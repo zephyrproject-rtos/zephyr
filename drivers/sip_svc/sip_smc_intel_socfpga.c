@@ -86,7 +86,7 @@ static void intel_sip_smc_plat_update_trans_id(const struct device *dev,
 	uint32_t *data;
 
 	if (request == NULL) {
-		LOG_ERR("request is empty");
+		LOG_ERROR("request is empty");
 		return;
 	}
 

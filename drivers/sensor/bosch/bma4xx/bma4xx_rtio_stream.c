@@ -57,7 +57,7 @@ void bma4xx_submit_stream(const struct device *sensor, struct rtio_iodev_sqe *io
 		ret = bma4xx_safely_configure(sensor, &new_config);
 
 		if (ret != 0) {
-			LOG_ERR("Failed to configure sensor");
+			LOG_ERROR("Failed to configure sensor");
 			rtio_iodev_sqe_err(iodev_sqe, ret);
 			return;
 		}
@@ -131,7 +131,7 @@ static void bma4xx_fifo_count_cb(struct rtio *r, const struct rtio_sqe *sqe, int
 	uint32_t buf_len;
 
 	if (rtio_sqe_rx_buf(iodev_sqe, min_read_size, ideal_read_size, &buf, &buf_len) != 0) {
-		LOG_ERR("Failed to get buffer");
+		LOG_ERROR("Failed to get buffer");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}
@@ -330,7 +330,7 @@ void bma4xx_fifo_event(const struct device *dev)
 
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
+		LOG_ERROR("Failed to get sensor clock cycles");
 		rtio_iodev_sqe_err(drv_data->streaming_sqe, rc);
 		return;
 	}

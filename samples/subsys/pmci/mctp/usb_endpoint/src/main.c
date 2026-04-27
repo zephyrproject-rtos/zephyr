@@ -43,14 +43,14 @@ static int enable_usb_device_next(void)
 
 	mctp_poc_usbd = sample_usbd_init_device(sample_msg_cb);
 	if (mctp_poc_usbd == NULL) {
-		LOG_ERR("Failed to initialize USB device");
+		LOG_ERROR("Failed to initialize USB device");
 		return -ENODEV;
 	}
 
 	if (!usbd_can_detect_vbus(mctp_poc_usbd)) {
 		err = usbd_enable(mctp_poc_usbd);
 		if (err) {
-			LOG_ERR("Failed to enable device support");
+			LOG_ERROR("Failed to enable device support");
 			return err;
 		}
 	}
@@ -83,7 +83,7 @@ int main(void)
 	int ret = enable_usb_device_next();
 
 	if (ret != 0) {
-		LOG_ERR("Failed to enable USB device support");
+		LOG_ERROR("Failed to enable USB device support");
 		return 0;
 	}
 

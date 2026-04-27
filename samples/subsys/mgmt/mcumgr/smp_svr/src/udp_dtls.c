@@ -28,7 +28,7 @@ int setup_udp_dtls(void)
 				sizeof(server_certificate));
 
 	if (rc < 0) {
-		LOG_ERR("Failed to register public certificate: %d", rc);
+		LOG_ERROR("Failed to register public certificate: %d", rc);
 		return rc;
 	}
 
@@ -36,7 +36,7 @@ int setup_udp_dtls(void)
 				TLS_CREDENTIAL_PRIVATE_KEY, private_key, sizeof(private_key));
 
 	if (rc < 0) {
-		LOG_ERR("Failed to register private key: %d", rc);
+		LOG_ERROR("Failed to register private key: %d", rc);
 	}
 
 	return rc;

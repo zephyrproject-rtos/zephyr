@@ -51,7 +51,7 @@ static int esp_hosted_request(const struct device *dev, CtrlMsgId msg_id, CtrlMs
 	pb_get_encoded_size(&payload_size, CtrlMsg_fields, ctrl_msg);
 
 	if ((payload_size + TLV_HEADER_SIZE) > ESP_FRAME_MAX_PAYLOAD) {
-		LOG_ERR("payload size > max payload %d", msg_id);
+		LOG_ERROR("payload size > max payload %d", msg_id);
 		return -1;
 	}
 
@@ -70,14 +70,14 @@ static int esp_hosted_request(const struct device *dev, CtrlMsgId msg_id, CtrlMs
 	pb_ostream_t stream = pb_ostream_from_buffer(frame.data_value, frame.data_length);
 
 	if (!pb_encode(&stream, CtrlMsg_fields, ctrl_msg)) {
-		LOG_ERR("failed to encode protobuf");
+		LOG_ERROR("failed to encode protobuf");
 		return -1;
 	}
 
 	/* Update frame checksum and send the frame. */
 	frame.checksum = esp_hosted_frame_checksum(&frame);
 	if (esp_hosted_hal_spi_transfer(dev, &frame, NULL, ESP_FRAME_SIZE_ROUND(frame))) {
-		LOG_ERR("request %d failed", msg_id);
+		LOG_ERROR("request %d failed", msg_id);
 		return -1;
 	}
 	return 0;
@@ -90,18 +90,18 @@ static int esp_hosted_response(const struct device *dev, CtrlMsgId msg_id, CtrlM
 		if (timeout == 0) {
 			return 0;
 		}
-		LOG_ERR("failed to receive response for %d", msg_id);
+		LOG_ERROR("failed to receive response for %d", msg_id);
 		return -1;
 	}
 
 	if (ctrl_msg->msg_id != msg_id) {
-		LOG_ERR("expected id %u got id %u", msg_id, ctrl_msg->msg_id);
+		LOG_ERROR("expected id %u got id %u", msg_id, ctrl_msg->msg_id);
 		return -1;
 	}
 
 	/* If message type is a response, check the response struct's return value. */
 	if (ctrl_msg->msg_type == CtrlMsgType_Resp && esp_hosted_ctrl_response(ctrl_msg)) {
-		LOG_ERR("response %d failed %d", msg_id, esp_hosted_ctrl_response(ctrl_msg));
+		LOG_ERROR("response %d failed %d", msg_id, esp_hosted_ctrl_response(ctrl_msg));
 		return -1;
 	}
 
@@ -145,7 +145,7 @@ static void esp_hosted_event_task(const struct device *dev, void *p2, void *p3)
 
 			if (((ESP_FRAME_SIZE * 2) - frame.len) < ESP_FRAME_SIZE) {
 				/* This shouldn't happen, but if it did stop the thread. */
-				LOG_ERR("spi buffer overflow offset: %d", frame.len);
+				LOG_ERROR("spi buffer overflow offset: %d", frame.len);
 				return;
 			}
 
@@ -158,7 +158,7 @@ static void esp_hosted_event_task(const struct device *dev, void *p2, void *p3)
 			}
 
 			if (ffrag.checksum != esp_hosted_frame_checksum(&ffrag)) {
-				LOG_ERR("invalid checksum");
+				LOG_ERROR("invalid checksum");
 				goto restart;
 			}
 
@@ -168,7 +168,7 @@ static void esp_hosted_event_task(const struct device *dev, void *p2, void *p3)
 			} else {
 				/* Fragmented frame */
 				if ((frame.seq_num + 1) != ffrag.seq_num) {
-					LOG_ERR("unexpected fragmented frame sequence");
+					LOG_ERROR("unexpected fragmented frame sequence");
 					goto restart;
 				}
 
@@ -200,7 +200,7 @@ static void esp_hosted_event_task(const struct device *dev, void *p2, void *p3)
 		case ESP_HOSTED_SERIAL_IF: /* Requires further processing */
 			break;
 		default:
-			LOG_ERR("unexpected interface type %d", frame.if_type);
+			LOG_ERROR("unexpected interface type %d", frame.if_type);
 			continue;
 		}
 
@@ -212,7 +212,7 @@ static void esp_hosted_event_task(const struct device *dev, void *p2, void *p3)
 		pb_istream_t stream = pb_istream_from_buffer(frame.data_value, frame.data_length);
 
 		if (!pb_decode(&stream, CtrlMsg_fields, &ctrl_msg)) {
-			LOG_ERR("failed to decode protobuf");
+			LOG_ERROR("failed to decode protobuf");
 			continue;
 		}
 
@@ -250,7 +250,7 @@ static void esp_hosted_event_task(const struct device *dev, void *p2, void *p3)
 
 		/* Queue control message resp/event for further processing. */
 		if (k_msgq_put(&esp_hosted_msgq, &ctrl_msg, K_FOREVER)) {
-			LOG_ERR("Failed to enqueue message");
+			LOG_ERROR("Failed to enqueue message");
 			return;
 		}
 
@@ -391,7 +391,7 @@ static int esp_hosted_send(const struct device *dev, struct net_pkt *pkt)
 #endif
 
 	if (pkt_len > ESP_FRAME_MAX_PAYLOAD) {
-		LOG_ERR("packet length > SPI buf length");
+		LOG_ERROR("packet length > SPI buf length");
 		return -ENOMEM;
 	}
 
@@ -402,14 +402,14 @@ static int esp_hosted_send(const struct device *dev, struct net_pkt *pkt)
 
 	/* Copy frame payload. */
 	if (net_pkt_read(pkt, frame.payload, pkt_len) < 0) {
-		LOG_ERR("net_pkt_read failed");
+		LOG_ERROR("net_pkt_read failed");
 		return -EIO;
 	}
 
 	/* Update frame checksum and send the frame. */
 	frame.checksum = esp_hosted_frame_checksum(&frame);
 	if (esp_hosted_hal_spi_transfer(dev, &frame, NULL, ESP_FRAME_SIZE_ROUND(frame))) {
-		LOG_ERR("spi_transfer failed");
+		LOG_ERROR("spi_transfer failed");
 		return -EIO;
 	}
 
@@ -437,19 +437,19 @@ static int esp_hosted_recv(struct net_if *iface, void *buf, size_t len)
 
 	pkt = net_pkt_rx_alloc_with_buffer(iface, len, NET_AF_UNSPEC, 0, K_MSEC(1000));
 	if (pkt == NULL) {
-		LOG_ERR("Failed to allocate net buffer");
+		LOG_ERROR("Failed to allocate net buffer");
 		return -ENOMEM;
 	}
 
 	if (net_pkt_write(pkt, buf, len) < 0) {
 		ret = -EIO;
-		LOG_ERR("Failed to write to net buffer");
+		LOG_ERROR("Failed to write to net buffer");
 		goto error;
 	}
 
 	if (net_recv_data(iface, pkt) < 0) {
 		ret = -EIO;
-		LOG_ERR("Failed to push received data");
+		LOG_ERROR("Failed to push received data");
 		goto error;
 	}
 
@@ -585,7 +585,7 @@ static int esp_hosted_dev_init(const struct device *dev)
 
 	/* Initialize semaphores. */
 	if (k_sem_init(&data->bus_sem, 1, 1)) {
-		LOG_ERR("k_sem_init() failed");
+		LOG_ERROR("k_sem_init() failed");
 		return -EINVAL;
 	}
 
@@ -596,7 +596,7 @@ static int esp_hosted_dev_init(const struct device *dev)
 				    K_INHERIT_PERMS, K_NO_WAIT);
 
 	if (!data->tid) {
-		LOG_ERR("ERROR spawning event processing thread");
+		LOG_ERROR("ERROR spawning event processing thread");
 		return -EAGAIN;
 	}
 

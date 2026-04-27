@@ -137,7 +137,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	}
 
 	if (ti_adc_sequencer_start(data->dev) < 0) {
-		LOG_ERR("Sequencer failed to start");
+		LOG_ERROR("Sequencer failed to start");
 	};
 }
 
@@ -184,39 +184,39 @@ static int ti_adc_channel_setup(const struct device *dev, const struct adc_chann
 	const uint8_t chan = chan_cfg->channel_id;
 
 	if (chan >= TI_ADC_TOTAL_CHANNELS) {
-		LOG_ERR("Channel %d invalid, must be less than %d", chan, TI_ADC_TOTAL_CHANNELS);
+		LOG_ERROR("Channel %d invalid, must be less than %d", chan, TI_ADC_TOTAL_CHANNELS);
 		return -EINVAL;
 	}
 
 	if (chan_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Gain must be 1x");
+		LOG_ERROR("Gain must be 1x");
 		return -EINVAL;
 	}
 
 	if (chan_cfg->reference == ADC_REF_INTERNAL &&
 	    DEVICE_API_GET(adc, dev)->ref_internal == 0) {
-		LOG_ERR("Voltage reference must be provided for ADC_REF_INTERNAL");
+		LOG_ERROR("Voltage reference must be provided for ADC_REF_INTERNAL");
 		return -EINVAL;
 	}
 
 	if (cfg->oversampling[chan] > TI_ADC_STEPCONFIG_AVERAGING_MAX) {
-		LOG_ERR("Invalid oversampling value");
+		LOG_ERROR("Invalid oversampling value");
 		return -EINVAL;
 	}
 
 	if (cfg->open_delay[chan] > TI_ADC_STEPDELAY_OPENDELAY_MAX) {
-		LOG_ERR("Invalid open delay");
+		LOG_ERROR("Invalid open delay");
 		return -EINVAL;
 	}
 
 	if (chan_cfg->acquisition_time > TI_ADC_STEPDELAY_SAMPLEDELAY_MAX) {
-		LOG_ERR("Invalid acquisition time (sample delay)");
+		LOG_ERROR("Invalid acquisition time (sample delay)");
 		return -EINVAL;
 	}
 
 #ifdef CONFIG_ADC_CONFIGURABLE_INPUTS
 	if (!chan_cfg->differential && chan_cfg->input_negative != TI_ADC_STEPCONFIG_SEL_INM_REFN) {
-		LOG_ERR("For single ended input, negative input must be REFN");
+		LOG_ERROR("For single ended input, negative input must be REFN");
 		return -EINVAL;
 	}
 #endif
@@ -262,7 +262,8 @@ static int ti_adc_read_start(const struct device *dev, const struct adc_sequence
 	required_size = sizeof(uint16_t) * data->chan_count * samplings;
 
 	if (sequence->buffer_size < required_size) {
-		LOG_ERR("Buffer size is too small (%zu/%zu)", sequence->buffer_size, required_size);
+		LOG_ERROR("Buffer size is too small (%zu/%zu)", sequence->buffer_size,
+			  required_size);
 		return -ENOMEM;
 	}
 
@@ -305,7 +306,7 @@ static int ti_adc_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pinctrl, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("failed to apply pinctrl");
+		LOG_ERROR("failed to apply pinctrl");
 		return ret;
 	}
 
@@ -324,7 +325,7 @@ static int ti_adc_init(const struct device *dev)
 		data->fifo_data_ptr = &regs->FIFO1DATA;
 		regs->FIFO1THRSH = TI_ADC_FIFO_THRESHOLD;
 	} else {
-		LOG_ERR("FIFO must be 0 or 1");
+		LOG_ERROR("FIFO must be 0 or 1");
 		return -EINVAL;
 	}
 

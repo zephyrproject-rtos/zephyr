@@ -44,7 +44,7 @@ static int wdt_xec_setup(const struct device *dev, uint8_t options)
 	}
 
 	if (!data->timeout_installed) {
-		LOG_ERR("No valid WDT timeout installed");
+		LOG_ERROR("No valid WDT timeout installed");
 		return -EINVAL;
 	}
 

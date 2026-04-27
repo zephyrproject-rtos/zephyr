@@ -43,14 +43,14 @@ static int flash_cad_read(const struct device *dev, off_t offset,
 	int rc;
 
 	if ((data == NULL) || (len == 0)) {
-		LOG_ERR("Invalid input parameter for QSPI Read!");
+		LOG_ERROR("Invalid input parameter for QSPI Read!");
 		return -EINVAL;
 	}
 
 	rc = cad_qspi_read(cad_params, data, (uint32_t)offset, len);
 
 	if (rc < 0) {
-		LOG_ERR("Cadence QSPI Flash Read Failed");
+		LOG_ERROR("Cadence QSPI Flash Read Failed");
 		return rc;
 	}
 
@@ -65,14 +65,14 @@ static int flash_cad_erase(const struct device *dev, off_t offset,
 	int rc;
 
 	if (len == 0) {
-		LOG_ERR("Invalid input parameter for QSPI Erase!");
+		LOG_ERROR("Invalid input parameter for QSPI Erase!");
 		return -EINVAL;
 	}
 
 	rc = cad_qspi_erase(cad_params, (uint32_t)offset, len);
 
 	if (rc < 0) {
-		LOG_ERR("Cadence QSPI Flash Erase Failed!");
+		LOG_ERROR("Cadence QSPI Flash Erase Failed!");
 		return rc;
 	}
 
@@ -87,14 +87,14 @@ static int flash_cad_write(const struct device *dev, off_t offset,
 	int rc;
 
 	if ((data == NULL) || (len == 0)) {
-		LOG_ERR("Invalid input parameter for QSPI Write!");
+		LOG_ERROR("Invalid input parameter for QSPI Write!");
 		return -EINVAL;
 	}
 
 	rc = cad_qspi_write(cad_params, (void *)data, (uint32_t)offset, len);
 
 	if (rc < 0) {
-		LOG_ERR("Cadence QSPI Flash Write Failed!");
+		LOG_ERROR("Cadence QSPI Flash Write Failed!");
 		return rc;
 	}
 
@@ -134,7 +134,7 @@ static int flash_cad_init(const struct device *dev)
 			QSPI_CONFIG_CSSOT, 0);
 
 	if (rc < 0) {
-		LOG_ERR("Cadence QSPI Flash Init Failed");
+		LOG_ERROR("Cadence QSPI Flash Init Failed");
 		return rc;
 	}
 

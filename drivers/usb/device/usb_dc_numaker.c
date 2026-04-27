@@ -325,14 +325,14 @@ static int numaker_usbd_send_msg(const struct device *dev, const struct numaker_
 			.type = NUMAKER_USBD_MSG_TYPE_SW_RECONN,
 		};
 
-		LOG_ERR("Message queue overflow");
+		LOG_ERROR("Message queue overflow");
 
 		/* Discard all not yet received messages for error recovery below */
 		k_msgq_purge(&data->msgq);
 
 		rc = k_msgq_put(&data->msgq, &msg_reconn, K_NO_WAIT);
 		if (rc < 0) {
-			LOG_ERR("Message queue overflow again");
+			LOG_ERROR("Message queue overflow again");
 		}
 	}
 
@@ -348,7 +348,7 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 
 	/* Reset controller ready? */
 	if (!device_is_ready(config->reset.dev)) {
-		LOG_ERR("Reset controller not ready");
+		LOG_ERROR("Reset controller not ready");
 		return -ENODEV;
 	}
 
@@ -977,7 +977,7 @@ static void numaker_usbd_msg_cb_ep(const struct device *dev, struct numaker_usbd
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
 
 	if (!ep_cur) {
-		LOG_ERR("Bind EP context: ep=0x%02x", ep);
+		LOG_ERROR("Bind EP context: ep=0x%02x", ep);
 		return;
 	}
 
@@ -1243,7 +1243,7 @@ int usb_dc_attach(void)
 	/* Initialize USB DC H/W */
 	rc = numaker_usbd_hw_setup(dev);
 	if (rc < 0) {
-		LOG_ERR("Set up H/W");
+		LOG_ERROR("Set up H/W");
 		goto cleanup;
 	}
 
@@ -1351,7 +1351,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const ep_cfg)
 
 	/* For safe, require EP number for control transfer to be 0 */
 	if ((ep_cfg->ep_type == USB_DC_EP_CONTROL) && USB_EP_GET_IDX(ep_cfg->ep_addr) != 0) {
-		LOG_ERR("EP number for control transfer must be 0");
+		LOG_ERROR("EP number for control transfer must be 0");
 		rc = -ENOTSUP;
 		goto cleanup;
 	}
@@ -1383,7 +1383,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const ep_cfg)
 	 */
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep_cfg->ep_addr);
 	if (!ep_cur) {
-		LOG_ERR("Bind EP context: ep=0x%02x", ep_cfg->ep_addr);
+		LOG_ERROR("Bind EP context: ep=0x%02x", ep_cfg->ep_addr);
 		rc = -ENOMEM;
 		goto cleanup;
 	}
@@ -1407,7 +1407,7 @@ int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb)
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
 
 	if (!ep_cur) {
-		LOG_ERR("Bind EP context: ep=0x%02x", ep);
+		LOG_ERROR("Bind EP context: ep=0x%02x", ep);
 		rc = -ENOMEM;
 		goto cleanup;
 	}
@@ -1437,7 +1437,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const ep_cfg)
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep_cfg->ep_addr);
 
 	if (!ep_cur) {
-		LOG_ERR("Bind EP context: ep=0x%02x", ep_cfg->ep_addr);
+		LOG_ERROR("Bind EP context: ep=0x%02x", ep_cfg->ep_addr);
 		rc = -ENOMEM;
 		goto cleanup;
 	}
@@ -1448,7 +1448,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const ep_cfg)
 		rc = numaker_usbd_ep_mgmt_alloc_dmabuf(dev, ep_cfg->ep_mps, &dmabuf_base,
 						       &dmabuf_size);
 		if (rc < 0) {
-			LOG_ERR("Allocate DMA buffer failed");
+			LOG_ERROR("Allocate DMA buffer failed");
 			goto cleanup;
 		}
 
@@ -1480,7 +1480,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
 
 	if (!ep_cur) {
-		LOG_ERR("Bind EP context: ep=0x%02x", ep);
+		LOG_ERROR("Bind EP context: ep=0x%02x", ep);
 		rc = -ENOMEM;
 		goto cleanup;
 	}
@@ -1509,7 +1509,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
 
 	if (!ep_cur) {
-		LOG_ERR("Bind EP context: ep=0x%02x", ep);
+		LOG_ERROR("Bind EP context: ep=0x%02x", ep);
 		rc = -ENOMEM;
 		goto cleanup;
 	}
@@ -1540,7 +1540,7 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
 
 	if (!ep_cur) {
-		LOG_ERR("Bind EP context: ep=0x%02x", ep);
+		LOG_ERROR("Bind EP context: ep=0x%02x", ep);
 		rc = -ENOMEM;
 		goto cleanup;
 	}
@@ -1573,7 +1573,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
 
 	if (!ep_cur) {
-		LOG_ERR("Bind EP context: ep=0x%02x", ep);
+		LOG_ERROR("Bind EP context: ep=0x%02x", ep);
 		rc = -ENOMEM;
 		goto cleanup;
 	}
@@ -1613,7 +1613,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
 
 	if (!ep_cur) {
-		LOG_ERR("Bind EP context: ep=0x%02x", ep);
+		LOG_ERROR("Bind EP context: ep=0x%02x", ep);
 		rc = -ENOMEM;
 		goto cleanup;
 	}
@@ -1641,7 +1641,7 @@ int usb_dc_ep_flush(const uint8_t ep)
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
 
 	if (!ep_cur) {
-		LOG_ERR("Bind EP context: ep=0x%02x", ep);
+		LOG_ERROR("Bind EP context: ep=0x%02x", ep);
 		rc = -ENOMEM;
 		goto cleanup;
 	}
@@ -1669,13 +1669,13 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data_buf, const uint3
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
 
 	if (!ep_cur) {
-		LOG_ERR("ep=0x%02x", ep);
+		LOG_ERROR("ep=0x%02x", ep);
 		rc = -ENOMEM;
 		goto cleanup;
 	}
 
 	if (!USB_EP_DIR_IS_IN(ep)) {
-		LOG_ERR("Invalid EP address 0x%02x for write", ep);
+		LOG_ERROR("Invalid EP address 0x%02x for write", ep);
 		rc = -EINVAL;
 		goto cleanup;
 	}
@@ -1711,8 +1711,8 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data_buf, const uint3
 	if (ret_bytes) {
 		*ret_bytes = data_len_act;
 	} else if (data_len_act != data_len) {
-		LOG_ERR("Expected write all %d bytes, but actual %d bytes written", data_len,
-			data_len_act);
+		LOG_ERROR("Expected write all %d bytes, but actual %d bytes written", data_len,
+			  data_len_act);
 		rc = -EIO;
 		goto cleanup;
 	}
@@ -1764,13 +1764,13 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data_buf, uint32_t max_data_len, ui
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
 
 	if (!ep_cur) {
-		LOG_ERR("Bind EP context: ep=0x%02x", ep);
+		LOG_ERROR("Bind EP context: ep=0x%02x", ep);
 		rc = -ENOMEM;
 		goto cleanup;
 	}
 
 	if (!USB_EP_DIR_IS_OUT(ep)) {
-		LOG_ERR("Invalid EP address 0x%02x for read", ep);
+		LOG_ERROR("Invalid EP address 0x%02x for read", ep);
 		rc = -EINVAL;
 		goto cleanup;
 	}
@@ -1778,7 +1778,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data_buf, uint32_t max_data_len, ui
 	/* Special handling for USB_CONTROL_EP_OUT on Setup packet */
 	if (ep == USB_CONTROL_EP_OUT && ep_mgmt->new_setup) {
 		if (!data_buf || max_data_len != 8) {
-			LOG_ERR("Invalid parameter for reading Setup packet");
+			LOG_ERROR("Invalid parameter for reading Setup packet");
 			rc = -EINVAL;
 			goto cleanup;
 		}
@@ -1810,7 +1810,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data_buf, uint32_t max_data_len, ui
 			*read_bytes = data_len_act;
 		}
 	} else if (max_data_len) {
-		LOG_ERR("Null data but non-zero data length");
+		LOG_ERROR("Null data but non-zero data length");
 		rc = -EINVAL;
 		goto cleanup;
 	} else {
@@ -1844,13 +1844,13 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
 
 	if (!ep_cur) {
-		LOG_ERR("Bind EP context: ep=0x%02x", ep);
+		LOG_ERROR("Bind EP context: ep=0x%02x", ep);
 		rc = -ENOMEM;
 		goto cleanup;
 	}
 
 	if (!USB_EP_DIR_IS_OUT(ep)) {
-		LOG_ERR("Invalid EP address 0x%02x for read", ep);
+		LOG_ERROR("Invalid EP address 0x%02x for read", ep);
 		rc = -EINVAL;
 		goto cleanup;
 	}
@@ -1889,7 +1889,7 @@ int usb_dc_ep_mps(const uint8_t ep)
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
 
 	if (!ep_cur) {
-		LOG_ERR("Bind EP context: ep=0x%02x", ep);
+		LOG_ERROR("Bind EP context: ep=0x%02x", ep);
 		rc = -ENOMEM;
 		goto cleanup;
 	}

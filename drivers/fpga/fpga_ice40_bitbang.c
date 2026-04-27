@@ -136,13 +136,13 @@ static void fpga_ice40_load_handler(struct k_work *item)
 	const struct fpga_ice40_config_bitbang *config_bitbang = config->derived_config;
 
 	if (!device_is_ready(config_bitbang->clk.port)) {
-		LOG_ERR("%s: GPIO for clk is not ready", dev->name);
+		LOG_ERROR("%s: GPIO for clk is not ready", dev->name);
 		ret = -ENODEV;
 		goto exit;
 	}
 
 	if (!device_is_ready(config_bitbang->pico.port)) {
-		LOG_ERR("%s: GPIO for pico is not ready", dev->name);
+		LOG_ERROR("%s: GPIO for pico is not ready", dev->name);
 		ret = -ENODEV;
 		goto exit;
 	}
@@ -170,7 +170,7 @@ static void fpga_ice40_load_handler(struct k_work *item)
 	ret = device_deinit(config->bus.bus);
 
 	if (ret != 0) {
-		LOG_ERR("failed to deinitialize the SPI device: %i", ret);
+		LOG_ERROR("failed to deinitialize the SPI device: %i", ret);
 		goto unlock;
 	}
 
@@ -191,7 +191,7 @@ static void fpga_ice40_load_handler(struct k_work *item)
 	fpga_ice40_delay(2 * config_bitbang->mhz_delay_count * config->creset_delay_us);
 
 	if (gpio_pin_get_dt(&config->cdone) != 0) {
-		LOG_ERR("CDONE should be low after the reset");
+		LOG_ERROR("CDONE should be low after the reset");
 		ret = -EIO;
 		goto unlock;
 	}
@@ -223,11 +223,11 @@ static void fpga_ice40_load_handler(struct k_work *item)
 	LOG_DBG("checking CDONE");
 	ret = gpio_pin_get_dt(&config->cdone);
 	if (ret < 0) {
-		LOG_ERR("failed to read CDONE: %d", ret);
+		LOG_ERROR("failed to read CDONE: %d", ret);
 		goto unlock;
 	} else if (ret != 1) {
 		ret = -EIO;
-		LOG_ERR("CDONE did not go high");
+		LOG_ERROR("CDONE did not go high");
 		goto unlock;
 	}
 
@@ -239,7 +239,7 @@ static void fpga_ice40_load_handler(struct k_work *item)
 	ret = device_init(config->bus.bus);
 
 	if (ret != 0) {
-		LOG_ERR("failed to reinitialize the SPI device: %i", ret);
+		LOG_ERROR("failed to reinitialize the SPI device: %i", ret);
 		goto unlock;
 	}
 

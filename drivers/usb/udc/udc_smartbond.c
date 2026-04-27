@@ -133,12 +133,12 @@ static int usb_smartbond_dma_config(struct usb_smartbond_data *data)
 	struct dma_block_config *rx_block = &data->dma_data.rx_block_cfg;
 
 	if (dma_request_channel(dma_cfg->rx_dev, (void *)&dma_cfg->rx_chan) < 0) {
-		LOG_ERR("RX DMA channel is already occupied");
+		LOG_ERROR("RX DMA channel is already occupied");
 		return -EIO;
 	}
 
 	if (dma_request_channel(dma_cfg->tx_dev, (void *)&dma_cfg->tx_chan) < 0) {
-		LOG_ERR("TX DMA channel is already occupied");
+		LOG_ERROR("TX DMA channel is already occupied");
 		return -EIO;
 	}
 
@@ -207,12 +207,12 @@ static int usb_smartbond_dma_config(struct usb_smartbond_data *data)
 	rx_block->block_size = 0;
 
 	if (dma_config(dma_cfg->rx_dev, dma_cfg->rx_chan, rx) < 0) {
-		LOG_ERR("RX DMA configuration failed");
+		LOG_ERROR("RX DMA configuration failed");
 		return -EINVAL;
 	}
 
 	if (dma_config(dma_cfg->tx_dev, dma_cfg->tx_chan, tx) < 0) {
-		LOG_ERR("TX DMA configuration failed");
+		LOG_ERROR("TX DMA configuration failed");
 		return -EINVAL;
 	}
 
@@ -349,7 +349,7 @@ static void start_rx_dma(const struct usb_smartbond_dma_config *dma_cfg, uintptr
 			 uintptr_t dst, uint16_t size)
 {
 	if (dma_reload(dma_cfg->rx_dev, dma_cfg->rx_chan, src, dst, size) < 0) {
-		LOG_ERR("Failed to reload RX DMA");
+		LOG_ERROR("Failed to reload RX DMA");
 	} else {
 		dma_start(dma_cfg->rx_dev, dma_cfg->rx_chan);
 	}
@@ -401,7 +401,7 @@ static void start_tx_dma(const struct usb_smartbond_dma_config *dma_cfg, uintptr
 			 uintptr_t dst, uint16_t size)
 {
 	if (dma_reload(dma_cfg->tx_dev, dma_cfg->tx_chan, src, dst, size) < 0) {
-		LOG_ERR("Failed to reload TX DMA");
+		LOG_ERROR("Failed to reload TX DMA");
 	} else {
 		dma_start(dma_cfg->tx_dev, dma_cfg->tx_chan);
 	}
@@ -839,12 +839,12 @@ static enum udc_bus_speed udc_smartbond_device_speed(const struct device *dev)
 static int udc_smartbond_shutdown(const struct device *dev)
 {
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
@@ -1017,7 +1017,7 @@ static void handle_epx_rx_ev(struct usb_smartbond_data *data, uint8_t ep_idx)
 				    ep_state->iso) {
 					buf = udc_buf_get(ep_cfg);
 					if (unlikely(buf == NULL)) {
-						LOG_ERR("ep 0x%02x queue is empty", ep_cfg->addr);
+						LOG_ERROR("ep 0x%02x queue is empty", ep_cfg->addr);
 						break;
 					}
 					ep_cfg->stat.busy = 0;
@@ -1441,7 +1441,7 @@ static void handle_ep0_rx_work(struct k_work *item)
 
 	irq_unlock(lock_key);
 	if (unlikely(buf == NULL)) {
-		LOG_ERR("ep 0x%02x queue is empty", ep);
+		LOG_ERROR("ep 0x%02x queue is empty", ep);
 		return;
 	}
 
@@ -1516,12 +1516,12 @@ static int udc_smartbond_enable(const struct device *dev)
 	usb_change_state(data, true, data->vbus_present);
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL, 8, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL, 8, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
@@ -1582,7 +1582,7 @@ static int udc_smartbond_init(const struct device *dev)
 		data->ep_state[0][i].config.addr = USB_EP_DIR_OUT | i;
 		err = udc_register_ep(dev, &data->ep_state[0][i].config);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 		data->ep_state[0][i].regs = reg_set + i;
@@ -1603,7 +1603,7 @@ static int udc_smartbond_init(const struct device *dev)
 		data->ep_state[1][i].config.addr = USB_EP_DIR_IN | i;
 		err = udc_register_ep(dev, &data->ep_state[1][i].config);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 		data->ep_state[1][i].regs = reg_set + i;

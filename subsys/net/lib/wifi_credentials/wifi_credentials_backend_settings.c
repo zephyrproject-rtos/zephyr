@@ -41,7 +41,7 @@ static int zephyr_settings_backend_load_val_cb(const char *key, size_t len,
 	}
 
 	if (len != arg->buf_len) {
-		LOG_ERR("Settings error: invalid settings length");
+		LOG_ERROR("Settings error: invalid settings length");
 		return -EINVAL;
 	}
 
@@ -49,7 +49,7 @@ static int zephyr_settings_backend_load_val_cb(const char *key, size_t len,
 
 	/* value validation */
 	if (length_read < len) {
-		LOG_ERR("Settings error: entry incomplete");
+		LOG_ERROR("Settings error: entry incomplete");
 		return -ENODATA;
 	}
 
@@ -66,19 +66,19 @@ static int zephyr_settings_backend_load_key_cb(const char *key, size_t len,
 
 	/* key validation */
 	if (!key) {
-		LOG_ERR("Settings error: no key");
+		LOG_ERROR("Settings error: no key");
 		return -EINVAL;
 	}
 
 	int idx = atoi(key);
 
 	if ((idx == 0 && strcmp(key, "0") != 0) || idx >= CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES) {
-		LOG_ERR("Settings error: index too large");
+		LOG_ERROR("Settings error: index too large");
 		return -EINVAL;
 	}
 
 	if (len < sizeof(struct wifi_credentials_header)) {
-		LOG_ERR("Settings error: invalid settings length");
+		LOG_ERROR("Settings error: invalid settings length");
 		return -EINVAL;
 	}
 
@@ -87,7 +87,7 @@ static int zephyr_settings_backend_load_key_cb(const char *key, size_t len,
 
 	/* value validation */
 	if (length_read < len) {
-		LOG_ERR("Settings error: entry incomplete");
+		LOG_ERROR("Settings error: entry incomplete");
 		return -ENODATA;
 	}
 
@@ -100,7 +100,7 @@ int wifi_credentials_backend_init(void)
 	int ret = settings_subsys_init();
 
 	if (ret) {
-		LOG_ERR("Initializing settings subsystem failed: %d", ret);
+		LOG_ERROR("Initializing settings subsystem failed: %d", ret);
 		return ret;
 	}
 
@@ -118,7 +118,7 @@ int wifi_credentials_store_entry(size_t idx, const void *buf, size_t buf_len)
 			   WIFI_CREDENTIALS_SBE_KEY_FMT, idx);
 
 	if (ret < 0 || ret == ARRAY_SIZE(settings_name_buf)) {
-		LOG_ERR("WiFi credentials settings key could not be generated, idx: %d", idx);
+		LOG_ERROR("WiFi credentials settings key could not be generated, idx: %d", idx);
 		return -EFAULT;
 	}
 
@@ -133,7 +133,7 @@ int wifi_credentials_delete_entry(size_t idx)
 			   WIFI_CREDENTIALS_SBE_KEY_FMT, idx);
 
 	if (ret < 0 || ret == ARRAY_SIZE(settings_name_buf)) {
-		LOG_ERR("WiFi credentials settings key could not be generated, idx: %d", idx);
+		LOG_ERROR("WiFi credentials settings key could not be generated, idx: %d", idx);
 		return -EFAULT;
 	}
 

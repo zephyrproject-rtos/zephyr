@@ -33,11 +33,11 @@ static void temp_work_cb(struct k_work *work)
 		struct sensor_value val;
 
 		if (!dev) {
-			LOG_ERR("device not ready.");
+			LOG_ERROR("device not ready.");
 			goto out;
 		}
 		if (sensor_sample_fetch(dev)) {
-			LOG_ERR("temperature data update failed");
+			LOG_ERROR("temperature data update failed");
 			goto out;
 		}
 

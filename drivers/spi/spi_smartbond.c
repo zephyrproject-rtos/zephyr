@@ -175,7 +175,7 @@ static inline int spi_smartbond_set_speed(const struct spi_smartbond_cfg *cfg,
 					  const uint32_t frequency)
 {
 	if (frequency < SCLK_FREQ_2MHZ) {
-		LOG_ERR("Frequency is lower than minimal SCLK %d", SCLK_FREQ_2MHZ);
+		LOG_ERROR("Frequency is lower than minimal SCLK %d", SCLK_FREQ_2MHZ);
 		return -ENOTSUP;
 	} else if (frequency < SCLK_FREQ_4MHZ) {
 		cfg->regs->SPI_CTRL_REG =
@@ -218,7 +218,7 @@ static inline int spi_smartbond_set_word_size(const struct spi_smartbond_cfg *cf
 			(2UL << SPI_SPI_CTRL_REG_SPI_WORD_Pos);
 		break;
 	default:
-		LOG_ERR("Word size not supported");
+		LOG_ERROR("Word size not supported");
 		return -ENOTSUP;
 	}
 
@@ -262,23 +262,23 @@ static int spi_smartbond_configure(const struct spi_smartbond_cfg *cfg,
 	}
 
 	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not yet supported");
+		LOG_ERROR("Slave mode not yet supported");
 		return -ENOTSUP;
 	}
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
 	    (spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only single line mode is supported");
+		LOG_ERROR("Only single line mode is supported");
 		return -ENOTSUP;
 	}
 
 	if (spi_cfg->operation & SPI_MODE_LOOP) {
-		LOG_ERR("Loopback mode is not supported");
+		LOG_ERROR("Loopback mode is not supported");
 		return -ENOTSUP;
 	}
 
@@ -824,28 +824,28 @@ static int spi_smartbond_dma_config(const struct device *dev)
 	if (!(config->tx_dma_chan & 0x1) ||
 			(config->rx_dma_chan & 0x1) ||
 			(config->tx_dma_chan != (config->rx_dma_chan + 1))) {
-		LOG_ERR("Invalid RX/TX channel selection");
+		LOG_ERROR("Invalid RX/TX channel selection");
 		return -EINVAL;
 	}
 
 	if (config->tx_slot_mux != config->rx_slot_mux) {
-		LOG_ERR("TX/RX DMA slots mismatch");
+		LOG_ERROR("TX/RX DMA slots mismatch");
 		return -EINVAL;
 	}
 
 	if (!device_is_ready(config->tx_dma_ctrl) ||
 		!device_is_ready(config->rx_dma_ctrl)) {
-		LOG_ERR("TX/RX DMA device is not ready");
+		LOG_ERROR("TX/RX DMA device is not ready");
 		return -ENODEV;
 	}
 
 	if (spi_smartbond_dma_tx_channel_request(dev) < 0) {
-		LOG_ERR("TX DMA channel is already occupied");
+		LOG_ERROR("TX DMA channel is already occupied");
 		return -EIO;
 	}
 
 	if (spi_smartbond_dma_rx_channel_request(dev) < 0) {
-		LOG_ERR("RX DMA channel is already occupied");
+		LOG_ERROR("RX DMA channel is already occupied");
 		return -EIO;
 	}
 
@@ -946,11 +946,11 @@ static int spi_smartbond_dma_trigger(const struct device *dev)
 			tx_block->source_addr_adj = 0x2;
 
 			if (dma_config(config->tx_dma_ctrl, config->tx_dma_chan, tx) < 0) {
-				LOG_ERR("TX DMA configuration failed");
+				LOG_ERROR("TX DMA configuration failed");
 				return -EINVAL;
 			}
 			if (dma_config(config->rx_dma_ctrl, config->rx_dma_chan, rx) < 0) {
-				LOG_ERR("RX DMA configuration failed");
+				LOG_ERROR("RX DMA configuration failed");
 				return -EINVAL;
 			}
 			dma_start(config->rx_dma_ctrl, config->rx_dma_chan);
@@ -971,7 +971,7 @@ static int spi_smartbond_dma_trigger(const struct device *dev)
 			tx_block->source_addr_adj = 0x0;
 
 			if (dma_config(config->tx_dma_ctrl, config->tx_dma_chan, tx) < 0) {
-				LOG_ERR("TX DMA configuration failed");
+				LOG_ERROR("TX DMA configuration failed");
 				return -EINVAL;
 			}
 			dma_start(config->tx_dma_ctrl, config->tx_dma_chan);
@@ -1008,11 +1008,11 @@ static int spi_smartbond_dma_trigger(const struct device *dev)
 			}
 
 			if (dma_config(config->tx_dma_ctrl, config->tx_dma_chan, tx) < 0) {
-				LOG_ERR("TX DMA configuration failed");
+				LOG_ERROR("TX DMA configuration failed");
 				return -EINVAL;
 			}
 			if (dma_config(config->rx_dma_ctrl, config->rx_dma_chan, rx) < 0) {
-				LOG_ERR("RX DMA configuration failed");
+				LOG_ERROR("RX DMA configuration failed");
 				return -EINVAL;
 			}
 			dma_start(config->rx_dma_ctrl, config->rx_dma_chan);
@@ -1109,7 +1109,7 @@ static int spi_smartbond_release(const struct device *dev, const struct spi_conf
 	struct spi_context *ctx = &data->ctx;
 
 	if (!spi_context_configured(ctx, spi_cfg)) {
-		LOG_ERR("SPI configuration was not the last one to be used");
+		LOG_ERROR("SPI configuration was not the last one to be used");
 		return -EINVAL;
 	}
 
@@ -1140,20 +1140,20 @@ static int spi_smartbond_resume(const struct device *dev)
 
 	rc = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (rc < 0) {
-		LOG_ERR("Failed to configure SPI pins");
+		LOG_ERROR("Failed to configure SPI pins");
 		return rc;
 	}
 
 	rc = spi_context_cs_configure_all(&data->ctx);
 	if (rc < 0) {
-		LOG_ERR("Failed to configure CS pins: %d", rc);
+		LOG_ERROR("Failed to configure CS pins: %d", rc);
 		return rc;
 	}
 
 #ifdef CONFIG_SPI_SMARTBOND_DMA
 	rc = spi_smartbond_dma_config(dev);
 	if (rc < 0) {
-		LOG_ERR("Failed to configure DMA");
+		LOG_ERROR("Failed to configure DMA");
 		return rc;
 	}
 #endif

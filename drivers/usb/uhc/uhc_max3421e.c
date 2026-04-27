@@ -367,7 +367,7 @@ static int max3421e_xfer_bulk(const struct device *dev,
 	}
 
 	if (buf == NULL) {
-		LOG_ERR("No buffer to handle");
+		LOG_ERROR("No buffer to handle");
 		return -ENODATA;
 	}
 
@@ -463,11 +463,11 @@ static int max3421e_hrslt_success(const struct device *dev)
 		finished = true;
 		break;
 	case MAX3421E_HXFR_TYPE_ISOOUT:
-		LOG_ERR("ISO OUT is not implemented");
+		LOG_ERROR("ISO OUT is not implemented");
 		k_panic();
 		break;
 	case MAX3421E_HXFR_TYPE_ISOIN:
-		LOG_ERR("ISO IN is not implemented");
+		LOG_ERROR("ISO IN is not implemented");
 		k_panic();
 		break;
 	case MAX3421E_HXFR_TYPE_BULKOUT:
@@ -532,7 +532,7 @@ static int max3421e_handle_hxfrdn(const struct device *dev)
 	int ret = 0;
 
 	if (xfer == NULL) {
-		LOG_ERR("No transfers to handle");
+		LOG_ERROR("No transfers to handle");
 		return -ENODATA;
 	}
 
@@ -870,8 +870,7 @@ static int max3421e_pinctl_setup(const struct device *dev)
 	}
 
 	if (unlikely(tmp != pinctl)) {
-		LOG_ERR("Failed to verify PINCTL register 0x%02x vs 0x%02x",
-			pinctl, tmp);
+		LOG_ERROR("Failed to verify PINCTL register 0x%02x vs 0x%02x", pinctl, tmp);
 		return -EIO;
 	}
 
@@ -905,8 +904,7 @@ static int max3421e_mode_setup(const struct device *dev)
 	}
 
 	if (tmp != mode) {
-		LOG_ERR("Failed to verify MODE register 0x%02x vs 0x%02x",
-			mode, tmp);
+		LOG_ERROR("Failed to verify MODE register 0x%02x vs 0x%02x", mode, tmp);
 		return -EIO;
 	}
 
@@ -936,8 +934,7 @@ static int max3421e_hien_setup(const struct device *dev)
 	}
 
 	if (tmp != hien) {
-		LOG_ERR("Failed to verify HIEN register 0x%02x vs 0x%02x",
-			hien, tmp);
+		LOG_ERROR("Failed to verify HIEN register 0x%02x vs 0x%02x", hien, tmp);
 		return -EIO;
 	}
 
@@ -964,8 +961,7 @@ static int max3421e_enable_int_output(const struct device *dev)
 	}
 
 	if (tmp != cpuctl) {
-		LOG_ERR("Failed to verify CPUCTL register 0x%02x vs 0x%02x",
-			cpuctl, tmp);
+		LOG_ERROR("Failed to verify CPUCTL register 0x%02x vs 0x%02x", cpuctl, tmp);
 		return -EIO;
 	}
 
@@ -980,37 +976,37 @@ static int uhc_max3421e_init(const struct device *dev)
 
 	ret = max3421e_pinctl_setup(dev);
 	if (ret) {
-		LOG_ERR("Failed to setup pinctl");
+		LOG_ERROR("Failed to setup pinctl");
 		return ret;
 	}
 
 	ret = max3421e_read(dev, MAX3421E_REG_REVISION, &rev, sizeof(rev));
 	if (ret) {
-		LOG_ERR("Failed to read revision");
+		LOG_ERROR("Failed to read revision");
 		return ret;
 	}
 
 	ret = max3421e_reset(dev);
 	if (ret) {
-		LOG_ERR("Failed to reset MAX3421E");
+		LOG_ERROR("Failed to reset MAX3421E");
 		return ret;
 	}
 
 	ret = max3421e_mode_setup(dev);
 	if (ret) {
-		LOG_ERR("Failed to setup controller mode");
+		LOG_ERROR("Failed to setup controller mode");
 		return ret;
 	}
 
 	ret = max3421e_hien_setup(dev);
 	if (ret) {
-		LOG_ERR("Failed to setup interrupts");
+		LOG_ERROR("Failed to setup interrupts");
 		return ret;
 	}
 
 	ret = max3421e_enable_int_output(dev);
 	if (ret) {
-		LOG_ERR("Failed to enable INT output");
+		LOG_ERROR("Failed to enable INT output");
 		return ret;
 	}
 
@@ -1050,33 +1046,31 @@ static int max3421e_driver_init(const struct device *dev)
 
 	if (config->dt_rst.port) {
 		if (!gpio_is_ready_dt(&config->dt_rst)) {
-			LOG_ERR("GPIO device %s not ready",
-				config->dt_rst.port->name);
+			LOG_ERROR("GPIO device %s not ready", config->dt_rst.port->name);
 			return -EIO;
 		}
 
 		ret = gpio_pin_configure_dt(&config->dt_rst,
 					    GPIO_OUTPUT_INACTIVE);
 		if (ret) {
-			LOG_ERR("Failed to configure GPIO pin %u",
-				config->dt_rst.pin);
+			LOG_ERROR("Failed to configure GPIO pin %u", config->dt_rst.pin);
 			return ret;
 		}
 	}
 
 	if (!spi_is_ready_dt(&config->dt_spi)) {
-		LOG_ERR("SPI device %s not ready", config->dt_spi.bus->name);
+		LOG_ERROR("SPI device %s not ready", config->dt_spi.bus->name);
 		return -EIO;
 	}
 
 	if (!gpio_is_ready_dt(&config->dt_int)) {
-		LOG_ERR("GPIO device %s not ready", config->dt_int.port->name);
+		LOG_ERROR("GPIO device %s not ready", config->dt_int.port->name);
 		return -EIO;
 	}
 
 	ret = gpio_pin_configure_dt(&config->dt_int, GPIO_INPUT);
 	if (ret) {
-		LOG_ERR("Failed to configure GPIO pin %u", config->dt_int.pin);
+		LOG_ERROR("Failed to configure GPIO pin %u", config->dt_int.pin);
 		return ret;
 	}
 

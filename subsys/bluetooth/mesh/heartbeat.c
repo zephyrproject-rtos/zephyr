@@ -176,7 +176,7 @@ static void hb_publish(struct k_work *work)
 
 	subnet = bt_mesh_subnet_get(pub.net_idx);
 	if (!subnet) {
-		LOG_ERR("No matching subnet for idx 0x%02x", pub.net_idx);
+		LOG_ERROR("No matching subnet for idx 0x%02x", pub.net_idx);
 		pub.dst = BT_MESH_ADDR_UNASSIGNED;
 		return;
 	}
@@ -193,7 +193,7 @@ int bt_mesh_hb_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	uint16_t feat;
 
 	if (buf->len < 3) {
-		LOG_ERR("Too short heartbeat message");
+		LOG_ERROR("Too short heartbeat message");
 		return -EINVAL;
 	}
 
@@ -260,7 +260,7 @@ uint8_t bt_mesh_hb_pub_set(struct bt_mesh_hb_pub *new_pub)
 	}
 
 	if (!bt_mesh_subnet_get(new_pub->net_idx)) {
-		LOG_ERR("Unknown NetKey 0x%04x", new_pub->net_idx);
+		LOG_ERROR("Unknown NetKey 0x%04x", new_pub->net_idx);
 		return STATUS_INVALID_NETKEY;
 	}
 
@@ -422,7 +422,7 @@ static int hb_pub_set(const char *name, size_t len_rd,
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &hb_val, sizeof(hb_val));
 	if (err) {
-		LOG_ERR("Failed to set \'hb_val\'");
+		LOG_ERROR("Failed to set \'hb_val\'");
 		return err;
 	}
 
@@ -468,7 +468,7 @@ void bt_mesh_hb_pub_pending_store(void)
 	}
 
 	if (err) {
-		LOG_ERR("Failed to store Heartbeat Publication");
+		LOG_ERROR("Failed to store Heartbeat Publication");
 	} else {
 		LOG_DBG("Stored Heartbeat Publication");
 	}

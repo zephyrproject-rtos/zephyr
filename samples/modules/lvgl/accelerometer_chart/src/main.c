@@ -35,7 +35,7 @@ static void sensor_timer_cb(lv_timer_t *timer)
 		rc = sensor_channel_get(accel_sensor, SENSOR_CHAN_ACCEL_XYZ, accel);
 	}
 	if (rc < 0) {
-		LOG_ERR("ERROR: Update failed: %d\n", rc);
+		LOG_ERROR("ERROR: Update failed: %d\n", rc);
 		return;
 	}
 	lv_chart_set_next_value(chart1, ser_x, sensor_value_to_double(&accel[0]));
@@ -72,13 +72,13 @@ int main(void)
 
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
-		LOG_ERR("Device not ready, aborting test");
+		LOG_ERROR("Device not ready, aborting test");
 		return -ENODEV;
 	}
 
 	accel_sensor = DEVICE_DT_GET(DT_ALIAS(accel0));
 	if (!device_is_ready(accel_sensor)) {
-		LOG_ERR("Device %s is not ready\n", accel_sensor->name);
+		LOG_ERROR("Device %s is not ready\n", accel_sensor->name);
 		return -ENODEV;
 	}
 
@@ -89,7 +89,7 @@ int main(void)
 	lv_timer_handler();
 	ret = display_blanking_off(display_dev);
 	if (ret < 0 && ret != -ENOSYS) {
-		LOG_ERR("Failed to turn blanking off (error %d)", ret);
+		LOG_ERROR("Failed to turn blanking off (error %d)", ret);
 		return 0;
 	}
 

@@ -280,7 +280,7 @@ int alt_eth_phy_config(uint16_t instance, struct eth_cyclonev_priv *p)
 
 	/* Return ERROR in case of timeout */
 	if ((timeout == PHY_READ_TO) || (rc == -1)) {
-		LOG_ERR("Error Link Down\n");
+		LOG_ERROR("Error Link Down\n");
 		return -1;
 	}
 	LOG_INF("Link is up!");
@@ -308,7 +308,7 @@ int alt_eth_phy_config(uint16_t instance, struct eth_cyclonev_priv *p)
 	/* Return ERROR in case of timeout */
 	if ((timeout == PHY_READ_TO) || (rc == -1)) {
 		alt_eth_phy_read_register(instance, PHY_BSR, &rdval, p);
-		LOG_ERR("Auto Negotiation: Status reg = 0x%x\n", rdval);
+		LOG_ERROR("Auto Negotiation: Status reg = 0x%x\n", rdval);
 		return -1;
 	}
 	LOG_INF("Auto Negotiation Complete!");

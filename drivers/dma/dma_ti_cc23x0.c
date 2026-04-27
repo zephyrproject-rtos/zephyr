@@ -133,17 +133,17 @@ static int dma_cc23x0_config(const struct device *dev, uint32_t channel,
 	int ret;
 
 	if (channel >= UDMA_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel (%u)", channel);
+		LOG_ERROR("Invalid channel (%u)", channel);
 		return -EINVAL;
 	}
 
 	if (config->dma_slot > DMA_CC23_IPID_MASK) {
-		LOG_ERR("Invalid trigger (%u)", config->dma_slot);
+		LOG_ERROR("Invalid trigger (%u)", config->dma_slot);
 		return -EINVAL;
 	}
 
 	if (config->block_count > 1) {
-		LOG_ERR("Chained transfers not supported");
+		LOG_ERROR("Chained transfers not supported");
 		return -ENOTSUP;
 	}
 
@@ -158,7 +158,7 @@ static int dma_cc23x0_config(const struct device *dev, uint32_t channel,
 		src_inc_flags = UDMA_SRC_INC_32;
 		break;
 	default:
-		LOG_ERR("Invalid source data size (%u)", config->source_data_size);
+		LOG_ERROR("Invalid source data size (%u)", config->source_data_size);
 		return -EINVAL;
 	}
 
@@ -173,7 +173,7 @@ static int dma_cc23x0_config(const struct device *dev, uint32_t channel,
 		dst_inc_flags = UDMA_DST_INC_32;
 		break;
 	default:
-		LOG_ERR("Invalid destination data size (%u)", config->dest_data_size);
+		LOG_ERROR("Invalid destination data size (%u)", config->dest_data_size);
 		return -EINVAL;
 	}
 
@@ -190,28 +190,28 @@ static int dma_cc23x0_config(const struct device *dev, uint32_t channel,
 		control = UDMA_SIZE_32;
 		break;
 	default:
-		LOG_ERR("Invalid data size (%u)", data_size);
+		LOG_ERROR("Invalid data size (%u)", data_size);
 		return -EINVAL;
 	}
 
 	ret = dma_cc23x0_set_addr_adj(&control, block->source_addr_adj,
 				      src_inc_flags, UDMA_SRC_INC_NONE);
 	if (ret) {
-		LOG_ERR("Invalid source address adjustment type (%u)", block->source_addr_adj);
+		LOG_ERROR("Invalid source address adjustment type (%u)", block->source_addr_adj);
 		return ret;
 	}
 
 	ret = dma_cc23x0_set_addr_adj(&control, block->dest_addr_adj,
 				      dst_inc_flags, UDMA_DST_INC_NONE);
 	if (ret) {
-		LOG_ERR("Invalid dest address adjustment type (%u)", block->dest_addr_adj);
+		LOG_ERROR("Invalid dest address adjustment type (%u)", block->dest_addr_adj);
 		return ret;
 	}
 
 	xfer_size = block->block_size / data_size;
 	if (!xfer_size || xfer_size > UDMA_XFER_SIZE_MAX) {
-		LOG_ERR("Invalid block size (%u - must be in range %u to %u)",
-			block->block_size, data_size, data_size * UDMA_XFER_SIZE_MAX);
+		LOG_ERROR("Invalid block size (%u - must be in range %u to %u)", block->block_size,
+			  data_size, data_size * UDMA_XFER_SIZE_MAX);
 		return -EINVAL;
 	}
 
@@ -219,8 +219,8 @@ static int dma_cc23x0_config(const struct device *dev, uint32_t channel,
 	if (burst_len <= UDMA_XFER_SIZE_MAX && IS_POWER_OF_TWO(burst_len)) {
 		control |= LOG2(burst_len) << UDMA_ARB_S;
 	} else {
-		LOG_ERR("Invalid burst length (%u - must be a power of 2 between %u and %u)",
-			config->source_burst_length, data_size, data_size * UDMA_XFER_SIZE_MAX);
+		LOG_ERROR("Invalid burst length (%u - must be a power of 2 between %u and %u)",
+			  config->source_burst_length, data_size, data_size * UDMA_XFER_SIZE_MAX);
 		return -EINVAL;
 	}
 

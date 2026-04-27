@@ -197,7 +197,7 @@ static int st7586s_write(const struct device *dev, const uint16_t x, const uint1
 	int total = 0;
 
 	if (desc->pitch != desc->width) {
-		LOG_ERR("Pitch is different from width");
+		LOG_ERROR("Pitch is different from width");
 		return -EINVAL;
 	}
 
@@ -205,13 +205,13 @@ static int st7586s_write(const struct device *dev, const uint16_t x, const uint1
 	    || data->current_pixel_format == PIXEL_FORMAT_MONO10) {
 		expected_len = desc->height * desc->width / 8;
 		if ((x % ST7586S_PPC) != 0 || (desc->width % ST7586S_PPC) != 0) {
-			LOG_ERR("X and width must be aligned on %d boundary", ST7586S_PPC);
+			LOG_ERROR("X and width must be aligned on %d boundary", ST7586S_PPC);
 			return -EINVAL;
 		}
 	} else if (data->current_pixel_format == PIXEL_FORMAT_L_8) {
 		expected_len = desc->height * desc->width / ST7586S_PPB_GRAY;
 		if ((x % ST7586S_PPA_GRAY) != 0 || (desc->width % ST7586S_PPA_GRAY) != 0) {
-			LOG_ERR("X and width must be aligned on %d boundary", ST7586S_PPA_GRAY);
+			LOG_ERROR("X and width must be aligned on %d boundary", ST7586S_PPA_GRAY);
 			return -EINVAL;
 		}
 	} else {
@@ -219,7 +219,7 @@ static int st7586s_write(const struct device *dev, const uint16_t x, const uint1
 	}
 
 	if (buf == NULL || desc->buf_size < expected_len) {
-		LOG_ERR("Display buffer is invalid");
+		LOG_ERROR("Display buffer is invalid");
 		return -EINVAL;
 	}
 
@@ -228,13 +228,13 @@ static int st7586s_write(const struct device *dev, const uint16_t x, const uint1
 
 	ret = st7586s_set_window(dev, x, y, desc->width, desc->height);
 	if (ret < 0) {
-		LOG_ERR("Could not set write window");
+		LOG_ERROR("Could not set write window");
 		return ret;
 	}
 
 	ret = st7586s_start_write(dev);
 	if (ret < 0) {
-		LOG_ERR("Could not start write");
+		LOG_ERROR("Could not start write");
 		return ret;
 	}
 
@@ -317,7 +317,7 @@ static int st7586s_set_pixel_format(const struct device *dev,
 		}
 		data->current_pixel_format = PIXEL_FORMAT_L_8;
 	} else {
-		LOG_ERR("Unsupported Pixel format");
+		LOG_ERROR("Unsupported Pixel format");
 		return -EINVAL;
 	}
 	return 0;
@@ -468,13 +468,13 @@ static int st7586s_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->mipi_dev)) {
-		LOG_ERR("MIPI not ready!");
+		LOG_ERROR("MIPI not ready!");
 		return -ENODEV;
 	}
 
 	ret = st7586s_init_device(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize device, err = %d", ret);
+		LOG_ERROR("Failed to initialize device, err = %d", ret);
 	}
 
 	return ret;

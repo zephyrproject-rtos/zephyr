@@ -515,7 +515,7 @@ static int espi_saf_xec_configuration(const struct device *dev,
 
 	ret = saf_init_erase_block_size(cfg);
 	if (ret != 0) {
-		LOG_ERR("SAF Config bad flash erase config");
+		LOG_ERROR("SAF Config bad flash erase config");
 		return ret;
 	}
 
@@ -679,12 +679,12 @@ static int saf_ecp_access(const struct device *dev,
 	LOG_DBG("%s", __func__);
 
 	if (!(regs->SAF_FL_CFG_MISC & MCHP_SAF_FL_CFG_MISC_SAF_EN)) {
-		LOG_ERR("SAF is disabled");
+		LOG_ERROR("SAF is disabled");
 		return -EIO;
 	}
 
 	if (regs->SAF_ECP_BUSY & MCHP_SAF_ECP_BUSY) {
-		LOG_ERR("SAF EC Portal is busy");
+		LOG_ERROR("SAF EC Portal is busy");
 		return -EBUSY;
 	}
 
@@ -692,7 +692,7 @@ static int saf_ecp_access(const struct device *dev,
 	    (cmd == MCHP_SAF_ECP_CMD_CTYPE_WRITE0)) {
 		rc = check_ecp_access_size(pckt->len);
 		if (rc) {
-			LOG_ERR("SAF EC Portal size out of bounds");
+			LOG_ERROR("SAF EC Portal size out of bounds");
 			return rc;
 		}
 
@@ -704,11 +704,11 @@ static int saf_ecp_access(const struct device *dev,
 	} else if (cmd == MCHP_SAF_ECP_CMD_CTYPE_ERASE0) {
 		n = get_erase_size_encoding(pckt->len);
 		if (n == 0xffffffff) {
-			LOG_ERR("SAF EC Portal unsupported erase size");
+			LOG_ERROR("SAF EC Portal unsupported erase size");
 			return -EAGAIN;
 		}
 	} else {
-		LOG_ERR("SAF EC Portal bad cmd");
+		LOG_ERROR("SAF EC Portal bad cmd");
 		return -EAGAIN;
 	}
 

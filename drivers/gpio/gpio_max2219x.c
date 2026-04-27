@@ -59,7 +59,7 @@ LOG_MODULE_REGISTER(gpio_max22190);
 
 #define PRINT_ERR_BIT(bit1, bit2)                                                                  \
 	if (bit1 & bit2) {                                                                         \
-		LOG_ERR("[%s] %d", #bit1, bit1);                                                   \
+		LOG_ERROR("[%s] %d", #bit1, bit1);                                                 \
 	}
 
 #define MAX22190_CLEAN_POR(dev)                                                                    \
@@ -314,7 +314,7 @@ static int max22190_reg_transceive(const struct device *dev, uint8_t addr, uint8
 	ret = spi_transceive_dt(&config->spi, &tx, &rx);
 
 	if (ret) {
-		LOG_ERR("Err spi_transcieve_dt  [%d]\n", ret);
+		LOG_ERROR("Err spi_transcieve_dt  [%d]\n", ret);
 		return ret;
 	}
 
@@ -322,7 +322,7 @@ static int max22190_reg_transceive(const struct device *dev, uint8_t addr, uint8
 	if (config->crc_en) {
 		crc = max22190_crc(&local_rx_buff[0]);
 		if (crc != (local_rx_buff[2] & 0x1F)) {
-			LOG_ERR("READ CRC ERR (%d)-(%d)\n", crc, (local_rx_buff[2] & 0x1F));
+			LOG_ERROR("READ CRC ERR (%d)-(%d)\n", crc, (local_rx_buff[2] & 0x1F));
 			return -EINVAL;
 		}
 	}
@@ -474,7 +474,7 @@ static int gpio_max22190_config(const struct device *dev, gpio_pin_t pin, gpio_f
 		LOG_INF("Nothing to do, only INPUT supported");
 		break;
 	default:
-		LOG_ERR("On MAX22190 only input option is available!");
+		LOG_ERROR("On MAX22190 only input option is available!");
 		return -ENOTSUP;
 	}
 
@@ -518,7 +518,7 @@ static int max22190_fault_set(const struct device *dev)
 	return ret;
 
 exit_fault_set:
-	LOG_ERR("Err spi_transcieve_dt  [%d]\n", ret);
+	LOG_ERROR("Err spi_transcieve_dt  [%d]\n", ret);
 
 	return ret;
 }
@@ -547,43 +547,43 @@ static int gpio_max22190_init(const struct device *dev)
 	int err = 0;
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus is not ready\n");
+		LOG_ERROR("SPI bus is not ready\n");
 		return -ENODEV;
 	}
 
 	/* setup READY gpio - normal low */
 	if (!gpio_is_ready_dt(&config->ready_gpio)) {
-		LOG_ERR("READY GPIO device not ready");
+		LOG_ERROR("READY GPIO device not ready");
 		return -ENODEV;
 	}
 
 	err = gpio_pin_configure_dt(&config->ready_gpio, GPIO_INPUT);
 	if (err < 0) {
-		LOG_ERR("Failed to configure reset GPIO");
+		LOG_ERROR("Failed to configure reset GPIO");
 		return err;
 	}
 
 	/* setup FAULT gpio - normal high */
 	if (!gpio_is_ready_dt(&config->fault_gpio)) {
-		LOG_ERR("FAULT GPIO device not ready");
+		LOG_ERROR("FAULT GPIO device not ready");
 		return -ENODEV;
 	}
 
 	err = gpio_pin_configure_dt(&config->fault_gpio, GPIO_INPUT | GPIO_PULL_UP);
 	if (err < 0) {
-		LOG_ERR("Failed to configure DC GPIO");
+		LOG_ERROR("Failed to configure DC GPIO");
 		return err;
 	}
 
 	/* setup LATCH gpio - normal high */
 	if (!gpio_is_ready_dt(&config->latch_gpio)) {
-		LOG_ERR("LATCH GPIO device not ready");
+		LOG_ERROR("LATCH GPIO device not ready");
 		return -ENODEV;
 	}
 
 	err = gpio_pin_configure_dt(&config->latch_gpio, GPIO_OUTPUT_INACTIVE);
 	if (err < 0) {
-		LOG_ERR("Failed to configure busy GPIO");
+		LOG_ERROR("Failed to configure busy GPIO");
 		return err;
 	}
 

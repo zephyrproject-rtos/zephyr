@@ -384,7 +384,7 @@ use_any_ipv6:
 	ret = net_socket_service_register(&svc_tcp, fds,
 					  ARRAY_SIZE(fds), NULL);
 	if (ret < 0) {
-		LOG_ERR("Cannot register socket service handler (%d)", ret);
+		LOG_ERROR("Cannot register socket service handler (%d)", ret);
 	}
 
 error:

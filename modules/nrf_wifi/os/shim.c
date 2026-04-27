@@ -195,7 +195,7 @@ static void *zep_shim_spinlock_alloc(void)
 
 	lock = k_heap_aligned_alloc(wifi_ctrl_pool, WORD_SIZE, sizeof(*lock), K_FOREVER);
 	if (!lock) {
-		LOG_ERR("%s: Unable to allocate memory for spinlock", __func__);
+		LOG_ERROR("%s: Unable to allocate memory for spinlock", __func__);
 	} else {
 		memset(lock, 0, sizeof(*lock));
 	}
@@ -265,7 +265,7 @@ static int zep_shim_pr_err(const char *fmt, va_list args)
 
 	vsnprintf(buf, sizeof(buf), fmt, args);
 
-	LOG_ERR("%s", buf);
+	LOG_ERROR("%s", buf);
 
 	return 0;
 }
@@ -419,13 +419,13 @@ static void *zep_shim_nbuf_set_raw_tx_hdr(void *nbuf, unsigned short raw_hdr_len
 	struct nwb *nwb = (struct nwb *)nbuf;
 
 	if (!nwb) {
-		LOG_ERR("%s: Received network buffer is NULL", __func__);
+		LOG_ERROR("%s: Received network buffer is NULL", __func__);
 		return NULL;
 	}
 
 	nwb->raw_tx_hdr = zep_shim_nbuf_data_get(nwb);
 	if (!nwb->raw_tx_hdr) {
-		LOG_ERR("%s: Unable to set raw Tx header in network buffer", __func__);
+		LOG_ERROR("%s: Unable to set raw Tx header in network buffer", __func__);
 		return NULL;
 	}
 
@@ -439,7 +439,7 @@ static void *zep_shim_nbuf_get_raw_tx_hdr(void *nbuf)
 	struct nwb *nwb = (struct nwb *)nbuf;
 
 	if (!nwb) {
-		LOG_ERR("%s: Received network buffer is NULL", __func__);
+		LOG_ERROR("%s: Received network buffer is NULL", __func__);
 		return NULL;
 	}
 
@@ -451,7 +451,7 @@ static bool zep_shim_nbuf_is_raw_tx(void *nbuf)
 	struct nwb *nwb = (struct nwb *)nbuf;
 
 	if (!nwb) {
-		LOG_ERR("%s: Received network buffer is NULL", __func__);
+		LOG_ERROR("%s: Received network buffer is NULL", __func__);
 		return false;
 	}
 
@@ -477,7 +477,7 @@ void *net_pkt_to_nbuf_zc(struct net_pkt *pkt)
 
 	/* Check if packet has more than one fragment */
 	if (pkt->buffer->frags) {
-		LOG_ERR("Zero-copy only supports single buffer packets");
+		LOG_ERROR("Zero-copy only supports single buffer packets");
 		return NULL;
 	}
 
@@ -587,7 +587,7 @@ void *net_raw_pkt_from_nbuf(void *iface, void *frm,
 	struct nwb *nwb = frm;
 
 	if (!nwb) {
-		LOG_ERR("%s: Received network buffer is NULL", __func__);
+		LOG_ERROR("%s: Received network buffer is NULL", __func__);
 		return NULL;
 	}
 
@@ -597,13 +597,13 @@ void *net_raw_pkt_from_nbuf(void *iface, void *frm,
 
 	data = (unsigned char *)zep_shim_data_mem_zalloc(total_len);
 	if (!data) {
-		LOG_ERR("%s: Unable to allocate memory for sniffer data packet", __func__);
+		LOG_ERROR("%s: Unable to allocate memory for sniffer data packet", __func__);
 		goto out;
 	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(iface, total_len, NET_AF_PACKET, ETH_P_ALL, K_MSEC(100));
 	if (!pkt) {
-		LOG_ERR("%s: Unable to allocate net packet buffer", __func__);
+		LOG_ERROR("%s: Unable to allocate net packet buffer", __func__);
 		goto out;
 	}
 
@@ -635,7 +635,7 @@ static void *zep_shim_llist_node_alloc(void)
 	llist_node = zep_shim_data_mem_zalloc(sizeof(*llist_node));
 
 	if (!llist_node) {
-		LOG_ERR("%s: Unable to allocate memory for linked list node", __func__);
+		LOG_ERROR("%s: Unable to allocate memory for linked list node", __func__);
 		return NULL;
 	}
 
@@ -651,7 +651,7 @@ static void *zep_shim_ctrl_llist_node_alloc(void)
 	llist_node = zep_shim_mem_zalloc(sizeof(*llist_node));
 
 	if (!llist_node) {
-		LOG_ERR("%s: Unable to allocate memory for linked list node", __func__);
+		LOG_ERROR("%s: Unable to allocate memory for linked list node", __func__);
 		return NULL;
 	}
 
@@ -695,7 +695,7 @@ static void *zep_shim_llist_alloc(void)
 	llist = zep_shim_data_mem_zalloc(sizeof(*llist));
 
 	if (!llist) {
-		LOG_ERR("%s: Unable to allocate memory for linked list", __func__);
+		LOG_ERROR("%s: Unable to allocate memory for linked list", __func__);
 	}
 
 	return llist;
@@ -708,7 +708,7 @@ static void *zep_shim_ctrl_llist_alloc(void)
 	llist = zep_shim_mem_zalloc(sizeof(*llist));
 
 	if (!llist) {
-		LOG_ERR("%s: Unable to allocate memory for linked list", __func__);
+		LOG_ERROR("%s: Unable to allocate memory for linked list", __func__);
 	}
 
 	return llist;
@@ -890,19 +890,19 @@ static void *zep_shim_bus_qspi_dev_add(void *os_qspi_priv, void *osal_qspi_dev_c
 
 	ret = rpu_init();
 	if (ret) {
-		LOG_ERR("%s: RPU init failed with error %d", __func__, ret);
+		LOG_ERROR("%s: RPU init failed with error %d", __func__, ret);
 		return NULL;
 	}
 
 	status = dev->init(qspi_defconfig());
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: QSPI device init failed", __func__);
+		LOG_ERROR("%s: QSPI device init failed", __func__);
 		return NULL;
 	}
 
 	ret = rpu_enable();
 	if (ret) {
-		LOG_ERR("%s: RPU enable failed with error %d", __func__, ret);
+		LOG_ERROR("%s: RPU enable failed with error %d", __func__, ret);
 		return NULL;
 	}
 	zep_qspi_priv->qspi_dev = dev;
@@ -929,7 +929,7 @@ static void *zep_shim_bus_qspi_init(void)
 	qspi_priv = zep_shim_mem_zalloc(sizeof(*qspi_priv));
 
 	if (!qspi_priv) {
-		LOG_ERR("%s: Unable to allocate memory for qspi_priv", __func__);
+		LOG_ERROR("%s: Unable to allocate memory for qspi_priv", __func__);
 		goto out;
 	}
 out:
@@ -970,7 +970,7 @@ static void zep_shim_bus_qspi_dev_host_map_get(void *os_qspi_dev_ctx,
 					       struct nrf_wifi_osal_host_map *host_map)
 {
 	if (!os_qspi_dev_ctx || !host_map) {
-		LOG_ERR("%s: Invalid parameters", __func__);
+		LOG_ERROR("%s: Invalid parameters", __func__);
 		return;
 	}
 
@@ -982,14 +982,14 @@ static void irq_work_handler(struct k_work *work)
 	int ret = 0;
 
 	if (!intr_priv || !intr_priv->callbk_fn || !intr_priv->callbk_data) {
-		LOG_ERR("%s: Invalid intr_priv handler", __func__);
+		LOG_ERROR("%s: Invalid intr_priv handler", __func__);
 		return;
 	}
 
 	ret = intr_priv->callbk_fn(intr_priv->callbk_data);
 
 	if (ret) {
-		LOG_ERR("%s: Interrupt callback failed", __func__);
+		LOG_ERROR("%s: Interrupt callback failed", __func__);
 	}
 }
 
@@ -1002,7 +1002,7 @@ static void zep_shim_irq_handler(const struct device *dev, struct gpio_callback 
 	ARG_UNUSED(pins);
 
 	if (!(intr_priv && intr_priv->callbk_fn && intr_priv->callbk_data)) {
-		LOG_ERR("%s: Invalid intr_priv", __func__);
+		LOG_ERROR("%s: Invalid intr_priv", __func__);
 		return;
 	}
 
@@ -1021,7 +1021,7 @@ static enum nrf_wifi_status zep_shim_bus_qspi_intr_reg(void *os_dev_ctx, void *c
 	intr_priv = zep_shim_mem_zalloc(sizeof(*intr_priv));
 
 	if (!intr_priv) {
-		LOG_ERR("%s: Unable to allocate memory for intr_priv", __func__);
+		LOG_ERROR("%s: Unable to allocate memory for intr_priv", __func__);
 		goto out;
 	}
 
@@ -1033,7 +1033,7 @@ static enum nrf_wifi_status zep_shim_bus_qspi_intr_reg(void *os_dev_ctx, void *c
 	ret = rpu_irq_config(&intr_priv->gpio_cb_data, zep_shim_irq_handler);
 
 	if (ret) {
-		LOG_ERR("%s: request_irq failed", __func__);
+		LOG_ERROR("%s: request_irq failed", __func__);
 		zep_shim_mem_free(intr_priv);
 		intr_priv = NULL;
 		goto out;
@@ -1052,7 +1052,7 @@ static void zep_shim_bus_qspi_intr_unreg(void *os_qspi_dev_ctx)
 	ARG_UNUSED(os_qspi_dev_ctx);
 	ret = rpu_irq_remove(&intr_priv->gpio_cb_data);
 	if (ret) {
-		LOG_ERR("%s: rpu_irq_remove failed", __func__);
+		LOG_ERROR("%s: rpu_irq_remove failed", __func__);
 		return;
 	}
 
@@ -1070,7 +1070,7 @@ static void *zep_shim_timer_alloc(void)
 	timer = zep_shim_mem_zalloc(sizeof(*timer));
 
 	if (!timer) {
-		LOG_ERR("%s: Unable to allocate memory for work", __func__);
+		LOG_ERROR("%s: Unable to allocate memory for work", __func__);
 	}
 
 	return timer;
@@ -1122,7 +1122,7 @@ static void zep_shim_assert(int test_val, int val, enum nrf_wifi_assert_op_type 
 		NET_ASSERT(test_val >= val, "%s", msg);
 	break;
 	default:
-		LOG_ERR("%s: Invalid assertion operation", __func__);
+		LOG_ERROR("%s: Invalid assertion operation", __func__);
 	}
 }
 

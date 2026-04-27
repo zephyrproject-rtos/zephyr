@@ -92,7 +92,7 @@ static int flash_numaker_erase(const struct device *dev, off_t offset, size_t le
 	while (page_nums) {
 		if (((len >= FMC_BANK_SIZE)) && ((addr % FMC_BANK_SIZE) == 0)) {
 			if (FMC_Erase_Bank(addr)) {
-				LOG_ERR("Erase flash bank failed or erase time-out");
+				LOG_ERROR("Erase flash bank failed or erase time-out");
 				rc = -EIO;
 				goto done;
 			}
@@ -101,7 +101,7 @@ static int flash_numaker_erase(const struct device *dev, off_t offset, size_t le
 		} else {
 			/* erase page */
 			if (FMC_Erase(addr)) {
-				LOG_ERR("Erase flash page failed or erase time-out");
+				LOG_ERROR("Erase flash page failed or erase time-out");
 				rc = -EIO;
 				goto done;
 			}

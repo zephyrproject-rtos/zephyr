@@ -131,7 +131,7 @@ static int zbt_config_mailbox(const struct device *dev)
 		    DEVICE_DT_INST_GET(0), 0);
 	hci->ipc_port = ipc_queue_init(&q_cfg);
 	if (IPC_QUEUE_INVALID_HANDLE == hci->ipc_port || ipc_queue_open(hci->ipc_port) != 0) {
-		LOG_ERR("Could not open IPC %d", hci->ipc_port);
+		LOG_ERROR("Could not open IPC %d", hci->ipc_port);
 		return -EIO;
 	}
 	return 0;
@@ -174,7 +174,7 @@ static inline void hci_get_type(const struct device *dev)
 	}
 	return;
 error:
-	LOG_ERR("Unknown HCI type 0x%02x", hci->rx.type);
+	LOG_ERROR("Unknown HCI type 0x%02x", hci->rx.type);
 	hci->rx.type = BT_HCI_H4_NONE;
 }
 
@@ -186,7 +186,7 @@ static void hci_read_hdr(const struct device *dev)
 
 	ret = ipc_queue_read(hci->ipc_port, hci->rx.hdr + bytes_read, hci->rx.remaining);
 	if (unlikely((ret < 0) || (ret > hci->rx.remaining))) {
-		LOG_ERR("Unable to read from IPC mailbox (ret %d)", ret);
+		LOG_ERROR("Unable to read from IPC mailbox (ret %d)", ret);
 	} else {
 		hci->rx.remaining -= ret;
 	}
@@ -301,7 +301,7 @@ static struct net_buf *get_rx(struct bt_sf32lb_data *hci)
 		return bt_buf_get_rx(BT_BUF_ACL_IN, K_NO_WAIT);
 	case BT_HCI_H4_SCO:
 		if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
-			LOG_ERR("SCO not supported by host stack.");
+			LOG_ERROR("SCO not supported by host stack.");
 		}
 		break;
 	case BT_HCI_H4_ISO:
@@ -310,7 +310,7 @@ static struct net_buf *get_rx(struct bt_sf32lb_data *hci)
 		}
 		break;
 	default:
-		LOG_ERR("Invalid rx type 0x%02x", hci->rx.type);
+		LOG_ERROR("Invalid rx type 0x%02x", hci->rx.type);
 	}
 
 	return NULL;
@@ -370,7 +370,7 @@ static size_t hci_discard(const struct device *dev, size_t len)
 
 	err = ipc_queue_read(hci->ipc_port, buf, MIN(len, sizeof(buf)));
 	if (unlikely(err < 0)) {
-		LOG_ERR("Unable to read from UART (err %d)", err);
+		LOG_ERROR("Unable to read from UART (err %d)", err);
 		err = 0;
 	}
 	return err;
@@ -400,8 +400,8 @@ static inline void read_payload(const struct device *dev)
 
 		buf_tailroom = net_buf_tailroom(hci->rx.buf);
 		if (buf_tailroom < (hci->rx.remaining + hci->rx.hdr_len)) {
-			LOG_ERR("Not enough space in buffer %u/%zu", hci->rx.remaining,
-				buf_tailroom);
+			LOG_ERROR("Not enough space in buffer %u/%zu", hci->rx.remaining,
+				  buf_tailroom);
 			hci->rx.discard = hci->rx.remaining;
 			reset_rx(hci);
 			return;
@@ -411,7 +411,7 @@ static inline void read_payload(const struct device *dev)
 
 	read = ipc_queue_read(hci->ipc_port, net_buf_tail(hci->rx.buf), hci->rx.remaining);
 	if (unlikely((read < 0) || (read > hci->rx.remaining))) {
-		LOG_ERR("Failed to read UART (err read length %d)", read);
+		LOG_ERROR("Failed to read UART (err read length %d)", read);
 		return;
 	}
 
@@ -460,14 +460,14 @@ static inline void read_header(const struct device *dev)
 		break;
 #endif
 	default:
-		LOG_ERR("Invalid rx type %d\n", hci->rx.type);
+		LOG_ERROR("Invalid rx type %d\n", hci->rx.type);
 		CODE_UNREACHABLE;
 		return;
 	}
 
 	if (hci->rx.have_hdr && hci->rx.buf != NULL) {
 		if (hci->rx.remaining > net_buf_tailroom(hci->rx.buf)) {
-			LOG_ERR("Not enough space in buffer");
+			LOG_ERROR("Not enough space in buffer");
 			hci->rx.discard = hci->rx.remaining;
 			reset_rx(hci);
 		} else {
@@ -497,7 +497,7 @@ static inline void process_tx(const struct device *dev)
 		bytes = ipc_queue_write(hci->ipc_port, hci->tx.buf->data, hci->tx.buf->len,
 					IPC_TIMEOUT_MS);
 		if (unlikely(bytes < 0)) {
-			LOG_ERR("Unable to write to UART (err %d)", bytes);
+			LOG_ERROR("Unable to write to UART (err %d)", bytes);
 		} else {
 			LOG_DBG("bytes %d", bytes);
 			net_buf_pull(hci->tx.buf, bytes);

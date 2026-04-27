@@ -44,7 +44,7 @@ static int lsm6dso16is_enable_t_int(const struct device *dev, int enable)
 
 	ret = lsm6dso16is_pin_int2_route_get(ctx, &val);
 	if (ret < 0) {
-		LOG_ERR("pint_int2_route_get error");
+		LOG_ERROR("pint_int2_route_get error");
 		return ret;
 	}
 
@@ -76,7 +76,7 @@ static int lsm6dso16is_enable_xl_int(const struct device *dev, int enable)
 
 		ret = lsm6dso16is_pin_int1_route_get(ctx, &val);
 		if (ret < 0) {
-			LOG_ERR("pint_int1_route_get error");
+			LOG_ERROR("pint_int1_route_get error");
 			return ret;
 		}
 
@@ -88,7 +88,7 @@ static int lsm6dso16is_enable_xl_int(const struct device *dev, int enable)
 
 		ret = lsm6dso16is_pin_int2_route_get(ctx, &val);
 		if (ret < 0) {
-			LOG_ERR("pint_int2_route_get error");
+			LOG_ERROR("pint_int2_route_get error");
 			return ret;
 		}
 
@@ -122,7 +122,7 @@ static int lsm6dso16is_enable_g_int(const struct device *dev, int enable)
 
 		ret = lsm6dso16is_pin_int1_route_get(ctx, &val);
 		if (ret < 0) {
-			LOG_ERR("pint_int1_route_get error");
+			LOG_ERROR("pint_int1_route_get error");
 			return ret;
 		}
 
@@ -134,7 +134,7 @@ static int lsm6dso16is_enable_g_int(const struct device *dev, int enable)
 
 		ret = lsm6dso16is_pin_int2_route_get(ctx, &val);
 		if (ret < 0) {
-			LOG_ERR("pint_int2_route_get error");
+			LOG_ERROR("pint_int2_route_get error");
 			return ret;
 		}
 
@@ -157,7 +157,7 @@ int lsm6dso16is_trigger_set(const struct device *dev,
 	struct lsm6dso16is_data *lsm6dso16is = dev->data;
 
 	if (!cfg->trig_enabled) {
-		LOG_ERR("trigger_set op not supported");
+		LOG_ERROR("trigger_set op not supported");
 		return -ENOTSUP;
 	}
 
@@ -289,7 +289,7 @@ int lsm6dso16is_init_interrupt(const struct device *dev)
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */
 	if (!gpio_is_ready_dt(&cfg->gpio_drdy)) {
-		LOG_ERR("Cannot get pointer to drdy_gpio device");
+		LOG_ERROR("Cannot get pointer to drdy_gpio device");
 		return -EINVAL;
 	}
 
@@ -329,7 +329,7 @@ int lsm6dso16is_init_interrupt(const struct device *dev)
 
 	ret = lsm6dso16is_data_ready_mode_set(ctx, mode);
 	if (ret < 0) {
-		LOG_ERR("drdy_pulsed config error %d", (int)cfg->drdy_pulsed);
+		LOG_ERROR("drdy_pulsed config error %d", (int)cfg->drdy_pulsed);
 		return ret;
 	}
 

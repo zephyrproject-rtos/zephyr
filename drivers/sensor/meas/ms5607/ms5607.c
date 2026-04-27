@@ -78,7 +78,7 @@ static int ms5607_read_prom(const struct ms5607_config *config, uint8_t cmd,
 
 	err = config->tf->read_prom(config, cmd, val);
 	if (err < 0) {
-		LOG_ERR("Error reading prom");
+		LOG_ERROR("Error reading prom");
 		return err;
 	}
 
@@ -199,7 +199,7 @@ static int ms5607_attr_set(const struct device *dev, enum sensor_channel chan,
 		conv_delay = 1U;
 		break;
 	default:
-		LOG_ERR("invalid oversampling rate %d", val->val1);
+		LOG_ERROR("invalid oversampling rate %d", val->val1);
 		return -EINVAL;
 	}
 

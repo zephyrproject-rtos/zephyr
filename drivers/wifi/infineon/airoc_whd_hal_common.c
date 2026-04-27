@@ -29,16 +29,16 @@ int airoc_wifi_power_on(const struct device *dev)
 
 	/* Check WIFI REG_ON gpio instance */
 	if (!device_is_ready(config->wifi_reg_on_gpio.port)) {
-		LOG_ERR("Error: failed to configure wifi_reg_on %s pin %d",
-			config->wifi_reg_on_gpio.port->name, config->wifi_reg_on_gpio.pin);
+		LOG_ERROR("Error: failed to configure wifi_reg_on %s pin %d",
+			  config->wifi_reg_on_gpio.port->name, config->wifi_reg_on_gpio.pin);
 		return -EIO;
 	}
 
 	/* Configure wifi_reg_on as output  */
 	ret = gpio_pin_configure_dt(&config->wifi_reg_on_gpio, GPIO_OUTPUT);
 	if (ret) {
-		LOG_ERR("Error %d: failed to configure wifi_reg_on %s pin %d", ret,
-			config->wifi_reg_on_gpio.port->name, config->wifi_reg_on_gpio.pin);
+		LOG_ERROR("Error %d: failed to configure wifi_reg_on %s pin %d", ret,
+			  config->wifi_reg_on_gpio.port->name, config->wifi_reg_on_gpio.pin);
 		return ret;
 	}
 	ret = gpio_pin_set_dt(&config->wifi_reg_on_gpio, 0);

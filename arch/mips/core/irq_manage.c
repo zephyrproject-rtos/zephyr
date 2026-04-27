@@ -22,7 +22,7 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 	ARG_UNUSED(unused);
 	cause = (read_c0_cause() & CAUSE_EXP_MASK) >> CAUSE_EXP_SHIFT;
 
-	LOG_ERR("Spurious interrupt detected! CAUSE: %ld", cause);
+	LOG_ERROR("Spurious interrupt detected! CAUSE: %ld", cause);
 
 	z_mips_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }

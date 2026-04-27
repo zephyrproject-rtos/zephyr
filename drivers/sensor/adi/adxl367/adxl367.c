@@ -425,7 +425,7 @@ int adxl367_self_test(const struct device *dev)
 		LOG_INF("ADXL367 passed self-test\n");
 		ret = 0;
 	} else {
-		LOG_ERR("ADXL367 failed self-test\n");
+		LOG_ERROR("ADXL367 failed self-test\n");
 		ret = -EINVAL;
 	}
 
@@ -823,7 +823,7 @@ static int adxl367_attr_set_thresh(const struct device *dev,
 		}
 
 	default:
-		LOG_ERR("attr_set() not supported on this channel");
+		LOG_ERROR("attr_set() not supported on this channel");
 		return -ENOTSUP;
 	}
 }
@@ -991,7 +991,7 @@ static int adxl367_probe(const struct device *dev)
 	}
 
 	if (dev_id != ADXL367_DEVID_VAL || part_id != ADXL367_PARTID_VAL) {
-		LOG_ERR("failed to read id (0x%X:0x%X)\n", dev_id, part_id);
+		LOG_ERROR("failed to read id (0x%X:0x%X)\n", dev_id, part_id);
 		return -ENODEV;
 	}
 
@@ -1059,7 +1059,7 @@ static int adxl367_probe(const struct device *dev)
 if (IS_ENABLED(CONFIG_ADXL367_TRIGGER)) {
 	ret = adxl367_init_interrupt(dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to initialize interrupt!");
+		LOG_ERROR("Failed to initialize interrupt!");
 		return -EIO;
 	}
 }
@@ -1084,7 +1084,7 @@ static int adxl367_init(const struct device *dev)
 
 	ret = cfg->bus_init(dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to initialize sensor bus\n");
+		LOG_ERROR("Failed to initialize sensor bus\n");
 		return ret;
 	}
 

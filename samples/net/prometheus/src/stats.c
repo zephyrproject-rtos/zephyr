@@ -49,7 +49,7 @@ static int stats_handler(struct http_client_ctx *client, enum http_transaction_s
 							prom_buffer,
 							sizeof(prom_buffer));
 		if (ret < 0 && ret != -EAGAIN) {
-			LOG_ERR("Cannot format exposition data (%d)", ret);
+			LOG_ERROR("Cannot format exposition data (%d)", ret);
 			return ret;
 		}
 
@@ -60,7 +60,7 @@ static int stats_handler(struct http_client_ctx *client, enum http_transaction_s
 			response_ctx->final_chunk = true;
 			ret = prometheus_collector_walk_init(&walk_ctx, stats_collector);
 			if (ret < 0) {
-				LOG_ERR("Cannot initialize walk context (%d)", ret);
+				LOG_ERROR("Cannot initialize walk context (%d)", ret);
 			}
 		}
 	}
@@ -85,7 +85,7 @@ int init_stats(struct prometheus_counter *counter)
 	/* Use a collector from default network interface */
 	stats_collector = net_if_get_default()->collector;
 	if (stats_collector == NULL) {
-		LOG_ERR("Cannot get collector from default network interface");
+		LOG_ERROR("Cannot get collector from default network interface");
 		return -EINVAL;
 	}
 

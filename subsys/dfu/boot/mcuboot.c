@@ -116,7 +116,7 @@ uint8_t boot_fetch_active_slot(void)
 	rc = blinfo_lookup(BLINFO_RUNNING_SLOT, &slot, sizeof(slot));
 
 	if (rc <= 0) {
-		LOG_ERR("Failed to fetch active slot: %d", rc);
+		LOG_ERROR("Failed to fetch active slot: %d", rc);
 
 		return INVALID_SLOT_ID;
 	}
@@ -269,7 +269,7 @@ size_t boot_get_image_start_offset(uint8_t area_id)
 
 		rc = flash_area_open(area_id, &fa);
 		if (rc) {
-			LOG_ERR("Flash open area %u failed: %d", area_id, rc);
+			LOG_ERROR("Flash open area %u failed: %d", area_id, rc);
 			goto done;
 		}
 
@@ -282,7 +282,7 @@ size_t boot_get_image_start_offset(uint8_t area_id)
 			rc = flash_area_get_sectors(area_id, &num_sectors, &sector_data);
 			if ((rc != 0 && rc != -ENOMEM) ||
 			    num_sectors != SWAP_USING_OFFSET_SECTOR_UPDATE_BEGIN) {
-				LOG_ERR("Failed to get sector details: %d", rc);
+				LOG_ERROR("Failed to get sector details: %d", rc);
 			} else {
 				off = sector_data.fs_size;
 			}

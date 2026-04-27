@@ -840,7 +840,7 @@ int coap_packet_set_path(struct coap_packet *cpkt, const char *path)
 								path + path_start,
 								path_end - path_start);
 				if (ret < 0) {
-					LOG_ERR("Failed to append path to CoAP message");
+					LOG_ERROR("Failed to append path to CoAP message");
 					goto out;
 				}
 			}
@@ -860,7 +860,7 @@ int coap_packet_set_path(struct coap_packet *cpkt, const char *path)
 								path + path_start,
 								path_end - path_start);
 				if (ret < 0) {
-					LOG_ERR("Failed to append path to CoAP message");
+					LOG_ERROR("Failed to append path to CoAP message");
 					goto out;
 				}
 			}
@@ -885,7 +885,7 @@ int coap_packet_set_path(struct coap_packet *cpkt, const char *path)
 									path + path_start,
 									path_end - path_start);
 					if (ret < 0) {
-						LOG_ERR("Failed to append path to CoAP message");
+						LOG_ERROR("Failed to append path to CoAP message");
 						goto out;
 					}
 				}
@@ -913,7 +913,7 @@ int coap_packet_set_path(struct coap_packet *cpkt, const char *path)
 							path_end - path_start + 1);
 		}
 		if (ret < 0) {
-			LOG_ERR("Failed to append path to CoAP message");
+			LOG_ERROR("Failed to append path to CoAP message");
 			goto out;
 		}
 	}

@@ -38,7 +38,7 @@ uint32_t pcie_conf_read(pcie_bdf_t bdf, unsigned int reg)
 
 	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_pcie_controller));
 	if (!dev) {
-		LOG_ERR("Failed to get PCIe root complex");
+		LOG_ERROR("Failed to get PCIe root complex");
 		return 0xffffffff;
 	}
 
@@ -51,7 +51,7 @@ void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data)
 
 	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_pcie_controller));
 	if (!dev) {
-		LOG_ERR("Failed to get PCIe root complex");
+		LOG_ERROR("Failed to get PCIe root complex");
 		return;
 	}
 
@@ -456,7 +456,7 @@ uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 
 	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_pcie_controller));
 	if (!dev) {
-		LOG_ERR("Failed to get PCIe root complex");
+		LOG_ERROR("Failed to get PCIe root complex");
 		return 0;
 	}
 

@@ -265,7 +265,7 @@ static int iis2dh_init(const struct device *dev)
 	}
 
 	if (wai != IIS2DH_ID) {
-		LOG_ERR("Invalid chip ID: %02x", wai);
+		LOG_ERROR("Invalid chip ID: %02x", wai);
 		return -EINVAL;
 	}
 
@@ -291,7 +291,7 @@ static int iis2dh_init(const struct device *dev)
 #ifdef CONFIG_IIS2DH_TRIGGER
 	if (cfg->int_gpio.port) {
 		if (iis2dh_init_interrupt(dev) < 0) {
-			LOG_ERR("Failed to initialize interrupts");
+			LOG_ERROR("Failed to initialize interrupts");
 			return -EIO;
 		}
 	}

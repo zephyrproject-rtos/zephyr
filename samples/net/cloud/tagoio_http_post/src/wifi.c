@@ -18,7 +18,7 @@ static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
 					   cb->info;
 
 	if (status->status) {
-		LOG_ERR("Connection request failed (%d)", status->status);
+		LOG_ERROR("Connection request failed (%d)", status->status);
 	} else {
 		LOG_INF("WIFI Connected");
 		connected = 1;

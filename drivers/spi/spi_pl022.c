@@ -363,31 +363,31 @@ static int spi_pl022_configure(const struct device *dev,
 #endif
 
 	if (spicfg->frequency > MAX_FREQ_CONTROLLER_MODE(pclk)) {
-		LOG_ERR("Frequency is up to %u in controller mode.",
-			MAX_FREQ_CONTROLLER_MODE(pclk));
+		LOG_ERROR("Frequency is up to %u in controller mode.",
+			  MAX_FREQ_CONTROLLER_MODE(pclk));
 		return -ENOTSUP;
 	}
 
 	if (op & SPI_TRANSFER_LSB) {
-		LOG_ERR("LSB-first not supported");
+		LOG_ERROR("LSB-first not supported");
 		return -ENOTSUP;
 	}
 
 	/* Half-duplex mode has not been implemented */
 	if (op & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	/* Peripheral mode has not been implemented */
 	if (SPI_OP_MODE_GET(op) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Peripheral mode is not supported");
+		LOG_ERROR("Peripheral mode is not supported");
 		return -ENOTSUP;
 	}
 
 	/* Word sizes other than 8 bits has not been implemented */
 	if (SPI_WORD_SIZE_GET(op) != 8) {
-		LOG_ERR("Word sizes other than 8 bits are not supported");
+		LOG_ERROR("Word sizes other than 8 bits are not supported");
 		return -ENOTSUP;
 	}
 
@@ -499,7 +499,7 @@ static uint32_t spi_pl022_dma_setup(const struct device *dev, const uint32_t dir
 
 	ret = dma_config(dma->dev, dma->channel, dma_cfg);
 	if (ret < 0) {
-		LOG_ERR("dma_config %p failed %d\n", dma->dev, ret);
+		LOG_ERROR("dma_config %p failed %d\n", dma->dev, ret);
 		return ret;
 	}
 
@@ -507,7 +507,7 @@ static uint32_t spi_pl022_dma_setup(const struct device *dev, const uint32_t dir
 
 	ret = dma_start(dma->dev, dma->channel);
 	if (ret < 0) {
-		LOG_ERR("dma_start %p failed %d\n", dma->dev, ret);
+		LOG_ERROR("dma_start %p failed %d\n", dma->dev, ret);
 		return ret;
 	}
 
@@ -574,7 +574,7 @@ static void spi_pl022_dma_callback(const struct device *dma_dev, void *arg, uint
 	if (status < 0) {
 		key = k_spin_lock(&data->lock);
 
-		LOG_ERR("dma:%p ch:%d callback gets error: %d", dma_dev, channel, status);
+		LOG_ERROR("dma:%p ch:%d callback gets error: %d", dma_dev, channel, status);
 		spi_pl022_complete(dev, status);
 
 		k_spin_unlock(&data->lock, key);
@@ -921,7 +921,7 @@ static int spi_pl022_init(const struct device *dev)
 	if (cfg->clk_dev) {
 		ret = clock_control_on(cfg->clk_dev, cfg->clk_id);
 		if (ret < 0) {
-			LOG_ERR("Failed to enable the clock");
+			LOG_ERROR("Failed to enable the clock");
 			return ret;
 		}
 	}
@@ -939,7 +939,7 @@ static int spi_pl022_init(const struct device *dev)
 #if defined(CONFIG_PINCTRL)
 	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Failed to apply pinctrl state");
+		LOG_ERROR("Failed to apply pinctrl state");
 		return ret;
 	}
 #endif
@@ -950,13 +950,13 @@ static int spi_pl022_init(const struct device *dev)
 			uint32_t ch_filter = BIT(cfg->dma[i].channel);
 
 			if (!device_is_ready(cfg->dma[i].dev)) {
-				LOG_ERR("DMA %s not ready", cfg->dma[i].dev->name);
+				LOG_ERROR("DMA %s not ready", cfg->dma[i].dev->name);
 				return -ENODEV;
 			}
 
 			ret = dma_request_channel(cfg->dma[i].dev, &ch_filter);
 			if (ret < 0) {
-				LOG_ERR("dma_request_channel failed %d", ret);
+				LOG_ERROR("dma_request_channel failed %d", ret);
 				return ret;
 			}
 		}
@@ -969,13 +969,13 @@ static int spi_pl022_init(const struct device *dev)
 
 	ret = spi_pl022_configure(dev, &spicfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure spi");
+		LOG_ERROR("Failed to configure spi");
 		return ret;
 	}
 
 	ret = spi_context_cs_configure_all(&data->ctx);
 	if (ret < 0) {
-		LOG_ERR("Failed to spi_context configure");
+		LOG_ERROR("Failed to spi_context configure");
 		return ret;
 	}
 

@@ -383,7 +383,7 @@ static void sm_handle_failure_state(enum sm_engine_state sm_state)
 /* force state machine restart */
 static void socket_fault_cb(int error)
 {
-	LOG_ERR("RD Client socket error: %d", error);
+	LOG_ERROR("RD Client socket error: %d", error);
 	lwm2m_socket_close(client.ctx);
 
 	if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP) && sm_is_bootstrap()) {
@@ -473,9 +473,8 @@ static int do_bootstrap_reply_cb(const struct coap_packet *response,
 		return 0;
 	}
 
-	LOG_ERR("Failed with code %u.%u (%s). Not Retrying.",
-		COAP_RESPONSE_CODE_CLASS(code), COAP_RESPONSE_CODE_DETAIL(code),
-		code2str(code));
+	LOG_ERROR("Failed with code %u.%u (%s). Not Retrying.", COAP_RESPONSE_CODE_CLASS(code),
+		  COAP_RESPONSE_CODE_DETAIL(code), code2str(code));
 
 	sm_handle_failure_state(ENGINE_IDLE);
 
@@ -530,7 +529,7 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 		ret = coap_find_options(response, COAP_OPTION_LOCATION_PATH,
 					options, 2);
 		if (ret < 2) {
-			LOG_ERR("Unexpected endpoint data returned. ret = %d", ret);
+			LOG_ERROR("Unexpected endpoint data returned. ret = %d", ret);
 			ret = -EINVAL;
 			goto fail;
 		}
@@ -538,10 +537,9 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 		/* option[0] should be "rd" */
 
 		if (options[1].len + 1 > sizeof(client.server_ep)) {
-			LOG_ERR("Unexpected length of query: "
-				    "%u (expected %zu)\n",
-				    options[1].len,
-				    sizeof(client.server_ep));
+			LOG_ERROR("Unexpected length of query: "
+				  "%u (expected %zu)\n",
+				  options[1].len, sizeof(client.server_ep));
 			ret = -EINVAL;
 			goto fail;
 		}
@@ -561,9 +559,8 @@ static int do_registration_reply_cb(const struct coap_packet *response,
 		return 0;
 	}
 
-	LOG_ERR("Failed with code %u.%u (%s).",
-		COAP_RESPONSE_CODE_CLASS(code), COAP_RESPONSE_CODE_DETAIL(code),
-		code2str(code));
+	LOG_ERROR("Failed with code %u.%u (%s).", COAP_RESPONSE_CODE_CLASS(code),
+		  COAP_RESPONSE_CODE_DETAIL(code), code2str(code));
 fail:
 	lwm2m_server_disable(client.ctx->srv_obj_inst, DISABLE_TIMEOUT);
 	sm_handle_failure_state(ENGINE_NETWORK_ERROR);
@@ -601,9 +598,8 @@ static int do_update_reply_cb(const struct coap_packet *response,
 		return 0;
 	}
 
-	LOG_ERR("Failed with code %u.%u (%s). Retrying registration.",
-		COAP_RESPONSE_CODE_CLASS(code), COAP_RESPONSE_CODE_DETAIL(code),
-		code2str(code));
+	LOG_ERROR("Failed with code %u.%u (%s). Retrying registration.",
+		  COAP_RESPONSE_CODE_CLASS(code), COAP_RESPONSE_CODE_DETAIL(code), code2str(code));
 
 	sm_handle_failure_state(ENGINE_DO_REGISTRATION);
 
@@ -638,9 +634,8 @@ static int do_deregister_reply_cb(const struct coap_packet *response,
 		return 0;
 	}
 
-	LOG_ERR("Failed with code %u.%u (%s). Not Retrying",
-		COAP_RESPONSE_CODE_CLASS(code), COAP_RESPONSE_CODE_DETAIL(code),
-		code2str(code));
+	LOG_ERROR("Failed with code %u.%u (%s). Not Retrying", COAP_RESPONSE_CODE_CLASS(code),
+		  COAP_RESPONSE_CODE_DETAIL(code), code2str(code));
 
 	sm_handle_failure_state(ENGINE_DEREGISTERED);
 
@@ -755,7 +750,7 @@ static int sm_send_bootstrap_registration(void)
 
 	msg = rd_get_message();
 	if (!msg) {
-		LOG_ERR("Unable to get a lwm2m message!");
+		LOG_ERROR("Unable to get a lwm2m message!");
 		return -ENOMEM;
 	}
 
@@ -807,7 +802,7 @@ static int sm_send_bootstrap_registration(void)
 
 	ret = lwm2m_send_message_async(msg);
 	if (ret < 0) {
-		LOG_ERR("Failed to send bootstrap message (err: %d)", ret);
+		LOG_ERROR("Failed to send bootstrap message (err: %d)", ret);
 		goto cleanup;
 	}
 
@@ -839,7 +834,7 @@ static void sm_do_bootstrap_reg(void)
 
 	ret = lwm2m_engine_start(client.ctx);
 	if (ret < 0) {
-		LOG_ERR("Cannot init LWM2M engine (%d)", ret);
+		LOG_ERROR("Cannot init LWM2M engine (%d)", ret);
 		set_sm_state(ENGINE_NETWORK_ERROR);
 		return;
 	}
@@ -848,7 +843,7 @@ static void sm_do_bootstrap_reg(void)
 	if (!ret) {
 		set_sm_state(ENGINE_BOOTSTRAP_REG_SENT);
 	} else {
-		LOG_ERR("Bootstrap registration err: %d", ret);
+		LOG_ERROR("Bootstrap registration err: %d", ret);
 		set_sm_state(ENGINE_NETWORK_ERROR);
 	}
 
@@ -897,7 +892,7 @@ static int sm_send_registration(bool send_obj_support_data,
 
 	msg = rd_get_message();
 	if (!msg) {
-		LOG_ERR("Unable to get a lwm2m message!");
+		LOG_ERROR("Unable to get a lwm2m message!");
 		return -ENOMEM;
 	}
 
@@ -1027,7 +1022,7 @@ static int sm_send_registration(bool send_obj_support_data,
 	return 0;
 
 cleanup:
-	LOG_ERR("error %d when sending registration message", ret);
+	LOG_ERROR("error %d when sending registration message", ret);
 	lwm2m_reset_message(msg, true);
 	return ret;
 }
@@ -1051,7 +1046,7 @@ static int sm_send_registration_msg(void)
 	if (!ret) {
 		set_sm_state(ENGINE_REGISTRATION_SENT);
 	} else {
-		LOG_ERR("Registration err: %d", ret);
+		LOG_ERROR("Registration err: %d", ret);
 		set_sm_state(ENGINE_NETWORK_ERROR);
 	}
 
@@ -1094,7 +1089,7 @@ static void sm_do_registration(void)
 		if (select_srv) {
 			/* Select next one from the list, or fail */
 			if (!lwm2m_server_select(&srv)) {
-				LOG_ERR("Unable to find a valid server instance.");
+				LOG_ERROR("Unable to find a valid server instance.");
 				goto bootstrap_or_retry;
 			}
 
@@ -1103,14 +1098,14 @@ static void sm_do_registration(void)
 
 			ret = lwm2m_get_u16(&LWM2M_OBJ(1, client.ctx->srv_obj_inst, 0), &ssid);
 			if (ret < 0) {
-				LOG_ERR("Failed to read SSID");
+				LOG_ERROR("Failed to read SSID");
 				lwm2m_server_disable(srv, K_FOREVER);
 				goto bootstrap_or_retry;
 			}
 
 			ret = lwm2m_security_short_id_to_inst(ssid);
 			if (ret < 0) {
-				LOG_ERR("Unable to find a valid security instance.");
+				LOG_ERROR("Unable to find a valid security instance.");
 				lwm2m_server_disable(srv, K_FOREVER);
 				goto bootstrap_or_retry;
 			}
@@ -1123,7 +1118,7 @@ static void sm_do_registration(void)
 
 		ret = lwm2m_engine_start(client.ctx);
 		if (ret < 0) {
-			LOG_ERR("Cannot init LWM2M engine (%d)", ret);
+			LOG_ERROR("Cannot init LWM2M engine (%d)", ret);
 			goto retry;
 		}
 	}
@@ -1218,7 +1213,7 @@ static int update_registration(void)
 				   do_update_reply_cb,
 				   do_update_timeout_cb);
 	if (ret) {
-		LOG_ERR("Registration update err: %d", ret);
+		LOG_ERROR("Registration update err: %d", ret);
 		return ret;
 	}
 
@@ -1231,7 +1226,7 @@ static int sm_update_registration(void)
 
 	ret = update_registration();
 	if (ret) {
-		LOG_ERR("Failed to update registration. Falling back to full registration");
+		LOG_ERROR("Failed to update registration. Falling back to full registration");
 
 		lwm2m_engine_stop(client.ctx);
 		/* perform full registration */
@@ -1258,7 +1253,7 @@ static int sm_do_deregister(void)
 
 	msg = rd_get_message();
 	if (!msg) {
-		LOG_ERR("Unable to get a lwm2m message!");
+		LOG_ERROR("Unable to get a lwm2m message!");
 		ret = -ENOMEM;
 		goto close_ctx;
 	}
@@ -1279,7 +1274,7 @@ static int sm_do_deregister(void)
 					LWM2M_RD_CLIENT_URI,
 					strlen(LWM2M_RD_CLIENT_URI));
 	if (ret < 0) {
-		LOG_ERR("Failed to encode URI path option (err:%d).", ret);
+		LOG_ERROR("Failed to encode URI path option (err:%d).", ret);
 		goto cleanup;
 	}
 
@@ -1288,7 +1283,7 @@ static int sm_do_deregister(void)
 					client.server_ep,
 					strlen(client.server_ep));
 	if (ret < 0) {
-		LOG_ERR("Failed to encode URI path option (err:%d).", ret);
+		LOG_ERROR("Failed to encode URI path option (err:%d).", ret);
 		goto cleanup;
 	}
 
@@ -1296,7 +1291,7 @@ static int sm_do_deregister(void)
 
 	ret = lwm2m_send_message_async(msg);
 	if (ret < 0) {
-		LOG_ERR("Failed to send deregistration message (err:%d).", ret);
+		LOG_ERROR("Failed to send deregistration message (err:%d).", ret);
 		goto cleanup;
 	}
 
@@ -1332,7 +1327,7 @@ static void sm_do_network_error(void)
 {
 	int err;
 
-	LOG_ERR("sm_do_network_error, retries %d", client.retries);
+	LOG_ERROR("sm_do_network_error, retries %d", client.retries);
 
 	lwm2m_socket_close(client.ctx);
 
@@ -1346,7 +1341,7 @@ static void sm_do_network_error(void)
 
 	/* Stop retrying and try fallback */
 	if (client.retries > CONFIG_LWM2M_RD_CLIENT_MAX_RETRIES) {
-		LOG_ERR("Network error, max retries reached (%d)", client.retries);
+		LOG_ERROR("Network error, max retries reached (%d)", client.retries);
 
 		/* Disable current server for a period so lwm2m_server_select() does not pick it */
 		if (client.ctx->srv_obj_inst > -1) {
@@ -1423,7 +1418,7 @@ static void sm_do_network_error(void)
 	 */
 	err = lwm2m_socket_start(client.ctx);
 	if (err) {
-		LOG_ERR("Failed to start socket %d", err);
+		LOG_ERROR("Failed to start socket %d", err);
 		/*
 		 * keep this state until lifetime/retry count exceeds. Renew
 		 * sm state to set retry_delay etc ...
@@ -1556,8 +1551,7 @@ static void lwm2m_rd_client_service(struct k_work *work)
 			break;
 
 		default:
-			LOG_ERR("Unhandled state: %d", get_sm_state());
-
+			LOG_ERROR("Unhandled state: %d", get_sm_state());
 		}
 
 		if (timeout) {
@@ -1583,8 +1577,8 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 
 	if (!IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP) &&
 	    (flags & LWM2M_RD_CLIENT_FLAG_BOOTSTRAP)) {
-		LOG_ERR("Bootstrap support is disabled. Please enable "
-			"CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP.");
+		LOG_ERROR("Bootstrap support is disabled. Please enable "
+			  "CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP.");
 
 		k_mutex_unlock(&client.mutex);
 		return -ENOTSUP;
@@ -1661,11 +1655,11 @@ int lwm2m_rd_client_pause(void)
 
 	if (!client.ctx) {
 		k_mutex_unlock(&client.mutex);
-		LOG_ERR("Cannot pause. No context");
+		LOG_ERROR("Cannot pause. No context");
 		return -EPERM;
 	} else if (sm_is_suspended()) {
 		k_mutex_unlock(&client.mutex);
-		LOG_ERR("LwM2M client already suspended");
+		LOG_ERROR("LwM2M client already suspended");
 		return 0;
 	}
 

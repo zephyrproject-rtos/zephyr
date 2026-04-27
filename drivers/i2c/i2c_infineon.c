@@ -184,13 +184,13 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 			data->cfg.frequencyhal_hz = CAT1_I2C_SPEED_FAST_PLUS_HZ;
 			break;
 		default:
-			LOG_ERR("Unsupported speed");
+			LOG_ERROR("Unsupported speed");
 			return -ERANGE;
 		}
 
 		/* This is deprecated and could be ignored in the future */
 		if (dev_config & I2C_ADDR_10_BITS) {
-			LOG_ERR("10-bit addressing mode is not supported");
+			LOG_ERROR("10-bit addressing mode is not supported");
 			return -EIO;
 		}
 	}
@@ -204,7 +204,7 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 	/* Configure the I2C resource to be master */
 	rslt = cyhal_i2c_configure(&data->obj, &data->cfg);
 	if (rslt != CY_RSLT_SUCCESS) {
-		LOG_ERR("cyhal_i2c_configure failed with err 0x%x", rslt);
+		LOG_ERROR("cyhal_i2c_configure failed with err 0x%x", rslt);
 		k_sem_give(&data->operation_sem);
 		return -EIO;
 	}
@@ -233,7 +233,7 @@ static int ifx_cat1_i2c_get_config(const struct device *dev, uint32_t *dev_confi
 		config = I2C_SPEED_SET(I2C_SPEED_FAST_PLUS);
 		break;
 	default:
-		LOG_ERR("Unsupported speed");
+		LOG_ERROR("Unsupported speed");
 		return -ERANGE;
 	}
 

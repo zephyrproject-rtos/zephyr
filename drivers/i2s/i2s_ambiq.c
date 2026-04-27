@@ -125,7 +125,7 @@ static int i2s_ambiq_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Fail to config I2S pins\n");
+		LOG_ERROR("Fail to config I2S pins\n");
 	}
 
 	am_hal_i2s_initialize(data->inst_idx, &data->i2s_handler);
@@ -145,12 +145,12 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 
 	if ((data->i2s_state != I2S_STATE_NOT_READY && data->i2s_state != I2S_STATE_READY) ||
 	    (data->i2s_state == I2S_STATE_RUNNING)) {
-		LOG_ERR("invalid state %d", data->i2s_state);
+		LOG_ERROR("invalid state %d", data->i2s_state);
 		return -EINVAL;
 	}
 
 	if (i2s_config_in->frame_clk_freq == 0U) {
-		LOG_ERR("Invalid frame_clk_freq %u", i2s_config_in->frame_clk_freq);
+		LOG_ERROR("Invalid frame_clk_freq %u", i2s_config_in->frame_clk_freq);
 		data->i2s_state = I2S_STATE_NOT_READY;
 		return 0;
 	}
@@ -205,7 +205,7 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 		i2s_io_config.eFyncCpol = AM_HAL_I2S_IO_FSYNC_CPOL_HIGH;
 		break;
 	default:
-		LOG_ERR("Unsupported data format %d", i2s_config_in->format);
+		LOG_ERROR("Unsupported data format %d", i2s_config_in->format);
 		return -EINVAL;
 	}
 
@@ -219,8 +219,8 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 			   AM_HAL_I2S_FRAME_WDLEN_32BITS) {
 			i2s_io_config.sFsyncPulseCfg.ui32FsyncPulseWidth = 31;
 		} else {
-			LOG_ERR("Unsupported channel length %d",
-				data->i2s_hal_cfg.eData->eChannelLenPhase1);
+			LOG_ERROR("Unsupported channel length %d",
+				  data->i2s_hal_cfg.eData->eChannelLenPhase1);
 			return -EINVAL;
 		}
 	}
@@ -240,7 +240,7 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 		data->i2s_hal_cfg.eXfer = AM_HAL_I2S_XFER_RX;
 		data->i2s_hal_cfg.eMode = AM_HAL_I2S_IO_MODE_SLAVE;
 	} else {
-		LOG_ERR("Unsupported direction %d", dir);
+		LOG_ERROR("Unsupported direction %d", dir);
 		return -EINVAL;
 	}
 
@@ -257,7 +257,7 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 	 * Highst clock freq is 3072 KHz (32bit / 2 channels / 48KHz sample rate)
 	 */
 	if (i2s_clock_freq < 128000 || i2s_clock_freq > 3072000) {
-		LOG_ERR("Invalid I2S clock frequency %d", i2s_clock_freq);
+		LOG_ERROR("Invalid I2S clock frequency %d", i2s_clock_freq);
 		return -EINVAL;
 	}
 
@@ -293,7 +293,7 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 		data->i2s_hal_cfg.eDiv3 = 0;
 		break;
 	default:
-		LOG_ERR("Unsupported I2S clock frequency %d", i2s_clock_freq);
+		LOG_ERROR("Unsupported I2S clock frequency %d", i2s_clock_freq);
 		return -EINVAL;
 	}
 
@@ -304,7 +304,7 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 		data->i2s_hal_cfg.eDiv3);
 
 	if (i2s_config_in->channels > 2) {
-		LOG_ERR("Unsupported channel number %d", i2s_config_in->channels);
+		LOG_ERROR("Unsupported channel number %d", i2s_config_in->channels);
 		return -EINVAL;
 	}
 
@@ -372,7 +372,7 @@ static int i2s_ambiq_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 	case I2S_TRIGGER_STOP:
 	case I2S_TRIGGER_DROP:
 		if (dir == I2S_DIR_BOTH) {
-			LOG_ERR("Unsupported direction %d for STOP/DRAIN/DROP", dir);
+			LOG_ERROR("Unsupported direction %d for STOP/DRAIN/DROP", dir);
 			return -EINVAL;
 		}
 
@@ -386,7 +386,7 @@ static int i2s_ambiq_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 
 	case I2S_TRIGGER_DRAIN:
 		if (data->i2s_state != I2S_STATE_RUNNING) {
-			LOG_ERR("DRAIN/STOP trigger: invalid state %d", data->i2s_state);
+			LOG_ERROR("DRAIN/STOP trigger: invalid state %d", data->i2s_state);
 			ret = -EIO;
 			break;
 		}
@@ -395,7 +395,7 @@ static int i2s_ambiq_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 
 	case I2S_TRIGGER_START:
 		if (data->i2s_state != I2S_STATE_READY) {
-			LOG_ERR("START trigger: invalid state %d", data->i2s_state);
+			LOG_ERROR("START trigger: invalid state %d", data->i2s_state);
 			ret = -EIO;
 			break;
 		}
@@ -408,7 +408,7 @@ static int i2s_ambiq_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 
 	case I2S_TRIGGER_PREPARE:
 		if (data->i2s_state != I2S_STATE_ERROR) {
-			LOG_ERR("Invalid state for PREPARE trigger: %d", data->i2s_state);
+			LOG_ERROR("Invalid state for PREPARE trigger: %d", data->i2s_state);
 			ret = -EIO;
 			break;
 		}
@@ -418,7 +418,7 @@ static int i2s_ambiq_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 		break;
 
 	default:
-		LOG_ERR("Invalid command: %d", cmd);
+		LOG_ERROR("Invalid command: %d", cmd);
 		ret = -EINVAL;
 		break;
 	}
@@ -432,12 +432,12 @@ static int i2s_ambiq_write(const struct device *dev, void *buffer, size_t size)
 	int ret;
 
 	if ((data->i2s_state != I2S_STATE_RUNNING) && (data->i2s_state != I2S_STATE_READY)) {
-		LOG_ERR("Device is not ready or running");
+		LOG_ERROR("Device is not ready or running");
 		return -EIO;
 	}
 
 	if (size > data->block_size) {
-		LOG_ERR("Max write size is: %u", data->block_size);
+		LOG_ERROR("Max write size is: %u", data->block_size);
 		return -EINVAL;
 	}
 
@@ -484,7 +484,7 @@ static int i2s_ambiq_read(const struct device *dev, void **buffer, size_t *size)
 	int ret;
 
 	if ((data->i2s_state != I2S_STATE_RUNNING) && (data->i2s_state != I2S_STATE_READY)) {
-		LOG_ERR("Device is not running or ready");
+		LOG_ERROR("Device is not running or ready");
 		return -EIO;
 	}
 
@@ -497,7 +497,7 @@ static int i2s_ambiq_read(const struct device *dev, void **buffer, size_t *size)
 
 		ret = k_mem_slab_alloc(data->mem_slab, &data->mem_slab_buffer, K_NO_WAIT);
 		if (ret != 0) {
-			LOG_ERR("Fail to allocate memory slab");
+			LOG_ERROR("Fail to allocate memory slab");
 			return -ENOMEM;
 		}
 
@@ -544,7 +544,7 @@ static int i2s_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 	ret = am_hal_i2s_power_control(data->i2s_handler, status, true);
 
 	if (ret != AM_HAL_STATUS_SUCCESS) {
-		LOG_ERR("am_hal_i2s_power_control failed: %d", ret);
+		LOG_ERROR("am_hal_i2s_power_control failed: %d", ret);
 		return -EPERM;
 	} else {
 		return 0;

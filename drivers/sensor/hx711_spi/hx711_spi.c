@@ -46,7 +46,7 @@ static int hx711_spi_read_sample(const struct device *dev, int32_t *sample)
 		tx_buffer[6] = HX711_CHA_GAIN_128;
 		break;
 	default:
-		LOG_ERR("Unsupported gain.");
+		LOG_ERROR("Unsupported gain.");
 		return -ENOTSUP;
 	}
 
@@ -99,7 +99,7 @@ static int hx711_sample_fetch_impl(const struct device *dev)
 	ret = hx711_spi_read_sample(dev, &sample);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to fetch sample.");
+		LOG_ERROR("Failed to fetch sample.");
 		return ret;
 	}
 
@@ -116,21 +116,21 @@ static int hx711_configure_gpio_interrupt(const struct device *dev, bool enable)
 	int ret;
 
 	if (!config->trig_cfg) {
-		LOG_ERR("trigger not configured for this device");
+		LOG_ERROR("trigger not configured for this device");
 		return -ENOTSUP;
 	}
 
 	if (enable) {
 		ret = pinctrl_apply_state(config->trig_cfg->pcfg, PINCTRL_STATE_TRIGGER);
 		if (ret < 0) {
-			LOG_ERR("could not apply pin config, return code %d", ret);
+			LOG_ERROR("could not apply pin config, return code %d", ret);
 			return ret;
 		}
 
 		ret = gpio_pin_interrupt_configure_dt(&config->trig_cfg->int_gpio,
 						      GPIO_INT_EDGE_FALLING);
 		if (ret < 0) {
-			LOG_ERR("could not set up gpio interrupt, return code %d", ret);
+			LOG_ERROR("could not set up gpio interrupt, return code %d", ret);
 			return ret;
 		}
 
@@ -139,13 +139,13 @@ static int hx711_configure_gpio_interrupt(const struct device *dev, bool enable)
 		ret = gpio_pin_interrupt_configure_dt(&config->trig_cfg->int_gpio,
 						      GPIO_INT_DISABLE);
 		if (ret < 0) {
-			LOG_ERR("could not set up gpio interrupt, return code %d", ret);
+			LOG_ERROR("could not set up gpio interrupt, return code %d", ret);
 			return ret;
 		}
 
 		ret = pinctrl_apply_state(config->trig_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 		if (ret < 0) {
-			LOG_ERR("could not apply pin config, return code %d", ret);
+			LOG_ERROR("could not apply pin config, return code %d", ret);
 			return ret;
 		}
 
@@ -188,7 +188,7 @@ static int hx711_gpio_irq_init(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&config->trig_cfg->int_gpio)) {
-		LOG_ERR("gpio %s is not ready", config->trig_cfg->int_gpio.port->name);
+		LOG_ERROR("gpio %s is not ready", config->trig_cfg->int_gpio.port->name);
 		return -EIO;
 	}
 
@@ -197,7 +197,7 @@ static int hx711_gpio_irq_init(const struct device *dev)
 
 	ret = gpio_add_callback(config->trig_cfg->int_gpio.port, &data->trig_data->gpio_cb);
 	if (ret != 0) {
-		LOG_ERR("Failed at gpio_add_callback_dt for int_gpio, return code %d", ret);
+		LOG_ERROR("Failed at gpio_add_callback_dt for int_gpio, return code %d", ret);
 		return ret;
 	}
 
@@ -288,7 +288,7 @@ static int hx711_sample_fetch(const struct device *dev, enum sensor_channel chan
 	struct hx711_data *data = dev->data;
 
 	if (data->trig_data->trigger_armed) {
-		LOG_ERR("cannot fetch when waiting for trigger");
+		LOG_ERROR("cannot fetch when waiting for trigger");
 		return -EAGAIN;
 	}
 #endif

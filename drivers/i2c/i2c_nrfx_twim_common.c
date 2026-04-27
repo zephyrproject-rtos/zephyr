@@ -63,7 +63,7 @@ int i2c_nrfx_twim_configure(const struct device *dev, uint32_t i2c_config)
 		break;
 #endif
 	default:
-		LOG_ERR("unsupported speed");
+		LOG_ERROR("unsupported speed");
 		return -EINVAL;
 	}
 
@@ -82,9 +82,9 @@ int i2c_nrfx_twim_msg_transfer(const struct device *dev, uint8_t flags, uint8_t 
 	};
 
 	if (buf_len > config->max_transfer_size) {
-		LOG_ERR("Trying to transfer more than the maximum size "
-			"for this device: %d > %d",
-			buf_len, config->max_transfer_size);
+		LOG_ERROR("Trying to transfer more than the maximum size "
+			  "for this device: %d > %d",
+			  buf_len, config->max_transfer_size);
 		return -ENOSPC;
 	}
 
@@ -134,7 +134,7 @@ int i2c_nrfx_twim_common_init(const struct device *dev)
 
 	if (nrfx_twim_init(config->twim, &config->twim_config, config->event_handler, (void *)dev) <
 	    0) {
-		LOG_ERR("Failed to initialize device: %s", dev->name);
+		LOG_ERROR("Failed to initialize device: %s", dev->name);
 		return -EIO;
 	}
 
@@ -155,9 +155,8 @@ int i2c_nrfx_twim_common_deinit(const struct device *dev)
 	 * be deinitialized
 	 */
 	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_SUSPENDED &&
-	    state != PM_DEVICE_STATE_OFF) {
-		LOG_ERR("device active");
+	if (state != PM_DEVICE_STATE_SUSPENDED && state != PM_DEVICE_STATE_OFF) {
+		LOG_ERROR("device active");
 		return -EBUSY;
 	}
 #else

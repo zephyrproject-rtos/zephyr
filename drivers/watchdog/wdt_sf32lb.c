@@ -58,12 +58,12 @@ static int wdt_sf32lb_setup(const struct device *dev, uint8_t options)
 	const struct wdt_sf32lb_config *config = dev->config;
 
 	if (options != 0U) {
-		LOG_ERR("Options not supported");
+		LOG_ERROR("Options not supported");
 		return -ENOTSUP;
 	}
 
 	if (wdt_sf32lb_is_enabled(dev)) {
-		LOG_ERR("Setup not allowed with watchdog enabled");
+		LOG_ERROR("Setup not allowed with watchdog enabled");
 		return -EBUSY;
 	}
 
@@ -78,7 +78,7 @@ static int wdt_sf32lb_disable(const struct device *dev)
 	struct wdt_sf32lb_data *data = dev->data;
 
 	if (!wdt_sf32lb_is_enabled(dev)) {
-		LOG_ERR("Watchdog already disabled");
+		LOG_ERROR("Watchdog already disabled");
 		return -EFAULT;
 	}
 	data->timeout_valid = false;
@@ -94,22 +94,22 @@ static int wdt_sf32lb_install_timeout(const struct device *dev,
 	struct wdt_sf32lb_data *data = dev->data;
 
 	if (wdt_sf32lb_is_enabled(dev)) {
-		LOG_ERR("Timeout install not allowed with watchdog enabled");
+		LOG_ERROR("Timeout install not allowed with watchdog enabled");
 		return -EBUSY;
 	}
 
 	if (wdt_cfg->flags != WDT_FLAG_RESET_SOC) {
-		LOG_ERR("Only SoC reset supported");
+		LOG_ERROR("Only SoC reset supported");
 		return -ENOTSUP;
 	}
 
 	if (wdt_cfg->callback != NULL) {
-		LOG_ERR("Callback not supported");
+		LOG_ERROR("Callback not supported");
 		return -ENOTSUP;
 	}
 
 	if (wdt_cfg->window.min != 0U) {
-		LOG_ERR("Window mode not supported!");
+		LOG_ERROR("Window mode not supported!");
 		return -ENOTSUP;
 	};
 
@@ -130,7 +130,7 @@ static int wdt_sf32lb_feed(const struct device *dev, int channel_id)
 	struct wdt_sf32lb_data *data = dev->data;
 
 	if (!data->timeout_valid) {
-		LOG_ERR("No valid timeout installed");
+		LOG_ERROR("No valid timeout installed");
 		return -EINVAL;
 	}
 

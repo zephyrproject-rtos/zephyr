@@ -102,7 +102,7 @@ static int counter_rts5912_set_alarm(const struct device *dev, uint8_t chan_id,
 	struct counter_rts5912_data *data = dev->data;
 
 	if (chan_id != 0) {
-		LOG_ERR("Invalid channel id %u", chan_id);
+		LOG_ERROR("Invalid channel id %u", chan_id);
 		return -ENOTSUP;
 	}
 
@@ -150,7 +150,7 @@ static int counter_rts5912_cancel_alarm(const struct device *dev, uint8_t chan_i
 	struct counter_rts5912_data *data = dev->data;
 
 	if (chan_id != 0) {
-		LOG_ERR("Invalid channel id %u", chan_id);
+		LOG_ERROR("Invalid channel id %u", chan_id);
 		return -ENOTSUP;
 	}
 

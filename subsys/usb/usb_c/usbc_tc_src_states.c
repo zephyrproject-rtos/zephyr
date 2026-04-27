@@ -265,7 +265,7 @@ void tc_attached_src_entry(void *obj)
 	/* Set cc polarity */
 	ret = tcpc_set_cc_polarity(tcpc, tc->cc_polarity);
 	if (ret != 0) {
-		LOG_ERR("Couldn't set CC polarity to %d: %d", tc->cc_polarity, ret);
+		LOG_ERROR("Couldn't set CC polarity to %d: %d", tc->cc_polarity, ret);
 		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
 		return;
 	}
@@ -277,11 +277,11 @@ void tc_attached_src_entry(void *obj)
 			if (tcpc_set_vconn(tcpc, true) == 0) {
 				atomic_set_bit(&tc->flags, TC_FLAGS_VCONN_ON);
 			} else {
-				LOG_ERR("VCONN can't be enabled\n");
+				LOG_ERROR("VCONN can't be enabled\n");
 			}
 		}
 	} else {
-		LOG_ERR("Power Supply can't be enabled\n");
+		LOG_ERROR("Power Supply can't be enabled\n");
 	}
 
 	/* Enable PD */
@@ -291,7 +291,7 @@ void tc_attached_src_entry(void *obj)
 	if (data->ppc != NULL) {
 		ret = ppc_set_src_ctrl(data->ppc, true);
 		if (ret < 0 && ret != -ENOSYS) {
-			LOG_ERR("Couldn't disable PPC source");
+			LOG_ERROR("Couldn't disable PPC source");
 		}
 	}
 }
@@ -342,21 +342,21 @@ void tc_attached_src_exit(void *obj)
 
 	/* Stop sourcing VBUS */
 	if (usbc_policy_src_en(dev, tcpc, false) != 0) {
-		LOG_ERR("Couldn't disable VBUS source");
+		LOG_ERROR("Couldn't disable VBUS source");
 	}
 
 	/* Disable the VBUS sourcing by the PPC */
 	if (data->ppc != NULL) {
 		ret = ppc_set_src_ctrl(data->ppc, false);
 		if (ret < 0 && ret != -ENOSYS) {
-			LOG_ERR("Couldn't disable PPC source");
+			LOG_ERROR("Couldn't disable PPC source");
 		}
 	}
 
 	/* Stop sourcing VCONN */
 	ret = tcpc_set_vconn(tcpc, false);
 	if (ret != 0 && ret != -ENOSYS) {
-		LOG_ERR("Couldn't disable VCONN source");
+		LOG_ERROR("Couldn't disable VCONN source");
 	}
 }
 
@@ -384,7 +384,7 @@ void tc_cc_rp_entry(void *obj)
 	/* Select Rp value */
 	ret = tcpc_select_rp_value(tcpc, rp);
 	if (ret != 0 && ret != -ENOTSUP) {
-		LOG_ERR("Couldn't set Rp value to %d: %d", rp, ret);
+		LOG_ERROR("Couldn't set Rp value to %d: %d", rp, ret);
 		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
 		return;
 	}
@@ -392,7 +392,7 @@ void tc_cc_rp_entry(void *obj)
 	/* Place Rp on CC lines */
 	ret = tcpc_set_cc(tcpc, TC_CC_RP);
 	if (ret != 0) {
-		LOG_ERR("Couldn't set CC lines to Rp: %d", ret);
+		LOG_ERROR("Couldn't set CC lines to Rp: %d", ret);
 		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
 	}
 }

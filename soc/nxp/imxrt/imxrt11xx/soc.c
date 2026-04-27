@@ -736,7 +736,7 @@ int mipi_csi2rx_clock_set_freq(clock_root_t clock_root, uint32_t rate)
 	clk_source = CLOCK_GetRootClockSource(clock_root, rootCfg.mux);
 	freq = CLOCK_GetFreq(clk_source);
 	if (rate > freq) {
-		LOG_ERR("Requested rate is higher than the maximum clock frequency");
+		LOG_ERROR("Requested rate is higher than the maximum clock frequency");
 		return -EINVAL;
 	}
 

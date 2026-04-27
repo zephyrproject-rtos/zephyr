@@ -178,7 +178,7 @@ static int flash_check_erased(const struct flash_area *fa)
 		rc = flash_area_read(fa, addr, data, bytes_to_read);
 
 		if (rc < 0) {
-			LOG_ERR("Failed to read data from flash area: %d", rc);
+			LOG_ERROR("Failed to read data from flash area: %d", rc);
 			return rc;
 		}
 

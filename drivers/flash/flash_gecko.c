@@ -94,12 +94,12 @@ static int flash_gecko_erase(const struct device *dev, off_t offset,
 	}
 
 	if ((offset % FLASH_PAGE_SIZE) != 0) {
-		LOG_ERR("offset 0x%lx: not on a page boundary", (long)offset);
+		LOG_ERROR("offset 0x%lx: not on a page boundary", (long)offset);
 		return -EINVAL;
 	}
 
 	if ((size % FLASH_PAGE_SIZE) != 0) {
-		LOG_ERR("size %zu: not multiple of a page size", size);
+		LOG_ERROR("size %zu: not multiple of a page size", size);
 		return -EINVAL;
 	}
 

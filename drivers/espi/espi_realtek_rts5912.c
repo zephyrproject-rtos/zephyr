@@ -165,7 +165,7 @@ static int espi_kbc_setup(const struct device *dev)
 	int rc;
 
 	if (!device_is_ready(espi_config->clk_dev)) {
-		LOG_ERR("KBC clock not ready");
+		LOG_ERROR("KBC clock not ready");
 		return -ENODEV;
 	}
 
@@ -177,7 +177,7 @@ static int espi_kbc_setup(const struct device *dev)
 
 	rc = clock_control_on(espi_config->clk_dev, (clock_control_subsys_t)&sccon);
 	if (rc != 0) {
-		LOG_ERR("KBC clock control on failed");
+		LOG_ERROR("KBC clock control on failed");
 		return rc;
 	}
 
@@ -366,7 +366,7 @@ static int espi_acpi_setup(const struct device *dev)
 	int rc;
 
 	if (!device_is_ready(espi_config->clk_dev)) {
-		LOG_ERR("ACPI clock not ready");
+		LOG_ERROR("ACPI clock not ready");
 		return -ENODEV;
 	}
 
@@ -374,7 +374,7 @@ static int espi_acpi_setup(const struct device *dev)
 	sccon.clk_idx = espi_config->acpi_clk_idx;
 	rc = clock_control_on(espi_config->clk_dev, (clock_control_subsys_t)&sccon);
 	if (rc != 0) {
-		LOG_ERR("ACPI clock control on failed");
+		LOG_ERROR("ACPI clock control on failed");
 		return rc;
 	}
 
@@ -498,7 +498,7 @@ static int espi_promt0_setup(const struct device *dev)
 	int rc;
 
 	if (!device_is_ready(espi_config->clk_dev)) {
-		LOG_ERR("Promt0 clock not ready");
+		LOG_ERROR("Promt0 clock not ready");
 		return -ENODEV;
 	}
 
@@ -507,7 +507,7 @@ static int espi_promt0_setup(const struct device *dev)
 
 	rc = clock_control_on(espi_config->clk_dev, (clock_control_subsys_t)&sccon);
 	if (rc != 0) {
-		LOG_ERR("Promt0 clock control on failed");
+		LOG_ERROR("Promt0 clock control on failed");
 		return rc;
 	}
 
@@ -1685,17 +1685,17 @@ static int espi_rts5912_send_oob(const struct device *dev, struct espi_oob_packe
 	int ret;
 
 	if (!(espi_reg->EOCFG & ESPI_EOCFG_CHRDY)) {
-		LOG_ERR("%s: OOB channel isn't ready", __func__);
+		LOG_ERROR("%s: OOB channel isn't ready", __func__);
 		return -EIO;
 	}
 
 	if (espi_data->oob_tx_busy) {
-		LOG_ERR("%s: OOB channel is busy", __func__);
+		LOG_ERROR("%s: OOB channel is busy", __func__);
 		return -EIO;
 	}
 
 	if (pckt->len > OOB_BUFFER_SIZE) {
-		LOG_ERR("%s: OOB Tx have no insufficient space", __func__);
+		LOG_ERROR("%s: OOB Tx have no insufficient space", __func__);
 		return -EINVAL;
 	}
 
@@ -1727,12 +1727,12 @@ static int espi_rts5912_receive_oob(const struct device *dev, struct espi_oob_pa
 	uint32_t rx_len;
 
 	if (!(espi_reg->EOCFG & ESPI_EOCFG_CHRDY)) {
-		LOG_ERR("%s: OOB channel isn't ready", __func__);
+		LOG_ERROR("%s: OOB channel isn't ready", __func__);
 		return -EIO;
 	}
 
 	if (espi_reg->EOSTS & ESPI_EOSTS_RXPND) {
-		LOG_ERR("OOB Receive Pending");
+		LOG_ERROR("OOB Receive Pending");
 		return -EIO;
 	}
 
@@ -1741,7 +1741,7 @@ static int espi_rts5912_receive_oob(const struct device *dev, struct espi_oob_pa
 	int ret = k_sem_take(&espi_data->oob_rx_lock, K_MSEC(MAX_OOB_TIMEOUT));
 
 	if (ret == -EAGAIN) {
-		LOG_ERR("OOB Rx Timeout");
+		LOG_ERROR("OOB Rx Timeout");
 		return -ETIMEDOUT;
 	}
 #endif
@@ -1750,7 +1750,7 @@ static int espi_rts5912_receive_oob(const struct device *dev, struct espi_oob_pa
 	rx_len = espi_reg->EORXLEN;
 
 	if (rx_len > pckt->len) {
-		LOG_ERR("space rcvd %d vs %d", rx_len, pckt->len);
+		LOG_ERROR("space rcvd %d vs %d", rx_len, pckt->len);
 		return -EIO;
 	}
 
@@ -1838,13 +1838,13 @@ static int espi_oob_ch_setup(const struct device *dev)
 
 	espi_data->oob_tx_ptr = oob_tx_buffer;
 	if (espi_data->oob_tx_ptr == NULL) {
-		LOG_ERR("Failed to allocate OOB Tx buffer");
+		LOG_ERROR("Failed to allocate OOB Tx buffer");
 		return -ENOMEM;
 	}
 
 	espi_data->oob_rx_ptr = oob_rx_buffer;
 	if (espi_data->oob_tx_ptr == NULL) {
-		LOG_ERR("Failed to allocate OOB Rx buffer");
+		LOG_ERROR("Failed to allocate OOB Rx buffer");
 		return -ENOMEM;
 	}
 
@@ -1912,17 +1912,17 @@ static int espi_rts5912_flash_read(const struct device *dev, struct espi_flash_p
 	uint32_t ctrl;
 
 	if (!(espi_reg->EFCONF & ESPI_EFCONF_CHEN)) {
-		LOG_ERR("Flash channel is disabled");
+		LOG_ERROR("Flash channel is disabled");
 		return -EIO;
 	}
 
 	if (pckt->len > MAF_BUFFER_SIZE) {
-		LOG_ERR("Invalid size request");
+		LOG_ERROR("Invalid size request");
 		return -EINVAL;
 	}
 
 	if (espi_reg->EMCTRL & ESPI_EMCTRL_START) {
-		LOG_ERR("Channel still busy");
+		LOG_ERROR("Channel still busy");
 		return -EBUSY;
 	}
 
@@ -1935,7 +1935,7 @@ static int espi_rts5912_flash_read(const struct device *dev, struct espi_flash_p
 	/* Wait until ISR or timeout */
 	ret = k_sem_take(&espi_data->flash_lock, K_MSEC(MAX_FLASH_TIMEOUT));
 	if (ret == -EAGAIN) {
-		LOG_ERR("%s timeout", __func__);
+		LOG_ERROR("%s timeout", __func__);
 		return -ETIMEDOUT;
 	}
 
@@ -1955,17 +1955,17 @@ static int espi_rts5912_flash_write(const struct device *dev, struct espi_flash_
 	uint32_t ctrl;
 
 	if (!(espi_reg->EFCONF & ESPI_EFCONF_CHEN)) {
-		LOG_ERR("Flash channel is disabled");
+		LOG_ERROR("Flash channel is disabled");
 		return -EIO;
 	}
 
 	if (pckt->len > MAF_BUFFER_SIZE) {
-		LOG_ERR("Packet length is too big");
+		LOG_ERROR("Packet length is too big");
 		return -EINVAL;
 	}
 
 	if (espi_reg->EMCTRL & ESPI_EMCTRL_START) {
-		LOG_ERR("Channel still busy");
+		LOG_ERROR("Channel still busy");
 		return -EBUSY;
 	}
 
@@ -1982,7 +1982,7 @@ static int espi_rts5912_flash_write(const struct device *dev, struct espi_flash_
 	/* Wait until ISR or timeout */
 	ret = k_sem_take(&espi_data->flash_lock, K_MSEC(MAX_FLASH_TIMEOUT));
 	if (ret == -EAGAIN) {
-		LOG_ERR("%s timeout", __func__);
+		LOG_ERROR("%s timeout", __func__);
 		return -ETIMEDOUT;
 	}
 
@@ -1998,12 +1998,12 @@ static int espi_rts5912_flash_erase(const struct device *dev, struct espi_flash_
 	uint32_t ctrl;
 
 	if (!(espi_reg->EFCONF & ESPI_EFCONF_CHEN)) {
-		LOG_ERR("Flash channel is disabled");
+		LOG_ERROR("Flash channel is disabled");
 		return -EIO;
 	}
 
 	if (espi_reg->EMCTRL & ESPI_EMCTRL_START) {
-		LOG_ERR("Channel still busy");
+		LOG_ERROR("Channel still busy");
 		return -EBUSY;
 	}
 
@@ -2016,7 +2016,7 @@ static int espi_rts5912_flash_erase(const struct device *dev, struct espi_flash_
 	/* Wait until ISR or timeout */
 	ret = k_sem_take(&espi_data->flash_lock, K_MSEC(MAX_FLASH_TIMEOUT));
 	if (ret == -EAGAIN) {
-		LOG_ERR("%s timeout", __func__);
+		LOG_ERROR("%s timeout", __func__);
 		return -ETIMEDOUT;
 	}
 
@@ -2067,7 +2067,7 @@ static int espi_flash_ch_setup(const struct device *dev)
 
 	espi_data->maf_ptr = flash_channel_buffer;
 	if (espi_data->maf_ptr == NULL) {
-		LOG_ERR("Failed to allocate MAF buffer");
+		LOG_ERROR("Failed to allocate MAF buffer");
 		return -ENOMEM;
 	}
 
@@ -2303,12 +2303,12 @@ static int espi_rts5912_init(const struct device *dev)
 	/* Setup eSPI pins */
 	rc = pinctrl_apply_state(espi_config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (rc < 0) {
-		LOG_ERR("eSPI pinctrl setup failed (%d)", rc);
+		LOG_ERROR("eSPI pinctrl setup failed (%d)", rc);
 		return rc;
 	}
 
 	if (!device_is_ready(espi_config->clk_dev)) {
-		LOG_ERR("eSPI clock not ready");
+		LOG_ERROR("eSPI clock not ready");
 		return -ENODEV;
 	}
 
@@ -2317,7 +2317,7 @@ static int espi_rts5912_init(const struct device *dev)
 	sccon.clk_idx = espi_config->espislv_clk_idx;
 	rc = clock_control_on(espi_config->clk_dev, (clock_control_subsys_t)&sccon);
 	if (rc != 0) {
-		LOG_ERR("eSPI clock control on failed");
+		LOG_ERROR("eSPI clock control on failed");
 		goto exit;
 	}
 
@@ -2328,7 +2328,7 @@ static int espi_rts5912_init(const struct device *dev)
 	/* Setup KBC */
 	rc = espi_kbc_setup(dev);
 	if (rc != 0) {
-		LOG_ERR("eSPI KBC setup failed");
+		LOG_ERROR("eSPI KBC setup failed");
 		goto exit;
 	}
 #endif
@@ -2341,7 +2341,7 @@ static int espi_rts5912_init(const struct device *dev)
 	/* Setup ACPI */
 	rc = espi_acpi_setup(dev);
 	if (rc != 0) {
-		LOG_ERR("eSPI ACPI setup failed");
+		LOG_ERROR("eSPI ACPI setup failed");
 		goto exit;
 	}
 #endif
@@ -2349,7 +2349,7 @@ static int espi_rts5912_init(const struct device *dev)
 #ifdef CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD
 	rc = espi_promt0_setup(dev);
 	if (rc != 0) {
-		LOG_ERR("eSPI Promt0 setup failed");
+		LOG_ERROR("eSPI Promt0 setup failed");
 		goto exit;
 	}
 
@@ -2360,7 +2360,7 @@ static int espi_rts5912_init(const struct device *dev)
 	/* Setup Port80 */
 	rc = espi_peri_ch_port80_setup(dev);
 	if (rc != 0) {
-		LOG_ERR("eSPI Port80 setup failed");
+		LOG_ERROR("eSPI Port80 setup failed");
 		goto exit;
 	}
 #endif
@@ -2379,7 +2379,7 @@ static int espi_rts5912_init(const struct device *dev)
 	/* Setup eSPI OOB channel */
 	rc = espi_oob_ch_setup(dev);
 	if (rc != 0) {
-		LOG_ERR("eSPI OOB channel setup failed");
+		LOG_ERROR("eSPI OOB channel setup failed");
 		goto exit;
 	}
 #endif
@@ -2388,7 +2388,7 @@ static int espi_rts5912_init(const struct device *dev)
 	/* Setup eSPI flash channel */
 	rc = espi_flash_ch_setup(dev);
 	if (rc != 0) {
-		LOG_ERR("eSPI flash channel setup failed");
+		LOG_ERROR("eSPI flash channel setup failed");
 		goto exit;
 	}
 #endif

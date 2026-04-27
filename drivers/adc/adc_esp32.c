@@ -108,35 +108,35 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 	uint8_t channel_id = find_lsb_set(seq->channels) - 1;
 
 	if (seq->buffer_size < 2) {
-		LOG_ERR("Sequence buffer space too low '%d'", seq->buffer_size);
+		LOG_ERROR("Sequence buffer space too low '%d'", seq->buffer_size);
 		return -ENOMEM;
 	}
 
 #ifndef CONFIG_ADC_ESP32_DMA
 	if (seq->channels > BIT(channel_id)) {
-		LOG_ERR("Multi-channel readings not supported");
+		LOG_ERROR("Multi-channel readings not supported");
 		return -ENOTSUP;
 	}
 
 	if (seq->options && seq->options->extra_samplings) {
-		LOG_ERR("Extra samplings not supported");
+		LOG_ERROR("Extra samplings not supported");
 		return -ENOTSUP;
 	}
 
 	if (seq->options && seq->options->interval_us) {
-		LOG_ERR("Interval between samplings not supported");
+		LOG_ERROR("Interval between samplings not supported");
 		return -ENOTSUP;
 	}
 #endif /* CONFIG_ADC_ESP32_DMA */
 
 	if (!VALID_RESOLUTION(seq->resolution)) {
-		LOG_ERR("unsupported resolution (%d)", seq->resolution);
+		LOG_ERROR("unsupported resolution (%d)", seq->resolution);
 		return -ENOTSUP;
 	}
 
 	if (seq->calibrate) {
 		/* TODO: Does this mean actual Vref measurement on selected GPIO ?*/
-		LOG_ERR("calibration is not supported");
+		LOG_ERROR("calibration is not supported");
 		return -ENOTSUP;
 	}
 
@@ -152,17 +152,17 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 	uint32_t acq_raw;
 
 	if (seq->channels > BIT(channel_id)) {
-		LOG_ERR("Multi-channel readings not supported");
+		LOG_ERROR("Multi-channel readings not supported");
 		return -ENOTSUP;
 	}
 
 	if (seq->options && seq->options->extra_samplings) {
-		LOG_ERR("Extra samplings not supported");
+		LOG_ERROR("Extra samplings not supported");
 		return -ENOTSUP;
 	}
 
 	if (seq->options && seq->options->interval_us) {
-		LOG_ERR("Interval between samplings not supported");
+		LOG_ERROR("Interval between samplings not supported");
 		return -ENOTSUP;
 	}
 
@@ -228,27 +228,27 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 	int err;
 
 	if (cfg->channel_id >= conf->channel_count) {
-		LOG_ERR("Unsupported channel id '%d'", cfg->channel_id);
+		LOG_ERROR("Unsupported channel id '%d'", cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Unsupported channel reference '%d'", cfg->reference);
+		LOG_ERROR("Unsupported channel reference '%d'", cfg->reference);
 		return -ENOTSUP;
 	}
 
 	if (cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Unsupported acquisition_time '%d'", cfg->acquisition_time);
+		LOG_ERROR("Unsupported acquisition_time '%d'", cfg->acquisition_time);
 		return -ENOTSUP;
 	}
 
 	if (cfg->differential) {
-		LOG_ERR("Differential channels are not supported");
+		LOG_ERROR("Differential channels are not supported");
 		return -ENOTSUP;
 	}
 
 	if (gain_to_atten(cfg->gain, &data->attenuation[cfg->channel_id])) {
-		LOG_ERR("Unsupported gain value '%d'", cfg->gain);
+		LOG_ERROR("Unsupported gain value '%d'", cfg->gain);
 		return -ENOTSUP;
 	}
 
@@ -321,7 +321,7 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 	int io_num = adc_channel_io_map[conf->unit][cfg->channel_id];
 
 	if (io_num < 0) {
-		LOG_ERR("Channel %u not supported!", cfg->channel_id);
+		LOG_ERROR("Channel %u not supported!", cfg->channel_id);
 		return -ENOTSUP;
 	}
 
@@ -334,7 +334,7 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 	err = gpio_pin_configure_dt(&gpio, GPIO_DISCONNECTED);
 
 	if (err) {
-		LOG_ERR("Error disconnecting io (%d)", io_num);
+		LOG_ERROR("Error disconnecting io (%d)", io_num);
 		return err;
 	}
 
@@ -360,7 +360,7 @@ static int adc_esp32_init(const struct device *dev)
 				     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clock_src_hz);
 
 	if (!device_is_ready(conf->gpio_port)) {
-		LOG_ERR("gpio0 port not ready");
+		LOG_ERROR("gpio0 port not ready");
 		return -ENODEV;
 	}
 

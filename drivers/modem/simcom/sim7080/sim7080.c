@@ -485,14 +485,14 @@ static int modem_set_baudrate(uint32_t baudrate)
 	int ret = snprintk(buf, sizeof(buf), "AT+IPR=%u", baudrate);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to build command");
+		LOG_ERROR("Failed to build command");
 		goto out;
 	}
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, buf, &mdata.sem_response,
 		K_SECONDS(2));
 	if (ret != 0) {
-		LOG_ERR("Failed to set baudrate");
+		LOG_ERROR("Failed to set baudrate");
 	}
 
 out:
@@ -581,7 +581,7 @@ static int modem_boot(bool allow_autobaud)
 		/* Set baudrate to disable autobaud on next startup */
 		ret = modem_set_baudrate(CONFIG_MODEM_SIMCOM_SIM7080_BAUDRATE);
 		if (ret != 0) {
-			LOG_ERR("Failed to disable echo");
+			LOG_ERROR("Failed to disable echo");
 			continue;
 		}
 
@@ -589,18 +589,18 @@ static int modem_boot(bool allow_autobaud)
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "AT+CFUN=1,1",
 			     &mdata.sem_response, K_MSEC(500));
 		if (ret != 0) {
-			LOG_ERR("Reset failed");
+			LOG_ERROR("Reset failed");
 			break;
 		}
 
 		ret = k_sem_take(&mdata.boot_sem, K_SECONDS(5));
 		if (ret != 0) {
-			LOG_ERR("No RDY received!");
+			LOG_ERROR("No RDY received!");
 			break;
 		}
 
 		if ((mdata.status_flags & SIM7080_STATUS_FLAG_POWER_ON) == 0) {
-			LOG_ERR("Modem not powered");
+			LOG_ERROR("Modem not powered");
 			break;
 		}
 
@@ -608,19 +608,19 @@ static int modem_boot(bool allow_autobaud)
 	}
 
 	if (ret != 0) {
-		LOG_ERR("Modem boot failed!");
+		LOG_ERROR("Modem boot failed!");
 		goto out;
 	}
 
 	/* Wait for sim card status */
 	ret = k_sem_take(&mdata.boot_sem, K_SECONDS(5));
 	if (ret != 0) {
-		LOG_ERR("Timeout while waiting for sim status");
+		LOG_ERROR("Timeout while waiting for sim status");
 		goto out;
 	}
 
 	if ((mdata.status_flags & SIM7080_STATUS_FLAG_CPIN_READY) == 0) {
-		LOG_ERR("Sim card not ready!");
+		LOG_ERROR("Sim card not ready!");
 		goto out;
 	}
 
@@ -628,7 +628,7 @@ static int modem_boot(bool allow_autobaud)
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0U, "ATE0",
 				 &mdata.sem_response, K_MSEC(500));
 	if (ret != 0) {
-		LOG_ERR("Disabling echo failed");
+		LOG_ERROR("Disabling echo failed");
 		goto out;
 	}
 
@@ -664,7 +664,7 @@ static int modem_setup(void)
 
 	ret = modem_boot(true);
 	if (ret < 0) {
-		LOG_ERR("Booting modem failed!!");
+		LOG_ERROR("Booting modem failed!!");
 		return ret;
 	}
 
@@ -672,12 +672,12 @@ static int modem_setup(void)
 					   ARRAY_SIZE(setup_cmds), &mdata.sem_response,
 					   MDM_REGISTRATION_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to send init commands!");
+		LOG_ERROR("Failed to send init commands!");
 		return ret;
 	}
 
 	if (strcmp(mdata.mdm_model, "SIMCOM_SIM7080") != 0) {
-		LOG_ERR("Wrong modem model: %s", mdata.mdm_model);
+		LOG_ERROR("Wrong modem model: %s", mdata.mdm_model);
 		ret = -EINVAL;
 		return ret;
 	}
@@ -717,12 +717,12 @@ int mdm_sim7080_power_off(void)
 	/* Wait for power down indication */
 	ret = k_sem_take(&mdata.boot_sem, K_SECONDS(5));
 	if (ret != 0) {
-		LOG_ERR("No power down indication");
+		LOG_ERROR("No power down indication");
 		goto out;
 	}
 
 	if ((mdata.status_flags & SIM7080_STATUS_FLAG_POWER_ON) != 0) {
-		LOG_ERR("Modem not powered down!");
+		LOG_ERROR("Modem not powered down!");
 		ret = -1;
 		goto out;
 	}
@@ -878,7 +878,7 @@ static int modem_init(const struct device *dev)
 
 	ret = gpio_pin_configure_dt(&power_gpio, GPIO_OUTPUT_LOW);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure %s pin", "power");
+		LOG_ERROR("Failed to configure %s pin", "power");
 		goto error;
 	}
 
@@ -886,7 +886,7 @@ static int modem_init(const struct device *dev)
 
 	ret = modem_context_register(&mctx);
 	if (ret < 0) {
-		LOG_ERR("Error registering modem context: %d", ret);
+		LOG_ERROR("Error registering modem context: %d", ret);
 		goto error;
 	}
 

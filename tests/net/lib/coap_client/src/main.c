@@ -201,7 +201,7 @@ static ssize_t z_impl_zsock_sendto_custom_fake_echo(int sock, void *buf, size_t 
 
 	int ret = coap_packet_parse(&response, buf, len, NULL, 0);
 	if (ret < 0) {
-		LOG_ERR("Invalid data received");
+		LOG_ERROR("Invalid data received");
 	}
 
 	ret = coap_find_options(&response, COAP_OPTION_ECHO, &option, 1);
@@ -234,7 +234,7 @@ static ssize_t z_impl_zsock_sendto_custom_fake_echo_next_req(int sock, void *buf
 
 	int ret = coap_packet_parse(&response, buf, len, NULL, 0);
 	if (ret < 0) {
-		LOG_ERR("Invalid data received");
+		LOG_ERROR("Invalid data received");
 	}
 
 	ret = coap_header_get_code(&response);

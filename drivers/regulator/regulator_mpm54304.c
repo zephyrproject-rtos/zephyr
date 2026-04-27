@@ -53,7 +53,7 @@ static int regulator_mpm54304_init(const struct device *dev)
 	uint8_t value;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
-		LOG_ERR("I2C bus %s not ready", config->bus.bus->name);
+		LOG_ERROR("I2C bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 

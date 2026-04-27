@@ -997,7 +997,7 @@ static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len)
 		if (err == -ENOTCONN) {
 			LOG_DBG("Notification error: ENOTCONN (%d)", err);
 		} else {
-			LOG_ERR("Notification error: %d", err);
+			LOG_ERROR("Notification error: %d", err);
 		}
 	}
 }
@@ -1011,7 +1011,7 @@ static void notify_string(struct bt_conn *conn, const struct bt_uuid *uuid, cons
 	err = bt_gatt_notify_uuid(conn, uuid, mcs.attrs, (void *)str,
 				  MIN(strlen(str), max_ntf_size));
 	if (err != 0) {
-		LOG_ERR("Notification error: %d", err);
+		LOG_ERROR("Notification error: %d", err);
 	}
 }
 
@@ -1077,7 +1077,7 @@ static void notify_cb(struct bt_conn *conn, void *data)
 
 	err = bt_conn_get_info(conn, &info);
 	if (err != 0) {
-		LOG_ERR("Failed to get conn info: %d", err);
+		LOG_ERROR("Failed to get conn info: %d", err);
 		return;
 	}
 
@@ -1441,7 +1441,7 @@ static void defer_media_control_point_ntf(struct bt_conn *conn, void *data)
 
 	err = bt_conn_get_info(conn, &info);
 	if (err != 0) {
-		LOG_ERR("Failed to get conn info: %d", err);
+		LOG_ERROR("Failed to get conn info: %d", err);
 		return;
 	}
 
@@ -1495,7 +1495,7 @@ static void defer_search_control_point_ntf(struct bt_conn *conn, void *data)
 
 	err = bt_conn_get_info(conn, &info);
 	if (err != 0) {
-		LOG_ERR("Failed to get conn info: %d", err);
+		LOG_ERROR("Failed to get conn info: %d", err);
 		return;
 	}
 
@@ -1560,7 +1560,7 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 
 	ots = bt_ots_free_instance_get();
 	if (!ots) {
-		LOG_ERR("Failed to retrieve OTS instance\n");
+		LOG_ERROR("Failed to retrieve OTS instance\n");
 		return -ENOMEM;
 	}
 
@@ -1573,7 +1573,7 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 	/* Initialize OTS instance. */
 	err = bt_ots_init(ots, &ots_init);
 	if (err) {
-		LOG_ERR("Failed to init OTS (err:%d)\n", err);
+		LOG_ERROR("Failed to init OTS (err:%d)\n", err);
 		return err;
 	}
 
@@ -1588,7 +1588,7 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 	err = bt_gatt_service_register(&mcs);
 
 	if (err) {
-		LOG_ERR("Could not register the MCS service");
+		LOG_ERROR("Could not register the MCS service");
 #ifdef CONFIG_BT_OTS
 		/* TODO: How does one un-register the OTS? */
 #endif /* CONFIG_BT_OTS */

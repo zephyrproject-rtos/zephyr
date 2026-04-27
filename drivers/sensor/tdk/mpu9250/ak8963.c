@@ -107,7 +107,7 @@ static int ak8963_execute_rw(const struct device *dev, uint8_t reg, bool write)
 				    MPU9250_REG_I2C_SLV4_ADDR,
 				    AK8963_I2C_ADDR | mode_bit);
 	if (ret < 0) {
-		LOG_ERR("Failed to write i2c target slave address.");
+		LOG_ERROR("Failed to write i2c target slave address.");
 		return ret;
 	}
 
@@ -116,7 +116,7 @@ static int ak8963_execute_rw(const struct device *dev, uint8_t reg, bool write)
 				    MPU9250_REG_I2C_SLV4_REG,
 				    reg);
 	if (ret < 0) {
-		LOG_ERR("Failed to write i2c target slave register.");
+		LOG_ERROR("Failed to write i2c target slave register.");
 		return ret;
 	}
 
@@ -125,7 +125,7 @@ static int ak8963_execute_rw(const struct device *dev, uint8_t reg, bool write)
 				    MPU9250_REG_I2C_SLV4_CTRL,
 				    MPU9250_REG_I2C_SLV4_CTRL_VAL);
 	if (ret < 0) {
-		LOG_ERR("Failed to initiate i2c slave transfer.");
+		LOG_ERROR("Failed to initiate i2c slave transfer.");
 		return ret;
 	}
 
@@ -134,7 +134,7 @@ static int ak8963_execute_rw(const struct device *dev, uint8_t reg, bool write)
 		ret = i2c_reg_read_byte_dt(&cfg->i2c,
 					   MPU9250_I2C_MST_STS, &status);
 		if (ret < 0) {
-			LOG_ERR("Waiting for slave failed.");
+			LOG_ERROR("Waiting for slave failed.");
 			return ret;
 		}
 	} while (!(status & MPU9250_I2C_MST_STS_SLV4_DONE));
@@ -150,7 +150,7 @@ static int ak8963_read_reg(const struct device *dev, uint8_t reg, uint8_t *data)
 	/* Execute transfer */
 	ret = ak8963_execute_rw(dev, reg, false);
 	if (ret < 0) {
-		LOG_ERR("Failed to prepare transfer.");
+		LOG_ERROR("Failed to prepare transfer.");
 		return ret;
 	}
 
@@ -158,7 +158,7 @@ static int ak8963_read_reg(const struct device *dev, uint8_t reg, uint8_t *data)
 	ret = i2c_reg_read_byte_dt(&cfg->i2c,
 				   MPU9250_REG_I2C_SLV4_DI, data);
 	if (ret < 0) {
-		LOG_ERR("Failed to read data from slave.");
+		LOG_ERROR("Failed to read data from slave.");
 		return ret;
 	}
 
@@ -174,14 +174,14 @@ static int ak8963_write_reg(const struct device *dev, uint8_t reg, uint8_t data)
 	ret = i2c_reg_write_byte_dt(&cfg->i2c,
 				    MPU9250_REG_I2C_SLV4_DO, data);
 	if (ret < 0) {
-		LOG_ERR("Failed to write data to slave.");
+		LOG_ERROR("Failed to write data to slave.");
 		return ret;
 	}
 
 	/* Execute transfer */
 	ret = ak8963_execute_rw(dev, reg, true);
 	if (ret < 0) {
-		LOG_ERR("Failed to transfer write to slave.");
+		LOG_ERROR("Failed to transfer write to slave.");
 		return ret;
 	}
 
@@ -195,7 +195,7 @@ static int ak8963_set_mode(const struct device *dev, uint8_t mode)
 
 	ret = ak8963_write_reg(dev, AK8963_REG_CNTL1, mode);
 	if (ret < 0) {
-		LOG_ERR("Failed to set AK8963 mode.");
+		LOG_ERROR("Failed to set AK8963 mode.");
 		return ret;
 	}
 
@@ -231,27 +231,27 @@ static int ak8963_fetch_adj(const struct device *dev)
 	/* Change to FUSE access mode to access adjustment registers */
 	ret = ak8963_set_mode(dev, AK8963_REG_CNTL1_FUSE_ROM_VAL);
 	if (ret < 0) {
-		LOG_ERR("Failed to set chip in fuse access mode.");
+		LOG_ERROR("Failed to set chip in fuse access mode.");
 		return ret;
 	}
 
 	ret = ak8963_read_reg(dev, AK8963_REG_ADJ_DATA_X, &buf);
 	if (ret < 0) {
-		LOG_ERR("Failed to read adjustment data.");
+		LOG_ERROR("Failed to read adjustment data.");
 		return ret;
 	}
 	drv_data->magn_scale_x = ak8963_calc_adj(buf);
 
 	ret = ak8963_read_reg(dev, AK8963_REG_ADJ_DATA_Y, &buf);
 	if (ret < 0) {
-		LOG_ERR("Failed to read adjustment data.");
+		LOG_ERROR("Failed to read adjustment data.");
 		return ret;
 	}
 	drv_data->magn_scale_y = ak8963_calc_adj(buf);
 
 	ret = ak8963_read_reg(dev, AK8963_REG_ADJ_DATA_Z, &buf);
 	if (ret < 0) {
-		LOG_ERR("Failed to read adjustment data.");
+		LOG_ERROR("Failed to read adjustment data.");
 		return ret;
 	}
 	drv_data->magn_scale_z = ak8963_calc_adj(buf);
@@ -259,7 +259,7 @@ static int ak8963_fetch_adj(const struct device *dev)
 	/* Change back to the powerdown mode */
 	ret = ak8963_set_mode(dev, AK8963_REG_CNTL1_POWERDOWN_VAL);
 	if (ret < 0) {
-		LOG_ERR("Failed to set chip in power down mode.");
+		LOG_ERROR("Failed to set chip in power down mode.");
 		return ret;
 	}
 
@@ -277,7 +277,7 @@ static int ak8963_reset(const struct device *dev)
 	ret = ak8963_write_reg(dev, AK8963_REG_CNTL2,
 			       AK8963_REG_CNTL2_RESET_VAL);
 	if (ret < 0) {
-		LOG_ERR("Failed to reset AK8963.");
+		LOG_ERROR("Failed to reset AK8963.");
 		return ret;
 	}
 
@@ -297,7 +297,7 @@ static int ak8963_init_master(const struct device *dev)
 				    MPU9250_REG_USER_CTRL,
 				    MPU9250_REG_USER_CTRL_I2C_MASTERMODE_VAL);
 	if (ret < 0) {
-		LOG_ERR("Failed to set MPU9250 master i2c mode.");
+		LOG_ERROR("Failed to set MPU9250 master i2c mode.");
 		return ret;
 	}
 
@@ -306,7 +306,7 @@ static int ak8963_init_master(const struct device *dev)
 				    MPU9250_REG_I2C_MST_CTRL,
 				    MPU9250_REG_I2C_MST_CTRL_WAIT_MAG_400KHZ_VAL);
 	if (ret < 0) {
-		LOG_ERR("Failed to set MPU9250 master i2c speed.");
+		LOG_ERROR("Failed to set MPU9250 master i2c speed.");
 		return ret;
 	}
 
@@ -323,7 +323,7 @@ static int ak8963_init_readout(const struct device *dev)
 				    MPU9250_REG_I2C_SLV0_ADDR,
 				    AK8963_I2C_ADDR | I2C_READ_FLAG);
 	if (ret < 0) {
-		LOG_ERR("Failed to set AK8963 slave address.");
+		LOG_ERROR("Failed to set AK8963 slave address.");
 		return ret;
 	}
 
@@ -331,7 +331,7 @@ static int ak8963_init_readout(const struct device *dev)
 	ret = i2c_reg_write_byte_dt(&cfg->i2c,
 				    MPU9250_REG_I2C_SLV0_REG, AK8963_REG_DATA);
 	if (ret < 0) {
-		LOG_ERR("Failed to set AK8963 register address.");
+		LOG_ERROR("Failed to set AK8963 register address.");
 		return ret;
 	}
 
@@ -340,7 +340,7 @@ static int ak8963_init_readout(const struct device *dev)
 				    MPU9250_REG_I2C_SLV0_CTRL,
 				    MPU9250_REG_READOUT_CTRL_VAL);
 	if (ret < 0) {
-		LOG_ERR("Failed to init AK8963 value readout.");
+		LOG_ERROR("Failed to init AK8963 value readout.");
 		return ret;
 	}
 
@@ -354,46 +354,46 @@ int ak8963_init(const struct device *dev)
 
 	ret = ak8963_init_master(dev);
 	if (ret < 0) {
-		LOG_ERR("Initializing MPU9250 master mode failed.");
+		LOG_ERROR("Initializing MPU9250 master mode failed.");
 		return ret;
 	}
 
 	ret = ak8963_reset(dev);
 	if (ret < 0) {
-		LOG_ERR("Resetting AK8963 failed.");
+		LOG_ERROR("Resetting AK8963 failed.");
 		return ret;
 	}
 
 	/* First check that the chip says hello */
 	ret = ak8963_read_reg(dev, AK8963_REG_ID, &buf);
 	if (ret < 0) {
-		LOG_ERR("Failed to read AK8963 chip id.");
+		LOG_ERROR("Failed to read AK8963 chip id.");
 		return ret;
 	}
 
 	if (buf != AK8963_REG_ID_VAL) {
-		LOG_ERR("Invalid AK8963 chip id (0x%X).", buf);
+		LOG_ERROR("Invalid AK8963 chip id (0x%X).", buf);
 		return -ENOTSUP;
 	}
 
 	/* Fetch calibration data */
 	ret = ak8963_fetch_adj(dev);
 	if (ret < 0) {
-		LOG_ERR("Calibrating AK8963 failed.");
+		LOG_ERROR("Calibrating AK8963 failed.");
 		return ret;
 	}
 
 	/* Set AK sample rate and resolution */
 	ret = ak8963_set_mode(dev, AK8963_REG_CNTL1_16BIT_100HZ_VAL);
 	if (ret < 0) {
-		LOG_ERR("Failed set sample rate for AK8963.");
+		LOG_ERROR("Failed set sample rate for AK8963.");
 		return ret;
 	}
 
 	/* Init constant readouts at sample rate */
 	ret = ak8963_init_readout(dev);
 	if (ret < 0) {
-		LOG_ERR("Initializing AK8963 readout failed.");
+		LOG_ERROR("Initializing AK8963 readout failed.");
 		return ret;
 	}
 

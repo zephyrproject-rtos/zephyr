@@ -193,7 +193,7 @@ static int ifx_sar_determine_routing(uint8_t pin, enum ifx_sar_pin_routing *rout
 		return 0;
 	}
 
-	LOG_ERR("Invalid pin number %u for routing determination", pin);
+	LOG_ERROR("Invalid pin number %u for routing determination", pin);
 	return -EINVAL;
 }
 
@@ -229,7 +229,7 @@ static int ifx_sar_calculate_acq_ticks(const struct device *dev,
 			cfg->clk_dst, &data->clock);
 
 		if (freq_hz == 0) {
-			LOG_ERR("Failed to get SAR ADC clock frequency");
+			LOG_ERROR("Failed to get SAR ADC clock frequency");
 			return -EIO;
 		}
 
@@ -285,12 +285,12 @@ static int ifx_sar_channel_setup(const struct device *dev,
 
 	/* Channel validation */
 	if (ch >= CY_SAR_SEQ_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel ID: %u", ch);
+		LOG_ERROR("Invalid channel ID: %u", ch);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Invalid gain: %d", channel_cfg->gain);
+		LOG_ERROR("Invalid gain: %d", channel_cfg->gain);
 		return -EINVAL;
 	}
 
@@ -315,13 +315,14 @@ static int ifx_sar_channel_setup(const struct device *dev,
 		expected_vref = IFX_SAR_VREF_EXT;
 		break;
 	default:
-		LOG_ERR("Channel %u: Unsupported reference: %d", ch, channel_cfg->reference);
+		LOG_ERROR("Channel %u: Unsupported reference: %d", ch, channel_cfg->reference);
 		return -EINVAL;
 	}
 
 	if (expected_vref != cfg->vref_src) {
-		LOG_ERR("Channel %u: Reference mismatch - channel requests %d but ADC block "
-			"is configured for vref-src %d", ch, channel_cfg->reference, cfg->vref_src);
+		LOG_ERROR("Channel %u: Reference mismatch - channel requests %d but ADC block "
+			  "is configured for vref-src %d",
+			  ch, channel_cfg->reference, cfg->vref_src);
 		return -EINVAL;
 	}
 
@@ -339,8 +340,8 @@ static int ifx_sar_channel_setup(const struct device *dev,
 	if (data->channel_cfg[ch].vplus_routing == IFX_SAR_ROUTE_SARMUX) {
 
 		if (channel_cfg->input_positive > IFX_SAR_SARMUX_PIN_MAX) {
-			LOG_ERR("Channel %u: SARMUX pin %u > max %u", ch,
-				channel_cfg->input_positive, IFX_SAR_SARMUX_PIN_MAX);
+			LOG_ERROR("Channel %u: SARMUX pin %u > max %u", ch,
+				  channel_cfg->input_positive, IFX_SAR_SARMUX_PIN_MAX);
 			return -EINVAL;
 		}
 
@@ -351,8 +352,8 @@ static int ifx_sar_channel_setup(const struct device *dev,
 		GPIO_PRT_Type *port_base = Cy_GPIO_PortToAddr(port);
 
 		if (!port_base) {
-			LOG_ERR("Channel %u: Cannot get GPIO port for pin %u", ch,
-				channel_cfg->input_positive);
+			LOG_ERROR("Channel %u: Cannot get GPIO port for pin %u", ch,
+				  channel_cfg->input_positive);
 			return -EINVAL;
 		}
 
@@ -393,8 +394,8 @@ static int ifx_sar_channel_setup(const struct device *dev,
 			sw_mask |= CY_SAR_MUX_FW_P7_VPLUS;
 			break;
 		default:
-			LOG_ERR("Channel %u: Invalid SARMUX pin %u in switch (global pin %u)", ch,
-				gpio_pin, channel_cfg->input_positive);
+			LOG_ERROR("Channel %u: Invalid SARMUX pin %u in switch (global pin %u)", ch,
+				  gpio_pin, channel_cfg->input_positive);
 			return -EINVAL;
 		}
 
@@ -425,8 +426,8 @@ static int ifx_sar_channel_setup(const struct device *dev,
 		/* Validate CTB and OpAmp indices */
 		if (ctb_idx < IFX_SAR_SARBUS_CTB_MIN || ctb_idx > IFX_SAR_SARBUS_CTB_MAX ||
 		    oa_idx < IFX_SAR_SARBUS_OA_MIN || oa_idx > IFX_SAR_SARBUS_OA_MAX) {
-			LOG_ERR("Channel %u: Invalid CTB/OpAmp address 0x%02x", ch,
-				channel_cfg->input_positive);
+			LOG_ERROR("Channel %u: Invalid CTB/OpAmp address 0x%02x", ch,
+				  channel_cfg->input_positive);
 			return -EINVAL;
 		}
 
@@ -437,21 +438,22 @@ static int ifx_sar_channel_setup(const struct device *dev,
 		 * SARBUS1: Reserved for negative terminal in differential mode
 		 */
 		if (oa_idx == IFX_SAR_SARBUS1_OA_IDX) {
-			LOG_ERR("Channel %u: SARBUS1 can only connect to negative terminal in "
-				"differential mode", ch);
+			LOG_ERROR("Channel %u: SARBUS1 can only connect to negative terminal in "
+				  "differential mode",
+				  ch);
 			return -EINVAL;
 		}
 
 		if (oa_idx != IFX_SAR_SARBUS0_OA_IDX) {
-			LOG_ERR("Channel %u: OpAmp index %u not supported", ch, oa_idx);
+			LOG_ERROR("Channel %u: OpAmp index %u not supported", ch, oa_idx);
 			return -EINVAL;
 		}
 
 		sw_mask |= CY_SAR_MUX_FW_SARBUS0_VPLUS;
 
 	} else {
-		LOG_ERR("Channel %u: Unknown routing type for positive input pin %u", ch,
-			channel_cfg->input_positive);
+		LOG_ERROR("Channel %u: Unknown routing type for positive input pin %u", ch,
+			  channel_cfg->input_positive);
 		return -EINVAL;
 	}
 
@@ -466,17 +468,16 @@ static int ifx_sar_channel_setup(const struct device *dev,
 		}
 
 		/* Positive and negative inputs must use the same routing type */
-		if (data->channel_cfg[ch].vplus_routing !=
-			data->channel_cfg[ch].vminus_routing) {
-			LOG_ERR("Channel %u: positive and negative routing mismatch", ch);
+		if (data->channel_cfg[ch].vplus_routing != data->channel_cfg[ch].vminus_routing) {
+			LOG_ERROR("Channel %u: positive and negative routing mismatch", ch);
 			return -EINVAL;
 		}
 
 		if (data->channel_cfg[ch].vminus_routing == IFX_SAR_ROUTE_SARMUX) {
 
 			if (channel_cfg->input_negative > IFX_SAR_SARMUX_PIN_MAX) {
-				LOG_ERR("Channel %u: SARMUX negative input pin %u > max %u", ch,
-					channel_cfg->input_negative, IFX_SAR_SARMUX_PIN_MAX);
+				LOG_ERROR("Channel %u: SARMUX negative input pin %u > max %u", ch,
+					  channel_cfg->input_negative, IFX_SAR_SARMUX_PIN_MAX);
 				return -EINVAL;
 			}
 
@@ -487,9 +488,9 @@ static int ifx_sar_channel_setup(const struct device *dev,
 			GPIO_PRT_Type *port_base = Cy_GPIO_PortToAddr(port);
 
 			if (!port_base) {
-				LOG_ERR("Channel %u: Cannot get GPIO port for negative input pin "
-					"%u",
-					ch, channel_cfg->input_negative);
+				LOG_ERROR("Channel %u: Cannot get GPIO port for negative input pin "
+					  "%u",
+					  ch, channel_cfg->input_negative);
 				return -EINVAL;
 			}
 
@@ -521,10 +522,10 @@ static int ifx_sar_channel_setup(const struct device *dev,
 				sw_mask |= CY_SAR_MUX_FW_P7_VMINUS;
 				break;
 			default:
-				LOG_ERR("Channel %u: Invalid SARMUX negative input pin %u in "
-					"switch (global "
-					"pin %u)",
-					ch, gpio_pin, channel_cfg->input_negative);
+				LOG_ERROR("Channel %u: Invalid SARMUX negative input pin %u in "
+					  "switch (global "
+					  "pin %u)",
+					  ch, gpio_pin, channel_cfg->input_negative);
 				return -EINVAL;
 			}
 
@@ -536,11 +537,10 @@ static int ifx_sar_channel_setup(const struct device *dev,
 			uint8_t oa_idx = channel_cfg->input_negative & IFX_SAR_SARBUS_OA_MASK;
 
 			/* Validate CTB and OpAmp indices */
-			if (ctb_idx < IFX_SAR_SARBUS_CTB_MIN ||
-				ctb_idx > IFX_SAR_SARBUS_CTB_MAX ||
-				oa_idx < IFX_SAR_SARBUS_OA_MIN ||
-				oa_idx > IFX_SAR_SARBUS_OA_MAX) {
-				LOG_ERR("Channel %u: Invalid CTB/OpAmp address for negative input "
+			if (ctb_idx < IFX_SAR_SARBUS_CTB_MIN || ctb_idx > IFX_SAR_SARBUS_CTB_MAX ||
+			    oa_idx < IFX_SAR_SARBUS_OA_MIN || oa_idx > IFX_SAR_SARBUS_OA_MAX) {
+				LOG_ERROR(
+					"Channel %u: Invalid CTB/OpAmp address for negative input "
 					"0x%02x",
 					ch, channel_cfg->input_negative);
 				return -EINVAL;
@@ -552,15 +552,16 @@ static int ifx_sar_channel_setup(const struct device *dev,
 			 * in differential mode. SARBUS0 is reserved for positive terminal.
 			 */
 			if (oa_idx == IFX_SAR_SARBUS0_OA_IDX) {
-				LOG_ERR("Channel %u: SARBUS0 can only connect to positive terminal",
+				LOG_ERROR(
+					"Channel %u: SARBUS0 can only connect to positive terminal",
 					ch);
 				return -EINVAL;
 			}
 
 			if (oa_idx != IFX_SAR_SARBUS1_OA_IDX) {
-				LOG_ERR("Channel %u: OpAmp index %u not supported for negative "
-					"input",
-					ch, oa_idx);
+				LOG_ERROR("Channel %u: OpAmp index %u not supported for negative "
+					  "input",
+					  ch, oa_idx);
 				return -EINVAL;
 			}
 
@@ -570,7 +571,7 @@ static int ifx_sar_channel_setup(const struct device *dev,
 
 	/* Check if any switches were configured */
 	if (sw_mask == 0) {
-		LOG_ERR("Channel %u: No SAR switches configured", ch);
+		LOG_ERROR("Channel %u: No SAR switches configured", ch);
 		return -EINVAL;
 	}
 
@@ -588,7 +589,7 @@ static int ifx_sar_channel_setup(const struct device *dev,
 	uint8_t sample_time_idx = ifx_sar_find_sample_time_idx(data, ticks);
 
 	if (sample_time_idx == IFX_SAR_INVALID_SAMPLE_TIME) {
-		LOG_ERR("Channel %u: No available sample time slots", ch);
+		LOG_ERROR("Channel %u: No available sample time slots", ch);
 		return -EINVAL;
 	}
 
@@ -620,8 +621,8 @@ static int validate_buffer_size(const struct adc_sequence *sequence)
 	}
 
 	if (sequence->buffer_size < required_buffer_size) {
-		LOG_ERR("Buffer too small: need %zu, got %zu", required_buffer_size,
-			sequence->buffer_size);
+		LOG_ERROR("Buffer too small: need %zu, got %zu", required_buffer_size,
+			  sequence->buffer_size);
 		return -ENOMEM;
 	}
 
@@ -698,7 +699,7 @@ static void ifx_sar_configure_reference(struct ifx_sar_data *data,
 		data->pdl_sar_cfg.vrefMvValue = vref_mv;
 		break;
 	default:
-		LOG_ERR("Unsupported VREF source, using Internal");
+		LOG_ERROR("Unsupported VREF source, using Internal");
 		data->pdl_sar_cfg.vrefSel = CY_SAR_VREF_SEL_BGR;
 		data->pdl_sar_cfg.vrefMvValue = IFX_SAR_REF_INTERNAL_MV;
 		break;
@@ -758,7 +759,7 @@ static int ifx_sar_configure_pdl(struct ifx_sar_data *data,
 
 		if (ch_cfg->vplus_routing == IFX_SAR_ROUTE_SARMUX) {
 			if (ch_cfg->vplus > IFX_SAR_SARMUX_PIN_MAX) {
-				LOG_ERR("Invalid SARMUX pin number: %d", ch_cfg->vplus);
+				LOG_ERROR("Invalid SARMUX pin number: %d", ch_cfg->vplus);
 				return -EINVAL;
 			}
 			vplus_addr = (cy_en_sar_chan_config_port_pin_addr_t)(CY_SAR_ADDR_SARMUX_0 +
@@ -767,8 +768,8 @@ static int ifx_sar_configure_pdl(struct ifx_sar_data *data,
 			/* SARBUS - use CTB OpAmp address directly */
 			vplus_addr = (cy_en_sar_chan_config_port_pin_addr_t)ch_cfg->vplus;
 		} else {
-			LOG_ERR("Unsupported positive input routing type: %d",
-				ch_cfg->vplus_routing);
+			LOG_ERROR("Unsupported positive input routing type: %d",
+				  ch_cfg->vplus_routing);
 			return -EINVAL;
 		}
 
@@ -780,8 +781,8 @@ static int ifx_sar_configure_pdl(struct ifx_sar_data *data,
 		if (ch_cfg->differential) {
 			if (ch_cfg->vminus_routing == IFX_SAR_ROUTE_SARMUX) {
 				if (ch_cfg->vminus > IFX_SAR_SARMUX_PIN_MAX) {
-					LOG_ERR("Invalid SARMUX negative input pin number: %d",
-						ch_cfg->vminus);
+					LOG_ERROR("Invalid SARMUX negative input pin number: %d",
+						  ch_cfg->vminus);
 					return -EINVAL;
 				}
 				uint32_t temp_addr = CY_SAR_NEG_ADDR_SARMUX_0 + ch_cfg->vminus;
@@ -789,8 +790,8 @@ static int ifx_sar_configure_pdl(struct ifx_sar_data *data,
 				vminus_addr = (cy_en_sar_chan_config_neg_port_pin_addr_t)temp_addr;
 				vminus_addr_en = true;
 			} else {
-				LOG_ERR("Unsupported negative input routing type: %d",
-					ch_cfg->vminus_routing);
+				LOG_ERROR("Unsupported negative input routing type: %d",
+					  ch_cfg->vminus_routing);
 				return -EINVAL;
 			}
 		}
@@ -917,28 +918,28 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 	cy_en_sar_status_t sar_status;
 
 	if (sequence->channels == 0) {
-		LOG_ERR("No channels selected");
+		LOG_ERROR("No channels selected");
 		return -EINVAL;
 	}
 
 	uint32_t unconfigured = sequence->channels & ~data->channels_mask;
 
 	if (unconfigured) {
-		LOG_ERR("Channel(s) 0x%08x not configured", unconfigured);
+		LOG_ERROR("Channel(s) 0x%08x not configured", unconfigured);
 		return -EINVAL;
 	}
 
 	/* Validate oversampling */
 	if (sequence->oversampling > 8) {
-		LOG_ERR("Invalid oversampling: %d", sequence->oversampling);
+		LOG_ERROR("Invalid oversampling: %d", sequence->oversampling);
 		return -EINVAL;
 	}
 
 	/* Validate ADC resolution setting */
 	if (sequence->resolution != IFX_SAR_RESOLUTION_8BIT &&
-		sequence->resolution != IFX_SAR_RESOLUTION_10BIT &&
-		sequence->resolution != IFX_SAR_RESOLUTION_12BIT) {
-		LOG_ERR("Invalid resolution: %d", sequence->resolution);
+	    sequence->resolution != IFX_SAR_RESOLUTION_10BIT &&
+	    sequence->resolution != IFX_SAR_RESOLUTION_12BIT) {
+		LOG_ERROR("Invalid resolution: %d", sequence->resolution);
 		return -EINVAL;
 	}
 
@@ -966,7 +967,7 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 	Cy_SAR_Disable(cfg->base);
 	sar_status = Cy_SAR_Init(cfg->base, &data->pdl_sar_cfg);
 	if (sar_status != CY_SAR_SUCCESS) {
-		LOG_ERR("Failed to initialize SAR ADC: %d", sar_status);
+		LOG_ERROR("Failed to initialize SAR ADC: %d", sar_status);
 		return -EIO;
 	}
 
@@ -1081,7 +1082,7 @@ static int ifx_sar_init(const struct device *dev)
 	/* Assign peripheral clock divider to ADC */
 	clk_status = ifx_cat1_utils_peri_pclk_assign_divider(cfg->clk_dst, &data->clock);
 	if (clk_status != CY_SYSCLK_SUCCESS) {
-		LOG_ERR("Failed to assign clock divider: %d", clk_status);
+		LOG_ERROR("Failed to assign clock divider: %d", clk_status);
 		return -EIO;
 	}
 
@@ -1091,7 +1092,7 @@ static int ifx_sar_init(const struct device *dev)
 	/* Initialize SAR ADC */
 	sar_status = Cy_SAR_Init(cfg->base, &data->pdl_sar_cfg);
 	if (sar_status != CY_SAR_SUCCESS) {
-		LOG_ERR("Failed to initialize SAR ADC: %d", sar_status);
+		LOG_ERROR("Failed to initialize SAR ADC: %d", sar_status);
 		return -EIO;
 	}
 

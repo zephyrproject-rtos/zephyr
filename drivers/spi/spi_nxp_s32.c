@@ -63,7 +63,7 @@ static int spi_nxp_s32_transfer_next_packet(const struct device *dev)
 						data->ctx.rx_buf, data->transfer_len, data_cb);
 
 	if (status) {
-		LOG_ERR("Transfer could not start");
+		LOG_ERROR("Transfer could not start");
 		return -EIO;
 	}
 
@@ -283,7 +283,7 @@ static int spi_nxp_s32_configure(const struct device *dev,
 
 	err = clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_rate);
 	if (err) {
-		LOG_ERR("Failed to get clock frequency");
+		LOG_ERROR("Failed to get clock frequency");
 		return err;
 	}
 
@@ -298,44 +298,44 @@ static int spi_nxp_s32_configure(const struct device *dev,
 	cs_active_high	= !!(spi_cfg->operation & SPI_CS_ACTIVE_HIGH);
 
 	if (slave_mode == (!!(config->spi_hw_cfg->Mcr & SPI_MCR_MSTR_MASK))) {
-		LOG_ERR("SPI mode (master/slave) must be same as configured in DT");
+		LOG_ERROR("SPI mode (master/slave) must be same as configured in DT");
 		return -ENOTSUP;
 	}
 
 	if (slave_mode && !IS_ENABLED(CONFIG_SPI_SLAVE)) {
-		LOG_ERR("Kconfig for enable SPI in slave mode is not enabled");
+		LOG_ERROR("Kconfig for enable SPI in slave mode is not enabled");
 		return -ENOTSUP;
 	}
 
 	if (slave_mode && lsb) {
-		LOG_ERR("SPI does not support to shifting out with LSB in slave mode");
+		LOG_ERROR("SPI does not support to shifting out with LSB in slave mode");
 		return -ENOTSUP;
 	}
 
 	if (spi_cfg->slave >= config->num_cs) {
-		LOG_ERR("Slave %d excess the allowed maximum value (%d)",
-			spi_cfg->slave, config->num_cs - 1);
+		LOG_ERROR("Slave %d excess the allowed maximum value (%d)", spi_cfg->slave,
+			  config->num_cs - 1);
 		return -ENOTSUP;
 	}
 
 	if (frame_size > 32U) {
-		LOG_ERR("Unsupported frame size %d bits", frame_size);
+		LOG_ERROR("Unsupported frame size %d bits", frame_size);
 		return -ENOTSUP;
 	}
 
 	if ((spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only single line mode is supported");
+		LOG_ERROR("Only single line mode is supported");
 		return -ENOTSUP;
 	}
 
 	if (spi_cfg->operation & SPI_MODE_LOOP) {
-		LOG_ERR("Loopback mode is not supported");
+		LOG_ERROR("Loopback mode is not supported");
 		return -ENOTSUP;
 	}
 
 	if (cs_active_high && !spi_cs_is_gpio(spi_cfg)) {
-		LOG_ERR("For CS has active state is high, a GPIO pin must be used to"
-			" control CS line instead");
+		LOG_ERROR("For CS has active state is high, a GPIO pin must be used to"
+			  " control CS line instead");
 		return -ENOTSUP;
 	}
 
@@ -344,7 +344,7 @@ static int spi_nxp_s32_configure(const struct device *dev,
 		if ((spi_cfg->frequency < SPI_NXP_S32_MIN_FREQ) ||
 			(spi_cfg->frequency > SPI_NXP_S32_MAX_FREQ)) {
 
-			LOG_ERR("The frequency is out of range");
+			LOG_ERROR("The frequency is out of range");
 			return -ENOTSUP;
 		}
 
@@ -413,7 +413,7 @@ static int transceive(const struct device *dev,
 
 	ret = spi_nxp_s32_configure(dev, spi_cfg);
 	if (ret) {
-		LOG_ERR("An error occurred in the SPI configuration");
+		LOG_ERROR("An error occurred in the SPI configuration");
 		spi_context_release(context, ret);
 		return ret;
 	}
@@ -501,19 +501,19 @@ static int spi_nxp_s32_init(const struct device *dev)
 	int ret = 0;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("Clock control device not ready");
+		LOG_ERROR("Clock control device not ready");
 		return -ENODEV;
 	}
 
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret) {
-		LOG_ERR("Failed to enable clock");
+		LOG_ERROR("Failed to enable clock");
 		return ret;
 	}
 
 	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_rate);
 	if (ret) {
-		LOG_ERR("Failed to get clock frequency");
+		LOG_ERROR("Failed to get clock frequency");
 		return ret;
 	}
 
@@ -588,7 +588,7 @@ static void spi_nxp_s32_transfer_callback(const struct device *dev, Spi_Ip_Event
 			ret = spi_nxp_s32_transfer_next_packet(dev);
 		}
 	} else {
-		LOG_ERR("Failing in transfer_callback");
+		LOG_ERROR("Failing in transfer_callback");
 		ret = -EIO;
 	}
 

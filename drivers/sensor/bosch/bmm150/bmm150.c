@@ -314,7 +314,7 @@ static int bmm150_sample_fetch(const struct device *dev,
 			chan == SENSOR_CHAN_MAGN_XYZ);
 
 	if (bmm150_reg_read(dev, BMM150_REG_X_L, (uint8_t *)values, sizeof(values)) < 0) {
-		LOG_ERR("failed to read sample");
+		LOG_ERROR("failed to read sample");
 		return -EIO;
 	}
 
@@ -467,7 +467,7 @@ static int bmm150_attr_set(const struct device *dev,
 		}
 
 		if (data->max_odr < val->val1) {
-			LOG_ERR("not supported with current oversampling");
+			LOG_ERROR("not supported with current oversampling");
 			return -ENOTSUP;
 		}
 
@@ -508,7 +508,7 @@ static int bmm150_full_por(const struct device *dev)
 	/* Ensure we are not in suspend mode so soft reset is not ignored */
 	ret = bmm150_power_control(dev, 1);
 	if (ret != 0) {
-		LOG_ERR("failed to ensure not in suspend mode: %d", ret);
+		LOG_ERROR("failed to ensure not in suspend mode: %d", ret);
 		return ret;
 	}
 
@@ -519,7 +519,7 @@ static int bmm150_full_por(const struct device *dev)
 				     BMM150_MASK_SOFT_RESET,
 				     BMM150_SOFT_RESET);
 	if (ret != 0) {
-		LOG_ERR("failed soft reset: %d", ret);
+		LOG_ERROR("failed soft reset: %d", ret);
 		return ret;
 	}
 
@@ -529,7 +529,7 @@ static int bmm150_full_por(const struct device *dev)
 	 */
 	ret = bmm150_power_control(dev, 0);
 	if (ret != 0) {
-		LOG_ERR("failed to enter suspend mode: %d", ret);
+		LOG_ERROR("failed to enter suspend mode: %d", ret);
 		return ret;
 	}
 
@@ -538,7 +538,7 @@ static int bmm150_full_por(const struct device *dev)
 	/* Full POR - back into sleep mode */
 	ret = bmm150_power_control(dev, 1);
 	if (ret != 0) {
-		LOG_ERR("failed to go back into sleep mode: %d", ret);
+		LOG_ERROR("failed to go back into sleep mode: %d", ret);
 		return ret;
 	}
 
@@ -560,45 +560,41 @@ static int bmm150_init_chip(const struct device *dev)
 
 	/* Read chip ID (can only be read in sleep mode)*/
 	if (bmm150_reg_read(dev, BMM150_REG_CHIP_ID, &chip_id, 1) < 0) {
-		LOG_ERR("failed reading chip id");
+		LOG_ERROR("failed reading chip id");
 		goto err_poweroff;
 	}
 
 	if (chip_id != BMM150_CHIP_ID_VAL) {
-		LOG_ERR("invalid chip id 0x%x", chip_id);
+		LOG_ERROR("invalid chip id 0x%x", chip_id);
 		goto err_poweroff;
 	}
 
 	/* Setting preset mode */
 	preset = bmm150_presets_table[BMM150_DEFAULT_PRESET];
 	if (bmm150_set_odr(dev, preset.odr) < 0) {
-		LOG_ERR("failed to set ODR to %d",
-			    preset.odr);
+		LOG_ERROR("failed to set ODR to %d", preset.odr);
 		goto err_poweroff;
 	}
 
-	if (bmm150_reg_write(dev, BMM150_REG_REP_XY, BMM150_REPXY_TO_REGVAL(preset.rep_xy))
-	    < 0) {
-		LOG_ERR("failed to set REP XY to %d",
-			    preset.rep_xy);
+	if (bmm150_reg_write(dev, BMM150_REG_REP_XY, BMM150_REPXY_TO_REGVAL(preset.rep_xy)) < 0) {
+		LOG_ERROR("failed to set REP XY to %d", preset.rep_xy);
 		goto err_poweroff;
 	}
 
 	if (bmm150_reg_write(dev, BMM150_REG_REP_Z, BMM150_REPZ_TO_REGVAL(preset.rep_z)) < 0) {
-		LOG_ERR("failed to set REP Z to %d",
-			    preset.rep_z);
+		LOG_ERROR("failed to set REP Z to %d", preset.rep_z);
 		goto err_poweroff;
 	}
 
 	/* Set chip normal mode */
 	if (bmm150_opmode(dev, BMM150_MODE_NORMAL) < 0) {
-		LOG_ERR("failed to enter normal mode");
+		LOG_ERROR("failed to enter normal mode");
 	}
 
 	/* Reads the trim registers of the sensor */
 	if (bmm150_reg_read(dev, BMM150_REG_TRIM_START, (uint8_t *)&data->tregs,
-			      sizeof(data->tregs)) < 0) {
-		LOG_ERR("failed to read trim regs");
+			    sizeof(data->tregs)) < 0) {
+		LOG_ERROR("failed to read trim regs");
 		goto err_poweroff;
 	}
 
@@ -631,21 +627,21 @@ static int pm_action(const struct device *dev, enum pm_device_action action)
 	case PM_DEVICE_ACTION_TURN_ON:
 		ret = bmm150_init_chip(dev);
 		if (ret != 0) {
-			LOG_ERR("failed to initialize chip: %d", ret);
+			LOG_ERROR("failed to initialize chip: %d", ret);
 		}
 		break;
 	case PM_DEVICE_ACTION_RESUME:
 		/* Need to enter sleep mode before setting OpMode to normal */
 		ret = bmm150_power_control(dev, 1);
 		if (ret != 0) {
-			LOG_ERR("failed to enter sleep mode: %d", ret);
+			LOG_ERROR("failed to enter sleep mode: %d", ret);
 		}
 
 		k_sleep(BMM150_START_UP_TIME);
 
 		ret |= bmm150_opmode(dev, BMM150_MODE_NORMAL);
 		if (ret != 0) {
-			LOG_ERR("failed to enter normal mode: %d", ret);
+			LOG_ERROR("failed to enter normal mode: %d", ret);
 		}
 #ifdef CONFIG_BMM150_TRIGGER
 		else {
@@ -657,7 +653,7 @@ static int pm_action(const struct device *dev, enum pm_device_action action)
 	case PM_DEVICE_ACTION_SUSPEND:
 		ret = bmm150_power_control(dev, 0); /* Suspend */
 		if (ret != 0) {
-			LOG_ERR("failed to enter suspend mode: %d", ret);
+			LOG_ERROR("failed to enter suspend mode: %d", ret);
 		}
 #ifdef CONFIG_BMM150_TRIGGER
 		else {
@@ -687,7 +683,7 @@ static int bmm150_init(const struct device *dev)
 
 #ifdef CONFIG_BMM150_TRIGGER
 	if (bmm150_trigger_mode_init(dev) < 0) {
-		LOG_ERR("Cannot set up trigger mode.");
+		LOG_ERROR("Cannot set up trigger mode.");
 		return -EINVAL;
 	}
 #endif

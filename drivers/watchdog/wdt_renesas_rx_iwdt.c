@@ -61,7 +61,7 @@ static int wdt_iwdt_rx_disable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	LOG_ERR("Independent Watchdog cannot be stopped once started");
+	LOG_ERROR("Independent Watchdog cannot be stopped once started");
 
 	return -EPERM;
 }
@@ -94,7 +94,7 @@ static int wdt_iwdt_rx_install_timeout(const struct device *dev, const struct wd
 	}
 
 	if (cfg->callback != NULL && (cfg->flags & WDT_FLAG_RESET_MASK) != 0) {
-		LOG_ERR("WDT_FLAG_RESET_NONE should be chosen in case of interrupt response");
+		LOG_ERROR("WDT_FLAG_RESET_NONE should be chosen in case of interrupt response");
 		return -ENOTSUP;
 	}
 
@@ -105,16 +105,16 @@ static int wdt_iwdt_rx_install_timeout(const struct device *dev, const struct wd
 	 */
 	if (CONFIG_WDT_RENESAS_RX_OFS0_IRQ_SEL_IWDTRSTIRQS == 0) {
 		if ((cfg->flags & WDT_FLAG_RESET_MASK) != WDT_FLAG_RESET_NONE) {
-			LOG_ERR("Reset flag is not consistent with OFS setting");
+			LOG_ERROR("Reset flag is not consistent with OFS setting");
 			return -EINVAL;
 		}
 	} else if (CONFIG_WDT_RENESAS_RX_OFS0_IRQ_SEL_IWDTRSTIRQS == 1) {
 		if ((cfg->flags & WDT_FLAG_RESET_MASK) == WDT_FLAG_RESET_NONE) {
-			LOG_ERR("Reset flag is not consistent with OFS setting");
+			LOG_ERROR("Reset flag is not consistent with OFS setting");
 			return -EINVAL;
 		}
 	} else {
-		LOG_ERR("Invalid OFS setting");
+		LOG_ERROR("Invalid OFS setting");
 		return -EINVAL;
 	}
 

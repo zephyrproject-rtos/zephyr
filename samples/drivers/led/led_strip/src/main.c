@@ -49,7 +49,7 @@ int main(void)
 	if (device_is_ready(strip)) {
 		LOG_INF("Found LED strip device %s", strip->name);
 	} else {
-		LOG_ERR("LED strip device %s is not ready", strip->name);
+		LOG_ERROR("LED strip device %s is not ready", strip->name);
 		return 0;
 	}
 
@@ -61,7 +61,7 @@ int main(void)
 
 			rc = led_strip_update_rgb(strip, pixels, STRIP_NUM_PIXELS);
 			if (rc) {
-				LOG_ERR("couldn't update strip: %d", rc);
+				LOG_ERROR("couldn't update strip: %d", rc);
 			}
 
 			k_sleep(DELAY_TIME);

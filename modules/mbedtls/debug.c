@@ -42,7 +42,7 @@ void zephyr_mbedtls_debug(void *ctx, int level, const char *file, int line, cons
 	switch (level) {
 	case 0:
 	case 1:
-		LOG_ERR("%s:%04d: %.*s", basename, line, str_len, str);
+		LOG_ERROR("%s:%04d: %.*s", basename, line, str_len, str);
 		break;
 	case 2:
 		LOG_WRN("%s:%04d: %.*s", basename, line, str_len, str);

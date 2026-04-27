@@ -68,28 +68,28 @@ static int setup_iface(struct net_if *eth_iface,
 
 	ret = net_eth_vlan_enable(eth_iface, vlan_tag);
 	if (ret < 0) {
-		LOG_ERR("Cannot enable VLAN for tag %d (%d)", vlan_tag, ret);
+		LOG_ERROR("Cannot enable VLAN for tag %d (%d)", vlan_tag, ret);
 	}
 
 	if (net_addr_pton(NET_AF_INET6, ipv6_addr, &addr6)) {
-		LOG_ERR("Invalid address: %s", ipv6_addr);
+		LOG_ERROR("Invalid address: %s", ipv6_addr);
 		return -EINVAL;
 	}
 
 	ifaddr = net_if_ipv6_addr_add(iface, &addr6, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
-		LOG_ERR("Cannot add %s to interface %p", ipv6_addr, iface);
+		LOG_ERROR("Cannot add %s to interface %p", ipv6_addr, iface);
 		return -EINVAL;
 	}
 
 	if (net_addr_pton(NET_AF_INET, ipv4_addr, &addr4)) {
-		LOG_ERR("Invalid address: %s", ipv4_addr);
+		LOG_ERROR("Invalid address: %s", ipv4_addr);
 		return -EINVAL;
 	}
 
 	ifaddr = net_if_ipv4_addr_add(iface, &addr4, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
-		LOG_ERR("Cannot add %s to interface %p", ipv4_addr, iface);
+		LOG_ERROR("Cannot add %s to interface %p", ipv4_addr, iface);
 		return -EINVAL;
 	}
 
@@ -194,7 +194,7 @@ static int init_app(void)
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
 	if (!iface) {
-		LOG_ERR("No ethernet interfaces found.");
+		LOG_ERROR("No ethernet interfaces found.");
 		return -ENOENT;
 	}
 
@@ -205,8 +205,8 @@ static int init_app(void)
 
 	caps = net_eth_get_hw_capabilities(iface);
 	if (!(caps & ETHERNET_LLDP)) {
-		LOG_ERR("Interface %p does not support %s", iface, "LLDP");
-		LOG_ERR("Cannot continue!");
+		LOG_ERROR("Interface %p does not support %s", iface, "LLDP");
+		LOG_ERROR("Cannot continue!");
 		return -ENOENT;
 	}
 

@@ -99,7 +99,7 @@ static int rts5912_sha256_process(const struct device *dev, const uint8_t *input
 		}
 
 		if (_wf_cycle_count < (_wf_now - _wf_start)) {
-			LOG_ERR("SHA2DMA reach timeout and breach");
+			LOG_ERROR("SHA2DMA reach timeout and breach");
 			return -EIO;
 		}
 
@@ -249,7 +249,7 @@ static int rts5912_hash_begin_session(const struct device *dev, struct hash_ctx 
 
 	k_mutex_lock(&(rts5912_sha256_ctx->crypto_rts5912_in_use), K_FOREVER);
 	if (rts5912_sha256_ctx->in_use == true) {
-		LOG_ERR("Crypto driver is busy!");
+		LOG_ERROR("Crypto driver is busy!");
 		k_mutex_unlock(&(rts5912_sha256_ctx->crypto_rts5912_in_use));
 		return -EBUSY;
 	}
@@ -311,25 +311,25 @@ static int rts5912_sha_init(const struct device *dev)
 
 	ret = rts5912_hash_begin_session(dev, pkt.ctx, CRYPTO_HASH_ALGO_SHA256);
 	if (ret != 0) {
-		LOG_ERR("Crypto driver init begin fail!");
+		LOG_ERROR("Crypto driver init begin fail!");
 		return ret;
 	}
 
 	ret = rts5912_sha256_update(dev, pkt.in_buf, pkt.in_len);
 	if (ret != 0) {
-		LOG_ERR("Crypto driver init update fail!");
+		LOG_ERROR("Crypto driver init update fail!");
 		return ret;
 	}
 
 	ret = rts5912_sha256_finish(dev, pkt.out_buf);
 	if (ret != 0) {
-		LOG_ERR("Crypto driver init finish fail!");
+		LOG_ERROR("Crypto driver init finish fail!");
 		return ret;
 	}
 
 	ret = rts5912_hash_free_session(dev, pkt.ctx);
 	if (ret != 0) {
-		LOG_ERR("Crypto driver init free fail!");
+		LOG_ERROR("Crypto driver init free fail!");
 		return ret;
 	}
 

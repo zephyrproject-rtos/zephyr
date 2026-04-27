@@ -135,7 +135,7 @@ static void riic_eei_isr(const struct device *dev)
 	struct i2c_rx_data *data = (struct i2c_rx_data *const)dev->data;
 #ifdef CONFIG_RENESAS_RX_I2C_DTC
 	if (data->p_regs->ICSR2.BIT.TMOF) {
-		LOG_ERR("Timed Out");
+		LOG_ERROR("Timed Out");
 		/** Disable interrupt and clear flag */
 		data->p_regs->ICIER.BIT.TMOIE = 0;
 		data->p_regs->ICSR2.BIT.TMOF = 0;
@@ -168,7 +168,7 @@ static void riic_eei_isr(const struct device *dev)
 		return;
 	}
 	if (data->p_regs->ICSR2.BIT.AL) {
-		LOG_ERR("Arbitration Lost");
+		LOG_ERROR("Arbitration Lost");
 		/** Disable interrupt and clear flag */
 		data->p_regs->ICIER.BIT.ALIE = 0;
 		data->p_regs->ICSR2.BIT.AL = 0;
@@ -454,19 +454,19 @@ static inline int rx_i2c_eei_grp_int_init(const struct device *dev)
 				       (bsp_int_cb_t)rx_i2c_eei_grp_isr, (void *)dev);
 
 	if (err != 0) {
-		LOG_ERR("Failed to set callback for group interrupt EEI: %d", err);
+		LOG_ERROR("Failed to set callback for group interrupt EEI: %d", err);
 		return err;
 	}
 
 	err = rx_grp_intc_set_gen(data->tei_eei_ctrl, data->eei_num, true);
 	if (err != 0) {
-		LOG_ERR("Failed to allow interrupt request for EEI: %d", err);
+		LOG_ERROR("Failed to allow interrupt request for EEI: %d", err);
 		return err;
 	}
 
 	err = rx_grp_intc_set_grp_int(data->tei_eei_ctrl, (bsp_int_src_t)data->eei_src, true);
 	if (err != 0) {
-		LOG_ERR("Failed to enable group interrupt for EEI: %d", err);
+		LOG_ERROR("Failed to enable group interrupt for EEI: %d", err);
 		return err;
 	}
 
@@ -482,19 +482,19 @@ static inline int rx_i2c_tei_grp_int_init(const struct device *dev)
 				       (bsp_int_cb_t)rx_i2c_tei_grp_isr, (void *)dev);
 
 	if (err != 0) {
-		LOG_ERR("Failed to set callback for group interrupt TEI: %d", err);
+		LOG_ERROR("Failed to set callback for group interrupt TEI: %d", err);
 		return err;
 	}
 
 	err = rx_grp_intc_set_gen(data->tei_eei_ctrl, data->tei_num, true);
 	if (err != 0) {
-		LOG_ERR("Failed to allow interrupt request for TEI: %d", err);
+		LOG_ERROR("Failed to allow interrupt request for TEI: %d", err);
 		return err;
 	}
 
 	err = rx_grp_intc_set_grp_int(data->tei_eei_ctrl, (bsp_int_src_t)data->tei_src, true);
 	if (err != 0) {
-		LOG_ERR("Failed to enable group interrupt for TEI: %d", err);
+		LOG_ERROR("Failed to enable group interrupt for TEI: %d", err);
 		return err;
 	}
 
@@ -652,7 +652,7 @@ static int i2c_rx_init(const struct device *dev)
 	/* Setup pin control */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("Pin control config failed.");
+		LOG_ERROR("Pin control config failed.");
 		return ret;
 	}
 
@@ -664,7 +664,7 @@ static int i2c_rx_init(const struct device *dev)
 	ret = R_RIIC_Open(&data->rdp_info);
 
 	if (ret) {
-		LOG_ERR("Open i2c master failed.");
+		LOG_ERROR("Open i2c master failed.");
 		return -EIO;
 	}
 
@@ -682,11 +682,11 @@ static int i2c_rx_configure(const struct device *dev, uint32_t dev_config)
 
 	/* Validate input */
 	if (!(dev_config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Only I2C Master mode supported.");
+		LOG_ERROR("Only I2C Master mode supported.");
 		return -ENOTSUP;
 	}
 	if (dev_config & I2C_ADDR_10_BITS) {
-		LOG_ERR("Only address 7 bits supported.");
+		LOG_ERROR("Only address 7 bits supported.");
 		return -ENOTSUP;
 	}
 
@@ -698,7 +698,7 @@ static int i2c_rx_configure(const struct device *dev, uint32_t dev_config)
 		speed = 400;
 		break;
 	default:
-		LOG_ERR("Unsupported speed: %d", I2C_SPEED_GET(dev_config));
+		LOG_ERROR("Unsupported speed: %d", I2C_SPEED_GET(dev_config));
 		return -ENOTSUP;
 	}
 

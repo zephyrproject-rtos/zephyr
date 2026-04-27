@@ -222,7 +222,7 @@ int tcpci_read_reg8(const struct i2c_dt_spec *i2c, uint8_t reg, uint8_t *value)
 	}
 
 	if (ret != 0) {
-		LOG_ERR(LOG_COMM_ERR_STR, i2c->bus->name, i2c->addr, "r8", reg, *value);
+		LOG_ERROR(LOG_COMM_ERR_STR, i2c->bus->name, i2c->addr, "r8", reg, *value);
 	}
 
 	return ret;
@@ -242,7 +242,7 @@ int tcpci_write_reg8(const struct i2c_dt_spec *i2c, uint8_t reg, uint8_t value)
 	}
 
 	if (ret != 0) {
-		LOG_ERR(LOG_COMM_ERR_STR, i2c->bus->name, i2c->addr, "w8", reg, value);
+		LOG_ERROR(LOG_COMM_ERR_STR, i2c->bus->name, i2c->addr, "w8", reg, value);
 	}
 
 	return ret;
@@ -280,7 +280,7 @@ int tcpci_read_reg16(const struct i2c_dt_spec *i2c, uint8_t reg, uint16_t *value
 	}
 
 	if (ret != 0) {
-		LOG_ERR(LOG_COMM_ERR_STR, i2c->bus->name, i2c->addr, "r16", reg, *value);
+		LOG_ERROR(LOG_COMM_ERR_STR, i2c->bus->name, i2c->addr, "r16", reg, *value);
 	}
 
 	return ret;
@@ -301,7 +301,7 @@ int tcpci_write_reg16(const struct i2c_dt_spec *i2c, uint8_t reg, uint16_t value
 	}
 
 	if (ret != 0) {
-		LOG_ERR(LOG_COMM_ERR_STR, i2c->bus->name, i2c->addr, "w16", reg, value);
+		LOG_ERROR(LOG_COMM_ERR_STR, i2c->bus->name, i2c->addr, "w16", reg, value);
 	}
 
 	return ret;
@@ -369,7 +369,7 @@ enum tcpc_alert tcpci_alert_reg_to_enum(uint16_t reg)
 		return TCPC_ALERT_VENDOR_DEFINED;
 	}
 
-	LOG_ERR("Invalid alert register value");
+	LOG_ERROR("Invalid alert register value");
 	return -1;
 }
 
@@ -659,7 +659,7 @@ int tcpci_tcpm_get_status_register(const struct i2c_dt_spec *bus, enum tcpc_stat
 	case TCPC_EXTENDED_ALERT_STATUS:
 		return tcpci_read_reg8(bus, TCPC_REG_ALERT_EXT, (uint8_t *)status);
 	default:
-		LOG_ERR("Not a TCPCI-specified reg address");
+		LOG_ERROR("Not a TCPCI-specified reg address");
 		return -EINVAL;
 	}
 }
@@ -671,10 +671,10 @@ int tcpci_tcpm_clear_status_register(const struct i2c_dt_spec *bus, enum tcpc_st
 	case TCPC_ALERT_STATUS:
 		return tcpci_write_reg16(bus, TCPC_REG_ALERT, mask);
 	case TCPC_CC_STATUS:
-		LOG_ERR("CC_STATUS is cleared by the TCPC");
+		LOG_ERROR("CC_STATUS is cleared by the TCPC");
 		return -EINVAL;
 	case TCPC_POWER_STATUS:
-		LOG_ERR("POWER_STATUS is cleared by the TCPC");
+		LOG_ERROR("POWER_STATUS is cleared by the TCPC");
 		return -EINVAL;
 	case TCPC_FAULT_STATUS:
 		return tcpci_write_reg8(bus, TCPC_REG_FAULT_STATUS, (uint8_t)mask);
@@ -683,7 +683,7 @@ int tcpci_tcpm_clear_status_register(const struct i2c_dt_spec *bus, enum tcpc_st
 	case TCPC_EXTENDED_ALERT_STATUS:
 		return tcpci_write_reg8(bus, TCPC_REG_ALERT_EXT, (uint8_t)mask);
 	default:
-		LOG_ERR("Not a TCPCI-specified reg address");
+		LOG_ERROR("Not a TCPCI-specified reg address");
 		return -EINVAL;
 	}
 }
@@ -695,7 +695,7 @@ int tcpci_tcpm_mask_status_register(const struct i2c_dt_spec *bus, enum tcpc_sta
 	case TCPC_ALERT_STATUS:
 		return tcpci_write_reg16(bus, TCPC_REG_ALERT_MASK, mask);
 	case TCPC_CC_STATUS:
-		LOG_ERR("CC_STATUS does not have a corresponding mask register");
+		LOG_ERROR("CC_STATUS does not have a corresponding mask register");
 		return -EINVAL;
 	case TCPC_POWER_STATUS:
 		return tcpci_write_reg8(bus, TCPC_REG_POWER_STATUS_MASK, (uint8_t)mask);
@@ -706,7 +706,7 @@ int tcpci_tcpm_mask_status_register(const struct i2c_dt_spec *bus, enum tcpc_sta
 	case TCPC_EXTENDED_ALERT_STATUS:
 		return tcpci_write_reg8(bus, TCPC_REG_ALERT_EXT_MASK, (uint8_t)mask);
 	default:
-		LOG_ERR("Not a TCPCI-specified reg address");
+		LOG_ERROR("Not a TCPCI-specified reg address");
 		return -EINVAL;
 	}
 }

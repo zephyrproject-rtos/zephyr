@@ -140,7 +140,7 @@ static void hdlc_iface_init(struct net_if *iface)
 	ot_uart.dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ot_uart));
 
 	if (!device_is_ready(ot_uart.dev)) {
-		LOG_ERR("UART device not ready");
+		LOG_ERROR("UART device not ready");
 	}
 
 	uart_irq_callback_user_data_set(ot_uart.dev,

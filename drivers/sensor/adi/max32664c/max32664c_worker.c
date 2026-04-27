@@ -237,7 +237,7 @@ void max32664c_worker(const struct device *dev)
 	while (data->is_thread_running) {
 		err = max32664c_get_hub_status(dev, &status, &i2c_error);
 		if (err) {
-			LOG_ERR("Failed to get hub status! Error: %d", err);
+			LOG_ERROR("Failed to get hub status! Error: %d", err);
 			continue;
 		}
 
@@ -249,7 +249,7 @@ void max32664c_worker(const struct device *dev)
 
 		err = max32664c_get_fifo_count(dev, &fifo);
 		if (err) {
-			LOG_ERR("Failed to get FIFO count! Error: %d", err);
+			LOG_ERROR("Failed to get FIFO count! Error: %d", err);
 			continue;
 		}
 
@@ -259,8 +259,8 @@ void max32664c_worker(const struct device *dev)
 		}
 #ifdef CONFIG_MAX32664C_USE_STATIC_MEMORY
 		else if (fifo > CONFIG_MAX32664C_SAMPLE_BUFFER_SIZE) {
-			LOG_ERR("FIFO count %u exceeds maximum buffer size %u!",
-				fifo, CONFIG_MAX32664C_SAMPLE_BUFFER_SIZE);
+			LOG_ERROR("FIFO count %u exceeds maximum buffer size %u!", fifo,
+				  CONFIG_MAX32664C_SAMPLE_BUFFER_SIZE);
 
 			/* TODO: Find a good way to clear the FIFO */
 			continue;
@@ -283,7 +283,7 @@ void max32664c_worker(const struct device *dev)
 		data->max32664_i2c_buffer = (uint8_t *)k_malloc(buffer_size);
 
 		if (data->max32664_i2c_buffer == NULL) {
-			LOG_ERR("Can not allocate memory for the I2C buffer!");
+			LOG_ERROR("Can not allocate memory for the I2C buffer!");
 			continue;
 		}
 #endif /* CONFIG_MAX32664C_USE_STATIC_MEMORY */
@@ -356,8 +356,8 @@ void max32664c_worker(const struct device *dev)
 		}
 
 		if (data->max32664_i2c_buffer[0] != 0) {
-			LOG_ERR("Can not read report! Status: 0x%X",
-				data->max32664_i2c_buffer[0]);
+			LOG_ERROR("Can not read report! Status: 0x%X",
+				  data->max32664_i2c_buffer[0]);
 		}
 
 #ifndef CONFIG_MAX32664C_USE_STATIC_MEMORY

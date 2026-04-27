@@ -705,7 +705,7 @@ static int nsos_connect_blocking(struct nsos_socket *sock,
 clear_nonblock:
 	clear_nonblock_ret = nsos_adapt_fcntl_setfl(sock->poll.mid.fd, fcntl_flags);
 	if (clear_nonblock_ret < 0) {
-		LOG_ERR("Failed to clear O_NONBLOCK: %d", clear_nonblock_ret);
+		LOG_ERROR("Failed to clear O_NONBLOCK: %d", clear_nonblock_ret);
 	}
 
 	return ret;

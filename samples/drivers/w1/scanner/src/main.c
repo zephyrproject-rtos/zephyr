@@ -22,7 +22,7 @@ int main(void)
 	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(w1));
 
 	if (!device_is_ready(dev)) {
-		LOG_ERR("Device not ready");
+		LOG_ERROR("Device not ready");
 		return 0;
 	}
 

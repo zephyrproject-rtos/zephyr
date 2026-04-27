@@ -134,7 +134,7 @@ static void auxdisplay_hd44780_command(const struct device *dev, bool rs,
 
 		rc = hd44780_db_gpios_configure(dev, lsb_line, GPIO_INPUT | GPIO_PULL_DOWN);
 		if (rc < 0) {
-			LOG_ERR("Configuration of db-gpios as inputs failed: %d", rc);
+			LOG_ERROR("Configuration of db-gpios as inputs failed: %d", rc);
 			return;
 		}
 
@@ -153,7 +153,7 @@ static void auxdisplay_hd44780_command(const struct device *dev, bool rs,
 
 		rc = hd44780_db_gpios_configure(dev, lsb_line, GPIO_OUTPUT);
 		if (rc < 0) {
-			LOG_ERR("Configuration of db-gpios as outputs failed: %d", rc);
+			LOG_ERROR("Configuration of db-gpios as outputs failed: %d", rc);
 			return;
 		}
 	}
@@ -226,7 +226,7 @@ static int auxdisplay_hd44780_init(const struct device *dev)
 
 	if (config->capabilities.mode > AUXDISPLAY_HD44780_MODE_8_BIT) {
 		/* This index is reserved for internal driver usage */
-		LOG_ERR("HD44780 mode must be 4 or 8-bit");
+		LOG_ERROR("HD44780 mode must be 4 or 8-bit");
 		return -EINVAL;
 	}
 
@@ -234,14 +234,14 @@ static int auxdisplay_hd44780_init(const struct device *dev)
 	rc = gpio_pin_configure_dt(&config->rs_gpio, GPIO_OUTPUT);
 
 	if (rc < 0) {
-		LOG_ERR("Configuration of RS GPIO failed: %d", rc);
+		LOG_ERROR("Configuration of RS GPIO failed: %d", rc);
 		return rc;
 	}
 
 	rc = gpio_pin_configure_dt(&config->e_gpio, GPIO_OUTPUT);
 
 	if (rc < 0) {
-		LOG_ERR("Configuration of E GPIO failed: %d", rc);
+		LOG_ERROR("Configuration of E GPIO failed: %d", rc);
 		return rc;
 	}
 
@@ -254,16 +254,16 @@ static int auxdisplay_hd44780_init(const struct device *dev)
 			rc = gpio_pin_configure_dt(&config->db_gpios[i], GPIO_OUTPUT);
 
 			if (rc < 0) {
-				LOG_ERR("Configuration of DB%d GPIO failed: %d", i, rc);
+				LOG_ERROR("Configuration of DB%d GPIO failed: %d", i, rc);
 				return rc;
 			}
 		} else if (config->capabilities.mode == AUXDISPLAY_HD44780_MODE_4_BIT && i > 3) {
 			/* Required pin missing */
-			LOG_ERR("Required DB%d pin missing (DB4-DB7 needed for 4-bit mode)", i);
+			LOG_ERROR("Required DB%d pin missing (DB4-DB7 needed for 4-bit mode)", i);
 			return -EINVAL;
 		} else if (config->capabilities.mode == AUXDISPLAY_HD44780_MODE_8_BIT) {
 			/* Required pin missing */
-			LOG_ERR("Required DB%d pin missing", i);
+			LOG_ERROR("Required DB%d pin missing", i);
 			return -EINVAL;
 		}
 
@@ -274,7 +274,7 @@ static int auxdisplay_hd44780_init(const struct device *dev)
 		rc = gpio_pin_configure_dt(&config->rw_gpio, GPIO_OUTPUT);
 
 		if (rc < 0) {
-			LOG_ERR("Configuration of RW GPIO failed: %d", rc);
+			LOG_ERROR("Configuration of RW GPIO failed: %d", rc);
 			return rc;
 		}
 	}
@@ -283,7 +283,7 @@ static int auxdisplay_hd44780_init(const struct device *dev)
 		rc = gpio_pin_configure_dt(&config->backlight_gpio, GPIO_OUTPUT);
 
 		if (rc < 0) {
-			LOG_ERR("Configuration of backlight GPIO failed: %d", rc);
+			LOG_ERROR("Configuration of backlight GPIO failed: %d", rc);
 			return rc;
 		}
 

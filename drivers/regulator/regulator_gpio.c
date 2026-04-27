@@ -41,7 +41,7 @@ static int regulator_gpio_apply_state(const struct device *dev, uint32_t state)
 
 		ret = gpio_pin_set_dt(&cfg->gpios[gpio_idx], new_state_of_gpio);
 		if (ret < 0) {
-			LOG_ERR("%s: can't set pin state", dev->name);
+			LOG_ERROR("%s: can't set pin state", dev->name);
 			return ret;
 		}
 	}
@@ -60,7 +60,7 @@ static int regulator_gpio_enable(const struct device *dev)
 
 	ret = gpio_pin_set_dt(&cfg->enable, 1);
 	if (ret < 0) {
-		LOG_ERR("%s: can't enable regulator!", dev->name);
+		LOG_ERROR("%s: can't enable regulator!", dev->name);
 		return ret;
 	}
 
@@ -90,7 +90,7 @@ static int regulator_gpio_list_voltage(const struct device *dev, unsigned int id
 	const struct regulator_gpio_config *cfg = dev->config;
 
 	if (idx >= cfg->states_cnt) {
-		LOG_ERR("%s: can't get list voltage for idx %u", dev->name, idx);
+		LOG_ERROR("%s: can't get list voltage for idx %u", dev->name, idx);
 		return -EINVAL;
 	}
 
@@ -118,7 +118,7 @@ static int regulator_gpio_set_voltage(const struct device *dev, int32_t min_uv, 
 	}
 
 	if (best_voltage == INT32_MAX) {
-		LOG_ERR("%s: can't find voltage is states", dev->name);
+		LOG_ERROR("%s: can't find voltage is states", dev->name);
 		return -EINVAL;
 	}
 
@@ -162,31 +162,31 @@ static int regulator_gpio_init(const struct device *dev)
 
 	for (unsigned int gpio_idx = 0; gpio_idx < cfg->num_gpios; gpio_idx++) {
 		if (!gpio_is_ready_dt(&cfg->gpios[gpio_idx])) {
-			LOG_ERR("%s: gpio pin: %s not ready", dev->name,
-				cfg->gpios[gpio_idx].port ? cfg->gpios[gpio_idx].port->name
-							  : "null");
+			LOG_ERROR("%s: gpio pin: %s not ready", dev->name,
+				  cfg->gpios[gpio_idx].port ? cfg->gpios[gpio_idx].port->name
+							    : "null");
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&cfg->gpios[gpio_idx], GPIO_OUTPUT);
 		if (ret < 0) {
-			LOG_ERR("%s: can't configure pin (%d) as output", dev->name,
-				cfg->gpios[gpio_idx].pin);
+			LOG_ERROR("%s: can't configure pin (%d) as output", dev->name,
+				  cfg->gpios[gpio_idx].pin);
 			return ret;
 		}
 	}
 
 	if (cfg->enable.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->enable)) {
-			LOG_ERR("%s: gpio pin: %s not ready", dev->name, cfg->enable.port->name);
+			LOG_ERROR("%s: gpio pin: %s not ready", dev->name, cfg->enable.port->name);
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&cfg->enable, should_enable ? GPIO_OUTPUT_ACTIVE
 									: GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("%s: can't configure enable pin (%d) as output", dev->name,
-				cfg->enable.pin);
+			LOG_ERROR("%s: can't configure enable pin (%d) as output", dev->name,
+				  cfg->enable.pin);
 			return ret;
 		}
 	}

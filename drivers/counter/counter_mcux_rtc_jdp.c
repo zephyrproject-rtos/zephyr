@@ -301,7 +301,7 @@ static int mcux_rtc_jdp_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	struct mcux_rtc_jdp_data *data = dev->data;
 
 	if (chan_id >= info->channels) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 
@@ -328,7 +328,7 @@ static int mcux_rtc_jdp_set_top_value(const struct device *dev, const struct cou
 	struct mcux_rtc_jdp_data *data = dev->data;
 
 	if (cfg->ticks != info->max_top_value) {
-		LOG_ERR("Top value can only be set to max value 0x%x", info->max_top_value);
+		LOG_ERROR("Top value can only be set to max value 0x%x", info->max_top_value);
 		return -ENOTSUP;
 	}
 

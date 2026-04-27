@@ -51,7 +51,7 @@ static int get_passkey_confirmation(struct bt_conn *conn)
 
 	err = bt_conn_auth_passkey_confirm(conn);
 	if (err) {
-		LOG_ERR("Failed to confirm passkey (err %d)", err);
+		LOG_ERROR("Failed to confirm passkey (err %d)", err);
 		return -1;
 	}
 

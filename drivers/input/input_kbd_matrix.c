@@ -390,7 +390,7 @@ int input_kbd_matrix_common_init(const struct device *dev)
 
 	ret = pm_device_runtime_enable(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable runtime power management");
+		LOG_ERROR("Failed to enable runtime power management");
 		return ret;
 	}
 

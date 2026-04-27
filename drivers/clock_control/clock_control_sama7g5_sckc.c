@@ -30,7 +30,7 @@ static int sckc_on(const struct device *dev, clock_control_subsys_t sys)
 	const struct sam_sckc_config *cfg = sys;
 
 	if (cfg == NULL) {
-		LOG_ERR("The SCKC config can not be NULL.");
+		LOG_ERROR("The SCKC config can not be NULL.");
 		return -ENXIO;
 	}
 

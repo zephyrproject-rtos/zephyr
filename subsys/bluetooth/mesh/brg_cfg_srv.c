@@ -23,7 +23,7 @@ static void bridge_status_send(const struct bt_mesh_model *model, struct bt_mesh
 	net_buf_simple_add_u8(&msg, bt_mesh_brg_cfg_enable_get() ? 1 : 0);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Brg Status send failed");
+		LOG_ERROR("Brg Status send failed");
 	}
 }
 
@@ -64,7 +64,7 @@ static void bridging_table_status_send(const struct bt_mesh_model *model,
 	net_buf_simple_add_le16(&msg, entry->addr2);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Brg Tbl Status send failed");
+		LOG_ERROR("Brg Tbl Status send failed");
 	}
 }
 
@@ -177,7 +177,7 @@ static int bridged_subnets_get(const struct bt_mesh_model *model, struct bt_mesh
 	}
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Brg Subnet List send failed");
+		LOG_ERROR("Brg Subnet List send failed");
 	}
 
 	return 0;
@@ -231,7 +231,7 @@ static int bridging_table_get(const struct bt_mesh_model *model, struct bt_mesh_
 
 tbl_get_respond:
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Brg Tbl List send failed");
+		LOG_ERROR("Brg Tbl List send failed");
 	}
 
 	return 0;
@@ -246,7 +246,7 @@ static int bridging_table_size_get(const struct bt_mesh_model *model, struct bt_
 	net_buf_simple_add_le16(&msg, CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Brg Tbl Size Status send failed");
+		LOG_ERROR("Brg Tbl Size Status send failed");
 	}
 
 	return 0;
@@ -269,7 +269,7 @@ static int brg_cfg_srv_init(const struct bt_mesh_model *model)
 		bt_mesh_model_find(bt_mesh_model_elem(model), BT_MESH_MODEL_ID_CFG_SRV);
 
 	if (config_srv == NULL) {
-		LOG_ERR("Not on primary element");
+		LOG_ERROR("Not on primary element");
 		return -EINVAL;
 	}
 

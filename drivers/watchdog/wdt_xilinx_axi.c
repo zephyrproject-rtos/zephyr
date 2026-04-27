@@ -157,7 +157,7 @@ static int wdt_xilinx_axi_install_timeout(const struct device *dev,
 	}
 
 	if (!good_timer_width) {
-		LOG_ERR("Cannot support timeout value of %u msec", cfg->window.max);
+		LOG_ERROR("Cannot support timeout value of %u msec", cfg->window.max);
 		ret = -EINVAL;
 		goto out;
 	}

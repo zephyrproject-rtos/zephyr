@@ -285,7 +285,7 @@ static int bee_keyscan_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure KEYSCAN pins");
+		LOG_ERROR("Failed to configure KEYSCAN pins");
 		return ret;
 	}
 

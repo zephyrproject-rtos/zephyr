@@ -37,7 +37,7 @@ static int wdt_max32_calculate_timeout(uint32_t timeout, uint32_t clock_src)
 
 	clk_frequency = ADI_MAX32_GET_PRPH_CLK_FREQ(clock_src);
 	if (clk_frequency == 0) {
-		LOG_ERR("Unsupported clock source.");
+		LOG_ERROR("Unsupported clock source.");
 		return -ENOTSUP;
 	}
 
@@ -186,7 +186,7 @@ static int wdt_max32_install_timeout(const struct device *dev, const struct wdt_
 		break;
 
 	default:
-		LOG_ERR("Unsupported watchdog config flag.");
+		LOG_ERROR("Unsupported watchdog config flag.");
 		return -ENOTSUP;
 	}
 
@@ -228,7 +228,7 @@ static int wdt_max32_init(const struct device *dev)
 
 	ret = Wrap_MXC_WDT_SelectClockSource(regs, cfg->perclk.clk_src);
 	if (ret != E_NO_ERROR) {
-		LOG_ERR("WDT instance does not support given clock source.");
+		LOG_ERROR("WDT instance does not support given clock source.");
 		return -ENOTSUP;
 	}
 

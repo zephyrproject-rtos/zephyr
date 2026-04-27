@@ -191,7 +191,7 @@ static void friend_clear_sent(int err, void *user_data)
 	lpn->req_attempts++;
 
 	if (err) {
-		LOG_ERR("Sending Friend Request failed (err %d)", err);
+		LOG_ERROR("Sending Friend Request failed (err %d)", err);
 		lpn_set_state(BT_MESH_LPN_ENABLED);
 		clear_friendship(false, lpn->disable);
 		return;
@@ -320,7 +320,7 @@ static void friend_req_send_end(int err, void *user_data)
 	}
 
 	if (err) {
-		LOG_ERR("Sending Friend Request failed (err %d)", err);
+		LOG_ERROR("Sending Friend Request failed (err %d)", err);
 		return;
 	}
 
@@ -381,7 +381,7 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
 
 	lpn->sub = bt_mesh_subnet_next(NULL);
 	if (!lpn->sub) {
-		LOG_ERR("No subnets, can't start LPN mode");
+		LOG_ERROR("No subnets, can't start LPN mode");
 		return -ENOENT;
 	}
 
@@ -409,7 +409,7 @@ static void req_send_end(int err, void *user_data)
 #endif
 
 	if (err) {
-		LOG_ERR("Sending request failed (err %d)", err);
+		LOG_ERROR("Sending request failed (err %d)", err);
 		lpn->sent_req = 0U;
 		group_zero(lpn->pending);
 		return;
@@ -872,7 +872,7 @@ static void update_timeout(struct bt_mesh_lpn *lpn)
 			}
 		}
 
-		LOG_ERR("Timed out waiting for first Friend Update");
+		LOG_ERROR("Timed out waiting for first Friend Update");
 		clear_friendship(false, false);
 	}
 }
@@ -931,7 +931,7 @@ static void lpn_timeout(struct k_work *work)
 			break;
 		}
 
-		LOG_ERR("No response from Friend after %u retries", lpn->req_attempts);
+		LOG_ERROR("No response from Friend after %u retries", lpn->req_attempts);
 		lpn->req_attempts = 0U;
 		clear_friendship(true, false);
 		break;

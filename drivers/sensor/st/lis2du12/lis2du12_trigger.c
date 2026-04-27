@@ -47,7 +47,7 @@ static int lis2du12_enable_drdy_int(const struct device *dev, int enable)
 
 		ret = lis2du12_pin_int1_route_get(ctx, &val);
 		if (ret < 0) {
-			LOG_ERR("pint_int1_route_get error");
+			LOG_ERROR("pint_int1_route_get error");
 			return ret;
 		}
 
@@ -59,7 +59,7 @@ static int lis2du12_enable_drdy_int(const struct device *dev, int enable)
 
 		ret = lis2du12_pin_int2_route_get(ctx, &val);
 		if (ret < 0) {
-			LOG_ERR("pint_int2_route_get error");
+			LOG_ERROR("pint_int2_route_get error");
 			return ret;
 		}
 
@@ -82,7 +82,7 @@ int lis2du12_enable_delta_int(const struct device *dev, int enable)
 
 		ret = lis2du12_pin_int1_route_get(ctx, &val);
 		if (ret < 0) {
-			LOG_ERR("pint_int1_route_get error");
+			LOG_ERROR("pint_int1_route_get error");
 			return ret;
 		}
 
@@ -94,7 +94,7 @@ int lis2du12_enable_delta_int(const struct device *dev, int enable)
 
 		ret = lis2du12_pin_int2_route_get(ctx, &val);
 		if (ret < 0) {
-			LOG_ERR("pint_int2_route_get error");
+			LOG_ERROR("pint_int2_route_get error");
 			return ret;
 		}
 
@@ -106,7 +106,7 @@ int lis2du12_enable_delta_int(const struct device *dev, int enable)
 	lis2du12_wkup_md_t wkup_md;
 
 	if (lis2du12_wake_up_mode_get(ctx, &wkup_md) < 0) {
-		LOG_ERR("failed reading wake up mode");
+		LOG_ERROR("failed reading wake up mode");
 		return -EIO;
 	}
 
@@ -115,21 +115,21 @@ int lis2du12_enable_delta_int(const struct device *dev, int enable)
 	wkup_md.z_en = wkup_md.x_en;
 
 	if (lis2du12_wake_up_mode_set(ctx, &wkup_md) < 0) {
-		LOG_ERR("failed setting wake up mode");
+		LOG_ERROR("failed setting wake up mode");
 		return -EIO;
 	}
 
 	lis2du12_int_mode_t int_mode;
 
 	if (lis2du12_interrupt_mode_set(ctx, &int_mode) < 0) {
-		LOG_ERR("failed reading int mode");
+		LOG_ERROR("failed reading int mode");
 		return -EIO;
 	}
 
 	int_mode.enable = enable ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 
 	if (lis2du12_interrupt_mode_set(ctx, &int_mode) < 0) {
-		LOG_ERR("failed setting int mode");
+		LOG_ERROR("failed setting int mode");
 		return -EIO;
 	}
 
@@ -147,7 +147,7 @@ int lis2du12_trigger_set(const struct device *dev,
 	struct lis2du12_data *lis2du12 = dev->data;
 
 	if (!cfg->trig_enabled) {
-		LOG_ERR("trigger_set op not supported");
+		LOG_ERROR("trigger_set op not supported");
 		return -ENOTSUP;
 	}
 
@@ -208,7 +208,7 @@ static void lis2du12_handle_interrupt(const struct device *dev)
 		lis2du12_status_t status;
 
 		if (lis2du12_status_get(ctx, &status) < 0) {
-			LOG_ERR("failed reading status reg");
+			LOG_ERROR("failed reading status reg");
 			return;
 		}
 
@@ -225,7 +225,7 @@ static void lis2du12_handle_interrupt(const struct device *dev)
 		lis2du12_all_sources_t all_src;
 
 		if (lis2du12_all_sources_get(ctx, &all_src) < 0) {
-			LOG_ERR("failed reading all interrupt sources");
+			LOG_ERROR("failed reading all interrupt sources");
 			return;
 		}
 
@@ -330,8 +330,8 @@ int lis2du12_init_interrupt(const struct device *dev)
 
 		/* setup data ready gpio interrupt (INT1 or INT2) */
 		if (!gpio_is_ready_dt(int_gpios[i])) {
-			LOG_ERR("Cannot get pointer to int%d_gpio device (%p)",
-				i + 1, int_gpios[i]);
+			LOG_ERROR("Cannot get pointer to int%d_gpio device (%p)", i + 1,
+				  int_gpios[i]);
 			return -EINVAL;
 		}
 	}
@@ -356,7 +356,7 @@ int lis2du12_init_interrupt(const struct device *dev)
 
 		ret = gpio_pin_configure_dt(int_gpios[i], GPIO_INPUT);
 		if (ret < 0) {
-			LOG_ERR("Could not configure gpio: %d", ret);
+			LOG_ERROR("Could not configure gpio: %d", ret);
 			return ret;
 		}
 
@@ -365,14 +365,14 @@ int lis2du12_init_interrupt(const struct device *dev)
 				   BIT(int_gpios[i]->pin));
 
 		if (gpio_add_callback(int_gpios[i]->port, &lis2du12->gpio_cb[i]) < 0) {
-			LOG_ERR("Could not set gpio callback");
+			LOG_ERROR("Could not set gpio callback");
 			return -EIO;
 		}
 
 		ret = gpio_pin_interrupt_configure_dt(int_gpios[i],
 						      GPIO_INT_EDGE_TO_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure gpio interrupt: %d", ret);
+			LOG_ERROR("Could not configure gpio interrupt: %d", ret);
 			return ret;
 		}
 	}
@@ -400,7 +400,7 @@ int lis2du12_accel_set_wake_th(const struct device *dev, const struct sensor_val
 
 	ret = lis2du12_wake_up_mode_get(ctx, &wakeup_mode);
 	if (ret < 0) {
-		LOG_ERR("Failed to get wake-up mode");
+		LOG_ERROR("Failed to get wake-up mode");
 		return ret;
 	}
 
@@ -423,7 +423,7 @@ int lis2du12_accel_set_wake_dur(const struct device *dev, const struct sensor_va
 
 	ret = lis2du12_wake_up_mode_get(ctx, &wakeup_mode);
 	if (ret < 0) {
-		LOG_ERR("Failed to get wake-up mode");
+		LOG_ERROR("Failed to get wake-up mode");
 		return ret;
 	}
 

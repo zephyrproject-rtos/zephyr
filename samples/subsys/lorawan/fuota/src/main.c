@@ -79,13 +79,13 @@ int main(void)
 
 	lora_dev = DEVICE_DT_GET(DT_ALIAS(lora0));
 	if (!device_is_ready(lora_dev)) {
-		LOG_ERR("%s: device not ready.", lora_dev->name);
+		LOG_ERROR("%s: device not ready.", lora_dev->name);
 		return -ENODEV;
 	}
 
 	ret = lorawan_start();
 	if (ret < 0) {
-		LOG_ERR("lorawan_start failed: %d", ret);
+		LOG_ERROR("lorawan_start failed: %d", ret);
 		return ret;
 	}
 
@@ -101,7 +101,7 @@ int main(void)
 	LOG_INF("Joining network over OTAA");
 	ret = lorawan_join(&join_cfg);
 	if (ret < 0) {
-		LOG_ERR("lorawan_join_network failed: %d", ret);
+		LOG_ERROR("lorawan_join_network failed: %d", ret);
 		return ret;
 	}
 
@@ -137,7 +137,7 @@ int main(void)
 		if (ret == 0) {
 			LOG_INF("Hello World sent!");
 		} else {
-			LOG_ERR("lorawan_send failed: %d", ret);
+			LOG_ERROR("lorawan_send failed: %d", ret);
 		}
 
 		k_sleep(DELAY);

@@ -47,7 +47,7 @@ static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *pat
 	bool ret;
 
 	if (gmtime_r(&value, &dt) != &dt) {
-		LOG_ERR("unable to convert from secs since Epoch to a date/time construct");
+		LOG_ERROR("unable to convert from secs since Epoch to a date/time construct");
 		return -EINVAL;
 	}
 
@@ -62,7 +62,7 @@ static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *pat
 			dt.tm_sec);
 
 	if (len < 0 || len > sizeof(time_str) - 1) {
-		LOG_ERR("unable to form a date/time string");
+		LOG_ERROR("unable to form a date/time string");
 		return -EINVAL;
 	}
 
@@ -72,7 +72,7 @@ static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *pat
 	ret = zcbor_tag_put(states, ZCBOR_TAG_TIME_TSTR);
 
 	if (!ret) {
-		LOG_ERR("unable to encode date/time string tag");
+		LOG_ERROR("unable to encode date/time string tag");
 		return -ENOMEM;
 	}
 
@@ -82,7 +82,7 @@ static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *pat
 
 	ret = zcbor_tstr_put_term(states, time_str, sizeof(time_str));
 	if (!ret) {
-		LOG_ERR("unable to encode date/time string");
+		LOG_ERROR("unable to encode date/time string");
 		return -ENOMEM;
 	}
 
@@ -107,7 +107,7 @@ static int put_s64(struct lwm2m_output_context *out,
 		payload_len = CPKT_CBOR_W_SZ(states[0].payload, out->out_cpkt);
 		out->out_cpkt->offset += payload_len;
 	} else {
-		LOG_ERR("unable to encode a long long integer value");
+		LOG_ERROR("unable to encode a long long integer value");
 		payload_len = -ENOMEM;
 	}
 
@@ -127,7 +127,7 @@ static int put_s32(struct lwm2m_output_context *out, struct lwm2m_obj_path *path
 		payload_len = CPKT_CBOR_W_SZ(states[0].payload, out->out_cpkt);
 		out->out_cpkt->offset += payload_len;
 	} else {
-		LOG_ERR("unable to encode an integer value");
+		LOG_ERROR("unable to encode an integer value");
 		payload_len = -ENOMEM;
 	}
 
@@ -277,7 +277,7 @@ static int get_float(struct lwm2m_input_context *in, double *value)
 	states->constant_state->enforce_canonical = false;
 
 	if (!zcbor_float_decode(states, value)) {
-		LOG_ERR("unable to decode a floating-point value");
+		LOG_ERROR("unable to decode a floating-point value");
 		return -EBADMSG;
 	}
 

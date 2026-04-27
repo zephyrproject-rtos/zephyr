@@ -105,12 +105,12 @@ int bt_mesh_sol_pdu_rpl_clear(struct bt_mesh_msg_ctx *ctx, uint16_t range_start,
 	};
 
 	if (range_len == 1) {
-		LOG_ERR("Invalid range length");
+		LOG_ERROR("Invalid range length");
 		return -EINVAL;
 	}
 
 	if ((range_start + (range_len > 1 ? range_len : 0)) > 0x8000 || range_start == 0) {
-		LOG_ERR("Range outside unicast address range");
+		LOG_ERROR("Range outside unicast address range");
 		return -EINVAL;
 	}
 
@@ -129,12 +129,12 @@ int bt_mesh_sol_pdu_rpl_clear_unack(struct bt_mesh_msg_ctx *ctx, uint16_t range_
 				    uint8_t range_len)
 {
 	if (range_len == 1) {
-		LOG_ERR("Invalid range length");
+		LOG_ERROR("Invalid range length");
 		return -EINVAL;
 	}
 
 	if ((range_start + (range_len > 1 ? range_len : 0)) > 0x8000 || range_start == 0) {
-		LOG_ERR("Range outside unicast address range");
+		LOG_ERROR("Range outside unicast address range");
 		return -EINVAL;
 	}
 
@@ -163,7 +163,7 @@ void bt_mesh_sol_pdu_rpl_cli_timeout_set(int32_t timeout)
 static int sol_pdu_rpl_cli_init(const struct bt_mesh_model *mod)
 {
 	if (!bt_mesh_model_in_primary(mod)) {
-		LOG_ERR("Solicitation PDU RPL Configuration client not in primary element");
+		LOG_ERROR("Solicitation PDU RPL Configuration client not in primary element");
 		return -EINVAL;
 	}
 

@@ -92,19 +92,19 @@ static int st_ilps22qs_init(const struct device *dev)
 		 */
 		data->i3c_dev = i3c_device_find(cfg->i3c.bus, &cfg->i3c.dev_id);
 		if (data->i3c_dev == NULL) {
-			LOG_ERR("Cannot find I3C device descriptor");
+			LOG_ERROR("Cannot find I3C device descriptor");
 			return -ENODEV;
 		}
 	}
 #endif
 
 	if (ilps22qs_id_get(ctx, &id) < 0) {
-		LOG_ERR("%s: Not able to read dev id", dev->name);
+		LOG_ERROR("%s: Not able to read dev id", dev->name);
 		return -EIO;
 	}
 
 	if (id.whoami != ILPS22QS_ID) {
-		LOG_ERR("%s: Invalid chip ID 0x%02x", dev->name, id.whoami);
+		LOG_ERROR("%s: Invalid chip ID 0x%02x", dev->name, id.whoami);
 		return -EIO;
 	}
 
@@ -112,7 +112,7 @@ static int st_ilps22qs_init(const struct device *dev)
 
 	/* Restore default configuration */
 	if (ilps22qs_init_set(ctx, ILPS22QS_RESET) < 0) {
-		LOG_ERR("%s: Not able to reset device", dev->name);
+		LOG_ERROR("%s: Not able to reset device", dev->name);
 		return -EIO;
 	}
 
@@ -130,7 +130,7 @@ static int st_ilps22qs_init(const struct device *dev)
 
 	/* Set bdu and if_inc recommended for driver usage */
 	if (ilps22qs_init_set(ctx, ILPS22QS_DRV_RDY) < 0) {
-		LOG_ERR("%s: Not able to set device to ready state", dev->name);
+		LOG_ERROR("%s: Not able to set device to ready state", dev->name);
 		return -EIO;
 	}
 
@@ -148,7 +148,7 @@ static int st_ilps22qs_init(const struct device *dev)
 	LOG_DBG("%s: odr: %d", dev->name, cfg->odr);
 	ret = ilps22qs_mode_set_odr_raw(dev, cfg->odr);
 	if (ret < 0) {
-		LOG_ERR("%s: Failed to set odr %d", dev->name, cfg->odr);
+		LOG_ERROR("%s: Failed to set odr %d", dev->name, cfg->odr);
 		return ret;
 	}
 
@@ -158,7 +158,7 @@ static int st_ilps22qs_init(const struct device *dev)
 #ifdef CONFIG_LPS2XDF_TRIGGER
 	if (cfg->trig_enabled) {
 		if (lps2xdf_init_interrupt(dev, DEVICE_VARIANT_ILPS22QS) < 0) {
-			LOG_ERR("Failed to initialize interrupt.");
+			LOG_ERROR("Failed to initialize interrupt.");
 			return -EIO;
 		}
 	}

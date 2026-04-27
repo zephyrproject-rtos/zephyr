@@ -46,17 +46,17 @@ int mipi_dbi_stm32_fmc_check_config(const struct device *dev,
 	}
 
 	if (dbi_config->mode != MIPI_DBI_MODE_8080_BUS_16_BIT) {
-		LOG_ERR("Only support Intel 8080 16-bits");
+		LOG_ERROR("Only support Intel 8080 16-bits");
 		return -ENOTSUP;
 	}
 
 	if (config->fmc_memory_width != FMC_NORSRAM_MEM_BUS_WIDTH_16) {
-		LOG_ERR("Only supports 16-bit bus width");
+		LOG_ERROR("Only supports 16-bit bus width");
 		return -EINVAL;
 	}
 
 	if (memc_stm32_fmc_clock_rate(&fmc_freq) < 0) {
-		LOG_ERR("Unable to get FMC frequency");
+		LOG_ERROR("Unable to get FMC frequency");
 		return -EINVAL;
 	}
 
@@ -65,7 +65,7 @@ int mipi_dbi_stm32_fmc_check_config(const struct device *dev,
 		((config->fmc_address_setup_time + 1) + (config->fmc_data_setup_time + 1)) * 1;
 
 	if (fmc_freq / fmc_write_cycles > dbi_config->config.frequency) {
-		LOG_ERR("Frequency is too high for the display controller");
+		LOG_ERROR("Frequency is too high for the display controller");
 		return -EINVAL;
 	}
 
@@ -154,24 +154,24 @@ static int mipi_dbi_stm32_fmc_init(const struct device *dev)
 
 	if (config->reset.port) {
 		if (!gpio_is_ready_dt(&config->reset)) {
-			LOG_ERR("Reset GPIO device not ready");
+			LOG_ERROR("Reset GPIO device not ready");
 			return -ENODEV;
 		}
 
 		if (gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE)) {
-			LOG_ERR("Couldn't configure reset pin");
+			LOG_ERROR("Couldn't configure reset pin");
 			return -EIO;
 		}
 	}
 
 	if (config->power.port) {
 		if (!gpio_is_ready_dt(&config->power)) {
-			LOG_ERR("Power GPIO device not ready");
+			LOG_ERROR("Power GPIO device not ready");
 			return -ENODEV;
 		}
 
 		if (gpio_pin_configure_dt(&config->power, GPIO_OUTPUT)) {
-			LOG_ERR("Couldn't configure power pin");
+			LOG_ERROR("Couldn't configure power pin");
 			return -EIO;
 		}
 	}

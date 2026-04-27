@@ -90,22 +90,22 @@ static int adc_sam_channel_setup(const struct device *dev,
 		afec->AFEC_CGR |= (2 << (channel_id * 2U));
 		break;
 	default:
-		LOG_ERR("Selected ADC gain is not valid");
+		LOG_ERROR("Selected ADC gain is not valid");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Selected ADC acquisition time is not valid");
+		LOG_ERROR("Selected ADC acquisition time is not valid");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->reference != ADC_REF_EXTERNAL0) {
-		LOG_ERR("Selected reference is not valid");
+		LOG_ERROR("Selected reference is not valid");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential input is not supported");
+		LOG_ERROR("Differential input is not supported");
 		return -EINVAL;
 	}
 
@@ -178,8 +178,8 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 		needed_buffer_size *= (1 + sequence->options->extra_samplings);
 	}
 	if (sequence->buffer_size < needed_buffer_size) {
-		LOG_ERR("Provided buffer is too small (%u/%u)",
-				sequence->buffer_size, needed_buffer_size);
+		LOG_ERROR("Provided buffer is too small (%u/%u)", sequence->buffer_size,
+			  needed_buffer_size);
 		return -ENOMEM;
 	}
 	return 0;
@@ -197,14 +197,13 @@ static int start_read(const struct device *dev,
 	/* Signal an error if the channel selection is invalid (no channels or
 	 * a non-existing one is selected).
 	 */
-	if (channels == 0U ||
-	    (channels & (~0UL << NUM_CHANNELS))) {
-		LOG_ERR("Invalid selection of channels");
+	if (channels == 0U || (channels & (~0UL << NUM_CHANNELS))) {
+		LOG_ERROR("Invalid selection of channels");
 		return -EINVAL;
 	}
 
 	if (sequence->oversampling != 0U) {
-		LOG_ERR("Oversampling is not supported");
+		LOG_ERROR("Oversampling is not supported");
 		return -EINVAL;
 	}
 
@@ -212,8 +211,7 @@ static int start_read(const struct device *dev,
 		/* TODO JKW: Support the Enhanced Resolution Mode 50.6.3 page
 		 * 1544.
 		 */
-		LOG_ERR("ADC resolution value %d is not valid",
-			    sequence->resolution);
+		LOG_ERROR("ADC resolution value %d is not valid", sequence->resolution);
 		return -EINVAL;
 	}
 

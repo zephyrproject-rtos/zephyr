@@ -55,7 +55,7 @@ static int dns_query(const char *host, uint16_t port, int family, int socktype,
 	/* Perform DNS query */
 	ret = getaddrinfo(host, NULL, &hints, &res);
 	if (ret < 0) {
-		LOG_ERR("getaddrinfo failed (%d, errno %d)", ret, errno);
+		LOG_ERROR("getaddrinfo failed (%d, errno %d)", ret, errno);
 		return ret;
 	}
 
@@ -85,19 +85,19 @@ static int ocpp_get_time_from_sntp(void)
 	ret = dns_query(CONFIG_NET_SAMPLE_SNTP_SERVER, CONFIG_NET_SAMPLE_SNTP_SERVER_PORT,
 				   AF_INET, SOCK_DGRAM, &addr, &addrlen);
 	if (ret != 0) {
-		LOG_ERR("Failed to lookup SNTP server (%d)", ret);
+		LOG_ERROR("Failed to lookup SNTP server (%d)", ret);
 		return ret;
 	}
 
 	ret = sntp_init(&ctx, &addr, addrlen);
 	if (ret < 0) {
-		LOG_ERR("Failed to init SNTP IPv4 ctx: %d", ret);
+		LOG_ERROR("Failed to init SNTP IPv4 ctx: %d", ret);
 		return ret;
 	}
 
 	ret = sntp_query(&ctx, 4 * MSEC_PER_SEC, &stime);
 	if (ret < 0) {
-		LOG_ERR("SNTP IPv4 request failed: %d", ret);
+		LOG_ERROR("SNTP IPv4 request failed: %d", ret);
 		return ret;
 	}
 
@@ -200,7 +200,7 @@ static void ocpp_cp_entry(void *p1, void *p2, void *p3)
 
 	ret = ocpp_session_open(&sh);
 	if (ret < 0) {
-		LOG_ERR("ocpp open ses idcon %d> res %d\n", idcon, ret);
+		LOG_ERROR("ocpp open ses idcon %d> res %d\n", idcon, ret);
 		return;
 	}
 
@@ -215,8 +215,7 @@ static void ocpp_cp_entry(void *p1, void *p2, void *p3)
 				     &status,
 				     timeout_ms);
 		if (ret < 0) {
-			LOG_ERR("ocpp auth %d> idcon %d status %d\n",
-				ret, idcon, status);
+			LOG_ERROR("ocpp auth %d> idcon %d status %d\n", ret, idcon, status);
 		} else {
 			LOG_INF("ocpp auth %d> idcon %d status %d\n",
 				ret, idcon, status);
@@ -225,8 +224,7 @@ static void ocpp_cp_entry(void *p1, void *p2, void *p3)
 	}
 
 	if (status != OCPP_AUTH_ACCEPTED) {
-		LOG_ERR("ocpp start idcon %d> not authorized status %d\n",
-			idcon, status);
+		LOG_ERROR("ocpp start idcon %d> not authorized status %d\n", idcon, status);
 		return;
 	}
 
@@ -253,7 +251,7 @@ static void ocpp_cp_entry(void *p1, void *p2, void *p3)
 
 	ret = ocpp_stop_transaction(sh, sys_rand32_get(), timeout_ms);
 	if (ret < 0) {
-		LOG_ERR("ocpp stop txn idcon %d> %d\n", idcon, ret);
+		LOG_ERROR("ocpp stop txn idcon %d> %d\n", idcon, ret);
 		return;
 	}
 
@@ -282,10 +280,10 @@ static int ocpp_getaddrinfo(char *server, int port, char **ip)
 	do {
 		ret = getaddrinfo(server, NULL, &hints, &result);
 		if (ret == -EAGAIN) {
-			LOG_ERR("ERROR: getaddrinfo %d, rebind", ret);
+			LOG_ERROR("ERROR: getaddrinfo %d, rebind", ret);
 			k_sleep(K_SECONDS(1));
 		} else if (ret != 0) {
-			LOG_ERR("ERROR: getaddrinfo failed %d", ret);
+			LOG_ERROR("ERROR: getaddrinfo failed %d", ret);
 			return ret;
 		}
 	} while (--retry && ret);
@@ -311,10 +309,9 @@ static int ocpp_getaddrinfo(char *server, int port, char **ip)
 			break;
 		}
 
-		LOG_ERR("error: ai_addrlen = %u should be %u or %u",
-			(unsigned int)addr->ai_addrlen,
-			(unsigned int)sizeof(struct sockaddr_in),
-			(unsigned int)sizeof(struct sockaddr_in6));
+		LOG_ERROR("error: ai_addrlen = %u should be %u or %u",
+			  (unsigned int)addr->ai_addrlen, (unsigned int)sizeof(struct sockaddr_in),
+			  (unsigned int)sizeof(struct sockaddr_in6));
 
 		addr = addr->ai_next;
 	}
@@ -363,7 +360,7 @@ int main(void)
 				 ca_certificate,
 				 sizeof(ca_certificate));
 	if (ret < 0) {
-		LOG_ERR("Failed to register CA certificate: %d", ret);
+		LOG_ERROR("Failed to register CA certificate: %d", ret);
 		return ret;
 	}
 
@@ -377,7 +374,7 @@ int main(void)
 			user_notify_cb,
 			NULL);
 	if (ret < 0) {
-		LOG_ERR("ocpp init failed %d\n", ret);
+		LOG_ERROR("ocpp init failed %d\n", ret);
 		return ret;
 	}
 

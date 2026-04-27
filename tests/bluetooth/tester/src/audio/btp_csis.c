@@ -84,7 +84,7 @@ static uint8_t csis_set_sirk_type(const void *cmd, uint16_t cmd_len, void *rsp, 
 		sirk_read_response = BT_CSIP_READ_SIRK_REQ_RSP_OOB_ONLY;
 		break;
 	default:
-		LOG_ERR("Unknown SIRK type: %u", cp->type);
+		LOG_ERROR("Unknown SIRK type: %u", cp->type);
 		return BTP_STATUS_FAILED;
 	}
 

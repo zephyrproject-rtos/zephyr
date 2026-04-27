@@ -52,7 +52,7 @@ static int gpio_esp32_lp_configure(const struct device *dev, gpio_pin_t pin, gpi
 	const struct gpio_esp32_lp_config *const cfg = dev->config;
 
 	if (!lp_gpio_is_valid(pin)) {
-		LOG_ERR("Selected LP IO pin is not valid.");
+		LOG_ERROR("Selected LP IO pin is not valid.");
 		return -EINVAL;
 	}
 
@@ -169,7 +169,7 @@ static int gpio_esp32_lp_pin_interrupt_configure(const struct device *dev, gpio_
 	int intr_trig_mode = lp_gpio_convert_int_type(mode, trig);
 
 	if (!lp_gpio_is_valid(pin)) {
-		LOG_ERR("Selected LP IO pin is not valid.");
+		LOG_ERROR("Selected LP IO pin is not valid.");
 		return -EINVAL;
 	}
 

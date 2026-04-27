@@ -154,7 +154,7 @@ usbd_class_get_by_ep(struct usbd_context *const uds_ctx,
 	}
 
 	if (!usbd_state_is_configured(uds_ctx)) {
-		LOG_ERR("No configuration set (Address state)");
+		LOG_ERROR("No configuration set (Address state)");
 		return NULL;
 	}
 
@@ -224,7 +224,7 @@ usbd_class_node_get(const char *name, const enum usbd_speed speed)
 		}
 	}
 
-	LOG_ERR("USB device class %s not found", name);
+	LOG_ERROR("USB device class %s not found", name);
 
 	return NULL;
 }
@@ -309,7 +309,7 @@ int usbd_register_class(struct usbd_context *const uds_ctx,
 	usbd_device_lock(uds_ctx);
 
 	if (usbd_is_initialized(uds_ctx)) {
-		LOG_ERR("USB device support is initialized");
+		LOG_ERROR("USB device support is initialized");
 		ret = -EBUSY;
 		goto register_class_error;
 	}
@@ -324,7 +324,7 @@ int usbd_register_class(struct usbd_context *const uds_ctx,
 	}
 
 	if ((c_data->uds_ctx != NULL) && (c_data->uds_ctx != uds_ctx)) {
-		LOG_ERR("Class registered to other context at different speed");
+		LOG_ERROR("Class registered to other context at different speed");
 		ret = -EBUSY;
 		goto register_class_error;
 	}
@@ -368,8 +368,8 @@ int usbd_register_all_classes(struct usbd_context *const uds_ctx,
 			ret = usbd_register_class(uds_ctx, c_nd->c_data->name,
 						  speed, cfg);
 			if (ret) {
-				LOG_ERR("Failed to register %s to HS configuration %u",
-					c_nd->c_data->name, cfg);
+				LOG_ERROR("Failed to register %s to HS configuration %u",
+					  c_nd->c_data->name, cfg);
 				return ret;
 			}
 		}
@@ -386,8 +386,8 @@ int usbd_register_all_classes(struct usbd_context *const uds_ctx,
 			ret = usbd_register_class(uds_ctx, c_nd->c_data->name,
 						  speed, cfg);
 			if (ret) {
-				LOG_ERR("Failed to register %s to FS configuration %u",
-					c_nd->c_data->name, cfg);
+				LOG_ERROR("Failed to register %s to FS configuration %u",
+					  c_nd->c_data->name, cfg);
 				return ret;
 			}
 		}
@@ -415,7 +415,7 @@ int usbd_unregister_class(struct usbd_context *const uds_ctx,
 	usbd_device_lock(uds_ctx);
 
 	if (usbd_is_initialized(uds_ctx)) {
-		LOG_ERR("USB device support is initialized");
+		LOG_ERROR("USB device support is initialized");
 		ret = -EBUSY;
 		goto unregister_class_error;
 	}
@@ -476,8 +476,8 @@ int usbd_unregister_all_classes(struct usbd_context *const uds_ctx,
 			ret = usbd_unregister_class(uds_ctx, c_nd->c_data->name,
 						    speed, cfg);
 			if (ret) {
-				LOG_ERR("Failed to unregister %s to HS configuration %u",
-					c_nd->c_data->name, cfg);
+				LOG_ERROR("Failed to unregister %s to HS configuration %u",
+					  c_nd->c_data->name, cfg);
 				return ret;
 			}
 		}
@@ -490,8 +490,8 @@ int usbd_unregister_all_classes(struct usbd_context *const uds_ctx,
 			ret = usbd_unregister_class(uds_ctx, c_nd->c_data->name,
 						    speed, cfg);
 			if (ret) {
-				LOG_ERR("Failed to unregister %s to FS configuration %u",
-					c_nd->c_data->name, cfg);
+				LOG_ERROR("Failed to unregister %s to FS configuration %u",
+					  c_nd->c_data->name, cfg);
 				return ret;
 			}
 		}

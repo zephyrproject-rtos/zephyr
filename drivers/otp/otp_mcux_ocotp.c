@@ -53,7 +53,7 @@ static int mcux_ocotp_program(const struct device *dev, off_t offset, const void
 	}
 
 	if (!IS_ALIGNED(offset, sizeof(uint32_t)) || !IS_ALIGNED(len, sizeof(uint32_t))) {
-		LOG_ERR("Unaligned program not allowed (0x%lx/0x%zx)", offset, len);
+		LOG_ERROR("Unaligned program not allowed (0x%lx/0x%zx)", offset, len);
 		return -EINVAL;
 	}
 
@@ -67,7 +67,7 @@ static int mcux_ocotp_program(const struct device *dev, off_t offset, const void
 
 		status = OCOTP_WriteFuseShadowRegister(config->base, addr, raw);
 		if (status != kStatus_Success) {
-			LOG_ERR("Failed to write OCOTP (%d)", status);
+			LOG_ERROR("Failed to write OCOTP (%d)", status);
 			mcux_ocotp_unlock(dev);
 			return -EIO;
 		}
@@ -107,7 +107,7 @@ static int mcux_ocotp_read(const struct device *dev, off_t offset, void *buf, si
 	while (len > 0) {
 		status = OCOTP_ReadFuseShadowRegisterExt(config->base, addr, (uint32_t *)raw, 1);
 		if (status != kStatus_Success) {
-			LOG_ERR("Failed to read OCOTP (%d)", status);
+			LOG_ERROR("Failed to read OCOTP (%d)", status);
 			mcux_ocotp_unlock(dev);
 			return -EIO;
 		}
@@ -145,13 +145,13 @@ static int mcux_ocotp_init(const struct device *dev)
 
 	if (config->clock_dev != NULL) {
 		if (!device_is_ready(config->clock_dev)) {
-			LOG_ERR("Clock not ready");
+			LOG_ERROR("Clock not ready");
 			return -ENODEV;
 		}
 
 		ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq);
 		if (ret < 0) {
-			LOG_ERR("Clock get rate failed (%d)", ret);
+			LOG_ERROR("Clock get rate failed (%d)", ret);
 			return ret;
 		}
 	}

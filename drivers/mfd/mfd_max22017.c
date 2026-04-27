@@ -81,7 +81,7 @@ int max22017_reg_read(const struct device *dev, uint8_t addr, uint16_t *value)
 	ret = crc8(crc_in, 3, MAX22017_CRC_POLY, 0, true);
 
 	if (ret != rxbuffer[3]) {
-		LOG_ERR("Reg read: CRC Mismatch calculated / read: %x / %x", ret, rxbuffer[3]);
+		LOG_ERROR("Reg read: CRC Mismatch calculated / read: %x / %x", ret, rxbuffer[3]);
 		return -EINVAL;
 	}
 
@@ -196,54 +196,54 @@ static void max22017_int_worker(struct k_work *work)
 
 	ret = max22017_reg_read(dev, MAX22017_GEN_INT_OFF, &gen_int);
 	if (ret) {
-		LOG_ERR("Unable to read GEN_INT register");
+		LOG_ERROR("Unable to read GEN_INT register");
 		goto fail;
 	}
 
 	if (FIELD_GET(MAX22017_GEN_INT_FAIL_INT, gen_int)) {
-		LOG_ERR("Boot failure");
+		LOG_ERROR("Boot failure");
 	}
 
 	ret = FIELD_GET(MAX22017_GEN_INT_CONV_OVF_INT, gen_int);
 	if (ret) {
-		LOG_ERR("Conversion failure on channels: %s %s", (ret & BIT(0)) ? "0" : "",
-			(ret & BIT(1)) ? "1" : "");
+		LOG_ERROR("Conversion failure on channels: %s %s", (ret & BIT(0)) ? "0" : "",
+			  (ret & BIT(1)) ? "1" : "");
 	}
 
 	ret = FIELD_GET(MAX22017_GEN_INT_OPENWIRE_DTCT_INT, gen_int);
 	if (ret) {
-		LOG_ERR("Openwire detected on channels: %s %s", (ret & BIT(0)) ? "0" : "",
-			(ret & BIT(1)) ? "1" : "");
+		LOG_ERROR("Openwire detected on channels: %s %s", (ret & BIT(0)) ? "0" : "",
+			  (ret & BIT(1)) ? "1" : "");
 	}
 
 	if (FIELD_GET(MAX22017_GEN_INT_HVDD_INT, gen_int)) {
-		LOG_ERR("HVDD/HVSS voltage difference below 1.5V");
+		LOG_ERROR("HVDD/HVSS voltage difference below 1.5V");
 	}
 
 	if (FIELD_GET(MAX22017_GEN_INT_TMOUT_INT, gen_int)) {
-		LOG_ERR("SPI transaction timeout");
+		LOG_ERROR("SPI transaction timeout");
 	}
 
 	ret = FIELD_GET(MAX22017_GEN_INT_THSHDN_INT, gen_int);
 	if (ret) {
-		LOG_ERR("Thermal shutdown AO channels: %s %s", (ret & BIT(0)) ? "0" : "",
-			(ret & BIT(1)) ? "1" : "");
+		LOG_ERROR("Thermal shutdown AO channels: %s %s", (ret & BIT(0)) ? "0" : "",
+			  (ret & BIT(1)) ? "1" : "");
 	}
 
 	ret = FIELD_GET(MAX22017_GEN_INT_THWRNG_INT, gen_int);
 	if (ret) {
-		LOG_ERR("Thermal warning AO channels: %s %s", (ret & BIT(0)) ? "0" : "",
-			(ret & BIT(1)) ? "1" : "");
+		LOG_ERROR("Thermal warning AO channels: %s %s", (ret & BIT(0)) ? "0" : "",
+			  (ret & BIT(1)) ? "1" : "");
 	}
 
 	ret = FIELD_GET(MAX22017_GEN_INT_OVC_INT, gen_int);
 	if (ret) {
-		LOG_ERR("Over current on channels: %s %s", (ret & BIT(0)) ? "0" : "",
-			(ret & BIT(1)) ? "1" : "");
+		LOG_ERROR("Over current on channels: %s %s", (ret & BIT(0)) ? "0" : "",
+			  (ret & BIT(1)) ? "1" : "");
 	}
 
 	if (FIELD_GET(MAX22017_GEN_INT_CRC_INT, gen_int)) {
-		LOG_ERR("CRC Error");
+		LOG_ERROR("CRC Error");
 	}
 
 	ret = FIELD_GET(MAX22017_GEN_INT_GPI_INT, gen_int);
@@ -280,21 +280,21 @@ static int max22017_init(const struct device *dev)
 	uint16_t gen_cnfg = 0, gen_int_en = 0;
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI spi %s not ready", config->spi.bus->name);
+		LOG_ERROR("SPI spi %s not ready", config->spi.bus->name);
 		return -ENODEV;
 	}
 
 	if (config->gpio_reset.port != NULL) {
 		ret = gpio_pin_configure_dt(&config->gpio_reset, GPIO_OUTPUT_ACTIVE);
 		if (ret) {
-			LOG_ERR("failed to initialize GPIO reset pin");
+			LOG_ERROR("failed to initialize GPIO reset pin");
 			return ret;
 		}
 	}
 
 	ret = max22017_reset(dev);
 	if (ret) {
-		LOG_ERR("failed to reset MAX22017");
+		LOG_ERROR("failed to reset MAX22017");
 		return ret;
 	}
 
@@ -305,20 +305,20 @@ static int max22017_init(const struct device *dev)
 	if (config->gpio_int.port) {
 		ret = gpio_pin_configure_dt(&config->gpio_int, GPIO_INPUT);
 		if (ret) {
-			LOG_ERR("failed to initialize GPIO interrupt pin");
+			LOG_ERROR("failed to initialize GPIO interrupt pin");
 			goto fail;
 		}
 
 		ret = gpio_pin_interrupt_configure_dt(&config->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 		if (ret) {
-			LOG_ERR("failed to configure interrupt pin");
+			LOG_ERROR("failed to configure interrupt pin");
 			goto fail;
 		}
 
 		gpio_init_callback(&data->callback_int, max22017_isr, BIT(config->gpio_int.pin));
 		ret = gpio_add_callback(config->gpio_int.port, &data->callback_int);
 		if (ret) {
-			LOG_ERR("failed to add data ready callback");
+			LOG_ERROR("failed to add data ready callback");
 			goto fail;
 		}
 	}
@@ -361,7 +361,7 @@ static int max22017_init(const struct device *dev)
 
 	ret = max22017_reg_read(dev, MAX22017_GEN_ID_OFF, &version);
 	if (ret) {
-		LOG_ERR("Unable to read MAX22017 version over SPI: %d", ret);
+		LOG_ERROR("Unable to read MAX22017 version over SPI: %d", ret);
 		goto fail;
 	}
 

@@ -70,7 +70,7 @@ static int nxp_lpcmp_set_trigger(const struct device *dev, enum comparator_trigg
 		data->interrupt_mask = LPCMP_IER_CFR_IE_MASK | LPCMP_IER_CFF_IE_MASK;
 		break;
 	default:
-		LOG_ERR("Invalid trigger type.");
+		LOG_ERROR("Invalid trigger type.");
 		return -EINVAL;
 	}
 
@@ -174,13 +174,13 @@ static int nxp_lpcmp_init(const struct device *dev)
 
 	if (config->clock_dev != NULL) {
 		if (!device_is_ready(config->clock_dev)) {
-			LOG_ERR("Clock device is not ready");
+			LOG_ERROR("Clock device is not ready");
 			return -ENODEV;
 		}
 
 		ret = clock_control_on(config->clock_dev, config->clock_subsys);
 		if (ret != 0) {
-			LOG_ERR("Device clock turn on failed (%d)", ret);
+			LOG_ERROR("Device clock turn on failed (%d)", ret);
 			return ret;
 		}
 	}

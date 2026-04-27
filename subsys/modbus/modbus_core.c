@@ -85,7 +85,7 @@ static void modbus_rx_handler(struct k_work *item)
 		}
 		break;
 	default:
-		LOG_ERR("Unknown MODBUS mode");
+		LOG_ERROR("Unknown MODBUS mode");
 		return;
 	}
 
@@ -121,17 +121,17 @@ void modbus_tx_adu(struct modbus_context *ctx)
 	case MODBUS_MODE_ASCII:
 		if (IS_ENABLED(CONFIG_MODBUS_SERIAL) &&
 		    modbus_serial_tx_adu(ctx)) {
-			LOG_ERR("Unsupported MODBUS serial mode");
+			LOG_ERROR("Unsupported MODBUS serial mode");
 		}
 		break;
 	case MODBUS_MODE_RAW:
 		if (IS_ENABLED(CONFIG_MODBUS_RAW_ADU) &&
 		    modbus_raw_tx_adu(ctx)) {
-			LOG_ERR("Unsupported MODBUS raw mode");
+			LOG_ERROR("Unsupported MODBUS raw mode");
 		}
 		break;
 	default:
-		LOG_ERR("Unknown MODBUS mode");
+		LOG_ERROR("Unknown MODBUS mode");
 	}
 }
 
@@ -154,14 +154,14 @@ struct modbus_context *modbus_get_context(const uint8_t iface)
 	struct modbus_context *ctx;
 
 	if (iface >= ARRAY_SIZE(mb_ctx_tbl)) {
-		LOG_ERR("Interface %u not available", iface);
+		LOG_ERROR("Interface %u not available", iface);
 		return NULL;
 	}
 
 	ctx = &mb_ctx_tbl[iface];
 
 	if (!atomic_test_bit(&ctx->state, MODBUS_STATE_CONFIGURED)) {
-		LOG_ERR("Interface not configured");
+		LOG_ERROR("Interface not configured");
 		return NULL;
 	}
 
@@ -195,14 +195,14 @@ static struct modbus_context *modbus_init_iface(const uint8_t iface)
 	struct modbus_context *ctx;
 
 	if (iface >= ARRAY_SIZE(mb_ctx_tbl)) {
-		LOG_ERR("Interface %u not available", iface);
+		LOG_ERROR("Interface %u not available", iface);
 		return NULL;
 	}
 
 	ctx = &mb_ctx_tbl[iface];
 
 	if (atomic_test_and_set_bit(&ctx->state, MODBUS_STATE_CONFIGURED)) {
-		LOG_ERR("Interface already used");
+		LOG_ERROR("Interface already used");
 		return NULL;
 	}
 
@@ -227,13 +227,13 @@ int modbus_init_server(const int iface, struct modbus_iface_param param)
 	int rc = 0;
 
 	if (!IS_ENABLED(CONFIG_MODBUS_SERVER)) {
-		LOG_ERR("Modbus server support is not enabled");
+		LOG_ERROR("Modbus server support is not enabled");
 		rc = -ENOTSUP;
 		goto init_server_error;
 	}
 
 	if (param.server.user_cb == NULL) {
-		LOG_ERR("User callbacks should be available");
+		LOG_ERROR("User callbacks should be available");
 		rc = -EINVAL;
 		goto init_server_error;
 	}
@@ -247,7 +247,7 @@ int modbus_init_server(const int iface, struct modbus_iface_param param)
 	ctx->client = false;
 
 	if (modbus_user_fc_init(ctx, param) != 0) {
-		LOG_ERR("Failed to init MODBUS user defined function codes");
+		LOG_ERROR("Failed to init MODBUS user defined function codes");
 		rc = -EINVAL;
 		goto init_server_error;
 	}
@@ -257,7 +257,7 @@ int modbus_init_server(const int iface, struct modbus_iface_param param)
 	case MODBUS_MODE_ASCII:
 		if (IS_ENABLED(CONFIG_MODBUS_SERIAL) &&
 		    modbus_serial_init(ctx, param) != 0) {
-			LOG_ERR("Failed to init MODBUS over serial line");
+			LOG_ERROR("Failed to init MODBUS over serial line");
 			rc = -EINVAL;
 			goto init_server_error;
 		}
@@ -265,13 +265,13 @@ int modbus_init_server(const int iface, struct modbus_iface_param param)
 	case MODBUS_MODE_RAW:
 		if (IS_ENABLED(CONFIG_MODBUS_RAW_ADU) &&
 		    modbus_raw_init(ctx, param) != 0) {
-			LOG_ERR("Failed to init MODBUS raw ADU support");
+			LOG_ERROR("Failed to init MODBUS raw ADU support");
 			rc = -EINVAL;
 			goto init_server_error;
 		}
 		break;
 	default:
-		LOG_ERR("Unknown MODBUS mode");
+		LOG_ERROR("Unknown MODBUS mode");
 		rc = -ENOTSUP;
 		goto init_server_error;
 	}
@@ -299,12 +299,12 @@ int modbus_register_user_fc(const int iface, struct modbus_custom_fc *custom_fc)
 	struct modbus_context *ctx = modbus_get_context(iface);
 
 	if (!custom_fc) {
-		LOG_ERR("Provided function code handler was NULL");
+		LOG_ERROR("Provided function code handler was NULL");
 		return -EINVAL;
 	}
 
 	if (custom_fc->fc & BIT(7)) {
-		LOG_ERR("Function codes must have MSB of 0");
+		LOG_ERROR("Function codes must have MSB of 0");
 		return -EINVAL;
 	}
 
@@ -322,7 +322,7 @@ int modbus_init_client(const int iface, struct modbus_iface_param param)
 	int rc = 0;
 
 	if (!IS_ENABLED(CONFIG_MODBUS_CLIENT)) {
-		LOG_ERR("Modbus client support is not enabled");
+		LOG_ERROR("Modbus client support is not enabled");
 		rc = -ENOTSUP;
 		goto init_client_error;
 	}
@@ -340,7 +340,7 @@ int modbus_init_client(const int iface, struct modbus_iface_param param)
 	case MODBUS_MODE_ASCII:
 		if (IS_ENABLED(CONFIG_MODBUS_SERIAL) &&
 		    modbus_serial_init(ctx, param) != 0) {
-			LOG_ERR("Failed to init MODBUS over serial line");
+			LOG_ERROR("Failed to init MODBUS over serial line");
 			rc = -EINVAL;
 			goto init_client_error;
 		}
@@ -348,13 +348,13 @@ int modbus_init_client(const int iface, struct modbus_iface_param param)
 	case MODBUS_MODE_RAW:
 		if (IS_ENABLED(CONFIG_MODBUS_RAW_ADU) &&
 		    modbus_raw_init(ctx, param) != 0) {
-			LOG_ERR("Failed to init MODBUS raw ADU support");
+			LOG_ERROR("Failed to init MODBUS raw ADU support");
 			rc = -EINVAL;
 			goto init_client_error;
 		}
 		break;
 	default:
-		LOG_ERR("Unknown MODBUS mode");
+		LOG_ERROR("Unknown MODBUS mode");
 		rc = -ENOTSUP;
 		goto init_client_error;
 	}
@@ -380,7 +380,7 @@ int modbus_disable(const uint8_t iface)
 
 	ctx = modbus_get_context(iface);
 	if (ctx == NULL) {
-		LOG_ERR("Interface %u not initialized", iface);
+		LOG_ERROR("Interface %u not initialized", iface);
 		return -EINVAL;
 	}
 
@@ -394,7 +394,7 @@ int modbus_disable(const uint8_t iface)
 	case MODBUS_MODE_RAW:
 		break;
 	default:
-		LOG_ERR("Unknown MODBUS mode");
+		LOG_ERROR("Unknown MODBUS mode");
 	}
 
 	k_work_cancel_sync(&ctx->server_work, &work_sync);

@@ -238,14 +238,14 @@ static int coresight_nrf_init(const struct device *dev)
 	if (cfg->pcfg) {
 		err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 		if (err) {
-			LOG_ERR("Failed to configure pins (%d)", err);
+			LOG_ERROR("Failed to configure pins (%d)", err);
 			return err;
 		}
 	}
 
 	err = ironside_se_tdd_configure(IRONSIDE_SE_TDD_CONFIG_ON_DEFAULT);
 	if (err) {
-		LOG_ERR("Failed to configure TDD (%d)", err);
+		LOG_ERROR("Failed to configure TDD (%d)", err);
 		return err;
 	}
 
@@ -265,7 +265,7 @@ static int coresight_nrf_init(const struct device *dev)
 	}
 #endif
 	default: {
-		LOG_ERR("Unsupported Coresight mode");
+		LOG_ERROR("Unsupported Coresight mode");
 		return -ENOTSUP;
 	}
 	}

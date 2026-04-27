@@ -65,7 +65,7 @@ void npcx_gpio_enable_io_pads(const struct device *dev, int pin)
 	const struct npcx_wui *io_wui = &config->wui_maps[pin];
 
 	if (io_wui->table == NPCX_MIWU_TABLE_NONE) {
-		LOG_ERR("Cannot enable GPIO(%x, %d) pad", config->port, pin);
+		LOG_ERROR("Cannot enable GPIO(%x, %d) pad", config->port, pin);
 		return;
 	}
 
@@ -84,7 +84,7 @@ void npcx_gpio_disable_io_pads(const struct device *dev, int pin)
 	const struct npcx_wui *io_wui = &config->wui_maps[pin];
 
 	if (io_wui->table == NPCX_MIWU_TABLE_NONE) {
-		LOG_ERR("Cannot disable GPIO(%x, %d) pad", config->port, pin);
+		LOG_ERROR("Cannot disable GPIO(%x, %d) pad", config->port, pin);
 		return;
 	}
 
@@ -291,7 +291,7 @@ static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
 	const struct gpio_npcx_config *const config = dev->config;
 
 	if (config->wui_maps[pin].table == NPCX_MIWU_TABLE_NONE) {
-		LOG_ERR("Cannot configure GPIO(%x, %d)", config->port, pin);
+		LOG_ERROR("Cannot configure GPIO(%x, %d)", config->port, pin);
 		return -EINVAL;
 	}
 
@@ -333,7 +333,7 @@ static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
 		} else if (trig == GPIO_INT_TRIG_BOTH) {
 			miwu_trig = NPCX_MIWU_TRIG_BOTH;
 		} else {
-			LOG_ERR("Invalid interrupt trigger type %d", trig);
+			LOG_ERROR("Invalid interrupt trigger type %d", trig);
 			return -EINVAL;
 		}
 
@@ -341,7 +341,7 @@ static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
 		ret = npcx_miwu_interrupt_configure(&config->wui_maps[pin],
 						miwu_mode, miwu_trig);
 		if (ret != 0) {
-			LOG_ERR("Configure MIWU interrupt failed");
+			LOG_ERROR("Configure MIWU interrupt failed");
 			return ret;
 		}
 
@@ -366,8 +366,7 @@ static int gpio_npcx_manage_callback(const struct device *dev,
 
 	/* Has the IO pin valid MIWU input source? */
 	if (config->wui_maps[pin].table == NPCX_MIWU_TABLE_NONE) {
-		LOG_ERR("Cannot manage GPIO(%x, %d) callback!", config->port,
-				pin);
+		LOG_ERROR("Cannot manage GPIO(%x, %d) callback!", config->port, pin);
 		return -EINVAL;
 	}
 

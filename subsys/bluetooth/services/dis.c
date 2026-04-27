@@ -317,16 +317,16 @@ static void dis_update_udi_value(const char *new, char *old, settings_read_cb re
 	bool valid = BT_ATT_MAX_ATTRIBUTE_LEN >= without_old + DIS_STR_SIZE(new);
 
 	if (!valid) {
-		LOG_ERR("Failed to set UDI %s. Not enough space. The sum of the 4 DIS UDI for "
-			"Medical Devices strings may not exceed the maximum attribute length.",
-			logkey);
+		LOG_ERROR("Failed to set UDI %s. Not enough space. The sum of the 4 DIS UDI for "
+			  "Medical Devices strings may not exceed the maximum attribute length.",
+			  logkey);
 		return;
 	}
 
 	int16_t len = read_cb((void *)new, (void *)old, CONFIG_BT_DIS_STR_MAX);
 
 	if (len < 0) {
-		LOG_ERR("Failed to read UDI %s from storage (err %zd)", logkey, len);
+		LOG_ERROR("Failed to read UDI %s from storage (err %zd)", logkey, len);
 	} else {
 		old[len] = '\0';
 
@@ -348,7 +348,7 @@ static int dis_set(const char *name, size_t len_rd, settings_read_cb read_cb, vo
 	if (!strncmp(name, "manuf", nlen)) {
 		len = read_cb(store, &dis_manuf, sizeof(dis_manuf) - 1);
 		if (len < 0) {
-			LOG_ERR("Failed to read manufacturer from storage (err %zd)", len);
+			LOG_ERROR("Failed to read manufacturer from storage (err %zd)", len);
 		} else {
 			dis_manuf[len] = '\0';
 
@@ -361,7 +361,7 @@ static int dis_set(const char *name, size_t len_rd, settings_read_cb read_cb, vo
 	if (!strncmp(name, "model", nlen)) {
 		len = read_cb(store, &dis_model, sizeof(dis_model) - 1);
 		if (len < 0) {
-			LOG_ERR("Failed to read model from storage (err %zd)", len);
+			LOG_ERROR("Failed to read model from storage (err %zd)", len);
 		} else {
 			dis_model[len] = '\0';
 
@@ -374,7 +374,7 @@ static int dis_set(const char *name, size_t len_rd, settings_read_cb read_cb, vo
 	if (!strncmp(name, "serial", nlen)) {
 		len = read_cb(store, &dis_serial_number, sizeof(dis_serial_number) - 1);
 		if (len < 0) {
-			LOG_ERR("Failed to read serial number from storage (err %zd)", len);
+			LOG_ERROR("Failed to read serial number from storage (err %zd)", len);
 		} else {
 			dis_serial_number[len] = '\0';
 
@@ -387,7 +387,7 @@ static int dis_set(const char *name, size_t len_rd, settings_read_cb read_cb, vo
 	if (!strncmp(name, "fw", nlen)) {
 		len = read_cb(store, &dis_fw_rev, sizeof(dis_fw_rev) - 1);
 		if (len < 0) {
-			LOG_ERR("Failed to read firmware revision from storage (err %zd)", len);
+			LOG_ERROR("Failed to read firmware revision from storage (err %zd)", len);
 		} else {
 			dis_fw_rev[len] = '\0';
 
@@ -400,7 +400,7 @@ static int dis_set(const char *name, size_t len_rd, settings_read_cb read_cb, vo
 	if (!strncmp(name, "hw", nlen)) {
 		len = read_cb(store, &dis_hw_rev, sizeof(dis_hw_rev) - 1);
 		if (len < 0) {
-			LOG_ERR("Failed to read hardware revision from storage (err %zd)", len);
+			LOG_ERROR("Failed to read hardware revision from storage (err %zd)", len);
 		} else {
 			dis_hw_rev[len] = '\0';
 
@@ -413,7 +413,7 @@ static int dis_set(const char *name, size_t len_rd, settings_read_cb read_cb, vo
 	if (!strncmp(name, "sw", nlen)) {
 		len = read_cb(store, &dis_sw_rev, sizeof(dis_sw_rev) - 1);
 		if (len < 0) {
-			LOG_ERR("Failed to read software revision from storage (err %zd)", len);
+			LOG_ERROR("Failed to read software revision from storage (err %zd)", len);
 		} else {
 			dis_sw_rev[len] = '\0';
 
@@ -449,7 +449,7 @@ static int dis_set(const char *name, size_t len_rd, settings_read_cb read_cb, vo
 
 		len = read_cb(store, &oui, sizeof(oui));
 		if (len < 0) {
-			LOG_ERR("Failed to read System ID OUI from storage (err %zd)", len);
+			LOG_ERROR("Failed to read System ID OUI from storage (err %zd)", len);
 		} else {
 			sys_put_le24(oui, &dis_system_id[5]);
 			LOG_DBG("System ID OUI set to %06X", oui);
@@ -461,7 +461,8 @@ static int dis_set(const char *name, size_t len_rd, settings_read_cb read_cb, vo
 
 		len = read_cb(store, &identifier, sizeof(identifier));
 		if (len < 0) {
-			LOG_ERR("Failed to read System ID identifier from storage (err %zd)", len);
+			LOG_ERROR("Failed to read System ID identifier from storage (err %zd)",
+				  len);
 		} else {
 			sys_put_le40(identifier, &dis_system_id[0]);
 			LOG_DBG("System ID identifier set to %10llX", identifier);
@@ -473,9 +474,9 @@ static int dis_set(const char *name, size_t len_rd, settings_read_cb read_cb, vo
 	if (!strncmp(name, "ieeercdl", nlen)) {
 		len = read_cb(store, &dis_ieee_rcdl, sizeof(dis_ieee_rcdl) - 1);
 		if (len < 0) {
-			LOG_ERR("Failed to read IEEE 11073-20601 Regulatory Certification Data "
-				"List from storage (err %zd)",
-				len);
+			LOG_ERROR("Failed to read IEEE 11073-20601 Regulatory Certification Data "
+				  "List from storage (err %zd)",
+				  len);
 		} else {
 			dis_ieee_rcdl[len] = '\0';
 

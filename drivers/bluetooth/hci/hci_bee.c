@@ -89,7 +89,7 @@ static bool bt_hci_bee_recv_cb(T_RTL_BT_HCI_EVT evt, bool status, uint8_t *buf, 
 			k_fifo_put(&rx.fifo, rx_buf);
 			break;
 		}
-		LOG_ERR("Failed to alloc RX slab, err: %d", err);
+		LOG_ERROR("Failed to alloc RX slab, err: %d", err);
 		rtl_bt_hci_ack(buf);
 	} break;
 
@@ -99,8 +99,8 @@ static bool bt_hci_bee_recv_cb(T_RTL_BT_HCI_EVT evt, bool status, uint8_t *buf, 
 	}
 
 	if (ret != 0) {
-		LOG_ERR("Error, evt %u status %u, type %u, len %u, ret %d", evt, status, buf[0],
-			len, ret);
+		LOG_ERROR("Error, evt %u status %u, type %u, len %u, ret %d", evt, status, buf[0],
+			  len, ret);
 		return false;
 	}
 
@@ -135,7 +135,7 @@ void bt_hci_bee_handle_rx_data(const struct device *dev, struct rtl_bt_rx_buf *r
 			}
 			net_buf_unref(z_buf);
 		}
-		LOG_ERR("H4_EVT: event 0x%x, len %d, alloc failed", hdr.evt, hdr.len);
+		LOG_ERROR("H4_EVT: event 0x%x, len %d, alloc failed", hdr.evt, hdr.len);
 	} break;
 
 	case H4_ACL: {
@@ -155,7 +155,7 @@ void bt_hci_bee_handle_rx_data(const struct device *dev, struct rtl_bt_rx_buf *r
 			}
 			net_buf_unref(z_buf);
 		}
-		LOG_ERR("H4_ACL: handle 0x%x, len %d, alloc failed", hdr.handle, hdr.len);
+		LOG_ERROR("H4_ACL: handle 0x%x, len %d, alloc failed", hdr.handle, hdr.len);
 	} break;
 
 	case H4_ISO: {
@@ -175,11 +175,11 @@ void bt_hci_bee_handle_rx_data(const struct device *dev, struct rtl_bt_rx_buf *r
 			}
 			net_buf_unref(z_buf);
 		}
-		LOG_ERR("H4_ISO: handle 0x%x, len %d, alloc failed", hdr.handle, hdr.len);
+		LOG_ERROR("H4_ISO: handle 0x%x, len %d, alloc failed", hdr.handle, hdr.len);
 	} break;
 
 	default:
-		LOG_ERR("rtl_rx_thread: invalid type %d", rx_buf->buf[0]);
+		LOG_ERROR("rtl_rx_thread: invalid type %d", rx_buf->buf[0]);
 		break;
 	}
 	rtl_bt_hci_ack(rx_buf->buf);
@@ -223,7 +223,7 @@ static int bt_hci_bee_send(const struct device *dev, struct net_buf *buf)
 		break;
 
 	default:
-		LOG_ERR("Unknown packet type: 0x%02x", packet_type);
+		LOG_ERROR("Unknown packet type: 0x%02x", packet_type);
 		ret = -EINVAL;
 		goto done;
 	}
@@ -247,7 +247,7 @@ static int bt_hci_bee_send(const struct device *dev, struct net_buf *buf)
 done:
 	net_buf_unref(buf);
 	if (ret != 0) {
-		LOG_ERR("Error, type %d, len %u, ret %d", packet_type, buf->len, ret);
+		LOG_ERROR("Error, type %d, len %u, ret %d", packet_type, buf->len, ret);
 	} else {
 		LOG_DBG("Sent, type %d, len %u", packet_type, buf->len);
 	}

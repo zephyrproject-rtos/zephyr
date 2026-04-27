@@ -228,22 +228,21 @@ static struct usb_dc_stm32_state usb_dc_stm32_state;
 
 /* Internal functions */
 
-/* these helpers are defined as macros such that LOG_ERR() call
+/* these helpers are defined as macros such that LOG_ERROR() call
  * is performed in caller's scope and has proper function name
  */
-#define SEND_MSG_TO_LOWERHALF(_status_field, _status, _target)			\
-	do {									\
-		struct usb_dc_stm32_msg msg = {					\
-			. _status_field = _status,				\
-			.target = _target,					\
-		};								\
-										\
-		int _errcode = k_msgq_put(					\
-			&usb_dc_stm32_state.isr_msgq, &msg, K_NO_WAIT);		\
-		if (_errcode != 0) {						\
-			LOG_ERR("k_msgq_put() failed: %d", _errcode);		\
-			__ASSERT_NO_MSG(0);					\
-		}								\
+#define SEND_MSG_TO_LOWERHALF(_status_field, _status, _target)                                     \
+	do {                                                                                       \
+		struct usb_dc_stm32_msg msg = {                                                    \
+			._status_field = _status,                                                  \
+			.target = _target,                                                         \
+		};                                                                                 \
+                                                                                                   \
+		int _errcode = k_msgq_put(&usb_dc_stm32_state.isr_msgq, &msg, K_NO_WAIT);          \
+		if (_errcode != 0) {                                                               \
+			LOG_ERROR("k_msgq_put() failed: %d", _errcode);                            \
+			__ASSERT_NO_MSG(0);                                                        \
+		}                                                                                  \
 	} while (0)
 
 #define usb_dc_stm32_send_stack_msg(_status)				\
@@ -365,10 +364,8 @@ static int usb_dc_stm32u5_phy_clock_select(const struct device *const clk)
 	};
 	uint32_t freq;
 
-	if (clock_control_get_rate(clk,
-				   (clock_control_subsys_t)&phy_pclken[1],
-				   &freq) != 0) {
-		LOG_ERR("Failed to get USB_PHY clock source rate");
+	if (clock_control_get_rate(clk, (clock_control_subsys_t)&phy_pclken[1], &freq) != 0) {
+		LOG_ERROR("Failed to get USB_PHY clock source rate");
 		return -EIO;
 	}
 
@@ -379,7 +376,7 @@ static int usb_dc_stm32u5_phy_clock_select(const struct device *const clk)
 		}
 	}
 
-	LOG_ERR("Unsupported PHY clock source frequency (%"PRIu32")", freq);
+	LOG_ERROR("Unsupported PHY clock source frequency (%" PRIu32 ")", freq);
 
 	return -EINVAL;
 }
@@ -390,13 +387,13 @@ static int usb_dc_stm32u5_phy_clock_enable(const struct device *const clk)
 
 	err = clock_control_configure(clk, (clock_control_subsys_t)&phy_pclken[1], NULL);
 	if (err) {
-		LOG_ERR("Could not select USB_PHY clock source");
+		LOG_ERROR("Could not select USB_PHY clock source");
 		return -EIO;
 	}
 
 	err = clock_control_on(clk, (clock_control_subsys_t)&phy_pclken[0]);
 	if (err) {
-		LOG_ERR("Unable to enable USB_PHY clock");
+		LOG_ERROR("Unable to enable USB_PHY clock");
 		return -EIO;
 	}
 
@@ -416,7 +413,7 @@ static int usb_dc_stm32_phy_specific_clock_enable(const struct device *const clk
 
 	/* Check that power range is 1 or 2 */
 	if (LL_PWR_GetRegulVoltageScaling() < LL_PWR_REGU_VOLTAGE_SCALE2) {
-		LOG_ERR("Wrong Power range to use USB OTG HS");
+		LOG_ERROR("Wrong Power range to use USB OTG HS");
 		return -EIO;
 	}
 
@@ -445,7 +442,7 @@ static int usb_dc_stm32_phy_specific_clock_enable(const struct device *const clk
 	HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
 
 	if (clock_control_on(clk, (clock_control_subsys_t)&pclken[0]) != 0) {
-		LOG_ERR("Unable to enable USB clock");
+		LOG_ERROR("Unable to enable USB clock");
 		return -EIO;
 	}
 
@@ -473,15 +470,14 @@ static int usb_dc_stm32_phy_specific_clock_enable(const struct device *const clk
 #endif
 
 	if (DT_INST_NUM_CLOCKS(0) > 1) {
-		if (clock_control_configure(clk, (clock_control_subsys_t)&pclken[1],
-									NULL) != 0) {
-			LOG_ERR("Could not select USB domain clock");
+		if (clock_control_configure(clk, (clock_control_subsys_t)&pclken[1], NULL) != 0) {
+			LOG_ERROR("Could not select USB domain clock");
 			return -EIO;
 		}
 	}
 
 	if (clock_control_on(clk, (clock_control_subsys_t)&pclken[0]) != 0) {
-		LOG_ERR("Unable to enable USB clock");
+		LOG_ERROR("Unable to enable USB clock");
 		return -EIO;
 	}
 
@@ -491,12 +487,12 @@ static int usb_dc_stm32_phy_specific_clock_enable(const struct device *const clk
 		if (clock_control_get_rate(clk,
 					   (clock_control_subsys_t)&pclken[1],
 					   &usb_clock_rate) != 0) {
-			LOG_ERR("Failed to get USB domain clock rate");
+			LOG_ERROR("Failed to get USB domain clock rate");
 			return -EIO;
 		}
 
 		if (usb_clock_rate != MHZ(48)) {
-			LOG_ERR("USB Clock is not 48MHz (%d)", usb_clock_rate);
+			LOG_ERROR("USB Clock is not 48MHz (%d)", usb_clock_rate);
 			return -ENOTSUP;
 		}
 	}
@@ -512,7 +508,7 @@ static int usb_dc_stm32_clock_enable(void)
 	int err;
 
 	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -576,7 +572,7 @@ static int usb_dc_stm32_clock_disable(void)
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	if (clock_control_off(clk, (clock_control_subsys_t)&pclken[0]) != 0) {
-		LOG_ERR("Unable to disable USB clock");
+		LOG_ERROR("Unable to disable USB clock");
 		return -EIO;
 	}
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy)
@@ -652,7 +648,7 @@ static int usb_dc_stm32_init(void)
 	LOG_DBG("Pinctrl signals configuration");
 	int ret = pinctrl_apply_state(usb_pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("USB pinctrl setup failed (%d)", ret);
+		LOG_ERROR("USB pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 #endif
@@ -660,7 +656,7 @@ static int usb_dc_stm32_init(void)
 	LOG_DBG("HAL_PCD_Init");
 	status = HAL_PCD_Init(&usb_dc_stm32_state.pcd);
 	if (status != HAL_OK) {
-		LOG_ERR("PCD_Init failed, %d", (int)status);
+		LOG_ERROR("PCD_Init failed, %d", (int)status);
 		return -EIO;
 	}
 
@@ -670,14 +666,14 @@ static int usb_dc_stm32_init(void)
 	LOG_DBG("HAL_PCD_Stop");
 	status = HAL_PCD_Stop(&usb_dc_stm32_state.pcd);
 	if (status != HAL_OK) {
-		LOG_ERR("PCD_Stop failed, %d", (int)status);
+		LOG_ERROR("PCD_Stop failed, %d", (int)status);
 		return -EIO;
 	}
 
 	LOG_DBG("HAL_PCD_Start");
 	status = HAL_PCD_Start(&usb_dc_stm32_state.pcd);
 	if (status != HAL_OK) {
-		LOG_ERR("PCD_Start failed, %d", (int)status);
+		LOG_ERROR("PCD_Start failed, %d", (int)status);
 		return -EIO;
 	}
 
@@ -744,19 +740,19 @@ int usb_dc_attach(void)
 	if (LL_APB2_GRP1_IsEnabledClock(LL_APB2_GRP1_PERIPH_SYSCFG)) {
 		LL_SYSCFG_EnableRemapIT_USB();
 	} else {
-		LOG_ERR("System Configuration Controller clock is "
-			"disabled. Unable to enable IRQ remapping.");
+		LOG_ERROR("System Configuration Controller clock is "
+			  "disabled. Unable to enable IRQ remapping.");
 	}
 #endif
 
 #if USB_OTG_HS_ULPI_PHY
 	if (ulpi_reset.port != NULL) {
 		if (!gpio_is_ready_dt(&ulpi_reset)) {
-			LOG_ERR("Reset GPIO device not ready");
+			LOG_ERROR("Reset GPIO device not ready");
 			return -EINVAL;
 		}
 		if (gpio_pin_configure_dt(&ulpi_reset, GPIO_OUTPUT_INACTIVE)) {
-			LOG_ERR("Couldn't configure reset pin");
+			LOG_ERROR("Couldn't configure reset pin");
 			return -EIO;
 		}
 	}
@@ -825,8 +821,7 @@ int usb_dc_set_address(const uint8_t addr)
 
 	status = HAL_PCD_SetAddress(&usb_dc_stm32_state.pcd, addr);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_SetAddress failed(0x%02x), %d", addr,
-			(int)status);
+		LOG_ERROR("HAL_PCD_SetAddress failed(0x%02x), %d", addr, (int)status);
 		return -EIO;
 	}
 
@@ -841,7 +836,7 @@ int usb_dc_ep_start_read(uint8_t ep, uint8_t *data, uint32_t max_data_len)
 
 	/* we flush EP0_IN by doing a 0 length receive on it */
 	if (!USB_EP_DIR_IS_OUT(ep) && (ep != EP0_IN || max_data_len)) {
-		LOG_ERR("invalid ep 0x%02x", ep);
+		LOG_ERROR("invalid ep 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -853,8 +848,7 @@ int usb_dc_ep_start_read(uint8_t ep, uint8_t *data, uint32_t max_data_len)
 				    usb_dc_stm32_state.ep_buf[USB_EP_GET_IDX(ep)],
 				    max_data_len);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_Receive failed(0x%02x), %d", ep,
-			(int)status);
+		LOG_ERROR("HAL_PCD_EP_Receive failed(0x%02x), %d", ep, (int)status);
 		return -EIO;
 	}
 
@@ -864,7 +858,7 @@ int usb_dc_ep_start_read(uint8_t ep, uint8_t *data, uint32_t max_data_len)
 int usb_dc_ep_get_read_count(uint8_t ep, uint32_t *read_bytes)
 {
 	if (!USB_EP_DIR_IS_OUT(ep) || !read_bytes) {
-		LOG_ERR("invalid ep 0x%02x", ep);
+		LOG_ERROR("invalid ep 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -881,12 +875,12 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		cfg->ep_type);
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
-		LOG_ERR("invalid endpoint configuration");
+		LOG_ERROR("invalid endpoint configuration");
 		return -1;
 	}
 
 	if (ep_idx > (USB_NUM_BIDIR_ENDPOINTS - 1)) {
-		LOG_ERR("endpoint index/address out of range");
+		LOG_ERROR("endpoint index/address out of range");
 		return -1;
 	}
 
@@ -972,8 +966,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 
 	status = HAL_PCD_EP_SetStall(&usb_dc_stm32_state.pcd, ep);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_SetStall failed(0x%02x), %d", ep,
-			(int)status);
+		LOG_ERROR("HAL_PCD_EP_SetStall failed(0x%02x), %d", ep, (int)status);
 		return -EIO;
 	}
 
@@ -999,8 +992,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 
 	status = HAL_PCD_EP_ClrStall(&usb_dc_stm32_state.pcd, ep);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_ClrStall failed(0x%02x), %d", ep,
-			(int)status);
+		LOG_ERROR("HAL_PCD_EP_ClrStall failed(0x%02x), %d", ep, (int)status);
 		return -EIO;
 	}
 
@@ -1042,8 +1034,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 	status = HAL_PCD_EP_Open(&usb_dc_stm32_state.pcd, ep,
 				 ep_state->ep_mps, ep_state->ep_type);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_Open failed(0x%02x), %d", ep,
-			(int)status);
+		LOG_ERROR("HAL_PCD_EP_Open failed(0x%02x), %d", ep, (int)status);
 		return -EIO;
 	}
 
@@ -1080,8 +1071,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 
 	status = HAL_PCD_EP_Close(&usb_dc_stm32_state.pcd, ep);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_Close failed(0x%02x), %d", ep,
-			(int)status);
+		LOG_ERROR("HAL_PCD_EP_Close failed(0x%02x), %d", ep, (int)status);
 		return -EIO;
 	}
 
@@ -1099,13 +1089,13 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	LOG_DBG("ep 0x%02x, len %u", ep, data_len);
 
 	if (!ep_state || !USB_EP_DIR_IS_IN(ep)) {
-		LOG_ERR("invalid ep 0x%02x", ep);
+		LOG_ERROR("invalid ep 0x%02x", ep);
 		return -EINVAL;
 	}
 
 	ret = k_sem_take(&ep_state->write_sem, K_NO_WAIT);
 	if (ret) {
-		LOG_ERR("Unable to get write lock (%d)", ret);
+		LOG_ERROR("Unable to get write lock (%d)", ret);
 		return -EAGAIN;
 	}
 
@@ -1120,8 +1110,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	status = HAL_PCD_EP_Transmit(&usb_dc_stm32_state.pcd, ep,
 				     (void *)data, len);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_Transmit failed(0x%02x), %d", ep,
-			(int)status);
+		LOG_ERROR("HAL_PCD_EP_Transmit failed(0x%02x), %d", ep, (int)status);
 		k_sem_give(&ep_state->write_sem);
 		ret = -EIO;
 	}
@@ -1151,7 +1140,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	uint32_t read_count;
 
 	if (!ep_state) {
-		LOG_ERR("Invalid Endpoint %x", ep);
+		LOG_ERROR("Invalid Endpoint %x", ep);
 		return -EINVAL;
 	}
 
@@ -1161,7 +1150,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 		ep_state->read_offset, read_count, (void *)data);
 
 	if (!USB_EP_DIR_IS_OUT(ep)) { /* check if OUT ep */
-		LOG_ERR("Wrong endpoint direction: 0x%02x", ep);
+		LOG_ERROR("Wrong endpoint direction: 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -1176,7 +1165,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 		ep_state->read_count -= read_count;
 		ep_state->read_offset += read_count;
 	} else if (max_data_len) {
-		LOG_ERR("Wrong arguments");
+		LOG_ERROR("Wrong arguments");
 	}
 
 	if (read_bytes) {
@@ -1191,7 +1180,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
 	if (!ep_state || !USB_EP_DIR_IS_OUT(ep)) { /* Check if OUT ep */
-		LOG_ERR("Not valid endpoint: %02x", ep);
+		LOG_ERROR("Not valid endpoint: %02x", ep);
 		return -EINVAL;
 	}
 
@@ -1233,7 +1222,7 @@ int usb_dc_ep_flush(const uint8_t ep)
 		return -EINVAL;
 	}
 
-	LOG_ERR("Not implemented");
+	LOG_ERROR("Not implemented");
 
 	return 0;
 }
@@ -1277,7 +1266,7 @@ int usb_dc_detach(void)
 	LOG_DBG("HAL_PCD_DeInit");
 	status = HAL_PCD_DeInit(&usb_dc_stm32_state.pcd);
 	if (status != HAL_OK) {
-		LOG_ERR("PCD_DeInit failed, %d", (int)status);
+		LOG_ERROR("PCD_DeInit failed, %d", (int)status);
 		return -EIO;
 	}
 
@@ -1295,7 +1284,7 @@ int usb_dc_detach(void)
 
 int usb_dc_reset(void)
 {
-	LOG_ERR("Not implemented");
+	LOG_ERROR("Not implemented");
 
 	return 0;
 }

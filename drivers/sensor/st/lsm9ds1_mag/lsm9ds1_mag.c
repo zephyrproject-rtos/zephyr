@@ -361,7 +361,7 @@ static int lsm9ds1_mag_init(const struct device *dev)
 
 	ret = lsm9ds1_mag_data_rate_set(ctx, cfg->mag_odr);
 	if (ret < 0) {
-		LOG_ERR("failed to set the odr");
+		LOG_ERROR("failed to set the odr");
 		return ret;
 	}
 
@@ -372,7 +372,7 @@ static int lsm9ds1_mag_init(const struct device *dev)
 	fs = cfg->mag_range;
 	ret = lsm9ds1_mag_full_scale_set(ctx, fs);
 	if (ret < 0) {
-		LOG_ERR("failed to set magnetometer range");
+		LOG_ERROR("failed to set magnetometer range");
 		return ret;
 	}
 

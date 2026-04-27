@@ -64,8 +64,7 @@ static int send_tcp_data(struct sample_data *data)
 	ret =  sendall(data->tcp.sock, lorem_ipsum, data->tcp.expecting);
 
 	if (ret < 0) {
-		LOG_ERR("%s TCP: Failed to send data, errno %d", data->proto,
-			errno);
+		LOG_ERROR("%s TCP: Failed to send data, errno %d", data->proto, errno);
 	} else {
 		if (PRINT_PROGRESS) {
 			LOG_DBG("%s TCP: Sent %d bytes", data->proto,
@@ -79,12 +78,12 @@ static int send_tcp_data(struct sample_data *data)
 static int compare_tcp_data(struct sample_data *data, const char *buf, uint32_t received)
 {
 	if (data->tcp.received + received > data->tcp.expecting) {
-		LOG_ERR("Too much data received: TCP %s", data->proto);
+		LOG_ERROR("Too much data received: TCP %s", data->proto);
 		return -EIO;
 	}
 
 	if (memcmp(buf, lorem_ipsum + data->tcp.received, received) != 0) {
-		LOG_ERR("Invalid data received: TCP %s", data->proto);
+		LOG_ERROR("Invalid data received: TCP %s", data->proto);
 		return -EIO;
 	}
 
@@ -103,8 +102,7 @@ static int start_tcp_proto(struct sample_data *data, sa_family_t family,
 	data->tcp.sock = socket(family, SOCK_STREAM, IPPROTO_TCP);
 #endif
 	if (data->tcp.sock < 0) {
-		LOG_ERR("Failed to create TCP socket (%s): %d", data->proto,
-			errno);
+		LOG_ERROR("Failed to create TCP socket (%s): %d", data->proto, errno);
 		return -errno;
 	}
 
@@ -152,16 +150,14 @@ static int start_tcp_proto(struct sample_data *data, sa_family_t family,
 	ret = setsockopt(data->tcp.sock, SOL_TLS, TLS_SEC_TAG_LIST,
 			 sec_tag_list, sizeof(sec_tag_list));
 	if (ret < 0) {
-		LOG_ERR("Failed to set TLS_SEC_TAG_LIST option (%s): %d",
-			data->proto, errno);
+		LOG_ERROR("Failed to set TLS_SEC_TAG_LIST option (%s): %d", data->proto, errno);
 		ret = -errno;
 	}
 
 	ret = setsockopt(data->tcp.sock, SOL_TLS, TLS_HOSTNAME,
 			 TLS_PEER_HOSTNAME, sizeof(TLS_PEER_HOSTNAME));
 	if (ret < 0) {
-		LOG_ERR("Failed to set TLS_HOSTNAME option (%s): %d",
-			data->proto, errno);
+		LOG_ERROR("Failed to set TLS_HOSTNAME option (%s): %d", data->proto, errno);
 		ret = -errno;
 	}
 #endif
@@ -176,8 +172,7 @@ static int start_tcp_proto(struct sample_data *data, sa_family_t family,
 
 	ret = connect(data->tcp.sock, addr, addrlen);
 	if (ret < 0) {
-		LOG_ERR("Cannot connect to TCP remote (%s): %d", data->proto,
-			errno);
+		LOG_ERROR("Cannot connect to TCP remote (%s): %d", data->proto, errno);
 		ret = -errno;
 	}
 

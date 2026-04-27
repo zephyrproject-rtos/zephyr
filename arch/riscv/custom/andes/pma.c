@@ -204,8 +204,8 @@ void pma_init(void)
 		__ASSERT(0, "CPU doesn't support PMA. "
 			"Please disable CONFIG_RISCV_CUSTOM_CSR_ANDES_PMA\n");
 #ifndef CONFIG_ASSERT
-		LOG_ERR("CPU doesn't support PMA. "
-			"Please disable CONFIG_RISCV_CUSTOM_CSR_ANDES_PMA");
+		LOG_ERROR("CPU doesn't support PMA. "
+			  "Please disable CONFIG_RISCV_CUSTOM_CSR_ANDES_PMA");
 #endif
 		return;
 	}

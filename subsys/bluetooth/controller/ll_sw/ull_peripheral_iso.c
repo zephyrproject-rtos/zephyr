@@ -59,7 +59,7 @@ static struct ll_conn *ll_cis_get_acl_awaiting_reply(uint16_t handle, uint8_t *e
 	struct ll_conn *acl_conn = NULL;
 
 	if (!IS_CIS_HANDLE(handle) || ll_conn_iso_stream_get(handle)->group == NULL) {
-		LOG_ERR("Unknown CIS handle %u", handle);
+		LOG_ERROR("Unknown CIS handle %u", handle);
 		*error = BT_HCI_ERR_UNKNOWN_CONN_ID;
 		return NULL;
 	}
@@ -77,19 +77,19 @@ static struct ll_conn *ll_cis_get_acl_awaiting_reply(uint16_t handle, uint8_t *e
 	}
 
 	if (!acl_conn) {
-		LOG_ERR("No connection found for handle %u", handle);
+		LOG_ERROR("No connection found for handle %u", handle);
 		*error = BT_HCI_ERR_CMD_DISALLOWED;
 		return NULL;
 	}
 
 	if (acl_conn->lll.role == BT_CONN_ROLE_CENTRAL) {
-		LOG_ERR("Not allowed for central");
+		LOG_ERROR("Not allowed for central");
 		*error = BT_HCI_ERR_CMD_DISALLOWED;
 		return NULL;
 	}
 
 	if (!ull_cp_cc_awaiting_reply(acl_conn)) {
-		LOG_ERR("Not allowed in current procedure state");
+		LOG_ERROR("Not allowed in current procedure state");
 		*error = BT_HCI_ERR_CMD_DISALLOWED;
 		return NULL;
 	}

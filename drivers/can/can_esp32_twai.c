@@ -170,25 +170,25 @@ static int can_esp32_twai_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(twai_config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	err = pinctrl_apply_state(twai_config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err != 0) {
-		LOG_ERR("failed to configure TWAI pins (err %d)", err);
+		LOG_ERROR("failed to configure TWAI pins (err %d)", err);
 		return err;
 	}
 
 	err = clock_control_on(twai_config->clock_dev, twai_config->clock_subsys);
 	if (err != 0) {
-		LOG_ERR("failed to enable CAN clock (err %d)", err);
+		LOG_ERROR("failed to enable CAN clock (err %d)", err);
 		return err;
 	}
 
 	err = can_sja1000_init(dev);
 	if (err != 0) {
-		LOG_ERR("failed to initialize controller (err %d)", err);
+		LOG_ERROR("failed to initialize controller (err %d)", err);
 		return err;
 	}
 
@@ -210,7 +210,7 @@ static int can_esp32_twai_init(const struct device *dev)
 			can_esp32_twai_isr, (void *)dev, NULL);
 
 	if (err != 0) {
-		LOG_ERR("could not allocate interrupt (err %d)", err);
+		LOG_ERROR("could not allocate interrupt (err %d)", err);
 	}
 
 	return err;

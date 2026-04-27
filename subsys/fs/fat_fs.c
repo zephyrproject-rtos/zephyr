@@ -491,14 +491,14 @@ static int fatfs_unmount(struct fs_mount_t *mountp)
 
 	res = f_mount(NULL, translate_path(mountp->mnt_point), 0);
 	if (res != FR_OK) {
-		LOG_ERR("Unmount failed (%d)", res);
+		LOG_ERROR("Unmount failed (%d)", res);
 		return translate_error(res);
 	}
 
 	/* Make direct disk IOCTL call to deinit disk */
 	disk_res = disk_ioctl(((FATFS *)mountp->fs_data)->pdrv, CTRL_POWER, &param);
 	if (disk_res != RES_OK) {
-		LOG_ERR("Could not power off disk (%d)", disk_res);
+		LOG_ERROR("Could not power off disk (%d)", disk_res);
 		return translate_disk_error(disk_res);
 	}
 
@@ -589,7 +589,7 @@ static void automount_if_enabled(struct fs_mount_t *mountp)
 
 	ret = fs_mount(mountp);
 	if (ret < 0) {
-		LOG_ERR("Error mounting filesystem: at %s: %d", mountp->mnt_point, ret);
+		LOG_ERROR("Error mounting filesystem: at %s: %d", mountp->mnt_point, ret);
 	} else {
 		LOG_DBG("FATFS Filesystem \"%s\" initialized", mountp->mnt_point);
 	}
@@ -612,8 +612,8 @@ static int fatfs_init(void)
 			mount_points[i] = 0;
 			mount_point_count++;
 			if (mount_point_count >= ARRAY_SIZE(VolumeStr)) {
-				LOG_ERR("Mount point count not sufficient for defined mount "
-					"points.");
+				LOG_ERROR("Mount point count not sufficient for defined mount "
+					  "points.");
 				return -1;
 			}
 			VolumeStr[mount_point_count] = &mount_points[i + 1];

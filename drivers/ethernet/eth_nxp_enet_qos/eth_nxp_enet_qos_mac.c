@@ -113,7 +113,7 @@ static void eth_nxp_enet_qos_iface_init(struct net_if *iface)
 
 		phy_link_callback_set(config->phy_dev, eth_nxp_enet_qos_phy_cb, (void *)dev);
 	} else {
-		LOG_ERR("PHY device not ready");
+		LOG_ERROR("PHY device not ready");
 	}
 }
 
@@ -138,7 +138,7 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 
 		if (total_bytes > config->hw_info.max_frame_len ||
 			frags_count > NUM_TX_BUFDESC) {
-			LOG_ERR("TX packet too large");
+			LOG_ERROR("TX packet too large");
 			return -E2BIG;
 		}
 	}
@@ -508,8 +508,9 @@ static void eth_nxp_enet_qos_mac_isr(const struct device *dev)
 			k_work_submit_to_queue(&rx_work_queue, &rx_data->rx_work);
 		}
 		if (ENET_QOS_REG_GET(DMA_CH_DMA_CHX_STAT, FBE, dma_ch0_interrupts)) {
-			LOG_ERR("Fatal bus error: RX:%x, TX:%x", (dma_ch0_interrupts >> 19) & 0x07,
-				(dma_ch0_interrupts >> 16) & 0x07);
+			LOG_ERROR("Fatal bus error: RX:%x, TX:%x",
+				  (dma_ch0_interrupts >> 19) & 0x07,
+				  (dma_ch0_interrupts >> 16) & 0x07);
 		}
 		if (ENET_QOS_REG_GET(DMA_CH_DMA_CHX_STAT, RBU, dma_ch0_interrupts)) {
 			LOG_WRN("RX buffer underrun");
@@ -559,7 +560,7 @@ static inline int enet_qos_dma_reset(enet_qos_t *base)
 	/* all ENET QOS domain clocks must resolve to clear software reset,
 	 * if getting this error, try checking phy clock connection
 	 */
-	LOG_ERR("Can't clear SWR");
+	LOG_ERROR("Can't clear SWR");
 	return -EIO;
 
 done:
@@ -709,7 +710,7 @@ static inline int enet_qos_rx_desc_init(enet_qos_t *base, struct nxp_enet_qos_rx
 	for (int i = 0; i < NUM_RX_BUFDESC; i++) {
 		buf = net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE, K_NO_WAIT);
 		if (buf == NULL) {
-			LOG_ERR("Missing a buf");
+			LOG_ERROR("Missing a buf");
 			return -ENOMEM;
 		}
 		rx->reserved_bufs[i] = buf;
@@ -751,7 +752,7 @@ static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
 	if (uuid_length > 0) {
 		hash = crc24_pgp((uint8_t *)unique_device_ID_16_bytes, uuid_length);
 	} else {
-		LOG_ERR("No unique MAC can be provided in this platform");
+		LOG_ERROR("No unique MAC can be provided in this platform");
 	}
 
 	/* Setting LAA bit because it is not guaranteed universally unique */

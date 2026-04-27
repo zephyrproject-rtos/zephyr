@@ -772,7 +772,7 @@ static int ism330dhcx_init(const struct device *dev)
 #ifdef CONFIG_ISM330DHCX_TRIGGER
 	if (config->drdy_gpio.port) {
 		if (ism330dhcx_init_interrupt(dev) < 0) {
-			LOG_ERR("Failed to initialize interrupt.");
+			LOG_ERROR("Failed to initialize interrupt.");
 			return -EIO;
 		}
 	}

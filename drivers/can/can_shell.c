@@ -194,7 +194,7 @@ static void can_shell_tx_callback(const struct device *dev, int error, void *use
 
 	err = k_msgq_put(&can_shell_tx_msgq, &event, K_NO_WAIT);
 	if (err != 0) {
-		LOG_ERR("CAN shell tx event queue full");
+		LOG_ERROR("CAN shell tx event queue full");
 	}
 }
 
@@ -211,7 +211,7 @@ static void can_shell_rx_callback(const struct device *dev, struct can_frame *fr
 
 	err = k_msgq_put(&can_shell_rx_msgq, &event, K_NO_WAIT);
 	if (err != 0) {
-		LOG_ERR("CAN shell rx event queue full");
+		LOG_ERROR("CAN shell rx event queue full");
 	}
 }
 

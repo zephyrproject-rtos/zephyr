@@ -76,7 +76,7 @@ int mdm_sim7080_get_battery_charge(uint8_t *bcs, uint8_t *bcl, uint16_t *voltage
 	struct modem_cmd cmds[] = {MODEM_CMD("+CBC: ", on_cmd_cbc, 3U, ",")};
 
 	if (sim7080_get_state() == SIM7080_STATE_OFF) {
-		LOG_ERR("SIM7080 not powered on!");
+		LOG_ERROR("SIM7080 not powered on!");
 		return -1;
 	}
 
@@ -152,13 +152,13 @@ static int cpsi_parse_gsm(struct sim7080_ue_sys_info *info, uint8_t **argv, uint
 	int ret = -EINVAL;
 
 	if (argc != CPSI_GSM_ARG_COUNT) {
-		LOG_ERR("Unexpected number of arguments: %u", argc);
+		LOG_ERROR("Unexpected number of arguments: %u", argc);
 		goto out;
 	}
 
 	ret = cpsi_parse_minus(argv[CPSI_MCC_MNC_IDX], &info->cell.gsm.mcc, &info->cell.gsm.mcn);
 	if (ret != 0) {
-		LOG_ERR("Failed to parse MCC/MCN");
+		LOG_ERROR("Failed to parse MCC/MCN");
 		goto out;
 	}
 
@@ -170,7 +170,7 @@ static int cpsi_parse_gsm(struct sim7080_ue_sys_info *info, uint8_t **argv, uint
 
 	ret = cpsi_parse_minus(argv[CPSI_GSM_C1_C2_IDX], &info->cell.gsm.c1, &info->cell.gsm.c2);
 	if (ret != 0) {
-		LOG_ERR("Failed to parse C1/C2");
+		LOG_ERROR("Failed to parse C1/C2");
 		goto out;
 	}
 
@@ -183,13 +183,13 @@ static int cpsi_parse_lte(struct sim7080_ue_sys_info *info, uint8_t **argv, uint
 	int ret = -EINVAL;
 
 	if (argc != CPSI_LTE_ARG_COUNT) {
-		LOG_ERR("Unexpected number of arguments: %u", argc);
+		LOG_ERROR("Unexpected number of arguments: %u", argc);
 		goto out;
 	}
 
 	ret = cpsi_parse_minus(argv[CPSI_MCC_MNC_IDX], &info->cell.lte.mcc, &info->cell.lte.mcn);
 	if (ret != 0) {
-		LOG_ERR("Failed to parse MCC/MCN");
+		LOG_ERROR("Failed to parse MCC/MCN");
 		goto out;
 	}
 
@@ -219,13 +219,13 @@ MODEM_CMD_DEFINE(on_cmd_cpsi)
 	memset(ue_sys_info, 0, sizeof(*ue_sys_info));
 
 	if (argc < 2) {
-		LOG_ERR("Insufficient number of parameters: %u", argc);
+		LOG_ERROR("Insufficient number of parameters: %u", argc);
 		goto out;
 	}
 
 	ret = lut_match(argv[CPSI_SYS_MODE_IDX], ue_sys_mode_lut, ARRAY_SIZE(ue_sys_mode_lut));
 	if (ret < 0) {
-		LOG_ERR("Illegal sys mode: %s", argv[CPSI_SYS_MODE_IDX]);
+		LOG_ERROR("Illegal sys mode: %s", argv[CPSI_SYS_MODE_IDX]);
 		goto out;
 	}
 
@@ -233,7 +233,7 @@ MODEM_CMD_DEFINE(on_cmd_cpsi)
 
 	ret = lut_match(argv[CPSI_OP_MODE_IDX], ue_op_mode_lut, ARRAY_SIZE(ue_op_mode_lut));
 	if (ret < 0) {
-		LOG_ERR("Illegal op mode: %s", argv[CPSI_OP_MODE_IDX]);
+		LOG_ERROR("Illegal op mode: %s", argv[CPSI_OP_MODE_IDX]);
 		goto out;
 	}
 
@@ -259,7 +259,7 @@ int mdm_sim7080_get_ue_sys_info(struct sim7080_ue_sys_info *info)
 	struct modem_cmd cmds[] = {MODEM_CMD("+CPSI: ", on_cmd_cpsi, 14U, ",")};
 
 	if (sim7080_get_state() == SIM7080_STATE_OFF) {
-		LOG_ERR("SIM7080 not powered on!");
+		LOG_ERROR("SIM7080 not powered on!");
 		goto out;
 	}
 

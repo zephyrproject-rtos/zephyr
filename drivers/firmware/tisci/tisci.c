@@ -125,20 +125,20 @@ static int tisci_get_response(const struct device *dev, struct tisci_xfer *xfer)
 	struct tisci_msg_hdr *hdr;
 
 	if (!xfer->rx_message.buf) {
-		LOG_ERR("No response buffer provided");
+		LOG_ERROR("No response buffer provided");
 		k_sem_give(&data->data_sem);
 		return -EINVAL;
 	}
 
 	if (k_sem_take(data->rx_message.response_ready_sem, K_MSEC(config->max_rx_timeout_ms)) !=
 	    0) {
-		LOG_ERR("Timeout waiting for response");
+		LOG_ERROR("Timeout waiting for response");
 		k_sem_give(&data->data_sem);
 		return -ETIMEDOUT;
 	}
 
 	if (xfer->rx_message.size > config->max_msg_size) {
-		LOG_ERR("rx_message.size [ %d ] > max_msg_size\n", xfer->rx_message.size);
+		LOG_ERROR("rx_message.size [ %d ] > max_msg_size\n", xfer->rx_message.size);
 		k_sem_give(&data->data_sem);
 		return -EINVAL;
 	}
@@ -149,8 +149,8 @@ static int tisci_get_response(const struct device *dev, struct tisci_xfer *xfer)
 	}
 
 	if (data->rx_message.size < xfer->rx_message.size) {
-		LOG_ERR("rx_message.size [ %zu ] < xfer->rx_message.size [ %zu ]\n",
-			data->rx_message.size, xfer->rx_message.size);
+		LOG_ERROR("rx_message.size [ %zu ] < xfer->rx_message.size [ %zu ]\n",
+			  data->rx_message.size, xfer->rx_message.size);
 		k_sem_give(&data->data_sem);
 		return -EINVAL;
 	}
@@ -168,7 +168,7 @@ static int tisci_get_response(const struct device *dev, struct tisci_xfer *xfer)
 
 	/* Sanity check for message response */
 	if (hdr->seq != data->seq) {
-		LOG_ERR("HDR seq != data seq [%d != %d]\n", hdr->seq, data->seq);
+		LOG_ERROR("HDR seq != data seq [%d != %d]\n", hdr->seq, data->seq);
 		k_sem_give(&data->data_sem);
 		return -EINVAL;
 	}
@@ -197,8 +197,9 @@ static int tisci_do_xfer(const struct device *dev, struct tisci_xfer *xfer)
 
 		/* Verify message fits with secure header (already checked in max_msg_size) */
 		if (msg->size + sizeof(struct tisci_secure_msg_hdr) > MAILBOX_MBOX_SIZE) {
-			LOG_ERR("Message too large for secure mailbox (%zu + %zu > %d)\n",
-				msg->size, sizeof(struct tisci_secure_msg_hdr), MAILBOX_MBOX_SIZE);
+			LOG_ERROR("Message too large for secure mailbox (%zu + %zu > %d)\n",
+				  msg->size, sizeof(struct tisci_secure_msg_hdr),
+				  MAILBOX_MBOX_SIZE);
 			k_sem_give(&data->data_sem);
 			return -EMSGSIZE;
 		}
@@ -219,8 +220,8 @@ static int tisci_do_xfer(const struct device *dev, struct tisci_xfer *xfer)
 
 	ret = mbox_send_dt(&config->mbox_tx, msg);
 	if (ret < 0) {
-		LOG_ERR("Could not send on %s path\n",
-			config->is_secure ? "secure" : "non-secure");
+		LOG_ERROR("Could not send on %s path\n",
+			  config->is_secure ? "secure" : "non-secure");
 		k_sem_give(&data->data_sem);
 		return ret;
 	}
@@ -232,7 +233,7 @@ static int tisci_do_xfer(const struct device *dev, struct tisci_xfer *xfer)
 			return ret;
 		}
 		if (!tisci_is_response_ack(xfer->rx_message.buf)) {
-			LOG_ERR("TISCI Response in NACK\n");
+			LOG_ERROR("TISCI Response in NACK\n");
 			k_sem_give(&data->data_sem);
 			return -ENODEV;
 		}
@@ -260,7 +261,7 @@ int tisci_cmd_get_clock_state(const struct device *dev, uint32_t dev_id, uint8_t
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_GET_CLOCK_STATE, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -268,7 +269,7 @@ int tisci_cmd_get_clock_state(const struct device *dev, uint32_t dev_id, uint8_t
 	req.clk_id = clk_id;
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to get clock state (ret=%d)", ret);
+		LOG_ERROR("Failed to get clock state (ret=%d)", ret);
 		return ret;
 	}
 
@@ -364,7 +365,7 @@ int tisci_cmd_clk_get_match_freq(const struct device *dev, uint32_t dev_id, uint
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_QUERY_CLOCK_FREQ, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -376,7 +377,7 @@ int tisci_cmd_clk_get_match_freq(const struct device *dev, uint32_t dev_id, uint
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to get matching clock frequency (ret=%d)", ret);
+		LOG_ERROR("Failed to get matching clock frequency (ret=%d)", ret);
 		return ret;
 	}
 
@@ -396,7 +397,7 @@ int tisci_cmd_clk_set_freq(const struct device *dev, uint32_t dev_id, uint8_t cl
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_SET_CLOCK_FREQ, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -408,7 +409,7 @@ int tisci_cmd_clk_set_freq(const struct device *dev, uint32_t dev_id, uint8_t cl
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to set clock frequency (ret=%d)", ret);
+		LOG_ERROR("Failed to set clock frequency (ret=%d)", ret);
 		return ret;
 	}
 
@@ -430,7 +431,7 @@ int tisci_cmd_clk_get_freq(const struct device *dev, uint32_t dev_id, uint8_t cl
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_GET_CLOCK_FREQ, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -439,7 +440,7 @@ int tisci_cmd_clk_get_freq(const struct device *dev, uint32_t dev_id, uint8_t cl
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to get clock frequency (ret=%d)", ret);
+		LOG_ERROR("Failed to get clock frequency (ret=%d)", ret);
 		return ret;
 	}
 
@@ -459,7 +460,7 @@ int tisci_set_clock_state(const struct device *dev, uint32_t dev_id, uint8_t clk
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_SET_CLOCK_STATE, flags, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -469,7 +470,7 @@ int tisci_set_clock_state(const struct device *dev, uint32_t dev_id, uint8_t clk
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to set clock state (ret=%d)", ret);
+		LOG_ERROR("Failed to set clock state (ret=%d)", ret);
 		return ret;
 	}
 
@@ -493,7 +494,7 @@ int tisci_cmd_clk_set_parent(const struct device *dev, uint32_t dev_id, uint8_t 
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to set clock parent (ret=%d)", ret);
+		LOG_ERROR("Failed to set clock parent (ret=%d)", ret);
 		return ret;
 	}
 
@@ -515,7 +516,7 @@ int tisci_cmd_clk_get_parent(const struct device *dev, uint32_t dev_id, uint8_t 
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_GET_CLOCK_PARENT, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -524,7 +525,7 @@ int tisci_cmd_clk_get_parent(const struct device *dev, uint32_t dev_id, uint8_t 
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to get clock parent (ret=%d)", ret);
+		LOG_ERROR("Failed to get clock parent (ret=%d)", ret);
 		return ret;
 	}
 
@@ -548,7 +549,7 @@ int tisci_cmd_clk_get_num_parents(const struct device *dev, uint32_t dev_id, uin
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_GET_NUM_CLOCK_PARENTS, 0, &req, sizeof(req),
 				    &resp, sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -557,7 +558,7 @@ int tisci_cmd_clk_get_num_parents(const struct device *dev, uint32_t dev_id, uin
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to get number of clock parents (ret=%d)", ret);
+		LOG_ERROR("Failed to get number of clock parents (ret=%d)", ret);
 		return ret;
 	}
 
@@ -601,7 +602,7 @@ int tisci_set_device_state(const struct device *dev, uint32_t dev_id, uint32_t f
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_SET_DEVICE_STATE, flags, &req, sizeof(req),
 				    &resp, sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -610,7 +611,7 @@ int tisci_set_device_state(const struct device *dev, uint32_t dev_id, uint32_t f
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to set device state (ret=%d)", ret);
+		LOG_ERROR("Failed to set device state (ret=%d)", ret);
 		return ret;
 	}
 
@@ -629,7 +630,7 @@ int tisci_set_device_state_no_wait(const struct device *dev, uint32_t dev_id, ui
 				    flags | TISCI_FLAG_REQ_GENERIC_NORESPONSE, &req, sizeof(req),
 				    &resp, sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -638,7 +639,7 @@ int tisci_set_device_state_no_wait(const struct device *dev, uint32_t dev_id, ui
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to set device state without wait (ret=%d)", ret);
+		LOG_ERROR("Failed to set device state without wait (ret=%d)", ret);
 		return ret;
 	}
 
@@ -660,7 +661,7 @@ int tisci_get_device_state(const struct device *dev, uint32_t dev_id, uint32_t *
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_GET_DEVICE_STATE, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -668,7 +669,7 @@ int tisci_get_device_state(const struct device *dev, uint32_t dev_id, uint32_t *
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to get device state (ret=%d)", ret);
+		LOG_ERROR("Failed to get device state (ret=%d)", ret);
 		return ret;
 	}
 
@@ -830,7 +831,7 @@ int tisci_cmd_set_device_resets(const struct device *dev, uint32_t dev_id, uint3
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_SET_DEVICE_RESETS, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -839,7 +840,7 @@ int tisci_cmd_set_device_resets(const struct device *dev, uint32_t dev_id, uint3
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to set device resets (ret=%d)", ret);
+		LOG_ERROR("Failed to set device resets (ret=%d)", ret);
 		return ret;
 	}
 
@@ -863,7 +864,7 @@ int tisci_cmd_proc_request(const struct device *dev, uint8_t proc_id)
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_PROC_REQUEST, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -871,7 +872,7 @@ int tisci_cmd_proc_request(const struct device *dev, uint8_t proc_id)
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to request processor control (ret=%d)", ret);
+		LOG_ERROR("Failed to request processor control (ret=%d)", ret);
 		return ret;
 	}
 
@@ -888,7 +889,7 @@ int tisci_cmd_proc_release(const struct device *dev, uint8_t proc_id)
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_PROC_RELEASE, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -896,7 +897,7 @@ int tisci_cmd_proc_release(const struct device *dev, uint8_t proc_id)
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to release processor control (ret=%d)", ret);
+		LOG_ERROR("Failed to release processor control (ret=%d)", ret);
 		return ret;
 	}
 
@@ -913,7 +914,7 @@ int tisci_cmd_proc_handover(const struct device *dev, uint8_t proc_id, uint8_t h
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_PROC_HANDOVER, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -922,7 +923,7 @@ int tisci_cmd_proc_handover(const struct device *dev, uint8_t proc_id, uint8_t h
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to handover processor control (ret=%d)", ret);
+		LOG_ERROR("Failed to handover processor control (ret=%d)", ret);
 		return ret;
 	}
 
@@ -940,7 +941,7 @@ int tisci_cmd_set_proc_boot_cfg(const struct device *dev, uint8_t proc_id, uint6
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_SET_PROC_BOOT_CONFIG, 0, &req, sizeof(req),
 				    &resp, sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -952,7 +953,7 @@ int tisci_cmd_set_proc_boot_cfg(const struct device *dev, uint8_t proc_id, uint6
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to set processor boot configuration (ret=%d)", ret);
+		LOG_ERROR("Failed to set processor boot configuration (ret=%d)", ret);
 		return ret;
 	}
 
@@ -970,7 +971,7 @@ int tisci_cmd_set_proc_boot_ctrl(const struct device *dev, uint8_t proc_id,
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_SET_PROC_BOOT_CTRL, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -980,7 +981,7 @@ int tisci_cmd_set_proc_boot_ctrl(const struct device *dev, uint8_t proc_id,
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to set processor boot control (ret=%d)", ret);
+		LOG_ERROR("Failed to set processor boot control (ret=%d)", ret);
 		return ret;
 	}
 
@@ -1002,7 +1003,7 @@ int tisci_cmd_proc_auth_boot_image(const struct device *dev, uint64_t *image_add
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_PROC_AUTH_BOOT_IMAGE, 0, &req, sizeof(req),
 				    &resp, sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -1011,7 +1012,7 @@ int tisci_cmd_proc_auth_boot_image(const struct device *dev, uint64_t *image_add
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to authenticate boot image (ret=%d)", ret);
+		LOG_ERROR("Failed to authenticate boot image (ret=%d)", ret);
 		return ret;
 	}
 
@@ -1041,7 +1042,7 @@ int tisci_cmd_get_proc_boot_status(const struct device *dev, uint8_t proc_id, ui
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_GET_PROC_BOOT_STATUS, 0, &req, sizeof(req),
 				    &resp, sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -1049,7 +1050,7 @@ int tisci_cmd_get_proc_boot_status(const struct device *dev, uint8_t proc_id, ui
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to get processor boot status (ret=%d)", ret);
+		LOG_ERROR("Failed to get processor boot status (ret=%d)", ret);
 		return ret;
 	}
 
@@ -1090,7 +1091,7 @@ int tisci_get_resource_range(const struct device *dev, uint32_t dev_id, uint8_t 
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_GET_RESOURCE_RANGE, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
@@ -1100,7 +1101,7 @@ int tisci_get_resource_range(const struct device *dev, uint32_t dev_id, uint8_t 
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to get resource range (ret=%d)", ret);
+		LOG_ERROR("Failed to get resource range (ret=%d)", ret);
 		return ret;
 	}
 
@@ -1144,7 +1145,7 @@ int cmd_set_board_config_using_msg(const struct device *dev, uint16_t msg_type, 
 
 	xfer = tisci_setup_one_xfer(dev, msg_type, 0, &req, sizeof(req), &resp, sizeof(resp));
 	if (!xfer) {
-		LOG_ERR(" Failed to setup board config transfer");
+		LOG_ERROR(" Failed to setup board config transfer");
 		return -EINVAL;
 	}
 
@@ -1154,7 +1155,7 @@ int cmd_set_board_config_using_msg(const struct device *dev, uint16_t msg_type, 
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Board config transfer failed (ret=%d)", ret);
+		LOG_ERROR("Board config transfer failed (ret=%d)", ret);
 		return ret;
 	}
 
@@ -1176,13 +1177,13 @@ int tisci_cmd_get_revision(const struct device *dev, struct tisci_version_info *
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_VERSION, 0, &hdr, sizeof(hdr), &rev_info,
 				    sizeof(rev_info));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to get version (ret=%d)", ret);
+		LOG_ERROR("Failed to get version (ret=%d)", ret);
 		return ret;
 	}
 
@@ -1206,7 +1207,7 @@ int tisci_cmd_sys_reset(const struct device *dev)
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_SYS_RESET, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR(" Failed to setup system reset transfer");
+		LOG_ERROR(" Failed to setup system reset transfer");
 		return -EINVAL;
 	}
 
@@ -1214,7 +1215,7 @@ int tisci_cmd_sys_reset(const struct device *dev)
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("System reset request failed (ret=%d)", ret);
+		LOG_ERROR("System reset request failed (ret=%d)", ret);
 		return ret;
 	}
 
@@ -1237,13 +1238,13 @@ int tisci_cmd_query_msmc(const struct device *dev, uint64_t *msmc_start, uint64_
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_QUERY_MSMC, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR(" Failed to setup MSMC query transfer");
+		LOG_ERROR(" Failed to setup MSMC query transfer");
 		return -EINVAL;
 	}
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("MSMC query failed (ret=%d)", ret);
+		LOG_ERROR("MSMC query failed (ret=%d)", ret);
 		return ret;
 	}
 
@@ -1270,7 +1271,7 @@ int tisci_cmd_set_fwl_region(const struct device *dev, const struct tisci_msg_fw
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_FWL_SET, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR(" Failed to setup firewall config transfer");
+		LOG_ERROR(" Failed to setup firewall config transfer");
 		return -EINVAL;
 	}
 
@@ -1284,7 +1285,7 @@ int tisci_cmd_set_fwl_region(const struct device *dev, const struct tisci_msg_fw
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Firewall config transfer failed (ret=%d)", ret);
+		LOG_ERROR("Firewall config transfer failed (ret=%d)", ret);
 		return ret;
 	}
 
@@ -1305,7 +1306,7 @@ int tisci_cmd_get_fwl_region(const struct device *dev, struct tisci_msg_fwl_regi
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_FWL_GET, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR(" Failed to setup firewall query transfer");
+		LOG_ERROR(" Failed to setup firewall query transfer");
 		return -EINVAL;
 	}
 
@@ -1315,7 +1316,7 @@ int tisci_cmd_get_fwl_region(const struct device *dev, struct tisci_msg_fwl_regi
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Firewall query transfer failed (ret=%d)", ret);
+		LOG_ERROR("Firewall query transfer failed (ret=%d)", ret);
 		return ret;
 	}
 
@@ -1344,7 +1345,7 @@ int tisci_cmd_change_fwl_owner(const struct device *dev, struct tisci_msg_fwl_ow
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_FWL_CHANGE_OWNER, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR(" Failed to setup firewall owner change transfer");
+		LOG_ERROR(" Failed to setup firewall owner change transfer");
 		return -EINVAL;
 	}
 
@@ -1354,7 +1355,7 @@ int tisci_cmd_change_fwl_owner(const struct device *dev, struct tisci_msg_fwl_ow
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Firewall owner change failed (ret=%d)", ret);
+		LOG_ERROR("Firewall owner change failed (ret=%d)", ret);
 		return ret;
 	}
 
@@ -1384,7 +1385,7 @@ int tisci_cmd_rm_udmap_tx_ch_cfg(const struct device *dev,
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_RM_UDMAP_TX_CH_CFG, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR(" Failed to setup UDMAP TX channel config transfer");
+		LOG_ERROR(" Failed to setup UDMAP TX channel config transfer");
 		return -EINVAL;
 	}
 
@@ -1412,7 +1413,7 @@ int tisci_cmd_rm_udmap_tx_ch_cfg(const struct device *dev,
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("UDMAP TX channel %u config failed (ret=%d)", params->index, ret);
+		LOG_ERROR("UDMAP TX channel %u config failed (ret=%d)", params->index, ret);
 		return ret;
 	}
 
@@ -1435,7 +1436,7 @@ int tisci_cmd_rm_udmap_rx_ch_cfg(const struct device *dev,
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_RM_UDMAP_RX_CH_CFG, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR(" Failed to setup UDMAP RX channel config transfer");
+		LOG_ERROR(" Failed to setup UDMAP RX channel config transfer");
 		return -EINVAL;
 	}
 
@@ -1459,7 +1460,7 @@ int tisci_cmd_rm_udmap_rx_ch_cfg(const struct device *dev,
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("UDMAP RX channel %u config failed (ret=%d)", params->index, ret);
+		LOG_ERROR("UDMAP RX channel %u config failed (ret=%d)", params->index, ret);
 		return ret;
 	}
 
@@ -1480,7 +1481,7 @@ int tisci_cmd_rm_psil_pair(const struct device *dev, uint32_t nav_id, uint32_t s
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_RM_PSIL_PAIR, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR(" Failed to setup PSI-L pair transfer");
+		LOG_ERROR(" Failed to setup PSI-L pair transfer");
 		return -EINVAL;
 	}
 
@@ -1490,8 +1491,8 @@ int tisci_cmd_rm_psil_pair(const struct device *dev, uint32_t nav_id, uint32_t s
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("PSI-L pair failed nav:%u %u->%u (ret=%d)", nav_id, src_thread, dst_thread,
-			ret);
+		LOG_ERROR("PSI-L pair failed nav:%u %u->%u (ret=%d)", nav_id, src_thread,
+			  dst_thread, ret);
 		return ret;
 	}
 
@@ -1510,7 +1511,7 @@ int tisci_cmd_rm_psil_unpair(const struct device *dev, uint32_t nav_id, uint32_t
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_RM_PSIL_UNPAIR, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR(" Failed to setup PSI-L unpair transfer");
+		LOG_ERROR(" Failed to setup PSI-L unpair transfer");
 		return -EINVAL;
 	}
 
@@ -1520,7 +1521,7 @@ int tisci_cmd_rm_psil_unpair(const struct device *dev, uint32_t nav_id, uint32_t
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("PSI-L unpair failed %u->%u (ret=%d)", src_thread, dst_thread, ret);
+		LOG_ERROR("PSI-L unpair failed %u->%u (ret=%d)", src_thread, dst_thread, ret);
 		return ret;
 	}
 
@@ -1556,13 +1557,13 @@ int tisci_cmd_rm_irq_set(const struct device *dev, struct tisci_irq_set_req *cli
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_RM_IRQ_SET, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to set IRQ (ret=%d)", ret);
+		LOG_ERROR("Failed to set IRQ (ret=%d)", ret);
 		return ret;
 	}
 
@@ -1596,13 +1597,13 @@ int tisci_cmd_rm_irq_release(const struct device *dev, struct tisci_irq_release_
 	xfer = tisci_setup_one_xfer(dev, TISCI_MSG_RM_IRQ_RELEASE, 0, &req, sizeof(req), &resp,
 				    sizeof(resp));
 	if (!xfer) {
-		LOG_ERR("Failed to setup transfer");
+		LOG_ERROR("Failed to setup transfer");
 		return -EINVAL;
 	}
 
 	ret = tisci_do_xfer(dev, xfer);
 	if (ret) {
-		LOG_ERR("Failed to release IRQ (ret=%d)", ret);
+		LOG_ERROR("Failed to release IRQ (ret=%d)", ret);
 		return ret;
 	}
 
@@ -1620,13 +1621,13 @@ static int tisci_init(const struct device *dev)
 
 	ret = mbox_register_callback_dt(&config->mbox_rx, callback, &data->rx_message);
 	if (ret < 0) {
-		LOG_ERR("Could not register callback (%d)\n", ret);
+		LOG_ERROR("Could not register callback (%d)\n", ret);
 		return ret;
 	}
 
 	ret = mbox_set_enabled_dt(&config->mbox_rx, true);
 	if (ret < 0) {
-		LOG_ERR("Could not enable RX channel (%d)\n", ret);
+		LOG_ERROR("Could not enable RX channel (%d)\n", ret);
 		return ret;
 	}
 	return 0;

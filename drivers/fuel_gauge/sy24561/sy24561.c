@@ -40,7 +40,7 @@ static int sy24561_read_reg(const struct device *dev, uint8_t reg, uint16_t *val
 	int const ret = i2c_write_read_dt(&config->i2c, &reg, sizeof(reg), buffer, sizeof(buffer));
 
 	if (ret != 0) {
-		LOG_ERR("i2c_write_read failed (reg 0x%02x): %d", reg, ret);
+		LOG_ERROR("i2c_write_read failed (reg 0x%02x): %d", reg, ret);
 		return ret;
 	}
 
@@ -59,7 +59,7 @@ static int sy24561_write_reg(const struct device *dev, uint8_t reg, uint16_t val
 	int const ret = i2c_write_dt(&config->i2c, buffer, sizeof(buffer));
 
 	if (ret != 0) {
-		LOG_ERR("i2c_write_read failed (reg 0x%02x): %d", reg, ret);
+		LOG_ERROR("i2c_write_read failed (reg 0x%02x): %d", reg, ret);
 		return ret;
 	}
 
@@ -141,7 +141,7 @@ static int sy24561_get_status(const struct device *dev, uint16_t *fg_status)
 	int const ret = sy24561_get_config(dev, &config);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to read config: %d", ret);
+		LOG_ERROR("Failed to read config: %d", ret);
 		return ret;
 	}
 
@@ -159,7 +159,7 @@ static int sy24561_set_status(const struct device *dev, uint16_t const status)
 	LOG_DBG("Setting status to %" PRIu16, status);
 
 	if (status != 0) {
-		LOG_ERR("Invalid status %" PRIu16 ", it should be 0", status);
+		LOG_ERROR("Invalid status %" PRIu16 ", it should be 0", status);
 		return -EINVAL;
 	}
 
@@ -167,7 +167,7 @@ static int sy24561_set_status(const struct device *dev, uint16_t const status)
 	int const ret = sy24561_get_config(dev, &config);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to read config: %d", ret);
+		LOG_ERROR("Failed to read config: %d", ret);
 		return ret;
 	}
 
@@ -180,7 +180,7 @@ static int sy24561_set_status(const struct device *dev, uint16_t const status)
 	LOG_DBG("new config register: 0x%x", config);
 
 	if (sy24561_write_reg(dev, SY24561_REG_CONFIG, config) != 0) {
-		LOG_ERR("Impossible to write config register");
+		LOG_ERROR("Impossible to write config register");
 		return -ENODEV;
 	}
 
@@ -195,7 +195,7 @@ static int sy24561_set_alarm_threshold(const struct device *dev, uint16_t percen
 	int const ret = sy24561_get_config(dev, &config);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to read config: %d", ret);
+		LOG_ERROR("Failed to read config: %d", ret);
 		return ret;
 	}
 
@@ -226,7 +226,7 @@ static int sy24561_set_alarm_threshold(const struct device *dev, uint16_t percen
 	LOG_DBG("new config register: 0x%x", config);
 
 	if (sy24561_write_reg(dev, SY24561_REG_CONFIG, config) != 0) {
-		LOG_ERR("Impossible to write config register");
+		LOG_ERROR("Impossible to write config register");
 		return -ENODEV;
 	}
 
@@ -241,7 +241,7 @@ static int sy24561_set_temperature(const struct device *dev, uint16_t temperatur
 	int const ret = sy24561_get_config(dev, &config);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to read config: %d", ret);
+		LOG_ERROR("Failed to read config: %d", ret);
 		return ret;
 	}
 
@@ -270,7 +270,7 @@ static int sy24561_set_temperature(const struct device *dev, uint16_t temperatur
 	LOG_DBG("new config register: 0x%x", config);
 
 	if (sy24561_write_reg(dev, SY24561_REG_CONFIG, config) != 0) {
-		LOG_ERR("Impossible to write config register");
+		LOG_ERROR("Impossible to write config register");
 		return -ENODEV;
 	}
 
@@ -290,7 +290,7 @@ int sy24561_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	case FUEL_GAUGE_CURRENT_DIRECTION:
 		return sy24561_get_current_direction(dev, &val->current_direction);
 	default:
-		LOG_ERR("Property %d not supported", (int)prop);
+		LOG_ERROR("Property %d not supported", (int)prop);
 		return -ENOTSUP;
 	}
 	return 0;
@@ -309,7 +309,7 @@ static int sy24561_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	case FUEL_GAUGE_STATUS:
 		return sy24561_set_status(dev, val.fg_status);
 	default:
-		LOG_ERR("Property %d not supported", (int)prop);
+		LOG_ERROR("Property %d not supported", (int)prop);
 		ret = -ENOTSUP;
 	}
 
@@ -321,7 +321,7 @@ int sy24561_init(const struct device *dev)
 	const struct sy24561_config *cfg = dev->config;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 

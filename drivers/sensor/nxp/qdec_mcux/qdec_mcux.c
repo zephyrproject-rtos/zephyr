@@ -52,7 +52,7 @@ static int qdec_mcux_attr_set(const struct device *dev, enum sensor_channel ch,
 	switch ((enum sensor_attribute_qdec_mcux) attr) {
 	case SENSOR_ATTR_QDEC_MOD_VAL:
 		if (!IN_RANGE(val->val1, 1, UINT16_MAX)) {
-			LOG_ERR("SENSOR_ATTR_QDEC_MOD_VAL value invalid");
+			LOG_ERROR("SENSOR_ATTR_QDEC_MOD_VAL value invalid");
 			return -EINVAL;
 		}
 		data->counts_per_revolution = val->val1;

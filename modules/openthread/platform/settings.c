@@ -65,8 +65,7 @@ static int ot_setting_delete_cb(const char *key, size_t len,
 
 	ret = settings_delete(path);
 	if (ret != 0) {
-		LOG_ERR("Failed to remove setting %s, ret %d", path,
-			ret);
+		LOG_ERROR("Failed to remove setting %s, ret %d", path, ret);
 		__ASSERT_NO_MSG(false);
 	}
 
@@ -105,8 +104,7 @@ static int ot_setting_delete_subtree(int key, int index, bool delete_subtree_roo
 	ret = settings_load_subtree_direct(subtree, ot_setting_delete_cb,
 					   &delete_ctx);
 	if (ret != 0) {
-		LOG_ERR("Failed to delete OT subtree %s, index %d, ret %d",
-			subtree, index, ret);
+		LOG_ERROR("Failed to delete OT subtree %s, index %d, ret %d", subtree, index, ret);
 		__ASSERT_NO_MSG(false);
 	}
 
@@ -185,7 +183,7 @@ static int ot_setting_read_cb(const char *key, size_t len,
 
 	ret = read_cb(cb_arg, ctx->value, len);
 	if (ret <= 0) {
-		LOG_ERR("Failed to read the setting, ret: %d", ret);
+		LOG_ERROR("Failed to read the setting, ret: %d", ret);
 		ctx->status = -EIO;
 		return 1;
 	}
@@ -213,7 +211,7 @@ void otPlatSettingsInit(otInstance *aInstance, const uint16_t *aSensitiveKeys,
 
 	ret = settings_subsys_init();
 	if (ret != 0) {
-		LOG_ERR("settings_subsys_init failed (ret %d)", ret);
+		LOG_ERROR("settings_subsys_init failed (ret %d)", ret);
 	}
 }
 
@@ -238,8 +236,8 @@ otError otPlatSettingsGet(otInstance *aInstance, uint16_t aKey, int aIndex,
 
 	ret = settings_load_subtree_direct(path, ot_setting_read_cb, &read_ctx);
 	if (ret != 0) {
-		LOG_ERR("Failed to load OT setting aKey %d, aIndex %d, ret %d",
-			aKey, aIndex, ret);
+		LOG_ERROR("Failed to load OT setting aKey %d, aIndex %d, ret %d", aKey, aIndex,
+			  ret);
 	}
 
 	if (read_ctx.status != 0) {
@@ -267,7 +265,7 @@ otError otPlatSettingsSet(otInstance *aInstance, uint16_t aKey,
 
 	ret = settings_save_one(path, aValue, aValueLength);
 	if (ret != 0) {
-		LOG_ERR("Failed to store setting %d, ret %d", aKey, ret);
+		LOG_ERROR("Failed to store setting %d, ret %d", aKey, ret);
 		return OT_ERROR_NO_BUFS;
 	}
 
@@ -292,7 +290,7 @@ otError otPlatSettingsAdd(otInstance *aInstance, uint16_t aKey,
 
 	ret = settings_save_one(path, aValue, aValueLength);
 	if (ret != 0) {
-		LOG_ERR("Failed to store setting %d, ret %d", aKey, ret);
+		LOG_ERROR("Failed to store setting %d, ret %d", aKey, ret);
 		return OT_ERROR_NO_BUFS;
 	}
 

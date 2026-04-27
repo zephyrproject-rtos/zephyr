@@ -107,7 +107,7 @@ int recv_cb(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	int pos = memcmp(buf->data, tx_data, buf->len);
 
 	if (pos != 0) {
-		LOG_ERR("RX data doesn't match TX: pos %d", pos);
+		LOG_ERROR("RX data doesn't match TX: pos %d", pos);
 		LOG_HEXDUMP_ERR(buf->data, buf->len, "RX data");
 		LOG_HEXDUMP_INF(tx_data, buf->len, "TX data");
 

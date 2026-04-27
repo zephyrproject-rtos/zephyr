@@ -314,7 +314,7 @@ static void att_tx_destroy_work_handler(struct k_work *work)
 		int err = k_work_submit_to_queue(NULL, work);
 
 		if (err < 0) {
-			LOG_ERR("Failed to re-submit %s: %d", __func__, err);
+			LOG_ERROR("Failed to re-submit %s: %d", __func__, err);
 			k_oops();
 		}
 	}
@@ -347,7 +347,7 @@ static void att_tx_destroy(struct net_buf *buf)
 
 	err = k_work_submit(&att_tx_destroy_work);
 	if (err < 0) {
-		LOG_ERR("Failed to submit att_tx_destroy_work: %d", err);
+		LOG_ERROR("Failed to submit att_tx_destroy_work: %d", err);
 		k_oops();
 	}
 	/* Continues in att_tx_destroy_work_handler() */
@@ -390,7 +390,7 @@ static void att_disconnect(struct bt_att_chan *chan)
 
 	err = bt_conn_disconnect(chan->chan.chan.conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
-		LOG_ERR("Disconnecting failed (err %d)", err);
+		LOG_ERROR("Disconnecting failed (err %d)", err);
 	}
 }
 
@@ -414,7 +414,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	LOG_DBG("code 0x%02x", hdr->code);
 
 	if (!atomic_test_bit(chan->flags, ATT_CONNECTED)) {
-		LOG_ERR("ATT channel not connected");
+		LOG_ERROR("ATT channel not connected");
 		return -EINVAL;
 	}
 
@@ -477,7 +477,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	if (hdr->code == BT_ATT_OP_SIGNED_WRITE_CMD) {
 		err = bt_smp_sign(chan->att->conn, buf);
 		if (err) {
-			LOG_ERR("Error signing data");
+			LOG_ERROR("Error signing data");
 			net_buf_unref(buf);
 			return err;
 		}
@@ -490,7 +490,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 	err = bt_l2cap_send_pdu(&chan->chan, buf, NULL, NULL);
 	if (err) {
 		if (err == -ENOBUFS) {
-			LOG_ERR("Ran out of TX buffers or contexts.");
+			LOG_ERROR("Ran out of TX buffers or contexts.");
 		}
 		/* In case of an error has occurred restore the buffer state */
 		net_buf_simple_restore(&buf->b, &state);
@@ -688,7 +688,7 @@ static void chan_rebegin_att_timeout(struct bt_att_tx_meta_data *user_data)
 	LOG_DBG("chan %p chan->req %p", chan, chan->req);
 
 	if (!atomic_test_bit(chan->flags, ATT_CONNECTED)) {
-		LOG_ERR("ATT channel not connected");
+		LOG_ERROR("ATT channel not connected");
 		return;
 	}
 
@@ -712,7 +712,7 @@ static void chan_req_notif_sent(struct bt_att_tx_meta_data *user_data)
 	LOG_DBG("chan %p CID 0x%04X", chan, chan->chan.tx.cid);
 
 	if (!atomic_test_bit(chan->flags, ATT_CONNECTED)) {
-		LOG_ERR("ATT channel not connected");
+		LOG_ERROR("ATT channel not connected");
 		return;
 	}
 
@@ -737,7 +737,7 @@ static void att_on_sent_cb(struct bt_att_tx_meta_data *meta)
 	}
 
 	if (meta->err) {
-		LOG_ERR("Got err %d, not calling ATT cb", meta->err);
+		LOG_ERROR("Got err %d, not calling ATT cb", meta->err);
 		return;
 	}
 
@@ -897,7 +897,7 @@ static void send_err_rsp(struct bt_att_chan *chan, uint8_t req, uint16_t handle,
 
 	buf = bt_att_chan_create_pdu(chan, BT_ATT_OP_ERROR_RSP, sizeof(*rsp));
 	if (!buf) {
-		LOG_ERR("Unable to create err rsp PDU");
+		LOG_ERROR("Unable to create err rsp PDU");
 		return;
 	}
 
@@ -2168,7 +2168,7 @@ static uint8_t att_write_rsp(struct bt_att_chan *chan, uint8_t req, uint8_t rsp,
 	if (rsp) {
 		data.buf = bt_att_chan_create_pdu(chan, rsp, 0);
 		if (!data.buf) {
-			LOG_ERR("Unable to create rsp PDU");
+			LOG_ERROR("Unable to create rsp PDU");
 			return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
 		}
 	}
@@ -2521,7 +2521,7 @@ static uint8_t att_signed_write_cmd(struct bt_att_chan *chan, struct net_buf *bu
 	net_buf_push(buf, sizeof(struct bt_att_hdr));
 	err = bt_smp_sign_verify(conn, buf);
 	if (err) {
-		LOG_ERR("Error verifying data");
+		LOG_ERROR("Error verifying data");
 		/* No response for this command */
 		return 0;
 	}
@@ -2765,7 +2765,7 @@ static uint8_t att_indicate(struct bt_att_chan *chan, struct net_buf *buf)
 
 	buf = bt_att_chan_create_pdu(chan, BT_ATT_OP_CONFIRM, 0);
 	if (!buf) {
-		LOG_ERR("Unable to create confirm PDU");
+		LOG_ERROR("Unable to create confirm PDU");
 		return 0;
 	}
 
@@ -3002,7 +3002,7 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	size_t i;
 
 	if (buf->len < sizeof(*hdr)) {
-		LOG_ERR("Too small ATT PDU received");
+		LOG_ERROR("Too small ATT PDU received");
 		return 0;
 	}
 
@@ -3038,7 +3038,7 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 
 	if (buf->len < handler->expect_len) {
-		LOG_ERR("Invalid len %u for code 0x%02x", buf->len, hdr->code);
+		LOG_ERROR("Invalid len %u for code 0x%02x", buf->len, hdr->code);
 		err = BT_ATT_ERR_INVALID_PDU;
 	} else {
 		err = handler->func(att_chan, buf);
@@ -3064,13 +3064,13 @@ static struct bt_att *att_get(struct bt_conn *conn)
 
 	chan = bt_l2cap_le_lookup_rx_cid(conn, BT_L2CAP_CID_ATT);
 	if (!chan) {
-		LOG_ERR("Unable to find ATT channel");
+		LOG_ERROR("Unable to find ATT channel");
 		return NULL;
 	}
 
 	att_chan = ATT_CHAN(chan);
 	if (!atomic_test_bit(att_chan->flags, ATT_CONNECTED)) {
-		LOG_ERR("ATT channel not connected");
+		LOG_ERROR("ATT channel not connected");
 		return NULL;
 	}
 
@@ -3110,7 +3110,7 @@ static struct net_buf *att_create_rsp_pdu(struct bt_att_chan *chan, uint8_t op)
 
 	buf = net_buf_alloc(&att_pool, BT_ATT_TIMEOUT);
 	if (!buf) {
-		LOG_ERR("Unable to allocate buffer for op 0x%02x", op);
+		LOG_ERROR("Unable to allocate buffer for op 0x%02x", op);
 		return NULL;
 	}
 
@@ -3201,8 +3201,7 @@ static void att_timeout(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct bt_att_chan *chan = CONTAINER_OF(dwork, struct bt_att_chan, timeout_work);
 
-	LOG_ERR("ATT Timeout for device %s. Disconnecting...",
-		bt_conn_dst_str(chan->att->conn));
+	LOG_ERROR("ATT Timeout for device %s. Disconnecting...", bt_conn_dst_str(chan->att->conn));
 
 	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part F] page 480:
 	 *
@@ -3302,7 +3301,7 @@ static uint8_t att_req_retry(struct bt_att_chan *att_chan)
 
 	buf = bt_att_chan_create_pdu(att_chan, req->att_op, req->len);
 	if (!buf) {
-		LOG_ERR("Unable to create retry PDU (%u)", req->att_op);
+		LOG_ERROR("Unable to create retry PDU (%u)", req->att_op);
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
@@ -3534,7 +3533,7 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **ch)
 	LOG_DBG("conn %p handle %u", conn, conn->handle);
 
 	if (k_mem_slab_alloc(&att_slab, (void **)&att, K_NO_WAIT)) {
-		LOG_ERR("No available ATT context for conn %p", conn);
+		LOG_ERROR("No available ATT context for conn %p", conn);
 		return -ENOMEM;
 	}
 
@@ -3645,7 +3644,7 @@ static void handle_potential_collision(struct bt_att *att)
 
 		err = att_schedule_eatt_connect(att->conn, to_connect);
 		if (err < 0) {
-			LOG_ERR("Failed to schedule EATT connection retry (err: %d)", err);
+			LOG_ERROR("Failed to schedule EATT connection retry (err: %d)", err);
 		}
 	}
 }
@@ -3882,7 +3881,7 @@ static void bt_eatt_init(void)
 	if (registered_server != &eatt_l2cap) {
 		err = bt_l2cap_server_register(&eatt_l2cap);
 		if (err < 0) {
-			LOG_ERR("EATT Server registration failed %d", err);
+			LOG_ERROR("EATT Server registration failed %d", err);
 		}
 	}
 

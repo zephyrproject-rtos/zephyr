@@ -38,7 +38,7 @@ static uint16_t bma4xx_compute_fifo_wm(const struct bma4xx_runtime_config *new_c
 	rc = bma4xx_accel_reg_to_hz(new_cfg->accel_odr, &val);
 
 	if (rc) {
-		LOG_ERR("Invalid ord value");
+		LOG_ERROR("Invalid ord value");
 		return -EINVAL;
 	}
 

@@ -66,13 +66,13 @@ static void ll_sys_temperature_calibration_measurement(void)
 	int rc = sensor_sample_fetch(dev_temp_sensor);
 
 	if (rc) {
-		LOG_ERR("Failed to fetch sample (%d)", rc);
+		LOG_ERROR("Failed to fetch sample (%d)", rc);
 		return;
 	}
 
 	rc = sensor_channel_get(dev_temp_sensor, SENSOR_CHAN_DIE_TEMP, &val);
 	if (rc) {
-		LOG_ERR("Failed to get data (%d)", rc);
+		LOG_ERROR("Failed to get data (%d)", rc);
 		return;
 	}
 
@@ -98,7 +98,7 @@ void ll_sys_temperature_calibration_measurement_work_handler(struct k_work *work
 void ll_sys_bg_temperature_measurement_init(void)
 {
 	if (!device_is_ready(dev_temp_sensor)) {
-		LOG_ERR("dev_temp_sensor: device %s not ready", dev_temp_sensor->name);
+		LOG_ERROR("dev_temp_sensor: device %s not ready", dev_temp_sensor->name);
 		k_panic();
 	} else {
 		/* Register Temperature Measurement task */

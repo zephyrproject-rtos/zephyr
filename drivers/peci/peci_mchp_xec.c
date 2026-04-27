@@ -409,15 +409,15 @@ static int peci_xec_transfer(const struct device *dev, struct peci_msg *msg)
 		err_val = regs->ERROR;
 		if (err_val) {
 			if (err_val & MCHP_PECI_ERR_RDOV) {
-				LOG_ERR("Read buffer is not empty");
+				LOG_ERROR("Read buffer is not empty");
 			}
 
 			if (err_val & MCHP_PECI_ERR_WRUN) {
-				LOG_ERR("Write buffer is not empty");
+				LOG_ERROR("Write buffer is not empty");
 			}
 
 			if (err_val & MCHP_PECI_ERR_BERR) {
-				LOG_ERR("PECI bus error");
+				LOG_ERROR("PECI bus error");
 			}
 
 			LOG_DBG("PECI err %x", err_val);
@@ -524,7 +524,7 @@ static int peci_xec_init(const struct device *dev)
 	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret != 0) {
-		LOG_ERR("XEC PECI pinctrl init failed (%d)", ret);
+		LOG_ERROR("XEC PECI pinctrl init failed (%d)", ret);
 		return ret;
 	}
 

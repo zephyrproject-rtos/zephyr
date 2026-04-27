@@ -70,12 +70,12 @@ static int dac_stm32_write_value(const struct device *dev,
 
 	if (channel - STM32_FIRST_CHANNEL >= data->channel_count ||
 					channel < STM32_FIRST_CHANNEL) {
-		LOG_ERR("Channel %d is not valid", channel);
+		LOG_ERROR("Channel %d is not valid", channel);
 		return -EINVAL;
 	}
 
 	if (value >= BIT(data->resolution)) {
-		LOG_ERR("Value %d is out of range", value);
+		LOG_ERROR("Value %d is out of range", value);
 		return -EINVAL;
 	}
 
@@ -100,7 +100,7 @@ static int dac_stm32_channel_setup(const struct device *dev,
 	if ((channel_cfg->channel_id - STM32_FIRST_CHANNEL >=
 			data->channel_count) ||
 			(channel_cfg->channel_id < STM32_FIRST_CHANNEL)) {
-		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
+		LOG_ERROR("Channel %d is not valid", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
@@ -108,7 +108,7 @@ static int dac_stm32_channel_setup(const struct device *dev,
 			(channel_cfg->resolution == 12)) {
 		data->resolution = channel_cfg->resolution;
 	} else {
-		LOG_ERR("Resolution not supported");
+		LOG_ERROR("Resolution not supported");
 		return -ENOTSUP;
 	}
 
@@ -133,7 +133,7 @@ static int dac_stm32_channel_setup(const struct device *dev,
 	LL_DAC_SetOutputConnection(cfg->base, channel, cfg_setting);
 #else
 	if (channel_cfg->internal) {
-		LOG_ERR("Internal connections not supported");
+		LOG_ERROR("Internal connections not supported");
 		return -ENOTSUP;
 	}
 #endif /* LL_DAC_OUTPUT_CONNECT_INTERNAL */
@@ -161,7 +161,7 @@ static int dac_stm32_init(const struct device *dev)
 	/* Configure dt provided device signals when available */
 	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if ((err < 0) && (err != -ENOENT)) {
-		LOG_ERR("DAC pinctrl setup failed (%d)", err);
+		LOG_ERROR("DAC pinctrl setup failed (%d)", err);
 		return err;
 	}
 

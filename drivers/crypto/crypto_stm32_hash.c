@@ -49,12 +49,12 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 	HAL_StatusTypeDef status;
 
 	if (!pkt || !pkt->in_buf || !pkt->out_buf) {
-		LOG_ERR("Invalid packet buffers");
+		LOG_ERROR("Invalid packet buffers");
 		return -EINVAL;
 	}
 
 	if (!finish) {
-		LOG_ERR("Multipart hashing not supported yet");
+		LOG_ERROR("Multipart hashing not supported yet");
 		return -ENOTSUP;
 	}
 
@@ -71,14 +71,14 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 		break;
 	default:
 		k_sem_give(&data->device_sem);
-		LOG_ERR("Unsupported algorithm in handler: %d", session->algo);
+		LOG_ERROR("Unsupported algorithm in handler: %d", session->algo);
 		return -ENOTSUP;
 	}
 
 	k_sem_give(&data->device_sem);
 
 	if (status != HAL_OK) {
-		LOG_ERR("HAL HASH computation failed (status=%d)", status);
+		LOG_ERROR("HAL HASH computation failed (status=%d)", status);
 		return -EIO;
 	}
 
@@ -97,13 +97,13 @@ static int stm32_hash_begin_session(const struct device *dev, struct hash_ctx *c
 	case CRYPTO_HASH_ALGO_SHA256:
 		break;
 	default:
-		LOG_ERR("Unsupported hash algorithm: %d", algo);
+		LOG_ERROR("Unsupported hash algorithm: %d", algo);
 		return -ENOTSUP;
 	}
 
 	ctx_idx = crypto_stm32_hash_get_unused_session_index(dev);
 	if (ctx_idx < 0) {
-		LOG_ERR("No free session for now");
+		LOG_ERROR("No free session for now");
 		return -ENOSPC;
 	}
 
@@ -126,7 +126,7 @@ static int stm32_hash_free_session(const struct device *dev, struct hash_ctx *ct
 	struct crypto_stm32_hash_session *session = CRYPTO_STM32_HASH_SESSN(ctx);
 
 	if (!session) {
-		LOG_ERR("Tried to free a NULL session");
+		LOG_ERROR("Tried to free a NULL session");
 		return -EINVAL;
 	}
 
@@ -148,7 +148,7 @@ static int crypto_stm32_hash_init(const struct device *dev)
 	struct crypto_stm32_hash_data *data = CRYPTO_STM32_HASH_DATA(dev);
 
 	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken) != 0) {
-		LOG_ERR("Clock op failed\n");
+		LOG_ERROR("Clock op failed\n");
 		return -EIO;
 	}
 
@@ -157,7 +157,7 @@ static int crypto_stm32_hash_init(const struct device *dev)
 
 	data->hhash.Init.DataType = HASH_DATATYPE_8B;
 	if (HAL_HASH_Init(&data->hhash) != HAL_OK) {
-		LOG_ERR("Peripheral init error");
+		LOG_ERROR("Peripheral init error");
 		return -EIO;
 	}
 

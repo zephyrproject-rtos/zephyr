@@ -475,7 +475,8 @@ void conn_mgr_conn_init(void)
 	/* Initialize connectivity bindings. */
 	STRUCT_SECTION_FOREACH(conn_mgr_conn_binding, binding) {
 		if (!(binding->impl->api)) {
-			LOG_ERR("Connectivity implementation has NULL API, and will be treated as "
+			LOG_ERROR(
+				"Connectivity implementation has NULL API, and will be treated as "
 				"non-existent.");
 		} else if (binding->impl->api->init) {
 			conn_mgr_binding_lock(binding);

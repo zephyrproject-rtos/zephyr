@@ -48,7 +48,7 @@ static int post_status_stage(struct usbd_context *const uds_ctx)
 	if (setup->bRequest == USB_SREQ_SET_ADDRESS) {
 		ret = udc_set_address(uds_ctx->dev, setup->wValue);
 		if (ret) {
-			LOG_ERR("Failed to set device address 0x%x", setup->wValue);
+			LOG_ERROR("Failed to set device address 0x%x", setup->wValue);
 		}
 	}
 
@@ -58,7 +58,7 @@ static int post_status_stage(struct usbd_context *const uds_ctx)
 
 		ret = udc_test_mode(uds_ctx->dev, mode, false);
 		if (ret) {
-			LOG_ERR("Failed to enable TEST_MODE %u", mode);
+			LOG_ERROR("Failed to enable TEST_MODE %u", mode);
 		}
 	}
 
@@ -93,7 +93,7 @@ static int sreq_set_address(struct usbd_context *const uds_ctx)
 
 		ret = udc_set_address(uds_ctx->dev, setup->wValue);
 		if (ret) {
-			LOG_ERR("Failed to set device address 0x%x", setup->wValue);
+			LOG_ERROR("Failed to set device address 0x%x", setup->wValue);
 			return ret;
 		}
 	} else {
@@ -146,8 +146,7 @@ static int sreq_set_configuration(struct usbd_context *const uds_ctx)
 
 	ret = usbd_config_set(uds_ctx, setup->wValue);
 	if (ret) {
-		LOG_ERR("Failed to set configuration %u, %d",
-			setup->wValue, ret);
+		LOG_ERROR("Failed to set configuration %u, %d", setup->wValue, ret);
 		return ret;
 	}
 
@@ -479,7 +478,7 @@ static int sreq_get_desc_cfg(struct usbd_context *const uds_ctx,
 
 	cfg_nd = usbd_config_get(uds_ctx, get_desc_speed, idx + 1);
 	if (cfg_nd == NULL) {
-		LOG_ERR("Configuration descriptor %u not found", idx + 1);
+		LOG_ERROR("Configuration descriptor %u not found", idx + 1);
 		errno = -ENOTSUP;
 		return 0;
 	}
@@ -534,7 +533,7 @@ static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_SN_ASCII7_LENGTH])
 
 	if (hwid_len < 0) {
 		if (hwid_len == -ENOSYS) {
-			LOG_ERR("HWINFO not implemented or enabled");
+			LOG_ERROR("HWINFO not implemented or enabled");
 		}
 
 		return hwid_len;
@@ -1069,7 +1068,7 @@ static int usbd_enqueue_setup(struct usbd_context *const uds_ctx)
 
 	ret = usbd_ep_ctrl_enqueue(uds_ctx, setup);
 	if (ret) {
-		LOG_ERR("Failed to enqueue SETUP buffer");
+		LOG_ERROR("Failed to enqueue SETUP buffer");
 		net_buf_unref(setup);
 	}
 
@@ -1088,7 +1087,7 @@ static int usbd_enqueue_status_in(struct usbd_context *const uds_ctx)
 
 	ret = usbd_ep_ctrl_enqueue(uds_ctx, status_in);
 	if (ret) {
-		LOG_ERR("Failed to enqueue Status IN buffer");
+		LOG_ERROR("Failed to enqueue Status IN buffer");
 		net_buf_unref(status_in);
 	}
 
@@ -1114,7 +1113,7 @@ static int usbd_enqueue_status_out(struct usbd_context *const uds_ctx)
 
 	ret = usbd_ep_ctrl_enqueue(uds_ctx, status_out);
 	if (ret) {
-		LOG_ERR("Failed to enqueue Status OUT buffer");
+		LOG_ERROR("Failed to enqueue Status OUT buffer");
 		net_buf_unref(status_out);
 	}
 
@@ -1130,7 +1129,7 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 
 	bi = udc_get_buf_info(buf);
 	if (USB_EP_GET_IDX(bi->ep)) {
-		LOG_ERR("Can only handle control requests");
+		LOG_ERROR("Can only handle control requests");
 		return -EIO;
 	}
 
@@ -1157,7 +1156,7 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 
 		if (bi->setup) {
 			if (ctrl_xfer_get_setup(uds_ctx, buf)) {
-				LOG_ERR("Malformed setup packet");
+				LOG_ERROR("Malformed setup packet");
 				net_buf_unref(buf);
 				goto ctrl_xfer_stall;
 			}
@@ -1165,7 +1164,7 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 			/* Remove setup packet buffer from the chain */
 			next_buf = net_buf_frag_del(NULL, buf);
 			if (next_buf != NULL) {
-				LOG_ERR("Unexpected buffer linked to setup");
+				LOG_ERROR("Unexpected buffer linked to setup");
 				net_buf_unref(next_buf);
 				goto ctrl_xfer_stall;
 			}

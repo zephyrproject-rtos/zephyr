@@ -387,7 +387,7 @@ static int get_block_increments(const struct dma_config *config,
 
 	if ((block_config->source_addr_adj == DMA_ADDR_ADJ_DECREMENT) ||
 	    (block_config->dest_addr_adj == DMA_ADDR_ADJ_DECREMENT)) {
-		LOG_ERR("DMA_ADDR_ADJ_DECREMENT not supported");
+		LOG_ERROR("DMA_ADDR_ADJ_DECREMENT not supported");
 		return -EINVAL;
 	}
 
@@ -430,14 +430,14 @@ static int get_block_increments(const struct dma_config *config,
 
 		dst_inc = 0;
 		if (block_config->dest_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
-			LOG_ERR("DMA to peripheral must set DMA_ADDR_ADJ_NO_CHANGE");
+			LOG_ERROR("DMA to peripheral must set DMA_ADDR_ADJ_NO_CHANGE");
 			return -EINVAL;
 		}
 		break;
 	case PERIPHERAL_TO_MEMORY:
 		src_inc = 0;
 		if (block_config->source_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
-			LOG_ERR("DMA from peripheral must set DMA_ADDR_ADJ_NO_CHANGE");
+			LOG_ERROR("DMA from peripheral must set DMA_ADDR_ADJ_NO_CHANGE");
 			return -EINVAL;
 		}
 
@@ -453,7 +453,7 @@ static int get_block_increments(const struct dma_config *config,
 		}
 		break;
 	default:
-		LOG_ERR("not support transfer direction");
+		LOG_ERROR("not support transfer direction");
 		return -EINVAL;
 	}
 
@@ -525,27 +525,25 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 
 	/* Check if have a free slot to store DMA channel data */
 	if (dma_data->num_channels_used > dev_config->num_of_channels) {
-		LOG_ERR("out of DMA channel %d", channel);
+		LOG_ERROR("out of DMA channel %d", channel);
 		return -EINVAL;
 	}
 
 	/* Check if the dma channel number is valid */
 	if (channel >= dev_config->num_of_channels) {
-		LOG_ERR("invalid DMA channel number %d", channel);
+		LOG_ERROR("invalid DMA channel number %d", channel);
 		return -EINVAL;
 	}
 
-	if (config->source_data_size != 4U &&
-		config->source_data_size != 2U &&
-		config->source_data_size != 1U) {
-		LOG_ERR("Source unit size error, %d", config->source_data_size);
+	if (config->source_data_size != 4U && config->source_data_size != 2U &&
+	    config->source_data_size != 1U) {
+		LOG_ERROR("Source unit size error, %d", config->source_data_size);
 		return -EINVAL;
 	}
 
-	if (config->dest_data_size != 4U &&
-		config->dest_data_size != 2U &&
-		config->dest_data_size != 1U) {
-		LOG_ERR("Dest unit size error, %d", config->dest_data_size);
+	if (config->dest_data_size != 4U && config->dest_data_size != 2U &&
+	    config->dest_data_size != 1U) {
+		LOG_ERROR("Dest unit size error, %d", config->dest_data_size);
 		return -EINVAL;
 	}
 
@@ -565,7 +563,7 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	if (dma_data->channel_index[channel] == -1) {
 		/* Not enough items in channel data array */
 		if (dma_data->num_channels_used >= dev_config->num_of_allocated_channels) {
-			LOG_ERR("No free DMA channels available");
+			LOG_ERROR("No free DMA channels available");
 			return -ENOMEM;
 		}
 
@@ -608,9 +606,9 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	if (config->source_chaining_en || config->dest_chaining_en) {
 		/* Chaining is enabled */
 		if (!dev_config->otrig_base_address || !dev_config->itrig_base_address) {
-			LOG_ERR("Calling function tried to setup up channel"
-			" chaining but the current platform is missing"
-			" the correct trigger base addresses.");
+			LOG_ERROR("Calling function tried to setup up channel"
+				  " chaining but the current platform is missing"
+				  " the correct trigger base addresses.");
 			k_spin_unlock(&configuring_otrigs, otrigs_key);
 			return -ENXIO;
 		}
@@ -635,9 +633,9 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 			}
 		}
 		if (!is_otrig_available) {
-			LOG_ERR("Calling function tried to setup up multiple"
-			" channels to be configured but the dma driver has"
-			" run out of OTrig Muxes");
+			LOG_ERROR("Calling function tried to setup up multiple"
+				  " channels to be configured but the dma driver has"
+				  " run out of OTrig Muxes");
 			k_spin_unlock(&configuring_otrigs, otrigs_key);
 			return -EINVAL;
 		}

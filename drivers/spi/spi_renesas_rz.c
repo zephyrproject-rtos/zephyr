@@ -20,7 +20,7 @@
 
 LOG_MODULE_REGISTER(rz_spi);
 
-#define LOG_DEV_ERR(dev, format, ...) LOG_ERR("%s:" #format, (dev)->name, ##__VA_ARGS__)
+#define LOG_DEV_ERR(dev, format, ...) LOG_ERROR("%s:" #format, (dev)->name, ##__VA_ARGS__)
 
 #include "spi_context.h"
 
@@ -117,7 +117,7 @@ static int spi_rz_configure(const struct device *dev, const struct spi_config *s
 	}
 
 	if (spi_cfg->operation & SPI_FRAME_FORMAT_TI) {
-		LOG_ERR("TI frame not supported");
+		LOG_ERROR("TI frame not supported");
 		return -ENOTSUP;
 	}
 
@@ -159,7 +159,7 @@ static int spi_rz_configure(const struct device *dev, const struct spi_config *s
 	data->fsp_ctrl->bit_width = (spi_bit_width_t)(SPI_WORD_SIZE_GET(spi_cfg->operation) - 1);
 	if ((data->fsp_ctrl->bit_width > SPI_BIT_WIDTH_32_BITS) ||
 	    (data->fsp_ctrl->bit_width < SPI_BIT_WIDTH_4_BITS)) {
-		LOG_ERR("Unsupported SPI word size: %u", SPI_WORD_SIZE_GET(spi_cfg->operation));
+		LOG_ERROR("Unsupported SPI word size: %u", SPI_WORD_SIZE_GET(spi_cfg->operation));
 		return -ENOTSUP;
 	}
 
@@ -206,7 +206,7 @@ static int spi_rz_configure(const struct device *dev, const struct spi_config *s
 			spi_extend->ssl_select = SPI_SSL_SELECT_SSL3;
 			break;
 		default:
-			LOG_ERR("Invalid SSL");
+			LOG_ERROR("Invalid SSL");
 			return -EINVAL;
 		}
 	}
@@ -217,7 +217,7 @@ static int spi_rz_configure(const struct device *dev, const struct spi_config *s
 	/* Open module r_spi. */
 	err = config->fsp_api->open(data->fsp_ctrl, data->fsp_config);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("R_SPI_Open error: %d", err);
+		LOG_ERROR("R_SPI_Open error: %d", err);
 		return -EIO;
 	}
 
@@ -350,7 +350,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 						 data->data_len, data->fsp_ctrl->bit_width);
 	}
 	if (ret) {
-		LOG_ERR("Async transmit fail: %d", ret);
+		LOG_ERROR("Async transmit fail: %d", ret);
 		spi_context_cs_control(spi_ctx, false);
 		spi_context_release(spi_ctx, ret);
 		return -EIO;
@@ -446,7 +446,7 @@ static inline void spi_rz_iodev_prepare_start(const struct device *dev)
 
 	err = spi_rz_configure(dev, spi_config);
 	if (err != 0) {
-		LOG_ERR("RTIO config spi error: %d", err);
+		LOG_ERROR("RTIO config spi error: %d", err);
 		spi_rz_iodev_complete(dev, err);
 		return;
 	}
@@ -653,13 +653,13 @@ static int spi_rz_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->pinctrl_dev, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("pinctrl_apply_state fail: %d", ret);
+		LOG_ERROR("pinctrl_apply_state fail: %d", ret);
 		return ret;
 	}
 
 	ret = spi_context_cs_configure_all(&data->ctx);
 	if (ret < 0) {
-		LOG_ERR("spi_context_cs_configure_all fail: %d", ret);
+		LOG_ERROR("spi_context_cs_configure_all fail: %d", ret);
 		return ret;
 	}
 #ifdef CONFIG_SPI_RTIO

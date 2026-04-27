@@ -131,16 +131,15 @@ static int check_jedec_id(const struct device *dev)
 
 	err = spi_transceive_dt(&cfg->bus, &tx_buf_set, &rx_buf_set);
 	if (err != 0) {
-		LOG_ERR("SPI transaction failed with code: %d/%u",
-			err, __LINE__);
+		LOG_ERROR("SPI transaction failed with code: %d/%u", err, __LINE__);
 		return -EIO;
 	}
 
 	if (memcmp(expected_id, read_id, sizeof(read_id)) != 0) {
-		LOG_ERR("Wrong JEDEC ID: %02X %02X %02X, "
-			"expected: %02X %02X %02X",
-			read_id[0], read_id[1], read_id[2],
-			expected_id[0], expected_id[1], expected_id[2]);
+		LOG_ERROR("Wrong JEDEC ID: %02X %02X %02X, "
+			  "expected: %02X %02X %02X",
+			  read_id[0], read_id[1], read_id[2], expected_id[0], expected_id[1],
+			  expected_id[2]);
 		return -ENODEV;
 	}
 
@@ -178,8 +177,7 @@ static int read_status_register(const struct device *dev, uint16_t *status)
 
 	err = spi_transceive_dt(&cfg->bus, &tx_buf_set, &rx_buf_set);
 	if (err != 0) {
-		LOG_ERR("SPI transaction failed with code: %d/%u",
-			err, __LINE__);
+		LOG_ERROR("SPI transaction failed with code: %d/%u", err, __LINE__);
 		return -EIO;
 	}
 
@@ -227,8 +225,7 @@ static int configure_page_size(const struct device *dev)
 
 	err = spi_write_dt(&cfg->bus, &tx_buf_set);
 	if (err != 0) {
-		LOG_ERR("SPI transaction failed with code: %d/%u",
-			err, __LINE__);
+		LOG_ERROR("SPI transaction failed with code: %d/%u", err, __LINE__);
 	} else {
 		err = wait_until_ready(dev);
 	}
@@ -280,8 +277,7 @@ static int spi_flash_at45_read(const struct device *dev, off_t offset,
 	release(dev);
 
 	if (err != 0) {
-		LOG_ERR("SPI transaction failed with code: %d/%u",
-			err, __LINE__);
+		LOG_ERROR("SPI transaction failed with code: %d/%u", err, __LINE__);
 	}
 
 	return (err != 0) ? -EIO : 0;
@@ -314,8 +310,7 @@ static int perform_write(const struct device *dev, off_t offset,
 
 	err = spi_write_dt(&cfg->bus, &tx_buf_set);
 	if (err != 0) {
-		LOG_ERR("SPI transaction failed with code: %d/%u",
-			err, __LINE__);
+		LOG_ERROR("SPI transaction failed with code: %d/%u", err, __LINE__);
 	} else {
 		err = wait_until_ready(dev);
 	}
@@ -387,8 +382,7 @@ static int perform_chip_erase(const struct device *dev)
 
 	err = spi_write_dt(&cfg->bus, &tx_buf_set);
 	if (err != 0) {
-		LOG_ERR("SPI transaction failed with code: %d/%u",
-			err, __LINE__);
+		LOG_ERROR("SPI transaction failed with code: %d/%u", err, __LINE__);
 	} else {
 		err = wait_until_ready(dev);
 	}
@@ -424,8 +418,7 @@ static int perform_erase_op(const struct device *dev, uint8_t opcode,
 
 	err = spi_write_dt(&cfg->bus, &tx_buf_set);
 	if (err != 0) {
-		LOG_ERR("SPI transaction failed with code: %d/%u",
-			err, __LINE__);
+		LOG_ERROR("SPI transaction failed with code: %d/%u", err, __LINE__);
 	} else {
 		err = wait_until_ready(dev);
 	}
@@ -492,9 +485,9 @@ static int spi_flash_at45_erase(const struct device *dev, off_t offset,
 				offset += cfg->page_size;
 				size   -= cfg->page_size;
 			} else {
-				LOG_ERR("Unsupported erase request: "
-					"size %zu at 0x%lx",
-					size, (long)offset);
+				LOG_ERROR("Unsupported erase request: "
+					  "size %zu at 0x%lx",
+					  size, (long)offset);
 				err = -EINVAL;
 			}
 
@@ -542,8 +535,7 @@ static int power_down_op(const struct device *dev, uint8_t opcode,
 
 	err = spi_write_dt(&cfg->bus, &tx_buf_set);
 	if (err != 0) {
-		LOG_ERR("SPI transaction failed with code: %d/%u",
-			err, __LINE__);
+		LOG_ERROR("SPI transaction failed with code: %d/%u", err, __LINE__);
 		return -EIO;
 	}
 
@@ -558,18 +550,18 @@ static int spi_flash_at45_init(const struct device *dev)
 	int err;
 
 	if (!spi_is_ready_dt(&dev_config->bus)) {
-		LOG_ERR("SPI bus %s not ready", dev_config->bus.bus->name);
+		LOG_ERROR("SPI bus %s not ready", dev_config->bus.bus->name);
 		return -ENODEV;
 	}
 
 #if ANY_INST_HAS_RESET_GPIOS
 	if (dev_config->reset) {
 		if (!device_is_ready(dev_config->reset->port)) {
-			LOG_ERR("Reset pin not ready");
+			LOG_ERROR("Reset pin not ready");
 			return -ENODEV;
 		}
 		if (gpio_pin_configure_dt(dev_config->reset, GPIO_OUTPUT_ACTIVE)) {
-			LOG_ERR("Couldn't configure reset pin");
+			LOG_ERROR("Couldn't configure reset pin");
 			return -ENODEV;
 		}
 		gpio_pin_set_dt(dev_config->reset, 0);
@@ -579,11 +571,11 @@ static int spi_flash_at45_init(const struct device *dev)
 #if ANY_INST_HAS_WP_GPIOS
 	if (dev_config->wp) {
 		if (!device_is_ready(dev_config->wp->port)) {
-			LOG_ERR("Write protect pin not ready");
+			LOG_ERROR("Write protect pin not ready");
 			return -ENODEV;
 		}
 		if (gpio_pin_configure_dt(dev_config->wp, GPIO_OUTPUT_ACTIVE)) {
-			LOG_ERR("Couldn't configure write protect pin");
+			LOG_ERROR("Couldn't configure write protect pin");
 			return -ENODEV;
 		}
 	}

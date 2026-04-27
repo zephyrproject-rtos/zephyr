@@ -22,7 +22,7 @@
 #include <soc_radio.h>
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
-#define PR_EXC(...) LOG_ERR(__VA_ARGS__)
+#define PR_EXC(...) LOG_ERROR(__VA_ARGS__)
 #else
 #define PR_EXC(...)
 #endif /* CONFIG_PRINTK || CONFIG_LOG */

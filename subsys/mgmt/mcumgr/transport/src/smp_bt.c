@@ -252,7 +252,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 	bool started;
 
 	if (cpd == NULL) {
-		LOG_ERR("Null cpd object for connection %p", (void *)conn);
+		LOG_ERROR("Null cpd object for connection %p", (void *)conn);
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
 
@@ -314,7 +314,7 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 	struct net_buf *nb;
 
 	if (cpd == NULL) {
-		LOG_ERR("Null cpd object for connection %p", (void *)conn);
+		LOG_ERROR("Null cpd object for connection %p", (void *)conn);
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
 
@@ -616,7 +616,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 		k_sem_give(&cpd->smp_notify_sem);
 	} else {
-		LOG_ERR("Null cpd object for connection %p", (void *)conn);
+		LOG_ERROR("Null cpd object for connection %p", (void *)conn);
 	}
 }
 
@@ -684,7 +684,7 @@ static void smp_bt_setup(void)
 #endif
 
 	if (rc != 0) {
-		LOG_ERR("Bluetooth SMP transport register failed (err %d)", rc);
+		LOG_ERROR("Bluetooth SMP transport register failed (err %d)", rc);
 	}
 }
 

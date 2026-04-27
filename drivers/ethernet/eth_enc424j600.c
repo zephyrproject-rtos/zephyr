@@ -177,7 +177,7 @@ static void enc424j600_write_mem(const struct device *dev, uint8_t opcode,
 	};
 
 	if (spi_write_dt(&config->spi, &tx)) {
-		LOG_ERR("Failed to write SRAM buffer");
+		LOG_ERROR("Failed to write SRAM buffer");
 		return;
 	}
 }
@@ -211,7 +211,7 @@ static void enc424j600_read_mem(const struct device *dev, uint8_t opcode,
 	};
 
 	if (spi_transceive_dt(&config->spi, &tx, &rx)) {
-		LOG_ERR("Failed to read SRAM buffer");
+		LOG_ERROR("Failed to read SRAM buffer");
 		return;
 	}
 }
@@ -281,7 +281,7 @@ static void enc424j600_setup_mac(const struct device *dev)
 	} else if (tmp & ENC424J600_PHSTAT3_SPDDPX_10) {
 		LOG_INF("10Mbps");
 	} else {
-		LOG_ERR("Unknown speed configuration");
+		LOG_ERROR("Unknown speed configuration");
 	}
 
 	if (tmp & ENC424J600_PHSTAT3_SPDDPX_FD) {
@@ -379,7 +379,7 @@ static int enc424j600_rx(const struct device *dev)
 	/* frame length without FCS */
 	frm_len -= 4;
 	if (frm_len > NET_ETH_MAX_FRAME_SIZE) {
-		LOG_ERR("Maximum frame length exceeded");
+		LOG_ERROR("Maximum frame length exceeded");
 		eth_stats_update_errors_rx(context->iface);
 		goto done;
 	}
@@ -388,7 +388,7 @@ static int enc424j600_rx(const struct device *dev)
 	pkt = net_pkt_rx_alloc_with_buffer(context->iface, frm_len, NET_AF_UNSPEC, 0,
 					   K_MSEC(CONFIG_ETH_ENC424J600_TIMEOUT));
 	if (!pkt) {
-		LOG_ERR("Could not allocate rx buffer");
+		LOG_ERROR("Could not allocate rx buffer");
 		eth_stats_update_errors_rx(context->iface);
 		goto done;
 	}
@@ -482,7 +482,7 @@ static void enc424j600_rx_thread(void *p1, void *p2, void *p3)
 				net_eth_carrier_off(context->iface);
 			}
 		} else {
-			LOG_ERR("Unknown Interrupt, EIR: 0x%04x", eir);
+			LOG_ERROR("Unknown Interrupt, EIR: 0x%04x", eir);
 			/*
 			 * Terminate interrupt handling thread
 			 * only when debugging.
@@ -649,19 +649,18 @@ static int enc424j600_init(const struct device *dev)
 
 	/* SPI config */
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI master port %s not ready", config->spi.bus->name);
+		LOG_ERROR("SPI master port %s not ready", config->spi.bus->name);
 		return -EINVAL;
 	}
 
 	/* Initialize GPIO */
 	if (!gpio_is_ready_dt(&config->interrupt)) {
-		LOG_ERR("GPIO port %s not ready", config->interrupt.port->name);
+		LOG_ERROR("GPIO port %s not ready", config->interrupt.port->name);
 		return -EINVAL;
 	}
 
 	if (gpio_pin_configure_dt(&config->interrupt, GPIO_INPUT)) {
-		LOG_ERR("Unable to configure GPIO pin %u",
-			config->interrupt.pin);
+		LOG_ERROR("Unable to configure GPIO pin %u", config->interrupt.pin);
 		return -EINVAL;
 	}
 
@@ -684,7 +683,7 @@ static int enc424j600_init(const struct device *dev)
 	} while (tmp != 0x4AFE && retries);
 
 	if (tmp != 0x4AFE) {
-		LOG_ERR("Timeout, failed to establish SPI connection");
+		LOG_ERROR("Timeout, failed to establish SPI connection");
 		return -EIO;
 	}
 
@@ -696,7 +695,7 @@ static int enc424j600_init(const struct device *dev)
 	} while (!(tmp & ENC424J600_ESTAT_CLKRDY)  && retries);
 
 	if (!(tmp & ENC424J600_ESTAT_CLKRDY)) {
-		LOG_ERR("CLKRDY not set");
+		LOG_ERROR("CLKRDY not set");
 		return -EIO;
 	}
 
@@ -705,7 +704,7 @@ static int enc424j600_init(const struct device *dev)
 	k_busy_wait(ENC424J600_PHY_READY_DELAY);
 	enc424j600_read_sfru(dev, ENC424J600_SFRX_EUDASTL, &tmp);
 	if (tmp) {
-		LOG_ERR("Failed to initialize ENC424J600");
+		LOG_ERROR("Failed to initialize ENC424J600");
 		return -EIO;
 	}
 

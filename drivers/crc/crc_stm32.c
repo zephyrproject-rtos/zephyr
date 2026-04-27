@@ -177,7 +177,7 @@ static int crc_stm32_update(const struct device *dev, struct crc_ctx *ctx, const
 		ret = dma_reload(config->dmac, config->dma_channel,
 			(uintptr_t)buffer, (uintptr_t)&config->base->DR, bufsize);
 		if (ret != 0) {
-			LOG_ERR("dma_reload() failed: %d", ret);
+			LOG_ERROR("dma_reload() failed: %d", ret);
 			return ret;
 		}
 
@@ -185,7 +185,7 @@ static int crc_stm32_update(const struct device *dev, struct crc_ctx *ctx, const
 		k_sem_take(&data->dma_sync, K_FOREVER);
 
 		if (data->dma_transfer_status != DMA_STATUS_COMPLETE) {
-			LOG_ERR("DMA transfer failure (status=%d)", data->dma_transfer_status);
+			LOG_ERROR("DMA transfer failure (status=%d)", data->dma_transfer_status);
 
 			/* Abort CRC computation and release device in case of failure */
 			crc_stm32_release(dev, ctx);
@@ -240,7 +240,7 @@ static int crc_stm32_init(const struct device *dev)
 
 	ret = clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable CRC clock: %d", ret);
+		LOG_ERROR("Failed to enable CRC clock: %d", ret);
 		return ret;
 	}
 
@@ -293,7 +293,7 @@ static int crc_stm32_init(const struct device *dev)
 
 	ret = dma_config(config->dmac, config->dma_channel, &data->dma_config);
 	if (ret != 0) {
-		LOG_ERR("dma_config() failed: %d", ret);
+		LOG_ERROR("dma_config() failed: %d", ret);
 		return ret;
 	}
 #endif /* CONFIG_CRC_STM32_DMA */

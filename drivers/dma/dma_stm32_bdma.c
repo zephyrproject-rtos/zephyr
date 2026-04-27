@@ -347,7 +347,7 @@ static void bdma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		}
 		channel->bdma_callback(dev, channel->user_data, callback_arg, 0);
 	} else {
-		LOG_ERR("Transfer Error.");
+		LOG_ERROR("Transfer Error.");
 		channel->busy = false;
 		bdma_stm32_dump_channel_irq(dev, id);
 		bdma_stm32_clear_channel_irq(dev, id);
@@ -372,7 +372,7 @@ static int bdma_stm32_get_priority(uint8_t priority, uint32_t *ll_priority)
 		*ll_priority = LL_BDMA_PRIORITY_VERYHIGH;
 		break;
 	default:
-		LOG_ERR("Priority error. %d", priority);
+		LOG_ERROR("Priority error. %d", priority);
 		return -EINVAL;
 	}
 
@@ -393,7 +393,7 @@ static int bdma_stm32_get_direction(enum dma_channel_direction direction,
 		*ll_direction = LL_BDMA_DIRECTION_PERIPH_TO_MEMORY;
 		break;
 	default:
-		LOG_ERR("Direction error. %d", direction);
+		LOG_ERROR("Direction error. %d", direction);
 		return -EINVAL;
 	}
 
@@ -413,7 +413,7 @@ static int bdma_stm32_get_memory_increment(enum dma_addr_adj increment,
 	case DMA_ADDR_ADJ_DECREMENT:
 		return -ENOTSUP;
 	default:
-		LOG_ERR("Memory increment error. %d", increment);
+		LOG_ERROR("Memory increment error. %d", increment);
 		return -EINVAL;
 	}
 
@@ -433,7 +433,7 @@ static int bdma_stm32_get_periph_increment(enum dma_addr_adj increment,
 	case DMA_ADDR_ADJ_DECREMENT:
 		return -ENOTSUP;
 	default:
-		LOG_ERR("Periph increment error. %d", increment);
+		LOG_ERROR("Periph increment error. %d", increment);
 		return -EINVAL;
 	}
 
@@ -492,46 +492,42 @@ BDMA_STM32_EXPORT_API int bdma_stm32_configure(const struct device *dev,
 	LL_BDMA_StructInit(&BDMA_InitStruct);
 
 	if (id >= dev_config->max_channels) {
-		LOG_ERR("cannot configure the bdma channel %d.", id);
+		LOG_ERROR("cannot configure the bdma channel %d.", id);
 		return -EINVAL;
 	}
 
 	if (channel->busy) {
-		LOG_ERR("bdma channel %d is busy.", id);
+		LOG_ERROR("bdma channel %d is busy.", id);
 		return -EBUSY;
 	}
 
 	if (bdma_stm32_disable_channel(bdma, id) != 0) {
-		LOG_ERR("could not disable bdma channel %d.", id);
+		LOG_ERROR("could not disable bdma channel %d.", id);
 		return -EBUSY;
 	}
 
 	bdma_stm32_clear_channel_irq(dev, id);
 
 	if (config->head_block->block_size > BDMA_STM32_MAX_DATA_ITEMS) {
-		LOG_ERR("Data size too big: %d\n",
-		       config->head_block->block_size);
+		LOG_ERROR("Data size too big: %d\n", config->head_block->block_size);
 		return -EINVAL;
 	}
 
-	if ((config->channel_direction == MEMORY_TO_MEMORY) &&
-		(!dev_config->support_m2m)) {
-		LOG_ERR("Memcopy not supported for device %s",
-			dev->name);
+	if ((config->channel_direction == MEMORY_TO_MEMORY) && (!dev_config->support_m2m)) {
+		LOG_ERROR("Memcopy not supported for device %s", dev->name);
 		return -ENOTSUP;
 	}
 
 	/* support only the same data width for source and dest */
 	if (config->dest_data_size != config->source_data_size) {
-		LOG_ERR("source and dest data size differ.");
+		LOG_ERROR("source and dest data size differ.");
 		return -EINVAL;
 	}
 
 	if (config->source_data_size != 4U &&
 	    config->source_data_size != 2U &&
 	    config->source_data_size != 1U) {
-		LOG_ERR("source and dest unit size error, %d",
-			config->source_data_size);
+		LOG_ERROR("source and dest unit size error, %d", config->source_data_size);
 		return -EINVAL;
 	}
 
@@ -539,10 +535,9 @@ BDMA_STM32_EXPORT_API int bdma_stm32_configure(const struct device *dev,
 	 * STM32's circular mode will auto reset both source address
 	 * counter and destination address counter.
 	 */
-	if (config->head_block->source_reload_en !=
-		config->head_block->dest_reload_en) {
-		LOG_ERR("source_reload_en and dest_reload_en must "
-			"be the same.");
+	if (config->head_block->source_reload_en != config->head_block->dest_reload_en) {
+		LOG_ERROR("source_reload_en and dest_reload_en must "
+			  "be the same.");
 		return -EINVAL;
 	}
 
@@ -567,14 +562,14 @@ BDMA_STM32_EXPORT_API int bdma_stm32_configure(const struct device *dev,
 	if (channel->direction == MEMORY_TO_PERIPHERAL || channel->direction == MEMORY_TO_MEMORY) {
 		if (!bdma_stm32_is_valid_memory_address(config->head_block->source_address,
 							config->head_block->block_size)) {
-			LOG_ERR("invalid source address");
+			LOG_ERROR("invalid source address");
 			return -EINVAL;
 		}
 	}
 	if (channel->direction == PERIPHERAL_TO_MEMORY || channel->direction == MEMORY_TO_MEMORY) {
 		if (!bdma_stm32_is_valid_memory_address(config->head_block->dest_address,
 							config->head_block->block_size)) {
-			LOG_ERR("invalid destination address");
+			LOG_ERROR("invalid destination address");
 			return -EINVAL;
 		}
 	}
@@ -617,8 +612,7 @@ BDMA_STM32_EXPORT_API int bdma_stm32_configure(const struct device *dev,
 		break;
 	/* Direction has been asserted in bdma_stm32_get_direction. */
 	default:
-		LOG_ERR("Channel direction error (%d).",
-				config->channel_direction);
+		LOG_ERROR("Channel direction error (%d).", config->channel_direction);
 		return -EINVAL;
 	}
 
@@ -786,9 +780,8 @@ static int bdma_stm32_init(const struct device *dev)
 	const struct bdma_stm32_config *config = dev->config;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	if (clock_control_on(clk,
-		(clock_control_subsys_t) &config->pclken) != 0) {
-		LOG_ERR("clock op failed\n");
+	if (clock_control_on(clk, (clock_control_subsys_t)&config->pclken) != 0) {
+		LOG_ERROR("clock op failed\n");
 		return -EIO;
 	}
 
@@ -815,7 +808,7 @@ static int bdma_stm32_init(const struct device *dev)
 	 */
 #if DT_NODE_HAS_PROP(DT_NODELABEL(sram4), zephyr_memory_attr)
 	if ((DT_PROP(DT_NODELABEL(sram4), zephyr_memory_attr) & DT_MEM_ARM_MPU_RAM_NOCACHE) == 0) {
-		LOG_ERR("SRAM4 is not set as uncached.");
+		LOG_ERROR("SRAM4 is not set as uncached.");
 		return -EIO;
 	}
 #else

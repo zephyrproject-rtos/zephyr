@@ -267,8 +267,7 @@ int sample_display_draw(void)
 
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
-		LOG_ERR("Device %s not found. Aborting sample.",
-			display_dev->name);
+		LOG_ERROR("Device %s not found. Aborting sample.", display_dev->name);
 		ret = -ENODEV;
 		goto end;
 	}
@@ -356,7 +355,7 @@ int sample_display_draw(void)
 		fill_buffer_fnc = fill_buffer_mono10;
 		break;
 	default:
-		LOG_ERR("Unsupported pixel format. Aborting sample.");
+		LOG_ERROR("Unsupported pixel format. Aborting sample.");
 		ret = -ENOTSUP;
 		goto end;
 	}
@@ -370,7 +369,7 @@ int sample_display_draw(void)
 	buf = k_aligned_alloc(CONFIG_SAMPLE_BUFFER_ADDR_ALIGN, buf_size);
 
 	if (buf == NULL) {
-		LOG_ERR("Could not allocate memory. Aborting sample.");
+		LOG_ERROR("Could not allocate memory. Aborting sample.");
 		ret = -ENOMEM;
 		goto end;
 	}
@@ -401,7 +400,7 @@ int sample_display_draw(void)
 		}
 		ret = display_write(display_dev, 0, idx, &buf_desc, buf);
 		if (ret < 0) {
-			LOG_ERR("Failed to write to display (error %d)", ret);
+			LOG_ERROR("Failed to write to display (error %d)", ret);
 			goto end;
 		}
 	}
@@ -415,7 +414,7 @@ int sample_display_draw(void)
 	y = 0;
 	ret = display_write(display_dev, x, y, &buf_desc, buf);
 	if (ret < 0) {
-		LOG_ERR("Failed to write to display (error %d)", ret);
+		LOG_ERROR("Failed to write to display (error %d)", ret);
 		goto end;
 	}
 
@@ -424,7 +423,7 @@ int sample_display_draw(void)
 	y = 0;
 	ret = display_write(display_dev, x, y, &buf_desc, buf);
 	if (ret < 0) {
-		LOG_ERR("Failed to write to display (error %d)", ret);
+		LOG_ERROR("Failed to write to display (error %d)", ret);
 		goto end;
 	}
 
@@ -440,13 +439,13 @@ int sample_display_draw(void)
 	y = capabilities.y_resolution - rect_h;
 	ret = display_write(display_dev, x, y, &buf_desc, buf);
 	if (ret < 0) {
-		LOG_ERR("Failed to write to display (error %d)", ret);
+		LOG_ERROR("Failed to write to display (error %d)", ret);
 		goto end;
 	}
 
 	ret = display_blanking_off(display_dev);
 	if (ret < 0 && ret != -ENOSYS) {
-		LOG_ERR("Failed to turn blanking off (error %d)", ret);
+		LOG_ERROR("Failed to turn blanking off (error %d)", ret);
 		goto end;
 	}
 
@@ -460,7 +459,7 @@ int sample_display_draw(void)
 			capabilities.current_pixel_format);
 		ret = display_write(display_dev, x, y, &buf_desc, buf);
 		if (ret < 0) {
-			LOG_ERR("Failed to write to display (error %d)", ret);
+			LOG_ERROR("Failed to write to display (error %d)", ret);
 			goto end;
 		}
 

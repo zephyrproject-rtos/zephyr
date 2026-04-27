@@ -25,7 +25,7 @@ static int akm09918c_flush_cqes(struct rtio *rtio_ctx)
 		cqe = rtio_cqe_consume(rtio_ctx);
 		if (cqe != NULL) {
 			if ((cqe->result < 0 && res == 0)) {
-				LOG_ERR("Bus error: %d", cqe->result);
+				LOG_ERROR("Bus error: %d", cqe->result);
 				res = cqe->result;
 			}
 			rtio_cqe_release(rtio_ctx, cqe);
@@ -51,7 +51,7 @@ void akm09918c_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe
 		case SENSOR_CHAN_ALL:
 			break;
 		default:
-			LOG_ERR("Unsupported channel type %d", channels[i].chan_type);
+			LOG_ERROR("Unsupported channel type %d", channels[i].chan_type);
 			rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 			return;
 		}
@@ -86,7 +86,7 @@ void akm09918_after_start_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe,
 
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
+		LOG_ERROR("Failed to get sensor clock cycles");
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}
@@ -103,8 +103,8 @@ void akm09918_after_start_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe,
 
 	rc = k_work_schedule(&data->work_ctx.async_fetch_work, K_USEC(AKM09918C_MEASURE_TIME_US));
 	if (rc == 0) {
-		LOG_ERR("The last fetch has not finished yet. "
-			"Try again later when the last sensor read operation has finished.");
+		LOG_ERROR("The last fetch has not finished yet. "
+			  "Try again later when the last sensor read operation has finished.");
 		rtio_iodev_sqe_err(iodev_sqe, -EBUSY);
 	}
 	return;
@@ -127,7 +127,7 @@ void akm09918_async_fetch(struct k_work *work)
 	/* Get the buffer for the frame, it may be allocated dynamically by the rtio context */
 	rc = rtio_sqe_rx_buf(ctx->iodev_sqe, req_buf_len, req_buf_len, &buf, &buf_len);
 	if (rc != 0) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", req_buf_len);
+		LOG_ERROR("Failed to get a read buffer of size %u bytes", req_buf_len);
 		rtio_iodev_sqe_err(ctx->iodev_sqe, rc);
 		return;
 	}
@@ -170,7 +170,7 @@ void akm09918_complete_cb(struct rtio *rtio_ctx, const struct rtio_sqe *sqe, int
 	}
 
 	if (FIELD_GET(AKM09918C_ST1_DRDY, edata->reading.st1) == 0) {
-		LOG_ERR("Data not ready, st1=0x%02x", edata->reading.st1);
+		LOG_ERROR("Data not ready, st1=0x%02x", edata->reading.st1);
 		rtio_iodev_sqe_err(parent_iodev_sqe, -EBUSY);
 		return;
 	}

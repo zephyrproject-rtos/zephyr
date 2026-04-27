@@ -311,44 +311,44 @@ static const char TIME_STRING_FORMAT[] = "\"yy/MM/dd,hh:mm:ss?zz\"";
 #define QUARTER_HOUR_RANGE 0, 96
 #define SECONDS_PER_QUARTER_HOUR (15 * 60)
 
-#define SEND_AT_CMD_ONCE_EXPECT_OK(c)                                          \
-	do {                                                                   \
-		ret = send_at_cmd(NULL, (c), MDM_CMD_SEND_TIMEOUT, 0, false);  \
-		if (ret < 0) {                                                 \
-			LOG_ERR("%s result:%d", (c), ret);                     \
-			goto error;                                            \
-		}                                                              \
+#define SEND_AT_CMD_ONCE_EXPECT_OK(c)                                                              \
+	do {                                                                                       \
+		ret = send_at_cmd(NULL, (c), MDM_CMD_SEND_TIMEOUT, 0, false);                      \
+		if (ret < 0) {                                                                     \
+			LOG_ERROR("%s result:%d", (c), ret);                                       \
+			goto error;                                                                \
+		}                                                                                  \
 	} while (false)
 
-#define SEND_AT_CMD_IGNORE_ERROR(c)                                            \
-	do {                                                                   \
-		ret = send_at_cmd(NULL, (c), MDM_CMD_SEND_TIMEOUT, 0, false);  \
-		if (ret < 0) {                                                 \
-			LOG_ERR("%s result:%d", (c), ret);                     \
-		}                                                              \
+#define SEND_AT_CMD_IGNORE_ERROR(c)                                                                \
+	do {                                                                                       \
+		ret = send_at_cmd(NULL, (c), MDM_CMD_SEND_TIMEOUT, 0, false);                      \
+		if (ret < 0) {                                                                     \
+			LOG_ERROR("%s result:%d", (c), ret);                                       \
+		}                                                                                  \
 	} while (false)
 
-#define SEND_AT_CMD_EXPECT_OK(c)                                               \
-	do {                                                                   \
-		ret = send_at_cmd(NULL, (c), MDM_CMD_SEND_TIMEOUT,             \
-				  MDM_DEFAULT_AT_CMD_RETRIES, false);          \
-		if (ret < 0) {                                                 \
-			LOG_ERR("%s result:%d", (c), ret);                     \
-			goto error;                                            \
-		}                                                              \
+#define SEND_AT_CMD_EXPECT_OK(c)                                                                   \
+	do {                                                                                       \
+		ret = send_at_cmd(NULL, (c), MDM_CMD_SEND_TIMEOUT, MDM_DEFAULT_AT_CMD_RETRIES,     \
+				  false);                                                          \
+		if (ret < 0) {                                                                     \
+			LOG_ERROR("%s result:%d", (c), ret);                                       \
+			goto error;                                                                \
+		}                                                                                  \
 	} while (false)
 
 /* Complex has "no_id_resp" set to true because the sending command
  * is the command used to process the response
  */
-#define SEND_COMPLEX_AT_CMD(c)                                                 \
-	do {                                                                   \
-		ret = send_at_cmd(NULL, (c), MDM_CMD_SEND_TIMEOUT,             \
-				  MDM_DEFAULT_AT_CMD_RETRIES, true);           \
-		if (ret < 0) {                                                 \
-			LOG_ERR("%s result:%d", (c), ret);                     \
-			goto error;                                            \
-		}                                                              \
+#define SEND_COMPLEX_AT_CMD(c)                                                                     \
+	do {                                                                                       \
+		ret = send_at_cmd(NULL, (c), MDM_CMD_SEND_TIMEOUT, MDM_DEFAULT_AT_CMD_RETRIES,     \
+				  true);                                                           \
+		if (ret < 0) {                                                                     \
+			LOG_ERROR("%s result:%d", (c), ret);                                       \
+			goto error;                                                                \
+		}                                                                                  \
 	} while (false)
 
 NET_BUF_POOL_DEFINE(mdm_recv_pool, CONFIG_MODEM_HL7800_RECV_BUF_CNT,
@@ -632,7 +632,7 @@ static int queue_stale_socket(enum net_sock_type type, uint8_t id)
 		sock->id = id;
 		k_queue_append(&iface_ctx.stale_socket_queue, (void *)sock);
 	} else {
-		LOG_ERR("Could not alloc stale socket");
+		LOG_ERROR("Could not alloc stale socket");
 		ret = -ENOMEM;
 	}
 
@@ -657,8 +657,8 @@ static int read_pin(int default_state, const struct gpio_dt_spec *spec)
 	int state = gpio_pin_get_raw(spec->port, spec->pin);
 
 	if (state < 0) {
-		LOG_ERR("Unable to read port: %s pin: %d status: %d",
-			spec->port->name, spec->pin, state);
+		LOG_ERROR("Unable to read port: %s pin: %d status: %d", spec->port->name, spec->pin,
+			  state);
 		state = default_state;
 	}
 
@@ -720,7 +720,7 @@ static int hl7800_RX_lock(void)
 	int rc = k_sem_take(&hl7800_RX_lock_sem, K_FOREVER);
 
 	if (rc != 0) {
-		LOG_ERR("Unable to lock hl7800 (%d)", rc);
+		LOG_ERROR("Unable to lock hl7800 (%d)", rc);
 	} else {
 		HL7800_RX_LOCK_DBG_LOG("Locked RX [%p]", k_current_get());
 	}
@@ -750,7 +750,7 @@ static int hl7800_TX_lock(void)
 	int rc = k_sem_take(&hl7800_TX_lock_sem, K_FOREVER);
 
 	if (rc != 0) {
-		LOG_ERR("Unable to lock hl7800 (%d)", rc);
+		LOG_ERROR("Unable to lock hl7800 (%d)", rc);
 	} else {
 		HL7800_TX_LOCK_DBG_LOG("Locked TX [%p]", k_current_get());
 	}
@@ -858,7 +858,7 @@ char *hl7800_sprint_ip_addr(const struct net_sockaddr *addr)
 		return net_addr_ntop(NET_AF_INET, &net_sin(addr)->sin_addr, buf,
 				     sizeof(buf));
 	} else {
-		LOG_ERR("Unknown IP address family:%d", addr->sa_family);
+		LOG_ERROR("Unknown IP address family:%d", addr->sa_family);
 		return NULL;
 	}
 }
@@ -1458,9 +1458,9 @@ static int send_data(struct hl7800_socket *sock, struct net_pkt *pkt)
 		snprintk(buf, sizeof(buf), "AT+KTCPSND=%d,%zu", sock->socket_id,
 			 send_len);
 	} else {
-		if (!net_addr_ntop(sock->family, &net_sin(&sock->dst)->sin_addr,
-				   dst_addr, sizeof(dst_addr))) {
-			LOG_ERR("Invalid dst addr");
+		if (!net_addr_ntop(sock->family, &net_sin(&sock->dst)->sin_addr, dst_addr,
+				   sizeof(dst_addr))) {
+			LOG_ERROR("Invalid dst addr");
 			return -EINVAL;
 		}
 		snprintk(buf, sizeof(buf), "AT+KUDPSND=%d,\"%s\",%u,%zu",
@@ -1472,13 +1472,13 @@ static int send_data(struct hl7800_socket *sock, struct net_pkt *pkt)
 	/* wait for CONNECT  or error */
 	ret = k_sem_take(&sock->sock_send_sem, MDM_IP_SEND_RX_TIMEOUT);
 	if (ret) {
-		LOG_ERR("Err waiting for CONNECT (%d)", ret);
+		LOG_ERROR("Err waiting for CONNECT (%d)", ret);
 		goto done;
 	}
 	/* check for error */
 	if (sock->error != 0) {
 		ret = sock->error;
-		LOG_ERR("AT+K**PSND (%d)", ret);
+		LOG_ERROR("AT+K**PSND (%d)", ret);
 		goto done;
 	}
 
@@ -1714,7 +1714,7 @@ static bool on_cmd_atcmdinfo_manufacturer(struct net_buf **buf, uint16_t len)
 	frag = NULL;
 	len = net_buf_findcrlf(*buf, &frag);
 	if (!frag) {
-		LOG_ERR("Unable to find mfg end");
+		LOG_ERROR("Unable to find mfg end");
 		goto done;
 	}
 	if (len < len_no_null) {
@@ -1749,7 +1749,7 @@ static bool on_cmd_atcmdinfo_model(struct net_buf **buf, uint16_t len)
 	frag = NULL;
 	len = net_buf_findcrlf(*buf, &frag);
 	if (!frag) {
-		LOG_ERR("Unable to find model end");
+		LOG_ERROR("Unable to find model end");
 		goto done;
 	}
 	if (len < len_no_null) {
@@ -1782,7 +1782,7 @@ static bool on_cmd_atcmdinfo_revision(struct net_buf **buf, uint16_t len)
 	frag = NULL;
 	len = net_buf_findcrlf(*buf, &frag);
 	if (!frag) {
-		LOG_ERR("Unable to find rev end");
+		LOG_ERROR("Unable to find rev end");
 		goto done;
 	}
 	if (len == 0) {
@@ -1816,7 +1816,7 @@ static bool on_cmd_atcmdinfo_imei(struct net_buf **buf, uint16_t len)
 	frag = NULL;
 	len = net_buf_findcrlf(*buf, &frag);
 	if (!frag) {
-		LOG_ERR("Unable to find IMEI end");
+		LOG_ERROR("Unable to find IMEI end");
 		goto done;
 	}
 	if (len < MDM_HL7800_IMEI_STRLEN) {
@@ -1853,7 +1853,7 @@ static bool on_cmd_atcmdinfo_iccid(struct net_buf **buf, uint16_t len)
 	if (len > MDM_HL7800_ICCID_MAX_STRLEN) {
 		delim = strchr(value, ',');
 		if (!delim) {
-			LOG_ERR("Could not process +CCID");
+			LOG_ERROR("Could not process +CCID");
 			return true;
 		}
 		/* Replace ',' with null so value contains two null terminated strings */
@@ -1889,7 +1889,7 @@ static bool on_cmd_atcmdinfo_imsi(struct net_buf **buf, uint16_t len)
 	frag = NULL;
 	len = net_buf_findcrlf(*buf, &frag);
 	if (!frag) {
-		LOG_ERR("Unable to find IMSI end");
+		LOG_ERROR("Unable to find IMSI end");
 		goto done;
 	}
 	if (len > MDM_HL7800_IMSI_MAX_STRLEN) {
@@ -1902,7 +1902,7 @@ static bool on_cmd_atcmdinfo_imsi(struct net_buf **buf, uint16_t len)
 	iface_ctx.mdm_imsi[out_len] = 0;
 
 	if (strstr(iface_ctx.mdm_imsi, "ERROR") != NULL) {
-		LOG_ERR("Unable to read IMSI");
+		LOG_ERROR("Unable to read IMSI");
 		memset(iface_ctx.mdm_imsi, 0, sizeof(iface_ctx.mdm_imsi));
 	}
 
@@ -1955,7 +1955,7 @@ static void dns_work_cb(struct k_work *work)
 			LOG_DBG("Initializing DNS resolver");
 			ret = dns_resolve_init(dnsCtx, (const char **)dns_servers_str, NULL);
 			if (ret < 0) {
-				LOG_ERR("dns_resolve_init fail (%d)", ret);
+				LOG_ERROR("dns_resolve_init fail (%d)", ret);
 				retry = true;
 			}
 		} else {
@@ -1963,7 +1963,7 @@ static void dns_work_cb(struct k_work *work)
 			ret = dns_resolve_reconfigure(dnsCtx, (const char **)dns_servers_str, NULL,
 						      DNS_SOURCE_MANUAL);
 			if (ret < 0) {
-				LOG_ERR("dns_resolve_reconfigure fail (%d)", ret);
+				LOG_ERROR("dns_resolve_reconfigure fail (%d)", ret);
 				retry = true;
 			}
 		}
@@ -2078,8 +2078,7 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 	for (int i = 0; i < num_delims; i++) {
 		delims[i] = strchr(search_start, ',');
 		if (!delims[i]) {
-			LOG_ERR("Could not find delim %d, val: %s", i,
-				value);
+			LOG_ERROR("Could not find delim %d, val: %s", i, value);
 			return true;
 		}
 		/* Start next search after current delim location */
@@ -2108,7 +2107,7 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 	for (int i = 0; i < num_delims; i++) {
 		sm_start = strchr(search_start, '.');
 		if (!sm_start) {
-			LOG_ERR("Could not find submask start");
+			LOG_ERROR("Could not find submask start");
 			return true;
 		}
 		/* Start next search after current delim location */
@@ -2126,7 +2125,7 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		ret = hl7800_net_addr6_pton(temp_addr_str, &new_ipv6_addr);
 	}
 	if (ret < 0) {
-		LOG_ERR("Invalid IP addr");
+		LOG_ERROR("Invalid IP addr");
 		return true;
 	}
 
@@ -2139,7 +2138,7 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		temp_addr_str[addr_len] = 0;
 		ret = net_addr_pton(NET_AF_INET, temp_addr_str, &iface_ctx.subnet);
 		if (ret < 0) {
-			LOG_ERR("Invalid subnet");
+			LOG_ERROR("Invalid subnet");
 			return true;
 		}
 
@@ -2150,7 +2149,7 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		temp_addr_str[addr_len] = 0;
 		ret = net_addr_pton(NET_AF_INET, temp_addr_str, &iface_ctx.gateway);
 		if (ret < 0) {
-			LOG_ERR("Invalid gateway");
+			LOG_ERROR("Invalid gateway");
 			return true;
 		}
 	}
@@ -2186,7 +2185,7 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 	}
 #endif
 	if (ret < 0) {
-		LOG_ERR("Invalid dns");
+		LOG_ERROR("Invalid dns");
 		return true;
 	}
 
@@ -2198,9 +2197,9 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 			 */
 			net_if_ipv4_addr_rm(iface_ctx.iface, &iface_ctx.ipv4Addr);
 
-			if (!net_if_ipv4_addr_add(iface_ctx.iface, &new_ipv4_addr,
-						  NET_ADDR_DHCP, 0)) {
-				LOG_ERR("Cannot set iface IPv4 addr");
+			if (!net_if_ipv4_addr_add(iface_ctx.iface, &new_ipv4_addr, NET_ADDR_DHCP,
+						  0)) {
+				LOG_ERROR("Cannot set iface IPv4 addr");
 			}
 
 			net_if_ipv4_set_netmask_by_addr(iface_ctx.iface,
@@ -2215,7 +2214,7 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 			net_if_ipv6_addr_rm(iface_ctx.iface, &iface_ctx.ipv6Addr);
 			if (!net_if_ipv6_addr_add(iface_ctx.iface, &new_ipv6_addr,
 						  NET_ADDR_AUTOCONF, 0)) {
-				LOG_ERR("Cannot set iface IPv6 addr");
+				LOG_ERROR("Cannot set iface IPv6 addr");
 			}
 #endif
 		}
@@ -2231,7 +2230,7 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		k_work_reschedule_for_queue(&hl7800_workq, &iface_ctx.dns_work,
 					    delay);
 	} else {
-		LOG_ERR("iface NULL");
+		LOG_ERROR("iface NULL");
 	}
 
 	return true;
@@ -2277,7 +2276,7 @@ static bool on_cmd_atcmdinfo_operator_status(struct net_buf **buf, uint16_t len)
 	for (i = 0; i < num_delims; i++) {
 		delims[i] = strchr(search_start, ',');
 		if (!delims[i]) {
-			LOG_ERR("Could not find delim %d, val: %s", i, value);
+			LOG_ERROR("Could not find delim %d, val: %s", i, value);
 			goto done;
 		}
 		/* Start next search after current delim location */
@@ -2308,7 +2307,7 @@ static bool on_cmd_atcmdinfo_serial_number(struct net_buf **buf, uint16_t len)
 	frag = NULL;
 	len = net_buf_findcrlf(*buf, &frag);
 	if (!frag) {
-		LOG_ERR("Unable to find sn end");
+		LOG_ERROR("Unable to find sn end");
 		goto done;
 	}
 
@@ -2319,7 +2318,7 @@ static bool on_cmd_atcmdinfo_serial_number(struct net_buf **buf, uint16_t len)
 	/* find ':' */
 	val_start = strchr(value, ':');
 	if (!val_start) {
-		LOG_ERR("Unable to find sn ':'");
+		LOG_ERROR("Unable to find sn ':'");
 		goto done;
 	}
 	/* Remove ": " chars */
@@ -2893,7 +2892,7 @@ static int hl7800_query_rssi(void)
 	ret = send_at_cmd(NULL, "AT+KCELLMEAS=0", MDM_CMD_SEND_TIMEOUT, 1,
 			  false);
 	if (ret < 0) {
-		LOG_ERR("AT+KCELLMEAS ret:%d", ret);
+		LOG_ERROR("AT+KCELLMEAS ret:%d", ret);
 	}
 	return ret;
 }
@@ -2913,7 +2912,7 @@ static void hl7800_stop_rssi_work(void)
 
 	rc = k_work_cancel_delayable(&iface_ctx.rssi_query_work);
 	if (rc != 0) {
-		LOG_ERR("Could not cancel RSSI work [%d]", rc);
+		LOG_ERROR("Could not cancel RSSI work [%d]", rc);
 	}
 }
 
@@ -3029,7 +3028,7 @@ static bool gps_handler(struct net_buf **buf, uint16_t len,
 	frag = NULL;
 	len = net_buf_findcrlf(*buf, &frag);
 	if (!frag) {
-		LOG_ERR("Unable to find end");
+		LOG_ERROR("Unable to find end");
 		goto done;
 	}
 
@@ -3122,7 +3121,7 @@ static bool on_cmd_polte_registration(struct net_buf **buf, uint16_t len)
 	len = net_buf_findcrlf(*buf, &frag);
 	do {
 		if (!frag) {
-			LOG_ERR("Unable to find end");
+			LOG_ERROR("Unable to find end");
 			break;
 		}
 
@@ -3183,7 +3182,7 @@ static bool on_cmd_polte_registration(struct net_buf **buf, uint16_t len)
 		data.status = 0;
 	} else {
 		data.status = -1;
-		LOG_ERR("Unable to parse PoLTE registration");
+		LOG_ERROR("Unable to parse PoLTE registration");
 	}
 
 	event_handler(HL7800_EVENT_POLTE_REGISTRATION, &data);
@@ -3209,7 +3208,7 @@ static bool on_cmd_polte_locate_cmd_rsp(struct net_buf **buf, uint16_t len)
 	len = net_buf_findcrlf(*buf, &frag);
 	do {
 		if (!frag) {
-			LOG_ERR("Unable to find end");
+			LOG_ERROR("Unable to find end");
 			break;
 		}
 
@@ -3254,7 +3253,7 @@ static bool on_cmd_polte_location(struct net_buf **buf, uint16_t len)
 	len = net_buf_findcrlf(*buf, &frag);
 	do {
 		if (!frag) {
-			LOG_ERR("Unable to find end");
+			LOG_ERROR("Unable to find end");
 			break;
 		}
 
@@ -3400,7 +3399,7 @@ static void iface_status_work_cb(struct k_work *work)
 	/* Query operator selection */
 	ret = send_at_cmd(NULL, "AT+COPS?", MDM_CMD_SEND_TIMEOUT, 0, false);
 	if (ret < 0) {
-		LOG_ERR("AT+COPS ret:%d", ret);
+		LOG_ERROR("AT+COPS ret:%d", ret);
 	}
 
 	/* bring iface up/down */
@@ -3515,7 +3514,7 @@ static bool on_cmd_operator_index_query(struct net_buf **buf, uint16_t len)
 	frag = NULL;
 	len = net_buf_findcrlf(*buf, &frag);
 	if (!frag) {
-		LOG_ERR("Unable to find end of operator index response");
+		LOG_ERROR("Unable to find end of operator index response");
 		goto done;
 	}
 
@@ -3541,7 +3540,7 @@ static bool on_cmd_modem_functionality(struct net_buf **buf, uint16_t len)
 	frag = NULL;
 	len = net_buf_findcrlf(*buf, &frag);
 	if (!frag) {
-		LOG_ERR("Unable to find end of response");
+		LOG_ERROR("Unable to find end of response");
 		goto done;
 	}
 
@@ -3574,7 +3573,7 @@ static bool on_cmd_survey_status(struct net_buf **buf, uint16_t len)
 	frag = NULL;
 	len = net_buf_findcrlf(*buf, &frag);
 	if (!frag) {
-		LOG_ERR("Unable to find end");
+		LOG_ERROR("Unable to find end");
 		goto done;
 	}
 
@@ -3782,8 +3781,7 @@ static bool on_cmd_atcmdinfo_rssi(struct net_buf **buf, uint16_t len)
 	for (i = 0; i < num_delims; i++) {
 		delims[i] = strchr(search_start, ',');
 		if (!delims[i]) {
-			LOG_ERR("Could not find delim %d, val: %s", i,
-				value);
+			LOG_ERROR("Could not find delim %d, val: %s", i, value);
 			goto done;
 		}
 		/* Start next search after current delim location */
@@ -3841,7 +3839,7 @@ static bool on_cmd_sock_ind(struct net_buf **buf, uint16_t len, const char *cons
 	/* find ',' because this is the format we expect */
 	delim = strchr(value, ',');
 	if (!delim) {
-		LOG_ERR("%s could not find ','", type);
+		LOG_ERROR("%s could not find ','", type);
 		goto done;
 	}
 
@@ -3877,7 +3875,7 @@ static bool on_cmd_sockerror(struct net_buf **buf, uint16_t len)
 	if (len > 0) {
 		memset(string, 0, sizeof(string));
 		net_buf_linearize(string, sizeof(string), *buf, 0, len);
-		LOG_ERR("'%s'", string);
+		LOG_ERROR("'%s'", string);
 	}
 
 	iface_ctx.last_error = -EIO;
@@ -3902,7 +3900,7 @@ static bool on_cmd_sock_error_code(struct net_buf **buf, uint16_t len)
 	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
 	value[out_len] = 0;
 	iface_ctx.last_error = strtol(value, NULL, 10);
-	LOG_ERR("Error code: %s", value);
+	LOG_ERROR("Error code: %s", value);
 
 	sock = socket_from_id(iface_ctx.last_socket_id);
 	if (!sock) {
@@ -3958,7 +3956,7 @@ static bool on_cmd_sock_notif(struct net_buf **buf, uint16_t len)
 	/* find ',' because this is the format we expect */
 	delim = strchr(value, ',');
 	if (!delim) {
-		LOG_ERR("+K**P_NOTIF could not find ','");
+		LOG_ERROR("+K**P_NOTIF could not find ','");
 		goto done;
 	}
 
@@ -4139,7 +4137,7 @@ static void sock_read(struct net_buf **buf)
 
 	sock = socket_from_id(iface_ctx.last_socket_id);
 	if (!sock) {
-		LOG_ERR("Socket not found! (%d)", iface_ctx.last_socket_id);
+		LOG_ERROR("Socket not found! (%d)", iface_ctx.last_socket_id);
 		goto exit;
 	}
 
@@ -4169,7 +4167,7 @@ static void sock_read(struct net_buf **buf)
 		net_context_get_iface(sock->context), sock->rx_size,
 		sock->family, sock->ip_proto, BUF_ALLOC_TIMEOUT);
 	if (!sock->recv_pkt) {
-		LOG_ERR("Failed net_pkt_get_reserve_rx!");
+		LOG_ERROR("Failed net_pkt_get_reserve_rx!");
 		goto done;
 	}
 
@@ -4185,8 +4183,7 @@ static void sock_read(struct net_buf **buf)
 		c = net_buf_get_u8(buf);
 		/* write data to packet */
 		if (net_pkt_write_u8(sock->recv_pkt, c)) {
-			LOG_ERR("Unable to add data! Aborting! Bytes RXd:%d",
-				i);
+			LOG_ERROR("Unable to add data! Aborting! Bytes RXd:%d", i);
 			goto rx_err;
 		}
 
@@ -4195,7 +4192,7 @@ static void sock_read(struct net_buf **buf)
 			/* wait for at least one more byte */
 			wait_for_modem_data(buf, 0, 1);
 			if (!*buf) {
-				LOG_ERR("No data in buf!");
+				LOG_ERROR("No data in buf!");
 				break;
 			}
 		}
@@ -4291,7 +4288,7 @@ static bool on_cmd_connect(struct net_buf **buf, uint16_t len)
 
 	sock = socket_from_id(iface_ctx.last_socket_id);
 	if (!sock) {
-		LOG_ERR("Sock (%d) not found", iface_ctx.last_socket_id);
+		LOG_ERROR("Sock (%d) not found", iface_ctx.last_socket_id);
 		goto done;
 	}
 
@@ -4407,7 +4404,7 @@ static bool on_cmd_sockdataind(struct net_buf **buf, uint16_t len)
 	/* First comma separator marks the end of socket_id */
 	delim = strchr(value, ',');
 	if (!delim) {
-		LOG_ERR("Missing comma");
+		LOG_ERROR("Missing comma");
 		goto error;
 	}
 
@@ -4420,7 +4417,7 @@ static bool on_cmd_sockdataind(struct net_buf **buf, uint16_t len)
 
 	sock = socket_from_id(socket_id);
 	if (!sock) {
-		LOG_ERR("Unable to find socket_id:%d", socket_id);
+		LOG_ERROR("Unable to find socket_id:%d", socket_id);
 		goto error;
 	}
 
@@ -4502,8 +4499,8 @@ static size_t hl7800_read_rx(struct net_buf **buf)
 		if (!*buf) {
 			*buf = net_buf_alloc(&mdm_recv_pool, BUF_ALLOC_TIMEOUT);
 			if (!*buf) {
-				LOG_ERR("Can't allocate RX data! "
-					"Skipping data!");
+				LOG_ERROR("Can't allocate RX data! "
+					  "Skipping data!");
 				break;
 			}
 		}
@@ -4513,8 +4510,7 @@ static size_t hl7800_read_rx(struct net_buf **buf)
 					     BUF_ALLOC_TIMEOUT,
 					     read_rx_allocator, &mdm_recv_pool);
 		if (rx_len < bytes_read) {
-			LOG_ERR("Data was lost! read %u of %zu!", rx_len,
-				bytes_read);
+			LOG_ERROR("Data was lost! read %u of %zu!", rx_len, bytes_read);
 		}
 		total_read += bytes_read;
 	}
@@ -4567,7 +4563,7 @@ static int prepare_and_send_fw_packet(void)
 	ret = fs_seek(&iface_ctx.fw_update_file, iface_ctx.file_pos, FS_SEEK_SET);
 	if (ret < 0) {
 		set_fota_state(HL7800_FOTA_FILE_ERROR);
-		LOG_ERR("Could not seek to offset %d of file", iface_ctx.file_pos);
+		LOG_ERROR("Could not seek to offset %d of file", iface_ctx.file_pos);
 		return ret;
 	}
 
@@ -4575,7 +4571,7 @@ static int prepare_and_send_fw_packet(void)
 			   XMODEM_DATA_SIZE);
 	if (read_res < 0) {
 		set_fota_state(HL7800_FOTA_FILE_ERROR);
-		LOG_ERR("Failed to read fw update file [%d]", read_res);
+		LOG_ERROR("Failed to read fw update file [%d]", read_res);
 		return ret;
 	} else if (read_res < XMODEM_DATA_SIZE) {
 		set_fota_state(HL7800_FOTA_PAD);
@@ -4892,14 +4888,14 @@ static void shutdown_uart(void)
 
 	rc = pm_device_state_get(iface_ctx.mdm_ctx.uart_dev, &state);
 	if (rc) {
-		LOG_ERR("Error getting UART power state (%d)", rc);
+		LOG_ERROR("Error getting UART power state (%d)", rc);
 	}
 	if (state != PM_DEVICE_STATE_SUSPENDED) {
 		HL7800_IO_DBG_LOG("Power OFF the UART");
 		uart_irq_rx_disable(iface_ctx.mdm_ctx.uart_dev);
 		rc = pm_device_action_run(iface_ctx.mdm_ctx.uart_dev, PM_DEVICE_ACTION_SUSPEND);
 		if (rc) {
-			LOG_ERR("Error disabling UART peripheral (%d)", rc);
+			LOG_ERROR("Error disabling UART peripheral (%d)", rc);
 			uart_irq_rx_enable(iface_ctx.mdm_ctx.uart_dev);
 		}
 	}
@@ -4914,13 +4910,13 @@ static void power_on_uart(void)
 
 	rc = pm_device_state_get(iface_ctx.mdm_ctx.uart_dev, &state);
 	if (rc) {
-		LOG_ERR("Error getting UART power state (%d)", rc);
+		LOG_ERROR("Error getting UART power state (%d)", rc);
 	}
 	if (state != PM_DEVICE_STATE_ACTIVE) {
 		HL7800_IO_DBG_LOG("Power ON the UART");
 		rc = pm_device_action_run(iface_ctx.mdm_ctx.uart_dev, PM_DEVICE_ACTION_RESUME);
 		if (rc) {
-			LOG_ERR("Error enabling UART peripheral (%d)", rc);
+			LOG_ERROR("Error enabling UART peripheral (%d)", rc);
 			uart_irq_rx_disable(iface_ctx.mdm_ctx.uart_dev);
 		} else {
 			uart_irq_rx_enable(iface_ctx.mdm_ctx.uart_dev);
@@ -5671,7 +5667,7 @@ reboot:
 	return 0;
 
 error:
-	LOG_ERR("Unable to configure modem");
+	LOG_ERROR("Unable to configure modem");
 	set_state(HL7800_STATE_NOT_READY);
 	set_network_state(HL7800_UNABLE_TO_CONFIGURE);
 	/* Kernel will fault with non-zero return value.
@@ -5732,7 +5728,7 @@ static void mdm_power_off_work_callback(struct k_work *item)
 
 	ret = send_at_cmd(NULL, "AT+CPOF", MDM_CMD_SEND_TIMEOUT, 1, false);
 	if (ret) {
-		LOG_ERR("AT+CPOF ret:%d", ret);
+		LOG_ERROR("AT+CPOF ret:%d", ret);
 		return;
 	}
 	prepare_io_for_reset();
@@ -5824,7 +5820,7 @@ static int connect_TCP_socket(struct hl7800_socket *sock)
 	snprintk(cmd_con, sizeof(cmd_con), "AT+KTCPCNX=%d", sock->socket_id);
 	ret = send_at_cmd(sock, cmd_con, MDM_CMD_SEND_TIMEOUT, 0, false);
 	if (ret < 0) {
-		LOG_ERR("AT+KTCPCNX ret:%d", ret);
+		LOG_ERROR("AT+KTCPCNX ret:%d", ret);
 		ret = -EIO;
 		goto done;
 	}
@@ -5838,7 +5834,7 @@ static int connect_TCP_socket(struct hl7800_socket *sock)
 		ret = -ETIMEDOUT;
 	}
 	if (ret < 0) {
-		LOG_ERR("+KTCP_IND/NOTIF ret:%d", ret);
+		LOG_ERROR("+KTCP_IND/NOTIF ret:%d", ret);
 		goto done;
 	} else {
 		sock->state = SOCK_CONNECTED;
@@ -5871,7 +5867,7 @@ static int configure_TCP_socket(struct hl7800_socket *sock)
 		 hl7800_sprint_ip_addr(&sock->dst), dst_port, af);
 	ret = send_at_cmd(sock, cmd_cfg, MDM_CMD_SEND_TIMEOUT, 0, false);
 	if (ret < 0) {
-		LOG_ERR("AT+KTCPCFG ret:%d", ret);
+		LOG_ERROR("AT+KTCPCFG ret:%d", ret);
 		ret = -EIO;
 		goto done;
 	}
@@ -5899,7 +5895,7 @@ static int configure_UDP_socket(struct hl7800_socket *sock)
 	snprintk(cmd, sizeof(cmd), "AT+KUDPCFG=1,0,,,,,%d,0", af);
 	ret = send_at_cmd(sock, cmd, MDM_CMD_SEND_TIMEOUT, 0, false);
 	if (ret < 0) {
-		LOG_ERR("AT+KUDPCFG ret:%d", ret);
+		LOG_ERROR("AT+KUDPCFG ret:%d", ret);
 		goto done;
 	}
 
@@ -5913,7 +5909,7 @@ static int configure_UDP_socket(struct hl7800_socket *sock)
 		ret = -ETIMEDOUT;
 	}
 	if (ret < 0) {
-		LOG_ERR("+KUDP_IND/NOTIF ret:%d", ret);
+		LOG_ERROR("+KUDP_IND/NOTIF ret:%d", ret);
 		goto done;
 	}
 done:
@@ -5928,7 +5924,7 @@ static int reconfigure_IP_connection(void)
 		/* reconfigure GPRS connection so sockets can be used */
 		ret = setup_gprs_connection(iface_ctx.mdm_apn.value);
 		if (ret < 0) {
-			LOG_ERR("AT+KCNXCFG= ret:%d", ret);
+			LOG_ERROR("AT+KCNXCFG= ret:%d", ret);
 			goto done;
 		}
 
@@ -6017,7 +6013,7 @@ static int offload_bind(struct net_context *context,
 
 	sock = (struct hl7800_socket *)context->offload_context;
 	if (!sock) {
-		LOG_ERR("Can't locate socket for net_ctx:%p!", context);
+		LOG_ERROR("Can't locate socket for net_ctx:%p!", context);
 		return -EINVAL;
 	}
 
@@ -6060,13 +6056,12 @@ static int offload_connect(struct net_context *context,
 
 	sock = (struct hl7800_socket *)context->offload_context;
 	if (!sock) {
-		LOG_ERR("Can't locate socket for net_ctx:%p!", context);
+		LOG_ERROR("Can't locate socket for net_ctx:%p!", context);
 		return -EINVAL;
 	}
 
 	if (sock->socket_id < 1) {
-		LOG_ERR("Invalid socket_id(%d) for net_ctx:%p!",
-			sock->socket_id, context);
+		LOG_ERROR("Invalid socket_id(%d) for net_ctx:%p!", sock->socket_id, context);
 		return -EINVAL;
 	}
 
@@ -6087,7 +6082,7 @@ static int offload_connect(struct net_context *context,
 	}
 
 	if (dst_port < 0) {
-		LOG_ERR("Invalid port: %d", net_ntohs(dst_port));
+		LOG_ERROR("Invalid port: %d", net_ntohs(dst_port));
 		return -EINVAL;
 	}
 
@@ -6146,7 +6141,7 @@ static int offload_sendto(struct net_pkt *pkt, const struct net_sockaddr *dst_ad
 
 	sock = (struct hl7800_socket *)context->offload_context;
 	if (!sock) {
-		LOG_ERR("Can't locate socket for net_ctx:%p!", context);
+		LOG_ERROR("Can't locate socket for net_ctx:%p!", context);
 		return -EINVAL;
 	}
 
@@ -6216,7 +6211,7 @@ static int offload_recv(struct net_context *context, net_context_recv_cb_t cb,
 
 	sock = (struct hl7800_socket *)context->offload_context;
 	if (!sock) {
-		LOG_ERR("Can't locate socket for net_ctx:%p!", context);
+		LOG_ERROR("Can't locate socket for net_ctx:%p!", context);
 		return -EINVAL;
 	}
 
@@ -6319,13 +6314,13 @@ int32_t mdm_hl7800_update_fw(char *file_path)
 	if (ret >= 0) {
 		LOG_DBG("file '%s' size %zu", file_info.name, file_info.size);
 	} else {
-		LOG_ERR("Failed to get file [%s] info: %d", file_path, ret);
+		LOG_ERROR("Failed to get file [%s] info: %d", file_path, ret);
 		goto err;
 	}
 
 	ret = fs_open(&iface_ctx.fw_update_file, file_path, FS_O_READ);
 	if (ret < 0) {
-		LOG_ERR("%s open err: %d", file_path, ret);
+		LOG_ERROR("%s open err: %d", file_path, ret);
 		goto err;
 	}
 
@@ -6438,65 +6433,64 @@ static int hl7800_init(const struct device *dev)
 	/* setup port devices and pin directions */
 	for (i = 0; i < MAX_MDM_CONTROL_PINS; i++) {
 		if (!gpio_is_ready_dt(&hl7800_cfg.gpio[i])) {
-			LOG_ERR("gpio port (%s) not ready!",
-				hl7800_cfg.gpio[i].port->name);
+			LOG_ERROR("gpio port (%s) not ready!", hl7800_cfg.gpio[i].port->name);
 			return -ENODEV;
 		}
 	}
 
 	ret = gpio_pin_configure_dt(&hl7800_cfg.gpio[MDM_RESET], GPIO_OUTPUT);
 	if (ret) {
-		LOG_ERR("Error configuring IO MDM_RESET %d err: %d!",
-			hl7800_cfg.gpio[MDM_RESET].pin, ret);
+		LOG_ERROR("Error configuring IO MDM_RESET %d err: %d!",
+			  hl7800_cfg.gpio[MDM_RESET].pin, ret);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&hl7800_cfg.gpio[MDM_WAKE], GPIO_OUTPUT);
 	if (ret) {
-		LOG_ERR("Error configuring IO MDM_WAKE %d err: %d!",
-			hl7800_cfg.gpio[MDM_WAKE].pin, ret);
+		LOG_ERROR("Error configuring IO MDM_WAKE %d err: %d!",
+			  hl7800_cfg.gpio[MDM_WAKE].pin, ret);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&hl7800_cfg.gpio[MDM_PWR_ON], GPIO_OUTPUT);
 	if (ret) {
-		LOG_ERR("Error configuring IO MDM_PWR_ON %d err: %d!",
-			hl7800_cfg.gpio[MDM_PWR_ON].pin, ret);
+		LOG_ERROR("Error configuring IO MDM_PWR_ON %d err: %d!",
+			  hl7800_cfg.gpio[MDM_PWR_ON].pin, ret);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&hl7800_cfg.gpio[MDM_FAST_SHUTD], GPIO_OUTPUT);
 	if (ret) {
-		LOG_ERR("Error configuring IO MDM_FAST_SHUTD %d err: %d!",
-			hl7800_cfg.gpio[MDM_FAST_SHUTD].pin, ret);
+		LOG_ERROR("Error configuring IO MDM_FAST_SHUTD %d err: %d!",
+			  hl7800_cfg.gpio[MDM_FAST_SHUTD].pin, ret);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&hl7800_cfg.gpio[MDM_VGPIO], GPIO_INPUT);
 	if (ret) {
-		LOG_ERR("Error configuring IO MDM_VGPIO %d err: %d!",
-			hl7800_cfg.gpio[MDM_VGPIO].pin, ret);
+		LOG_ERROR("Error configuring IO MDM_VGPIO %d err: %d!",
+			  hl7800_cfg.gpio[MDM_VGPIO].pin, ret);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&hl7800_cfg.gpio[MDM_UART_DSR], GPIO_INPUT);
 	if (ret) {
-		LOG_ERR("Error configuring IO MDM_UART_DSR %d err: %d!",
-			hl7800_cfg.gpio[MDM_UART_DSR].pin, ret);
+		LOG_ERROR("Error configuring IO MDM_UART_DSR %d err: %d!",
+			  hl7800_cfg.gpio[MDM_UART_DSR].pin, ret);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&hl7800_cfg.gpio[MDM_UART_CTS], GPIO_INPUT);
 	if (ret) {
-		LOG_ERR("Error configuring IO MDM_UART_CTS %d err: %d!",
-			hl7800_cfg.gpio[MDM_UART_CTS].pin, ret);
+		LOG_ERROR("Error configuring IO MDM_UART_CTS %d err: %d!",
+			  hl7800_cfg.gpio[MDM_UART_CTS].pin, ret);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&hl7800_cfg.gpio[MDM_GPIO6], GPIO_INPUT);
 	if (ret) {
-		LOG_ERR("Error configuring IO MDM_GPIO6 %d err: %d!",
-			hl7800_cfg.gpio[MDM_GPIO6].pin, ret);
+		LOG_ERROR("Error configuring IO MDM_GPIO6 %d err: %d!",
+			  hl7800_cfg.gpio[MDM_GPIO6].pin, ret);
 		return ret;
 	}
 
@@ -6517,12 +6511,12 @@ static int hl7800_init(const struct device *dev)
 	ret = gpio_add_callback(hl7800_cfg.gpio[MDM_VGPIO].port,
 				&iface_ctx.mdm_vgpio_cb);
 	if (ret) {
-		LOG_ERR("Cannot setup vgpio callback! (%d)", ret);
+		LOG_ERROR("Cannot setup vgpio callback! (%d)", ret);
 		return ret;
 	}
 	ret = gpio_pin_interrupt_configure_dt(&hl7800_cfg.gpio[MDM_VGPIO], GPIO_INT_EDGE_BOTH);
 	if (ret) {
-		LOG_ERR("Error config vgpio interrupt! (%d)", ret);
+		LOG_ERROR("Error config vgpio interrupt! (%d)", ret);
 		return ret;
 	}
 
@@ -6532,12 +6526,12 @@ static int hl7800_init(const struct device *dev)
 	ret = gpio_add_callback(hl7800_cfg.gpio[MDM_UART_DSR].port,
 				&iface_ctx.mdm_uart_dsr_cb);
 	if (ret) {
-		LOG_ERR("Cannot setup uart dsr callback! (%d)", ret);
+		LOG_ERROR("Cannot setup uart dsr callback! (%d)", ret);
 		return ret;
 	}
 	ret = gpio_pin_interrupt_configure_dt(&hl7800_cfg.gpio[MDM_UART_DSR], GPIO_INT_EDGE_BOTH);
 	if (ret) {
-		LOG_ERR("Error config uart dsr interrupt! (%d)", ret);
+		LOG_ERROR("Error config uart dsr interrupt! (%d)", ret);
 		return ret;
 	}
 
@@ -6547,12 +6541,12 @@ static int hl7800_init(const struct device *dev)
 	ret = gpio_add_callback(hl7800_cfg.gpio[MDM_GPIO6].port,
 				&iface_ctx.mdm_gpio6_cb);
 	if (ret) {
-		LOG_ERR("Cannot setup gpio6 callback! (%d)", ret);
+		LOG_ERROR("Cannot setup gpio6 callback! (%d)", ret);
 		return ret;
 	}
 	ret = gpio_pin_interrupt_configure_dt(&hl7800_cfg.gpio[MDM_GPIO6], GPIO_INT_EDGE_BOTH);
 	if (ret) {
-		LOG_ERR("Error config gpio6 interrupt! (%d)", ret);
+		LOG_ERROR("Error config gpio6 interrupt! (%d)", ret);
 		return ret;
 	}
 
@@ -6562,12 +6556,12 @@ static int hl7800_init(const struct device *dev)
 	ret = gpio_add_callback(hl7800_cfg.gpio[MDM_UART_CTS].port,
 				&iface_ctx.mdm_uart_cts_cb);
 	if (ret) {
-		LOG_ERR("Cannot setup uart cts callback! (%d)", ret);
+		LOG_ERROR("Cannot setup uart cts callback! (%d)", ret);
 		return ret;
 	}
 	ret = gpio_pin_interrupt_configure_dt(&hl7800_cfg.gpio[MDM_UART_CTS], GPIO_INT_EDGE_BOTH);
 	if (ret) {
-		LOG_ERR("Error config uart cts interrupt! (%d)", ret);
+		LOG_ERROR("Error config uart cts interrupt! (%d)", ret);
 		return ret;
 	}
 
@@ -6583,7 +6577,7 @@ static int hl7800_init(const struct device *dev)
 	ret = mdm_receiver_register(&iface_ctx.mdm_ctx, MDM_UART_DEV,
 				    mdm_recv_buf, sizeof(mdm_recv_buf));
 	if (ret < 0) {
-		LOG_ERR("Error registering modem receiver (%d)!", ret);
+		LOG_ERROR("Error registering modem receiver (%d)!", ret);
 		return ret;
 	}
 

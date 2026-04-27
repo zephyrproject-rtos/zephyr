@@ -43,10 +43,10 @@ int main(void)
 	int ret;
 
 	if (!dev) {
-		LOG_ERR("DRV2605 device not found");
+		LOG_ERROR("DRV2605 device not found");
 		return -ENODEV;
 	} else if (!device_is_ready(dev)) {
-		LOG_ERR("DRV2605 device %s is not ready", dev->name);
+		LOG_ERROR("DRV2605 device %s is not ready", dev->name);
 		return -EIO;
 	}
 
@@ -56,13 +56,13 @@ int main(void)
 
 	ret = drv2605_haptic_config(dev, DRV2605_HAPTICS_SOURCE_ROM, &config_data);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure ROM event: %d", ret);
+		LOG_ERROR("Failed to configure ROM event: %d", ret);
 		return ret;
 	}
 
 	ret = haptics_start_output(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to start ROM event: %d", ret);
+		LOG_ERROR("Failed to start ROM event: %d", ret);
 		return ret;
 	}
 

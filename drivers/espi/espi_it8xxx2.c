@@ -1857,17 +1857,17 @@ static int espi_it8xxx2_send_oob(const struct device *dev,
 		(struct espi_oob_msg_packet *)pckt->buf;
 
 	if (!(slave_reg->CH_OOB_CAPCFG3 & IT8XXX2_ESPI_OOB_READY_MASK)) {
-		LOG_ERR("%s: OOB channel isn't ready", __func__);
+		LOG_ERROR("%s: OOB channel isn't ready", __func__);
 		return -EIO;
 	}
 
 	if (slave_reg->ESUCTRL0 & IT8XXX2_ESPI_UPSTREAM_BUSY) {
-		LOG_ERR("%s: OOB upstream busy", __func__);
+		LOG_ERROR("%s: OOB upstream busy", __func__);
 		return -EIO;
 	}
 
 	if (pckt->len > ESPI_IT8XXX2_OOB_MAX_PAYLOAD_SIZE) {
-		LOG_ERR("%s: Out of OOB queue space", __func__);
+		LOG_ERROR("%s: Out of OOB queue space", __func__);
 		return -EINVAL;
 	}
 
@@ -1904,7 +1904,7 @@ static int espi_it8xxx2_receive_oob(const struct device *dev,
 	uint8_t oob_len;
 
 	if (!(slave_reg->CH_OOB_CAPCFG3 & IT8XXX2_ESPI_OOB_READY_MASK)) {
-		LOG_ERR("%s: OOB channel isn't ready", __func__);
+		LOG_ERROR("%s: OOB channel isn't ready", __func__);
 		return -EIO;
 	}
 
@@ -1915,7 +1915,7 @@ static int espi_it8xxx2_receive_oob(const struct device *dev,
 	/* Wait until receive OOB message or timeout */
 	ret = k_sem_take(&data->oob_upstream_go, K_MSEC(ESPI_OOB_TIMEOUT_MS));
 	if (ret == -EAGAIN) {
-		LOG_ERR("%s: Timeout", __func__);
+		LOG_ERROR("%s: Timeout", __func__);
 		return -ETIMEDOUT;
 	}
 #endif
@@ -1927,8 +1927,7 @@ static int espi_it8xxx2_receive_oob(const struct device *dev,
 	 * The first three bytes of buffer are cycle type, tag, and length.
 	 */
 	if (oob_len > pckt->len) {
-		LOG_ERR("%s: Out of rx buf %d vs %d", __func__,
-			oob_len, pckt->len);
+		LOG_ERROR("%s: Out of rx buf %d vs %d", __func__, oob_len, pckt->len);
 		return -EINVAL;
 	}
 
@@ -1989,18 +1988,17 @@ static int espi_it8xxx2_flash_trans(const struct device *dev,
 		(struct espi_queue1_regs *)config->base_espi_queue1;
 
 	if (!(slave_reg->CH_FLASH_CAPCFG3 & IT8XXX2_ESPI_FC_READY_MASK)) {
-		LOG_ERR("%s: Flash channel isn't ready (tran:%d)",
-			__func__, tran);
+		LOG_ERROR("%s: Flash channel isn't ready (tran:%d)", __func__, tran);
 		return -EIO;
 	}
 
 	if (slave_reg->ESUCTRL0 & IT8XXX2_ESPI_UPSTREAM_BUSY) {
-		LOG_ERR("%s: Upstream busy (tran:%d)", __func__, tran);
+		LOG_ERROR("%s: Upstream busy (tran:%d)", __func__, tran);
 		return -EIO;
 	}
 
 	if (pckt->len > IT8XXX2_ESPI_FLASH_MAX_PAYLOAD_SIZE) {
-		LOG_ERR("%s: Invalid size request (tran:%d)", __func__, tran);
+		LOG_ERROR("%s: Invalid size request (tran:%d)", __func__, tran);
 		return -EINVAL;
 	}
 
@@ -2051,12 +2049,12 @@ static int espi_it8xxx2_flash_read(const struct device *dev,
 	ret = k_sem_take(&data->flash_upstream_go,
 			K_MSEC(ESPI_FLASH_READ_TIMEOUT_MS));
 	if (ret == -EAGAIN) {
-		LOG_ERR("%s: Timeout", __func__);
+		LOG_ERROR("%s: Timeout", __func__);
 		return -ETIMEDOUT;
 	}
 
 	if (data->put_flash_cycle_type != ESPI_IT8XXX2_PUT_FLASH_C_SCWD) {
-		LOG_ERR("%s: Unsuccessful completion", __func__);
+		LOG_ERROR("%s: Unsuccessful completion", __func__);
 		return -EIO;
 	}
 
@@ -2099,12 +2097,12 @@ static int espi_it8xxx2_flash_write(const struct device *dev,
 	ret = k_sem_take(&data->flash_upstream_go,
 			K_MSEC(ESPI_FLASH_WRITE_TIMEOUT_MS));
 	if (ret == -EAGAIN) {
-		LOG_ERR("%s: Timeout", __func__);
+		LOG_ERROR("%s: Timeout", __func__);
 		return -ETIMEDOUT;
 	}
 
 	if (data->put_flash_cycle_type != ESPI_IT8XXX2_PUT_FLASH_C_SCWOD) {
-		LOG_ERR("%s: Unsuccessful completion", __func__);
+		LOG_ERROR("%s: Unsuccessful completion", __func__);
 		return -EIO;
 	}
 
@@ -2135,12 +2133,12 @@ static int espi_it8xxx2_flash_erase(const struct device *dev,
 	ret = k_sem_take(&data->flash_upstream_go,
 			K_MSEC(ESPI_FLASH_ERASE_TIMEOUT_MS));
 	if (ret == -EAGAIN) {
-		LOG_ERR("%s: Timeout", __func__);
+		LOG_ERROR("%s: Timeout", __func__);
 		return -ETIMEDOUT;
 	}
 
 	if (data->put_flash_cycle_type != ESPI_IT8XXX2_PUT_FLASH_C_SCWOD) {
-		LOG_ERR("%s: Unsuccessful completion", __func__);
+		LOG_ERROR("%s: Unsuccessful completion", __func__);
 		return -EIO;
 	}
 
@@ -2164,8 +2162,7 @@ static void espi_it8xxx2_flash_upstream_done_isr(const struct device *dev)
 
 	if (slave_reg->ESUCTRL1 == IT8XXX2_ESPI_CYCLE_TYPE_FLASH_READ) {
 		if (data->put_flash_len > IT8XXX2_ESPI_FLASH_MAX_PAYLOAD_SIZE) {
-			LOG_ERR("%s: Invalid size (%d)", __func__,
-							data->put_flash_len);
+			LOG_ERROR("%s: Invalid size (%d)", __func__, data->put_flash_len);
 		} else {
 			for (int i = 0; i < data->put_flash_len; i++) {
 				data->flash_buf[i] =

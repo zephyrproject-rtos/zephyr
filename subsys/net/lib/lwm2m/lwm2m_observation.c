@@ -167,7 +167,7 @@ static int notify_value_reg_inst_update(const struct lwm2m_engine_res_inst *ref,
 	}
 
 	if (notify_reg == NULL) {
-		LOG_ERR("Failed to allocate entry in notify registry");
+		LOG_ERROR("Failed to allocate entry in notify registry");
 		return -ENOMEM;
 	}
 
@@ -268,7 +268,7 @@ static int update_attrs(void *ref, struct notification_attrs *out)
 			out->st = write_attr_pool[i].float_val;
 			break;
 		default:
-			LOG_ERR("Unrecognized attr: %d", write_attr_pool[i].type);
+			LOG_ERROR("Unrecognized attr: %d", write_attr_pool[i].type);
 			return -EINVAL;
 		}
 
@@ -365,7 +365,7 @@ static int engine_observe_get_attributes(const struct lwm2m_obj_path *path,
 	/* check if object exists */
 	obj = get_engine_obj(path->obj_id);
 	if (!obj) {
-		LOG_ERR("unable to find obj: %u", path->obj_id);
+		LOG_ERROR("unable to find obj: %u", path->obj_id);
 		return -ENOENT;
 	}
 
@@ -398,16 +398,16 @@ static int engine_observe_get_attributes(const struct lwm2m_obj_path *path,
 		}
 
 		if (i == obj_inst->resource_count) {
-			LOG_ERR("unable to find res_id: %u/%u/%u", path->obj_id, path->obj_inst_id,
-				path->res_id);
+			LOG_ERROR("unable to find res_id: %u/%u/%u", path->obj_id,
+				  path->obj_inst_id, path->res_id);
 			return -ENOENT;
 		}
 
 		/* load object field data */
 		obj_field = lwm2m_get_engine_obj_field(obj, obj_inst->resources[i].res_id);
 		if (!obj_field) {
-			LOG_ERR("unable to find obj_field: %u/%u/%u", path->obj_id,
-				path->obj_inst_id, path->res_id);
+			LOG_ERROR("unable to find obj_field: %u/%u/%u", path->obj_id,
+				  path->obj_inst_id, path->res_id);
 			return -ENOENT;
 		}
 
@@ -887,12 +887,12 @@ static int engine_add_observer(struct lwm2m_message *msg, const uint8_t *token, 
 	int ret;
 
 	if (!msg || !msg->ctx) {
-		LOG_ERR("valid lwm2m message is required");
+		LOG_ERROR("valid lwm2m message is required");
 		return -EINVAL;
 	}
 
 	if (!token || (tkl == 0U || tkl > MAX_TOKEN_LEN)) {
-		LOG_ERR("token(%p) and token length(%u) must be valid.", token, tkl);
+		LOG_ERROR("token(%p) and token length(%u) must be valid.", token, tkl);
 		return -EINVAL;
 	}
 
@@ -957,7 +957,7 @@ int do_composite_observe_read_path_op(struct lwm2m_message *msg, uint16_t conten
 #endif
 
 	default:
-		LOG_ERR("Unsupported content-format: %u", content_format);
+		LOG_ERROR("Unsupported content-format: %u", content_format);
 		return -ENOMSG;
 	}
 }
@@ -974,12 +974,12 @@ static int engine_add_composite_observer(struct lwm2m_message *msg, const uint8_
 	int ret;
 
 	if (!msg || !msg->ctx) {
-		LOG_ERR("valid lwm2m message is required");
+		LOG_ERROR("valid lwm2m message is required");
 		return -EINVAL;
 	}
 
 	if (!token || (tkl == 0U || tkl > MAX_TOKEN_LEN)) {
-		LOG_ERR("token(%p) and token length(%u) must be valid.", token, tkl);
+		LOG_ERROR("token(%p) and token length(%u) must be valid.", token, tkl);
 		return -EINVAL;
 	}
 
@@ -1047,7 +1047,7 @@ int engine_remove_observer_by_token(struct lwm2m_ctx *ctx, const uint8_t *token,
 	sys_snode_t *prev_node = NULL;
 
 	if (!token || (tkl == 0U || tkl > MAX_TOKEN_LEN)) {
-		LOG_ERR("token(%p) and token length(%u) must be valid.", token, tkl);
+		LOG_ERROR("token(%p) and token length(%u) must be valid.", token, tkl);
 		return -EINVAL;
 	}
 
@@ -1074,7 +1074,7 @@ static int engine_remove_composite_observer(struct lwm2m_message *msg, const uin
 	int ret;
 
 	if (!token || (tkl == 0U || tkl > MAX_TOKEN_LEN)) {
-		LOG_ERR("token(%p) and token length(%u) must be valid.", token, tkl);
+		LOG_ERROR("token(%p) and token length(%u) must be valid.", token, tkl);
 		return -EINVAL;
 	}
 
@@ -1483,7 +1483,7 @@ int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj, struct lwm2m_message 
 
 	nr_opt = coap_find_options(msg->in.in_cpkt, COAP_OPTION_URI_QUERY, options, NR_LWM2M_ATTR);
 	if (nr_opt <= 0) {
-		LOG_ERR("No attribute found!");
+		LOG_ERROR("No attribute found!");
 		/* translate as bad request */
 		return -EEXIST;
 	}
@@ -1574,7 +1574,7 @@ int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj, struct lwm2m_message 
 		}
 
 		if (ret < 0) {
-			LOG_ERR("invalid attr[%s] value", lwm2m_attr_to_str(type));
+			LOG_ERROR("invalid attr[%s] value", lwm2m_attr_to_str(type));
 			/* bad request */
 			return -EEXIST;
 		}
@@ -1740,7 +1740,7 @@ int lwm2m_engine_observation_handler(struct lwm2m_message *msg, int observe, uin
 		r = coap_append_option_int(msg->out.out_cpkt, COAP_OPTION_OBSERVE,
 					   OBSERVE_COUNTER_START);
 		if (r < 0) {
-			LOG_ERR("OBSERVE option error: %d", r);
+			LOG_ERROR("OBSERVE option error: %d", r);
 			return r;
 		}
 
@@ -1751,7 +1751,7 @@ int lwm2m_engine_observation_handler(struct lwm2m_message *msg, int observe, uin
 		}
 
 		if (r < 0) {
-			LOG_ERR("add OBSERVE error: %d", r);
+			LOG_ERROR("add OBSERVE error: %d", r);
 		}
 	} else if (observe == 1) {
 		/* remove observer */
@@ -1765,7 +1765,7 @@ int lwm2m_engine_observation_handler(struct lwm2m_message *msg, int observe, uin
 				if (r < 0)
 #endif /* CONFIG_LWM2M_CANCEL_OBSERVE_BY_PATH */
 				{
-					LOG_ERR("remove observe error: %d", r);
+					LOG_ERROR("remove observe error: %d", r);
 					r = 0;
 				}
 			}

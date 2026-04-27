@@ -40,7 +40,7 @@ static int lsm6dsv16x_enable_xl_int(const struct device *dev, int enable)
 
 		ret = lsm6dsv16x_pin_int1_route_get(ctx, &val);
 		if (ret < 0) {
-			LOG_ERR("pint_int1_route_get error");
+			LOG_ERROR("pint_int1_route_get error");
 			return ret;
 		}
 
@@ -52,7 +52,7 @@ static int lsm6dsv16x_enable_xl_int(const struct device *dev, int enable)
 
 		ret = lsm6dsv16x_pin_int2_route_get(ctx, &val);
 		if (ret < 0) {
-			LOG_ERR("pint_int2_route_get error");
+			LOG_ERROR("pint_int2_route_get error");
 			return ret;
 		}
 
@@ -86,7 +86,7 @@ static int lsm6dsv16x_enable_g_int(const struct device *dev, int enable)
 
 		ret = lsm6dsv16x_pin_int1_route_get(ctx, &val);
 		if (ret < 0) {
-			LOG_ERR("pint_int1_route_get error");
+			LOG_ERROR("pint_int1_route_get error");
 			return ret;
 		}
 
@@ -98,7 +98,7 @@ static int lsm6dsv16x_enable_g_int(const struct device *dev, int enable)
 
 		ret = lsm6dsv16x_pin_int2_route_get(ctx, &val);
 		if (ret < 0) {
-			LOG_ERR("pint_int2_route_get error");
+			LOG_ERROR("pint_int2_route_get error");
 			return ret;
 		}
 
@@ -124,7 +124,7 @@ static int lsm6dsv16x_enable_wake_int(const struct device *dev, int enable)
 	int_mode.lir = !cfg->drdy_pulsed;
 	ret = lsm6dsv16x_interrupt_enable_set(ctx, int_mode);
 	if (ret < 0) {
-		LOG_ERR("interrupt_enable_set error");
+		LOG_ERROR("interrupt_enable_set error");
 		return ret;
 	}
 
@@ -133,7 +133,7 @@ static int lsm6dsv16x_enable_wake_int(const struct device *dev, int enable)
 
 		ret = lsm6dsv16x_pin_int1_route_get(ctx, &val);
 		if (ret < 0) {
-			LOG_ERR("pint_int1_route_get error");
+			LOG_ERROR("pint_int1_route_get error");
 			return ret;
 		}
 
@@ -145,7 +145,7 @@ static int lsm6dsv16x_enable_wake_int(const struct device *dev, int enable)
 
 		ret = lsm6dsv16x_pin_int2_route_get(ctx, &val);
 		if (ret < 0) {
-			LOG_ERR("pint_int2_route_get error");
+			LOG_ERROR("pint_int2_route_get error");
 			return ret;
 		}
 
@@ -169,12 +169,12 @@ int lsm6dsv16x_trigger_set(const struct device *dev,
 	int ret = 0;
 
 	if (!cfg->trig_enabled) {
-		LOG_ERR("trigger_set op not supported");
+		LOG_ERROR("trigger_set op not supported");
 		return -ENOTSUP;
 	}
 
 	if (trig == NULL) {
-		LOG_ERR("no trigger");
+		LOG_ERROR("no trigger");
 		return -EINVAL;
 	}
 
@@ -275,7 +275,7 @@ static void lsm6dsv16x_handle_interrupt(const struct device *dev)
 		ret = gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio,
 						GPIO_INT_EDGE_TO_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("%s: Not able to configure pin_int", dev->name);
+			LOG_ERROR("%s: Not able to configure pin_int", dev->name);
 		}
 	}
 }
@@ -304,7 +304,7 @@ static void lsm6dsv16x_gpio_callback(const struct device *dev,
 
 	ret = gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio, GPIO_INT_DISABLE);
 	if (ret < 0) {
-		LOG_ERR("%s: Not able to configure pin_int", dev->name);
+		LOG_ERROR("%s: Not able to configure pin_int", dev->name);
 	}
 
 	lsm6dsv16x_intr_callback(lsm6dsv16x);
@@ -364,7 +364,7 @@ static int lsm6dsv16x_ibi_cb(struct i3c_device_desc *target,
 	 * 10th byte: MLC_STATUS
 	 */
 	if (payload->payload_len != sizeof(lsm6dsv16x->ibi_payload)) {
-		LOG_ERR("Invalid IBI payload length");
+		LOG_ERROR("Invalid IBI payload length");
 		return -EINVAL;
 	}
 
@@ -389,7 +389,7 @@ int lsm6dsv16x_init_interrupt(const struct device *dev)
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */
 	if ((!ON_I3C_BUS(cfg) || (I3C_INT_PIN(cfg))) && !gpio_is_ready_dt(lsm6dsv16x->drdy_gpio)) {
-		LOG_ERR("Cannot get pointer to drdy_gpio device");
+		LOG_ERROR("Cannot get pointer to drdy_gpio device");
 		return -EINVAL;
 	}
 
@@ -436,7 +436,7 @@ int lsm6dsv16x_init_interrupt(const struct device *dev)
 
 	ret = lsm6dsv16x_data_ready_mode_set(ctx, mode);
 	if (ret < 0) {
-		LOG_ERR("drdy_pulsed config error %d", (int)cfg->drdy_pulsed);
+		LOG_ERROR("drdy_pulsed config error %d", (int)cfg->drdy_pulsed);
 		return ret;
 	}
 
@@ -446,14 +446,14 @@ int lsm6dsv16x_init_interrupt(const struct device *dev)
 			/* Enable INT Pins when using I3C */
 			ret = lsm6dsv16x_i3c_int_en_set(ctx, I3C_INT_PIN(cfg));
 			if (ret < 0) {
-				LOG_ERR("failed to enable int pin for I3C %d", ret);
+				LOG_ERROR("failed to enable int pin for I3C %d", ret);
 				return ret;
 			}
 
 			ret = gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio,
 							      GPIO_INT_EDGE_TO_ACTIVE);
 			if (ret < 0) {
-				LOG_ERR("Could not configure gpio interrupt");
+				LOG_ERROR("Could not configure gpio interrupt");
 				return ret;
 			}
 		} else {
@@ -473,12 +473,12 @@ int lsm6dsv16x_init_interrupt(const struct device *dev)
 			 */
 			ret = lsm6dsv16x_i3c_ibi_time_set(ctx, cfg->bus_act_sel);
 			if (ret < 0) {
-				LOG_ERR("failed to set ibi available time %d", ret);
+				LOG_ERROR("failed to set ibi available time %d", ret);
 				return -EIO;
 			}
 
 			if (i3c_ibi_enable(lsm6dsv16x->i3c_dev) != 0) {
-				LOG_ERR("Could not enable I3C IBI");
+				LOG_ERROR("Could not enable I3C IBI");
 				return -EIO;
 			}
 		}

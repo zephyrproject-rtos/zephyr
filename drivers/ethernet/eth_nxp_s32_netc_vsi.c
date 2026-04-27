@@ -56,8 +56,8 @@ static void nxp_s32_eth_iface_init(struct net_if *iface)
 		msix = &cfg->msix[i];
 		if (mbox_is_ready_dt(&msix->mbox_spec)) {
 			if (mbox_set_enabled_dt(&msix->mbox_spec, true)) {
-				LOG_ERR("Failed to enable MRU channel %u",
-					msix->mbox_spec.channel_id);
+				LOG_ERROR("Failed to enable MRU channel %u",
+					  msix->mbox_spec.channel_id);
 			}
 		}
 	}

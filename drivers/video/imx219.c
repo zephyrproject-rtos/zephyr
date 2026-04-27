@@ -223,20 +223,20 @@ static int imx219_set_fmt(const struct device *dev, struct video_format *fmt)
 
 	ret = video_format_caps_index(imx219_fmts, fmt, &idx);
 	if (ret < 0) {
-		LOG_ERR("Format requested '%s' %ux%u not supported",
-			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height);
+		LOG_ERROR("Format requested '%s' %ux%u not supported",
+			  VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height);
 		return -ENOTSUP;
 	}
 
 	if (fmt->width != imx219_fmts[idx].width_min &&
 	    (fmt->width - imx219_fmts[idx].width_min) % imx219_fmts[idx].width_step != 0) {
-		LOG_ERR("Unsupported width %u requested", fmt->width);
+		LOG_ERROR("Unsupported width %u requested", fmt->width);
 		return -EINVAL;
 	}
 
 	if (fmt->height != imx219_fmts[idx].height_min &&
 	    (fmt->height - imx219_fmts[idx].height_min) % imx219_fmts[idx].height_step != 0) {
-		LOG_ERR("Unsupported height %u requested", fmt->height);
+		LOG_ERROR("Unsupported height %u requested", fmt->height);
 		return -EINVAL;
 	}
 
@@ -281,7 +281,7 @@ static int imx219_get_fmt(const struct device *dev, struct video_format *fmt)
 static int imx219_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
-		LOG_ERR("Only output buffers supported");
+		LOG_ERROR("Only output buffers supported");
 		return -EINVAL;
 	}
 
@@ -373,7 +373,7 @@ static int imx219_set_stream(const struct device *dev, bool on, enum video_buf_t
 	const struct imx219_config *cfg = dev->config;
 
 	if (type != VIDEO_BUF_TYPE_OUTPUT) {
-		LOG_ERR("Only output buffers supported");
+		LOG_ERROR("Only output buffers supported");
 		return -EINVAL;
 	}
 
@@ -493,7 +493,7 @@ static int imx219_set_input_clk(const struct device *dev, uint32_t rate_hz)
 	const struct imx219_config *cfg = dev->config;
 
 	if (rate_hz < MHZ(6) || rate_hz > MHZ(27) || rate_hz % MHZ(1) != 0) {
-		LOG_ERR("Unsupported INCK freq (%d Hz)", rate_hz);
+		LOG_ERROR("Unsupported INCK freq (%d Hz)", rate_hz);
 		return -EINVAL;
 	}
 
@@ -516,7 +516,7 @@ static int imx219_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("I2C device %s is not ready", cfg->i2c.bus->name);
+		LOG_ERROR("I2C device %s is not ready", cfg->i2c.bus->name);
 		return -ENODEV;
 	}
 
@@ -535,7 +535,7 @@ static int imx219_init(const struct device *dev)
 	}
 
 	if (reg != IMX219_CHIP_ID) {
-		LOG_ERR("Wrong chip ID 0x%04x instead of 0x%04x", reg, IMX219_CHIP_ID);
+		LOG_ERROR("Wrong chip ID 0x%04x instead of 0x%04x", reg, IMX219_CHIP_ID);
 		return -ENODEV;
 	}
 

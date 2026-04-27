@@ -558,7 +558,7 @@ static uint8_t _connect(const struct btp_l2cap_connect_v2_cmd *cp,
 		goto fail;
 #endif
 	} else {
-		LOG_ERR("Invalid 'num' parameter value");
+		LOG_ERROR("Invalid 'num' parameter value");
 		goto fail;
 	}
 
@@ -735,7 +735,7 @@ static uint8_t reconfigure(const void *cmd, uint16_t cmd_len,
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -761,7 +761,7 @@ static uint8_t disconnect_eatt_chans(const void *cmd, uint16_t cmd_len,
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -808,7 +808,7 @@ static uint8_t br_send_data(uint8_t chan_id, const struct btp_l2cap_send_data_cm
 	net_buf_add_mem(buf, cp->data, data_len);
 	err = bt_l2cap_chan_send(&br_chan->br.chan, buf);
 	if (err < 0) {
-		LOG_ERR("Unable to send data: %d", -err);
+		LOG_ERROR("Unable to send data: %d", -err);
 		net_buf_unref(buf);
 		return BTP_STATUS_FAILED;
 	}
@@ -871,7 +871,7 @@ static uint8_t send_data(const void *cmd, uint16_t cmd_len,
 	net_buf_add_mem(buf, cp->data, data_len);
 	ret = bt_l2cap_chan_send(&chan->le.chan, buf);
 	if (ret < 0) {
-		LOG_ERR("Unable to send data: %d", -ret);
+		LOG_ERROR("Unable to send data: %d", -ret);
 		net_buf_unref(buf);
 		return BTP_STATUS_FAILED;
 	}
@@ -1221,13 +1221,13 @@ static uint8_t send_echo_req(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	int err;
 
 	if (cp->address.type != BTP_BR_ADDRESS_TYPE) {
-		LOG_ERR("Only support Classic");
+		LOG_ERROR("Only support Classic");
 		return BTP_STATUS_FAILED;
 	}
 
 	conn = bt_conn_lookup_addr_br(&cp->address.a);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1244,7 +1244,7 @@ static uint8_t send_echo_req(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	err = bt_l2cap_br_echo_req(conn, buf);
 	bt_conn_unref(conn);
 	if (err != 0) {
-		LOG_ERR("Unable to ECHO REQ: %d", -err);
+		LOG_ERROR("Unable to ECHO REQ: %d", -err);
 		net_buf_unref(buf);
 		return BTP_STATUS_FAILED;
 	}
@@ -1264,13 +1264,13 @@ static uint8_t connless_send(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	int err;
 
 	if (cp->address.type != BTP_BR_ADDRESS_TYPE) {
-		LOG_ERR("Only support Classic");
+		LOG_ERROR("Only support Classic");
 		return BTP_STATUS_FAILED;
 	}
 
 	conn = bt_conn_lookup_addr_br(&cp->address.a);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1278,7 +1278,7 @@ static uint8_t connless_send(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	data_len = sys_le16_to_cpu(cp->data_length);
 
 	if (data_len > DATA_MTU) {
-		LOG_ERR("Data length exceeds MAX buffer len (%u > %u)", data_len, DATA_MTU);
+		LOG_ERROR("Data length exceeds MAX buffer len (%u > %u)", data_len, DATA_MTU);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1289,7 +1289,7 @@ static uint8_t connless_send(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	err = bt_l2cap_br_connless_send(conn, psm, buf);
 	bt_conn_unref(conn);
 	if (err < 0) {
-		LOG_ERR("Unable to send CLS data: %d", -err);
+		LOG_ERROR("Unable to send CLS data: %d", -err);
 		net_buf_unref(buf);
 		return BTP_STATUS_FAILED;
 	}
@@ -1391,7 +1391,7 @@ static void l2cap_br_echo_req(struct bt_conn *conn, uint8_t identifier, struct n
 
 	err = bt_l2cap_br_echo_rsp(conn, identifier, tx_buf);
 	if (err != 0) {
-		LOG_ERR("Unable to ECHO REQ: %d", -err);
+		LOG_ERROR("Unable to ECHO REQ: %d", -err);
 		net_buf_unref(tx_buf);
 	}
 }

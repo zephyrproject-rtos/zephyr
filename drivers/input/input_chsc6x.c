@@ -88,7 +88,7 @@ static int chsc6x_process(const struct device *dev)
 
 	ret = cfg->read_data(&cfg->i2c, &is_pressed, &x_axis, &y_axis);
 	if (ret < 0) {
-		LOG_ERR("Could not read data: %d", ret);
+		LOG_ERROR("Could not read data: %d", ret);
 		return ret;
 	}
 
@@ -123,7 +123,7 @@ static int chsc6x_chip_init(const struct device *dev)
 	const struct chsc6x_config *cfg = dev->config;
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("I2C bus %s not ready", cfg->i2c.bus->name);
+		LOG_ERROR("I2C bus %s not ready", cfg->i2c.bus->name);
 		return -ENODEV;
 	}
 
@@ -142,19 +142,19 @@ static int chsc6x_init(const struct device *dev)
 	const struct chsc6x_config *config = dev->config;
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("GPIO port %s not ready", config->int_gpio.port->name);
+		LOG_ERROR("GPIO port %s not ready", config->int_gpio.port->name);
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Could not configure interrupt GPIO pin: %d", ret);
+		LOG_ERROR("Could not configure interrupt GPIO pin: %d", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Could not configure interrupt GPIO interrupt: %d", ret);
+		LOG_ERROR("Could not configure interrupt GPIO interrupt: %d", ret);
 		return ret;
 	}
 
@@ -162,7 +162,7 @@ static int chsc6x_init(const struct device *dev)
 
 	ret = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
 	if (ret < 0) {
-		LOG_ERR("Could not set gpio callback: %d", ret);
+		LOG_ERROR("Could not set gpio callback: %d", ret);
 		return ret;
 	}
 

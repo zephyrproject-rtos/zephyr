@@ -100,12 +100,12 @@ static int mspm0_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	struct pwm_mspm0_data *data = dev->data;
 
 	if (channel >= MSPM0_TIMER_CC_MAX) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
 	if (period_cycles > UINT16_MAX) {
-		LOG_ERR("period cycles exceeds 16-bit timer limit");
+		LOG_ERROR("period cycles exceeds 16-bit timer limit");
 		return -ENOTSUP;
 	}
 
@@ -144,7 +144,7 @@ static int mspm0_pwm_get_cycles_per_sec(const struct device *dev,
 				(clock_control_subsys_t)&config->clock_subsys,
 				&clock_rate);
 	if (ret != 0) {
-		LOG_ERR("clk get rate err %d", ret);
+		LOG_ERROR("clk get rate err %d", ret);
 		return ret;
 	}
 
@@ -224,7 +224,7 @@ static int mspm0_capture_configure(const struct device *dev,
 
 	if (config->is_capture != true ||
 	    channel != 0) {
-		LOG_ERR("Invalid channel %d", channel);
+		LOG_ERROR("Invalid channel %d", channel);
 		return -EINVAL;
 	}
 
@@ -246,7 +246,7 @@ static int mspm0_capture_configure(const struct device *dev,
 
 	/* If interrupt is enabled --> channel is on-going */
 	if (DL_Timer_getEnabledInterrupts(config->base, intr_mask)) {
-		LOG_ERR("Channel %d is busy", channel);
+		LOG_ERROR("Channel %d is busy", channel);
 		k_mutex_unlock(&data->lock);
 		return -EBUSY;
 	}
@@ -268,12 +268,12 @@ static int mspm0_capture_enable(const struct device *dev, uint32_t channel)
 
 	if (config->is_capture != true ||
 	    channel != 0) {
-		LOG_ERR("Invalid capture mode or channel");
+		LOG_ERROR("Invalid capture mode or channel");
 		return -EINVAL;
 	}
 
 	if (!data->callback) {
-		LOG_ERR("Callback is not configured");
+		LOG_ERROR("Callback is not configured");
 		return -EINVAL;
 	}
 
@@ -295,7 +295,7 @@ static int mspm0_capture_enable(const struct device *dev, uint32_t channel)
 
 	/* If interrupt is enabled --> channel is on-going */
 	if (DL_Timer_getEnabledInterrupts(config->base, intr_mask)) {
-		LOG_ERR("Channel %d is busy", channel);
+		LOG_ERROR("Channel %d is busy", channel);
 		k_mutex_unlock(&data->lock);
 		return -EBUSY;
 	}
@@ -317,7 +317,7 @@ static int mspm0_capture_disable(const struct device *dev, uint32_t channel)
 
 	if (config->is_capture != true ||
 	    channel != 0) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
@@ -355,7 +355,7 @@ static int pwm_mspm0_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 

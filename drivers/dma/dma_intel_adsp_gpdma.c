@@ -349,7 +349,7 @@ static int intel_adsp_gpdma_power_on(const struct device *dev)
 	ret = intel_adsp_gpdma_enable(dev);
 
 	if (ret != 0) {
-		LOG_ERR("%s: failed to initialize", dev->name);
+		LOG_ERROR("%s: failed to initialize", dev->name);
 		goto out;
 	}
 #endif
@@ -363,7 +363,7 @@ static int intel_adsp_gpdma_power_on(const struct device *dev)
 	/* Disable all channels and Channel interrupts */
 	ret = dw_dma_setup(dev);
 	if (ret != 0) {
-		LOG_ERR("%s: failed to initialize", dev->name);
+		LOG_ERROR("%s: failed to initialize", dev->name);
 		goto out;
 	}
 

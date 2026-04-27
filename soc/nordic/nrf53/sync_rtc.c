@@ -261,7 +261,7 @@ static int sync_rtc_setup(void)
 
 bail:
 	if (rv != 0) {
-		LOG_ERR("Failed synchronized RTC setup (err: %d)", rv);
+		LOG_ERROR("Failed synchronized RTC setup (err: %d)", rv);
 	}
 
 	return rv;

@@ -125,7 +125,7 @@ static void spi_smrdr(const struct device *dev, uint32_t off, uint32_t spide, ui
 		*smrdr = sys_read32(DEVICE_MMIO_GET(dev) + off);
 		break;
 	default:
-		LOG_ERR("%s: Invalid transfer data enable value", __func__);
+		LOG_ERROR("%s: Invalid transfer data enable value", __func__);
 	}
 }
 
@@ -142,7 +142,7 @@ static void spi_smwdr(const struct device *dev, uint32_t off, uint32_t spide, ui
 		sys_write32(smwdr, DEVICE_MMIO_GET(dev) + off);
 		break;
 	default:
-		LOG_ERR("%s: Invalid transfer data enable value", __func__);
+		LOG_ERROR("%s: Invalid transfer data enable value", __func__);
 	}
 }
 
@@ -176,7 +176,7 @@ static void write_data_section(const struct device *dev, struct spibsc_reg *regs
 		}
 		break;
 	default:
-		LOG_ERR("%s: Invalid transfer data enable value", __func__);
+		LOG_ERROR("%s: Invalid transfer data enable value", __func__);
 	}
 
 	/* Single/Dual/Quad */
@@ -196,7 +196,7 @@ static int configure_data_section(const struct device *dev, struct spibsc_reg *r
 	if ((regset->smenr_spidb != SPI_1BIT) && (regset->smenr_spide != SPI_OUTPUT_DISABLE) &&
 	    (regset->smcr_spire == SPI_SPIDATA_ENABLE) &&
 	    (regset->smcr_spiwe == SPI_OUTPUT_ENABLE)) {
-		LOG_ERR("Read/Write mode is not supported for data width != 1 bit");
+		LOG_ERROR("Read/Write mode is not supported for data width != 1 bit");
 		return -EINVAL;
 	}
 
@@ -233,7 +233,7 @@ static void read_data_section(const struct device *dev, struct spibsc_reg *regse
 		}
 		break;
 	default:
-		LOG_ERR("%s: Invalid transfer data enable value", __func__);
+		LOG_ERROR("%s: Invalid transfer data enable value", __func__);
 	}
 }
 
@@ -244,7 +244,7 @@ static int spi_xfer(const struct device *dev, struct spibsc_reg *regset)
 	if (spi_reg_read(dev, CMNCR_OFF, SPI_CMNCR_MD_SHIFT, SPI_CMNCR_MD) != SPI_CMNCR_MD_SPI) {
 		if (spi_reg_read(dev, CMNSR_OFF, SPI_CMNSR_SSLF_SHIFT, SPI_CMNSR_SSLF) !=
 		    SPI_SSL_NEGATE) {
-			LOG_ERR("%s: SSL is in the high state", __func__);
+			LOG_ERROR("%s: SSL is in the high state", __func__);
 			return -EBUSY;
 		}
 		/* SPI Mode */
@@ -252,7 +252,7 @@ static int spi_xfer(const struct device *dev, struct spibsc_reg *regset)
 	}
 
 	if (spi_reg_read(dev, CMNSR_OFF, SPI_CMNSR_TEND_SHIFT, SPI_CMNSR_TEND) != SPI_TRANS_END) {
-		LOG_ERR("%s: transaction is still in progress", __func__);
+		LOG_ERROR("%s: transaction is still in progress", __func__);
 		return -EBUSY;
 	}
 
@@ -447,7 +447,7 @@ static int wait_status_from_flash(const struct device *dev)
 	while (true) {
 		ret = flash_read_register(dev, SPI_NOR_CMD_RDSR, &status_reg);
 		if (ret < 0) {
-			LOG_ERR("Failed to read status register");
+			LOG_ERROR("Failed to read status register");
 			break;
 		}
 		if ((status_reg & SPI_NOR_WIP_BIT) == 0) {
@@ -584,7 +584,7 @@ static int flash_rza2m_write_enable(const struct device *dev)
 
 	ret = spi_xfer(dev, &spimd_reg);
 	if (ret < 0) {
-		LOG_ERR("Failed to send Write Enable Command");
+		LOG_ERROR("Failed to send Write Enable Command");
 	}
 
 	return ret;
@@ -695,7 +695,7 @@ static int data_send(const struct device *dev, uint32_t bit_width, uint32_t spbs
 
 		ret = spi_xfer(dev, &spimd_reg); /* Data */
 		if (ret < 0) {
-			LOG_ERR("Failed to send data to flash");
+			LOG_ERROR("Failed to send data to flash");
 			return ret;
 		}
 	}
@@ -744,13 +744,13 @@ int flash_rza2m_page_program(const struct device *dev, uint32_t offset, const ui
 
 		ret = spi_xfer(dev, &spimd_reg);
 		if (ret < 0) {
-			LOG_ERR("Failed to send Program Page Command");
+			LOG_ERROR("Failed to send Program Page Command");
 			return ret;
 		}
 
 		ret = data_send(dev, SPI_1BIT, SPI_SPISSL_NEGATE, write_tmp_buf, program_size);
 		if (ret < 0) {
-			LOG_ERR("Failed to send data to flash");
+			LOG_ERROR("Failed to send data to flash");
 			return ret;
 		}
 
@@ -781,7 +781,7 @@ static int flash_rza2m_read(const struct device *dev, off_t offset, void *data, 
 	size_t aligned_size = MAX(size, SPI_NOR_PAGE_SIZE);
 
 	if (config->type != SERIAL_FLASH) {
-		LOG_ERR("%s: Only Serial Flash is supported", __func__);
+		LOG_ERROR("%s: Only Serial Flash is supported", __func__);
 		return -ENOTSUP;
 	}
 
@@ -790,7 +790,7 @@ static int flash_rza2m_read(const struct device *dev, off_t offset, void *data, 
 	}
 
 	if (!is_valid_range(dev, offset, size)) {
-		LOG_ERR("Range exceeds the flash boundaries. Offset=%#lx, Size=%u", offset, size);
+		LOG_ERROR("Range exceeds the flash boundaries. Offset=%#lx, Size=%u", offset, size);
 		return -EINVAL;
 	}
 
@@ -823,7 +823,7 @@ static int flash_rza2m_write(const struct device *dev, off_t offset, const void 
 	const struct flash_rza2m_config *config = dev->config;
 
 	if (config->type != SERIAL_FLASH) {
-		LOG_ERR("%s: Only Serial Flash is supported", __func__);
+		LOG_ERROR("%s: Only Serial Flash is supported", __func__);
 		return -ENOTSUP;
 	}
 
@@ -837,7 +837,7 @@ static int flash_rza2m_write(const struct device *dev, off_t offset, const void 
 	}
 
 	if (!is_valid_range(dev, offset, size)) {
-		LOG_ERR("Range exceeds the flash boundaries. Offset=%#lx, Size=%u", offset, size);
+		LOG_ERROR("Range exceeds the flash boundaries. Offset=%#lx, Size=%u", offset, size);
 		return -EINVAL;
 	}
 
@@ -873,7 +873,7 @@ static int sector_erase_serial(const struct device *dev, uint32_t offset)
 
 	ret = spi_xfer(dev, &spimd_reg);
 	if (ret < 0) {
-		LOG_ERR("Failed to send Sector Erase Command");
+		LOG_ERROR("Failed to send Sector Erase Command");
 		return ret;
 	}
 
@@ -890,7 +890,7 @@ static int range_erase_serial(const struct device *dev, off_t offset, size_t siz
 	do {
 		ret = sector_erase_serial(dev, offt);
 		if (ret) {
-			LOG_ERR("%s: Unable to clear sector on addr: %x", __func__, offt);
+			LOG_ERROR("%s: Unable to clear sector on addr: %x", __func__, offt);
 			return ret;
 		}
 
@@ -907,17 +907,17 @@ static int flash_rza2m_erase(const struct device *dev, off_t offset, size_t size
 	const struct flash_rza2m_config *config = dev->config;
 
 	if (config->type != SERIAL_FLASH) {
-		LOG_ERR("%s: Only Serial Flash is supported", __func__);
+		LOG_ERROR("%s: Only Serial Flash is supported", __func__);
 		return -ENOTSUP;
 	}
 
 	if (size % config->erase_block_size) {
-		LOG_ERR("%s: erase size isn't aligned to the sector size", __func__);
+		LOG_ERROR("%s: erase size isn't aligned to the sector size", __func__);
 		return -EINVAL;
 	}
 
 	if (offset % config->erase_block_size) {
-		LOG_ERR("%s: offset isn't aligned to the sector size", __func__);
+		LOG_ERROR("%s: offset isn't aligned to the sector size", __func__);
 		return -EINVAL;
 	}
 
@@ -927,8 +927,8 @@ static int flash_rza2m_erase(const struct device *dev, off_t offset, size_t size
 	}
 
 	if (!is_valid_range(dev, offset, size)) {
-		LOG_ERR("Erase range exceeds the flash boundaries. Offset=%#lx, Size=%u", offset,
-			size);
+		LOG_ERROR("Erase range exceeds the flash boundaries. Offset=%#lx, Size=%u", offset,
+			  size);
 		return -EINVAL;
 	}
 
@@ -1084,7 +1084,7 @@ static int flash_rza2m_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("%s: unable to apply pinctrl configuration with code: %d", __func__, ret);
+		LOG_ERROR("%s: unable to apply pinctrl configuration with code: %d", __func__, ret);
 		return -EINVAL;
 	}
 

@@ -519,7 +519,7 @@ static int rtc_counter_set_time(const struct device *dev, const struct rtc_time 
 		ret = nvmem_cell_write(&config->epoch_offset_cell, &data->epoch_offset, 0,
 				       sizeof(int64_t));
 		if (ret < 0) {
-			LOG_ERR("Failed to write epoch offset (%d)", ret);
+			LOG_ERROR("Failed to write epoch offset (%d)", ret);
 		}
 	}
 #endif
@@ -613,14 +613,14 @@ static int rtc_counter_init(const struct device *dev)
 	uint32_t freq;
 
 	if (!device_is_ready(config->counter_dev)) {
-		LOG_ERR("Counter device %s not ready", config->counter_dev->name);
+		LOG_ERROR("Counter device %s not ready", config->counter_dev->name);
 		return -ENODEV;
 	}
 
 	/* Validate counter frequency (must be non-zero) */
 	freq = counter_get_frequency(config->counter_dev);
 	if (freq == 0U) {
-		LOG_ERR("Unsupported counter frequency: %u Hz", freq);
+		LOG_ERROR("Unsupported counter frequency: %u Hz", freq);
 		return -ENOTSUP;
 	}
 
@@ -633,7 +633,7 @@ static int rtc_counter_init(const struct device *dev)
 		int ret = nvmem_cell_read(&config->epoch_offset_cell, &data->epoch_offset, 0,
 					  sizeof(int64_t));
 		if (ret < 0) {
-			LOG_ERR("Failed to read epoch offset (%d)", ret);
+			LOG_ERROR("Failed to read epoch offset (%d)", ret);
 		} else {
 			data->epoch_valid = true;
 		}

@@ -157,7 +157,7 @@ static int it8xxx2_ilm_init(const struct device *dev)
 						     (const void *)flash_base, used_size);
 
 		if (rv) {
-			LOG_ERR("Unable to configure ILM block %p: %d", (void *)flash_base, rv);
+			LOG_ERROR("Unable to configure ILM block %p: %d", (void *)flash_base, rv);
 			return rv;
 		}
 	}

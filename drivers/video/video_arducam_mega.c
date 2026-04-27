@@ -331,7 +331,7 @@ static int arducam_mega_write_reg(const struct spi_dt_spec *spec, uint8_t reg_ad
 	for (int tries = 3;; tries--) {
 		ret = spi_write_dt(spec, &tx_bufs);
 		if (ret < 0 && tries == 0) {
-			LOG_ERR("failed to write 0x%x to 0x%x", value, reg_addr);
+			LOG_ERROR("failed to write 0x%x to 0x%x", value, reg_addr);
 			return ret;
 		}
 
@@ -370,7 +370,7 @@ static int arducam_mega_read_reg(const struct spi_dt_spec *spec, uint8_t reg_add
 	for (int tries = 3;; tries--) {
 		ret = spi_transceive_dt(spec, &tx_bufs, &rx_bufs);
 		if (ret < 0 && tries == 0) {
-			LOG_ERR("failed to read 0x%x register", reg_addr);
+			LOG_ERROR("failed to read 0x%x register", reg_addr);
 			return ret;
 		}
 
@@ -435,13 +435,13 @@ static int arducam_mega_write_reg_wait(const struct arducam_mega_bus *bus, uint1
 
 	ret = arducam_mega_await_bus_idle(bus, idle_timeout_ms);
 	if (ret < 0) {
-		LOG_ERR("Bus idle wait failed before writing register 0x%04x", reg);
+		LOG_ERROR("Bus idle wait failed before writing register 0x%04x", reg);
 		return ret;
 	}
 
 	ret = arducam_mega_write_reg(bus, reg, value);
 	if (ret < 0) {
-		LOG_ERR("Failed to write register 0x%04x)", reg);
+		LOG_ERROR("Failed to write register 0x%04x)", reg);
 	}
 
 	return ret;
@@ -535,7 +535,7 @@ static int arducam_mega_set_special_effects(const struct device *dev, enum video
 	}
 
 	if (!supported) {
-		LOG_ERR("Unsupported color effect: %d", effect);
+		LOG_ERROR("Unsupported color effect: %d", effect);
 		return -ENOTSUP;
 	}
 
@@ -559,7 +559,7 @@ static int arducam_mega_set_output_format(const struct device *dev, int output_f
 		format_val = MEGA_PIXELFORMAT_YUV;
 		break;
 	default:
-		LOG_ERR("Image format not supported");
+		LOG_ERROR("Image format not supported");
 		return -ENOTSUP;
 	}
 
@@ -570,7 +570,7 @@ static int arducam_mega_set_output_format(const struct device *dev, int output_f
 
 	ret = arducam_mega_await_bus_idle(&cfg->bus, 30);
 	if (ret < 0) {
-		LOG_ERR("Bus idle wait failed after setting output format");
+		LOG_ERROR("Bus idle wait failed after setting output format");
 	}
 
 	return ret;
@@ -584,7 +584,7 @@ static int arducam_mega_set_jpeg_quality(const struct device *dev, enum mega_ima
 	LOG_DBG("JPEG quality level: %d", __func__, qc);
 
 	if (drv_data->fmt.pixelformat != VIDEO_PIX_FMT_JPEG) {
-		LOG_ERR("Image format does not support setting JPEG quality");
+		LOG_ERROR("Image format does not support setting JPEG quality");
 		return -ENOTSUP;
 	}
 
@@ -608,7 +608,7 @@ static int arducam_mega_set_white_bal_enable(const struct device *dev, int enabl
 
 	ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
 	if (ret < 0) {
-		LOG_ERR("Bus idle wait failed after setting white balance");
+		LOG_ERROR("Bus idle wait failed after setting white balance");
 	}
 
 	return ret;
@@ -638,7 +638,7 @@ static int arducam_mega_set_gain_enable(const struct device *dev, int enable)
 
 	ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
 	if (ret < 0) {
-		LOG_ERR("Bus idle wait failed after setting gain enable");
+		LOG_ERROR("Bus idle wait failed after setting gain enable");
 	}
 
 	return ret;
@@ -677,7 +677,7 @@ static int arducam_mega_set_gain(const struct device *dev, uint16_t value)
 
 	ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
 	if (ret < 0) {
-		LOG_ERR("Bus idle wait failed after setting gain");
+		LOG_ERROR("Bus idle wait failed after setting gain");
 	}
 
 	return ret;
@@ -700,7 +700,7 @@ static int arducam_mega_set_exposure_enable(const struct device *dev, int enable
 
 	ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
 	if (ret < 0) {
-		LOG_ERR("Bus idle wait failed after setting exposure enable");
+		LOG_ERROR("Bus idle wait failed after setting exposure enable");
 	}
 
 	return ret;
@@ -731,7 +731,7 @@ static int arducam_mega_set_exposure(const struct device *dev, uint32_t value)
 
 	ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
 	if (ret < 0) {
-		LOG_ERR("Bus idle wait failed after setting exposure");
+		LOG_ERROR("Bus idle wait failed after setting exposure");
 	}
 
 	return ret;
@@ -749,7 +749,7 @@ static int arducam_mega_set_resolution(const struct device *dev, enum mega_resol
 
 	ret = arducam_mega_await_bus_idle(&cfg->bus, 10);
 	if (ret < 0) {
-		LOG_ERR("Bus idle wait failed after setting resolution");
+		LOG_ERROR("Bus idle wait failed after setting resolution");
 	}
 
 	return ret;
@@ -764,17 +764,17 @@ static int arducam_mega_check_connection(const struct device *dev)
 
 	ret = arducam_mega_await_bus_idle(&cfg->bus, 255);
 	if (ret < 0) {
-		LOG_ERR("Bus idle wait failed during connection check");
+		LOG_ERROR("Bus idle wait failed during connection check");
 		return ret;
 	}
 
 	ret = arducam_mega_read_reg(&cfg->bus, CAM_REG_SENSOR_ID, &cam_id);
 	if (ret < 0) {
-		LOG_ERR("Failed to read sensor ID");
+		LOG_ERROR("Failed to read sensor ID");
 		return ret;
 	}
 	if (!(cam_id & 0x87)) {
-		LOG_ERR("arducam mega not detected, 0x%x\n", cam_id);
+		LOG_ERROR("arducam mega not detected, 0x%x\n", cam_id);
 		return -ENODEV;
 	}
 	drv_data->features = MEGA_HAS_DEFAULT;
@@ -836,8 +836,8 @@ static int arducam_mega_set_fmt(const struct device *dev, struct video_format *f
 
 	ret = video_format_caps_index(fmts, fmt, &i);
 	if (ret < 0) {
-		LOG_ERR("Unsupported pixel format or resolution %s %ux%u",
-			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height);
+		LOG_ERROR("Unsupported pixel format or resolution %s %ux%u",
+			  VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height);
 		return ret;
 	}
 	ret = arducam_mega_set_output_format(dev, fmt->pixelformat);
@@ -928,7 +928,7 @@ static int arducam_mega_soft_reset(const struct device *dev)
 	/* Initiate system reset */
 	ret = arducam_mega_write_reg(&cfg->bus, CAM_REG_SENSOR_RESET, SENSOR_RESET_ENABLE);
 	if (ret < 0) {
-		LOG_ERR("Failed to reset the sensor (%d)", ret);
+		LOG_ERROR("Failed to reset the sensor (%d)", ret);
 		return ret;
 	}
 
@@ -950,7 +950,7 @@ static int arducam_mega_capture(const struct device *dev, uint32_t *length)
 	for (int tries = ARDUCAM_MEGA_CAPTURE_TRIES; tries > 0; tries--) {
 		ret = arducam_mega_read_reg(&cfg->bus, ARDUCHIP_TRIG, &reg_data);
 		if (ret < 0) {
-			LOG_ERR("Capture timeout!");
+			LOG_ERROR("Capture timeout!");
 			return ret;
 		}
 
@@ -963,19 +963,19 @@ static int arducam_mega_capture(const struct device *dev, uint32_t *length)
 
 	ret = arducam_mega_read_reg(&cfg->bus, FIFO_SIZE1, &reg_data);
 	if (ret < 0) {
-		LOG_ERR("Failed to reset the fifo1 size (%d)", ret);
+		LOG_ERROR("Failed to reset the fifo1 size (%d)", ret);
 		return ret;
 	}
 	drv_data->fifo_length = reg_data;
 	ret = arducam_mega_read_reg(&cfg->bus, FIFO_SIZE2, &reg_data);
 	if (ret < 0) {
-		LOG_ERR("Failed to reset the fifo2 size (%d)", ret);
+		LOG_ERROR("Failed to reset the fifo2 size (%d)", ret);
 		return ret;
 	}
 	drv_data->fifo_length |= reg_data << 8;
 	ret = arducam_mega_read_reg(&cfg->bus, FIFO_SIZE3, &reg_data);
 	if (ret < 0) {
-		LOG_ERR("Failed to reset the fifo3 size (%d)", ret);
+		LOG_ERROR("Failed to reset the fifo3 size (%d)", ret);
 		return ret;
 	}
 	drv_data->fifo_length |= reg_data << 16;
@@ -998,7 +998,7 @@ static int arducam_mega_fifo_read(const struct device *dev, struct video_buffer 
 
 	ret = arducam_mega_read_block(&cfg->bus, buf->buffer, rlen, drv_data->fifo_first_read);
 	if (ret < 0) {
-		LOG_ERR("Failed to read block (%d)", ret);
+		LOG_ERROR("Failed to read block (%d)", ret);
 		return ret;
 	}
 
@@ -1033,7 +1033,7 @@ static void arducam_mega_buffer_work(struct k_work *work)
 
 	ret = arducam_mega_fifo_read(drv_data->dev, vbuf);
 	if (ret < 0) {
-		LOG_ERR("failed to read a buffer (%d)", ret);
+		LOG_ERROR("failed to read a buffer (%d)", ret);
 		return;
 	}
 
@@ -1268,7 +1268,7 @@ static int arducam_mega_init(const struct device *dev)
 	uint32_t reg_data;
 
 	if (!spi_is_ready_dt(&cfg->bus)) {
-		LOG_ERR("%s: device is not ready", cfg->bus.bus->name);
+		LOG_ERROR("%s: device is not ready", cfg->bus.bus->name);
 		return -ENODEV;
 	}
 
@@ -1286,19 +1286,19 @@ static int arducam_mega_init(const struct device *dev)
 
 	ret = arducam_mega_soft_reset(dev);
 	if (ret < 0) {
-		LOG_ERR("arducam mega camera reset failed.\n");
+		LOG_ERROR("arducam mega camera reset failed.\n");
 		return ret;
 	}
 
 	ret = arducam_mega_check_connection(dev);
 	if (ret < 0) {
-		LOG_ERR("arducam mega camera no connection.\n");
+		LOG_ERROR("arducam mega camera no connection.\n");
 		return ret;
 	}
 
 	ret = arducam_mega_read_reg(&cfg->bus, CAM_REG_YEAR_SDK, &reg_data);
 	if (ret < 0) {
-		LOG_ERR("Failed to read year (%d)", ret);
+		LOG_ERROR("Failed to read year (%d)", ret);
 		return ret;
 	}
 
@@ -1306,7 +1306,7 @@ static int arducam_mega_init(const struct device *dev)
 
 	ret = arducam_mega_read_reg(&cfg->bus, CAM_REG_MONTH_SDK, &reg_data);
 	if (ret < 0) {
-		LOG_ERR("Failed to read month(%d)", ret);
+		LOG_ERROR("Failed to read month(%d)", ret);
 		return ret;
 	}
 
@@ -1314,7 +1314,7 @@ static int arducam_mega_init(const struct device *dev)
 
 	ret = arducam_mega_read_reg(&cfg->bus, CAM_REG_DAY_SDK, &reg_data);
 	if (ret < 0) {
-		LOG_ERR("Failed to read day (%d)", ret);
+		LOG_ERROR("Failed to read day (%d)", ret);
 		return ret;
 	}
 
@@ -1322,7 +1322,7 @@ static int arducam_mega_init(const struct device *dev)
 
 	ret = arducam_mega_read_reg(&cfg->bus, CAM_REG_FPGA_VERSION_NUMBER, &reg_data);
 	if (ret < 0) {
-		LOG_ERR("Failed to read version number (%d)", ret);
+		LOG_ERROR("Failed to read version number (%d)", ret);
 		return ret;
 	}
 
@@ -1338,12 +1338,12 @@ static int arducam_mega_init(const struct device *dev)
 
 	ret = arducam_mega_set_fmt(dev, &fmt);
 	if (ret < 0) {
-		LOG_ERR("Unable to configure default format");
+		LOG_ERROR("Unable to configure default format");
 		return ret;
 	}
 	ret = arducam_mega_init_controls(dev);
 	if (ret < 0) {
-		LOG_ERR("Unable to initialize controls");
+		LOG_ERROR("Unable to initialize controls");
 		return ret;
 	}
 	return 0;

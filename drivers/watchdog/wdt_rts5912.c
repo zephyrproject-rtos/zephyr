@@ -60,22 +60,22 @@ static int wdt_rts5912_setup(const struct device *dev, uint8_t options)
 	WDT_Type *wdt_reg = (WDT_Type *)config->base;
 
 	if (!data->timeout_installed) {
-		LOG_ERR("No valid WDT timeout installed");
+		LOG_ERROR("No valid WDT timeout installed");
 		return -EINVAL;
 	}
 
 	if (wdt_reg->CTRL & WDT_CTRL_EN) {
-		LOG_ERR("WDT is already running");
+		LOG_ERROR("WDT is already running");
 		return -EBUSY;
 	}
 
 	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
-		LOG_ERR("WDT_OPT_PAUSE_IN_SLEEP is not supported");
+		LOG_ERROR("WDT_OPT_PAUSE_IN_SLEEP is not supported");
 		return -ENOTSUP;
 	}
 
 	if (options & WDT_OPT_PAUSE_HALTED_BY_DBG) {
-		LOG_ERR("Pause when halted by debugger not supported");
+		LOG_ERROR("Pause when halted by debugger not supported");
 		return -ENOTSUP;
 	}
 
@@ -124,12 +124,12 @@ static int wdt_rts5912_install_timeout(const struct device *dev,
 	LOG_DBG("WDT intstall timeout");
 
 	if (wdt_reg->CTRL & WDT_CTRL_EN) {
-		LOG_ERR("WDT is already running");
+		LOG_ERROR("WDT is already running");
 		return -EBUSY;
 	}
 
 	if (config->window.min > 0U) {
-		LOG_ERR("Lower limit of watchdog is not supported, keep it zero");
+		LOG_ERROR("Lower limit of watchdog is not supported, keep it zero");
 		data->timeout_installed = false;
 		return -EINVAL;
 	}
@@ -142,10 +142,10 @@ static int wdt_rts5912_install_timeout(const struct device *dev,
 		wdt_reg->CTRL &= ~WDT_CTRL_RSTEN;
 		break;
 	case WDT_FLAG_RESET_CPU_CORE:
-		LOG_ERR("WDT_FLAG_RESET_CPU_CORE is not supported\n");
+		LOG_ERROR("WDT_FLAG_RESET_CPU_CORE is not supported\n");
 		break;
 	default:
-		LOG_ERR("Unsupported watchdog config Flag\n");
+		LOG_ERROR("Unsupported watchdog config Flag\n");
 		return -ENOTSUP;
 	}
 
@@ -154,9 +154,9 @@ static int wdt_rts5912_install_timeout(const struct device *dev,
 	max = min * WDT_MAX_CNT;
 
 	if ((timeout < min) || (timeout > max)) {
-		LOG_ERR("Invalid timeout value allowed range:"
-			"%d ms to %d ms",
-			min / MSEC_PER_SEC, max / MSEC_PER_SEC);
+		LOG_ERROR("Invalid timeout value allowed range:"
+			  "%d ms to %d ms",
+			  min / MSEC_PER_SEC, max / MSEC_PER_SEC);
 		return -EINVAL;
 	}
 

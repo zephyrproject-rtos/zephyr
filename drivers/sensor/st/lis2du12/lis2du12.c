@@ -102,7 +102,7 @@ static int lis2du12_accel_odr_set(const struct device *dev, uint16_t freq)
 	}
 
 	if (lis2du12_accel_set_odr_raw(dev, odr) < 0) {
-		LOG_ERR("failed to set accelerometer sampling rate");
+		LOG_ERROR("failed to set accelerometer sampling rate");
 		return -EIO;
 	}
 
@@ -120,7 +120,7 @@ static int lis2du12_accel_range_set(const struct device *dev, int32_t range)
 	}
 
 	if (lis2du12_accel_set_fs_raw(dev, fs) < 0) {
-		LOG_ERR("failed to set accelerometer full-scale");
+		LOG_ERROR("failed to set accelerometer full-scale");
 		return -EIO;
 	}
 
@@ -170,7 +170,7 @@ static inline int lis2du12_reboot(const struct device *dev)
 
 	do {
 		if (!--tries) {
-			LOG_ERR("sw reset timed out");
+			LOG_ERROR("sw reset timed out");
 			return -ETIMEDOUT;
 		}
 		k_usleep(50);
@@ -213,7 +213,7 @@ static int lis2du12_sample_fetch_accel(const struct device *dev)
 
 	md.fs = cfg->accel_range;
 	if (lis2du12_data_get(ctx, &md, &xl_data) < 0) {
-		LOG_ERR("Failed to read sample");
+		LOG_ERROR("Failed to read sample");
 		return -EIO;
 	}
 
@@ -330,14 +330,14 @@ static int lis2du12_init_chip(const struct device *dev)
 	uint8_t odr, fs;
 
 	if (lis2du12_id_get(ctx, &chip_id) < 0) {
-		LOG_ERR("Failed reading chip id");
+		LOG_ERROR("Failed reading chip id");
 		return -EIO;
 	}
 
 	LOG_INF("chip id 0x%x", chip_id.whoami);
 
 	if (chip_id.whoami != LIS2DU12_ID) {
-		LOG_ERR("Invalid chip id 0x%x", chip_id.whoami);
+		LOG_ERROR("Invalid chip id 0x%x", chip_id.whoami);
 		return -EIO;
 	}
 
@@ -350,7 +350,7 @@ static int lis2du12_init_chip(const struct device *dev)
 	fs = cfg->accel_range;
 	LOG_DBG("accel range is %d", fs);
 	if (lis2du12_accel_set_fs_raw(dev, fs) < 0) {
-		LOG_ERR("failed to set accelerometer range %d", fs);
+		LOG_ERROR("failed to set accelerometer range %d", fs);
 		return -EIO;
 	}
 	lis2du12->accel_fs = lis2du12_accel_fs_map[fs];
@@ -360,7 +360,7 @@ static int lis2du12_init_chip(const struct device *dev)
 	odr = cfg->accel_odr;
 	LOG_DBG("accel odr is %d", odr);
 	if (lis2du12_accel_set_odr_raw(dev, odr) < 0) {
-		LOG_ERR("failed to set accelerometer odr %d", odr);
+		LOG_ERROR("failed to set accelerometer odr %d", odr);
 		return -EIO;
 	}
 
@@ -378,14 +378,14 @@ static int lis2du12_init(const struct device *dev)
 	data->dev = dev;
 
 	if (lis2du12_init_chip(dev) < 0) {
-		LOG_ERR("failed to initialize chip");
+		LOG_ERROR("failed to initialize chip");
 		return -EIO;
 	}
 
 #ifdef CONFIG_LIS2DU12_TRIGGER
 	if (cfg->trig_enabled) {
 		if (lis2du12_init_interrupt(dev) < 0) {
-			LOG_ERR("Failed to initialize interrupt.");
+			LOG_ERROR("Failed to initialize interrupt.");
 			return -EIO;
 		}
 	}

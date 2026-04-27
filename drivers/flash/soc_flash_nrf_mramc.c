@@ -50,17 +50,17 @@ BUILD_ASSERT((ERASE_BLOCK_SIZE % WRITE_BLOCK_SIZE) == 0,
 static bool validate_action(uint32_t addr, size_t len, bool must_align)
 {
 	if (!nrfx_mramc_valid_address_check(addr, true)) {
-		LOG_ERR("Invalid address: %x", addr);
+		LOG_ERROR("Invalid address: %x", addr);
 		return false;
 	}
 
 	if (!nrfx_mramc_fits_memory_check(addr, true, len)) {
-		LOG_ERR("Address %x with length %zu exceeds MRAM size", addr, len);
+		LOG_ERROR("Address %x with length %zu exceeds MRAM size", addr, len);
 		return false;
 	}
 
 	if (must_align && !(nrfx_is_word_aligned((void const *)addr))) {
-		LOG_ERR("Address %x is not word aligned", addr);
+		LOG_ERROR("Address %x is not word aligned", addr);
 		return false;
 	}
 
@@ -73,7 +73,7 @@ static int nrf_mramc_read(const struct device *dev, off_t offset, void *data, si
 	uint32_t addr = NRFX_MRAMC_MAP_TO_ADDR(offset);
 
 	if (data == NULL) {
-		LOG_ERR("Data pointer is NULL");
+		LOG_ERROR("Data pointer is NULL");
 		return -EINVAL;
 	}
 
@@ -97,7 +97,7 @@ static int nrf_mramc_write(const struct device *dev, off_t offset,
 	uint32_t addr = NRFX_MRAMC_MAP_TO_ADDR(offset);
 
 	if (data == NULL) {
-		LOG_ERR("Data pointer is NULL");
+		LOG_ERROR("Data pointer is NULL");
 		return -EINVAL;
 	}
 
@@ -189,7 +189,7 @@ static int mramc_sys_init(const struct device *dev)
 	int ret = nrfx_mramc_init(&config, NULL);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to initialize MRAMC: %d", ret);
+		LOG_ERROR("Failed to initialize MRAMC: %d", ret);
 		return ret;
 	}
 	LOG_DBG("MRAMC initialized successfully");

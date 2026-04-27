@@ -99,7 +99,7 @@ static inline int bq25713_read8(const struct device *dev, uint8_t reg, uint8_t *
 
 	ret = i2c_reg_read_byte_dt(&config->i2c, reg, value);
 	if (ret < 0) {
-		LOG_ERR("Unable to read register");
+		LOG_ERROR("Unable to read register");
 	}
 	return ret;
 }
@@ -112,7 +112,7 @@ static inline int bq25713_update8(const struct device *dev, uint8_t reg, uint8_t
 
 	ret = i2c_reg_update_byte_dt(&config->i2c, reg, mask, value);
 	if (ret < 0) {
-		LOG_ERR("Unable to update register");
+		LOG_ERROR("Unable to update register");
 	}
 	return ret;
 }
@@ -136,7 +136,7 @@ static inline int bq25713_read16(const struct device *dev, uint8_t reg, uint16_t
 
 	ret = i2c_burst_read_dt(&config->i2c, reg, i2c_data, sizeof(i2c_data));
 	if (ret < 0) {
-		LOG_ERR("Unable to read register");
+		LOG_ERROR("Unable to read register");
 		return ret;
 	}
 
@@ -434,7 +434,7 @@ static int bq25713_init(const struct device *dev)
 	case BQ25713_REG_ID_PN_25713B:
 		break;
 	default:
-		LOG_ERR("Error unknown model: 0x%04x\n", value);
+		LOG_ERROR("Error unknown model: 0x%04x\n", value);
 		return -ENODEV;
 	}
 

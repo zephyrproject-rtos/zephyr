@@ -57,17 +57,17 @@ static int ltc166x_channel_setup(const struct device *dev,
 	const struct ltc166x_config *config = dev->config;
 
 	if (channel_cfg->channel_id > config->nchannels - 1) {
-		LOG_ERR("Unsupported channel %d", channel_cfg->channel_id);
+		LOG_ERROR("Unsupported channel %d", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->resolution != config->resolution) {
-		LOG_ERR("Unsupported resolution %d", channel_cfg->resolution);
+		LOG_ERROR("Unsupported resolution %d", channel_cfg->resolution);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->internal) {
-		LOG_ERR("Internal channels not supported");
+		LOG_ERROR("Internal channels not supported");
 		return -ENOTSUP;
 	}
 
@@ -80,12 +80,12 @@ static int ltc166x_write_value(const struct device *dev, uint8_t channel,
 	const struct ltc166x_config *config = dev->config;
 
 	if (channel > config->nchannels - 1) {
-		LOG_ERR("unsupported channel %d", channel);
+		LOG_ERROR("unsupported channel %d", channel);
 		return -ENOTSUP;
 	}
 
 	if (value >= (1 << config->resolution)) {
-		LOG_ERR("Value %d out of range", value);
+		LOG_ERROR("Value %d out of range", value);
 		return -EINVAL;
 	}
 
@@ -97,7 +97,7 @@ static int ltc166x_init(const struct device *dev)
 	const struct ltc166x_config *config = dev->config;
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		LOG_ERROR("SPI bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 	return 0;

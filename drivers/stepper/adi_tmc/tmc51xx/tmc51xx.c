@@ -69,7 +69,7 @@ static int tmc51xx_reg_write_spi(const struct device *dev, const uint8_t reg_add
 
 	err = tmc_spi_write_register(&config->bus.spi, TMC5XXX_WRITE_BIT, reg_addr, reg_val);
 	if (err < 0) {
-		LOG_ERR("Failed to write register 0x%x with value 0x%x", reg_addr, reg_val);
+		LOG_ERROR("Failed to write register 0x%x with value 0x%x", reg_addr, reg_val);
 	}
 
 	return err;
@@ -82,7 +82,7 @@ static int tmc51xx_reg_read_spi(const struct device *dev, const uint8_t reg_addr
 
 	err = tmc_spi_read_register(&config->bus.spi, TMC5XXX_ADDRESS_MASK, reg_addr, reg_val);
 	if (err < 0) {
-		LOG_ERR("Failed to read register 0x%x", reg_addr);
+		LOG_ERROR("Failed to read register 0x%x", reg_addr);
 	}
 
 	return err;
@@ -114,7 +114,7 @@ static int tmc51xx_reg_write_uart(const struct device *dev, const uint8_t reg_ad
 	/* Route to the adi_tmc_uart.h implementation */
 	err = tmc_uart_write_register(config->bus.uart, config->uart_addr, reg_addr, reg_val);
 	if (err < 0) {
-		LOG_ERR("Failed to write register 0x%x with value 0x%x", reg_addr, reg_val);
+		LOG_ERROR("Failed to write register 0x%x with value 0x%x", reg_addr, reg_val);
 	}
 
 	return err;
@@ -129,7 +129,7 @@ static int tmc51xx_reg_read_uart(const struct device *dev, const uint8_t reg_add
 	/* Route to the adi_tmc_uart.h implementation */
 	err = tmc_uart_read_register(config->bus.uart, config->uart_addr, reg_addr, reg_val);
 	if (err < 0) {
-		LOG_ERR("Failed to read register 0x%x", reg_addr);
+		LOG_ERROR("Failed to read register 0x%x", reg_addr);
 	}
 
 	return err;
@@ -222,7 +222,7 @@ int tmc51xx_write(const struct device *dev, const uint8_t reg_addr, const uint32
 	k_sem_give(&data->sem);
 
 	if (err < 0) {
-		LOG_ERR("Failed to write register 0x%x with value 0x%x", reg_addr, reg_val);
+		LOG_ERROR("Failed to write register 0x%x with value 0x%x", reg_addr, reg_val);
 		return err;
 	}
 	return 0;
@@ -241,7 +241,7 @@ int tmc51xx_read(const struct device *dev, const uint8_t reg_addr, uint32_t *reg
 	k_sem_give(&data->sem);
 
 	if (err < 0) {
-		LOG_ERR("Failed to read register 0x%x", reg_addr);
+		LOG_ERROR("Failed to read register 0x%x", reg_addr);
 		return err;
 	}
 	return 0;
@@ -256,7 +256,7 @@ static void log_stallguard(const struct device *dev, const uint32_t drv_status)
 
 	err = tmc51xx_read_actual_position(dev, &position);
 	if (err != 0) {
-		LOG_ERR("%s: Failed to read XACTUAL register", dev->name);
+		LOG_ERROR("%s: Failed to read XACTUAL register", dev->name);
 		return;
 	}
 
@@ -298,7 +298,7 @@ static void rampstat_work_handler(struct k_work *work)
 
 	err = tmc51xx_read(dev, TMC51XX_DRVSTATUS, &drv_status);
 	if (err != 0) {
-		LOG_ERR("%s: Failed to read DRVSTATUS register", dev->name);
+		LOG_ERROR("%s: Failed to read DRVSTATUS register", dev->name);
 		return;
 	}
 #ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_STALLGUARD_LOG
@@ -308,7 +308,7 @@ static void rampstat_work_handler(struct k_work *work)
 		LOG_INF("%s: Stall detected", dev->name);
 		err = tmc51xx_write(dev, TMC51XX_RAMPMODE, TMC5XXX_RAMPMODE_HOLD_MODE);
 		if (err != 0) {
-			LOG_ERR("%s: Failed to stop motor", dev->name);
+			LOG_ERROR("%s: Failed to stop motor", dev->name);
 			return;
 		}
 	}
@@ -317,7 +317,7 @@ static void rampstat_work_handler(struct k_work *work)
 
 	err = rampstat_read_clear(dev, &rampstat_value);
 	if (err != 0) {
-		LOG_ERR("%s: Failed to read RAMPSTAT register", dev->name);
+		LOG_ERROR("%s: Failed to read RAMPSTAT register", dev->name);
 		return;
 	}
 
@@ -355,7 +355,7 @@ static void rampstat_work_handler(struct k_work *work)
 			break;
 #endif /* CONFIG_STEPPER_ADI_TMC51XX_STEPPER_DRIVER */
 		default:
-			LOG_ERR("Illegal ramp stat bit field 0x%x", ramp_stat_values);
+			LOG_ERROR("Illegal ramp stat bit field 0x%x", ramp_stat_values);
 			break;
 		}
 	} else {
@@ -401,7 +401,7 @@ static int tmc51xx_init(const struct device *dev)
 
 	err = tmc51xx_bus_check(dev);
 	if (err < 0) {
-		LOG_ERR("Bus not ready for '%s'", dev->name);
+		LOG_ERROR("Bus not ready for '%s'", dev->name);
 		return err;
 	}
 
@@ -409,13 +409,13 @@ static int tmc51xx_init(const struct device *dev)
 	/* Initialize SW_SEL GPIO if using UART and GPIO is specified */
 	if (config->comm_type == TMC_COMM_UART && config->sw_sel_gpio.port) {
 		if (!gpio_is_ready_dt(&config->sw_sel_gpio)) {
-			LOG_ERR("SW_SEL GPIO not ready");
+			LOG_ERROR("SW_SEL GPIO not ready");
 			return -ENODEV;
 		}
 
 		err = gpio_pin_configure_dt(&config->sw_sel_gpio, GPIO_OUTPUT_ACTIVE);
 		if (err < 0) {
-			LOG_ERR("Failed to configure SW_SEL GPIO");
+			LOG_ERROR("Failed to configure SW_SEL GPIO");
 			return err;
 		}
 	}
@@ -426,20 +426,20 @@ static int tmc51xx_init(const struct device *dev)
 	if ((config->comm_type == TMC_COMM_SPI) && config->diag0_gpio.port) {
 		LOG_INF("Configuring DIAG0 GPIO interrupt pin");
 		if (!gpio_is_ready_dt(&config->diag0_gpio)) {
-			LOG_ERR("DIAG0 interrupt GPIO not ready");
+			LOG_ERROR("DIAG0 interrupt GPIO not ready");
 			return -ENODEV;
 		}
 
 		err = gpio_pin_configure_dt(&config->diag0_gpio, GPIO_INPUT);
 		if (err < 0) {
-			LOG_ERR("Could not configure DIAG0 GPIO (%d)", err);
+			LOG_ERROR("Could not configure DIAG0 GPIO (%d)", err);
 			return err;
 		}
 		k_work_init_delayable(&data->rampstat_callback_dwork, rampstat_work_handler);
 
 		err = gpio_pin_interrupt_configure_dt(&config->diag0_gpio, GPIO_INT_EDGE_RISING);
 		if (err) {
-			LOG_ERR("failed to configure DIAG0 interrupt (err %d)", err);
+			LOG_ERROR("failed to configure DIAG0 interrupt (err %d)", err);
 			return -EIO;
 		}
 
@@ -449,7 +449,7 @@ static int tmc51xx_init(const struct device *dev)
 
 		err = gpio_add_callback(config->diag0_gpio.port, &data->diag0_cb);
 		if (err < 0) {
-			LOG_ERR("Could not add DIAG0 pin GPIO callback (%d)", err);
+			LOG_ERROR("Could not add DIAG0 pin GPIO callback (%d)", err);
 			return -EIO;
 		}
 

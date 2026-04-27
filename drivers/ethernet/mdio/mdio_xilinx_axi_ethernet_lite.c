@@ -98,7 +98,7 @@ static inline int mdio_axi_eth_lite_complete_transaction(const struct mdio_axi_e
 	}
 
 	if (waited_cycles == MDIO_MAX_WAIT_US) {
-		LOG_ERR("Timed out waiting for MDIO transaction to complete!");
+		LOG_ERROR("Timed out waiting for MDIO transaction to complete!");
 		return -EIO;
 	}
 	/* busy went low - transaction complete */
@@ -112,15 +112,15 @@ static int mdio_axi_eth_lite_read(const struct device *dev, uint8_t phy_addr, ui
 	struct mdio_axi_eth_lite_data *data = dev->data;
 
 	if (phy_addr >= AXI_ETH_LITE_MAX_PHY_DEVICES) {
-		LOG_ERR("Requested read port address %" PRIu8 " not supported - max %d", phy_addr,
-			AXI_ETH_LITE_MAX_PHY_DEVICES);
+		LOG_ERROR("Requested read port address %" PRIu8 " not supported - max %d", phy_addr,
+			  AXI_ETH_LITE_MAX_PHY_DEVICES);
 		return -ENOSYS;
 	}
 
 	(void)k_mutex_lock(&data->mutex, K_FOREVER);
 
 	if (mdio_axi_eth_lite_check_busy(config) < 0) {
-		LOG_ERR("MDIO bus busy!");
+		LOG_ERROR("MDIO bus busy!");
 		(void)k_mutex_unlock(&data->mutex);
 		return -ENOSYS;
 	}
@@ -147,15 +147,15 @@ static int mdio_axi_eth_lite_write(const struct device *dev, uint8_t phy_addr, u
 	struct mdio_axi_eth_lite_data *data = dev->data;
 
 	if (phy_addr >= AXI_ETH_LITE_MAX_PHY_DEVICES) {
-		LOG_ERR("Requested write port address %" PRIu8 " not supported - max %d", phy_addr,
-			AXI_ETH_LITE_MAX_PHY_DEVICES);
+		LOG_ERROR("Requested write port address %" PRIu8 " not supported - max %d",
+			  phy_addr, AXI_ETH_LITE_MAX_PHY_DEVICES);
 		return -ENOSYS;
 	}
 
 	(void)k_mutex_lock(&data->mutex, K_FOREVER);
 
 	if (mdio_axi_eth_lite_check_busy(config) < 0) {
-		LOG_ERR("MDIO bus busy!");
+		LOG_ERROR("MDIO bus busy!");
 		(void)k_mutex_unlock(&data->mutex);
 		return -ENOSYS;
 	}

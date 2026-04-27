@@ -79,7 +79,7 @@ static void chsc5x_work_handler(struct k_work *work)
 	ret = i2c_write_read_dt(&cfg->i2c, write_buffer, sizeof(write_buffer), read_buffer,
 				sizeof(read_buffer));
 	if (ret < 0) {
-		LOG_ERR("Could not read data: %i", ret);
+		LOG_ERROR("Could not read data: %i", ret);
 		return;
 	}
 
@@ -121,14 +121,14 @@ static int chsc5x_verify_ic(const struct device *dev)
 	uint8_t read_buffer[4];
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("I2C bus %s not ready", cfg->i2c.bus->name);
+		LOG_ERROR("I2C bus %s not ready", cfg->i2c.bus->name);
 		return -ENODEV;
 	}
 
 	ret = i2c_write_read_dt(&cfg->i2c, write_buffer, sizeof(write_buffer), read_buffer,
 				sizeof(read_buffer));
 	if (ret < 0) {
-		LOG_ERR("Could not read data: %i", ret);
+		LOG_ERROR("Could not read data: %i", ret);
 		return ret;
 	}
 
@@ -143,7 +143,7 @@ static int chsc5x_verify_ic(const struct device *dev)
 	case CHSC5X_IC_TYPE_CHSC1716:
 		break;
 	default:
-		LOG_ERR("CHSC5X wrong ic type: returned 0x%02x", read_buffer[0]);
+		LOG_ERROR("CHSC5X wrong ic type: returned 0x%02x", read_buffer[0]);
 		return -ENODEV;
 	}
 
@@ -158,13 +158,13 @@ static int chsc5x_reset(const struct device *dev)
 
 	if (config->reset_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->reset_gpio)) {
-			LOG_ERR("GPIO port %s not ready", config->reset_gpio.port->name);
+			LOG_ERROR("GPIO port %s not ready", config->reset_gpio.port->name);
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure reset GPIO (%d)", ret);
+			LOG_ERROR("Could not configure reset GPIO (%d)", ret);
 			return ret;
 		}
 
@@ -172,7 +172,7 @@ static int chsc5x_reset(const struct device *dev)
 
 		ret = gpio_pin_set_dt(&config->reset_gpio, 0);
 		if (ret < 0) {
-			LOG_ERR("Could not pull reset low (%d)", ret);
+			LOG_ERROR("Could not pull reset low (%d)", ret);
 			return ret;
 		}
 
@@ -232,24 +232,24 @@ static int chsc5x_init(const struct device *dev)
 
 	ret = chsc5x_reset(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to reset (%d)", ret);
+		LOG_ERROR("Failed to reset (%d)", ret);
 		return ret;
 	}
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("GPIO port %s not ready", config->int_gpio.port->name);
+		LOG_ERROR("GPIO port %s not ready", config->int_gpio.port->name);
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Could not configure interrupt GPIO pin: %d", ret);
+		LOG_ERROR("Could not configure interrupt GPIO pin: %d", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Could not configure interrupt GPIO interrupt: %d", ret);
+		LOG_ERROR("Could not configure interrupt GPIO interrupt: %d", ret);
 		return ret;
 	}
 
@@ -257,7 +257,7 @@ static int chsc5x_init(const struct device *dev)
 
 	ret = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
 	if (ret < 0) {
-		LOG_ERR("Could not set gpio callback: %d", ret);
+		LOG_ERROR("Could not set gpio callback: %d", ret);
 		return ret;
 	}
 
@@ -267,7 +267,7 @@ static int chsc5x_init(const struct device *dev)
 
 	ret =  chsc5x_verify_ic(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to verify ic: %d", ret);
+		LOG_ERROR("Failed to verify ic: %d", ret);
 		return ret;
 	}
 #endif /* CONFIG_INPUT_CHSC5X_VERIFY_IC_TYPE */

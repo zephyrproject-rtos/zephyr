@@ -281,7 +281,7 @@ void ifx_autanalog_set_irq_handler(const struct device *dev, const struct device
 	struct ifx_autanalog_mfd_data *data = dev->data;
 
 	if (periph >= IFX_AUTANALOG_PERIPH_COUNT) {
-		LOG_ERR("Invalid peripheral type: %d", periph);
+		LOG_ERROR("Invalid peripheral type: %d", periph);
 		return;
 	}
 
@@ -354,7 +354,7 @@ static int ifx_autanalog_mfd_init(const struct device *dev)
 	/* Initialize the AutAnalog block with AC configuration */
 	result_val = Cy_AutAnalog_Init(config->init_param);
 	if (result_val != CY_RSLT_SUCCESS) {
-		LOG_ERR("Failed to initialize AutAnalog subsystem");
+		LOG_ERROR("Failed to initialize AutAnalog subsystem");
 		return -EIO;
 	}
 

@@ -117,13 +117,13 @@ static int ds2484_init(const struct device *dev)
 
 	if (config->slpz_spec.port) {
 		if (!gpio_is_ready_dt(&config->slpz_spec)) {
-			LOG_ERR("Port (SLPZ) not ready");
+			LOG_ERROR("Port (SLPZ) not ready");
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&config->slpz_spec, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Pin configuration (SLPZ) failed: %d", ret);
+			LOG_ERROR("Pin configuration (SLPZ) failed: %d", ret);
 			return ret;
 		}
 	}
@@ -134,7 +134,7 @@ static int ds2484_init(const struct device *dev)
 
 	ret = ds2482_84_reset_device(&config->i2c_spec);
 	if (ret < 0) {
-		LOG_ERR("Device reset failed: %d", ret);
+		LOG_ERROR("Device reset failed: %d", ret);
 		return ret;
 	}
 
@@ -142,7 +142,7 @@ static int ds2484_init(const struct device *dev)
 
 	ret = ds2482_84_write_config(&config->i2c_spec, data->reg_device_config);
 	if (ret < 0) {
-		LOG_ERR("Device config update failed: %d", ret);
+		LOG_ERROR("Device config update failed: %d", ret);
 		return ret;
 	}
 

@@ -80,20 +80,20 @@ static int reboot_by_wdt(void)
 	}
 
 	if (!device_is_ready(wdt)) {
-		LOG_ERR("WDT device is not ready");
+		LOG_ERROR("WDT device is not ready");
 		return -EIO;
 	}
 
 	err = wdt_install_timeout(wdt, &m_cfg_wdt);
 	if (err < 0) {
-		LOG_ERR("WDT install error");
+		LOG_ERROR("WDT install error");
 		return -EIO;
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(wdt_options); ++i) {
 		err = wdt_setup(wdt, wdt_options[i]);
 		if (err < 0) {
-			LOG_ERR("Failed WDT setup with options = %u", wdt_options[i]);
+			LOG_ERROR("Failed WDT setup with options = %u", wdt_options[i]);
 		} else {
 			/* We are ok with the configuration:
 			 * just wait for the WDT to trigger
@@ -143,8 +143,8 @@ static void ep_recv(const void *data, size_t len, void *priv)
 	struct ipc_ept *ep = priv;
 
 	if (len < sizeof(struct ipc_test_cmd)) {
-		LOG_ERR("The unexpected size of received data: %u < %u", len,
-			sizeof(struct ipc_test_cmd));
+		LOG_ERROR("The unexpected size of received data: %u < %u", len,
+			  sizeof(struct ipc_test_cmd));
 		/* Dropping further processing */
 		return;
 	}
@@ -161,7 +161,7 @@ static void ep_recv(const void *data, size_t len, void *priv)
 
 		ret = ipc_service_send(ep, &cmd_pong, sizeof(cmd_pong));
 		if (ret < 0) {
-			LOG_ERR("PONG response failed: %d", ret);
+			LOG_ERROR("PONG response failed: %d", ret);
 		}
 		break;
 	}
@@ -171,7 +171,7 @@ static void ep_recv(const void *data, size_t len, void *priv)
 		struct ipc_test_cmd *cmd_rsp = k_malloc(len);
 
 		if (!cmd_rsp) {
-			LOG_ERR("ECHO response failed: memory allocation");
+			LOG_ERROR("ECHO response failed: memory allocation");
 			break;
 		}
 
@@ -180,7 +180,7 @@ static void ep_recv(const void *data, size_t len, void *priv)
 		ret = ipc_service_send(ep, cmd_rsp, len);
 		k_free(cmd_rsp);
 		if (ret < 0) {
-			LOG_ERR("ECHO response failed: %d", ret);
+			LOG_ERROR("ECHO response failed: %d", ret);
 		}
 		break;
 	}
@@ -235,7 +235,7 @@ static void ep_recv(const void *data, size_t len, void *priv)
 
 		ret = ipc_service_send(ep, &cmd_stat, sizeof(cmd_stat));
 		if (ret < 0) {
-			LOG_ERR("RXGET response send failed");
+			LOG_ERROR("RXGET response send failed");
 		}
 		break;
 	}
@@ -251,7 +251,7 @@ static void ep_recv(const void *data, size_t len, void *priv)
 
 		ret = ipc_service_send(ep, &cmd_stat, sizeof(cmd_stat));
 		if (ret < 0) {
-			LOG_ERR("TXGET response send failed");
+			LOG_ERROR("TXGET response send failed");
 		}
 		break;
 	}
@@ -263,18 +263,18 @@ static void ep_recv(const void *data, size_t len, void *priv)
 
 		/* Ignore if there is an error */
 		if (ipc_rx_params.result) {
-			LOG_ERR("There is error in Rx transfer already");
+			LOG_ERROR("There is error in Rx transfer already");
 			break;
 		}
 
 		if (len != ipc_rx_params.blk_size + offsetof(struct ipc_test_cmd, data)) {
-			LOG_ERR("Size mismatch");
+			LOG_ERROR("Size mismatch");
 			ipc_rx_params.result = -EMSGSIZE;
 			break;
 		}
 
 		if (ipc_rx_params.blk_cnt <= 0) {
-			LOG_ERR("Data not expected");
+			LOG_ERROR("Data not expected");
 			ipc_rx_params.result = -EFAULT;
 			break;
 		}
@@ -284,7 +284,7 @@ static void ep_recv(const void *data, size_t len, void *priv)
 			uint8_t expected = (uint8_t)rand_r(&ipc_rx_params.seed);
 
 			if (cmd->data[n] != expected) {
-				LOG_ERR("Data value error at %u", n);
+				LOG_ERROR("Data value error at %u", n);
 				ipc_rx_params.result = -EINVAL;
 				break;
 			}
@@ -294,14 +294,14 @@ static void ep_recv(const void *data, size_t len, void *priv)
 		break;
 	}
 	default:
-		LOG_ERR("Unhandled command: %u", cmd->cmd);
+		LOG_ERROR("Unhandled command: %u", cmd->cmd);
 		break;
 	}
 }
 
 static void ep_error(const char *message, void *priv)
 {
-	LOG_ERR("EP error: \"%s\"", message);
+	LOG_ERROR("EP error: \"%s\"", message);
 }
 
 static int init_ipc(void)
@@ -316,13 +316,13 @@ static int init_ipc(void)
 
 	ret = ipc_service_open_instance(ipc0_instance);
 	if ((ret < 0) && (ret != -EALREADY)) {
-		LOG_ERR("ipc_service_open_instance() failure: %d", ret);
+		LOG_ERROR("ipc_service_open_instance() failure: %d", ret);
 		return ret;
 	}
 
 	ret = ipc_service_register_endpoint(ipc0_instance, &ep, &ep_cfg);
 	if (ret < 0) {
-		LOG_ERR("ipc_service_register_endpoint() failure: %d", ret);
+		LOG_ERROR("ipc_service_register_endpoint() failure: %d", ret);
 		return ret;
 	}
 
@@ -372,14 +372,14 @@ int main(void)
 			/* Rebond now */
 			ret = ipc_service_deregister_endpoint(ep_cfg.priv);
 			if (ret) {
-				LOG_ERR("ipc_service_deregister_endpoint() failure: %d", ret);
+				LOG_ERROR("ipc_service_deregister_endpoint() failure: %d", ret);
 				continue;
 			}
 			ipc0_bounded = false;
 
 			ret = ipc_service_register_endpoint(ipc0_instance, ep_cfg.priv, &ep_cfg);
 			if (ret < 0) {
-				LOG_ERR("ipc_service_register_endpoint() failure: %d", ret);
+				LOG_ERROR("ipc_service_register_endpoint() failure: %d", ret);
 				return ret;
 			}
 
@@ -394,7 +394,8 @@ int main(void)
 				ret = ipc_service_register_endpoint(ipc0_instance, ep_cfg.priv,
 								    &ep_cfg);
 				if (ret < 0) {
-					LOG_ERR("ipc_service_register_endpoint() failure: %d", ret);
+					LOG_ERROR("ipc_service_register_endpoint() failure: %d",
+						  ret);
 					return ret;
 				}
 
@@ -412,7 +413,7 @@ int main(void)
 			struct ipc_test_cmd *cmd_data = k_malloc(cmd_size);
 
 			if (!cmd_data) {
-				LOG_ERR("Cannot create TX test buffer");
+				LOG_ERROR("Cannot create TX test buffer");
 				ipc_tx_params.result = -ENOMEM;
 				continue;
 			}
@@ -436,7 +437,7 @@ int main(void)
 					Z_SPIN_DELAY(1);
 				} while (ret == -ENOMEM);
 				if (ret < 0) {
-					LOG_ERR("Cannot send TX test buffer: %d", ret);
+					LOG_ERROR("Cannot send TX test buffer: %d", ret);
 					ipc_tx_params.result = -EIO;
 					continue;
 				}

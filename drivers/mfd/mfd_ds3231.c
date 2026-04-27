@@ -61,7 +61,7 @@ static int mfd_ds3231_init(const struct device *dev)
 
 	k_sem_init(&data->lock, 1, 1);
 	if (!i2c_is_ready_dt(&(config->i2c_bus))) {
-		LOG_ERR("I2C bus not ready.");
+		LOG_ERROR("I2C bus not ready.");
 		return -ENODEV;
 	}
 	return 0;

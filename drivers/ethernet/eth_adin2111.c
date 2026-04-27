@@ -160,7 +160,7 @@ int eth_adin2111_oa_spi_xfer(const struct device *dev, uint8_t *buf_rx, uint8_t 
 
 	ret = spi_transceive_dt(&cfg->spi, &tx, &rx);
 	if (ret < 0) {
-		LOG_ERR("ERRR dma!\n");
+		LOG_ERROR("ERRR dma!\n");
 		return ret;
 	}
 
@@ -199,7 +199,7 @@ static int eth_adin2111_reg_read_oa(const struct device *dev, const uint16_t reg
 	if (ctx->oa_prot) {
 		pval = sys_be32_to_cpu(*(uint32_t *)&rx_buf[12]);
 		if (*val != ~pval) {
-			LOG_ERR("OA protected mode rx error !");
+			LOG_ERROR("OA protected mode rx error !");
 			return -1;
 		}
 	}
@@ -241,7 +241,7 @@ static int eth_adin2111_reg_write_oa(const struct device *dev, const uint16_t re
 	if (ctx->oa_prot) {
 		pval = sys_be32_to_cpu(*(uint32_t *)&rx_buf[12]);
 		if (val != ~pval) {
-			LOG_ERR("OA protected mode tx error !");
+			LOG_ERROR("OA protected mode tx error !");
 			return -1;
 		}
 	}
@@ -259,7 +259,7 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 
 	ret = eth_adin2111_reg_read(dev, ADIN2111_BUFSTS, &rca);
 	if (ret < 0) {
-		LOG_ERR("can't read BUFSTS");
+		LOG_ERROR("can't read BUFSTS");
 		return -EIO;
 	}
 
@@ -277,7 +277,7 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 
 	ret = eth_adin2111_oa_spi_xfer(dev, ctx->oa_rx_buf, ctx->oa_tx_buf, len);
 	if (ret < 0) {
-		LOG_ERR("SPI xfer failed");
+		LOG_ERROR("SPI xfer failed");
 		return ret;
 	}
 
@@ -286,11 +286,11 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 		ftr = sys_be32_to_cpu(*(uint32_t *)&ctx->oa_rx_buf[rx_pos + ctx->oa_cps]);
 
 		if (eth_adin2111_oa_get_parity(ftr)) {
-			LOG_ERR("OA RX: Footer parity error !");
+			LOG_ERROR("OA RX: Footer parity error !");
 			return -EIO;
 		}
 		if (!(ftr & ADIN2111_OA_DATA_FTR_SYNC)) {
-			LOG_ERR("OA RX: Configuration not in sync !");
+			LOG_ERROR("OA RX: Configuration not in sync !");
 			return -EIO;
 		}
 		if (!(ftr & ADIN2111_OA_DATA_FTR_DV)) {
@@ -300,7 +300,7 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 		if (ftr & ADIN2111_OA_DATA_FTR_SV) {
 			swo = (ftr & ADIN2111_OA_DATA_FTR_SWO_MSK) >> ADIN2111_OA_DATA_FTR_SWO;
 			if (swo != 0) {
-				LOG_ERR("OA RX: Misalignbed start of frame !");
+				LOG_ERROR("OA RX: Misalignbed start of frame !");
 				return -EIO;
 			}
 			/* Reset store cursor */
@@ -318,21 +318,21 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 							   NET_AF_UNSPEC, 0,
 							   K_MSEC(CONFIG_ETH_ADIN2111_TIMEOUT));
 			if (!pkt) {
-				LOG_ERR("OA RX: cannot allocate packet space, skipping.");
+				LOG_ERROR("OA RX: cannot allocate packet space, skipping.");
 				return -ENOMEM;
 			}
 			/* Skipping CRC32 */
 			ret = net_pkt_write(pkt, ctx->buf, ctx->scur - sizeof(uint32_t));
 			if (ret < 0) {
 				net_pkt_unref(pkt);
-				LOG_ERR("Failed to write pkt, scur %d, err %d", ctx->scur, ret);
+				LOG_ERROR("Failed to write pkt, scur %d, err %d", ctx->scur, ret);
 				return ret;
 			}
 			ret = net_recv_data(iface, pkt);
 			if (ret < 0) {
 				net_pkt_unref(pkt);
-				LOG_ERR("Port %u failed to enqueue frame to RX queue, %d",
-					port_idx, ret);
+				LOG_ERROR("Port %u failed to enqueue frame to RX queue, %d",
+					  port_idx, ret);
 				return ret;
 			}
 		}
@@ -374,7 +374,7 @@ static int eth_adin2111_send_oa_frame(const struct device *dev, struct net_pkt *
 
 	ret = eth_adin2111_reg_read(dev, ADIN2111_BUFSTS, &txc);
 	if (ret < 0) {
-		LOG_ERR("Cannot read txc");
+		LOG_ERROR("Cannot read txc");
 		return -EIO;
 	}
 
@@ -404,7 +404,7 @@ static int eth_adin2111_send_oa_frame(const struct device *dev, struct net_pkt *
 		clen = len > ctx->oa_cps ? ctx->oa_cps : len;
 		ret = net_pkt_read(pkt, &ctx->oa_tx_buf[cur], clen);
 		if (ret < 0) {
-			LOG_ERR("Cannot read from tx packet");
+			LOG_ERROR("Cannot read from tx packet");
 			return ret;
 		}
 		cur += ctx->oa_cps;
@@ -413,7 +413,7 @@ static int eth_adin2111_send_oa_frame(const struct device *dev, struct net_pkt *
 
 	ret = eth_adin2111_oa_spi_xfer(dev, ctx->oa_rx_buf, ctx->oa_tx_buf, cur);
 	if (ret < 0) {
-		LOG_ERR("Error on SPI xfer");
+		LOG_ERROR("Error on SPI xfer");
 		return ret;
 	}
 
@@ -564,7 +564,7 @@ static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 	ret = eth_adin2111_reg_read(dev, fsize_reg, &fsize);
 	if (ret < 0) {
 		eth_stats_update_errors_rx(iface);
-		LOG_ERR("Port %u failed to read RX FSIZE, %d", port_idx, ret);
+		LOG_ERROR("Port %u failed to read RX FSIZE, %d", port_idx, ret);
 		return ret;
 	}
 
@@ -599,7 +599,7 @@ static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 	ret = spi_transceive_dt(&cfg->spi, &tx, &rx);
 	if (ret < 0) {
 		eth_stats_update_errors_rx(iface);
-		LOG_ERR("Port %u failed to read RX FIFO, %d", port_idx, ret);
+		LOG_ERROR("Port %u failed to read RX FIFO, %d", port_idx, ret);
 		return ret;
 	}
 
@@ -610,8 +610,8 @@ static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 					   K_MSEC(CONFIG_ETH_ADIN2111_TIMEOUT));
 	if (!pkt) {
 		eth_stats_update_errors_rx(iface);
-		LOG_ERR("Port %u failed to alloc frame RX buffer, %u bytes",
-			port_idx, fsize_real);
+		LOG_ERROR("Port %u failed to alloc frame RX buffer, %u bytes", port_idx,
+			  fsize_real);
 		return -ENOMEM;
 	}
 
@@ -619,7 +619,7 @@ static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 	if (ret < 0) {
 		eth_stats_update_errors_rx(iface);
 		net_pkt_unref(pkt);
-		LOG_ERR("Port %u failed to fill RX frame, %d", port_idx, ret);
+		LOG_ERROR("Port %u failed to fill RX frame, %d", port_idx, ret);
 		return ret;
 	}
 
@@ -627,8 +627,7 @@ static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 	if (ret < 0) {
 		eth_stats_update_errors_rx(iface);
 		net_pkt_unref(pkt);
-		LOG_ERR("Port %u failed to enqueue frame to RX queue, %d",
-			port_idx, ret);
+		LOG_ERROR("Port %u failed to enqueue frame to RX queue, %d", port_idx, ret);
 		return ret;
 	}
 
@@ -752,20 +751,20 @@ continue_unlock:
 		/* clear interrupts */
 		ret = eth_adin2111_reg_write(dev, ADIN2111_STATUS0, ADIN2111_STATUS0_CLEAR);
 		if (ret < 0) {
-			LOG_ERR("Failed to clear STATUS0, %d", ret);
+			LOG_ERROR("Failed to clear STATUS0, %d", ret);
 		}
 		ret = eth_adin2111_reg_write(dev, ADIN2111_STATUS1, ADIN2111_STATUS1_CLEAR);
 		if (ret < 0) {
-			LOG_ERR("Failed to clear STATUS1, %d", ret);
+			LOG_ERROR("Failed to clear STATUS1, %d", ret);
 		}
 		/* enable interrupts */
 		ret = eth_adin2111_reg_write(dev, ADIN2111_IMASK0, ctx->imask0);
 		if (ret < 0) {
-			LOG_ERR("Failed to write IMASK0, %d", ret);
+			LOG_ERROR("Failed to write IMASK0, %d", ret);
 		}
 		ret = eth_adin2111_reg_write(dev, ADIN2111_IMASK1, ctx->imask1);
 		if (ret < 0) {
-			LOG_ERR("Failed to write IMASK1, %d", ret);
+			LOG_ERROR("Failed to write IMASK1, %d", ret);
 		}
 		eth_adin2111_unlock(dev);
 	}
@@ -845,7 +844,7 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 	ret = adin2111_read_tx_space(adin, &tx_space);
 	if (ret < 0) {
 		eth_stats_update_errors_tx(data->iface);
-		LOG_ERR("Failed to read TX FIFO space, %d", ret);
+		LOG_ERROR("Failed to read TX FIFO space, %d", ret);
 		goto end_unlock;
 	}
 
@@ -900,8 +899,7 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 			   pkt_len);
 	if (ret < 0) {
 		eth_stats_update_errors_tx(data->iface);
-		LOG_ERR("Port %u failed to read PKT into TX buffer, %d",
-			cfg->port_idx, ret);
+		LOG_ERROR("Port %u failed to read PKT into TX buffer, %d", cfg->port_idx, ret);
 		goto end_unlock;
 	}
 
@@ -909,7 +907,7 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 	ret = eth_adin2111_reg_write(adin, ADIN2111_TX_FSIZE, padded_size);
 	if (ret < 0) {
 		eth_stats_update_errors_tx(data->iface);
-		LOG_ERR("Port %u write FSIZE failed, %d", cfg->port_idx, ret);
+		LOG_ERROR("Port %u write FSIZE failed, %d", cfg->port_idx, ret);
 		goto end_unlock;
 	}
 
@@ -925,7 +923,7 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 end_check:
 	if (ret < 0) {
 		eth_stats_update_errors_tx(data->iface);
-		LOG_ERR("Port %u frame SPI write failed, %d", cfg->port_idx, ret);
+		LOG_ERROR("Port %u frame SPI write failed, %d", cfg->port_idx, ret);
 		goto end_unlock;
 	}
 
@@ -1157,14 +1155,14 @@ static void adin2111_port_iface_init(struct net_if *iface)
 	int ret;
 
 	if (!device_is_ready(adin)) {
-		LOG_ERR("ADIN %s is not ready, can't init port %u iface",
-			cfg->adin->name, cfg->port_idx);
+		LOG_ERROR("ADIN %s is not ready, can't init port %u iface", cfg->adin->name,
+			  cfg->port_idx);
 		return;
 	}
 
 	if (!device_is_ready(cfg->phy)) {
-		LOG_ERR("PHY %u is not ready, can't init port %u iface",
-			cfg->phy_addr, cfg->port_idx);
+		LOG_ERROR("PHY %u is not ready, can't init port %u iface", cfg->phy_addr,
+			  cfg->port_idx);
 		return;
 	}
 
@@ -1173,8 +1171,7 @@ static void adin2111_port_iface_init(struct net_if *iface)
 
 	ret = adin2111_filter_unicast(adin, data->mac_addr, cfg->port_idx);
 	if (ret < 0) {
-		LOG_ERR("Port %u, failed to set unicast filter, %d",
-			cfg->port_idx, ret);
+		LOG_ERROR("Port %u, failed to set unicast filter, %d", cfg->port_idx, ret);
 		return;
 	}
 	net_if_set_link_addr(iface, data->mac_addr, sizeof(data->mac_addr),
@@ -1189,19 +1186,19 @@ static void adin2111_port_iface_init(struct net_if *iface)
 		/* setup rx filters */
 		ret = adin2111_filter_multicast(adin);
 		if (ret < 0) {
-			LOG_ERR("Couldn't set multicast filter, %d", ret);
+			LOG_ERROR("Couldn't set multicast filter, %d", ret);
 			return;
 		}
 		ret = adin2111_filter_broadcast(adin);
 		if (ret < 0) {
-			LOG_ERR("Couldn't set broadcast filter, %d", ret);
+			LOG_ERROR("Couldn't set broadcast filter, %d", ret);
 			return;
 		}
 
 		/* sync */
 		ret = adin2111_config_sync(adin);
 		if (ret < 0) {
-			LOG_ERR("Failed to write CONFIG0 SYNC, %d", ret);
+			LOG_ERROR("Failed to write CONFIG0 SYNC, %d", ret);
 			return;
 		}
 
@@ -1346,7 +1343,7 @@ int eth_adin2111_sw_reset(const struct device *dev, uint16_t delay)
 
 	ret = adin2111_await_device(dev);
 	if (ret < 0) {
-		LOG_ERR("ADIN did't come out of the reset, %d", ret);
+		LOG_ERROR("ADIN did't come out of the reset, %d", ret);
 		return ret;
 	}
 
@@ -1365,32 +1362,30 @@ static int adin2111_init(const struct device *dev)
 		 "SPI frequency exceeds supported maximum\n");
 
 	if (!spi_is_ready_dt(&cfg->spi)) {
-		LOG_ERR("SPI bus %s not ready", cfg->spi.bus->name);
+		LOG_ERROR("SPI bus %s not ready", cfg->spi.bus->name);
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&cfg->interrupt)) {
-		LOG_ERR("Interrupt GPIO device %s is not ready",
-			cfg->interrupt.port->name);
+		LOG_ERROR("Interrupt GPIO device %s is not ready", cfg->interrupt.port->name);
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&cfg->interrupt, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure interrupt GPIO, %d", ret);
+		LOG_ERROR("Failed to configure interrupt GPIO, %d", ret);
 		return ret;
 	}
 
 	if (cfg->reset.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->reset)) {
-			LOG_ERR("Reset GPIO device %s is not ready",
-			cfg->reset.port->name);
+			LOG_ERROR("Reset GPIO device %s is not ready", cfg->reset.port->name);
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&cfg->reset, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure reset GPIO, %d", ret);
+			LOG_ERROR("Failed to configure reset GPIO, %d", ret);
 			return ret;
 		}
 
@@ -1409,7 +1404,7 @@ static int adin2111_init(const struct device *dev)
 
 	ret = gpio_add_callback(cfg->interrupt.port, &ctx->gpio_int_callback);
 	if (ret < 0) {
-		LOG_ERR("Failed to add INT callback, %d", ret);
+		LOG_ERROR("Failed to add INT callback, %d", ret);
 		return ret;
 	}
 
@@ -1417,14 +1412,14 @@ static int adin2111_init(const struct device *dev)
 
 	ret = adin2111_check_spi(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to communicate over SPI, %d", ret);
+		LOG_ERROR("Failed to communicate over SPI, %d", ret);
 		return ret;
 	}
 
 	/* perform MACPHY soft reset */
 	ret = eth_adin2111_sw_reset(dev, ADIN2111_SW_RESET_DELAY_MS);
 	if (ret < 0) {
-		LOG_ERR("MACPHY software reset failed, %d", ret);
+		LOG_ERROR("MACPHY software reset failed, %d", ret);
 		return ret;
 	}
 
@@ -1433,7 +1428,7 @@ static int adin2111_init(const struct device *dev)
 	/* if that is enabled, then CONFIG_ETH_ADIN2111_SPI_CFG0 must be off */
 	ret = eth_adin2111_reg_read(dev, ADIN2111_CONFIG0, &val);
 	if (ret < 0) {
-		LOG_ERR("Failed to read CONFIG0, %d", ret);
+		LOG_ERROR("Failed to read CONFIG0, %d", ret);
 		return ret;
 	}
 
@@ -1447,14 +1442,14 @@ static int adin2111_init(const struct device *dev)
 
 	ret = eth_adin2111_reg_write(dev, ADIN2111_CONFIG0, val);
 	if (ret < 0) {
-		LOG_ERR("Failed to write CONFIG0, %d", ret);
+		LOG_ERROR("Failed to write CONFIG0, %d", ret);
 		return ret;
 	}
 
 	/* CONFIG 2 */
 	ret = eth_adin2111_reg_read(dev, ADIN2111_CONFIG2, &val);
 	if (ret < 0) {
-		LOG_ERR("Failed to read CONFIG2, %d", ret);
+		LOG_ERROR("Failed to read CONFIG2, %d", ret);
 		return ret;
 	}
 
@@ -1470,7 +1465,7 @@ static int adin2111_init(const struct device *dev)
 
 	ret = eth_adin2111_reg_write(dev, ADIN2111_CONFIG2, val);
 	if (ret < 0) {
-		LOG_ERR("Failed to write CONFIG2, %d", ret);
+		LOG_ERROR("Failed to write CONFIG2, %d", ret);
 		return ret;
 	}
 
@@ -1485,19 +1480,19 @@ static int adin2111_init(const struct device *dev)
 	/* enable interrupts */
 	ret = eth_adin2111_reg_write(dev, ADIN2111_IMASK0, ctx->imask0);
 	if (ret < 0) {
-		LOG_ERR("Failed to write IMASK0, %d", ret);
+		LOG_ERROR("Failed to write IMASK0, %d", ret);
 		return ret;
 	}
 	ret = eth_adin2111_reg_write(dev, ADIN2111_IMASK1, ctx->imask1);
 	if (ret < 0) {
-		LOG_ERR("Failed to write IMASK1, %d", ret);
+		LOG_ERROR("Failed to write IMASK1, %d", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
 						GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable INT, %d", ret);
+		LOG_ERROR("Failed to enable INT, %d", ret);
 		return ret;
 	}
 

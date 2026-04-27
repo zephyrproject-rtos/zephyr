@@ -47,8 +47,8 @@ static void spi_rtio_iodev_default_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 			num_msgs++;
 			break;
 		default:
-			LOG_ERR("Invalid op code %d for submission %p", txn_curr->sqe.op,
-				(void *)&txn_curr->sqe);
+			LOG_ERROR("Invalid op code %d for submission %p", txn_curr->sqe.op,
+				  (void *)&txn_curr->sqe);
 			err = -EIO;
 			break;
 		}
@@ -66,9 +66,9 @@ static void spi_rtio_iodev_default_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 	 * register address, and another to read/write the register into an array
 	 */
 	if (num_msgs > CONFIG_SPI_RTIO_FALLBACK_MSGS) {
-		LOG_ERR("At most CONFIG_SPI_RTIO_FALLBACK_MSGS"
-			" submissions in a transaction are"
-			" allowed in the default handler");
+		LOG_ERROR("At most CONFIG_SPI_RTIO_FALLBACK_MSGS"
+			  " submissions in a transaction are"
+			  " allowed in the default handler");
 		rtio_iodev_sqe_err(txn_head, -ENOMEM);
 		return;
 	}
@@ -142,8 +142,8 @@ void spi_rtio_iodev_default_submit(const struct device *dev,
 	struct rtio_work_req *req = rtio_work_req_alloc();
 
 	if (req == NULL) {
-		LOG_ERR("RTIO work item allocation failed. Consider to increase "
-			"CONFIG_RTIO_WORKQ_POOL_ITEMS.");
+		LOG_ERROR("RTIO work item allocation failed. Consider to increase "
+			  "CONFIG_RTIO_WORKQ_POOL_ITEMS.");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}

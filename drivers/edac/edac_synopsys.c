@@ -283,13 +283,13 @@ static void edac_synopsys_isr(const struct device *dev)
 			/* Clear the last error */
 			edac_synopsys_write_reg(dev, SYNOPSYS_ECCCLR,
 						SYNOPSYS_ECCCLR_CLR_UNCORR_ERR_MASK);
-			LOG_ERR("Uncorrectable ECC error detected: count: %u, last: rank %u, bg "
-				"%u, bank %u, row %u, col %u, syndrome 0x%016llx, syndrome_ecc "
-				"0x%02x",
-				cb_data.uncorr_err_count, cb_data.uncorr_err_rank,
-				cb_data.uncorr_err_bg, cb_data.uncorr_err_bank,
-				cb_data.uncorr_err_row, cb_data.uncorr_err_col,
-				cb_data.uncorr_err_syndrome, cb_data.uncorr_err_syndrome_ecc);
+			LOG_ERROR("Uncorrectable ECC error detected: count: %u, last: rank %u, bg "
+				  "%u, bank %u, row %u, col %u, syndrome 0x%016llx, syndrome_ecc "
+				  "0x%02x",
+				  cb_data.uncorr_err_count, cb_data.uncorr_err_rank,
+				  cb_data.uncorr_err_bg, cb_data.uncorr_err_bank,
+				  cb_data.uncorr_err_row, cb_data.uncorr_err_col,
+				  cb_data.uncorr_err_syndrome, cb_data.uncorr_err_syndrome_ecc);
 		}
 		if (int_status & SYNOPSYS_QOS_IRQ_ECC_COR_MASK) {
 			/* Clear the last error */

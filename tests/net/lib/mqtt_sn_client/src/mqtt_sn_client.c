@@ -81,7 +81,7 @@ static void assert_msg_send_data(int called, const void *msg_data, size_t msg_sz
 	zassert_equal(msg_send_data.called, called, "msg_send called %d times instead of %d",
 		      msg_send_data.called, called);
 	if (msg_send_data.msg_sz != msg_sz || memcmp(msg_send_data.msg_data, msg_data, msg_sz)) {
-		LOG_ERR("Unexpected msg_data");
+		LOG_ERROR("Unexpected msg_data");
 		LOG_HEXDUMP_ERR(msg_send_data.msg_data, msg_send_data.msg_sz, "actual");
 		LOG_HEXDUMP_ERR(msg_data, msg_sz, "expected");
 		zassert_true(false);

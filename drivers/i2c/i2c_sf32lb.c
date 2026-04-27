@@ -198,7 +198,7 @@ static int i2c_sf32lb_send_addr(const struct device *dev, uint16_t addr, struct 
 
 	if (!WAIT_FOR(sys_test_bit(cfg->base + I2C_SR, I2C_SR_TE_Pos), SF32LB_I2C_TIMEOUT_MAX_US,
 		      NULL)) {
-		LOG_ERR("Abort timed out(I2C_SR: 0x%08x)", sys_read32(cfg->base + I2C_SR));
+		LOG_ERROR("Abort timed out(I2C_SR: 0x%08x)", sys_read32(cfg->base + I2C_SR));
 		return -EIO;
 	}
 
@@ -214,7 +214,7 @@ static int i2c_sf32lb_send_addr(const struct device *dev, uint16_t addr, struct 
 	if ((msg->len == 0) && i2c_is_stop_op(msg)) {
 		if (!WAIT_FOR(!sys_test_bit(cfg->base + I2C_SR, I2C_SR_UB_Pos),
 			      SF32LB_I2C_TIMEOUT_MAX_US, NULL)) {
-			LOG_ERR("Stop timed out (I2C_SR:0x%08x)", sys_read32(cfg->base + I2C_SR));
+			LOG_ERROR("Stop timed out (I2C_SR:0x%08x)", sys_read32(cfg->base + I2C_SR));
 		}
 	}
 
@@ -243,7 +243,7 @@ static int i2c_sf32lb_dma_tx_config(const struct device *dev, struct i2c_msg *ms
 	dma_blk.block_size = msg->len;
 	err = sf32lb_dma_config_dt(&config->dma_tx, &tx_dma_cfg);
 	if (err < 0) {
-		LOG_ERR("Error configuring Tx DMA (%d)", err);
+		LOG_ERROR("Error configuring Tx DMA (%d)", err);
 		return err;
 	}
 
@@ -273,7 +273,7 @@ static int i2c_sf32lb_dma_rx_config(const struct device *dev, struct i2c_msg *ms
 
 	err = sf32lb_dma_config_dt(&config->dma_rx, &rx_dma_cfg);
 	if (err < 0) {
-		LOG_ERR("Error configuring Rx DMA (%d)", err);
+		LOG_ERROR("Error configuring Rx DMA (%d)", err);
 		return err;
 	}
 
@@ -292,8 +292,7 @@ static int i2c_sf32lb_master_send_dma(const struct device *dev, uint16_t addr, s
 	data->error = 0;
 
 	if (msg->len > SF32LB_I2C_DMA_MAX_LEN) {
-		LOG_ERR("DMA length %d exceeds max %d",
-			msg->len, SF32LB_I2C_DMA_MAX_LEN);
+		LOG_ERROR("DMA length %d exceeds max %d", msg->len, SF32LB_I2C_DMA_MAX_LEN);
 		return -ENOTSUP;
 	}
 
@@ -333,7 +332,7 @@ static int i2c_sf32lb_master_send_dma(const struct device *dev, uint16_t addr, s
 
 	ret = k_sem_take(&data->i2c_compl, K_MSEC(SF32LB_I2C_TIMEOUT_MAX_US / 1000));
 	if (ret < 0) {
-		LOG_ERR("master send timeout");
+		LOG_ERROR("master send timeout");
 		sf32lb_dma_stop_dt(&config->dma_tx);
 		sys_clear_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
 		sys_clear_bits(config->base + I2C_IER, I2C_IER_DMADONEIE | I2C_IER_BEDIE);
@@ -348,7 +347,7 @@ static int i2c_sf32lb_master_send_dma(const struct device *dev, uint16_t addr, s
 	if (stop_needed) {
 		if (!WAIT_FOR(!sys_test_bit(config->base + I2C_SR, I2C_SR_UB_Pos),
 			      SF32LB_I2C_TIMEOUT_MAX_US, NULL)) {
-			LOG_ERR("Wait for bus idle timeout");
+			LOG_ERROR("Wait for bus idle timeout");
 			return -ETIMEDOUT;
 		}
 		sys_clear_bits(config->base + I2C_CR, I2C_CR_LASTSTOP | I2C_CR_MSDE);
@@ -414,7 +413,7 @@ static int i2c_sf32lb_master_recv_dma(const struct device *dev, uint16_t addr, s
 
 	ret = k_sem_take(&data->i2c_compl, K_MSEC(SF32LB_I2C_TIMEOUT_MAX_US / 1000));
 	if (ret < 0) {
-		LOG_ERR("master recv timeout");
+		LOG_ERROR("master recv timeout");
 		sys_clear_bit(config->base + I2C_CR, I2C_CR_DMAEN_Pos);
 		sys_set_bit(config->base + I2C_SR, I2C_SR_DMADONE_Pos);
 		sf32lb_dma_stop_dt(&config->dma_rx);
@@ -429,8 +428,8 @@ static int i2c_sf32lb_master_recv_dma(const struct device *dev, uint16_t addr, s
 	if (stop_needed) {
 		if (!WAIT_FOR(!sys_test_bit(config->base + I2C_SR, I2C_SR_UB_Pos),
 			      SF32LB_I2C_TIMEOUT_MAX_US, NULL)) {
-			LOG_ERR("Stop timed out (I2C_SR:0x%08x)",
-				sys_read32(config->base + I2C_SR));
+			LOG_ERROR("Stop timed out (I2C_SR:0x%08x)",
+				  sys_read32(config->base + I2C_SR));
 		}
 		sys_clear_bits(config->base + I2C_CR, I2C_CR_LASTNACK | I2C_CR_LASTSTOP);
 	}
@@ -488,7 +487,7 @@ static int i2c_sf32lb_master_send(const struct device *dev, uint16_t addr, struc
 	sys_set_bit(cfg->base + I2C_IER, I2C_IER_BEDIE_Pos);
 
 	if (k_sem_take(&data->i2c_compl, K_MSEC(SF32LB_I2C_TIMEOUT_MAX_US / 1000)) != 0) {
-		LOG_ERR("master sent timeout");
+		LOG_ERROR("master sent timeout");
 		sys_write32(0, cfg->base + I2C_IER);
 		data->current_msg = NULL;
 		return -ETIMEDOUT;
@@ -542,7 +541,7 @@ static int i2c_sf32lb_master_recv(const struct device *dev, uint16_t addr, struc
 	sys_set_bits(cfg->base + I2C_IER, I2C_IER_RFIE | I2C_IER_MSDIE | I2C_IER_BEDIE);
 
 	if (k_sem_take(&data->i2c_compl, K_MSEC(SF32LB_I2C_TIMEOUT_MAX_US / 1000)) != 0) {
-		LOG_ERR("master recv timeout");
+		LOG_ERROR("master recv timeout");
 		sys_write32(0, cfg->base + I2C_IER);
 		data->current_msg = NULL;
 		return -ETIMEDOUT;
@@ -589,7 +588,7 @@ static int i2c_sf32lb_configure(const struct device *dev, uint32_t dev_config)
 		break;
 
 	default:
-		LOG_ERR("Unsupported I2C speed requested:%d", I2C_SPEED_GET(dev_config));
+		LOG_ERROR("Unsupported I2C speed requested:%d", I2C_SPEED_GET(dev_config));
 		return -ENOTSUP;
 	}
 
@@ -645,7 +644,7 @@ static int i2c_sf32lb_transfer(const struct device *dev, struct i2c_msg *msgs, u
 
 	if (sys_test_bit(cfg->base + I2C_SR, I2C_SR_UB_Pos)) {
 		k_mutex_unlock(&data->lock);
-		LOG_ERR("Bus busy");
+		LOG_ERROR("Bus busy");
 		return -EBUSY;
 	};
 
@@ -720,12 +719,12 @@ static int i2c_sf32lb_init(const struct device *dev)
 
 	if (config->dma_used) {
 		if (!sf32lb_dma_is_ready_dt(&config->dma_tx)) {
-			LOG_ERR("Tx DMA channel not ready");
+			LOG_ERROR("Tx DMA channel not ready");
 			return -ENODEV;
 		}
 
 		if (!sf32lb_dma_is_ready_dt(&config->dma_rx)) {
-			LOG_ERR("Rx DMA channel not ready");
+			LOG_ERROR("Rx DMA channel not ready");
 			return -ENODEV;
 		}
 

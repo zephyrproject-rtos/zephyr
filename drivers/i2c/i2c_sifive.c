@@ -99,7 +99,7 @@ static int i2c_sifive_send_addr(const struct device *dev,
 	}
 
 	if (IS_SET(config, REG_STATUS, SF_STATUS_RXACK)) {
-		LOG_ERR("I2C Rx failed to acknowledge\n");
+		LOG_ERROR("I2C Rx failed to acknowledge\n");
 		return -EIO;
 	}
 
@@ -116,7 +116,7 @@ static int i2c_sifive_write_msg(const struct device *dev,
 
 	rc = i2c_sifive_send_addr(dev, addr, SF_TX_WRITE);
 	if (rc != 0) {
-		LOG_ERR("I2C failed to write message\n");
+		LOG_ERROR("I2C failed to write message\n");
 		return rc;
 	}
 
@@ -147,7 +147,7 @@ static int i2c_sifive_write_msg(const struct device *dev,
 		}
 
 		if (IS_SET(config, REG_STATUS, SF_STATUS_RXACK)) {
-			LOG_ERR("I2C Rx failed to acknowledge\n");
+			LOG_ERROR("I2C Rx failed to acknowledge\n");
 			return -EIO;
 		}
 	}
@@ -206,12 +206,12 @@ static int i2c_sifive_configure(const struct device *dev, uint32_t dev_config)
 
 	/* Check for NULL pointers */
 	if (dev == NULL) {
-		LOG_ERR("Device handle is NULL");
+		LOG_ERROR("Device handle is NULL");
 		return -EINVAL;
 	}
 	config = dev->config;
 	if (config == NULL) {
-		LOG_ERR("Device config is NULL");
+		LOG_ERROR("Device config is NULL");
 		return -EINVAL;
 	}
 
@@ -230,7 +230,7 @@ static int i2c_sifive_configure(const struct device *dev, uint32_t dev_config)
 	case I2C_SPEED_HIGH:
 	case I2C_SPEED_ULTRA:
 	default:
-		LOG_ERR("Unsupported I2C speed requested");
+		LOG_ERROR("Unsupported I2C speed requested");
 		return -ENOTSUP;
 	}
 
@@ -244,7 +244,7 @@ static int i2c_sifive_configure(const struct device *dev, uint32_t dev_config)
 
 	/* Support I2C Master mode only */
 	if (!(dev_config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("I2C only supports operation as master");
+		LOG_ERROR("I2C only supports operation as master");
 		return -ENOTSUP;
 	}
 
@@ -253,7 +253,7 @@ static int i2c_sifive_configure(const struct device *dev, uint32_t dev_config)
 	 * in the future when needed.
 	 */
 	if (dev_config & I2C_ADDR_10_BITS) {
-		LOG_ERR("I2C driver does not support 10-bit addresses");
+		LOG_ERROR("I2C driver does not support 10-bit addresses");
 		return -ENOTSUP;
 	}
 
@@ -272,11 +272,11 @@ static int i2c_sifive_transfer(const struct device *dev,
 
 	/* Check for NULL pointers */
 	if (dev == NULL) {
-		LOG_ERR("Device handle is NULL");
+		LOG_ERROR("Device handle is NULL");
 		return -EINVAL;
 	}
 	if (dev->config == NULL) {
-		LOG_ERR("Device config is NULL");
+		LOG_ERROR("Device config is NULL");
 		return -EINVAL;
 	}
 	if (msgs == NULL) {
@@ -291,7 +291,7 @@ static int i2c_sifive_transfer(const struct device *dev,
 		}
 
 		if (rc != 0) {
-			LOG_ERR("I2C failed to transfer messages\n");
+			LOG_ERROR("I2C failed to transfer messages\n");
 			return rc;
 		}
 	}
@@ -309,7 +309,7 @@ static int i2c_sifive_init(const struct device *dev)
 
 	rc = i2c_sifive_configure(dev, dev_config);
 	if (rc != 0) {
-		LOG_ERR("Failed to configure I2C on init");
+		LOG_ERROR("Failed to configure I2C on init");
 		return rc;
 	}
 

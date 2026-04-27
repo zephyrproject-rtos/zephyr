@@ -78,13 +78,13 @@ void esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_info_t *fr
 
 	pkt = net_pkt_rx_alloc_with_buffer(esp32_data.iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
-		LOG_ERR("No pkt available");
+		LOG_ERROR("No pkt available");
 		goto exit;
 	}
 
 	err = net_pkt_write(pkt, payload, len);
 	if (err != 0) {
-		LOG_ERR("Failed to write to a packet: %d", err);
+		LOG_ERROR("Failed to write to a packet: %d", err);
 		net_pkt_unref(pkt);
 		goto exit;
 	}
@@ -95,7 +95,7 @@ void esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_info_t *fr
 
 	err = net_recv_data(esp32_data.iface, pkt);
 	if (err != 0) {
-		LOG_ERR("RCV Packet dropped by NET stack: %d", err);
+		LOG_ERROR("RCV Packet dropped by NET stack: %d", err);
 		net_pkt_unref(pkt);
 	}
 
@@ -233,7 +233,7 @@ static int handle_ack(struct ieee802154_esp32_data *data)
 
 	ack_pkt = net_pkt_rx_alloc_with_buffer(data->iface, ack_len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!ack_pkt) {
-		LOG_ERR("No free packet available.");
+		LOG_ERROR("No free packet available.");
 		err = -ENOMEM;
 		goto free_esp_ack;
 	}
@@ -242,7 +242,7 @@ static int handle_ack(struct ieee802154_esp32_data *data)
 	 * PHY header (PHR byte containing the length).
 	 */
 	if (net_pkt_write(ack_pkt, data->ack_frame + 1, ack_len) < 0) {
-		LOG_ERR("Failed to write to a packet.");
+		LOG_ERROR("Failed to write to a packet.");
 		err = -ENOMEM;
 		goto free_net_ack;
 	}
@@ -296,7 +296,7 @@ static int esp32_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode, s
 	int err;
 
 	if (payload_len > IEEE802154_MTU) {
-		LOG_ERR("Payload too large: %d", payload_len);
+		LOG_ERROR("Payload too large: %d", payload_len);
 		return -EMSGSIZE;
 	}
 
@@ -337,14 +337,14 @@ static int esp32_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode, s
 						 (uint32_t)net_time_us);
 		break;
 	default:
-		LOG_ERR("TX mode %d not supported", tx_mode);
+		LOG_ERROR("TX mode %d not supported", tx_mode);
 		return -ENOTSUP;
 	}
 
 	err = k_sem_take(&data->tx_wait, K_MSEC(IEEE802154_ESP32_TX_TIMEOUT_MS));
 
 	if (err != 0) {
-		LOG_ERR("TX timeout");
+		LOG_ERROR("TX timeout");
 	} else {
 		handle_ack(data);
 	}
@@ -357,7 +357,7 @@ static int esp32_start(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	if (esp_ieee802154_receive() != 0) {
-		LOG_ERR("Failed to start radio");
+		LOG_ERROR("Failed to start radio");
 		return -EIO;
 	}
 
@@ -369,7 +369,7 @@ static int esp32_stop(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	if (esp_ieee802154_sleep() != 0) {
-		LOG_ERR("Failed to stop radio");
+		LOG_ERROR("Failed to stop radio");
 		return -EIO;
 	}
 
@@ -456,7 +456,7 @@ static int esp32_init(const struct device *dev)
 	k_sem_init(&data->tx_wait, 0, 1);
 
 	if (esp_ieee802154_enable() != 0) {
-		LOG_ERR("IEEE 802154 enabling failed!");
+		LOG_ERROR("IEEE 802154 enabling failed!");
 		return -EIO;
 	}
 

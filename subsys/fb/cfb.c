@@ -389,7 +389,7 @@ static int draw_text(const struct device *dev, const char *const str, int16_t x,
 	fptr = &(fb->fonts[fb->font_idx]);
 
 	if (fptr->height % 8) {
-		LOG_ERR("Wrong font size");
+		LOG_ERROR("Wrong font size");
 		return -EINVAL;
 	}
 

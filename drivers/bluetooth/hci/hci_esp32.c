@@ -178,7 +178,7 @@ static int bt_esp32_vs_send_cmd_complete(const struct device *dev, uint16_t opco
 
 	buf = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE, false, K_NO_WAIT);
 	if (!buf) {
-		LOG_ERR("No available event buffers for VS cmd complete");
+		LOG_ERROR("No available event buffers for VS cmd complete");
 		return -ENOMEM;
 	}
 
@@ -211,7 +211,7 @@ static int bt_esp32_vs_write_tx_power(const struct device *dev, struct net_buf *
 	uint16_t handle;
 
 	if (buf->len < sizeof(*cp)) {
-		LOG_ERR("VS Write TX Power: invalid param length");
+		LOG_ERROR("VS Write TX Power: invalid param length");
 		rp.status = BT_HCI_ERR_INVALID_PARAM;
 		rp.handle_type = 0;
 		rp.handle = 0;
@@ -272,7 +272,7 @@ static int bt_esp32_vs_read_tx_power(const struct device *dev, struct net_buf *b
 	uint16_t handle;
 
 	if (buf->len < sizeof(*cp)) {
-		LOG_ERR("VS Read TX Power: invalid param length");
+		LOG_ERROR("VS Read TX Power: invalid param length");
 		rp.status = BT_HCI_ERR_INVALID_PARAM;
 		rp.handle_type = 0;
 		rp.handle = 0;
@@ -371,7 +371,7 @@ static int bt_esp32_vs_read_build_info(const struct device *dev)
 
 	buf = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE, false, K_NO_WAIT);
 	if (!buf) {
-		LOG_ERR("No available event buffers for VS read build info");
+		LOG_ERROR("No available event buffers for VS read build info");
 		return -ENOMEM;
 	}
 
@@ -555,7 +555,7 @@ static struct net_buf *bt_esp_evt_recv(uint8_t *data, size_t remaining)
 	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
-		LOG_ERR("Not enough data for event header");
+		LOG_ERROR("Not enough data for event header");
 		return NULL;
 	}
 
@@ -564,7 +564,7 @@ static struct net_buf *bt_esp_evt_recv(uint8_t *data, size_t remaining)
 	remaining -= sizeof(hdr);
 
 	if (remaining != hdr.len) {
-		LOG_ERR("Event payload length is not correct");
+		LOG_ERROR("Event payload length is not correct");
 		return NULL;
 	}
 	LOG_DBG("len %u", hdr.len);
@@ -576,7 +576,7 @@ static struct net_buf *bt_esp_evt_recv(uint8_t *data, size_t remaining)
 		if (discardable) {
 			LOG_DBG("Discardable buffer pool full, ignoring event");
 		} else {
-			LOG_ERR("No available event buffers!");
+			LOG_ERROR("No available event buffers!");
 		}
 		return buf;
 	}
@@ -585,7 +585,7 @@ static struct net_buf *bt_esp_evt_recv(uint8_t *data, size_t remaining)
 
 	buf_tailroom = net_buf_tailroom(buf);
 	if (buf_tailroom < remaining) {
-		LOG_ERR("Not enough space in buffer %zu/%zu", remaining, buf_tailroom);
+		LOG_ERROR("Not enough space in buffer %zu/%zu", remaining, buf_tailroom);
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -602,7 +602,7 @@ static struct net_buf *bt_esp_acl_recv(uint8_t *data, size_t remaining)
 	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
-		LOG_ERR("Not enough data for ACL header");
+		LOG_ERROR("Not enough data for ACL header");
 		return NULL;
 	}
 
@@ -614,19 +614,19 @@ static struct net_buf *bt_esp_acl_recv(uint8_t *data, size_t remaining)
 
 		net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	} else {
-		LOG_ERR("No available ACL buffers!");
+		LOG_ERROR("No available ACL buffers!");
 		return NULL;
 	}
 
 	if (remaining != sys_le16_to_cpu(hdr.len)) {
-		LOG_ERR("ACL payload length is not correct");
+		LOG_ERROR("ACL payload length is not correct");
 		net_buf_unref(buf);
 		return NULL;
 	}
 
 	buf_tailroom = net_buf_tailroom(buf);
 	if (buf_tailroom < remaining) {
-		LOG_ERR("Not enough space in buffer %zu/%zu", remaining, buf_tailroom);
+		LOG_ERROR("Not enough space in buffer %zu/%zu", remaining, buf_tailroom);
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -644,7 +644,7 @@ static struct net_buf *bt_esp_iso_recv(uint8_t *data, size_t remaining)
 	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
-		LOG_ERR("Not enough data for ISO header");
+		LOG_ERROR("Not enough data for ISO header");
 		return NULL;
 	}
 
@@ -656,19 +656,19 @@ static struct net_buf *bt_esp_iso_recv(uint8_t *data, size_t remaining)
 
 		net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	} else {
-		LOG_ERR("No available ISO buffers!");
+		LOG_ERROR("No available ISO buffers!");
 		return NULL;
 	}
 
 	if (remaining != bt_iso_hdr_len(sys_le16_to_cpu(hdr.len))) {
-		LOG_ERR("ISO payload length is not correct");
+		LOG_ERROR("ISO payload length is not correct");
 		net_buf_unref(buf);
 		return NULL;
 	}
 
 	buf_tailroom = net_buf_tailroom(buf);
 	if (buf_tailroom < remaining) {
-		LOG_ERR("Not enough space in buffer %zu/%zu", remaining, buf_tailroom);
+		LOG_ERROR("Not enough space in buffer %zu/%zu", remaining, buf_tailroom);
 		net_buf_unref(buf);
 		return NULL;
 	}
@@ -706,7 +706,7 @@ static int hci_esp_host_rcv_pkt(uint8_t *data, uint16_t len)
 		break;
 
 	default:
-		LOG_ERR("Unknown HCI type %u", pkt_indicator);
+		LOG_ERROR("Unknown HCI type %u", pkt_indicator);
 		return -1;
 	}
 
@@ -748,7 +748,7 @@ static int bt_esp32_send(const struct device *dev, struct net_buf *buf)
 	err = 0;
 
 	if (k_sem_take(&hci_send_sem, HCI_BT_ESP32_TIMEOUT) != 0) {
-		LOG_ERR("Send packet timeout error");
+		LOG_ERROR("Send packet timeout error");
 		err = -ETIMEDOUT;
 	} else {
 		if (!esp_vhci_host_check_send_available()) {
@@ -777,17 +777,17 @@ static int bt_esp32_ble_init(void)
 
 	ret = esp_bt_controller_init(&bt_cfg);
 	if (ret == ESP_ERR_NO_MEM) {
-		LOG_ERR("Not enough memory to initialize Bluetooth.");
-		LOG_ERR("Consider increasing CONFIG_HEAP_MEM_POOL_SIZE value.");
+		LOG_ERROR("Not enough memory to initialize Bluetooth.");
+		LOG_ERROR("Consider increasing CONFIG_HEAP_MEM_POOL_SIZE value.");
 		return -ENOMEM;
 	} else if (ret != ESP_OK) {
-		LOG_ERR("Unable to initialize the Bluetooth: %d", ret);
+		LOG_ERROR("Unable to initialize the Bluetooth: %d", ret);
 		return -EIO;
 	}
 
 	ret = esp_bt_controller_enable(mode);
 	if (ret) {
-		LOG_ERR("Bluetooth controller enable failed: %d", ret);
+		LOG_ERROR("Bluetooth controller enable failed: %d", ret);
 		return -EIO;
 	}
 
@@ -806,13 +806,13 @@ static int bt_esp32_ble_deinit(void)
 
 	ret = esp_bt_controller_disable();
 	if (ret) {
-		LOG_ERR("Bluetooth controller disable failed %d", ret);
+		LOG_ERROR("Bluetooth controller disable failed %d", ret);
 		return ret;
 	}
 
 	ret = esp_bt_controller_deinit();
 	if (ret) {
-		LOG_ERR("Bluetooth controller deinit failed %d", ret);
+		LOG_ERROR("Bluetooth controller deinit failed %d", ret);
 		return ret;
 	}
 

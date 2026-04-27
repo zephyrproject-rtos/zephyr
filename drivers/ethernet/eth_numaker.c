@@ -392,14 +392,14 @@ static void m_numaker_gmacdev_packet_rx(const struct device *dev)
 		 */
 		pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
-			LOG_ERR("pkt alloc frame-len=%d failed", len);
+			LOG_ERROR("pkt alloc frame-len=%d failed", len);
 			goto next;
 		}
 
 		LOG_DBG("length=%d, pkt=0x%x", len, (uint32_t)pkt);
 		/* deliver RX packet to upper layer, pack as one net_pkt */
 		if (net_pkt_write(pkt, buffer, len)) {
-			LOG_ERR("Unable to write RX frame into the pkt");
+			LOG_ERROR("Unable to write RX frame into the pkt");
 			net_pkt_unref(pkt);
 			goto error;
 		}
@@ -407,7 +407,7 @@ static void m_numaker_gmacdev_packet_rx(const struct device *dev)
 		if (pkt != NULL) {
 			res = net_recv_data(data->iface, pkt);
 			if (res < 0) {
-				LOG_ERR("net_recv_data: %d", res);
+				LOG_ERROR("net_recv_data: %d", res);
 				net_pkt_unref(pkt);
 				goto error;
 			}
@@ -479,7 +479,7 @@ static int numaker_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	/* Get exclusive access */
 	if (total_len > NET_ETH_MAX_FRAME_SIZE) {
 		/* NuMaker SDK reserve 2048 for tx_buf */
-		LOG_ERR("TX packet length [%d] over max [%d]", total_len, NET_ETH_MAX_FRAME_SIZE);
+		LOG_ERROR("TX packet length [%d] over max [%d]", total_len, NET_ETH_MAX_FRAME_SIZE);
 		goto error;
 	}
 
@@ -499,7 +499,7 @@ static int numaker_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 
 error:
-	LOG_ERR("Writing pkt to TX descriptor failed");
+	LOG_ERROR("Writing pkt to TX descriptor failed");
 	return -EIO;
 }
 
@@ -647,7 +647,7 @@ static void eth_numaker_isr(const struct device *dev)
 	}
 
 	if (interrupt & synopGMACDmaRxAbnormal) {
-		LOG_ERR("Abnormal Rx Interrupt Seen");
+		LOG_ERROR("Abnormal Rx Interrupt Seen");
 		/* If Mac is not in powerdown */
 		if (gmacdev->GMAC_Power_down == 0) {
 			gmacdev->synopGMACNetStats.rx_over_errors++;
@@ -659,7 +659,7 @@ static void eth_numaker_isr(const struct device *dev)
 
 	/* Receiver gone in to stopped state */
 	if (interrupt & synopGMACDmaRxStopped) {
-		LOG_ERR("Receiver stopped seeing Rx interrupts");
+		LOG_ERROR("Receiver stopped seeing Rx interrupts");
 		if (gmacdev->GMAC_Power_down == 0) {
 			gmacdev->synopGMACNetStats.rx_over_errors++;
 			synopGMAC_enable_dma_rx(gmacdev);
@@ -673,7 +673,7 @@ static void eth_numaker_isr(const struct device *dev)
 	}
 
 	if (interrupt & synopGMACDmaTxAbnormal) {
-		LOG_ERR("Abnormal Tx Interrupt Seen");
+		LOG_ERROR("Abnormal Tx Interrupt Seen");
 		if (gmacdev->GMAC_Power_down == 0) {
 			synop_handle_transmit_over(0);
 			/* No-op at this stage for TX INT */
@@ -681,12 +681,12 @@ static void eth_numaker_isr(const struct device *dev)
 	}
 
 	if (interrupt & synopGMACDmaTxStopped) {
-		LOG_ERR("Transmitter stopped sending the packets");
+		LOG_ERROR("Transmitter stopped sending the packets");
 		if (gmacdev->GMAC_Power_down == 0) {
 			synopGMAC_disable_dma_tx(gmacdev);
 			synopGMAC_take_desc_ownership_tx(gmacdev);
 			synopGMAC_enable_dma_tx(gmacdev);
-			LOG_ERR("Transmission Resumed");
+			LOG_ERROR("Transmission Resumed");
 		}
 	}
 
@@ -732,7 +732,7 @@ static int eth_numaker_init(const struct device *dev)
 	 * Validate this module's reset object
 	 */
 	if (!device_is_ready(cfg->reset.dev)) {
-		LOG_ERR("reset controller not ready");
+		LOG_ERROR("reset controller not ready");
 		return -ENODEV;
 	}
 
@@ -741,7 +741,7 @@ static int eth_numaker_init(const struct device *dev)
 	irq_disable(DT_INST_IRQN(0));
 	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("Failed to apply pinctrl state");
+		LOG_ERROR("Failed to apply pinctrl state");
 		goto done;
 	}
 
@@ -754,7 +754,7 @@ static int eth_numaker_init(const struct device *dev)
 	/* Configure GMAC device */
 	ret = m_numaker_gmacdev_init(gmacdev, mac_addr, cfg->gmac_base);
 	if (ret != 0) {
-		LOG_ERR("GMAC failed to initialize");
+		LOG_ERROR("GMAC failed to initialize");
 		goto done;
 	}
 

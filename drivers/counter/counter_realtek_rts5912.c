@@ -102,7 +102,7 @@ static int counter_rts5912_set_alarm(const struct device *dev, uint8_t chan_id,
 	uint32_t value;
 
 	if (chan_id != 0) {
-		LOG_ERR("Invalid channel id %u", chan_id);
+		LOG_ERROR("Invalid channel id %u", chan_id);
 		return -ENOTSUP;
 	}
 
@@ -156,7 +156,7 @@ static int counter_rts5912_cancel_alarm(const struct device *dev, uint8_t chan_i
 	volatile struct timer32_type *counter = config->base_address;
 
 	if (chan_id != 0) {
-		LOG_ERR("Invalid channel id %u", chan_id);
+		LOG_ERROR("Invalid channel id %u", chan_id);
 		return -ENOTSUP;
 	}
 
@@ -297,13 +297,13 @@ static int counter_rts5912_init(const struct device *dev)
 	};
 
 	if (!device_is_ready(counter_cfg->clk_dev)) {
-		LOG_ERR("device is not ready");
+		LOG_ERROR("device is not ready");
 		return -ENODEV;
 	}
 
 	rc = clock_control_on(counter_cfg->clk_dev, (clock_control_subsys_t)&sccon_subsys);
 	if (rc != 0) {
-		LOG_ERR("clock power on fail");
+		LOG_ERROR("clock power on fail");
 		return rc;
 	}
 

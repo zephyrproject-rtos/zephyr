@@ -61,12 +61,12 @@ int airoc_wifi_init_primary(const struct device *dev, whd_interface_t *interface
 	gpio_pin_configure_dt(&config->bus_select_gpio, GPIO_OUTPUT_INACTIVE);
 
 	if (airoc_wifi_power_on(dev)) {
-		LOG_ERR("airoc_wifi_power_on returns fail");
+		LOG_ERROR("airoc_wifi_power_on returns fail");
 		return -ENODEV;
 	}
 
 	if (!spi_is_ready_dt(&config->bus_dev.bus_spi)) {
-		LOG_ERR("SPI device is not ready");
+		LOG_ERROR("SPI device is not ready");
 		return -ENODEV;
 	}
 
@@ -103,7 +103,7 @@ whd_result_t whd_bus_spi_transfer(whd_driver_t whd_driver, const uint8_t *tx, si
 #if defined(SPI_DATA_IRQ_SHARED)
 	ret = whd_bus_spi_irq_enable(whd_driver, false);
 	if (ret) {
-		LOG_ERR("whd_bus_spi_irq_enable FAIL %d\n", ret);
+		LOG_ERROR("whd_bus_spi_irq_enable FAIL %d\n", ret);
 		whd_ret = WHD_WLAN_SDIO_ERROR;
 	}
 #endif
@@ -146,14 +146,14 @@ whd_result_t whd_bus_spi_transfer(whd_driver_t whd_driver, const uint8_t *tx, si
 
 	ret = spi_transceive_dt(spi_obj, &tx_set, &rx_set);
 	if (ret) {
-		LOG_ERR("spi_transceive FAIL %d\n", ret);
+		LOG_ERROR("spi_transceive FAIL %d\n", ret);
 		whd_ret = WHD_WLAN_SDIO_ERROR;
 	}
 
 #if defined(SPI_DATA_IRQ_SHARED)
 	ret = whd_bus_spi_irq_enable(whd_driver, true);
 	if (ret) {
-		LOG_ERR("whd_bus_spi_irq_enable FAIL %d\n", ret);
+		LOG_ERROR("whd_bus_spi_irq_enable FAIL %d\n", ret);
 		whd_ret = WHD_WLAN_SDIO_ERROR;
 	}
 #endif

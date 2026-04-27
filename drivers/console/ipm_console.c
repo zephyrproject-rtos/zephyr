@@ -29,7 +29,7 @@ static int console_out(int c)
 
 	ret = ipm_send(ipm_dev, 1, len, buf, len);
 	if (ret) {
-		LOG_ERR("Error sending character %c over IPM, ret %d", c, ret);
+		LOG_ERROR("Error sending character %c over IPM, ret %d", c, ret);
 	}
 
 	memset(buf, 0, sizeof(buf));
@@ -61,13 +61,13 @@ static int ipm_console_init(void)
 
 	ipm_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 	if (!device_is_ready(ipm_dev)) {
-		LOG_ERR("%s is not ready", ipm_dev->name);
+		LOG_ERROR("%s is not ready", ipm_dev->name);
 		return -ENODEV;
 	}
 
 	if (ipm_max_id_val_get(ipm_dev) < CONFIG_IPM_CONSOLE_LINE_BUF_LEN) {
-		LOG_ERR("IPM driver does not support buffer length %d",
-			CONFIG_IPM_CONSOLE_LINE_BUF_LEN);
+		LOG_ERROR("IPM driver does not support buffer length %d",
+			  CONFIG_IPM_CONSOLE_LINE_BUF_LEN);
 		return -ENOTSUP;
 	}
 

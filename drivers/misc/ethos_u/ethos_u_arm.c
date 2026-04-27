@@ -120,7 +120,7 @@ static inline void ethosu_ta_apply(const struct ethosu_ta_cfg *c)
 	const uint32_t hw_version = sys_read32(base + TA_VERSION);
 
 	if (!ethosu_ta_version_supported(hw_version)) {
-		LOG_ERR("TA@0x%08" PRIxPTR " has unsupported version 0x%08x", base, hw_version);
+		LOG_ERROR("TA@0x%08" PRIxPTR " has unsupported version 0x%08x", base, hw_version);
 		return;
 	}
 
@@ -191,7 +191,7 @@ static int ethosu_zephyr_init(const struct device *dev)
 
 	if (ethosu_init(drv, config->base_addr, config->fast_mem_base, config->fast_mem_size,
 			config->secure_enable, config->privilege_enable)) {
-		LOG_ERR("Failed to initialize NPU with ethosu_init().");
+		LOG_ERROR("Failed to initialize NPU with ethosu_init().");
 		return -EINVAL;
 	}
 

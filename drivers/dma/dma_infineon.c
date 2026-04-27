@@ -298,24 +298,25 @@ static int ifx_cat1_dma_configure(const struct device *dev, uint32_t channel,
 	cy_stc_dma_descriptor_t *prev_descriptor = NULL;
 
 	if (channel >= cfg->num_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
 	/* Support only the same data width for source and dest */
 	if (config->dest_data_size != config->source_data_size) {
-		LOG_ERR("Source and dest data size differ.");
+		LOG_ERROR("Source and dest data size differ.");
 		return -EINVAL;
 	}
 
 	if ((config->dest_data_size != 1) && (config->dest_data_size != 2) &&
 	    (config->dest_data_size != 4)) {
-		LOG_ERR("dest_data_size must be 1, 2, or 4 (%" PRIu32 ")", config->dest_data_size);
+		LOG_ERROR("dest_data_size must be 1, 2, or 4 (%" PRIu32 ")",
+			  config->dest_data_size);
 		return -EINVAL;
 	}
 
 	if (config->complete_callback_en > 1) {
-		LOG_ERR("Callback on each block not implemented");
+		LOG_ERROR("Callback on each block not implemented");
 		return -ENOTSUP;
 	}
 
@@ -343,7 +344,7 @@ static int ifx_cat1_dma_configure(const struct device *dev, uint32_t channel,
 
 			/* allocate new descriptor */
 			if (_dma_alloc_descriptor((void **)&descriptor)) {
-				LOG_ERR("Can't allocate new descriptor");
+				LOG_ERROR("Can't allocate new descriptor");
 				return -EINVAL;
 			}
 
@@ -415,7 +416,7 @@ static int ifx_cat1_dma_start(const struct device *dev, uint32_t channel)
 	struct ifx_cat1_dma_data *data = dev->data;
 
 	if (channel >= cfg->num_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
@@ -444,7 +445,7 @@ static int ifx_cat1_dma_stop(const struct device *dev, uint32_t channel)
 	const struct ifx_cat1_dma_config *const cfg = dev->config;
 
 	if (channel >= cfg->num_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
@@ -462,7 +463,7 @@ int ifx_cat1_dma_reload(const struct device *dev, uint32_t channel, uint32_t src
 	cy_stc_dma_descriptor_t *descriptor = data->channels[channel].descr;
 
 	if (channel >= cfg->num_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
@@ -540,7 +541,7 @@ static int ifx_cat1_dma_get_status(const struct device *dev, uint32_t channel,
 	uint32_t pending_status = 0;
 
 	if (channel >= cfg->num_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 

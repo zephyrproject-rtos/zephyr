@@ -89,12 +89,12 @@ static int mcux_stm_set_alarm(const struct device *dev, uint8_t chan_id,
 	uint32_t ticks = alarm_cfg->ticks;
 
 	if (chan_id >= config->info.channels) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 
 	if (data->channels[chan_id].alarm_callback != NULL) {
-		LOG_ERR("channel already in use");
+		LOG_ERROR("channel already in use");
 		return -EBUSY;
 	}
 
@@ -124,7 +124,7 @@ static int mcux_stm_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	struct mcux_stm_data *data = dev->data;
 
 	if (chan_id >= config->info.channels) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 
@@ -195,7 +195,7 @@ static int mcux_stm_init(const struct device *dev)
 	uint32_t clock_freq;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -205,7 +205,7 @@ static int mcux_stm_init(const struct device *dev)
 	}
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_freq)) {
-		LOG_ERR("Could not get clock frequency");
+		LOG_ERROR("Could not get clock frequency");
 		return -EINVAL;
 	}
 

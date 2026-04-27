@@ -679,7 +679,7 @@ static int hm0360_set_frmival(const struct device *dev, struct video_frmival *fr
 
 	ret = video_modify_cci_reg(&config->bus, HM0360_CCI_PLL1_CONFIG, 0x03, osc_div);
 	if (ret < 0) {
-		LOG_ERR("Could not set PLL1 Config");
+		LOG_ERROR("Could not set PLL1 Config");
 		return ret;
 	}
 
@@ -745,7 +745,7 @@ static int hm0360_init(const struct device *dev)
 		}
 		ret = gpio_pin_configure_dt(&config->pwdn, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not clear power down pin: %d", ret);
+			LOG_ERROR("Could not clear power down pin: %d", ret);
 			return ret;
 		}
 	}
@@ -758,13 +758,13 @@ static int hm0360_init(const struct device *dev)
 		}
 		ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not set reset pin: %d", ret);
+			LOG_ERROR("Could not set reset pin: %d", ret);
 			return ret;
 		}
 		/* Reset is active high, has 1ms settling time*/
 		ret = gpio_pin_set_dt(&config->reset, 0);
 		if (ret < 0) {
-			LOG_ERR("Error setting GPIO: %d\n", ret);
+			LOG_ERROR("Error setting GPIO: %d\n", ret);
 			return ret;
 		}
 		k_msleep(1);
@@ -776,12 +776,12 @@ static int hm0360_init(const struct device *dev)
 	/*  Read Product ID and check if PID OK  */
 	ret = video_read_cci_reg(&config->bus, HM0360_CCI_ID, &pid);
 	if (ret < 0) {
-		LOG_ERR("Could not read product ID: %d", ret);
+		LOG_ERROR("Could not read product ID: %d", ret);
 		return ret;
 	}
 
 	if (pid != HM0360_PROD_ID) {
-		LOG_ERR("Incorrect product ID: 0x%02X", pid);
+		LOG_ERROR("Incorrect product ID: 0x%02X", pid);
 		return -ENODEV;
 	}
 	LOG_DBG("Product ID is: %x", pid);
@@ -789,7 +789,7 @@ static int hm0360_init(const struct device *dev)
 	/* Reset camera registers */
 	ret = video_write_cci_reg(&config->bus, HM0360_CCI_RESET, 0x01);
 	if (ret < 0) {
-		LOG_ERR("Could not write reset: %d", ret);
+		LOG_ERROR("Could not write reset: %d", ret);
 		return ret;
 	}
 	/* Delay for 1ms. */
@@ -799,19 +799,19 @@ static int hm0360_init(const struct device *dev)
 	ret = video_write_cci_multiregs16(&config->bus, hm0360_default_regs,
 					  ARRAY_SIZE(hm0360_default_regs));
 	if (ret < 0) {
-		LOG_ERR("Failed to set default registers");
+		LOG_ERROR("Failed to set default registers");
 		return ret;
 	}
 
 	ret = hm0360_set_fmt(dev, &fmt);
 	if (ret < 0) {
-		LOG_ERR("ERROR: Unable to set format");
+		LOG_ERROR("ERROR: Unable to set format");
 		return ret;
 	}
 
 	ret = hm0360_set_frmival(dev, &default_frmival);
 	if (ret < 0) {
-		LOG_ERR("ERROR: Unable to set frame rate");
+		LOG_ERROR("ERROR: Unable to set frame rate");
 		return ret;
 	}
 
@@ -826,7 +826,7 @@ static int hm0360_set_stream(const struct device *dev, bool enable, enum video_b
 
 	ret = video_write_cci_reg(&config->bus, HM0360_CCI_MODE, HM0360_MODE_STREAMING);
 	if (ret < 0) {
-		LOG_ERR("Could not set streaming");
+		LOG_ERROR("Could not set streaming");
 		return ret;
 	}
 	k_msleep(4);

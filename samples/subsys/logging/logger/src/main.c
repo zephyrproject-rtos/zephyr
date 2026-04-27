@@ -136,7 +136,7 @@ static void severity_levels_showcase(void)
 {
 	printk("Severity levels showcase.\n");
 
-	LOG_ERR("Error message example.");
+	LOG_ERROR("Error message example.");
 	LOG_WRN("Warning message example.");
 	LOG_INF("Info message example.");
 	LOG_DBG("Debug message example.");

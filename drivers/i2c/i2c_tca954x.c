@@ -116,20 +116,19 @@ static int tca954x_root_init(const struct device *dev)
 	const struct tca954x_root_config *config = dev->config;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C bus %s not ready", config->i2c.bus->name);
+		LOG_ERROR("I2C bus %s not ready", config->i2c.bus->name);
 		return -ENODEV;
 	}
 
 	/* If the RESET line is available, configure it. */
 	if (config->reset_gpios.port) {
 		if (!gpio_is_ready_dt(&config->reset_gpios)) {
-			LOG_ERR("%s is not ready",
-				config->reset_gpios.port->name);
+			LOG_ERROR("%s is not ready", config->reset_gpios.port->name);
 			return -ENODEV;
 		}
 
 		if (gpio_pin_configure_dt(&config->reset_gpios, GPIO_OUTPUT)) {
-			LOG_ERR("%s: failed to configure RESET line", dev->name);
+			LOG_ERROR("%s: failed to configure RESET line", dev->name);
 			return -EIO;
 		}
 
@@ -149,13 +148,13 @@ static int tca954x_channel_init(const struct device *dev)
 			get_root_config_from_channel(dev);
 
 	if (!device_is_ready(chan_cfg->root)) {
-		LOG_ERR("I2C mux root %s not ready", chan_cfg->root->name);
+		LOG_ERROR("I2C mux root %s not ready", chan_cfg->root->name);
 		return -ENODEV;
 	}
 
 	if ((chan_cfg->chan_mask >= BIT(root_cfg->nchans) && !chan_cfg->has_enable) ||
 	    (chan_cfg->chan_mask > (BIT(2) | (root_cfg->nchans - 1)) && chan_cfg->has_enable)) {
-		LOG_ERR("Wrong DTS address provided for %s", dev->name);
+		LOG_ERROR("Wrong DTS address provided for %s", dev->name);
 		return -EINVAL;
 	}
 

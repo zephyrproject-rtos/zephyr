@@ -1857,7 +1857,7 @@ static isoal_status_t ll_iso_pdu_alloc(struct isoal_pdu_buffer *pdu_buffer)
 
 	node_tx = ll_iso_tx_mem_acquire();
 	if (!node_tx) {
-		LOG_ERR("Tx Buffer Overflow");
+		LOG_ERROR("Tx Buffer Overflow");
 		/* TODO: Report overflow to HCI and remove assert
 		 * data_buf_overflow(evt, BT_OVERFLOW_LINK_ISO)
 		 */

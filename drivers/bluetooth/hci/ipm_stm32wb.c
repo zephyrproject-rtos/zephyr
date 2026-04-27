@@ -272,8 +272,8 @@ static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 			switch (hcievt->evtserial.evt.evtcode) {
 			case BT_HCI_EVT_VENDOR:
 				/* Vendor events are currently unsupported */
-				LOG_ERR("Unknown evtcode type 0x%02x",
-					hcievt->evtserial.evt.evtcode);
+				LOG_ERROR("Unknown evtcode type 0x%02x",
+					  hcievt->evtserial.evt.evtcode);
 				TL_MM_EvtDone(hcievt);
 				goto end_loop;
 			default:
@@ -298,8 +298,8 @@ static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 			buf_tailroom = net_buf_tailroom(buf);
 			buf_add_len = hcievt->evtserial.evt.plen + 2;
 			if (buf_tailroom < buf_add_len) {
-				LOG_ERR("Not enough space in buffer %zu/%zu", buf_add_len,
-					buf_tailroom);
+				LOG_ERROR("Not enough space in buffer %zu/%zu", buf_add_len,
+					  buf_tailroom);
 				net_buf_unref(buf);
 				goto end_loop;
 			}
@@ -318,8 +318,8 @@ static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 			buf_tailroom = net_buf_tailroom(buf);
 			buf_add_len = acl_hdr.len;
 			if (buf_tailroom < buf_add_len) {
-				LOG_ERR("Not enough space in buffer %zu/%zu", buf_add_len,
-					buf_tailroom);
+				LOG_ERROR("Not enough space in buffer %zu/%zu", buf_add_len,
+					  buf_tailroom);
 				net_buf_unref(buf);
 				goto end_loop;
 			}
@@ -328,7 +328,7 @@ static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 					buf_add_len);
 			break;
 		default:
-			LOG_ERR("Unknown BT buf type %d", hcievt->evtserial.type);
+			LOG_ERROR("Unknown BT buf type %d", hcievt->evtserial.type);
 			TL_MM_EvtDone(hcievt);
 			goto end_loop;
 		}
@@ -462,7 +462,7 @@ static int bt_ipm_send(const struct device *dev, struct net_buf *buf)
 		break;
 	default:
 		k_sem_give(&ipm_busy);
-		LOG_ERR("Unsupported type");
+		LOG_ERROR("Unsupported type");
 		return -EINVAL;
 	}
 
@@ -548,7 +548,7 @@ static int bt_ipm_ble_init(void)
 
 	err = bt_ipm_set_addr();
 	if (err) {
-		LOG_ERR("Can't set BLE UID addr");
+		LOG_ERROR("Can't set BLE UID addr");
 	}
 	/* Send ACI_WRITE_SET_TX_POWER_LEVEL */
 	buf = bt_hci_cmd_alloc(K_FOREVER);
@@ -577,7 +577,7 @@ static int c2_reset(void)
 	err = clock_control_configure(clk, (clock_control_subsys_t) &clk_cfg[1],
 					NULL);
 	if (err < 0) {
-		LOG_ERR("Could not configure RF Wake up clock");
+		LOG_ERROR("Could not configure RF Wake up clock");
 		return err;
 	}
 
@@ -594,7 +594,7 @@ static int c2_reset(void)
 
 	err = clock_control_on(clk, (clock_control_subsys_t) &clk_cfg[0]);
 	if (err < 0) {
-		LOG_ERR("Could not enable IPCC clock");
+		LOG_ERROR("Could not enable IPCC clock");
 		return err;
 	}
 
@@ -673,7 +673,7 @@ static int bt_ipm_close(const struct device *dev)
 
 	err = bt_hci_cmd_send_sync(ACI_HAL_STACK_RESET, NULL, NULL);
 	if (err) {
-		LOG_ERR("IPM Channel Close Issue");
+		LOG_ERROR("IPM Channel Close Issue");
 		return err;
 	}
 

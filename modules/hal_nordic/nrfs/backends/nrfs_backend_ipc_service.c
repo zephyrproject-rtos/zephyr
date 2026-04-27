@@ -67,27 +67,27 @@ __weak void nrfs_backend_error_handler(enum nrfs_backend_error error_id, int err
 {
 	switch (error_id) {
 	case NRFS_ERROR_EPT_RECEIVE_DATA_TOO_LONG:
-		LOG_ERR("Received data is too long. Config error.");
+		LOG_ERROR("Received data is too long. Config error.");
 		break;
 
 	case NRFS_ERROR_NO_DATA_RECEIVED:
-		LOG_ERR("No data in received message!");
+		LOG_ERROR("No data in received message!");
 		break;
 
 	case NRFS_ERROR_IPC_OPEN_INSTANCE:
-		LOG_ERR("IPC open instance failure with error: %d", error);
+		LOG_ERROR("IPC open instance failure with error: %d", error);
 		break;
 
 	case NRFS_ERROR_IPC_REGISTER_ENDPOINT:
-		LOG_ERR("IPC register endpoint failure with error: %d", error);
+		LOG_ERROR("IPC register endpoint failure with error: %d", error);
 		break;
 
 	case NRFS_ERROR_SEND_DATA_FROM_QUEUE:
-		LOG_ERR("IPC backend sent data failed.");
+		LOG_ERROR("IPC backend sent data failed.");
 		break;
 
 	default:
-		LOG_ERR("Undefined error id: %d, error cause: %d", error_id, error);
+		LOG_ERROR("Undefined error id: %d, error cause: %d", error_id, error);
 		break;
 	}
 
@@ -242,7 +242,7 @@ nrfs_err_t nrfs_backend_send_ex(void *message, size_t size, k_timeout_t timeout,
 		return err >= 0 ? 0 : NRFS_ERR_IPC;
 	}
 
-	LOG_ERR("Trying to send %d bytes where max is %d.", size, MAX_PACKET_DATA_SIZE);
+	LOG_ERROR("Trying to send %d bytes where max is %d.", size, MAX_PACKET_DATA_SIZE);
 
 	return NRFS_ERR_IPC;
 }
@@ -276,7 +276,7 @@ void nrfs_backend_register_bound_subscribe(struct nrfs_backend_bound_info_subs *
 
 __weak void nrfs_backend_fatal_error_handler(enum nrfs_backend_error error_id)
 {
-	LOG_ERR("Fatal error: %d rebooting...", error_id);
+	LOG_ERROR("Fatal error: %d rebooting...", error_id);
 	sys_reboot(SYS_REBOOT_WARM);
 }
 

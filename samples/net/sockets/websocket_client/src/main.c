@@ -80,8 +80,8 @@ static int setup_socket(sa_family_t family, const char *server, int port,
 			ret = setsockopt(*sock, SOL_TLS, TLS_SEC_TAG_LIST,
 					 sec_tag_list, sizeof(sec_tag_list));
 			if (ret < 0) {
-				LOG_ERR("Failed to set %s secure option (%d)",
-					family_str, -errno);
+				LOG_ERROR("Failed to set %s secure option (%d)", family_str,
+					  -errno);
 				ret = -errno;
 				goto fail;
 			}
@@ -90,8 +90,9 @@ static int setup_socket(sa_family_t family, const char *server, int port,
 					 TLS_PEER_HOSTNAME,
 					 sizeof(TLS_PEER_HOSTNAME));
 			if (ret < 0) {
-				LOG_ERR("Failed to set %s TLS_HOSTNAME "
-					"option (%d)", family_str, -errno);
+				LOG_ERROR("Failed to set %s TLS_HOSTNAME "
+					  "option (%d)",
+					  family_str, -errno);
 				ret = -errno;
 				goto fail;
 			}
@@ -101,8 +102,7 @@ static int setup_socket(sa_family_t family, const char *server, int port,
 	}
 
 	if (*sock < 0) {
-		LOG_ERR("Failed to create %s HTTP socket (%d)", family_str,
-			-errno);
+		LOG_ERROR("Failed to create %s HTTP socket (%d)", family_str, -errno);
 	}
 
 	return ret;
@@ -128,9 +128,8 @@ static int connect_socket(sa_family_t family, const char *server, int port,
 
 	ret = connect(*sock, addr, addr_len);
 	if (ret < 0) {
-		LOG_ERR("Cannot connect to %s remote (%d)",
-			family == AF_INET ? "IPv4" : "IPv6",
-			-errno);
+		LOG_ERROR("Cannot connect to %s remote (%d)", family == AF_INET ? "IPv4" : "IPv6",
+			  -errno);
 		ret = -errno;
 	}
 
@@ -201,8 +200,8 @@ static void recv_data_wso_api(int sock, size_t amount, uint8_t *buf,
 	if (remaining != 0 || total_read != amount ||
 	    /* Do not check the final \n at the end of the msg */
 	    memcmp(lorem_ipsum, buf, amount - 1) != 0) {
-		LOG_ERR("%s data recv failure %zd/%d bytes (remaining %" PRId64 ")",
-			proto, amount, total_read, remaining);
+		LOG_ERROR("%s data recv failure %zd/%d bytes (remaining %" PRId64 ")", proto,
+			  amount, total_read, remaining);
 		LOG_HEXDUMP_DBG(buf, total_read, "received ws buf");
 		LOG_HEXDUMP_DBG(lorem_ipsum, total_read, "sent ws buf");
 	} else {
@@ -239,8 +238,8 @@ static void recv_data_bsd_api(int sock, size_t amount, uint8_t *buf,
 	if (remaining != 0 ||
 	    /* Do not check the final \n at the end of the msg */
 	    memcmp(lorem_ipsum, buf, amount - 1) != 0) {
-		LOG_ERR("%s data recv failure %zd/%d bytes (remaining %d)",
-			proto, amount, read_pos, remaining);
+		LOG_ERROR("%s data recv failure %zd/%d bytes (remaining %d)", proto, amount,
+			  read_pos, remaining);
 		LOG_HEXDUMP_DBG(buf, read_pos, "received bsd buf");
 		LOG_HEXDUMP_DBG(lorem_ipsum, read_pos, "sent bsd buf");
 	} else {
@@ -278,8 +277,8 @@ static bool send_and_wait_msg(int sock, size_t amount, const char *proto,
 
 	if (ret <= 0) {
 		if (ret < 0) {
-			LOG_ERR("%s failed to send data using %s (%d)", proto,
-				(count % 2) ? "ws API" : "socket API", ret);
+			LOG_ERROR("%s failed to send data using %s (%d)", proto,
+				  (count % 2) ? "ws API" : "socket API", ret);
 		} else {
 			LOG_DBG("%s connection closed", proto);
 		}
@@ -321,8 +320,7 @@ int main(void)
 					 ca_certificate,
 					 sizeof(ca_certificate));
 		if (ret < 0) {
-			LOG_ERR("Failed to register public certificate: %d",
-				ret);
+			LOG_ERROR("Failed to register public certificate: %d", ret);
 			k_sleep(K_FOREVER);
 		}
 	}
@@ -340,7 +338,7 @@ int main(void)
 	}
 
 	if (sock4 < 0 && sock6 < 0) {
-		LOG_ERR("Cannot create HTTP connection.");
+		LOG_ERROR("Cannot create HTTP connection.");
 		k_sleep(K_FOREVER);
 	}
 
@@ -358,8 +356,7 @@ int main(void)
 
 		websock4 = websocket_connect(sock4, &req, timeout, "IPv4");
 		if (websock4 < 0) {
-			LOG_ERR("Cannot connect to %s:%d", SERVER_ADDR4,
-				SERVER_PORT);
+			LOG_ERROR("Cannot connect to %s:%d", SERVER_ADDR4, SERVER_PORT);
 			close(sock4);
 		}
 	}
@@ -378,14 +375,13 @@ int main(void)
 
 		websock6 = websocket_connect(sock6, &req, timeout, "IPv6");
 		if (websock6 < 0) {
-			LOG_ERR("Cannot connect to [%s]:%d", SERVER_ADDR6,
-				SERVER_PORT);
+			LOG_ERROR("Cannot connect to [%s]:%d", SERVER_ADDR6, SERVER_PORT);
 			close(sock6);
 		}
 	}
 
 	if (websock4 < 0 && websock6 < 0) {
-		LOG_ERR("No IPv4 or IPv6 connectivity");
+		LOG_ERROR("No IPv4 or IPv6 connectivity");
 		k_sleep(K_FOREVER);
 	}
 

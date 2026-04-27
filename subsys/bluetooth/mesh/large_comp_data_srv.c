@@ -69,7 +69,7 @@ static int handle_large_comp_data_get(const struct bt_mesh_model *model,
 		NET_BUF_SIMPLE_DEFINE(temp_buf, CONFIG_BT_MESH_COMP_PST_BUF_SIZE);
 		err = bt_mesh_comp_read(&temp_buf, page);
 		if (err) {
-			LOG_ERR("Could not read comp data p%d, err: %d", page, err);
+			LOG_ERROR("Could not read comp data p%d, err: %d", page, err);
 			return err;
 		}
 
@@ -89,14 +89,14 @@ static int handle_large_comp_data_get(const struct bt_mesh_model *model,
 		if (offset < total_size) {
 			err = bt_mesh_comp_data_get_page(&rsp, page, offset);
 			if (err && err != -E2BIG) {
-				LOG_ERR("Could not read comp data p%d, err: %d", page, err);
+				LOG_ERROR("Could not read comp data p%d, err: %d", page, err);
 				return err;
 			}
 		}
 	}
 
 	if (bt_mesh_model_send(model, ctx, &rsp, NULL, NULL)) {
-		LOG_ERR("Unable to send Large Composition Data Status");
+		LOG_ERROR("Unable to send Large Composition Data Status");
 	}
 
 	return 0;
@@ -137,7 +137,7 @@ static int handle_models_metadata_get(const struct bt_mesh_model *model,
 		rsp.size -= BT_MESH_MIC_SHORT;
 		err = bt_mesh_models_metadata_read(&rsp, offset);
 		if (err) {
-			LOG_ERR("Unable to get stored models metadata");
+			LOG_ERROR("Unable to get stored models metadata");
 			return err;
 		}
 
@@ -149,14 +149,14 @@ static int handle_models_metadata_get(const struct bt_mesh_model *model,
 		if (offset < total_size) {
 			err = bt_mesh_metadata_get_page_0(&rsp, offset);
 			if (err && err != -E2BIG) {
-				LOG_ERR("Failed to get Models Metadata Page 0: %d", err);
+				LOG_ERROR("Failed to get Models Metadata Page 0: %d", err);
 				return err;
 			}
 		}
 	}
 
 	if (bt_mesh_model_send(model, ctx, &rsp, NULL, NULL)) {
-		LOG_ERR("Unable to send Models Metadata Status");
+		LOG_ERROR("Unable to send Models Metadata Status");
 	}
 
 	return 0;
@@ -174,7 +174,7 @@ static int large_comp_data_srv_init(const struct bt_mesh_model *model)
 		bt_mesh_model_find(bt_mesh_model_elem(model), BT_MESH_MODEL_ID_CFG_SRV);
 
 	if (config_srv == NULL) {
-		LOG_ERR("Large Composition Data Server cannot extend Configuration server");
+		LOG_ERROR("Large Composition Data Server cannot extend Configuration server");
 		return -EINVAL;
 	}
 

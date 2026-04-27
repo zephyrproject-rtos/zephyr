@@ -124,18 +124,18 @@ static int dma_bflb_configure(const struct device *dev, uint32_t channel,
 	uint16_t size;
 
 	if (channel >= BFLB_DMA_CH_NB) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
 	if (config->block_count > 1) {
-		LOG_ERR("Chained transfers not supported");
+		LOG_ERROR("Chained transfers not supported");
 		/* TODO: add support for LLI chained transfers. */
 		return -ENOTSUP;
 	}
 
 	if (block->source_addr_adj == 1 || block->dest_addr_adj == 1) {
-		LOG_ERR("Decrement not supported");
+		LOG_ERROR("Decrement not supported");
 		return -EINVAL;
 	}
 
@@ -154,7 +154,7 @@ static int dma_bflb_configure(const struct device *dev, uint32_t channel,
 		ch_config |= BFLB_DMA_FLOW_P_P << DMA_FLOWCNTRL_SHIFT;
 		return -ENOTSUP;
 	} else {
-		LOG_ERR("Direction error. %d", config->channel_direction);
+		LOG_ERROR("Direction error. %d", config->channel_direction);
 		return -EINVAL;
 	}
 
@@ -188,7 +188,7 @@ static int dma_bflb_configure(const struct device *dev, uint32_t channel,
 	} else if (config->source_data_size == 8) {
 		control |= BFLB_DMA_WIDTH_2WORD << DMA_SWIDTH_SHIFT;
 	} else {
-		LOG_ERR("Invalid source data size");
+		LOG_ERROR("Invalid source data size");
 		return -EINVAL;
 	}
 
@@ -201,7 +201,7 @@ static int dma_bflb_configure(const struct device *dev, uint32_t channel,
 	} else if (config->dest_data_size == 8) {
 		control |= BFLB_DMA_WIDTH_2WORD << DMA_DWIDTH_SHIFT;
 	} else {
-		LOG_ERR("Invalid destination data size");
+		LOG_ERROR("Invalid destination data size");
 		return -EINVAL;
 	}
 
@@ -214,7 +214,7 @@ static int dma_bflb_configure(const struct device *dev, uint32_t channel,
 	} else if (config->source_burst_length == 16) {
 		control |= BFLB_DMA_BURST_16 << DMA_SBSIZE_SHIFT;
 	} else {
-		LOG_ERR("Invalid source burst size");
+		LOG_ERROR("Invalid source burst size");
 		return -EINVAL;
 	}
 
@@ -227,7 +227,7 @@ static int dma_bflb_configure(const struct device *dev, uint32_t channel,
 	} else if (config->dest_burst_length == 16) {
 		control |= BFLB_DMA_BURST_16 << DMA_DBSIZE_SHIFT;
 	} else {
-		LOG_ERR("Invalid destination burst size");
+		LOG_ERROR("Invalid destination burst size");
 		return -EINVAL;
 	}
 

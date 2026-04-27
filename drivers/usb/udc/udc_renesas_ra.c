@@ -118,7 +118,7 @@ static void udc_event_xfer_next(const struct device *dev, const uint8_t ep)
 		}
 
 		if (err != FSP_SUCCESS) {
-			LOG_ERR("ep 0x%02x error", ep);
+			LOG_ERROR("ep 0x%02x error", ep);
 			udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 		} else {
 			udc_ep_set_busy(ep_cfg, true);
@@ -473,12 +473,12 @@ static int udc_renesas_ra_init(const struct device *dev)
 	}
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
@@ -504,12 +504,12 @@ static int udc_renesas_ra_shutdown(const struct device *dev)
 	struct udc_renesas_ra_data *data = udc_get_private(dev);
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
@@ -527,7 +527,7 @@ static int udc_renesas_ra_clock_check(const struct device *dev)
 #if USBHS_PHY_CLOCK_SOURCE_IS_XTAL
 	if (config->speed_idx == UDC_BUS_SPEED_HS) {
 		if (BSP_CFG_XTAL_HZ == 0) {
-			LOG_ERR("XTAL clock should be provided");
+			LOG_ERROR("XTAL clock should be provided");
 			return -EINVAL;
 		}
 
@@ -542,7 +542,7 @@ static int udc_renesas_ra_clock_check(const struct device *dev)
 		uint32_t clock_rate;
 
 		if (!device_is_ready(clock_dev)) {
-			LOG_ERR("%s is not ready", clock_dev->name);
+			LOG_ERROR("%s is not ready", clock_dev->name);
 			return -ENODEV;
 		}
 
@@ -550,13 +550,13 @@ static int udc_renesas_ra_clock_check(const struct device *dev)
 		clock_rate = clk_src_rate / clock_cfg->clk_div;
 
 		if (strcmp(clock_dev->name, "uclk") == 0 && clock_rate != MHZ(48)) {
-			LOG_ERR("Setting for uclk should be 48Mhz");
+			LOG_ERROR("Setting for uclk should be 48Mhz");
 			return -ENOTSUP;
 		}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_usbhs)
 		if (strcmp(clock_dev->name, "u60clk") == 0 && clock_rate != MHZ(60)) {
-			LOG_ERR("Setting for u60clk should be 60Mhz");
+			LOG_ERROR("Setting for u60clk should be 60Mhz");
 			return -ENOTSUP;
 		}
 #endif
@@ -575,8 +575,8 @@ static int udc_renesas_ra_driver_preinit(const struct device *dev)
 
 #if !USBHS_PHY_CLOCK_SOURCE_IS_XTAL
 	if (priv->udc_cfg.usb_speed == USBD_SPEED_HS) {
-		LOG_ERR("High-speed operation is not supported in case PHY clock source is not "
-			"XTAL");
+		LOG_ERROR("High-speed operation is not supported in case PHY clock source is not "
+			  "XTAL");
 		return -ENOTSUP;
 	}
 #endif
@@ -584,13 +584,13 @@ static int udc_renesas_ra_driver_preinit(const struct device *dev)
 	if (config->speed_idx == UDC_BUS_SPEED_HS) {
 		if (!(priv->udc_cfg.usb_speed == USBD_SPEED_HS ||
 		      priv->udc_cfg.usb_speed == USBD_SPEED_FS)) {
-			LOG_ERR("USBHS module only support high-speed and full-speed device");
+			LOG_ERROR("USBHS module only support high-speed and full-speed device");
 			return -ENOTSUP;
 		}
 	} else {
 		/* config->speed_idx == UDC_BUS_SPEED_FS */
 		if (priv->udc_cfg.usb_speed != USBD_SPEED_FS) {
-			LOG_ERR("USBFS module only support full-speed device");
+			LOG_ERROR("USBFS module only support full-speed device");
 			return -ENOTSUP;
 		}
 	}
@@ -630,7 +630,7 @@ static int udc_renesas_ra_driver_preinit(const struct device *dev)
 		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
 		err = udc_register_ep(dev, &config->ep_cfg_out[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}
@@ -650,7 +650,7 @@ static int udc_renesas_ra_driver_preinit(const struct device *dev)
 		config->ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
 		err = udc_register_ep(dev, &config->ep_cfg_in[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}

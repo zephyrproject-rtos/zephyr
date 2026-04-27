@@ -43,17 +43,17 @@ static int mcp3221_start_read(const struct device *dev, const struct adc_sequenc
 	size_t needed_size = MCP3221_DATA_SIZE;
 
 	if (sequence->resolution != MCP3221_RESOLUTION) {
-		LOG_ERR("Unsupported resolution %d", sequence->resolution);
+		LOG_ERROR("Unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}
 
 	if (sequence->channels != BIT(0)) {
-		LOG_ERR("Only one channel is supported by the MCP3221");
+		LOG_ERROR("Only one channel is supported by the MCP3221");
 		return -EINVAL;
 	}
 
 	if (sequence->oversampling) {
-		LOG_ERR("Oversampling not supported");
+		LOG_ERROR("Oversampling not supported");
 		return -EINVAL;
 	}
 
@@ -62,7 +62,7 @@ static int mcp3221_start_read(const struct device *dev, const struct adc_sequenc
 	}
 
 	if (sequence->buffer_size < needed_size) {
-		LOG_ERR("Buffer size too small for the requested sequence");
+		LOG_ERROR("Buffer size too small for the requested sequence");
 		return -ENOMEM;
 	}
 
@@ -115,7 +115,7 @@ static int mcp3221_read_channel(const struct device *dev, uint16_t *result)
 	int ret = i2c_read_dt(&config->i2c, raw_data, MCP3221_DATA_SIZE);
 
 	if (ret != 0) {
-		LOG_ERR("Error reading mcp3221 on I2C bus");
+		LOG_ERROR("Error reading mcp3221 on I2C bus");
 		return ret;
 	}
 	*result = (raw_data[0] << 8) | raw_data[1];
@@ -127,22 +127,22 @@ static int mcp3221_channel_setup(const struct device *dev,
 				 const struct adc_channel_cfg *channel_cfg)
 {
 	if (channel_cfg->channel_id != 0) {
-		LOG_ERR("Unsupported channel id '%d'", channel_cfg->channel_id);
+		LOG_ERROR("Unsupported channel id '%d'", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->reference != ADC_REF_VDD_1) {
-		LOG_ERR("Unsupported channel reference '%d'", channel_cfg->reference);
+		LOG_ERROR("Unsupported channel reference '%d'", channel_cfg->reference);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("unsupported channel gain '%d'", channel_cfg->gain);
+		LOG_ERROR("unsupported channel gain '%d'", channel_cfg->gain);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Unsupported acquisition_time '%d'", channel_cfg->acquisition_time);
+		LOG_ERROR("Unsupported acquisition_time '%d'", channel_cfg->acquisition_time);
 		return -ENOTSUP;
 	}
 	return 0;
@@ -170,7 +170,7 @@ static void mcp3221_acquisition_thread(void *p1, void *p2, void *p3)
 
 		err = mcp3221_read_channel(data->dev, &result);
 		if (err) {
-			LOG_ERR("Failed to read channel %d (err %d)", 0, err);
+			LOG_ERROR("Failed to read channel %d (err %d)", 0, err);
 			adc_context_complete(&data->ctx, err);
 			break;
 		}

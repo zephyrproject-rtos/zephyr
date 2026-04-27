@@ -645,7 +645,7 @@ static void usbd_dmareq_process(void)
 		__ASSERT_NO_MSG(nrfx_is_in_ram(payload_buf));
 
 		if (received > payload_len) {
-			LOG_ERR("buffer too small: r: %u, l: %u", received, payload_len);
+			LOG_ERROR("buffer too small: r: %u, l: %u", received, payload_len);
 		} else {
 			payload_len = received;
 		}
@@ -1242,7 +1242,7 @@ static void udc_event_xfer_in(const struct device *dev, const uint8_t ep)
 
 	buf = udc_buf_get(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("ep 0x%02x queue is empty", ep);
+		LOG_ERROR("ep 0x%02x queue is empty", ep);
 		__ASSERT_NO_MSG(false);
 		return;
 	}
@@ -1320,7 +1320,7 @@ static void udc_event_xfer_out(const struct device *dev, const uint8_t ep)
 	ep_cfg = udc_get_ep_cfg(dev, ep);
 	buf = udc_buf_get(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("ep 0x%02x ok, queue is empty", ep);
+		LOG_ERROR("ep 0x%02x ok, queue is empty", ep);
 		return;
 	}
 
@@ -1546,7 +1546,7 @@ static void udc_nrf_power_handler(nrfx_power_usb_evt_t pwr_evt)
 		vbus_present = false;
 		break;
 	default:
-		LOG_ERR("Unknown power event %d", pwr_evt);
+		LOG_ERROR("Unknown power event %d", pwr_evt);
 	}
 }
 
@@ -1694,20 +1694,20 @@ static int udc_nrf_enable(const struct device *dev)
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
 				   USB_EP_TYPE_CONTROL, UDC_NRF_EP0_SIZE, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
 				   USB_EP_TYPE_CONTROL, UDC_NRF_EP0_SIZE, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
 	sys_notify_init_spinwait(&hfxo_cli.notify);
 	ret = onoff_request(hfxo_mgr, &hfxo_cli);
 	if (ret < 0) {
-		LOG_ERR("Failed to start HFXO %d", ret);
+		LOG_ERROR("Failed to start HFXO %d", ret);
 		return ret;
 	}
 
@@ -1726,18 +1726,18 @@ static int udc_nrf_disable(const struct device *dev)
 	nrf_usbd_legacy_disable();
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
 	ret = onoff_cancel_or_release(hfxo_mgr, &hfxo_cli);
 	if (ret < 0) {
-		LOG_ERR("Failed to stop HFXO %d", ret);
+		LOG_ERROR("Failed to stop HFXO %d", ret);
 		return ret;
 	}
 
@@ -1818,7 +1818,7 @@ static int udc_nrf_driver_init(const struct device *dev)
 		ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
 		err = udc_register_ep(dev, &ep_cfg_out[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}
@@ -1840,7 +1840,7 @@ static int udc_nrf_driver_init(const struct device *dev)
 		ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
 		err = udc_register_ep(dev, &ep_cfg_in[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}

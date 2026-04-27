@@ -55,7 +55,7 @@ static int sdhc_cdns_write_phy_reg(uint32_t phy_reg_addr, uint32_t phy_reg_addr_
 	data = sys_read32(phy_reg_data);
 
 	if (data != phy_reg_data_value) {
-		LOG_ERR("PHY_REG_DATA is not set properly");
+		LOG_ERROR("PHY_REG_DATA is not set properly");
 		return -ENXIO;
 	}
 
@@ -65,9 +65,9 @@ static int sdhc_cdns_write_phy_reg(uint32_t phy_reg_addr, uint32_t phy_reg_addr_
 int sdhc_cdns_wait_ics(uint16_t timeout, uint32_t cdn_srs_res)
 {
 	/* Wait status command response ready */
-	if (!WAIT_FOR(((sys_read32(cdn_srs_res) & CDNS_SRS11_ICS)
-		== CDNS_SRS11_ICS), timeout, k_msleep(1))) {
-		LOG_ERR("Timed out waiting for ICS response");
+	if (!WAIT_FOR(((sys_read32(cdn_srs_res) & CDNS_SRS11_ICS) == CDNS_SRS11_ICS), timeout,
+		      k_msleep(1))) {
+		LOG_ERROR("Timed out waiting for ICS response");
 		return -ETIMEDOUT;
 	}
 
@@ -86,10 +86,10 @@ static int sdhc_cdns_card_present(void)
 {
 	uint32_t timeout = CARD_REG_TIME_DELAY_US;
 
-	if (!WAIT_FOR((((sys_read32(cdns_params.reg_base + SDHC_CDNS_SRS09))
-			& CDNS_SRS09_CI) == CDNS_SRS09_CI),
-			timeout, k_msleep(1))) {
-		LOG_ERR("Card detection timeout");
+	if (!WAIT_FOR((((sys_read32(cdns_params.reg_base + SDHC_CDNS_SRS09)) & CDNS_SRS09_CI) ==
+		       CDNS_SRS09_CI),
+		      timeout, k_msleep(1))) {
+		LOG_ERROR("Card detection timeout");
 		return -ETIMEDOUT;
 	}
 
@@ -184,7 +184,7 @@ static int sdhc_cdns_program_phy_reg(struct sdhc_cdns_combo_phy *sdhc_cdns_combo
 			cdns_params.combophy + PHY_DQS_TIMING_REG, cdns_params.reg_base
 			+ SDHC_CDNS_HRS05, value);
 	if (ret != 0U) {
-		LOG_ERR("Error in PHY_DQS_TIMING_REG programming");
+		LOG_ERROR("Error in PHY_DQS_TIMING_REG programming");
 		return ret;
 	}
 
@@ -201,7 +201,7 @@ static int sdhc_cdns_program_phy_reg(struct sdhc_cdns_combo_phy *sdhc_cdns_combo
 			cdns_params.combophy + PHY_GATE_LPBK_CTRL_REG, cdns_params.reg_base
 			+ SDHC_CDNS_HRS05, value);
 	if (ret != 0U) {
-		LOG_ERR("Error in PHY_GATE_LPBK_CTRL_REG programming");
+		LOG_ERROR("Error in PHY_GATE_LPBK_CTRL_REG programming");
 		return -ret;
 	}
 
@@ -215,7 +215,7 @@ static int sdhc_cdns_program_phy_reg(struct sdhc_cdns_combo_phy *sdhc_cdns_combo
 			cdns_params.combophy + PHY_DLL_MASTER_CTRL_REG, cdns_params.reg_base
 			+ SDHC_CDNS_HRS05, value);
 	if (ret != 0U) {
-		LOG_ERR("Error in PHY_DLL_MASTER_CTRL_REG programming");
+		LOG_ERROR("Error in PHY_DLL_MASTER_CTRL_REG programming");
 		return ret;
 	}
 
@@ -231,7 +231,7 @@ static int sdhc_cdns_program_phy_reg(struct sdhc_cdns_combo_phy *sdhc_cdns_combo
 			cdns_params.combophy + PHY_DLL_SLAVE_CTRL_REG, cdns_params.reg_base
 			+ SDHC_CDNS_HRS05, value);
 	if (ret != 0U) {
-		LOG_ERR("Error in PHY_DLL_SLAVE_CTRL_REG programming");
+		LOG_ERROR("Error in PHY_DLL_SLAVE_CTRL_REG programming");
 		return ret;
 	}
 
@@ -270,7 +270,7 @@ static int sdhc_cdns_program_phy_reg(struct sdhc_cdns_combo_phy *sdhc_cdns_combo
 			cdns_params.combophy + PHY_DQ_TIMING_REG, cdns_params.reg_base
 			+ SDHC_CDNS_HRS05, value);
 	if (ret != 0U) {
-		LOG_ERR("Error in PHY_DQ_TIMING_REG programming");
+		LOG_ERROR("Error in PHY_DQ_TIMING_REG programming");
 		return ret;
 	}
 	return 0;
@@ -282,7 +282,7 @@ static int sdhc_cdns_cache_invd(int lba, uintptr_t buf, size_t size)
 
 	ret = arch_dcache_invd_range((void *)buf, size);
 	if (ret != 0) {
-		LOG_ERR("%s: error in invalidate dcache with ret %d", __func__, ret);
+		LOG_ERROR("%s: error in invalidate dcache with ret %d", __func__, ret);
 		return ret;
 	}
 
@@ -311,8 +311,8 @@ static int sdhc_cdns_prepare(uint32_t dma_start_addr, uintptr_t dma_buff,
 		cdns_params.desc_size);
 
 	if (desc_cnt > CONFIG_CDNS_DESC_COUNT) {
-		LOG_ERR("Requested data transfer length %u greater than configured length %u",
-			size, (CONFIG_CDNS_DESC_COUNT * SDMMC_DMA_MAX_BUFFER_SIZE));
+		LOG_ERROR("Requested data transfer length %u greater than configured length %u",
+			  size, (CONFIG_CDNS_DESC_COUNT * SDMMC_DMA_MAX_BUFFER_SIZE));
 		return -EINVAL;
 	}
 
@@ -414,7 +414,7 @@ static int sdhc_cdns_set_ios(unsigned int clk, unsigned int width)
 	if (clk != 0) {
 		ret = sdhc_cdns_host_set_clk(clk);
 		if (ret != 0) {
-			LOG_ERR("%s: Clock configuration failed", __func__);
+			LOG_ERROR("%s: Clock configuration failed", __func__);
 			return ret;
 		}
 	}
@@ -538,9 +538,9 @@ static int sdhc_cdns_reset(void)
 
 	/* Wait status command response ready */
 	timeout = CARD_REG_TIME_DELAY_US;
-	if (!WAIT_FOR(((sys_read32(cdns_params.reg_base + SDHC_CDNS_HRS00) &
-		CDNS_HRS00_SWR) == 0), timeout, k_msleep(1))) {
-		LOG_ERR("Software reset is not completed...timedout");
+	if (!WAIT_FOR(((sys_read32(cdns_params.reg_base + SDHC_CDNS_HRS00) & CDNS_HRS00_SWR) == 0),
+		      timeout, k_msleep(1))) {
+		LOG_ERROR("Software reset is not completed...timedout");
 		return -ETIMEDOUT;
 	}
 
@@ -556,31 +556,31 @@ static int sdhc_cdns_init(void)
 
 	ret = sdhc_cdns_program_phy_reg(&sdhc_cdns_combo_phy_reg_info, &sdhc_cdns_sdmmc_reg_info);
 	if (ret != 0U) {
-		LOG_ERR("SoftPhy register configuration failed");
+		LOG_ERROR("SoftPhy register configuration failed");
 		return ret;
 	}
 
 	ret = sdhc_cdns_init_hrs_io(&sdhc_cdns_combo_phy_reg_info, &sdhc_cdns_sdmmc_reg_info);
 	if (ret != 0U) {
-		LOG_ERR("Configuration for HRS IO reg failed");
+		LOG_ERROR("Configuration for HRS IO reg failed");
 		return ret;
 	}
 
 	ret = sdhc_cdns_card_present();
 	if (ret != CARD_PRESENT) {
-		LOG_ERR("SD card does not detect");
+		LOG_ERROR("SD card does not detect");
 		return -ETIMEDOUT;
 	}
 
 	ret = sdhc_cdns_vol_reset();
 	if (ret != 0U) {
-		LOG_ERR("SD/MMC card reset failed");
+		LOG_ERROR("SD/MMC card reset failed");
 		return ret;
 	}
 
 	ret = sdhc_cdns_set_clk(&cdns_params);
 	if (ret != 0U) {
-		LOG_ERR("Host controller set clk failed");
+		LOG_ERROR("Host controller set clk failed");
 		return ret;
 	}
 
@@ -720,18 +720,19 @@ static int sdhc_cdns_send_cmd(struct sdmmc_cmd *cmd, struct sdhc_data *data)
 	sys_write32(op | cmd_indx, cdns_params.reg_base + SDHC_CDNS_SRS03);
 
 	timeout = CARD_REG_TIME_DELAY_US;
-	if (!WAIT_FOR(((((sys_read32(cdns_params.reg_base + SDHC_CDNS_SRS12)) &
-			CDNS_SRS12_CC) == CDNS_SRS12_CC) | (((sys_read32(cdns_params.reg_base +
-			SDHC_CDNS_SRS12)) & CDNS_SRS12_EINT) == CDNS_SRS12_EINT)),
-			timeout, k_msleep(1))) {
-		LOG_ERR("Response timeout SRS12");
+	if (!WAIT_FOR(((((sys_read32(cdns_params.reg_base + SDHC_CDNS_SRS12)) & CDNS_SRS12_CC) ==
+			CDNS_SRS12_CC) |
+		       (((sys_read32(cdns_params.reg_base + SDHC_CDNS_SRS12)) & CDNS_SRS12_EINT) ==
+			CDNS_SRS12_EINT)),
+		      timeout, k_msleep(1))) {
+		LOG_ERROR("Response timeout SRS12");
 		return -ETIMEDOUT;
 	}
 
 	value = sys_read32(cdns_params.reg_base + SDHC_CDNS_SRS12);
 	status_check = value & CDNS_SRS12_ERR_MASK;
 	if (status_check != 0U) {
-		LOG_ERR("SD host controller send command failed, SRS12 = %X", status_check);
+		LOG_ERROR("SD host controller send command failed, SRS12 = %X", status_check);
 		return -EIO;
 	}
 

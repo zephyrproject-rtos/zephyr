@@ -57,14 +57,14 @@ static int sai_mclk_config(const struct device *dev,
 
 	ret = get_msel(bclk_source, &msel);
 	if (ret < 0) {
-		LOG_ERR("invalid MCLK source %d for MSEL", bclk_source);
+		LOG_ERROR("invalid MCLK source %d for MSEL", bclk_source);
 		return ret;
 	}
 
 	/* get MCLK's rate */
 	ret = get_mclk_rate(&cfg->clk_data, bclk_source, &mclk_rate);
 	if (ret < 0) {
-		LOG_ERR("failed to query MCLK's rate");
+		LOG_ERROR("failed to query MCLK's rate");
 		return ret;
 	}
 
@@ -131,7 +131,7 @@ static const struct dai_properties
 	case DAI_DIR_TX:
 		return cfg->tx_props;
 	default:
-		LOG_ERR("invalid direction: %d", dir);
+		LOG_ERROR("invalid direction: %d", dir);
 		return NULL;
 	}
 
@@ -216,7 +216,7 @@ static int sai_config_set(const struct device *dev,
 	int ret;
 
 	if (cfg->type != DAI_IMX_SAI) {
-		LOG_ERR("wrong DAI type: %d", cfg->type);
+		LOG_ERROR("wrong DAI type: %d", cfg->type);
 		return -EINVAL;
 	}
 
@@ -232,27 +232,27 @@ static int sai_config_set(const struct device *dev,
 	 */
 	ret = sai_update_state(DAI_DIR_TX, data, DAI_STATE_READY);
 	if (ret < 0) {
-		LOG_ERR("failed to update TX state. Reason: %d", ret);
+		LOG_ERROR("failed to update TX state. Reason: %d", ret);
 		return ret;
 	}
 
 	ret = sai_update_state(DAI_DIR_RX, data, DAI_STATE_READY);
 	if (ret < 0) {
-		LOG_ERR("failed to update RX state. Reason: %d", ret);
+		LOG_ERROR("failed to update RX state. Reason: %d", ret);
 		return ret;
 	}
 
 	/* condition: BCLK = FSYNC * TDM_SLOT_WIDTH * TDM_SLOTS */
 	if (bespoke->bclk_rate !=
 	    (bespoke->fsync_rate * bespoke->tdm_slot_width * bespoke->tdm_slots)) {
-		LOG_ERR("bad BCLK value: %d", bespoke->bclk_rate);
+		LOG_ERROR("bad BCLK value: %d", bespoke->bclk_rate);
 		return -EINVAL;
 	}
 
 	/* TODO: this should be removed if we're to support sw channels != hw channels */
 	if (count_leading_zeros(~bespoke->tx_slots) != bespoke->tdm_slots ||
 	    count_leading_zeros(~bespoke->rx_slots) != bespoke->tdm_slots) {
-		LOG_ERR("number of TX/RX slots doesn't match number of TDM slots");
+		LOG_ERROR("number of TX/RX slots doesn't match number of TDM slots");
 		return -EINVAL;
 	}
 
@@ -301,12 +301,12 @@ static int sai_config_set(const struct device *dev,
 		break;
 	case DAI_CBC_CFP:
 	case DAI_CBP_CFC:
-		LOG_ERR("unsupported provider configuration: %d",
-			cfg->format & DAI_FORMAT_CLOCK_PROVIDER_MASK);
+		LOG_ERROR("unsupported provider configuration: %d",
+			  cfg->format & DAI_FORMAT_CLOCK_PROVIDER_MASK);
 		return -ENOTSUP;
 	default:
-		LOG_ERR("invalid provider configuration: %d",
-			cfg->format & DAI_FORMAT_CLOCK_PROVIDER_MASK);
+		LOG_ERROR("invalid provider configuration: %d",
+			  cfg->format & DAI_FORMAT_CLOCK_PROVIDER_MASK);
 		return -EINVAL;
 	}
 
@@ -327,8 +327,7 @@ static int sai_config_set(const struct device *dev,
 		tx_config->bitClock.bclkPolarity = kSAI_PolarityActiveLow;
 		break;
 	default:
-		LOG_ERR("unsupported DAI protocol: %d",
-			cfg->format & DAI_FORMAT_PROTOCOL_MASK);
+		LOG_ERROR("unsupported DAI protocol: %d", cfg->format & DAI_FORMAT_PROTOCOL_MASK);
 		return -EINVAL;
 	}
 
@@ -351,8 +350,8 @@ static int sai_config_set(const struct device *dev,
 		/* nothing to do here */
 		break;
 	default:
-		LOG_ERR("invalid clock inversion configuration: %d",
-			cfg->format & DAI_FORMAT_CLOCK_INVERSION_MASK);
+		LOG_ERROR("invalid clock inversion configuration: %d",
+			  cfg->format & DAI_FORMAT_CLOCK_INVERSION_MASK);
 		return -EINVAL;
 	}
 
@@ -377,7 +376,7 @@ static int sai_config_set(const struct device *dev,
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_ERR("failed to get() SAI device: %d", ret);
+		LOG_ERROR("failed to get() SAI device: %d", ret);
 		return ret;
 	}
 
@@ -405,7 +404,7 @@ static int sai_config_set(const struct device *dev,
 #ifdef CONFIG_SAI_HAS_MCLK_CONFIG_OPTION
 	ret = sai_mclk_config(dev, tx_config->bitClock.bclkSource, bespoke);
 	if (ret < 0) {
-		LOG_ERR("failed to set MCLK configuration");
+		LOG_ERROR("failed to set MCLK configuration");
 		pm_device_runtime_put(dev);
 		return ret;
 	}
@@ -490,7 +489,7 @@ static int sai_tx_rx_disable(struct sai_data *data,
 	 * as it does some busy waiting.
 	 */
 	if (k_is_in_isr()) {
-		LOG_ERR("sai_disable() should never be called from ISR context");
+		LOG_ERROR("sai_disable() should never be called from ISR context");
 		return -EINVAL;
 	}
 
@@ -498,7 +497,7 @@ static int sai_tx_rx_disable(struct sai_data *data,
 	    cfg->rx_sync_mode == kSAI_ModeAsync) {
 		ret = sai_dir_disable(data, dir);
 		if (!ret) {
-			LOG_ERR("timed out while waiting for dir %d disable", dir);
+			LOG_ERROR("timed out while waiting for dir %d disable", dir);
 			return -ETIMEDOUT;
 		}
 	} else {
@@ -508,16 +507,15 @@ static int sai_tx_rx_disable(struct sai_data *data,
 		if (dir == sync_dir) {
 			ret = sai_dir_disable(data, sync_dir);
 			if (!ret) {
-				LOG_ERR("timed out while waiting for dir %d disable",
-					sync_dir);
+				LOG_ERROR("timed out while waiting for dir %d disable", sync_dir);
 				return -ETIMEDOUT;
 			}
 
 			if (!SAI_TX_RX_DIR_IS_SW_ENABLED(async_dir, data)) {
 				ret = sai_dir_disable(data, async_dir);
 				if (!ret) {
-					LOG_ERR("timed out while waiting for dir %d disable",
-						async_dir);
+					LOG_ERROR("timed out while waiting for dir %d disable",
+						  async_dir);
 					return -ETIMEDOUT;
 				}
 			}
@@ -525,8 +523,8 @@ static int sai_tx_rx_disable(struct sai_data *data,
 			if (!SAI_TX_RX_DIR_IS_SW_ENABLED(sync_dir, data)) {
 				ret = sai_dir_disable(data, async_dir);
 				if (!ret) {
-					LOG_ERR("timed out while waiting for dir %d disable",
-						async_dir);
+					LOG_ERROR("timed out while waiting for dir %d disable",
+						  async_dir);
 					return -ETIMEDOUT;
 				}
 			}
@@ -547,15 +545,15 @@ static int sai_trigger_pause(const struct device *dev,
 	cfg = dev->config;
 
 	if (dir != DAI_DIR_RX && dir != DAI_DIR_TX) {
-		LOG_ERR("invalid direction: %d", dir);
+		LOG_ERROR("invalid direction: %d", dir);
 		return -EINVAL;
 	}
 
 	/* attempt to change state */
 	ret = sai_update_state(dir, data, DAI_STATE_PAUSED);
 	if (ret < 0) {
-		LOG_ERR("failed to transition to PAUSED from %d. Reason: %d",
-			sai_get_state(dir, data), ret);
+		LOG_ERROR("failed to transition to PAUSED from %d. Reason: %d",
+			  sai_get_state(dir, data), ret);
 		return ret;
 	}
 
@@ -588,15 +586,15 @@ static int sai_trigger_stop(const struct device *dev,
 	old_state = sai_get_state(dir, data);
 
 	if (dir != DAI_DIR_RX && dir != DAI_DIR_TX) {
-		LOG_ERR("invalid direction: %d", dir);
+		LOG_ERROR("invalid direction: %d", dir);
 		return -EINVAL;
 	}
 
 	/* attempt to change state */
 	ret = sai_update_state(dir, data, DAI_STATE_STOPPING);
 	if (ret < 0) {
-		LOG_ERR("failed to transition to STOPPING from %d. Reason: %d",
-			sai_get_state(dir, data), ret);
+		LOG_ERROR("failed to transition to STOPPING from %d. Reason: %d",
+			  sai_get_state(dir, data), ret);
 		return ret;
 	}
 
@@ -709,15 +707,15 @@ static int sai_trigger_start(const struct device *dev,
 
 	/* TX and RX should be triggered independently */
 	if (dir != DAI_DIR_RX && dir != DAI_DIR_TX) {
-		LOG_ERR("invalid direction: %d", dir);
+		LOG_ERROR("invalid direction: %d", dir);
 		return -EINVAL;
 	}
 
 	/* attempt to change state */
 	ret = sai_update_state(dir, data, DAI_STATE_RUNNING);
 	if (ret < 0) {
-		LOG_ERR("failed to transition to RUNNING from %d. Reason: %d",
-			sai_get_state(dir, data), ret);
+		LOG_ERROR("failed to transition to RUNNING from %d. Reason: %d",
+			  sai_get_state(dir, data), ret);
 		return ret;
 	}
 
@@ -734,7 +732,7 @@ static int sai_trigger_start(const struct device *dev,
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_ERR("failed to get() SAI device: %d", ret);
+		LOG_ERROR("failed to get() SAI device: %d", ret);
 		return ret;
 	}
 
@@ -799,7 +797,7 @@ static int sai_trigger(const struct device *dev,
 		 */
 		return 0;
 	default:
-		LOG_ERR("invalid trigger command: %d", cmd);
+		LOG_ERROR("invalid trigger command: %d", cmd);
 		return -EINVAL;
 	}
 
@@ -845,8 +843,8 @@ static int sai_clks_enable_disable(const struct device *dev, bool enable)
 		}
 
 		if (ret < 0) {
-			LOG_ERR("failed to gate/ungate clock %u: %d",
-				cfg->clk_data.clocks[i], ret);
+			LOG_ERROR("failed to gate/ungate clock %u: %d", cfg->clk_data.clocks[i],
+				  ret);
 			return ret;
 		}
 	}
@@ -887,17 +885,17 @@ static int sai_init(const struct device *dev)
 	device_map(&data->regmap, cfg->regmap_phys, cfg->regmap_size, K_MEM_CACHE_NONE);
 
 	if (SAI_DLINE_COUNT(cfg->regmap_phys) == -1) {
-		LOG_ERR("bad or unsupported SAI instance");
+		LOG_ERROR("bad or unsupported SAI instance");
 		return -EINVAL;
 	}
 
 	if (cfg->tx_dline >= SAI_DLINE_COUNT(cfg->regmap_phys)) {
-		LOG_ERR("invalid TX data line index");
+		LOG_ERROR("invalid TX data line index");
 		return -EINVAL;
 	}
 
 	if (cfg->rx_dline >= SAI_DLINE_COUNT(cfg->regmap_phys)) {
-		LOG_ERR("invalid RX data line index");
+		LOG_ERROR("invalid RX data line index");
 		return -EINVAL;
 	}
 

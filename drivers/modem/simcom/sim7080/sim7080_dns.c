@@ -35,7 +35,7 @@ MODEM_CMD_DEFINE(on_cmd_cdnsgip)
 
 	state = atoi(argv[0]);
 	if (state == 0) {
-		LOG_ERR("DNS lookup failed with error %s", argv[1]);
+		LOG_ERROR("DNS lookup failed with error %s", argv[1]);
 		goto exit;
 	}
 
@@ -47,7 +47,7 @@ MODEM_CMD_DEFINE(on_cmd_cdnsgip)
 	char *ipv4 = strstr(ips, "\"");
 
 	if (!ipv4) {
-		LOG_ERR("Malformed DNS response!!");
+		LOG_ERROR("Malformed DNS response!!");
 		goto exit;
 	}
 
@@ -74,7 +74,7 @@ static int offload_getaddrinfo(const char *node, const char *service,
 
 	/* Modem is not attached to the network. */
 	if (sim7080_get_state() != SIM7080_STATE_NETWORKING) {
-		LOG_ERR("Modem currently not attached to the network!");
+		LOG_ERROR("Modem currently not attached to the network!");
 		return DNS_EAI_AGAIN;
 	}
 
@@ -118,7 +118,7 @@ static int offload_getaddrinfo(const char *node, const char *service,
 	ret = snprintk(sendbuf, sizeof(sendbuf), "AT+CDNSGIP=\"%s\",%u,%u", node,
 				mdata.dns.recount, mdata.dns.timeout);
 	if (ret < 0) {
-		LOG_ERR("Formatting dns query failed");
+		LOG_ERROR("Formatting dns query failed");
 		return ret;
 	}
 

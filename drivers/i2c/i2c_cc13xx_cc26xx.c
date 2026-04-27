@@ -177,19 +177,19 @@ static int i2c_cc13xx_cc26xx_configure(const struct device *dev,
 		fast = true;
 		break;
 	default:
-		LOG_ERR("Unsupported speed");
+		LOG_ERROR("Unsupported speed");
 		return -EIO;
 	}
 
 	/* Support for slave mode has not been implemented */
 	if (!(dev_config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Slave mode is not supported");
+		LOG_ERROR("Slave mode is not supported");
 		return -EIO;
 	}
 
 	/* This is deprecated and could be ignored in the future */
 	if (dev_config & I2C_ADDR_10_BITS) {
-		LOG_ERR("10-bit addressing mode is not supported");
+		LOG_ERROR("10-bit addressing mode is not supported");
 		return -EIO;
 	}
 
@@ -339,14 +339,14 @@ static int i2c_cc13xx_cc26xx_init(const struct device *dev)
 
 	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
-		LOG_ERR("Failed to configure pinctrl state");
+		LOG_ERROR("Failed to configure pinctrl state");
 		return err;
 	}
 
 	cfg = i2c_map_dt_bitrate(DT_INST_PROP(0, clock_frequency));
 	err = i2c_cc13xx_cc26xx_configure(dev, cfg | I2C_MODE_CONTROLLER);
 	if (err) {
-		LOG_ERR("Failed to configure");
+		LOG_ERROR("Failed to configure");
 		return err;
 	}
 

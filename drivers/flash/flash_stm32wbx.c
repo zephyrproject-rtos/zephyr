@@ -80,7 +80,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 	 */
 	if ((flash[0] != 0xFFFFFFFFUL ||
 	     flash[1] != 0xFFFFFFFFUL) && val != 0UL) {
-		LOG_ERR("Word at offs %ld not erased", (long)offset);
+		LOG_ERROR("Word at offs %ld not erased", (long)offset);
 		return -EIO;
 	}
 

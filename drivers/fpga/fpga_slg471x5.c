@@ -116,13 +116,13 @@ static int fpga_slg471x5_load(const struct device *dev, uint32_t *image_ptr, uin
 
 	ret = i2c_write_dt(&config->bus, buf, img_size + 1);
 	if (ret < 0) {
-		LOG_ERR("Loading bitstream failed");
+		LOG_ERROR("Loading bitstream failed");
 		return ret;
 	}
 
 	ret = fpga_slg471x5_verify(dev, buf + 1, img_size);
 	if (ret < 0) {
-		LOG_ERR("Verification failed");
+		LOG_ERROR("Verification failed");
 		return ret;
 	}
 
@@ -159,7 +159,7 @@ static int fpga_slg471x5_init(const struct device *dev)
 	const struct fpga_slg471x5_config *config = dev->config;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
-		LOG_ERR("I2C bus %s not ready", config->bus.bus->name);
+		LOG_ERROR("I2C bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 

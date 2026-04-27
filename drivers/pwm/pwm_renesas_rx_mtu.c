@@ -322,15 +322,15 @@ static int pwm_renesas_rx_configure_capture(const struct device *dev, uint32_t c
 	int ret;
 
 	if (!(flags & PWM_CAPTURE_TYPE_MASK)) {
-		LOG_ERR("No PWM capture type specified");
+		LOG_ERROR("No PWM capture type specified");
 		return -EINVAL;
 	}
 	if ((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_BOTH) {
-		LOG_ERR("Cannot capture both period and pulse width");
+		LOG_ERROR("Cannot capture both period and pulse width");
 		return -ENOTSUP;
 	}
 	if (data->capture.is_busy) {
-		LOG_ERR("Capture already active on this pin");
+		LOG_ERROR("Capture already active on this pin");
 		return -EBUSY;
 	}
 
@@ -402,12 +402,12 @@ static int pwm_renesas_rx_enable_capture(const struct device *dev, uint32_t chan
 	}
 
 	if (data->capture.is_busy) {
-		LOG_ERR("Capture already active on this pin");
+		LOG_ERROR("Capture already active on this pin");
 		return -EBUSY;
 	}
 
 	if (!data->capture.callback) {
-		LOG_ERR("PWM capture not configured");
+		LOG_ERROR("PWM capture not configured");
 		return -EINVAL;
 	}
 

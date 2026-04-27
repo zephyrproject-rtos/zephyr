@@ -146,7 +146,7 @@ static int can_native_linux_send(const struct device *dev, const struct can_fram
 #ifdef CONFIG_CAN_FD_MODE
 	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR |
 		CAN_FRAME_FDF | CAN_FRAME_BRS)) != 0) {
-		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		LOG_ERROR("unsupported CAN frame flags 0x%02x", frame->flags);
 		return -ENOTSUP;
 	}
 
@@ -160,18 +160,18 @@ static int can_native_linux_send(const struct device *dev, const struct can_fram
 	}
 #else /* CONFIG_CAN_FD_MODE */
 	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR)) != 0) {
-		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		LOG_ERROR("unsupported CAN frame flags 0x%02x", frame->flags);
 		return -ENOTSUP;
 	}
 #endif /* !CONFIG_CAN_FD_MODE */
 
 	if (frame->dlc > max_dlc) {
-		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, max_dlc);
+		LOG_ERROR("DLC of %d exceeds maximum (%d)", frame->dlc, max_dlc);
 		return -EINVAL;
 	}
 
 	if (data->dev_fd <= 0) {
-		LOG_ERR("No file descriptor: %d", data->dev_fd);
+		LOG_ERROR("No file descriptor: %d", data->dev_fd);
 		return -EIO;
 	}
 
@@ -190,7 +190,7 @@ static int can_native_linux_send(const struct device *dev, const struct can_fram
 
 	ret = nsi_host_write(data->dev_fd, &sframe, mtu);
 	if (ret < 0) {
-		LOG_ERR("Cannot send CAN data len %d (%d)", sframe.len, -errno);
+		LOG_ERROR("Cannot send CAN data len %d (%d)", sframe.len, -errno);
 	}
 
 	return 0;
@@ -207,7 +207,7 @@ static int can_native_linux_add_rx_filter(const struct device *dev, can_rx_callb
 		filter->mask);
 
 	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
-		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
+		LOG_ERROR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
 
@@ -221,7 +221,7 @@ static int can_native_linux_add_rx_filter(const struct device *dev, can_rx_callb
 	}
 
 	if (filter_id < 0) {
-		LOG_ERR("No free filter left");
+		LOG_ERROR("No free filter left");
 		k_mutex_unlock(&data->filter_mutex);
 		return filter_id;
 	}
@@ -243,7 +243,7 @@ static void can_native_linux_remove_rx_filter(const struct device *dev, int filt
 	struct can_native_linux_data *data = dev->data;
 
 	if (filter_id < 0 || filter_id >= ARRAY_SIZE(data->filters)) {
-		LOG_ERR("filter ID %d out of bounds", filter_id);
+		LOG_ERROR("filter ID %d out of bounds", filter_id);
 		return;
 	}
 
@@ -300,12 +300,12 @@ static int can_native_linux_set_mode(const struct device *dev, can_mode_t mode)
 
 #ifdef CONFIG_CAN_FD_MODE
 	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_FD)) != 0) {
-		LOG_ERR("unsupported mode: 0x%08x", mode);
+		LOG_ERROR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
 #else
 	if ((mode & ~(CAN_MODE_LOOPBACK)) != 0) {
-		LOG_ERR("unsupported mode: 0x%08x", mode);
+		LOG_ERROR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
 #endif /* CONFIG_CAN_FD_MODE */
@@ -316,7 +316,7 @@ static int can_native_linux_set_mode(const struct device *dev, can_mode_t mode)
 
 	err = linux_socketcan_set_mode_fd(data->dev_fd, (mode & CAN_MODE_FD) != 0);
 	if (err != 0) {
-		LOG_ERR("failed to set mode");
+		LOG_ERROR("failed to set mode");
 		return -EIO;
 	}
 
@@ -468,7 +468,7 @@ static int can_native_linux_init(const struct device *dev)
 	LOG_DBG("Opening %s", if_name);
 	data->dev_fd = linux_socketcan_iface_open(if_name);
 	if (data->dev_fd < 0) {
-		LOG_ERR("Cannot open %s (%d)", if_name, data->dev_fd);
+		LOG_ERROR("Cannot open %s (%d)", if_name, data->dev_fd);
 		return -ENODEV;
 	}
 

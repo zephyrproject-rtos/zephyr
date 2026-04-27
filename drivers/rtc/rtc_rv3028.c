@@ -211,7 +211,7 @@ static int rv3028_read_regs(const struct device *dev, uint8_t addr, void *buf, s
 
 	err = i2c_write_read_dt(&config->i2c, &addr, sizeof(addr), buf, len);
 	if (err) {
-		LOG_ERR("failed to read reg addr 0x%02x, len %d (err %d)", addr, len, err);
+		LOG_ERROR("failed to read reg addr 0x%02x, len %d (err %d)", addr, len, err);
 		return err;
 	}
 
@@ -234,7 +234,7 @@ static int rv3028_write_regs(const struct device *dev, uint8_t addr, void *buf, 
 
 	err = i2c_write_dt(&config->i2c, block, sizeof(block));
 	if (err) {
-		LOG_ERR("failed to write reg addr 0x%02x, len %d (err %d)", addr, len, err);
+		LOG_ERROR("failed to write reg addr 0x%02x, len %d (err %d)", addr, len, err);
 		return err;
 	}
 
@@ -253,8 +253,8 @@ static int rv3028_update_reg8(const struct device *dev, uint8_t addr, uint8_t ma
 
 	err = i2c_reg_update_byte_dt(&config->i2c, addr, mask, val);
 	if (err) {
-		LOG_ERR("failed to update reg addr 0x%02x, mask 0x%02x, val 0x%02x (err %d)", addr,
-			mask, val, err);
+		LOG_ERROR("failed to update reg addr 0x%02x, mask 0x%02x, val 0x%02x (err %d)",
+			  addr, mask, val, err);
 		return err;
 	}
 
@@ -484,7 +484,7 @@ static int rv3028_set_time(const struct device *dev, const struct rtc_time *time
 	if (timeptr == NULL ||
 	    !rtc_utils_validate_rtc_time(timeptr, RV3028_RTC_TIME_MASK) ||
 	    (timeptr->tm_year < RV3028_YEAR_OFFSET)) {
-		LOG_ERR("invalid time");
+		LOG_ERROR("invalid time");
 		return -EINVAL;
 	}
 
@@ -568,7 +568,7 @@ static int rv3028_alarm_get_supported_fields(const struct device *dev, uint16_t 
 	ARG_UNUSED(dev);
 
 	if (id != 0U) {
-		LOG_ERR("invalid alarm ID %d", id);
+		LOG_ERROR("invalid alarm ID %d", id);
 		return -EINVAL;
 	}
 
@@ -583,17 +583,17 @@ static int rv3028_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 	uint8_t regs[3];
 
 	if (id != 0U) {
-		LOG_ERR("invalid alarm ID %d", id);
+		LOG_ERROR("invalid alarm ID %d", id);
 		return -EINVAL;
 	}
 
 	if (mask & ~(RV3028_RTC_ALARM_TIME_MASK)) {
-		LOG_ERR("unsupported alarm field mask 0x%04x", mask);
+		LOG_ERROR("unsupported alarm field mask 0x%04x", mask);
 		return -EINVAL;
 	}
 
 	if (!rtc_utils_validate_rtc_time(timeptr, mask)) {
-		LOG_ERR("invalid alarm time");
+		LOG_ERROR("invalid alarm time");
 		return -EINVAL;
 	}
 
@@ -629,7 +629,7 @@ static int rv3028_alarm_get_time(const struct device *dev, uint16_t id, uint16_t
 	int err;
 
 	if (id != 0U) {
-		LOG_ERR("invalid alarm ID %d", id);
+		LOG_ERROR("invalid alarm ID %d", id);
 		return -EINVAL;
 	}
 
@@ -669,7 +669,7 @@ static int rv3028_alarm_is_pending(const struct device *dev, uint16_t id)
 	int err;
 
 	if (id != 0U) {
-		LOG_ERR("invalid alarm ID %d", id);
+		LOG_ERROR("invalid alarm ID %d", id);
 		return -EINVAL;
 	}
 
@@ -719,7 +719,7 @@ static int rv3028_alarm_set_callback(const struct device *dev, uint16_t id,
 	}
 
 	if (id != 0U) {
-		LOG_ERR("invalid alarm ID %d", id);
+		LOG_ERROR("invalid alarm ID %d", id);
 		return -EINVAL;
 	}
 
@@ -872,7 +872,7 @@ static int rv3028_init(const struct device *dev)
 	k_sem_init(&data->lock, 1, 1);
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C bus not ready");
+		LOG_ERROR("I2C bus not ready");
 		return -ENODEV;
 	}
 
@@ -886,19 +886,19 @@ static int rv3028_init(const struct device *dev)
 #if RV3028_INT_GPIOS_IN_USE
 	if (config->gpio_int.port != NULL) {
 		if (!gpio_is_ready_dt(&config->gpio_int)) {
-			LOG_ERR("GPIO not ready");
+			LOG_ERROR("GPIO not ready");
 			return -ENODEV;
 		}
 
 		err = gpio_pin_configure_dt(&config->gpio_int, GPIO_INPUT);
 		if (err) {
-			LOG_ERR("failed to configure GPIO (err %d)", err);
+			LOG_ERROR("failed to configure GPIO (err %d)", err);
 			return -ENODEV;
 		}
 
 		err = gpio_pin_interrupt_configure_dt(&config->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 		if (err) {
-			LOG_ERR("failed to enable GPIO interrupt (err %d)", err);
+			LOG_ERROR("failed to enable GPIO interrupt (err %d)", err);
 			return err;
 		}
 
@@ -907,7 +907,7 @@ static int rv3028_init(const struct device *dev)
 
 		err = gpio_add_callback_dt(&config->gpio_int, &data->int_callback);
 		if (err) {
-			LOG_ERR("failed to add GPIO callback (err %d)", err);
+			LOG_ERROR("failed to add GPIO callback (err %d)", err);
 			return -ENODEV;
 		}
 

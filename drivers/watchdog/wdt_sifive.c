@@ -121,7 +121,7 @@ static int wdt_sifive_setup(const struct device *dev, uint8_t options)
 	uint32_t t, mode;
 
 	if (!data->timeout_valid) {
-		LOG_ERR("No valid timeouts installed");
+		LOG_ERROR("No valid timeouts installed");
 		return -EINVAL;
 	}
 
@@ -171,7 +171,7 @@ static int wdt_sifive_convtime(uint32_t timeout, int clk, int *scaler)
 
 	if (i == 16) {
 		/* Maximum counter and scaler */
-		LOG_ERR("Invalid timeout value allowed range");
+		LOG_ERROR("Invalid timeout value allowed range");
 
 		*scaler = WDOGCFG_SCALE_MAX;
 		return WDOGCMP_MAX;
@@ -191,7 +191,7 @@ static int wdt_sifive_install_timeout(const struct device *dev,
 	int cmp, scaler;
 
 	if (data->timeout_valid) {
-		LOG_ERR("No more timeouts can be installed");
+		LOG_ERROR("No more timeouts can be installed");
 		return -ENOMEM;
 	}
 	if (cfg->window.min != 0U || cfg->window.max == 0U) {
@@ -204,7 +204,7 @@ static int wdt_sifive_install_timeout(const struct device *dev,
 	 */
 	cmp = wdt_sifive_convtime(cfg->window.max, WDOG_CLK, &scaler);
 	if (cmp < 0 || WDOGCMP_MAX < cmp) {
-		LOG_ERR("Unsupported watchdog timeout\n");
+		LOG_ERROR("Unsupported watchdog timeout\n");
 		return -EINVAL;
 	}
 
@@ -219,7 +219,7 @@ static int wdt_sifive_install_timeout(const struct device *dev,
 		break;
 	case WDT_FLAG_RESET_CPU_CORE:
 	default:
-		LOG_ERR("Unsupported watchdog config flags\n");
+		LOG_ERROR("Unsupported watchdog config flags\n");
 
 		wdt_sifive_disable(dev);
 		return -ENOTSUP;

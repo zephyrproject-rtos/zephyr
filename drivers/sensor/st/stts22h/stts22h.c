@@ -41,12 +41,12 @@ static int stts22h_sample_fetch(const struct device *dev, enum sensor_channel ch
 	int16_t raw_temp;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP) {
-		LOG_ERR("Invalid channel: %d", chan);
+		LOG_ERROR("Invalid channel: %d", chan);
 		return -ENOTSUP;
 	}
 
 	if (stts22h_temperature_raw_get(ctx, &raw_temp) < 0) {
-		LOG_ERR("Failed to read sample");
+		LOG_ERROR("Failed to read sample");
 		return -EIO;
 	}
 
@@ -68,7 +68,7 @@ static int stts22h_channel_get(const struct device *dev,
 	struct stts22h_data *data = dev->data;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
-		LOG_ERR("Invalid channel: %d", chan);
+		LOG_ERROR("Invalid channel: %d", chan);
 		return -ENOTSUP;
 	}
 
@@ -104,7 +104,7 @@ static int stts22h_odr_set(const struct device *dev,
 	case 5:
 		return stts22h_set_odr_raw(dev, STTS22H_200Hz);
 	default:
-		LOG_ERR("bad frequency: %d (odr = %d)", val->val1, odr);
+		LOG_ERROR("bad frequency: %d (odr = %d)", val->val1, odr);
 		return -EINVAL;
 	}
 }
@@ -112,7 +112,7 @@ static int stts22h_odr_set(const struct device *dev,
 static inline uint32_t stts22h_val_to_threshold(const struct sensor_value *val)
 {
 	if (val->val1 < ST22H_RANGE_LOWEST_TEMP || val->val1 > ST22H_RANGE_HIGHEST_TEMP) {
-		LOG_ERR("Invalid value: %d", val->val1);
+		LOG_ERROR("Invalid value: %d", val->val1);
 		return UINT32_MAX;
 	}
 	/* The conversion formula is: (degC / 0.64) + 63, we multiply by 100*/
@@ -120,7 +120,7 @@ static inline uint32_t stts22h_val_to_threshold(const struct sensor_value *val)
 	uint32_t raw_value = (temperature_degree_times100 / 64) + 63;
 
 	if (raw_value > 0xFF) {
-		LOG_ERR("Invalid value: %d", raw_value);
+		LOG_ERROR("Invalid value: %d", raw_value);
 		return UINT32_MAX;
 	}
 
@@ -135,7 +135,7 @@ static int stts22h_attr_set(const struct device *dev,
 			    const struct sensor_value *val)
 {
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP) {
-		LOG_ERR("Invalid channel: %d", chan);
+		LOG_ERROR("Invalid channel: %d", chan);
 		return -ENOTSUP;
 	}
 	switch (attr) {
@@ -174,7 +174,7 @@ static int stts22h_attr_set(const struct device *dev,
 	}
 #endif
 	default:
-		LOG_ERR("Attribute %d not supported.", attr);
+		LOG_ERROR("Attribute %d not supported.", attr);
 		return -ENOTSUP;
 	}
 
@@ -197,14 +197,14 @@ static int stts22h_init_chip(const struct device *dev)
 	uint8_t chip_id, odr;
 
 	if (stts22h_dev_id_get(ctx, &chip_id) < 0) {
-		LOG_ERR("Failed reading chip id");
+		LOG_ERROR("Failed reading chip id");
 		return -EIO;
 	}
 
 	LOG_INF("chip id 0x%02x", chip_id);
 
 	if (stts22h_auto_increment_set(ctx, 1) < 0) {
-		LOG_ERR("Failed to set autoincr");
+		LOG_ERROR("Failed to set autoincr");
 		return -EIO;
 	}
 
@@ -212,7 +212,7 @@ static int stts22h_init_chip(const struct device *dev)
 	odr = cfg->odr;
 	LOG_INF("sensor odr is %d", odr);
 	if (stts22h_set_odr_raw(dev, odr) < 0) {
-		LOG_ERR("Failed to set sampling rate");
+		LOG_ERROR("Failed to set sampling rate");
 		return -EIO;
 	}
 
@@ -230,14 +230,14 @@ static int stts22h_init(const struct device *dev)
 	data->dev = dev;
 
 	if (stts22h_init_chip(dev) < 0) {
-		LOG_ERR("Failed to initialize chip");
+		LOG_ERROR("Failed to initialize chip");
 		return -EIO;
 	}
 
 #ifdef CONFIG_STTS22H_TRIGGER
 	if (cfg->int_gpio.port) {
 		if (stts22h_init_interrupt(dev) < 0) {
-			LOG_ERR("Failed to initialize interrupt.");
+			LOG_ERROR("Failed to initialize interrupt.");
 			return -EIO;
 		}
 	}

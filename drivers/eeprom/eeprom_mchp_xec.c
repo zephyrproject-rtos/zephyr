@@ -125,7 +125,7 @@ static void eeprom_xec_wait_transfer_compl(struct eeprom_xec_regs * const regs)
 
 	do {
 		if (retry_count >= XEC_EEPROM_XFER_COMPL_RETRY_COUNT) {
-			LOG_ERR("XEC EEPROM retry count exceeded");
+			LOG_ERROR("XEC EEPROM retry count exceeded");
 			break;
 		}
 		k_sleep(K_USEC(XEC_EEPROM_DELAY_BUSY_POLL_US));
@@ -148,7 +148,7 @@ static void eeprom_xec_wait_write_compl(struct eeprom_xec_regs * const regs)
 
 	do {
 		if (retry_count >= XEC_EEPROM_XFER_COMPL_RETRY_COUNT) {
-			LOG_ERR("XEC EEPROM retry count exceeded");
+			LOG_ERROR("XEC EEPROM retry count exceeded");
 			break;
 		}
 
@@ -312,7 +312,7 @@ static int eeprom_xec_pm_action(const struct device *dev, enum pm_device_action 
 	case PM_DEVICE_ACTION_RESUME:
 		ret = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_DEFAULT);
 		if (ret != 0) {
-			LOG_ERR("XEC EEPROM pinctrl setup failed (%d)", ret);
+			LOG_ERROR("XEC EEPROM pinctrl setup failed (%d)", ret);
 			return ret;
 		}
 		regs->mode |= XEC_EEPROM_MODE_ACTIVATE;
@@ -345,7 +345,7 @@ static int eeprom_xec_init(const struct device *dev)
 	int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret != 0) {
-		LOG_ERR("XEC EEPROM pinctrl init failed (%d)", ret);
+		LOG_ERROR("XEC EEPROM pinctrl init failed (%d)", ret);
 		return ret;
 	}
 

@@ -66,6 +66,6 @@ void virtio_isr(const struct device *dev, uint8_t isr_status, uint16_t virtqueue
 		}
 	}
 	if (isr_status & VIRTIO_DEVICE_CONFIGURATION_INTERRUPT) {
-		LOG_ERR("device configuration change interrupt is currently unsupported");
+		LOG_ERROR("device configuration change interrupt is currently unsupported");
 	}
 }

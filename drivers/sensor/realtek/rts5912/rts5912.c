@@ -106,7 +106,7 @@ static int tach_rts5912_init(const struct device *dev)
 
 	ret = clock_control_on(cfg->clk_dev, (clock_control_subsys_t)&sccon_subsys);
 	if (ret != 0) {
-		LOG_ERR("RTS5912 Tachometer clock control failed (%d)", ret);
+		LOG_ERROR("RTS5912 Tachometer clock control failed (%d)", ret);
 		return ret;
 	}
 
@@ -114,7 +114,7 @@ static int tach_rts5912_init(const struct device *dev)
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret != 0) {
-		LOG_ERR("RTS5912 pinctrl failed (%d)", ret);
+		LOG_ERROR("RTS5912 pinctrl failed (%d)", ret);
 		return ret;
 	}
 #endif

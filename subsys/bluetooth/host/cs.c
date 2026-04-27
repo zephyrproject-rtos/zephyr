@@ -66,7 +66,7 @@ static struct net_buf *alloc_reassembly_buf(uint16_t conn_handle)
 	struct net_buf *buf = net_buf_alloc(&reassembly_buf_pool, K_NO_WAIT);
 
 	if (!buf) {
-		LOG_ERR("Failed to allocate new reassembly buffer");
+		LOG_ERROR("Failed to allocate new reassembly buffer");
 		return NULL;
 	}
 
@@ -89,7 +89,8 @@ static struct net_buf *alloc_reassembly_buf(uint16_t conn_handle)
 static void free_reassembly_buf(struct net_buf **buf)
 {
 	if (!buf) {
-		LOG_ERR("NULL double pointer was passed when attempting to free reassembly buffer");
+		LOG_ERROR(
+			"NULL double pointer was passed when attempting to free reassembly buffer");
 		return;
 	}
 
@@ -144,7 +145,7 @@ static bool add_reassembly_data(struct net_buf *reassembly_buf, const uint8_t *d
 				uint16_t data_len)
 {
 	if (data_len > net_buf_tailroom(reassembly_buf)) {
-		LOG_ERR("Not enough reassembly buffer space for subevent result");
+		LOG_ERROR("Not enough reassembly buffer space for subevent result");
 		return false;
 	}
 
@@ -168,7 +169,7 @@ static struct net_buf *start_reassembly(uint16_t conn_handle, const uint8_t *ste
 	struct net_buf *reassembly_buf = get_reassembly_buf(conn_handle, true);
 
 	if (!reassembly_buf) {
-		LOG_ERR("No buffer allocated for the result reassembly");
+		LOG_ERROR("No buffer allocated for the result reassembly");
 		return NULL;
 	}
 
@@ -196,7 +197,8 @@ static struct net_buf *continue_reassembly(uint16_t conn_handle, const uint8_t *
 	struct net_buf *reassembly_buf = get_reassembly_buf(conn_handle, false);
 
 	if (!reassembly_buf) {
-		LOG_ERR("No reassembly buffer was allocated for this CS procedure, possibly due to "
+		LOG_ERROR(
+			"No reassembly buffer was allocated for this CS procedure, possibly due to "
 			"an out-of-order subevent result continue event");
 		return NULL;
 	}
@@ -314,7 +316,7 @@ void bt_hci_le_cs_read_remote_supported_capabilities_complete(struct net_buf *bu
 	struct bt_hci_evt_le_cs_read_remote_supported_capabilities_complete *evt;
 
 	if (buf->len < sizeof(*evt)) {
-		LOG_ERR("Unexpected end of buffer");
+		LOG_ERROR("Unexpected end of buffer");
 		return;
 	}
 
@@ -325,7 +327,7 @@ void bt_hci_le_cs_read_remote_supported_capabilities_complete(struct net_buf *bu
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
 	if (!conn) {
-		LOG_ERR("Could not lookup connection handle when reading remote CS capabilities");
+		LOG_ERROR("Could not lookup connection handle when reading remote CS capabilities");
 		return;
 	}
 
@@ -444,7 +446,7 @@ void bt_hci_le_cs_read_remote_supported_capabilities_complete_v2(struct net_buf 
 	struct bt_hci_evt_le_cs_read_remote_supported_capabilities_complete_v2 *evt;
 
 	if (buf->len < sizeof(*evt)) {
-		LOG_ERR("Unexpected end of buffer");
+		LOG_ERROR("Unexpected end of buffer");
 		return;
 	}
 
@@ -455,7 +457,7 @@ void bt_hci_le_cs_read_remote_supported_capabilities_complete_v2(struct net_buf 
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
 	if (!conn) {
-		LOG_ERR("Could not lookup connection handle when reading remote CS capabilities");
+		LOG_ERROR("Could not lookup connection handle when reading remote CS capabilities");
 		return;
 	}
 
@@ -625,7 +627,7 @@ void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf)
 	struct bt_hci_evt_le_cs_read_remote_fae_table_complete *evt;
 
 	if (buf->len < sizeof(*evt)) {
-		LOG_ERR("Unexpected end of buffer");
+		LOG_ERROR("Unexpected end of buffer");
 		return;
 	}
 
@@ -636,7 +638,7 @@ void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf)
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
 	if (!conn) {
-		LOG_ERR("Could not lookup connection handle when reading remote FAE Table");
+		LOG_ERROR("Could not lookup connection handle when reading remote FAE Table");
 		return;
 	}
 
@@ -778,7 +780,7 @@ void bt_hci_le_cs_subevent_result(struct net_buf *buf)
 	struct net_buf *reassembly_buf = NULL;
 
 	if (buf->len < sizeof(*evt)) {
-		LOG_ERR("Unexpected end of buffer");
+		LOG_ERROR("Unexpected end of buffer");
 		return;
 	}
 
@@ -796,7 +798,7 @@ void bt_hci_le_cs_subevent_result(struct net_buf *buf)
 	{
 		conn = bt_conn_lookup_handle(conn_handle, BT_CONN_TYPE_LE);
 		if (!conn) {
-			LOG_ERR("Unknown connection handle when processing subevent results");
+			LOG_ERROR("Unknown connection handle when processing subevent results");
 			return;
 		}
 	}
@@ -886,7 +888,7 @@ void bt_hci_le_cs_subevent_result_continue(struct net_buf *buf)
 	uint16_t conn_handle;
 
 	if (buf->len < sizeof(*evt)) {
-		LOG_ERR("Unexpected end of buffer");
+		LOG_ERROR("Unexpected end of buffer");
 		return;
 	}
 
@@ -904,7 +906,7 @@ void bt_hci_le_cs_subevent_result_continue(struct net_buf *buf)
 	{
 		conn = bt_conn_lookup_handle(conn_handle, BT_CONN_TYPE_LE);
 		if (!conn) {
-			LOG_ERR("Unknown connection handle when processing subevent results");
+			LOG_ERROR("Unknown connection handle when processing subevent results");
 			return;
 		}
 	}
@@ -975,7 +977,7 @@ void bt_hci_le_cs_config_complete_event(struct net_buf *buf)
 	struct bt_conn *conn;
 
 	if (buf->len < sizeof(*evt)) {
-		LOG_ERR("Unexpected end of buffer");
+		LOG_ERROR("Unexpected end of buffer");
 		return;
 	}
 
@@ -986,7 +988,7 @@ void bt_hci_le_cs_config_complete_event(struct net_buf *buf)
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->handle), BT_CONN_TYPE_LE);
 	if (!conn) {
-		LOG_ERR("Could not lookup connection handle when reading CS configuration");
+		LOG_ERROR("Could not lookup connection handle when reading CS configuration");
 		return;
 	}
 
@@ -1599,7 +1601,7 @@ void bt_hci_le_cs_security_enable_complete(struct net_buf *buf)
 	struct bt_hci_evt_le_cs_security_enable_complete *evt;
 
 	if (buf->len < sizeof(*evt)) {
-		LOG_ERR("Unexpected end of buffer");
+		LOG_ERROR("Unexpected end of buffer");
 		return;
 	}
 
@@ -1610,7 +1612,7 @@ void bt_hci_le_cs_security_enable_complete(struct net_buf *buf)
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->handle), BT_CONN_TYPE_LE);
 	if (!conn) {
-		LOG_ERR("Can't lookup conn handle when reading Security Enable Complete event");
+		LOG_ERROR("Can't lookup conn handle when reading Security Enable Complete event");
 		return;
 	}
 
@@ -1627,7 +1629,7 @@ void bt_hci_le_cs_procedure_enable_complete(struct net_buf *buf)
 	struct bt_conn_le_cs_procedure_enable_complete params;
 
 	if (buf->len < sizeof(*evt)) {
-		LOG_ERR("Unexpected end of buffer");
+		LOG_ERROR("Unexpected end of buffer");
 		return;
 	}
 
@@ -1638,7 +1640,7 @@ void bt_hci_le_cs_procedure_enable_complete(struct net_buf *buf)
 
 	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->handle), BT_CONN_TYPE_LE);
 	if (!conn) {
-		LOG_ERR("Can't lookup conn handle when reading Procedure Enable Complete event");
+		LOG_ERROR("Can't lookup conn handle when reading Procedure Enable Complete event");
 		return;
 	}
 
@@ -1690,7 +1692,7 @@ void bt_hci_le_cs_test_end_complete(struct net_buf *buf)
 	struct bt_hci_evt_le_cs_test_end_complete *evt;
 
 	if (buf->len < sizeof(*evt)) {
-		LOG_ERR("Unexpected end of buffer");
+		LOG_ERROR("Unexpected end of buffer");
 		return;
 	}
 

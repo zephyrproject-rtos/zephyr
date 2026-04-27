@@ -172,8 +172,8 @@ static uint32_t tcc_get_prescale_val(uint32_t prescaler)
 		break;
 	default:
 		prescaler_val = TCC_CTRLA_PRESCALER_DIV1; /* Default fallback */
-		LOG_ERR("Unsupported prescaler specified in dts. Initialising with default "
-			"prescaler of DIV1");
+		LOG_ERROR("Unsupported prescaler specified in dts. Initialising with default "
+			  "prescaler of DIV1");
 
 		break;
 	}
@@ -203,7 +203,7 @@ static inline void tcc_sync_wait(void *pwm_reg)
 
 	if (!WAIT_FOR(((PWM_REG(pwm_reg)->TCC_SYNCBUSY) != 0), TIMEOUT_VALUE_US,
 		      k_busy_wait(DELAY_US))) {
-		LOG_ERR("TCC_SYNCBUSY wait timed out");
+		LOG_ERROR("TCC_SYNCBUSY wait timed out");
 	}
 	LOG_DBG("%s invoked", __func__);
 }
@@ -281,9 +281,9 @@ static int pwm_mchp_set_cycles(const struct device *pwm_dev, uint32_t channel, u
 	MCHP_PWM_DATA_LOCK(&mchp_pwm_data->lock);
 
 	if (channel >= mchp_pwm_cfg->channels) {
-		LOG_ERR("channel %d is invalid", channel);
+		LOG_ERROR("channel %d is invalid", channel);
 	} else if ((period > top) || (pulse > top)) {
-		LOG_ERR("period or pulse is out of range");
+		LOG_ERROR("period or pulse is out of range");
 	} else {
 
 		bool invert_flag_set = ((flags & PWM_POLARITY_INVERTED) != 0);
@@ -335,7 +335,7 @@ static int pwm_mchp_get_cycles_per_sec(const struct device *pwm_dev, uint32_t ch
 		*cycles = periph_clk_freq / mchp_pwm_cfg->prescaler;
 		ret_val = MCHP_PWM_SUCCESS;
 	} else {
-		LOG_ERR("channel %d is invalid", channel);
+		LOG_ERROR("channel %d is invalid", channel);
 	}
 
 	MCHP_PWM_DATA_UNLOCK(&mchp_pwm_data->lock);
@@ -381,18 +381,18 @@ static int pwm_mchp_init(const struct device *pwm_dev)
 		ret_val = clock_control_on(mchp_pwm_cfg->pwm_clock.clock_dev,
 					   mchp_pwm_cfg->pwm_clock.periph_async_clk);
 		if ((ret_val < 0) && (ret_val != -EALREADY)) {
-			LOG_ERR("Failed to enable the periph_async_clk for PWM: %d", ret_val);
+			LOG_ERROR("Failed to enable the periph_async_clk for PWM: %d", ret_val);
 			break;
 		}
 		ret_val = clock_control_on(mchp_pwm_cfg->pwm_clock.clock_dev,
 					   mchp_pwm_cfg->pwm_clock.host_core_sync_clk);
 		if ((ret_val < 0) && (ret_val != -EALREADY)) {
-			LOG_ERR("Failed to enable the host_core_sync_clk for PWM: %d", ret_val);
+			LOG_ERROR("Failed to enable the host_core_sync_clk for PWM: %d", ret_val);
 			break;
 		}
 		ret_val = pinctrl_apply_state(mchp_pwm_cfg->pinctrl_config, PINCTRL_STATE_DEFAULT);
 		if (ret_val < 0) {
-			LOG_ERR("Pincontrol apply state failed %d", ret_val);
+			LOG_ERROR("Pincontrol apply state failed %d", ret_val);
 			break;
 		}
 		tcc_init(mchp_pwm_cfg->regs, mchp_pwm_cfg->prescaler);

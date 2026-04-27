@@ -56,9 +56,9 @@ static uint16_t phy_xlnx_gem_mdio_read(
 		reg_val = sys_read32(base_addr + ETH_XLNX_GEM_NWSR_OFFSET);
 	} while ((reg_val & ETH_XLNX_GEM_MDIO_IDLE_BIT) == 0 && poll_cnt < 10);
 	if (poll_cnt == 10) {
-		LOG_ERR("GEM@0x%08X read from PHY address %hhu, "
-			"register address %hhu timed out",
-			base_addr, phy_addr, reg_addr);
+		LOG_ERROR("GEM@0x%08X read from PHY address %hhu, "
+			  "register address %hhu timed out",
+			  base_addr, phy_addr, reg_addr);
 		return 0;
 	}
 
@@ -89,9 +89,9 @@ static uint16_t phy_xlnx_gem_mdio_read(
 		reg_val = sys_read32(base_addr + ETH_XLNX_GEM_NWSR_OFFSET);
 	} while ((reg_val & ETH_XLNX_GEM_MDIO_IDLE_BIT) == 0 && poll_cnt < 10);
 	if (poll_cnt == 10) {
-		LOG_ERR("GEM@0x%08X read from PHY address %hhu, "
-			"register address %hhu timed out",
-			base_addr, phy_addr, reg_addr);
+		LOG_ERROR("GEM@0x%08X read from PHY address %hhu, "
+			  "register address %hhu timed out",
+			  base_addr, phy_addr, reg_addr);
 		return 0;
 	}
 
@@ -135,9 +135,9 @@ static void phy_xlnx_gem_mdio_write(
 		reg_val = sys_read32(base_addr + ETH_XLNX_GEM_NWSR_OFFSET);
 	} while ((reg_val & ETH_XLNX_GEM_MDIO_IDLE_BIT) == 0 && poll_cnt < 10);
 	if (poll_cnt == 10) {
-		LOG_ERR("GEM@0x%08X write to PHY address %hhu, "
-			"register address %hhu timed out",
-			base_addr, phy_addr, reg_addr);
+		LOG_ERROR("GEM@0x%08X write to PHY address %hhu, "
+			  "register address %hhu timed out",
+			  base_addr, phy_addr, reg_addr);
 		return;
 	}
 
@@ -170,9 +170,9 @@ static void phy_xlnx_gem_mdio_write(
 		reg_val = sys_read32(base_addr + ETH_XLNX_GEM_NWSR_OFFSET);
 	} while ((reg_val & ETH_XLNX_GEM_MDIO_IDLE_BIT) == 0 && poll_cnt < 10);
 	if (poll_cnt == 10) {
-		LOG_ERR("GEM@0x%08X write to PHY address %hhu, "
-			"register address %hhu timed out",
-			base_addr, phy_addr, reg_addr);
+		LOG_ERROR("GEM@0x%08X write to PHY address %hhu, "
+			  "register address %hhu timed out",
+			  base_addr, phy_addr, reg_addr);
 	}
 }
 
@@ -218,8 +218,8 @@ static void phy_xlnx_gem_marvell_alaska_reset(const struct device *dev)
 						  PHY_MRVL_COPPER_CONTROL_REGISTER);
 	}
 	if (retries == 10) {
-		LOG_ERR("%s reset PHY address %hhu (Marvell Alaska) timed out",
-			dev->name, dev_data->phy_addr);
+		LOG_ERROR("%s reset PHY address %hhu (Marvell Alaska) timed out", dev->name,
+			  dev_data->phy_addr);
 	}
 }
 
@@ -292,8 +292,8 @@ static void phy_xlnx_gem_marvell_alaska_cfg(const struct device *dev)
 				PHY_MRVL_GENERAL_CONTROL_1_REGISTER);
 		}
 		if (retries == 10) {
-			LOG_ERR("%s configure PHY address %hhu (Marvell Alaska) timed out",
-				dev->name, dev_data->phy_addr);
+			LOG_ERROR("%s configure PHY address %hhu (Marvell Alaska) timed out",
+				  dev->name, dev_data->phy_addr);
 			return;
 		}
 
@@ -630,8 +630,8 @@ static void phy_xlnx_gem_ti_dp83822_reset(const struct device *dev)
 						  PHY_TI_BASIC_MODE_CONTROL_REGISTER);
 	}
 	if (retries == 10) {
-		LOG_ERR("%s reset PHY address %hhu (TI TLK105/DP83822) timed out",
-			dev->name, dev_data->phy_addr);
+		LOG_ERROR("%s reset PHY address %hhu (TI TLK105/DP83822) timed out", dev->name,
+			  dev_data->phy_addr);
 	}
 }
 
@@ -975,6 +975,6 @@ int phy_xlnx_gem_detect(const struct device *dev)
 		}
 	}
 
-	LOG_ERR("%s PHY detection failed", dev->name);
+	LOG_ERROR("%s PHY detection failed", dev->name);
 	return -EIO;
 }

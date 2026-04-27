@@ -173,8 +173,8 @@ static int pcf2123_reg_read(const struct device *dev, const uint8_t start_addr, 
 
 	ret = spi_transceive_dt(&config->spi, &tx_bufs, &rx_bufs);
 	if (ret < 0) {
-		LOG_ERR("Failed to read from register with start address %d (err %d)", start_addr,
-			ret);
+		LOG_ERROR("Failed to read from register with start address %d (err %d)", start_addr,
+			  ret);
 		return ret;
 	}
 
@@ -213,7 +213,7 @@ static int pcf2123_reg_write(const struct device *dev, const uint8_t start_addr,
 
 	ret = spi_write_dt(&config->spi, &tx_bufs);
 	if (ret < 0) {
-		LOG_ERR("Failed to set RTC time (err %d)", ret);
+		LOG_ERROR("Failed to set RTC time (err %d)", ret);
 		return ret;
 	}
 
@@ -227,13 +227,13 @@ static int pcf2123_set_time(const struct device *dev, const struct rtc_time *tim
 		timeptr->tm_min, timeptr->tm_sec);
 
 	if (!rtc_utils_validate_rtc_time(timeptr, PCF2123_RTC_TIME_MASK)) {
-		LOG_ERR("RTC time validation failed");
+		LOG_ERROR("RTC time validation failed");
 		return -EINVAL;
 	}
 
 	if ((timeptr->tm_year < PCF2123_YEARS_OFFSET) ||
 	    (timeptr->tm_year > PCF2123_YEARS_OFFSET + 99)) {
-		LOG_ERR("Invalid tm_year value: %d", timeptr->tm_year);
+		LOG_ERROR("Invalid tm_year value: %d", timeptr->tm_year);
 		return -EINVAL;
 	}
 
@@ -335,7 +335,7 @@ static int pcf2123_clear_alarm_flag(const struct device *dev)
 
 	ret = pcf2123_reg_read(dev, PCF2123_REG_CTRL_2, &ctrl2, 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to read from control register 2 to clear AF bit (err %d)", ret);
+		LOG_ERROR("Failed to read from control register 2 to clear AF bit (err %d)", ret);
 		return ret;
 	}
 
@@ -343,7 +343,7 @@ static int pcf2123_clear_alarm_flag(const struct device *dev)
 	ctrl2 &= ~PCF2123_CTRL_2_AF;
 	ret = pcf2123_reg_write(dev, PCF2123_REG_CTRL_2, &ctrl2, 1);
 	if (ret < 0) {
-		LOG_ERR("Failed write to control register 2 to clear the AF bit (err %d)", ret);
+		LOG_ERROR("Failed write to control register 2 to clear the AF bit (err %d)", ret);
 		return ret;
 	}
 
@@ -355,7 +355,7 @@ static int pcf2123_alarm_get_supported_fields(const struct device *dev, uint16_t
 	ARG_UNUSED(dev);
 
 	if (id != 0U) {
-		LOG_ERR("Invalid ID: %d", id);
+		LOG_ERROR("Invalid ID: %d", id);
 		return -EINVAL;
 	}
 
@@ -368,17 +368,17 @@ static int pcf2123_alarm_set_time(const struct device *dev, uint16_t id, uint16_
 				  const struct rtc_time *timeptr)
 {
 	if (id != 0) {
-		LOG_ERR("Invalid ID: %d", id);
+		LOG_ERROR("Invalid ID: %d", id);
 		return -EINVAL;
 	}
 
 	if ((mask & ~(PCF2123_RTC_ALARM_TIME_MASK)) != 0) {
-		LOG_ERR("Invalid alarm mask: 0x%04X", mask);
+		LOG_ERROR("Invalid alarm mask: 0x%04X", mask);
 		return -EINVAL;
 	}
 
 	if (!rtc_utils_validate_rtc_time(timeptr, mask)) {
-		LOG_ERR("Failed to validate the RTC time");
+		LOG_ERROR("Failed to validate the RTC time");
 		return -EINVAL;
 	}
 
@@ -418,13 +418,13 @@ static int pcf2123_alarm_set_time(const struct device *dev, uint16_t id, uint16_
 	/* Clear the alarm flag. */
 	ret = pcf2123_clear_alarm_flag(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to clear alarm flag (err %d)", ret);
+		LOG_ERROR("Failed to clear alarm flag (err %d)", ret);
 		return -ENOMSG;
 	}
 
 	ret = pcf2123_reg_write(dev, PCF2123_REG_ALARM_MINUTE, regs, sizeof(regs));
 	if (ret) {
-		LOG_ERR("Failed to write to alarm registers (err %d)", ret);
+		LOG_ERROR("Failed to write to alarm registers (err %d)", ret);
 		return -ENOMSG;
 	}
 
@@ -433,7 +433,7 @@ static int pcf2123_alarm_set_time(const struct device *dev, uint16_t id, uint16_
 
 	ret = pcf2123_reg_read(dev, PCF2123_REG_CTRL_2, &ctrl2, 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to read from control register 2 (err %d)", ret);
+		LOG_ERROR("Failed to read from control register 2 (err %d)", ret);
 		return ret;
 	}
 
@@ -441,7 +441,8 @@ static int pcf2123_alarm_set_time(const struct device *dev, uint16_t id, uint16_
 		ctrl2 |= PCF2123_CTRL_2_AIE;
 		ret = pcf2123_reg_write(dev, PCF2123_REG_CTRL_2, &ctrl2, 1);
 		if (ret < 0) {
-			LOG_ERR("Failed to enable interrupts in control register 2 (err %d)", ret);
+			LOG_ERROR("Failed to enable interrupts in control register 2 (err %d)",
+				  ret);
 			return ret;
 		}
 	}
@@ -457,7 +458,7 @@ static int pcf2123_alarm_get_time(const struct device *dev, uint16_t id, uint16_
 
 	ret = pcf2123_reg_read(dev, PCF2123_REG_ALARM_MINUTE, regs, sizeof(regs));
 	if (ret < 0) {
-		LOG_ERR("Failed to read alarm registers (err %d)", ret);
+		LOG_ERROR("Failed to read alarm registers (err %d)", ret);
 		return ret;
 	}
 
@@ -504,13 +505,13 @@ static int pcf2123_alarm_is_pending(const struct device *dev, uint16_t id)
 	uint8_t ctrl2;
 
 	if (id != 0) {
-		LOG_ERR("Invalid ID: %d", id);
+		LOG_ERROR("Invalid ID: %d", id);
 		return -EINVAL;
 	}
 
 	ret = pcf2123_reg_read(dev, PCF2123_REG_CTRL_2, &ctrl2, 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to read from control register 2 (err %d)", ret);
+		LOG_ERROR("Failed to read from control register 2 (err %d)", ret);
 		return ret;
 	}
 
@@ -518,7 +519,7 @@ static int pcf2123_alarm_is_pending(const struct device *dev, uint16_t id)
 	if (ctrl2 & PCF2123_CTRL_2_AF) {
 		ret = pcf2123_clear_alarm_flag(dev);
 		if (ret < 0) {
-			LOG_ERR("Failed to clear alarm flag (err %d)", ret);
+			LOG_ERROR("Failed to clear alarm flag (err %d)", ret);
 			return -ENOMSG;
 		}
 
@@ -545,12 +546,12 @@ static int pcf2123_alarm_set_callback(const struct device *dev, uint16_t id,
 	int ret;
 
 	if (config->int1.port == NULL) {
-		LOG_ERR("The int1 port is NULL");
+		LOG_ERROR("The int1 port is NULL");
 		return -ENOTSUP;
 	}
 
 	if (id != 0U) {
-		LOG_ERR("Invalid ID %d", id);
+		LOG_ERROR("Invalid ID %d", id);
 		return -EINVAL;
 	}
 
@@ -560,20 +561,20 @@ static int pcf2123_alarm_set_callback(const struct device *dev, uint16_t id,
 
 	ret = gpio_pin_configure_dt(&config->int1, GPIO_INPUT | GPIO_PULL_UP);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure int1 (err %d)", ret);
+		LOG_ERROR("Failed to configure int1 (err %d)", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->int1, GPIO_INT_EDGE_FALLING);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure edge on int1 (err %d)", ret);
+		LOG_ERROR("Failed to configure edge on int1 (err %d)", ret);
 		return ret;
 	}
 
 	gpio_init_callback(&data->int1_callback, gpio_int1_callback, BIT(config->int1.pin));
 	ret = gpio_add_callback(config->int1.port, &data->int1_callback);
 	if (ret < 0) {
-		LOG_ERR("Failed to add callback to int1 (err %d)", ret);
+		LOG_ERROR("Failed to add callback to int1 (err %d)", ret);
 		return ret;
 	}
 
@@ -627,14 +628,14 @@ int pcf2123_init(const struct device *dev)
 #endif
 
 	if (!device_is_ready(config->spi.bus)) {
-		LOG_ERR("SPI device not ready: %s", config->spi.bus->name);
+		LOG_ERROR("SPI device not ready: %s", config->spi.bus->name);
 		return -ENODEV;
 	}
 
 	/* Determine if the SPI device is alive by attempting to read from control register 1. */
 	ret = pcf2123_reg_read(dev, PCF2123_REG_CTRL_1, &dummy_check, 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to communicate with PCF2123 (err %d)", ret);
+		LOG_ERROR("Failed to communicate with PCF2123 (err %d)", ret);
 		return -ENODEV;
 	}
 
@@ -643,7 +644,7 @@ int pcf2123_init(const struct device *dev)
 
 	ret = pcf2123_reg_write(dev, PCF2123_REG_CTRL_2, &ctrl2, 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to write to control register 2 during initialization");
+		LOG_ERROR("Failed to write to control register 2 during initialization");
 		return -ENODEV;
 	}
 #endif

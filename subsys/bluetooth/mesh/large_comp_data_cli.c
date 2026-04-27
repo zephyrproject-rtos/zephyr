@@ -103,7 +103,7 @@ const struct bt_mesh_model_op _bt_mesh_large_comp_data_cli_op[] = {
 static int large_comp_data_cli_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
-		LOG_ERR("Large Comp Data Client only allowed in primary element");
+		LOG_ERROR("Large Comp Data Client only allowed in primary element");
 		return -EINVAL;
 	}
 

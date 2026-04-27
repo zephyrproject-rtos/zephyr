@@ -306,7 +306,7 @@ void *EWLmalloc(uint32_t n)
 
 	p = EWL_HEAP_ALIGNED_ALLOC(n);
 	if (p == NULL) {
-		LOG_ERR("alloc failed for size=%d", n);
+		LOG_ERROR("alloc failed for size=%d", n);
 		return NULL;
 	}
 
@@ -360,7 +360,7 @@ i32 EWLWaitHwRdy(const void *instance, uint32_t *slices_ready)
 	if (k_sem_take(&inst->complete, K_MSEC(EWL_TIMEOUT))) {
 		uint32_t irq_status = sys_read32(config->reg + BASE_HEncIRQ);
 
-		LOG_ERR("timeout, status=0x%x", irq_status);
+		LOG_ERROR("timeout, status=0x%x", irq_status);
 		return EWL_HW_WAIT_TIMEOUT;
 	}
 
@@ -411,7 +411,7 @@ static int stm32_venc_set_fmt(const struct device *dev, struct video_format *fmt
 	if (fmt->type == VIDEO_BUF_TYPE_INPUT) {
 		if ((fmt->pixelformat != VIDEO_PIX_FMT_NV12) &&
 		    (fmt->pixelformat != VIDEO_PIX_FMT_RGB565)) {
-			LOG_ERR("invalid input pixel format");
+			LOG_ERROR("invalid input pixel format");
 			return -EINVAL;
 		}
 
@@ -419,7 +419,7 @@ static int stm32_venc_set_fmt(const struct device *dev, struct video_format *fmt
 		data->in_fmt = *fmt;
 	} else {
 		if (fmt->pixelformat != VIDEO_PIX_FMT_H264) {
-			LOG_ERR("invalid output pixel format");
+			LOG_ERROR("invalid output pixel format");
 			return -EINVAL;
 		}
 
@@ -476,40 +476,40 @@ static int encoder_prepare(struct stm32_venc_data *data)
 
 	h264ret = H264EncInit(&cfg, &data->encoder);
 	if (h264ret != H264ENC_OK) {
-		LOG_ERR("H264EncInit error=%d", h264ret);
+		LOG_ERROR("H264EncInit error=%d", h264ret);
 		return -EIO;
 	}
 
 	/* set format conversion for preprocessing */
 	h264ret = H264EncGetPreProcessing(data->encoder, &preproc_cfg);
 	if (h264ret != H264ENC_OK) {
-		LOG_ERR("H264EncGetPreProcessing error=%d", h264ret);
+		LOG_ERROR("H264EncGetPreProcessing error=%d", h264ret);
 		return -EIO;
 	}
 	preproc_cfg.inputType = to_h264pixfmt(data->in_fmt.pixelformat);
 	h264ret = H264EncSetPreProcessing(data->encoder, &preproc_cfg);
 	if (h264ret != H264ENC_OK) {
-		LOG_ERR("H264EncSetPreProcessing error=%d", h264ret);
+		LOG_ERROR("H264EncSetPreProcessing error=%d", h264ret);
 		return -EIO;
 	}
 
 	/* setup coding ctrl */
 	h264ret = H264EncGetCodingCtrl(data->encoder, &codingctrl_cfg);
 	if (h264ret != H264ENC_OK) {
-		LOG_ERR("H264EncGetCodingCtrl error=%d", h264ret);
+		LOG_ERROR("H264EncGetCodingCtrl error=%d", h264ret);
 		return -EIO;
 	}
 
 	h264ret = H264EncSetCodingCtrl(data->encoder, &codingctrl_cfg);
 	if (h264ret != H264ENC_OK) {
-		LOG_ERR("H264EncSetCodingCtrl error=%d", h264ret);
+		LOG_ERROR("H264EncSetCodingCtrl error=%d", h264ret);
 		return -EIO;
 	}
 
 	/* set bit rate configuration */
 	h264ret = H264EncGetRateCtrl(data->encoder, &ratectrl_cfg);
 	if (h264ret != H264ENC_OK) {
-		LOG_ERR("H264EncGetRateCtrl error=%d", h264ret);
+		LOG_ERROR("H264EncGetRateCtrl error=%d", h264ret);
 		return -EIO;
 	}
 
@@ -524,7 +524,7 @@ static int encoder_prepare(struct stm32_venc_data *data)
 
 	h264ret = H264EncSetRateCtrl(data->encoder, &ratectrl_cfg);
 	if (h264ret != H264ENC_OK) {
-		LOG_ERR("H264EncSetRateCtrl error=%d", h264ret);
+		LOG_ERROR("H264EncSetRateCtrl error=%d", h264ret);
 		return -EIO;
 	}
 
@@ -544,7 +544,7 @@ static int encoder_start(struct stm32_venc_data *data, struct video_buffer *outp
 	/* create stream */
 	h264ret = H264EncStrmStart(data->encoder, &enc_in, &enc_out);
 	if (h264ret != H264ENC_OK) {
-		LOG_ERR("H264EncStrmStart error=%d", h264ret);
+		LOG_ERROR("H264EncStrmStart error=%d", h264ret);
 		return -EIO;
 	}
 
@@ -646,9 +646,9 @@ static int encode_frame(struct stm32_venc_data *data)
 		output->bytesused = enc_out.streamSize;
 		break;
 	case H264ENC_FUSE_ERROR:
-		LOG_ERR("H264EncStrmEncode error=%d", h264ret);
+		LOG_ERROR("H264EncStrmEncode error=%d", h264ret);
 
-		LOG_ERR("DCMIPP and VENC desync at frame %d, restart the video", data->frame_nb);
+		LOG_ERROR("DCMIPP and VENC desync at frame %d, restart the video", data->frame_nb);
 		encoder_end(data);
 
 		ret = encoder_start(data, output);
@@ -657,8 +657,8 @@ static int encode_frame(struct stm32_venc_data *data)
 		}
 		break;
 	default:
-		LOG_ERR("H264EncStrmEncode error=%d", h264ret);
-		LOG_ERR("error encoding frame %d", data->frame_nb);
+		LOG_ERROR("H264EncStrmEncode error=%d", h264ret);
+		LOG_ERROR("error encoding frame %d", data->frame_nb);
 
 		encoder_end(data);
 
@@ -848,13 +848,13 @@ static int stm32_venc_init(const struct device *dev)
 	/* Enable VENC clock */
 	err = stm32_venc_enable_clock(dev);
 	if (err < 0) {
-		LOG_ERR("clock enabling failed.");
+		LOG_ERROR("clock enabling failed.");
 		return err;
 	}
 
 	/* Reset VENC */
 	if (!device_is_ready(config->reset.dev)) {
-		LOG_ERR("reset controller not ready");
+		LOG_ERROR("reset controller not ready");
 		return -ENODEV;
 	}
 	reset_line_toggle_dt(&config->reset);

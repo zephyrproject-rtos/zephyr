@@ -166,7 +166,7 @@ static int stm32_ipcc_mailbox_ipm_send(const struct device *dev, int wait,
 	}
 
 	if (id >= data->num_ch) {
-		LOG_ERR("invalid id (%d)\r\n", id);
+		LOG_ERROR("invalid id (%d)\r\n", id);
 		return  -EINVAL;
 	}
 

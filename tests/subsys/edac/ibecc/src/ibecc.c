@@ -334,8 +334,8 @@ static void *setup_ibecc(void)
 	int ret = k_mem_domain_add_partition(&k_mem_domain_default,
 					     &default_part);
 	if (ret != 0) {
-		LOG_ERR("Failed to add to mem domain (%d)", ret);
-		LOG_ERR("Running test setup function second time?");
+		LOG_ERROR("Failed to add to mem domain (%d)", ret);
+		LOG_ERROR("Running test setup function second time?");
 		ztest_test_fail();
 	}
 #endif

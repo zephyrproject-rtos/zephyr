@@ -285,9 +285,9 @@ static void msd_init(void)
 static void sendCSW(void)
 {
 	csw.Signature = CSW_Signature;
-	if (usb_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr, (uint8_t *)&csw,
-		      sizeof(struct CSW), NULL) != 0) {
-		LOG_ERR("usb write failure");
+	if (usb_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr, (uint8_t *)&csw, sizeof(struct CSW),
+		      NULL) != 0) {
+		LOG_ERROR("usb write failure");
 	}
 	stage = MSC_WAIT_CSW;
 }
@@ -319,7 +319,7 @@ static bool write(uint8_t *buf, uint16_t size)
 	stage = MSC_SEND_CSW;
 
 	if (usb_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr, buf, size, NULL)) {
-		LOG_ERR("USB write failed");
+		LOG_ERROR("USB write failed");
 		return false;
 	}
 
@@ -340,9 +340,8 @@ static bool write(uint8_t *buf, uint16_t size)
 static int mass_storage_class_handle_req(struct usb_setup_packet *setup,
 					 int32_t *len, uint8_t **data)
 {
-	if (setup->wIndex != mass_cfg.if0.bInterfaceNumber ||
-	    setup->wValue != 0) {
-		LOG_ERR("Invalid setup parameters");
+	if (setup->wIndex != mass_cfg.if0.bInterfaceNumber || setup->wValue != 0) {
+		LOG_ERROR("Invalid setup parameters");
 		return -EINVAL;
 	}
 
@@ -461,10 +460,8 @@ static void thread_memory_read_done(void)
 		n = BLOCK_SIZE - curr_offset;
 	}
 
-	if (usb_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr,
-		&page[curr_offset], n, NULL) != 0) {
-		LOG_ERR("Failed to write EP 0x%x",
-			mass_ep_data[MSD_IN_EP_IDX].ep_addr);
+	if (usb_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr, &page[curr_offset], n, NULL) != 0) {
+		LOG_ERROR("Failed to write EP 0x%x", mass_ep_data[MSD_IN_EP_IDX].ep_addr);
 	}
 	curr_offset += n;
 	if (curr_offset >= BLOCK_SIZE) {
@@ -525,7 +522,7 @@ static bool infoTransfer(void)
 
 	LOG_DBG("LBA (block) : 0x%x ", n);
 	if (n >= block_count) {
-		LOG_ERR("LBA out of range");
+		LOG_ERROR("LBA out of range");
 		fail();
 		return false;
 	}
@@ -551,7 +548,7 @@ static bool infoTransfer(void)
 	length = n * BLOCK_SIZE;
 
 	if (cbw.DataLength != length) {
-		LOG_ERR("DataLength mismatch");
+		LOG_ERROR("DataLength mismatch");
 		fail();
 		return false;
 	}
@@ -562,13 +559,13 @@ static bool infoTransfer(void)
 static void CBWDecode(uint8_t *buf, uint16_t size)
 {
 	if (size != sizeof(cbw)) {
-		LOG_ERR("size != sizeof(cbw)");
+		LOG_ERROR("size != sizeof(cbw)");
 		return;
 	}
 
 	memcpy((uint8_t *)&cbw, buf, size);
 	if (cbw.Signature != CBW_Signature) {
-		LOG_ERR("CBW Signature Mismatch");
+		LOG_ERROR("CBW Signature Mismatch");
 		return;
 	}
 
@@ -695,7 +692,7 @@ static void memoryVerify(uint8_t *buf, uint16_t size)
 	if (!curr_offset) {
 		LOG_DBG("Disk READ sector %u", curr_lba);
 		if (disk_access_read(disk_pdrv, page, curr_lba, 1)) {
-			LOG_ERR("---- Disk Read Error %u", curr_lba);
+			LOG_ERROR("---- Disk Read Error %u", curr_lba);
 		}
 	}
 
@@ -791,7 +788,7 @@ static void mass_storage_bulk_out(uint8_t ep,
 			memoryVerify(bo_buf, bytes_read);
 			break;
 		default:
-			LOG_ERR("> BO - PROC_CBW default <<ERROR!!!>>");
+			LOG_ERROR("> BO - PROC_CBW default <<ERROR!!!>>");
 			break;
 		}
 		break;
@@ -833,7 +830,7 @@ static void thread_memory_write_done(void)
 
 	if (!length) {
 		if (disk_access_ioctl(disk_pdrv, DISK_IOCTL_CTRL_SYNC, NULL)) {
-			LOG_ERR("!! Disk cache sync error !!");
+			LOG_ERROR("!! Disk cache sync error !!");
 		}
 	}
 
@@ -871,7 +868,7 @@ static void mass_storage_bulk_in(uint8_t ep,
 			memoryRead();
 			break;
 		default:
-			LOG_ERR("< BI-PROC_CBW default <<ERROR!!>>");
+			LOG_ERROR("< BI-PROC_CBW default <<ERROR!!>>");
 			break;
 		}
 		break;
@@ -984,24 +981,20 @@ static void mass_thread_main(void *p1, void *p2, void *p3)
 
 		switch (thread_op) {
 		case THREAD_OP_READ_QUEUED:
-			if (disk_access_read(disk_pdrv,
-						page, curr_lba, 1)) {
-				LOG_ERR("!! Disk Read Error %u !",
-					curr_lba);
+			if (disk_access_read(disk_pdrv, page, curr_lba, 1)) {
+				LOG_ERROR("!! Disk Read Error %u !", curr_lba);
 			}
 
 			thread_memory_read_done();
 			break;
 		case THREAD_OP_WRITE_QUEUED:
-			if (disk_access_write(disk_pdrv,
-						page, curr_lba, 1)) {
-				LOG_ERR("!!!!! Disk Write Error %u !!!!!",
-					curr_lba);
+			if (disk_access_write(disk_pdrv, page, curr_lba, 1)) {
+				LOG_ERROR("!!!!! Disk Write Error %u !!!!!", curr_lba);
 			}
 			thread_memory_write_done();
 			break;
 		default:
-			LOG_ERR("XXXXXX thread_op  %d ! XXXXX", thread_op);
+			LOG_ERROR("XXXXXX thread_op  %d ! XXXXX", thread_op);
 		}
 	}
 }
@@ -1023,26 +1016,24 @@ static int mass_storage_init(void)
 
 
 	if (disk_access_init(disk_pdrv) != 0) {
-		LOG_ERR("Storage init ERROR !!!! - Aborting USB init");
+		LOG_ERROR("Storage init ERROR !!!! - Aborting USB init");
 		return 0;
 	}
 
-	if (disk_access_ioctl(disk_pdrv,
-				DISK_IOCTL_GET_SECTOR_COUNT, &block_count)) {
-		LOG_ERR("Unable to get sector count - Aborting USB init");
+	if (disk_access_ioctl(disk_pdrv, DISK_IOCTL_GET_SECTOR_COUNT, &block_count)) {
+		LOG_ERROR("Unable to get sector count - Aborting USB init");
 		return 0;
 	}
 
-	if (disk_access_ioctl(disk_pdrv,
-				DISK_IOCTL_GET_SECTOR_SIZE, &block_size)) {
-		LOG_ERR("Unable to get sector size - Aborting USB init");
+	if (disk_access_ioctl(disk_pdrv, DISK_IOCTL_GET_SECTOR_SIZE, &block_size)) {
+		LOG_ERROR("Unable to get sector size - Aborting USB init");
 		return 0;
 	}
 
 	if (block_size != BLOCK_SIZE) {
-		LOG_ERR("Block Size reported by the storage side is "
-			"different from Mass Storage Class page Buffer - "
-			"Aborting");
+		LOG_ERROR("Block Size reported by the storage side is "
+			  "different from Mass Storage Class page Buffer - "
+			  "Aborting");
 		return 0;
 	}
 

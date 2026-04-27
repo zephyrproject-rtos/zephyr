@@ -204,14 +204,14 @@ static int phy_ti_dp83867_clear_interrupt(struct ti_dp83867_data *data)
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret) {
-		LOG_ERR("PHY mutex lock error");
+		LOG_ERROR("PHY mutex lock error");
 		return ret;
 	}
 
 	/* Read/clear PHY interrupt status register */
 	ret = phy_ti_dp83867_read(dev, PHY_TI_DP83867_ISR, &reg_val);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) interrupt status register", config->addr);
+		LOG_ERROR("Error reading phy (%d) interrupt status register", config->addr);
 	}
 
 	/* Unlock mutex */
@@ -228,7 +228,7 @@ static void phy_ti_dp83867_interrupt_handler(const struct device *port, struct g
 
 	ret = k_work_reschedule(&data->phy_monitor_work, K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Failed to schedule phy_monitor_work from ISR");
+		LOG_ERROR("Failed to schedule phy_monitor_work from ISR");
 	}
 }
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
@@ -242,7 +242,7 @@ static int phy_ti_dp83867_autonegotiate(const struct device *dev)
 	/* Read control register to write back with autonegotiation bit */
 	ret = phy_ti_dp83867_read(dev, MII_BMCR, &bmcr);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) basic control register", config->addr);
+		LOG_ERROR("Error reading phy (%d) basic control register", config->addr);
 		return ret;
 	}
 
@@ -252,7 +252,7 @@ static int phy_ti_dp83867_autonegotiate(const struct device *dev)
 
 	ret = phy_ti_dp83867_write(dev, MII_BMCR, bmcr);
 	if (ret) {
-		LOG_ERR("Error writing phy (%d) basic control register", config->addr);
+		LOG_ERROR("Error writing phy (%d) basic control register", config->addr);
 		return ret;
 	}
 
@@ -272,14 +272,14 @@ static int phy_ti_dp83867_get_link(const struct device *dev, struct phy_link_sta
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret) {
-		LOG_ERR("PHY mutex lock error");
+		LOG_ERROR("PHY mutex lock error");
 		return ret;
 	}
 
 	/* Read PHY status register */
 	ret = phy_ti_dp83867_read(dev, PHY_TI_DP83867_PHYSTS, &physr);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) specific status register", config->addr);
+		LOG_ERROR("Error reading phy (%d) specific status register", config->addr);
 		(void)k_mutex_unlock(&data->mutex);
 		return ret;
 	}
@@ -344,7 +344,7 @@ static int phy_ti_dp83867_reset(const struct device *dev)
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret) {
-		LOG_ERR("PHY mutex lock error");
+		LOG_ERROR("PHY mutex lock error");
 		return ret;
 	}
 
@@ -365,13 +365,13 @@ static int phy_ti_dp83867_reset(const struct device *dev)
 
 	ret = phy_ti_dp83867_write(dev, DP83867_CTRL, DP83867_SWRESET);
 	if (ret < 0) {
-		LOG_ERR("Error writing phy (%d) control register", config->addr);
+		LOG_ERROR("Error writing phy (%d) control register", config->addr);
 		return ret;
 	}
 
 	ret = phy_ti_dp83867_write(dev, DP83867_CTRL, DP83867_SWRESTART);
 	if (ret) {
-		LOG_ERR("Error writing phy (%d) control register", config->addr);
+		LOG_ERROR("Error writing phy (%d) control register", config->addr);
 		return ret;
 	}
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
@@ -397,14 +397,14 @@ static int phy_ti_dp83867_cfg_link(const struct device *dev, enum phy_link_speed
 	__maybe_unused uint32_t val;
 
 	if (flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) {
-		LOG_ERR("Disabling auto-negotiation is not supported by this driver");
+		LOG_ERROR("Disabling auto-negotiation is not supported by this driver");
 		return -ENOTSUP;
 	}
 
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret) {
-		LOG_ERR("PHY mutex lock error");
+		LOG_ERROR("PHY mutex lock error");
 		goto done;
 	}
 
@@ -414,28 +414,28 @@ static int phy_ti_dp83867_cfg_link(const struct device *dev, enum phy_link_speed
 		/* Enable interrupt output register */
 		ret = phy_ti_dp83867_read(dev, PHY_TI_DP83867_CFG3, &val);
 		if (ret) {
-			LOG_ERR("Error reading phy (%d) CFG3 register", config->addr);
+			LOG_ERROR("Error reading phy (%d) CFG3 register", config->addr);
 			goto done;
 		}
 
 		val |= PHY_TI_DP83867_INT_EN;
 		ret = phy_ti_dp83867_write(dev, PHY_TI_DP83867_CFG3, val);
 		if (ret) {
-			LOG_ERR("Error writing phy (%d) CFG3 register", config->addr);
+			LOG_ERROR("Error writing phy (%d) CFG3 register", config->addr);
 			goto done;
 		}
 
 		/* Enable link status change interrupt */
 		ret = phy_ti_dp83867_read(dev, PHY_TI_DP83867_MICR, &val);
 		if (ret) {
-			LOG_ERR("Error reading phy (%d) MICR register", config->addr);
+			LOG_ERROR("Error reading phy (%d) MICR register", config->addr);
 			goto done;
 		}
 
 		val |= PHY_TI_DP83867_LINK_STATUS_CHNG_INT_EN;
 		ret = phy_ti_dp83867_write(dev, PHY_TI_DP83867_MICR, val);
 		if (ret) {
-			LOG_ERR("Error writing phy (%d) MICR register", config->addr);
+			LOG_ERROR("Error writing phy (%d) MICR register", config->addr);
 			goto done;
 		}
 
@@ -448,20 +448,20 @@ static int phy_ti_dp83867_cfg_link(const struct device *dev, enum phy_link_speed
 
 	ret = phy_mii_set_anar_reg(dev, speeds);
 	if ((ret < 0) && (ret != -EALREADY)) {
-		LOG_ERR("Error setting ANAR register for phy (%d)", config->addr);
+		LOG_ERROR("Error setting ANAR register for phy (%d)", config->addr);
 		goto done;
 	}
 
 	ret = phy_mii_set_c1kt_reg(dev, speeds);
 	if ((ret < 0) && (ret != -EALREADY)) {
-		LOG_ERR("Error setting C1KT register for phy (%d)", config->addr);
+		LOG_ERROR("Error setting C1KT register for phy (%d)", config->addr);
 		goto done;
 	}
 
 	/* (re)do autonegotiation */
 	ret = phy_ti_dp83867_autonegotiate(dev);
 	if (ret && (ret != -ENETDOWN)) {
-		LOG_ERR("Error in autonegotiation");
+		LOG_ERROR("Error in autonegotiation");
 		goto done;
 	}
 
@@ -560,7 +560,7 @@ static int phy_ti_dp83867_init(const struct device *dev)
 	/* Reset PHY */
 	ret = phy_ti_dp83867_reset(dev);
 	if (ret) {
-		LOG_ERR("Failed to reset phy (%d)", config->addr);
+		LOG_ERROR("Failed to reset phy (%d)", config->addr);
 		return ret;
 	}
 
@@ -568,14 +568,14 @@ static int phy_ti_dp83867_init(const struct device *dev)
 		/* Read the Strap quirk bit to configure it to 0 */
 		ret = phy_ti_dp83867_indirect_read(dev, DP83867_CFG4_REG, &cfg4_val);
 		if (ret) {
-			LOG_ERR("Error reading DP83867_CFG4");
+			LOG_ERROR("Error reading DP83867_CFG4");
 			return ret;
 		}
 
 		cfg4_val &= ~DP83867_CFG4_RX_STRAP_BIT;
 		ret = phy_ti_dp83867_indirect_write(dev, DP83867_CFG4_REG, cfg4_val);
 		if (ret) {
-			LOG_ERR("Error writing DP83867_CFG4");
+			LOG_ERROR("Error writing DP83867_CFG4");
 			return ret;
 		}
 	}
@@ -583,7 +583,7 @@ static int phy_ti_dp83867_init(const struct device *dev)
 	/* Read the RGMIICTL1 register to configure internal delay enable bits*/
 	ret = phy_ti_dp83867_indirect_read(dev, DP83867_RGMIICTL1, &rgmii_ctl_val);
 	if (ret) {
-		LOG_ERR("Error reading DP83867_RGMIICTL1");
+		LOG_ERROR("Error reading DP83867_RGMIICTL1");
 		return ret;
 	}
 
@@ -612,14 +612,14 @@ static int phy_ti_dp83867_init(const struct device *dev)
 	/* write updated delay enable configuration to PHY(DP83867_RGMIICTL1)*/
 	ret = phy_ti_dp83867_indirect_write(dev, DP83867_RGMIICTL1, rgmii_ctl_val);
 	if (ret) {
-		LOG_ERR("Failed to write DP83867_RGMIICTL1");
+		LOG_ERROR("Failed to write DP83867_RGMIICTL1");
 		return ret;
 	}
 
 	/* Read RGMIIDCTL the delay value control register*/
 	ret = phy_ti_dp83867_indirect_read(dev, DP83867_RGMIIDCTL, &rgmii_dctl_val);
 	if (ret) {
-		LOG_ERR("Error reading DP83867_RGMIIDCTL");
+		LOG_ERROR("Error reading DP83867_RGMIIDCTL");
 		return ret;
 	}
 
@@ -641,14 +641,14 @@ static int phy_ti_dp83867_init(const struct device *dev)
 	/* Write final delay values to PHY(DP83867_RGMIIDCTL) */
 	ret = phy_ti_dp83867_indirect_write(dev, DP83867_RGMIIDCTL, rgmii_dctl_val);
 	if (ret) {
-		LOG_ERR("Error writing DP83867_RGMIIDCTL");
+		LOG_ERROR("Error writing DP83867_RGMIIDCTL");
 		return ret;
 	}
 
 	/* Verify fifo depth value */
 	ret = phy_ti_dp83867_read(dev, PHY_TI_DP83867_PHYCR, &phycr_val);
 	if (ret) {
-		LOG_ERR("Error reading DP83867_PHYCR");
+		LOG_ERROR("Error reading DP83867_PHYCR");
 		return ret;
 	}
 

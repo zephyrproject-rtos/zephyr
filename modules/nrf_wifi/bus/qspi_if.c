@@ -729,7 +729,7 @@ static int qspi_nrfx_configure(const struct device *dev)
 		ret = qspi_rdsr(dev);
 
 		if (ret < 0) {
-			LOG_ERR("RDSR failed: %d", ret);
+			LOG_ERROR("RDSR failed: %d", ret);
 			return ret;
 		}
 
@@ -767,7 +767,7 @@ static int qspi_nrfx_configure(const struct device *dev)
 		}
 
 		if (ret < 0) {
-			LOG_ERR("QE %s failed: %d", qe_value ? "set" : "clear", ret);
+			LOG_ERROR("QE %s failed: %d", qe_value ? "set" : "clear", ret);
 		}
 	}
 
@@ -1104,7 +1104,7 @@ int qspi_wait_while_rpu_awake(const struct device *dev)
 	}
 
 	if (ret || !(val & RPU_AWAKE_BIT)) {
-		LOG_ERR("RPU is not awake even after 10ms");
+		LOG_ERROR("RPU is not awake even after 10ms");
 		return -1;
 	}
 
@@ -1133,7 +1133,7 @@ int qspi_WRSR2(const struct device *dev, uint8_t data)
 	qspi_device_uninit(dev);
 
 	if (ret < 0) {
-		LOG_ERR("cmd_wakeup RPU failed %d", ret);
+		LOG_ERROR("cmd_wakeup RPU failed %d", ret);
 	}
 
 	return ret;
@@ -1224,7 +1224,7 @@ int qspi_write_reg(const struct device *dev, uint8_t reg_addr, uint8_t reg_value
 	LOG_DBG("QSPI write reg 0x%02x = 0x%02x", reg_addr, reg_value);
 
 	if (ret < 0) {
-		LOG_ERR("QSPI write reg 0x%02x failed: %d", reg_addr, ret);
+		LOG_ERROR("QSPI write reg 0x%02x failed: %d", reg_addr, ret);
 	}
 
 	return ret;
@@ -1283,9 +1283,9 @@ void qspi_update_nonce(unsigned int addr, int len, int hlread)
 void qspi_addr_check(unsigned int addr, const void *data, unsigned int len)
 {
 	if ((addr % 4 != 0) || (((unsigned int)data) % 4 != 0) || (len % 4 != 0)) {
-		LOG_ERR("%s : Unaligned address %x %x %d %x %x", __func__, addr,
-		       (unsigned int)data, (addr % 4 != 0), (((unsigned int)data) % 4 != 0),
-		       (len % 4 != 0));
+		LOG_ERROR("%s : Unaligned address %x %x %d %x %x", __func__, addr,
+			  (unsigned int)data, (addr % 4 != 0), (((unsigned int)data) % 4 != 0),
+			  (len % 4 != 0));
 	}
 }
 
@@ -1336,7 +1336,8 @@ int qspi_hl_readw(unsigned int addr, void *data)
 	len += (4 * qspi_cfg->qspi_slave_latency);
 
 	if (len > sizeof(rxb)) {
-		LOG_ERR("%s: len exceeded, check NRF_WIFI_QSPI_SLAVE_MAX_LATENCY (len=%u, rxb=%zu)",
+		LOG_ERROR(
+			"%s: len exceeded, check NRF_WIFI_QSPI_SLAVE_MAX_LATENCY (len=%u, rxb=%zu)",
 			__func__, (unsigned int)len, sizeof(rxb));
 		return -ENOMEM;
 	}
@@ -1394,7 +1395,7 @@ int qspi_cmd_sleep_rpu(const struct device *dev)
 	qspi_device_uninit(dev);
 
 	if (ret < 0) {
-		LOG_ERR("cmd_wakeup RPU failed: %d", ret);
+		LOG_ERROR("cmd_wakeup RPU failed: %d", ret);
 	}
 
 	return ret;
@@ -1414,7 +1415,7 @@ int qspi_enable_encryption(uint8_t *key)
 	int ret = qspi_device_init(&qspi_perip);
 
 	if (ret != 0) {
-		LOG_ERR("qspi_device_init failed: %d", ret);
+		LOG_ERROR("qspi_device_init failed: %d", ret);
 		return -EIO;
 	}
 
@@ -1422,13 +1423,13 @@ int qspi_enable_encryption(uint8_t *key)
 
 	err = nrfx_qspi_dma_encrypt(&qspi_cfg->p_cfg);
 	if (err != 0) {
-		LOG_ERR("nrfx_qspi_dma_encrypt failed: %d", err);
+		LOG_ERROR("nrfx_qspi_dma_encrypt failed: %d", err);
 		return -EIO;
 	}
 
 	err = qspi_cmd_encryption(&qspi_perip, &qspi_cfg->p_cfg);
 	if (err != 0) {
-		LOG_ERR("qspi_cmd_encryption failed: %d", err);
+		LOG_ERROR("qspi_cmd_encryption failed: %d", err);
 		return -EIO;
 	}
 

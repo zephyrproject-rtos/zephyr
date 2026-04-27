@@ -164,7 +164,7 @@ static int flash_rx_write(const struct device *dev, off_t offset, const void *da
 		}
 
 		if (flash_event.error) {
-			LOG_ERR("write error=%d", (int)err);
+			LOG_ERROR("write error=%d", (int)err);
 			result = -EIO;
 			goto out;
 		}
@@ -245,7 +245,7 @@ static int flash_rx_erase(const struct device *dev, off_t offset, size_t len)
 			}
 
 			if (flash_event.error) {
-				LOG_ERR("erase error=%d", (int)err);
+				LOG_ERROR("erase error=%d", (int)err);
 				result = -EIO;
 				goto out;
 			}
@@ -287,12 +287,12 @@ static int flash_rx_controller_init(const struct device *dev)
 		flash_data->FlashRegion = DATA_FLASH;
 	} else {
 #ifdef CONFIG_FLASH_RENESAS_RX_BGO_ENABLED
-		LOG_ERR("Please do not enable BGO in code flash programming");
+		LOG_ERROR("Please do not enable BGO in code flash programming");
 		return -EPERM;
 #endif
 		if (!FLASH_RX_CF_INCLUDED) {
 			/* Enables code flash configuration before usage */
-			LOG_ERR("Code flash is not enabled");
+			LOG_ERROR("Code flash is not enabled");
 			return -ENODEV;
 		}
 

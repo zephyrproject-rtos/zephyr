@@ -179,7 +179,7 @@ static int ambiq_rtc_alarm_get_supported_fields(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (id != 0U) {
-		LOG_ERR("Invalid ID %d", id);
+		LOG_ERROR("Invalid ID %d", id);
 		return -EINVAL;
 	}
 
@@ -196,7 +196,7 @@ static int ambiq_rtc_alarm_get_time(const struct device *dev, uint16_t id, uint1
 	struct ambiq_rtc_data *data = dev->data;
 
 	if (id != 0U) {
-		LOG_ERR("Invalid ID %d", id);
+		LOG_ERROR("Invalid ID %d", id);
 		return -EINVAL;
 	}
 
@@ -229,7 +229,7 @@ static int ambiq_rtc_alarm_set_time(const struct device *dev, uint16_t id, uint1
 	uint16_t mask_available;
 
 	if (id != 0U) {
-		LOG_ERR("Invalid ID %d", id);
+		LOG_ERROR("Invalid ID %d", id);
 		return -EINVAL;
 	}
 
@@ -331,7 +331,7 @@ static int ambiq_rtc_alarm_set_callback(const struct device *dev, uint16_t id,
 	struct ambiq_rtc_data *data = dev->data;
 
 	if (id != 0U) {
-		LOG_ERR("Invalid ID %d", id);
+		LOG_ERROR("Invalid ID %d", id);
 		return -EINVAL;
 	}
 

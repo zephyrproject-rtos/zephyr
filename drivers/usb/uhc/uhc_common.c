@@ -123,7 +123,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		}
 
 		if (ep_desc == NULL) {
-			LOG_ERR("Endpoint 0x%02x is not configured", ep);
+			LOG_ERROR("Endpoint 0x%02x is not configured", ep);
 			goto xfer_alloc_error;
 		}
 
@@ -135,7 +135,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	LOG_DBG("Allocate xfer, ep 0x%02x mps %u cb %p", ep, mps, cb);
 
 	if (k_mem_slab_alloc(&uhc_xfer_pool, (void **)&xfer, K_NO_WAIT)) {
-		LOG_ERR("Failed to allocate transfer");
+		LOG_ERROR("Failed to allocate transfer");
 		goto xfer_alloc_error;
 	}
 
@@ -189,7 +189,7 @@ int uhc_xfer_free(const struct device *dev, struct uhc_transfer *const xfer)
 
 	if (xfer->queued) {
 		ret = -EBUSY;
-		LOG_ERR("Transfer is still queued");
+		LOG_ERROR("Transfer is still queued");
 		goto xfer_free_error;
 	}
 

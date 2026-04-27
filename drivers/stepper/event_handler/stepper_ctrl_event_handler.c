@@ -35,7 +35,7 @@ void stepper_ctrl_event_handler_process_cb(const struct device *dev,
 
 	ret = k_work_submit(&data->event_callback_work);
 	if (ret < 0) {
-		LOG_ERR("Failed to submit work item: %d", ret);
+		LOG_ERROR("Failed to submit work item: %d", ret);
 	}
 #else
 	data->callback(dev, event, data->event_cb_user_data);

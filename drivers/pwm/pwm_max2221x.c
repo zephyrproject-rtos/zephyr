@@ -30,7 +30,7 @@ int max2221x_get_master_chop_freq(const struct device *dev)
 
 	ret = max2221x_reg_read(config->parent, MAX2221X_REG_GLOBAL_CTRL, &reg);
 	if (ret) {
-		LOG_ERR("Failed to read global control register");
+		LOG_ERROR("Failed to read global control register");
 		return ret;
 	}
 
@@ -62,7 +62,7 @@ int max2221x_get_master_chop_freq(const struct device *dev)
 	case MAX2221X_FREQ_2500HZ:
 		return 2500;
 	default:
-		LOG_ERR("Unknown master chopping frequency");
+		LOG_ERROR("Unknown master chopping frequency");
 		return -EINVAL;
 	}
 }
@@ -75,20 +75,20 @@ int max2221x_get_channel_freq(const struct device *dev, uint32_t channel, uint32
 	const struct max2221x_pwm_config *config = dev->config;
 
 	if (channel_freq == NULL) {
-		LOG_ERR("channel_freq pointer must not be NULL");
+		LOG_ERROR("channel_freq pointer must not be NULL");
 		return -EINVAL;
 	}
 
 	ret = max2221x_get_master_chop_freq(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to get master chop frequency");
+		LOG_ERROR("Failed to get master chop frequency");
 		return ret;
 	}
 	master_freq = (uint32_t)ret;
 
 	ret = max2221x_reg_read(config->parent, MAX2221X_REG_CFG_CTRL1(channel), &reg);
 	if (ret) {
-		LOG_ERR("Failed to read register for channel: %u", channel);
+		LOG_ERROR("Failed to read register for channel: %u", channel);
 		return ret;
 	}
 
@@ -108,7 +108,7 @@ int max2221x_get_channel_freq(const struct device *dev, uint32_t channel, uint32
 		*channel_freq = master_freq / 8;
 		break;
 	default:
-		LOG_ERR("Unknown channel frequency");
+		LOG_ERROR("Unknown channel frequency");
 		return -EINVAL;
 	}
 
@@ -118,12 +118,12 @@ int max2221x_get_channel_freq(const struct device *dev, uint32_t channel, uint32
 int max2221x_calculate_duty_cycle(uint32_t pulse, uint32_t period, uint16_t *duty_cycle)
 {
 	if (period == 0) {
-		LOG_ERR("Period must be > 0");
+		LOG_ERROR("Period must be > 0");
 		return -EINVAL;
 	}
 
 	if (pulse > period) {
-		LOG_ERR("Pulse width cannot be greater than period");
+		LOG_ERROR("Pulse width cannot be greater than period");
 		return -EINVAL;
 	}
 
@@ -139,12 +139,12 @@ int max2221x_calculate_master_freq_divisor(uint32_t master_freq, uint32_t period
 	const int divisors[] = {1, 2, 4, 8};
 
 	if (master_freq == 0) {
-		LOG_ERR("Invalid input: Master frequency must be > 0");
+		LOG_ERROR("Invalid input: Master frequency must be > 0");
 		return -EINVAL;
 	}
 
 	if (period == 0) {
-		LOG_ERR("Invalid input: Pulse width must be > 0");
+		LOG_ERROR("Invalid input: Pulse width must be > 0");
 		return -EINVAL;
 	}
 
@@ -171,13 +171,13 @@ int max2221x_get_cycles_per_sec(const struct device *dev, uint32_t channel, uint
 	uint32_t channel_freq;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel: %u", channel);
+		LOG_ERROR("Invalid channel: %u", channel);
 		return -EINVAL;
 	}
 
 	ret = max2221x_get_channel_freq(dev, channel, &channel_freq);
 	if (ret < 0) {
-		LOG_ERR("Failed to get channel frequency for channel: %u", channel);
+		LOG_ERROR("Failed to get channel frequency for channel: %u", channel);
 		return ret;
 	}
 
@@ -197,23 +197,23 @@ int max2221x_set_cycles(const struct device *dev, uint32_t channel, uint32_t per
 	const struct max2221x_pwm_config *config = dev->config;
 
 	if (channel >= MAX2221X_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel number: %i", channel);
+		LOG_ERROR("Invalid channel number: %i", channel);
 		return -EINVAL;
 	}
 
 	if (period == 0) {
-		LOG_ERR("Period must be greater than 0");
+		LOG_ERROR("Period must be greater than 0");
 		return -EINVAL;
 	}
 
 	if (pulse > period) {
-		LOG_ERR("Pulse width cannot be greater than period");
+		LOG_ERROR("Pulse width cannot be greater than period");
 		return -EINVAL;
 	}
 
 	ret = max2221x_reg_read(config->parent, MAX2221X_REG_GLOBAL_CFG, &global_cfg);
 	if (ret) {
-		LOG_ERR("Failed to read global configuration register");
+		LOG_ERROR("Failed to read global configuration register");
 		return ret;
 	}
 
@@ -221,7 +221,7 @@ int max2221x_set_cycles(const struct device *dev, uint32_t channel, uint32_t per
 
 	ret = max2221x_reg_read(config->parent, MAX2221X_REG_CFG_CTRL0(channel), &cfg_ctrl0);
 	if (ret) {
-		LOG_ERR("Failed to read control mode register");
+		LOG_ERROR("Failed to read control mode register");
 		return ret;
 	}
 
@@ -229,7 +229,7 @@ int max2221x_set_cycles(const struct device *dev, uint32_t channel, uint32_t per
 
 	ret = max2221x_get_master_chop_freq(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to get master chop frequency");
+		LOG_ERROR("Failed to get master chop frequency");
 		return ret;
 	}
 	master_freq = (uint32_t)ret;
@@ -238,16 +238,16 @@ int max2221x_set_cycles(const struct device *dev, uint32_t channel, uint32_t per
 	max_period = min_period * 8;
 
 	if (period < min_period || period > max_period) {
-		LOG_ERR("Period must be between %d and %d microseconds for "
-			"frequency %d Hz",
-			min_period, max_period, master_freq);
+		LOG_ERROR("Period must be between %d and %d microseconds for "
+			  "frequency %d Hz",
+			  min_period, max_period, master_freq);
 		return -EINVAL;
 	}
 
 	ret = max2221x_calculate_master_freq_divisor(master_freq, period, &channel_freq_divisor);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to calculate channel frequency divisor");
+		LOG_ERROR("Failed to calculate channel frequency divisor");
 		return ret;
 	}
 
@@ -268,13 +268,13 @@ int max2221x_set_cycles(const struct device *dev, uint32_t channel, uint32_t per
 		channel_freq_reg_value = MAX2221X_FREQ_M_8;
 		break;
 	default:
-		LOG_ERR("Invalid channel frequency divisor: %d", channel_freq_divisor);
+		LOG_ERROR("Invalid channel frequency divisor: %d", channel_freq_divisor);
 		return -EINVAL;
 	}
 
 	ret = max2221x_calculate_duty_cycle(pulse, valid_period, &duty_cycle);
 	if (ret < 0) {
-		LOG_ERR("Failed to calculate duty cycle");
+		LOG_ERROR("Failed to calculate duty cycle");
 		return ret;
 	}
 
@@ -282,7 +282,7 @@ int max2221x_set_cycles(const struct device *dev, uint32_t channel, uint32_t per
 		ret = max2221x_reg_update(config->parent, MAX2221X_REG_CFG_CTRL1(channel),
 					  MAX2221X_F_PWM_MASK, channel_freq_reg_value);
 		if (ret) {
-			LOG_ERR("Failed to write channel frequency for channel %d", channel);
+			LOG_ERROR("Failed to write channel frequency for channel %d", channel);
 			return ret;
 		}
 
@@ -290,12 +290,12 @@ int max2221x_set_cycles(const struct device *dev, uint32_t channel, uint32_t per
 			ret = max2221x_reg_write(config->parent, MAX2221X_REG_CFG_DC_H(channel),
 						 duty_cycle);
 			if (ret) {
-				LOG_ERR("Failed to write DC_H for channel %d", channel);
+				LOG_ERROR("Failed to write DC_H for channel %d", channel);
 				return ret;
 			}
 		} else {
-			LOG_ERR("Cannot set duty cycle in control mode %d for channel %d",
-				ctrl_mode, channel);
+			LOG_ERROR("Cannot set duty cycle in control mode %d for channel %d",
+				  ctrl_mode, channel);
 		}
 	}
 
@@ -313,7 +313,7 @@ static int max2221x_pwm_init(const struct device *dev)
 	LOG_DBG("Initialize MAX2221X PWM instance %s", dev->name);
 
 	if (!device_is_ready(config->parent)) {
-		LOG_ERR("Parent device '%s' not ready", config->parent->name);
+		LOG_ERROR("Parent device '%s' not ready", config->parent->name);
 		return -ENODEV;
 	}
 

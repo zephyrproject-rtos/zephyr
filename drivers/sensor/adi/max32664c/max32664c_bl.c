@@ -42,13 +42,13 @@ static int max32664c_bl_i2c_transmit(const struct device *dev, uint8_t *tx_buf, 
 
 	err = i2c_write_dt(&config->i2c, tx_buf, tx_len);
 	if (err) {
-		LOG_ERR("I2C transmission error %d!", err);
+		LOG_ERROR("I2C transmission error %d!", err);
 		return err;
 	}
 	k_msleep(MAX32664C_DEFAULT_CMD_DELAY_MS);
 	err = i2c_read_dt(&config->i2c, rx_buf, rx_len);
 	if (err) {
-		LOG_ERR("I2C transmission error %d!", err);
+		LOG_ERROR("I2C transmission error %d!", err);
 		return err;
 	}
 	k_msleep(MAX32664C_DEFAULT_CMD_DELAY_MS);
@@ -129,7 +129,7 @@ static int max32664c_bl_write_page(const struct device *dev, const uint8_t *data
 	k_msleep(MAX32664C_PAGE_WRITE_DELAY_MS);
 	err = i2c_read_dt(&config->i2c, &rx_buf, 1);
 	if (err) {
-		LOG_ERR("I2C read error %d!", err);
+		LOG_ERROR("I2C read error %d!", err);
 		err = -EINVAL;
 		goto max32664c_bl_write_page_exit;
 	};
@@ -204,7 +204,7 @@ static int max32664c_bl_load_fw(const struct device *dev, const uint8_t *firmwar
 	}
 
 	if (rx_buf != 0) {
-		LOG_ERR("Failed to set number of pages: %d", rx_buf);
+		LOG_ERROR("Failed to set number of pages: %d", rx_buf);
 		return -EINVAL;
 	}
 
@@ -222,7 +222,7 @@ static int max32664c_bl_load_fw(const struct device *dev, const uint8_t *firmwar
 		return -EINVAL;
 	}
 	if (rx_buf != 0) {
-		LOG_ERR("Failed to set init vector: %d", rx_buf);
+		LOG_ERROR("Failed to set init vector: %d", rx_buf);
 		return -EINVAL;
 	}
 
@@ -235,7 +235,7 @@ static int max32664c_bl_load_fw(const struct device *dev, const uint8_t *firmwar
 		return -EINVAL;
 	}
 	if (rx_buf != 0) {
-		LOG_ERR("Failed to set auth vector: %d", rx_buf);
+		LOG_ERROR("Failed to set auth vector: %d", rx_buf);
 		return -EINVAL;
 	}
 
@@ -304,7 +304,7 @@ int max32664c_bl_enter(const struct device *dev, const uint8_t *firmware, uint32
 
 	LOG_DBG("Mode: %x ", rx_buf[1]);
 	if (rx_buf[1] != 8) {
-		LOG_ERR("Device not in bootloader mode!");
+		LOG_ERROR("Device not in bootloader mode!");
 		return -EINVAL;
 	}
 
@@ -359,7 +359,7 @@ int max32664c_bl_leave(const struct device *dev)
 
 	LOG_DBG("Mode: %x ", rx_buf[1]);
 	if (rx_buf[1] != 0) {
-		LOG_ERR("Device not in application mode!");
+		LOG_ERROR("Device not in application mode!");
 		return -EINVAL;
 	}
 

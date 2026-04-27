@@ -86,7 +86,7 @@ static int dac_mcp4728_init(const struct device *dev)
 	const struct mcp4728_config *config = dev->config;
 
 	if (!device_is_ready(config->bus.bus)) {
-		LOG_ERR("%s device not found", config->bus.bus->name);
+		LOG_ERROR("%s device not found", config->bus.bus->name);
 		return -ENODEV;
 	}
 	return 0;

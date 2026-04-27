@@ -61,13 +61,13 @@ int mcux_opamp_fast_init(const struct device *dev)
 
 	/* Enable OPAMP clock. */
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("Clock device is not ready");
+		LOG_ERROR("Clock device is not ready");
 		return -ENODEV;
 	}
 
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret) {
-		LOG_ERR("Device clock turn on failed");
+		LOG_ERROR("Device clock turn on failed");
 		return ret;
 	}
 

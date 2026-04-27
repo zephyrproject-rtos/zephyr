@@ -64,7 +64,7 @@ static void input_cb(struct input_event *evt, void *user_data)
 	kb_evt.code = evt->code;
 	kb_evt.value = evt->value;
 	if (k_msgq_put(&kb_msgq, &kb_evt, K_NO_WAIT) != 0) {
-		LOG_ERR("Failed to put new input event");
+		LOG_ERROR("Failed to put new input event");
 	}
 }
 
@@ -156,13 +156,13 @@ static void msg_cb(struct usbd_context *const usbd_ctx,
 	if (usbd_can_detect_vbus(usbd_ctx)) {
 		if (msg->type == USBD_MSG_VBUS_READY) {
 			if (usbd_enable(usbd_ctx)) {
-				LOG_ERR("Failed to enable device support");
+				LOG_ERROR("Failed to enable device support");
 			}
 		}
 
 		if (msg->type == USBD_MSG_VBUS_REMOVED) {
 			if (usbd_disable(usbd_ctx)) {
-				LOG_ERR("Failed to disable device support");
+				LOG_ERROR("Failed to disable device support");
 			}
 		}
 	}
@@ -181,20 +181,20 @@ int main(void)
 		}
 
 		if (!gpio_is_ready_dt(&kb_leds[i])) {
-			LOG_ERR("LED device %s is not ready", kb_leds[i].port->name);
+			LOG_ERROR("LED device %s is not ready", kb_leds[i].port->name);
 			return -EIO;
 		}
 
 		ret = gpio_pin_configure_dt(&kb_leds[i], GPIO_OUTPUT_INACTIVE);
 		if (ret != 0) {
-			LOG_ERR("Failed to configure the LED pin, %d", ret);
+			LOG_ERROR("Failed to configure the LED pin, %d", ret);
 			return -EIO;
 		}
 	}
 
 	hid_dev = DEVICE_DT_GET_ONE(zephyr_hid_device);
 	if (!device_is_ready(hid_dev)) {
-		LOG_ERR("HID Device is not ready");
+		LOG_ERROR("HID Device is not ready");
 		return -EIO;
 	}
 
@@ -202,7 +202,7 @@ int main(void)
 				  hid_report_desc, sizeof(hid_report_desc),
 				  &kb_ops);
 	if (ret != 0) {
-		LOG_ERR("Failed to register HID Device, %d", ret);
+		LOG_ERROR("Failed to register HID Device, %d", ret);
 		return ret;
 	}
 
@@ -220,7 +220,7 @@ int main(void)
 
 	sample_usbd = sample_usbd_init_device(msg_cb);
 	if (sample_usbd == NULL) {
-		LOG_ERR("Failed to initialize USB device");
+		LOG_ERROR("Failed to initialize USB device");
 		return -ENODEV;
 	}
 
@@ -228,7 +228,7 @@ int main(void)
 		/* doc device enable start */
 		ret = usbd_enable(sample_usbd);
 		if (ret) {
-			LOG_ERR("Failed to enable device support");
+			LOG_ERROR("Failed to enable device support");
 			return ret;
 		}
 		/* doc device enable end */
@@ -297,7 +297,7 @@ int main(void)
 			if (kb_evt.value) {
 				ret = usbd_wakeup_request(sample_usbd);
 				if (ret) {
-					LOG_ERR("Remote wakeup error, %d", ret);
+					LOG_ERROR("Remote wakeup error, %d", ret);
 				}
 			}
 			continue;
@@ -305,7 +305,7 @@ int main(void)
 
 		ret = hid_device_submit_report(hid_dev, KB_REPORT_COUNT, report);
 		if (ret) {
-			LOG_ERR("HID submit report error, %d", ret);
+			LOG_ERROR("HID submit report error, %d", ret);
 		}
 	}
 

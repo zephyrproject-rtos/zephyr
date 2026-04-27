@@ -49,12 +49,12 @@ static int mipi_dsi_renesas_ra_attach(const struct device *dev, uint8_t channel,
 	fsp_err_t err;
 
 	if (!(mdev->mode_flags & MIPI_DSI_MODE_VIDEO)) {
-		LOG_ERR("DSI host supports video mode only!");
+		LOG_ERROR("DSI host supports video mode only!");
 		return -ENOTSUP;
 	}
 
 	if (channel == 0 && (mdev->mode_flags & MIPI_DSI_MODE_LPM) == 0) {
-		LOG_ERR("This channel support LP mode transfer only");
+		LOG_ERROR("This channel support LP mode transfer only");
 		return -ENOTSUP;
 	}
 
@@ -81,13 +81,13 @@ static int mipi_dsi_renesas_ra_attach(const struct device *dev, uint8_t channel,
 
 	err = R_MIPI_DSI_Open(&data->mipi_dsi_ctrl, &cfg);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Open DSI failed (%d)", err);
+		LOG_ERROR("Open DSI failed (%d)", err);
 		return -EIO;
 	}
 
 	err = R_MIPI_DSI_Start(&data->mipi_dsi_ctrl);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Start DSI host failed! (%d)", err);
+		LOG_ERROR("Start DSI host failed! (%d)", err);
 		return -EIO;
 	}
 
@@ -122,7 +122,7 @@ static ssize_t mipi_dsi_renesas_ra_dcs_write(const struct device *dev, uint8_t c
 	k_sem_reset(&data->in_transmission);
 
 	if (R_MIPI_DSI_Command(&data->mipi_dsi_ctrl, &fsp_msg) != FSP_SUCCESS) {
-		LOG_ERR("DSI write fail");
+		LOG_ERROR("DSI write fail");
 		return -EIO;
 	}
 
@@ -151,7 +151,7 @@ static ssize_t mipi_dsi_renesas_ra_generic_write(const struct device *dev, uint8
 	k_sem_reset(&data->in_transmission);
 
 	if (R_MIPI_DSI_Command(&data->mipi_dsi_ctrl, &fsp_msg) != FSP_SUCCESS) {
-		LOG_ERR("DSI write fail");
+		LOG_ERROR("DSI write fail");
 		return -EIO;
 	}
 
@@ -168,7 +168,7 @@ static ssize_t mipi_dsi_renesas_ra_transfer(const struct device *dev, uint8_t ch
 					    struct mipi_dsi_msg *msg)
 {
 	if (channel == 0 && (msg->flags & MIPI_DSI_MSG_USE_LPM) == 0) {
-		LOG_ERR("This channel support LP mode transfer only");
+		LOG_ERROR("This channel support LP mode transfer only");
 		return -ENOTSUP;
 	}
 
@@ -206,14 +206,14 @@ static int mipi_dsi_renesas_ra_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	ret = clock_control_on(config->clock_dev,
 			       (clock_control_subsys_t)&config->clock_dsi_subsys);
 	if (ret != 0) {
-		LOG_ERR("Enable DSI peripheral clock failed! (%d)", ret);
+		LOG_ERROR("Enable DSI peripheral clock failed! (%d)", ret);
 		return ret;
 	}
 

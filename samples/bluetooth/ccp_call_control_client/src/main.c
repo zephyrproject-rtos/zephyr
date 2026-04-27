@@ -68,7 +68,7 @@ static void security_changed_cb(struct bt_conn *conn, bt_security_t level, enum 
 	if (err == 0) {
 		k_sem_give(&sem_security_updated);
 	} else {
-		LOG_ERR("Failed to set security level: %s(%u)", bt_security_err_to_str(err), err);
+		LOG_ERROR("Failed to set security level: %s(%u)", bt_security_err_to_str(err), err);
 	}
 }
 
@@ -138,7 +138,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf
 
 		err = bt_le_scan_stop();
 		if (err != 0) {
-			LOG_ERR("Scanning failed to stop (err %d)", err);
+			LOG_ERROR("Scanning failed to stop (err %d)", err);
 			return;
 		}
 
@@ -146,7 +146,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf
 		err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN,
 					BT_LE_CONN_PARAM_DEFAULT, &peer_conn);
 		if (err != 0) {
-			LOG_ERR("Conn create failed: %d", err);
+			LOG_ERROR("Conn create failed: %d", err);
 		}
 	}
 }
@@ -157,7 +157,7 @@ static int scan_and_connect(void)
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err != 0) {
-		LOG_ERR("Scanning failed to start (err %d)", err);
+		LOG_ERROR("Scanning failed to start (err %d)", err);
 		return err;
 	}
 
@@ -165,19 +165,19 @@ static int scan_and_connect(void)
 
 	err = k_sem_take(&sem_conn_state_change, K_FOREVER);
 	if (err != 0) {
-		LOG_ERR("failed to take sem_connected (err %d)", err);
+		LOG_ERROR("failed to take sem_connected (err %d)", err);
 		return err;
 	}
 
 	err = bt_conn_set_security(peer_conn, BT_SECURITY_L2);
 	if (err != 0) {
-		LOG_ERR("failed to set security (err %d)", err);
+		LOG_ERROR("failed to set security (err %d)", err);
 		return err;
 	}
 
 	err = k_sem_take(&sem_security_updated, SEM_TIMEOUT);
 	if (err != 0) {
-		LOG_ERR("failed to take sem_security_updated (err %d)", err);
+		LOG_ERROR("failed to take sem_security_updated (err %d)", err);
 		return err;
 	}
 
@@ -191,7 +191,7 @@ static void ccp_call_control_client_discover_cb(struct bt_ccp_call_control_clien
 						void *user_data)
 {
 	if (err != 0) {
-		LOG_ERR("Discovery failed: %d", err);
+		LOG_ERROR("Discovery failed: %d", err);
 		return;
 	}
 
@@ -209,7 +209,7 @@ static void ccp_call_control_client_read_bearer_provider_name_cb(
 	void *user_data)
 {
 	if (err != 0) {
-		LOG_ERR("Failed to read bearer %p provider name: %d\n", (void *)bearer, err);
+		LOG_ERROR("Failed to read bearer %p provider name: %d\n", (void *)bearer, err);
 		return;
 	}
 
@@ -233,7 +233,7 @@ static int reset_ccp_call_control_client(void)
 
 		err = k_sem_take(&sem_conn_state_change, K_FOREVER);
 		if (err != 0) {
-			LOG_ERR("Failed to take sem_conn_state_change: %d", err);
+			LOG_ERROR("Failed to take sem_conn_state_change: %d", err);
 			return err;
 		}
 	}
@@ -241,7 +241,7 @@ static int reset_ccp_call_control_client(void)
 	/* If scanning is already stopped it will still return `0` */
 	err = bt_le_scan_stop();
 	if (err != 0) {
-		LOG_ERR("Scanning failed to stop (err %d)", err);
+		LOG_ERROR("Scanning failed to stop (err %d)", err);
 		return err;
 	}
 
@@ -258,13 +258,13 @@ static int discover_services(void)
 
 	err = bt_ccp_call_control_client_discover(peer_conn, &call_control_client);
 	if (err != 0) {
-		LOG_ERR("Failed to discover: %d", err);
+		LOG_ERROR("Failed to discover: %d", err);
 		return err;
 	}
 
 	err = k_sem_take(&sem_ccp_action_completed, SEM_TIMEOUT);
 	if (err != 0) {
-		LOG_ERR("Failed to take sem_ccp_action_completed: %d", err);
+		LOG_ERROR("Failed to take sem_ccp_action_completed: %d", err);
 		return err;
 	}
 
@@ -282,7 +282,7 @@ static int read_bearer_name(struct bt_ccp_call_control_client_bearer *bearer)
 
 	err = k_sem_take(&sem_ccp_action_completed, SEM_TIMEOUT);
 	if (err != 0) {
-		LOG_ERR("Failed to take sem_ccp_action_completed: %d", err);
+		LOG_ERROR("Failed to take sem_ccp_action_completed: %d", err);
 		return err;
 	}
 
@@ -296,7 +296,7 @@ static int read_bearer_names(void)
 #if defined(CONFIG_BT_TBS_CLIENT_GTBS)
 	err = read_bearer_name(client_bearers.gtbs_bearer);
 	if (err != 0) {
-		LOG_ERR("Failed to read name for GTBS bearer: %d", err);
+		LOG_ERROR("Failed to read name for GTBS bearer: %d", err);
 		return err;
 	}
 #endif /* CONFIG_BT_TBS_CLIENT_GTBS */
@@ -305,7 +305,7 @@ static int read_bearer_names(void)
 	for (size_t i = 0; i < client_bearers.tbs_count; i++) {
 		err = read_bearer_name(client_bearers.tbs_bearers[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to read name for bearer[%zu]: %d", i, err);
+			LOG_ERROR("Failed to read name for bearer[%zu]: %d", i, err);
 			return err;
 		}
 	}
@@ -329,7 +329,7 @@ static int init_ccp_call_control_client(void)
 
 	err = bt_enable(NULL);
 	if (err != 0) {
-		LOG_ERR("Bluetooth enable failed (err %d)", err);
+		LOG_ERROR("Bluetooth enable failed (err %d)", err);
 
 		return err;
 	}
@@ -337,14 +337,14 @@ static int init_ccp_call_control_client(void)
 	LOG_DBG("Bluetooth initialized");
 	err = bt_le_scan_cb_register(&scan_cbs);
 	if (err != 0) {
-		LOG_ERR("Bluetooth enable failed (err %d)", err);
+		LOG_ERROR("Bluetooth enable failed (err %d)", err);
 
 		return err;
 	}
 
 	err = bt_ccp_call_control_client_register_cb(&ccp_call_control_client_cbs);
 	if (err != 0) {
-		LOG_ERR("Bluetooth enable failed (err %d)", err);
+		LOG_ERROR("Bluetooth enable failed (err %d)", err);
 
 		return err;
 	}
@@ -391,7 +391,7 @@ int main(void)
 		/* Reset if disconnected */
 		err = k_sem_take(&sem_conn_state_change, K_FOREVER);
 		if (err != 0) {
-			LOG_ERR("Failed to take sem_conn_state_change: err %d", err);
+			LOG_ERROR("Failed to take sem_conn_state_change: err %d", err);
 			break;
 		}
 	}

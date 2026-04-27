@@ -120,20 +120,20 @@ static int wdt_sam4l_convert_timeout(const struct wdt_sam4l_dev_cfg *cfg,
 	int scale;
 
 	if (config->window.max < config->window.min || config->window.max == 0) {
-		LOG_ERR("The watchdog window should have a valid period");
+		LOG_ERROR("The watchdog window should have a valid period");
 		return -EINVAL;
 	}
 
 	scale = wdt_sam4l_calc_timeout(cfg, config->window.min);
 	if (scale < 0) {
-		LOG_ERR("Window minimal value is too big");
+		LOG_ERROR("Window minimal value is too big");
 		return -EINVAL;
 	}
 	*tban = scale;
 
 	scale = wdt_sam4l_calc_timeout(cfg, config->window.max - config->window.min);
 	if (scale < 0) {
-		LOG_ERR("Window maximal value is too big");
+		LOG_ERROR("Window maximal value is too big");
 		return -EINVAL;
 	}
 	*psel = scale;
@@ -148,29 +148,29 @@ static int wdt_sam4l_setup(const struct device *dev, uint8_t options)
 	volatile uint32_t reg;
 
 	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
-		LOG_ERR("Pause in Sleep is an invalid option");
+		LOG_ERROR("Pause in Sleep is an invalid option");
 		return -ENOTSUP;
 	}
 
 	if (options & WDT_OPT_PAUSE_HALTED_BY_DBG) {
-		LOG_ERR("Pause on CPU halted by debug is an invalid option");
+		LOG_ERROR("Pause on CPU halted by debug is an invalid option");
 		return -ENOTSUP;
 	}
 
 	reg = wdt->CTRL;
 
 	if (reg & WDT_CTRL_EN) {
-		LOG_ERR("Watchdog is running and can not be changed");
+		LOG_ERROR("Watchdog is running and can not be changed");
 		return -EPERM;
 	}
 
 	if (reg & WDT_CTRL_SFV) {
-		LOG_ERR("Watchdog is locked and can not be changed");
+		LOG_ERROR("Watchdog is locked and can not be changed");
 		return -EPERM;
 	}
 
 	if (!(reg & WDT_CTRL_PSEL_Msk)) {
-		LOG_ERR("No valid timeouts installed");
+		LOG_ERROR("No valid timeouts installed");
 		return -EINVAL;
 	}
 
@@ -191,7 +191,7 @@ static int wdt_sam4l_disable(const struct device *dev)
 	Wdt *const wdt = cfg->regs;
 
 	if (wdt->CTRL & WDT_CTRL_SFV) {
-		LOG_ERR("Watchdog is already locked");
+		LOG_ERROR("Watchdog is already locked");
 		return -EPERM;
 	}
 
@@ -216,12 +216,12 @@ static int wdt_sam4l_install_timeout(const struct device *dev,
 	uint32_t tban, psel;
 
 	if (wdt->CTRL & WDT_CTRL_MODE) {
-		LOG_ERR("No more timeouts can be installed");
+		LOG_ERROR("No more timeouts can be installed");
 		return -ENOMEM;
 	}
 
 	if (config->flags & WDT_FLAG_RESET_CPU_CORE) {
-		LOG_ERR("The SAM4L watchdog does not support reset CPU core");
+		LOG_ERROR("The SAM4L watchdog does not support reset CPU core");
 		return -ENOTSUP;
 	}
 
@@ -232,12 +232,12 @@ static int wdt_sam4l_install_timeout(const struct device *dev,
 	reg = wdt->CTRL;
 
 	if (reg & WDT_CTRL_EN) {
-		LOG_ERR("Watchdog is running and can not be changed");
+		LOG_ERROR("Watchdog is running and can not be changed");
 		return -EPERM;
 	}
 
 	if (reg & WDT_CTRL_SFV) {
-		LOG_ERR("Watchdog is locked and can not be changed");
+		LOG_ERROR("Watchdog is locked and can not be changed");
 		return -EPERM;
 	}
 

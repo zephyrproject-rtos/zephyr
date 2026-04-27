@@ -65,11 +65,11 @@ static int pwm_cc23x0_set_cycles(const struct device *dev, uint32_t channel, uin
 
 	if ((config->base != LGPT3_BASE) && (pulse > 0xffff || period > 0xffff || pulse > period)) {
 		/* LGPT0, LGPT1, LGPT2 - 16bit counters */
-		LOG_ERR("Period of pulse out of range");
+		LOG_ERROR("Period of pulse out of range");
 		return -EINVAL;
 	} else if (pulse > 0xffffff || period > 0xffffff || pulse > period) {
 		/* LGPT3 - 24bit counter */
-		LOG_ERR("Period of pulse out of range");
+		LOG_ERROR("Period of pulse out of range");
 		return -EINVAL;
 	}
 
@@ -83,7 +83,7 @@ static int pwm_cc23x0_set_cycles(const struct device *dev, uint32_t channel, uin
 		HWREG(config->base + LGPT_O_C2CC) = pulse;
 		HWREG(config->base + LGPT_O_C2CFG) = 0x400 | 0xB;
 	} else {
-		LOG_ERR("Invalid chan ID");
+		LOG_ERROR("Invalid chan ID");
 		return -ENOTSUP;
 	}
 
@@ -181,7 +181,7 @@ static int pwm_cc23x0_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("[ERR] failed to setup PWM pinctrl");
+		LOG_ERROR("[ERR] failed to setup PWM pinctrl");
 		return ret;
 	}
 

@@ -50,26 +50,26 @@ int main(void)
 	};
 
 	if (!adc_is_ready_dt(&ch_cfg)) {
-		LOG_ERR("LMP90100 device not ready");
+		LOG_ERROR("LMP90100 device not ready");
 		return 0;
 	}
 
 	err = adc_channel_setup_dt(&ch_cfg);
 	if (err != 0) {
-		LOG_ERR("failed to setup ADC channel (err %d)", err);
+		LOG_ERROR("failed to setup ADC channel (err %d)", err);
 		return 0;
 	}
 
 	err = adc_sequence_init_dt(&ch_cfg, &seq);
 	if (err != 0) {
-		LOG_ERR("failed to initialize ADC sequence (err %d)", err);
+		LOG_ERROR("failed to initialize ADC sequence (err %d)", err);
 		return 0;
 	}
 
 	while (true) {
 		err = adc_read_dt(&ch_cfg, &seq);
 		if (err != 0) {
-			LOG_ERR("failed to read ADC (err %d)", err);
+			LOG_ERROR("failed to read ADC (err %d)", err);
 		} else {
 			resistance = (buffer / adc_max) * BOTTOM_RESISTANCE;
 			printf("R: %.02f ohm\n", resistance);

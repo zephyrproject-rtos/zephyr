@@ -244,7 +244,7 @@ static void dwmac_tx_release(struct dwmac_priv *p)
 		if (des3_val & TDES3_LD) {
 			/* log any errors */
 			if (des3_val & TDES3_ES) {
-				LOG_ERR("tx error (DES3 = 0x%08x)", des3_val);
+				LOG_ERROR("tx error (DES3 = 0x%08x)", des3_val);
 				eth_stats_update_errors_tx(p->iface);
 			}
 		}
@@ -285,19 +285,19 @@ static void dwmac_receive(struct dwmac_priv *p)
 		if (des3_val & RDES3_FD) {
 			p->rx_bytes = 0;
 			if (p->rx_pkt) {
-				LOG_ERR("d[%d] first desc but pkt exists", d_idx);
+				LOG_ERROR("d[%d] first desc but pkt exists", d_idx);
 				eth_stats_update_errors_rx(p->iface);
 				net_pkt_unref(p->rx_pkt);
 			}
 			p->rx_pkt = net_pkt_rx_alloc_on_iface(p->iface, K_NO_WAIT);
 			if (!p->rx_pkt) {
-				LOG_ERR("net_pkt_rx_alloc_on_iface() failed");
+				LOG_ERROR("net_pkt_rx_alloc_on_iface() failed");
 				eth_stats_update_errors_rx(p->iface);
 			}
 		}
 
 		if (!p->rx_pkt) {
-			LOG_ERR("no rx_pkt: skipping desc %d", d_idx);
+			LOG_ERROR("no rx_pkt: skipping desc %d", d_idx);
 			continue;
 		}
 
@@ -318,7 +318,7 @@ static void dwmac_receive(struct dwmac_priv *p)
 					net_pkt_get_nbfrags(p->rx_pkt));
 				net_recv_data(p->iface, p->rx_pkt);
 			} else {
-				LOG_ERR("rx error (DES3 = 0x%08x)", des3_val);
+				LOG_ERROR("rx error (DES3 = 0x%08x)", des3_val);
 				eth_stats_update_errors_rx(p->iface);
 				net_pkt_unref(p->rx_pkt);
 			}
@@ -346,7 +346,7 @@ static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
 
 		/* wait for an empty descriptor */
 		if (k_sem_take(&p->free_rx_descs, K_FOREVER) != 0) {
-			LOG_ERR("can't get free RX desc to refill");
+			LOG_ERROR("can't get free RX desc to refill");
 			break;
 		}
 
@@ -363,7 +363,7 @@ static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
 		if (!frag) {
 			frag = net_pkt_get_reserve_rx_data(RX_FRAG_SIZE, K_FOREVER);
 			if (!frag) {
-				LOG_ERR("net_pkt_get_reserve_rx_data() returned NULL");
+				LOG_ERROR("net_pkt_get_reserve_rx_data() returned NULL");
 				k_sem_give(&p->free_rx_descs);
 				break;
 			}
@@ -403,7 +403,7 @@ static void dwmac_dma_irq(struct dwmac_priv *p, unsigned int ch)
 	__ASSERT(ch == 0, "only one DMA channel is currently supported");
 
 	if (status & DMA_CHn_STATUS_AIS) {
-		LOG_ERR("Abnormal Interrupt Status received (0x%x)", status);
+		LOG_ERROR("Abnormal Interrupt Status received (0x%x)", status);
 	}
 
 	if (status & DMA_CHn_STATUS_TI) {
@@ -541,7 +541,7 @@ static void phy_link_state_changed(const struct device *phy_dev,
 			reg_val &= ~MAC_CONF_PS;
 			break;
 		default:
-			LOG_ERR("unknown link speed %d", state->speed);
+			LOG_ERROR("unknown link speed %d", state->speed);
 		}
 
 		if (PHY_LINK_IS_FULL_DUPLEX(state->speed)) {
@@ -587,7 +587,7 @@ static void dwmac_iface_init(struct net_if *iface)
 		if (device_is_ready(p->phy_dev)) {
 			phy_link_callback_set(p->phy_dev, phy_link_state_changed, (void *)p);
 		} else {
-			LOG_ERR("PHY device not ready");
+			LOG_ERROR("PHY device not ready");
 		}
 	}
 
@@ -652,7 +652,7 @@ int dwmac_probe(const struct device *dev)
 	timeout = sys_timepoint_calc(K_MSEC(100));
 	while (REG_READ(DMA_MODE) & DMA_MODE_SWR) {
 		if (sys_timepoint_expired(timeout)) {
-			LOG_ERR("unable to reset hardware");
+			LOG_ERROR("unable to reset hardware");
 			return -EIO;
 		}
 	}

@@ -59,7 +59,7 @@ static void transmitter_status(const struct bt_mesh_model *model,
 	bt_mesh_sar_tx_encode(&msg, tx);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Transmitter Status");
+		LOG_ERROR("Unable to send Transmitter Status");
 	}
 }
 
@@ -77,7 +77,7 @@ static void receiver_status(const struct bt_mesh_model *model,
 	bt_mesh_sar_rx_encode(&msg, rx);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Receiver Status");
+		LOG_ERROR("Unable to send Receiver Status");
 	}
 }
 
@@ -146,7 +146,7 @@ const struct bt_mesh_model_op bt_mesh_sar_cfg_srv_op[] = {
 static int sar_cfg_srv_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
-		LOG_ERR("Configuration Server only allowed in primary element");
+		LOG_ERROR("Configuration Server only allowed in primary element");
 		return -EINVAL;
 	}
 

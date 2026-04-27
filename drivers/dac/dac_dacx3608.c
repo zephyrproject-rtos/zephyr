@@ -41,7 +41,7 @@ static int dacx3608_reg_read(const struct device *dev, uint8_t reg,
 	const struct dacx3608_config *cfg = dev->config;
 
 	if (i2c_burst_read_dt(&cfg->bus, reg, (uint8_t *) val, 2) < 0) {
-		LOG_ERR("I2C read failed");
+		LOG_ERROR("I2C read failed");
 		return -EIO;
 	}
 
@@ -93,17 +93,17 @@ static int dacx3608_channel_setup(const struct device *dev,
 	int ret;
 
 	if (channel_cfg->channel_id > DACX3608_MAX_CHANNEL - 1) {
-		LOG_ERR("Unsupported channel %d", channel_cfg->channel_id);
+		LOG_ERROR("Unsupported channel %d", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->resolution != config->resolution) {
-		LOG_ERR("Unsupported resolution %d", channel_cfg->resolution);
+		LOG_ERROR("Unsupported resolution %d", channel_cfg->resolution);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->internal) {
-		LOG_ERR("Internal channels not supported");
+		LOG_ERROR("Internal channels not supported");
 		return -ENOTSUP;
 	}
 
@@ -116,7 +116,7 @@ static int dacx3608_channel_setup(const struct device *dev,
 	ret = dacx3608_reg_update(dev, DACX3608_REG_DEVICE_CONFIG,
 				BIT(channel_cfg->channel_id), setting);
 	if (ret) {
-		LOG_ERR("Unable to update DEVICE_CONFIG register");
+		LOG_ERROR("Unable to update DEVICE_CONFIG register");
 		return -EIO;
 	}
 
@@ -138,7 +138,7 @@ static int dacx3608_write_value(const struct device *dev, uint8_t channel,
 	const bool brdcast = (channel == DAC_CHANNEL_BROADCAST) ? 1 : 0;
 
 	if (!brdcast && (channel > DACX3608_MAX_CHANNEL - 1)) {
-		LOG_ERR("Unsupported channel %d", channel);
+		LOG_ERROR("Unsupported channel %d", channel);
 		return -ENOTSUP;
 	}
 
@@ -148,12 +148,12 @@ static int dacx3608_write_value(const struct device *dev, uint8_t channel,
 	 */
 	if ((brdcast && !data->configured) ||
 	    (channel < DACX3608_MAX_CHANNEL && !(data->configured & BIT(channel)))) {
-		LOG_ERR("Channel %d not initialized", channel);
+		LOG_ERROR("Channel %d not initialized", channel);
 		return -EINVAL;
 	}
 
 	if (value >= (1 << (config->resolution))) {
-		LOG_ERR("Value %d out of range", value);
+		LOG_ERROR("Value %d out of range", value);
 		return -EINVAL;
 	}
 
@@ -173,7 +173,7 @@ static int dacx3608_write_value(const struct device *dev, uint8_t channel,
 
 	ret = dacx3608_reg_write(dev, reg, regval);
 	if (ret) {
-		LOG_ERR("Unable to set value %d on channel %d", value, channel);
+		LOG_ERROR("Unable to set value %d on channel %d", value, channel);
 		return -EIO;
 	}
 
@@ -201,7 +201,7 @@ static int dacx3608_device_id_check(const struct device *dev)
 
 	ret = dacx3608_reg_read(dev, DACX3608_REG_STATUS_TRIGGER, &dev_id);
 	if (ret) {
-		LOG_ERR("Unable to read device ID");
+		LOG_ERROR("Unable to read device ID");
 		return -EIO;
 	}
 
@@ -211,7 +211,7 @@ static int dacx3608_device_id_check(const struct device *dev)
 		LOG_DBG("Device ID %#4x", dev_id);
 		break;
 	default:
-		LOG_ERR("Unknown Device ID %#4x", dev_id);
+		LOG_ERROR("Unknown Device ID %#4x", dev_id);
 		return -EIO;
 	}
 
@@ -225,13 +225,13 @@ static int dacx3608_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->bus.bus)) {
-		LOG_ERR("I2C device not ready");
+		LOG_ERROR("I2C device not ready");
 		return -ENODEV;
 	}
 
 	ret = dacx3608_soft_reset(dev);
 	if (ret) {
-		LOG_ERR("Soft-reset failed");
+		LOG_ERROR("Soft-reset failed");
 		return ret;
 	}
 

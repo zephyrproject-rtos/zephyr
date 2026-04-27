@@ -620,7 +620,7 @@ static int uart_async_sf32lb_rx_disable(const struct device *dev)
 
 	err = sf32lb_dma_stop_dt(&config->rx_dma);
 	if (err) {
-		LOG_ERR("Error stopping Rx DMA (%d)", err);
+		LOG_ERROR("Error stopping Rx DMA (%d)", err);
 		goto unlock;
 	}
 
@@ -734,7 +734,7 @@ static int uart_async_sf32lb_tx_abort(const struct device *dev)
 
 	err = sf32lb_dma_stop_dt(&config->tx_dma);
 	if (err) {
-		LOG_ERR("Error stopping Tx DMA (%d)", err);
+		LOG_ERROR("Error stopping Tx DMA (%d)", err);
 		goto unlock;
 	}
 
@@ -895,7 +895,7 @@ static int uart_sf32lb_init(const struct device *dev)
 
 	ret = sf32lb_dma_config_dt(&config->rx_dma, &rx_dma_cfg);
 	if (ret < 0) {
-		LOG_ERR("Error configuring Rx DMA (%d)", ret);
+		LOG_ERROR("Error configuring Rx DMA (%d)", ret);
 		return ret;
 	}
 
@@ -915,7 +915,7 @@ static int uart_sf32lb_init(const struct device *dev)
 
 	ret = sf32lb_dma_config_dt(&config->tx_dma, &tx_dma_cfg);
 	if (ret) {
-		LOG_ERR("Error configuring Tx DMA (%d)", ret);
+		LOG_ERROR("Error configuring Tx DMA (%d)", ret);
 		return ret;
 	}
 #endif

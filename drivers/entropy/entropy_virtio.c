@@ -53,7 +53,7 @@ static int entropy_virtio_get_entropy(const struct device *dev, uint8_t *buffer,
 	int ret;
 
 	if (!vq) {
-		LOG_ERR("failed to get virtqueue %d", VIRTIO_ENTROPY_QUEUE_IDX);
+		LOG_ERROR("failed to get virtqueue %d", VIRTIO_ENTROPY_QUEUE_IDX);
 		return -ENODEV;
 	}
 
@@ -66,7 +66,7 @@ static int entropy_virtio_get_entropy(const struct device *dev, uint8_t *buffer,
 		ret = virtq_add_buffer_chain(vq, buf, 1, 0, entropy_virtio_virtq_recv_cb, data,
 					     K_FOREVER);
 		if (ret) {
-			LOG_ERR("virtq_add_buffer_chain failed: %d", ret);
+			LOG_ERROR("virtq_add_buffer_chain failed: %d", ret);
 			k_mutex_unlock(&data->buf_mutex);
 			return -EIO;
 		}
@@ -76,8 +76,8 @@ static int entropy_virtio_get_entropy(const struct device *dev, uint8_t *buffer,
 		k_sem_take(&data->sem, K_FOREVER);
 
 		if (data->received_len != buf[0].len) {
-			LOG_ERR("insufficient number of values: %d/%d", data->received_len,
-				buf[0].len);
+			LOG_ERROR("insufficient number of values: %d/%d", data->received_len,
+				  buf[0].len);
 			k_mutex_unlock(&data->buf_mutex);
 			return -EIO;
 		}
@@ -108,7 +108,7 @@ static int entropy_virtio_init(const struct device *dev)
 
 	ret = virtio_init_virtqueues(cfg->vdev, 1, entropy_virtio_enum_queues_cb, NULL);
 	if (ret) {
-		LOG_ERR("virtio_init_virtqueues failed: %d", ret);
+		LOG_ERROR("virtio_init_virtqueues failed: %d", ret);
 		return ret;
 	}
 

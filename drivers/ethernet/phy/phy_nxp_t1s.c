@@ -73,7 +73,7 @@ static int phy_nxp_t1s_set_plca_cfg(const struct device *dev, struct phy_plca_cf
 
 	status = TENBASET_PHY_SetPLCAConfig(base, &plca_config);
 	if (status != kStatus_Success) {
-		LOG_ERR("PHY (%p) Failed to set PLCA config", base);
+		LOG_ERROR("PHY (%p) Failed to set PLCA config", base);
 		return -EIO;
 	}
 
@@ -132,7 +132,7 @@ static int phy_nxp_t1s_init(const struct device *dev)
 
 	status = TENBASET_PHY_Init(base, &cfg, handle);
 	if (status != kStatus_Success) {
-		LOG_ERR("PHY (%p) Failed to initialize", base);
+		LOG_ERROR("PHY (%p) Failed to initialize", base);
 		return -EIO;
 	}
 

@@ -323,24 +323,24 @@ static int nxp_dma_init(const struct device *dev)
 
 	if (cfg->dma_clk_dev != NULL) {
 		if (!device_is_ready(cfg->dma_clk_dev)) {
-			LOG_ERR("DMA clock device not ready");
+			LOG_ERROR("DMA clock device not ready");
 			return -ENODEV;
 		}
 		ret = clock_control_on(cfg->dma_clk_dev, cfg->dma_clk_subsys);
 		if (ret < 0) {
-			LOG_ERR("Failed to enable DMA clock (%d)", ret);
+			LOG_ERROR("Failed to enable DMA clock (%d)", ret);
 			return ret;
 		}
 	}
 
 	if (cfg->dmamux_clk_dev != NULL) {
 		if (!device_is_ready(cfg->dmamux_clk_dev)) {
-			LOG_ERR("DMAMUX clock device not ready");
+			LOG_ERROR("DMAMUX clock device not ready");
 			return -ENODEV;
 		}
 		ret = clock_control_on(cfg->dmamux_clk_dev, cfg->dmamux_clk_subsys);
 		if (ret < 0) {
-			LOG_ERR("Failed to enable DMAMUX clock (%d)", ret);
+			LOG_ERROR("Failed to enable DMAMUX clock (%d)", ret);
 			return ret;
 		}
 	}

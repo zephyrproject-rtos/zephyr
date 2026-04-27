@@ -374,7 +374,7 @@ static uint32_t setup_segments_object(struct mpl_track *track)
 		LOG_HEXDUMP_DBG(obj.content->data, obj.content->len, "Segments Object");
 		LOG_DBG("Segments object length: %d", obj.content->len);
 	} else {
-		LOG_ERR("No seg!");
+		LOG_ERROR("No seg!");
 	}
 
 	return obj.content->len;
@@ -539,7 +539,7 @@ static int add_track_object(struct mpl_track *track)
 	int ret;
 
 	if (!track) {
-		LOG_ERR("No track");
+		LOG_ERROR("No track");
 		return -EINVAL;
 	}
 
@@ -603,7 +603,7 @@ static int add_group_object(struct mpl_group *group)
 	int ret;
 
 	if (!group) {
-		LOG_ERR("No group");
+		LOG_ERROR("No group");
 		return -EINVAL;
 	}
 
@@ -702,7 +702,7 @@ static void on_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 	if (atomic_test_and_set_bit(obj.flags, MPL_OBJ_FLAG_BUSY)) {
 		/* TODO: Can there be a collision between select and internal */
 		/* activities, like adding new objects? */
-		LOG_ERR("Object busy - select not performed");
+		LOG_ERROR("Object busy - select not performed");
 		return;
 	}
 
@@ -733,7 +733,7 @@ static void on_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 		LOG_DBG("Current Group Object ID");
 		(void)setup_group_object(media_player.group);
 	} else {
-		LOG_ERR("Unknown Object ID");
+		LOG_ERROR("Unknown Object ID");
 		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
 		return;
 	}
@@ -812,7 +812,7 @@ static ssize_t on_object_send(struct bt_ots *ots, struct bt_conn *conn,
 	if (atomic_test_and_set_bit(obj.flags, MPL_OBJ_FLAG_BUSY)) {
 		/* TODO: Can there be a collision between select and internal */
 		/* activities, like adding new objects? */
-		LOG_ERR("Object busy");
+		LOG_ERROR("Object busy");
 		return -EBUSY;
 	}
 
@@ -823,7 +823,7 @@ static ssize_t on_object_send(struct bt_ots *ots, struct bt_conn *conn,
 	}
 
 	if (id != obj.selected_id) {
-		LOG_ERR("Read from unselected object");
+		LOG_ERROR("Read from unselected object");
 		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
 		return -EINVAL;
 	}
@@ -2337,13 +2337,13 @@ int media_proxy_pl_init(void)
 	 * called, but the set is to avoid the objects being accessed before properly initialized
 	 */
 	if (atomic_test_and_set_bit(obj.flags, MPL_OBJ_FLAG_BUSY)) {
-		LOG_ERR("Object busy");
+		LOG_ERROR("Object busy");
 		return -EBUSY;
 	}
 
 	ret = bt_mcs_init(&ots_cbs);
 	if (ret < 0) {
-		LOG_ERR("Could not init MCS: %d", ret);
+		LOG_ERROR("Could not init MCS: %d", ret);
 		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
 
 		return ret;
@@ -2351,7 +2351,7 @@ int media_proxy_pl_init(void)
 #else
 	ret = bt_mcs_init(NULL);
 	if (ret < 0) {
-		LOG_ERR("Could not init MCS: %d", ret);
+		LOG_ERROR("Could not init MCS: %d", ret);
 		return ret;
 	}
 #endif  /* CONFIG_BT_MPL_OBJECTS */
@@ -2367,7 +2367,7 @@ int media_proxy_pl_init(void)
 	/* Icon Object */
 	ret = add_icon_object(&media_player);
 	if (ret < 0) {
-		LOG_ERR("Unable to add icon object, error %d", ret);
+		LOG_ERROR("Unable to add icon object, error %d", ret);
 		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
 		return ret;
 	}
@@ -2375,7 +2375,7 @@ int media_proxy_pl_init(void)
 	/* Add all tracks and groups to OTS */
 	ret = add_group_and_track_objects(&media_player);
 	if (ret < 0) {
-		LOG_ERR("Error adding tracks and groups to OTS, error %d", ret);
+		LOG_ERROR("Error adding tracks and groups to OTS, error %d", ret);
 		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
 		return ret;
 	}
@@ -2385,7 +2385,7 @@ int media_proxy_pl_init(void)
 	/* but for no only one of the tracks has segments .*/
 	ret = add_current_track_segments_object(&media_player);
 	if (ret < 0) {
-		LOG_ERR("Error adding Track Segments Object to OTS, error %d", ret);
+		LOG_ERROR("Error adding Track Segments Object to OTS, error %d", ret);
 		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
 		return ret;
 	}
@@ -2430,7 +2430,7 @@ int media_proxy_pl_init(void)
 
 	ret = media_proxy_pl_register(&media_player.calls);
 	if (ret < 0) {
-		LOG_ERR("Unable to register player");
+		LOG_ERROR("Unable to register player");
 		return ret;
 	}
 

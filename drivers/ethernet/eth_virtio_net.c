@@ -136,7 +136,7 @@ static int virtnet_send(const struct device *dev, struct net_pkt *pkt)
 	size_t len = net_pkt_get_len(pkt);
 
 	if (net_pkt_read(pkt, data->txb + sizeof(struct _virtio_net_hdr), len)) {
-		LOG_ERR("could not read contents of packet to be sent");
+		LOG_ERROR("could not read contents of packet to be sent");
 		return -EIO;
 	}
 
@@ -145,7 +145,7 @@ static int virtnet_send(const struct device *dev, struct net_pkt *pkt)
 		{.addr = data->txb, .len = sizeof(struct _virtio_net_hdr) + len}};
 
 	if (virtq_add_buffer_chain(vq, vqbuf, 1, 1, NULL, NULL, K_FOREVER)) {
-		LOG_ERR("could not send packet");
+		LOG_ERROR("could not send packet");
 		return -EIO;
 	}
 	virtio_notify_virtqueue(config->vdev, VIRTQ_TX(1));
@@ -165,12 +165,12 @@ void virtnet_rx_cb(void *priv, uint32_t len)
 		net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_FOREVER);
 
 	if (pkt == NULL) {
-		LOG_ERR("received packet, but could not pass it to the operating system");
+		LOG_ERROR("received packet, but could not pass it to the operating system");
 	} else if (net_pkt_write(pkt, &(data->rxb[buf_no][sizeof(struct _virtio_net_hdr)]), len)) {
-		LOG_ERR("could not copy entire received packet");
+		LOG_ERROR("could not copy entire received packet");
 		net_pkt_unref(pkt);
 	} else if (net_recv_data(data->iface, pkt)) {
-		LOG_ERR("operating system failed to receive packet");
+		LOG_ERROR("operating system failed to receive packet");
 		net_pkt_unref(pkt);
 	} else {
 		/* Packet received correctly, no error */
@@ -214,10 +214,10 @@ static int virtnet_dev_init(const struct device *dev)
 
 	data->virtio_devcfg = virtio_get_device_specific_config(config->vdev);
 	if (data->virtio_devcfg == NULL) {
-		LOG_ERR("could not get config struct");
+		LOG_ERROR("could not get config struct");
 	}
 	if (virtio_commit_feature_bits(config->vdev)) {
-		LOG_ERR("could not commit feature bits");
+		LOG_ERROR("could not commit feature bits");
 	}
 	LOG_DBG("MAC address is %02x:%02x:%02x:%02x:%02x:%02x", data->mac[0], data->mac[1],
 		data->mac[2], data->mac[3], data->mac[4], data->mac[5]);

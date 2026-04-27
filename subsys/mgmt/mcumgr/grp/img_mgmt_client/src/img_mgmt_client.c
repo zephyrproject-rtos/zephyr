@@ -121,7 +121,7 @@ static int image_state_res_fn(struct net_buf *nb, void *user_data)
 				/* No more map */
 				break;
 			}
-			LOG_ERR("Corrupted Image data %d", rc);
+			LOG_ERROR("Corrupted Image data %d", rc);
 			image_info->status = MGMT_ERR_EINVAL;
 			goto out;
 		}
@@ -129,7 +129,7 @@ static int image_state_res_fn(struct net_buf *nb, void *user_data)
 		if (hash.len != IMG_MGMT_DATA_SHA_LEN || !version.len ||
 		    !zcbor_map_decode_bulk_key_found(list_res_decode, ARRAY_SIZE(list_res_decode),
 						     "slot")) {
-			LOG_ERR("Missing mandatory parametrs");
+			LOG_ERROR("Missing mandatory parametrs");
 			image_info->status = MGMT_ERR_EINVAL;
 			goto out;
 		}
@@ -237,7 +237,7 @@ static int erase_res_fn(struct net_buf *nb, void *user_data)
 
 	rc = zcbor_map_decode_bulk(zsd, upload_res_decode, ARRAY_SIZE(upload_res_decode), &decoded);
 	if (rc) {
-		LOG_ERR("Erase fail %d", rc);
+		LOG_ERROR("Erase fail %d", rc);
 		active_client->status = MGMT_ERR_EINVAL;
 		goto end;
 	}
@@ -285,7 +285,7 @@ static size_t upload_message_header_size(struct img_gr_upload *upload_state)
 	}
 
 	if (!ok) {
-		LOG_ERR("Failed to encode Image Upload packet");
+		LOG_ERROR("Failed to encode Image Upload packet");
 		return 0;
 	}
 	cbor_length = zse->payload - temp_buf;
@@ -404,7 +404,7 @@ int img_mgmt_client_upload(struct img_mgmt_client *client, const uint8_t *data, 
 		}
 
 		if (!ok) {
-			LOG_ERR("Failed to encode Image Upload packet");
+			LOG_ERROR("Failed to encode Image Upload packet");
 			smp_packet_free(nb);
 			image_upload_buf->status = MGMT_ERR_ENOMEM;
 			goto end;
@@ -421,7 +421,7 @@ int img_mgmt_client_upload(struct img_mgmt_client *client, const uint8_t *data, 
 					 &mcumgr_img_client_grp_sem,
 					 CONFIG_MCUMGR_GRP_IMG_FLASH_OPERATION_TIMEOUT);
 		if (rc) {
-			LOG_ERR("Failed to send SMP Upload init packet, err: %d", rc);
+			LOG_ERROR("Failed to send SMP Upload init packet, err: %d", rc);
 			smp_packet_free(nb);
 			image_upload_buf->status = rc;
 			goto end;
@@ -429,7 +429,7 @@ int img_mgmt_client_upload(struct img_mgmt_client *client, const uint8_t *data, 
 		}
 		k_sem_take(&mcumgr_img_client_grp_sem, K_FOREVER);
 		if (image_upload_buf->status) {
-			LOG_ERR("Upload Fail: %d", image_upload_buf->status);
+			LOG_ERROR("Upload Fail: %d", image_upload_buf->status);
 			goto end;
 		}
 

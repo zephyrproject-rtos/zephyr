@@ -174,7 +174,7 @@ static void uart_bitbang_rx_counter_top_interrupt(const struct device *dev, void
 		/* Enable rx gpio interrupt */
 		rc = gpio_pin_interrupt_configure_dt(&config->rx_gpio, GPIO_INT_EDGE_FALLING);
 		if (rc < 0) {
-			LOG_ERR("Couldn't configure rx pin (%d)", rc);
+			LOG_ERROR("Couldn't configure rx pin (%d)", rc);
 		}
 
 		/* Check parity */
@@ -225,7 +225,7 @@ static void uart_bitbang_rx_callback(const struct device *dev, struct gpio_callb
 	/* Disable rx gpio interrupt */
 	rc = gpio_pin_interrupt_configure_dt(&config->rx_gpio, GPIO_INT_DISABLE);
 	if (rc < 0) {
-		LOG_ERR("Couldn't configure rx pin (%d)", rc);
+		LOG_ERROR("Couldn't configure rx pin (%d)", rc);
 	}
 }
 
@@ -618,11 +618,11 @@ static int uart_bitbang_init(const struct device *dev)
 	 */
 	if (config->tx_gpio.port != NULL) {
 		if (config->tx_counter == NULL) {
-			LOG_ERR("Couldn't configure tx counter");
+			LOG_ERROR("Couldn't configure tx counter");
 			return -ENODEV;
 		} else if (config->tx_counter != config->rx_counter) {
 			if (!device_is_ready(config->tx_counter)) {
-				LOG_ERR("Couldn't configure tx counter");
+				LOG_ERROR("Couldn't configure tx counter");
 				return -ENODEV;
 			}
 			data->tx_counter_cfg.callback = uart_bitbang_tx_counter_top_interrupt;
@@ -632,7 +632,7 @@ static int uart_bitbang_init(const struct device *dev)
 			data->tx_counter_cfg.flags = 0;
 			rc = counter_set_top_value(config->tx_counter, &data->tx_counter_cfg);
 			if (rc < 0) {
-				LOG_ERR("Couldn't configure tx counter (%d)", rc);
+				LOG_ERROR("Couldn't configure tx counter (%d)", rc);
 				return rc;
 			}
 		}
@@ -647,11 +647,11 @@ static int uart_bitbang_init(const struct device *dev)
 	 */
 	if (config->rx_gpio.port != NULL) {
 		if (config->rx_counter == NULL) {
-			LOG_ERR("Couldn't configure rx counter");
+			LOG_ERROR("Couldn't configure rx counter");
 			return -ENODEV;
 		} else if (config->rx_counter != config->tx_counter) {
 			if (!device_is_ready(config->rx_counter)) {
-				LOG_ERR("Couldn't configure rx counter");
+				LOG_ERROR("Couldn't configure rx counter");
 				return -ENODEV;
 			}
 			data->rx_counter_cfg.callback = uart_bitbang_rx_counter_top_interrupt;
@@ -661,7 +661,7 @@ static int uart_bitbang_init(const struct device *dev)
 			data->rx_counter_cfg.flags = 0;
 			rc = counter_set_top_value(config->rx_counter, &data->rx_counter_cfg);
 			if (rc < 0) {
-				LOG_ERR("Couldn't configure rx counter (%d)", rc);
+				LOG_ERROR("Couldn't configure rx counter (%d)", rc);
 				return rc;
 			}
 		}
@@ -675,7 +675,7 @@ static int uart_bitbang_init(const struct device *dev)
 	if (((config->tx_gpio.port != NULL) || (config->rx_gpio.port != NULL)) &&
 	    (config->tx_counter != NULL) && (config->tx_counter == config->rx_counter)) {
 		if (!device_is_ready(config->tx_counter)) {
-			LOG_ERR("Couldn't configure tx/rx counter");
+			LOG_ERROR("Couldn't configure tx/rx counter");
 			return -ENODEV;
 		}
 		data->tx_counter_cfg.callback = uart_bitbang_tx_rx_counter_top_interrupt;
@@ -685,7 +685,7 @@ static int uart_bitbang_init(const struct device *dev)
 		data->tx_counter_cfg.flags = 0;
 		rc = counter_set_top_value(config->tx_counter, &data->tx_counter_cfg);
 		if (rc < 0) {
-			LOG_ERR("Couldn't configure tx/rx counter (%d)", rc);
+			LOG_ERROR("Couldn't configure tx/rx counter (%d)", rc);
 			return rc;
 		}
 	}
@@ -693,17 +693,17 @@ static int uart_bitbang_init(const struct device *dev)
 	/* Setup tx gpio if it is defined */
 	if (config->tx_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->tx_gpio)) {
-			LOG_ERR("GPIO port for tx pin is not ready");
+			LOG_ERROR("GPIO port for tx pin is not ready");
 			return -ENODEV;
 		}
 		rc = gpio_pin_configure_dt(&config->tx_gpio, GPIO_OUTPUT_INACTIVE);
 		if (rc < 0) {
-			LOG_ERR("Couldn't configure tx pin (%d)", rc);
+			LOG_ERROR("Couldn't configure tx pin (%d)", rc);
 			return rc;
 		}
 		rc = gpio_pin_set_dt(&config->tx_gpio, 1);
 		if (rc < 0) {
-			LOG_ERR("Couldn't set tx pin (%d)", rc);
+			LOG_ERROR("Couldn't set tx pin (%d)", rc);
 			return rc;
 		}
 	}
@@ -711,24 +711,24 @@ static int uart_bitbang_init(const struct device *dev)
 	/* Setup rx gpio if it is defined */
 	if (config->rx_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->rx_gpio)) {
-			LOG_ERR("GPIO port for rx pin is not ready");
+			LOG_ERROR("GPIO port for rx pin is not ready");
 			return -ENODEV;
 		}
 		rc = gpio_pin_configure_dt(&config->rx_gpio, GPIO_INPUT);
 		if (rc < 0) {
-			LOG_ERR("Couldn't configure rx pin (%d)", rc);
+			LOG_ERROR("Couldn't configure rx pin (%d)", rc);
 			return rc;
 		}
 		rc = gpio_pin_interrupt_configure_dt(&config->rx_gpio, GPIO_INT_EDGE_FALLING);
 		if (rc < 0) {
-			LOG_ERR("Couldn't configure rx pin (%d)", rc);
+			LOG_ERROR("Couldn't configure rx pin (%d)", rc);
 			return rc;
 		}
 		gpio_init_callback(&data->rx_gpio_cb_data, uart_bitbang_rx_callback,
 				   BIT(config->rx_gpio.pin));
 		rc = gpio_add_callback_dt(&config->rx_gpio, &data->rx_gpio_cb_data);
 		if (rc < 0) {
-			LOG_ERR("Couldn't configure rx callback (%d)", rc);
+			LOG_ERROR("Couldn't configure rx callback (%d)", rc);
 			return rc;
 		}
 	}
@@ -737,17 +737,17 @@ static int uart_bitbang_init(const struct device *dev)
 	if ((config->uart_cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485) &&
 	    (config->de_gpio.port != NULL)) {
 		if (!gpio_is_ready_dt(&config->de_gpio)) {
-			LOG_ERR("GPIO port for driver enable pin is not ready");
+			LOG_ERROR("GPIO port for driver enable pin is not ready");
 			return -ENODEV;
 		}
 		rc = gpio_pin_configure_dt(&config->de_gpio, GPIO_OUTPUT_INACTIVE);
 		if (rc < 0) {
-			LOG_ERR("Couldn't configure driver enable pin (%d)", rc);
+			LOG_ERROR("Couldn't configure driver enable pin (%d)", rc);
 			return rc;
 		}
 		rc = gpio_pin_set_dt(&config->de_gpio, 0);
 		if (rc < 0) {
-			LOG_ERR("Couldn't set driver enable pin (%d)", rc);
+			LOG_ERROR("Couldn't set driver enable pin (%d)", rc);
 			return rc;
 		}
 	}

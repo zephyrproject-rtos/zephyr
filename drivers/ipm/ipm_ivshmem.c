@@ -48,7 +48,7 @@ static void ivshmem_ipm_event_loop_thread(void *arg, void *p2, void *p3)
 	int ret = ivshmem_register_handler(dev_cfg->ivshmem_dev, &sig, 0);
 
 	if (ret < 0) {
-		LOG_ERR("registering handlers must be supported: %d\n", ret);
+		LOG_ERROR("registering handlers must be supported: %d\n", ret);
 		k_panic();
 	}
 

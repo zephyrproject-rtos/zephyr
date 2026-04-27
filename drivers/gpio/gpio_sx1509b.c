@@ -544,7 +544,7 @@ static int sx1509b_init(const struct device *dev)
 	int rc;
 
 	if (!device_is_ready(cfg->bus.bus)) {
-		LOG_ERR("I2C bus not ready");
+		LOG_ERROR("I2C bus not ready");
 		rc = -ENODEV;
 		goto out;
 	}
@@ -574,7 +574,7 @@ static int sx1509b_init(const struct device *dev)
 	rc = i2c_reg_write_byte_dt(&cfg->bus, SX1509B_REG_RESET,
 				   SX1509B_REG_RESET_MAGIC0);
 	if (rc != 0) {
-		LOG_ERR("%s: reset m0 failed: %d\n", dev->name, rc);
+		LOG_ERROR("%s: reset m0 failed: %d\n", dev->name, rc);
 		goto out;
 	}
 	rc = i2c_reg_write_byte_dt(&cfg->bus, SX1509B_REG_RESET,
@@ -616,7 +616,7 @@ static int sx1509b_init(const struct device *dev)
 
 out:
 	if (rc != 0) {
-		LOG_ERR("%s init failed: %d", dev->name, rc);
+		LOG_ERROR("%s init failed: %d", dev->name, rc);
 	} else {
 		LOG_INF("%s init ok", dev->name);
 	}

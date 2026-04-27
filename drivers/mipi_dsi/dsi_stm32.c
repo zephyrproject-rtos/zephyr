@@ -57,7 +57,7 @@ static int stm32_dsi_clock_source_config(const struct device *dev)
 	ret = clock_control_configure(config->rcc, (clock_control_subsys_t)&config->dsisrc_clk,
 				      NULL);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure DSI clock source (%d)", ret);
+		LOG_ERROR("Failed to configure DSI clock source (%d)", ret);
 		return ret;
 	}
 
@@ -172,14 +172,14 @@ static int mipi_dsi_stm32_host_init(const struct device *dev)
 		data->hdsi.Init.NumberOfLanes = DSI_TWO_DATA_LANES;
 		break;
 	default:
-		LOG_ERR("Number of DSI lanes (%d) not supported!", config->data_lanes);
+		LOG_ERROR("Number of DSI lanes (%d) not supported!", config->data_lanes);
 		return -ENOTSUP;
 	}
 
 	ret = clock_control_get_rate(config->rcc, (clock_control_subsys_t)&config->pix_clk,
 				     &data->pixel_clk_khz);
 	if (ret) {
-		LOG_ERR("Get pixel clock failed! (%d)", ret);
+		LOG_ERROR("Get pixel clock failed! (%d)", ret);
 		return ret;
 	}
 
@@ -187,7 +187,7 @@ static int mipi_dsi_stm32_host_init(const struct device *dev)
 	ret = clock_control_get_rate(config->rcc, (clock_control_subsys_t)&config->ref_clk,
 				     &hse_clock);
 	if (ret) {
-		LOG_ERR("Get HSE clock failed! (%d)", ret);
+		LOG_ERROR("Get HSE clock failed! (%d)", ret);
 		return ret;
 	}
 
@@ -216,14 +216,14 @@ static int mipi_dsi_stm32_host_init(const struct device *dev)
 
 	hal_ret = HAL_DSI_Init(&data->hdsi, &data->pll_init);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("DSI init failed! (%d)", hal_ret);
+		LOG_ERROR("DSI init failed! (%d)", hal_ret);
 		return -EIO;
 	}
 
 	if (data->host_timeouts) {
 		hal_ret = HAL_DSI_ConfigHostTimeouts(&data->hdsi, data->host_timeouts);
 		if (hal_ret != HAL_OK) {
-			LOG_ERR("Set DSI host timeouts failed! (%d)", hal_ret);
+			LOG_ERROR("Set DSI host timeouts failed! (%d)", hal_ret);
 			return -EIO;
 		}
 	}
@@ -231,14 +231,14 @@ static int mipi_dsi_stm32_host_init(const struct device *dev)
 	if (data->phy_timings) {
 		hal_ret = HAL_DSI_ConfigPhyTimer(&data->hdsi, data->phy_timings);
 		if (hal_ret != HAL_OK) {
-			LOG_ERR("Set DSI PHY timings failed! (%d)", hal_ret);
+			LOG_ERROR("Set DSI PHY timings failed! (%d)", hal_ret);
 			return -EIO;
 		}
 	}
 
 	hal_ret = HAL_DSI_ConfigFlowControl(&data->hdsi, DSI_FLOW_CONTROL_BTA);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("Setup DSI flow control failed! (%d)", hal_ret);
+		LOG_ERROR("Setup DSI flow control failed! (%d)", hal_ret);
 		return -EIO;
 	}
 
@@ -247,7 +247,7 @@ static int mipi_dsi_stm32_host_init(const struct device *dev)
 	if (config->lp_rx_filter_freq) {
 		hal_ret = HAL_DSI_SetLowPowerRXFilter(&data->hdsi, config->lp_rx_filter_freq);
 		if (hal_ret != HAL_OK) {
-			LOG_ERR("Setup DSI LP RX filter failed! (%d)", hal_ret);
+			LOG_ERROR("Setup DSI LP RX filter failed! (%d)", hal_ret);
 			return -EIO;
 		}
 	}
@@ -255,7 +255,7 @@ static int mipi_dsi_stm32_host_init(const struct device *dev)
 
 	hal_ret = HAL_DSI_ConfigErrorMonitor(&data->hdsi, config->active_errors);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("Setup DSI error monitor failed! (%d)", hal_ret);
+		LOG_ERROR("Setup DSI error monitor failed! (%d)", hal_ret);
 		return -EIO;
 	}
 
@@ -287,13 +287,13 @@ static int mipi_dsi_stm32_attach(const struct device *dev, uint8_t channel,
 	HAL_StatusTypeDef ret;
 
 	if (!(mdev->mode_flags & MIPI_DSI_MODE_VIDEO)) {
-		LOG_ERR("DSI host supports video mode only!");
+		LOG_ERROR("DSI host supports video mode only!");
 		return -ENOTSUP;
 	}
 
 	vcfg->VirtualChannelID = channel;
 	if (mipi_dsi_stm32_set_colorcoding(mdev->pixfmt, &vcfg->ColorCoding) < 0) {
-		LOG_ERR("MIPI PIXFMT not supported by the DSI host");
+		LOG_ERROR("MIPI PIXFMT not supported by the DSI host");
 		return -ENOTSUP;
 	}
 
@@ -336,14 +336,14 @@ static int mipi_dsi_stm32_attach(const struct device *dev, uint8_t channel,
 
 	ret = HAL_DSI_ConfigVideoMode(&data->hdsi, vcfg);
 	if (ret != HAL_OK) {
-		LOG_ERR("Setup DSI video mode failed! (%d)", ret);
+		LOG_ERROR("Setup DSI video mode failed! (%d)", ret);
 		return -EIO;
 	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_mipi_dsi)
 	ret = stm32_dsi_clock_source_config(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure DSI clock source");
+		LOG_ERROR("Failed to configure DSI clock source");
 		return ret;
 	}
 #endif
@@ -354,14 +354,14 @@ static int mipi_dsi_stm32_attach(const struct device *dev, uint8_t channel,
 
 	ret = HAL_DSI_Start(&data->hdsi);
 	if (ret != HAL_OK) {
-		LOG_ERR("Start DSI host failed! (%d)", ret);
+		LOG_ERROR("Start DSI host failed! (%d)", ret);
 		return -EIO;
 	}
 
 	if (config->test_pattern >= 0) {
 		ret = HAL_DSI_PatternGeneratorStart(&data->hdsi, 0, config->test_pattern);
 		if (ret != HAL_OK) {
-			LOG_ERR("Start DSI pattern generator failed! (%d)", ret);
+			LOG_ERROR("Start DSI pattern generator failed! (%d)", ret);
 			return -EIO;
 		}
 	}
@@ -420,7 +420,7 @@ static ssize_t mipi_dsi_stm32_transfer(const struct device *dev, uint8_t channel
 		len = msg->tx_len;
 		break;
 	default:
-		LOG_ERR("Unsupported message type (%d)", msg->type);
+		LOG_ERROR("Unsupported message type (%d)", msg->type);
 		return -ENOTSUP;
 	}
 
@@ -439,7 +439,7 @@ static ssize_t mipi_dsi_stm32_transfer(const struct device *dev, uint8_t channel
 	}
 
 	if (ret != HAL_OK) {
-		LOG_ERR("Transfer failed! (%d)", ret);
+		LOG_ERROR("Transfer failed! (%d)", ret);
 		return -EIO;
 	}
 
@@ -458,7 +458,7 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 
 	ret = clock_control_on(config->rcc, (clock_control_subsys_t)&config->dsi_clk);
 	if (ret < 0) {
-		LOG_ERR("Enable DSI peripheral clock failed! (%d)", ret);
+		LOG_ERROR("Enable DSI peripheral clock failed! (%d)", ret);
 		return ret;
 	}
 
@@ -466,7 +466,7 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 
 	ret = mipi_dsi_stm32_host_init(dev);
 	if (ret) {
-		LOG_ERR("Setup DSI host failed! (%d)", ret);
+		LOG_ERROR("Setup DSI host failed! (%d)", ret);
 		return ret;
 	}
 

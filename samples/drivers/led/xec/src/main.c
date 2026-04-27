@@ -73,7 +73,7 @@ int led_test(void)
 		print_bbled_regs(base);
 
 		if (!device_is_ready(dev)) {
-			LOG_ERR("%s: device not ready", dev->name);
+			LOG_ERROR("%s: device not ready", dev->name);
 			continue;
 		}
 
@@ -82,7 +82,7 @@ int led_test(void)
 		delay_off = 250;
 		ret = led_blink(dev, 0, delay_on, delay_off);
 		if (ret) {
-			LOG_ERR("LED blink API returned error %d", ret);
+			LOG_ERROR("LED blink API returned error %d", ret);
 		}
 		print_bbled_regs(base);
 
@@ -94,7 +94,7 @@ int led_test(void)
 		delay_off = 1800;
 		ret = led_blink(dev, 0, delay_on, delay_off);
 		if (ret) {
-			LOG_ERR("LED blink API returned error %d", ret);
+			LOG_ERROR("LED blink API returned error %d", ret);
 		}
 		print_bbled_regs(base);
 
@@ -104,7 +104,7 @@ int led_test(void)
 		LOG_INF("Set ON");
 		ret = led_on(dev, 0);
 		if (ret) {
-			LOG_ERR("LED ON API returned error %d", ret);
+			LOG_ERROR("LED ON API returned error %d", ret);
 		}
 		print_bbled_regs(base);
 
@@ -114,7 +114,7 @@ int led_test(void)
 		LOG_INF("Set OFF");
 		ret = led_off(dev, 0);
 		if (ret) {
-			LOG_ERR("LED OFF API returned error %d", ret);
+			LOG_ERROR("LED OFF API returned error %d", ret);
 		}
 		print_bbled_regs(base);
 

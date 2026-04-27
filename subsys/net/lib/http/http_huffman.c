@@ -378,13 +378,13 @@ int http_hpack_huffman_decode(const uint8_t *encoded_buf, size_t encoded_len,
 		/* Pass to decoder */
 		decoded = huffman_decode_bits(bits);
 		if (decoded == NULL) {
-			LOG_ERR("No symbol found");
+			LOG_ERROR("No symbol found");
 			return -EBADMSG;
 		}
 
 		if (decoded == &eos) {
 			if (encoded_bits_len > MAX_PADDING_LEN) {
-				LOG_ERR("eos reached prematurely");
+				LOG_ERROR("eos reached prematurely");
 				return -EBADMSG;
 			}
 
@@ -392,7 +392,7 @@ int http_hpack_huffman_decode(const uint8_t *encoded_buf, size_t encoded_len,
 		}
 
 		if (encoded_bits_len < decoded->bitlen) {
-			LOG_ERR("Invalid symbol used for padding");
+			LOG_ERROR("Invalid symbol used for padding");
 			return -EBADMSG;
 		}
 
@@ -402,7 +402,7 @@ int http_hpack_huffman_decode(const uint8_t *encoded_buf, size_t encoded_len,
 
 		/* Store decoded symbol */
 		if (buflen == 0) {
-			LOG_ERR("Not enough buffer to decode string");
+			LOG_ERROR("Not enough buffer to decode string");
 			return -ENOBUFS;
 		}
 

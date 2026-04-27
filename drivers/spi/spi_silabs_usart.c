@@ -138,12 +138,12 @@ static int spi_config(const struct device *dev,
 #endif
 
 	if (config->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	if (SPI_WORD_SIZE_GET(config->operation) != SPI_WORD_SIZE) {
-		LOG_ERR("Word size must be %d", SPI_WORD_SIZE);
+		LOG_ERROR("Word size must be %d", SPI_WORD_SIZE);
 		return -ENOTSUP;
 	}
 
@@ -155,7 +155,7 @@ static int spi_config(const struct device *dev,
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
 	    (config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only supports single mode");
+		LOG_ERROR("Only supports single mode");
 		return -ENOTSUP;
 	}
 
@@ -166,7 +166,7 @@ static int spi_config(const struct device *dev,
 	}
 
 	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+		LOG_ERROR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 
@@ -175,7 +175,7 @@ static int spi_config(const struct device *dev,
 	 * transaction.
 	 */
 	if (usart_config->clock_frequency > spi_frequency) {
-		LOG_ERR("SPI clock-frequency too high");
+		LOG_ERROR("SPI clock-frequency too high");
 		return -EINVAL;
 	}
 	spi_frequency = MIN(usart_config->clock_frequency, spi_frequency);

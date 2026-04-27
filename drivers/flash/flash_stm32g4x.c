@@ -90,7 +90,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 
 	/* if the control register is locked, do not fail silently */
 	if (regs->CR & FLASH_CR_LOCK) {
-		LOG_ERR("CR locked");
+		LOG_ERROR("CR locked");
 		return -EIO;
 	}
 
@@ -107,7 +107,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 	 */
 	if ((flash[0] != 0xFFFFFFFFUL ||
 	    flash[1] != 0xFFFFFFFFUL) && val != 0UL) {
-		LOG_ERR("Word at offs %ld not erased", (long)offset);
+		LOG_ERROR("Word at offs %ld not erased", (long)offset);
 		return -EIO;
 	}
 
@@ -157,7 +157,7 @@ static int erase_page(const struct device *dev, unsigned int offset)
 
 	/* if the control register is locked, do not fail silently */
 	if (regs->CR & FLASH_CR_LOCK) {
-		LOG_ERR("CR locked");
+		LOG_ERROR("CR locked");
 		return -EIO;
 	}
 
@@ -194,7 +194,7 @@ static int erase_page(const struct device *dev, unsigned int offset)
 			page = (offset - BANK2_OFFSET) / FLASH_PAGE_SIZE;
 			LOG_DBG("Erase page %d on bank 2", page);
 		} else {
-			LOG_ERR("Offset %d does not exist", offset);
+			LOG_ERROR("Offset %d does not exist", offset);
 			return -EINVAL;
 		}
 	} else {

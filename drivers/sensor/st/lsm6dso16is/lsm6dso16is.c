@@ -295,7 +295,7 @@ static int lsm6dso16is_attr_set(const struct device *dev,
 	case SENSOR_CHAN_PRESS:
 	case SENSOR_CHAN_HUMIDITY:
 		if (!data->shub_inited) {
-			LOG_ERR("shub not inited.");
+			LOG_ERROR("shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -679,7 +679,7 @@ static int lsm6dso16is_channel_get(const struct device *dev,
 	case SENSOR_CHAN_MAGN_Z:
 	case SENSOR_CHAN_MAGN_XYZ:
 		if (!data->shub_inited) {
-			LOG_ERR("attr_set() shub not inited.");
+			LOG_ERROR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -688,7 +688,7 @@ static int lsm6dso16is_channel_get(const struct device *dev,
 
 	case SENSOR_CHAN_HUMIDITY:
 		if (!data->shub_inited) {
-			LOG_ERR("attr_set() shub not inited.");
+			LOG_ERROR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -697,7 +697,7 @@ static int lsm6dso16is_channel_get(const struct device *dev,
 
 	case SENSOR_CHAN_PRESS:
 		if (!data->shub_inited) {
-			LOG_ERR("attr_set() shub not inited.");
+			LOG_ERROR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -706,7 +706,7 @@ static int lsm6dso16is_channel_get(const struct device *dev,
 
 	case SENSOR_CHAN_AMBIENT_TEMP:
 		if (!data->shub_inited) {
-			LOG_ERR("attr_set() shub not inited.");
+			LOG_ERROR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -767,7 +767,7 @@ static int lsm6dso16is_init_chip(const struct device *dev)
 	fs = cfg->accel_range;
 	LOG_DBG("accel range is %d", fs);
 	if (lsm6dso16is_accel_set_fs_raw(dev, fs) < 0) {
-		LOG_ERR("failed to set accelerometer range %d", fs);
+		LOG_ERROR("failed to set accelerometer range %d", fs);
 		return -EIO;
 	}
 	lsm6dso16is->acc_gain = lsm6dso16is_accel_fs_map[fs] * GAIN_UNIT_XL / 2;
@@ -775,14 +775,14 @@ static int lsm6dso16is_init_chip(const struct device *dev)
 	odr = cfg->accel_odr;
 	LOG_DBG("accel odr is %d", odr);
 	if (lsm6dso16is_accel_set_odr_raw(dev, odr) < 0) {
-		LOG_ERR("failed to set accelerometer odr %d", odr);
+		LOG_ERROR("failed to set accelerometer odr %d", odr);
 		return -EIO;
 	}
 
 	fs = cfg->gyro_range;
 	LOG_DBG("gyro range is %d", fs);
 	if (lsm6dso16is_gyro_set_fs_raw(dev, fs) < 0) {
-		LOG_ERR("failed to set gyroscope range %d", fs);
+		LOG_ERROR("failed to set gyroscope range %d", fs);
 		return -EIO;
 	}
 	lsm6dso16is->gyro_gain = (lsm6dso16is_gyro_fs_sens[fs] * GAIN_UNIT_G);
@@ -791,7 +791,7 @@ static int lsm6dso16is_init_chip(const struct device *dev)
 	LOG_DBG("gyro odr is %d", odr);
 	lsm6dso16is->gyro_freq = lsm6dso16is_odr_to_freq_val(odr);
 	if (lsm6dso16is_gyro_set_odr_raw(dev, odr) < 0) {
-		LOG_ERR("failed to set gyroscope odr %d", odr);
+		LOG_ERROR("failed to set gyroscope odr %d", odr);
 		return -EIO;
 	}
 
@@ -821,7 +821,7 @@ static int lsm6dso16is_init(const struct device *dev)
 #ifdef CONFIG_LSM6DSO16IS_TRIGGER
 	if (cfg->trig_enabled) {
 		if (lsm6dso16is_init_interrupt(dev) < 0) {
-			LOG_ERR("Failed to initialize interrupt.");
+			LOG_ERROR("Failed to initialize interrupt.");
 			return -EIO;
 		}
 	}

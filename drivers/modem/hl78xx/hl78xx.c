@@ -820,8 +820,8 @@ void hl78xx_on_kbndcfg(struct modem_chat *chat, char **argv, uint16_t argc, void
 	kbnd_bitmap_size = strlen(argv[2]);
 	HL78XX_LOG_DBG("%d %d [%s] [%s] [%s]", __LINE__, argc, argv[0], argv[1], argv[2]);
 	if (kbnd_bitmap_size >= MDM_BAND_HEX_STR_LEN) {
-		LOG_ERR("%d %s Unexpected band bitmap length of %d", __LINE__, __func__,
-			kbnd_bitmap_size);
+		LOG_ERROR("%d %s Unexpected band bitmap length of %d", __LINE__, __func__,
+			  kbnd_bitmap_size);
 		return;
 	}
 	if (rat_id >= HL78XX_RAT_COUNT) {
@@ -1026,7 +1026,7 @@ static int hl78xx_dynamic_cmd_prepare_script(struct hl78xx_data *data,
 
 	if (copy_cmd) {
 		if (req->cmd_len >= sizeof(data->buffers.cmd_buffer)) {
-			LOG_ERR("Dynamic command too long: %u", req->cmd_len);
+			LOG_ERROR("Dynamic command too long: %u", req->cmd_len);
 			return -EMSGSIZE;
 		}
 
@@ -1074,7 +1074,7 @@ static int hl78xx_dynamic_cmd_send_impl(struct hl78xx_data *data,
 	int script_ret = 0;
 
 	if (data == NULL || req == NULL || req->cmd == NULL) {
-		LOG_ERR("%d %s Invalid parameter", __LINE__, __func__);
+		LOG_ERROR("%d %s Invalid parameter", __LINE__, __func__);
 		errno = EINVAL;
 		return -1;
 	}
@@ -1094,7 +1094,7 @@ static int hl78xx_dynamic_cmd_send_impl(struct hl78xx_data *data,
 
 	ret = hl78xx_dynamic_cmd_prepare_script(data, req, run_async);
 	if (ret < 0) {
-		LOG_ERR("%d %s Failed to prepare dynamic script: %d", __LINE__, __func__, ret);
+		LOG_ERROR("%d %s Failed to prepare dynamic script: %d", __LINE__, __func__, ret);
 		(void)k_mutex_unlock(&data->tx_lock);
 		if (req->user_cmd == false) {
 			errno = -ret;
@@ -1105,7 +1105,7 @@ static int hl78xx_dynamic_cmd_send_impl(struct hl78xx_data *data,
 	script_ret = run_async ? modem_chat_run_script_async(&data->chat, &data->dynamic_script)
 			       : modem_chat_run_script(&data->chat, &data->dynamic_script);
 	if (script_ret < 0) {
-		LOG_ERR("%d %s Failed to run at command: %d", __LINE__, __func__, script_ret);
+		LOG_ERROR("%d %s Failed to run at command: %d", __LINE__, __func__, script_ret);
 	} else {
 		LOG_DBG("Chat script executed successfully.");
 	}
@@ -1151,7 +1151,7 @@ void mdm_vgpio_callback_isr(const struct device *port, struct gpio_callback *cb,
 	const struct gpio_dt_spec *spec = &config->mdm_gpio_vgpio;
 
 	if (spec == NULL || spec->port == NULL) {
-		LOG_ERR("VGPIO GPIO spec is not configured properly");
+		LOG_ERROR("VGPIO GPIO spec is not configured properly");
 		return;
 	}
 	if (!(pins & BIT(spec->pin))) {
@@ -1168,7 +1168,7 @@ void mdm_uart_dsr_callback_isr(const struct device *port, struct gpio_callback *
 	const struct gpio_dt_spec *spec = &config->mdm_gpio_uart_dsr;
 
 	if (spec == NULL || spec->port == NULL) {
-		LOG_ERR("DSR GPIO spec is not configured properly");
+		LOG_ERROR("DSR GPIO spec is not configured properly");
 		return;
 	}
 	if (!(pins & BIT(spec->pin))) {
@@ -1186,7 +1186,7 @@ void mdm_gpio6_callback_isr(const struct device *port, struct gpio_callback *cb,
 	bool pin_state;
 
 	if (spec == NULL || spec->port == NULL) {
-		LOG_ERR("GPIO6 GPIO spec is not configured properly");
+		LOG_ERROR("GPIO6 GPIO spec is not configured properly");
 		return;
 	}
 	if (!(pins & BIT(spec->pin))) {
@@ -1245,7 +1245,7 @@ void mdm_uart_cts_callback_isr(const struct device *port, struct gpio_callback *
 	const struct gpio_dt_spec *spec = &config->mdm_gpio_uart_cts;
 
 	if (spec == NULL || spec->port == NULL) {
-		LOG_ERR("CTS GPIO spec is not configured properly");
+		LOG_ERROR("CTS GPIO spec is not configured properly");
 		return;
 	}
 	if (!(pins & BIT(spec->pin))) {
@@ -1425,7 +1425,7 @@ static int hl78xx_on_set_baudrate_state_enter(struct hl78xx_data *data)
 	/* Detect current baud rate */
 	ret = hl78xx_detect_current_baudrate(data);
 	if (ret < 0) {
-		LOG_ERR("Baud rate detection failed");
+		LOG_ERROR("Baud rate detection failed");
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_FAILED);
 		return ret;
 	}
@@ -1433,7 +1433,7 @@ static int hl78xx_on_set_baudrate_state_enter(struct hl78xx_data *data)
 	/* Switch to target baud rate if different */
 	ret = hl78xx_switch_baudrate(data, data->status.uart.target_baudrate);
 	if (ret < 0) {
-		LOG_ERR("Failed to switch baud rate: %d", ret);
+		LOG_ERROR("Failed to switch baud rate: %d", ret);
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_FAILED);
 		return ret;
 	}
@@ -1462,8 +1462,8 @@ static void hl78xx_set_baudrate_event_handler(struct hl78xx_data *data, enum hl7
 			k_sleep(K_MSEC(500));
 			hl78xx_on_set_baudrate_state_enter(data);
 		} else {
-			LOG_ERR("Baud rate configuration failed after %d attempts",
-				data->status.uart.baudrate_detection_retry);
+			LOG_ERROR("Baud rate configuration failed after %d attempts",
+				  data->status.uart.baudrate_detection_retry);
 			hl78xx_enter_state(data,
 					   MODEM_HL78XX_STATE_RUN_INIT_FAIL_DIAGNOSTIC_SCRIPT);
 		}
@@ -1530,7 +1530,7 @@ static void hl78xx_run_init_fail_script_event_handler(struct hl78xx_data *data,
 		}
 		break;
 	case MODEM_HL78XX_EVENT_TIMEOUT:
-		LOG_ERR("Modem initialization failed after diagnostic script");
+		LOG_ERROR("Modem initialization failed after diagnostic script");
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
 		break;
 	case MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT:
@@ -1560,7 +1560,8 @@ static void hl78xx_run_init_fail_script_event_handler(struct hl78xx_data *data,
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
 		if (!hl78xx_gpio_is_enabled(&config->mdm_gpio_wake) &&
 		    IS_ENABLED(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)) {
-			LOG_ERR("The modem wake pin is not enabled. Make sure that modem low-power "
+			LOG_ERROR(
+				"The modem wake pin is not enabled. Make sure that modem low-power "
 				"mode is disabled. If you’re unsure, enable it by adding the "
 				"corresponding DTS configuration entry.");
 		}
@@ -1640,7 +1641,7 @@ static int hl78xx_on_rat_cfg_script_state_enter(struct hl78xx_data *data)
 	return 0;
 error:
 	hl78xx_chat_callback_handler(&data->chat, MODEM_CHAT_SCRIPT_RESULT_ABORT, data);
-	LOG_ERR("%d %s Failed to send command: %d", __LINE__, __func__, ret);
+	LOG_ERROR("%d %s Failed to send command: %d", __LINE__, __func__, ret);
 	return ret;
 }
 
@@ -1734,7 +1735,7 @@ static int hl78xx_on_pmc_cfg_script_state_enter(struct hl78xx_data *data)
 	return 0;
 error:
 	hl78xx_chat_callback_handler(&data->chat, MODEM_CHAT_SCRIPT_RESULT_ABORT, data);
-	LOG_ERR("Failed to send command: %d", ret);
+	LOG_ERROR("Failed to send command: %d", ret);
 	return ret;
 }
 
@@ -1831,7 +1832,7 @@ static int hl78xx_on_enable_gprs_state_enter(struct hl78xx_data *data)
 	return 0;
 error:
 	hl78xx_chat_callback_handler(&data->chat, MODEM_CHAT_SCRIPT_RESULT_ABORT, data);
-	LOG_ERR("%d %s Failed to send command: %d", __LINE__, __func__, ret);
+	LOG_ERROR("%d %s Failed to send command: %d", __LINE__, __func__, ret);
 	return ret;
 }
 
@@ -2054,7 +2055,7 @@ static int hl78xx_on_carrier_on_state_enter(struct hl78xx_data *data)
 	ret = hl78xx_gsm_pdp_activate(data);
 
 	if (ret) {
-		LOG_ERR("Failed to activate PDP context: %d", ret);
+		LOG_ERROR("Failed to activate PDP context: %d", ret);
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_FAILED);
 		return ret;
 	}
@@ -2120,7 +2121,7 @@ static void hl78xx_carrier_on_timeout_handler(struct hl78xx_data *data
 			ret = hl78xx_set_apn_internal(data, data->identity.apn,
 						      strlen(data->identity.apn));
 			if (ret) {
-				LOG_ERR("LPM APN restore failed: %d, retrying", ret);
+				LOG_ERROR("LPM APN restore failed: %d, retrying", ret);
 				data->status.lpm_restore_pending = true;
 				hl78xx_start_timer(data, K_SECONDS(2));
 				return;
@@ -2141,12 +2142,12 @@ static void hl78xx_carrier_on_timeout_handler(struct hl78xx_data *data
 
 	ret = dns_work_cb(data->dev, true);
 	if (ret == -EAGAIN) {
-		LOG_ERR("DNS work callback failed: rescheduling... %d", ret);
+		LOG_ERROR("DNS work callback failed: rescheduling... %d", ret);
 		hl78xx_start_timer(data, K_SECONDS(2));
 		return;
 	}
 	if (ret < 0) {
-		LOG_ERR("DNS work callback failed: %d", ret);
+		LOG_ERROR("DNS work callback failed: %d", ret);
 		return;
 	}
 
@@ -2534,7 +2535,7 @@ static void hl78xx_sleep_event_handler(struct hl78xx_data *data, enum hl78xx_eve
 		uart_irq_rx_disable(config->uart);
 		rc = pm_device_action_run(config->uart, PM_DEVICE_ACTION_SUSPEND);
 		if (rc < 0 && rc != -EALREADY) {
-			LOG_ERR("UART suspend failed: %d", rc);
+			LOG_ERROR("UART suspend failed: %d", rc);
 		}
 #ifdef CONFIG_HL78XX_GNSS
 		if (hl78xx_gnss_is_pending(data)) {
@@ -2566,7 +2567,7 @@ static void hl78xx_sleep_event_handler(struct hl78xx_data *data, enum hl78xx_eve
 		}
 		rc = pm_device_action_run(config->uart, PM_DEVICE_ACTION_RESUME);
 		if (rc < 0 && rc != -EALREADY) {
-			LOG_ERR("UART resume failed: %d", rc);
+			LOG_ERROR("UART resume failed: %d", rc);
 		}
 		uart_irq_rx_enable(config->uart);
 		hl78xx_start_timer(data, K_MSEC(config->startup_time_ms));
@@ -2603,7 +2604,7 @@ static void hl78xx_sleep_event_handler(struct hl78xx_data *data, enum hl78xx_eve
 		break;
 #endif /* CONFIG_HL78XX_GNSS */
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
-		LOG_ERR("Failed to enter sleep mode");
+		LOG_ERROR("Failed to enter sleep mode");
 		break;
 
 	case MODEM_HL78XX_EVENT_SUSPEND:
@@ -2657,7 +2658,7 @@ static void hl78xx_airplane_mode_event_handler(struct hl78xx_data *data, enum hl
 #endif /* CONFIG_HL78XX_GNSS */
 
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
-		LOG_ERR("Failed to set airplane mode");
+		LOG_ERROR("Failed to set airplane mode");
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
 		break;
 
@@ -2877,7 +2878,7 @@ static void hl78xx_event_handler(struct hl78xx_data *data, enum hl78xx_event evt
 	if ((int)s < MODEM_HL78XX_STATE_COUNT && hl78xx_state_table[s].on_event) {
 		hl78xx_state_table[s].on_event(data, evt);
 	} else {
-		LOG_ERR("%d unknown event %d", __LINE__, evt);
+		LOG_ERROR("%d unknown event %d", __LINE__, evt);
 	}
 	if (state != s) {
 		hl78xx_log_state_changed(state, s);
@@ -3024,7 +3025,7 @@ static int hl78xx_init(const struct device *dev)
 			if (gpio_pins[i] != NULL && gpio_pins[i]->port != NULL) {
 				port_name = gpio_pins[i]->port->name;
 			}
-			LOG_ERR("GPIO port (%s) not ready!", port_name);
+			LOG_ERROR("GPIO port (%s) not ready!", port_name);
 			return -ENODEV;
 		}
 	}
@@ -3071,7 +3072,7 @@ static int hl78xx_init(const struct device *dev)
 	for (int i = 0; i < ARRAY_SIZE(gpio_config); i++) {
 		ret = gpio_pin_configure_dt(gpio_config[i].spec, gpio_config[i].flags);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure %s pin", gpio_config[i].name);
+			LOG_ERROR("Failed to configure %s pin", gpio_config[i].name);
 			goto error;
 		}
 	}
@@ -3082,12 +3083,12 @@ static int hl78xx_init(const struct device *dev)
 
 	ret = gpio_add_callback(config->mdm_gpio_vgpio.port, &data->gpio_cbs.vgpio_cb);
 	if (ret) {
-		LOG_ERR("Cannot setup VGPIO callback! (%d)", ret);
+		LOG_ERROR("Cannot setup VGPIO callback! (%d)", ret);
 		goto error;
 	}
 	ret = gpio_pin_interrupt_configure_dt(&config->mdm_gpio_vgpio, GPIO_INT_EDGE_BOTH);
 	if (ret) {
-		LOG_ERR("Error configuring VGPIO interrupt! (%d)", ret);
+		LOG_ERROR("Error configuring VGPIO interrupt! (%d)", ret);
 		goto error;
 	}
 #endif /* HAS_VGPIO_GPIO */
@@ -3098,13 +3099,13 @@ static int hl78xx_init(const struct device *dev)
 
 	ret = gpio_add_callback(config->mdm_gpio_gpio6.port, &data->gpio_cbs.gpio6_cb);
 	if (ret) {
-		LOG_ERR("Cannot setup GPIO6 callback! (%d)", ret);
+		LOG_ERROR("Cannot setup GPIO6 callback! (%d)", ret);
 		goto error;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->mdm_gpio_gpio6, GPIO_INT_EDGE_BOTH);
 	if (ret) {
-		LOG_ERR("Error configuring GPIO6 interrupt! (%d)", ret);
+		LOG_ERROR("Error configuring GPIO6 interrupt! (%d)", ret);
 		goto error;
 	}
 #endif /* HAS_GPIO6_GPIO */

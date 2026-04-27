@@ -54,7 +54,8 @@ static int set_power_mode(enum bmp5_powermode powermode, const struct device *de
 
 	ret = get_power_mode(&current_powermode, dev);
 	if (ret != BMP5_OK) {
-		LOG_ERR("Couldn't set the power mode because something went wrong when getting the "
+		LOG_ERROR(
+			"Couldn't set the power mode because something went wrong when getting the "
 			"current power mode.");
 		return ret;
 	}
@@ -559,13 +560,13 @@ static int bmp581_init(const struct device *dev)
 
 	ret = soft_reset(dev);
 	if (ret != BMP5_OK) {
-		LOG_ERR("Failed to perform soft-reset: %d", ret);
+		LOG_ERROR("Failed to perform soft-reset: %d", ret);
 		return ret;
 	}
 
 	ret = bmp581_reg_read_rtio(&conf->bus, BMP5_REG_CHIP_ID, &drv->chip_id, 1);
 	if (ret != BMP5_OK) {
-		LOG_ERR("Failed to read chip ID: %d", ret);
+		LOG_ERROR("Failed to read chip ID: %d", ret);
 		return ret;
 	}
 
@@ -574,33 +575,33 @@ static int bmp581_init(const struct device *dev)
 		if (ret == BMP5_OK) {
 			ret = validate_chip_id(drv);
 			if (ret != BMP5_OK) {
-				LOG_ERR("Unexpected chip id (%x). Expected (%x or %x)",
-					drv->chip_id, BMP5_CHIP_ID_PRIM, BMP5_CHIP_ID_SEC);
+				LOG_ERROR("Unexpected chip id (%x). Expected (%x or %x)",
+					  drv->chip_id, BMP5_CHIP_ID_PRIM, BMP5_CHIP_ID_SEC);
 			}
 		}
 	} else {
 		/* that means something went wrong */
-		LOG_ERR("Unexpected chip id (%x). Expected (%x or %x)", drv->chip_id,
-			BMP5_CHIP_ID_PRIM, BMP5_CHIP_ID_SEC);
+		LOG_ERROR("Unexpected chip id (%x). Expected (%x or %x)", drv->chip_id,
+			  BMP5_CHIP_ID_PRIM, BMP5_CHIP_ID_SEC);
 		return -EINVAL;
 	}
 
 	ret = set_iir_filters_config(&drv->osr_odr_press_config, dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to set initial IIR settings: %d", ret);
+		LOG_ERROR("Failed to set initial IIR settings: %d", ret);
 		return ret;
 	}
 
 	ret = set_osr_odr_press_config(&drv->osr_odr_press_config, dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to set initial ODR OSR settings: %d", ret);
+		LOG_ERROR("Failed to set initial ODR OSR settings: %d", ret);
 		return ret;
 	}
 
 	if (IS_ENABLED(CONFIG_BMP581_STREAM)) {
 		ret = bmp581_stream_init(dev);
 		if (ret != 0) {
-			LOG_ERR("Failed to initialize streaming support: %d", ret);
+			LOG_ERROR("Failed to initialize streaming support: %d", ret);
 			return ret;
 		}
 	}
@@ -646,7 +647,7 @@ static void bmp581_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 
 	err = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
 	CHECKIF(err < 0 || buf_len < min_buf_len || !buf) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
+		LOG_ERROR("Failed to get a read buffer of size %u bytes", min_buf_len);
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -655,7 +656,7 @@ static void bmp581_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 
 	err = bmp581_encode(dev, cfg, 0, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to encode sensor data");
+		LOG_ERROR("Failed to encode sensor data");
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -666,7 +667,7 @@ static void bmp581_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 					      edata->payload, sizeof(edata->payload),
 					      &read_sqe);
 	if (err < 0) {
-		LOG_ERR("Failed to prepare async read operation");
+		LOG_ERROR("Failed to prepare async read operation");
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -675,7 +676,7 @@ static void bmp581_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 	struct rtio_sqe *complete_sqe = rtio_sqe_acquire(conf->bus.rtio.ctx);
 
 	if (!complete_sqe) {
-		LOG_ERR("Failed to acquire completion SQE");
+		LOG_ERROR("Failed to acquire completion SQE");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		rtio_sqe_drop_all(conf->bus.rtio.ctx);
 		return;
@@ -698,7 +699,7 @@ static void bmp581_submit(const struct device *dev, struct rtio_iodev_sqe *iodev
 	} else if (IS_ENABLED(CONFIG_BMP581_STREAM)) {
 		bmp581_stream_submit(dev, iodev_sqe);
 	} else {
-		LOG_ERR("Streaming not supported");
+		LOG_ERROR("Streaming not supported");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
 }

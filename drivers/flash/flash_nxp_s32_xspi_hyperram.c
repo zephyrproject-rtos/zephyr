@@ -102,10 +102,10 @@ int nxp_s32_xspi_wait_until_ready(const struct device *dev)
 	} while ((status == STATUS_XSPI_IP_BUSY) && (timeout > 0));
 
 	if (status != STATUS_XSPI_IP_SUCCESS) {
-		LOG_ERR("Failed to read memory status (%d)", status);
+		LOG_ERROR("Failed to read memory status (%d)", status);
 		ret = -EIO;
 	} else if (timeout == 0) {
-		LOG_ERR("Timeout, memory is busy");
+		LOG_ERROR("Timeout, memory is busy");
 		ret = -ETIMEDOUT;
 	}
 
@@ -138,8 +138,8 @@ int nxp_s32_xspi_read(const struct device *dev, off_t offset, void *dest, size_t
 				      (uint32_t)(offset + config->state->baseAddress),
 				      (uint8_t *)dest, (uint32_t)size);
 		if (status != STATUS_XSPI_IP_SUCCESS) {
-			LOG_ERR("Failed to read %zu bytes at 0x%lx (%d)", size, (long)offset,
-				status);
+			LOG_ERROR("Failed to read %zu bytes at 0x%lx (%d)", size, (long)offset,
+				  status);
 			ret = -EIO;
 		}
 
@@ -186,8 +186,8 @@ int nxp_s32_xspi_write(const struct device *dev, off_t offset, const void *src, 
 					 (uint32_t)(offset + config->state->baseAddress),
 					 (const uint8_t *)src, (uint32_t)len);
 		if (status != STATUS_XSPI_IP_SUCCESS) {
-			LOG_ERR("Failed to write %zu bytes at 0x%lx (%d)", len, (long)offset,
-				status);
+			LOG_ERROR("Failed to write %zu bytes at 0x%lx (%d)", len, (long)offset,
+				  status);
 			ret = -EIO;
 			break;
 		}
@@ -231,8 +231,8 @@ static int nxp_s32_xspi_erase(const struct device *dev, off_t offset, size_t siz
 					    (uint32_t)(offset + config->state->baseAddress),
 					    erase_size);
 		if (status != STATUS_XSPI_IP_SUCCESS) {
-			LOG_ERR("Failed to erase %zu bytes at 0x%lx (%d)", erase_size, (long)offset,
-				status);
+			LOG_ERROR("Failed to erase %zu bytes at 0x%lx (%d)", erase_size,
+				  (long)offset, status);
 			ret = -EIO;
 			break;
 		}
@@ -280,7 +280,7 @@ int nxp_s32_xspi_read_id(const struct device *dev, uint8_t *id)
 
 	status = Xspi_Ip_ReadId(data->instance, id);
 	if (status != STATUS_XSPI_IP_SUCCESS) {
-		LOG_ERR("Failed to read device ID (%d)", status);
+		LOG_ERROR("Failed to read device ID (%d)", status);
 		ret = -EIO;
 	}
 
@@ -308,26 +308,26 @@ static int nxp_s32_xspi_init(const struct device *dev)
 #endif
 
 	if (!device_is_ready(config->controller)) {
-		LOG_ERR("Memory control device not ready");
+		LOG_ERROR("Memory control device not ready");
 		return -ENODEV;
 	}
 
 	status = Xspi_Ip_Init(data->instance, (const Xspi_Ip_MemoryConfigType *)memory_cfg,
 			      (const Xspi_Ip_MemoryConnectionType *)&data->memory_conn_cfg);
 	if (status != STATUS_XSPI_IP_SUCCESS) {
-		LOG_ERR("Fail to init memory device %d (%d)", data->instance, status);
+		LOG_ERROR("Fail to init memory device %d (%d)", data->instance, status);
 		return -EIO;
 	}
 
 	/* Verify connectivity by reading the device ID */
 	ret = nxp_s32_xspi_read_id(dev, dev_id);
 	if (ret != 0) {
-		LOG_ERR("Device ID read failed (%d)", ret);
+		LOG_ERROR("Device ID read failed (%d)", ret);
 		return -ENODEV;
 	}
 
 	if (memcmp(dev_id, memory_cfg->readIdSettings.readIdExpected, sizeof(dev_id))) {
-		LOG_ERR("Device id does not match config");
+		LOG_ERROR("Device id does not match config");
 		return -EINVAL;
 	}
 

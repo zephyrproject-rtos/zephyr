@@ -152,7 +152,7 @@ static int tmag5273_check_device_status(const struct tmag5273_config *drv_cfg,
 
 	retval = i2c_reg_read_byte_dt(&drv_cfg->i2c, TMAG5273_REG_CONV_STATUS, device_status);
 	if (retval < 0) {
-		LOG_ERR("error reading CONV_STATUS %d", retval);
+		LOG_ERROR("error reading CONV_STATUS %d", retval);
 		return retval;
 	}
 
@@ -164,25 +164,25 @@ static int tmag5273_check_device_status(const struct tmag5273_config *drv_cfg,
 
 	retval = i2c_reg_read_byte_dt(&drv_cfg->i2c, TMAG5273_REG_DEVICE_STATUS, device_status);
 	if (retval < 0) {
-		LOG_ERR("error reading DEVICE_STATUS %d", retval);
+		LOG_ERROR("error reading DEVICE_STATUS %d", retval);
 		return retval;
 	}
 
 	if ((*device_status & TMAG5273_VCC_UV_ER_MSK) == TMAG5273_VCC_UV_ERR) {
-		LOG_ERR("VCC under voltage detected");
+		LOG_ERROR("VCC under voltage detected");
 	}
 #ifdef CONFIG_CRC
 	if (drv_cfg->crc_enabled &&
 	    ((*device_status & TMAG5273_OTP_CRC_ER_MSK) == TMAG5273_OTP_CRC_ERR)) {
-		LOG_ERR("OTP CRC error detected");
+		LOG_ERROR("OTP CRC error detected");
 	}
 #endif
 	if ((*device_status & TMAG5273_INT_ER_MSK) == TMAG5273_INT_ERR) {
-		LOG_ERR("INT pin error detected");
+		LOG_ERROR("INT pin error detected");
 	}
 
 	if ((*device_status & TMAG5273_OSC_ER_MSK) == TMAG5273_OSC_ERR) {
-		LOG_ERR("Oscillator error detected");
+		LOG_ERROR("Oscillator error detected");
 	}
 
 	return -EIO;
@@ -373,7 +373,7 @@ static inline int tmag5273_attr_set_xyz_calc(const struct device *dev,
 		regdata = TMAG5273_ANGLE_EN_XZ;
 		break;
 	default:
-		LOG_ERR("unknown attribute value %d", val->val1);
+		LOG_ERROR("unknown attribute value %d", val->val1);
 		return -ENOTSUP;
 	}
 
@@ -457,12 +457,12 @@ static int tmag5273_attr_set(const struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr, const struct sensor_value *val)
 {
 	CHECKIF(dev == NULL) {
-		LOG_ERR("dev: NULL");
+		LOG_ERROR("dev: NULL");
 		return -EINVAL;
 	}
 
 	CHECKIF(val == NULL) {
-		LOG_ERR("val: NULL");
+		LOG_ERROR("val: NULL");
 		return -EINVAL;
 	}
 
@@ -496,7 +496,7 @@ static int tmag5273_attr_set(const struct device *dev, enum sensor_channel chan,
 		}
 		break;
 	default:
-		LOG_ERR("unknown attribute %d", attr);
+		LOG_ERROR("unknown attribute %d", attr);
 		return -ENOTSUP;
 	}
 
@@ -507,12 +507,12 @@ static int tmag5273_attr_get(const struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr, struct sensor_value *val)
 {
 	CHECKIF(dev == NULL) {
-		LOG_ERR("dev: NULL");
+		LOG_ERROR("dev: NULL");
 		return -EINVAL;
 	}
 
 	CHECKIF(val == NULL) {
-		LOG_ERR("val: NULL");
+		LOG_ERROR("val: NULL");
 		return -EINVAL;
 	}
 
@@ -546,7 +546,7 @@ static int tmag5273_attr_get(const struct device *dev, enum sensor_channel chan,
 		}
 		break;
 	default:
-		LOG_ERR("unknown attribute %d", attr);
+		LOG_ERROR("unknown attribute %d", attr);
 		return -ENOTSUP;
 	}
 
@@ -579,7 +579,7 @@ static int tmag5273_sample_fetch_inner(const struct device *dev, enum sensor_cha
 				&drv_cfg->i2c, TMAG5273_REG_CONV_STATUS | conv_bit, &i2c_buffer[0]);
 
 			if (retval < 0) {
-				LOG_ERR("error reading conversion state %d", retval);
+				LOG_ERROR("error reading conversion state %d", retval);
 				return retval;
 			}
 
@@ -595,7 +595,7 @@ static int tmag5273_sample_fetch_inner(const struct device *dev, enum sensor_cha
 	switch ((int)chan) {
 	case SENSOR_CHAN_MAGN_X:
 		if (!(drv_cfg->axis & TMAG5273_MAG_CH_EN_X)) {
-			LOG_ERR("x-axis measurement deactivated");
+			LOG_ERROR("x-axis measurement deactivated");
 			return -ENOTSUP;
 		}
 		start_address = TMAG5273_REG_X_MSB_RESULT;
@@ -603,7 +603,7 @@ static int tmag5273_sample_fetch_inner(const struct device *dev, enum sensor_cha
 		break;
 	case SENSOR_CHAN_MAGN_Y:
 		if (!(drv_cfg->axis & TMAG5273_MAG_CH_EN_Y)) {
-			LOG_ERR("y-axis measurement deactivated");
+			LOG_ERROR("y-axis measurement deactivated");
 			return -ENOTSUP;
 		}
 		start_address = TMAG5273_REG_Y_MSB_RESULT;
@@ -611,7 +611,7 @@ static int tmag5273_sample_fetch_inner(const struct device *dev, enum sensor_cha
 		break;
 	case SENSOR_CHAN_MAGN_Z:
 		if (!(drv_cfg->axis & TMAG5273_MAG_CH_EN_Z)) {
-			LOG_ERR("z-axis measurement deactivated");
+			LOG_ERROR("z-axis measurement deactivated");
 			return -ENOTSUP;
 		}
 		start_address = TMAG5273_REG_Z_MSB_RESULT;
@@ -619,7 +619,7 @@ static int tmag5273_sample_fetch_inner(const struct device *dev, enum sensor_cha
 		break;
 	case SENSOR_CHAN_MAGN_XYZ:
 		if (drv_cfg->axis == TMAG5273_MAG_CH_EN_NONE) {
-			LOG_ERR("xyz-axis measurement deactivated");
+			LOG_ERROR("xyz-axis measurement deactivated");
 			return -ENOTSUP;
 		}
 		start_address = TMAG5273_REG_X_MSB_RESULT;
@@ -627,7 +627,7 @@ static int tmag5273_sample_fetch_inner(const struct device *dev, enum sensor_cha
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
 		if (!drv_cfg->temperature) {
-			LOG_ERR("temperature measurement deactivated");
+			LOG_ERROR("temperature measurement deactivated");
 			return -ENOTSUP;
 		}
 		start_address = TMAG5273_REG_T_MSB_RESULT;
@@ -635,7 +635,7 @@ static int tmag5273_sample_fetch_inner(const struct device *dev, enum sensor_cha
 		break;
 	case SENSOR_CHAN_ROTATION:
 		if (drv_cfg->angle_magnitude_axis == TMAG5273_ANGLE_CALC_NONE) {
-			LOG_ERR("axis measurement deactivated");
+			LOG_ERROR("axis measurement deactivated");
 			return -ENOTSUP;
 		}
 		start_address = TMAG5273_REG_ANGLE_MSB_RESULT;
@@ -644,14 +644,14 @@ static int tmag5273_sample_fetch_inner(const struct device *dev, enum sensor_cha
 	case TMAG5273_CHAN_MAGNITUDE:
 	case TMAG5273_CHAN_MAGNITUDE_MSB:
 		if (drv_cfg->angle_magnitude_axis == TMAG5273_ANGLE_CALC_NONE) {
-			LOG_ERR("axis measurement deactivated");
+			LOG_ERROR("axis measurement deactivated");
 			return -ENOTSUP;
 		}
 		start_address = end_address = TMAG5273_REG_MAGNITUDE_RESULT;
 		break;
 	case TMAG5273_CHAN_ANGLE_MAGNITUDE:
 		if (drv_cfg->angle_magnitude_axis == TMAG5273_ANGLE_CALC_NONE) {
-			LOG_ERR("axis measurement deactivated");
+			LOG_ERROR("axis measurement deactivated");
 			return -ENOTSUP;
 		}
 		start_address = TMAG5273_REG_ANGLE_MSB_RESULT;
@@ -662,7 +662,7 @@ static int tmag5273_sample_fetch_inner(const struct device *dev, enum sensor_cha
 		end_address = TMAG5273_REG_RESULT_END;
 		break;
 	default:
-		LOG_ERR("unknown sensor channel %d", chan);
+		LOG_ERROR("unknown sensor channel %d", chan);
 		return -EINVAL;
 	}
 
@@ -703,7 +703,7 @@ static int tmag5273_sample_fetch_inner(const struct device *dev, enum sensor_cha
 					   block_size + crc_size);
 
 		if (retval < 0) {
-			LOG_ERR("could not read result data %d", retval);
+			LOG_ERROR("could not read result data %d", retval);
 			return -EIO;
 		}
 
@@ -713,8 +713,8 @@ static int tmag5273_sample_fetch_inner(const struct device *dev, enum sensor_cha
 			const uint8_t crc = crc8_ccitt(0xFF, &i2c_buffer[offset], block_size);
 
 			if (i2c_buffer[offset + block_size] != crc) {
-				LOG_ERR("invalid CRC value: 0x%X (expected: 0x%X)",
-					i2c_buffer[offset + block_size], crc);
+				LOG_ERROR("invalid CRC value: 0x%X (expected: 0x%X)",
+					  i2c_buffer[offset + block_size], crc);
 				return -EIO;
 			}
 		}
@@ -860,7 +860,7 @@ static int tmag5273_channel_get(const struct device *dev, enum sensor_channel ch
 				struct sensor_value *val)
 {
 	CHECKIF(val == NULL) {
-		LOG_ERR("val: NULL");
+		LOG_ERROR("val: NULL");
 		return -EINVAL;
 	}
 
@@ -1000,7 +1000,7 @@ static inline int tmag5273_init_device_config(const struct device *dev)
 
 	retval = i2c_reg_write_byte_dt(&drv_cfg->i2c, TMAG5273_REG_DEVICE_CONFIG_1, regdata);
 	if (retval < 0) {
-		LOG_ERR("error setting DEVICE_CONFIG_1 %d", retval);
+		LOG_ERROR("error setting DEVICE_CONFIG_1 %d", retval);
 		return -EIO;
 	}
 
@@ -1027,7 +1027,7 @@ static inline int tmag5273_init_device_config(const struct device *dev)
 
 	retval = i2c_reg_write_byte_dt(&drv_cfg->i2c, TMAG5273_REG_DEVICE_CONFIG_2, regdata);
 	if (retval < 0) {
-		LOG_ERR("error setting DEVICE_CONFIG_2 %d", retval);
+		LOG_ERROR("error setting DEVICE_CONFIG_2 %d", retval);
 		return -EIO;
 	}
 
@@ -1053,7 +1053,7 @@ static inline int tmag5273_init_sensor_settings(const struct tmag5273_config *dr
 
 	retval = i2c_reg_write_byte_dt(&drv_cfg->i2c, TMAG5273_REG_SENSOR_CONFIG_1, regdata);
 	if (retval < 0) {
-		LOG_ERR("error setting SENSOR_CONFIG_1 %d", retval);
+		LOG_ERROR("error setting SENSOR_CONFIG_1 %d", retval);
 		return -EIO;
 	}
 
@@ -1090,7 +1090,7 @@ static inline int tmag5273_init_sensor_settings(const struct tmag5273_config *dr
 
 	retval = i2c_reg_write_byte_dt(&drv_cfg->i2c, TMAG5273_REG_SENSOR_CONFIG_2, regdata);
 	if (retval < 0) {
-		LOG_ERR("error setting SENSOR_CONFIG_2 %d", retval);
+		LOG_ERROR("error setting SENSOR_CONFIG_2 %d", retval);
 		return -EIO;
 	}
 
@@ -1107,14 +1107,14 @@ static inline int tmag5273_init_sensor_settings(const struct tmag5273_config *dr
 
 	retval = i2c_reg_write_byte_dt(&drv_cfg->i2c, TMAG5273_REG_T_CONFIG, regdata);
 	if (retval < 0) {
-		LOG_ERR("error setting SENSOR_CONFIG_2 %d", retval);
+		LOG_ERROR("error setting SENSOR_CONFIG_2 %d", retval);
 		return -EIO;
 	}
 
 	retval = i2c_reg_write_byte_dt(&drv_cfg->i2c, TMAG5273_REG_MAG_GAIN_CONFIG,
 				       drv_cfg->mag_gain_correction);
 	if (retval < 0) {
-		LOG_ERR("error setting MAG_GAIN_CONFIG %d", retval);
+		LOG_ERROR("error setting MAG_GAIN_CONFIG %d", retval);
 		return -EIO;
 	}
 
@@ -1138,7 +1138,7 @@ static int tmag5273_pm_action(const struct device *dev, enum pm_device_action ac
 		retval = i2c_reg_update_byte_dt(&drv_cfg->i2c, TMAG5273_REG_DEVICE_CONFIG_2,
 						TMAG5273_OPERATING_MODE_MSK, value);
 		if (retval < 0) {
-			LOG_ERR("error updating DEVICE_CONFIG_2 %d", retval);
+			LOG_ERROR("error updating DEVICE_CONFIG_2 %d", retval);
 			return -EIO;
 		}
 		break;
@@ -1147,7 +1147,7 @@ static int tmag5273_pm_action(const struct device *dev, enum pm_device_action ac
 						TMAG5273_OPERATING_MODE_MSK,
 						TMAG5273_OPERATING_MODE_SLEEP);
 		if (retval < 0) {
-			LOG_ERR("error updating DEVICE_CONFIG_2 %d", retval);
+			LOG_ERROR("error updating DEVICE_CONFIG_2 %d", retval);
 			return -EIO;
 		}
 		break;
@@ -1176,19 +1176,19 @@ static int tmag5273_init(const struct device *dev)
 	uint8_t regdata;
 
 	if (!i2c_is_ready_dt(&drv_cfg->i2c)) {
-		LOG_ERR("could not get pointer to TMAG5273 I2C device");
+		LOG_ERROR("could not get pointer to TMAG5273 I2C device");
 		return -ENODEV;
 	}
 
 	if (drv_cfg->trigger_conv_via_int) {
 		if (!gpio_is_ready_dt(&drv_cfg->int_gpio)) {
-			LOG_ERR("invalid int-gpio configuration");
+			LOG_ERROR("invalid int-gpio configuration");
 			return -ENODEV;
 		}
 
 		retval = gpio_pin_configure_dt(&drv_cfg->int_gpio, GPIO_INPUT);
 		if (retval < 0) {
-			LOG_ERR("cannot configure GPIO %d", retval);
+			LOG_ERROR("cannot configure GPIO %d", retval);
 			return -EINVAL;
 		}
 	}
@@ -1197,7 +1197,7 @@ static int tmag5273_init(const struct device *dev)
 
 	retval = i2c_reg_read_byte_dt(&drv_cfg->i2c, TMAG5273_REG_DEVICE_CONFIG_2, &regdata);
 	if (retval < 0) {
-		LOG_ERR("could not read device config 2 register %d", retval);
+		LOG_ERROR("could not read device config 2 register %d", retval);
 		return -EIO;
 	}
 
@@ -1209,18 +1209,18 @@ static int tmag5273_init(const struct device *dev)
 	}
 
 	if (regdata != TMAG5273_MANUFACTURER_ID_LSB) {
-		LOG_ERR("unexpected manufacturer id LSB 0x%X", regdata);
+		LOG_ERROR("unexpected manufacturer id LSB 0x%X", regdata);
 		return -EINVAL;
 	}
 
 	retval = i2c_reg_read_byte_dt(&drv_cfg->i2c, TMAG5273_REG_MANUFACTURER_ID_MSB, &regdata);
 	if (retval < 0) {
-		LOG_ERR("could not read MSB of manufacturer id %d", retval);
+		LOG_ERROR("could not read MSB of manufacturer id %d", retval);
 		return -EIO;
 	}
 
 	if (regdata != TMAG5273_MANUFACTURER_ID_MSB) {
-		LOG_ERR("unexpected manufacturer id MSB 0x%X", regdata);
+		LOG_ERROR("unexpected manufacturer id MSB 0x%X", regdata);
 		return -EINVAL;
 	}
 
@@ -1228,13 +1228,13 @@ static int tmag5273_init(const struct device *dev)
 
 	retval = tmag5273_reset_device_status(dev);
 	if (retval < 0) {
-		LOG_ERR("could not reset DEVICE_STATUS register %d", retval);
+		LOG_ERROR("could not reset DEVICE_STATUS register %d", retval);
 		return -EIO;
 	}
 
 	retval = i2c_reg_read_byte_dt(&drv_cfg->i2c, TMAG5273_REG_DEVICE_ID, &regdata);
 	if (retval < 0) {
-		LOG_ERR("could not read DEVICE_ID register %d", retval);
+		LOG_ERROR("could not read DEVICE_ID register %d", retval);
 		return -EIO;
 	}
 
@@ -1255,7 +1255,7 @@ static int tmag5273_init(const struct device *dev)
 	case TMAG5273_VER_TMAG3001X2:
 		break;
 	default:
-		LOG_ERR("unsupported version %d", drv_data->version);
+		LOG_ERROR("unsupported version %d", drv_data->version);
 		return -EIO;
 	}
 
@@ -1274,20 +1274,20 @@ static int tmag5273_init(const struct device *dev)
 
 	retval = i2c_reg_write_byte_dt(&drv_cfg->i2c, TMAG5273_REG_INT_CONFIG_1, regdata);
 	if (retval < 0) {
-		LOG_ERR("error deactivating interrupts %d", retval);
+		LOG_ERROR("error deactivating interrupts %d", retval);
 		return -EIO;
 	}
 
 	/* set settings */
 	retval = tmag5273_init_sensor_settings(drv_cfg, drv_data->version);
 	if (retval < 0) {
-		LOG_ERR("error setting sensor configuration %d", retval);
+		LOG_ERROR("error setting sensor configuration %d", retval);
 		return retval;
 	}
 
 	retval = tmag5273_init_device_config(dev);
 	if (retval < 0) {
-		LOG_ERR("error setting device configuration %d", retval);
+		LOG_ERROR("error setting device configuration %d", retval);
 		return retval;
 	}
 

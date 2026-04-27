@@ -363,7 +363,7 @@ static bool parse_ad(struct bt_data *data, void *user_data)
 		LOG_INF("Device name : %.*s", data->data_len, data->data);
 
 		if (check_if_peer_connected(addr)) {
-			LOG_ERR("Peer is already connected or in disconnecting state");
+			LOG_ERROR("Peer is already connected or in disconnecting state");
 			break;
 		}
 
@@ -436,7 +436,7 @@ static void connected_cb(struct bt_conn *conn, uint8_t conn_err)
 	if (!err) {
 		LOG_INF("Security level is set to : %u", BT_SECURITY_L2);
 	} else {
-		LOG_ERR("Failed to set security (%d).", err);
+		LOG_ERROR("Failed to set security (%d).", err);
 	}
 #endif /* CONFIG_BT_SMP */
 
@@ -475,7 +475,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 	LOG_INF("Security for %s changed: level %u", bt_conn_dst_str(conn), level);
 
 	if (err) {
-		LOG_ERR("Security failed, disconnecting");
+		LOG_ERROR("Security failed, disconnecting");
 		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_POWER_OFF);
 	}
 }
@@ -486,7 +486,7 @@ static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 {
 	struct conn_info *conn_info_ref;
 
-	LOG_ERR("Identity resolved %s -> %s", bt_addr_le_str(rpa), bt_addr_le_str(identity));
+	LOG_ERROR("Identity resolved %s -> %s", bt_addr_le_str(rpa), bt_addr_le_str(identity));
 
 	/* overwrite RPA */
 	conn_info_ref = get_conn_info_ref(conn);
@@ -541,7 +541,7 @@ static void exchange_mtu(struct bt_conn *conn, void *data)
 		mtu_exchange_params.func = mtu_exchange_cb;
 		err = bt_gatt_exchange_mtu(conn, &mtu_exchange_params);
 		if (err) {
-			LOG_ERR("MTU exchange failed (err %d)", err);
+			LOG_ERROR("MTU exchange failed (err %d)", err);
 			atomic_clear_bit(conn_info_ref->flags, CONN_INFO_SENT_MTU_EXCHANGE);
 		} else {
 			LOG_INF("MTU Exchange pending...");
@@ -641,7 +641,7 @@ static void notify_peers(struct bt_conn *conn, void *data)
 	LOG_INF("notify: %s", bt_conn_dst_str(conn));
 	err = bt_gatt_notify(conn, vnd_attr, vnd_value, notification_size);
 	if (err) {
-		LOG_ERR("Couldn't send GATT notification");
+		LOG_ERROR("Couldn't send GATT notification");
 		return;
 	}
 
@@ -662,7 +662,7 @@ void test_central_main(void)
 	err = bt_enable(NULL);
 
 	if (err) {
-		LOG_ERR("Bluetooth init failed (err %d)", err);
+		LOG_ERROR("Bluetooth init failed (err %d)", err);
 		return;
 	}
 
@@ -701,7 +701,7 @@ void test_central_main(void)
 			 * notifications use up all the buffers and it can never
 			 * complete in time.
 			 */
-			LOG_ERR("subscription failed: %d, not notifying", err);
+			LOG_ERROR("subscription failed: %d, not notifying", err);
 		}
 		k_msleep(10);
 	}

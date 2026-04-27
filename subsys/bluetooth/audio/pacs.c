@@ -1149,7 +1149,7 @@ static void notify_cb(struct bt_conn *conn, void *data)
 
 	err = bt_conn_get_info(conn, &info);
 	if (err != 0) {
-		LOG_ERR("Failed to get conn info: %d", err);
+		LOG_ERROR("Failed to get conn info: %d", err);
 		return;
 	}
 
@@ -1372,7 +1372,7 @@ void bt_pacs_cap_foreach(enum bt_audio_dir dir, bt_pacs_cap_foreach_func_t func,
 	sys_slist_t *pac;
 
 	if (func == NULL) {
-		LOG_ERR("func is NULL");
+		LOG_ERROR("func is NULL");
 		return;
 	}
 
@@ -1536,7 +1536,7 @@ int bt_pacs_conn_set_available_contexts_for_conn(struct bt_conn *conn, enum bt_a
 
 	err = bt_conn_get_info(conn, &info);
 	if (err < 0) {
-		LOG_ERR("Could not get conn info: %d", err);
+		LOG_ERROR("Could not get conn info: %d", err);
 		return err;
 	}
 
@@ -1645,7 +1645,7 @@ enum bt_audio_context bt_pacs_get_available_contexts_for_conn(struct bt_conn *co
 							      enum bt_audio_dir dir)
 {
 	if (conn == NULL) {
-		LOG_ERR("NULL conn");
+		LOG_ERROR("NULL conn");
 		return BT_AUDIO_CONTEXT_TYPE_NONE;
 	}
 

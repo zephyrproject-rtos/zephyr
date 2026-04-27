@@ -201,14 +201,14 @@ static int gnss_luatos_air530z_init(const struct device *dev)
 
 	ret = modem_chat_run_script(&data->chat, &init_script);
 	if (ret < 0) {
-		LOG_ERR("Failed to run init_script");
+		LOG_ERROR("Failed to run init_script");
 		modem_pipe_close(data->uart_pipe, K_SECONDS(10));
 		return ret;
 	}
 
 	/* setup on-off gpio for power management */
 	if (!gpio_is_ready_dt(&config->on_off_gpio)) {
-		LOG_ERR("on-off GPIO device not ready");
+		LOG_ERROR("on-off GPIO device not ready");
 		return -ENODEV;
 	}
 

@@ -124,7 +124,7 @@ static int rtc_rts5912_init(const struct device *dev)
 	int rc;
 
 	if (!device_is_ready(rtc_config->clk_dev)) {
-		LOG_ERR("RTC device not ready");
+		LOG_ERROR("RTC device not ready");
 		return -ENODEV;
 	}
 
@@ -132,7 +132,7 @@ static int rtc_rts5912_init(const struct device *dev)
 	sccon.clk_idx = rtc_config->rtc_clk_idx;
 	rc = clock_control_on(rtc_config->clk_dev, (clock_control_subsys_t)&sccon);
 	if (rc < 0) {
-		LOG_ERR("Failed to turn on RTC clock (%d)", rc);
+		LOG_ERROR("Failed to turn on RTC clock (%d)", rc);
 		return rc;
 	}
 

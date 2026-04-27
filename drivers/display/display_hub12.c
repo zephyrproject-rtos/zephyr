@@ -95,7 +95,7 @@ static void hub12_scan_row(struct hub12_data *data, const struct hub12_config *c
 
 	ret = spi_write_dt(&config->spi, &tx);
 	if (ret < 0) {
-		LOG_ERR("SPI write failed: %d", ret);
+		LOG_ERROR("SPI write failed: %d", ret);
 		return;
 	}
 
@@ -158,12 +158,12 @@ static int hub12_write(const struct device *dev, const uint16_t x, const uint16_
 	}
 
 	if (desc->pitch != desc->width) {
-		LOG_ERR("Unsupported pitch");
+		LOG_ERROR("Unsupported pitch");
 		return -ENOTSUP;
 	}
 
 	if (desc->buf_size < (desc->width * desc->height / HUB12_PIXELS_PER_BYTE)) {
-		LOG_ERR("Buffer too small");
+		LOG_ERROR("Buffer too small");
 		return -EINVAL;
 	}
 
@@ -307,7 +307,7 @@ static int hub12_init(const struct device *dev)
 
 	if (!gpio_is_ready_dt(&config->pa) || !gpio_is_ready_dt(&config->pb) ||
 	    !gpio_is_ready_dt(&config->pe) || !gpio_is_ready_dt(&config->plat)) {
-		LOG_ERR("GPIO devices not ready");
+		LOG_ERROR("GPIO devices not ready");
 		return -ENODEV;
 	}
 
@@ -332,7 +332,7 @@ static int hub12_init(const struct device *dev)
 	}
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI device not ready");
+		LOG_ERROR("SPI device not ready");
 		return -ENODEV;
 	}
 
@@ -343,7 +343,7 @@ static int hub12_init(const struct device *dev)
 
 	ret = k_sem_init(&data->lock, 1, 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize semaphore");
+		LOG_ERROR("Failed to initialize semaphore");
 		return ret;
 	}
 

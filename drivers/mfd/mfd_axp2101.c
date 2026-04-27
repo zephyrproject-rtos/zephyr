@@ -79,7 +79,7 @@ static inline int axp2101_irq_read_and_clear(const struct i2c_dt_spec *i2c,
 	ret = i2c_burst_read_dt(i2c, AXP2101_REG_IRQ_STATUS_0, irq_status,
 				AXP2101_IRQ_STATUS_REG_COUNT);
 	if (ret < 0) {
-		LOG_ERR("Failed to read IRQ status registers");
+		LOG_ERROR("Failed to read IRQ status registers");
 		return ret;
 	}
 
@@ -90,7 +90,7 @@ static inline int axp2101_irq_read_and_clear(const struct i2c_dt_spec *i2c,
 	ret = i2c_burst_write_dt(i2c, AXP2101_REG_IRQ_STATUS_0, irq_status,
 				 AXP2101_IRQ_STATUS_REG_COUNT);
 	if (ret < 0) {
-		LOG_ERR("Failed to clear IRQ status registers");
+		LOG_ERROR("Failed to clear IRQ status registers");
 		return ret;
 	}
 
@@ -118,7 +118,7 @@ static void axp2101_k_work_handler(struct k_work *work)
 		ret = input_report_key(dev, INPUT_KEY_POWER, false, true, K_FOREVER);
 	}
 	if (ret < 0) {
-		LOG_ERR("Failed to send input event");
+		LOG_ERROR("Failed to send input event");
 	}
 #endif /* CONFIG_MFD_AXP2101_POWER_BUTTON */
 
@@ -160,7 +160,7 @@ static int mfd_axp2101_configure_irq(const struct device *dev)
 				 axp2101_dflt_irq_enable,
 				 ARRAY_SIZE(axp2101_dflt_irq_enable));
 	if (ret < 0) {
-		LOG_ERR("Failed to configure enabled IRQs");
+		LOG_ERROR("Failed to configure enabled IRQs");
 		return ret;
 	}
 
@@ -168,13 +168,13 @@ static int mfd_axp2101_configure_irq(const struct device *dev)
 	ret = i2c_burst_write_dt(&config->i2c, AXP2101_REG_IRQ_STATUS_0,
 				dummy_buffer, ARRAY_SIZE(dummy_buffer));
 	if (ret < 0) {
-		LOG_ERR("Failed to clear IRQ status registers");
+		LOG_ERROR("Failed to clear IRQ status registers");
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure interrupt GPIO: %d", ret);
+		LOG_ERROR("Failed to configure interrupt GPIO: %d", ret);
 		return ret;
 	}
 
@@ -182,13 +182,13 @@ static int mfd_axp2101_configure_irq(const struct device *dev)
 
 	ret = gpio_add_callback(config->int_gpio.port, &data->gpio_cb);
 	if (ret < 0) {
-		LOG_ERR("Failed to add GPIO callback: %d", ret);
+		LOG_ERROR("Failed to add GPIO callback: %d", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure GPIO interrupt: %d", ret);
+		LOG_ERROR("Failed to configure GPIO interrupt: %d", ret);
 		return ret;
 	}
 
@@ -209,7 +209,7 @@ static int mfd_axp2101_init(const struct device *dev)
 	int ret;
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C bus not ready");
+		LOG_ERROR("I2C bus not ready");
 		return -ENODEV;
 	}
 
@@ -219,7 +219,7 @@ static int mfd_axp2101_init(const struct device *dev)
 		return ret;
 	}
 	if (chip_id != AXP2101_CHIP_ID) {
-		LOG_ERR("Invalid Chip detected (%d)", chip_id);
+		LOG_ERROR("Invalid Chip detected (%d)", chip_id);
 		return -EINVAL;
 	}
 

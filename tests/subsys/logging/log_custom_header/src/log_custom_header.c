@@ -67,7 +67,7 @@ ZTEST(log_custom_header, test_macro_prefix)
 	zassert_equal(count, 3);
 	zassert_mem_equal(output, CUSTOM_LOG_PREFIX "WRN ff", strlen(output));
 
-	LOG_ERR("ERR %d %d %d", 1, 2, 3);
+	LOG_ERROR("ERR %d %d %d", 1, 2, 3);
 	LOG_PROCESS();
 	zassert_equal(count, 4);
 	zassert_mem_equal(output, CUSTOM_LOG_PREFIX "ERR 1 2 3", strlen(output));

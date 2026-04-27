@@ -54,7 +54,7 @@ static int neorv32_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	uint8_t prsc;
 
 	if (channel >= NEORV32_PWM_CHANNELS) {
-		LOG_ERR("invalid PWM channel %u", channel);
+		LOG_ERROR("invalid PWM channel %u", channel);
 		return -EINVAL;
 	}
 
@@ -104,13 +104,13 @@ static int neorv32_pwm_get_cycles_per_sec(const struct device *dev, uint32_t cha
 	int err;
 
 	if (channel >= NEORV32_PWM_CHANNELS) {
-		LOG_ERR("invalid PWM channel %u", channel);
+		LOG_ERROR("invalid PWM channel %u", channel);
 		return -EINVAL;
 	}
 
 	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_CLK, &clk);
 	if (err < 0) {
-		LOG_ERR("failed to determine clock rate (err %d)", err);
+		LOG_ERROR("failed to determine clock rate (err %d)", err);
 		return -EIO;
 	}
 
@@ -126,18 +126,18 @@ static int neorv32_pwm_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(config->syscon)) {
-		LOG_ERR("syscon device not ready");
+		LOG_ERROR("syscon device not ready");
 		return -EINVAL;
 	}
 
 	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_SOC, &features);
 	if (err < 0) {
-		LOG_ERR("failed to determine implemented features (err %d)", err);
+		LOG_ERROR("failed to determine implemented features (err %d)", err);
 		return -EIO;
 	}
 
 	if ((features & NEORV32_SYSINFO_SOC_IO_PWM) == 0) {
-		LOG_ERR("neorv32 pwm not supported");
+		LOG_ERROR("neorv32 pwm not supported");
 		return -ENODEV;
 	}
 

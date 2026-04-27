@@ -199,7 +199,7 @@ const struct bt_bap_base *bt_bap_base_get_base_from_ad(const struct bt_data *ad)
 
 	uuid = net_buf_simple_pull_mem(&net_buf, BT_UUID_SIZE_16);
 	if (!bt_uuid_create(&broadcast_uuid.uuid, uuid, BT_UUID_SIZE_16)) {
-		LOG_ERR("bt_uuid_create failed");
+		LOG_ERROR("bt_uuid_create failed");
 
 		return NULL;
 	}

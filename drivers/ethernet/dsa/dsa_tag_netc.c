@@ -29,7 +29,7 @@ struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 
 	/* Tag is inserted after DMAC/SMAC fields. Get tag common part. */
 	if (payload_len < tag_len) {
-		LOG_ERR("tag len error");
+		LOG_ERROR("tag len error");
 		return iface_dst;
 	}
 
@@ -39,7 +39,7 @@ struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 	/* Check port index */
 	if (tag_common->port >= DSA_PORT_MAX_COUNT ||
 	    dsa_switch_ctx->iface_user[tag_common->port] == NULL) {
-		LOG_ERR("port index error");
+		LOG_ERROR("port index error");
 		return iface_dst;
 	}
 
@@ -47,7 +47,7 @@ struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 	if (tag_common->type == NETC_SWITCH_TAG_TYPE_FORWARD) {
 		tag_len = sizeof(struct netc_switch_tag_forward);
 		if (payload_len < tag_len) {
-			LOG_ERR("tag len error");
+			LOG_ERROR("tag len error");
 			return iface_dst;
 		}
 	} else if (tag_common->type == NETC_SWITCH_TAG_TYPE_TO_HOST) {
@@ -62,14 +62,14 @@ struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 			/* Normal case */
 			tag_len = sizeof(struct netc_switch_tag_host);
 			if (payload_len < tag_len) {
-				LOG_ERR("tag len error");
+				LOG_ERROR("tag len error");
 				return iface_dst;
 			}
 			break;
 		case NETC_SWITCH_TAG_SUBTYPE_TO_HOST_RX_TS:
 			tag_len = sizeof(struct netc_switch_tag_host_rx_ts);
 			if (payload_len < tag_len) {
-				LOG_ERR("tag len error");
+				LOG_ERROR("tag len error");
 				return iface_dst;
 			}
 #ifdef CONFIG_NET_L2_PTP
@@ -84,7 +84,7 @@ struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 		case NETC_SWITCH_TAG_SUBTYPE_TO_HOST_TX_TS:
 			tag_len = sizeof(struct netc_switch_tag_host_tx_ts);
 			if (payload_len < tag_len) {
-				LOG_ERR("tag len error");
+				LOG_ERROR("tag len error");
 				return iface_dst;
 			}
 #ifdef CONFIG_NET_L2_PTP
@@ -98,11 +98,11 @@ struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 #endif
 			break;
 		default:
-			LOG_ERR("tag sub-type error");
+			LOG_ERROR("tag sub-type error");
 			return iface_dst;
 		}
 	} else {
-		LOG_ERR("tag type error");
+		LOG_ERROR("tag type error");
 		return iface_dst;
 	}
 
@@ -138,7 +138,7 @@ struct net_pkt *dsa_tag_netc_xmit(struct net_if *iface, struct net_pkt *pkt)
 	header_buf = net_buf_alloc_len(net_buf_pool_get(pkt->buffer->pool_id),
 				       header_len, K_NO_WAIT);
 	if (!header_buf) {
-		LOG_ERR("Cannot allocate header buffer");
+		LOG_ERROR("Cannot allocate header buffer");
 		return NULL;
 	}
 

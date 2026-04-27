@@ -165,28 +165,28 @@ static int sct2024_init(const struct device *dev)
 	const struct sct2024_cfg *cfg = dev->config;
 
 	if (!spi_is_ready_dt(&cfg->spi)) {
-		LOG_ERR("SPI device not ready");
+		LOG_ERROR("SPI device not ready");
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&cfg->la_pin)) {
-		LOG_ERR("LA GPIO device not ready");
+		LOG_ERROR("LA GPIO device not ready");
 		return -ENODEV;
 	}
 
 	if (gpio_pin_configure_dt(&cfg->la_pin, GPIO_OUTPUT_INACTIVE) < 0) {
-		LOG_ERR("Failed to configure LA pin");
+		LOG_ERROR("Failed to configure LA pin");
 		return -EIO;
 	}
 
 	if (sct2024_is_oe_pin_defined(dev)) {
 		if (!gpio_is_ready_dt(&cfg->oe_pin)) {
-			LOG_ERR("OE GPIO device not ready");
+			LOG_ERROR("OE GPIO device not ready");
 			return -ENODEV;
 		}
 
 		if (gpio_pin_configure_dt(&cfg->oe_pin, GPIO_OUTPUT_ACTIVE) < 0) {
-			LOG_ERR("Failed to configure OE pin");
+			LOG_ERROR("Failed to configure OE pin");
 			return -EIO;
 		}
 	}

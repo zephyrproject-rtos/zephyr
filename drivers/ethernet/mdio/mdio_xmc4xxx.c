@@ -141,7 +141,7 @@ static int mdio_xmc4xxx_initialize(const struct device *dev)
 
 	ret = mdio_xmc4xxx_set_clock_divider(dev);
 	if (ret != 0) {
-		LOG_ERR("Error setting MDIO clock divider");
+		LOG_ERROR("Error setting MDIO clock divider");
 		return -EINVAL;
 	}
 

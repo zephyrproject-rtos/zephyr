@@ -148,11 +148,11 @@ static int pwm_numaker_configure_capture(const struct device *dev, uint32_t chan
 	data->capture[pair].user_data = user_data;
 
 	if (data->capture[pair].is_busy) {
-		LOG_ERR("Capture already active on this channel %d", pair);
+		LOG_ERROR("Capture already active on this channel %d", pair);
 		return -EBUSY;
 	}
 	if ((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_BOTH) {
-		LOG_ERR("Cannot capture both period and pulse width");
+		LOG_ERROR("Cannot capture both period and pulse width");
 		return -ENOTSUP;
 	}
 
@@ -199,12 +199,12 @@ static int pwm_numaker_enable_capture(const struct device *dev, uint32_t channel
 	LOG_DBG("");
 
 	if (!data->capture[pair].callback) {
-		LOG_ERR("PWM capture not configured");
+		LOG_ERROR("PWM capture not configured");
 		return -EINVAL;
 	}
 
 	if (data->capture[pair].is_busy) {
-		LOG_ERR("Capture already active on this channel %d", pair);
+		LOG_ERROR("Capture already active on this channel %d", pair);
 		return -EBUSY;
 	}
 
@@ -439,7 +439,7 @@ static int pwm_numaker_clk_get_rate(EPWM_T *epwm, uint32_t *rate)
 	} else if (epwm == EPWM1) {
 		clk_src = CLK->EPWMSEL & CLK_EPWMSEL_EPWM1SEL_Msk;
 	} else {
-		LOG_ERR("Invalid EPWM node");
+		LOG_ERROR("Invalid EPWM node");
 		return -EINVAL;
 	}
 
@@ -461,7 +461,7 @@ static int pwm_numaker_clk_get_rate(EPWM_T *epwm, uint32_t *rate)
 	} else if (epwm == EPWM1) {
 		clk_src = CLK->CLKSEL2 & CLK_CLKSEL2_EPWM1SEL_Msk;
 	} else {
-		LOG_ERR("Invalid EPWM node");
+		LOG_ERROR("Invalid EPWM node");
 		return -EINVAL;
 	}
 
@@ -494,7 +494,7 @@ static int pwm_numaker_init(const struct device *dev)
 
 	/* Validate this module's reset object */
 	if (!device_is_ready(cfg->reset.dev)) {
-		LOG_ERR("reset controller not ready");
+		LOG_ERROR("reset controller not ready");
 		return -ENODEV;
 	}
 
@@ -523,7 +523,7 @@ static int pwm_numaker_init(const struct device *dev)
 	err =  pwm_numaker_clk_get_rate(epwm, &clock_freq);
 
 	if (err < 0) {
-		LOG_ERR("Get EPWM clock rate failure %d", err);
+		LOG_ERROR("Get EPWM clock rate failure %d", err);
 		goto done;
 	}
 	data->clock_freq = clock_freq;
@@ -531,7 +531,7 @@ static int pwm_numaker_init(const struct device *dev)
 
 	err = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
-		LOG_ERR("Failed to apply pinctrl state");
+		LOG_ERROR("Failed to apply pinctrl state");
 		goto done;
 	}
 

@@ -58,12 +58,12 @@ int airoc_wifi_init_primary(const struct device *dev, whd_interface_t *interface
 #endif
 
 	if (airoc_wifi_power_on(dev)) {
-		LOG_ERR("airoc_wifi_power_on retuens fail");
+		LOG_ERROR("airoc_wifi_power_on retuens fail");
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(config->bus_dev.bus_sdio)) {
-		LOG_ERR("SDHC device is not ready");
+		LOG_ERROR("SDHC device is not ready");
 		return -ENODEV;
 	}
 
@@ -75,32 +75,32 @@ int airoc_wifi_init_primary(const struct device *dev, whd_interface_t *interface
 	/* Init SDIO functions */
 	ret = sdio_init_func(&data->card, &data->card.func0, BUS_FUNCTION);
 	if (ret) {
-		LOG_ERR("sdio_enable_func BUS_FUNCTION, error: %x", ret);
+		LOG_ERROR("sdio_enable_func BUS_FUNCTION, error: %x", ret);
 		return ret;
 	}
 	ret = sdio_init_func(&data->card, &data->sdio_func1, BACKPLANE_FUNCTION);
 	if (ret) {
-		LOG_ERR("sdio_enable_func BACKPLANE_FUNCTION, error: %x", ret);
+		LOG_ERROR("sdio_enable_func BACKPLANE_FUNCTION, error: %x", ret);
 		return ret;
 	}
 	ret = sdio_init_func(&data->card, &data->sdio_func2, WLAN_FUNCTION);
 	if (ret) {
-		LOG_ERR("sdio_enable_func WLAN_FUNCTION, error: %x", ret);
+		LOG_ERROR("sdio_enable_func WLAN_FUNCTION, error: %x", ret);
 		return ret;
 	}
 	ret = sdio_set_block_size(&data->sdio_func1, SDIO_64B_BLOCK);
 	if (ret) {
-		LOG_ERR("Can't set block size for BACKPLANE_FUNCTION, error: %x", ret);
+		LOG_ERROR("Can't set block size for BACKPLANE_FUNCTION, error: %x", ret);
 		return ret;
 	}
 	ret = sdio_set_block_size(&data->sdio_func2, SDIO_64B_BLOCK);
 	if (ret) {
-		LOG_ERR("Can't set block size for WLAN_FUNCTION, error: %x", ret);
+		LOG_ERROR("Can't set block size for WLAN_FUNCTION, error: %x", ret);
 		return ret;
 	}
 	ret = sdio_set_block_size(&data->card.func0, data->card.func0.cis.max_blk_size);
 	if (ret) {
-		LOG_ERR("Can't set block size for BUS_FUNCTION, error: %x", ret);
+		LOG_ERROR("Can't set block size for BUS_FUNCTION, error: %x", ret);
 		return ret;
 	}
 

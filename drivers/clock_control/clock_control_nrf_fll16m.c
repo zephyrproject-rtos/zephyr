@@ -140,12 +140,12 @@ static int fll16m_resolve_spec_to_idx(const struct device *dev,
 	uint16_t req_accuracy;
 
 	if (req_spec->frequency > dev_config->fixed_frequency) {
-		LOG_ERR("invalid frequency");
+		LOG_ERROR("invalid frequency");
 		return -EINVAL;
 	}
 
 	if (req_spec->precision) {
-		LOG_ERR("invalid precision");
+		LOG_ERROR("invalid precision");
 		return -EINVAL;
 	}
 
@@ -162,7 +162,7 @@ static int fll16m_resolve_spec_to_idx(const struct device *dev,
 		return i;
 	}
 
-	LOG_ERR("invalid accuracy");
+	LOG_ERROR("invalid accuracy");
 	return -EINVAL;
 }
 
@@ -306,7 +306,7 @@ static int fll16m_init(const struct device *dev)
 
 	dev_data->bypass_startup_time_us = nrf_bicr_hfxo_startup_time_us_get(BICR);
 	if (dev_data->bypass_startup_time_us == NRF_BICR_HFXO_STARTUP_TIME_UNCONFIGURED) {
-		LOG_ERR("BICR HFXO startup time invalid");
+		LOG_ERROR("BICR HFXO startup time invalid");
 		return -ENODEV;
 	}
 

@@ -62,7 +62,7 @@ static int ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx)
 
 	ret = bt_l2cap_chan_send(&l2cap_ctx->ot_chan.chan, buf);
 	if (ret < 0) {
-		LOG_ERR("Unable to send data over CoC: %d", ret);
+		LOG_ERROR("Unable to send data over CoC: %d", ret);
 		net_buf_unref(buf);
 
 		return -ENOEXEC;
@@ -219,7 +219,7 @@ static int bt_gatt_ots_l2cap_init(void)
 
 	err = bt_l2cap_server_register(&l2cap_server);
 	if (err) {
-		LOG_ERR("Unable to register OTS PSM");
+		LOG_ERROR("Unable to register OTS PSM");
 		return err;
 	}
 
@@ -240,7 +240,7 @@ int bt_gatt_ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	int err;
 
 	if (l2cap_ctx->tx.len != 0) {
-		LOG_ERR("L2CAP TX in progress");
+		LOG_ERROR("L2CAP TX in progress");
 
 		return -EAGAIN;
 	}
@@ -252,7 +252,7 @@ int bt_gatt_ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx,
 
 	err = ots_l2cap_send(l2cap_ctx);
 	if (err) {
-		LOG_ERR("Unable to send data over CoC: %d", err);
+		LOG_ERROR("Unable to send data over CoC: %d", err);
 
 		return err;
 	}

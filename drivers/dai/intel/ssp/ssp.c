@@ -222,8 +222,8 @@ static int dai_ssp_setup_initial_mclk_source(struct dai_intel_ssp *dp, uint32_t 
 	int i;
 
 	if (mclk_id >= DAI_INTEL_SSP_NUM_MCLK) {
-		LOG_ERR("can't configure MCLK %d, only %d mclk[s] existed!",
-			mclk_id, DAI_INTEL_SSP_NUM_MCLK);
+		LOG_ERROR("can't configure MCLK %d, only %d mclk[s] existed!", mclk_id,
+			  DAI_INTEL_SSP_NUM_MCLK);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -237,7 +237,7 @@ static int dai_ssp_setup_initial_mclk_source(struct dai_intel_ssp *dp, uint32_t 
 	}
 
 	if (clk_index < 0) {
-		LOG_ERR("MCLK %d, no valid source", mclk_rate);
+		LOG_ERROR("MCLK %d, no valid source", mclk_rate);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -279,16 +279,16 @@ static int dai_ssp_check_current_mclk_source(struct dai_intel_ssp *dp, uint16_t 
 	LOG_INF("MCLK %d, source = %d", mclk_rate, mp->mclk_source_clock);
 
 	if (ft[mp->mclk_source_clock].freq % mclk_rate != 0) {
-		LOG_ERR("MCLK %d, no valid configuration for already selected source = %d",
-			mclk_rate, mp->mclk_source_clock);
+		LOG_ERROR("MCLK %d, no valid configuration for already selected source = %d",
+			  mclk_rate, mp->mclk_source_clock);
 		ret = -EINVAL;
 	}
 
 	/* if the mclk is already used, can't change its divider, just increase ref count */
 	if (mp->mclk_sources_ref[mclk_id] > 0) {
 		if (mp->mclk_rate[mclk_id] != mclk_rate) {
-			LOG_ERR("Can't set MCLK %d to %d, it is already configured to %d",
-				mclk_id, mclk_rate, mp->mclk_rate[mclk_id]);
+			LOG_ERROR("Can't set MCLK %d to %d, it is already configured to %d",
+				  mclk_id, mclk_rate, mp->mclk_rate[mclk_id]);
 			return -EINVAL;
 		}
 
@@ -325,7 +325,7 @@ static int dai_ssp_set_mclk_divider(struct dai_intel_ssp *dp, uint16_t mclk_id, 
 		mdivr = mdivr_val - 2; /* 1/n */
 		break;
 	default:
-		LOG_ERR("invalid mdivr_val %d", mdivr_val);
+		LOG_ERROR("invalid mdivr_val %d", mdivr_val);
 		return -EINVAL;
 	}
 
@@ -342,7 +342,7 @@ static int dai_ssp_mn_set_mclk(struct dai_intel_ssp *dp, uint16_t mclk_id, uint3
 	int ret = 0;
 
 	if (mclk_id >= DAI_INTEL_SSP_NUM_MCLK) {
-		LOG_ERR("mclk ID (%d) >= %d", mclk_id, DAI_INTEL_SSP_NUM_MCLK);
+		LOG_ERROR("mclk ID (%d) >= %d", mclk_id, DAI_INTEL_SSP_NUM_MCLK);
 		return -EINVAL;
 	}
 
@@ -578,7 +578,7 @@ static int dai_ssp_setup_initial_bclk_mn_source(struct dai_intel_ssp *dp, uint32
 	int clk_index = dai_ssp_find_bclk_source(dp, bclk, scr_div, m, n);
 
 	if (clk_index < 0) {
-		LOG_ERR("BCLK %d, no valid source", bclk);
+		LOG_ERROR("BCLK %d, no valid source", bclk);
 		return -EINVAL;
 	}
 
@@ -609,7 +609,7 @@ static void dai_ssp_reset_bclk_mn_source(struct dai_intel_ssp *dp)
 	int clk_index = dai_ssp_find_clk_ssp_index(dp, DAI_INTEL_SSP_CLOCK_XTAL_OSCILLATOR);
 
 	if (clk_index < 0) {
-		LOG_ERR("BCLK reset failed, no SSP_CLOCK_XTAL_OSCILLATOR source!");
+		LOG_ERROR("BCLK reset failed, no SSP_CLOCK_XTAL_OSCILLATOR source!");
 		return;
 	}
 
@@ -645,8 +645,8 @@ static int dai_ssp_setup_current_bclk_mn_source(struct dai_intel_ssp *dp, uint32
 		goto out;
 	}
 
-	LOG_ERR("BCLK %d, no valid configuration for already selected source = %d",
-		bclk, mp->bclk_source_mn_clock);
+	LOG_ERROR("BCLK %d, no valid configuration for already selected source = %d", bclk,
+		  mp->bclk_source_mn_clock);
 	ret = -EINVAL;
 
 out:
@@ -743,8 +743,8 @@ static int dai_ssp_poll_for_register_delay(uint32_t reg, uint32_t mask,
 					   uint32_t val, uint64_t us)
 {
 	if (!WAIT_FOR((sys_read32(reg) & mask) == val, us, k_busy_wait(1))) {
-		LOG_ERR("poll timeout reg[%#x]=%#x, waited for: mask %#x, val %#x, us %u", reg,
-			sys_read32(reg), mask, val, (uint32_t)us);
+		LOG_ERROR("poll timeout reg[%#x]=%#x, waited for: mask %#x, val %#x, us %u", reg,
+			  sys_read32(reg), mask, val, (uint32_t)us);
 		return -EIO;
 	}
 
@@ -1133,8 +1133,8 @@ static int dai_ssp_mclk_prepare_enable(struct dai_intel_ssp *dp)
 	ret = dai_ssp_mn_set_mclk(dp, ssp_plat_data->params.mclk_id,
 					ssp_plat_data->params.mclk_rate);
 	if (ret < 0) {
-		LOG_ERR("invalid mclk_rate = %d for mclk_id = %d", ssp_plat_data->params.mclk_rate,
-			ssp_plat_data->params.mclk_id);
+		LOG_ERROR("invalid mclk_rate = %d for mclk_id = %d",
+			  ssp_plat_data->params.mclk_rate, ssp_plat_data->params.mclk_id);
 	} else {
 		ssp_plat_data->clk_active |= SSP_CLK_MCLK_ACTIVE;
 	}
@@ -1177,14 +1177,14 @@ static int dai_ssp_bclk_prepare_enable(struct dai_intel_ssp *dp)
 	ret = dai_ssp_mn_set_bclk(dp, dp->dai_index, ssp_plat_data->params.bclk_rate,
 				  &mdiv, &need_ecs);
 	if (ret < 0) {
-		LOG_ERR("invalid bclk_rate = %d for ssp_index = %d",
-			ssp_plat_data->params.bclk_rate, dp->dai_index);
+		LOG_ERROR("invalid bclk_rate = %d for ssp_index = %d",
+			  ssp_plat_data->params.bclk_rate, dp->dai_index);
 		goto out;
 	}
 #else
 	if (ft[DAI_INTEL_SSP_DEFAULT_IDX].freq % ssp_plat_data->params.bclk_rate != 0) {
-		LOG_ERR("invalid bclk_rate = %d for ssp_index = %d",
-			ssp_plat_data->params.bclk_rate, dp->dai_index);
+		LOG_ERROR("invalid bclk_rate = %d for ssp_index = %d",
+			  ssp_plat_data->params.bclk_rate, dp->dai_index);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1203,7 +1203,7 @@ static int dai_ssp_bclk_prepare_enable(struct dai_intel_ssp *dp)
 
 	/* divisor must be within SCR range */
 	if (mdiv > (SSCR0_SCR_MASK >> 8)) {
-		LOG_ERR("divisor %d is not within SCR range", mdiv);
+		LOG_ERROR("divisor %d is not within SCR range", mdiv);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1368,7 +1368,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		/* FIXME: this mode has not been tested */
 		break;
 	default:
-		LOG_ERR("format & PROVIDER_MASK EINVAL");
+		LOG_ERROR("format & PROVIDER_MASK EINVAL");
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1388,7 +1388,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		inverted_bclk = true; /* handled later with bclk idle */
 		break;
 	default:
-		LOG_ERR("format & INV_MASK EINVAL");
+		LOG_ERROR("format & INV_MASK EINVAL");
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1452,24 +1452,24 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 
 	if (!ssp_plat_data->params.mclk_rate ||
 	    ssp_plat_data->params.mclk_rate > ft[DAI_INTEL_SSP_MAX_FREQ_INDEX].freq) {
-		LOG_ERR("invalid MCLK = %d Hz (valid < %d)", ssp_plat_data->params.mclk_rate,
-			ft[DAI_INTEL_SSP_MAX_FREQ_INDEX].freq);
+		LOG_ERROR("invalid MCLK = %d Hz (valid < %d)", ssp_plat_data->params.mclk_rate,
+			  ft[DAI_INTEL_SSP_MAX_FREQ_INDEX].freq);
 		ret = -EINVAL;
 		goto out;
 	}
 
 	if (!ssp_plat_data->params.bclk_rate ||
-		ssp_plat_data->params.bclk_rate > ssp_plat_data->params.mclk_rate) {
-		LOG_ERR("BCLK %d Hz = 0 or > MCLK %d Hz", ssp_plat_data->params.bclk_rate,
-			ssp_plat_data->params.mclk_rate);
+	    ssp_plat_data->params.bclk_rate > ssp_plat_data->params.mclk_rate) {
+		LOG_ERROR("BCLK %d Hz = 0 or > MCLK %d Hz", ssp_plat_data->params.bclk_rate,
+			  ssp_plat_data->params.mclk_rate);
 		ret = -EINVAL;
 		goto out;
 	}
 
 	/* calc frame width based on BCLK and rate - must be divisible */
 	if (ssp_plat_data->params.bclk_rate % ssp_plat_data->params.fsync_rate) {
-		LOG_ERR("BCLK %d is not divisible by rate %d", ssp_plat_data->params.bclk_rate,
-			ssp_plat_data->params.fsync_rate);
+		LOG_ERROR("BCLK %d is not divisible by rate %d", ssp_plat_data->params.bclk_rate,
+			  ssp_plat_data->params.fsync_rate);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1477,15 +1477,15 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 	/* must be enough BCLKs for data */
 	bdiv = ssp_plat_data->params.bclk_rate / ssp_plat_data->params.fsync_rate;
 	if (bdiv < ssp_plat_data->params.tdm_slot_width * ssp_plat_data->params.tdm_slots) {
-		LOG_ERR("not enough BCLKs need %d",
-			ssp_plat_data->params.tdm_slot_width * ssp_plat_data->params.tdm_slots);
+		LOG_ERROR("not enough BCLKs need %d",
+			  ssp_plat_data->params.tdm_slot_width * ssp_plat_data->params.tdm_slots);
 		ret = -EINVAL;
 		goto out;
 	}
 
 	/* tdm_slot_width must be <= 38 for SSP */
 	if (ssp_plat_data->params.tdm_slot_width > 38) {
-		LOG_ERR("tdm_slot_width %d > 38", ssp_plat_data->params.tdm_slot_width);
+		LOG_ERROR("tdm_slot_width %d > 38", ssp_plat_data->params.tdm_slot_width);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1494,14 +1494,14 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		   (ssp_plat_data->params.tdm_per_slot_padding_flag ?
 		    ssp_plat_data->params.tdm_slot_width : ssp_plat_data->params.sample_valid_bits);
 	if (bdiv < bdiv_min) {
-		LOG_ERR("bdiv(%d) < bdiv_min(%d)", bdiv, bdiv_min);
+		LOG_ERROR("bdiv(%d) < bdiv_min(%d)", bdiv, bdiv_min);
 		ret = -EINVAL;
 		goto out;
 	}
 
 	frame_end_padding = bdiv - bdiv_min;
 	if (frame_end_padding > SSPSP2_FEP_MASK) {
-		LOG_ERR("frame_end_padding too big: %u", frame_end_padding);
+		LOG_ERROR("frame_end_padding too big: %u", frame_end_padding);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1515,7 +1515,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		sscr0 |= SSCR0_FRDC(ssp_plat_data->params.tdm_slots);
 
 		if (bdiv % 2) {
-			LOG_ERR("bdiv %d is not divisible by 2", bdiv);
+			LOG_ERROR("bdiv %d is not divisible by 2", bdiv);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1536,7 +1536,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		 * of each slot
 		 */
 		if (frame_end_padding % 2) {
-			LOG_ERR("frame_end_padding %d is not divisible by 2", frame_end_padding);
+			LOG_ERROR("frame_end_padding %d is not divisible by 2", frame_end_padding);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1545,7 +1545,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 
 		if (slot_end_padding > DAI_INTEL_IPC3_SSP_SLOT_PADDING_MAX) {
 			/* too big padding */
-			LOG_ERR("slot_end_padding > %d", DAI_INTEL_IPC3_SSP_SLOT_PADDING_MAX);
+			LOG_ERROR("slot_end_padding > %d", DAI_INTEL_IPC3_SSP_SLOT_PADDING_MAX);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1566,7 +1566,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		sscr2 &= ~SSCR2_LJDFD;
 
 		if (bdiv % 2) {
-			LOG_ERR("bdiv %d is not divisible by 2", bdiv);
+			LOG_ERROR("bdiv %d is not divisible by 2", bdiv);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1587,7 +1587,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		 * of each slot
 		 */
 		if (frame_end_padding % 2) {
-			LOG_ERR("frame_end_padding %d is not divisible by 2", frame_end_padding);
+			LOG_ERROR("frame_end_padding %d is not divisible by 2", frame_end_padding);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1596,7 +1596,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 
 		if (slot_end_padding > 15) {
 			/* can't handle padding over 15 bits */
-			LOG_ERR("slot_end_padding %d > 15 bits", slot_end_padding);
+			LOG_ERROR("slot_end_padding %d > 15 bits", slot_end_padding);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1629,8 +1629,9 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 
 		/* frame_pulse_width must less or equal 38 */
 		if (ssp_plat_data->params.frame_pulse_width >
-			DAI_INTEL_IPC3_SSP_FRAME_PULSE_WIDTH_MAX) {
-			LOG_ERR("frame_pulse_width > %d", DAI_INTEL_IPC3_SSP_FRAME_PULSE_WIDTH_MAX);
+		    DAI_INTEL_IPC3_SSP_FRAME_PULSE_WIDTH_MAX) {
+			LOG_ERROR("frame_pulse_width > %d",
+				  DAI_INTEL_IPC3_SSP_FRAME_PULSE_WIDTH_MAX);
 			ret = -EINVAL;
 			goto out;
 		}
@@ -1657,10 +1658,9 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 			slot_end_padding = ssp_plat_data->params.tdm_slot_width -
 				ssp_plat_data->params.sample_valid_bits;
 
-			if (slot_end_padding >
-				DAI_INTEL_IPC3_SSP_SLOT_PADDING_MAX) {
-				LOG_ERR("slot_end_padding > %d",
-					DAI_INTEL_IPC3_SSP_SLOT_PADDING_MAX);
+			if (slot_end_padding > DAI_INTEL_IPC3_SSP_SLOT_PADDING_MAX) {
+				LOG_ERROR("slot_end_padding > %d",
+					  DAI_INTEL_IPC3_SSP_SLOT_PADDING_MAX);
 				ret = -EINVAL;
 				goto out;
 			}
@@ -1674,7 +1674,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 
 		break;
 	default:
-		LOG_ERR("invalid format 0x%04x", config->format);
+		LOG_ERROR("invalid format 0x%04x", config->format);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1705,7 +1705,7 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 		sample_width = 4;
 		break;
 	default:
-		LOG_ERR("sample_valid_bits %d", ssp_plat_data->params.sample_valid_bits);
+		LOG_ERROR("sample_valid_bits %d", ssp_plat_data->params.sample_valid_bits);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1879,15 +1879,15 @@ static int dai_ssp_check_aux_data(struct ssp_intel_aux_tlv *aux_tlv, int aux_len
 		/* ignored */
 		return 0;
 	default:
-		LOG_ERR("undefined aux data type %u", aux_tlv->type);
+		LOG_ERROR("undefined aux data type %u", aux_tlv->type);
 		return -EINVAL;
 	}
 
 	/* check for malformed struct, size greater than aux_data or described in tlv */
 	size_left = aux_len - parsed_len - sizeof(struct ssp_intel_aux_tlv);
 	if (size > size_left || size != aux_tlv->size) {
-		LOG_ERR("malformed struct, size %d, size_left %d, tlv_size %d", size,
-			size_left, aux_tlv->size);
+		LOG_ERROR("malformed struct, size %d, size_left %d, tlv_size %d", size, size_left,
+			  aux_tlv->size);
 		return -EINVAL;
 	}
 
@@ -1916,7 +1916,7 @@ static int dai_ssp_check_dma_control(const uint8_t *aux_ptr, int aux_len)
 		case SSP_LINK_CLK_SOURCE:
 			break;
 		default:
-			LOG_ERR("incorrect config type %u", aux_tlv->type);
+			LOG_ERROR("incorrect config type %u", aux_tlv->type);
 			return -EINVAL;
 		}
 
@@ -2007,7 +2007,7 @@ static int dai_ssp_parse_tlv(struct dai_intel_ssp *dp, const uint8_t *aux_ptr, s
 			/* ignored */
 			break;
 		default:
-			LOG_ERR("undefined aux data type %u", aux_tlv->type);
+			LOG_ERROR("undefined aux data type %u", aux_tlv->type);
 			return -EINVAL;
 		}
 
@@ -2038,7 +2038,7 @@ static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_con
 		aux_len = cfg_len - pre_aux_len;
 		aux_ptr = (uint8_t *)blob30 + pre_aux_len;
 	} else {
-		LOG_ERR("unsupported blob version");
+		LOG_ERROR("unsupported blob version");
 		return -EINVAL;
 	}
 
@@ -2054,7 +2054,7 @@ static int dai_ssp_set_clock_control_ver_1_5(struct dai_intel_ssp *dp,
 {
 	/* currently we only support 1 divider */
 	if (cc->mdivrcnt != 1) {
-		LOG_ERR("bad clock divider count %u", cc->mdivrcnt);
+		LOG_ERROR("bad clock divider count %u", cc->mdivrcnt);
 		return -EINVAL;
 	}
 
@@ -2648,7 +2648,7 @@ static int dai_ssp_probe(struct dai_intel_ssp *dp)
 	/* allocate private data */
 	ssp = k_calloc(1, sizeof(*ssp));
 	if (!ssp) {
-		LOG_ERR("SSP%d: alloc failed", ssp_plat_data->ssp_index);
+		LOG_ERROR("SSP%d: alloc failed", ssp_plat_data->ssp_index);
 		return -ENOMEM;
 	}
 	dai_set_drvdata(dp, ssp);

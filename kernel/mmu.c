@@ -303,8 +303,7 @@ static void *virt_region_alloc(size_t size, size_t align)
 	alloc_size = num_bits * CONFIG_MMU_PAGE_SIZE;
 	ret = sys_bitarray_alloc(&virt_region_bitmap, num_bits, &offset);
 	if (ret != 0) {
-		LOG_ERR("insufficient virtual address space (requested %zu)",
-			size);
+		LOG_ERROR("insufficient virtual address space (requested %zu)", size);
 		return NULL;
 	}
 
@@ -581,17 +580,16 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 	__ASSERT((flags & K_MEM_CACHE_MASK) == 0U,
 		 "%s does not support explicit cache settings", __func__);
 
-	if (((flags & K_MEM_PERM_USER) != 0U) &&
-	    ((flags & K_MEM_MAP_UNINIT) != 0U)) {
-		LOG_ERR("user access to anonymous uninitialized pages is forbidden");
+	if (((flags & K_MEM_PERM_USER) != 0U) && ((flags & K_MEM_MAP_UNINIT) != 0U)) {
+		LOG_ERROR("user access to anonymous uninitialized pages is forbidden");
 		return NULL;
 	}
 	if ((size % CONFIG_MMU_PAGE_SIZE) != 0U) {
-		LOG_ERR("unaligned size %zu passed to %s", size, __func__);
+		LOG_ERROR("unaligned size %zu passed to %s", size, __func__);
 		return NULL;
 	}
 	if (size == 0) {
-		LOG_ERR("zero sized memory mapping");
+		LOG_ERROR("zero sized memory mapping");
 		return NULL;
 	}
 
@@ -599,7 +597,7 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 	 * won't map.
 	 */
 	if (size_add_overflow(size, CONFIG_MMU_PAGE_SIZE * 2, &total_size)) {
-		LOG_ERR("too large size %zu passed to %s", size, __func__);
+		LOG_ERROR("too large size %zu passed to %s", size, __func__);
 		return NULL;
 	}
 
@@ -972,8 +970,7 @@ fail:
 	 * Other problems not related to resource exhaustion we leave as
 	 * assertions since they are clearly programming mistakes.
 	 */
-	LOG_ERR("memory mapping 0x%lx (size %zu, flags 0x%x) failed",
-		phys, size, flags);
+	LOG_ERROR("memory mapping 0x%lx (size %zu, flags 0x%x) failed", phys, size, flags);
 	k_panic();
 }
 
@@ -1349,7 +1346,7 @@ static int page_frame_prepare_locked(struct k_mem_page_frame *pf, bool *dirty_pt
 		ret = k_mem_paging_backing_store_location_get(pf, location_ptr,
 							      page_fault);
 		if (ret != 0) {
-			LOG_ERR("out of backing store memory");
+			LOG_ERROR("out of backing store memory");
 			return -ENOMEM;
 		}
 		arch_mem_page_out(k_mem_page_frame_to_virt(pf), *location_ptr);

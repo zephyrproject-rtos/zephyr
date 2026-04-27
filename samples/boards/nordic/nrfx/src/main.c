@@ -48,19 +48,19 @@ int main(void)
 	 */
 	rv = nrfx_gpiote_init(gpiote, 0);
 	if (rv != 0) {
-		LOG_ERR("nrfx_gpiote_init error: %d", rv);
+		LOG_ERROR("nrfx_gpiote_init error: %d", rv);
 		return 0;
 	}
 
 	rv = nrfx_gpiote_channel_alloc(gpiote, &in_channel);
 	if (rv != 0) {
-		LOG_ERR("Failed to allocate in_channel, error: %d", rv);
+		LOG_ERROR("Failed to allocate in_channel, error: %d", rv);
 		return 0;
 	}
 
 	rv = nrfx_gpiote_channel_alloc(gpiote, &out_channel);
 	if (rv != 0) {
-		LOG_ERR("Failed to allocate out_channel, error: %d", rv);
+		LOG_ERROR("Failed to allocate out_channel, error: %d", rv);
 		return 0;
 	}
 
@@ -83,7 +83,7 @@ int main(void)
 
 	rv = nrfx_gpiote_input_configure(gpiote, INPUT_PIN, &input_config);
 	if (rv != 0) {
-		LOG_ERR("nrfx_gpiote_input_configure error: %d", rv);
+		LOG_ERROR("nrfx_gpiote_input_configure error: %d", rv);
 		return 0;
 	}
 
@@ -104,7 +104,7 @@ int main(void)
 					   &output_config,
 					   &task_config);
 	if (rv != 0) {
-		LOG_ERR("nrfx_gpiote_output_configure error: %d", rv);
+		LOG_ERROR("nrfx_gpiote_output_configure error: %d", rv);
 		return 0;
 	}
 
@@ -121,7 +121,7 @@ int main(void)
 				   nrfx_gpiote_out_task_address_get(gpiote, OUTPUT_PIN),
 				   &ppi_handle);
 	if (rv < 0) {
-		LOG_ERR("nrfx_gppi_conn_alloc error: %d", rv);
+		LOG_ERROR("nrfx_gppi_conn_alloc error: %d", rv);
 		return 0;
 	}
 

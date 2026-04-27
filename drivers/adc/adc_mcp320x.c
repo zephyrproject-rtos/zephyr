@@ -50,24 +50,22 @@ static int mcp320x_channel_setup(const struct device *dev,
 	struct mcp320x_data *data = dev->data;
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("unsupported channel gain '%d'", channel_cfg->gain);
+		LOG_ERROR("unsupported channel gain '%d'", channel_cfg->gain);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->reference != ADC_REF_EXTERNAL0) {
-		LOG_ERR("unsupported channel reference '%d'",
-			channel_cfg->reference);
+		LOG_ERROR("unsupported channel reference '%d'", channel_cfg->reference);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("unsupported acquisition_time '%d'",
-			channel_cfg->acquisition_time);
+		LOG_ERROR("unsupported acquisition_time '%d'", channel_cfg->acquisition_time);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->channel_id >= config->channels) {
-		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
+		LOG_ERROR("unsupported channel id '%d'", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
@@ -111,19 +109,18 @@ static int mcp320x_start_read(const struct device *dev,
 	int err;
 
 	if (sequence->resolution != MCP320X_RESOLUTION) {
-		LOG_ERR("unsupported resolution %d", sequence->resolution);
+		LOG_ERROR("unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}
 
 	if (find_msb_set(sequence->channels) > config->channels) {
-		LOG_ERR("unsupported channels in mask: 0x%08x",
-			sequence->channels);
+		LOG_ERROR("unsupported channels in mask: 0x%08x", sequence->channels);
 		return -ENOTSUP;
 	}
 
 	err = mcp320x_validate_buffer_size(dev, sequence);
 	if (err) {
-		LOG_ERR("buffer size too small");
+		LOG_ERROR("buffer size too small");
 		return err;
 	}
 
@@ -252,8 +249,7 @@ static void mcp320x_acquisition_thread(void *p1, void *p2, void *p3)
 
 			err = mcp320x_read_channel(data->dev, channel, &result);
 			if (err) {
-				LOG_ERR("failed to read channel %d (err %d)",
-					channel, err);
+				LOG_ERROR("failed to read channel %d (err %d)", channel, err);
 				adc_context_complete(&data->ctx, err);
 				break;
 			}
@@ -279,7 +275,7 @@ static int mcp320x_init(const struct device *dev)
 	k_sem_init(&data->sem, 0, 1);
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus is not ready");
+		LOG_ERROR("SPI bus is not ready");
 		return -ENODEV;
 	}
 

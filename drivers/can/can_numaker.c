@@ -47,7 +47,7 @@ static int can_numaker_get_core_clock(const struct device *dev, uint32_t *rate)
 
 	rc = clock_control_get_rate(config->clk_dev, (clock_control_subsys_t)&scc_subsys, rate);
 	if (rc < 0) {
-		LOG_ERR("Failed clock_control_get_rate(): %d", rc);
+		LOG_ERROR("Failed clock_control_get_rate(): %d", rc);
 		return rc;
 	}
 
@@ -96,7 +96,7 @@ static inline int can_numaker_init_unlocked(const struct device *dev)
 
 	rc = can_mcan_init(dev);
 	if (rc < 0) {
-		LOG_ERR("Failed to initialize mcan: %d", rc);
+		LOG_ERROR("Failed to initialize mcan: %d", rc);
 		return rc;
 	}
 
@@ -121,12 +121,12 @@ static int can_numaker_init(const struct device *dev)
 	int rc;
 
 	if (!device_is_ready(config->reset.dev)) {
-		LOG_ERR("reset controller not ready");
+		LOG_ERROR("reset controller not ready");
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(config->clk_dev)) {
-		LOG_ERR("clock controller not ready");
+		LOG_ERROR("clock controller not ready");
 		return -ENODEV;
 	}
 

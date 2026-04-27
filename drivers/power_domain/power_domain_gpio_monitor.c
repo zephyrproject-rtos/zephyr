@@ -100,20 +100,20 @@ static int pd_gpio_monitor_init(const struct device *dev)
 	data->dev = dev;
 
 	if (!gpio_is_ready_dt(&config->power_good_gpio)) {
-		LOG_ERR("GPIO port %s is not ready", config->power_good_gpio.port->name);
+		LOG_ERROR("GPIO port %s is not ready", config->power_good_gpio.port->name);
 		return -ENODEV;
 	}
 
 	rc = gpio_pin_configure_dt(&config->power_good_gpio, GPIO_INPUT);
 	if (rc) {
-		LOG_ERR("Failed to configure GPIO");
+		LOG_ERROR("Failed to configure GPIO");
 		goto unconfigure_pin;
 	}
 
 	rc = gpio_pin_interrupt_configure_dt(&config->power_good_gpio, GPIO_INT_EDGE_BOTH);
 	if (rc) {
 		gpio_pin_configure_dt(&config->power_good_gpio, GPIO_DISCONNECTED);
-		LOG_ERR("Failed to configure GPIO interrupt");
+		LOG_ERROR("Failed to configure GPIO interrupt");
 		goto unconfigure_interrupt;
 	}
 
@@ -121,7 +121,7 @@ static int pd_gpio_monitor_init(const struct device *dev)
 						BIT(config->power_good_gpio.pin));
 	rc = gpio_add_callback_dt(&config->power_good_gpio, &data->callback);
 	if (rc) {
-		LOG_ERR("Failed to add GPIO callback");
+		LOG_ERROR("Failed to add GPIO callback");
 		goto remove_callback;
 	}
 

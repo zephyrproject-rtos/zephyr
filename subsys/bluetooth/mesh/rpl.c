@@ -63,7 +63,7 @@ static void clear_rpl(struct bt_mesh_rpl *rpl)
 	snprintk(path, sizeof(path), "bt/mesh/RPL/%x", rpl->src);
 	err = settings_delete(path);
 	if (err) {
-		LOG_ERR("Failed to clear RPL");
+		LOG_ERROR("Failed to clear RPL");
 	} else {
 		LOG_DBG("Cleared RPL");
 	}
@@ -156,7 +156,7 @@ bool bt_mesh_rpl_check(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match, bo
 		}
 	}
 
-	LOG_ERR("RPL is full!");
+	LOG_ERROR("RPL is full!");
 	return true;
 
 match:
@@ -277,7 +277,7 @@ static int rpl_set(const char *name, size_t len_rd,
 	}
 
 	if (!name) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
@@ -298,14 +298,14 @@ static int rpl_set(const char *name, size_t len_rd,
 	if (!entry) {
 		entry = bt_mesh_rpl_alloc(src);
 		if (!entry) {
-			LOG_ERR("Unable to allocate RPL entry for 0x%04x", src);
+			LOG_ERROR("Unable to allocate RPL entry for 0x%04x", src);
 			return -ENOMEM;
 		}
 	}
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &rpl, sizeof(rpl));
 	if (err) {
-		LOG_ERR("Failed to set `net`");
+		LOG_ERROR("Failed to set `net`");
 		return err;
 	}
 
@@ -339,7 +339,7 @@ static void store_rpl(struct bt_mesh_rpl *entry)
 
 	err = settings_save_one(path, &rpl, sizeof(rpl));
 	if (err) {
-		LOG_ERR("Failed to store RPL %s value", path);
+		LOG_ERROR("Failed to store RPL %s value", path);
 	} else {
 		LOG_DBG("Stored RPL %s value", path);
 	}

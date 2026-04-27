@@ -106,7 +106,7 @@ static inline void h4_get_type(const struct device *dev)
 		}
 		__fallthrough;
 	default:
-		LOG_ERR("Unknown H:4 type 0x%02x", h4->rx.type);
+		LOG_ERROR("Unknown H:4 type 0x%02x", h4->rx.type);
 		h4->rx.type = BT_HCI_H4_NONE;
 	}
 }
@@ -120,7 +120,7 @@ static void h4_read_hdr(const struct device *dev)
 
 	ret = uart_fifo_read(cfg->uart, h4->rx.hdr + bytes_read, h4->rx.remaining);
 	if (unlikely(ret < 0)) {
-		LOG_ERR("Unable to read from UART (ret %d)", ret);
+		LOG_ERROR("Unable to read from UART (ret %d)", ret);
 	} else {
 		h4->rx.remaining -= ret;
 	}
@@ -253,7 +253,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			h4->rx.buf = get_rx(h4, K_FOREVER);
 			LOG_DBG("Got rx.buf %p", h4->rx.buf);
 			if (h4->rx.remaining > net_buf_tailroom(h4->rx.buf)) {
-				LOG_ERR("Not enough space in buffer");
+				LOG_ERROR("Not enough space in buffer");
 				h4->rx.discard = h4->rx.remaining;
 				reset_rx(h4);
 			} else {
@@ -292,7 +292,7 @@ static size_t h4_discard(const struct device *uart, size_t len)
 
 	err = uart_fifo_read(uart, buf, MIN(len, sizeof(buf)));
 	if (unlikely(err < 0)) {
-		LOG_ERR("Unable to read from UART (err %d)", err);
+		LOG_ERROR("Unable to read from UART (err %d)", err);
 		return 0;
 	}
 
@@ -339,8 +339,8 @@ static inline void read_payload(const struct device *dev)
 
 		buf_tailroom = net_buf_tailroom(h4->rx.buf);
 		if (buf_tailroom < (h4->rx.remaining + h4->rx.hdr_len)) {
-			LOG_ERR("Not enough space in buffer %u/%zu", h4->rx.remaining,
-				buf_tailroom);
+			LOG_ERROR("Not enough space in buffer %u/%zu", h4->rx.remaining,
+				  buf_tailroom);
 			h4->rx.discard = h4->rx.remaining;
 			reset_rx(h4);
 			return;
@@ -351,7 +351,7 @@ static inline void read_payload(const struct device *dev)
 
 	read = uart_fifo_read(cfg->uart, net_buf_tail(h4->rx.buf), h4->rx.remaining);
 	if (unlikely(read < 0)) {
-		LOG_ERR("Failed to read UART (err %d)", read);
+		LOG_ERROR("Failed to read UART (err %d)", read);
 		return;
 	}
 
@@ -403,7 +403,7 @@ static inline void read_header(const struct device *dev)
 
 	if (h4->rx.have_hdr && h4->rx.buf) {
 		if (h4->rx.remaining > net_buf_tailroom(h4->rx.buf)) {
-			LOG_ERR("Not enough space in buffer");
+			LOG_ERROR("Not enough space in buffer");
 			h4->rx.discard = h4->rx.remaining;
 			reset_rx(h4);
 		} else {
@@ -421,7 +421,7 @@ static inline void process_tx(const struct device *dev)
 	if (!h4->tx.buf) {
 		h4->tx.buf = k_fifo_get(&h4->tx.fifo, K_NO_WAIT);
 		if (!h4->tx.buf) {
-			LOG_ERR("TX interrupt but no pending buffer!");
+			LOG_ERROR("TX interrupt but no pending buffer!");
 			uart_irq_tx_disable(cfg->uart);
 			return;
 		}
@@ -429,7 +429,7 @@ static inline void process_tx(const struct device *dev)
 
 	bytes = uart_fifo_fill(cfg->uart, h4->tx.buf->data, h4->tx.buf->len);
 	if (unlikely(bytes < 0)) {
-		LOG_ERR("Unable to write to UART (err %d)", bytes);
+		LOG_ERROR("Unable to write to UART (err %d)", bytes);
 	} else {
 		net_buf_pull(h4->tx.buf, bytes);
 	}

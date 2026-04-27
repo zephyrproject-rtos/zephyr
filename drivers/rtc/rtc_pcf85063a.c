@@ -92,7 +92,7 @@ static int pcf85063a_set_time(const struct device *dev, const struct rtc_time *t
 	}
 
 	if (!rtc_utils_validate_rtc_time(timeptr, PCF85063A_RTC_TIME_MASK)) {
-		LOG_ERR("invalid time");
+		LOG_ERROR("invalid time");
 		return -EINVAL;
 	}
 
@@ -107,7 +107,7 @@ static int pcf85063a_set_time(const struct device *dev, const struct rtc_time *t
 
 	ret = i2c_write_dt(&config->i2c, raw_time, sizeof(raw_time));
 	if (ret) {
-		LOG_ERR("Error when setting time: %i", ret);
+		LOG_ERROR("Error when setting time: %i", ret);
 		return ret;
 	}
 
@@ -123,7 +123,7 @@ static int pcf85063a_get_time(const struct device *dev, struct rtc_time *timeptr
 	ret = i2c_burst_read_dt(&config->i2c, PCF85063A_TIME_DATE_REGISTER, raw_time,
 				sizeof(raw_time));
 	if (ret) {
-		LOG_ERR("Unable to get time. Err: %i", ret);
+		LOG_ERROR("Unable to get time. Err: %i", ret);
 		return ret;
 	}
 
@@ -180,7 +180,7 @@ static int pcf85063a_alarm_get_supported_fields(const struct device *dev, uint16
 	ARG_UNUSED(dev);
 
 	if (id != 0) {
-		LOG_ERR("invalid ID %d", id);
+		LOG_ERROR("invalid ID %d", id);
 		return -EINVAL;
 	}
 
@@ -197,12 +197,12 @@ static int pcf85063a_alarm_set_time(const struct device *dev, uint16_t id, uint1
 	int ret;
 
 	if (id != 0) {
-		LOG_ERR("invalid ID %d", id);
+		LOG_ERROR("invalid ID %d", id);
 		return -EINVAL;
 	}
 
 	if (!rtc_utils_validate_rtc_time(timeptr, mask)) {
-		LOG_ERR("invalid alarm time");
+		LOG_ERROR("invalid alarm time");
 		return -EINVAL;
 	}
 
@@ -245,7 +245,7 @@ static int pcf85063a_alarm_set_time(const struct device *dev, uint16_t id, uint1
 
 	ret = i2c_write_dt(&config->i2c, regs, sizeof(regs));
 	if (ret) {
-		LOG_ERR("Error when setting alarm: %i", ret);
+		LOG_ERROR("Error when setting alarm: %i", ret);
 		return ret;
 	}
 
@@ -263,13 +263,13 @@ static int pcf85063a_alarm_get_time(const struct device *dev, uint16_t id, uint1
 	int err;
 
 	if (id != 0) {
-		LOG_ERR("invalid ID %d", id);
+		LOG_ERROR("invalid ID %d", id);
 		return -EINVAL;
 	}
 
 	err = i2c_burst_read_dt(&config->i2c, PCF85063A_ALARM_REGISTER, regs, sizeof(regs));
 	if (err) {
-		LOG_ERR("Error when getting alarm time: %i", err);
+		LOG_ERROR("Error when getting alarm time: %i", err);
 		return err;
 	}
 
@@ -312,13 +312,13 @@ static int pcf85063a_alarm_is_pending(const struct device *dev, uint16_t id)
 	int err;
 
 	if (id != 0) {
-		LOG_ERR("invalid ID %d", id);
+		LOG_ERROR("invalid ID %d", id);
 		return -EINVAL;
 	}
 
 	err = i2c_reg_read_byte_dt(&config->i2c, PCF85063A_CONTROL2_REGISTER, &reg);
 	if (err) {
-		LOG_ERR("Error when getting the control register 2: %i", err);
+		LOG_ERROR("Error when getting the control register 2: %i", err);
 		return err;
 	}
 
@@ -328,7 +328,7 @@ static int pcf85063a_alarm_is_pending(const struct device *dev, uint16_t id)
 
 		err = i2c_reg_write_byte_dt(&config->i2c, PCF85063A_CONTROL2_REGISTER, new);
 		if (err) {
-			LOG_ERR("Error clearing AF flag: %i", err);
+			LOG_ERROR("Error clearing AF flag: %i", err);
 			return err;
 		}
 		return 1;
@@ -357,7 +357,7 @@ static int pcf85063a_alarm_set_callback(const struct device *dev, uint16_t id,
 	}
 
 	if (id != 0) {
-		LOG_ERR("invalid ID %d", id);
+		LOG_ERROR("invalid ID %d", id);
 		return -EINVAL;
 	}
 
@@ -367,15 +367,15 @@ static int pcf85063a_alarm_set_callback(const struct device *dev, uint16_t id,
 
 	ret = gpio_pin_configure_dt(&config->int1, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Error %d: failed to configure %s pin %d", ret, config->int1.port->name,
-			config->int1.pin);
+		LOG_ERROR("Error %d: failed to configure %s pin %d", ret, config->int1.port->name,
+			  config->int1.pin);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->int1, GPIO_INT_EDGE_FALLING);
 	if (ret < 0) {
-		LOG_ERR("Error %d: failed to configure interrupt on %s pin %d", ret,
-			config->int1.port->name, config->int1.pin);
+		LOG_ERROR("Error %d: failed to configure interrupt on %s pin %d", ret,
+			  config->int1.port->name, config->int1.pin);
 		return ret;
 	}
 
@@ -409,13 +409,13 @@ static int pcf85063a_init(const struct device *dev)
 
 	data->callback_work = callback_work;
 	if (!gpio_is_ready_dt(&config->int1)) {
-		LOG_ERR("Interrupt GPIO device not ready");
+		LOG_ERROR("Interrupt GPIO device not ready");
 		return -ENODEV;
 	}
 #endif
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C device not ready: %s", config->i2c.bus->name);
+		LOG_ERROR("I2C device not ready: %s", config->i2c.bus->name);
 		return -ENODEV;
 	}
 
@@ -423,7 +423,7 @@ static int pcf85063a_init(const struct device *dev)
 	ret = i2c_reg_update_byte_dt(&config->i2c, PCF85063A_CONTROL1_REGISTER,
 				     PCF85063A_CONTROL1_REGISTER_12_24, 0);
 	if (ret) {
-		LOG_ERR("Failed to set hour format: %i", ret);
+		LOG_ERROR("Failed to set hour format: %i", ret);
 		return ret;
 	}
 

@@ -73,13 +73,13 @@ static void sntp_set_rtc(__maybe_unused const struct timespec *tspec)
 	}
 
 	if (timespec_to_rtc_time(tspec, &rtctime) != 0) {
-		LOG_ERR("Convert timespec to set RTC failed");
+		LOG_ERROR("Convert timespec to set RTC failed");
 		return;
 	}
 
 	res = rtc_set_time(dev, &rtctime);
 	if (res != 0) {
-		LOG_ERR("Set RTC failed: %d", res);
+		LOG_ERROR("Set RTC failed: %d", res);
 	}
 #endif
 }
@@ -93,7 +93,7 @@ static int sntp_set_clocks(struct sntp_time *ts)
 	tspec.tv_nsec = ((uint64_t)ts->fraction * NSEC_PER_SEC) >> 32;
 	ret = sys_clock_settime(SYS_CLOCK_REALTIME, &tspec);
 	if (ret < 0) {
-		LOG_ERR("Setting sys clock failed (%d)", ret);
+		LOG_ERROR("Setting sys clock failed (%d)", ret);
 	}
 
 	sntp_set_rtc(&tspec);
@@ -109,7 +109,7 @@ int net_init_clock_via_sntp(void)
 	int res = sntp_init_helper(&ts);
 
 	if (res < 0) {
-		LOG_ERR("Cannot set time using SNTP: %d", res);
+		LOG_ERROR("Cannot set time using SNTP: %d", res);
 		goto end;
 	}
 
@@ -155,7 +155,7 @@ static void sntp_async_service_handler(struct net_socket_service_event *pev)
 
 	ret = sntp_read_async(pev, &ts);
 	if (ret < 0) {
-		LOG_ERR("Failed to read SNTP response (%d)", ret);
+		LOG_ERROR("Failed to read SNTP response (%d)", ret);
 		goto out;
 	}
 
@@ -178,13 +178,13 @@ static int sntp_query_async(struct net_sockaddr *addr, net_socklen_t addrlen)
 
 	ret = sntp_init_async(&sntp_async_ctx, addr, addrlen, &sntp_service_async);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize SNTP context (%d)", ret);
+		LOG_ERROR("Failed to initialize SNTP context (%d)", ret);
 		goto end;
 	}
 
 	ret = sntp_send_async(&sntp_async_ctx);
 	if (ret < 0) {
-		LOG_ERR("Failed to send SNTP query (%d)", ret);
+		LOG_ERROR("Failed to send SNTP query (%d)", ret);
 		sntp_close_async(&sntp_service_async);
 		goto end;
 	}
@@ -279,7 +279,7 @@ static int dns_query_async(void)
 					type, NULL, dns_result_cb,
 					NULL, CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT);
 		if (ret < 0) {
-			LOG_ERR("Failed to initiate DNS query for SNTP server (%d)", ret);
+			LOG_ERROR("Failed to initiate DNS query for SNTP server (%d)", ret);
 		}
 
 		return ret;
@@ -305,7 +305,7 @@ static int dns_query_async(void)
 
 		ret = sntp_query_async(net_sad(&sntp_addr), sntp_addrlen);
 	} else {
-		LOG_ERR("Failed to parse SNTP server address, enable CONFIG_DNS_RESOLVER");
+		LOG_ERROR("Failed to parse SNTP server address, enable CONFIG_DNS_RESOLVER");
 		ret = -EINVAL;
 	}
 
@@ -330,7 +330,7 @@ static void sntp_resync_handler(struct k_work *work)
 
 		ret = sntp_query_async(net_sad(&sntp_addr), sntp_addrlen);
 		if (ret < 0) {
-			LOG_ERR("Cannot set time using SNTP: %d", ret);
+			LOG_ERROR("Cannot set time using SNTP: %d", ret);
 		}
 
 		goto out;

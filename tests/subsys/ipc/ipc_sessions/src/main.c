@@ -52,7 +52,7 @@ static void ep_bound(void *priv)
 	ipc0_bounded = true;
 	ret = k_msgq_put(&ipc_events, &ev, K_NO_WAIT);
 	if (ret) {
-		LOG_ERR("Cannot put event in queue: %d", ret);
+		LOG_ERROR("Cannot put event in queue: %d", ret);
 	}
 }
 
@@ -67,7 +67,7 @@ static void ep_unbound(void *priv)
 	ipc0_bounded = false;
 	ret = k_msgq_put(&ipc_events, &ev, K_NO_WAIT);
 	if (ret) {
-		LOG_ERR("Cannot put event in queue: %d", ret);
+		LOG_ERROR("Cannot put event in queue: %d", ret);
 	}
 }
 
@@ -94,7 +94,7 @@ static void ep_error(const char *message, void *priv)
 
 	ret = k_msgq_put(&ipc_events, &ev, K_NO_WAIT);
 	if (ret) {
-		LOG_ERR("Cannot put event in queue: %d", ret);
+		LOG_ERROR("Cannot put event in queue: %d", ret);
 	}
 }
 

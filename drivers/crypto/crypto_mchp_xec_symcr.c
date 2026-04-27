@@ -310,7 +310,7 @@ static int xec_symcr_do_hash(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fi
 	cstate = &hs->mhstate;
 
 	if (!hs->open) {
-		LOG_ERR("Session not open");
+		LOG_ERROR("Session not open");
 		return -EIO;
 	}
 
@@ -327,12 +327,12 @@ static int xec_symcr_do_hash(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fi
 
 	ret = init_rom_hash_context(hs->rom_algo, c);
 	if (ret) {
-		LOG_ERR("ROM context init error %d", ret);
+		LOG_ERROR("ROM context init error %d", ret);
 		return ret;
 	}
 	ret = mchp_xec_rom_hash_resume_state_wrapper(c, cstate);
 	if (ret) {
-		LOG_ERR("Resume state error %d", ret);
+		LOG_ERROR("Resume state error %d", ret);
 		return ret;
 	}
 
@@ -350,7 +350,7 @@ static int xec_symcr_do_hash(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fi
 	if (hs->blklen) {
 		ret = mchp_xec_rom_hash_feed_wrapper(c, (const uint8_t *)hs->blockbuf, hs->blklen);
 		if (ret) {
-			LOG_ERR("ROM hash feed error %d", ret);
+			LOG_ERROR("ROM hash feed error %d", ret);
 			return ret;
 		}
 		hs->blklen = 0; /* consumed */
@@ -358,26 +358,26 @@ static int xec_symcr_do_hash(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fi
 
 	ret = mchp_xec_rom_hash_feed_wrapper(c, pkt->in_buf, fill_len);
 	if (ret) {
-		LOG_ERR("ROM hash feed error %d", ret);
+		LOG_ERROR("ROM hash feed error %d", ret);
 		return ret;
 	}
 
 	if (finish) {
 		ret = mchp_xec_rom_hash_digest_wrapper(c, pkt->out_buf);
 		if (ret) {
-			LOG_ERR("ROM Hash final error %d", ret);
+			LOG_ERROR("ROM Hash final error %d", ret);
 			return ret;
 		}
 	} else {
 		ret = mchp_xec_rom_hash_save_state(c);
 		if (ret) {
-			LOG_ERR("ROM hash save state error %d", ret);
+			LOG_ERROR("ROM hash save state error %d", ret);
 			return ret;
 		}
 	}
 	ret = mchp_xec_rom_hash_wait_wrapper(c);
 	if (ret) {
-		LOG_ERR("ROM hash wait error %d", ret);
+		LOG_ERROR("ROM hash wait error %d", ret);
 		return ret;
 	}
 	if (finish) {
@@ -402,19 +402,19 @@ static int xec_symcr_hash_session_begin(const struct device *dev, struct hash_ct
 	int ret = 0;
 
 	if (ctx->flags & ~(MCHP_XEC_SYMCR_CAPS_SUPPORT)) {
-		LOG_ERR("Unsupported flag");
+		LOG_ERROR("Unsupported flag");
 		return -ENOTSUP;
 	}
 
 	rom_algo = lookup_hash_alg(algo);
 	if (rom_algo == MCHP_ROM_HASH_ALG_NONE) {
-		LOG_ERR("Unsupported algo %d", algo);
+		LOG_ERROR("Unsupported algo %d", algo);
 		return -ENOTSUP;
 	}
 
 	session_idx = mchp_xec_get_unused_session_index(data);
 	if (session_idx < 0) {
-		LOG_ERR("No session available");
+		LOG_ERROR("No session available");
 		return -ENOSPC;
 	}
 
@@ -433,7 +433,7 @@ static int xec_symcr_hash_session_begin(const struct device *dev, struct hash_ct
 	/* reset HW at beginning of session */
 	ret = mchp_xec_rom_ah_dma_init(MCHP_ROM_AH_DMA_INIT_WITH_RESET);
 	if (ret) {
-		LOG_ERR("ROM HW init error %d", ret);
+		LOG_ERROR("ROM HW init error %d", ret);
 		return -EIO;
 	}
 
@@ -442,13 +442,13 @@ static int xec_symcr_hash_session_begin(const struct device *dev, struct hash_ct
 
 	ret = init_rom_hash_context(hs->rom_algo, c);
 	if (ret) {
-		LOG_ERR("ROM HW context init error %d", ret);
+		LOG_ERROR("ROM HW context init error %d", ret);
 		return ret;
 	}
 
 	ret = mchp_xec_rom_hash_init_state_wrapper(c, cstate, hs->statebuf);
 	if (ret) {
-		LOG_ERR("ROM HW init state error %d", ret);
+		LOG_ERROR("ROM HW init state error %d", ret);
 	}
 
 	hs->open = true;
@@ -473,7 +473,7 @@ static int xec_symcr_hash_session_free(const struct device *dev, struct hash_ctx
 	ret = mchp_xec_rom_ah_dma_init(MCHP_ROM_AH_DMA_INIT_WITH_RESET);
 	if (ret) {
 		ret = -EIO;
-		LOG_ERR("ROM HW reset error %d", ret);
+		LOG_ERROR("ROM HW reset error %d", ret);
 	}
 
 	hs = (struct xec_symcr_hash_session *)ctx->drv_sessn_state;

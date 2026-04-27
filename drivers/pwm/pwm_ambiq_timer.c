@@ -104,7 +104,7 @@ static int ambiq_timer_pwm_set_cycles(const struct device *dev, uint32_t channel
 	const struct pwm_ambiq_timer_config *config = dev->config;
 
 	if (period_cycles == 0) {
-		LOG_ERR("period_cycles can not be set to zero");
+		LOG_ERROR("period_cycles can not be set to zero");
 		return -ENOTSUP;
 	}
 

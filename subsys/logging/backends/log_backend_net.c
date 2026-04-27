@@ -196,7 +196,7 @@ static bool check_net_init_done(void)
 
 		released = zsock_close(ctx->sock);
 		if (released < 0) {
-			LOG_ERR("Cannot release socket (%d)", ret);
+			LOG_ERROR("Cannot release socket (%d)", ret);
 			ret = false;
 		} else {
 			/* The socket is successfully closed so we flag it
@@ -226,7 +226,7 @@ bool log_backend_net_set_addr(const char *addr)
 
 	ret = net_ipaddr_parse(addr, strlen(addr), net_sad(&server_addr));
 	if (!ret) {
-		LOG_ERR("Cannot parse syslog server address");
+		LOG_ERROR("Cannot parse syslog server address");
 		return ret;
 	}
 
@@ -247,7 +247,7 @@ bool log_backend_net_set_ip(const struct net_sockaddr *addr)
 
 		net_port_set_default(net_sad(&server_addr), 514);
 	} else {
-		LOG_ERR("Unknown address family");
+		LOG_ERROR("Unknown address family");
 		return false;
 	}
 
@@ -285,7 +285,7 @@ static void init_net(struct log_backend const *const backend)
 #if defined(CONFIG_NET_TCP)
 			ctx.is_tcp = true;
 #else
-			LOG_ERR("tcp:// server requires CONFIG_NET_TCP. Using UDP");
+			LOG_ERROR("tcp:// server requires CONFIG_NET_TCP. Using UDP");
 #endif
 		}
 

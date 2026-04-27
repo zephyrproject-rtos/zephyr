@@ -1193,8 +1193,8 @@ static void modem_cmux_on_dlci_frame_uih(struct modem_cmux_dlci *dlci)
 	written = ring_buf_put(&dlci->receive_rb, cmux->frame.data, cmux->frame.data_len);
 	k_mutex_unlock(&dlci->receive_rb_lock);
 	if (written < cmux->frame.data_len) {
-		LOG_ERR("DLCI %u receive buffer overrun (dropped %u out of %u bytes)",
-			dlci->dlci_address, cmux->frame.data_len - written, cmux->frame.data_len);
+		LOG_ERROR("DLCI %u receive buffer overrun (dropped %u out of %u bytes)",
+			  dlci->dlci_address, cmux->frame.data_len - written, cmux->frame.data_len);
 		dlci->rx_full = true;
 	}
 	if ((CONFIG_MODEM_CMUX_MSC_FC_THRESHOLD > 0) &&
@@ -1444,7 +1444,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, int idx)
 		}
 
 		if (cmux->frame.data_len > CONFIG_MODEM_CMUX_MTU) {
-			LOG_ERR("Too large frame");
+			LOG_ERROR("Too large frame");
 			modem_cmux_drop_frame(cmux);
 			break;
 		}
@@ -1467,14 +1467,14 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, int idx)
 		cmux->frame.data_len |= ((uint16_t)byte) << 7;
 
 		if (cmux->frame.data_len > CONFIG_MODEM_CMUX_MTU) {
-			LOG_ERR("Too large frame");
+			LOG_ERROR("Too large frame");
 			modem_cmux_drop_frame(cmux);
 			break;
 		}
 
 		if (cmux->frame.data_len > cmux->config.receive_buf_size) {
-			LOG_ERR("Indicated frame data length %u exceeds receive buffer size %u",
-				cmux->frame.data_len, cmux->config.receive_buf_size);
+			LOG_ERROR("Indicated frame data length %u exceeds receive buffer size %u",
+				  cmux->frame.data_len, cmux->config.receive_buf_size);
 
 			modem_cmux_drop_frame(cmux);
 			break;
@@ -1603,7 +1603,7 @@ static void modem_cmux_receive_handler(struct k_work *item)
 		move_incomplete_frame(cmux);
 	}
 	if (ret < 0) {
-		LOG_ERR("Pipe receiving error: %d", ret);
+		LOG_ERROR("Pipe receiving error: %d", ret);
 	}
 }
 
@@ -1685,7 +1685,7 @@ static bool powersave_wait_wakeup(struct modem_cmux *cmux)
 		if (cmux->config.close_pipe_on_power_save) {
 			ret = modem_pipe_open(cmux->pipe, K_FOREVER);
 			if (ret < 0) {
-				LOG_ERR("Failed to open pipe for wake up (%d)", ret);
+				LOG_ERROR("Failed to open pipe for wake up (%d)", ret);
 				set_state(cmux, MODEM_CMUX_STATE_DISCONNECTED);
 				modem_cmux_raise_event(cmux, MODEM_CMUX_EVENT_DISCONNECTED);
 				return true;
@@ -1699,7 +1699,7 @@ static bool powersave_wait_wakeup(struct modem_cmux *cmux)
 
 	if (is_waking_up(cmux)) {
 		if (sys_timepoint_expired(cmux->t3_timepoint)) {
-			LOG_ERR("Wake up timed out, link dead");
+			LOG_ERROR("Wake up timed out, link dead");
 			disconnect(cmux);
 			return true;
 		}
@@ -1752,8 +1752,8 @@ static void modem_cmux_transmit_handler(struct k_work *item)
 		if (ret < 0) {
 			ring_buf_get_finish(&cmux->transmit_rb, 0);
 			if (ret != -EPERM) {
-				LOG_ERR("Failed to %s %u bytes. (%d)",
-					"transmit", reserved_size, ret);
+				LOG_ERROR("Failed to %s %u bytes. (%d)", "transmit", reserved_size,
+					  ret);
 			}
 			break;
 		}
@@ -1794,7 +1794,7 @@ static void modem_cmux_connect_handler(struct k_work *item)
 	if (cmux->state == MODEM_CMUX_STATE_CONNECTING) {
 		cmux->retry_count++;
 		if (cmux->retry_count > MODEM_CMUX_N2_RETRIES) {
-			LOG_ERR("CMUX connection failed after %u retries", MODEM_CMUX_N2_RETRIES);
+			LOG_ERROR("CMUX connection failed after %u retries", MODEM_CMUX_N2_RETRIES);
 			disconnect(cmux);
 			return;
 		}
@@ -2024,8 +2024,8 @@ static void modem_cmux_dlci_open_handler(struct k_work *item)
 	if (dlci->state == MODEM_CMUX_DLCI_STATE_OPENING) {
 		dlci->cmux->retry_count++;
 		if (dlci->cmux->retry_count > MODEM_CMUX_N2_RETRIES) {
-			LOG_ERR("DLCI %u open failed after %u retries", dlci->dlci_address,
-				MODEM_CMUX_N2_RETRIES);
+			LOG_ERROR("DLCI %u open failed after %u retries", dlci->dlci_address,
+				  MODEM_CMUX_N2_RETRIES);
 			dlci_close(dlci);
 			return;
 		}
@@ -2066,8 +2066,8 @@ static void modem_cmux_dlci_close_handler(struct k_work *item)
 	if (dlci->state == MODEM_CMUX_DLCI_STATE_CLOSING) {
 		cmux->retry_count++;
 		if (cmux->retry_count > MODEM_CMUX_N2_RETRIES) {
-			LOG_ERR("DLCI %u close failed after %u retries", dlci->dlci_address,
-				MODEM_CMUX_N2_RETRIES);
+			LOG_ERROR("DLCI %u close failed after %u retries", dlci->dlci_address,
+				  MODEM_CMUX_N2_RETRIES);
 			dlci_close(dlci);
 			return;
 		}

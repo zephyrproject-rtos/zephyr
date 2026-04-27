@@ -269,13 +269,13 @@ static int regulator_tps55287_init(const struct device *dev)
 
 	if (config->en_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->en_gpio)) {
-			LOG_ERR("%s is not ready", config->en_gpio.port->name);
+			LOG_ERROR("%s is not ready", config->en_gpio.port->name);
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&config->en_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret != 0) {
-			LOG_ERR("EN pin configuration failed: %d", ret);
+			LOG_ERROR("EN pin configuration failed: %d", ret);
 			return ret;
 		}
 
@@ -307,7 +307,7 @@ static int regulator_tps55287_init(const struct device *dev)
 
 	ret = regulator_common_init(dev, is_enabled);
 	if (ret < 0) {
-		LOG_ERR("%s: Failed to initialize regulator: %d", dev->name, ret);
+		LOG_ERROR("%s: Failed to initialize regulator: %d", dev->name, ret);
 	}
 	return ret;
 }

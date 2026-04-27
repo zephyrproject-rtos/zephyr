@@ -385,13 +385,13 @@ static int charger_adp5360_set_linear_range(const struct device *dev,
 
 	ret = linear_range_group_get_index(range, num_ranges, input, &code);
 	if (ret < 0) {
-		LOG_ERR("Failed to get index in linear range: %d", ret);
+		LOG_ERROR("Failed to get index in linear range: %d", ret);
 		return ret;
 	}
 
 	ret = mfd_adp5360_reg_update(dev, reg, mask, (uint8_t)code);
 	if (ret < 0) {
-		LOG_ERR("Failed to update mask 0x%2X in reg 0x%2X: %d", mask, reg, ret);
+		LOG_ERROR("Failed to update mask 0x%2X in reg 0x%2X: %d", mask, reg, ret);
 		return ret;
 	}
 
@@ -424,7 +424,7 @@ static int charger_adp5360_prep_linear_range(const struct linear_range *range, c
 	value = CLAMP(value, min_range, max_range);
 	ret = linear_range_group_get_index(range, nrange, value, &lin_idx);
 	if (ret) {
-		LOG_ERR("Failed to get index in linear range %d", ret);
+		LOG_ERROR("Failed to get index in linear range %d", ret);
 		return ret;
 	}
 
@@ -440,15 +440,15 @@ static int charger_adp5360_charge_enable(const struct device *dev, const bool en
 	int ret;
 
 	if (!cfg->function_cfg.en_ldo) {
-		LOG_ERR("Charger is not enabled due to LDO disabled");
+		LOG_ERROR("Charger is not enabled due to LDO disabled");
 		return -ENOTSUP;
 	}
 
 	ret = mfd_adp5360_reg_update(cfg->mfd_dev, ADP5360_REG_CHARGER_FUNC_CFG,
 				     ADP5360_FUNC_EN_CHG, enable);
 	if (ret < 0) {
-		LOG_ERR("Failed to update mask 0x%2X in charger function: %d",
-			(uint32_t)ADP5360_FUNC_EN_CHG, ret);
+		LOG_ERROR("Failed to update mask 0x%2X in charger function: %d",
+			  (uint32_t)ADP5360_FUNC_EN_CHG, ret);
 		return ret;
 	}
 
@@ -464,7 +464,7 @@ static int charger_adp5360_get_online(const struct device *dev, enum charger_onl
 
 	ret = mfd_adp5360_reg_read(cfg->mfd_dev, ADP5360_REG_CHARGER_FUNC_CFG, &val);
 	if (ret) {
-		LOG_ERR("Failed to read charger function - ret %d", ret);
+		LOG_ERROR("Failed to read charger function - ret %d", ret);
 		return ret;
 	}
 
@@ -485,7 +485,7 @@ static int charger_adp5360_get_battery_present(const struct device *dev, bool *p
 
 	ret = mfd_adp5360_reg_read(cfg->mfd_dev, ADP5360_REG_CHARGER_STATUS_2, &val);
 	if (ret) {
-		LOG_ERR("Failed to read charger status 2 - ret %d", ret);
+		LOG_ERROR("Failed to read charger status 2 - ret %d", ret);
 		return ret;
 	}
 
@@ -506,7 +506,7 @@ static int charger_adp5360_get_status(const struct device *dev, enum charger_sta
 
 	ret = mfd_adp5360_reg_read(cfg->mfd_dev, ADP5360_REG_CHARGER_STATUS_1, &val);
 	if (ret) {
-		LOG_ERR("Failed to read charger status 1 - ret %d", ret);
+		LOG_ERROR("Failed to read charger status 1 - ret %d", ret);
 		return ret;
 	}
 
@@ -541,7 +541,7 @@ static int charger_adp5360_get_charge_type(const struct device *dev,
 
 	ret = mfd_adp5360_reg_read(cfg->mfd_dev, ADP5360_REG_CHARGER_STATUS_1, &val);
 	if (ret) {
-		LOG_ERR("Failed to read charger status 1 - ret %d", ret);
+		LOG_ERROR("Failed to read charger status 1 - ret %d", ret);
 		return ret;
 	}
 
@@ -574,7 +574,7 @@ static int charger_adp5360_get_health(const struct device *dev, enum charger_hea
 
 	ret = mfd_adp5360_reg_read(cfg->mfd_dev, ADP5360_REG_CHARGER_STATUS_2, &val);
 	if (ret) {
-		LOG_ERR("Failed to read charger status 2 - ret %d", ret);
+		LOG_ERROR("Failed to read charger status 2 - ret %d", ret);
 		return ret;
 	}
 
@@ -602,7 +602,7 @@ static int charger_adp5360_get_health(const struct device *dev, enum charger_hea
 	/* device watchdog (if set) */
 	ret = mfd_adp5360_reg_read(cfg->mfd_dev, ADP5360_REG_FAULT_STATUS, &val);
 	if (ret) {
-		LOG_ERR("Failed to read fault status - ret %d", ret);
+		LOG_ERROR("Failed to read fault status - ret %d", ret);
 		return ret;
 	}
 
@@ -620,7 +620,7 @@ static int charger_adp5360_get_health(const struct device *dev, enum charger_hea
 	/* safety timeout */
 	ret = mfd_adp5360_reg_read(cfg->mfd_dev, ADP5360_REG_CHARGER_STATUS_1, &val);
 	if (ret) {
-		LOG_ERR("Failed to read charger status 1 - ret %d", ret);
+		LOG_ERROR("Failed to read charger status 1 - ret %d", ret);
 		return ret;
 	}
 
@@ -655,7 +655,7 @@ static int charger_adp5360_set_trickle_current(const struct device *dev, uint32_
 		cfg->mfd_dev, i_trickle_charge_ua_range, ARRAY_SIZE(i_trickle_charge_ua_range),
 		ADP5360_REG_CHARGER_TERM_CFG, ADP5360_ITRK_MASK, const_current);
 	if (ret) {
-		LOG_ERR("Failed to set trickle current %d", ret);
+		LOG_ERROR("Failed to set trickle current %d", ret);
 		return ret;
 	}
 
@@ -674,7 +674,7 @@ static int charger_adp5360_set_constant_current(const struct device *dev, uint32
 		cfg->mfd_dev, i_fast_charge_ua_range, ARRAY_SIZE(i_fast_charge_ua_range),
 		ADP5360_REG_CHARGER_CURR_CFG, ADP5360_ICHG_MASK, const_current);
 	if (ret) {
-		LOG_ERR("Failed to set constant current %d", ret);
+		LOG_ERROR("Failed to set constant current %d", ret);
 		return ret;
 	}
 
@@ -693,7 +693,7 @@ static int charger_adp5360_set_termination_current(const struct device *dev, uin
 		cfg->mfd_dev, i_term_ua_range, ARRAY_SIZE(i_term_ua_range),
 		ADP5360_REG_CHARGER_CURR_CFG, ADP5360_IEND_MASK, term_current);
 	if (ret) {
-		LOG_ERR("Failed to set Termination current %d", ret);
+		LOG_ERROR("Failed to set Termination current %d", ret);
 		return ret;
 	}
 
@@ -735,7 +735,7 @@ static int charger_adp5360_set_regulation_current(const struct device *dev, uint
 		cfg->mfd_dev, v_bus_i_limit_ua_range, ARRAY_SIZE(v_bus_i_limit_ua_range),
 		ADP5360_REG_CHARGER_VBUS_ILIM, ADP5360_ILIM_MASK, reg_current);
 	if (ret) {
-		LOG_ERR("Failed to set regulation current %d", ret);
+		LOG_ERROR("Failed to set regulation current %d", ret);
 		return ret;
 	}
 
@@ -756,7 +756,7 @@ static int charger_adp5360_set_regulation_voltage(const struct device *dev, uint
 					       ADP5360_REG_CHARGER_VBUS_ILIM, ADP5360_VADPICHG_MASK,
 					       reg_voltage);
 	if (ret) {
-		LOG_ERR("Failed to set regulation voltage %d", ret);
+		LOG_ERROR("Failed to set regulation voltage %d", ret);
 		return ret;
 	}
 
@@ -853,7 +853,7 @@ static inline int charger_adp5360_init_vsys_ichg(const struct device *dev)
 
 	ret = mfd_adp5360_reg_write(cfg->mfd_dev, ADP5360_REG_CHARGER_VBUS_ILIM, reg_val);
 	if (ret) {
-		LOG_ERR("Failed to write to VBUS ILIM setting:%d", ret);
+		LOG_ERROR("Failed to write to VBUS ILIM setting:%d", ret);
 		return ret;
 	}
 
@@ -885,7 +885,7 @@ static inline int charger_adp5360_init_charger_term(const struct device *dev)
 
 	ret = mfd_adp5360_reg_write(cfg->mfd_dev, ADP5360_REG_CHARGER_TERM_CFG, reg_val);
 	if (ret) {
-		LOG_ERR("Failed to write to Charger Termination setting:%d", ret);
+		LOG_ERROR("Failed to write to Charger Termination setting:%d", ret);
 		return ret;
 	}
 
@@ -915,7 +915,7 @@ static inline int charger_adp5360_init_charger_current(const struct device *dev)
 
 	ret = mfd_adp5360_reg_write(cfg->mfd_dev, ADP5360_REG_CHARGER_CURR_CFG, reg_val);
 	if (ret) {
-		LOG_ERR("Failed to write to Charger Current setting:%d", ret);
+		LOG_ERROR("Failed to write to Charger Current setting:%d", ret);
 		return ret;
 	}
 
@@ -949,7 +949,7 @@ static inline int charger_adp5360_init_charger_volt_thres(const struct device *d
 
 	ret = mfd_adp5360_reg_write(cfg->mfd_dev, ADP5360_REG_CHARGER_VOLT_CFG, reg_val);
 	if (ret) {
-		LOG_ERR("Failed to write to Charger Voltage setting:%d", ret);
+		LOG_ERROR("Failed to write to Charger Voltage setting:%d", ret);
 		return ret;
 	}
 
@@ -968,7 +968,7 @@ static inline int charger_adp5360_init_timer(const struct device *dev)
 
 	ret = mfd_adp5360_reg_write(cfg->mfd_dev, ADP5360_REG_CHARGER_TMR_CFG, reg_val);
 	if (ret) {
-		LOG_ERR("Failed to write to Charger Timer setting:%d", ret);
+		LOG_ERROR("Failed to write to Charger Timer setting:%d", ret);
 		return ret;
 	}
 
@@ -990,7 +990,7 @@ static inline int charger_adp5360_init_function(const struct device *dev)
 
 	ret = mfd_adp5360_reg_write(cfg->mfd_dev, ADP5360_REG_CHARGER_FUNC_CFG, reg_val);
 	if (ret) {
-		LOG_ERR("Failed to write to Charger Function setting:%d", ret);
+		LOG_ERROR("Failed to write to Charger Function setting:%d", ret);
 		return ret;
 	}
 
@@ -1008,7 +1008,7 @@ static inline int charger_adp5360_init_bat_therm(const struct device *dev)
 
 	ret = mfd_adp5360_reg_write(cfg->mfd_dev, ADP5360_REG_CHARGER_THERM_CTRL, reg_val);
 	if (ret) {
-		LOG_ERR("Failed to write to Charger Thermistor setting:%d", ret);
+		LOG_ERROR("Failed to write to Charger Thermistor setting:%d", ret);
 		return ret;
 	}
 
@@ -1031,7 +1031,7 @@ static inline int charger_adp5360_init_therm_voltage(const struct device *dev)
 
 	ret = mfd_adp5360_reg_write(cfg->mfd_dev, ADP5360_REG_BATTERY_THERM_0C, reg_val);
 	if (ret) {
-		LOG_ERR("Failed to write to Cold Battery Voltage setting:%d", ret);
+		LOG_ERROR("Failed to write to Cold Battery Voltage setting:%d", ret);
 		return ret;
 	}
 
@@ -1047,7 +1047,7 @@ static inline int charger_adp5360_init_therm_voltage(const struct device *dev)
 
 	ret = mfd_adp5360_reg_write(cfg->mfd_dev, ADP5360_REG_BATTERY_THERM_10C, reg_val);
 	if (ret) {
-		LOG_ERR("Failed to write to Cool Battery Voltage setting:%d", ret);
+		LOG_ERROR("Failed to write to Cool Battery Voltage setting:%d", ret);
 		return ret;
 	}
 
@@ -1063,7 +1063,7 @@ static inline int charger_adp5360_init_therm_voltage(const struct device *dev)
 
 	ret = mfd_adp5360_reg_write(cfg->mfd_dev, ADP5360_REG_BATTERY_THERM_45C, reg_val);
 	if (ret) {
-		LOG_ERR("Failed to write to Warm Battery Voltage setting:%d", ret);
+		LOG_ERROR("Failed to write to Warm Battery Voltage setting:%d", ret);
 		return ret;
 	}
 
@@ -1079,7 +1079,7 @@ static inline int charger_adp5360_init_therm_voltage(const struct device *dev)
 
 	ret = mfd_adp5360_reg_write(cfg->mfd_dev, ADP5360_REG_BATTERY_THERM_60C, reg_val);
 	if (ret) {
-		LOG_ERR("Failed to write to Hot Battery Voltage setting:%d", ret);
+		LOG_ERROR("Failed to write to Hot Battery Voltage setting:%d", ret);
 		return ret;
 	}
 
@@ -1103,7 +1103,7 @@ static inline int charger_adp5360_init_bat_prot_ctrl(const struct device *dev)
 
 	ret = mfd_adp5360_reg_write(cfg->mfd_dev, ADP5360_REG_BATPROT_CFG, reg_val);
 	if (ret) {
-		LOG_ERR("Failed to write to Battery Protection setting:%d", ret);
+		LOG_ERROR("Failed to write to Battery Protection setting:%d", ret);
 		return ret;
 	}
 
@@ -1132,7 +1132,7 @@ static inline int charger_adp5360_init_bat_prot_uv(const struct device *dev)
 
 	ret = mfd_adp5360_reg_write(cfg->mfd_dev, ADP5360_REG_BATPROT_UV_CFG, reg_val);
 	if (ret) {
-		LOG_ERR("Failed to write to Battery Undervoltage Protection setting:%d", ret);
+		LOG_ERROR("Failed to write to Battery Undervoltage Protection setting:%d", ret);
 		return ret;
 	}
 
@@ -1159,7 +1159,7 @@ static inline int charger_adp5360_init_bat_prot_oc_dischg(const struct device *d
 
 	ret = mfd_adp5360_reg_write(cfg->mfd_dev, ADP5360_REG_BATPROT_DISCHG_OC_CFG, reg_val);
 	if (ret) {
-		LOG_ERR("Failed to write to Battery Undercurrent Protection setting:%d", ret);
+		LOG_ERROR("Failed to write to Battery Undercurrent Protection setting:%d", ret);
 		return ret;
 	}
 
@@ -1186,7 +1186,7 @@ static inline int charger_adp5360_init_bat_prot_ov(const struct device *dev)
 
 	ret = mfd_adp5360_reg_write(cfg->mfd_dev, ADP5360_REG_BATPROT_OV_CFG, reg_val);
 	if (ret) {
-		LOG_ERR("Failed to write to Battery Overvoltage Protection setting:%d", ret);
+		LOG_ERROR("Failed to write to Battery Overvoltage Protection setting:%d", ret);
 		return ret;
 	}
 
@@ -1212,7 +1212,7 @@ static inline int charger_adp5360_init_bat_prot_oc_chg(const struct device *dev)
 
 	ret = mfd_adp5360_reg_write(cfg->mfd_dev, ADP5360_REG_BATPROT_CHG_OC_CFG, reg_val);
 	if (ret) {
-		LOG_ERR("Failed to write to Battery Overcurrent Protection setting:%d", ret);
+		LOG_ERROR("Failed to write to Battery Overcurrent Protection setting:%d", ret);
 		return ret;
 	}
 
@@ -1225,7 +1225,7 @@ static int charger_adp5360_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(cfg->mfd_dev)) {
-		LOG_ERR("MFD device is not ready");
+		LOG_ERROR("MFD device is not ready");
 		return -ENODEV;
 	}
 

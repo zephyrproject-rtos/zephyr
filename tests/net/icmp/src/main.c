@@ -213,7 +213,7 @@ static int get_ipv4_reply(struct net_if *iface,
 	ret = net_ipv4_create_full(reply, src4, dest4, params->tc_tos,
 				   params->identifier, 0, 0);
 	if (ret < 0) {
-		LOG_ERR("Cannot create IPv4 pkt (%d)", ret);
+		LOG_ERROR("Cannot create IPv4 pkt (%d)", ret);
 		return ret;
 	}
 
@@ -222,13 +222,13 @@ static int get_ipv4_reply(struct net_if *iface,
 
 	ret = net_icmpv4_create(reply, NET_ICMPV4_ECHO_REPLY, 0);
 	if (ret < 0) {
-		LOG_ERR("Cannot create ICMPv4 pkt (%d)", ret);
+		LOG_ERROR("Cannot create ICMPv4 pkt (%d)", ret);
 		return ret;
 	}
 
 	ret = net_pkt_write(reply, params->data, params->data_size);
 	if (ret < 0) {
-		LOG_ERR("Cannot write payload (%d)", ret);
+		LOG_ERROR("Cannot write payload (%d)", ret);
 		return ret;
 	}
 
@@ -284,7 +284,7 @@ static int get_ipv6_reply(struct net_if *iface,
 
 	ret = net_ipv6_create(reply, src6, dest6);
 	if (ret < 0) {
-		LOG_ERR("Cannot create IPv6 pkt (%d)", ret);
+		LOG_ERROR("Cannot create IPv6 pkt (%d)", ret);
 		return ret;
 	}
 
@@ -293,13 +293,13 @@ static int get_ipv6_reply(struct net_if *iface,
 
 	ret = net_icmpv6_create(reply, NET_ICMPV6_ECHO_REPLY, 0);
 	if (ret < 0) {
-		LOG_ERR("Cannot create ICMPv6 pkt (%d)", ret);
+		LOG_ERROR("Cannot create ICMPv6 pkt (%d)", ret);
 		return ret;
 	}
 
 	ret = net_pkt_write(reply, params->data, params->data_size);
 	if (ret < 0) {
-		LOG_ERR("Cannot write payload (%d)", ret);
+		LOG_ERROR("Cannot write payload (%d)", ret);
 		return ret;
 	}
 
@@ -340,7 +340,7 @@ static int offload_ping_handler(struct net_icmp_ctx *ctx,
 
 	ret = net_icmp_get_offload_rsp_handler(icmp_offload_ctx, &resp_handler);
 	if (ret < 0) {
-		LOG_ERR("Cannot get offload response handler.");
+		LOG_ERROR("Cannot get offload response handler.");
 		return -ENOENT;
 	}
 
@@ -355,7 +355,7 @@ static int offload_ping_handler(struct net_icmp_ctx *ctx,
 		ret = get_ipv4_reply(iface, dst, params, &reply,
 				     &ipv4_hdr, &icmp_hdr);
 		if (ret < 0) {
-			LOG_ERR("Cannot create reply pkt (%d)", ret);
+			LOG_ERROR("Cannot create reply pkt (%d)", ret);
 			return ret;
 		}
 
@@ -367,7 +367,7 @@ static int offload_ping_handler(struct net_icmp_ctx *ctx,
 		ret = get_ipv6_reply(iface, dst, params, &reply,
 				     &ipv6_hdr, &icmp_hdr);
 		if (ret < 0) {
-			LOG_ERR("Cannot create reply pkt (%d)", ret);
+			LOG_ERROR("Cannot create reply pkt (%d)", ret);
 			return ret;
 		}
 
@@ -377,7 +377,7 @@ static int offload_ping_handler(struct net_icmp_ctx *ctx,
 
 	verdict = resp_handler(ctx, reply, &ip_hdr, icmp_hdr, user_data);
 	if (verdict != NET_OK) {
-		LOG_ERR("Cannot send response (%d)", ret);
+		LOG_ERROR("Cannot send response (%d)", ret);
 		return -EIO;
 	}
 
@@ -406,7 +406,7 @@ static void offload_iface_init(struct net_if *iface)
 	/* This will cause ping requests to be re-directed to our offload handler */
 	ret = net_icmp_register_offload_ping(&offload_data, iface, offload_ping_handler);
 	if (ret < 0) {
-		LOG_ERR("Cannot register offload ping handler (%d)", ret);
+		LOG_ERROR("Cannot register offload ping handler (%d)", ret);
 	}
 
 	ctx->iface = iface;

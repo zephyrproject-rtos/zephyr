@@ -56,16 +56,16 @@ static int uart_renesas_ra_sau_baudrate_validate(const struct device *dev, uint3
 	ret = clock_control_get_rate(cfg->clock_dev, (clock_control_subsys_t)&cfg->clock_subsys,
 				     &peripheral_clock);
 	if (ret < 0) {
-		LOG_ERR("Failed to get peripheral clock rate: %d", ret);
+		LOG_ERROR("Failed to get peripheral clock rate: %d", ret);
 		return ret;
 	}
 
 	stclk = DIV_ROUND_CLOSEST(peripheral_clock, (2 * baudrate)) - 1;
 
 	if (stclk < SAU_UART_STCLK_MIN || stclk > SAU_UART_STCLK_MAX) {
-		LOG_ERR("SAU UART baudrate of %u is not achievable with selected operation clock "
-			"settings. Suggest stclk >= %hu and stclk <= %hu. Calculated stclk: %u",
-			baudrate, SAU_UART_STCLK_MIN, SAU_UART_STCLK_MAX, stclk);
+		LOG_ERROR("SAU UART baudrate of %u is not achievable with selected operation clock "
+			  "settings. Suggest stclk >= %hu and stclk <= %hu. Calculated stclk: %u",
+			  baudrate, SAU_UART_STCLK_MIN, SAU_UART_STCLK_MAX, stclk);
 		return -EINVAL;
 	}
 
@@ -106,7 +106,7 @@ static int uart_renesas_ra_sau_apply_config(const struct device *dev,
 		data_bits = UART_DATA_BITS_8;
 		break;
 	default:
-		LOG_ERR("Unsupported data bits setting");
+		LOG_ERROR("Unsupported data bits setting");
 		return -ENOSYS;
 	}
 
@@ -121,14 +121,14 @@ static int uart_renesas_ra_sau_apply_config(const struct device *dev,
 		parity = UART_PARITY_ODD;
 		break;
 	default:
-		LOG_ERR("Unsupported parity setting");
+		LOG_ERROR("Unsupported parity setting");
 		return -ENOSYS;
 	}
 
 	ret = uart_renesas_ra_sau_baudrate_validate(dev, uart_cfg->baudrate,
 						    &data->fsp_baud_setting);
 	if (ret < 0) {
-		LOG_ERR("Failed to calculate baudrate settings");
+		LOG_ERROR("Failed to calculate baudrate settings");
 		return ret;
 	}
 

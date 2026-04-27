@@ -502,7 +502,7 @@ void i3c_sec_handoffed(struct k_work *work)
 	int ret;
 
 	if (!deftgts) {
-		LOG_ERR("Did not receive DEFTGTS before Handoff");
+		LOG_ERROR("Did not receive DEFTGTS before Handoff");
 		return;
 	}
 
@@ -519,7 +519,7 @@ void i3c_sec_handoffed(struct k_work *work)
 	 */
 	ret = i3c_config_get_target(dev, &config_target);
 	if (ret != 0) {
-		LOG_ERR("Failed to retrieve active controller info");
+		LOG_ERROR("Failed to retrieve active controller info");
 		return;
 	}
 
@@ -592,9 +592,9 @@ int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
 			 * This is probably due to having the same PIDs for multiple targets
 			 * in the device tree.
 			 */
-			LOG_ERR("PID 0x%04x%08x already has "
-				"dynamic address (0x%02x) assigned",
-				vendor_id, part_no, desc->dynamic_addr);
+			LOG_ERROR("PID 0x%04x%08x already has "
+				  "dynamic address (0x%02x) assigned",
+				  vendor_id, part_no, desc->dynamic_addr);
 			ret = -EINVAL;
 			goto err;
 		}
@@ -878,7 +878,7 @@ static int i3c_bus_prepare_setdasa(const struct device *dev, const struct i3c_de
 			if (!i3c_addr_slots_is_free(&bus_data->attached_dev.addr_slots,
 						    desc->init_dynamic_addr)) {
 				if (i3c_detach_i3c_device(desc) != 0) {
-					LOG_ERR("Failed to detach %s", desc->dev->name);
+					LOG_ERROR("Failed to detach %s", desc->dev->name);
 				}
 				continue;
 			}
@@ -893,10 +893,10 @@ static int i3c_bus_prepare_setdasa(const struct device *dev, const struct i3c_de
 
 		ret = i3c_bus_setdasa(desc, dynamic_addr);
 		if (ret != 0) {
-			LOG_ERR("SETDASA error on address 0x%x (%d)", desc->static_addr, ret);
+			LOG_ERROR("SETDASA error on address 0x%x (%d)", desc->static_addr, ret);
 			/* SETDASA failed, detach it from the controller */
 			if (i3c_detach_i3c_device(desc) != 0) {
-				LOG_ERR("Failed to detach %s (%d)", desc->dev->name, ret);
+				LOG_ERROR("Failed to detach %s (%d)", desc->dev->name, ret);
 			}
 		}
 	}
@@ -958,7 +958,7 @@ int i3c_bus_rstdaa_all(const struct device *dev)
 
 	ret = i3c_ccc_do_rstdaa_all(dev);
 	if (ret != 0) {
-		LOG_ERR("%s: RSTDAA error (%d)", dev->name, ret);
+		LOG_ERROR("%s: RSTDAA error (%d)", dev->name, ret);
 		return ret;
 	}
 
@@ -990,8 +990,8 @@ int i3c_bus_setdasa(struct i3c_device_desc *desc, uint8_t dynamic_addr)
 	/* check if the addressed is free, if the requested DA is different from the SA */
 	if (desc->static_addr != dynamic_addr) {
 		if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, dynamic_addr)) {
-			LOG_ERR("%s: Address 0x%02x is already in use.", desc->bus->name,
-				dynamic_addr);
+			LOG_ERROR("%s: Address 0x%02x is already in use.", desc->bus->name,
+				  dynamic_addr);
 			return -EADDRNOTAVAIL;
 		}
 	}
@@ -1004,7 +1004,7 @@ int i3c_bus_setdasa(struct i3c_device_desc *desc, uint8_t dynamic_addr)
 
 	ret = i3c_ccc_do_setdasa(desc, dyn_addr);
 	if (ret != 0) {
-		LOG_ERR("%s: %s: SETDASA error (%d)", desc->bus->name, desc->dev->name, ret);
+		LOG_ERROR("%s: %s: SETDASA error (%d)", desc->bus->name, desc->dev->name, ret);
 		return ret;
 	}
 
@@ -1013,8 +1013,8 @@ int i3c_bus_setdasa(struct i3c_device_desc *desc, uint8_t dynamic_addr)
 	if (desc->dynamic_addr != desc->static_addr) {
 		ret = i3c_reattach_i3c_device(desc, desc->static_addr);
 		if (ret < 0) {
-			LOG_ERR("%s: %s: unable to reattach device (%d)", desc->bus->name,
-				desc->dev->name, ret);
+			LOG_ERROR("%s: %s: unable to reattach device (%d)", desc->bus->name,
+				  desc->dev->name, ret);
 			return ret;
 		}
 	}
@@ -1033,8 +1033,8 @@ int i3c_bus_setnewda(struct i3c_device_desc *desc, uint8_t dynamic_addr)
 	/* check if the addressed is free, also a 'clown' could set the same DA */
 	if (desc->dynamic_addr != dynamic_addr) {
 		if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, dynamic_addr)) {
-			LOG_ERR("%s: Address 0x%02x is already in use.", desc->bus->name,
-				dynamic_addr);
+			LOG_ERROR("%s: Address 0x%02x is already in use.", desc->bus->name,
+				  dynamic_addr);
 			return -EADDRNOTAVAIL;
 		}
 	}
@@ -1047,7 +1047,7 @@ int i3c_bus_setnewda(struct i3c_device_desc *desc, uint8_t dynamic_addr)
 
 	ret = i3c_ccc_do_setnewda(desc, dyn_addr);
 	if (ret != 0) {
-		LOG_ERR("%s: %s: SETNEWDA error (%d)", desc->bus->name, desc->dev->name, ret);
+		LOG_ERROR("%s: %s: SETNEWDA error (%d)", desc->bus->name, desc->dev->name, ret);
 		return ret;
 	}
 
@@ -1057,7 +1057,7 @@ int i3c_bus_setnewda(struct i3c_device_desc *desc, uint8_t dynamic_addr)
 	/* reattach device address */
 	ret = i3c_reattach_i3c_device(desc, old_da);
 	if (ret != 0) {
-		LOG_ERR("%s: %s: unable to reattach device", desc->bus->name, desc->dev->name);
+		LOG_ERROR("%s: %s: unable to reattach device", desc->bus->name, desc->dev->name);
 		return ret;
 	}
 	LOG_DBG("%s: %s: SETNEWDA to 0x%02x", desc->bus->name, desc->dev->name, desc->dynamic_addr);
@@ -1072,7 +1072,7 @@ int i3c_bus_setaasa(const struct device *dev)
 
 	ret = i3c_ccc_do_setaasa_all(dev);
 	if (ret != 0) {
-		LOG_ERR("%s: unable to send CCC SETAASA", dev->name);
+		LOG_ERROR("%s: unable to send CCC SETAASA", dev->name);
 		return ret;
 	}
 
@@ -1099,7 +1099,7 @@ int i3c_bus_getbcr(struct i3c_device_desc *desc)
 
 	ret = i3c_ccc_do_getbcr(desc, &getbcr);
 	if (ret != 0) {
-		LOG_ERR("%s: %s: GETBCR error (%d)", desc->bus->name, desc->dev->name, ret);
+		LOG_ERROR("%s: %s: GETBCR error (%d)", desc->bus->name, desc->dev->name, ret);
 		return ret;
 	}
 
@@ -1117,7 +1117,7 @@ int i3c_bus_getdcr(struct i3c_device_desc *desc)
 
 	ret = i3c_ccc_do_getdcr(desc, &getdcr);
 	if (ret != 0) {
-		LOG_ERR("%s: %s: GETDCR error (%d)", desc->bus->name, desc->dev->name, ret);
+		LOG_ERROR("%s: %s: GETDCR error (%d)", desc->bus->name, desc->dev->name, ret);
 		return ret;
 	}
 
@@ -1135,7 +1135,7 @@ int i3c_bus_getpid(struct i3c_device_desc *desc)
 
 	ret = i3c_ccc_do_getpid(desc, &getpid);
 	if (ret != 0) {
-		LOG_ERR("%s: %s: GETPID error (%d)", desc->bus->name, desc->dev->name, ret);
+		LOG_ERROR("%s: %s: GETPID error (%d)", desc->bus->name, desc->dev->name, ret);
 		return ret;
 	}
 
@@ -1154,7 +1154,7 @@ int i3c_bus_getmrl(struct i3c_device_desc *desc)
 
 	ret = i3c_ccc_do_getmrl(desc, &mrl);
 	if (ret != 0) {
-		LOG_ERR("%s: %s: GETMRL error (%d)", desc->bus->name, desc->dev->name, ret);
+		LOG_ERROR("%s: %s: GETMRL error (%d)", desc->bus->name, desc->dev->name, ret);
 		return ret;
 	}
 
@@ -1180,7 +1180,7 @@ int i3c_bus_getmwl(struct i3c_device_desc *desc)
 
 	ret = i3c_ccc_do_getmwl(desc, &mwl);
 	if (ret != 0) {
-		LOG_ERR("%s: %s: GETMWL error (%d)", desc->bus->name, desc->dev->name, ret);
+		LOG_ERROR("%s: %s: GETMWL error (%d)", desc->bus->name, desc->dev->name, ret);
 		return ret;
 	}
 
@@ -1201,7 +1201,7 @@ int i3c_bus_setmrl(struct i3c_device_desc *desc, uint16_t mrl, uint8_t ibi_len)
 
 	ret = i3c_ccc_do_setmrl(desc, &mrl_cmd);
 	if (ret != 0) {
-		LOG_ERR("%s: %s: SETMRL error (%d)", desc->bus->name, desc->dev->name, ret);
+		LOG_ERROR("%s: %s: SETMRL error (%d)", desc->bus->name, desc->dev->name, ret);
 		return ret;
 	}
 
@@ -1228,7 +1228,7 @@ int i3c_bus_setmwl(struct i3c_device_desc *desc, uint16_t mwl)
 
 	ret = i3c_ccc_do_setmwl(desc, &mwl_cmd);
 	if (ret != 0) {
-		LOG_ERR("%s: %s: SETMWL error (%d)", desc->bus->name, desc->dev->name, ret);
+		LOG_ERROR("%s: %s: SETMWL error (%d)", desc->bus->name, desc->dev->name, ret);
 		return ret;
 	}
 
@@ -1249,7 +1249,7 @@ int i3c_bus_setmrl_all(const struct device *dev, uint16_t mrl, uint8_t ibi_len, 
 
 	ret = i3c_ccc_do_setmrl_all(dev, &setmrl, has_ibi_size);
 	if (ret < 0) {
-		LOG_ERR("%s: SETMRL error (%d)", dev->name, ret);
+		LOG_ERROR("%s: SETMRL error (%d)", dev->name, ret);
 		return ret;
 	}
 
@@ -1286,7 +1286,7 @@ int i3c_bus_setmwl_all(const struct device *dev, uint16_t mwl)
 
 	ret = i3c_ccc_do_setmwl_all(dev, &setmwl);
 	if (ret < 0) {
-		LOG_ERR("%s: unable to send CCC SETMWL BC.", dev->name);
+		LOG_ERROR("%s: unable to send CCC SETMWL BC.", dev->name);
 		return ret;
 	}
 
@@ -1306,14 +1306,14 @@ int i3c_bus_getacccr(struct i3c_device_desc *desc)
 
 	ret = i3c_ccc_do_getacccr(desc, &handoff_address);
 	if (ret != 0) {
-		LOG_ERR("%s: %s: GETACCCR error (%d)", desc->bus->name, desc->dev->name, ret);
+		LOG_ERROR("%s: %s: GETACCCR error (%d)", desc->bus->name, desc->dev->name, ret);
 		return ret;
 	}
 
 	/* Verify Odd Parity and Correct Dynamic Address Reply */
 	if ((i3c_odd_parity(handoff_address.addr >> 1) != (handoff_address.addr & BIT(0))) ||
 	    (handoff_address.addr >> 1 != desc->dynamic_addr)) {
-		LOG_ERR("%s: %s: GETACCCR invalid response", desc->bus->name, desc->dev->name);
+		LOG_ERROR("%s: %s: GETACCCR invalid response", desc->bus->name, desc->dev->name);
 		return -EPROTO;
 	}
 
@@ -1339,7 +1339,7 @@ int i3c_bus_deftgts(const struct device *dev)
 	 */
 	ret = i3c_config_get(dev, I3C_CONFIG_TARGET, &config_target);
 	if (ret != 0) {
-		LOG_ERR("Failed to retrieve active controller info");
+		LOG_ERROR("Failed to retrieve active controller info");
 		return ret;
 	}
 
@@ -1406,7 +1406,7 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 	/* Retrieve the active controller configuration */
 	ret = i3c_config_get_controller(dev, &ctrl_cfg);
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to retrieve controller configuration", dev->name);
+		LOG_ERROR("%s: Failed to retrieve controller configuration", dev->name);
 		return ret;
 	}
 
@@ -1423,7 +1423,7 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 
 	ret = i3c_configure_controller(dev, &ctrl_cfg);
 	if (ret != 0) {
-		LOG_ERR("%s: Open Drain Slow speed set failed", dev->name);
+		LOG_ERROR("%s: Open Drain Slow speed set failed", dev->name);
 		return ret;
 	}
 
@@ -1460,7 +1460,7 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 	ctrl_cfg.scl_od_min.high_ns = prev_od_high_ns;
 	ret = i3c_configure_controller(dev, &ctrl_cfg);
 	if (ret != 0) {
-		LOG_ERR("%s: Open Drain Normal speed set failed", dev->name);
+		LOG_ERROR("%s: Open Drain Normal speed set failed", dev->name);
 		return ret;
 	}
 
@@ -1489,7 +1489,7 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 	if (need_aasa) {
 		ret = i3c_bus_setaasa(dev);
 		if (ret != 0) {
-			LOG_ERR("failed to perform setaasa");
+			LOG_ERROR("failed to perform setaasa");
 		}
 	}
 
@@ -1511,7 +1511,7 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 				 * Continue on so the devices already have
 				 * addresses can still function.
 				 */
-				LOG_ERR("DAA was not successful.");
+				LOG_ERROR("DAA was not successful.");
 			}
 		}
 	}
@@ -1534,7 +1534,7 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 		ret = (desc->static_addr == 0) ? i3c_device_adv_info_get(desc)
 					       : i3c_device_info_get(desc);
 		if (ret != 0) {
-			LOG_ERR("Error getting device info for 0x%02x", desc->static_addr);
+			LOG_ERROR("Error getting device info for 0x%02x", desc->static_addr);
 		} else {
 			LOG_DBG("Target 0x%02x, BCR 0x%02x, DCR 0x%02x, MRL %d, MWL %d, IBI %d",
 				desc->dynamic_addr, desc->bcr, desc->dcr, desc->data_length.mrl,
@@ -1545,7 +1545,7 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 	if (i3c_bus_has_sec_controller(dev)) {
 		ret = i3c_bus_deftgts(dev);
 		if (ret != 0) {
-			LOG_ERR("Error sending DEFTGTS");
+			LOG_ERROR("Error sending DEFTGTS");
 		}
 	}
 #endif /* CONFIG_I3C_TARGET */

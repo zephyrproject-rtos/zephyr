@@ -115,7 +115,7 @@ void bt_mesh_beacon_cache_clear(struct bt_mesh_subnet *sub)
 static void beacon_start(uint16_t duration, int err, void *user_data)
 {
 	if (err) {
-		LOG_ERR("Failed to send beacon: err %d", err);
+		LOG_ERROR("Failed to send beacon: err %d", err);
 		if (beacon_send_sub_curr) {
 			k_work_reschedule(&beacon_timer, K_NO_WAIT);
 		}
@@ -203,7 +203,7 @@ static int private_beacon_update(struct bt_mesh_subnet *sub)
 				     priv_random.val, sub->priv_beacon_ctx.data,
 				     sub->priv_beacon.auth);
 	if (err) {
-		LOG_ERR("Can't encrypt private beacon");
+		LOG_ERROR("Can't encrypt private beacon");
 		return err;
 	}
 
@@ -288,7 +288,7 @@ static int net_beacon_send(struct bt_mesh_subnet *sub, struct bt_mesh_beacon *be
 	adv = bt_mesh_adv_create(BT_MESH_ADV_BEACON, BT_MESH_ADV_TAG_LOCAL,
 				 PROV_XMIT, K_NO_WAIT);
 	if (!adv) {
-		LOG_ERR("Unable to allocate beacon adv");
+		LOG_ERROR("Unable to allocate beacon adv");
 		return -ENOMEM; /* Bail out */
 	}
 
@@ -352,7 +352,7 @@ static int unprovisioned_beacon_send(void)
 	adv = bt_mesh_adv_create(BT_MESH_ADV_BEACON, BT_MESH_ADV_TAG_LOCAL,
 				 UNPROV_XMIT, K_NO_WAIT);
 	if (!adv) {
-		LOG_ERR("Unable to allocate beacon adv");
+		LOG_ERROR("Unable to allocate beacon adv");
 		return -ENOBUFS;
 	}
 
@@ -379,7 +379,7 @@ static int unprovisioned_beacon_send(void)
 		adv = bt_mesh_adv_create(BT_MESH_ADV_URI, BT_MESH_ADV_TAG_LOCAL,
 					 UNPROV_XMIT, K_NO_WAIT);
 		if (!adv) {
-			LOG_ERR("Unable to allocate URI adv");
+			LOG_ERROR("Unable to allocate URI adv");
 			return -ENOBUFS;
 		}
 
@@ -412,7 +412,7 @@ static void unprovisioned_beacon_recv(struct net_buf_simple *buf)
 	}
 
 	if (buf->len != 18 && buf->len != 22) {
-		LOG_ERR("Invalid unprovisioned beacon length (%u)", buf->len);
+		LOG_ERROR("Invalid unprovisioned beacon length (%u)", buf->len);
 		return;
 	}
 
@@ -480,8 +480,8 @@ static bool beacons_send_next(void)
 		beacon_send_sub_curr = sub_next;
 		err = net_beacon_for_subnet_send(beacon_send_sub_curr);
 		if (err < 0 && (err != -ENOMSG)) {
-			LOG_ERR("Failed to advertise subnet %d: err %d",
-				beacon_send_sub_curr->net_idx, err);
+			LOG_ERROR("Failed to advertise subnet %d: err %d",
+				  beacon_send_sub_curr->net_idx, err);
 		}
 	} while (err);
 
@@ -685,7 +685,7 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 	struct beacon_params params;
 
 	if (buf->len < 21) {
-		LOG_ERR("Too short secure beacon (len %u)", buf->len);
+		LOG_ERROR("Too short secure beacon (len %u)", buf->len);
 		return;
 	}
 
@@ -703,7 +703,7 @@ static void private_beacon_recv(struct net_buf_simple *buf)
 	struct beacon_params params;
 
 	if (buf->len < 26) {
-		LOG_ERR("Too short private beacon (len %u)", buf->len);
+		LOG_ERROR("Too short private beacon (len %u)", buf->len);
 		return;
 	}
 
@@ -722,7 +722,7 @@ void bt_mesh_beacon_recv(struct net_buf_simple *buf)
 	LOG_DBG("%u bytes: %s", buf->len, bt_hex(buf->data, buf->len));
 
 	if (buf->len < 1) {
-		LOG_ERR("Too short beacon");
+		LOG_ERROR("Too short beacon");
 		return;
 	}
 

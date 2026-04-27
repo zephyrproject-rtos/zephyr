@@ -249,7 +249,7 @@ int usb_dc_set_address(const uint8_t addr)
 		kUSB_DeviceControlPreSetDeviceAddress,
 		&dev_state.dev_struct.deviceAddress);
 	if (kStatus_USB_Success != status) {
-		LOG_ERR("Failed to set device address");
+		LOG_ERROR("Failed to set device address");
 		return -EINVAL;
 	}
 	return 0;
@@ -261,12 +261,12 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const cfg)
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
-		LOG_ERR("invalid endpoint configuration");
+		LOG_ERROR("invalid endpoint configuration");
 		return -1;
 	}
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("endpoint index/address out of range");
+		LOG_ERROR("endpoint index/address out of range");
 		return -1;
 	}
 
@@ -287,7 +287,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	ep_init.transferType = cfg->ep_type;
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("Wrong endpoint index/address");
+		LOG_ERROR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
 
@@ -318,7 +318,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 
 		*block = k_heap_alloc(&ep_buf_pool, cfg->ep_mps, K_NO_WAIT);
 		if (*block == NULL) {
-			LOG_ERR("Failed to allocate memory");
+			LOG_ERROR("Failed to allocate memory");
 			return -ENOMEM;
 		}
 
@@ -332,7 +332,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 			dev_state.dev_struct.controllerHandle,
 			kUSB_DeviceControlEndpointInit, &ep_init);
 	if (kStatus_USB_Success != status) {
-		LOG_ERR("Failed to initialize endpoint");
+		LOG_ERROR("Failed to initialize endpoint");
 		return -EIO;
 	}
 
@@ -356,7 +356,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 	usb_status_t status;
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("Wrong endpoint index/address");
+		LOG_ERROR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
 
@@ -364,7 +364,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 			dev_state.dev_struct.controllerHandle,
 			kUSB_DeviceControlEndpointStall, &endpoint);
 	if (kStatus_USB_Success != status) {
-		LOG_ERR("Failed to stall endpoint");
+		LOG_ERROR("Failed to stall endpoint");
 		return -EIO;
 	}
 
@@ -378,7 +378,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 	usb_status_t status;
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("Wrong endpoint index/address");
+		LOG_ERROR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
 
@@ -386,7 +386,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 			dev_state.dev_struct.controllerHandle,
 			kUSB_DeviceControlEndpointUnstall, &endpoint);
 	if (kStatus_USB_Success != status) {
-		LOG_ERR("Failed to clear stall");
+		LOG_ERROR("Failed to clear stall");
 		return -EIO;
 	}
 
@@ -397,7 +397,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 				(uint8_t *)dev_state.eps[ep_abs_idx].block,
 				(uint32_t)dev_state.eps[ep_abs_idx].ep_mps);
 		if (kStatus_USB_Success != status) {
-			LOG_ERR("Failed to enable reception on 0x%02x", ep);
+			LOG_ERROR("Failed to enable reception on 0x%02x", ep);
 			return -EIO;
 		}
 
@@ -414,7 +414,7 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 	usb_status_t status;
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("Wrong endpoint index/address");
+		LOG_ERROR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
 
@@ -429,7 +429,7 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 			dev_state.dev_struct.controllerHandle,
 			kUSB_DeviceControlGetEndpointStatus, &ep_status);
 	if (kStatus_USB_Success != status) {
-		LOG_ERR("Failed to get endpoint status");
+		LOG_ERROR("Failed to get endpoint status");
 		return -EIO;
 	}
 
@@ -457,7 +457,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 	}
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("Wrong endpoint index/address");
+		LOG_ERROR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
 
@@ -473,7 +473,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 				(uint8_t *)dev_state.eps[ep_abs_idx].block,
 				(uint32_t)dev_state.eps[ep_abs_idx].ep_mps);
 		if (kStatus_USB_Success != status) {
-			LOG_ERR("Failed to enable reception on 0x%02x", ep);
+			LOG_ERROR("Failed to enable reception on 0x%02x", ep);
 			return -EIO;
 		}
 
@@ -495,7 +495,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 	usb_status_t status;
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("Wrong endpoint index/address");
+		LOG_ERROR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
 
@@ -504,7 +504,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 							dev_state.dev_struct.controllerHandle,
 							ep);
 		if (kStatus_USB_Success != status) {
-			LOG_ERR("Failed to disable ep 0x%02x", ep);
+			LOG_ERROR("Failed to disable ep 0x%02x", ep);
 			return -EIO;
 		}
 	}
@@ -520,7 +520,7 @@ int usb_dc_ep_flush(const uint8_t ep)
 	uint8_t ep_abs_idx = EP_ABS_IDX(ep);
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("Wrong endpoint index/address");
+		LOG_ERROR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
 
@@ -538,12 +538,12 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	usb_status_t status;
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("Wrong endpoint index/address");
+		LOG_ERROR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
 
 	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_IN) {
-		LOG_ERR("Wrong endpoint direction");
+		LOG_ERROR("Wrong endpoint direction");
 		return -EINVAL;
 	}
 
@@ -572,7 +572,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 						dev_state.dev_struct.controllerHandle,
 						ep, buffer, len_to_send);
 	if (kStatus_USB_Success != status) {
-		LOG_ERR("Failed to fill ep 0x%02x buffer", ep);
+		LOG_ERROR("Failed to fill ep 0x%02x buffer", ep);
 		return -EIO;
 	}
 
@@ -628,19 +628,19 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	uint8_t *bufp = NULL;
 
 	if (dev_state.eps[ep_abs_idx].ep_occupied) {
-		LOG_ERR("Endpoint is occupied by the controller");
+		LOG_ERROR("Endpoint is occupied by the controller");
 		return -EBUSY;
 	}
 
 	if ((ep_abs_idx >= NUM_OF_EP_MAX) ||
 	    (USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT)) {
-		LOG_ERR("Wrong endpoint index/address/direction");
+		LOG_ERROR("Wrong endpoint index/address/direction");
 		return -EINVAL;
 	}
 
 	/* Allow to read 0 bytes */
 	if (!data && max_data_len) {
-		LOG_ERR("Wrong arguments");
+		LOG_ERROR("Wrong arguments");
 		return -EINVAL;
 	}
 
@@ -697,7 +697,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX ||
 	    USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT) {
-		LOG_ERR("Wrong endpoint index/address/direction");
+		LOG_ERROR("Wrong endpoint index/address/direction");
 		return -EINVAL;
 	}
 
@@ -721,7 +721,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 			    (uint8_t *)dev_state.eps[ep_abs_idx].block,
 			    dev_state.eps[ep_abs_idx].ep_mps);
 	if (kStatus_USB_Success != status) {
-		LOG_ERR("Failed to enable reception on ep 0x%02x", ep);
+		LOG_ERROR("Failed to enable reception on ep 0x%02x", ep);
 		return -EIO;
 	}
 
@@ -755,7 +755,7 @@ int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb)
 	uint8_t ep_abs_idx = EP_ABS_IDX(ep);
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("Wrong endpoint index/address");
+		LOG_ERROR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
 
@@ -777,7 +777,7 @@ int usb_dc_ep_mps(const uint8_t ep)
 	uint8_t ep_abs_idx = EP_ABS_IDX(ep);
 
 	if (ep_abs_idx >= NUM_OF_EP_MAX) {
-		LOG_ERR("Wrong endpoint index/address");
+		LOG_ERROR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
 
@@ -795,7 +795,7 @@ static void handle_bus_reset(void)
 			dev_state.dev_struct.controllerHandle,
 			kUSB_DeviceControlSetDefaultStatus, NULL);
 	if (kStatus_USB_Success != status) {
-		LOG_ERR("Failed to set default status");
+		LOG_ERROR("Failed to set default status");
 	}
 
 	for (int i = 0; i < NUM_OF_EP_MAX; i++) {
@@ -815,7 +815,7 @@ static void handle_bus_reset(void)
 			dev_state.dev_struct.controllerHandle,
 			kUSB_DeviceControlEndpointInit, &ep_init);
 	if (kStatus_USB_Success != status) {
-		LOG_ERR("Failed to initialize control OUT endpoint");
+		LOG_ERROR("Failed to initialize control OUT endpoint");
 	}
 
 	dev_state.eps[ep_abs_idx].ep_occupied = false;
@@ -828,7 +828,7 @@ static void handle_bus_reset(void)
 			dev_state.dev_struct.controllerHandle,
 			kUSB_DeviceControlEndpointInit, &ep_init);
 	if (kStatus_USB_Success != status) {
-		LOG_ERR("Failed to initialize control IN endpoint");
+		LOG_ERROR("Failed to initialize control IN endpoint");
 	}
 
 	dev_state.eps[ep_abs_idx].ep_occupied = false;
@@ -867,7 +867,7 @@ static void handle_transfer_msg(usb_device_callback_message_struct_t *cb_msg)
 					kUSB_DeviceControlSetDeviceAddress,
 					&dev_state.dev_struct.deviceAddress);
 				if (kStatus_USB_Success != status) {
-					LOG_ERR("Failed to set device address");
+					LOG_ERROR("Failed to set device address");
 					return;
 				}
 				dev_state.dev_struct.deviceAddress = 0;
@@ -889,7 +889,7 @@ static void handle_transfer_msg(usb_device_callback_message_struct_t *cb_msg)
 #endif
 		dev_state.eps[ep_abs_idx].callback(ep, ep_status_code);
 	} else {
-		LOG_ERR("No cb pointer for endpoint 0x%02x", ep);
+		LOG_ERROR("No cb pointer for endpoint 0x%02x", ep);
 	}
 }
 
@@ -928,7 +928,7 @@ static void usb_mcux_thread_main(void *arg1, void *arg2, void *arg3)
 			ep_abs_idx = EP_ABS_IDX(msg.code);
 
 			if (ep_abs_idx >= NUM_OF_EP_MAX) {
-				LOG_ERR("Wrong endpoint index/address");
+				LOG_ERROR("Wrong endpoint index/address");
 				return;
 			}
 

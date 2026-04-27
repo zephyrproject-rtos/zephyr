@@ -67,7 +67,7 @@ static int channel_change_state(struct sof_host_dma_channel *chan,
 		}
 		break;
 	default:
-		LOG_ERR("invalid channel previous state: %d", prev);
+		LOG_ERROR("invalid channel previous state: %d", prev);
 		return -EINVAL;
 	}
 
@@ -90,7 +90,7 @@ static int sof_host_dma_reload(const struct device *dev, uint32_t chan_id,
 	data = dev->data;
 
 	if (chan_id >= data->ctx.dma_channels) {
-		LOG_ERR("channel %d is not a valid channel ID", chan_id);
+		LOG_ERROR("channel %d is not a valid channel ID", chan_id);
 		return -EINVAL;
 	}
 
@@ -99,7 +99,7 @@ static int sof_host_dma_reload(const struct device *dev, uint32_t chan_id,
 
 	/* validate state */
 	if (chan->state != CHAN_STATE_CONFIGURED) {
-		LOG_ERR("attempting to reload unconfigured DMA channel %d", chan_id);
+		LOG_ERROR("attempting to reload unconfigured DMA channel %d", chan_id);
 		return -EINVAL;
 	}
 
@@ -111,7 +111,7 @@ static int sof_host_dma_reload(const struct device *dev, uint32_t chan_id,
 		ret = sys_cache_data_invd_range(UINT_TO_POINTER(chan->src),
 						chan->size);
 		if (ret < 0) {
-			LOG_ERR("failed to invalidate data cache range");
+			LOG_ERROR("failed to invalidate data cache range");
 			return ret;
 		}
 	}
@@ -151,7 +151,7 @@ static int sof_host_dma_reload(const struct device *dev, uint32_t chan_id,
 	 */
 	ret = sys_cache_data_flush_range(UINT_TO_POINTER(chan->dest), chan->size);
 	if (ret < 0) {
-		LOG_ERR("failed to flush data cache range");
+		LOG_ERROR("failed to flush data cache range");
 		return ret;
 	}
 
@@ -169,7 +169,7 @@ static int sof_host_dma_config(const struct device *dev, uint32_t chan_id,
 	data = dev->data;
 
 	if (chan_id >= data->ctx.dma_channels) {
-		LOG_ERR("channel %d is not a valid channel ID", chan_id);
+		LOG_ERROR("channel %d is not a valid channel ID", chan_id);
 		return -EINVAL;
 	}
 
@@ -179,36 +179,35 @@ static int sof_host_dma_config(const struct device *dev, uint32_t chan_id,
 	/* attempt a state transition */
 	ret = channel_change_state(chan, CHAN_STATE_CONFIGURED);
 	if (ret < 0) {
-		LOG_ERR("failed to change channel %d's state to CONFIGURED", chan_id);
+		LOG_ERROR("failed to change channel %d's state to CONFIGURED", chan_id);
 		return ret;
 	}
 
 	/* SG configurations are not currently supported */
 	if (config->block_count != 1) {
-		LOG_ERR("invalid number of blocks: %d", config->block_count);
+		LOG_ERROR("invalid number of blocks: %d", config->block_count);
 		return -EINVAL;
 	}
 
 	if (!config->head_block->source_address) {
-		LOG_ERR("got NULL source address");
+		LOG_ERROR("got NULL source address");
 		return -EINVAL;
 	}
 
 	if (!config->head_block->dest_address) {
-		LOG_ERR("got NULL destination address");
+		LOG_ERROR("got NULL destination address");
 		return -EINVAL;
 	}
 
 	if (!config->head_block->block_size) {
-		LOG_ERR("got 0 bytes to copy");
+		LOG_ERROR("got 0 bytes to copy");
 		return -EINVAL;
 	}
 
 	/* for now, only H2M and M2H transfers are supported */
 	if (config->channel_direction != HOST_TO_MEMORY &&
 	    config->channel_direction != MEMORY_TO_HOST) {
-		LOG_ERR("invalid channel direction: %d",
-			config->channel_direction);
+		LOG_ERROR("invalid channel direction: %d", config->channel_direction);
 		return -EINVAL;
 	}
 
@@ -264,7 +263,7 @@ static int sof_host_dma_get_attribute(const struct device *dev, uint32_t type, u
 		*val = CONFIG_DMA_NXP_SOF_HOST_DMA_ALIGN;
 		break;
 	default:
-		LOG_ERR("invalid attribute type: %d", type);
+		LOG_ERROR("invalid attribute type: %d", type);
 		return -EINVAL;
 	}
 

@@ -124,7 +124,7 @@ static bool settings_fcb_check_duplicate(struct settings_fcb *cf,
 
 		if (settings_line_name_read(name2, sizeof(name2), &name2_len,
 					    &entry2_ctx)) {
-			LOG_ERR("failed to load line");
+			LOG_ERROR("failed to load line");
 			continue;
 		}
 		name2[name2_len] = '\0';
@@ -164,7 +164,7 @@ static int settings_fcb_load_priv(struct settings_store *cs,
 		rc2 = settings_line_name_read(name, sizeof(name), &name_len,
 					     (void *)&entry_ctx);
 		if (rc2) {
-			LOG_ERR("Failed to load line name: %d", rc2);
+			LOG_ERROR("Failed to load line name: %d", rc2);
 			continue;
 		}
 		name[name_len] = '\0';
@@ -294,13 +294,13 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 		rc = fcb_append_finish(&cf->cf_fcb, &loc2.loc);
 
 		if (rc != 0) {
-			LOG_ERR("Failed to finish fcb_append (%d)", rc);
+			LOG_ERROR("Failed to finish fcb_append (%d)", rc);
 		}
 	}
 	rc = fcb_rotate(&cf->cf_fcb);
 
 	if (rc != 0) {
-		LOG_ERR("Failed to fcb rotate (%d)", rc);
+		LOG_ERROR("Failed to fcb rotate (%d)", rc);
 	}
 }
 

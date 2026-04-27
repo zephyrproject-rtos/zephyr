@@ -114,7 +114,7 @@ static int counter_xec_set_alarm(const struct device *dev, uint8_t chan_id,
 	struct counter_xec_data *data = COUNTER_XEC_DATA(dev);
 
 	if (chan_id != 0) {
-		LOG_ERR("Invalid channel id %u", chan_id);
+		LOG_ERROR("Invalid channel id %u", chan_id);
 		return -ENOTSUP;
 	}
 
@@ -158,7 +158,7 @@ static int counter_xec_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	struct counter_xec_data *data = COUNTER_XEC_DATA(dev);
 
 	if (chan_id != 0) {
-		LOG_ERR("Invalid channel id %u", chan_id);
+		LOG_ERROR("Invalid channel id %u", chan_id);
 		return -ENOTSUP;
 	}
 

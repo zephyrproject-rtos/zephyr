@@ -256,7 +256,7 @@ static int sam0_prep_out(const struct device *dev,
 	unsigned int lock_key;
 
 	if (!endpoint->EPSTATUS.bit.BK0RDY) {
-		LOG_ERR("ep 0x%02x buffer is used by the controller", ep_cfg->addr);
+		LOG_ERROR("ep 0x%02x buffer is used by the controller", ep_cfg->addr);
 		return -EBUSY;
 	}
 
@@ -286,7 +286,7 @@ static int sam0_prep_in(const struct device *dev,
 	unsigned int lock_key;
 
 	if (endpoint->EPSTATUS.bit.BK1RDY) {
-		LOG_ERR("ep 0x%02x buffer is used by the controller", ep_cfg->addr);
+		LOG_ERROR("ep 0x%02x buffer is used by the controller", ep_cfg->addr);
 		return -EAGAIN;
 	}
 
@@ -314,7 +314,7 @@ static int sam0_handle_evt_finished(const struct device *dev,
 
 	buf = udc_buf_get(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer for ep 0x%02x", ep_cfg->addr);
+		LOG_ERROR("No buffer for ep 0x%02x", ep_cfg->addr);
 		return -ENOBUFS;
 	}
 
@@ -330,7 +330,7 @@ static inline int sam0_handle_evt_dout(const struct device *dev,
 
 	buf = udc_buf_get(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer for OUT ep 0x%02x", ep_cfg->addr);
+		LOG_ERROR("No buffer for OUT ep 0x%02x", ep_cfg->addr);
 		return -ENODATA;
 	}
 
@@ -403,7 +403,7 @@ static ALWAYS_INLINE void sam0_thread_handler(const struct device *const dev)
 			if (!udc_ep_is_busy(ep_cfg)) {
 				sam0_handle_xfer_next(dev, ep_cfg);
 			} else {
-				LOG_ERR("Endpoint 0x%02x busy", ep);
+				LOG_ERROR("Endpoint 0x%02x busy", ep);
 			}
 		}
 	}
@@ -421,7 +421,7 @@ static ALWAYS_INLINE void sam0_thread_handler(const struct device *const dev)
 			if (!udc_ep_is_busy(ep_cfg)) {
 				sam0_handle_xfer_next(dev, ep_cfg);
 			} else {
-				LOG_ERR("Endpoint 0x%02x busy", ep);
+				LOG_ERROR("Endpoint 0x%02x busy", ep);
 			}
 		}
 	}
@@ -445,8 +445,7 @@ static void sam0_handle_setup_isr(const struct device *dev)
 	struct udc_sam0_data *const priv = udc_get_private(dev);
 
 	if (bd->bank0.byte_count != 8) {
-		LOG_ERR("Wrong byte count %u for setup packet",
-			bd->bank0.byte_count);
+		LOG_ERROR("Wrong byte count %u for setup packet", bd->bank0.byte_count);
 	}
 
 	memcpy(priv->setup, priv->ctrl_out_buf, sizeof(priv->setup));
@@ -464,7 +463,7 @@ static void sam0_handle_out_isr(const struct device *dev, const uint8_t ep)
 
 	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer for ep 0x%02x", ep);
+		LOG_ERROR("No buffer for ep 0x%02x", ep);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return;
 	}
@@ -514,7 +513,7 @@ static void sam0_handle_in_isr(const struct device *dev, const uint8_t ep)
 
 	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer for ep 0x%02x", ep);
+		LOG_ERROR("No buffer for ep 0x%02x", ep);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return;
 	}
@@ -857,7 +856,7 @@ static int udc_sam0_enable(const struct device *dev)
 
 	ret = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("Failed to apply default pinctrl state (%d)", ret);
+		LOG_ERROR("Failed to apply default pinctrl state (%d)", ret);
 		return ret;
 	}
 
@@ -868,15 +867,13 @@ static int udc_sam0_enable(const struct device *dev)
 
 	base->DESCADD.reg = (uintptr_t)config->bdt;
 
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL, 64, 0)) {
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL, 64, 0)) {
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
@@ -905,12 +902,12 @@ static int udc_sam0_disable(const struct device *dev)
 	sam0_wait_syncbusy(dev);
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
@@ -988,7 +985,7 @@ static int udc_sam0_driver_preinit(const struct device *dev)
 		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
 		err = udc_register_ep(dev, &config->ep_cfg_out[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}
@@ -1008,7 +1005,7 @@ static int udc_sam0_driver_preinit(const struct device *dev)
 		config->ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
 		err = udc_register_ep(dev, &config->ep_cfg_in[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}

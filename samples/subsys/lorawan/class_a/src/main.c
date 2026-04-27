@@ -61,7 +61,7 @@ int main(void)
 
 	lora_dev = DEVICE_DT_GET(DT_ALIAS(lora0));
 	if (!device_is_ready(lora_dev)) {
-		LOG_ERR("%s: device not ready.", lora_dev->name);
+		LOG_ERROR("%s: device not ready.", lora_dev->name);
 		return 0;
 	}
 
@@ -71,14 +71,14 @@ int main(void)
 	 */
 	ret = lorawan_set_region(LORAWAN_REGION_EU868);
 	if (ret < 0) {
-		LOG_ERR("lorawan_set_region failed: %d", ret);
+		LOG_ERROR("lorawan_set_region failed: %d", ret);
 		return 0;
 	}
 #endif
 
 	ret = lorawan_start();
 	if (ret < 0) {
-		LOG_ERR("lorawan_start failed: %d", ret);
+		LOG_ERROR("lorawan_start failed: %d", ret);
 		return 0;
 	}
 
@@ -95,7 +95,7 @@ int main(void)
 	LOG_INF("Joining network over OTAA");
 	ret = lorawan_join(&join_cfg);
 	if (ret < 0) {
-		LOG_ERR("lorawan_join_network failed: %d", ret);
+		LOG_ERROR("lorawan_join_network failed: %d", ret);
 		return 0;
 	}
 
@@ -111,13 +111,13 @@ int main(void)
 		 * we'll just continue.
 		 */
 		if (ret == -EAGAIN) {
-			LOG_ERR("lorawan_send failed: %d. Continuing...", ret);
+			LOG_ERROR("lorawan_send failed: %d. Continuing...", ret);
 			k_sleep(DELAY);
 			continue;
 		}
 
 		if (ret < 0) {
-			LOG_ERR("lorawan_send failed: %d", ret);
+			LOG_ERROR("lorawan_send failed: %d", ret);
 			return 0;
 		}
 

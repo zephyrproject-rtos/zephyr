@@ -186,7 +186,7 @@ static int link_accept(const struct prov_bearer_cb *cb, void *cb_data)
 
 	err = bt_mesh_adv_enable();
 	if (err) {
-		LOG_ERR("Failed enabling advertiser");
+		LOG_ERROR("Failed enabling advertiser");
 		return err;
 	}
 

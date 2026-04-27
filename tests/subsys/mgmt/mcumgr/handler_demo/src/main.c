@@ -41,7 +41,7 @@ enum mgmt_cb_return test_function(uint32_t event, enum mgmt_cb_return prev_statu
 
 		LOG_INF("Received hook, allowing");
 	} else {
-		LOG_ERR("Received unknown event: %d", event);
+		LOG_ERROR("Received unknown event: %d", event);
 	}
 
 	/* Return OK status code to continue with acceptance to underlying handler */

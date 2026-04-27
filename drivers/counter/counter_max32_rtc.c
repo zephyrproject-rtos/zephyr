@@ -217,7 +217,7 @@ static int rtc_max32_init(const struct device *dev)
 
 	while ((ret = Wrap_MXC_RTC_Init(0, 0, cfg->perclk.clk_src)) != E_SUCCESS) {
 		if (ret < 0) {
-			LOG_ERR("RTC does not support this clock source.");
+			LOG_ERROR("RTC does not support this clock source.");
 			return -ENOTSUP;
 		}
 	}

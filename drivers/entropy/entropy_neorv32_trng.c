@@ -105,18 +105,18 @@ static int neorv32_trng_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(config->syscon)) {
-		LOG_ERR("syscon device not ready");
+		LOG_ERROR("syscon device not ready");
 		return -EINVAL;
 	}
 
 	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_SOC, &features);
 	if (err < 0) {
-		LOG_ERR("failed to determine implemented features (err %d)", err);
+		LOG_ERROR("failed to determine implemented features (err %d)", err);
 		return err;
 	}
 
 	if ((features & NEORV32_SYSINFO_SOC_IO_TRNG) == 0) {
-		LOG_ERR("neorv32 trng not supported");
+		LOG_ERROR("neorv32 trng not supported");
 		return -ENODEV;
 	}
 

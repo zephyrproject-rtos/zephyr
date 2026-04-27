@@ -180,7 +180,7 @@ static int eth_nxp_s32_init(const struct device *dev)
 	 */
 	clk_status = Clock_Ip_Init(&Clock_Ip_aClockConfig[CONFIG_ETH_NXP_S32_CLOCK_CONFIG_IDX]);
 	if (clk_status != CLOCK_IP_SUCCESS) {
-		LOG_ERR("Failed to configure clocks (%d)", clk_status);
+		LOG_ERROR("Failed to configure clocks (%d)", clk_status);
 		return -EIO;
 	}
 
@@ -190,13 +190,13 @@ static int eth_nxp_s32_init(const struct device *dev)
 	 */
 	err = select_phy_interface(cfg->ctrl_cfg.Gmac_pCtrlConfig->MiiMode);
 	if (err != 0) {
-		LOG_ERR("Failed to select PHY interface (%d)", err);
+		LOG_ERROR("Failed to select PHY interface (%d)", err);
 		return -EIO;
 	}
 
 	mac_status = Gmac_Ip_Init(cfg->instance, &cfg->ctrl_cfg);
 	if (mac_status != GMAC_STATUS_SUCCESS) {
-		LOG_ERR("Failed to initialize GMAC%d (%d)", cfg->instance, mac_status);
+		LOG_ERROR("Failed to initialize GMAC%d (%d)", cfg->instance, mac_status);
 		return -EIO;
 	}
 
@@ -242,7 +242,7 @@ static int eth_nxp_s32_stop(const struct device *dev)
 
 	status = Gmac_Ip_DisableController(cfg->instance);
 	if (status != GMAC_STATUS_SUCCESS) {
-		LOG_ERR("Failed to disable controller GMAC%d (%d)", cfg->instance, status);
+		LOG_ERROR("Failed to disable controller GMAC%d (%d)", cfg->instance, status);
 		err = -EIO;
 	}
 
@@ -281,8 +281,7 @@ static void eth_nxp_s32_iface_init(struct net_if *iface)
 	 * immediately after setting it.
 	 */
 	if (!device_is_ready(cfg->phy_dev)) {
-		LOG_ERR("PHY device (%p) is not ready, cannot init iface",
-			cfg->phy_dev);
+		LOG_ERROR("PHY device (%p) is not ready, cannot init iface", cfg->phy_dev);
 		return;
 	}
 
@@ -312,14 +311,14 @@ static int eth_nxp_s32_tx(const struct device *dev, struct net_pkt *pkt)
 	buf.Data = NULL;
 	status = Gmac_Ip_GetTxBuff(cfg->instance, cfg->tx_ring_idx, &buf, NULL);
 	if (status != GMAC_STATUS_SUCCESS) {
-		LOG_ERR("Failed to get tx buffer (%d)", status);
+		LOG_ERROR("Failed to get tx buffer (%d)", status);
 		res = -ENOBUFS;
 		goto error;
 	}
 
 	res = net_pkt_read(pkt, buf.Data, pkt_len);
 	if (res) {
-		LOG_ERR("Failed to copy packet to tx buffer (%d)", res);
+		LOG_ERROR("Failed to copy packet to tx buffer (%d)", res);
 		res = -ENOBUFS;
 		goto error;
 	}
@@ -327,14 +326,14 @@ static int eth_nxp_s32_tx(const struct device *dev, struct net_pkt *pkt)
 	buf.Length = (uint16_t)pkt_len;
 	status = Gmac_Ip_SendFrame(cfg->instance, cfg->tx_ring_idx, &buf, &tx_options);
 	if (status != GMAC_STATUS_SUCCESS) {
-		LOG_ERR("Failed to tx frame (%d)", status);
+		LOG_ERROR("Failed to tx frame (%d)", status);
 		res = -EIO;
 		goto error;
 	}
 
 	/* Wait for the transmission to complete */
 	if (k_sem_take(&ctx->tx_sem, ETH_NXP_S32_DMA_TX_TIMEOUT) != 0) {
-		LOG_ERR("Timeout transmitting frame");
+		LOG_ERROR("Timeout transmitting frame");
 		res = -EIO;
 		goto error;
 	}
@@ -342,11 +341,11 @@ static int eth_nxp_s32_tx(const struct device *dev, struct net_pkt *pkt)
 	/* Restore the buffer address pointer and clear the descriptor after the status is read */
 	status = Gmac_Ip_GetTransmitStatus(cfg->instance, cfg->tx_ring_idx, &buf, &tx_info);
 	if (status != GMAC_STATUS_SUCCESS) {
-		LOG_ERR("Failed to restore tx buffer: %s (%d) ",
-			(status == GMAC_STATUS_BUSY ? "busy" : "buf not found"), status);
+		LOG_ERROR("Failed to restore tx buffer: %s (%d) ",
+			  (status == GMAC_STATUS_BUSY ? "busy" : "buf not found"), status);
 		res = -EIO;
 	} else if (tx_info.ErrMask != 0U) {
-		LOG_ERR("Tx frame has errors (error mask 0x%X)", tx_info.ErrMask);
+		LOG_ERROR("Tx frame has errors (error mask 0x%X)", tx_info.ErrMask);
 		res = -EIO;
 	}
 
@@ -369,13 +368,13 @@ static struct net_pkt *eth_nxp_s32_get_pkt(const struct device *dev,
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, rx_info->PktLen,
 					   NET_AF_UNSPEC, 0, ETH_NXP_S32_BUF_TIMEOUT);
 	if (!pkt) {
-		LOG_ERR("Failed to allocate rx buffer of length %u", rx_info->PktLen);
+		LOG_ERROR("Failed to allocate rx buffer of length %u", rx_info->PktLen);
 		goto exit;
 	}
 
 	res = net_pkt_write(pkt, buf->Data, rx_info->PktLen);
 	if (res) {
-		LOG_ERR("Failed to write rx frame into pkt buffer (%d)", res);
+		LOG_ERROR("Failed to write rx frame into pkt buffer (%d)", res);
 		net_pkt_unref(pkt);
 		pkt = NULL;
 		goto exit;
@@ -402,7 +401,7 @@ static void eth_nxp_s32_rx(const struct device *dev)
 	status = Gmac_Ip_ReadFrame(cfg->instance, cfg->rx_ring_idx, &buf, &rx_info);
 	if (rx_info.ErrMask != 0U) {
 		Gmac_Ip_ProvideRxBuff(cfg->instance, cfg->rx_ring_idx, &buf);
-		LOG_ERR("Rx frame has errors (error mask 0x%X)", rx_info.ErrMask);
+		LOG_ERROR("Rx frame has errors (error mask 0x%X)", rx_info.ErrMask);
 	} else if (status == GMAC_STATUS_SUCCESS) {
 		pkt = eth_nxp_s32_get_pkt(dev, &buf, &rx_info);
 		Gmac_Ip_ProvideRxBuff(cfg->instance, cfg->rx_ring_idx, &buf);
@@ -411,7 +410,7 @@ static void eth_nxp_s32_rx(const struct device *dev)
 			if (res < 0) {
 				eth_stats_update_errors_rx(get_iface(ctx));
 				net_pkt_unref(pkt);
-				LOG_ERR("Failed to enqueue frame into rx queue (%d)", res);
+				LOG_ERROR("Failed to enqueue frame into rx queue (%d)", res);
 			}
 		}
 	}

@@ -964,7 +964,7 @@ static int hci_driver_send(const struct device *dev, struct net_buf *buf)
 	LOG_DBG("enter");
 
 	if (!buf->len) {
-		LOG_ERR("Empty HCI packet");
+		LOG_ERROR("Empty HCI packet");
 		return -EINVAL;
 	}
 
@@ -984,7 +984,7 @@ static int hci_driver_send(const struct device *dev, struct net_buf *buf)
 		break;
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 	default:
-		LOG_ERR("Unknown HCI type %u", type);
+		LOG_ERROR("Unknown HCI type %u", type);
 		return -EINVAL;
 	}
 
@@ -1009,7 +1009,7 @@ static int hci_driver_open(const struct device *dev, bt_hci_recv_t recv)
 
 	err = ll_init(&sem_recv);
 	if (err) {
-		LOG_ERR("LL initialization failed: %d", err);
+		LOG_ERROR("LL initialization failed: %d", err);
 		return err;
 	}
 

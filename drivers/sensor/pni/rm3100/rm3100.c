@@ -66,7 +66,7 @@ static void rm3100_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 
 	err = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
 	if (err) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
+		LOG_ERROR("Failed to get a read buffer of size %u bytes", min_buf_len);
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -75,7 +75,7 @@ static void rm3100_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 
 	err = rm3100_encode(dev, channels, num_channels, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to encode sensor data");
+		LOG_ERROR("Failed to encode sensor data");
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -85,7 +85,7 @@ static void rm3100_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 	struct rtio_sqe *complete_sqe = rtio_sqe_acquire(data->rtio.ctx);
 
 	if (!write_sqe || !read_sqe || !complete_sqe) {
-		LOG_ERR("Failed to acquire RTIO SQEs");
+		LOG_ERROR("Failed to acquire RTIO SQEs");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}
@@ -128,7 +128,7 @@ static void rm3100_submit(const struct device *dev, struct rtio_iodev_sqe *iodev
 	} else if (IS_ENABLED(CONFIG_RM3100_STREAM)) {
 		rm3100_stream_submit(dev, iodev_sqe);
 	} else {
-		LOG_ERR("Streaming not supported");
+		LOG_ERROR("Streaming not supported");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
 }
@@ -148,13 +148,13 @@ static int rm3100_init(const struct device *dev)
 
 #if CONFIG_SPI_RTIO
 	if (rtio_is_spi(data->rtio.type) && !spi_is_ready_iodev(data->rtio.iodev)) {
-		LOG_ERR("Bus is not ready");
+		LOG_ERROR("Bus is not ready");
 		return -ENODEV;
 	}
 #endif
 #if CONFIG_I2C_RTIO
 	if (rtio_is_i2c(data->rtio.type) && !i2c_is_ready_iodev(data->rtio.iodev)) {
-		LOG_ERR("Bus is not ready");
+		LOG_ERROR("Bus is not ready");
 		return -ENODEV;
 	}
 #endif
@@ -162,11 +162,10 @@ static int rm3100_init(const struct device *dev)
 	/* Check device ID to make sure we can talk to the sensor */
 	err = rm3100_bus_read(dev, RM3100_REG_REVID, &val, 1);
 	if (err < 0) {
-		LOG_ERR("Failed to read chip ID");
+		LOG_ERROR("Failed to read chip ID");
 		return err;
 	} else if (val != RM3100_REVID_VALUE) {
-		LOG_ERR("Invalid chip ID: 0x%02x, expected 0x%02x",
-			val, RM3100_REVID_VALUE);
+		LOG_ERROR("Invalid chip ID: 0x%02x, expected 0x%02x", val, RM3100_REVID_VALUE);
 		return -ENODEV;
 	}
 	LOG_DBG("RM3100 chip ID confirmed: 0x%02x", val);
@@ -174,7 +173,7 @@ static int rm3100_init(const struct device *dev)
 	if (IS_ENABLED(CONFIG_RM3100_STREAM)) {
 		err = rm3100_stream_init(dev);
 		if (err < 0) {
-			LOG_ERR("Failed to set up stream config: %d", err);
+			LOG_ERROR("Failed to set up stream config: %d", err);
 			return err;
 		}
 	}
@@ -197,7 +196,7 @@ static int rm3100_init(const struct device *dev)
 	 err = rm3100_bus_write(dev, RM3100_REG_CCX_MSB,
 				(uint8_t *)cycle_count, sizeof(cycle_count));
 	if (err < 0) {
-		LOG_ERR("Failed to set cycle count: %d", err);
+		LOG_ERROR("Failed to set cycle count: %d", err);
 		return err;
 	}
 
@@ -205,7 +204,7 @@ static int rm3100_init(const struct device *dev)
 
 	err = rm3100_bus_write(dev, RM3100_REG_TMRC, &val, 1);
 	if (err < 0) {
-		LOG_ERR("Failed to set ODR: %d", err);
+		LOG_ERROR("Failed to set ODR: %d", err);
 		return err;
 	}
 
@@ -214,7 +213,7 @@ static int rm3100_init(const struct device *dev)
 
 	err = rm3100_bus_write(dev, RM3100_REG_CMM, &val, 1);
 	if (err < 0) {
-		LOG_ERR("Failed to set sensor in Continuous Measurement Mode: %d", err);
+		LOG_ERROR("Failed to set sensor in Continuous Measurement Mode: %d", err);
 		return err;
 	}
 

@@ -210,12 +210,12 @@ static int eth_stellaris_rx(const struct device *dev)
 
 	pkt = eth_stellaris_rx_pkt(dev, iface);
 	if (!pkt) {
-		LOG_ERR("Failed to read data");
+		LOG_ERROR("Failed to read data");
 		goto err_mem;
 	}
 
 	if (net_recv_data(iface, pkt) < 0) {
-		LOG_ERR("Failed to place frame in RX Queue");
+		LOG_ERROR("Failed to place frame in RX Queue");
 		goto pkt_unref;
 	}
 
@@ -262,19 +262,19 @@ static void eth_stellaris_isr(const struct device *dev)
 	}
 
 	if (isr_val & BIT_MACRIS_TXER) {
-		LOG_ERR("Transmit Frame Error");
+		LOG_ERROR("Transmit Frame Error");
 		eth_stats_update_errors_tx(dev_data->iface);
 		dev_data->tx_err = true;
 		k_sem_give(&dev_data->tx_sem);
 	}
 
 	if (isr_val & BIT_MACRIS_RXER) {
-		LOG_ERR("Error Receiving Frame");
+		LOG_ERROR("Error Receiving Frame");
 		eth_stellaris_rx_error(dev_data->iface);
 	}
 
 	if (isr_val & BIT_MACRIS_FOV) {
-		LOG_ERR("Error Rx Overrun");
+		LOG_ERROR("Error Rx Overrun");
 		eth_stellaris_rx_error(dev_data->iface);
 	}
 

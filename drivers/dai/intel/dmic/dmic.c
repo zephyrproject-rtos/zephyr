@@ -183,7 +183,7 @@ static inline void dai_dmic_set_sync_period(uint32_t period, const struct dai_in
 
 	if (!WAIT_FOR((sys_read32(base + DMICSYNC_OFFSET) & DMICSYNC_SYNCPU) == 0, 1000,
 		      k_sleep(K_USEC(100)))) {
-		LOG_ERR("poll timeout");
+		LOG_ERROR("poll timeout");
 	}
 
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_CMDSYNC,
@@ -228,7 +228,7 @@ static void dmic_sync_trigger(const struct dai_intel_dmic *dmic)
 	/* waiting for CMDSYNC bit clearing */
 	if (!WAIT_FOR((sys_read32(base + DMICSYNC_OFFSET) & DMICSYNC_CMDSYNC) == 0,
 		      1000, k_sleep(K_USEC(100)))) {
-		LOG_ERR("poll timeout");
+		LOG_ERROR("poll timeout");
 	}
 }
 
@@ -705,7 +705,7 @@ static int dai_dmic_trigger(const struct device *dev, enum dai_dir dir,
 	LOG_DBG("dmic_trigger()");
 
 	if (dir != DAI_DIR_RX) {
-		LOG_ERR("dmic_trigger(): direction != DAI_DIR_RX");
+		LOG_ERROR("dmic_trigger(): direction != DAI_DIR_RX");
 		return -EINVAL;
 	}
 
@@ -716,7 +716,8 @@ static int dai_dmic_trigger(const struct device *dev, enum dai_dir dir,
 			dai_dmic_start(dmic);
 			dmic->state = DAI_STATE_RUNNING;
 		} else {
-			LOG_ERR("dmic_trigger(): state is not prepare or paused, dmic->state = %u",
+			LOG_ERROR(
+				"dmic_trigger(): state is not prepare or paused, dmic->state = %u",
 				dmic->state);
 		}
 		break;
@@ -767,12 +768,12 @@ static int dai_dmic_set_config(const struct device *dev,
 	LOG_INF("dmic_set_config()");
 
 	if (di >= CONFIG_DAI_DMIC_HW_FIFOS) {
-		LOG_ERR("dmic_set_config(): DAI index exceeds number of FIFOs");
+		LOG_ERROR("dmic_set_config(): DAI index exceeds number of FIFOs");
 		return -EINVAL;
 	}
 
 	if (!bespoke_cfg) {
-		LOG_ERR("dmic_set_config(): NULL config");
+		LOG_ERROR("dmic_set_config(): NULL config");
 		return -EINVAL;
 	}
 
@@ -793,7 +794,7 @@ static int dai_dmic_set_config(const struct device *dev,
 #endif
 
 	if (ret < 0) {
-		LOG_ERR("dmic_set_config(): Failed to set the requested configuration.");
+		LOG_ERROR("dmic_set_config(): Failed to set the requested configuration.");
 		goto out;
 	}
 

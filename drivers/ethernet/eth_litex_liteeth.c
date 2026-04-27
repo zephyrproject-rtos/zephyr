@@ -88,7 +88,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	/* wait for the device to be ready to transmit */
 	ret = k_sem_take(&context->sem_tx_ready, MAX_TX_FAILURE);
 	if (ret < 0) {
-		LOG_ERR("TX fifo failed");
+		LOG_ERROR("TX fifo failed");
 		return -EIO;
 	};
 	/* start transmitting */
@@ -124,7 +124,7 @@ static void eth_rx(const struct device *port)
 	pkt = net_pkt_rx_alloc_with_buffer(context->iface, len, NET_AF_UNSPEC, 0,
 					   K_NO_WAIT);
 	if (pkt == NULL) {
-		LOG_ERR("Failed to obtain RX buffer of length %u", len);
+		LOG_ERROR("Failed to obtain RX buffer of length %u", len);
 		return;
 	}
 
@@ -132,7 +132,7 @@ static void eth_rx(const struct device *port)
 	if (net_pkt_write(pkt,
 			  UINT_TO_POINTER(config->rx_buf_addr + (rxslot * ETH_LITEX_SLOT_SIZE)),
 			  len) != 0) {
-		LOG_ERR("Failed to append RX buffer to context buffer");
+		LOG_ERROR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
 		return;
 	}
@@ -140,7 +140,7 @@ static void eth_rx(const struct device *port)
 	/* receive data */
 	r = net_recv_data(context->iface, pkt);
 	if (r < 0) {
-		LOG_ERR("Failed to enqueue frame into RX queue: %d", r);
+		LOG_ERROR("Failed to enqueue frame into RX queue: %d", r);
 		net_pkt_unref(pkt);
 	}
 }
@@ -262,7 +262,7 @@ static void eth_iface_init(struct net_if *iface)
 	if (device_is_ready(config->phy_dev)) {
 		phy_link_callback_set(config->phy_dev, phy_link_state_changed, (void *)iface);
 	} else {
-		LOG_ERR("PHY device not ready");
+		LOG_ERROR("PHY device not ready");
 	}
 }
 

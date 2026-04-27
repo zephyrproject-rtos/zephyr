@@ -78,7 +78,7 @@ static int i2s_stm32_enable_clock(const struct device *dev)
 
 	ret = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (ret != 0) {
-		LOG_ERR("Could not enable I2S clock");
+		LOG_ERROR("Could not enable I2S clock");
 		return -EIO;
 	}
 
@@ -88,7 +88,7 @@ static int i2s_stm32_enable_clock(const struct device *dev)
 					      (clock_control_subsys_t)&cfg->pclken[1],
 					      NULL);
 		if (ret < 0) {
-			LOG_ERR("Could not configure I2S domain clock");
+			LOG_ERROR("Could not configure I2S domain clock");
 			return -EIO;
 		}
 	}
@@ -106,17 +106,15 @@ static int i2s_stm32_set_clock(const struct device *dev,
 	if (cfg->pclk_len > 1) {
 		/* Handle multiple clock sources */
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t)&cfg->pclken[1],
-					   &freq_in) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
+					   (clock_control_subsys_t)&cfg->pclken[1], &freq_in) < 0) {
+			LOG_ERROR("Failed call clock_control_get_rate(pclken[1])");
 			return -EIO;
 		}
 	} else {
 		/* Handle single clock source */
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					   (clock_control_subsys_t)&cfg->pclken[0],
-					   &freq_in) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
+					   (clock_control_subsys_t)&cfg->pclken[0], &freq_in) < 0) {
+			LOG_ERROR("Failed call clock_control_get_rate(pclken[0])");
 			return -EIO;
 		}
 	}
@@ -132,7 +130,7 @@ static int i2s_stm32_set_clock(const struct device *dev,
 
 	/* i2s_div == 0 || i2s_div == 1 are forbidden */
 	if (i2s_div < 2U) {
-		LOG_ERR("The linear prescaler value is unsupported");
+		LOG_ERROR("The linear prescaler value is unsupported");
 		return -EINVAL;
 	}
 
@@ -172,13 +170,12 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 	} else if (dir == I2S_DIR_BOTH) {
 		return -ENOSYS;
 	} else {
-		LOG_ERR("Either RX or TX direction must be selected");
+		LOG_ERROR("Either RX or TX direction must be selected");
 		return -EINVAL;
 	}
 
-	if (stream->state != I2S_STATE_NOT_READY &&
-	    stream->state != I2S_STATE_READY) {
-		LOG_ERR("invalid state");
+	if (stream->state != I2S_STATE_NOT_READY && stream->state != I2S_STATE_READY) {
+		LOG_ERROR("invalid state");
 		return -EINVAL;
 	}
 
@@ -237,7 +234,7 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 	} else if (i2s_cfg->word_size == 32U) {
 		LL_I2S_SetDataFormat(cfg->i2s, LL_I2S_DATAFORMAT_32B);
 	} else {
-		LOG_ERR("invalid word size");
+		LOG_ERROR("invalid word size");
 		return -EINVAL;
 	}
 
@@ -264,7 +261,7 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 		break;
 
 	default:
-		LOG_ERR("Unsupported I2S data format");
+		LOG_ERROR("Unsupported I2S data format");
 		return -EINVAL;
 	}
 
@@ -314,15 +311,14 @@ static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
 	} else if (dir == I2S_DIR_BOTH) {
 		return -ENOSYS;
 	} else {
-		LOG_ERR("Either RX or TX direction must be selected");
+		LOG_ERROR("Either RX or TX direction must be selected");
 		return -EINVAL;
 	}
 
 	switch (cmd) {
 	case I2S_TRIGGER_START:
 		if (stream->state != I2S_STATE_READY) {
-			LOG_ERR("START trigger: invalid state %d",
-				    stream->state);
+			LOG_ERROR("START trigger: invalid state %d", stream->state);
 			return -EIO;
 		}
 
@@ -330,7 +326,7 @@ static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
 
 		ret = stream->stream_start(stream, dev);
 		if (ret < 0) {
-			LOG_ERR("START trigger failed %d", ret);
+			LOG_ERROR("START trigger failed %d", ret);
 			return ret;
 		}
 
@@ -342,7 +338,7 @@ static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
 		key = irq_lock();
 		if (stream->state != I2S_STATE_RUNNING) {
 			irq_unlock(key);
-			LOG_ERR("STOP trigger: invalid state");
+			LOG_ERROR("STOP trigger: invalid state");
 			return -EIO;
 		}
 do_trigger_stop:
@@ -365,7 +361,7 @@ do_trigger_stop:
 		key = irq_lock();
 		if (stream->state != I2S_STATE_RUNNING) {
 			irq_unlock(key);
-			LOG_ERR("DRAIN trigger: invalid state");
+			LOG_ERROR("DRAIN trigger: invalid state");
 			return -EIO;
 		}
 
@@ -385,7 +381,7 @@ do_trigger_stop:
 		} else if (dir == I2S_DIR_RX) {
 			goto do_trigger_stop;
 		} else {
-			LOG_ERR("Unavailable direction");
+			LOG_ERROR("Unavailable direction");
 			return -EINVAL;
 		}
 		irq_unlock(key);
@@ -393,7 +389,7 @@ do_trigger_stop:
 
 	case I2S_TRIGGER_DROP:
 		if (stream->state == I2S_STATE_NOT_READY) {
-			LOG_ERR("DROP trigger: invalid state");
+			LOG_ERROR("DROP trigger: invalid state");
 			return -EIO;
 		}
 		stream->stream_disable(stream, dev);
@@ -403,7 +399,7 @@ do_trigger_stop:
 
 	case I2S_TRIGGER_PREPARE:
 		if (stream->state != I2S_STATE_ERROR) {
-			LOG_ERR("PREPARE trigger: invalid state");
+			LOG_ERROR("PREPARE trigger: invalid state");
 			return -EIO;
 		}
 		stream->state = I2S_STATE_READY;
@@ -411,7 +407,7 @@ do_trigger_stop:
 		break;
 
 	default:
-		LOG_ERR("Unsupported trigger command");
+		LOG_ERROR("Unsupported trigger command");
 		return -EINVAL;
 	}
 
@@ -618,7 +614,7 @@ static void dma_tx_callback(const struct device *dma_dev, void *arg,
 
 	/* Stop transmission if there was an error */
 	if (stream->state == I2S_STATE_ERROR) {
-		LOG_ERR("TX error detected");
+		LOG_ERROR("TX error detected");
 		goto tx_disable;
 	}
 
@@ -723,7 +719,7 @@ static int i2s_stm32_initialize(const struct device *dev)
 	/* Enable I2S clock propagation */
 	ret = i2s_stm32_enable_clock(dev);
 	if (ret < 0) {
-		LOG_ERR("%s: clock enabling failed: %d",  __func__, ret);
+		LOG_ERROR("%s: clock enabling failed: %d", __func__, ret);
 		return -EIO;
 	}
 
@@ -736,7 +732,7 @@ static int i2s_stm32_initialize(const struct device *dev)
 	/* Configure dt provided device signals when available */
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("I2S pinctrl setup failed (%d)", ret);
+		LOG_ERROR("I2S pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
@@ -749,11 +745,11 @@ static int i2s_stm32_initialize(const struct device *dev)
 
 	/* Get the binding to the DMA device */
 	if (!device_is_ready(dev_data->tx.dev_dma)) {
-		LOG_ERR("%s device not ready", dev_data->tx.dev_dma->name);
+		LOG_ERROR("%s device not ready", dev_data->tx.dev_dma->name);
 		return -ENODEV;
 	}
 	if (!device_is_ready(dev_data->rx.dev_dma)) {
-		LOG_ERR("%s device not ready", dev_data->rx.dev_dma->name);
+		LOG_ERROR("%s device not ready", dev_data->rx.dev_dma->name);
 		return -ENODEV;
 	}
 
@@ -793,7 +789,7 @@ static int rx_stream_start(struct stream *stream, const struct device *dev)
 			stream->dst_addr_increment, stream->fifo_threshold,
 			stream->cfg.block_size);
 	if (ret < 0) {
-		LOG_ERR("Failed to start RX DMA transfer: %d", ret);
+		LOG_ERROR("Failed to start RX DMA transfer: %d", ret);
 		return ret;
 	}
 
@@ -849,7 +845,7 @@ static int tx_stream_start(struct stream *stream, const struct device *dev)
 			stream->dst_addr_increment, stream->fifo_threshold,
 			stream->cfg.block_size);
 	if (ret < 0) {
-		LOG_ERR("Failed to start TX DMA transfer: %d", ret);
+		LOG_ERROR("Failed to start TX DMA transfer: %d", ret);
 		return ret;
 	}
 

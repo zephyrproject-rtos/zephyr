@@ -63,7 +63,7 @@ static int mcux_pwt_set_cycles(const struct device *dev, uint32_t channel,
 	ARG_UNUSED(pulse_cycles);
 	ARG_UNUSED(flags);
 
-	LOG_ERR("pwt only supports pwm capture");
+	LOG_ERROR("pwt only supports pwm capture");
 
 	return -ENOTSUP;
 }
@@ -77,24 +77,24 @@ static int mcux_pwt_configure_capture(const struct device *dev,
 	struct mcux_pwt_data *data = dev->data;
 
 	if (channel >= PWT_INPUTS) {
-		LOG_ERR("invalid channel %d", channel);
+		LOG_ERROR("invalid channel %d", channel);
 		return -EINVAL;
 	}
 
 	if (mcux_pwt_is_active(dev)) {
-		LOG_ERR("pwm capture in progress");
+		LOG_ERROR("pwm capture in progress");
 		return -EBUSY;
 	}
 
 #if defined(CONFIG_SOC_SERIES_KE1XZ)
 	if ((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_BOTH) {
-		LOG_ERR("Cannot capture both period and pulse width");
+		LOG_ERROR("Cannot capture both period and pulse width");
 		return -ENOTSUP;
 	}
 
 	if (((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_PERIOD) &&
 		((flags & PWM_POLARITY_MASK) == PWM_POLARITY_NORMAL)) {
-		LOG_ERR("Cannot capture period in normal polarity (active-high pulse)");
+		LOG_ERROR("Cannot capture period in normal polarity (active-high pulse)");
 		return -ENOTSUP;
 	}
 #endif
@@ -123,17 +123,17 @@ static int mcux_pwt_enable_capture(const struct device *dev, uint32_t channel)
 	struct mcux_pwt_data *data = dev->data;
 
 	if (channel >= PWT_INPUTS) {
-		LOG_ERR("invalid channel %d", channel);
+		LOG_ERROR("invalid channel %d", channel);
 		return -EINVAL;
 	}
 
 	if (!data->callback) {
-		LOG_ERR("PWM capture not configured");
+		LOG_ERROR("PWM capture not configured");
 		return -EINVAL;
 	}
 
 	if (mcux_pwt_is_active(dev)) {
-		LOG_ERR("PWM capture already enabled");
+		LOG_ERROR("PWM capture already enabled");
 		return -EBUSY;
 	}
 
@@ -150,7 +150,7 @@ static int mcux_pwt_disable_capture(const struct device *dev, uint32_t channel)
 	const struct mcux_pwt_config *config = dev->config;
 
 	if (channel >= PWT_INPUTS) {
-		LOG_ERR("invalid channel %d", channel);
+		LOG_ERROR("invalid channel %d", channel);
 		return -EINVAL;
 	}
 
@@ -299,13 +299,13 @@ static int mcux_pwt_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &data->clock_freq)) {
-		LOG_ERR("could not get clock frequency");
+		LOG_ERROR("could not get clock frequency");
 		return -EINVAL;
 	}
 

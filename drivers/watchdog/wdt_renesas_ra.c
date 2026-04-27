@@ -89,7 +89,7 @@ static int wdt_renesas_ra_timeout_calculate(const struct device *dev,
 		if (config->window.min != data->timeout.window.min ||
 		    config->window.max != data->timeout.window.max ||
 		    config->flags != data->timeout.flags) {
-			LOG_ERR("wdt support only one timeout setting value");
+			LOG_ERROR("wdt support only one timeout setting value");
 			return -EINVAL;
 		}
 
@@ -124,7 +124,7 @@ static int wdt_renesas_ra_timeout_calculate(const struct device *dev,
 	}
 
 	if (min_delta == UINT_MAX) {
-		LOG_ERR("wdt timeout out of range");
+		LOG_ERROR("wdt timeout out of range");
 		return -EINVAL;
 	}
 
@@ -133,7 +133,7 @@ static int wdt_renesas_ra_timeout_calculate(const struct device *dev,
 
 	if (window_start_lut[window_start_idx] == WDT_WINDOW_INVALID ||
 	    window_end_lut[window_end_idx] == WDT_WINDOW_INVALID) {
-		LOG_ERR("this wdt timeout is not supported");
+		LOG_ERROR("this wdt timeout is not supported");
 		return -ENOTSUP;
 	}
 
@@ -160,20 +160,20 @@ static int wdt_renesas_ra_setup(const struct device *dev, uint8_t options)
 	 * mode is supported
 	 */
 	if ((options & WDT_OPT_PAUSE_IN_SLEEP) != 0) {
-		LOG_ERR("wdt pause in sleep mode not supported");
+		LOG_ERROR("wdt pause in sleep mode not supported");
 		return -ENOTSUP;
 	}
 
 	wdt_renesas_ra_inst_lock(dev);
 
 	if (atomic_test_bit(&data->device_state, WDT_RENESAS_RA_ATOMIC_ENABLE)) {
-		LOG_ERR("wdt has been already setup");
+		LOG_ERROR("wdt has been already setup");
 		ret = -EBUSY;
 		goto end;
 	}
 
 	if (!atomic_test_bit(&data->device_state, WDT_RENESAS_RA_ATOMIC_TIMEOUT_SET)) {
-		LOG_ERR("wdt timeout should be installed before");
+		LOG_ERROR("wdt timeout should be installed before");
 		ret = -EFAULT;
 		goto end;
 	}
@@ -182,13 +182,13 @@ static int wdt_renesas_ra_setup(const struct device *dev, uint8_t options)
 	R_DEBUG->DBGSTOPCR_b.DBGSTOP_WDT = (options & WDT_OPT_PAUSE_HALTED_BY_DBG) != 0 ? 1 : 0;
 
 	if (R_WDT_Open(&data->wdt_ctrl, &data->wdt_cfg) != FSP_SUCCESS) {
-		LOG_ERR("wdt setup failed");
+		LOG_ERROR("wdt setup failed");
 		ret = -EIO;
 		goto end;
 	}
 
 	if (R_WDT_Refresh(&data->wdt_ctrl) != FSP_SUCCESS) {
-		LOG_ERR("wdt start failed");
+		LOG_ERROR("wdt start failed");
 		ret = -EIO;
 		goto end;
 	}
@@ -206,11 +206,11 @@ static int wdt_renesas_ra_disable(const struct device *dev)
 	struct wdt_renesas_ra_data *data = dev->data;
 
 	if (!atomic_test_bit(&data->device_state, WDT_RENESAS_RA_ATOMIC_ENABLE)) {
-		LOG_ERR("wdt has not been enabled yet");
+		LOG_ERROR("wdt has not been enabled yet");
 		return -EFAULT;
 	}
 
-	LOG_ERR("wdt can not be stopped once it has started");
+	LOG_ERROR("wdt can not be stopped once it has started");
 	return -EPERM;
 }
 
@@ -245,26 +245,26 @@ static int wdt_renesas_ra_install_timeout(const struct device *dev,
 	}
 
 	if (config->callback == NULL && (config->flags & WDT_FLAG_RESET_MASK) == 0) {
-		LOG_ERR("no timeout response was chosen");
+		LOG_ERROR("no timeout response was chosen");
 		return -EINVAL;
 	}
 
 	if (config->callback != NULL && (config->flags & WDT_FLAG_RESET_MASK) != 0) {
-		LOG_ERR("WDT_FLAG_RESET_NONE should be chosen in case of interrupt response");
+		LOG_ERROR("WDT_FLAG_RESET_NONE should be chosen in case of interrupt response");
 		return -ENOTSUP;
 	}
 
 	wdt_renesas_ra_inst_lock(dev);
 
 	if (atomic_test_bit(&data->device_state, WDT_RENESAS_RA_ATOMIC_ENABLE)) {
-		LOG_ERR("cannot change timeout settings after wdt setup");
+		LOG_ERROR("cannot change timeout settings after wdt setup");
 		ret = -EBUSY;
 		goto end;
 	}
 
 #ifndef CONFIG_WDT_RENESAS_RA_NMI
 	if (config->callback != NULL) {
-		LOG_ERR("interrupt response only available in case CONFIG_WDT_RENESAS_RA_NMI=y");
+		LOG_ERROR("interrupt response only available in case CONFIG_WDT_RENESAS_RA_NMI=y");
 		ret = -ENOTSUP;
 		goto end;
 	}

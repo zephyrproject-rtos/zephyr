@@ -49,13 +49,13 @@ static void sample_msg_cb(struct usbd_context *const ctx, const struct usbd_msg 
 	if (usbd_can_detect_vbus(ctx)) {
 		if (msg->type == USBD_MSG_VBUS_READY) {
 			if (usbd_enable(ctx)) {
-				LOG_ERR("Failed to enable device support");
+				LOG_ERROR("Failed to enable device support");
 			}
 		}
 
 		if (msg->type == USBD_MSG_VBUS_REMOVED) {
 			if (usbd_disable(ctx)) {
-				LOG_ERR("Failed to disable device support");
+				LOG_ERROR("Failed to disable device support");
 			}
 		}
 	}
@@ -80,14 +80,14 @@ static int enable_usb_device_next(void)
 
 	sample_usbd = sample_usbd_init_device(sample_msg_cb);
 	if (sample_usbd == NULL) {
-		LOG_ERR("Failed to initialize USB device");
+		LOG_ERROR("Failed to initialize USB device");
 		return -ENODEV;
 	}
 
 	if (!usbd_can_detect_vbus(sample_usbd)) {
 		err = usbd_enable(sample_usbd);
 		if (err) {
-			LOG_ERR("Failed to enable device support");
+			LOG_ERROR("Failed to enable device support");
 			return err;
 		}
 	}
@@ -117,13 +117,13 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 
 			recv_len = uart_fifo_read(dev, buffer, len);
 			if (recv_len < 0) {
-				LOG_ERR("Failed to read UART FIFO");
+				LOG_ERROR("Failed to read UART FIFO");
 				recv_len = 0;
 			};
 
 			rb_len = ring_buf_put(&ringbuf, buffer, recv_len);
 			if (rb_len < recv_len) {
-				LOG_ERR("Drop %u bytes", recv_len - rb_len);
+				LOG_ERROR("Drop %u bytes", recv_len - rb_len);
 			}
 
 			LOG_DBG("tty fifo -> ringbuf %d bytes", rb_len);
@@ -150,7 +150,7 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 
 			send_len = uart_fifo_fill(dev, buffer, rb_len);
 			if (send_len < rb_len) {
-				LOG_ERR("Drop %d bytes", rb_len - send_len);
+				LOG_ERROR("Drop %d bytes", rb_len - send_len);
 			}
 
 			LOG_DBG("ringbuf -> tty fifo %d bytes", send_len);
@@ -163,13 +163,13 @@ int main(void)
 	int ret;
 
 	if (!device_is_ready(uart_dev)) {
-		LOG_ERR("CDC ACM device not ready");
+		LOG_ERROR("CDC ACM device not ready");
 		return 0;
 	}
 
 	ret = enable_usb_device_next();
 	if (ret != 0) {
-		LOG_ERR("Failed to enable USB device support");
+		LOG_ERROR("Failed to enable USB device support");
 		return 0;
 	}
 

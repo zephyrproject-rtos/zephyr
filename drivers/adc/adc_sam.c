@@ -61,25 +61,25 @@ static int adc_sam_channel_setup(const struct device *dev,
 	uint8_t channel_id = channel_cfg->channel_id;
 
 	if (channel_cfg->differential) {
-		if (channel_id != (channel_cfg->input_positive / 2U)
-		    || channel_id != (channel_cfg->input_negative / 2U)) {
-			LOG_ERR("Invalid ADC differential input for channel %u", channel_id);
+		if (channel_id != (channel_cfg->input_positive / 2U) ||
+		    channel_id != (channel_cfg->input_negative / 2U)) {
+			LOG_ERROR("Invalid ADC differential input for channel %u", channel_id);
 			return -EINVAL;
 		}
 	} else {
 		if (channel_id != channel_cfg->input_positive) {
-			LOG_ERR("Invalid ADC single-ended input for channel %u", channel_id);
+			LOG_ERROR("Invalid ADC single-ended input for channel %u", channel_id);
 			return -EINVAL;
 		}
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Invalid ADC channel acquisition time");
+		LOG_ERROR("Invalid ADC channel acquisition time");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->reference != ADC_REF_EXTERNAL0) {
-		LOG_ERR("Invalid ADC channel reference (%d)", channel_cfg->reference);
+		LOG_ERROR("Invalid ADC channel reference (%d)", channel_cfg->reference);
 		return -EINVAL;
 	}
 
@@ -101,7 +101,7 @@ static int adc_sam_channel_setup(const struct device *dev,
 	switch (channel_cfg->gain) {
 	case ADC_GAIN_1_2:
 		if (!channel_cfg->differential) {
-			LOG_ERR("ADC 1/2x gain only allowed for differential channel");
+			LOG_ERROR("ADC 1/2x gain only allowed for differential channel");
 			return -EINVAL;
 		}
 		/* NOP */
@@ -114,13 +114,13 @@ static int adc_sam_channel_setup(const struct device *dev,
 		break;
 	case ADC_GAIN_4:
 		if (channel_cfg->differential) {
-			LOG_ERR("ADC 4x gain only allowed for single-ended channel");
+			LOG_ERROR("ADC 4x gain only allowed for single-ended channel");
 			return -EINVAL;
 		}
 		adc->ADC_CGR |= ADC_CGR_GAIN0(3) << (channel_id * 2U);
 		break;
 	default:
-		LOG_ERR("Invalid ADC channel gain (%d)", channel_cfg->gain);
+		LOG_ERROR("Invalid ADC channel gain (%d)", channel_cfg->gain);
 		return -EINVAL;
 	}
 
@@ -178,8 +178,8 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	}
 
 	if (sequence->buffer_size < needed_buffer_size) {
-		LOG_ERR("Provided buffer is too small (%u/%u)",
-				sequence->buffer_size, needed_buffer_size);
+		LOG_ERROR("Provided buffer is too small (%u/%u)", sequence->buffer_size,
+			  needed_buffer_size);
 		return -ENOMEM;
 	}
 
@@ -196,19 +196,18 @@ static int start_read(const struct device *dev,
 	/* Signal an error if the channel selection is invalid (no channels or
 	 * a non-existing one is selected).
 	 */
-	if (channels == 0U ||
-	    (channels & (~0UL << SAM_ADC_NUM_CHANNELS))) {
-		LOG_ERR("Invalid selection of channels");
+	if (channels == 0U || (channels & (~0UL << SAM_ADC_NUM_CHANNELS))) {
+		LOG_ERROR("Invalid selection of channels");
 		return -EINVAL;
 	}
 
 	if (sequence->oversampling != 0U) {
-		LOG_ERR("Oversampling is not supported");
+		LOG_ERROR("Oversampling is not supported");
 		return -EINVAL;
 	}
 
 	if (sequence->resolution != 12U) {
-		LOG_ERR("ADC resolution %d is not valid", sequence->resolution);
+		LOG_ERROR("ADC resolution %d is not valid", sequence->resolution);
 		return -EINVAL;
 	}
 
@@ -282,14 +281,14 @@ static int adc_sam_init(const struct device *dev)
 				     (clock_control_subsys_t)&cfg->clock_cfg,
 				     &frequency);
 	if (ret < 0) {
-		LOG_ERR("Failed to get ADC peripheral clock rate (%d)", ret);
+		LOG_ERROR("Failed to get ADC peripheral clock rate (%d)", ret);
 		return -ENODEV;
 	}
 
 	/* Calculate ADC clock frequency */
 	frequency = frequency / 2U / (cfg->prescaler + 1U);
 	if (frequency < 1000000U || frequency > 22000000U) {
-		LOG_ERR("Invalid ADC clock frequency %d (1MHz < freq < 22Mhz)", frequency);
+		LOG_ERROR("Invalid ADC clock frequency %d (1MHz < freq < 22Mhz)", frequency);
 		return -EINVAL;
 	}
 
@@ -329,7 +328,7 @@ static int adc_sam_init(const struct device *dev)
 	ret = clock_control_on(SAM_DT_PMC_CONTROLLER,
 			       (clock_control_subsys_t)&cfg->clock_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable ADC clock (%d)", ret);
+		LOG_ERROR("Failed to enable ADC clock (%d)", ret);
 		return -ENODEV;
 	}
 

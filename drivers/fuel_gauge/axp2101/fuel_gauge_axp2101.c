@@ -167,7 +167,7 @@ static int axp2101_init(const struct device *dev)
 	cfg = dev->config;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 

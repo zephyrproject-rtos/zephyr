@@ -335,7 +335,7 @@ static int cdc_ncm_out_start(struct usbd_class_data *const c_data)
 
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+		LOG_ERROR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
 	} else {
 		LOG_DBG("enqueue out %u", buf->size);
@@ -441,7 +441,7 @@ static int check_frame(struct cdc_ncm_eth_data *data, struct net_buf *const buf)
 	/* TODO: support nth32 */
 	ret = verify_nth16(data, ntb, len);
 	if (ret < 0) {
-		LOG_ERR("Failed to verify NTH16");
+		LOG_ERROR("Failed to verify NTH16");
 		return ret;
 	}
 
@@ -519,7 +519,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 
 	if (err || buf->len == 0) {
 		if (err != -ECONNABORTED) {
-			LOG_ERR("Bulk OUT transfer error (%d) or zero length", err);
+			LOG_ERROR("Bulk OUT transfer error (%d) or zero length", err);
 		}
 
 		goto restart_out_transfer;
@@ -527,7 +527,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 
 	ret = check_frame(data, buf);
 	if (ret < 0) {
-		LOG_ERR("check frame failed (%d)", ret);
+		LOG_ERROR("check frame failed (%d)", ret);
 		goto restart_out_transfer;
 	}
 
@@ -536,7 +536,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 	 */
 	src = net_pkt_alloc(K_MSEC(NET_PKT_ALLOC_TIMEOUT));
 	if (src == NULL) {
-		LOG_ERR("src packet alloc fail");
+		LOG_ERROR("src packet alloc fail");
 		goto restart_out_transfer;
 	}
 
@@ -573,7 +573,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 
 		pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_FOREVER);
 		if (!pkt) {
-			LOG_ERR("No memory for net_pkt");
+			LOG_ERROR("No memory for net_pkt");
 			goto unref_packet;
 		}
 
@@ -581,14 +581,14 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 
 		ret = net_pkt_skip(src, start);
 		if (ret < 0) {
-			LOG_ERR("Cannot advance pkt by %u bytes (%d)", start, ret);
+			LOG_ERROR("Cannot advance pkt by %u bytes (%d)", start, ret);
 			net_pkt_unref(pkt);
 			goto unref_packet;
 		}
 
 		ret = net_pkt_copy(pkt, src, len);
 		if (ret < 0) {
-			LOG_ERR("Cannot copy data (%d)", ret);
+			LOG_ERROR("Cannot copy data (%d)", ret);
 			net_pkt_unref(pkt);
 			goto unref_packet;
 		}
@@ -596,7 +596,7 @@ static int cdc_ncm_acl_out_cb(struct usbd_class_data *const c_data,
 		LOG_DBG("Received packet len %zu", net_pkt_get_len(pkt));
 
 		if (net_recv_data(data->iface, pkt) < 0) {
-			LOG_ERR("Packet %p dropped by network stack", pkt);
+			LOG_ERROR("Packet %p dropped by network stack", pkt);
 			net_pkt_unref(pkt);
 		}
 	}
@@ -697,7 +697,7 @@ static int cdc_ncm_send_notification(const struct device *dev,
 
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
+		LOG_ERROR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
 	}
 
@@ -850,7 +850,7 @@ static void usbd_cdc_ncm_update(struct usbd_class_data *const c_data,
 		(void)k_work_reschedule(&data->notif_work, K_MSEC(100));
 		ret = cdc_ncm_out_start(c_data);
 		if (ret < 0) {
-			LOG_ERR("Failed to start OUT transfer (%d)", ret);
+			LOG_ERROR("Failed to start OUT transfer (%d)", ret);
 		}
 	}
 }
@@ -991,7 +991,7 @@ static int usbd_cdc_ncm_init(struct usbd_class_data *const c_data)
 
 	if (desc->if0_ecm.iMACAddress == 0) {
 		if (usbd_add_descriptor(uds_ctx, data->mac_desc_data)) {
-			LOG_ERR("Failed to add iMACAddress string descriptor");
+			LOG_ERROR("Failed to add iMACAddress string descriptor");
 		} else {
 			desc->if0_ecm.iMACAddress = usbd_str_desc_get_idx(data->mac_desc_data);
 		}
@@ -1047,7 +1047,7 @@ static int cdc_ncm_send(const struct device *dev, struct net_pkt *const pkt)
 
 	buf = cdc_ncm_buf_alloc(cdc_ncm_get_bulk_in(c_data));
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		return -ENOMEM;
 	}
 
@@ -1074,7 +1074,7 @@ static int cdc_ncm_send(const struct device *dev, struct net_pkt *const pkt)
 	net_buf_add(buf, sys_le16_to_cpu(ntb->ndp_datagram[0].wDatagramIndex));
 
 	if (net_pkt_read(pkt, buf->data + buf->len, len)) {
-		LOG_ERR("Failed copy net_pkt");
+		LOG_ERROR("Failed copy net_pkt");
 		net_buf_unref(buf);
 
 		return -ENOBUFS;

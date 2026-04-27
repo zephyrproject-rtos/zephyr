@@ -70,8 +70,7 @@ static int vl53l0x_setup_single_shot(const struct device *dev)
 
 	ret = VL53L0X_StaticInit(&drv_data->vl53l0x);
 	if (ret) {
-		LOG_ERR("[%s] VL53L0X_StaticInit failed",
-			dev->name);
+		LOG_ERROR("[%s] VL53L0X_StaticInit failed", dev->name);
 		goto exit;
 	}
 
@@ -79,8 +78,7 @@ static int vl53l0x_setup_single_shot(const struct device *dev)
 					    &VhvSettings,
 					    &PhaseCal);
 	if (ret) {
-		LOG_ERR("[%s] VL53L0X_PerformRefCalibration failed",
-			dev->name);
+		LOG_ERROR("[%s] VL53L0X_PerformRefCalibration failed", dev->name);
 		goto exit;
 	}
 
@@ -88,16 +86,14 @@ static int vl53l0x_setup_single_shot(const struct device *dev)
 					       &refSpadCount,
 					       &isApertureSpads);
 	if (ret) {
-		LOG_ERR("[%s] VL53L0X_PerformRefSpadManagement failed",
-			dev->name);
+		LOG_ERROR("[%s] VL53L0X_PerformRefSpadManagement failed", dev->name);
 		goto exit;
 	}
 
 	ret = VL53L0X_SetDeviceMode(&drv_data->vl53l0x,
 				    VL53L0X_DEVICEMODE_SINGLE_RANGING);
 	if (ret) {
-		LOG_ERR("[%s] VL53L0X_SetDeviceMode failed",
-			dev->name);
+		LOG_ERROR("[%s] VL53L0X_SetDeviceMode failed", dev->name);
 		goto exit;
 	}
 
@@ -105,8 +101,7 @@ static int vl53l0x_setup_single_shot(const struct device *dev)
 					  VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE,
 					  1);
 	if (ret) {
-		LOG_ERR("[%s] VL53L0X_SetLimitCheckEnable sigma failed",
-			dev->name);
+		LOG_ERROR("[%s] VL53L0X_SetLimitCheckEnable sigma failed", dev->name);
 		goto exit;
 	}
 
@@ -114,8 +109,7 @@ static int vl53l0x_setup_single_shot(const struct device *dev)
 					  VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE,
 					  1);
 	if (ret) {
-		LOG_ERR("[%s] VL53L0X_SetLimitCheckEnable signal rate failed",
-			dev->name);
+		LOG_ERROR("[%s] VL53L0X_SetLimitCheckEnable signal rate failed", dev->name);
 		goto exit;
 	}
 
@@ -124,8 +118,7 @@ static int vl53l0x_setup_single_shot(const struct device *dev)
 					 VL53L0X_SETUP_SIGNAL_LIMIT);
 
 	if (ret) {
-		LOG_ERR("[%s] VL53L0X_SetLimitCheckValue signal rate failed",
-			dev->name);
+		LOG_ERROR("[%s] VL53L0X_SetLimitCheckValue signal rate failed", dev->name);
 		goto exit;
 	}
 
@@ -133,16 +126,14 @@ static int vl53l0x_setup_single_shot(const struct device *dev)
 					 VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE,
 					 VL53L0X_SETUP_SIGMA_LIMIT);
 	if (ret) {
-		LOG_ERR("[%s] VL53L0X_SetLimitCheckValue sigma failed",
-			dev->name);
+		LOG_ERROR("[%s] VL53L0X_SetLimitCheckValue sigma failed", dev->name);
 		goto exit;
 	}
 
 	ret = VL53L0X_SetMeasurementTimingBudgetMicroSeconds(&drv_data->vl53l0x,
 							     VL53L0X_SETUP_MAX_TIME_FOR_RANGING);
 	if (ret) {
-		LOG_ERR("[%s] VL53L0X_SetMeasurementTimingBudgetMicroSeconds failed",
-			dev->name);
+		LOG_ERROR("[%s] VL53L0X_SetMeasurementTimingBudgetMicroSeconds failed", dev->name);
 		goto exit;
 	}
 
@@ -150,8 +141,7 @@ static int vl53l0x_setup_single_shot(const struct device *dev)
 					  VL53L0X_VCSEL_PERIOD_PRE_RANGE,
 					  VL53L0X_SETUP_PRE_RANGE_VCSEL_PERIOD);
 	if (ret) {
-		LOG_ERR("[%s] VL53L0X_SetVcselPulsePeriod pre range failed",
-			dev->name);
+		LOG_ERROR("[%s] VL53L0X_SetVcselPulsePeriod pre range failed", dev->name);
 		goto exit;
 	}
 
@@ -159,8 +149,7 @@ static int vl53l0x_setup_single_shot(const struct device *dev)
 					  VL53L0X_VCSEL_PERIOD_FINAL_RANGE,
 					  VL53L0X_SETUP_FINAL_RANGE_VCSEL_PERIOD);
 	if (ret) {
-		LOG_ERR("[%s] VL53L0X_SetVcselPulsePeriod final range failed",
-			dev->name);
+		LOG_ERROR("[%s] VL53L0X_SetVcselPulsePeriod final range failed", dev->name);
 		goto exit;
 	}
 
@@ -182,8 +171,7 @@ static int vl53l0x_start(const struct device *dev)
 	if (config->xshut.port) {
 		r = gpio_pin_configure_dt(&config->xshut, GPIO_OUTPUT_INACTIVE);
 		if (r < 0) {
-			LOG_ERR("[%s] Unable to inactivate XSHUT: %d",
-				dev->name, r);
+			LOG_ERROR("[%s] Unable to inactivate XSHUT: %d", dev->name, r);
 			return -EIO;
 		}
 		k_sleep(T_BOOT);
@@ -193,8 +181,7 @@ static int vl53l0x_start(const struct device *dev)
 	if (config->i2c.addr != VL53L0X_INITIAL_ADDR) {
 		ret = VL53L0X_SetDeviceAddress(&drv_data->vl53l0x, 2 * config->i2c.addr);
 		if (ret != 0) {
-			LOG_ERR("[%s] Unable to reconfigure I2C address",
-				dev->name);
+			LOG_ERROR("[%s] Unable to reconfigure I2C address", dev->name);
 			return -EIO;
 		}
 
@@ -206,7 +193,7 @@ static int vl53l0x_start(const struct device *dev)
 
 	ret = VL53L0X_GetDeviceInfo(&drv_data->vl53l0x, &vl53l0x_dev_info);
 	if (ret < 0) {
-		LOG_ERR("[%s] Could not get info from device.", dev->name);
+		LOG_ERROR("[%s] Could not get info from device.", dev->name);
 		return -ENODEV;
 	}
 
@@ -223,15 +210,14 @@ static int vl53l0x_start(const struct device *dev)
 			     VL53L0X_REG_WHO_AM_I,
 			     &vl53l0x_id);
 	if ((ret < 0) || (vl53l0x_id != VL53L0X_CHIP_ID)) {
-		LOG_ERR("[%s] Issue on device identification", dev->name);
+		LOG_ERROR("[%s] Issue on device identification", dev->name);
 		return -ENOTSUP;
 	}
 
 	/* sensor init */
 	ret = VL53L0X_DataInit(&drv_data->vl53l0x);
 	if (ret < 0) {
-		LOG_ERR("[%s] VL53L0X_DataInit return error (%d)",
-			dev->name, ret);
+		LOG_ERROR("[%s] VL53L0X_DataInit return error (%d)", dev->name, ret);
 		return -ENOTSUP;
 	}
 
@@ -266,8 +252,7 @@ static int vl53l0x_sample_fetch(const struct device *dev,
 	ret = VL53L0X_PerformSingleRangingMeasurement(&drv_data->vl53l0x,
 						      &drv_data->RangingMeasurementData);
 	if (ret < 0) {
-		LOG_ERR("[%s] Could not perform measurement (error=%d)",
-			dev->name, ret);
+		LOG_ERROR("[%s] Could not perform measurement (error=%d)", dev->name, ret);
 		return -EINVAL;
 	}
 
@@ -338,7 +323,7 @@ static int vl53l0x_init(const struct device *dev)
 
 #if defined(CONFIG_VL53L0X_RECONFIGURE_ADDRESS) || defined(CONFIG_PM_DEVICE)
 	if (config->xshut.port == NULL) {
-		LOG_ERR("[%s] Missing XSHUT gpio spec", dev->name);
+		LOG_ERROR("[%s] Missing XSHUT gpio spec", dev->name);
 		return -ENOTSUP;
 	}
 #endif
@@ -350,15 +335,15 @@ static int vl53l0x_init(const struct device *dev)
 	 */
 	r = gpio_pin_configure_dt(&config->xshut, GPIO_OUTPUT_ACTIVE);
 	if (r < 0) {
-		LOG_ERR("[%s] Unable to shutdown sensor", dev->name);
+		LOG_ERROR("[%s] Unable to shutdown sensor", dev->name);
 		return -EIO;
 	}
 	LOG_DBG("[%s] Shutdown", dev->name);
 #else
 	if (config->i2c.addr != VL53L0X_INITIAL_ADDR) {
-		LOG_ERR("[%s] Invalid device address (should be 0x%X or "
-			"CONFIG_VL53L0X_RECONFIGURE_ADDRESS should be enabled)",
-			dev->name, VL53L0X_INITIAL_ADDR);
+		LOG_ERROR("[%s] Invalid device address (should be 0x%X or "
+			  "CONFIG_VL53L0X_RECONFIGURE_ADDRESS should be enabled)",
+			  dev->name, VL53L0X_INITIAL_ADDR);
 		return -ENOTSUP;
 	}
 
@@ -383,14 +368,14 @@ static int vl53l0x_pm_action(const struct device *dev,
 	case PM_DEVICE_ACTION_RESUME:
 		ret = vl53l0x_init(dev);
 		if (ret != 0) {
-			LOG_ERR("resume init: %d", ret);
+			LOG_ERROR("resume init: %d", ret);
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		/* HW Standby */
 		ret = gpio_pin_set_dt(&config->xshut, 1);
 		if (ret < 0) {
-			LOG_ERR("[%s] XSHUT pin active", dev->name);
+			LOG_ERROR("[%s] XSHUT pin active", dev->name);
 		}
 		break;
 	default:

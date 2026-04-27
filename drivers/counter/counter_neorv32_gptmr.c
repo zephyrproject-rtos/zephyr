@@ -112,7 +112,7 @@ static int neorv32_gptmr_set_top_value(const struct device *dev, const struct co
 	}
 
 	if ((cfg->flags & ~(COUNTER_TOP_CFG_DONT_RESET | COUNTER_TOP_CFG_RESET_WHEN_LATE)) != 0U) {
-		LOG_ERR("unsupported flags 0x%08x", cfg->flags);
+		LOG_ERROR("unsupported flags 0x%08x", cfg->flags);
 		return -ENOTSUP;
 	}
 
@@ -173,7 +173,7 @@ static uint32_t neorv32_gptmr_get_freq(const struct device *dev)
 
 	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_CLK, &clk);
 	if (err < 0) {
-		LOG_ERR("failed to determine clock rate (err %d)", err);
+		LOG_ERROR("failed to determine clock rate (err %d)", err);
 		return 0U;
 	}
 
@@ -212,18 +212,18 @@ static int neorv32_gptmr_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(config->syscon)) {
-		LOG_ERR("syscon device not ready");
+		LOG_ERROR("syscon device not ready");
 		return -EINVAL;
 	}
 
 	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_SOC, &features);
 	if (err < 0) {
-		LOG_ERR("failed to determine implemented features (err %d)", err);
+		LOG_ERROR("failed to determine implemented features (err %d)", err);
 		return -EIO;
 	}
 
 	if ((features & NEORV32_SYSINFO_SOC_IO_GPTMR) == 0) {
-		LOG_ERR("neorv32 gptmr not supported");
+		LOG_ERROR("neorv32 gptmr not supported");
 		return -ENODEV;
 	}
 

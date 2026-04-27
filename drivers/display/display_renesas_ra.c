@@ -72,12 +72,12 @@ static int ra_display_write(const struct device *dev, const uint16_t x, const ui
 	fsp_err_t err;
 
 	if (desc->pitch < desc->width) {
-		LOG_ERR("Pitch is smaller than width");
+		LOG_ERROR("Pitch is smaller than width");
 		return -EINVAL;
 	}
 
 	if ((desc->pitch * data->pixel_size * desc->height) > desc->buf_size) {
-		LOG_ERR("Input buffer too small");
+		LOG_ERROR("Input buffer too small");
 		return -EINVAL;
 	}
 
@@ -85,7 +85,7 @@ static int ra_display_write(const struct device *dev, const uint16_t x, const ui
 		l_pend_buf = buf;
 	} else {
 #if CONFIG_RENESAS_RA_GLCDC_FB_NUM == 0
-		LOG_ERR("Partial write requires internal frame buffer");
+		LOG_ERROR("Partial write requires internal frame buffer");
 		return -ENOTSUP;
 #else
 		const uint8_t *src = buf;
@@ -126,7 +126,7 @@ static int ra_display_write(const struct device *dev, const uint16_t x, const ui
 		err = R_GLCDC_BufferChange(&data->display_ctrl, (uint8_t *)data->pend_buf,
 					   DISPLAY_FRAME_LAYER_1);
 		if (err != FSP_SUCCESS) {
-			LOG_ERR("GLCDC buffer change failed");
+			LOG_ERROR("GLCDC buffer change failed");
 			return -EIO;
 		}
 
@@ -136,7 +136,7 @@ static int ra_display_write(const struct device *dev, const uint16_t x, const ui
 	if (data->display_ctrl.state != DISPLAY_STATE_DISPLAYING) {
 		err = R_GLCDC_Start(&data->display_ctrl);
 		if (err != FSP_SUCCESS) {
-			LOG_ERR("GLCDC start failed");
+			LOG_ERROR("GLCDC start failed");
 			return -EIO;
 		}
 
@@ -231,7 +231,7 @@ static int ra_display_set_pixel_format(const struct device *dev,
 	}
 
 	if (data->display_ctrl.state == DISPLAY_STATE_DISPLAYING) {
-		LOG_ERR("Cannot change the display format while displaying");
+		LOG_ERROR("Cannot change the display format while displaying");
 		return -EWOULDBLOCK;
 	}
 
@@ -258,7 +258,7 @@ static int ra_display_set_pixel_format(const struct device *dev,
 	buf_len = (config->height * config->width * DISPLAY_BITS_PER_PIXEL(set_pixel_format)) >> 3;
 
 	if (buf_len > data->frame_buffer_len) {
-		LOG_ERR("Frame buffer is smaller than new pixel format require");
+		LOG_ERROR("Frame buffer is smaller than new pixel format require");
 		return -ENOTSUP;
 	}
 
@@ -272,7 +272,7 @@ static int ra_display_set_pixel_format(const struct device *dev,
 
 	err = R_GLCDC_LayerChange(&data->display_ctrl, &layer_cfg, DISPLAY_FRAME_LAYER_1);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Failed to change the pixel format");
+		LOG_ERROR("Failed to change the pixel format");
 		return -EIO;
 	}
 
@@ -371,7 +371,7 @@ static int display_init(const struct device *dev)
 	if (config->pincfg != NULL) {
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 		if (err) {
-			LOG_ERR("pin function initial failed");
+			LOG_ERROR("pin function initial failed");
 			return err;
 		}
 	}
@@ -381,19 +381,19 @@ static int display_init(const struct device *dev)
 	err = clock_control_on(config->clock_dev,
 			       (clock_control_subsys_t)&config->clock_glcdc_subsys);
 	if (err) {
-		LOG_ERR("Enable GLCDC clock failed!");
+		LOG_ERROR("Enable GLCDC clock failed!");
 		return err;
 	}
 
 	err = R_GLCDC_Open(&data->display_ctrl, &data->display_fsp_cfg);
 	if (err) {
-		LOG_ERR("GLCDC open failed");
+		LOG_ERROR("GLCDC open failed");
 		return -EIO;
 	}
 
 	err = gpio_pin_configure_dt(&config->backlight_gpio, GPIO_OUTPUT_ACTIVE);
 	if (err) {
-		LOG_ERR("config backlight gpio failed");
+		LOG_ERROR("config backlight gpio failed");
 		return err;
 	}
 

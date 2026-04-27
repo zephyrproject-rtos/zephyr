@@ -152,7 +152,7 @@ int bt_apollo_spi_send(uint8_t *data, uint16_t len, bt_spi_transceive_fun transc
 			/* Transmit the message */
 			ret = transceive(data, len, NULL, 0);
 			if (ret) {
-				LOG_ERR("SPI write error %d", ret);
+				LOG_ERROR("SPI write error %d", ret);
 			}
 			break;
 		}
@@ -160,7 +160,7 @@ int bt_apollo_spi_send(uint8_t *data, uint16_t len, bt_spi_transceive_fun transc
 #elif (CONFIG_SOC_SERIES_APOLLO3X)
 	ret = transceive(data, len, NULL, 0);
 	if ((ret) && (ret != AM_HAL_BLE_STATUS_SPI_NOT_READY)) {
-		LOG_ERR("SPI write error %d", ret);
+		LOG_ERROR("SPI write error %d", ret);
 	}
 #endif /* CONFIG_SOC_SERIES_APOLLO4X */
 
@@ -216,7 +216,7 @@ int bt_apollo_spi_rcv(uint8_t *data, uint16_t *len, bt_spi_transceive_fun transc
 		ret = transceive(NULL, 0, data, read_size);
 
 		if (ret) {
-			LOG_ERR("SPI read error %d", ret);
+			LOG_ERROR("SPI read error %d", ret);
 			break;
 		}
 	} while (0);
@@ -325,14 +325,14 @@ int bt_apollo_controller_init(spi_transmit_fun transmit)
 		LOG_INF("BT controller initialized");
 	} else {
 		am_devices_cooper_set_initialize_state(AM_DEVICES_COOPER_STATE_INITIALIZE_FAIL);
-		LOG_ERR("BT controller initialization fail");
+		LOG_ERROR("BT controller initialization fail");
 	}
 #elif (CONFIG_SOC_SERIES_APOLLO3X)
 	ret = am_apollo3_bt_controller_init();
 	if (ret == AM_HAL_STATUS_SUCCESS) {
 		LOG_INF("BT controller initialized");
 	} else {
-		LOG_ERR("BT controller initialization fail");
+		LOG_ERROR("BT controller initialization fail");
 	}
 
 	irq_enable(DT_IRQN(SPI_DEV_NODE));
@@ -367,7 +367,7 @@ int bt_apollo_controller_deinit(void)
 		LOG_INF("BT controller deinitialized");
 	} else {
 		ret = -EPERM;
-		LOG_ERR("BT controller deinitialization fails");
+		LOG_ERROR("BT controller deinitialization fails");
 	}
 #else
 	ret = -ENOTSUP;
@@ -447,17 +447,17 @@ int bt_apollo_dev_init(void)
 {
 #if (CONFIG_SOC_SERIES_APOLLO4X)
 	if (!gpio_is_ready_dt(&irq_gpio)) {
-		LOG_ERR("IRQ GPIO device not ready");
+		LOG_ERROR("IRQ GPIO device not ready");
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&rst_gpio)) {
-		LOG_ERR("Reset GPIO device not ready");
+		LOG_ERROR("Reset GPIO device not ready");
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&clkreq_gpio)) {
-		LOG_ERR("CLKREQ GPIO device not ready");
+		LOG_ERROR("CLKREQ GPIO device not ready");
 		return -ENODEV;
 	}
 #endif /* CONFIG_SOC_SERIES_APOLLO4X */

@@ -280,7 +280,7 @@ static int intel_sha_device_set_hash_type(const struct device *dev, struct hash_
 	ctx_idx = intel_sha_get_unused_session_idx();
 
 	if (ctx_idx < 0) {
-		LOG_ERR("All sessions in use!");
+		LOG_ERROR("All sessions in use!");
 		return -ENOSPC;
 	}
 	ctx->drv_sessn_state = &sha_sessions[ctx_idx];

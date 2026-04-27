@@ -116,7 +116,7 @@ static int nxp_sema42_init(const struct device *dev)
 		int ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
 
 		if (ret) {
-			LOG_ERR("Device clock turn on failed");
+			LOG_ERROR("Device clock turn on failed");
 			return ret;
 		}
 	}

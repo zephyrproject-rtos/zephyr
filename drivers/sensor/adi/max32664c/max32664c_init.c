@@ -57,7 +57,7 @@ static int max32664c_write_config(const struct device *dev)
 	tx[2] = 0x13;
 	tx[3] = config->min_integration_time_idx;
 	if (max32664c_i2c_transmit(dev, tx, 4, &rx, 1, MAX32664C_DEFAULT_CMD_DELAY)) {
-		LOG_ERR("Can not write minimum integration time!");
+		LOG_ERROR("Can not write minimum integration time!");
 		return -EINVAL;
 	}
 
@@ -66,7 +66,7 @@ static int max32664c_write_config(const struct device *dev)
 	tx[2] = 0x14;
 	tx[3] = config->min_sampling_rate_idx;
 	if (max32664c_i2c_transmit(dev, tx, 4, &rx, 1, MAX32664C_DEFAULT_CMD_DELAY)) {
-		LOG_ERR("Can not write minimum sampling rate!");
+		LOG_ERROR("Can not write minimum sampling rate!");
 		return -EINVAL;
 	}
 
@@ -75,7 +75,7 @@ static int max32664c_write_config(const struct device *dev)
 	tx[2] = 0x15;
 	tx[3] = config->max_integration_time_idx;
 	if (max32664c_i2c_transmit(dev, tx, 4, &rx, 1, MAX32664C_DEFAULT_CMD_DELAY)) {
-		LOG_ERR("Can not write maximum integration time!");
+		LOG_ERROR("Can not write maximum integration time!");
 		return -EINVAL;
 	}
 
@@ -84,7 +84,7 @@ static int max32664c_write_config(const struct device *dev)
 	tx[2] = 0x16;
 	tx[3] = config->max_sampling_rate_idx;
 	if (max32664c_i2c_transmit(dev, tx, 4, &rx, 1, MAX32664C_DEFAULT_CMD_DELAY)) {
-		LOG_ERR("Can not write maximum sampling rate!");
+		LOG_ERROR("Can not write maximum sampling rate!");
 		return -EINVAL;
 	}
 
@@ -92,7 +92,7 @@ static int max32664c_write_config(const struct device *dev)
 	tx[1] = 0x02;
 	tx[2] = config->report_period;
 	if (max32664c_i2c_transmit(dev, tx, 3, &rx, 1, MAX32664C_DEFAULT_CMD_DELAY)) {
-		LOG_ERR("Can not set report period!");
+		LOG_ERROR("Can not set report period!");
 		return -EINVAL;
 	}
 
@@ -104,7 +104,7 @@ static int max32664c_write_config(const struct device *dev)
 	tx[4] = config->hr_config[1];
 	LOG_DBG("Configuring WHRM: 0x%02X%02X", tx[3], tx[4]);
 	if (max32664c_i2c_transmit(dev, tx, 5, &rx, 1, MAX32664C_DEFAULT_CMD_DELAY)) {
-		LOG_ERR("Can not configure WHRM!");
+		LOG_ERROR("Can not configure WHRM!");
 		return -EINVAL;
 	}
 
@@ -116,7 +116,7 @@ static int max32664c_write_config(const struct device *dev)
 	tx[4] = config->spo2_config[1];
 	LOG_DBG("Configuring SpO2: 0x%02X%02X", tx[3], tx[4]);
 	if (max32664c_i2c_transmit(dev, tx, 5, &rx, 1, MAX32664C_DEFAULT_CMD_DELAY)) {
-		LOG_ERR("Can not configure SpO2!");
+		LOG_ERROR("Can not configure SpO2!");
 		return -EINVAL;
 	}
 
@@ -125,12 +125,12 @@ static int max32664c_write_config(const struct device *dev)
 	tx[1] = 0x01;
 	tx[2] = 0x01;
 	if (max32664c_i2c_transmit(dev, tx, 3, &rx, 1, MAX32664C_DEFAULT_CMD_DELAY)) {
-		LOG_ERR("Can not set interrupt threshold!");
+		LOG_ERROR("Can not set interrupt threshold!");
 		return -EINVAL;
 	}
 
 	if (max32664c_set_spo2_coeffs(dev)) {
-		LOG_ERR("Can not set SpO2 calibration coefficients!");
+		LOG_ERROR("Can not set SpO2 calibration coefficients!");
 		return -EINVAL;
 	}
 
@@ -154,7 +154,7 @@ static int max32664c_read_config(const struct device *dev)
 	tx[0] = 0x11;
 	tx[1] = 0x02;
 	if (max32664c_i2c_transmit(dev, tx, 2, rx, 2, MAX32664C_DEFAULT_CMD_DELAY)) {
-		LOG_ERR("Can not read report period!");
+		LOG_ERROR("Can not read report period!");
 		return -EINVAL;
 	}
 	data->report_period = rx[1];
@@ -163,7 +163,7 @@ static int max32664c_read_config(const struct device *dev)
 	tx[1] = 0x07;
 	tx[2] = 0x13;
 	if (max32664c_i2c_transmit(dev, tx, 3, rx, 2, MAX32664C_DEFAULT_CMD_DELAY)) {
-		LOG_ERR("Can not read minimum integration time!");
+		LOG_ERROR("Can not read minimum integration time!");
 		return -EINVAL;
 	}
 	data->min_integration_time_idx = rx[1];
@@ -172,7 +172,7 @@ static int max32664c_read_config(const struct device *dev)
 	tx[1] = 0x07;
 	tx[2] = 0x14;
 	if (max32664c_i2c_transmit(dev, tx, 3, rx, 2, MAX32664C_DEFAULT_CMD_DELAY)) {
-		LOG_ERR("Can not read minimum sampling rate!");
+		LOG_ERROR("Can not read minimum sampling rate!");
 		return -EINVAL;
 	}
 	data->min_sampling_rate_idx = rx[1];
@@ -181,7 +181,7 @@ static int max32664c_read_config(const struct device *dev)
 	tx[1] = 0x07;
 	tx[2] = 0x15;
 	if (max32664c_i2c_transmit(dev, tx, 3, rx, 2, MAX32664C_DEFAULT_CMD_DELAY)) {
-		LOG_ERR("Can not read maximum integration time!");
+		LOG_ERROR("Can not read maximum integration time!");
 		return -EINVAL;
 	}
 	data->max_integration_time_idx = rx[1];
@@ -190,7 +190,7 @@ static int max32664c_read_config(const struct device *dev)
 	tx[1] = 0x07;
 	tx[2] = 0x16;
 	if (max32664c_i2c_transmit(dev, tx, 3, rx, 2, MAX32664C_DEFAULT_CMD_DELAY)) {
-		LOG_ERR("Can not read maximum sampling rate!");
+		LOG_ERROR("Can not read maximum sampling rate!");
 		return -EINVAL;
 	}
 	data->max_sampling_rate_idx = rx[1];
@@ -205,12 +205,12 @@ int max32664c_init_hub(const struct device *dev)
 	LOG_DBG("Initialize sensor hub");
 
 	if (max32664c_write_config(dev)) {
-		LOG_ERR("Can not write default configuration!");
+		LOG_ERROR("Can not write default configuration!");
 		return -EINVAL;
 	}
 
 	if (max32664c_read_config(dev)) {
-		LOG_ERR("Can not read configuration!");
+		LOG_ERROR("Can not read configuration!");
 		return -EINVAL;
 	}
 

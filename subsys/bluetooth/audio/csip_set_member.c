@@ -139,7 +139,7 @@ static void notify_work_reschedule(k_timeout_t delay)
 
 	err = k_work_reschedule(&deferred_nfy_work, delay);
 	if (err < 0) {
-		LOG_ERR("Failed to reschedule notification work err %d", err);
+		LOG_ERROR("Failed to reschedule notification work err %d", err);
 	}
 }
 
@@ -286,8 +286,7 @@ static ssize_t read_sirk(struct bt_conn *conn, const struct bt_gatt_attr *attr, 
 
 			err = sirk_encrypt(conn, &svc_inst->sirk, &enc_sirk);
 			if (err != 0) {
-				LOG_ERR("Could not encrypt SIRK: %d",
-					err);
+				LOG_ERROR("Could not encrypt SIRK: %d", err);
 				gatt_err = BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 			} else {
 				sirk = &enc_sirk;
@@ -299,7 +298,7 @@ static ssize_t read_sirk(struct bt_conn *conn, const struct bt_gatt_attr *attr, 
 		} else if (cb_rsp == BT_CSIP_READ_SIRK_REQ_RSP_OOB_ONLY) {
 			gatt_err = BT_GATT_ERR(BT_CSIP_ERROR_SIRK_OOB_ONLY);
 		} else {
-			LOG_ERR("Invalid callback response: %u", cb_rsp);
+			LOG_ERROR("Invalid callback response: %u", cb_rsp);
 			gatt_err = BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 		}
 
@@ -719,7 +718,7 @@ static void notify(struct bt_csip_set_member_svc_inst *svc_inst, struct bt_conn 
 		if (err == -ENOTCONN) {
 			LOG_DBG("Notification error: ENOTCONN (%d)", err);
 		} else {
-			LOG_ERR("Notification error: %d", err);
+			LOG_ERROR("Notification error: %d", err);
 		}
 	}
 }

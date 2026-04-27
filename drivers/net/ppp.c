@@ -154,9 +154,10 @@ static void uart_callback(const struct device *dev,
 
 		err = uart_config_get(dev, &uart_conf);
 		if (err) {
-			LOG_ERR("uart_config_get() err: %d", err);
-		} else if (uart_conf.baudrate / 10 * CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT
-			  / MSEC_PER_SEC > evt->data.tx.len * 2) {
+			LOG_ERROR("uart_config_get() err: %d", err);
+		} else if (uart_conf.baudrate / 10 * CONFIG_NET_PPP_ASYNC_UART_TX_TIMEOUT /
+				   MSEC_PER_SEC >
+			   evt->data.tx.len * 2) {
 			/* The abort likely did not happen because of missing bandwidth. */
 			LOG_DBG("UART_TX_ABORTED");
 		} else {
@@ -214,7 +215,7 @@ static void uart_callback(const struct device *dev,
 		if (next_buf) {
 			err = uart_rx_buf_rsp(dev, next_buf, sizeof(context->buf));
 			if (err) {
-				LOG_ERR("uart_rx_buf_rsp() err: %d", err);
+				LOG_ERROR("uart_rx_buf_rsp() err: %d", err);
 			}
 		}
 
@@ -254,13 +255,13 @@ static int ppp_async_uart_rx_enable(struct ppp_driver_context *context)
 	next_buf = context->buf2;
 	err = uart_callback_set(context->dev, uart_callback, (void *)context);
 	if (err) {
-		LOG_ERR("Failed to set uart callback, err %d", err);
+		LOG_ERROR("Failed to set uart callback, err %d", err);
 	}
 
 	err = uart_rx_enable(context->dev, context->buf, sizeof(context->buf),
 			     CONFIG_NET_PPP_ASYNC_UART_RX_ENABLE_TIMEOUT * USEC_PER_MSEC);
 	if (err) {
-		LOG_ERR("uart_rx_enable() failed, err %d", err);
+		LOG_ERROR("uart_rx_enable() failed, err %d", err);
 	} else {
 		LOG_DBG("RX enabled");
 	}
@@ -279,13 +280,13 @@ static void uart_recovery(struct k_work *work)
 	if (ret >= (sizeof(ppp->rx_buf) / 2)) {
 		ret = ppp_async_uart_rx_enable(ppp);
 		if (ret) {
-			LOG_ERR("ppp_async_uart_rx_enable() failed, err %d", ret);
+			LOG_ERROR("ppp_async_uart_rx_enable() failed, err %d", ret);
 		} else {
 			LOG_DBG("UART RX recovered.");
 		}
 		uart_recovery_pending = false;
 	} else {
-		LOG_ERR("Rx buffer still doesn't have enough room %d to be re-enabled", ret);
+		LOG_ERROR("Rx buffer still doesn't have enough room %d to be re-enabled", ret);
 		k_work_schedule(&ppp->uart_recovery_work,
 				K_MSEC(CONFIG_NET_PPP_ASYNC_UART_RX_RECOVERY_TIMEOUT));
 	}
@@ -310,7 +311,7 @@ static int ppp_save_byte(struct ppp_driver_context *ppp, uint8_t byte)
 			CONFIG_NET_BUF_DATA_SIZE,
 			NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!ppp->pkt) {
-			LOG_ERR("[%p] cannot allocate pkt", ppp);
+			LOG_ERROR("[%p] cannot allocate pkt", ppp);
 			return -ENOMEM;
 		}
 
@@ -334,7 +335,7 @@ static int ppp_save_byte(struct ppp_driver_context *ppp, uint8_t byte)
 					   CONFIG_NET_BUF_DATA_SIZE + ppp->available,
 					   NET_AF_UNSPEC, K_NO_WAIT);
 		if (ret < 0) {
-			LOG_ERR("[%p] cannot allocate new data buffer", ppp);
+			LOG_ERROR("[%p] cannot allocate new data buffer", ppp);
 			goto out_of_mem;
 		}
 
@@ -344,8 +345,7 @@ static int ppp_save_byte(struct ppp_driver_context *ppp, uint8_t byte)
 	if (ppp->available) {
 		ret = net_pkt_write_u8(ppp->pkt, byte);
 		if (ret < 0) {
-			LOG_ERR("[%p] Cannot write to pkt %p (%d)",
-				ppp, ppp->pkt, ret);
+			LOG_ERROR("[%p] Cannot write to pkt %p (%d)", ppp, ppp->pkt, ret);
 			goto out_of_mem;
 		}
 
@@ -442,7 +442,7 @@ static int ppp_send_flush(struct ppp_driver_context *ppp, int off)
 
 	ret = uart_tx(ppp->dev, buf, off, timeout);
 	if (ret) {
-		LOG_ERR("uart_tx() failed, err %d", ret);
+		LOG_ERROR("uart_tx() failed, err %d", ret);
 		k_sem_give(&uarte_tx_finished);
 	}
 #else
@@ -601,7 +601,7 @@ static int ppp_input_byte(struct ppp_driver_context *ppp, uint8_t byte)
 		break;
 
 	default:
-		LOG_ERR("[%p] Invalid state %d", ppp, ppp->state);
+		LOG_ERROR("[%p] Invalid state %d", ppp, ppp->state);
 		break;
 	}
 
@@ -1104,9 +1104,9 @@ static void ppp_uart_isr(const struct device *uart, void *user_data)
 
 		ret = ring_buf_put(&context->rx_ringbuf, context->buf, rx);
 		if (ret < rx) {
-			LOG_ERR("Rx buffer doesn't have enough space. "
-				"Bytes pending: %d, written: %d",
-				rx, ret);
+			LOG_ERROR("Rx buffer doesn't have enough space. "
+				  "Bytes pending: %d, written: %d",
+				  rx, ret);
 			break;
 		}
 
@@ -1127,7 +1127,7 @@ static int ppp_start(const struct device *dev)
 		LOG_DBG("Initializing PPP to use %s", context->dev->name);
 
 		if (!device_is_ready(context->dev)) {
-			LOG_ERR("Device %s is not ready", context->dev->name);
+			LOG_ERROR("Device %s is not ready", context->dev->name);
 			return -ENODEV;
 		}
 #if defined(CONFIG_NET_PPP_ASYNC_UART)

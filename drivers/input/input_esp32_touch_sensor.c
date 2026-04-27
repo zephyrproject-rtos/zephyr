@@ -205,15 +205,17 @@ static int esp32_touch_sensor_init(const struct device *dev)
 			&dev_cfg->channel_cfg[i];
 
 		if (!(channel_cfg->channel_num > 0 && channel_cfg->channel_num < TOUCH_PAD_MAX)) {
-			LOG_ERR("Touch %d configuration failed: "
-				"Touch channel error", i);
+			LOG_ERROR("Touch %d configuration failed: "
+				  "Touch channel error",
+				  i);
 			return -EINVAL;
 		}
 
 #if defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3)
 		if (channel_cfg->channel_num == TOUCH_DENOISE_CHANNEL) {
-			LOG_ERR("Touch %d configuration failed: "
-				"TOUCH0 is internal denoise channel", i);
+			LOG_ERROR("Touch %d configuration failed: "
+				  "TOUCH0 is internal denoise channel",
+				  i);
 			return -EINVAL;
 		}
 #endif  /* defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3) */
@@ -282,7 +284,7 @@ static int esp32_touch_sensor_init(const struct device *dev)
 	err = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, irq), flags, esp32_touch_rtc_isr,
 			     (void *)dev, NULL);
 	if (err) {
-		LOG_ERR("Failed to register ISR\n");
+		LOG_ERROR("Failed to register ISR\n");
 		return -EFAULT;
 	}
 

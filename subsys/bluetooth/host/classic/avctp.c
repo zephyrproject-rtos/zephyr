@@ -97,7 +97,7 @@ static void avctp_l2cap_connected(struct bt_l2cap_chan *chan)
 	struct bt_avctp *session;
 
 	if (!chan) {
-		LOG_ERR("Invalid AVCTP chan");
+		LOG_ERROR("Invalid AVCTP chan");
 		return;
 	}
 
@@ -114,7 +114,7 @@ static void avctp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 	struct bt_avctp *session;
 
 	if (!chan) {
-		LOG_ERR("Invalid AVCTP chan");
+		LOG_ERROR("Invalid AVCTP chan");
 		return;
 	}
 
@@ -147,7 +147,7 @@ static struct net_buf *avctp_l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 	struct bt_avctp *session;
 
 	if (chan == NULL) {
-		LOG_ERR("Invalid AVCTP chan");
+		LOG_ERROR("Invalid AVCTP chan");
 		return NULL;
 	}
 
@@ -157,7 +157,7 @@ static struct net_buf *avctp_l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 	if (session->ops != NULL && session->ops->alloc_buf != NULL) {
 		buf = session->ops->alloc_buf(session);
 		if (buf == NULL) {
-			LOG_ERR("Failed to allocate buffer");
+			LOG_ERROR("Failed to allocate buffer");
 		}
 		return buf;
 	}
@@ -190,7 +190,7 @@ static int send_single_avctp(struct bt_avctp *avctp, uint8_t tid, bt_avctp_cr_t 
 	}
 
 	if (net_buf_headroom(buf) < BT_AVCTP_HDR_SIZE_SINGLE) {
-		LOG_ERR("Not enough headroom in buffer for AVCTP SINGLE header");
+		LOG_ERROR("Not enough headroom in buffer for AVCTP SINGLE header");
 		return -ENOMEM;
 	}
 
@@ -202,7 +202,7 @@ static int send_single_avctp(struct bt_avctp *avctp, uint8_t tid, bt_avctp_cr_t 
 	avctp_tx_remove(buf);
 	err = bt_l2cap_br_chan_send_cb(&avctp->br_chan.chan, buf, avctp_tx_cb, NULL);
 	if (err < 0) {
-		LOG_ERR("Failed to send l2cap chan (err: %d)", err);
+		LOG_ERROR("Failed to send l2cap chan (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -224,7 +224,7 @@ static int send_fragmented_avctp(struct bt_avctp *avctp, struct avctp_buf_user_d
 	case BT_AVCTP_PKT_TYPE_START:
 		buf = bt_l2cap_create_pdu(avctp->tx_pool, BT_AVCTP_HDR_SIZE_START);
 		if (buf == NULL) {
-			LOG_ERR("No buf for AVCTP START");
+			LOG_ERROR("No buf for AVCTP START");
 			return -ENOBUFS;
 		}
 		avctp_hdr_start = net_buf_push(buf, BT_AVCTP_HDR_SIZE_START);
@@ -239,7 +239,7 @@ static int send_fragmented_avctp(struct bt_avctp *avctp, struct avctp_buf_user_d
 	case BT_AVCTP_PKT_TYPE_END:
 		buf = bt_l2cap_create_pdu(avctp->tx_pool, BT_AVCTP_HDR_SIZE_CONTINUE_END);
 		if (buf == NULL) {
-			LOG_ERR("No buf for AVCTP CONTINUE/END");
+			LOG_ERROR("No buf for AVCTP CONTINUE/END");
 			return -ENOBUFS;
 		}
 		avctp_hdr_continue_end = net_buf_push(buf, BT_AVCTP_HDR_SIZE_CONTINUE_END);
@@ -249,7 +249,7 @@ static int send_fragmented_avctp(struct bt_avctp *avctp, struct avctp_buf_user_d
 		break;
 
 	default:
-		LOG_ERR("Invalid packet type: %d", pkt_type);
+		LOG_ERROR("Invalid packet type: %d", pkt_type);
 		return -EINVAL;
 	}
 
@@ -264,7 +264,7 @@ static int send_fragmented_avctp(struct bt_avctp *avctp, struct avctp_buf_user_d
 
 	err = bt_l2cap_br_chan_send_cb(&avctp->br_chan.chan, buf, avctp_tx_cb, NULL);
 	if (err < 0) {
-		LOG_ERR("Failed to send l2cap chan (err: %d)", err);
+		LOG_ERROR("Failed to send l2cap chan (err: %d)", err);
 		net_buf_unref(buf);
 	}
 	return err;
@@ -326,7 +326,7 @@ static void avctp_tx_processor(struct k_work *item)
 		err = send_single_avctp(session, user_data->tid, user_data->cr, user_data->ipid,
 					user_data->pid, buf);
 		if (err < 0) {
-			LOG_ERR("Failed to send SINGLE packet, len=%u", buf->len);
+			LOG_ERROR("Failed to send SINGLE packet, len=%u", buf->len);
 			avctp_tx_raise(0);
 		}
 		return;
@@ -350,7 +350,7 @@ static void avctp_tx_processor(struct k_work *item)
 			avctp_tx_raise(AVCTP_TX_RETRY_DELAY);
 			return;
 		}
-		LOG_ERR("Failed to send fragment at offset %u", user_data->sent_len);
+		LOG_ERROR("Failed to send fragment at offset %u", user_data->sent_len);
 		goto failed;
 	}
 
@@ -408,7 +408,7 @@ static int dispatch_avctp_packet(struct bt_avctp *session, struct net_buf *buf,
 		return session->ops->recv(session, buf, cr, tid);
 	}
 
-	LOG_ERR("unsupported AVCTP PID received: 0x%04x", pid);
+	LOG_ERROR("unsupported AVCTP PID received: 0x%04x", pid);
 
 	if (cr == BT_AVCTP_CMD) {
 		rsp = bt_avctp_create_pdu(NULL);
@@ -421,7 +421,7 @@ static int dispatch_avctp_packet(struct bt_avctp *session, struct net_buf *buf,
 					   BT_AVCTP_IPID_INVALID);
 		if (err < 0) {
 			net_buf_unref(rsp);
-			LOG_ERR("AVCTP send fail, err = %d", err);
+			LOG_ERROR("AVCTP send fail, err = %d", err);
 			bt_avctp_disconnect(session);
 			return err;
 		}
@@ -457,7 +457,7 @@ static int avctp_recv_fragmented(struct bt_avctp *avctp, struct net_buf *buf)
 
 		avctp->reassembly_buf = net_buf_alloc(avctp->rx_pool, K_FOREVER);
 		if (avctp->reassembly_buf == NULL) {
-			LOG_ERR("Failed to allocate reassembly buffer");
+			LOG_ERROR("Failed to allocate reassembly buffer");
 			return -ENOMEM;
 		}
 
@@ -547,7 +547,7 @@ static int avctp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	int err;
 
 	if (buf->len < sizeof(*hdr)) {
-		LOG_ERR("invalid AVCTP header received");
+		LOG_ERROR("invalid AVCTP header received");
 		return -EINVAL;
 	}
 
@@ -556,7 +556,7 @@ static int avctp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	if (pkt_type != BT_AVCTP_PKT_TYPE_SINGLE) {
 		err = avctp_recv_fragmented(session, buf);
 		if (err < 0) {
-			LOG_ERR("AVCTP recv fragmented packet fail, err = %d", err);
+			LOG_ERROR("AVCTP recv fragmented packet fail, err = %d", err);
 		}
 		return err;
 	}
@@ -568,7 +568,7 @@ static int avctp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 
 	if (buf->len < BT_AVCTP_HDR_SIZE_SINGLE) {
-		LOG_ERR("invalid AVCTP single header received");
+		LOG_ERROR("invalid AVCTP single header received");
 		return -EINVAL;
 	}
 	hdr_single = net_buf_pull_mem(buf, BT_AVCTP_HDR_SIZE_SINGLE);
@@ -615,7 +615,7 @@ struct net_buf *bt_avctp_create_pdu(struct net_buf_pool *pool)
 	/* reserved avctp_header */
 	buf = bt_l2cap_create_pdu(pool, sizeof(struct bt_avctp_header_start));
 	if (buf == NULL) {
-		LOG_ERR("No buff available");
+		LOG_ERROR("No buff available");
 	}
 
 	return buf;
@@ -630,14 +630,14 @@ int bt_avctp_send(struct bt_avctp *session, struct net_buf *buf, bt_avctp_cr_t c
 		return -EINVAL;
 	}
 	if ((session->tx_pool != NULL) && (session->max_tx_payload_size == 0)) {
-		LOG_ERR("Invalid max_tx_payload_size %u", session->max_tx_payload_size);
+		LOG_ERROR("Invalid max_tx_payload_size %u", session->max_tx_payload_size);
 		return -EINVAL;
 	}
 
 	if (session->tx_pool == NULL) {
 		if (buf->len > (session->br_chan.tx.mtu - BT_AVCTP_HDR_SIZE_SINGLE)) {
-			LOG_ERR("Buffer size %u exceeds MTU %u", buf->len,
-				session->br_chan.tx.mtu - BT_AVCTP_HDR_SIZE_SINGLE);
+			LOG_ERROR("Buffer size %u exceeds MTU %u", buf->len,
+				  session->br_chan.tx.mtu - BT_AVCTP_HDR_SIZE_SINGLE);
 			return -EMSGSIZE;
 		}
 		num_packet = 1;
@@ -673,7 +673,7 @@ static int avctp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *serv
 	/* Get the AVCTP session from upper layer */
 	err = avctp_server->accept(conn, &session);
 	if (err < 0) {
-		LOG_ERR("Incoming connection rejected");
+		LOG_ERROR("Incoming connection rejected");
 		return err;
 	}
 
@@ -706,7 +706,7 @@ int bt_avctp_server_register(struct bt_avctp_server *server)
 	server->l2cap.accept = avctp_l2cap_accept;
 	err = bt_l2cap_br_server_register(&server->l2cap);
 	if (err < 0) {
-		LOG_ERR("AVCTP L2CAP registration failed %d", err);
+		LOG_ERROR("AVCTP L2CAP registration failed %d", err);
 		k_sem_give(&avctp_lock);
 		return err;
 	}

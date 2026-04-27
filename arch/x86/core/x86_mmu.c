@@ -754,8 +754,7 @@ static void dump_entry(int level, void *virt, pentry_t entry)
 	DUMP_BIT(G);
 	DUMP_BIT(XD);
 
-	LOG_ERR("%sE: %p -> " PRI_ENTRY ": %s", info->name,
-		virtmap, entry & info->mask, buf);
+	LOG_ERROR("%sE: %p -> " PRI_ENTRY ": %s", info->name, virtmap, entry & info->mask, buf);
 
 	#undef DUMP_BIT
 }
@@ -780,7 +779,7 @@ void z_x86_dump_mmu_flags(pentry_t *ptables, void *virt)
 	pentry_get(&level, &entry, ptables, virt);
 
 	if ((entry & MMU_P) == 0) {
-		LOG_ERR("%sE: not present", paging_levels[level].name);
+		LOG_ERROR("%sE: not present", paging_levels[level].name);
 	} else {
 		dump_entry(level, virt, entry);
 	}
@@ -1033,7 +1032,7 @@ static int page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
 			/* Cannot continue since we cannot split
 			 * bigpage mappings.
 			 */
-			LOG_ERR("large page encountered");
+			LOG_ERROR("large page encountered");
 			ret = -EFAULT;
 			goto out;
 		}
@@ -1045,8 +1044,8 @@ static int page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
 			 * and it cannot be dereferenced in next loop
 			 * iteration.
 			 */
-			LOG_ERR("missing page table level %d when trying to map %p",
-				level + 1, virt);
+			LOG_ERROR("missing page table level %d when trying to map %p", level + 1,
+				  virt);
 			ret = -EFAULT;
 			goto out;
 		}
@@ -1104,8 +1103,7 @@ static int range_map_ptables(pentry_t *ptables, void *virt, uintptr_t phys,
 	}
 
 	CHECKIF(!((entry_flags & paging_levels[0].mask) == 0U)) {
-		LOG_ERR("entry_flags " PRI_ENTRY " overlaps address area",
-			entry_flags);
+		LOG_ERROR("entry_flags " PRI_ENTRY " overlaps address area", entry_flags);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -1183,7 +1181,7 @@ static int range_map(void *virt, uintptr_t phys, size_t size,
 #endif /* CONFIG_X86_64 */
 
 	CHECKIF(!((options & OPTION_USER) == 0U)) {
-		LOG_ERR("invalid option for mapping");
+		LOG_ERROR("invalid option for mapping");
 		ret = -EINVAL;
 		goto out;
 	}

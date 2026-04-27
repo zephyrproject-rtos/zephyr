@@ -182,7 +182,7 @@ static void dsa_netc_port_phylink_change(const struct device *phydev, struct phy
 					   PHY_TO_NETC_SPEED(state->speed),
 					   PHY_TO_NETC_DUPLEX_MODE(state->speed));
 		if (result != kStatus_Success) {
-			LOG_ERR("DSA user port %d failed to set MAC up", cfg->port_idx);
+			LOG_ERROR("DSA user port %d failed to set MAC up", cfg->port_idx);
 		}
 		net_eth_carrier_on(iface);
 	} else {
@@ -370,7 +370,7 @@ static int dsa_netc_set_qbv(const struct device *dev, const struct ethernet_conf
 		result = SWT_TxPortTGSEnable(&prv->swt_handle, cfg->port_idx,
 					     config->qbv_param.enabled);
 		if (result != kStatus_Success) {
-			LOG_ERR("Couldn't enable/disable QBV");
+			LOG_ERROR("Couldn't enable/disable QBV");
 			ret = -ENOTSUP;
 		}
 		break;
@@ -388,7 +388,7 @@ static int dsa_netc_set_qbv(const struct device *dev, const struct ethernet_conf
 		row = config->qbv_param.gate_control.row;
 		gate_num = ((CONFIG_NET_TC_TX_COUNT) < 8 ? (CONFIG_NET_TC_TX_COUNT) : 8);
 		if (row > CONFIG_DSA_NXP_IMX_NETC_GCL_LEN) {
-			LOG_ERR("The gate control list length exceeds the limit");
+			LOG_ERROR("The gate control list length exceeds the limit");
 			return -ENOTSUP;
 		}
 		prv->qbv_config[cfg->port_idx].gcList[row].interval =
@@ -403,7 +403,7 @@ static int dsa_netc_set_qbv(const struct device *dev, const struct ethernet_conf
 			result = SWT_TxTGSConfigAdminGcl(&prv->swt_handle,
 				&(prv->qbv_config[cfg->port_idx].tgs_config));
 			if (result != kStatus_Success) {
-				LOG_ERR("Fail to set gate control list, err code: 0x%x", result);
+				LOG_ERROR("Fail to set gate control list, err code: 0x%x", result);
 				ret = -ENOTSUP;
 			}
 		}
@@ -451,7 +451,7 @@ static int dsa_netc_get_qbv(const struct device *dev, struct ethernet_config *co
 		row = config->qbv_param.gate_control.row;
 		gate_num = ((CONFIG_NET_TC_TX_COUNT) < 8 ? (CONFIG_NET_TC_TX_COUNT) : 8);
 		if (row > CONFIG_DSA_NXP_IMX_NETC_GCL_LEN) {
-			LOG_ERR("The gate control list length exceeds the limit");
+			LOG_ERROR("The gate control list length exceeds the limit");
 			return -ENOTSUP;
 		}
 		config->qbv_param.gate_control.time_interval =

@@ -141,7 +141,7 @@ static void test_tx_immediate_replay_attack(void)
 						 &send_cb, &sem));
 
 		if (k_sem_take(&sem, K_SECONDS(TEST_DATA_WAITING_TIME))) {
-			LOG_ERR("Send timed out");
+			LOG_ERROR("Send timed out");
 		}
 
 		ASSERT_TRUE(is_tx_succeeded);
@@ -159,7 +159,7 @@ static void test_tx_immediate_replay_attack(void)
 						 &send_cb, &sem));
 
 		if (k_sem_take(&sem, K_SECONDS(TEST_DATA_WAITING_TIME))) {
-			LOG_ERR("Send timed out");
+			LOG_ERROR("Send timed out");
 		}
 
 		ASSERT_TRUE(!is_tx_succeeded);
@@ -204,7 +204,7 @@ static void test_tx_power_replay_attack(void)
 						 &send_cb, &sem));
 
 		if (k_sem_take(&sem, K_SECONDS(TEST_DATA_WAITING_TIME))) {
-			LOG_ERR("Send timed out");
+			LOG_ERROR("Send timed out");
 		}
 
 		ASSERT_TRUE(!is_tx_succeeded);
@@ -220,7 +220,7 @@ static void test_tx_power_replay_attack(void)
 						 &send_cb, &sem));
 
 		if (k_sem_take(&sem, K_SECONDS(TEST_DATA_WAITING_TIME))) {
-			LOG_ERR("Send timed out");
+			LOG_ERROR("Send timed out");
 		}
 
 		ASSERT_TRUE(is_tx_succeeded);
@@ -278,13 +278,13 @@ static bool msg_send(uint16_t src, uint16_t dst)
 
 	err = bt_mesh_trans_send(&tx, &msg, &cb, &sem);
 	if (err) {
-		LOG_ERR("Failed to send message (err %d)", err);
+		LOG_ERROR("Failed to send message (err %d)", err);
 		return false;
 	}
 
 	err = k_sem_take(&sem, K_SECONDS(10));
 	if (err) {
-		LOG_ERR("Send timed out (err %d)", err);
+		LOG_ERROR("Send timed out (err %d)", err);
 		return false;
 	}
 
@@ -298,7 +298,7 @@ static bool msg_recv(uint16_t expected_addr)
 
 	err = bt_mesh_test_recv_msg(&msg, K_SECONDS(10));
 	if (err) {
-		LOG_ERR("Failed to receive message from %u (err %d)", expected_addr, err);
+		LOG_ERROR("Failed to receive message from %u (err %d)", expected_addr, err);
 		return false;
 	}
 

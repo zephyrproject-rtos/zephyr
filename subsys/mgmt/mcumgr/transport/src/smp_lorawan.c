@@ -143,12 +143,12 @@ static void smp_lorawan_downlink(uint8_t port, uint8_t flags, int16_t rssi, int8
 				rc = smp_reassembly_complete(&smp_lorawan_transport, false);
 
 				if (rc) {
-					LOG_ERR("LoRaWAN SMP reassembly complete failed: %d", rc);
+					LOG_ERROR("LoRaWAN SMP reassembly complete failed: %d", rc);
 				}
 			} else if (rc < 0) {
-				LOG_ERR("LoRaWAN SMP reassembly collect failed: %d", rc);
+				LOG_ERROR("LoRaWAN SMP reassembly collect failed: %d", rc);
 			} else {
-				LOG_ERR("LoRaWAN SMP expected data left: %d", rc);
+				LOG_ERROR("LoRaWAN SMP expected data left: %d", rc);
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_LORAWAN_POLL_FOR_DATA
 				/* Send empty LoRaWAN packet to receive next packet from server */
@@ -163,18 +163,18 @@ static void smp_lorawan_downlink(uint8_t port, uint8_t flags, int16_t rssi, int8
 			nb = smp_packet_alloc();
 
 			if (!nb) {
-				LOG_ERR("LoRaWAN SMP packet allocation failure");
+				LOG_ERROR("LoRaWAN SMP packet allocation failure");
 				return;
 			}
 
 			net_buf_add_mem(nb, hex_data, len);
 			smp_rx_req(&smp_lorawan_transport, nb);
 		} else {
-			LOG_ERR("Invalid LoRaWAN SMP downlink");
+			LOG_ERROR("Invalid LoRaWAN SMP downlink");
 		}
 #endif
 	} else {
-		LOG_ERR("Invalid LoRaWAN SMP downlink");
+		LOG_ERROR("Invalid LoRaWAN SMP downlink");
 	}
 }
 
@@ -197,8 +197,8 @@ static int smp_lorawan_uplink(struct net_buf *nb)
 	lorawan_get_payload_sizes(&data_size, &temp);
 
 	if (nb->len > data_size) {
-		LOG_ERR("Cannot send LoRaWAN SMP message, too large. Message: %d, maximum: %d",
-			nb->len, data_size);
+		LOG_ERROR("Cannot send LoRaWAN SMP message, too large. Message: %d, maximum: %d",
+			  nb->len, data_size);
 	} else {
 		rc = lorawan_send(CONFIG_MCUMGR_TRANSPORT_LORAWAN_FRAME_PORT, nb->data, nb->len,
 #if defined(CONFIG_MCUMGR_TRANSPORT_LORAWAN_CONFIRMED_UPLINKS)
@@ -209,7 +209,7 @@ static int smp_lorawan_uplink(struct net_buf *nb)
 				 );
 
 		if (rc != 0) {
-			LOG_ERR("Failed to send LoRaWAN SMP message: %d", rc);
+			LOG_ERROR("Failed to send LoRaWAN SMP message: %d", rc);
 		}
 	}
 #endif
@@ -246,7 +246,7 @@ static void smp_lorawan_start(void)
 	if (rc == 0) {
 		lorawan_register_downlink_callback(&lorawan_smp_downlink_cb);
 	} else {
-		LOG_ERR("Failed to init LoRaWAN MCUmgr SMP transport: %d", rc);
+		LOG_ERROR("Failed to init LoRaWAN MCUmgr SMP transport: %d", rc);
 	}
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_LORAWAN_POLL_FOR_DATA

@@ -793,12 +793,12 @@ static void eth_xmc4xxx_isr(const struct device *dev)
 	}
 
 	if ((status & ETH_STATUS_ERROR_TRANSMIT_EVENTS) != 0) {
-		LOG_ERR("Transmit error event [0x%x]", status);
+		LOG_ERROR("Transmit error event [0x%x]", status);
 		eth_xmc4xxx_flush_tx(dev);
 	}
 
 	if ((status & ETH_STATUS_ERROR_RECEIVE_EVENTS) != 0) {
-		LOG_ERR("Receive error event [0x%x]", status);
+		LOG_ERROR("Receive error event [0x%x]", status);
 		eth_xmc4xxx_flush_rx(dev);
 	}
 
@@ -932,7 +932,7 @@ static int eth_xmc4xxx_rx_dma_descriptors_init(const struct device *dev)
 
 		if (rx_buf == NULL) {
 			eth_xmc4xxx_free_rx_bufs(dev);
-			LOG_ERR("Failed to reserve data net buffers");
+			LOG_ERROR("Failed to reserve data net buffers");
 			return -ENOBUFS;
 		}
 
@@ -1030,7 +1030,7 @@ static int eth_xmc4xxx_init(const struct device *dev)
 	k_sem_init(&dev_data->tx_desc_sem, NUM_TX_DMA_DESCRIPTORS, NUM_TX_DMA_DESCRIPTORS);
 
 	if (!device_is_ready(dev_cfg->phy_dev)) {
-		LOG_ERR("Phy device not ready");
+		LOG_ERROR("Phy device not ready");
 		return -ENODEV;
 	}
 
@@ -1049,7 +1049,7 @@ static int eth_xmc4xxx_init(const struct device *dev)
 
 	ret = eth_xmc4xxx_reset(dev);
 	if (ret != 0) {
-		LOG_ERR("Error resetting ethernet [%d]", ret);
+		LOG_ERROR("Error resetting ethernet [%d]", ret);
 		return ret;
 	}
 

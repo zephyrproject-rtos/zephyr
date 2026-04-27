@@ -59,14 +59,14 @@ int main(void)
 				    "smp_svr_stats");
 
 	if (rc < 0) {
-		LOG_ERR("Error initializing stats system [%d]", rc);
+		LOG_ERROR("Error initializing stats system [%d]", rc);
 	}
 
 	/* Register the built-in mcumgr command handlers. */
 #ifdef CONFIG_MCUMGR_GRP_FS
 	rc = fs_mount(&littlefs_mnt);
 	if (rc < 0) {
-		LOG_ERR("Error mounting littlefs [%d]", rc);
+		LOG_ERROR("Error mounting littlefs [%d]", rc);
 	}
 #endif
 
@@ -77,10 +77,10 @@ int main(void)
 		rc = smp_udp_open();
 
 		if (rc != 0) {
-			LOG_ERR("UDP transport open failed: %d", rc);
+			LOG_ERROR("UDP transport open failed: %d", rc);
 		}
 	} else {
-		LOG_ERR("TLS init failed, cannot start UDP transport");
+		LOG_ERROR("TLS init failed, cannot start UDP transport");
 	}
 #endif
 

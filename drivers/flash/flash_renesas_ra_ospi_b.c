@@ -399,7 +399,7 @@ static int flash_renesas_ra_ospi_b_read_jedec_id(const struct device *dev, uint8
 
 	ret = flash_renesas_ra_ospi_b_read_device_id(&ospi_b_data->ospi_b_ctrl, id);
 	if (ret) {
-		LOG_ERR("Failed to read jedec id");
+		LOG_ERROR("Failed to read jedec id");
 	} else {
 		LOG_INF("Manuf ID = %02x   Memory Type = %02x   Memory Density = %02x   ID Length "
 			"= %02x\n",
@@ -424,7 +424,7 @@ static int flash_renesas_ra_ospi_b_sfdp_read(const struct device *dev, off_t off
 	}
 
 	if (data == NULL) {
-		LOG_ERR("The data buffer is NULL");
+		LOG_ERROR("The data buffer is NULL");
 		return -EINVAL;
 	}
 	acquire_device(dev);
@@ -444,7 +444,7 @@ static int flash_renesas_ra_ospi_b_sfdp_read(const struct device *dev, off_t off
 					      SPI_FLASH_DIRECT_TRANSFER_DIR_READ);
 
 		if (err != FSP_SUCCESS) {
-			LOG_ERR("Failed to read SFDP id");
+			LOG_ERROR("Failed to read SFDP id");
 			release_device(dev);
 			return -EIO;
 		}
@@ -474,27 +474,27 @@ static int flash_renesas_ra_ospi_b_erase(const struct device *dev, off_t offset,
 	if (!len) {
 		return 0;
 	} else if (len % SPI_NOR_SECTOR_SIZE != 0) {
-		LOG_ERR("Wrong sector size 0x%x", len);
+		LOG_ERROR("Wrong sector size 0x%x", len);
 		return -EINVAL;
 	}
 
 	if (!flash_renesas_ra_ospi_b_is_valid_address(dev, offset, len)) {
-		LOG_ERR("Address or size exceeds expected values: "
-			"Address 0x%lx, size %u",
-			(long)offset, len);
+		LOG_ERROR("Address or size exceeds expected values: "
+			  "Address 0x%lx, size %u",
+			  (long)offset, len);
 		return -EINVAL;
 	}
 
 	/* check offset and len that valid in sector layout */
 	ret = flash_get_page_info_by_offs(dev, offset, &page_info_start);
 	if ((ret != 0) || (offset != page_info_start.start_offset)) {
-		LOG_ERR("The offset 0x%lx is not aligned with the starting sector", (long)offset);
+		LOG_ERROR("The offset 0x%lx is not aligned with the starting sector", (long)offset);
 		return -EINVAL;
 	}
 
 	ret = flash_get_page_info_by_offs(dev, (offset + len), &page_info_end);
 	if ((ret != 0) || ((offset + len) != page_info_end.start_offset)) {
-		LOG_ERR("The size %u is not aligned with the ending sector", len);
+		LOG_ERROR("The size %u is not aligned with the ending sector", len);
 		return -EINVAL;
 	}
 
@@ -521,7 +521,7 @@ static int flash_renesas_ra_ospi_b_erase(const struct device *dev, off_t offset,
 			(uint8_t *)(BSP_FEATURE_OSPI_B_DEVICE_1_START_ADDRESS + offset),
 			erase_size);
 		if (err != FSP_SUCCESS) {
-			LOG_ERR("Erase at address 0x%lx, size %zu Failed", offset, erase_size);
+			LOG_ERROR("Erase at address 0x%lx, size %zu Failed", offset, erase_size);
 			ret = -EIO;
 			break;
 		}
@@ -529,7 +529,7 @@ static int flash_renesas_ra_ospi_b_erase(const struct device *dev, off_t offset,
 		err = flash_renesas_ra_ospi_b_wait_operation(&ospi_b_data->ospi_b_ctrl,
 							     erase_timeout);
 		if (err != FSP_SUCCESS) {
-			LOG_ERR("Wait for erase to finish timeout");
+			LOG_ERROR("Wait for erase to finish timeout");
 			ret = -EIO;
 			break;
 		}
@@ -551,9 +551,9 @@ static int flash_renesas_ra_ospi_b_read(const struct device *dev, off_t offset, 
 	}
 
 	if (!flash_renesas_ra_ospi_b_is_valid_address(dev, offset, len)) {
-		LOG_ERR("Address or size exceeds expected values: "
-			"Address 0x%lx, size %zu",
-			(long)offset, len);
+		LOG_ERROR("Address or size exceeds expected values: "
+			  "Address 0x%lx, size %zu",
+			  (long)offset, len);
 		return -EINVAL;
 	}
 
@@ -578,14 +578,14 @@ static int flash_renesas_ra_ospi_b_write(const struct device *dev, off_t offset,
 	if (data != NULL) {
 		p_src = data;
 	} else {
-		LOG_ERR("The data buffer is NULL");
+		LOG_ERROR("The data buffer is NULL");
 		return -EINVAL;
 	}
 
 	if (!flash_renesas_ra_ospi_b_is_valid_address(dev, offset, len)) {
-		LOG_ERR("Address or size exceeds expected values: "
-			"Address 0x%lx, size %zu",
-			(long)offset, len);
+		LOG_ERROR("Address or size exceeds expected values: "
+			  "Address 0x%lx, size %zu",
+			  (long)offset, len);
 		return -EINVAL;
 	}
 
@@ -600,14 +600,14 @@ static int flash_renesas_ra_ospi_b_write(const struct device *dev, off_t offset,
 			&ospi_b_data->ospi_b_ctrl, p_src,
 			(uint8_t *)(BSP_FEATURE_OSPI_B_DEVICE_1_START_ADDRESS + offset), size);
 		if (err != FSP_SUCCESS) {
-			LOG_ERR("Write at address 0x%lx, size %zu", offset, size);
+			LOG_ERROR("Write at address 0x%lx, size %zu", offset, size);
 			ret = -EIO;
 			break;
 		}
 
 		err = flash_renesas_ra_ospi_b_wait_operation(&ospi_b_data->ospi_b_ctrl, TIME_WRITE);
 		if (err != FSP_SUCCESS) {
-			LOG_ERR("Wait for write to finish timeout");
+			LOG_ERROR("Wait for write to finish timeout");
 			ret = -EIO;
 			break;
 		}
@@ -665,43 +665,43 @@ static int flash_renesas_ra_ospi_b_init(const struct device *dev)
 
 	/* protocol/data_rate of XSPI checking */
 	if (config->protocol == XSPI_DUAL_MODE || config->protocol == XSPI_QUAD_MODE) {
-		LOG_ERR("XSPI mode DUAL|QUAD currently not support");
+		LOG_ERROR("XSPI mode DUAL|QUAD currently not support");
 		return -ENOTSUP;
 	} else if (((config->protocol != XSPI_OCTO_MODE) &&
 		    (config->data_rate == XSPI_DTR_TRANSFER)) ||
 		   ((config->protocol == XSPI_OCTO_MODE) &&
 		    (config->data_rate == XSPI_STR_TRANSFER))) {
-		LOG_ERR("XSPI mode SPI/DTR or OPI/STR is not valid");
+		LOG_ERROR("XSPI mode SPI/DTR or OPI/STR is not valid");
 		return -ENOTSUP;
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("Clock control device not ready");
+		LOG_ERROR("Clock control device not ready");
 		return -ENODEV;
 	}
 
 	ret = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->clock_subsys);
 	if (ret < 0) {
-		LOG_ERR("Could not initialize clock (%d)", ret);
+		LOG_ERROR("Could not initialize clock (%d)", ret);
 		return ret;
 	}
 
 	ret = clock_control_get_rate(config->clock_dev,
 				     (clock_control_subsys_t)&config->clock_subsys, &clock_freq);
 	if (ret) {
-		LOG_ERR("Failed to get clock frequency (%d)", ret);
+		LOG_ERROR("Failed to get clock frequency (%d)", ret);
 		return ret;
 	}
 
 	if ((config->protocol == XSPI_SPI_MODE && (config->max_frequency / 2) < clock_freq) ||
 	    (config->protocol == XSPI_OCTO_MODE && (config->max_frequency) < clock_freq)) {
-		LOG_ERR("Invalid clock frequency (%u)", clock_freq);
+		LOG_ERROR("Invalid clock frequency (%u)", clock_freq);
 		return -EINVAL;
 	}
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("Failed to configure pins (%d)", ret);
+		LOG_ERROR("Failed to configure pins (%d)", ret);
 		return ret;
 	}
 
@@ -709,14 +709,14 @@ static int flash_renesas_ra_ospi_b_init(const struct device *dev)
 
 	ret = flash_renesas_ra_ospi_b_spi_mode_init(&data->ospi_b_ctrl, &data->ospi_b_cfg);
 	if (ret) {
-		LOG_ERR("Init SPI mode failed");
+		LOG_ERROR("Init SPI mode failed");
 		return ret;
 	}
 
 	if (config->protocol == XSPI_OCTO_MODE) {
 		ret = flash_renesas_ra_ospi_b_set_protocol_to_opi(&data->ospi_b_ctrl, dev);
 		if (ret) {
-			LOG_ERR("Init OPI mode failed");
+			LOG_ERROR("Init OPI mode failed");
 			return ret;
 		}
 	}

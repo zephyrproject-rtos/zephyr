@@ -195,7 +195,7 @@ static int mac_build_data_frame(struct lwan_ctx *ctx,
 		ret = mac_encrypt_ul_payload(sess, req->port, req->data,
 					     req->len, frame, fhdr_end);
 		if (ret != 0) {
-			LOG_ERR("Payload encrypt failed: %d", ret);
+			LOG_ERROR("Payload encrypt failed: %d", ret);
 			return ret;
 		}
 	}
@@ -206,7 +206,7 @@ static int mac_build_data_frame(struct lwan_ctx *ctx,
 				   sess->fcnt_up, DIR_UPLINK,
 				   frame, msg_len, &frame[msg_len]);
 	if (ret != 0) {
-		LOG_ERR("Data MIC compute failed: %d", ret);
+		LOG_ERROR("Data MIC compute failed: %d", ret);
 		return ret;
 	}
 
@@ -492,13 +492,13 @@ void mac_do_send(struct lwan_ctx *ctx, const struct lwan_send_req *req)
 
 	ret = region->get_tx_params(tx_dr_idx, &dr_params, &tx_power);
 	if (ret != 0) {
-		LOG_ERR("Invalid datarate DR%u: %d", tx_dr_idx, ret);
+		LOG_ERROR("Invalid datarate DR%u: %d", tx_dr_idx, ret);
 		goto done;
 	}
 
 	if (req->len > dr_params.max_payload) {
-		LOG_ERR("Payload too large for DR%u: %u > %u", tx_dr_idx,
-			req->len, dr_params.max_payload);
+		LOG_ERROR("Payload too large for DR%u: %u > %u", tx_dr_idx, req->len,
+			  dr_params.max_payload);
 		ret = -EMSGSIZE;
 		goto done;
 	}
@@ -519,8 +519,7 @@ void mac_do_send(struct lwan_ctx *ctx, const struct lwan_send_req *req)
 
 		ret = select_data_channel_wait(ctx, tx_dr_idx, &tx_freq);
 		if (ret != 0) {
-			LOG_ERR("No channel available for DR%u: %d",
-				tx_dr_idx, ret);
+			LOG_ERROR("No channel available for DR%u: %d", tx_dr_idx, ret);
 			goto done;
 		}
 
@@ -541,7 +540,7 @@ void mac_do_send(struct lwan_ctx *ctx, const struct lwan_send_req *req)
 		}
 
 		if (ret != -ETIMEDOUT) {
-			LOG_ERR("TX/RX transaction failed: %d", ret);
+			LOG_ERROR("TX/RX transaction failed: %d", ret);
 			goto done;
 		}
 

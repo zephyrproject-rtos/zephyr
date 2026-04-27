@@ -90,7 +90,7 @@ static void rfcomm_connected(struct bt_rfcomm_dlc *dlc)
 	LOG_DBG("DLC connected");
 
 	if (chan->conn == NULL) {
-		LOG_ERR("No connection");
+		LOG_ERROR("No connection");
 		return;
 	}
 
@@ -130,7 +130,7 @@ static void rfcomm_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	LOG_DBG("DLC received data");
 
 	if (chan->conn == NULL) {
-		LOG_ERR("No connection");
+		LOG_ERROR("No connection");
 		return;
 	}
 
@@ -140,7 +140,7 @@ static void rfcomm_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	tester_rsp_buffer_allocate(ev_len, &ev_data);
 
 	if (ev_data == NULL) {
-		LOG_ERR("Failed to allocate event buffer");
+		LOG_ERROR("Failed to allocate event buffer");
 		tester_rsp_buffer_unlock();
 		return;
 	}
@@ -166,7 +166,7 @@ static void rfcomm_sent(struct bt_rfcomm_dlc *dlc, int err)
 	LOG_DBG("DLC sent callback (err %d)", err);
 
 	if (chan->conn == NULL) {
-		LOG_ERR("No connection");
+		LOG_ERROR("No connection");
 		return;
 	}
 
@@ -196,13 +196,13 @@ static int server_accept(struct bt_conn *conn, struct bt_rfcomm_server *server,
 
 	err = bt_conn_get_info(conn, &info);
 	if (err != 0) {
-		LOG_ERR("Failed to get conn info (err %d)", err);
+		LOG_ERROR("Failed to get conn info (err %d)", err);
 		return -ENOTCONN;
 	}
 
 	chan = alloc_channel(info.br.dst);
 	if (chan == NULL) {
-		LOG_ERR("No free channels");
+		LOG_ERROR("No free channels");
 		return -ENOMEM;
 	}
 
@@ -231,13 +231,13 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 
 	conn = bt_conn_lookup_addr_br(&cp->address.a);
 	if (conn == NULL) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
 	chan = alloc_channel(&cp->address.a);
 	if (chan == NULL) {
-		LOG_ERR("No free channels");
+		LOG_ERROR("No free channels");
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
@@ -249,7 +249,7 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 
 	err = bt_rfcomm_dlc_connect(conn, &chan->dlc, cp->channel);
 	if (err != 0) {
-		LOG_ERR("Failed to create DLC (err %d)", err);
+		LOG_ERROR("Failed to create DLC (err %d)", err);
 		free_channel(chan);
 		return BTP_STATUS_FAILED;
 	}
@@ -271,13 +271,13 @@ static uint8_t disconnect(const void *cmd, uint16_t cmd_len,
 
 	chan = find_channel(&cp->address.a, cp->channel);
 	if (chan == NULL) {
-		LOG_ERR("Channel not found");
+		LOG_ERROR("Channel not found");
 		return BTP_STATUS_FAILED;
 	}
 
 	err = bt_rfcomm_dlc_disconnect(&chan->dlc);
 	if (err != 0) {
-		LOG_ERR("Failed to destroy DLC (err %d)", err);
+		LOG_ERROR("Failed to destroy DLC (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -300,7 +300,7 @@ static uint8_t send_data(const void *cmd, uint16_t cmd_len,
 
 	chan = find_channel(&cp->address.a, cp->channel);
 	if (chan == NULL) {
-		LOG_ERR("Channel not found");
+		LOG_ERROR("Channel not found");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -308,12 +308,12 @@ static uint8_t send_data(const void *cmd, uint16_t cmd_len,
 
 	buf = bt_rfcomm_create_pdu(&rfcomm_pdu_pool);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		return BTP_STATUS_FAILED;
 	}
 
 	if (net_buf_tailroom(buf) < data_len) {
-		LOG_ERR("Buffer too small for data %u < %u", net_buf_tailroom(buf), data_len);
+		LOG_ERROR("Buffer too small for data %u < %u", net_buf_tailroom(buf), data_len);
 		net_buf_unref(buf);
 		return BTP_STATUS_FAILED;
 	}
@@ -322,7 +322,7 @@ static uint8_t send_data(const void *cmd, uint16_t cmd_len,
 
 	err = bt_rfcomm_dlc_send(&chan->dlc, buf);
 	if (err < 0) {
-		LOG_ERR("Failed to send (err %d)", err);
+		LOG_ERROR("Failed to send (err %d)", err);
 		net_buf_unref(buf);
 		return BTP_STATUS_FAILED;
 	}
@@ -340,7 +340,7 @@ static uint8_t listen(const void *cmd, uint16_t cmd_len,
 	LOG_DBG("RFCOMM Listen");
 
 	if (server_count >= MAX_RFCOMM_SERVERS) {
-		LOG_ERR("No free servers");
+		LOG_ERROR("No free servers");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -350,7 +350,7 @@ static uint8_t listen(const void *cmd, uint16_t cmd_len,
 
 	err = bt_rfcomm_server_register(server);
 	if (err != 0) {
-		LOG_ERR("Failed to register server (err %d)", err);
+		LOG_ERROR("Failed to register server (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -374,7 +374,7 @@ static uint8_t send_rpn(const void *cmd, uint16_t cmd_len,
 
 	chan = find_channel(&cp->address.a, cp->channel);
 	if (chan == NULL) {
-		LOG_ERR("Channel not found");
+		LOG_ERROR("Channel not found");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -388,7 +388,7 @@ static uint8_t send_rpn(const void *cmd, uint16_t cmd_len,
 
 	err = bt_rfcomm_send_rpn_cmd(&chan->dlc, &rpn);
 	if (err != 0) {
-		LOG_ERR("Failed to send RPN (err %d)", err);
+		LOG_ERROR("Failed to send RPN (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -409,7 +409,7 @@ static uint8_t get_dlc_info(const void *cmd, uint16_t cmd_len,
 
 	chan = find_channel(&cp->address.a, cp->channel);
 	if (chan == NULL) {
-		LOG_ERR("Channel not found");
+		LOG_ERROR("Channel not found");
 		return BTP_STATUS_FAILED;
 	}
 

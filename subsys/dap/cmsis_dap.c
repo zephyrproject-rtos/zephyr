@@ -190,14 +190,14 @@ static uint16_t dap_connect(struct dap_link_context *const ctx,
 
 		if (atomic_test_and_set_bit(&ctx->state,
 					    DAP_STATE_CONNECTED)) {
-			LOG_ERR("DAP device is already connected");
+			LOG_ERROR("DAP device is already connected");
 			break;
 		}
 
 		(void)swdp_port_on(ctx->dev);
 		break;
 	case DAP_PORT_JTAG:
-		LOG_ERR("port unsupported");
+		LOG_ERROR("port unsupported");
 		port = DAP_ERROR;
 		break;
 	default:
@@ -269,7 +269,7 @@ static uint16_t dap_swj_pins(struct dap_link_context *const ctx,
 	uint8_t state;
 
 	if (!atomic_test_bit(&ctx->state, DAP_STATE_CONNECTED)) {
-		LOG_ERR("DAP device is not connected");
+		LOG_ERROR("DAP device is not connected");
 		response[0] = DAP_ERROR;
 		return 1U;
 	}
@@ -332,7 +332,7 @@ static uint16_t dap_swj_sequence(struct dap_link_context *const ctx,
 	}
 
 	if (!atomic_test_bit(&ctx->state, DAP_STATE_CONNECTED)) {
-		LOG_ERR("DAP device is not connected");
+		LOG_ERROR("DAP device is not connected");
 		response[0] = DAP_ERROR;
 		return 1U;
 	}
@@ -352,7 +352,7 @@ static uint16_t dap_swdp_configure(struct dap_link_context *const ctx,
 	bool data_phase = (request[0] & 0x04U) ? true : false;
 
 	if (!atomic_test_bit(&ctx->state, DAP_STATE_CONNECTED)) {
-		LOG_ERR("DAP device is not connected");
+		LOG_ERROR("DAP device is not connected");
 		response[0] = DAP_ERROR;
 		return 1U;
 	}
@@ -593,7 +593,7 @@ static uint16_t dap_transfer(struct dap_link_context *const ctx,
 	uint16_t retval;
 
 	if (!atomic_test_bit(&ctx->state, DAP_STATE_CONNECTED)) {
-		LOG_ERR("DAP device is not connected");
+		LOG_ERROR("DAP device is not connected");
 		response[0] = DAP_ERROR;
 		return 1U;
 	}
@@ -604,7 +604,7 @@ static uint16_t dap_transfer(struct dap_link_context *const ctx,
 		break;
 	case DAP_PORT_JTAG:
 	default:
-		LOG_ERR("port unsupported");
+		LOG_ERROR("port unsupported");
 		response[0] = DAP_ERROR;
 		retval = 1U;
 	}
@@ -629,7 +629,7 @@ static uint16_t dap_swdp_sequence(struct dap_link_context *const ctx,
 		break;
 	case DAP_PORT_JTAG:
 	default:
-		LOG_ERR("port unsupported");
+		LOG_ERROR("port unsupported");
 		response[0] = DAP_ERROR;
 		return 1U;
 	}
@@ -752,7 +752,7 @@ static uint16_t dap_transferblock(struct dap_link_context *const ctx,
 	uint16_t retval;
 
 	if (!atomic_test_bit(&ctx->state, DAP_STATE_CONNECTED)) {
-		LOG_ERR("DAP device is not connected");
+		LOG_ERROR("DAP device is not connected");
 		/* Clear response count */
 		sys_put_le16(0U, &response[0]);
 		/* Clear DAP response (ACK) value */
@@ -766,7 +766,7 @@ static uint16_t dap_transferblock(struct dap_link_context *const ctx,
 		break;
 	case DAP_PORT_JTAG:
 	default:
-		LOG_ERR("port unsupported");
+		LOG_ERROR("port unsupported");
 		/* Clear response count */
 		sys_put_le16(0U, &response[0]);
 		/* Clear DAP response (ACK) value */
@@ -801,7 +801,7 @@ static uint16_t dap_writeabort(struct dap_link_context *const ctx,
 	uint16_t retval;
 
 	if (!atomic_test_bit(&ctx->state, DAP_STATE_CONNECTED)) {
-		LOG_ERR("DAP device is not connected");
+		LOG_ERROR("DAP device is not connected");
 		response[0] = DAP_ERROR;
 		return 1U;
 	}
@@ -812,7 +812,7 @@ static uint16_t dap_writeabort(struct dap_link_context *const ctx,
 		break;
 	case DAP_PORT_JTAG:
 	default:
-		LOG_ERR("port unsupported");
+		LOG_ERROR("port unsupported");
 		response[0] = DAP_ERROR;
 		retval = 1U;
 	}
@@ -887,17 +887,17 @@ static uint16_t dap_process_cmd(struct dap_link_context *const ctx,
 		retval = dap_swdp_sequence(ctx, request, response);
 		break;
 	case ID_DAP_JTAG_SEQUENCE:
-		LOG_ERR("JTAG sequence unsupported");
+		LOG_ERROR("JTAG sequence unsupported");
 		retval = 1;
 		*response = DAP_ERROR;
 		break;
 	case ID_DAP_JTAG_CONFIGURE:
-		LOG_ERR("JTAG configure unsupported");
+		LOG_ERROR("JTAG configure unsupported");
 		retval = 1;
 		*response = DAP_ERROR;
 		break;
 	case ID_DAP_JTAG_IDCODE:
-		LOG_ERR("JTAG IDCODE unsupported");
+		LOG_ERROR("JTAG IDCODE unsupported");
 		retval = 1;
 		*response = DAP_ERROR;
 		break;
@@ -914,57 +914,57 @@ static uint16_t dap_process_cmd(struct dap_link_context *const ctx,
 		retval = dap_writeabort(ctx, request, response);
 		break;
 	case ID_DAP_SWO_TRANSPORT:
-		LOG_ERR("SWO Transport unsupported");
+		LOG_ERROR("SWO Transport unsupported");
 		retval = 1;
 		*response = DAP_ERROR;
 		break;
 	case ID_DAP_SWO_MODE:
-		LOG_ERR("SWO Mode unsupported");
+		LOG_ERROR("SWO Mode unsupported");
 		retval = 1;
 		*response = DAP_ERROR;
 		break;
 	case ID_DAP_SWO_BAUDRATE:
-		LOG_ERR("SWO Baudrate unsupported");
+		LOG_ERROR("SWO Baudrate unsupported");
 		retval = 1;
 		*response = DAP_ERROR;
 		break;
 	case ID_DAP_SWO_CONTROL:
-		LOG_ERR("SWO Control unsupported");
+		LOG_ERROR("SWO Control unsupported");
 		retval = 1;
 		*response = DAP_ERROR;
 		break;
 	case ID_DAP_SWO_STATUS:
-		LOG_ERR("SWO Status unsupported");
+		LOG_ERROR("SWO Status unsupported");
 		retval = 1;
 		*response = DAP_ERROR;
 		break;
 	case ID_DAP_SWO_DATA:
-		LOG_ERR("SWO Data unsupported");
+		LOG_ERROR("SWO Data unsupported");
 		retval = 1;
 		*response = DAP_ERROR;
 		break;
 	case ID_DAP_UART_TRANSPORT:
-		LOG_ERR("UART Transport unsupported");
+		LOG_ERROR("UART Transport unsupported");
 		retval = 1;
 		*response = DAP_ERROR;
 		break;
 	case ID_DAP_UART_CONFIGURE:
-		LOG_ERR("UART Configure unsupported");
+		LOG_ERROR("UART Configure unsupported");
 		retval = 1;
 		*response = DAP_ERROR;
 		break;
 	case ID_DAP_UART_CONTROL:
-		LOG_ERR("UART Control unsupported");
+		LOG_ERROR("UART Control unsupported");
 		retval = 1;
 		*response = DAP_ERROR;
 		break;
 	case ID_DAP_UART_STATUS:
-		LOG_ERR("UART Status unsupported");
+		LOG_ERROR("UART Status unsupported");
 		retval = 1;
 		*response = DAP_ERROR;
 		break;
 	case ID_DAP_UART_TRANSFER:
-		LOG_ERR("UART Transfer unsupported");
+		LOG_ERROR("UART Transfer unsupported");
 		retval = 1;
 		*response = DAP_ERROR;
 		break;
@@ -1021,7 +1021,7 @@ void dap_link_set_pkt_size(struct dap_link_context *const dap_link_ctx,
 int dap_link_init(struct dap_link_context *const dap_link_ctx)
 {
 	if (!device_is_ready(dap_link_ctx->dev)) {
-		LOG_ERR("SWD driver %s not ready", dap_link_ctx->dev->name);
+		LOG_ERROR("SWD driver %s not ready", dap_link_ctx->dev->name);
 		return -ENODEV;
 	}
 

@@ -110,7 +110,7 @@ static int nxp_send_vs_cmd(const struct bt_hci_nxp_vs_cmd *cmd, uint8_t flags)
 	}
 
 	if (err != 0) {
-		LOG_ERR("Failed to send VS cmd");
+		LOG_ERROR("Failed to send VS cmd");
 	}
 
 	return err;
@@ -131,7 +131,7 @@ static void bt_nxp_sco_init(uint16_t voice_setting)
 		flags = NXP_VS_CMD_FLAG_WIDEBAND;
 		break;
 	default:
-		LOG_ERR("Unsupported air coding format %u", air_coding_fmt);
+		LOG_ERROR("Unsupported air coding format %u", air_coding_fmt);
 		return;
 	}
 
@@ -140,7 +140,7 @@ static void bt_nxp_sco_init(uint16_t voice_setting)
 
 	ARRAY_FOR_EACH(sco_init_vs_cmds, i) {
 		if (nxp_send_vs_cmd(&sco_init_vs_cmds[i], flags) != 0) {
-			LOG_ERR("Failed to send VS cmd %u", i);
+			LOG_ERROR("Failed to send VS cmd %u", i);
 			return;
 		}
 	}
@@ -188,13 +188,13 @@ void bt_nxp_sco_connected(struct bt_conn *conn, uint8_t err)
 		flags = NXP_VS_CMD_FLAG_WIDEBAND;
 		break;
 	default:
-		LOG_ERR("Unsupported air mode %u", air_mode);
+		LOG_ERROR("Unsupported air mode %u", air_mode);
 		return;
 	}
 
 	ARRAY_FOR_EACH(sco_start_vs_cmds, i) {
 		if (nxp_send_vs_cmd(&sco_start_vs_cmds[i], flags) != 0) {
-			LOG_ERR("Failed to send VS cmd %u", i);
+			LOG_ERROR("Failed to send VS cmd %u", i);
 			return;
 		}
 	}
@@ -214,13 +214,13 @@ void bt_nxp_sco_disconnected(struct bt_conn *conn, uint8_t reason)
 		flags = NXP_VS_CMD_FLAG_WIDEBAND;
 		break;
 	default:
-		LOG_ERR("Unsupported air mode %u", air_mode);
+		LOG_ERROR("Unsupported air mode %u", air_mode);
 		return;
 	}
 
 	ARRAY_FOR_EACH(sco_stop_vs_cmds, i) {
 		if (nxp_send_vs_cmd(&sco_stop_vs_cmds[i], flags) != 0) {
-			LOG_ERR("Failed to send VS cmd %u", i);
+			LOG_ERROR("Failed to send VS cmd %u", i);
 			return;
 		}
 	}

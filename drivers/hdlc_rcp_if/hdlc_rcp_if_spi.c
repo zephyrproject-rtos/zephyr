@@ -189,7 +189,7 @@ static void hdlc_rcp_if_push_pull_spi(struct k_work *work)
 
 	ret = spi_transceive_dt(&cfg->bus, &tx_set, &rx_set);
 	if (ret < 0) {
-		LOG_ERR("Failed to push/pull frames (%d)", ret);
+		LOG_ERROR("Failed to push/pull frames (%d)", ret);
 		goto end;
 	}
 
@@ -343,8 +343,8 @@ static int hdlc_send(const uint8_t *frame, uint16_t length)
 				continue;
 			}
 			if (data->tx_fcs != FCS_CHECK) {
-				LOG_ERR("Invalid HDLC CRC 0x%04x for length %u", data->tx_fcs,
-					data->tx_len);
+				LOG_ERROR("Invalid HDLC CRC 0x%04x for length %u", data->tx_fcs,
+					  data->tx_len);
 				data->tx_escaped = false;
 				data->tx_len = 0;
 				data->tx_fcs = FCS_RESET;
@@ -409,24 +409,24 @@ static int hdlc_rcp_if_spi_init(const struct device *dev)
 	k_work_init(&data->work, hdlc_rcp_if_push_pull_spi);
 
 	if (!spi_is_ready_dt(&cfg->bus)) {
-		LOG_ERR("SPI bus not ready");
+		LOG_ERROR("SPI bus not ready");
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&cfg->int_gpio)) {
-		LOG_ERR("Interrupt GPIO not ready");
+		LOG_ERROR("Interrupt GPIO not ready");
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure interrupt GPIO pin (%d)", ret);
+		LOG_ERROR("Failed to configure interrupt GPIO pin (%d)", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure interrupt GPIO (%d)", ret);
+		LOG_ERROR("Failed to configure interrupt GPIO (%d)", ret);
 		return ret;
 	}
 
@@ -434,13 +434,13 @@ static int hdlc_rcp_if_spi_init(const struct device *dev)
 
 	ret = gpio_add_callback(cfg->int_gpio.port, &data->int_gpio_cb);
 	if (ret < 0) {
-		LOG_ERR("Failed to add interrupt GPIO callback (%d)", ret);
+		LOG_ERROR("Failed to add interrupt GPIO callback (%d)", ret);
 		return ret;
 	}
 
 	ret = hdlc_rcp_if_spi_reset(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to reset HDLC SPI device (%d)", ret);
+		LOG_ERROR("Failed to reset HDLC SPI device (%d)", ret);
 	}
 
 	return 0;

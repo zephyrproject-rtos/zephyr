@@ -1508,7 +1508,7 @@ static uint16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf, 
 		att_list_len += sending_len;
 
 		if (max_att_len < sending_len) {
-			LOG_ERR("Att len exceeds %u < %u", max_att_len, sending_len);
+			LOG_ERROR("Att len exceeds %u < %u", max_att_len, sending_len);
 			net_buf_unref(rsp_buf);
 			return BT_SDP_INVALID_SYNTAX;
 		}
@@ -1602,7 +1602,7 @@ static int bt_sdp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	BT_ASSERT(sdp);
 
 	if (buf->len < sizeof(*hdr)) {
-		LOG_ERR("Too small SDP PDU received");
+		LOG_ERROR("Too small SDP PDU received");
 		return 0;
 	}
 
@@ -1667,7 +1667,7 @@ static int bt_sdp_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 		return 0;
 	}
 
-	LOG_ERR("No available SDP context for conn %p", conn);
+	LOG_ERROR("No available SDP context for conn %p", conn);
 
 	return -ENOMEM;
 }
@@ -1689,7 +1689,7 @@ void bt_sdp_init(void)
 
 	err = bt_l2cap_br_server_register(&server);
 	if ((err != 0) && (err != -EEXIST)) {
-		LOG_ERR("Failed to register SDP L2CAP server (error %d)", err);
+		LOG_ERROR("Failed to register SDP L2CAP server (error %d)", err);
 		return;
 	}
 
@@ -1706,12 +1706,12 @@ int bt_sdp_register_service(struct bt_sdp_record *service)
 	uint8_t index = 0;
 
 	if (!service) {
-		LOG_ERR("No service record specified");
+		LOG_ERROR("No service record specified");
 		return 0;
 	}
 
 	if (sys_slist_find(&sdp_db, &service->node, NULL)) {
-		LOG_ERR("Service already registered");
+		LOG_ERROR("Service already registered");
 		return -EEXIST;
 	}
 
@@ -1722,7 +1722,7 @@ int bt_sdp_register_service(struct bt_sdp_record *service)
 		index = last->index + 1;
 
 		if (last->index > index) {
-			LOG_ERR("Registered record is full");
+			LOG_ERROR("Registered record is full");
 			return -EOVERFLOW;
 		}
 	}
@@ -1957,7 +1957,8 @@ static int sdp_client_notify_result(struct bt_sdp_client *session,
 					return 0;
 
 no_more_space:
-					LOG_ERR("Allocated buffer has not more space for the next "
+					LOG_ERROR(
+						"Allocated buffer has not more space for the next "
 						"SDP discover. Need to increase date size of the "
 						"receiving pool.");
 					net_buf_unref(buf);
@@ -1967,8 +1968,8 @@ no_more_space:
 				net_buf_reset(session->rec_buf);
 				dst = net_buf_add(session->rec_buf, len);
 				if (dst == src) {
-					LOG_ERR("No more buffer space for SDP discover. Need to "
-						"increase buffer size of the receiving pool.");
+					LOG_ERROR("No more buffer space for SDP discover. Need to "
+						  "increase buffer size of the receiving pool.");
 					return -ENOMEM;
 				}
 
@@ -2051,7 +2052,7 @@ static int sdp_client_ss_search(struct bt_sdp_client *session,
 		net_buf_add_mem(buf, uuid128, sizeof(uuid128));
 		break;
 	default:
-		LOG_ERR("Unknown UUID type %u", param->uuid->type);
+		LOG_ERROR("Unknown UUID type %u", param->uuid->type);
 		net_buf_unref(buf);
 		return -EINVAL;
 	}
@@ -2180,7 +2181,7 @@ static int sdp_client_sa_search(struct bt_sdp_client *session,
 	/* Check the tailroom of the buffer */
 	len = sdp_client_get_total_len(session, param);
 	if (len > net_buf_tailroom(buf)) {
-		LOG_ERR("No space to add attribute ID");
+		LOG_ERROR("No space to add attribute ID");
 		net_buf_unref(buf);
 		return -ENOMEM;
 	}
@@ -2230,7 +2231,7 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 		/* Notify current received data */
 		err = sdp_client_ssa_sa_notify(session);
 		if (err != 0) {
-			LOG_ERR("Failed to notify received data: %d", err);
+			LOG_ERROR("Failed to notify received data: %d", err);
 			return err;
 		}
 
@@ -2267,7 +2268,7 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 		net_buf_add_mem(buf, uuid128, sizeof(uuid128));
 		break;
 	default:
-		LOG_ERR("Unknown UUID type %u", param->uuid->type);
+		LOG_ERROR("Unknown UUID type %u", param->uuid->type);
 		net_buf_unref(buf);
 		return -EINVAL;
 	}
@@ -2278,7 +2279,7 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 	/* Check the tailroom of the buffer */
 	len = sdp_client_get_total_len(session, param);
 	if (len > net_buf_tailroom(buf)) {
-		LOG_ERR("No space to add attribute ID");
+		LOG_ERROR("No space to add attribute ID");
 		net_buf_unref(buf);
 		return -ENOMEM;
 	}
@@ -2374,7 +2375,7 @@ static int sdp_client_receive_ss(struct bt_sdp_client *session, struct net_buf *
 
 	/* Check the buffer len for the total_count field */
 	if (buf->len < sizeof(total_count)) {
-		LOG_ERR("Invalid frame payload length");
+		LOG_ERROR("Invalid frame payload length");
 		return -EINVAL;
 	}
 
@@ -2383,7 +2384,7 @@ static int sdp_client_receive_ss(struct bt_sdp_client *session, struct net_buf *
 
 	/* Check the buffer len for the current_count field */
 	if (buf->len < sizeof(current_count)) {
-		LOG_ERR("Invalid frame payload length");
+		LOG_ERROR("Invalid frame payload length");
 		return -EINVAL;
 	}
 
@@ -2391,19 +2392,19 @@ static int sdp_client_receive_ss(struct bt_sdp_client *session, struct net_buf *
 	current_count = net_buf_pull_be16(buf);
 	/* Check valid of current service record count */
 	if (current_count > total_count) {
-		LOG_ERR("Invalid current service record count");
+		LOG_ERROR("Invalid current service record count");
 		return -EINVAL;
 	}
 
 	received_count = session->rec_buf->len / SDP_RECORD_HANDLE_SIZE;
 	if ((received_count + current_count) > total_count) {
-		LOG_ERR("Excess data received");
+		LOG_ERROR("Excess data received");
 		return -EINVAL;
 	}
 
 	record_len = current_count * SDP_RECORD_HANDLE_SIZE;
 	if (record_len >= buf->len) {
-		LOG_ERR("Invalid packet");
+		LOG_ERROR("Invalid packet");
 		return -EINVAL;
 	}
 
@@ -2411,12 +2412,12 @@ static int sdp_client_receive_ss(struct bt_sdp_client *session, struct net_buf *
 	cstate = (struct bt_sdp_pdu_cstate *)(buf->data + record_len);
 
 	if (cstate->length > BT_SDP_MAX_PDU_CSTATE_LEN) {
-		LOG_ERR("Invalid SDP PDU Continuation State length %u", cstate->length);
+		LOG_ERROR("Invalid SDP PDU Continuation State length %u", cstate->length);
 		return -EINVAL;
 	}
 
 	if ((record_len + SDP_CONT_STATE_LEN_SIZE + cstate->length) > buf->len) {
-		LOG_ERR("Invalid payload length");
+		LOG_ERROR("Invalid payload length");
 		return -EINVAL;
 	}
 
@@ -2473,7 +2474,7 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 
 	/* Check the buffer len for the frame_len field */
 	if (buf->len < sizeof(frame_len)) {
-		LOG_ERR("Invalid frame payload length");
+		LOG_ERROR("Invalid frame payload length");
 		return -EINVAL;
 	}
 
@@ -2481,12 +2482,12 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 	frame_len = net_buf_pull_be16(buf);
 	/* Check valid buf len for attribute list and cont state */
 	if (buf->len < frame_len + SDP_CONT_STATE_LEN_SIZE) {
-		LOG_ERR("Invalid frame payload length");
+		LOG_ERROR("Invalid frame payload length");
 		return -EINVAL;
 	}
 	/* Check valid range of attributes length */
 	if ((session->cstate.length == 0) && (frame_len < 2)) {
-		LOG_ERR("Invalid attributes data length");
+		LOG_ERROR("Invalid attributes data length");
 		return -EINVAL;
 	}
 
@@ -2494,12 +2495,12 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 	cstate = (struct bt_sdp_pdu_cstate *)(buf->data + frame_len);
 
 	if (cstate->length > BT_SDP_MAX_PDU_CSTATE_LEN) {
-		LOG_ERR("Invalid SDP PDU Continuation State length %u", cstate->length);
+		LOG_ERROR("Invalid SDP PDU Continuation State length %u", cstate->length);
 		return -EINVAL;
 	}
 
 	if ((frame_len + SDP_CONT_STATE_LEN_SIZE + cstate->length) > buf->len) {
-		LOG_ERR("Invalid frame payload length");
+		LOG_ERROR("Invalid frame payload length");
 		return -EINVAL;
 	}
 
@@ -2514,7 +2515,7 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 
 		err = sdp_client_ssa_sa_notify(session);
 		if (err != 0) {
-			LOG_ERR("Failed to notify received data: %d", err);
+			LOG_ERROR("Failed to notify received data: %d", err);
 			return err;
 		}
 	}
@@ -2538,7 +2539,7 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 	 * received. So the frame_len is less than total.
 	 */
 	if (total && (frame_len > total)) {
-		LOG_ERR("Invalid attribute lists");
+		LOG_ERROR("Invalid attribute lists");
 		return -EINVAL;
 	}
 
@@ -2599,7 +2600,7 @@ static int sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	LOG_DBG("session %p buf %p", session, buf);
 
 	if (buf->len < sizeof(*hdr)) {
-		LOG_ERR("Too small SDP PDU");
+		LOG_ERROR("Too small SDP PDU");
 		return 0;
 	}
 
@@ -2610,12 +2611,12 @@ static int sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	LOG_DBG("SDP PDU tid %u len %u", tid, len);
 
 	if (buf->len != len) {
-		LOG_ERR("SDP PDU length mismatch (%u != %u)", buf->len, len);
+		LOG_ERROR("SDP PDU length mismatch (%u != %u)", buf->len, len);
 		return 0;
 	}
 
 	if (tid != session->tid) {
-		LOG_ERR("Mismatch transaction ID value in SDP PDU");
+		LOG_ERROR("Mismatch transaction ID value in SDP PDU");
 		return 0;
 	}
 
@@ -2814,7 +2815,7 @@ static int sdp_client_new_session(struct bt_conn *conn, struct bt_sdp_client *se
 
 	err = sdp_client_chan_connect(session);
 	if (err) {
-		LOG_ERR("Cannot connect %d", err);
+		LOG_ERROR("Cannot connect %d", err);
 		return err;
 	}
 
@@ -2921,13 +2922,13 @@ int bt_sdp_get_proto_param(const struct net_buf *buf, uint16_t proto, uint16_t *
 	int err;
 
 	if ((buf == NULL) || (param == NULL)) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return -EINVAL;
 	}
 
 	if ((proto != BT_SDP_PROTO_RFCOMM) && (proto != BT_SDP_PROTO_L2CAP) &&
 	    (proto != BT_SDP_PROTO_AVDTP)) {
-		LOG_ERR("Invalid protocol specifier");
+		LOG_ERROR("Invalid protocol specifier");
 		return -EINVAL;
 	}
 
@@ -2955,13 +2956,13 @@ int bt_sdp_get_addl_proto_param(const struct net_buf *buf, uint16_t proto, uint8
 	int err;
 
 	if ((buf == NULL) || (param == NULL)) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return -EINVAL;
 	}
 
 	if ((proto != BT_SDP_PROTO_RFCOMM) && (proto != BT_SDP_PROTO_L2CAP) &&
 	    (proto != BT_SDP_PROTO_AVDTP)) {
-		LOG_ERR("Invalid protocol specifier");
+		LOG_ERROR("Invalid protocol specifier");
 		return -EINVAL;
 	}
 
@@ -2973,12 +2974,12 @@ int bt_sdp_get_addl_proto_param(const struct net_buf *buf, uint16_t proto, uint8
 
 	count = bt_sdp_attr_addl_proto_count(&attr);
 	if (count <= 0) {
-		LOG_ERR("No attribute value");
+		LOG_ERROR("No attribute value");
 		return -EINVAL;
 	}
 
 	if (index >= count) {
-		LOG_ERR("Index out of range 0 ~ %d", count - 1);
+		LOG_ERROR("Index out of range 0 ~ %d", count - 1);
 		return -EINVAL;
 	}
 
@@ -2998,7 +2999,7 @@ int bt_sdp_get_profile_version(const struct net_buf *buf, uint16_t profile, uint
 	int err;
 
 	if ((buf == NULL) || (version == NULL)) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return -EINVAL;
 	}
 
@@ -3024,7 +3025,7 @@ int bt_sdp_get_features(const struct net_buf *buf, uint16_t *features)
 	int err;
 
 	if ((buf == NULL) || (features == NULL)) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return -EINVAL;
 	}
 
@@ -3050,7 +3051,7 @@ int bt_sdp_get_vendor_id(const struct net_buf *buf, uint16_t *vendor_id)
 	int err;
 
 	if ((buf == NULL) || (vendor_id == NULL)) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return -EINVAL;
 	}
 
@@ -3076,7 +3077,7 @@ int bt_sdp_get_product_id(const struct net_buf *buf, uint16_t *product_id)
 	int err;
 
 	if ((buf == NULL) || (product_id == NULL)) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return -EINVAL;
 	}
 
@@ -3785,7 +3786,8 @@ int bt_sdp_attr_addl_proto_parse(const struct bt_sdp_attribute *attr,
 	}
 
 	if (attr->id != BT_SDP_ATTR_ADD_PROTO_DESC_LIST) {
-		LOG_ERR("Unsupported ATTR ID %u != %u", attr->id, BT_SDP_ATTR_ADD_PROTO_DESC_LIST);
+		LOG_ERROR("Unsupported ATTR ID %u != %u", attr->id,
+			  BT_SDP_ATTR_ADD_PROTO_DESC_LIST);
 		return -ENOTSUP;
 	}
 
@@ -3836,7 +3838,8 @@ ssize_t bt_sdp_attr_addl_proto_count(const struct bt_sdp_attribute *attr)
 	}
 
 	if (attr->id != BT_SDP_ATTR_ADD_PROTO_DESC_LIST) {
-		LOG_ERR("Unsupported ATTR ID %u != %u", attr->id, BT_SDP_ATTR_ADD_PROTO_DESC_LIST);
+		LOG_ERROR("Unsupported ATTR ID %u != %u", attr->id,
+			  BT_SDP_ATTR_ADD_PROTO_DESC_LIST);
 		return -ENOTSUP;
 	}
 
@@ -3888,7 +3891,8 @@ int bt_sdp_attr_addl_proto_read(const struct bt_sdp_attribute *attr, uint16_t in
 	}
 
 	if (attr->id != BT_SDP_ATTR_ADD_PROTO_DESC_LIST) {
-		LOG_ERR("Unsupported ATTR ID %u != %u", attr->id, BT_SDP_ATTR_ADD_PROTO_DESC_LIST);
+		LOG_ERROR("Unsupported ATTR ID %u != %u", attr->id,
+			  BT_SDP_ATTR_ADD_PROTO_DESC_LIST);
 		return -ENOTSUP;
 	}
 

@@ -68,7 +68,7 @@ static int hdlc_register_rx_cb(hdlc_rx_callback_t hdlc_rx_callback, void *param)
 
 	ret = PLATFORM_InitHdlcInterface((platform_hdlc_rx_callback_t)hdlc_rx_callback, param);
 	if (ret < 0) {
-		LOG_ERR("HDLC RX callback registration failed");
+		LOG_ERROR("HDLC RX callback registration failed");
 	}
 
 	return ret;
@@ -80,7 +80,7 @@ static int hdlc_send(const uint8_t *frame, uint16_t length)
 
 	ret = PLATFORM_SendHdlcMessage((uint8_t *)frame, length);
 	if (ret < 0) {
-		LOG_ERR("HDLC send frame failed");
+		LOG_ERROR("HDLC send frame failed");
 	}
 
 	return ret;
@@ -92,7 +92,7 @@ static int hdlc_deinit(void)
 
 	ret = PLATFORM_TerminateHdlcInterface();
 	if (ret < 0) {
-		LOG_ERR("Failed to shutdown OpenThread controller");
+		LOG_ERROR("Failed to shutdown OpenThread controller");
 	}
 
 	return ret;

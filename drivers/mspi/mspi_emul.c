@@ -91,12 +91,12 @@ static inline int mspi_verify_device(const struct device *controller,
 
 		if (device_index >= data->mspicfg.num_periph ||
 		    device_index != dev_id->dev_idx) {
-			LOG_ERR("%u, invalid device ID.", __LINE__);
+			LOG_ERROR("%u, invalid device ID.", __LINE__);
 			return -ENODEV;
 		}
 	} else {
 		if (dev_id->dev_idx >= data->mspicfg.num_periph) {
-			LOG_ERR("%u, invalid device ID.", __LINE__);
+			LOG_ERROR("%u, invalid device ID.", __LINE__);
 			return -ENODEV;
 		}
 	}
@@ -215,7 +215,7 @@ static inline int mspi_dev_cfg_check_save(const struct device *controller,
 
 	if (param_mask & MSPI_DEVICE_CONFIG_FREQUENCY) {
 		if (dev_cfg->freq > MSPI_MAX_FREQ) {
-			LOG_ERR("%u, freq is too large.", __LINE__);
+			LOG_ERROR("%u, freq is too large.", __LINE__);
 			return -ENOTSUP;
 		}
 		data->dev_cfg.freq = dev_cfg->freq;
@@ -223,7 +223,7 @@ static inline int mspi_dev_cfg_check_save(const struct device *controller,
 
 	if (param_mask & MSPI_DEVICE_CONFIG_IO_MODE) {
 		if (dev_cfg->io_mode >= MSPI_IO_MODE_MAX) {
-			LOG_ERR("%u, Invalid io_mode.", __LINE__);
+			LOG_ERROR("%u, Invalid io_mode.", __LINE__);
 			return -EINVAL;
 		}
 		data->dev_cfg.io_mode = dev_cfg->io_mode;
@@ -231,7 +231,7 @@ static inline int mspi_dev_cfg_check_save(const struct device *controller,
 
 	if (param_mask & MSPI_DEVICE_CONFIG_DATA_RATE) {
 		if (dev_cfg->data_rate >= MSPI_DATA_RATE_MAX) {
-			LOG_ERR("%u, Invalid data_rate.", __LINE__);
+			LOG_ERROR("%u, Invalid data_rate.", __LINE__);
 			return -EINVAL;
 		}
 		data->dev_cfg.data_rate = dev_cfg->data_rate;
@@ -239,7 +239,7 @@ static inline int mspi_dev_cfg_check_save(const struct device *controller,
 
 	if (param_mask & MSPI_DEVICE_CONFIG_CPP) {
 		if (dev_cfg->cpp > MSPI_CPP_MODE_3) {
-			LOG_ERR("%u, Invalid cpp.", __LINE__);
+			LOG_ERROR("%u, Invalid cpp.", __LINE__);
 			return -EINVAL;
 		}
 		data->dev_cfg.cpp = dev_cfg->cpp;
@@ -247,7 +247,7 @@ static inline int mspi_dev_cfg_check_save(const struct device *controller,
 
 	if (param_mask & MSPI_DEVICE_CONFIG_ENDIAN) {
 		if (dev_cfg->endian > MSPI_XFER_BIG_ENDIAN) {
-			LOG_ERR("%u, Invalid endian.", __LINE__);
+			LOG_ERROR("%u, Invalid endian.", __LINE__);
 			return -EINVAL;
 		}
 		data->dev_cfg.endian = dev_cfg->endian;
@@ -255,7 +255,7 @@ static inline int mspi_dev_cfg_check_save(const struct device *controller,
 
 	if (param_mask & MSPI_DEVICE_CONFIG_CE_POL) {
 		if (dev_cfg->ce_polarity > MSPI_CE_ACTIVE_HIGH) {
-			LOG_ERR("%u, Invalid ce_polarity.", __LINE__);
+			LOG_ERROR("%u, Invalid ce_polarity.", __LINE__);
 			return -EINVAL;
 		}
 		data->dev_cfg.ce_polarity = dev_cfg->ce_polarity;
@@ -263,7 +263,7 @@ static inline int mspi_dev_cfg_check_save(const struct device *controller,
 
 	if (param_mask & MSPI_DEVICE_CONFIG_DQS) {
 		if (dev_cfg->dqs_enable && !data->mspicfg.dqs_support) {
-			LOG_ERR("%u, DQS mode not supported.", __LINE__);
+			LOG_ERROR("%u, DQS mode not supported.", __LINE__);
 			return -ENOTSUP;
 		}
 		data->dev_cfg.dqs_enable = dev_cfg->dqs_enable;
@@ -314,12 +314,12 @@ static inline int mspi_dev_cfg_check_save(const struct device *controller,
 static inline int mspi_xfer_check(const struct mspi_xfer *xfer)
 {
 	if (xfer->xfer_mode > MSPI_DMA) {
-		LOG_ERR("%u, Invalid xfer xfer_mode.", __LINE__);
+		LOG_ERROR("%u, Invalid xfer xfer_mode.", __LINE__);
 		return -EINVAL;
 	}
 
 	if (!xfer->packets || !xfer->num_packet) {
-		LOG_ERR("%u, Invalid xfer payload.", __LINE__);
+		LOG_ERROR("%u, Invalid xfer payload.", __LINE__);
 		return -EINVAL;
 	}
 
@@ -327,17 +327,17 @@ static inline int mspi_xfer_check(const struct mspi_xfer *xfer)
 
 		if (!xfer->packets[i].data_buf ||
 		    !xfer->packets[i].num_bytes) {
-			LOG_ERR("%u, Invalid xfer payload num: %u.", __LINE__, i);
+			LOG_ERROR("%u, Invalid xfer payload num: %u.", __LINE__, i);
 			return -EINVAL;
 		}
 
 		if (xfer->packets[i].dir > MSPI_TX) {
-			LOG_ERR("%u, Invalid xfer direction.", __LINE__);
+			LOG_ERROR("%u, Invalid xfer direction.", __LINE__);
 			return -EINVAL;
 		}
 
 		if (xfer->packets[i].cb_mask > MSPI_BUS_XFER_COMPLETE_CB) {
-			LOG_ERR("%u, Invalid xfer cb_mask.", __LINE__);
+			LOG_ERROR("%u, Invalid xfer cb_mask.", __LINE__);
 			return -EINVAL;
 		}
 	}
@@ -419,7 +419,7 @@ static int emul_mspi_trigger_event(const struct device *controller,
 		if (cb) {
 			cb(cb_context);
 		} else {
-			LOG_ERR("%u, mspi callback type %u not registered.", __LINE__, evt_type);
+			LOG_ERROR("%u, mspi callback type %u not registered.", __LINE__, evt_type);
 			return -EINVAL;
 		}
 	}
@@ -442,34 +442,34 @@ static int mspi_emul_config(const struct mspi_dt_spec *spec)
 	int ret = 0;
 
 	if (config->op_mode > MSPI_OP_MODE_PERIPHERAL) {
-		LOG_ERR("%u, Invalid MSPI OP mode.", __LINE__);
+		LOG_ERROR("%u, Invalid MSPI OP mode.", __LINE__);
 		return -EINVAL;
 	}
 
 	if (config->max_freq > MSPI_MAX_FREQ) {
-		LOG_ERR("%u, Invalid MSPI Frequency", __LINE__);
+		LOG_ERROR("%u, Invalid MSPI Frequency", __LINE__);
 		return -ENOTSUP;
 	}
 
 	if (config->duplex > MSPI_FULL_DUPLEX) {
-		LOG_ERR("%u, Invalid MSPI duplexity.", __LINE__);
+		LOG_ERROR("%u, Invalid MSPI duplexity.", __LINE__);
 		return -EINVAL;
 	}
 
 	if (config->num_periph > MSPI_MAX_DEVICE) {
-		LOG_ERR("%u, Invalid MSPI peripheral number.", __LINE__);
+		LOG_ERROR("%u, Invalid MSPI peripheral number.", __LINE__);
 		return -ENOTSUP;
 	}
 
 	if (config->num_ce_gpios != 0 &&
 	    config->num_ce_gpios != config->num_periph) {
-		LOG_ERR("%u, Invalid number of ce_gpios.", __LINE__);
+		LOG_ERROR("%u, Invalid number of ce_gpios.", __LINE__);
 		return -EINVAL;
 	}
 
 	if (config->re_init) {
 		if (k_mutex_lock(&data->lock, K_MSEC(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE))) {
-			LOG_ERR("%u, Failed to access controller.", __LINE__);
+			LOG_ERROR("%u, Failed to access controller.", __LINE__);
 			return -EBUSY;
 		}
 		while (mspi_is_inp(spec->bus)) {
@@ -515,7 +515,7 @@ static int mspi_emul_dev_config(const struct device *controller,
 
 	if (data->dev_id != dev_id) {
 		if (k_mutex_lock(&data->lock, K_MSEC(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE))) {
-			LOG_ERR("%u, Failed to access controller.", __LINE__);
+			LOG_ERROR("%u, Failed to access controller.", __LINE__);
 			return -EBUSY;
 		}
 
@@ -534,7 +534,7 @@ static int mspi_emul_dev_config(const struct device *controller,
 	} else if (param_mask < MSPI_DEVICE_CONFIG_ALL) {
 		if (data->dev_id != dev_id) {
 			/* MSPI_DEVICE_CONFIG_ALL should be used */
-			LOG_ERR("%u, config failed, must be the same device.", __LINE__);
+			LOG_ERROR("%u, config failed, must be the same device.", __LINE__);
 			ret = -ENOTSUP;
 			goto e_return;
 		}
@@ -551,7 +551,7 @@ static int mspi_emul_dev_config(const struct device *controller,
 			/* Conduct device switching */
 		}
 	} else {
-		LOG_ERR("%u, Invalid param_mask.", __LINE__);
+		LOG_ERROR("%u, Invalid param_mask.", __LINE__);
 		ret = -EINVAL;
 		goto e_return;
 	}
@@ -582,7 +582,7 @@ static int mspi_emul_xip_config(const struct device *controller,
 	int ret = 0;
 
 	if (dev_id != data->dev_id) {
-		LOG_ERR("%u, dev_id don't match.", __LINE__);
+		LOG_ERROR("%u, dev_id don't match.", __LINE__);
 		return -ESTALE;
 	}
 
@@ -611,7 +611,7 @@ static int mspi_emul_scramble_config(const struct device *controller,
 	}
 
 	if (dev_id != data->dev_id) {
-		LOG_ERR("%u, dev_id don't match.", __LINE__);
+		LOG_ERROR("%u, dev_id don't match.", __LINE__);
 		return -ESTALE;
 	}
 
@@ -643,14 +643,14 @@ static int mspi_emul_timing_config(const struct device *controller,
 	}
 
 	if (dev_id != data->dev_id) {
-		LOG_ERR("%u, dev_id don't match.", __LINE__);
+		LOG_ERROR("%u, dev_id don't match.", __LINE__);
 		return -ESTALE;
 	}
 
 	if (param_mask == MSPI_TIMING_PARAM_DUMMY) {
 		data->timing_cfg = *(struct mspi_timing_cfg *)timing_cfg;
 	} else {
-		LOG_ERR("%u, param_mask not supported.", __LINE__);
+		LOG_ERROR("%u, param_mask not supported.", __LINE__);
 		return -ENOTSUP;
 	}
 
@@ -707,12 +707,12 @@ static int mspi_emul_register_callback(const struct device *controller,
 	}
 
 	if (dev_id != data->dev_id) {
-		LOG_ERR("%u, dev_id don't match.", __LINE__);
+		LOG_ERROR("%u, dev_id don't match.", __LINE__);
 		return -ESTALE;
 	}
 
 	if (evt_type >= MSPI_BUS_EVENT_MAX) {
-		LOG_ERR("%u, callback types not supported.", __LINE__);
+		LOG_ERROR("%u, callback types not supported.", __LINE__);
 		return -ENOTSUP;
 	}
 
@@ -746,12 +746,12 @@ static int mspi_emul_transceive(const struct device *controller,
 
 	emul = mspi_emul_find(controller, dev_id->dev_idx);
 	if (!emul) {
-		LOG_ERR("%u, mspi_emul not found.", __LINE__);
+		LOG_ERROR("%u, mspi_emul not found.", __LINE__);
 		return -EIO;
 	}
 
 	if (dev_id != data->dev_id) {
-		LOG_ERR("%u, dev_id don't match.", __LINE__);
+		LOG_ERROR("%u, dev_id don't match.", __LINE__);
 		return -ESTALE;
 	}
 
@@ -774,12 +774,12 @@ static int mspi_emul_transceive(const struct device *controller,
 		if (cfg_flag == 1) {
 			ret = mspi_xfer_config(controller, xfer);
 			if (ret) {
-				LOG_ERR("%u, xfer config fail.", __LINE__);
+				LOG_ERROR("%u, xfer config fail.", __LINE__);
 				goto trans_err;
 			}
 		} else {
 			ret = cfg_flag;
-			LOG_ERR("%u, xfer fail.", __LINE__);
+			LOG_ERROR("%u, xfer fail.", __LINE__);
 			goto trans_err;
 		}
 	}

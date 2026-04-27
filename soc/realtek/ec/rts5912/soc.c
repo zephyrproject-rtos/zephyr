@@ -37,7 +37,7 @@ void soc_early_init_hook(void)
 	if (IS_ENABLED(CONFIG_RTS5912_DEBUG_SWJ)) {
 		ret = swj_connector_init();
 		if (ret < 0) {
-			LOG_ERR("SWJ init failed %d", ret);
+			LOG_ERROR("SWJ init failed %d", ret);
 		}
 	}
 

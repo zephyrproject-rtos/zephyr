@@ -54,8 +54,8 @@ static inline int riscv_relocation_fits(long long jump_target, long long max_dis
 		max_distance++;
 	}
 	if (llabs(jump_target) > max_distance) {
-		LOG_ERR("%lld byte relocation is not possible for type %" PRIu64 " (max %lld)!",
-			jump_target, (uint64_t)reloc_type, max_distance);
+		LOG_ERROR("%lld byte relocation is not possible for type %" PRIu64 " (max %lld)!",
+			  jump_target, (uint64_t)reloc_type, max_distance);
 		return -ENOEXEC; /* jump too far */
 	}
 
@@ -155,8 +155,8 @@ static int llext_riscv_find_sym_pcrel(struct llext_loader *ldr, struct llext *ex
 	}
 
 	if (!found_candidate) {
-		LOG_ERR("Could not find R_RISCV_PCREL_HI20 relocation for "
-			"R_RISCV_PCREL_LO12 relocation!");
+		LOG_ERROR("Could not find R_RISCV_PCREL_HI20 relocation for "
+			  "R_RISCV_PCREL_LO12 relocation!");
 		return -ENOEXEC;
 	}
 
@@ -212,7 +212,7 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 
 	ret = llext_read_symbol(ldr, ext, rel, &sym);
 	if (ret != 0) {
-		LOG_ERR("Could not read symbol from binary!");
+		LOG_ERROR("Could not read symbol from binary!");
 		return ret;
 	}
 
@@ -220,7 +220,7 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 	ret = llext_lookup_symbol(ldr, ext, &sym_base_addr_unsigned, rel, &sym, sym_name, shdr);
 
 	if (ret != 0) {
-		LOG_ERR("Could not find symbol %s!", sym_name);
+		LOG_ERROR("Could not find symbol %s!", sym_name);
 		return ret;
 	}
 	/*
@@ -259,10 +259,10 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 	ret = llext_riscv_find_sym_pcrel(ldr, ext, rel, shdr, &sym, &sym_base_addr);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to resolve RISC-V PCREL relocation for symbol %s at %p "
-			"with base address %p load address %p type %" PRIu64,
-			sym_name, (void *)loc, (void *)sym_base_addr, (void *)load_bias,
-			(uint64_t)reloc_type);
+		LOG_ERROR("Failed to resolve RISC-V PCREL relocation for symbol %s at %p "
+			  "with base address %p load address %p type %" PRIu64,
+			  sym_name, (void *)loc, (void *)sym_base_addr, (void *)load_bias,
+			  (uint64_t)reloc_type);
 		return ret;
 	}
 
@@ -515,9 +515,9 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 		while (target_alignment < rel->r_addend) {
 			target_alignment *= 2;
 		}
-		LOG_ERR("Symbol %s with location %p requires alignment to %" PRIu64 " bytes!",
-			sym_name, (void *)loc, (uint64_t)target_alignment);
-		LOG_ERR("Alignment relocation is currently not supported!");
+		LOG_ERROR("Symbol %s with location %p requires alignment to %" PRIu64 " bytes!",
+			  sym_name, (void *)loc, (uint64_t)target_alignment);
+		LOG_ERROR("Alignment relocation is currently not supported!");
 		return -ENOEXEC;
 	/* ignored, this is primarily intended for removing instructions during link-time
 	 * optimization
@@ -525,8 +525,8 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 	case R_RISCV_RELAX:
 		break;
 	default:
-		LOG_ERR("Unsupported relocation type: %" PRIu64 " for symbol: %s",
-			(uint64_t)reloc_type, sym_name);
+		LOG_ERROR("Unsupported relocation type: %" PRIu64 " for symbol: %s",
+			  (uint64_t)reloc_type, sym_name);
 		return -ENOEXEC;
 	}
 

@@ -51,14 +51,14 @@ static int pwm_xmc4xxx_ccu8_init(const struct device *dev)
 		};
 
 		if (config->slice_prescaler[i] > MAX_SLICE_PRESCALER) {
-			LOG_ERR("Invalid slice_prescaler value %d. Range [0, 15]",
-				config->slice_prescaler[i]);
+			LOG_ERROR("Invalid slice_prescaler value %d. Range [0, 15]",
+				  config->slice_prescaler[i]);
 			return -EINVAL;
 		}
 
 		if (config->slice_deadtime_prescaler[i] > MAX_DEADTIME_PRESCALER) {
-			LOG_ERR("Invalid dead time prescaler value %d. Range [0, 3]",
-				config->slice_deadtime_prescaler[i]);
+			LOG_ERROR("Invalid dead time prescaler value %d. Range [0, 3]",
+				  config->slice_deadtime_prescaler[i]);
 			return -EINVAL;
 		}
 

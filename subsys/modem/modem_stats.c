@@ -88,7 +88,7 @@ static bool stats_buffer_length_is_valid(const struct modem_stats_buffer *buffer
 static void stats_buffer_log_invalid_length(const struct modem_stats_buffer *buffer,
 					    uint32_t length)
 {
-	LOG_ERR("%s: length (%u) exceeds size (%u)", buffer->name, length, buffer->size);
+	LOG_ERROR("%s: length (%u) exceeds size (%u)", buffer->name, length, buffer->size);
 }
 
 static void stats_buffer_update_max_used(struct modem_stats_buffer *buffer, uint32_t length)

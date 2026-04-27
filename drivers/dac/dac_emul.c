@@ -37,24 +37,24 @@ static int dac_emul_channel_setup(const struct device *dev,
 	uint8_t resolution = channel_cfg->resolution;
 
 	if (channel >= config->channel_count) {
-		LOG_ERR("Invalid channel %u (max %u)", channel, config->channel_count - 1);
+		LOG_ERROR("Invalid channel %u (max %u)", channel, config->channel_count - 1);
 		return -EINVAL;
 	}
 
 	if (resolution == 0) {
-		LOG_ERR("Resolution cannot be 0");
+		LOG_ERROR("Resolution cannot be 0");
 		return -EINVAL;
 	}
 
 	if (resolution > 32) {
-		LOG_ERR("Resolution cannot exceed 32 bits");
+		LOG_ERROR("Resolution cannot exceed 32 bits");
 		return -EINVAL;
 	}
 
 	int rc = k_mutex_lock(&data->channel_mutex, DAC_EMUL_TIMEOUT);
 
 	if (rc != 0) {
-		LOG_ERR("Could not acquire channel lock (%d)", rc);
+		LOG_ERROR("Could not acquire channel lock (%d)", rc);
 		return (rc == -EAGAIN) ? -EBUSY : rc;
 	}
 
@@ -72,19 +72,19 @@ static inline int write_value_locked(struct dac_emul_channel *chan, uint8_t chan
 				     uint32_t value)
 {
 	if (chan->resolution == 0) {
-		LOG_ERR("Channel %u not configured", channel_id);
+		LOG_ERROR("Channel %u not configured", channel_id);
 		return -ENXIO;
 	}
 
 	if (chan->resolution > 32) {
-		LOG_ERR("Channel %u has invalid resolution %u", channel_id, chan->resolution);
+		LOG_ERROR("Channel %u has invalid resolution %u", channel_id, chan->resolution);
 		return -EINVAL;
 	}
 
 	uint32_t max_value = (uint32_t)((1ULL << chan->resolution) - 1);
 
 	if (value > max_value) {
-		LOG_ERR("Value is out of range (%u > %u)", value, max_value);
+		LOG_ERROR("Value is out of range (%u > %u)", value, max_value);
 		return -EINVAL;
 	}
 
@@ -100,7 +100,7 @@ static int dac_emul_write_value(const struct device *dev, uint8_t channel, uint3
 	const struct dac_emul_config *config = dev->config;
 
 	if (channel >= config->channel_count) {
-		LOG_ERR("Invalid channel %u (max %u)", channel, config->channel_count - 1);
+		LOG_ERROR("Invalid channel %u (max %u)", channel, config->channel_count - 1);
 		return -EINVAL;
 	}
 
@@ -109,7 +109,7 @@ static int dac_emul_write_value(const struct device *dev, uint8_t channel, uint3
 	int rc = k_mutex_lock(&data->channel_mutex, DAC_EMUL_TIMEOUT);
 
 	if (rc != 0) {
-		LOG_ERR("Could not acquire channel lock (%d)", rc);
+		LOG_ERROR("Could not acquire channel lock (%d)", rc);
 		return (rc == -EAGAIN) ? -EBUSY : rc;
 	}
 
@@ -140,19 +140,19 @@ int dac_emul_value_get(const struct device *dev, uint8_t channel, uint32_t *valu
 	const struct dac_emul_config *config = dev->config;
 
 	if (channel >= config->channel_count) {
-		LOG_ERR("Invalid channel %u (max %u)", channel, config->channel_count - 1);
+		LOG_ERROR("Invalid channel %u (max %u)", channel, config->channel_count - 1);
 		return -EINVAL;
 	}
 
 	if (value == NULL) {
-		LOG_ERR("Null pointer provided");
+		LOG_ERROR("Null pointer provided");
 		return -EINVAL;
 	}
 
 	int rc = k_mutex_lock(&data->channel_mutex, DAC_EMUL_TIMEOUT);
 
 	if (rc != 0) {
-		LOG_ERR("Could not acquire channel lock (%d)", rc);
+		LOG_ERROR("Could not acquire channel lock (%d)", rc);
 		return (rc == -EAGAIN) ? -EBUSY : rc;
 	}
 

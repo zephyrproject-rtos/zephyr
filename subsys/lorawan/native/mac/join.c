@@ -106,7 +106,7 @@ static int mac_build_join_request(const struct lwan_join_req *req,
 	/* MIC = cmac(NwkKey, MHDR | JoinEUI | DevEUI | DevNonce) */
 	ret = lwan_crypto_compute_mic(nwk_cmac, frame, mic_off, pkt->mic);
 	if (ret != 0) {
-		LOG_ERR("Failed to compute join request MIC: %d", ret);
+		LOG_ERROR("Failed to compute join request MIC: %d", ret);
 		return ret;
 	}
 
@@ -125,8 +125,7 @@ static int mac_apply_dl_settings(struct lwan_ctx *ctx, uint8_t dl_settings)
 
 	ret = ctx->region->validate_dl_settings(rx1_dr_offset, rx2_datarate);
 	if (ret != 0) {
-		LOG_ERR("Invalid DLSettings: RX1DRoff=%u RX2DR=%u",
-			rx1_dr_offset, rx2_datarate);
+		LOG_ERROR("Invalid DLSettings: RX1DRoff=%u RX2DR=%u", rx1_dr_offset, rx2_datarate);
 		return ret;
 	}
 
@@ -183,7 +182,7 @@ static int mac_apply_join_accept(struct lwan_ctx *ctx,
 					      &sess->fnwk_s_int_cmac,
 					      &sess->fnwk_s_int_ecb);
 	if (ret != 0) {
-		LOG_ERR("Session key derivation failed: %d", ret);
+		LOG_ERROR("Session key derivation failed: %d", ret);
 		return ret;
 	}
 
@@ -209,9 +208,8 @@ static int mac_verify_join_accept_mic(psa_key_id_t nwk_cmac,
 		return ret;
 	}
 
-	if (memcmp(computed_mic, &frame[frame_len - LWAN_MIC_SIZE],
-		   LWAN_MIC_SIZE) != 0) {
-		LOG_ERR("Join accept MIC mismatch");
+	if (memcmp(computed_mic, &frame[frame_len - LWAN_MIC_SIZE], LWAN_MIC_SIZE) != 0) {
+		LOG_ERROR("Join accept MIC mismatch");
 		return -EBADMSG;
 	}
 
@@ -228,9 +226,8 @@ static int mac_parse_join_accept(struct lwan_ctx *ctx,
 	int ret;
 
 	payload_len = rx_len - MHDR_SIZE;
-	if (payload_len != JA_MIN_SIZE &&
-	    payload_len != JA_MAX_SIZE) {
-		LOG_ERR("Invalid join accept size: %zu", rx_len);
+	if (payload_len != JA_MIN_SIZE && payload_len != JA_MAX_SIZE) {
+		LOG_ERROR("Invalid join accept size: %zu", rx_len);
 		return -EINVAL;
 	}
 
@@ -239,7 +236,7 @@ static int mac_parse_join_accept(struct lwan_ctx *ctx,
 	ret = lwan_crypto_decrypt_join_accept(nwk_ecb, &frame[MHDR_SIZE],
 					      payload_len);
 	if (ret != 0) {
-		LOG_ERR("Join accept decrypt failed: %d", ret);
+		LOG_ERROR("Join accept decrypt failed: %d", ret);
 		return ret;
 	}
 
@@ -320,7 +317,7 @@ void mac_do_join(struct lwan_ctx *ctx, const struct lwan_join_req *req)
 	jctx.dev_nonce = req->dev_nonce;
 
 	if (jctx.nwk_cmac == 0 || jctx.nwk_ecb == 0) {
-		LOG_ERR("Failed to import NwkKey");
+		LOG_ERROR("Failed to import NwkKey");
 		ret = -EIO;
 		goto done;
 	}
@@ -333,7 +330,7 @@ void mac_do_join(struct lwan_ctx *ctx, const struct lwan_join_req *req)
 
 	ret = select_join_channel_wait(ctx, &tx_freq, &tx_dr_idx);
 	if (ret != 0) {
-		LOG_ERR("No join channel available: %d", ret);
+		LOG_ERROR("No join channel available: %d", ret);
 		goto done;
 	}
 
@@ -354,7 +351,7 @@ void mac_do_join(struct lwan_ctx *ctx, const struct lwan_join_req *req)
 	} else if (ret == -ETIMEDOUT) {
 		LOG_WRN("Join failed: no join accept received");
 	} else {
-		LOG_ERR("Join failed: %d", ret);
+		LOG_ERROR("Join failed: %d", ret);
 	}
 
 done:

@@ -73,18 +73,18 @@ static int init_lc3_decoder(struct stream_rx *stream, uint32_t lc3_frame_duratio
 			    uint32_t lc3_freq_hz)
 {
 	if (stream == NULL) {
-		LOG_ERR("NULL stream to init LC3 decoder");
+		LOG_ERROR("NULL stream to init LC3 decoder");
 		return -EINVAL;
 	}
 
 	if (stream->lc3_decoder != NULL) {
-		LOG_ERR("Already initialized");
+		LOG_ERROR("Already initialized");
 		return -EALREADY;
 	}
 
 	if (lc3_freq_hz == 0U || lc3_frame_duration_us == 0U) {
-		LOG_ERR("Invalid freq (%u) or frame duration (%u)", lc3_freq_hz,
-			lc3_frame_duration_us);
+		LOG_ERROR("Invalid freq (%u) or frame duration (%u)", lc3_freq_hz,
+			  lc3_frame_duration_us);
 
 		return -EINVAL;
 	}
@@ -97,7 +97,7 @@ static int init_lc3_decoder(struct stream_rx *stream, uint32_t lc3_frame_duratio
 				  IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT) ? USB_SAMPLE_RATE_HZ : 0,
 				  &stream->lc3_decoder_mem);
 	if (stream->lc3_decoder == NULL) {
-		LOG_ERR("Failed to setup LC3 decoder - wrong parameters?\n");
+		LOG_ERROR("Failed to setup LC3 decoder - wrong parameters?\n");
 		return -EINVAL;
 	}
 
@@ -142,8 +142,8 @@ static bool decode_frame(struct lc3_data *data, size_t frame_cnt)
 	err = lc3_decode(stream->lc3_decoder, iso_data, octets_per_frame, LC3_PCM_FORMAT_S16,
 			 lc3_rx_buf, 1);
 	if (err < 0) {
-		LOG_ERR("Failed to decode LC3 data (%u/%u - %u/%u)", frame_cnt + 1, total_frames,
-			octets_per_frame * frame_cnt, buf->len);
+		LOG_ERROR("Failed to decode LC3 data (%u/%u - %u/%u)", frame_cnt + 1, total_frames,
+			  octets_per_frame * frame_cnt, buf->len);
 		return false;
 	}
 
@@ -229,14 +229,14 @@ static size_t decode_frame_block(struct lc3_data *data, size_t frame_cnt)
 			if (IS_ENABLED(CONFIG_USE_CODEC_AUDIO_OUTPUT)) {
 				ret = codec_add_frame(stream, i, data->ts);
 				if (ret != 0) {
-					LOG_ERR("codec_add_frame failed: %d", ret);
+					LOG_ERROR("codec_add_frame failed: %d", ret);
 					continue;
 				}
 			}
 			if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
 				ret = usb_add_frame(stream, i, data->ts);
 				if (ret != 0) {
-					LOG_ERR("usb_add_frame failed: %d", ret);
+					LOG_ERROR("usb_add_frame failed: %d", ret);
 					continue;
 				}
 			}
@@ -318,13 +318,13 @@ int lc3_enable(struct stream_rx *stream)
 			    ret == 48000) {
 				lc3_freq_hz = (uint32_t)ret;
 			} else {
-				LOG_ERR("Unsupported frequency for LC3: %d", ret);
+				LOG_ERROR("Unsupported frequency for LC3: %d", ret);
 			}
 		} else {
-			LOG_ERR("Invalid frequency: %d", ret);
+			LOG_ERROR("Invalid frequency: %d", ret);
 		}
 	} else {
-		LOG_ERR("Could not get frequency: %d", ret);
+		LOG_ERROR("Could not get frequency: %d", ret);
 	}
 
 	if (lc3_freq_hz == 0U) {
@@ -337,10 +337,10 @@ int lc3_enable(struct stream_rx *stream)
 		if (ret > 0) {
 			lc3_frame_duration_us = (uint32_t)ret;
 		} else {
-			LOG_ERR("Invalid frame duration: %d", ret);
+			LOG_ERROR("Invalid frame duration: %d", ret);
 		}
 	} else {
-		LOG_ERR("Could not get frame duration: %d", ret);
+		LOG_ERROR("Could not get frame duration: %d", ret);
 	}
 
 	if (lc3_frame_duration_us == 0U) {
@@ -363,7 +363,7 @@ int lc3_enable(struct stream_rx *stream)
 	if (ret >= 0) {
 		stream->lc3_frame_blocks_per_sdu = (uint8_t)ret;
 	} else {
-		LOG_ERR("Could not get frame blocks per SDU: %d", ret);
+		LOG_ERROR("Could not get frame blocks per SDU: %d", ret);
 		stream->lc3_frame_blocks_per_sdu = 0U;
 	}
 
@@ -375,7 +375,7 @@ int lc3_enable(struct stream_rx *stream)
 	if (ret >= 0) {
 		stream->lc3_octets_per_frame = (uint16_t)ret;
 	} else {
-		LOG_ERR("Could not get octets per frame: %d", ret);
+		LOG_ERROR("Could not get octets per frame: %d", ret);
 		stream->lc3_octets_per_frame = 0U;
 	}
 
@@ -387,7 +387,7 @@ int lc3_enable(struct stream_rx *stream)
 		const int err = init_lc3_decoder(stream, lc3_frame_duration_us, lc3_freq_hz);
 
 		if (err != 0) {
-			LOG_ERR("Failed to init LC3 decoder: %d", err);
+			LOG_ERROR("Failed to init LC3 decoder: %d", err);
 			return err;
 		}
 	}
@@ -416,7 +416,7 @@ int lc3_enable(struct stream_rx *stream)
 		const int err = hw_codec_cfg(lc3_freq_hz);
 
 		if ((err != 0) && (err != -EALREADY)) {
-			LOG_ERR("Failed to configure codec: %d", err);
+			LOG_ERROR("Failed to configure codec: %d", err);
 			return err;
 		}
 	}

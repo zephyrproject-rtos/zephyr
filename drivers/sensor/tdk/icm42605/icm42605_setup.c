@@ -56,7 +56,7 @@ int icm42605_set_odr(const struct device *dev, uint16_t a_rate, uint16_t g_rate)
 
 	if (a_rate > 8000 || g_rate > 8000 ||
 	    a_rate < 1 || g_rate < 12) {
-		LOG_ERR("Not supported frequency");
+		LOG_ERROR("Not supported frequency");
 		return -ENOTSUP;
 	}
 
@@ -170,7 +170,7 @@ int icm42605_sensor_init(const struct device *dev)
 	result = inv_spi_single_write(&cfg->spi, REG_DEVICE_CONFIG, &v);
 
 	if (result) {
-		LOG_ERR("write REG_DEVICE_CONFIG failed");
+		LOG_ERROR("write REG_DEVICE_CONFIG failed");
 		return result;
 	}
 
@@ -182,7 +182,7 @@ int icm42605_sensor_init(const struct device *dev)
 	result = inv_spi_single_write(&cfg->spi, REG_INTF_CONFIG1, &v);
 
 	if (result) {
-		LOG_ERR("write REG_INTF_CONFIG1 failed");
+		LOG_ERROR("write REG_INTF_CONFIG1 failed");
 		return result;
 	}
 
@@ -193,14 +193,14 @@ int icm42605_sensor_init(const struct device *dev)
 	result = inv_spi_single_write(&cfg->spi, REG_TMST_CONFIG, &v);
 
 	if (result) {
-		LOG_ERR("Write REG_TMST_CONFIG failed");
+		LOG_ERROR("Write REG_TMST_CONFIG failed");
 		return result;
 	}
 
 	result = inv_spi_read(&cfg->spi, REG_INTF_CONFIG0, &v, 1);
 
 	if (result) {
-		LOG_ERR("Read REG_INTF_CONFIG0 failed");
+		LOG_ERROR("Read REG_INTF_CONFIG0 failed");
 		return result;
 	}
 
@@ -211,7 +211,7 @@ int icm42605_sensor_init(const struct device *dev)
 	result = inv_spi_single_write(&cfg->spi, REG_INTF_CONFIG0, &v);
 
 	if (result) {
-		LOG_ERR("Write REG_INTF_CONFIG failed");
+		LOG_ERROR("Write REG_INTF_CONFIG failed");
 		return result;
 	}
 
@@ -395,7 +395,7 @@ int icm42605_turn_on_sensor(const struct device *dev)
 
 
 	if (drv_data->sensor_started) {
-		LOG_ERR("Sensor already started");
+		LOG_ERROR("Sensor already started");
 		return -EALREADY;
 	}
 

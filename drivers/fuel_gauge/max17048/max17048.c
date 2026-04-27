@@ -60,7 +60,7 @@ int max17048_read_register(const struct device *dev, uint8_t registerId, uint16_
 	int rc = i2c_write_read_dt(&cfg->i2c, &registerId, sizeof(registerId), max17048_buffer,
 				   sizeof(max17048_buffer));
 	if (rc) {
-		LOG_ERR("Unable to read register, error %d", rc);
+		LOG_ERROR("Unable to read register, error %d", rc);
 		return rc;
 	}
 
@@ -156,23 +156,23 @@ static int max17048_init(const struct device *dev)
 	uint16_t version;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 
 	int rc = max17048_read_register(dev, REGISTER_VERSION, &version);
 
 	if (rc) {
-		LOG_ERR("Cannot read from I2C");
+		LOG_ERROR("Cannot read from I2C");
 		return rc;
 	}
 
 	version = version & 0xFFF0;
 	if (version != 0x10) {
-		LOG_ERR("Something found at the provided I2C address, but it is not a MAX17048");
-		LOG_ERR("The version registers should be 0x10 but got %x. Maybe your wiring is "
-			"wrong or it is a fake chip\n",
-			version);
+		LOG_ERROR("Something found at the provided I2C address, but it is not a MAX17048");
+		LOG_ERROR("The version registers should be 0x10 but got %x. Maybe your wiring is "
+			  "wrong or it is a fake chip\n",
+			  version);
 		return -ENODEV;
 	}
 
@@ -220,13 +220,13 @@ static int max17048_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	int ret;
 
 	if (rc) {
-		LOG_ERR("Error while reading battery percentage");
+		LOG_ERROR("Error while reading battery percentage");
 		return rc;
 	}
 
 	rc = max17048_voltage(dev, &data->voltage);
 	if (rc) {
-		LOG_ERR("Error while reading battery voltage");
+		LOG_ERROR("Error while reading battery voltage");
 		return rc;
 	}
 
@@ -236,7 +236,7 @@ static int max17048_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	 */
 	rc = max17048_crate(dev, &crate);
 	if (rc) {
-		LOG_ERR("Error while reading battery current rate");
+		LOG_ERROR("Error while reading battery current rate");
 		return rc;
 	}
 

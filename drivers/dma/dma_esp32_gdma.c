@@ -182,7 +182,7 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 					struct dma_block_config *block)
 {
 	if (!block) {
-		LOG_ERR("At least one dma block is required");
+		LOG_ERROR("At least one dma block is required");
 		return -EINVAL;
 	}
 
@@ -203,11 +203,11 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 #endif
 			) {
 				if (dma_channel->dir == DMA_TX) {
-					LOG_ERR("Tx buffer not in DMA capable memory: %p",
-						(uint32_t *)target_address);
+					LOG_ERROR("Tx buffer not in DMA capable memory: %p",
+						  (uint32_t *)target_address);
 				} else {
-					LOG_ERR("Rx buffer not in DMA capable memory: %p",
-						(uint32_t *)target_address);
+					LOG_ERROR("Rx buffer not in DMA capable memory: %p",
+						  (uint32_t *)target_address);
 				}
 
 				return -EINVAL;
@@ -253,7 +253,8 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 
 	if (desc_iter->next) {
 		memset(dma_channel->desc_list, 0, sizeof(dma_channel->desc_list));
-		LOG_ERR("Run out of DMA descriptors. Increase CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
+		LOG_ERROR(
+			"Run out of DMA descriptors. Increase CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
 		return -EINVAL;
 	}
 
@@ -356,7 +357,7 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 	int ret = 0;
 
 	if (channel >= config->dma_channel_max) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
@@ -365,7 +366,7 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 	}
 
 	if (config_dma->source_burst_length != config_dma->dest_burst_length) {
-		LOG_ERR("Source and destination burst lengths must be equal");
+		LOG_ERROR("Source and destination burst lengths must be equal");
 		return -EINVAL;
 	}
 
@@ -401,7 +402,7 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 		ret = dma_esp32_config_tx(dev, dma_channel, config_dma);
 		break;
 	default:
-		LOG_ERR("Invalid Channel direction");
+		LOG_ERROR("Invalid Channel direction");
 		return -EINVAL;
 	}
 
@@ -415,7 +416,7 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 	struct dma_esp32_channel *dma_channel = &config->dma_channel[channel];
 
 	if (channel >= config->dma_channel_max) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
@@ -456,7 +457,7 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 						 (int32_t)dma_channel->desc_list);
 			gdma_ll_tx_start(data->hal.dev, dma_channel->channel_id);
 		} else {
-			LOG_ERR("Channel %d is not configured", channel);
+			LOG_ERROR("Channel %d is not configured", channel);
 			return -EINVAL;
 		}
 	}
@@ -471,7 +472,7 @@ static int dma_esp32_stop(const struct device *dev, uint32_t channel)
 	struct dma_esp32_channel *dma_channel = &config->dma_channel[channel];
 
 	if (channel >= config->dma_channel_max) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
@@ -515,7 +516,7 @@ static int dma_esp32_get_status(const struct device *dev, uint32_t channel,
 	dma_descriptor_t *desc;
 
 	if (channel >= config->dma_channel_max) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
@@ -559,7 +560,7 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 	uint32_t buf;
 
 	if (channel >= config->dma_channel_max) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
@@ -597,7 +598,8 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 
 	if (desc_iter->next) {
 		memset(desc_iter, 0, sizeof(dma_descriptor_t));
-		LOG_ERR("Not enough DMA descriptors. Increase CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
+		LOG_ERROR(
+			"Not enough DMA descriptors. Increase CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
 		return -EINVAL;
 	}
 
@@ -637,7 +639,7 @@ static int dma_esp32_configure_irq(const struct device *dev)
 			NULL);
 
 		if (ret != 0) {
-			LOG_ERR("Could not allocate interrupt handler");
+			LOG_ERROR("Could not allocate interrupt handler");
 			return ret;
 		}
 	}
@@ -653,19 +655,19 @@ static int dma_esp32_init(const struct device *dev)
 	int ret = 0;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret < 0 && ret != -EALREADY) {
-		LOG_ERR("Could not initialize clock (%d)", ret);
+		LOG_ERROR("Could not initialize clock (%d)", ret);
 		return ret;
 	}
 
 	ret = dma_esp32_configure_irq(dev);
 	if (ret < 0) {
-		LOG_ERR("Could not configure IRQ (%d)", ret);
+		LOG_ERROR("Could not configure IRQ (%d)", ret);
 		return ret;
 	}
 

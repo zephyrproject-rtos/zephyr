@@ -52,7 +52,7 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 	udev = usbh_device_alloc(ctx);
 
 	if (udev == NULL) {
-		LOG_ERR("Failed allocate new device");
+		LOG_ERROR("Failed allocate new device");
 		return;
 	}
 
@@ -101,7 +101,7 @@ static ALWAYS_INLINE int usbh_event_handler(struct usbh_context *const ctx,
 
 	switch (event->type) {
 	case UHC_EVT_DEV_CONNECTED_LS:
-		LOG_ERR("Low speed device not supported (connected event)");
+		LOG_ERROR("Low speed device not supported (connected event)");
 		break;
 	case UHC_EVT_DEV_CONNECTED_FS:
 	case UHC_EVT_DEV_CONNECTED_HS:
@@ -174,7 +174,7 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 		}
 
 		if (ret) {
-			LOG_ERR("Failed to handle request completion callback");
+			LOG_ERROR("Failed to handle request completion callback");
 		}
 	}
 }
@@ -185,7 +185,7 @@ int usbh_init_device_intl(struct usbh_context *const uhs_ctx)
 
 	ret = uhc_init(uhs_ctx->dev, usbh_event_carrier, uhs_ctx);
 	if (ret != 0) {
-		LOG_ERR("Failed to init device driver");
+		LOG_ERROR("Failed to init device driver");
 		return ret;
 	}
 

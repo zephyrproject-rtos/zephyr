@@ -73,13 +73,13 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 
 		comp = bt_mesh_comp_get();
 		if (comp == NULL) {
-			LOG_ERR("Failed to get node composition");
+			LOG_ERROR("Failed to get node composition");
 			return -EINVAL;
 		}
 
 		subnet = bt_mesh_cdb_subnet_get(net_idx);
 		if (!subnet) {
-			LOG_ERR("No subnet with idx %d", net_idx);
+			LOG_ERROR("No subnet with idx %d", net_idx);
 			return -ENOENT;
 		}
 
@@ -87,7 +87,7 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		node = bt_mesh_cdb_node_alloc(prov->uuid, addr,
 					      comp->elem_count, net_idx);
 		if (node == NULL) {
-			LOG_ERR("Failed to allocate database node");
+			LOG_ERROR("Failed to allocate database node");
 			return -ENOMEM;
 		}
 
@@ -104,7 +104,7 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 		err = bt_mesh_cdb_subnet_key_import(subnet, BT_MESH_KEY_REFRESH(flags) ? 1 : 0,
 						    net_key);
 		if (err) {
-			LOG_ERR("Failed to import cdb network key");
+			LOG_ERROR("Failed to import cdb network key");
 			goto error_exit;
 		}
 
@@ -113,28 +113,28 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 
 		err = bt_mesh_cdb_node_key_import(node, dev_key);
 		if (err) {
-			LOG_ERR("Failed to import cdb device key");
+			LOG_ERROR("Failed to import cdb device key");
 			goto error_exit;
 		}
 	}
 
 	err = bt_mesh_key_import(BT_MESH_KEY_TYPE_DEV, dev_key, &mesh_dev_key);
 	if (err) {
-		LOG_ERR("Failed to import device key");
+		LOG_ERROR("Failed to import device key");
 		goto error_exit;
 	}
 	is_dev_key_valid = true;
 
 	err = bt_mesh_key_import(BT_MESH_KEY_TYPE_NET, net_key, &mesh_net_key);
 	if (err) {
-		LOG_ERR("Failed to import network key");
+		LOG_ERROR("Failed to import network key");
 		goto error_exit;
 	}
 	is_net_key_valid = true;
 
 	err = bt_mesh_net_create(net_idx, flags, &mesh_net_key, iv_index);
 	if (err) {
-		LOG_ERR("Failed to create network");
+		LOG_ERROR("Failed to create network");
 		goto error_exit;
 	}
 
@@ -219,7 +219,7 @@ void bt_mesh_dev_key_cand(const uint8_t *key)
 
 	err = bt_mesh_key_import(BT_MESH_KEY_TYPE_DEV, key, &bt_mesh.dev_key_cand);
 	if (err) {
-		LOG_ERR("Failed to import device key candidate");
+		LOG_ERROR("Failed to import device key candidate");
 		return;
 	}
 
@@ -633,7 +633,7 @@ int bt_mesh_start(void)
 
 	err = bt_mesh_adv_enable();
 	if (err) {
-		LOG_ERR("Failed enabling advertiser");
+		LOG_ERROR("Failed enabling advertiser");
 		return err;
 	}
 

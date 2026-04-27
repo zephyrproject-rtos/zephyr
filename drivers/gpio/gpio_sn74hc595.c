@@ -160,28 +160,29 @@ static int gpio_sn74hc595_init(const struct device *dev)
 	const struct gpio_sn74hc595_config *config = dev->config;
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		LOG_ERROR("SPI bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 
 	if (config->enable_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->enable_gpio)) {
-			LOG_ERR("GPIO port %s not ready", config->enable_gpio.port->name);
+			LOG_ERROR("GPIO port %s not ready", config->enable_gpio.port->name);
 			return -ENODEV;
 		}
 		if (gpio_pin_configure_dt(&config->enable_gpio, GPIO_OUTPUT_INACTIVE) < 0) {
-			LOG_ERR("Unable to configure ENABLE GPIO pin %u", config->enable_gpio.pin);
+			LOG_ERROR("Unable to configure ENABLE GPIO pin %u",
+				  config->enable_gpio.pin);
 			return -EINVAL;
 		}
 	}
 
 	if (config->reset_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->reset_gpio)) {
-			LOG_ERR("GPIO port %s not ready", config->reset_gpio.port->name);
+			LOG_ERROR("GPIO port %s not ready", config->reset_gpio.port->name);
 			return -ENODEV;
 		}
 		if (gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE) < 0) {
-			LOG_ERR("Unable to configure RST GPIO pin %u", config->reset_gpio.pin);
+			LOG_ERROR("Unable to configure RST GPIO pin %u", config->reset_gpio.pin);
 			return -EINVAL;
 		}
 

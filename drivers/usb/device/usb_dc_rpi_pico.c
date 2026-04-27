@@ -429,13 +429,13 @@ static void udc_rpi_isr(const void *arg)
 	}
 
 	if (status & USB_INTS_ERROR_CRC_BITS) {
-		LOG_ERR("crc error");
+		LOG_ERROR("crc error");
 		hw_clear_alias(usb_hw)->sie_status = USB_SIE_STATUS_CRC_ERROR_BITS;
 		handled |= USB_INTS_ERROR_CRC_BITS;
 	}
 
 	if (status ^ handled) {
-		LOG_ERR("unhandled IRQ: 0x%x", (uint)(status ^ handled));
+		LOG_ERROR("unhandled IRQ: 0x%x", (uint)(status ^ handled));
 	}
 }
 
@@ -467,7 +467,7 @@ static int udc_rpi_init(void)
 	if (pcfg != NULL) {
 		ret = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
 		if (ret != 0) {
-			LOG_ERR("Failed to apply pincfg: %d", ret);
+			LOG_ERROR("Failed to apply pincfg: %d", ret);
 			return ret;
 		}
 	}
@@ -574,7 +574,7 @@ int usb_dc_ep_start_read(uint8_t ep, size_t len)
 	LOG_DBG("ep 0x%02x len %d", ep, len);
 
 	if (!USB_EP_DIR_IS_OUT(ep)) {
-		LOG_ERR("invalid ep 0x%02x", ep);
+		LOG_ERROR("invalid ep 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -595,12 +595,12 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const cfg)
 		cfg->ep_addr, cfg->ep_mps, cfg->ep_type);
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
-		LOG_ERR("invalid endpoint configuration");
+		LOG_ERROR("invalid endpoint configuration");
 		return -1;
 	}
 
 	if (ep_idx > (USB_NUM_BIDIR_ENDPOINTS - 1)) {
-		LOG_ERR("endpoint index/address out of range");
+		LOG_ERROR("endpoint index/address out of range");
 		return -1;
 	}
 
@@ -768,7 +768,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 	LOG_DBG("ep 0x%02x, len %u", ep, data_len);
 
 	if (!ep_state || !USB_EP_DIR_IS_IN(ep)) {
-		LOG_ERR("invalid ep 0x%02x", ep);
+		LOG_ERROR("invalid ep 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -834,12 +834,12 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data,
 	uint32_t read_count;
 
 	if (!ep_state) {
-		LOG_ERR("Invalid Endpoint %x", ep);
+		LOG_ERROR("Invalid Endpoint %x", ep);
 		return -EINVAL;
 	}
 
 	if (!USB_EP_DIR_IS_OUT(ep)) {
-		LOG_ERR("Wrong endpoint direction: 0x%02x", ep);
+		LOG_ERROR("Wrong endpoint direction: 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -867,7 +867,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data,
 
 		ep_state->read_offset += read_count;
 	} else if (max_data_len) {
-		LOG_ERR("Wrong arguments");
+		LOG_ERROR("Wrong arguments");
 	}
 
 	if (read_bytes) {
@@ -925,7 +925,7 @@ int usb_dc_ep_read_continue(const uint8_t ep)
 	bool arm_out_endpoint = false;
 
 	if (!ep_state || !USB_EP_DIR_IS_OUT(ep)) {
-		LOG_ERR("Not valid endpoint: %02x", ep);
+		LOG_ERROR("Not valid endpoint: %02x", ep);
 		return -EINVAL;
 	}
 	if (ep == USB_CONTROL_EP_OUT) {
@@ -986,7 +986,7 @@ int usb_dc_ep_flush(const uint8_t ep)
 		return -EINVAL;
 	}
 
-	LOG_ERR("Not implemented");
+	LOG_ERROR("Not implemented");
 
 	return 0;
 }
@@ -1004,14 +1004,14 @@ int usb_dc_ep_mps(const uint8_t ep)
 
 int usb_dc_detach(void)
 {
-	LOG_ERR("Not implemented");
+	LOG_ERROR("Not implemented");
 
 	return 0;
 }
 
 int usb_dc_reset(void)
 {
-	LOG_ERR("Not implemented");
+	LOG_ERROR("Not implemented");
 
 	return 0;
 }

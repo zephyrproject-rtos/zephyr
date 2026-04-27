@@ -85,8 +85,7 @@ static int modem_atoi(const char *s, const int err_value,
 
 	ret = (int)strtol(s, &endptr, 10);
 	if (!endptr || *endptr != '\0') {
-		LOG_ERR("bad %s '%s' in %s", s, desc,
-			func);
+		LOG_ERROR("bad %s '%s' in %s", s, desc, func);
 		return err_value;
 	}
 
@@ -123,13 +122,13 @@ static int on_cmd_sockread_common(int socket_fd,
 	int bytes_to_skip;
 
 	if (!len) {
-		LOG_ERR("Invalid length, Aborting!");
+		LOG_ERROR("Invalid length, Aborting!");
 		return -EAGAIN;
 	}
 
 	/* Make sure we still have buf data */
 	if (!data->rx_buf) {
-		LOG_ERR("Incorrect format! Ignoring data!");
+		LOG_ERROR("Incorrect format! Ignoring data!");
 		return -EINVAL;
 	}
 
@@ -138,7 +137,7 @@ static int on_cmd_sockread_common(int socket_fd,
 	/* No (or not enough) data available on the socket. */
 	bytes_to_skip = digits(socket_data_length) + 2 + 4;
 	if (socket_data_length <= 0) {
-		LOG_ERR("Length problem (%d).  Aborting!", socket_data_length);
+		LOG_ERROR("Length problem (%d).  Aborting!", socket_data_length);
 		return -EAGAIN;
 	}
 
@@ -160,14 +159,14 @@ static int on_cmd_sockread_common(int socket_fd,
 
 	sock = modem_socket_from_fd(&mdata.socket_config, socket_fd);
 	if (!sock) {
-		LOG_ERR("Socket not found! (%d)", socket_fd);
+		LOG_ERROR("Socket not found! (%d)", socket_fd);
 		ret = -EINVAL;
 		goto exit;
 	}
 
 	sock_data = (struct socket_read_data *)sock->data;
 	if (!sock_data) {
-		LOG_ERR("Socket data not found! Skip handling (%d)", socket_fd);
+		LOG_ERROR("Socket data not found! Skip handling (%d)", socket_fd);
 		ret = -EINVAL;
 		goto exit;
 	}
@@ -177,8 +176,9 @@ static int on_cmd_sockread_common(int socket_fd,
 	data->rx_buf = net_buf_skip(data->rx_buf, ret);
 	sock_data->recv_read_len = ret;
 	if (ret != socket_data_length) {
-		LOG_ERR("Total copied data is different then received data!"
-			" copied:%d vs. received:%d", ret, socket_data_length);
+		LOG_ERROR("Total copied data is different then received data!"
+			  " copied:%d vs. received:%d",
+			  ret, socket_data_length);
 		ret = -EINVAL;
 	}
 
@@ -206,7 +206,7 @@ static void socket_close(struct modem_socket *sock)
 			     NULL, 0U, buf,
 			     &mdata.sem_response, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("%s ret:%d", buf, ret);
+		LOG_ERROR("%s ret:%d", buf, ret);
 	}
 
 	modem_socket_put(&mdata.socket_config, sock->sock_fd);
@@ -699,15 +699,14 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr,
 
 	/* Verify socket has been allocated */
 	if (modem_socket_is_allocated(&mdata.socket_config, sock) == false) {
-		LOG_ERR("Invalid socket_id(%d) from fd:%d",
-			sock->id, sock->sock_fd);
+		LOG_ERROR("Invalid socket_id(%d) from fd:%d", sock->id, sock->sock_fd);
 		errno = EINVAL;
 		return -1;
 	}
 
 	if (sock->is_connected == true) {
-		LOG_ERR("Socket is already connected!! socket_id(%d), socket_fd:%d",
-			sock->id, sock->sock_fd);
+		LOG_ERROR("Socket is already connected!! socket_id(%d), socket_fd:%d", sock->id,
+			  sock->sock_fd);
 		errno = EISCONN;
 		return -1;
 	}
@@ -729,8 +728,8 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr,
 
 	ret = modem_context_sprint_ip_addr(addr, ip_str, sizeof(ip_str));
 	if (ret != 0) {
-		LOG_ERR("Error formatting IP string %d", ret);
-		LOG_ERR("Closing the socket!!!");
+		LOG_ERROR("Error formatting IP string %d", ret);
+		LOG_ERROR("Closing the socket!!!");
 		socket_close(sock);
 		errno = -ret;
 		return -1;
@@ -745,8 +744,8 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr,
 			     NULL, 0U, buf,
 			     &mdata.sem_response, K_SECONDS(1));
 	if (ret < 0) {
-		LOG_ERR("%s ret:%d", buf, ret);
-		LOG_ERR("Closing the socket!!!");
+		LOG_ERROR("%s ret:%d", buf, ret);
+		LOG_ERROR("Closing the socket!!!");
 		socket_close(sock);
 		errno = -ret;
 		return -1;
@@ -762,15 +761,15 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr,
 	/* Wait for QI+OPEN */
 	ret = k_sem_take(&mdata.sem_sock_conn, MDM_CMD_CONN_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Timeout waiting for socket open");
-		LOG_ERR("Closing the socket!!!");
+		LOG_ERROR("Timeout waiting for socket open");
+		LOG_ERROR("Closing the socket!!!");
 		socket_close(sock);
 		goto exit;
 	}
 
 	ret = modem_cmd_handler_get_error(&mdata.cmd_handler_data);
 	if (ret != 0) {
-		LOG_ERR("Closing the socket!!!");
+		LOG_ERROR("Closing the socket!!!");
 		socket_close(sock);
 		goto exit;
 	}
@@ -875,7 +874,7 @@ static void modem_rssi_query_work(struct k_work *work)
 			     &cmd, 1U, send_cmd, &mdata.sem_response,
 			     MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("AT+CSQ ret:%d", ret);
+		LOG_ERROR("AT+CSQ ret:%d", ret);
 	}
 
 	/* Re-start RSSI query work */
@@ -1001,7 +1000,7 @@ static int modem_pdp_context_activate(void)
 	}
 
 	if (ret == -EIO && retry_count >= MDM_PDP_ACT_RETRY_COUNT) {
-		LOG_ERR("Retried activating/deactivating too many times.");
+		LOG_ERROR("Retried activating/deactivating too many times.");
 	}
 
 	return ret;
@@ -1031,7 +1030,7 @@ restart:
 	LOG_INF("Waiting for modem to respond");
 	ret = k_sem_take(&mdata.sem_response, MDM_MAX_BOOT_TIME);
 	if (ret < 0) {
-		LOG_ERR("Timeout waiting for RDY");
+		LOG_ERROR("Timeout waiting for RDY");
 		goto error;
 	}
 
@@ -1061,13 +1060,13 @@ restart_rssi:
 		rssi_retry_count++;
 
 		if (rssi_retry_count >= MDM_NETWORK_RETRY_COUNT) {
-			LOG_ERR("Failed network init. Too many attempts!");
+			LOG_ERROR("Failed network init. Too many attempts!");
 			ret = -ENETUNREACH;
 			goto error;
 		}
 
 		/* Try again! */
-		LOG_ERR("Failed network init. Restarting process.");
+		LOG_ERROR("Failed network init. Restarting process.");
 		counter = 0;
 		goto restart_rssi;
 	}
@@ -1080,7 +1079,7 @@ restart_rssi:
 	/* Once the network is ready, we try to activate the PDP context. */
 	ret = modem_pdp_context_activate();
 	if (ret < 0 && init_retry_count++ < MDM_INIT_RETRY_COUNT) {
-		LOG_ERR("Error activating modem with pdp context");
+		LOG_ERROR("Error activating modem with pdp context");
 		goto restart;
 	}
 
@@ -1228,14 +1227,14 @@ static int modem_init(const struct device *dev)
 	/* pin setup */
 	ret = gpio_pin_configure_dt(&power_gpio, GPIO_OUTPUT_LOW);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure %s pin", "power");
+		LOG_ERROR("Failed to configure %s pin", "power");
 		goto error;
 	}
 
 #if DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
 	ret = gpio_pin_configure_dt(&reset_gpio, GPIO_OUTPUT_LOW);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure %s pin", "reset");
+		LOG_ERROR("Failed to configure %s pin", "reset");
 		goto error;
 	}
 #endif
@@ -1243,7 +1242,7 @@ static int modem_init(const struct device *dev)
 #if DT_INST_NODE_HAS_PROP(0, mdm_dtr_gpios)
 	ret = gpio_pin_configure_dt(&dtr_gpio, GPIO_OUTPUT_LOW);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure %s pin", "dtr");
+		LOG_ERROR("Failed to configure %s pin", "dtr");
 		goto error;
 	}
 #endif
@@ -1251,7 +1250,7 @@ static int modem_init(const struct device *dev)
 #if DT_INST_NODE_HAS_PROP(0, mdm_wdisable_gpios)
 	ret = gpio_pin_configure_dt(&wdisable_gpio, GPIO_OUTPUT_LOW);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure %s pin", "wdisable");
+		LOG_ERROR("Failed to configure %s pin", "wdisable");
 		goto error;
 	}
 #endif
@@ -1261,7 +1260,7 @@ static int modem_init(const struct device *dev)
 
 	ret = modem_context_register(&mctx);
 	if (ret < 0) {
-		LOG_ERR("Error registering modem context: %d", ret);
+		LOG_ERROR("Error registering modem context: %d", ret);
 		goto error;
 	}
 

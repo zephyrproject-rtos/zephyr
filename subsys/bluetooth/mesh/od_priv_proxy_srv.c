@@ -89,7 +89,7 @@ static int od_priv_proxy_srv_init(const struct bt_mesh_model *mod)
 		bt_mesh_model_find(bt_mesh_model_elem(mod), BT_MESH_MODEL_ID_SOL_PDU_RPL_SRV);
 
 	if (priv_beacon_srv == NULL) {
-		LOG_ERR("On-Demand Private Proxy server cannot extend Private Beacon server");
+		LOG_ERROR("On-Demand Private Proxy server cannot extend Private Beacon server");
 		return -EINVAL;
 	}
 
@@ -127,7 +127,7 @@ static int od_priv_proxy_srv_settings_set(const struct bt_mesh_model *model, con
 
 	err = bt_mesh_settings_set(read_cb, cb_data, &on_demand_state, sizeof(uint8_t));
 	if (err) {
-		LOG_ERR("Failed to set OD private proxy state");
+		LOG_ERROR("Failed to set OD private proxy state");
 		return err;
 	}
 

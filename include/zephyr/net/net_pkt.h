@@ -1291,8 +1291,8 @@ static ALWAYS_INLINE void net_pkt_set_stats_tick(struct net_pkt *pkt,
 						 uint32_t tick)
 {
 	if (pkt->detail.count >= NET_PKT_DETAIL_STATS_COUNT) {
-		LOG_ERR("Detail stats count overflow (%d >= %d)",
-			pkt->detail.count, NET_PKT_DETAIL_STATS_COUNT);
+		LOG_ERROR("Detail stats count overflow (%d >= %d)", pkt->detail.count,
+			  NET_PKT_DETAIL_STATS_COUNT);
 		return;
 	}
 

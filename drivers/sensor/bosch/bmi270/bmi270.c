@@ -566,7 +566,7 @@ static int bmi270_write_anymo_threshold(const struct device *dev,
 	uint16_t lsbs = (val.val2 * BMI270_ANYMO_2_THRESHOLD_MASK) / 1e6;
 
 	if (!lsbs) {
-		LOG_ERR("Threshold too low!");
+		LOG_ERROR("Threshold too low!");
 		return -EINVAL;
 	}
 
@@ -649,7 +649,7 @@ static int bmi270_init(const struct device *dev)
 
 	ret = bmi270_bus_check(dev);
 	if (ret < 0) {
-		LOG_ERR("Could not initialize bus");
+		LOG_ERROR("Could not initialize bus");
 		return ret;
 	}
 
@@ -667,7 +667,7 @@ static int bmi270_init(const struct device *dev)
 
 	ret = bmi270_bus_init(dev);
 	if (ret != 0) {
-		LOG_ERR("Could not initiate bus communication");
+		LOG_ERROR("Could not initiate bus communication");
 		return ret;
 	}
 
@@ -677,8 +677,7 @@ static int bmi270_init(const struct device *dev)
 	}
 
 	if (chip_id != BMI270_CHIP_ID) {
-		LOG_ERR("Unexpected chip id (%x). Expected (%x)",
-			chip_id, BMI270_CHIP_ID);
+		LOG_ERROR("Unexpected chip id (%x). Expected (%x)", chip_id, BMI270_CHIP_ID);
 		return -EIO;
 	}
 
@@ -693,7 +692,7 @@ static int bmi270_init(const struct device *dev)
 	/* Initialize bus after soft reset according to BMI270 spec */
 	ret = bmi270_bus_init(dev);
 	if (ret != 0) {
-		LOG_ERR("Could not initiate bus communication");
+		LOG_ERROR("Could not initiate bus communication");
 		return ret;
 	}
 
@@ -756,7 +755,7 @@ static int bmi270_init(const struct device *dev)
 #if CONFIG_BMI270_TRIGGER
 	ret = bmi270_init_interrupts(dev);
 	if (ret) {
-		LOG_ERR("bmi270_init_interrupts returned %d", ret);
+		LOG_ERROR("bmi270_init_interrupts returned %d", ret);
 		return ret;
 	}
 #endif

@@ -46,7 +46,7 @@ static void trigger_events(void *p1, void *p2, void *p3)
 			ifaddr_v6 = net_if_ipv6_addr_add(iface, &addr_v6,
 							 NET_ADDR_MANUAL, 0);
 			if (!ifaddr_v6) {
-				LOG_ERR("Cannot add IPv%c address", '6');
+				LOG_ERROR("Cannot add IPv%c address", '6');
 				break;
 			}
 
@@ -54,7 +54,7 @@ static void trigger_events(void *p1, void *p2, void *p3)
 		case 1:
 			ret = net_if_ipv6_addr_rm(iface, &addr_v6);
 			if (!ret) {
-				LOG_ERR("Cannot del IPv%c address", '6');
+				LOG_ERROR("Cannot del IPv%c address", '6');
 				break;
 			}
 

@@ -210,13 +210,13 @@ static int globaltop_pa6h_pm_resume(const struct device *dev)
 
 	ret = modem_pipe_open(data->uart_pipe, K_SECONDS(MODEM_TIMEOUT_S));
 	if (ret < 0) {
-		LOG_ERR("Failed to open UART pipe: %d", ret);
+		LOG_ERROR("Failed to open UART pipe: %d", ret);
 		return ret;
 	}
 
 	ret = modem_chat_attach(&data->chat, data->uart_pipe);
 	if (ret < 0) {
-		LOG_ERR("Failed to attach chat: %d", ret);
+		LOG_ERROR("Failed to attach chat: %d", ret);
 		modem_pipe_close(data->uart_pipe, K_SECONDS(MODEM_TIMEOUT_S));
 		return ret;
 	}
@@ -225,7 +225,7 @@ static int globaltop_pa6h_pm_resume(const struct device *dev)
 	if (!data->is_init) {
 		ret = gnss_set_fix_rate(dev, config->fix_interval_ms);
 		if (ret < 0) {
-			LOG_ERR("Failed to set initial fix rate: %d", ret);
+			LOG_ERROR("Failed to set initial fix rate: %d", ret);
 			modem_pipe_close(data->uart_pipe, K_SECONDS(MODEM_TIMEOUT_S));
 			return ret;
 		}
@@ -302,7 +302,7 @@ static int globaltop_pa6h_init(const struct device *dev)
 
 	ret = globaltop_pa6h_init_nmea0183_match(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize NMEA0183 match: %d", ret);
+		LOG_ERROR("Failed to initialize NMEA0183 match: %d", ret);
 		return ret;
 	}
 
@@ -310,7 +310,7 @@ static int globaltop_pa6h_init(const struct device *dev)
 
 	ret = globaltop_pa6h_init_chat(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize chat: %d", ret);
+		LOG_ERROR("Failed to initialize chat: %d", ret);
 		return ret;
 	}
 

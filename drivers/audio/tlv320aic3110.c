@@ -59,7 +59,7 @@ static int codec_configure(const struct device *dev, struct audio_codec_cfg *cfg
 	int ret;
 
 	if (cfg->dai_type != AUDIO_DAI_TYPE_I2S) {
-		LOG_ERR("dai_type must be AUDIO_DAI_TYPE_I2S");
+		LOG_ERROR("dai_type must be AUDIO_DAI_TYPE_I2S");
 		return -EINVAL;
 	}
 
@@ -67,13 +67,13 @@ static int codec_configure(const struct device *dev, struct audio_codec_cfg *cfg
 
 	ret = codec_configure_clocks(dev, cfg);
 	if (ret) {
-		LOG_ERR("Failed to configure clocks: %d", ret);
+		LOG_ERROR("Failed to configure clocks: %d", ret);
 		return ret;
 	}
 
 	ret = codec_configure_dai(dev, &cfg->dai_cfg);
 	if (ret) {
-		LOG_ERR("Failed to configure DAI: %d", ret);
+		LOG_ERROR("Failed to configure DAI: %d", ret);
 		return ret;
 	}
 
@@ -138,7 +138,7 @@ static void codec_mute_output(const struct device *dev, audio_channel_t channel,
 		break;
 
 	default:
-		LOG_ERR("channel %u invalid.", channel);
+		LOG_ERROR("channel %u invalid.", channel);
 		break;
 	}
 }
@@ -241,7 +241,7 @@ static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg)
 		val |= IF_CTRL_WLEN(IF_CTRL_WLEN_32);
 		break;
 	default:
-		LOG_ERR("Unsupported PCM sample bit width %u", cfg->i2s.word_size);
+		LOG_ERROR("Unsupported PCM sample bit width %u", cfg->i2s.word_size);
 		return -EINVAL;
 	}
 
@@ -265,7 +265,7 @@ static int codec_configure_clocks(const struct device *dev, struct audio_codec_c
 		ret = clock_control_get_rate(dev_cfg->mclk_dev, dev_cfg->mclk_name,
 					     &cfg->mclk_freq);
 		if (ret < 0) {
-			LOG_ERR("MCLK clock source freq acquire fail: %d", ret);
+			LOG_ERROR("MCLK clock source freq acquire fail: %d", ret);
 		}
 	}
 
@@ -280,8 +280,8 @@ static int codec_configure_clocks(const struct device *dev, struct audio_codec_c
 	}
 
 	if (i == ARRAY_SIZE(pll_div_table)) {
-		LOG_ERR("Unable to find PLL dividers for MCLK %u Hz PCM Rate: %u Hz",
-			cfg->mclk_freq, i2s->frame_clk_freq);
+		LOG_ERROR("Unable to find PLL dividers for MCLK %u Hz PCM Rate: %u Hz",
+			  cfg->mclk_freq, i2s->frame_clk_freq);
 		return -EINVAL;
 	}
 
@@ -312,8 +312,8 @@ static int codec_configure_clocks(const struct device *dev, struct audio_codec_c
 	if (i2s->options & I2S_OPT_BIT_CLK_CONTROLLER) {
 		bclk_div = dosr * mdac / (i2s->word_size * 2U); /* stereo */
 		if ((bclk_div * i2s->word_size * 2) != (dosr * mdac)) {
-			LOG_ERR("Unable to generate BCLK %u from MCLK %u",
-				i2s->frame_clk_freq * i2s->word_size * 2U, cfg->mclk_freq);
+			LOG_ERROR("Unable to generate BCLK %u from MCLK %u",
+				  i2s->frame_clk_freq * i2s->word_size * 2U, cfg->mclk_freq);
 			return -EINVAL;
 		}
 		LOG_DBG("I2S Master BCLKDIV: %u", bclk_div);
@@ -448,7 +448,7 @@ static int codec_set_output_volume(const struct device *dev, audio_channel_t cha
 	uint8_t vol_array[] = {107, 108, 110, 113, 116, 120, 125, 128, 132, 138, 144};
 
 	if ((vol > CODEC_OUTPUT_VOLUME_MAX) || (vol < CODEC_OUTPUT_VOLUME_MIN)) {
-		LOG_ERR("Invalid volume %d.%d dB", vol >> 1, ((uint32_t)vol & 1) ? 5 : 0);
+		LOG_ERROR("Invalid volume %d.%d dB", vol >> 1, ((uint32_t)vol & 1) ? 5 : 0);
 		return -EINVAL;
 	}
 
@@ -496,7 +496,7 @@ static int codec_set_output_volume(const struct device *dev, audio_channel_t cha
 		return 0;
 
 	default:
-		LOG_ERR("channel %u invalid.", channel);
+		LOG_ERROR("channel %u invalid.", channel);
 		return -EINVAL;
 	}
 

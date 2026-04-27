@@ -178,7 +178,7 @@ static inline void exti_enable_rtc_alarm_it(uint32_t line_num)
 
 	ret = stm32_exti_enable(line_num, STM32_EXTI_TRIG_RISING, STM32_EXTI_MODE_IT);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable EXTI line number %d (error %d)", line_num, ret);
+		LOG_ERROR("Failed to enable EXTI line number %d (error %d)", line_num, ret);
 	}
 #endif
 }
@@ -487,7 +487,7 @@ static int rtc_stm32_init(const struct device *dev)
 
 	/* Enable RTC bus clock */
 	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]) != 0) {
-		LOG_ERR("clock op failed\n");
+		LOG_ERROR("clock op failed\n");
 		return -EIO;
 	}
 
@@ -533,7 +533,7 @@ static int rtc_stm32_init(const struct device *dev)
 
 		if (err < 0) {
 			stm32_backup_domain_disable_access();
-			LOG_ERR("clock configure failed\n");
+			LOG_ERROR("clock configure failed\n");
 			return -EIO;
 		}
 	}
@@ -669,7 +669,7 @@ static int rtc_stm32_get_time(const struct device *dev, struct rtc_time *timeptr
 #endif /* HW_SUBSECOND_SUPPORT */
 
 	if (timeptr == NULL) {
-		LOG_ERR("NULL rtc_time pointer");
+		LOG_ERROR("NULL rtc_time pointer");
 		return -EINVAL;
 	}
 
@@ -826,12 +826,12 @@ static int rtc_stm32_alarm_get_supported_fields(const struct device *dev, uint16
 					uint16_t *mask)
 {
 	if (mask == NULL) {
-		LOG_ERR("NULL mask pointer");
+		LOG_ERROR("NULL mask pointer");
 		return -EINVAL;
 	}
 
 	if ((id != RTC_STM32_ALRM_A) && (id != RTC_STM32_ALRM_B)) {
-		LOG_ERR("invalid alarm ID %d", id);
+		LOG_ERROR("invalid alarm ID %d", id);
 		return -EINVAL;
 	}
 
@@ -847,7 +847,7 @@ static int rtc_stm32_alarm_get_time(const struct device *dev, uint16_t id, uint1
 	int err = 0;
 
 	if ((mask == NULL) || (timeptr == NULL)) {
-		LOG_ERR("NULL pointer");
+		LOG_ERROR("NULL pointer");
 		return -EINVAL;
 	}
 
@@ -855,7 +855,7 @@ static int rtc_stm32_alarm_get_time(const struct device *dev, uint16_t id, uint1
 
 	if ((id != RTC_STM32_ALRM_A) &&
 	    ((RTC_STM32_ALARMS_COUNT == 1) || (id != RTC_STM32_ALRM_B))) {
-		LOG_ERR("invalid alarm ID %d", id);
+		LOG_ERROR("invalid alarm ID %d", id);
 		err = -EINVAL;
 		goto unlock;
 	}
@@ -897,7 +897,7 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 	} else if (id == RTC_STM32_ALRM_B) {
 		p_rtc_alrm = &(data->rtc_alrm_b);
 	} else {
-		LOG_ERR("invalid alarm ID %d", id);
+		LOG_ERROR("invalid alarm ID %d", id);
 		err = -EINVAL;
 		goto unlock;
 	}
@@ -919,13 +919,13 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 	}
 
 	if ((mask & ~RTC_STM32_SUPPORTED_ALARM_FIELDS) != 0) {
-		LOG_ERR("unsupported alarm %d field mask 0x%04x", id, mask);
+		LOG_ERROR("unsupported alarm %d field mask 0x%04x", id, mask);
 		err = -EINVAL;
 		goto unlock;
 	}
 
 	if (timeptr == NULL) {
-		LOG_ERR("timeptr is invalid");
+		LOG_ERROR("timeptr is invalid");
 		err = -EINVAL;
 		goto unlock;
 	}
@@ -1025,7 +1025,7 @@ static int rtc_stm32_alarm_set_callback(const struct device *dev, uint16_t id,
 	} else if (id == RTC_STM32_ALRM_B) {
 		p_rtc_alrm = &(data->rtc_alrm_b);
 	} else {
-		LOG_ERR("invalid alarm ID %d", id);
+		LOG_ERROR("invalid alarm ID %d", id);
 		err = -EINVAL;
 		goto unlock;
 	}
@@ -1053,7 +1053,7 @@ static int rtc_stm32_alarm_is_pending(const struct device *dev, uint16_t id)
 	} else if (id == RTC_STM32_ALRM_B) {
 		p_rtc_alrm = &(data->rtc_alrm_b);
 	} else {
-		LOG_ERR("invalid alarm ID %d", id);
+		LOG_ERROR("invalid alarm ID %d", id);
 		ret = -EINVAL;
 		goto unlock;
 	}

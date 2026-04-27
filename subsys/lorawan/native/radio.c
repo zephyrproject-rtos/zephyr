@@ -36,7 +36,7 @@ static struct lora_modem_config rx_config = {
 int radio_init(const struct device *lora_dev)
 {
 	if (!device_is_ready(lora_dev)) {
-		LOG_ERR("LoRa device not ready");
+		LOG_ERROR("LoRa device not ready");
 		return -ENODEV;
 	}
 
@@ -64,25 +64,25 @@ int radio_tx(const uint8_t *data, size_t len,
 
 	ret = lora_config(radio_dev, &tx_config);
 	if (ret != 0) {
-		LOG_ERR("TX config failed: %d", ret);
+		LOG_ERROR("TX config failed: %d", ret);
 		return -EIO;
 	}
 
 	ret = lora_send_async(radio_dev, (uint8_t *)data, len, &tx_done);
 	if (ret != 0) {
-		LOG_ERR("lora_send_async failed: %d", ret);
+		LOG_ERROR("lora_send_async failed: %d", ret);
 		return -EIO;
 	}
 
 	/* Wait for TX complete with a generous timeout */
 	ret = k_poll(events, 1, K_SECONDS(10));
 	if (ret != 0) {
-		LOG_ERR("TX poll timeout: %d", ret);
+		LOG_ERROR("TX poll timeout: %d", ret);
 		return -EIO;
 	}
 
 	if (tx_done.result != 0) {
-		LOG_ERR("TX failed: %d", tx_done.result);
+		LOG_ERROR("TX failed: %d", tx_done.result);
 		return -EIO;
 	}
 
@@ -140,7 +140,7 @@ int radio_rx(uint32_t freq, const struct lwan_dr_params *dr,
 
 	ret = lora_config(radio_dev, &rx_config);
 	if (ret != 0) {
-		LOG_ERR("RX config failed: %d", ret);
+		LOG_ERROR("RX config failed: %d", ret);
 		return -EIO;
 	}
 
@@ -151,7 +151,7 @@ int radio_rx(uint32_t freq, const struct lwan_dr_params *dr,
 			LOG_DBG("RX timeout: freq=%u sf=%u", freq, dr->sf);
 			return 0;
 		}
-		LOG_ERR("lora_recv failed: %d", ret);
+		LOG_ERROR("lora_recv failed: %d", ret);
 		return -EIO;
 	}
 

@@ -132,7 +132,7 @@ static int rm68200_set_pixel_format(const struct device *dev,
 	if (pixel_format == config->pixel_format) {
 		return 0;
 	}
-	LOG_ERR("Pixel format change not implemented");
+	LOG_ERROR("Pixel format change not implemented");
 	return -ENOTSUP;
 }
 
@@ -142,7 +142,7 @@ static int rm68200_set_orientation(const struct device *dev,
 	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
 		return 0;
 	}
-	LOG_ERR("Changing display orientation not implemented");
+	LOG_ERROR("Changing display orientation not implemented");
 	return -ENOTSUP;
 }
 
@@ -182,14 +182,14 @@ static int rm68200_init(const struct device *dev)
 
 	ret = mipi_dsi_attach(config->mipi_dsi, config->channel, &mdev);
 	if (ret < 0) {
-		LOG_ERR("Could not attach to MIPI-DSI host");
+		LOG_ERROR("Could not attach to MIPI-DSI host");
 		return ret;
 	}
 
 	if (config->reset_gpio.port != NULL) {
 		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure reset GPIO (%d)", ret);
+			LOG_ERROR("Could not configure reset GPIO (%d)", ret);
 			return ret;
 		}
 
@@ -1024,7 +1024,7 @@ static int rm68200_init(const struct device *dev)
 	if (config->bl_gpio.port != NULL) {
 		ret = gpio_pin_configure_dt(&config->bl_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure bl GPIO (%d)", ret);
+			LOG_ERROR("Could not configure bl GPIO (%d)", ret);
 			return ret;
 		}
 	}

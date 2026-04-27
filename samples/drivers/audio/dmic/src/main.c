@@ -40,13 +40,13 @@ static int do_pdm_transfer(const struct device *dmic_dev,
 
 	ret = dmic_configure(dmic_dev, cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure the driver: %d", ret);
+		LOG_ERROR("Failed to configure the driver: %d", ret);
 		return ret;
 	}
 
 	ret = dmic_trigger(dmic_dev, DMIC_TRIGGER_START);
 	if (ret < 0) {
-		LOG_ERR("START trigger failed: %d", ret);
+		LOG_ERROR("START trigger failed: %d", ret);
 		return ret;
 	}
 
@@ -56,7 +56,7 @@ static int do_pdm_transfer(const struct device *dmic_dev,
 
 		ret = dmic_read(dmic_dev, 0, &buffer, &size, READ_TIMEOUT);
 		if (ret < 0) {
-			LOG_ERR("%d - read failed: %d", i, ret);
+			LOG_ERROR("%d - read failed: %d", i, ret);
 			return ret;
 		}
 
@@ -67,7 +67,7 @@ static int do_pdm_transfer(const struct device *dmic_dev,
 
 	ret = dmic_trigger(dmic_dev, DMIC_TRIGGER_STOP);
 	if (ret < 0) {
-		LOG_ERR("STOP trigger failed: %d", ret);
+		LOG_ERROR("STOP trigger failed: %d", ret);
 		return ret;
 	}
 
@@ -82,7 +82,7 @@ int main(void)
 	LOG_INF("DMIC sample");
 
 	if (!device_is_ready(dmic_dev)) {
-		LOG_ERR("%s is not ready", dmic_dev->name);
+		LOG_ERROR("%s is not ready", dmic_dev->name);
 		return 0;
 	}
 

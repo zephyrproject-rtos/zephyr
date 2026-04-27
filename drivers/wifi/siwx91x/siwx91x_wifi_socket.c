@@ -71,7 +71,7 @@ void siwx91x_on_join_ipv4(struct siwx91x_dev *sidev)
 	/* FIXME: support for static IP configuration */
 	ret = sl_si91x_configure_ip_address(&ip_config4, SL_SI91X_WIFI_CLIENT_VAP_ID);
 	if (ret) {
-		LOG_ERR("sl_si91x_configure_ip_address(): %#04x", ret);
+		LOG_ERROR("sl_si91x_configure_ip_address(): %#04x", ret);
 		return;
 	}
 	memcpy(addr4.s4_addr, ip_config4.ip.v4.ip_address.bytes, sizeof(addr4.s4_addr));
@@ -94,7 +94,7 @@ void siwx91x_on_join_ipv6(struct siwx91x_dev *sidev)
 	/* FIXME: support for static IP configuration */
 	ret = sl_si91x_configure_ip_address(&ip_config6, SL_SI91X_WIFI_CLIENT_VAP_ID);
 	if (ret) {
-		LOG_ERR("sl_si91x_configure_ip_address(): %#04x", ret);
+		LOG_ERROR("sl_si91x_configure_ip_address(): %#04x", ret);
 		return;
 	}
 	ARRAY_FOR_EACH(addr6.s6_addr32, i) {
@@ -324,7 +324,7 @@ static int siwx91x_sock_sendto(struct net_pkt *pkt,
 	 * continuous buffer.
 	 */
 	if (net_pkt_get_len(pkt) > NET_ETH_MTU) {
-		LOG_ERR("unexpected buffer size");
+		LOG_ERROR("unexpected buffer size");
 		ret = -ENOBUFS;
 		goto out_cb;
 	}

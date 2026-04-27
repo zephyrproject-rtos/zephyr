@@ -119,13 +119,13 @@ int mfd_adp5360_software_reset(const struct device *dev)
 	reset_cfg = FIELD_PREP(ADP5360_MFD_SOC_RESET_MASK, 1);
 	ret = mfd_adp5360_reg_write(dev, ADP5360_MFD_REG_SOC_RESET, reset_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to write software reset register");
+		LOG_ERROR("Failed to write software reset register");
 		return ret;
 	}
 	reset_cfg = FIELD_PREP(ADP5360_MFD_SOC_RESET_MASK, 0);
 	ret = mfd_adp5360_reg_write(dev, ADP5360_MFD_REG_SOC_RESET, reset_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to clear software reset register");
+		LOG_ERROR("Failed to clear software reset register");
 		return ret;
 	}
 	return 0;
@@ -139,7 +139,7 @@ int mfd_adp5360_hardware_reset(const struct device *dev)
 
 	ret = gpio_pin_set_dt(&config->manual_reset_gpio, 0);
 	if (ret < 0) {
-		LOG_ERR("Failed to set reset GPIO high");
+		LOG_ERROR("Failed to set reset GPIO high");
 		return ret;
 	}
 
@@ -148,7 +148,7 @@ int mfd_adp5360_hardware_reset(const struct device *dev)
 
 	ret = gpio_pin_set_dt(&config->manual_reset_gpio, 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to set reset GPIO low");
+		LOG_ERROR("Failed to set reset GPIO low");
 		return ret;
 	}
 
@@ -162,13 +162,13 @@ int mfd_adp5360_hardware_reset(const struct device *dev)
 	/* Read status register to check if manual reset interrupt was triggered */
 	ret = mfd_adp5360_reg_read(dev, ADP5360_MFD_REG_PGOOD_STATUS, &status);
 	if (ret < 0) {
-		LOG_ERR("Failed to read pgood status register");
+		LOG_ERROR("Failed to read pgood status register");
 		return ret;
 	}
 
 	/* Check if reset was successful by verifying PGOOD status */
 	if ((status & ADP5360_STATUS_MANUAL_RESET_INT_MASK) == 0) {
-		LOG_ERR("Manual reset failed, PGOOD status indicates reset not successful");
+		LOG_ERROR("Manual reset failed, PGOOD status indicates reset not successful");
 		return -EIO;
 	}
 	return 0;
@@ -202,19 +202,19 @@ static int mfd_adp5360_pm_control(const struct device *dev, enum pm_device_actio
 	case PM_DEVICE_ACTION_RESUME:
 		ret = mfd_adp5360_set_fg_mode(dev, ADP5360_FG_MODE_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to set fuel gauge to active mode");
+			LOG_ERROR("Failed to set fuel gauge to active mode");
 			return ret;
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		ret = mfd_adp5360_set_fg_mode(dev, ADP5360_FG_MODE_SLEEP);
 		if (ret < 0) {
-			LOG_ERR("Failed to set fuel gauge to sleep mode");
+			LOG_ERROR("Failed to set fuel gauge to sleep mode");
 			return ret;
 		}
 		break;
 	default:
-		LOG_ERR("Unsupported PM action %d for ADP5360", action);
+		LOG_ERROR("Unsupported PM action %d for ADP5360", action);
 		return -EINVAL;
 	}
 	return 0;
@@ -266,13 +266,13 @@ static int mfd_adp5360_init(const struct device *dev)
 
 	ret = mfd_adp5360_reg_read(dev, ADP5360_MFD_REG_INT_STATUS1, &val);
 	if (ret < 0) {
-		LOG_ERR("Failed to clear interrupt status 1");
+		LOG_ERROR("Failed to clear interrupt status 1");
 		return ret;
 	}
 
 	ret = mfd_adp5360_reg_read(dev, ADP5360_MFD_REG_INT_STATUS2, &val);
 	if (ret < 0) {
-		LOG_ERR("Failed to clear interrupt status 2");
+		LOG_ERROR("Failed to clear interrupt status 2");
 		return ret;
 	}
 
@@ -280,7 +280,7 @@ static int mfd_adp5360_init(const struct device *dev)
 	if (config->interrupt_gpio.port) {
 		ret = mfd_adp5360_init_interrupt(dev);
 		if (ret < 0) {
-			LOG_ERR("Failed to initialize interrupt");
+			LOG_ERROR("Failed to initialize interrupt");
 			return ret;
 		}
 	}
@@ -288,7 +288,7 @@ static int mfd_adp5360_init(const struct device *dev)
 	if (config->pgood1_gpio.port || config->pgood2_gpio.port) {
 		ret = mfd_adp5360_init_pgood_interrupt(dev);
 		if (ret < 0) {
-			LOG_ERR("Failed to initialize pgood interrupt");
+			LOG_ERROR("Failed to initialize pgood interrupt");
 			return ret;
 		}
 	}
@@ -296,7 +296,7 @@ static int mfd_adp5360_init(const struct device *dev)
 	if (config->manual_reset_gpio.port) {
 		ret = gpio_pin_configure_dt(&config->manual_reset_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure reset GPIO pin");
+			LOG_ERROR("Failed to configure reset GPIO pin");
 			return ret;
 		}
 	}
@@ -304,7 +304,7 @@ static int mfd_adp5360_init(const struct device *dev)
 	if (config->reset_status_gpio.port) {
 		ret = mfd_adp5360_init_reset_status_interrupt(dev);
 		if (ret < 0) {
-			LOG_ERR("Failed to Initialize reset status interrupt");
+			LOG_ERROR("Failed to Initialize reset status interrupt");
 			return ret;
 		}
 	}

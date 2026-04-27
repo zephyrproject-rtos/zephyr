@@ -139,7 +139,7 @@ static void handle_meta_event(struct net_buf *buf)
 		/* do nothing */
 		break;
 	default:
-		LOG_ERR("unhandled meta event %x", code);
+		LOG_ERROR("unhandled meta event %x", code);
 		LOG_HEXDUMP_ERR(buf->data, buf->len, "HCI META EVT");
 	}
 }
@@ -253,7 +253,7 @@ static void recv(struct net_buf *buf)
 			handle_ncp(buf);
 			break;
 		default:
-			LOG_ERR("unhandled msg %x", code);
+			LOG_ERROR("unhandled msg %x", code);
 			LOG_HEXDUMP_ERR(buf->data, buf->len, "HCI EVT");
 		}
 
@@ -270,7 +270,7 @@ static void recv(struct net_buf *buf)
 		return;
 	}
 
-	LOG_ERR("HCI RX (not data or event)");
+	LOG_ERROR("HCI RX (not data or event)");
 	net_buf_unref(buf);
 }
 

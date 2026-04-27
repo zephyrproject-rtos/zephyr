@@ -780,7 +780,7 @@ static void indicate_cb(struct bt_conn *conn,
 			struct bt_gatt_indicate_params *params, uint8_t err)
 {
 	if (err != 0U) {
-		LOG_ERR("Indication fail");
+		LOG_ERROR("Indication fail");
 	} else {
 		LOG_DBG("Indication success");
 	}
@@ -955,7 +955,7 @@ static void exchange_func(struct bt_conn *conn, uint8_t err,
 			  struct bt_gatt_exchange_params *params)
 {
 	if (err != 0U) {
-		LOG_ERR("MTU exchange failed");
+		LOG_ERROR("MTU exchange failed");
 	} else {
 		LOG_DBG("MTU exchange succeed");
 	}
@@ -1986,7 +1986,7 @@ static int disable_subscription(struct bt_conn *conn, uint16_t ccc_handle)
 	/* Fail if CCC handle doesn't match */
 	subscription = find_subscription(ccc_handle);
 	if (!subscription) {
-		LOG_ERR("CCC handle doesn't match");
+		LOG_ERROR("CCC handle doesn't match");
 		return -EINVAL;
 	}
 
@@ -2092,8 +2092,7 @@ static uint8_t notify_mult(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (!IN_RANGE(cp->cnt, min_cnt, max_cnt)) {
-		LOG_ERR("Invalid count value %d (range %zu to %zu)",
-			    cp->cnt, min_cnt, max_cnt);
+		LOG_ERROR("Invalid count value %d (range %zu to %zu)", cp->cnt, min_cnt, max_cnt);
 
 		return BTP_STATUS_FAILED;
 	}
@@ -2112,7 +2111,7 @@ static uint8_t notify_mult(const void *cmd, uint16_t cmd_len,
 
 		if (!IN_RANGE(handle, server_db_start_handle,
 			      server_db_start_handle + attr_count)) {
-			LOG_ERR("ATT handle %u not in server DB range", handle);
+			LOG_ERROR("ATT handle %u not in server DB range", handle);
 			return BTP_STATUS_FAILED;
 		}
 
@@ -2129,7 +2128,7 @@ static uint8_t notify_mult(const void *cmd, uint16_t cmd_len,
 
 	err = bt_gatt_notify_multiple(conn, cp->cnt, params);
 	if (err != 0) {
-		LOG_ERR("bt_gatt_notify_multiple failed: %d", err);
+		LOG_ERROR("bt_gatt_notify_multiple failed: %d", err);
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
@@ -2187,7 +2186,7 @@ static uint8_t remove_by_handle_from_db(const void *cmd, uint16_t cmd_len, void 
 
 				err = bt_gatt_service_unregister(&server_svcs[i]);
 				if (err < 0 && err != -ENOENT) {
-					LOG_ERR("Failed to unregister service [%d]: %d", i, err);
+					LOG_ERROR("Failed to unregister service [%d]: %d", i, err);
 					return BTP_STATUS_FAILED;
 				}
 

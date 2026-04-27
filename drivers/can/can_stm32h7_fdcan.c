@@ -90,17 +90,15 @@ static int can_stm32h7_get_core_clock(const struct device *dev, uint32_t *rate)
 	uint32_t cdiv;
 
 	if (IS_ENABLED(STM32H7_FDCAN_DOMAIN_CLOCK_SUPPORT) && (stm32h7_cfg->pclk_len > 1)) {
-		if (clock_control_get_rate(clk,
-			 (clock_control_subsys_t) &stm32h7_cfg->pclken[1],
-			  &rate_tmp) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclk[1])");
+		if (clock_control_get_rate(clk, (clock_control_subsys_t)&stm32h7_cfg->pclken[1],
+					   &rate_tmp) < 0) {
+			LOG_ERROR("Failed call clock_control_get_rate(pclk[1])");
 			return -EIO;
 		}
 	} else {
-		if (clock_control_get_rate(clk,
-			 (clock_control_subsys_t) &stm32h7_cfg->pclken[0],
-			  &rate_tmp) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclk[0])");
+		if (clock_control_get_rate(clk, (clock_control_subsys_t)&stm32h7_cfg->pclken[0],
+					   &rate_tmp) < 0) {
+			LOG_ERROR("Failed call clock_control_get_rate(pclk[0])");
 			return -EIO;
 		}
 	}
@@ -127,7 +125,7 @@ static int can_stm32h7_clock_enable(const struct device *dev)
 				(clock_control_subsys_t)&stm32h7_cfg->pclken[1],
 				NULL);
 		if (ret < 0) {
-			LOG_ERR("Could not select can_stm32fd domain clock");
+			LOG_ERROR("Could not select can_stm32fd domain clock");
 			return ret;
 		}
 
@@ -139,20 +137,20 @@ static int can_stm32h7_clock_enable(const struct device *dev)
 		ret = clock_control_get_rate(clk,
 			(clock_control_subsys_t)&stm32h7_cfg->pclken[1], &fdcan_clock);
 		if (ret != 0) {
-			LOG_ERR("failure getting clock rate");
+			LOG_ERROR("failure getting clock rate");
 			return ret;
 		}
 
 		if (fdcan_clock > VOS0_MAX_FREQ) {
-			LOG_ERR("FDCAN Clock source %d exceeds max allowed %d",
-					fdcan_clock, VOS0_MAX_FREQ);
+			LOG_ERROR("FDCAN Clock source %d exceeds max allowed %d", fdcan_clock,
+				  VOS0_MAX_FREQ);
 			return -ENODEV;
 		}
 	}
 
 	ret = clock_control_on(clk, (clock_control_subsys_t)&stm32h7_cfg->pclken[0]);
 	if (ret != 0) {
-		LOG_ERR("failure enabling clock");
+		LOG_ERROR("failure enabling clock");
 		return ret;
 	}
 
@@ -175,7 +173,7 @@ static int can_stm32h7_init(const struct device *dev)
 	/* Configure dt provided device signals when available */
 	ret = pinctrl_apply_state(stm32h7_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("CAN pinctrl setup failed (%d)", ret);
+		LOG_ERROR("CAN pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 

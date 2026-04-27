@@ -446,7 +446,7 @@ static int ov7725_set_fmt(const struct device *dev, struct video_format *fmt)
 	ret = ov7725_write_all(dev, ov7725_init_reg_tb,
 				ARRAY_SIZE(ov7725_init_reg_tb));
 	if (ret) {
-		LOG_ERR("Unable to write ov7725 config");
+		LOG_ERROR("Unable to write ov7725 config");
 		return ret;
 	}
 
@@ -461,7 +461,7 @@ static int ov7725_set_fmt(const struct device *dev, struct video_format *fmt)
 						0x1FU,
 						ov7725_pf_configs[i].com7);
 			if (ret) {
-				LOG_ERR("Unable to write ov7725 pixel format");
+				LOG_ERROR("Unable to write ov7725 pixel format");
 				return ret;
 			}
 		}
@@ -572,18 +572,18 @@ static int ov7725_init(const struct device *dev)
 	/* Identify the device. */
 	ret = ov7725_read_reg(&cfg->i2c, OV7725_PID, &pid);
 	if (ret) {
-		LOG_ERR("Unable to read PID");
+		LOG_ERROR("Unable to read PID");
 		return -ENODEV;
 	}
 
 	ret = ov7725_read_reg(&cfg->i2c, OV7725_VER, &ver);
 	if (ret) {
-		LOG_ERR("Unable to read VER");
+		LOG_ERROR("Unable to read VER");
 		return -ENODEV;
 	}
 
 	if (OV7725_REVISION != (((uint32_t)pid << 8U) | (uint32_t)ver)) {
-		LOG_ERR("OV7725 Get Vision fail\n");
+		LOG_ERROR("OV7725 Get Vision fail\n");
 		return -ENODEV;
 	}
 
@@ -594,7 +594,7 @@ static int ov7725_init(const struct device *dev)
 
 	ret = ov7725_set_fmt(dev, &fmt);
 	if (ret) {
-		LOG_ERR("Unable to configure default format");
+		LOG_ERROR("Unable to configure default format");
 		return -EIO;
 	}
 
@@ -615,14 +615,13 @@ static int ov7725_init_0(const struct device *dev)
 	const struct ov7725_config *cfg = dev->config;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
-		LOG_ERR("%s: device %s is not ready", dev->name,
-				cfg->reset_gpio.port->name);
+		LOG_ERROR("%s: device %s is not ready", dev->name, cfg->reset_gpio.port->name);
 		return -ENODEV;
 	}
 #endif

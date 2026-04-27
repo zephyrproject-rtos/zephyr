@@ -191,9 +191,9 @@ int llext_lookup_symbol(struct llext_loader *ldr, struct llext *ext, uintptr_t *
 		}
 
 		if (*link_addr == 0) {
-			LOG_ERR("Undefined symbol with no entry in "
-				"symbol table %s, offset %zd, link section %d",
-				name, (size_t)rel->r_offset, shdr->sh_link);
+			LOG_ERROR("Undefined symbol with no entry in "
+				  "symbol table %s, offset %zd, link section %d",
+				  name, (size_t)rel->r_offset, shdr->sh_link);
 
 			if (!IS_ENABLED(CONFIG_LLEXT_EXPORT_DEVICES)) {
 				/**
@@ -239,9 +239,9 @@ int llext_lookup_symbol(struct llext_loader *ldr, struct llext *ext, uintptr_t *
 		*link_addr =
 			(uintptr_t)llext_loaded_sect_ptr(ldr, ext, sym->st_shndx) + sym->st_value;
 	} else {
-		LOG_ERR("cannot apply relocation: "
-			"target symbol has unexpected section index %d (%#x)",
-			sym->st_shndx, sym->st_shndx);
+		LOG_ERROR("cannot apply relocation: "
+			  "target symbol has unexpected section index %d (%#x)",
+			  sym->st_shndx, sym->st_shndx);
 		return -ENOEXEC;
 	}
 
@@ -276,7 +276,7 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 		}
 
 		if (ret != 0) {
-			LOG_ERR("PLT: failed to read RELA #%u, trying to continue", i);
+			LOG_ERROR("PLT: failed to read RELA #%u, trying to continue", i);
 			continue;
 		}
 
@@ -296,7 +296,8 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 		}
 
 		if (ret != 0) {
-			LOG_ERR("PLT: failed to read symbol table #%u RELA #%u, trying to continue",
+			LOG_ERROR(
+				"PLT: failed to read symbol table #%u RELA #%u, trying to continue",
 				j, i);
 			continue;
 		}
@@ -324,7 +325,7 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 		 * since the buffer will be directly modified.
 		 */
 		if (ldr->storage != LLEXT_STORAGE_WRITABLE) {
-			LOG_ERR("PLT: cannot link read-only ELF file");
+			LOG_ERROR("PLT: cannot link read-only ELF file");
 			continue;
 		}
 
@@ -339,8 +340,8 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 			ssize_t offset = llext_file_offset(ldr, rela.r_offset);
 
 			if (offset < 0) {
-				LOG_ERR("Offset %#zx not found in ELF, trying to continue",
-					(size_t)rela.r_offset);
+				LOG_ERROR("Offset %#zx not found in ELF, trying to continue",
+					  (size_t)rela.r_offset);
 				continue;
 			}
 
@@ -419,19 +420,19 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 		switch (shdr->sh_type) {
 		case SHT_REL:
 			if (shdr->sh_entsize != sizeof(elf_rel_t)) {
-				LOG_ERR("Invalid entry size %zd for SHT_REL section %d",
-					(size_t)shdr->sh_entsize, i);
+				LOG_ERROR("Invalid entry size %zd for SHT_REL section %d",
+					  (size_t)shdr->sh_entsize, i);
 				return -ENOEXEC;
 			}
 			break;
 		case SHT_RELA:
 			if (IS_ENABLED(CONFIG_ARM)) {
-				LOG_ERR("Found unsupported SHT_RELA section %d", i);
+				LOG_ERROR("Found unsupported SHT_RELA section %d", i);
 				return -ENOTSUP;
 			}
 			if (shdr->sh_entsize != sizeof(elf_rela_t)) {
-				LOG_ERR("Invalid entry size %zd for SHT_RELA section %d",
-					(size_t)shdr->sh_entsize, i);
+				LOG_ERROR("Invalid entry size %zd for SHT_RELA section %d",
+					  (size_t)shdr->sh_entsize, i);
 				return -ENOEXEC;
 			}
 			break;
@@ -440,13 +441,11 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			continue;
 		}
 
-		if (shdr->sh_info >= ext->sect_cnt ||
-		    shdr->sh_size % shdr->sh_entsize != 0) {
-			LOG_ERR("Sanity checks failed for section %d "
-				"(info %zd, size %zd, entsize %zd)", i,
-				(size_t)shdr->sh_info,
-				(size_t)shdr->sh_size,
-				(size_t)shdr->sh_entsize);
+		if (shdr->sh_info >= ext->sect_cnt || shdr->sh_size % shdr->sh_entsize != 0) {
+			LOG_ERROR("Sanity checks failed for section %d "
+				  "(info %zd, size %zd, entsize %zd)",
+				  i, (size_t)shdr->sh_info, (size_t)shdr->sh_size,
+				  (size_t)shdr->sh_entsize);
 			return -ENOEXEC;
 		}
 
@@ -493,7 +492,7 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 		enum llext_mem mem_idx = ldr->sect_map[shdr->sh_info].mem_idx;
 
 		if (mem_idx == LLEXT_MEM_COUNT) {
-			LOG_ERR("Section %d not loaded in any memory region", shdr->sh_info);
+			LOG_ERROR("Section %d not loaded in any memory region", shdr->sh_info);
 			return -ENOEXEC;
 		}
 

@@ -135,19 +135,19 @@ int platform_init(void)
 
 	status = metal_init(&metal_params);
 	if (status) {
-		LOG_ERR("metal_init: failed: %d", status);
+		LOG_ERROR("metal_init: failed: %d", status);
 		return -1;
 	}
 
 	status = metal_register_generic_device(&shm_device);
 	if (status) {
-		LOG_ERR("Couldn't register shared memory: %d", status);
+		LOG_ERROR("Couldn't register shared memory: %d", status);
 		return -1;
 	}
 
 	status = metal_device_open("generic", SHM_DEVICE_NAME, &device);
 	if (status) {
-		LOG_ERR("metal_device_open failed: %d", status);
+		LOG_ERROR("metal_device_open failed: %d", status);
 		return -1;
 	}
 
@@ -157,7 +157,7 @@ int platform_init(void)
 
 	shm_io = metal_device_io_region(device, 0);
 	if (!shm_io) {
-		LOG_ERR("Failed to get shm_io region");
+		LOG_ERROR("Failed to get shm_io region");
 		return -1;
 	}
 
@@ -171,18 +171,18 @@ int platform_init(void)
 
 	rsc_io = metal_device_io_region(device, 1);
 	if (!rsc_io) {
-		LOG_ERR("Failed to get rsc_io region");
+		LOG_ERROR("Failed to get rsc_io region");
 		return -1;
 	}
 
 	/* Setup MBOX */
 	if (!mbox_is_ready_dt(&tx_channel)) {
-		LOG_ERR("MBOX TX device is not ready");
+		LOG_ERROR("MBOX TX device is not ready");
 		return -1;
 	}
 
 	if (!mbox_is_ready_dt(&rx_channel)) {
-		LOG_ERR("MBOX RX device is not ready");
+		LOG_ERROR("MBOX RX device is not ready");
 		return -1;
 	}
 
@@ -190,7 +190,7 @@ int platform_init(void)
 
 	status = mbox_set_enabled_dt(&rx_channel, true);
 	if (status) {
-		LOG_ERR("mbox_set_enabled_dt failed");
+		LOG_ERROR("mbox_set_enabled_dt failed");
 		return -1;
 	}
 
@@ -229,7 +229,7 @@ struct rpmsg_device *platform_create_rpmsg_vdev(unsigned int vdev_index, unsigne
 					rsc_io, NULL, mailbox_notify, NULL);
 
 	if (!vdev) {
-		LOG_ERR("failed to create vdev");
+		LOG_ERROR("failed to create vdev");
 		return NULL;
 	}
 
@@ -241,7 +241,7 @@ struct rpmsg_device *platform_create_rpmsg_vdev(unsigned int vdev_index, unsigne
 	ret = rproc_virtio_init_vring(vdev, 0, vring_rsc->notifyid, (void *)VRING_TX_ADDR_CM33,
 				      rsc_io, vring_rsc->num, vring_rsc->align);
 	if (ret) {
-		LOG_ERR("failed to init vring 0");
+		LOG_ERROR("failed to init vring 0");
 		goto failed;
 	}
 
@@ -250,7 +250,7 @@ struct rpmsg_device *platform_create_rpmsg_vdev(unsigned int vdev_index, unsigne
 	ret = rproc_virtio_init_vring(vdev, 1, vring_rsc->notifyid, (void *)VRING_RX_ADDR_CM33,
 				      rsc_io, vring_rsc->num, vring_rsc->align);
 	if (ret) {
-		LOG_ERR("failed to init vring 1");
+		LOG_ERROR("failed to init vring 1");
 		goto failed;
 	}
 
@@ -265,7 +265,7 @@ struct rpmsg_device *platform_create_rpmsg_vdev(unsigned int vdev_index, unsigne
 	ret = rpmsg_init_vdev(&rvdev, vdev, ns_cb, shm_io, &shpool);
 
 	if (ret) {
-		LOG_ERR("failed rpmsg_init_vdev");
+		LOG_ERROR("failed rpmsg_init_vdev");
 		goto failed;
 	}
 
@@ -318,7 +318,7 @@ void rpmsg_mng_task(void *arg1, void *arg2, void *arg3)
 	/* Initialize platform */
 	rpdev = platform_create_rpmsg_vdev(0, VIRTIO_DEV_DEVICE, NULL, new_service_cb);
 	if (!rpdev) {
-		LOG_ERR("Failed to create rpmsg virtio device");
+		LOG_ERROR("Failed to create rpmsg virtio device");
 		ret = -1;
 		goto task_end;
 	}
@@ -344,7 +344,7 @@ int main(void)
 	int ret = platform_init();
 
 	if (ret) {
-		LOG_ERR("Failed to initialize platform");
+		LOG_ERROR("Failed to initialize platform");
 		return -1;
 	}
 

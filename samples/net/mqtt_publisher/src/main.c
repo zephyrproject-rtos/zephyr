@@ -92,7 +92,7 @@ static int tls_init(void)
 	err = tls_credential_add(APP_CA_CERT_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
 				 ca_certificate, sizeof(ca_certificate));
 	if (err < 0) {
-		LOG_ERR("Failed to register public certificate: %d", err);
+		LOG_ERROR("Failed to register public certificate: %d", err);
 		return err;
 	}
 #endif
@@ -101,14 +101,14 @@ static int tls_init(void)
 	err = tls_credential_add(APP_PSK_TAG, TLS_CREDENTIAL_PSK,
 				 client_psk, sizeof(client_psk));
 	if (err < 0) {
-		LOG_ERR("Failed to register PSK: %d", err);
+		LOG_ERROR("Failed to register PSK: %d", err);
 		return err;
 	}
 
 	err = tls_credential_add(APP_PSK_TAG, TLS_CREDENTIAL_PSK_ID,
 				 client_psk_id, sizeof(client_psk_id) - 1);
 	if (err < 0) {
-		LOG_ERR("Failed to register PSK ID: %d", err);
+		LOG_ERROR("Failed to register PSK ID: %d", err);
 	}
 #endif
 
@@ -144,7 +144,7 @@ static int wait(int timeout)
 	if (nfds > 0) {
 		ret = poll(fds, nfds, timeout);
 		if (ret < 0) {
-			LOG_ERR("poll error: %d", errno);
+			LOG_ERROR("poll error: %d", errno);
 		}
 	}
 
@@ -159,7 +159,7 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 	switch (evt->type) {
 	case MQTT_EVT_CONNACK:
 		if (evt->result != 0) {
-			LOG_ERR("MQTT connect failed %d", evt->result);
+			LOG_ERROR("MQTT connect failed %d", evt->result);
 			break;
 		}
 
@@ -198,7 +198,7 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 
 	case MQTT_EVT_PUBACK:
 		if (evt->result != 0) {
-			LOG_ERR("MQTT PUBACK error %d", evt->result);
+			LOG_ERROR("MQTT PUBACK error %d", evt->result);
 			break;
 		}
 
@@ -208,7 +208,7 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 
 	case MQTT_EVT_PUBREC:
 		if (evt->result != 0) {
-			LOG_ERR("MQTT PUBREC error %d", evt->result);
+			LOG_ERROR("MQTT PUBREC error %d", evt->result);
 			break;
 		}
 
@@ -220,14 +220,14 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 
 		err = mqtt_publish_qos2_release(client, &rel_param);
 		if (err != 0) {
-			LOG_ERR("Failed to send MQTT PUBREL: %d", err);
+			LOG_ERROR("Failed to send MQTT PUBREL: %d", err);
 		}
 
 		break;
 
 	case MQTT_EVT_PUBCOMP:
 		if (evt->result != 0) {
-			LOG_ERR("MQTT PUBCOMP error %d", evt->result);
+			LOG_ERROR("MQTT PUBCOMP error %d", evt->result);
 			break;
 		}
 

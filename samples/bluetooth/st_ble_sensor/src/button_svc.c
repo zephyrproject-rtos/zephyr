@@ -30,15 +30,14 @@ int button_init(gpio_callback_handler_t handler)
 	int ret;
 
 	if (!gpio_is_ready_dt(&button)) {
-		LOG_ERR("Error: button GPIO device %s is not ready",
-			button.port->name);
+		LOG_ERROR("Error: button GPIO device %s is not ready", button.port->name);
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
 	if (ret != 0) {
-		LOG_ERR("Error %d: can't configure button on GPIO %s pin %d",
-			ret, button.port->name, button.pin);
+		LOG_ERROR("Error %d: can't configure button on GPIO %s pin %d", ret,
+			  button.port->name, button.pin);
 		return ret;
 
 	}
@@ -47,8 +46,9 @@ int button_init(gpio_callback_handler_t handler)
 	gpio_add_callback(button.port, &gpio_cb);
 	ret = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0) {
-		LOG_ERR("Error %d: can't configure button interrupt on "
-			"GPIO %s pin %d", ret, button.port->name, button.pin);
+		LOG_ERROR("Error %d: can't configure button interrupt on "
+			  "GPIO %s pin %d",
+			  ret, button.port->name, button.pin);
 		return ret;
 	}
 	return 0;

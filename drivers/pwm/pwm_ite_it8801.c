@@ -64,7 +64,7 @@ static void pwm_enable(const struct device *dev, int enabled)
 					     IT8801_PWMMCR_MCR_MASK, 0);
 	}
 	if (ret != 0) {
-		LOG_ERR("Failed to enable pwm (ret %d)", ret);
+		LOG_ERROR("Failed to enable pwm (ret %d)", ret);
 		return;
 	}
 }
@@ -95,7 +95,7 @@ static int pwm_it8801_set_cycles(const struct device *dev, uint32_t channel, uin
 
 		ret = i2c_reg_update_byte_dt(&config->i2c_dev, IT8801_REG_PWMODDSR, mask, mask);
 		if (ret != 0) {
-			LOG_ERR("Failed to set push-pull (ret %d)", ret);
+			LOG_ERROR("Failed to set push-pull (ret %d)", ret);
 			return ret;
 		}
 	}
@@ -110,7 +110,7 @@ static int pwm_it8801_set_cycles(const struct device *dev, uint32_t channel, uin
 
 	ret = i2c_reg_write_byte_dt(&config->i2c_dev, config->reg_dcr, duty);
 	if (ret != 0) {
-		LOG_ERR("Failed to set cycles (ret %d)", ret);
+		LOG_ERROR("Failed to set cycles (ret %d)", ret);
 		return ret;
 	}
 
@@ -127,7 +127,7 @@ static int pwm_it8801_init(const struct device *dev)
 
 	/* Verify multi-function parent is ready */
 	if (!device_is_ready(config->mfd)) {
-		LOG_ERR("(pwm)%s is not ready", config->mfd->name);
+		LOG_ERROR("(pwm)%s is not ready", config->mfd->name);
 		return -ENODEV;
 	}
 
@@ -140,7 +140,7 @@ static int pwm_it8801_init(const struct device *dev)
 						config->altctrl[i].pin,
 						config->altctrl[i].alt_func);
 		if (ret != 0) {
-			LOG_ERR("Failed to configure pins (ret %d)", ret);
+			LOG_ERROR("Failed to configure pins (ret %d)", ret);
 			return ret;
 		}
 	}

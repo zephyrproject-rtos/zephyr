@@ -267,7 +267,7 @@ static int regulator_adp5360_enable(const struct device *dev)
 	if (config->desc->is_buckboost && config->en_gpio.port != NULL) {
 		ret = gpio_pin_set_dt(&config->en_gpio, 1);
 		if (ret < 0) {
-			LOG_ERR("Failed to set buck-boost enable GPIO pin");
+			LOG_ERROR("Failed to set buck-boost enable GPIO pin");
 			return ret;
 		}
 	}
@@ -288,7 +288,7 @@ static int regulator_adp5360_disable(const struct device *dev)
 	if (config->desc->is_buckboost && config->en_gpio.port != NULL) {
 		ret = gpio_pin_set_dt(&config->en_gpio, 0);
 		if (ret < 0) {
-			LOG_ERR("Failed to set buck-boost enable GPIO pin");
+			LOG_ERROR("Failed to set buck-boost enable GPIO pin");
 			return ret;
 		}
 	}
@@ -373,7 +373,7 @@ static int regulator_adp5360_init(const struct device *dev)
 					    config->desc->is_buckboost ?
 					    GPIO_OUTPUT_INACTIVE : GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure enable GPIO pin");
+			LOG_ERROR("Failed to configure enable GPIO pin");
 			return ret;
 		}
 	}

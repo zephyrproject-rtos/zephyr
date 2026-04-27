@@ -248,7 +248,7 @@ static int icm42x70_set_accel_power_mode(struct icm42x70_data *drv_data,
 			if (drv_data->accel_hz <= 400) {
 				inv_imu_enable_accel_low_power_mode(&drv_data->driver);
 			} else {
-				LOG_ERR("Not supported ATTR value");
+				LOG_ERROR("Not supported ATTR value");
 				return -EINVAL;
 			}
 		}
@@ -259,13 +259,13 @@ static int icm42x70_set_accel_power_mode(struct icm42x70_data *drv_data,
 			if (drv_data->accel_hz >= 12) {
 				inv_imu_enable_accel_low_noise_mode(&drv_data->driver);
 			} else {
-				LOG_ERR("Not supported ATTR value");
+				LOG_ERROR("Not supported ATTR value");
 				return -EINVAL;
 			}
 		}
 		drv_data->accel_pwr_mode = val->val1;
 	} else {
-		LOG_ERR("Not supported ATTR value");
+		LOG_ERROR("Not supported ATTR value");
 		return -EINVAL;
 	}
 	return 0;
@@ -292,7 +292,7 @@ static int icm42x70_set_accel_odr(struct icm42x70_data *drv_data, const struct s
 		inv_imu_disable_accel(&drv_data->driver);
 		drv_data->accel_hz = val->val1;
 	} else {
-		LOG_ERR("Incorrect sampling value");
+		LOG_ERROR("Incorrect sampling value");
 		return -EINVAL;
 	}
 	return 0;
@@ -301,7 +301,7 @@ static int icm42x70_set_accel_odr(struct icm42x70_data *drv_data, const struct s
 static int icm42x70_set_accel_fs(struct icm42x70_data *drv_data, const struct sensor_value *val)
 {
 	if (val->val1 > 16 || val->val1 < 2) {
-		LOG_ERR("Incorrect fullscale value");
+		LOG_ERROR("Incorrect fullscale value");
 		return -EINVAL;
 	}
 	inv_imu_set_accel_fsr(&drv_data->driver,
@@ -324,19 +324,19 @@ static int icm42x70_accel_config(struct icm42x70_data *drv_data, enum sensor_att
 
 	} else if ((enum sensor_attribute_icm42x70)attr == SENSOR_ATTR_BW_FILTER_LPF) {
 		if (val->val1 > 180) {
-			LOG_ERR("Incorrect low pass filter bandwidth value");
+			LOG_ERROR("Incorrect low pass filter bandwidth value");
 			return -EINVAL;
 		}
 		inv_imu_set_accel_ln_bw(&drv_data->driver, convert_ln_bw_to_bitfield(val->val1));
 
 	} else if ((enum sensor_attribute_icm42x70)attr == SENSOR_ATTR_AVERAGING) {
 		if (val->val1 > 64 || val->val1 < 2) {
-			LOG_ERR("Incorrect averaging filter value");
+			LOG_ERROR("Incorrect averaging filter value");
 			return -EINVAL;
 		}
 		inv_imu_set_accel_lp_avg(&drv_data->driver, convert_lp_avg_to_bitfield(val->val1));
 	} else {
-		LOG_ERR("Unsupported attribute");
+		LOG_ERROR("Unsupported attribute");
 		return -EINVAL;
 	}
 	return 0;
@@ -357,19 +357,19 @@ static int icm42x70_sensor_init(const struct device *dev)
 	data->serif.serif_type = config->serif_type;
 	err = inv_imu_init(&data->driver, &data->serif, NULL);
 	if (err < 0) {
-		LOG_ERR("Init failed: %d", err);
+		LOG_ERROR("Init failed: %d", err);
 		return err;
 	}
 
 	err = inv_imu_get_who_am_i(&data->driver, &data->chip_id);
 	if (err < 0) {
-		LOG_ERR("ID read failed: %d", err);
+		LOG_ERROR("ID read failed: %d", err);
 		return err;
 	}
 
 	if (data->chip_id != data->imu_whoami) {
-		LOG_ERR("invalid WHO_AM_I value, was 0x%x but expected 0x%x for %s", data->chip_id,
-			data->imu_whoami, data->imu_name);
+		LOG_ERROR("invalid WHO_AM_I value, was 0x%x but expected 0x%x for %s",
+			  data->chip_id, data->imu_whoami, data->imu_name);
 		return -ENOTSUP;
 	}
 
@@ -388,7 +388,7 @@ static int icm42x70_turn_on_sensor(const struct device *dev)
 	data->accel_fs =
 		convert_bitfield_to_acc_fs((cfg->accel_fs << ACCEL_CONFIG0_ACCEL_UI_FS_SEL_POS));
 	if ((err < 0) || (data->accel_fs == 0)) {
-		LOG_ERR("Failed to configure accel FSR");
+		LOG_ERROR("Failed to configure accel FSR");
 		return -EIO;
 	}
 	LOG_DBG("Set accel full scale to: %d G", data->accel_fs);
@@ -401,7 +401,7 @@ static int icm42x70_turn_on_sensor(const struct device *dev)
 		data->gyro_fs = convert_bitfield_to_gyr_fs(
 			(cfg->gyro_fs << GYRO_CONFIG0_GYRO_UI_FS_SEL_POS));
 		if ((err < 0) || (data->gyro_fs == 0)) {
-			LOG_ERR("Failed to configure gyro FSR");
+			LOG_ERROR("Failed to configure gyro FSR");
 			return -EIO;
 		}
 		LOG_DBG("Set gyro full scale to: %d dps", data->gyro_fs);
@@ -420,7 +420,7 @@ static int icm42x70_turn_on_sensor(const struct device *dev)
 	}
 #endif
 	if (err < 0) {
-		LOG_ERR("Failed to configure filtering.");
+		LOG_ERROR("Failed to configure filtering.");
 		return -EIO;
 	}
 
@@ -434,7 +434,7 @@ static int icm42x70_turn_on_sensor(const struct device *dev)
 			   (convert_dt_enum_to_freq(cfg->accel_hz) <= 400)) {
 			err |= inv_imu_enable_accel_low_power_mode(&data->driver);
 		} else {
-			LOG_ERR("Not supported power mode value");
+			LOG_ERROR("Not supported power mode value");
 		}
 	}
 #if CONFIG_USE_EMD_ICM42670
@@ -448,7 +448,7 @@ static int icm42x70_turn_on_sensor(const struct device *dev)
 	}
 #endif
 	if (err < 0) {
-		LOG_ERR("Failed to configure ODR.");
+		LOG_ERROR("Failed to configure ODR.");
 		return -EIO;
 	}
 
@@ -819,11 +819,11 @@ static int icm42x70_attr_set(const struct device *dev, enum sensor_channel chan,
 			} else if (val->val1 == TDK_APEX_WOM) {
 				icm42x70_apex_enable_wom(&drv_data->driver);
 			} else {
-				LOG_ERR("Not supported ATTR value");
+				LOG_ERROR("Not supported ATTR value");
 			}
 #endif
 		} else {
-			LOG_ERR("Not supported ATTR");
+			LOG_ERROR("Not supported ATTR");
 			return -EINVAL;
 		}
 	} else if (SENSOR_CHANNEL_IS_ACCEL(chan)) {
@@ -835,7 +835,7 @@ static int icm42x70_attr_set(const struct device *dev, enum sensor_channel chan,
 		icm42670_gyro_config(drv_data, attr, val);
 #endif
 	} else {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		(void)drv_data;
 		return -EINVAL;
 	}
@@ -866,7 +866,7 @@ static int icm42x70_attr_get(const struct device *dev, enum sensor_channel chan,
 		} else if (attr == SENSOR_ATTR_FULL_SCALE) {
 			val->val1 = data->accel_fs;
 		} else {
-			LOG_ERR("Unsupported attribute");
+			LOG_ERROR("Unsupported attribute");
 			res = -EINVAL;
 		}
 		break;
@@ -882,7 +882,7 @@ static int icm42x70_attr_get(const struct device *dev, enum sensor_channel chan,
 			} else if (attr == SENSOR_ATTR_FULL_SCALE) {
 				val->val1 = data->gyro_fs;
 			} else {
-				LOG_ERR("Unsupported attribute");
+				LOG_ERROR("Unsupported attribute");
 				res = -EINVAL;
 			}
 		} else {
@@ -897,7 +897,7 @@ static int icm42x70_attr_get(const struct device *dev, enum sensor_channel chan,
 		break;
 
 	default:
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		res = -EINVAL;
 		break;
 	}
@@ -920,7 +920,7 @@ static int icm42x70_init(const struct device *dev)
 	int res = 0;
 
 	if (icm42x70_bus_check(dev) < 0) {
-		LOG_ERR("bus check failed");
+		LOG_ERROR("bus check failed");
 		return -ENODEV;
 	}
 
@@ -938,7 +938,7 @@ static int icm42x70_init(const struct device *dev)
 	data->temp = 0;
 
 	if (icm42x70_sensor_init(dev)) {
-		LOG_ERR("could not initialize sensor");
+		LOG_ERROR("could not initialize sensor");
 		return -EIO;
 	}
 
@@ -946,7 +946,7 @@ static int icm42x70_init(const struct device *dev)
 	res |= icm42x70_trigger_enable_interrupt(dev);
 	res |= icm42x70_trigger_init(dev);
 	if (res < 0) {
-		LOG_ERR("Failed to initialize interrupt.");
+		LOG_ERROR("Failed to initialize interrupt.");
 		return res;
 	}
 #endif

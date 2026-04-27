@@ -78,7 +78,7 @@ static int hts221_sample_fetch(const struct device *dev,
 	status = hts221_read_reg(ctx, HTS221_HUMIDITY_OUT_L |
 				 HTS221_AUTOINCREMENT_ADDR, buf, 4);
 	if (status < 0) {
-		LOG_ERR("Failed to fetch data sample.");
+		LOG_ERROR("Failed to fetch data sample.");
 		return status;
 	}
 
@@ -99,7 +99,7 @@ static int hts221_read_conversion_data(const struct device *dev)
 	status = hts221_read_reg(ctx, HTS221_H0_RH_X2 |
 				 HTS221_AUTOINCREMENT_ADDR, buf, 16);
 	if (status < 0) {
-		LOG_ERR("Failed to read conversion data.");
+		LOG_ERROR("Failed to read conversion data.");
 		return status;
 	}
 
@@ -134,12 +134,12 @@ int hts221_init(const struct device *dev)
 
 	status = hts221_device_id_get(ctx, &id);
 	if (status < 0) {
-		LOG_ERR("Failed to read chip ID.");
+		LOG_ERROR("Failed to read chip ID.");
 		return status;
 	}
 
 	if (id != HTS221_ID) {
-		LOG_ERR("Invalid chip ID.");
+		LOG_ERROR("Invalid chip ID.");
 		return -EINVAL;
 	}
 
@@ -151,25 +151,25 @@ int hts221_init(const struct device *dev)
 	}
 
 	if (idx == ARRAY_SIZE(hts221_odrs)) {
-		LOG_ERR("Invalid ODR value %s.", CONFIG_HTS221_ODR);
+		LOG_ERROR("Invalid ODR value %s.", CONFIG_HTS221_ODR);
 		return -EINVAL;
 	}
 
 	status = hts221_data_rate_set(ctx, hts221_odrs[idx].odr);
 	if (status < 0) {
-		LOG_ERR("Could not set output data rate");
+		LOG_ERROR("Could not set output data rate");
 		return status;
 	}
 
 	status = hts221_block_data_update_set(ctx, 1);
 	if (status < 0) {
-		LOG_ERR("Could not set BDU bit");
+		LOG_ERROR("Could not set BDU bit");
 		return status;
 	}
 
 	status = hts221_power_on_set(ctx, 1);
 	if (status < 0) {
-		LOG_ERR("Could not set PD bit");
+		LOG_ERROR("Could not set PD bit");
 		return status;
 	}
 
@@ -181,14 +181,14 @@ int hts221_init(const struct device *dev)
 
 	status = hts221_read_conversion_data(dev);
 	if (status < 0) {
-		LOG_ERR("Failed to read conversion data.");
+		LOG_ERROR("Failed to read conversion data.");
 		return status;
 	}
 
 #ifdef CONFIG_HTS221_TRIGGER
 	status = hts221_init_interrupt(dev);
 	if (status < 0) {
-		LOG_ERR("Failed to initialize interrupt.");
+		LOG_ERROR("Failed to initialize interrupt.");
 		return status;
 	}
 #endif

@@ -127,12 +127,12 @@ static int dma_channel_common_checks(const struct device *dev, uint32_t channel)
 	struct dma_renesas_rz_data *data = dev->data;
 
 	if (channel >= config->num_channels) {
-		LOG_ERR("%d: Invalid DMA channel %d.", __LINE__, channel);
+		LOG_ERROR("%d: Invalid DMA channel %d.", __LINE__, channel);
 		return -EINVAL;
 	}
 
 	if (!data->channels[channel].is_configured) {
-		LOG_ERR("%d: DMA channel %d should first be configured.", __LINE__, channel);
+		LOG_ERROR("%d: DMA channel %d should first be configured.", __LINE__, channel);
 		return -EINVAL;
 	}
 
@@ -143,24 +143,24 @@ static inline int dma_channel_config_check_parameters(const struct device *dev,
 						      struct dma_config *cfg)
 {
 	if ((cfg == NULL) || (cfg->head_block == NULL)) {
-		LOG_ERR("%d: Missing configuration structure.", __LINE__);
+		LOG_ERROR("%d: Missing configuration structure.", __LINE__);
 		return -EFAULT;
 	}
 
 	if (1 < cfg->block_count) {
-		LOG_ERR("%d: Link Mode is not supported, but only support 1 block per transfer",
-			__LINE__);
+		LOG_ERROR("%d: Link Mode is not supported, but only support 1 block per transfer",
+			  __LINE__);
 		return -ENOTSUP;
 	}
 
 	if (cfg->source_chaining_en || cfg->dest_chaining_en) {
-		LOG_ERR("%d:Channel chaining is not supported.", __LINE__);
+		LOG_ERROR("%d:Channel chaining is not supported.", __LINE__);
 		return -ENOTSUP;
 	}
 
 	if (cfg->head_block->dest_scatter_count || cfg->head_block->source_gather_count ||
 	    cfg->head_block->source_gather_interval || cfg->head_block->dest_scatter_interval) {
-		LOG_ERR("%d: Scatter and gather are not supported.", __LINE__);
+		LOG_ERROR("%d: Scatter and gather are not supported.", __LINE__);
 		return -ENOTSUP;
 	}
 
@@ -185,7 +185,7 @@ static int dma_channel_set_size(uint32_t size)
 		transfer_size = TRANSFER_SIZE_8_BYTE;
 		break;
 	default:
-		LOG_ERR("%d: Unsupported data width.", __LINE__);
+		LOG_ERROR("%d: Unsupported data width.", __LINE__);
 		return -ENOTSUP;
 	}
 
@@ -214,7 +214,7 @@ static inline int dma_channel_config_save_parameters(const struct device *dev, u
 		dest_transfer_addr_mode = TRANSFER_ADDR_MODE_INCREMENTED;
 		break;
 	default:
-		LOG_ERR("%d, Unsupported destination address adjustment.", __LINE__);
+		LOG_ERROR("%d, Unsupported destination address adjustment.", __LINE__);
 		return -ENOTSUP;
 	}
 
@@ -226,7 +226,7 @@ static inline int dma_channel_config_save_parameters(const struct device *dev, u
 		src_transfer_addr_mode = TRANSFER_ADDR_MODE_INCREMENTED;
 		break;
 	default:
-		LOG_ERR("%d, Unsupported source address adjustment.", __LINE__);
+		LOG_ERROR("%d, Unsupported source address adjustment.", __LINE__);
 		return -ENOTSUP;
 	}
 
@@ -249,7 +249,7 @@ static inline int dma_channel_config_save_parameters(const struct device *dev, u
 		activation_with_software_trigger = false;
 		break;
 	default:
-		LOG_ERR("%d: Unsupported direction mode.", __LINE__);
+		LOG_ERROR("%d: Unsupported direction mode.", __LINE__);
 		return -ENOTSUP;
 	}
 
@@ -261,7 +261,7 @@ static inline int dma_channel_config_save_parameters(const struct device *dev, u
 	p_extend->detection_mode = DMAC_DETECTION_RISING_EDGE;
 
 	if (cfg->head_block->block_size > UINT16_MAX) {
-		LOG_ERR("Larger than max block size");
+		LOG_ERROR("Larger than max block size");
 		return -ENOTSUP;
 	}
 
@@ -344,7 +344,7 @@ static inline int dma_channel_config_save_parameters(const struct device *dev, u
 	}
 
 	if (1 < cfg->block_count) {
-		LOG_ERR("%d: Link Mode is not supported.", __LINE__);
+		LOG_ERROR("%d: Link Mode is not supported.", __LINE__);
 	} else {
 		p_extend->dmac_mode = RZ_DMA_MODE_SELECT_REGISTER;
 	}
@@ -371,8 +371,8 @@ static int dma_renesas_rz_get_status(const struct device *dev, uint32_t channel,
 
 	ret = config->fsp_api->infoGet(data->channels[channel].fsp_ctrl, &properties);
 	if (FSP_SUCCESS != (fsp_err_t)ret) {
-		LOG_ERR("%d: Failed to get info dma channel %d info with status %d.", __LINE__,
-			channel, ret);
+		LOG_ERROR("%d: Failed to get info dma channel %d info with status %d.", __LINE__,
+			  channel, ret);
 		return -EIO;
 	}
 
@@ -433,7 +433,7 @@ static int dma_renesas_rz_resume(const struct device *dev, uint32_t channel)
 #ifdef CONFIG_CPU_CORTEX_A
 	/* Check whether a transfer is suspended. */
 	if (0 == p_ctrl->p_reg->CHSTAT_b.SUS) {
-		LOG_ERR("%d: DMA channel not suspend.", channel);
+		LOG_ERROR("%d: DMA channel not suspend.", channel);
 		return -EINVAL;
 	}
 
@@ -445,7 +445,7 @@ static int dma_renesas_rz_resume(const struct device *dev, uint32_t channel)
 
 	/* Check whether a transfer is suspended. */
 	if (0 == p_ctrl->p_reg->GRP[group].CH[prv_channel].CHSTAT_b.SUS) {
-		LOG_ERR("%d: DMA channel not suspend.", channel);
+		LOG_ERROR("%d: DMA channel not suspend.", channel);
 		return -EINVAL;
 	}
 
@@ -470,8 +470,8 @@ static int dma_renesas_rz_stop(const struct device *dev, uint32_t channel)
 	ret = config->fsp_api->disable(data->channels[channel].fsp_ctrl);
 
 	if (FSP_SUCCESS != (fsp_err_t)ret) {
-		LOG_ERR("%d: Failed to stop dma channel %d info with status %d.", __LINE__, channel,
-			ret);
+		LOG_ERROR("%d: Failed to stop dma channel %d info with status %d.", __LINE__,
+			  channel, ret);
 		return -EIO;
 	}
 
@@ -494,8 +494,8 @@ static int dma_renesas_rz_start(const struct device *dev, uint32_t channel)
 	ret = config->fsp_api->enable(data->channels[channel].fsp_ctrl);
 
 	if (FSP_SUCCESS != (fsp_err_t)ret) {
-		LOG_ERR("%d: Failed to start %d dma channel with status %d.", __LINE__, channel,
-			ret);
+		LOG_ERROR("%d: Failed to start %d dma channel with status %d.", __LINE__, channel,
+			  ret);
 		return -EIO;
 	}
 
@@ -516,8 +516,8 @@ static int dma_renesas_rz_start(const struct device *dev, uint32_t channel)
 						     (transfer_start_mode_t)NULL);
 
 		if (FSP_SUCCESS != (fsp_err_t)ret) {
-			LOG_ERR("%d: Failed to trigger %d dma channel with status %d.", __LINE__,
-				channel, ret);
+			LOG_ERROR("%d: Failed to trigger %d dma channel with status %d.", __LINE__,
+				  channel, ret);
 			return -EIO;
 		}
 	}
@@ -534,7 +534,7 @@ static int dma_renesas_rz_configure(const struct device *dev, uint32_t channel,
 	int ret;
 
 	if (channel >= config->num_channels) {
-		LOG_ERR("%d: Invalid DMA channel %d.", __LINE__, channel);
+		LOG_ERROR("%d: Invalid DMA channel %d.", __LINE__, channel);
 		return -EINVAL;
 	}
 
@@ -559,8 +559,8 @@ static int dma_renesas_rz_configure(const struct device *dev, uint32_t channel,
 	ret = config->fsp_api->open(channel_cfg->fsp_ctrl, &channel_cfg->fsp_cfg);
 
 	if (FSP_SUCCESS != (fsp_err_t)ret) {
-		LOG_ERR("%d: Failed to configure %d dma channel with status %d.", __LINE__, channel,
-			ret);
+		LOG_ERROR("%d: Failed to configure %d dma channel with status %d.", __LINE__,
+			  channel, ret);
 		return -EIO;
 	}
 	/* Mark that requested channel is configured successfully. */
@@ -587,7 +587,7 @@ static int dma_renesas_rz_reload(const struct device *dev, uint32_t channel, uin
 	}
 
 	if (size == 0) {
-		LOG_ERR("%d: Size must to not equal to 0.", __LINE__);
+		LOG_ERROR("%d: Size must to not equal to 0.", __LINE__);
 		return -EINVAL;
 	}
 
@@ -600,8 +600,8 @@ static int dma_renesas_rz_reload(const struct device *dev, uint32_t channel, uin
 	ret = config->fsp_api->reconfigure(data->channels[channel].fsp_ctrl, p_info);
 
 	if (FSP_SUCCESS != (fsp_err_t)ret) {
-		LOG_ERR("%d: Failed to reload %d dma channel with status %d.", __LINE__, channel,
-			ret);
+		LOG_ERROR("%d: Failed to reload %d dma channel with status %d.", __LINE__, channel,
+			  ret);
 		return -EIO;
 	}
 
@@ -611,7 +611,7 @@ static int dma_renesas_rz_reload(const struct device *dev, uint32_t channel, uin
 static int dma_renesas_rz_get_attribute(const struct device *dev, uint32_t type, uint32_t *val)
 {
 	if (val == NULL) {
-		LOG_ERR("%d: Invalid attribute context.", __LINE__);
+		LOG_ERROR("%d: Invalid attribute context.", __LINE__);
 		return -EINVAL;
 	}
 
@@ -642,7 +642,7 @@ static bool dma_renesas_rz_channel_filter(const struct device *dev, int channel,
 	struct dma_renesas_rz_data *data = dev->data;
 
 	if (channel >= config->num_channels) {
-		LOG_ERR("%d: Invalid DMA channel %d.", __LINE__, channel);
+		LOG_ERROR("%d: Invalid DMA channel %d.", __LINE__, channel);
 		return false;
 	}
 
@@ -659,7 +659,7 @@ static void dma_renesas_rz_channel_release(const struct device *dev, uint32_t ch
 	fsp_err_t ret;
 
 	if (channel >= config->num_channels) {
-		LOG_ERR("%d: Invalid DMA channel %d.", __LINE__, channel);
+		LOG_ERROR("%d: Invalid DMA channel %d.", __LINE__, channel);
 		return;
 	}
 
@@ -667,8 +667,8 @@ static void dma_renesas_rz_channel_release(const struct device *dev, uint32_t ch
 	ret = config->fsp_api->close(data->channels[channel].fsp_ctrl);
 
 	if (ret != FSP_SUCCESS) {
-		LOG_ERR("%d: Failed to release %d dma channel with status %d.", __LINE__, channel,
-			ret);
+		LOG_ERROR("%d: Failed to release %d dma channel with status %d.", __LINE__, channel,
+			  ret);
 	}
 }
 

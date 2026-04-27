@@ -120,7 +120,7 @@ int flash_gd32_write_range(off_t offset, const void *data, size_t len)
 	if (FMC_STAT & GD32_FMC_V1_WRITE_ERR) {
 		ret = -EIO;
 		FMC_STAT |= GD32_FMC_V1_WRITE_ERR;
-		LOG_ERR("FMC programming failed");
+		LOG_ERROR("FMC programming failed");
 	}
 
 expired_out:
@@ -155,7 +155,7 @@ static int gd32_fmc_v1_page_erase(uint32_t page_addr)
 	if (FMC_STAT & GD32_FMC_V1_ERASE_ERR) {
 		ret = -EIO;
 		FMC_STAT |= GD32_FMC_V1_ERASE_ERR;
-		LOG_ERR("FMC page %u erase failed", page_addr);
+		LOG_ERROR("FMC page %u erase failed", page_addr);
 	}
 
 expired_out:

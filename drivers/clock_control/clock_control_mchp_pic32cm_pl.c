@@ -142,14 +142,14 @@ static int clock_check_subsys(union clock_mchp_subsys subsys)
 		break;
 
 	default:
-		LOG_ERR("Unsupported SUBSYS_TYPE");
+		LOG_ERROR("Unsupported SUBSYS_TYPE");
 		return -EINVAL;
 	}
 
 	/* Check if the specified id is valid. */
 	if ((subsys.bits.inst > inst_max) || (subsys.bits.gclkperiph > gclkperiph_max) ||
 	    (subsys.bits.mclkbus > mclkbus_max) || (subsys.bits.mclkmaskbit > mclkmaskbit_max)) {
-		LOG_ERR("Invalid SUBSYS ID");
+		LOG_ERROR("Invalid SUBSYS ID");
 		return -EINVAL;
 	}
 
@@ -175,7 +175,7 @@ static __IO uint32_t *get_mclkbus_mask_reg(mclk_registers_t *mclk_regs, uint32_t
 		reg32 = &mclk_regs->MCLK_APBCMASK;
 		break;
 	default:
-		LOG_ERR("Unsupported mclkbus");
+		LOG_ERROR("Unsupported mclkbus");
 		break;
 	}
 
@@ -334,7 +334,7 @@ static int clock_off(const struct clock_mchp_config *config, const union clock_m
 			     TIMEOUT_XOSC32KCTRL_RDY,
 			     (k_is_pre_kernel() ? k_busy_wait(1) : k_sleep(K_USEC(100)))) ==
 		    false) {
-			LOG_ERR("XOSC32KCTRL ready timed out");
+			LOG_ERROR("XOSC32KCTRL ready timed out");
 			ret_status = -ETIMEDOUT;
 		}
 		break;
@@ -354,7 +354,7 @@ static int clock_off(const struct clock_mchp_config *config, const union clock_m
 			     TIMEOUT_GCLKGEN_BUSY_RDY,
 			     (k_is_pre_kernel() ? k_busy_wait(1) : k_sleep(K_USEC(100)))) ==
 		    false) {
-			LOG_ERR("GCLKGEN ready timed out");
+			LOG_ERROR("GCLKGEN ready timed out");
 			ret_status = -ETIMEDOUT;
 		}
 		break;
@@ -545,7 +545,7 @@ static int wait_for_clock_on(const struct device *dev, clock_control_subsys_t sy
 			     TIMEOUT_VALUE_US(config->on_timeout_ms),
 			     (k_is_pre_kernel() ? k_busy_wait(1) : k_sleep(K_USEC(100)))) ==
 		    false) {
-			LOG_ERR("clk on timeout :SUBSYS_TYPE_XOSC32K");
+			LOG_ERROR("clk on timeout :SUBSYS_TYPE_XOSC32K");
 			ret_val = -ETIMEDOUT;
 		}
 		break;
@@ -555,7 +555,7 @@ static int wait_for_clock_on(const struct device *dev, clock_control_subsys_t sy
 			     TIMEOUT_VALUE_US(config->on_timeout_ms),
 			     (k_is_pre_kernel() ? k_busy_wait(1) : k_sleep(K_USEC(100)))) ==
 		    false) {
-			LOG_ERR("clk on timeout : SUBSYS_TYPE_OSC32K");
+			LOG_ERROR("clk on timeout : SUBSYS_TYPE_OSC32K");
 			ret_val = -ETIMEDOUT;
 		}
 		break;
@@ -564,7 +564,7 @@ static int wait_for_clock_on(const struct device *dev, clock_control_subsys_t sy
 			     TIMEOUT_VALUE_US(config->on_timeout_ms),
 			     (k_is_pre_kernel() ? k_busy_wait(1) : k_sleep(K_USEC(100)))) ==
 		    false) {
-			LOG_ERR("clk on timeout  : %x", subsys.val);
+			LOG_ERROR("clk on timeout  : %x", subsys.val);
 			ret_val = -ETIMEDOUT;
 		}
 		break;
@@ -735,7 +735,7 @@ static uint32_t find_oschf_frequency_bitpos(uint32_t freq)
 		break;
 	default:
 		freq_bitpos = OSCCTRL_OSCHFCTRL_FRQSEL_4M_Val;
-		LOG_ERR("unsupported frequency %d, setting default to 4MHz", __LINE__);
+		LOG_ERROR("unsupported frequency %d, setting default to 4MHz", __LINE__);
 		break;
 	}
 
@@ -765,7 +765,7 @@ static void clock_osc32k_init(const struct device *dev, bool on_demand)
 		if (WAIT_FOR(((osc32kctrl_regs->OSC32KCTRL_STATUS &
 			       OSC32KCTRL_STATUS_OSC32KRDY_Msk) != 0),
 			     TIMEOUT_OSC32KCTRL_RDY, NULL) == false) {
-			LOG_ERR("OSC32KCTRL ready timed out");
+			LOG_ERROR("OSC32KCTRL ready timed out");
 			return;
 		}
 		data->gclkgen_src_on_status |= BIT(CLOCK_MCHP_GCLK_SRC_OSC32K);
@@ -861,7 +861,7 @@ void clock_mclkperiph_init(const struct device *dev, uint32_t subsys_val, uint8_
 				if (WAIT_FOR(((osc32kctrl_regs->OSC32KCTRL_STATUS &                \
 					       OSC32KCTRL_STATUS_XOSC32KRDY_Msk) != 0),            \
 					     TIMEOUT_XOSC32KCTRL_RDY, NULL) == false) {            \
-					LOG_ERR("XOSC32KCTRL ready timed out");                    \
+					LOG_ERROR("XOSC32KCTRL ready timed out");                  \
 				} else {                                                           \
 					data->gclkgen_src_on_status |=                             \
 						BIT(CLOCK_MCHP_GCLK_SRC_XOSC32K);                  \
@@ -890,7 +890,7 @@ void clock_mclkperiph_init(const struct device *dev, uint32_t subsys_val, uint8_
 			uint32_t val32 = 0;                                                        \
 			if ((data->gclkgen_src_on_status &                                         \
 			     BIT(DT_ENUM_IDX(child, gclkgen_src))) != 0) {                         \
-				LOG_ERR("glckgen_src of subsys %x not turned on", subsys.val);     \
+				LOG_ERROR("glckgen_src of subsys %x not turned on", subsys.val);   \
 				break;                                                             \
 			}                                                                          \
 			GET_PIN_SRC_FREQ(child)                                                    \
@@ -912,8 +912,8 @@ void clock_mclkperiph_init(const struct device *dev, uint32_t subsys_val, uint8_
 			config->gclk_regs->GCLK_GENCTRL[inst] = val32;                             \
 			if (WAIT_FOR((config->gclk_regs->GCLK_SYNCBUSY == 0), TIMEOUT_REG_SYNC,    \
 				     NULL) == false) {                                             \
-				LOG_ERR("GCLK_SYNCBUSY timeout on writing GCLK_GENCTRL[%d]",       \
-					inst);                                                     \
+				LOG_ERROR("GCLK_SYNCBUSY timeout on writing GCLK_GENCTRL[%d]",     \
+					  inst);                                                   \
 				break;                                                             \
 			}                                                                          \
 			/* To avoid changing oschf, while gclk0 drives it. Else will affect CPU */ \

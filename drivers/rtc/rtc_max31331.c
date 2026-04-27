@@ -169,7 +169,7 @@ static int rtc_max31331_get_time(const struct device *dev, struct rtc_time *time
 
 	ret = max31331_reg_read(dev, MAX31331_SECONDS, raw_time, ARRAY_SIZE(raw_time));
 	if (ret) {
-		LOG_ERR("Unable to get time. Err: %i", ret);
+		LOG_ERROR("Unable to get time. Err: %i", ret);
 		return ret;
 	}
 
@@ -206,7 +206,7 @@ static int rtc_max31331_set_time(const struct device *dev, const struct rtc_time
 	uint8_t raw_time[7];
 
 	if ((timeptr == NULL) || !rtc_utils_validate_rtc_time(timeptr, MAX31331_RTC_TIME_MASK)) {
-		LOG_ERR("invalid time");
+		LOG_ERROR("invalid time");
 		return -EINVAL;
 	}
 
@@ -227,7 +227,7 @@ static int rtc_max31331_set_time(const struct device *dev, const struct rtc_time
 
 	ret = max31331_reg_write_multiple(dev, MAX31331_SECONDS, raw_time, ARRAY_SIZE(raw_time));
 	if (ret) {
-		LOG_ERR("Error when setting time: %i", ret);
+		LOG_ERROR("Error when setting time: %i", ret);
 		return ret;
 	}
 	return 0;
@@ -238,12 +238,12 @@ static int rtc_max31331_set_time(const struct device *dev, const struct rtc_time
 static inline int validate_alarm_1_time_mask(uint16_t mask)
 {
 	if (mask & RTC_ALARM_TIME_MASK_YEARDAY) {
-		LOG_ERR("Alarm 1 does not support yearday field");
+		LOG_ERROR("Alarm 1 does not support yearday field");
 		return -EINVAL;
 	}
 
 	if (mask == 0) {
-		LOG_ERR("Alarm 1 time mask not set");
+		LOG_ERROR("Alarm 1 time mask not set");
 		return -EINVAL;
 	}
 	return 0;
@@ -264,7 +264,7 @@ static int set_alarm_time_1(const struct device *dev, uint16_t mask, const struc
 
 	ret = validate_alarm_1_time_mask(mask);
 	if (ret) {
-		LOG_ERR("Invalid alarm 1 time mask: %i", ret);
+		LOG_ERROR("Invalid alarm 1 time mask: %i", ret);
 		return ret;
 	}
 
@@ -320,7 +320,7 @@ static int set_alarm_time_1(const struct device *dev, uint16_t mask, const struc
 	ret = max31331_reg_write_multiple(dev, MAX31331_ALARM_1_SECONDS, raw_time,
 					  ARRAY_SIZE(raw_time));
 	if (ret) {
-		LOG_ERR("Error when setting alarm: %i", ret);
+		LOG_ERROR("Error when setting alarm: %i", ret);
 		return ret;
 	}
 	return 0;
@@ -335,22 +335,22 @@ static int set_alarm_time_1(const struct device *dev, uint16_t mask, const struc
 static inline int validate_alarm_2_time_mask(uint16_t mask)
 {
 	if (mask == 0) {
-		LOG_ERR("Alarm 2 time mask not set");
+		LOG_ERROR("Alarm 2 time mask not set");
 		return -EINVAL;
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_SECOND) {
-		LOG_ERR("Alarm 2 does not support seconds field");
+		LOG_ERROR("Alarm 2 does not support seconds field");
 		return -EINVAL;
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_YEAR) {
-		LOG_ERR("Alarm 2 does not support year field");
+		LOG_ERROR("Alarm 2 does not support year field");
 		return -EINVAL;
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_MONTH) {
-		LOG_ERR("Alarm 2 does not support month field");
+		LOG_ERROR("Alarm 2 does not support month field");
 		return -EINVAL;
 	}
 
@@ -372,7 +372,7 @@ static int set_alarm_time_2(const struct device *dev, uint16_t mask, const struc
 
 	ret = validate_alarm_2_time_mask(mask);
 	if (ret) {
-		LOG_ERR("Invalid alarm 2 time mask: %i", ret);
+		LOG_ERROR("Invalid alarm 2 time mask: %i", ret);
 		return ret;
 	}
 
@@ -415,7 +415,7 @@ static int set_alarm_time_2(const struct device *dev, uint16_t mask, const struc
 	ret = max31331_reg_write_multiple(dev, MAX31331_ALARM_2_MINUTES, raw_time,
 					  ARRAY_SIZE(raw_time));
 	if (ret) {
-		LOG_ERR("Error when setting alarm: %i", ret);
+		LOG_ERROR("Error when setting alarm: %i", ret);
 		return ret;
 	}
 	return 0;
@@ -444,18 +444,18 @@ static int enable_alarm_interrupt(const struct device *dev, uint16_t id, uint16_
 		ret = max31331_reg_update(dev, MAX31331_INTERRUPT_ENABLE,
 					  ALARM_1_INTERRUPT_ENABLE_MASK, enable);
 		if (ret) {
-			LOG_ERR("Error setting alarm interrupt: %i", ret);
+			LOG_ERROR("Error setting alarm interrupt: %i", ret);
 			return ret;
 		}
 	} else if (id == 2) {
 		ret = max31331_reg_update(dev, MAX31331_INTERRUPT_ENABLE,
 					  ALARM_2_INTERRUPT_ENABLE_MASK, enable);
 		if (ret) {
-			LOG_ERR("Error setting alarm interrupt: %i", ret);
+			LOG_ERROR("Error setting alarm interrupt: %i", ret);
 			return ret;
 		}
 	} else {
-		LOG_ERR("Invalid Alarm ID: %d", id);
+		LOG_ERROR("Invalid Alarm ID: %d", id);
 		return -EINVAL;
 	}
 	return 0;
@@ -487,7 +487,7 @@ static int set_alarm_time(const struct device *dev, uint16_t mask, const struct 
 		}
 
 	} else {
-		LOG_ERR("Invalid Alarm ID: %d", id);
+		LOG_ERROR("Invalid Alarm ID: %d", id);
 		return -EINVAL;
 	}
 	return 0;
@@ -495,7 +495,7 @@ static int set_alarm_time(const struct device *dev, uint16_t mask, const struct 
 static int validate_mask_month_week_day(uint16_t mask)
 {
 	if ((mask & RTC_ALARM_TIME_MASK_MONTHDAY) && (mask & RTC_ALARM_TIME_MASK_WEEKDAY)) {
-		LOG_ERR("Both day and date are set. Not Supported");
+		LOG_ERROR("Both day and date are set. Not Supported");
 		return -EINVAL;
 	}
 	return 0;
@@ -520,17 +520,17 @@ static int rtc_max31331_alarm_set_time(const struct device *dev, uint16_t id, ui
 	}
 
 	if ((timeptr == NULL) || !rtc_utils_validate_rtc_time(timeptr, mask)) {
-		LOG_ERR("invalid alarm time");
+		LOG_ERROR("invalid alarm time");
 		return -EINVAL;
 	}
 	ret = set_alarm_time(dev, mask, timeptr, id);
 	if (ret) {
-		LOG_ERR("Error when setting alarm time: %i", ret);
+		LOG_ERROR("Error when setting alarm time: %i", ret);
 		return ret;
 	}
 	ret = enable_alarm_interrupt(dev, id, mask);
 	if (ret) {
-		LOG_ERR("Error when enabling alarm interrupt: %i", ret);
+		LOG_ERROR("Error when enabling alarm interrupt: %i", ret);
 		return ret;
 	}
 	return 0;
@@ -601,7 +601,7 @@ static int rtc_max31331_alarm_get_time(const struct device *dev, uint16_t id, ui
 		ret = max31331_reg_read(dev, MAX31331_ALARM_1_SECONDS, raw_time,
 					ARRAY_SIZE(raw_time));
 		if (ret) {
-			LOG_ERR("Error when getting alarm time: %i", ret);
+			LOG_ERROR("Error when getting alarm time: %i", ret);
 			return ret;
 		}
 		*mask = 0;
@@ -610,14 +610,14 @@ static int rtc_max31331_alarm_get_time(const struct device *dev, uint16_t id, ui
 	case 2:
 		ret = max31331_reg_read(dev, MAX31331_ALARM_2_MINUTES, raw_time, 3);
 		if (ret) {
-			LOG_ERR("Error when getting alarm time: %i", ret);
+			LOG_ERROR("Error when getting alarm time: %i", ret);
 			return ret;
 		}
 		*mask = 0;
 		process_mask_alarm_2(mask, raw_time);
 		return 0;
 	default:
-		LOG_ERR("Invalid Alarm ID: %d", id);
+		LOG_ERROR("Invalid Alarm ID: %d", id);
 		return -EINVAL;
 	}
 }
@@ -637,7 +637,7 @@ static int rtc_max31331_alarm_set_callback(const struct device *dev, uint16_t id
 	struct rtc_max31331_data *data = dev->data;
 
 	if (id <= 0 || id > 2) {
-		LOG_ERR("invalid ID %d", id);
+		LOG_ERROR("invalid ID %d", id);
 		return -EINVAL;
 	}
 	data->alarms[id - 1].callback = callback;
@@ -686,13 +686,13 @@ static int rtc_max31331_alarm_is_pending(const struct device *dev, uint16_t id)
 	uint8_t int_status;
 
 	if (id <= 0 || id > 2) {
-		LOG_ERR("invalid ID %d", id);
+		LOG_ERROR("invalid ID %d", id);
 		return -EINVAL;
 	}
 
 	ret = max31331_reg_read(dev, MAX31331_STATUS_REG, &int_status, 1);
 	if (ret) {
-		LOG_ERR("Failed to read interrupt status");
+		LOG_ERROR("Failed to read interrupt status");
 		return ret;
 	}
 
@@ -738,7 +738,7 @@ static void rtc_max31331_main_cb(const struct device *dev)
 	/* Read Status and Clear Flags */
 	ret = max31331_reg_read(dev, MAX31331_STATUS_REG, &int_status, 1);
 	if (ret) {
-		LOG_ERR("Failed to read interrupt status");
+		LOG_ERROR("Failed to read interrupt status");
 		return;
 	}
 
@@ -758,7 +758,7 @@ static void rtc_max31331_main_cb(const struct device *dev)
 
 	ret = gpio_pin_interrupt_configure_dt(&config->inta_gpios, GPIO_INT_EDGE_FALLING);
 	if (ret) {
-		LOG_ERR("Failed to enable INT GPIO interrupt");
+		LOG_ERROR("Failed to enable INT GPIO interrupt");
 		return;
 	}
 	__ASSERT(ret == 0, "Interrupt Configuration Failed");
@@ -780,7 +780,7 @@ static void rtc_max31331_gpio_callback(const struct device *dev, struct gpio_cal
 
 	ret = gpio_pin_interrupt_configure_dt(&config->inta_gpios, GPIO_INT_DISABLE);
 	if (ret) {
-		LOG_ERR("Failed to disable INT GPIO interrupt");
+		LOG_ERROR("Failed to disable INT GPIO interrupt");
 		return;
 	}
 #if defined(CONFIG_RTC_MAX31331_INTERRUPT_GLOBAL_THREAD)
@@ -837,25 +837,25 @@ static int rtc_max31331_alarm_init(const struct device *dev)
 	int ret = 0;
 
 	if (!gpio_is_ready_dt(&config->inta_gpios)) {
-		LOG_ERR("INT GPIO not ready");
+		LOG_ERROR("INT GPIO not ready");
 		return -ENODEV;
 	}
 
 	ret = rtc_max31331_init_alarms(dev);
 	if (ret) {
-		LOG_ERR("Failed to initialize alarms");
+		LOG_ERROR("Failed to initialize alarms");
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&config->inta_gpios, GPIO_INPUT);
 	if (ret) {
-		LOG_ERR("Failed to configure INT GPIO");
+		LOG_ERROR("Failed to configure INT GPIO");
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->inta_gpios, GPIO_INT_EDGE_FALLING);
 	if (ret) {
-		LOG_ERR("Failed to configure INT GPIO interrupt");
+		LOG_ERROR("Failed to configure INT GPIO interrupt");
 		return ret;
 	}
 
@@ -863,7 +863,7 @@ static int rtc_max31331_alarm_init(const struct device *dev)
 			   BIT(config->inta_gpios.pin));
 	ret = gpio_add_callback(config->inta_gpios.port, &data->int_callback);
 	if (ret) {
-		LOG_ERR("Failed to add INT GPIO callback");
+		LOG_ERROR("Failed to add INT GPIO callback");
 		return ret;
 	}
 
@@ -924,26 +924,26 @@ static int rtc_max31331_timestamping_init(const struct device *dev)
 			(config->ts_power_supply_switch ? TS_POWER_SUPPLY_SWITCH_MASK : 0));
 
 	if (ret) {
-		LOG_ERR("Failed to configure timestamping");
+		LOG_ERROR("Failed to configure timestamping");
 		return ret;
 	}
 
 	ret = max31331_reg_update(dev, MAX31331_RTC_CONFIG1, EN_IOUTPUT_MASK, config->din_en_io);
 	if (ret) {
-		LOG_ERR("Failed to configure timestamping I/O");
+		LOG_ERROR("Failed to configure timestamping I/O");
 		return ret;
 	}
 
 	ret = max31331_reg_update(dev, MAX31331_RTC_CONFIG1, DIGITAL_INPUT_POLARITY_MASK,
 				  config->din_polarity);
 	if (ret) {
-		LOG_ERR("Failed to configure timestamping DIN polarity");
+		LOG_ERROR("Failed to configure timestamping DIN polarity");
 		return ret;
 	}
 
 	ret = rtc_max31331_timestamp_callback_init(dev);
 	if (ret) {
-		LOG_ERR("Failed to initialize timestamp callback");
+		LOG_ERROR("Failed to initialize timestamp callback");
 		return ret;
 	}
 
@@ -970,7 +970,7 @@ int rtc_max31331_set_timestamp_callback(const struct device *dev,
 	ret = max31331_reg_update(dev, MAX31331_INTERRUPT_ENABLE, DIGITAL_INTERRUPT_ENABLE_MASK,
 				  (cb != NULL) ? 1 : 0);
 	if (ret) {
-		LOG_ERR("Failed to %s timestamp interrupt", (cb != NULL) ? "enable" : "disable");
+		LOG_ERROR("Failed to %s timestamp interrupt", (cb != NULL) ? "enable" : "disable");
 		return ret;
 	}
 	return 0;
@@ -1006,13 +1006,13 @@ int rtc_max31331_get_timestamps(const struct device *dev, struct rtc_time *timep
 		start_addr = MAX31331_TS3_SEC;
 		break;
 	default:
-		LOG_ERR("Invalid timestamp index");
+		LOG_ERROR("Invalid timestamp index");
 		return -EINVAL;
 	}
 
 	ret = max31331_reg_read(dev, start_addr, reg_buf, ARRAY_SIZE(reg_buf));
 	if (ret) {
-		LOG_ERR("Failed to read timestamp count");
+		LOG_ERROR("Failed to read timestamp count");
 		return ret;
 	}
 
@@ -1051,33 +1051,33 @@ static int rtc_max31331_init(const struct device *dev)
 
 	ret = max31331_reg_write(dev, MAX31331_RTC_RESET, SW_RESET_MASK);
 	if (ret) {
-		LOG_ERR("Failed to reset the device");
+		LOG_ERROR("Failed to reset the device");
 		return ret;
 	}
 
 	ret = max31331_reg_write(dev, MAX31331_RTC_RESET, 0);
 	if (ret) {
-		LOG_ERR("Failed to reset the device");
+		LOG_ERROR("Failed to reset the device");
 		return ret;
 	}
 
 	ret = max31331_reg_update(dev, MAX31331_RTC_CONFIG2, CLKOUT_ENABLE_MASK, 1);
 
 	if (ret) {
-		LOG_ERR("Failed to enable CLKOUT");
+		LOG_ERROR("Failed to enable CLKOUT");
 		return ret;
 	}
 
 	ret = max31331_reg_update(dev, MAX31331_TIMESTAMP_CONFIG, TS_REG_RESET_MASK, 1);
 	if (ret) {
-		LOG_ERR("Failed to reset timestamp registers");
+		LOG_ERROR("Failed to reset timestamp registers");
 		return ret;
 	}
 
 #if defined(CONFIG_RTC_MAX31331_TIMESTAMPING)
 	ret = rtc_max31331_timestamping_init(dev);
 	if (ret) {
-		LOG_ERR("Failed to initialize timestamping");
+		LOG_ERROR("Failed to initialize timestamping");
 		return ret;
 	}
 #endif
@@ -1086,7 +1086,7 @@ static int rtc_max31331_init(const struct device *dev)
 	if (config->inta_gpios.port) {
 		ret = rtc_max31331_alarm_init(dev);
 		if (ret) {
-			LOG_ERR("Failed to initialize alarms");
+			LOG_ERROR("Failed to initialize alarms");
 			return ret;
 		}
 	}
@@ -1094,7 +1094,7 @@ static int rtc_max31331_init(const struct device *dev)
 
 	ret = max31331_reg_update(dev, MAX31331_RTC_CONFIG1, ENABLE_OSCILLATOR_MASK, 1);
 	if (ret) {
-		LOG_ERR("Failed to enable oscillator");
+		LOG_ERROR("Failed to enable oscillator");
 		return ret;
 	}
 

@@ -479,7 +479,7 @@ static int set_data_add_complete(uint8_t *set_data, uint8_t set_data_len_max,
 
 				if (!(type == BT_DATA_NAME_COMPLETE &&
 				      shortened_len > 0)) {
-					LOG_ERR("Too big advertising data");
+					LOG_ERROR("Too big advertising data");
 					return -EINVAL;
 				}
 
@@ -995,7 +995,7 @@ static int adv_start_legacy(struct bt_le_ext_adv *adv,
 
 	err = bt_le_adv_set_enable(adv, true);
 	if (err) {
-		LOG_ERR("Failed to start advertiser");
+		LOG_ERROR("Failed to start advertiser");
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn) {
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 			bt_conn_unref(conn);
@@ -1247,7 +1247,7 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 
 	err = bt_le_adv_set_enable_ext(adv, true, &start_param);
 	if (err) {
-		LOG_ERR("Failed to start advertiser");
+		LOG_ERROR("Failed to start advertiser");
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn) {
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 			bt_conn_unref(conn);
@@ -1315,7 +1315,7 @@ int bt_le_adv_stop(void)
 	int err;
 
 	if (!adv) {
-		LOG_ERR("No valid legacy adv to stop");
+		LOG_ERROR("No valid legacy adv to stop");
 		return 0;
 	}
 
@@ -1540,7 +1540,7 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 
 	err = bt_le_adv_set_enable_ext(adv, true, param);
 	if (err) {
-		LOG_ERR("Failed to start advertiser");
+		LOG_ERROR("Failed to start advertiser");
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn) {
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 			bt_conn_unref(conn);
@@ -1941,7 +1941,7 @@ void bt_hci_le_per_adv_subevent_data_request(struct net_buf *buf)
 	struct bt_le_ext_adv *adv;
 
 	if (buf->len < sizeof(struct bt_hci_evt_le_per_adv_subevent_data_request)) {
-		LOG_ERR("Invalid data request");
+		LOG_ERROR("Invalid data request");
 
 		return;
 	}
@@ -1949,7 +1949,7 @@ void bt_hci_le_per_adv_subevent_data_request(struct net_buf *buf)
 	evt = net_buf_pull_mem(buf, sizeof(struct bt_hci_evt_le_per_adv_subevent_data_request));
 	adv = bt_hci_adv_lookup_handle(evt->adv_handle);
 	if (!adv) {
-		LOG_ERR("Unknown advertising handle %d", evt->adv_handle);
+		LOG_ERROR("Unknown advertising handle %d", evt->adv_handle);
 
 		return;
 	}
@@ -1971,7 +1971,7 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 	struct net_buf_simple data;
 
 	if (buf->len < sizeof(struct bt_hci_evt_le_per_adv_response_report)) {
-		LOG_ERR("Invalid response report");
+		LOG_ERROR("Invalid response report");
 
 		return;
 	}
@@ -1979,7 +1979,7 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 	evt = net_buf_pull_mem(buf, sizeof(struct bt_hci_evt_le_per_adv_response_report));
 	adv = bt_hci_adv_lookup_handle(evt->adv_handle);
 	if (!adv) {
-		LOG_ERR("Unknown advertising handle %d", evt->adv_handle);
+		LOG_ERROR("Unknown advertising handle %d", evt->adv_handle);
 
 		return;
 	}
@@ -1989,7 +1989,7 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 
 	for (uint8_t i = 0; i < evt->num_responses; i++) {
 		if (buf->len < sizeof(struct bt_hci_evt_le_per_adv_response)) {
-			LOG_ERR("Invalid response report");
+			LOG_ERROR("Invalid response report");
 
 			return;
 		}
@@ -2001,7 +2001,7 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 		info.response_slot = response->response_slot;
 
 		if (buf->len < response->data_length) {
-			LOG_ERR("Invalid response report");
+			LOG_ERROR("Invalid response report");
 
 			return;
 		}
@@ -2024,7 +2024,7 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 				adv->cb->pawr_response(adv, &info, &data);
 			}
 		} else {
-			LOG_ERR("Invalid data status %d", response->data_status);
+			LOG_ERROR("Invalid data status %d", response->data_status);
 			(void)net_buf_pull_mem(buf, response->data_length);
 		}
 	}
@@ -2084,7 +2084,7 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 		evt->adv_handle, conn_handle, evt->num_completed_ext_adv_evts);
 
 	if (!adv) {
-		LOG_ERR("No valid adv");
+		LOG_ERROR("No valid adv");
 		return;
 	}
 
@@ -2188,7 +2188,7 @@ void bt_hci_le_scan_req_received(struct net_buf *buf)
 	LOG_DBG("handle %u peer %s", evt->handle, bt_addr_le_str(&evt->addr));
 
 	if (!adv) {
-		LOG_ERR("No valid adv");
+		LOG_ERROR("No valid adv");
 		return;
 	}
 

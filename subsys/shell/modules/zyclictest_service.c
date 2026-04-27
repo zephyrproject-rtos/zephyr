@@ -130,13 +130,13 @@ static int zyclictest_init(void)
 				zyclictest_thr, NULL, NULL, NULL, zyc_data.thr_prio, 0, K_NO_WAIT);
 
 	if (zyc_tid != &zyc_ctl) {
-		LOG_ERR("Error while creating zyclictest thread");
+		LOG_ERROR("Error while creating zyclictest thread");
 		return -ENOMEM;
 	}
 
 	ret = k_thread_name_set(zyc_tid, "zyclictest");
 	if (ret) {
-		LOG_ERR("Error while setting zyclictest thread name: %d", ret);
+		LOG_ERROR("Error while setting zyclictest thread name: %d", ret);
 	}
 
 	return 0;
@@ -150,7 +150,7 @@ static int zyclictest_exit(void)
 
 	ret = k_thread_join(zyc_tid, K_FOREVER);
 	if (ret) {
-		LOG_ERR("Error while terminating zyclictest thread: %d", ret);
+		LOG_ERROR("Error while terminating zyclictest thread: %d", ret);
 	}
 
 	zyc_tid = NULL;
@@ -261,7 +261,7 @@ static int cmd_zyclictest_start(const struct shell *sh, size_t argc, char **argv
 
 	ret = zyclictest_init();
 	if (ret) {
-		LOG_ERR("Error while initializing zyclictest: %d", ret);
+		LOG_ERROR("Error while initializing zyclictest: %d", ret);
 	}
 
 	return 0;

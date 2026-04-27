@@ -259,7 +259,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t id)
 		pm_get_lowpower_resource_list(&exclude_from_pd, &wakeup_sources, false);
 		status = POWER_EnterDeepSleep(exclude_from_pd, wakeup_sources);
 		if (status != kStatus_Success) {
-			LOG_ERR("Failed to enter deep sleep mode: %d", status);
+			LOG_ERROR("Failed to enter deep sleep mode: %d", status);
 		}
 		break;
 
@@ -267,7 +267,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t id)
 		pm_get_lowpower_resource_list(&exclude_from_pd, &wakeup_sources, true);
 		status = POWER_EnterPowerDown(exclude_from_pd, wakeup_sources, 1);
 		if (status != kStatus_Success) {
-			LOG_ERR("Failed to enter power down mode: %d", status);
+			LOG_ERROR("Failed to enter power down mode: %d", status);
 		}
 		break;
 
@@ -292,19 +292,19 @@ static void init_wakeup_gpio_pins(void)
 	int ret;
 
 	if (!device_is_ready(wakeup_pin_dt.port)) {
-		LOG_ERR("Wake-up GPIO device not ready");
+		LOG_ERROR("Wake-up GPIO device not ready");
 		return;
 	}
 
 	ret = gpio_pin_configure_dt(&wakeup_pin_dt, GPIO_INPUT);
 	if (ret != 0) {
-		LOG_ERR("Error %d: failed to configure wakeup pin\n", ret);
+		LOG_ERROR("Error %d: failed to configure wakeup pin\n", ret);
 		return;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&wakeup_pin_dt, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0) {
-		LOG_ERR("Error %d: failed to configure wakeup pin interrupt\n", ret);
+		LOG_ERROR("Error %d: failed to configure wakeup pin interrupt\n", ret);
 		return;
 	}
 }

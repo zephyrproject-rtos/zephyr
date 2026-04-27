@@ -379,7 +379,7 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 		break;
 
 	default:
-		LOG_ERR("Unsupported I2S data format");
+		LOG_ERROR("Unsupported I2S data format");
 		return -EINVAL;
 	}
 
@@ -465,7 +465,7 @@ static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 		break;
 
 	default:
-		LOG_ERR("Unsupported I2S data format");
+		LOG_ERROR("Unsupported I2S data format");
 		return -EINVAL;
 	}
 
@@ -516,7 +516,7 @@ static int bit_clock_set(Ssc *const ssc, uint32_t bit_clk_freq)
 	uint32_t clk_div = SOC_ATMEL_SAM_MCK_FREQ_HZ / bit_clk_freq / 2U;
 
 	if (clk_div == 0U || clk_div >= (1 << 12)) {
-		LOG_ERR("Invalid bit clock frequency");
+		LOG_ERROR("Invalid bit clock frequency");
 		return -EINVAL;
 	}
 
@@ -565,13 +565,13 @@ static int i2s_sam_configure(const struct device *dev, enum i2s_dir dir,
 	} else if (dir == I2S_DIR_BOTH) {
 		return -ENOSYS;
 	} else {
-		LOG_ERR("Either RX or TX direction must be selected");
+		LOG_ERROR("Either RX or TX direction must be selected");
 		return -EINVAL;
 	}
 
 	if (stream->state != I2S_STATE_NOT_READY &&
 	    stream->state != I2S_STATE_READY) {
-		LOG_ERR("invalid state");
+		LOG_ERROR("invalid state");
 		return -EINVAL;
 	}
 
@@ -583,26 +583,26 @@ static int i2s_sam_configure(const struct device *dev, enum i2s_dir dir,
 	}
 
 	if (i2s_cfg->format & I2S_FMT_FRAME_CLK_INV) {
-		LOG_ERR("Frame clock inversion is not implemented");
-		LOG_ERR("Please submit a patch");
+		LOG_ERROR("Frame clock inversion is not implemented");
+		LOG_ERROR("Please submit a patch");
 		return -EINVAL;
 	}
 
 	if (i2s_cfg->format & I2S_FMT_BIT_CLK_INV) {
-		LOG_ERR("Bit clock inversion is not implemented");
-		LOG_ERR("Please submit a patch");
+		LOG_ERROR("Bit clock inversion is not implemented");
+		LOG_ERROR("Please submit a patch");
 		return -EINVAL;
 	}
 
 	if (word_size_bits < SAM_SSC_WORD_SIZE_BITS_MIN ||
 	    word_size_bits > SAM_SSC_WORD_SIZE_BITS_MAX) {
-		LOG_ERR("Unsupported I2S word size");
+		LOG_ERROR("Unsupported I2S word size");
 		return -EINVAL;
 	}
 
 	if (num_words < SAM_SSC_WORD_PER_FRAME_MIN ||
 	    num_words > SAM_SSC_WORD_PER_FRAME_MAX) {
-		LOG_ERR("Unsupported words per frame number");
+		LOG_ERROR("Unsupported words per frame number");
 		return -EINVAL;
 	}
 
@@ -663,7 +663,7 @@ static int rx_stream_start(struct stream *stream, Ssc *const ssc,
 			(void *)&(ssc->SSC_RHR), stream->mem_block,
 			stream->cfg.block_size);
 	if (ret < 0) {
-		LOG_ERR("Failed to start RX DMA transfer: %d", ret);
+		LOG_ERROR("Failed to start RX DMA transfer: %d", ret);
 		return ret;
 	}
 
@@ -715,7 +715,7 @@ static int tx_stream_start(struct stream *stream, Ssc *const ssc,
 			stream->mem_block, (void *)&(ssc->SSC_THR),
 			mem_block_size);
 	if (ret < 0) {
-		LOG_ERR("Failed to start TX DMA transfer: %d", ret);
+		LOG_ERROR("Failed to start TX DMA transfer: %d", ret);
 		return ret;
 	}
 
@@ -798,7 +798,7 @@ static int i2s_sam_trigger(const struct device *dev, enum i2s_dir dir,
 	} else if (dir == I2S_DIR_BOTH) {
 		return -ENOSYS;
 	} else {
-		LOG_ERR("Either RX or TX direction must be selected");
+		LOG_ERROR("Either RX or TX direction must be selected");
 		return -EINVAL;
 	}
 
@@ -864,7 +864,7 @@ static int i2s_sam_trigger(const struct device *dev, enum i2s_dir dir,
 		break;
 
 	default:
-		LOG_ERR("Unsupported trigger command");
+		LOG_ERROR("Unsupported trigger command");
 		return -EINVAL;
 	}
 
@@ -965,7 +965,7 @@ static int i2s_sam_initialize(const struct device *dev)
 		   CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT);
 
 	if (!device_is_ready(dev_cfg->dev_dma)) {
-		LOG_ERR("%s device not ready", dev_cfg->dev_dma->name);
+		LOG_ERROR("%s device not ready", dev_cfg->dev_dma->name);
 		return -ENODEV;
 	}
 

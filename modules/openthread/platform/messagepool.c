@@ -59,7 +59,7 @@ otMessageBuffer *otPlatMessagePoolNew(otInstance *aInstance)
 	otMessageBuffer *buffer;
 
 	if (k_mem_slab_alloc(&message_pool, (void **)&buffer, BUF_TIMEOUT) != 0) {
-		LOG_ERR("Failed to allocate message buffer");
+		LOG_ERROR("Failed to allocate message buffer");
 		return NULL;
 	}
 

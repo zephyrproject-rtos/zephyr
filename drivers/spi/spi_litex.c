@@ -55,48 +55,48 @@ static int spi_config(const struct device *dev, const struct spi_config *config,
 	struct spi_litex_data *dev_data = dev->data;
 
 	if (config->slave >= dev_config->max_cs) {
-		LOG_ERR("More slaves than supported");
+		LOG_ERROR("More slaves than supported");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	if (SPI_WORD_SIZE_GET(config->operation) > dev_config->data_width) {
-		LOG_ERR("Word size must be <= %d", dev_config->data_width);
+		LOG_ERROR("Word size must be <= %d", dev_config->data_width);
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_CS_ACTIVE_HIGH) {
-		LOG_ERR("CS active high not supported");
+		LOG_ERROR("CS active high not supported");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_LOCK_ON) {
-		LOG_ERR("Lock On not supported");
+		LOG_ERROR("Lock On not supported");
 		return -ENOTSUP;
 	}
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
 	    (config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only supports single mode");
+		LOG_ERROR("Only supports single mode");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_TRANSFER_LSB) {
-		LOG_ERR("LSB first not supported");
+		LOG_ERROR("LSB first not supported");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & (SPI_MODE_CPOL | SPI_MODE_CPHA)) {
-		LOG_ERR("Only supports CPOL=CPHA=0");
+		LOG_ERROR("Only supports CPOL=CPHA=0");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+		LOG_ERROR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 

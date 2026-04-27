@@ -116,7 +116,7 @@ static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 					 * buffer - Ignore
 					 */
 				} else {
-					LOG_ERR("Unable to send: %d", err);
+					LOG_ERROR("Unable to send: %d", err);
 				}
 
 				net_buf_unref(buf);

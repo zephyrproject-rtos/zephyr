@@ -156,7 +156,7 @@ static int mcux_qtmr_set_alarm(const struct device *dev, uint8_t chan_id,
 	uint32_t ticks;
 
 	if (chan_id != 0) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 
@@ -189,7 +189,7 @@ static int mcux_qtmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	struct mcux_qtmr_data *data = dev->data;
 
 	if (chan_id != 0) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 
@@ -214,8 +214,7 @@ static int mcux_qtmr_set_top_value(const struct device *dev,
 	struct mcux_qtmr_data *data = dev->data;
 
 	if (cfg->ticks != config->info.max_top_value) {
-		LOG_ERR("Wrap can only be set to 0x%x",
-			config->info.max_top_value);
+		LOG_ERROR("Wrap can only be set to 0x%x", config->info.max_top_value);
 		return -ENOTSUP;
 	}
 
@@ -271,7 +270,7 @@ static int mcux_qtmr_init(const struct device *dev)
 	} else {
 		/* bus clock with divider */
 		if (!device_is_ready(config->clock_dev)) {
-			LOG_ERR("clock control device not ready");
+			LOG_ERROR("clock control device not ready");
 			return -ENODEV;
 		}
 

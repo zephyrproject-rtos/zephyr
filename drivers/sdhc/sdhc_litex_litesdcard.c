@@ -393,7 +393,7 @@ static int sdhc_litex_set_io(const struct device *dev, struct sdhc_io *ios)
 
 	if (ios->bus_width) {
 		if (ios->bus_width > dev_config->bus_width) {
-			LOG_ERR("Bus width range error %d", ios->bus_width);
+			LOG_ERROR("Bus width range error %d", ios->bus_width);
 			return -ENOTSUP;
 		}
 

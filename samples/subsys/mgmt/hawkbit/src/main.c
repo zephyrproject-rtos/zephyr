@@ -93,7 +93,7 @@ int main(void)
 #ifdef CONFIG_HAWKBIT_CUSTOM_ATTRIBUTES
 	ret = hawkbit_set_custom_data_cb(hawkbit_new_config_data_cb);
 	if (ret < 0) {
-		LOG_ERR("Failed to set custom data callback");
+		LOG_ERROR("Failed to set custom data callback");
 	}
 #endif /* CONFIG_HAWKBIT_CUSTOM_ATTRIBUTES */
 
@@ -104,7 +104,7 @@ int main(void)
 
 	ret = hawkbit_init();
 	if (ret < 0) {
-		LOG_ERR("Failed to init hawkBit");
+		LOG_ERROR("Failed to init hawkBit");
 	}
 
 #if defined(CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME) && !defined(CONFIG_HAWKBIT_SHELL)
@@ -122,10 +122,10 @@ int main(void)
 
 	switch (hawkbit_probe()) {
 	case HAWKBIT_UNCONFIRMED_IMAGE:
-		LOG_ERR("Image is unconfirmed");
-		LOG_ERR("Rebooting to previous confirmed image");
-		LOG_ERR("If this image is flashed using a hardware tool");
-		LOG_ERR("Make sure that it is a confirmed image");
+		LOG_ERROR("Image is unconfirmed");
+		LOG_ERROR("Rebooting to previous confirmed image");
+		LOG_ERROR("If this image is flashed using a hardware tool");
+		LOG_ERROR("Make sure that it is a confirmed image");
 		k_sleep(K_SECONDS(1));
 		sys_reboot(SYS_REBOOT_WARM);
 		break;

@@ -111,8 +111,8 @@ static inline int prel31_decode(elf_word reloc_type, uint32_t loc,
 	*offset = sign_extend(*(int32_t *)loc, SHIFT_PREL31_SIGN);
 	*offset += sym_base_addr - loc;
 	if (*offset >= PREL31_UPPER_BOUNDARY || *offset < PREL31_LOWER_BOUNDARY) {
-		LOG_ERR("sym '%s': relocation out of range (%#x -> %#x)\n",
-			sym_name, loc, sym_base_addr);
+		LOG_ERROR("sym '%s': relocation out of range (%#x -> %#x)\n", sym_name, loc,
+			  sym_base_addr);
 		ret = -ENOEXEC;
 	} else {
 		ret = 0;
@@ -153,8 +153,8 @@ static inline int jumps_decode(elf_word reloc_type, uint32_t loc,
 	*offset = sign_extend(*offset, SHIFT_JUMPS_SIGN);
 	*offset += sym_base_addr - loc;
 	if (*offset >= JUMP_LOWER_BOUNDARY || *offset <= JUMP_UPPER_BOUNDARY) {
-		LOG_ERR("sym '%s': relocation out of range (%#x -> %#x)\n",
-			sym_name, loc, sym_base_addr);
+		LOG_ERROR("sym '%s': relocation out of range (%#x -> %#x)\n", sym_name, loc,
+			  sym_base_addr);
 		ret = -ENOEXEC;
 	} else {
 		ret = 0;
@@ -235,8 +235,8 @@ static inline int thm_jumps_decode(elf_word reloc_type, uint32_t loc,
 	*offset += sym_base_addr - loc;
 
 	if (*offset >= THM_JUMP_LOWER_BOUNDARY || *offset <= THM_JUMP_UPPER_BOUNDARY) {
-		LOG_ERR("sym '%s': relocation out of range (%#x -> %#x)\n",
-			sym_name, loc, sym_base_addr);
+		LOG_ERROR("sym '%s': relocation out of range (%#x -> %#x)\n", sym_name, loc,
+			  sym_base_addr);
 		ret = -ENOEXEC;
 	} else {
 		ret = 0;
@@ -339,7 +339,7 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 	ret = llext_read_symbol(ldr, ext, rel, &sym);
 
 	if (ret != 0) {
-		LOG_ERR("Could not read symbol from binary!");
+		LOG_ERROR("Could not read symbol from binary!");
 		return ret;
 	}
 
@@ -348,7 +348,7 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 	ret = llext_lookup_symbol(ldr, ext, &sym_base_addr, rel, &sym, sym_name, shdr);
 
 	if (ret != 0) {
-		LOG_ERR("Could not find symbol %s!", sym_name);
+		LOG_ERROR("Could not find symbol %s!", sym_name);
 		return ret;
 	}
 
@@ -414,7 +414,7 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 		break;
 
 	default:
-		LOG_ERR("unknown relocation: %u\n", reloc_type);
+		LOG_ERROR("unknown relocation: %u\n", reloc_type);
 		ret = -ENOEXEC;
 	}
 

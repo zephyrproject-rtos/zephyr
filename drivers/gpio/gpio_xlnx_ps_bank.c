@@ -435,7 +435,7 @@ static int gpio_xlnx_ps_bank_init(const struct device *dev)
 
 	__ASSERT(dev_data->base != 0, "%s mapped base address missing", dev->name);
 	if (dev_data->base == 0) {
-		LOG_ERR("%s mapped base address missing", dev->name);
+		LOG_ERROR("%s mapped base address missing", dev->name);
 		return -EIO;
 	}
 

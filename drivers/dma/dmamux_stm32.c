@@ -125,13 +125,13 @@ int dmamux_stm32_configure(const struct device *dev, uint32_t id,
 	int request_id = config->dma_slot;
 
 	if (request_id > dev_config->req_nb + dev_config->gen_nb) {
-		LOG_ERR("request ID %d is not valid.", request_id);
+		LOG_ERROR("request ID %d is not valid.", request_id);
 		return -EINVAL;
 	}
 
 	/* check if this channel is valid */
 	if (id >= dev_config->channel_nb) {
-		LOG_ERR("channel ID %d is too big.", id);
+		LOG_ERROR("channel ID %d is too big.", id);
 		return -EINVAL;
 	}
 
@@ -148,7 +148,7 @@ int dmamux_stm32_configure(const struct device *dev, uint32_t id,
 	 */
 	if (dma_device->configure(dev_config->mux_channels[id].dev_dma,
 			dev_config->mux_channels[id].dma_id, config) != 0) {
-		LOG_ERR("cannot configure the dmamux.");
+		LOG_ERROR("cannot configure the dmamux.");
 		return -EINVAL;
 	}
 
@@ -169,13 +169,13 @@ int dmamux_stm32_start(const struct device *dev, uint32_t id)
 
 	/* check if this channel is valid */
 	if (id >= dev_config->channel_nb) {
-		LOG_ERR("channel ID %d is too big.", id);
+		LOG_ERROR("channel ID %d is too big.", id);
 		return -EINVAL;
 	}
 
 	if (dma_device->start(dev_config->mux_channels[id].dev_dma,
 		dev_config->mux_channels[id].dma_id) != 0) {
-		LOG_ERR("cannot start the dmamux channel %d.", id);
+		LOG_ERROR("cannot start the dmamux channel %d.", id);
 		return -EINVAL;
 	}
 
@@ -189,13 +189,13 @@ int dmamux_stm32_stop(const struct device *dev, uint32_t id)
 
 	/* check if this channel is valid */
 	if (id >= dev_config->channel_nb) {
-		LOG_ERR("channel ID %d is too big.", id);
+		LOG_ERROR("channel ID %d is too big.", id);
 		return -EINVAL;
 	}
 
 	if (dma_device->stop(dev_config->mux_channels[id].dev_dma,
 		dev_config->mux_channels[id].dma_id) != 0) {
-		LOG_ERR("cannot stop the dmamux channel %d.", id);
+		LOG_ERROR("cannot stop the dmamux channel %d.", id);
 		return -EINVAL;
 	}
 
@@ -210,14 +210,14 @@ int dmamux_stm32_reload(const struct device *dev, uint32_t id,
 
 	/* check if this channel is valid */
 	if (id >= dev_config->channel_nb) {
-		LOG_ERR("channel ID %d is too big.", id);
+		LOG_ERROR("channel ID %d is too big.", id);
 		return -EINVAL;
 	}
 
 	if (dma_device->reload(dev_config->mux_channels[id].dev_dma,
 		dev_config->mux_channels[id].dma_id,
 		src, dst, size) != 0) {
-		LOG_ERR("cannot reload the dmamux channel %d.", id);
+		LOG_ERROR("cannot reload the dmamux channel %d.", id);
 		return -EINVAL;
 	}
 
@@ -232,13 +232,13 @@ int dmamux_stm32_get_status(const struct device *dev, uint32_t id,
 
 	/* check if this channel is valid */
 	if (id >= dev_config->channel_nb) {
-		LOG_ERR("channel ID %d is too big.", id);
+		LOG_ERROR("channel ID %d is too big.", id);
 		return -EINVAL;
 	}
 
 	if (dma_device->get_status(dev_config->mux_channels[id].dev_dma,
 		dev_config->mux_channels[id].dma_id, stat) != 0) {
-		LOG_ERR("cannot get the status of dmamux channel %d.", id);
+		LOG_ERROR("cannot get the status of dmamux channel %d.", id);
 		return -EINVAL;
 	}
 
@@ -253,7 +253,7 @@ static int dmamux_stm32_init(const struct device *dev)
 
 	if (clock_control_on(clk,
 		(clock_control_subsys_t) &config->pclken) != 0) {
-		LOG_ERR("clock op failed\n");
+		LOG_ERROR("clock op failed\n");
 		return -EIO;
 	}
 #endif /* DT_INST_NODE_HAS_PROP(0, clocks) */

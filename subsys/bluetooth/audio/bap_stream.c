@@ -643,7 +643,7 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
+		LOG_ERROR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EBADMSG;
 	}
 
@@ -734,7 +734,7 @@ int bt_bap_stream_enable(struct bt_bap_stream *stream, const uint8_t meta[], siz
 
 	/* Valid for an ASE only if ASE_State field = 0x02 (QoS Configured) */
 	if (stream->ep->state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(stream->ep->state));
+		LOG_ERROR("Invalid state: %s", bt_bap_ep_state_str(stream->ep->state));
 		return -EBADMSG;
 	}
 
@@ -771,7 +771,7 @@ int bt_bap_stream_stop(struct bt_bap_stream *stream)
 	case BT_BAP_EP_STATE_DISABLING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
+		LOG_ERROR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EBADMSG;
 	}
 
@@ -813,7 +813,7 @@ int bt_bap_stream_reconfig(struct bt_bap_stream *stream, const struct bt_audio_c
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(state));
+		LOG_ERROR("Invalid state: %s", bt_bap_ep_state_str(state));
 		return -EBADMSG;
 	}
 
@@ -856,7 +856,7 @@ int bt_bap_stream_connect(struct bt_bap_stream *stream)
 	case BT_BAP_EP_STATE_ENABLING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(state));
+		LOG_ERROR("Invalid state: %s", bt_bap_ep_state_str(state));
 		return -EBADMSG;
 	}
 
@@ -888,7 +888,7 @@ int bt_bap_stream_start(struct bt_bap_stream *stream)
 	case BT_BAP_EP_STATE_ENABLING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(state));
+		LOG_ERROR("Invalid state: %s", bt_bap_ep_state_str(state));
 		return -EBADMSG;
 	}
 
@@ -935,7 +935,7 @@ int bt_bap_stream_metadata(struct bt_bap_stream *stream, const uint8_t meta[], s
 	case BT_BAP_EP_STATE_STREAMING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(state));
+		LOG_ERROR("Invalid state: %s", bt_bap_ep_state_str(state));
 		return -EBADMSG;
 	}
 
@@ -977,7 +977,7 @@ int bt_bap_stream_disable(struct bt_bap_stream *stream)
 	case BT_BAP_EP_STATE_STREAMING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(state));
+		LOG_ERROR("Invalid state: %s", bt_bap_ep_state_str(state));
 		return -EBADMSG;
 	}
 
@@ -1025,7 +1025,7 @@ int bt_bap_stream_release(struct bt_bap_stream *stream)
 	case BT_BAP_EP_STATE_DISABLING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(state));
+		LOG_ERROR("Invalid state: %s", bt_bap_ep_state_str(state));
 		return -EBADMSG;
 	}
 

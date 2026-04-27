@@ -406,7 +406,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 	switch (flags) {
 	case BT_ACL_START:
 		if (conn->rx) {
-			LOG_ERR("Unexpected first L2CAP frame");
+			LOG_ERROR("Unexpected first L2CAP frame");
 			bt_conn_reset_rx_state(conn);
 		}
 
@@ -417,7 +417,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 		break;
 	case BT_ACL_CONT:
 		if (!conn->rx) {
-			LOG_ERR("Unexpected L2CAP continuation");
+			LOG_ERROR("Unexpected L2CAP continuation");
 			bt_conn_reset_rx_state(conn);
 			net_buf_unref(buf);
 			return;
@@ -430,7 +430,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 		}
 
 		if (buf->len > net_buf_tailroom(conn->rx)) {
-			LOG_ERR("Not enough buffer space for L2CAP data");
+			LOG_ERROR("Not enough buffer space for L2CAP data");
 
 			/* Frame is not complete but we still pass it to L2CAP
 			 * so that it may handle error on protocol level
@@ -450,7 +450,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 		 * LE-U from Controller to Host.
 		 * Only BT_ACL_POINT_TO_POINT is supported.
 		 */
-		LOG_ERR("Unexpected ACL flags (0x%02x)", flags);
+		LOG_ERROR("Unexpected ACL flags (0x%02x)", flags);
 		bt_conn_reset_rx_state(conn);
 		net_buf_unref(buf);
 		return;
@@ -471,7 +471,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 	}
 
 	if (!bt_conn_is_br(conn) && (conn->rx->len > acl_total_len)) {
-		LOG_ERR("ACL len mismatch (%u > %u)", conn->rx->len, acl_total_len);
+		LOG_ERROR("ACL len mismatch (%u > %u)", conn->rx->len, acl_total_len);
 		bt_conn_reset_rx_state(conn);
 		return;
 	}
@@ -758,7 +758,7 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 	atomic_dec(&conn->in_ll);
 	(void)sys_slist_find_and_remove(&conn->tx_pending, &tx->node);
 
-	LOG_ERR("Unable to send to driver (err %d)", err);
+	LOG_ERROR("Unable to send to driver (err %d)", err);
 
 	/* If we get here, something has seriously gone wrong: the `parent` buf
 	 * (of which the current fragment belongs) should also be destroyed.
@@ -1070,7 +1070,7 @@ void bt_conn_tx_processor(void)
 	int err = send_buf(conn, buf, buf_len, cb, ud);
 
 	if (err) {
-		LOG_ERR("Fatal error (%d). Disconnecting %p", err, conn);
+		LOG_ERROR("Fatal error (%d). Disconnecting %p", err, conn);
 		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 		goto exit;
 	}
@@ -1790,7 +1790,7 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 	    can_initiate_feature_exchange(conn)) {
 		err = bt_hci_le_read_remote_features(conn);
 		if (err) {
-			LOG_ERR("Failed read remote features (%d)", err);
+			LOG_ERROR("Failed read remote features (%d)", err);
 		}
 		if (conn->state != BT_CONN_CONNECTED) {
 			return;
@@ -1801,7 +1801,7 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 	    !atomic_test_bit(conn->flags, BT_CONN_AUTO_VERSION_INFO)) {
 		err = bt_hci_read_remote_version(conn);
 		if (err) {
-			LOG_ERR("Failed read remote version (%d)", err);
+			LOG_ERROR("Failed read remote version (%d)", err);
 		}
 		if (conn->state != BT_CONN_CONNECTED) {
 			return;
@@ -1813,7 +1813,7 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 	     !IS_ENABLED(CONFIG_BT_AUTO_PHY_PERIPHERAL_NONE))) {
 		err = do_phy_update(conn);
 		if (err) {
-			LOG_ERR("Failed LE Set PHY (%d)", err);
+			LOG_ERROR("Failed LE Set PHY (%d)", err);
 		}
 
 		if (conn->state != BT_CONN_CONNECTED) {
@@ -1832,7 +1832,7 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 		if (!err) {
 			err = bt_le_set_data_len(conn, tx_octets, tx_time);
 			if (err) {
-				LOG_ERR("Failed to set data len (%d)", err);
+				LOG_ERROR("Failed to set data len (%d)", err);
 			}
 		}
 	}
@@ -3398,8 +3398,8 @@ int bt_conn_le_read_min_conn_interval_groups(struct bt_conn_le_min_conn_interval
 	rp = (struct bt_hci_op_le_read_min_supported_conn_interval *)rsp->data;
 
 	if (rp->num_groups > BT_CONN_LE_MAX_CONN_INTERVAL_GROUPS) {
-		LOG_ERR("Too many groups: %d (max %d)",
-			rp->num_groups, BT_CONN_LE_MAX_CONN_INTERVAL_GROUPS);
+		LOG_ERROR("Too many groups: %d (max %d)", rp->num_groups,
+			  BT_CONN_LE_MAX_CONN_INTERVAL_GROUPS);
 		net_buf_unref(rsp);
 		return -ENOMEM;
 	}
@@ -3972,7 +3972,7 @@ int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 
 	err = bt_le_create_conn(conn);
 	if (err) {
-		LOG_ERR("Failed to start filtered scan");
+		LOG_ERROR("Failed to start filtered scan");
 		conn->err = 0;
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 		bt_conn_unref(conn);
@@ -4010,7 +4010,7 @@ int bt_conn_create_auto_stop(void)
 
 	err = bt_le_create_conn_cancel();
 	if (err) {
-		LOG_ERR("Failed to stop initiator");
+		LOG_ERROR("Failed to stop initiator");
 		return err;
 	}
 
@@ -4369,7 +4369,7 @@ int bt_conn_auth_keypress_notify(struct bt_conn *conn,
 		return bt_smp_auth_keypress_notify(conn, type);
 	}
 
-	LOG_ERR("Not implemented for conn type %d", conn->type);
+	LOG_ERROR("Not implemented for conn type %d", conn->type);
 	return -EINVAL;
 }
 #endif
@@ -4512,18 +4512,18 @@ void bt_hci_le_df_connection_iq_report_common(uint8_t event, struct net_buf *buf
 	if (event == BT_HCI_EVT_LE_CONNECTION_IQ_REPORT) {
 		err = hci_df_prepare_connection_iq_report(buf, &iq_report, &conn);
 		if (err) {
-			LOG_ERR("Prepare CTE conn IQ report failed %d", err);
+			LOG_ERROR("Prepare CTE conn IQ report failed %d", err);
 			return;
 		}
 	} else if (IS_ENABLED(CONFIG_BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES) &&
 		   event == BT_HCI_EVT_VS_LE_CONNECTION_IQ_REPORT) {
 		err = hci_df_vs_prepare_connection_iq_report(buf, &iq_report, &conn);
 		if (err) {
-			LOG_ERR("Prepare CTE conn IQ report failed %d", err);
+			LOG_ERROR("Prepare CTE conn IQ report failed %d", err);
 			return;
 		}
 	} else {
-		LOG_ERR("Unhandled VS connection IQ report");
+		LOG_ERROR("Unhandled VS connection IQ report");
 		return;
 	}
 
@@ -4565,7 +4565,7 @@ void bt_hci_le_df_cte_req_failed(struct net_buf *buf)
 
 	err = hci_df_prepare_conn_cte_req_failed(buf, &iq_report, &conn);
 	if (err) {
-		LOG_ERR("Prepare CTE REQ failed IQ report failed %d", err);
+		LOG_ERROR("Prepare CTE REQ failed IQ report failed %d", err);
 		return;
 	}
 

@@ -25,16 +25,16 @@ int bt_hci_transport_setup(const struct device *h4)
 	struct gpio_dt_spec bt_reset = GPIO_DT_SPEC_GET(DT_DRV_INST(0), reset_gpios);
 
 	if (!gpio_is_ready_dt(&bt_reset)) {
-		LOG_ERR("Error: failed to configure bt_reset %s pin %d", bt_reset.port->name,
-			bt_reset.pin);
+		LOG_ERROR("Error: failed to configure bt_reset %s pin %d", bt_reset.port->name,
+			  bt_reset.pin);
 		return -EIO;
 	}
 
 	/* Set bt_reset as output and activate DA1453x reset */
 	err = gpio_pin_configure_dt(&bt_reset, GPIO_OUTPUT_ACTIVE);
 	if (err) {
-		LOG_ERR("Error %d: failed to configure bt_reset %s pin %d", err,
-			bt_reset.port->name, bt_reset.pin);
+		LOG_ERROR("Error %d: failed to configure bt_reset %s pin %d", err,
+			  bt_reset.port->name, bt_reset.pin);
 		return err;
 	}
 

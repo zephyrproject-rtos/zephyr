@@ -146,12 +146,12 @@ int spi_saf_init(void)
 			     (const struct spi_buf_set *)&tx_bufs,
 			     (const struct spi_buf_set *)&rx_bufs);
 	if (ret) {
-		LOG_ERR("Read JEDEC ID spi_transceive failure: error %d", ret);
+		LOG_ERROR("Read JEDEC ID spi_transceive failure: error %d", ret);
 		return ret;
 	}
 
 	if (jedec_id != W25Q128_JEDEC_ID) {
-		LOG_ERR("JEDIC ID does not match W25Q128 %0x", safbuf2[0]);
+		LOG_ERROR("JEDIC ID does not match W25Q128 %0x", safbuf2[0]);
 		return -1;
 	}
 
@@ -175,7 +175,7 @@ int spi_saf_init(void)
 			     (const struct spi_buf_set *)&tx_bufs,
 			     (const struct spi_buf_set *)&rx_bufs);
 	if (ret) {
-		LOG_ERR("Read STATUS2 spi_transceive failure: error %d", ret);
+		LOG_ERROR("Read STATUS2 spi_transceive failure: error %d", ret);
 		return ret;
 	}
 
@@ -203,9 +203,9 @@ int spi_saf_init(void)
 				     (const struct spi_buf_set *)&tx_bufs,
 				     (const struct spi_buf_set *)&rx_bufs);
 		if (ret) {
-			LOG_ERR("Send write enable volatile spi_transceive"
-				" failure: error %d",
-				ret);
+			LOG_ERROR("Send write enable volatile spi_transceive"
+				  " failure: error %d",
+				  ret);
 			return ret;
 		}
 
@@ -225,9 +225,9 @@ int spi_saf_init(void)
 				     (const struct spi_buf_set *)&tx_bufs,
 				     (const struct spi_buf_set *)&rx_bufs);
 		if (ret) {
-			LOG_ERR("Write SPI STATUS2 QE=1 spi_transceive"
-				" failure: error %d",
-				ret);
+			LOG_ERROR("Write SPI STATUS2 QE=1 spi_transceive"
+				  " failure: error %d",
+				  ret);
 			return ret;
 		}
 
@@ -252,17 +252,17 @@ int spi_saf_init(void)
 				     (const struct spi_buf_set *)&tx_bufs,
 				     (const struct spi_buf_set *)&rx_bufs);
 		if (ret) {
-			LOG_ERR("Read SPI STATUS1 spi_transceive"
-				" failure: error %d",
-				ret);
+			LOG_ERROR("Read SPI STATUS1 spi_transceive"
+				  " failure: error %d",
+				  ret);
 			return ret;
 		}
 
 		spi_status1 = safbuf2[0];
 		if (spi_status1 & SPI_STATUS1_BUSY) {
-			LOG_ERR("SPI BUSY set after write to volatile STATUS2:"
-				" STATUS1=0x%02X",
-				spi_status1);
+			LOG_ERROR("SPI BUSY set after write to volatile STATUS2:"
+				  " STATUS1=0x%02X",
+				  spi_status1);
 			return ret;
 		}
 
@@ -287,17 +287,17 @@ int spi_saf_init(void)
 				     (const struct spi_buf_set *)&tx_bufs,
 				     (const struct spi_buf_set *)&rx_bufs);
 		if (ret) {
-			LOG_ERR("Read 2 of SPI STATUS2  spi_transceive"
-				" failure: error %d",
-				ret);
+			LOG_ERROR("Read 2 of SPI STATUS2  spi_transceive"
+				  " failure: error %d",
+				  ret);
 			return ret;
 		}
 
 		spi_status2 = safbuf2[0];
 		if (!(spi_status2 & SPI_STATUS2_QE)) {
-			LOG_ERR("Read back of SPI STATUS2 after setting "
-				"volatile QE bit shows QE not set: 0x%02X",
-				spi_status2);
+			LOG_ERROR("Read back of SPI STATUS2 after setting "
+				  "volatile QE bit shows QE not set: 0x%02X",
+				  spi_status2);
 			return -1;
 		}
 	}
@@ -311,14 +311,14 @@ int espi_saf_init(void)
 
 	ret = espi_saf_config(espi_saf_dev, (struct espi_saf_cfg *)&saf_cfg1);
 	if (ret) {
-		LOG_ERR("Failed to configure eSPI SAF error %d", ret);
+		LOG_ERROR("Failed to configure eSPI SAF error %d", ret);
 	} else {
 		LOG_INF("eSPI SAF configured successfully!");
 	}
 
 	ret = espi_saf_set_protection_regions(espi_saf_dev, &saf_pr_w25q128);
 	if (ret) {
-		LOG_ERR("Failed to set SAF protection region(s) %d", ret);
+		LOG_ERROR("Failed to set SAF protection region(s) %d", ret);
 	} else {
 		LOG_INF("eSPI SAF protection regions(s) configured!");
 	}

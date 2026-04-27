@@ -176,7 +176,7 @@ static inline int spi_it51xxx_set_freq(const struct device *dev, const uint32_t 
 		}
 	}
 
-	LOG_ERR("unknown frequency %dHz, pll %dHz, ec %dHz", frequency, clk_pll, IT51XXX_EC_FREQ);
+	LOG_ERROR("unknown frequency %dHz, pll %dHz, ec %dHz", frequency, clk_pll, IT51XXX_EC_FREQ);
 	return -ENOTSUP;
 
 out:
@@ -267,19 +267,19 @@ static int spi_it51xxx_configure(const struct device *dev, const struct spi_conf
 	uint8_t reg_val;
 
 	if (spi_cfg->slave > (SPI_CHIP_SELECT_COUNT - 1)) {
-		LOG_ERR("slave %d is greater than %d", spi_cfg->slave, SPI_CHIP_SELECT_COUNT - 1);
+		LOG_ERROR("slave %d is greater than %d", spi_cfg->slave, SPI_CHIP_SELECT_COUNT - 1);
 		return -EINVAL;
 	}
 
 	LOG_DBG("chip select: %d, operation: 0x%x", spi_cfg->slave, spi_cfg->operation);
 
 	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_SLAVE) {
-		LOG_ERR("unsupported spi slave mode");
+		LOG_ERROR("unsupported spi slave mode");
 		return -ENOTSUP;
 	}
 
 	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_LOOP) {
-		LOG_ERR("unsupported loopback mode");
+		LOG_ERROR("unsupported loopback mode");
 		return -ENOTSUP;
 	}
 
@@ -303,7 +303,7 @@ static int spi_it51xxx_configure(const struct device *dev, const struct spi_conf
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
 	    (spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("only single line mode is supported");
+		LOG_ERROR("only single line mode is supported");
 		return -EINVAL;
 	}
 
@@ -515,7 +515,7 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 
 	ret = clock_control_on(cfg->clk_dev, (clock_control_subsys_t *)&cfg->clk_cfg);
 	if (ret) {
-		LOG_ERR("failed to turn on spi clock %d", ret);
+		LOG_ERROR("failed to turn on spi clock %d", ret);
 		goto out;
 	}
 
@@ -550,7 +550,7 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 
 	ret = clock_control_off(cfg->clk_dev, (clock_control_subsys_t *)&cfg->clk_cfg);
 	if (ret) {
-		LOG_ERR("failed to turn off spi clock %d", ret);
+		LOG_ERROR("failed to turn off spi clock %d", ret);
 	}
 out:
 	spi_context_release(ctx, ret);
@@ -721,7 +721,7 @@ static int spi_it51xxx_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("failed to set default pinctrl, ret %d", ret);
+		LOG_ERROR("failed to set default pinctrl, ret %d", ret);
 		return ret;
 	}
 

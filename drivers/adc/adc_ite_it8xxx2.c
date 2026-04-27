@@ -98,14 +98,13 @@ static int adc_it8xxx2_channel_setup(const struct device *dev,
 	uint8_t channel_id = channel_cfg->channel_id;
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Selected ADC acquisition time is not valid");
+		LOG_ERROR("Selected ADC acquisition time is not valid");
 		return -EINVAL;
 	}
 
 	/* Support channels 0~7 and 13~16 */
-	if (!((channel_id >= 0 && channel_id <= 7) ||
-	    (channel_id >= 13 && channel_id <= 16))) {
-		LOG_ERR("Channel %d is not valid", channel_id);
+	if (!((channel_id >= 0 && channel_id <= 7) || (channel_id >= 13 && channel_id <= 16))) {
+		LOG_ERROR("Channel %d is not valid", channel_id);
 		return -EINVAL;
 	}
 
@@ -115,12 +114,12 @@ static int adc_it8xxx2_channel_setup(const struct device *dev,
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Invalid channel gain");
+		LOG_ERROR("Invalid channel gain");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Invalid channel reference");
+		LOG_ERROR("Invalid channel reference");
 		return -EINVAL;
 	}
 
@@ -214,7 +213,7 @@ static void adc_poll_valid_data(void)
 	if (valid) {
 		adc_it8xxx2_get_sample(dev);
 	} else {
-		LOG_ERR("Sampling timeout.");
+		LOG_ERROR("Sampling timeout.");
 		return;
 	}
 }
@@ -270,8 +269,8 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	}
 
 	if (sequence->buffer_size < needed_buffer_size) {
-		LOG_ERR("Provided buffer is too small (%u/%u)",
-				sequence->buffer_size, needed_buffer_size);
+		LOG_ERROR("Provided buffer is too small (%u/%u)", sequence->buffer_size,
+			  needed_buffer_size);
 		return -ENOMEM;
 	}
 
@@ -290,12 +289,12 @@ static int adc_it8xxx2_start_read(const struct device *dev,
 	}
 
 	if (!channel_mask || channel_mask & ~BIT_MASK(CHIP_ADC_COUNT)) {
-		LOG_ERR("Invalid selection of channels");
+		LOG_ERROR("Invalid selection of channels");
 		return -EINVAL;
 	}
 
 	if (!sequence->resolution) {
-		LOG_ERR("ADC resolution is not valid");
+		LOG_ERROR("ADC resolution is not valid");
 		return -EINVAL;
 	}
 	LOG_DBG("Configure resolution=%d", sequence->resolution);
@@ -435,7 +434,7 @@ static int adc_it8xxx2_init(const struct device *dev)
 	/* Set the pin to ADC alternate function. */
 	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (status < 0) {
-		LOG_ERR("Failed to configure ADC pins");
+		LOG_ERROR("Failed to configure ADC pins");
 		return status;
 	}
 

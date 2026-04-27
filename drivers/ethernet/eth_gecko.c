@@ -74,7 +74,7 @@ static void eth_gecko_setup_mac(const struct device *dev)
 	/* PHY auto-negotiate link parameters */
 	result = phy_gecko_auto_negotiate(&cfg->phy, &link_status);
 	if (result < 0) {
-		LOG_ERR("ETH PHY auto-negotiate sequence failed");
+		LOG_ERROR("ETH PHY auto-negotiate sequence failed");
 		return;
 	}
 
@@ -195,7 +195,7 @@ static struct net_pkt *frame_get(const struct device *dev)
 		rx_frame = net_pkt_rx_alloc_with_buffer(dev_data->iface,
 					total_len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (!rx_frame) {
-			LOG_ERR("Failed to obtain RX buffer");
+			LOG_ERROR("Failed to obtain RX buffer");
 			ETH_RX_DISABLE(eth);
 			eth_init_rx_buf_desc();
 			eth->RXQPTR = (uint32_t)dma_rx_desc_tab;
@@ -207,13 +207,10 @@ static struct net_pkt *frame_get(const struct device *dev)
 		j = sofIdx;
 		while (total_len) {
 			frag_len = MIN(total_len, ETH_RX_BUF_SIZE);
-			LOG_DBG("frag: %u, fraglen: %u, rx_buf_idx: %u", j,
-				frag_len, rx_buf_idx);
-			if (net_pkt_write(rx_frame, &dma_rx_buffer[j],
-					  frag_len) < 0) {
-				LOG_ERR("Failed to append RX buffer");
-				dma_rx_desc_tab[j].address &=
-					~ETH_RX_OWNERSHIP;
+			LOG_DBG("frag: %u, fraglen: %u, rx_buf_idx: %u", j, frag_len, rx_buf_idx);
+			if (net_pkt_write(rx_frame, &dma_rx_buffer[j], frag_len) < 0) {
+				LOG_ERROR("Failed to append RX buffer");
+				dma_rx_desc_tab[j].address &= ~ETH_RX_OWNERSHIP;
 				net_pkt_unref(rx_frame);
 				rx_frame = NULL;
 				break;
@@ -250,8 +247,7 @@ static void eth_rx(const struct device *dev)
 		/* All data for this frame received */
 		res = net_recv_data(dev_data->iface, rx_frame);
 		if (res < 0) {
-			LOG_ERR("Failed to enqueue frame into RX queue: %d",
-				res);
+			LOG_ERROR("Failed to enqueue frame into RX queue: %d", res);
 			eth_stats_update_errors_rx(dev_data->iface);
 			net_pkt_unref(rx_frame);
 		}
@@ -280,27 +276,27 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	/* Determine length of frame */
 	total_len = net_pkt_get_len(pkt);
 	if (total_len > ETH_TX_BUF_SIZE) {
-		LOG_ERR("PKT to big");
+		LOG_ERROR("PKT to big");
 		res = -EIO;
 		goto error;
 	}
 
 	if (k_sem_take(&dev_data->tx_sem, K_MSEC(100)) != 0) {
-		LOG_ERR("TX process did not complete within 100ms");
+		LOG_ERROR("TX process did not complete within 100ms");
 		res = -EIO;
 		goto error;
 	}
 
 	/* Make sure current buffer is available for writing */
 	if (!(dma_tx_desc_tab[tx_buf_idx].status & ETH_TX_USED)) {
-		LOG_ERR("Buffer already in use");
+		LOG_ERROR("Buffer already in use");
 		res = -EIO;
 		goto error;
 	}
 
 	dma_buffer = (uint8_t *)dma_tx_desc_tab[tx_buf_idx].address;
 	if (net_pkt_read(pkt, dma_buffer, total_len)) {
-		LOG_ERR("Failed to read packet into buffer");
+		LOG_ERROR("Failed to read packet into buffer");
 		res = -EIO;
 		goto error;
 	}
@@ -611,7 +607,7 @@ static void eth_iface_init(struct net_if *iface)
 	/* Initialise PHY */
 	result = phy_gecko_init(&cfg->phy);
 	if (result < 0) {
-		LOG_ERR("ETH PHY Initialization Error");
+		LOG_ERROR("ETH PHY Initialization Error");
 		return;
 	}
 

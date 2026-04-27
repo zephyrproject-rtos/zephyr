@@ -118,7 +118,7 @@ int usbd_ep_ctrl_enqueue(struct usbd_context *const uds_ctx,
 
 	if (USB_EP_DIR_IS_IN(bi->ep)) {
 		if (usbd_is_suspended(uds_ctx)) {
-			LOG_ERR("device is suspended");
+			LOG_ERROR("device is suspended");
 			return -EPERM;
 		}
 

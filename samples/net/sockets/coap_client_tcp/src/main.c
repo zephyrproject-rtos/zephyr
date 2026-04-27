@@ -54,7 +54,7 @@ static void event_callback(struct coap_client_tcp *cli,
 		LOG_WRN("Server requested session release");
 		break;
 	case COAP_CLIENT_TCP_EVENT_ABORT:
-		LOG_ERR("Connection aborted by server");
+		LOG_ERROR("Connection aborted by server");
 		break;
 	}
 }
@@ -63,7 +63,7 @@ static void response_callback(const struct coap_client_response_data *data,
 			      void *user_data)
 {
 	if (data->result_code < 0) {
-		LOG_ERR("Request failed with error: %d", data->result_code);
+		LOG_ERROR("Request failed with error: %d", data->result_code);
 		response_received = true;
 		k_sem_give(&response_sem);
 		return;
@@ -100,13 +100,13 @@ static int send_get_request(const char *path)
 
 	ret = coap_client_tcp_req(&client, &req);
 	if (ret < 0) {
-		LOG_ERR("Failed to send request: %d", ret);
+		LOG_ERROR("Failed to send request: %d", ret);
 		return ret;
 	}
 
 	ret = k_sem_take(&response_sem, K_SECONDS(30));
 	if (ret < 0) {
-		LOG_ERR("Timeout waiting for response");
+		LOG_ERROR("Timeout waiting for response");
 		return -ETIMEDOUT;
 	}
 
@@ -130,7 +130,7 @@ int main(void)
 	/* Initialize CoAP TCP client */
 	ret = coap_client_tcp_init(&client, "coap_tcp");
 	if (ret < 0) {
-		LOG_ERR("Failed to init client: %d", ret);
+		LOG_ERROR("Failed to init client: %d", ret);
 		return ret;
 	}
 
@@ -144,7 +144,7 @@ int main(void)
 				      sizeof(server_addr),
 				      IPPROTO_TCP);
 	if (ret < 0) {
-		LOG_ERR("Failed to connect: %d", ret);
+		LOG_ERROR("Failed to connect: %d", ret);
 		return ret;
 	}
 
@@ -153,7 +153,7 @@ int main(void)
 	/* Wait for CSM exchange to complete via event callback */
 	ret = k_sem_take(&csm_sem, K_SECONDS(5));
 	if (ret < 0) {
-		LOG_ERR("Timeout waiting for CSM exchange");
+		LOG_ERROR("Timeout waiting for CSM exchange");
 		return ret;
 	}
 
@@ -172,19 +172,19 @@ int main(void)
 	/* Send GET request */
 	ret = send_get_request(RESOURCE_PATH);
 	if (ret < 0) {
-		LOG_ERR("GET failed: %d", ret);
+		LOG_ERROR("GET failed: %d", ret);
 	}
 
 	/* Graceful release */
 	LOG_INF("Sending Release...");
 	ret = coap_client_tcp_release(&client, NULL, 0);
 	if (ret < 0) {
-		LOG_ERR("Release failed: %d", ret);
+		LOG_ERROR("Release failed: %d", ret);
 	}
 
 	ret = coap_client_tcp_close(&client);
 	if (ret < 0) {
-		LOG_ERR("Close failed: %d", ret);
+		LOG_ERROR("Close failed: %d", ret);
 	}
 
 	LOG_INF("Sample complete");

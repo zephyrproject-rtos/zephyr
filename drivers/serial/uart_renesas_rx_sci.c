@@ -220,19 +220,19 @@ static inline int uart_rx_sci_tei_grp_enable(const struct device *dev)
 	err = rx_grp_intc_set_callback(data->tei_ctrl, (bsp_int_src_t)data->tei_src,
 				       (bsp_int_cb_t)uart_rx_sci_tei_isr, (void *)dev);
 	if (err != 0) {
-		LOG_ERR("Failed to set callback for group interrupt TEI: %d", err);
+		LOG_ERROR("Failed to set callback for group interrupt TEI: %d", err);
 		return err;
 	}
 
 	err = rx_grp_intc_set_gen(data->tei_ctrl, data->tei_num, true);
 	if (err != 0) {
-		LOG_ERR("Failed to allow interrupt request for TEI: %d", err);
+		LOG_ERROR("Failed to allow interrupt request for TEI: %d", err);
 		return err;
 	}
 
 	err = rx_grp_intc_set_grp_int(data->tei_ctrl, (bsp_int_src_t)data->tei_src, true);
 	if (err != 0) {
-		LOG_ERR("Failed to enable group interrupt for TEI: %d", err);
+		LOG_ERROR("Failed to enable group interrupt for TEI: %d", err);
 		return err;
 	}
 
@@ -247,19 +247,19 @@ static inline int uart_rx_sci_eri_grp_enable(const struct device *dev)
 	err = rx_grp_intc_set_callback(data->eri_ctrl, (bsp_int_src_t)data->eri_src,
 				       (bsp_int_cb_t)uart_rx_sci_eri_isr, (void *)dev);
 	if (err != 0) {
-		LOG_ERR("Failed to set callback for group interrupt ERI: %d", err);
+		LOG_ERROR("Failed to set callback for group interrupt ERI: %d", err);
 		return err;
 	}
 
 	err = rx_grp_intc_set_gen(data->eri_ctrl, data->eri_num, true);
 	if (err != 0) {
-		LOG_ERR("Failed to allow interrupt request for ERI: %d", err);
+		LOG_ERROR("Failed to allow interrupt request for ERI: %d", err);
 		return err;
 	}
 
 	err = rx_grp_intc_set_grp_int(data->eri_ctrl, (bsp_int_src_t)data->eri_src, true);
 	if (err != 0) {
-		LOG_ERR("Failed to enable group interrupt for ERI: %d", err);
+		LOG_ERROR("Failed to enable group interrupt for ERI: %d", err);
 		return err;
 	}
 
@@ -483,7 +483,7 @@ static void uart_rx_irq_tx_enable(const struct device *dev)
 	int err = uart_rx_sci_tei_grp_enable(dev);
 
 	if (err != 0) {
-		LOG_ERR("Failed to enable group interrupt TEI: %d", err);
+		LOG_ERROR("Failed to enable group interrupt TEI: %d", err);
 		return;
 	}
 #else
@@ -507,7 +507,7 @@ static void uart_rx_irq_tx_disable(const struct device *dev)
 	/* Disable the interrupt request for the tei interrupt */
 	err = rx_grp_intc_set_gen(data->tei_ctrl, data->tei_num, false);
 	if (err != 0) {
-		LOG_ERR("Failed to disable group interrupt TEI: %d", err);
+		LOG_ERROR("Failed to disable group interrupt TEI: %d", err);
 		return;
 	}
 #else
@@ -548,7 +548,7 @@ static void uart_rx_irq_rx_enable(const struct device *dev)
 	int err = uart_rx_sci_eri_grp_enable(dev);
 
 	if (err != 0) {
-		LOG_ERR("Failed to enable group interrupt ERI: %d", err);
+		LOG_ERROR("Failed to enable group interrupt ERI: %d", err);
 		return;
 	}
 #endif /* CONFIG_RENESAS_RX_GRP_INTC */
@@ -581,7 +581,7 @@ static void uart_rx_irq_err_enable(const struct device *dev)
 	int err = uart_rx_sci_eri_grp_enable(dev);
 
 	if (err != 0) {
-		LOG_ERR("Failed to enable group interrupt ERI: %d", err);
+		LOG_ERROR("Failed to enable group interrupt ERI: %d", err);
 		return;
 	}
 #endif /* CONFIG_RENESAS_RX_GRP_INTC */
@@ -600,7 +600,7 @@ static void uart_rx_irq_err_disable(const struct device *dev)
 
 	err = rx_grp_intc_set_gen(data->eri_ctrl, data->eri_num, false);
 	if (err != 0) {
-		LOG_ERR("Failed to disable interrupt request for ERI: %d", err);
+		LOG_ERROR("Failed to disable interrupt request for ERI: %d", err);
 		return;
 	}
 #endif /* CONFIG_RENESAS_RX_GRP_INTC */
@@ -665,7 +665,7 @@ static inline void enable_tx(const struct device *dev)
 	int err = uart_rx_sci_tei_grp_enable(dev);
 
 	if (err != 0) {
-		LOG_ERR("Failed to enable group interrupt TEI: %d", err);
+		LOG_ERROR("Failed to enable group interrupt TEI: %d", err);
 		return;
 	}
 #else

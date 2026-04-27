@@ -65,7 +65,7 @@ static int eeprom_fm25xxx_set_enable_write(const struct device *dev, bool enable
 	int ret = spi_write_dt(&config->spi, &tx_buf_set);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to %s writes", enable_writes ? "enable" : "disable");
+		LOG_ERROR("Failed to %s writes", enable_writes ? "enable" : "disable");
 		return ret;
 	}
 
@@ -78,7 +78,7 @@ int eeprom_fm25xxx_read(const struct device *dev, off_t offset, void *data, size
 	const struct fm25xxx_config *config = dev->config;
 
 	if (offset + len > config->size) {
-		LOG_ERR("Can not read more data than the device size");
+		LOG_ERROR("Can not read more data than the device size");
 		return -EINVAL;
 	}
 
@@ -104,7 +104,7 @@ int eeprom_fm25xxx_read(const struct device *dev, off_t offset, void *data, size
 		sys_put_be24(offset, &read_op[1]);
 		break;
 	default:
-		LOG_ERR("Invalid number of address bytes %zu", addr_bytes);
+		LOG_ERROR("Invalid number of address bytes %zu", addr_bytes);
 		return -EINVAL;
 	}
 
@@ -137,7 +137,7 @@ int eeprom_fm25xxx_read(const struct device *dev, off_t offset, void *data, size
 	ret = spi_transceive_dt(&config->spi, &tx_buf_set, &rx_buf_set);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to read from FRAM");
+		LOG_ERROR("Failed to read from FRAM");
 		return ret;
 	}
 
@@ -151,12 +151,12 @@ int eeprom_fm25xxx_write(const struct device *dev, off_t offset, const void *dat
 	struct fm25xxx_data *dev_data = dev->data;
 
 	if (config->readonly) {
-		LOG_ERR("Can not write to a readonly device");
+		LOG_ERROR("Can not write to a readonly device");
 		return -EACCES;
 	}
 
 	if (offset + len > config->size) {
-		LOG_ERR("Can not write more data than the device size");
+		LOG_ERROR("Can not write more data than the device size");
 		return -EINVAL;
 	}
 
@@ -182,7 +182,7 @@ int eeprom_fm25xxx_write(const struct device *dev, off_t offset, const void *dat
 		sys_put_be24(offset, &write_op[1]);
 		break;
 	default:
-		LOG_ERR("Invalid number of address bytes %zu", addr_bytes);
+		LOG_ERROR("Invalid number of address bytes %zu", addr_bytes);
 		return -EINVAL;
 	}
 
@@ -208,21 +208,21 @@ int eeprom_fm25xxx_write(const struct device *dev, off_t offset, const void *dat
 	ret = eeprom_fm25xxx_set_enable_write(dev, true);
 	if (ret != 0) {
 		k_sem_give(&dev_data->lock);
-		LOG_ERR("Could not enable writes");
+		LOG_ERROR("Could not enable writes");
 		return ret;
 	}
 
 	ret = spi_write_dt(&config->spi, &tx_buf_set);
 	if (ret != 0) {
 		k_sem_give(&dev_data->lock);
-		LOG_ERR("Failed to write to FRAM");
+		LOG_ERROR("Failed to write to FRAM");
 		return ret;
 	}
 
 	ret = eeprom_fm25xxx_set_enable_write(dev, false);
 	if (ret != 0) {
 		k_sem_give(&dev_data->lock);
-		LOG_ERR("Could not disable writes");
+		LOG_ERROR("Could not disable writes");
 		return ret;
 	}
 
@@ -246,7 +246,7 @@ static int eeprom_fm25xxx_init(const struct device *dev)
 	k_sem_init(&data->lock, 1, 1);
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus not ready");
+		LOG_ERROR("SPI bus not ready");
 		return -ENODEV;
 	}
 

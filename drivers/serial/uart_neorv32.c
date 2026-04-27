@@ -135,17 +135,17 @@ static int neorv32_uart_configure(const struct device *dev, const struct uart_co
 	__ASSERT_NO_MSG(cfg != NULL);
 
 	if (cfg->stop_bits != UART_CFG_STOP_BITS_1) {
-		LOG_ERR("hardware only supports one stop bit");
+		LOG_ERROR("hardware only supports one stop bit");
 		return -ENOTSUP;
 	}
 
 	if (cfg->data_bits != UART_CFG_DATA_BITS_8) {
-		LOG_ERR("hardware only supports 8 data bits");
+		LOG_ERROR("hardware only supports 8 data bits");
 		return -ENOTSUP;
 	}
 
 	if (cfg->parity != UART_CFG_PARITY_NONE) {
-		LOG_ERR("hardware only supports parity mode none");
+		LOG_ERROR("hardware only supports parity mode none");
 		return -ENOTSUP;
 	}
 
@@ -157,18 +157,18 @@ static int neorv32_uart_configure(const struct device *dev, const struct uart_co
 		hwfc_en = true;
 		break;
 	default:
-		LOG_ERR("unsupported flow control mode %d", cfg->flow_ctrl);
+		LOG_ERROR("unsupported flow control mode %d", cfg->flow_ctrl);
 		return -ENOTSUP;
 	}
 
 	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_CLK, &clk);
 	if (err < 0) {
-		LOG_ERR("failed to determine clock rate (err %d)", err);
+		LOG_ERROR("failed to determine clock rate (err %d)", err);
 		return -EIO;
 	}
 
 	if (cfg->baudrate == 0) {
-		LOG_ERR("invalid baud rate 0");
+		LOG_ERROR("invalid baud rate 0");
 		return -EINVAL;
 	}
 
@@ -188,7 +188,7 @@ static int neorv32_uart_configure(const struct device *dev, const struct uart_co
 	}
 
 	if (prscx > prscx_max) {
-		LOG_ERR("unsupported baud rate %d", cfg->baudrate);
+		LOG_ERROR("unsupported baud rate %d", cfg->baudrate);
 		return -ENOTSUP;
 	}
 
@@ -400,18 +400,18 @@ static int neorv32_uart_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(config->syscon)) {
-		LOG_ERR("syscon device not ready");
+		LOG_ERROR("syscon device not ready");
 		return -EINVAL;
 	}
 
 	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_SOC, &features);
 	if (err < 0) {
-		LOG_ERR("failed to determine implemented features (err %d)", err);
+		LOG_ERROR("failed to determine implemented features (err %d)", err);
 		return -EIO;
 	}
 
 	if ((features & config->feature_mask) == 0) {
-		LOG_ERR("neorv32 uart instance not supported");
+		LOG_ERROR("neorv32 uart instance not supported");
 		return -ENODEV;
 	}
 

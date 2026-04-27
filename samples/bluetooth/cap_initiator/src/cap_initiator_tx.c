@@ -78,7 +78,7 @@ static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 				if (err == 0) {
 					tx_streams[i].seq_num++;
 				} else {
-					LOG_ERR("Unable to send: %d", err);
+					LOG_ERROR("Unable to send: %d", err);
 					net_buf_unref(buf);
 				}
 			}

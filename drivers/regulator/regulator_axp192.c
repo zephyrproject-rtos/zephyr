@@ -453,7 +453,7 @@ static int axp192_enable(const struct device *dev)
 #endif
 
 	if (ret != 0) {
-		LOG_ERR("Failed to enable regulator");
+		LOG_ERROR("Failed to enable regulator");
 	}
 
 	return ret;
@@ -481,7 +481,7 @@ static int axp192_disable(const struct device *dev)
 #endif
 
 	if (ret != 0) {
-		LOG_ERR("Failed to disable regulator");
+		LOG_ERROR("Failed to disable regulator");
 	}
 
 	return ret;
@@ -514,7 +514,7 @@ static int axp192_set_voltage(const struct device *dev, int32_t min_uv, int32_t 
 	ret = linear_range_group_get_win_index(config->desc->ranges, config->desc->num_ranges,
 					       min_uv, max_uv, &idx);
 	if (ret != 0) {
-		LOG_ERR("No voltage range window could be detected");
+		LOG_ERROR("No voltage range window could be detected");
 		return ret;
 	}
 
@@ -525,7 +525,7 @@ static int axp192_set_voltage(const struct device *dev, int32_t min_uv, int32_t 
 	ret = i2c_reg_update_byte_dt(&config->i2c, config->desc->vsel_reg, config->desc->vsel_mask,
 				     (uint8_t)idx);
 	if (ret != 0) {
-		LOG_ERR("Failed to set regulator voltage");
+		LOG_ERROR("Failed to set regulator voltage");
 	}
 
 	return ret;
@@ -582,7 +582,7 @@ static int axp192_set_mode(const struct device *dev, regulator_mode_t mode)
 			return 0;
 		}
 	} else {
-		LOG_ERR("Setting DCDC workmode failed");
+		LOG_ERROR("Setting DCDC workmode failed");
 		return -ENOTSUP;
 	}
 
@@ -619,14 +619,14 @@ static int regulator_axp192_init(const struct device *dev)
 	regulator_common_data_init(dev);
 
 	if (!device_is_ready(config->mfd)) {
-		LOG_ERR("Parent instance not ready!");
+		LOG_ERROR("Parent instance not ready!");
 		return -ENODEV;
 	}
 
 	/* read regulator state */
 	ret = i2c_reg_read_byte_dt(&config->i2c, config->desc->enable_reg, &enabled_val);
 	if (ret != 0) {
-		LOG_ERR("Reading enable status failed!");
+		LOG_ERROR("Reading enable status failed!");
 		return ret;
 	}
 	is_enabled = ((enabled_val & config->desc->enable_mask) == config->desc->enable_val);

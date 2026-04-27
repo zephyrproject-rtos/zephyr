@@ -23,7 +23,7 @@ int ext2_bitmap_set(uint8_t *bm, uint32_t index, uint32_t size)
 	uint32_t off = index % 8;
 
 	if (idx >= size) {
-		LOG_ERR("Tried to set value outside of bitmap (%d)", index);
+		LOG_ERROR("Tried to set value outside of bitmap (%d)", index);
 		return -EINVAL;
 	}
 
@@ -44,7 +44,7 @@ int ext2_bitmap_unset(uint8_t *bm, uint32_t index, uint32_t size)
 	uint32_t off = index % 8;
 
 	if (idx >= size) {
-		LOG_ERR("Tried to unset value outside of bitmap (%d)", index);
+		LOG_ERROR("Tried to unset value outside of bitmap (%d)", index);
 		return -EINVAL;
 	}
 

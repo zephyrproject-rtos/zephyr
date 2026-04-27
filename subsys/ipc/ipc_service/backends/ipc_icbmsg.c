@@ -259,7 +259,7 @@ static uint8_t *buffer_from_index_validate(const struct channel_config *ch_conf,
 	struct block_content *block;
 
 	if (block_index >= ch_conf->block_count) {
-		LOG_ERR("Block index invalid");
+		LOG_ERROR("Block index invalid");
 		return NULL;
 	}
 
@@ -276,7 +276,7 @@ static uint8_t *buffer_from_index_validate(const struct channel_config *ch_conf,
 
 		if ((buffer_size > allocable_size - BLOCK_HEADER_SIZE) ||
 		    (&block->data[buffer_size] > end_ptr)) {
-			LOG_ERR("Block corrupted");
+			LOG_ERROR("Block corrupted");
 			return NULL;
 		}
 
@@ -312,7 +312,7 @@ static int buffer_to_index_validate(const struct channel_config *ch_conf,
 	expected = buffer_from_index_validate(ch_conf, block_index, size, false);
 
 	if (expected == NULL || expected != buffer) {
-		LOG_ERR("Pointer invalid");
+		LOG_ERROR("Pointer invalid");
 		return -EINVAL;
 	}
 
@@ -382,7 +382,7 @@ static int alloc_tx_buffer(struct backend_data *dev_data, uint32_t *size,
 
 	if (r < 0) {
 		if (r != -ENOSPC && r != -EAGAIN) {
-			LOG_ERR("Failed to allocate buffer, err: %d", r);
+			LOG_ERROR("Failed to allocate buffer, err: %d", r);
 			/* Only -EINVAL is allowed in this place. Any other code
 			 * indicates something wrong with the logic.
 			 */
@@ -455,8 +455,7 @@ static int release_tx_blocks(struct backend_data *dev_data, size_t tx_block_inde
 		new_total_size = new_size + BLOCK_HEADER_SIZE;
 		new_num_blocks = DIV_ROUND_UP(new_total_size, conf->tx.block_size);
 		if (new_num_blocks > num_blocks) {
-			LOG_ERR("Requested %d blocks, allocated %d", new_num_blocks,
-				num_blocks);
+			LOG_ERROR("Requested %d blocks, allocated %d", new_num_blocks, num_blocks);
 			return -EINVAL;
 		}
 		/* Update actual buffer size and number of blocks to release. */
@@ -474,7 +473,7 @@ static int release_tx_blocks(struct backend_data *dev_data, size_t tx_block_inde
 		r = sys_bitarray_free(conf->tx_usage_bitmap, num_blocks,
 				      release_index);
 		if (r < 0) {
-			LOG_ERR("Cannot free bits, err %d", r);
+			LOG_ERROR("Cannot free bits, err %d", r);
 			return r;
 		}
 
@@ -538,7 +537,7 @@ static int send_control_message(struct backend_data *dev_data, enum msg_type msg
 	k_mutex_unlock(&dev_data->mutex);
 #endif
 	if (r < sizeof(message)) {
-		LOG_ERR("Cannot send over ICMsg, err %d", r);
+		LOG_ERROR("Cannot send over ICMsg, err %d", r);
 	}
 	return r;
 }
@@ -669,7 +668,7 @@ static int match_bound_msg(struct backend_data *dev_data, size_t rx_block_index,
 	dev_data->ept_map[ept->addr] = ept_index;
 	valid_state = atomic_cas(&ept->state, EPT_CONFIGURED, EPT_READY);
 	if (!valid_state) {
-		LOG_ERR("Unexpected bounding from remote on endpoint %d", ept_addr);
+		LOG_ERROR("Unexpected bounding from remote on endpoint %d", ept_addr);
 		return -EINVAL;
 	}
 
@@ -755,7 +754,7 @@ static void ept_bound_process(struct backend_data *dev_data)
 				r = send_bound_message(dev_data, ept);
 				if (r < 0) {
 					atomic_set(&ept->state, EPT_UNCONFIGURED);
-					LOG_ERR("Failed to send bound, err %d", r);
+					LOG_ERROR("Failed to send bound, err %d", r);
 				}
 			}
 		}
@@ -778,7 +777,7 @@ static void ept_bound_process(struct backend_data *dev_data)
 					dev_data->waiting_bound[i] =
 						WAITING_BOUND_MSG_EMPTY;
 					if (r < 0) {
-						LOG_ERR("Failed bound, err %d", r);
+						LOG_ERROR("Failed bound, err %d", r);
 					}
 				}
 			}
@@ -813,7 +812,7 @@ static struct ept_data *get_ept_and_rx_validate(struct backend_data *dev_data,
 	enum ept_bounding_state state;
 
 	if (ept_addr >= NUM_EPT || dev_data->ept_map[ept_addr] >= NUM_EPT) {
-		LOG_ERR("Received invalid endpoint addr %d", ept_addr);
+		LOG_ERROR("Received invalid endpoint addr %d", ept_addr);
 		return NULL;
 	}
 
@@ -833,7 +832,7 @@ static struct ept_data *get_ept_and_rx_validate(struct backend_data *dev_data,
 			ept->cfg->cb.bound(ept->cfg->priv);
 		}
 	} else {
-		LOG_ERR("Invalid state %d of receiving endpoint %d", state, ept->addr);
+		LOG_ERROR("Invalid state %d of receiving endpoint %d", state, ept->addr);
 		return NULL;
 	}
 
@@ -856,8 +855,7 @@ static int received_data(struct backend_data *dev_data, size_t rx_block_index,
 	buffer = buffer_from_index_validate(&conf->rx, rx_block_index, &size, true);
 	ept = get_ept_and_rx_validate(dev_data, ept_addr);
 	if (buffer == NULL || ept == NULL) {
-		LOG_ERR("Received invalid block index %d or addr %d", rx_block_index,
-			ept_addr);
+		LOG_ERROR("Received invalid block index %d or addr %d", rx_block_index, ept_addr);
 		return -EINVAL;
 	}
 
@@ -889,7 +887,7 @@ static int received_release_data(struct backend_data *dev_data, size_t tx_block_
 	/* Validate. */
 	buffer = buffer_from_index_validate(&conf->tx, tx_block_index, &size, false);
 	if (buffer == NULL) {
-		LOG_ERR("Received invalid block index %d", tx_block_index);
+		LOG_ERROR("Received invalid block index %d", tx_block_index);
 		return -EINVAL;
 	}
 
@@ -915,7 +913,7 @@ static int received_bound(struct backend_data *dev_data, size_t rx_block_index,
 	/* Validate */
 	buffer = buffer_from_index_validate(&conf->rx, rx_block_index, &size, true);
 	if (buffer == NULL) {
-		LOG_ERR("Received invalid block index %d", rx_block_index);
+		LOG_ERROR("Received invalid block index %d", rx_block_index);
 		return -EINVAL;
 	}
 
@@ -995,7 +993,7 @@ static void control_received(const void *data, size_t len, void *priv)
 
 exit:
 	if (r < 0) {
-		LOG_ERR("Failed to receive, err %d", r);
+		LOG_ERROR("Failed to receive, err %d", r);
 	}
 }
 
@@ -1115,7 +1113,7 @@ static int register_ept(const struct device *instance, void **token,
 	/* Reserve new endpoint index. */
 	ept_index = atomic_inc(&dev_data->flags) & FLAG_EPT_COUNT_MASK;
 	if (ept_index >= NUM_EPT) {
-		LOG_ERR("Too many endpoints");
+		LOG_ERROR("Too many endpoints");
 		__ASSERT_NO_MSG(false);
 		return -ENOMEM;
 	}

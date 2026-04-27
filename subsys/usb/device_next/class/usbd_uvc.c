@@ -413,8 +413,8 @@ static int uvc_get_vs_format_from_desc(const struct device *dev, struct video_fo
 	/* Update the format based on the probe message from the host */
 	uvc_get_vs_fmtfrm_desc(dev, &format_desc, &frame_desc);
 	if (format_desc == NULL || frame_desc == NULL) {
-		LOG_ERR("Invalid format ID (%u) and/or frame ID (%u)",
-			data->format_id, data->frame_id);
+		LOG_ERROR("Invalid format ID (%u) and/or frame ID (%u)", data->format_id,
+			  data->frame_id);
 		return -EINVAL;
 	}
 
@@ -715,7 +715,7 @@ static int uvc_get_vc_ctrl(const struct device *dev, struct net_buf *const buf,
 
 	ret = video_query_ctrl(&cq);
 	if (ret != 0) {
-		LOG_ERR("Failed to query %s for control 0x%x", video_dev->name, cq.id);
+		LOG_ERROR("Failed to query %s for control 0x%x", video_dev->name, cq.id);
 		return ret;
 	}
 
@@ -723,7 +723,7 @@ static int uvc_get_vc_ctrl(const struct device *dev, struct net_buf *const buf,
 
 	if (cq.type != VIDEO_CTRL_TYPE_BOOLEAN && cq.type != VIDEO_CTRL_TYPE_MENU &&
 	    cq.type != VIDEO_CTRL_TYPE_INTEGER && cq.type != VIDEO_CTRL_TYPE_INTEGER64) {
-		LOG_ERR("Unsupported control type %u", cq.type);
+		LOG_ERROR("Unsupported control type %u", cq.type);
 		return -ENOTSUP;
 	}
 
@@ -829,18 +829,18 @@ static int uvc_set_vc_ctrl(const struct device *dev, const struct net_buf *const
 
 	ret = video_query_ctrl(&cq);
 	if (ret != 0) {
-		LOG_ERR("Failed to query the video device for control 0x%08x", cq.id);
+		LOG_ERROR("Failed to query the video device for control 0x%08x", cq.id);
 		return ret;
 	}
 
 	if (cq.type != VIDEO_CTRL_TYPE_BOOLEAN && cq.type != VIDEO_CTRL_TYPE_MENU &&
 	    cq.type != VIDEO_CTRL_TYPE_INTEGER && cq.type != VIDEO_CTRL_TYPE_INTEGER64) {
-		LOG_ERR("Unsupported control type %u", cq.type);
+		LOG_ERROR("Unsupported control type %u", cq.type);
 		return -ENOTSUP;
 	}
 
 	if (buf.len < map->size) {
-		LOG_ERR("USB message size %u too short for control 0x%08x", buf.len, cq.id);
+		LOG_ERROR("USB message size %u too short for control 0x%08x", buf.len, cq.id);
 		return -ENOTSUP;
 	}
 
@@ -888,7 +888,7 @@ static int uvc_set_vc_ctrl(const struct device *dev, const struct net_buf *const
 
 	ret = video_set_ctrl(video_dev, &ctrl);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure target video device");
+		LOG_ERROR("Failed to configure target video device");
 		return ret;
 	}
 
@@ -966,7 +966,7 @@ static int uvc_get_control_op(const struct device *dev, const struct usb_setup_p
 			LOG_INF("Host sent a VideoStreaming COMMIT control");
 			return UVC_OP_VS_COMMIT;
 		default:
-			LOG_ERR("Invalid probe/commit operation for bInterfaceNumber %u", ifnum);
+			LOG_ERROR("Invalid probe/commit operation for bInterfaceNumber %u", ifnum);
 			return UVC_OP_INVALID;
 		}
 	}
@@ -1180,7 +1180,8 @@ static union uvc_fmt_desc *uvc_new_fmt_desc(const struct device *dev)
 	BUILD_ASSERT(CONFIG_USBD_VIDEO_MAX_FORMATS == ARRAY_SIZE(cfg->desc->if1_fmts));
 
 	if (data->fmt_desc_idx >= CONFIG_USBD_VIDEO_MAX_FORMATS) {
-		LOG_ERR("Out of descriptor pointers, raise CONFIG_USBD_VIDEO_MAX_FORMATS above %u",
+		LOG_ERROR(
+			"Out of descriptor pointers, raise CONFIG_USBD_VIDEO_MAX_FORMATS above %u",
 			CONFIG_USBD_VIDEO_MAX_FORMATS);
 		return NULL;
 	}
@@ -1509,7 +1510,7 @@ int uvc_device_enable(const struct device *const dev)
 	int ret;
 
 	if (!atomic_test_bit(&data->state, UVC_STATE_INITIALIZED)) {
-		LOG_ERR("UVC instance '%s' is not initialized ", dev->name);
+		LOG_ERROR("UVC instance '%s' is not initialized ", dev->name);
 		return -EIO;
 	}
 
@@ -1535,7 +1536,7 @@ int uvc_device_enable(const struct device *const dev)
 	/* Generating the default probe message now that descriptors are complete */
 	ret = uvc_get_vs_probe_struct(dev, &data->default_probe, UVC_GET_CUR);
 	if (ret != 0) {
-		LOG_ERR("init: failed to query the default probe");
+		LOG_ERROR("init: failed to query the default probe");
 		return ret;
 	}
 
@@ -1613,17 +1614,17 @@ int uvc_device_add_format(const struct device *const dev, const struct video_for
 	int ret;
 
 	if (!atomic_test_bit(&data->state, UVC_STATE_INITIALIZED)) {
-		LOG_ERR("UVC instance '%s' is not initialized ", dev->name);
+		LOG_ERROR("UVC instance '%s' is not initialized ", dev->name);
 		return -EIO;
 	}
 
 	if (data->video_dev == NULL) {
-		LOG_ERR("Video device not yet configured into UVC");
+		LOG_ERROR("Video device not yet configured into UVC");
 		return -EINVAL;
 	}
 
 	if (fmt->size == 0) {
-		LOG_ERR("The format size must be set prior to add it to UVC");
+		LOG_ERROR("The format size must be set prior to add it to UVC");
 		return -EINVAL;
 	}
 

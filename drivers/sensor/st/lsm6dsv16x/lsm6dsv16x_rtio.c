@@ -35,7 +35,7 @@ static void lsm6dsv16x_submit_sample(const struct device *dev, struct rtio_iodev
 	/* Get the buffer for the frame, it may be allocated dynamically by the rtio context */
 	rc = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
 	if (rc != 0) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
+		LOG_ERROR("Failed to get a read buffer of size %u bytes", min_buf_len);
 		goto err;
 	}
 
@@ -116,7 +116,7 @@ static void lsm6dsv16x_submit_sample(const struct device *dev, struct rtio_iodev
 
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
+		LOG_ERROR("Failed to get sensor clock cycles");
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		goto err;
 	}
@@ -132,7 +132,7 @@ static void lsm6dsv16x_submit_sample(const struct device *dev, struct rtio_iodev
 err:
 	/* Check that the fetch succeeded */
 	if (rc != 0) {
-		LOG_ERR("Failed to fetch samples");
+		LOG_ERROR("Failed to fetch samples");
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}
@@ -157,8 +157,8 @@ void lsm6dsv16x_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sq
 	struct rtio_work_req *req = rtio_work_req_alloc();
 
 	if (req == NULL) {
-		LOG_ERR("RTIO work item allocation failed. Consider to increase "
-			"CONFIG_RTIO_WORKQ_POOL_ITEMS.");
+		LOG_ERROR("RTIO work item allocation failed. Consider to increase "
+			  "CONFIG_RTIO_WORKQ_POOL_ITEMS.");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}

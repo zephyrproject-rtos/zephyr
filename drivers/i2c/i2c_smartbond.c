@@ -126,7 +126,7 @@ static int i2c_smartbond_apply_configure(const struct device *dev, uint32_t dev_
 	 *	break;
 	 */
 	default:
-		LOG_ERR("Speed not supported");
+		LOG_ERROR("Speed not supported");
 		return -ENOTSUP;
 	}
 
@@ -135,7 +135,7 @@ static int i2c_smartbond_apply_configure(const struct device *dev, uint32_t dev_
 		con_reg |=
 			I2C_I2C_CON_REG_I2C_MASTER_MODE_Msk | I2C_I2C_CON_REG_I2C_SLAVE_DISABLE_Msk;
 	} else {
-		LOG_ERR("Only I2C Controller mode supported");
+		LOG_ERROR("Only I2C Controller mode supported");
 		return -ENOTSUP;
 	}
 
@@ -574,7 +574,7 @@ static int i2c_smartbond_resume(const struct device *dev)
 
 	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
-		LOG_ERR("Failed to configure I2C pins");
+		LOG_ERROR("Failed to configure I2C pins");
 		return err;
 	}
 

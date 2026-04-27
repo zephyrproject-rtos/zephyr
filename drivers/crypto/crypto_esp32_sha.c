@@ -111,7 +111,7 @@ static int sha_get_params(enum hash_algo algo, struct sha_params *params)
 	}
 
 	if (!sha_algo_supported(algo)) {
-		LOG_ERR("Algorithm %d not supported by hardware", algo);
+		LOG_ERROR("Algorithm %d not supported by hardware", algo);
 		return -ENOTSUP;
 	}
 
@@ -169,7 +169,7 @@ static void sha_ctx_init_params(struct esp_sha_ctx *s, enum hash_algo algo)
 	s->algo = algo;
 
 	if (sha_get_params(algo, &s->params) != 0) {
-		LOG_ERR("Failed to get parameters for algorithm %d", algo);
+		LOG_ERROR("Failed to get parameters for algorithm %d", algo);
 		return;
 	}
 
@@ -263,7 +263,7 @@ static size_t sha_make_padding(const struct esp_sha_ctx *s, const uint8_t *tail,
 	const uint64_t bit_len = s->total_len * 8ULL;
 
 	if (tail_len >= B) {
-		LOG_ERR("Invalid tail length: %zu", tail_len);
+		LOG_ERROR("Invalid tail length: %zu", tail_len);
 		return 0;
 	}
 
@@ -366,23 +366,23 @@ static int sha_handler(struct hash_ctx *hctx, struct hash_pkt *pkt, bool fin)
 	int ret = 0;
 
 	if (!s) {
-		LOG_ERR("Invalid session state");
+		LOG_ERROR("Invalid session state");
 		return -EINVAL;
 	}
 
 	if ((pkt->in_len > 0 && !pkt->in_buf) || (fin && !pkt->out_buf)) {
-		LOG_ERR("Invalid buffer pointers");
+		LOG_ERROR("Invalid buffer pointers");
 		return -EINVAL;
 	}
 
 #if !SOC_SHA_SUPPORT_RESUME
 	if (!s->first_block) {
-		LOG_ERR("Multi-part hash not supported on this chip (no resume support)");
+		LOG_ERROR("Multi-part hash not supported on this chip (no resume support)");
 		return -ENOTSUP;
 	}
 
 	if (!fin) {
-		LOG_ERR("Non-final operations not supported on original ESP32");
+		LOG_ERROR("Non-final operations not supported on original ESP32");
 		return -ENOTSUP;
 	}
 #endif
@@ -400,7 +400,7 @@ static int sha_handler(struct hash_ctx *hctx, struct hash_pkt *pkt, bool fin)
 	if (pkt->in_len > 0) {
 		ret = sha_update_stream(s, pkt->in_buf, pkt->in_len);
 		if (ret != 0) {
-			LOG_ERR("Failed to update stream: %d", ret);
+			LOG_ERROR("Failed to update stream: %d", ret);
 			goto unlock;
 		}
 	}
@@ -418,7 +418,7 @@ static int sha_handler(struct hash_ctx *hctx, struct hash_pkt *pkt, bool fin)
 	size_t nfinal = sha_make_padding(s, tail, s->buf_len, last, last2);
 
 	if (nfinal == 0) {
-		LOG_ERR("Failed to create padding");
+		LOG_ERROR("Failed to create padding");
 		ret = -EINVAL;
 		goto unlock;
 	}
@@ -474,7 +474,7 @@ static int sha_begin_session(const struct device *dev, struct hash_ctx *hctx, en
 	struct esp_sha_ctx *s = sha_pool_alloc(algo);
 
 	if (!s) {
-		LOG_ERR("No available SHA sessions");
+		LOG_ERROR("No available SHA sessions");
 		return -ENOMEM;
 	}
 
@@ -517,17 +517,17 @@ static int sha_init(const struct device *dev)
 	const struct esp_sha_config *cfg = dev->config;
 
 	if (!cfg->clock_dev) {
-		LOG_ERR("Clock device is NULL");
+		LOG_ERROR("Clock device is NULL");
 		return -EINVAL;
 	}
 
 	if (!device_is_ready(cfg->clock_dev)) {
-		LOG_ERR("Clock device not ready");
+		LOG_ERROR("Clock device not ready");
 		return -ENODEV;
 	}
 
 	if (clock_control_on(cfg->clock_dev, cfg->clock_subsys) != 0) {
-		LOG_ERR("Failed to enable SHA peripheral clock");
+		LOG_ERROR("Failed to enable SHA peripheral clock");
 		return -EIO;
 	}
 

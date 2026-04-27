@@ -149,7 +149,7 @@ static int mfd_axp192_init(const struct device *dev)
 	LOG_DBG("Initializing instance");
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C bus not ready");
+		LOG_ERROR("I2C bus not ready");
 		return -ENODEV;
 	}
 
@@ -159,7 +159,7 @@ static int mfd_axp192_init(const struct device *dev)
 		return ret;
 	}
 	if (chip_id != AXP192_CHIP_ID) {
-		LOG_ERR("Invalid Chip detected (%d)", chip_id);
+		LOG_ERROR("Invalid Chip detected (%d)", chip_id);
 		return -EINVAL;
 	}
 
@@ -181,7 +181,7 @@ int mfd_axp192_gpio_func_get(const struct device *dev, uint8_t gpio, enum axp192
 	uint8_t reg_fnc;
 
 	if (gpio >= AXP192_GPIO_MAX_NUM) {
-		LOG_ERR("Invalid gpio (%d)", gpio);
+		LOG_ERROR("Invalid gpio (%d)", gpio);
 		return -EINVAL;
 	}
 
@@ -290,12 +290,12 @@ int mfd_axp192_gpio_func_ctrl(const struct device *dev, const struct device *cli
 	uint8_t reg_cfg = 0;
 
 	if (!AXP192_GPIO_FUNC_VALID(func)) {
-		LOG_ERR("Invalid function");
+		LOG_ERROR("Invalid function");
 		return -EINVAL;
 	}
 
 	if (gpio >= AXP192_GPIO_MAX_NUM) {
-		LOG_ERR("Invalid gpio (%d)", gpio);
+		LOG_ERROR("Invalid gpio (%d)", gpio);
 		return -EINVAL;
 	}
 
@@ -392,7 +392,7 @@ int mfd_axp192_gpio_func_ctrl(const struct device *dev, const struct device *cli
 	}
 
 	if (ret != 0) {
-		LOG_ERR("Invalid function (0x%x) for gpio %d", func, gpio);
+		LOG_ERROR("Invalid function (0x%x) for gpio %d", func, gpio);
 		return ret;
 	}
 
@@ -443,7 +443,7 @@ int mfd_axp192_gpio_pd_get(const struct device *dev, uint8_t gpio, bool *enabled
 		return -ENOTSUP;
 
 	default:
-		LOG_ERR("Invalid gpio (%d)", gpio);
+		LOG_ERROR("Invalid gpio (%d)", gpio);
 		return -EINVAL;
 	}
 
@@ -492,11 +492,11 @@ int mfd_axp192_gpio_pd_ctrl(const struct device *dev, uint8_t gpio, bool enable)
 	case 4U:
 		__fallthrough;
 	case 5U:
-		LOG_ERR("Pull-Down not support on gpio %d", gpio);
+		LOG_ERROR("Pull-Down not support on gpio %d", gpio);
 		return -ENOTSUP;
 
 	default:
-		LOG_ERR("Invalid gpio (%d)", gpio);
+		LOG_ERROR("Invalid gpio (%d)", gpio);
 		return -EINVAL;
 	}
 

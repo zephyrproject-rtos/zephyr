@@ -312,7 +312,7 @@ static int gpio_rza2m_pin_configure(const struct device *port_dev, gpio_pin_t pi
 	const struct gpio_rza2m_port_config *config = port_dev->config;
 
 	if (pin >= config->ngpios) {
-		LOG_ERR("provided pin %d > %d (ngpios)", pin, config->ngpios);
+		LOG_ERROR("provided pin %d > %d (ngpios)", pin, config->ngpios);
 		return -EINVAL;
 	}
 
@@ -334,7 +334,7 @@ static int gpio_rza2m_pin_configure(const struct device *port_dev, gpio_pin_t pi
 		/* Configure pin drive strength */
 		ret = gpio_rza2m_pin_drive_set(port_dev, pin, flags);
 		if (ret) {
-			LOG_ERR("unable to set gpio drive level");
+			LOG_ERROR("unable to set gpio drive level");
 			return ret;
 		}
 

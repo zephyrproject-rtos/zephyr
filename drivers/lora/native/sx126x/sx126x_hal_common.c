@@ -83,13 +83,13 @@ int sx126x_hal_configure_gpio(const struct gpio_dt_spec *gpio,
 	}
 
 	if (!gpio_is_ready_dt(gpio)) {
-		LOG_ERR("%s GPIO not ready", name);
+		LOG_ERROR("%s GPIO not ready", name);
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(gpio, flags);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure %s: %d", name, ret);
+		LOG_ERROR("Failed to configure %s: %d", name, ret);
 		return ret;
 	}
 
@@ -118,7 +118,7 @@ int sx126x_hal_wakeup(const struct device *dev)
 	 */
 	ret = spi_write_dt(&config->spi, &tx_set);
 	if (ret < 0) {
-		LOG_ERR("Wakeup SPI failed: %d", ret);
+		LOG_ERROR("Wakeup SPI failed: %d", ret);
 		return ret;
 	}
 
@@ -139,7 +139,7 @@ int sx126x_hal_write_cmd(const struct device *dev, uint8_t opcode,
 
 	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), (uint8_t *)data, len, false);
 	if (ret < 0) {
-		LOG_ERR("SPI write failed: %d", ret);
+		LOG_ERROR("SPI write failed: %d", ret);
 		return ret;
 	}
 
@@ -170,7 +170,7 @@ int sx126x_hal_read_cmd(const struct device *dev, uint8_t opcode,
 
 	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), data, len, true);
 	if (ret < 0) {
-		LOG_ERR("SPI transceive failed: %d", ret);
+		LOG_ERROR("SPI transceive failed: %d", ret);
 		return ret;
 	}
 
@@ -194,7 +194,7 @@ int sx126x_hal_write_regs(const struct device *dev, uint16_t address,
 
 	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), (uint8_t *)data, len, false);
 	if (ret < 0) {
-		LOG_ERR("SPI write regs failed: %d", ret);
+		LOG_ERROR("SPI write regs failed: %d", ret);
 		return ret;
 	}
 
@@ -219,7 +219,7 @@ int sx126x_hal_read_regs(const struct device *dev, uint16_t address,
 
 	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), data, len, true);
 	if (ret < 0) {
-		LOG_ERR("SPI read regs failed: %d", ret);
+		LOG_ERROR("SPI read regs failed: %d", ret);
 		return ret;
 	}
 
@@ -240,7 +240,7 @@ int sx126x_hal_write_buffer(const struct device *dev, uint8_t offset,
 
 	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), (uint8_t *)data, len, false);
 	if (ret < 0) {
-		LOG_ERR("SPI write buffer failed: %d", ret);
+		LOG_ERROR("SPI write buffer failed: %d", ret);
 		return ret;
 	}
 
@@ -261,7 +261,7 @@ int sx126x_hal_read_buffer(const struct device *dev, uint8_t offset,
 
 	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), data, len, true);
 	if (ret < 0) {
-		LOG_ERR("SPI read buffer failed: %d", ret);
+		LOG_ERROR("SPI read buffer failed: %d", ret);
 		return ret;
 	}
 

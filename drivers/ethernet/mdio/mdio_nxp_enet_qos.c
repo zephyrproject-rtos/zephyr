@@ -114,7 +114,7 @@ static int do_transaction(struct mdio_transaction *mdio, bool clause45)
 	}
 
 	if (ret) {
-		LOG_ERR("MDIO transaction timed out");
+		LOG_ERROR("MDIO transaction timed out");
 		goto done;
 	}
 
@@ -246,7 +246,7 @@ static int nxp_enet_qos_mdio_init(const struct device *dev)
 	} else if (enet_module_clk_rate < 250) {
 		divider = 4;
 	} else {
-		LOG_ERR("ENET QOS clk rate does not allow MDIO");
+		LOG_ERROR("ENET QOS clk rate does not allow MDIO");
 		return -ENOTSUP;
 	}
 

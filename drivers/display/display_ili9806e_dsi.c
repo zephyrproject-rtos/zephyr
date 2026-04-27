@@ -235,7 +235,7 @@ static int ili9806e_write_reg(const struct device *dev, uint8_t reg, const uint8
 
 	ret = mipi_dsi_transfer(cfg->mipi_dsi, cfg->channel, &msg);
 	if (ret < 0) {
-		LOG_ERR("Failed writing reg: 0x%x result: (%d)", reg, ret);
+		LOG_ERROR("Failed writing reg: 0x%x result: (%d)", reg, ret);
 		return ret;
 	}
 
@@ -256,7 +256,7 @@ static int ili9806e_write_sequence(const struct device *dev, const struct ili980
 	for (int i = 0; i < nr_cmds && ret == 0; i++) {
 		ret = ili9806e_write_reg(dev, cmd->reg, cmd->cmd, cmd->cmd_len);
 		if (ret < 0) {
-			LOG_ERR("Failed writing sequence: 0x%x result: (%d)", cmd->reg, ret);
+			LOG_ERROR("Failed writing sequence: 0x%x result: (%d)", cmd->reg, ret);
 			return ret;
 		}
 		cmd++;
@@ -308,7 +308,7 @@ static int ili9806e_blanking_on(const struct device *dev)
 	if (cfg->backlight.port != NULL) {
 		ret = gpio_pin_set_dt(&cfg->backlight, 0);
 		if (ret) {
-			LOG_ERR("Disable backlight failed! (%d)", ret);
+			LOG_ERROR("Disable backlight failed! (%d)", ret);
 			return ret;
 		}
 	}
@@ -324,7 +324,7 @@ static int ili9806e_blanking_off(const struct device *dev)
 	if (cfg->backlight.port != NULL) {
 		ret = gpio_pin_set_dt(&cfg->backlight, 1);
 		if (ret) {
-			LOG_ERR("Enable backlight failed! (%d)", ret);
+			LOG_ERROR("Enable backlight failed! (%d)", ret);
 			return ret;
 		}
 	}
@@ -372,27 +372,27 @@ static int ili9806e_init(const struct device *dev)
 
 	if (cfg->reset.port) {
 		if (!gpio_is_ready_dt(&cfg->reset)) {
-			LOG_ERR("Reset GPIO device is not ready!");
+			LOG_ERROR("Reset GPIO device is not ready!");
 			return -ENODEV;
 		}
 		k_sleep(K_MSEC(1));
 
 		ret = gpio_pin_configure_dt(&cfg->reset, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Reset display failed! (%d)", ret);
+			LOG_ERROR("Reset display failed! (%d)", ret);
 			return ret;
 		}
 
 		ret = gpio_pin_set_dt(&cfg->reset, 0);
 		if (ret < 0) {
-			LOG_ERR("Reset display failed! (%d)", ret);
+			LOG_ERROR("Reset display failed! (%d)", ret);
 			return ret;
 		}
 		k_sleep(K_MSEC(1));
 
 		ret = gpio_pin_set_dt(&cfg->reset, 1);
 		if (ret < 0) {
-			LOG_ERR("Enable display failed! (%d)", ret);
+			LOG_ERROR("Enable display failed! (%d)", ret);
 			return ret;
 		}
 		k_sleep(K_MSEC(50));
@@ -417,21 +417,21 @@ static int ili9806e_init(const struct device *dev)
 
 	ret = mipi_dsi_attach(cfg->mipi_dsi, cfg->channel, &mdev);
 	if (ret < 0) {
-		LOG_ERR("Could not attach to MIPI-DSI host");
+		LOG_ERROR("Could not attach to MIPI-DSI host");
 		return ret;
 	}
 
 	if (cfg->backlight.port != NULL) {
 		ret = gpio_pin_configure_dt(&cfg->backlight, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure backlight GPIO (%d)", ret);
+			LOG_ERROR("Could not configure backlight GPIO (%d)", ret);
 			return ret;
 		}
 	}
 
 	ret = ili9806e_config(dev);
 	if (ret) {
-		LOG_ERR("DSI init sequence failed! (%d)", ret);
+		LOG_ERROR("DSI init sequence failed! (%d)", ret);
 		return ret;
 	}
 

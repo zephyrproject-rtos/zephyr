@@ -356,7 +356,7 @@ static int can_xmc4xxx_add_rx_filter(const struct device *dev, can_rx_callback_t
 	int filter_idx;
 
 	if ((filter->flags & ~CAN_FILTER_IDE) != 0) {
-		LOG_ERR("Unsupported CAN filter flags 0x%02x", filter->flags);
+		LOG_ERROR("Unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
 
@@ -409,7 +409,7 @@ static void can_xmc4xxx_remove_rx_filter(const struct device *dev, int filter_id
 	unsigned int key;
 
 	if (filter_idx < 0 || filter_idx >= CONFIG_CAN_XMC4XXX_MAX_FILTERS) {
-		LOG_ERR("Filter ID %d out of bounds", filter_idx);
+		LOG_ERROR("Filter ID %d out of bounds", filter_idx);
 		return;
 	}
 
@@ -734,7 +734,7 @@ static int can_xmc4xxx_start(const struct device *dev)
 	if (dev_cfg->common.phy != NULL) {
 		ret = can_transceiver_enable(dev_cfg->common.phy, dev_data->common.mode);
 		if (ret < 0) {
-			LOG_ERR("Failed to enable CAN transceiver [%d]", ret);
+			LOG_ERROR("Failed to enable CAN transceiver [%d]", ret);
 			return ret;
 		}
 	}
@@ -774,7 +774,7 @@ static int can_xmc4xxx_stop(const struct device *dev)
 	if (dev_cfg->common.phy != NULL) {
 		ret = can_transceiver_disable(dev_cfg->common.phy);
 		if (ret < 0) {
-			LOG_ERR("Failed to disable CAN transceiver [%d]", ret);
+			LOG_ERROR("Failed to disable CAN transceiver [%d]", ret);
 			return ret;
 		}
 	}

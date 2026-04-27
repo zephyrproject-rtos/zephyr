@@ -158,8 +158,7 @@ int nrf70_off_raw_tx_init(uint8_t *mac_addr, unsigned char *country_code)
 	off_raw_tx_drv_priv.fmac_priv = nrf_wifi_off_raw_tx_fmac_init();
 
 	if (off_raw_tx_drv_priv.fmac_priv == NULL) {
-		LOG_ERR("%s: Failed to initialize nRF70 driver",
-			__func__);
+		LOG_ERROR("%s: Failed to initialize nRF70 driver", __func__);
 		goto err;
 	}
 
@@ -170,7 +169,7 @@ int nrf70_off_raw_tx_init(uint8_t *mac_addr, unsigned char *country_code)
 	rpu_ctx = nrf_wifi_off_raw_tx_fmac_dev_add(off_raw_tx_drv_priv.fmac_priv,
 						   rpu_ctx_zep);
 	if (!rpu_ctx) {
-		LOG_ERR("%s: Failed to add nRF70 device", __func__);
+		LOG_ERROR("%s: Failed to add nRF70 device", __func__);
 		rpu_ctx_zep = NULL;
 		goto err;
 	}
@@ -179,14 +178,14 @@ int nrf70_off_raw_tx_init(uint8_t *mac_addr, unsigned char *country_code)
 
 	status = nrf_wifi_fw_load(rpu_ctx);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: Failed to load the nRF70 firmware patch", __func__);
+		LOG_ERROR("%s: Failed to load the nRF70 firmware patch", __func__);
 		goto err;
 	}
 
 	status = nrf_wifi_fmac_ver_get(rpu_ctx,
 				       &fw_ver);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: Failed to read the nRF70 firmware version", __func__);
+		LOG_ERROR("%s: Failed to read the nRF70 firmware version", __func__);
 		goto err;
 	}
 
@@ -218,7 +217,7 @@ int nrf70_off_raw_tx_init(uint8_t *mac_addr, unsigned char *country_code)
 						   &board_params,
 						   country_code);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nRF70 firmware initialization failed", __func__);
+		LOG_ERROR("%s: nRF70 firmware initialization failed", __func__);
 		goto err;
 	}
 
@@ -232,9 +231,8 @@ int nrf70_off_raw_tx_init(uint8_t *mac_addr, unsigned char *country_code)
 				     6,
 				     CONFIG_WIFI_FIXED_MAC_ADDRESS);
 		if (ret < 0) {
-			LOG_ERR("%s: Failed to parse MAC address: %s",
-				__func__,
-				CONFIG_WIFI_FIXED_MAC_ADDRESS);
+			LOG_ERROR("%s: Failed to parse MAC address: %s", __func__,
+				  CONFIG_WIFI_FIXED_MAC_ADDRESS);
 			goto err;
 		}
 #elif CONFIG_WIFI_OTP_MAC_ADDRESS
@@ -242,21 +240,16 @@ int nrf70_off_raw_tx_init(uint8_t *mac_addr, unsigned char *country_code)
 							0,
 							rpu_ctx_zep->mac_addr);
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
-			LOG_ERR("%s: Fetching of MAC address from OTP failed",
-				__func__);
+			LOG_ERROR("%s: Fetching of MAC address from OTP failed", __func__);
 			goto err;
 		}
 #endif /* CONFIG_WIFI_FIXED_MAC_ADDRESS_ENABLED */
 
 		if (!nrf_wifi_utils_is_mac_addr_valid(rpu_ctx_zep->mac_addr)) {
-			LOG_ERR("%s: Invalid MAC address: %02X:%02X:%02X:%02X:%02X:%02X",
-				__func__,
-				rpu_ctx_zep->mac_addr[0],
-				rpu_ctx_zep->mac_addr[1],
-				rpu_ctx_zep->mac_addr[2],
-				rpu_ctx_zep->mac_addr[3],
-				rpu_ctx_zep->mac_addr[4],
-				rpu_ctx_zep->mac_addr[5]);
+			LOG_ERROR("%s: Invalid MAC address: %02X:%02X:%02X:%02X:%02X:%02X",
+				  __func__, rpu_ctx_zep->mac_addr[0], rpu_ctx_zep->mac_addr[1],
+				  rpu_ctx_zep->mac_addr[2], rpu_ctx_zep->mac_addr[3],
+				  rpu_ctx_zep->mac_addr[4], rpu_ctx_zep->mac_addr[5]);
 			goto err;
 		}
 	}
@@ -318,13 +311,13 @@ int nrf70_off_raw_tx_conf_update(struct nrf_wifi_off_raw_tx_conf *conf)
 	k_spinlock_key_t key;
 
 	if (!conf) {
-		LOG_ERR("%s: Config params is NULL", __func__);
+		LOG_ERROR("%s: Config params is NULL", __func__);
 		goto out;
 	}
 
 	off_ctrl_params = nrf_wifi_osal_mem_zalloc(sizeof(*off_ctrl_params));
 	if (!off_ctrl_params) {
-		LOG_ERR("%s: Failed to allocate memory for off_ctrl_params", __func__);
+		LOG_ERROR("%s: Failed to allocate memory for off_ctrl_params", __func__);
 		goto out;
 	}
 
@@ -333,19 +326,19 @@ int nrf70_off_raw_tx_conf_update(struct nrf_wifi_off_raw_tx_conf *conf)
 	fmac_dev_ctx = off_raw_tx_drv_priv.rpu_ctx_zep.rpu_ctx;
 
 	if (!fmac_dev_ctx) {
-		LOG_ERR("%s: FMAC device context is NULL", __func__);
+		LOG_ERROR("%s: FMAC device context is NULL", __func__);
 		goto out;
 	}
 
 	off_tx_params = nrf_wifi_osal_mem_zalloc(sizeof(*off_tx_params));
 	if (!off_tx_params) {
-		LOG_ERR("%s Failed to allocate memory for off_tx_params: ", __func__);
+		LOG_ERROR("%s Failed to allocate memory for off_tx_params: ", __func__);
 		goto out;
 	}
 
 	if (!validate_rate(conf->tput_mode, conf->rate)) {
-		LOG_ERR("%s Invalid rate. Throughput mode: %d, rate: %d\n", __func__,
-				      conf->tput_mode, conf->rate);
+		LOG_ERROR("%s Invalid rate. Throughput mode: %d, rate: %d\n", __func__,
+			  conf->tput_mode, conf->rate);
 		goto out;
 	}
 
@@ -366,7 +359,7 @@ int nrf70_off_raw_tx_conf_update(struct nrf_wifi_off_raw_tx_conf *conf)
 				   conf->pkt,
 				   conf->pkt_len);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: hal_rpu_mem_write failed", __func__);
+		LOG_ERROR("%s: hal_rpu_mem_write failed", __func__);
 		goto out;
 	}
 
@@ -374,8 +367,7 @@ int nrf70_off_raw_tx_conf_update(struct nrf_wifi_off_raw_tx_conf *conf)
 					       off_ctrl_params,
 					       off_tx_params);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nRF70 offloaded raw TX configuration failed",
-				      __func__);
+		LOG_ERROR("%s: nRF70 offloaded raw TX configuration failed", __func__);
 		goto out;
 	}
 
@@ -396,21 +388,19 @@ int nrf70_off_raw_tx_start(struct nrf_wifi_off_raw_tx_conf *conf)
 
 	status = nrf70_off_raw_tx_conf_update(conf);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nRF70 offloaded raw TX configuration failed",
-				      __func__);
+		LOG_ERROR("%s: nRF70 offloaded raw TX configuration failed", __func__);
 		goto out;
 	}
 
 	key = k_spin_lock(&off_raw_tx_drv_priv.lock);
 	if (!off_raw_tx_drv_priv.rpu_ctx_zep.rpu_ctx) {
-		LOG_ERR("%s: FMAC device context is NULL", __func__);
+		LOG_ERROR("%s: FMAC device context is NULL", __func__);
 		goto out;
 	}
 
 	status = nrf_wifi_off_raw_tx_fmac_start(off_raw_tx_drv_priv.rpu_ctx_zep.rpu_ctx);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nRF70 offloaded raw TX start failed",
-				      __func__);
+		LOG_ERROR("%s: nRF70 offloaded raw TX start failed", __func__);
 		goto out;
 	}
 
@@ -430,14 +420,13 @@ int nrf70_off_raw_tx_stop(void)
 	key = k_spin_lock(&off_raw_tx_drv_priv.lock);
 
 	if (!off_raw_tx_drv_priv.rpu_ctx_zep.rpu_ctx) {
-		LOG_ERR("%s: FMAC device context is NULL", __func__);
+		LOG_ERROR("%s: FMAC device context is NULL", __func__);
 		goto out;
 	}
 
 	status = nrf_wifi_off_raw_tx_fmac_stop(off_raw_tx_drv_priv.rpu_ctx_zep.rpu_ctx);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nRF70 offloaded raw TX stop failed",
-				      __func__);
+		LOG_ERROR("%s: nRF70 offloaded raw TX stop failed", __func__);
 		goto out;
 	}
 
@@ -451,7 +440,7 @@ out:
 int nrf70_off_raw_tx_mac_addr_get(uint8_t *mac_addr)
 {
 	if (!mac_addr) {
-		LOG_ERR("%s: Invalid param", __func__);
+		LOG_ERROR("%s: Invalid param", __func__);
 		return -EINVAL;
 	}
 
@@ -471,7 +460,7 @@ int nrf70_off_raw_tx_stats(struct nrf_wifi_off_raw_tx_stats *off_raw_tx_stats)
 	key = k_spin_lock(&off_raw_tx_drv_priv.lock);
 
 	if (!off_raw_tx_drv_priv.rpu_ctx_zep.rpu_ctx) {
-		LOG_ERR("%s: FMAC device context is NULL", __func__);
+		LOG_ERROR("%s: FMAC device context is NULL", __func__);
 		goto out;
 	}
 
@@ -479,8 +468,7 @@ int nrf70_off_raw_tx_stats(struct nrf_wifi_off_raw_tx_stats *off_raw_tx_stats)
 						    0,
 						    &stats);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nRF70 offloaded raw TX stats failed",
-				      __func__);
+		LOG_ERROR("%s: nRF70 offloaded raw TX stats failed", __func__);
 		goto out;
 	}
 

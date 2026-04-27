@@ -213,7 +213,7 @@ static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
 
 		len = sizeof(struct bt_hci_evt_hdr) + msg[EVT_HEADER_SIZE];
 		if (len > net_buf_tailroom(buf)) {
-			LOG_ERR("Event too long: %d", len);
+			LOG_ERROR("Event too long: %d", len);
 			net_buf_unref(buf);
 			return NULL;
 		}
@@ -224,14 +224,14 @@ static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
 		memcpy(&acl_hdr, &msg[1], sizeof(acl_hdr));
 		len = sizeof(acl_hdr) + sys_le16_to_cpu(acl_hdr.len);
 		if (len > net_buf_tailroom(buf)) {
-			LOG_ERR("ACL too long: %d", len);
+			LOG_ERROR("ACL too long: %d", len);
 			net_buf_unref(buf);
 			return NULL;
 		}
 		net_buf_add_mem(buf, &msg[1], len);
 		break;
 	default:
-		LOG_ERR("Unknown BT buf type %d", msg[0]);
+		LOG_ERROR("Unknown BT buf type %d", msg[0]);
 		return NULL;
 	}
 
@@ -283,7 +283,7 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 
 		if (ret || size == 0) {
 			if (ret) {
-				LOG_ERR("Error %d", ret);
+				LOG_ERROR("Error %d", ret);
 			}
 			continue;
 		}
@@ -310,7 +310,7 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 	LOG_DBG("");
 
 	if (buf->len > SPI_MAX_MSG_LEN) {
-		LOG_ERR("Message too long (%d)", buf->len);
+		LOG_ERROR("Message too long (%d)", buf->len);
 		return -EINVAL;
 	}
 
@@ -346,7 +346,7 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 	k_sem_give(&sem_busy);
 
 	if (ret != 0) {
-		LOG_ERR("Error %d", ret);
+		LOG_ERROR("Error %d", ret);
 		return ret;
 	}
 
@@ -418,17 +418,17 @@ static int bt_spi_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	if (!spi_is_ready_dt(&bus)) {
-		LOG_ERR("SPI device not ready");
+		LOG_ERROR("SPI device not ready");
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&irq_gpio)) {
-		LOG_ERR("IRQ GPIO device not ready");
+		LOG_ERROR("IRQ GPIO device not ready");
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&rst_gpio)) {
-		LOG_ERR("Reset GPIO device not ready");
+		LOG_ERROR("Reset GPIO device not ready");
 		return -ENODEV;
 	}
 

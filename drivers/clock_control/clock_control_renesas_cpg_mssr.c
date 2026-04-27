@@ -81,7 +81,7 @@ rcar_cpg_find_clk_info_by_module_id(const struct device *dev, uint32_t domain, u
 	item = bsearch((void *)uintptr_id, table, table_size, sizeof(*item),
 		       cmp_cpg_clk_info_table_items);
 	if (!item) {
-		LOG_ERR("%s: can't find clk info (domain %u module %u)", dev->name, domain, id);
+		LOG_ERROR("%s: can't find clk info (domain %u module %u)", dev->name, domain, id);
 	}
 
 	return item;
@@ -201,10 +201,10 @@ static void rcar_cpg_change_children_in_out_freq(const struct device *dev,
 			 *   this function it is impossible);
 			 * - impossible value is set in clock register divider bits.
 			 */
-			LOG_ERR("%s: error during getting divider from clock register, domain %u "
-				"module %u! Please, revise logic related to obtaining divider or "
-				"check presentence of clock inside appropriate clk_info_table",
-				dev->name, children_list->domain, children_list->module);
+			LOG_ERROR("%s: error during getting divider from clock register, domain %u "
+				  "module %u! Please, revise logic related to obtaining divider or "
+				  "check presentence of clock inside appropriate clk_info_table",
+				  dev->name, children_list->domain, children_list->module);
 			k_panic();
 			return;
 		}
@@ -225,8 +225,8 @@ int rcar_cpg_get_rate(const struct device *dev, clock_control_subsys_t sys, uint
 	struct cpg_clk_info_table *clk_info;
 
 	if (!dev || !sys || !rate) {
-		LOG_ERR("%s: received null ptr input arg(s) dev %p sys %p rate %p",
-			__func__, dev, sys, rate);
+		LOG_ERROR("%s: received null ptr input arg(s) dev %p sys %p rate %p", __func__, dev,
+			  sys, rate);
 		return -EINVAL;
 	}
 
@@ -242,12 +242,12 @@ int rcar_cpg_get_rate(const struct device *dev, clock_control_subsys_t sys, uint
 	k_spin_unlock(&data->lock, key);
 
 	if (ret < 0) {
-		LOG_ERR("%s: clk (domain %u module %u) error (%lld) during getting out frequency",
-			dev->name, clk->domain, clk->module, ret);
+		LOG_ERROR("%s: clk (domain %u module %u) error (%lld) during getting out frequency",
+			  dev->name, clk->domain, clk->module, ret);
 		return -EINVAL;
 	} else if (ret > UINT_MAX) {
-		LOG_ERR("%s: clk (domain %u module %u) frequency bigger then max uint value",
-			dev->name, clk->domain, clk->module);
+		LOG_ERROR("%s: clk (domain %u module %u) frequency bigger then max uint value",
+			  dev->name, clk->domain, clk->module);
 		return -EINVAL;
 	}
 
@@ -270,8 +270,8 @@ int rcar_cpg_set_rate(const struct device *dev, clock_control_subsys_t sys,
 	uintptr_t u_rate = (uintptr_t)rate;
 
 	if (!dev || !sys || !rate) {
-		LOG_ERR("%s: received null ptr input arg(s) dev %p sys %p rate %p",
-			__func__, dev, sys, rate);
+		LOG_ERROR("%s: received null ptr input arg(s) dev %p sys %p rate %p", __func__, dev,
+			  sys, rate);
 		return -EINVAL;
 	}
 
@@ -282,8 +282,8 @@ int rcar_cpg_set_rate(const struct device *dev, clock_control_subsys_t sys,
 
 	if (clk_info->domain == CPG_MOD) {
 		if (!clk_info->parent) {
-			LOG_ERR("%s: parent isn't present for module clock, module id %u",
-				dev->name, clk_info->module);
+			LOG_ERROR("%s: parent isn't present for module clock, module id %u",
+				  dev->name, clk_info->module);
 			k_panic();
 		}
 		clk_info = clk_info->parent;
@@ -323,9 +323,9 @@ int rcar_cpg_set_rate(const struct device *dev, clock_control_subsys_t sys,
 		out_rate = rcar_cpg_get_out_freq(dev, clk_info);
 		if (out_rate < 0 || out_rate != u_rate) {
 			ret = -EINVAL;
-			LOG_ERR("%s: clock (domain %u module %u) register cfg freq (%lld) "
-				"isn't equal to requested %lu",
-				dev->name, clk->domain, clk->module, out_rate, u_rate);
+			LOG_ERROR("%s: clock (domain %u module %u) register cfg freq (%lld) "
+				  "isn't equal to requested %lu",
+				  dev->name, clk->domain, clk->module, out_rate, u_rate);
 			goto unlock;
 		}
 
@@ -358,10 +358,10 @@ void rcar_cpg_build_clock_relationship(const struct device *dev)
 
 			/* check if an array is sorted by module id or not */
 			if (prev_mod_id >= item->module) {
-				LOG_ERR("%s: clocks have to be sorted inside clock table in "
-					"ascending order by module id field, domain %u "
-					"module id %u",
-					dev->name, item->domain, item->module);
+				LOG_ERROR("%s: clocks have to be sorted inside clock table in "
+					  "ascending order by module id field, domain %u "
+					  "module id %u",
+					  dev->name, item->domain, item->module);
 				k_panic();
 			}
 
@@ -374,16 +374,16 @@ void rcar_cpg_build_clock_relationship(const struct device *dev)
 			parent = rcar_cpg_find_clk_info_by_module_id(dev, CPG_CORE,
 								     item->parent_id);
 			if (!parent) {
-				LOG_ERR("%s: can't find parent for clock with valid parent id, "
-					"domain %u module id %u",
-					dev->name, item->domain, item->module);
+				LOG_ERROR("%s: can't find parent for clock with valid parent id, "
+					  "domain %u module id %u",
+					  dev->name, item->domain, item->module);
 				k_panic();
 			}
 
 			if (item->parent != NULL) {
-				LOG_ERR("%s: trying to set another parent for a clock, domain %u "
-					"module id %u, parent for the clock has been already set",
-					dev->name, item->domain, item->module);
+				LOG_ERROR("%s: trying to set another parent for a clock, domain %u "
+					  "module id %u, parent for the clock has been already set",
+					  dev->name, item->domain, item->module);
 				k_panic();
 			}
 
@@ -414,10 +414,10 @@ void rcar_cpg_update_all_in_out_freq(const struct device *dev)
 
 		for (idx = 0; idx < data->clk_info_table_size[domain]; idx++, item++) {
 			if (rcar_cpg_get_in_update_out_freq(dev, item) < 0) {
-				LOG_ERR("%s: can't update in/out freq for clock during init, "
-					"domain %u module %u! Please, review correctness of data "
-					"inside clk_info_table",
-					dev->name, item->domain, item->module);
+				LOG_ERROR("%s: can't update in/out freq for clock during init, "
+					  "domain %u module %u! Please, review correctness of data "
+					  "inside clk_info_table",
+					  dev->name, item->domain, item->module);
 				k_panic();
 			}
 		}

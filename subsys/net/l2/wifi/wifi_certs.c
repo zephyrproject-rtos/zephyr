@@ -85,21 +85,21 @@ static int process_certificates(struct wifi_cert_data *certs, size_t cert_count)
 
 		err = tls_credential_get(certs[i].sec_tag, certs[i].type, NULL, &len);
 		if (err != -EFBIG) {
-			LOG_ERR("Failed to get credential tag: %d length, err: %d",
-				certs[i].sec_tag, err);
+			LOG_ERROR("Failed to get credential tag: %d length, err: %d",
+				  certs[i].sec_tag, err);
 			return err;
 		}
 
 		cert_tmp = k_malloc(len);
 		if (!cert_tmp) {
-			LOG_ERR("Failed to allocate memory for credential tag: %d",
-				certs[i].sec_tag);
+			LOG_ERROR("Failed to allocate memory for credential tag: %d",
+				  certs[i].sec_tag);
 			return -ENOMEM;
 		}
 
 		err = tls_credential_get(certs[i].sec_tag, certs[i].type, cert_tmp, &len);
 		if (err) {
-			LOG_ERR("Failed to get credential tag: %d", certs[i].sec_tag);
+			LOG_ERROR("Failed to get credential tag: %d", certs[i].sec_tag);
 			k_free(cert_tmp);
 			return err;
 		}
@@ -281,13 +281,13 @@ int process_certificates(void)
 
 	ret = net_if_get_name(iface, if_name, sizeof(if_name));
 	if (!ret) {
-		LOG_ERR("Cannot get interface name (%d)", ret);
+		LOG_ERROR("Cannot get interface name (%d)", ret);
 		return -1;
 	}
 
 	wpa_s = zephyr_get_handle_by_ifname(if_name);
 	if (!wpa_s) {
-		LOG_ERR("Unable to find the interface: %s, quitting", if_name);
+		LOG_ERROR("Unable to find the interface: %s, quitting", if_name);
 		return -1;
 	}
 

@@ -167,7 +167,7 @@ static void hci_tx_thread(void *p1, void *p2, void *p3)
 				USB_TRANS_WRITE);
 			break;
 		default:
-			LOG_ERR("Unsupported type %u", type);
+			LOG_ERROR("Unsupported type %u", type);
 			break;
 		}
 
@@ -189,7 +189,7 @@ static void hci_rx_thread(void *p1, void *p2, void *p3)
 
 		err = bt_send(buf);
 		if (err) {
-			LOG_ERR("Error sending to driver");
+			LOG_ERROR("Error sending to driver");
 			net_buf_unref(buf);
 		}
 	}
@@ -222,7 +222,7 @@ static void acl_read_cb(uint8_t ep, int size, void *priv)
 	if (buf == NULL) {
 		buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_FOREVER, data, size);
 		if (!buf) {
-			LOG_ERR("Failed to allocate buffer");
+			LOG_ERROR("Failed to allocate buffer");
 			goto restart_out_transfer;
 		}
 
@@ -230,13 +230,13 @@ static void acl_read_cb(uint8_t ep, int size, void *priv)
 		LOG_DBG("pkt_len %u, chunk %u", pkt_len, size);
 
 		if (pkt_len == 0) {
-			LOG_ERR("Failed to get packet length");
+			LOG_ERROR("Failed to get packet length");
 			net_buf_unref(buf);
 			buf = NULL;
 		}
 	} else {
 		if (net_buf_tailroom(buf) < size) {
-			LOG_ERR("Buffer tailroom too small");
+			LOG_ERROR("Buffer tailroom too small");
 			net_buf_unref(buf);
 			buf = NULL;
 			goto restart_out_transfer;
@@ -328,7 +328,7 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 
 	buf = bt_buf_get_tx(BT_BUF_CMD, K_NO_WAIT, *data, *len);
 	if (!buf) {
-		LOG_ERR("Cannot get free buffer\n");
+		LOG_ERROR("Cannot get free buffer\n");
 		return -ENOMEM;
 	}
 
@@ -367,7 +367,7 @@ static int bluetooth_init(void)
 
 	ret = bt_enable_raw(&tx_queue);
 	if (ret) {
-		LOG_ERR("Failed to open Bluetooth raw channel: %d", ret);
+		LOG_ERROR("Failed to open Bluetooth raw channel: %d", ret);
 		return ret;
 	}
 

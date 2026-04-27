@@ -64,13 +64,13 @@ static int clock_control_si32_ahb_init(const struct device *dev)
 
 		ret = clock_control_set_rate(config->clock_dev, NULL, &freq);
 		if (ret) {
-			LOG_ERR("failed to set parent clock rate: %d", ret);
+			LOG_ERROR("failed to set parent clock rate: %d", ret);
 			return ret;
 		}
 
 		ret = clock_control_on(config->clock_dev, NULL);
 		if (ret) {
-			LOG_ERR("failed to enable parent clock: %d", ret);
+			LOG_ERROR("failed to enable parent clock: %d", ret);
 			return ret;
 		}
 

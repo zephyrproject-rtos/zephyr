@@ -21,7 +21,7 @@ static int get_pmc_clk(const struct device *dev, clock_control_subsys_t sys,
 	const struct sam_pmc_data *data = dev->data;
 
 	if (cfg == NULL || data == NULL) {
-		LOG_ERR("The PMC config and data can not be NULL.");
+		LOG_ERROR("The PMC config and data can not be NULL.");
 		return -ENXIO;
 	}
 
@@ -32,7 +32,7 @@ static int get_pmc_clk(const struct device *dev, clock_control_subsys_t sys,
 		return 0;
 	}
 
-	LOG_ERR("The PMC clock type is not implemented.");
+	LOG_ERROR("The PMC clock type is not implemented.");
 
 	return -ENODEV;
 }

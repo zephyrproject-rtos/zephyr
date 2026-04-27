@@ -132,7 +132,7 @@ static int retention_init(const struct device *dev)
 	ssize_t area_size;
 
 	if (!device_is_ready(config->parent)) {
-		LOG_ERR("Parent device is not ready");
+		LOG_ERROR("Parent device is not ready");
 		return -ENODEV;
 	}
 
@@ -142,14 +142,14 @@ static int retention_init(const struct device *dev)
 	area_size = retained_mem_size(config->parent);
 
 	if (area_size < 0) {
-		LOG_ERR("Parent initialisation failure: %d", area_size);
+		LOG_ERROR("Parent initialisation failure: %d", area_size);
 		return area_size;
 	}
 
 	if ((config->offset + config->size) > area_size) {
 		/* Backend storage is insufficient */
-		LOG_ERR("Underlying area size is insufficient, requires: 0x%x, has: 0x%x",
-			(config->offset + config->size), area_size);
+		LOG_ERROR("Underlying area size is insufficient, requires: 0x%x, has: 0x%x",
+			  (config->offset + config->size), area_size);
 		return -EINVAL;
 	}
 

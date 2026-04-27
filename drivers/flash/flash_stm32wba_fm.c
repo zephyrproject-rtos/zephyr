@@ -67,7 +67,7 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t le
 static int flash_stm32_read(const struct device *dev, off_t offset, void *data, size_t len)
 {
 	if (!flash_stm32_valid_range(dev, offset, len, false)) {
-		LOG_ERR("Read range invalid. Offset: %p, len: %zu", (void *)offset, len);
+		LOG_ERROR("Read range invalid. Offset: %p, len: %zu", (void *)offset, len);
 		return -EINVAL;
 	}
 
@@ -90,7 +90,7 @@ static int flash_stm32_erase(const struct device *dev, off_t offset, size_t len)
 	int sect_num;
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
-		LOG_ERR("Erase range invalid. Offset: %p, len: %zu", (void *)offset, len);
+		LOG_ERROR("Erase range invalid. Offset: %p, len: %zu", (void *)offset, len);
 		return -EINVAL;
 	}
 
@@ -123,7 +123,7 @@ static int flash_stm32_write(const struct device *dev, off_t offset, const void 
 	int rc;
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
-		LOG_ERR("Write range invalid. Offset: %p, len: %zu", (void *)offset, len);
+		LOG_ERROR("Write range invalid. Offset: %p, len: %zu", (void *)offset, len);
 		return -EINVAL;
 	}
 

@@ -460,7 +460,7 @@ static void eth_dwc_xgmac_update_link_speed(const struct device *dev,
 		LOG_DBG("%s: MAC link speed updated to 1Gbps", dev->name);
 		break;
 	default:
-		LOG_ERR("%s: Invalid link speed configuration value", dev->name);
+		LOG_ERROR("%s: Invalid link speed configuration value", dev->name);
 	}
 
 	sys_write32(reg_val, ioaddr + CORE_MAC_TX_CONFIGURATION_OFST);
@@ -563,7 +563,7 @@ static void get_and_refill_desc_buffs(struct xgmac_dma_rx_desc *rx_desc, uint16_
 	/* Reserve a free buffer in network RX buffers pool */
 	new_buff = net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE, K_FOREVER);
 	if (!new_buff) {
-		LOG_ERR("Failed to allocate a network buffer to refill the DMA descriptor");
+		LOG_ERROR("Failed to allocate a network buffer to refill the DMA descriptor");
 		return;
 	}
 	/**
@@ -589,7 +589,7 @@ static void get_and_refill_desc_buffs(struct xgmac_dma_rx_desc *rx_desc, uint16_
 		rx_desc->rdes0 = 1u;
 		net_pkt_frag_unref((struct net_buf *)(*(rx_buffs + (desc_id * RX_FRAGS_PER_DESC))));
 		*(rx_buffs + (desc_id * RX_FRAGS_PER_DESC)) = (mem_addr_t)NULL;
-		LOG_ERR("Failed to allocate a network buffer to refill the DMA descriptor");
+		LOG_ERROR("Failed to allocate a network buffer to refill the DMA descriptor");
 		return;
 	}
 	/**
@@ -648,8 +648,8 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 			}
 			rx_desc_meta->rx_pkt = net_pkt_rx_alloc_on_iface(data->iface, K_NO_WAIT);
 			if (!rx_desc_meta->rx_pkt) {
-				LOG_ERR("%s: Failed allocate a network packet for receive data",
-					dev->name);
+				LOG_ERROR("%s: Failed allocate a network packet for receive data",
+					  dev->name);
 				/* Error processing */
 				return;
 			}
@@ -692,7 +692,7 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 							net_pkt_get_len(rx_desc_meta->rx_pkt));
 					}
 				} else {
-					LOG_ERR("%s: rx packet error", dev->name);
+					LOG_ERROR("%s: rx packet error", dev->name);
 					UPDATE_ETH_STATS_RX_ERROR_PKT_CNT(data, 1u);
 					net_pkt_unref(rx_desc_meta->rx_pkt);
 				}
@@ -703,9 +703,9 @@ static void eth_dwc_xgmac_rx_irq_work(const struct device *dev, uint32_t dma_chn
 						 CONFIG_NET_BUF_DATA_SIZE);
 			}
 		} else {
-			LOG_ERR("%s: Received a buffer with no FD buffer received in the "
-				"sequence",
-				dev->name);
+			LOG_ERROR("%s: Received a buffer with no FD buffer received in the "
+				  "sequence",
+				  dev->name);
 		}
 		rx_desc_meta->next_to_read =
 			((rx_desc_meta->next_to_read + 1) % dma_chnl_cfg->rdrl);
@@ -783,7 +783,7 @@ static void eth_dwc_xgmac_dmach_isr(const struct device *dev, uint32_t dmach_int
 	}
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_TPS_SET_MSK) {
 		/* Transmit process stopped interrupt*/
-		LOG_ERR("%s: DMA channel %d Transmit process stopped", dev->name, dma_chnl);
+		LOG_ERROR("%s: DMA channel %d Transmit process stopped", dev->name, dma_chnl);
 	}
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_TBU_SET_MSK) {
 		/* Transmit buffer unavailable interrupt*/
@@ -791,27 +791,27 @@ static void eth_dwc_xgmac_dmach_isr(const struct device *dev, uint32_t dmach_int
 	}
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_RBU_SET_MSK) {
 		/* Receive buffer unavailable interrupt*/
-		LOG_ERR("%s: DMA channel %d Receive buffer unavailable", dev->name, dma_chnl);
+		LOG_ERROR("%s: DMA channel %d Receive buffer unavailable", dev->name, dma_chnl);
 	}
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_RPS_SET_MSK) {
 		/* Receive process stopped interrupt*/
-		LOG_ERR("%s: DMA channel %d Receive process stopped", dev->name, dma_chnl);
+		LOG_ERROR("%s: DMA channel %d Receive process stopped", dev->name, dma_chnl);
 	}
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_DDE_SET_MSK) {
 		/* Descriptor definition error interrupt*/
-		LOG_ERR("%s: DMA channel %d  Descriptor definition error", dev->name, dma_chnl);
+		LOG_ERROR("%s: DMA channel %d  Descriptor definition error", dev->name, dma_chnl);
 	}
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_FBE_SET_MSK) {
 		/* Fatal bus error interrupt*/
-		LOG_ERR("%s: DMA channel %d Fatal bus error", dev->name, dma_chnl);
+		LOG_ERROR("%s: DMA channel %d Fatal bus error", dev->name, dma_chnl);
 	}
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_CDE_SET_MSK) {
 		/* Context descriptor error interrupt*/
-		LOG_ERR("%s: DMA channel %d Context descriptor error", dev->name, dma_chnl);
+		LOG_ERROR("%s: DMA channel %d Context descriptor error", dev->name, dma_chnl);
 	}
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_AIS_SET_MSK) {
 		/* Abnormal interrupt status interrupt*/
-		LOG_ERR("%s: DMA channel %d Abnormal error", dev->name, dma_chnl);
+		LOG_ERROR("%s: DMA channel %d Abnormal error", dev->name, dma_chnl);
 	}
 }
 
@@ -884,9 +884,9 @@ static void eth_dwc_xgmac_isr(const struct device *dev)
 			sys_read32(ioaddr + XGMAC_DMA_BASE_ADDR_OFFSET + DMA_INTERRUPT_STATUS_OFST);
 		for (uint32_t x = 0; x < config->num_dma_chnl; x++) {
 			if (dma_int_status & BIT(x)) {
-				LOG_ERR("%s ignoring dma ch %d interrupt: %x ", dev->name, x,
-					sys_read32(ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(x) +
-						   DMA_CHx_STATUS_OFST));
+				LOG_ERROR("%s ignoring dma ch %d interrupt: %x ", dev->name, x,
+					  sys_read32(ioaddr + XGMAC_DMA_CHNLx_BASE_ADDR_OFFSET(x) +
+						     DMA_CHx_STATUS_OFST));
 				reg_val = DMA_CHx_STATUS_NIS_SET_MSK | DMA_CHx_STATUS_AIS_SET_MSK |
 					  DMA_CHx_STATUS_CDE_SET_MSK | DMA_CHx_STATUS_FBE_SET_MSK |
 					  DMA_CHx_STATUS_DDE_SET_MSK | DMA_CHx_STATUS_RPS_SET_MSK |
@@ -898,9 +898,9 @@ static void eth_dwc_xgmac_isr(const struct device *dev)
 			}
 		}
 
-		LOG_ERR("%s ignoring xgmac interrupt: device not started,link is down or network "
-			"interface is not up",
-			dev->name);
+		LOG_ERROR("%s ignoring xgmac interrupt: device not started,link is down or network "
+			  "interface is not up",
+			  dev->name);
 
 		return;
 	}
@@ -1097,10 +1097,10 @@ void eth_dwc_xgmac_prefill_rx_desc(const struct device *dev)
 			rx_buffs[RX_FRAG_ONE] = (mem_addr_t)net_pkt_get_reserve_rx_data(
 				CONFIG_NET_BUF_DATA_SIZE, K_FOREVER);
 			if (!rx_buffs[RX_FRAG_ONE]) {
-				LOG_ERR("%s: Failed to allocate a network buffer to fill "
-					"the "
-					"RxDesc[%d]",
-					dev->name, desc_id);
+				LOG_ERROR("%s: Failed to allocate a network buffer to fill "
+					  "the "
+					  "RxDesc[%d]",
+					  dev->name, desc_id);
 				break;
 			}
 			arch_dcache_invd_range(rx_desc, sizeof(rx_desc));
@@ -1113,10 +1113,10 @@ void eth_dwc_xgmac_prefill_rx_desc(const struct device *dev)
 				CONFIG_NET_BUF_DATA_SIZE, K_FOREVER);
 			if (!rx_buffs[RX_FRAG_TWO]) {
 				net_pkt_frag_unref((struct net_buf *)(rx_buffs[RX_FRAG_ONE]));
-				LOG_ERR("%s: Failed to allocate a network buffer to fill "
-					"the "
-					"RxDesc[%d]",
-					dev->name, desc_id);
+				LOG_ERROR("%s: Failed to allocate a network buffer to fill "
+					  "the "
+					  "RxDesc[%d]",
+					  dev->name, desc_id);
 				break;
 			}
 			rx_desc->rdes2 =
@@ -1176,7 +1176,7 @@ static void eth_dwc_xgmac_iface_init(struct net_if *iface)
 		phy_link_callback_set(dev_conf->phy_dev, &phy_link_state_change_callback,
 				      (void *)dev);
 	} else {
-		LOG_ERR("%s: PHY device not ready", dev->name);
+		LOG_ERROR("%s: PHY device not ready", dev->name);
 	}
 	LOG_DBG("%s: Ethernet iface init done binded to iface@0x%p", dev->name, iface);
 }
@@ -1367,21 +1367,21 @@ static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 	uint32_t tdes2_flgs, tdes3_flgs, tdes3_fd_flg;
 
 	if (!pkt || !pkt->frags) {
-		LOG_ERR("%s: cannot TX, invalid argument", dev->name);
+		LOG_ERROR("%s: cannot TX, invalid argument", dev->name);
 		return -EINVAL;
 	}
 
 	if (net_pkt_get_len(pkt) == 0) {
-		LOG_ERR("%s cannot TX, zero packet length", dev->name);
+		LOG_ERROR("%s cannot TX, zero packet length", dev->name);
 		UPDATE_ETH_STATS_TX_ERROR_PKT_CNT(dev_data, 1u);
 		return -EINVAL;
 	}
 
 	if (!dev_data->dev_started || dev_data->link_speed == LINK_DOWN ||
 	    (!net_if_flag_is_set(dev_data->iface, NET_IF_UP))) {
-		LOG_ERR("%s cannot TX, due to any of these reasons, device not started,link is "
-			"down or network interface is not up",
-			dev->name);
+		LOG_ERROR("%s cannot TX, due to any of these reasons, device not started,link is "
+			  "down or network interface is not up",
+			  dev->name);
 		UPDATE_ETH_STATS_TX_DROP_PKT_CNT(dev_data, 1u);
 		return -EIO;
 	}
@@ -1490,7 +1490,7 @@ static inline uint32_t get_free_mac_addr_indx(const struct device *dev)
 			return idx;
 		}
 	}
-	LOG_ERR("%s, MAC address filter failed. All MAC address slots are in use", dev->name);
+	LOG_ERROR("%s, MAC address filter failed. All MAC address slots are in use", dev->name);
 	return -EIO;
 }
 

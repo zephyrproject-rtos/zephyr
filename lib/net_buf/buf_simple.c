@@ -17,9 +17,8 @@ LOG_MODULE_REGISTER(net_buf_simple, CONFIG_NET_BUF_LOG_LEVEL);
 #include <zephyr/net_buf.h>
 
 #if defined(CONFIG_NET_BUF_SIMPLE_LOG)
-#define NET_BUF_SIMPLE_DBG(fmt, ...) LOG_DBG("(%p) " fmt, k_current_get(), \
-				      ##__VA_ARGS__)
-#define NET_BUF_SIMPLE_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
+#define NET_BUF_SIMPLE_DBG(fmt, ...)  LOG_DBG("(%p) " fmt, k_current_get(), ##__VA_ARGS__)
+#define NET_BUF_SIMPLE_ERR(fmt, ...)  LOG_ERROR(fmt, ##__VA_ARGS__)
 #define NET_BUF_SIMPLE_WARN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
 #define NET_BUF_SIMPLE_INFO(fmt, ...) LOG_INF(fmt, ##__VA_ARGS__)
 #else

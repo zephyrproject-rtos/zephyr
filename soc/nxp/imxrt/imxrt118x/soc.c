@@ -57,7 +57,7 @@ static void ele_ping_timer_handler(struct k_timer *timer)
 	if (status == kStatus_Success) {
 		LOG_DBG("ELE ping successful");
 	} else {
-		LOG_ERR("ELE ping failed with status: %d", status);
+		LOG_ERROR("ELE ping failed with status: %d", status);
 	}
 }
 

@@ -159,7 +159,7 @@ static int pwm_it51xxx_set_cycles(const struct device *dev, uint32_t channel,
 	 *       [9.2MHz or 32.768KHz] / 65536 / 1024, the minimum integer is 1.
 	 */
 	if (target_freq < 1) {
-		LOG_ERR("PWM output frequency is < 1 !");
+		LOG_ERROR("PWM output frequency is < 1 !");
 		return -EINVAL;
 	}
 
@@ -214,7 +214,7 @@ static int pwm_it51xxx_set_cycles(const struct device *dev, uint32_t channel,
 		}
 
 		if (pxc > UINT16_MAX) {
-			LOG_ERR("PWM prescaler PxC only support 2 bytes !");
+			LOG_ERROR("PWM prescaler PxC only support 2 bytes !");
 			return -EINVAL;
 		}
 
@@ -281,7 +281,7 @@ static int pwm_it51xxx_init(const struct device *dev)
 	/* Set alternate mode of PWM pin */
 	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (status < 0) {
-		LOG_ERR("Failed to configure PWM pins");
+		LOG_ERROR("Failed to configure PWM pins");
 		return status;
 	}
 

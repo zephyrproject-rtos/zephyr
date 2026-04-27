@@ -52,7 +52,7 @@ static int eswifi_off_listen(struct net_context *context, int backlog)
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "P8=%d\r", backlog);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
-		LOG_ERR("Unable to start set listen backlog");
+		LOG_ERROR("Unable to start set listen backlog");
 		err = -EIO;
 	}
 
@@ -110,7 +110,7 @@ static int eswifi_off_connect(struct net_context *context,
 	LOG_DBG("timeout=%d", timeout);
 
 	if (addr->sa_family != NET_AF_INET) {
-		LOG_ERR("Only NET_AF_INET is supported!");
+		LOG_ERROR("Only NET_AF_INET is supported!");
 		return -EPFNOSUPPORT;
 	}
 
@@ -209,7 +209,7 @@ static int __eswifi_off_send_pkt(struct eswifi_dev *eswifi,
 	err = eswifi_request(eswifi, eswifi->buf, offset + 1,
 			     eswifi->buf, sizeof(eswifi->buf));
 	if (err < 0) {
-		LOG_ERR("Unable to send data");
+		LOG_ERROR("Unable to send data");
 		return -EIO;
 	}
 
@@ -480,7 +480,7 @@ void eswifi_offload_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len)
 		}
 
 		if (!socket) {
-			LOG_ERR("No listening socket");
+			LOG_ERROR("No listening socket");
 			return;
 		}
 
@@ -565,13 +565,13 @@ int eswifi_offload_init(struct eswifi_dev *eswifi)
 
 	err = eswifi_off_enable_dhcp(eswifi);
 	if (err < 0) {
-		LOG_ERR("Unable to configure dhcp");
+		LOG_ERROR("Unable to configure dhcp");
 		return err;
 	}
 
 	err = eswifi_off_disable_bypass(eswifi);
 	if (err < 0) {
-		LOG_ERR("Unable to disable bypass mode");
+		LOG_ERROR("Unable to disable bypass mode");
 		return err;
 	}
 

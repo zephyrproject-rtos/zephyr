@@ -80,21 +80,21 @@ static void send_indication_work_handler(struct k_work *work)
 
 	if ((ets_cb == NULL) || (ets_cb->read_elapsed_time == NULL) ||
 	    (ets_cb->read_clock_status == NULL)) {
-		LOG_ERR("ETS callbacks not set for indication");
+		LOG_ERROR("ETS callbacks not set for indication");
 		return;
 	}
 
 	/* Read current elapsed time into static buffer */
 	err = ets_cb->read_elapsed_time(&indicate_data.et);
 	if (err != 0) {
-		LOG_ERR("Failed to read elapsed time for indication: %d", err);
+		LOG_ERROR("Failed to read elapsed time for indication: %d", err);
 		return;
 	}
 
 	/* Read clock status */
 	err = ets_cb->read_clock_status(&clock_status);
 	if (err != 0) {
-		LOG_ERR("Failed to read clock status for indication: %d", err);
+		LOG_ERROR("Failed to read clock status for indication: %d", err);
 		return;
 	}
 
@@ -135,19 +135,19 @@ static ssize_t read_elapsed_time(struct bt_conn *conn, const struct bt_gatt_attr
 
 	if ((ets_cb == NULL) || (ets_cb->read_elapsed_time == NULL) ||
 	    (ets_cb->read_clock_status == NULL)) {
-		LOG_ERR("ETS read callbacks not set");
+		LOG_ERROR("ETS read callbacks not set");
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
 	err = ets_cb->read_elapsed_time(&response.et);
 	if (err != 0) {
-		LOG_ERR("Read failed: %d", err);
+		LOG_ERROR("Read failed: %d", err);
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
 	err = ets_cb->read_clock_status(&response.clock_status);
 	if (err != 0) {
-		LOG_ERR("ETS read_clock_status callback failed: %d", err);
+		LOG_ERROR("ETS read_clock_status callback failed: %d", err);
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
@@ -165,7 +165,7 @@ static ssize_t write_elapsed_time(struct bt_conn *conn, const struct bt_gatt_att
 	enum bt_ets_write_result result;
 
 	if (!ets_cb || !ets_cb->write_elapsed_time) {
-		LOG_ERR("callback is required, but not set");
+		LOG_ERROR("callback is required, but not set");
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
 	}
 
@@ -174,7 +174,7 @@ static ssize_t write_elapsed_time(struct bt_conn *conn, const struct bt_gatt_att
 	}
 
 	if (len != sizeof(et)) {
-		LOG_ERR("Invalid write length: %u (expected %zu)", len, sizeof(et));
+		LOG_ERROR("Invalid write length: %u (expected %zu)", len, sizeof(et));
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
@@ -182,30 +182,31 @@ static ssize_t write_elapsed_time(struct bt_conn *conn, const struct bt_gatt_att
 
 	/* Validate reserved bits (protocol-level check) */
 	if (et.flags & BT_ETS_FLAG_RESERVED_MASK) {
-		LOG_ERR("Reserved bits set in flags: 0x%02x", et.flags);
+		LOG_ERROR("Reserved bits set in flags: 0x%02x", et.flags);
 		return BT_GATT_ERR(BT_ETS_ATT_ERR_INCORRECT_TIME_FORMAT);
 	}
 
 	/* Validate time value range */
 	time_value = sys_get_le48(et.time_value);
 	if (time_value >= ETS_TIME_VALUE_MAX) {
-		LOG_ERR("Time value out of range: %llu (max %llu)", time_value, ETS_TIME_VALUE_MAX);
+		LOG_ERROR("Time value out of range: %llu (max %llu)", time_value,
+			  ETS_TIME_VALUE_MAX);
 		return BT_GATT_ERR(BT_ATT_ERR_OUT_OF_RANGE);
 	}
 
 	/* Check resolution bits match configuration (static property) */
 	if ((et.flags & BT_ETS_FLAG_RESOLUTION_MASK) !=
 	    (BT_ETS_SUPPORTED_FLAGS_MASK & BT_ETS_FLAG_RESOLUTION_MASK)) {
-		LOG_ERR("Invalid resolution in flags: 0x%02lx (expected: 0x%02lx)",
-			et.flags & BT_ETS_FLAG_RESOLUTION_MASK,
-			BT_ETS_SUPPORTED_FLAGS_MASK & BT_ETS_FLAG_RESOLUTION_MASK);
+		LOG_ERROR("Invalid resolution in flags: 0x%02lx (expected: 0x%02lx)",
+			  et.flags & BT_ETS_FLAG_RESOLUTION_MASK,
+			  BT_ETS_SUPPORTED_FLAGS_MASK & BT_ETS_FLAG_RESOLUTION_MASK);
 		return BT_GATT_ERR(BT_ETS_ATT_ERR_INCORRECT_TIME_FORMAT);
 	}
 
 	/* Check unsupported flags are not set (static properties) */
 	if (et.flags & ~BT_ETS_SUPPORTED_FLAGS_MASK) {
-		LOG_ERR("Unsupported flags set: 0x%02x (supported: 0x%02lx)", et.flags,
-			BT_ETS_SUPPORTED_FLAGS_MASK);
+		LOG_ERROR("Unsupported flags set: 0x%02x (supported: 0x%02lx)", et.flags,
+			  BT_ETS_SUPPORTED_FLAGS_MASK);
 		return BT_GATT_ERR(BT_ETS_ATT_ERR_INCORRECT_TIME_FORMAT);
 	}
 
@@ -226,7 +227,7 @@ static ssize_t write_elapsed_time(struct bt_conn *conn, const struct bt_gatt_att
 		LOG_WRN("Incorrect time format (application validation)");
 		return BT_GATT_ERR(BT_ETS_ATT_ERR_INCORRECT_TIME_FORMAT);
 	default:
-		LOG_ERR("Unknown write result: %d", result);
+		LOG_ERROR("Unknown write result: %d", result);
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
@@ -267,7 +268,7 @@ int bt_ets_init(const struct bt_ets_cb *cb)
 	__ASSERT(cb->read_clock_status != NULL, "`read_clock_status` callback is required for ETS");
 
 	if ((cb == NULL) || (cb->read_elapsed_time == NULL) || (cb->read_clock_status == NULL)) {
-		LOG_ERR("Mandatory ETS callbacks are NULL");
+		LOG_ERROR("Mandatory ETS callbacks are NULL");
 		return -EINVAL;
 	}
 
@@ -282,7 +283,7 @@ int bt_ets_indicate(const struct bt_ets_elapsed_time *elapsed_time, uint8_t cloc
 	int err;
 
 	if (elapsed_time == NULL) {
-		LOG_ERR("elapsed_time parameter is NULL");
+		LOG_ERROR("elapsed_time parameter is NULL");
 		return -EINVAL;
 	}
 
@@ -299,7 +300,7 @@ int bt_ets_indicate(const struct bt_ets_elapsed_time *elapsed_time, uint8_t cloc
 	/* Send indication to all connected clients that have enabled indications */
 	err = bt_gatt_indicate(NULL, &indicate_params);
 	if (err != 0) {
-		LOG_ERR("Failed to send indication: %d", err);
+		LOG_ERROR("Failed to send indication: %d", err);
 	}
 
 	return err;
@@ -314,7 +315,7 @@ int bt_ets_time_to_unix_ms(const struct bt_ets_elapsed_time *et_time, int64_t *u
 	uint8_t resolution;
 
 	if ((et_time == NULL) || (unix_ms == NULL)) {
-		LOG_ERR("Invalid NULL parameter(s)");
+		LOG_ERROR("Invalid NULL parameter(s)");
 		return -EINVAL;
 	}
 
@@ -329,7 +330,7 @@ int bt_ets_time_to_unix_ms(const struct bt_ets_elapsed_time *et_time, int64_t *u
 	case BT_ETS_RESOLUTION_1_SEC:
 		/* 1 second resolution: multiply by 1000 */
 		if (ets_time_value > (INT64_MAX / BT_ETS_MSEC_PER_SEC)) {
-			LOG_ERR("Time value overflow during conversion");
+			LOG_ERROR("Time value overflow during conversion");
 			return -EOVERFLOW;
 		}
 		ets_ms = (int64_t)ets_time_value * BT_ETS_MSEC_PER_SEC;
@@ -338,7 +339,7 @@ int bt_ets_time_to_unix_ms(const struct bt_ets_elapsed_time *et_time, int64_t *u
 	case BT_ETS_RESOLUTION_100_MS:
 		/* 100 ms resolution: multiply by 100 */
 		if (ets_time_value > (INT64_MAX / BT_ETS_MSEC_PER_100_MS)) {
-			LOG_ERR("Time value overflow during conversion");
+			LOG_ERROR("Time value overflow during conversion");
 			return -EOVERFLOW;
 		}
 		ets_ms = (int64_t)ets_time_value * BT_ETS_MSEC_PER_100_MS;
@@ -347,7 +348,7 @@ int bt_ets_time_to_unix_ms(const struct bt_ets_elapsed_time *et_time, int64_t *u
 	case BT_ETS_RESOLUTION_1_MS:
 		/* 1 ms resolution: direct conversion */
 		if (ets_time_value > INT64_MAX) {
-			LOG_ERR("Time value overflow during conversion");
+			LOG_ERROR("Time value overflow during conversion");
 			return -EOVERFLOW;
 		}
 		ets_ms = (int64_t)ets_time_value;
@@ -359,7 +360,7 @@ int bt_ets_time_to_unix_ms(const struct bt_ets_elapsed_time *et_time, int64_t *u
 		break;
 
 	default:
-		LOG_ERR("Invalid resolution value: %u", resolution);
+		LOG_ERROR("Invalid resolution value: %u", resolution);
 		return -EINVAL;
 	}
 
@@ -402,7 +403,7 @@ int bt_ets_time_from_unix_ms(struct bt_ets_elapsed_time *et_time, int64_t unix_m
 
 	/* Check if time is before ETS epoch */
 	if (ets_ms < 0) {
-		LOG_ERR("Time is before ETS epoch (2000-01-01)");
+		LOG_ERROR("Time is before ETS epoch (2000-01-01)");
 		return -EINVAL;
 	}
 
@@ -425,7 +426,7 @@ int bt_ets_time_from_unix_ms(struct bt_ets_elapsed_time *et_time, int64_t unix_m
 #elif defined(CONFIG_BT_ETS_RESOLUTION_100_US)
 	/* 100 us resolution: multiply by 10 */
 	if (ets_ms > (INT64_MAX / BT_ETS_100US_PER_MSEC)) {
-		LOG_ERR("Time value overflow during conversion");
+		LOG_ERROR("Time value overflow during conversion");
 		return -EOVERFLOW;
 	}
 	ets_time_value = (uint64_t)(ets_ms * BT_ETS_100US_PER_MSEC);
@@ -434,7 +435,7 @@ int bt_ets_time_from_unix_ms(struct bt_ets_elapsed_time *et_time, int64_t unix_m
 
 	/* Check if value fits in 48 bits */
 	if (ets_time_value > ETS_TIME_VALUE_MAX) {
-		LOG_ERR("Time value exceeds 48-bit limit: %llu", ets_time_value);
+		LOG_ERROR("Time value exceeds 48-bit limit: %llu", ets_time_value);
 		return -EOVERFLOW;
 	}
 

@@ -93,7 +93,7 @@ LOG_MODULE_REGISTER(tcpc_numaker, CONFIG_USBC_LOG_LEVEL);
 	({                                                                                         \
 		int rc_intern = numaker_utcpd_reg_write_wait_ready(dev);                           \
 		if (rc_intern < 0) {                                                               \
-			LOG_ERR("UTCPD register (%s) write timeout", #reg_name);                   \
+			LOG_ERROR("UTCPD register (%s) write timeout", #reg_name);                 \
 		} else {                                                                           \
 			utcpd_base->reg_name = (val);                                              \
 		}                                                                                  \
@@ -107,7 +107,7 @@ LOG_MODULE_REGISTER(tcpc_numaker, CONFIG_USBC_LOG_LEVEL);
 	({                                                                                         \
 		int rc_intern = numaker_utcpd_reg_write_wait_ready(dev);                           \
 		if (rc_intern < 0) {                                                               \
-			LOG_ERR("UTCPD register (%s) write timeout, force-write", #reg_name);      \
+			LOG_ERROR("UTCPD register (%s) write timeout, force-write", #reg_name);    \
 		}                                                                                  \
 		utcpd_base->reg_name = (val);                                                      \
 		rc_intern;                                                                         \
@@ -120,7 +120,7 @@ LOG_MODULE_REGISTER(tcpc_numaker, CONFIG_USBC_LOG_LEVEL);
 	({                                                                                         \
 		int rc_intern = numaker_utcpd_reg_write_wait_ready(dev);                           \
 		if (rc_intern < 0) {                                                               \
-			LOG_ERR("UTCPD register (0x%04x) write timeout", reg_offset);              \
+			LOG_ERROR("UTCPD register (0x%04x) write timeout", reg_offset);            \
 		} else {                                                                           \
 			sys_write32((val), ((uintptr_t)utcpd_base) + reg_offset);                  \
 		}                                                                                  \
@@ -134,7 +134,8 @@ LOG_MODULE_REGISTER(tcpc_numaker, CONFIG_USBC_LOG_LEVEL);
 	({                                                                                         \
 		int rc_intern = numaker_utcpd_reg_write_wait_ready(dev);                           \
 		if (rc_intern < 0) {                                                               \
-			LOG_ERR("UTCPD register (0x%04x) write timeout, force-write", reg_offset); \
+			LOG_ERROR("UTCPD register (0x%04x) write timeout, force-write",            \
+				  reg_offset);                                                     \
 		}                                                                                  \
 		sys_write32((val), ((uintptr_t)utcpd_base) + reg_offset);                          \
 		rc_intern;                                                                         \
@@ -405,13 +406,13 @@ static int numaker_eadc_vref_init(const struct device *dev)
 	}
 	/* ADC device ready */
 	if (!adc_is_ready_dt(spec)) {
-		LOG_ERR("ADC device for VBUS/VCONN not ready");
+		LOG_ERROR("ADC device for VBUS/VCONN not ready");
 		return -ENODEV;
 	}
 
 	/* ADC channel configuration ready */
 	if (!spec->channel_cfg_dt_node_exists) {
-		LOG_ERR("ADC channel configuration for VBUS/VCONN not specified");
+		LOG_ERROR("ADC channel configuration for VBUS/VCONN not specified");
 		return -ENODEV;
 	}
 
@@ -435,11 +436,11 @@ static int numaker_eadc_vref_init(const struct device *dev)
 			SYS->VREFCTL |= SYS_VREFCTL_VREF_3_0V;
 			break;
 		default:
-			LOG_ERR("Invalid Vref voltage");
+			LOG_ERROR("Invalid Vref voltage");
 			return -ENOTSUP;
 		}
 	} else {
-		LOG_ERR("Invalid Vref source");
+		LOG_ERROR("Invalid Vref source");
 		return -ENOTSUP;
 	}
 
@@ -780,7 +781,7 @@ static int numaker_utcpd_rx_fifo_enqueue(const struct device *dev)
 
 	/* rxbcnt = 1 (frame type) + 2 (Message Header) + Rx data byte count */
 	if (rxbcnt < 3) {
-		LOG_ERR("Invalid UTCPD.RXBCNT: %d", rxbcnt);
+		LOG_ERROR("Invalid UTCPD.RXBCNT: %d", rxbcnt);
 		rc = -EIO;
 		goto cleanup;
 	}
@@ -788,9 +789,9 @@ static int numaker_utcpd_rx_fifo_enqueue(const struct device *dev)
 
 	/* Not support Unchunked Extended Message exceeding PD_CONVERT_PD_HEADER_COUNT_TO_BYTES */
 	if (rx_data_size > (PD_MAX_EXTENDED_MSG_LEGACY_LEN + 2)) {
-		LOG_ERR("Not support Unchunked Extended Message exceeding "
-			"PD_CONVERT_PD_HEADER_COUNT_TO_BYTES: %d",
-			rx_data_size);
+		LOG_ERROR("Not support Unchunked Extended Message exceeding "
+			  "PD_CONVERT_PD_HEADER_COUNT_TO_BYTES: %d",
+			  rx_data_size);
 		rc = -EIO;
 		goto cleanup;
 	}
@@ -949,7 +950,7 @@ static void numaker_utcpd_isr(const struct device *dev)
 
 	/* Fault */
 	if ((is & UTCPD_IS_FUTIS_Msk) && (futstsie & futsts)) {
-		LOG_ERR("UTCPD fault (FUTSTS=0x%08x)", futsts);
+		LOG_ERROR("UTCPD fault (FUTSTS=0x%08x)", futsts);
 		NUMAKER_UTCPD_REG_FORCE_WRITE_BY_OFFSET(dev, offsetof(UTCPD_T, FUTSTS), futsts);
 		/* NOTE: FUTSTSIE will restore to default on Hard Reset. We may re-enter
 		 *       here and redo mask.
@@ -1010,13 +1011,13 @@ static int numaker_eadc_smplmod_init(const struct device *dev, const struct adc_
 
 	/* ADC device ready */
 	if (!adc_is_ready_dt(spec)) {
-		LOG_ERR("ADC device for VBUS/VCONN not ready");
+		LOG_ERROR("ADC device for VBUS/VCONN not ready");
 		return -ENODEV;
 	}
 
 	/* ADC channel configuration ready */
 	if (!spec->channel_cfg_dt_node_exists) {
-		LOG_ERR("ADC channel configuration for VBUS/VCONN not specified");
+		LOG_ERROR("ADC channel configuration for VBUS/VCONN not specified");
 		return -ENODEV;
 	}
 
@@ -1024,7 +1025,7 @@ static int numaker_eadc_smplmod_init(const struct device *dev, const struct adc_
 	acq_time_unit = ADC_ACQ_TIME_UNIT(acquisition_time);
 	acq_time_value = ADC_ACQ_TIME_VALUE(acquisition_time);
 	if (acq_time_unit != ADC_ACQ_TIME_TICKS) {
-		LOG_ERR("Invalid acquisition time unit for VBUS/VCONN");
+		LOG_ERROR("Invalid acquisition time unit for VBUS/VCONN");
 		return -ENOTSUP;
 	}
 
@@ -1132,16 +1133,16 @@ static int numaker_utcpd_gpios_init(const struct device *dev)
 	/* Configure VBUS detect pin to INPUT to avoid intervening its power measurement */
 	spec = &config->utcpd.gpios.vbus_detect;
 	if (spec->port == NULL) {
-		LOG_ERR("VBUS detect pin not specified");
+		LOG_ERROR("VBUS detect pin not specified");
 		return -ENODEV;
 	}
 	if (!gpio_is_ready_dt(spec)) {
-		LOG_ERR("VBUS detect pin port device not ready");
+		LOG_ERROR("VBUS detect pin port device not ready");
 		return -ENODEV;
 	}
 	rc = gpio_pin_configure_dt(spec, GPIO_INPUT);
 	if (rc < 0) {
-		LOG_ERR("VBUS detect pin configured to INPUT failed: %d", rc);
+		LOG_ERROR("VBUS detect pin configured to INPUT failed: %d", rc);
 		return rc;
 	}
 
@@ -1149,12 +1150,13 @@ static int numaker_utcpd_gpios_init(const struct device *dev)
 	spec = &config->utcpd.gpios.vbus_discharge;
 	if (spec->port != NULL) {
 		if (!gpio_is_ready_dt(spec)) {
-			LOG_ERR("VBUS discharge pin port device not ready");
+			LOG_ERROR("VBUS discharge pin port device not ready");
 			return -ENODEV;
 		}
 		rc = gpio_pin_configure_dt(spec, GPIO_OUTPUT_INACTIVE);
 		if (rc < 0) {
-			LOG_ERR("VBUS discharge pin configured to OUTPUT INACTIVE failed: %d", rc);
+			LOG_ERROR("VBUS discharge pin configured to OUTPUT INACTIVE failed: %d",
+				  rc);
 			return rc;
 		}
 	}
@@ -1163,12 +1165,13 @@ static int numaker_utcpd_gpios_init(const struct device *dev)
 	spec = &config->utcpd.gpios.vconn_discharge;
 	if (spec->port != NULL) {
 		if (!gpio_is_ready_dt(spec)) {
-			LOG_ERR("VCONN discharge pin port device not ready");
+			LOG_ERROR("VCONN discharge pin port device not ready");
 			return -ENODEV;
 		}
 		rc = gpio_pin_configure_dt(spec, GPIO_OUTPUT_INACTIVE);
 		if (rc < 0) {
-			LOG_ERR("VCONN discharge pin configured to OUTPUT INACTIVE failed: %d", rc);
+			LOG_ERROR("VCONN discharge pin configured to OUTPUT INACTIVE failed: %d",
+				  rc);
 			return rc;
 		}
 	}
@@ -1773,7 +1776,7 @@ static int numaker_tcpc_set_cc(const struct device *dev, enum tc_cc_pull pull)
 		break;
 
 	default:
-		LOG_ERR("Invalid Rp value: %d", data->rp);
+		LOG_ERROR("Invalid Rp value: %d", data->rp);
 		return -EINVAL;
 	}
 
@@ -1796,7 +1799,7 @@ static int numaker_tcpc_set_cc(const struct device *dev, enum tc_cc_pull pull)
 		break;
 
 	default:
-		LOG_ERR("Invalid pull: %d", pull);
+		LOG_ERROR("Invalid pull: %d", pull);
 		return -EINVAL;
 	}
 
@@ -2023,7 +2026,7 @@ static int numaker_tcpc_set_cc_polarity(const struct device *dev, enum tc_cc_pol
 		break;
 
 	default:
-		LOG_ERR("Invalid CC polarity: %d", polarity);
+		LOG_ERROR("Invalid CC polarity: %d", polarity);
 		return -EINVAL;
 	}
 	return NUMAKER_UTCPD_REG_WRITE_BY_NAME(dev, CTL, ctl);
@@ -2046,9 +2049,9 @@ static int numaker_tcpc_transmit_data(const struct device *dev, struct pd_msg *m
 
 	/* Not support Unchunked Extended Message exceeding PD_CONVERT_PD_HEADER_COUNT_TO_BYTES */
 	if (msg->len > (PD_MAX_EXTENDED_MSG_LEGACY_LEN + 2)) {
-		LOG_ERR("Not support Unchunked Extended Message exceeding "
-			"PD_CONVERT_PD_HEADER_COUNT_TO_BYTES: %d",
-			msg->len);
+		LOG_ERROR("Not support Unchunked Extended Message exceeding "
+			  "PD_CONVERT_PD_HEADER_COUNT_TO_BYTES: %d",
+			  msg->len);
 		return -EIO;
 	}
 
@@ -2078,7 +2081,7 @@ static int numaker_tcpc_transmit_data(const struct device *dev, struct pd_msg *m
 		/* Per TCPCI spec, no retry for non-SOP* transmission */
 		txctl_retrycnt = 0;
 	} else {
-		LOG_ERR("Invalid PD packet type: %d", msg->type);
+		LOG_ERROR("Invalid PD packet type: %d", msg->type);
 		return -EINVAL;
 	}
 	/* NOTE: Needn't extra cast for UTCPD_TXCTL.TXSTYPE aligning with pd_packet_type */

@@ -79,7 +79,7 @@ int bt_ias_client_alert_write(struct bt_conn *conn, enum bt_ias_alert_lvl lvl)
 	if (lvl_u8 != BT_IAS_ALERT_LVL_NO_ALERT &&
 	    lvl_u8 != BT_IAS_ALERT_LVL_MILD_ALERT &&
 	    lvl_u8 != BT_IAS_ALERT_LVL_HIGH_ALERT) {
-		LOG_ERR("Invalid alert value: %u", lvl_u8);
+		LOG_ERROR("Invalid alert value: %u", lvl_u8);
 		return -EINVAL;
 	}
 
@@ -87,7 +87,7 @@ int bt_ias_client_alert_write(struct bt_conn *conn, enum bt_ias_alert_lvl lvl)
 					     client_by_conn(conn)->alert_level_handle,
 					     &lvl_u8, sizeof(lvl_u8), false);
 	if (err < 0) {
-		LOG_ERR("IAS client level %d write failed: %d", lvl, err);
+		LOG_ERROR("IAS client level %d write failed: %d", lvl, err);
 	}
 
 	return err;

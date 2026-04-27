@@ -29,14 +29,14 @@ int main(void)
 
 	res = llext_load(ldr, "ext", &ext, &ldr_parm);
 	if (res != 0) {
-		LOG_ERR("Failed to load extension, return code %d\n", res);
+		LOG_ERROR("Failed to load extension, return code %d\n", res);
 		return res;
 	}
 
 	void (*hello_world_fn)() = llext_find_sym(&ext->exp_tab, "hello_world");
 
 	if (hello_world_fn == NULL) {
-		LOG_ERR("Failed to find symbol\n");
+		LOG_ERROR("Failed to find symbol\n");
 		return -1;
 	}
 

@@ -166,7 +166,7 @@ int disk_access_ioctl(const char *pdrv, uint8_t cmd, void *buf)
 				disk->refcnt++;
 				rc = 0;
 			} else {
-				LOG_ERR("Disk reference count at max value");
+				LOG_ERROR("Disk reference count at max value");
 			}
 			break;
 		case DISK_IOCTL_CTRL_DEINIT:
@@ -200,12 +200,12 @@ int disk_access_register(struct disk_info *disk)
 	k_spinlock_key_t spinlock_key;
 
 	if ((disk == NULL) || (disk->name == NULL)) {
-		LOG_ERR("invalid disk interface!!");
+		LOG_ERROR("invalid disk interface!!");
 		return -EINVAL;
 	}
 
 	if (disk_access_get_di(disk->name) != NULL) {
-		LOG_ERR("disk interface already registered!!");
+		LOG_ERROR("disk interface already registered!!");
 		return -EINVAL;
 	}
 
@@ -225,12 +225,12 @@ int disk_access_unregister(struct disk_info *disk)
 	k_spinlock_key_t spinlock_key;
 
 	if ((disk == NULL) || (disk->name == NULL)) {
-		LOG_ERR("invalid disk interface!!");
+		LOG_ERROR("invalid disk interface!!");
 		return -EINVAL;
 	}
 
 	if (disk_access_get_di(disk->name) == NULL) {
-		LOG_ERR("disk interface not registered!!");
+		LOG_ERROR("disk interface not registered!!");
 		return -EINVAL;
 	}
 

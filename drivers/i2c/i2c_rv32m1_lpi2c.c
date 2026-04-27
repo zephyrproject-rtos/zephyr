@@ -50,13 +50,13 @@ static int rv32m1_lpi2c_configure(const struct device *dev,
 
 	if (!(I2C_MODE_CONTROLLER & dev_config)) {
 		/* Slave mode not supported - yet */
-		LOG_ERR("Slave mode not supported");
+		LOG_ERROR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 
 	if (I2C_ADDR_10_BITS & dev_config) {
 		/* FSL LPI2C driver only supports 7-bit addressing */
-		LOG_ERR("10 bit addressing not supported");
+		LOG_ERROR("10 bit addressing not supported");
 		return -ENOTSUP;
 	}
 
@@ -79,13 +79,13 @@ static int rv32m1_lpi2c_configure(const struct device *dev,
 	/*      baudrate = MHZ(5); */
 	/*      break; */
 	default:
-		LOG_ERR("Unsupported speed");
+		LOG_ERROR("Unsupported speed");
 		return -ENOTSUP;
 	}
 
 	err = clock_control_get_rate(config->clock_dev, config->clock_subsys, &clk_freq);
 	if (err) {
-		LOG_ERR("Could not get clock frequency (err %d)", err);
+		LOG_ERROR("Could not get clock frequency (err %d)", err);
 		return -EINVAL;
 	}
 
@@ -212,19 +212,19 @@ static int rv32m1_lpi2c_init(const struct device *dev)
 	CLOCK_SetIpSrc(config->clock_ip_name, config->clock_ip_src);
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	err = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (err) {
-		LOG_ERR("Could not turn on clock (err %d)", err);
+		LOG_ERROR("Could not turn on clock (err %d)", err);
 		return -EINVAL;
 	}
 
 	err = clock_control_get_rate(config->clock_dev, config->clock_subsys, &clk_freq);
 	if (err) {
-		LOG_ERR("Could not get clock frequency (err %d)", err);
+		LOG_ERROR("Could not get clock frequency (err %d)", err);
 		return -EINVAL;
 	}
 
@@ -237,7 +237,7 @@ static int rv32m1_lpi2c_init(const struct device *dev)
 	dev_cfg = i2c_map_dt_bitrate(config->bitrate);
 	err = rv32m1_lpi2c_configure(dev, dev_cfg | I2C_MODE_CONTROLLER);
 	if (err) {
-		LOG_ERR("Could not configure controller (err %d)", err);
+		LOG_ERROR("Could not configure controller (err %d)", err);
 		return err;
 	}
 

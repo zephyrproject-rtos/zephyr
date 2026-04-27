@@ -104,8 +104,8 @@ static int gpio_ite_configure(const struct device *dev,
 		if (ECREG(reg_gpcr) != GPCR_PORT_PIN_MODE_TRISTATE) {
 			/* Go back to default setting (input) */
 			ECREG(reg_gpcr) = GPCR_PORT_PIN_MODE_INPUT;
-			LOG_ERR("Cannot config the node-gpio@%x, pin=%d as tri-state",
-				(uint32_t)reg_gpdr, pin);
+			LOG_ERROR("Cannot config the node-gpio@%x, pin=%d as tri-state",
+				  (uint32_t)reg_gpdr, pin);
 			rc = -ENOTSUP;
 			goto unlock_and_return;
 		}

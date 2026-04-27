@@ -182,21 +182,21 @@ static int ifx_cat1_counter_init(const struct device *dev)
 		rslt = cyhal_gpio_init(config->external_pin, CYHAL_GPIO_DIR_INPUT,
 				       CYHAL_GPIO_DRIVE_NONE, 0);
 		if (rslt != CY_RSLT_SUCCESS) {
-			LOG_ERR("External pin configuration error");
+			LOG_ERROR("External pin configuration error");
 			return -EIO;
 		}
 
 		rslt = cyhal_gpio_enable_output(config->external_pin, CYHAL_SIGNAL_TYPE_EDGE,
 						(cyhal_source_t *)&data->signal_source);
 		if (rslt != CY_RSLT_SUCCESS) {
-			LOG_ERR("error in the enabling of Counter input pin output");
+			LOG_ERROR("error in the enabling of Counter input pin output");
 			return -EIO;
 		}
 
 		rslt = cyhal_timer_connect_digital(&data->counter_obj, data->signal_source,
 						   CYHAL_TIMER_INPUT_COUNT);
 		if (rslt != CY_RSLT_SUCCESS) {
-			LOG_ERR("Error connecting signal source");
+			LOG_ERROR("Error connecting signal source");
 			return -EIO;
 		}
 	}

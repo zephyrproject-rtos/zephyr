@@ -67,7 +67,7 @@ static int mbc_validate_fc03fp_response(struct modbus_context *ctx, float *ptbl)
 	req_byte_cnt = req_qty * sizeof(uint16_t);
 
 	if (req_byte_cnt != resp_byte_cnt) {
-		LOG_ERR("Mismatch in the number of registers");
+		LOG_ERROR("Mismatch in the number of registers");
 		return -EINVAL;
 	}
 
@@ -104,7 +104,7 @@ static int mbc_validate_rd_response(struct modbus_context *ctx,
 	req_addr = sys_get_be16(&ctx->tx_adu.data[0]);
 
 	if ((resp_byte_cnt + 1) > sizeof(ctx->rx_adu.data)) {
-		LOG_ERR("Byte count exceeds buffer length");
+		LOG_ERROR("Byte count exceeds buffer length");
 		return -EINVAL;
 	}
 
@@ -113,7 +113,7 @@ static int mbc_validate_rd_response(struct modbus_context *ctx,
 	case MODBUS_FC02_DI_RD:
 		req_byte_cnt = ((req_qty - 1) / 8) + 1;
 		if (req_byte_cnt != resp_byte_cnt) {
-			LOG_ERR("Mismatch in the number of coils or inputs");
+			LOG_ERROR("Mismatch in the number of coils or inputs");
 			err = -EINVAL;
 		} else {
 			for (uint8_t i = 0; i < resp_byte_cnt; i++) {
@@ -134,7 +134,7 @@ static int mbc_validate_rd_response(struct modbus_context *ctx,
 	case MODBUS_FC04_IN_REG_RD:
 		req_byte_cnt = req_qty * sizeof(uint16_t);
 		if (req_byte_cnt != resp_byte_cnt) {
-			LOG_ERR("Mismatch in the number of registers");
+			LOG_ERROR("Mismatch in the number of registers");
 			err = -EINVAL;
 		} else {
 			for (uint16_t i = 0; i < req_qty; i++) {
@@ -147,7 +147,7 @@ static int mbc_validate_rd_response(struct modbus_context *ctx,
 		break;
 
 	default:
-		LOG_ERR("Validation not implemented for FC 0x%02x", fc);
+		LOG_ERROR("Validation not implemented for FC 0x%02x", fc);
 		err = -ENOTSUP;
 	}
 
@@ -174,7 +174,7 @@ static int mbc_validate_fc08_response(struct modbus_context *ctx,
 	resp_data = sys_get_be16(&ctx->rx_adu.data[2]);
 
 	if (req_sfunc != resp_sfunc) {
-		LOG_ERR("Mismatch in the sub-function code");
+		LOG_ERROR("Mismatch in the sub-function code");
 		return -EINVAL;
 	}
 
@@ -182,7 +182,7 @@ static int mbc_validate_fc08_response(struct modbus_context *ctx,
 	case MODBUS_FC08_SUBF_QUERY:
 	case MODBUS_FC08_SUBF_CLR_CTR:
 		if (req_data != resp_data) {
-			LOG_ERR("Request and response data are different");
+			LOG_ERROR("Request and response data are different");
 			err = -EINVAL;
 		} else {
 			*data = resp_data;
@@ -234,7 +234,7 @@ static int mbc_validate_wr_response(struct modbus_context *ctx,
 		break;
 
 	default:
-		LOG_ERR("Validation not implemented for FC 0x%02x", fc);
+		LOG_ERROR("Validation not implemented for FC 0x%02x", fc);
 		err = -ENOTSUP;
 	}
 
@@ -256,7 +256,7 @@ static int mbc_send_cmd(struct modbus_context *ctx, const uint8_t unit_id,
 
 	err = mbc_validate_response_fc(ctx, unit_id, fc);
 	if (err < 0) {
-		LOG_ERR("Failed to validate unit ID or function code");
+		LOG_ERROR("Failed to validate unit ID or function code");
 		return err;
 	} else if (err > 0) {
 		LOG_INF("Modbus FC %u, error code %u", fc, err);
@@ -283,7 +283,7 @@ static int mbc_send_cmd(struct modbus_context *ctx, const uint8_t unit_id,
 		break;
 
 	default:
-		LOG_ERR("FC 0x%02x not implemented", fc);
+		LOG_ERROR("FC 0x%02x not implemented", fc);
 		err = -ENOTSUP;
 	}
 
@@ -527,7 +527,7 @@ int modbus_write_coils(const int iface,
 	length += num_bytes + 1;
 
 	if (length > sizeof(ctx->tx_adu.data)) {
-		LOG_ERR("Length of data buffer is not sufficient");
+		LOG_ERROR("Length of data buffer is not sufficient");
 		k_mutex_unlock(&ctx->iface_lock);
 		return -ENOBUFS;
 	}
@@ -571,7 +571,7 @@ int modbus_write_holding_regs(const int iface,
 	length += num_bytes + 1;
 
 	if (length > sizeof(ctx->tx_adu.data)) {
-		LOG_ERR("Length of data buffer is not sufficient");
+		LOG_ERROR("Length of data buffer is not sufficient");
 		k_mutex_unlock(&ctx->iface_lock);
 		return -ENOBUFS;
 	}
@@ -620,7 +620,7 @@ int modbus_write_holding_regs_fp(const int iface,
 	length += num_bytes + 1;
 
 	if (length > sizeof(ctx->tx_adu.data)) {
-		LOG_ERR("Length of data buffer is not sufficient");
+		LOG_ERROR("Length of data buffer is not sufficient");
 		k_mutex_unlock(&ctx->iface_lock);
 		return -ENOBUFS;
 	}

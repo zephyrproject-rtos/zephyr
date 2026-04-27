@@ -338,18 +338,17 @@ static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
 	} else if (dir == I2S_DIR_BOTH) {
 		return -ENOSYS;
 	} else {
-		LOG_ERR("either RX or TX direction must be selected");
+		LOG_ERROR("either RX or TX direction must be selected");
 		return -EINVAL;
 	}
 
-	if (stream->state != I2S_STATE_NOT_READY &&
-	    stream->state != I2S_STATE_READY) {
-		LOG_ERR("invalid state");
+	if (stream->state != I2S_STATE_NOT_READY && stream->state != I2S_STATE_READY) {
+		LOG_ERROR("invalid state");
 		return -EINVAL;
 	}
 
 	if (i2s_cfg->options & I2S_OPT_BIT_CLK_GATED) {
-		LOG_ERR("invalid operating mode");
+		LOG_ERROR("invalid operating mode");
 		return -EINVAL;
 	}
 
@@ -362,15 +361,15 @@ static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
 	} else if (i2s_cfg->channels == 2) {
 		channel_div = 1;
 	} else {
-		LOG_ERR("invalid channels number");
+		LOG_ERROR("invalid channels number");
 		return -EINVAL;
 	}
 	int req_buf_s =
 		(cfg->fifo_depth * (i2s_cfg->word_size / 8)) / channel_div;
 
 	if (i2s_cfg->block_size < req_buf_s) {
-		LOG_ERR("not enough space to allocate single buffer");
-		LOG_ERR("fifo requires at least %i bytes", req_buf_s);
+		LOG_ERROR("not enough space to allocate single buffer");
+		LOG_ERROR("fifo requires at least %i bytes", req_buf_s);
 		return -EINVAL;
 	} else if (i2s_cfg->block_size != req_buf_s) {
 		LOG_WRN("the buffer is greater than required,"
@@ -384,36 +383,35 @@ static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
 
 	int dev_sample_width = i2s_get_sample_width(cfg->base);
 
-	if (i2s_cfg->word_size != 8U && i2s_cfg->word_size != 16U &&
-	    i2s_cfg->word_size != 24U && i2s_cfg->word_size != 32U &&
-	    i2s_cfg->word_size != dev_sample_width) {
-		LOG_ERR("invalid word size");
+	if (i2s_cfg->word_size != 8U && i2s_cfg->word_size != 16U && i2s_cfg->word_size != 24U &&
+	    i2s_cfg->word_size != 32U && i2s_cfg->word_size != dev_sample_width) {
+		LOG_ERROR("invalid word size");
 		return -EINVAL;
 	}
 
 	int dev_format = i2s_get_foramt(cfg->base);
 
 	if (dev_format != i2s_cfg->format) {
-		LOG_ERR("unsupported I2S data format");
+		LOG_ERROR("unsupported I2S data format");
 		return -EINVAL;
 	}
 
 #if CONFIG_I2S_LITEX_CHANNELS_CONCATENATED
 #if CONFIG_I2S_LITEX_DATA_BIG_ENDIAN
-	LOG_ERR("Big endian is not supported "
-			"when channels are conncatenated");
+	LOG_ERROR("Big endian is not supported "
+		  "when channels are conncatenated");
 	return -EINVAL;
 #endif
 	if (channels_concatenated == 0) {
-		LOG_ERR("invalid state. "
-				"Your device is configured to send "
-				"channels with padding. "
-				"Please reconfigure driver");
+		LOG_ERROR("invalid state. "
+			  "Your device is configured to send "
+			  "channels with padding. "
+			  "Please reconfigure driver");
 		return -EINVAL;
 	}
 
 	if (i2s_cfg->word_size != 16) {
-		LOG_ERR("invalid word size");
+		LOG_ERROR("invalid word size");
 		return -EINVAL;
 	}
 
@@ -491,15 +489,14 @@ static int i2s_litex_trigger(const struct device *dev, enum i2s_dir dir,
 	} else if (dir == I2S_DIR_BOTH) {
 		return -ENOSYS;
 	} else {
-		LOG_ERR("either RX or TX direction must be selected");
+		LOG_ERROR("either RX or TX direction must be selected");
 		return -EINVAL;
 	}
 
 	switch (cmd) {
 	case I2S_TRIGGER_START:
 		if (stream->state != I2S_STATE_READY) {
-			LOG_ERR("START trigger: invalid state %d",
-				stream->state);
+			LOG_ERROR("START trigger: invalid state %d", stream->state);
 			return -EIO;
 		}
 		__ASSERT_NO_MSG(stream->mem_block == NULL);
@@ -510,9 +507,8 @@ static int i2s_litex_trigger(const struct device *dev, enum i2s_dir dir,
 		break;
 
 	case I2S_TRIGGER_STOP:
-		if (stream->state != I2S_STATE_RUNNING &&
-		    stream->state != I2S_STATE_READY) {
-			LOG_ERR("STOP trigger: invalid state");
+		if (stream->state != I2S_STATE_RUNNING && stream->state != I2S_STATE_READY) {
+			LOG_ERROR("STOP trigger: invalid state");
 			return -EIO;
 		}
 		i2s_disable(cfg->base);
@@ -521,7 +517,7 @@ static int i2s_litex_trigger(const struct device *dev, enum i2s_dir dir,
 		break;
 
 	default:
-		LOG_ERR("unsupported trigger command");
+		LOG_ERROR("unsupported trigger command");
 		return -EINVAL;
 	}
 	return 0;

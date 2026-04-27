@@ -77,14 +77,14 @@ static int is31fl3733_select_page(const struct device *dev, uint8_t page)
 	/* Unlock page selection register */
 	ret = i2c_reg_write_byte_dt(&config->bus, CMD_LOCK_REG, CMD_LOCK_UNLOCK);
 	if (ret < 0) {
-		LOG_ERR("Could not unlock page selection register");
+		LOG_ERROR("Could not unlock page selection register");
 		return ret;
 	}
 
 	/* Write to function select to select active page */
 	ret = i2c_reg_write_byte_dt(&config->bus, CMD_SEL_REG, page);
 	if (ret < 0) {
-		LOG_ERR("Could not select active page");
+		LOG_ERROR("Could not select active page");
 		return ret;
 	}
 	data->selected_page = page;
@@ -145,12 +145,12 @@ static int is31fl3733_init(const struct device *dev)
 	uint8_t dummy;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
-		LOG_ERR("I2C device not ready");
+		LOG_ERROR("I2C device not ready");
 		return -ENODEV;
 	}
 	if (config->sdb.port != NULL) {
 		if (!gpio_is_ready_dt(&config->sdb)) {
-			LOG_ERR("GPIO SDB pin not ready");
+			LOG_ERROR("GPIO SDB pin not ready");
 			return -ENODEV;
 		}
 		/* Set SDB pin high to exit hardware shutdown */

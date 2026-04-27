@@ -354,12 +354,12 @@ int udc_ep_enable_internal(const struct device *dev,
 	}
 
 	if (cfg->stat.enabled) {
-		LOG_ERR("ep 0x%02x already enabled", cfg->addr);
+		LOG_ERROR("ep 0x%02x already enabled", cfg->addr);
 		return -EALREADY;
 	}
 
 	if (!ep_check_config(dev, cfg, ep, attributes, mps, interval)) {
-		LOG_ERR("Endpoint 0x%02x validation failed", cfg->addr);
+		LOG_ERROR("Endpoint 0x%02x validation failed", cfg->addr);
 		return -ENODEV;
 	}
 
@@ -415,7 +415,7 @@ int udc_ep_disable_internal(const struct device *dev, const uint8_t ep)
 	}
 
 	if (!cfg->stat.enabled) {
-		LOG_ERR("ep 0x%02x already disabled", cfg->addr);
+		LOG_ERROR("ep 0x%02x already disabled", cfg->addr);
 		return -EALREADY;
 	}
 
@@ -709,7 +709,7 @@ struct net_buf *udc_ep_buf_alloc(const struct device *dev,
 
 	buf = net_buf_alloc_len(&udc_ep_pool, size, K_NO_WAIT);
 	if (!buf) {
-		LOG_ERR("Failed to allocate net_buf %zd, ep 0x%02x", size, ep);
+		LOG_ERROR("Failed to allocate net_buf %zd, ep 0x%02x", size, ep);
 		goto ep_alloc_error;
 	}
 

@@ -73,17 +73,17 @@ static int adc_kb1200_start_read(const struct device *dev, const struct adc_sequ
 	int error = 0;
 
 	if (!sequence->channels || (sequence->channels & ~BIT_MASK(ADC_MAX_CHAN))) {
-		LOG_ERR("Invalid ADC channels.");
+		LOG_ERROR("Invalid ADC channels.");
 		return -EINVAL;
 	}
 	/* Fixed 10 bit resolution of ene ADC */
 	if (sequence->resolution != ADC_RESOLUTION) {
-		LOG_ERR("Unfixed 10 bit ADC resolution.");
+		LOG_ERROR("Unfixed 10 bit ADC resolution.");
 		return -ENOTSUP;
 	}
 	/* Check sequence->buffer_size is enough */
 	if (!adc_kb1200_validate_buffer_size(sequence)) {
-		LOG_ERR("ADC buffer size too small.");
+		LOG_ERROR("ADC buffer size too small.");
 		return -ENOMEM;
 	}
 
@@ -110,7 +110,7 @@ static int adc_kb1200_start_read(const struct device *dev, const struct adc_sequ
 			k_busy_wait(ADC_WAIT_TIME);
 			count++;
 			if (count >= ADC_WAIT_CNT) {
-				LOG_ERR("ADC busy timeout...");
+				LOG_ERROR("ADC busy timeout...");
 				error = -EBUSY;
 				break;
 			}
@@ -139,27 +139,27 @@ static int adc_kb1200_channel_setup(const struct device *dev,
 				    const struct adc_channel_cfg *channel_cfg)
 {
 	if (channel_cfg->channel_id >= ADC_MAX_CHAN) {
-		LOG_ERR("Invalid channel %d.", channel_cfg->channel_id);
+		LOG_ERROR("Invalid channel %d.", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Unsupported channel acquisition time.");
+		LOG_ERROR("Unsupported channel acquisition time.");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels are not supported.");
+		LOG_ERROR("Differential channels are not supported.");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Unsupported channel gain %d.", channel_cfg->gain);
+		LOG_ERROR("Unsupported channel gain %d.", channel_cfg->gain);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Unsupported channel reference.");
+		LOG_ERROR("Unsupported channel reference.");
 		return -ENOTSUP;
 	}
 	LOG_DBG("ADC channel %d configured.", channel_cfg->channel_id);
@@ -234,7 +234,7 @@ static int adc_kb1200_init(const struct device *dev)
 	/* Configure pin-mux for ADC device */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("ADC pinctrl setup failed (%d).", ret);
+		LOG_ERROR("ADC pinctrl setup failed (%d).", ret);
 		return ret;
 	}
 

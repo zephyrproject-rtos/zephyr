@@ -74,14 +74,14 @@ static void fpga_ice40_load_handler(struct k_work *item)
 	LOG_DBG("Set CRESET low");
 	ret = gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_LOW);
 	if (ret < 0) {
-		LOG_ERR("failed to set CRESET low: %d", ret);
+		LOG_ERROR("failed to set CRESET low: %d", ret);
 		goto unlock;
 	}
 
 	LOG_DBG("Set SPI_CS low");
 	ret = gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_LOW);
 	if (ret < 0) {
-		LOG_ERR("failed to set SPI_CS low: %d", ret);
+		LOG_ERROR("failed to set SPI_CS low: %d", ret);
 		goto unlock;
 	}
 
@@ -90,7 +90,7 @@ static void fpga_ice40_load_handler(struct k_work *item)
 	k_busy_wait(config->creset_delay_us);
 
 	if (gpio_pin_get_dt(&config->cdone) != 0) {
-		LOG_ERR("CDONE should be low after the reset");
+		LOG_ERROR("CDONE should be low after the reset");
 		ret = -EIO;
 		goto unlock;
 	}
@@ -98,7 +98,7 @@ static void fpga_ice40_load_handler(struct k_work *item)
 	LOG_DBG("Set CRESET high");
 	ret = gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH);
 	if (ret < 0) {
-		LOG_ERR("failed to set CRESET high: %d", ret);
+		LOG_ERROR("failed to set CRESET high: %d", ret);
 		goto unlock;
 	}
 
@@ -108,7 +108,7 @@ static void fpga_ice40_load_handler(struct k_work *item)
 	LOG_DBG("Set SPI_CS high");
 	ret = gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 	if (ret < 0) {
-		LOG_ERR("failed to set SPI_CS high: %d", ret);
+		LOG_ERROR("failed to set SPI_CS high: %d", ret);
 		goto unlock;
 	}
 
@@ -117,14 +117,14 @@ static void fpga_ice40_load_handler(struct k_work *item)
 	tx_buf.len = DIV_ROUND_UP(config->leading_clocks, BITS_PER_BYTE);
 	ret = spi_write_dt(&bus, &tx_bufs);
 	if (ret < 0) {
-		LOG_ERR("Failed to send leading %u clocks: %d", config->leading_clocks, ret);
+		LOG_ERROR("Failed to send leading %u clocks: %d", config->leading_clocks, ret);
 		goto unlock;
 	}
 
 	LOG_DBG("Set SPI_CS low");
 	ret = gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_LOW);
 	if (ret < 0) {
-		LOG_ERR("failed to set SPI_CS low: %d", ret);
+		LOG_ERROR("failed to set SPI_CS low: %d", ret);
 		goto unlock;
 	}
 
@@ -133,14 +133,14 @@ static void fpga_ice40_load_handler(struct k_work *item)
 	tx_buf.len = img_size;
 	ret = spi_write_dt(&bus, &tx_bufs);
 	if (ret < 0) {
-		LOG_ERR("Failed to send bin file: %d", ret);
+		LOG_ERROR("Failed to send bin file: %d", ret);
 		goto unlock;
 	}
 
 	LOG_DBG("Set SPI_CS high");
 	ret = gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 	if (ret < 0) {
-		LOG_ERR("failed to set SPI_CS high: %d", ret);
+		LOG_ERROR("failed to set SPI_CS high: %d", ret);
 		goto unlock;
 	}
 
@@ -149,18 +149,18 @@ static void fpga_ice40_load_handler(struct k_work *item)
 	tx_buf.len = DIV_ROUND_UP(config->trailing_clocks, BITS_PER_BYTE);
 	ret = spi_write_dt(&bus, &tx_bufs);
 	if (ret < 0) {
-		LOG_ERR("Failed to send trailing %u clocks: %d", config->trailing_clocks, ret);
+		LOG_ERROR("Failed to send trailing %u clocks: %d", config->trailing_clocks, ret);
 		goto unlock;
 	}
 
 	LOG_DBG("checking CDONE");
 	ret = gpio_pin_get_dt(&config->cdone);
 	if (ret < 0) {
-		LOG_ERR("failed to read CDONE: %d", ret);
+		LOG_ERROR("failed to read CDONE: %d", ret);
 		goto unlock;
 	} else if (ret != 1) {
 		ret = -EIO;
-		LOG_ERR("CDONE did not go high");
+		LOG_ERROR("CDONE did not go high");
 		goto unlock;
 	}
 

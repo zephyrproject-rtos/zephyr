@@ -208,17 +208,17 @@ static int adc_xec_start_read(const struct device *dev,
 	uint32_t sar_ctrl;
 
 	if (sequence->channels & ~BIT_MASK(XEC_ADC_CFG_CHANNELS)) {
-		LOG_ERR("Incorrect channels, bitmask 0x%x", sequence->channels);
+		LOG_ERROR("Incorrect channels, bitmask 0x%x", sequence->channels);
 		return -EINVAL;
 	}
 
 	if (sequence->channels == 0UL) {
-		LOG_ERR("No channel selected");
+		LOG_ERROR("No channel selected");
 		return -EINVAL;
 	}
 
 	if (!adc_xec_validate_buffer_size(sequence)) {
-		LOG_ERR("Incorrect buffer size");
+		LOG_ERROR("Incorrect buffer size");
 		return -ENOMEM;
 	}
 
@@ -424,7 +424,7 @@ static int adc_xec_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("XEC ADC V2 pinctrl setup failed (%d)", ret);
+		LOG_ERROR("XEC ADC V2 pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 

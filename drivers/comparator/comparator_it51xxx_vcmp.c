@@ -140,7 +140,7 @@ static int vcmp_set_threshold(const struct device *dev, int32_t threshold_mv)
 	reg_val = (threshold_mv * VCMP_THRESHOLD / VCMP_MAX_MVOLT);
 
 	if (reg_val >= VCMP_THRESHOLD) {
-		LOG_ERR("Vcmp%d threshold only support 10-bits", cfg->vcmp_ch);
+		LOG_ERROR("Vcmp%d threshold only support 10-bits", cfg->vcmp_ch);
 		return -ENOTSUP;
 	}
 
@@ -186,7 +186,7 @@ static int it51xxx_vcmp_get_output(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	LOG_ERR("Unsupported function: %s", __func__);
+	LOG_ERROR("Unsupported function: %s", __func__);
 
 	return -ENOTSUP;
 }
@@ -204,7 +204,7 @@ static int it51xxx_vcmp_set_trigger(const struct device *dev, enum comparator_tr
 
 	switch (trigger) {
 	case COMPARATOR_TRIGGER_BOTH_EDGES:
-		LOG_ERR("Unsupported trigger: COMPARATOR_TRIGGER_BOTH_EDGES");
+		LOG_ERROR("Unsupported trigger: COMPARATOR_TRIGGER_BOTH_EDGES");
 		return -ENOTSUP;
 	case COMPARATOR_TRIGGER_RISING_EDGE:
 		data->interrupt_mask = COMPARATOR_TRIGGER_RISING_EDGE;
@@ -334,7 +334,7 @@ static int vcmp_it51xxx_init(const struct device *dev)
 	 * so we need to set ADC channel to alternate mode first.
 	 */
 	if (!device_is_ready(cfg->adc)) {
-		LOG_ERR("ADC device not ready");
+		LOG_ERROR("ADC device not ready");
 		return -ENODEV;
 	}
 
@@ -360,7 +360,7 @@ static int vcmp_it51xxx_init(const struct device *dev)
 
 	/* Store the address of driver data  for later access in ISR function*/
 	if (cfg->vcmp_ch >= VCMP_CHANNEL_CNT) {
-		LOG_ERR("invalid volt comparator channel setting(%d)", cfg->vcmp_ch);
+		LOG_ERROR("invalid volt comparator channel setting(%d)", cfg->vcmp_ch);
 		return -EINVAL;
 	}
 	vcmp_data[cfg->vcmp_ch] = dev->data;

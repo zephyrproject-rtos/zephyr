@@ -66,7 +66,7 @@ static int gpio_sc18im_port_set_raw(const struct device *port,
 
 	ret = sc18im704_transfer(cfg->bridge, buf, sizeof(buf), NULL, 0);
 	if (ret < 0) {
-		LOG_ERR("Failed to write GPIO state (%d)", ret);
+		LOG_ERROR("Failed to write GPIO state (%d)", ret);
 		return ret;
 	}
 
@@ -118,7 +118,7 @@ static int gpio_sc18im_pin_configure(const struct device *port, gpio_pin_t pin,
 
 	ret = sc18im704_claim(cfg->bridge);
 	if (ret < 0) {
-		LOG_ERR("Failed to claim bridge (%d)", ret);
+		LOG_ERROR("Failed to claim bridge (%d)", ret);
 		return ret;
 	}
 
@@ -140,7 +140,7 @@ static int gpio_sc18im_pin_configure(const struct device *port, gpio_pin_t pin,
 
 	ret = sc18im704_transfer(cfg->bridge, buf, sizeof(buf), NULL, 0);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure GPIO (%d)", ret);
+		LOG_ERROR("Failed to configure GPIO (%d)", ret);
 	}
 
 	if (ret == 0 && flags & GPIO_OUTPUT) {
@@ -208,7 +208,7 @@ static int gpio_sc18im_port_get_raw(const struct device *port, gpio_port_value_t
 
 	ret = sc18im704_transfer(cfg->bridge, buf, sizeof(buf), &data, 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to read GPIO state (%d)", ret);
+		LOG_ERROR("Failed to read GPIO state (%d)", ret);
 		return ret;
 	}
 
@@ -244,7 +244,7 @@ static int gpio_sc18im_init(const struct device *dev)
 	const struct gpio_sc18im_config *cfg = dev->config;
 
 	if (!device_is_ready(cfg->bridge)) {
-		LOG_ERR("Parent device not ready");
+		LOG_ERROR("Parent device not ready");
 		return -ENODEV;
 	}
 

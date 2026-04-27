@@ -468,7 +468,7 @@ static int bq24190_init(const struct device *dev)
 	case BQ24190_REG_VPRS_PN_24192I:
 		break;
 	default:
-		LOG_ERR("Error unknown model: 0x%02x\n", val);
+		LOG_ERROR("Error unknown model: 0x%02x\n", val);
 		return -ENODEV;
 	}
 

@@ -331,8 +331,7 @@ static void sam_pit_isr(const struct device *dev)
 	key = k_spin_lock(&data->lock);
 
 	if (status & PIT64B_ISR_OVRE_Msk) {
-		LOG_ERR("%s: More than 1 rollover occurred since the last read\n\r",
-			dev->name);
+		LOG_ERROR("%s: More than 1 rollover occurred since the last read\n\r", dev->name);
 	}
 
 	if (status & PIT64B_ISR_PERIOD_Msk) {

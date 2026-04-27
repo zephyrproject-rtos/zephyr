@@ -54,14 +54,14 @@ static bool dvfs_service_handler_freq_change_req_pending(void)
 static void dvfs_service_handler_nrfs_error_check(nrfs_err_t err)
 {
 	if (err != NRFS_SUCCESS) {
-		LOG_ERR("Failed with nrfs error: %d", err);
+		LOG_ERROR("Failed with nrfs error: %d", err);
 	}
 }
 
 static void dvfs_service_handler_error(int err)
 {
 	if (err != 0) {
-		LOG_ERR("Failed with error: %d", err);
+		LOG_ERROR("Failed with error: %d", err);
 	}
 }
 
@@ -211,7 +211,7 @@ static void nrfs_dvfs_evt_handler(nrfs_dvfs_evt_t const *p_evt, void *context)
 			nrfs_dvfs_init_complete_request(get_next_context()));
 		LOG_DBG("DVFS handler EVT_INIT_PREPARATION handled");
 #else
-		LOG_ERR("DVFS handler - unexpected EVT_INIT_PREPARATION");
+		LOG_ERROR("DVFS handler - unexpected EVT_INIT_PREPARATION");
 #endif
 		break;
 	case NRFS_DVFS_EVT_INIT_DONE:
@@ -253,7 +253,7 @@ static void nrfs_dvfs_evt_handler(nrfs_dvfs_evt_t const *p_evt, void *context)
 			k_timer_start(&dvfs_service_scaling_finish_delay_timer,
 				      SCALING_FINISH_DELAY_TIMEOUT_US, K_NO_WAIT);
 		} else {
-			LOG_ERR("DVFS handler - unexpected EVT_OPPOINT_SCALING_PREPARE");
+			LOG_ERROR("DVFS handler - unexpected EVT_OPPOINT_SCALING_PREPARE");
 		}
 #endif
 		break;
@@ -263,10 +263,10 @@ static void nrfs_dvfs_evt_handler(nrfs_dvfs_evt_t const *p_evt, void *context)
 		LOG_DBG("DVFS handler EVT_OPPOINT_SCALING_DONE handled");
 		break;
 	case NRFS_DVFS_EVT_REJECT:
-		LOG_ERR("DVFS handler - request rejected");
+		LOG_ERROR("DVFS handler - request rejected");
 		break;
 	default:
-		LOG_ERR("DVFS handler - unexpected event: 0x%x", p_evt->type);
+		LOG_ERROR("DVFS handler - unexpected event: 0x%x", p_evt->type);
 		break;
 	}
 }
@@ -330,7 +330,7 @@ int32_t dvfs_service_handler_change_freq_setting(enum dvfs_frequency_setting fre
 	}
 
 	if (!dvfs_service_handler_freq_setting_allowed(freq_setting)) {
-		LOG_ERR("Requested frequency setting %d not supported.", freq_setting);
+		LOG_ERROR("Requested frequency setting %d not supported.", freq_setting);
 		return -ENXIO;
 	}
 
@@ -359,6 +359,6 @@ void dvfs_service_handler_register_freq_setting_applied_callback(dvfs_service_ha
 		LOG_DBG("Registered frequency applied callback");
 		dvfs_frequency_change_applied_clb = clb;
 	} else {
-		LOG_ERR("Invalid callback function provided!");
+		LOG_ERROR("Invalid callback function provided!");
 	}
 }

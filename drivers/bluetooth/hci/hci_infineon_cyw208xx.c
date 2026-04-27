@@ -147,7 +147,7 @@ static int cyw208xx_bt_firmware_download(const uint8_t *firmware_image, uint32_t
 		/* Allocate buffer for hci_write_ram/hci_launch_ram command. */
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (buf == NULL) {
-			LOG_ERR("Unable to allocate command buffer");
+			LOG_ERROR("Unable to allocate command buffer");
 			return -ENOBUFS;
 		}
 
@@ -194,7 +194,7 @@ static int cyw208xx_bt_enable_low_power_mode(void)
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (buf == NULL) {
-		LOG_ERR("Unable to allocate command buffer");
+		LOG_ERROR("Unable to allocate command buffer");
 		return -ENOBUFS;
 	}
 
@@ -241,7 +241,7 @@ static int cyw208xx_setup(const struct device *dev, const struct bt_hci_setup_pa
 	/* Set public address */
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (buf == NULL) {
-		LOG_ERR("Unable to allocate command buffer");
+		LOG_ERROR("Unable to allocate command buffer");
 		cyhal_syspm_unlock_deepsleep();
 		return -ENOMEM;
 	}
@@ -264,14 +264,14 @@ static int cyw208xx_setup(const struct device *dev, const struct bt_hci_setup_pa
 
 	err = bt_hci_cmd_send_sync(BT_HCI_VND_OP_SET_LOCAL_DEV_ADDR, buf, NULL);
 	if (err) {
-		LOG_ERR("Failed to set public address (%d)", err);
+		LOG_ERROR("Failed to set public address (%d)", err);
 		cyhal_syspm_unlock_deepsleep();
 		return err;
 	}
 
 	err = cyw208xx_bt_enable_low_power_mode();
 	if (err) {
-		LOG_ERR("Failed to set low power mode (%d)", err);
+		LOG_ERROR("Failed to set low power mode (%d)", err);
 		cyhal_syspm_unlock_deepsleep();
 		return err;
 	}
@@ -346,7 +346,7 @@ static int cyw208xx_send(const struct device *dev, struct net_buf *buf)
 		break;
 
 	default:
-		LOG_ERR("Unknown type %u", type);
+		LOG_ERROR("Unknown type %u", type);
 		ret = EIO;
 		goto done;
 	}
@@ -354,7 +354,7 @@ static int cyw208xx_send(const struct device *dev, struct net_buf *buf)
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "Final HCI buffer:");
 
 	if (ret) {
-		LOG_ERR("SPI write error %d", ret);
+		LOG_ERROR("SPI write error %d", ret);
 	}
 
 done:
@@ -396,7 +396,7 @@ static int cyw208xx_hci_init(const struct device *dev)
 	cybt_platform_config_init(&cybsp_bt_platform_cfg);
 
 	if (!Cy_SysPm_RegisterCallback(&cyw208xx_syspm_callback_cfg)) {
-		LOG_ERR("Syspm Callback registering failed!");
+		LOG_ERROR("Syspm Callback registering failed!");
 		CY_ASSERT(0);
 	}
 	return 0;
@@ -418,7 +418,7 @@ wiced_bt_dev_vendor_specific_command(uint16_t opcode, uint8_t param_len, uint8_t
 	/* Allocate a HCI command buffer */
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
-		LOG_ERR("Unable to allocate buffer");
+		LOG_ERROR("Unable to allocate buffer");
 		return WICED_NO_MEMORY;
 	}
 
@@ -440,7 +440,7 @@ void wiced_bt_process_hci(hci_packet_type_t pti, uint8_t *data, uint32_t length)
 	case HCI_PACKET_TYPE_EVENT:
 		buf = bt_buf_get_evt(data[0], 0, K_NO_WAIT);
 		if (!buf) {
-			LOG_ERR("Failed to allocate the buffer for RX: EVENT ");
+			LOG_ERROR("Failed to allocate the buffer for RX: EVENT ");
 			return;
 		}
 		break;
@@ -448,7 +448,7 @@ void wiced_bt_process_hci(hci_packet_type_t pti, uint8_t *data, uint32_t length)
 	case HCI_PACKET_TYPE_ACL:
 		buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_NO_WAIT);
 		if (!buf) {
-			LOG_ERR("Failed to allocate the buffer for RX: ACL ");
+			LOG_ERROR("Failed to allocate the buffer for RX: ACL ");
 			return;
 		}
 		break;
@@ -460,7 +460,7 @@ void wiced_bt_process_hci(hci_packet_type_t pti, uint8_t *data, uint32_t length)
 	case HCI_PACKET_TYPE_ISO:
 		buf = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
 		if (!buf) {
-			LOG_ERR("Failed to allocate the buffer for RX: ISO ");
+			LOG_ERROR("Failed to allocate the buffer for RX: ISO ");
 			return;
 		}
 		break;

@@ -369,13 +369,13 @@ static int pf1550_init_properties(const struct device *dev)
 
 	ret = pf1550_get_charger_status(dev, &data->charger_status);
 	if (ret < 0) {
-		LOG_ERR("Failed to read charger status: %d", ret);
+		LOG_ERROR("Failed to read charger status: %d", ret);
 		return ret;
 	}
 
 	ret = pf1550_get_charger_online(dev, &data->charger_online);
 	if (ret < 0) {
-		LOG_ERR("Failed to read charger online: %d", ret);
+		LOG_ERROR("Failed to read charger online: %d", ret);
 		return ret;
 	}
 
@@ -410,44 +410,44 @@ static int pf1550_update_properties(const struct device *dev)
 
 	ret = pf1550_set_vbus_ilim(dev, config->vbus_ilim_ua);
 	if (ret < 0) {
-		LOG_ERR("Failed to set vbus current limit: %d", ret);
+		LOG_ERROR("Failed to set vbus current limit: %d", ret);
 		return ret;
 	}
 
 	ret = pf1550_set_vsys_min(dev, config->vsys_min_uv);
 	if (ret < 0) {
-		LOG_ERR("Failed to set minimum system voltage threshold: %d", ret);
+		LOG_ERROR("Failed to set minimum system voltage threshold: %d", ret);
 		return ret;
 	}
 
 	ret = pf1550_set_charge_termination_uv(dev, config->charge_voltage_max_uv);
 	if (ret < 0) {
-		LOG_ERR("Failed to set recharge threshold: %d", ret);
+		LOG_ERROR("Failed to set recharge threshold: %d", ret);
 		return ret;
 	}
 
 	therm_mode = pf1550_string_to_therm_mode(config->therm_mon_mode);
 	ret = pf1550_set_thermistor_mode(dev, therm_mode);
 	if (ret < 0) {
-		LOG_ERR("Failed to set thermistor mode: %d", ret);
+		LOG_ERROR("Failed to set thermistor mode: %d", ret);
 		return ret;
 	}
 
 	ret = pf1550_set_constant_charge_current(dev, data->charge_current_ua);
 	if (ret < 0) {
-		LOG_ERR("Failed to set charge voltage: %d", ret);
+		LOG_ERROR("Failed to set charge voltage: %d", ret);
 		return ret;
 	}
 
 	ret = pf1550_set_enabled(dev, data->charger_enabled);
 	if (ret < 0) {
-		LOG_ERR("Failed to set enabled: %d", ret);
+		LOG_ERROR("Failed to set enabled: %d", ret);
 		return ret;
 	}
 
 	ret = pf1550_led_config(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure led: %d", ret);
+		LOG_ERROR("Failed to configure led: %d", ret);
 		return ret;
 	}
 
@@ -514,8 +514,8 @@ static int pf1550_enable_interrupt_pin(const struct device *dev, bool enabled)
 
 	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, flags);
 	if (ret < 0) {
-		LOG_ERR("Could not %s interrupt GPIO callback: %d", enabled ? "enable" : "disable",
-			ret);
+		LOG_ERROR("Could not %s interrupt GPIO callback: %d",
+			  enabled ? "enable" : "disable", ret);
 	}
 
 	return ret;
@@ -595,20 +595,20 @@ static int pf1550_configure_interrupt_pin(const struct device *dev)
 
 	ret = gpio_is_ready_dt(&config->int_gpio) ? 0 : -ENODEV;
 	if (ret < 0) {
-		LOG_ERR("Interrupt GPIO device not ready: %d", ret);
+		LOG_ERROR("Interrupt GPIO device not ready: %d", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Could not configure interrupt GPIO: %d", ret);
+		LOG_ERROR("Could not configure interrupt GPIO: %d", ret);
 		return ret;
 	}
 
 	gpio_init_callback(&data->gpio_cb, pf1550_gpio_callback, BIT(config->int_gpio.pin));
 	ret = gpio_add_callback_dt(&config->int_gpio, &data->gpio_cb);
 	if (ret < 0) {
-		LOG_ERR("Could not add interrupt GPIO callback: %d", ret);
+		LOG_ERROR("Could not add interrupt GPIO callback: %d", ret);
 		return ret;
 	}
 
@@ -647,13 +647,13 @@ static int pf1550_init(const struct device *dev)
 
 	ret = pf1550_enable_interrupts(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable interrupts: %d", ret);
+		LOG_ERROR("Failed to enable interrupts: %d", ret);
 		return ret;
 	}
 
 	ret = pf1550_update_properties(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to setup charger: %d", ret);
+		LOG_ERROR("Failed to setup charger: %d", ret);
 		return ret;
 	}
 

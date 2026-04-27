@@ -221,7 +221,7 @@ static void ar_execute(void *pkt)
 					kCAU3_TaskDoneEvent);
 		if (status != kStatus_Success) {
 			radio_ar_ctx.irk_idx = RPA_NO_IRK_MATCH;
-			LOG_ERR("CAUv3 RPA table search failed %d", status);
+			LOG_ERROR("CAUv3 RPA table search failed %d", status);
 			return;
 		}
 	}
@@ -582,7 +582,7 @@ void radio_phy_set(uint8_t phy, uint8_t flags)
 
 		err = XCVR_ChangeMode(GFSK_BT_0p5_h_0p5, DR_1MBPS);
 		if (err) {
-			LOG_ERR("Failed to change PHY to 1 Mbps");
+			LOG_ERROR("Failed to change PHY to 1 Mbps");
 			BT_ASSERT(0);
 		}
 
@@ -599,7 +599,7 @@ void radio_phy_set(uint8_t phy, uint8_t flags)
 
 		err = XCVR_ChangeMode(GFSK_BT_0p5_h_0p5, DR_2MBPS);
 		if (err) {
-			LOG_ERR("Failed to change PHY to 2 Mbps");
+			LOG_ERROR("Failed to change PHY to 2 Mbps");
 			BT_ASSERT(0);
 		}
 
@@ -1302,7 +1302,7 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, uint8_t phy, void *pkt)
 	/* Loads the key into CAU3's DMEM and expands the AES key schedule. */
 	status = CAU3_AES_SetKey(CAU3, &handle, key_local, 16);
 	if (status != kStatus_Success) {
-		LOG_ERR("CAUv3 AES key set failed %d", status);
+		LOG_ERROR("CAUv3 AES key set failed %d", status);
 		return NULL;
 	}
 
@@ -1401,7 +1401,7 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 	/* Loads the key into CAU3's DMEM and expands the AES key schedule. */
 	status = CAU3_AES_SetKey(CAU3, &handle, key_local, 16);
 	if (status != kStatus_Success) {
-		LOG_ERR("CAUv3 AES key set failed %d", status);
+		LOG_ERROR("CAUv3 AES key set failed %d", status);
 		return NULL;
 	}
 
@@ -1414,7 +1414,7 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 				 ctx_ccm.nonce.bytes, 13,
 				 &aad, 1, auth_mic, CAU3_BLE_MIC_SIZE);
 	if (status != kStatus_Success) {
-		LOG_ERR("CAUv3 AES CCM decrypt failed %d", status);
+		LOG_ERROR("CAUv3 AES CCM decrypt failed %d", status);
 		return 0;
 	}
 
@@ -1445,7 +1445,7 @@ uint32_t radio_ccm_is_done(void)
 				ctx_ccm.nonce.bytes, 13,
 				&aad, 1, auth_mic, CAU3_BLE_MIC_SIZE);
 		if (status != kStatus_Success) {
-			LOG_ERR("CAUv3 AES CCM decrypt failed %d", status);
+			LOG_ERROR("CAUv3 AES CCM decrypt failed %d", status);
 			return 0;
 		}
 
@@ -1483,7 +1483,7 @@ void radio_ar_configure(uint32_t nirk, void *irk)
 	/* Initialize CAUv3 RPA table */
 	status = CAU3_RPAtableInit(CAU3, kCAU3_TaskDoneEvent);
 	if (kStatus_Success != status) {
-		LOG_ERR("CAUv3 RPA table init failed");
+		LOG_ERROR("CAUv3 RPA table init failed");
 		return;
 	}
 
@@ -1500,7 +1500,7 @@ void radio_ar_configure(uint32_t nirk, void *irk)
 		status = CAU3_RPAtableInsertKey(CAU3, (uint32_t *)&pirk,
 						kCAU3_TaskDoneEvent);
 		if (kStatus_Success != status) {
-			LOG_ERR("CAUv3 RPA table insert failed");
+			LOG_ERROR("CAUv3 RPA table insert failed");
 			return;
 		}
 	}

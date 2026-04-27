@@ -129,7 +129,7 @@ static int run_receiver(const struct device *lora_dev)
 
 	ret = lora_config(lora_dev, &config);
 	if (ret < 0) {
-		LOG_ERR("LoRa config failed: %d", ret);
+		LOG_ERROR("LoRa config failed: %d", ret);
 		return ret;
 	}
 
@@ -142,7 +142,7 @@ static int run_receiver(const struct device *lora_dev)
 				   K_MSEC(SLEEP_PERIOD_MS),
 				   duty_cycle_recv_cb, NULL);
 	if (ret < 0) {
-		LOG_ERR("lora_recv_duty_cycle_async failed: %d", ret);
+		LOG_ERROR("lora_recv_duty_cycle_async failed: %d", ret);
 		return ret;
 	}
 
@@ -168,7 +168,7 @@ static int run_sender(const struct device *lora_dev)
 
 	ret = lora_config(lora_dev, &config);
 	if (ret < 0) {
-		LOG_ERR("LoRa config failed: %d", ret);
+		LOG_ERROR("LoRa config failed: %d", ret);
 		return ret;
 	}
 
@@ -179,7 +179,7 @@ static int run_sender(const struct device *lora_dev)
 	while (1) {
 		ret = lora_send(lora_dev, data, TX_DATA_LEN);
 		if (ret < 0) {
-			LOG_ERR("LoRa send failed: %d", ret);
+			LOG_ERROR("LoRa send failed: %d", ret);
 			return ret;
 		}
 
@@ -221,7 +221,7 @@ int main(void)
 	const struct device *const lora_dev = DEVICE_DT_GET(DEFAULT_RADIO_NODE);
 
 	if (!device_is_ready(lora_dev)) {
-		LOG_ERR("%s not ready", lora_dev->name);
+		LOG_ERROR("%s not ready", lora_dev->name);
 		return 0;
 	}
 

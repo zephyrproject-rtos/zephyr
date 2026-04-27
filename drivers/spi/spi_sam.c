@@ -106,7 +106,7 @@ static int spi_sam_configure(const struct device *dev,
 	}
 
 	if (config->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
@@ -116,8 +116,8 @@ static int spi_sam_configure(const struct device *dev,
 	}
 
 	if (spi_csr_idx > (SAM_SPI_CHIP_SELECT_COUNT - 1)) {
-		LOG_ERR("Slave %d is greater than %d",
-			spi_csr_idx, SAM_SPI_CHIP_SELECT_COUNT - 1);
+		LOG_ERROR("Slave %d is greater than %d", spi_csr_idx,
+			  SAM_SPI_CHIP_SELECT_COUNT - 1);
 		return -EINVAL;
 	}
 
@@ -397,26 +397,26 @@ static int spi_sam_dma_txrx(const struct device *dev,
 
 	res = dma_config(drv_cfg->dma_dev, drv_cfg->dma_rx_channel, &rx_dma_cfg);
 	if (res != 0) {
-		LOG_ERR("failed to configure SPI DMA RX");
+		LOG_ERROR("failed to configure SPI DMA RX");
 		goto out;
 	}
 
 	res = dma_config(drv_cfg->dma_dev, drv_cfg->dma_tx_channel, &tx_dma_cfg);
 	if (res != 0) {
-		LOG_ERR("failed to configure SPI DMA TX");
+		LOG_ERROR("failed to configure SPI DMA TX");
 		goto out;
 	}
 
 	/* Clocking begins on tx, so start rx first */
 	res = dma_start(drv_cfg->dma_dev, drv_cfg->dma_rx_channel);
 	if (res != 0) {
-		LOG_ERR("failed to start SPI DMA RX");
+		LOG_ERROR("failed to start SPI DMA RX");
 		goto out;
 	}
 
 	res = dma_start(drv_cfg->dma_dev, drv_cfg->dma_tx_channel);
 	if (res != 0) {
-		LOG_ERR("failed to start SPI DMA TX");
+		LOG_ERROR("failed to start SPI DMA TX");
 		dma_stop(drv_cfg->dma_dev, drv_cfg->dma_rx_channel);
 	}
 
@@ -675,7 +675,7 @@ static void spi_sam_iodev_start(const struct device *dev)
 			sqe->txrx.buf_len);
 		break;
 	default:
-		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
+		LOG_ERROR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
 		spi_sam_iodev_complete(dev, -EINVAL);
 		return;
 	}

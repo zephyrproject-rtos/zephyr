@@ -99,10 +99,9 @@ static int memc_stm32_nor_psram_init(const struct device *dev)
 		}
 
 		if (ret < 0) {
-			LOG_ERR("Unable to initialize memory type: "
-				"0x%08X, NSBank: %d, err: %d",
-				bank_config->init.MemoryType,
-				bank_config->init.NSBank, ret);
+			LOG_ERROR("Unable to initialize memory type: "
+				  "0x%08X, NSBank: %d, err: %d",
+				  bank_config->init.MemoryType, bank_config->init.NSBank, ret);
 			return ret;
 		}
 	}

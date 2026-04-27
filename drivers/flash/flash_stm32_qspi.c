@@ -310,7 +310,7 @@ static int qspi_send_cmd(const struct device *dev, const QSPI_CommandTypeDef *cm
 
 	hal_ret = HAL_QSPI_Command_IT(&dev_data->hqspi, (QSPI_CommandTypeDef *)cmd);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("%d: Failed to send QSPI instruction", hal_ret);
+		LOG_ERROR("%d: Failed to send QSPI instruction", hal_ret);
 		return -EIO;
 	}
 	LOG_DBG("CCR 0x%x", dev_data->hqspi.Instance->CCR);
@@ -335,7 +335,7 @@ static int qspi_read_access(const struct device *dev, QSPI_CommandTypeDef *cmd,
 
 	hal_ret = HAL_QSPI_Command_IT(&dev_data->hqspi, cmd);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("%d: Failed to send QSPI instruction", hal_ret);
+		LOG_ERROR("%d: Failed to send QSPI instruction", hal_ret);
 		return -EIO;
 	}
 
@@ -345,7 +345,7 @@ static int qspi_read_access(const struct device *dev, QSPI_CommandTypeDef *cmd,
 	hal_ret = HAL_QSPI_Receive_IT(&dev_data->hqspi, data);
 #endif
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("%d: Failed to read data", hal_ret);
+		LOG_ERROR("%d: Failed to read data", hal_ret);
 		return -EIO;
 	}
 
@@ -371,7 +371,7 @@ static int qspi_write_access(const struct device *dev, QSPI_CommandTypeDef *cmd,
 
 	hal_ret = HAL_QSPI_Command_IT(&dev_data->hqspi, cmd);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("%d: Failed to send QSPI instruction", hal_ret);
+		LOG_ERROR("%d: Failed to send QSPI instruction", hal_ret);
 		return -EIO;
 	}
 
@@ -381,7 +381,7 @@ static int qspi_write_access(const struct device *dev, QSPI_CommandTypeDef *cmd,
 	hal_ret = HAL_QSPI_Transmit_IT(&dev_data->hqspi, (uint8_t *)data);
 #endif
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("%d: Failed to read data", hal_ret);
+		LOG_ERROR("%d: Failed to read data", hal_ret);
 		return -EIO;
 	}
 	LOG_DBG("CCR 0x%x", dev_data->hqspi.Instance->CCR);
@@ -418,13 +418,13 @@ static int qspi_read_jedec_id(const struct device *dev, uint8_t *id)
 	hal_ret = HAL_QSPI_Command_IT(&dev_data->hqspi, &cmd);
 
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("%d: Failed to send QSPI instruction", hal_ret);
+		LOG_ERROR("%d: Failed to send QSPI instruction", hal_ret);
 		return -EIO;
 	}
 
 	hal_ret = HAL_QSPI_Receive(&dev_data->hqspi, data, HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("%d: Failed to read data", hal_ret);
+		LOG_ERROR("%d: Failed to read data", hal_ret);
 		return -EIO;
 	}
 
@@ -495,7 +495,7 @@ static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data,
 	hal_ret = HAL_QSPI_Command(&dev_data->hqspi, &cmd,
 				   HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("%d: Failed to send SFDP instruction", hal_ret);
+		LOG_ERROR("%d: Failed to send SFDP instruction", hal_ret);
 		ret = -EIO;
 		goto end;
 	}
@@ -503,7 +503,7 @@ static int qspi_read_sfdp(const struct device *dev, off_t addr, void *data,
 	hal_ret = HAL_QSPI_Receive(&dev_data->hqspi, (uint8_t *)data,
 				   HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("%d: Failed to read SFDP", hal_ret);
+		LOG_ERROR("%d: Failed to read SFDP", hal_ret);
 		ret = -EIO;
 		goto end;
 	}
@@ -558,7 +558,7 @@ static int stm32_qspi_set_memory_mapped(const struct device *dev)
 
 	hal_ret = HAL_QSPI_MemoryMapped(&dev_data->hqspi, &cmd, &mem_mapped);
 	if (hal_ret != 0) {
-		LOG_ERR("%d: Failed to enable memory mapped", hal_ret);
+		LOG_ERROR("%d: Failed to enable memory mapped", hal_ret);
 		return -EIO;
 	}
 
@@ -581,7 +581,7 @@ static int stm32_qspi_abort(const struct device *dev)
 
 	hal_ret = HAL_QSPI_Abort(&dev_data->hqspi);
 	if (hal_ret != HAL_OK) {
-		LOG_ERR("%d: QSPI abort failed", hal_ret);
+		LOG_ERROR("%d: QSPI abort failed", hal_ret);
 		return -EIO;
 	}
 
@@ -612,7 +612,7 @@ static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
 	if (!stm32_qspi_is_memory_mapped(dev)) {
 		ret = stm32_qspi_set_memory_mapped(dev);
 		if (ret != 0) {
-			LOG_ERR("READ: failed to set memory mapped");
+			LOG_ERROR("READ: failed to set memory mapped");
 			goto end;
 		}
 	}
@@ -786,7 +786,7 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 		/* Abort ongoing transfer to force CS high/BUSY deasserted */
 		ret = stm32_qspi_abort(dev);
 		if (ret != 0) {
-			LOG_ERR("Failed to abort memory-mapped access before write");
+			LOG_ERROR("Failed to abort memory-mapped access before write");
 			goto end;
 		}
 	}
@@ -865,7 +865,7 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 		/* Abort ongoing transfer to force CS high/BUSY deasserted */
 		ret = stm32_qspi_abort(dev);
 		if (ret != 0) {
-			LOG_ERR("Failed to abort memory-mapped access before erase");
+			LOG_ERROR("Failed to abort memory-mapped access before erase");
 			goto end;
 		}
 	}
@@ -905,8 +905,7 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 				addr += BIT(bet->exp);
 				size -= BIT(bet->exp);
 			} else {
-				LOG_ERR("Can't erase %zu at 0x%lx",
-					size, (long)addr);
+				LOG_ERROR("Can't erase %zu at 0x%lx", size, (long)addr);
 				ret = -EINVAL;
 			}
 		}
@@ -959,8 +958,7 @@ static void qspi_dma_callback(const struct device *dev, void *arg,
 	ARG_UNUSED(dev);
 
 	if (status < 0) {
-		LOG_ERR("DMA callback error with channel %d.", channel);
-
+		LOG_ERROR("DMA callback error with channel %d.", channel);
 	}
 
 	HAL_DMA_IRQHandler(hdma);
@@ -1321,8 +1319,8 @@ static int qspi_program_quad_io(const struct device *dev)
 	}
 
 	if (!flash_reg_is_set_for_all(&reg, qe_bit)) {
-		LOG_ERR("Status Register %u [0x" FLASH_REG_FMT "] not set", qe_reg_num,
-			flash_reg_to_raw(&reg));
+		LOG_ERROR("Status Register %u [0x" FLASH_REG_FMT "] not set", qe_reg_num,
+			  flash_reg_to_raw(&reg));
 		return -EIO;
 	}
 
@@ -1341,7 +1339,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 	int rc;
 
 	if (flash_size != dev_cfg->flash_size) {
-		LOG_ERR("Unexpected flash size: %u", flash_size);
+		LOG_ERROR("Unexpected flash size: %u", flash_size);
 	}
 
 	LOG_INF("%s: %u MiBy flash", dev->name, (uint32_t)(flash_size >> 20));
@@ -1388,7 +1386,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 					data->flag_access_32bit = true;
 					LOG_INF("Flash - address mode: 4B");
 				} else {
-					LOG_ERR("Unable to enter 4B mode: %d\n", rc);
+					LOG_ERROR("Unable to enter 4B mode: %d\n", rc);
 					return rc;
 				}
 			}
@@ -1431,7 +1429,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 
 		/* don't continue when there is no supported mode */
 		if (data->mode == STM32_QSPI_UNKNOWN_MODE) {
-			LOG_ERR("No supported flash read mode found");
+			LOG_ERROR("No supported flash read mode found");
 			return -ENOTSUP;
 		}
 
@@ -1452,7 +1450,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 		/* enable QE */
 		rc = qspi_program_quad_io(dev);
 		if (rc < 0) {
-			LOG_ERR("Failed to enable Quad mode: %d", rc);
+			LOG_ERROR("Failed to enable Quad mode: %d", rc);
 			return rc;
 		}
 
@@ -1489,14 +1487,14 @@ static int flash_stm32_qspi_send_reset(const struct device *dev)
 	 */
 	ret = qspi_send_cmd(dev, &cmd);
 	if (ret != 0) {
-		LOG_ERR("%d: Failed to send RESET_EN", ret);
+		LOG_ERROR("%d: Failed to send RESET_EN", ret);
 		return ret;
 	}
 
 	cmd.Instruction = SPI_NOR_CMD_RESET_MEM;
 	ret = qspi_send_cmd(dev, &cmd);
 	if (ret != 0) {
-		LOG_ERR("%d: Failed to send RESET_MEM", ret);
+		LOG_ERROR("%d: Failed to send RESET_MEM", ret);
 		return ret;
 	}
 
@@ -1504,14 +1502,14 @@ static int flash_stm32_qspi_send_reset(const struct device *dev)
 	cmd.InstructionMode = QSPI_INSTRUCTION_1_LINE;
 	ret = qspi_send_cmd(dev, &cmd);
 	if (ret != 0) {
-		LOG_ERR("%d: Failed to send RESET_EN", ret);
+		LOG_ERROR("%d: Failed to send RESET_EN", ret);
 		return ret;
 	}
 
 	cmd.Instruction = SPI_NOR_CMD_RESET_MEM;
 	ret = qspi_send_cmd(dev, &cmd);
 	if (ret != 0) {
-		LOG_ERR("%d: Failed to send RESET_MEM", ret);
+		LOG_ERROR("%d: Failed to send RESET_MEM", ret);
 		return ret;
 	}
 
@@ -1532,7 +1530,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	/* Signals configuration */
 	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("QSPI pinctrl setup failed (%d)", ret);
+		LOG_ERROR("QSPI pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
@@ -1552,7 +1550,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	static DMA_HandleTypeDef hdma;
 
 	if (!device_is_ready(dev_data->dma.dev)) {
-		LOG_ERR("%s device not ready", dev_data->dma.dev->name);
+		LOG_ERROR("%s device not ready", dev_data->dma.dev->name);
 		return -ENODEV;
 	}
 
@@ -1567,7 +1565,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 
 	/* Proceed to the HAL DMA driver init */
 	if (dma_cfg->source_data_size != dma_cfg->dest_data_size) {
-		LOG_ERR("Source and destination data sizes not aligned");
+		LOG_ERROR("Source and destination data sizes not aligned");
 		return -EINVAL;
 	}
 
@@ -1677,14 +1675,14 @@ static int flash_stm32_qspi_init(const struct device *dev)
 
 	ret = qspi_read_sfdp(dev, 0, u.raw, sizeof(u.raw));
 	if (ret != 0) {
-		LOG_ERR("SFDP read failed: %d", ret);
+		LOG_ERROR("SFDP read failed: %d", ret);
 		return ret;
 	}
 
 	uint32_t magic = jesd216_sfdp_magic(hp);
 
 	if (magic != JESD216_SFDP_MAGIC) {
-		LOG_ERR("SFDP magic %08x invalid", magic);
+		LOG_ERROR("SFDP magic %08x invalid", magic);
 		return -EINVAL;
 	}
 
@@ -1717,7 +1715,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 			}
 
 			if (ret != 0) {
-				LOG_ERR("SFDP BFP failed: %d", ret);
+				LOG_ERROR("SFDP BFP failed: %d", ret);
 				break;
 			}
 		}
@@ -1727,7 +1725,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	ret = setup_pages_layout(dev);
 	if (ret != 0) {
-		LOG_ERR("layout setup failed: %d", ret);
+		LOG_ERROR("layout setup failed: %d", ret);
 		return -ENODEV;
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
@@ -1735,7 +1733,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
 		ret = qspi_write_unprotect(dev);
 		if (ret != 0) {
-			LOG_ERR("write unprotect failed: %d", ret);
+			LOG_ERROR("write unprotect failed: %d", ret);
 			return -ENODEV;
 		}
 		LOG_DBG("Write Un-protected");
@@ -1744,7 +1742,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 #ifdef CONFIG_STM32_MEMMAP
 	ret = stm32_qspi_set_memory_mapped(dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable memory-mapped mode: %d", ret);
+		LOG_ERROR("Failed to enable memory-mapped mode: %d", ret);
 		return ret;
 	}
 	LOG_INF("Memory-mapped NOR quad-flash at 0x%lx (0x%x bytes)",

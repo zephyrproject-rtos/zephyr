@@ -62,7 +62,7 @@ static int cmd_info(const struct shell *sh, size_t argc, char **argv)
 	int ret = 0;
 
 	if (device_id == NULL || firmware_version == NULL) {
-		LOG_ERR("Could not alloc device_id or firmware_version memory");
+		LOG_ERROR("Could not alloc device_id or firmware_version memory");
 
 		ret = -ENOMEM;
 

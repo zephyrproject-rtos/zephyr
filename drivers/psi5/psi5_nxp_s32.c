@@ -75,7 +75,7 @@ static int psi5_nxp_s32_start_sync(const struct device *dev, uint8_t channel)
 	err = Psi5_Ip_SetChannelSync(config->ctrl_inst, channel, true);
 
 	if (err) {
-		LOG_ERR("Failed to start sync PSI5 %d channel %d", config->ctrl_inst, channel);
+		LOG_ERROR("Failed to start sync PSI5 %d channel %d", config->ctrl_inst, channel);
 		k_mutex_unlock(&channel_data->lock);
 		return -EIO;
 	}
@@ -112,7 +112,7 @@ static int psi5_nxp_s32_stop_sync(const struct device *dev, uint8_t channel)
 	err = Psi5_Ip_SetChannelSync(config->ctrl_inst, channel, false);
 
 	if (err) {
-		LOG_ERR("Failed to stop sync PSI5 %d channel %d", config->ctrl_inst, channel);
+		LOG_ERROR("Failed to stop sync PSI5 %d channel %d", config->ctrl_inst, channel);
 		k_mutex_unlock(&channel_data->lock);
 		return -EIO;
 	}
@@ -141,7 +141,7 @@ static int psi5_nxp_s32_do_send(const struct device *dev, uint8_t channel, uint6
 
 	err = Psi5_Ip_Transmit(config->ctrl_inst, channel, psi5_data);
 	if (err) {
-		LOG_ERR("Failed to transmit PSI5 %d channel %d", config->ctrl_inst, channel);
+		LOG_ERROR("Failed to transmit PSI5 %d channel %d", config->ctrl_inst, channel);
 		k_sem_give(&channel_data->tx_sem);
 		return -EIO;
 	}
@@ -492,7 +492,7 @@ static const Psi5_Ip_ConfigType psi5_nxp_s32_controller_config = {
                                                                                                    \
 		err = pinctrl_apply_state(config->pin_cfg, PINCTRL_STATE_DEFAULT);                 \
 		if (err < 0) {                                                                     \
-			LOG_ERR("PSI5 pinctrl setup failed (%d)", err);                            \
+			LOG_ERROR("PSI5 pinctrl setup failed (%d)", err);                          \
 			return err;                                                                \
 		}                                                                                  \
                                                                                                    \

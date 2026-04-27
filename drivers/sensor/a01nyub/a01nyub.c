@@ -173,7 +173,7 @@ static int a01nyub_init(const struct device *dev)
 
 	ret = uart_configure(cfg->uart_dev, &uart_cfg_a01nyub);
 	if (ret == -ENOSYS) {
-		LOG_ERR("Unable to configure UART port");
+		LOG_ERROR("Unable to configure UART port");
 		return -ENOSYS;
 	}
 
@@ -181,11 +181,11 @@ static int a01nyub_init(const struct device *dev)
 
 	if (ret < 0) {
 		if (ret == -ENOTSUP) {
-			LOG_ERR("Interrupt-driven UART API support not enabled");
+			LOG_ERROR("Interrupt-driven UART API support not enabled");
 		} else if (ret == -ENOSYS) {
-			LOG_ERR("UART device does not support interrupt-driven API");
+			LOG_ERROR("UART device does not support interrupt-driven API");
 		} else {
-			LOG_ERR("Error setting UART callback: %d", ret);
+			LOG_ERROR("Error setting UART callback: %d", ret);
 		}
 		return ret;
 	}

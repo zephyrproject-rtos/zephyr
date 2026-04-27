@@ -68,18 +68,18 @@ static int manager_set_domain_locked(gdpwr_power_domain_t domain, bool on)
 
 	err = nrfs_gdpwr_power_request(domain, req, NULL);
 	if (err != NRFS_SUCCESS) {
-		LOG_ERR("%s %s", "nrfs gdpwr request", "failed");
+		LOG_ERROR("%s %s", "nrfs gdpwr request", "failed");
 		return -EIO;
 	}
 
 	ret = k_sem_take(&req_sem, MANAGER_REQUEST_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("%s %s", "nrfs gdpwr request", "timed out");
+		LOG_ERROR("%s %s", "nrfs gdpwr request", "timed out");
 		return -ETIMEDOUT;
 	}
 
 	if (req_resp != NRFS_GDPWR_REQ_APPLIED) {
-		LOG_ERR("%s %s", "nrfs gdpwr request", "rejected");
+		LOG_ERROR("%s %s", "nrfs gdpwr request", "rejected");
 		return -EIO;
 	}
 
@@ -164,13 +164,13 @@ static int manager_init(void)
 
 	err = nrfs_backend_wait_for_connection(K_FOREVER);
 	if (err != NRFS_SUCCESS) {
-		LOG_ERR("%s %s", "nrfs backend connection", "failed");
+		LOG_ERROR("%s %s", "nrfs backend connection", "failed");
 		return -EIO;
 	}
 
 	err = nrfs_gdpwr_init(manager_event_handler);
 	if (err != NRFS_SUCCESS) {
-		LOG_ERR("%s %s", "nrfs gdpwr init", "failed");
+		LOG_ERROR("%s %s", "nrfs gdpwr init", "failed");
 		return -EIO;
 	}
 

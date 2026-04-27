@@ -147,7 +147,7 @@ static int phy_rt_rtl8211f_reset(const struct device *dev)
 	/* Reset PHY using register */
 	ret = phy_rt_rtl8211f_write(dev, MII_BMCR, MII_BMCR_RESET);
 	if (ret) {
-		LOG_ERR("Error writing phy (%d) basic control register", config->addr);
+		LOG_ERROR("Error writing phy (%d) basic control register", config->addr);
 		return ret;
 	}
 
@@ -158,7 +158,7 @@ static int phy_rt_rtl8211f_reset(const struct device *dev)
 	do {
 		ret = phy_rt_rtl8211f_read(dev, MII_BMCR, &reg_val);
 		if (ret) {
-			LOG_ERR("Error reading phy (%d) basic control register", config->addr);
+			LOG_ERROR("Error reading phy (%d) basic control register", config->addr);
 			return ret;
 		}
 	} while (reg_val & MII_BMCR_RESET);
@@ -170,7 +170,7 @@ finalize_reset:
 	do {
 		ret = phy_rt_rtl8211f_read(dev, MII_PHYID1R, &reg_val);
 		if (ret) {
-			LOG_ERR("Error reading phy (%d) identifier register 1", config->addr);
+			LOG_ERROR("Error reading phy (%d) identifier register 1", config->addr);
 			return ret;
 		}
 	} while (reg_val != REALTEK_OUI_MSB);
@@ -187,7 +187,7 @@ static int phy_rt_rtl8211f_restart_autonegotiation(const struct device *dev)
 	/* Read control register to write back with autonegotiation bit */
 	ret = phy_rt_rtl8211f_read(dev, MII_BMCR, &bmcr);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) basic control register", config->addr);
+		LOG_ERROR("Error reading phy (%d) basic control register", config->addr);
 		return ret;
 	}
 
@@ -197,7 +197,7 @@ static int phy_rt_rtl8211f_restart_autonegotiation(const struct device *dev)
 
 	ret = phy_rt_rtl8211f_write(dev, MII_BMCR, bmcr);
 	if (ret) {
-		LOG_ERR("Error writing phy (%d) basic control register", config->addr);
+		LOG_ERROR("Error writing phy (%d) basic control register", config->addr);
 		return ret;
 	}
 
@@ -218,14 +218,14 @@ static int phy_rt_rtl8211f_get_link(const struct device *dev,
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret) {
-		LOG_ERR("PHY mutex lock error");
+		LOG_ERROR("PHY mutex lock error");
 		return ret;
 	}
 
 	/* Read PHY specific status register */
 	ret = phy_rt_rtl8211f_read(dev, PHY_RT_RTL8211F_PHYSR_REG, &physr);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) specific status register", config->addr);
+		LOG_ERROR("Error reading phy (%d) specific status register", config->addr);
 		(void)k_mutex_unlock(&data->mutex);
 		return ret;
 	}
@@ -289,14 +289,14 @@ static int phy_rt_rtl8211f_cfg_link(const struct device *dev, enum phy_link_spee
 	int ret;
 
 	if (flags & PHY_FLAG_AUTO_NEGOTIATION_DISABLED) {
-		LOG_ERR("Disabling auto-negotiation is not supported by this driver");
+		LOG_ERROR("Disabling auto-negotiation is not supported by this driver");
 		return -ENOTSUP;
 	}
 
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret) {
-		LOG_ERR("PHY mutex lock error");
+		LOG_ERROR("PHY mutex lock error");
 		return ret;
 	}
 
@@ -311,20 +311,20 @@ static int phy_rt_rtl8211f_cfg_link(const struct device *dev, enum phy_link_spee
 
 	ret = phy_mii_set_anar_reg(dev, speeds);
 	if (ret < 0 && ret != -EALREADY) {
-		LOG_ERR("Error setting ANAR register for phy (%d)", config->addr);
+		LOG_ERROR("Error setting ANAR register for phy (%d)", config->addr);
 		goto done;
 	}
 
 	ret = phy_mii_set_c1kt_reg(dev, speeds);
 	if (ret < 0 && ret != -EALREADY) {
-		LOG_ERR("Error setting C1KT register for phy (%d)", config->addr);
+		LOG_ERROR("Error setting C1KT register for phy (%d)", config->addr);
 		goto done;
 	}
 
 	/* (Re)start autonegotiation */
 	ret = phy_rt_rtl8211f_restart_autonegotiation(dev);
 	if (ret) {
-		LOG_ERR("Error restarting autonegotiation");
+		LOG_ERROR("Error restarting autonegotiation");
 		goto done;
 	}
 done:
@@ -369,14 +369,14 @@ static int phy_rt_rtl8211f_clear_interrupt(struct rt_rtl8211f_data *data)
 	/* Lock mutex */
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret) {
-		LOG_ERR("PHY mutex lock error");
+		LOG_ERROR("PHY mutex lock error");
 		return ret;
 	}
 
 	/* Read/clear PHY interrupt status register */
 	ret = phy_rt_rtl8211f_read(dev, PHY_RT_RTL8211F_INSR_REG, &reg_val);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) interrupt status register", config->addr);
+		LOG_ERROR("Error reading phy (%d) interrupt status register", config->addr);
 	}
 
 	/* Unlock mutex */
@@ -394,7 +394,7 @@ static void phy_rt_rtl8211f_interrupt_handler(const struct device *port,
 
 	ret = k_work_reschedule(&data->phy_monitor_work, K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Failed to schedule phy_monitor_work from ISR");
+		LOG_ERROR("Failed to schedule phy_monitor_work from ISR");
 	}
 }
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
@@ -465,7 +465,7 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 	/* Reset PHY */
 	ret = phy_rt_rtl8211f_reset(dev);
 	if (ret) {
-		LOG_ERR("Failed to reset phy (%d)", config->addr);
+		LOG_ERROR("Failed to reset phy (%d)", config->addr);
 		return ret;
 	}
 
@@ -473,40 +473,40 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG,
 					PHY_RT_RTL8211F_PAGE_MIICR_ADDR);
 	if (ret) {
-		LOG_ERR("Error writing phy (%d) page select register", config->addr);
+		LOG_ERROR("Error writing phy (%d) page select register", config->addr);
 		return ret;
 	}
 
 	ret = phy_rt_rtl8211f_read(dev, PHY_RT_RTL8211F_MIICR1_REG, &reg_val);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) mii control register1", config->addr);
+		LOG_ERROR("Error reading phy (%d) mii control register1", config->addr);
 		return ret;
 	}
 
 	reg_val |= PHY_RT_RTL8211F_MIICR1_TXDLY_MASK;
 	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_MIICR1_REG, reg_val);
 	if (ret) {
-		LOG_ERR("Error writing phy (%d) mii control register1", config->addr);
+		LOG_ERROR("Error writing phy (%d) mii control register1", config->addr);
 		return ret;
 	}
 
 	ret = phy_rt_rtl8211f_read(dev, PHY_RT_RTL8211F_MIICR2_REG, &reg_val);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) mii control register2", config->addr);
+		LOG_ERROR("Error reading phy (%d) mii control register2", config->addr);
 		return ret;
 	}
 
 	reg_val |= PHY_RT_RTL8211F_MIICR2_RXDLY_MASK;
 	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_MIICR2_REG, reg_val);
 	if (ret) {
-		LOG_ERR("Error writing phy (%d) mii control register2", config->addr);
+		LOG_ERROR("Error writing phy (%d) mii control register2", config->addr);
 		return ret;
 	}
 
 	/* Restore to default page 0 */
 	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG, 0);
 	if (ret) {
-		LOG_ERR("Error writing phy (%d) page select register", config->addr);
+		LOG_ERROR("Error writing phy (%d) page select register", config->addr);
 		return ret;
 	}
 
@@ -522,7 +522,7 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG,
 					PHY_RT_RTL8211F_PAGE_INTR_PIN_ADDR);
 	if (ret) {
-		LOG_ERR("Error writing phy (%d) page select register", config->addr);
+		LOG_ERROR("Error writing phy (%d) page select register", config->addr);
 		return ret;
 	}
 	ret = phy_rt_rtl8211f_read(dev, PHY_RT_RTL8211F_INTR_PIN_REG, &reg_val);
@@ -530,18 +530,18 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 		reg_val &= ~PHY_RT_RTL8211F_INTR_PIN_MASK;
 		ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_INTR_PIN_REG, reg_val);
 		if (ret) {
-			LOG_ERR("Error writing phy (%d) interrupt pin setting register",
-				config->addr);
+			LOG_ERROR("Error writing phy (%d) interrupt pin setting register",
+				  config->addr);
 			return ret;
 		}
 	} else {
-		LOG_ERR("Error reading phy (%d) interrupt pin setting register", config->addr);
+		LOG_ERROR("Error reading phy (%d) interrupt pin setting register", config->addr);
 		return ret;
 	}
 	/* Restore to default page 0 */
 	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG, 0);
 	if (ret) {
-		LOG_ERR("Error writing phy (%d) page select register", config->addr);
+		LOG_ERROR("Error writing phy (%d) page select register", config->addr);
 		return ret;
 	}
 
@@ -573,24 +573,24 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG,
 					PHY_RT_RTL8211F_PAGE_INTR_ADDR);
 	if (ret) {
-		LOG_ERR("Error writing phy (%d) page select register", config->addr);
+		LOG_ERROR("Error writing phy (%d) page select register", config->addr);
 		return ret;
 	}
 	ret = phy_rt_rtl8211f_read(dev, PHY_RT_RTL8211F_INER_REG, &reg_val);
 	if (ret) {
-		LOG_ERR("Error reading phy (%d) interrupt enable register", config->addr);
+		LOG_ERROR("Error reading phy (%d) interrupt enable register", config->addr);
 		return ret;
 	}
 	reg_val |= PHY_RT_RTL8211F_INER_LINKSTATUS_CHANGE_MASK;
 	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_INER_REG, reg_val);
 	if (ret) {
-		LOG_ERR("Error writing phy (%d) interrupt enable register", config->addr);
+		LOG_ERROR("Error writing phy (%d) interrupt enable register", config->addr);
 		return ret;
 	}
 	/* Restore to default page 0 */
 	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG, 0);
 	if (ret) {
-		LOG_ERR("Error writing phy (%d) page select register", config->addr);
+		LOG_ERROR("Error writing phy (%d) page select register", config->addr);
 		return ret;
 	}
 skip_int_gpio:

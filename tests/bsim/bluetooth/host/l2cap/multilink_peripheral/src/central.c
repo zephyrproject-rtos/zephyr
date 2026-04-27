@@ -81,7 +81,7 @@ static int l2cap_server_register(bt_security_t sec_level)
 static void acl_connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
-		LOG_ERR("Failed to connect to %s (0x%02x)", bt_conn_dst_str(conn), err);
+		LOG_ERROR("Failed to connect to %s (0x%02x)", bt_conn_dst_str(conn), err);
 		return;
 	}
 

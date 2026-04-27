@@ -91,7 +91,7 @@ static void msg_subscriber_task(void *sub)
 
 	while (!zbus_sub_wait_msg(subscriber, &chan, &acc, K_FOREVER)) {
 		if (&acc_data_chan != chan) {
-			LOG_ERR("Wrong channel %p!", chan);
+			LOG_ERROR("Wrong channel %p!", chan);
 
 			continue;
 		}
@@ -143,7 +143,7 @@ static void subscriber_task(void *sub)
 
 	while (!zbus_sub_wait(subscriber, &chan, K_FOREVER)) {
 		if (&acc_data_chan != chan) {
-			LOG_ERR("Wrong channel %p!", chan);
+			LOG_ERROR("Wrong channel %p!", chan);
 
 			continue;
 		}

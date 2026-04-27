@@ -76,19 +76,19 @@ static int set_static_color(const struct device *dev, uint8_t r, uint8_t g,
 
 	ret = led_set_brightness(dev, LED_R, r);
 	if (ret) {
-		LOG_ERR("Failed to set color.");
+		LOG_ERROR("Failed to set color.");
 		return ret;
 	}
 
 	ret = led_set_brightness(dev, LED_G, g);
 	if (ret) {
-		LOG_ERR("Failed to set color.");
+		LOG_ERROR("Failed to set color.");
 		return ret;
 	}
 
 	ret = led_set_brightness(dev, LED_B, b);
 	if (ret) {
-		LOG_ERR("Failed to set color.");
+		LOG_ERROR("Failed to set color.");
 		return ret;
 	}
 
@@ -118,7 +118,7 @@ static int blink_color(const struct device *dev, bool r, bool g, bool b,
 	if (r) {
 		ret = led_blink(dev, LED_R, delay_on, delay_off);
 		if (ret) {
-			LOG_ERR("Failed to set color.");
+			LOG_ERROR("Failed to set color.");
 			return ret;
 		}
 	}
@@ -126,7 +126,7 @@ static int blink_color(const struct device *dev, bool r, bool g, bool b,
 	if (g) {
 		ret = led_blink(dev, LED_G, delay_on, delay_off);
 		if (ret) {
-			LOG_ERR("Failed to set color.");
+			LOG_ERROR("Failed to set color.");
 			return ret;
 		}
 	}
@@ -134,7 +134,7 @@ static int blink_color(const struct device *dev, bool r, bool g, bool b,
 	if (b) {
 		ret = led_blink(dev, LED_B, delay_on, delay_off);
 		if (ret) {
-			LOG_ERR("Failed to set color.");
+			LOG_ERROR("Failed to set color.");
 			return ret;
 		}
 	}
@@ -168,10 +168,10 @@ int main(void)
 	int i, ret;
 
 	if (!dev) {
-		LOG_ERR("No \"ti,lp5562\" device found");
+		LOG_ERROR("No \"ti,lp5562\" device found");
 		return 0;
 	} else if (!device_is_ready(dev)) {
-		LOG_ERR("LED device %s is not ready", dev->name);
+		LOG_ERROR("LED device %s is not ready", dev->name);
 		return 0;
 	} else {
 		LOG_INF("Found LED device %s", dev->name);

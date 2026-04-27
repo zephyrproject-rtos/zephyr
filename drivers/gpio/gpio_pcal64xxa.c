@@ -187,7 +187,7 @@ static int pcal64xxa_pin_configure(const struct device *dev, gpio_pin_t pin, gpi
 	if (rc == 0) {
 		drv_data->pins_cfg = pins_cfg;
 	} else {
-		LOG_ERR("%s: failed to apply pin config", dev->name);
+		LOG_ERROR("%s: failed to apply pin config", dev->name);
 	}
 
 	k_sem_give(&drv_data->lock);
@@ -208,7 +208,7 @@ static int pcal64xxa_process_input(const struct device *dev, gpio_port_value_t *
 	rc = drv_cfg->chip_api->inputs_read(&drv_cfg->i2c, &int_sources, &input_port);
 
 	if (rc != 0) {
-		LOG_ERR("%s: failed to read inputs", dev->name);
+		LOG_ERROR("%s: failed to read inputs", dev->name);
 		k_sem_give(&drv_data->lock);
 		return rc;
 	}
@@ -323,7 +323,7 @@ static int pcal64xxa_port_set_raw(const struct device *dev, pcal64xxa_data_t mas
 	k_sem_give(&drv_data->lock);
 
 	if (rc != 0) {
-		LOG_ERR("%s: failed to write output port: %d", dev->name, rc);
+		LOG_ERROR("%s: failed to write output port: %d", dev->name, rc);
 		return -EIO;
 	}
 
@@ -400,7 +400,7 @@ static int pcal64xxa_pin_interrupt_configure(const struct device *dev, gpio_pin_
 	if (rc == 0) {
 		drv_data->triggers = triggers;
 	} else {
-		LOG_ERR("%s: failed to apply triggers", dev->name);
+		LOG_ERROR("%s: failed to apply triggers", dev->name);
 	}
 
 	k_sem_give(&drv_data->lock);
@@ -425,7 +425,7 @@ static int pcal64xxa_i2c_write(const struct i2c_dt_spec *i2c, uint8_t register_a
 	rc = i2c_reg_write_byte_dt(i2c, register_address, value);
 
 	if (rc != 0) {
-		LOG_ERR("unable to write to register 0x%02X, error %i", register_address, rc);
+		LOG_ERROR("unable to write to register 0x%02X, error %i", register_address, rc);
 	}
 
 	return rc;
@@ -440,7 +440,7 @@ static int pcal64xxa_i2c_read(const struct i2c_dt_spec *i2c, uint8_t register_ad
 	LOG_DBG("reading from register 0x%02X value 0x%02X", register_address, *value);
 
 	if (rc != 0) {
-		LOG_ERR("unable to read from register 0x%02X, error %i", register_address, rc);
+		LOG_ERROR("unable to read from register 0x%02X, error %i", register_address, rc);
 	}
 
 	return rc;
@@ -550,7 +550,7 @@ static int pcal6408a_outputs_write(const struct i2c_dt_spec *i2c, pcal64xxa_data
 	rc = pcal64xxa_i2c_write(i2c, PCAL6408A_REG_OUTPUT_PORT, (uint8_t)outputs);
 
 	if (rc != 0) {
-		LOG_ERR("failed to write output port: %d", rc);
+		LOG_ERROR("failed to write output port: %d", rc);
 		return -EIO;
 	}
 
@@ -566,13 +566,13 @@ static int pcal6408a_triggers_apply(const struct i2c_dt_spec *i2c,
 
 	rc = pcal64xxa_i2c_write(i2c, PCAL6408A_REG_INPUT_LATCH, (uint8_t)input_latch);
 	if (rc != 0) {
-		LOG_ERR("failed to configure input latch: %d", rc);
+		LOG_ERROR("failed to configure input latch: %d", rc);
 		return -EIO;
 	}
 
 	rc = pcal64xxa_i2c_write(i2c, PCAL6408A_REG_INTERRUPT_MASK, (uint8_t)interrupt_mask);
 	if (rc != 0) {
-		LOG_ERR("failed to configure interrupt mask: %d", rc);
+		LOG_ERROR("failed to configure interrupt mask: %d", rc);
 		return -EIO;
 	}
 
@@ -592,7 +592,7 @@ static int pcal6408a_reset_state_apply(const struct i2c_dt_spec *i2c)
 	for (int i = 0; i < ARRAY_SIZE(reset_state); ++i) {
 		rc = pcal64xxa_i2c_write(i2c, reset_state[i][0], reset_state[i][1]);
 		if (rc != 0) {
-			LOG_ERR("failed to reset register %02x: %d", reset_state[i][0], rc);
+			LOG_ERROR("failed to reset register %02x: %d", reset_state[i][0], rc);
 			return -EIO;
 		}
 	}
@@ -751,7 +751,7 @@ static int pcal6416a_inputs_read(const struct i2c_dt_spec *i2c, pcal64xxa_data_t
 
 	rc = pcal64xxa_i2c_read(i2c, PCAL6416A_REG_INPUT_PORT_1, &value_high);
 	if (rc != 0) {
-		LOG_ERR("failed to read input port: %d", rc);
+		LOG_ERROR("failed to read input port: %d", rc);
 		return -EIO;
 	}
 
@@ -771,14 +771,14 @@ static int pcal6416a_outputs_write(const struct i2c_dt_spec *i2c, pcal64xxa_data
 	rc = pcal64xxa_i2c_write(i2c, PCAL6416A_REG_OUTPUT_PORT_0, (uint8_t)outputs);
 
 	if (rc != 0) {
-		LOG_ERR("failed to write output port: %d", rc);
+		LOG_ERROR("failed to write output port: %d", rc);
 		return -EIO;
 	}
 
 	rc = pcal64xxa_i2c_write(i2c, PCAL6416A_REG_OUTPUT_PORT_1, (uint8_t)(outputs >> 8));
 
 	if (rc != 0) {
-		LOG_ERR("failed to write output port: %d", rc);
+		LOG_ERROR("failed to write output port: %d", rc);
 		return -EIO;
 	}
 
@@ -794,26 +794,26 @@ static int pcal6416a_triggers_apply(const struct i2c_dt_spec *i2c,
 
 	rc = pcal64xxa_i2c_write(i2c, PCAL6416A_REG_INPUT_LATCH_0, (uint8_t)input_latch);
 	if (rc != 0) {
-		LOG_ERR("failed to configure input latch: %d", rc);
+		LOG_ERROR("failed to configure input latch: %d", rc);
 		return -EIO;
 	}
 
 	rc = pcal64xxa_i2c_write(i2c, PCAL6416A_REG_INPUT_LATCH_1, (uint8_t)(input_latch >> 8));
 	if (rc != 0) {
-		LOG_ERR("failed to configure input latch: %d", rc);
+		LOG_ERROR("failed to configure input latch: %d", rc);
 		return -EIO;
 	}
 
 	rc = pcal64xxa_i2c_write(i2c, PCAL6416A_REG_INTERRUPT_MASK_0, (uint8_t)interrupt_mask);
 	if (rc != 0) {
-		LOG_ERR("failed to configure interrupt mask: %d", rc);
+		LOG_ERROR("failed to configure interrupt mask: %d", rc);
 		return -EIO;
 	}
 
 	rc = pcal64xxa_i2c_write(i2c, PCAL6416A_REG_INTERRUPT_MASK_1,
 				 (uint8_t)(interrupt_mask >> 8));
 	if (rc != 0) {
-		LOG_ERR("failed to configure interrupt mask: %d", rc);
+		LOG_ERROR("failed to configure interrupt mask: %d", rc);
 		return -EIO;
 	}
 
@@ -836,7 +836,7 @@ static int pcal6416a_reset_state_apply(const struct i2c_dt_spec *i2c)
 	for (int i = 0; i < ARRAY_SIZE(reset_state); ++i) {
 		rc = pcal64xxa_i2c_write(i2c, reset_state[i][0], reset_state[i][1]);
 		if (rc != 0) {
-			LOG_ERR("failed to reset register %02x: %d", reset_state[i][0], rc);
+			LOG_ERROR("failed to reset register %02x: %d", reset_state[i][0], rc);
 			return -EIO;
 		}
 	}
@@ -874,14 +874,14 @@ static int pcal64xxa_apply_initial_state(const struct device *dev)
 	 */
 	if (drv_cfg->gpio_reset.port != NULL) {
 		if (!gpio_is_ready_dt(&drv_cfg->gpio_reset)) {
-			LOG_ERR("%s: reset gpio device is not ready", dev->name);
+			LOG_ERROR("%s: reset gpio device is not ready", dev->name);
 			return -ENODEV;
 		}
 
 		LOG_DBG("%s: trigger reset", dev->name);
 		rc = gpio_pin_configure_dt(&drv_cfg->gpio_reset, GPIO_OUTPUT_ACTIVE);
 		if (rc != 0) {
-			LOG_ERR("%s: failed to configure RESET line: %d", dev->name, rc);
+			LOG_ERROR("%s: failed to configure RESET line: %d", dev->name, rc);
 			return -EIO;
 		}
 
@@ -890,7 +890,7 @@ static int pcal64xxa_apply_initial_state(const struct device *dev)
 
 		rc = gpio_pin_set_dt(&drv_cfg->gpio_reset, 0);
 		if (rc != 0) {
-			LOG_ERR("%s: failed to deactivate RESET line: %d", dev->name, rc);
+			LOG_ERROR("%s: failed to deactivate RESET line: %d", dev->name, rc);
 			return -EIO;
 		}
 
@@ -900,7 +900,7 @@ static int pcal64xxa_apply_initial_state(const struct device *dev)
 		rc = drv_cfg->chip_api->reset_state_apply(&drv_cfg->i2c);
 
 		if (rc != 0) {
-			LOG_ERR("%s: failed to apply reset state", dev->name);
+			LOG_ERROR("%s: failed to apply reset state", dev->name);
 			return rc;
 		}
 	}
@@ -908,7 +908,7 @@ static int pcal64xxa_apply_initial_state(const struct device *dev)
 	/* Set initial configuration of the pins. */
 	rc = drv_cfg->chip_api->pins_cfg_apply(&drv_cfg->i2c, &initial_pins_cfg);
 	if (rc != 0) {
-		LOG_ERR("%s: failed to apply pin config", dev->name);
+		LOG_ERROR("%s: failed to apply pin config", dev->name);
 		return rc;
 	}
 
@@ -928,7 +928,7 @@ static int pcal64xxa_read_state_from_registers(const struct device *dev)
 	/* Read current configuration of the pins. */
 	rc = drv_cfg->chip_api->pins_cfg_read(&drv_cfg->i2c, &drv_data->pins_cfg);
 	if (rc != 0) {
-		LOG_ERR("%s: failed to apply pin config", dev->name);
+		LOG_ERROR("%s: failed to apply pin config", dev->name);
 		return rc;
 	}
 
@@ -947,7 +947,7 @@ static int pcal64xxa_apply_initial_triggers(const struct device *dev)
 	/* Set initial state of the interrupt related registers. */
 	rc = drv_cfg->chip_api->triggers_apply(&drv_cfg->i2c, &initial_triggers);
 	if (rc != 0) {
-		LOG_ERR("%s: failed to apply triggers", dev->name);
+		LOG_ERROR("%s: failed to apply triggers", dev->name);
 		return rc;
 	}
 
@@ -967,7 +967,7 @@ static int pcal64xxa_read_initial_inputs(const struct device *dev)
 	rc = drv_cfg->chip_api->inputs_read(&drv_cfg->i2c, &int_sources,
 					    &drv_data->input_port_last);
 	if (rc != 0) {
-		LOG_ERR("%s: failed to read inputs", dev->name);
+		LOG_ERROR("%s: failed to read inputs", dev->name);
 		return rc;
 	}
 
@@ -1017,8 +1017,8 @@ int pcal64xxa_init(const struct device *dev)
 	LOG_DBG("%s: initializing PCAL64XXA", dev->name);
 
 	if (drv_cfg->ngpios != 8U && drv_cfg->ngpios != 16U) {
-		LOG_ERR("%s: Invalid value ngpios=%u. Expected 8 or 16!",
-			dev->name, drv_cfg->ngpios);
+		LOG_ERROR("%s: Invalid value ngpios=%u. Expected 8 or 16!", dev->name,
+			  drv_cfg->ngpios);
 		return -EINVAL;
 	}
 
@@ -1027,27 +1027,27 @@ int pcal64xxa_init(const struct device *dev)
 	 * to avoid a const warning
 	 */
 	if (!i2c_is_ready_dt(&drv_cfg->i2c)) {
-		LOG_ERR("%s: %s is not ready", dev->name, drv_cfg->i2c.bus->name);
+		LOG_ERROR("%s: %s is not ready", dev->name, drv_cfg->i2c.bus->name);
 		return -ENODEV;
 	}
 
 	/* If the INT line is available, configure the callback for it. */
 	if (drv_cfg->gpio_interrupt.port != NULL) {
 		if (!gpio_is_ready_dt(&drv_cfg->gpio_interrupt)) {
-			LOG_ERR("%s: interrupt gpio device is not ready", dev->name);
+			LOG_ERROR("%s: interrupt gpio device is not ready", dev->name);
 			return -ENODEV;
 		}
 
 		rc = gpio_pin_configure_dt(&drv_cfg->gpio_interrupt, GPIO_INPUT);
 		if (rc != 0) {
-			LOG_ERR("%s: failed to configure INT line: %d", dev->name, rc);
+			LOG_ERROR("%s: failed to configure INT line: %d", dev->name, rc);
 			return -EIO;
 		}
 
 		rc = gpio_pin_interrupt_configure_dt(&drv_cfg->gpio_interrupt,
 						     GPIO_INT_EDGE_TO_ACTIVE);
 		if (rc != 0) {
-			LOG_ERR("%s: failed to configure INT interrupt: %d", dev->name, rc);
+			LOG_ERROR("%s: failed to configure INT interrupt: %d", dev->name, rc);
 			return -EIO;
 		}
 
@@ -1055,7 +1055,7 @@ int pcal64xxa_init(const struct device *dev)
 				   BIT(drv_cfg->gpio_interrupt.pin));
 		rc = gpio_add_callback(drv_cfg->gpio_interrupt.port, &drv_data->int_gpio_cb);
 		if (rc != 0) {
-			LOG_ERR("%s: failed to add INT callback: %d", dev->name, rc);
+			LOG_ERROR("%s: failed to add INT callback: %d", dev->name, rc);
 			return -EIO;
 		}
 	}

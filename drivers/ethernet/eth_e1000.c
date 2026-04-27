@@ -64,7 +64,7 @@ static const char *e1000_reg_to_string(enum e1000_reg_t r)
 	_(ITR);
 	}
 #undef _
-	LOG_ERR("Unsupported register: 0x%x", r);
+	LOG_ERROR("Unsupported register: 0x%x", r);
 	k_oops();
 	return NULL;
 }
@@ -155,7 +155,7 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 	len = dev->rx[dev->next_rx_desc].len - 4;
 
 	if (len <= 0) {
-		LOG_ERR("Invalid RX descriptor length: %hu", dev->rx[dev->next_rx_desc].len);
+		LOG_ERROR("Invalid RX descriptor length: %hu", dev->rx[dev->next_rx_desc].len);
 		goto err;
 	}
 
@@ -164,12 +164,12 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 	pkt = net_pkt_rx_alloc_with_buffer(dev->iface, len, NET_AF_UNSPEC, 0,
 					   K_NO_WAIT);
 	if (!pkt) {
-		LOG_ERR("Out of buffers");
+		LOG_ERROR("Out of buffers");
 		goto err;
 	}
 
 	if (net_pkt_write(pkt, buf, len)) {
-		LOG_ERR("Out of memory for received frame");
+		LOG_ERROR("Out of memory for received frame");
 		net_pkt_unref(pkt);
 		pkt = NULL;
 	} else {
@@ -204,7 +204,7 @@ static void e1000_isr(const struct device *ddev)
 	}
 
 	if (icr) {
-		LOG_ERR("Unhandled interrupt, ICR: 0x%x", icr);
+		LOG_ERROR("Unhandled interrupt, ICR: 0x%x", icr);
 	}
 }
 

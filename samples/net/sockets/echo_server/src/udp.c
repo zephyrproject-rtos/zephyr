@@ -49,8 +49,7 @@ static int start_udp_proto(struct data *data, struct sockaddr *bind_addr,
 	data->udp.sock = socket(bind_addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
 #endif
 	if (data->udp.sock < 0) {
-		LOG_ERR("Failed to create UDP socket (%s): %d", data->proto,
-			errno);
+		LOG_ERROR("Failed to create UDP socket (%s): %d", data->proto, errno);
 		return -errno;
 	}
 
@@ -66,8 +65,7 @@ static int start_udp_proto(struct data *data, struct sockaddr *bind_addr,
 	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_SEC_TAG_LIST,
 			 sec_tag_list, sizeof(sec_tag_list));
 	if (ret < 0) {
-		LOG_ERR("Failed to set UDP secure option (%s): %d", data->proto,
-			errno);
+		LOG_ERROR("Failed to set UDP secure option (%s): %d", data->proto, errno);
 		ret = -errno;
 	}
 
@@ -75,8 +73,7 @@ static int start_udp_proto(struct data *data, struct sockaddr *bind_addr,
 	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_DTLS_ROLE,
 			 &role, sizeof(role));
 	if (ret < 0) {
-		LOG_ERR("Failed to set DTLS role secure option (%s): %d",
-			data->proto, errno);
+		LOG_ERROR("Failed to set DTLS role secure option (%s): %d", data->proto, errno);
 		ret = -errno;
 	}
 #endif
@@ -99,8 +96,7 @@ static int start_udp_proto(struct data *data, struct sockaddr *bind_addr,
 
 	ret = bind(data->udp.sock, bind_addr, bind_addrlen);
 	if (ret < 0) {
-		LOG_ERR("Failed to bind UDP socket (%s): %d", data->proto,
-			errno);
+		LOG_ERROR("Failed to bind UDP socket (%s): %d", data->proto, errno);
 		ret = -errno;
 	}
 
@@ -125,8 +121,7 @@ static int process_udp(struct data *data)
 
 		if (received < 0) {
 			/* Socket error */
-			LOG_ERR("UDP (%s): Connection error %d", data->proto,
-				errno);
+			LOG_ERROR("UDP (%s): Connection error %d", data->proto, errno);
 			ret = -errno;
 			break;
 		} else if (received) {
@@ -136,8 +131,7 @@ static int process_udp(struct data *data)
 		ret = sendto(data->udp.sock, data->udp.recv_buffer, received, 0,
 			     &client_addr, client_addr_len);
 		if (ret < 0) {
-			LOG_ERR("UDP (%s): Failed to send %d", data->proto,
-				errno);
+			LOG_ERROR("UDP (%s): Failed to send %d", data->proto, errno);
 			ret = -errno;
 			break;
 		}

@@ -109,7 +109,7 @@ static int ac057tc1_busy_wait(const struct device *dev, uint32_t timeout_ms)
 
 	ret = gpio_pin_interrupt_configure_dt(&config->busy_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure busy GPIO interrupt: %d", ret);
+		LOG_ERROR("Failed to configure busy GPIO interrupt: %d", ret);
 		return ret;
 	}
 
@@ -118,7 +118,7 @@ static int ac057tc1_busy_wait(const struct device *dev, uint32_t timeout_ms)
 	gpio_pin_interrupt_configure_dt(&config->busy_gpio, GPIO_INT_DISABLE);
 
 	if (ret < 0) {
-		LOG_ERR("Timeout waiting for busy signal");
+		LOG_ERROR("Timeout waiting for busy signal");
 		return -ETIMEDOUT;
 	}
 
@@ -133,14 +133,14 @@ static int ac057tc1_hw_init(const struct device *dev)
 
 	ret = mipi_dbi_reset(config->mipi_dev, AC057TC1_RESET_DELAY);
 	if (ret < 0) {
-		LOG_ERR("Failed to reset display: %d", ret);
+		LOG_ERROR("Failed to reset display: %d", ret);
 		return ret;
 	}
 	k_msleep(AC057TC1_RESET_WAIT);
 
 	ret = ac057tc1_busy_wait(dev, AC057TC1_BUSY_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Display not ready after reset");
+		LOG_ERROR("Display not ready after reset");
 		return ret;
 	}
 
@@ -233,19 +233,19 @@ static int ac057tc1_init(const struct device *dev)
 	LOG_DBG("Initializing AC057TC1 display");
 
 	if (!device_is_ready(config->mipi_dev)) {
-		LOG_ERR("MIPI DBI device not ready");
+		LOG_ERROR("MIPI DBI device not ready");
 		return -ENODEV;
 	}
 
 	if (config->busy_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->busy_gpio)) {
-			LOG_ERR("Busy GPIO not ready");
+			LOG_ERROR("Busy GPIO not ready");
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&config->busy_gpio, GPIO_INPUT);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure busy GPIO: %d", ret);
+			LOG_ERROR("Failed to configure busy GPIO: %d", ret);
 			return ret;
 		}
 
@@ -256,7 +256,7 @@ static int ac057tc1_init(const struct device *dev)
 		gpio_init_callback(&data->busy_cb, ac057tc1_busy_cb, BIT(config->busy_gpio.pin));
 		ret = gpio_add_callback(config->busy_gpio.port, &data->busy_cb);
 		if (ret < 0) {
-			LOG_ERR("Failed to add busy GPIO callback: %d", ret);
+			LOG_ERROR("Failed to add busy GPIO callback: %d", ret);
 			return ret;
 		}
 	}
@@ -265,7 +265,7 @@ static int ac057tc1_init(const struct device *dev)
 
 	ret = ac057tc1_hw_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Hardware init failed: %d", ret);
+		LOG_ERROR("Hardware init failed: %d", ret);
 		return ret;
 	}
 
@@ -286,7 +286,7 @@ static int ac057tc1_write(const struct device *dev, const uint16_t x, const uint
 
 	/* Validate parameters */
 	if (x != 0 || y != 0 || desc->width != config->width || desc->height != config->height) {
-		LOG_ERR("Partial updates not supported. Full screen writes only.");
+		LOG_ERROR("Partial updates not supported. Full screen writes only.");
 		return -ENOTSUP;
 	}
 
@@ -294,14 +294,15 @@ static int ac057tc1_write(const struct device *dev, const uint16_t x, const uint
 	buf_len = (desc->width * desc->height) / 2U;
 
 	if (buf == NULL || desc->buf_size < buf_len) {
-		LOG_ERR("Invalid buffer: buf=%p size=%u expected=%u", buf, desc->buf_size, buf_len);
+		LOG_ERROR("Invalid buffer: buf=%p size=%u expected=%u", buf, desc->buf_size,
+			  buf_len);
 		return -EINVAL;
 	}
 
 	/* Wake panel from deep sleep if needed */
 	ret = ac057tc1_hw_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to wake panel: %d", ret);
+		LOG_ERROR("Failed to wake panel: %d", ret);
 		return ret;
 	}
 
@@ -317,7 +318,7 @@ static int ac057tc1_write(const struct device *dev, const uint16_t x, const uint
 	/* Send pixel data with DATA_START_TRANS command */
 	ret = ac057tc1_write_cmd(dev, AC057TC1_CMD_DATA_START_TRANS, buf, buf_len);
 	if (ret < 0) {
-		LOG_ERR("Failed to write display data: %d", ret);
+		LOG_ERROR("Failed to write display data: %d", ret);
 		return ret;
 	}
 
@@ -402,7 +403,7 @@ static int ac057tc1_set_pixel_format(const struct device *dev, const enum displa
 		return 0;
 	}
 
-	LOG_ERR("Pixel format not supported");
+	LOG_ERROR("Pixel format not supported");
 	return -ENOTSUP;
 }
 

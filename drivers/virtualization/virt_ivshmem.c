@@ -50,8 +50,7 @@ static bool ivshmem_configure_msi_x_interrupts(const struct device *dev)
 					      data->vectors,
 					      CONFIG_IVSHMEM_MSI_X_VECTORS);
 	if (n_vectors == 0) {
-		LOG_ERR("Could not allocate %u MSI-X vectors",
-			CONFIG_IVSHMEM_MSI_X_VECTORS);
+		LOG_ERROR("Could not allocate %u MSI-X vectors", CONFIG_IVSHMEM_MSI_X_VECTORS);
 		goto out;
 	}
 
@@ -65,7 +64,7 @@ static bool ivshmem_configure_msi_x_interrupts(const struct device *dev)
 					     &data->vectors[i],
 					     ivshmem_doorbell,
 					     &data->params[i], 0)) {
-			LOG_ERR("Failed to connect MSI-X vector %u", i);
+			LOG_ERROR("Failed to connect MSI-X vector %u", i);
 			goto out;
 		}
 	}
@@ -73,7 +72,7 @@ static bool ivshmem_configure_msi_x_interrupts(const struct device *dev)
 	LOG_INF("%u MSI-X Vectors connected", n_vectors);
 
 	if (!pcie_msi_enable(data->pcie->bdf, data->vectors, n_vectors, 0)) {
-		LOG_ERR("Could not enable MSI-X");
+		LOG_ERROR("Could not enable MSI-X");
 		goto out;
 	}
 
@@ -99,7 +98,7 @@ static bool ivshmem_configure_int_x_interrupts(const struct device *dev)
 	uint32_t cfg_intx_pin = PCIE_CONF_INTR_PIN(cfg_int);
 
 	if (!IN_RANGE(cfg_intx_pin, PCIE_INTX_PIN_MIN, PCIE_INTX_PIN_MAX)) {
-		LOG_ERR("Invalid INTx pin %u", cfg_intx_pin);
+		LOG_ERROR("Invalid INTx pin %u", cfg_intx_pin);
 		return false;
 	}
 
@@ -113,10 +112,9 @@ static bool ivshmem_configure_int_x_interrupts(const struct device *dev)
 
 	LOG_INF("Enabling INTx IRQ %u (pin %u)", intx->irq, cfg_intx_pin);
 	if (intx->irq == INTX_IRQ_UNUSED ||
-		!pcie_connect_dynamic_irq(
-			data->pcie->bdf, intx->irq, intx->priority,
-			ivshmem_doorbell, &data->params[0], intx->flags)) {
-		LOG_ERR("Failed to connect INTx ISR %u", cfg_intx_pin);
+	    !pcie_connect_dynamic_irq(data->pcie->bdf, intx->irq, intx->priority, ivshmem_doorbell,
+				      &data->params[0], intx->flags)) {
+		LOG_ERROR("Failed to connect INTx ISR %u", cfg_intx_pin);
 		return false;
 	}
 
@@ -162,8 +160,8 @@ static bool ivshmem_configure(const struct device *dev)
 
 	if (!pcie_get_mbar(data->pcie->bdf, IVSHMEM_PCIE_REG_BAR_IDX, &mbar_regs)) {
 		if (IS_ENABLED(CONFIG_IVSHMEM_DOORBELL)
-			IF_ENABLED(CONFIG_IVSHMEM_V2, (|| data->ivshmem_v2))) {
-			LOG_ERR("ivshmem regs bar not found");
+			    IF_ENABLED(CONFIG_IVSHMEM_V2, (|| data->ivshmem_v2))) {
+			LOG_ERROR("ivshmem regs bar not found");
 			return false;
 		}
 		LOG_INF("ivshmem regs bar not found");
@@ -190,7 +188,7 @@ static bool ivshmem_configure(const struct device *dev)
 #ifdef CONFIG_IVSHMEM_V2
 	if (data->ivshmem_v2) {
 		if (mbar_regs.size < sizeof(struct ivshmem_v2_reg)) {
-			LOG_ERR("Invalid ivshmem regs size %zu", mbar_regs.size);
+			LOG_ERROR("Invalid ivshmem regs size %zu", mbar_regs.size);
 			return false;
 		}
 
@@ -199,7 +197,7 @@ static bool ivshmem_configure(const struct device *dev)
 
 		data->max_peers = regs->max_peers;
 		if (!IN_RANGE(data->max_peers, 2, CONFIG_IVSHMEM_V2_MAX_PEERS)) {
-			LOG_ERR("Invalid max peers %u", data->max_peers);
+			LOG_ERROR("Invalid max peers %u", data->max_peers);
 			return false;
 		}
 
@@ -216,7 +214,7 @@ static bool ivshmem_configure(const struct device *dev)
 		size_t state_table_size = pcie_conf_read(data->pcie->bdf, cap_pos);
 		LOG_INF("State table size 0x%zX", state_table_size);
 		if (state_table_size < sizeof(uint32_t) * data->max_peers) {
-			LOG_ERR("Invalid state table size %zu", state_table_size);
+			LOG_ERROR("Invalid state table size %zu", state_table_size);
 			return false;
 		}
 		k_mem_map_phys_bare((uint8_t **)&data->state_table_shmem,
@@ -268,7 +266,7 @@ static bool ivshmem_configure(const struct device *dev)
 #endif /* CONFIG_IVSHMEM_V2 */
 	{
 		if (!shmem_bar_present) {
-			LOG_ERR("ivshmem mem bar not found");
+			LOG_ERROR("ivshmem mem bar not found");
 			return false;
 		}
 
@@ -281,14 +279,14 @@ static bool ivshmem_configure(const struct device *dev)
 
 	if (msi_x_bar_present) {
 		if (!ivshmem_configure_msi_x_interrupts(dev)) {
-			LOG_ERR("MSI-X init failed");
+			LOG_ERROR("MSI-X init failed");
 			return false;
 		}
 	}
 #ifdef CONFIG_IVSHMEM_V2
 	else if (data->ivshmem_v2) {
 		if (!ivshmem_configure_int_x_interrupts(dev)) {
-			LOG_ERR("INTx init failed");
+			LOG_ERROR("INTx init failed");
 			return false;
 		}
 	}

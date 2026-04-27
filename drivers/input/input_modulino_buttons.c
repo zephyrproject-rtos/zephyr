@@ -40,7 +40,7 @@ static void modulino_buttons_handler(struct k_work *work)
 
 	ret = i2c_read_dt(&cfg->bus, buf, sizeof(buf));
 	if (ret < 0) {
-		LOG_ERR("i2c read error: %d", ret);
+		LOG_ERROR("i2c read error: %d", ret);
 		goto out;
 	}
 

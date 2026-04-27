@@ -117,8 +117,8 @@ static int entropy_gd32_init(const struct device *dev)
 	trng_enable();
 
 	if (!entropy_gd32_ck48m_ready()) {
-		LOG_ERR("CK48M is not configured/running; configure gd,ck48m-source in DT "
-			"(gd,gd32-rcu) for TRNG");
+		LOG_ERROR("CK48M is not configured/running; configure gd,ck48m-source in DT "
+			  "(gd,gd32-rcu) for TRNG");
 		return -EIO;
 	}
 

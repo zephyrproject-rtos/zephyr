@@ -52,7 +52,7 @@ static bool is_valid_core_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 	case BTP_CORE_EV_IUT_READY:
 		return buf_simple->len == 0U;
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -220,7 +220,7 @@ static bool is_valid_gap_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 	case BTP_GAP_EV_PERIODIC_BIGINFO:
 		return buf_simple->len == sizeof(struct btp_gap_periodic_biginfo_ev);
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -471,7 +471,7 @@ static bool is_valid_gatt_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 		}
 
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -525,7 +525,7 @@ static bool is_valid_l2cap_packet_len(const struct btp_hdr *hdr, struct net_buf_
 	case BTP_L2CAP_EV_RECONFIGURED:
 		return buf_simple->len == sizeof(struct btp_l2cap_reconfigured_ev);
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -816,7 +816,7 @@ static bool is_valid_mesh_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 	case MESH_EV_BLOB_LOST_TARGET:
 		return buf_simple->len == 0U;
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -850,7 +850,7 @@ static bool is_valid_mesh_mdl_packet_len(const struct btp_hdr *hdr,
 	case BTP_MMDL_DFU_SRV_APPLY:
 		return buf_simple->len == 0U;
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -876,7 +876,7 @@ static bool is_valid_vcs_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 
 	/* no events */
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -890,7 +890,7 @@ static bool is_valid_ias_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 	case BTP_IAS_EV_OUT_ALERT_ACTION:
 		return buf_simple->len == sizeof(struct btp_ias_alert_action_ev);
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -949,7 +949,7 @@ static bool is_valid_aics_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 	case BTP_AICS_PROCEDURE_EV:
 		return buf_simple->len == sizeof(struct btp_aics_procedure_ev);
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -981,7 +981,7 @@ static bool is_valid_vocs_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 	case BTP_VOCS_PROCEDURE_EV:
 		return buf_simple->len == sizeof(struct btp_vocs_procedure_ev);
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1002,7 +1002,7 @@ static bool is_valid_pacs_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 
 	/* No events */
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1046,7 +1046,7 @@ static bool is_valid_ascs_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 	case BTP_ASCS_EV_CIS_DISCONNECTED:
 		return buf_simple->len == sizeof(struct btp_ascs_cis_disconnected_ev);
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1179,7 +1179,7 @@ static bool is_valid_bap_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 	case BTP_BAP_EV_PA_SYNC_REQ:
 		return buf_simple->len == sizeof(struct btp_bap_pa_sync_req_ev);
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1205,7 +1205,7 @@ static bool is_valid_has_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 	case BTP_HAS_EV_OPERATION_COMPLETED:
 		return buf_simple->len == sizeof(struct btp_has_operation_completed_ev);
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1229,7 +1229,7 @@ static bool is_valid_micp_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 	case BTP_MICP_MUTE_STATE_EV:
 		return buf_simple->len == sizeof(struct btp_micp_mute_state_ev);
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1249,7 +1249,7 @@ static bool is_valid_csis_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 
 	/* No events */
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1273,7 +1273,7 @@ static bool is_valid_mics_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 	case BTP_MICS_MUTE_STATE_EV:
 		return buf_simple->len == sizeof(struct btp_mics_mute_state_ev);
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1360,7 +1360,7 @@ static bool is_valid_ccp_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 	case BTP_CCP_EV_CURRENT_CALLS:
 		return buf_simple->len == sizeof(struct btp_ccp_current_calls_ev);
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1402,7 +1402,7 @@ static bool is_valid_vcp_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 	case BTP_VCP_PROCEDURE_EV:
 		return buf_simple->len == sizeof(struct btp_vcp_procedure_ev);
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1420,7 +1420,7 @@ static bool is_valid_cas_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 
 	/* No events */
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1522,7 +1522,7 @@ static bool is_valid_mcp_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 	case BTP_SCP_NTF_EV:
 		return buf_simple->len == sizeof(struct btp_scp_cmd_ntf_ev);
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1533,7 +1533,7 @@ static bool is_valid_gmcs_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 	/* No responses */
 	/* No events */
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1565,7 +1565,7 @@ static bool is_valid_hap_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 	case BT_HAP_EV_HAUC_DISCOVERY_COMPLETE:
 		return buf_simple->len == sizeof(struct btp_hap_hauc_discovery_complete_ev);
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1593,7 +1593,7 @@ static bool is_valid_csip_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 	case BTP_CSIP_LOCK_EV:
 		return buf_simple->len == sizeof(struct btp_csip_lock_ev);
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1641,7 +1641,7 @@ static bool is_valid_cap_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 	case BTP_CAP_EV_UNICAST_STOP_COMPLETED:
 		return buf_simple->len == sizeof(struct btp_cap_unicast_stop_completed_ev);
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1675,7 +1675,7 @@ static bool is_valid_tbs_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 
 	/* No events */
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1693,7 +1693,7 @@ static bool is_valid_tmap_packet_len(const struct btp_hdr *hdr, struct net_buf_s
 	case BT_TMAP_EV_DISCOVERY_COMPLETE:
 		return buf_simple->len == sizeof(struct btp_tmap_discovery_complete_ev);
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1709,7 +1709,7 @@ static bool is_valid_ots_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 
 	/* No events */
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1741,7 +1741,7 @@ static bool is_valid_pbp_packet_len(const struct btp_hdr *hdr, struct net_buf_si
 			return false;
 		}
 	default:
-		LOG_ERR("Unhandled opcode 0x%02X", hdr->opcode);
+		LOG_ERROR("Unhandled opcode 0x%02X", hdr->opcode);
 		return false;
 	}
 }
@@ -1837,7 +1837,7 @@ static bool is_valid_packet_len(uint8_t buf[], size_t len)
 		return is_valid_pbp_packet_len(hdr, &buf_simple);
 	}
 
-	LOG_ERR("Unhandled service 0x%02x", hdr->service);
+	LOG_ERROR("Unhandled service 0x%02x", hdr->service);
 	return false;
 }
 

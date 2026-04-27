@@ -89,7 +89,7 @@ static int xspim_stm32_init(const struct device *dev)
 
 		if (HAL_XSPIM_Config(&hxspi, &xspi_mgr_cfg,
 				     HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-			LOG_ERR("XSPIM config failed for dev %p", controllers_io_map[i].base);
+			LOG_ERROR("XSPIM config failed for dev %p", controllers_io_map[i].base);
 			return -EIO;
 		}
 	}

@@ -194,7 +194,7 @@ static int ecm_class_handler(struct usb_setup_packet *setup, int32_t *len,
 		netusb_enabled());
 
 	if (!netusb_enabled()) {
-		LOG_ERR("interface disabled");
+		LOG_ERROR("interface disabled");
 		return -ENODEV;
 	}
 
@@ -265,7 +265,7 @@ static int ecm_send(struct net_pkt *pkt)
 	ret = usb_transfer_sync(ecm_ep_data[ECM_IN_EP_IDX].ep_addr,
 				tx_buf, len, USB_TRANS_WRITE);
 	if (ret != len) {
-		LOG_ERR("Transfer failure");
+		LOG_ERROR("Transfer failure");
 		return -EINVAL;
 	}
 
@@ -295,12 +295,12 @@ static void ecm_read_cb(uint8_t ep, int size, void *priv)
 	pkt = net_pkt_rx_alloc_with_buffer(netusb_net_iface(), size, NET_AF_UNSPEC,
 					   0, K_FOREVER);
 	if (!pkt) {
-		LOG_ERR("no memory for network packet");
+		LOG_ERROR("no memory for network packet");
 		goto done;
 	}
 
 	if (net_pkt_write(pkt, rx_buf, size)) {
-		LOG_ERR("Unable to write into pkt");
+		LOG_ERROR("Unable to write into pkt");
 		net_pkt_unref(pkt);
 		goto done;
 	}

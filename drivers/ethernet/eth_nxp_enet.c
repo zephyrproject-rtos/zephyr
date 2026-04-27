@@ -190,7 +190,7 @@ static inline void eth_wait_for_ptp_ts(const struct device *dev, struct net_pkt 
 
 	net_pkt_ref(pkt);
 	while (k_sem_take(&data->ptp.ptp_ts_sem, K_MSEC(200)) != 0) {
-		LOG_ERR("error on take PTP semaphore");
+		LOG_ERROR("error on take PTP semaphore");
 	}
 }
 #else
@@ -231,7 +231,7 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 			     frame_is_timestamped, pkt);
 
 	if (ret != kStatus_Success) {
-		LOG_ERR("ENET_SendFrame error: %d", ret);
+		LOG_ERROR("ENET_SendFrame error: %d", ret);
 		ENET_ReclaimTxDescriptor(data->base, &data->enet_handle, RING_ID);
 		return -EIO;
 	}
@@ -355,7 +355,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	} else if (status == kStatus_ENET_RxFrameError) {
 		enet_data_error_stats_t error_stats;
 
-		LOG_ERR("ENET_GetRxFrameSize return: %d", (int)status);
+		LOG_ERROR("ENET_GetRxFrameSize return: %d", (int)status);
 
 		ENET_GetRxErrBeforeReadFrame(&data->enet_handle,
 					     &error_stats, RING_ID);
@@ -363,7 +363,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	}
 
 	if (frame_length > NET_ETH_MAX_FRAME_SIZE) {
-		LOG_ERR("Frame too large (%d)", frame_length);
+		LOG_ERROR("Frame too large (%d)", frame_length);
 		goto flush;
 	}
 
@@ -380,12 +380,12 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	k_mutex_unlock(&data->rx_frame_buf_mutex);
 
 	if (status) {
-		LOG_ERR("ENET_ReadFrame failed: %d", (int)status);
+		LOG_ERROR("ENET_ReadFrame failed: %d", (int)status);
 		goto error;
 	}
 
 	if (net_pkt_write(pkt, data->rx_frame_buf, frame_length)) {
-		LOG_ERR("Unable to write frame into the packet");
+		LOG_ERROR("Unable to write frame into the packet");
 		goto error;
 	}
 
@@ -609,7 +609,7 @@ static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
 
 	if (id == 0xFFFFFF) {
 		/* Allowed but should raise highest level error notice to user */
-		LOG_ERR("No unique MAC can be provided in this platform");
+		LOG_ERROR("No unique MAC can be provided in this platform");
 	}
 
 	/* Setting LAA bit because it is not guaranteed universally unique */
@@ -996,7 +996,7 @@ static int nxp_enet_mod_init(const struct device *dev)
 
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret) {
-		LOG_ERR("ENET module clock error");
+		LOG_ERROR("ENET module clock error");
 		return ret;
 	}
 

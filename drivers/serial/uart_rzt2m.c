@@ -254,7 +254,7 @@ static int rzt2m_module_start(const struct device *dev)
 		*MSTPCRA &= ~(MSTPCRA_MASK_SCIx(interface_id));
 		dummy = *MSTPCRA;
 	} else {
-		LOG_ERR("SCI modules in the secure domain on RZT2M are not supported.");
+		LOG_ERROR("SCI modules in the secure domain on RZT2M are not supported.");
 		return -ENOTSUP;
 	}
 
@@ -319,7 +319,8 @@ static int rzt2m_uart_init(const struct device *dev)
 		*CCR3(config->base) |= CCR3_MASK_STP;
 		break;
 	default:
-		LOG_ERR("Selected bit stop length is not supported: %u.", data->uart_cfg.stop_bits);
+		LOG_ERROR("Selected bit stop length is not supported: %u.",
+			  data->uart_cfg.stop_bits);
 		return -ENOTSUP;
 	}
 
@@ -331,13 +332,14 @@ static int rzt2m_uart_init(const struct device *dev)
 		*CCR3(config->base) |= CCR3_CHR_8BIT;
 		break;
 	default:
-		LOG_ERR("Selected number of data bits is not supported: %u.",
-			data->uart_cfg.data_bits);
+		LOG_ERROR("Selected number of data bits is not supported: %u.",
+			  data->uart_cfg.data_bits);
 		return -ENOTSUP;
 	}
 
 	if (data->uart_cfg.baudrate > ARRAY_SIZE(baud_settings)) {
-		LOG_ERR("Selected baudrate variant is not supported: %u.", data->uart_cfg.baudrate);
+		LOG_ERROR("Selected baudrate variant is not supported: %u.",
+			  data->uart_cfg.baudrate);
 		return -ENOTSUP;
 	}
 	baud_setting = baud_settings[data->uart_cfg.baudrate];
@@ -358,7 +360,7 @@ static int rzt2m_uart_init(const struct device *dev)
 		*CCR1(config->base) |= (CCR1_MASK_PE | CCR1_MASK_PM);
 		break;
 	default:
-		LOG_ERR("Unsupported parity: %u", data->uart_cfg.parity);
+		LOG_ERROR("Unsupported parity: %u", data->uart_cfg.parity);
 	}
 
 	/* Specify trigger thresholds and clear FIFOs. */

@@ -40,7 +40,7 @@ static int emul_sbs_charger_reg_write(const struct emul *target, int reg, int va
 		data->reg_charger_mode = val;
 		break;
 	default:
-		LOG_ERR("Unknown write %x", reg);
+		LOG_ERROR("Unknown write %x", reg);
 		return -EIO;
 	}
 
@@ -58,7 +58,7 @@ static int emul_sbs_charger_reg_read(const struct emul *target, int reg, int *va
 		*val = 1;
 		break;
 	default:
-		LOG_ERR("Unknown register 0x%x read", reg);
+		LOG_ERROR("Unknown register 0x%x read", reg);
 		return -EIO;
 	}
 	LOG_INF("read 0x%x = 0x%x", reg, *val);
@@ -82,11 +82,11 @@ static int sbs_charger_emul_transfer_i2c(const struct emul *target, struct i2c_m
 	switch (num_msgs) {
 	case 1:
 		if (msgs->flags & I2C_MSG_READ) {
-			LOG_ERR("Unexpected single-message read");
+			LOG_ERROR("Unexpected single-message read");
 			return -EIO;
 		}
 		if (msgs->len != 3) {
-			LOG_ERR("Unexpected msg0 length %d", msgs->len);
+			LOG_ERROR("Unexpected msg0 length %d", msgs->len);
 			return -EIO;
 		}
 		reg = msgs->buf[0];
@@ -97,11 +97,11 @@ static int sbs_charger_emul_transfer_i2c(const struct emul *target, struct i2c_m
 		break;
 	case 2:
 		if (msgs->flags & I2C_MSG_READ) {
-			LOG_ERR("Unexpected read");
+			LOG_ERROR("Unexpected read");
 			return -EIO;
 		}
 		if (msgs->len != 1) {
-			LOG_ERR("Unexpected msg0 length %d", msgs->len);
+			LOG_ERROR("Unexpected msg0 length %d", msgs->len);
 			return -EIO;
 		}
 		reg = msgs->buf[0];
@@ -121,13 +121,13 @@ static int sbs_charger_emul_transfer_i2c(const struct emul *target, struct i2c_m
 				sys_put_le16(val, msgs->buf);
 				break;
 			default:
-				LOG_ERR("Unexpected msg1 length %d", msgs->len);
+				LOG_ERROR("Unexpected msg1 length %d", msgs->len);
 				return -EIO;
 			}
 		} else {
 			/* We write a word (2 bytes by the SBS spec) */
 			if (msgs->len != 2) {
-				LOG_ERR("Unexpected msg1 length %d", msgs->len);
+				LOG_ERROR("Unexpected msg1 length %d", msgs->len);
 			}
 			value = sys_get_le16(msgs->buf);
 
@@ -135,7 +135,7 @@ static int sbs_charger_emul_transfer_i2c(const struct emul *target, struct i2c_m
 		}
 		break;
 	default:
-		LOG_ERR("Invalid number of messages: %d", num_msgs);
+		LOG_ERROR("Invalid number of messages: %d", num_msgs);
 		return -EIO;
 	}
 

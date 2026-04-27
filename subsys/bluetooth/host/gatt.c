@@ -195,7 +195,7 @@ static void sc_store(struct gatt_sc_cfg *cfg)
 
 	err = bt_settings_store_sc(cfg->id, &cfg->peer, &cfg->data, sizeof(cfg->data));
 	if (err) {
-		LOG_ERR("failed to store SC (err %d)", err);
+		LOG_ERROR("failed to store SC (err %d)", err);
 		return;
 	}
 
@@ -223,7 +223,7 @@ static int bt_gatt_clear_sc(uint8_t id, const bt_addr_le_t *addr)
 
 		err = bt_settings_delete_sc(cfg->id, &cfg->peer);
 		if (err) {
-			LOG_ERR("failed to delete SC (err %d)", err);
+			LOG_ERROR("failed to delete SC (err %d)", err);
 		} else {
 			LOG_DBG("deleted SC for %s", bt_addr_le_str(&cfg->peer));
 		}
@@ -241,7 +241,7 @@ static void sc_clear(struct bt_conn *conn)
 
 		err = bt_gatt_clear_sc(conn->id, &conn->le.dst);
 		if (err) {
-			LOG_ERR("Failed to clear SC %d", err);
+			LOG_ERROR("Failed to clear SC %d", err);
 		}
 	} else {
 		struct gatt_sc_cfg *cfg;
@@ -301,7 +301,7 @@ static void sc_save(uint8_t id, bt_addr_le_t *peer, uint16_t start, uint16_t end
 		/* Find and initialize a free sc_cfg entry */
 		cfg = find_sc_cfg(BT_ID_DEFAULT, BT_ADDR_LE_ANY);
 		if (!cfg) {
-			LOG_ERR("unable to save SC: no cfg left");
+			LOG_ERROR("unable to save SC: no cfg left");
 			return;
 		}
 
@@ -569,14 +569,14 @@ static int db_hash_setup(struct gen_hash_state *state, uint8_t *key)
 
 	ret = psa_import_key(&key_attr, key, 16, &(state->key));
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("Unable to import the key for AES CMAC %d", ret);
+		LOG_ERROR("Unable to import the key for AES CMAC %d", ret);
 		return -EIO;
 	}
 	memset(&state->operation, 0, sizeof(state->operation));
 
 	ret = psa_mac_sign_setup(&(state->operation), state->key, PSA_ALG_CMAC);
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("CMAC operation init failed %d", ret);
+		LOG_ERROR("CMAC operation init failed %d", ret);
 		return -EIO;
 	}
 	return 0;
@@ -587,7 +587,7 @@ static int db_hash_update(struct gen_hash_state *state, uint8_t *data, size_t le
 	psa_status_t ret = psa_mac_update(&(state->operation), data, len);
 
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("CMAC update failed %d", ret);
+		LOG_ERROR("CMAC update failed %d", ret);
 		return -EIO;
 	}
 	return 0;
@@ -601,7 +601,7 @@ static int db_hash_finish(struct gen_hash_state *state)
 	psa_destroy_key(state->key);
 
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("CMAC finish failed %d", ret);
+		LOG_ERROR("CMAC finish failed %d", ret);
 		return -EIO;
 	}
 	return 0;
@@ -725,7 +725,7 @@ static void db_hash_store(void)
 
 	err = bt_settings_store_hash(&db_hash.hash, sizeof(db_hash.hash));
 	if (err) {
-		LOG_ERR("Failed to save Database Hash (err %d)", err);
+		LOG_ERROR("Failed to save Database Hash (err %d)", err);
 	}
 
 	LOG_DBG("Database Hash stored");
@@ -944,7 +944,7 @@ static int bt_gatt_store_cf(uint8_t id, const bt_addr_le_t *peer)
 
 	err = bt_settings_store_cf(id, peer, str, len);
 	if (err) {
-		LOG_ERR("Failed to store Client Features (err %d)", err);
+		LOG_ERROR("Failed to store Client Features (err %d)", err);
 		return err;
 	}
 
@@ -1173,7 +1173,7 @@ populate:
 			handle = attrs->handle;
 		} else if (find_attr(attrs->handle)) {
 			/* Service has conflicting handles */
-			LOG_ERR("Unable to register handle 0x%04x", attrs->handle);
+			LOG_ERROR("Unable to register handle 0x%04x", attrs->handle);
 			return -EINVAL;
 		}
 
@@ -3218,7 +3218,7 @@ static void sc_restore(struct bt_conn *conn)
 	sc_restore_params[index].len = sizeof(sc_range[index]);
 
 	if (bt_gatt_indicate(conn, &sc_restore_params[index])) {
-		LOG_ERR("SC restore indication failed");
+		LOG_ERROR("SC restore indication failed");
 	}
 }
 
@@ -3379,16 +3379,16 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 		uint8_t properties;
 
 		if (!attr->read) {
-			LOG_ERR("Read method not set");
+			LOG_ERROR("Read method not set");
 			return false;
 		}
 		/* The characteristic properties is the first byte of the attribute value */
 		len = attr->read(NULL, attr, &properties, sizeof(properties), 0);
 		if (len < 0) {
-			LOG_ERR("Failed to read attribute %p (err %zd)", attr, len);
+			LOG_ERROR("Failed to read attribute %p (err %zd)", attr, len);
 			return false;
 		} else if (len != sizeof(properties)) {
-			LOG_ERR("Invalid read length: %zd", len);
+			LOG_ERROR("Invalid read length: %zd", len);
 			return false;
 		}
 
@@ -3424,16 +3424,16 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 	}
 
 	if (!attr->read) {
-		LOG_ERR("Read method not set");
+		LOG_ERROR("Read method not set");
 		return false;
 	}
 
 	len = attr->read(conn, attr, ccc_bits_encoded, sizeof(ccc_bits_encoded), 0);
 	if (len < 0) {
-		LOG_ERR("Failed to read attribute %p (err %zd)", attr, len);
+		LOG_ERROR("Failed to read attribute %p (err %zd)", attr, len);
 		return false;
 	} else if (len != sizeof(ccc_bits_encoded)) {
-		LOG_ERR("Invalid read length: %zd", len);
+		LOG_ERROR("Invalid read length: %zd", len);
 		return false;
 	}
 
@@ -3615,7 +3615,7 @@ void bt_gatt_mult_notification(struct bt_conn *conn, const void *data,
 		LOG_DBG("handle 0x%02x len %u", handle, len);
 
 		if (len > buf.len) {
-			LOG_ERR("Invalid data len %u > %u", len, length);
+			LOG_ERROR("Invalid data len %u > %u", len, length);
 			return;
 		}
 
@@ -3850,7 +3850,7 @@ static int gatt_find_type(struct bt_conn *conn,
 		len += BT_UUID_SIZE_128;
 		break;
 	default:
-		LOG_ERR("Unknown UUID type %u", params->uuid->type);
+		LOG_ERROR("Unknown UUID type %u", params->uuid->type);
 		return -EINVAL;
 	}
 
@@ -3873,7 +3873,7 @@ static void read_included_uuid_cb(struct bt_conn *conn, int err,
 	} u;
 
 	if (length != 16U) {
-		LOG_ERR("Invalid data len %u", length);
+		LOG_ERROR("Invalid data len %u", length);
 		params->func(conn, NULL, params);
 		return;
 	}
@@ -3964,7 +3964,7 @@ static uint16_t parse_include(struct bt_conn *conn, const void *pdu,
 		u.uuid.type = BT_UUID_TYPE_128;
 		break;
 	default:
-		LOG_ERR("Invalid data len %u", rsp->len);
+		LOG_ERROR("Invalid data len %u", rsp->len);
 		goto done;
 	}
 
@@ -4059,7 +4059,7 @@ static uint16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 		u.uuid.type = BT_UUID_TYPE_128;
 		break;
 	default:
-		LOG_ERR("Invalid data len %u", rsp->len);
+		LOG_ERROR("Invalid data len %u", rsp->len);
 		goto done;
 	}
 
@@ -4326,7 +4326,7 @@ static uint16_t parse_service(struct bt_conn *conn, const void *pdu,
 		u.uuid.type = BT_UUID_TYPE_128;
 		break;
 	default:
-		LOG_ERR("Invalid data len %u", rsp->len);
+		LOG_ERROR("Invalid data len %u", rsp->len);
 		goto done;
 	}
 
@@ -4487,7 +4487,7 @@ static void gatt_find_info_rsp(struct bt_conn *conn, int err,
 		len = sizeof(*info.i128);
 		break;
 	default:
-		LOG_ERR("Invalid format %u", rsp->format);
+		LOG_ERROR("Invalid format %u", rsp->format);
 		goto done;
 	}
 
@@ -4671,7 +4671,7 @@ static void parse_read_by_uuid(struct bt_conn *conn,
 
 		/* Handle 0 is invalid */
 		if (!handle) {
-			LOG_ERR("Invalid handle");
+			LOG_ERROR("Invalid handle");
 			return;
 		}
 
@@ -5105,7 +5105,7 @@ static void gatt_prepare_write_rsp(struct bt_conn *conn, int err,
 
 	len = length - sizeof(*rsp);
 	if (len > params->length) {
-		LOG_ERR("Incorrect length, canceling write");
+		LOG_ERROR("Incorrect length, canceling write");
 		if (gatt_cancel_all_writes(conn, params)) {
 			goto fail;
 		}
@@ -5115,7 +5115,7 @@ static void gatt_prepare_write_rsp(struct bt_conn *conn, int err,
 
 	data_valid = memcmp(params->data, rsp->value, len) == 0;
 	if (params->offset != rsp->offset || !data_valid) {
-		LOG_ERR("Incorrect offset or data in response, canceling write");
+		LOG_ERROR("Incorrect offset or data in response, canceling write");
 		if (gatt_cancel_all_writes(conn, params)) {
 			goto fail;
 		}
@@ -5750,7 +5750,7 @@ static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		settings_name_next(name, &next);
 
 		if (!name) {
-			LOG_ERR("Insufficient number of arguments");
+			LOG_ERROR("Insufficient number of arguments");
 			return -EINVAL;
 		} else if (!next) {
 			load.addr_with_id.id = BT_ID_DEFAULT;
@@ -5758,7 +5758,7 @@ static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 			unsigned long next_id = strtoul(next, NULL, 10);
 
 			if (next_id >= CONFIG_BT_ID_MAX) {
-				LOG_ERR("Invalid local identity %lu", next_id);
+				LOG_ERROR("Invalid local identity %lu", next_id);
 				return -EINVAL;
 			}
 
@@ -5767,7 +5767,7 @@ static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 		err = bt_settings_decode_key(name, &addr);
 		if (err) {
-			LOG_ERR("Unable to decode address %s", name);
+			LOG_ERROR("Unable to decode address %s", name);
 			return -EINVAL;
 		}
 
@@ -5777,7 +5777,7 @@ static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 			len = read_cb(cb_arg, ccc_store, sizeof(ccc_store));
 
 			if (len < 0) {
-				LOG_ERR("Failed to decode value (err %zd)", len);
+				LOG_ERROR("Failed to decode value (err %zd)", len);
 				return len;
 			}
 
@@ -5827,7 +5827,7 @@ static int ccc_set_direct(const char *key, size_t len, settings_read_cb read_cb,
 
 		/* Only "bt/ccc" settings should ever come here */
 		if (!settings_name_steq((const char *)param, "bt/ccc", &name)) {
-			LOG_ERR("Invalid key");
+			LOG_ERROR("Invalid key");
 			return -EINVAL;
 		}
 
@@ -6039,8 +6039,8 @@ static uint8_t ccc_save(const struct bt_gatt_attr *attr, uint16_t handle,
 	LOG_DBG("Storing CCCs handle 0x%04x value 0x%04x", handle, cfg->value);
 
 	if (save->count >= CCC_STORE_MAX) {
-		LOG_ERR("Too many Client Characteristic Configuration. "
-				"See CONFIG_BT_SETTINGS_CCC_STORE_MAX\n");
+		LOG_ERROR("Too many Client Characteristic Configuration. "
+			  "See CONFIG_BT_SETTINGS_CCC_STORE_MAX\n");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -6075,7 +6075,7 @@ static int gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr)
 
 	err = bt_settings_store_ccc(id, addr, str, len);
 	if (err) {
-		LOG_ERR("Failed to store CCCs (err %d)", err);
+		LOG_ERROR("Failed to store CCCs (err %d)", err);
 		return err;
 	}
 
@@ -6104,13 +6104,13 @@ static int sc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	const char *next;
 
 	if (!name) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -EINVAL;
 	}
 
 	err = bt_settings_decode_key(name, &addr);
 	if (err) {
-		LOG_ERR("Unable to decode address %s", name);
+		LOG_ERROR("Unable to decode address %s", name);
 		return -EINVAL;
 	}
 
@@ -6122,7 +6122,7 @@ static int sc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		unsigned long next_id = strtoul(next, NULL, 10);
 
 		if (next_id >= CONFIG_BT_ID_MAX) {
-			LOG_ERR("Invalid local identity %lu", next_id);
+			LOG_ERROR("Invalid local identity %lu", next_id);
 			return -EINVAL;
 		}
 
@@ -6134,7 +6134,7 @@ static int sc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		/* Find and initialize a free sc_cfg entry */
 		cfg = find_sc_cfg(BT_ID_DEFAULT, BT_ADDR_LE_ANY);
 		if (!cfg) {
-			LOG_ERR("Unable to restore SC: no cfg left");
+			LOG_ERROR("Unable to restore SC: no cfg left");
 			return -ENOMEM;
 		}
 
@@ -6145,7 +6145,7 @@ static int sc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	if (len_rd) {
 		len = read_cb(cb_arg, &cfg->data, sizeof(cfg->data));
 		if (len < 0) {
-			LOG_ERR("Failed to decode value (err %zd)", len);
+			LOG_ERROR("Failed to decode value (err %zd)", len);
 			return len;
 		}
 
@@ -6190,13 +6190,13 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	uint8_t id;
 
 	if (!name) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -EINVAL;
 	}
 
 	err = bt_settings_decode_key(name, &addr);
 	if (err) {
-		LOG_ERR("Unable to decode address %s", name);
+		LOG_ERROR("Unable to decode address %s", name);
 		return -EINVAL;
 	}
 
@@ -6208,7 +6208,7 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		unsigned long next_id = strtoul(next, NULL, 10);
 
 		if (next_id >= CONFIG_BT_ID_MAX) {
-			LOG_ERR("Invalid local identity %lu", next_id);
+			LOG_ERROR("Invalid local identity %lu", next_id);
 			return -EINVAL;
 		}
 
@@ -6219,7 +6219,7 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	if (!cfg) {
 		cfg = find_cf_cfg(NULL);
 		if (!cfg) {
-			LOG_ERR("Unable to restore CF: no cfg left");
+			LOG_ERROR("Unable to restore CF: no cfg left");
 			return -ENOMEM;
 		}
 
@@ -6232,7 +6232,7 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 		len = read_cb(cb_arg, dst, sizeof(dst));
 		if (len < 0) {
-			LOG_ERR("Failed to decode value (err %zd)", len);
+			LOG_ERROR("Failed to decode value (err %zd)", len);
 			return len;
 		}
 
@@ -6274,7 +6274,7 @@ static int db_hash_set(const char *name, size_t len_rd,
 
 	len = read_cb(cb_arg, db_hash.stored_hash, sizeof(db_hash.stored_hash));
 	if (len < 0) {
-		LOG_ERR("Failed to decode value (err %zd)", len);
+		LOG_ERROR("Failed to decode value (err %zd)", len);
 		return len;
 	}
 

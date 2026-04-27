@@ -100,8 +100,8 @@ static int gpio_ite_configure(const struct device *dev, gpio_pin_t pin, gpio_fla
 		if (sys_read8(config->reg_gpcr + pin) != GPCR_PORT_PIN_MODE_TRISTATE) {
 			/* Go back to default setting (input) */
 			sys_write8(GPCR_PORT_PIN_MODE_INPUT, config->reg_gpcr + pin);
-			LOG_ERR("Cannot config the node-gpio@%x, pin=%d as tri-state",
-				(uint32_t)config->reg_gpdr, pin);
+			LOG_ERROR("Cannot config the node-gpio@%x, pin=%d as tri-state",
+				  (uint32_t)config->reg_gpdr, pin);
 			rc = -ENOTSUP;
 			goto unlock_and_return;
 		}
@@ -416,7 +416,7 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev, gpio_pin_t
 	struct gpio_ite_data *data = dev->data;
 
 	if (!gpio_irq) {
-		LOG_ERR("Unsupport interrupt pin");
+		LOG_ERROR("Unsupport interrupt pin");
 		return -ENOTSUP;
 	}
 

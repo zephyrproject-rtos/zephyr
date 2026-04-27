@@ -136,27 +136,27 @@ static int adc_cc32xx_channel_setup(const struct device *dev,
 	const uint8_t ch = channel_cfg->channel_id;
 
 	if (ch >= CHAN_COUNT) {
-		LOG_ERR("Channel %d is not supported, max %d", ch, CHAN_COUNT);
+		LOG_ERROR("Channel %d is not supported, max %d", ch, CHAN_COUNT);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Acquisition time is not valid");
+		LOG_ERROR("Acquisition time is not valid");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels are not supported");
+		LOG_ERROR("Differential channels are not supported");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Gain is not valid");
+		LOG_ERROR("Gain is not valid");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Reference is not valid");
+		LOG_ERROR("Reference is not valid");
 		return -EINVAL;
 	}
 
@@ -180,8 +180,7 @@ static int cc32xx_read(const struct device *dev,
 	size_t exp_size;
 
 	if (sequence->resolution != 12) {
-		LOG_ERR("Only 12 Resolution is supported, but %d got",
-			sequence->resolution);
+		LOG_ERROR("Only 12 Resolution is supported, but %d got", sequence->resolution);
 		return -EINVAL;
 	}
 
@@ -198,8 +197,8 @@ static int cc32xx_read(const struct device *dev,
 	}
 
 	if (sequence->buffer_size < exp_size) {
-		LOG_ERR("Required buffer size is %u, but %u got",
-			exp_size, sequence->buffer_size);
+		LOG_ERROR("Required buffer size is %u, but %u got", exp_size,
+			  sequence->buffer_size);
 		return -ENOMEM;
 	}
 

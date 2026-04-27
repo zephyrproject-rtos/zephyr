@@ -236,7 +236,7 @@ static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 			 * exists or the `REGION_*_ATTR` macro is not defined
 			 * for that attribute.
 			 */
-			LOG_ERR("Invalid attribute for the region\n");
+			LOG_ERROR("Invalid attribute for the region\n");
 			return -EINVAL;
 		}
 
@@ -453,7 +453,7 @@ static int dup_dynamic_regions(struct dynamic_region_info *dst, int len)
 	int num = sys_dyn_regions_num[arch_curr_cpu()->id];
 
 	if (num >= len) {
-		LOG_ERR("system dynamic region nums too large.");
+		LOG_ERROR("system dynamic region nums too large.");
 		return -EINVAL;
 	}
 
@@ -589,9 +589,9 @@ static int flush_dynamic_regions_to_mpu(struct dynamic_region_info *dyn_regions,
 	int reg_avail_idx = static_regions_num;
 
 	if (region_num >= get_num_regions()) {
-		LOG_ERR("Out-of-bounds error for mpu regions. "
-			"region num: %d, total mpu regions: %d",
-			region_num, get_num_regions());
+		LOG_ERROR("Out-of-bounds error for mpu regions. "
+			  "region num: %d, total mpu regions: %d",
+			  region_num, get_num_regions());
 		return -ENOENT;
 	}
 

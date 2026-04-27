@@ -34,7 +34,7 @@ static int mcp230xx_read_port_regs(const struct device *dev, uint8_t reg, uint16
 
 	ret = i2c_burst_read_dt(&config->bus.i2c, reg, (uint8_t *)&port_data, nread);
 	if (ret < 0) {
-		LOG_ERR("i2c_read failed!");
+		LOG_ERROR("i2c_read failed!");
 		return ret;
 	}
 
@@ -56,7 +56,7 @@ static int mcp230xx_write_port_regs(const struct device *dev, uint8_t reg, uint1
 
 	ret = i2c_write_dt(&config->bus.i2c, buf, nwrite);
 	if (ret < 0) {
-		LOG_ERR("i2c_write failed!");
+		LOG_ERROR("i2c_write failed!");
 		return ret;
 	}
 
@@ -68,7 +68,7 @@ static int mcp230xx_bus_is_ready(const struct device *dev)
 	const struct mcp23xxx_config *config = dev->config;
 
 	if (!device_is_ready(config->bus.i2c.bus)) {
-		LOG_ERR("I2C bus %s not ready", config->bus.i2c.bus->name);
+		LOG_ERROR("I2C bus %s not ready", config->bus.i2c.bus->name);
 		return -ENODEV;
 	}
 

@@ -230,7 +230,7 @@ static int cy8c95xx_init(const struct device *dev)
 	k_sem_take(drv_data->lock, K_FOREVER);
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("%s is not ready", cfg->i2c.bus->name);
+		LOG_ERROR("%s is not ready", cfg->i2c.bus->name);
 		rc = -ENODEV;
 		goto out;
 	}
@@ -254,7 +254,7 @@ static int cy8c95xx_init(const struct device *dev)
 	rc = write_pin_state(cfg, &drv_data->pin_state);
 out:
 	if (rc != 0) {
-		LOG_ERR("%s init failed: %d", dev->name, rc);
+		LOG_ERROR("%s init failed: %d", dev->name, rc);
 	} else {
 		LOG_DBG("%s init ok", dev->name);
 	}

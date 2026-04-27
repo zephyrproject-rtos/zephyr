@@ -135,7 +135,7 @@ static int uptime_handler(struct http_client_ctx *client, enum http_transaction_
 	if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
 		ret = snprintf(uptime_buf, sizeof(uptime_buf), "%" PRId64, k_uptime_get());
 		if (ret < 0) {
-			LOG_ERR("Failed to snprintf uptime, err %d", ret);
+			LOG_ERROR("Failed to snprintf uptime, err %d", ret);
 			return ret;
 		}
 
@@ -325,14 +325,14 @@ static void setup_tls(void)
 				 server_certificate,
 				 sizeof(server_certificate));
 	if (err < 0) {
-		LOG_ERR("Failed to register public certificate: %d", err);
+		LOG_ERROR("Failed to register public certificate: %d", err);
 	}
 
 	err = tls_credential_add(HTTP_SERVER_CERTIFICATE_TAG,
 				 TLS_CREDENTIAL_PRIVATE_KEY,
 				 private_key, sizeof(private_key));
 	if (err < 0) {
-		LOG_ERR("Failed to register private key: %d", err);
+		LOG_ERROR("Failed to register private key: %d", err);
 	}
 
 #if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
@@ -341,7 +341,7 @@ static void setup_tls(void)
 				 psk,
 				 sizeof(psk));
 	if (err < 0) {
-		LOG_ERR("Failed to register PSK: %d", err);
+		LOG_ERROR("Failed to register PSK: %d", err);
 	}
 
 	err = tls_credential_add(PSK_TAG,
@@ -349,7 +349,7 @@ static void setup_tls(void)
 				 psk_id,
 				 sizeof(psk_id) - 1);
 	if (err < 0) {
-		LOG_ERR("Failed to register PSK ID: %d", err);
+		LOG_ERROR("Failed to register PSK ID: %d", err);
 	}
 #endif /* defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED) */
 #endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */

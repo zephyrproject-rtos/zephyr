@@ -71,7 +71,7 @@ static void npcx_lct_handle_isr(const struct device *dev)
 	 */
 	if (WAIT_FOR(!IS_BIT_SET(reg_base->LCTCONT, NPCX_LCTCONT_LCTEN),
 		     COUNTER_NPCX_LCT_CHECK_TIMEOUT_US, NULL) == false) {
-		LOG_ERR("The LCT function is still working");
+		LOG_ERROR("The LCT function is still working");
 	}
 
 	reg_base->LCTCONT &= ~BIT(NPCX_LCTCONT_LCTEVEN);
@@ -115,7 +115,7 @@ static int npcx_lct_enable(struct lct_reg *const reg_base, bool enable)
 	 */
 	if (WAIT_FOR(IS_BIT_SET(reg_base->LCTCONT, NPCX_LCTCONT_LCTEN) == enable,
 		     COUNTER_NPCX_LCT_CHECK_TIMEOUT_US, NULL) == false) {
-		LOG_ERR("LCT enable/disable timeout");
+		LOG_ERROR("LCT enable/disable timeout");
 		return -ETIMEDOUT;
 	}
 
@@ -148,7 +148,7 @@ static int counter_npcx_lct_cancel_alarm(const struct device *dev, uint8_t chan_
 	int ret = 0;
 
 	if (chan_id != 0) {
-		LOG_ERR("Invalid channel id %u", chan_id);
+		LOG_ERROR("Invalid channel id %u", chan_id);
 		return -ENOTSUP;
 	}
 
@@ -156,7 +156,7 @@ static int counter_npcx_lct_cancel_alarm(const struct device *dev, uint8_t chan_
 
 	ret = npcx_lct_enable(reg_base, false);
 	if (ret != 0) {
-		LOG_ERR("disable LCT failed");
+		LOG_ERROR("disable LCT failed");
 		ret = -EBUSY;
 		goto return_exit;
 	}
@@ -197,7 +197,7 @@ static int counter_npcx_lct_start(const struct device *dev)
 
 	ret = npcx_lct_enable(reg_base, true);
 	if (ret != 0) {
-		LOG_ERR("enable LCT failed");
+		LOG_ERROR("enable LCT failed");
 		ret = -EBUSY;
 		goto return_exit;
 	}
@@ -223,7 +223,7 @@ static int counter_npcx_lct_stop(const struct device *dev)
 
 	ret = npcx_lct_enable(reg_base, false);
 	if (ret != 0) {
-		LOG_ERR("disable LCT failed");
+		LOG_ERROR("disable LCT failed");
 		ret = -EBUSY;
 		goto return_exit;
 	}
@@ -274,7 +274,7 @@ static int counter_npcx_lct_set_alarm(const struct device *dev, uint8_t chan_id,
 	int ret;
 
 	if (chan_id != 0) {
-		LOG_ERR("Invalid channel id %u", chan_id);
+		LOG_ERROR("Invalid channel id %u", chan_id);
 		ret = -ENOTSUP;
 		goto return_exit;
 	}
@@ -284,7 +284,7 @@ static int counter_npcx_lct_set_alarm(const struct device *dev, uint8_t chan_id,
 	 * So only relative alarms are supported.
 	 */
 	if (alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) {
-		LOG_ERR("Invalid flags %x", alarm_cfg->flags);
+		LOG_ERROR("Invalid flags %x", alarm_cfg->flags);
 		ret = -ENOTSUP;
 		goto return_exit;
 	}

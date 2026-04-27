@@ -172,7 +172,7 @@ static void reassemble_packet(struct net_ipv4_reassembly *reass)
 			pkt->buffer);
 
 		if (net_pkt_pull(pkt, net_pkt_ip_hdr_len(pkt))) {
-			LOG_ERR("Failed to pull headers");
+			LOG_ERROR("Failed to pull headers");
 			reassembly_cancel(reass->id, &reass->src, &reass->dst);
 			return;
 		}
@@ -357,7 +357,7 @@ enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt, struct net_ip
 
 	reass = reassembly_get(id, hdr->src, hdr->dst, hdr->proto);
 	if (!reass) {
-		LOG_ERR("Cannot get reassembly slot, dropping pkt %p", pkt);
+		LOG_ERROR("Cannot get reassembly slot, dropping pkt %p", pkt);
 		goto drop;
 	}
 
@@ -391,14 +391,14 @@ enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt, struct net_ip
 		/* We could not add this fragment into our saved fragment list. The whole packet
 		 * must be discarded at this point.
 		 */
-		LOG_ERR("No slots available for 0x%x", reass->id);
+		LOG_ERROR("No slots available for 0x%x", reass->id);
 		net_pkt_unref(pkt);
 		goto drop;
 	}
 
 	ret = fragments_are_ready(reass);
 	if (ret < 0) {
-		LOG_ERR("Reassembled IPv4 verify failed, dropping id %u", reass->id);
+		LOG_ERROR("Reassembled IPv4 verify failed, dropping id %u", reass->id);
 
 		/* Let the caller release the already inserted pkt */
 		if (i < CONFIG_NET_IPV4_FRAGMENT_MAX_PKT) {
@@ -532,7 +532,7 @@ static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fi
 	return 0;
 
 fail:
-	LOG_ERR("Cannot send fragment (%d)", ret);
+	LOG_ERROR("Cannot send fragment (%d)", ret);
 	net_pkt_unref(frag_pkt);
 
 	return ret;
@@ -574,8 +574,8 @@ int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	fit_len = (mtu - net_pkt_ip_hdr_len(pkt)) / 8;
 
 	if (fit_len <= 0) {
-		LOG_ERR("No room for IPv4 payload MTU %d hdrs_len %d", mtu,
-			net_pkt_ip_hdr_len(pkt));
+		LOG_ERROR("No room for IPv4 payload MTU %d hdrs_len %d", mtu,
+			  net_pkt_ip_hdr_len(pkt));
 		return -EINVAL;
 	}
 

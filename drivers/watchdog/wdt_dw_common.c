@@ -35,7 +35,7 @@ int dw_wdt_configure(const uint32_t base, const uint32_t config)
 	uint32_t period;
 
 	if (!(config & WDT_DW_FLAG_CONFIGURED)) {
-		LOG_ERR("Timeout not installed.");
+		LOG_ERROR("Timeout not installed.");
 		return -ENOTSUP;
 	}
 
@@ -63,14 +63,14 @@ int dw_wdt_calc_period(const uint32_t base, const uint32_t clk_freq,
 
 	/* Window timeout is not supported by this driver */
 	if (config->window.min) {
-		LOG_ERR("Window timeout is not supported.");
+		LOG_ERROR("Window timeout is not supported.");
 		return -ENOTSUP;
 	}
 
 	period64 = (uint64_t)clk_freq * config->window.max;
 	period64 /= 1000;
 	if (!period64 || (period64 >> 31)) {
-		LOG_ERR("Window max is out of range.");
+		LOG_ERROR("Window max is out of range.");
 		return -EINVAL;
 	}
 
@@ -78,7 +78,7 @@ int dw_wdt_calc_period(const uint32_t base, const uint32_t clk_freq,
 	period = ilog2(period);
 
 	if (period >= dw_wdt_cnt_width_get(base)) {
-		LOG_ERR("Watchdog timeout too long.");
+		LOG_ERROR("Watchdog timeout too long.");
 		return -EINVAL;
 	}
 
@@ -93,7 +93,7 @@ int dw_wdt_probe(const uint32_t base, const uint32_t reset_pulse_length)
 	const uint32_t type = dw_wdt_comp_type_get(base);
 
 	if (type != WDT_COMP_TYPE_VALUE) {
-		LOG_ERR("Invalid component type %x", type);
+		LOG_ERROR("Invalid component type %x", type);
 		return -ENODEV;
 	}
 

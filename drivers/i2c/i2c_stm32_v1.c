@@ -514,7 +514,7 @@ int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config
 
 	ret = i2c_stm32_runtime_configure(dev, bitrate_cfg);
 	if (ret < 0) {
-		LOG_ERR("i2c: failure initializing");
+		LOG_ERROR("i2c: failure initializing");
 		return ret;
 	}
 

@@ -148,7 +148,7 @@ static inline void can_stm32_rx_isr_handler(const struct device *dev)
 	}
 
 	if (can->RF0R & CAN_RF0R_FOVR0) {
-		LOG_ERR("RX FIFO Overflow");
+		LOG_ERROR("RX FIFO Overflow");
 		CAN_STATS_RX_OVERRUN_INC(dev);
 	}
 }
@@ -404,7 +404,7 @@ static int can_stm32_start(const struct device *dev)
 	if (cfg->common.phy != NULL) {
 		ret = can_transceiver_enable(cfg->common.phy, data->common.mode);
 		if (ret != 0) {
-			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
+			LOG_ERROR("failed to enable CAN transceiver (err %d)", ret);
 			goto unlock;
 		}
 	}
@@ -413,7 +413,7 @@ static int can_stm32_start(const struct device *dev)
 
 	ret = can_stm32_leave_init_mode(can);
 	if (ret < 0) {
-		LOG_ERR("Failed to leave init mode");
+		LOG_ERROR("Failed to leave init mode");
 
 		if (cfg->common.phy != NULL) {
 			/* Attempt to disable the CAN transceiver in case of error */
@@ -448,7 +448,7 @@ static int can_stm32_stop(const struct device *dev)
 
 	ret = can_stm32_enter_init_mode(can);
 	if (ret < 0) {
-		LOG_ERR("Failed to enter init mode");
+		LOG_ERROR("Failed to enter init mode");
 		ret = -EIO;
 		goto unlock;
 	}
@@ -462,7 +462,7 @@ static int can_stm32_stop(const struct device *dev)
 	if (cfg->common.phy != NULL) {
 		ret = can_transceiver_disable(cfg->common.phy);
 		if (ret != 0) {
-			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
+			LOG_ERROR("failed to enable CAN transceiver (err %d)", ret);
 			goto unlock;
 		}
 	}
@@ -489,7 +489,7 @@ static int can_stm32_set_mode(const struct device *dev, can_mode_t mode)
 	}
 
 	if ((mode & ~(supported)) != 0) {
-		LOG_ERR("unsupported mode: 0x%08x", mode);
+		LOG_ERROR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
 
@@ -574,7 +574,7 @@ static int can_stm32_get_core_clock(const struct device *dev, uint32_t *rate)
 				     (clock_control_subsys_t) &cfg->pclken,
 				     rate);
 	if (ret != 0) {
-		LOG_ERR("Failed call clock_control_get_rate: return [%d]", ret);
+		LOG_ERROR("Failed call clock_control_get_rate: return [%d]", ret);
 		return -EIO;
 	}
 
@@ -607,33 +607,33 @@ static int can_stm32_init(const struct device *dev)
 
 	if (cfg->common.phy != NULL) {
 		if (!device_is_ready(cfg->common.phy)) {
-			LOG_ERR("CAN transceiver not ready");
+			LOG_ERROR("CAN transceiver not ready");
 			return -ENODEV;
 		}
 	}
 
 	ret = clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken);
 	if (ret != 0) {
-		LOG_ERR("HAL_CAN_Init clock control on failed: %d", ret);
+		LOG_ERROR("HAL_CAN_Init clock control on failed: %d", ret);
 		return -EIO;
 	}
 
 	/* Configure dt provided device signals when available */
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("CAN pinctrl setup failed (%d)", ret);
+		LOG_ERROR("CAN pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
 	ret = can_stm32_enter_init_mode(can);
 	if (ret) {
-		LOG_ERR("Failed to enter init mode");
+		LOG_ERROR("Failed to enter init mode");
 		return ret;
 	}
 
 	ret = can_stm32_leave_sleep_mode(can);
 	if (ret) {
-		LOG_ERR("Failed to exit sleep mode");
+		LOG_ERROR("Failed to exit sleep mode");
 		return ret;
 	}
 
@@ -666,7 +666,7 @@ static int can_stm32_init(const struct device *dev)
 	ret = can_calc_timing(dev, &timing, cfg->common.bitrate,
 			      cfg->common.sample_point);
 	if (ret == -EINVAL) {
-		LOG_ERR("Can't find timing for given param");
+		LOG_ERROR("Can't find timing for given param");
 		return -EIO;
 	}
 	LOG_DBG("Presc: %d, TS1: %d, TS2: %d",
@@ -779,12 +779,12 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 		    , (frame->flags & CAN_FRAME_RTR) != 0 ? "yes" : "no");
 
 	if (frame->dlc > CAN_MAX_DLC) {
-		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
+		LOG_ERROR("DLC of %d exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
 		return -EINVAL;
 	}
 
 	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR)) != 0) {
-		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		LOG_ERROR("unsupported CAN frame flags 0x%02x", frame->flags);
 		return -ENOTSUP;
 	}
 
@@ -976,7 +976,7 @@ static int can_stm32_add_rx_filter(const struct device *dev, can_rx_callback_t c
 	int filter_id;
 
 	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
-		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
+		LOG_ERROR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
 
@@ -1012,7 +1012,7 @@ static void can_stm32_remove_rx_filter(const struct device *dev, int filter_id)
 	bool bank_unused;
 
 	if (filter_id < 0 || filter_id >= CAN_STM32_MAX_FILTER_ID) {
-		LOG_ERR("filter ID %d out of bounds", filter_id);
+		LOG_ERROR("filter ID %d out of bounds", filter_id);
 		return;
 	}
 

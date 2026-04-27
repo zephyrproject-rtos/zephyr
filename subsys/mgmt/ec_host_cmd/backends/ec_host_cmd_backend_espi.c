@@ -70,7 +70,7 @@ static void espi_handler(const struct device *dev, struct espi_callback *cb,
 	 * host command, so accept the sending state as well.
 	 */
 	if (hc_espi->state != ESPI_STATE_READY_TO_RECV && hc_espi->state != ESPI_STATE_SENDING) {
-		LOG_ERR("Received HC in bad state");
+		LOG_ERROR("Received HC in bad state");
 		return;
 	}
 

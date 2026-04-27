@@ -59,7 +59,7 @@ static void nxp_video_sdma_callback(const struct device *dev, void *user_data,
 	struct nxp_video_sdma_data *data = user_data;
 
 	if (status < 0) {
-		LOG_ERR("Transfer failed: %d, stopping DMA", status);
+		LOG_ERROR("Transfer failed: %d, stopping DMA", status);
 		dma_stop(data->config->dma_dev, 0);
 		return;
 	}
@@ -221,14 +221,14 @@ static int nxp_video_sdma_set_format(const struct device *dev, struct video_form
 	int ret;
 
 	if (!device_is_ready(config->sensor_dev)) {
-		LOG_ERR("Sensor device not ready");
+		LOG_ERROR("Sensor device not ready");
 		return -ENODEV;
 	}
 
 	if ((fmt->pixelformat != fmts[0].pixelformat) ||
 	    (fmt->width != fmts[0].width_min) ||
 	    (fmt->height != fmts[0].height_min)) {
-		LOG_ERR("Unsupported format");
+		LOG_ERROR("Unsupported format");
 		return -ENOTSUP;
 	}
 
@@ -250,7 +250,7 @@ static int nxp_video_sdma_get_format(const struct device *dev, struct video_form
 	int ret;
 
 	if (!device_is_ready(config->sensor_dev)) {
-		LOG_ERR("Sensor device not ready");
+		LOG_ERROR("Sensor device not ready");
 		return -ENODEV;
 	}
 
@@ -270,9 +270,9 @@ static int nxp_video_sdma_get_format(const struct device *dev, struct video_form
 	    (fmt->height != fmts[0].height_min)) {
 		ret = video_set_format(config->sensor_dev, &fmt[0]);
 		if (ret < 0) {
-			LOG_ERR("Sensor device does not support [%s] width [%u] height [%u]",
-					VIDEO_FOURCC_TO_STR(fmts[0].pixelformat),
-						fmts[0].width_min, fmts[0].height_min);
+			LOG_ERROR("Sensor device does not support [%s] width [%u] height [%u]",
+				  VIDEO_FOURCC_TO_STR(fmts[0].pixelformat), fmts[0].width_min,
+				  fmts[0].height_min);
 			return ret;
 		}
 	}
@@ -298,7 +298,7 @@ static int nxp_video_sdma_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->dma_dev)) {
-		LOG_ERR("SmartDMA not ready");
+		LOG_ERROR("SmartDMA not ready");
 		return -ENODEV;
 	}
 

@@ -264,20 +264,20 @@ static int st75256_write(const struct device *dev, const uint16_t x, const uint1
 	 * or greyscale at one pixel per byte converted to vtiled 4 pixels per byte
 	 */
 	if (desc->pitch != desc->width) {
-		LOG_ERR("Pitch is not width");
+		LOG_ERROR("Pitch is not width");
 		return -EINVAL;
 	}
 
 	if (data->current_pixel_format == PIXEL_FORMAT_MONO01) {
 		buf_len = MIN(desc->buf_size, desc->height * desc->width / 8);
 		if ((y % 8) != 0 || (desc->height % 8) != 0) {
-			LOG_ERR("Y and height must be aligned on 8 boundary");
+			LOG_ERROR("Y and height must be aligned on 8 boundary");
 			return -EINVAL;
 		}
 	} else if (data->current_pixel_format == PIXEL_FORMAT_L_8) {
 		buf_len = MIN(desc->buf_size, desc->height * desc->width / 4);
 		if ((y % 4) != 0 || (desc->height % 4) != 0) {
-			LOG_ERR("Y and height must be aligned on 4 boundary");
+			LOG_ERROR("Y and height must be aligned on 4 boundary");
 			return -EINVAL;
 		}
 	} else {
@@ -285,7 +285,7 @@ static int st75256_write(const struct device *dev, const uint16_t x, const uint1
 	}
 
 	if (buf == NULL || buf_len == 0U) {
-		LOG_ERR("Display buffer is not available");
+		LOG_ERROR("Display buffer is not available");
 		return -EINVAL;
 	}
 
@@ -350,7 +350,7 @@ static int st75256_set_pixel_format(const struct device *dev,
 		data->current_screen_info = 0;
 		data->current_pixel_format = PIXEL_FORMAT_L_8;
 	} else {
-		LOG_ERR("Unsupported Pixel format");
+		LOG_ERROR("Unsupported Pixel format");
 		return -EINVAL;
 	}
 	return 0;
@@ -536,13 +536,13 @@ static int st75256_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->mipi_dev)) {
-		LOG_ERR("MIPI not ready!");
+		LOG_ERROR("MIPI not ready!");
 		return -ENODEV;
 	}
 
 	ret = st75256_init_device(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize device, err = %d", ret);
+		LOG_ERROR("Failed to initialize device, err = %d", ret);
 	}
 
 	return ret;

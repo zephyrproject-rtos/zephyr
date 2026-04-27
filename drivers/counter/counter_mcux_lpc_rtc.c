@@ -134,7 +134,7 @@ static int mcux_lpc_rtc_set_alarm(const struct device *dev, uint8_t chan_id,
 	LOG_DBG("Current time is %d ticks", current);
 
 	if (chan_id != 0U) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 
@@ -147,7 +147,7 @@ static int mcux_lpc_rtc_set_alarm(const struct device *dev, uint8_t chan_id,
 	}
 
 	if (ticks < current) {
-		LOG_ERR("Alarm cannot be earlier than current time");
+		LOG_ERROR("Alarm cannot be earlier than current time");
 		return -EINVAL;
 	}
 
@@ -165,7 +165,7 @@ static int mcux_lpc_rtc_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	struct mcux_lpc_rtc_data *data = dev->data;
 
 	if (chan_id != 0U) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 
@@ -281,7 +281,7 @@ static int mcux_lpc_rtc_highres_start(const struct device *dev)
 			/* RTC is not enabled and we do not turn it on as it will effect
 			 * the RTC counter value thereby affecting the RTC counter drivers
 			 */
-			LOG_ERR("RTC Wake counter cannot be started as RTC is not enabled.");
+			LOG_ERROR("RTC Wake counter cannot be started as RTC is not enabled.");
 			return -EINVAL;
 		}
 	} else {

@@ -34,7 +34,7 @@ ZBUS_CHAN_DEFINE(chan_event,       /* Name */
 static void listener_callback(const struct zbus_channel *chan)
 {
 	if (chan != &chan_event) {
-		LOG_ERR("Unexpected channel");
+		LOG_ERROR("Unexpected channel");
 		return;
 	}
 
@@ -48,7 +48,7 @@ ZBUS_LISTENER_DEFINE(lis_foo, listener_callback);
 static void async_listener_callback(const struct zbus_channel *chan, const void *message)
 {
 	if (chan != &chan_event) {
-		LOG_ERR("Unexpected channel");
+		LOG_ERROR("Unexpected channel");
 		return;
 	}
 

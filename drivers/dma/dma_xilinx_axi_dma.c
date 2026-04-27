@@ -331,18 +331,19 @@ dma_xilinx_axi_dma_clean_up_sg_descriptors(const struct device *dev,
 			current_status & XILINX_AXI_DMA_SG_DESCRIPTOR_STATUS_LENGTH_MASK;
 
 		if (current_status & XILINX_AXI_DMA_SG_DESCRIPTOR_STATUS_DEC_ERR_MASK) {
-			LOG_ERR("Descriptor has SG decode error, status=%" PRIx32, current_status);
+			LOG_ERROR("Descriptor has SG decode error, status=%" PRIx32,
+				  current_status);
 			retval = -EFAULT;
 		}
 
 		if (current_status & XILINX_AXI_DMA_SG_DESCRIPTOR_STATUS_SLV_ERR_MASK) {
-			LOG_ERR("Descriptor has SG slave error, status=%" PRIx32, current_status);
+			LOG_ERROR("Descriptor has SG slave error, status=%" PRIx32, current_status);
 			retval = -EFAULT;
 		}
 
 		if (current_status & XILINX_AXI_DMA_SG_DESCRIPTOR_STATUS_INT_ERR_MASK) {
-			LOG_ERR("Descriptor has SG internal error, status=%" PRIx32,
-				current_status);
+			LOG_ERROR("Descriptor has SG internal error, status=%" PRIx32,
+				  current_status);
 			retval = -EFAULT;
 		}
 
@@ -350,29 +351,29 @@ dma_xilinx_axi_dma_clean_up_sg_descriptors(const struct device *dev,
 			uint32_t checksum_status = current_descriptor->app2;
 
 			if (checksum_status & XILINX_AXI_DMA_SG_DESCRIPTOR_APP2_FCS_ERR_MASK) {
-				LOG_ERR("Checksum offloading has FCS error status %" PRIx32 "!",
-					checksum_status);
+				LOG_ERROR("Checksum offloading has FCS error status %" PRIx32 "!",
+					  checksum_status);
 				retval = -EFAULT;
 			}
 
 			if ((checksum_status & XILINX_AXI_DMA_SG_DESCRIPTOR_APP2_IP_ERR_MASK) ==
 			    XILINX_AXI_DMA_SG_DESCRIPTOR_APP2_IP_ERR_MASK) {
-				LOG_ERR("Checksum offloading has IP error status %" PRIx32 "!",
-					checksum_status);
+				LOG_ERROR("Checksum offloading has IP error status %" PRIx32 "!",
+					  checksum_status);
 				retval = -EFAULT;
 			}
 
 			if ((checksum_status & XILINX_AXI_DMA_SG_DESCRIPTOR_APP2_UDP_ERR_MASK) ==
 			    XILINX_AXI_DMA_SG_DESCRIPTOR_APP2_UDP_ERR_MASK) {
-				LOG_ERR("Checksum offloading has UDP error status %" PRIx32 "!",
-					checksum_status);
+				LOG_ERROR("Checksum offloading has UDP error status %" PRIx32 "!",
+					  checksum_status);
 				retval = -EFAULT;
 			}
 
 			if ((checksum_status & XILINX_AXI_DMA_SG_DESCRIPTOR_APP2_TCP_ERR_MASK) ==
 			    XILINX_AXI_DMA_SG_DESCRIPTOR_APP2_TCP_ERR_MASK) {
-				LOG_ERR("Checksum offloading has TCP error status %" PRIx32 "!",
-					checksum_status);
+				LOG_ERROR("Checksum offloading has TCP error status %" PRIx32 "!",
+					  checksum_status);
 				retval = -EFAULT;
 			}
 			/* FIXME in some corner cases, the hardware cannot check the checksum */
@@ -429,7 +430,7 @@ static void dma_xilinx_axi_dma_tx_isr(const struct device *dev)
 	dmasr = dma_xilinx_axi_dma_read_reg(channel_data, XILINX_AXI_DMA_REG_DMASR);
 
 	if (dmasr & XILINX_AXI_DMA_REGS_DMASR_ERR_IRQ) {
-		LOG_ERR("DMA reports TX error, DMASR = 0x%" PRIx32, dmasr);
+		LOG_ERROR("DMA reports TX error, DMASR = 0x%" PRIx32, dmasr);
 		dma_xilinx_axi_dma_write_reg(channel_data, XILINX_AXI_DMA_REG_DMASR,
 					     XILINX_AXI_DMA_REGS_DMASR_ERR_IRQ);
 	}
@@ -464,7 +465,7 @@ static void dma_xilinx_axi_dma_rx_isr(const struct device *dev)
 	dmasr = dma_xilinx_axi_dma_read_reg(channel_data, XILINX_AXI_DMA_REG_DMASR);
 
 	if (dmasr & XILINX_AXI_DMA_REGS_DMASR_ERR_IRQ) {
-		LOG_ERR("DMA reports RX error, DMASR = 0x%" PRIx32, dmasr);
+		LOG_ERROR("DMA reports RX error, DMASR = 0x%" PRIx32, dmasr);
 		dma_xilinx_axi_dma_write_reg(channel_data, XILINX_AXI_DMA_REG_DMASR,
 					     XILINX_AXI_DMA_REGS_DMASR_ERR_IRQ);
 	}
@@ -504,8 +505,8 @@ static int dma_xilinx_axi_dma_start(const struct device *dev, uint32_t channel)
 	const int irq_key = dma_xilinx_axi_dma_lock_irq(dev, channel);
 
 	if (channel >= cfg->channels) {
-		LOG_ERR("Invalid channel %" PRIu32 " - must be < %" PRIu32 "!", channel,
-			cfg->channels);
+		LOG_ERROR("Invalid channel %" PRIu32 " - must be < %" PRIu32 "!", channel,
+			  cfg->channels);
 		dma_xilinx_axi_dma_unlock_irq(dev, channel, irq_key);
 		return -EINVAL;
 	}
@@ -580,8 +581,8 @@ static int dma_xilinx_axi_dma_stop(const struct device *dev, uint32_t channel)
 	uint32_t new_control;
 
 	if (channel >= cfg->channels) {
-		LOG_ERR("Invalid channel %" PRIu32 " - must be < %" PRIu32 "!", channel,
-			cfg->channels);
+		LOG_ERROR("Invalid channel %" PRIu32 " - must be < %" PRIu32 "!", channel,
+			  cfg->channels);
 		return -EINVAL;
 	}
 
@@ -608,8 +609,8 @@ static int dma_xilinx_axi_dma_get_status(const struct device *dev, uint32_t chan
 	struct dma_xilinx_axi_dma_channel *channel_data = &data->channels[channel];
 
 	if (channel >= cfg->channels) {
-		LOG_ERR("Invalid channel %" PRIu32 " - must be < %" PRIu32 "!", channel,
-			cfg->channels);
+		LOG_ERROR("Invalid channel %" PRIu32 " - must be < %" PRIu32 "!", channel,
+			  cfg->channels);
 		return -EINVAL;
 	}
 
@@ -664,7 +665,8 @@ static inline int dma_xilinx_axi_dma_transfer_block(const struct device *dev, ui
 #ifdef CONFIG_DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
 		if (((uintptr_t)buffer_addr & (sys_cache_data_line_size_get() - 1)) ||
 		    (block_size & (sys_cache_data_line_size_get() - 1))) {
-			LOG_ERR("RX buffer address and block size must be cache line size aligned");
+			LOG_ERROR(
+				"RX buffer address and block size must be cache line size aligned");
 			dma_xilinx_axi_dma_unlock_irq(dev, channel, irq_key);
 			return -EINVAL;
 		}
@@ -684,7 +686,7 @@ static inline int dma_xilinx_axi_dma_transfer_block(const struct device *dev, ui
 	current_descriptor->app0 = channel_data->sg_desc_app0;
 
 	if (block_size > UINT32_MAX) {
-		LOG_ERR("Too large block: %zu bytes!", block_size);
+		LOG_ERROR("Too large block: %zu bytes!", block_size);
 
 		dma_xilinx_axi_dma_unlock_irq(dev, channel, irq_key);
 
@@ -724,8 +726,8 @@ static inline int dma_xilinx_axi_dma_config_reload(const struct device *dev, uin
 	const struct dma_xilinx_axi_dma_config *cfg = dev->config;
 
 	if (channel >= cfg->channels) {
-		LOG_ERR("Invalid channel %" PRIu32 " - must be < %" PRIu32 "!", channel,
-			cfg->channels);
+		LOG_ERROR("Invalid channel %" PRIu32 " - must be < %" PRIu32 "!", channel,
+			  cfg->channels);
 		return -EINVAL;
 	}
 	/* one-block-at-a-time transfer */
@@ -744,41 +746,41 @@ static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t chann
 	int block_count = 0;
 
 	if (channel >= cfg->channels) {
-		LOG_ERR("Invalid channel %" PRIu32 " - must be < %" PRIu32 "!", channel,
-			cfg->channels);
+		LOG_ERROR("Invalid channel %" PRIu32 " - must be < %" PRIu32 "!", channel,
+			  cfg->channels);
 		return -EINVAL;
 	}
 
 	if (dma_cfg->head_block->source_addr_adj == DMA_ADDR_ADJ_DECREMENT) {
-		LOG_ERR("Xilinx AXI DMA only supports incrementing addresses!");
+		LOG_ERROR("Xilinx AXI DMA only supports incrementing addresses!");
 		return -ENOTSUP;
 	}
 
 	if (dma_cfg->head_block->dest_addr_adj == DMA_ADDR_ADJ_DECREMENT) {
-		LOG_ERR("Xilinx AXI DMA only supports incrementing addresses!");
+		LOG_ERROR("Xilinx AXI DMA only supports incrementing addresses!");
 		return -ENOTSUP;
 	}
 
 	if (dma_cfg->head_block->source_addr_adj != DMA_ADDR_ADJ_INCREMENT &&
 	    dma_cfg->head_block->source_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
-		LOG_ERR("invalid source_addr_adj %" PRIu16, dma_cfg->head_block->source_addr_adj);
+		LOG_ERROR("invalid source_addr_adj %" PRIu16, dma_cfg->head_block->source_addr_adj);
 		return -ENOTSUP;
 	}
 	if (dma_cfg->head_block->dest_addr_adj != DMA_ADDR_ADJ_INCREMENT &&
 	    dma_cfg->head_block->dest_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
-		LOG_ERR("invalid dest_addr_adj %" PRIu16, dma_cfg->head_block->dest_addr_adj);
+		LOG_ERROR("invalid dest_addr_adj %" PRIu16, dma_cfg->head_block->dest_addr_adj);
 		return -ENOTSUP;
 	}
 
 	if (channel == XILINX_AXI_DMA_TX_CHANNEL_NUM &&
 	    dma_cfg->channel_direction != MEMORY_TO_PERIPHERAL) {
-		LOG_ERR("TX channel must be used with MEMORY_TO_PERIPHERAL!");
+		LOG_ERROR("TX channel must be used with MEMORY_TO_PERIPHERAL!");
 		return -ENOTSUP;
 	}
 
 	if (channel == XILINX_AXI_DMA_RX_CHANNEL_NUM &&
 	    dma_cfg->channel_direction != PERIPHERAL_TO_MEMORY) {
-		LOG_ERR("RX channel must be used with PERIPHERAL_TO_MEMORY!");
+		LOG_ERROR("RX channel must be used with PERIPHERAL_TO_MEMORY!");
 		return -ENOTSUP;
 	}
 
@@ -853,10 +855,10 @@ static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t chann
 			XILINX_AXI_DMA_SG_DESCRIPTOR_APP0_CHECKSUM_OFFLOAD_NONE;
 		break;
 	default:
-		LOG_ERR("Linked channel invalid! Valid values: %u for full ethernt checksum "
-			"offloading %u for no checksum offloading!",
-			XILINX_AXI_DMA_LINKED_CHANNEL_FULL_CSUM_OFFLOAD,
-			XILINX_AXI_DMA_LINKED_CHANNEL_NO_CSUM_OFFLOAD);
+		LOG_ERROR("Linked channel invalid! Valid values: %u for full ethernt checksum "
+			  "offloading %u for no checksum offloading!",
+			  XILINX_AXI_DMA_LINKED_CHANNEL_FULL_CSUM_OFFLOAD,
+			  XILINX_AXI_DMA_LINKED_CHANNEL_NO_CSUM_OFFLOAD);
 		return -EINVAL;
 	}
 
@@ -913,9 +915,9 @@ static int dma_xilinx_axi_dma_init(const struct device *dev)
 	bool reset = false;
 
 	if (cfg->channels != XILINX_AXI_DMA_NUM_CHANNELS) {
-		LOG_ERR("Invalid number of configured channels (%" PRIu32
-			") - Xilinx AXI DMA must have %" PRIu32 " channels!",
-			cfg->channels, XILINX_AXI_DMA_NUM_CHANNELS);
+		LOG_ERROR("Invalid number of configured channels (%" PRIu32
+			  ") - Xilinx AXI DMA must have %" PRIu32 " channels!",
+			  cfg->channels, XILINX_AXI_DMA_NUM_CHANNELS);
 		return -EINVAL;
 	}
 
@@ -950,7 +952,7 @@ static int dma_xilinx_axi_dma_init(const struct device *dev)
 		}
 	}
 	if (!reset) {
-		LOG_ERR("DMA reset timed out!");
+		LOG_ERROR("DMA reset timed out!");
 		return -EIO;
 	}
 

@@ -32,7 +32,7 @@ static int settings_direct_loader(const char *key, size_t len,
 				      sizeof(bytes_written));
 
 		if (cb_len != sizeof(ctx->bytes_written)) {
-			LOG_ERR("Unable to read bytes_written from storage");
+			LOG_ERROR("Unable to read bytes_written from storage");
 			return cb_len;
 		}
 
@@ -57,7 +57,7 @@ static int settings_direct_loader(const char *key, size_t len,
 			rc = flash_get_page_info_by_offs(ctx->fdev, offset,
 							 &page);
 			if (rc != 0) {
-				LOG_ERR("Error %d while getting page info", rc);
+				LOG_ERROR("Error %d while getting page info", rc);
 				return rc;
 			}
 			ctx->erased_up_to = page.start_offset + page.size - ctx->offset;
@@ -112,7 +112,7 @@ static int stream_flash_erase_to_append(struct stream_flash_ctx *ctx, size_t siz
 	 */
 	rc = flash_get_page_info_by_offs(ctx->fdev, ctx->offset + ctx->erased_up_to, &page);
 	if (rc != 0) {
-		LOG_ERR("Error %d while getting page info", rc);
+		LOG_ERROR("Error %d while getting page info", rc);
 		return rc;
 	}
 
@@ -121,7 +121,7 @@ static int stream_flash_erase_to_append(struct stream_flash_ctx *ctx, size_t siz
 	rc = flash_erase(ctx->fdev, page.start_offset, page.size);
 
 	if (rc != 0) {
-		LOG_ERR("Error %d while erasing page", rc);
+		LOG_ERROR("Error %d while erasing page", rc);
 	} else {
 		ctx->erased_up_to += page.size;
 	}
@@ -138,7 +138,7 @@ int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off)
 	struct flash_pages_info page;
 
 	if (off < ctx->offset || (off - ctx->offset) >= ctx->available) {
-		LOG_ERR("Offset out of designated range");
+		LOG_ERROR("Offset out of designated range");
 		return -ERANGE;
 	}
 
@@ -158,7 +158,7 @@ int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off)
 #endif
 	rc = flash_get_page_info_by_offs(ctx->fdev, off, &page);
 	if (rc != 0) {
-		LOG_ERR("Error %d while getting page info", rc);
+		LOG_ERROR("Error %d while getting page info", rc);
 		return rc;
 	}
 
@@ -171,7 +171,7 @@ int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off)
 	rc = flash_erase(ctx->fdev, page.start_offset, page.size);
 
 	if (rc != 0) {
-		LOG_ERR("Error %d while erasing page", rc);
+		LOG_ERROR("Error %d while erasing page", rc);
 	} else {
 		ctx->erased_up_to = page.start_offset + page.size;
 	}
@@ -201,8 +201,8 @@ static int flash_sync(struct stream_flash_ctx *ctx)
 
 		rc = stream_flash_erase_to_append(ctx, ctx->buf_bytes);
 		if (rc < 0) {
-			LOG_ERR("stream_flash_forward_erase %d range=0x%08zx",
-				rc, ctx->buf_bytes);
+			LOG_ERROR("stream_flash_forward_erase %d range=0x%08zx", rc,
+				  ctx->buf_bytes);
 			return rc;
 		}
 	}
@@ -221,8 +221,7 @@ static int flash_sync(struct stream_flash_ctx *ctx)
 	rc = flash_write(ctx->fdev, write_addr, ctx->buf, buf_bytes_aligned);
 
 	if (rc != 0) {
-		LOG_ERR("flash_write error %d offset=0x%08zx", rc,
-			write_addr);
+		LOG_ERROR("flash_write error %d offset=0x%08zx", rc, write_addr);
 		return rc;
 	}
 
@@ -239,13 +238,13 @@ static int flash_sync(struct stream_flash_ctx *ctx)
 		rc = flash_read(ctx->fdev, write_addr, ctx->buf,
 				ctx->buf_bytes);
 		if (rc != 0) {
-			LOG_ERR("flash read failed: %d", rc);
+			LOG_ERROR("flash read failed: %d", rc);
 			return rc;
 		}
 
 		rc = ctx->callback(ctx->buf, ctx->buf_bytes, write_addr);
 		if (rc != 0) {
-			LOG_ERR("callback failed: %d", rc);
+			LOG_ERROR("callback failed: %d", rc);
 			return rc;
 		}
 	}
@@ -324,7 +323,7 @@ static bool find_flash_total_size(const struct flash_pages_info *info,
 	struct _inspect_flash *ctx = (struct _inspect_flash *) data;
 
 	if (ctx->buf_len > info->size) {
-		LOG_ERR("Buffer size is bigger than page");
+		LOG_ERROR("Buffer size is bigger than page");
 		ctx->total_size = 0;
 		return false;
 	}
@@ -348,10 +347,10 @@ static inline int inspect_device(const struct stream_flash_ctx *ctx)
 	flash_page_foreach(ctx->fdev, find_flash_total_size, &inspect_flash_ctx);
 
 	if (inspect_flash_ctx.total_size == 0) {
-		LOG_ERR("Device seems to have 0 size");
+		LOG_ERROR("Device seems to have 0 size");
 		return -EFAULT;
 	} else if (inspect_flash_ctx.total_size < (ctx->offset + ctx->available)) {
-		LOG_ERR("Requested range overflows device size");
+		LOG_ERROR("Requested range overflows device size");
 		return -EFAULT;
 	}
 
@@ -378,22 +377,22 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
 	params = flash_get_parameters(fdev);
 
 	if (buf_len % params->write_block_size) {
-		LOG_ERR("Buffer size is not aligned to minimal write-block-size");
+		LOG_ERROR("Buffer size is not aligned to minimal write-block-size");
 		return -EFAULT;
 	}
 
 	if (offset % params->write_block_size) {
-		LOG_ERR("Incorrect parameter");
+		LOG_ERROR("Incorrect parameter");
 		return -EFAULT;
 	}
 
 	if (size == 0 || size % params->write_block_size) {
-		LOG_ERR("Size is incorrect");
+		LOG_ERROR("Size is incorrect");
 		return -EFAULT;
 	}
 
 	if ((offset + size) < offset) {
-		LOG_ERR("Requested range overflows SIZE_MAX");
+		LOG_ERROR("Requested range overflows SIZE_MAX");
 		return -EFAULT;
 	}
 
@@ -438,7 +437,7 @@ static int stream_flash_settings_init(void)
 	int rc = settings_subsys_init();
 
 	if (rc != 0) {
-		LOG_ERR("Error %d initializing settings subsystem", rc);
+		LOG_ERROR("Error %d initializing settings subsystem", rc);
 	}
 	return rc;
 }
@@ -458,8 +457,7 @@ int stream_flash_progress_load(struct stream_flash_ctx *ctx,
 	}
 
 	if (rc != 0) {
-		LOG_ERR("Error %d while loading progress for \"%s\"",
-			rc, settings_key);
+		LOG_ERROR("Error %d while loading progress for \"%s\"", rc, settings_key);
 	}
 
 	return rc;
@@ -480,8 +478,7 @@ int stream_flash_progress_save(const struct stream_flash_ctx *ctx,
 	}
 
 	if (rc != 0) {
-		LOG_ERR("Error %d while storing progress for \"%s\"",
-			rc, settings_key);
+		LOG_ERROR("Error %d while storing progress for \"%s\"", rc, settings_key);
 	}
 
 	return rc;
@@ -501,8 +498,7 @@ int stream_flash_progress_clear(const struct stream_flash_ctx *ctx,
 	}
 
 	if (rc != 0) {
-		LOG_ERR("Error %d while deleting progress for \"%s\"",
-			rc, settings_key);
+		LOG_ERROR("Error %d while deleting progress for \"%s\"", rc, settings_key);
 	}
 
 	return rc;

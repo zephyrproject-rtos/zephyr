@@ -75,19 +75,19 @@ static int ina237_emul_transfer_i2c(const struct emul *target, struct i2c_msg ms
 
 	/* The INA237 uses big-endian read 16, read 24, and write 16 transactions */
 	if (!msgs || num_msgs < 1 || num_msgs > 2) {
-		LOG_ERR("Invalid number of messages: %d", num_msgs);
+		LOG_ERROR("Invalid number of messages: %d", num_msgs);
 		return -EIO;
 	}
 
 	if (msgs[0].flags & I2C_MSG_READ) {
-		LOG_ERR("Expected write");
+		LOG_ERROR("Expected write");
 		return -EIO;
 	}
 
 	if (num_msgs == 1) {
 		/* Write16 Transaction */
 		if (msgs[0].len != 3) {
-			LOG_ERR("Expected 3 bytes");
+			LOG_ERROR("Expected 3 bytes");
 			return -EIO;
 		}
 
@@ -98,7 +98,7 @@ static int ina237_emul_transfer_i2c(const struct emul *target, struct i2c_msg ms
 		struct ina237_reg *reg_ptr = get_register(data, reg);
 
 		if (!reg_ptr) {
-			LOG_ERR("Invalid register: %02x", reg);
+			LOG_ERROR("Invalid register: %02x", reg);
 			return -EIO;
 		}
 		reg_ptr->value = val;
@@ -106,7 +106,7 @@ static int ina237_emul_transfer_i2c(const struct emul *target, struct i2c_msg ms
 	} else {
 		/* Read 2 or 3 bytes */
 		if ((msgs[1].flags & I2C_MSG_READ) == I2C_MSG_WRITE) {
-			LOG_ERR("Expected read");
+			LOG_ERROR("Expected read");
 			return -EIO;
 		}
 		uint8_t reg = msgs[0].buf[0];
@@ -114,7 +114,7 @@ static int ina237_emul_transfer_i2c(const struct emul *target, struct i2c_msg ms
 		struct ina237_reg *reg_ptr = get_register(data, reg);
 
 		if (!reg_ptr) {
-			LOG_ERR("Invalid register: %02x", reg);
+			LOG_ERROR("Invalid register: %02x", reg);
 			return -EIO;
 		}
 
@@ -125,7 +125,7 @@ static int ina237_emul_transfer_i2c(const struct emul *target, struct i2c_msg ms
 			sys_put_be24(reg_ptr->value, msgs[1].buf);
 			LOG_DBG("Read24 reg %02x: %06x", reg, reg_ptr->value);
 		} else {
-			LOG_ERR("Invalid read length: %d", msgs[1].len);
+			LOG_ERROR("Invalid read length: %d", msgs[1].len);
 			return -EIO;
 		}
 	}

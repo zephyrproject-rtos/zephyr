@@ -68,7 +68,7 @@ static int pcf857x_process_input(const struct device *dev, gpio_port_value_t *va
 
 	rc = i2c_read_dt(&drv_cfg->i2c, rx_buf, drv_data->num_bytes);
 	if (rc != 0) {
-		LOG_ERR("%s: failed to read from device: %d", dev->name, rc);
+		LOG_ERROR("%s: failed to read from device: %d", dev->name, rc);
 		return -EIO;
 	}
 
@@ -93,7 +93,7 @@ static void pcf857x_work_handler(struct k_work *work)
 	int rc = pcf857x_process_input(drv_data->dev, &changed_pins);
 
 	if (rc) {
-		LOG_ERR("Failed to read interrupt sources: %d", rc);
+		LOG_ERROR("Failed to read interrupt sources: %d", rc);
 	}
 	k_sem_give(&drv_data->lock);
 	if (input_port_last_temp != (uint16_t)changed_pins && !rc) {
@@ -173,7 +173,7 @@ static int pcf857x_port_set_raw(const struct device *dev, uint16_t mask, uint16_
 	}
 
 	if ((drv_data->pins_cfg.configured_as_outputs & value) != value) {
-		LOG_ERR("Pin(s) is/are configured as input which should be output.");
+		LOG_ERROR("Pin(s) is/are configured as input which should be output.");
 		return -EOPNOTSUPP;
 	}
 
@@ -186,7 +186,7 @@ static int pcf857x_port_set_raw(const struct device *dev, uint16_t mask, uint16_
 
 	rc = i2c_write_dt(&drv_cfg->i2c, tx_buf_p, drv_data->num_bytes);
 	if (rc != 0) {
-		LOG_ERR("%s: failed to write output port: %d", dev->name, rc);
+		LOG_ERROR("%s: failed to write output port: %d", dev->name, rc);
 		k_sem_give(&drv_data->lock);
 		return -EIO;
 	}
@@ -337,26 +337,26 @@ static int pcf857x_init(const struct device *dev)
 	int rc;
 
 	if (!device_is_ready(drv_cfg->i2c.bus)) {
-		LOG_ERR("%s is not ready", drv_cfg->i2c.bus->name);
+		LOG_ERROR("%s is not ready", drv_cfg->i2c.bus->name);
 		return -ENODEV;
 	}
 
 	/* If the INT line is available, configure the callback for it. */
 	if (drv_cfg->gpio_int.port) {
 		if (!gpio_is_ready_dt(&drv_cfg->gpio_int)) {
-			LOG_ERR("Port is not ready");
+			LOG_ERROR("Port is not ready");
 			return -ENODEV;
 		}
 
 		rc = gpio_pin_configure_dt(&drv_cfg->gpio_int, GPIO_INPUT);
 		if (rc != 0) {
-			LOG_ERR("%s: failed to configure INT line: %d", dev->name, rc);
+			LOG_ERROR("%s: failed to configure INT line: %d", dev->name, rc);
 			return -EIO;
 		}
 
 		rc = gpio_pin_interrupt_configure_dt(&drv_cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 		if (rc != 0) {
-			LOG_ERR("%s: failed to configure INT interrupt: %d", dev->name, rc);
+			LOG_ERROR("%s: failed to configure INT interrupt: %d", dev->name, rc);
 			return -EIO;
 		}
 
@@ -364,7 +364,7 @@ static int pcf857x_init(const struct device *dev)
 				   BIT(drv_cfg->gpio_int.pin));
 		rc = gpio_add_callback(drv_cfg->gpio_int.port, &drv_data->int_gpio_cb);
 		if (rc != 0) {
-			LOG_ERR("%s: failed to add INT callback: %d", dev->name, rc);
+			LOG_ERROR("%s: failed to add INT callback: %d", dev->name, rc);
 			return -EIO;
 		}
 	}

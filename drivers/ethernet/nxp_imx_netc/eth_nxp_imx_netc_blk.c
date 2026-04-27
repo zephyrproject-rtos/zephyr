@@ -233,7 +233,7 @@ static int eth_nxp_imx_netc_blk_init(const struct device *dev)
 	if (ierb_is_locked(dev)) {
 		ret = ierb_unlock(dev);
 		if (ret) {
-			LOG_ERR("Unlock IERB failed.");
+			LOG_ERROR("Unlock IERB failed.");
 			return ret;
 		}
 	}
@@ -242,13 +242,13 @@ static int eth_nxp_imx_netc_blk_init(const struct device *dev)
 
 	ret = ierb_lock(dev);
 	if (ret) {
-		LOG_ERR("Lock IERB failed.");
+		LOG_ERROR("Lock IERB failed.");
 		return ret;
 	}
 
 	ret = netcmix_init(dev);
 	if (ret) {
-		LOG_ERR("NETCMIX init failed.");
+		LOG_ERROR("NETCMIX init failed.");
 		return ret;
 	}
 

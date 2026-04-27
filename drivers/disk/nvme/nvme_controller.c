@@ -35,7 +35,7 @@ static int nvme_controller_wait_for_ready(const struct device *dev,
 	while (1) {
 		csts = nvme_mmio_read_4(regs, csts);
 		if (csts == NVME_GONE) {
-			LOG_ERR("Controller is unreachable");
+			LOG_ERROR("Controller is unreachable");
 			return -EIO;
 		}
 
@@ -45,7 +45,7 @@ static int nvme_controller_wait_for_ready(const struct device *dev,
 		}
 
 		if ((int64_t)timeout - sys_clock_tick_get_32() < 0) {
-			LOG_ERR("Timeout error");
+			LOG_ERROR("Timeout error");
 			return -EIO;
 		}
 
@@ -146,7 +146,7 @@ static int nvme_controller_setup_admin_queues(const struct device *dev)
 
 	/* Admin queue is always id 0 */
 	if (nvme_cmd_qpair_setup(nvme_ctrlr->adminq, nvme_ctrlr, 0) != 0) {
-		LOG_ERR("Admin cmd qpair setup failed");
+		LOG_ERROR("Admin cmd qpair setup failed");
 		return -EIO;
 	}
 
@@ -183,8 +183,7 @@ static int nvme_controller_setup_io_queues(const struct device *dev)
 
 	nvme_completion_poll(&status);
 	if (nvme_cpl_status_is_error(&status)) {
-		LOG_ERR("Could not set IO num queues to %u",
-			nvme_ctrlr->num_io_queues);
+		LOG_ERROR("Could not set IO num queues to %u", nvme_ctrlr->num_io_queues);
 		nvme_completion_print(&status.cpl);
 		return -EIO;
 	}
@@ -209,8 +208,8 @@ static int nvme_controller_setup_io_queues(const struct device *dev)
 
 	for (idx = 0; idx < nvme_ctrlr->num_io_queues; idx++) {
 		io_qpair = &nvme_ctrlr->ioq[idx];
-		if (nvme_cmd_qpair_setup(io_qpair, nvme_ctrlr, idx+1) != 0) {
-			LOG_ERR("IO cmd qpair %u setup failed", idx+1);
+		if (nvme_cmd_qpair_setup(io_qpair, nvme_ctrlr, idx + 1) != 0) {
+			LOG_ERROR("IO cmd qpair %u setup failed", idx + 1);
 			return -EIO;
 		}
 
@@ -227,7 +226,7 @@ static int nvme_controller_setup_io_queues(const struct device *dev)
 
 		nvme_completion_poll(&status);
 		if (nvme_cpl_status_is_error(&status)) {
-			LOG_ERR("IO CQ creation failed");
+			LOG_ERROR("IO CQ creation failed");
 			nvme_completion_print(&status.cpl);
 			return -EIO;
 		}
@@ -243,7 +242,7 @@ static int nvme_controller_setup_io_queues(const struct device *dev)
 
 		nvme_completion_poll(&status);
 		if (nvme_cpl_status_is_error(&status)) {
-			LOG_ERR("IO CQ creation failed");
+			LOG_ERROR("IO CQ creation failed");
 			nvme_completion_print(&status.cpl);
 			return -EIO;
 		}
@@ -328,7 +327,7 @@ static int nvme_controller_pcie_configure(const struct device *dev)
 	uint8_t n_vectors;
 
 	if (nvme_ctrlr_cfg->pcie->bdf == PCIE_BDF_NONE) {
-		LOG_ERR("Controller not found");
+		LOG_ERROR("Controller not found");
 		return -ENODEV;
 	}
 
@@ -339,9 +338,8 @@ static int nvme_controller_pcie_configure(const struct device *dev)
 		PCIE_BDF_TO_DEV(nvme_ctrlr_cfg->pcie->bdf),
 		PCIE_BDF_TO_FUNC(nvme_ctrlr_cfg->pcie->bdf));
 
-	if (!pcie_get_mbar(nvme_ctrlr_cfg->pcie->bdf,
-			   NVME_PCIE_BAR_IDX, &mbar_regs)) {
-		LOG_ERR("Could not get NVME registers");
+	if (!pcie_get_mbar(nvme_ctrlr_cfg->pcie->bdf, NVME_PCIE_BAR_IDX, &mbar_regs)) {
+		LOG_ERROR("Could not get NVME registers");
 		return -EIO;
 	}
 
@@ -354,15 +352,13 @@ static int nvme_controller_pcie_configure(const struct device *dev)
 					      nvme_ctrlr->vectors,
 					      NVME_PCIE_MSIX_VECTORS);
 	if (n_vectors == 0) {
-		LOG_ERR("Could not allocate %u MSI-X vectors",
-			NVME_PCIE_MSIX_VECTORS);
+		LOG_ERROR("Could not allocate %u MSI-X vectors", NVME_PCIE_MSIX_VECTORS);
 		return -EIO;
 	}
 
 	/* Enabling MSI-X and the vectors */
-	if (!pcie_msi_enable(nvme_ctrlr_cfg->pcie->bdf,
-			     nvme_ctrlr->vectors, n_vectors, 0)) {
-		LOG_ERR("Could not enable MSI-X");
+	if (!pcie_msi_enable(nvme_ctrlr_cfg->pcie->bdf, nvme_ctrlr->vectors, n_vectors, 0)) {
+		LOG_ERROR("Could not enable MSI-X");
 		return -EIO;
 	}
 
@@ -378,7 +374,7 @@ static int nvme_controller_identify(struct nvme_controller *nvme_ctrlr)
 					   nvme_completion_poll_cb, &status);
 	nvme_completion_poll(&status);
 	if (nvme_cpl_status_is_error(&status)) {
-		LOG_ERR("Could not identify the controller");
+		LOG_ERROR("Could not identify the controller");
 		nvme_completion_print(&status.cpl);
 		return -EIO;
 	}
@@ -435,7 +431,7 @@ static int nvme_controller_init(const struct device *dev)
 
 	ret = nvme_controller_disable(dev);
 	if (ret != 0) {
-		LOG_ERR("Controller cannot be disabled");
+		LOG_ERROR("Controller cannot be disabled");
 		return ret;
 	}
 
@@ -446,7 +442,7 @@ static int nvme_controller_init(const struct device *dev)
 
 	ret = nvme_controller_enable(dev);
 	if (ret != 0) {
-		LOG_ERR("Controller cannot be enabled");
+		LOG_ERROR("Controller cannot be enabled");
 		return ret;
 	}
 

@@ -23,7 +23,7 @@ static int renesas_ra_sdram_init(const struct device *dev)
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
-		LOG_ERR("pin function initial failed");
+		LOG_ERROR("pin function initial failed");
 		return err;
 	}
 

@@ -82,7 +82,7 @@ static int gpio_axp192_configure(const struct device *dev, gpio_pin_t pin, gpio_
 	enum axp192_gpio_func func;
 
 	if (pin >= config->ngpios) {
-		LOG_ERR("Invalid gpio pin (%d)", pin);
+		LOG_ERROR("Invalid gpio pin (%d)", pin);
 		return -EINVAL;
 	}
 
@@ -123,7 +123,7 @@ static int gpio_axp192_configure(const struct device *dev, gpio_pin_t pin, gpio_
 		/* Configure pull-down */
 		if ((flags & GPIO_PULL_UP) != 0) {
 			/* not supported */
-			LOG_ERR("Pull-Up not supported");
+			LOG_ERROR("Pull-Up not supported");
 			ret = -ENOTSUP;
 		} else if ((flags & GPIO_PULL_DOWN) != 0) {
 			/* out = 0 means pull-down*/
@@ -293,7 +293,7 @@ static int gpio_axp192_init(const struct device *dev)
 	LOG_DBG("Initializing");
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("device not ready");
+		LOG_ERROR("device not ready");
 		return -ENODEV;
 	}
 

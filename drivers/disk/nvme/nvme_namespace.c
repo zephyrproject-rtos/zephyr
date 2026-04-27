@@ -130,7 +130,7 @@ int nvme_namespace_construct(struct nvme_namespace *ns,
 		 ctrlr->id, ns->id-1);
 
 	if (nvme_namespace_disk_setup(ns, &ns->disk) != 0) {
-		LOG_ERR("Could not register no disk subsystem");
+		LOG_ERROR("Could not register no disk subsystem");
 	}
 
 	return 0;

@@ -73,8 +73,7 @@ static void uplink_handler(struct k_work *work)
 	if (!err) {
 		LOG_DBG("Message sent to port %d", msg_copy.port);
 	} else {
-		LOG_ERR("Sending message to port %d failed: %d",
-			msg_copy.port, err);
+		LOG_ERROR("Sending message to port %d failed: %d", msg_copy.port, err);
 	}
 
 	/* take the semaphore again to schedule next uplink */
@@ -121,7 +120,7 @@ int lorawan_services_schedule_uplink(uint8_t port, uint8_t *data, uint8_t len, u
 	int64_t timeout_abs_ticks;
 
 	if (len > sizeof(messages[0].data)) {
-		LOG_ERR("Uplink payload for port %u too long: %u bytes", port, len);
+		LOG_ERROR("Uplink payload for port %u too long: %u bytes", port, len);
 		LOG_HEXDUMP_ERR(data, len, "Payload: ");
 		return -EFBIG;
 	}

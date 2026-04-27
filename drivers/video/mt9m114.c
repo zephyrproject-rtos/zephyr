@@ -414,7 +414,7 @@ static int mt9m114_set_fmt(const struct device *dev, struct video_format *fmt)
 	}
 
 	if (i == (ARRAY_SIZE(fmts) - 1)) {
-		LOG_ERR("Unsupported pixel format or resolution");
+		LOG_ERROR("Unsupported pixel format or resolution");
 		return -ENOTSUP;
 	}
 
@@ -428,7 +428,7 @@ static int mt9m114_set_fmt(const struct device *dev, struct video_format *fmt)
 	/* Set output pixel format */
 	ret = mt9m114_set_output_format(dev, fmt->pixelformat);
 	if (ret) {
-		LOG_ERR("Unable to set pixel format");
+		LOG_ERROR("Unable to set pixel format");
 		return ret;
 	}
 
@@ -438,7 +438,7 @@ static int mt9m114_set_fmt(const struct device *dev, struct video_format *fmt)
 		    fmt->height == resolution_configs[i].height) {
 			ret = mt9m114_write_all(dev, resolution_configs[i].params);
 			if (ret) {
-				LOG_ERR("Unable to set resolution");
+				LOG_ERROR("Unable to set resolution");
 				return ret;
 			}
 
@@ -537,7 +537,7 @@ static int mt9m114_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 
@@ -546,12 +546,12 @@ static int mt9m114_init(const struct device *dev)
 
 	ret = mt9m114_read_reg(dev, MT9M114_CHIP_ID, sizeof(val), &val);
 	if (ret) {
-		LOG_ERR("Unable to read chip ID");
+		LOG_ERROR("Unable to read chip ID");
 		return -ENODEV;
 	}
 
 	if (val != MT9M114_CHIP_ID_VAL) {
-		LOG_ERR("Wrong ID: %04x (exp %04x)", val, MT9M114_CHIP_ID_VAL);
+		LOG_ERROR("Wrong ID: %04x (exp %04x)", val, MT9M114_CHIP_ID_VAL);
 		return -ENODEV;
 	}
 
@@ -561,13 +561,13 @@ static int mt9m114_init(const struct device *dev)
 	/* Init registers */
 	ret = mt9m114_write_all(dev, mt9m114_init_config);
 	if (ret) {
-		LOG_ERR("Unable to initialize mt9m114 config");
+		LOG_ERROR("Unable to initialize mt9m114 config");
 		return ret;
 	}
 
 	ret = mt9m114_set_fmt(dev, &fmt);
 	if (ret) {
-		LOG_ERR("Unable to configure default format");
+		LOG_ERROR("Unable to configure default format");
 		return -EIO;
 	}
 

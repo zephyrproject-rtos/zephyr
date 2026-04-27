@@ -107,7 +107,7 @@ static inline int st7701_dcs_write(const struct device *dev, uint8_t cmd, const 
 
 	ret = mipi_dsi_dcs_write(cfg->mipi_dsi, cfg->channel, cmd, buf, len);
 	if (ret < 0) {
-		LOG_ERR("DCS 0x%x write failed! (%d)", cmd, ret);
+		LOG_ERROR("DCS 0x%x write failed! (%d)", cmd, ret);
 		return ret;
 	}
 
@@ -122,7 +122,7 @@ static int st7701_short_write_1p(const struct device *dev, uint8_t cmd, uint8_t 
 
 	ret = mipi_dsi_generic_write(cfg->mipi_dsi, cfg->channel, buf, sizeof(val));
 	if (ret < 0) {
-		LOG_ERR("Short write failed! (%d)", ret);
+		LOG_ERROR("Short write failed! (%d)", ret);
 		return ret;
 	}
 
@@ -136,7 +136,7 @@ static int st7701_generic_write(const struct device *dev, const void *buf, size_
 
 	ret = mipi_dsi_generic_write(cfg->mipi_dsi, cfg->channel, buf, len);
 	if (ret < 0) {
-		LOG_ERR("Generic write failed! (%d)", ret);
+		LOG_ERROR("Generic write failed! (%d)", ret);
 		return ret;
 	}
 
@@ -151,12 +151,12 @@ static int st7701_check_id(const struct device *dev)
 
 	ret = mipi_dsi_dcs_read(cfg->mipi_dsi, cfg->channel, ST7701_CMD_ID1, &id, sizeof(id));
 	if (ret != sizeof(id)) {
-		LOG_ERR("Read panel ID failed! (%d)", ret);
+		LOG_ERROR("Read panel ID failed! (%d)", ret);
 		return -EIO;
 	}
 
 	if (id != ST7701_ID) {
-		LOG_ERR("ID 0x%x (should 0x%x)", id, ST7701_ID);
+		LOG_ERROR("ID 0x%x (should 0x%x)", id, ST7701_ID);
 		return -EINVAL;
 	}
 
@@ -241,7 +241,7 @@ static int st7701_configure(const struct device *dev)
 		buf[0] = MIPI_DCS_PIXEL_FORMAT_24BIT;
 		break;
 	default:
-		LOG_ERR("Unsupported pixel format 0x%x!", data->dsi_pixel_format);
+		LOG_ERROR("Unsupported pixel format 0x%x!", data->dsi_pixel_format);
 		return -ENOTSUP;
 	}
 
@@ -311,7 +311,7 @@ static int st7701_blanking_on(const struct device *dev)
 	if (cfg->backlight.port != NULL) {
 		ret = gpio_pin_set_dt(&cfg->backlight, 0);
 		if (ret) {
-			LOG_ERR("Disable backlight failed! (%d)", ret);
+			LOG_ERROR("Disable backlight failed! (%d)", ret);
 			return ret;
 		}
 	}
@@ -327,7 +327,7 @@ static int st7701_blanking_off(const struct device *dev)
 	if (cfg->backlight.port != NULL) {
 		ret = gpio_pin_set_dt(&cfg->backlight, 1);
 		if (ret) {
-			LOG_ERR("Enable backlight failed! (%d)", ret);
+			LOG_ERROR("Enable backlight failed! (%d)", ret);
 			return ret;
 		}
 	}
@@ -394,20 +394,20 @@ static int st7701_init(const struct device *dev)
 
 	if (cfg->reset.port) {
 		if (!gpio_is_ready_dt(&cfg->reset)) {
-			LOG_ERR("Reset GPIO device is not ready!");
+			LOG_ERROR("Reset GPIO device is not ready!");
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&cfg->reset, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Reset display failed! (%d)", ret);
+			LOG_ERROR("Reset display failed! (%d)", ret);
 			return ret;
 		}
 
 		k_msleep(10);
 		ret = gpio_pin_set_dt(&cfg->reset, 1);
 		if (ret < 0) {
-			LOG_ERR("Enable display failed! (%d)", ret);
+			LOG_ERROR("Enable display failed! (%d)", ret);
 			return ret;
 		}
 
@@ -449,25 +449,25 @@ static int st7701_init(const struct device *dev)
 
 	ret = mipi_dsi_attach(cfg->mipi_dsi, cfg->channel, &mdev);
 	if (ret < 0) {
-		LOG_ERR("MIPI-DSI attach failed! (%d)", ret);
+		LOG_ERROR("MIPI-DSI attach failed! (%d)", ret);
 		return ret;
 	}
 
 	ret = st7701_check_id(dev);
 	if (ret) {
-		LOG_ERR("Panel ID check failed! (%d)", ret);
+		LOG_ERROR("Panel ID check failed! (%d)", ret);
 		return ret;
 	}
 
 	ret = st7701_configure(dev);
 	if (ret) {
-		LOG_ERR("DSI init sequence failed! (%d)", ret);
+		LOG_ERROR("DSI init sequence failed! (%d)", ret);
 		return ret;
 	}
 
 	ret = st7701_blanking_off(dev);
 	if (ret) {
-		LOG_ERR("Display blanking off failed! (%d)", ret);
+		LOG_ERROR("Display blanking off failed! (%d)", ret);
 		return ret;
 	}
 

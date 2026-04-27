@@ -36,13 +36,13 @@ static int i2c_b91_configure(const struct device *dev, uint32_t dev_config)
 
 	/* check address size */
 	if (dev_config & I2C_ADDR_10_BITS) {
-		LOG_ERR("10-bits address is not supported");
+		LOG_ERROR("10-bits address is not supported");
 		return -ENOTSUP;
 	}
 
 	/* check I2C Master/Slave configuration */
 	if (!(dev_config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("I2C slave is not implemented");
+		LOG_ERROR("I2C slave is not implemented");
 		return -ENOTSUP;
 	}
 
@@ -60,7 +60,7 @@ static int i2c_b91_configure(const struct device *dev, uint32_t dev_config)
 	case I2C_SPEED_HIGH:
 	case I2C_SPEED_ULTRA:
 	default:
-		LOG_ERR("Unsupported I2C speed requested");
+		LOG_ERROR("Unsupported I2C speed requested");
 		return -ENOTSUP;
 	}
 
@@ -88,7 +88,7 @@ static int i2c_b91_transfer(const struct device *dev,
 	for (int i = 0; i < num_msgs; i++) {
 		/* check addr size */
 		if (msgs[i].flags & I2C_MSG_ADDR_10_BITS) {
-			LOG_ERR("10-bits address is not supported");
+			LOG_ERROR("10-bits address is not supported");
 			k_sem_give(&data->mutex);
 			return -ENOTSUP;
 		}
@@ -106,7 +106,7 @@ static int i2c_b91_transfer(const struct device *dev,
 
 		/* check status */
 		if (!status) {
-			LOG_ERR("Failed to transfer I2C messages\n");
+			LOG_ERROR("Failed to transfer I2C messages\n");
 			k_sem_give(&data->mutex);
 			return -EIO;
 		}
@@ -132,14 +132,14 @@ static int i2c_b91_init(const struct device *dev)
 	/* config i2c on startup */
 	status = i2c_b91_configure(dev, dev_config);
 	if (status != 0) {
-		LOG_ERR("Failed to configure I2C on init");
+		LOG_ERROR("Failed to configure I2C on init");
 		return status;
 	}
 
 	/* configure pins */
 	status = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (status < 0) {
-		LOG_ERR("Failed to configure I2C pins");
+		LOG_ERROR("Failed to configure I2C pins");
 		return status;
 	}
 

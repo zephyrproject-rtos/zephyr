@@ -123,7 +123,7 @@ int z_impl_k_thread_stack_free(k_thread_stack_t *stack)
 	if (data.tid != NULL) {
 		if (!(z_is_thread_state_set(data.tid, _THREAD_DUMMY) ||
 		      z_is_thread_state_set(data.tid, _THREAD_DEAD))) {
-			LOG_ERR("tid %p is in use!", data.tid);
+			LOG_ERROR("tid %p is in use!", data.tid);
 			return -EBUSY;
 		}
 	}
@@ -131,7 +131,7 @@ int z_impl_k_thread_stack_free(k_thread_stack_t *stack)
 	if (CONFIG_DYNAMIC_THREAD_POOL_SIZE > 0) {
 		if (IS_ARRAY_ELEMENT(dynamic_stack, stack)) {
 			if (sys_bitarray_free(&dynamic_ba, 1, ARRAY_INDEX(dynamic_stack, stack))) {
-				LOG_ERR("stack %p is not allocated!", stack);
+				LOG_ERROR("stack %p is not allocated!", stack);
 				return -EINVAL;
 			}
 

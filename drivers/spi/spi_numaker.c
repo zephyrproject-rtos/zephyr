@@ -67,12 +67,12 @@ static int spi_numaker_configure(const struct device *dev, const struct spi_conf
 	}
 
 	if (SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) {
-		LOG_ERR("Loop back mode not support");
+		LOG_ERROR("Loop back mode not support");
 		return -ENOTSUP;
 	}
 
 	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not support");
+		LOG_ERROR("Slave mode not support");
 		return -ENOTSUP;
 	}
 
@@ -189,7 +189,7 @@ static int spi_numaker_txrx(const struct device *dev, uint8_t spi_dfs)
 	time_out_cnt = SystemCoreClock; /* 1 second time-out */
 	while (SPI_IS_BUSY(dev_cfg->spi)) {
 		if (--time_out_cnt == 0) {
-			LOG_ERR("Wait for SPI time-out");
+			LOG_ERROR("Wait for SPI time-out");
 			return -EIO;
 		}
 	}
@@ -239,7 +239,7 @@ static int spi_numaker_transceive(const struct device *dev, const struct spi_con
 		break;
 	default:
 		spi_dfs = 0;
-		LOG_ERR("Not support SPI WORD size as [%d] bits", word_size);
+		LOG_ERROR("Not support SPI WORD size as [%d] bits", word_size);
 		ret = -ENOTSUP;
 		goto done;
 	}
@@ -321,7 +321,7 @@ static int spi_numaker_init(const struct device *dev)
 
 	err = pinctrl_apply_state(dev_cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
-		LOG_ERR("Failed to apply pinctrl state");
+		LOG_ERROR("Failed to apply pinctrl state");
 		goto done;
 	}
 
@@ -334,7 +334,7 @@ static int spi_numaker_init(const struct device *dev)
 
 	/* Reset this module, same as BSP's SYS_ResetModule(id_rst) */
 	if (!device_is_ready(dev_cfg->reset.dev)) {
-		LOG_ERR("reset controller not ready");
+		LOG_ERROR("reset controller not ready");
 		err = -ENODEV;
 		goto done;
 	}

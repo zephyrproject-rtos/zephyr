@@ -47,7 +47,7 @@ static void cpu_freq_next_pstate(void)
 
 	ret = cpu_freq_policy_select_pstate(&pstate_next);
 	if (ret) {
-		LOG_ERR("Failed to get pstate: %d", ret);
+		LOG_ERROR("Failed to get pstate: %d", ret);
 		return;
 	}
 
@@ -113,7 +113,7 @@ static void cpu_freq_timer_handler(struct k_timer *timer)
 		 * error and try again on the next timer expiration.
 		 */
 
-		LOG_ERR("Failed to add IPI work: %d", ret);
+		LOG_ERROR("Failed to add IPI work: %d", ret);
 
 		return;
 	}

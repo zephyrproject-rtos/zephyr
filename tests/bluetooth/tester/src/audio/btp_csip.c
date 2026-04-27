@@ -149,7 +149,7 @@ static void csip_set_coordinator_ordered_access_cb(
 	LOG_DBG("");
 
 	if (err) {
-		LOG_ERR("Ordered access failed with err %d", err);
+		LOG_ERROR("Ordered access failed with err %d", err);
 	} else if (locked) {
 		LOG_DBG("Ordered access procedure locked member %p", member);
 	} else {
@@ -185,7 +185,7 @@ static uint8_t btp_csip_discover(const void *cmd, uint16_t cmd_len,
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 
 		return BTP_STATUS_FAILED;
 	}
@@ -201,7 +201,7 @@ static int get_available_members(const struct bt_csip_set_coordinator_set_member
 	members_count = 0;
 
 	if (cur_csis_inst == NULL) {
-		LOG_ERR("No CSIP instance available");
+		LOG_ERROR("No CSIP instance available");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -214,7 +214,7 @@ static int get_available_members(const struct bt_csip_set_coordinator_set_member
 	}
 
 	if (members_count == 0) {
-		LOG_ERR("No set members available");
+		LOG_ERROR("No set members available");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -293,7 +293,7 @@ static uint8_t btp_csip_start_ordered_access(const void *cmd, uint16_t cmd_len,
 	LOG_DBG("");
 
 	if (cur_csis_inst == NULL) {
-		LOG_ERR("No CSIP instance available");
+		LOG_ERROR("No CSIP instance available");
 
 		return BTP_STATUS_FAILED;
 	}
@@ -307,7 +307,7 @@ static uint8_t btp_csip_start_ordered_access(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (member_count == 0) {
-		LOG_ERR("No set members available");
+		LOG_ERROR("No set members available");
 
 		return BTP_STATUS_FAILED;
 	}

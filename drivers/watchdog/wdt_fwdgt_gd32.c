@@ -82,13 +82,13 @@ static int gd32_fwdgt_setup(const struct device *dev, uint8_t options)
 #if CONFIG_GD32_DBG_SUPPORT
 		dbg_periph_enable(DBG_FWDGT_HOLD);
 #else
-		LOG_ERR("Debug support not enabled");
+		LOG_ERROR("Debug support not enabled");
 		return -ENOTSUP;
 #endif
 	}
 
 	if ((options & WDT_OPT_PAUSE_IN_SLEEP) != 0U) {
-		LOG_ERR("WDT_OPT_PAUSE_IN_SLEEP not supported");
+		LOG_ERROR("WDT_OPT_PAUSE_IN_SLEEP not supported");
 		return -ENOTSUP;
 	}
 
@@ -114,14 +114,14 @@ static int gd32_fwdgt_install_timeout(const struct device *dev,
 
 	/* Callback is not supported by FWDGT */
 	if (config->callback != NULL) {
-		LOG_ERR("callback not supported by FWDGT");
+		LOG_ERROR("callback not supported by FWDGT");
 		return -ENOTSUP;
 	}
 
 	/* Calculate prescaler and reload value from timeout value */
 	if (gd32_fwdgt_calc_timeout(config->window.max, &prescaler,
 				    &reload) != 0) {
-		LOG_ERR("window max is out of range");
+		LOG_ERROR("window max is out of range");
 		return -EINVAL;
 	}
 
@@ -129,7 +129,7 @@ static int gd32_fwdgt_install_timeout(const struct device *dev,
 	fwdgt_write_enable();
 	errstat = fwdgt_config(reload, prescaler);
 	if (errstat != SUCCESS) {
-		LOG_ERR("fwdgt_config() failed: %d", errstat);
+		LOG_ERROR("fwdgt_config() failed: %d", errstat);
 		return -EINVAL;
 	}
 	fwdgt_write_disable();

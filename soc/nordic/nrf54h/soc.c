@@ -166,7 +166,7 @@ void soc_late_init_hook(void)
 
 	if (IS_ENABLED(CONFIG_SOC_NRF54H20_CPURAD_ENABLE_CHECK_VTOR) &&
 	    sys_read32((mem_addr_t)radiocore_address) == 0xFFFFFFFFUL) {
-		LOG_ERR("Radiocore is not programmed, it will not be started");
+		LOG_ERROR("Radiocore is not programmed, it will not be started");
 
 		return;
 	}

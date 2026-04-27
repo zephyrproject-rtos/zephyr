@@ -48,7 +48,7 @@ int find_characteristic(struct bt_conn *conn,
 					       BT_ATT_FIRST_ATTRIBUTE_HANDLE,
 					       BT_ATT_LAST_ATTRIBUTE_HANDLE);
 	if (err != 0) {
-		LOG_ERR("Failed to discover service: %d", err);
+		LOG_ERROR("Failed to discover service: %d", err);
 
 		return err;
 	}
@@ -59,7 +59,7 @@ int find_characteristic(struct bt_conn *conn,
 						      NULL, conn, chrc, (svc_handle + 1),
 						      svc_end_handle);
 	if (err != 0) {
-		LOG_ERR("Failed to get value handle: %d", err);
+		LOG_ERROR("Failed to get value handle: %d", err);
 
 		return err;
 	}

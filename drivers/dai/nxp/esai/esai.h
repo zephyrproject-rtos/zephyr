@@ -333,12 +333,12 @@ static int esai_parse_clock_config(const struct esai_config *cfg,
 
 		/* sanity checks */
 		if (crt_clock > ESAI_CLOCK_FST) {
-			LOG_ERR("invalid clock configuration ID: %d", crt_clock);
+			LOG_ERROR("invalid clock configuration ID: %d", crt_clock);
 			return -EINVAL;
 		}
 
 		if (crt_dir > ESAI_CLOCK_OUTPUT) {
-			LOG_ERR("invalid clock configuration direction: %d", crt_dir);
+			LOG_ERROR("invalid clock configuration direction: %d", crt_dir);
 			return -EINVAL;
 		}
 
@@ -445,7 +445,7 @@ static inline int esai_update_state(struct esai_data *data,
 		}
 		break;
 	default:
-		LOG_ERR("invalid new state: %d", new_state);
+		LOG_ERROR("invalid new state: %d", new_state);
 		return -EINVAL;
 	}
 

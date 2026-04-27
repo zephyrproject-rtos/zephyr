@@ -132,7 +132,7 @@ void bt_hci_conn_req(struct net_buf *buf)
 
 	err = accept_conn(evt);
 	if (err != BT_HCI_ERR_SUCCESS) {
-		LOG_ERR("Failed to accept conn from %s (err %u)", bt_addr_str(&evt->bdaddr), err);
+		LOG_ERROR("Failed to accept conn from %s (err %u)", bt_addr_str(&evt->bdaddr), err);
 		reject_conn(&evt->bdaddr, err);
 		bt_conn_unref(conn);
 		return;
@@ -157,7 +157,7 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
-		LOG_ERR("Failed to allocate command buffer");
+		LOG_ERROR("Failed to allocate command buffer");
 		return false;
 	}
 
@@ -166,12 +166,12 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE, buf, &rsp);
 	if (err) {
-		LOG_ERR("Failed to read encryption key size (err %d)", err);
+		LOG_ERROR("Failed to read encryption key size (err %d)", err);
 		return false;
 	}
 
 	if (rsp->len < sizeof(*rp)) {
-		LOG_ERR("Too small command complete for encryption key size");
+		LOG_ERROR("Too small command complete for encryption key size");
 		net_buf_unref(rsp);
 		return false;
 	}
@@ -216,13 +216,13 @@ bool bt_br_update_sec_level(struct bt_conn *conn)
 	}
 
 	if (!br_sufficient_key_size(conn)) {
-		LOG_ERR("Encryption key size is not sufficient");
+		LOG_ERROR("Encryption key size is not sufficient");
 		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
 		return false;
 	}
 
 	if (conn->required_sec_level > conn->sec_level) {
-		LOG_ERR("Failed to set required security level");
+		LOG_ERROR("Failed to set required security level");
 		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
 		return false;
 	}
@@ -240,7 +240,7 @@ void bt_hci_synchronous_conn_complete(struct net_buf *buf)
 
 	sco_conn = bt_conn_lookup_addr_sco(&evt->bdaddr);
 	if (!sco_conn) {
-		LOG_ERR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERROR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
@@ -273,7 +273,7 @@ void bt_hci_conn_complete(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERROR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
@@ -444,7 +444,7 @@ void bt_hci_inquiry_complete(struct net_buf *buf)
 	struct bt_hci_evt_inquiry_complete *evt = (void *)buf->data;
 
 	if (evt->status) {
-		LOG_ERR("Failed to complete inquiry");
+		LOG_ERROR("Failed to complete inquiry");
 	}
 
 	report_discovery_results();
@@ -514,7 +514,7 @@ void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 		struct bt_br_discovery_cb *listener, *next;
 
 		if (buf->len < sizeof(*evt)) {
-			LOG_ERR("Unexpected end to buffer");
+			LOG_ERROR("Unexpected end to buffer");
 			return;
 		}
 
@@ -670,7 +670,7 @@ void bt_hci_read_remote_features_complete(struct net_buf *buf)
 
 	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_BR);
 	if (!conn) {
-		LOG_ERR("Can't find conn for handle %u", handle);
+		LOG_ERROR("Can't find conn for handle %u", handle);
 		return;
 	}
 
@@ -710,7 +710,7 @@ void bt_hci_read_remote_ext_features_complete(struct net_buf *buf)
 
 	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_BR);
 	if (!conn) {
-		LOG_ERR("Can't find conn for handle %u", handle);
+		LOG_ERROR("Can't find conn for handle %u", handle);
 		return;
 	}
 
@@ -730,7 +730,7 @@ void bt_hci_role_change(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERROR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
@@ -757,18 +757,18 @@ void bt_hci_link_mode_change(struct net_buf *buf)
 
 	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_BR);
 	if (!conn) {
-		LOG_ERR("Can't find conn for handle 0x%x", handle);
+		LOG_ERROR("Can't find conn for handle 0x%x", handle);
 		return;
 	}
 
 	if (conn->state != BT_CONN_CONNECTED) {
-		LOG_ERR("Invalid state %d", conn->state);
+		LOG_ERROR("Invalid state %d", conn->state);
 		bt_conn_unref(conn);
 		return;
 	}
 
 	if (evt->status) {
-		LOG_ERR("Error %d, type %d", evt->status, conn->type);
+		LOG_ERROR("Error %d, type %d", evt->status, conn->type);
 		bt_conn_unref(conn);
 		return;
 	}
@@ -1491,13 +1491,13 @@ int bt_br_page_scan_update_param(const struct bt_br_page_scan_param *param)
 
 	err = bt_br_write_page_scan_activity(param->interval, param->window);
 	if (err != 0) {
-		LOG_ERR("write page scan activity failed (err %d)", err);
+		LOG_ERROR("write page scan activity failed (err %d)", err);
 		return err;
 	}
 
 	err = bt_br_write_page_scan_type(param->type);
 	if (err != 0) {
-		LOG_ERR("write page scan type failed (err %d)", err);
+		LOG_ERROR("write page scan type failed (err %d)", err);
 		return err;
 	}
 
@@ -1514,13 +1514,13 @@ int bt_br_inquiry_scan_update_param(const struct bt_br_inquiry_scan_param *param
 
 	err = bt_br_write_inquiry_scan_activity(param->interval, param->window);
 	if (err != 0) {
-		LOG_ERR("write inquiry scan activity failed (err %d)", err);
+		LOG_ERROR("write inquiry scan activity failed (err %d)", err);
 		return err;
 	}
 
 	err = bt_br_write_inquiry_scan_type(param->type);
 	if (err != 0) {
-		LOG_ERR("write inquiry scan type failed (err %d)", err);
+		LOG_ERROR("write inquiry scan type failed (err %d)", err);
 		return err;
 	}
 
@@ -1537,7 +1537,7 @@ int bt_br_set_class_of_device(uint32_t cod)
 
 	/* Limited discoverable mode could be set with bt_br_set_discoverable */
 	if (cod & BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER) {
-		LOG_ERR("Cannot set limited discoverable bit directly in COD");
+		LOG_ERROR("Cannot set limited discoverable bit directly in COD");
 		return -EINVAL;
 	}
 
@@ -1552,7 +1552,7 @@ int bt_br_set_class_of_device(uint32_t cod)
 
 	err = bt_br_write_cod(cod);
 	if (err != 0) {
-		LOG_ERR("write cod:0x%06x failed (err %d)", cod, err);
+		LOG_ERROR("write cod:0x%06x failed (err %d)", cod, err);
 		return err;
 	}
 
@@ -1569,7 +1569,7 @@ int bt_br_get_class_of_device(uint32_t *cod)
 
 	err = bt_br_read_cod(cod);
 	if (err != 0) {
-		LOG_ERR("read cod failed (err %d)", err);
+		LOG_ERROR("read cod failed (err %d)", err);
 		return err;
 	}
 

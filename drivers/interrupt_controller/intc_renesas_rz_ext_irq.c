@@ -129,7 +129,7 @@ static int intc_rz_ext_irq_init(const struct device *dev)
 		ret = pinctrl_apply_state(config->pin_config, PINCTRL_STATE_DEFAULT);
 
 		if (ret < 0) {
-			LOG_ERR("%s: pinctrl config failed.", __func__);
+			LOG_ERROR("%s: pinctrl config failed.", __func__);
 			return ret;
 		}
 	}

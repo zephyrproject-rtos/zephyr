@@ -153,7 +153,7 @@ static void connectivity_event_handler(struct net_mgmt_event_callback *cb, uint6
 				       struct net_if *iface)
 {
 	if (event == NET_EVENT_CONN_IF_FATAL_ERROR) {
-		LOG_ERR("Fatal error received from the connectivity layer");
+		LOG_ERROR("Fatal error received from the connectivity layer");
 		return;
 	}
 }
@@ -189,7 +189,7 @@ static void l4_event_handler(struct net_mgmt_event_callback *cb, uint64_t event,
 static void gnss_data_cb(const struct device *dev, const struct gnss_data *data)
 {
 	if (!data) {
-		LOG_ERR("Received NULL GNSS data");
+		LOG_ERROR("Received NULL GNSS data");
 		return;
 	}
 
@@ -553,7 +553,7 @@ static int resolve_broker_addr(struct net_sockaddr_in *broker)
 		zsock_inet_ntop(NET_PF_INET, &broker->sin_addr, addr_str, sizeof(addr_str));
 		LOG_INF("Resolved: %s:%u", addr_str, net_htons(broker->sin_port));
 	} else {
-		LOG_ERR("failed to resolve hostname err = %d (errno = %d)", ret, errno);
+		LOG_ERROR("failed to resolve hostname err = %d (errno = %d)", ret, errno);
 	}
 
 	zsock_freeaddrinfo(ai);
@@ -660,7 +660,7 @@ static int app_collect_and_log_modem_info(void)
 	LOG_INF("Setting new APN: %s", newapn);
 	int ret = cellular_set_apn(modem, newapn);
 	if (ret < 0) {
-		LOG_ERR("Failed to set new APN, error: %d", ret);
+		LOG_ERROR("Failed to set new APN, error: %d", ret);
 	}
 
 	k_sem_reset(&network_connected_sem);
@@ -768,7 +768,7 @@ static void app_gnss_prepare_assisted_data(void)
 	if (agnss_status.mode == HL78XX_AGNSS_MODE_INVALID) {
 		ret = hl78xx_gnss_assist_data_download(modem, HL78XX_AGNSS_DAYS_2);
 		if (ret < 0) {
-			LOG_ERR("Failed to download A-GNSS data: %d", ret);
+			LOG_ERROR("Failed to download A-GNSS data: %d", ret);
 		} else {
 			LOG_INF("A-GNSS data download started");
 		}
@@ -797,7 +797,7 @@ static int app_gnss_enter_and_wait_ready(const struct device *gnss_dev)
 	k_sem_reset(&gnss_sem);
 	ret = hl78xx_enter_gnss_mode(gnss_dev);
 	if (ret < 0 && ret != -EALREADY) {
-		LOG_ERR("Failed to request GNSS mode: %d", ret);
+		LOG_ERROR("Failed to request GNSS mode: %d", ret);
 		return ret;
 	}
 #ifdef CONFIG_MODEM_HL78XX_EDRX
@@ -823,7 +823,7 @@ static int app_gnss_enter_and_wait_ready(const struct device *gnss_dev)
 	LOG_INF("Entering GNSS mode...");
 	ret = hl78xx_enter_gnss_mode(gnss_dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to enter GNSS mode: %d", ret);
+		LOG_ERROR("Failed to enter GNSS mode: %d", ret);
 		return ret;
 	}
 
@@ -848,7 +848,7 @@ static void app_gnss_configure(const struct device *gnss_dev)
 	LOG_INF("Powering on GNSS...");
 	ret = pm_device_action_run(gnss_dev, PM_DEVICE_ACTION_RESUME);
 	if (ret < 0 && ret != -EALREADY) {
-		LOG_ERR("Failed to power on GNSS: %d", ret);
+		LOG_ERROR("Failed to power on GNSS: %d", ret);
 	} else {
 		LOG_INF("GNSS powered on");
 	}
@@ -923,7 +923,7 @@ static int app_gnss_collect_and_exit(const struct device *gnss_dev)
 	LOG_INF("Exiting GNSS mode...");
 	ret = hl78xx_exit_gnss_mode(gnss_dev);
 	if (ret < 0 && ret != -EALREADY) {
-		LOG_ERR("Failed to exit GNSS mode: %d", ret);
+		LOG_ERROR("Failed to exit GNSS mode: %d", ret);
 		return ret;
 	}
 
@@ -961,7 +961,7 @@ static void app_gnss_restore_lte_connectivity(void)
 	ret = hl78xx_api_func_set_phone_functionality(modem, HL78XX_FULLY_FUNCTIONAL,
 						      is_reset_required);
 	if (ret < 0) {
-		LOG_ERR("Failed to set full functionality: %d", ret);
+		LOG_ERROR("Failed to set full functionality: %d", ret);
 	} else {
 		LOG_INF("Phone functionality restored, modem returning to LTE");
 	}
@@ -991,7 +991,7 @@ static enum app_flow_result app_run_gnss_demo(void)
 #endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
 
 	if (!device_is_ready(gnss_dev)) {
-		LOG_ERR("GNSS device %s is not ready!", gnss_dev->name);
+		LOG_ERROR("GNSS device %s is not ready!", gnss_dev->name);
 		return app_gnss_demo_abort();
 	}
 
@@ -1048,7 +1048,7 @@ int main(void)
 	bool run_post_lpm_stage = false;
 
 	if (device_is_ready(modem) == false) {
-		LOG_ERR("%d, %s Device %s is not ready", __LINE__, __func__, modem->name);
+		LOG_ERROR("%d, %s Device %s is not ready", __LINE__, __func__, modem->name);
 	}
 #ifdef CONFIG_PM_DEVICE
 	LOG_INF("Powering on modem");
@@ -1058,7 +1058,7 @@ int main(void)
 		struct net_if *iface = net_if_get_default();
 
 		if (!iface) {
-			LOG_ERR("No network interface found!");
+			LOG_ERROR("No network interface found!");
 			return -ENODEV;
 		}
 
@@ -1074,7 +1074,7 @@ int main(void)
 		ret = net_if_up(iface);
 
 		if (ret < 0 && ret != -EALREADY) {
-			LOG_ERR("net_if_up, error: %d", ret);
+			LOG_ERROR("net_if_up, error: %d", ret);
 			return ret;
 		}
 
@@ -1108,14 +1108,14 @@ int main(void)
 		if (!run_post_lpm_stage) {
 			ret = app_wait_for_network();
 			if (ret < 0) {
-				LOG_ERR("Network wait failed: %d", ret);
+				LOG_ERROR("Network wait failed: %d", ret);
 				return ret;
 			}
 
 			if (!skip_modem_info) {
 				ret = app_collect_and_log_modem_info();
 				if (ret < 0) {
-					LOG_ERR("Modem information stage failed: %d", ret);
+					LOG_ERROR("Modem information stage failed: %d", ret);
 					return ret;
 				}
 			}

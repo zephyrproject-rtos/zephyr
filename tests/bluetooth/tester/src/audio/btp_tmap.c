@@ -38,7 +38,7 @@ static void tmap_discover_cb(enum bt_tmap_role role, struct bt_conn *conn, int e
 	struct btp_tmap_discovery_complete_ev ev;
 
 	if (err) {
-		LOG_ERR("Discovery failed (%d)", err);
+		LOG_ERROR("Discovery failed (%d)", err);
 	}
 
 	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
@@ -60,13 +60,13 @@ static uint8_t tmap_discover(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
 	err = bt_tmap_discover(conn, &tmap_cb);
 	if (err != 0) {
-		LOG_ERR("Failed to discover remote TMAP: %d", err);
+		LOG_ERROR("Failed to discover remote TMAP: %d", err);
 	}
 
 	bt_conn_unref(conn);
@@ -102,7 +102,7 @@ uint8_t tester_init_tmap(void)
 	err = bt_tmap_register(role);
 
 	if (err != 0) {
-		LOG_ERR("Failed to register TMAP (err %d)", err);
+		LOG_ERROR("Failed to register TMAP (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 

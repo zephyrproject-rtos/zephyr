@@ -56,7 +56,7 @@ static void edma_isr(const void *parameter)
 		/* TODO: add support for error handling here */
 		ret = EDMA_CHAN_PRODUCE_CONSUME_A(chan, update_size);
 		if (ret < 0) {
-			LOG_ERR("chan %d buffer overflow/underrun", chan->id);
+			LOG_ERROR("chan %d buffer overflow/underrun", chan->id);
 		}
 	}
 
@@ -118,46 +118,43 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	cfg = dev->config;
 
 	if (!dma_cfg->head_block) {
-		LOG_ERR("head block shouldn't be NULL");
+		LOG_ERROR("head block shouldn't be NULL");
 		return -EINVAL;
 	}
 
 	/* validate source data size (SSIZE) */
 	if (!EDMA_TransferWidthIsValid(data->hal_cfg, dma_cfg->source_data_size)) {
-		LOG_ERR("invalid source data size: %d",
-			dma_cfg->source_data_size);
+		LOG_ERROR("invalid source data size: %d", dma_cfg->source_data_size);
 		return -EINVAL;
 	}
 
 	/* validate destination data size (DSIZE) */
 	if (!EDMA_TransferWidthIsValid(data->hal_cfg, dma_cfg->dest_data_size)) {
-		LOG_ERR("invalid destination data size: %d",
-			dma_cfg->dest_data_size);
+		LOG_ERROR("invalid destination data size: %d", dma_cfg->dest_data_size);
 		return -EINVAL;
 	}
 
 	/* validate configured alignment */
 	if (!EDMA_TransferWidthIsValid(data->hal_cfg, CONFIG_DMA_NXP_EDMA_ALIGN)) {
-		LOG_ERR("configured alignment %d is invalid",
-			CONFIG_DMA_NXP_EDMA_ALIGN);
+		LOG_ERROR("configured alignment %d is invalid", CONFIG_DMA_NXP_EDMA_ALIGN);
 		return -EINVAL;
 	}
 
 	/* Scatter-Gather configurations currently not supported */
 	if (dma_cfg->block_count != 1) {
-		LOG_ERR("number of blocks %d not supported", dma_cfg->block_count);
+		LOG_ERROR("number of blocks %d not supported", dma_cfg->block_count);
 		return -ENOTSUP;
 	}
 
 	/* source address shouldn't be NULL */
 	if (!dma_cfg->head_block->source_address) {
-		LOG_ERR("source address cannot be NULL");
+		LOG_ERROR("source address cannot be NULL");
 		return -EINVAL;
 	}
 
 	/* destination address shouldn't be NULL */
 	if (!dma_cfg->head_block->dest_address) {
-		LOG_ERR("destination address cannot be NULL");
+		LOG_ERROR("destination address cannot be NULL");
 		return -EINVAL;
 	}
 
@@ -173,9 +170,8 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	 *	I tested it on). Is there a need to allow such a scenario?
 	 */
 	if (dma_cfg->head_block->source_address % dma_cfg->source_data_size) {
-		LOG_ERR("source address 0x%x alignment doesn't match data size %d",
-			dma_cfg->head_block->source_address,
-			dma_cfg->source_data_size);
+		LOG_ERROR("source address 0x%x alignment doesn't match data size %d",
+			  dma_cfg->head_block->source_address, dma_cfg->source_data_size);
 		return -EINVAL;
 	}
 
@@ -184,9 +180,8 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	 * bit (see CHn_ES register).
 	 */
 	if (dma_cfg->head_block->dest_address % dma_cfg->dest_data_size) {
-		LOG_ERR("destination address 0x%x alignment doesn't match data size %d",
-			dma_cfg->head_block->dest_address,
-			dma_cfg->dest_data_size);
+		LOG_ERROR("destination address 0x%x alignment doesn't match data size %d",
+			  dma_cfg->head_block->dest_address, dma_cfg->dest_data_size);
 		return -EINVAL;
 	}
 
@@ -194,11 +189,9 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	 * This is because the burst length is the equivalent of NBYTES which
 	 * is used for both the destination and the source.
 	 */
-	if (dma_cfg->source_burst_length !=
-	    dma_cfg->dest_burst_length) {
-		LOG_ERR("source burst length %d doesn't match destination burst length %d",
-			dma_cfg->source_burst_length,
-			dma_cfg->dest_burst_length);
+	if (dma_cfg->source_burst_length != dma_cfg->dest_burst_length) {
+		LOG_ERROR("source burst length %d doesn't match destination burst length %d",
+			  dma_cfg->source_burst_length, dma_cfg->dest_burst_length);
 		return -EINVAL;
 	}
 
@@ -212,9 +205,8 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	 * no error in the hardware but it's still wrong.
 	 */
 	if (dma_cfg->head_block->block_size % dma_cfg->source_burst_length) {
-		LOG_ERR("block size %d should be a multiple of NBYTES %d",
-			dma_cfg->head_block->block_size,
-			dma_cfg->source_burst_length);
+		LOG_ERROR("block size %d should be a multiple of NBYTES %d",
+			  dma_cfg->head_block->block_size, dma_cfg->source_burst_length);
 		return -EINVAL;
 	}
 
@@ -230,17 +222,16 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	 */
 	if (dma_cfg->source_burst_length %
 	    MAX(dma_cfg->source_data_size, dma_cfg->dest_data_size)) {
-		LOG_ERR("NBYTES %d should be a multiple of MAX(SSIZE(%d), DSIZE(%d))",
-			dma_cfg->source_burst_length,
-			dma_cfg->source_data_size,
-			dma_cfg->dest_data_size);
+		LOG_ERROR("NBYTES %d should be a multiple of MAX(SSIZE(%d), DSIZE(%d))",
+			  dma_cfg->source_burst_length, dma_cfg->source_data_size,
+			  dma_cfg->dest_data_size);
 		return -EINVAL;
 	}
 
 	/* fetch channel data */
 	chan = lookup_channel(dev, chan_id);
 	if (!chan) {
-		LOG_ERR("channel ID %u is not valid", chan_id);
+		LOG_ERROR("channel ID %u is not valid", chan_id);
 		return -EINVAL;
 	}
 
@@ -269,8 +260,8 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 			chan->stat.free = chan->bsize;
 			break;
 		default:
-			LOG_ERR("unsupported transfer dir %d for cyclic mode",
-				dma_cfg->channel_direction);
+			LOG_ERROR("unsupported transfer dir %d for cyclic mode",
+				  dma_cfg->channel_direction);
 			return -ENOTSUP;
 		}
 	} else {
@@ -279,8 +270,8 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 
 	/* check if transition to CONFIGURED is allowed */
 	if (!channel_allows_transition(chan, CHAN_STATE_CONFIGURED)) {
-		LOG_ERR("chan %d transition from %d to CONFIGURED not allowed",
-			chan_id, chan->state);
+		LOG_ERROR("chan %d transition from %d to CONFIGURED not allowed", chan_id,
+			  chan->state);
 		return -EPERM;
 	}
 
@@ -302,7 +293,7 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 				     dma_cfg->head_block->block_size,
 				     transfer_type);
 	if (ret < 0) {
-		LOG_ERR("failed to configure transfer");
+		LOG_ERROR("failed to configure transfer");
 		return to_std_error(ret);
 	}
 
@@ -310,7 +301,7 @@ static int edma_config(const struct device *dev, uint32_t chan_id,
 	if (EDMA_HAS_MUX(data->hal_cfg)) {
 		ret = EDMA_SetChannelMux(data->hal_cfg, chan_id, dma_cfg->dma_slot);
 		if (ret < 0) {
-			LOG_ERR("failed to set channel MUX");
+			LOG_ERROR("failed to set channel MUX");
 			return to_std_error(ret);
 		}
 	}
@@ -360,7 +351,7 @@ static int edma_get_status(const struct device *dev, uint32_t chan_id,
 	/* fetch channel data */
 	chan = lookup_channel(dev, chan_id);
 	if (!chan) {
-		LOG_ERR("channel ID %u is not valid", chan_id);
+		LOG_ERROR("channel ID %u is not valid", chan_id);
 		return -EINVAL;
 	}
 
@@ -405,7 +396,7 @@ static int edma_suspend(const struct device *dev, uint32_t chan_id)
 	/* fetch channel data */
 	chan = lookup_channel(dev, chan_id);
 	if (!chan) {
-		LOG_ERR("channel ID %u is not valid", chan_id);
+		LOG_ERROR("channel ID %u is not valid", chan_id);
 		return -EINVAL;
 	}
 
@@ -413,8 +404,8 @@ static int edma_suspend(const struct device *dev, uint32_t chan_id)
 
 	/* check if transition to SUSPENDED is allowed */
 	if (!channel_allows_transition(chan, CHAN_STATE_SUSPENDED)) {
-		LOG_ERR("chan %d transition from %d to SUSPENDED not allowed",
-			chan_id, chan->state);
+		LOG_ERROR("chan %d transition from %d to SUSPENDED not allowed", chan_id,
+			  chan->state);
 		return -EPERM;
 	}
 
@@ -443,7 +434,7 @@ static int edma_stop(const struct device *dev, uint32_t chan_id)
 	/* fetch channel data */
 	chan = lookup_channel(dev, chan_id);
 	if (!chan) {
-		LOG_ERR("channel ID %u is not valid", chan_id);
+		LOG_ERROR("channel ID %u is not valid", chan_id);
 		return -EINVAL;
 	}
 
@@ -451,8 +442,8 @@ static int edma_stop(const struct device *dev, uint32_t chan_id)
 
 	/* check if transition to STOPPED is allowed */
 	if (!channel_allows_transition(chan, CHAN_STATE_STOPPED)) {
-		LOG_ERR("chan %d transition from %d to STOPPED not allowed",
-			chan_id, chan->state);
+		LOG_ERROR("chan %d transition from %d to STOPPED not allowed", chan_id,
+			  chan->state);
 		return -EPERM;
 	}
 
@@ -482,7 +473,7 @@ out_release_channel:
 	if (EDMA_HAS_MUX(data->hal_cfg)) {
 		ret = EDMA_SetChannelMux(data->hal_cfg, chan_id, 0);
 		if (ret < 0) {
-			LOG_ERR("failed to set channel MUX");
+			LOG_ERROR("failed to set channel MUX");
 			return to_std_error(ret);
 		}
 	}
@@ -506,14 +497,14 @@ static int edma_start(const struct device *dev, uint32_t chan_id)
 	/* fetch channel data */
 	chan = lookup_channel(dev, chan_id);
 	if (!chan) {
-		LOG_ERR("channel ID %u is not valid", chan_id);
+		LOG_ERROR("channel ID %u is not valid", chan_id);
 		return -EINVAL;
 	}
 
 	/* check if transition to STARTED is allowed */
 	if (!channel_allows_transition(chan, CHAN_STATE_STARTED)) {
-		LOG_ERR("chan %d transition from %d to STARTED not allowed",
-			chan_id, chan->state);
+		LOG_ERROR("chan %d transition from %d to STARTED not allowed", chan_id,
+			  chan->state);
 		return -EPERM;
 	}
 
@@ -541,13 +532,13 @@ static int edma_reload(const struct device *dev, uint32_t chan_id, uint32_t src,
 	/* fetch channel data */
 	chan = lookup_channel(dev, chan_id);
 	if (!chan) {
-		LOG_ERR("channel ID %u is not valid", chan_id);
+		LOG_ERROR("channel ID %u is not valid", chan_id);
 		return -EINVAL;
 	}
 
 	/* channel needs to be started to allow reloading */
 	if (chan->state != CHAN_STATE_STARTED) {
-		LOG_ERR("reload is only supported on started channels");
+		LOG_ERROR("reload is only supported on started channels");
 		return -EINVAL;
 	}
 
@@ -556,7 +547,7 @@ static int edma_reload(const struct device *dev, uint32_t chan_id, uint32_t src,
 		ret = EDMA_CHAN_PRODUCE_CONSUME_B(chan, size);
 		irq_unlock(key);
 		if (ret < 0) {
-			LOG_ERR("chan %d buffer overflow/underrun", chan_id);
+			LOG_ERROR("chan %d buffer overflow/underrun", chan_id);
 			return ret;
 		}
 	}
@@ -576,7 +567,7 @@ static int edma_get_attribute(const struct device *dev, uint32_t type, uint32_t 
 		*val = 1;
 		break;
 	default:
-		LOG_ERR("invalid attribute type: %d", type);
+		LOG_ERROR("invalid attribute type: %d", type);
 		return -EINVAL;
 	}
 
@@ -604,8 +595,7 @@ static bool edma_channel_filter(const struct device *dev, int chan_id, void *par
 	if (chan->pd_dev) {
 		ret = pm_device_runtime_get(chan->pd_dev);
 		if (ret < 0) {
-			LOG_ERR("failed to PM get channel %d PD dev: %d",
-				chan_id, ret);
+			LOG_ERROR("failed to PM get channel %d PD dev: %d", chan_id, ret);
 			return false;
 		}
 	}
@@ -629,16 +619,14 @@ static void edma_channel_release(const struct device *dev, uint32_t chan_id)
 	data = dev->data;
 
 	if (!channel_allows_transition(chan, CHAN_STATE_RELEASING)) {
-		LOG_ERR("chan %d transition from %d to RELEASING not allowed",
-			chan_id, chan->state);
+		LOG_ERROR("chan %d transition from %d to RELEASING not allowed", chan_id,
+			  chan->state);
 		return;
 	}
 
 	/* channel needs to be INACTIVE before transitioning */
-	if (!WAIT_FOR(!EDMA_CHAN_IS_ACTIVE(data, chan),
-		      EDMA_ACTIVE_TIMEOUT, k_busy_wait(1))) {
-		LOG_ERR("timed out while waiting for chan %d to become inactive",
-			chan->id);
+	if (!WAIT_FOR(!EDMA_CHAN_IS_ACTIVE(data, chan), EDMA_ACTIVE_TIMEOUT, k_busy_wait(1))) {
+		LOG_ERROR("timed out while waiting for chan %d to become inactive", chan->id);
 		return;
 	}
 
@@ -652,8 +640,7 @@ static void edma_channel_release(const struct device *dev, uint32_t chan_id)
 	if (chan->pd_dev) {
 		ret = pm_device_runtime_put(chan->pd_dev);
 		if (ret < 0) {
-			LOG_ERR("failed to PM put channel %d PD dev: %d",
-				chan_id, ret);
+			LOG_ERROR("failed to PM put channel %d PD dev: %d", chan_id, ret);
 		}
 	}
 

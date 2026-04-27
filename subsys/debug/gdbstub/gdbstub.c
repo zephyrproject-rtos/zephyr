@@ -878,7 +878,7 @@ int gdb_init(void)
 	printk("gdbstub:%s enter\n", __func__);
 #endif
 	if (z_gdb_backend_init() == -1) {
-		LOG_ERR("Could not initialize gdbstub backend.");
+		LOG_ERROR("Could not initialize gdbstub backend.");
 		return -1;
 	}
 

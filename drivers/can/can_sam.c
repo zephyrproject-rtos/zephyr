@@ -139,7 +139,7 @@ static int can_sam_init(const struct device *dev)
 		}
 		break;
 	default:
-		LOG_ERR("Configure CAN memory with an invalid method");
+		LOG_ERROR("Configure CAN memory with an invalid method");
 		return -EINVAL;
 	}
 

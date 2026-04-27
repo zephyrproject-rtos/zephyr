@@ -16,7 +16,7 @@ int main(void)
 	const struct device *const dev = DEVICE_DT_GET(DT_ALIAS(co2));
 
 	if (!device_is_ready(dev)) {
-		LOG_ERR("%s is not ready", dev->name);
+		LOG_ERROR("%s is not ready", dev->name);
 		return 0;
 	}
 

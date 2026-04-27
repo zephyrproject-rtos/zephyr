@@ -111,7 +111,7 @@ static int sy1xx_spi_init(const struct device *dev)
 	/* PAD config */
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("SPI failed to set pin config for %u", cfg->inst);
+		LOG_ERROR("SPI failed to set pin config for %u", cfg->inst);
 		return ret;
 	}
 
@@ -125,7 +125,7 @@ static int sy1xx_spi_init(const struct device *dev)
 	/* prepare context for cs */
 	ret = spi_context_cs_configure_all(&data->ctx);
 	if (ret < 0) {
-		LOG_ERR("SPI failed to configure");
+		LOG_ERROR("SPI failed to configure");
 		return ret;
 	}
 
@@ -324,11 +324,11 @@ static int32_t sy1xx_spi_full_duplex_transfer_ctx(const struct device *dev)
 	SY1XX_UDMA_WAIT_FOR_FINISHED_RX(cfg->base);
 
 	if (SY1XX_UDMA_GET_REMAINING_TX(cfg->base)) {
-		LOG_ERR("not all bytes sent");
+		LOG_ERROR("not all bytes sent");
 		return -EIO;
 	}
 	if (SY1XX_UDMA_GET_REMAINING_RX(cfg->base)) {
-		LOG_ERR("not all bytes received");
+		LOG_ERROR("not all bytes received");
 		return -EIO;
 	}
 
@@ -361,7 +361,7 @@ static int sy1xx_spi_transceive_sync(const struct device *dev, const struct spi_
 
 	ret = sy1xx_spi_set_cs(dev);
 	if (ret < 0) {
-		LOG_ERR("SPI set cs failed");
+		LOG_ERROR("SPI set cs failed");
 		goto done;
 	}
 
@@ -371,7 +371,7 @@ static int sy1xx_spi_transceive_sync(const struct device *dev, const struct spi_
 	while (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)) {
 		ret = sy1xx_spi_full_duplex_transfer_ctx(dev);
 		if (ret < 0) {
-			LOG_ERR("Failed to transfer data - %d", ret);
+			LOG_ERROR("Failed to transfer data - %d", ret);
 			goto done;
 		}
 	}

@@ -151,7 +151,7 @@ static void create_adv(struct bt_le_ext_adv **adv)
 
 	err = bt_le_ext_adv_create(&params, &adv_cb, adv);
 	if (err) {
-		LOG_ERR("Failed to create advertiser (%d)", err);
+		LOG_ERROR("Failed to create advertiser (%d)", err);
 		return;
 	}
 
@@ -203,7 +203,7 @@ static void update_adv_params(struct bt_le_ext_adv *adv, enum adv_param_t adv_pa
 
 	err = bt_le_ext_adv_update_param(adv, &params);
 	if (err) {
-		LOG_ERR("Failed to update advertiser set (%d)", err);
+		LOG_ERROR("Failed to update advertiser set (%d)", err);
 		return;
 	}
 
@@ -214,7 +214,7 @@ static void update_adv_params(struct bt_le_ext_adv *adv, enum adv_param_t adv_pa
 
 		err = bt_le_ext_adv_set_data(adv, NULL, 0, &sd, sd_len);
 		if (err) {
-			LOG_ERR("Failed to set advertising data (%d)", err);
+			LOG_ERROR("Failed to set advertising data (%d)", err);
 		}
 
 		LOG_DBG("Advertiser data set");
@@ -237,7 +237,7 @@ static void start_adv(struct bt_le_ext_adv *adv)
 	err = bt_le_ext_adv_start(adv, &start_params);
 
 	if (err) {
-		LOG_ERR("Failed to start advertiser (%d)", err);
+		LOG_ERROR("Failed to start advertiser (%d)", err);
 		return;
 	}
 
@@ -325,7 +325,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 	if (!err) {
 		LOG_DBG("Security changed: %s level %u", bt_conn_dst_str(conn), level);
 	} else {
-		LOG_ERR("Security failed: %s level %u err %d", bt_conn_dst_str(conn), level);
+		LOG_ERROR("Security failed: %s level %u err %d", bt_conn_dst_str(conn), level);
 	}
 }
 

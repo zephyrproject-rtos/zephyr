@@ -40,7 +40,7 @@ int max32664c_acc_fill_fifo(const struct device *dev, struct max32664c_acc_data_
 	uint8_t rx;
 
 	if (length > 16) {
-		LOG_ERR("Length exceeds maximum of 16 samples!");
+		LOG_ERROR("Length exceeds maximum of 16 samples!");
 		return -EINVAL;
 	}
 

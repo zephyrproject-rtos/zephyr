@@ -106,17 +106,17 @@ static int adc_bflb_channel_setup(const struct device *dev,
 	uint8_t gain = ADC_GAIN_1_ID;
 
 	if (data->channel_count > ADC_CHAN_COUNT) {
-		LOG_ERR("Too many channels");
+		LOG_ERROR("Too many channels");
 		return -ENOTSUP;
 	}
 	if (channel_cfg->input_negative > ADC_CHAN_INPUT_COUNT
 		|| channel_cfg->input_positive > ADC_CHAN_INPUT_COUNT) {
-		LOG_ERR("Bad channel number(s)");
+		LOG_ERROR("Bad channel number(s)");
 		return -EINVAL;
 	}
 
 	if (channel_id >= ADC_CHAN_COUNT) {
-		LOG_ERR("Bad channel ID");
+		LOG_ERROR("Bad channel ID");
 		return -EINVAL;
 	}
 
@@ -140,7 +140,7 @@ static int adc_bflb_channel_setup(const struct device *dev,
 		gain = ADC_GAIN_32_ID;
 		break;
 	default:
-		LOG_ERR("Gain must be between 1 and 32 (included), cannot be 3, 6, 12, 24");
+		LOG_ERROR("Gain must be between 1 and 32 (included), cannot be 3, 6, 12, 24");
 		return -EINVAL;
 	}
 
@@ -268,7 +268,7 @@ static int adc_bflb_read(const struct device *dev,
 
 	nb_samples = sequence->buffer_size / 2 / chan_nb;
 	if (nb_samples < 1) {
-		LOG_ERR("resolution 12 to 16 bits, buffer size invalid");
+		LOG_ERROR("resolution 12 to 16 bits, buffer size invalid");
 		return -EINVAL;
 	}
 
@@ -286,7 +286,7 @@ static int adc_bflb_read(const struct device *dev,
 		tmp |= ADC_RESOLUTION_16B_ID << AON_GPADC_RES_SEL_SHIFT;
 		break;
 	default:
-		LOG_ERR("resolution 12, 14 or 16 bits, resolution invalid");
+		LOG_ERROR("resolution 12, 14 or 16 bits, resolution invalid");
 		return -EINVAL;
 	}
 	sys_write32(tmp, cfg->reg_AON + AON_GPADC_REG_CONFIG1_OFFSET);
@@ -451,11 +451,11 @@ static int adc_bflb_calibrate_efuse(const struct device *dev)
 
 	ret = syscon_read_reg(efuse, 0x78, &trim);
 	if (ret < 0) {
-		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", ret);
+		LOG_ERROR("Error: Couldn't read efuses: err: %d.\n", ret);
 		return -EINVAL;
 	}
 	if ((trim & 0x4000) == 0) {
-		LOG_ERR("Error: ADC calibration data not present");
+		LOG_ERROR("Error: ADC calibration data not present");
 		return -EINVAL;
 	}
 	trim = (trim & 0x1FFE) >> 1;
@@ -479,11 +479,11 @@ static int adc_bflb_calibrate_efuse(const struct device *dev)
 
 	ret = syscon_read_reg(efuse, 0xF0, &trim);
 	if (ret < 0) {
-		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", ret);
+		LOG_ERROR("Error: Couldn't read efuses: err: %d.\n", ret);
 		return -EINVAL;
 	}
 	if ((trim & 0x4000000) == 0) {
-		LOG_ERR("Error: ADC calibration data not present");
+		LOG_ERROR("Error: ADC calibration data not present");
 		return -EINVAL;
 	}
 	trim = (trim & 0x3FFC000) >> 14;
@@ -543,7 +543,7 @@ static int adc_bflb_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure pins for ADC. err=%d", ret);
+		LOG_ERROR("Failed to configure pins for ADC. err=%d", ret);
 		return ret;
 	}
 
@@ -664,7 +664,7 @@ static int adc_bflb_init(const struct device *dev)
 #else
 	ret = adc_bflb_calibrate_efuse(dev);
 	if (ret < 0) {
-		LOG_ERR("Couldn't calibrate via efuses. err=%d", ret);
+		LOG_ERROR("Couldn't calibrate via efuses. err=%d", ret);
 		return ret;
 	}
 	adc_bflb_calibrate_gnd_offset(dev);

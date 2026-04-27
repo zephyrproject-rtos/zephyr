@@ -145,7 +145,7 @@ static int can_mspm0_canfd_clock_enable(const struct device *dev)
 	if (!WAIT_FOR(((DL_MCAN_getRevisionId(config->ti_canfd_base, &revid),
 			(uint32_t)revid.scheme) != MSPM0_MCAN_REVID_SCHEME_INVALID),
 		      MSPM0_MCAN_CLOCK_TIMEOUT_US, k_busy_wait(1))) {
-		LOG_ERR("MSPM0 MCAN clock stabilization failed");
+		LOG_ERROR("MSPM0 MCAN clock stabilization failed");
 		return -ENODEV;
 	}
 
@@ -162,7 +162,7 @@ static int can_mspm0_canfd_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("MSPM0 MCAN pinctrl error (%d)", ret);
+		LOG_ERROR("MSPM0 MCAN pinctrl error (%d)", ret);
 		return ret;
 	}
 
@@ -178,7 +178,7 @@ static int can_mspm0_canfd_init(const struct device *dev)
 	/* Wait for Memory initialization to be completed. */
 	if (!WAIT_FOR(DL_MCAN_isMemInitDone(config->ti_canfd_base),
 		      MSPM0_MCAN_MEMINIT_TIMEOUT_US, k_busy_wait(1))) {
-		LOG_ERR("MSPM0 MCAN memory init failed");
+		LOG_ERROR("MSPM0 MCAN memory init failed");
 		return -ENODEV;
 	}
 

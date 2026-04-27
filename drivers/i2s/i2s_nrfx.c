@@ -83,7 +83,7 @@ static void find_suitable_clock(const struct i2s_nrfx_drv_cfg *drv_cfg,
 	};
 
 	if (nrfx_i2s_prescalers_calc(&clk_params, &config->prescalers) != 0) {
-		LOG_ERR("Failed to find suitable I2S clock configuration.");
+		LOG_ERROR("Failed to find suitable I2S clock configuration.");
 	}
 }
 
@@ -108,8 +108,7 @@ static bool get_next_rx_buffer(struct i2s_nrfx_drv_data *drv_data,
 				   (void **)&buffers->p_rx_buffer,
 				   K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Failed to allocate next RX buffer: %d",
-			ret);
+		LOG_ERROR("Failed to allocate next RX buffer: %d", ret);
 		return false;
 	}
 
@@ -196,7 +195,7 @@ static void data_handler(const struct device *dev,
 		 * buffers will be released after the transfer actually stops).
 		 */
 		if (drv_data->state != I2S_STATE_STOPPING) {
-			LOG_ERR("Next buffers not supplied on time");
+			LOG_ERROR("Next buffers not supplied on time");
 			drv_data->state = I2S_STATE_ERROR;
 		}
 		nrfx_i2s_stop(&drv_data->i2s);
@@ -215,7 +214,7 @@ static void data_handler(const struct device *dev,
 					     &buf,
 					     K_NO_WAIT);
 			if (ret < 0) {
-				LOG_ERR("No room in RX queue");
+				LOG_ERROR("No room in RX queue");
 				drv_data->state = I2S_STATE_ERROR;
 				stop_transfer = true;
 
@@ -323,7 +322,7 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 	nrfx_i2s_config_t nrfx_cfg;
 
 	if (drv_data->state != I2S_STATE_READY) {
-		LOG_ERR("Cannot configure in state: %d", drv_data->state);
+		LOG_ERROR("Cannot configure in state: %d", drv_data->state);
 		return -EINVAL;
 	}
 
@@ -344,7 +343,7 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 			i2s_cfg->block_size != 0);
 
 	if ((i2s_cfg->block_size % sizeof(uint32_t)) != 0) {
-		LOG_ERR("This device can transfer only full 32-bit words");
+		LOG_ERROR("This device can transfer only full 32-bit words");
 		return -EINVAL;
 	}
 
@@ -366,7 +365,7 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 		break;
 #endif
 	default:
-		LOG_ERR("Unsupported word size: %u", i2s_cfg->word_size);
+		LOG_ERROR("Unsupported word size: %u", i2s_cfg->word_size);
 		return -EINVAL;
 	}
 
@@ -384,14 +383,14 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 		nrfx_cfg.format = NRF_I2S_FORMAT_ALIGNED;
 		break;
 	default:
-		LOG_ERR("Unsupported data format: 0x%02x", i2s_cfg->format);
+		LOG_ERROR("Unsupported data format: 0x%02x", i2s_cfg->format);
 		return -EINVAL;
 	}
 
 	if ((i2s_cfg->format & I2S_FMT_DATA_ORDER_LSB) ||
 	    (i2s_cfg->format & I2S_FMT_BIT_CLK_INV) ||
 	    (i2s_cfg->format & I2S_FMT_FRAME_CLK_INV)) {
-		LOG_ERR("Unsupported stream format: 0x%02x", i2s_cfg->format);
+		LOG_ERROR("Unsupported stream format: 0x%02x", i2s_cfg->format);
 		return -EINVAL;
 	}
 
@@ -400,8 +399,7 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 	} else if (i2s_cfg->channels == 1) {
 		nrfx_cfg.channels = NRF_I2S_CHANNELS_LEFT;
 	} else {
-		LOG_ERR("Unsupported number of channels: %u",
-			i2s_cfg->channels);
+		LOG_ERROR("Unsupported number of channels: %u", i2s_cfg->channels);
 		return -EINVAL;
 	}
 
@@ -412,7 +410,7 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 		   !(i2s_cfg->options & I2S_OPT_FRAME_CLK_TARGET)) {
 		nrfx_cfg.mode = NRF_I2S_MODE_MASTER;
 	} else {
-		LOG_ERR("Unsupported operation mode: 0x%02x", i2s_cfg->options);
+		LOG_ERROR("Unsupported operation mode: 0x%02x", i2s_cfg->options);
 		return -EINVAL;
 	}
 
@@ -433,9 +431,8 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 		drv_data->request_clock = false;
 	}
 
-	if ((i2s_cfg->options & I2S_OPT_LOOPBACK) ||
-	    (i2s_cfg->options & I2S_OPT_PINGPONG)) {
-		LOG_ERR("Unsupported options: 0x%02x", i2s_cfg->options);
+	if ((i2s_cfg->options & I2S_OPT_LOOPBACK) || (i2s_cfg->options & I2S_OPT_PINGPONG)) {
+		LOG_ERROR("Unsupported options: 0x%02x", i2s_cfg->options);
 		return -EINVAL;
 	}
 
@@ -477,7 +474,7 @@ static int i2s_nrfx_read(const struct device *dev,
 	int ret;
 
 	if (!drv_data->rx_configured) {
-		LOG_ERR("Device is not configured");
+		LOG_ERROR("Device is not configured");
 		return -EIO;
 	}
 
@@ -508,19 +505,18 @@ static int i2s_nrfx_write(const struct device *dev,
 	int ret;
 
 	if (!drv_data->tx_configured) {
-		LOG_ERR("Device is not configured");
+		LOG_ERROR("Device is not configured");
 		return -EIO;
 	}
 
-	if (drv_data->state != I2S_STATE_RUNNING &&
-	    drv_data->state != I2S_STATE_READY) {
-		LOG_ERR("Cannot write in state: %d", drv_data->state);
+	if (drv_data->state != I2S_STATE_RUNNING && drv_data->state != I2S_STATE_READY) {
+		LOG_ERROR("Cannot write in state: %d", drv_data->state);
 		return -EIO;
 	}
 
 	if (size > drv_data->tx.cfg.block_size || size < sizeof(uint32_t)) {
-		LOG_ERR("This device can only write blocks up to %u bytes",
-			drv_data->tx.cfg.block_size);
+		LOG_ERROR("This device can only write blocks up to %u bytes",
+			  drv_data->tx.cfg.block_size);
 		return -EIO;
 	}
 
@@ -547,7 +543,7 @@ static int i2s_nrfx_write(const struct device *dev,
 			 * Do not return error because the caller is no longer
 			 * responsible for releasing the buffer.
 			 */
-			LOG_ERR("Cannot reacquire queued buffer");
+			LOG_ERROR("Cannot reacquire queued buffer");
 			return 0;
 		}
 
@@ -571,7 +567,7 @@ static int start_transfer(struct i2s_nrfx_drv_data *drv_data)
 
 	if (drv_data->active_dir != I2S_DIR_RX && /* -> TX to be started */
 	    !get_next_tx_buffer(drv_data, &initial_buffers)) {
-		LOG_ERR("No TX buffer available");
+		LOG_ERROR("No TX buffer available");
 		ret = -ENOMEM;
 	} else if (drv_data->active_dir != I2S_DIR_TX && /* -> RX to be started */
 		   !get_next_rx_buffer(drv_data, &initial_buffers)) {
@@ -596,7 +592,7 @@ static int start_transfer(struct i2s_nrfx_drv_data *drv_data)
 			return 0;
 		}
 
-		LOG_ERR("Failed to start I2S transfer: %d", err);
+		LOG_ERROR("Failed to start I2S transfer: %d", err);
 		ret = -EIO;
 	}
 
@@ -648,7 +644,7 @@ static int trigger_start(const struct device *dev)
 
 	err = nrfx_i2s_init(&drv_data->i2s, nrfx_cfg, drv_cfg->data_handler);
 	if (err != 0) {
-		LOG_ERR("Failed to initialize I2S: %d", err);
+		LOG_ERROR("Failed to initialize I2S: %d", err);
 		return -EIO;
 	}
 
@@ -672,7 +668,7 @@ static int trigger_start(const struct device *dev)
 			nrfx_i2s_uninit(&drv_data->i2s);
 			drv_data->state = I2S_STATE_READY;
 
-			LOG_ERR("Failed to request clock: %d", ret);
+			LOG_ERROR("Failed to request clock: %d", ret);
 			return -EIO;
 		}
 	} else {
@@ -705,17 +701,14 @@ static int i2s_nrfx_trigger(const struct device *dev,
 	}
 
 	if (!configured) {
-		LOG_ERR("Device is not configured");
+		LOG_ERROR("Device is not configured");
 		return -EIO;
 	}
 
-	if (dir == I2S_DIR_BOTH &&
-	    (memcmp(&drv_data->tx.nrfx_cfg,
-		    &drv_data->rx.nrfx_cfg,
-		    sizeof(drv_data->rx.nrfx_cfg)) != 0
-	     ||
-	     (drv_data->tx.cfg.block_size != drv_data->rx.cfg.block_size))) {
-		LOG_ERR("TX and RX configurations are different");
+	if (dir == I2S_DIR_BOTH && (memcmp(&drv_data->tx.nrfx_cfg, &drv_data->rx.nrfx_cfg,
+					   sizeof(drv_data->rx.nrfx_cfg)) != 0 ||
+				    (drv_data->tx.cfg.block_size != drv_data->rx.cfg.block_size))) {
+		LOG_ERROR("TX and RX configurations are different");
 		return -EIO;
 	}
 
@@ -734,7 +727,7 @@ static int i2s_nrfx_trigger(const struct device *dev,
 		cmd_allowed = (drv_data->state == I2S_STATE_ERROR);
 		break;
 	default:
-		LOG_ERR("Invalid trigger: %d", cmd);
+		LOG_ERROR("Invalid trigger: %d", cmd);
 		return -EINVAL;
 	}
 
@@ -747,10 +740,9 @@ static int i2s_nrfx_trigger(const struct device *dev,
 	 * that are currently active (this device cannot e.g. stop only TX
 	 * without stopping RX).
 	 */
-	if (drv_data->state == I2S_STATE_RUNNING &&
-	    drv_data->active_dir != dir) {
-		LOG_ERR("Inappropriate trigger (%d/%d), active stream(s): %d",
-			cmd, dir, drv_data->active_dir);
+	if (drv_data->state == I2S_STATE_RUNNING && drv_data->active_dir != dir) {
+		LOG_ERROR("Inappropriate trigger (%d/%d), active stream(s): %d", cmd, dir,
+			  drv_data->active_dir);
 		return -EINVAL;
 	}
 
@@ -788,7 +780,7 @@ static int i2s_nrfx_trigger(const struct device *dev,
 		return 0;
 
 	default:
-		LOG_ERR("Invalid trigger: %d", cmd);
+		LOG_ERROR("Invalid trigger: %d", cmd);
 		return -EINVAL;
 	}
 }

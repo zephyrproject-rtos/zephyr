@@ -134,7 +134,7 @@ static void handler_in_progress(struct k_work *work)
 		LOG_INF("HC pending done, result=%d", saved_status);
 	} else {
 		saved_status = EC_HOST_CMD_UNAVAILABLE;
-		LOG_ERR("HC incorrect IN_PROGRESS callback");
+		LOG_ERROR("HC incorrect IN_PROGRESS callback");
 	}
 	cb_in_progress = NULL;
 	cmd_in_progress = false;
@@ -302,7 +302,7 @@ int ec_host_cmd_send_response(enum ec_host_cmd_status status,
 	struct ec_host_cmd_tx_buf *tx = &hc->tx;
 
 	if (hc->state != EC_HOST_CMD_STATE_PROCESSING) {
-		LOG_ERR("Unexpected state while sending");
+		LOG_ERROR("Unexpected state while sending");
 		return -ENOTSUP;
 	}
 	hc->state = EC_HOST_CMD_STATE_SENDING;
@@ -500,7 +500,7 @@ int ec_host_cmd_init(struct ec_host_cmd_backend *backend)
 	}
 
 	if (!backend_tx_buf || !backend_rx_buf) {
-		LOG_ERR("No buffer for Host Command communication");
+		LOG_ERROR("No buffer for Host Command communication");
 		return -EIO;
 	}
 

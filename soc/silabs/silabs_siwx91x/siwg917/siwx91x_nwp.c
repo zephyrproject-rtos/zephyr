@@ -367,7 +367,7 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 		 "hidden_ssid or max_num_sta requires SOFT AP mode");
 
 	if (wifi_oper_mode == WIFI_SOFTAP_MODE && max_num_sta > AP_MAX_NUM_STA) {
-		LOG_ERR("Exceeded maximum supported stations (%d)", AP_MAX_NUM_STA);
+		LOG_ERROR("Exceeded maximum supported stations (%d)", AP_MAX_NUM_STA);
 		return -EINVAL;
 	}
 
@@ -456,7 +456,7 @@ int siwx91x_nwp_apply_power_profile(const struct device *dev)
 	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
 		ret = sl_si91x_bt_set_performance_profile(&bt_performance_profile);
 		if (ret) {
-			LOG_ERR("Failed to initiate power save in BLE mode");
+			LOG_ERROR("Failed to initiate power save in BLE mode");
 			return -EINVAL;
 		}
 	}
@@ -496,14 +496,14 @@ static int siwx91x_nwp_init(const struct device *dev)
 	/* Check if the NWP firmware version is correct */
 	ret = siwx91x_check_nwp_version();
 	if (ret < 0) {
-		LOG_ERR("Unexpected NWP firmware version (expected: %X.%d.%d.%d.%d.%d.%d)",
-			siwx91x_nwp_fw_expected_version.rom_id,
-			siwx91x_nwp_fw_expected_version.major,
-			siwx91x_nwp_fw_expected_version.minor,
-			siwx91x_nwp_fw_expected_version.security_version,
-			siwx91x_nwp_fw_expected_version.patch_num,
-			siwx91x_nwp_fw_expected_version.customer_id,
-			siwx91x_nwp_fw_expected_version.build_num);
+		LOG_ERROR("Unexpected NWP firmware version (expected: %X.%d.%d.%d.%d.%d.%d)",
+			  siwx91x_nwp_fw_expected_version.rom_id,
+			  siwx91x_nwp_fw_expected_version.major,
+			  siwx91x_nwp_fw_expected_version.minor,
+			  siwx91x_nwp_fw_expected_version.security_version,
+			  siwx91x_nwp_fw_expected_version.patch_num,
+			  siwx91x_nwp_fw_expected_version.customer_id,
+			  siwx91x_nwp_fw_expected_version.build_num);
 		return -EINVAL;
 	}
 

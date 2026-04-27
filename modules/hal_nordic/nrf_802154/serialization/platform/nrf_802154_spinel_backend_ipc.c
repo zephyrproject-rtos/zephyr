@@ -69,19 +69,19 @@ nrf_802154_ser_err_t nrf_802154_backend_init(void)
 
 	err = ipc_service_open_instance(ipc_instance);
 	if (err < 0 && err != -EALREADY) {
-		LOG_ERR("Failed to open IPC instance: %d", err);
+		LOG_ERROR("Failed to open IPC instance: %d", err);
 		return NRF_802154_SERIALIZATION_ERROR_INIT_FAILED;
 	}
 
 	err = ipc_service_register_endpoint(ipc_instance, &ept, &ept_cfg);
 	if (err < 0) {
-		LOG_ERR("Failed to register IPC endpoint: %d", err);
+		LOG_ERROR("Failed to register IPC endpoint: %d", err);
 		return NRF_802154_SERIALIZATION_ERROR_INIT_FAILED;
 	}
 
 	err = k_sem_take(&edp_bound_sem, IPC_BOUND_TIMEOUT_IN_MS);
 	if (err < 0) {
-		LOG_ERR("IPC endpoint bind timed out");
+		LOG_ERROR("IPC endpoint bind timed out");
 		return NRF_802154_SERIALIZATION_ERROR_INIT_FAILED;
 	}
 
@@ -115,7 +115,7 @@ static uint8_t get_rb_idx_plus_1(uint8_t i)
 static nrf_802154_ser_err_t spinel_packet_from_thread_send(const uint8_t *data, uint32_t len)
 {
 	if (get_rb_idx_plus_1(wr_idx) == rd_idx) {
-		LOG_ERR("No spinel buffer available to send a new packet");
+		LOG_ERROR("No spinel buffer available to send a new packet");
 		return NRF_802154_SERIALIZATION_ERROR_BACKEND_FAILURE;
 	}
 

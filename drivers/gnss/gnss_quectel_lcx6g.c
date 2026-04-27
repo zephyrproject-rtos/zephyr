@@ -205,27 +205,27 @@ static int quectel_lcx6g_resume(const struct device *dev)
 
 	ret = modem_pipe_open(data->uart_pipe, K_SECONDS(10));
 	if (ret < 0) {
-		LOG_ERR("Failed to open pipe");
+		LOG_ERROR("Failed to open pipe");
 		return ret;
 	}
 
 	ret = modem_chat_attach(&data->chat, data->uart_pipe);
 	if (ret < 0) {
-		LOG_ERR("Failed to attach chat");
+		LOG_ERROR("Failed to attach chat");
 		modem_pipe_close(data->uart_pipe, K_SECONDS(10));
 		return ret;
 	}
 
 	ret = modem_chat_run_script(&data->chat, &resume_script);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize GNSS");
+		LOG_ERROR("Failed to initialize GNSS");
 		modem_pipe_close(data->uart_pipe, K_SECONDS(10));
 		return ret;
 	}
 
 	ret = quectel_lcx6g_configure_pps(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure PPS");
+		LOG_ERROR("Failed to configure PPS");
 		modem_pipe_close(data->uart_pipe, K_SECONDS(10));
 		return ret;
 	}
@@ -246,7 +246,7 @@ static int quectel_lcx6g_suspend(const struct device *dev)
 
 	ret = modem_chat_run_script(&data->chat, &suspend_script);
 	if (ret < 0) {
-		LOG_ERR("Failed to suspend GNSS");
+		LOG_ERROR("Failed to suspend GNSS");
 	} else {
 		LOG_INF("Suspended");
 	}

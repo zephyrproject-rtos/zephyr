@@ -79,7 +79,7 @@ int main(void)
 
 		ret = zbus_chan_pub(&request_channel, &data, K_MSEC(100));
 		if (ret < 0) {
-			LOG_ERR("Failed to publish on channel %s: %d", request_channel.name, ret);
+			LOG_ERROR("Failed to publish on channel %s: %d", request_channel.name, ret);
 		} else {
 			LOG_INF("Published on channel %s. Test Value=%d", request_channel.name,
 				data.test_value);

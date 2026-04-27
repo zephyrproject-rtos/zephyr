@@ -81,7 +81,7 @@ static void clear_net_key(uint16_t net_idx)
 	snprintk(path, sizeof(path), "bt/mesh/NetKey/%x", net_idx);
 	err = settings_delete(path);
 	if (err) {
-		LOG_ERR("Failed to clear NetKeyIndex 0x%03x", net_idx);
+		LOG_ERROR("Failed to clear NetKeyIndex 0x%03x", net_idx);
 	} else {
 		LOG_DBG("Cleared NetKeyIndex 0x%03x", net_idx);
 	}
@@ -111,7 +111,7 @@ static void store_subnet(uint16_t net_idx)
 
 	err = settings_save_one(path, &key, sizeof(key));
 	if (err) {
-		LOG_ERR("Failed to store NetKey value");
+		LOG_ERROR("Failed to store NetKey value");
 	} else {
 		LOG_DBG("Stored NetKey value");
 	}
@@ -310,14 +310,14 @@ static int net_keys_create(struct bt_mesh_subnet_keys *keys, bool import, const 
 
 	err = msg_cred_create(&keys->msg, &p, 1, key);
 	if (err) {
-		LOG_ERR("Unable to generate NID, EncKey & PrivacyKey");
+		LOG_ERROR("Unable to generate NID, EncKey & PrivacyKey");
 		return err;
 	}
 
 	if (import) {
 		err = bt_mesh_key_import(BT_MESH_KEY_TYPE_NET, key, &keys->net);
 		if (err) {
-			LOG_ERR("Unable to import network key");
+			LOG_ERROR("Unable to import network key");
 			return err;
 		}
 	}
@@ -328,7 +328,7 @@ static int net_keys_create(struct bt_mesh_subnet_keys *keys, bool import, const 
 
 	err = bt_mesh_k3(key, keys->net_id);
 	if (err) {
-		LOG_ERR("Unable to generate Net ID");
+		LOG_ERROR("Unable to generate Net ID");
 		return err;
 	}
 
@@ -337,7 +337,7 @@ static int net_keys_create(struct bt_mesh_subnet_keys *keys, bool import, const 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 	err = bt_mesh_identity_key(key, &keys->identity);
 	if (err) {
-		LOG_ERR("Unable to generate IdentityKey");
+		LOG_ERROR("Unable to generate IdentityKey");
 		return err;
 	}
 
@@ -346,7 +346,7 @@ static int net_keys_create(struct bt_mesh_subnet_keys *keys, bool import, const 
 
 	err = bt_mesh_beacon_key(key, &keys->beacon);
 	if (err) {
-		LOG_ERR("Unable to generate beacon key");
+		LOG_ERROR("Unable to generate beacon key");
 		return err;
 	}
 
@@ -355,7 +355,7 @@ static int net_keys_create(struct bt_mesh_subnet_keys *keys, bool import, const 
 #if defined(CONFIG_BT_MESH_PRIV_BEACONS)
 	err = bt_mesh_private_beacon_key(key, &keys->priv_beacon);
 	if (err) {
-		LOG_ERR("Unable to generate private beacon key");
+		LOG_ERROR("Unable to generate private beacon key");
 		return err;
 	}
 
@@ -975,14 +975,14 @@ static int net_key_set(const char *name, size_t len_rd,
 	}
 
 	if (!name) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
 	net_idx = strtol(name, NULL, 16);
 	err = bt_mesh_settings_set(read_cb, cb_arg, &key, sizeof(key));
 	if (err) {
-		LOG_ERR("Failed to set \'net-key\'");
+		LOG_ERROR("Failed to set \'net-key\'");
 		return err;
 	}
 

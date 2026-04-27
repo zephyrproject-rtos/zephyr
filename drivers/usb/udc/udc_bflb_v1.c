@@ -281,7 +281,7 @@ static int xcvr_config(void)
 	/* USB requires the 48MHz DLL output; verify DLL is powered up */
 	regval = sys_read32(GLB_BASE + GLB_DLL_OFFSET);
 	if (!(regval & GLB_PU_DLL_MSK)) {
-		LOG_ERR("DLL not powered up, cannot start USB");
+		LOG_ERROR("DLL not powered up, cannot start USB");
 		return -ENODEV;
 	}
 
@@ -676,7 +676,7 @@ static void handle_evt_din(const struct device *dev,
 
 		buf = udc_buf_get(ep_cfg);
 		if (buf == NULL) {
-			LOG_ERR("No buffer for ep 0x%02x", ep_cfg->addr);
+			LOG_ERROR("No buffer for ep 0x%02x", ep_cfg->addr);
 			udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 			return;
 		}
@@ -1189,7 +1189,7 @@ static void handle_xfer_done(const struct device *dev, uint32_t eps)
 		ep = USB_EP_DIR_IN | bit;
 		ep_cfg = udc_get_ep_cfg(dev, ep);
 		if (ep_cfg == NULL) {
-			LOG_ERR("No config for ep 0x%02x", ep);
+			LOG_ERROR("No config for ep 0x%02x", ep);
 			continue;
 		}
 		handle_evt_din(dev, ep_cfg);
@@ -1204,7 +1204,7 @@ static void handle_xfer_done(const struct device *dev, uint32_t eps)
 		ep = USB_EP_DIR_OUT | bit;
 		ep_cfg = udc_get_ep_cfg(dev, ep);
 		if (ep_cfg == NULL) {
-			LOG_ERR("No config for ep 0x%02x", ep);
+			LOG_ERROR("No config for ep 0x%02x", ep);
 			continue;
 		}
 		handle_evt_dout(dev, ep_cfg);
@@ -1225,7 +1225,7 @@ static void handle_xfer_new(const struct device *dev, uint32_t eps)
 		ep_cfg = udc_get_ep_cfg(dev, ep);
 
 		if (ep_cfg == NULL) {
-			LOG_ERR("No config for ep 0x%02x", ep);
+			LOG_ERROR("No config for ep 0x%02x", ep);
 			continue;
 		}
 
@@ -1591,7 +1591,7 @@ static int udc_bflb_v1_init(const struct device *dev)
 
 	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err != 0) {
-		LOG_ERR("Failed to apply pinctrl (%d)", err);
+		LOG_ERROR("Failed to apply pinctrl (%d)", err);
 		return err;
 	}
 
@@ -1606,14 +1606,14 @@ static int udc_bflb_v1_init(const struct device *dev)
 	err = udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
 				     USB_EP_TYPE_CONTROL, BFLB_EP0_MPS, 0);
 	if (err != 0) {
-		LOG_ERR("Failed to enable control OUT endpoint");
+		LOG_ERROR("Failed to enable control OUT endpoint");
 		return err;
 	}
 
 	err = udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL,
 				     BFLB_EP0_MPS, 0);
 	if (err != 0) {
-		LOG_ERR("Failed to enable control IN endpoint");
+		LOG_ERROR("Failed to enable control IN endpoint");
 		return err;
 	}
 
@@ -1661,12 +1661,12 @@ static int udc_bflb_v1_disable(const struct device *dev)
 
 	err = udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT);
 	if (err != 0) {
-		LOG_ERR("Failed to disable control OUT endpoint");
+		LOG_ERROR("Failed to disable control OUT endpoint");
 	}
 
 	err = udc_ep_disable_internal(dev, USB_CONTROL_EP_IN);
 	if (err != 0) {
-		LOG_ERR("Failed to disable control IN endpoint");
+		LOG_ERROR("Failed to disable control IN endpoint");
 	}
 
 	return 0;
@@ -1742,7 +1742,7 @@ static int udc_bflb_v1_driver_preinit(const struct device *dev)
 	config->ep_cfg_out[0].addr = USB_CONTROL_EP_OUT;
 	err = udc_register_ep(dev, &config->ep_cfg_out[0]);
 	if (err != 0) {
-		LOG_ERR("Failed to register endpoint");
+		LOG_ERROR("Failed to register endpoint");
 		return err;
 	}
 
@@ -1752,7 +1752,7 @@ static int udc_bflb_v1_driver_preinit(const struct device *dev)
 	config->ep_cfg_in[0].addr = USB_CONTROL_EP_IN;
 	err = udc_register_ep(dev, &config->ep_cfg_in[0]);
 	if (err != 0) {
-		LOG_ERR("Failed to register endpoint");
+		LOG_ERROR("Failed to register endpoint");
 		return err;
 	}
 
@@ -1765,7 +1765,7 @@ static int udc_bflb_v1_driver_preinit(const struct device *dev)
 		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
 		err = udc_register_ep(dev, &config->ep_cfg_out[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}
@@ -1779,7 +1779,7 @@ static int udc_bflb_v1_driver_preinit(const struct device *dev)
 		config->ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
 		err = udc_register_ep(dev, &config->ep_cfg_in[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}

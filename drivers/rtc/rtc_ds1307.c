@@ -150,7 +150,7 @@ static int ds1307_init(const struct device *dev)
 	const struct ds1307_config *config = dev->config;
 
 	if (!i2c_is_ready_dt(&config->i2c_bus)) {
-		LOG_ERR("I2C bus not ready");
+		LOG_ERROR("I2C bus not ready");
 		return -ENODEV;
 	}
 
@@ -176,20 +176,20 @@ static int ds1307_init(const struct device *dev)
 	}
 	err = i2c_reg_write_byte_dt(&config->i2c_bus, DS1307_REG_CTRL, reg_val);
 	if (err < 0) {
-		LOG_ERR("Error: Configure SQW: %d", err);
+		LOG_ERROR("Error: Configure SQW: %d", err);
 	}
 
 	/* Ensure Clock Halt = 0 */
 	err = i2c_reg_read_byte_dt(&config->i2c_bus, DS1307_REG_SECONDS, &reg_val);
 	if (err < 0) {
-		LOG_ERR("Error: Read SECONDS/Clock Halt register: %d", err);
+		LOG_ERROR("Error: Read SECONDS/Clock Halt register: %d", err);
 	}
 	if (reg_val & ~SECONDS_BITS) {
 		/* Clock Halt bit is set */
 		err = i2c_reg_write_byte_dt(&config->i2c_bus, DS1307_REG_SECONDS,
 					    reg_val & SECONDS_BITS);
 		if (err < 0) {
-			LOG_ERR("Error: Clear Clock Halt bit: %d", err);
+			LOG_ERROR("Error: Clear Clock Halt bit: %d", err);
 		}
 	}
 

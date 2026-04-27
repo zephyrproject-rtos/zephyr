@@ -189,7 +189,7 @@ static void gop_eagain_retry(int cmd, struct gnttab_map_grant_ref *gref)
 	} while ((*status == GNTST_eagain) && (delay < GOP_RETRY_DELAY));
 
 	if (delay >= GOP_RETRY_DELAY) {
-		LOG_ERR("Failed to map grant, timeout reached\n");
+		LOG_ERROR("Failed to map grant, timeout reached\n");
 		*status = GNTST_bad_page;
 	}
 }
@@ -232,7 +232,7 @@ void *gnttab_get_pages(unsigned int npages)
 		if (removed > 0) {
 			ret = gnttab_put_pages(page_addr, removed);
 			if (ret) {
-				LOG_ERR("gnttab_put_pages failed ret=%d addr=%p", ret, page_addr);
+				LOG_ERROR("gnttab_put_pages failed ret=%d addr=%p", ret, page_addr);
 				k_panic();
 			}
 		}
@@ -360,7 +360,7 @@ static int gnttab_init(void)
 
 	xen_max_grant_frames = gnttab_get_max_frames();
 	if (xen_max_grant_frames < CONFIG_NR_GRANT_FRAMES) {
-		LOG_ERR("Xen max_grant_frames is less than CONFIG_NR_GRANT_FRAMES!");
+		LOG_ERROR("Xen max_grant_frames is less than CONFIG_NR_GRANT_FRAMES!");
 		k_panic();
 	}
 

@@ -321,14 +321,14 @@ int main(void)
 	/* Get the device for this port */
 	usbc_port0 = DEVICE_DT_GET(USBC_PORT0_NODE);
 	if (!device_is_ready(usbc_port0)) {
-		LOG_ERR("PORT0 device not ready");
+		LOG_ERROR("PORT0 device not ready");
 		return 0;
 	}
 
 	/* Get the power controller device for this port */
 	port0_data.pwrctrl = DEVICE_DT_GET(USBC_PORT0_PWRCTRL_NODE);
 	if (!device_is_ready(port0_data.pwrctrl)) {
-		LOG_ERR("PORT0 power controller not ready");
+		LOG_ERROR("PORT0 power controller not ready");
 		return 0;
 	}
 

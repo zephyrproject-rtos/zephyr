@@ -57,8 +57,7 @@ static int i2c_npcx_port_configure(const struct device *dev,
 	const struct i2c_npcx_port_config *const config = dev->config;
 
 	if (config->i2c_ctrl == NULL) {
-		LOG_ERR("Cannot find i2c controller on port%02x!",
-								config->port);
+		LOG_ERROR("Cannot find i2c controller on port%02x!", config->port);
 		return -EIO;
 	}
 
@@ -81,7 +80,7 @@ static int i2c_npcx_port_get_config(const struct device *dev, uint32_t *dev_conf
 	int ret;
 
 	if (config->i2c_ctrl == NULL) {
-		LOG_ERR("Cannot find i2c controller on port%02x!", config->port);
+		LOG_ERROR("Cannot find i2c controller on port%02x!", config->port);
 		return -EIO;
 	}
 
@@ -102,8 +101,7 @@ static int i2c_npcx_port_transfer(const struct device *dev,
 	int idx_port = (config->port & 0x0F);
 
 	if (config->i2c_ctrl == NULL) {
-		LOG_ERR("Cannot find i2c controller on port%02x!",
-								config->port);
+		LOG_ERROR("Cannot find i2c controller on port%02x!", config->port);
 		return -EIO;
 	}
 
@@ -128,7 +126,7 @@ static int i2c_npcx_port_recover_bus(const struct device *dev)
 	int ret;
 
 	if (config->i2c_ctrl == NULL) {
-		LOG_ERR("Cannot find i2c controller on port%02x!", config->port);
+		LOG_ERROR("Cannot find i2c controller on port%02x!", config->port);
 		return -EIO;
 	}
 
@@ -155,7 +153,7 @@ static int i2c_npcx_target_register(const struct device *dev,
 	}
 
 	if (config->i2c_ctrl == NULL) {
-		LOG_ERR("Cannot find i2c controller on port%02x!", config->port);
+		LOG_ERROR("Cannot find i2c controller on port%02x!", config->port);
 		return -EIO;
 	}
 
@@ -177,7 +175,7 @@ static int i2c_npcx_target_unregister(const struct device *dev,
 	const struct i2c_npcx_port_config *const config = dev->config;
 
 	if (config->i2c_ctrl == NULL) {
-		LOG_ERR("Cannot find i2c controller on port%02x!", config->port);
+		LOG_ERROR("Cannot find i2c controller on port%02x!", config->port);
 		return -EIO;
 	}
 
@@ -203,7 +201,7 @@ static int i2c_npcx_port_init(const struct device *dev)
 	/* Configure pin-mux for I2C device */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("I2C pinctrl setup failed (%d)", ret);
+		LOG_ERROR("I2C pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 

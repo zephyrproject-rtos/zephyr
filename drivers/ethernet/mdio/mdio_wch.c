@@ -60,7 +60,7 @@ static int mdio_wch_transfer(const struct device *dev, uint8_t prtad, uint8_t re
 	do {
 		if (sys_timepoint_expired(timeout)) {
 			k_sem_give(&dev_data->sem);
-			LOG_ERR("Transfer: MDIO Timeout!");
+			LOG_ERROR("Transfer: MDIO Timeout!");
 			return -EIO;
 		}
 
@@ -102,7 +102,7 @@ static int mdio_wch_init(const struct device *dev)
 	int ret = clock_control_on(config->clk_dev, clock_sys);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to enable ethernet clock needed for MDIO (%d)", ret);
+		LOG_ERROR("Failed to enable ethernet clock needed for MDIO (%d)", ret);
 		return ret;
 	}
 

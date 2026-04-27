@@ -760,14 +760,14 @@ static uint32_t modem_cellular_baudrate_update(struct modem_cellular_data *data,
 
 	ret = uart_config_get(config->uart, &cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to get UART configuration (%d)", ret);
+		LOG_ERROR("Failed to get UART configuration (%d)", ret);
 		return 0;
 	}
 	original_baudrate = cfg.baudrate;
 	cfg.baudrate = desired_baudrate;
 	ret = uart_configure(config->uart, &cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to set new baudrate (%d)", ret);
+		LOG_ERROR("Failed to set new baudrate (%d)", ret);
 		return 0;
 	}
 	return original_baudrate;
@@ -2252,7 +2252,7 @@ int modem_cellular_init(const struct device *dev)
 
 		ret = gpio_pin_configure_dt(&config->ring_gpio, GPIO_INPUT);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure ring GPIO (%d)", ret);
+			LOG_ERROR("Failed to configure ring GPIO (%d)", ret);
 			return ret;
 		}
 
@@ -2261,13 +2261,13 @@ int modem_cellular_init(const struct device *dev)
 
 		ret = gpio_add_callback(config->ring_gpio.port, &data->ring_gpio_cb);
 		if (ret < 0) {
-			LOG_ERR("Failed to add ring GPIO callback (%d)", ret);
+			LOG_ERROR("Failed to add ring GPIO callback (%d)", ret);
 			return ret;
 		}
 
 		ret = gpio_pin_interrupt_configure_dt(&config->ring_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure ring GPIO interrupt (%d)", ret);
+			LOG_ERROR("Failed to configure ring GPIO interrupt (%d)", ret);
 			return ret;
 		}
 

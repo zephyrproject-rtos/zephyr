@@ -235,7 +235,7 @@ static void setup_certs(void)
 				 ca_certificate,
 				 sizeof(ca_certificate));
 	if (ret < 0) {
-		LOG_ERR("Failed to register CA certificate: %d", ret);
+		LOG_ERROR("Failed to register CA certificate: %d", ret);
 	}
 
 	ret = tls_credential_add(SERVER_CERTIFICATE_TAG,
@@ -243,14 +243,14 @@ static void setup_certs(void)
 				 server_certificate,
 				 sizeof(server_certificate));
 	if (ret < 0) {
-		LOG_ERR("Failed to register server public certificate: %d", ret);
+		LOG_ERROR("Failed to register server public certificate: %d", ret);
 	}
 
 	ret = tls_credential_add(SERVER_CERTIFICATE_TAG,
 				 TLS_CREDENTIAL_PRIVATE_KEY,
 				 server_private_key, sizeof(server_private_key));
 	if (ret < 0) {
-		LOG_ERR("Failed to register server private key: %d", ret);
+		LOG_ERROR("Failed to register server private key: %d", ret);
 	}
 
 	/* Register client certificate (both client/server certs are signed by same CA) */
@@ -259,14 +259,14 @@ static void setup_certs(void)
 				 client_certificate,
 				 sizeof(client_certificate));
 	if (ret < 0) {
-		LOG_ERR("Failed to register client public certificate: %d", ret);
+		LOG_ERROR("Failed to register client public certificate: %d", ret);
 	}
 
 	ret = tls_credential_add(CLIENT_CERTIFICATE_TAG,
 				 TLS_CREDENTIAL_PRIVATE_KEY,
 				 client_private_key, sizeof(client_private_key));
 	if (ret < 0) {
-		LOG_ERR("Failed to register client private key: %d", ret);
+		LOG_ERROR("Failed to register client private key: %d", ret);
 	}
 }
 
@@ -358,22 +358,19 @@ static void before(void *arg)
 
 	quic_stream_foreach(test_stream_cb, cfg);
 	if (cfg->stream_count != 0) {
-		LOG_ERR("Expected 0 streams at test start (was %d)",
-			cfg->stream_count);
+		LOG_ERROR("Expected 0 streams at test start (was %d)", cfg->stream_count);
 		test_failure = true;
 	}
 
 	quic_endpoint_foreach(test_endpoint_cb, cfg);
 	if (cfg->endpoint_count != 0) {
-		LOG_ERR("Expected 0 endpoints at test start (was %d)",
-			cfg->endpoint_count);
+		LOG_ERROR("Expected 0 endpoints at test start (was %d)", cfg->endpoint_count);
 		test_failure = true;
 	}
 
 	quic_context_foreach(test_connection_cb, cfg);
 	if (cfg->connection_count != 0) {
-		LOG_ERR("Expected 0 connections at test start (was %d)",
-			cfg->connection_count);
+		LOG_ERROR("Expected 0 connections at test start (was %d)", cfg->connection_count);
 		test_failure = true;
 	}
 }
@@ -401,8 +398,7 @@ static void after(void *arg)
 	}
 
 	if (fail) {
-		LOG_ERR("Expected 0 streams at test end (was %d)",
-			cfg->stream_count);
+		LOG_ERROR("Expected 0 streams at test end (was %d)", cfg->stream_count);
 		test_failure = true;
 	}
 
@@ -421,8 +417,7 @@ static void after(void *arg)
 	}
 
 	if (fail) {
-		LOG_ERR("Expected 0 connections at test end (was %d)",
-			cfg->connection_count);
+		LOG_ERROR("Expected 0 connections at test end (was %d)", cfg->connection_count);
 		test_failure = true;
 	}
 
@@ -441,8 +436,7 @@ static void after(void *arg)
 	}
 
 	if (fail) {
-		LOG_ERR("Expected 0 endpoints at test end (was %d)",
-			cfg->endpoint_count);
+		LOG_ERROR("Expected 0 endpoints at test end (was %d)", cfg->endpoint_count);
 		test_failure = true;
 	}
 
@@ -1723,8 +1717,7 @@ static void server_uni_thread(void *p1, void *p2, void *p3)
 	stream_send_sock = quic_stream_open(connected_sock, QUIC_STREAM_SERVER,
 					    QUIC_STREAM_UNIDIRECTIONAL, 0);
 	if (stream_send_sock < 0) {
-		LOG_ERR("Failed to open server stream send sock (%d)",
-			stream_send_sock);
+		LOG_ERROR("Failed to open server stream send sock (%d)", stream_send_sock);
 		data->error = stream_send_sock;
 		goto out;
 	}
@@ -1761,7 +1754,7 @@ out:
 		ret = zsock_close(stream_send_sock);
 		if (ret < 0) {
 			ret = -errno;
-			LOG_ERR("Failed to close server stream send sock (%d)", ret);
+			LOG_ERROR("Failed to close server stream send sock (%d)", ret);
 			if (data->error == 0) {
 				data->error = ret;
 			}

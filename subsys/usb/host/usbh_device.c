@@ -24,7 +24,7 @@ struct usb_device *usbh_device_alloc(struct usbh_context *const uhs_ctx)
 	struct usb_device *udev;
 
 	if (k_mem_slab_alloc(&usb_device_slab, (void **)&udev, K_NO_WAIT)) {
-		LOG_ERR("Failed to allocate USB device memory");
+		LOG_ERROR("Failed to allocate USB device memory");
 		return NULL;
 	}
 
@@ -77,20 +77,20 @@ static int validate_device_mps0(const struct usb_device *const udev)
 	const uint8_t mps0 = udev->dev_desc.bMaxPacketSize0;
 
 	if (udev->speed == USB_SPEED_SPEED_SS || udev->speed == USB_SPEED_SPEED_LS) {
-		LOG_ERR("USB device speed not supported");
+		LOG_ERROR("USB device speed not supported");
 		return -ENOTSUP;
 	}
 
 	if (udev->speed == USB_SPEED_SPEED_HS) {
 		if (mps0 != 64) {
-			LOG_ERR("HS device has wrong bMaxPacketSize0 %u", mps0);
+			LOG_ERROR("HS device has wrong bMaxPacketSize0 %u", mps0);
 			return -EINVAL;
 		}
 	}
 
 	if (udev->speed == USB_SPEED_SPEED_FS) {
 		if (mps0 != 8 && mps0 != 16 && mps0 != 32 && mps0 != 64) {
-			LOG_ERR("FS device has wrong bMaxPacketSize0 %u", mps0);
+			LOG_ERROR("FS device has wrong bMaxPacketSize0 %u", mps0);
 			return -EINVAL;
 		}
 	}
@@ -219,20 +219,20 @@ int usbh_device_interface_set(struct usb_device *const udev,
 	int err;
 
 	if (iface > UHC_INTERFACES_MAX) {
-		LOG_ERR("Unsupported number of interfaces");
+		LOG_ERROR("Unsupported number of interfaces");
 		return -EINVAL;
 	}
 
 	err = k_mutex_lock(&udev->mutex, K_NO_WAIT);
 	if (err) {
-		LOG_ERR("Failed to lock USB device");
+		LOG_ERROR("Failed to lock USB device");
 		return err;
 	}
 
 	if (!dry) {
 		err = usbh_req_set_alt(udev, iface, alt);
 		if (err) {
-			LOG_ERR("Set Interface %u alternate %u request failed", iface, alt);
+			LOG_ERROR("Set Interface %u alternate %u request failed", iface, alt);
 			goto error;
 		}
 	}
@@ -247,21 +247,21 @@ int usbh_device_interface_set(struct usb_device *const udev,
 	/* Test if interface and interface alternate exist */
 	err = device_interface_modify(udev, EP_OP_TEST, iface, alt);
 	if (err) {
-		LOG_ERR("No interface %u with alternate %u", iface, alt);
+		LOG_ERROR("No interface %u with alternate %u", iface, alt);
 		goto error;
 	}
 
 	/* Shutdown current interface alternate */
 	err = device_interface_modify(udev, EP_OP_DOWN, iface, cur_alt);
 	if (err) {
-		LOG_ERR("Failed to shutdown interface %u alternate %u", iface, alt);
+		LOG_ERROR("Failed to shutdown interface %u alternate %u", iface, alt);
 		goto error;
 	}
 
 	/* Setup new interface alternate */
 	err = device_interface_modify(udev, EP_OP_UP, iface, alt);
 	if (err) {
-		LOG_ERR("Failed to setup interface %u alternate %u", iface, cur_alt);
+		LOG_ERROR("Failed to setup interface %u alternate %u", iface, cur_alt);
 		goto error;
 	}
 
@@ -290,7 +290,7 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 		if ((uint8_t *)dhp + sizeof(struct usb_desc_header) > (uint8_t *)desc_end ||
 		    (uint8_t *)dhp + dhp->bLength > (uint8_t *)desc_end ||
 		    dhp->bLength <= sizeof(struct usb_desc_header)) {
-			LOG_ERR("Invalid descriptor size %d.", dhp->bLength);
+			LOG_ERROR("Invalid descriptor size %d.", dhp->bLength);
 			return -EINVAL;
 		}
 
@@ -306,7 +306,7 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 
 			if (if_desc->bAlternateSetting == 0) {
 				if (tmp_nif >= UHC_INTERFACES_MAX) {
-					LOG_ERR("Unsupported number of interfaces");
+					LOG_ERROR("Unsupported number of interfaces");
 					return -EINVAL;
 				}
 
@@ -336,7 +336,7 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 	}
 
 	if (cfg_desc->bNumInterfaces != tmp_nif) {
-		LOG_ERR("The configuration has an incorrect number of interfaces");
+		LOG_ERROR("The configuration has an incorrect number of interfaces");
 		return -EINVAL;
 	}
 
@@ -364,7 +364,7 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 
 	err = k_mutex_lock(&udev->mutex, K_NO_WAIT);
 	if (err) {
-		LOG_ERR("Failed to lock USB device");
+		LOG_ERROR("Failed to lock USB device");
 		return err;
 	}
 
@@ -377,7 +377,7 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 		reset_configuration(udev);
 		err = usbh_req_set_cfg(udev, num);
 		if (err) {
-			LOG_ERR("Set Configuration %u request failed", num);
+			LOG_ERROR("Set Configuration %u request failed", num);
 		}
 
 		goto error;
@@ -387,24 +387,24 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 
 	err = usbh_req_desc_cfg(udev, idx, sizeof(cfg_desc), &cfg_desc);
 	if (err) {
-		LOG_ERR("Failed to read configuration %u descriptor", num);
+		LOG_ERROR("Failed to read configuration %u descriptor", num);
 		goto error;
 	}
 
 	if (cfg_desc.bDescriptorType != USB_DESC_CONFIGURATION) {
-		LOG_ERR("Failed to read configuration descriptor");
+		LOG_ERROR("Failed to read configuration descriptor");
 		err = -EINVAL;
 		goto error;
 	}
 
 	if (cfg_desc.bNumInterfaces == 0) {
-		LOG_ERR("Configuration %u has no interfaces", cfg_desc.bNumInterfaces);
+		LOG_ERROR("Configuration %u has no interfaces", cfg_desc.bNumInterfaces);
 		err = -EINVAL;
 		goto error;
 	}
 
 	if (cfg_desc.bNumInterfaces >= UHC_INTERFACES_MAX) {
-		LOG_ERR("Unsupported number of interfaces");
+		LOG_ERROR("Unsupported number of interfaces");
 		err = -EINVAL;
 		goto error;
 	}
@@ -413,14 +413,14 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 				      cfg_desc.wTotalLength + sizeof(struct usb_desc_header),
 				      K_NO_WAIT);
 	if (udev->cfg_desc == NULL) {
-		LOG_ERR("Failed to allocate memory for configuration descriptor");
+		LOG_ERROR("Failed to allocate memory for configuration descriptor");
 		err = -ENOMEM;
 		goto error;
 	}
 
 	err = usbh_req_set_cfg(udev, num);
 	if (err) {
-		LOG_ERR("Set Configuration %u request failed", num);
+		LOG_ERROR("Set Configuration %u request failed", num);
 		goto error;
 	}
 
@@ -431,14 +431,14 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 
 	err = usbh_req_desc_cfg(udev, idx, cfg_desc.wTotalLength, udev->cfg_desc);
 	if (err) {
-		LOG_ERR("Failed to read configuration descriptor of %u bytes: %d",
-			cfg_desc.wTotalLength, err);
+		LOG_ERROR("Failed to read configuration descriptor of %u bytes: %d",
+			  cfg_desc.wTotalLength, err);
 		k_heap_free(&usb_device_heap, udev->cfg_desc);
 		goto error;
 	}
 
 	if (memcmp(udev->cfg_desc, &cfg_desc, sizeof(cfg_desc))) {
-		LOG_ERR("Configuration descriptor read mismatch");
+		LOG_ERROR("Configuration descriptor read mismatch");
 		k_heap_free(&usb_device_heap, udev->cfg_desc);
 		goto error;
 	}
@@ -467,7 +467,7 @@ int usbh_device_set_address(struct usb_device *const udev, const uint8_t new_add
 
 	err = usbh_req_set_address(udev, new_addr);
 	if (err) {
-		LOG_ERR("Failed to set device address to 0x%02x", new_addr);
+		LOG_ERROR("Failed to set device address to 0x%02x", new_addr);
 		return err;
 	}
 
@@ -498,7 +498,7 @@ void usbh_device_connect(struct usbh_context *const ctx,
 
 	err = usbh_device_init(udev);
 	if (err != 0) {
-		LOG_ERR("Failed to init new USB device");
+		LOG_ERROR("Failed to init new USB device");
 		usbh_device_free(udev);
 		return;
 	}
@@ -522,20 +522,20 @@ int usbh_device_init(struct usb_device *const udev)
 	int err;
 
 	if (udev->state != USB_STATE_DEFAULT) {
-		LOG_ERR("USB device is not in default state");
+		LOG_ERROR("USB device is not in default state");
 		return -EALREADY;
 	}
 
 	err = k_mutex_lock(&udev->mutex, K_NO_WAIT);
 	if (err) {
-		LOG_ERR("Failed to lock USB device");
+		LOG_ERROR("Failed to lock USB device");
 		return err;
 	}
 
 	if (usbh_device_is_root(uhs_ctx, udev)) {
 		err = uhc_bus_reset(uhs_ctx->dev);
 		if (err) {
-			LOG_ERR("Failed to signal bus reset");
+			LOG_ERROR("Failed to signal bus reset");
 			return err;
 		}
 	}
@@ -547,7 +547,7 @@ int usbh_device_init(struct usb_device *const udev)
 	udev->dev_desc.bMaxPacketSize0 = 8;
 	err = usbh_req_desc_dev(udev, 8, &udev->dev_desc);
 	if (err) {
-		LOG_ERR("Failed to read device descriptor");
+		LOG_ERROR("Failed to read device descriptor");
 		goto error;
 	}
 
@@ -558,19 +558,19 @@ int usbh_device_init(struct usb_device *const udev)
 
 	err = usbh_req_desc_dev(udev, sizeof(udev->dev_desc), &udev->dev_desc);
 	if (err) {
-		LOG_ERR("Failed to read device descriptor");
+		LOG_ERROR("Failed to read device descriptor");
 		goto error;
 	}
 
 	if (!udev->dev_desc.bNumConfigurations) {
-		LOG_ERR("Device has no configurations, bNumConfigurations %d",
-			udev->dev_desc.bNumConfigurations);
+		LOG_ERROR("Device has no configurations, bNumConfigurations %d",
+			  udev->dev_desc.bNumConfigurations);
 		goto error;
 	}
 
 	err = alloc_device_address(udev, &new_addr);
 	if (err) {
-		LOG_ERR("Failed to allocate device address");
+		LOG_ERROR("Failed to allocate device address");
 		goto error;
 	}
 
@@ -583,7 +583,7 @@ int usbh_device_init(struct usb_device *const udev)
 
 	err = usbh_device_set_configuration(udev, 1);
 	if (err) {
-		LOG_ERR("Failed to configure new device with address %u", udev->addr);
+		LOG_ERROR("Failed to configure new device with address %u", udev->addr);
 	}
 
 error:

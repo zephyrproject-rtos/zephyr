@@ -223,7 +223,7 @@ static int init_app(void)
 
 	ret = net_capture_setup(remote, local, peer, &capture_dev);
 	if (ret < 0) {
-		LOG_ERR("Capture cannot be setup (%d)", ret);
+		LOG_ERROR("Capture cannot be setup (%d)", ret);
 		return -ENOEXEC;
 	}
 
@@ -237,14 +237,13 @@ static int init_app(void)
 
 		ifindex = net_if_get_by_name(COOKED_MODE_INTERFACE_NAME);
 		if (ifindex < 0) {
-			LOG_ERR("Interface \"%s\" not found.", COOKED_MODE_INTERFACE_NAME);
+			LOG_ERROR("Interface \"%s\" not found.", COOKED_MODE_INTERFACE_NAME);
 			return -ENOENT;
 		}
 
 		ret = net_capture_enable(capture_dev, net_if_get_by_index(ifindex));
 		if (ret < 0) {
-			LOG_ERR("Cannot enable capture to interface %d (%d)",
-				ifindex, ret);
+			LOG_ERROR("Cannot enable capture to interface %d (%d)", ifindex, ret);
 			return ret;
 		}
 
@@ -262,8 +261,7 @@ static int init_app(void)
 			       net_if_get_by_index(ifindex), &params,
 			       sizeof(struct virtual_interface_req_params));
 		if (ret < 0 && ret != -ENOTSUP) {
-			LOG_ERR("Cannot set interface %d link types (%d)",
-				ifindex, ret);
+			LOG_ERROR("Cannot set interface %d link types (%d)", ifindex, ret);
 			return ret;
 		}
 
@@ -273,7 +271,7 @@ static int init_app(void)
 		 */
 		ret = net_if_up(net_if_get_by_index(ifindex));
 		if (ret < 0) {
-			LOG_ERR("Cannot take up interface %d (%d)", ifindex, ret);
+			LOG_ERROR("Cannot take up interface %d (%d)", ifindex, ret);
 			return ret;
 		}
 
@@ -322,7 +320,7 @@ int main(void)
 
 	ret = init_app();
 	if (ret < 0) {
-		LOG_ERR("Cannot start the application.");
+		LOG_ERROR("Cannot start the application.");
 		return ret;
 	}
 

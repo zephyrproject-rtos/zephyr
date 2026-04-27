@@ -46,7 +46,7 @@ static int rsi_bt_driver_send_tx_pwr_vs_cmd(const struct device *dev, uint8_t pr
 	/* Allocate HCI command buffer with timeout */
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
-		LOG_ERR("Failed to allocate HCI command buffer");
+		LOG_ERROR("Failed to allocate HCI command buffer");
 		return -ENOMEM;
 	}
 	net_buf_add_u8(buf, protocol_mode);
@@ -56,7 +56,7 @@ static int rsi_bt_driver_send_tx_pwr_vs_cmd(const struct device *dev, uint8_t pr
 
 	err = bt_hci_cmd_send_sync(BT_OP_VS_RF_POWER_MODE, buf, NULL);
 	if (err) {
-		LOG_ERR("RF Power Mode command failed: %d", err);
+		LOG_ERROR("RF Power Mode command failed: %d", err);
 		return err;
 	}
 
@@ -82,13 +82,13 @@ static int siwx91x_bt_setup(const struct device *dev, const struct bt_hci_setup_
 	int err = rsi_bt_driver_send_tx_pwr_vs_cmd(dev, BT_LE_MODE, RSI_BLE_PWR_INX);
 
 	if (err < 0) {
-		LOG_ERR("Failed to send RF power config command: %d", err);
+		LOG_ERROR("Failed to send RF power config command: %d", err);
 		return err;
 	}
 
 	err = siwx91x_nwp_apply_power_profile(hci_config->nwp_dev);
 	if (err < 0) {
-		LOG_ERR("Failed to set power profile: %d", err);
+		LOG_ERROR("Failed to set power profile: %d", err);
 		return err;
 	}
 
@@ -107,7 +107,7 @@ static int siwx91x_bt_send(const struct device *dev, struct net_buf *buf)
 		 * be introduced
 		 */
 		if (sc) {
-			LOG_ERR("BT command send failure: %d", sc);
+			LOG_ERROR("BT command send failure: %d", sc);
 			sc = -EIO;
 		}
 	}
@@ -148,7 +148,7 @@ static void siwx91x_bt_resp_rcvd(uint16_t status, rsi_ble_event_rcp_rcvd_info_t 
 		break;
 	}
 	default:
-		LOG_ERR("Unknown/Unhandled HCI type: %d", packet_type);
+		LOG_ERROR("Unknown/Unhandled HCI type: %d", packet_type);
 		break;
 	}
 
@@ -163,7 +163,7 @@ static int siwx91x_bt_init(const struct device *dev)
 	const struct hci_config *hci_config = dev->config;
 
 	if (!device_is_ready(hci_config->nwp_dev)) {
-		LOG_ERR("NWP device not ready");
+		LOG_ERROR("NWP device not ready");
 		return -ENODEV;
 	}
 

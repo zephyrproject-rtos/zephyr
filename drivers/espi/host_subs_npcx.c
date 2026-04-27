@@ -693,7 +693,7 @@ static void host_c2h_wait_write_done(void)
 	while (IS_BIT_SET(inst_c2h->SIBCTRL, NPCX_SIBCTRL_CSWR)) {
 		elapsed_cycles = k_cycle_get_32() - start_cycles;
 		if (elapsed_cycles > max_wait_cycles) {
-			LOG_ERR("c2h write transaction expired!");
+			LOG_ERROR("c2h write transaction expired!");
 			break;
 		}
 	}
@@ -710,7 +710,7 @@ static void host_c2h_wait_read_done(void)
 	while (IS_BIT_SET(inst_c2h->SIBCTRL, NPCX_SIBCTRL_CSRD)) {
 		elapsed_cycles = k_cycle_get_32() - start_cycles;
 		if (elapsed_cycles > max_wait_cycles) {
-			LOG_ERR("c2h read transaction expired!");
+			LOG_ERROR("c2h read transaction expired!");
 			break;
 		}
 	}

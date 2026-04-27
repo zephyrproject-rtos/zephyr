@@ -98,7 +98,7 @@ static int wait(struct shell_mqtt *sh, int timeout)
 	if (sh->nfds > 0) {
 		rc = zsock_poll(sh->fds, sh->nfds, timeout);
 		if (rc < 0) {
-			LOG_ERR("poll error: %d", errno);
+			LOG_ERROR("poll error: %d", errno);
 		}
 	}
 
@@ -126,8 +126,8 @@ static int get_mqtt_broker_addrinfo(struct shell_mqtt *sh)
 		return 0;
 	}
 
-	LOG_ERR("DNS%s resolved for %s:%d, retrying", " not", CONFIG_SHELL_MQTT_SERVER_ADDR,
-		CONFIG_SHELL_MQTT_SERVER_PORT);
+	LOG_ERROR("DNS%s resolved for %s:%d, retrying", " not", CONFIG_SHELL_MQTT_SERVER_ADDR,
+		  CONFIG_SHELL_MQTT_SERVER_PORT);
 
 	return rc;
 }
@@ -243,7 +243,7 @@ static void sh_mqtt_process_handler(struct k_work *work)
 			LOG_DBG("Process socket for MQTT packet");
 			rc = mqtt_input(&sh->mqtt_cli);
 			if (rc != 0) {
-				LOG_ERR("%s error: %d", "processed: mqtt_input", rc);
+				LOG_ERROR("%s error: %d", "processed: mqtt_input", rc);
 				goto process_error;
 			}
 		} else if (rc < 0) {
@@ -253,7 +253,7 @@ static void sh_mqtt_process_handler(struct k_work *work)
 		LOG_DBG("MQTT %s", "Keepalive");
 		rc = mqtt_live(&sh->mqtt_cli);
 		if ((rc != 0) && (rc != -EAGAIN)) {
-			LOG_ERR("%s error: %d", "mqtt_live", rc);
+			LOG_ERROR("%s error: %d", "mqtt_live", rc);
 			goto process_error;
 		}
 
@@ -313,7 +313,7 @@ static void sh_mqtt_subscribe_handler(struct k_work *work)
 			LOG_DBG("Process socket for MQTT packet");
 			rc = mqtt_input(&sh->mqtt_cli);
 			if (rc != 0) {
-				LOG_ERR("%s error: %d", "subscribe: mqtt_input", rc);
+				LOG_ERROR("%s error: %d", "subscribe: mqtt_input", rc);
 				goto subscribe_error;
 			}
 		} else if (rc < 0) {
@@ -363,7 +363,7 @@ static void sh_mqtt_connect_handler(struct k_work *work)
 
 	if (sh->transport_state == SHELL_MQTT_TRANSPORT_CONNECTED) {
 		__ASSERT(0, "MQTT shouldn't be already connected");
-		LOG_ERR("MQTT shouldn't be already connected");
+		LOG_ERROR("MQTT shouldn't be already connected");
 		goto connect_error;
 	}
 
@@ -384,7 +384,7 @@ static void sh_mqtt_connect_handler(struct k_work *work)
 	LOG_DBG("Connecting to MQTT broker");
 	rc = mqtt_connect(&sh->mqtt_cli);
 	if (rc != 0) {
-		LOG_ERR("%s error: %d", "mqtt_connect", rc);
+		LOG_ERROR("%s error: %d", "mqtt_connect", rc);
 		goto connect_error;
 	}
 
@@ -399,7 +399,7 @@ static void sh_mqtt_connect_handler(struct k_work *work)
 		LOG_DBG("Process socket for MQTT packet");
 		rc = mqtt_input(&sh->mqtt_cli);
 		if (rc != 0) {
-			LOG_ERR("%s error: %d", "connect: mqtt_input", rc);
+			LOG_ERROR("%s error: %d", "connect: mqtt_input", rc);
 			goto connect_error;
 		}
 	} else if (rc < 0) {
@@ -439,7 +439,7 @@ static int sh_mqtt_publish_tx_buf(struct shell_mqtt *sh, bool is_work)
 	rc = sh_mqtt_publish(sh, &sh->tx_buf.buf[0], sh->tx_buf.len);
 	memset(&sh->tx_buf, 0, sizeof(sh->tx_buf));
 	if (rc != 0) {
-		LOG_ERR("MQTT publish error: %d", rc);
+		LOG_ERROR("MQTT publish error: %d", rc);
 		return rc;
 	}
 
@@ -522,7 +522,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 	case MQTT_EVT_CONNACK:
 		if (evt->result != 0) {
 			sh->transport_state = SHELL_MQTT_TRANSPORT_DISCONNECTED;
-			LOG_ERR("MQTT %s %d", "connect failed", evt->result);
+			LOG_ERROR("MQTT %s %d", "connect failed", evt->result);
 			break;
 		}
 
@@ -532,7 +532,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 
 	case MQTT_EVT_SUBACK:
 		if (evt->result != 0) {
-			LOG_ERR("MQTT subscribe: %s", "error");
+			LOG_ERROR("MQTT subscribe: %s", "error");
 			sh->subscribe_state = SHELL_MQTT_NOT_SUBSCRIBED;
 			break;
 		}
@@ -613,7 +613,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 
 	case MQTT_EVT_PUBACK:
 		if (evt->result != 0) {
-			LOG_ERR("MQTT PUBACK error %d", evt->result);
+			LOG_ERROR("MQTT PUBACK error %d", evt->result);
 			break;
 		}
 
@@ -641,7 +641,7 @@ static int init(const struct shell_transport *transport, const void *config,
 	(void)k_mutex_init(&sh->lock);
 
 	if (!shell_mqtt_get_devid(sh->device_id, DEVICE_ID_HEX_MAX_SIZE)) {
-		LOG_ERR("Unable to get device identity, using dummy value");
+		LOG_ERROR("Unable to get device identity, using dummy value");
 		(void)snprintf(sh->device_id, sizeof("dummy"), "dummy");
 	}
 

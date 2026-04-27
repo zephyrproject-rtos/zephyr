@@ -51,7 +51,7 @@ int sx126x_hal_reset(const struct device *dev)
 	 */
 	ret = sx126x_hal_wakeup(dev);
 	if (ret < 0) {
-		LOG_ERR("Wakeup failed: %d", ret);
+		LOG_ERROR("Wakeup failed: %d", ret);
 		return ret;
 	}
 
@@ -225,7 +225,7 @@ int sx126x_hal_init(const struct device *dev)
 	data->dio1_callback = NULL;
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus not ready");
+		LOG_ERROR("SPI bus not ready");
 		return -ENODEV;
 	}
 

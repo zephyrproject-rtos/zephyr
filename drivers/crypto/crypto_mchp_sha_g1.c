@@ -97,7 +97,7 @@ static int mchp_sha_wait_data_rdy(sha_registers_t *const regs)
 
 	while ((regs->SHA_ISR & SHA_ISR_DATRDY_Msk) == 0) {
 		if (timeout-- == 0) {
-			LOG_ERR("MCHP SHA wait data ready timeout");
+			LOG_ERROR("MCHP SHA wait data ready timeout");
 			return -ETIMEDOUT;
 		}
 		k_busy_wait(5);
@@ -182,12 +182,12 @@ static int mchp_sha_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fin
 	int ret;
 
 	if (!pkt || !pkt->in_buf || (!pkt->out_buf && !inplace_ops)) {
-		LOG_ERR("Invalid packet buffers");
+		LOG_ERROR("Invalid packet buffers");
 		return -EINVAL;
 	}
 
 	if (!finish) {
-		LOG_ERR("Multipart shaing not supported yet");
+		LOG_ERROR("Multipart shaing not supported yet");
 		return -ENOTSUP;
 	}
 
@@ -195,13 +195,13 @@ static int mchp_sha_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool fin
 
 	if (session->algo_cfg == NULL) {
 		k_sem_give(&data->device_sem);
-		LOG_ERR("Unsupported algorithm");
+		LOG_ERROR("Unsupported algorithm");
 		return -ENOTSUP;
 	}
 
 	if (inplace_ops && pkt->in_len < session->algo_cfg->dgst_len) {
 		k_sem_give(&data->device_sem);
-		LOG_ERR("Insufficient in_buf for digest");
+		LOG_ERROR("Insufficient in_buf for digest");
 		return -EINVAL;
 	}
 
@@ -220,7 +220,7 @@ static int mchp_sha_begin_session(const struct device *dev, struct hash_ctx *ctx
 	struct crypto_mchp_sha_session *session;
 
 	if (ctx->flags & ~(MCHP_SHA_CAPS_SUPPORT)) {
-		LOG_ERR("Unsupported flag");
+		LOG_ERROR("Unsupported flag");
 		return -ENOTSUP;
 	}
 
@@ -232,13 +232,13 @@ static int mchp_sha_begin_session(const struct device *dev, struct hash_ctx *ctx
 	}
 
 	if (algo_cfg == NULL) {
-		LOG_ERR("Unsupported hash algorithm: %d", algo);
+		LOG_ERROR("Unsupported hash algorithm: %d", algo);
 		return -ENOTSUP;
 	}
 
 	session = crypto_mchp_sha_get_unused_session();
 	if (session == NULL) {
-		LOG_ERR("No free session for now");
+		LOG_ERROR("No free session for now");
 		return -ENOSPC;
 	}
 	session->algo_cfg = algo_cfg;
@@ -256,12 +256,12 @@ static int mchp_sha_begin_session(const struct device *dev, struct hash_ctx *ctx
 static int mchp_sha_free_session(const struct device *dev, struct hash_ctx *ctx)
 {
 	if (!ctx || !ctx->device || !ctx->drv_sessn_state) {
-		LOG_ERR("Tried to free a invalid context or session");
+		LOG_ERROR("Tried to free a invalid context or session");
 		return -EINVAL;
 	}
 
 	if (ctx->device != dev) {
-		LOG_ERR("The context or session tried to free is not related to the device");
+		LOG_ERROR("The context or session tried to free is not related to the device");
 		return -EINVAL;
 	}
 
@@ -291,12 +291,12 @@ static int crypto_mchp_sha_init(const struct device *dev)
 	struct crypto_mchp_sha_data *data = dev->data;
 
 	if (!device_is_ready(pmc)) {
-		LOG_ERR("Power Management Controller device not ready");
+		LOG_ERROR("Power Management Controller device not ready");
 		return -ENODEV;
 	}
 
 	if (clock_control_on(pmc, (clock_control_subsys_t)(uintptr_t)&(cfg->clock_cfg)) != 0) {
-		LOG_ERR("Clock op failed\n");
+		LOG_ERROR("Clock op failed\n");
 		return -EIO;
 	}
 

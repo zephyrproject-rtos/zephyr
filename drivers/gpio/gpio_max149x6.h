@@ -14,10 +14,10 @@
 #define MAX149X6_GET_BIT(val, i) (0x1 & ((val) >> (i)))
 #define PRINT_ERR_BIT(bit1, bit2)                                                                  \
 	if ((bit1) & (bit2))                                                                       \
-		LOG_ERR("[%s] %d", #bit1, bit1)
+	LOG_ERROR("[%s] %d", #bit1, bit1)
 #define PRINT_ERR(bit)                                                                             \
 	if (bit)                                                                                   \
-		LOG_ERR("[DIAG] [%s] %d\n", #bit, bit)
+	LOG_ERROR("[DIAG] [%s] %d\n", #bit, bit)
 #define PRINT_INF(bit) LOG_INFO("[%s] %d\n", #bit, bit)
 #define LOG_DIAG(...)  Z_LOG(LOG_LEVEL_ERR, __VA_ARGS__)
 
@@ -123,7 +123,7 @@ static int max149x6_reg_transceive(const struct device *dev, uint8_t addr, uint8
 	ret = spi_transceive_dt(&config->spi, &tx, &rx);
 
 	if (ret) {
-		LOG_ERR("Err spi_transcieve_dt  [%d]\n", ret);
+		LOG_ERROR("Err spi_transcieve_dt  [%d]\n", ret);
 		return ret;
 	}
 
@@ -131,7 +131,7 @@ static int max149x6_reg_transceive(const struct device *dev, uint8_t addr, uint8
 	if (config->crc_en) {
 		crc = max149x6_crc(&local_rx_buff[0], false, local_rx_buff[2] & 0xE0);
 		if (crc != (local_rx_buff[2] & 0x1F)) {
-			LOG_ERR("READ CRC ERR (%d)-(%d)\n", crc, (local_rx_buff[2] & 0x1F));
+			LOG_ERROR("READ CRC ERR (%d)-(%d)\n", crc, (local_rx_buff[2] & 0x1F));
 			return -EINVAL;
 		}
 	}

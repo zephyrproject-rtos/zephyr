@@ -97,7 +97,7 @@ static int gpio_aw9523b_pin_configure(const struct device *dev, gpio_pin_t pin, 
 
 	err = i2c_reg_update_byte_dt(&config->i2c, AW9523B_REG_CONFIG(port), mask, input_en);
 	if (err) {
-		LOG_ERR("%s: Failed to set pin%d direction (%d)", dev->name, pin, err);
+		LOG_ERROR("%s: Failed to set pin%d direction (%d)", dev->name, pin, err);
 		goto on_error;
 	}
 
@@ -110,7 +110,7 @@ static int gpio_aw9523b_pin_configure(const struct device *dev, gpio_pin_t pin, 
 			/* Read initial pin state */
 			err = i2c_burst_read_dt(&config->i2c, AW9523B_REG_INPUT0, buf, sizeof(buf));
 			if (err) {
-				LOG_ERR("%s: Read initial pin state failed (%d)", dev->name, err);
+				LOG_ERROR("%s: Read initial pin state failed (%d)", dev->name, err);
 				goto on_error;
 			}
 
@@ -126,7 +126,7 @@ static int gpio_aw9523b_pin_configure(const struct device *dev, gpio_pin_t pin, 
 
 	err = i2c_reg_update_byte_dt(&config->i2c, AW9523B_REG_OUTPUT(port), mask, out_high);
 	if (err) {
-		LOG_ERR("%s: Failed to set initial pin state (%d)", dev->name, err);
+		LOG_ERROR("%s: Failed to set initial pin state (%d)", dev->name, err);
 		return err;
 	}
 
@@ -169,12 +169,12 @@ static int gpio_aw9523b_port_read_write_toggle(const struct device *dev, gpio_po
 	 */
 	err = i2c_burst_read_dt(&config->i2c, AW9523B_REG_INPUT0, &buf[0], 1);
 	if (err) {
-		LOG_ERR("%s: Failed to read port0 status (%d)", dev->name, err);
+		LOG_ERROR("%s: Failed to read port0 status (%d)", dev->name, err);
 		goto end;
 	}
 	err = i2c_burst_read_dt(&config->i2c, AW9523B_REG_INPUT1, &buf[1], 1);
 	if (err) {
-		LOG_ERR("%s: Failed to read port1 status (%d)", dev->name, err);
+		LOG_ERROR("%s: Failed to read port1 status (%d)", dev->name, err);
 		goto end;
 	}
 
@@ -199,7 +199,7 @@ static int gpio_aw9523b_port_read_write_toggle(const struct device *dev, gpio_po
 	*(uint16_t *)(&buf[1]) = sys_get_le16((uint8_t *)&new_value);
 	err = i2c_write_dt(&config->i2c, buf, sizeof(buf));
 	if (err) {
-		LOG_ERR("%s: Failed to set port (%d)", dev->name, err);
+		LOG_ERROR("%s: Failed to set port (%d)", dev->name, err);
 	}
 
 end:
@@ -258,11 +258,11 @@ static __maybe_unused void gpio_aw9523b_interrupt_worker(struct k_work *work)
 	 */
 	err = i2c_burst_read_dt(&config->i2c, AW9523B_REG_INPUT0, &buf[0], 1);
 	if (err) {
-		LOG_ERR("%s: Failed to read INPUT0 %d", data->dev->name, err);
+		LOG_ERROR("%s: Failed to read INPUT0 %d", data->dev->name, err);
 	}
 	err = i2c_burst_read_dt(&config->i2c, AW9523B_REG_INPUT1, &buf[1], 1);
 	if (err) {
-		LOG_ERR("%s: Failed to read INPUT1 %d", data->dev->name, err);
+		LOG_ERROR("%s: Failed to read INPUT1 %d", data->dev->name, err);
 	}
 
 	value = sys_get_le16(buf);
@@ -308,7 +308,7 @@ static __maybe_unused int gpio_aw9523b_pin_interrupt_configure(const struct devi
 
 	err = i2c_reg_update_byte_dt(&config->i2c, AW9523B_REG_INT(port), mask, n_int_en);
 	if (err) {
-		LOG_ERR("%s: Failed to configure pin interruption (%d)", dev->name, err);
+		LOG_ERROR("%s: Failed to configure pin interruption (%d)", dev->name, err);
 		goto end;
 	}
 
@@ -316,7 +316,7 @@ static __maybe_unused int gpio_aw9523b_pin_interrupt_configure(const struct devi
 		/* Read initial pin state */
 		err = i2c_burst_read_dt(&config->i2c, AW9523B_REG_INPUT0, buf, sizeof(buf));
 		if (err) {
-			LOG_ERR("%s: Failed to read initial pin state (%d)", dev->name, err);
+			LOG_ERROR("%s: Failed to read initial pin state (%d)", dev->name, err);
 			goto end;
 		}
 
@@ -343,7 +343,7 @@ static __maybe_unused int gpio_aw9523b_manage_callback(const struct device *dev,
 
 	err = gpio_manage_callback(&data->callbacks, callback, set);
 	if (err) {
-		LOG_ERR("%s: gpio_manage_callback failed (%d)", dev->name, err);
+		LOG_ERROR("%s: gpio_manage_callback failed (%d)", dev->name, err);
 	}
 
 	k_sem_give(aw9523b_get_lock(config->mfd_dev));
@@ -393,29 +393,29 @@ static int gpio_aw9523b_init(const struct device *dev)
 	k_work_init(&data->intr_worker, gpio_aw9523b_interrupt_worker);
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("%s: Interrupt GPIO not ready", dev->name);
+		LOG_ERROR("%s: Interrupt GPIO not ready", dev->name);
 		return -ENODEV;
 	}
 
 	err = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (err) {
-		LOG_ERR("%s: Failed to configure interrupt pin %d (%d)", dev->name,
-			config->int_gpio.pin, err);
+		LOG_ERROR("%s: Failed to configure interrupt pin %d (%d)", dev->name,
+			  config->int_gpio.pin, err);
 		return err;
 	}
 
 	err = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (err) {
-		LOG_ERR("%s: Failed to configure interrupt %d (%d)", dev->name,
-			config->int_gpio.pin, err);
+		LOG_ERROR("%s: Failed to configure interrupt %d (%d)", dev->name,
+			  config->int_gpio.pin, err);
 		return err;
 	}
 
 	gpio_init_callback(&data->gpio_callback, config->int_cb, BIT(config->int_gpio.pin));
 	err = gpio_add_callback(config->int_gpio.port, &data->gpio_callback);
 	if (err) {
-		LOG_ERR("%s: Failed to add interrupt callback for pin %d (%d)", dev->name,
-			config->int_gpio.pin, err);
+		LOG_ERROR("%s: Failed to add interrupt callback for pin %d (%d)", dev->name,
+			  config->int_gpio.pin, err);
 		return err;
 	}
 
@@ -428,14 +428,14 @@ end_init_int_gpio:
 	}
 
 	if (!gpio_is_ready_dt(&config->reset_gpio)) {
-		LOG_ERR("%s: Reset GPIO not ready", dev->name);
+		LOG_ERROR("%s: Reset GPIO not ready", dev->name);
 		return -ENODEV;
 	}
 
 	err = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
 	if (err) {
-		LOG_ERR("%s: Failed to configure reset pin %d (%d)", dev->name,
-			config->reset_gpio.pin, err);
+		LOG_ERROR("%s: Failed to configure reset pin %d (%d)", dev->name,
+			  config->reset_gpio.pin, err);
 		return err;
 	}
 
@@ -443,8 +443,8 @@ end_init_int_gpio:
 
 	err = gpio_pin_set_dt(&config->reset_gpio, 0);
 	if (err) {
-		LOG_ERR("%s: Failed to set 0 reset pin %d (%d)", dev->name, config->reset_gpio.pin,
-			err);
+		LOG_ERROR("%s: Failed to set 0 reset pin %d (%d)", dev->name,
+			  config->reset_gpio.pin, err);
 		return err;
 	}
 
@@ -460,14 +460,14 @@ end_hw_reset:
 	/* Software reset */
 	err = i2c_reg_read_byte_dt(&config->i2c, AW9523B_REG_SW_RSTN, buf);
 	if (err) {
-		LOG_ERR("%s: Failed to software reset (%d)", dev->name, err);
+		LOG_ERROR("%s: Failed to software reset (%d)", dev->name, err);
 		return err;
 	}
 
 	/* Disabling all interrupts */
 	err = i2c_write_dt(&config->i2c, int_init_data, sizeof(int_init_data));
 	if (err) {
-		LOG_ERR("%s: Failed to disable all interrupts (%d)", dev->name, err);
+		LOG_ERROR("%s: Failed to disable all interrupts (%d)", dev->name, err);
 		return err;
 	}
 
@@ -475,7 +475,8 @@ end_hw_reset:
 		/* Configure port0 to push-pull mode */
 		err = i2c_reg_update_byte_dt(&config->i2c, AW9523B_REG_CTL, AW9523B_GPOMD, 0xFF);
 		if (err) {
-			LOG_ERR("%s: Failed to configure port0 to push-pull (%d)", dev->name, err);
+			LOG_ERROR("%s: Failed to configure port0 to push-pull (%d)", dev->name,
+				  err);
 			return err;
 		}
 	}

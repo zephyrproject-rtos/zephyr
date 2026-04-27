@@ -23,7 +23,7 @@ static void zbus_proxy_agent_ipc_error_cb(const char *error_msg, void *config)
 	__maybe_unused struct zbus_proxy_agent_ipc_data *ipc_data =
 		(struct zbus_proxy_agent_ipc_data *)config;
 
-	LOG_ERR("IPC error: %s on endpoint %s", error_msg, ipc_data->ept_cfg.name);
+	LOG_ERROR("IPC error: %s on endpoint %s", error_msg, ipc_data->ept_cfg.name);
 }
 
 static void zbus_proxy_agent_ipc_recv_callback(const void *data, size_t len, void *config)
@@ -33,11 +33,11 @@ static void zbus_proxy_agent_ipc_recv_callback(const void *data, size_t len, voi
 	int ret;
 
 	CHECKIF(data == NULL) {
-		LOG_ERR("Received invalid data");
+		LOG_ERROR("Received invalid data");
 		return;
 	}
 	CHECKIF(len == 0 || len != sizeof(struct zbus_proxy_msg)) {
-		LOG_ERR("Received data of invalid length: %zu", len);
+		LOG_ERROR("Received data of invalid length: %zu", len);
 		return;
 	}
 
@@ -67,15 +67,15 @@ static int zbus_proxy_agent_ipc_backend_init(const struct zbus_proxy_agent *agen
 	ipc_data = ipc_config->data;
 
 	CHECKIF(ipc_config->dev == NULL) {
-		LOG_ERR("IPC device is NULL");
+		LOG_ERROR("IPC device is NULL");
 		return -ENODEV;
 	}
 	CHECKIF(ipc_data == NULL) {
-		LOG_ERR("IPC runtime data is NULL");
+		LOG_ERROR("IPC runtime data is NULL");
 		return -EINVAL;
 	}
 	CHECKIF(ipc_data->initialized) {
-		LOG_ERR("IPC backend for endpoint %s already initialized", ipc_config->ept_name);
+		LOG_ERROR("IPC backend for endpoint %s already initialized", ipc_config->ept_name);
 		return -EALREADY;
 	}
 
@@ -84,12 +84,12 @@ static int zbus_proxy_agent_ipc_backend_init(const struct zbus_proxy_agent *agen
 
 	ret = k_sem_init(&ipc_data->ept_bound_sem, 0, 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize IPC endpoint bound semaphore: %d", ret);
+		LOG_ERROR("Failed to initialize IPC endpoint bound semaphore: %d", ret);
 		return ret;
 	}
 
 	if (!device_is_ready(ipc_config->dev)) {
-		LOG_ERR("IPC device is not ready");
+		LOG_ERROR("IPC device is not ready");
 		return -ENODEV;
 	}
 
@@ -101,14 +101,14 @@ static int zbus_proxy_agent_ipc_backend_init(const struct zbus_proxy_agent *agen
 
 	ret = ipc_service_open_instance(ipc_config->dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to open IPC instance %s: %d", ipc_config->dev->name, ret);
+		LOG_ERROR("Failed to open IPC instance %s: %d", ipc_config->dev->name, ret);
 		return ret;
 	}
 
 	ret = ipc_service_register_endpoint(ipc_config->dev, &ipc_data->ipc_ept,
 					    &ipc_data->ept_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to register IPC endpoint %s: %d", ipc_data->ept_cfg.name, ret);
+		LOG_ERROR("Failed to register IPC endpoint %s: %d", ipc_data->ept_cfg.name, ret);
 		ipc_service_close_instance(ipc_config->dev);
 
 		return ret;
@@ -117,8 +117,8 @@ static int zbus_proxy_agent_ipc_backend_init(const struct zbus_proxy_agent *agen
 	ret = k_sem_take(&ipc_data->ept_bound_sem,
 			 K_MSEC(CONFIG_ZBUS_PROXY_AGENT_IPC_BIND_TIMEOUT_MS));
 	if (ret < 0) {
-		LOG_ERR("IPC endpoint %s failed to bind within %d ms: %d", ipc_data->ept_cfg.name,
-			CONFIG_ZBUS_PROXY_AGENT_IPC_BIND_TIMEOUT_MS, ret);
+		LOG_ERROR("IPC endpoint %s failed to bind within %d ms: %d", ipc_data->ept_cfg.name,
+			  CONFIG_ZBUS_PROXY_AGENT_IPC_BIND_TIMEOUT_MS, ret);
 		ipc_service_deregister_endpoint(&ipc_data->ipc_ept);
 		ipc_service_close_instance(ipc_config->dev);
 
@@ -148,8 +148,8 @@ static int zbus_proxy_agent_ipc_backend_send(const struct zbus_proxy_agent *agen
 
 	ret = ipc_service_send(&ipc_data->ipc_ept, msg, sizeof(struct zbus_proxy_msg));
 	if (ret != sizeof(struct zbus_proxy_msg)) {
-		LOG_ERR("Failed to send message via IPC endpoint %s: %d", ipc_data->ept_cfg.name,
-			ret);
+		LOG_ERROR("Failed to send message via IPC endpoint %s: %d", ipc_data->ept_cfg.name,
+			  ret);
 		return ret < 0 ? ret : -EIO;
 	}
 

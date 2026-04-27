@@ -52,10 +52,8 @@ bool pm_suspend_devices(void)
 			continue;
 		} else if (ret < 0) {
 			if (ret != -EBUSY) {
-				LOG_ERR("Device %s did not enter %s state (%d)",
-					dev->name,
-					pm_device_state_str(PM_DEVICE_STATE_SUSPENDED),
-					ret);
+				LOG_ERROR("Device %s did not enter %s state (%d)", dev->name,
+					  pm_device_state_str(PM_DEVICE_STATE_SUSPENDED), ret);
 			}
 			return false;
 		}

@@ -126,13 +126,13 @@ static int clk_generated_get_rate(const struct device *dev,
 		}
 	}
 	if (!parent) {
-		LOG_ERR("find parent clock failed.");
+		LOG_ERROR("find parent clock failed.");
 		return -ENXIO;
 	}
 
 	ret = clock_control_get_rate(parent, NULL, rate);
 	if (ret) {
-		LOG_ERR("get parent clock rate failed.");
+		LOG_ERROR("get parent clock rate failed.");
 		return ret;
 	}
 
@@ -164,15 +164,15 @@ int clk_register_generated(pmc_registers_t *const pmc, struct k_spinlock *lock,
 
 	gck = &clocks_gck[clocks_gck_idx++];
 	if (clocks_gck_idx > ARRAY_SIZE(clocks_gck)) {
-		LOG_ERR("Array for generated clock not enough");
+		LOG_ERROR("Array for generated clock not enough");
 		return -ENOMEM;
 	}
 	if (num_parents > ARRAY_SIZE(gck->parents)) {
-		LOG_ERR("Array for parent clock not enough");
+		LOG_ERROR("Array for parent clock not enough");
 		return -ENOMEM;
 	}
 	if (num_parents > ARRAY_SIZE(gck->mux_table)) {
-		LOG_ERR("Array for mux table not enough");
+		LOG_ERROR("Array for mux table not enough");
 		return -ENOMEM;
 	}
 	memcpy(gck->parents, parents, sizeof(struct device *) * num_parents);

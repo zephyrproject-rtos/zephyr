@@ -138,7 +138,7 @@ static void tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 		    struct bt_conn *conn)
 {
 	/* Not doing any writes yet */
-	LOG_ERR("Unexpected call, context: %p, conn: %p", l2cap_ctx, (void *)conn);
+	LOG_ERROR("Unexpected call, context: %p, conn: %p", l2cap_ctx, (void *)conn);
 }
 
 static void write_obj_tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
@@ -148,7 +148,7 @@ static void write_obj_tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	size_t written;
 
 	if (cur_inst == NULL) {
-		LOG_ERR("OTS instance invalid\n");
+		LOG_ERROR("OTS instance invalid\n");
 		return;
 	}
 
@@ -393,7 +393,7 @@ static void oacp_ind_handler(struct bt_conn *conn,
 			req_opcode = net_buf_simple_pull_u8(&net_buf);
 			result_code = net_buf_simple_pull_u8(&net_buf);
 		} else {
-			LOG_ERR("Invalid indication data len %u", net_buf.len);
+			LOG_ERROR("Invalid indication data len %u", net_buf.len);
 			return;
 		}
 
@@ -406,8 +406,9 @@ static void oacp_ind_handler(struct bt_conn *conn,
 						otc_inst, conn, result_code, checksum);
 				}
 			} else {
-				LOG_ERR("Invalid indication data len %u after opcode and result "
-					"pulled", net_buf.len);
+				LOG_ERROR("Invalid indication data len %u after opcode and result "
+					  "pulled",
+					  net_buf.len);
 				return;
 			}
 		}
@@ -436,7 +437,7 @@ uint8_t bt_ots_client_indicate_handler(struct bt_conn *conn,
 	 */
 
 	if (!inst) {
-		LOG_ERR("Instance not found");
+		LOG_ERROR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -464,7 +465,7 @@ static uint8_t read_feature_cb(struct bt_conn *conn, uint8_t err,
 	net_buf_simple_init_with_data(&net_buf, (void *)data, length);
 
 	if (!inst) {
-		LOG_ERR("Instance not found");
+		LOG_ERROR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -536,7 +537,7 @@ int bt_ots_client_read_feature(struct bt_ots_client *otc_inst,
 			LOG_WRN("Invalid Connection");
 			return -ENOTCONN;
 		} else if (!otc_inst) {
-			LOG_ERR("Invalid OTC instance");
+			LOG_ERROR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (!otc_inst->feature_handle) {
 			LOG_DBG("Handle not set");
@@ -546,7 +547,7 @@ int bt_ots_client_read_feature(struct bt_ots_client *otc_inst,
 		inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 		if (!inst) {
-			LOG_ERR("Invalid OTC instance");
+			LOG_ERROR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (inst->busy) {
 			return -EBUSY;
@@ -577,7 +578,7 @@ static void write_olcp_cb(struct bt_conn *conn, uint8_t err,
 	LOG_DBG("Write %s (0x%02X)", err ? "failed" : "successful", err);
 
 	if (!inst) {
-		LOG_ERR("Instance not found");
+		LOG_ERROR("Instance not found");
 		return;
 	}
 
@@ -630,7 +631,7 @@ int bt_ots_client_select_id(struct bt_ots_client *otc_inst,
 			LOG_WRN("Invalid Connection");
 			return -ENOTCONN;
 		} else if (!otc_inst) {
-			LOG_ERR("Invalid OTC instance");
+			LOG_ERROR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (!otc_inst->olcp_handle) {
 			LOG_DBG("Handle not set");
@@ -640,7 +641,7 @@ int bt_ots_client_select_id(struct bt_ots_client *otc_inst,
 		inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 		if (!inst) {
-			LOG_ERR("Invalid OTC instance");
+			LOG_ERROR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (inst->busy) {
 			return -EBUSY;
@@ -668,7 +669,7 @@ int bt_ots_client_select_first(struct bt_ots_client *otc_inst,
 			LOG_WRN("Invalid Connection");
 			return -ENOTCONN;
 		} else if (!otc_inst) {
-			LOG_ERR("Invalid OTC instance");
+			LOG_ERROR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (!otc_inst->olcp_handle) {
 			LOG_DBG("Handle not set");
@@ -678,7 +679,7 @@ int bt_ots_client_select_first(struct bt_ots_client *otc_inst,
 		inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 		if (!inst) {
-			LOG_ERR("Invalid OTC instance");
+			LOG_ERROR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (inst->busy) {
 			return -EBUSY;
@@ -702,7 +703,7 @@ int bt_ots_client_select_last(struct bt_ots_client *otc_inst,
 			LOG_WRN("Invalid Connection");
 			return -ENOTCONN;
 		} else if (!otc_inst) {
-			LOG_ERR("Invalid OTC instance");
+			LOG_ERROR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (!otc_inst->olcp_handle) {
 			LOG_DBG("Handle not set");
@@ -712,7 +713,7 @@ int bt_ots_client_select_last(struct bt_ots_client *otc_inst,
 		inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 		if (!inst) {
-			LOG_ERR("Invalid OTC instance");
+			LOG_ERROR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (inst->busy) {
 			return -EBUSY;
@@ -737,7 +738,7 @@ int bt_ots_client_select_next(struct bt_ots_client *otc_inst,
 			LOG_WRN("Invalid Connection");
 			return -ENOTCONN;
 		} else if (!otc_inst) {
-			LOG_ERR("Invalid OTC instance");
+			LOG_ERROR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (!otc_inst->olcp_handle) {
 			LOG_DBG("Handle not set");
@@ -747,7 +748,7 @@ int bt_ots_client_select_next(struct bt_ots_client *otc_inst,
 		inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 		if (!inst) {
-			LOG_ERR("Invalid OTC instance");
+			LOG_ERROR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (inst->busy) {
 			return -EBUSY;
@@ -771,7 +772,7 @@ int bt_ots_client_select_prev(struct bt_ots_client *otc_inst,
 			LOG_WRN("Invalid Connection");
 			return -ENOTCONN;
 		} else if (!otc_inst) {
-			LOG_ERR("Invalid OTC instance");
+			LOG_ERROR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (!otc_inst->olcp_handle) {
 			LOG_DBG("Handle not set");
@@ -781,7 +782,7 @@ int bt_ots_client_select_prev(struct bt_ots_client *otc_inst,
 		inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 		if (!inst) {
-			LOG_ERR("Invalid OTC instance");
+			LOG_ERROR("Invalid OTC instance");
 			return -EINVAL;
 		} else if (inst->busy) {
 			return -EBUSY;
@@ -808,7 +809,7 @@ static uint8_t read_object_size_cb(struct bt_conn *conn, uint8_t err,
 	LOG_DBG("handle %d, length %u", params->single.handle, length);
 
 	if (!inst) {
-		LOG_ERR("Instance not found");
+		LOG_ERROR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -872,7 +873,7 @@ static uint8_t read_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	LOG_DBG("handle %d, length %u", params->single.handle, length);
 
 	if (!inst) {
-		LOG_ERR("Instance not found");
+		LOG_ERROR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -929,7 +930,7 @@ static uint8_t read_obj_name_cb(struct bt_conn *conn, uint8_t err,
 	LOG_DBG("handle %d, length %u", params->single.handle, length);
 
 	if (!inst) {
-		LOG_ERR("Instance not found");
+		LOG_ERROR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -966,7 +967,7 @@ static uint8_t read_obj_type_cb(struct bt_conn *conn, uint8_t err,
 	LOG_DBG("handle %d, length %u", params->single.handle, length);
 
 	if (!inst) {
-		LOG_ERR("Instance not found");
+		LOG_ERROR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1016,7 +1017,7 @@ static uint8_t read_obj_created_cb(struct bt_conn *conn, uint8_t err,
 	LOG_DBG("handle %d, length %u", params->single.handle, length);
 
 	if (!inst) {
-		LOG_ERR("Instance not found");
+		LOG_ERROR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1057,7 +1058,7 @@ static uint8_t read_obj_modified_cb(struct bt_conn *conn, uint8_t err,
 	LOG_DBG("handle %d, length %u", params->single.handle, length);
 
 	if (!inst) {
-		LOG_ERR("Instance not found");
+		LOG_ERROR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1092,7 +1093,7 @@ static int read_attr(struct bt_conn *conn,
 		LOG_DBG("Handle not set");
 		return -EINVAL;
 	} else if (cb == NULL) {
-		LOG_ERR("No callback set");
+		LOG_ERROR("No callback set");
 		return -EINVAL;
 	}
 
@@ -1119,7 +1120,7 @@ static uint8_t read_obj_properties_cb(struct bt_conn *conn, uint8_t err,
 	LOG_INF("handle %d, length %u", params->single.handle, length);
 
 	if (!inst) {
-		LOG_ERR("Instance not found");
+		LOG_ERROR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1164,7 +1165,7 @@ static void write_oacp_cp_cb(struct bt_conn *conn, uint8_t err,
 	LOG_DBG("Write %s (0x%02X)", err ? "failed" : "successful", err);
 
 	if (!inst) {
-		LOG_ERR("Instance not found");
+		LOG_ERROR("Instance not found");
 		return;
 	}
 
@@ -1180,7 +1181,7 @@ static void write_oacp_cp_write_req_cb(struct bt_conn *conn, uint8_t err,
 
 	LOG_DBG("Write Object request %s (0x%02X)", err ? "failed" : "successful", err);
 	if (!inst) {
-		LOG_ERR("Instance not found");
+		LOG_ERROR("Instance not found");
 		return;
 	}
 
@@ -1366,14 +1367,14 @@ int bt_ots_client_read_object_data(struct bt_ots_client *otc_inst,
 		LOG_WRN("Invalid Connection");
 		return -ENOTCONN;
 	} else if (!otc_inst) {
-		LOG_ERR("Invalid OTC instance");
+		LOG_ERROR("Invalid OTC instance");
 		return -EINVAL;
 	}
 
 	inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 	if (!inst) {
-		LOG_ERR("Invalid OTC instance");
+		LOG_ERROR("Invalid OTC instance");
 		return -EINVAL;
 	}
 
@@ -1397,13 +1398,13 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
 	}
 
 	if (!otc_inst) {
-		LOG_ERR("Invalid OTC instance");
+		LOG_ERROR("Invalid OTC instance");
 		return -EINVAL;
 	}
 
 	if ((mode != BT_OTS_OACP_WRITE_OP_MODE_NONE) &&
 	    (mode != BT_OTS_OACP_WRITE_OP_MODE_TRUNCATE)) {
-		LOG_ERR("Invalid write object mode parameter %d", mode);
+		LOG_ERROR("Invalid write object mode parameter %d", mode);
 		return -EINVAL;
 	}
 
@@ -1411,42 +1412,42 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
 	 *	Offset and Length field are UINT32 Length
 	 */
 	if (len > UINT32_MAX) {
-		LOG_ERR("length %zu exceeds UINT32", len);
+		LOG_ERROR("length %zu exceeds UINT32", len);
 		return -EINVAL;
 	}
 
 	if (len == 0) {
-		LOG_ERR("length equals zero");
+		LOG_ERROR("length equals zero");
 		return -EINVAL;
 	}
 
 	if ((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
-		LOG_ERR("offset %ld exceeds UINT32 and must be >= 0", offset);
+		LOG_ERROR("offset %ld exceeds UINT32 and must be >= 0", offset);
 		return -EINVAL;
 	}
 
 	if (offset > otc_inst->cur_object.size.cur) {
-		LOG_ERR("offset %ld exceeds cur size %zu", offset, otc_inst->cur_object.size.cur);
+		LOG_ERROR("offset %ld exceeds cur size %zu", offset, otc_inst->cur_object.size.cur);
 		return -EINVAL;
 	}
 
 	if ((offset < otc_inst->cur_object.size.cur) &&
 	    !BT_OTS_OBJ_GET_PROP_PATCH(otc_inst->cur_object.props)) {
-		LOG_ERR("Patch is not supported");
+		LOG_ERROR("Patch is not supported");
 		return -EACCES;
 	}
 
 	if (((len + offset) > otc_inst->cur_object.size.alloc) &&
 	    !BT_OTS_OBJ_GET_PROP_APPEND(otc_inst->cur_object.props)) {
-		LOG_ERR("APPEND is not supported. Invalid new end of object %lu alloc %zu."
-		, (len + offset), otc_inst->cur_object.size.alloc);
+		LOG_ERROR("APPEND is not supported. Invalid new end of object %lu alloc %zu.",
+			  (len + offset), otc_inst->cur_object.size.alloc);
 		return -EINVAL;
 	}
 
 	inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 	if (!inst) {
-		LOG_ERR("Invalid OTC instance");
+		LOG_ERROR("Invalid OTC instance");
 		return -EINVAL;
 	}
 
@@ -1565,7 +1566,7 @@ int bt_ots_client_read_object_metadata(struct bt_ots_client *otc_inst,
 		LOG_WRN("Invalid Connection");
 		return -ENOTCONN;
 	} else if (!otc_inst) {
-		LOG_ERR("Invalid OTC instance");
+		LOG_ERROR("Invalid OTC instance");
 		return -EINVAL;
 	} else if (!metadata) {
 		LOG_WRN("No metadata to read");
@@ -1575,7 +1576,7 @@ int bt_ots_client_read_object_metadata(struct bt_ots_client *otc_inst,
 	inst = lookup_inst_by_handle(otc_inst->start_handle);
 
 	if (!inst) {
-		LOG_ERR("Invalid OTC instance");
+		LOG_ERROR("Invalid OTC instance");
 		return -EINVAL;
 	} else if (inst->busy) {
 		return -EBUSY;

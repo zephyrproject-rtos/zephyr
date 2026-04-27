@@ -155,7 +155,7 @@ static void kbd_matrix_state_log_entry(char *header, kbd_row_t *data)
 
 		/* Last byte is for the string termination */
 		if (size < 1) {
-			LOG_ERR("kbd_matrix_buf too small");
+			LOG_ERROR("kbd_matrix_buf too small");
 			return;
 		}
 	}
@@ -195,17 +195,17 @@ static void kbd_matrix_state_log(struct input_event *evt, void *user_data)
 	}
 
 	if (col > (CONFIG_INPUT_SHELL_KBD_MATRIX_STATE_MAX_COLS - 1)) {
-		LOG_ERR("column index too large for the state buffer: %d", col);
+		LOG_ERROR("column index too large for the state buffer: %d", col);
 		return;
 	}
 
 	if (col > (cfg->col_size - 1)) {
-		LOG_ERR("invalid column index: %d", col);
+		LOG_ERROR("invalid column index: %d", col);
 		return;
 	}
 
 	if (row > (cfg->row_size - 1)) {
-		LOG_ERR("invalid row index: %d", row);
+		LOG_ERROR("invalid row index: %d", row);
 		return;
 	}
 

@@ -129,7 +129,7 @@ static void dma_callback(const struct device *dma_dev, void *arg, uint32_t chann
 	}
 
 	if (status != 0) {
-		LOG_ERR("DMIC DMA error: %d", status);
+		LOG_ERROR("DMIC DMA error: %d", status);
 		dmic_stop_capture(dev);
 		data->state = DMIC_STATE_ERROR;
 		return;
@@ -139,7 +139,7 @@ static void dma_callback(const struct device *dma_dev, void *arg, uint32_t chann
 		data->dma_rx.remaining_block_size = data->block_size;
 		/* All PCM data now transferred from HW FIFO(s) to memory buffer */
 		if (0 != k_msgq_put(data->rx_queue, &data->active_buf, K_NO_WAIT)) {
-			LOG_ERR("DMIC overflow, no space in queue");
+			LOG_ERROR("DMIC overflow, no space in queue");
 			dmic_stop_capture(dev);
 			data->state = DMIC_STATE_ERROR;
 			return;
@@ -147,7 +147,7 @@ static void dma_callback(const struct device *dma_dev, void *arg, uint32_t chann
 
 		/* Allocate the next memory buffer */
 		if (0 != k_mem_slab_alloc(data->mem_slab, &data->active_buf, K_NO_WAIT)) {
-			LOG_ERR("No free memory block available for DMIC reception");
+			LOG_ERROR("No free memory block available for DMIC reception");
 			dmic_stop_capture(dev);
 			data->state = DMIC_STATE_ERROR;
 			return;
@@ -157,7 +157,7 @@ static void dma_callback(const struct device *dma_dev, void *arg, uint32_t chann
 	/* configure the next DMA transfer */
 	ret = dmic_start_dma(dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to restart DMIC DMA transfer: %d", ret);
+		LOG_ERROR("Failed to restart DMIC DMA transfer: %d", ret);
 	}
 }
 
@@ -171,14 +171,14 @@ static int dmic_start_capture(const struct device *dev)
 
 	ret = k_mem_slab_alloc(data->mem_slab, &data->active_buf, K_NO_WAIT);
 	if (ret != 0) {
-		LOG_ERR("No free memory block available for DMIC reception");
+		LOG_ERROR("No free memory block available for DMIC reception");
 		data->state = DMIC_STATE_ERROR;
 		return -ENOBUFS;
 	}
 
 	ret = dmic_start_dma(dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to start DMIC DMA transfer: %d", ret);
+		LOG_ERROR("Failed to start DMIC DMA transfer: %d", ret);
 		return ret;
 	}
 
@@ -263,7 +263,7 @@ static int ifx_dmic_configure(const struct device *dev, struct dmic_cfg *cfg)
 	enum pdm_lr lr_1;
 
 	if (data->state == DMIC_STATE_ACTIVE) {
-		LOG_ERR("Cannot configure DMIC in active state");
+		LOG_ERROR("Cannot configure DMIC in active state");
 		return -EBUSY;
 	}
 
@@ -355,7 +355,7 @@ static int ifx_dmic_configure(const struct device *dev, struct dmic_cfg *cfg)
 	uint8_t sample_delay_r = (3 * (pdm_cfg->clkDiv + 1U)) / 4U - 1U;
 
 	if ((stream->block_size % (channel->req_num_chan * dma_data_size_bytes)) != 0) {
-		LOG_ERR("block_size is not aligned to channel count and data size");
+		LOG_ERROR("block_size is not aligned to channel count and data size");
 		return -EINVAL;
 	}
 
@@ -412,7 +412,7 @@ static int ifx_dmic_configure(const struct device *dev, struct dmic_cfg *cfg)
 		}
 	}
 	if (channel->act_num_chan != channel->req_num_chan) {
-		LOG_ERR("Unable to configure all requested channels");
+		LOG_ERROR("Unable to configure all requested channels");
 		return -EIO;
 	}
 
@@ -461,7 +461,7 @@ static int ifx_dmic_trigger(const struct device *dev, enum dmic_trigger cmd)
 
 		ret = dmic_start_capture(dev);
 		if (ret != 0) {
-			LOG_ERR("Failed to start capture: %d", ret);
+			LOG_ERROR("Failed to start capture: %d", ret);
 			return ret;
 		}
 
@@ -474,7 +474,7 @@ static int ifx_dmic_trigger(const struct device *dev, enum dmic_trigger cmd)
 
 		ret = dmic_start_capture(dev);
 		if (ret != 0) {
-			LOG_ERR("Failed to start capture: %d", ret);
+			LOG_ERROR("Failed to start capture: %d", ret);
 			return ret;
 		}
 
@@ -587,17 +587,17 @@ static void dmic_isr(const struct device *dev, uint8_t channel)
 
 	if (((int_status & CY_PDM_PCM_INTR_RX_FIR_OVERFLOW)) ||
 	    ((int_status & CY_PDM_PCM_INTR_RX_IF_OVERFLOW))) {
-		LOG_ERR("CH:%d Interface overflow - indicates clocking issues", channel);
+		LOG_ERROR("CH:%d Interface overflow - indicates clocking issues", channel);
 		data->state = DMIC_STATE_ERROR;
 	}
 
 	if (int_status & CY_PDM_PCM_INTR_RX_OVERFLOW) {
-		LOG_ERR("CH:%d FIFO overflow", channel);
+		LOG_ERROR("CH:%d FIFO overflow", channel);
 		data->state = DMIC_STATE_ERROR;
 	}
 
 	if (int_status & CY_PDM_PCM_INTR_RX_UNDERFLOW) {
-		LOG_ERR("CH:%d FIFO underflow", channel);
+		LOG_ERROR("CH:%d FIFO underflow", channel);
 		data->state = DMIC_STATE_ERROR;
 	}
 

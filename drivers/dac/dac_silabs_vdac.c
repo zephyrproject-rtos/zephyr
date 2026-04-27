@@ -40,7 +40,7 @@ static int vdac_init(const struct device *dev)
 	/* Configure pinctrl */
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0 && err != -ENOENT) {
-		LOG_ERR("failed to allocate silabs,analog-bus via pinctrl");
+		LOG_ERROR("failed to allocate silabs,analog-bus via pinctrl");
 		return err;
 	}
 
@@ -48,7 +48,7 @@ static int vdac_init(const struct device *dev)
 	err = clock_control_on(config->clock_dev,
 			       (clock_control_subsys_t)&config->clock_cfg);
 	if (err < 0) {
-		LOG_ERR("failed to enable clocks via clock_control");
+		LOG_ERROR("failed to enable clocks via clock_control");
 		return err;
 	}
 
@@ -56,7 +56,7 @@ static int vdac_init(const struct device *dev)
 	err = clock_control_get_rate(config->clock_dev,
 				     (clock_control_subsys_t)&config->clock_cfg, &freq);
 	if (err < 0) {
-		LOG_ERR("failed to get clock rate via clock_control");
+		LOG_ERROR("failed to get clock rate via clock_control");
 		return err;
 	}
 	init.prescaler = sl_hal_vdac_calculate_prescaler(config->base, MAX_FREQUENCY, freq);
@@ -72,17 +72,17 @@ static int vdac_channel_setup(const struct device *dev, const struct dac_channel
 	const struct vdac_config *config = dev->config;
 
 	if (channel_cfg->channel_id >= NUM_CHANNELS) {
-		LOG_ERR("unsupported channel %d", channel_cfg->channel_id);
+		LOG_ERROR("unsupported channel %d", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->resolution != VDAC_RESOLUTION(VDAC_NUM(config->base))) {
-		LOG_ERR("unsupported resolution %d", channel_cfg->resolution);
+		LOG_ERROR("unsupported resolution %d", channel_cfg->resolution);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->internal) {
-		LOG_ERR("internal channels not supported");
+		LOG_ERROR("internal channels not supported");
 		return -ENOTSUP;
 	}
 
@@ -102,12 +102,12 @@ static int vdac_write_value(const struct device *dev, uint8_t channel, uint32_t 
 	const struct vdac_config *config = dev->config;
 
 	if (channel >= NUM_CHANNELS) {
-		LOG_ERR("unsupported channel %d", channel);
+		LOG_ERROR("unsupported channel %d", channel);
 		return -ENOTSUP;
 	}
 
 	if (value >= (1 << VDAC_RESOLUTION(VDAC_NUM(config->base)))) {
-		LOG_ERR("value %d out of range", value);
+		LOG_ERROR("value %d out of range", value);
 		return -ENOTSUP;
 	}
 

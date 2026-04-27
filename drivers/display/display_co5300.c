@@ -174,13 +174,13 @@ static int co5300_write(const struct device *dev,
 	if ((x > config->panel_width) || (y > config->panel_height) ||
 			((x + desc->width) > config->panel_width) ||
 			((y + desc->height) > config->panel_height)) {
-		LOG_ERR("Update area outside panel dimensions");
+		LOG_ERROR("Update area outside panel dimensions");
 		return -EINVAL;
 	}
 
 	/* Check whether the updated area is valid */
 	if (desc->width == 0 || desc->height == 0) {
-		LOG_ERR("The height/width of the update area cannot be 0");
+		LOG_ERROR("The height/width of the update area cannot be 0");
 		return -EINVAL;
 	}
 
@@ -297,7 +297,7 @@ static void co5300_get_capabilities(const struct device *dev,
 		capabilities->current_pixel_format = PIXEL_FORMAT_RGB_888;
 		break;
 	default:
-		LOG_ERR("Unsupported display format");
+		LOG_ERROR("Unsupported display format");
 		/* Other display formats not implemented */
 		break;
 	}
@@ -360,7 +360,7 @@ static int co5300_set_orientation(const struct device *dev,
 	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
 		return 0;
 	}
-	LOG_ERR("Changing display orientation not implemented");
+	LOG_ERROR("Changing display orientation not implemented");
 	return -ENOTSUP;
 }
 
@@ -372,21 +372,21 @@ static int co5300_reset(const struct device *dev)
 	if (config->reset_gpios.port != NULL) {
 		ret = gpio_pin_configure_dt(&config->reset_gpios, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure reset GPIO (%d)", ret);
+			LOG_ERROR("Could not configure reset GPIO (%d)", ret);
 			return ret;
 		}
 
 		k_sleep(K_MSEC(10));
 		ret = gpio_pin_set_dt(&config->reset_gpios, 0);
 		if (ret < 0) {
-			LOG_ERR("Could not pull reset low (%d)", ret);
+			LOG_ERROR("Could not pull reset low (%d)", ret);
 			return ret;
 		}
 
 		k_sleep(K_MSEC(30));
 		ret = gpio_pin_set_dt(&config->reset_gpios, 1);
 		if (ret < 0) {
-			LOG_ERR("Could not pull reset high (%d)", ret);
+			LOG_ERROR("Could not pull reset high (%d)", ret);
 			return ret;
 		}
 		k_sleep(K_MSEC(150));
@@ -404,14 +404,14 @@ static int co5300_setup_tear_effect(const struct device *dev)
 	if (config->tear_effect_gpios.port != NULL) {
 		ret = gpio_pin_configure_dt(&config->tear_effect_gpios, GPIO_INPUT);
 		if (ret < 0) {
-			LOG_ERR("Could not configure TE GPIO (%d)", ret);
+			LOG_ERROR("Could not configure TE GPIO (%d)", ret);
 			return ret;
 		}
 
 		ret = gpio_pin_interrupt_configure_dt(&config->tear_effect_gpios,
 				GPIO_INT_EDGE_TO_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure TE interrupt (%d)", ret);
+			LOG_ERROR("Could not configure TE interrupt (%d)", ret);
 			return ret;
 		}
 
@@ -419,7 +419,7 @@ static int co5300_setup_tear_effect(const struct device *dev)
 				BIT(config->tear_effect_gpios.pin));
 		ret = gpio_add_callback(config->tear_effect_gpios.port, &data->tear_effect_gpio_cb);
 		if (ret < 0) {
-			LOG_ERR("Could not add TE gpio callback");
+			LOG_ERROR("Could not add TE gpio callback");
 			return ret;
 		}
 
@@ -448,7 +448,7 @@ static int co5300_init(const struct device *dev)
 	mdev.pixfmt = data->pixel_format;
 	ret = mipi_dsi_attach(config->mipi_dsi, config->channel, &mdev);
 	if (ret < 0) {
-		LOG_ERR("Could not attach to MIPI-DSI host");
+		LOG_ERROR("Could not attach to MIPI-DSI host");
 		return ret;
 	}
 
@@ -487,7 +487,7 @@ static int co5300_init(const struct device *dev)
 		co5300_set_pixel_format(dev, PIXEL_FORMAT_RGB_565);
 	} else {
 		/* Unsupported pixel format */
-		LOG_ERR("Pixel format not supported");
+		LOG_ERROR("Pixel format not supported");
 		return -ENOTSUP;
 	}
 
@@ -506,7 +506,7 @@ static int co5300_init(const struct device *dev)
 	if (config->backlight_gpios.port != NULL) {
 		ret = gpio_pin_configure_dt(&config->backlight_gpios, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure bl GPIO (%d)", ret);
+			LOG_ERROR("Could not configure bl GPIO (%d)", ret);
 			return ret;
 		}
 	}

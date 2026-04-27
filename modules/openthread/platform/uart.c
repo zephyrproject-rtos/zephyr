@@ -214,7 +214,7 @@ otError otPlatUartEnable(void)
 	ot_uart.dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ot_uart));
 
 	if (!device_is_ready(ot_uart.dev)) {
-		LOG_ERR("UART device not ready");
+		LOG_ERROR("UART device not ready");
 		return OT_ERROR_FAILED;
 	}
 

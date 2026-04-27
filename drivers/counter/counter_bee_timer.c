@@ -101,22 +101,22 @@ static int counter_bee_timer_set_top_value(const struct device *dev,
 	struct counter_bee_data *data = dev->data;
 
 	if (top_cfg == NULL) {
-		LOG_ERR("There is no top_cfg");
+		LOG_ERROR("There is no top_cfg");
 		return -EINVAL;
 	}
 
 	if (top_cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
-		LOG_ERR("Unsupport setting top value without resetting counter");
+		LOG_ERROR("Unsupport setting top value without resetting counter");
 		return -ENOTSUP;
 	}
 
 	if (data->alarm.callback) {
-		LOG_ERR("Alarm is active");
+		LOG_ERROR("Alarm is active");
 		return -EBUSY;
 	}
 
 	if (top_cfg->ticks <= 1) {
-		LOG_ERR("Top ticks too short");
+		LOG_ERROR("Top ticks too short");
 		return -EBUSY;
 	}
 
@@ -147,32 +147,32 @@ static int counter_bee_timer_set_alarm(const struct device *dev, uint8_t chan,
 	struct counter_bee_data *data = dev->data;
 
 	if (alarm_cfg == NULL) {
-		LOG_ERR("There is no alarm_cfg");
+		LOG_ERROR("There is no alarm_cfg");
 		return -EINVAL;
 	}
 
 	if (!alarm_cfg->callback) {
-		LOG_ERR("There is no alarm callback");
+		LOG_ERROR("There is no alarm callback");
 		return -EINVAL;
 	}
 
 	if (alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) {
-		LOG_ERR("Unsupport absolute alarm");
+		LOG_ERROR("Unsupport absolute alarm");
 		return -ENOTSUP;
 	}
 
 	if (data->alarm.callback) {
-		LOG_ERR("Alarm is already active");
+		LOG_ERROR("Alarm is already active");
 		return -EBUSY;
 	}
 
 	if (alarm_cfg->ticks > data->top.ticks) {
-		LOG_ERR("Alarm ticks exceed top ticks");
+		LOG_ERROR("Alarm ticks exceed top ticks");
 		return -EINVAL;
 	}
 
 	if (alarm_cfg->ticks <= 1) {
-		LOG_ERR("Alarm ticks too short");
+		LOG_ERROR("Alarm ticks too short");
 		return -EINVAL;
 	}
 
@@ -227,7 +227,7 @@ static int counter_bee_timer_init(const struct device *dev)
 
 	data->ops = bee_timer_get_ops(cfg->enhanced);
 	if (!data->ops) {
-		LOG_ERR("Bee timer HAL not enabled");
+		LOG_ERROR("Bee timer HAL not enabled");
 		return -ENOTSUP;
 	}
 

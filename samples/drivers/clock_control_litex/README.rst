@@ -63,7 +63,7 @@ The driver is interfaced with the :ref:`Clock Control API <clock_control_api>` f
 	dev = DEVICE_DT_GET(MMCM);
 	clock_control_subsys_t sub_system = (clock_control_subsys_t)&setup;
 	if ((ret = clock_control_on(dev, sub_system)) != 0) {
-		LOG_ERR("Set CLKOUT%d param error!", setup.clkout_nr);
+		LOG_ERROR("Set CLKOUT%d param error!", setup.clkout_nr);
 		return ret;
 	}
 

@@ -84,7 +84,7 @@ static bool is_tx_stream(struct bt_bap_stream *stream)
 
 	err = bt_bap_ep_get_info(stream->ep, &ep_info);
 	if (err != 0) {
-		LOG_ERR("Failed to get ep info: %d", err);
+		LOG_ERROR("Failed to get ep info: %d", err);
 
 		return false;
 	}
@@ -128,7 +128,7 @@ static void unicast_stream_started_cb(struct bt_bap_stream *stream)
 
 		err = cap_initiator_tx_register_stream(cap_stream);
 		if (err != 0) {
-			LOG_ERR("Failed to register %p for TX: %d", stream, err);
+			LOG_ERROR("Failed to register %p for TX: %d", stream, err);
 		}
 	}
 }
@@ -154,7 +154,7 @@ static void unicast_stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reas
 
 		err = cap_initiator_tx_unregister_stream(cap_stream);
 		if (err != 0) {
-			LOG_ERR("Failed to unregister %p for TX: %d", stream, err);
+			LOG_ERROR("Failed to unregister %p for TX: %d", stream, err);
 		}
 	}
 }
@@ -255,13 +255,13 @@ static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
 	if (dir == BT_AUDIO_DIR_SINK) {
 		if (err != 0) {
-			LOG_ERR("Discovery sinks failed: %d", err);
+			LOG_ERROR("Discovery sinks failed: %d", err);
 		} else {
 			LOG_INF("Discover sinks complete");
 		}
 	} else if (dir == BT_AUDIO_DIR_SOURCE) {
 		if (err != 0) {
-			LOG_ERR("Discovery sources failed: %d", err);
+			LOG_ERROR("Discovery sources failed: %d", err);
 		} else {
 			LOG_INF("Discover sources complete");
 		}
@@ -296,13 +296,13 @@ static int discover_sinks(void)
 
 	err = bt_bap_unicast_client_discover(peer.conn, BT_AUDIO_DIR_SINK);
 	if (err != 0) {
-		LOG_ERR("Failed to discover sink: %d", err);
+		LOG_ERROR("Failed to discover sink: %d", err);
 		return err;
 	}
 
 	err = k_sem_take(&sem_proc, SEM_TIMEOUT);
 	if (err != 0) {
-		LOG_ERR("Timeout on sinks discover: %d", err);
+		LOG_ERROR("Timeout on sinks discover: %d", err);
 		return err;
 	}
 
@@ -320,13 +320,13 @@ static int discover_sources(void)
 
 	err = bt_bap_unicast_client_discover(peer.conn, BT_AUDIO_DIR_SOURCE);
 	if (err != 0) {
-		LOG_ERR("Failed to discover sources: %d", err);
+		LOG_ERROR("Failed to discover sources: %d", err);
 		return err;
 	}
 
 	err = k_sem_take(&sem_proc, SEM_TIMEOUT);
 	if (err != 0) {
-		LOG_ERR("Timeout on sources discover: %d", err);
+		LOG_ERROR("Timeout on sources discover: %d", err);
 		return err;
 	}
 
@@ -360,7 +360,7 @@ static int unicast_group_create(void)
 
 	err = bt_cap_unicast_group_create(&group_param, &unicast_group);
 	if (err != 0) {
-		LOG_ERR("Failed to create group: %d", err);
+		LOG_ERROR("Failed to create group: %d", err);
 		return err;
 	}
 
@@ -375,7 +375,7 @@ static int unicast_group_delete(void)
 
 	err = bt_cap_unicast_group_delete(unicast_group);
 	if (err != 0) {
-		LOG_ERR("Failed to delete group: %d", err);
+		LOG_ERROR("Failed to delete group: %d", err);
 		return err;
 	}
 	unicast_group = NULL;
@@ -390,7 +390,7 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
 	if (err != 0) {
-		LOG_ERR("CAS discovery completed with error: %d", err);
+		LOG_ERROR("CAS discovery completed with error: %d", err);
 
 		return;
 	}
@@ -408,7 +408,7 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 static void unicast_start_complete_cb(int err, struct bt_conn *conn)
 {
 	if (err != 0) {
-		LOG_ERR("Failed to start (failing conn %p): %d", (void *)conn, err);
+		LOG_ERROR("Failed to start (failing conn %p): %d", (void *)conn, err);
 		return;
 	}
 
@@ -424,13 +424,13 @@ static int discover_cas(void)
 
 	err = bt_cap_initiator_unicast_discover(peer.conn);
 	if (err != 0) {
-		LOG_ERR("Failed to discover CAS: %d", err);
+		LOG_ERROR("Failed to discover CAS: %d", err);
 		return err;
 	}
 
 	err = k_sem_take(&sem_proc, SEM_TIMEOUT);
 	if (err != 0) {
-		LOG_ERR("Timeout on CAS discover: %d", err);
+		LOG_ERROR("Timeout on CAS discover: %d", err);
 		return err;
 	}
 
@@ -467,7 +467,7 @@ static int unicast_audio_start(void)
 
 	err = bt_cap_initiator_unicast_audio_start(&param);
 	if (err != 0) {
-		LOG_ERR("Failed to start unicast audio: %d", err);
+		LOG_ERROR("Failed to start unicast audio: %d", err);
 		return err;
 	}
 
@@ -486,7 +486,7 @@ static void start_scan(void)
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err != 0) {
-		LOG_ERR("Scanning failed to start: %d", err);
+		LOG_ERROR("Scanning failed to start: %d", err);
 		return;
 	}
 
@@ -496,7 +496,7 @@ static void start_scan(void)
 static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
 	if (err != 0) {
-		LOG_ERR("Failed to connect to %s: %u", bt_conn_dst_str(conn), err);
+		LOG_ERROR("Failed to connect to %s: %u", bt_conn_dst_str(conn), err);
 
 		bt_conn_unref(peer.conn);
 		peer.conn = NULL;
@@ -535,8 +535,8 @@ static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
 		LOG_INF("Security changed: %u", level);
 		k_sem_give(&sem_security_changed);
 	} else {
-		LOG_ERR("Failed to set security level: %s(%d)",
-			bt_security_err_to_str(sec_err), sec_err);
+		LOG_ERROR("Failed to set security level: %s(%d)", bt_security_err_to_str(sec_err),
+			  sec_err);
 
 		if (sec_err == BT_SECURITY_ERR_PIN_OR_KEY_MISSING) {
 			int err;
@@ -544,7 +544,7 @@ static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
 			LOG_INF("Removing old key");
 			err = bt_unpair(BT_ID_DEFAULT, bt_conn_get_dst(conn));
 			if (err != 0) {
-				LOG_ERR("Failed to remove old key: %d", err);
+				LOG_ERROR("Failed to remove old key: %d", err);
 			}
 		}
 	}
@@ -585,7 +585,7 @@ static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_
 
 	err = bt_le_scan_stop();
 	if (err != 0) {
-		LOG_ERR("Failed to stop scan: %d", err);
+		LOG_ERROR("Failed to stop scan: %d", err);
 		return false;
 	}
 
@@ -622,7 +622,7 @@ static int scan_and_connect(void)
 
 	err = k_sem_take(&sem_state_change, K_FOREVER);
 	if (err != 0) {
-		LOG_ERR("Failed to take sem_state_change: %d", err);
+		LOG_ERROR("Failed to take sem_state_change: %d", err);
 		return err;
 	}
 
@@ -635,7 +635,7 @@ static void exchange_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchan
 		LOG_INF("MTU exchange done");
 		k_sem_give(&sem_proc);
 	} else {
-		LOG_ERR("MTU exchange failed: err %u", err);
+		LOG_ERROR("MTU exchange failed: err %u", err);
 	}
 }
 
@@ -654,12 +654,12 @@ static int exchange_mtu(void)
 
 		err = bt_gatt_exchange_mtu(peer.conn, &exchange_params);
 		if (err != 0) {
-			LOG_ERR("Failed to exchange MTU: %d", err);
+			LOG_ERROR("Failed to exchange MTU: %d", err);
 		}
 
 		err = k_sem_take(&sem_proc, SEM_TIMEOUT);
 		if (err != 0) {
-			LOG_ERR("Timeout on MTU exchange request: %d", err);
+			LOG_ERROR("Timeout on MTU exchange request: %d", err);
 			return err;
 		}
 	}
@@ -667,7 +667,7 @@ static int exchange_mtu(void)
 	LOG_INF("Waiting for MTU exchange");
 	err = k_sem_take(&sem_mtu_exchanged, SEM_TIMEOUT);
 	if (err != 0) {
-		LOG_ERR("Timeout on MTU exchange: %d", err);
+		LOG_ERROR("Timeout on MTU exchange: %d", err);
 		return err;
 	}
 
@@ -680,14 +680,14 @@ static int update_security(void)
 
 	err = bt_conn_set_security(peer.conn, BT_SECURITY_L2);
 	if (err != 0) {
-		LOG_ERR("Failed to set security: %d", err);
+		LOG_ERROR("Failed to set security: %d", err);
 		return err;
 	}
 
 	LOG_INF("Waiting for security change");
 	err = k_sem_take(&sem_security_changed, SEM_TIMEOUT);
 	if (err != 0) {
-		LOG_ERR("Timeout on security: %d", err);
+		LOG_ERROR("Timeout on security: %d", err);
 		return err;
 	}
 
@@ -715,14 +715,14 @@ static int init_cap_initiator(void)
 
 	err = bt_cap_initiator_register_cb(&cap_cb);
 	if (err != 0) {
-		LOG_ERR("Failed to register CAP callbacks: %d", err);
+		LOG_ERROR("Failed to register CAP callbacks: %d", err);
 
 		return err;
 	}
 
 	err = bt_bap_unicast_client_register_cb(&unicast_client_cbs);
 	if (err != 0) {
-		LOG_ERR("Failed to register BAP unicast client callbacks: %d", err);
+		LOG_ERROR("Failed to register BAP unicast client callbacks: %d", err);
 
 		return err;
 	}
@@ -754,7 +754,7 @@ static int reset_cap_initiator(void)
 
 		err = k_sem_take(&sem_state_change, K_FOREVER);
 		if (err != 0) {
-			LOG_ERR("Timeout on disconnect: %d", err);
+			LOG_ERROR("Timeout on disconnect: %d", err);
 			return err;
 		}
 	}
@@ -762,7 +762,7 @@ static int reset_cap_initiator(void)
 	if (peer.source_stream.bap_stream.ep != NULL) {
 		err = k_sem_take(&peer.source_stream_sem, SEM_TIMEOUT);
 		if (err != 0) {
-			LOG_ERR("Timeout on source_stream_sem: %d", err);
+			LOG_ERROR("Timeout on source_stream_sem: %d", err);
 			return err;
 		}
 	}
@@ -770,7 +770,7 @@ static int reset_cap_initiator(void)
 	if (peer.sink_stream.bap_stream.ep != NULL) {
 		err = k_sem_take(&peer.sink_stream_sem, SEM_TIMEOUT);
 		if (err != 0) {
-			LOG_ERR("Timeout on sink_stream_sem: %d", err);
+			LOG_ERROR("Timeout on sink_stream_sem: %d", err);
 			return err;
 		}
 	}
@@ -811,7 +811,7 @@ int cap_initiator_unicast(void)
 	while (true) {
 		err = reset_cap_initiator();
 		if (err != 0) {
-			LOG_ERR("Failed to reset");
+			LOG_ERROR("Failed to reset");
 
 			return err;
 		}
@@ -885,7 +885,7 @@ int cap_initiator_unicast(void)
 		/* Reset if disconnected */
 		err = k_sem_take(&sem_state_change, K_FOREVER);
 		if (err != 0) {
-			LOG_ERR("Failed to take sem_state_change: err %d", err);
+			LOG_ERROR("Failed to take sem_state_change: err %d", err);
 
 			return err;
 		}

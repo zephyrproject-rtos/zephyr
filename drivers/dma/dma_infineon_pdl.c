@@ -119,13 +119,13 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 	cy_stc_dma_descriptor_t *descriptor = NULL;
 
 	if (channel >= cfg->num_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
 	/* Support only the same data width for source and dest */
 	if (config->dest_data_size != config->source_data_size) {
-		LOG_ERR("Source and dest data size differ.");
+		LOG_ERROR("Source and dest data size differ.");
 		return -EINVAL;
 	}
 
@@ -134,13 +134,14 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 	    (config->dest_burst_length <= 1 && config->head_block->block_size > 256) ||
 	    (config->dest_burst_length > 0 &&
 	     config->head_block->block_size > (config->dest_burst_length * 256))) {
-		LOG_ERR("DMA (DW) only supports <=256 byte burst and <=256 bytes per burst");
+		LOG_ERROR("DMA (DW) only supports <=256 byte burst and <=256 bytes per burst");
 		return -EINVAL;
 	}
 
 	if (config->dest_data_size != 1 && config->dest_data_size != 2 &&
 	    config->dest_data_size != 4) {
-		LOG_ERR("dest_data_size must be 1, 2, or 4 (%" PRIu32 ")", config->dest_data_size);
+		LOG_ERROR("dest_data_size must be 1, 2, or 4 (%" PRIu32 ")",
+			  config->dest_data_size);
 		return -EINVAL;
 	}
 
@@ -254,7 +255,8 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 		/* Allocate next descriptor if need */
 		if (i + 1u < config->block_count) {
 			if (i + 1u >= DESCRIPTOR_COUNT) {
-				LOG_ERR("Not enough descriptors available for channel %d", channel);
+				LOG_ERROR("Not enough descriptors available for channel %d",
+					  channel);
 				return -ENOMEM;
 			}
 			descriptor_config.nextDescriptor = &data->channels[channel].descr[i + 1u];
@@ -302,7 +304,7 @@ static int ifx_cat1_dma_start(const struct device *dev, uint32_t channel)
 	const struct ifx_cat1_dma_config *const cfg = dev->config;
 
 	if (channel >= cfg->num_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
@@ -326,7 +328,7 @@ static int ifx_cat1_dma_stop(const struct device *dev, uint32_t channel)
 	const struct ifx_cat1_dma_config *const cfg = dev->config;
 
 	if (channel >= cfg->num_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
@@ -344,7 +346,7 @@ int ifx_cat1_dma_reload(const struct device *dev, uint32_t channel, uint32_t src
 	cy_stc_dma_descriptor_t *descriptor = &data->channels[channel].descr[0];
 
 	if (channel >= cfg->num_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
@@ -442,7 +444,7 @@ static int ifx_cat1_dma_get_status(const struct device *dev, uint32_t channel,
 	const struct ifx_cat1_dma_config *const cfg = dev->config;
 
 	if (channel >= cfg->num_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
@@ -512,31 +514,31 @@ static void ifx_cat1_dma_isr(struct ifx_cat1_dma_irq_context *irq_context)
 		status = 0;
 		break;
 	case CY_DMA_INTR_CAUSE_DESCR_BUS_ERROR: /* Descriptor bus error   */
-		LOG_ERR("DMA error: Descriptor bus error (cause=0x%x)", intr_cause);
+		LOG_ERROR("DMA error: Descriptor bus error (cause=0x%x)", intr_cause);
 		status = -EIO;
 		break;
 	case CY_DMA_INTR_CAUSE_SRC_BUS_ERROR: /* Source bus error       */
-		LOG_ERR("DMA error: Source bus error (cause=0x%x)", intr_cause);
+		LOG_ERROR("DMA error: Source bus error (cause=0x%x)", intr_cause);
 		status = -EIO;
 		break;
 	case CY_DMA_INTR_CAUSE_DST_BUS_ERROR: /* Destination bus error  */
-		LOG_ERR("DMA error: Destination bus error (cause=0x%x)", intr_cause);
+		LOG_ERROR("DMA error: Destination bus error (cause=0x%x)", intr_cause);
 		status = -EIO;
 		break;
 	case CY_DMA_INTR_CAUSE_SRC_MISAL: /* Source address is not aligned      */
-		LOG_ERR("DMA error: Source misaligned (cause=0x%x)", intr_cause);
+		LOG_ERROR("DMA error: Source misaligned (cause=0x%x)", intr_cause);
 		status = -EIO;
 		break;
 	case CY_DMA_INTR_CAUSE_DST_MISAL: /* Destination address is not aligned */
-		LOG_ERR("DMA error: Destination misaligned (cause=0x%x)", intr_cause);
+		LOG_ERROR("DMA error: Destination misaligned (cause=0x%x)", intr_cause);
 		status = -EIO;
 		break;
 	case CY_DMA_INTR_CAUSE_CURR_PTR_NULL: /* Current descr pointer is NULL   */
-		LOG_ERR("DMA error: Current descriptor pointer is NULL (cause=0x%x)", intr_cause);
+		LOG_ERROR("DMA error: Current descriptor pointer is NULL (cause=0x%x)", intr_cause);
 		status = -EIO;
 		break;
 	case CY_DMA_INTR_CAUSE_ACTIVE_CH_DISABLED: /* Active channel is disabled      */
-		LOG_ERR("DMA error: Active channel disabled (cause=0x%x)", intr_cause);
+		LOG_ERROR("DMA error: Active channel disabled (cause=0x%x)", intr_cause);
 		status = -EIO;
 		break;
 	default:

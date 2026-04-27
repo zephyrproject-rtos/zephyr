@@ -462,7 +462,7 @@ static int ads1119_init(const struct device *dev)
 
 	rc = ads1119_read_reg(dev, ADS1119_REG_STATUS, &status);
 	if (rc) {
-		LOG_ERR("Could not get %s status", dev->name);
+		LOG_ERROR("Could not get %s status", dev->name);
 		return rc;
 	}
 

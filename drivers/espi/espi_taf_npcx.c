@@ -134,7 +134,7 @@ static void espi_taf_fiu_mode_set(void)
 		} else if ((flags & NPCX_QSPI_BKP_FLASH_SL) != 0) {
 			inst->FIU_4B_EN |= BIT(NPCX_MSR_FIU_4B_EN_BKP_4B);
 		} else {
-			LOG_ERR("No valid flash selected");
+			LOG_ERROR("No valid flash selected");
 		}
 	}
 }
@@ -327,7 +327,7 @@ static void taf_release_flash_np_free(const struct device *dev)
 
 	if (WAIT_FOR(!IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL),
 		CONFIG_ESPI_TAF_TX_AVAIL_CHECK_TIME, NULL) == false) {
-		LOG_ERR("Flash_ACC_TX_AVAIL is not cleared");
+		LOG_ERROR("Flash_ACC_TX_AVAIL is not cleared");
 	}
 
 	tmp = inst->FLASHCTL;
@@ -363,7 +363,7 @@ static int taf_npcx_completion_handler(const struct device *dev, uint8_t type, u
 	 */
 	if (WAIT_FOR(!IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_FLASH_ACC_TX_AVAIL),
 		     CONFIG_ESPI_TAF_TX_AVAIL_CHECK_TIME, NULL) == false) {
-		LOG_ERR("Check TX Queue Is Empty Timeout");
+		LOG_ERROR("Check TX Queue Is Empty Timeout");
 		return -EBUSY;
 	}
 
@@ -407,12 +407,12 @@ static int espi_taf_npcx_flash_read(const struct device *dev, struct espi_saf_pa
 	}
 
 	if (total_len > max_read_req) {
-		LOG_ERR("Exceeded the limitation of read length");
+		LOG_ERROR("Exceeded the limitation of read length");
 		return -EINVAL;
 	}
 
 	if (espi_taf_check_read_protect(dev, addr, len, taf_data_ptr->tag)) {
-		LOG_ERR("Access protect region");
+		LOG_ERROR("Access protect region");
 		return -EINVAL;
 	}
 
@@ -439,7 +439,7 @@ static int espi_taf_npcx_flash_read(const struct device *dev, struct espi_saf_pa
 					(npcx_espi_taf_data.low_dev_size - addr));
 
 			if (rc) {
-				LOG_ERR("flash read fail 0x%x", rc);
+				LOG_ERROR("flash read fail 0x%x", rc);
 				return -EIO;
 			}
 
@@ -454,14 +454,14 @@ static int espi_taf_npcx_flash_read(const struct device *dev, struct espi_saf_pa
 		rc = flash_read(spi_dev, addr, npcx_espi_taf_data.read_buf, len);
 #endif
 		if (rc) {
-			LOG_ERR("flash read fail 0x%x", rc);
+			LOG_ERROR("flash read fail 0x%x", rc);
 			return -EIO;
 		}
 
 		rc = taf_npcx_completion_handler(dev, cycle_type, taf_data_ptr->tag, len,
 						 (uint32_t *)npcx_espi_taf_data.read_buf);
 		if (rc) {
-			LOG_ERR("espi taf completion handler fail");
+			LOG_ERROR("espi taf completion handler fail");
 			return rc;
 		}
 
@@ -490,7 +490,7 @@ static int espi_taf_npcx_flash_write(const struct device *dev, struct espi_saf_p
 
 	if (espi_taf_check_write_protect(dev, pckt->flash_addr,
 					 pckt->len, taf_data_ptr->tag)) {
-		LOG_ERR("Access protection region");
+		LOG_ERROR("Access protection region");
 		return -EINVAL;
 	}
 
@@ -501,21 +501,21 @@ static int espi_taf_npcx_flash_write(const struct device *dev, struct espi_saf_p
 		rc = flash_write(npcx_espi_taf_data.high_dev_ptr,
 				 (addr - npcx_espi_taf_data.low_dev_size), data_ptr, len);
 	} else {
-		LOG_ERR("Write across two flashes");
+		LOG_ERROR("Write across two flashes");
 		return -EINVAL;
 	}
 #else
 	rc = flash_write(spi_dev, addr, data_ptr, len);
 #endif
 	if (rc) {
-		LOG_ERR("flash write fail 0x%x", rc);
+		LOG_ERROR("flash write fail 0x%x", rc);
 		return -EIO;
 	}
 
 	rc = taf_npcx_completion_handler(dev, CYC_SCS_CMP_WITHOUT_DATA, taf_data_ptr->tag, 0x0,
 					 NULL);
 	if (rc) {
-		LOG_ERR("espi taf completion handler fail");
+		LOG_ERROR("espi taf completion handler fail");
 		return rc;
 	}
 
@@ -531,14 +531,14 @@ static int espi_taf_npcx_flash_erase(const struct device *dev, struct espi_saf_p
 	int rc;
 
 	if ((pckt->len < 0) || (pckt->len >= NPCX_ESPI_TAF_ERASE_LEN_MAX)) {
-		LOG_ERR("Invalid erase block size");
+		LOG_ERROR("Invalid erase block size");
 		return -EINVAL;
 	}
 
 	len = erase_blk[pckt->len];
 
 	if (espi_taf_check_write_protect(dev, addr, len, taf_data_ptr->tag)) {
-		LOG_ERR("Access protection region");
+		LOG_ERROR("Access protection region");
 		return -EINVAL;
 	}
 
@@ -549,21 +549,21 @@ static int espi_taf_npcx_flash_erase(const struct device *dev, struct espi_saf_p
 		rc = flash_erase(npcx_espi_taf_data.high_dev_ptr,
 				 (addr - npcx_espi_taf_data.low_dev_size), len);
 	} else {
-		LOG_ERR("Erase across two flashes");
+		LOG_ERROR("Erase across two flashes");
 		return -EINVAL;
 	}
 #else
 	rc = flash_erase(spi_dev, addr, len);
 #endif
 	if (rc) {
-		LOG_ERR("flash erase fail");
+		LOG_ERROR("flash erase fail");
 		return -EIO;
 	}
 
 	rc = taf_npcx_completion_handler(dev, CYC_SCS_CMP_WITHOUT_DATA, taf_data_ptr->tag, 0x0,
 					 NULL);
 	if (rc) {
-		LOG_ERR("espi taf completion handler fail");
+		LOG_ERROR("espi taf completion handler fail");
 		return rc;
 	}
 
@@ -585,14 +585,14 @@ static int espi_taf_npcx_rpmc_op1(const struct device *dev, struct espi_saf_pack
 
 	rc = flash_ex_op(spi_dev, FLASH_NPCX_EX_OP_EXEC_UMA, (uintptr_t)&op_in, NULL);
 	if (rc) {
-		LOG_ERR("flash RPMC OP1 fail");
+		LOG_ERROR("flash RPMC OP1 fail");
 		return -EIO;
 	}
 
 	rc = taf_npcx_completion_handler(dev, CYC_SCS_CMP_WITHOUT_DATA, taf_data_ptr->tag, 0x0,
 					 NULL);
 	if (rc) {
-		LOG_ERR("espi taf completion handler fail");
+		LOG_ERROR("espi taf completion handler fail");
 		return rc;
 	}
 
@@ -618,14 +618,14 @@ static int espi_taf_npcx_rpmc_op2(const struct device *dev, struct espi_saf_pack
 	int rc;
 
 	if (pckt->len > MAX_TX_PAYLOAD_SIZE) {
-		LOG_ERR("Invalid size");
+		LOG_ERROR("Invalid size");
 		return -EINVAL;
 	}
 
 	do {
 		rc = flash_ex_op(spi_dev, FLASH_NPCX_EX_OP_EXEC_UMA, (uintptr_t)&op_in, &op_out);
 		if (rc) {
-			LOG_ERR("flash RPMC OP2 fail");
+			LOG_ERROR("flash RPMC OP2 fail");
 			return -EIO;
 		}
 
@@ -646,7 +646,7 @@ static int espi_taf_npcx_rpmc_op2(const struct device *dev, struct espi_saf_pack
 	rc = taf_npcx_completion_handler(dev, CYC_SCS_CMP_WITH_DATA_ONLY, taf_data_ptr->tag,
 					 pckt->len, (uint32_t *)npcx_espi_taf_data.read_buf);
 	if (rc) {
-		LOG_ERR("espi taf completion handler fail");
+		LOG_ERROR("espi taf completion handler fail");
 		return rc;
 	}
 
@@ -662,7 +662,7 @@ static int espi_taf_npcx_flash_unsuccess(const struct device *dev, struct espi_s
 	rc = taf_npcx_completion_handler(dev, CYC_UNSCS_CMP_WITHOUT_DATA_ONLY, taf_data_ptr->tag,
 					 0x0, NULL);
 	if (rc) {
-		LOG_ERR("espi taf completion handler fail");
+		LOG_ERROR("espi taf completion handler fail");
 		return rc;
 	}
 
@@ -740,7 +740,7 @@ int espi_taf_npcx_block(const struct device *dev, bool en_block)
 	if (en_block) {
 		if (WAIT_FOR(!IS_BIT_SET(inst->ESPISTS, NPCX_ESPISTS_FLAUTORDREQ),
 			     CONFIG_ESPI_TAF_NPCX_STS_AWAIT_TIMEOUT, NULL) == false) {
-			LOG_ERR("Check Automatic Read Queue Empty Timeout");
+			LOG_ERROR("Check Automatic Read Queue Empty Timeout");
 			return -ETIMEDOUT;
 		}
 
@@ -750,7 +750,7 @@ int espi_taf_npcx_block(const struct device *dev, bool en_block)
 			     CONFIG_ESPI_TAF_NPCX_STS_AWAIT_TIMEOUT, NULL) == false) {
 			inst->FLASHCTL &= ~BIT(NPCX_FLASHCTL_AUTO_RD_DIS_CTL);
 			inst->ESPISTS |= BIT(NPCX_ESPISTS_AUTO_RD_DIS_STS);
-			LOG_ERR("Check Automatic Read Disable Timeout");
+			LOG_ERROR("Check Automatic Read Disable Timeout");
 			return -ETIMEDOUT;
 		}
 	} else {

@@ -1127,7 +1127,7 @@ static int sam_pmc_register_pll(const struct device *dev, struct pmc_data *sama7
 			}
 
 			if (ret) {
-				LOG_ERR("Register clock %s failed.", sama7d65_plls[i][j].n);
+				LOG_ERROR("Register clock %s failed.", sama7d65_plls[i][j].n);
 				return ret;
 			}
 
@@ -1154,7 +1154,7 @@ static int sam_pmc_register_mckx(const struct device *dev, struct pmc_data *sama
 	ret = clk_register_master_div(regmap, "mck0", sama7d65_plls[PLL_ID_CPU][1].clk,
 				      &mck0_layout, &mck0_characteristics, &pmc_mck0_lock, 5, &clk);
 	if (ret) {
-		LOG_ERR("Register MCK0 clock failed.");
+		LOG_ERROR("Register MCK0 clock failed.");
 		return ret;
 	}
 	sama7d65_mckx[PCK_PARENT_HW_MCK0].clk = sama7d65_pmc->chws[PMC_MCK] = clk;
@@ -1167,7 +1167,7 @@ static int sam_pmc_register_mckx(const struct device *dev, struct pmc_data *sama
 		struct device *tmp_parent_hws[8];
 
 		if (num_parents > ARRAY_SIZE(mux_table)) {
-			LOG_ERR("Array for mux table not enough");
+			LOG_ERROR("Array for mux table not enough");
 			return -ENOMEM;
 		}
 
@@ -1185,7 +1185,7 @@ static int sam_pmc_register_mckx(const struct device *dev, struct pmc_data *sama
 		ret = clk_register_master(regmap, sama7d65_mckx[i].n, num_parents, parents,
 					  mux_table, &pmc_mckX_lock, sama7d65_mckx[i].id, &clk);
 		if (ret) {
-			LOG_ERR("Register MCK%d clock failed.", i);
+			LOG_ERROR("Register MCK%d clock failed.", i);
 			return ret;
 		}
 
@@ -1217,7 +1217,7 @@ static int sam_pmc_register_generated(const struct device *dev, struct pmc_data 
 		struct device *tmp_parent_hws[8];
 
 		if (num_parents > ARRAY_SIZE(mux_table)) {
-			LOG_ERR("Array for mux table not enough");
+			LOG_ERROR("Array for mux table not enough");
 			return -ENOMEM;
 		}
 
@@ -1241,7 +1241,7 @@ static int sam_pmc_register_generated(const struct device *dev, struct pmc_data 
 					     &sama7d65_gck[i].r,
 					     sama7d65_gck[i].pp_chg_id, &clk);
 		if (ret) {
-			LOG_ERR("Register generated clock failed.");
+			LOG_ERROR("Register generated clock failed.");
 			return ret;
 		}
 		sama7d65_pmc->ghws[sama7d65_gck[i].id] = clk;
@@ -1267,14 +1267,14 @@ void sam_pmc_setup(const struct device *dev)
 	int ret, i;
 
 	if (!td_slck || !md_slck || !main_xtal || !regmap) {
-		LOG_ERR("Incorrect parameters.");
+		LOG_ERROR("Incorrect parameters.");
 		return;
 	}
 
 	if (CLK_CNT_SYSTEM != nck(sama7d65_systemck) ||
 	    CLK_CNT_PERIPH != nck(sama7d65_periphck) ||
 	    CLK_CNT_GCK != nck(sama7d65_gck)) {
-		LOG_ERR("Incorrect definitions could make array for pmc clocks not enough");
+		LOG_ERROR("Incorrect definitions could make array for pmc clocks not enough");
 		return;
 	}
 
@@ -1282,26 +1282,26 @@ void sam_pmc_setup(const struct device *dev)
 					 nck(sama7d65_periphck), nck(sama7d65_gck),
 					 SOC_NUM_CLOCK_PROGRAMMABLE, &pmc_table[0]);
 	if (!sama7d65_pmc) {
-		LOG_ERR("allocate PMC data failed.");
+		LOG_ERROR("allocate PMC data failed.");
 		return;
 	}
 	data->pmc = sama7d65_pmc;
 
 	ret = clk_register_main_rc_osc(regmap, "main_rc_osc", MHZ(12), &main_rc);
 	if (ret) {
-		LOG_ERR("Register clock main_rc_osc failed.");
+		LOG_ERROR("Register clock main_rc_osc failed.");
 		return;
 	}
 
 	if (clock_control_get_rate(main_xtal, NULL, &rate)) {
-		LOG_ERR("get clock rate of main_xtal failed.");
+		LOG_ERROR("get clock rate of main_xtal failed.");
 		return;
 	}
 
 	bypass = 0;
 	ret = clk_register_main_osc(regmap, "main_osc", bypass, rate, &main_osc);
 	if (ret) {
-		LOG_ERR("Register clock main_osc failed.");
+		LOG_ERROR("Register clock main_osc failed.");
 		return;
 	}
 
@@ -1309,7 +1309,7 @@ void sam_pmc_setup(const struct device *dev)
 	parents[1] = main_osc;
 	ret = clk_register_main(regmap, "mainck", parents, 2, &clk);
 	if (ret) {
-		LOG_ERR("Register clock mainck failed.");
+		LOG_ERROR("Register clock mainck failed.");
 		return;
 	}
 
@@ -1338,7 +1338,7 @@ void sam_pmc_setup(const struct device *dev)
 		ret = clk_register_programmable(regmap, parents, 9, i, &programmable_layout,
 						sama7d65_prog_mux_table, &clk);
 		if (ret) {
-			LOG_ERR("Register programmable clock %d failed.", i);
+			LOG_ERROR("Register programmable clock %d failed.", i);
 			return;
 		}
 
@@ -1350,7 +1350,7 @@ void sam_pmc_setup(const struct device *dev)
 					  sama7d65_pmc->pchws[i],
 					  sama7d65_systemck[i].id, &clk);
 		if (ret) {
-			LOG_ERR("Register system clock %d failed.", i);
+			LOG_ERROR("Register system clock %d failed.", i);
 			return;
 		}
 
@@ -1367,7 +1367,7 @@ void sam_pmc_setup(const struct device *dev)
 					      &sama7d65_periphck[i].r,
 					      &clk);
 		if (ret) {
-			LOG_ERR("Register peripheral clock failed.");
+			LOG_ERROR("Register peripheral clock failed.");
 			return;
 		}
 		sama7d65_pmc->phws[sama7d65_periphck[i].id] = clk;

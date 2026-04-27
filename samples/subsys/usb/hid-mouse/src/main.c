@@ -70,7 +70,7 @@ static void input_cb(struct input_event *evt, void *user_data)
 	}
 
 	if (k_msgq_put(&mouse_msgq, tmp, K_NO_WAIT) != 0) {
-		LOG_ERR("Failed to put new input event");
+		LOG_ERROR("Failed to put new input event");
 	}
 
 	tmp[MOUSE_X_REPORT_IDX] = 0U;
@@ -108,19 +108,19 @@ int main(void)
 	int ret;
 
 	if (!gpio_is_ready_dt(&led0)) {
-		LOG_ERR("LED device %s is not ready", led0.port->name);
+		LOG_ERROR("LED device %s is not ready", led0.port->name);
 		return 0;
 	}
 
 	ret = gpio_pin_configure_dt(&led0, GPIO_OUTPUT);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure the LED pin, error: %d", ret);
+		LOG_ERROR("Failed to configure the LED pin, error: %d", ret);
 		return 0;
 	}
 
 	hid_dev = DEVICE_DT_GET_ONE(zephyr_hid_device);
 	if (!device_is_ready(hid_dev)) {
-		LOG_ERR("HID Device is not ready");
+		LOG_ERROR("HID Device is not ready");
 		return -EIO;
 	}
 
@@ -128,19 +128,19 @@ int main(void)
 				  hid_report_desc, sizeof(hid_report_desc),
 				  &mouse_ops);
 	if (ret != 0) {
-		LOG_ERR("Failed to register HID Device, %d", ret);
+		LOG_ERROR("Failed to register HID Device, %d", ret);
 		return ret;
 	}
 
 	sample_usbd = sample_usbd_init_device(NULL);
 	if (sample_usbd == NULL) {
-		LOG_ERR("Failed to initialize USB device");
+		LOG_ERROR("Failed to initialize USB device");
 		return -ENODEV;
 	}
 
 	ret = usbd_enable(sample_usbd);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable device support");
+		LOG_ERROR("Failed to enable device support");
 		return ret;
 	}
 
@@ -158,7 +158,7 @@ int main(void)
 
 		ret = hid_device_submit_report(hid_dev, MOUSE_REPORT_COUNT, report);
 		if (ret) {
-			LOG_ERR("HID submit report error, %d", ret);
+			LOG_ERROR("HID submit report error, %d", ret);
 		} else {
 			/* Toggle LED on sent report */
 			(void)gpio_pin_toggle(led0.port, led0.pin);

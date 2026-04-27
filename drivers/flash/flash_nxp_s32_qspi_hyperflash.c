@@ -39,26 +39,26 @@ static int nxp_s32_qspi_init(const struct device *dev)
 #endif
 
 	if (!device_is_ready(config->controller)) {
-		LOG_ERR("Memory control device not ready");
+		LOG_ERROR("Memory control device not ready");
 		return -ENODEV;
 	}
 
 	status = Qspi_Ip_Init(data->instance, (const Qspi_Ip_MemoryConfigType *)memory_cfg,
 			      (const Qspi_Ip_MemoryConnectionType *)&data->memory_conn_cfg);
 	if (status != STATUS_QSPI_IP_SUCCESS) {
-		LOG_ERR("Fail to init memory device %d (%d)", data->instance, status);
+		LOG_ERROR("Fail to init memory device %d (%d)", data->instance, status);
 		return -EIO;
 	}
 
 	/* Verify connectivity by reading the device ID */
 	ret = nxp_s32_qspi_read_id(dev, dev_id);
 	if (ret != 0) {
-		LOG_ERR("Device ID read failed (%d)", ret);
+		LOG_ERROR("Device ID read failed (%d)", ret);
 		return -ENODEV;
 	}
 
 	if (memcmp(dev_id, memory_cfg->readIdSettings.readIdExpected, sizeof(dev_id))) {
-		LOG_ERR("Device id does not match config");
+		LOG_ERROR("Device id does not match config");
 		return -EINVAL;
 	}
 

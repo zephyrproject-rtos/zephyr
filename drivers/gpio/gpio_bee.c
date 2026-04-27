@@ -481,7 +481,7 @@ static int gpio_bee_init(const struct device *dev)
 
 	ret = pinctrl_lookup_state(config->pcfg, PINCTRL_STATE_DEFAULT, &state);
 	if ((ret < 0) && (ret != -ENOENT)) {
-		LOG_ERR("GPIO relate pins should be configured on dts pinctrl node");
+		LOG_ERROR("GPIO relate pins should be configured on dts pinctrl node");
 		return -EIO;
 	}
 
@@ -489,14 +489,14 @@ static int gpio_bee_init(const struct device *dev)
 		pad_num = state->pins[state_cnt].pin;
 		pin_num = GPIO_GetNum(pad_num) & 31;
 		if (pin_num == 0xff) {
-			LOG_ERR("Wrong pad is configured as GPIO.");
+			LOG_ERROR("Wrong pad is configured as GPIO.");
 			continue;
 		}
 
 		if (data->array[pin_num].pad_num != TOTAL_PIN_NUM) {
-			LOG_ERR("Redundant configuration for different pads(%d) "
-				"using the same GPIO pin(%s: %d).",
-				data->array[pin_num].pad_num, dev->name, pin_num);
+			LOG_ERROR("Redundant configuration for different pads(%d) "
+				  "using the same GPIO pin(%s: %d).",
+				  data->array[pin_num].pad_num, dev->name, pin_num);
 			continue;
 		}
 

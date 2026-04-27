@@ -119,12 +119,12 @@ static void shim_nrf_twis_handle_read_req(const struct device *dev)
 	int err;
 
 	if (callbacks->buf_read_requested(target_config, &buf, &buf_size)) {
-		LOG_ERR("no buffer provided");
+		LOG_ERROR("no buffer provided");
 		return;
 	}
 
 	if (SHIM_NRF_TWIS_BUF_SIZE < buf_size) {
-		LOG_ERR("provided buffer too large");
+		LOG_ERROR("provided buffer too large");
 		return;
 	}
 
@@ -132,7 +132,7 @@ static void shim_nrf_twis_handle_read_req(const struct device *dev)
 
 	err = nrfx_twis_tx_prepare(twis, dev_config->buf, buf_size);
 	if (err < 0) {
-		LOG_ERR("tx prepare failed");
+		LOG_ERROR("tx prepare failed");
 		return;
 	}
 }
@@ -146,7 +146,7 @@ static void shim_nrf_twis_handle_write_req(const struct device *dev)
 
 	err = nrfx_twis_rx_prepare(twis, dev_config->buf, SHIM_NRF_TWIS_BUF_SIZE);
 	if (err < 0) {
-		LOG_ERR("rx prepare failed");
+		LOG_ERROR("rx prepare failed");
 		return;
 	}
 }
@@ -218,7 +218,7 @@ static int shim_nrf_twis_target_register(const struct device *dev,
 	};
 
 	if (target_config->flags) {
-		LOG_ERR("16-bit address unsupported");
+		LOG_ERROR("16-bit address unsupported");
 		return -EINVAL;
 	}
 
@@ -282,7 +282,7 @@ static int shim_nrf_twis_deinit(const struct device *dev)
 	struct shim_nrf_twis_data *dev_data = dev->data;
 
 	if (dev_data->target_config != NULL) {
-		LOG_ERR("target registered");
+		LOG_ERROR("target registered");
 		return -EPERM;
 	}
 
@@ -292,7 +292,7 @@ static int shim_nrf_twis_deinit(const struct device *dev)
 	 * be deinitialized
 	 */
 	if (!shim_nrf_twis_is_suspended(dev)) {
-		LOG_ERR("device active");
+		LOG_ERROR("device active");
 		return -EBUSY;
 	}
 #else

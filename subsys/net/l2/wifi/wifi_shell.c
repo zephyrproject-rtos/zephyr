@@ -111,7 +111,7 @@ static struct net_if *get_iface(enum iface_type type, int argc, char *argv[])
 
 			iface_index = shell_strtol(argv[i + 1], 10, &err);
 			if (err || iface_index < 0) {
-				LOG_ERR("Invalid interface index: %s", argv[i + 1]);
+				LOG_ERROR("Invalid interface index: %s", argv[i + 1]);
 				return NULL;
 			}
 			break;
@@ -134,8 +134,8 @@ static struct net_if *get_iface(enum iface_type type, int argc, char *argv[])
 		}
 
 		if (iface == NULL) {
-			LOG_ERR("No default interface found for type: %s",
-					type == IFACE_TYPE_STA ? "STA" : "SAP");
+			LOG_ERROR("No default interface found for type: %s",
+				  type == IFACE_TYPE_STA ? "STA" : "SAP");
 			return NULL;
 		}
 	}
@@ -144,14 +144,14 @@ static struct net_if *get_iface(enum iface_type type, int argc, char *argv[])
 	if (iface != NULL) {
 		/* If iface is valid nm wifi iface */
 		if (!wifi_nm_get_instance_iface(iface)) {
-			LOG_ERR("Interface %d is not a nm wifi iface", iface_index);
+			LOG_ERROR("Interface %d is not a nm wifi iface", iface_index);
 			return NULL;
 		}
 
 		/* If iface nm wifi type match input type */
 		if ((type == IFACE_TYPE_STA && !wifi_nm_iface_is_sta(iface)) ||
-			(type == IFACE_TYPE_SAP && !wifi_nm_iface_is_sap(iface))) {
-			LOG_ERR("Interface %d type does not match %d", iface_index, type);
+		    (type == IFACE_TYPE_SAP && !wifi_nm_iface_is_sap(iface))) {
+			LOG_ERROR("Interface %d type does not match %d", iface_index, type);
 			return NULL;
 		}
 	}

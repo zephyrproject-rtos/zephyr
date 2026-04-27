@@ -89,7 +89,7 @@ static int wdt_max42500_is_enabled(const struct device *dev)
 
 	r = i2c_reg_read_byte_dt(&cfg->i2c, MAX42500_REG_WDCFG2, &wdcfg2);
 	if (r < 0) {
-		LOG_ERR("Error reading WDCFG2");
+		LOG_ERROR("Error reading WDCFG2");
 		return r;
 	}
 
@@ -106,7 +106,7 @@ static int wdt_max42500_set_enable(const struct device *dev, bool enabled)
 				   BIT(MAX42500_REG_WDCFG2_WDEN_BIT),
 				   enabled ? BIT(MAX42500_REG_WDCFG2_WDEN_BIT) : 0);
 	if (r < 0) {
-		LOG_ERR("Error updating WDCFG2 WDEN bit");
+		LOG_ERROR("Error updating WDCFG2 WDEN bit");
 		return r;
 	}
 
@@ -122,7 +122,7 @@ static int wdt_max42500_config_single_ended_monitor(const struct device *dev,
 	r = i2c_reg_write_byte_dt(&cfg->i2c, MAX42500_REG_VIN1 + m_cfg->reg - 1,
 				  m_cfg->single_ended.nominal_voltage);
 	if (r < 0) {
-		LOG_ERR("Failed to set monitor %d nominal voltage", m_cfg->reg);
+		LOG_ERROR("Failed to set monitor %d nominal voltage", m_cfg->reg);
 		return r;
 	}
 
@@ -130,7 +130,7 @@ static int wdt_max42500_config_single_ended_monitor(const struct device *dev,
 	r = i2c_reg_write_byte_dt(&cfg->i2c, MAX42500_REG_OVUV1 + m_cfg->reg - 1,
 				  m_cfg->single_ended.ovuv_limit);
 	if (r < 0) {
-		LOG_ERR("Failed to set monitor %d ovuv voltage", m_cfg->reg);
+		LOG_ERROR("Failed to set monitor %d ovuv voltage", m_cfg->reg);
 		return r;
 	}
 
@@ -177,13 +177,13 @@ static int wdt_max42500_set_up_voltage_monitors(const struct device *dev)
 	 */
 	r = i2c_reg_read_byte_dt(&cfg->i2c, MAX42500_REG_RSTMAP, &rstmap);
 	if (r < 0) {
-		LOG_ERR("Failed to read RSTMAP register");
+		LOG_ERROR("Failed to read RSTMAP register");
 		return r;
 	}
 
 	r = i2c_reg_read_byte_dt(&cfg->i2c, MAX42500_REG_VMON, &vmon);
 	if (r < 0) {
-		LOG_ERR("Failed to read VMON register");
+		LOG_ERROR("Failed to read VMON register");
 		return r;
 	}
 
@@ -207,7 +207,7 @@ static int wdt_max42500_set_up_voltage_monitors(const struct device *dev)
 	LOG_DBG("Setting VMON to %x", vmon);
 	r = i2c_reg_write_byte_dt(&cfg->i2c, MAX42500_REG_VMON, vmon);
 	if (r < 0) {
-		LOG_ERR("Failed to write VMON");
+		LOG_ERROR("Failed to write VMON");
 		return r;
 	}
 
@@ -215,7 +215,7 @@ static int wdt_max42500_set_up_voltage_monitors(const struct device *dev)
 
 	r = i2c_reg_write_byte_dt(&cfg->i2c, MAX42500_REG_RSTMAP, rstmap);
 	if (r < 0) {
-		LOG_ERR("Failed to write RSTMAP");
+		LOG_ERROR("Failed to write RSTMAP");
 		return r;
 	}
 
@@ -225,7 +225,7 @@ static int wdt_max42500_set_up_voltage_monitors(const struct device *dev)
 		LOG_DBG("Setting monitor %d", m_cfg->reg);
 		r = wdt_max42500_config_monitor(dev, m_cfg);
 		if (r < 0) {
-			LOG_ERR("Failed to configure monitor %d (%d)", m_cfg->reg, r);
+			LOG_ERROR("Failed to configure monitor %d (%d)", m_cfg->reg, r);
 			return r;
 		}
 
@@ -236,7 +236,7 @@ static int wdt_max42500_set_up_voltage_monitors(const struct device *dev)
 	LOG_DBG("Setting VMON to %x", vmon);
 	r = i2c_reg_write_byte_dt(&cfg->i2c, MAX42500_REG_VMON, vmon);
 	if (r < 0) {
-		LOG_ERR("Failed to write VMON");
+		LOG_ERROR("Failed to write VMON");
 		return r;
 	}
 
@@ -244,13 +244,13 @@ static int wdt_max42500_set_up_voltage_monitors(const struct device *dev)
 
 	r = i2c_reg_read_byte_dt(&cfg->i2c, MAX42500_REG_STATOV, &ov_stat);
 	if (r < 0) {
-		LOG_ERR("Failed to read OV status register");
+		LOG_ERROR("Failed to read OV status register");
 		return r;
 	}
 
 	r = i2c_reg_read_byte_dt(&cfg->i2c, MAX42500_REG_STATUV, &uv_stat);
 	if (r < 0) {
-		LOG_ERR("Failed to read UV status register");
+		LOG_ERROR("Failed to read UV status register");
 		return r;
 	}
 
@@ -260,19 +260,19 @@ static int wdt_max42500_set_up_voltage_monitors(const struct device *dev)
 
 	r = i2c_reg_write_byte_dt(&cfg->i2c, MAX42500_REG_RSTMAP, rstmap);
 	if (r < 0) {
-		LOG_ERR("Failed to write RSTMAP");
+		LOG_ERROR("Failed to write RSTMAP");
 		return r;
 	}
 
 	r = i2c_reg_read_byte_dt(&cfg->i2c, MAX42500_REG_STATOV, &ov_stat);
 	if (r < 0) {
-		LOG_ERR("Failed to read OV status register");
+		LOG_ERROR("Failed to read OV status register");
 		return r;
 	}
 
 	r = i2c_reg_read_byte_dt(&cfg->i2c, MAX42500_REG_STATUV, &uv_stat);
 	if (r < 0) {
-		LOG_ERR("Failed to read UV status register");
+		LOG_ERROR("Failed to read UV status register");
 		return r;
 	}
 
@@ -287,25 +287,25 @@ static int wdt_max42500_setup(const struct device *dev, uint8_t options)
 	int r;
 
 	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
-		LOG_ERR("Pause in sleep not supported");
+		LOG_ERROR("Pause in sleep not supported");
 		return -ENOTSUP;
 	}
 
 	if (options & WDT_OPT_PAUSE_HALTED_BY_DBG) {
-		LOG_ERR("Pause when halted by debugger not supported");
+		LOG_ERROR("Pause when halted by debugger not supported");
 		return -ENOTSUP;
 	}
 
 	r = wdt_max42500_set_up_voltage_monitors(dev);
 	if (r < 0) {
-		LOG_ERR("Failed to set up voltage monitors (%d)", r);
+		LOG_ERROR("Failed to set up voltage monitors (%d)", r);
 		return r;
 	}
 
 	if (data->timeout_installed) {
 		r = wdt_max42500_set_enable(dev, true);
 		if (r < 0) {
-			LOG_ERR("Failed to enable the watchdog");
+			LOG_ERROR("Failed to enable the watchdog");
 			return r;
 		}
 	}
@@ -319,7 +319,7 @@ static int wdt_max42500_disable(const struct device *dev)
 
 	r = wdt_max42500_is_enabled(dev);
 	if (r < 0) {
-		LOG_ERR("Error fetching if in enabled");
+		LOG_ERROR("Error fetching if in enabled");
 		return r;
 	} else if (r == 0) {
 		/* Already disabled, don't try to disable again */
@@ -355,17 +355,17 @@ static int wdt_max42500_install_timeout(const struct device *dev, const struct w
 	uint32_t open, close, t_wdclk;
 
 	if (cfg->flags != WDT_FLAG_RESET_SOC) {
-		LOG_ERR("Only SoC reset supported");
+		LOG_ERROR("Only SoC reset supported");
 		return -ENOTSUP;
 	}
 
 	if (cfg->window.max == 0) {
-		LOG_ERR("Upper limit timeout out of range");
+		LOG_ERROR("Upper limit timeout out of range");
 		return -EINVAL;
 	}
 
 	if (cfg->callback) {
-		LOG_ERR("Callback not currently supported");
+		LOG_ERROR("Callback not currently supported");
 		return -ENOTSUP;
 	}
 
@@ -375,7 +375,7 @@ static int wdt_max42500_install_timeout(const struct device *dev, const struct w
 	close = wdt_max42500_timeout_to_period(t_wdclk, cfg->window.max);
 
 	if (open > BIT_MASK(4) || close > BIT_MASK(4) || close <= open) {
-		LOG_ERR("Invalid window for given wdiv %d (%d - %d)", data->wdiv, open, close);
+		LOG_ERROR("Invalid window for given wdiv %d (%d - %d)", data->wdiv, open, close);
 		return -EINVAL;
 	}
 
@@ -385,7 +385,7 @@ static int wdt_max42500_install_timeout(const struct device *dev, const struct w
 	wdcfg1 = (close << 4) | open;
 	r = i2c_reg_write_byte_dt(&dev_cfg->i2c, MAX42500_REG_WDCFG1, wdcfg1);
 	if (r < 0) {
-		LOG_ERR("Failed to set the watchdog open/close window");
+		LOG_ERROR("Failed to set the watchdog open/close window");
 		return r;
 	}
 
@@ -412,7 +412,7 @@ static int wdt_max42500_get_challenge_response(const struct device *dev, uint8_t
 
 	r = i2c_reg_read_byte_dt(&cfg->i2c, MAX42500_REG_WDKEY, &curr_wdkey);
 	if (r < 0) {
-		LOG_ERR("Failed to read current WDKEY");
+		LOG_ERROR("Failed to read current WDKEY");
 		return r;
 	}
 
@@ -431,13 +431,13 @@ static int wdt_max42500_feed(const struct device *dev, int channel_id)
 	uint8_t wdkey = 0, stat;
 
 	if (!data->timeout_installed) {
-		LOG_ERR("No valid timeout installed");
+		LOG_ERROR("No valid timeout installed");
 		return -EINVAL;
 	}
 
 	r = i2c_reg_read_byte_dt(&cfg->i2c, MAX42500_REG_WDSTAT, &stat);
 	if (r < 0) {
-		LOG_ERR("Failed to read the wd status (%d)", r);
+		LOG_ERROR("Failed to read the wd status (%d)", r);
 		return r;
 	}
 
@@ -446,7 +446,7 @@ static int wdt_max42500_feed(const struct device *dev, int channel_id)
 	if (data->mode == WDT_MAX42500_MODE_CHALLENGE_RESPONSE) {
 		r = wdt_max42500_get_challenge_response(dev, &wdkey);
 		if (r < 0) {
-			LOG_ERR("Failed to get new challenge/response WDKEY value");
+			LOG_ERROR("Failed to get new challenge/response WDKEY value");
 			return r;
 		}
 
@@ -455,7 +455,7 @@ static int wdt_max42500_feed(const struct device *dev, int channel_id)
 
 	r = i2c_reg_write_byte_dt(&cfg->i2c, MAX42500_REG_WDKEY, wdkey);
 	if (r < 0) {
-		LOG_ERR("Failed to write the new WDKEY value to feed the watchdog");
+		LOG_ERROR("Failed to write the new WDKEY value to feed the watchdog");
 		return r;
 	}
 
@@ -463,7 +463,7 @@ static int wdt_max42500_feed(const struct device *dev, int channel_id)
 
 	r = i2c_reg_read_byte_dt(&cfg->i2c, MAX42500_REG_WDSTAT, &stat);
 	if (r < 0) {
-		LOG_ERR("Failed to read the wd status (%d)", r);
+		LOG_ERROR("Failed to read the wd status (%d)", r);
 		return r;
 	}
 
@@ -488,13 +488,13 @@ static int wdt_max42500_init(const struct device *dev)
 	bool update_cdiv = false;
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("I2C bus device is not ready");
+		LOG_ERROR("I2C bus device is not ready");
 		return -ENODEV;
 	}
 
 	r = i2c_reg_read_byte_dt(&cfg->i2c, MAX42500_REG_ID, &id);
 	if (r < 0) {
-		LOG_ERR("Failed to fetch the device ID");
+		LOG_ERROR("Failed to fetch the device ID");
 		return r;
 	}
 
@@ -502,7 +502,7 @@ static int wdt_max42500_init(const struct device *dev)
 
 	r = i2c_reg_read_byte_dt(&cfg->i2c, MAX42500_REG_WDCDIV, &cdiv);
 	if (r < 0) {
-		LOG_ERR("Failed to fetch the device WDCDIV");
+		LOG_ERROR("Failed to fetch the device WDCDIV");
 		return r;
 	}
 
@@ -529,14 +529,14 @@ static int wdt_max42500_init(const struct device *dev)
 	if (update_cdiv) {
 		r = i2c_reg_write_byte_dt(&cfg->i2c, MAX42500_REG_WDCDIV, cdiv);
 		if (r < 0) {
-			LOG_ERR("Failed to update the device WDCDIV");
+			LOG_ERROR("Failed to update the device WDCDIV");
 			return r;
 		}
 	}
 
 	r = wdt_max42500_disable(dev);
 	if (r < 0) {
-		LOG_ERR("Failed to disable the watchdog on init (%d)", r);
+		LOG_ERROR("Failed to disable the watchdog on init (%d)", r);
 	}
 
 	return r;

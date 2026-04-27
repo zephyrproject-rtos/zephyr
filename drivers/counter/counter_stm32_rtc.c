@@ -301,7 +301,7 @@ static int rtc_stm32_deinit(void)
 	/* Set Initialization mode */
 	ret = rtc_stm32_enter_init_mode();
 	if (ret < 0) {
-		LOG_ERR("Failed to enter RTC init mode");
+		LOG_ERROR("Failed to enter RTC init mode");
 		return ret;
 	}
 
@@ -353,7 +353,7 @@ static int rtc_stm32_deinit(void)
 	/* Exit Initialization mode */
 	ret = rtc_stm32_exit_init_mode();
 	if (ret < 0) {
-		LOG_ERR("Failed to exit RTC init mode");
+		LOG_ERROR("Failed to exit RTC init mode");
 		return ret;
 	}
 
@@ -369,7 +369,7 @@ static int rtc_stm32_configure(const struct device *dev)
 	/* Set Initialization mode */
 	ret = rtc_stm32_enter_init_mode();
 	if (ret < 0) {
-		LOG_ERR("Failed to enter RTC init mode");
+		LOG_ERROR("Failed to enter RTC init mode");
 		return ret;
 	}
 
@@ -385,7 +385,7 @@ static int rtc_stm32_configure(const struct device *dev)
 	/* Exit Initialization mode */
 	ret = rtc_stm32_exit_init_mode();
 	if (ret < 0) {
-		LOG_ERR("Failed to exit RTC init mode");
+		LOG_ERROR("Failed to exit RTC init mode");
 	}
 
 	return ret;
@@ -399,7 +399,7 @@ static int rtc_stm32_start(const struct device *dev)
 
 	/* Enable RTC bus clock */
 	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
-		LOG_ERR("RTC clock enabling failed");
+		LOG_ERROR("RTC clock enabling failed");
 		return -EIO;
 	}
 #else
@@ -429,7 +429,7 @@ static int rtc_stm32_stop(const struct device *dev)
 
 	/* Disable RTC bus clock */
 	if (clock_control_off(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
-		LOG_ERR("RTC clock disabling failed");
+		LOG_ERROR("RTC clock disabling failed");
 		return -EIO;
 	}
 #else
@@ -790,7 +790,7 @@ static int rtc_stm32_init(const struct device *dev)
 
 	/* Enable RTC bus clock */
 	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
-		LOG_ERR("clock op failed");
+		LOG_ERROR("clock op failed");
 		return -EIO;
 	}
 
@@ -808,7 +808,7 @@ static int rtc_stm32_init(const struct device *dev)
 	if (clock_control_configure(clk,
 				    (clock_control_subsys_t) &cfg->pclken[1],
 				    NULL) != 0) {
-		LOG_ERR("clock configure failed");
+		LOG_ERROR("clock configure failed");
 		goto out_disable_bkup_access;
 	}
 
@@ -826,14 +826,14 @@ static int rtc_stm32_init(const struct device *dev)
 #if !defined(CONFIG_COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS)
 	ret = rtc_stm32_deinit();
 	if (ret < 0) {
-		LOG_ERR("Failed to deinit RTC");
+		LOG_ERROR("Failed to deinit RTC");
 		goto out_disable_bkup_access;
 	}
 #endif
 
 	ret = rtc_stm32_configure(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to init RTC");
+		LOG_ERROR("Failed to init RTC");
 		goto out_disable_bkup_access;
 	}
 
@@ -930,7 +930,7 @@ static int rtc_stm32_pm_action(const struct device *dev,
 	case PM_DEVICE_ACTION_RESUME:
 		/* Enable RTC bus clock */
 		if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
-			LOG_ERR("clock op failed");
+			LOG_ERROR("clock op failed");
 			return -EIO;
 		}
 		break;

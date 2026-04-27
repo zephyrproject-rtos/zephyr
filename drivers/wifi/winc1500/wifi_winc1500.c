@@ -296,7 +296,7 @@ static int winc1500_get(net_sa_family_t family,
 	SOCKET sock;
 
 	if (family != NET_AF_INET) {
-		LOG_ERR("Only NET_AF_INET is supported!");
+		LOG_ERROR("Only NET_AF_INET is supported!");
 		return -1;
 	}
 
@@ -306,7 +306,7 @@ static int winc1500_get(net_sa_family_t family,
 	 */
 	sock = winc1500_socket(2, type, 0);
 	if (sock < 0 || sock >= CONFIG_WIFI_WINC1500_OFFLOAD_MAX_SOCKETS) {
-		LOG_ERR("socket error or out of bounds: %d", sock);
+		LOG_ERROR("socket error or out of bounds: %d", sock);
 		return -1;
 	}
 
@@ -338,14 +338,12 @@ static int winc1500_bind(struct net_context *context,
 	ret = winc1500_socket_bind((intptr_t)context->offload_context, (struct sockaddr *)addr,
 		   addrlen);
 	if (ret) {
-		LOG_ERR("bind error %d %s!",
-			ret, socket_message_to_string(ret));
+		LOG_ERROR("bind error %d %s!", ret, socket_message_to_string(ret));
 		return ret;
 	}
 
-	if (k_sem_take(&w1500_data.socket_data[socket].wait_sem,
-		       WINC1500_BIND_TIMEOUT)) {
-		LOG_ERR("bind error timeout expired");
+	if (k_sem_take(&w1500_data.socket_data[socket].wait_sem, WINC1500_BIND_TIMEOUT)) {
+		LOG_ERROR("bind error timeout expired");
 		return -ETIMEDOUT;
 	}
 
@@ -363,8 +361,7 @@ static int winc1500_listen(struct net_context *context, int backlog)
 
 	ret = winc1500_socket_listen((intptr_t)context->offload_context, backlog);
 	if (ret) {
-		LOG_ERR("listen error %d %s!",
-			ret, socket_error_string(ret));
+		LOG_ERROR("listen error %d %s!", ret, socket_error_string(ret));
 		return ret;
 	}
 
@@ -396,8 +393,7 @@ static int winc1500_connect(struct net_context *context,
 
 	ret = winc1500_socket_connect(socket, (struct sockaddr *)addr, addrlen);
 	if (ret) {
-		LOG_ERR("connect error %d %s!",
-			ret, socket_error_string(ret));
+		LOG_ERROR("connect error %d %s!", ret, socket_error_string(ret));
 		return ret;
 	}
 
@@ -426,8 +422,7 @@ static int winc1500_accept(struct net_context *context,
 
 	ret = winc1500_socket_accept(socket, NULL, 0);
 	if (ret) {
-		LOG_ERR("accept error %d %s!",
-			ret, socket_error_string(ret));
+		LOG_ERROR("accept error %d %s!", ret, socket_error_string(ret));
 		return ret;
 	}
 
@@ -468,7 +463,7 @@ static int winc1500_send(struct net_pkt *pkt,
 
 	ret = winc1500_socket_send(socket, buf->data, buf->len, 0);
 	if (ret) {
-		LOG_ERR("send error %d %s!", ret, socket_error_string(ret));
+		LOG_ERROR("send error %d %s!", ret, socket_error_string(ret));
 		goto out;
 	}
 
@@ -509,7 +504,7 @@ static int winc1500_sendto(struct net_pkt *pkt,
 	ret = winc1500_socket_sendto(socket, buf->data, buf->len, 0,
 		     (struct sockaddr *)dst_addr, addrlen);
 	if (ret) {
-		LOG_ERR("sendto error %d %s!", ret, socket_error_string(ret));
+		LOG_ERROR("sendto error %d %s!", ret, socket_error_string(ret));
 		goto out;
 	}
 
@@ -528,14 +523,14 @@ static int prepare_pkt(struct socket_data *sock_data)
 	sock_data->rx_pkt = net_pkt_rx_alloc_on_iface(w1500_data.iface,
 						      K_NO_WAIT);
 	if (!sock_data->rx_pkt) {
-		LOG_ERR("Could not allocate rx packet");
+		LOG_ERROR("Could not allocate rx packet");
 		return -1;
 	}
 
 	/* Reserve a data buffer to receive the frame */
 	sock_data->pkt_buf = net_buf_alloc(&winc1500_rx_pool, K_NO_WAIT);
 	if (!sock_data->pkt_buf) {
-		LOG_ERR("Could not allocate data buffer");
+		LOG_ERROR("Could not allocate data buffer");
 		net_pkt_unref(sock_data->rx_pkt);
 		return -1;
 	}
@@ -565,7 +560,7 @@ static int winc1500_recv(struct net_context *context,
 
 	ret = prepare_pkt(&w1500_data.socket_data[socket]);
 	if (ret) {
-		LOG_ERR("Could not reserve packet buffer");
+		LOG_ERROR("Could not reserve packet buffer");
 		return -ENOMEM;
 	}
 
@@ -573,8 +568,7 @@ static int winc1500_recv(struct net_context *context,
 	ret = winc1500_socket_recv(socket, w1500_data.socket_data[socket].pkt_buf->data,
 		   CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, timeout);
 	if (ret) {
-		LOG_ERR("recv error %d %s!",
-			ret, socket_error_string(ret));
+		LOG_ERROR("recv error %d %s!", ret, socket_error_string(ret));
 		return ret;
 	}
 
@@ -729,7 +723,7 @@ static void handle_scan_done(void *pvMsg)
 		w1500_data.scan_cb(w1500_data.iface, -EIO, NULL);
 		reset_scan_data();
 
-		LOG_ERR("Scan failed.");
+		LOG_ERROR("Scan failed.");
 
 		return;
 	}
@@ -780,8 +774,7 @@ static void handle_socket_msg_connect(struct socket_data *sd, void *pvMsg)
 {
 	tstrSocketConnectMsg *strConnMsg = (tstrSocketConnectMsg *)pvMsg;
 
-	LOG_ERR("CONNECT: socket %d error %d",
-		strConnMsg->sock, strConnMsg->s8Error);
+	LOG_ERROR("CONNECT: socket %d error %d", strConnMsg->sock, strConnMsg->s8Error);
 
 	if (!strConnMsg->s8Error) {
 		net_context_set_state(sd->context, NET_CONTEXT_CONNECTED);
@@ -833,9 +826,8 @@ static void handle_socket_msg_bind(struct socket_data *sd, void *pvMsg)
 	 */
 
 	if (bind_msg->status) {
-		LOG_ERR("BIND: error %d %s",
-			bind_msg->status,
-			socket_message_to_string(bind_msg->status));
+		LOG_ERROR("BIND: error %d %s", bind_msg->status,
+			  socket_message_to_string(bind_msg->status));
 		sd->ret_code = bind_msg->status;
 	}
 }
@@ -849,9 +841,8 @@ static void handle_socket_msg_listen(struct socket_data *sd, void *pvMsg)
 	 */
 
 	if (listen_msg->status) {
-		LOG_ERR("winc1500_socket_cb:LISTEN: error %d %s",
-			listen_msg->status,
-			socket_message_to_string(listen_msg->status));
+		LOG_ERROR("winc1500_socket_cb:LISTEN: error %d %s", listen_msg->status,
+			  socket_message_to_string(listen_msg->status));
 		sd->ret_code = listen_msg->status;
 	}
 }
@@ -875,9 +866,8 @@ static void handle_socket_msg_accept(struct socket_data *sd, void *pvMsg)
 		accept_msg->sock);
 
 	if (accept_msg->sock < 0) {
-		LOG_ERR("ACCEPT: error %d %s",
-			accept_msg->sock,
-			socket_message_to_string(accept_msg->sock));
+		LOG_ERROR("ACCEPT: error %d %s", accept_msg->sock,
+			  socket_message_to_string(accept_msg->sock));
 		sd->ret_code = accept_msg->sock;
 	}
 
@@ -892,7 +882,7 @@ static void handle_socket_msg_accept(struct socket_data *sd, void *pvMsg)
 		ret = net_context_get(NET_AF_INET, NET_SOCK_STREAM,
 				      NET_IPPROTO_TCP, &a_sd->context);
 		if (ret < 0) {
-			LOG_ERR("Cannot get new net context for ACCEPT");
+			LOG_ERROR("Cannot get new net context for ACCEPT");
 			return;
 		}
 		/* We get a new socket from accept_msg but we need a new
@@ -997,7 +987,7 @@ static int winc1500_mgmt_scan(const struct device *dev,
 
 	if (m2m_wifi_request_scan(M2M_WIFI_CH_ALL)) {
 		w1500_data.scan_cb = NULL;
-		LOG_ERR("Failed to request scan");
+		LOG_ERROR("Failed to request scan");
 		return -EIO;
 	}
 
@@ -1144,7 +1134,7 @@ static int winc1500_init(const struct device *dev)
 
 	ret = m2m_wifi_init(&param);
 	if (ret != M2M_SUCCESS) {
-		LOG_ERR("m2m_wifi_init return error!(%d)", ret);
+		LOG_ERROR("m2m_wifi_init return error!(%d)", ret);
 		return -EIO;
 	}
 
@@ -1152,7 +1142,7 @@ static int winc1500_init(const struct device *dev)
 	registerSocketCallback(winc1500_socket_cb, NULL);
 
 	if (m2m_wifi_get_otp_mac_address(w1500_data.mac, &is_valid) != M2M_SUCCESS) {
-		LOG_ERR("Failed to get MAC address");
+		LOG_ERROR("Failed to get MAC address");
 	}
 
 	LOG_DBG("WINC1500 MAC Address from OTP (%d) "
@@ -1162,15 +1152,15 @@ static int winc1500_init(const struct device *dev)
 		w1500_data.mac[3], w1500_data.mac[4], w1500_data.mac[5]);
 
 	if (m2m_wifi_set_scan_region(WINC1500_REGION) != M2M_SUCCESS) {
-		LOG_ERR("Failed set scan region");
+		LOG_ERROR("Failed set scan region");
 	}
 
 	if (m2m_wifi_set_power_profile(PWR_LOW1) != M2M_SUCCESS) {
-		LOG_ERR("Failed set power profile");
+		LOG_ERROR("Failed set power profile");
 	}
 
 	if (m2m_wifi_set_tx_power(TX_PWR_LOW) != M2M_SUCCESS) {
-		LOG_ERR("Failed set tx power");
+		LOG_ERROR("Failed set tx power");
 	}
 
 	/* monitoring thread for winc wifi callbacks */

@@ -51,7 +51,7 @@ static void update_sleep_time(struct k_timer *timer_id)
 		curr_work_time_ms = PERCENT_SLEEP_MS * 100;
 		break;
 	default:
-		LOG_ERR("Unknown CPU scenario: %d", cpu_scenario);
+		LOG_ERROR("Unknown CPU scenario: %d", cpu_scenario);
 	}
 }
 

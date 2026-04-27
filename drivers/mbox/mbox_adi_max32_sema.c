@@ -102,7 +102,7 @@ static int mbox_adi_max32_sema_register_callback(const struct device *dev,
 	struct mbox_adi_max32_sema_data *data = dev->data;
 
 	if (channel_id != 0) {
-		LOG_ERR("Only one channel (0) is supported.");
+		LOG_ERROR("Only one channel (0) is supported.");
 		return -EINVAL;
 	}
 
@@ -119,7 +119,7 @@ static int mbox_adi_max32_sema_set_enabled(const struct device *dev, mbox_channe
 	mem_addr_t irq_reg = get_rx_irq_reg(dev);
 
 	if (channel_id != 0) {
-		LOG_ERR("Only one channel (0) is supported.");
+		LOG_ERROR("Only one channel (0) is supported.");
 		return -EINVAL;
 	}
 
@@ -157,13 +157,13 @@ static int mbox_adi_max32_sema_send(const struct device *dev, mbox_channel_id_t 
 	uint32_t data;
 
 	if (channel_id != 0) {
-		LOG_ERR("Only one channel (0) is supported.");
+		LOG_ERROR("Only one channel (0) is supported.");
 		return -EINVAL;
 	}
 
 	if (cfg->msg_payloads && msg) {
 		if (msg->size != 4) {
-			LOG_ERR("Invalid payload size %d", msg->size);
+			LOG_ERROR("Invalid payload size %d", msg->size);
 			return -EINVAL;
 		}
 
@@ -186,7 +186,7 @@ static int mbox_adi_max32_init(const struct device *dev)
 		/* enable clock */
 		ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
 		if (ret != 0) {
-			LOG_ERR("cannot enable SEMA clock");
+			LOG_ERROR("cannot enable SEMA clock");
 			return ret;
 		}
 	}

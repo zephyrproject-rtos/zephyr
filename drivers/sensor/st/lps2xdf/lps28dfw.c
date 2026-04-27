@@ -103,7 +103,7 @@ exit:
 	ret = gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
 					      GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("%s: Not able to configure pin_int", dev->name);
+		LOG_ERROR("%s: Not able to configure pin_int", dev->name);
 	}
 }
 
@@ -177,19 +177,19 @@ static int st_lps28dfw_init(const struct device *dev)
 		 */
 		data->i3c_dev = i3c_device_find(cfg->i3c.bus, &cfg->i3c.dev_id);
 		if (data->i3c_dev == NULL) {
-			LOG_ERR("Cannot find I3C device descriptor");
+			LOG_ERROR("Cannot find I3C device descriptor");
 			return -ENODEV;
 		}
 	}
 #endif
 
 	if (lps28dfw_id_get(ctx, &id) < 0) {
-		LOG_ERR("%s: Not able to read dev id", dev->name);
+		LOG_ERROR("%s: Not able to read dev id", dev->name);
 		return -EIO;
 	}
 
 	if (id.whoami != LPS28DFW_ID) {
-		LOG_ERR("%s: Invalid chip ID 0x%02x", dev->name, id.whoami);
+		LOG_ERROR("%s: Invalid chip ID 0x%02x", dev->name, id.whoami);
 		return -EIO;
 	}
 
@@ -197,7 +197,7 @@ static int st_lps28dfw_init(const struct device *dev)
 
 	/* Restore default configuration */
 	if (lps28dfw_init_set(ctx, LPS28DFW_RESET) < 0) {
-		LOG_ERR("%s: Not able to reset device", dev->name);
+		LOG_ERROR("%s: Not able to reset device", dev->name);
 		return -EIO;
 	}
 
@@ -215,7 +215,7 @@ static int st_lps28dfw_init(const struct device *dev)
 
 	/* Set bdu and if_inc recommended for driver usage */
 	if (lps28dfw_init_set(ctx, LPS28DFW_DRV_RDY) < 0) {
-		LOG_ERR("%s: Not able to set device to ready state", dev->name);
+		LOG_ERROR("%s: Not able to set device to ready state", dev->name);
 		return -EIO;
 	}
 
@@ -233,7 +233,7 @@ static int st_lps28dfw_init(const struct device *dev)
 	LOG_DBG("%s: odr: %d", dev->name, cfg->odr);
 	ret = lps28dfw_mode_set_odr_raw(dev, cfg->odr);
 	if (ret < 0) {
-		LOG_ERR("%s: Failed to set odr %d", dev->name, cfg->odr);
+		LOG_ERROR("%s: Failed to set odr %d", dev->name, cfg->odr);
 		return ret;
 	}
 
@@ -243,7 +243,7 @@ static int st_lps28dfw_init(const struct device *dev)
 #ifdef CONFIG_LPS2XDF_TRIGGER
 	if (cfg->trig_enabled) {
 		if (lps2xdf_init_interrupt(dev, DEVICE_VARIANT_LPS28DFW) < 0) {
-			LOG_ERR("Failed to initialize interrupt.");
+			LOG_ERROR("Failed to initialize interrupt.");
 			return -EIO;
 		}
 	}

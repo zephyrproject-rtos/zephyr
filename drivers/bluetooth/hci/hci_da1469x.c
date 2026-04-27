@@ -89,7 +89,7 @@ static void h4_get_type(void)
 		}
 		__fallthrough;
 	default:
-		LOG_ERR("Unknown H:4 type 0x%02x", rx.type);
+		LOG_ERROR("Unknown H:4 type 0x%02x", rx.type);
 		rx.type = BT_HCI_H4_NONE;
 	}
 }
@@ -101,7 +101,7 @@ static void h4_read_hdr(void)
 
 	ret = cmac_mbox_read(rx.hdr + bytes_read, rx.remaining);
 	if (unlikely(ret < 0)) {
-		LOG_ERR("Unable to read from mailbox (ret %d)", ret);
+		LOG_ERROR("Unable to read from mailbox (ret %d)", ret);
 	} else {
 		rx.remaining -= ret;
 	}
@@ -231,7 +231,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			rx.buf = get_rx(K_FOREVER);
 			LOG_DBG("Got rx.buf %p", rx.buf);
 			if (rx.remaining > net_buf_tailroom(rx.buf)) {
-				LOG_ERR("Not enough space in buffer");
+				LOG_ERROR("Not enough space in buffer");
 				rx.discard = rx.remaining;
 				reset_rx();
 			} else {
@@ -269,7 +269,7 @@ static size_t h4_discard(size_t len)
 
 	err = cmac_mbox_read(buf, MIN(len, sizeof(buf)));
 	if (unlikely(err < 0)) {
-		LOG_ERR("Unable to read from mailbox (err %d)", err);
+		LOG_ERROR("Unable to read from mailbox (err %d)", err);
 		return 0;
 	}
 
@@ -302,7 +302,7 @@ static inline void read_payload(void)
 
 		buf_tailroom = net_buf_tailroom(rx.buf);
 		if (buf_tailroom < rx.remaining) {
-			LOG_ERR("Not enough space in buffer %u/%zu", rx.remaining, buf_tailroom);
+			LOG_ERROR("Not enough space in buffer %u/%zu", rx.remaining, buf_tailroom);
 			rx.discard = rx.remaining;
 			reset_rx();
 			return;
@@ -313,7 +313,7 @@ static inline void read_payload(void)
 
 	read = cmac_mbox_read(net_buf_tail(rx.buf), rx.remaining);
 	if (unlikely(read < 0)) {
-		LOG_ERR("Failed to read mailbox (err %d)", read);
+		LOG_ERROR("Failed to read mailbox (err %d)", read);
 		return;
 	}
 
@@ -361,7 +361,7 @@ static inline void read_header(void)
 
 	if (rx.have_hdr && rx.buf) {
 		if (rx.remaining > net_buf_tailroom(rx.buf)) {
-			LOG_ERR("Not enough space in buffer");
+			LOG_ERROR("Not enough space in buffer");
 			rx.discard = rx.remaining;
 			reset_rx();
 		} else {

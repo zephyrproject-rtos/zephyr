@@ -99,7 +99,7 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 #endif /* CONFIG_PWM_CAPTURE */
 
 	if (channel >= config->channel_count) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -ENOTSUP;
 	}
 
@@ -114,7 +114,7 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 
 #ifdef CONFIG_PWM_CAPTURE
 	if (data->capture[pair].capture_active) {
-		LOG_ERR("Capture already active on channel pair %d", pair);
+		LOG_ERROR("Capture already active on channel pair %d", pair);
 		return -EBUSY;
 	}
 #endif /* CONFIG_PWM_CAPTURE */
@@ -142,7 +142,7 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 			data->clock_freq);
 
 		if (pwm_freq == 0U) {
-			LOG_ERR("Could not set up pwm_freq=%d", pwm_freq);
+			LOG_ERROR("Could not set up pwm_freq=%d", pwm_freq);
 			return -EINVAL;
 		}
 
@@ -156,7 +156,7 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 				      pwm_freq, data->clock_freq);
 
 		if (status != kStatus_Success) {
-			LOG_ERR("Could not set up pwm");
+			LOG_ERROR("Could not set up pwm");
 			return -ENOTSUP;
 		}
 		TPM_StartTimer(base, config->tpm_clock_source);
@@ -206,32 +206,32 @@ static int mcux_tpm_configure_capture(const struct device *dev,
 	uint32_t pair = TPM_WHICH_PAIR(channel);
 
 	if (config->mode != kTPM_EdgeAlignedPwm) {
-		LOG_ERR("PWM capture only supported in edge aligned mode");
+		LOG_ERROR("PWM capture only supported in edge aligned mode");
 		return -ENOTSUP;
 	}
 
 	if ((channel & 0x1U) == 0x1U) {
-		LOG_ERR("PWM capture only supported on even channels");
+		LOG_ERROR("PWM capture only supported on even channels");
 		return -ENOTSUP;
 	}
 
 	if (pair >= ARRAY_SIZE(data->capture)) {
-		LOG_ERR("Invalid channel pair %d", pair);
+		LOG_ERROR("Invalid channel pair %d", pair);
 		return -EINVAL;
 	}
 
 	if (data->capture[pair].capture_active) {
-		LOG_ERR("Capture already active on channel pair %d", pair);
+		LOG_ERROR("Capture already active on channel pair %d", pair);
 		return -EBUSY;
 	}
 
 	if (!(flags & PWM_CAPTURE_TYPE_MASK)) {
-		LOG_ERR("No capture type specified");
+		LOG_ERROR("No capture type specified");
 		return -EINVAL;
 	}
 
 	if ((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_BOTH) {
-		LOG_ERR("Cannot capture both period and pulse width");
+		LOG_ERROR("Cannot capture both period and pulse width");
 		return -ENOTSUP;
 	}
 
@@ -278,27 +278,27 @@ static int mcux_tpm_enable_capture(const struct device *dev, uint32_t channel)
 	uint32_t pair = TPM_WHICH_PAIR(channel);
 
 	if (config->mode != kTPM_EdgeAlignedPwm) {
-		LOG_ERR("PWM capture only supported in edge aligned mode");
+		LOG_ERROR("PWM capture only supported in edge aligned mode");
 		return -ENOTSUP;
 	}
 
 	if ((channel & 0x1U) == 0x1U) {
-		LOG_ERR("PWM capture only supported on even channels");
+		LOG_ERROR("PWM capture only supported on even channels");
 		return -ENOTSUP;
 	}
 
 	if (pair >= ARRAY_SIZE(data->capture)) {
-		LOG_ERR("Invalid channel pair %d", pair);
+		LOG_ERROR("Invalid channel pair %d", pair);
 		return -EINVAL;
 	}
 
 	if (!data->capture[pair].callback) {
-		LOG_ERR("PWM capture not configured");
+		LOG_ERROR("PWM capture not configured");
 		return -EINVAL;
 	}
 
 	if (data->capture[pair].capture_active) {
-		LOG_ERR("Capture already active on channel pair %d", pair);
+		LOG_ERROR("Capture already active on channel pair %d", pair);
 		return -EBUSY;
 	}
 
@@ -323,12 +323,12 @@ static int mcux_tpm_disable_capture(const struct device *dev, uint32_t channel)
 	uint32_t pair = TPM_WHICH_PAIR(channel);
 
 	if ((channel & 0x1U) == 0x1U) {
-		LOG_ERR("PWM capture only supported on even channels");
+		LOG_ERROR("PWM capture only supported on even channels");
 		return -ENOTSUP;
 	}
 
 	if (pair >= ARRAY_SIZE(data->capture)) {
-		LOG_ERR("Invalid channel pair %d", pair);
+		LOG_ERROR("Invalid channel pair %d", pair);
 		return -EINVAL;
 	}
 
@@ -403,12 +403,12 @@ static void mcux_tpm_capture_second_edge(const struct device *dev, uint32_t chan
 	/* Calculate cycles, check for overflows */
 	if (overflows > 0) {
 		if (u32_mul_overflow(overflows, base->MOD, &cycles)) {
-			LOG_ERR("overflow while calculating cycles");
+			LOG_ERROR("overflow while calculating cycles");
 			status = -ERANGE;
 		} else {
 			cycles -= first_cnv;
 			if (u32_add_overflow(cycles, second_cnv, &cycles)) {
-				LOG_ERR("overflow while calculating cycles");
+				LOG_ERROR("overflow while calculating cycles");
 				cycles = 0;
 				status = -ERANGE;
 			}
@@ -533,12 +533,12 @@ static int mcux_tpm_init(const struct device *dev)
 	base = TPM_TYPE_BASE(dev, base);
 
 	if (config->channel_count > ARRAY_SIZE(data->channel)) {
-		LOG_ERR("Invalid channel count");
+		LOG_ERROR("Invalid channel count");
 		return -EINVAL;
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
@@ -547,7 +547,7 @@ static int mcux_tpm_init(const struct device *dev)
 		/* Check if error is due to lack of support */
 		if (err != -ENOSYS) {
 			/* Real error occurred */
-			LOG_ERR("Failed to configure clock: %d", err);
+			LOG_ERROR("Failed to configure clock: %d", err);
 			return err;
 		}
 	}
@@ -558,7 +558,7 @@ static int mcux_tpm_init(const struct device *dev)
 	    config->clock_subsys != (clock_control_subsys_t)IMX95_CLK_BUSAON) {
 #endif
 		if (clock_control_on(config->clock_dev, config->clock_subsys)) {
-			LOG_ERR("Could not turn on clock");
+			LOG_ERROR("Could not turn on clock");
 			return -EINVAL;
 		}
 #if defined(CONFIG_SOC_MIMX9596)
@@ -567,7 +567,7 @@ static int mcux_tpm_init(const struct device *dev)
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &data->clock_freq)) {
-		LOG_ERR("Could not get clock frequency");
+		LOG_ERROR("Could not get clock frequency");
 		return -EINVAL;
 	}
 

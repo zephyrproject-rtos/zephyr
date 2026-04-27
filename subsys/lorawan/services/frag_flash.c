@@ -67,7 +67,7 @@ int8_t frag_flash_write(uint32_t addr, uint8_t *data, uint32_t size)
 		LOG_DBG("Caching %u bytes for addr 0x%X", size, addr);
 
 		if (size != frag_size) {
-			LOG_ERR("Invalid fragment size %d", size);
+			LOG_ERROR("Invalid fragment size %d", size);
 			return -EINVAL;
 		}
 
@@ -85,7 +85,7 @@ int8_t frag_flash_write(uint32_t addr, uint8_t *data, uint32_t size)
 			memcpy(frag_cache[cached_frags].data, data, size);
 			cached_frags++;
 		} else {
-			LOG_ERR("Fragment cache too small");
+			LOG_ERROR("Fragment cache too small");
 			err = -ENOSPC;
 		}
 	}
@@ -123,6 +123,6 @@ void frag_flash_finish(void)
 
 	err = boot_request_upgrade(BOOT_UPGRADE_TEST);
 	if (err) {
-		LOG_ERR("Failed to request upgrade (err %d)", err);
+		LOG_ERROR("Failed to request upgrade (err %d)", err);
 	}
 }

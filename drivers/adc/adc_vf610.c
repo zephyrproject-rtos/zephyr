@@ -37,27 +37,27 @@ static int vf610_adc_channel_setup(const struct device *dev,
 	uint8_t channel_id = channel_cfg->channel_id;
 
 	if (channel_id > (ADC_HC0_ADCH_MASK >> ADC_HC0_ADCH_SHIFT)) {
-		LOG_ERR("Channel %d is not valid", channel_id);
+		LOG_ERROR("Channel %d is not valid", channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Invalid channel acquisition time");
+		LOG_ERROR("Invalid channel acquisition time");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels are not supported");
+		LOG_ERROR("Differential channels are not supported");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Invalid channel gain");
+		LOG_ERROR("Invalid channel gain");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Invalid channel reference");
+		LOG_ERROR("Invalid channel reference");
 		return -EINVAL;
 	}
 
@@ -84,7 +84,7 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 		resolution = adcResolutionBit12;
 		break;
 	default:
-		LOG_ERR("Invalid resolution");
+		LOG_ERROR("Invalid resolution");
 		return -EINVAL;
 	}
 
@@ -107,7 +107,7 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 		mode = adcAvgNum32;
 		break;
 	default:
-		LOG_ERR("Invalid oversampling");
+		LOG_ERROR("Invalid oversampling");
 		return -EINVAL;
 	}
 	ADC_SetAverageNum(config->base, mode);

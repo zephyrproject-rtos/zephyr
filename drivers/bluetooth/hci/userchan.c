@@ -118,7 +118,7 @@ static struct net_buf *get_rx_acl(const uint8_t *data)
 
 	buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_NO_WAIT);
 	if (buf == NULL) {
-		LOG_ERR("No available ACL buffers!");
+		LOG_ERROR("No available ACL buffers!");
 	}
 
 	return buf;
@@ -151,7 +151,7 @@ static struct net_buf *get_rx(const uint8_t *buf)
 		}
 		__fallthrough;
 	default:
-		LOG_ERR("Unknown packet type: %u", hci_h4_type);
+		LOG_ERROR("Unknown packet type: %u", hci_h4_type);
 	}
 
 	return NULL;
@@ -268,8 +268,9 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		}
 
 		if (frame_size >= sizeof(frame)) {
-			LOG_ERR("HCI Packet is too big for frame (%d "
-				"bytes). Dropping data", sizeof(frame));
+			LOG_ERROR("HCI Packet is too big for frame (%d "
+				  "bytes). Dropping data",
+				  sizeof(frame));
 			frame_size = 0; /* Drop buffer */
 		}
 
@@ -282,7 +283,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 				continue;
 			}
 
-			LOG_ERR("Reading socket failed, errno %d", errno);
+			LOG_ERROR("Reading socket failed, errno %d", errno);
 			(void)nsi_host_close(uc->fd);
 			uc->fd = -1;
 			return;
@@ -296,7 +297,8 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			const int32_t decoded_len = hci_packet_complete(frame_start, frame_size);
 
 			if (decoded_len == -1) {
-				LOG_ERR("HCI Packet type is invalid, length could not be decoded");
+				LOG_ERROR(
+					"HCI Packet type is invalid, length could not be decoded");
 				frame_size = 0; /* Drop buffer */
 				break;
 			}
@@ -323,8 +325,8 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 			buf_tailroom = net_buf_tailroom(buf);
 			if (buf_tailroom < buf_add_len) {
-				LOG_ERR("Not enough space in buffer %zu/%zu",
-					buf_add_len, buf_tailroom);
+				LOG_ERROR("Not enough space in buffer %zu/%zu", buf_add_len,
+					  buf_tailroom);
 				net_buf_unref(buf);
 				continue;
 			}
@@ -347,7 +349,7 @@ static int uc_send(const struct device *dev, struct net_buf *buf)
 	LOG_DBG("buf %p type %u len %u", buf, buf->data[0], buf->len);
 
 	if (uc->fd < 0) {
-		LOG_ERR("User channel not open");
+		LOG_ERROR("User channel not open");
 		return -EIO;
 	}
 

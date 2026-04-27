@@ -339,7 +339,7 @@ int clk_register_main(pmc_registers_t *const pmc, const char *name,
 
 	clkmain = &clocks_main;
 	if (num_parents > ARRAY_SIZE(clkmain->parents)) {
-		LOG_ERR("Array for parent clock not enough");
+		LOG_ERROR("Array for parent clock not enough");
 		return -ENOMEM;
 	}
 	memcpy(clkmain->parents, parents, sizeof(struct device *) * num_parents);

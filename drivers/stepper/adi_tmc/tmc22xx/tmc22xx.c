@@ -48,9 +48,9 @@ static int tmc22xx_set_micro_step_res(const struct device *dev,
 	int ret;
 
 	if ((config->common.m0_pin.port == NULL) || (config->common.m1_pin.port == NULL)) {
-		LOG_ERR("%s: Failed to set microstep resolution: microstep pins are not defined "
-			"(error: %d)",
-			dev->name, -ENOTSUP);
+		LOG_ERROR("%s: Failed to set microstep resolution: microstep pins are not defined "
+			  "(error: %d)",
+			  dev->name, -ENOTSUP);
 		return -ENOTSUP;
 	}
 
@@ -61,13 +61,13 @@ static int tmc22xx_set_micro_step_res(const struct device *dev,
 
 		ret = gpio_pin_set_dt(&config->common.m0_pin, i & 0x01);
 		if (ret < 0) {
-			LOG_ERR("Failed to set MS1 pin: %d", ret);
+			LOG_ERROR("Failed to set MS1 pin: %d", ret);
 			return ret;
 		}
 
 		ret = gpio_pin_set_dt(&config->common.m1_pin, (i & 0x02) >> 1);
 		if (ret < 0) {
-			LOG_ERR("Failed to set MS2 pin: %d", ret);
+			LOG_ERROR("Failed to set MS2 pin: %d", ret);
 			return ret;
 		}
 
@@ -75,7 +75,7 @@ static int tmc22xx_set_micro_step_res(const struct device *dev,
 		return 0;
 	}
 
-	LOG_ERR("Unsupported microstep resolution: %d", micro_step_res);
+	LOG_ERROR("Unsupported microstep resolution: %d", micro_step_res);
 
 	return -ENOTSUP;
 }
@@ -95,24 +95,24 @@ static int tmc22xx_stepper_configure_msx_pins(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&config->common.m0_pin)) {
-		LOG_ERR("MS1 pin not ready");
+		LOG_ERROR("MS1 pin not ready");
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&config->common.m0_pin, GPIO_OUTPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure ms1 pin");
+		LOG_ERROR("Failed to configure ms1 pin");
 		return ret;
 	}
 
 	if (!gpio_is_ready_dt(&config->common.m1_pin)) {
-		LOG_ERR("MS2 pin not ready");
+		LOG_ERROR("MS2 pin not ready");
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&config->common.m1_pin, GPIO_OUTPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure ms2 pin");
+		LOG_ERROR("Failed to configure ms2 pin");
 		return ret;
 	}
 
@@ -126,26 +126,26 @@ static int tmc22xx_stepper_init(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&config->common.en_pin)) {
-		LOG_ERR("GPIO pins are not ready");
+		LOG_ERROR("GPIO pins are not ready");
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&config->common.en_pin, GPIO_OUTPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure enable pin: %d", ret);
+		LOG_ERROR("Failed to configure enable pin: %d", ret);
 		return ret;
 	}
 
 	if ((config->common.m0_pin.port != NULL) && (config->common.m1_pin.port != NULL)) {
 		ret = tmc22xx_stepper_configure_msx_pins(dev);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure MSX pins: %d", ret);
+			LOG_ERROR("Failed to configure MSX pins: %d", ret);
 			return ret;
 		}
 
 		ret = tmc22xx_set_micro_step_res(dev, data->resolution);
 		if (ret < 0) {
-			LOG_ERR("Failed to set microstep resolution: %d", ret);
+			LOG_ERROR("Failed to set microstep resolution: %d", ret);
 			return ret;
 		}
 	}

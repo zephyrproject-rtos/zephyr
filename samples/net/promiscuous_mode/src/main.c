@@ -116,7 +116,7 @@ static void print_info(struct net_pkt *pkt)
 	}
 
 	if (ret < 0) {
-		LOG_ERR("Cannot get port numbers for pkt %p", pkt);
+		LOG_ERROR("Cannot get port numbers for pkt %p", pkt);
 		return;
 	}
 

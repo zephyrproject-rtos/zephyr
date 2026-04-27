@@ -57,7 +57,7 @@ static void loopback_init(struct net_if *iface)
 		ifaddr = net_if_ipv4_addr_add(iface, &ipv4_loopback,
 					      NET_ADDR_AUTOCONF, 0);
 		if (!ifaddr) {
-			LOG_ERR("Failed to register IPv4 loopback address");
+			LOG_ERROR("Failed to register IPv4 loopback address");
 		}
 
 		net_if_ipv4_set_netmask_by_addr(iface, &ipv4_loopback, &netmask);
@@ -69,7 +69,7 @@ static void loopback_init(struct net_if *iface)
 		ifaddr = net_if_ipv6_addr_add(iface, &ipv6_loopback,
 					      NET_ADDR_AUTOCONF, 0);
 		if (!ifaddr) {
-			LOG_ERR("Failed to register IPv6 loopback address");
+			LOG_ERROR("Failed to register IPv6 loopback address");
 		}
 	}
 
@@ -78,7 +78,7 @@ static void loopback_init(struct net_if *iface)
 
 		ret = net_if_set_name(iface, "lo");
 		if (ret < 0) {
-			LOG_ERR("Failed to set loopback interface name (%d)", ret);
+			LOG_ERROR("Failed to set loopback interface name (%d)", ret);
 		}
 	}
 }
@@ -125,7 +125,7 @@ static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 #endif
 
 	if (!pkt->frags) {
-		LOG_ERR("No data to send");
+		LOG_ERROR("No data to send");
 		return -ENODATA;
 	}
 
@@ -162,7 +162,7 @@ static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 
 	res = net_recv_data(net_pkt_iface(cloned), cloned);
 	if (res < 0) {
-		LOG_ERR("Data receive failed.");
+		LOG_ERROR("Data receive failed.");
 	}
 
 out:

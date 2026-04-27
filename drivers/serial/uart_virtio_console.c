@@ -178,13 +178,13 @@ static void virtconsole_recv_setup(const struct device *dev, uint16_t q_no, void
 	struct virtq *vq = virtio_get_virtqueue(config->vdev, q_no);
 
 	if (vq == NULL) {
-		LOG_ERR("could not access virtqueue %u", q_no);
+		LOG_ERROR("could not access virtqueue %u", q_no);
 		return;
 	}
 	struct virtq_buf vqbuf[] = {{.addr = addr, .len = len}};
 
 	if (virtq_add_buffer_chain(vq, vqbuf, 1, 0, recv_cb, cb_data, K_NO_WAIT)) {
-		LOG_ERR("could not set up virtqueue %u for receiving", q_no);
+		LOG_ERROR("could not set up virtqueue %u for receiving", q_no);
 		return;
 	}
 	virtio_notify_virtqueue(config->vdev, q_no);
@@ -199,7 +199,7 @@ static void virtconsole_control_tx_flush(void *priv, uint32_t len)
 	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_CONTROL_TX);
 
 	if (vq == NULL) {
-		LOG_ERR("could not access virtqueue 3");
+		LOG_ERROR("could not access virtqueue 3");
 		return;
 	}
 	int i = vq->free_desc_n;
@@ -211,7 +211,7 @@ static void virtconsole_control_tx_flush(void *priv, uint32_t len)
 						 priv, K_NO_WAIT);
 
 		if (ret) {
-			LOG_ERR("could not send control message");
+			LOG_ERROR("could not send control message");
 			return;
 		}
 		virtio_notify_virtqueue(config->vdev, VIRTQ_CONTROL_TX);
@@ -228,14 +228,14 @@ static void virtconsole_send_control_msg(const struct device *dev, uint32_t port
 	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_CONTROL_TX);
 
 	if (vq == NULL) {
-		LOG_ERR("could not access virtqueue 3");
+		LOG_ERROR("could not access virtqueue 3");
 		return;
 	}
 	struct _fifo_item_virtio_console_control *item = &(data->tx_ctlbuf[data->txctlcurrent]);
 	struct _virtio_console_control *msg = &(item->msg);
 
 	if (item->pending) {
-		LOG_ERR("not enough free buffers for control message");
+		LOG_ERROR("not enough free buffers for control message");
 		return;
 	}
 	msg->port = sys_cpu_to_le32(port);
@@ -253,7 +253,7 @@ static void virtconsole_send_control_msg(const struct device *dev, uint32_t port
 	} else if (ret == 0) {
 		virtio_notify_virtqueue(config->vdev, VIRTQ_CONTROL_TX);
 	} else {
-		LOG_ERR("could not send control message");
+		LOG_ERROR("could not send control message");
 		return;
 	}
 	data->txctlcurrent =
@@ -403,7 +403,7 @@ static void virtconsole_poll_out(const struct device *dev, unsigned char c)
 			struct virtq *vq = virtio_get_virtqueue(config->vdev, q_no);
 
 			if (vq == NULL) {
-				LOG_ERR("could not access virtqueue %u", q_no);
+				LOG_ERROR("could not access virtqueue %u", q_no);
 				K_SPINLOCK_BREAK;
 			}
 			data->txbuf[data->txcurrent] = c;
@@ -411,7 +411,7 @@ static void virtconsole_poll_out(const struct device *dev, unsigned char c)
 						  .len = sizeof(char)};
 
 			if (virtq_add_buffer_chain(vq, &vqbuf, 1, 1, NULL, NULL, K_FOREVER)) {
-				LOG_ERR("could not send character");
+				LOG_ERROR("could not send character");
 				K_SPINLOCK_BREAK;
 			}
 			virtio_notify_virtqueue(config->vdev, q_no);
@@ -548,7 +548,7 @@ static int virtconsole_init(const struct device *dev)
 	int ret = virtio_init_virtqueues(config->vdev, n_queues, virtconsole_enum_queues_cb, NULL);
 
 	if (ret) {
-		LOG_ERR("error initializing virtqueues!");
+		LOG_ERROR("error initializing virtqueues!");
 		return ret;
 	}
 	virtio_finalize_init(config->vdev);

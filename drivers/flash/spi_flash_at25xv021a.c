@@ -90,7 +90,7 @@ static int flash_at25xv021a_read_status(const struct device *dev, uint8_t *statu
 
 	err = spi_transceive_dt(&config->spi, &tx, &rx);
 	if (err < 0) {
-		LOG_ERR("unable to read status register from %s", dev->name);
+		LOG_ERROR("unable to read status register from %s", dev->name);
 		return err;
 	}
 
@@ -118,7 +118,7 @@ static int flash_at25xv021a_wait_for_idle(const struct device *dev, k_timeout_t 
 		k_msleep(1);
 	}
 
-	LOG_ERR("timed out waiting for %s to idle", dev->name);
+	LOG_ERROR("timed out waiting for %s to idle", dev->name);
 	return -EBUSY;
 }
 
@@ -136,7 +136,7 @@ static int flash_at25xv021a_spi_transceive(const struct device *dev, const struc
 
 	err = spi_transceive_dt(spi, tx, rx);
 	if (err < 0) {
-		LOG_ERR("unable to read from %s", dev->name);
+		LOG_ERROR("unable to read from %s", dev->name);
 	}
 
 	return err;
@@ -206,7 +206,8 @@ static int flash_at25xv021a_read(const struct device *dev, off_t offset, void *b
 	}
 
 	if (len > config->size) {
-		LOG_ERR("attempted to read more than device %s size: %u", dev->name, config->size);
+		LOG_ERROR("attempted to read more than device %s size: %u", dev->name,
+			  config->size);
 		return -EINVAL;
 	}
 
@@ -254,7 +255,7 @@ static int flash_at25xv021a_spi_write(const struct device *dev, const struct spi
 
 	err = spi_write_dt(spi, tx);
 	if (err < 0) {
-		LOG_ERR("unable to write to %s", dev->name);
+		LOG_ERROR("unable to write to %s", dev->name);
 	}
 
 	return err;
@@ -280,7 +281,7 @@ static int flash_at25xv021a_write_enable(const struct device *dev)
 	}
 
 	if (status != DEV_SR_WEL) {
-		LOG_ERR("unable to enable writes on %s", dev->name);
+		LOG_ERROR("unable to enable writes on %s", dev->name);
 		return -EIO;
 	}
 
@@ -315,7 +316,7 @@ static int flash_at25xv021a_hardware_lock(const struct device *dev)
 #if ANY_DEV_HAS_WP_GPIO
 	err = gpio_pin_configure_dt(&config->wp_gpio, GPIO_OUTPUT_ACTIVE);
 	if (err < 0) {
-		LOG_ERR("unable to set WP GPIO");
+		LOG_ERROR("unable to set WP GPIO");
 		return err;
 	}
 #endif /* ANY_DEV_HAS_WP_GPIOS */
@@ -326,7 +327,7 @@ static int flash_at25xv021a_hardware_lock(const struct device *dev)
 	}
 
 	if (status != DEV_SR_SPRL) {
-		LOG_ERR("unable to lock hardware");
+		LOG_ERROR("unable to lock hardware");
 		return -EIO;
 	}
 
@@ -351,7 +352,7 @@ static int flash_at25xv021a_hardware_unlock(const struct device *dev)
 #if ANY_DEV_HAS_WP_GPIO
 	err = gpio_pin_configure_dt(&config->wp_gpio, GPIO_OUTPUT_INACTIVE);
 	if (err < 0) {
-		LOG_ERR("unable to set WP GPIO");
+		LOG_ERROR("unable to set WP GPIO");
 		return err;
 	}
 #endif /* ANY_DEV_HAS_WP_GPIO */
@@ -372,7 +373,7 @@ static int flash_at25xv021a_hardware_unlock(const struct device *dev)
 	}
 
 	if (status == DEV_SR_SPRL) {
-		LOG_ERR("unable to unlock hardware");
+		LOG_ERROR("unable to unlock hardware");
 		return -EIO;
 	}
 
@@ -415,7 +416,7 @@ static int flash_at25xv021a_global_protection(const struct device *dev, uint8_t 
 
 	expected_status = (protection_cmd == DEV_GLOBAL_PROTECT) ? DEV_SR_SWP : 0;
 	if (status != expected_status) {
-		LOG_ERR("unable to update global protection");
+		LOG_ERROR("unable to update global protection");
 		return -EIO;
 	}
 
@@ -465,7 +466,7 @@ static int flash_at25xv021a_software_protection(const struct device *dev, off_t 
 
 	unexpected_status = (protection_cmd == DEV_PROTECT) ? 0 : DEV_SR_SWP;
 	if (status == unexpected_status) {
-		LOG_ERR("failed to update software protection for %s", dev->name);
+		LOG_ERROR("failed to update software protection for %s", dev->name);
 		return -EIO;
 	}
 
@@ -498,7 +499,7 @@ static int flash_at25xv021a_hardware_init(const struct device *dev)
 	}
 
 	if (status != (DEV_SR_SPRL | DEV_SR_SWP)) {
-		LOG_ERR("unable to initialize hardware");
+		LOG_ERROR("unable to initialize hardware");
 		return -EIO;
 	}
 
@@ -539,7 +540,7 @@ static int flash_at25xv021a_write_internal(const struct device *dev, off_t offse
 	}
 
 	if (status != 0) {
-		LOG_ERR("failed to program %s", dev->name);
+		LOG_ERROR("failed to program %s", dev->name);
 		return -EIO;
 	}
 
@@ -607,7 +608,7 @@ static int flash_at25xv021a_chip_erase(const struct device *dev)
 	}
 
 	if (status != 0) {
-		LOG_ERR("failed to erase %s", dev->name);
+		LOG_ERROR("failed to erase %s", dev->name);
 		return -EIO;
 	}
 
@@ -650,7 +651,7 @@ static int flash_at25xv021a_erase_internal(const struct device *dev, uint32_t ad
 	}
 
 	if (status != 0) {
-		LOG_ERR("unable to erase from %s", dev->name);
+		LOG_ERROR("unable to erase from %s", dev->name);
 		return -EIO;
 	}
 
@@ -691,7 +692,7 @@ static int flash_at25xv021a_write(const struct device *dev, off_t offset, const 
 	const struct flash_at25xv021a_config *config = dev->config;
 
 	if (config->read_only) {
-		LOG_ERR("attempted to write to read-only device %s", dev->name);
+		LOG_ERROR("attempted to write to read-only device %s", dev->name);
 		return -EINVAL;
 	}
 
@@ -701,7 +702,7 @@ static int flash_at25xv021a_write(const struct device *dev, off_t offset, const 
 	}
 
 	if (len > config->page_size) {
-		LOG_ERR("attempted to write more than page size in one write operation");
+		LOG_ERROR("attempted to write more than page size in one write operation");
 		return -EINVAL;
 	}
 
@@ -709,7 +710,7 @@ static int flash_at25xv021a_write(const struct device *dev, off_t offset, const 
 
 	err = flash_at25xv021a_process_write(dev, offset, buf, len);
 	if (err != 0) {
-		LOG_ERR("unable to complete write operation for %s", dev->name);
+		LOG_ERROR("unable to complete write operation for %s", dev->name);
 	}
 
 	k_mutex_unlock(&data->lock);
@@ -724,7 +725,7 @@ static int flash_at25xv021a_erase(const struct device *dev, off_t offset, size_t
 	const struct flash_at25xv021a_config *config = dev->config;
 
 	if (config->read_only) {
-		LOG_ERR("attempted to erase from read-only device %s", dev->name);
+		LOG_ERROR("attempted to erase from read-only device %s", dev->name);
 		return -EINVAL;
 	}
 
@@ -734,12 +735,13 @@ static int flash_at25xv021a_erase(const struct device *dev, off_t offset, size_t
 	}
 
 	if (offset % config->page_size != 0 || size % config->page_size != 0) {
-		LOG_ERR("offset and/or size is not aligned to page size in %s erase", dev->name);
+		LOG_ERROR("offset and/or size is not aligned to page size in %s erase", dev->name);
 		return -EINVAL;
 	}
 
 	if (offset + size > config->size) {
-		LOG_ERR("attempted to erase beyond %s size boundary: %u", dev->name, config->size);
+		LOG_ERROR("attempted to erase beyond %s size boundary: %u", dev->name,
+			  config->size);
 		return -EINVAL;
 	}
 
@@ -755,7 +757,7 @@ static int flash_at25xv021a_erase(const struct device *dev, off_t offset, size_t
 
 		err = flash_at25xv021a_process_erase(dev, &offset);
 		if (err != 0) {
-			LOG_ERR("unable to complete erase operation for %s", dev->name);
+			LOG_ERROR("unable to complete erase operation for %s", dev->name);
 			break;
 		}
 
@@ -770,14 +772,14 @@ static int flash_at25xv021a_erase(const struct device *dev, off_t offset, size_t
 static int flash_at25xv021a_write(const struct device *dev, off_t offset, const void *buf,
 				  size_t len)
 {
-	LOG_ERR("attempted to write to read-only device %s", dev->name);
+	LOG_ERROR("attempted to write to read-only device %s", dev->name);
 
 	return -EINVAL;
 }
 
 static int flash_at25xv021a_erase(const struct device *dev, off_t offset, size_t size)
 {
-	LOG_ERR("attempted to erase from read-only device %s", dev->name);
+	LOG_ERROR("attempted to erase from read-only device %s", dev->name);
 
 	return -EINVAL;
 }
@@ -828,7 +830,7 @@ static int flash_at25xv021a_resume(const struct device *dev)
 
 	err = flash_at25xv021a_verify_device(dev);
 	if (err != 0) {
-		LOG_ERR("failed to resume %s", dev->name);
+		LOG_ERROR("failed to resume %s", dev->name);
 	}
 
 	return err;
@@ -878,12 +880,12 @@ static int flash_at25xv021a_init(const struct device *dev)
 
 	err = k_mutex_init(&data->lock);
 	if (err != 0) {
-		LOG_ERR("unable to initialize mutex");
+		LOG_ERROR("unable to initialize mutex");
 		return err;
 	}
 
 	if (!device_is_ready(config->spi.bus)) {
-		LOG_ERR("spi bus is not ready");
+		LOG_ERROR("spi bus is not ready");
 		return -ENODEV;
 	}
 
@@ -897,18 +899,18 @@ static int flash_at25xv021a_init(const struct device *dev)
 
 	err = flash_at25xv021a_verify_device(dev);
 	if (err != 0) {
-		LOG_ERR("unable to verify device information");
+		LOG_ERROR("unable to verify device information");
 		return err;
 	}
 
 #if ANY_DEV_WRITEABLE && ANY_DEV_HAS_WP_GPIO
 	if (!device_is_ready(config->wp_gpio.port)) {
-		LOG_ERR("device controlling WP GPIO is not ready");
+		LOG_ERROR("device controlling WP GPIO is not ready");
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&config->wp_gpio)) {
-		LOG_ERR("WP GPIO is not ready");
+		LOG_ERROR("WP GPIO is not ready");
 		return -ENODEV;
 	}
 #endif /* ANY_DEV_WRITEABLE && ANY_DEV_HAS_WP_GPIO */

@@ -316,7 +316,7 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 	}
 
 	if (ctrl->flags & VIDEO_CTRL_FLAG_WRITE_ONLY) {
-		LOG_ERR("Control id 0x%x is write-only\n", control->id);
+		LOG_ERROR("Control id 0x%x is write-only\n", control->id);
 		return -EACCES;
 	}
 
@@ -362,19 +362,19 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 	}
 
 	if (ctrl->flags & VIDEO_CTRL_FLAG_READ_ONLY) {
-		LOG_ERR("Control id 0x%x is read-only\n", control->id);
+		LOG_ERROR("Control id 0x%x is read-only\n", control->id);
 		return -EACCES;
 	}
 
 	if (ctrl->flags & VIDEO_CTRL_FLAG_INACTIVE) {
-		LOG_ERR("Control id 0x%x is inactive\n", control->id);
+		LOG_ERROR("Control id 0x%x is inactive\n", control->id);
 		return -EACCES;
 	}
 
 	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64
 		    ? !IN_RANGE(control->val64, ctrl->range.min64, ctrl->range.max64)
 		    : !IN_RANGE(control->val, ctrl->range.min, ctrl->range.max)) {
-		LOG_ERR("Control value is invalid\n");
+		LOG_ERROR("Control value is invalid\n");
 		return -EINVAL;
 	}
 
@@ -621,7 +621,7 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 	char buf[11];
 
 	if (cq == NULL || cq->dev == NULL) {
-		LOG_ERR("%s - Invalid parameter given", __func__);
+		LOG_ERROR("%s - Invalid parameter given", __func__);
 		return;
 	}
 

@@ -43,7 +43,7 @@ static int i3g4250d_sample_fetch(const struct device *dev,
 
 	ret = i3g4250d_angular_rate_raw_get(ctx, buf);
 	if (ret < 0) {
-		LOG_ERR("Failed to fetch raw data sample!");
+		LOG_ERROR("Failed to fetch raw data sample!");
 		return ret;
 	}
 
@@ -139,7 +139,7 @@ static int i3g4250d_config_gyro(const struct device *dev,
 		dr_reg = gyr_odr_to_reg(val);
 		return i3g4250d_data_rate_set(ctx, dr_reg);
 	default:
-		LOG_ERR("Gyro attribute not supported");
+		LOG_ERROR("Gyro attribute not supported");
 		break;
 	}
 
@@ -154,7 +154,7 @@ static int i3g4250d_attr_set(const struct device *dev, enum sensor_channel chan,
 	case SENSOR_CHAN_GYRO_XYZ:
 		return i3g4250d_config_gyro(dev, attr, val);
 	default:
-		LOG_ERR("attr_set() not supported on this channel %d.", chan);
+		LOG_ERROR("attr_set() not supported on this channel %d.", chan);
 		break;
 	}
 
@@ -181,27 +181,27 @@ static int i3g4250d_init(const struct device *dev)
 	}
 
 	if (wai != I3G4250D_ID) {
-		LOG_ERR("Invalid chip ID: %02x", wai);
+		LOG_ERROR("Invalid chip ID: %02x", wai);
 		return -EIO;
 	}
 
 	/* Configure filtering chain -  Gyroscope - High Pass */
 	ret = i3g4250d_filter_path_set(ctx, I3G4250D_LPF1_HP_ON_OUT);
 	if (ret != 0) {
-		LOG_ERR("Failed setting filter path");
+		LOG_ERROR("Failed setting filter path");
 		return ret;
 	}
 
 	ret = i3g4250d_hp_bandwidth_set(ctx, I3G4250D_HP_LEVEL_3);
 	if (ret != 0) {
-		LOG_ERR("Failed setting high pass");
+		LOG_ERROR("Failed setting high pass");
 		return ret;
 	}
 
 	/* Set Output data rate */
 	ret = i3g4250d_data_rate_set(ctx, I3G4250D_ODR_100Hz);
 	if (ret != 0) {
-		LOG_ERR("Failed setting data rate");
+		LOG_ERROR("Failed setting data rate");
 		return ret;
 	}
 

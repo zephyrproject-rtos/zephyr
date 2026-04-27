@@ -61,14 +61,14 @@ static void ipc1_entry(void *dummy0, void *dummy1, void *dummy2)
 
 	ret = ipc_service_open_instance(ipc1_instance);
 	if (ret < 0 && ret != -EALREADY) {
-		LOG_ERR("ipc_service_open_instance() failure");
+		LOG_ERROR("ipc_service_open_instance() failure");
 		return;
 	}
 
 	LOG_INF("ipc open %d", ret);
 	ret = ipc_service_register_endpoint(ipc1_instance, &ipc1_ept, &ipc1_ept_cfg);
 	if (ret < 0) {
-		LOG_ERR("ipc_service_register_endpoint() failure");
+		LOG_ERROR("ipc_service_register_endpoint() failure");
 		return;
 	}
 
@@ -77,7 +77,7 @@ static void ipc1_entry(void *dummy0, void *dummy1, void *dummy2)
 	while (message < 100) {
 		ret = ipc_service_send(&ipc1_ept, &message, sizeof(message));
 		if (ret < 0) {
-			LOG_ERR("send_message(%d) failed with ret %d", message, ret);
+			LOG_ERROR("send_message(%d) failed with ret %d", message, ret);
 			break;
 		}
 

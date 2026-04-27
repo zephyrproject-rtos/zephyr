@@ -326,7 +326,7 @@ static int lan9250_configure(const struct device *dev)
 	}
 
 	if ((tmp & LAN9250_ID_REV_CHIP_ID) != LAN9250_ID_REV_CHIP_ID_DEFAULT) {
-		LOG_ERR("ERROR: Bad Rev ID: %08x\n", tmp);
+		LOG_ERROR("ERROR: Bad Rev ID: %08x\n", tmp);
 		return -ENODEV;
 	}
 
@@ -619,7 +619,8 @@ static int lan9250_rx(const struct device *dev)
 	pkt_len -= 4;
 
 	if (pkt_len > NET_ETH_MAX_FRAME_SIZE) {
-		LOG_ERR("Maximum frame length exceeded, it should be: %d", NET_ETH_MAX_FRAME_SIZE);
+		LOG_ERROR("Maximum frame length exceeded, it should be: %d",
+			  NET_ETH_MAX_FRAME_SIZE);
 		eth_stats_update_errors_rx(ctx->iface);
 	}
 
@@ -627,7 +628,7 @@ static int lan9250_rx(const struct device *dev)
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_len, NET_AF_UNSPEC, 0,
 					   K_MSEC(CONFIG_ETH_LAN9250_BUF_ALLOC_TIMEOUT));
 	if (!pkt) {
-		LOG_ERR("%s: Could not allocate rx buffer", dev->name);
+		LOG_ERROR("%s: Could not allocate rx buffer", dev->name);
 		eth_stats_update_errors_rx(ctx->iface);
 		return 0;
 	}
@@ -822,7 +823,7 @@ static int lan9250_set_config(const struct device *dev, enum ethernet_config_typ
 		       sizeof(ctx->mac_address));
 		ret = lan9250_set_macaddr(dev);
 		if (ret < 0) {
-			LOG_ERR("Set mac address failed");
+			LOG_ERROR("Set mac address failed");
 			return ret;
 		}
 
@@ -887,19 +888,19 @@ static int lan9250_init(const struct device *dev)
 
 	/* SPI config */
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI master port %s not ready", config->spi.bus->name);
+		LOG_ERROR("SPI master port %s not ready", config->spi.bus->name);
 		return -EINVAL;
 	}
 
 	/* Initialize GPIO */
 	if (!gpio_is_ready_dt(&config->interrupt)) {
-		LOG_ERR("GPIO port %s not ready", config->interrupt.port->name);
+		LOG_ERROR("GPIO port %s not ready", config->interrupt.port->name);
 		return -EINVAL;
 	}
 
 	ret = gpio_pin_configure_dt(&config->interrupt, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Unable to configure GPIO pin %u", config->interrupt.pin);
+		LOG_ERROR("Unable to configure GPIO pin %u", config->interrupt.pin);
 		return ret;
 	}
 
@@ -907,26 +908,26 @@ static int lan9250_init(const struct device *dev)
 			   BIT(config->interrupt.pin));
 	ret = gpio_add_callback(config->interrupt.port, &context->gpio_cb);
 	if (ret < 0) {
-		LOG_ERR("Unable to add GPIO callback %u", config->interrupt.pin);
+		LOG_ERROR("Unable to add GPIO callback %u", config->interrupt.pin);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->interrupt,
 					      GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Unable to enable GPIO INT %u", config->interrupt.pin);
+		LOG_ERROR("Unable to enable GPIO INT %u", config->interrupt.pin);
 		return ret;
 	}
 
 	if (config->reset.port != NULL) {
 		if (!gpio_is_ready_dt(&config->reset)) {
-			LOG_ERR("GPIO port %s not ready", config->reset.port->name);
+			LOG_ERROR("GPIO port %s not ready", config->reset.port->name);
 			return -EINVAL;
 		}
 
 		ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Unable to configure GPIO pin %u", config->reset.pin);
+			LOG_ERROR("Unable to configure GPIO pin %u", config->reset.pin);
 			return ret;
 		}
 
@@ -944,19 +945,19 @@ static int lan9250_init(const struct device *dev)
 	/* Reset and wait for ready on the LAN9250 SPI device */
 	ret = lan9250_sw_reset(dev);
 	if (ret < 0) {
-		LOG_ERR("Reset failed");
+		LOG_ERROR("Reset failed");
 		return ret;
 	}
 	ret = lan9250_configure(dev);
 	if (ret < 0) {
-		LOG_ERR("Configuration failed");
+		LOG_ERROR("Configuration failed");
 		return ret;
 	}
 
 	(void)net_eth_mac_load(&config->mac_cfg, context->mac_address);
 	ret = lan9250_set_macaddr(dev);
 	if (ret < 0) {
-		LOG_ERR("Set mac address failed");
+		LOG_ERROR("Set mac address failed");
 		return ret;
 	}
 

@@ -21,7 +21,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		psci_cpu_suspend(state, 0);
 		break;
 	default:
-		LOG_ERR("PM state %d is not supported.", state);
+		LOG_ERROR("PM state %d is not supported.", state);
 		break;
 	}
 }

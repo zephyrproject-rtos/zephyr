@@ -92,19 +92,19 @@ static int divider_setup(void)
 	int rc;
 
 	if (!device_is_ready(ddp->adc)) {
-		LOG_ERR("ADC device is not ready %s", ddp->adc->name);
+		LOG_ERROR("ADC device is not ready %s", ddp->adc->name);
 		return -ENOENT;
 	}
 
 	if (gcp->port) {
 		if (!device_is_ready(gcp->port)) {
-			LOG_ERR("%s: device not ready", gcp->port->name);
+			LOG_ERROR("%s: device not ready", gcp->port->name);
 			return -ENOENT;
 		}
 		rc = gpio_pin_configure_dt(gcp, GPIO_OUTPUT_INACTIVE);
 		if (rc != 0) {
-			LOG_ERR("Failed to control feed %s.%u: %d",
-				gcp->port->name, gcp->pin, rc);
+			LOG_ERROR("Failed to control feed %s.%u: %d", gcp->port->name, gcp->pin,
+				  rc);
 			return rc;
 		}
 	}

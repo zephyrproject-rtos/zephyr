@@ -30,13 +30,13 @@ static void msg_cb(struct usbd_context *const usbd_ctx,
 	if (usbd_can_detect_vbus(usbd_ctx)) {
 		if (msg->type == USBD_MSG_VBUS_READY) {
 			if (usbd_enable(usbd_ctx)) {
-				LOG_ERR("Failed to enable device support");
+				LOG_ERROR("Failed to enable device support");
 			}
 		}
 
 		if (msg->type == USBD_MSG_VBUS_REMOVED) {
 			if (usbd_disable(usbd_ctx)) {
-				LOG_ERR("Failed to disable device support");
+				LOG_ERROR("Failed to disable device support");
 			}
 		}
 	}
@@ -49,32 +49,32 @@ int main(void)
 
 	sample_usbd = sample_usbd_setup_device(msg_cb);
 	if (sample_usbd == NULL) {
-		LOG_ERR("Failed to setup USB device");
+		LOG_ERROR("Failed to setup USB device");
 		return -ENODEV;
 	}
 
 	ret = usbd_add_descriptor(sample_usbd, &bos_vreq_msosv2);
 	if (ret) {
-		LOG_ERR("Failed to add MSOSv2 capability descriptor");
+		LOG_ERROR("Failed to add MSOSv2 capability descriptor");
 		return ret;
 	}
 
 	ret = usbd_add_descriptor(sample_usbd, &bos_vreq_webusb);
 	if (ret) {
-		LOG_ERR("Failed to add WebUSB capability descriptor");
+		LOG_ERROR("Failed to add WebUSB capability descriptor");
 		return ret;
 	}
 
 	ret = usbd_init(sample_usbd);
 	if (ret) {
-		LOG_ERR("Failed to initialize device support");
+		LOG_ERROR("Failed to initialize device support");
 		return ret;
 	}
 
 	if (!usbd_can_detect_vbus(sample_usbd)) {
 		ret = usbd_enable(sample_usbd);
 		if (ret) {
-			LOG_ERR("Failed to enable device support");
+			LOG_ERROR("Failed to enable device support");
 			return ret;
 		}
 	}

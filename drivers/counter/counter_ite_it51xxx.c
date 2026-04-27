@@ -117,12 +117,12 @@ static int counter_it51xxx_set_alarm(const struct device *dev, uint8_t chan_id,
 	ARG_UNUSED(chan_id);
 
 	if (alarm_cfg->callback == NULL) {
-		LOG_ERR("Alarm timer callback can't be NULL");
+		LOG_ERROR("Alarm timer callback can't be NULL");
 		return -EINVAL;
 	}
 
 	if (alarm_cfg->ticks > sys_read32(config->base + REG_TIMER_ET8CNTLLR)) {
-		LOG_ERR("Alarm timer ticks can't be bigger than top ticks");
+		LOG_ERROR("Alarm timer ticks can't be bigger than top ticks");
 		return -EINVAL;
 	}
 
@@ -136,7 +136,7 @@ static int counter_it51xxx_set_alarm(const struct device *dev, uint8_t chan_id,
 	 * so only relative alarms are supported.
 	 */
 	if (alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) {
-		LOG_ERR("COUNTER_ALARM_CFG_ABSOLUTE flag is not supported");
+		LOG_ERROR("COUNTER_ALARM_CFG_ABSOLUTE flag is not supported");
 		return -ENOTSUP;
 	}
 
@@ -169,7 +169,7 @@ static int counter_it51xxx_cancel_alarm(const struct device *dev, uint8_t chan_i
 	struct counter_it51xxx_data *data = dev->data;
 
 	if (chan_id != 0) {
-		LOG_ERR("Invalid channel id %u", chan_id);
+		LOG_ERROR("Invalid channel id %u", chan_id);
 		return -ENOTSUP;
 	}
 
@@ -190,17 +190,17 @@ static int counter_it51xxx_set_top_value(const struct device *dev,
 	struct counter_it51xxx_data *data = dev->data;
 
 	if (top_cfg == NULL) {
-		LOG_ERR("Top timer configuration can't be NULL");
+		LOG_ERROR("Top timer configuration can't be NULL");
 		return -EINVAL;
 	}
 
 	if (top_cfg->ticks == 0) {
-		LOG_ERR("Top timer ticks can't be set to zero");
+		LOG_ERROR("Top timer ticks can't be set to zero");
 		return -EINVAL;
 	}
 
 	if (top_cfg->ticks > config->info.max_top_value) {
-		LOG_ERR("Top timer ticks only support 32 bits");
+		LOG_ERROR("Top timer ticks only support 32 bits");
 		return -ENOTSUP;
 	}
 
@@ -211,7 +211,7 @@ static int counter_it51xxx_set_top_value(const struct device *dev,
 
 	/* Top timer ticks cannot be updated without reset */
 	if (top_cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
-		LOG_ERR("COUNTER_ALARM_CFG_ABSOLUTE flag is not supported");
+		LOG_ERROR("COUNTER_ALARM_CFG_ABSOLUTE flag is not supported");
 		return -ENOTSUP;
 	}
 

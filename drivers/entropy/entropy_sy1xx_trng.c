@@ -43,12 +43,12 @@ static int sy1xx_trng_driver_init(const struct device *dev)
 
 	/* trng comes up fully initialized, so only check if all is fine */
 	if (0 != sys_read32(cfg->base_addr + SY1XX_TRNG_ERROR_OFFS)) {
-		LOG_ERR("failure mode active, internal init failed");
+		LOG_ERROR("failure mode active, internal init failed");
 		return -EINVAL;
 	}
 
 	if (SY1XX_TRNG_FIFO_SIZE != sys_read32(cfg->base_addr + SY1XX_TRNG_FIFO_COUNT_OFFS)) {
-		LOG_ERR("fifo not fully loaded");
+		LOG_ERROR("fifo not fully loaded");
 		return -EINVAL;
 	}
 
@@ -93,7 +93,7 @@ static int sy1xx_trng_driver_get_entropy(const struct device *dev, uint8_t *buff
 
 	/* always error check, to make sure that we received valid readings */
 	if (0 != sys_read32(cfg->base_addr + SY1XX_TRNG_ERROR_OFFS)) {
-		LOG_ERR("failure mode active, reading of values failed");
+		LOG_ERROR("failure mode active, reading of values failed");
 		return -EINVAL;
 	}
 
@@ -138,7 +138,7 @@ static int sy1xx_trng_driver_get_entropy_isr(const struct device *dev, uint8_t *
 
 	/* always error check, to make sure that we received valid readings */
 	if (0 != sys_read32(cfg->base_addr + SY1XX_TRNG_ERROR_OFFS)) {
-		LOG_ERR("failure mode active, reading of values failed");
+		LOG_ERROR("failure mode active, reading of values failed");
 		return -EINVAL;
 	}
 

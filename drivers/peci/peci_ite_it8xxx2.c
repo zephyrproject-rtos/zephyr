@@ -140,13 +140,13 @@ static int peci_it8xxx2_check_host_finish(const struct device *dev)
 	int ret = k_sem_take(&data->device_sync_sem, K_MSEC(PECI_TIMEOUT_MS));
 
 	if (ret == -EAGAIN) {
-		LOG_ERR("%s: Timeout", __func__);
+		LOG_ERROR("%s: Timeout", __func__);
 		return -ETIMEDOUT;
 	}
 
 	if (peci_regs->HOSTAR != FINISH) {
-		LOG_ERR("[PECI] Error: HOSTAR=0x%02X\r\n", peci_regs->HOSTAR);
-			return -EIO;
+		LOG_ERROR("[PECI] Error: HOSTAR=0x%02X\r\n", peci_regs->HOSTAR);
+		return -EIO;
 	}
 
 	return 0;
@@ -179,7 +179,7 @@ static int peci_it8xxx2_configure(const struct device *dev, uint32_t bitrate)
 		break;
 
 	default:
-		LOG_ERR("[PECI] Error: Specified Bitrate Not Supported\r\n");
+		LOG_ERROR("[PECI] Error: Specified Bitrate Not Supported\r\n");
 		hoctl2r_to_write |= PECI_IT8XXX2_BITRATE_1MHZ_BITS;
 		data->bitrate =  PECI_IT8XXX2_BITRATE_1MHZ;
 		peci_regs->HOCTL2R = hoctl2r_to_write;
@@ -219,7 +219,7 @@ static void peci_it8xxx2_rst_module(const struct device *dev)
 		(struct peci_it8xxx2_regs *)config->base_addr;
 	struct gctrl_it8xxx2_regs *const gctrl_regs = GCTRL_IT8XXX2_REGS_BASE;
 
-	LOG_ERR("[PECI] Module Reset for Status Error.\r\n");
+	LOG_ERROR("[PECI] Module Reset for Status Error.\r\n");
 	/* Reset IT8XXX2 PECI Module Thoroughly */
 	gctrl_regs->GCTRL_RSTC4 |= IT8XXX2_GCTRL_RPECI;
 	/*
@@ -233,7 +233,7 @@ static void peci_it8xxx2_rst_module(const struct device *dev)
 	peci_it8xxx2_init_vtts(peci_regs, HOVTTS0P95V);
 	peci_it8xxx2_configure(dev, PECI_IT8XXX2_BITRATE_1MHZ);
 	peci_it8xxx2_enable(dev);
-	LOG_ERR("[PECI] Reinitialization Finished.\r\n");
+	LOG_ERROR("[PECI] Reinitialization Finished.\r\n");
 }
 
 static int peci_it8xxx2_transfer(const struct device *dev, struct peci_msg *msg)
@@ -250,7 +250,7 @@ static int peci_it8xxx2_transfer(const struct device *dev, struct peci_msg *msg)
 	ret_code = 0;
 
 	if (!(peci_regs->HOCTLR & PECIHEN)) {
-		LOG_ERR("[PECI] Please call the peci_enable() first.\r\n");
+		LOG_ERROR("[PECI] Please call the peci_enable() first.\r\n");
 		return -ECONNREFUSED;
 	}
 
@@ -321,7 +321,7 @@ static int peci_it8xxx2_init(const struct device *dev)
 	/* Configure the GPF6 to Alternative Function 3: PECI */
 	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (status < 0) {
-		LOG_ERR("Failed to configure PECI pins");
+		LOG_ERROR("Failed to configure PECI pins");
 		return status;
 	}
 

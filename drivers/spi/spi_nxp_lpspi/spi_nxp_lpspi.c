@@ -352,13 +352,13 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	lpspi_data->word_size_bytes =
 		DIV_ROUND_UP(SPI_WORD_SIZE_GET(spi_cfg->operation), BITS_PER_BYTE);
 	if (lpspi_data->word_size_bytes > 4) {
-		LOG_ERR("Maximum 4 byte word size");
+		LOG_ERROR("Maximum 4 byte word size");
 		ret = -EINVAL;
 		goto error;
 	}
 
 	if (op_mode == SPI_OP_MODE_SLAVE && !(spi_cfg->operation & SPI_MODE_CPHA)) {
-		LOG_ERR("CPHA=0 not supported with LPSPI peripheral mode");
+		LOG_ERROR("CPHA=0 not supported with LPSPI peripheral mode");
 		ret = -ENOTSUP;
 		goto error;
 	}

@@ -264,7 +264,7 @@ static int sam9x60_clk_frac_pll_get_rate(const struct device *dev,
 
 	retval = clock_control_get_rate(frac->core.parent, NULL, rate);
 	if (retval) {
-		LOG_ERR("get parent clock rate failed.");
+		LOG_ERROR("get parent clock rate failed.");
 		*rate = 0;
 	} else {
 		*rate = *rate * (frac->mul + 1) +
@@ -300,7 +300,7 @@ int sam9x60_clk_register_frac_pll(pmc_registers_t *const pmc, struct k_spinlock 
 
 	frac = &clocks_frac[clocks_frac_idx++];
 	if (clocks_frac_idx > ARRAY_SIZE(clocks_frac)) {
-		LOG_ERR("Array for PLL frac clock not enough");
+		LOG_ERROR("Array for PLL frac clock not enough");
 		return -ENOMEM;
 	}
 
@@ -330,7 +330,7 @@ int sam9x60_clk_register_frac_pll(pmc_registers_t *const pmc, struct k_spinlock 
 		 */
 		ret = clock_control_get_rate(parent, NULL, &parent_rate);
 		if (ret) {
-			LOG_ERR("get parent clock rate failed.");
+			LOG_ERROR("get parent clock rate failed.");
 			goto free;
 		}
 
@@ -464,7 +464,7 @@ static int sam9x60_clk_div_pll_get_rate(const struct device *dev,
 
 	retval = clock_control_get_rate(div->core.parent, NULL, rate);
 	if (retval) {
-		LOG_ERR("get parent clock rate failed.");
+		LOG_ERROR("get parent clock rate failed.");
 		*rate = 0;
 	} else {
 		*rate = DIV_ROUND_CLOSEST_ULL(*rate, div->div + 1);
@@ -499,7 +499,7 @@ int sam9x60_clk_register_div_pll(pmc_registers_t *const pmc, struct k_spinlock *
 
 	div = &clocks_div[clocks_div_idx++];
 	if (clocks_div_idx > ARRAY_SIZE(clocks_div)) {
-		LOG_ERR("Array for PLL div clock not enough");
+		LOG_ERROR("Array for PLL div clock not enough");
 		return -ENOMEM;
 	}
 

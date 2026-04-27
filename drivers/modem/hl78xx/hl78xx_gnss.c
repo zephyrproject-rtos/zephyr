@@ -727,19 +727,19 @@ void hl78xx_on_gnssad(struct modem_chat *chat, char **argv, uint16_t argc, void 
 	int mode;
 
 	if (data == NULL || data->gnss_dev == NULL) {
-		LOG_ERR("GNSS device not available");
+		LOG_ERROR("GNSS device not available");
 		return;
 	}
 
 	data_nmea = data->gnss_dev->data;
 	if (data_nmea == NULL || data_nmea->gnss == NULL) {
-		LOG_ERR("GNSS NMEA data not available");
+		LOG_ERROR("GNSS NMEA data not available");
 		return;
 	}
 
 	data_gnss = data_nmea->gnss->data;
 	if (data_gnss == NULL) {
-		LOG_ERR("GNSS data structure not available");
+		LOG_ERROR("GNSS data structure not available");
 		return;
 	}
 
@@ -816,8 +816,8 @@ void hl78xx_gnss_on_gnssev(struct modem_chat *chat, char **argv, uint16_t argc, 
 		break;
 	case HL78XX_GNSSEV_START: /* GNSS start event */
 		if (event_value == 0) {
-			LOG_ERR("GNSS start failed: LTE modem is active (shared RF path)");
-			LOG_ERR("GNSS requires airplane mode (CFUN=4) or PSM/idle-eDRX");
+			LOG_ERROR("GNSS start failed: LTE modem is active (shared RF path)");
+			LOG_ERROR("GNSS requires airplane mode (CFUN=4) or PSM/idle-eDRX");
 			data_gnss->gnss_start_status = false;
 			gnss_set_search_state(data_gnss, HL78XX_GNSS_SEARCH_STATE_BLOCKED_BY_LTE);
 			/* Notify user that GNSS was blocked - they should enter airplane mode */
@@ -1095,7 +1095,7 @@ static int hl78xx_gnss_set_fix_rate(const struct device *dev, uint32_t fix_inter
 	}
 
 	if (fix_interval_ms < 100 || fix_interval_ms > 10000) {
-		LOG_ERR("Fix rate %u ms out of range (100-10000)", fix_interval_ms);
+		LOG_ERROR("Fix rate %u ms out of range (100-10000)", fix_interval_ms);
 		return -EINVAL;
 	}
 
@@ -1196,7 +1196,7 @@ static int hl78xx_gnss_set_enabled_systems(const struct device *dev, gnss_system
 	supported_systems = (GNSS_SYSTEM_GPS | GNSS_SYSTEM_GLONASS);
 
 	if (!(systems & GNSS_SYSTEM_GPS)) {
-		LOG_ERR("GPS must be enabled");
+		LOG_ERROR("GPS must be enabled");
 		return -EINVAL;
 	}
 
@@ -1354,13 +1354,13 @@ static int hl78xx_gnss_init(const struct device *dev)
 
 	/* Get parent modem data */
 	if (!config->parent_modem) {
-		LOG_ERR("Parent modem device not configured");
+		LOG_ERROR("Parent modem device not configured");
 		return -EINVAL;
 	}
 	data->dev = dev;
 	data->parent_data = (struct hl78xx_data *)config->parent_modem->data;
 	if (!data->parent_data) {
-		LOG_ERR("Parent modem data not available");
+		LOG_ERROR("Parent modem data not available");
 		return -EINVAL;
 	}
 
@@ -1370,7 +1370,7 @@ static int hl78xx_gnss_init(const struct device *dev)
 	/* Initialize NMEA0183 match subsystem */
 	ret = hl78xx_gnss_init_nmea0183_match(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize NMEA0183 match: %d", ret);
+		LOG_ERROR("Failed to initialize NMEA0183 match: %d", ret);
 		return ret;
 	}
 
@@ -1727,7 +1727,7 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
 						  data->buffers.termination_pattern,
 						  data->buffers.termination_pattern_size);
 			if (ret < 0) {
-				LOG_ERR("Failed to send termination pattern: %d", ret);
+				LOG_ERROR("Failed to send termination pattern: %d", ret);
 			}
 			modem_chat_attach(&data->chat, data->uart_pipe);
 			/* Script will handle the rest */
@@ -1735,7 +1735,7 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
 		}
 		ret = hl78xx_run_gnss_stop_search_chat_script(data);
 		if (ret < 0) {
-			LOG_ERR("Failed to run GNSS stop script: %d", ret);
+			LOG_ERROR("Failed to run GNSS stop script: %d", ret);
 		}
 		break;
 

@@ -633,7 +633,7 @@ static int qmspi_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("QSPI pinctrl setup failed (%d)", ret);
+		LOG_ERROR("QSPI pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 

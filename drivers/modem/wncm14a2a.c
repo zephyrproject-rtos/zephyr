@@ -292,7 +292,7 @@ char *wncm14a2a_sprint_ip_addr(const struct net_sockaddr *addr)
 		return net_addr_ntop(NET_AF_INET, &net_sin(addr)->sin_addr,
 				     buf, sizeof(buf));
 	} else {
-		LOG_ERR("Unknown IP address family:%d", addr->sa_family);
+		LOG_ERROR("Unknown IP address family:%d", addr->sa_family);
 		return NULL;
 	}
 }
@@ -651,7 +651,7 @@ static void on_cmd_sockexterror(struct net_buf **buf, uint16_t len)
 	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
 	value[out_len] = 0;
 	ictx.last_error = -atoi(value);
-	LOG_ERR("@EXTERR:%d", ictx.last_error);
+	LOG_ERROR("@EXTERR:%d", ictx.last_error);
 	sock = socket_from_id(ictx.last_socket_id);
 	if (!sock) {
 		k_sem_give(&ictx.response_sem);
@@ -758,7 +758,7 @@ static void on_cmd_sockread(struct net_buf **buf, uint16_t len)
 	 * a comma and that the next char in the buffer is a quote.
 	 */
 	if (!*buf || value[i] != ',' || *(*buf)->data != '\"') {
-		LOG_ERR("Incorrect format! Ignoring data!");
+		LOG_ERROR("Incorrect format! Ignoring data!");
 		return;
 	}
 
@@ -775,13 +775,13 @@ static void on_cmd_sockread(struct net_buf **buf, uint16_t len)
 
 	/* check that we have enough data */
 	if (!*buf || len > (actual_length * 2) + 1) {
-		LOG_ERR("Incorrect format! Ignoring data!");
+		LOG_ERROR("Incorrect format! Ignoring data!");
 		return;
 	}
 
 	sock = socket_from_id(ictx.last_socket_id);
 	if (!sock) {
-		LOG_ERR("Socket not found! (%d)", ictx.last_socket_id);
+		LOG_ERROR("Socket not found! (%d)", ictx.last_socket_id);
 		return;
 	}
 
@@ -791,7 +791,7 @@ static void on_cmd_sockread(struct net_buf **buf, uint16_t len)
 			actual_length, sock->family, sock->ip_proto,
 			BUF_ALLOC_TIMEOUT);
 	if (!sock->recv_pkt) {
-		LOG_ERR("Failed net_pkt_get_reserve_rx!");
+		LOG_ERROR("Failed net_pkt_get_reserve_rx!");
 		return;
 	}
 
@@ -815,7 +815,7 @@ static void on_cmd_sockread(struct net_buf **buf, uint16_t len)
 
 		if (i % 2) {
 			if (net_pkt_write_u8(sock->recv_pkt, c)) {
-				LOG_ERR("Unable to add data! Aborting!");
+				LOG_ERROR("Unable to add data! Aborting!");
 				net_pkt_unref(sock->recv_pkt);
 				sock->recv_pkt = NULL;
 				return;
@@ -862,7 +862,7 @@ static void on_cmd_sockdataind(struct net_buf **buf, uint16_t len)
 	/* First comma separator marks the end of socket_id */
 	delim1 = strchr(value, ',');
 	if (!delim1) {
-		LOG_ERR("Missing 1st comma");
+		LOG_ERROR("Missing 1st comma");
 		return;
 	}
 
@@ -873,7 +873,7 @@ static void on_cmd_sockdataind(struct net_buf **buf, uint16_t len)
 	/* TODO: ignore for now, but maybe this is useful? */
 	delim2 = strchr(delim1, ',');
 	if (!delim2) {
-		LOG_ERR("Missing 2nd comma");
+		LOG_ERROR("Missing 2nd comma");
 		return;
 	}
 
@@ -887,7 +887,7 @@ static void on_cmd_sockdataind(struct net_buf **buf, uint16_t len)
 
 	sock = socket_from_id(socket_id);
 	if (!sock) {
-		LOG_ERR("Unable to find socket_id:%d", socket_id);
+		LOG_ERROR("Unable to find socket_id:%d", socket_id);
 		return;
 	}
 
@@ -1021,8 +1021,8 @@ static void wncm14a2a_read_rx(struct net_buf **buf)
 		if (!*buf) {
 			*buf = net_buf_alloc(&mdm_recv_pool, BUF_ALLOC_TIMEOUT);
 			if (!*buf) {
-				LOG_ERR("Can't allocate RX data! "
-					    "Skipping data!");
+				LOG_ERROR("Can't allocate RX data! "
+					  "Skipping data!");
 				break;
 			}
 		}
@@ -1032,8 +1032,7 @@ static void wncm14a2a_read_rx(struct net_buf **buf)
 					      read_rx_allocator,
 					      &mdm_recv_pool);
 		if (rx_len < bytes_read) {
-			LOG_ERR("Data was lost! read %u of %zu!",
-				    rx_len, bytes_read);
+			LOG_ERROR("Data was lost! read %u of %zu!", rx_len, bytes_read);
 		}
 	}
 }
@@ -1245,7 +1244,7 @@ static void wncm14a2a_rssi_query_work(struct k_work *work)
 	/* query modem RSSI */
 	ret = send_at_cmd(NULL, "AT%MEAS=\"23\"", MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("AT%%MEAS ret:%d", ret);
+		LOG_ERROR("AT%%MEAS ret:%d", ret);
 	}
 
 	/* re-start RSSI query work */
@@ -1281,7 +1280,7 @@ restart:
 	}
 
 	if (ret < 0) {
-		LOG_ERR("MODEM WAIT LOOP ERROR: %d", ret);
+		LOG_ERROR("MODEM WAIT LOOP ERROR: %d", ret);
 		goto error;
 	}
 
@@ -1290,14 +1289,14 @@ restart:
 
 	ret = send_at_cmd(NULL, "ATE1", MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("ATE1 ret:%d", ret);
+		LOG_ERROR("ATE1 ret:%d", ret);
 		goto error;
 	}
 
 	ret = send_at_cmd(NULL, "AT%PDNSET=1,\"" CONFIG_MODEM_WNCM14A2A_APN_NAME
 			  "\",\"IPV4V6\"", MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("AT%%PDNSET ret:%d", ret);
+		LOG_ERROR("AT%%PDNSET ret:%d", ret);
 		goto error;
 	}
 
@@ -1305,14 +1304,14 @@ restart:
 	LOG_INF("Querying modem information");
 	ret = send_at_cmd(NULL, "ATI", MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("ATI ret:%d", ret);
+		LOG_ERROR("ATI ret:%d", ret);
 		goto error;
 	}
 
 	/* query modem IMEI */
 	ret = send_at_cmd(NULL, "AT+CGSN", MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("AT+CGSN ret:%d", ret);
+		LOG_ERROR("AT+CGSN ret:%d", ret);
 		goto error;
 	}
 
@@ -1336,11 +1335,11 @@ restart:
 	if (ictx.mdm_rssi <= -1000 || ictx.mdm_rssi == 0) {
 		retry_count++;
 		if (retry_count > 3) {
-			LOG_ERR("Failed network init.  Too many attempts!");
+			LOG_ERROR("Failed network init.  Too many attempts!");
 			goto error;
 		}
 
-		LOG_ERR("Failed network init.  Restarting process.");
+		LOG_ERROR("Failed network init.  Restarting process.");
 		goto restart;
 	}
 
@@ -1348,13 +1347,13 @@ restart:
 
 	ret = send_at_cmd(NULL, "AT@INTERNET=1", MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("AT@INTERNET ret:%d", ret);
+		LOG_ERROR("AT@INTERNET ret:%d", ret);
 		goto error;
 	}
 
 	ret = send_at_cmd(NULL, "AT@SOCKDIAL=1", MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("SOCKDIAL=1 CHECK ret:%d", ret);
+		LOG_ERROR("SOCKDIAL=1 CHECK ret:%d", ret);
 		/* don't report this as an error, we retry later */
 	}
 
@@ -1389,8 +1388,7 @@ static int wncm14a2a_init(const struct device *dev)
 	/* setup port devices and pin directions */
 	for (i = 0; i < MAX_MDM_CONTROL_PINS; i++) {
 		if (!gpio_is_ready_dt(&wncm14a2a_cfg.gpio[i])) {
-			LOG_ERR("gpio port (%s) not ready!",
-				wncm14a2a_cfg.gpio[i].port->name);
+			LOG_ERROR("gpio port (%s) not ready!", wncm14a2a_cfg.gpio[i].port->name);
 			return -ENODEV;
 		}
 
@@ -1409,7 +1407,7 @@ static int wncm14a2a_init(const struct device *dev)
 	ret = mdm_receiver_register(&ictx.mdm_ctx, MDM_UART_DEV,
 				    mdm_recv_buf, sizeof(mdm_recv_buf));
 	if (ret < 0) {
-		LOG_ERR("Error registering modem receiver (%d)!", ret);
+		LOG_ERROR("Error registering modem receiver (%d)!", ret);
 		goto error;
 	}
 
@@ -1456,7 +1454,7 @@ static int offload_get(net_sa_family_t family,
 		 family == NET_AF_INET ? 0 : 1);
 	ret = send_at_cmd(NULL, buf, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("AT@SOCKCREAT ret:%d", ret);
+		LOG_ERROR("AT@SOCKCREAT ret:%d", ret);
 		socket_put(sock);
 	}
 
@@ -1475,7 +1473,7 @@ static int offload_bind(struct net_context *context,
 
 	sock = (struct wncm14a2a_socket *)context->offload_context;
 	if (!sock) {
-		LOG_ERR("Can't locate socket for net_ctx:%p!", context);
+		LOG_ERROR("Can't locate socket for net_ctx:%p!", context);
 		return -EINVAL;
 	}
 
@@ -1525,13 +1523,12 @@ static int offload_connect(struct net_context *context,
 
 	sock = (struct wncm14a2a_socket *)context->offload_context;
 	if (!sock) {
-		LOG_ERR("Can't locate socket for net_ctx:%p!", context);
+		LOG_ERROR("Can't locate socket for net_ctx:%p!", context);
 		return -EINVAL;
 	}
 
 	if (sock->socket_id < 1) {
-		LOG_ERR("Invalid socket_id(%d) for net_ctx:%p!",
-			    sock->socket_id, context);
+		LOG_ERROR("Invalid socket_id(%d) for net_ctx:%p!", sock->socket_id, context);
 		return -EINVAL;
 	}
 
@@ -1552,7 +1549,7 @@ static int offload_connect(struct net_context *context,
 	}
 
 	if (dst_port < 0) {
-		LOG_ERR("Invalid port: %d", dst_port);
+		LOG_ERROR("Invalid port: %d", dst_port);
 		return -EINVAL;
 	}
 
@@ -1569,7 +1566,7 @@ static int offload_connect(struct net_context *context,
 	if (!ret) {
 		net_context_set_state(sock->context, NET_CONTEXT_CONNECTED);
 	} else {
-		LOG_ERR("AT@SOCKCONN ret:%d", ret);
+		LOG_ERROR("AT@SOCKCONN ret:%d", ret);
 	}
 
 	if (cb) {
@@ -1605,13 +1602,13 @@ static int offload_sendto(struct net_pkt *pkt,
 
 	sock = (struct wncm14a2a_socket *)context->offload_context;
 	if (!sock) {
-		LOG_ERR("Can't locate socket for net_ctx:%p!", context);
+		LOG_ERROR("Can't locate socket for net_ctx:%p!", context);
 		return -EINVAL;
 	}
 
 	ret = send_data(sock, pkt);
 	if (ret < 0) {
-		LOG_ERR("send_data error: %d", ret);
+		LOG_ERROR("send_data error: %d", ret);
 	} else {
 		net_pkt_unref(pkt);
 	}
@@ -1656,7 +1653,7 @@ static int offload_recv(struct net_context *context,
 
 	sock = (struct wncm14a2a_socket *)context->offload_context;
 	if (!sock) {
-		LOG_ERR("Can't locate socket for net_ctx:%p!", context);
+		LOG_ERROR("Can't locate socket for net_ctx:%p!", context);
 		return -EINVAL;
 	}
 
@@ -1686,7 +1683,7 @@ static int offload_put(struct net_context *context)
 
 	ret = send_at_cmd(sock, buf, MDM_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("AT@SOCKCLOSE ret:%d", ret);
+		LOG_ERROR("AT@SOCKCLOSE ret:%d", ret);
 	}
 
 	/* clear last_socket_id */

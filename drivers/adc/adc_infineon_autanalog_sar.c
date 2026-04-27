@@ -195,7 +195,7 @@ static void ifx_init_pdl_structs(struct ifx_autanalog_sar_adc_data *data,
 		data->pdl_adc_hs_static_obj.hsVref = CY_AUTANALOG_SAR_VREF_PRB_OUT1;
 		break;
 	default:
-		LOG_ERR("Unsupported VREF source, using VDDA");
+		LOG_ERROR("Unsupported VREF source, using VDDA");
 		data->pdl_adc_hs_static_obj.hsVref = CY_AUTANALOG_SAR_VREF_VDDA;
 		break;
 	}
@@ -215,7 +215,7 @@ static void ifx_autanalog_sar_get_results(uint32_t channels,
 					  struct ifx_autanalog_sar_adc_data *data)
 {
 	if (data->conversion_buffer == NULL) {
-		LOG_ERR("ADC data buffer is NULL");
+		LOG_ERROR("ADC data buffer is NULL");
 		return;
 	}
 
@@ -250,22 +250,22 @@ static int ifx_build_hs_sequencer_entry(uint32_t channels, struct ifx_autanalog_
 		if ((channels & (1 << i)) != 0) {
 			if (data->autanalog_channel_cfg[i].sample_time_idx >=
 			    IFX_AUTANALOG_SAR_SAMPLETIME_COUNT) {
-				LOG_ERR("Invalid sample time index for channel %d", i);
+				LOG_ERROR("Invalid sample time index for channel %d", i);
 				return -EINVAL;
 			}
 
 			if (timer_index == IFX_AUTANALOG_SAR_SAMPLETIME_COUNT) {
 				timer_index = data->autanalog_channel_cfg[i].sample_time_idx;
 			} else if (timer_index != data->autanalog_channel_cfg[i].sample_time_idx) {
-				LOG_ERR("All channels in a sequence must have the same sample "
-					"time");
+				LOG_ERROR("All channels in a sequence must have the same sample "
+					  "time");
 				return -EINVAL;
 			}
 		}
 	}
 
 	if (timer_index >= IFX_AUTANALOG_SAR_SAMPLETIME_COUNT) {
-		LOG_ERR("No sample time configured for selected channels");
+		LOG_ERROR("No sample time configured for selected channels");
 		return -EINVAL;
 	}
 
@@ -305,7 +305,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	}
 
 	if (sequence->channels == 0) {
-		LOG_ERR("No channels specified");
+		LOG_ERROR("No channels specified");
 		data->conversion_result = -EINVAL;
 
 		return;
@@ -315,7 +315,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	 * read operation.  If needed, this can be extended to use multiple sequencers.
 	 */
 	if (ifx_build_hs_sequencer_entry(sequence->channels, data) != 0) {
-		LOG_ERR("Error building ADC Sequencer Configuration");
+		LOG_ERROR("Error building ADC Sequencer Configuration");
 		data->conversion_result = -EINVAL;
 		return;
 	}
@@ -325,8 +325,8 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	result_status = Cy_AutAnalog_SAR_LoadHSseqTable(0, IFX_AUTANALOG_SAR_NUM_SEQUENCERS,
 							&data->pdl_adc_seq_hs_cfg_obj[0]);
 	if (result_status != CY_AUTANALOG_SUCCESS) {
-		LOG_ERR("Error Loading ADC Sequencer Configuration: %u",
-			(unsigned int)result_status);
+		LOG_ERROR("Error Loading ADC Sequencer Configuration: %u",
+			  (unsigned int)result_status);
 		data->conversion_result = -EIO;
 		return;
 	}
@@ -383,27 +383,27 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 	struct ifx_autanalog_sar_adc_data *data = dev->data;
 
 	if (sequence->buffer_size < (sizeof(int32_t) * POPCOUNT(sequence->channels))) {
-		LOG_ERR("Buffer too small");
+		LOG_ERROR("Buffer too small");
 		return -ENOMEM;
 	}
 
 	if (sequence->resolution != ADC_AUTANALOG_SAR_RESOLUTION) {
-		LOG_ERR("Unsupported resolution: %d", sequence->resolution);
+		LOG_ERROR("Unsupported resolution: %d", sequence->resolution);
 		return -EINVAL;
 	}
 
 	if (sequence->channels == 0) {
-		LOG_ERR("No channels specified");
+		LOG_ERROR("No channels specified");
 		return -EINVAL;
 	}
 
 	if ((sequence->channels ^ (data->enabled_channels & sequence->channels)) != 0) {
-		LOG_ERR("Channels not configured");
+		LOG_ERROR("Channels not configured");
 		return -EINVAL;
 	}
 
 	if (sequence->oversampling != 0) {
-		LOG_ERR("Oversampling not supported");
+		LOG_ERROR("Oversampling not supported");
 		return -EINVAL;
 	}
 
@@ -439,7 +439,7 @@ static void ifx_autanalog_sar_adc_isr(const struct device *dev)
 			/* Not all channels have completed yet.  This shouldn't happen in
 			 * normal operation
 			 */
-			LOG_ERR("ADC ISR: Not all channels completed yet.");
+			LOG_ERROR("ADC ISR: Not all channels completed yet.");
 		}
 	}
 #else
@@ -466,7 +466,7 @@ static uint16_t ifx_calc_acquisition_timer_val(uint32_t acquisition_time_ns)
 
 	clock_frequency_hz = Cy_SysClk_ClkHfGetFrequency(IFX_AUTANALOG_HF_CLK_SRC);
 	if (clock_frequency_hz == 0) {
-		LOG_ERR("Failed to get AutAnalog clock frequency");
+		LOG_ERROR("Failed to get AutAnalog clock frequency");
 		return 0;
 	}
 
@@ -555,17 +555,17 @@ static int ifx_autanalog_sar_adc_channel_setup(const struct device *dev,
 	uint16_t timer_clock_cycles;
 
 	if (channel_cfg->channel_id >= IFX_AUTANALOG_SAR_MAX_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel ID: %d", channel_cfg->channel_id);
+		LOG_ERROR("Invalid channel ID: %d", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels not supported");
+		LOG_ERROR("Differential channels not supported");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("AutAnalog SAR ADC Hardware only supports unity gain.");
+		LOG_ERROR("AutAnalog SAR ADC Hardware only supports unity gain.");
 		return -EINVAL;
 	}
 
@@ -576,7 +576,7 @@ static int ifx_autanalog_sar_adc_channel_setup(const struct device *dev,
 	if (channel_cfg->reference != ADC_REF_INTERNAL &&
 	    channel_cfg->reference != ADC_REF_EXTERNAL0 &&
 	    channel_cfg->reference != ADC_REF_VDD_1_2) {
-		LOG_ERR("Reference setting not supported.");
+		LOG_ERROR("Reference setting not supported.");
 		return -EINVAL;
 	}
 
@@ -584,8 +584,8 @@ static int ifx_autanalog_sar_adc_channel_setup(const struct device *dev,
 	 * MUXed inputs
 	 */
 	if (channel_cfg->input_positive >= PASS_SAR_SAR_GPIO_CHANNELS) {
-		LOG_ERR("Invalid ADC input pin for channel %d: %d", channel_cfg->channel_id,
-			channel_cfg->input_positive);
+		LOG_ERROR("Invalid ADC input pin for channel %d: %d", channel_cfg->channel_id,
+			  channel_cfg->input_positive);
 		return -EINVAL;
 	}
 
@@ -607,7 +607,7 @@ static int ifx_autanalog_sar_adc_channel_setup(const struct device *dev,
 	}
 
 	if (sample_time_idx == 0xFF) {
-		LOG_ERR("No available sample time slots for requested acquisition time");
+		LOG_ERROR("No available sample time slots for requested acquisition time");
 		return -EINVAL;
 	}
 
@@ -629,7 +629,7 @@ static int ifx_autanalog_sar_adc_channel_setup(const struct device *dev,
 	    CY_AUTANALOG_SUCCESS) {
 		data->pdl_adc_hs_static_obj.hsGpioChan[channel_cfg->channel_id] = NULL;
 		data->pdl_adc_hs_static_obj.hsGpioResultMask &= ~(1 << channel_cfg->channel_id);
-		LOG_ERR("Failed to configure ADC Channel %d", channel_cfg->channel_id);
+		LOG_ERROR("Failed to configure ADC Channel %d", channel_cfg->channel_id);
 
 		return -EIO;
 	}
@@ -656,7 +656,7 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 	cy_en_autanalog_status_t result_val;
 
 	if (!device_is_ready(cfg->mfd)) {
-		LOG_ERR("AutAnalog MFD device not ready");
+		LOG_ERROR("AutAnalog MFD device not ready");
 		return -ENODEV;
 	}
 
@@ -671,7 +671,7 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 	ifx_init_pdl_structs(data, cfg);
 	result_val = Cy_AutAnalog_SAR_LoadConfig(0, &data->pdl_adc_top_obj);
 	if (result_val != CY_AUTANALOG_SUCCESS) {
-		LOG_ERR("Failed to initialize AutAnalog SAR ADC");
+		LOG_ERROR("Failed to initialize AutAnalog SAR ADC");
 		return -EIO;
 	}
 

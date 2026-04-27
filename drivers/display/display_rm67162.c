@@ -266,14 +266,14 @@ static int rm67162_init(const struct device *dev)
 
 	ret = mipi_dsi_attach(config->mipi_dsi, config->channel, &mdev);
 	if (ret < 0) {
-		LOG_ERR("Could not attach to MIPI-DSI host");
+		LOG_ERROR("Could not attach to MIPI-DSI host");
 		return ret;
 	}
 
 	if (config->reset_gpio.port != NULL) {
 		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure reset GPIO (%d)", ret);
+			LOG_ERROR("Could not configure reset GPIO (%d)", ret);
 			return ret;
 		}
 
@@ -286,14 +286,14 @@ static int rm67162_init(const struct device *dev)
 		/* Start reset sequence */
 		ret = gpio_pin_set_dt(&config->reset_gpio, 0);
 		if (ret < 0) {
-			LOG_ERR("Could not pull reset low (%d)", ret);
+			LOG_ERROR("Could not pull reset low (%d)", ret);
 			return ret;
 		}
 		/* Per datasheet, reset low pulse width should be at least 10usec */
 		k_sleep(K_USEC(30));
 		ret = gpio_pin_set_dt(&config->reset_gpio, 1);
 		if (ret < 0) {
-			LOG_ERR("Could not pull reset high (%d)", ret);
+			LOG_ERROR("Could not pull reset high (%d)", ret);
 			return ret;
 		}
 		/*
@@ -325,7 +325,7 @@ static int rm67162_init(const struct device *dev)
 		data->bytes_per_pixel = 2;
 	} else {
 		/* Unsupported pixel format */
-		LOG_ERR("Pixel format not supported");
+		LOG_ERROR("Pixel format not supported");
 		return -ENOTSUP;
 	}
 	ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
@@ -352,7 +352,7 @@ static int rm67162_init(const struct device *dev)
 	if (config->bl_gpio.port != NULL) {
 		ret = gpio_pin_configure_dt(&config->bl_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure bl GPIO (%d)", ret);
+			LOG_ERROR("Could not configure bl GPIO (%d)", ret);
 			return ret;
 		}
 	}
@@ -361,14 +361,14 @@ static int rm67162_init(const struct device *dev)
 		/* Setup TE pin */
 		ret = gpio_pin_configure_dt(&config->te_gpio, GPIO_INPUT);
 		if (ret < 0) {
-			LOG_ERR("Could not configure TE GPIO (%d)", ret);
+			LOG_ERROR("Could not configure TE GPIO (%d)", ret);
 			return ret;
 		}
 
 		ret = gpio_pin_interrupt_configure_dt(&config->te_gpio,
 						      GPIO_INT_EDGE_TO_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure TE interrupt (%d)", ret);
+			LOG_ERROR("Could not configure TE interrupt (%d)", ret);
 			return ret;
 		}
 
@@ -377,7 +377,7 @@ static int rm67162_init(const struct device *dev)
 				BIT(config->te_gpio.pin));
 		ret = gpio_add_callback(config->te_gpio.port, &data->te_gpio_cb);
 		if (ret < 0) {
-			LOG_ERR("Could not add TE gpio callback");
+			LOG_ERROR("Could not add TE gpio callback");
 			return ret;
 		}
 
@@ -567,7 +567,7 @@ static int rm67162_set_orientation(const struct device *dev,
 	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
 		return 0;
 	}
-	LOG_ERR("Changing display orientation not implemented");
+	LOG_ERROR("Changing display orientation not implemented");
 	return -ENOTSUP;
 }
 

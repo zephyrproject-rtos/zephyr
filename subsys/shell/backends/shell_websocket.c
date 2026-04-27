@@ -51,7 +51,7 @@ static void ws_end_client_connection(struct shell_websocket *ws)
 	ret = net_socket_service_register(&websocket_server, ws->fds,
 					  ARRAY_SIZE(ws->fds), NULL);
 	if (ret < 0) {
-		LOG_ERR("Failed to re-register socket service (%d)", ret);
+		LOG_ERROR("Failed to re-register socket service (%d)", ret);
 	}
 
 	k_mutex_unlock(&ws->socket_lock);
@@ -85,7 +85,7 @@ static int ws_send(struct shell_websocket *ws, bool block)
 
 		if (ret < 0) {
 			ret = -errno;
-			LOG_ERR("Failed to send %d, shutting down", -ret);
+			LOG_ERROR("Failed to send %d, shutting down", -ret);
 			ws_end_client_connection(ws);
 			return ret;
 		}
@@ -172,7 +172,7 @@ static void ws_server_cb(struct net_socket_service_event *evt)
 	    (evt->event.revents & ZSOCK_POLLNVAL)) {
 		(void)zsock_getsockopt(evt->event.fd, ZSOCK_SOL_SOCKET,
 				       ZSOCK_SO_ERROR, &sock_error, &optlen);
-		LOG_ERR("Websocket socket %d error (%d)", evt->event.fd, sock_error);
+		LOG_ERROR("Websocket socket %d error (%d)", evt->event.fd, sock_error);
 
 		if (evt->event.fd == ws->fds[0].fd) {
 			return ws_end_client_connection(ws);
@@ -195,7 +195,7 @@ static int shell_ws_init(struct shell_websocket *ctx, int ws_socket)
 	int ret;
 
 	if (ws_socket < 0) {
-		LOG_ERR("Invalid socket %d", ws_socket);
+		LOG_ERROR("Invalid socket %d", ws_socket);
 		return -EBADF;
 	}
 
@@ -212,7 +212,7 @@ static int shell_ws_init(struct shell_websocket *ctx, int ws_socket)
 	ret = net_socket_service_register(&websocket_server, ctx->fds,
 					  ARRAY_SIZE(ctx->fds), ctx);
 	if (ret < 0) {
-		LOG_ERR("Failed to register socket service, %d", ret);
+		LOG_ERROR("Failed to register socket service, %d", ret);
 		goto error;
 	}
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_WS)) {

@@ -168,7 +168,7 @@ static int i2c_gecko_init(const struct device *dev)
 
 	error = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (error < 0) {
-		LOG_ERR("Failed to configure I2C pins err[%d]", error);
+		LOG_ERROR("Failed to configure I2C pins err[%d]", error);
 		return error;
 	}
 
@@ -243,7 +243,7 @@ void i2c_gecko_isr(const struct device *dev)
 
 	/* If some sort of fault, abort transfer. */
 	if (pending & (I2C_IF_BUSERR | I2C_IF_ARBLOST)) {
-		LOG_ERR("I2C Bus Error");
+		LOG_ERROR("I2C Bus Error");
 		I2C_IntClear(config->base, I2C_IF_BUSERR);
 		I2C_IntClear(config->base, I2C_IF_ARBLOST);
 	} else {

@@ -155,7 +155,7 @@ static void ac_wait_sync(ac_registers_t *ac_reg, uint32_t mask)
 {
 	if (WAIT_FOR(((ac_reg->AC_SYNCBUSY & mask) != mask), TIMEOUT_VALUE_US,
 		     k_busy_wait(DELAY_US)) == false) {
-		LOG_ERR("Timeout waiting for AC_SYNCBUSY bits to clear (mask=0x%X)", mask);
+		LOG_ERROR("Timeout waiting for AC_SYNCBUSY bits to clear (mask=0x%X)", mask);
 	}
 }
 
@@ -217,7 +217,7 @@ static int ac_wait_for_conversion(ac_registers_t *ac_reg, uint8_t channel_id)
 
 	if (WAIT_FOR(((ac_reg->AC_STATUSB & ready_mask) == ready_mask), TIMEOUT_VALUE_US,
 		     k_busy_wait(DELAY_US)) == false) {
-		LOG_ERR("Timeout waiting for AC_STATUSB ready (channel=%u)", channel_id);
+		LOG_ERROR("Timeout waiting for AC_STATUSB ready (channel=%u)", channel_id);
 		return -ETIMEDOUT;
 	}
 
@@ -366,7 +366,7 @@ static int comparator_mchp_set_trigger(const struct device *dev, enum comparator
 		intsel_val = AC_COMPCTRL_INTSEL_TOGGLE_Val;
 		break;
 	default:
-		LOG_ERR("Invalid comparator trigger: %d, defaulting to NONE", trigger);
+		LOG_ERROR("Invalid comparator trigger: %d, defaulting to NONE", trigger);
 		intsel_val = AC_COMPCTRL_INTSEL_EOC_Val;
 		trigger = COMPARATOR_TRIGGER_NONE;
 		break;
@@ -463,7 +463,7 @@ static int comparator_mchp_init(const struct device *dev)
 	ret = clock_control_on(dev_cfg->comparator_clock.clock_dev,
 			       dev_cfg->comparator_clock.gclk_sys);
 	if (ret < 0 && ret != -EALREADY) {
-		LOG_ERR("Failed to enable GCLK for COMP: %d", ret);
+		LOG_ERROR("Failed to enable GCLK for COMP: %d", ret);
 		return ret;
 	}
 
@@ -471,14 +471,14 @@ static int comparator_mchp_init(const struct device *dev)
 	ret = clock_control_on(dev_cfg->comparator_clock.clock_dev,
 			       dev_cfg->comparator_clock.mclk_sys);
 	if (ret < 0 && ret != -EALREADY) {
-		LOG_ERR("Failed to enable MCLK for COMP: %d", ret);
+		LOG_ERROR("Failed to enable MCLK for COMP: %d", ret);
 		return ret;
 	}
 
 	/* Apply pinctrl default state */
 	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Failed to apply pinctrl state: %d", ret);
+		LOG_ERROR("Failed to apply pinctrl state: %d", ret);
 		return ret;
 	}
 

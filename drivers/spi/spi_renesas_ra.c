@@ -99,7 +99,7 @@ static int ra_spi_configure(const struct device *dev, const struct spi_config *c
 
 	if (!((word_size >= 8 && word_size <= 16) || word_size == 20 || word_size == 24 ||
 	      word_size == 32)) {
-		LOG_ERR("Unsupported SPI word size: %u", word_size);
+		LOG_ERROR("Unsupported SPI word size: %u", word_size);
 		return -ENOTSUP;
 	}
 
@@ -121,7 +121,7 @@ static int ra_spi_configure(const struct device *dev, const struct spi_config *c
 		if (data->fsp_config.operating_mode == SPI_MODE_MASTER) {
 			data->fsp_config.clk_phase = SPI_CLK_PHASE_EDGE_ODD;
 		} else {
-			LOG_ERR("Invalid clock phase");
+			LOG_ERROR("Invalid clock phase");
 			return -EINVAL;
 		}
 	}
@@ -143,7 +143,7 @@ static int ra_spi_configure(const struct device *dev, const struct spi_config *c
 		fsp_err = R_SPI_CalculateBitrate(config->frequency,
 						 &data->fsp_config_extend.spck_div);
 		if (fsp_err != FSP_SUCCESS) {
-			LOG_ERR("spi frequency calculate error %d", fsp_err);
+			LOG_ERROR("spi frequency calculate error %d", fsp_err);
 			return -EIO;
 		}
 	}
@@ -167,7 +167,7 @@ static int ra_spi_configure(const struct device *dev, const struct spi_config *c
 			data->fsp_config_extend.ssl_select = SPI_SSL_SELECT_SSL3;
 			break;
 		default:
-			LOG_ERR("Invalid SSL");
+			LOG_ERROR("Invalid SSL");
 			return -EINVAL;
 		}
 	}
@@ -178,7 +178,7 @@ static int ra_spi_configure(const struct device *dev, const struct spi_config *c
 	data->fsp_config.p_context = (void *)dev;
 	fsp_err = R_SPI_Open(&data->spi, &data->fsp_config);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("R_SPI_Open error: %d", fsp_err);
+		LOG_ERROR("R_SPI_Open error: %d", fsp_err);
 		return -EIO;
 	}
 	data->ctx.config = config;

@@ -39,7 +39,7 @@ static int microchip_mcp7940n_bbram_init(const struct device *dev)
 	uint8_t buffer;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C device %s is not ready", config->i2c.bus->name);
+		LOG_ERROR("I2C device %s is not ready", config->i2c.bus->name);
 		return -ENODEV;
 	}
 
@@ -50,7 +50,7 @@ static int microchip_mcp7940n_bbram_init(const struct device *dev)
 				  &buffer);
 
 	if (rc != 0) {
-		LOG_ERR("Failed to read RTCWKDAY register: %d", rc);
+		LOG_ERROR("Failed to read RTCWKDAY register: %d", rc);
 	}
 
 	return rc;
@@ -88,7 +88,7 @@ static int microchip_mcp7940n_bbram_is_invalid(const struct device *dev)
 					   buffer);
 
 		if (rc != 0) {
-			LOG_ERR("Failed to write RTCWKDAY register: %d", rc);
+			LOG_ERROR("Failed to write RTCWKDAY register: %d", rc);
 			goto finish;
 		}
 
@@ -129,7 +129,7 @@ static int microchip_mcp7940n_bbram_check_standby_power(const struct device *dev
 					   buffer);
 
 		if (rc != 0) {
-			LOG_ERR("Failed to write RTCWKDAY register: %d", rc);
+			LOG_ERROR("Failed to write RTCWKDAY register: %d", rc);
 			goto finish;
 		}
 

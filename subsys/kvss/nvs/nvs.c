@@ -1213,7 +1213,7 @@ int nvs_clear(struct nvs_fs *fs)
 	uint32_t addr;
 
 	if (!fs->ready) {
-		LOG_ERR("NVS not initialized");
+		LOG_ERROR("NVS not initialized");
 		return -EACCES;
 	}
 
@@ -1241,7 +1241,7 @@ int nvs_mount(struct nvs_fs *fs)
 
 	fs->flash_parameters = flash_get_parameters(fs->flash_device);
 	if (fs->flash_parameters == NULL) {
-		LOG_ERR("Could not obtain flash parameters");
+		LOG_ERROR("Could not obtain flash parameters");
 		return -EINVAL;
 	}
 
@@ -1249,31 +1249,31 @@ int nvs_mount(struct nvs_fs *fs)
 
 	/* check that the write block size is supported */
 	if (write_block_size > NVS_BLOCK_SIZE || write_block_size == 0) {
-		LOG_ERR("Unsupported write block size");
+		LOG_ERROR("Unsupported write block size");
 		return -EINVAL;
 	}
 
 	/* check that sector size is not greater than max */
 	if (fs->sector_size > NVS_MAX_SECTOR_SIZE) {
-		LOG_ERR("Sector size %u too large, maximum is %zu",
-			fs->sector_size, NVS_MAX_SECTOR_SIZE);
+		LOG_ERROR("Sector size %u too large, maximum is %zu", fs->sector_size,
+			  NVS_MAX_SECTOR_SIZE);
 		return -EINVAL;
 	}
 
 	/* check that sector size is a multiple of pagesize */
 	rc = flash_get_page_info_by_offs(fs->flash_device, fs->offset, &info);
 	if (rc) {
-		LOG_ERR("Unable to get page info");
+		LOG_ERROR("Unable to get page info");
 		return -EINVAL;
 	}
 	if (!fs->sector_size || fs->sector_size % info.size) {
-		LOG_ERR("Invalid sector size");
+		LOG_ERROR("Invalid sector size");
 		return -EINVAL;
 	}
 
 	/* check the number of sectors, it should be at least 2 */
 	if (fs->sector_count < 2) {
-		LOG_ERR("Configuration error - sector count");
+		LOG_ERROR("Configuration error - sector count");
 		return -EINVAL;
 	}
 
@@ -1307,7 +1307,7 @@ ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 	bool prev_found = false;
 
 	if (!fs->ready) {
-		LOG_ERR("NVS not initialized");
+		LOG_ERROR("NVS not initialized");
 		return -EACCES;
 	}
 
@@ -1469,7 +1469,7 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
 #endif
 
 	if (!fs->ready) {
-		LOG_ERR("NVS not initialized");
+		LOG_ERROR("NVS not initialized");
 		return -EACCES;
 	}
 
@@ -1538,7 +1538,8 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
 
 		computed_data_crc = crc32_ieee(data, wlk_ate.len - NVS_DATA_CRC_SIZE);
 		if (read_data_crc != computed_data_crc) {
-			LOG_ERR("Invalid data CRC: read_data_crc=0x%08X, computed_data_crc=0x%08X",
+			LOG_ERROR(
+				"Invalid data CRC: read_data_crc=0x%08X, computed_data_crc=0x%08X",
 				read_data_crc, computed_data_crc);
 			rc = -EIO;
 			goto err;
@@ -1568,7 +1569,7 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 	int rc;
 
 	if (!fs->ready) {
-		LOG_ERR("NVS not initialized");
+		LOG_ERROR("NVS not initialized");
 		return -EACCES;
 	}
 
@@ -1629,7 +1630,7 @@ size_t nvs_sector_max_data_size(struct nvs_fs *fs)
 	size_t ate_size;
 
 	if (!fs->ready) {
-		LOG_ERR("NVS not initialized");
+		LOG_ERROR("NVS not initialized");
 		return -EACCES;
 	}
 
@@ -1643,7 +1644,7 @@ int nvs_sector_use_next(struct nvs_fs *fs)
 	int ret;
 
 	if (!fs->ready) {
-		LOG_ERR("NVS not initialized");
+		LOG_ERROR("NVS not initialized");
 		return -EACCES;
 	}
 

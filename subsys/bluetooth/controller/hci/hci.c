@@ -558,8 +558,8 @@ static void host_buffer_size(struct net_buf *buf, struct net_buf **evt)
 	 * ACL MTU to be at least the LL MTU
 	 */
 	if (acl_mtu < LL_LENGTH_OCTETS_RX_MAX) {
-		LOG_ERR("FC: Require Host ACL MTU (%u) >= LL Max Data Length (%u)", acl_mtu,
-			LL_LENGTH_OCTETS_RX_MAX);
+		LOG_ERROR("FC: Require Host ACL MTU (%u) >= LL Max Data Length (%u)", acl_mtu,
+			  LL_LENGTH_OCTETS_RX_MAX);
 		ccst->status = BT_HCI_ERR_INVALID_PARAM;
 		return;
 	}
@@ -5396,7 +5396,7 @@ static struct net_buf *hci_vs_err_trace_create(uint8_t data_type,
 				net_buf_add_u8(buf, STR_NULL_TERMINATOR);
 				net_buf_add_le32(buf, line);
 			} else {
-				LOG_ERR("Can't create HCI Fatal Error event");
+				LOG_ERROR("Can't create HCI Fatal Error event");
 			}
 		}
 	}
@@ -5711,7 +5711,7 @@ static int mesh_cmd_handle(struct net_buf *cmd, struct net_buf **evt)
 	uint8_t mesh_op;
 
 	if (cmd->len < sizeof(*cp_mesh)) {
-		LOG_ERR("No HCI VSD Command header");
+		LOG_ERROR("No HCI VSD Command header");
 		return -EINVAL;
 	}
 
@@ -5819,13 +5819,13 @@ struct net_buf *hci_cmd_handle(struct net_buf *cmd, void **node_rx)
 	int err;
 
 	if (cmd->len < sizeof(*chdr)) {
-		LOG_ERR("No HCI Command header");
+		LOG_ERROR("No HCI Command header");
 		return NULL;
 	}
 
 	chdr = net_buf_pull_mem(cmd, sizeof(*chdr));
 	if (cmd->len < chdr->param_len) {
-		LOG_ERR("Invalid HCI CMD packet length");
+		LOG_ERROR("Invalid HCI CMD packet length");
 		return NULL;
 	}
 
@@ -5900,7 +5900,7 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 	*evt = NULL;
 
 	if (buf->len < sizeof(*acl)) {
-		LOG_ERR("No HCI ACL header");
+		LOG_ERROR("No HCI ACL header");
 		return -EINVAL;
 	}
 
@@ -5909,12 +5909,12 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 	handle = sys_le16_to_cpu(acl->handle);
 
 	if (buf->len < len) {
-		LOG_ERR("Invalid HCI ACL packet length");
+		LOG_ERROR("Invalid HCI ACL packet length");
 		return -EINVAL;
 	}
 
 	if (len > LL_LENGTH_OCTETS_TX_MAX) {
-		LOG_ERR("Invalid HCI ACL Data length");
+		LOG_ERROR("Invalid HCI ACL Data length");
 		return -EINVAL;
 	}
 
@@ -5924,7 +5924,7 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 
 	node_tx = ll_tx_mem_acquire();
 	if (!node_tx) {
-		LOG_ERR("Tx Buffer Overflow");
+		LOG_ERROR("Tx Buffer Overflow");
 		data_buf_overflow(evt, BT_OVERFLOW_LINK_ACL);
 		return -ENOBUFS;
 	}
@@ -5953,7 +5953,7 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 	memcpy(&pdu_data->lldata[0], buf->data, len);
 
 	if (ll_tx_mem_enqueue(handle, node_tx)) {
-		LOG_ERR("Invalid Tx Enqueue");
+		LOG_ERROR("Invalid Tx Enqueue");
 		ll_tx_mem_release(node_tx);
 		return -EINVAL;
 	}
@@ -5978,7 +5978,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	*evt  = NULL;
 
 	if (buf->len < sizeof(*iso_hdr)) {
-		LOG_ERR("No HCI ISO header");
+		LOG_ERROR("No HCI ISO header");
 		return -EINVAL;
 	}
 
@@ -5987,7 +5987,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	len = bt_iso_hdr_len(sys_le16_to_cpu(iso_hdr->len));
 
 	if (buf->len < len) {
-		LOG_ERR("Invalid HCI ISO packet length");
+		LOG_ERROR("Invalid HCI ISO packet length");
 		return -EINVAL;
 	}
 
@@ -6159,7 +6159,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		hdr = &cis->hdr;
 		dp_in = hdr->datapath_in;
 		if (!dp_in || dp_in->path_id != BT_HCI_DATAPATH_ID_HCI) {
-			LOG_ERR("Input data path not set for HCI");
+			LOG_ERROR("Input data path not set for HCI");
 			return -EINVAL;
 		}
 
@@ -6197,13 +6197,13 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		stream_handle = LL_BIS_ADV_IDX_FROM_HANDLE(handle);
 		stream = ull_adv_iso_stream_get(stream_handle);
 		if (!stream || !stream->dp) {
-			LOG_ERR("Invalid BIS stream");
+			LOG_ERROR("Invalid BIS stream");
 			return -EINVAL;
 		}
 
 		adv_iso = ull_adv_iso_by_stream_get(stream_handle);
 		if (!adv_iso) {
-			LOG_ERR("No BIG associated with stream handle");
+			LOG_ERROR("No BIG associated with stream handle");
 			return -EINVAL;
 		}
 

@@ -22,7 +22,7 @@ static void sensing_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 	if (api->submit != NULL) {
 		api->submit(dev, iodev_sqe);
 	} else {
-		LOG_ERR("submit function not supported for device %p %s!\n", dev, dev->name);
+		LOG_ERROR("submit function not supported for device %p %s!\n", dev, dev->name);
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
 }

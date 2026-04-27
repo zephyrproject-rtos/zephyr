@@ -99,7 +99,7 @@ static const uint32_t *dai_dmic_configure_coeff(const struct dai_intel_dmic *dmi
 	fir_length_b = FIELD_GET(FIR_CONFIG_FIR_LENGTH, pdm_cfg->fir_config[1].fir_config) + 1;
 
 	if (fir_length_a > 256 || fir_length_b > 256) {
-		LOG_ERR("invalid coeff length! %d %d", fir_length_a, fir_length_b);
+		LOG_ERROR("invalid coeff length! %d %d", fir_length_a, fir_length_b);
 		return NULL;
 	}
 
@@ -148,7 +148,7 @@ static int dai_nhlt_get_clock_div(const struct dai_intel_dmic *dmic, const int p
 		dmic->dai_config_params.dai_index, rate_div, p_clkdiv, p_mcic, p_mfir);
 
 	if (!rate_div) {
-		LOG_ERR("zero clock divide or decimation factor");
+		LOG_ERROR("zero clock divide or decimation factor");
 		return -EINVAL;
 	}
 
@@ -222,14 +222,14 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic, const int c
 		dmic->dai_config_params.word_size = 32;
 		break;
 	default:
-		LOG_ERR("nhlt_dmic_dai_params_get(): Illegal OF bit field");
+		LOG_ERROR("nhlt_dmic_dai_params_get(): Illegal OF bit field");
 		return -EINVAL;
 	}
 
 	num_pdm = FIELD_GET(OUTCONTROL_IPM, outcontrol_val);
 	if (num_pdm > CONFIG_DAI_DMIC_HW_CONTROLLERS) {
-		LOG_ERR("nhlt_dmic_dai_params_get(): Illegal IPM PDM controllers count %d",
-			num_pdm);
+		LOG_ERROR("nhlt_dmic_dai_params_get(): Illegal IPM PDM controllers count %d",
+			  num_pdm);
 		return -EINVAL;
 	}
 
@@ -245,28 +245,28 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic, const int c
 	first_pdm = source_pdm;
 	ret = dai_ipm_source_to_enable(dmic, &n, num_pdm, stereo_pdm, source_pdm);
 	if (ret) {
-		LOG_ERR("nhlt_dmic_dai_params_get(): Illegal IPM_SOURCE_1");
+		LOG_ERROR("nhlt_dmic_dai_params_get(): Illegal IPM_SOURCE_1");
 		return -EINVAL;
 	}
 
 	source_pdm = FIELD_GET(OUTCONTROL_IPM_SOURCE_2, outcontrol_val);
 	ret = dai_ipm_source_to_enable(dmic, &n, num_pdm, stereo_pdm, source_pdm);
 	if (ret) {
-		LOG_ERR("nhlt_dmic_dai_params_get(): Illegal IPM_SOURCE_2");
+		LOG_ERROR("nhlt_dmic_dai_params_get(): Illegal IPM_SOURCE_2");
 		return -EINVAL;
 	}
 
 	source_pdm = FIELD_GET(OUTCONTROL_IPM_SOURCE_3, outcontrol_val);
 	ret = dai_ipm_source_to_enable(dmic, &n, num_pdm, stereo_pdm, source_pdm);
 	if (ret) {
-		LOG_ERR("nhlt_dmic_dai_params_get(): Illegal IPM_SOURCE_3");
+		LOG_ERROR("nhlt_dmic_dai_params_get(): Illegal IPM_SOURCE_3");
 		return -EINVAL;
 	}
 
 	source_pdm = FIELD_GET(OUTCONTROL_IPM_SOURCE_4, outcontrol_val);
 	ret = dai_ipm_source_to_enable(dmic, &n, num_pdm, stereo_pdm, source_pdm);
 	if (ret) {
-		LOG_ERR("nhlt_dmic_dai_params_get(): Illegal IPM_SOURCE_4");
+		LOG_ERROR("nhlt_dmic_dai_params_get(): Illegal IPM_SOURCE_4");
 		return -EINVAL;
 	}
 
@@ -339,7 +339,7 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic)
 		dmic->dai_config_params.format = DAI_DMIC_FRAME_S32_LE;
 		break;
 	default:
-		LOG_ERR("Illegal OF bit field");
+		LOG_ERROR("Illegal OF bit field");
 		return -EINVAL;
 	}
 
@@ -391,12 +391,12 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic)
 			dmic->enable[1] = 0x3;	/* PDM1 MIC A and B */
 			LOG_INF("set 4ch pdm0 and pdm1");
 		} else {
-			LOG_ERR("Illegal 4ch configuration");
+			LOG_ERROR("Illegal 4ch configuration");
 			return -EINVAL;
 		}
 		break;
 	default:
-		LOG_ERR("Illegal OF bit field");
+		LOG_ERROR("Illegal OF bit field");
 		return -EINVAL;
 	}
 
@@ -635,8 +635,8 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	const uint32_t *pdm_coeff_ptr[DMIC_HW_CONTROLLERS_MAX] = { 0 };
 
 	if (dmic->dai_config_params.dai_index >= DMIC_HW_FIFOS_MAX) {
-		LOG_ERR("dmic_set_config_nhlt(): illegal DAI index %d",
-			 dmic->dai_config_params.dai_index);
+		LOG_ERROR("dmic_set_config_nhlt(): illegal DAI index %d",
+			  dmic->dai_config_params.dai_index);
 		return -EINVAL;
 	}
 
@@ -660,7 +660,7 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 
 	/* Get OUTCONTROLx configuration */
 	if (num_fifos < 1 || num_fifos > DMIC_HW_FIFOS_MAX) {
-		LOG_ERR("dmic_set_config_nhlt(): illegal number of FIFOs %d", num_fifos);
+		LOG_ERROR("dmic_set_config_nhlt(): illegal number of FIFOs %d", num_fifos);
 		return -EINVAL;
 	}
 
@@ -705,7 +705,7 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	p += sizeof(struct nhlt_pdm_ctrl_mask);
 	LOG_DBG("dmic_set_config_nhlt(): pdm_ctrl_mask = %d", pdm_ctrl_mask);
 	if (num_pdm < 1 || num_pdm > CONFIG_DAI_DMIC_HW_CONTROLLERS) {
-		LOG_ERR("dmic_set_config_nhlt(): illegal number of PDMs %d", num_pdm);
+		LOG_ERROR("dmic_set_config_nhlt(): illegal number of PDMs %d", num_pdm);
 		return -EINVAL;
 	}
 
@@ -761,7 +761,8 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 			pdm_coeff_ptr[pdm_idx] = fir_coeffs;
 		} else {
 			if (pdm_cfg->reuse_fir_from_pdm > pdm_idx) {
-				LOG_ERR("invalid reuse fir index %u", pdm_cfg->reuse_fir_from_pdm);
+				LOG_ERROR("invalid reuse fir index %u",
+					  pdm_cfg->reuse_fir_from_pdm);
 				return -EINVAL;
 			}
 
@@ -769,7 +770,8 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 			fir_coeffs = pdm_coeff_ptr[pdm_cfg->reuse_fir_from_pdm - 1];
 
 			if (!fir_coeffs) {
-				LOG_ERR("unable to reuse fir from %u", pdm_cfg->reuse_fir_from_pdm);
+				LOG_ERROR("unable to reuse fir from %u",
+					  pdm_cfg->reuse_fir_from_pdm);
 				return -EINVAL;
 			}
 		}

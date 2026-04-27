@@ -367,7 +367,7 @@ static int http_client_certificate(void)
 				 TLS_CREDENTIAL_CA_CERTIFICATE, ca_certificate,
 				 sizeof(ca_certificate));
 	if (ret < 0) {
-		LOG_ERR("Failed to register public certificate (%d)", ret);
+		LOG_ERROR("Failed to register public certificate (%d)", ret);
 		return ret;
 	}
 

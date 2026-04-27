@@ -126,7 +126,7 @@ static int max30210_attr_set_continuous_conversion_mode(const struct device *dev
 
 	ret = max30210_reg_write(dev, TEMP_CONVERT, 0X03);
 	if (ret < 0) {
-		LOG_ERR("Failed to set CONTINUOUS CONVERSION MODE: %d\n", ret);
+		LOG_ERROR("Failed to set CONTINUOUS CONVERSION MODE: %d\n", ret);
 		return ret;
 	}
 	return 0;
@@ -141,7 +141,7 @@ static int max30210_attr_set_continuous_conversion_mode(const struct device *dev
 static int max30210_validate_whole_part(const struct sensor_value *val)
 {
 	if (val->val1 < 0 || val->val1 > MAX30210_TEMP_MAX_C) {
-		LOG_ERR("Invalid whole part for THRESH\n");
+		LOG_ERROR("Invalid whole part for THRESH\n");
 		return -EINVAL;
 	}
 	return 0;
@@ -157,7 +157,7 @@ static int max30210_validate_fractional_parts(const struct sensor_value *val)
 {
 	if (val->val2 < 0 || val->val2 > MAX30210_TEMP_FRAC_MAX_UC ||
 	    val->val2 % MAX30210_TEMP_FRAC_STEP_UC != 0) {
-		LOG_ERR("Invalid fractional part for THRESH\n");
+		LOG_ERROR("Invalid fractional part for THRESH\n");
 		return -EINVAL;
 	}
 	return 0;
@@ -181,13 +181,13 @@ static int max30210_attr_set_threshold(const struct device *dev, const struct se
 
 	ret = max30210_validate_whole_part(val);
 	if (ret < 0) {
-		LOG_ERR("Failed to validate whole part for THRESH: %d\n", ret);
+		LOG_ERROR("Failed to validate whole part for THRESH: %d\n", ret);
 		return ret;
 	}
 
 	ret = max30210_validate_fractional_parts(val);
 	if (ret < 0) {
-		LOG_ERR("Failed to validate fractional part for THRESH: %d\n", ret);
+		LOG_ERROR("Failed to validate fractional part for THRESH: %d\n", ret);
 		return ret;
 	}
 
@@ -205,7 +205,7 @@ static int max30210_attr_set_threshold(const struct device *dev, const struct se
 		ret = max30210_reg_write_multiple(dev, TEMP_ALARM_LOW_MSB, thresh_data, 2);
 	}
 	if (ret < 0) {
-		LOG_ERR("Failed to set THRESH: %d\n", ret);
+		LOG_ERROR("Failed to set THRESH: %d\n", ret);
 		return ret;
 	}
 	return 0;
@@ -224,7 +224,7 @@ static int max30210_attr_set_sampling_frequency(const struct device *dev,
 	int ret;
 
 	if (val->val1 < 0 || val->val1 > 8) {
-		LOG_ERR("Invalid whole part for SAMPLING FREQUENCY\n");
+		LOG_ERROR("Invalid whole part for SAMPLING FREQUENCY\n");
 		return -EINVAL;
 	}
 	uint8_t sampling_rate = 0;
@@ -256,7 +256,7 @@ static int max30210_attr_set_sampling_frequency(const struct device *dev,
 			break;
 
 		default:
-			LOG_ERR("Invalid SAMPLING FREQUENCY\n");
+			LOG_ERROR("Invalid SAMPLING FREQUENCY\n");
 			return -EINVAL;
 		}
 
@@ -279,14 +279,14 @@ static int max30210_attr_set_sampling_frequency(const struct device *dev,
 			break;
 
 		default:
-			LOG_ERR("Invalid SAMPLING FREQUENCY\n");
+			LOG_ERROR("Invalid SAMPLING FREQUENCY\n");
 			return -EINVAL;
 		}
 	}
 
 	ret = max30210_reg_update(dev, TEMP_CONFIG_2, TEMP_PERIOD_MASK, sampling_rate);
 	if (ret < 0) {
-		LOG_ERR("Failed to set SAMPLING FREQUENCY: %d\n", ret);
+		LOG_ERROR("Failed to set SAMPLING FREQUENCY: %d\n", ret);
 		return ret;
 	}
 	return 0;
@@ -301,7 +301,7 @@ static int max30210_attr_set_sampling_frequency(const struct device *dev,
 static int max30210_validate_fast_thresh_whole_part(const struct sensor_value *val)
 {
 	if (val->val1 < 0 || val->val1 > 1) {
-		LOG_ERR("Invalid whole part for INC/DEC FAST THRESH\n");
+		LOG_ERROR("Invalid whole part for INC/DEC FAST THRESH\n");
 		return -EINVAL;
 	}
 	return 0;
@@ -329,13 +329,13 @@ static int max30210_attr_set_temp_inc_fast_thresh(const struct device *dev,
 	temp_data->temp_inc_fast_thresh = inc_fast_thresh;
 
 	if (inc_fast_thresh > MAX30210_TEMP_SLOPE_MAX_REG_VALUE) {
-		LOG_ERR("INC FAST THRESH exceeds maximum value\n");
+		LOG_ERROR("INC FAST THRESH exceeds maximum value\n");
 		return -EINVAL;
 	}
 
 	ret = max30210_reg_write(dev, TEMP_INC_FAST_THRESH, inc_fast_thresh);
 	if (ret < 0) {
-		LOG_ERR("Failed to set INC FAST THRESH: %d\n", ret);
+		LOG_ERROR("Failed to set INC FAST THRESH: %d\n", ret);
 		return ret;
 	}
 	return 0;
@@ -359,14 +359,14 @@ static int max30210_attr_set_temp_dec_fast_thresh(const struct device *dev,
 	/* Highest possible whole number is 1 degrees celsius */
 	ret = max30210_validate_fast_thresh_whole_part(val);
 	if (ret < 0) {
-		LOG_ERR("Invalid whole part for DEC FAST THRESH\n");
+		LOG_ERROR("Invalid whole part for DEC FAST THRESH\n");
 		return -EINVAL;
 	}
 
 	/* Validate value is non-negative, <= 1 degree, and a multiple of 0.005 degrees */
 	ret = max30210_validate_fractional_parts(val);
 	if (ret < 0) {
-		LOG_ERR("Invalid fractional part for DEC FAST THRESH\n");
+		LOG_ERROR("Invalid fractional part for DEC FAST THRESH\n");
 		return -EINVAL;
 	}
 
@@ -377,13 +377,13 @@ static int max30210_attr_set_temp_dec_fast_thresh(const struct device *dev,
 	temp_data->temp_dec_fast_thresh = dec_fast_thresh;
 
 	if (dec_fast_thresh > MAX30210_TEMP_SLOPE_MAX_REG_VALUE) {
-		LOG_ERR("DEC FAST THRESH exceeds maximum value\n");
+		LOG_ERROR("DEC FAST THRESH exceeds maximum value\n");
 		return -EINVAL;
 	}
 
 	ret = max30210_reg_write(dev, TEMP_DEC_FAST_THRESH, dec_fast_thresh);
 	if (ret < 0) {
-		LOG_ERR("Failed to set DEC FAST THRESH: %d\n", ret);
+		LOG_ERROR("Failed to set DEC FAST THRESH: %d\n", ret);
 		return ret;
 	}
 	return 0;
@@ -401,7 +401,7 @@ static int max30210_attr_set_soft_reset(const struct device *dev)
 
 	ret = max30210_reg_write(dev, SYS_CONFIG, RESET_MASK);
 	if (ret < 0) {
-		LOG_ERR("Failed to perform software reset: %d\n", ret);
+		LOG_ERROR("Failed to perform software reset: %d\n", ret);
 		return ret;
 	}
 	k_sleep(K_MSEC(10));
@@ -422,12 +422,12 @@ static int max30210_attr_set_rate_chg_filter(const struct device *dev,
 
 	/*Check validity of Rate CHG Filter*/
 	if (val->val1 < 0 || val->val1 > 7) {
-		LOG_ERR("Invalid value for rate change filter\n");
+		LOG_ERROR("Invalid value for rate change filter\n");
 		return -EINVAL;
 	}
 	ret = max30210_reg_update(dev, TEMP_CONFIG_1, RATE_CHRG_FILTER_MASK, val->val1);
 	if (ret < 0) {
-		LOG_ERR("Failed to set rate change filter: %d\n", ret);
+		LOG_ERROR("Failed to set rate change filter: %d\n", ret);
 		return ret;
 	}
 	return 0;
@@ -442,7 +442,7 @@ static int max30210_attr_set_rate_chg_filter(const struct device *dev,
 static int validate_mode_reset_value(const struct sensor_value *val)
 {
 	if (val->val1 < 0 || val->val1 > 1) {
-		LOG_ERR("Invalid value for Reset or Mode\n");
+		LOG_ERROR("Invalid value for Reset or Mode\n");
 		return -EINVAL;
 	}
 	return 0;
@@ -462,13 +462,13 @@ static int max30210_attr_set_hi_non_consecutive_mode(const struct device *dev,
 
 	ret = validate_mode_reset_value(val);
 	if (ret < 0) {
-		LOG_ERR("Invalid value for high consecutive mode\n");
+		LOG_ERROR("Invalid value for high consecutive mode\n");
 		return -EINVAL;
 	}
 
 	ret = max30210_reg_update(dev, TEMP_ALARM_HIGH_SETUP, TEMP_HI_ALARM_TRIP_MASK, val->val1);
 	if (ret < 0) {
-		LOG_ERR("Failed to set high consecutive mode: %d\n", ret);
+		LOG_ERROR("Failed to set high consecutive mode: %d\n", ret);
 		return ret;
 	}
 	return 0;
@@ -488,13 +488,13 @@ static int max30210_attr_set_lo_non_consecutive_mode(const struct device *dev,
 
 	ret = validate_mode_reset_value(val);
 	if (ret < 0) {
-		LOG_ERR("Invalid value for low consecutive mode\n");
+		LOG_ERROR("Invalid value for low consecutive mode\n");
 		return -EINVAL;
 	}
 
 	ret = max30210_reg_update(dev, TEMP_ALARM_LOW_SETUP, TEMP_LO_ALARM_TRIP_MASK, val->val1);
 	if (ret < 0) {
-		LOG_ERR("Failed to set low consecutive mode: %d\n", ret);
+		LOG_ERROR("Failed to set low consecutive mode: %d\n", ret);
 		return ret;
 	}
 	return 0;
@@ -503,7 +503,7 @@ static int max30210_attr_set_lo_non_consecutive_mode(const struct device *dev,
 static int validate_trip_count_value(const struct sensor_value *val)
 {
 	if (val->val1 < 1 || val->val1 > 4) {
-		LOG_ERR("Invalid value for trip count\n");
+		LOG_ERROR("Invalid value for trip count\n");
 		return -EINVAL;
 	}
 	return 0;
@@ -522,14 +522,14 @@ static int max30210_attr_set_hi_trip_count(const struct device *dev, const struc
 
 	ret = validate_trip_count_value(val);
 	if (ret < 0) {
-		LOG_ERR("Invalid value for high trip count\n");
+		LOG_ERROR("Invalid value for high trip count\n");
 		return -EINVAL;
 	}
 
 	ret = max30210_reg_update(dev, TEMP_ALARM_HIGH_SETUP, TEMP_HI_TRIP_COUNTER_MASK,
 				  (val->val1) - 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to set high trip count: %d\n", ret);
+		LOG_ERROR("Failed to set high trip count: %d\n", ret);
 		return ret;
 	}
 	return 0;
@@ -548,14 +548,14 @@ static int max30210_attr_set_lo_trip_count(const struct device *dev, const struc
 
 	ret = validate_trip_count_value(val);
 	if (ret < 0) {
-		LOG_ERR("Invalid value for low trip count\n");
+		LOG_ERROR("Invalid value for low trip count\n");
 		return -EINVAL;
 	}
 
 	ret = max30210_reg_update(dev, TEMP_ALARM_LOW_SETUP, TEMP_LO_TRIP_COUNTER_MASK,
 				  (val->val1) - 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to set low trip count: %d\n", ret);
+		LOG_ERROR("Failed to set low trip count: %d\n", ret);
 		return ret;
 	}
 	return 0;
@@ -575,13 +575,13 @@ static int max30210_attr_set_hi_trip_count_reset(const struct device *dev,
 
 	ret = validate_mode_reset_value(val);
 	if (ret < 0) {
-		LOG_ERR("Invalid value for high trip count reset\n");
+		LOG_ERROR("Invalid value for high trip count reset\n");
 		return -EINVAL;
 	}
 
 	ret = max30210_reg_update(dev, TEMP_ALARM_HIGH_SETUP, TEMP_RST_HI_COUNTER, val->val1);
 	if (ret < 0) {
-		LOG_ERR("Failed to set high trip count reset: %d\n", ret);
+		LOG_ERROR("Failed to set high trip count reset: %d\n", ret);
 		return ret;
 	}
 	return 0;
@@ -601,13 +601,13 @@ static int max30210_attr_set_lo_trip_count_reset(const struct device *dev,
 
 	ret = validate_mode_reset_value(val);
 	if (ret < 0) {
-		LOG_ERR("Invalid value for low trip count reset\n");
+		LOG_ERROR("Invalid value for low trip count reset\n");
 		return -EINVAL;
 	}
 
 	ret = max30210_reg_update(dev, TEMP_ALARM_LOW_SETUP, TEMP_RST_LO_COUNTER, val->val1);
 	if (ret < 0) {
-		LOG_ERR("Failed to set low trip count reset: %d\n", ret);
+		LOG_ERROR("Failed to set low trip count reset: %d\n", ret);
 		return ret;
 	}
 	return 0;
@@ -627,13 +627,13 @@ static int max30210_attr_set_alert_mode(const struct device *dev, const struct s
 	/*Check validity of Alert Mode*/
 	ret = validate_mode_reset_value(val);
 	if (ret < 0) {
-		LOG_ERR("Invalid value for alert mode\n");
+		LOG_ERROR("Invalid value for alert mode\n");
 		return -EINVAL;
 	}
 
 	ret = max30210_reg_update(dev, TEMP_CONFIG_2, ALERT_MODE_MASK, val->val1);
 	if (ret < 0) {
-		LOG_ERR("Failed to set alert mode: %d\n", ret);
+		LOG_ERROR("Failed to set alert mode: %d\n", ret);
 		return ret;
 	}
 	return 0;
@@ -683,7 +683,7 @@ static int max30210_attr_set(const struct device *dev, enum sensor_channel chan,
 	case SENSOR_ATTR_MAX30210_ALERT_MODE:
 		return max30210_attr_set_alert_mode(dev, val);
 	default:
-		LOG_ERR("Unsupported attribute: %d", attr);
+		LOG_ERROR("Unsupported attribute: %d", attr);
 		return -ENOTSUP;
 	}
 
@@ -704,13 +704,13 @@ static int max30210_sample_fetch(const struct device *dev, enum sensor_channel c
 	int ret;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP) {
-		LOG_ERR("Unsupported channel: %d", chan);
+		LOG_ERROR("Unsupported channel: %d", chan);
 		return -ENOTSUP;
 	}
 
 	ret = max30210_reg_read(dev, TEMP_DATA_MSB, temp_data, 2);
 	if (ret < 0) {
-		LOG_ERR("Failed to read TEMP_DATA_MSB: %d", ret);
+		LOG_ERROR("Failed to read TEMP_DATA_MSB: %d", ret);
 		return ret;
 	}
 
@@ -733,7 +733,7 @@ static int max30210_channel_get(const struct device *dev, enum sensor_channel ch
 	struct max30210_data *data = dev->data;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
-		LOG_ERR("Unsupported channel: %d", chan);
+		LOG_ERROR("Unsupported channel: %d", chan);
 		return -ENOTSUP;
 	}
 	/** 0.005/LSB*/
@@ -760,7 +760,7 @@ static int max30210_probe(const struct device *dev)
 
 	ret = max30210_reg_write_multiple(dev, TEMP_ALARM_HIGH_MSB, alarm_setup, 2);
 	if (ret < 0) {
-		LOG_ERR("Failed to set Alarm High Setup: %d\n", ret);
+		LOG_ERROR("Failed to set Alarm High Setup: %d\n", ret);
 		return ret;
 	}
 
@@ -769,7 +769,7 @@ static int max30210_probe(const struct device *dev)
 	max30210_temp_to_bytes(config->alarm_low_setup, &alarm_setup[0], &alarm_setup[1]);
 	ret = max30210_reg_write_multiple(dev, TEMP_ALARM_LOW_MSB, alarm_setup, 2);
 	if (ret < 0) {
-		LOG_ERR("Failed to set Alarm Low Setup: %d\n", ret);
+		LOG_ERROR("Failed to set Alarm Low Setup: %d\n", ret);
 		return ret;
 	}
 
@@ -782,14 +782,14 @@ static int max30210_probe(const struct device *dev)
 	/* Set Decrement Fast Threshold */
 	ret = max30210_reg_write(dev, TEMP_DEC_FAST_THRESH, config->dec_fast_thresh);
 	if (ret < 0) {
-		LOG_ERR("Failed to set Decrement Fast Threshold: %d\n", ret);
+		LOG_ERROR("Failed to set Decrement Fast Threshold: %d\n", ret);
 		return ret;
 	}
 
 	/* Set Sampling Rate */
 	ret = max30210_reg_update(dev, TEMP_CONFIG_2, TEMP_PERIOD_MASK, config->sampling_rate);
 	if (ret < 0) {
-		LOG_ERR("Failed to set Sampling Rate: %d\n", ret);
+		LOG_ERROR("Failed to set Sampling Rate: %d\n", ret);
 		return ret;
 	}
 
@@ -797,7 +797,7 @@ static int max30210_probe(const struct device *dev)
 	ret = max30210_reg_update(dev, TEMP_ALARM_HIGH_SETUP, TEMP_HI_TRIP_COUNTER_MASK,
 				  (config->hi_trip_count) - 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to set High Trip Count: %d\n", ret);
+		LOG_ERROR("Failed to set High Trip Count: %d\n", ret);
 		return ret;
 	}
 
@@ -805,7 +805,7 @@ static int max30210_probe(const struct device *dev)
 	ret = max30210_reg_update(dev, TEMP_ALARM_HIGH_SETUP, TEMP_HI_ALARM_TRIP_MASK,
 				  config->hi_trip_non_consecutive);
 	if (ret < 0) {
-		LOG_ERR("Failed to set High Non-Consecutive Mode: %d\n", ret);
+		LOG_ERROR("Failed to set High Non-Consecutive Mode: %d\n", ret);
 		return ret;
 	}
 
@@ -813,7 +813,7 @@ static int max30210_probe(const struct device *dev)
 	ret = max30210_reg_update(dev, TEMP_ALARM_LOW_SETUP, TEMP_LO_TRIP_COUNTER_MASK,
 				  (config->lo_trip_count) - 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to set Low Trip Count: %d\n", ret);
+		LOG_ERROR("Failed to set Low Trip Count: %d\n", ret);
 		return ret;
 	}
 
@@ -821,13 +821,13 @@ static int max30210_probe(const struct device *dev)
 	ret = max30210_reg_update(dev, TEMP_ALARM_LOW_SETUP, TEMP_LO_ALARM_TRIP_MASK,
 				  config->lo_trip_non_consecutive);
 	if (ret < 0) {
-		LOG_ERR("Failed to set Low Non-Consecutive Mode: %d\n", ret);
+		LOG_ERROR("Failed to set Low Non-Consecutive Mode: %d\n", ret);
 		return ret;
 	}
 
 	ret = max30210_reg_update(dev, TEMP_CONFIG_1, CHG_DET_EN_MASK, 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable Change Detection: %d\n", ret);
+		LOG_ERROR("Failed to enable Change Detection: %d\n", ret);
 		return ret;
 	}
 	if (config->init_start) {
@@ -855,36 +855,36 @@ static int max30210_init(const struct device *dev)
 	int ret = max30210_reg_read(dev, PART_ID, &part_id, 1);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to read PART_ID: %d\n", ret);
+		LOG_ERROR("Failed to read PART_ID: %d\n", ret);
 		return ret;
 	}
 
 	if (part_id != MAX30210_PART_ID) {
-		LOG_ERR("Invalid PART_ID: 0x%02X\n", part_id);
+		LOG_ERROR("Invalid PART_ID: 0x%02X\n", part_id);
 		return -ENODEV;
 	}
 	/* Perform Software Reset */
 	ret = max30210_reg_write(dev, SYS_CONFIG, RESET_MASK);
 	if (ret < 0) {
-		LOG_ERR("Failed to perform software reset: %d\n", ret);
+		LOG_ERROR("Failed to perform software reset: %d\n", ret);
 		return ret;
 	}
 
 	ret = max30210_reg_read(dev, STATUS, &status, 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to read STATUS register: %d\n", ret);
+		LOG_ERROR("Failed to read STATUS register: %d\n", ret);
 		return ret;
 	}
 
 	ret = max30210_probe(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to probe MAX30210: %d\n", ret);
+		LOG_ERROR("Failed to probe MAX30210: %d\n", ret);
 		return ret;
 	}
 
 #ifdef CONFIG_MAX30210_TRIGGER
 	if (max30210_init_interrupt(dev)) {
-		LOG_ERR("Failed to initialize interrupts\n");
+		LOG_ERROR("Failed to initialize interrupts\n");
 		return -EIO;
 	}
 #endif

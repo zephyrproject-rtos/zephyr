@@ -137,7 +137,7 @@ static int netc_eth_rx(const struct device *dev)
 	if (rx_result != kStatus_NETC_RxTsrResp &&
 	    rx_result != kStatus_NETC_RxHRNotZeroFrame &&
 	    rx_result != kStatus_Success) {
-		LOG_ERR("Error on received frame");
+		LOG_ERROR("Error on received frame");
 		return -EIO;
 	}
 
@@ -148,7 +148,7 @@ static int netc_eth_rx(const struct device *dev)
 
 		result = netc_eth_get_tx_response(dev, &tsr);
 		if (result != kStatus_Success) {
-			LOG_ERR("Error on received TX timestamp response frame");
+			LOG_ERROR("Error on received TX timestamp response frame");
 			return -ENOBUFS;
 		}
 
@@ -159,7 +159,7 @@ static int netc_eth_rx(const struct device *dev)
 	/* Receive frame */
 	result = EP_ReceiveFrameCopy(&data->handle, 0, data->rx_frame, length, &attr);
 	if (result != kStatus_Success) {
-		LOG_ERR("Error on received frame");
+		LOG_ERROR("Error on received frame");
 		return -EIO;
 	}
 
@@ -199,7 +199,7 @@ static int netc_eth_rx(const struct device *dev)
 	if (ret < 0) {
 		eth_stats_update_errors_rx(iface_dst);
 		net_pkt_unref(pkt);
-		LOG_ERR("Failed to enqueue frame into rx queue: %d", ret);
+		LOG_ERROR("Failed to enqueue frame into rx queue: %d", ret);
 	}
 	return ret;
 }
@@ -217,7 +217,7 @@ static void netc_eth_rx_thread(void *arg1, void *unused1, void *unused2)
 	while (1) {
 		ret = k_sem_take(&data->rx_sem, K_FOREVER);
 		if (ret != 0) {
-			LOG_ERR("Take rx_sem error: %d", ret);
+			LOG_ERROR("Take rx_sem error: %d", ret);
 			continue;
 		}
 
@@ -321,12 +321,12 @@ int netc_eth_init_common(const struct device *dev)
 	int ret;
 
 	if (config->msi_dev == NULL) {
-		LOG_ERR("MSI device is not configured");
+		LOG_ERROR("MSI device is not configured");
 		return -ENODEV;
 	}
 	ret = its_setup_deviceid(config->msi_dev, config->msi_device_id, NETC_MSIX_ENTRY_NUM);
 	if (ret != 0) {
-		LOG_ERR("Failed to setup device ID for MSI: %d", ret);
+		LOG_ERROR("Failed to setup device ID for MSI: %d", ret);
 		return ret;
 	}
 	data->tx_intid = its_alloc_intid(config->msi_dev);
@@ -339,7 +339,7 @@ int netc_eth_init_common(const struct device *dev)
 	ret = its_map_intid(config->msi_dev, config->msi_device_id, NETC_TX_MSIX_ENTRY_IDX,
 			    data->tx_intid);
 	if (ret != 0) {
-		LOG_ERR("Failed to map TX MSI interrupt: %d", ret);
+		LOG_ERROR("Failed to map TX MSI interrupt: %d", ret);
 		return ret;
 	}
 
@@ -349,7 +349,7 @@ int netc_eth_init_common(const struct device *dev)
 	ret = its_map_intid(config->msi_dev, config->msi_device_id, NETC_RX_MSIX_ENTRY_IDX,
 			    data->rx_intid);
 	if (ret != 0) {
-		LOG_ERR("Failed to map RX MSI interrupt: %d", ret);
+		LOG_ERROR("Failed to map RX MSI interrupt: %d", ret);
 		return ret;
 	}
 
@@ -489,7 +489,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	buff.length = (uint16_t)pkt_len;
 	ret = net_pkt_read(pkt, buff.buffer, pkt_len);
 	if (ret) {
-		LOG_ERR("Failed to copy packet to tx buffer: %d", ret);
+		LOG_ERROR("Failed to copy packet to tx buffer: %d", ret);
 		ret = -ENOBUFS;
 		goto error;
 	}
@@ -520,7 +520,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	result = EP_SendFrame(&data->handle, 0, &frame, NULL, &opt);
 #endif
 	if (result != kStatus_Success) {
-		LOG_ERR("Failed to tx frame");
+		LOG_ERROR("Failed to tx frame");
 		ret = -EIO;
 		goto error;
 	}
@@ -534,7 +534,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 		if (frame_info != NULL) {
 			if (frame_info->status != kNETC_EPTxSuccess) {
 				memset(frame_info, 0, sizeof(netc_tx_frame_info_t));
-				LOG_ERR("Failed to tx frame");
+				LOG_ERROR("Failed to tx frame");
 				ret = -EIO;
 				goto error;
 			}
@@ -600,7 +600,7 @@ int netc_eth_set_config(const struct device *dev, enum ethernet_config_type type
 		memcpy(data->mac_addr, config->mac_address.addr, sizeof(data->mac_addr));
 		result = EP_SetPrimaryMacAddr(&data->handle, (uint8_t *)data->mac_addr);
 		if (result != kStatus_Success) {
-			LOG_ERR("PHY device (%p) is not ready, cannot init iface", cfg->phy_dev);
+			LOG_ERROR("PHY device (%p) is not ready, cannot init iface", cfg->phy_dev);
 			ret = -ENOTSUP;
 			break;
 		}

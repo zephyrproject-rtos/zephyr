@@ -226,8 +226,7 @@ int settings_call_set_handler(const char *name,
 		rc = ch->h_set(name_key, len, read_cb, read_cb_arg);
 
 		if (rc != 0) {
-			LOG_ERR("set-value failure. key: %s error(%d)",
-				name, rc);
+			LOG_ERROR("set-value failure. key: %s error(%d)", name, rc);
 			/* Ignoring the error */
 			rc = 0;
 		} else {

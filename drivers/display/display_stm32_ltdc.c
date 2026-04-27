@@ -298,7 +298,7 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 
 	/* Validate the given parameters */
 	if (x + desc->width > config->width || y + desc->height > config->height) {
-		LOG_ERR("Rectangle does not fit into the display");
+		LOG_ERROR("Rectangle does not fit into the display");
 		return -EINVAL;
 	}
 
@@ -319,8 +319,8 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 	}
 
 	/* Partial write is only possible if LTDC has its own framebuffer */
-	if (CONFIG_STM32_LTDC_FB_NUM == 0) {
-		LOG_ERR("Partial write requires internal frame buffer");
+	if (CONFIG_STM32_LTDC_FB_NUM == 0)  {
+		LOG_ERROR("Partial write requires internal frame buffer");
 		return -ENOTSUP;
 	}
 
@@ -364,7 +364,7 @@ static int stm32_ltdc_read(const struct device *dev, const uint16_t x,
 
 	/* Validate the given parameters */
 	if (x + desc->width > config->width || y + desc->height > config->height) {
-		LOG_ERR("Rectangle does not fit into the display");
+		LOG_ERROR("Rectangle does not fit into the display");
 		return -EINVAL;
 	}
 
@@ -413,7 +413,7 @@ static int stm32_ltdc_display_blanking_off(const struct device *dev)
 	}
 
 	if (!device_is_ready(display_dev)) {
-		LOG_ERR("Display device %s not ready", display_dev->name);
+		LOG_ERROR("Display device %s not ready", display_dev->name);
 		return -ENODEV;
 	}
 
@@ -444,7 +444,7 @@ static int stm32_ltdc_display_blanking_on(const struct device *dev)
 	}
 
 	if (!device_is_ready(display_dev)) {
-		LOG_ERR("Display device %s not ready", display_dev->name);
+		LOG_ERROR("Display device %s not ready", display_dev->name);
 		return -ENODEV;
 	}
 
@@ -549,7 +549,7 @@ static int stm32_ltdc_init(const struct device *dev)
 	if (config->disp_on_gpio.port) {
 		err = gpio_pin_configure_dt(&config->disp_on_gpio, GPIO_OUTPUT_ACTIVE);
 		if (err < 0) {
-			LOG_ERR("Configuration of display on/off control GPIO failed");
+			LOG_ERROR("Configuration of display on/off control GPIO failed");
 			return err;
 		}
 	}
@@ -558,7 +558,7 @@ static int stm32_ltdc_init(const struct device *dev)
 	if (config->bl_ctrl_gpio.port) {
 		err = gpio_pin_configure_dt(&config->bl_ctrl_gpio, GPIO_OUTPUT_INACTIVE);
 		if (err < 0) {
-			LOG_ERR("Configuration of display backlight control GPIO failed");
+			LOG_ERROR("Configuration of display backlight control GPIO failed");
 			return err;
 		}
 	}
@@ -567,7 +567,7 @@ static int stm32_ltdc_init(const struct device *dev)
 	if (!IS_ENABLED(CONFIG_MIPI_DSI)) {
 		err = pinctrl_apply_state(config->pctrl, PINCTRL_STATE_DEFAULT);
 		if (err < 0) {
-			LOG_ERR("LTDC pinctrl setup failed");
+			LOG_ERROR("LTDC pinctrl setup failed");
 			return err;
 		}
 	}
@@ -576,7 +576,7 @@ static int stm32_ltdc_init(const struct device *dev)
 	err = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				(clock_control_subsys_t) &config->pclken[0]);
 	if (err < 0) {
-		LOG_ERR("Could not enable LTDC peripheral clock");
+		LOG_ERROR("Could not enable LTDC peripheral clock");
 		return err;
 	}
 
@@ -586,7 +586,7 @@ static int stm32_ltdc_init(const struct device *dev)
 					      (clock_control_subsys_t) &config->pclken[1],
 					      NULL);
 		if (err < 0) {
-			LOG_ERR("Could not configure LTDC peripheral clock");
+			LOG_ERROR("Could not configure LTDC peripheral clock");
 			return err;
 		}
 	}
@@ -697,7 +697,7 @@ static int stm32_ltdc_pm_action(const struct device *dev,
 	}
 
 	if (err < 0) {
-		LOG_ERR("%s: failed to set power mode", dev->name);
+		LOG_ERROR("%s: failed to set power mode", dev->name);
 	}
 
 	return err;

@@ -222,7 +222,7 @@ static int bma4xx_attr_set(const struct device *dev, enum sensor_channel chan,
 			/* Use for setting the bandwidth parameter (BWP) */
 			res = bma4xx_attr_set_bwp(val, &new_config);
 		} else {
-			LOG_ERR("Unsupported attribute");
+			LOG_ERROR("Unsupported attribute");
 			res = -ENOTSUP;
 		}
 		break;
@@ -233,18 +233,18 @@ static int bma4xx_attr_set(const struct device *dev, enum sensor_channel chan,
 			}
 			new_config.batch_ticks = val->val1;
 		} else {
-			LOG_ERR("Unsupported attribute");
+			LOG_ERROR("Unsupported attribute");
 			res = -EINVAL;
 		}
 		break;
 	default:
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		res = -EINVAL;
 		break;
 	}
 
 	if (res) {
-		LOG_ERR("Failed to set attribute");
+		LOG_ERROR("Failed to set attribute");
 		return res;
 	}
 
@@ -263,14 +263,14 @@ static int bma4xx_chip_init(const struct device *dev)
 	/* Sensor bus-specific initialization */
 	status = cfg->bus_init(dev);
 	if (status) {
-		LOG_ERR("Failed to initialize bus: %d", status);
+		LOG_ERROR("Failed to initialize bus: %d", status);
 		return status;
 	}
 
 	/* Read Chip ID */
 	status = bma4xx->hw_ops->read_reg(dev, BMA4XX_REG_CHIP_ID, &bma4xx->chip_id);
 	if (status) {
-		LOG_ERR("could not read chip_id: %d", status);
+		LOG_ERROR("could not read chip_id: %d", status);
 		return status;
 	}
 	LOG_DBG("chip_id is 0x%02x", bma4xx->chip_id);
@@ -282,7 +282,7 @@ static int bma4xx_chip_init(const struct device *dev)
 	case BMA4XX_CHIP_ID_BMA422:
 		break;
 	default:
-		LOG_ERR("Chip id (0x%02X) not supported", bma4xx->chip_id);
+		LOG_ERROR("Chip id (0x%02X) not supported", bma4xx->chip_id);
 		return -ENODEV;
 	}
 
@@ -293,14 +293,14 @@ static int bma4xx_chip_init(const struct device *dev)
 	/* Issue soft reset command */
 	status = bma4xx->hw_ops->write_reg(dev, BMA4XX_REG_CMD, BMA4XX_CMD_SOFT_RESET);
 	if (status) {
-		LOG_ERR("Could not soft-reset chip: %d", status);
+		LOG_ERROR("Could not soft-reset chip: %d", status);
 		return status;
 	}
 
 	if (IS_ENABLED(CONFIG_BMA4XX_STREAM)) {
 		status = bma4xx_init_interrupt(dev);
 		if (status != 0) {
-			LOG_ERR("Failed to initialize bma4xx interrupt");
+			LOG_ERROR("Failed to initialize bma4xx interrupt");
 			return status;
 		}
 	}
@@ -312,7 +312,7 @@ static int bma4xx_chip_init(const struct device *dev)
 
 	status = bma4xx_configure(dev, &bma4xx->cfg);
 	if (status) {
-		LOG_ERR("Failed to initialize bma4xx trigger");
+		LOG_ERROR("Failed to initialize bma4xx trigger");
 		return status;
 	}
 
@@ -329,7 +329,7 @@ static int bma4xx_attr_get(const struct device *dev, enum sensor_channel chan,
 		val->val1 = bma4xx->chip_id;
 		return 0;
 	default:
-		LOG_ERR("Attribute not supported");
+		LOG_ERROR("Attribute not supported");
 		return -EINVAL;
 	}
 }

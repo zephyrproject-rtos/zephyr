@@ -672,7 +672,7 @@ static void vcp_vol_ctlr_aics_discover_cb(struct bt_aics *inst, int err)
 	struct bt_vcp_vol_ctlr_cb *listener, *next;
 
 	if (vol_ctlr == NULL) {
-		LOG_ERR("Could not lookup vol_ctlr from aics");
+		LOG_ERROR("Could not lookup vol_ctlr from aics");
 
 		return;
 	}
@@ -805,7 +805,7 @@ static void vcp_vol_ctlr_vocs_discover_cb(struct bt_vocs *inst, int err)
 	struct bt_vcp_vol_ctlr_cb *listener, *next;
 
 	if (vol_ctlr == NULL) {
-		LOG_ERR("Could not lookup vol_ctlr from vocs");
+		LOG_ERROR("Could not lookup vol_ctlr from vocs");
 		vcp_vol_ctlr_discover_complete(vol_ctlr, BT_GATT_ERR(BT_ATT_ERR_UNLIKELY));
 
 		return;

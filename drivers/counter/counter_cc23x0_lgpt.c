@@ -140,7 +140,7 @@ static int counter_cc23x0_lgpt_set_alarm(const struct device *dev, uint8_t chan_
 	struct counter_cc23x0_lgpt_data *data = dev->data;
 
 	if (alarm_cfg->ticks > config->counter_info.max_top_value) {
-		LOG_ERR("Ticks out of range\n");
+		LOG_ERROR("Ticks out of range\n");
 		return -EINVAL;
 	}
 
@@ -157,7 +157,7 @@ static int counter_cc23x0_lgpt_set_alarm(const struct device *dev, uint8_t chan_
 		HWREG(config->base + LGPT_O_C2CC) = alarm_cfg->ticks;
 		HWREG(config->base + LGPT_O_C2CFG) = 0x9D;
 	} else {
-		LOG_ERR("Invalid chan ID\n");
+		LOG_ERROR("Invalid chan ID\n");
 		return -ENOTSUP;
 	}
 
@@ -187,7 +187,7 @@ static int counter_cc23x0_lgpt_cancel_alarm(const struct device *dev, uint8_t ch
 		HWREG(config->base + LGPT_O_C2CC) = 0;
 		HWREG(config->base + LGPT_O_C2CFG) = 0;
 	} else {
-		LOG_ERR("Invalid chan ID\n");
+		LOG_ERROR("Invalid chan ID\n");
 		return -ENOTSUP;
 	}
 

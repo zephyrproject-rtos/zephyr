@@ -526,12 +526,12 @@ static int encrypt_friend_pdu(struct bt_mesh_friend *frnd, struct net_buf *buf,
 	buf->data[0] = (cred->nid | (iv_index & 1) << 7);
 
 	if (bt_mesh_net_encrypt(&cred->enc, &buf->b, iv_index, BT_MESH_NONCE_NETWORK)) {
-		LOG_ERR("Encrypting failed");
+		LOG_ERROR("Encrypting failed");
 		return -EINVAL;
 	}
 
 	if (bt_mesh_net_obfuscate(buf->data, iv_index, &cred->privacy)) {
-		LOG_ERR("Obfuscating failed");
+		LOG_ERROR("Obfuscating failed");
 		return -EINVAL;
 	}
 
@@ -595,7 +595,7 @@ static void enqueue_sub_cfm(struct bt_mesh_friend *frnd, uint8_t xact)
 
 	buf = encode_friend_ctl(frnd, TRANS_CTL_OP_FRIEND_SUB_CFM, &sdu);
 	if (!buf) {
-		LOG_ERR("Unable to encode Subscription List Confirmation");
+		LOG_ERROR("Unable to encode Subscription List Confirmation");
 		return;
 	}
 
@@ -703,7 +703,7 @@ static void enqueue_update(struct bt_mesh_friend *frnd, uint8_t md)
 
 	buf = encode_update(frnd, md);
 	if (!buf) {
-		LOG_ERR("Unable to encode Friend Update");
+		LOG_ERROR("Unable to encode Friend Update");
 		return;
 	}
 
@@ -928,7 +928,7 @@ static void enqueue_offer(struct bt_mesh_friend *frnd, int8_t rssi)
 
 	buf = encode_friend_ctl(frnd, TRANS_CTL_OP_FRIEND_OFFER, &sdu);
 	if (!buf) {
-		LOG_ERR("Unable to encode Friend Offer");
+		LOG_ERROR("Unable to encode Friend Offer");
 		return;
 	}
 
@@ -1052,7 +1052,7 @@ init_friend:
 
 	err = friend_cred_create(frnd, SUBNET_KEY_TX_IDX(frnd->subnet));
 	if (err) {
-		LOG_ERR("Failed to create friend credentials");
+		LOG_ERROR("Failed to create friend credentials");
 		friend_clear(frnd);
 		return -EIO;
 	}
@@ -1138,7 +1138,7 @@ static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
 
 	seg = get_seg(frnd, src, seq_zero, seg_count);
 	if (!seg) {
-		LOG_ERR("No free friend segment RX contexts for 0x%04x", src);
+		LOG_ERROR("No free friend segment RX contexts for 0x%04x", src);
 		net_buf_unref(buf);
 		return;
 	}
@@ -1283,7 +1283,7 @@ send_last:
 	adv = bt_mesh_adv_create(BT_MESH_ADV_DATA, BT_MESH_ADV_TAG_FRIEND,
 				 FRIEND_XMIT, K_NO_WAIT);
 	if (!adv) {
-		LOG_ERR("Unable to allocate friend adv");
+		LOG_ERROR("Unable to allocate friend adv");
 		return;
 	}
 
@@ -1319,7 +1319,7 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 			LOG_DBG("Generating new keys for 0x%04x", frnd->lpn);
 			err = friend_cred_create(frnd, 1);
 			if (err) {
-				LOG_ERR("Failed updating friend cred for 0x%04x", frnd->lpn);
+				LOG_ERROR("Failed updating friend cred for 0x%04x", frnd->lpn);
 				friend_clear(frnd);
 			}
 			break;
@@ -1464,7 +1464,7 @@ static void friend_lpn_enqueue_rx(struct bt_mesh_friend *frnd,
 
 	buf = create_friend_pdu(frnd, &info, sbuf);
 	if (!buf) {
-		LOG_ERR("Failed to encode Friend buffer");
+		LOG_ERROR("Failed to encode Friend buffer");
 		return;
 	}
 
@@ -1500,7 +1500,7 @@ static void friend_lpn_enqueue_tx(struct bt_mesh_friend *frnd,
 
 	buf = create_friend_pdu(frnd, &info, sbuf);
 	if (!buf) {
-		LOG_ERR("Failed to encode Friend buffer");
+		LOG_ERROR("Failed to encode Friend buffer");
 		return;
 	}
 
@@ -1679,7 +1679,7 @@ static bool friend_queue_prepare_space(struct bt_mesh_friend *frnd, uint16_t add
 		struct net_buf *buf = (void *)net_buf_slist_get(&frnd->queue);
 
 		if (!buf) {
-			LOG_ERR("Unable to free up enough buffers");
+			LOG_ERROR("Unable to free up enough buffers");
 			return false;
 		}
 

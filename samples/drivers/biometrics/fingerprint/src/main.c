@@ -26,7 +26,7 @@ static void print_capabilities(void)
 
 	ret = biometric_get_capabilities(fingerprint, &caps);
 	if (ret < 0) {
-		LOG_ERR("Failed to get capabilities: %d", ret);
+		LOG_ERROR("Failed to get capabilities: %d", ret);
 		return;
 	}
 
@@ -100,7 +100,7 @@ static void test_verification(uint16_t template_id)
 	} else if (ret == -ETIMEDOUT) {
 		LOG_WRN("Timeout");
 	} else {
-		LOG_ERR("Verification failed: %d", ret);
+		LOG_ERROR("Verification failed: %d", ret);
 	}
 }
 
@@ -121,7 +121,7 @@ static void test_identification(void)
 	} else if (ret == -ETIMEDOUT) {
 		LOG_WRN("Timeout");
 	} else {
-		LOG_ERR("Identification failed: %d", ret);
+		LOG_ERROR("Identification failed: %d", ret);
 	}
 }
 
@@ -133,7 +133,7 @@ static void list_templates(void)
 
 	ret = biometric_template_list(fingerprint, ids, ARRAY_SIZE(ids), &count);
 	if (ret < 0) {
-		LOG_ERR("Failed to list templates: %d", ret);
+		LOG_ERROR("Failed to list templates: %d", ret);
 		return;
 	}
 
@@ -153,7 +153,7 @@ int main(void)
 	LOG_INF("Fingerprint Sensor Test");
 
 	if (!device_is_ready(fingerprint)) {
-		LOG_ERR("Sensor not ready");
+		LOG_ERROR("Sensor not ready");
 		return -ENODEV;
 	}
 

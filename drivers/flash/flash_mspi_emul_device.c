@@ -154,12 +154,12 @@ static int flash_mspi_emul_erase(const struct device *flash, off_t offset, size_
 	acquire(flash);
 
 	if (offset % SPI_NOR_SECTOR_SIZE) {
-		LOG_ERR("Invalid offset");
+		LOG_ERROR("Invalid offset");
 		return -EINVAL;
 	}
 
 	if (size % SPI_NOR_SECTOR_SIZE) {
-		LOG_ERR("Invalid size");
+		LOG_ERROR("Invalid size");
 		return -EINVAL;
 	}
 
@@ -238,7 +238,7 @@ static int flash_mspi_emul_write(const struct device *flash, off_t offset,
 		ret = mspi_transceive(data->bus, &cfg->dev_id,
 				      (const struct mspi_xfer *)&data->xfer);
 		if (ret) {
-			LOG_ERR("%u, MSPI write transaction failed with code: %d", __LINE__, ret);
+			LOG_ERROR("%u, MSPI write transaction failed with code: %d", __LINE__, ret);
 			return -EIO;
 		}
 
@@ -297,7 +297,7 @@ static int flash_mspi_emul_read(const struct device *flash, off_t offset,
 
 	ret = mspi_transceive(data->bus, &cfg->dev_id, (const struct mspi_xfer *)&data->xfer);
 	if (ret) {
-		LOG_ERR("%u, MSPI read transaction failed with code: %d", __LINE__, ret);
+		LOG_ERROR("%u, MSPI read transaction failed with code: %d", __LINE__, ret);
 		return -EIO;
 	}
 
@@ -369,7 +369,7 @@ static int emul_mspi_device_init(const struct emul *emul_flash, const struct dev
 
 	if (mspi_dev_config(data->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL,
 			    &cfg->tar_dev_cfg)) {
-		LOG_ERR("%u, Failed to config mspi controller", __LINE__);
+		LOG_ERROR("%u, Failed to config mspi controller", __LINE__);
 		return -EIO;
 	}
 	data->dev_cfg = cfg->tar_dev_cfg;
@@ -377,7 +377,7 @@ static int emul_mspi_device_init(const struct emul *emul_flash, const struct dev
 #if CONFIG_MSPI_XIP
 	if (cfg->tar_xip_cfg.enable) {
 		if (mspi_xip_config(data->bus, &cfg->dev_id, &cfg->tar_xip_cfg)) {
-			LOG_ERR("%u, Failed to enable XIP.", __LINE__);
+			LOG_ERROR("%u, Failed to enable XIP.", __LINE__);
 			return -EIO;
 		}
 		data->xip_cfg = cfg->tar_xip_cfg;
@@ -387,7 +387,7 @@ static int emul_mspi_device_init(const struct emul *emul_flash, const struct dev
 #if CONFIG_MSPI_SCRAMBLE
 	if (cfg->tar_scramble_cfg.enable) {
 		if (mspi_scramble_config(data->bus, &cfg->dev_id, &cfg->tar_scramble_cfg)) {
-			LOG_ERR("%u, Failed to enable scrambling.", __LINE__);
+			LOG_ERROR("%u, Failed to enable scrambling.", __LINE__);
 			return -EIO;
 		}
 		data->scramble_cfg = cfg->tar_scramble_cfg;
@@ -397,7 +397,7 @@ static int emul_mspi_device_init(const struct emul *emul_flash, const struct dev
 #if CONFIG_MSPI_TIMING
 	if (mspi_timing_config(data->bus, &cfg->dev_id,
 			       MSPI_TIMING_PARAM_DUMMY, &data->timing_cfg)) {
-		LOG_ERR("%u, Failed to configure timing.", __LINE__);
+		LOG_ERROR("%u, Failed to configure timing.", __LINE__);
 		return -EIO;
 	}
 #endif

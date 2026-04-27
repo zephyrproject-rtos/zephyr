@@ -33,40 +33,40 @@ int main(void)
 
 	rc = fs_open(&file, FILE_PATH, FS_O_CREATE | FS_O_WRITE);
 	if (rc != 0) {
-		LOG_ERR("Accessing filesystem failed");
+		LOG_ERROR("Accessing filesystem failed");
 		return rc;
 	}
 
 	rc = fs_write(&file, data, strlen(data));
 	if (rc != strlen(data)) {
-		LOG_ERR("Writing filesystem failed");
+		LOG_ERROR("Writing filesystem failed");
 		return rc;
 	}
 
 	rc = fs_close(&file);
 	if (rc != 0) {
-		LOG_ERR("Closing file failed");
+		LOG_ERROR("Closing file failed");
 		return rc;
 	}
 
 	/* You can unmount the automount node */
 	rc = fs_unmount(auto_mount_point);
 	if (rc != 0) {
-		LOG_ERR("Failed to do unmount");
+		LOG_ERROR("Failed to do unmount");
 		return rc;
 	};
 
 	/* And mount it back */
 	rc = fs_mount(auto_mount_point);
 	if (rc != 0) {
-		LOG_ERR("Failed to remount the auto-mount node");
+		LOG_ERROR("Failed to remount the auto-mount node");
 		return rc;
 	}
 
 	/* Is the file still there? */
 	rc = fs_stat(FILE_PATH, &stat);
 	if (rc != 0) {
-		LOG_ERR("File status check failed %d", rc);
+		LOG_ERROR("File status check failed %d", rc);
 		return rc;
 	}
 

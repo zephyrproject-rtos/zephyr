@@ -264,7 +264,7 @@ static int fw_upload_read_data(uint8_t *buffer, uint32_t len)
 		err = k_sem_take(&fw_upload.rx.sem,
 				 K_MSEC(CONFIG_BT_H4_NXP_CTLR_WAIT_HDR_SIG_TIMEOUT));
 		if (err < 0) {
-			LOG_ERR("Fail to read data");
+			LOG_ERROR("Fail to read data");
 			return err;
 		}
 		*buffer = fw_upload.rx.buffer[fw_upload.rx.tail];
@@ -316,7 +316,7 @@ static int fw_upload_wait_for_hdr_sig(void)
 			return 0;
 		}
 	}
-	LOG_ERR("HDR SIG not found");
+	LOG_ERROR("HDR SIG not found");
 	return -EIO;
 }
 
@@ -334,17 +334,17 @@ static int fw_upload_request_check_crc(uint8_t *buffer, uint8_t request)
 	if (request == V3_HEADER_DATA_REQ) {
 		crc = fw_upload_crc8(buffer, A6REQ_PAYLOAD_LEN + REQ_HEADER_LEN);
 		if (crc != buffer[A6REQ_PAYLOAD_LEN + REQ_HEADER_LEN]) {
-			LOG_ERR("Request %d, CRC check failed", request);
+			LOG_ERROR("Request %d, CRC check failed", request);
 			return -EINVAL;
 		}
 	} else if (request == V3_START_INDICATION) {
 		crc = fw_upload_crc8(buffer, AbREQ_PAYLOAD_LEN + REQ_HEADER_LEN);
 		if (crc != buffer[AbREQ_PAYLOAD_LEN + REQ_HEADER_LEN]) {
-			LOG_ERR("Request %d, CRC check failed", request);
+			LOG_ERROR("Request %d, CRC check failed", request);
 			return -EINVAL;
 		}
 	} else {
-		LOG_ERR("Invalid request %d", request);
+		LOG_ERROR("Invalid request %d", request);
 	}
 
 	return 0;
@@ -366,7 +366,7 @@ static void fw_upload_send_ack(uint8_t ack)
 		fw_upload_write_data(fw_upload.buffer, 6);
 		LOG_DBG("ACK = %x, CRC = %x", ack, fw_upload.buffer[5]);
 	} else {
-		LOG_ERR("Invalid ack");
+		LOG_ERROR("Invalid ack");
 	}
 }
 
@@ -389,13 +389,13 @@ static int fw_upload_wait_req(bool secondary_speed)
 
 	err = fw_upload_read_data(&buffer[1], len);
 	if (err < 0) {
-		LOG_ERR("Fail to read req");
+		LOG_ERROR("Fail to read req");
 		return err;
 	}
 
 	err = fw_upload_request_check_crc(buffer, fw_upload.hdr_sig);
 	if (err != 0) {
-		LOG_ERR("Fail to check CRC");
+		LOG_ERROR("Fail to check CRC");
 		fw_upload_send_ack(V3_CRC_ERROR);
 		return err;
 	}
@@ -470,13 +470,13 @@ static int fw_upload_change_timeout(void)
 					retry--;
 					fw_upload_send_ack(V3_TIMEOUT_ACK);
 				} else {
-					LOG_ERR("Fail to change timeout with response err %d",
-						fw_upload.error);
+					LOG_ERROR("Fail to change timeout with response err %d",
+						  fw_upload.error);
 					return -ENOTSUP;
 				}
 			}
 		} else {
-			LOG_ERR("Unsupported version %d", fw_upload.version);
+			LOG_ERROR("Unsupported version %d", fw_upload.version);
 			return -ENOTSUP;
 		}
 	}
@@ -550,8 +550,8 @@ static uint16_t fw_upload_wait_length(uint8_t flag)
 			}
 		}
 	} else {
-		LOG_ERR("remote asks len %d bytes", len);
-		LOG_ERR("remote asks len_comp %d bytes", len_comp);
+		LOG_ERROR("remote asks len %d bytes", len);
+		LOG_ERROR("remote asks len_comp %d bytes", len_comp);
 		/* Failure due to mismatch. */
 		ack = 0xbf;
 		fw_upload_write_data(&ack, 1);
@@ -589,13 +589,13 @@ static void fw_upload_get_hdr_start(uint8_t *buffer)
 				LOG_DBG("Found header %x", fw_upload.hdr_sig);
 			}
 		} else {
-			LOG_ERR("Fail to read HDR sig %d", err);
+			LOG_ERROR("Fail to read HDR sig %d", err);
 			return;
 		}
 	}
 	err = fw_upload_read_data(&buffer[count], 4);
 	if (err < 0) {
-		LOG_ERR("Fail to read HDR payload %d", err);
+		LOG_ERROR("Fail to read HDR payload %d", err);
 	}
 }
 
@@ -628,7 +628,7 @@ static int fw_upload_get_last_5bytes(uint8_t *buffer)
 	if (err >= 0) {
 		LOG_DBG("Valid len %d", len);
 	} else {
-		LOG_ERR("Invalid HDR");
+		LOG_ERROR("Invalid HDR");
 		return err;
 	}
 
@@ -729,7 +729,7 @@ static int fw_upload_write_hdr_and_payload(uint16_t len_to_send, uint8_t *buffer
 
 		err = fw_upload_get_last_5bytes(buffer);
 		if (err < 0) {
-			LOG_ERR("Fail to get response");
+			LOG_ERROR("Fail to get response");
 			return err;
 		}
 
@@ -809,8 +809,8 @@ static int fw_upload_change_speed(uint8_t hdr)
 			}
 
 			if (load_payload) {
-				LOG_ERR("HDR cannot be received by using second speed. receovery "
-					"speed");
+				LOG_ERROR("HDR cannot be received by using second speed. receovery "
+					  "speed");
 
 				err = fw_upload_uart_reconfig(uart_dev_data.primary_speed,
 							      uart_dev_data.primary_flowcontrol);
@@ -921,8 +921,8 @@ static int fw_upload_v1_send_data(uint16_t len)
 		 sizeof(fw_upload.send_buffer), len);
 
 	if (sizeof(fw_upload.send_buffer) < len) {
-		LOG_ERR("V1: Out of sending buffer range (%u < %u)", sizeof(fw_upload.send_buffer),
-			len);
+		LOG_ERROR("V1: Out of sending buffer range (%u < %u)",
+			  sizeof(fw_upload.send_buffer), len);
 		return -ENOMEM;
 	}
 
@@ -936,8 +936,8 @@ static int fw_upload_v1_send_data(uint16_t len)
 		data_len = fw_upload_get_payload_length(fw_upload.send_buffer);
 		if ((data_len > (sizeof(fw_upload.send_buffer) - len)) ||
 		    ((data_len + fw_upload.current_length) > fw_upload.fw_length)) {
-			LOG_ERR("Invalid FW at %d/%d", fw_upload.current_length,
-				fw_upload.fw_length);
+			LOG_ERROR("Invalid FW at %d/%d", fw_upload.current_length,
+				  fw_upload.fw_length);
 			return -EINVAL;
 		}
 		memcpy(&fw_upload.send_buffer[len], fw_upload.fw + fw_upload.current_length,
@@ -969,7 +969,7 @@ static int fw_upload_v3_send_data(void)
 	start = fw_upload.offset - fw_upload.cmd7_change_timeout_len -
 		fw_upload.change_speed_buffer_len;
 	if (start >= fw_upload.fw_length) {
-		LOG_ERR("Invalid fw offset");
+		LOG_ERROR("Invalid fw offset");
 		return -EINVAL;
 	}
 
@@ -981,8 +981,8 @@ static int fw_upload_v3_send_data(void)
 		 fw_upload.length);
 
 	if (sizeof(fw_upload.send_buffer) < fw_upload.length) {
-		LOG_ERR("V3: Out of sending buffer range (%u < %u)", sizeof(fw_upload.send_buffer),
-			fw_upload.length);
+		LOG_ERROR("V3: Out of sending buffer range (%u < %u)",
+			  sizeof(fw_upload.send_buffer), fw_upload.length);
 		return -ENOMEM;
 	}
 
@@ -1021,7 +1021,7 @@ static int fw_uploading(const uint8_t *fw, uint32_t fw_length)
 		LOG_DBG("Change speed to %d", uart_dev_data.secondary_speed);
 		err = fw_upload_change_speed(fw_upload.wait_hdr_sig);
 		if (err != 0) {
-			LOG_ERR("Fail to change speed");
+			LOG_ERROR("Fail to change speed");
 			return err;
 		}
 		secondary_speed = true;
@@ -1052,7 +1052,7 @@ static int fw_uploading(const uint8_t *fw, uint32_t fw_length)
 				LOG_DBG("FW download done");
 				return 0;
 			}
-			LOG_ERR("FW download failed");
+			LOG_ERROR("FW download failed");
 			return len_to_send;
 		} else if (fw_upload.version == VER3) {
 			if (fw_upload.hdr_sig == V3_START_INDICATION) {
@@ -1061,7 +1061,7 @@ static int fw_uploading(const uint8_t *fw, uint32_t fw_length)
 			}
 			err = fw_upload_wait_req(false);
 			if (err) {
-				LOG_ERR("Fail to wait req");
+				LOG_ERROR("Fail to wait req");
 				return err;
 			}
 			if (fw_upload.length) {
@@ -1069,7 +1069,7 @@ static int fw_uploading(const uint8_t *fw, uint32_t fw_length)
 					fw_upload_send_ack(V3_REQUEST_ACK);
 					err = fw_upload_v3_send_data();
 					if (err < 0) {
-						LOG_ERR("FW download failed");
+						LOG_ERROR("FW download failed");
 						return err;
 					}
 				} else {
@@ -1151,16 +1151,16 @@ static int bt_nxp_ctlr_init(void)
 #if DT_NODE_HAS_PROP(DT_DRV_INST(0), sdio_reset_gpios)
 	/* Check BT REG_ON gpio instance */
 	if (!gpio_is_ready_dt(&sdio_reset)) {
-		LOG_ERR("Error: failed to configure sdio_reset %s pin %d", sdio_reset.port->name,
-			sdio_reset.pin);
+		LOG_ERROR("Error: failed to configure sdio_reset %s pin %d", sdio_reset.port->name,
+			  sdio_reset.pin);
 		return -EIO;
 	}
 
 	/* Configure sdio_reset as output  */
 	err = gpio_pin_configure_dt(&sdio_reset, GPIO_OUTPUT);
 	if (err) {
-		LOG_ERR("Error %d: failed to configure sdio_reset %s pin %d", err,
-			sdio_reset.port->name, sdio_reset.pin);
+		LOG_ERROR("Error %d: failed to configure sdio_reset %s pin %d", err,
+			  sdio_reset.port->name, sdio_reset.pin);
 		return err;
 	}
 	err = gpio_pin_set_dt(&sdio_reset, 0);
@@ -1172,16 +1172,16 @@ static int bt_nxp_ctlr_init(void)
 #if DT_NODE_HAS_PROP(DT_DRV_INST(0), w_disable_gpios)
 	/* Check BT REG_ON gpio instance */
 	if (!gpio_is_ready_dt(&w_disable)) {
-		LOG_ERR("Error: failed to configure w_disable %s pin %d", w_disable.port->name,
-			w_disable.pin);
+		LOG_ERROR("Error: failed to configure w_disable %s pin %d", w_disable.port->name,
+			  w_disable.pin);
 		return -EIO;
 	}
 
 	/* Configure w_disable as output  */
 	err = gpio_pin_configure_dt(&w_disable, GPIO_OUTPUT);
 	if (err) {
-		LOG_ERR("Error %d: failed to configure w_disable %s pin %d", err,
-			w_disable.port->name, w_disable.pin);
+		LOG_ERROR("Error %d: failed to configure w_disable %s pin %d", err,
+			  w_disable.port->name, w_disable.pin);
 		return err;
 	}
 	err = gpio_pin_set_dt(&w_disable, 0);
@@ -1223,7 +1223,7 @@ static int bt_nxp_ctlr_init(void)
 	err = fw_upload_uart_reconfig(uart_dev_data.primary_speed,
 				      uart_dev_data.primary_flowcontrol);
 	if (err) {
-		LOG_ERR("Fail to config uart");
+		LOG_ERROR("Fail to config uart");
 		return err;
 	}
 
@@ -1232,7 +1232,7 @@ static int bt_nxp_ctlr_init(void)
 	err = fw_uploading(bt_fw_bin, bt_fw_bin_len);
 
 	if (err) {
-		LOG_ERR("Fail to upload firmware");
+		LOG_ERROR("Fail to upload firmware");
 		return err;
 	}
 
@@ -1346,7 +1346,7 @@ static int bt_nxp_set_calibration_data_annex55(void)
 
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (buf == NULL) {
-			LOG_ERR("Unable to allocate command buffer");
+			LOG_ERROR("Unable to allocate command buffer");
 			return -ENOMEM;
 		}
 
@@ -1354,7 +1354,7 @@ static int bt_nxp_set_calibration_data_annex55(void)
 
 		ret = bt_hci_cmd_send_sync(opcode, buf, NULL);
 		if (ret) {
-			LOG_ERR("Failed to send set-calibration cmd (err %d)", ret);
+			LOG_ERROR("Failed to send set-calibration cmd (err %d)", ret);
 			return ret;
 		}
 
@@ -1411,7 +1411,7 @@ static int bt_nxp_set_calibration_data_annex100(void)
 
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (buf == NULL) {
-			LOG_ERR("Unable to allocate command buffer");
+			LOG_ERROR("Unable to allocate command buffer");
 			return -ENOMEM;
 		}
 
@@ -1420,7 +1420,7 @@ static int bt_nxp_set_calibration_data_annex100(void)
 
 		ret = bt_hci_cmd_send_sync(opcode, buf, NULL);
 		if (ret) {
-			LOG_ERR("Failed to send set-calibration cmd (err %d)", ret);
+			LOG_ERROR("Failed to send set-calibration cmd (err %d)", ret);
 			return ret;
 		}
 	}
@@ -1452,7 +1452,7 @@ static int bt_hci_baudrate_update(const struct device *dev, uint32_t baudrate)
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
-		LOG_ERR("Fail to allocate buffer");
+		LOG_ERROR("Fail to allocate buffer");
 		return -ENOBUFS;
 	}
 
@@ -1461,7 +1461,7 @@ static int bt_hci_baudrate_update(const struct device *dev, uint32_t baudrate)
 
 	err = bt_hci_cmd_send_sync(BT_HCI_VSC_BAUDRATE_UPDATE_OPCODE, buf, NULL);
 	if (err) {
-		LOG_ERR("Fail to send baudrate update cmd");
+		LOG_ERROR("Fail to send baudrate update cmd");
 		return err;
 	}
 
@@ -1506,20 +1506,20 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 
 	err = fw_upload_uart_reconfig(operation_speed, flowcontrol_of_hci);
 	if (err) {
-		LOG_ERR("Fail to update uart bandrate");
+		LOG_ERROR("Fail to update uart bandrate");
 		return err;
 	}
 
 	if (!fw_upload.is_setup_done) {
 		err = bt_nxp_set_calibration_data_annex55();
 		if (err) {
-			LOG_ERR("Fail to load annex-55 calibration data");
+			LOG_ERROR("Fail to load annex-55 calibration data");
 			return err;
 		}
 
 		err = bt_nxp_set_calibration_data_annex100();
 		if (err) {
-			LOG_ERR("Fail to load annex-100 calibration data");
+			LOG_ERROR("Fail to load annex-100 calibration data");
 			return err;
 		}
 #if defined(CONFIG_BT_NXP_CTRL_WAKE_ON_BT)
@@ -1528,16 +1528,16 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 
 	LOG_DBG("Configuring Wakeup IOs\n");
 	if (!gpio_is_ready_dt(&wakeup)) {
-		LOG_ERR("Error: failed to configure wakeup %s pin %d", wakeup.port->name,
-			wakeup.pin);
+		LOG_ERROR("Error: failed to configure wakeup %s pin %d", wakeup.port->name,
+			  wakeup.pin);
 		return -EIO;
 	}
 
 	/* Configure wakeup gpio as input  */
 	err = gpio_pin_configure_dt(&wakeup, GPIO_INPUT);
 	if (err) {
-		LOG_ERR("Error %d: failed to configure wakeup %s pin %d", err,
-			wakeup.port->name, wakeup.pin);
+		LOG_ERROR("Error %d: failed to configure wakeup %s pin %d", err, wakeup.port->name,
+			  wakeup.pin);
 		return err;
 	}
 

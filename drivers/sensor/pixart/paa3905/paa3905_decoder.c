@@ -61,7 +61,7 @@ static bool is_data_valid(const struct paa3905_encoded_data *edata)
 		shutter_max = SHUTTER_MAX_SUPER_LOW_LIGHT;
 		break;
 	default:
-		LOG_ERR("Invalid op mode");
+		LOG_ERROR("Invalid op mode");
 		return false;
 	}
 
@@ -149,7 +149,7 @@ static int paa3905_decoder_decode(const uint8_t *buffer,
 		channel_request = paa3905_encode_channel(chan_spec.chan_type);
 		if (((edata->header.channels & channel_request) != channel_request) ||
 		    !is_data_valid(edata)) {
-			LOG_ERR("No data available");
+			LOG_ERROR("No data available");
 			return -ENODATA;
 		}
 
@@ -170,7 +170,7 @@ static int paa3905_decoder_decode(const uint8_t *buffer,
 		channel_request = paa3905_encode_channel(chan_spec.chan_type);
 		if (((edata->header.channels & channel_request) != channel_request) ||
 		    !is_data_valid(edata)) {
-			LOG_ERR("No data available");
+			LOG_ERROR("No data available");
 			return -ENODATA;
 		}
 

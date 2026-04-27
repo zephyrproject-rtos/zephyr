@@ -96,7 +96,7 @@ int bt_testlib_scan_find_name(bt_addr_le_t *result, const char *name)
 	if (!api_err) {
 		LOG_INF("Scan match: %s", bt_addr_le_str(result));
 	} else {
-		LOG_ERR("Scan error: %d", api_err);
+		LOG_ERROR("Scan error: %d", api_err);
 	}
 
 	return api_err;

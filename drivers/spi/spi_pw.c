@@ -249,7 +249,7 @@ static int spi_pw_set_data_size(const struct device *dev,
 	} else if (SPI_WORD_SIZE_GET(config->operation) == 32) {
 		ctrlr0 |= PW_SPI_DATA_SIZE_32_BIT;
 	} else {
-		LOG_ERR("Invalid word size");
+		LOG_ERROR("Invalid word size");
 		return -ENOTSUP;
 	}
 
@@ -407,7 +407,7 @@ static int32_t spi_pw_idma_transfer(const struct device *dev,
 	if (tx_count > 0) {
 		dma_blocks_tx = k_calloc(tx_count, sizeof(struct dma_block_config));
 		if (!dma_blocks_tx) {
-			LOG_ERR("Failed to allocate TX dma_block_config");
+			LOG_ERROR("Failed to allocate TX dma_block_config");
 			return -ENOMEM;
 		}
 		for (i = 0; i < tx_count; i++) {
@@ -444,7 +444,7 @@ static int32_t spi_pw_idma_transfer(const struct device *dev,
 	if (rx_count > 0) {
 		dma_blocks_rx = k_calloc(rx_count, sizeof(struct dma_block_config));
 		if (!dma_blocks_rx) {
-			LOG_ERR("Failed to allocate RX dma_block_config");
+			LOG_ERROR("Failed to allocate RX dma_block_config");
 			if (dma_blocks_tx) {
 				k_free(dma_blocks_tx);
 			}
@@ -689,19 +689,19 @@ static int spi_pw_transfer(const struct device *dev)
 	intr_status = spi_pw_reg_read(dev, PW_SPI_REG_SSSR);
 
 	if (intr_status & PW_SPI_SSSR_ROR_BIT) {
-		LOG_ERR("Receive FIFO overrun");
+		LOG_ERROR("Receive FIFO overrun");
 		err = -EIO;
 		goto out;
 	}
 
 	if (intr_status & PW_SPI_SSSR_TUR_BIT) {
-		LOG_ERR("Transmit FIFO underrun");
+		LOG_ERROR("Transmit FIFO underrun");
 		err = -EIO;
 		goto out;
 	}
 
 	if (intr_status & PW_SPI_SSSR_TINT_BIT) {
-		LOG_ERR("Receiver timeout interrupt");
+		LOG_ERROR("Receiver timeout interrupt");
 		err = -EIO;
 		goto out;
 	}
@@ -744,13 +744,13 @@ static int spi_pw_configure(const struct device *dev,
 	}
 
 	if (config->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	/* Verify if requested op mode is relevant to this controller */
 	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+		LOG_ERROR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 
@@ -759,17 +759,17 @@ static int spi_pw_configure(const struct device *dev,
 	     (config->operation & (SPI_LINES_DUAL |
 				   SPI_LINES_QUAD |
 				   SPI_LINES_OCTAL)))) {
-		LOG_ERR("Extended mode Unsupported configuration");
+		LOG_ERROR("Extended mode Unsupported configuration");
 		return -EINVAL;
 	}
 
 	if (config->operation & SPI_FRAME_FORMAT_TI) {
-		LOG_ERR("TI frame format not supported");
+		LOG_ERROR("TI frame format not supported");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_HOLD_ON_CS) {
-		LOG_ERR("Chip select hold not supported");
+		LOG_ERROR("Chip select hold not supported");
 		return -ENOTSUP;
 	}
 
@@ -777,7 +777,7 @@ static int spi_pw_configure(const struct device *dev,
 	err = spi_pw_set_data_size(dev, config);
 
 	if (err) {
-		LOG_ERR("Invalid data size");
+		LOG_ERROR("Invalid data size");
 		return -ENOTSUP;
 	}
 
@@ -806,12 +806,12 @@ static int transceive(const struct device *dev,
 	int err;
 
 	if (!tx_bufs && !rx_bufs) {
-		LOG_ERR(" Tx & Rx buff null");
+		LOG_ERROR(" Tx & Rx buff null");
 		return 0;
 	}
 
 	if (asynchronous) {
-		LOG_ERR("Async not supported");
+		LOG_ERROR("Async not supported");
 		return -ENOTSUP;
 	}
 
@@ -820,7 +820,7 @@ static int transceive(const struct device *dev,
 	/* Configure */
 	err = spi_pw_configure(dev, info, spi, config);
 	if (err) {
-		LOG_ERR("spi pw config fail");
+		LOG_ERROR("spi pw config fail");
 		goto out;
 	}
 
@@ -958,12 +958,12 @@ static int spi_pw_init(const struct device *dev)
 		struct pcie_bar mbar;
 
 		if (info->pcie->bdf == PCIE_BDF_NONE) {
-			LOG_ERR("Cannot probe PCI device");
+			LOG_ERROR("Cannot probe PCI device");
 			return -ENODEV;
 		}
 
 		if (!pcie_probe_mbar(info->pcie->bdf, 0, &mbar)) {
-			LOG_ERR("MBAR not found");
+			LOG_ERROR("MBAR not found");
 			return -EINVAL;
 		}
 
@@ -1024,7 +1024,7 @@ static int spi_pw_init(const struct device *dev)
 	if (spi->cs_mode == CS_GPIO_MODE) {
 		err = spi_context_cs_configure_all(&spi->ctx);
 		if (err < 0) {
-			LOG_ERR("Failed to configure CS pins: %d", err);
+			LOG_ERROR("Failed to configure CS pins: %d", err);
 			return err;
 		}
 	}

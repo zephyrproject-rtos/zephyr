@@ -89,7 +89,7 @@ static int dwc2_init_pinctrl(const struct device *dev)
 
 	ret = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("Failed to apply default pinctrl state (%d)", ret);
+		LOG_ERROR("Failed to apply default pinctrl state (%d)", ret);
 	}
 
 	LOG_DBG("Apply pinctrl");
@@ -125,8 +125,7 @@ static void dwc2_wait_for_bit(const struct device *dev,
 		}
 
 		if (sys_timepoint_expired(timeout)) {
-			LOG_ERR("Timeout waiting for bit 0x%08X at 0x%08X",
-				bit, (uint32_t)addr);
+			LOG_ERROR("Timeout waiting for bit 0x%08X at 0x%08X", bit, (uint32_t)addr);
 			return;
 		}
 	}
@@ -331,13 +330,13 @@ static bool dwc2_dma_buffer_ok_to_use(const struct device *dev, void *buf,
 	ARG_UNUSED(dev);
 
 	if (!IS_ALIGNED(buf, 4)) {
-		LOG_ERR("Buffer not aligned");
+		LOG_ERROR("Buffer not aligned");
 		return false;
 	}
 
 	/* We can only do 1 packet if Max Packet Size is not multiple of 4 */
 	if (unlikely(mps % 4) && (xfersize > USB_MPS_EP_SIZE(mps))) {
-		LOG_ERR("Padding not supported");
+		LOG_ERROR("Padding not supported");
 		return false;
 	}
 
@@ -396,8 +395,8 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 		 * per microframe).
 		 */
 		if ((len > max_transfer) && ((1 + addnl) > max_pkts)) {
-			LOG_ERR("ep 0x%02x FIFO space is too low, %u (%u)",
-				cfg->addr, spcavail, len);
+			LOG_ERROR("ep 0x%02x FIFO space is too low, %u (%u)", cfg->addr, spcavail,
+				  len);
 			return -EAGAIN;
 		}
 
@@ -601,7 +600,7 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 		pktcnt = 1 + addnl;
 
 		if (xfersize > net_buf_tailroom(buf)) {
-			LOG_ERR("ISO RX buffer too small");
+			LOG_ERROR("ISO RX buffer too small");
 			return;
 		}
 
@@ -705,12 +704,12 @@ static void dwc2_handle_xfer_next(const struct device *dev,
 		err = dwc2_tx_fifo_write(dev, cfg, buf);
 
 		if (err) {
-			LOG_ERR("Failed to start write to TX FIFO, ep 0x%02x (err: %d)",
-				cfg->addr, err);
+			LOG_ERROR("Failed to start write to TX FIFO, ep 0x%02x (err: %d)",
+				  cfg->addr, err);
 
 			buf = udc_buf_get(cfg);
 			if (udc_submit_ep_event(dev, buf, -ECONNREFUSED)) {
-				LOG_ERR("Failed to submit endpoint event");
+				LOG_ERROR("Failed to submit endpoint event");
 			};
 
 			return;
@@ -746,7 +745,7 @@ static inline int dwc2_handle_evt_dout(const struct device *dev,
 
 	buf = udc_buf_get(cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer queued for ep 0x%02x", cfg->addr);
+		LOG_ERROR("No buffer queued for ep 0x%02x", cfg->addr);
 		return -ENODATA;
 	}
 
@@ -768,7 +767,7 @@ static int dwc2_handle_evt_din(const struct device *dev,
 
 	buf = udc_buf_peek(cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer for ep 0x%02x", cfg->addr);
+		LOG_ERROR("No buffer for ep 0x%02x", cfg->addr);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return -ENOBUFS;
 	}
@@ -1136,8 +1135,8 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 			curaddr = dwc2_get_txfaddr(dev, ep_idx - 1);
 			txfdep = dwc2_get_txfdep(dev, ep_idx - 1);
 			if (txfaddr != curaddr || reqdep > txfdep) {
-				LOG_ERR("FIFO%u cannot be reused, new addr 0x%04x depth %u",
-					ep_idx, txfaddr, reqdep);
+				LOG_ERROR("FIFO%u cannot be reused, new addr 0x%04x depth %u",
+					  ep_idx, txfaddr, reqdep);
 				return -ENOMEM;
 			}
 		} else {
@@ -1239,7 +1238,7 @@ static int udc_dwc2_ep_activate(const struct device *dev,
 		dxepctl_reg = (mem_addr_t)&base->out_ep[ep_idx].doepctl;
 	} else {
 		if (priv->ineps > 0U && ep_idx > (priv->ineps - 1U)) {
-			LOG_ERR("No resources available for ep 0x%02x", cfg->addr);
+			LOG_ERROR("No resources available for ep 0x%02x", cfg->addr);
 			return -EINVAL;
 		}
 
@@ -1438,7 +1437,7 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 
 		ret = k_event_wait(&priv->ep_disabled, BIT(ep_bit), false, K_MSEC(100));
 		if (ret == 0) {
-			LOG_ERR("Endpoint 0x%02x disable timeout", cfg->addr);
+			LOG_ERROR("Endpoint 0x%02x disable timeout", cfg->addr);
 		}
 	}
 
@@ -1688,8 +1687,8 @@ static int dwc2_core_soft_reset(const struct device *dev)
 		k_busy_wait(1);
 
 		if (++cnt > csr_timeout_us) {
-			LOG_ERR("Wait for AHB idle timeout, GRSTCTL 0x%08x",
-				sys_read32(grstctl_reg));
+			LOG_ERROR("Wait for AHB idle timeout, GRSTCTL 0x%08x",
+				  sys_read32(grstctl_reg));
 			return -EIO;
 		}
 	}
@@ -1700,8 +1699,8 @@ static int dwc2_core_soft_reset(const struct device *dev)
 	cnt = 0UL;
 	do {
 		if (++cnt > csr_timeout_us) {
-			LOG_ERR("Wait for CSR done timeout, GRSTCTL 0x%08x",
-				sys_read32(grstctl_reg));
+			LOG_ERROR("Wait for CSR done timeout, GRSTCTL 0x%08x",
+				  sys_read32(grstctl_reg));
 			return -EIO;
 		}
 
@@ -1757,7 +1756,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	ghwcfg4 = sys_read32((mem_addr_t)&base->ghwcfg4);
 
 	if (!(ghwcfg4 & USB_DWC2_GHWCFG4_DEDFIFOMODE)) {
-		LOG_ERR("Only dedicated TX FIFO mode is supported");
+		LOG_ERROR("Only dedicated TX FIFO mode is supported");
 		return -ENOTSUP;
 	}
 
@@ -1972,15 +1971,13 @@ static int udc_dwc2_init_controller(const struct device *dev)
 			i, priv->max_txfifo_depth[i], dwc2_get_txfaddr(dev, i));
 	}
 
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL, 64, 0)) {
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL, 64, 0)) {
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
@@ -2012,7 +2009,7 @@ static int udc_dwc2_enable(const struct device *dev)
 
 	err = dwc2_quirk_pre_enable(dev);
 	if (err) {
-		LOG_ERR("Quirk pre enable failed %d", err);
+		LOG_ERROR("Quirk pre enable failed %d", err);
 		return err;
 	}
 
@@ -2031,7 +2028,7 @@ static int udc_dwc2_enable(const struct device *dev)
 
 	err = dwc2_quirk_post_enable(dev);
 	if (err) {
-		LOG_ERR("Quirk post enable failed %d", err);
+		LOG_ERROR("Quirk post enable failed %d", err);
 		return err;
 	}
 
@@ -2087,7 +2084,7 @@ static int udc_dwc2_disable(const struct device *dev)
 
 	err = dwc2_quirk_disable(dev);
 	if (err) {
-		LOG_ERR("Quirk disable failed %d", err);
+		LOG_ERROR("Quirk disable failed %d", err);
 		return err;
 	}
 
@@ -2100,7 +2097,7 @@ static int udc_dwc2_init(const struct device *dev)
 
 	ret = dwc2_quirk_init(dev);
 	if (ret) {
-		LOG_ERR("Quirk init failed %d", ret);
+		LOG_ERROR("Quirk init failed %d", ret);
 		return ret;
 	}
 
@@ -2113,7 +2110,7 @@ static int udc_dwc2_shutdown(const struct device *dev)
 
 	ret = dwc2_quirk_shutdown(dev);
 	if (ret) {
-		LOG_ERR("Quirk shutdown failed %d", ret);
+		LOG_ERROR("Quirk shutdown failed %d", ret);
 		return ret;
 	}
 
@@ -2190,7 +2187,7 @@ static int dwc2_driver_preinit(const struct device *dev)
 		LOG_DBG("Register ep 0x%02x (%u)", i, n);
 		err = udc_register_ep(dev, &config->ep_cfg_out[n]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 
@@ -2226,7 +2223,7 @@ static int dwc2_driver_preinit(const struct device *dev)
 		LOG_DBG("Register ep 0x%02x (%u)", USB_EP_DIR_IN | i, n);
 		err = udc_register_ep(dev, &config->ep_cfg_in[n]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 
@@ -2321,7 +2318,7 @@ static inline int dwc2_read_fifo_setup(const struct device *dev, uint8_t ep,
 	/* FIFO access is always in 32-bit words */
 
 	if (size != 8) {
-		LOG_ERR("%zu bytes SETUP", size);
+		LOG_ERROR("%zu bytes SETUP", size);
 	}
 
 	/*
@@ -2511,7 +2508,7 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 
 	buf = udc_buf_peek(ep_cfg);
 	if (!buf) {
-		LOG_ERR("No buffer for ep 0x%02x", ep_cfg->addr);
+		LOG_ERROR("No buffer for ep 0x%02x", ep_cfg->addr);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return;
 	}

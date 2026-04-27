@@ -318,7 +318,7 @@ static int flash_flexspi_nor_wait_bus_busy(struct flash_flexspi_nor_data *data)
 		ret = flash_flexspi_nor_read_status(data, &status);
 		LOG_DBG("status: 0x%x", status);
 		if (ret) {
-			LOG_ERR("Could not read status");
+			LOG_ERROR("Could not read status");
 			return ret;
 		}
 
@@ -501,12 +501,12 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 	}
 
 	if (offset % SPI_NOR_SECTOR_SIZE) {
-		LOG_ERR("Invalid offset");
+		LOG_ERROR("Invalid offset");
 		return -EINVAL;
 	}
 
 	if (size % SPI_NOR_SECTOR_SIZE) {
-		LOG_ERR("Invalid size");
+		LOG_ERROR("Invalid size");
 		return -EINVAL;
 	}
 
@@ -1326,8 +1326,9 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 	if (data->jedec_id[0]) {
 		/* Check the JEDEC ID against the one from devicetree. */
 		if (memcmp((uint8_t *)&vendor_id, data->jedec_id, sizeof(data->jedec_id)) != 0) {
-			LOG_ERR("Jedec id %02x %02x %02x does not match devicetree %02x %02x %02x",
-				vendor_id & 0xff, (vendor_id>>8) & 0xff, (vendor_id>>16) & 0xff,
+			LOG_ERROR(
+				"Jedec id %02x %02x %02x does not match devicetree %02x %02x %02x",
+				vendor_id & 0xff, (vendor_id >> 8) & 0xff, (vendor_id >> 16) & 0xff,
 				data->jedec_id[0], data->jedec_id[1], data->jedec_id[2]);
 			return -EINVAL;
 		}
@@ -1709,19 +1710,19 @@ static int flash_flexspi_nor_init(const struct device *dev)
 	memcpy(&data->controller, config->controller, sizeof(struct device));
 
 	if (!device_is_ready(&data->controller)) {
-		LOG_ERR("Controller device is not ready");
+		LOG_ERROR("Controller device is not ready");
 		return -ENODEV;
 	}
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	if (config->rst_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->rst_gpio)) {
-			LOG_ERR("Reset GPIO device is not ready");
+			LOG_ERROR("Reset GPIO device is not ready");
 			return -ENODEV;
 		}
 
 		if (gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_ACTIVE) < 0) {
-			LOG_ERR("Reset GPIO config failed");
+			LOG_ERROR("Reset GPIO config failed");
 			return -EIO;
 		}
 
@@ -1743,14 +1744,14 @@ static int flash_flexspi_nor_init(const struct device *dev)
 				/* Spin */
 			}
 		}
-		LOG_ERR("SFDP probe failed");
+		LOG_ERROR("SFDP probe failed");
 		return -EIO;
 	}
 
 	/* Set the FlexSPI to full clock speed */
 	if (memc_flexspi_update_clock(&data->controller, &data->config,
 					data->port, data->config.flexspiRootClk)) {
-		LOG_ERR("Could not set flexspi clock speed");
+		LOG_ERROR("Could not set flexspi clock speed");
 		return -ENOTSUP;
 	}
 

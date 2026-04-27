@@ -241,8 +241,8 @@ static void adc_submit_fallback(const struct device *dev, struct rtio_iodev_sqe 
 	struct rtio_work_req *req = rtio_work_req_alloc();
 
 	if (req == NULL) {
-		LOG_ERR("RTIO work item allocation failed. Consider to increase "
-			"CONFIG_RTIO_WORKQ_POOL_ITEMS.");
+		LOG_ERROR("RTIO work item allocation failed. Consider to increase "
+			  "CONFIG_RTIO_WORKQ_POOL_ITEMS.");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}

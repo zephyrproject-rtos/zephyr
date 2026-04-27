@@ -246,7 +246,7 @@ static int it82xx2_usb_extend_ep_ctrl(const struct device *dev, const uint8_t ep
 		} else if (((ep_idx - 4) / 3 == 3)) {
 			epn_ext_ctrl1->fields.epn9_direction_bit = enable;
 		} else {
-			LOG_ERR("Invalid endpoint 0x%x for control type 0x%x", ep, ctrl);
+			LOG_ERROR("Invalid endpoint 0x%x for control type 0x%x", ep, ctrl);
 			return -EINVAL;
 		}
 		break;
@@ -260,7 +260,7 @@ static int it82xx2_usb_extend_ep_ctrl(const struct device *dev, const uint8_t ep
 		} else if (((ep_idx - 4) / 3 == 3)) {
 			epn_ext_ctrl1->fields.epn9_enable_bit = enable;
 		} else {
-			LOG_ERR("Invalid endpoint 0x%x for control type 0x%x", ep, ctrl);
+			LOG_ERROR("Invalid endpoint 0x%x for control type 0x%x", ep, ctrl);
 			return -EINVAL;
 		}
 		break;
@@ -272,7 +272,7 @@ static int it82xx2_usb_extend_ep_ctrl(const struct device *dev, const uint8_t ep
 		ep_regs[fifo_idx].ep_ctrl.fields.ready_bit = enable;
 		break;
 	default:
-		LOG_ERR("Unknown control type 0x%x", ctrl);
+		LOG_ERROR("Unknown control type 0x%x", ctrl);
 		return -EINVAL;
 	}
 
@@ -344,7 +344,7 @@ static int it82xx2_usb_ep_ctrl(const struct device *dev, uint8_t ep, enum it82xx
 		ep_ctrl_value ^= ENDPOINT_OUTDATA_SEQ_BIT;
 		break;
 	default:
-		LOG_ERR("Unknown control type 0x%x", ctrl);
+		LOG_ERROR("Unknown control type 0x%x", ctrl);
 		return -EINVAL;
 	}
 
@@ -429,7 +429,7 @@ static int it82xx2_usb_fifo_ctrl(const struct device *dev, const uint8_t ep, con
 	int ret = 0;
 
 	if (ep_idx == 0) {
-		LOG_ERR("Invalid endpoint 0x%x", ep);
+		LOG_ERROR("Invalid endpoint 0x%x", ep);
 		return -EINVAL;
 	}
 
@@ -456,7 +456,7 @@ static int it82xx2_usb_fifo_ctrl(const struct device *dev, const uint8_t ep, con
 			ep_fifo_ctrl[fifon_ctrl + 1] |= BIT(ep_idx - 8);
 		}
 	} else {
-		LOG_ERR("Failed to set fifo control register for ep 0x%x", ep);
+		LOG_ERROR("Failed to set fifo control register for ep 0x%x", ep);
 		ret = -EINVAL;
 	}
 	irq_unlock(key);
@@ -666,7 +666,7 @@ static int it82xx2_host_wakeup(const struct device *dev)
 
 		ret = k_sem_take(&priv->suspended_sem, K_MSEC(500));
 		if (ret < 0) {
-			LOG_ERR("Failed to wake up host");
+			LOG_ERROR("Failed to wake up host");
 		}
 	}
 
@@ -838,7 +838,7 @@ static uint16_t get_fifo_ctrl(const struct device *dev, const uint8_t fifo_idx)
 	uint8_t fifon_ctrl;
 
 	if (fifo_idx == 0) {
-		LOG_ERR("Invalid fifo_idx 0x%x", fifo_idx);
+		LOG_ERROR("Invalid fifo_idx 0x%x", fifo_idx);
 		return 0;
 	}
 
@@ -971,7 +971,7 @@ static bool it82xx2_fake_token(const struct device *dev, const uint8_t ep, const
 		}
 		break;
 	default:
-		LOG_ERR("Invalid token type(%d)", token_type);
+		LOG_ERROR("Invalid token type(%d)", token_type);
 		is_fake = true;
 		break;
 	}
@@ -1108,7 +1108,7 @@ static inline int work_handler_out(const struct device *dev, uint8_t ep)
 	      (((uint16_t)ff_regs[fifo_idx].ep_rx_fifo_dcnt_msb) << 8);
 
 	if (len > udc_mps_ep_size(ep_cfg)) {
-		LOG_ERR("Failed to handle this packet due to the packet size");
+		LOG_ERROR("Failed to handle this packet due to the packet size");
 		return -ENOBUFS;
 	}
 
@@ -1178,7 +1178,7 @@ static void xfer_work_handler(const struct device *dev)
 			}
 			break;
 		default:
-			LOG_ERR("Unknown event type 0x%x", evt.event);
+			LOG_ERROR("Unknown event type 0x%x", evt.event);
 			err = -EINVAL;
 			break;
 		}
@@ -1213,7 +1213,7 @@ static inline bool it82xx2_check_ep0_stall(const struct device *dev, const uint8
 		if (transtype == DC_SETUP_TRANS) {
 			ff_regs[ep_idx].ep_rx_fifo_ctrl = FIFO_FORCE_EMPTY;
 		}
-		LOG_ERR("Cleared stall bit");
+		LOG_ERROR("Cleared stall bit");
 		return true;
 	}
 
@@ -1289,7 +1289,7 @@ static void it82xx2_usb_xfer_done(const struct device *dev)
 			it82xx2_event_submit(dev, ep, IT82xx2_EVT_OUT_TOKEN);
 			break;
 		default:
-			LOG_ERR("Unknown transaction type");
+			LOG_ERROR("Unknown transaction type");
 			break;
 		}
 	}
@@ -1448,14 +1448,14 @@ static int it82xx2_init(const struct device *dev)
 	ret = udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL,
 				     config->ep_cfg_out[0].caps.mps, 0);
 	if (ret) {
-		LOG_ERR("Failed to enable ep 0x%02x", USB_CONTROL_EP_OUT);
+		LOG_ERROR("Failed to enable ep 0x%02x", USB_CONTROL_EP_OUT);
 		return ret;
 	}
 
 	ret = udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL,
 				     config->ep_cfg_in[0].caps.mps, 0);
 	if (ret) {
-		LOG_ERR("Failed to enable ep 0x%02x", USB_CONTROL_EP_IN);
+		LOG_ERROR("Failed to enable ep 0x%02x", USB_CONTROL_EP_IN);
 		return ret;
 	}
 	return 0;
@@ -1464,12 +1464,12 @@ static int it82xx2_init(const struct device *dev)
 static int it82xx2_shutdown(const struct device *dev)
 {
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
@@ -1516,7 +1516,7 @@ static int it82xx2_usb_driver_preinit(const struct device *dev)
 
 	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
-		LOG_ERR("Failed to configure usb pins");
+		LOG_ERROR("Failed to configure usb pins");
 		return err;
 	}
 
@@ -1535,7 +1535,7 @@ static int it82xx2_usb_driver_preinit(const struct device *dev)
 		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
 		err = udc_register_ep(dev, &config->ep_cfg_out[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}
@@ -1555,7 +1555,7 @@ static int it82xx2_usb_driver_preinit(const struct device *dev)
 		config->ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
 		err = udc_register_ep(dev, &config->ep_cfg_in[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}

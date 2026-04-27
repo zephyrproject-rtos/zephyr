@@ -23,7 +23,7 @@
 
 LOG_MODULE_REGISTER(rz_spi);
 
-#define LOG_DEV_ERR(dev, format, ...) LOG_ERR("%s:" #format, (dev)->name, ##__VA_ARGS__)
+#define LOG_DEV_ERR(dev, format, ...) LOG_ERROR("%s:" #format, (dev)->name, ##__VA_ARGS__)
 
 #include "spi_context.h"
 
@@ -168,7 +168,7 @@ static int spi_rz_rspi_configure(const struct device *dev, const struct spi_conf
 	}
 
 	if (spi_cfg->operation & SPI_FRAME_FORMAT_TI) {
-		LOG_ERR("TI frame not supported");
+		LOG_ERROR("TI frame not supported");
 		return -ENOTSUP;
 	}
 
@@ -246,7 +246,7 @@ static int spi_rz_rspi_configure(const struct device *dev, const struct spi_conf
 	/* Open module RSPI. */
 	err = config->fsp_api->open(data->fsp_ctrl, data->fsp_config);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("R_RSPI_Open error: %d", err);
+		LOG_ERROR("R_RSPI_Open error: %d", err);
 		return -EINVAL;
 	}
 
@@ -381,7 +381,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 						 data->data_len, data->fsp_ctrl->bit_width);
 	}
 	if (ret) {
-		LOG_ERR("Async transmit fail: %d", ret);
+		LOG_ERROR("Async transmit fail: %d", ret);
 		return -EIO;
 	}
 	ret = spi_context_wait_for_completion(spi_ctx);
@@ -475,7 +475,7 @@ static inline void spi_rz_rspi_iodev_prepare_start(const struct device *dev)
 
 	err = spi_rz_rspi_configure(dev, spi_config);
 	if (err != 0) {
-		LOG_ERR("RTIO config spi error: %d", err);
+		LOG_ERROR("RTIO config spi error: %d", err);
 	}
 	spi_context_cs_control(&data->ctx, true);
 }
@@ -574,19 +574,19 @@ static int spi_rz_rspi_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->pinctrl_dev, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("pinctrl_apply_state fail: %d", ret);
+		LOG_ERROR("pinctrl_apply_state fail: %d", ret);
 		return ret;
 	}
 
 	ret = spi_context_cs_configure_all(&data->ctx);
 	if (ret < 0) {
-		LOG_ERR("spi_context_cs_configure_all fail: %d", ret);
+		LOG_ERROR("spi_context_cs_configure_all fail: %d", ret);
 		return ret;
 	}
 
 	rate = R_FSP_SystemClockHzGet(FSP_PRIV_CLOCK_P0CLK);
 	if (rate < 0) {
-		LOG_ERR("Failed to get clk, rate: %d", rate);
+		LOG_ERROR("Failed to get clk, rate: %d", rate);
 		return ret;
 	}
 #if CONFIG_SPI_RTIO

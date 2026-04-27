@@ -114,7 +114,7 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
 	int ret = 0;
 
 	if (!gpio_pin_is_valid(io_pin)) {
-		LOG_ERR("Selected IO pin is not valid.");
+		LOG_ERROR("Selected IO pin is not valid.");
 		return -EINVAL;
 	}
 
@@ -127,7 +127,7 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
 #endif
 
 	if (io_pin >= GPIO_NUM_MAX) {
-		LOG_ERR("Invalid pin.");
+		LOG_ERROR("Invalid pin.");
 		ret = -EINVAL;
 		goto end;
 	}
@@ -168,7 +168,7 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
 		if (flags & GPIO_LINE_OPEN_DRAIN) {
 			gpio_ll_od_enable(cfg->gpio_base, io_pin);
 		} else {
-			LOG_ERR("GPIO configuration not supported");
+			LOG_ERROR("GPIO configuration not supported");
 			ret = -ENOTSUP;
 			goto end;
 		}
@@ -199,7 +199,7 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
 	if (flags & GPIO_OUTPUT) {
 
 		if (!gpio_pin_is_output_capable(pin)) {
-			LOG_ERR("GPIO can only be used as input");
+			LOG_ERROR("GPIO can only be used as input");
 			ret = -EINVAL;
 			goto end;
 		}
@@ -603,7 +603,7 @@ static int gpio_esp32_init(const struct device *dev)
 			NULL);
 
 		if (ret != 0) {
-			LOG_ERR("could not allocate interrupt (err %d)", ret);
+			LOG_ERROR("could not allocate interrupt (err %d)", ret);
 			return ret;
 		}
 

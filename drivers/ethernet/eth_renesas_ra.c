@@ -263,13 +263,13 @@ static void renesas_ra_eth_initialize(struct net_if *iface)
 	err = R_ETHER_Open(&ctx->ctrl, cfg->p_cfg);
 
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Failed to init ether - R_ETHER_Open fail");
+		LOG_ERROR("Failed to init ether - R_ETHER_Open fail");
 	}
 
 	err = R_ETHER_CallbackSet(&ctx->ctrl, renesas_ra_eth_callback, (void *const)dev, NULL);
 
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Failed to init ether - R_ETHER_CallbackSet fail");
+		LOG_ERROR("Failed to init ether - R_ETHER_CallbackSet fail");
 	}
 
 	/* Do not start the interface until PHY link is up */
@@ -304,7 +304,7 @@ static int renesas_ra_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 
 error:
-	LOG_ERR("Writing to FIFO failed");
+	LOG_ERROR("Writing to FIFO failed");
 	return -1;
 }
 
@@ -342,18 +342,18 @@ static struct net_pkt *renesas_ra_eth_rx(const struct device *dev)
 
 	err = R_ETHER_Read(&ctx->ctrl, rx_buf, &len);
 	if ((err != FSP_SUCCESS) && (err != FSP_ERR_ETHER_ERROR_NO_DATA)) {
-		LOG_ERR("Failed to read packets");
+		LOG_ERROR("Failed to read packets");
 		goto out;
 	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
-		LOG_ERR("Failed to obtain RX buffer");
+		LOG_ERROR("Failed to obtain RX buffer");
 		goto out;
 	}
 
 	if (net_pkt_write(pkt, rx_buf, len)) {
-		LOG_ERR("Failed to append RX buffer to context buffer");
+		LOG_ERROR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
 		pkt = NULL;
 		goto out;
@@ -410,7 +410,7 @@ int renesas_ra_eth_init(const struct device *dev)
 		break;
 	default:
 		/* Build assert at top of file should catch this case */
-		LOG_ERR("Failed to init Ethernet driver - phy-connection-type not support");
+		LOG_ERROR("Failed to init Ethernet driver - phy-connection-type not support");
 
 		return -EINVAL;
 	}

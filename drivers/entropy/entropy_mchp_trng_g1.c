@@ -98,7 +98,7 @@ static int entropy_wait_ready(const struct device *dev)
 
 	if (WAIT_FOR((trng_regs->TRNG_INTFLAG & TRNG_INTFLAG_DATARDY_Msk) != 0,
 		     TRNG_TIMEOUT_VALUE_US, k_busy_wait(DELAY_US)) == false) {
-		LOG_ERR("TRNG not ready — timeout occurred (busy-wait)");
+		LOG_ERROR("TRNG not ready — timeout occurred (busy-wait)");
 		return -ETIMEDOUT;
 	}
 
@@ -114,7 +114,7 @@ static int entropy_read(const struct device *dev, uint8_t *buffer, uint16_t leng
 	struct entropy_mchp_dev_data *mchp_entropy_data = dev->data;
 
 	if (buffer == NULL) {
-		LOG_ERR("Invalid argument — buffer is NULL");
+		LOG_ERROR("Invalid argument — buffer is NULL");
 		return -EINVAL;
 	}
 
@@ -128,7 +128,7 @@ static int entropy_read(const struct device *dev, uint8_t *buffer, uint16_t leng
 		}
 
 		if (ret != ENTROPY_MCHP_SUCCESS) {
-			LOG_ERR("TRNG not ready (ret=%d)", ret);
+			LOG_ERROR("TRNG not ready (ret=%d)", ret);
 			return ret;
 		}
 
@@ -150,7 +150,7 @@ static int entropy_read(const struct device *dev, uint8_t *buffer, uint16_t leng
 static int entropy_mchp_get_entropy(const struct device *dev, uint8_t *buffer, uint16_t length)
 {
 	if (length == 0) {
-		LOG_ERR("Invalid length: %d", length);
+		LOG_ERROR("Invalid length: %d", length);
 		return -EINVAL;
 	}
 
@@ -165,7 +165,7 @@ static int entropy_mchp_get_entropy_isr(const struct device *dev, uint8_t *buffe
 	int ret;
 
 	if (length == 0) {
-		LOG_ERR("Invalid length: %d", length);
+		LOG_ERROR("Invalid length: %d", length);
 		return -EINVAL;
 	}
 
@@ -186,7 +186,7 @@ static int entropy_mchp_init(const struct device *dev)
 	int ret = clock_control_on(entropy_cfg->entropy_clock.clock_dev,
 				   entropy_cfg->entropy_clock.mclk_sys);
 	if ((ret != ENTROPY_MCHP_SUCCESS) && (ret != -EALREADY)) {
-		LOG_ERR("Failed to enable clock (ret=%d)", ret);
+		LOG_ERROR("Failed to enable clock (ret=%d)", ret);
 		return ret;
 	}
 

@@ -35,17 +35,17 @@ static int mcux_dac32_channel_setup(const struct device *dev,
 	dac32_config_t dac32_config;
 
 	if (channel_cfg->channel_id != 0) {
-		LOG_ERR("unsupported channel %d", channel_cfg->channel_id);
+		LOG_ERROR("unsupported channel %d", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->resolution != 12) {
-		LOG_ERR("unsupported resolution %d", channel_cfg->resolution);
+		LOG_ERROR("unsupported resolution %d", channel_cfg->resolution);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->internal) {
-		LOG_ERR("Internal channels not supported");
+		LOG_ERROR("Internal channels not supported");
 		return -ENOTSUP;
 	}
 
@@ -71,17 +71,17 @@ static int mcux_dac32_write_value(const struct device *dev, uint8_t channel,
 	struct mcux_dac32_data *data = dev->data;
 
 	if (!data->configured) {
-		LOG_ERR("channel not initialized");
+		LOG_ERROR("channel not initialized");
 		return -EINVAL;
 	}
 
 	if (channel != 0) {
-		LOG_ERR("unsupported channel %d", channel);
+		LOG_ERROR("unsupported channel %d", channel);
 		return -ENOTSUP;
 	}
 
 	if (value >= 4096) {
-		LOG_ERR("value %d out of range", value);
+		LOG_ERROR("value %d out of range", value);
 		return -EINVAL;
 	}
 

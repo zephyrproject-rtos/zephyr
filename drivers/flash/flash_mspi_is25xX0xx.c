@@ -109,7 +109,7 @@ static int flash_mspi_is25xX0xx_enter_command_mode(const struct device *flash)
 	ret = mspi_dev_config(cfg->bus, &cfg->dev_id,
 			      MSPI_DEVICE_CONFIG_ALL, &cfg->serial_cfg);
 	if (ret) {
-		LOG_ERR("Failed to enter command mode/%u", __LINE__);
+		LOG_ERROR("Failed to enter command mode/%u", __LINE__);
 		return -EIO;
 	}
 	return 0;
@@ -128,7 +128,7 @@ static int flash_mspi_is25xX0xx_exit_command_mode(const struct device *flash)
 	ret = mspi_dev_config(cfg->bus, &cfg->dev_id,
 			      MSPI_DEVICE_CONFIG_ALL, &data->dev_cfg);
 	if (ret) {
-		LOG_ERR("Failed to exit command mode/%u", __LINE__);
+		LOG_ERROR("Failed to exit command mode/%u", __LINE__);
 		return -EIO;
 	}
 	return 0;
@@ -161,7 +161,7 @@ static int flash_mspi_is25xX0xx_command_write(const struct device *flash, uint8_
 
 	ret = mspi_transceive(cfg->bus, &cfg->dev_id, (const struct mspi_xfer *)&data->trans);
 	if (ret) {
-		LOG_ERR("MSPI write transaction failed with code: %d/%u", ret, __LINE__);
+		LOG_ERROR("MSPI write transaction failed with code: %d/%u", ret, __LINE__);
 		return -EIO;
 	}
 	return ret;
@@ -194,7 +194,7 @@ static int flash_mspi_is25xX0xx_command_read(const struct device *flash, uint8_t
 
 	ret = mspi_transceive(cfg->bus, &cfg->dev_id, (const struct mspi_xfer *)&data->trans);
 	if (ret) {
-		LOG_ERR("MSPI read transaction failed with code: %d/%u", ret, __LINE__);
+		LOG_ERROR("MSPI read transaction failed with code: %d/%u", ret, __LINE__);
 		return -EIO;
 	}
 	return ret;
@@ -264,7 +264,7 @@ static int flash_mspi_is25xX0xx_is_ready(const struct device *flash)
 		ret = flash_mspi_is25xX0xx_command_read(flash, 0x70, 0, 0, rx_dummy,
 							(uint8_t *)&flag_stat, 1);
 		if (ret) {
-			LOG_ERR("Could not read flag status");
+			LOG_ERROR("Could not read flag status");
 			return ret;
 		}
 
@@ -279,7 +279,7 @@ static int flash_mspi_is25xX0xx_is_ready(const struct device *flash)
 	} while (timeout);
 
 	if (timeout == 0) {
-		LOG_ERR("Operation timed out");
+		LOG_ERROR("Operation timed out");
 		return -ETIMEDOUT;
 	}
 
@@ -295,15 +295,14 @@ static int flash_mspi_is25xX0xx_reset(const struct device *flash)
 
 	if (cfg->reset_gpio.port) {
 		if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
-			LOG_ERR("Device %s is not ready",
-				cfg->reset_gpio.port->name);
+			LOG_ERROR("Device %s is not ready", cfg->reset_gpio.port->name);
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&cfg->reset_gpio,
 					   GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to activate RESET: %d", ret);
+			LOG_ERROR("Failed to activate RESET: %d", ret);
 			return -EIO;
 		}
 
@@ -313,7 +312,7 @@ static int flash_mspi_is25xX0xx_reset(const struct device *flash)
 
 		ret = gpio_pin_set_dt(&cfg->reset_gpio, 0);
 		if (ret < 0) {
-			LOG_ERR("Failed to deactivate RESET: %d", ret);
+			LOG_ERROR("Failed to deactivate RESET: %d", ret);
 			return -EIO;
 		}
 
@@ -435,7 +434,7 @@ static int flash_mspi_is25xX0xx_page_program(const struct device *flash, off_t o
 
 	ret = mspi_transceive(cfg->bus, &cfg->dev_id, (const struct mspi_xfer *)&data->trans);
 	if (ret) {
-		LOG_ERR("MSPI write transaction failed with code: %d/%u", ret, __LINE__);
+		LOG_ERROR("MSPI write transaction failed with code: %d/%u", ret, __LINE__);
 		return -EIO;
 	}
 	return ret;
@@ -453,25 +452,25 @@ static int flash_mspi_is25xX0xx_busy_wait(const struct device *flash, unsigned i
 		ret = flash_mspi_is25xX0xx_command_read(flash, SPI_NOR_CMD_RDSR, 0, 0, rx_dummy,
 							(uint8_t *)&status, 1);
 		if (ret) {
-			LOG_ERR("Could not read status");
+			LOG_ERROR("Could not read status");
 			return ret;
 		}
 		ret = flash_mspi_is25xX0xx_command_read(flash, 0x70, 0, 0, rx_dummy,
 							(uint8_t *)&flag_stat, 1);
 		if (ret) {
-			LOG_ERR("Could not read flag status");
+			LOG_ERROR("Could not read flag status");
 			return ret;
 		}
 		LOG_DBG("status: 0x%x, flag status: 0x%x", status, flag_stat);
 
 		if (flag_stat & BIT(1)) {
-			LOG_ERR("Access denied");
+			LOG_ERROR("Access denied");
 			return -EACCES;
 		} else if (flag_stat & BIT(4)) {
-			LOG_ERR("Program operation failed");
+			LOG_ERROR("Program operation failed");
 			return -EIO;
 		} else if (flag_stat & BIT(5)) {
-			LOG_ERR("Erase operation failed");
+			LOG_ERROR("Erase operation failed");
 			return -EIO;
 		}
 
@@ -480,7 +479,7 @@ static int flash_mspi_is25xX0xx_busy_wait(const struct device *flash, unsigned i
 	} while ((status & SPI_NOR_WIP_BIT) && timeout);
 
 	if (timeout == 0) {
-		LOG_ERR("Operation timed out");
+		LOG_ERROR("Operation timed out");
 		return -ETIMEDOUT;
 	}
 
@@ -537,7 +536,7 @@ static int flash_mspi_is25xX0xx_read(const struct device *flash, off_t offset, v
 		ret = mspi_transceive(cfg->bus, &cfg->dev_id,
 				      (const struct mspi_xfer *)&data->trans);
 		if (ret) {
-			LOG_ERR("MSPI read transaction failed with code: %d/%u", ret, __LINE__);
+			LOG_ERROR("MSPI read transaction failed with code: %d/%u", ret, __LINE__);
 			return -EIO;
 		}
 
@@ -667,12 +666,12 @@ static int flash_mspi_is25xX0xx_erase(const struct device *flash, off_t offset, 
 	acquire(flash);
 
 	if (offset % SPI_NOR_SECTOR_SIZE) {
-		LOG_ERR("Invalid offset");
+		LOG_ERROR("Invalid offset");
 		return -EINVAL;
 	}
 
 	if (size % SPI_NOR_SECTOR_SIZE) {
-		LOG_ERR("Invalid size");
+		LOG_ERROR("Invalid size");
 		return -EINVAL;
 	}
 
@@ -796,7 +795,7 @@ static int flash_mspi_is25xX0xx_init(const struct device *flash)
 	uint8_t                                   reg_io_mode;
 
 	if (!device_is_ready(cfg->bus)) {
-		LOG_ERR("Controller device is not ready.");
+		LOG_ERROR("Controller device is not ready.");
 		return -ENODEV;
 	}
 
@@ -807,23 +806,23 @@ static int flash_mspi_is25xX0xx_init(const struct device *flash)
 		reg_io_mode = IS25XX0XX_IO_MODE_EXTENDED_SPI;
 		break;
 	default:
-		LOG_ERR("bus mode %d not supported/%u", cfg->tar_dev_cfg.io_mode, __LINE__);
+		LOG_ERROR("bus mode %d not supported/%u", cfg->tar_dev_cfg.io_mode, __LINE__);
 		return -EIO;
 	}
 
 	if (mspi_dev_config(cfg->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL, &cfg->serial_cfg)) {
-		LOG_ERR("Failed to config mspi controller/%u", __LINE__);
+		LOG_ERROR("Failed to config mspi controller/%u", __LINE__);
 		return -EIO;
 	}
 	data->dev_cfg = cfg->serial_cfg;
 
 	if (flash_mspi_is25xX0xx_reset(flash)) {
-		LOG_ERR("Could not reset Flash/%u", __LINE__);
+		LOG_ERROR("Could not reset Flash/%u", __LINE__);
 		return -EIO;
 	}
 
 	if (flash_mspi_is25xX0xx_get_vendor_id(flash, &vendor_id)) {
-		LOG_ERR("Could not read vendor id/%u", __LINE__);
+		LOG_ERROR("Could not read vendor id/%u", __LINE__);
 		return -EIO;
 	}
 	LOG_DBG("Vendor id: 0x%0x", vendor_id);
@@ -867,17 +866,16 @@ static int flash_mspi_is25xX0xx_init(const struct device *flash)
 		}
 	}
 
-	if (mspi_dev_config(cfg->bus, &cfg->dev_id,
-			    MSPI_DEVICE_CONFIG_ALL, &cfg->tar_dev_cfg)) {
-		LOG_ERR("Failed to config mspi controller/%u", __LINE__);
+	if (mspi_dev_config(cfg->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL, &cfg->tar_dev_cfg)) {
+		LOG_ERROR("Failed to config mspi controller/%u", __LINE__);
 		return -EIO;
 	}
 	data->dev_cfg = cfg->tar_dev_cfg;
 
 #if CONFIG_MSPI_TIMING
 	if (mspi_timing_config(cfg->bus, &cfg->dev_id, cfg->timing_cfg_mask,
-				(void *)&cfg->tar_timing_cfg)) {
-		LOG_ERR("Failed to config mspi timing/%u", __LINE__);
+			       (void *)&cfg->tar_timing_cfg)) {
+		LOG_ERROR("Failed to config mspi timing/%u", __LINE__);
 		return -EIO;
 	}
 	data->timing_cfg = cfg->tar_timing_cfg;
@@ -886,7 +884,7 @@ static int flash_mspi_is25xX0xx_init(const struct device *flash)
 #if CONFIG_MSPI_XIP
 	if (cfg->tar_xip_cfg.enable) {
 		if (mspi_xip_config(cfg->bus, &cfg->dev_id, &cfg->tar_xip_cfg)) {
-			LOG_ERR("Failed to enable XIP/%u", __LINE__);
+			LOG_ERROR("Failed to enable XIP/%u", __LINE__);
 			return -EIO;
 		}
 		data->xip_cfg = cfg->tar_xip_cfg;
@@ -896,7 +894,7 @@ static int flash_mspi_is25xX0xx_init(const struct device *flash)
 #if CONFIG_MSPI_SCRAMBLE
 	if (cfg->tar_scramble_cfg.enable) {
 		if (mspi_scramble_config(cfg->bus, &cfg->dev_id, &cfg->tar_scramble_cfg)) {
-			LOG_ERR("Failed to enable scrambling/%u", __LINE__);
+			LOG_ERROR("Failed to enable scrambling/%u", __LINE__);
 			return -EIO;
 		}
 		data->scramble_cfg = cfg->tar_scramble_cfg;
@@ -940,7 +938,7 @@ static int flash_mspi_is25xX0xx_read_sfdp(const struct device *flash, off_t addr
 	ret = mspi_transceive(cfg->bus, &cfg->dev_id, (const struct mspi_xfer *)&data->trans);
 
 	if (ret) {
-		LOG_ERR("MSPI read transaction failed with code: %d/%u", ret, __LINE__);
+		LOG_ERROR("MSPI read transaction failed with code: %d/%u", ret, __LINE__);
 		return -EIO;
 	}
 

@@ -188,24 +188,24 @@ static int mdio_gpio_initialize(const struct device *dev)
 	k_sem_init(&dev_data->sem, 1, 1);
 
 	if (!device_is_ready(dev_cfg->mdc_gpio.port)) {
-		LOG_ERR("GPIO port for MDC pin is not ready");
+		LOG_ERROR("GPIO port for MDC pin is not ready");
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(dev_cfg->mdio_gpio.port)) {
-		LOG_ERR("GPIO port for MDIO pin is not ready");
+		LOG_ERROR("GPIO port for MDIO pin is not ready");
 		return -ENODEV;
 	}
 
 	rc = gpio_pin_configure_dt(&dev_cfg->mdc_gpio, GPIO_OUTPUT_INACTIVE);
 	if (rc < 0) {
-		LOG_ERR("Couldn't configure MDC pin; (%d)", rc);
+		LOG_ERROR("Couldn't configure MDC pin; (%d)", rc);
 		return rc;
 	}
 
 	rc = gpio_pin_configure_dt(&dev_cfg->mdio_gpio, GPIO_INPUT);
 	if (rc < 0) {
-		LOG_ERR("Couldn't configure MDIO pin; (%d)", rc);
+		LOG_ERROR("Couldn't configure MDIO pin; (%d)", rc);
 		return rc;
 	}
 

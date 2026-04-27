@@ -253,7 +253,7 @@ static int simplelink_socket(int family, int type, int proto)
 	/* Map Zephyr socket.h family to SimpleLink's: */
 	err = simplelink_socket_family_from_posix(family, &family);
 	if (err) {
-		LOG_ERR("unsupported family: %d", family);
+		LOG_ERROR("unsupported family: %d", family);
 		retval = slcb_SetErrno(-err);
 		goto exit;
 	}
@@ -261,7 +261,7 @@ static int simplelink_socket(int family, int type, int proto)
 	/* Map Zephyr socket.h type to SimpleLink's: */
 	err = simplelink_socket_type_from_posix(type, &type);
 	if (err) {
-		LOG_ERR("unsupported type: %d", type);
+		LOG_ERROR("unsupported type: %d", type);
 		retval = slcb_SetErrno(-err);
 		goto exit;
 	}
@@ -269,7 +269,7 @@ static int simplelink_socket(int family, int type, int proto)
 	/* Map Zephyr protocols to TI's values: */
 	err = simplelink_socket_proto_from_zephyr(proto, &sl_proto);
 	if (err) {
-		LOG_ERR("unsupported proto: %d", proto);
+		LOG_ERROR("unsupported proto: %d", proto);
 		retval = slcb_SetErrno(-err);
 		goto exit;
 	}
@@ -1104,8 +1104,7 @@ static int simplelink_getaddrinfo(const char *node, const char *service,
 		service, &sl_hints, &sl_res);
 
 	if (retval < 0) {
-		LOG_ERR("Could not resolve name: %s, retval: %d",
-			    node, retval);
+		LOG_ERROR("Could not resolve name: %s, retval: %d", node, retval);
 		retval = DNS_EAI_NONAME;
 		goto exit;
 	}
@@ -1115,8 +1114,7 @@ static int simplelink_getaddrinfo(const char *node, const char *service,
 	while (sl_ai != NULL) {
 		retval = set_addr_info(sl_ai, res);
 		if (retval < 0) {
-			LOG_ERR("Unable to set address info, retval: %d",
-				retval);
+			LOG_ERROR("Unable to set address info, retval: %d", retval);
 			goto exit;
 		}
 		sl_ai = sl_ai->ai_next;
@@ -1160,7 +1158,7 @@ static int simplelink_fcntl(int sd, int cmd, va_list args)
 			&enableOption, optlen);
 		break;
 	default:
-		LOG_ERR("Invalid command: %d", cmd);
+		LOG_ERROR("Invalid command: %d", cmd);
 		retval = slcb_SetErrno(EINVAL);
 		goto exit;
 	}

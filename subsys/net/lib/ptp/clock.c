@@ -152,8 +152,8 @@ static void clock_forward_management_msg(struct ptp_port *port, struct ptp_msg *
 
 		SYS_SLIST_FOR_EACH_CONTAINER(&ptp_clk.ports_list, iter, node) {
 			if (clock_forward_msg(port, iter, msg, &net_byte_ord)) {
-				LOG_ERR("Failed to forward message to %d Port",
-					iter->port_ds.id.port_number);
+				LOG_ERROR("Failed to forward message to %d Port",
+					  iter->port_ds.id.port_number);
 			}
 		}
 
@@ -267,7 +267,7 @@ const struct ptp_clock *ptp_clock_init(void)
 	int ret = clock_generate_id(&dds->clk_id, iface);
 
 	if (ret) {
-		LOG_ERR("Couldn't assign Clock Identity.");
+		LOG_ERROR("Couldn't assign Clock Identity.");
 		return NULL;
 	}
 
@@ -294,7 +294,7 @@ const struct ptp_clock *ptp_clock_init(void)
 
 	ptp_clk.phc = net_eth_get_ptp_clock(iface);
 	if (!ptp_clk.phc) {
-		LOG_ERR("Couldn't get PTP HW Clock for the interface.");
+		LOG_ERROR("Couldn't get PTP HW Clock for the interface.");
 		return NULL;
 	}
 

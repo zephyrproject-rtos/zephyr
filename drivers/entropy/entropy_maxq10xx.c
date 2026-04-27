@@ -125,13 +125,13 @@ static int entropy_maxq10xx_read(const struct device *dev, uint8_t *buffer, uint
 	}
 
 	if (execution_status[0] != 0 || execution_status[1] != 0) {
-		LOG_ERR("Execution status: 0x%02X 0x%02X", execution_status[0],
-			execution_status[1]);
+		LOG_ERROR("Execution status: 0x%02X 0x%02X", execution_status[0],
+			  execution_status[1]);
 		return -EIO;
 	}
 
 	if (length != sys_get_be16(length_data)) {
-		LOG_ERR("Length mismatch: %d != %d", length, sys_get_be16(length_data));
+		LOG_ERROR("Length mismatch: %d != %d", length, sys_get_be16(length_data));
 		return -EIO;
 	}
 
@@ -167,7 +167,7 @@ static int entropy_maxq10xx_read(const struct device *dev, uint8_t *buffer, uint
 	crc_calc = crc16_reflect(MAXQ10XX_CRC16_POLYNOMIAL, crc_calc, buffer, length);
 
 	if (crc_calc != sys_get_le16(crc)) {
-		LOG_ERR("CRC error: 0x%04X != 0x%04X", crc_calc, sys_get_le16(crc));
+		LOG_ERROR("CRC error: 0x%04X != 0x%04X", crc_calc, sys_get_le16(crc));
 		return -EIO;
 	}
 
@@ -189,19 +189,19 @@ static int entropy_maxq10xx_get_entropy(const struct device *dev, uint8_t *buffe
 
 	ret = entropy_maxq10xx_send_cmd(dev, length);
 	if (ret < 0) {
-		LOG_ERR("Failed to send command: %d", ret);
+		LOG_ERROR("Failed to send command: %d", ret);
 		goto exit;
 	}
 
 	ret = entropy_maxq10xx_wait(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to wait for ready: %d", ret);
+		LOG_ERROR("Failed to wait for ready: %d", ret);
 		goto exit;
 	}
 
 	ret = entropy_maxq10xx_read(dev, buffer, length);
 	if (ret < 0) {
-		LOG_ERR("Failed to read data: %d", ret);
+		LOG_ERROR("Failed to read data: %d", ret);
 	}
 exit:
 	k_sem_give(sem_lock);

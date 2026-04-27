@@ -88,8 +88,9 @@ static void client_list_try_add(int sock)
 			ret = net_socket_service_register(&service_tcp, sockfd_tcp,
 							  ARRAY_SIZE(sockfd_tcp), NULL);
 			if (ret < 0) {
-				LOG_ERR("Cannot register socket service handler (%d). "
-					"Attempting to restart service.", ret);
+				LOG_ERROR("Cannot register socket service handler (%d). "
+					  "Attempting to restart service.",
+					  ret);
 				restart_echo_service();
 			}
 			k_mutex_unlock(&lock);
@@ -113,8 +114,9 @@ static void client_list_remove(int client)
 			ret = net_socket_service_register(&service_tcp, sockfd_tcp,
 							  ARRAY_SIZE(sockfd_tcp), NULL);
 			if (ret < 0) {
-				LOG_ERR("Cannot register socket service handler (%d). "
-					"Attempting to restart service.", ret);
+				LOG_ERROR("Cannot register socket service handler (%d). "
+					  "Attempting to restart service.",
+					  ret);
 				restart_echo_service();
 			}
 			break;
@@ -138,7 +140,7 @@ static void receive_data(bool is_udp, struct net_socket_service_event *pev,
 		       (struct sockaddr *)&addr, &addrlen);
 	if (len <= 0) {
 		if (len < 0) {
-			LOG_ERR("recv: %d", -errno);
+			LOG_ERROR("recv: %d", -errno);
 		}
 		if (!is_udp) {
 			client_list_remove(client);
@@ -158,7 +160,7 @@ static void receive_data(bool is_udp, struct net_socket_service_event *pev,
 		}
 
 		if (out_len < 0) {
-			LOG_ERR("sendto: %d", -errno);
+			LOG_ERROR("sendto: %d", -errno);
 			break;
 		}
 
@@ -177,7 +179,7 @@ static void tcp_accept_handler(struct net_socket_service_event *pev)
 
 	client = accept(sock, (struct sockaddr *)&client_addr, &client_addr_len);
 	if (client < 0) {
-		LOG_ERR("accept: %d. Restarting service.", -errno);
+		LOG_ERROR("accept: %d. Restarting service.", -errno);
 		restart_echo_service();
 		return;
 	}
@@ -195,7 +197,7 @@ static int setup_tcp_socket(struct sockaddr_in6 *addr)
 
 	sock = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
 	if (sock < 0) {
-		LOG_ERR("socket: %d", -errno);
+		LOG_ERROR("socket: %d", -errno);
 		return -errno;
 	}
 
@@ -213,13 +215,13 @@ static int setup_tcp_socket(struct sockaddr_in6 *addr)
 	}
 
 	if (bind(sock, (struct sockaddr *)addr, sizeof(*addr)) < 0) {
-		LOG_ERR("bind: %d", -errno);
+		LOG_ERROR("bind: %d", -errno);
 		close(sock);
 		return -errno;
 	}
 
 	if (listen(sock, 5) < 0) {
-		LOG_ERR("listen: %d", -errno);
+		LOG_ERROR("listen: %d", -errno);
 		close(sock);
 		return -errno;
 	}
@@ -234,7 +236,7 @@ static int setup_udp_socket(struct sockaddr_in6 *addr)
 
 	sock = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
 	if (sock < 0) {
-		LOG_ERR("socket: %d", -errno);
+		LOG_ERROR("socket: %d", -errno);
 		return -errno;
 	}
 
@@ -252,7 +254,7 @@ static int setup_udp_socket(struct sockaddr_in6 *addr)
 	}
 
 	if (bind(sock, (struct sockaddr *)addr, sizeof(*addr)) < 0) {
-		LOG_ERR("bind: %d", -errno);
+		LOG_ERROR("bind: %d", -errno);
 		close(sock);
 		return -errno;
 	}
@@ -274,13 +276,13 @@ static int start_echo_service(void)
 
 	tcp_sock = setup_tcp_socket(&addr);
 	if (tcp_sock < 0) {
-		LOG_ERR("Failed to setup tcp listening socket");
+		LOG_ERROR("Failed to setup tcp listening socket");
 		return tcp_sock;
 	}
 
 	udp_sock = setup_udp_socket(&addr);
 	if (udp_sock < 0) {
-		LOG_ERR("Failed to setup udp socket");
+		LOG_ERROR("Failed to setup udp socket");
 		ret = udp_sock;
 		goto cleanup_tcp;
 	}
@@ -289,7 +291,7 @@ static int start_echo_service(void)
 	sockfd_accept = (struct pollfd){ .fd = tcp_sock, .events = POLLIN };
 	ret = net_socket_service_register(&service_accept, &sockfd_accept, 1, NULL);
 	if (ret < 0) {
-		LOG_ERR("Cannot register socket service handler (%d)", ret);
+		LOG_ERROR("Cannot register socket service handler (%d)", ret);
 		goto cleanup_sockets;
 	}
 
@@ -297,7 +299,7 @@ static int start_echo_service(void)
 	sockfd_udp = (struct pollfd){ .fd = udp_sock, .events = POLLIN };
 	ret = net_socket_service_register(&service_udp, &sockfd_udp, 1, NULL);
 	if (ret < 0) {
-		LOG_ERR("Cannot register socket service handler (%d)", ret);
+		LOG_ERROR("Cannot register socket service handler (%d)", ret);
 		goto cleanup_sockets;
 	}
 

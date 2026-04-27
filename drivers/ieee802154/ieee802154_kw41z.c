@@ -199,7 +199,7 @@ static inline void kw41z_wait_for_idle(void)
 	}
 
 	if (state != KW41Z_STATE_IDLE) {
-		LOG_ERR("Error waiting for idle state");
+		LOG_ERROR("Error waiting for idle state");
 	}
 }
 
@@ -515,7 +515,7 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, uint8_t len)
 	pkt = net_pkt_rx_alloc_with_buffer(kw41z->iface, pkt_len,
 					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
-		LOG_ERR("No buf available");
+		LOG_ERROR("No buf available");
 		goto out;
 	}
 
@@ -560,7 +560,7 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, uint8_t len)
 
 	rslt = net_recv_data(kw41z->iface, pkt);
 	if (rslt < 0) {
-		LOG_ERR("RCV Packet dropped by NET stack: %d", rslt);
+		LOG_ERROR("RCV Packet dropped by NET stack: %d", rslt);
 		goto out;
 	}
 
@@ -583,7 +583,7 @@ static void handle_ack(struct kw41z_context *kw41z, uint8_t seq_number)
 	ack_pkt = net_pkt_rx_alloc_with_buffer(kw41z->iface, ACK_FRAME_LEN,
 					       NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!ack_pkt) {
-		LOG_ERR("No free packet available.");
+		LOG_ERROR("No free packet available.");
 		return;
 	}
 
@@ -594,7 +594,7 @@ static void handle_ack(struct kw41z_context *kw41z, uint8_t seq_number)
 	ack_psdu[2] = seq_number;
 
 	if (net_pkt_write(ack_pkt, ack_psdu, sizeof(ack_psdu)) < 0) {
-		LOG_ERR("Failed to write to a packet.");
+		LOG_ERROR("Failed to write to a packet.");
 		goto out;
 	}
 
@@ -622,7 +622,7 @@ static int kw41z_tx(const struct device *dev, enum ieee802154_tx_mode mode,
 	unsigned int key;
 
 	if (mode != IEEE802154_TX_MODE_DIRECT) {
-		LOG_ERR("TX mode %d not supported", mode);
+		LOG_ERROR("TX mode %d not supported", mode);
 		return -ENOTSUP;
 	}
 
@@ -637,7 +637,7 @@ static int kw41z_tx(const struct device *dev, enum ieee802154_tx_mode mode,
 	}
 
 	if (payload_len > KW41Z_PSDU_LENGTH) {
-		LOG_ERR("Payload too long");
+		LOG_ERROR("Payload too long");
 		return 0;
 	}
 
@@ -785,7 +785,7 @@ static void kw41z_isr(int unused)
 		 * PLL unlock
 		 */
 		if (irqsts & ZLL_IRQSTS_PLL_UNLOCK_IRQ_MASK) {
-			LOG_ERR("PLL unlock error");
+			LOG_ERROR("PLL unlock error");
 			kw41z_isr_seq_cleanup();
 			restart_rx = 1U;
 		}

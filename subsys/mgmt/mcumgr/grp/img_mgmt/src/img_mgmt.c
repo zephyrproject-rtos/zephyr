@@ -198,7 +198,7 @@ static bool img_mgmt_slot_max_size(size_t *area_sizes, zcbor_state_t *zse)
 	rc = blinfo_lookup(BLINFO_MAX_APPLICATION_SIZE, &max_app_size, sizeof(max_app_size));
 
 	if (rc < 0) {
-		LOG_ERR("Failed to lookup max application size: %d", rc);
+		LOG_ERROR("Failed to lookup max application size: %d", rc);
 	} else if (rc > 0) {
 		ok = zcbor_tstr_put_lit(zse, "max_image_size") &&
 		     zcbor_uint32_put(zse, (uint32_t)max_app_size);
@@ -248,7 +248,7 @@ int img_mgmt_active_slot(int image)
 	rc = blinfo_lookup(BLINFO_RUNNING_SLOT, &temp_slot, sizeof(temp_slot));
 
 	if (rc <= 0) {
-		LOG_ERR("Failed to fetch active slot: %d", rc);
+		LOG_ERROR("Failed to fetch active slot: %d", rc);
 
 		return 255;
 	}
@@ -561,7 +561,8 @@ static int img_mgmt_slot_info(struct smp_streamer *ctxt)
 			ok = zcbor_tstr_put_lit(zse, "rc") &&
 			     zcbor_int32_put(zse, rc);
 
-			LOG_ERR("Failed to open slot %d for information fetching: %d", area_id, rc);
+			LOG_ERROR("Failed to open slot %d for information fetching: %d", area_id,
+				  rc);
 		} else {
 #if defined(CONFIG_MCUMGR_GRP_IMG_SLOT_INFO_HOOKS)
 			struct img_mgmt_slot_info_slot slot_info_data = {
@@ -820,7 +821,7 @@ defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 #endif
 
 		MGMT_CTXT_SET_RC_RSN(ctxt, IMG_MGMT_UPLOAD_ACTION_RC_RSN(&action));
-		LOG_ERR("Image upload inspect failed: %d", rc);
+		LOG_ERROR("Image upload inspect failed: %d", rc);
 		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_IMAGE, rc);
 		goto end;
 	}
@@ -959,7 +960,7 @@ defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(&action,
 				img_mgmt_err_str_flash_write_failed);
 
-			LOG_ERR("Irrecoverable error: flash write failed: %d", rc);
+			LOG_ERROR("Irrecoverable error: flash write failed: %d", rc);
 
 			ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_IMAGE, rc);
 			goto end;
@@ -981,10 +982,10 @@ defined(CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS)
 				if (flash_img_check(&ctx, &fic, g_img_mgmt_state.area_id) == 0) {
 					data_match = true;
 				} else {
-					LOG_ERR("Uploaded image sha256 hash verification failed");
+					LOG_ERROR("Uploaded image sha256 hash verification failed");
 				}
 			} else {
-				LOG_ERR("Uploaded image sha256 could not be checked");
+				LOG_ERROR("Uploaded image sha256 could not be checked");
 			}
 #endif
 

@@ -132,7 +132,7 @@ static int it8xxx2_sha256_module_calculation(void)
 	irq_unlock(key);
 
 	if (timeout) {
-		LOG_ERR("HW execute sha256 calculation timeout");
+		LOG_ERROR("HW execute sha256 calculation timeout");
 		it8xxx2_sha256_init(true);
 
 		return -ETIMEDOUT;
@@ -274,7 +274,7 @@ static int it8xxx2_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt,
 		irq_unlock(key);
 
 		if (timeout) {
-			LOG_ERR("HW write back hash timeout");
+			LOG_ERROR("HW write back hash timeout");
 			it8xxx2_sha256_init(true);
 
 			return -ETIMEDOUT;
@@ -307,12 +307,12 @@ static int it8xxx2_hash_begin_session(const struct device *dev,
 				struct hash_ctx *ctx, enum hash_algo algo)
 {
 	if (algo != CRYPTO_HASH_ALGO_SHA256) {
-		LOG_ERR("Unsupported algorithm");
+		LOG_ERROR("Unsupported algorithm");
 		return -ENOTSUP;
 	}
 
 	if (ctx->flags & ~(it8xxx2_query_hw_caps(dev))) {
-		LOG_ERR("Unsupported flag");
+		LOG_ERROR("Unsupported flag");
 		return -ENOTSUP;
 	}
 

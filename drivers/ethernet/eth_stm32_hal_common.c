@@ -77,10 +77,10 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 				iface = net_pkt_iface(pkt);
 				res = net_recv_data(iface, pkt);
 				if (res < 0) {
-					eth_stats_update_errors_rx(
-							net_pkt_iface(pkt));
-					LOG_ERR("Failed to enqueue frame "
-						"into RX queue: %d", res);
+					eth_stats_update_errors_rx(net_pkt_iface(pkt));
+					LOG_ERROR("Failed to enqueue frame "
+						  "into RX queue: %d",
+						  res);
 					net_pkt_unref(pkt);
 				}
 			}
@@ -127,7 +127,7 @@ static int eth_initialize(const struct device *dev)
 		}
 
 		if (ret != 0) {
-			LOG_ERR("Failed to setup ethernet clock #%zu", n);
+			LOG_ERROR("Failed to setup ethernet clock #%zu", n);
 			return -EIO;
 		}
 	}
@@ -135,7 +135,7 @@ static int eth_initialize(const struct device *dev)
 	/* configure pinmux */
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Could not configure ethernet pins");
+		LOG_ERROR("Could not configure ethernet pins");
 		return ret;
 	}
 
@@ -161,7 +161,7 @@ static int eth_initialize(const struct device *dev)
 	}
 
 	if (ret < 0) {
-		LOG_ERR("Failed to load MAC address (%d)", ret);
+		LOG_ERROR("Failed to load MAC address (%d)", ret);
 		return ret;
 	}
 
@@ -169,7 +169,7 @@ static int eth_initialize(const struct device *dev)
 
 	ret = eth_stm32_hal_init(dev);
 	if (ret) {
-		LOG_ERR("Failed to initialize HAL");
+		LOG_ERROR("Failed to initialize HAL");
 		return -EIO;
 	}
 
@@ -275,7 +275,7 @@ static void eth_iface_init(struct net_if *iface)
 	if (device_is_ready(eth_stm32_phy_dev)) {
 		phy_link_callback_set(eth_stm32_phy_dev, phy_link_state_changed, (void *)dev);
 	} else {
-		LOG_ERR("PHY device not ready");
+		LOG_ERROR("PHY device not ready");
 	}
 
 	/* Now that the iface is setup, we are safe to enable IRQs. */

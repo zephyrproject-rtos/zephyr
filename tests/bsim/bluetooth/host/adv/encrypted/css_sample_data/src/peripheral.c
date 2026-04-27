@@ -59,8 +59,8 @@ static void set_ad_data(struct bt_le_ext_adv *adv)
 	size_t size_ead = BT_EAD_ENCRYPTED_PAYLOAD_SIZE(size_ad_data);
 
 	if (size_ead != sample_data->size_ead) {
-		LOG_ERR("Size of ead: %zu\n", size_ead);
-		LOG_ERR("Size of sample_ead: %zu", sample_data->size_ead);
+		LOG_ERROR("Size of ead: %zu\n", size_ead);
+		LOG_ERROR("Size of sample_ead: %zu", sample_data->size_ead);
 		TEST_FAIL("Computed size of encrypted data does not match the size of the encrypted"
 			  " data from the sample. (data set %d)", data_set);
 	}

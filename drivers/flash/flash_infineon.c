@@ -62,7 +62,7 @@ static int ifx_cat1_flash_read(const struct device *dev, off_t offset, void *dat
 
 	rslt = cyhal_flash_read(&dev_data->flash_obj, read_offset, (uint8_t *)data, data_len);
 	if (rslt != CY_RSLT_SUCCESS) {
-		LOG_ERR("Error reading @ 0x%x (Err:0x%x)", read_offset, rslt);
+		LOG_ERROR("Error reading @ 0x%x (Err:0x%x)", read_offset, rslt);
 		ret = -EIO;
 		goto out;
 	}
@@ -96,7 +96,7 @@ static int ifx_cat1_flash_write(const struct device *dev, off_t offset, const vo
 		rslt = cyhal_flash_write(&dev_data->flash_obj, write_offset,
 					 (const uint32_t *)data_ptr);
 		if (rslt != CY_RSLT_SUCCESS) {
-			LOG_ERR("Error in writing @ 0x%x (Err:0x%x)", write_offset, rslt);
+			LOG_ERROR("Error in writing @ 0x%x (Err:0x%x)", write_offset, rslt);
 			ret = -EIO;
 			goto out;
 		}
@@ -129,7 +129,7 @@ static int ifx_cat1_flash_erase(const struct device *dev, off_t offset, size_t s
 	while (size) {
 		rslt = cyhal_flash_erase(&data->flash_obj, erase_offset);
 		if (rslt != CY_RSLT_SUCCESS) {
-			LOG_ERR("Error in erasing : 0x%x", rslt);
+			LOG_ERROR("Error in erasing : 0x%x", rslt);
 			return -EIO;
 		}
 
@@ -175,7 +175,7 @@ static int ifx_cat1_flash_init(const struct device *dev)
 
 	rslt = cyhal_flash_init(&data->flash_obj);
 	if (rslt != CY_RSLT_SUCCESS) {
-		LOG_ERR("Failed to init flash hal driver (Err:0x%x)", rslt);
+		LOG_ERROR("Failed to init flash hal driver (Err:0x%x)", rslt);
 		return -EIO;
 	}
 

@@ -109,7 +109,7 @@ static int eeprom_at2x_read(const struct device *dev, off_t offset, void *buf,
 	while (len) {
 		ret = config->read_fn(dev, offset, pbuf, len);
 		if (ret < 0) {
-			LOG_ERR("failed to read EEPROM (err %d)", ret);
+			LOG_ERROR("failed to read EEPROM (err %d)", ret);
 			k_mutex_unlock(&data->lock);
 			return ret;
 		}
@@ -174,7 +174,7 @@ static int eeprom_at2x_write(const struct device *dev, off_t offset,
 #if ANY_INST_HAS_WP_GPIOS
 	ret = eeprom_at2x_write_enable(dev);
 	if (ret) {
-		LOG_ERR("failed to write-enable EEPROM (err %d)", ret);
+		LOG_ERROR("failed to write-enable EEPROM (err %d)", ret);
 		k_mutex_unlock(&data->lock);
 		return ret;
 	}
@@ -183,7 +183,7 @@ static int eeprom_at2x_write(const struct device *dev, off_t offset,
 	while (len) {
 		ret = config->write_fn(dev, offset, pbuf, len);
 		if (ret < 0) {
-			LOG_ERR("failed to write to EEPROM (err %d)", ret);
+			LOG_ERROR("failed to write to EEPROM (err %d)", ret);
 #if ANY_INST_HAS_WP_GPIOS
 			eeprom_at2x_write_protect(dev);
 #endif /* ANY_INST_HAS_WP_GPIOS */
@@ -199,7 +199,7 @@ static int eeprom_at2x_write(const struct device *dev, off_t offset,
 #if ANY_INST_HAS_WP_GPIOS
 	ret = eeprom_at2x_write_protect(dev);
 	if (ret) {
-		LOG_ERR("failed to write-protect EEPROM (err %d)", ret);
+		LOG_ERROR("failed to write-protect EEPROM (err %d)", ret);
 	}
 #else
 	ret = 0;
@@ -399,7 +399,7 @@ static int eeprom_at25_wait_for_idle(const struct device *dev)
 		int64_t now = k_uptime_get();
 		err = eeprom_at25_rdsr(dev, &status);
 		if (err) {
-			LOG_ERR("Could not read status register (err %d)", err);
+			LOG_ERROR("Could not read status register (err %d)", err);
 			return err;
 		}
 
@@ -472,7 +472,7 @@ static int eeprom_at25_read(const struct device *dev, off_t offset, void *buf,
 
 	err = eeprom_at25_wait_for_idle(dev);
 	if (err) {
-		LOG_ERR("EEPROM idle wait failed (err %d)", err);
+		LOG_ERROR("EEPROM idle wait failed (err %d)", err);
 		return err;
 	}
 
@@ -541,13 +541,13 @@ static int eeprom_at25_write(const struct device *dev, off_t offset,
 
 	err = eeprom_at25_wait_for_idle(dev);
 	if (err) {
-		LOG_ERR("EEPROM idle wait failed (err %d)", err);
+		LOG_ERROR("EEPROM idle wait failed (err %d)", err);
 		return err;
 	}
 
 	err = eeprom_at25_wren(dev);
 	if (err) {
-		LOG_ERR("failed to disable write protection (err %d)", err);
+		LOG_ERROR("failed to disable write protection (err %d)", err);
 		return err;
 	}
 
@@ -568,7 +568,7 @@ static int eeprom_at2x_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 
 	if (!config->bus_is_ready(dev)) {
-		LOG_ERR("parent bus device not ready");
+		LOG_ERROR("parent bus device not ready");
 		return -EINVAL;
 	}
 
@@ -576,13 +576,13 @@ static int eeprom_at2x_init(const struct device *dev)
 	if (config->wp_gpio.port) {
 		int err;
 		if (!gpio_is_ready_dt(&config->wp_gpio)) {
-			LOG_ERR("wp gpio device not ready");
+			LOG_ERROR("wp gpio device not ready");
 			return -EINVAL;
 		}
 
 		err = gpio_pin_configure_dt(&config->wp_gpio, GPIO_OUTPUT_ACTIVE);
 		if (err) {
-			LOG_ERR("failed to configure WP GPIO pin (err %d)", err);
+			LOG_ERROR("failed to configure WP GPIO pin (err %d)", err);
 			return err;
 		}
 	}

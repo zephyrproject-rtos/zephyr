@@ -64,7 +64,7 @@ static int ifx_cat1_flash_read(const struct device *dev, off_t offset, void *dat
 
 	rslt = cy_serial_flash_qspi_read(offset, data_len, data);
 	if (rslt != CY_RSLT_SUCCESS) {
-		LOG_ERR("Error reading @ %lu (Err:0x%x)", offset, rslt);
+		LOG_ERROR("Error reading @ %lu (Err:0x%x)", offset, rslt);
 		ret = -EIO;
 	}
 
@@ -90,7 +90,7 @@ static int ifx_cat1_flash_write(const struct device *dev, off_t offset, const vo
 
 	rslt = cy_serial_flash_qspi_write(offset, data_len, data);
 	if (rslt != CY_RSLT_SUCCESS) {
-		LOG_ERR("Error in writing @ %lu (Err:0x%x)", offset, rslt);
+		LOG_ERROR("Error in writing @ %lu (Err:0x%x)", offset, rslt);
 		ret = -EIO;
 	}
 
@@ -111,7 +111,7 @@ static int ifx_cat1_flash_erase(const struct device *dev, off_t offset, size_t s
 
 	rslt = cy_serial_flash_qspi_erase(offset, size);
 	if (rslt != CY_RSLT_SUCCESS) {
-		LOG_ERR("Error in erasing : 0x%x", rslt);
+		LOG_ERROR("Error in erasing : 0x%x", rslt);
 		ret = -EIO;
 	}
 
@@ -155,7 +155,7 @@ static int ifx_cat1_flash_init(const struct device *dev)
 	rslt = cy_serial_flash_qspi_init(&sfdp_slave_slot_0, NC, NC, NC, NC, NC, NC, NC, NC, NC, NC,
 					 50000000lu);
 	if (rslt != CY_RSLT_SUCCESS) {
-		LOG_ERR("Serial Flash initialization failed [rslt: 0x%x]", rslt);
+		LOG_ERROR("Serial Flash initialization failed [rslt: 0x%x]", rslt);
 	}
 
 	k_sem_init(&data->sem, 1, 1);

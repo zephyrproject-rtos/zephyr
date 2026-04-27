@@ -154,7 +154,7 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 		uint8_t command_id = rx_buf[rx_pos++];
 
 		if (sizeof(tx_buf) - tx_pos < FRAG_TRANSPORT_MAX_ANS_LEN) {
-			LOG_ERR("insufficient tx_buf size, some requests discarded");
+			LOG_ERROR("insufficient tx_buf size, some requests discarded");
 			break;
 		}
 

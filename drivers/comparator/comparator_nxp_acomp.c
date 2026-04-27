@@ -68,10 +68,10 @@ static int nxp_acomp_set_trigger(const struct device *dev, enum comparator_trigg
 		data->interrupt_mask = ACOMP_IMR0_OUTA_INT_MASK_MASK | ACOMP_IMR0_OUT_INT_MASK_MASK;
 		break;
 	case COMPARATOR_TRIGGER_BOTH_EDGES:
-		LOG_ERR("Trigger type not support.");
+		LOG_ERROR("Trigger type not support.");
 		return -ENOTSUP;
 	default:
-		LOG_ERR("Trigger type invalid.");
+		LOG_ERROR("Trigger type invalid.");
 		return -EINVAL;
 	}
 

@@ -72,7 +72,7 @@ static int read_port_regs(const struct device *dev, uint8_t reg, uint8_t *cache)
 
 	ret = i2c_reg_read_byte_dt(&config->i2c, reg, &port_data);
 	if (ret != 0) {
-		LOG_ERR("Error reading register 0x%X (%d)", reg, ret);
+		LOG_ERROR("Error reading register 0x%X (%d)", reg, ret);
 		return ret;
 	}
 	*cache = port_data;
@@ -102,8 +102,7 @@ static int write_port_regs(const struct device *dev, uint8_t reg,
 	if (*cache != value) {
 		ret = i2c_reg_write_byte_dt(&config->i2c, reg, value);
 		if (ret != 0) {
-			LOG_ERR("error writing to register 0x%X (%d)",
-				reg, ret);
+			LOG_ERROR("error writing to register 0x%X (%d)", reg, ret);
 			return ret;
 		}
 		*cache = value;
@@ -276,13 +275,13 @@ static int gpio_fxl6408_pin_config(const struct device *dev, gpio_pin_t pin,
 
 	ret = setup_pin_dir(dev, pin, flags);
 	if (ret != 0) {
-		LOG_ERR("error setting pin direction (%d)", ret);
+		LOG_ERROR("error setting pin direction (%d)", ret);
 		goto done;
 	}
 
 	ret = setup_pin_pullupdown(dev, pin, flags);
 	if (ret) {
-		LOG_ERR("error setting pin pull up/down (%d)", ret);
+		LOG_ERROR("error setting pin pull up/down (%d)", ret);
 		goto done;
 	}
 
@@ -384,7 +383,7 @@ int gpio_fxl6408_init(const struct device *dev)
 	const struct gpio_fxl6408_config *const config = dev->config;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("%s is not ready", config->i2c.bus->name);
+		LOG_ERROR("%s is not ready", config->i2c.bus->name);
 		return -ENODEV;
 	}
 

@@ -169,7 +169,7 @@ static int pwm_bflb_init(const struct device *dev)
 
 	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
-		LOG_ERR("Failed to configure pins for PWM. err=%d", err);
+		LOG_ERROR("Failed to configure pins for PWM. err=%d", err);
 		return err;
 	}
 

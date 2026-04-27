@@ -148,7 +148,7 @@ static int flash_esp32_read_check_enc(off_t address, void *buffer, size_t length
 	}
 
 	if (ret != 0) {
-		LOG_ERR("Flash read error: %d", ret);
+		LOG_ERROR("Flash read error: %d", ret);
 		return -EIO;
 	}
 
@@ -168,7 +168,7 @@ static int flash_esp32_write_check_enc(off_t address, const void *buffer, size_t
 	}
 
 	if (ret != 0) {
-		LOG_ERR("Flash write error: %d", ret);
+		LOG_ERROR("Flash write error: %d", ret);
 		return -EIO;
 	}
 
@@ -204,8 +204,8 @@ static bool aligned_flash_write(size_t dest_addr, const void *src, size_t size, 
 
 		if (flash_encryption_enabled && erase) {
 			if (esp_flash_erase_region(NULL, dest_addr, size) != ESP_OK) {
-				LOG_ERR("%s: Flash erase failed at 0x%08lx", __func__,
-					(uintptr_t)dest_addr);
+				LOG_ERROR("%s: Flash erase failed at 0x%08lx", __func__,
+					  (uintptr_t)dest_addr);
 				return false;
 			}
 		}
@@ -227,8 +227,8 @@ static bool aligned_flash_write(size_t dest_addr, const void *src, size_t size, 
 		/* Read data before modifying */
 		if (flash_esp32_read_check_enc(aligned_curr_addr, write_aux_buf,
 					       ROUND_UP(chunk_len, alignment)) != ESP_OK) {
-			LOG_ERR("%s: Flash read failed at 0x%08lx", __func__,
-				(uintptr_t)aligned_curr_addr);
+			LOG_ERROR("%s: Flash read failed at 0x%08lx", __func__,
+				  (uintptr_t)aligned_curr_addr);
 			return false;
 		}
 
@@ -237,8 +237,8 @@ static bool aligned_flash_write(size_t dest_addr, const void *src, size_t size, 
 			if (esp_flash_erase_region(NULL, aligned_curr_addr,
 						   ROUND_UP(chunk_len, FLASH_SECTOR_SIZE)) !=
 			    ESP_OK) {
-				LOG_ERR("%s: Flash erase failed at 0x%08lx", __func__,
-					(uintptr_t)aligned_curr_addr);
+				LOG_ERROR("%s: Flash erase failed at 0x%08lx", __func__,
+					  (uintptr_t)aligned_curr_addr);
 				return false;
 			}
 		}
@@ -250,8 +250,8 @@ static bool aligned_flash_write(size_t dest_addr, const void *src, size_t size, 
 		/* Write back aligned chunk */
 		if (flash_esp32_write_check_enc(aligned_curr_addr, write_aux_buf,
 						ROUND_UP(chunk_len, alignment)) != ESP_OK) {
-			LOG_ERR("%s: Flash write failed at 0x%08lx", __func__,
-				(uintptr_t)aligned_curr_addr);
+			LOG_ERROR("%s: Flash write failed at 0x%08lx", __func__,
+				  (uintptr_t)aligned_curr_addr);
 			return false;
 		}
 
@@ -268,27 +268,27 @@ static bool erase_partial_sector(size_t addr, size_t sector_size, size_t erase_s
 {
 	/* Read full sector before erasing */
 	if (flash_esp32_read_check_enc(addr, erase_aux_buf, sector_size) != ESP_OK) {
-		LOG_ERR("%s: Flash read failed at 0x%08lx", __func__, (uintptr_t)addr);
+		LOG_ERROR("%s: Flash read failed at 0x%08lx", __func__, (uintptr_t)addr);
 		return false;
 	}
 	/* Erase full sector */
 	if (esp_flash_erase_region(NULL, addr, sector_size) != ESP_OK) {
-		LOG_ERR("%s: Flash erase failed at 0x%08lx", __func__, (uintptr_t)addr);
+		LOG_ERROR("%s: Flash erase failed at 0x%08lx", __func__, (uintptr_t)addr);
 		return false;
 	}
 	/* Write back preserved head data up to erase_start */
 	if (erase_start > 0) {
 		if (!aligned_flash_write(addr, erase_aux_buf, erase_start, false)) {
-			LOG_ERR("%s: Flash write failed at 0x%08lx", __func__, (uintptr_t)addr);
+			LOG_ERROR("%s: Flash write failed at 0x%08lx", __func__, (uintptr_t)addr);
 			return false;
 		}
 	}
 	/* Write back preserved tail data from erase_end up to sector end */
 	if (erase_end < sector_size) {
 		if (!aligned_flash_write(addr + erase_end, &erase_aux_buf[erase_end],
-								sector_size - erase_end, false)) {
-			LOG_ERR("%s: Flash write failed at 0x%08lx", __func__,
-					(uintptr_t)(addr + erase_end));
+					 sector_size - erase_end, false)) {
+			LOG_ERROR("%s: Flash write failed at 0x%08lx", __func__,
+				  (uintptr_t)(addr + erase_end));
 			return false;
 		}
 	}
@@ -341,8 +341,8 @@ static bool aligned_flash_erase(size_t addr, size_t size)
 				(uintptr_t)current_addr, contiguous_size);
 
 			if (esp_flash_erase_region(NULL, current_addr, contiguous_size) != ESP_OK) {
-				LOG_ERR("%s: Flash erase failed at 0x%08lx", __func__,
-					(uintptr_t)current_addr);
+				LOG_ERROR("%s: Flash erase failed at 0x%08lx", __func__,
+					  (uintptr_t)current_addr);
 				return false;
 			}
 
@@ -426,7 +426,7 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 #endif /* CONFIG_MCUBOOT */
 
 	if (ret != 0) {
-		LOG_ERR("Flash read error: %d", ret);
+		LOG_ERROR("Flash read error: %d", ret);
 		return -EIO;
 	}
 
@@ -440,7 +440,7 @@ static int flash_esp32_write(const struct device *dev, off_t address, const void
 
 #ifdef CONFIG_MCUBOOT
 	if (!flash_esp32_is_aligned(address, (void *)buffer, length)) {
-		LOG_ERR("Unaligned flash write is not supported");
+		LOG_ERROR("Unaligned flash write is not supported");
 		return -EINVAL;
 	}
 
@@ -461,7 +461,7 @@ static int flash_esp32_write(const struct device *dev, off_t address, const void
 	}
 
 	if (!aligned_flash_write(address, buffer, length, erase)) {
-		LOG_ERR("%s: Flash erase before write failed", __func__);
+		LOG_ERROR("%s: Flash erase before write failed", __func__);
 		ret = -1;
 	}
 #else
@@ -472,7 +472,7 @@ static int flash_esp32_write(const struct device *dev, off_t address, const void
 #endif /* CONFIG_MCUBOOT */
 
 	if (ret != 0) {
-		LOG_ERR("Flash write error: %d", ret);
+		LOG_ERROR("Flash write error: %d", ret);
 		return -EIO;
 	}
 
@@ -514,7 +514,7 @@ static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 		 */
 		while (bytes_remaining != 0) {
 			if (!aligned_flash_write(offset, erased_val_buf, bytes_written, false)) {
-				LOG_ERR("%s: Flash erase failed", __func__);
+				LOG_ERROR("%s: Flash erase failed", __func__);
 				return -1;
 			}
 			offset += bytes_written;
@@ -529,7 +529,7 @@ static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 #endif /* CONFIG_MCUBOOT */
 
 	if (ret != 0) {
-		LOG_ERR("Flash erase error: %d", ret);
+		LOG_ERROR("Flash erase error: %d", ret);
 		return -EIO;
 	}
 	return 0;
@@ -733,7 +733,7 @@ static int flash_esp32_init(const struct device *dev)
 	if (data->ipm) {
 		ipm_register_callback(data->ipm, flash_cpu01_receive_cb, data);
 	} else {
-		LOG_ERR("Failed to get ipm0 device");
+		LOG_ERROR("Failed to get ipm0 device");
 		return -ENODEV;
 	}
 #ifdef CONFIG_ESP_FLASH_HOST

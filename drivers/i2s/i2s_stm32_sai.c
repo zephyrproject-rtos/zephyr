@@ -135,7 +135,7 @@ void HAL_SAI_RxCpltCallback(SAI_HandleTypeDef *hsai)
 	if (stream->mem_block == NULL) {
 		if (stream->state != I2S_STATE_READY) {
 			stream->state = I2S_STATE_ERROR;
-			LOG_ERR("RX mem_block NULL");
+			LOG_ERROR("RX mem_block NULL");
 			__HAL_SAI_DISABLE(hsai);
 			goto exit;
 		} else {
@@ -170,7 +170,7 @@ void HAL_SAI_RxCpltCallback(SAI_HandleTypeDef *hsai)
 
 	if (HAL_SAI_Receive_DMA(hsai, stream->mem_block,
 				stream->mem_block_len / stream->dma_src_size) != HAL_OK) {
-		LOG_ERR("HAL_SAI_Receive_DMA: <FAILED>");
+		LOG_ERROR("HAL_SAI_Receive_DMA: <FAILED>");
 	}
 
 exit:
@@ -186,7 +186,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 	int ret;
 
 	if (stream->state == I2S_STATE_ERROR) {
-		LOG_ERR("TX bad status: %d, Stopping...", stream->state);
+		LOG_ERROR("TX bad status: %d, Stopping...", stream->state);
 		__HAL_SAI_DISABLE(hsai);
 		goto exit;
 	}
@@ -194,7 +194,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 	if (stream->mem_block == NULL) {
 		if (stream->state != I2S_STATE_READY) {
 			stream->state = I2S_STATE_ERROR;
-			LOG_ERR("TX mem_block NULL");
+			LOG_ERROR("TX mem_block NULL");
 			__HAL_SAI_DISABLE(hsai);
 			goto exit;
 		} else {
@@ -234,7 +234,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 
 	if (HAL_SAI_Transmit_DMA(hsai, stream->mem_block,
 				 stream->mem_block_len / stream->dma_src_size) != HAL_OK) {
-		LOG_ERR("HAL_SAI_Transmit_DMA: <FAILED>");
+		LOG_ERROR("HAL_SAI_Transmit_DMA: <FAILED>");
 	}
 
 exit:
@@ -270,7 +270,7 @@ void HAL_SAI_ErrorCallback(SAI_HandleTypeDef *hsai)
 		LOG_WRN("DMA error");
 		break;
 	default:
-		LOG_ERR("Unknown error");
+		LOG_ERROR("Unknown error");
 	}
 }
 
@@ -283,7 +283,7 @@ static int stm32_sai_enable_clock(const struct device *dev)
 	/* Turn on SAI peripheral clock */
 	err = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (err != 0) {
-		LOG_ERR("I2S clock Enable: <FAILED>");
+		LOG_ERROR("I2S clock Enable: <FAILED>");
 		return -EIO;
 	}
 	LOG_DBG("I2S clock Enable: <OK>");
@@ -292,7 +292,7 @@ static int stm32_sai_enable_clock(const struct device *dev)
 		/* Enable I2S clock source */
 		err = clock_control_configure(clk, (clock_control_subsys_t)&cfg->pclken[1], NULL);
 		if (err < 0) {
-			LOG_ERR("I2S domain clock configuration: <FAILED>");
+			LOG_ERROR("I2S domain clock configuration: <FAILED>");
 			return -EIO;
 		}
 	}
@@ -312,7 +312,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	DMA_HandleTypeDef *hdma = &dev_data->hdma;
 
 	if (!device_is_ready(stream->dma_dev)) {
-		LOG_ERR("%s DMA device not ready", stream->dma_dev->name);
+		LOG_ERROR("%s DMA device not ready", stream->dma_dev->name);
 		return -ENODEV;
 	}
 
@@ -324,7 +324,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 
 	ret = dma_config(stream->dma_dev, stream->dma_channel, dma_cfg);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d", stream->dma_channel);
+		LOG_ERROR("Failed to configure DMA channel %d", stream->dma_channel);
 		return ret;
 	}
 
@@ -332,7 +332,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	hdma->Init.Mode = DMA_NORMAL;
 
 	if (dma_cfg->channel_priority >= ARRAY_SIZE(dma_priority)) {
-		LOG_ERR("Invalid DMA channel priority");
+		LOG_ERROR("Invalid DMA channel priority");
 		return -EINVAL;
 	}
 	hdma->Init.Priority = dma_priority[dma_cfg->channel_priority];
@@ -344,7 +344,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 #endif
 
 	if (dma_cfg->source_data_size != dma_cfg->dest_data_size) {
-		LOG_ERR("Source and destination data sizes are not aligned");
+		LOG_ERROR("Source and destination data sizes are not aligned");
 		return -EINVAL;
 	}
 
@@ -352,7 +352,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 
 #if defined(CONFIG_DMA_STM32U5)
 	if (idx >= ARRAY_SIZE(dma_src_size)) {
-		LOG_ERR("Invalid source and destination DMA data size");
+		LOG_ERROR("Invalid source and destination DMA data size");
 		return -EINVAL;
 	}
 
@@ -365,7 +365,7 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	hdma->Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
 #else
 	if (idx >= ARRAY_SIZE(dma_m_size)) {
-		LOG_ERR("Invalid peripheral and memory DMA data size");
+		LOG_ERROR("Invalid peripheral and memory DMA data size");
 		return -EINVAL;
 	}
 
@@ -400,19 +400,19 @@ static int i2s_stm32_sai_dma_init(const struct device *dev)
 	}
 
 	if (HAL_DMA_Init(&dev_data->hdma) != HAL_OK) {
-		LOG_ERR("HAL_DMA_Init: <FAILED>");
+		LOG_ERROR("HAL_DMA_Init: <FAILED>");
 		return -EIO;
 	}
 
 #if defined(CONFIG_SOC_SERIES_STM32N6X)
 	if (HAL_DMA_ConfigChannelAttributes(&dev_data->hdma, DMA_CHANNEL_SEC | DMA_CHANNEL_PRIV |
 					    DMA_CHANNEL_SRC_SEC | DMA_CHANNEL_DEST_SEC) != HAL_OK) {
-		LOG_ERR("HAL_DMA_ConfigChannelAttributes: <Failed>");
+		LOG_ERROR("HAL_DMA_ConfigChannelAttributes: <Failed>");
 		return -EIO;
 	}
 #elif defined(CONFIG_DMA_STM32U5)
 	if (HAL_DMA_ConfigChannelAttributes(&dev_data->hdma, DMA_CHANNEL_NPRIV) != HAL_OK) {
-		LOG_ERR("HAL_DMA_ConfigChannelAttributes: <Failed>");
+		LOG_ERROR("HAL_DMA_ConfigChannelAttributes: <Failed>");
 		return -EIO;
 	}
 #endif
@@ -429,33 +429,33 @@ static int i2s_stm32_sai_initialize(const struct device *dev)
 	/* Enable SAI clock */
 	ret = stm32_sai_enable_clock(dev);
 	if (ret < 0) {
-		LOG_ERR("Clock enabling failed.");
+		LOG_ERROR("Clock enabling failed.");
 		return -EIO;
 	}
 
 	/* Configure DT provided pins */
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("I2S pinctrl setup: <FAILED>");
+		LOG_ERROR("I2S pinctrl setup: <FAILED>");
 		return ret;
 	}
 
 	if (!device_is_ready(dev_data->stream.dma_dev)) {
-		LOG_ERR("%s device not ready", dev_data->stream.dma_dev->name);
+		LOG_ERROR("%s device not ready", dev_data->stream.dma_dev->name);
 		return -ENODEV;
 	}
 
 	ret = k_msgq_alloc_init(&dev_data->stream.queue, sizeof(struct queue_item),
 				CONFIG_I2S_STM32_SAI_BLOCK_COUNT);
 	if (ret < 0) {
-		LOG_ERR("k_msgq_alloc_init(): <FAILED>");
+		LOG_ERROR("k_msgq_alloc_init(): <FAILED>");
 		return ret;
 	}
 
 	/* Initialize DMA */
 	ret = i2s_stm32_sai_dma_init(dev);
 	if (ret < 0) {
-		LOG_ERR("i2s_stm32_sai_dma_init(): <FAILED>");
+		LOG_ERROR("i2s_stm32_sai_dma_init(): <FAILED>");
 		return ret;
 	}
 
@@ -471,7 +471,7 @@ static void dma_callback(const struct device *dma_dev, void *arg, uint32_t chann
 	ARG_UNUSED(dma_dev);
 
 	if (status < 0) {
-		LOG_ERR("DMA callback error with channel %d.", channel);
+		LOG_ERROR("DMA callback error with channel %d.", channel);
 	}
 	HAL_DMA_IRQHandler(hdma);
 }
@@ -515,7 +515,7 @@ static int i2s_stm32_sai_f4_clock_source_configure(const struct device *dev)
 		break;
 
 	default:
-		LOG_ERR("Wrong source clock defined.");
+		LOG_ERROR("Wrong source clock defined.");
 		return -EINVAL;
 	}
 
@@ -575,12 +575,12 @@ static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 			}
 		}
 	} else {
-		LOG_ERR("Either RX or TX direction must be selected");
+		LOG_ERROR("Either RX or TX direction must be selected");
 		return -EINVAL;
 	}
 
 	if (stream->state != I2S_STATE_NOT_READY && stream->state != I2S_STATE_READY) {
-		LOG_ERR("Invalid state: %d", (int)stream->state);
+		LOG_ERROR("Invalid state: %d", (int)stream->state);
 		return -EINVAL;
 	}
 
@@ -638,7 +638,7 @@ static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 		hsai->Init.AudioFrequency = SAI_AUDIO_FREQUENCY_8K;
 		break;
 	default:
-		LOG_ERR("Invalid frame_clk_freq %u", stream->i2s_cfg.frame_clk_freq);
+		LOG_ERROR("Invalid frame_clk_freq %u", stream->i2s_cfg.frame_clk_freq);
 		stream->state = I2S_STATE_NOT_READY;
 		return -EINVAL;
 	}
@@ -658,7 +658,7 @@ static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 		stream->dma_src_size = 4;
 		break;
 	default:
-		LOG_ERR("Invalid wordsize %u", stream->i2s_cfg.word_size);
+		LOG_ERROR("Invalid wordsize %u", stream->i2s_cfg.word_size);
 		stream->state = I2S_STATE_NOT_READY;
 		return -EINVAL;
 	}
@@ -674,13 +674,13 @@ static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 		LOG_DBG("SAI_STEREOMODE");
 		break;
 	default:
-		LOG_ERR("NOT VALID CHANNEL NUMBER %u", stream->i2s_cfg.channels);
+		LOG_ERROR("NOT VALID CHANNEL NUMBER %u", stream->i2s_cfg.channels);
 		stream->state = I2S_STATE_NOT_READY;
 		return -EINVAL;
 	}
 
 	if (stream->i2s_cfg.options & I2S_OPT_PINGPONG) {
-		LOG_ERR("Ping-pong mode not supported");
+		LOG_ERROR("Ping-pong mode not supported");
 		stream->state = I2S_STATE_NOT_READY;
 		return -ENOTSUP;
 	}
@@ -688,7 +688,7 @@ static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 	if ((stream->i2s_cfg.format & I2S_FMT_DATA_ORDER_LSB) ||
 	    (stream->i2s_cfg.format & I2S_FMT_BIT_CLK_INV) ||
 	    (stream->i2s_cfg.format & I2S_FMT_FRAME_CLK_INV)) {
-		LOG_ERR("Unsupported stream format");
+		LOG_ERROR("Unsupported stream format");
 		return -EINVAL;
 	}
 
@@ -709,13 +709,13 @@ static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 		protocol = SAI_I2S_LSBJUSTIFIED;
 		break;
 	default:
-		LOG_ERR("Unsupported I2S data format");
+		LOG_ERROR("Unsupported I2S data format");
 		return -EINVAL;
 	}
 
 	/* Initialize SAI peripheral */
 	if (HAL_SAI_InitProtocol(hsai, protocol, word_size, 2) != HAL_OK) {
-		LOG_ERR("HAL_SAI_InitProtocol: <FAILED>");
+		LOG_ERROR("HAL_SAI_InitProtocol: <FAILED>");
 		return -EIO;
 	}
 
@@ -731,12 +731,12 @@ static int i2s_stm32_sai_write(const struct device *dev, void *mem_block, size_t
 	int ret;
 
 	if (stream->state != I2S_STATE_RUNNING && stream->state != I2S_STATE_READY) {
-		LOG_ERR("TX Invalid state: %d", (int)stream->state);
+		LOG_ERROR("TX Invalid state: %d", (int)stream->state);
 		return -EIO;
 	}
 
 	if (size > stream->i2s_cfg.block_size) {
-		LOG_ERR("Max write size is: %u", (unsigned int)stream->i2s_cfg.block_size);
+		LOG_ERROR("Max write size is: %u", (unsigned int)stream->i2s_cfg.block_size);
 		return -EINVAL;
 	}
 
@@ -744,7 +744,7 @@ static int i2s_stm32_sai_write(const struct device *dev, void *mem_block, size_t
 
 	ret = k_msgq_put(&stream->queue, &item, K_MSEC(stream->i2s_cfg.timeout));
 	if (ret < 0) {
-		LOG_ERR("TX queue full");
+		LOG_ERROR("TX queue full");
 	}
 
 	return 0;
@@ -758,13 +758,13 @@ static int i2s_stm32_sai_read(const struct device *dev, void **mem_block, size_t
 
 	if (dev_data->stream.state == I2S_STATE_NOT_READY ||
 	    dev_data->stream.state == I2S_STATE_ERROR) {
-		LOG_ERR("RX invalid state: %d", (int)dev_data->stream.state);
+		LOG_ERROR("RX invalid state: %d", (int)dev_data->stream.state);
 		return -EIO;
 	}
 
 	ret = k_msgq_get(&dev_data->stream.queue, &item, K_MSEC(dev_data->stream.i2s_cfg.timeout));
 	if (ret < 0) {
-		LOG_ERR("RX queue: %d", k_msgq_num_used_get(&dev_data->stream.queue));
+		LOG_ERROR("RX queue: %d", k_msgq_num_used_get(&dev_data->stream.queue));
 		return ret;
 	}
 
@@ -795,7 +795,7 @@ static int stream_start(const struct device *dev, enum i2s_dir dir)
 
 		if (HAL_SAI_Transmit_DMA(hsai, stream->mem_block,
 					 stream->mem_block_len / stream->dma_src_size) != HAL_OK) {
-			LOG_ERR("HAL_SAI_Transmit_DMA: <FAILED>");
+			LOG_ERROR("HAL_SAI_Transmit_DMA: <FAILED>");
 			return -EIO;
 		}
 	} else {
@@ -809,7 +809,7 @@ static int stream_start(const struct device *dev, enum i2s_dir dir)
 
 		if (HAL_SAI_Receive_DMA(hsai, stream->mem_block,
 					stream->mem_block_len / stream->dma_src_size) != HAL_OK) {
-			LOG_ERR("HAL_SAI_Receive_DMA: <FAILED>");
+			LOG_ERROR("HAL_SAI_Receive_DMA: <FAILED>");
 			return -EIO;
 		}
 	}
@@ -843,7 +843,7 @@ static int i2s_stm32_sai_trigger(const struct device *dev, enum i2s_dir dir,
 	int ret;
 
 	if (dir == I2S_DIR_BOTH) {
-		LOG_ERR("Unsupported direction: %d", (int)dir);
+		LOG_ERROR("Unsupported direction: %d", (int)dir);
 		return -ENOSYS;
 	}
 
@@ -852,13 +852,13 @@ static int i2s_stm32_sai_trigger(const struct device *dev, enum i2s_dir dir,
 		LOG_DBG("I2S_TRIGGER_START");
 
 		if (stream->state != I2S_STATE_READY) {
-			LOG_ERR("START trigger: invalid state %d", stream->state);
+			LOG_ERROR("START trigger: invalid state %d", stream->state);
 			return -EIO;
 		}
 
 		ret = stream->stream_start(dev, dir);
 		if (ret < 0) {
-			LOG_ERR("START trigger failed %d", ret);
+			LOG_ERROR("START trigger failed %d", ret);
 			return ret;
 		}
 
@@ -871,7 +871,7 @@ static int i2s_stm32_sai_trigger(const struct device *dev, enum i2s_dir dir,
 		LOG_DBG("I2S_TRIGGER_STOP");
 
 		if (stream->state != I2S_STATE_RUNNING) {
-			LOG_ERR("STOP - Invalid state: %d", (int)stream->state);
+			LOG_ERROR("STOP - Invalid state: %d", (int)stream->state);
 			irq_unlock(key);
 			return -EIO;
 		}
@@ -886,7 +886,7 @@ static int i2s_stm32_sai_trigger(const struct device *dev, enum i2s_dir dir,
 		LOG_DBG("I2S_TRIGGER_DRAIN");
 
 		if (stream->state != I2S_STATE_RUNNING) {
-			LOG_ERR("DRAIN - Invalid state: %d", (int)stream->state);
+			LOG_ERROR("DRAIN - Invalid state: %d", (int)stream->state);
 			irq_unlock(key);
 			return -EIO;
 		}
@@ -900,7 +900,7 @@ static int i2s_stm32_sai_trigger(const struct device *dev, enum i2s_dir dir,
 		LOG_DBG("I2S_TRIGGER_DROP");
 
 		if (stream->state == I2S_STATE_NOT_READY) {
-			LOG_ERR("DROP - invalid state: %d", (int)stream->state);
+			LOG_ERROR("DROP - invalid state: %d", (int)stream->state);
 			irq_unlock(key);
 			return -EIO;
 		}
@@ -915,7 +915,7 @@ static int i2s_stm32_sai_trigger(const struct device *dev, enum i2s_dir dir,
 		LOG_DBG("I2S_TRIGGER_PREPARE");
 
 		if (stream->state != I2S_STATE_ERROR) {
-			LOG_ERR("PREPARE - invalid state: %d", (int)stream->state);
+			LOG_ERROR("PREPARE - invalid state: %d", (int)stream->state);
 			irq_unlock(key);
 			return -EIO;
 		}
@@ -925,7 +925,7 @@ static int i2s_stm32_sai_trigger(const struct device *dev, enum i2s_dir dir,
 		irq_unlock(key);
 		break;
 	default:
-		LOG_ERR("Unsupported trigger command");
+		LOG_ERROR("Unsupported trigger command");
 		return -EINVAL;
 	}
 	return 0;

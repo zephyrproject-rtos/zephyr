@@ -98,11 +98,11 @@ static int hl78xx_at_shell_init(void)
 	struct hl78xx_data *data = NULL;
 
 	if (device_is_ready(modem) == false) {
-		LOG_ERR("%d, %s Device %s is not ready", __LINE__, __func__, modem->name);
+		LOG_ERROR("%d, %s Device %s is not ready", __LINE__, __func__, modem->name);
 	}
 	data = (struct hl78xx_data *)modem->data;
 	if (data == NULL) {
-		LOG_ERR("%d, %s Modem data is NULL", __LINE__, __func__);
+		LOG_ERROR("%d, %s Modem data is NULL", __LINE__, __func__);
 		return -EINVAL;
 	}
 	at_shell_chat = &data->chat;

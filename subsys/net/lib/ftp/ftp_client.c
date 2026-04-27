@@ -91,7 +91,7 @@ static int new_ftp_connection(struct ftp_client *client, enum ftp_channel_type c
 	*sock = zsock_socket(client->remote.sa_family, NET_SOCK_STREAM, proto);
 	if (*sock < 0) {
 		ret = -errno;
-		LOG_ERR("socket(data) failed: %d", ret);
+		LOG_ERROR("socket(data) failed: %d", ret);
 		return ret;
 	}
 	if (client->sec_tag != SEC_TAG_TLS_INVALID) {
@@ -101,7 +101,7 @@ static int new_ftp_connection(struct ftp_client *client, enum ftp_channel_type c
 				       sec_tag_list, sizeof(sec_tag_t));
 		if (ret < 0) {
 			ret = -errno;
-			LOG_ERR("set tag list failed: %d", ret);
+			LOG_ERROR("set tag list failed: %d", ret);
 			zsock_close(*sock);
 			*sock = INVALID_SOCKET;
 			return ret;
@@ -120,7 +120,7 @@ static int new_ftp_connection(struct ftp_client *client, enum ftp_channel_type c
 	ret = zsock_connect(*sock, &client->remote, addrlen);
 	if (ret < 0) {
 		ret = -errno;
-		LOG_ERR("connect(data) failed: %d", ret);
+		LOG_ERROR("connect(data) failed: %d", ret);
 		zsock_close(*sock);
 		*sock = INVALID_SOCKET;
 		return ret;
@@ -255,7 +255,7 @@ static int do_ftp_send_ctrl(struct ftp_client *client, const uint8_t *message, i
 		ret = zsock_send(client->ctrl_sock, message + offset, length - offset, 0);
 		if (ret < 0) {
 			ret = -errno;
-			LOG_ERR("send cmd failed: %d", ret);
+			LOG_ERROR("send cmd failed: %d", ret);
 			break;
 		}
 		offset += ret;
@@ -350,7 +350,7 @@ static int recv_ctrl_response(struct ftp_client *client, enum ftp_reply_code *er
 	if (ret < 0) {
 		ret = -errno;
 		*err_code = FTP_CODE_903_SOCKET_POLL_ERROR;
-		LOG_ERR("poll(ctrl) failed: (%d)", ret);
+		LOG_ERROR("poll(ctrl) failed: (%d)", ret);
 		goto out;
 	}
 
@@ -364,14 +364,14 @@ static int recv_ctrl_response(struct ftp_client *client, enum ftp_reply_code *er
 	if ((fds[0].revents & ZSOCK_POLLHUP) == ZSOCK_POLLHUP) {
 		ret = -ECONNRESET;
 		*err_code = FTP_CODE_901_DISCONNECTED_BY_REMOTE;
-		LOG_ERR("POLLHUP");
+		LOG_ERROR("POLLHUP");
 		goto out;
 	}
 
 	if ((fds[0].revents & ZSOCK_POLLIN) != ZSOCK_POLLIN) {
 		ret = -EIO;
 		*err_code = FTP_CODE_904_UNEXPECTED_POLL_EVENT;
-		LOG_ERR("POLL 0x%08x", fds[0].revents);
+		LOG_ERROR("POLL 0x%08x", fds[0].revents);
 		goto out;
 	}
 
@@ -379,16 +379,16 @@ static int recv_ctrl_response(struct ftp_client *client, enum ftp_reply_code *er
 			 sizeof(client->ctrl_buf) - client->ctrl_len - 1, 0);
 	if (ret < 0) {
 		ret = -errno;
-		*err_code = ret == -ENETDOWN ? FTP_CODE_905_NETWORK_DOWN :
-					       FTP_CODE_909_UNEXPECTED_ERROR;
-		LOG_ERR("recv(ctrl) failed: (%d)", ret);
+		*err_code = ret == -ENETDOWN ? FTP_CODE_905_NETWORK_DOWN
+					     : FTP_CODE_909_UNEXPECTED_ERROR;
+		LOG_ERROR("recv(ctrl) failed: (%d)", ret);
 		goto out;
 	}
 
 	if (ret == 0) {
 		ret = -ECONNRESET;
 		*err_code = FTP_CODE_901_DISCONNECTED_BY_REMOTE;
-		LOG_ERR("recv(ctrl) peer closed connection");
+		LOG_ERROR("recv(ctrl) peer closed connection");
 	}
 
 out:
@@ -419,7 +419,7 @@ static int do_ftp_recv_ctrl(struct ftp_client *client, bool post_result, int suc
 		if (client->ctrl_len >= sizeof(client->ctrl_buf) - 1) {
 			ret = -ENOMEM;
 			err_code = FTP_CODE_909_UNEXPECTED_ERROR;
-			LOG_ERR("recv(ctrl) buffer full");
+			LOG_ERROR("recv(ctrl) buffer full");
 			goto error;
 		}
 	}
@@ -487,7 +487,7 @@ static int do_ftp_send_data(struct ftp_client *client, uint16_t data_port,
 		ret = zsock_send(client->data_sock, message + offset, length - offset, 0);
 		if (ret < 0) {
 			ret = -errno;
-			LOG_ERR("send data failed: %d", ret);
+			LOG_ERROR("send data failed: %d", ret);
 			break;
 		}
 		LOG_DBG("DATA sent %d", ret);
@@ -526,7 +526,7 @@ static int do_ftp_recv_data(struct ftp_client *client, uint16_t data_port)
 		ret = zsock_poll(fds, 1, FTP_CLIENT_POLL_TIMEOUT_MSEC);
 		if (ret < 0) {
 			ret = -errno;
-			LOG_ERR("poll(data) failed: (%d)", ret);
+			LOG_ERROR("poll(data) failed: (%d)", ret);
 			break;
 		}
 
@@ -546,7 +546,7 @@ static int do_ftp_recv_data(struct ftp_client *client, uint16_t data_port)
 				 sizeof(client->data_buf), 0);
 		if (ret < 0) {
 			ret = -errno;
-			LOG_ERR("recv(data) failed: (%d)", ret);
+			LOG_ERROR("recv(data) failed: (%d)", ret);
 			break;
 		}
 
@@ -583,7 +583,7 @@ int ftp_open(struct ftp_client *client, const char *hostname, uint16_t port, int
 	k_mutex_lock(&client->lock, K_FOREVER);
 
 	if (client->connected) {
-		LOG_ERR("FTP already connected");
+		LOG_ERROR("FTP already connected");
 		ret = -EINVAL;
 		goto out;
 	}
@@ -591,8 +591,8 @@ int ftp_open(struct ftp_client *client, const char *hostname, uint16_t port, int
 	/* Resolve the hostname in the preferred IP version .*/
 	ret = zsock_getaddrinfo(hostname, NULL, NULL, &ai);
 	if (ret != 0) {
-		LOG_ERR("Failed to resolve hostname (\"%s\"): %s",
-			hostname, zsock_gai_strerror(ret));
+		LOG_ERROR("Failed to resolve hostname (\"%s\"): %s", hostname,
+			  zsock_gai_strerror(ret));
 		ret = -EHOSTUNREACH;
 		goto out;
 	}

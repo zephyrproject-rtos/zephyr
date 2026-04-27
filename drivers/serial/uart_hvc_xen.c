@@ -237,15 +237,13 @@ int xen_console_init(const struct device *dev)
 
 	ret = hvm_get_parameter(HVM_PARAM_CONSOLE_EVTCHN, DOMID_SELF, &data->evtchn);
 	if (ret) {
-		LOG_ERR("%s: failed to get Xen console evtchn, ret = %d\n",
-				__func__, ret);
+		LOG_ERROR("%s: failed to get Xen console evtchn, ret = %d\n", __func__, ret);
 		return ret;
 	}
 
 	ret = hvm_get_parameter(HVM_PARAM_CONSOLE_PFN, DOMID_SELF, &console_pfn);
 	if (ret) {
-		LOG_ERR("%s: failed to get Xen console PFN, ret = %d\n",
-				__func__, ret);
+		LOG_ERROR("%s: failed to get Xen console PFN, ret = %d\n", __func__, ret);
 		return ret;
 	}
 

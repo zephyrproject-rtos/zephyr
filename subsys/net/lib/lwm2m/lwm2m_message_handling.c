@@ -122,7 +122,7 @@ static int init_block_ctx(const struct lwm2m_obj_path *path, struct lwm2m_block_
 	int64_t timestamp;
 
 	if (!path) {
-		LOG_ERR("Null block ctx path");
+		LOG_ERROR("Null block ctx path");
 		return -EFAULT;
 	}
 
@@ -148,7 +148,7 @@ static int init_block_ctx(const struct lwm2m_obj_path *path, struct lwm2m_block_
 
 	if (*ctx == NULL) {
 		lwm2m_engine_unlock();
-		LOG_ERR("Cannot find free block context");
+		LOG_ERROR("Cannot find free block context");
 		return -ENOMEM;
 	}
 
@@ -169,7 +169,7 @@ static int get_block_ctx(const struct lwm2m_obj_path *path, struct lwm2m_block_c
 	int i;
 
 	if (!path) {
-		LOG_ERR("Null block ctx path");
+		LOG_ERROR("Null block ctx path");
 		return -EFAULT;
 	}
 
@@ -323,7 +323,7 @@ ZTESTABLE_STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_
 		ret = lwm2m_init_message(msg);
 		if (ret < 0) {
 			lwm2m_reset_message(msg, true);
-			LOG_ERR("Unable to init lwm2m message for next block!");
+			LOG_ERROR("Unable to init lwm2m message for next block!");
 			return ret;
 		}
 		if (msg->reply) {
@@ -345,7 +345,7 @@ ZTESTABLE_STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_
 	if (block_num == 0) {
 		ret = request_output_block_ctx(&msg->out.block_ctx);
 		if (ret < 0) {
-			LOG_ERR("coap packet init error: no output block context available");
+			LOG_ERROR("coap packet init error: no output block context available");
 			return ret;
 		}
 		ret = coap_block_transfer_init(msg->out.block_ctx, block_size,
@@ -377,7 +377,7 @@ ZTESTABLE_STATIC int build_msg_block_for_send(struct lwm2m_message *msg, uint16_
 	ret = buf_append(CPKT_BUF_WRITE(&msg->cpkt),
 			 complete_payload + (block_num * block_size_bytes), payload_size);
 	if (ret < 0) {
-		LOG_ERR("CoAP message size overflow");
+		LOG_ERROR("CoAP message size overflow");
 		return ret;
 	}
 
@@ -615,7 +615,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 	int r = 0;
 
 	if (!msg || !msg->ctx) {
-		LOG_ERR("LwM2M message is invalid.");
+		LOG_ERROR("LwM2M message is invalid.");
 		return -EINVAL;
 	}
 
@@ -636,7 +636,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		/* Get new big buffer for serializing the message */
 		r = request_body_encode_buffer(&body_data);
 		if (r < 0) {
-			LOG_ERR("coap packet init error: no msg buffer available");
+			LOG_ERROR("coap packet init error: no msg buffer available");
 			goto cleanup;
 		}
 		/*  in case of failure the buffer is released with this pointer */
@@ -654,7 +654,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 	r = coap_packet_init(&msg->cpkt, body_data, body_data_max_len, COAP_VERSION_1, msg->type,
 			     tokenlen, token, msg->code, msg->mid);
 	if (r < 0) {
-		LOG_ERR("coap packet init error (err:%d)", r);
+		LOG_ERROR("coap packet init error (err:%d)", r);
 		goto cleanup;
 	}
 
@@ -667,17 +667,17 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 
 	msg->pending = coap_pending_next_unused(msg->ctx->pendings, ARRAY_SIZE(msg->ctx->pendings));
 	if (!msg->pending) {
-		LOG_ERR("Unable to find a free pending to track "
-			"retransmissions.");
+		LOG_ERROR("Unable to find a free pending to track "
+			  "retransmissions.");
 		r = -ENOMEM;
 		goto cleanup_unlock;
 	}
 
 	r = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr, NULL);
 	if (r < 0) {
-		LOG_ERR("Unable to initialize a pending "
-			"retransmission (err:%d).",
-			r);
+		LOG_ERROR("Unable to initialize a pending "
+			  "retransmission (err:%d).",
+			  r);
 		goto cleanup_unlock;
 	}
 
@@ -685,7 +685,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		msg->reply =
 			coap_reply_next_unused(msg->ctx->replies, ARRAY_SIZE(msg->ctx->replies));
 		if (!msg->reply) {
-			LOG_ERR("No resources for waiting for replies.");
+			LOG_ERROR("No resources for waiting for replies.");
 			r = -ENOMEM;
 			goto cleanup_unlock;
 		}
@@ -780,7 +780,7 @@ int lwm2m_send_empty_ack(struct lwm2m_ctx *client_ctx, uint16_t mid)
 
 	msg = lwm2m_get_message(client_ctx);
 	if (!msg) {
-		LOG_ERR("Unable to get a lwm2m message!");
+		LOG_ERROR("Unable to get a lwm2m message!");
 		return -ENOMEM;
 	}
 
@@ -796,7 +796,7 @@ int lwm2m_send_empty_ack(struct lwm2m_ctx *client_ctx, uint16_t mid)
 	ret = zsock_send(client_ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to send packet, err %d", errno);
+		LOG_ERROR("Failed to send packet, err %d", errno);
 		ret = -errno;
 	}
 
@@ -1165,7 +1165,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 				*(uint32_t *)write_buf = (uint32_t)temp_time;
 				len = sizeof(uint32_t);
 			} else {
-				LOG_ERR("Time resource buf len not supported %zu", data_len);
+				LOG_ERROR("Time resource buf len not supported %zu", data_len);
 				ret = -EINVAL;
 			}
 
@@ -1247,7 +1247,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 			break;
 
 		default:
-			LOG_ERR("unknown obj data_type %d", obj_field->data_type);
+			LOG_ERROR("unknown obj data_type %d", obj_field->data_type);
 			return -EINVAL;
 		}
 
@@ -1271,8 +1271,8 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 			}
 
 			if (len > data_len) {
-				LOG_ERR("Received data won't fit into provided "
-					"buffer");
+				LOG_ERROR("Received data won't fit into provided "
+					  "buffer");
 				return -ENOMEM;
 			}
 
@@ -1357,7 +1357,7 @@ static int lwm2m_read_resource_data(struct lwm2m_message *msg, void *data_ptr, s
 			ret = engine_put_time(&msg->out, &msg->path,
 					      (time_t) *((uint32_t *)data_ptr));
 		} else {
-			LOG_ERR("Resource time length not supported %zu", data_len);
+			LOG_ERROR("Resource time length not supported %zu", data_len);
 			ret = -EINVAL;
 		}
 
@@ -1376,7 +1376,7 @@ static int lwm2m_read_resource_data(struct lwm2m_message *msg, void *data_ptr, s
 		break;
 
 	default:
-		LOG_ERR("unknown obj data_type %d", data_type);
+		LOG_ERROR("unknown obj data_type %d", data_type);
 		ret = -EINVAL;
 	}
 
@@ -1409,7 +1409,7 @@ static int lwm2m_read_cached_data(struct lwm2m_message *msg,
 	for (size_t i = 0; i < length; i++) {
 
 		if (!lwm2m_cache_read(cached_data, &buf)) {
-			LOG_ERR("Read operation fail");
+			LOG_ERROR("Read operation fail");
 			return -ENOMEM;
 		}
 
@@ -1464,7 +1464,7 @@ static int lwm2m_read_cached_data(struct lwm2m_message *msg,
 
 		/* Validate that we really read some data */
 		if (ret < 0) {
-			LOG_ERR("Read operation fail");
+			LOG_ERROR("Read operation fail");
 			return -ENOMEM;
 		}
 	}
@@ -1587,7 +1587,7 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm
 
 		/* Validate that we really read some data */
 		if (ret < 0) {
-			LOG_ERR("Read operation fail");
+			LOG_ERROR("Read operation fail");
 			return -ENOMEM;
 		}
 	}
@@ -1671,7 +1671,7 @@ static int do_read_op(struct lwm2m_message *msg, uint16_t content_format)
 #endif
 
 	default:
-		LOG_ERR("Unsupported content-format: %u", content_format);
+		LOG_ERROR("Unsupported content-format: %u", content_format);
 		return -ENOMSG;
 	}
 }
@@ -1691,7 +1691,7 @@ static int do_composite_read_op(struct lwm2m_message *msg, uint16_t content_form
 #endif
 
 	default:
-		LOG_ERR("Unsupported content-format: %u", content_format);
+		LOG_ERROR("Unsupported content-format: %u", content_format);
 		return -ENOMSG;
 	}
 }
@@ -1748,7 +1748,7 @@ static int lwm2m_perform_read_object_instance(struct lwm2m_message *msg,
 					/* ignore errors unless single read */
 					if (msg->path.level > LWM2M_PATH_LEVEL_OBJECT_INST &&
 					    !LWM2M_HAS_PERM(obj_field, BIT(LWM2M_FLAG_OPTIONAL))) {
-						LOG_ERR("READ OP: %d", ret);
+						LOG_ERROR("READ OP: %d", ret);
 					}
 				} else {
 					*num_read += 1U;
@@ -1807,13 +1807,13 @@ int lwm2m_perform_read_op(struct lwm2m_message *msg, uint16_t content_format)
 	/* set output content-format */
 	ret = coap_append_option_int(msg->out.out_cpkt, COAP_OPTION_CONTENT_FORMAT, content_format);
 	if (ret < 0) {
-		LOG_ERR("Error setting response content-format: %d", ret);
+		LOG_ERROR("Error setting response content-format: %d", ret);
 		return ret;
 	}
 
 	ret = coap_packet_append_payload_marker(msg->out.out_cpkt);
 	if (ret < 0) {
-		LOG_ERR("Error appending payload marker: %d", ret);
+		LOG_ERROR("Error appending payload marker: %d", ret);
 		return ret;
 	}
 
@@ -1908,7 +1908,7 @@ int lwm2m_discover_handler(struct lwm2m_message *msg, bool is_bootstrap)
 	ret = coap_append_option_int(msg->out.out_cpkt, COAP_OPTION_CONTENT_FORMAT,
 				     LWM2M_FORMAT_APP_LINK_FORMAT);
 	if (ret < 0) {
-		LOG_ERR("Error setting response content-format: %d", ret);
+		LOG_ERROR("Error setting response content-format: %d", ret);
 		return ret;
 	}
 
@@ -2011,7 +2011,7 @@ static int do_discover_op(struct lwm2m_message *msg, uint16_t content_format)
 		return do_discover_op_link_format(msg, msg->ctx->bootstrap_mode);
 
 	default:
-		LOG_ERR("Unsupported format: %u", content_format);
+		LOG_ERROR("Unsupported format: %u", content_format);
 		return -ENOMSG;
 	}
 }
@@ -2064,7 +2064,7 @@ static int do_write_op(struct lwm2m_message *msg, uint16_t format)
 #endif
 
 	default:
-		LOG_ERR("Unsupported format: %u", format);
+		LOG_ERROR("Unsupported format: %u", format);
 		r = -ENOMSG;
 		break;
 	}
@@ -2121,7 +2121,7 @@ static int parse_write_op(struct lwm2m_message *msg, uint16_t format)
 		}
 
 		if (r < 0) {
-			LOG_ERR("Cannot find block context");
+			LOG_ERROR("Cannot find block context");
 			return r;
 		}
 
@@ -2147,7 +2147,7 @@ static int parse_write_op(struct lwm2m_message *msg, uint16_t format)
 		}
 		r = coap_update_from_block(msg->in.in_cpkt, &block_ctx->ctx);
 		if (r < 0) {
-			LOG_ERR("Error from block update: %d", r);
+			LOG_ERROR("Error from block update: %d", r);
 			return r;
 		}
 
@@ -2217,7 +2217,7 @@ static int do_composite_write_op(struct lwm2m_message *msg, uint16_t format)
 #endif
 
 	default:
-		LOG_ERR("Unsupported format: %u", format);
+		LOG_ERROR("Unsupported format: %u", format);
 		return -ENOMSG;
 	}
 }
@@ -2261,14 +2261,14 @@ static int lwm2m_engine_default_content_format(uint16_t *accept_format)
 			LOG_DBG("No accept option given. Assume OMA TLV.");
 			*accept_format = LWM2M_FORMAT_OMA_TLV;
 		} else {
-			LOG_ERR("CBOR, SenML CBOR, SenML JSON or OMA TLV is not supported");
+			LOG_ERROR("CBOR, SenML CBOR, SenML JSON or OMA TLV is not supported");
 			return -ENOTSUP;
 		}
 	} else if (IS_ENABLED(CONFIG_LWM2M_RW_OMA_TLV_SUPPORT)) {
 		LOG_DBG("No accept option given. Assume OMA TLV.");
 		*accept_format = LWM2M_FORMAT_OMA_TLV;
 	} else {
-		LOG_ERR("No default content format is set");
+		LOG_ERROR("No default content format is set");
 		return -ENOTSUP;
 	}
 
@@ -2503,9 +2503,9 @@ static int handle_request(struct coap_packet *request, struct lwm2m_message *msg
 					msg->ctx->srv_obj_inst, msg->operation,
 					msg->ctx->bootstrap_mode);
 	if (r < 0) {
-		LOG_ERR("Access denied - Server obj %u does not have proper access to "
-			"resource",
-			msg->ctx->srv_obj_inst);
+		LOG_ERROR("Access denied - Server obj %u does not have proper access to "
+			  "resource",
+			  msg->ctx->srv_obj_inst);
 		goto error;
 	}
 #endif
@@ -2521,7 +2521,7 @@ static int handle_request(struct coap_packet *request, struct lwm2m_message *msg
 		if (observe >= 0) {
 			/* Validate That Token is valid for Observation */
 			if (!msg->token) {
-				LOG_ERR("OBSERVE request missing token");
+				LOG_ERROR("OBSERVE request missing token");
 				r = -EINVAL;
 				goto error;
 			}
@@ -2592,7 +2592,7 @@ static int handle_request(struct coap_packet *request, struct lwm2m_message *msg
 		break;
 
 	default:
-		LOG_ERR("Unknown operation: %u", msg->operation);
+		LOG_ERROR("Unknown operation: %u", msg->operation);
 		r = -EINVAL;
 	}
 
@@ -2629,7 +2629,7 @@ error:
 
 	r = lwm2m_init_message(msg);
 	if (r < 0) {
-		LOG_ERR("Error recreating message: %d", r);
+		LOG_ERROR("Error recreating message: %d", r);
 	}
 
 	return 0;
@@ -2662,17 +2662,17 @@ static int lwm2m_response_promote_to_con(struct lwm2m_message *msg)
 	/* Add the packet to the pending list. */
 	msg->pending = coap_pending_next_unused(msg->ctx->pendings, ARRAY_SIZE(msg->ctx->pendings));
 	if (!msg->pending) {
-		LOG_ERR("Unable to find a free pending to track "
-			"retransmissions.");
+		LOG_ERROR("Unable to find a free pending to track "
+			  "retransmissions.");
 		lwm2m_client_unlock(msg->ctx);
 		return -ENOMEM;
 	}
 
 	ret = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr, NULL);
 	if (ret < 0) {
-		LOG_ERR("Unable to initialize a pending "
-			"retransmission (err:%d).",
-			ret);
+		LOG_ERROR("Unable to initialize a pending "
+			  "retransmission (err:%d).",
+			  ret);
 	}
 
 	lwm2m_client_unlock(msg->ctx);
@@ -2710,7 +2710,7 @@ static void handle_ongoing_block2_tx(struct lwm2m_message *msg, struct coap_pack
 
 	r = coap_get_block2_option(cpkt, &more, &block);
 	if (r < 0) {
-		LOG_ERR("Failed to parse BLOCK2");
+		LOG_ERROR("Failed to parse BLOCK2");
 		return;
 	}
 
@@ -2720,14 +2720,14 @@ static void handle_ongoing_block2_tx(struct lwm2m_message *msg, struct coap_pack
 	r = build_msg_block_for_send(msg, block, block_size);
 	if (r < 0) {
 		clear_ongoing_block2_tx();
-		LOG_ERR("Unable to build next block of lwm2m message! r=%d", r);
+		LOG_ERROR("Unable to build next block of lwm2m message! r=%d", r);
 		return;
 	}
 
 	r = lwm2m_send_message_async(msg);
 	if (r < 0) {
 		clear_ongoing_block2_tx();
-		LOG_ERR("Unable to send next block of lwm2m message!");
+		LOG_ERROR("Unable to send next block of lwm2m message!");
 		return;
 	}
 #endif
@@ -2750,7 +2750,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 
 	r = coap_packet_parse(&response, buf, buf_len, NULL, 0);
 	if (r < 0) {
-		LOG_ERR("Invalid data received (err:%d)", r);
+		LOG_ERROR("Invalid data received (err:%d)", r);
 		return;
 	}
 
@@ -2805,7 +2805,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 		if (coap_header_get_type(&response) == COAP_TYPE_CON) {
 			r = lwm2m_send_empty_ack(client_ctx, coap_header_get_id(&response));
 			if (r < 0) {
-				LOG_ERR("Error transmitting ACK");
+				LOG_ERROR("Error transmitting ACK");
 			}
 		}
 
@@ -2814,7 +2814,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 
 			r = coap_get_block1_option(&response, &more_blocks, &block_num);
 			if (r < 0) {
-				LOG_ERR("Missing block1 option in response with continue");
+				LOG_ERROR("Missing block1 option in response with continue");
 				goto client_unlock;
 			}
 
@@ -2826,7 +2826,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 
 			if (!more_blocks) {
 				lwm2m_reset_message(msg, true);
-				LOG_ERR("Missing more flag in response with continue");
+				LOG_ERROR("Missing more flag in response with continue");
 				goto client_unlock;
 			}
 
@@ -2843,14 +2843,14 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 			r = build_msg_block_for_send(msg, block_num + 1, block_size);
 			if (r < 0) {
 				lwm2m_reset_message(msg, true);
-				LOG_ERR("Unable to build next block of lwm2m message!");
+				LOG_ERROR("Unable to build next block of lwm2m message!");
 				goto client_unlock;
 			}
 
 			r = lwm2m_send_message_async(msg);
 			if (r < 0) {
 				lwm2m_reset_message(msg, true);
-				LOG_ERR("Unable to send next block of lwm2m message!");
+				LOG_ERROR("Unable to send next block of lwm2m message!");
 				goto client_unlock;
 			}
 
@@ -2878,7 +2878,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 	} else if (pending && coap_header_get_type(&response) == COAP_TYPE_RESET) {
 		msg = find_msg(pending, NULL);
 		if (msg == NULL) {
-			LOG_ERR("Orphaned pending %p.", pending);
+			LOG_ERROR("Orphaned pending %p.", pending);
 			coap_pending_clear(pending);
 			goto client_unlock;
 		}
@@ -2903,7 +2903,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 
 		msg = lwm2m_get_message(client_ctx);
 		if (!msg) {
-			LOG_ERR("Unable to get a lwm2m message!");
+			LOG_ERROR("Unable to get a lwm2m message!");
 			return;
 		}
 
@@ -2927,7 +2927,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 		if (msg->acknowledged) {
 			r = lwm2m_response_promote_to_con(msg);
 			if (r < 0) {
-				LOG_ERR("Failed to promote response to CON: %d", r);
+				LOG_ERROR("Failed to promote response to CON: %d", r);
 				lwm2m_reset_message(msg, true);
 				return;
 			}
@@ -2936,7 +2936,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 		client_ctx->processed_req = NULL;
 		r = lwm2m_send_message_async(msg);
 		if (r < 0) {
-			LOG_ERR("Failed to send response (err: %d)", r);
+			LOG_ERROR("Failed to send response (err: %d)", r);
 			lwm2m_reset_message(msg, true);
 			return;
 		}
@@ -2971,7 +2971,7 @@ static void notify_message_timeout_cb(struct lwm2m_message *msg)
 		}
 	}
 
-	LOG_ERR("Notify Message Timed Out : %p", msg);
+	LOG_ERROR("Notify Message Timed Out : %p", msg);
 }
 
 static struct lwm2m_obj_path *lwm2m_read_first_path_ptr(sys_slist_t *lwm2m_path_list)
@@ -3023,10 +3023,10 @@ static int notify_message_reply_cb(const struct coap_packet *response, struct co
 		if (reply->tkl > 0) {
 			ret = engine_remove_observer_by_token(msg->ctx, reply->token, reply->tkl);
 			if (ret) {
-				LOG_ERR("remove observe error: %d", ret);
+				LOG_ERROR("remove observe error: %d", ret);
 			}
 		} else {
-			LOG_ERR("notify reply missing token -- ignored.");
+			LOG_ERROR("notify reply missing token -- ignored.");
 		}
 	} else {
 		obs = engine_observe_node_discover(&msg->ctx->observer, &prev_node, NULL,
@@ -3061,7 +3061,7 @@ static int do_send_op(struct lwm2m_message *msg, uint16_t content_format,
 #endif
 
 	default:
-		LOG_ERR("Unsupported content-format for /dp: %u", content_format);
+		LOG_ERROR("Unsupported content-format for /dp: %u", content_format);
 		return -ENOMSG;
 	}
 }
@@ -3119,7 +3119,7 @@ int generate_notify_message(struct lwm2m_ctx *ctx, struct observe_node *obs, voi
 
 	msg = lwm2m_get_message(ctx);
 	if (!msg) {
-		LOG_ERR("Unable to get a lwm2m message!");
+		LOG_ERROR("Unable to get a lwm2m message!");
 		return -ENOMEM;
 	}
 msg_init:
@@ -3127,7 +3127,7 @@ msg_init:
 	if (!obs->composite) {
 		path = lwm2m_read_first_path_ptr(&obs->path_list);
 		if (!path) {
-			LOG_ERR("Observation node not include path");
+			LOG_ERROR("Observation node not include path");
 			ret = -EINVAL;
 			goto cleanup;
 		}
@@ -3140,8 +3140,8 @@ msg_init:
 
 		obj_inst = get_engine_obj_inst(path->obj_id, path->obj_inst_id);
 		if (!obj_inst) {
-			LOG_ERR("unable to get engine obj for %u/%u", path->obj_id,
-				path->obj_inst_id);
+			LOG_ERROR("unable to get engine obj for %u/%u", path->obj_id,
+				  path->obj_inst_id);
 			ret = -EINVAL;
 			goto cleanup;
 		}
@@ -3164,7 +3164,7 @@ msg_init:
 
 	ret = lwm2m_init_message(msg);
 	if (ret < 0) {
-		LOG_ERR("Unable to init lwm2m message! (err: %d)", ret);
+		LOG_ERROR("Unable to init lwm2m message! (err: %d)", ret);
 		goto cleanup;
 	}
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
@@ -3178,7 +3178,7 @@ msg_init:
 	obs->counter++;
 	ret = coap_append_option_int(&msg->cpkt, COAP_OPTION_OBSERVE, obs->counter);
 	if (ret < 0) {
-		LOG_ERR("OBSERVE option error: %d", ret);
+		LOG_ERROR("OBSERVE option error: %d", ret);
 		goto cleanup;
 	}
 
@@ -3198,7 +3198,7 @@ msg_init:
 			 */
 			goto msg_init;
 		}
-		LOG_ERR("error in multi-format read (err:%d)", ret);
+		LOG_ERROR("error in multi-format read (err:%d)", ret);
 		goto cleanup;
 	}
 
@@ -3259,13 +3259,13 @@ int lwm2m_perform_composite_read_op(struct lwm2m_message *msg, uint16_t content_
 	/* set output content-format */
 	ret = coap_append_option_int(msg->out.out_cpkt, COAP_OPTION_CONTENT_FORMAT, content_format);
 	if (ret < 0) {
-		LOG_ERR("Error setting response content-format: %d", ret);
+		LOG_ERROR("Error setting response content-format: %d", ret);
 		return ret;
 	}
 
 	ret = coap_packet_append_payload_marker(msg->out.out_cpkt);
 	if (ret < 0) {
-		LOG_ERR("Error appending payload marker: %d", ret);
+		LOG_ERROR("Error appending payload marker: %d", ret);
 		return ret;
 	}
 
@@ -3286,7 +3286,7 @@ int lwm2m_perform_composite_read_op(struct lwm2m_message *msg, uint16_t content_
 			/* Read root Path */
 			ret = lwm2m_perform_composite_read_root(msg, &num_read);
 			if (ret == -ENOMEM) {
-				LOG_ERR("Supported message size is too small for read root");
+				LOG_ERROR("Supported message size is too small for read root");
 				return ret;
 			}
 			break;
@@ -3334,7 +3334,7 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 	http_parser_url_init(&parser);
 	ret = http_parser_parse_url(url, strlen(url), 0, &parser);
 	if (ret < 0) {
-		LOG_ERR("Invalid url: %s", url);
+		LOG_ERROR("Invalid url: %s", url);
 		return -ENOTSUP;
 	}
 
@@ -3404,7 +3404,7 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 		hints.ai_socktype = NET_SOCK_DGRAM;
 		ret = zsock_getaddrinfo(url + off, NULL, &hints, &res);
 		if (ret != 0) {
-			LOG_ERR("Unable to resolve address");
+			LOG_ERROR("Unable to resolve address");
 			/* DNS error codes don't align with normal errors */
 			ret = -ENOENT;
 			goto cleanup;
@@ -3465,7 +3465,7 @@ int do_composite_read_op_for_parsed_list(struct lwm2m_message *msg, uint16_t con
 #endif
 
 	default:
-		LOG_ERR("Unsupported content-format: %u", content_format);
+		LOG_ERROR("Unsupported content-format: %u", content_format);
 		return -ENOMSG;
 	}
 }
@@ -3489,8 +3489,8 @@ static int do_send_reply_cb(const struct coap_packet *response, struct coap_repl
 		return 0;
 	}
 
-	LOG_ERR("Failed with code %u.%u. Not Retrying.", COAP_RESPONSE_CODE_CLASS(code),
-		COAP_RESPONSE_CODE_DETAIL(code));
+	LOG_ERROR("Failed with code %u.%u. Not Retrying.", COAP_RESPONSE_CODE_CLASS(code),
+		  COAP_RESPONSE_CODE_DETAIL(code));
 
 	if (msg && msg->send_status_cb) {
 		msg->send_status_cb(LWM2M_SEND_STATUS_FAILURE);
@@ -3607,7 +3607,7 @@ msg_alloc:
 	msg = lwm2m_get_message(ctx);
 	if (!msg) {
 		lwm2m_registry_unlock();
-		LOG_ERR("Unable to get a lwm2m message!");
+		LOG_ERROR("Unable to get a lwm2m message!");
 		return -ENOMEM;
 	}
 
@@ -3656,7 +3656,7 @@ msg_init:
 			goto msg_init;
 		}
 
-		LOG_ERR("Send (err:%d)", ret);
+		LOG_ERROR("Send (err:%d)", ret);
 		goto cleanup;
 	}
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)

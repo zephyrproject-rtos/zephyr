@@ -55,7 +55,7 @@ static int max14917_reg_trans_spi_diag(const struct device *dev)
 	/* Perform SPI transaction */
 	ret = spi_transceive_dt(&config->spi, &tx, &rx);
 	if (ret) {
-		LOG_ERR("SPI transfer failed");
+		LOG_ERROR("SPI transfer failed");
 		return ret;
 	}
 
@@ -64,7 +64,7 @@ static int max14917_reg_trans_spi_diag(const struct device *dev)
 		crc = crc8(&local_tx_buff[0], 1, MAX14917_CRC_POLY, MAX14917_CRC_INI_VAL, false);
 		crc = (crc & MAX14917_CRC_MASK);
 		if (crc != (local_rx_buff[1] & 0x1F)) {
-			LOG_ERR("READ CRC ERR (%d)-(%d)\n", crc, (local_rx_buff[1] & 0x1F));
+			LOG_ERROR("READ CRC ERR (%d)-(%d)\n", crc, (local_rx_buff[1] & 0x1F));
 			return -EINVAL;
 		}
 		/* Set error flags in device data */
@@ -122,88 +122,88 @@ static int gpio_max14917_init(const struct device *dev)
 	LOG_DBG(" --- GPIO max14917 init IN ---");
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus is not ready\n");
+		LOG_ERROR("SPI bus is not ready\n");
 		return -ENODEV;
 	}
 
 	/* Output GPIOS */
 	/* setup EN gpio - normal low */
 	if (!gpio_is_ready_dt(&config->en_gpio)) {
-		LOG_ERR("EN GPIO device not ready");
+		LOG_ERROR("EN GPIO device not ready");
 		return -ENODEV;
 	}
 
 	err = gpio_pin_configure_dt(&config->en_gpio, GPIO_OUTPUT);
 	if (err < 0) {
-		LOG_ERR("Failed to configure EN GPIO");
+		LOG_ERROR("Failed to configure EN GPIO");
 		return err;
 	}
 
 	/* setup SYNC gpio - normal low */
 	if (!gpio_is_ready_dt(&config->sync_gpio)) {
-		LOG_ERR("SYNC GPIO device not ready");
+		LOG_ERROR("SYNC GPIO device not ready");
 		return -ENODEV;
 	}
 
 	err = gpio_pin_configure_dt(&config->sync_gpio, GPIO_OUTPUT);
 	if (err < 0) {
-		LOG_ERR("Failed to configure SYNC GPIO");
+		LOG_ERROR("Failed to configure SYNC GPIO");
 		return err;
 	}
 	/* setup CRCEN gpio - normal low */
 	if (!gpio_is_ready_dt(&config->crcen_gpio)) {
-		LOG_ERR("CRCEN GPIO device not ready");
+		LOG_ERROR("CRCEN GPIO device not ready");
 		return -ENODEV;
 	}
 
 	err = gpio_pin_configure_dt(&config->crcen_gpio, GPIO_OUTPUT);
 	if (err < 0) {
-		LOG_ERR("Failed to configure CRCEN GPIO");
+		LOG_ERROR("Failed to configure CRCEN GPIO");
 		return err;
 	}
 	/* Input GPIOS */
 	/* setup VDDOK gpio - normal low */
 	if (!gpio_is_ready_dt(&config->vddok_gpio)) {
-		LOG_ERR("VDDOK GPIO device not ready");
+		LOG_ERROR("VDDOK GPIO device not ready");
 		return -ENODEV;
 	}
 
 	err = gpio_pin_configure_dt(&config->vddok_gpio, GPIO_INPUT);
 	if (err < 0) {
-		LOG_ERR("Failed to configure VDDOK GPIO");
+		LOG_ERROR("Failed to configure VDDOK GPIO");
 		return err;
 	}
 	/* setup READY gpio - normal low */
 	if (!gpio_is_ready_dt(&config->ready_gpio)) {
-		LOG_ERR("VDDOK READY device not ready");
+		LOG_ERROR("VDDOK READY device not ready");
 		return -ENODEV;
 	}
 
 	err = gpio_pin_configure_dt(&config->ready_gpio, GPIO_INPUT);
 	if (err < 0) {
-		LOG_ERR("Failed to configure READY GPIO");
+		LOG_ERROR("Failed to configure READY GPIO");
 		return err;
 	}
 	/* setup COMERR gpio - normal low */
 	if (!gpio_is_ready_dt(&config->comerr_gpio)) {
-		LOG_ERR("COMERR GPIO device not ready");
+		LOG_ERROR("COMERR GPIO device not ready");
 		return -ENODEV;
 	}
 
 	err = gpio_pin_configure_dt(&config->comerr_gpio, GPIO_INPUT);
 	if (err < 0) {
-		LOG_ERR("Failed to configure COMERR GPIO");
+		LOG_ERROR("Failed to configure COMERR GPIO");
 		return err;
 	}
 	/* setup FAULT gpio - normal low */
 	if (!gpio_is_ready_dt(&config->fault_gpio)) {
-		LOG_ERR("FAULT GPIO device not ready");
+		LOG_ERROR("FAULT GPIO device not ready");
 		return -ENODEV;
 	}
 
 	err = gpio_pin_configure_dt(&config->fault_gpio, GPIO_INPUT);
 	if (err < 0) {
-		LOG_ERR("Failed to configure FAULT GPIO");
+		LOG_ERROR("Failed to configure FAULT GPIO");
 		return err;
 	}
 
@@ -260,7 +260,7 @@ static int gpio_max14917_config(const struct device *dev, gpio_pin_t pin, gpio_f
 		break;
 	case GPIO_INPUT:
 	default:
-		LOG_ERR("NOT SUPPORTED OPTION!");
+		LOG_ERROR("NOT SUPPORTED OPTION!");
 		return -ENOTSUP;
 	}
 

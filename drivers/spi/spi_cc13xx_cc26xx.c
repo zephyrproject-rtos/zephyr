@@ -49,46 +49,46 @@ static int spi_cc13xx_cc26xx_configure(const struct device *dev,
 	}
 
 	if (config->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	/* Slave mode has not been implemented */
 	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Slave mode is not supported");
+		LOG_ERROR("Slave mode is not supported");
 		return -ENOTSUP;
 	}
 
 	/* Word sizes other than 8 bits has not been implemented */
 	if (SPI_WORD_SIZE_GET(config->operation) != 8) {
-		LOG_ERR("Word sizes other than 8 bits are not supported");
+		LOG_ERROR("Word sizes other than 8 bits are not supported");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_TRANSFER_LSB) {
-		LOG_ERR("Transfer LSB first mode is not supported");
+		LOG_ERROR("Transfer LSB first mode is not supported");
 		return -EINVAL;
 	}
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
 	    (config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Multiple lines are not supported");
+		LOG_ERROR("Multiple lines are not supported");
 		return -EINVAL;
 	}
 
 	if (config->operation & SPI_CS_ACTIVE_HIGH && !spi_cs_is_gpio(config)) {
-		LOG_ERR("Active high CS requires emulation through a GPIO line.");
+		LOG_ERROR("Active high CS requires emulation through a GPIO line.");
 		return -EINVAL;
 	}
 
 	if (config->frequency < CPU_FREQ / (254 * (255 + 1))) {
-		LOG_ERR("Frequencies lower than %d Hz are not supported",
-			CPU_FREQ / (254 * (255 + 1)));
+		LOG_ERROR("Frequencies lower than %d Hz are not supported",
+			  CPU_FREQ / (254 * (255 + 1)));
 		return -EINVAL;
 	}
 
 	if (2 * config->frequency > CPU_FREQ) {
-		LOG_ERR("Frequency greater than supported in master mode");
+		LOG_ERROR("Frequency greater than supported in master mode");
 		return -EINVAL;
 	}
 
@@ -108,7 +108,7 @@ static int spi_cc13xx_cc26xx_configure(const struct device *dev,
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("applying SPI pinctrl state failed");
+		LOG_ERROR("applying SPI pinctrl state failed");
 		return ret;
 	}
 

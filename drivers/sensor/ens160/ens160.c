@@ -27,7 +27,7 @@ static int ens160_set_temperature(const struct device *dev, const struct sensor_
 
 	/* Recommended operation: -5 to 60 degrees Celsius */
 	if (!IN_RANGE(val->val1, -5, 60)) {
-		LOG_ERR("Invalid temperature value");
+		LOG_ERROR("Invalid temperature value");
 		return -EINVAL;
 	}
 
@@ -39,7 +39,7 @@ static int ens160_set_temperature(const struct device *dev, const struct sensor_
 
 	ret = data->tf->write_data(dev, ENS160_REG_TEMP_IN, buf, 2U);
 	if (ret < 0) {
-		LOG_ERR("Failed to write temperature");
+		LOG_ERROR("Failed to write temperature");
 		return ret;
 	}
 
@@ -55,7 +55,7 @@ static int ens160_set_humidity(const struct device *dev, const struct sensor_val
 
 	/* Recommended operation: 20 to 80% RH */
 	if (!IN_RANGE(val->val1, 20, 80)) {
-		LOG_ERR("Invalid RH value");
+		LOG_ERROR("Invalid RH value");
 		return -EINVAL;
 	}
 
@@ -66,7 +66,7 @@ static int ens160_set_humidity(const struct device *dev, const struct sensor_val
 
 	ret = data->tf->write_data(dev, ENS160_REG_RH_IN, buf, 2U);
 	if (ret < 0) {
-		LOG_ERR("Failed to write RH");
+		LOG_ERROR("Failed to write RH");
 		return ret;
 	}
 
@@ -105,7 +105,7 @@ static int ens160_sample_fetch(const struct device *dev, enum sensor_channel cha
 	ret = data->tf->read_data(dev, ENS160_REG_DATA_ECO2, (uint8_t *)&le16_buffer,
 				  sizeof(le16_buffer));
 	if (ret < 0) {
-		LOG_ERR("Failed to fetch CO2");
+		LOG_ERROR("Failed to fetch CO2");
 		return ret;
 	}
 
@@ -114,7 +114,7 @@ static int ens160_sample_fetch(const struct device *dev, enum sensor_channel cha
 	ret = data->tf->read_data(dev, ENS160_REG_DATA_TVOC, (uint8_t *)&le16_buffer,
 				  sizeof(le16_buffer));
 	if (ret < 0) {
-		LOG_ERR("Failed to fetch VOC");
+		LOG_ERROR("Failed to fetch VOC");
 		return ret;
 	}
 
@@ -122,7 +122,7 @@ static int ens160_sample_fetch(const struct device *dev, enum sensor_channel cha
 
 	ret = data->tf->read_reg(dev, ENS160_REG_DATA_AQI, &buffer);
 	if (ret < 0) {
-		LOG_ERR("Failed to fetch AQI");
+		LOG_ERROR("Failed to fetch AQI");
 		return ret;
 	}
 
@@ -200,7 +200,7 @@ static int ens160_init(const struct device *dev)
 
 	ret = data->tf->write_reg(dev, ENS160_REG_OPMODE, ENS160_OPMODE_RESET);
 	if (ret < 0) {
-		LOG_ERR("Failed to reset the device");
+		LOG_ERROR("Failed to reset the device");
 		return ret;
 	}
 
@@ -208,18 +208,19 @@ static int ens160_init(const struct device *dev)
 
 	ret = data->tf->read_data(dev, ENS160_REG_PART_ID, (uint8_t *)&part_id, sizeof(part_id));
 	if (ret < 0) {
-		LOG_ERR("Failed to read Part ID");
+		LOG_ERROR("Failed to read Part ID");
 		return -EIO;
 	}
 
 	if (sys_le16_to_cpu(part_id) != ENS160_PART_ID) {
-		LOG_ERR("Part ID is invalid. Expected: 0x%x; read: 0x%x", ENS160_PART_ID, part_id);
+		LOG_ERROR("Part ID is invalid. Expected: 0x%x; read: 0x%x", ENS160_PART_ID,
+			  part_id);
 		return -EIO;
 	}
 
 	ret = data->tf->write_reg(dev, ENS160_REG_OPMODE, ENS160_OPMODE_IDLE);
 	if (ret < 0) {
-		LOG_ERR("Failed to set operation mode");
+		LOG_ERROR("Failed to set operation mode");
 		return ret;
 	}
 
@@ -227,13 +228,13 @@ static int ens160_init(const struct device *dev)
 
 	ret = data->tf->write_reg(dev, ENS160_REG_COMMAND, ENS160_COMMAND_CLRGPR);
 	if (ret < 0) {
-		LOG_ERR("Failed to clear GPR registers");
+		LOG_ERROR("Failed to clear GPR registers");
 		return ret;
 	}
 
 	ret = data->tf->write_reg(dev, ENS160_REG_COMMAND, ENS160_COMMAND_GET_APPVER);
 	if (ret < 0) {
-		LOG_ERR("Failed to write GET_APPVER command");
+		LOG_ERROR("Failed to write GET_APPVER command");
 		return ret;
 	}
 
@@ -241,7 +242,7 @@ static int ens160_init(const struct device *dev)
 
 	ret = data->tf->read_data(dev, ENS160_REG_GPR_READ4, fw_version, sizeof(fw_version));
 	if (ret < 0) {
-		LOG_ERR("Failed to read firmware version");
+		LOG_ERROR("Failed to read firmware version");
 		return ret;
 	}
 	LOG_INF("Firmware version: %u.%u.%u", fw_version[2], fw_version[1], fw_version[0]);
@@ -249,14 +250,14 @@ static int ens160_init(const struct device *dev)
 #ifdef CONFIG_ENS160_TRIGGER
 	ret = ens160_init_interrupt(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize interrupt");
+		LOG_ERROR("Failed to initialize interrupt");
 		return ret;
 	}
 #endif /* CONFIG_ENS160_TRIGGER */
 
 	ret = data->tf->write_reg(dev, ENS160_REG_OPMODE, ENS160_OPMODE_STANDARD);
 	if (ret < 0) {
-		LOG_ERR("Failed to set operation mode");
+		LOG_ERROR("Failed to set operation mode");
 		return ret;
 	}
 
@@ -264,12 +265,12 @@ static int ens160_init(const struct device *dev)
 
 	ret = data->tf->read_reg(dev, ENS160_REG_DEVICE_STATUS, &status);
 	if (ret < 0) {
-		LOG_ERR("Failed to read device status");
+		LOG_ERROR("Failed to read device status");
 		return ret;
 	}
 
 	if (FIELD_GET(ENS160_STATUS_VALIDITY_FLAG, status) != ENS160_STATUS_NORMAL) {
-		LOG_ERR("Status 0x%02x is invalid", status);
+		LOG_ERROR("Status 0x%02x is invalid", status);
 		return -EINVAL;
 	}
 

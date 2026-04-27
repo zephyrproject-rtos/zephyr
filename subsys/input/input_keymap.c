@@ -76,7 +76,7 @@ static int keymap_init(const struct device *dev)
 	const struct keymap_config *cfg = dev->config;
 
 	if (!device_is_ready(cfg->input_dev)) {
-		LOG_ERR("input device not ready");
+		LOG_ERROR("input device not ready");
 		return -ENODEV;
 	}
 

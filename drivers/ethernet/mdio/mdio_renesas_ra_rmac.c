@@ -69,7 +69,7 @@ static int mdio_renesas_ra_read(const struct device *dev, uint8_t prtad, uint8_t
 
 	if (!WAIT_FOR(((*config->reg.mpsm & R_RMAC0_MPSM_PSME_Msk) == 0),
 		      RENESAS_RA_MDIO_TIMEOUT_US, NULL)) {
-		LOG_ERR("MDIO read operation timed out");
+		LOG_ERROR("MDIO read operation timed out");
 		ret = -ETIMEDOUT;
 	}
 
@@ -109,7 +109,7 @@ static int mdio_renesas_ra_write(const struct device *dev, uint8_t prtad, uint8_
 
 	if (!WAIT_FOR(((*config->reg.mpsm & R_RMAC0_MPSM_PSME_Msk) == 0),
 		      RENESAS_RA_MDIO_TIMEOUT_US, NULL)) {
-		LOG_ERR("MDIO write operation timed out");
+		LOG_ERROR("MDIO write operation timed out");
 		ret = -ETIMEDOUT;
 	}
 

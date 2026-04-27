@@ -44,17 +44,17 @@ static int mcux_rtwdog_setup(const struct device *dev, uint8_t options)
 	RTWDOG_Type *base = config->base;
 
 	if (!data->timeout_valid) {
-		LOG_ERR("No valid timeouts installed");
+		LOG_ERROR("No valid timeouts installed");
 		return -EINVAL;
 	}
 
 	if (data->enabled) {
-		LOG_ERR("This watchdog has been enabled");
+		LOG_ERROR("This watchdog has been enabled");
 		return -EBUSY;
 	}
 
 	if ((options & WDT_OPT_PAUSE_IN_SLEEP) != 0U) {
-		LOG_ERR("Not support WDT_OPT_PAUSE_IN_SLEEP");
+		LOG_ERROR("Not support WDT_OPT_PAUSE_IN_SLEEP");
 		return -ENOTSUP;
 	}
 
@@ -76,7 +76,7 @@ static int mcux_rtwdog_disable(const struct device *dev)
 	data->timeout_valid = false;
 
 	if (!data->enabled) {
-		LOG_ERR("Disabled when watchdog is not enabled");
+		LOG_ERROR("Disabled when watchdog is not enabled");
 		return -EFAULT;
 	}
 
@@ -95,17 +95,17 @@ static int mcux_rtwdog_install_timeout(const struct device *dev, const struct wd
 	uint32_t clk_divider;
 
 	if (data->enabled) {
-		LOG_ERR("Timeout can not be installed while watchdog has already been setup");
+		LOG_ERROR("Timeout can not be installed while watchdog has already been setup");
 		return -EBUSY;
 	}
 
 	if (data->timeout_valid) {
-		LOG_ERR("No more timeouts can be installed");
+		LOG_ERROR("No more timeouts can be installed");
 		return -ENOMEM;
 	}
 
 	if (cfg->flags == WDT_FLAG_RESET_NONE) {
-		LOG_ERR("Not support WDT_FLAG_RESET_NONE");
+		LOG_ERROR("Not support WDT_FLAG_RESET_NONE");
 		return -ENOTSUP;
 	}
 
@@ -120,7 +120,7 @@ static int mcux_rtwdog_install_timeout(const struct device *dev, const struct wd
 		MSEC_TO_RTWDOG_TICKS(clock_freq, clk_divider, cfg->window.max);
 
 	if (data->wdog_config.timeoutValue > UINT16_MAX) {
-		LOG_ERR("Invalid window max");
+		LOG_ERROR("Invalid window max");
 		return -EINVAL;
 	}
 
@@ -135,7 +135,7 @@ static int mcux_rtwdog_install_timeout(const struct device *dev, const struct wd
 
 	if ((data->wdog_config.timeoutValue < RTWDOG_MIN_TIMEOUT) ||
 	    (data->wdog_config.timeoutValue <= data->wdog_config.windowValue)) {
-		LOG_ERR("Invalid timeout");
+		LOG_ERROR("Invalid timeout");
 		return -EINVAL;
 	}
 
@@ -153,12 +153,12 @@ static int mcux_rtwdog_feed(const struct device *dev, int channel_id)
 	RTWDOG_Type *base = config->base;
 
 	if (channel_id != 0) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 
 	if (!data->enabled) {
-		LOG_ERR("Feed disabled watchdog");
+		LOG_ERROR("Feed disabled watchdog");
 		return -EINVAL;
 	}
 

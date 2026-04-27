@@ -129,7 +129,7 @@ int stream_rx_started(struct bt_bap_stream *bap_stream)
 
 		err = lc3_enable(stream);
 		if (err < 0) {
-			LOG_ERR("Error: cannot enable LC3 codec: %d", err);
+			LOG_ERROR("Error: cannot enable LC3 codec: %d", err);
 			return err;
 		}
 	}
@@ -151,7 +151,7 @@ int stream_rx_stopped(struct bt_bap_stream *bap_stream)
 
 		err = lc3_disable(stream);
 		if (err < 0) {
-			LOG_ERR("Error: cannot disable LC3 codec: %d", err);
+			LOG_ERROR("Error: cannot disable LC3 codec: %d", err);
 			return err;
 		}
 	}

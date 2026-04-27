@@ -463,8 +463,7 @@ static int saf_flash_freq_cfg(struct mchp_espi_saf * const regs, uint8_t cs,
 	if (fmhz) {
 		fdiv = 0u;
 		if (qmspi_freq_div_from_mhz(fmhz, &fdiv)) {
-			LOG_ERR("%s SAF CLKDIV CS0 bad freq MHz %u",
-				__func__, fmhz);
+			LOG_ERROR("%s SAF CLKDIV CS0 bad freq MHz %u", __func__, fmhz);
 			return -EIO;
 		}
 		if (fdiv) {
@@ -477,8 +476,7 @@ static int saf_flash_freq_cfg(struct mchp_espi_saf * const regs, uint8_t cs,
 	if (fmhz) {
 		fdiv = 0u;
 		if (qmspi_freq_div_from_mhz(fmhz, &fdiv)) {
-			LOG_ERR("%s SAF CLKDIV CS1 bad freq MHz %u",
-				__func__, fmhz);
+			LOG_ERROR("%s SAF CLKDIV CS1 bad freq MHz %u", __func__, fmhz);
 			return -EIO;
 		}
 		if (fdiv) {
@@ -685,7 +683,7 @@ static int espi_saf_xec_configuration(const struct device *dev,
 
 	ret = saf_init_erase_block_size(dev, cfg);
 	if (ret != 0) {
-		LOG_ERR("SAF Config bad flash erase config");
+		LOG_ERROR("SAF Config bad flash erase config");
 		return ret;
 	}
 
@@ -856,13 +854,13 @@ static int saf_ecp_access(const struct device *dev,
 	LOG_DBG("%s", __func__);
 
 	if (!(regs->SAF_FL_CFG_MISC & MCHP_SAF_FL_CFG_MISC_SAF_EN)) {
-		LOG_ERR("SAF is disabled");
+		LOG_ERROR("SAF is disabled");
 		return -EIO;
 	}
 
 	n = regs->SAF_ECP_BUSY;
 	if (n & (MCHP_SAF_ECP_EC0_BUSY | MCHP_SAF_ECP_EC1_BUSY)) {
-		LOG_ERR("SAF EC Portal is busy: 0x%08x", n);
+		LOG_ERROR("SAF EC Portal is busy: 0x%08x", n);
 		return -EBUSY;
 	}
 
@@ -871,7 +869,7 @@ static int saf_ecp_access(const struct device *dev,
 	case MCHP_SAF_ECP_CMD_WRITE:
 		rc = check_ecp_access_size(pckt->len);
 		if (rc) {
-			LOG_ERR("SAF EC Portal size out of bounds");
+			LOG_ERROR("SAF EC Portal size out of bounds");
 			return rc;
 		}
 
@@ -884,7 +882,7 @@ static int saf_ecp_access(const struct device *dev,
 	case MCHP_SAF_ECP_CMD_ERASE:
 		n = get_erase_size_encoding(dev, pckt->len);
 		if (n == UINT32_MAX) {
-			LOG_ERR("SAF EC Portal unsupported erase size");
+			LOG_ERROR("SAF EC Portal unsupported erase size");
 			return -EAGAIN;
 		}
 		break;
@@ -892,11 +890,11 @@ static int saf_ecp_access(const struct device *dev,
 	case MCHP_SAF_ECP_CMD_RPMC_OP2_CS0:
 		rc = check_ecp_access_size(pckt->len);
 		if (rc) {
-			LOG_ERR("SAF EC Portal RPMC size out of bounds");
+			LOG_ERROR("SAF EC Portal RPMC size out of bounds");
 			return rc;
 		}
 		if (!(regs->SAF_CFG_CS0_OPD & SAF_CFG_CS_OPC_RPMC_OP2_MSK)) {
-			LOG_ERR("SAF CS0 RPMC opcode not configured");
+			LOG_ERROR("SAF CS0 RPMC opcode not configured");
 			return -EIO;
 		}
 		n = pckt->len;
@@ -905,17 +903,17 @@ static int saf_ecp_access(const struct device *dev,
 	case MCHP_SAF_ECP_CMD_RPMC_OP2_CS1:
 		rc = check_ecp_access_size(pckt->len);
 		if (rc) {
-			LOG_ERR("SAF EC Portal RPMC size out of bounds");
+			LOG_ERROR("SAF EC Portal RPMC size out of bounds");
 			return rc;
 		}
 		if (!(regs->SAF_CFG_CS1_OPD & SAF_CFG_CS_OPC_RPMC_OP2_MSK)) {
-			LOG_ERR("SAF CS1 RPMC opcode not configured");
+			LOG_ERROR("SAF CS1 RPMC opcode not configured");
 			return -EIO;
 		}
 		n = pckt->len;
 		break;
 	default:
-		LOG_ERR("SAF EC Portal bad cmd");
+		LOG_ERROR("SAF EC Portal bad cmd");
 		return -EAGAIN;
 	}
 
@@ -943,7 +941,7 @@ static int saf_ecp_access(const struct device *dev,
 
 	rc = k_sem_take(&xdat->ecp_lock, K_MSEC(MAX_SAF_FLASH_TIMEOUT_MS));
 	if (rc == -EAGAIN) {
-		LOG_ERR("%s timeout", __func__);
+		LOG_ERROR("%s timeout", __func__);
 		return -ETIMEDOUT;
 	}
 
@@ -953,7 +951,7 @@ static int saf_ecp_access(const struct device *dev,
 	/* clear hardware status and check for errors */
 	if (n & err_mask) {
 		regs->SAF_ECP_STATUS = n;
-		LOG_ERR("%s error %x", __func__, n);
+		LOG_ERROR("%s error %x", __func__, n);
 		return -EIO;
 	}
 

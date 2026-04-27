@@ -79,7 +79,7 @@ int sc18im704_transfer(const struct device *dev,
 		ret = ret == -1 ? -EAGAIN : ret;
 
 		if (ret < 0) {
-			LOG_ERR("Failed to read data (%d)", ret);
+			LOG_ERROR("Failed to read data (%d)", ret);
 		}
 	}
 
@@ -123,7 +123,7 @@ static int i2c_sc18im_configure(const struct device *dev, uint32_t config)
 
 		ret = sc18im704_transfer(dev, buf, sizeof(buf), NULL, 0);
 		if (ret < 0) {
-			LOG_ERR("Failed to set I2C speed (%d)", ret);
+			LOG_ERROR("Failed to set I2C speed (%d)", ret);
 			return -EIO;
 		}
 	}
@@ -202,7 +202,7 @@ static int i2c_sc18im_transfer(const struct device *dev,
 
 	ret = sc18im704_claim(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to claim I2C bridge (%d)", ret);
+		LOG_ERROR("Failed to claim I2C bridge (%d)", ret);
 		return ret;
 	}
 
@@ -250,13 +250,13 @@ static int i2c_sc18im_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 
 	if (!device_is_ready(cfg->bus)) {
-		LOG_ERR("UART bus not ready");
+		LOG_ERROR("UART bus not ready");
 		return -ENODEV;
 	}
 
 	ret = uart_configure(cfg->bus, &uart_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure UART (%d)", ret);
+		LOG_ERROR("Failed to configure UART (%d)", ret);
 		return ret;
 	}
 
@@ -264,26 +264,26 @@ static int i2c_sc18im_init(const struct device *dev)
 		uint8_t buf[2];
 
 		if (!gpio_is_ready_dt(&cfg->reset_gpios)) {
-			LOG_ERR("Reset GPIO device not ready");
+			LOG_ERROR("Reset GPIO device not ready");
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&cfg->reset_gpios, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure reset GPIO (%d)", ret);
+			LOG_ERROR("Failed to configure reset GPIO (%d)", ret);
 			return ret;
 		}
 
 		ret = gpio_pin_set_dt(&cfg->reset_gpios, 0);
 		if (ret < 0) {
-			LOG_ERR("Failed to set reset GPIO (%d)", ret);
+			LOG_ERROR("Failed to set reset GPIO (%d)", ret);
 			return ret;
 		}
 
 		/* The device sends "OK" */
 		ret = sc18im704_transfer(dev, NULL, 0, buf, sizeof(buf));
 		if (ret < 0) {
-			LOG_ERR("Failed to get OK (%d)", ret);
+			LOG_ERROR("Failed to get OK (%d)", ret);
 			return ret;
 		}
 	}
@@ -301,7 +301,7 @@ static int i2c_sc18im_init(const struct device *dev)
 
 		ret = sc18im704_transfer(dev, buf, sizeof(buf), NULL, 0);
 		if (ret < 0) {
-			LOG_ERR("Failed to set baudrate (%d)", ret);
+			LOG_ERROR("Failed to set baudrate (%d)", ret);
 			return ret;
 		}
 
@@ -312,7 +312,7 @@ static int i2c_sc18im_init(const struct device *dev)
 		uart_cfg.baudrate = cfg->bus_speed;
 		ret = uart_configure(cfg->bus, &uart_cfg);
 		if (ret < 0) {
-			LOG_ERR("Failed to re-configure UART (%d)", ret);
+			LOG_ERROR("Failed to re-configure UART (%d)", ret);
 			return ret;
 		}
 	}

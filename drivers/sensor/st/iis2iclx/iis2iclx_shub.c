@@ -106,7 +106,7 @@ static int iis2iclx_lis2mdl_odr_set(const struct device *dev,
 	}
 
 	if (odr == ARRAY_SIZE(lis2mdl_map)) {
-		LOG_ERR("shub: LIS2MDL freq val %d not supported.", freq);
+		LOG_ERROR("shub: LIS2MDL freq val %d not supported.", freq);
 		return -ENOTSUP;
 	}
 
@@ -127,7 +127,7 @@ static int iis2iclx_lis2mdl_conf(const struct device *dev, uint8_t i2c_addr,
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return iis2iclx_lis2mdl_odr_set(dev, i2c_addr, val->val1);
 	default:
-		LOG_ERR("shub: LIS2MDL attribute not supported.");
+		LOG_ERROR("shub: LIS2MDL attribute not supported.");
 		return -ENOTSUP;
 	}
 
@@ -163,7 +163,7 @@ static int hts221_read_conv_data(const struct device *dev,
 						(HTS221_REG_CONV_START + i) |
 						HTS221_AUTOINCREMENT,
 						&buf[i], len) < 0) {
-			LOG_ERR("shub: failed to read hts221 conv data");
+			LOG_ERROR("shub: failed to read hts221 conv data");
 			return -EIO;
 		}
 	}
@@ -202,7 +202,7 @@ static int iis2iclx_hts221_odr_set(const struct device *dev,
 	}
 
 	if (odr == ARRAY_SIZE(hts221_map)) {
-		LOG_ERR("shub: HTS221 freq val %d not supported.", freq);
+		LOG_ERROR("shub: HTS221 freq val %d not supported.", freq);
 		return -ENOTSUP;
 	}
 
@@ -223,7 +223,7 @@ static int iis2iclx_hts221_conf(const struct device *dev, uint8_t i2c_addr,
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return iis2iclx_hts221_odr_set(dev, i2c_addr, val->val1);
 	default:
-		LOG_ERR("shub: HTS221 attribute not supported.");
+		LOG_ERROR("shub: HTS221 attribute not supported.");
 		return -ENOTSUP;
 	}
 
@@ -315,7 +315,7 @@ static int iis2iclx_lps22hh_odr_set(const struct device *dev,
 	}
 
 	if (odr == ARRAY_SIZE(lps22hh_map)) {
-		LOG_ERR("shub: LPS22HH freq val %d not supported.", freq);
+		LOG_ERROR("shub: LPS22HH freq val %d not supported.", freq);
 		return -ENOTSUP;
 	}
 
@@ -336,7 +336,7 @@ static int iis2iclx_lps22hh_conf(const struct device *dev, uint8_t i2c_addr,
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return iis2iclx_lps22hh_odr_set(data, i2c_addr, val->val1);
 	default:
-		LOG_ERR("shub: LPS22HH attribute not supported.");
+		LOG_ERROR("shub: LPS22HH attribute not supported.");
 		return -ENOTSUP;
 	}
 
@@ -446,7 +446,7 @@ static int iis2iclx_shub_read_embedded_regs(const struct iis2iclx_config *cfg,
 	iis2iclx_shub_embedded_en(cfg, true);
 
 	if (iis2iclx_read_reg((stmdev_ctx_t *)&cfg->ctx, reg_addr, value, len) < 0) {
-		LOG_ERR("shub: failed to read external reg: %02x", reg_addr);
+		LOG_ERROR("shub: failed to read external reg: %02x", reg_addr);
 		iis2iclx_shub_embedded_en(cfg, false);
 		return -EIO;
 	}
@@ -463,7 +463,7 @@ static int iis2iclx_shub_write_embedded_regs(const struct iis2iclx_config *cfg,
 	iis2iclx_shub_embedded_en(cfg, true);
 
 	if (iis2iclx_write_reg((stmdev_ctx_t *)&cfg->ctx, reg_addr, value, len) < 0) {
-		LOG_ERR("shub: failed to write external reg: %02x", reg_addr);
+		LOG_ERROR("shub: failed to write external reg: %02x", reg_addr);
 		iis2iclx_shub_embedded_en(cfg, false);
 		return -EIO;
 	}
@@ -506,12 +506,12 @@ static int iis2iclx_shub_check_slv0_nack(const struct iis2iclx_config *cfg)
 
 	if (iis2iclx_shub_read_embedded_regs(cfg, IIS2ICLX_SHUB_STATUS_MASTER,
 					       &status, 1) < 0) {
-		LOG_ERR("shub: error reading embedded reg");
+		LOG_ERROR("shub: error reading embedded reg");
 		return -EIO;
 	}
 
 	if (status & (IIS2ICLX_SHUB_STATUS_SLV0_NACK)) {
-		LOG_ERR("shub: SLV0 nacked");
+		LOG_ERROR("shub: SLV0 nacked");
 		return -EIO;
 	}
 
@@ -534,7 +534,7 @@ static int iis2iclx_shub_read_slave_reg(const struct device *dev,
 
 	if (iis2iclx_shub_write_embedded_regs(cfg, IIS2ICLX_SHUB_SLV0_ADDR,
 						slave, 3) < 0) {
-		LOG_ERR("shub: error writing embedded reg");
+		LOG_ERROR("shub: error writing embedded reg");
 		return -EIO;
 	}
 
@@ -551,7 +551,7 @@ static int iis2iclx_shub_read_slave_reg(const struct device *dev,
 	iis2iclx_shub_embedded_en(cfg, true);
 	if (iis2iclx_read_reg((stmdev_ctx_t *)&cfg->ctx, IIS2ICLX_SHUB_DATA_OUT,
 				value, len) < 0) {
-		LOG_ERR("shub: error reading sensor data");
+		LOG_ERROR("shub: error reading sensor data");
 		iis2iclx_shub_embedded_en(cfg, false);
 		return -EIO;
 	}
@@ -579,7 +579,7 @@ static int iis2iclx_shub_write_slave_reg(const struct device *dev,
 		if (iis2iclx_shub_write_embedded_regs(cfg,
 							IIS2ICLX_SHUB_SLV0_ADDR,
 							slv_cfg, 2) < 0) {
-			LOG_ERR("shub: error writing embedded reg");
+			LOG_ERROR("shub: error writing embedded reg");
 			return -EIO;
 		}
 
@@ -587,7 +587,7 @@ static int iis2iclx_shub_write_slave_reg(const struct device *dev,
 		if (iis2iclx_shub_write_embedded_regs(cfg,
 					IIS2ICLX_SHUB_SLV0_DATAWRITE,
 					slv_cfg, 1) < 0) {
-			LOG_ERR("shub: error writing embedded reg");
+			LOG_ERROR("shub: error writing embedded reg");
 			return -EIO;
 		}
 
@@ -611,7 +611,7 @@ static int iis2iclx_shub_write_slave_reg(const struct device *dev,
 	slv_cfg[2] = 0x0;
 	if (iis2iclx_shub_write_embedded_regs(cfg, IIS2ICLX_SHUB_SLV0_ADDR,
 						slv_cfg, 3) < 0) {
-		LOG_ERR("shub: error writing embedded reg");
+		LOG_ERROR("shub: error writing embedded reg");
 		return -EIO;
 	}
 
@@ -646,7 +646,7 @@ static int iis2iclx_shub_set_data_channel(const struct device *dev)
 	if (iis2iclx_shub_write_embedded_regs(cfg,
 						IIS2ICLX_SHUB_SLV1_ADDR,
 						slv_cfg, n*3) < 0) {
-		LOG_ERR("shub: error writing embedded reg");
+		LOG_ERROR("shub: error writing embedded reg");
 		return -EIO;
 	}
 
@@ -654,14 +654,14 @@ static int iis2iclx_shub_set_data_channel(const struct device *dev)
 	iis2iclx_aux_sens_on_t aux = IIS2ICLX_SLV_0_1_2;
 
 	if (iis2iclx_sh_slave_connected_set((stmdev_ctx_t *)&cfg->ctx, aux) < 0) {
-		LOG_ERR("shub: error setting aux sensors");
+		LOG_ERROR("shub: error setting aux sensors");
 		return -EIO;
 	}
 
 	iis2iclx_write_once_t wo = IIS2ICLX_ONLY_FIRST_CYCLE;
 
 	if (iis2iclx_sh_write_mode_set((stmdev_ctx_t *)&cfg->ctx, wo) < 0) {
-		LOG_ERR("shub: error setting write once");
+		LOG_ERROR("shub: error setting write once");
 		return -EIO;
 	}
 
@@ -705,7 +705,7 @@ int iis2iclx_shub_fetch_external_devs(const struct device *dev)
 
 		if (iis2iclx_read_reg((stmdev_ctx_t *)&cfg->ctx, sp->sh_out_reg,
 				     data->ext_data[n], sp->out_data_len) < 0) {
-			LOG_ERR("shub: failed to read sample");
+			LOG_ERROR("shub: failed to read sample");
 			iis2iclx_shub_embedded_en(cfg, false);
 			return -EIO;
 		}
@@ -733,12 +733,12 @@ int iis2iclx_shub_config(const struct device *dev, enum sensor_channel chan,
 	}
 
 	if (n == data->num_ext_dev) {
-		LOG_ERR("shub: chan not supported");
+		LOG_ERROR("shub: chan not supported");
 		return -ENOTSUP;
 	}
 
 	if (sp == NULL || sp->dev_conf == NULL) {
-		LOG_ERR("shub: chan not configurable");
+		LOG_ERROR("shub: chan not configurable");
 		return -ENOTSUP;
 	}
 

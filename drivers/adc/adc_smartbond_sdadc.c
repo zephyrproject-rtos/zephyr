@@ -62,17 +62,17 @@ static int sdadc_smartbond_channel_setup(const struct device *dev,
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Selected ADC acquisition time is not valid");
+		LOG_ERROR("Selected ADC acquisition time is not valid");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->input_positive > SMARTBOND_SDADC_VBAT) {
-		LOG_ERR("Channels out of range");
+		LOG_ERROR("Channels out of range");
 		return -EINVAL;
 	}
 	if (channel_cfg->differential) {
 		if (channel_cfg->input_negative >= SMARTBOND_SDADC_VBAT) {
-			LOG_ERR("Differential negative channels out of range");
+			LOG_ERROR("Differential negative channels out of range");
 			return -EINVAL;
 		}
 	}
@@ -82,7 +82,7 @@ static int sdadc_smartbond_channel_setup(const struct device *dev,
 	     channel_cfg->gain != ADC_GAIN_1_4) ||
 	    (channel_cfg->input_positive != SMARTBOND_SDADC_VBAT &&
 	     channel_cfg->gain != ADC_GAIN_1)) {
-		LOG_ERR("ADC gain should be 1/4 for VBAT and 1 for all other channels");
+		LOG_ERROR("ADC gain should be 1/4 for VBAT and 1 for all other channels");
 		return -EINVAL;
 	}
 
@@ -90,7 +90,7 @@ static int sdadc_smartbond_channel_setup(const struct device *dev,
 	case ADC_REF_INTERNAL:
 		break;
 	default:
-		LOG_ERR("Selected ADC reference is not valid");
+		LOG_ERROR("Selected ADC reference is not valid");
 		return -EINVAL;
 	}
 
@@ -189,8 +189,8 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	}
 
 	if (sequence->buffer_size < needed_buffer_size) {
-		LOG_ERR("Provided buffer is too small (%u/%u)",
-			sequence->buffer_size, needed_buffer_size);
+		LOG_ERROR("Provided buffer is too small (%u/%u)", sequence->buffer_size,
+			  needed_buffer_size);
 		return -ENOMEM;
 	}
 
@@ -204,19 +204,18 @@ static int start_read(const struct device *dev,
 	struct sdadc_smartbond_data *data = dev->data;
 
 	if (sequence->oversampling < 7U || sequence->oversampling > 10) {
-		LOG_ERR("Invalid oversampling");
+		LOG_ERROR("Invalid oversampling");
 		return -EINVAL;
 	}
 
 	if ((sequence->channels == 0) ||
 	    ((sequence->channels & ~BIT_MASK(SMARTBOND_SDADC_CHANNEL_COUNT)) != 0)) {
-		LOG_ERR("Channel scanning is not supported");
+		LOG_ERROR("Channel scanning is not supported");
 		return -EINVAL;
 	}
 
 	if (sequence->resolution < 8 || sequence->resolution > 15) {
-		LOG_ERR("ADC resolution value %d is not valid",
-			sequence->resolution);
+		LOG_ERROR("ADC resolution value %d is not valid", sequence->resolution);
 		return -EINVAL;
 	}
 
@@ -315,7 +314,7 @@ static int sdadc_smartbond_resume(const struct device *dev)
 		/* Release the comms domain */
 		da1469x_pd_release(MCU_PD_DOMAIN_COM);
 
-		LOG_ERR("ADC pinctrl setup failed (%d)", ret);
+		LOG_ERROR("ADC pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 

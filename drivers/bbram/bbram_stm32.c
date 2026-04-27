@@ -112,7 +112,7 @@ static int bbram_stm32_init(const struct device *dev)
 	const struct bbram_stm32_config *config = dev->config;
 
 	if (!device_is_ready(config->parent)) {
-		LOG_ERR("Device %s is not ready", config->parent->name);
+		LOG_ERROR("Device %s is not ready", config->parent->name);
 		return -ENODEV;
 	}
 

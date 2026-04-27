@@ -514,7 +514,7 @@ static int sdhc_spi_read_data(const struct device *dev, struct sdhc_data *data)
 		ret = spi_transceive(config->spi_dev,
 			dev_data->spi_cfg, tx_ptr, &rx);
 		if (ret) {
-			LOG_ERR("Data write failed");
+			LOG_ERROR("Data write failed");
 			return ret;
 		}
 		/* Read CRC16 plus one end byte */
@@ -523,7 +523,7 @@ static int sdhc_spi_read_data(const struct device *dev, struct sdhc_data *data)
 		if (crc16_itu_t(0, read_location, data->block_size) !=
 			sys_get_be16(crc)) {
 			/* Bad CRC */
-			LOG_ERR("Bad data CRC");
+			LOG_ERROR("Bad data CRC");
 			return -EILSEQ;
 		}
 		/* Advance read location */
@@ -533,7 +533,7 @@ static int sdhc_spi_read_data(const struct device *dev, struct sdhc_data *data)
 			/* Check next data token */
 			ret = sdhc_skip(dev, 0xff);
 			if (ret != SD_SPI_TOKEN_SINGLE) {
-				LOG_ERR("Bad token");
+				LOG_ERROR("Bad token");
 				return -EIO;
 			}
 		}
@@ -744,7 +744,7 @@ static int sdhc_spi_set_io(const struct device *dev, struct sdhc_io *ios)
 
 			/* Send 74 clock cycles to start card */
 			if (sdhc_spi_init_card(dev) != 0) {
-				LOG_ERR("Card SCLK init sequence failed");
+				LOG_ERROR("Card SCLK init sequence failed");
 				return -EIO;
 			}
 		} else {
@@ -821,20 +821,20 @@ static int sdhc_spi_init(const struct device *dev)
 		}
 		ret = gpio_pin_configure_dt(&cfg->pwr_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret != 0) {
-			LOG_ERR("Could not configure power gpio (%d)", ret);
+			LOG_ERROR("Could not configure power gpio (%d)", ret);
 			return ret;
 		}
 	}
 
 	if (cfg->cd_gpio.port) {
 		if (!gpio_is_ready_dt(&cfg->cd_gpio)) {
-			LOG_ERR("Card detect GPIO device not ready");
+			LOG_ERROR("Card detect GPIO device not ready");
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&cfg->cd_gpio, GPIO_INPUT);
 		if (ret < 0) {
-			LOG_ERR("Could not configure card-detect pin; (%d)", ret);
+			LOG_ERROR("Could not configure card-detect pin; (%d)", ret);
 			return ret;
 		}
 	}

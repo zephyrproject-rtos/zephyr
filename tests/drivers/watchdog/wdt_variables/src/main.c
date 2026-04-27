@@ -66,7 +66,7 @@ int main(void)
 		LOG_INF("Reset wasn't due to watchdog.");
 
 		if (!device_is_ready(my_wdt_device)) {
-			LOG_ERR("WDT device %s is not ready", my_wdt_device->name);
+			LOG_ERROR("WDT device %s is not ready", my_wdt_device->name);
 			return 1;
 		}
 
@@ -77,14 +77,14 @@ int main(void)
 		m_cfg_wdt0.window.max = WDT_WINDOW_MAX;
 		ret = wdt_install_timeout(my_wdt_device, &m_cfg_wdt0);
 		if (ret < 0) {
-			LOG_ERR("wdt_install_timeout() returned %d", ret);
+			LOG_ERROR("wdt_install_timeout() returned %d", ret);
 			return 1;
 		}
 
 		/* Start Watchdog */
 		ret = wdt_setup(my_wdt_device, WDT_OPT_PAUSE_HALTED_BY_DBG);
 		if (ret < 0) {
-			LOG_ERR("wdt_setup() returned %d", ret);
+			LOG_ERROR("wdt_setup() returned %d", ret);
 			return 1;
 		}
 
@@ -96,22 +96,22 @@ int main(void)
 		LOG_INF("Watchod has fired");
 
 		if (global_tmp_0 != 1) {
-			LOG_ERR("global_tmp_0 is %d instead of 1", global_tmp_0);
+			LOG_ERROR("global_tmp_0 is %d instead of 1", global_tmp_0);
 			test_passing = false;
 		}
 
 		if (global_tmp_1 != (TEST_VALUE + 1)) {
-			LOG_ERR("global_tmp_1 is %d instead of %d", global_tmp_1, TEST_VALUE + 1);
+			LOG_ERROR("global_tmp_1 is %d instead of %d", global_tmp_1, TEST_VALUE + 1);
 			test_passing = false;
 		}
 
 		if (tmp_0 != 1) {
-			LOG_ERR("tmp_0 is %d instead of 1", tmp_0);
+			LOG_ERROR("tmp_0 is %d instead of 1", tmp_0);
 			test_passing = false;
 		}
 
 		if (tmp_1 != (TEST_VALUE + 1)) {
-			LOG_ERR("tmp_1 is %d instead of %d", tmp_1, TEST_VALUE + 1);
+			LOG_ERROR("tmp_1 is %d instead of %d", tmp_1, TEST_VALUE + 1);
 			test_passing = false;
 		}
 

@@ -194,7 +194,7 @@ static int cdb_net_set(const char *name, size_t len_rd,
 		/* Try to recover previous version of the network settings without address. */
 		err = bt_mesh_settings_set(read_cb, cb_arg, &net, sizeof(net.iv));
 		if (err) {
-			LOG_ERR("Failed to set \'cdb_net\'");
+			LOG_ERROR("Failed to set \'cdb_net\'");
 			return err;
 		}
 
@@ -228,7 +228,7 @@ static int cdb_node_set(const char *name, size_t len_rd,
 	}
 
 	if (!name) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
@@ -248,7 +248,7 @@ static int cdb_node_set(const char *name, size_t len_rd,
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &val, sizeof(val));
 	if (err) {
-		LOG_ERR("Failed to set \'node\'");
+		LOG_ERROR("Failed to set \'node\'");
 		return err;
 	}
 
@@ -259,7 +259,7 @@ static int cdb_node_set(const char *name, size_t len_rd,
 	}
 
 	if (!node) {
-		LOG_ERR("No space for a new node");
+		LOG_ERROR("No space for a new node");
 		return -ENOMEM;
 	}
 
@@ -294,7 +294,7 @@ static int cdb_subnet_set(const char *name, size_t len_rd,
 	}
 
 	if (!name) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
@@ -304,7 +304,7 @@ static int cdb_subnet_set(const char *name, size_t len_rd,
 	if (len_rd == 0) {
 		LOG_DBG("val (null)");
 		if (!sub) {
-			LOG_ERR("No subnet with NetKeyIndex 0x%03x", net_idx);
+			LOG_ERROR("No subnet with NetKeyIndex 0x%03x", net_idx);
 			return -ENOENT;
 		}
 
@@ -315,7 +315,7 @@ static int cdb_subnet_set(const char *name, size_t len_rd,
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &key, sizeof(key));
 	if (err) {
-		LOG_ERR("Failed to set \'net-key\'");
+		LOG_ERROR("Failed to set \'net-key\'");
 		return err;
 	}
 
@@ -337,7 +337,7 @@ static int cdb_subnet_set(const char *name, size_t len_rd,
 
 	sub = bt_mesh_cdb_subnet_alloc(net_idx);
 	if (!sub) {
-		LOG_ERR("No space to allocate a new subnet");
+		LOG_ERROR("No space to allocate a new subnet");
 		return -ENOMEM;
 	}
 
@@ -364,7 +364,7 @@ static int cdb_app_key_set(const char *name, size_t len_rd,
 	}
 
 	if (!name) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
@@ -384,7 +384,7 @@ static int cdb_app_key_set(const char *name, size_t len_rd,
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &key, sizeof(key));
 	if (err) {
-		LOG_ERR("Failed to set \'app-key\'");
+		LOG_ERROR("Failed to set \'app-key\'");
 		return err;
 	}
 
@@ -400,7 +400,7 @@ static int cdb_app_key_set(const char *name, size_t len_rd,
 	}
 
 	if (!app) {
-		LOG_ERR("No space for a new app key");
+		LOG_ERROR("No space for a new app key");
 		return -ENOMEM;
 	}
 
@@ -419,7 +419,7 @@ static int cdb_set(const char *name, size_t len_rd,
 	const char *next;
 
 	if (!name) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
@@ -431,7 +431,7 @@ static int cdb_set(const char *name, size_t len_rd,
 	len = settings_name_next(name, &next);
 
 	if (!next) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
@@ -474,7 +474,7 @@ static void store_cdb_node(const struct bt_mesh_cdb_node *node)
 
 	err = settings_save_one(path, &val, sizeof(val));
 	if (err) {
-		LOG_ERR("Failed to store Node %s", path);
+		LOG_ERROR("Failed to store Node %s", path);
 	} else {
 		LOG_DBG("Stored Node %s", path);
 	}
@@ -490,7 +490,7 @@ static void clear_cdb_node(uint16_t addr)
 	snprintk(path, sizeof(path), "bt/mesh/cdb/Node/%x", addr);
 	err = settings_delete(path);
 	if (err) {
-		LOG_ERR("Failed to clear Node 0x%04x", addr);
+		LOG_ERROR("Failed to clear Node 0x%04x", addr);
 	} else {
 		LOG_DBG("Cleared Node 0x%04x", addr);
 	}
@@ -514,7 +514,7 @@ static void store_cdb_subnet(const struct bt_mesh_cdb_subnet *sub)
 
 	err = settings_save_one(path, &key, sizeof(key));
 	if (err) {
-		LOG_ERR("Failed to store Subnet %s", path);
+		LOG_ERROR("Failed to store Subnet %s", path);
 	} else {
 		LOG_DBG("Stored Subnet %s", path);
 	}
@@ -530,7 +530,7 @@ static void clear_cdb_subnet(uint16_t net_idx)
 	snprintk(path, sizeof(path), "bt/mesh/cdb/Subnet/%x", net_idx);
 	err = settings_delete(path);
 	if (err) {
-		LOG_ERR("Failed to clear NetKeyIndex 0x%03x", net_idx);
+		LOG_ERROR("Failed to clear NetKeyIndex 0x%03x", net_idx);
 	} else {
 		LOG_DBG("Cleared NetKeyIndex 0x%03x", net_idx);
 	}
@@ -551,7 +551,7 @@ static void store_cdb_app_key(const struct bt_mesh_cdb_app_key *app)
 
 	err = settings_save_one(path, &key, sizeof(key));
 	if (err) {
-		LOG_ERR("Failed to store AppKey %s", path);
+		LOG_ERROR("Failed to store AppKey %s", path);
 	} else {
 		LOG_DBG("Stored AppKey %s", path);
 	}
@@ -565,7 +565,7 @@ static void clear_cdb_app_key(uint16_t app_idx)
 	snprintk(path, sizeof(path), "bt/mesh/cdb/AppKey/%x", app_idx);
 	err = settings_delete(path);
 	if (err) {
-		LOG_ERR("Failed to clear AppKeyIndex 0x%03x", app_idx);
+		LOG_ERROR("Failed to clear AppKeyIndex 0x%03x", app_idx);
 	} else {
 		LOG_DBG("Cleared AppKeyIndex 0x%03x", app_idx);
 	}
@@ -951,15 +951,15 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 		sub_cdb->kr_phase = sub->kr_phase;
 		err = bt_mesh_key_export(tmp, &sub->keys[0].net);
 		if (err) {
-			LOG_ERR("Failed to export NetKey from stack for subnet: %#x, err: %d",
-				sub->net_idx, err);
+			LOG_ERROR("Failed to export NetKey from stack for subnet: %#x, err: %d",
+				  sub->net_idx, err);
 			return;
 		}
 
 		err = bt_mesh_cdb_subnet_key_import(sub_cdb, 0, tmp);
 		if (err) {
-			LOG_ERR("Failed to import NetKey in CDB for subnet: %#x, err: %d",
-				sub->net_idx, err);
+			LOG_ERROR("Failed to import NetKey in CDB for subnet: %#x, err: %d",
+				  sub->net_idx, err);
 			return;
 		}
 		break;
@@ -970,15 +970,15 @@ static void subnet_evt(struct bt_mesh_subnet *sub, enum bt_mesh_key_evt evt)
 		sub_cdb->kr_phase = sub->kr_phase;
 		err = bt_mesh_key_export(tmp, &sub->keys[1].net);
 		if (err) {
-			LOG_ERR("Failed to export NetKey from stack for subnet: %#x, err: %d",
-				sub->net_idx, err);
+			LOG_ERROR("Failed to export NetKey from stack for subnet: %#x, err: %d",
+				  sub->net_idx, err);
 			return;
 		}
 
 		err = bt_mesh_cdb_subnet_key_import(sub_cdb, 1, tmp);
 		if (err) {
-			LOG_ERR("Failed to import NetKey in CDB for subnet: %#x, err: %d",
-				sub->net_idx, err);
+			LOG_ERROR("Failed to import NetKey in CDB for subnet: %#x, err: %d",
+				  sub->net_idx, err);
 			return;
 		}
 		break;
@@ -1247,7 +1247,7 @@ static void app_key_evt(struct bt_mesh_app_key *app, enum bt_mesh_key_evt evt)
 
 		err = bt_mesh_key_export(tmp, &app->keys[0].val);
 		if (err) {
-			LOG_ERR("Failed to export AppKey: %#x, err: %d", app->app_idx, err);
+			LOG_ERROR("Failed to export AppKey: %#x, err: %d", app->app_idx, err);
 			return;
 		}
 
@@ -1255,8 +1255,7 @@ static void app_key_evt(struct bt_mesh_app_key *app, enum bt_mesh_key_evt evt)
 		app_cdb->app_idx = app->app_idx;
 		err = bt_mesh_cdb_app_key_import(app_cdb, 0, tmp);
 		if (err) {
-			LOG_ERR("Failed to import AppKey: %#x, err: %d", app->app_idx,
-				err);
+			LOG_ERROR("Failed to import AppKey: %#x, err: %d", app->app_idx, err);
 			return;
 		}
 		break;
@@ -1266,13 +1265,13 @@ static void app_key_evt(struct bt_mesh_app_key *app, enum bt_mesh_key_evt evt)
 	case BT_MESH_KEY_UPDATED:
 		err = bt_mesh_key_export(tmp, &app->keys[1].val);
 		if (err) {
-			LOG_ERR("Failed to export AppKey: %#x, err: %d", app->app_idx, err);
+			LOG_ERROR("Failed to export AppKey: %#x, err: %d", app->app_idx, err);
 			return;
 		}
 
 		err = bt_mesh_cdb_app_key_import(app_cdb, 1, tmp);
 		if (err) {
-			LOG_ERR("Failed to import AppKey: %#x, err: %d", app->app_idx, err);
+			LOG_ERROR("Failed to import AppKey: %#x, err: %d", app->app_idx, err);
 			return;
 		}
 		break;
@@ -1301,7 +1300,7 @@ static void clear_cdb_net(void)
 
 	err = settings_delete("bt/mesh/cdb/Net");
 	if (err) {
-		LOG_ERR("Failed to clear Network");
+		LOG_ERROR("Failed to clear Network");
 	} else {
 		LOG_DBG("Cleared Network");
 	}
@@ -1321,7 +1320,7 @@ static void store_cdb_pending_net(void)
 
 	err = settings_save_one("bt/mesh/cdb/Net", &net, sizeof(net));
 	if (err) {
-		LOG_ERR("Failed to store Network value");
+		LOG_ERROR("Failed to store Network value");
 	} else {
 		LOG_DBG("Stored Network value");
 	}

@@ -26,7 +26,7 @@ otError otPlatEntropyGet(uint8_t *aOutput, uint16_t aOutputLength)
 
 	err = sys_csrand_get(aOutput, aOutputLength);
 	if (err != 0) {
-		LOG_ERR("Failed to obtain entropy, err %d", err);
+		LOG_ERROR("Failed to obtain entropy, err %d", err);
 		return OT_ERROR_FAILED;
 	}
 

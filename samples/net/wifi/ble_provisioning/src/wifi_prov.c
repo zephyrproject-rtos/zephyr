@@ -53,7 +53,7 @@ static void wifi_event(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 				result_cb(true);
 			}
 		} else {
-			LOG_ERR("Wi-Fi connect failed (%d)", st ? st->status : -1);
+			LOG_ERROR("Wi-Fi connect failed (%d)", st ? st->status : -1);
 			if (result_cb) {
 				result_cb(false);
 			}
@@ -105,7 +105,7 @@ int wifi_prov_creds_save(const struct wifi_prov_creds *creds)
 		LOG_WRN("PSK provided but security is open; dropping PSK");
 		psk_len = 0;
 	} else if (type != WIFI_SECURITY_TYPE_NONE && psk_len == 0) {
-		LOG_ERR("security=%u requires a non-empty PSK", type);
+		LOG_ERROR("security=%u requires a non-empty PSK", type);
 		return -EINVAL;
 	}
 
@@ -127,7 +127,7 @@ int wifi_prov_connect_stored(void)
 	int err;
 
 	if (!iface) {
-		LOG_ERR("no Wi-Fi STA interface");
+		LOG_ERROR("no Wi-Fi STA interface");
 		return -ENODEV;
 	}
 

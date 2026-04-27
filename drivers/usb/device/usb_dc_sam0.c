@@ -365,12 +365,12 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
-		LOG_ERR("invalid endpoint configuration");
+		LOG_ERROR("invalid endpoint configuration");
 		return -1;
 	}
 
 	if (ep_idx > USB_NUM_ENDPOINTS) {
-		LOG_ERR("endpoint index/address too high");
+		LOG_ERROR("endpoint index/address too high");
 		return -1;
 	}
 
@@ -459,7 +459,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep_idx];
 
 	if (ep_idx >= USB_NUM_ENDPOINTS) {
-		LOG_ERR("endpoint index/address out of range");
+		LOG_ERROR("endpoint index/address out of range");
 		return -1;
 	}
 
@@ -480,7 +480,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep_idx];
 
 	if (ep_idx >= USB_NUM_ENDPOINTS) {
-		LOG_ERR("endpoint index/address out of range");
+		LOG_ERROR("endpoint index/address out of range");
 		return -1;
 	}
 
@@ -501,12 +501,12 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *stalled)
 	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep_idx];
 
 	if (ep_idx >= USB_NUM_ENDPOINTS) {
-		LOG_ERR("endpoint index/address out of range");
+		LOG_ERROR("endpoint index/address out of range");
 		return -1;
 	}
 
 	if (stalled == NULL) {
-		LOG_ERR("parameter must not be NULL");
+		LOG_ERROR("parameter must not be NULL");
 		return -1;
 	}
 
@@ -531,7 +531,7 @@ int usb_dc_ep_flush(uint8_t ep)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (ep_idx >= USB_NUM_ENDPOINTS) {
-		LOG_ERR("endpoint index/address out of range");
+		LOG_ERROR("endpoint index/address out of range");
 		return -1;
 	}
 
@@ -550,7 +550,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep_idx];
 
 	if (ep_idx >= USB_NUM_ENDPOINTS) {
-		LOG_ERR("endpoint index/address out of range");
+		LOG_ERROR("endpoint index/address out of range");
 		return -EINVAL;
 	}
 
@@ -575,7 +575,7 @@ int usb_dc_ep_disable(uint8_t ep)
 	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep_idx];
 
 	if (ep_idx >= USB_NUM_ENDPOINTS) {
-		LOG_ERR("endpoint index/address out of range");
+		LOG_ERROR("endpoint index/address out of range");
 		return -EINVAL;
 	}
 
@@ -599,7 +599,7 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *buf, uint32_t len, uint32_t *ret_
 			desc->DeviceDescBank[1].PCKSIZE.bit.SIZE];
 
 	if (ep_idx >= USB_NUM_ENDPOINTS) {
-		LOG_ERR("endpoint index/address out of range");
+		LOG_ERROR("endpoint index/address out of range");
 		return -1;
 	}
 
@@ -643,7 +643,7 @@ int usb_dc_ep_read_ex(uint8_t ep, uint8_t *buf, uint32_t max_data_len,
 	int remain;
 
 	if (ep_idx >= USB_NUM_ENDPOINTS) {
-		LOG_ERR("endpoint index/address out of range");
+		LOG_ERROR("endpoint index/address out of range");
 		return -1;
 	}
 
@@ -706,7 +706,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep_idx];
 
 	if (ep_idx >= USB_NUM_ENDPOINTS) {
-		LOG_ERR("endpoint index/address out of range");
+		LOG_ERROR("endpoint index/address out of range");
 		return -1;
 	}
 
@@ -723,7 +723,7 @@ int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb)
 	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
 	if (ep_idx >= USB_NUM_ENDPOINTS) {
-		LOG_ERR("endpoint index/address out of range");
+		LOG_ERROR("endpoint index/address out of range");
 		return -1;
 	}
 
@@ -742,7 +742,7 @@ int usb_dc_ep_mps(const uint8_t ep)
 	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep_idx];
 
 	if (ep_idx >= USB_NUM_ENDPOINTS) {
-		LOG_ERR("endpoint index/address out of range");
+		LOG_ERROR("endpoint index/address out of range");
 		return -1;
 	}
 

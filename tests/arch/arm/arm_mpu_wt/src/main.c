@@ -122,7 +122,7 @@ static void dma_callback(const struct device *dev, void *user_data,
 		dma_transfer_done = true;
 		k_sem_give(&dma_sem);
 	} else {
-		LOG_ERR("DMA transfer failed with status: %d", status);
+		LOG_ERROR("DMA transfer failed with status: %d", status);
 		dma_transfer_done = false;
 		k_sem_give(&dma_sem);
 	}
@@ -155,9 +155,10 @@ static void *alloc_test_memory(size_t size)
 
 	/* Use custom memory region */
 	if (next_offset + size > current_test_region.size) {
-		LOG_ERR("Not enough space in custom memory region");
-		LOG_ERR("  Requested: %zu bytes", size);
-		LOG_ERR("  Available: %zu bytes", (size_t)(current_test_region.size - next_offset));
+		LOG_ERROR("Not enough space in custom memory region");
+		LOG_ERROR("  Requested: %zu bytes", size);
+		LOG_ERROR("  Available: %zu bytes",
+			  (size_t)(current_test_region.size - next_offset));
 		return NULL;
 	}
 
@@ -224,12 +225,12 @@ static int execute_dma_transfer(const struct device *dma_dev, void *src,
 	/* Validate alignment requirements for EDMA */
 	if (((uintptr_t)src & (sizeof(uint32_t) - 1)) != 0 ||
 	    ((uintptr_t)dst & (sizeof(uint32_t) - 1)) != 0) {
-		LOG_ERR("Source or destination not properly aligned");
+		LOG_ERROR("Source or destination not properly aligned");
 		return -EINVAL;
 	}
 
 	if ((size & (sizeof(uint32_t) - 1)) != 0) {
-		LOG_ERR("Transfer size not multiple of %zu bytes", sizeof(uint32_t));
+		LOG_ERROR("Transfer size not multiple of %zu bytes", sizeof(uint32_t));
 		return -EINVAL;
 	}
 
@@ -267,21 +268,21 @@ static int execute_dma_transfer(const struct device *dma_dev, void *src,
 	LOG_INF("Configuring DMA channel %d", DMA_CHANNEL);
 	ret = dma_config(dma_dev, DMA_CHANNEL, &dma_cfg);
 	if (ret != 0) {
-		LOG_ERR("DMA config failed: %d", ret);
+		LOG_ERROR("DMA config failed: %d", ret);
 		return ret;
 	}
 
 	LOG_INF("Starting DMA transfer");
 	ret = dma_start(dma_dev, DMA_CHANNEL);
 	if (ret != 0) {
-		LOG_ERR("DMA start failed: %d", ret);
+		LOG_ERROR("DMA start failed: %d", ret);
 		return ret;
 	}
 
 	LOG_INF("Waiting for DMA completion (timeout: %d ms)", DMA_TIMEOUT_MS);
 	ret = k_sem_take(&dma_sem, K_MSEC(DMA_TIMEOUT_MS));
 	if (ret != 0) {
-		LOG_ERR("DMA transfer timeout");
+		LOG_ERROR("DMA transfer timeout");
 
 		/* Check DMA status */
 		struct dma_status status;
@@ -330,7 +331,7 @@ ZTEST(arm_mpu_wt, test_wt_dma_coherency)
 	dma_buffer = alloc_test_memory(TEST_MEMORY_SIZE);
 
 	if (cpu_buffer == NULL || dma_buffer == NULL) {
-		LOG_ERR("Failed to allocate test buffers");
+		LOG_ERROR("Failed to allocate test buffers");
 		if (cpu_buffer != NULL) {
 			free_test_memory((void *)cpu_buffer);
 		}
@@ -393,8 +394,8 @@ ZTEST(arm_mpu_wt, test_wt_dma_coherency)
 			uint32_t actual = dma_buffer[i];
 
 			if (actual != expected) {
-				LOG_ERR("Pattern[%d] mismatch: expected 0x%08x, got 0x%08x",
-					i, expected, actual);
+				LOG_ERROR("Pattern[%d] mismatch: expected 0x%08x, got 0x%08x", i,
+					  expected, actual);
 				all_passed = false;
 			} else {
 				LOG_DBG("Pattern[%d] OK: 0x%08x", i, actual);
@@ -417,7 +418,7 @@ ZTEST(arm_mpu_wt, test_wt_dma_coherency)
 			LOG_INF("Write-Through cache is working correctly");
 		}
 	} else {
-		LOG_ERR("DMA transfer failed: %d", ret);
+		LOG_ERROR("DMA transfer failed: %d", ret);
 		ztest_test_fail();
 	}
 
@@ -465,9 +466,9 @@ ZTEST(arm_mpu_wt, test_wt_cache_invalidate)
 		uint32_t actual = test_addr[i];
 
 		if (actual != expected) {
-			LOG_ERR("Pattern[%d] mismatch after invalidation: "
-				"expected 0x%08x, got 0x%08x",
-				i, expected, actual);
+			LOG_ERROR("Pattern[%d] mismatch after invalidation: "
+				  "expected 0x%08x, got 0x%08x",
+				  i, expected, actual);
 			all_passed = false;
 		} else {
 			LOG_DBG("Pattern[%d] OK after invalidation: 0x%08x", i, actual);

@@ -46,7 +46,7 @@ static int mcux_mcg_get_rate(const struct device *dev,
 		*rate = CLOCK_GetOutClkFreq();
 		return 0;
 	default:
-		LOG_ERR("Unsupported clock name");
+		LOG_ERROR("Unsupported clock name");
 		return -EINVAL;
 		break;
 	}

@@ -1667,7 +1667,7 @@ static void cap_commander_vcp_vol_set_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int e
 	vcp_err = bt_vcp_vol_ctlr_conn_get(vol_ctlr, &conn);
 	if (vcp_err != 0) {
 		bt_cap_common_unlock_proc();
-		LOG_ERR("Failed to get conn by vol_ctrl: %d", vcp_err);
+		LOG_ERROR("Failed to get conn by vol_ctrl: %d", vcp_err);
 		return;
 	}
 
@@ -1857,7 +1857,7 @@ static void cap_commander_vcp_vol_mute_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int 
 	if (vcp_err != 0) {
 		bt_cap_common_unlock_proc();
 
-		LOG_ERR("Failed to get conn by vol_ctrl: %d", vcp_err);
+		LOG_ERROR("Failed to get conn by vol_ctrl: %d", vcp_err);
 		return;
 	}
 
@@ -2078,7 +2078,7 @@ static void cap_commander_vcp_set_offset_cb(struct bt_vocs *inst, int err)
 	if (vocs_err != 0) {
 		bt_cap_common_unlock_proc();
 
-		LOG_ERR("Failed to get conn by inst: %d", vocs_err);
+		LOG_ERROR("Failed to get conn by inst: %d", vocs_err);
 		return;
 	}
 
@@ -2317,7 +2317,7 @@ static void cap_commander_micp_mic_mute_cb(struct bt_micp_mic_ctlr *mic_ctlr, in
 	micp_err = bt_micp_mic_ctlr_conn_get(mic_ctlr, &conn);
 	if (micp_err != 0) {
 		bt_cap_common_unlock_proc();
-		LOG_ERR("Failed to get conn by mic_ctlr: %d", micp_err);
+		LOG_ERROR("Failed to get conn by mic_ctlr: %d", micp_err);
 		return;
 	}
 
@@ -2530,7 +2530,7 @@ static void cap_commander_micp_gain_set_cb(struct bt_aics *inst, int err)
 	micp_err = bt_aics_client_conn_get(inst, &conn);
 	if (micp_err != 0) {
 		bt_cap_common_unlock_proc();
-		LOG_ERR("Failed to get conn by aics: %d", micp_err);
+		LOG_ERROR("Failed to get conn by aics: %d", micp_err);
 		return;
 	}
 

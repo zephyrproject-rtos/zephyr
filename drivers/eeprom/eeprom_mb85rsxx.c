@@ -69,7 +69,7 @@ static int eeprom_mb85rsxx_read(const struct device *dev, off_t offset, void *bu
 	int err;
 
 	if (offset + len > config->size) {
-		LOG_ERR("attempt to read past device boundary");
+		LOG_ERROR("attempt to read past device boundary");
 		return -EINVAL;
 	}
 
@@ -112,7 +112,7 @@ static int eeprom_mb85rsxx_read(const struct device *dev, off_t offset, void *bu
 	k_mutex_unlock(&data->lock);
 
 	if (err < 0) {
-		LOG_ERR("failed to read FRAM (err %d)", err);
+		LOG_ERROR("failed to read FRAM (err %d)", err);
 	}
 
 	return err;
@@ -160,12 +160,12 @@ static int eeprom_mb85rsxx_write(const struct device *dev, off_t offset, const v
 	int err;
 
 	if (config->readonly) {
-		LOG_ERR("attempt to write to read-only device");
+		LOG_ERROR("attempt to write to read-only device");
 		return -EACCES;
 	}
 
 	if (offset + len > config->size) {
-		LOG_ERR("attempt to write past device boundary");
+		LOG_ERROR("attempt to write past device boundary");
 		return -EINVAL;
 	}
 
@@ -193,21 +193,21 @@ static int eeprom_mb85rsxx_write(const struct device *dev, off_t offset, const v
 
 	err = eeprom_mb85rsxx_wren(dev);
 	if (err < 0) {
-		LOG_ERR("failed to disable write protection (err %d)", err);
+		LOG_ERROR("failed to disable write protection (err %d)", err);
 		k_mutex_unlock(&data->lock);
 		return err;
 	}
 
 	err = spi_write_dt(&config->spi, &tx);
 	if (err < 0) {
-		LOG_ERR("failed to write to FRAM (err %d)", err);
+		LOG_ERROR("failed to write to FRAM (err %d)", err);
 		k_mutex_unlock(&data->lock);
 		return err;
 	}
 
 	err = eeprom_mb85rsxx_wrdi(dev);
 	if (err < 0) {
-		LOG_ERR("failed to disable write (err %d)", err);
+		LOG_ERROR("failed to disable write (err %d)", err);
 	}
 
 	k_mutex_unlock(&data->lock);
@@ -257,7 +257,7 @@ static int eeprom_mb85rsxx_rdid(const struct device *dev)
 	k_mutex_unlock(&data->lock);
 
 	if (err < 0) {
-		LOG_ERR("failed to read RDID (err %d)", err);
+		LOG_ERROR("failed to read RDID (err %d)", err);
 		return err;
 	}
 
@@ -266,7 +266,7 @@ static int eeprom_mb85rsxx_rdid(const struct device *dev)
 		(((id[2] & EEPROM_MB85RSXX_PROD_MASK) != EEPROM_MB85RSXX_PROD_ID1_MB85RS2MT) &&
 		 (id[2] != EEPROM_MB85RSXX_PROD_ID1_MB85RS2MTA)) ||
 		id[3] != EEPROM_MB85RSXX_PROD_ID2) {
-		LOG_ERR("invalid device ID: %02X %02X %02X %02X", id[0], id[1], id[2], id[3]);
+		LOG_ERROR("invalid device ID: %02X %02X %02X %02X", id[0], id[1], id[2], id[3]);
 		return -EIO;
 	}
 
@@ -283,13 +283,13 @@ static int eeprom_mb85rsxx_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus not ready");
+		LOG_ERROR("SPI bus not ready");
 		return -EINVAL;
 	}
 
 	err = eeprom_mb85rsxx_rdid(dev);
 	if (err < 0) {
-		LOG_ERR("Failed to initialize device, RDID check failed (err %d)", err);
+		LOG_ERROR("Failed to initialize device, RDID check failed (err %d)", err);
 		return err;
 	}
 

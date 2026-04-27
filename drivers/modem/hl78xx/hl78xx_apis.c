@@ -182,7 +182,7 @@ int hl78xx_api_func_get_modem_info_vendor(const struct device *dev,
 		ret = hl78xx_send_cmd(data, network_operator, NULL, hl78xx_get_allow_match(),
 				      hl78xx_get_allow_match_size());
 		if (ret < 0) {
-			LOG_ERR("Failed to get network operator");
+			LOG_ERROR("Failed to get network operator");
 		}
 		safe_strncpy(info, (const char *)data->status.network_operator.operator,
 			     MIN(size, sizeof(data->status.network_operator.operator)));
@@ -341,7 +341,7 @@ int hl78xx_start_airvantage_dm_session(const struct device *dev)
 			      .user_cmd = false,
 		      });
 	if (ret < 0) {
-		LOG_ERR("Start DM session error %d", ret);
+		LOG_ERROR("Start DM session error %d", ret);
 		return ret;
 	}
 	return 0;
@@ -363,7 +363,7 @@ int hl78xx_stop_airvantage_dm_session(const struct device *dev)
 			      .user_cmd = false,
 		      });
 	if (ret < 0) {
-		LOG_ERR("Stop DM session error %d", ret);
+		LOG_ERROR("Stop DM session error %d", ret);
 		return ret;
 	}
 	return 0;
@@ -630,7 +630,7 @@ int hl78xx_gnss_assist_data_get_status(const struct device *dev, struct hl78xx_a
 	ret = hl78xx_send_cmd(data_modem, cmd, NULL, hl78xx_get_gnssad_match(), 1);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to query A-GNSS status: %d", ret);
+		LOG_ERROR("Failed to query A-GNSS status: %d", ret);
 		return ret;
 	}
 
@@ -657,7 +657,7 @@ int hl78xx_gnss_assist_data_download(const struct device *dev, enum hl78xx_agnss
 
 	/* Validate days parameter */
 	if (!hl78xx_agnss_validate_days(days)) {
-		LOG_ERR("Invalid days value for A-GNSS download: %d", days);
+		LOG_ERROR("Invalid days value for A-GNSS download: %d", days);
 		return -EINVAL;
 	}
 
@@ -676,7 +676,7 @@ int hl78xx_gnss_assist_data_download(const struct device *dev, enum hl78xx_agnss
 			      hl78xx_get_ok_match_size());
 
 	if (ret < 0) {
-		LOG_ERR("Failed to download A-GNSS data: %d", ret);
+		LOG_ERROR("Failed to download A-GNSS data: %d", ret);
 		return ret;
 	}
 
@@ -704,7 +704,7 @@ int hl78xx_gnss_assist_data_delete(const struct device *dev)
 			      hl78xx_get_ok_match_size());
 
 	if (ret < 0) {
-		LOG_ERR("Failed to delete A-GNSS data: %d", ret);
+		LOG_ERROR("Failed to delete A-GNSS data: %d", ret);
 		return ret;
 	}
 

@@ -105,7 +105,7 @@ static int i2c_emul_send_to_target(const struct device *dev, struct i2c_msg *msg
 					return rc;
 				}
 				if (len > msgs[i].len) {
-					LOG_ERR("buf_read_requested returned too many bytes");
+					LOG_ERROR("buf_read_requested returned too many bytes");
 					return -ENOMEM;
 				}
 				memcpy(msgs[i].buf, ptr, len);

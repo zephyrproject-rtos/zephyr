@@ -100,22 +100,22 @@ static int wdt_sam0_setup(const struct device *dev, uint8_t options)
 	struct wdt_sam0_dev_data *data = dev->data;
 
 	if (wdt_sam0_is_enabled()) {
-		LOG_ERR("Watchdog already setup");
+		LOG_ERROR("Watchdog already setup");
 		return -EBUSY;
 	}
 
 	if (!data->timeout_valid) {
-		LOG_ERR("No valid timeout installed");
+		LOG_ERROR("No valid timeout installed");
 		return -EINVAL;
 	}
 
 	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
-		LOG_ERR("Pause in sleep not supported");
+		LOG_ERROR("Pause in sleep not supported");
 		return -ENOTSUP;
 	}
 
 	if (options & WDT_OPT_PAUSE_HALTED_BY_DBG) {
-		LOG_ERR("Pause when halted by debugger not supported");
+		LOG_ERROR("Pause when halted by debugger not supported");
 		return -ENOTSUP;
 	}
 
@@ -146,23 +146,23 @@ static int wdt_sam0_install_timeout(const struct device *dev,
 
 	/* CONFIG is enable protected, error out if already enabled */
 	if (wdt_sam0_is_enabled()) {
-		LOG_ERR("Watchdog already setup");
+		LOG_ERROR("Watchdog already setup");
 		return -EBUSY;
 	}
 
 	if (cfg->flags != WDT_FLAG_RESET_SOC) {
-		LOG_ERR("Only SoC reset supported");
+		LOG_ERROR("Only SoC reset supported");
 		return -ENOTSUP;
 	}
 
 	if (cfg->window.max == 0) {
-		LOG_ERR("Upper limit timeout out of range");
+		LOG_ERROR("Upper limit timeout out of range");
 		return -EINVAL;
 	}
 
 	per = wdt_sam0_timeout_to_wdt_period(cfg->window.max);
 	if (per > WDT_CONFIG_PER_16K_Val) {
-		LOG_ERR("Upper limit timeout out of range");
+		LOG_ERROR("Upper limit timeout out of range");
 		goto timeout_invalid;
 	}
 
@@ -170,7 +170,7 @@ static int wdt_sam0_install_timeout(const struct device *dev,
 		/* Window mode */
 		window = wdt_sam0_timeout_to_wdt_period(cfg->window.min);
 		if (window > WDT_CONFIG_PER_8K_Val) {
-			LOG_ERR("Lower limit timeout out of range");
+			LOG_ERROR("Lower limit timeout out of range");
 			goto timeout_invalid;
 		}
 		if (per <= window) {
@@ -229,7 +229,7 @@ static int wdt_sam0_feed(const struct device *dev, int channel_id)
 	struct wdt_sam0_dev_data *data = dev->data;
 
 	if (!data->timeout_valid) {
-		LOG_ERR("No valid timeout installed");
+		LOG_ERROR("No valid timeout installed");
 		return -EINVAL;
 	}
 

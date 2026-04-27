@@ -116,7 +116,7 @@ static inline int numaker_pcc_get_max_divider(NUMAKER_PCC_MODIDX_REAL_TYPE clk_m
 		break;
 #endif
 	default:
-		LOG_ERR("Unsupported clock module index: 0x%" PRIx64, (uint64_t)clk_modidx_real);
+		LOG_ERROR("Unsupported clock module index: 0x%" PRIx64, (uint64_t)clk_modidx_real);
 		return -ENOTSUP;
 	}
 
@@ -148,8 +148,8 @@ static inline int numaker_pcc_get_source_rate(NUMAKER_PCC_MODIDX_REAL_TYPE clk_m
 			*source_rate = __HIRC;
 			break;
 		default:
-			LOG_ERR("Unsupported clock module/source index: 0x%" PRIx64 "/%d",
-				(uint64_t)clk_modidx_real, clksrc_idx);
+			LOG_ERROR("Unsupported clock module/source index: 0x%" PRIx64 "/%d",
+				  (uint64_t)clk_modidx_real, clksrc_idx);
 			return -ENOTSUP;
 		}
 		break;
@@ -169,8 +169,8 @@ static inline int numaker_pcc_get_source_rate(NUMAKER_PCC_MODIDX_REAL_TYPE clk_m
 			*source_rate = __HIRC;
 			break;
 		default:
-			LOG_ERR("Unsupported clock module/source index: 0x%" PRIx64 "/%d",
-				(uint64_t)clk_modidx_real, clksrc_idx);
+			LOG_ERROR("Unsupported clock module/source index: 0x%" PRIx64 "/%d",
+				  (uint64_t)clk_modidx_real, clksrc_idx);
 			return -ENOTSUP;
 		}
 		break;
@@ -191,8 +191,8 @@ static inline int numaker_pcc_get_source_rate(NUMAKER_PCC_MODIDX_REAL_TYPE clk_m
 			*source_rate = __HIRC;
 			break;
 		default:
-			LOG_ERR("Unsupported clock module/source index: 0x%" PRIx64 "/%d",
-				(uint64_t)clk_modidx_real, clksrc_idx);
+			LOG_ERROR("Unsupported clock module/source index: 0x%" PRIx64 "/%d",
+				  (uint64_t)clk_modidx_real, clksrc_idx);
 			return -ENOTSUP;
 		}
 		break;
@@ -216,8 +216,8 @@ static inline int numaker_pcc_get_source_rate(NUMAKER_PCC_MODIDX_REAL_TYPE clk_m
 			*source_rate = __HIRC48M / 4;
 			break;
 		default:
-			LOG_ERR("Unsupported clock module/source index: 0x%" PRIx64 "/%d",
-				(uint64_t)clk_modidx_real, clksrc_idx);
+			LOG_ERROR("Unsupported clock module/source index: 0x%" PRIx64 "/%d",
+				  (uint64_t)clk_modidx_real, clksrc_idx);
 			return -ENOTSUP;
 		}
 		break;
@@ -240,8 +240,8 @@ static inline int numaker_pcc_get_source_rate(NUMAKER_PCC_MODIDX_REAL_TYPE clk_m
 			*source_rate = __HIRC48M / 4;
 			break;
 		default:
-			LOG_ERR("Unsupported clock module/source index: 0x%" PRIx64 "/%d",
-				(uint64_t)clk_modidx_real, clksrc_idx);
+			LOG_ERROR("Unsupported clock module/source index: 0x%" PRIx64 "/%d",
+				  (uint64_t)clk_modidx_real, clksrc_idx);
 			return -ENOTSUP;
 		}
 		break;
@@ -262,8 +262,8 @@ static inline int numaker_pcc_get_source_rate(NUMAKER_PCC_MODIDX_REAL_TYPE clk_m
 			*source_rate = __HIRC;
 			break;
 		default:
-			LOG_ERR("Unsupported clock module/source index: 0x%" PRIx64 "/%d",
-				(uint64_t)clk_modidx_real, clksrc_idx);
+			LOG_ERROR("Unsupported clock module/source index: 0x%" PRIx64 "/%d",
+				  (uint64_t)clk_modidx_real, clksrc_idx);
 			return -ENOTSUP;
 		}
 		break;
@@ -282,14 +282,14 @@ static inline int numaker_pcc_get_source_rate(NUMAKER_PCC_MODIDX_REAL_TYPE clk_m
 			*source_rate = __HIRC;
 			break;
 		default:
-			LOG_ERR("Unsupported clock module/source index: 0x%" PRIx64 "/%d",
-				(uint64_t)clk_modidx_real, clksrc_idx);
+			LOG_ERROR("Unsupported clock module/source index: 0x%" PRIx64 "/%d",
+				  (uint64_t)clk_modidx_real, clksrc_idx);
 			return -ENOTSUP;
 		}
 		break;
 #endif
 	default:
-		LOG_ERR("Unsupported clock module index: 0x%" PRIx64, (uint64_t)clk_modidx_real);
+		LOG_ERROR("Unsupported clock module index: 0x%" PRIx64, (uint64_t)clk_modidx_real);
 		return -ENOTSUP;
 	}
 
@@ -352,7 +352,7 @@ static inline int numaker_scc_get_rate(const struct device *dev, clock_control_s
 	ARG_UNUSED(dev);
 
 	if (!rate) {
-		LOG_ERR("NULL rate pointer");
+		LOG_ERROR("NULL rate pointer");
 		return -EINVAL;
 	}
 
@@ -377,7 +377,7 @@ static inline int numaker_scc_get_rate(const struct device *dev, clock_control_s
 
 		*rate = source_rate / clkdiv_value;
 	} else {
-		LOG_ERR("Invalid subsys (%d)", scc_subsys->subsys_id);
+		LOG_ERROR("Invalid subsys (%d)", scc_subsys->subsys_id);
 		return -EINVAL;
 	}
 
@@ -476,7 +476,7 @@ static inline int numaker_scc_set_rate(const struct device *dev, clock_control_s
 		pcc_rate->clk_div_value_max = clkdiv_value_max;
 		pcc_rate->clk_mod_rate = source_rate / clkdiv_value;
 	} else {
-		LOG_ERR("Invalid subsys (%d)", scc_subsys->subsys_id);
+		LOG_ERROR("Invalid subsys (%d)", scc_subsys->subsys_id);
 		return -EINVAL;
 	}
 

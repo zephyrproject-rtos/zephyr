@@ -77,7 +77,7 @@ static bool create_some_entries(const char *base_path)
 	fs_file_t_init(&file);
 
 	if (base >= (sizeof(path) - SOME_REQUIRED_LEN)) {
-		LOG_ERR("Not enough concatenation buffer to create file paths");
+		LOG_ERROR("Not enough concatenation buffer to create file paths");
 		return false;
 	}
 
@@ -89,7 +89,7 @@ static bool create_some_entries(const char *base_path)
 	strcat(&path[base], SOME_FILE_NAME);
 
 	if (fs_open(&file, path, FS_O_CREATE) != 0) {
-		LOG_ERR("Failed to create file %s", path);
+		LOG_ERROR("Failed to create file %s", path);
 		return false;
 	}
 	fs_close(&file);
@@ -98,7 +98,7 @@ static bool create_some_entries(const char *base_path)
 	strcat(&path[base], SOME_DIR_NAME);
 
 	if (fs_mkdir(path) != 0) {
-		LOG_ERR("Failed to create dir %s", path);
+		LOG_ERROR("Failed to create dir %s", path);
 		/* If code gets here, it has at least successes to create the
 		 * file so allow function to return true.
 		 */
@@ -120,20 +120,20 @@ int main(void)
 
 		if (disk_access_ioctl(disk_pdrv,
 				DISK_IOCTL_CTRL_INIT, NULL) != 0) {
-			LOG_ERR("Storage init ERROR!");
+			LOG_ERROR("Storage init ERROR!");
 			break;
 		}
 
 		if (disk_access_ioctl(disk_pdrv,
 				DISK_IOCTL_GET_SECTOR_COUNT, &block_count)) {
-			LOG_ERR("Unable to get sector count");
+			LOG_ERROR("Unable to get sector count");
 			break;
 		}
 		LOG_INF("Block count %u", block_count);
 
 		if (disk_access_ioctl(disk_pdrv,
 				DISK_IOCTL_GET_SECTOR_SIZE, &block_size)) {
-			LOG_ERR("Unable to get sector size");
+			LOG_ERROR("Unable to get sector size");
 			break;
 		}
 		printk("Sector size %u\n", block_size);
@@ -143,7 +143,7 @@ int main(void)
 
 		if (disk_access_ioctl(disk_pdrv,
 				DISK_IOCTL_CTRL_DEINIT, NULL) != 0) {
-			LOG_ERR("Storage deinit ERROR!");
+			LOG_ERROR("Storage deinit ERROR!");
 			break;
 		}
 	} while (0);

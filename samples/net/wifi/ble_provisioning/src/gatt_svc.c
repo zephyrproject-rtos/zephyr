@@ -208,7 +208,7 @@ int gatt_svc_adv_start(void)
 	}
 
 	if (err) {
-		LOG_ERR("adv start failed (%d)", err);
+		LOG_ERROR("adv start failed (%d)", err);
 		return err;
 	}
 
@@ -222,7 +222,7 @@ int gatt_svc_adv_stop(void)
 	int err = bt_le_adv_stop();
 
 	if (err && err != -EALREADY) {
-		LOG_ERR("adv stop failed (%d)", err);
+		LOG_ERROR("adv stop failed (%d)", err);
 		return err;
 	}
 

@@ -47,7 +47,7 @@ static void on_coap_response(const struct coap_client_response_data *data, void 
 			elapsed_time);
 		k_sem_give(&coap_done_sem);
 	} else if (COAP_RESPONSE_CODE_CONTENT != data->result_code) {
-		LOG_ERR("Error during CoAP download, result_code=%d", data->result_code);
+		LOG_ERROR("Error during CoAP download, result_code=%d", data->result_code);
 		k_sem_give(&coap_done_sem);
 	}
 }
@@ -71,7 +71,7 @@ static void do_coap_download(struct sockaddr *sa)
 
 	sockfd = socket(sa->sa_family, SOCK_DGRAM, 0);
 	if (sockfd < 0) {
-		LOG_ERR("Failed to create socket, err %d", errno);
+		LOG_ERROR("Failed to create socket, err %d", errno);
 		return;
 	}
 
@@ -79,7 +79,7 @@ static void do_coap_download(struct sockaddr *sa)
 
 	ret = coap_client_req(&client, sockfd, sa, &request, NULL);
 	if (ret) {
-		LOG_ERR("Failed to send CoAP request, err %d", ret);
+		LOG_ERROR("Failed to send CoAP request, err %d", ret);
 		return;
 	}
 
@@ -97,7 +97,7 @@ int main(void)
 
 	ret = coap_client_init(&client, NULL);
 	if (ret) {
-		LOG_ERR("Failed to init coap client, err %d", ret);
+		LOG_ERROR("Failed to init coap client, err %d", ret);
 		return ret;
 	}
 

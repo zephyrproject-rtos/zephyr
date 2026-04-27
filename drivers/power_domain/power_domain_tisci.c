@@ -32,7 +32,7 @@ static int tisci_power_domain_on(const struct power_domain *pd)
 	}
 
 	if (ret) {
-		LOG_ERR("TISCI PM: get_device(%u) failed (%d)\n", pd->devid, ret);
+		LOG_ERROR("TISCI PM: get_device(%u) failed (%d)\n", pd->devid, ret);
 	}
 
 	return ret;
@@ -43,7 +43,7 @@ static int tisci_power_domain_off(const struct power_domain *pd)
 	int ret = tisci_cmd_put_device(dmsc, pd->devid);
 
 	if (ret) {
-		LOG_ERR("TISCI PM: put_device(%u) failed (%d)\n", pd->devid, ret);
+		LOG_ERROR("TISCI PM: put_device(%u) failed (%d)\n", pd->devid, ret);
 	}
 
 	return ret;
@@ -79,13 +79,13 @@ static int tisci_pd_init(const struct device *dev)
 	int ret;
 
 	if (dmsc == NULL) {
-		LOG_ERR("DMSC device not found");
+		LOG_ERROR("DMSC device not found");
 		return -ENODEV;
 	}
 
 	ret = pm_device_driver_init(dev, tisci_pd_pm_action);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable runtime PM: %d", ret);
+		LOG_ERROR("Failed to enable runtime PM: %d", ret);
 		return ret;
 	}
 

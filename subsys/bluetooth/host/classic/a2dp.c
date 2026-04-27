@@ -1362,7 +1362,7 @@ int bt_a2dp_stream_delay_report(struct bt_a2dp_stream *stream, uint16_t delay)
 	}
 
 	if (stream->local_ep->sep.sep_info.tsep != BT_AVDTP_SINK) {
-		LOG_ERR("Delay report is only supported for sink endpoint");
+		LOG_ERROR("Delay report is only supported for sink endpoint");
 		return -ENOTSUP;
 	}
 
@@ -1489,7 +1489,7 @@ void bt_a2dp_init(void)
 	/* Register event handlers with AVDTP */
 	err = bt_avdtp_register(&avdtp_cb);
 	if ((err < 0) && (err != -EALREADY)) {
-		LOG_ERR("A2DP registration failed (err %d)", err);
+		LOG_ERROR("A2DP registration failed (err %d)", err);
 		return;
 	}
 
@@ -1504,7 +1504,7 @@ struct bt_a2dp *bt_a2dp_connect(struct bt_conn *conn)
 
 	a2dp = a2dp_get_connection(conn);
 	if (!a2dp) {
-		LOG_ERR("Cannot allocate memory");
+		LOG_ERROR("Cannot allocate memory");
 		return NULL;
 	}
 

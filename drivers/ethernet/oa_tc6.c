@@ -53,7 +53,7 @@ int oa_tc6_reg_read(struct oa_tc6 *tc6, const uint32_t reg, uint32_t *val)
 	/* Check if echoed control command header is correct */
 	rv = sys_be32_to_cpu(*(uint32_t *)&buf[4]);
 	if (hdr_bkp != rv) {
-		LOG_ERR("Header transmission error!");
+		LOG_ERROR("Header transmission error!");
 		return -1;
 	}
 
@@ -63,7 +63,7 @@ int oa_tc6_reg_read(struct oa_tc6 *tc6, const uint32_t reg, uint32_t *val)
 	if (tc6->protected) {
 		rvn = sys_be32_to_cpu(*(uint32_t *)&buf[12]);
 		if (rv != ~rvn) {
-			LOG_ERR("Protected mode transmission error!");
+			LOG_ERROR("Protected mode transmission error!");
 			return -1;
 		}
 	}
@@ -114,14 +114,14 @@ int oa_tc6_reg_write(struct oa_tc6 *tc6, const uint32_t reg, uint32_t val)
 	/* Check if echoed control command header is correct */
 	rv = sys_be32_to_cpu(*(uint32_t *)&buf_rx[4]);
 	if (hdr_bkp != rv) {
-		LOG_ERR("Header transmission error!");
+		LOG_ERROR("Header transmission error!");
 		return -1;
 	}
 
 	/* Check if echoed value is correct */
 	rv = sys_be32_to_cpu(*(uint32_t *)&buf_rx[8]);
 	if (val != rv) {
-		LOG_ERR("Header transmission error!");
+		LOG_ERROR("Header transmission error!");
 		return -1;
 	}
 
@@ -132,7 +132,7 @@ int oa_tc6_reg_write(struct oa_tc6 *tc6, const uint32_t reg, uint32_t val)
 	if (tc6->protected) {
 		rvn = sys_be32_to_cpu(*(uint32_t *)&buf_rx[12]);
 		if (val != ~rvn) {
-			LOG_ERR("Protected mode transmission error!");
+			LOG_ERROR("Protected mode transmission error!");
 			return -1;
 		}
 	}
@@ -293,7 +293,7 @@ int oa_tc6_check_status(struct oa_tc6 *tc6)
 	uint32_t sts;
 
 	if (!tc6->sync) {
-		LOG_ERR("SYNC: Configuration lost, reset IC!");
+		LOG_ERROR("SYNC: Configuration lost, reset IC!");
 		return -EIO;
 	}
 
@@ -414,7 +414,7 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 		if (!buf_rx) {
 			buf_rx = net_pkt_get_frag(pkt, buf_rx_size, OA_TC6_BUF_ALLOC_TIMEOUT);
 			if (!buf_rx) {
-				LOG_ERR("OA RX: Can't allocate RX buffer fordata!");
+				LOG_ERROR("OA RX: Can't allocate RX buffer fordata!");
 				return -ENOMEM;
 			}
 		}
@@ -424,18 +424,18 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 
 		ret = oa_tc6_chunk_spi_transfer(tc6, buf_rx->data + buf_rx_used, NULL, hdr, &ftr);
 		if (ret < 0) {
-			LOG_ERR("OA RX: transmission error: %d!", ret);
+			LOG_ERROR("OA RX: transmission error: %d!", ret);
 			goto unref_buf;
 		}
 
 		ret = -EIO;
 		if (oa_tc6_get_parity(ftr)) {
-			LOG_ERR("OA RX: Footer parity error!");
+			LOG_ERROR("OA RX: Footer parity error!");
 			goto unref_buf;
 		}
 
 		if (!FIELD_GET(OA_DATA_FTR_SYNC, ftr)) {
-			LOG_ERR("OA RX: Configuration not SYNC'ed!");
+			LOG_ERROR("OA RX: Configuration not SYNC'ed!");
 			goto unref_buf;
 		}
 
@@ -478,7 +478,7 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 			if (FIELD_GET(OA_DATA_FTR_SV, ftr) && (ebo <= sbo)) {
 				tc6->concat_buf = net_buf_clone(buf_rx, OA_TC6_BUF_ALLOC_TIMEOUT);
 				if (!tc6->concat_buf) {
-					LOG_ERR("OA RX: Can't allocate RX buffer for data!");
+					LOG_ERROR("OA RX: Can't allocate RX buffer for data!");
 					ret = -ENOMEM;
 					goto unref_buf;
 				}

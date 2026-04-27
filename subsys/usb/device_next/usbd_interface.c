@@ -43,8 +43,7 @@ static int handle_ep_op(struct usbd_context *const uds_ctx,
 	}
 
 	if (ret) {
-		LOG_ERR("Failed to handle op %d, ep 0x%02x, bm 0x%08x, %d",
-			op, ep, *ep_bm, ret);
+		LOG_ERROR("Failed to handle op %d, ep 0x%02x, bm 0x%08x, %d", op, ep, *ep_bm, ret);
 	}
 
 	return ret;

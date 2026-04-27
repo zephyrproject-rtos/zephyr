@@ -59,13 +59,13 @@ static inline int mcux_wdog32_get_clock_frequency(const struct device *dev, uint
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, freq);
 	if (ret) {
-		LOG_ERR("Failed to get clock frequency: %d", ret);
+		LOG_ERROR("Failed to get clock frequency: %d", ret);
 		return ret;
 	}
 
@@ -94,7 +94,7 @@ static int mcux_wdog32_setup(const struct device *dev, uint8_t options)
 	int ret;
 
 	if (!data->timeout_valid) {
-		LOG_ERR("No valid timeouts installed");
+		LOG_ERROR("No valid timeouts installed");
 		return -EINVAL;
 	}
 
@@ -139,7 +139,7 @@ static int mcux_wdog32_install_timeout(const struct device *dev, const struct wd
 	int ret;
 
 	if (data->timeout_valid) {
-		LOG_ERR("No more timeouts can be installed");
+		LOG_ERROR("No more timeouts can be installed");
 		return -ENOMEM;
 	}
 
@@ -165,7 +165,7 @@ static int mcux_wdog32_install_timeout(const struct device *dev, const struct wd
 
 	if ((data->wdog_config.timeoutValue < MIN_TIMEOUT) ||
 	    (data->wdog_config.timeoutValue < data->wdog_config.windowValue)) {
-		LOG_ERR("Invalid timeout");
+		LOG_ERROR("Invalid timeout");
 		return -EINVAL;
 	}
 
@@ -184,7 +184,7 @@ static int mcux_wdog32_feed(const struct device *dev, int channel_id)
 	WDOG_Type *base = get_base_address(dev);
 
 	if (channel_id != 0) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 
@@ -220,14 +220,14 @@ static int mcux_wdog32_init(const struct device *dev)
 		ret = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
 		if (ret && ret != -ENOSYS) {
 			/* Real error occurred */
-			LOG_ERR("Failed to configure clock: %d", ret);
+			LOG_ERROR("Failed to configure clock: %d", ret);
 			return ret;
 		}
 
 #if FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL
 		ret = clock_control_on(config->clock_dev, config->clock_subsys);
 		if (ret) {
-			LOG_ERR("Failed to enable clock: %d", ret);
+			LOG_ERROR("Failed to enable clock: %d", ret);
 			return ret;
 		}
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */

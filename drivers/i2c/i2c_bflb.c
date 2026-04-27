@@ -308,7 +308,7 @@ static int i2c_bflb_configure(const struct device *dev, uint32_t dev_config)
 	int err;
 
 	if ((dev_config & I2C_MODE_CONTROLLER) == 0) {
-		LOG_ERR("Not Controller Mode unsupported");
+		LOG_ERROR("Not Controller Mode unsupported");
 		return -EIO;
 	}
 
@@ -332,7 +332,7 @@ static int i2c_bflb_configure(const struct device *dev, uint32_t dev_config)
 		speed_freq = config->bitrate;
 		break;
 	default:
-		LOG_ERR("Unsupported I2C speed requested");
+		LOG_ERROR("Unsupported I2C speed requested");
 		return -ENOTSUP;
 	}
 
@@ -529,7 +529,7 @@ static int i2c_bflb_prepare_transfer(const struct device *dev,
 	}
 
 	if (p + msgs[i].len >= &(data->transfer_buffer[I2C_MAX_PACKET_LENGTH])) {
-		LOG_ERR("Cannot send packet of length > 255");
+		LOG_ERROR("Cannot send packet of length > 255");
 		return -ENOTSUP;
 	}
 
@@ -553,14 +553,14 @@ static int i2c_bflb_check_msgs(struct i2c_msg *msgs, uint8_t num_msgs, bool *add
 {
 	for (uint8_t i = 0; i < num_msgs; i++) {
 		if (msgs[i].len > I2C_MAX_PACKET_LENGTH) {
-			LOG_ERR("Cannot send packet of length > 255");
+			LOG_ERROR("Cannot send packet of length > 255");
 			return -ENOTSUP;
 		}
 		if ((msgs[i].flags & I2C_MSG_ADDR_10_BITS) != 0) {
 #if defined(CONFIG_SOC_SERIES_BL61X)
 			*addr_10b = true;
 #else
-			LOG_ERR("10 bits addresses not supported");
+			LOG_ERROR("10 bits addresses not supported");
 			return -ENOTSUP;
 #endif
 		}

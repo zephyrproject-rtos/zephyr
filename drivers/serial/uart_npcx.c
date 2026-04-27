@@ -701,7 +701,7 @@ static void uart_npcx_async_tx_timeout(struct k_work *work)
 		CONTAINER_OF(tx_params, struct uart_npcx_async_data, tx_dma_params);
 	const struct device *dev = async_data->uart_dev;
 
-	LOG_ERR("Async Tx Timeout");
+	LOG_ERROR("Async Tx Timeout");
 	uart_npcx_async_tx_abort(dev);
 }
 
@@ -1092,21 +1092,21 @@ static int uart_npcx_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(clk_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	/* Turn on device clock first and get source clock freq. */
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
-		LOG_ERR("Turn on UART clock fail %d", ret);
+		LOG_ERROR("Turn on UART clock fail %d", ret);
 		return ret;
 	}
 
 #ifdef CONFIG_UART_ASYNC_API
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->mdma_clk_cfg);
 	if (ret < 0) {
-		LOG_ERR("Turn on UART MDMA clock fail %d", ret);
+		LOG_ERROR("Turn on UART MDMA clock fail %d", ret);
 		return ret;
 	}
 #endif
@@ -1117,15 +1117,15 @@ static int uart_npcx_init(const struct device *dev)
 	 */
 	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)&config->clk_cfg, &uart_rate);
 	if (ret < 0) {
-		LOG_ERR("Get UART clock rate error %d", ret);
+		LOG_ERROR("Get UART clock rate error %d", ret);
 		return ret;
 	}
 
 	/* Configure baud rate */
 	ret = uart_set_npcx_baud_rate(inst, data->baud_rate, uart_rate);
 	if (ret < 0) {
-		LOG_ERR("Set baud rate %d with unsupported apb clock %d failed", data->baud_rate,
-			uart_rate);
+		LOG_ERROR("Set baud rate %d with unsupported apb clock %d failed", data->baud_rate,
+			  uart_rate);
 		return ret;
 	}
 
@@ -1139,7 +1139,7 @@ static int uart_npcx_init(const struct device *dev)
 	} else if (config->data_bits == UART_CFG_DATA_BITS_7) {
 		SET_FIELD(inst->UFRS, NPCX_UFRS_CHAR_FIELD, NPCX_UFRS_CHAR_DATA_BIT_7);
 	} else {
-		LOG_ERR("Unsupported data bits %d", config->data_bits);
+		LOG_ERROR("Unsupported data bits %d", config->data_bits);
 		return -ENOTSUP;
 	}
 
@@ -1208,7 +1208,7 @@ static int uart_npcx_init(const struct device *dev)
 	/* Configure pin-mux for uart device */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("UART pinctrl setup failed (%d)", ret);
+		LOG_ERROR("UART pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 

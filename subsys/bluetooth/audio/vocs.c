@@ -87,8 +87,8 @@ static void notify_work_reschedule(struct bt_vocs_server *inst, enum bt_vocs_not
 
 	err = k_work_reschedule(&inst->notify_work, K_NO_WAIT);
 	if (err < 0) {
-		LOG_ERR("Failed to reschedule %s notification err %d",
-			vocs_notify_str(notify), err);
+		LOG_ERROR("Failed to reschedule %s notification err %d", vocs_notify_str(notify),
+			  err);
 	}
 }
 
@@ -101,7 +101,7 @@ static void notify(struct bt_vocs_server *inst, enum bt_vocs_notify notify,
 	if (err == -ENOMEM) {
 		notify_work_reschedule(inst, notify, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
 	} else if (err < 0 && err != -ENOTCONN) {
-		LOG_ERR("Notify %s err %d", vocs_notify_str(notify), err);
+		LOG_ERROR("Notify %s err %d", vocs_notify_str(notify), err);
 	}
 }
 

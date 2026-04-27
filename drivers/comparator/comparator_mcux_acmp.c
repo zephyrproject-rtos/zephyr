@@ -555,7 +555,7 @@ static int mcux_acmp_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("failed to set %s", "pincfg");
+		LOG_ERROR("failed to set %s", "pincfg");
 		return ret;
 	}
 
@@ -565,7 +565,7 @@ static int mcux_acmp_init(const struct device *dev)
 
 	ret = comp_mcux_acmp_set_filter_config(dev, &config->filter_config);
 	if (ret) {
-		LOG_ERR("failed to set %s", "filter config");
+		LOG_ERROR("failed to set %s", "filter config");
 		return ret;
 	}
 

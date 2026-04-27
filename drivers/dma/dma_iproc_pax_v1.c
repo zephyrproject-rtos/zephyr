@@ -501,16 +501,16 @@ static int process_cmpl_event(const struct device *dev,
 	is_outstanding = sys_read32(RM_RING_REG(pd, idx,
 						RING_NUM_REQ_OUTSTAND));
 	if ((ring->curr.opq != c->opq) && (is_outstanding != 0)) {
-		LOG_ERR("RING%d: pkt id should be %d, rcvd %d outst=%d\n",
-			idx, ring->curr.opq, c->opq, is_outstanding);
+		LOG_ERROR("RING%d: pkt id should be %d, rcvd %d outst=%d\n", idx, ring->curr.opq,
+			  c->opq, is_outstanding);
 		ret = -EIO;
 	}
 	/* check for completion AE timeout */
 	if (c->rm_status == RM_COMPLETION_AE_TIMEOUT) {
-		LOG_ERR("RING%d WR_PTR:%d rm_status:%x AE Timeout!\n",
-			idx, wr_offs, c->rm_status);
+		LOG_ERROR("RING%d WR_PTR:%d rm_status:%x AE Timeout!\n", idx, wr_offs,
+			  c->rm_status);
 		/* TBD: Issue full card reset to restore operations */
-		LOG_ERR("Needs Card Reset to recover!\n");
+		LOG_ERROR("Needs Card Reset to recover!\n");
 		ret = -ETIMEDOUT;
 	}
 
@@ -543,11 +543,11 @@ static int peek_ring_cmpl(const struct device *dev,
 	} while (--timeout);
 
 	if (timeout == 0) {
-		LOG_ERR("RING%d timeout, rcvd %d, expected %d!\n",
-			idx, PAX_DMA_GET_CMPL_COUNT(wr_offs, rd_offs), pl_len);
+		LOG_ERROR("RING%d timeout, rcvd %d, expected %d!\n", idx,
+			  PAX_DMA_GET_CMPL_COUNT(wr_offs, rd_offs), pl_len);
 		/* More debug info on current dma instance */
-		LOG_ERR("WR_PTR:%x RD_PTR%x\n", wr_offs, rd_offs);
-		return  -ETIMEDOUT;
+		LOG_ERROR("WR_PTR:%x RD_PTR%x\n", wr_offs, rd_offs);
+		return -ETIMEDOUT;
 	}
 
 	return process_cmpl_event(dev, idx, pl_len);
@@ -592,7 +592,7 @@ static int dma_iproc_pax_init(const struct device *dev)
 	uintptr_t mem_aligned;
 
 	if (!device_is_ready(cfg->pcie_dev)) {
-		LOG_ERR("PCIe device not ready");
+		LOG_ERROR("PCIe device not ready");
 		return -ENODEV;
 	}
 
@@ -633,7 +633,7 @@ static int dma_iproc_pax_init(const struct device *dev)
 						r *
 						PAX_DMA_PER_RING_ALLOC_SIZE);
 		if (!pd->ring[r].ring_mem) {
-			LOG_ERR("RING%d failed to alloc desc memory!\n", r);
+			LOG_ERROR("RING%d failed to alloc desc memory!\n", r);
 			return -ENOMEM;
 		}
 		/* Find 8K aligned address within allocated region */
@@ -727,7 +727,7 @@ static int wait_for_pkt_completion(const struct device *dev,
 
 	/* wait for sg dma completion alert */
 	if (k_sem_take(&ring->alert, K_MSEC(PAX_DMA_TIMEOUT)) != 0) {
-		LOG_ERR("PAX DMA [ring %d] Timeout!\n", idx);
+		LOG_ERROR("PAX DMA [ring %d] Timeout!\n", idx);
 		return -ETIMEDOUT;
 	}
 
@@ -856,7 +856,7 @@ static int dma_iproc_pax_configure(const struct device *dev, uint32_t channel,
 #endif
 
 	if (channel >= PAX_DMA_RINGS_MAX) {
-		LOG_ERR("Invalid ring/channel %d\n", channel);
+		LOG_ERROR("Invalid ring/channel %d\n", channel);
 		return -EINVAL;
 	}
 
@@ -902,30 +902,28 @@ static int dma_iproc_pax_configure(const struct device *dev, uint32_t channel,
 
 #ifdef CONFIG_DMA_IPROC_PAX_DEBUG
 	if (xfer_sz > PAX_DMA_MAX_SIZE) {
-		LOG_ERR("Unsupported size: %d\n", xfer_sz);
+		LOG_ERROR("Unsupported size: %d\n", xfer_sz);
 		ring->ring_active = 0;
 		ret = -EINVAL;
 		goto err;
 	}
 
 	if (xfer_sz % PAX_DMA_MIN_SIZE) {
-		LOG_ERR("Unaligned size 0x%x\n", xfer_sz);
+		LOG_ERROR("Unaligned size 0x%x\n", xfer_sz);
 		ring->ring_active = 0;
 		ret = -EINVAL;
 		goto err;
 	}
 
 	if (pci_addr32[0] % PAX_DMA_ADDR_ALIGN) {
-		LOG_ERR("Unaligned Host addr: 0x%x.0x%x\n",
-			pci_addr32[1], pci_addr32[0]);
+		LOG_ERROR("Unaligned Host addr: 0x%x.0x%x\n", pci_addr32[1], pci_addr32[0]);
 		ring->ring_active = 0;
 		ret = -EINVAL;
 		goto err;
 	}
 
 	if (axi_addr32[0] % PAX_DMA_ADDR_ALIGN) {
-		LOG_ERR("Unaligned Card addr: 0x%x.0x%x\n",
-			axi_addr32[1], axi_addr32[0]);
+		LOG_ERROR("Unaligned Card addr: 0x%x.0x%x\n", axi_addr32[1], axi_addr32[0]);
 		ring->ring_active = 0;
 		ret = -EINVAL;
 		goto err;
@@ -949,7 +947,7 @@ static int dma_iproc_pax_transfer_start(const struct device *dev,
 	struct dma_iproc_pax_ring_data *ring;
 
 	if (channel >= PAX_DMA_RINGS_MAX) {
-		LOG_ERR("Invalid ring %d\n", channel);
+		LOG_ERROR("Invalid ring %d\n", channel);
 		return -EINVAL;
 	}
 	ring = &(pd->ring[channel]);

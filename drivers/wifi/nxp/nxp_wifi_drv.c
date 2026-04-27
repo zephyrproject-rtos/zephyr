@@ -128,13 +128,13 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 #ifdef CONFIG_NET_INTERFACE_NAME
 		ret = net_if_set_name(g_mlan.netif, "ml");
 		if (ret < 0) {
-			LOG_ERR("Failed to set STA nxp_wlan_network interface name");
+			LOG_ERROR("Failed to set STA nxp_wlan_network interface name");
 			return 0;
 		}
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 		ret = net_if_set_name(g_uap.netif, "ua");
 		if (ret < 0) {
-			LOG_ERR("Failed to set uAP nxp_wlan_network interface name");
+			LOG_ERROR("Failed to set uAP nxp_wlan_network interface name");
 			return 0;
 		}
 #endif
@@ -145,7 +145,7 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 #endif
 		break;
 	case WLAN_REASON_INITIALIZATION_FAILED:
-		LOG_ERR("WLAN: initialization failed");
+		LOG_ERROR("WLAN: initialization failed");
 		break;
 	case WLAN_REASON_AUTH_SUCCESS:
 #ifndef CONFIG_WIFI_NM_WPA_SUPPLICANT
@@ -168,7 +168,7 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 #ifndef CONFIG_WIFI_NM_WPA_SUPPLICANT
 		ret = wlan_get_address(&addr);
 		if (ret != WM_SUCCESS) {
-			LOG_ERR("failed to get IP address");
+			LOG_ERROR("failed to get IP address");
 			return 0;
 		}
 
@@ -176,7 +176,7 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 
 		ret = wlan_get_current_network_ssid(ssid);
 		if (ret != WM_SUCCESS) {
-			LOG_ERR("Failed to get External AP nxp_wlan_network ssid");
+			LOG_ERROR("Failed to get External AP nxp_wlan_network ssid");
 			return 0;
 		}
 
@@ -255,36 +255,35 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 #ifndef CONFIG_WIFI_NM_HOSTAPD_AP
 		ret = wlan_get_current_uap_network_ssid(uap_ssid);
 		if (ret != WM_SUCCESS) {
-			LOG_ERR("Failed to get Soft AP nxp_wlan_network ssid");
+			LOG_ERROR("Failed to get Soft AP nxp_wlan_network ssid");
 			return 0;
 		}
 
 		LOG_DBG("Soft AP \"%s\" started successfully", uap_ssid);
 #endif
-		if (net_addr_pton(NET_AF_INET, CONFIG_NXP_WIFI_SOFTAP_IP_ADDRESS,
-				  &dhcps_addr4) < 0) {
-			LOG_ERR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_ADDRESS");
+		if (net_addr_pton(NET_AF_INET, CONFIG_NXP_WIFI_SOFTAP_IP_ADDRESS, &dhcps_addr4) <
+		    0) {
+			LOG_ERROR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_ADDRESS");
 			return 0;
 		}
 		net_if_ipv4_addr_add(g_uap.netif, &dhcps_addr4, NET_ADDR_MANUAL, 0);
 		net_if_ipv4_set_gw(g_uap.netif, &dhcps_addr4);
 
-		if (net_addr_pton(NET_AF_INET, CONFIG_NXP_WIFI_SOFTAP_IP_MASK,
-				  &netmask_addr) < 0) {
-			LOG_ERR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_MASK");
+		if (net_addr_pton(NET_AF_INET, CONFIG_NXP_WIFI_SOFTAP_IP_MASK, &netmask_addr) < 0) {
+			LOG_ERROR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_MASK");
 			return 0;
 		}
 		net_if_ipv4_set_netmask_by_addr(g_uap.netif, &dhcps_addr4, &netmask_addr);
 		net_if_dormant_off(g_uap.netif);
 
 		if (net_addr_pton(NET_AF_INET, CONFIG_NXP_WIFI_SOFTAP_IP_BASE, &base_addr) < 0) {
-			LOG_ERR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_BASE");
+			LOG_ERROR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_BASE");
 			return 0;
 		}
 
 #ifdef CONFIG_NXP_WIFI_SOFTAP_DHCP_SERVER
 		if (net_dhcpv4_server_start(g_uap.netif, &base_addr) < 0) {
-			LOG_ERR("DHCP Server start failed");
+			LOG_ERROR("DHCP Server start failed");
 			return 0;
 		}
 
@@ -361,9 +360,9 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		net_if_dormant_on(g_uap.netif);
 		LOG_DBG("WLAN: UAP Stopped");
 
-		if (net_addr_pton(NET_AF_INET, CONFIG_NXP_WIFI_SOFTAP_IP_ADDRESS,
-				  &dhcps_addr4) < 0) {
-			LOG_ERR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_ADDRESS");
+		if (net_addr_pton(NET_AF_INET, CONFIG_NXP_WIFI_SOFTAP_IP_ADDRESS, &dhcps_addr4) <
+		    0) {
+			LOG_ERROR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_ADDRESS");
 		} else {
 			net_if_ipv4_addr_rm(g_uap.netif, &dhcps_addr4);
 		}
@@ -419,30 +418,30 @@ static int nxp_wifi_cpu_reset(uint8_t enable)
 	struct gpio_dt_spec pwr_gpios = GPIO_DT_SPEC_GET(DT_DRV_INST(0), pwr_gpios);
 
 	if (!gpio_is_ready_dt(&sdio_reset)) {
-		LOG_ERR("Error: failed to configure sdio_reset %s pin %d", sdio_reset.port->name,
-				sdio_reset.pin);
+		LOG_ERROR("Error: failed to configure sdio_reset %s pin %d", sdio_reset.port->name,
+			  sdio_reset.pin);
 		return -EIO;
 	}
 
 	/* Configure sdio_reset as output  */
 	err = gpio_pin_configure_dt(&sdio_reset, GPIO_OUTPUT);
 	if (err) {
-		LOG_ERR("Error %d: failed to configure sdio_reset %s pin %d", err,
-				sdio_reset.port->name, sdio_reset.pin);
+		LOG_ERROR("Error %d: failed to configure sdio_reset %s pin %d", err,
+			  sdio_reset.port->name, sdio_reset.pin);
 		return err;
 	}
 
 	if (!gpio_is_ready_dt(&pwr_gpios)) {
-		LOG_ERR("Error: failed to configure pwr_gpios %s pin %d", pwr_gpios.port->name,
-				pwr_gpios.pin);
+		LOG_ERROR("Error: failed to configure pwr_gpios %s pin %d", pwr_gpios.port->name,
+			  pwr_gpios.pin);
 		return -EIO;
 	}
 
 	/* Configure wlan-power-io as an output  */
 	err = gpio_pin_configure_dt(&pwr_gpios, GPIO_OUTPUT);
 	if (err) {
-		LOG_ERR("Error %d: failed to configure pwr_gpios %s pin %d", err,
-				pwr_gpios.port->name, pwr_gpios.pin);
+		LOG_ERROR("Error %d: failed to configure pwr_gpios %s pin %d", err,
+			  pwr_gpios.port->name, pwr_gpios.pin);
 		return err;
 	}
 
@@ -578,7 +577,7 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 	struct ipv4_config *ap_addr4 = &nxp_wlan_uap_network.ip.ipv4;
 
 	if (if_handle->state.interface != WLAN_BSS_TYPE_UAP) {
-		LOG_ERR("Wi-Fi not in uAP mode");
+		LOG_ERROR("Wi-Fi not in uAP mode");
 		return -EIO;
 	}
 
@@ -662,7 +661,7 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 	}
 
 	if (status != NXP_WIFI_RET_SUCCESS) {
-		LOG_ERR("Failed to enable Wi-Fi AP mode");
+		LOG_ERROR("Failed to enable Wi-Fi AP mode");
 		return -EAGAIN;
 	}
 
@@ -680,23 +679,23 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 	case WIFI_FREQ_BANDWIDTH_80MHZ:
 		ret = wlan_uap_set_bandwidth(params->bandwidth);
 		if (ret != WM_SUCCESS) {
-			LOG_ERR("Bandwidth is not supported");
+			LOG_ERROR("Bandwidth is not supported");
 			return -EAGAIN;
 		}
 		break;
 	default:
-		LOG_ERR("Invalid bandwidth");
+		LOG_ERROR("Invalid bandwidth");
 		return -EAGAIN;
 	}
 
 	if (net_addr_pton(NET_AF_INET, CONFIG_NXP_WIFI_SOFTAP_IP_ADDRESS, &ap_addr4->address) < 0) {
-		LOG_ERR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_ADDRESS");
+		LOG_ERROR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_ADDRESS");
 		return -ENOENT;
 	}
 	ap_addr4->gw = ap_addr4->address;
 
 	if (net_addr_pton(NET_AF_INET, CONFIG_NXP_WIFI_SOFTAP_IP_MASK, &ap_addr4->netmask) < 0) {
-		LOG_ERR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_MASK");
+		LOG_ERROR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_MASK");
 		return -ENOENT;
 	}
 
@@ -724,7 +723,7 @@ static int nxp_wifi_stop_ap(const struct device *dev)
 	struct interface *if_handle = (struct interface *)&g_uap;
 
 	if (if_handle->state.interface != WLAN_BSS_TYPE_UAP) {
-		LOG_ERR("Wi-Fi not in uAP mode");
+		LOG_ERROR("Wi-Fi not in uAP mode");
 		return -EIO;
 	}
 
@@ -740,7 +739,7 @@ static int nxp_wifi_stop_ap(const struct device *dev)
 	}
 
 	if (status != NXP_WIFI_RET_SUCCESS) {
-		LOG_ERR("Failed to disable Wi-Fi AP mode");
+		LOG_ERROR("Failed to disable Wi-Fi AP mode");
 		return -EAGAIN;
 	}
 
@@ -754,7 +753,7 @@ static int nxp_wifi_ap_config_params(const struct device *dev, struct wifi_ap_co
 	interface_t *if_handle = (interface_t *)dev->data;
 
 	if (if_handle->state.interface != WLAN_BSS_TYPE_UAP) {
-		LOG_ERR("Wi-Fi not in uAP mode");
+		LOG_ERROR("Wi-Fi not in uAP mode");
 		return -EIO;
 	}
 
@@ -767,7 +766,7 @@ static int nxp_wifi_ap_config_params(const struct device *dev, struct wifi_ap_co
 			ret = wlan_uap_set_sta_ageout_timer(params->max_inactivity * 10);
 			if (ret != WM_SUCCESS) {
 				status = NXP_WIFI_RET_FAIL;
-				LOG_ERR("Failed to set maximum inactivity duration for stations");
+				LOG_ERROR("Failed to set maximum inactivity duration for stations");
 			} else {
 				LOG_INF("Set maximum inactivity duration for stations: %d (s)",
 					params->max_inactivity);
@@ -778,7 +777,7 @@ static int nxp_wifi_ap_config_params(const struct device *dev, struct wifi_ap_co
 			ret = wlan_set_uap_max_clients(params->max_num_sta);
 			if (ret != WM_SUCCESS) {
 				status = NXP_WIFI_RET_FAIL;
-				LOG_ERR("Failed to set maximum number of stations");
+				LOG_ERROR("Failed to set maximum number of stations");
 			} else {
 				LOG_INF("Set maximum number of stations: %d", params->max_num_sta);
 			}
@@ -788,7 +787,7 @@ static int nxp_wifi_ap_config_params(const struct device *dev, struct wifi_ap_co
 			ret = wlan_uap_set_bandwidth(params->bandwidth);
 			if (ret != WM_SUCCESS) {
 				status = NXP_WIFI_RET_FAIL;
-				LOG_ERR("Bandwidth is not supported");
+				LOG_ERROR("Bandwidth is not supported");
 			} else {
 				LOG_INF("Set  Wi-Fi AP bandwidth: %d", params->bandwidth);
 			}
@@ -891,12 +890,12 @@ static int nxp_wifi_scan(const struct device *dev, struct wifi_scan_params *para
 	uint8_t i = 0;
 
 	if (if_handle->state.interface != WLAN_BSS_TYPE_STA) {
-		LOG_ERR("Wi-Fi not in station mode");
+		LOG_ERROR("Wi-Fi not in station mode");
 		return -EIO;
 	}
 
 	if (s_nxp_wifi_State != NXP_WIFI_STARTED) {
-		LOG_ERR("Wi-Fi not started status %d", s_nxp_wifi_State);
+		LOG_ERROR("Wi-Fi not started status %d", s_nxp_wifi_State);
 		return -EBUSY;
 	}
 
@@ -914,7 +913,7 @@ static int nxp_wifi_scan(const struct device *dev, struct wifi_scan_params *para
 	g_mlan.max_bss_cnt = params->max_bss_cnt;
 
 	if (params->bands & (1 << WIFI_FREQ_BAND_6_GHZ)) {
-		LOG_ERR("Wi-Fi band 6 GHz not supported");
+		LOG_ERROR("Wi-Fi band 6 GHz not supported");
 		g_mlan.scan_cb = NULL;
 		return -EIO;
 	}
@@ -963,7 +962,7 @@ static int nxp_wifi_scan(const struct device *dev, struct wifi_scan_params *para
 	}
 #else
 	if (params->bands & (1 << WIFI_FREQ_BAND_5_GHZ)) {
-		LOG_ERR("Wi-Fi band 5Hz not supported");
+		LOG_ERROR("Wi-Fi band 5Hz not supported");
 		g_mlan.scan_cb = NULL;
 		return -EIO;
 	}
@@ -974,7 +973,7 @@ do_scan:
 
 	ret = wlan_scan_with_opt(wlan_scan_params_v2);
 	if (ret != WM_SUCCESS) {
-		LOG_ERR("Failed to start Wi-Fi scanning");
+		LOG_ERROR("Failed to start Wi-Fi scanning");
 		g_mlan.scan_cb = NULL;
 		return -EAGAIN;
 	}
@@ -991,7 +990,7 @@ static int nxp_wifi_version(const struct device *dev, struct wifi_version *param
 	}
 
 	if (status != NXP_WIFI_RET_SUCCESS) {
-		LOG_ERR("Failed to get Wi-Fi driver/firmware version");
+		LOG_ERROR("Failed to get Wi-Fi driver/firmware version");
 		return -EAGAIN;
 	}
 
@@ -1009,13 +1008,13 @@ static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_pa
 	struct interface *if_handle = (struct interface *)dev->data;
 
 	if (s_nxp_wifi_State != NXP_WIFI_STARTED) {
-		LOG_ERR("Wi-Fi not started");
+		LOG_ERROR("Wi-Fi not started");
 		wifi_mgmt_raise_connect_result_event(g_mlan.netif, -1);
 		return -EALREADY;
 	}
 
 	if (if_handle->state.interface != WLAN_BSS_TYPE_STA) {
-		LOG_ERR("Wi-Fi not in station mode");
+		LOG_ERROR("Wi-Fi not in station mode");
 		wifi_mgmt_raise_connect_result_event(g_mlan.netif, -1);
 		return -EIO;
 	}
@@ -1095,7 +1094,7 @@ static int nxp_wifi_connect(const struct device *dev, struct wifi_connect_req_pa
 	}
 
 	if (status != NXP_WIFI_RET_SUCCESS) {
-		LOG_ERR("Failed to connect to Wi-Fi access point");
+		LOG_ERROR("Failed to connect to Wi-Fi access point");
 		return -EAGAIN;
 	}
 
@@ -1131,7 +1130,7 @@ static int nxp_wifi_disconnect(const struct device *dev)
 	}
 
 	if (if_handle->state.interface != WLAN_BSS_TYPE_STA) {
-		LOG_ERR("Wi-Fi not in station mode");
+		LOG_ERROR("Wi-Fi not in station mode");
 		return -EIO;
 	}
 
@@ -1150,7 +1149,7 @@ static int nxp_wifi_disconnect(const struct device *dev)
 	}
 
 	if (status != NXP_WIFI_RET_SUCCESS) {
-		LOG_ERR("Failed to disconnect from AP");
+		LOG_ERROR("Failed to disconnect from AP");
 		wifi_mgmt_raise_disconnect_result_event(g_mlan.netif, -1);
 		return -EAGAIN;
 	}
@@ -1166,13 +1165,13 @@ static int nxp_wifi_uap_disconnect_sta(const struct device *dev, const uint8_t *
 	int ret;
 
 	if (!is_uap_started()) {
-		LOG_ERR("Please start uap first!");
+		LOG_ERROR("Please start uap first!");
 		return -EAGAIN;
 	}
 
 	ret = wlan_uap_disconnect_sta((uint8_t *)mac);
 	if (ret != WM_SUCCESS) {
-		LOG_ERR("Failed to disconnect STA");
+		LOG_ERROR("Failed to disconnect STA");
 	}
 
 	return ret;
@@ -1441,7 +1440,7 @@ static int nxp_wifi_stats(const struct device *dev, struct net_stats_wifi *stats
 	memset(wifi_stats, 0, sizeof(wlan_pkt_stats_t));
 	ret = nxp_wifi_get_detail_stats(if_handle->state.interface, wifi_stats);
 	if (ret != 0) {
-		LOG_ERR("Get detailed statistics from Wi-Fi failed ret %d", ret);
+		LOG_ERROR("Get detailed statistics from Wi-Fi failed ret %d", ret);
 		k_free(wifi_stats);
 		return ret;
 	}
@@ -1494,7 +1493,7 @@ int nxp_wifi_reset_stats(const struct device *dev)
 	memset(wifi_stats, 0, sizeof(wlan_pkt_stats_t));
 	ret = nxp_wifi_get_detail_stats(if_handle->state.interface, wifi_stats);
 	if (ret != 0) {
-		LOG_ERR("Reset detailed statistics from Wi-Fi failed ret %d", ret);
+		LOG_ERROR("Reset detailed statistics from Wi-Fi failed ret %d", ret);
 		k_free(wifi_stats);
 		return ret;
 	}
@@ -1519,11 +1518,11 @@ static void nxp_wifi_auto_connect(void)
 	char psk[WLAN_PSK_MAX_LENGTH] = {0};
 
 	if (ssid_len >= IEEEtypes_SSID_SIZE) {
-		LOG_ERR("AutoConnect SSID too long");
+		LOG_ERROR("AutoConnect SSID too long");
 		return;
 	}
 	if (ssid_len == 0) {
-		LOG_ERR("AutoConnect SSID NULL");
+		LOG_ERROR("AutoConnect SSID NULL");
 		return;
 	}
 
@@ -1535,7 +1534,7 @@ static void nxp_wifi_auto_connect(void)
 		strcpy(psk, CONFIG_NXP_WIFI_STA_AUTO_PASSWORD);
 		params.security = WIFI_SECURITY_TYPE_PSK;
 	} else {
-		LOG_ERR("AutoConnect invalid password length %d", psk_len);
+		LOG_ERROR("AutoConnect invalid password length %d", psk_len);
 		return;
 	}
 
@@ -1568,13 +1567,13 @@ static int nxp_wifi_11k_neighbor_request(const struct device *dev, struct wifi_1
 
 	if (params != NULL) {
 		if (strlen(params->ssid) > WIFI_SSID_MAX_LEN) {
-			LOG_ERR("ssid too long");
+			LOG_ERROR("ssid too long");
 			return -EINVAL;
 		}
 
 		ret = wlan_host_11k_neighbor_req(params->ssid);
 		if (ret != WM_SUCCESS) {
-			LOG_ERR("send neighbor report request fail");
+			LOG_ERROR("send neighbor report request fail");
 			return -EAGAIN;
 		}
 	}
@@ -1598,7 +1597,7 @@ static int nxp_wifi_power_save(const struct device *dev, struct wifi_ps_params *
 	struct interface *if_handle = (struct interface *)dev->data;
 
 	if (if_handle->state.interface != WLAN_BSS_TYPE_STA) {
-		LOG_ERR("Wi-Fi not in station mode");
+		LOG_ERROR("Wi-Fi not in station mode");
 		return -EIO;
 	}
 
@@ -1747,7 +1746,7 @@ static int nxp_wifi_power_save(const struct device *dev, struct wifi_ps_params *
 	}
 
 	if (status != NXP_WIFI_RET_SUCCESS) {
-		LOG_ERR("Failed to set Wi-Fi power save");
+		LOG_ERROR("Failed to set Wi-Fi power save");
 		return -EAGAIN;
 	}
 
@@ -1760,7 +1759,7 @@ int nxp_wifi_get_power_save(const struct device *dev, struct wifi_ps_config *con
 	struct interface *if_handle = (struct interface *)dev->data;
 
 	if (if_handle->state.interface != WLAN_BSS_TYPE_STA) {
-		LOG_ERR("Wi-Fi not in station mode");
+		LOG_ERROR("Wi-Fi not in station mode");
 		return -EIO;
 	}
 
@@ -1800,7 +1799,7 @@ int nxp_wifi_get_power_save(const struct device *dev, struct wifi_ps_config *con
 	}
 
 	if (status != NXP_WIFI_RET_SUCCESS) {
-		LOG_ERR("Failed to get Wi-Fi power save config");
+		LOG_ERROR("Failed to get Wi-Fi power save config");
 		return -EAGAIN;
 	}
 
@@ -1852,19 +1851,19 @@ static int nxp_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain 
 		wifi_get_country_code(reg_domain->country_code);
 	} else {
 		if (is_uap_started()) {
-			LOG_ERR("region code can not be set after uAP start!");
+			LOG_ERROR("region code can not be set after uAP start!");
 			return -EAGAIN;
 		}
 
 		ret = wlan_set_country_code(reg_domain->country_code);
 		if (ret != WM_SUCCESS) {
-			LOG_ERR("Unable to set country code: %s", reg_domain->country_code);
+			LOG_ERROR("Unable to set country code: %s", reg_domain->country_code);
 			return -EAGAIN;
 		}
 
 		ret = wlan_create_dnld_countryinfo();
 		if (ret != WM_SUCCESS) {
-			LOG_ERR("Unable to create and download countryinfo");
+			LOG_ERROR("Unable to create and download countryinfo");
 			return -EAGAIN;
 		}
 
@@ -1994,12 +1993,12 @@ static void nxp_wifi_sta_init(struct net_if *iface)
 		/* Initialize the wifi subsystem */
 		ret = nxp_wifi_wlan_init();
 		if (ret) {
-			LOG_ERR("wlan initialization failed");
+			LOG_ERROR("wlan initialization failed");
 			return;
 		}
 		ret = nxp_wifi_wlan_start();
 		if (ret) {
-			LOG_ERR("wlan start failed");
+			LOG_ERROR("wlan start failed");
 			return;
 		}
 	}
@@ -2033,12 +2032,12 @@ static void nxp_wifi_uap_init(struct net_if *iface)
 		/* Initialize the wifi subsystem */
 		ret = nxp_wifi_wlan_init();
 		if (ret) {
-			LOG_ERR("wlan initialization failed");
+			LOG_ERROR("wlan initialization failed");
 			return;
 		}
 		ret = nxp_wifi_wlan_start();
 		if (ret) {
-			LOG_ERR("wlan start failed");
+			LOG_ERROR("wlan start failed");
 			return;
 		}
 	}
@@ -2153,16 +2152,16 @@ static int nxp_wifi_dev_init(const struct device *dev)
 	struct gpio_dt_spec wakeup = GPIO_DT_SPEC_GET(DT_DRV_INST(0), wakeup_gpios);
 
 	if (!gpio_is_ready_dt(&wakeup)) {
-		LOG_ERR("Error: failed to configure wakeup %s pin %d", wakeup.port->name,
-			wakeup.pin);
+		LOG_ERROR("Error: failed to configure wakeup %s pin %d", wakeup.port->name,
+			  wakeup.pin);
 		return -EIO;
 	}
 
 	/* Configure wakeup gpio as input  */
 	err = gpio_pin_configure_dt(&wakeup, GPIO_INPUT);
 	if (err) {
-		LOG_ERR("Error %d: failed to configure wakeup %s pin %d", err,
-			wakeup.port->name, wakeup.pin);
+		LOG_ERROR("Error %d: failed to configure wakeup %s pin %d", err, wakeup.port->name,
+			  wakeup.pin);
 		return err;
 	}
 
@@ -2200,17 +2199,17 @@ static int nxp_wifi_set_config(const struct device *dev, enum ethernet_config_ty
 
 		if (if_handle->state.interface == WLAN_BSS_TYPE_STA) {
 			if (wlan_set_sta_mac_addr(if_handle->mac_address)) {
-				LOG_ERR("Failed to set Wi-Fi MAC Address");
+				LOG_ERROR("Failed to set Wi-Fi MAC Address");
 				return -ENOEXEC;
 			}
 		} else if (IS_ENABLED(CONFIG_NXP_WIFI_SOFTAP_SUPPORT) &&
 			   (if_handle->state.interface == WLAN_BSS_TYPE_UAP)) {
 			if (wlan_set_uap_mac_addr(if_handle->mac_address)) {
-				LOG_ERR("Failed to set Wi-Fi MAC Address");
+				LOG_ERROR("Failed to set Wi-Fi MAC Address");
 				return -ENOEXEC;
 			}
 		} else {
-			LOG_ERR("Invalid Interface index");
+			LOG_ERROR("Invalid Interface index");
 			return -ENOEXEC;
 		}
 		break;

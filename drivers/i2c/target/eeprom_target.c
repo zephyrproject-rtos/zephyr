@@ -276,7 +276,7 @@ static int i2c_eeprom_target_init(const struct device *dev)
 	const struct i2c_eeprom_target_config *cfg = dev->config;
 
 	if (!device_is_ready(cfg->bus.bus)) {
-		LOG_ERR("I2C controller device not ready");
+		LOG_ERROR("I2C controller device not ready");
 		return -ENODEV;
 	}
 

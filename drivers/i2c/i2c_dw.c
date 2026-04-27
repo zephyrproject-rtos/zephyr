@@ -131,12 +131,12 @@ static int i2c_dw_error_chk(const struct device *dev)
 		/* check SDA stuck low Tx abort, need to do bus recover */
 		if (ic_txabrt_src.bits.SDASTUCKLOW) {
 			dw->state |= I2C_DW_SDA_STUCK;
-			LOG_ERR("SDA Stuck Low on %s", dev->name);
+			LOG_ERROR("SDA Stuck Low on %s", dev->name);
 		}
 		/* check if user abort the transmit */
 		if (ic_txabrt_src.bits.USRABRT) {
 			dw->state |= I2C_DW_USER_ABRT;
-			LOG_ERR("User Abort on %s", dev->name);
+			LOG_ERROR("User Abort on %s", dev->name);
 		}
 		/* TX abrt because STOP */
 		if (intr_stat.bits.stop_det) {
@@ -148,7 +148,7 @@ static int i2c_dw_error_chk(const struct device *dev)
 	/* check SCL stuck low */
 	if (intr_stat.bits.scl_stuck_low) {
 		dw->state |= I2C_DW_SCL_STUCK;
-		LOG_ERR("SCL Stuck Low on %s", dev->name);
+		LOG_ERROR("SCL Stuck Low on %s", dev->name);
 	}
 	if (dw->state & I2C_DW_ERR_MASK) {
 #if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS

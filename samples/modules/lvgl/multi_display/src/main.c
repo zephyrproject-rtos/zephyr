@@ -34,7 +34,7 @@ int main(void)
 
 	for (int i = 0; i < DT_ZEPHYR_DISPLAYS_COUNT; i++) {
 		if (!device_is_ready(display_dev[i])) {
-			LOG_ERR("Display device %d is not ready", i);
+			LOG_ERROR("Display device %d is not ready", i);
 			return 0;
 		}
 	}
@@ -42,7 +42,7 @@ int main(void)
 	for (int i = 0; i < DT_ZEPHYR_DISPLAYS_COUNT; i++) {
 		d = lv_display_get_next(d);
 		if (d == NULL) {
-			LOG_ERR("Invalid LV display %d object", i);
+			LOG_ERROR("Invalid LV display %d object", i);
 			return 0;
 		}
 		lv_displays[i] = d;
@@ -80,8 +80,8 @@ int main(void)
 
 		ret = display_blanking_off(display_dev[i]);
 		if (ret < 0 && ret != -ENOSYS) {
-			LOG_ERR("Failed to turn display %s blanking off (error %d)",
-				display_dev[i]->name, ret);
+			LOG_ERROR("Failed to turn display %s blanking off (error %d)",
+				  display_dev[i]->name, ret);
 			return 0;
 		}
 	}

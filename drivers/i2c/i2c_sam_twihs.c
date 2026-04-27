@@ -91,7 +91,7 @@ static int i2c_clk_set(Twihs *const twihs, uint32_t speed)
 	}
 
 	if (ck_div > CKDIV_MAX) {
-		LOG_ERR("Failed to configure I2C clock");
+		LOG_ERROR("Failed to configure I2C clock");
 		return -EIO;
 	}
 
@@ -111,13 +111,13 @@ static int i2c_sam_twihs_configure(const struct device *dev, uint32_t config)
 	int ret;
 
 	if (!(config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Master Mode is not enabled");
+		LOG_ERROR("Master Mode is not enabled");
 		return -EIO;
 	}
 
 	if (config & I2C_ADDR_10_BITS) {
-		LOG_ERR("I2C 10-bit addressing is currently not supported");
-		LOG_ERR("Please submit a patch");
+		LOG_ERROR("I2C 10-bit addressing is currently not supported");
+		LOG_ERROR("Please submit a patch");
 		return -EIO;
 	}
 
@@ -130,7 +130,7 @@ static int i2c_sam_twihs_configure(const struct device *dev, uint32_t config)
 		bitrate = BUS_SPEED_FAST_HZ;
 		break;
 	default:
-		LOG_ERR("Unsupported I2C speed value");
+		LOG_ERROR("Unsupported I2C speed value");
 		return -EIO;
 	}
 
@@ -325,7 +325,7 @@ static int i2c_sam_twihs_initialize(const struct device *dev)
 
 	ret = i2c_sam_twihs_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize %s device", dev->name);
+		LOG_ERROR("Failed to initialize %s device", dev->name);
 		return ret;
 	}
 

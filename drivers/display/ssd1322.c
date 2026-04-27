@@ -243,7 +243,7 @@ static int ssd1322_write(const struct device *dev, const uint16_t x, const uint1
 	uint8_t cmd_data[2];
 
 	if (desc->pitch != desc->width) {
-		LOG_ERR("Pitch is different from width");
+		LOG_ERROR("Pitch is different from width");
 		return -EINVAL;
 	}
 
@@ -259,12 +259,12 @@ static int ssd1322_write(const struct device *dev, const uint16_t x, const uint1
 	}
 
 	if (buf == NULL || buf_len == 0U) {
-		LOG_ERR("Display buffer is not available");
+		LOG_ERROR("Display buffer is not available");
 		return -EINVAL;
 	}
 
 	if ((x & 1) != 0U) {
-		LOG_ERR("Unsupported origin");
+		LOG_ERROR("Unsupported origin");
 		return -EINVAL;
 	}
 
@@ -446,7 +446,7 @@ static int ssd1322_set_pixel_format(const struct device *dev,
 	} else if (pixel_format == PIXEL_FORMAT_L_8) {
 		data->current_pixel_format = PIXEL_FORMAT_L_8;
 	} else {
-		LOG_ERR("Unsupported Pixel format");
+		LOG_ERROR("Unsupported Pixel format");
 		return -EINVAL;
 	}
 	return 0;
@@ -457,14 +457,14 @@ static int ssd1322_init(const struct device *dev)
 	const struct ssd1322_config *config = dev->config;
 
 	if (!device_is_ready(config->mipi_dev)) {
-		LOG_ERR("MIPI not ready!");
+		LOG_ERROR("MIPI not ready!");
 		return -ENODEV;
 	}
 
 	int ret = ssd1322_init_device(dev);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize device, err = %d", ret);
+		LOG_ERROR("Failed to initialize device, err = %d", ret);
 		return -EIO;
 	}
 

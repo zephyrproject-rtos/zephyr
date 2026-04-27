@@ -18,19 +18,19 @@ static bool data_parse_cb(struct bt_data *data, void *user_data)
 		size_t decrypted_data_size = BT_EAD_DECRYPTED_PAYLOAD_SIZE(data->data_len);
 
 		if (decrypted_data_size != sample_data->size_ad_data) {
-			LOG_ERR("Size of decrypted data: %d", decrypted_data_size);
-			LOG_ERR("Size of sample data: %d", sample_data->size_ad_data);
+			LOG_ERROR("Size of decrypted data: %d", decrypted_data_size);
+			LOG_ERROR("Size of sample data: %d", sample_data->size_ad_data);
 			TEST_FAIL("Computed size of data does not match the size of the data from "
 				  "the sample. (data set %d)", data_set);
 		}
 
 		if (memcmp(sample_data->randomizer_little_endian, data->data,
 			   BT_EAD_RANDOMIZER_SIZE) != 0) {
-			LOG_ERR("Received Randomizer: %s",
-				bt_hex(data->data, BT_EAD_RANDOMIZER_SIZE));
-			LOG_ERR("Expected Randomizer from sample: %s",
-				bt_hex(sample_data->randomizer_little_endian,
-				       BT_EAD_RANDOMIZER_SIZE));
+			LOG_ERROR("Received Randomizer: %s",
+				  bt_hex(data->data, BT_EAD_RANDOMIZER_SIZE));
+			LOG_ERROR("Expected Randomizer from sample: %s",
+				  bt_hex(sample_data->randomizer_little_endian,
+					 BT_EAD_RANDOMIZER_SIZE));
 			TEST_FAIL("Received Randomizer does not match the expected one.");
 		}
 

@@ -118,7 +118,7 @@ static bool mbs_fc01_coil_read(struct modbus_context *ctx)
 	uint16_t coil_cntr;
 
 	if (ctx->rx_adu.length != request_len) {
-		LOG_ERR("Wrong request length");
+		LOG_ERROR("Wrong request length");
 		return false;
 	}
 
@@ -132,7 +132,7 @@ static bool mbs_fc01_coil_read(struct modbus_context *ctx)
 
 	/* Make sure we don't exceed the allowed limit per request */
 	if (coil_qty == 0 || coil_qty > coils_limit) {
-		LOG_ERR("Number of coils limit exceeded");
+		LOG_ERROR("Number of coils limit exceeded");
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
 	}
@@ -217,7 +217,7 @@ static bool mbs_fc02_di_read(struct modbus_context *ctx)
 	uint16_t di_cntr;
 
 	if (ctx->rx_adu.length != request_len) {
-		LOG_ERR("Wrong request length");
+		LOG_ERROR("Wrong request length");
 		return false;
 	}
 
@@ -231,7 +231,7 @@ static bool mbs_fc02_di_read(struct modbus_context *ctx)
 
 	/* Make sure we don't exceed the allowed limit per request */
 	if (di_qty == 0 || di_qty > di_limit) {
-		LOG_ERR("Number of inputs limit exceeded");
+		LOG_ERROR("Number of inputs limit exceeded");
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
 	}
@@ -315,7 +315,7 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 	uint16_t num_bytes;
 
 	if (ctx->rx_adu.length != request_len) {
-		LOG_ERR("Wrong request length");
+		LOG_ERROR("Wrong request length");
 		return false;
 	}
 
@@ -323,8 +323,7 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 	reg_qty = sys_get_be16(&ctx->rx_adu.data[2]);
 
 	if (reg_qty == 0 || reg_qty > regs_limit) {
-		LOG_ERR("Wrong register quantity, %u (limit is %u)",
-			reg_qty, regs_limit);
+		LOG_ERROR("Wrong register quantity, %u (limit is %u)", reg_qty, regs_limit);
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
 	}
@@ -427,7 +426,7 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 	uint16_t num_bytes;
 
 	if (ctx->rx_adu.length != request_len) {
-		LOG_ERR("Wrong request length");
+		LOG_ERROR("Wrong request length");
 		return false;
 	}
 
@@ -435,8 +434,7 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 	reg_qty = sys_get_be16(&ctx->rx_adu.data[2]);
 
 	if (reg_qty == 0 || reg_qty > regs_limit) {
-		LOG_ERR("Wrong register quantity, %u (limit is %u)",
-			reg_qty, regs_limit);
+		LOG_ERROR("Wrong register quantity, %u (limit is %u)", reg_qty, regs_limit);
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
 	}
@@ -537,7 +535,7 @@ static bool mbs_fc05_coil_write(struct modbus_context *ctx)
 	bool coil_state;
 
 	if (ctx->rx_adu.length != request_len) {
-		LOG_ERR("Wrong request length %u", ctx->rx_adu.length);
+		LOG_ERROR("Wrong request length %u", ctx->rx_adu.length);
 		return false;
 	}
 
@@ -595,7 +593,7 @@ static bool mbs_fc06_hreg_write(struct modbus_context *ctx)
 	uint16_t reg_val;
 
 	if (ctx->rx_adu.length != request_len) {
-		LOG_ERR("Wrong request length %u", ctx->rx_adu.length);
+		LOG_ERROR("Wrong request length %u", ctx->rx_adu.length);
 		return false;
 	}
 
@@ -645,7 +643,7 @@ static bool mbs_fc08_diagnostics(struct modbus_context *ctx)
 	uint16_t data;
 
 	if (ctx->rx_adu.length != request_len) {
-		LOG_ERR("Wrong request length %u", ctx->rx_adu.length);
+		LOG_ERROR("Wrong request length %u", ctx->rx_adu.length);
 		return false;
 	}
 
@@ -739,7 +737,7 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 	bool coil_state;
 
 	if (ctx->rx_adu.length < request_len) {
-		LOG_ERR("Wrong request length %u", ctx->rx_adu.length);
+		LOG_ERROR("Wrong request length %u", ctx->rx_adu.length);
 		return false;
 	}
 
@@ -754,15 +752,14 @@ static bool mbs_fc15_coils_write(struct modbus_context *ctx)
 	num_bytes = ctx->rx_adu.data[4];
 
 	if (coil_qty == 0 || coil_qty > coils_limit) {
-		LOG_ERR("Number of coils limit exceeded");
+		LOG_ERROR("Number of coils limit exceeded");
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
 	}
 
 	/* Be sure byte count is valid for quantity of coils. */
-	if (((((coil_qty - 1) / 8) + 1) !=  num_bytes) ||
-	    (ctx->rx_adu.length  != (num_bytes + 5))) {
-		LOG_ERR("Mismatch in the number of coils");
+	if (((((coil_qty - 1) / 8) + 1) != num_bytes) || (ctx->rx_adu.length != (num_bytes + 5))) {
+		LOG_ERROR("Mismatch in the number of coils");
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
 	}
@@ -838,7 +835,7 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 	uint16_t num_bytes;
 
 	if (ctx->rx_adu.length < request_len) {
-		LOG_ERR("Wrong request length %u", ctx->rx_adu.length);
+		LOG_ERROR("Wrong request length %u", ctx->rx_adu.length);
 		return false;
 	}
 
@@ -848,7 +845,7 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 	num_bytes = ctx->rx_adu.data[4];
 
 	if (reg_qty == 0 || reg_qty > regs_limit) {
-		LOG_ERR("Number of registers limit exceeded");
+		LOG_ERROR("Number of registers limit exceeded");
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
 	}
@@ -875,13 +872,13 @@ static bool mbs_fc16_hregs_write(struct modbus_context *ctx)
 
 	/* Compare number of bytes and payload length */
 	if ((ctx->rx_adu.length - 5) != num_bytes) {
-		LOG_ERR("Mismatch in the number of bytes");
+		LOG_ERROR("Mismatch in the number of bytes");
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
 	}
 
 	if ((num_bytes / reg_qty) != sizeof(uint16_t)) {
-		LOG_ERR("Mismatch in the number of registers");
+		LOG_ERROR("Mismatch in the number of registers");
 		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
 		return true;
 	}
@@ -951,7 +948,7 @@ static bool mbs_try_user_fc(struct modbus_context *ctx, uint8_t fc)
 		}
 	}
 
-	LOG_ERR("Function code 0x%02x not implemented", fc);
+	LOG_ERROR("Function code 0x%02x not implemented", fc);
 	mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 
 	return true;

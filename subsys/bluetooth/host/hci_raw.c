@@ -87,7 +87,7 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 	case BT_BUF_ISO_IN:
 		break;
 	default:
-		LOG_ERR("Invalid rx type: %u", type);
+		LOG_ERROR("Invalid rx type: %u", type);
 		return NULL;
 	}
 
@@ -125,7 +125,7 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 		break;
 #endif /* CONFIG_BT_ISO */
 	default:
-		LOG_ERR("Invalid tx type: %u", type);
+		LOG_ERROR("Invalid tx type: %u", type);
 		return NULL;
 	}
 
@@ -194,7 +194,7 @@ int bt_enable_raw(struct k_fifo *rx_queue)
 	raw_rx = rx_queue;
 
 	if (!device_is_ready(bt_dev.hci)) {
-		LOG_ERR("HCI driver is not ready");
+		LOG_ERROR("HCI driver is not ready");
 		return -ENODEV;
 	}
 
@@ -202,7 +202,7 @@ int bt_enable_raw(struct k_fifo *rx_queue)
 
 	err = bt_hci_open(bt_dev.hci, bt_hci_recv);
 	if (err) {
-		LOG_ERR("HCI driver open failed (%d)", err);
+		LOG_ERROR("HCI driver open failed (%d)", err);
 		return err;
 	}
 

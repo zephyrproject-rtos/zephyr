@@ -355,13 +355,13 @@ static int pwm_nxp_s32_set_cycles(const struct device *dev, uint32_t channel,
 	uint8_t logic_ch;
 
 	if (channel >= EMIOS_PWM_IP_CHANNEL_COUNT) {
-		LOG_ERR("invalid channel %d", channel);
+		LOG_ERROR("invalid channel %d", channel);
 		return -EINVAL;
 	}
 
 	if (eMios_Pwm_Ip_IndexInChState[config->instance][channel] >=
 		EMIOS_PWM_IP_NUM_OF_CHANNELS_USED) {
-		LOG_ERR("Channel %d is not configured for PWM", channel);
+		LOG_ERROR("Channel %d is not configured for PWM", channel);
 		return -EINVAL;
 	}
 
@@ -374,7 +374,7 @@ static int pwm_nxp_s32_set_cycles(const struct device *dev, uint32_t channel,
 
 		if ((period_cycles > EMIOS_PWM_IP_MAX_CNT_VAL) ||
 			(period_cycles <= EMIOS_PWM_IP_MIN_CNT_VAL)) {
-			LOG_ERR("Period cycles is out of range");
+			LOG_ERROR("Period cycles is out of range");
 			return -EINVAL;
 		}
 
@@ -390,7 +390,7 @@ static int pwm_nxp_s32_set_cycles(const struct device *dev, uint32_t channel,
 
 		if ((period_cycles > EMIOS_PWM_IP_MAX_CNT_VAL) ||
 			(period_cycles <= EMIOS_PWM_IP_MIN_CNT_VAL)) {
-			LOG_ERR("Period cycles is out of range");
+			LOG_ERROR("Period cycles is out of range");
 			return -EINVAL;
 		}
 
@@ -403,14 +403,14 @@ static int pwm_nxp_s32_set_cycles(const struct device *dev, uint32_t channel,
 
 		if ((period_cycles > EMIOS_PWM_IP_MAX_CNT_VAL) ||
 			(period_cycles <= EMIOS_PWM_IP_MIN_CNT_VAL)) {
-			LOG_ERR("Period cycles is out of range");
+			LOG_ERROR("Period cycles is out of range");
 			return -EINVAL;
 		}
 
 		pulse_cycles += pwm_info->PhaseShift;
 
 		if (pulse_cycles > period_cycles) {
-			LOG_ERR("Pulse cycles is out of range");
+			LOG_ERROR("Pulse cycles is out of range");
 			return -EINVAL;
 		}
 
@@ -466,24 +466,24 @@ static int pwm_nxp_s32_capture_configure(const struct device *dev,
 	struct pwm_nxp_s32_data *data = dev->data;
 
 	if (channel >= EMIOS_ICU_IP_NUM_OF_CHANNELS) {
-		LOG_ERR("Invalid channel %d", channel);
+		LOG_ERROR("Invalid channel %d", channel);
 		return -EINVAL;
 	}
 
 	if (!flags) {
-		LOG_ERR("Invalid PWM capture flag");
+		LOG_ERROR("Invalid PWM capture flag");
 		return -EINVAL;
 	}
 
 	if (eMios_Icu_Ip_IndexInChState[config->instance][channel] >=
 		EMIOS_ICU_IP_NUM_OF_CHANNELS_USED) {
-		LOG_ERR("Channel %d is not configured for PWM", channel);
+		LOG_ERROR("Channel %d is not configured for PWM", channel);
 		return -EINVAL;
 	}
 
 	/* If interrupt is enabled --> channel is on-going */
 	if (config->base->CH.UC[channel].C & eMIOS_C_FEN_MASK) {
-		LOG_ERR("Channel %d is busy", channel);
+		LOG_ERROR("Channel %d is busy", channel);
 		return -EBUSY;
 	}
 
@@ -506,24 +506,24 @@ static int pwm_nxp_s32_capture_enable(const struct device *dev, uint32_t channel
 	uint8_t num_edge;
 
 	if (channel >= EMIOS_ICU_IP_NUM_OF_CHANNELS) {
-		LOG_ERR("Invalid channel %d", channel);
+		LOG_ERROR("Invalid channel %d", channel);
 		return -EINVAL;
 	}
 
 	if (eMios_Icu_Ip_IndexInChState[config->instance][channel] >=
 		EMIOS_ICU_IP_NUM_OF_CHANNELS_USED) {
-		LOG_ERR("Channel %d is not configured for PWM", channel);
+		LOG_ERROR("Channel %d is not configured for PWM", channel);
 		return -EINVAL;
 	}
 
 	if (!data->ch_data[channel].callback) {
-		LOG_ERR("Callback is not configured");
+		LOG_ERROR("Callback is not configured");
 		return -EINVAL;
 	}
 
 	/* If interrupt is enabled --> channel is on-going */
 	if (config->base->CH.UC[channel].C & eMIOS_C_FEN_MASK) {
-		LOG_ERR("Channel %d is busy", channel);
+		LOG_ERROR("Channel %d is busy", channel);
 		return -EBUSY;
 	}
 
@@ -552,13 +552,13 @@ static int pwm_nxp_s32_capture_disable(const struct device *dev, uint32_t channe
 	const struct pwm_nxp_s32_config *config = dev->config;
 
 	if (channel >= EMIOS_ICU_IP_NUM_OF_CHANNELS) {
-		LOG_ERR("Invalid channel %d", channel);
+		LOG_ERROR("Invalid channel %d", channel);
 		return -EINVAL;
 	}
 
 	if (eMios_Icu_Ip_IndexInChState[config->instance][channel] >=
 		EMIOS_ICU_IP_NUM_OF_CHANNELS_USED) {
-		LOG_ERR("Channel %d is not configured for PWM", channel);
+		LOG_ERROR("Channel %d is not configured for PWM", channel);
 		return -EINVAL;
 	}
 

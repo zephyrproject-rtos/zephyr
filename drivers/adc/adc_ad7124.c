@@ -326,24 +326,24 @@ static int adc_ad7124_acq_time_to_odr(const struct device *dev, uint16_t acq_tim
 	}
 
 	if (acquisition_time_unit != ADC_ACQ_TIME_TICKS) {
-		LOG_ERR("%s: invalid acquisition time %i", dev->name, acquisition_time_value);
+		LOG_ERROR("%s: invalid acquisition time %i", dev->name, acquisition_time_value);
 		return -EINVAL;
 	}
 
 	if (acquisition_time_value < ADC_ODR_MIN_VALUE) {
-		LOG_ERR("%s: invalid acquisition time %i", dev->name, acquisition_time_value);
+		LOG_ERROR("%s: invalid acquisition time %i", dev->name, acquisition_time_value);
 		return -EINVAL;
 	} else if (config->power_mode == AD7124_HIGH_POWER_MODE &&
 		   acquisition_time_value > ADC_ODR_HIGH_POWER_MAX) {
-		LOG_ERR("%s: invalid acquisition time %i", dev->name, acquisition_time_value);
+		LOG_ERROR("%s: invalid acquisition time %i", dev->name, acquisition_time_value);
 		return -EINVAL;
 	} else if (config->power_mode == AD7124_MID_POWER_MODE &&
 		   acquisition_time_value > ADC_ODR_MID_POWER_MAX) {
-		LOG_ERR("%s: invalid acquisition time %i", dev->name, acquisition_time_value);
+		LOG_ERROR("%s: invalid acquisition time %i", dev->name, acquisition_time_value);
 		return -EINVAL;
 	} else if (config->power_mode == AD7124_LOW_POWER_MODE &&
 		   acquisition_time_value > ADC_ODR_LOW_POWER_MAX) {
-		LOG_ERR("%s: invalid acquisition time %i", dev->name, acquisition_time_value);
+		LOG_ERROR("%s: invalid acquisition time %i", dev->name, acquisition_time_value);
 		return -EINVAL;
 	}
 
@@ -369,12 +369,12 @@ static uint16_t adc_ad7124_odr_to_fs(const struct device *dev, int16_t odr)
 		master_clk_freq = AD7124_LOW_POWER_CLK;
 		break;
 	default:
-		LOG_ERR("Invalid power mode (%u)", config->power_mode);
+		LOG_ERROR("Invalid power mode (%u)", config->power_mode);
 		return -EINVAL;
 	}
 
 	if (odr <= 0) {
-		LOG_ERR("Invalid ODR value: %d", odr);
+		LOG_ERROR("Invalid ODR value: %d", odr);
 		return -EINVAL;
 	}
 
@@ -399,7 +399,7 @@ static int adc_ad7124_create_new_cfg(const struct device *dev, const struct adc_
 	int ret;
 
 	if (cfg->channel_id >= AD7124_MAX_CHANNELS) {
-		LOG_ERR("Invalid channel (%u)", cfg->channel_id);
+		LOG_ERROR("Invalid channel (%u)", cfg->channel_id);
 		return -EINVAL;
 	}
 
@@ -417,7 +417,7 @@ static int adc_ad7124_create_new_cfg(const struct device *dev, const struct adc_
 		ref_source = AVDD_AVSS;
 		break;
 	default:
-		LOG_ERR("Invalid reference source (%u)", cfg->reference);
+		LOG_ERROR("Invalid reference source (%u)", cfg->reference);
 		return -EINVAL;
 	}
 
@@ -449,7 +449,7 @@ static int adc_ad7124_create_new_cfg(const struct device *dev, const struct adc_
 		gain = AD7124_GAIN_128;
 		break;
 	default:
-		LOG_ERR("Invalid gain value (%u)", cfg->gain);
+		LOG_ERROR("Invalid gain value (%u)", cfg->gain);
 		return -EINVAL;
 	}
 
@@ -860,7 +860,7 @@ static int adc_ad7124_enable_current_sources(const struct device *dev,
 	uint8_t iout_idx;
 
 	if (cfg->current_source_pin[0] > AD7124_CURRENT_SOURCE_MASK) {
-		LOG_ERR("Invalid current source configuration %u", cfg->current_source_pin[0]);
+		LOG_ERROR("Invalid current source configuration %u", cfg->current_source_pin[0]);
 		return -EINVAL;
 	}
 
@@ -916,21 +916,21 @@ static int adc_ad7124_channel_setup(const struct device *dev, const struct adc_c
 	/* Setup the channel configuration */
 	ret = adc_ad7124_setup_cfg(dev, &data->channel_setup_cfg[cfg->channel_id]);
 	if (ret) {
-		LOG_ERR("Error setting up configuration");
+		LOG_ERROR("Error setting up configuration");
 		return ret;
 	}
 
 	/* Setup the filter configuration */
 	ret = adc_ad7124_filter_cfg(dev, &data->channel_setup_cfg[cfg->channel_id]);
 	if (ret) {
-		LOG_ERR("Error setting up filter");
+		LOG_ERROR("Error setting up filter");
 		return ret;
 	}
 
 	if (cfg->current_source_pin_set) {
 		ret = adc_ad7124_enable_current_sources(dev, cfg);
 		if (ret) {
-			LOG_ERR("Error setting up current sources");
+			LOG_ERROR("Error setting up current sources");
 			return ret;
 		}
 	}
@@ -938,7 +938,7 @@ static int adc_ad7124_channel_setup(const struct device *dev, const struct adc_c
 	/* Setup the channel */
 	ret = adc_ad7124_channel_cfg(dev, cfg);
 	if (ret) {
-		LOG_ERR("Error setting up channel");
+		LOG_ERROR("Error setting up channel");
 		return ret;
 	}
 
@@ -1234,21 +1234,21 @@ static int adc_ad7124_perform_read(const struct device *dev)
 
 		ret = adc_ad7124_wait_for_conv_ready(dev);
 		if (ret) {
-			LOG_ERR("waiting for conversion ready failed");
+			LOG_ERROR("waiting for conversion ready failed");
 			adc_context_complete(&data->ctx, ret);
 			return ret;
 		}
 
 		ret = adc_ad7124_read_reg(dev, AD7124_DATA, AD7124_DATA_REG_LEN, data->buffer);
 		if (ret) {
-			LOG_ERR("reading sample failed");
+			LOG_ERROR("reading sample failed");
 			adc_context_complete(&data->ctx, ret);
 			return ret;
 		}
 
 		ret = adc_ad7124_get_read_chan_id(dev, &adc_ch_id);
 		if (ret) {
-			LOG_ERR("reading channel id failed");
+			LOG_ERROR("reading channel id failed");
 			adc_context_complete(&data->ctx, ret);
 			return ret;
 		}
@@ -1276,17 +1276,17 @@ static int adc_ad7124_validate_sequence(const struct device *dev,
 	size_t necessary;
 
 	if (sequence->resolution != config->resolution) {
-		LOG_ERR("invalid resolution");
+		LOG_ERROR("invalid resolution");
 		return -EINVAL;
 	}
 
 	if (!sequence->channels) {
-		LOG_ERR("no channel selected");
+		LOG_ERROR("no channel selected");
 		return -EINVAL;
 	}
 
 	if (sequence->oversampling) {
-		LOG_ERR("oversampling is not supported");
+		LOG_ERROR("oversampling is not supported");
 		return -EINVAL;
 	}
 
@@ -1298,7 +1298,7 @@ static int adc_ad7124_validate_sequence(const struct device *dev,
 	}
 
 	if (sequence->buffer_size < necessary) {
-		LOG_ERR("buffer size %u is too small, need %u", sequence->buffer_size, necessary);
+		LOG_ERROR("buffer size %u is too small, need %u", sequence->buffer_size, necessary);
 		return -ENOMEM;
 	}
 
@@ -1308,12 +1308,12 @@ static int adc_ad7124_validate_sequence(const struct device *dev,
 		}
 
 		if ((BIT(i) & sequence->channels) && !(BIT(i) & data->channels)) {
-			LOG_ERR("Channel-%d not enabled", i);
+			LOG_ERROR("Channel-%d not enabled", i);
 			return -EINVAL;
 		}
 
 		if (i >= AD7124_MAX_CHANNELS) {
-			LOG_ERR("invalid channel selection");
+			LOG_ERROR("invalid channel selection");
 			return -EINVAL;
 		}
 	}
@@ -1329,7 +1329,7 @@ static int adc_ad7124_start_read(const struct device *dev, const struct adc_sequ
 
 	result = adc_ad7124_validate_sequence(dev, sequence);
 	if (result != 0) {
-		LOG_ERR("sequence validation failed");
+		LOG_ERROR("sequence validation failed");
 		return result;
 	}
 
@@ -1415,7 +1415,7 @@ static int adc_ad7124_init(const struct device *dev)
 	k_sem_init(&data->acquire_signal, 0, 1);
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("spi bus %s not ready", config->bus.bus->name);
+		LOG_ERROR("spi bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 

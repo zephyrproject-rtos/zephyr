@@ -82,19 +82,19 @@ static int dac161s997_read_reg(const struct device *dev, enum dac161s997_reg reg
 
 	res = spi_write_dt(&config->bus, &tx_bufs);
 	if (res != 0) {
-		LOG_ERR("Read 0x%02x setup failed: %d", reg, res);
+		LOG_ERROR("Read 0x%02x setup failed: %d", reg, res);
 		return res;
 	}
 
 	tx_buf[0] = DAC161S997_REG_NOP;
 	res = spi_transceive_dt(&config->bus, &tx_bufs, &rx_bufs);
 	if (res != 0) {
-		LOG_ERR("Read from 0x%02x failed: %d", reg, res);
+		LOG_ERROR("Read from 0x%02x failed: %d", reg, res);
 		return res;
 	}
 
 	if (reg_read != rx_buf[0]) {
-		LOG_ERR("Read 0x%02x addr mismatch: 0x%02x", reg_read, rx_buf[0]);
+		LOG_ERROR("Read 0x%02x addr mismatch: 0x%02x", reg_read, rx_buf[0]);
 		return -EIO;
 	}
 
@@ -116,7 +116,7 @@ static int dac161s997_write_reg(const struct device *dev, enum dac161s997_reg re
 	int ret = spi_write_dt(&config->bus, &tx_bufs);
 
 	if (ret != 0) {
-		LOG_ERR("Write to reg 0x%02x failed: %i", reg, ret);
+		LOG_ERROR("Write to reg 0x%02x failed: %i", reg, ret);
 		return ret;
 	}
 
@@ -127,17 +127,17 @@ static int dac161s997_channel_setup(const struct device *dev,
 				    const struct dac_channel_cfg *channel_cfg)
 {
 	if (channel_cfg->channel_id >= DAC161S997_CHANNELS) {
-		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
+		LOG_ERROR("Channel %d is not valid", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->resolution != DAC161S997_RESOLUTION) {
-		LOG_ERR("Only %d bit resolution is supported", DAC161S997_RESOLUTION);
+		LOG_ERROR("Only %d bit resolution is supported", DAC161S997_RESOLUTION);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->internal) {
-		LOG_ERR("Internal channels not supported");
+		LOG_ERROR("Internal channels not supported");
 		return -ENOTSUP;
 	}
 
@@ -150,12 +150,12 @@ static int dac161s997_write_value(const struct device *dev, uint8_t channel, uin
 	int ret;
 
 	if (channel >= DAC161S997_CHANNELS) {
-		LOG_ERR("Channel %d is not valid", channel);
+		LOG_ERROR("Channel %d is not valid", channel);
 		return -EINVAL;
 	}
 
 	if (value > BIT(DAC161S997_RESOLUTION) - 1) {
-		LOG_ERR("Value %d out of range", value);
+		LOG_ERROR("Value %d out of range", value);
 		return -EINVAL;
 	}
 
@@ -229,7 +229,7 @@ static int dac161s997_init(const struct device *dev)
 	data->dev = dev;
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		LOG_ERROR("SPI bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 
@@ -252,13 +252,13 @@ static int dac161s997_init(const struct device *dev)
 
 	/* Check that DAC_RES bits are all set */
 	if (status.dac_resolution != 0x7) {
-		LOG_ERR("Unexpected DAC resolution value: 0x%02x", status.dac_resolution);
+		LOG_ERROR("Unexpected DAC resolution value: 0x%02x", status.dac_resolution);
 		return ret;
 	}
 
 	if (config->gpio_errb.port != NULL) {
 		if (!gpio_is_ready_dt(&config->gpio_errb)) {
-			LOG_ERR("ERRB GPIO is not ready");
+			LOG_ERROR("ERRB GPIO is not ready");
 			return -ENODEV;
 		}
 
@@ -269,19 +269,19 @@ static int dac161s997_init(const struct device *dev)
 
 		ret = gpio_pin_configure_dt(&config->gpio_errb, GPIO_INPUT);
 		if (ret != 0) {
-			LOG_ERR("Configure ERRB GPIO failed: %d", ret);
+			LOG_ERROR("Configure ERRB GPIO failed: %d", ret);
 			return ret;
 		}
 
 		ret = gpio_pin_interrupt_configure_dt(&config->gpio_errb, GPIO_INT_EDGE_TO_ACTIVE);
 		if (ret) {
-			LOG_ERR("Configure ERRB interrupt failed: %d", ret);
+			LOG_ERROR("Configure ERRB interrupt failed: %d", ret);
 			return ret;
 		}
 
 		ret = gpio_add_callback_dt(&config->gpio_errb, &data->gpio_errb_cb);
 		if (ret != 0) {
-			LOG_ERR("Configure ERRB callback failed: %d", ret);
+			LOG_ERROR("Configure ERRB callback failed: %d", ret);
 			return ret;
 		}
 	}

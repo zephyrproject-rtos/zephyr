@@ -45,14 +45,13 @@ int __sx12xx_configure_pin(const struct gpio_dt_spec *gpio, gpio_flags_t flags)
 	int err;
 
 	if (!device_is_ready(gpio->port)) {
-		LOG_ERR("GPIO device not ready %s", gpio->port->name);
+		LOG_ERROR("GPIO device not ready %s", gpio->port->name);
 		return -ENODEV;
 	}
 
 	err = gpio_pin_configure_dt(gpio, flags);
 	if (err) {
-		LOG_ERR("Cannot configure gpio %s %d: %d", gpio->port->name,
-			gpio->pin, err);
+		LOG_ERROR("Cannot configure gpio %s %d: %d", gpio->port->name, gpio->pin, err);
 		return err;
 	}
 
@@ -270,7 +269,7 @@ int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 	 */
 	ret = k_poll(&evt, 1, K_MSEC(2 * air_time));
 	if (ret < 0) {
-		LOG_ERR("Packet transmission failed!");
+		LOG_ERROR("Packet transmission failed!");
 		if (!modem_release(&dev_data)) {
 			/* TX done interrupt is currently running */
 			k_poll(&evt, 1, K_FOREVER);
@@ -341,7 +340,7 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 	}
 
 	if (done.result < 0) {
-		LOG_ERR("Receive error");
+		LOG_ERROR("Receive error");
 		return done.result;
 	}
 
@@ -384,7 +383,7 @@ int sx12xx_lora_config(const struct device *dev,
 
 	ret = sx12xx_get_bandwidth_idx(config->bandwidth, &bw_idx);
 	if (ret < 0) {
-		LOG_ERR("Unsupported bandwidth: %d", config->bandwidth);
+		LOG_ERROR("Unsupported bandwidth: %d", config->bandwidth);
 		return ret;
 	}
 

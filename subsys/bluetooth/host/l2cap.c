@@ -244,7 +244,7 @@ static void l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan, bt_l2cap_chan
 		}
 		break;
 	default:
-		LOG_ERR("%s()%d: unknown (%u) state was set", func, line, state);
+		LOG_ERROR("%s()%d: unknown (%u) state was set", func, line, state);
 		return;
 	}
 
@@ -316,7 +316,7 @@ static void l2cap_rtx_timeout(struct k_work *work)
 	struct bt_l2cap_le_chan *chan = LE_CHAN_RTX(work);
 	struct bt_conn *conn = chan->chan.conn;
 
-	LOG_ERR("chan %p timeout", chan);
+	LOG_ERROR("chan %p timeout", chan);
 
 	bt_l2cap_chan_remove(conn, &chan->chan);
 	l2cap_chan_del(&chan->chan);
@@ -382,7 +382,7 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 #endif
 
 	if (!le_chan) {
-		LOG_ERR("Unable to allocate L2CAP channel ID");
+		LOG_ERROR("Unable to allocate L2CAP channel ID");
 		return false;
 	}
 
@@ -491,7 +491,7 @@ static struct net_buf *l2cap_create_le_sig_pdu(uint8_t code, uint8_t ident,
 		/* If it was not possible to allocate a buffer within the
 		 * timeout return NULL.
 		 */
-		LOG_ERR("Unable to allocate buffer for op 0x%02x", code);
+		LOG_ERROR("Unable to allocate buffer for op 0x%02x", code);
 		return NULL;
 	}
 
@@ -783,7 +783,7 @@ int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
 		 * refs suggests a silent data corruption would occur if not for
 		 * this error.
 		 */
-		LOG_ERR("Expecting 1 ref, got %d", pdu->ref);
+		LOG_ERROR("Expecting 1 ref, got %d", pdu->ref);
 		return -EINVAL;
 	}
 
@@ -976,7 +976,7 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 	__ASSERT_NO_MSG(conn->state == BT_CONN_CONNECTED);
 
 	if (bt_buf_has_view(fifo_pdu)) {
-		LOG_ERR("already have view on %p", fifo_pdu);
+		LOG_ERROR("already have view on %p", fifo_pdu);
 		return NULL;
 	}
 
@@ -1098,8 +1098,7 @@ static void le_conn_param_rsp(struct bt_l2cap *l2cap, struct net_buf *buf)
 	struct bt_l2cap_conn_param_rsp *rsp = (void *)buf->data;
 
 	if (buf->len != sizeof(*rsp)) {
-		LOG_ERR("Invalid LE conn param rsp size (%u != %zu)",
-			buf->len, sizeof(*rsp));
+		LOG_ERROR("Invalid LE conn param rsp size (%u != %zu)", buf->len, sizeof(*rsp));
 		return;
 	}
 
@@ -1116,8 +1115,8 @@ static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
 	bool accepted;
 
 	if (buf->len != sizeof(*req)) {
-		LOG_ERR("Invalid LE conn update param req size (%u != %zu)",
-			buf->len, sizeof(*req));
+		LOG_ERROR("Invalid LE conn update param req size (%u != %zu)", buf->len,
+			  sizeof(*req));
 		return;
 	}
 
@@ -1258,7 +1257,7 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 static void l2cap_chan_seg_recv_rx_init(struct bt_l2cap_le_chan *chan)
 {
 	if (chan->rx.mps > BT_L2CAP_RX_MTU) {
-		LOG_ERR("Limiting RX MPS by stack buffer size.");
+		LOG_ERROR("Limiting RX MPS by stack buffer size.");
 		chan->rx.mps = BT_L2CAP_RX_MTU;
 	}
 
@@ -1434,12 +1433,12 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 
 #if defined(CONFIG_BT_L2CAP_SEG_RECV)
 	if (!(*chan)->ops->recv == !(*chan)->ops->seg_recv) {
-		LOG_ERR("Exactly one of 'recv' or 'seg_recv' must be set");
+		LOG_ERROR("Exactly one of 'recv' or 'seg_recv' must be set");
 		return BT_L2CAP_LE_ERR_UNACCEPT_PARAMS;
 	}
 #else
 	if (!(*chan)->ops->recv) {
-		LOG_ERR("Mandatory callback 'recv' missing");
+		LOG_ERROR("Mandatory callback 'recv' missing");
 		return BT_L2CAP_LE_ERR_UNACCEPT_PARAMS;
 	}
 #endif
@@ -1512,8 +1511,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	uint16_t result;
 
 	if (buf->len != sizeof(*req)) {
-		LOG_ERR("Invalid LE conn req packet size (%u != %zu)",
-			buf->len, sizeof(*req));
+		LOG_ERROR("Invalid LE conn req packet size (%u != %zu)", buf->len, sizeof(*req));
 		return;
 	}
 
@@ -1539,7 +1537,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	 */
 	if (!IN_RANGE(mtu, L2CAP_LE_MIN_MTU, BT_L2CAP_MAX_MTU) ||
 	    !IN_RANGE(mps, L2CAP_LE_MIN_MPS, BT_L2CAP_MAX_MPS)) {
-		LOG_ERR("Invalid le conn req params: mtu %u mps %u", mtu, mps);
+		LOG_ERROR("Invalid le conn req params: mtu %u mps %u", mtu, mps);
 		result = BT_L2CAP_LE_ERR_UNACCEPT_PARAMS;
 		goto rsp;
 	}
@@ -1606,7 +1604,7 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	/* set dcid to zeros here, in case of all connections refused error */
 	memset(dcid, 0, sizeof(dcid));
 	if (buf->len < sizeof(*req)) {
-		LOG_ERR("Too small LE conn req packet size");
+		LOG_ERROR("Too small LE conn req packet size");
 		result = BT_L2CAP_LE_ERR_INVALID_PARAMS;
 		req_cid_count = 0;
 		goto response;
@@ -1616,7 +1614,7 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	req_cid_count = buf->len / sizeof(scid);
 
 	if (buf->len > sizeof(dcid)) {
-		LOG_ERR("Too large LE conn req packet size");
+		LOG_ERROR("Too large LE conn req packet size");
 		req_cid_count = BT_L2CAP_ECRED_CHAN_MAX_PER_REQ;
 		result = BT_L2CAP_LE_ERR_INVALID_PARAMS;
 		goto response;
@@ -1633,8 +1631,8 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	if (!IN_RANGE(mtu, BT_L2CAP_ECRED_MIN_MTU, BT_L2CAP_MAX_MTU) ||
 	    !IN_RANGE(mps, BT_L2CAP_ECRED_MIN_MPS, BT_L2CAP_MAX_MPS) ||
 	    !IN_RANGE(credits, BT_L2CAP_ECRED_CREDITS_MIN, BT_L2CAP_ECRED_CREDITS_MAX)) {
-		LOG_ERR("Invalid le ecred conn req params: mtu %u mps %u credits %u", mtu, mps,
-			credits);
+		LOG_ERROR("Invalid le ecred conn req params: mtu %u mps %u credits %u", mtu, mps,
+			  credits);
 		result = BT_L2CAP_LE_ERR_INVALID_PARAMS;
 		goto response;
 	}
@@ -1732,7 +1730,7 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 	bool mps_reduced = false;
 
 	if (buf->len < sizeof(*req)) {
-		LOG_ERR("Too small ecred reconf req packet size");
+		LOG_ERROR("Too small ecred reconf req packet size");
 		return;
 	}
 
@@ -1767,8 +1765,8 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 		}
 
 		if (BT_L2CAP_LE_CHAN(chan)->tx.mtu > mtu) {
-			LOG_ERR("chan %p decreased MTU %u -> %u", chan,
-				BT_L2CAP_LE_CHAN(chan)->tx.mtu, mtu);
+			LOG_ERROR("chan %p decreased MTU %u -> %u", chan,
+				  BT_L2CAP_LE_CHAN(chan)->tx.mtu, mtu);
 			result = BT_L2CAP_RECONF_INVALID_MTU;
 			goto response;
 		}
@@ -1823,8 +1821,8 @@ static void le_ecred_reconf_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	uint16_t result;
 
 	if (buf->len != sizeof(*rsp)) {
-		LOG_ERR("Invalid ecred reconf rsp packet size (%u != %zu)",
-			buf->len, sizeof(*rsp));
+		LOG_ERROR("Invalid ecred reconf rsp packet size (%u != %zu)", buf->len,
+			  sizeof(*rsp));
 		return;
 	}
 
@@ -1886,8 +1884,7 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	uint16_t dcid;
 
 	if (buf->len != sizeof(*req)) {
-		LOG_ERR("Invalid LE conn req packet size (%u != %zu)",
-			buf->len, sizeof(*req));
+		LOG_ERROR("Invalid LE conn req packet size (%u != %zu)", buf->len, sizeof(*req));
 		return;
 	}
 
@@ -1978,7 +1975,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	uint8_t succeeded = 0;
 
 	if (buf->len < sizeof(*rsp)) {
-		LOG_ERR("Too small ecred conn rsp packet size");
+		LOG_ERROR("Too small ecred conn rsp packet size");
 		return;
 	}
 
@@ -2027,7 +2024,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 			k_work_cancel_delayable(&chan->rtx_work);
 
 			if (buf->len < sizeof(dcid)) {
-				LOG_ERR("Fewer dcid values than expected");
+				LOG_ERROR("Fewer dcid values than expected");
 				bt_l2cap_chan_remove(conn, &chan->chan);
 				l2cap_chan_del(&chan->chan);
 				continue;
@@ -2118,8 +2115,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	uint16_t dcid, mtu, mps, credits, result;
 
 	if (buf->len != sizeof(*rsp)) {
-		LOG_ERR("Invalid LE conn rsp packet size (%u != %zu)",
-			buf->len, sizeof(*rsp));
+		LOG_ERROR("Invalid LE conn rsp packet size (%u != %zu)", buf->len, sizeof(*rsp));
 		return;
 	}
 
@@ -2142,7 +2138,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	if (!chan) {
-		LOG_ERR("Cannot find channel for ident %u", ident);
+		LOG_ERROR("Cannot find channel for ident %u", ident);
 		return;
 	}
 
@@ -2206,20 +2202,19 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 	uint16_t scid;
 
 	if (buf->len != sizeof(*rsp)) {
-		LOG_ERR("Invalid LE disconn rsp packet size (%u != %zu)",
-			buf->len, sizeof(*rsp));
+		LOG_ERROR("Invalid LE disconn rsp packet size (%u != %zu)", buf->len, sizeof(*rsp));
 		return;
 	}
 
 	chan = l2cap_lookup_ident(conn, ident, BT_L2CAP_DISCONN_REQ);
 	if (!chan) {
-		LOG_ERR("Cannot find channel for ident %u", ident);
+		LOG_ERROR("Cannot find channel for ident %u", ident);
 		return;
 	}
 
 	scid = sys_le16_to_cpu(rsp->scid);
 	if (scid != chan->rx.cid) {
-		LOG_ERR("Invalid scid 0x%04x", scid);
+		LOG_ERROR("Invalid scid 0x%04x", scid);
 		return;
 	}
 
@@ -2243,8 +2238,7 @@ static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
 	uint16_t credits, cid;
 
 	if (buf->len != sizeof(*ev)) {
-		LOG_ERR("Invalid LE Credits packet size (%u != %zu)",
-			buf->len, sizeof(*ev));
+		LOG_ERROR("Invalid LE Credits packet size (%u != %zu)", buf->len, sizeof(*ev));
 		return;
 	}
 
@@ -2266,14 +2260,14 @@ static void le_credits(struct bt_l2cap *l2cap, uint8_t ident,
 
 	chan = bt_l2cap_le_lookup_tx_cid(conn, cid);
 	if (!chan) {
-		LOG_ERR("Unable to find channel of LE Credits packet");
+		LOG_ERROR("Unable to find channel of LE Credits packet");
 		return;
 	}
 
 	le_chan = BT_L2CAP_LE_CHAN(chan);
 
 	if (atomic_get(&le_chan->tx.credits) + credits > UINT16_MAX) {
-		LOG_ERR("Credits overflow");
+		LOG_ERROR("Credits overflow");
 		bt_l2cap_chan_disconnect(chan);
 		return;
 	}
@@ -2303,7 +2297,7 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	uint16_t len;
 
 	if (buf->len < sizeof(*hdr)) {
-		LOG_ERR("Too small L2CAP signaling PDU");
+		LOG_ERROR("Too small L2CAP signaling PDU");
 		return 0;
 	}
 
@@ -2313,12 +2307,12 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	LOG_DBG("Signaling code 0x%02x ident %u len %u", hdr->code, hdr->ident, len);
 
 	if (buf->len != len) {
-		LOG_ERR("L2CAP length mismatch (%u != %u)", buf->len, len);
+		LOG_ERROR("L2CAP length mismatch (%u != %u)", buf->len, len);
 		return 0;
 	}
 
 	if (!hdr->ident) {
-		LOG_ERR("Invalid ident value in L2CAP PDU");
+		LOG_ERROR("Invalid ident value in L2CAP PDU");
 		return 0;
 	}
 
@@ -2424,7 +2418,7 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_LE_CREDITS, get_ident(),
 				      sizeof(*ev));
 	if (!buf) {
-		LOG_ERR("Unable to send credits update");
+		LOG_ERROR("Unable to send credits update");
 		/* Disconnect would probably not work either so the only
 		 * option left is to shutdown the channel.
 		 */
@@ -2488,27 +2482,27 @@ int bt_l2cap_chan_give_credits(struct bt_l2cap_chan *chan, uint16_t additional_c
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
 
 	if (!chan || !chan->ops) {
-		LOG_ERR("%s: Invalid chan object.", __func__);
+		LOG_ERROR("%s: Invalid chan object.", __func__);
 		return -EINVAL;
 	}
 
 	if (!chan->ops->seg_recv) {
-		LOG_ERR("%s: Available only with seg_recv.", __func__);
+		LOG_ERROR("%s: Available only with seg_recv.", __func__);
 		return -EINVAL;
 	}
 
 	if (additional_credits == 0) {
-		LOG_ERR("%s: Refusing to give 0.", __func__);
+		LOG_ERROR("%s: Refusing to give 0.", __func__);
 		return -EINVAL;
 	}
 
 	if (bt_l2cap_chan_get_state(chan) == BT_L2CAP_CONNECTING) {
-		LOG_ERR("%s: Cannot give credits while connecting.", __func__);
+		LOG_ERROR("%s: Cannot give credits while connecting.", __func__);
 		return -EBUSY;
 	}
 
 	if (atomic_add_safe_u16(&le_chan->rx.credits, additional_credits)) {
-		LOG_ERR("%s: Overflow.", __func__);
+		LOG_ERROR("%s: Overflow.", __func__);
 		return -EOVERFLOW;
 	}
 
@@ -2517,7 +2511,7 @@ int bt_l2cap_chan_give_credits(struct bt_l2cap_chan *chan, uint16_t additional_c
 
 		err = l2cap_chan_send_credits_pdu(chan->conn, le_chan->rx.cid, additional_credits);
 		if (err) {
-			LOG_ERR("%s: PDU failed %d.", __func__, err);
+			LOG_ERROR("%s: PDU failed %d.", __func__, err);
 			return err;
 		}
 	}
@@ -2586,7 +2580,7 @@ static void l2cap_chan_le_recv_sdu(struct bt_l2cap_le_chan *chan,
 	err = chan->chan.ops->recv(&chan->chan, buf);
 	if (err < 0) {
 		if (err != -EINPROGRESS) {
-			LOG_ERR("err %d", err);
+			LOG_ERROR("err %d", err);
 			bt_l2cap_chan_disconnect(&chan->chan);
 			net_buf_unref(buf);
 		}
@@ -2610,7 +2604,7 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 	}
 
 	if (len + buf->len > chan->_sdu_len) {
-		LOG_ERR("SDU length mismatch");
+		LOG_ERROR("SDU length mismatch");
 		bt_l2cap_chan_disconnect(&chan->chan);
 		return;
 	}
@@ -2625,7 +2619,7 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 	len = net_buf_append_bytes(chan->_sdu, buf->len, buf->data, K_NO_WAIT,
 				   l2cap_alloc_frag, chan);
 	if (len != buf->len) {
-		LOG_ERR("Unable to store SDU");
+		LOG_ERROR("Unable to store SDU");
 		bt_l2cap_chan_disconnect(&chan->chan);
 		return;
 	}
@@ -2707,7 +2701,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 	int err;
 
 	if (!test_and_dec(&chan->rx.credits)) {
-		LOG_ERR("No credits to receive packet");
+		LOG_ERROR("No credits to receive packet");
 		bt_l2cap_chan_disconnect(&chan->chan);
 		return;
 	}
@@ -2743,7 +2737,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 	LOG_DBG("chan %p len %u sdu_len %u", chan, buf->len, sdu_len);
 
 	if (sdu_len > chan->rx.mtu) {
-		LOG_ERR("Invalid SDU length");
+		LOG_ERROR("Invalid SDU length");
 		bt_l2cap_chan_disconnect(&chan->chan);
 		return;
 	}
@@ -2752,14 +2746,14 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 	if (chan->chan.ops->alloc_buf) {
 		chan->_sdu = chan->chan.ops->alloc_buf(&chan->chan);
 		if (!chan->_sdu) {
-			LOG_ERR("Unable to allocate buffer for SDU");
+			LOG_ERROR("Unable to allocate buffer for SDU");
 			bt_l2cap_chan_disconnect(&chan->chan);
 			return;
 		}
 
 		if (chan->_sdu->user_data_size < sizeof(uint16_t)) {
-			LOG_ERR("SDU buffer user_data_size %u is too small",
-				chan->_sdu->user_data_size);
+			LOG_ERROR("SDU buffer user_data_size %u is too small",
+				  chan->_sdu->user_data_size);
 			net_buf_unref(chan->_sdu);
 			chan->_sdu = NULL;
 			bt_l2cap_chan_disconnect(&chan->chan);
@@ -2794,7 +2788,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 
 	if (err < 0) {
 		if (err != -EINPROGRESS) {
-			LOG_ERR("err %d", err);
+			LOG_ERROR("err %d", err);
 			bt_l2cap_chan_disconnect(&chan->chan);
 		}
 		return;
@@ -2873,7 +2867,7 @@ void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf, bool complete)
 	}
 
 	if (buf->len < sizeof(*hdr)) {
-		LOG_ERR("Too small L2CAP PDU received");
+		LOG_ERROR("Too small L2CAP PDU received");
 		net_buf_unref(buf);
 		return;
 	}
@@ -2958,7 +2952,7 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		return 0;
 	}
 
-	LOG_ERR("No available L2CAP context for conn %p", conn);
+	LOG_ERROR("No available L2CAP context for conn %p", conn);
 
 	return -ENOMEM;
 }
@@ -3365,8 +3359,7 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 	__ASSERT_NO_MSG(buf->frags == NULL);
 
 	if (sdu_len > le_chan->tx.mtu) {
-		LOG_ERR("attempt to send %u bytes on %u MTU chan",
-			sdu_len, le_chan->tx.mtu);
+		LOG_ERROR("attempt to send %u bytes on %u MTU chan", sdu_len, le_chan->tx.mtu);
 		return -EMSGSIZE;
 	}
 
@@ -3376,7 +3369,7 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 		 * refs suggests a silent data corruption would occur if not for
 		 * this error.
 		 */
-		LOG_ERR("buf given to l2cap has other refs");
+		LOG_ERROR("buf given to l2cap has other refs");
 		return -EINVAL;
 	}
 
@@ -3384,7 +3377,7 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 		/* Call `net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE)`
 		 * when allocating buffers intended for bt_l2cap_chan_send().
 		 */
-		LOG_ERR("Not enough headroom in buf %p", buf);
+		LOG_ERROR("Not enough headroom in buf %p", buf);
 		return -EINVAL;
 	}
 

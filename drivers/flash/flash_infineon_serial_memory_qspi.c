@@ -99,7 +99,7 @@ static int ifx_serial_memory_flash_read(const struct device *dev, off_t offset, 
 
 	rslt = mtb_serial_memory_read(&serial_memory_obj, offset, data_len, data);
 	if (rslt != CY_RSLT_SUCCESS) {
-		LOG_ERR("Error reading @ %lu (Err:0x%x)", offset, rslt);
+		LOG_ERROR("Error reading @ %lu (Err:0x%x)", offset, rslt);
 		ret = -EIO;
 	}
 
@@ -126,7 +126,7 @@ static int ifx_serial_memory_flash_write(const struct device *dev, off_t offset,
 
 	rslt = mtb_serial_memory_write(&serial_memory_obj, offset, data_len, data);
 	if (rslt != CY_RSLT_SUCCESS) {
-		LOG_ERR("Error in writing @ %lu (Err:0x%x)", offset, rslt);
+		LOG_ERROR("Error in writing @ %lu (Err:0x%x)", offset, rslt);
 		ret = -EIO;
 	}
 
@@ -148,7 +148,7 @@ static int ifx_serial_memory_flash_erase(const struct device *dev, off_t offset,
 
 	rslt = mtb_serial_memory_erase(&serial_memory_obj, offset, size);
 	if (rslt != CY_RSLT_SUCCESS) {
-		LOG_ERR("Error in erasing : 0x%x", rslt);
+		LOG_ERROR("Error in erasing : 0x%x", rslt);
 		ret = -EIO;
 	}
 
@@ -245,7 +245,7 @@ static int ifx_serial_memory_flash_init(const struct device *dev)
 					 SMIF0_CORE0, &CYBSP_SMIF_CORE_0_XSPI_FLASH_hal_clock,
 					 &smif_mem_context, &smif_mem_info, &smif0BlockConfig);
 	if (result != CY_RSLT_SUCCESS) {
-		LOG_ERR("serial memory setup failed (QSPI) : 0x%x", result);
+		LOG_ERROR("serial memory setup failed (QSPI) : 0x%x", result);
 	}
 
 	k_sem_init(&data->sem, 1, 1);

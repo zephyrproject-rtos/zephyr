@@ -112,23 +112,23 @@ static int spi_silabs_eusart_configure(const struct device *dev, const struct sp
 	spi_frequency /= 2;
 
 	if (config->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	if (SPI_WORD_SIZE_GET(config->operation) != SPI_WORD_SIZE) {
-		LOG_ERR("Word size must be %d", SPI_WORD_SIZE);
+		LOG_ERROR("Word size must be %d", SPI_WORD_SIZE);
 		return -ENOTSUP;
 	}
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
 	    (config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only supports single mode");
+		LOG_ERROR("Only supports single mode");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+		LOG_ERROR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 
@@ -137,7 +137,7 @@ static int spi_silabs_eusart_configure(const struct device *dev, const struct sp
 	 * transaction.
 	 */
 	if (eusart_cfg->clock_frequency > spi_frequency) {
-		LOG_ERR("SPI clock-frequency too high");
+		LOG_ERROR("SPI clock-frequency too high");
 		return -EINVAL;
 	}
 	spi_frequency = MIN(eusart_cfg->clock_frequency, spi_frequency);
@@ -193,7 +193,7 @@ static int spi_silabs_eusart_configure(const struct device *dev, const struct sp
 		}
 
 		if (data->dma_chan_rx.chan_nb < 0) {
-			LOG_ERR("DMA channel request failed");
+			LOG_ERROR("DMA channel request failed");
 			return -EAGAIN;
 		}
 
@@ -205,7 +205,7 @@ static int spi_silabs_eusart_configure(const struct device *dev, const struct sp
 		if (data->dma_chan_tx.chan_nb < 0) {
 			dma_release_channel(data->dma_chan_rx.dma_dev, data->dma_chan_rx.chan_nb);
 			data->dma_chan_rx.chan_nb = -1;
-			LOG_ERR("DMA channel request failed");
+			LOG_ERROR("DMA channel request failed");
 			return -EAGAIN;
 		}
 	}

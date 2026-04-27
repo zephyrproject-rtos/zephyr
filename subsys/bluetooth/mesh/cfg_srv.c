@@ -75,12 +75,12 @@ static int dev_comp_data_get(const struct bt_mesh_model *model,
 	}
 
 	if (err) {
-		LOG_ERR("Failed to get CDP%d, err:%d", page, err);
+		LOG_ERROR("Failed to get CDP%d, err:%d", page, err);
 		return err;
 	}
 
 	if (bt_mesh_model_send(model, ctx, &sdu, NULL, NULL)) {
-		LOG_ERR("Unable to send Device Composition Status response");
+		LOG_ERROR("Unable to send Device Composition Status response");
 	}
 
 	return err;
@@ -296,7 +296,7 @@ static int send_app_key_status(const struct bt_mesh_model *model,
 	key_idx_pack_pair(&msg, net_idx, app_idx);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send App Key Status response");
+		LOG_ERROR("Unable to send App Key Status response");
 	}
 
 	return 0;
@@ -385,7 +385,7 @@ static int app_key_get(const struct bt_mesh_model *model,
 
 	get_idx = net_buf_simple_pull_le16(buf);
 	if (get_idx > 0xfff) {
-		LOG_ERR("Invalid NetKeyIndex 0x%04x", get_idx);
+		LOG_ERROR("Invalid NetKeyIndex 0x%04x", get_idx);
 		return -EINVAL;
 	}
 
@@ -415,7 +415,7 @@ static int app_key_get(const struct bt_mesh_model *model,
 
 send_status:
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send AppKey List");
+		LOG_ERROR("Unable to send AppKey List");
 	}
 
 	return 0;
@@ -434,7 +434,7 @@ static int beacon_get(const struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, bt_mesh_beacon_enabled());
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Config Beacon Status response");
+		LOG_ERROR("Unable to send Config Beacon Status response");
 	}
 
 	return 0;
@@ -460,7 +460,7 @@ static int beacon_set(const struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, buf->data[0]);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Config Beacon Status response");
+		LOG_ERROR("Unable to send Config Beacon Status response");
 	}
 
 	return 0;
@@ -479,7 +479,7 @@ static int default_ttl_get(const struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, bt_mesh_default_ttl_get());
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Default TTL Status response");
+		LOG_ERROR("Unable to send Default TTL Status response");
 	}
 
 	return 0;
@@ -505,7 +505,7 @@ static int default_ttl_set(const struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, buf->data[0]);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Default TTL Status response");
+		LOG_ERROR("Unable to send Default TTL Status response");
 	}
 
 	return 0;
@@ -520,7 +520,7 @@ static int send_gatt_proxy_status(const struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, bt_mesh_gatt_proxy_get());
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send GATT Proxy Status");
+		LOG_ERROR("Unable to send GATT Proxy Status");
 	}
 
 	return 0;
@@ -573,7 +573,7 @@ static int net_transmit_get(const struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, bt_mesh_net_transmit_get());
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Config Network Transmit Status");
+		LOG_ERROR("Unable to send Config Network Transmit Status");
 	}
 
 	return 0;
@@ -597,7 +597,7 @@ static int net_transmit_set(const struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, buf->data[0]);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Network Transmit Status");
+		LOG_ERROR("Unable to send Network Transmit Status");
 	}
 
 	return 0;
@@ -617,7 +617,7 @@ static int relay_get(const struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, bt_mesh_relay_retransmit_get());
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Config Relay Status response");
+		LOG_ERROR("Unable to send Config Relay Status response");
 	}
 
 	return 0;
@@ -644,7 +644,7 @@ static int relay_set(const struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, bt_mesh_relay_retransmit_get());
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Relay Status response");
+		LOG_ERROR("Unable to send Relay Status response");
 	}
 
 	return 0;
@@ -684,7 +684,7 @@ static int send_mod_pub_status(const struct bt_mesh_model *cfg_mod,
 	}
 
 	if (bt_mesh_model_send(cfg_mod, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Model Publication Status");
+		LOG_ERROR("Unable to send Model Publication Status");
 	}
 
 	return 0;
@@ -700,7 +700,7 @@ static int mod_pub_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx
 	bool vnd;
 
 	if ((buf->len != 4U) && (buf->len != 6U)) {
-		LOG_ERR("The message size for the application opcode is incorrect.");
+		LOG_ERROR("The message size for the application opcode is incorrect.");
 		return -EMSGSIZE;
 	}
 
@@ -753,7 +753,7 @@ static int mod_pub_set(const struct bt_mesh_model *model,
 	bool vnd;
 
 	if ((buf->len != 11U) && (buf->len != 13U)) {
-		LOG_ERR("The message size for the application opcode is incorrect.");
+		LOG_ERROR("The message size for the application opcode is incorrect.");
 		return -EMSGSIZE;
 	}
 
@@ -770,7 +770,7 @@ static int mod_pub_set(const struct bt_mesh_model *model,
 
 	pub_ttl = net_buf_simple_pull_u8(buf);
 	if (pub_ttl > BT_MESH_TTL_MAX && pub_ttl != BT_MESH_TTL_DEFAULT) {
-		LOG_ERR("Invalid TTL value 0x%02x", pub_ttl);
+		LOG_ERROR("Invalid TTL value 0x%02x", pub_ttl);
 		return -EINVAL;
 	}
 
@@ -852,7 +852,7 @@ static int mod_pub_va_set(const struct bt_mesh_model *model,
 	bool vnd;
 
 	if ((buf->len != 25U) && (buf->len != 27U)) {
-		LOG_ERR("The message size for the application opcode is incorrect.");
+		LOG_ERROR("The message size for the application opcode is incorrect.");
 		return -EMSGSIZE;
 	}
 
@@ -868,7 +868,7 @@ static int mod_pub_va_set(const struct bt_mesh_model *model,
 	pub_app_idx &= BIT_MASK(12);
 	pub_ttl = net_buf_simple_pull_u8(buf);
 	if (pub_ttl > BT_MESH_TTL_MAX && pub_ttl != BT_MESH_TTL_DEFAULT) {
-		LOG_ERR("Invalid TTL value 0x%02x", pub_ttl);
+		LOG_ERROR("Invalid TTL value 0x%02x", pub_ttl);
 		return -EINVAL;
 	}
 
@@ -936,7 +936,7 @@ static int send_mod_sub_status(const struct bt_mesh_model *model,
 	}
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Model Subscription Status");
+		LOG_ERROR("Unable to send Model Subscription Status");
 	}
 
 	return 0;
@@ -955,7 +955,7 @@ static int mod_sub_add(const struct bt_mesh_model *model,
 	bool vnd;
 
 	if ((buf->len != 6U) && (buf->len != 8U)) {
-		LOG_ERR("The message size for the application opcode is incorrect.");
+		LOG_ERROR("The message size for the application opcode is incorrect.");
 		return -EMSGSIZE;
 	}
 
@@ -1033,7 +1033,7 @@ static int mod_sub_del(const struct bt_mesh_model *model,
 	bool vnd;
 
 	if ((buf->len != 6U) && (buf->len != 8U)) {
-		LOG_ERR("The message size for the application opcode is incorrect.");
+		LOG_ERROR("The message size for the application opcode is incorrect.");
 		return -EMSGSIZE;
 	}
 
@@ -1114,7 +1114,7 @@ static int mod_sub_overwrite(const struct bt_mesh_model *model,
 	bool vnd;
 
 	if ((buf->len != 6U) && (buf->len != 8U)) {
-		LOG_ERR("The message size for the application opcode is incorrect.");
+		LOG_ERROR("The message size for the application opcode is incorrect.");
 		return -EMSGSIZE;
 	}
 
@@ -1185,7 +1185,7 @@ static int mod_sub_del_all(const struct bt_mesh_model *model,
 	bool vnd;
 
 	if ((buf->len != 4U) && (buf->len != 6U)) {
-		LOG_ERR("The message size for the application opcode is incorrect.");
+		LOG_ERROR("The message size for the application opcode is incorrect.");
 		return -EMSGSIZE;
 	}
 
@@ -1310,7 +1310,7 @@ static int mod_sub_get(const struct bt_mesh_model *model,
 
 send_list:
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Model Subscription List");
+		LOG_ERROR("Unable to send Model Subscription List");
 	}
 
 	return 0;
@@ -1369,7 +1369,7 @@ static int mod_sub_get_vnd(const struct bt_mesh_model *model,
 
 send_list:
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Vendor Model Subscription List");
+		LOG_ERROR("Unable to send Vendor Model Subscription List");
 	}
 
 	return 0;
@@ -1391,7 +1391,7 @@ static int mod_sub_va_add(const struct bt_mesh_model *model,
 	bool vnd;
 
 	if ((buf->len != 20U) && (buf->len != 22U)) {
-		LOG_ERR("The message size for the application opcode is incorrect.");
+		LOG_ERROR("The message size for the application opcode is incorrect.");
 		return -EMSGSIZE;
 	}
 
@@ -1493,7 +1493,7 @@ static int mod_sub_va_del(const struct bt_mesh_model *model,
 	bool vnd;
 
 	if ((buf->len != 20U) && (buf->len != 22U)) {
-		LOG_ERR("The message size for the application opcode is incorrect.");
+		LOG_ERROR("The message size for the application opcode is incorrect.");
 		return -EMSGSIZE;
 	}
 
@@ -1576,7 +1576,7 @@ static int mod_sub_va_overwrite(const struct bt_mesh_model *model,
 	bool vnd;
 
 	if ((buf->len != 20U) && (buf->len != 22U)) {
-		LOG_ERR("The message size for the application opcode is incorrect.");
+		LOG_ERROR("The message size for the application opcode is incorrect.");
 		return -EMSGSIZE;
 	}
 
@@ -1650,7 +1650,7 @@ static int send_net_key_status(const struct bt_mesh_model *model,
 	net_buf_simple_add_le16(&msg, idx);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send NetKey Status");
+		LOG_ERROR("Unable to send NetKey Status");
 	}
 
 	return 0;
@@ -1664,7 +1664,7 @@ static int net_key_add(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx
 
 	idx = net_buf_simple_pull_le16(buf);
 	if (idx > 0xfff) {
-		LOG_ERR("Invalid NetKeyIndex 0x%04x", idx);
+		LOG_ERROR("Invalid NetKeyIndex 0x%04x", idx);
 		return -EINVAL;
 	}
 
@@ -1684,7 +1684,7 @@ static int net_key_update(const struct bt_mesh_model *model,
 
 	idx = net_buf_simple_pull_le16(buf);
 	if (idx > 0xfff) {
-		LOG_ERR("Invalid NetKeyIndex 0x%04x", idx);
+		LOG_ERROR("Invalid NetKeyIndex 0x%04x", idx);
 		return -EINVAL;
 	}
 
@@ -1701,7 +1701,7 @@ static int net_key_del(const struct bt_mesh_model *model,
 
 	del_idx = net_buf_simple_pull_le16(buf);
 	if (del_idx > 0xfff) {
-		LOG_ERR("Invalid NetKeyIndex 0x%04x", del_idx);
+		LOG_ERROR("Invalid NetKeyIndex 0x%04x", del_idx);
 		return -EINVAL;
 	}
 
@@ -1739,7 +1739,7 @@ static int net_key_get(const struct bt_mesh_model *model,
 	key_idx_pack_list(&msg, net_idx, count);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send NetKey List");
+		LOG_ERROR("Unable to send NetKey List");
 	}
 
 	return 0;
@@ -1758,7 +1758,7 @@ static int send_node_id_status(const struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, node_id);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Node Identity Status");
+		LOG_ERROR("Unable to send Node Identity Status");
 	}
 
 	return 0;
@@ -1777,7 +1777,7 @@ static int node_identity_get(const struct bt_mesh_model *model,
 
 	idx = net_buf_simple_pull_le16(buf);
 	if (idx > 0xfff) {
-		LOG_ERR("Invalid NetKeyIndex 0x%04x", idx);
+		LOG_ERROR("Invalid NetKeyIndex 0x%04x", idx);
 		return -EINVAL;
 	}
 
@@ -1853,7 +1853,7 @@ static int mod_app_bind(const struct bt_mesh_model *model,
 	bool vnd;
 
 	if ((buf->len != 6U) && (buf->len != 8U)) {
-		LOG_ERR("The message size for the application opcode is incorrect.");
+		LOG_ERROR("The message size for the application opcode is incorrect.");
 		return -EMSGSIZE;
 	}
 
@@ -1882,7 +1882,7 @@ static int mod_app_bind(const struct bt_mesh_model *model,
 
 	/* Some models only allow device key based access */
 	if (mod->rt->flags & BT_MESH_MOD_DEVKEY_ONLY) {
-		LOG_ERR("Client tried to bind AppKey to DevKey based model");
+		LOG_ERROR("Client tried to bind AppKey to DevKey based model");
 		status = STATUS_CANNOT_BIND;
 		goto send_status;
 	}
@@ -1899,7 +1899,7 @@ send_status:
 			      mod_id);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Model App Bind Status response");
+		LOG_ERROR("Unable to send Model App Bind Status response");
 	}
 
 	return 0;
@@ -1917,7 +1917,7 @@ static int mod_app_unbind(const struct bt_mesh_model *model,
 	bool vnd;
 
 	if ((buf->len != 6U) && (buf->len != 8U)) {
-		LOG_ERR("The message size for the application opcode is incorrect.");
+		LOG_ERROR("The message size for the application opcode is incorrect.");
 		return -EMSGSIZE;
 	}
 
@@ -1956,7 +1956,7 @@ send_status:
 			      mod_id);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Model App Unbind Status response");
+		LOG_ERROR("Unable to send Model App Unbind Status response");
 	}
 
 	return 0;
@@ -1980,7 +1980,7 @@ static int mod_app_get(const struct bt_mesh_model *model,
 	bool vnd;
 
 	if ((buf->len != 4U) && (buf->len != 6U)) {
-		LOG_ERR("The message size for the application opcode is incorrect.");
+		LOG_ERROR("The message size for the application opcode is incorrect.");
 		return -EMSGSIZE;
 	}
 
@@ -2031,7 +2031,7 @@ send_list:
 	}
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Model Application List message");
+		LOG_ERROR("Unable to send Model Application List message");
 	}
 
 	return 0;
@@ -2040,7 +2040,7 @@ send_list:
 static void reset_send_start(uint16_t duration, int err, void *cb_data)
 {
 	if (err) {
-		LOG_ERR("Sending Node Reset Status failed (err %d)", err);
+		LOG_ERROR("Sending Node Reset Status failed (err %d)", err);
 		k_work_submit(&node_reset_pending);
 	}
 }
@@ -2066,7 +2066,7 @@ static int node_reset(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 	bt_mesh_model_msg_init(&msg, OP_NODE_RESET_STATUS);
 
 	if (bt_mesh_model_send(model, ctx, &msg, &reset_cb, NULL)) {
-		LOG_ERR("Unable to send Node Reset Status");
+		LOG_ERROR("Unable to send Node Reset Status");
 	}
 
 	return 0;
@@ -2081,7 +2081,7 @@ static int send_friend_status(const struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, bt_mesh_friend_get());
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Friend Status");
+		LOG_ERROR("Unable to send Friend Status");
 	}
 
 	return 0;
@@ -2154,7 +2154,7 @@ send_rsp:
 	net_buf_simple_add_le24(&msg, timeout_steps);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send LPN PollTimeout Status");
+		LOG_ERROR("Unable to send LPN PollTimeout Status");
 	}
 
 	return 0;
@@ -2173,7 +2173,7 @@ static int send_krp_status(const struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, phase);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Key Refresh State Status");
+		LOG_ERROR("Unable to send Key Refresh State Status");
 	}
 
 	return 0;
@@ -2187,7 +2187,7 @@ static int krp_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 
 	idx = net_buf_simple_pull_le16(buf);
 	if (idx > 0xfff) {
-		LOG_ERR("Invalid NetKeyIndex 0x%04x", idx);
+		LOG_ERROR("Invalid NetKeyIndex 0x%04x", idx);
 		return -EINVAL;
 	}
 
@@ -2208,13 +2208,13 @@ static int krp_set(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 	phase = net_buf_simple_pull_u8(buf);
 
 	if (idx > 0xfff) {
-		LOG_ERR("Invalid NetKeyIndex 0x%04x", idx);
+		LOG_ERROR("Invalid NetKeyIndex 0x%04x", idx);
 		return -EINVAL;
 	}
 
 	status = bt_mesh_subnet_kr_phase_set(idx, &phase);
 	if (status == STATUS_CANNOT_UPDATE) {
-		LOG_ERR("Invalid kr phase transition 0x%02x", phase);
+		LOG_ERROR("Invalid kr phase transition 0x%02x", phase);
 		return -EINVAL;
 	}
 
@@ -2278,7 +2278,7 @@ static int hb_pub_send_status(const struct bt_mesh_model *model,
 	}
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Heartbeat Publication Status");
+		LOG_ERROR("Unable to send Heartbeat Publication Status");
 	}
 
 	return 0;
@@ -2342,12 +2342,12 @@ static int heartbeat_pub_set(const struct bt_mesh_model *model,
 	}
 
 	if (param->ttl > BT_MESH_TTL_MAX && param->ttl != BT_MESH_TTL_DEFAULT) {
-		LOG_ERR("Invalid TTL value 0x%02x", param->ttl);
+		LOG_ERROR("Invalid TTL value 0x%02x", param->ttl);
 		return -EINVAL;
 	}
 
 	if (pub.net_idx > 0xfff) {
-		LOG_ERR("Invalid NetKeyIndex 0x%04x", pub.net_idx);
+		LOG_ERROR("Invalid NetKeyIndex 0x%04x", pub.net_idx);
 		return -EINVAL;
 	}
 
@@ -2376,7 +2376,7 @@ static int hb_sub_send_status(const struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, sub->max_hops);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Heartbeat Subscription Status");
+		LOG_ERROR("Unable to send Heartbeat Subscription Status");
 	}
 
 	return 0;
@@ -2511,7 +2511,7 @@ const struct bt_mesh_model_op bt_mesh_cfg_srv_op[] = {
 static int cfg_srv_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
-		LOG_ERR("Configuration Server only allowed in primary element");
+		LOG_ERROR("Configuration Server only allowed in primary element");
 		return -EINVAL;
 	}
 

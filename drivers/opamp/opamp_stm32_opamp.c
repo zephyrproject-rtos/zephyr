@@ -176,7 +176,7 @@ static int stm32_opamp_set_gain(const struct device *dev, enum opamp_gain gain)
 	k_mutex_lock(&data->dev_mtx, K_FOREVER);
 
 	if (stm32_opamp_is_locked(dev)) {
-		LOG_ERR("%s: locked", dev->name);
+		LOG_ERROR("%s: locked", dev->name);
 		k_mutex_unlock(&data->dev_mtx);
 		return -EPERM;
 	}
@@ -221,7 +221,7 @@ static int stm32_opamp_set_gain(const struct device *dev, enum opamp_gain gain)
 		ll_gain = LL_OPAMP_PGA_GAIN_64_OR_MINUS_63;
 		break;
 	default:
-		LOG_ERR("%s: invalid gain %d", dev->name, gain);
+		LOG_ERROR("%s: invalid gain %d", dev->name, gain);
 		k_mutex_unlock(&data->dev_mtx);
 		return -EINVAL;
 	}
@@ -291,7 +291,7 @@ static int stm32_opamp_set_functional_mode(const struct device *dev)
 	case OPAMP_FUNCTIONAL_MODE_INVERTING:
 		/* INM shall be connected to VINM0 in inverting-mode */
 		if (cfg->inm[0] != OPAMP_INM_VINM0) {
-			LOG_ERR("%s: expected inm to be set to VINM0", dev->name);
+			LOG_ERROR("%s: expected inm to be set to VINM0", dev->name);
 			LOG_DBG("%s: VINM0 (0x%lx) != 0x%x", dev->name, OPAMP_INM_VINM0,
 				cfg->inm[0]);
 			return -EINVAL;
@@ -370,7 +370,7 @@ static int stm32_opamp_set_functional_mode(const struct device *dev)
 		}
 		break;
 	default:
-		LOG_ERR("%s: invalid functional_mode: %d", dev->name, cfg->functional_mode);
+		LOG_ERROR("%s: invalid functional_mode: %d", dev->name, cfg->functional_mode);
 		return -EINVAL;
 	}
 
@@ -398,8 +398,8 @@ static int stm32_opamp_get_calout(const struct device *dev, struct adc_sequence 
 	}
 
 	if (adc_read_dt(adc_ch, adc_seq) < 0) {
-		LOG_ERR("%s: could not read adc channel #%d", adc_ch->dev->name,
-			adc_ch->channel_id);
+		LOG_ERROR("%s: could not read adc channel #%d", adc_ch->dev->name,
+			  adc_ch->channel_id);
 		return -EIO;
 	}
 
@@ -423,15 +423,15 @@ static int stm32_opamp_adc_calib_configure(const struct device *dev, struct adc_
 	if (LL_OPAMP_GetInternalOutput(opamp) == OPAMP_INTERNAL_OUTPUT_ENABLED && adc_ch != NULL) {
 		ret = adc_channel_setup_dt(adc_ch);
 		if (ret < 0) {
-			LOG_ERR("%s: could not setup channel #%d", adc_ch->dev->name,
-				adc_ch->channel_id);
+			LOG_ERROR("%s: could not setup channel #%d", adc_ch->dev->name,
+				  adc_ch->channel_id);
 			return ret;
 		}
 
 		ret = adc_sequence_init_dt(adc_ch, adc_seq);
 		if (ret < 0) {
-			LOG_ERR("%s: could not setup adc sequence for channel #%d",
-				adc_ch->dev->name, adc_ch->channel_id);
+			LOG_ERROR("%s: could not setup adc sequence for channel #%d",
+				  adc_ch->dev->name, adc_ch->channel_id);
 			return ret;
 		}
 	}
@@ -555,21 +555,21 @@ static int stm32_opamp_init(const struct device *dev)
 	}
 
 	if (adc_ch != NULL && adc_ch->dev != NULL && !adc_is_ready_dt(adc_ch)) {
-		LOG_ERR("%s ADC device not ready", adc_ch->dev->name);
+		LOG_ERROR("%s ADC device not ready", adc_ch->dev->name);
 		return -ENODEV;
 	}
 
 	/* Enable OPAMP bus clock */
 	ret = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (ret != 0) {
-		LOG_ERR("%s clock op failed (%d)", dev->name, ret);
+		LOG_ERROR("%s clock op failed (%d)", dev->name, ret);
 		return ret;
 	}
 
 	/* Configure OPAMP inputs as specified in Device Tree */
 	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("%s pinctrl setup failed (%d)", dev->name, ret);
+		LOG_ERROR("%s pinctrl setup failed (%d)", dev->name, ret);
 		return ret;
 	}
 

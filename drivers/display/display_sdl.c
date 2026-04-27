@@ -121,7 +121,7 @@ static void exec_sdl_task(const struct device *dev, const struct sdl_display_tas
 		sdl_display_blanking_on_bottom(disp_data->renderer);
 		break;
 	default:
-		LOG_ERR("Unknown SDL task");
+		LOG_ERROR("Unknown SDL task");
 		break;
 	}
 }
@@ -1204,7 +1204,7 @@ static void sdl_display_get_capabilities(
 		disp_data->current_pixel_format = pixel_format;
 		return 0;
 	default:
-		LOG_ERR("Pixel format not supported");
+		LOG_ERROR("Pixel format not supported");
 		return -ENOTSUP;
 	}
 }

@@ -74,24 +74,24 @@ static int mcux_ftm_set_cycles(const struct device *dev, uint32_t channel,
 #endif /* CONFIG_PWM_CAPTURE */
 
 	if (period_cycles == 0U) {
-		LOG_ERR("Channel can not be set to inactive level");
+		LOG_ERROR("Channel can not be set to inactive level");
 		return -ENOTSUP;
 	}
 
 	if (period_cycles > UINT16_MAX) {
-		LOG_ERR("Period cycles must be less or equal than %u", UINT16_MAX);
+		LOG_ERROR("Period cycles must be less or equal than %u", UINT16_MAX);
 		return -EINVAL;
 	}
 
 	if (channel >= config->channel_count) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -ENOTSUP;
 	}
 
 #ifdef CONFIG_PWM_CAPTURE
 	irqs = FTM_GetEnabledInterrupts(config->base);
 	if (irqs & BIT(PAIR_2ND_CH(pair))) {
-		LOG_ERR("Cannot set PWM, capture in progress on pair %d", pair);
+		LOG_ERROR("Cannot set PWM, capture in progress on pair %d", pair);
 		return -EBUSY;
 	}
 #endif /* CONFIG_PWM_CAPTURE */
@@ -110,7 +110,7 @@ static int mcux_ftm_set_cycles(const struct device *dev, uint32_t channel,
 	if (period_cycles != data->period_cycles) {
 #ifdef CONFIG_PWM_CAPTURE
 		if (irqs & BIT_MASK(ARRAY_SIZE(data->channel))) {
-			LOG_ERR("Cannot change period, capture in progress");
+			LOG_ERROR("Cannot change period, capture in progress");
 			return -EBUSY;
 		}
 #endif /* CONFIG_PWM_CAPTURE */
@@ -135,7 +135,7 @@ static int mcux_ftm_set_cycles(const struct device *dev, uint32_t channel,
 	status = FTM_SetupPwmMode(config->base, data->channel,
 				  config->channel_count, config->mode);
 	if (status != kStatus_Success) {
-		LOG_ERR("Could not set up pwm");
+		LOG_ERROR("Could not set up pwm");
 		return -ENOTSUP;
 	}
 	FTM_SetSoftwareTrigger(config->base, true);
@@ -155,27 +155,27 @@ static int mcux_ftm_configure_capture(const struct device *dev,
 	uint32_t pair = channel / 2U;
 
 	if (channel & 0x1U) {
-		LOG_ERR("PWM capture only supported on even channels");
+		LOG_ERROR("PWM capture only supported on even channels");
 		return -ENOTSUP;
 	}
 
 	if (pair >= ARRAY_SIZE(data->capture)) {
-		LOG_ERR("Invalid channel pair %d", pair);
+		LOG_ERROR("Invalid channel pair %d", pair);
 		return -EINVAL;
 	}
 
 	if (FTM_GetEnabledInterrupts(config->base) & BIT(PAIR_2ND_CH(pair))) {
-		LOG_ERR("Capture already active on channel pair %d", pair);
+		LOG_ERROR("Capture already active on channel pair %d", pair);
 		return -EBUSY;
 	}
 
 	if (!(flags & PWM_CAPTURE_TYPE_MASK)) {
-		LOG_ERR("No capture type specified");
+		LOG_ERROR("No capture type specified");
 		return -EINVAL;
 	}
 
 	if ((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_BOTH) {
-		LOG_ERR("Cannot capture both period and pulse width");
+		LOG_ERROR("Cannot capture both period and pulse width");
 		return -ENOTSUP;
 	}
 
@@ -221,22 +221,22 @@ static int mcux_ftm_enable_capture(const struct device *dev, uint32_t channel)
 	uint32_t pair = channel / 2U;
 
 	if (channel & 0x1U) {
-		LOG_ERR("PWM capture only supported on even channels");
+		LOG_ERROR("PWM capture only supported on even channels");
 		return -ENOTSUP;
 	}
 
 	if (pair >= ARRAY_SIZE(data->capture)) {
-		LOG_ERR("Invalid channel pair %d", pair);
+		LOG_ERROR("Invalid channel pair %d", pair);
 		return -EINVAL;
 	}
 
 	if (!data->capture[pair].callback) {
-		LOG_ERR("PWM capture not configured");
+		LOG_ERROR("PWM capture not configured");
 		return -EINVAL;
 	}
 
 	if (FTM_GetEnabledInterrupts(config->base) & BIT(PAIR_2ND_CH(pair))) {
-		LOG_ERR("Capture already active on channel pair %d", pair);
+		LOG_ERROR("Capture already active on channel pair %d", pair);
 		return -EBUSY;
 	}
 
@@ -259,12 +259,12 @@ static int mcux_ftm_disable_capture(const struct device *dev, uint32_t channel)
 	uint32_t pair = channel / 2U;
 
 	if (channel & 0x1U) {
-		LOG_ERR("PWM capture only supported on even channels");
+		LOG_ERROR("PWM capture only supported on even channels");
 		return -ENOTSUP;
 	}
 
 	if (pair >= ARRAY_SIZE(data->capture)) {
-		LOG_ERR("Invalid channel pair %d", pair);
+		LOG_ERROR("Invalid channel pair %d", pair);
 		return -EINVAL;
 	}
 
@@ -342,12 +342,12 @@ static void mcux_ftm_capture_second_edge(const struct device *dev, uint32_t chan
 	/* Calculate cycles, check for overflows */
 	if (overflows > 0) {
 		if (u32_mul_overflow(overflows, config->base->MOD, &cycles)) {
-			LOG_ERR("overflow while calculating cycles");
+			LOG_ERROR("overflow while calculating cycles");
 			status = -ERANGE;
 		} else {
 			cycles -= first_cnv;
 			if (u32_add_overflow(cycles, second_cnv, &cycles)) {
-				LOG_ERR("overflow while calculating cycles");
+				LOG_ERROR("overflow while calculating cycles");
 				cycles = 0;
 				status = -ERANGE;
 			}
@@ -450,18 +450,18 @@ static int mcux_ftm_init(const struct device *dev)
 	}
 
 	if (config->channel_count > ARRAY_SIZE(data->channel)) {
-		LOG_ERR("Invalid channel count");
+		LOG_ERROR("Invalid channel count");
 		return -EINVAL;
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &data->clock_freq)) {
-		LOG_ERR("Could not get clock frequency");
+		LOG_ERROR("Could not get clock frequency");
 		return -EINVAL;
 	}
 

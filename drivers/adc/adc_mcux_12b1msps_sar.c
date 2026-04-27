@@ -47,27 +47,27 @@ static int mcux_12b1msps_sar_adc_channel_setup(const struct device *dev,
 	uint8_t channel_id = channel_cfg->channel_id;
 
 	if (channel_id > (ADC_HC_ADCH_MASK >> ADC_HC_ADCH_SHIFT)) {
-		LOG_ERR("Invalid channel %d", channel_id);
+		LOG_ERROR("Invalid channel %d", channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Unsupported channel acquisition time");
+		LOG_ERROR("Unsupported channel acquisition time");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels are not supported");
+		LOG_ERROR("Differential channels are not supported");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Unsupported channel gain %d", channel_cfg->gain);
+		LOG_ERROR("Unsupported channel gain %d", channel_cfg->gain);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Unsupported channel reference");
+		LOG_ERROR("Unsupported channel reference");
 		return -ENOTSUP;
 	}
 
@@ -96,7 +96,7 @@ static int mcux_12b1msps_sar_adc_start_read(const struct device *dev,
 		resolution = kADC_Resolution12Bit;
 		break;
 	default:
-		LOG_ERR("Unsupported resolution %d", sequence->resolution);
+		LOG_ERROR("Unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}
 
@@ -121,8 +121,7 @@ static int mcux_12b1msps_sar_adc_start_read(const struct device *dev,
 		mode = kADC_HardwareAverageCount32;
 		break;
 	default:
-		LOG_ERR("Unsupported oversampling value %d",
-			sequence->oversampling);
+		LOG_ERROR("Unsupported oversampling value %d", sequence->oversampling);
 		return -ENOTSUP;
 	}
 	ADC_SetHardwareAverageConfig(config->base, mode);

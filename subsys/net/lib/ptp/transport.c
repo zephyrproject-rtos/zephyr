@@ -39,7 +39,7 @@ static int transport_socket_open(struct net_if *iface, struct net_sockaddr *addr
 	int socket = zsock_socket(addr->sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 
 	if (net_if_get_by_iface(iface) < 0) {
-		LOG_ERR("Failed to obtain interface index");
+		LOG_ERROR("Failed to obtain interface index");
 		return -1;
 	}
 
@@ -49,31 +49,31 @@ static int transport_socket_open(struct net_if *iface, struct net_sockaddr *addr
 
 	if (zsock_setsockopt(socket, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR, &feature_on,
 			     sizeof(feature_on))) {
-		LOG_ERR("Failed to set SO_REUSEADDR");
+		LOG_ERROR("Failed to set SO_REUSEADDR");
 		goto error;
 	}
 
 	if (zsock_bind(socket, addr, sizeof(*addr))) {
-		LOG_ERR("Failed to bind socket");
+		LOG_ERROR("Failed to bind socket");
 		goto error;
 	}
 
 	cnt = net_if_get_name(iface, ifreq.ifr_name, INTERFACE_NAME_LEN);
 	if (cnt > 0 && zsock_setsockopt(socket, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE,
 					ifreq.ifr_name, sizeof(ifreq.ifr_name))) {
-		LOG_ERR("Failed to set socket binding to an interface");
+		LOG_ERROR("Failed to set socket binding to an interface");
 		goto error;
 	}
 
 	if (zsock_setsockopt(socket, ZSOCK_SOL_SOCKET, ZSOCK_SO_TIMESTAMPING, &ts_mask,
 			     sizeof(ts_mask))) {
-		LOG_ERR("Failed to set SO_TIMESTAMPING");
+		LOG_ERROR("Failed to set SO_TIMESTAMPING");
 		goto error;
 	}
 
 	if (zsock_setsockopt(socket, ZSOCK_SOL_SOCKET, ZSOCK_SO_PRIORITY, &priority,
 			     sizeof(priority))) {
-		LOG_ERR("Failed to set SO_PRIORITY");
+		LOG_ERROR("Failed to set SO_PRIORITY");
 		goto error;
 	}
 
@@ -93,7 +93,7 @@ static int transport_join_multicast(struct ptp_port *port)
 
 		if (zsock_setsockopt(port->socket[1], NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
 				     &mreqn, sizeof(mreqn))) {
-			LOG_ERR("Failed to join IPv4 multicast group");
+			LOG_ERROR("Failed to join IPv4 multicast group");
 			return -1;
 		}
 	} else {
@@ -104,7 +104,7 @@ static int transport_join_multicast(struct ptp_port *port)
 
 		if (zsock_setsockopt(port->socket[0], NET_IPPROTO_IPV6, ZSOCK_IPV6_ADD_MEMBERSHIP,
 				     &mreqn, sizeof(mreqn))) {
-			LOG_ERR("Failed to join IPv6 multicast group");
+			LOG_ERROR("Failed to join IPv6 multicast group");
 			return -1;
 		}
 	}
@@ -129,7 +129,7 @@ static int transport_udp_ipv4_open(struct net_if *iface, uint16_t port)
 	}
 
 	if (zsock_setsockopt(socket, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_TTL, &ttl, sizeof(ttl))) {
-		LOG_ERR("Failed to set ip multicast ttl socket option");
+		LOG_ERROR("Failed to set ip multicast ttl socket option");
 		goto error;
 	}
 
@@ -167,13 +167,13 @@ static int transport_udp_ipv6_open(struct net_if *iface, uint16_t port)
 
 	if (zsock_setsockopt(socket, NET_IPPROTO_IPV6, ZSOCK_IPV6_RECVPKTINFO, &feature_on,
 			     sizeof(feature_on))) {
-		LOG_ERR("Failed to set IPV6_RECVPKTINFO");
+		LOG_ERROR("Failed to set IPV6_RECVPKTINFO");
 		goto error;
 	}
 
 	if (zsock_setsockopt(socket, NET_IPPROTO_IPV6, ZSOCK_IPV6_MULTICAST_HOPS, &hops,
 			     sizeof(hops))) {
-		LOG_ERR("Failed to set ip multicast hops socket option");
+		LOG_ERROR("Failed to set ip multicast hops socket option");
 		goto error;
 	}
 
@@ -204,7 +204,7 @@ static int transport_l2_open(struct net_if *iface)
 	int socket;
 
 	if (ifindex < 0) {
-		LOG_ERR("Failed to obtain interface index");
+		LOG_ERROR("Failed to obtain interface index");
 		return -1;
 	}
 
@@ -218,14 +218,14 @@ static int transport_l2_open(struct net_if *iface)
 	addr.sll_ifindex = ifindex;
 
 	if (zsock_bind(socket, (struct net_sockaddr *)&addr, sizeof(addr))) {
-		LOG_ERR("Failed to bind L2 PTP socket");
+		LOG_ERROR("Failed to bind L2 PTP socket");
 		zsock_close(socket);
 		return -1;
 	}
 
 	if (zsock_setsockopt(socket, ZSOCK_SOL_SOCKET, ZSOCK_SO_TIMESTAMPING, &ts_mask,
 			     sizeof(ts_mask))) {
-		LOG_ERR("Failed to set SO_TIMESTAMPING on L2 socket");
+		LOG_ERROR("Failed to set SO_TIMESTAMPING on L2 socket");
 		zsock_close(socket);
 		return -1;
 	}
@@ -259,7 +259,7 @@ static int transport_send_udp(int socket, int port, void *buf, int length,
 							   : sizeof(struct net_sockaddr_in6);
 	cnt = zsock_sendto(socket, buf, length, 0, addr, addrlen);
 	if (cnt < 1) {
-		LOG_ERR("Failed to send message");
+		LOG_ERROR("Failed to send message");
 		return -EFAULT;
 	}
 
@@ -273,7 +273,7 @@ static int transport_send_l2(struct ptp_port *port, int socket, void *buf, int l
 	int cnt;
 
 	if (ifindex < 0) {
-		LOG_ERR("Failed to obtain interface index");
+		LOG_ERROR("Failed to obtain interface index");
 		return -EFAULT;
 	}
 
@@ -285,7 +285,7 @@ static int transport_send_l2(struct ptp_port *port, int socket, void *buf, int l
 
 	cnt = zsock_sendto(socket, buf, length, 0, (struct net_sockaddr *)&addr, sizeof(addr));
 	if (cnt < 1) {
-		LOG_ERR("Failed to send L2 message");
+		LOG_ERROR("Failed to send L2 message");
 		return -EFAULT;
 	}
 
@@ -339,8 +339,8 @@ int ptp_transport_close(struct ptp_port *port)
 	if (IS_ENABLED(CONFIG_PTP_IEEE_802_3_PROTOCOL)) {
 		if (port->socket[PTP_SOCKET_EVENT] >= 0 &&
 		    zsock_close(port->socket[PTP_SOCKET_EVENT])) {
-			LOG_ERR("Failed to close socket on PTP Port %d",
-				port->port_ds.id.port_number);
+			LOG_ERROR("Failed to close socket on PTP Port %d",
+				  port->port_ds.id.port_number);
 			return -1;
 		}
 
@@ -354,8 +354,8 @@ int ptp_transport_close(struct ptp_port *port)
 
 		if (port->socket[i] >= 0) {
 			if (zsock_close(port->socket[i])) {
-				LOG_ERR("Failed to close socket on PTP Port %d",
-					port->port_ds.id.port_number);
+				LOG_ERROR("Failed to close socket on PTP Port %d",
+					  port->port_ds.id.port_number);
 				return -1;
 			}
 		}
@@ -496,7 +496,7 @@ static int transport_recv_l2_msg(struct ptp_port *port, struct ptp_msg *msg)
 				return 0;
 			}
 
-			LOG_ERR("Failed receive L2 PTP message (errno %d)", errno);
+			LOG_ERROR("Failed receive L2 PTP message (errno %d)", errno);
 			return cnt;
 		}
 	}
@@ -518,7 +518,7 @@ static int transport_recv_udp_msg(struct ptp_port *port, struct ptp_msg *msg, en
 
 	cnt = zsock_recvmsg(port->socket[idx], &msghdr, ZSOCK_MSG_DONTWAIT);
 	if (cnt < 0) {
-		LOG_ERR("Failed receive PTP message");
+		LOG_ERROR("Failed receive PTP message");
 		return cnt;
 	}
 

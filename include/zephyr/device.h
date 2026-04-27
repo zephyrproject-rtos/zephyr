@@ -887,8 +887,8 @@ __syscall bool device_is_ready(const struct device *dev);
  *
  * @param dev pointer to a struct device.
  */
-#define LOG_ERR_DEVICE_NOT_READY(dev) \
-	LOG_ERR("%s device not ready", (dev) ? (dev)->name : "(null)")
+#define LOG_ERR_DEVICE_NOT_READY(dev)                                                              \
+	LOG_ERROR("%s device not ready", (dev) ? (dev)->name : "(null)")
 
 /**
  * @brief Initialize a device.

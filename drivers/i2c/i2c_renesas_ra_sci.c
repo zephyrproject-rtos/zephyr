@@ -92,7 +92,7 @@ static int renesas_ra_sci_i2c_configure(const struct device *dev, uint32_t dev_c
 	fsp_err_t err;
 
 	if (!(dev_config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Only I2C Master mode supported.");
+		LOG_ERROR("Only I2C Master mode supported.");
 		return -EINVAL;
 	}
 
@@ -104,7 +104,7 @@ static int renesas_ra_sci_i2c_configure(const struct device *dev, uint32_t dev_c
 		data->i2c_config.rate = I2C_MASTER_RATE_FAST;
 		break;
 	default:
-		LOG_ERR("Invalid I2C speed rate flag: %d", I2C_SPEED_GET(dev_config));
+		LOG_ERROR("Invalid I2C speed rate flag: %d", I2C_SPEED_GET(dev_config));
 		return -EINVAL;
 	}
 
@@ -112,13 +112,13 @@ static int renesas_ra_sci_i2c_configure(const struct device *dev, uint32_t dev_c
 
 	err = R_SCI_I2C_Close(&data->ctrl);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Failed to configure I2C device");
+		LOG_ERROR("Failed to configure I2C device");
 		return -EIO;
 	}
 
 	err = R_SCI_I2C_Open(&data->ctrl, &data->i2c_config);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Failed to configure I2C device");
+		LOG_ERROR("Failed to configure I2C device");
 		return -EIO;
 	}
 
@@ -189,10 +189,10 @@ static int renesas_ra_sci_i2c_transfer(const struct device *dev, struct i2c_msg 
 			 */
 			if (OPERATION(current) != OPERATION(next)) {
 				if (!(next->flags & I2C_MSG_RESTART)) {
-					LOG_ERR("Restart condition between messages of "
-						"different directions is required."
-						"Current/Total: [%d/%d]",
-						i, num_msgs);
+					LOG_ERROR("Restart condition between messages of "
+						  "different directions is required."
+						  "Current/Total: [%d/%d]",
+						  i, num_msgs);
 					ret = -EIO;
 					break;
 				}
@@ -200,10 +200,10 @@ static int renesas_ra_sci_i2c_transfer(const struct device *dev, struct i2c_msg 
 
 			/* Stop condition is only allowed on last message */
 			if (current->flags & I2C_MSG_STOP) {
-				LOG_ERR("Invalid stop flag. Stop condition is only allowed on "
-					"last message. "
-					"Current/Total: [%d/%d]",
-					i, num_msgs);
+				LOG_ERROR("Invalid stop flag. Stop condition is only allowed on "
+					  "last message. "
+					  "Current/Total: [%d/%d]",
+					  i, num_msgs);
 				ret = -EIO;
 				break;
 			}
@@ -253,14 +253,14 @@ static int renesas_ra_sci_i2c_transfer(const struct device *dev, struct i2c_msg 
 		if (fsp_err != FSP_SUCCESS) {
 			switch (fsp_err) {
 			case FSP_ERR_INVALID_SIZE:
-				LOG_ERR("Provided number of bytes more than uint16_t size "
-					"(65535) while DTC is used for data transfer.");
+				LOG_ERROR("Provided number of bytes more than uint16_t size "
+					  "(65535) while DTC is used for data transfer.");
 				break;
 			case FSP_ERR_IN_USE:
-				LOG_ERR("Bus busy condition. Another transfer was in progress.");
+				LOG_ERROR("Bus busy condition. Another transfer was in progress.");
 				break;
 			default:
-				LOG_ERR("Unknown error.");
+				LOG_ERROR("Unknown error.");
 				break;
 			}
 
@@ -274,7 +274,7 @@ static int renesas_ra_sci_i2c_transfer(const struct device *dev, struct i2c_msg 
 		/* Handle event msg from callback. */
 		switch (data->event) {
 		case I2C_MASTER_EVENT_ABORTED:
-			LOG_ERR("%s failed.", (current->flags & I2C_MSG_READ) ? "Read" : "Write");
+			LOG_ERROR("%s failed.", (current->flags & I2C_MSG_READ) ? "Read" : "Write");
 			ret = -EIO;
 			goto out;
 		case I2C_MASTER_EVENT_RX_COMPLETE:
@@ -337,20 +337,20 @@ static void renesas_ra_sci_i2c_async_iter(const struct device *dev)
 		 */
 		if (OPERATION(current) != OPERATION(next)) {
 			if (!(next->flags & I2C_MSG_RESTART)) {
-				LOG_ERR("Restart condition between messages of "
-					"different directions is required."
-					"Current/Total: [%d/%d]",
-					data->msg_idx + 1, data->num_msgs);
+				LOG_ERROR("Restart condition between messages of "
+					  "different directions is required."
+					  "Current/Total: [%d/%d]",
+					  data->msg_idx + 1, data->num_msgs);
 				renesas_ra_sci_i2c_async_done(dev, data, -EIO);
 				return;
 			}
 		}
 
 		if (current->flags & I2C_MSG_STOP) {
-			LOG_ERR("Invalid stop flag. Stop condition is only allowed on "
-				"last message. "
-				"Current/Total: [%d/%d]",
-				data->msg_idx + 1, data->num_msgs);
+			LOG_ERROR("Invalid stop flag. Stop condition is only allowed on "
+				  "last message. "
+				  "Current/Total: [%d/%d]",
+				  data->msg_idx + 1, data->num_msgs);
 			renesas_ra_sci_i2c_async_done(dev, data, -EIO);
 			return;
 		}
@@ -373,14 +373,14 @@ static void renesas_ra_sci_i2c_async_iter(const struct device *dev)
 	if (fsp_err != FSP_SUCCESS) {
 		switch (fsp_err) {
 		case FSP_ERR_INVALID_SIZE:
-			LOG_ERR("Provided number of bytes more than uint16_t size "
-				"(65535) while DTC is used for data transfer.");
+			LOG_ERROR("Provided number of bytes more than uint16_t size "
+				  "(65535) while DTC is used for data transfer.");
 			break;
 		case FSP_ERR_IN_USE:
-			LOG_ERR("Bus busy condition. Another transfer was in progress.");
+			LOG_ERROR("Bus busy condition. Another transfer was in progress.");
 			break;
 		default:
-			LOG_ERR("Unknown error.");
+			LOG_ERROR("Unknown error.");
 			break;
 		}
 
@@ -453,7 +453,7 @@ static int renesas_ra_sci_i2c_init(const struct device *dev)
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret < 0) {
-		LOG_ERR("Pinctrl config failed.");
+		LOG_ERROR("Pinctrl config failed.");
 		return ret;
 	}
 
@@ -474,7 +474,7 @@ static int renesas_ra_sci_i2c_init(const struct device *dev)
 		data->dev_config |= I2C_SPEED_SET(I2C_SPEED_FAST);
 		break;
 	default:
-		LOG_ERR("Invalid I2C speed rate: %d", data->i2c_config.rate);
+		LOG_ERROR("Invalid I2C speed rate: %d", data->i2c_config.rate);
 		return -ENOTSUP;
 	}
 
@@ -486,7 +486,7 @@ static int renesas_ra_sci_i2c_init(const struct device *dev)
 	fsp_err = R_SCI_I2C_Open(&data->ctrl, &data->i2c_config);
 
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("I2C init failed.");
+		LOG_ERROR("I2C init failed.");
 	}
 
 	config->irq_config_func(dev);

@@ -575,30 +575,30 @@ static int can_renesas_ra_send(const struct device *dev, const struct can_frame 
 #ifdef CONFIG_CAN_FD_MODE
 	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR | CAN_FRAME_FDF | CAN_FRAME_BRS)) !=
 	    0) {
-		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		LOG_ERROR("unsupported CAN frame flags 0x%02x", frame->flags);
 		return -ENOTSUP;
 	}
 
 	if ((data->common.mode & CAN_MODE_FD) == 0U &&
 	    ((frame->flags & (CAN_FRAME_FDF | CAN_FRAME_BRS)) != 0U)) {
-		LOG_ERR("CAN FD format not supported in non-FD mode");
+		LOG_ERROR("CAN FD format not supported in non-FD mode");
 		return -ENOTSUP;
 	}
 #else  /* CONFIG_CAN_FD_MODE */
 	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR)) != 0U) {
-		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		LOG_ERROR("unsupported CAN frame flags 0x%02x", frame->flags);
 		return -ENOTSUP;
 	}
 #endif /* !CONFIG_CAN_FD_MODE */
 
 	if ((frame->flags & CAN_FRAME_FDF) != 0U) {
 		if (frame->dlc > CANFD_MAX_DLC) {
-			LOG_ERR("DLC of %d for CAN FD format frame", frame->dlc);
+			LOG_ERROR("DLC of %d for CAN FD format frame", frame->dlc);
 			return -EINVAL;
 		}
 	} else {
 		if (frame->dlc > CAN_MAX_DLC) {
-			LOG_ERR("DLC of %d for non-FD format frame", frame->dlc);
+			LOG_ERROR("DLC of %d for non-FD format frame", frame->dlc);
 			return -EINVAL;
 		}
 	}
@@ -921,9 +921,9 @@ static inline int can_renesas_module_clock_init(const struct device *dev)
 	}
 
 	if (dll_rate < global_cfg->dll_min_freq || dll_rate > global_cfg->dll_max_freq) {
-		LOG_ERR("%s frequency is out of supported range: %d < %s freq < %d",
-			cfg->dll_clk->name, global_cfg->dll_min_freq, cfg->dll_clk->name,
-			global_cfg->dll_max_freq);
+		LOG_ERROR("%s frequency is out of supported range: %d < %s freq < %d",
+			  cfg->dll_clk->name, global_cfg->dll_min_freq, cfg->dll_clk->name,
+			  global_cfg->dll_max_freq);
 		return -ENOTSUP;
 	}
 
@@ -933,8 +933,8 @@ static inline int can_renesas_module_clock_init(const struct device *dev)
 	 * Otherwise, it must be at least 32MHz.
 	 */
 	if (IS_ENABLED(CONFIG_CAN_FD_MODE) ? op_rate < MHZ(40) : op_rate < MHZ(32)) {
-		LOG_ERR("%s frequency should be at least %d", global_cfg->op_clk->name,
-			IS_ENABLED(CONFIG_CAN_FD_MODE) ? MHZ(40) : MHZ(32));
+		LOG_ERROR("%s frequency should be at least %d", global_cfg->op_clk->name,
+			  IS_ENABLED(CONFIG_CAN_FD_MODE) ? MHZ(40) : MHZ(32));
 		return -ENOTSUP;
 	}
 
@@ -943,10 +943,10 @@ static inline int can_renesas_module_clock_init(const struct device *dev)
 	 * (CANFD operation clock rate) >= DLL rate
 	 */
 	if ((ram_rate / 2) < dll_rate || op_rate < dll_rate) {
-		LOG_ERR("%s frequency should be less than half of %s and %s frequency should "
-			"be less than %s",
-			global_cfg->ram_clk->name, cfg->dll_clk->name, global_cfg->op_clk->name,
-			cfg->dll_clk->name);
+		LOG_ERROR("%s frequency should be less than half of %s and %s frequency should "
+			  "be less than %s",
+			  global_cfg->ram_clk->name, cfg->dll_clk->name, global_cfg->op_clk->name,
+			  cfg->dll_clk->name);
 		return -ENOTSUP;
 	}
 

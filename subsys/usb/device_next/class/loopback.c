@@ -109,13 +109,13 @@ static int lb_submit_bulk_out(struct usbd_class_data *const c_data)
 
 	buf = usbd_ep_buf_alloc(c_data, lb_get_bulk_out(c_data), sizeof(lb_buf));
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		return -ENOMEM;
 	}
 
 	err = usbd_ep_enqueue(c_data, buf);
 	if (err) {
-		LOG_ERR("Failed to enqueue buffer");
+		LOG_ERROR("Failed to enqueue buffer");
 		net_buf_unref(buf);
 	}
 
@@ -138,14 +138,14 @@ static int lb_submit_bulk_in(struct usbd_class_data *const c_data)
 
 	buf = usbd_ep_buf_alloc(c_data, lb_get_bulk_in(c_data), sizeof(lb_buf));
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		return -ENOMEM;
 	}
 
 	net_buf_add_mem(buf, lb_buf, MIN(sizeof(lb_buf), net_buf_tailroom(buf)));
 	err = usbd_ep_enqueue(c_data, buf);
 	if (err) {
-		LOG_ERR("Failed to enqueue buffer");
+		LOG_ERROR("Failed to enqueue buffer");
 		net_buf_unref(buf);
 	}
 
@@ -176,7 +176,7 @@ static int lb_request_handler(struct usbd_class_data *const c_data,
 	if (err == -ECONNABORTED) {
 		LOG_INF("Transfer ep 0x%02x, len %zu cancelled", ep, len);
 	} else if (err != 0) {
-		LOG_ERR("Transfer ep 0x%02x, len %zu failed", ep, len);
+		LOG_ERROR("Transfer ep 0x%02x, len %zu failed", ep, len);
 		ret = err;
 	} else {
 		LOG_DBG("Transfer ep 0x%02x, len %zu finished", ep, len);
@@ -221,7 +221,7 @@ static int lb_control_to_host(struct usbd_class_data *c_data,
 		return 0;
 	}
 
-	LOG_ERR("Class request 0x%x not supported", setup->bRequest);
+	LOG_ERROR("Class request 0x%x not supported", setup->bRequest);
 	errno = -ENOTSUP;
 
 	return 0;
@@ -243,7 +243,7 @@ static int lb_control_to_dev(struct usbd_class_data *c_data,
 		return 0;
 	}
 
-	LOG_ERR("Class request 0x%x not supported", setup->bRequest);
+	LOG_ERROR("Class request 0x%x not supported", setup->bRequest);
 	errno = -ENOTSUP;
 
 	return 0;

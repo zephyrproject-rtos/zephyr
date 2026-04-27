@@ -267,17 +267,17 @@ static int pwm_rza2m_gpt_set_cycles(const struct device *dev, uint32_t channel, 
 	bool is_inv;
 
 	if (!(channel == RZ_PWM_GPT_IO_A || channel == RZ_PWM_GPT_IO_B)) {
-		LOG_ERR("Valid only for RZ_PWM_GPT_IO_A and RZ_PWM_GPT_IO_B pins");
+		LOG_ERROR("Valid only for RZ_PWM_GPT_IO_A and RZ_PWM_GPT_IO_B pins");
 		return -EINVAL;
 	}
 
 	if (period_cyc == 0) {
-		LOG_ERR("%s: period is equal to zero", dev->name);
+		LOG_ERROR("%s: period is equal to zero", dev->name);
 		return -EINVAL;
 	}
 
 	if (period_cyc < pulse_cyc) {
-		LOG_ERR("%s: period duration less than pulse duration", dev->name);
+		LOG_ERROR("%s: period duration less than pulse duration", dev->name);
 		return -EINVAL;
 	}
 
@@ -337,8 +337,8 @@ static int pwm_rza2m_gpt_get_cycles_per_sec(const struct device *dev, uint32_t c
 	clk_divisor = RZA2M_GTCR_GET_TPCS(clk_divisor);
 
 	if (clk_divisor > RZA2M_GTCR_TPCS_MAX_VAL) {
-		LOG_ERR("%s: clock clk_divisor hasn't be bigger than %u", dev->name,
-			RZA2M_GTCR_TPCS_MAX_VAL);
+		LOG_ERROR("%s: clock clk_divisor hasn't be bigger than %u", dev->name,
+			  RZA2M_GTCR_TPCS_MAX_VAL);
 		return -EINVAL;
 	}
 
@@ -402,12 +402,12 @@ static int pwm_rza2m_gpt_configure_capture(const struct device *dev, uint32_t ch
 	int err;
 
 	if (!(channel == RZ_PWM_GPT_IO_A || channel == RZ_PWM_GPT_IO_B)) {
-		LOG_ERR("Valid only for RZ_PWM_GPT_IO_A and RZ_PWM_GPT_IO_B pins");
+		LOG_ERROR("Valid only for RZ_PWM_GPT_IO_A and RZ_PWM_GPT_IO_B pins");
 		return -EINVAL;
 	}
 
 	if (capture->is_busy) {
-		LOG_ERR("%s: capture started, pls, stop before reconfigutration", dev->name);
+		LOG_ERROR("%s: capture started, pls, stop before reconfigutration", dev->name);
 		return -EBUSY;
 	}
 
@@ -455,17 +455,17 @@ static int pwm_rza2m_gpt_enable_capture(const struct device *dev, uint32_t chann
 	uint32_t intad, st, ssr;
 
 	if (!(channel == RZ_PWM_GPT_IO_A || channel == RZ_PWM_GPT_IO_B)) {
-		LOG_ERR("Valid only for RZ_PWM_GPT_IO_A and RZ_PWM_GPT_IO_B pins");
+		LOG_ERROR("Valid only for RZ_PWM_GPT_IO_A and RZ_PWM_GPT_IO_B pins");
 		return -EINVAL;
 	}
 
 	if (!capture->callback) {
-		LOG_ERR("PWM capture not configured");
+		LOG_ERROR("PWM capture not configured");
 		return -EINVAL;
 	}
 
 	if (capture->is_busy) {
-		LOG_ERR("Capture already active on this pin");
+		LOG_ERROR("Capture already active on this pin");
 		return -EBUSY;
 	}
 
@@ -526,7 +526,7 @@ static int pwm_rza2m_gpt_disable_capture(const struct device *dev, uint32_t chan
 	uint32_t reg, st;
 
 	if (!(channel == RZ_PWM_GPT_IO_A || channel == RZ_PWM_GPT_IO_B)) {
-		LOG_ERR("Valid only for RZ_PWM_GPT_IO_A and RZ_PWM_GPT_IO_B pins");
+		LOG_ERROR("Valid only for RZ_PWM_GPT_IO_A and RZ_PWM_GPT_IO_B pins");
 		return -EINVAL;
 	}
 
@@ -599,7 +599,7 @@ static int pwm_rza2m_gpt_init(const struct device *dev)
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
-		LOG_ERR("Failed to configure pins for PWM (%d)", err);
+		LOG_ERROR("Failed to configure pins for PWM (%d)", err);
 		return err;
 	}
 

@@ -73,8 +73,8 @@ void *llext_memblk_aligned_alloc_data_instr(struct llext *ext, sys_mem_blocks_t 
 	}
 
 	if (CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE % align != 0) {
-		LOG_ERR("Requested alignment %zu not possible with block alignment %d", align,
-			CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE);
+		LOG_ERROR("Requested alignment %zu not possible with block alignment %d", align,
+			  CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE);
 		return NULL;
 	}
 
@@ -98,7 +98,7 @@ void llext_memblk_free_data_instr(struct llext *ext, sys_mem_blocks_t *memblk_he
 	struct llext_alloc *mem_alloc = get_llext_alloc(&ext->mem_alloc_map, ptr);
 
 	if (!mem_alloc) {
-		LOG_ERR("Could not find sys_mem_blocks alloc to free pointer %p", ptr);
+		LOG_ERROR("Could not find sys_mem_blocks alloc to free pointer %p", ptr);
 		return;
 	}
 

@@ -402,14 +402,14 @@ static int numaker_usbd_send_msg(const struct device *dev, const struct numaker_
 			.type = NUMAKER_USBD_MSG_TYPE_SW_RECONN,
 		};
 
-		LOG_ERR("Message queue overflow");
+		LOG_ERROR("Message queue overflow");
 
 		/* Discard all not yet received messages for error recovery below */
 		k_msgq_purge(priv->msgq);
 
 		err = k_msgq_put(priv->msgq, &msg_reconn, K_NO_WAIT);
 		if (err < 0) {
-			LOG_ERR("Message queue overflow again");
+			LOG_ERROR("Message queue overflow again");
 		}
 	}
 
@@ -447,7 +447,7 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 
 	/* Reset controller ready? */
 	if (!device_is_ready(config->reset.dev)) {
-		LOG_ERR("Reset controller not ready");
+		LOG_ERROR("Reset controller not ready");
 		return -ENODEV;
 	}
 
@@ -545,7 +545,7 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 	}
 	err = numaker_usbd_enable_usb_phy(dev);
 	if (err < 0) {
-		LOG_ERR("Enable USB/PHY failed");
+		LOG_ERROR("Enable USB/PHY failed");
 		goto cleanup;
 	}
 
@@ -1826,14 +1826,14 @@ static int numaker_usbd_xfer_out(const struct device *dev, uint8_t ep, bool stri
 	bool status = false;
 
 	if (!USB_EP_DIR_IS_OUT(ep)) {
-		LOG_ERR("Invalid EP address 0x%02x for data out", ep);
+		LOG_ERROR("Invalid EP address 0x%02x for data out", ep);
 		return -EINVAL;
 	}
 
 	ep_cfg = udc_get_ep_cfg(dev, ep);
 	if (udc_ep_is_busy(ep_cfg)) {
 		if (strict) {
-			LOG_ERR("EP 0x%02x busy", ep);
+			LOG_ERROR("EP 0x%02x busy", ep);
 			return -EAGAIN;
 		}
 
@@ -1843,7 +1843,7 @@ static int numaker_usbd_xfer_out(const struct device *dev, uint8_t ep, bool stri
 	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
 		if (strict) {
-			LOG_ERR("No buffer queued for EP 0x%02x", ep);
+			LOG_ERROR("No buffer queued for EP 0x%02x", ep);
 			return -ENODATA;
 		}
 
@@ -1863,7 +1863,7 @@ static int numaker_usbd_xfer_out(const struct device *dev, uint8_t ep, bool stri
 	/* Bind EP H/W context to EP address */
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
 	if (!ep_cur) {
-		LOG_ERR("Bind EP H/W context: ep=0x%02x", ep);
+		LOG_ERROR("Bind EP H/W context: ep=0x%02x", ep);
 		return -ENODEV;
 	}
 
@@ -1881,14 +1881,14 @@ static int numaker_usbd_xfer_in(const struct device *dev, uint8_t ep, bool stric
 	uint32_t data_len;
 
 	if (!USB_EP_DIR_IS_IN(ep)) {
-		LOG_ERR("Invalid EP address 0x%02x for data in", ep);
+		LOG_ERROR("Invalid EP address 0x%02x for data in", ep);
 		return -EINVAL;
 	}
 
 	ep_cfg = udc_get_ep_cfg(dev, ep);
 	if (udc_ep_is_busy(ep_cfg)) {
 		if (strict) {
-			LOG_ERR("EP 0x%02x busy", ep);
+			LOG_ERROR("EP 0x%02x busy", ep);
 			return -EAGAIN;
 		}
 
@@ -1898,7 +1898,7 @@ static int numaker_usbd_xfer_in(const struct device *dev, uint8_t ep, bool stric
 	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
 		if (strict) {
-			LOG_ERR("No buffer queued for EP 0x%02x", ep);
+			LOG_ERROR("No buffer queued for EP 0x%02x", ep);
 			return -ENODATA;
 		}
 
@@ -1908,7 +1908,7 @@ static int numaker_usbd_xfer_in(const struct device *dev, uint8_t ep, bool stric
 	/* Bind EP H/W context to EP address */
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
 	if (!ep_cur) {
-		LOG_ERR("ep=0x%02x", ep);
+		LOG_ERROR("ep=0x%02x", ep);
 		return -ENODEV;
 	}
 
@@ -1916,7 +1916,7 @@ static int numaker_usbd_xfer_in(const struct device *dev, uint8_t ep, bool stric
 	if (data_len) {
 		err = numaker_usbd_ep_copy_from_user(ep_cur, buf->data, &data_len);
 		if (err < 0) {
-			LOG_ERR("Transfer to USB buffer failed: %d", err);
+			LOG_ERROR("Transfer to USB buffer failed: %d", err);
 			return err;
 		}
 		net_buf_pull(buf, data_len);
@@ -1943,7 +1943,7 @@ static int numaker_usbd_msg_handle_attach(const struct device *dev, struct numak
 	if (config->is_hsusbd) {
 		err = numaker_usbd_enable_usb_phy(dev);
 		if (err < 0) {
-			LOG_ERR("Enable USB/PHY failed");
+			LOG_ERROR("Enable USB/PHY failed");
 			return -err;
 		}
 	} else {
@@ -1966,7 +1966,7 @@ static int numaker_usbd_msg_handle_reset(const struct device *dev, struct numake
 	if (config->is_hsusbd) {
 		err = numaker_usbd_enable_usb_phy(dev);
 		if (err < 0) {
-			LOG_ERR("Enable USB/PHY failed");
+			LOG_ERROR("Enable USB/PHY failed");
 			return -err;
 		}
 	} else {
@@ -1993,7 +1993,7 @@ static int numaker_usbd_msg_handle_resume(const struct device *dev, struct numak
 	if (config->is_hsusbd) {
 		err = numaker_usbd_enable_usb_phy(dev);
 		if (err < 0) {
-			LOG_ERR("Enable USB/PHY failed");
+			LOG_ERROR("Enable USB/PHY failed");
 			return -err;
 		}
 	} else {
@@ -2021,7 +2021,7 @@ static int numaker_usbd_msg_handle_setup(const struct device *dev, struct numake
 	/* Bind EP H/W context to EP address */
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
 	if (!ep_cur) {
-		LOG_ERR("Bind EP H/W context: ep=0x%02x", ep);
+		LOG_ERROR("Bind EP H/W context: ep=0x%02x", ep);
 		return -ENODEV;
 	}
 
@@ -2086,13 +2086,13 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 	/* Bind EP H/W context to EP address */
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
 	if (!ep_cur) {
-		LOG_ERR("Bind EP H/W context: ep=0x%02x", ep);
+		LOG_ERROR("Bind EP H/W context: ep=0x%02x", ep);
 		return -ENODEV;
 	}
 
 	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer queued for ep=0x%02x", ep);
+		LOG_ERROR("No buffer queued for ep=0x%02x", ep);
 		return -ENODATA;
 	}
 
@@ -2104,7 +2104,7 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 	data_ptr = net_buf_tail(buf);
 	err = numaker_usbd_ep_copy_to_user(ep_cur, data_ptr, &data_len, &data_rmn);
 	if (err < 0) {
-		LOG_ERR("Transfer from USB buffer failed: %d", err);
+		LOG_ERROR("Transfer from USB buffer failed: %d", err);
 		return err;
 	}
 	net_buf_add(buf, data_len);
@@ -2124,7 +2124,7 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 
 		err = udc_submit_ep_event(dev, buf, 0);
 		if (err < 0) {
-			LOG_ERR("udc_submit_ep_event failed for ep=0x%02x: %d", ep, err);
+			LOG_ERROR("udc_submit_ep_event failed for ep=0x%02x: %d", ep, err);
 		}
 
 		return err;
@@ -2144,7 +2144,7 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 
 		err = udc_submit_ep_event(dev, buf, 0);
 		if (err < 0) {
-			LOG_ERR("udc_submit_ep_event failed for ep=0x%02x: %d", ep, err);
+			LOG_ERROR("udc_submit_ep_event failed for ep=0x%02x: %d", ep, err);
 			return err;
 		}
 	}
@@ -2175,7 +2175,7 @@ static int numaker_usbd_msg_handle_in(const struct device *dev, struct numaker_u
 	/* Bind EP H/W context to EP address */
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep);
 	if (!ep_cur) {
-		LOG_ERR("Bind EP H/W context: ep=0x%02x", ep);
+		LOG_ERROR("Bind EP H/W context: ep=0x%02x", ep);
 		return -ENODEV;
 	}
 
@@ -2194,7 +2194,7 @@ static int numaker_usbd_msg_handle_in(const struct device *dev, struct numaker_u
 
 	err = udc_submit_ep_event(dev, buf, 0);
 	if (err < 0) {
-		LOG_ERR("udc_submit_ep_event failed for ep=0x%02x: %d", ep, err);
+		LOG_ERROR("udc_submit_ep_event failed for ep=0x%02x: %d", ep, err);
 		return err;
 	}
 
@@ -2228,7 +2228,7 @@ static int numaker_usbd_msg_handle_status(const struct device *dev, struct numak
 
 	bi = udc_get_buf_info(buf);
 	if (!bi->status) {
-		LOG_ERR("enqueued buffer is not status");
+		LOG_ERROR("enqueued buffer is not status");
 		return -EINVAL;
 	}
 
@@ -2237,7 +2237,7 @@ static int numaker_usbd_msg_handle_status(const struct device *dev, struct numak
 
 	err = udc_submit_ep_event(dev, buf, 0);
 	if (err < 0) {
-		LOG_ERR("udc_submit_ep_event failed for ep=0x%02x: %d", ep, err);
+		LOG_ERROR("udc_submit_ep_event failed for ep=0x%02x: %d", ep, err);
 		return err;
 	}
 
@@ -2604,7 +2604,7 @@ static int udc_numaker_ep_dequeue(const struct device *dev, struct udc_ep_config
 	/* Bind EP H/W context to EP address */
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep_cfg->addr);
 	if (!ep_cur) {
-		LOG_ERR("Bind EP H/W context: ep=0x%02x", ep_cfg->addr);
+		LOG_ERROR("Bind EP H/W context: ep=0x%02x", ep_cfg->addr);
 		return -ENODEV;
 	}
 
@@ -2624,7 +2624,7 @@ static int udc_numaker_ep_set_halt(const struct device *dev, struct udc_ep_confi
 	/* Bind EP H/W context to EP address */
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep_cfg->addr);
 	if (!ep_cur) {
-		LOG_ERR("Bind EP H/W context: ep=0x%02x", ep_cfg->addr);
+		LOG_ERROR("Bind EP H/W context: ep=0x%02x", ep_cfg->addr);
 		return -ENODEV;
 	}
 
@@ -2644,7 +2644,7 @@ static int udc_numaker_ep_clear_halt(const struct device *dev, struct udc_ep_con
 	/* Bind EP H/W context to EP address */
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep_cfg->addr);
 	if (!ep_cur) {
-		LOG_ERR("Bind EP H/W context: ep=0x%02x", ep_cfg->addr);
+		LOG_ERROR("Bind EP H/W context: ep=0x%02x", ep_cfg->addr);
 		return -ENODEV;
 	}
 
@@ -2672,7 +2672,7 @@ static int udc_numaker_ep_enable(const struct device *dev, struct udc_ep_config 
 	/* Bind EP H/W context to EP address */
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep_cfg->addr);
 	if (!ep_cur) {
-		LOG_ERR("Bind EP H/W context: ep=0x%02x", ep_cfg->addr);
+		LOG_ERROR("Bind EP H/W context: ep=0x%02x", ep_cfg->addr);
 		return -ENODEV;
 	}
 
@@ -2682,7 +2682,7 @@ static int udc_numaker_ep_enable(const struct device *dev, struct udc_ep_config 
 		err = numaker_usbd_ep_mgmt_alloc_dmabuf(dev, ep_cfg->mps, &dmabuf_base,
 							&dmabuf_size);
 		if (err < 0) {
-			LOG_ERR("Allocate DMA buffer failed");
+			LOG_ERROR("Allocate DMA buffer failed");
 			return err;
 		}
 
@@ -2717,7 +2717,7 @@ static int udc_numaker_ep_disable(const struct device *dev, struct udc_ep_config
 	/* Bind EP H/W context to EP address */
 	ep_cur = numaker_usbd_ep_mgmt_bind_ep(dev, ep_cfg->addr);
 	if (!ep_cur) {
-		LOG_ERR("Bind EP H/W context: ep=0x%02x", ep_cfg->addr);
+		LOG_ERROR("Bind EP H/W context: ep=0x%02x", ep_cfg->addr);
 		return -ENODEV;
 	}
 
@@ -2757,7 +2757,7 @@ static int udc_numaker_host_wakeup(const struct device *dev)
 	/* Enable back USB/PHY first */
 	err = numaker_usbd_enable_usb_phy(dev);
 	if (err < 0) {
-		LOG_ERR("Enable USB/PHY failed");
+		LOG_ERROR("Enable USB/PHY failed");
 		return -EIO;
 	}
 
@@ -2852,7 +2852,7 @@ static int udc_numaker_init(const struct device *dev)
 	/* Initialize UDC H/W */
 	err = numaker_usbd_hw_setup(dev);
 	if (err < 0) {
-		LOG_ERR("Set up H/W: %d", err);
+		LOG_ERROR("Set up H/W: %d", err);
 		return err;
 	}
 
@@ -2863,12 +2863,12 @@ static int udc_numaker_init(const struct device *dev)
 	numaker_usbd_ep_mgmt_init(dev);
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
@@ -2887,12 +2887,12 @@ static int udc_numaker_shutdown(const struct device *dev)
 	struct udc_numaker_data *priv = udc_get_private(dev);
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
@@ -2962,7 +2962,7 @@ static int udc_numaker_driver_preinit(const struct device *dev)
 		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
 		err = udc_register_ep(dev, &config->ep_cfg_out[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}
@@ -2987,7 +2987,7 @@ static int udc_numaker_driver_preinit(const struct device *dev)
 		config->ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
 		err = udc_register_ep(dev, &config->ep_cfg_in[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}

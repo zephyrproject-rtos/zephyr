@@ -52,7 +52,7 @@ static int led_init(otCoapResource *rsc)
 
 		ret = gpio_pin_configure_dt(&led->gpio, GPIO_OUTPUT);
 		if (ret) {
-			LOG_ERR("Failed to configure the GPIO");
+			LOG_ERROR("Failed to configure the GPIO");
 			return ret;
 		}
 	}
@@ -71,7 +71,7 @@ static int led_handler_put(void *ctx, uint8_t *buf, int size)
 		       &led_data);
 
 	if (led_data.led_id >= led_ctx->count) {
-		LOG_ERR("Invalid led id: %x", led_data.led_id);
+		LOG_ERROR("Invalid led id: %x", led_data.led_id);
 		return -EINVAL;
 	}
 	led = &led_ctx->led[led_data.led_id];
@@ -90,7 +90,7 @@ static int led_handler_put(void *ctx, uint8_t *buf, int size)
 		ret = gpio_pin_set_dt(&led->gpio, led->state);
 		break;
 	default:
-		LOG_ERR("Set an unsupported LED state: %x", led_data.state);
+		LOG_ERROR("Set an unsupported LED state: %x", led_data.state);
 	}
 
 	return ret;

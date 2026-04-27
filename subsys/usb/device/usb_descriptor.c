@@ -447,8 +447,9 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 			if (if_descr->bInterfaceNumber == 0U) {
 				cfg_data = usb_get_cfg_data(if_descr);
 				if (!cfg_data) {
-					LOG_ERR("There is no usb_cfg_data "
-						"for %p", head);
+					LOG_ERROR("There is no usb_cfg_data "
+						  "for %p",
+						  head);
 					return -1;
 				}
 
@@ -462,17 +463,15 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 			break;
 		case USB_DESC_ENDPOINT:
 			if (!cfg_data) {
-				LOG_ERR("Uninitialized usb_cfg_data pointer, "
-					"corrupted device descriptor?");
+				LOG_ERROR("Uninitialized usb_cfg_data pointer, "
+					  "corrupted device descriptor?");
 				return -1;
 			}
 
 			LOG_DBG("Endpoint descriptor %p", head);
 			ep_descr = (struct usb_ep_descriptor *)head;
-			if (usb_validate_ep_cfg_data(ep_descr,
-						     cfg_data,
-						     &requested_ep)) {
-				LOG_ERR("Failed to validate endpoints");
+			if (usb_validate_ep_cfg_data(ep_descr, cfg_data, &requested_ep)) {
+				LOG_ERROR("Failed to validate endpoints");
 				return -1;
 			}
 
@@ -495,7 +494,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 				ascii7_to_utf16le(head);
 			} else {
 				if (!cfg_descr) {
-					LOG_ERR("Incomplete device descriptor");
+					LOG_ERROR("Incomplete device descriptor");
 					return -1;
 				}
 
@@ -535,7 +534,7 @@ uint8_t *usb_get_device_descriptor(void)
 
 	if (!initialized) {
 		if (usb_fix_descriptor(__usb_descriptor_start)) {
-			LOG_ERR("Failed to fixup USB descriptor");
+			LOG_ERROR("Failed to fixup USB descriptor");
 			return NULL;
 		}
 

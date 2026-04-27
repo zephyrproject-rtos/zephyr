@@ -150,7 +150,7 @@ static int iproc_pcie_raise_irq(const struct device *dev,
 		ret = -ENOTSUP;
 		break;
 	default:
-		LOG_ERR("Unknown IRQ type\n");
+		LOG_ERROR("Unknown IRQ type\n");
 		ret = -EINVAL;
 	}
 
@@ -188,7 +188,7 @@ static int iproc_pcie_pl330_dma_xfer(const struct device *dev,
 	int ret = -EINVAL;
 
 	if (!device_is_ready(cfg->pl330_dev)) {
-		LOG_ERR("DMA controller is not ready\n");
+		LOG_ERROR("DMA controller is not ready\n");
 		ret = -ENODEV;
 		goto out;
 	}
@@ -211,14 +211,14 @@ static int iproc_pcie_pl330_dma_xfer(const struct device *dev,
 
 	ret = dma_config(cfg->pl330_dev, chan_id,  &dma_cfg);
 	if (ret) {
-		LOG_ERR("DMA config failed\n");
+		LOG_ERROR("DMA config failed\n");
 		goto out;
 	}
 
 	/* start DMA */
 	ret = dma_start(cfg->pl330_dev, chan_id);
 	if (ret) {
-		LOG_ERR("DMA transfer failed\n");
+		LOG_ERROR("DMA transfer failed\n");
 	}
 out:
 	return ret;
@@ -439,7 +439,7 @@ static int iproc_pcie_ep_init(const struct device *dev)
 
 	ret = iproc_pcie_mode_check(cfg);
 	if (ret) {
-		LOG_ERR("ERROR: Only PCIe EP mode is supported\n");
+		LOG_ERROR("ERROR: Only PCIe EP mode is supported\n");
 		goto err_out;
 	}
 

@@ -460,7 +460,7 @@ int ad405x_init_conv(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&cfg->conversion)) {
-		LOG_ERR("GPIO port %s not ready", cfg->conversion.port->name);
+		LOG_ERROR("GPIO port %s not ready", cfg->conversion.port->name);
 		return -EINVAL;
 	}
 
@@ -484,7 +484,7 @@ int ad405x_init_interrupt(const struct device *dev)
 	if (cfg->has_gp1 != 0) {
 
 		if (!gpio_is_ready_dt(&cfg->gp1_interrupt)) {
-			LOG_ERR("GPIO port %s not ready", cfg->gp1_interrupt.port->name);
+			LOG_ERROR("GPIO port %s not ready", cfg->gp1_interrupt.port->name);
 			return -EINVAL;
 		}
 
@@ -498,7 +498,7 @@ int ad405x_init_interrupt(const struct device *dev)
 
 		ret = gpio_add_callback(cfg->gp1_interrupt.port, &drv_data->gpio1_cb);
 		if (ret != 0) {
-			LOG_ERR("Failed to set gpio callback!");
+			LOG_ERROR("Failed to set gpio callback!");
 			return ret;
 		}
 
@@ -508,7 +508,7 @@ int ad405x_init_interrupt(const struct device *dev)
 	if (cfg->has_gp0 != 0) {
 
 		if (!gpio_is_ready_dt(&cfg->gp0_interrupt)) {
-			LOG_ERR("GPIO port %s not ready", cfg->gp0_interrupt.port->name);
+			LOG_ERROR("GPIO port %s not ready", cfg->gp0_interrupt.port->name);
 			return -EINVAL;
 		}
 
@@ -522,7 +522,7 @@ int ad405x_init_interrupt(const struct device *dev)
 
 		ret = gpio_add_callback(cfg->gp0_interrupt.port, &drv_data->gpio0_cb);
 		if (ret != 0) {
-			LOG_ERR("Failed to set gpio callback!");
+			LOG_ERROR("Failed to set gpio callback!");
 			return ret;
 		}
 	}
@@ -536,11 +536,11 @@ static int ad405x_channel_setup(const struct device *dev,
 {
 	const struct adc_ad405x_config *cfg = dev->config;
 	if (channel_cfg->channel_id != 0) {
-		LOG_ERR("invalid channel id %d", channel_cfg->channel_id);
+		LOG_ERROR("invalid channel id %d", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 	if (channel_cfg->differential != cfg->spec.channel_cfg.differential) {
-		LOG_ERR("invalid mode %d", channel_cfg->differential);
+		LOG_ERROR("invalid mode %d", channel_cfg->differential);
 		return -EINVAL;
 	}
 
@@ -849,20 +849,20 @@ static int adc_ad405x_start_read(const struct device *dev, const struct adc_sequ
 
 	if (cfg->chip_id == AD4050_CHIP_ID) {
 		if (sequence->resolution != cfg->spec.resolution) {
-			LOG_ERR("invalid resolution %d", sequence->resolution);
+			LOG_ERROR("invalid resolution %d", sequence->resolution);
 			return -EINVAL;
 		}
 	}
 	if (cfg->chip_id == AD4052_CHIP_ID) {
 		if (sequence->resolution != cfg->spec.resolution) {
-			LOG_ERR("invalid resolution %d", sequence->resolution);
+			LOG_ERROR("invalid resolution %d", sequence->resolution);
 			return -EINVAL;
 		}
 	}
 
 	ret = adc_ad405x_validate_buffer_size(dev, sequence);
 	if (ret < 0) {
-		LOG_ERR("insufficient buffer size");
+		LOG_ERROR("insufficient buffer size");
 		return ret;
 	}
 
@@ -922,14 +922,14 @@ static int adc_ad405x_init(const struct device *dev)
 	uint16_t reg_val_res;
 
 	if (!adc_ad405x_bus_is_ready(dev)) {
-		LOG_ERR("bus not ready");
+		LOG_ERROR("bus not ready");
 		return -ENODEV;
 	}
 
 #if CONFIG_AD405X_TRIGGER
 	ret = ad405x_init_interrupt(dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to initialize interrupt!");
+		LOG_ERROR("Failed to initialize interrupt!");
 		return -EIO;
 	}
 #else
@@ -961,7 +961,7 @@ static int adc_ad405x_init(const struct device *dev)
 	reg_val_res = (reg_val_hi << 8) | reg_val;
 	if ((reg_val_res != AD4052_REG_PRODUCT_ID_VAL) &&
 	    (reg_val_res != AD4050_REG_PRODUCT_ID_VAL)) {
-		LOG_ERR("Invalid product id");
+		LOG_ERROR("Invalid product id");
 		return -ENODEV;
 	}
 
@@ -971,7 +971,7 @@ static int adc_ad405x_init(const struct device *dev)
 	}
 
 	if (reg_val != AD405X_REG_DEVICE_TYPE_VAL) {
-		LOG_ERR("Invalid device type");
+		LOG_ERROR("Invalid device type");
 		return -ENODEV;
 	}
 
@@ -987,18 +987,18 @@ static int adc_ad405x_init(const struct device *dev)
 
 	reg_val_res = (reg_val_hi << 8) | reg_val;
 	if (reg_val_res != AD405X_REG_VENDOR_VAL) {
-		LOG_ERR("Invalid vendor value");
+		LOG_ERROR("Invalid vendor value");
 		return -ENODEV;
 	}
 
 	if (cfg->chip_id == AD4050_CHIP_ID) {
 		if (cfg->spec.resolution != AD4050_ADC_RESOLUTION) {
-			LOG_ERR("Invalid resolution %d", cfg->spec.resolution);
+			LOG_ERROR("Invalid resolution %d", cfg->spec.resolution);
 			return -EINVAL;
 		}
 	} else {
 		if (cfg->spec.resolution != AD4052_ADC_RESOLUTION) {
-			LOG_ERR("Invalid resolution %d", cfg->spec.resolution);
+			LOG_ERROR("Invalid resolution %d", cfg->spec.resolution);
 			return -EINVAL;
 		}
 	}
@@ -1023,7 +1023,7 @@ void ad405x_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev
 	const struct adc_ad405x_config *cfg_405 = (const struct adc_ad405x_config *)dev->config;
 
 	if (data->data_ready_gpio > AD405X_GP1)	{
-		LOG_ERR("DATA_READY irq is not enabled!");
+		LOG_ERROR("DATA_READY irq is not enabled!");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 		return;
 	}
@@ -1047,7 +1047,7 @@ void ad405x_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev
 		rc = ad405x_set_operation_mode(dev, cfg_405->active_mode);
 
 		if (rc < 0) {
-			LOG_ERR("Set operation mode failed!");
+			LOG_ERROR("Set operation mode failed!");
 			return;
 		}
 		ad405x_timer_init(dev);
@@ -1215,7 +1215,7 @@ static void ad405x_stream_irq_handler(const struct device *dev)
 	int ret = counter_get_value(data->timer_dev, &ticks);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to get timer value");
+		LOG_ERROR("Failed to get timer value");
 		data->timestamp = 0;
 		return;
 	}
@@ -1229,7 +1229,7 @@ static void ad405x_stream_irq_handler(const struct device *dev)
 
 	/* Not inherently an underrun/overrun as we may have a buffer to fill next time */
 	if (current_sqe == NULL) {
-		LOG_ERR("No pending SQE");
+		LOG_ERROR("No pending SQE");
 		return;
 	}
 

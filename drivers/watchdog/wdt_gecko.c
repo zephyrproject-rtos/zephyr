@@ -106,7 +106,7 @@ static int wdt_gecko_setup(const struct device *dev, uint8_t options)
 	}
 
 	if (!data->timeout_installed) {
-		LOG_ERR("No valid timeouts installed");
+		LOG_ERROR("No valid timeouts installed");
 		return -EINVAL;
 	}
 
@@ -173,14 +173,14 @@ static int wdt_gecko_install_timeout(const struct device *dev,
 	}
 
 	if (data->timeout_installed) {
-		LOG_ERR("No more timeouts can be installed");
+		LOG_ERROR("No more timeouts can be installed");
 		return -ENOMEM;
 	}
 
 	if ((cfg->window.max < wdt_gecko_get_timeout_from_persel(0)) ||
 		(cfg->window.max > wdt_gecko_get_timeout_from_persel(
 			WDT_GECKO_MAX_PERIOD_SELECT_VALUE))) {
-		LOG_ERR("Upper limit timeout out of range");
+		LOG_ERROR("Upper limit timeout out of range");
 		return -EINVAL;
 	}
 
@@ -214,7 +214,7 @@ static int wdt_gecko_install_timeout(const struct device *dev,
 	switch (cfg->flags) {
 	case WDT_FLAG_RESET_SOC:
 		if (cfg->callback != NULL) {
-			LOG_ERR("Reset mode with callback not supported\n");
+			LOG_ERROR("Reset mode with callback not supported\n");
 			return -ENOTSUP;
 		}
 		data->wdog_config.resetDisable = false;
@@ -228,11 +228,11 @@ static int wdt_gecko_install_timeout(const struct device *dev,
 		break;
 
 	case WDT_FLAG_RESET_CPU_CORE:
-		LOG_ERR("CPU core only reset not supported");
+		LOG_ERROR("CPU core only reset not supported");
 		return -ENOTSUP;
 
 	default:
-		LOG_ERR("Unsupported watchdog config flag");
+		LOG_ERROR("Unsupported watchdog config flag");
 		return -EINVAL;
 	}
 
@@ -247,7 +247,7 @@ static int wdt_gecko_feed(const struct device *dev, int channel_id)
 	WDOG_TypeDef *wdog = config->base;
 
 	if (channel_id != 0) {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 

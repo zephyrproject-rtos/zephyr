@@ -193,18 +193,18 @@ static int usb_smartbond_dma_validate(void)
 	if (!(usbd_dma_cfg.tx_chan & 0x1) ||
 			(usbd_dma_cfg.rx_chan & 0x1) ||
 			(usbd_dma_cfg.tx_chan != (usbd_dma_cfg.rx_chan + 1))) {
-		LOG_ERR("Invalid RX/TX channel selection");
+		LOG_ERROR("Invalid RX/TX channel selection");
 		return -EINVAL;
 	}
 
 	if (usbd_dma_cfg.rx_slot_mux != usbd_dma_cfg.tx_slot_mux) {
-		LOG_ERR("TX/RX DMA slots mismatch");
+		LOG_ERROR("TX/RX DMA slots mismatch");
 		return -EINVAL;
 	}
 
 	if (!device_is_ready(usbd_dma_cfg.tx_dev) ||
 		!device_is_ready(usbd_dma_cfg.rx_dev)) {
-		LOG_ERR("TX/RX DMA device is not ready");
+		LOG_ERROR("TX/RX DMA device is not ready");
 		return -ENODEV;
 	}
 
@@ -220,13 +220,13 @@ static int usb_smartbond_dma_config(void)
 
 	if (dma_request_channel(usbd_dma_cfg.rx_dev,
 				(void *)&usbd_dma_cfg.rx_chan) < 0) {
-		LOG_ERR("RX DMA channel is already occupied");
+		LOG_ERROR("RX DMA channel is already occupied");
 		return -EIO;
 	}
 
 	if (dma_request_channel(usbd_dma_cfg.tx_dev,
 				(void *)&usbd_dma_cfg.tx_chan) < 0) {
-		LOG_ERR("TX DMA channel is already occupied");
+		LOG_ERROR("TX DMA channel is already occupied");
 		return -EIO;
 	}
 
@@ -295,12 +295,12 @@ static int usb_smartbond_dma_config(void)
 	rx_block->block_size = 0;
 
 	if (dma_config(usbd_dma_cfg.rx_dev, usbd_dma_cfg.rx_chan, rx) < 0) {
-		LOG_ERR("RX DMA configuration failed");
+		LOG_ERROR("RX DMA configuration failed");
 		return -EINVAL;
 	}
 
 	if (dma_config(usbd_dma_cfg.tx_dev, usbd_dma_cfg.tx_chan, tx) < 0) {
-		LOG_ERR("TX DMA configuration failed");
+		LOG_ERROR("TX DMA configuration failed");
 		return -EINVAL;
 	}
 
@@ -432,7 +432,7 @@ static void start_rx_dma(volatile void *src, void *dst, uint16_t size)
 {
 	if (dma_reload(usbd_dma_cfg.rx_dev, usbd_dma_cfg.rx_chan,
 		(uint32_t)src, (uint32_t)dst, size) < 0) {
-		LOG_ERR("Failed to reload RX DMA");
+		LOG_ERROR("Failed to reload RX DMA");
 	} else {
 		dma_start(usbd_dma_cfg.rx_dev, usbd_dma_cfg.rx_chan);
 	}
@@ -481,7 +481,7 @@ static void start_tx_dma(void *src, volatile void *dst, uint16_t size)
 {
 	if (dma_reload(usbd_dma_cfg.tx_dev, usbd_dma_cfg.tx_chan,
 		(uint32_t)src, (uint32_t)dst, size) < 0) {
-		LOG_ERR("Failed to reload TX DMA");
+		LOG_ERROR("Failed to reload TX DMA");
 	} else {
 		dma_start(usbd_dma_cfg.tx_dev, usbd_dma_cfg.tx_chan);
 	}
@@ -1171,7 +1171,7 @@ int usb_dc_ep_disable(const uint8_t ep)
 	LOG_DBG("%02x", ep);
 
 	if (ep_state == NULL) {
-		LOG_ERR("Not valid endpoint: %02x", ep);
+		LOG_ERROR("Not valid endpoint: %02x", ep);
 		return -EINVAL;
 	}
 
@@ -1195,7 +1195,7 @@ int usb_dc_ep_mps(const uint8_t ep)
 	struct smartbond_ep_state *ep_state = usb_dc_get_ep_state(ep);
 
 	if (ep_state == NULL) {
-		LOG_ERR("Not valid endpoint: %02x", ep);
+		LOG_ERROR("Not valid endpoint: %02x", ep);
 		return -EINVAL;
 	}
 
@@ -1207,7 +1207,7 @@ int usb_dc_ep_read_continue(uint8_t ep)
 	struct smartbond_ep_state *ep_state = usb_dc_get_ep_out_state(ep);
 
 	if (ep_state == NULL) {
-		LOG_ERR("Not valid endpoint: %02x", ep);
+		LOG_ERROR("Not valid endpoint: %02x", ep);
 		return -EINVAL;
 	}
 
@@ -1230,7 +1230,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	uint16_t read_count;
 
 	if (ep_state == NULL) {
-		LOG_ERR("Invalid Endpoint %x", ep);
+		LOG_ERROR("Invalid Endpoint %x", ep);
 		return -EINVAL;
 	}
 
@@ -1247,7 +1247,7 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 		memcpy(data, ep_state->buffer + ep_state->transferred, read_count);
 		ep_state->transferred += read_count;
 	} else if (max_data_len) {
-		LOG_ERR("Wrong arguments");
+		LOG_ERROR("Wrong arguments");
 	}
 
 	if (read_bytes) {
@@ -1279,17 +1279,17 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data *const cfg)
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL && ep_idx != 0) ||
 	    (cfg->ep_type != USB_DC_EP_CONTROL && ep_idx == 0)) {
-		LOG_ERR("invalid endpoint configuration");
+		LOG_ERROR("invalid endpoint configuration");
 		return -EINVAL;
 	}
 
 	if (ep_idx > 3) {
-		LOG_ERR("endpoint address out of range");
+		LOG_ERROR("endpoint address out of range");
 		return -EINVAL;
 	}
 
 	if (ep_out_buf_size[ep_idx] < cfg->ep_mps) {
-		LOG_ERR("endpoint size too big");
+		LOG_ERROR("endpoint size too big");
 		return -EINVAL;
 	}
 
@@ -1303,7 +1303,7 @@ int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb)
 	LOG_DBG("%02x %p", ep, (void *)cb);
 
 	if (ep_state == NULL) {
-		LOG_ERR("Not valid endpoint: %02x", ep);
+		LOG_ERROR("Not valid endpoint: %02x", ep);
 		return -EINVAL;
 	}
 
@@ -1367,7 +1367,7 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 	LOG_DBG("%02x", ep);
 
 	if (ep_state == NULL) {
-		LOG_ERR("Not valid endpoint: %02x", ep);
+		LOG_ERROR("Not valid endpoint: %02x", ep);
 		return -EINVAL;
 	}
 	regs =  ep_state->regs;
@@ -1397,7 +1397,7 @@ int usb_dc_ep_enable(const uint8_t ep)
 	uint8_t ep_dir = USB_EP_GET_DIR(ep);
 
 	if (ep_state == NULL) {
-		LOG_ERR("Not valid endpoint: %02x", ep);
+		LOG_ERROR("Not valid endpoint: %02x", ep);
 		return -EINVAL;
 	}
 
@@ -1493,7 +1493,7 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data, const uint32_t 
 	struct smartbond_ep_state *ep_state = usb_dc_get_ep_state(ep);
 
 	if (ep_state == NULL) {
-		LOG_ERR("%02x no ep_state", ep);
+		LOG_ERROR("%02x no ep_state", ep);
 		return -EINVAL;
 	}
 
@@ -1542,7 +1542,7 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 	}
 
 	if (ep_state == NULL) {
-		LOG_ERR("Not valid endpoint: %02x", ep);
+		LOG_ERROR("Not valid endpoint: %02x", ep);
 		return -EINVAL;
 	}
 
@@ -1598,11 +1598,11 @@ int usb_dc_ep_flush(const uint8_t ep)
 	struct smartbond_ep_state *ep_state = usb_dc_get_ep_state(ep);
 
 	if (ep_state == NULL) {
-		LOG_ERR("Not valid endpoint: %02x", ep);
+		LOG_ERROR("Not valid endpoint: %02x", ep);
 		return -EINVAL;
 	}
 
-	LOG_ERR("Not implemented");
+	LOG_ERROR("Not implemented");
 
 	return 0;
 }

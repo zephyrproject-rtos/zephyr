@@ -27,7 +27,7 @@ static void setup_ipv6(void)
 	struct net_if *iface = net_if_get_default();
 
 	if (net_addr_pton(NET_AF_INET6, MCAST_IP6ADDR, &addr)) {
-		LOG_ERR("Invalid address: %s", MCAST_IP6ADDR);
+		LOG_ERROR("Invalid address: %s", MCAST_IP6ADDR);
 		return;
 	}
 

@@ -88,8 +88,9 @@ static int fvp_cpu_power_on(unsigned long target_mpidr, uintptr_t entry_point)
 	do {
 		psysr = fvp_pwrc_read_psysr(pwrc_vaddr, target_mpidr);
 		if (timeout-- <= 0) {
-			LOG_ERR("FVP: Timeout waiting for CPU 0x%lx power-off "
-				"to complete, PSYSR=0x%x", target_mpidr, psysr);
+			LOG_ERROR("FVP: Timeout waiting for CPU 0x%lx power-off "
+				  "to complete, PSYSR=0x%x",
+				  target_mpidr, psysr);
 			k_mem_unmap_phys_bare(pwrc_vaddr_ptr, FVP_REGISTER_MAP_SIZE);
 			return -ETIMEDOUT;
 		}
@@ -164,6 +165,6 @@ int pm_system_reset(unsigned char reset_type)
 	 */
 	k_busy_wait(1000000); /* Wait 1 second */
 
-	LOG_ERR("FVP: System reset failed - system did not reset");
+	LOG_ERROR("FVP: System reset failed - system did not reset");
 	return -ETIMEDOUT;
 }

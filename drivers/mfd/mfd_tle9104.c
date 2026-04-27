@@ -190,7 +190,7 @@ static int tle9104_transceive_frame(const struct device *dev, bool write,
 
 	result = spi_transceive_dt(&config->bus, &tx, &rx);
 	if (result != 0) {
-		LOG_ERR("spi_write failed with error %i", result);
+		LOG_ERROR("spi_write failed with error %i", result);
 		return result;
 	}
 
@@ -198,7 +198,7 @@ static int tle9104_transceive_frame(const struct device *dev, bool write,
 	LOG_DBG("received complete frame 0x%04X", read_frame);
 
 	if (!tle9104_check_parity(read_frame)) {
-		LOG_ERR("parity check for received frame of TLE9104 failed");
+		LOG_ERROR("parity check for received frame of TLE9104 failed");
 		return -EIO;
 	}
 
@@ -264,7 +264,7 @@ static int tle9104_write_state_internal(const struct device *dev, uint8_t state)
 
 		result = gpio_pin_set_dt(&config->gpio_control[i], current_value);
 		if (result != 0) {
-			LOG_ERR("unable to set control GPIO");
+			LOG_ERROR("unable to set control GPIO");
 			return result;
 		}
 	}
@@ -272,7 +272,7 @@ static int tle9104_write_state_internal(const struct device *dev, uint8_t state)
 	if (spi_update_required) {
 		result = tle9104_write_register(dev, TLE9104REGISTER_CTRL, register_ctrl);
 		if (result != 0) {
-			LOG_ERR("unable to set control register");
+			LOG_ERROR("unable to set control register");
 			return result;
 		}
 	}
@@ -315,7 +315,7 @@ tle9104_get_diagnostics_internal(const struct device *dev,
 		return result;
 	}
 	if (read_reg != TLE9104REGISTER_DIAGOUT12ON) {
-		LOG_ERR("expected to read different register");
+		LOG_ERROR("expected to read different register");
 		return -EFAULT;
 	}
 
@@ -325,7 +325,7 @@ tle9104_get_diagnostics_internal(const struct device *dev,
 		return result;
 	}
 	if (read_reg != TLE9104REGISTER_DIAGOUT34ON) {
-		LOG_ERR("expected to read different register");
+		LOG_ERROR("expected to read different register");
 		return -EFAULT;
 	}
 
@@ -335,7 +335,7 @@ tle9104_get_diagnostics_internal(const struct device *dev,
 		return result;
 	}
 	if (read_reg != TLE9104REGISTER_DIAGOFF) {
-		LOG_ERR("expected to read different register");
+		LOG_ERROR("expected to read different register");
 		return -EFAULT;
 	}
 
@@ -427,12 +427,12 @@ static int tle9104_init(const struct device *dev)
 
 	result = k_mutex_init(&data->lock);
 	if (result != 0) {
-		LOG_ERR("unable to initialize mutex");
+		LOG_ERROR("unable to initialize mutex");
 		return result;
 	}
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus %s is not ready", config->bus.bus->name);
+		LOG_ERROR("SPI bus %s is not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 
@@ -449,39 +449,39 @@ static int tle9104_init(const struct device *dev)
 		register_cfg |= TLE9104_CFG_OUT1DD_BIT << i;
 
 		if (!gpio_is_ready_dt(current)) {
-			LOG_ERR("%s: control GPIO is not ready", dev->name);
+			LOG_ERROR("%s: control GPIO is not ready", dev->name);
 			return -ENODEV;
 		}
 
 		result = gpio_pin_configure_dt(current, GPIO_OUTPUT_INACTIVE);
 		if (result != 0) {
-			LOG_ERR("failed to initialize control GPIO %i", i);
+			LOG_ERROR("failed to initialize control GPIO %i", i);
 			return result;
 		}
 	}
 
 	if (config->gpio_enable.port != NULL) {
 		if (!gpio_is_ready_dt(&config->gpio_enable)) {
-			LOG_ERR("%s: enable GPIO is not ready", dev->name);
+			LOG_ERROR("%s: enable GPIO is not ready", dev->name);
 			return -ENODEV;
 		}
 
 		result = gpio_pin_configure_dt(&config->gpio_enable, GPIO_OUTPUT_ACTIVE);
 		if (result != 0) {
-			LOG_ERR("failed to enable TLE9104");
+			LOG_ERROR("failed to enable TLE9104");
 			return result;
 		}
 	}
 
 	if (config->gpio_reset.port != NULL) {
 		if (!gpio_is_ready_dt(&config->gpio_reset)) {
-			LOG_ERR("%s: reset GPIO is not yet ready", dev->name);
+			LOG_ERROR("%s: reset GPIO is not yet ready", dev->name);
 			return -ENODEV;
 		}
 
 		result = gpio_pin_configure_dt(&config->gpio_reset, GPIO_OUTPUT_ACTIVE);
 		if (result != 0) {
-			LOG_ERR("failed to initialize GPIO for reset");
+			LOG_ERROR("failed to initialize GPIO for reset");
 			return result;
 		}
 
@@ -502,12 +502,12 @@ static int tle9104_init(const struct device *dev)
 	}
 
 	if (read_reg != TLE9104REGISTER_ICVID) {
-		LOG_ERR("expected to read register ICVID, got instead 0x%02X", read_reg);
+		LOG_ERROR("expected to read register ICVID, got instead 0x%02X", read_reg);
 		return -EIO;
 	}
 
 	if (register_icvid != TLE9104_ICVERSIONID) {
-		LOG_ERR("got unexpected IC version id 0x%02X", register_icvid);
+		LOG_ERROR("got unexpected IC version id 0x%02X", register_icvid);
 		return -EIO;
 	}
 
@@ -518,12 +518,12 @@ static int tle9104_init(const struct device *dev)
 	}
 
 	if (read_reg != TLE9104REGISTER_GLOBALSTATUS) {
-		LOG_ERR("expected to read register GLOBALSTATUS, got instead 0x%02X", read_reg);
+		LOG_ERROR("expected to read register GLOBALSTATUS, got instead 0x%02X", read_reg);
 		return -EIO;
 	}
 
 	if ((register_globalstatus & TLE9104_GLOBALSTATUS_POR_LATCH_BIT) == 0) {
-		LOG_ERR("no power on reset detected");
+		LOG_ERROR("no power on reset detected");
 		return -EIO;
 	}
 
@@ -543,7 +543,7 @@ static int tle9104_init(const struct device *dev)
 
 	result = tle9104_write_register(dev, TLE9104REGISTER_CFG, register_cfg);
 	if (result != 0) {
-		LOG_ERR("unable to write configuration");
+		LOG_ERROR("unable to write configuration");
 		return result;
 	}
 
@@ -558,7 +558,7 @@ static int tle9104_init(const struct device *dev)
 
 	result = tle9104_write_register(dev, TLE9104REGISTER_OFFDIAGCFG, register_cfg);
 	if (result != 0) {
-		LOG_ERR("unable to write OFF-diag configuration");
+		LOG_ERROR("unable to write OFF-diag configuration");
 		return result;
 	}
 
@@ -572,7 +572,7 @@ static int tle9104_init(const struct device *dev)
 
 	result = tle9104_write_register(dev, TLE9104REGISTER_ONDIAGCFG, register_cfg);
 	if (result != 0) {
-		LOG_ERR("unable to write ON-diag configuration");
+		LOG_ERROR("unable to write ON-diag configuration");
 		return result;
 	}
 
@@ -582,7 +582,7 @@ static int tle9104_init(const struct device *dev)
 
 	result = tle9104_write_register(dev, TLE9104REGISTER_GLOBALSTATUS, register_globalstatus);
 	if (result != 0) {
-		LOG_ERR("unable to write global status");
+		LOG_ERROR("unable to write global status");
 		return result;
 	}
 

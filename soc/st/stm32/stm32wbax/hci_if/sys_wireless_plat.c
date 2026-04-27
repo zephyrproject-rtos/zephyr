@@ -39,7 +39,7 @@ void BLEPLAT_Init(void)
 
 	rng_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 	if (!device_is_ready(rng_dev)) {
-		LOG_ERR("error: random device not ready");
+		LOG_ERROR("error: random device not ready");
 	}
 }
 
@@ -105,13 +105,13 @@ void MX_RAMCFG_Init(void)
 	/* Initialize RAMCFG SRAM1 */
 	hramcfg_SRAM1.Instance = RAMCFG_SRAM1;
 	if (HAL_RAMCFG_Init(&hramcfg_SRAM1) != HAL_OK) {
-		LOG_ERR("Could not init RAMCFG");
+		LOG_ERROR("Could not init RAMCFG");
 	}
 }
 
 void Error_Handler(void)
 {
-	LOG_ERR("");
+	LOG_ERROR("");
 }
 
 void enable_rng_clock(bool enable)

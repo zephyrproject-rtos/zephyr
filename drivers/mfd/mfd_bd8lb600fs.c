@@ -123,7 +123,7 @@ static int bd8lb600fs_transceive_state(const struct device *dev)
 	int result = spi_transceive_dt(&config->bus, &tx, &rx);
 
 	if (result != 0) {
-		LOG_ERR("spi_transceive failed with error %i", result);
+		LOG_ERROR("spi_transceive failed with error %i", result);
 		return result;
 	}
 
@@ -151,7 +151,7 @@ static int bd8lb600fs_write_state(const struct device *dev)
 	int result = spi_write_dt(&config->bus, &tx);
 
 	if (result != 0) {
-		LOG_ERR("spi_transceive failed with error %i", result);
+		LOG_ERROR("spi_transceive failed with error %i", result);
 		return result;
 	}
 
@@ -192,26 +192,26 @@ static int bd8lb600fs_init(const struct device *dev)
 	struct bd8lb600fs_data *data = dev->data;
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		LOG_ERROR("SPI bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&config->gpio_reset)) {
-		LOG_ERR("%s: reset GPIO is not ready", dev->name);
+		LOG_ERROR("%s: reset GPIO is not ready", dev->name);
 		return -ENODEV;
 	}
 
 	int result = k_mutex_init(&data->lock);
 
 	if (result != 0) {
-		LOG_ERR("unable to initialize mutex");
+		LOG_ERROR("unable to initialize mutex");
 		return result;
 	}
 
 	result = gpio_pin_configure_dt(&config->gpio_reset, GPIO_OUTPUT_ACTIVE);
 
 	if (result != 0) {
-		LOG_ERR("failed to initialize GPIO for reset");
+		LOG_ERROR("failed to initialize GPIO for reset");
 		return result;
 	}
 

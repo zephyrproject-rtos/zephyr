@@ -98,7 +98,7 @@ static void data_ready_work_handler(struct rtio_iodev_sqe *iodev_sqe)
 			      &edata_len);
 
 	CHECKIF(err || !edata || edata_len < sizeof(struct afbr_s50_edata)) {
-		LOG_ERR("Failed to get buffer for edata");
+		LOG_ERROR("Failed to get buffer for edata");
 		handle_error_on_result(data, -ENOMEM);
 		return;
 	}
@@ -107,7 +107,7 @@ static void data_ready_work_handler(struct rtio_iodev_sqe *iodev_sqe)
 
 	err = sensor_clock_get_cycles(&cycles);
 	CHECKIF(err != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
+		LOG_ERROR("Failed to get sensor clock cycles");
 		handle_error_on_result(data, -EIO);
 		return;
 	}
@@ -120,7 +120,7 @@ static void data_ready_work_handler(struct rtio_iodev_sqe *iodev_sqe)
 
 	status = Argus_EvaluateData(data->platform.argus.handle, &edata->payload);
 	if (status != STATUS_OK) {
-		LOG_ERR("Data not valid: %d, %d", status, edata->payload.Status);
+		LOG_ERROR("Data not valid: %d, %d", status, edata->payload.Status);
 		handle_error_on_result(data, -EIO);
 	}
 	CHECKIF(Argus_IsDataEvaluationPending(data->platform.argus.handle)) {
@@ -153,7 +153,7 @@ static status_t data_ready_callback(status_t status, argus_hnd_t *hnd)
 	 */
 	err = afbr_s50_platform_get_by_hnd(hnd, &platform);
 	CHECKIF(err) {
-		LOG_ERR("Failed to get platform data SQE response can't be sent");
+		LOG_ERROR("Failed to get platform data SQE response can't be sent");
 		return ERROR_FAIL;
 	}
 
@@ -161,7 +161,7 @@ static status_t data_ready_callback(status_t status, argus_hnd_t *hnd)
 	struct rtio_iodev_sqe *iodev_sqe = data->rtio.iodev_sqe;
 
 	if (status != STATUS_OK) {
-		LOG_ERR("Measurement failed: %d", status);
+		LOG_ERROR("Measurement failed: %d", status);
 		handle_error_on_result(data, -EIO);
 		return status;
 	}
@@ -173,8 +173,8 @@ static status_t data_ready_callback(status_t status, argus_hnd_t *hnd)
 	struct rtio_work_req *req = rtio_work_req_alloc();
 
 	CHECKIF(!req) {
-		LOG_ERR("RTIO work item allocation failed. Consider to increase "
-			"CONFIG_RTIO_WORKQ_POOL_ITEMS");
+		LOG_ERROR("RTIO work item allocation failed. Consider to increase "
+			  "CONFIG_RTIO_WORKQ_POOL_ITEMS");
 		handle_error_on_result(data, -ENOMEM);
 		return ERROR_FAIL;
 	}
@@ -202,7 +202,7 @@ static void afbr_s50_submit_single_shot(const struct device *dev,
 	status_t status = Argus_TriggerMeasurement(data->platform.argus.handle,
 						   data_ready_callback);
 	if (status != STATUS_OK) {
-		LOG_ERR("Argus_TriggerMeasurement failed: %d", status);
+		LOG_ERROR("Argus_TriggerMeasurement failed: %d", status);
 
 		data->rtio.iodev_sqe = NULL;
 		rtio_iodev_sqe_err(iodev_sqe, -EIO);
@@ -228,7 +228,7 @@ static void afbr_s50_submit_streaming(const struct device *dev,
 	CHECKIF(read_cfg->triggers->trigger != SENSOR_TRIG_DATA_READY ||
 		read_cfg->count != 1 ||
 		read_cfg->triggers->opt != SENSOR_STREAM_DATA_INCLUDE) {
-		LOG_ERR("Invalid trigger for streaming mode");
+		LOG_ERROR("Invalid trigger for streaming mode");
 
 		data->rtio.iodev_sqe = NULL;
 		rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
@@ -243,7 +243,7 @@ static void afbr_s50_submit_streaming(const struct device *dev,
 							      data_ready_callback);
 
 		if (status != STATUS_OK) {
-			LOG_ERR("Argus_TriggerMeasurement failed: %d", status);
+			LOG_ERROR("Argus_TriggerMeasurement failed: %d", status);
 
 			data->rtio.iodev_sqe = NULL;
 			rtio_iodev_sqe_err(iodev_sqe, -EIO);
@@ -298,13 +298,13 @@ static int afbr_s50_init(const struct device *dev)
 
 	err = afbr_s50_platform_init(&data->platform);
 	if (err) {
-		LOG_ERR("Failed to initialize platform hooks: %d", err);
+		LOG_ERROR("Failed to initialize platform hooks: %d", err);
 		return err;
 	}
 
 	data->platform.argus.handle = Argus_CreateHandle();
 	if (data->platform.argus.handle == NULL) {
-		LOG_ERR("Failed to create handle");
+		LOG_ERROR("Failed to create handle");
 		return -ENOMEM;
 	}
 
@@ -313,14 +313,14 @@ static int afbr_s50_init(const struct device *dev)
 				data->platform.argus.id,
 				cfg->settings.measurement_mode);
 	if (status != STATUS_OK) {
-		LOG_ERR("Failed to initialize device");
+		LOG_ERROR("Failed to initialize device");
 		return -EIO;
 	}
 
 	status = Argus_SetConfigurationDFMMode(data->platform.argus.handle,
 					       cfg->settings.dual_freq_mode);
 	if (status != STATUS_OK) {
-		LOG_ERR("Failed to set DFM mode: %d", status);
+		LOG_ERROR("Failed to set DFM mode: %d", status);
 		return -EIO;
 	}
 
@@ -329,7 +329,7 @@ static int afbr_s50_init(const struct device *dev)
 	status = Argus_SetConfigurationFrameTime(data->platform.argus.handle,
 						 period_us);
 	if (status != STATUS_OK) {
-		LOG_ERR("Failed to set frame time: %d", status);
+		LOG_ERROR("Failed to set frame time: %d", status);
 		return -EIO;
 	}
 

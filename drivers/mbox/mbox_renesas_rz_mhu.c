@@ -108,20 +108,20 @@ static int mbox_rz_mhu_send(const struct device *dev, mbox_channel_id_t channel_
 	if (!is_tx_channel_valid(dev, channel_id)) {
 		if (!is_rx_channel_valid(dev, channel_id)) {
 			/* Channel is neither RX nor TX */
-			LOG_ERR("Invalid MBOX channel number: %d", channel_id);
+			LOG_ERROR("Invalid MBOX channel number: %d", channel_id);
 			return -EINVAL;
 		}
 
 		/* Channel is a RX channel, but this function only accepts TX */
-		LOG_ERR("Channel ID %d is a RX channel, but only TX channels are allowed",
-			channel_id);
+		LOG_ERROR("Channel ID %d is a RX channel, but only TX channels are allowed",
+			  channel_id);
 		return -ENOSYS;
 	}
 
 	if (msg != NULL) {
 		/* Maximum size allowed is 4 bytes */
 		if (msg->size > config->mhu_ch_size) {
-			LOG_ERR("Size %d is not valid. Maximum size is 4 bytes", msg->size);
+			LOG_ERROR("Size %d is not valid. Maximum size is 4 bytes", msg->size);
 			return -EMSGSIZE;
 		}
 
@@ -148,7 +148,7 @@ static int mbox_rz_mhu_send(const struct device *dev, mbox_channel_id_t channel_
 			if (data->fsp_ctrl->p_regs->MSG_INT_STSn != 0) {
 				k_busy_wait(CONFIG_MBOX_BUSY_WAIT_TIMEOUT_US);
 				if (data->fsp_ctrl->p_regs->MSG_INT_STSn != 0) {
-					LOG_ERR("Remote is busy");
+					LOG_ERROR("Remote is busy");
 					return -EBUSY;
 				}
 			}
@@ -156,7 +156,7 @@ static int mbox_rz_mhu_send(const struct device *dev, mbox_channel_id_t channel_
 			if (data->fsp_ctrl->p_regs->RSP_INT_STSn != 0) {
 				k_busy_wait(CONFIG_MBOX_BUSY_WAIT_TIMEOUT_US);
 				if (data->fsp_ctrl->p_regs->RSP_INT_STSn != 0) {
-					LOG_ERR("Remote is busy");
+					LOG_ERROR("Remote is busy");
 					return -EBUSY;
 				}
 			}
@@ -170,7 +170,7 @@ static int mbox_rz_mhu_send(const struct device *dev, mbox_channel_id_t channel_
 	}
 
 	if (fsp_err) {
-		LOG_ERR("Message send failed");
+		LOG_ERROR("Message send failed");
 		return -EIO;
 	}
 
@@ -188,18 +188,18 @@ static int mbox_rz_mhu_reg_callback(const struct device *dev, mbox_channel_id_t 
 	if (!is_rx_channel_valid(dev, channel_id)) {
 		if (!is_tx_channel_valid(dev, channel_id)) {
 			/* Channel is neither RX nor TX */
-			LOG_ERR("Invalid MBOX channel number: %d", channel_id);
+			LOG_ERROR("Invalid MBOX channel number: %d", channel_id);
 			return -EINVAL;
 		}
 
 		/* Channel is a TX channel, but this function only accepts RX */
-		LOG_ERR("Channel ID %d is a TX channel, but only RX channels are allowed",
-			channel_id);
+		LOG_ERROR("Channel ID %d is a TX channel, but only RX channels are allowed",
+			  channel_id);
 		return -ENOSYS;
 	}
 
 	if (!cb) {
-		LOG_ERR("Must provide callback");
+		LOG_ERROR("Must provide callback");
 		return -EINVAL;
 	}
 
@@ -222,7 +222,7 @@ static int mbox_rz_mhu_init(const struct device *dev)
 	fsp_err = config->fsp_api->open(data->fsp_ctrl, data->fsp_cfg);
 
 	if (fsp_err) {
-		LOG_ERR("MBOX initialization failed");
+		LOG_ERROR("MBOX initialization failed");
 		return -EIO;
 	}
 
@@ -238,13 +238,13 @@ static int mbox_rz_mhu_set_enabled(const struct device *dev, mbox_channel_id_t c
 	if (!is_rx_channel_valid(dev, channel_id)) {
 		if (!is_tx_channel_valid(dev, channel_id)) {
 			/* Channel is neither RX nor TX */
-			LOG_ERR("Invalid MBOX channel number: %d", channel_id);
+			LOG_ERROR("Invalid MBOX channel number: %d", channel_id);
 			return -EINVAL;
 		}
 
 		/* Channel is a TX channel, but this function only accepts RX */
-		LOG_ERR("Channel ID %d is a TX channel, but only RX channels are allowed",
-			channel_id);
+		LOG_ERROR("Channel ID %d is a TX channel, but only RX channels are allowed",
+			  channel_id);
 		return -ENOSYS;
 	}
 

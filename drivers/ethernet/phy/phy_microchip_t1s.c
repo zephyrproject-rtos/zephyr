@@ -248,7 +248,7 @@ static void phy_mc_t1s_update_link_state(const struct device *dev)
 
 	ret = phy_mc_t1s_read(dev, MII_BMSR, &value);
 	if (ret < 0) {
-		LOG_ERR("Failed MII_BMSR register read: %d\n", ret);
+		LOG_ERROR("Failed MII_BMSR register read: %d\n", ret);
 		return;
 	}
 
@@ -528,7 +528,7 @@ static int phy_mc_t1s_id(const struct device *dev, uint32_t *phy_id)
 
 	ret = phy_mc_t1s_read(dev, MII_PHYID1R, &value);
 	if (ret < 0) {
-		LOG_ERR("Failed MII_PHYID1R register read: %d\n", ret);
+		LOG_ERROR("Failed MII_PHYID1R register read: %d\n", ret);
 		return ret;
 	}
 
@@ -536,7 +536,7 @@ static int phy_mc_t1s_id(const struct device *dev, uint32_t *phy_id)
 
 	ret = phy_mc_t1s_read(dev, MII_PHYID2R, &value);
 	if (ret < 0) {
-		LOG_ERR("Failed MII_PHYID2R register read: %d\n", ret);
+		LOG_ERROR("Failed MII_PHYID2R register read: %d\n", ret);
 		return ret;
 	}
 
@@ -611,12 +611,12 @@ static int phy_mc_t1s_init(const struct device *dev)
 		ret = phy_mc_lan867x_revd0_config_init(dev);
 		break;
 	default:
-		LOG_ERR("Unsupported PHY ID: %x\n", data->phy_id);
+		LOG_ERROR("Unsupported PHY ID: %x\n", data->phy_id);
 		return -ENODEV;
 	}
 
 	if (ret < 0) {
-		LOG_ERR("PHY initial configuration error: %d\n", ret);
+		LOG_ERROR("PHY initial configuration error: %d\n", ret);
 		return ret;
 	}
 

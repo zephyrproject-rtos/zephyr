@@ -272,7 +272,7 @@ static int dma_sedi_reload(const struct device *dev, uint32_t channel,
 			      uint64_t src, uint64_t dst, size_t size)
 {
 	if ((dev == NULL) || (channel >= DEV_CFG(dev)->chn_num)) {
-		LOG_ERR("dma reload failed for invalid args");
+		LOG_ERROR("dma reload failed for invalid args");
 		return -ENOTSUP;
 	}
 
@@ -282,7 +282,7 @@ static int dma_sedi_reload(const struct device *dev, uint32_t channel,
 	struct dma_block_config *block_config;
 
 	if ((config == NULL) || (config->head_block == NULL)) {
-		LOG_ERR("dma reload failed, no config found");
+		LOG_ERROR("dma reload failed, no config found");
 		return -ENOTSUP;
 	}
 	block_config = config->head_block;
@@ -292,7 +292,7 @@ static int dma_sedi_reload(const struct device *dev, uint32_t channel,
 		block_config->dest_address = dst;
 		block_config->block_size = size;
 	} else {
-		LOG_ERR("no reload support for multi-linkedlist mode");
+		LOG_ERROR("no reload support for multi-linkedlist mode");
 		return -ENOTSUP;
 	}
 	return ret;
@@ -301,7 +301,7 @@ static int dma_sedi_reload(const struct device *dev, uint32_t channel,
 static int dma_sedi_start(const struct device *dev, uint32_t channel)
 {
 	if ((dev == NULL) || (channel >= DEV_CFG(dev)->chn_num)) {
-		LOG_ERR("dma transferring failed for invalid args");
+		LOG_ERROR("dma transferring failed for invalid args");
 		return -ENOTSUP;
 	}
 
@@ -325,7 +325,7 @@ static int dma_sedi_start(const struct device *dev, uint32_t channel)
 		ret = sedi_dma_start_transfer(info->peripheral_id, channel,
 						src_addr, dst_addr, block_config->block_size);
 	} else {
-		LOG_ERR("MULTIPLE_BLOCK CONFIG is not set");
+		LOG_ERROR("MULTIPLE_BLOCK CONFIG is not set");
 		goto ERR;
 	}
 
@@ -336,7 +336,7 @@ static int dma_sedi_start(const struct device *dev, uint32_t channel)
 	return ret;
 
 ERR:
-	LOG_ERR("dma transfer failed");
+	LOG_ERROR("dma transfer failed");
 	return ret;
 }
 

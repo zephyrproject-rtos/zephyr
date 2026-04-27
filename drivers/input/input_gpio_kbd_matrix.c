@@ -152,7 +152,7 @@ static void gpio_kbd_matrix_set_detect_mode(const struct device *dev, bool enabl
 
 		ret = gpio_pin_interrupt_configure_dt(gpio, flags);
 		if (ret != 0) {
-			LOG_ERR("Pin %d interrupt configuration failed: %d", i, ret);
+			LOG_ERROR("Pin %d interrupt configuration failed: %d", i, ret);
 			return;
 		}
 	}
@@ -207,7 +207,7 @@ static int gpio_kbd_matrix_init(const struct device *dev)
 			ret = gpio_pin_configure_dt(gpio, GPIO_INPUT);
 		}
 		if (ret != 0) {
-			LOG_ERR("Pin %d configuration failed: %d", i, ret);
+			LOG_ERROR("Pin %d configuration failed: %d", i, ret);
 			return ret;
 		}
 	}
@@ -223,7 +223,7 @@ static int gpio_kbd_matrix_init(const struct device *dev)
 
 		ret = gpio_pin_configure_dt(gpio, GPIO_INPUT);
 		if (ret != 0) {
-			LOG_ERR("Pin %d configuration failed: %d", i, ret);
+			LOG_ERROR("Pin %d configuration failed: %d", i, ret);
 			return ret;
 		}
 
@@ -237,7 +237,7 @@ static int gpio_kbd_matrix_init(const struct device *dev)
 
 		ret = gpio_add_callback_dt(gpio, gpio_cb);
 		if (ret < 0) {
-			LOG_ERR("Could not set gpio callback");
+			LOG_ERROR("Could not set gpio callback");
 			return ret;
 		}
 	}

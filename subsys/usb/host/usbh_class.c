@@ -51,7 +51,7 @@ void usbh_class_remove_all(struct usb_device *const udev)
 
 		ret = usbh_class_removed(c_data);
 		if (ret != 0) {
-			LOG_ERR("Failed to handle device removal for each class (%d)", ret);
+			LOG_ERROR("Failed to handle device removal for each class (%d)", ret);
 			c_node->state = USBH_CLASS_STATE_ERROR;
 			c_data->udev = NULL;
 			continue;
@@ -155,8 +155,7 @@ void usbh_class_probe_device(struct usb_device *const udev)
 
 		ret = usbh_desc_fill_filter(desc, &filter_data, &iface);
 		if (ret != 0) {
-			LOG_ERR("Failed to collect class codes for matching interface %u",
-				iface);
+			LOG_ERROR("Failed to collect class codes for matching interface %u", iface);
 			continue;
 		}
 

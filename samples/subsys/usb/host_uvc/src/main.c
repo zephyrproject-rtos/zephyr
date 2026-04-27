@@ -100,7 +100,7 @@ static int configure_video_format_and_rate(const struct device *uvc_dev,
 
 	ret = video_set_format(uvc_dev, fmt);
 	if (ret != 0) {
-		LOG_ERR("Unable to set format");
+		LOG_ERROR("Unable to set format");
 		return ret;
 	}
 
@@ -155,8 +155,8 @@ static int allocate_buffers_and_start_stream(const struct device *uvc_dev,
 	for (i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
 		vbuf = video_buffer_aligned_alloc(bsize, CONFIG_VIDEO_BUFFER_POOL_ALIGN, K_FOREVER);
 		if (vbuf == NULL) {
-			LOG_ERR("Unable to alloc video buffer %d/%d", i,
-				CONFIG_VIDEO_BUFFER_POOL_NUM_MAX);
+			LOG_ERROR("Unable to alloc video buffer %d/%d", i,
+				  CONFIG_VIDEO_BUFFER_POOL_NUM_MAX);
 			ret = -ENOMEM;
 			goto exit_free;
 		}
@@ -177,7 +177,7 @@ static int allocate_buffers_and_start_stream(const struct device *uvc_dev,
 
 	ret = video_stream_start(uvc_dev, type);
 	if (ret != 0) {
-		LOG_ERR("Unable to start capture (interface)");
+		LOG_ERROR("Unable to start capture (interface)");
 		goto exit_free;
 	}
 
@@ -202,7 +202,7 @@ static int setup_video_streaming(const struct device *uvc_dev,
 	/* Get capabilities */
 	ret = video_get_caps(uvc_dev, &caps);
 	if (ret != 0) {
-		LOG_ERR("Unable to retrieve video capabilities");
+		LOG_ERROR("Unable to retrieve video capabilities");
 		return ret;
 	}
 
@@ -217,7 +217,7 @@ static int setup_video_streaming(const struct device *uvc_dev,
 
 	if (caps.min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
 	    bsize > (CONFIG_APP_VIDEO_FRAME_WIDTH * CONFIG_APP_VIDEO_FRAME_HEIGHT * 2)) {
-		LOG_ERR("Not enough buffers or memory to start streaming");
+		LOG_ERROR("Not enough buffers or memory to start streaming");
 		return -ENOMEM;
 	}
 
@@ -240,7 +240,7 @@ static int cleanup_video_streaming(const struct device *uvc_dev,
 	/* -ENODEV is expected when device is disconnected, continue cleanup */
 	ret = video_stream_stop(uvc_dev, type);
 	if (ret != 0 && ret != -ENODEV) {
-		LOG_ERR("Failed to stop video stream: %d", ret);
+		LOG_ERROR("Failed to stop video stream: %d", ret);
 		return ret;
 	}
 
@@ -261,7 +261,7 @@ static int process_video_stream(const struct device *uvc_dev, uint32_t *frame_co
 			LOG_WRN("Video device disconnected");
 			return -ENODEV;
 		}
-		LOG_ERR("Unable to dequeue video buf: %d", err);
+		LOG_ERROR("Unable to dequeue video buf: %d", err);
 		return 0;
 	}
 
@@ -275,7 +275,7 @@ static int process_video_stream(const struct device *uvc_dev, uint32_t *frame_co
 		LOG_WRN("Video device disconnected during enqueue");
 		return -ENODEV;
 	} else if (err != 0) {
-		LOG_ERR("Unable to requeue video buf: %d", err);
+		LOG_ERROR("Unable to requeue video buf: %d", err);
 	}
 
 	return 0;
@@ -295,19 +295,19 @@ int main(void)
 	int err;
 
 	if (!device_is_ready(uvc_dev)) {
-		LOG_ERR("USB host video device %s is not ready", uvc_dev->name);
+		LOG_ERROR("USB host video device %s is not ready", uvc_dev->name);
 		return 0;
 	}
 
 	err = usbh_init(&uhs_ctx);
 	if (err) {
-		LOG_ERR("Failed to initialize host support");
+		LOG_ERROR("Failed to initialize host support");
 		return err;
 	}
 
 	err = usbh_enable(&uhs_ctx);
 	if (err) {
-		LOG_ERR("Failed to enable USB host support");
+		LOG_ERROR("Failed to enable USB host support");
 		return err;
 	}
 
@@ -329,7 +329,7 @@ int main(void)
 		/* Setup and start streaming */
 		err = setup_video_streaming(uvc_dev, allocated_vbufs, &allocated_count, &fmt);
 		if (err != 0) {
-			LOG_ERR("Failed to setup video streaming");
+			LOG_ERROR("Failed to setup video streaming");
 			k_sleep(K_MSEC(1000));
 			continue;
 		}
@@ -355,7 +355,7 @@ int main(void)
 
 		err = cleanup_video_streaming(uvc_dev, allocated_vbufs, &allocated_count, type);
 		if (err != 0) {
-			LOG_ERR("Failed to cleanup video streaming: %d", err);
+			LOG_ERROR("Failed to cleanup video streaming: %d", err);
 		}
 
 		LOG_INF("Video device disconnected, waiting for reconnection...");

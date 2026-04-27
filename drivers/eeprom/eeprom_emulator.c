@@ -551,7 +551,7 @@ static int eeprom_emu_read(const struct device *dev, off_t address, void *data,
 	}
 
 	if (!device_is_ready(dev_config->flash_dev)) {
-		LOG_ERR("flash device is not ready");
+		LOG_ERROR("flash device is not ready");
 		return -EIO;
 	}
 
@@ -602,12 +602,12 @@ static int eeprom_emu_write(const struct device *dev, off_t address,
 	}
 
 	if (dev_config->readonly) {
-		LOG_ERR("attempt to write to read-only device");
+		LOG_ERROR("attempt to write to read-only device");
 		return -EACCES;
 	}
 
 	if (!device_is_ready(dev_config->flash_dev)) {
-		LOG_ERR("flash device is not ready");
+		LOG_ERROR("flash device is not ready");
 		return -EIO;
 	}
 

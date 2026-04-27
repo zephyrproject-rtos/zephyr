@@ -48,7 +48,7 @@ static void rt1718s_alert_worker(struct k_work *work)
 		    rt1718s_reg_burst_read(dev, RT1718S_REG_ALERT_MASK, (uint8_t *)&mask,
 					   sizeof(mask))) {
 			k_sem_give(&data->lock_tcpci);
-			LOG_ERR("i2c access failed");
+			LOG_ERROR("i2c access failed");
 			continue;
 		}
 
@@ -63,7 +63,7 @@ static void rt1718s_alert_worker(struct k_work *work)
 			if (rt1718s_reg_burst_write(dev, RT1718S_REG_ALERT, (uint8_t *)&alert,
 						    sizeof(alert))) {
 				k_sem_give(&data->lock_tcpci);
-				LOG_ERR("i2c access failed");
+				LOG_ERROR("i2c access failed");
 				continue;
 			}
 		}
@@ -88,7 +88,7 @@ static int rt1718s_init(const struct device *dev)
 
 	/* Check I2C is ready */
 	if (!device_is_ready(config->i2c_dev.bus)) {
-		LOG_ERR("%s device not ready", config->i2c_dev.bus->name);
+		LOG_ERROR("%s device not ready", config->i2c_dev.bus->name);
 		return -ENODEV;
 	}
 
@@ -96,7 +96,7 @@ static int rt1718s_init(const struct device *dev)
 
 	if (IS_ENABLED(CONFIG_GPIO_RT1718S_INTERRUPT)) {
 		if (!gpio_is_ready_dt(&config->irq_gpio)) {
-			LOG_ERR("%s device not ready", config->irq_gpio.port->name);
+			LOG_ERROR("%s device not ready", config->irq_gpio.port->name);
 			return -ENODEV;
 		}
 

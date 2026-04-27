@@ -34,11 +34,11 @@ static int wdt_kb106x_setup(const struct device *dev, uint8_t options)
 	struct wdt_kb106x_data *data = dev->data;
 
 	if (!data->timeout_installed) {
-		LOG_ERR("No valid WDT timeout installed");
+		LOG_ERROR("No valid WDT timeout installed");
 		return -EINVAL;
 	}
 	if (options & WDT_OPT_PAUSE_HALTED_BY_DBG) {
-		LOG_ERR("WDT_OPT_PAUSE_HALTED_BY_DBG is not supported");
+		LOG_ERROR("WDT_OPT_PAUSE_HALTED_BY_DBG is not supported");
 		return -ENOTSUP;
 	}
 
@@ -62,7 +62,7 @@ static int wdt_kb106x_disable(const struct device *dev)
 	struct wdt_kb106x_data *data = dev->data;
 
 	if (!(cfg->wdt->WDTCFG & WDT_FUNCTON_ENABLE)) {
-		LOG_ERR("wdt is not enabled");
+		LOG_ERROR("wdt is not enabled");
 		return -EALREADY;
 	}
 	/* WDT disable, write bit 7~4 = 1001b */
@@ -85,14 +85,14 @@ static int wdt_kb106x_install_timeout(const struct device *dev,
 	/* Watchdog Counter Match Value */
 	if (config->window.min > 0U) {
 		data->timeout_installed = false;
-		LOG_ERR("wdt not support window, window.min need set 0");
+		LOG_ERROR("wdt not support window, window.min need set 0");
 		return -EINVAL;
 	}
 	cfg->wdt->WDTM = (config->window.max * 1000) / WDT_TICK_TIME_US;
 	/* (HW design) The counter match value must be >= 3 */
 	if (cfg->wdt->WDTM < WDT_MIN_CNT) {
 		data->timeout_installed = false;
-		LOG_ERR("wdt timeout value below the hw min value");
+		LOG_ERROR("wdt timeout value below the hw min value");
 		return -EINVAL;
 	}
 
@@ -129,7 +129,7 @@ static int wdt_kb106x_feed(const struct device *dev, int channel_id)
 	struct wdt_kb106x_config const *cfg = dev->config;
 
 	if (!(cfg->wdt->WDTCFG & WDT_FUNCTON_ENABLE)) {
-		LOG_ERR("wdt is not enabled");
+		LOG_ERROR("wdt is not enabled");
 		return -EINVAL;
 	}
 	/* fw scratch register */

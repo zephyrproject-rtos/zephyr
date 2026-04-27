@@ -134,7 +134,7 @@ int plain_text_put_float(struct lwm2m_output_context *out,
 
 	len = lwm2m_ftoa(value, pt_buffer, sizeof(pt_buffer), 15);
 	if (len < 0 || len >= sizeof(pt_buffer)) {
-		LOG_ERR("Failed to encode float value");
+		LOG_ERROR("Failed to encode float value");
 		return -EINVAL;
 	}
 
@@ -256,7 +256,7 @@ static int get_string(struct lwm2m_input_context *in, uint8_t *value,
 	coap_packet_get_payload(in->in_cpkt, &in_len);
 
 	if (in_len + 1 > buflen) {
-		LOG_ERR("Buffer too small to accommodate string");
+		LOG_ERROR("Buffer too small to accommodate string");
 		return -ENOMEM;
 	}
 
@@ -313,7 +313,7 @@ static int get_float(struct lwm2m_input_context *in, double *value)
 
 	ret = lwm2m_atof(buf, value);
 	if (ret != 0) {
-		LOG_ERR("Failed to parse float value");
+		LOG_ERROR("Failed to parse float value");
 		return -EBADMSG;
 	}
 

@@ -78,7 +78,7 @@ static void irq_process(const struct device *dev)
 
 		LOG_DBG("isr");
 		if (!data->irq_isr) {
-			LOG_ERR("no isr registered");
+			LOG_ERROR("no isr registered");
 			break;
 		}
 		data->irq_isr(dev, data->irq_isr_user_data);
@@ -152,7 +152,7 @@ static void irq_callback_set(const struct device *dev, uart_irq_callback_user_da
 
 #if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS) && defined(CONFIG_UART_ASYNC_API)
 	if (data->read_buf) {
-		LOG_ERR("Setting callback to NULL while asynchronous API is in use.");
+		LOG_ERROR("Setting callback to NULL while asynchronous API is in use.");
 	}
 	data->async_cb = NULL;
 	data->async_cb_user_data = NULL;
@@ -329,7 +329,7 @@ static int serial_vnd_callback_set(const struct device *dev, uart_callback_t cal
 #endif
 
 	if (callback == NULL && data->read_buf) {
-		LOG_ERR("Setting callback to NULL while asynchronous API is in use.");
+		LOG_ERROR("Setting callback to NULL while asynchronous API is in use.");
 	}
 
 	data->async_cb = callback;

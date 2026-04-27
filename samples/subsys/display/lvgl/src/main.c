@@ -64,7 +64,7 @@ int main(void)
 
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
-		LOG_ERR("Device not ready, aborting test");
+		LOG_ERROR("Device not ready, aborting test");
 		return 0;
 	}
 
@@ -74,7 +74,7 @@ int main(void)
 
 		err = gpio_pin_configure_dt(&button_gpio, GPIO_INPUT);
 		if (err) {
-			LOG_ERR("failed to configure button gpio: %d", err);
+			LOG_ERROR("failed to configure button gpio: %d", err);
 			return 0;
 		}
 
@@ -83,14 +83,14 @@ int main(void)
 
 		err = gpio_add_callback(button_gpio.port, &button_callback);
 		if (err) {
-			LOG_ERR("failed to add button callback: %d", err);
+			LOG_ERROR("failed to add button callback: %d", err);
 			return 0;
 		}
 
 		err = gpio_pin_interrupt_configure_dt(&button_gpio,
 						      GPIO_INT_EDGE_TO_ACTIVE);
 		if (err) {
-			LOG_ERR("failed to enable button callback: %d", err);
+			LOG_ERROR("failed to enable button callback: %d", err);
 			return 0;
 		}
 	}
@@ -145,7 +145,7 @@ int main(void)
 	lv_timer_handler();
 	ret = display_blanking_off(display_dev);
 	if (ret < 0 && ret != -ENOSYS) {
-		LOG_ERR("Failed to turn blanking off (error %d)", ret);
+		LOG_ERROR("Failed to turn blanking off (error %d)", ret);
 		return 0;
 	}
 

@@ -88,13 +88,13 @@ static int d6f_init(const struct device *dev)
 	LOG_DBG("Initializing %s", dev->name);
 
 	if (!adc_is_ready_dt(config->adc)) {
-		LOG_ERR("%s not ready", dev->name);
+		LOG_ERROR("%s not ready", dev->name);
 		return -ENODEV;
 	}
 
 	rc = adc_channel_setup_dt(config->adc);
 	if (rc != 0) {
-		LOG_ERR("%s setup failed: %d", config->adc->dev->name, rc);
+		LOG_ERROR("%s setup failed: %d", config->adc->dev->name, rc);
 		return -ENODEV;
 	}
 

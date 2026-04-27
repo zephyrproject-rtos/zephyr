@@ -54,7 +54,7 @@ static int echo_service(const struct sockaddr *server_addr)
 	r = setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
 	if (r == -1) {
 		r = -errno;
-		LOG_ERR("setsockopt() failed (%d)", r);
+		LOG_ERROR("setsockopt() failed (%d)", r);
 		close(server_fd);
 		return r;
 	}
@@ -180,7 +180,7 @@ void service(void)
 	while (r == 0) {
 		r = echo_service((struct sockaddr *)&server_addr);
 		if (r < 0) {
-			LOG_ERR("Fatal echo server error, %d", r);
+			LOG_ERROR("Fatal echo server error, %d", r);
 		}
 	}
 }

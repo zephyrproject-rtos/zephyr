@@ -105,7 +105,7 @@ static int mcux_dcnano_lcdif_dbi_configure(const struct device *dev,
 	/* SPI mode is not supported by the SDK LCDIF driver */
 	if ((bus_type == MIPI_DBI_MODE_SPI_3WIRE) ||
 		(bus_type == MIPI_DBI_MODE_SPI_4WIRE)) {
-		LOG_ERR("Bus type not supported.");
+		LOG_ERROR("Bus type not supported.");
 		return -EINVAL;
 	}
 
@@ -226,7 +226,7 @@ static int mipi_dbi_dcnano_lcdif_write_display(const struct device *dev,
 		bytes_per_pixel = 2U;
 		break;
 	default:
-		LOG_ERR("Bus type not supported.");
+		LOG_ERROR("Bus type not supported.");
 		ret = -ENODEV;
 		break;
 	}

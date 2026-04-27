@@ -143,7 +143,7 @@ static int wdt_ambiq_install_timeout(const struct device *dev, const struct wdt_
 		data->reset = false;
 		break;
 	default:
-		LOG_ERR("Unsupported watchdog config flag");
+		LOG_ERROR("Unsupported watchdog config flag");
 		return -EINVAL;
 	}
 

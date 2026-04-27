@@ -39,12 +39,12 @@ static void net_canbus_recv(const struct device *dev, struct can_frame *frame, v
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, sizeof(struct can_frame),
 					   NET_AF_CAN, 0, K_NO_WAIT);
 	if (pkt == NULL) {
-		LOG_ERR("Failed to obtain net_pkt");
+		LOG_ERROR("Failed to obtain net_pkt");
 		return;
 	}
 
 	if (net_pkt_write(pkt, frame, sizeof(struct can_frame))) {
-		LOG_ERR("Failed to append RX data");
+		LOG_ERROR("Failed to append RX data");
 		net_pkt_unref(pkt);
 		return;
 	}
@@ -138,7 +138,7 @@ static int net_canbus_init(const struct device *dev)
 	const struct net_canbus_config *cfg = dev->config;
 
 	if (!device_is_ready(cfg->can_dev)) {
-		LOG_ERR("CAN device not ready");
+		LOG_ERROR("CAN device not ready");
 		return -ENODEV;
 	}
 

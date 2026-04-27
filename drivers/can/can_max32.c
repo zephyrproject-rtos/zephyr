@@ -134,7 +134,7 @@ static int can_max32_set_mode(const struct device *dev, can_mode_t mode)
 	}
 
 	if ((mode & ~(cap)) != 0) {
-		LOG_ERR("unsupported mode: 0x%08x; Capabilities: 0x%08x", mode, cap);
+		LOG_ERROR("unsupported mode: 0x%08x; Capabilities: 0x%08x", mode, cap);
 		return -ENOTSUP;
 	}
 
@@ -160,8 +160,7 @@ static int can_max32_init_timing_struct(struct can_timing *timing, const struct 
 	ret = can_calc_timing(dev, timing, dev_cfg->common.bitrate,
 				dev_cfg->common.sample_point);
 	if (ret < 0) {
-		LOG_ERR("can_calc_timing error sample_point: %d!",
-			dev_cfg->common.sample_point);
+		LOG_ERROR("can_calc_timing error sample_point: %d!", dev_cfg->common.sample_point);
 	}
 	LOG_DBG("Bitrate: %d", dev_cfg->common.bitrate);
 	LOG_DBG("Presc: %d, PG1: %d, PG2: %d", timing->prescaler,
@@ -178,7 +177,7 @@ static int can_max32_set_timing(const struct device *dev, const struct can_timin
 	uint32_t nbt_reg = 0;
 
 	if (!timing) {
-		LOG_ERR("timing structure is null");
+		LOG_ERROR("timing structure is null");
 		return -EINVAL;
 	}
 
@@ -223,7 +222,7 @@ static int can_max32_start(const struct device *dev)
 	if (dev_cfg->common.phy != NULL) {
 		ret = can_transceiver_enable(dev_cfg->common.phy, mode);
 		if (ret != 0) {
-			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
+			LOG_ERROR("failed to enable CAN transceiver (err %d)", ret);
 			goto unlock;
 		}
 	}
@@ -264,14 +263,14 @@ static int can_max32_stop(const struct device *dev)
 	if (dev_cfg->common.phy != NULL) {
 		ret = can_transceiver_disable(dev_cfg->common.phy);
 		if (ret != 0) {
-			LOG_ERR("failed to enable CAN transceiver (err %d)", ret);
+			LOG_ERROR("failed to enable CAN transceiver (err %d)", ret);
 			goto unlock;
 		}
 	}
 
 	ret = MXC_CAN_SetMode(dev_cfg->can_id, MXC_CAN_MODE_INITIALIZATION);
 	if (ret < 0) {
-		LOG_ERR("failed to stop CAN controller (err %d)", ret);
+		LOG_ERROR("failed to stop CAN controller (err %d)", ret);
 		goto unlock;
 	}
 
@@ -296,7 +295,7 @@ static int can_max32_send(const struct device *dev, const struct can_frame *msg,
 		(msg->flags & CAN_FRAME_RTR) ? "RTR" : "");
 
 	if (msg->dlc > MAX32_CAN_MAX_DLC) {
-		LOG_ERR("DLC of %d exceeds maximum (%d)", msg->dlc, MAX32_CAN_MAX_DLC);
+		LOG_ERROR("DLC of %d exceeds maximum (%d)", msg->dlc, MAX32_CAN_MAX_DLC);
 		return -EINVAL;
 	}
 
@@ -327,7 +326,7 @@ static int can_max32_send(const struct device *dev, const struct can_frame *msg,
 
 	ret = MXC_CAN_MessageSendAsync(0, &dev_data->tx_data.req);
 	if (ret < 0) {
-		LOG_ERR("MXC_CAN_MessageSendAsync error (err %d)", ret);
+		LOG_ERROR("MXC_CAN_MessageSendAsync error (err %d)", ret);
 		k_sem_give(&dev_data->tx_sem);
 	}
 
@@ -345,7 +344,7 @@ static int can_max32_add_rx_filter(const struct device *dev, can_rx_callback_t c
 	__ASSERT(callback != NULL, "rx_filter callback can not be null");
 
 	if ((filter->flags & ~CAN_FILTER_IDE) != 0) {
-		LOG_ERR("Unsupported CAN filter flags 0x%02x", filter->flags);
+		LOG_ERROR("Unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
 
@@ -387,7 +386,7 @@ static void can_max32_remove_rx_filter(const struct device *dev, int filter_idx)
 	unsigned int key;
 
 	if ((filter_idx < 0) || (filter_idx >= CONFIG_CAN_MAX32_MAX_FILTERS)) {
-		LOG_ERR("Filter ID %d out of bounds", filter_idx);
+		LOG_ERROR("Filter ID %d out of bounds", filter_idx);
 		return;
 	}
 
@@ -614,25 +613,25 @@ static int can_max32_init(const struct device *dev)
 
 	if (dev_cfg->common.phy != NULL) {
 		if (!device_is_ready(dev_cfg->common.phy)) {
-			LOG_ERR("CAN transceiver not ready");
+			LOG_ERROR("CAN transceiver not ready");
 			return -ENODEV;
 		}
 	}
 
 	if (!device_is_ready(dev_cfg->clock)) {
-		LOG_ERR("CAN clock is not ready");
+		LOG_ERROR("CAN clock is not ready");
 		return -ENODEV;
 	}
 
 	ret = clock_control_on(dev_cfg->clock, (clock_control_subsys_t)&dev_cfg->perclk);
 	if (ret) {
-		LOG_ERR("CAN clock is not on");
+		LOG_ERROR("CAN clock is not on");
 		return -EIO;
 	}
 
 	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("CAN pinctrl apply error:%d", ret);
+		LOG_ERROR("CAN pinctrl apply error:%d", ret);
 		return ret;
 	}
 
@@ -645,19 +644,19 @@ static int can_max32_init(const struct device *dev)
 	ret = Wrap_MXC_CAN_Init(dev_cfg->can_id, MXC_CAN_OBJ_CFG_TXRX, unit_event_callback,
 				object_event_callback);
 	if (ret < 0) {
-		LOG_ERR("Wrap_MXC_CAN_Init() failed:%d", ret);
+		LOG_ERROR("Wrap_MXC_CAN_Init() failed:%d", ret);
 		return ret;
 	}
 
 	ret = can_max32_init_timing_struct(&timing, dev);
 	if (ret < 0) {
-		LOG_ERR("can_max32_init_timing_struct failed:%d", ret);
+		LOG_ERROR("can_max32_init_timing_struct failed:%d", ret);
 		return ret;
 	}
 
 	ret = can_set_timing(dev, &timing);
 	if (ret < 0) {
-		LOG_ERR("can_set_timing failed:%d", ret);
+		LOG_ERROR("can_set_timing failed:%d", ret);
 		return ret;
 	}
 

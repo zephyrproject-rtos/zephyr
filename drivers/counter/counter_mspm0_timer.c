@@ -182,7 +182,7 @@ static uint32_t counter_mspm0_get_freq(const struct device *dev)
 				(clock_control_subsys_t)&config->clock_subsys,
 				&clock_rate);
 	if (ret != 0) {
-		LOG_ERR("clk get rate err %d", ret);
+		LOG_ERROR("clk get rate err %d", ret);
 		return 0;
 	}
 
@@ -203,7 +203,7 @@ static int counter_mspm0_init(const struct device *dev)
 			};
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 

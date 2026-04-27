@@ -920,7 +920,7 @@ static int cdns_i3c_read_rx_fifo_ddr_xfer(const struct cdns_i3c_config *config, 
 			uint8_t crc = (uint8_t)DDR_CRC(val);
 
 			if (crc5 != crc) {
-				LOG_ERR("DDR RX crc error");
+				LOG_ERROR("DDR RX crc error");
 				return -EIO;
 			}
 		}
@@ -941,7 +941,7 @@ static inline int cdns_i3c_wait_for_idle(const struct device *dev)
 	 */
 	while (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_IDLE)) {
 		if (k_cycle_get_32() - start_time > I3C_IDLE_TIMEOUT_CYC) {
-			LOG_ERR("%s: Timeout waiting for idle", dev->name);
+			LOG_ERROR("%s: Timeout waiting for idle", dev->name);
 			return -EAGAIN;
 		}
 	}
@@ -1156,8 +1156,8 @@ static int cdns_i3c_controller_ibi_enable(const struct device *dev, struct i3c_d
 	i3c_events.events = I3C_CCC_EVT_INTR | I3C_CCC_EVT_CR;
 	ret = i3c_ccc_do_events_set(target, true, &i3c_events);
 	if (ret != 0) {
-		LOG_ERR("%s: Error sending IBI ENEC for 0x%02x (%d)", dev->name,
-			target->dynamic_addr, ret);
+		LOG_ERROR("%s: Error sending IBI ENEC for 0x%02x (%d)", dev->name,
+			  target->dynamic_addr, ret);
 		return ret;
 	}
 
@@ -1187,8 +1187,8 @@ static int cdns_i3c_controller_ibi_disable(const struct device *dev, struct i3c_
 	i3c_events.events = I3C_CCC_EVT_INTR;
 	ret = i3c_ccc_do_events_set(target, false, &i3c_events);
 	if (ret != 0) {
-		LOG_ERR("%s: Error sending IBI DISEC for 0x%02x (%d)", dev->name,
-			target->dynamic_addr, ret);
+		LOG_ERROR("%s: Error sending IBI DISEC for 0x%02x (%d)", dev->name,
+			  target->dynamic_addr, ret);
 		return ret;
 	}
 
@@ -1210,24 +1210,24 @@ static int cdns_i3c_target_ibi_raise_hj(const struct device *dev)
 
 	/* HJ requests should not be done by primary controllers */
 	if (!ctrl_config->is_secondary) {
-		LOG_ERR("%s: controller is primary, HJ not available", dev->name);
+		LOG_ERROR("%s: controller is primary, HJ not available", dev->name);
 		return -ENOTSUP;
 	}
 	/* Check if target already has a DA assigned to it */
 	if (sys_read32(config->base + SLV_STATUS1) & SLV_STATUS1_HAS_DA) {
-		LOG_ERR("%s: HJ not available, DA already assigned", dev->name);
+		LOG_ERROR("%s: HJ not available, DA already assigned", dev->name);
 		return -EACCES;
 	}
 	/* Check if HJ requests DISEC CCC with DISHJ field set has been received */
 	if (sys_read32(config->base + SLV_STATUS1) & SLV_STATUS1_HJ_DIS) {
-		LOG_ERR("%s: HJ requests are currently disabled by DISEC", dev->name);
+		LOG_ERROR("%s: HJ requests are currently disabled by DISEC", dev->name);
 		return -EAGAIN;
 	}
 
 	sys_write32(CTRL_HJ_INIT | sys_read32(config->base + CTRL), config->base + CTRL);
 	k_sem_reset(&data->ibi_hj_complete);
 	if (k_sem_take(&data->ibi_hj_complete, K_MSEC(500)) != 0) {
-		LOG_ERR("%s: timeout waiting for DAA after HJ", dev->name);
+		LOG_ERROR("%s: timeout waiting for DAA after HJ", dev->name);
 		return -ETIMEDOUT;
 	}
 	return 0;
@@ -1240,19 +1240,19 @@ static int cdns_i3c_target_ibi_raise_cr(const struct device *dev)
 
 	/* Check if target does not have a DA assigned to it */
 	if (!(sys_read32(config->base + SLV_STATUS1) & SLV_STATUS1_HAS_DA)) {
-		LOG_ERR("%s: CR not available, DA not assigned", dev->name);
+		LOG_ERROR("%s: CR not available, DA not assigned", dev->name);
 		return -EACCES;
 	}
 	/* Check if CR requests DISEC CCC with DISMR field set has been received */
 	if (sys_read32(config->base + SLV_STATUS1) & SLV_STATUS1_MR_DIS) {
-		LOG_ERR("%s: CR requests are currently disabled by DISEC", dev->name);
+		LOG_ERROR("%s: CR requests are currently disabled by DISEC", dev->name);
 		return -EAGAIN;
 	}
 
 	sys_write32(CTRL_MST_INIT | sys_read32(config->base + CTRL), config->base + CTRL);
 	k_sem_reset(&data->ibi_cr_complete);
 	if (k_sem_take(&data->ibi_cr_complete, K_MSEC(500)) != 0) {
-		LOG_ERR("%s: timeout waiting for GETACCCR after CR", dev->name);
+		LOG_ERROR("%s: timeout waiting for GETACCCR after CR", dev->name);
 		return -ETIMEDOUT;
 	}
 	return 0;
@@ -1268,12 +1268,12 @@ static int cdns_i3c_target_ibi_raise_intr(const struct device *dev, struct i3c_i
 
 	/* Check if target does not have a DA assigned to it */
 	if (!(sys_read32(config->base + SLV_STATUS1) & SLV_STATUS1_HAS_DA)) {
-		LOG_ERR("%s: TIR not available, DA not assigned", dev->name);
+		LOG_ERROR("%s: TIR not available, DA not assigned", dev->name);
 		return -EACCES;
 	}
 	/* Check if TIR requests DISEC CCC with DISMR field set has been received */
 	if (sys_read32(config->base + SLV_STATUS1) & SLV_STATUS1_IBI_DIS) {
-		LOG_ERR("%s: TIR requests are currently disabled by DISEC", dev->name);
+		LOG_ERROR("%s: TIR requests are currently disabled by DISEC", dev->name);
 		return -EAGAIN;
 	}
 
@@ -1285,7 +1285,7 @@ static int cdns_i3c_target_ibi_raise_intr(const struct device *dev, struct i3c_i
 	 *       utilizes the IBI data threshold interrupts.
 	 */
 	if (request->payload_len > data->hw_cfg.ibi_mem_depth) {
-		LOG_ERR("%s: payload too large for IBI TIR", dev->name);
+		LOG_ERROR("%s: payload too large for IBI TIR", dev->name);
 		return -ENOMEM;
 	}
 
@@ -1522,7 +1522,7 @@ static int cdns_i3c_do_ccc_do(const struct device *dev, struct i3c_ccc_payload *
 		1 + ((payload->ccc.data_len > 0) ? payload->targets.num_targets
 						 : MAX(payload->targets.num_targets - 1, 0));
 	if (num_msgs > data->hw_cfg.cmd_mem_depth || num_msgs > data->hw_cfg.cmdr_mem_depth) {
-		LOG_ERR("%s: Too many messages", dev->name);
+		LOG_ERROR("%s: Too many messages", dev->name);
 		return -ENOMEM;
 	}
 
@@ -1539,7 +1539,7 @@ static int cdns_i3c_do_ccc_do(const struct device *dev, struct i3c_ccc_payload *
 		}
 	}
 	if ((rxsize > data->hw_cfg.rx_mem_depth) || (txsize > data->hw_cfg.tx_mem_depth)) {
-		LOG_ERR("%s: Total RX and/or TX transfer larger than FIFO", dev->name);
+		LOG_ERROR("%s: Total RX and/or TX transfer larger than FIFO", dev->name);
 		return -ENOMEM;
 	}
 
@@ -1585,15 +1585,15 @@ static int cdns_i3c_do_ccc_do(const struct device *dev, struct i3c_ccc_payload *
 					cmd->cmd0 |= CMD0_FIFO_IS_DB;
 					cmd->cmd1 |= CMD1_FIFO_DB(payload->ccc.data[0]);
 				} else {
-					LOG_ERR("%s: Defining Byte with Direct CCC not supported "
-						"with rev %lup%lu",
-						dev->name, REV_ID_REV_MAJOR(data->hw_cfg.rev_id),
-						REV_ID_REV_MINOR(data->hw_cfg.rev_id));
+					LOG_ERROR("%s: Defining Byte with Direct CCC not supported "
+						  "with rev %lup%lu",
+						  dev->name, REV_ID_REV_MAJOR(data->hw_cfg.rev_id),
+						  REV_ID_REV_MINOR(data->hw_cfg.rev_id));
 					ret = -ENOTSUP;
 					goto error;
 				}
 			} else if (payload->ccc.data_len > 1) {
-				LOG_ERR("%s: Defining Byte length greater than 1", dev->name);
+				LOG_ERROR("%s: Defining Byte length greater than 1", dev->name);
 				ret = -EINVAL;
 				goto error;
 			}
@@ -1663,7 +1663,7 @@ static int cdns_i3c_do_ccc_do(const struct device *dev, struct i3c_ccc_payload *
 #endif
 
 	if (!async && data->xfer.ret < 0) {
-		LOG_ERR("%s: CCC[0x%02x] error (%d)", dev->name, payload->ccc.id, data->xfer.ret);
+		LOG_ERROR("%s: CCC[0x%02x] error (%d)", dev->name, payload->ccc.id, data->xfer.ret);
 	}
 
 	if (!async) {
@@ -2179,7 +2179,7 @@ static int cdns_i3c_i2c_transfer_do(const struct device *dev, struct i3c_i2c_dev
 	__ASSERT_NO_MSG(num_msgs > 0);
 
 	if (num_msgs > data->hw_cfg.cmd_mem_depth || num_msgs > data->hw_cfg.cmdr_mem_depth) {
-		LOG_ERR("%s: Too many messages", dev->name);
+		LOG_ERROR("%s: Too many messages", dev->name);
 		return -ENOMEM;
 	}
 
@@ -2194,7 +2194,7 @@ static int cdns_i3c_i2c_transfer_do(const struct device *dev, struct i3c_i2c_dev
 		}
 	}
 	if ((rxsize > data->hw_cfg.rx_mem_depth) || (txsize > data->hw_cfg.tx_mem_depth)) {
-		LOG_ERR("%s: Total RX and/or TX transfer larger than FIFO", dev->name);
+		LOG_ERROR("%s: Total RX and/or TX transfer larger than FIFO", dev->name);
 		return -ENOMEM;
 	}
 
@@ -2381,7 +2381,7 @@ static int cdns_i3c_attach_device(const struct device *dev, struct i3c_device_de
 		slot = cdns_i3c_master_get_rr_slot(dev, desc->dynamic_addr);
 
 		if (slot < 0) {
-			LOG_ERR("%s: no space for i3c device: %s", dev->name, desc->dev->name);
+			LOG_ERROR("%s: no space for i3c device: %s", dev->name, desc->dev->name);
 			pm_device_busy_clear(dev);
 			k_mutex_unlock(&data->bus_lock);
 			return slot;
@@ -2420,7 +2420,7 @@ static int cdns_i3c_reattach_device(const struct device *dev, struct i3c_device_
 	struct cdns_i3c_i2c_dev_data *cdns_i3c_device_data = desc->controller_priv;
 
 	if (cdns_i3c_device_data == NULL) {
-		LOG_ERR("%s: %s: device not attached", dev->name, desc->dev->name);
+		LOG_ERROR("%s: %s: device not attached", dev->name, desc->dev->name);
 		return -EINVAL;
 	}
 
@@ -2449,7 +2449,7 @@ static int cdns_i3c_detach_device(const struct device *dev, struct i3c_device_de
 	struct cdns_i3c_i2c_dev_data *cdns_i3c_device_data = desc->controller_priv;
 
 	if (cdns_i3c_device_data == NULL) {
-		LOG_ERR("%s: %s: device not attached", dev->name, desc->dev->name);
+		LOG_ERROR("%s: %s: device not attached", dev->name, desc->dev->name);
 		return -EINVAL;
 	}
 
@@ -2476,7 +2476,7 @@ static int cdns_i3c_i2c_attach_device(const struct device *dev, struct i3c_i2c_d
 	int slot = cdns_i3c_master_get_rr_slot(dev, 0);
 
 	if (slot < 0) {
-		LOG_ERR("%s: no space for i2c device: addr 0x%02x", dev->name, desc->addr);
+		LOG_ERROR("%s: no space for i2c device: addr 0x%02x", dev->name, desc->addr);
 		return slot;
 	}
 
@@ -2510,7 +2510,7 @@ static int cdns_i3c_i2c_detach_device(const struct device *dev, struct i3c_i2c_d
 	struct cdns_i3c_i2c_dev_data *cdns_i2c_device_data = desc->controller_priv;
 
 	if (cdns_i2c_device_data == NULL) {
-		LOG_ERR("%s: device not attached", dev->name);
+		LOG_ERROR("%s: device not attached", dev->name);
 		return -EINVAL;
 	}
 
@@ -2542,7 +2542,7 @@ static int cdns_i3c_transfer_do(const struct device *dev, struct i3c_device_desc
 	__ASSERT_NO_MSG(num_msgs > 0);
 
 	if (num_msgs > data->hw_cfg.cmd_mem_depth || num_msgs > data->hw_cfg.cmdr_mem_depth) {
-		LOG_ERR("%s: Too many messages", dev->name);
+		LOG_ERROR("%s: Too many messages", dev->name);
 		return -ENOMEM;
 	}
 
@@ -2561,7 +2561,7 @@ static int cdns_i3c_transfer_do(const struct device *dev, struct i3c_device_desc
 		}
 	}
 	if ((rxsize > data->hw_cfg.rx_mem_depth) || (txsize > data->hw_cfg.tx_mem_depth)) {
-		LOG_ERR("%s: Total RX and/or TX transfer larger than FIFO", dev->name);
+		LOG_ERROR("%s: Total RX and/or TX transfer larger than FIFO", dev->name);
 		return -ENOMEM;
 	}
 
@@ -2698,7 +2698,7 @@ static int cdns_i3c_transfer_do(const struct device *dev, struct i3c_device_desc
 			cmd->sdr_err = &(msgs[i].err);
 			cmd->hdr = I3C_DATA_RATE_HDR_DDR;
 		} else {
-			LOG_ERR("%s: Unsupported HDR Mode %d", dev->name, msgs[i].hdr_mode);
+			LOG_ERROR("%s: Unsupported HDR Mode %d", dev->name, msgs[i].hdr_mode);
 			ret = -ENOTSUP;
 			goto error;
 		}
@@ -2710,7 +2710,7 @@ static int cdns_i3c_transfer_do(const struct device *dev, struct i3c_device_desc
 	cdns_i3c_start_transfer(dev);
 	if (!async) {
 		if (k_sem_take(&data->xfer.complete, K_MSEC(1000)) != 0) {
-			LOG_ERR("%s: transfer timed out", dev->name);
+			LOG_ERROR("%s: transfer timed out", dev->name);
 			cdns_i3c_cancel_transfer(dev);
 		}
 	}
@@ -2838,7 +2838,7 @@ static void cdns_i3c_handle_ibi(const struct device *dev, uint32_t ibir)
 	}
 	if (ibir & IBIR_ERROR) {
 		/* Controller issued an Abort */
-		LOG_ERR("%s: IBI Data overflow", dev->name);
+		LOG_ERROR("%s: IBI Data overflow", dev->name);
 	}
 
 	/* Read out any payload bytes */
@@ -2849,14 +2849,14 @@ static void cdns_i3c_handle_ibi(const struct device *dev, uint32_t ibir)
 			if (cdns_i3c_read_ibi_fifo(
 				    config, &data->ibi_buf.ibi_data[data->ibi_buf.ibi_data_cnt],
 				    ibi_len - data->ibi_buf.ibi_data_cnt) < 0) {
-				LOG_ERR("%s: Failed to get payload", dev->name);
+				LOG_ERROR("%s: Failed to get payload", dev->name);
 			}
 		}
 		data->ibi_buf.ibi_data_cnt = 0;
 	}
 
 	if (i3c_ibi_work_enqueue_target_irq(desc, data->ibi_buf.ibi_data, ibi_len) != 0) {
-		LOG_ERR("%s: Error enqueue IBI IRQ work", dev->name);
+		LOG_ERROR("%s: Error enqueue IBI IRQ work", dev->name);
 	}
 }
 #ifdef CONFIG_I3C_TARGET
@@ -2890,12 +2890,12 @@ static void cdns_i3c_handle_cr(const struct device *dev, uint32_t ibir)
 		return;
 	}
 	if (ibir & IBIR_ERROR) {
-		LOG_ERR("%s: Data overflow", dev->name);
+		LOG_ERROR("%s: Data overflow", dev->name);
 		return;
 	}
 
 	if (i3c_ibi_work_enqueue_controller_request(desc) != 0) {
-		LOG_ERR("%s: Error enqueue IBI IRQ work", dev->name);
+		LOG_ERROR("%s: Error enqueue IBI IRQ work", dev->name);
 	}
 }
 
@@ -2915,7 +2915,7 @@ static void cdns_i3c_handle_hj(const struct device *dev, uint32_t ibir)
 
 	/* TODO: disable CTRL_HJ_DISEC and process auto-ENTDAA*/
 	if (i3c_ibi_work_enqueue_hotjoin(dev) != 0) {
-		LOG_ERR("%s: Error enqueue IBI HJ work", dev->name);
+		LOG_ERROR("%s: Error enqueue IBI HJ work", dev->name);
 	}
 }
 
@@ -3037,7 +3037,7 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 #ifdef CONFIG_I3C_USE_IBI
 		cnds_i3c_master_demux_ibis(dev);
 #else
-		LOG_ERR("%s: IBI received - Kconfig for using IBIs is not enabled", dev->name);
+		LOG_ERROR("%s: IBI received - Kconfig for using IBIs is not enabled", dev->name);
 #endif
 	}
 
@@ -3052,23 +3052,23 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 			data->ibi_buf.ibi_data_cnt += 4;
 		}
 #else
-		LOG_ERR("%s: IBI received - Kconfig for using IBIs is not enabled", dev->name);
+		LOG_ERROR("%s: IBI received - Kconfig for using IBIs is not enabled", dev->name);
 #endif
 	}
 
 	/* In-band interrupt response overflow */
 	if (int_st & MST_INT_IBIR_OVF) {
-		LOG_ERR("%s: controller ibir overflow,", dev->name);
+		LOG_ERROR("%s: controller ibir overflow,", dev->name);
 	}
 
 	/* In-band interrupt data */
 	if (int_st & MST_INT_TX_OVF) {
-		LOG_ERR("%s: controller tx buffer overflow,", dev->name);
+		LOG_ERROR("%s: controller tx buffer overflow,", dev->name);
 	}
 
 	/* In-band interrupt data */
 	if (int_st & MST_INT_RX_UNF) {
-		LOG_ERR("%s: controller rx buffer underflow,", dev->name);
+		LOG_ERROR("%s: controller rx buffer underflow,", dev->name);
 	}
 #ifdef CONFIG_I3C_TARGET
 	if (int_st & MST_INT_MR_DONE) {
@@ -3145,12 +3145,12 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 
 	/* SLV SDR rx fifo underflow */
 	if (int_sl & SLV_INT_SDR_RX_UNF) {
-		LOG_ERR("%s: slave sdr rx buffer underflow", dev->name);
+		LOG_ERROR("%s: slave sdr rx buffer underflow", dev->name);
 	}
 
 	/* SLV SDR tx fifo overflow */
 	if (int_sl & SLV_INT_SDR_TX_OVF) {
-		LOG_ERR("%s: slave sdr tx buffer overflow,", dev->name);
+		LOG_ERROR("%s: slave sdr tx buffer overflow,", dev->name);
 	}
 
 	if (int_sl & SLV_INT_DDR_RX_THR) {
@@ -3171,7 +3171,7 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 
 				if (cdns_i3c_ddr_parity(ddr_payload) !=
 				    (ddr_rx_data & (DDR_ODD_PARITY | DDR_EVEN_PARITY))) {
-					LOG_ERR("%s: Received incorrect DDR Parity", dev->name);
+					LOG_ERROR("%s: Received incorrect DDR Parity", dev->name);
 				}
 				/* calculate a running a crc */
 				crc5 = i3c_cdns_crc5(crc5, ddr_payload);
@@ -3189,7 +3189,7 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 				   ((ddr_rx_data & DDR_CRC_TOKEN_MASK) == DDR_CRC_TOKEN)) {
 				/* should come through here last */
 				if (crc5 != DDR_CRC(ddr_rx_data)) {
-					LOG_ERR("%s: Received incorrect DDR CRC5", dev->name);
+					LOG_ERROR("%s: Received incorrect DDR CRC5", dev->name);
 				}
 			} else if (preamble == DDR_PREAMBLE_CMD_CRC) {
 				/* should come through here first */
@@ -3487,7 +3487,7 @@ static int cdns_i3c_target_tx_write(const struct device *dev, uint8_t *buf, uint
 			i = cdns_i3c_target_tx_ddr_write(dev, buf, len);
 			/* TODO: DDR THR interrupt support not implemented yet*/
 		} else {
-			LOG_ERR("%s: HDR-DDR not supported", dev->name);
+			LOG_ERROR("%s: HDR-DDR not supported", dev->name);
 			i = -ENOTSUP;
 		}
 	} else if (hdr_mode == 0) {
@@ -3525,7 +3525,7 @@ static int cdns_i3c_target_tx_write(const struct device *dev, uint8_t *buf, uint
 		thr_ctrl |= TX_THR(MIN((data->hw_cfg.tx_mem_depth / 4) / 2, len / 2));
 		sys_write32(thr_ctrl, config->base + TX_RX_THR_CTRL);
 	} else {
-		LOG_ERR("%s: Unsupported HDR Mode %d", dev->name, hdr_mode);
+		LOG_ERROR("%s: Unsupported HDR Mode %d", dev->name, hdr_mode);
 		i = -ENOTSUP;
 	}
 error:
@@ -3742,7 +3742,7 @@ static void i3c_cdns_deftgts_work_fn(struct k_work *work)
 		malloc(sizeof(uint8_t) + sizeof(struct i3c_ccc_deftgts_active_controller) +
 		       (count * sizeof(struct i3c_ccc_deftgts_target)));
 	if (!data->common.deftgts) {
-		LOG_ERR("%s: Failed to allocate memory for DEFTGTS", dev->name);
+		LOG_ERROR("%s: Failed to allocate memory for DEFTGTS", dev->name);
 		return;
 	}
 

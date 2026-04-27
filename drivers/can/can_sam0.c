@@ -144,19 +144,19 @@ static int can_sam0_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(sam_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("failed to apply pinctrl");
+		LOG_ERROR("failed to apply pinctrl");
 		return ret;
 	}
 
 	ret = can_mcan_configure_mram(dev, 0U, sam_cfg->mram);
 	if (ret != 0) {
-		LOG_ERR("failed to configure message ram");
+		LOG_ERROR("failed to configure message ram");
 		return ret;
 	}
 
 	ret = can_mcan_init(dev);
 	if (ret != 0) {
-		LOG_ERR("failed to mcan init");
+		LOG_ERROR("failed to mcan init");
 		return ret;
 	}
 

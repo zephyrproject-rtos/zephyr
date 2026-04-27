@@ -246,7 +246,7 @@ static int espi_xec_configure(const struct device *dev, struct espi_cfg *cfg)
 		if (IS_ENABLED(CONFIG_ESPI_FLASH_CHANNEL)) {
 			cap0 |= MCHP_ESPI_GBL_CAP0_FC_SUPP;
 		} else {
-			LOG_ERR("Flash channel not supported");
+			LOG_ERROR("Flash channel not supported");
 			return -EINVAL;
 		}
 	}
@@ -332,7 +332,7 @@ static int espi_xec_send_vwire(const struct device *dev,
 		}
 
 		if (rd_cnt == 0) {
-			LOG_ERR("VW %d send timeout", signal);
+			LOG_ERROR("VW %d send timeout", signal);
 			return -ETIMEDOUT;
 		}
 	}
@@ -388,17 +388,17 @@ static int espi_xec_send_oob(const struct device *dev,
 	LOG_DBG("%s", __func__);
 
 	if (!(regs->OOBTXSTS & MCHP_ESPI_OOB_TX_STS_CHEN)) {
-		LOG_ERR("OOB channel is disabled");
+		LOG_ERROR("OOB channel is disabled");
 		return -EIO;
 	}
 
 	if (regs->OOBTXSTS & MCHP_ESPI_OOB_TX_STS_BUSY) {
-		LOG_ERR("OOB channel is busy");
+		LOG_ERROR("OOB channel is busy");
 		return -EBUSY;
 	}
 
 	if (pckt->len > CONFIG_ESPI_OOB_BUFFER_SIZE) {
-		LOG_ERR("insufficient space");
+		LOG_ERROR("insufficient space");
 		return -EINVAL;
 	}
 
@@ -415,7 +415,7 @@ static int espi_xec_send_oob(const struct device *dev,
 	}
 
 	if (regs->OOBTXSTS & err_mask) {
-		LOG_ERR("Tx failed %x", regs->OOBTXSTS);
+		LOG_ERROR("Tx failed %x", regs->OOBTXSTS);
 		regs->OOBTXSTS = err_mask;
 		return -EIO;
 	}
@@ -448,7 +448,7 @@ static int espi_xec_receive_oob(const struct device *dev,
 	uint32_t rcvd_len = regs->OOBRXL & MCHP_ESPI_OOB_RX_LEN_MASK;
 
 	if (rcvd_len > pckt->len) {
-		LOG_ERR("space rcvd %d vs %d", rcvd_len, pckt->len);
+		LOG_ERROR("space rcvd %d vs %d", rcvd_len, pckt->len);
 		return -EIO;
 	}
 
@@ -480,12 +480,12 @@ static int espi_xec_flash_read(const struct device *dev,
 	LOG_DBG("%s", __func__);
 
 	if (!(regs->FCSTS & MCHP_ESPI_FC_STS_CHAN_EN)) {
-		LOG_ERR("Flash channel is disabled");
+		LOG_ERROR("Flash channel is disabled");
 		return -EIO;
 	}
 
 	if (pckt->len > CONFIG_ESPI_FLASH_BUFFER_SIZE) {
-		LOG_ERR("Invalid size request");
+		LOG_ERROR("Invalid size request");
 		return -EINVAL;
 	}
 
@@ -500,12 +500,12 @@ static int espi_xec_flash_read(const struct device *dev,
 	/* Wait until ISR or timeout */
 	ret = k_sem_take(&data->flash_lock, K_MSEC(MAX_FLASH_TIMEOUT));
 	if (ret == -EAGAIN) {
-		LOG_ERR("%s timeout", __func__);
+		LOG_ERROR("%s timeout", __func__);
 		return -ETIMEDOUT;
 	}
 
 	if (regs->FCSTS & err_mask) {
-		LOG_ERR("%s error %x", __func__, err_mask);
+		LOG_ERROR("%s error %x", __func__, err_mask);
 		regs->FCSTS = err_mask;
 		return -EIO;
 	}
@@ -530,17 +530,17 @@ static int espi_xec_flash_write(const struct device *dev,
 	LOG_DBG("%s", __func__);
 
 	if (sizeof(target_mem) < pckt->len) {
-		LOG_ERR("Packet length is too big");
+		LOG_ERROR("Packet length is too big");
 		return -ENOMEM;
 	}
 
 	if (!(regs->FCSTS & MCHP_ESPI_FC_STS_CHAN_EN)) {
-		LOG_ERR("Flash channel is disabled");
+		LOG_ERROR("Flash channel is disabled");
 		return -EIO;
 	}
 
 	if ((regs->FCCFG & MCHP_ESPI_FC_CFG_BUSY)) {
-		LOG_ERR("Flash channel is busy");
+		LOG_ERROR("Flash channel is busy");
 		return -EBUSY;
 	}
 
@@ -557,12 +557,12 @@ static int espi_xec_flash_write(const struct device *dev,
 	/* Wait until ISR or timeout */
 	ret = k_sem_take(&data->flash_lock, K_MSEC(MAX_FLASH_TIMEOUT));
 	if (ret == -EAGAIN) {
-		LOG_ERR("%s timeout", __func__);
+		LOG_ERROR("%s timeout", __func__);
 		return -ETIMEDOUT;
 	}
 
 	if (regs->FCSTS & err_mask) {
-		LOG_ERR("%s err: %x", __func__, err_mask);
+		LOG_ERROR("%s err: %x", __func__, err_mask);
 		regs->FCSTS = err_mask;
 		return -EIO;
 	}
@@ -586,12 +586,12 @@ static int espi_xec_flash_erase(const struct device *dev,
 	LOG_DBG("%s", __func__);
 
 	if (!(regs->FCSTS & MCHP_ESPI_FC_STS_CHAN_EN)) {
-		LOG_ERR("Flash channel is disabled");
+		LOG_ERROR("Flash channel is disabled");
 		return -EIO;
 	}
 
 	if ((regs->FCCFG & MCHP_ESPI_FC_CFG_BUSY)) {
-		LOG_ERR("Flash channel is busy");
+		LOG_ERROR("Flash channel is busy");
 		return -EBUSY;
 	}
 
@@ -608,12 +608,12 @@ static int espi_xec_flash_erase(const struct device *dev,
 	/* Wait until ISR or timeout */
 	ret = k_sem_take(&data->flash_lock, K_MSEC(MAX_FLASH_TIMEOUT));
 	if (ret == -EAGAIN) {
-		LOG_ERR("%s timeout", __func__);
+		LOG_ERROR("%s timeout", __func__);
 		return -ETIMEDOUT;
 	}
 
 	if (regs->FCSTS & err_mask) {
-		LOG_ERR("%s err: %x", __func__, err_mask);
+		LOG_ERROR("%s err: %x", __func__, err_mask);
 		regs->FCSTS = err_mask;
 		return -EIO;
 	}
@@ -861,7 +861,7 @@ static void espi_pc_isr(const struct device *dev)
 
 	LOG_DBG("%s %x", __func__, status);
 	if (status & MCHP_ESPI_PC_STS_BUS_ERR) {
-		LOG_ERR("%s bus error", __func__);
+		LOG_ERROR("%s bus error", __func__);
 		regs->PCSTS = MCHP_ESPI_PC_STS_BUS_ERR;
 	}
 
@@ -1490,7 +1490,7 @@ static int espi_xec_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("XEC eSPI V2 pinctrl setup failed (%d)", ret);
+		LOG_ERROR("XEC eSPI V2 pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
@@ -1550,7 +1550,7 @@ static int espi_xec_init(const struct device *dev)
 	 */
 	ret = xec_register_vw_handlers(dev);
 	if (ret) {
-		LOG_ERR("XEX eSPI V2 register VW handlers error %d", ret);
+		LOG_ERROR("XEX eSPI V2 register VW handlers error %d", ret);
 		return ret;
 	}
 

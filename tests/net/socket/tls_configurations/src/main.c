@@ -64,7 +64,7 @@ static int wait_for_event(void)
 	 */
 	ret = zsock_poll(fds, ARRAY_SIZE(fds), -1);
 	if (ret < 0) {
-		LOG_ERR("Error in poll (%d)", errno);
+		LOG_ERROR("Error in poll (%d)", errno);
 		return ret;
 	}
 
@@ -86,7 +86,7 @@ static int create_socket(void)
 	socket_fd = zsock_socket(addr.sin_family, NET_SOCK_STREAM, NET_IPPROTO_TLS_1_2);
 #endif
 	if (socket_fd < 0) {
-		LOG_ERR("Failed to create TLS socket (%d)", errno);
+		LOG_ERROR("Failed to create TLS socket (%d)", errno);
 		return -errno;
 	}
 
@@ -102,7 +102,7 @@ static int create_socket(void)
 	ret = zsock_setsockopt(socket_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST, sec_tag_list,
 			       sizeof(sec_tag_list));
 	if (ret < 0) {
-		LOG_ERR("Failed to set TLS_SEC_TAG_LIST option (%d)", errno);
+		LOG_ERROR("Failed to set TLS_SEC_TAG_LIST option (%d)", errno);
 		return -errno;
 	}
 
@@ -111,14 +111,14 @@ static int create_socket(void)
 	ret = zsock_setsockopt(socket_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_HOSTNAME, "localhost",
 			       sizeof("localhost"));
 	if (ret < 0) {
-		LOG_ERR("Failed to set TLS_HOSTNAME option (%d)", errno);
+		LOG_ERROR("Failed to set TLS_HOSTNAME option (%d)", errno);
 		return -errno;
 	}
 #endif
 
 	ret = zsock_connect(socket_fd, (struct net_sockaddr *)&addr, sizeof(addr));
 	if (ret < 0) {
-		LOG_ERR("Cannot connect to TCP remote (%d)", errno);
+		LOG_ERROR("Cannot connect to TCP remote (%d)", errno);
 		return -errno;
 	}
 
@@ -146,7 +146,7 @@ static int setup_credentials(void)
 				certificate,
 				sizeof(certificate));
 	if (err < 0) {
-		LOG_ERR("Failed to register certificate: %d", err);
+		LOG_ERROR("Failed to register certificate: %d", err);
 		return err;
 	}
 #endif
@@ -157,14 +157,14 @@ static int setup_credentials(void)
 				psk,
 				sizeof(psk));
 	if (err < 0) {
-		LOG_ERR("Failed to register PSK: %d", err);
+		LOG_ERROR("Failed to register PSK: %d", err);
 	}
 	err = tls_credential_add(PSK_TAG,
 				TLS_CREDENTIAL_PSK_ID,
 				psk_id,
 				sizeof(psk_id) - 1);
 	if (err < 0) {
-		LOG_ERR("Failed to register PSK ID: %d", err);
+		LOG_ERROR("Failed to register PSK ID: %d", err);
 	}
 #endif
 
@@ -182,7 +182,7 @@ int main(void)
 
 	ret = create_socket();
 	if (ret < 0) {
-		LOG_ERR("Socket creation failed (%d)", ret);
+		LOG_ERROR("Socket creation failed (%d)", ret);
 		goto exit;
 	}
 
@@ -203,7 +203,7 @@ int main(void)
 		LOG_DBG("Send: %s", test_buf);
 		ret = zsock_send(socket_fd, test_buf, data_len, 0);
 		if (ret < 0) {
-			LOG_ERR("Error sending test string (%d)", errno);
+			LOG_ERROR("Error sending test string (%d)", errno);
 			goto exit;
 		}
 
@@ -213,15 +213,15 @@ int main(void)
 
 		ret = zsock_recv(socket_fd, test_buf, data_len, ZSOCK_MSG_WAITALL);
 		if (ret == 0) {
-			LOG_ERR("Server terminated unexpectedly");
+			LOG_ERROR("Server terminated unexpectedly");
 			ret = -EIO;
 			goto exit;
 		} else if (ret < 0) {
-			LOG_ERR("Error receiving data (%d)", errno);
+			LOG_ERROR("Error receiving data (%d)", errno);
 			goto exit;
 		}
 		if (ret != data_len) {
-			LOG_ERR("Sent %zu bytes, but received %d", data_len, ret);
+			LOG_ERROR("Sent %zu bytes, but received %d", data_len, ret);
 			ret = -EINVAL;
 			goto exit;
 		}
@@ -230,7 +230,7 @@ int main(void)
 
 	ret = memcmp(TEST_STRING, test_buf, data_len);
 	if (ret != 0) {
-		LOG_ERR("Received data does not match with TEST_STRING");
+		LOG_ERROR("Received data does not match with TEST_STRING");
 		LOG_HEXDUMP_ERR(test_buf, data_len, "Received:");
 		LOG_HEXDUMP_ERR(TEST_STRING, data_len, "Expected:");
 		ret = -EINVAL;

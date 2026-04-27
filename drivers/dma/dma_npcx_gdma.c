@@ -90,7 +90,7 @@ static void dma_npcx_isr(const struct device *dev)
 #if defined(CONFIG_DMA_NPCX_GDMA_EX)
 		/* Check GDMA Transfer Error */
 		if (IS_BIT_SET(inst->CONTROL, NPCX_DMACTL_GDMAERR)) {
-			LOG_ERR("GDMA transfer error occurred!");
+			LOG_ERROR("GDMA transfer error occurred!");
 			ret = -EIO;
 		}
 #endif
@@ -244,7 +244,7 @@ static int dma_npcx_configure(const struct device *dev, uint32_t channel, struct
 
 	/* Check channel is valid */
 	if (channel >= dev_data->ctx.dma_channels) {
-		LOG_ERR("out of range DMA channel %d", channel);
+		LOG_ERROR("out of range DMA channel %d", channel);
 		return -EINVAL;
 	}
 
@@ -257,31 +257,31 @@ static int dma_npcx_configure(const struct device *dev, uint32_t channel, struct
 	channel_data = &dev_data->channels[channel];
 
 	if (cfg->source_burst_length != cfg->dest_burst_length) {
-		LOG_ERR("Burst length mismatch between source and destination");
+		LOG_ERROR("Burst length mismatch between source and destination");
 		return -EINVAL;
 	}
 
 	/* Check the source address is aligned */
 	if ((src_addr % cfg->source_burst_length) != 0) {
-		LOG_ERR("Source Address Not Aligned (0x%lx)", src_addr);
+		LOG_ERROR("Source Address Not Aligned (0x%lx)", src_addr);
 		return -EINVAL;
 	}
 
 	/* Check the destination address is aligned */
 	if ((dst_addr % cfg->dest_burst_length) != 0) {
-		LOG_ERR("Destination Address Not Aligned (0x%lx)", dst_addr);
+		LOG_ERROR("Destination Address Not Aligned (0x%lx)", dst_addr);
 		return -EINVAL;
 	}
 
 	/* Check the size is aligned */
 	if ((block_size % (cfg->source_burst_length)) != 0) {
-		LOG_ERR("Size Not Aligned");
+		LOG_ERROR("Size Not Aligned");
 		return -EINVAL;
 	}
 
 	/* Check source and destination region not overlay */
 	if (((src_addr + block_size) > dst_addr) && ((dst_addr + block_size) > src_addr)) {
-		LOG_ERR("Transaction Region Overlap");
+		LOG_ERROR("Transaction Region Overlap");
 		return -EFAULT;
 	}
 
@@ -297,7 +297,7 @@ static int dma_npcx_start(const struct device *dev, uint32_t channel)
 	struct dma_npcx_dev_data *const dev_data = dev->data;
 
 	if (channel >= dev_data->ctx.dma_channels) {
-		LOG_ERR("out of range DMA channel %d", channel);
+		LOG_ERROR("out of range DMA channel %d", channel);
 		return -EINVAL;
 	}
 
@@ -309,7 +309,7 @@ static int dma_npcx_stop(const struct device *dev, uint32_t channel)
 	struct dma_npcx_dev_data *const dev_data = dev->data;
 
 	if (channel >= dev_data->ctx.dma_channels) {
-		LOG_ERR("out of range DMA channel %d", channel);
+		LOG_ERROR("out of range DMA channel %d", channel);
 		return -EINVAL;
 	}
 
@@ -326,7 +326,7 @@ static int dma_npcx_get_status(const struct device *dev, uint32_t channel,
 	uint32_t cnt, bus_width;
 
 	if (channel >= dev_data->ctx.dma_channels) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
@@ -356,7 +356,7 @@ static bool dma_npcx_chan_filter(const struct device *dev, int ch, void *filter_
 	struct dma_npcx_dev_data *const dev_data = dev->data;
 
 	if (ch >= dev_data->ctx.dma_channels) {
-		LOG_ERR("Invalid DMA channel index %d", ch);
+		LOG_ERROR("Invalid DMA channel index %d", ch);
 		return false;
 	}
 
@@ -375,13 +375,13 @@ static int dma_npcx_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(clk_dev)) {
-		LOG_ERR("%s device not ready", clk_dev->name);
+		LOG_ERROR("%s device not ready", clk_dev->name);
 		return -ENODEV;
 	}
 
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&dev_cfg->clk_cfg);
 	if (ret < 0) {
-		LOG_ERR("Turn on GDMA clock fail %d", ret);
+		LOG_ERROR("Turn on GDMA clock fail %d", ret);
 		return ret;
 	}
 

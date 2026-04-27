@@ -48,7 +48,7 @@ int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 	int cpu_id = 0;
 
 	if (pstate_out == NULL) {
-		LOG_ERR("On-Demand Policy: pstate_out is NULL");
+		LOG_ERROR("On-Demand Policy: pstate_out is NULL");
 		return -EINVAL;
 	}
 
@@ -59,7 +59,7 @@ int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 
 	cpu_load = cpu_load_metric_get(cpu_id);
 	if (cpu_load < 0) {
-		LOG_ERR("Unable to retrieve CPU load");
+		LOG_ERROR("Unable to retrieve CPU load");
 		return cpu_load;
 	}
 
@@ -124,7 +124,7 @@ const struct pstate *cpu_freq_policy_pstate_set(const struct pstate *state)
 
 	rv = cpu_freq_pstate_set(state);
 	if (rv != 0) {
-		LOG_ERR("Failed to set P-state: %d", rv);
+		LOG_ERROR("Failed to set P-state: %d", rv);
 		return NULL;
 	}
 

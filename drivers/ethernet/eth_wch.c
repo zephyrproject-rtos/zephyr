@@ -215,7 +215,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	LOG_DBG("Sending Packet: %p of Length: %u", pkt, total_len);
 	if (total_len > (ETH_TXBUF_SIZE * ETH_TXBUF_NB)) {
 		eth_stats_update_errors_tx(data->iface);
-		LOG_ERR("Packet spans all available descriptors");
+		LOG_ERROR("Packet spans all available descriptors");
 		return -ENOBUFS;
 	}
 
@@ -225,7 +225,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	do {
 		if ((dma_tx_desc_current->Status & ETH_DMATxDesc_OWN) != 0U) {
 			eth_stats_update_errors_tx(data->iface);
-			LOG_ERR("No Descriptors Available");
+			LOG_ERROR("No Descriptors Available");
 			res = -EBUSY;
 			goto error;
 		}
@@ -236,7 +236,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		if (net_pkt_read(pkt, (void *)(dma_tx_desc_current->Buffer1Addr), chunk_size) !=
 		    0U) {
 			eth_stats_update_errors_tx(data->iface);
-			LOG_ERR("Could not read descriptor buffer!");
+			LOG_ERROR("Could not read descriptor buffer!");
 			res = -ENOBUFS;
 			goto error;
 		}
@@ -303,12 +303,12 @@ static struct net_pkt *eth_rx(const struct device *dev)
 
 	pkt = net_pkt_rx_alloc_with_buffer(data->iface, total_len, AF_UNSPEC, 0, K_MSEC(100));
 	if (pkt == 0U) {
-		LOG_ERR("Failed to obtain RX buffer");
+		LOG_ERROR("Failed to obtain RX buffer");
 		goto release_desc;
 	}
 
 	if (net_pkt_write(pkt, (void *)(dma_rx_desc_current->Buffer1Addr), total_len) != 0) {
-		LOG_ERR("Failed to append RX buffer to context buffer");
+		LOG_ERROR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
 		pkt = NULL;
 		goto release_desc;
@@ -351,10 +351,10 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 				res = net_recv_data(iface, pkt);
 				if (res < 0) {
 					eth_stats_update_errors_rx(iface);
-					LOG_ERR("Failed to enqueue "
-						"frame "
-						"into RX queue: %d",
-						res);
+					LOG_ERROR("Failed to enqueue "
+						  "frame "
+						  "into RX queue: %d",
+						  res);
 					net_pkt_unref(pkt);
 				}
 			}
@@ -549,7 +549,7 @@ static void eth_wch_iface_init(struct net_if *iface)
 	if (device_is_ready(config->phy_dev)) {
 		phy_link_callback_set(config->phy_dev, phy_link_state_changed, (void *)dev);
 	} else {
-		LOG_ERR("PHY device not ready");
+		LOG_ERROR("PHY device not ready");
 	}
 }
 
@@ -642,7 +642,7 @@ static int eth_wch_init(const struct device *dev)
 	ret |= clock_control_on(config->clk_rx_dev, clock_sys);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to enable ethernet clocks");
+		LOG_ERROR("Failed to enable ethernet clocks");
 		return -EIO;
 	}
 
@@ -674,7 +674,7 @@ static int eth_wch_init(const struct device *dev)
 	/* configure pinmux */
 	ret = pinctrl_apply_state(config->pin_cfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Could not configure ethernet pins (%d)", ret);
+		LOG_ERROR("Could not configure ethernet pins (%d)", ret);
 		return ret;
 	}
 

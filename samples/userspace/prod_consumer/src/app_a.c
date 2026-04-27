@@ -73,7 +73,7 @@ void sample_callback(const struct device *dev, void *context, void *data)
 	 */
 	ret = k_msgq_put(&mqueue, data, K_NO_WAIT);
 	if (ret) {
-		LOG_ERR("k_msgq_put failed with %d", ret);
+		LOG_ERROR("k_msgq_put failed with %d", ret);
 	}
 }
 
@@ -94,7 +94,7 @@ static void monitor_entry(void *p1, void *p2, void *p3)
 
 	ret = sample_driver_state_set(sample_device, true);
 	if (ret != 0) {
-		LOG_ERR("couldn't start driver interrupts");
+		LOG_ERROR("couldn't start driver interrupts");
 		k_oops();
 	}
 
@@ -102,7 +102,7 @@ static void monitor_entry(void *p1, void *p2, void *p3)
 		payload = sys_heap_alloc(&shared_pool,
 					 SAMPLE_DRIVER_MSG_SIZE);
 		if (payload == NULL) {
-			LOG_ERR("couldn't alloc memory from shared pool");
+			LOG_ERROR("couldn't alloc memory from shared pool");
 			k_oops();
 			continue;
 		}
@@ -113,7 +113,7 @@ static void monitor_entry(void *p1, void *p2, void *p3)
 		LOG_DBG("monitor thread waiting for data...");
 		ret = k_msgq_get(&mqueue, payload, K_FOREVER);
 		if (ret != 0) {
-			LOG_ERR("k_msgq_get() failed with %d", ret);
+			LOG_ERROR("k_msgq_get() failed with %d", ret);
 			k_oops();
 		}
 
@@ -138,7 +138,7 @@ static void monitor_entry(void *p1, void *p2, void *p3)
 	 */
 	ret = sample_driver_state_set(sample_device, false);
 	if (ret != 0) {
-		LOG_ERR("couldn't disable driver");
+		LOG_ERROR("couldn't disable driver");
 		k_oops();
 	}
 	LOG_DBG("monitor thread exiting");
@@ -162,7 +162,7 @@ static void writeback_entry(void *p1, void *p2, void *p3)
 		 */
 		data = k_queue_get(&shared_queue_outgoing, K_FOREVER);
 		if (data == NULL) {
-			LOG_ERR("no data?");
+			LOG_ERROR("no data?");
 			k_oops();
 		}
 
@@ -178,7 +178,7 @@ static void writeback_entry(void *p1, void *p2, void *p3)
 	 */
 	ret = magic_syscall(&writeback_count);
 	if (ret != 0) {
-		LOG_ERR("no more magic!");
+		LOG_ERROR("no more magic!");
 		k_oops();
 	}
 
@@ -199,7 +199,7 @@ void app_a_entry(void *p1, void *p2, void *p3)
 
 	sample_device = device_get_binding(SAMPLE_DRIVER_NAME_0);
 	if (sample_device == NULL) {
-		LOG_ERR("bad sample device");
+		LOG_ERROR("bad sample device");
 		k_oops();
 	}
 

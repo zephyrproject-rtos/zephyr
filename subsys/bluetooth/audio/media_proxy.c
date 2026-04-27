@@ -238,7 +238,7 @@ uint8_t media_proxy_sctrl_get_content_ctrl_id(void)
 static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 {
 	if (err) {
-		LOG_ERR("Discovery failed (%d)", err);
+		LOG_ERROR("Discovery failed (%d)", err);
 	}
 
 	LOG_DBG("Discovered player");
@@ -256,7 +256,7 @@ static void mcc_read_player_name_cb(struct bt_conn *conn, int err, const char *n
 	LOG_DBG("MCC player name callback");
 
 	if (err) {
-		LOG_ERR("Player name failed");
+		LOG_ERROR("Player name failed");
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->player_name_recv) {
@@ -272,7 +272,7 @@ static void mcc_read_icon_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 	LOG_DBG("Icon Object ID callback");
 
 	if (err) {
-		LOG_ERR("Icon Object ID read failed (%d)", err);
+		LOG_ERROR("Icon Object ID read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->icon_id_recv) {
@@ -287,7 +287,7 @@ static void mcc_read_icon_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 static void mcc_read_icon_url_cb(struct bt_conn *conn, int err, const char *url)
 {
 	if (err) {
-		LOG_ERR("Icon URL read failed (%d)", err);
+		LOG_ERROR("Icon URL read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->icon_url_recv) {
@@ -301,7 +301,7 @@ static void mcc_read_icon_url_cb(struct bt_conn *conn, int err, const char *url)
 static void mcc_track_changed_ntf_cb(struct bt_conn *conn, int err)
 {
 	if (err) {
-		LOG_ERR("Track change notification failed (%d)", err);
+		LOG_ERROR("Track change notification failed (%d)", err);
 		return;
 	}
 
@@ -316,7 +316,7 @@ static void mcc_track_changed_ntf_cb(struct bt_conn *conn, int err)
 static void mcc_read_track_title_cb(struct bt_conn *conn, int err, const char *title)
 {
 	if (err) {
-		LOG_ERR("Track title read failed (%d)", err);
+		LOG_ERROR("Track title read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_title_recv) {
@@ -331,7 +331,7 @@ static void mcc_read_track_title_cb(struct bt_conn *conn, int err, const char *t
 static void mcc_read_track_duration_cb(struct bt_conn *conn, int err, int32_t dur)
 {
 	if (err) {
-		LOG_ERR("Track duration read failed (%d)", err);
+		LOG_ERROR("Track duration read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_duration_recv) {
@@ -346,7 +346,7 @@ static void mcc_read_track_duration_cb(struct bt_conn *conn, int err, int32_t du
 static void mcc_read_track_position_cb(struct bt_conn *conn, int err, int32_t pos)
 {
 	if (err) {
-		LOG_ERR("Track position read failed (%d)", err);
+		LOG_ERROR("Track position read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_position_recv) {
@@ -361,7 +361,7 @@ static void mcc_read_track_position_cb(struct bt_conn *conn, int err, int32_t po
 static void mcc_set_track_position_cb(struct bt_conn *conn, int err, int32_t pos)
 {
 	if (err) {
-		LOG_ERR("Track Position set failed (%d)", err);
+		LOG_ERROR("Track Position set failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_position_write) {
@@ -376,7 +376,7 @@ static void mcc_set_track_position_cb(struct bt_conn *conn, int err, int32_t pos
 static void mcc_read_playback_speed_cb(struct bt_conn *conn, int err, int8_t speed)
 {
 	if (err) {
-		LOG_ERR("Playback speed read failed (%d)", err);
+		LOG_ERROR("Playback speed read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playback_speed_recv) {
@@ -391,7 +391,7 @@ static void mcc_read_playback_speed_cb(struct bt_conn *conn, int err, int8_t spe
 static void mcc_set_playback_speed_cb(struct bt_conn *conn, int err, int8_t speed)
 {
 	if (err) {
-		LOG_ERR("Playback speed set failed (%d)", err);
+		LOG_ERROR("Playback speed set failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playback_speed_write) {
@@ -406,7 +406,7 @@ static void mcc_set_playback_speed_cb(struct bt_conn *conn, int err, int8_t spee
 static void mcc_read_seeking_speed_cb(struct bt_conn *conn, int err, int8_t speed)
 {
 	if (err) {
-		LOG_ERR("Seeking speed read failed (%d)", err);
+		LOG_ERROR("Seeking speed read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->seeking_speed_recv) {
@@ -421,7 +421,7 @@ static void mcc_read_seeking_speed_cb(struct bt_conn *conn, int err, int8_t spee
 static void mcc_read_segments_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	if (err) {
-		LOG_ERR("Track Segments Object ID read failed (%d)", err);
+		LOG_ERROR("Track Segments Object ID read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_segments_id_recv) {
@@ -434,7 +434,7 @@ static void mcc_read_segments_obj_id_cb(struct bt_conn *conn, int err, uint64_t 
 static void mcc_read_current_track_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	if (err) {
-		LOG_ERR("Current Track Object ID read failed (%d)", err);
+		LOG_ERROR("Current Track Object ID read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->current_track_id_recv) {
@@ -449,7 +449,7 @@ static void mcc_read_current_track_obj_id_cb(struct bt_conn *conn, int err, uint
 static void mcc_read_next_track_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	if (err) {
-		LOG_ERR("Next Track Object ID read failed (%d)", err);
+		LOG_ERROR("Next Track Object ID read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->next_track_id_recv) {
@@ -464,7 +464,7 @@ static void mcc_read_next_track_obj_id_cb(struct bt_conn *conn, int err, uint64_
 static void mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	if (err) {
-		LOG_ERR("Parent Group Object ID read failed (%d)", err);
+		LOG_ERROR("Parent Group Object ID read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->parent_group_id_recv) {
@@ -477,7 +477,7 @@ static void mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, int err, uint6
 static void mcc_read_current_group_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	if (err) {
-		LOG_ERR("Current Group Object ID read failed (%d)", err);
+		LOG_ERROR("Current Group Object ID read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->current_group_id_recv) {
@@ -495,7 +495,7 @@ static void mcc_read_current_group_obj_id_cb(struct bt_conn *conn, int err, uint
 static void mcc_read_playing_order_cb(struct bt_conn *conn, int err, uint8_t order)
 {
 	if (err) {
-		LOG_ERR("Playing order read failed (%d)", err);
+		LOG_ERROR("Playing order read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playing_order_recv) {
@@ -510,7 +510,7 @@ static void mcc_read_playing_order_cb(struct bt_conn *conn, int err, uint8_t ord
 static void mcc_set_playing_order_cb(struct bt_conn *conn, int err, uint8_t order)
 {
 	if (err) {
-		LOG_ERR("Playing order set failed (%d)", err);
+		LOG_ERROR("Playing order set failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playing_order_write) {
@@ -525,7 +525,7 @@ static void mcc_set_playing_order_cb(struct bt_conn *conn, int err, uint8_t orde
 static void mcc_read_playing_orders_supported_cb(struct bt_conn *conn, int err, uint16_t orders)
 {
 	if (err) {
-		LOG_ERR("Playing orders supported read failed (%d)", err);
+		LOG_ERROR("Playing orders supported read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playing_orders_supported_recv) {
@@ -540,7 +540,7 @@ static void mcc_read_playing_orders_supported_cb(struct bt_conn *conn, int err, 
 static void mcc_read_media_state_cb(struct bt_conn *conn, int err, uint8_t state)
 {
 	if (err) {
-		LOG_ERR("Media State read failed (%d)", err);
+		LOG_ERROR("Media State read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->media_state_recv) {
@@ -555,8 +555,8 @@ static void mcc_read_media_state_cb(struct bt_conn *conn, int err, uint8_t state
 static void mcc_send_cmd_cb(struct bt_conn *conn, int err, const struct mpl_cmd *cmd)
 {
 	if (err) {
-		LOG_ERR("Command send failed (%d) - opcode: %d, param: %d", err, cmd->opcode,
-			cmd->param);
+		LOG_ERROR("Command send failed (%d) - opcode: %d, param: %d", err, cmd->opcode,
+			  cmd->param);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->command_send) {
@@ -571,8 +571,8 @@ static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err,
 			   const struct mpl_cmd_ntf *ntf)
 {
 	if (err) {
-		LOG_ERR("Command notification error (%d) - command opcode: %d, result: %d", err,
-			ntf->requested_opcode, ntf->result_code);
+		LOG_ERROR("Command notification error (%d) - command opcode: %d, result: %d", err,
+			  ntf->requested_opcode, ntf->result_code);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->command_recv) {
@@ -586,7 +586,7 @@ static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err,
 static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err, uint32_t opcodes)
 {
 	if (err) {
-		LOG_ERR("Opcodes supported read failed (%d)", err);
+		LOG_ERROR("Opcodes supported read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->commands_supported_recv) {
@@ -601,7 +601,7 @@ static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err, uint32_
 static void mcc_send_search_cb(struct bt_conn *conn, int err, const struct mpl_search *search)
 {
 	if (err) {
-		LOG_ERR("Search send failed (%d)", err);
+		LOG_ERROR("Search send failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->search_send) {
@@ -614,7 +614,7 @@ static void mcc_send_search_cb(struct bt_conn *conn, int err, const struct mpl_s
 static void mcc_search_ntf_cb(struct bt_conn *conn, int err, uint8_t result_code)
 {
 	if (err) {
-		LOG_ERR("Search notification error (%d), result code: %d", err, result_code);
+		LOG_ERROR("Search notification error (%d), result code: %d", err, result_code);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->search_recv) {
@@ -627,7 +627,7 @@ static void mcc_search_ntf_cb(struct bt_conn *conn, int err, uint8_t result_code
 static void mcc_read_search_results_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
 	if (err) {
-		LOG_ERR("Search Results Object ID read failed (%d)", err);
+		LOG_ERROR("Search Results Object ID read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->search_results_id_recv) {
@@ -642,7 +642,7 @@ static void mcc_read_search_results_obj_id_cb(struct bt_conn *conn, int err, uin
 static void mcc_read_content_control_id_cb(struct bt_conn *conn, int err, uint8_t ccid)
 {
 	if (err) {
-		LOG_ERR("Content Control ID read failed (%d)", err);
+		LOG_ERROR("Content Control ID read failed (%d)", err);
 	}
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->content_ctrl_id_recv) {
@@ -769,14 +769,14 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 
 	err = bt_mcc_init(&mprx.mcc_cbs);
 	if (err) {
-		LOG_ERR("Failed to initialize MCC");
+		LOG_ERROR("Failed to initialize MCC");
 		return err;
 	}
 
 	/* Start discovery of remote MCS, subscribe to notifications */
 	err = bt_mcc_discover_mcs(conn, 1);
 	if (err) {
-		LOG_ERR("Discovery failed");
+		LOG_ERROR("Discovery failed");
 		return err;
 	}
 

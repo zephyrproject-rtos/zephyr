@@ -103,7 +103,7 @@ static int iis2iclx_accel_odr_set(const struct device *dev, uint16_t freq)
 	}
 
 	if (iis2iclx_accel_set_odr_raw(dev, odr) < 0) {
-		LOG_ERR("failed to set accelerometer sampling rate");
+		LOG_ERROR("failed to set accelerometer sampling rate");
 		return -EIO;
 	}
 
@@ -121,7 +121,7 @@ static int iis2iclx_accel_range_set(const struct device *dev, int32_t range)
 	}
 
 	if (iis2iclx_accel_set_fs_raw(dev, fs) < 0) {
-		LOG_ERR("failed to set accelerometer full-scale");
+		LOG_ERROR("failed to set accelerometer full-scale");
 		return -EIO;
 	}
 
@@ -140,7 +140,7 @@ static int iis2iclx_accel_config(const struct device *dev,
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return iis2iclx_accel_odr_set(dev, val->val1);
 	default:
-		LOG_ERR("Accel attribute not supported.");
+		LOG_ERROR("Accel attribute not supported.");
 		return -ENOTSUP;
 	}
 
@@ -164,14 +164,14 @@ static int iis2iclx_attr_set(const struct device *dev,
 	case SENSOR_CHAN_PRESS:
 	case SENSOR_CHAN_HUMIDITY:
 		if (!data->shub_inited) {
-			LOG_ERR("shub not inited.");
+			LOG_ERROR("shub not inited.");
 			return -ENOTSUP;
 		}
 
 		return iis2iclx_shub_config(dev, chan, attr, val);
 #endif /* CONFIG_IIS2ICLX_SENSORHUB */
 	default:
-		LOG_ERR("attr_set() not supported on this channel.");
+		LOG_ERROR("attr_set() not supported on this channel.");
 		return -ENOTSUP;
 	}
 
@@ -185,7 +185,7 @@ static int iis2iclx_sample_fetch_accel(const struct device *dev)
 	int16_t buf[2];
 
 	if (iis2iclx_acceleration_raw_get((stmdev_ctx_t *)&cfg->ctx, buf) < 0) {
-		LOG_ERR("Failed to read sample");
+		LOG_ERROR("Failed to read sample");
 		return -EIO;
 	}
 
@@ -203,7 +203,7 @@ static int iis2iclx_sample_fetch_temp(const struct device *dev)
 	int16_t buf;
 
 	if (iis2iclx_temperature_raw_get((stmdev_ctx_t *)&cfg->ctx, &buf) < 0) {
-		LOG_ERR("Failed to read sample");
+		LOG_ERROR("Failed to read sample");
 		return -EIO;
 	}
 
@@ -217,7 +217,7 @@ static int iis2iclx_sample_fetch_temp(const struct device *dev)
 static int iis2iclx_sample_fetch_shub(const struct device *dev)
 {
 	if (iis2iclx_shub_fetch_external_devs(dev) < 0) {
-		LOG_ERR("failed to read ext shub devices");
+		LOG_ERROR("failed to read ext shub devices");
 		return -EIO;
 	}
 
@@ -341,7 +341,7 @@ static inline int iis2iclx_magn_get_channel(enum sensor_channel chan,
 
 	idx = iis2iclx_shub_get_idx(data->dev, SENSOR_CHAN_MAGN_XYZ);
 	if (idx < 0) {
-		LOG_ERR("external magn not supported");
+		LOG_ERROR("external magn not supported");
 		return -ENOTSUP;
 	}
 
@@ -469,7 +469,7 @@ static int iis2iclx_channel_get(const struct device *dev,
 	case SENSOR_CHAN_MAGN_Z:
 	case SENSOR_CHAN_MAGN_XYZ:
 		if (!data->shub_inited) {
-			LOG_ERR("attr_set() shub not inited.");
+			LOG_ERROR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -478,7 +478,7 @@ static int iis2iclx_channel_get(const struct device *dev,
 
 	case SENSOR_CHAN_HUMIDITY:
 		if (!data->shub_inited) {
-			LOG_ERR("attr_set() shub not inited.");
+			LOG_ERROR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -487,7 +487,7 @@ static int iis2iclx_channel_get(const struct device *dev,
 
 	case SENSOR_CHAN_PRESS:
 		if (!data->shub_inited) {
-			LOG_ERR("attr_set() shub not inited.");
+			LOG_ERROR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -496,7 +496,7 @@ static int iis2iclx_channel_get(const struct device *dev,
 
 	case SENSOR_CHAN_AMBIENT_TEMP:
 		if (!data->shub_inited) {
-			LOG_ERR("attr_set() shub not inited.");
+			LOG_ERROR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -530,14 +530,14 @@ static int iis2iclx_init_chip(const struct device *dev)
 	iis2iclx->dev = dev;
 
 	if (iis2iclx_device_id_get((stmdev_ctx_t *)&cfg->ctx, &chip_id) < 0) {
-		LOG_ERR("Failed reading chip id");
+		LOG_ERROR("Failed reading chip id");
 		return -EIO;
 	}
 
 	LOG_INF("chip id 0x%x", chip_id);
 
 	if (chip_id != IIS2ICLX_ID) {
-		LOG_ERR("Invalid chip id 0x%x", chip_id);
+		LOG_ERROR("Invalid chip id 0x%x", chip_id);
 		return -EIO;
 	}
 
@@ -550,26 +550,26 @@ static int iis2iclx_init_chip(const struct device *dev)
 
 	LOG_DBG("range is %d", fs);
 	if (iis2iclx_accel_set_fs_raw(dev, fs) < 0) {
-		LOG_ERR("failed to set accelerometer full-scale");
+		LOG_ERROR("failed to set accelerometer full-scale");
 		return -EIO;
 	}
 	iis2iclx->acc_gain = (iis2iclx_accel_fs_sens[fs] * GAIN_UNIT_XL);
 
 	LOG_DBG("odr is %d", odr);
 	if (iis2iclx_accel_set_odr_raw(dev, odr) < 0) {
-		LOG_ERR("failed to set accelerometer sampling rate");
+		LOG_ERROR("failed to set accelerometer sampling rate");
 		return -EIO;
 	}
 
 	/* Set FIFO bypass mode */
 	if (iis2iclx_fifo_mode_set((stmdev_ctx_t *)&cfg->ctx,
 				   IIS2ICLX_BYPASS_MODE) < 0) {
-		LOG_ERR("failed to set FIFO mode");
+		LOG_ERROR("failed to set FIFO mode");
 		return -EIO;
 	}
 
 	if (iis2iclx_block_data_update_set((stmdev_ctx_t *)&cfg->ctx, 1) < 0) {
-		LOG_ERR("failed to set BDU mode");
+		LOG_ERROR("failed to set BDU mode");
 		return -EIO;
 	}
 
@@ -586,14 +586,14 @@ static int iis2iclx_init(const struct device *dev)
 	LOG_INF("Initialize device %s", dev->name);
 	data->dev = dev;
 	if (iis2iclx_init_chip(dev) < 0) {
-		LOG_ERR("failed to initialize chip");
+		LOG_ERROR("failed to initialize chip");
 		return -EIO;
 	}
 
 #ifdef CONFIG_IIS2ICLX_TRIGGER
 	if (cfg->trig_enabled) {
 		if (iis2iclx_init_interrupt(dev) < 0) {
-			LOG_ERR("Failed to initialize interrupt.");
+			LOG_ERROR("Failed to initialize interrupt.");
 			return -EIO;
 		}
 	}

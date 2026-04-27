@@ -87,7 +87,7 @@ static int emul_lc709203f_reg_write(const struct emul *target, uint8_t *buf, siz
 	const uint8_t crc_calc = crc8(crc_buf, sizeof(crc_buf), LC709203F_CRC_POLYNOMIAL, 0, false);
 
 	if (crc != crc_calc) {
-		LOG_ERR("CRC mismatch on reg 0x%02x", reg);
+		LOG_ERROR("CRC mismatch on reg 0x%02x", reg);
 		return -EIO;
 	}
 
@@ -111,7 +111,7 @@ static int emul_lc709203f_reg_write(const struct emul *target, uint8_t *buf, siz
 		data->regs[reg] = value;
 		break;
 	default:
-		LOG_ERR("Unknown or read only register 0x%x write", reg);
+		LOG_ERROR("Unknown or read only register 0x%x write", reg);
 		return -EIO;
 	}
 	return 0;
@@ -126,8 +126,8 @@ static int emul_lc709203f_reg_read(const struct emul *target, int reg, uint8_t *
 	switch (reg) {
 	case LC709203F_REG_CELL_TEMPERATURE:
 		if (data->regs[LC709203F_REG_STATUS_BIT] == 0x0000) {
-			LOG_ERR("Temperature obtaining method is not set to Thermistor mode, "
-				"instead its set to I2C mode");
+			LOG_ERROR("Temperature obtaining method is not set to Thermistor mode, "
+				  "instead its set to I2C mode");
 			return -EIO;
 		}
 	case LC709203F_REG_THERMISTOR_B:
@@ -147,7 +147,7 @@ static int emul_lc709203f_reg_read(const struct emul *target, int reg, uint8_t *
 		val = data->regs[reg];
 		break;
 	default:
-		LOG_ERR("Unknown or write only register 0x%x read", reg);
+		LOG_ERROR("Unknown or write only register 0x%x read", reg);
 		return -EIO;
 	}
 
@@ -179,7 +179,7 @@ static int lc709203f_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 	switch (num_msgs) {
 	case 1:
 		if (msgs->flags & I2C_MSG_READ) {
-			LOG_ERR("Unexpected read");
+			LOG_ERROR("Unexpected read");
 			return -EIO;
 		}
 
@@ -187,16 +187,16 @@ static int lc709203f_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 			return emul_lc709203f_reg_write(target, msgs->buf, msgs->len);
 		}
 
-		LOG_ERR("Unexpected msg length %d", msgs->len);
+		LOG_ERROR("Unexpected msg length %d", msgs->len);
 		return -EIO;
 
 	case 2:
 		if (msgs->flags & I2C_MSG_READ) {
-			LOG_ERR("Unexpected read");
+			LOG_ERROR("Unexpected read");
 			return -EIO;
 		}
 		if (msgs->len != 1) {
-			LOG_ERR("Unexpected msg0 length %d", msgs->len);
+			LOG_ERROR("Unexpected msg0 length %d", msgs->len);
 			return -EIO;
 		}
 		reg = msgs->buf[0];
@@ -208,13 +208,13 @@ static int lc709203f_emul_transfer_i2c(const struct emul *target, struct i2c_msg
 				return emul_lc709203f_reg_read(target, reg, msgs->buf, msgs->len);
 			}
 
-			LOG_ERR("Unexpected msg length %d", msgs->len);
+			LOG_ERROR("Unexpected msg length %d", msgs->len);
 			return -EIO;
 		}
-		LOG_ERR("Second message must be an I2C write");
+		LOG_ERROR("Second message must be an I2C write");
 		return -EIO;
 	default:
-		LOG_ERR("Invalid number of messages: %d", num_msgs);
+		LOG_ERROR("Invalid number of messages: %d", num_msgs);
 		return -EIO;
 	}
 

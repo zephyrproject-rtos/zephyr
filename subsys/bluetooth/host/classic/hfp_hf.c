@@ -163,10 +163,10 @@ void hf_slc_error(struct at_client *hf_at)
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	int err;
 
-	LOG_ERR("SLC error: disconnecting");
+	LOG_ERROR("SLC error: disconnecting");
 	err = bt_rfcomm_dlc_disconnect(&hf->rfcomm_dlc);
 	if (err) {
-		LOG_ERR("Rfcomm: Unable to disconnect :%d", -err);
+		LOG_ERROR("Rfcomm: Unable to disconnect :%d", -err);
 	}
 }
 
@@ -174,11 +174,11 @@ static void hfp_hf_send_failed(struct bt_hfp_hf *hf)
 {
 	int err;
 
-	LOG_ERR("SLC error: disconnecting");
+	LOG_ERROR("SLC error: disconnecting");
 
 	err = bt_rfcomm_dlc_disconnect(&hf->rfcomm_dlc);
 	if (err) {
-		LOG_ERR("Fail to disconnect: %d", err);
+		LOG_ERROR("Fail to disconnect: %d", err);
 	}
 }
 
@@ -246,7 +246,7 @@ static void hfp_hf_send_data(struct bt_hfp_hf *hf)
 
 	err = bt_rfcomm_dlc_send(&hf->rfcomm_dlc, buf);
 	if (err < 0) {
-		LOG_ERR("Rfcomm send error :(%d)", err);
+		LOG_ERROR("Rfcomm send error :(%d)", err);
 		atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_TX_ONGOING);
 		net_buf_unref(buf);
 		hfp_hf_send_failed(hf);
@@ -262,7 +262,7 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 
 	buf = bt_rfcomm_create_pdu(&hf_pool);
 	if (!buf) {
-		LOG_ERR("No Buffers!");
+		LOG_ERROR("No Buffers!");
 		return -ENOMEM;
 	}
 
@@ -271,7 +271,7 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 	va_start(vargs, format);
 	ret = vsnprintk(buf->data, (net_buf_tailroom(buf) - 1), format, vargs);
 	if (ret < 0) {
-		LOG_ERR("Unable to format variable arguments");
+		LOG_ERROR("Unable to format variable arguments");
 		return ret;
 	}
 	va_end(vargs);
@@ -295,7 +295,7 @@ int brsf_handle(struct at_client *hf_at)
 
 	ret = at_get_number(hf_at, &val);
 	if (ret < 0) {
-		LOG_ERR("Error getting value");
+		LOG_ERROR("Error getting value");
 		return ret;
 	}
 
@@ -323,7 +323,7 @@ int brsf_resp(struct at_client *hf_at, struct net_buf *buf)
 		/* Returning negative value is avoided before SLC connection
 		 * established.
 		 */
-		LOG_ERR("Error parsing CMD input");
+		LOG_ERROR("Error parsing CMD input");
 		hf_slc_error(hf_at);
 	}
 
@@ -348,7 +348,7 @@ static void cind_handle_values(struct at_client *hf_at, uint32_t index,
 			continue;
 		}
 		if (min != ag_ind[i].min || max != ag_ind[i].max) {
-			LOG_ERR("%s indicator min/max value not matching", name);
+			LOG_ERROR("%s indicator min/max value not matching", name);
 		}
 
 		hf->ind_table[index] = i;
@@ -366,32 +366,32 @@ int cind_handle(struct at_client *hf_at)
 		uint32_t min, max;
 
 		if (at_open_list(hf_at) < 0) {
-			LOG_ERR("Could not get open list");
+			LOG_ERROR("Could not get open list");
 			goto error;
 		}
 
 		if (at_list_get_string(hf_at, name, sizeof(name)) < 0) {
-			LOG_ERR("Could not get string");
+			LOG_ERROR("Could not get string");
 			goto error;
 		}
 
 		if (at_open_list(hf_at) < 0) {
-			LOG_ERR("Could not get open list");
+			LOG_ERROR("Could not get open list");
 			goto error;
 		}
 
 		if (at_list_get_range(hf_at, &min, &max) < 0) {
-			LOG_ERR("Could not get range");
+			LOG_ERROR("Could not get range");
 			goto error;
 		}
 
 		if (at_close_list(hf_at) < 0) {
-			LOG_ERR("Could not get close list");
+			LOG_ERROR("Could not get close list");
 			goto error;
 		}
 
 		if (at_close_list(hf_at) < 0) {
-			LOG_ERR("Could not get close list");
+			LOG_ERROR("Could not get close list");
 			goto error;
 		}
 
@@ -401,7 +401,7 @@ int cind_handle(struct at_client *hf_at)
 
 	return 0;
 error:
-	LOG_ERR("Error on CIND response");
+	LOG_ERROR("Error on CIND response");
 	hf_slc_error(hf_at);
 	return -EINVAL;
 }
@@ -413,7 +413,7 @@ int cind_resp(struct at_client *hf_at, struct net_buf *buf)
 	err = at_parse_cmd_input(hf_at, buf, "CIND", cind_handle,
 				 AT_CMD_TYPE_NORMAL);
 	if (err < 0) {
-		LOG_ERR("Error parsing CMD input");
+		LOG_ERROR("Error parsing CMD input");
 		hf_slc_error(hf_at);
 	}
 
@@ -555,7 +555,7 @@ static int hf_query_current_calls(struct bt_hfp_hf *hf)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -EINVAL;
 	}
 
@@ -584,7 +584,7 @@ static int hf_query_current_calls(struct bt_hfp_hf *hf)
 
 	err = hfp_hf_send_cmd(hf, NULL, clcc_finish, "AT+CLCC");
 	if (err < 0) {
-		LOG_ERR("Fail to query current calls on %p", hf);
+		LOG_ERROR("Fail to query current calls on %p", hf);
 	}
 
 	return err;
@@ -810,7 +810,7 @@ static int clcc_handle(struct at_client *hf_at)
 
 	err = at_get_number(hf_at, &index);
 	if (err < 0) {
-		LOG_ERR("Error getting index");
+		LOG_ERROR("Error getting index");
 		return err;
 	}
 
@@ -833,25 +833,25 @@ static int clcc_handle(struct at_client *hf_at)
 
 	err = at_get_number(hf_at, &dir);
 	if (err < 0) {
-		LOG_ERR("Error getting dir");
+		LOG_ERROR("Error getting dir");
 		return err;
 	}
 
 	err = at_get_number(hf_at, &status);
 	if (err < 0) {
-		LOG_ERR("Error getting status");
+		LOG_ERROR("Error getting status");
 		return err;
 	}
 
 	err = at_get_number(hf_at, &mode);
 	if (err < 0) {
-		LOG_ERR("Error getting mode");
+		LOG_ERROR("Error getting mode");
 		return err;
 	}
 
 	err = at_get_number(hf_at, &mpty);
 	if (err < 0) {
-		LOG_ERR("Error getting mpty");
+		LOG_ERROR("Error getting mpty");
 		return err;
 	}
 
@@ -889,7 +889,7 @@ static int clcc_handle(struct at_client *hf_at)
 	}
 
 	if (incoming != (dir == BT_HFP_CLCC_DIR_INCOMING)) {
-		LOG_ERR("Call dir of HF is not aligned with AG");
+		LOG_ERROR("Call dir of HF is not aligned with AG");
 		return 0;
 	}
 
@@ -919,7 +919,7 @@ static int bvra_handle(struct at_client *hf_at)
 
 	err = at_get_number(hf_at, &activate);
 	if (err < 0) {
-		LOG_ERR("Error getting activate");
+		LOG_ERROR("Error getting activate");
 		return err;
 	}
 
@@ -957,7 +957,7 @@ static int bvra_handle(struct at_client *hf_at)
 	}
 
 	if (id_len > BT_HFP_BVRA_TEXT_ID_MAX_LEN) {
-		LOG_ERR("Invalid text ID length %d", id_len);
+		LOG_ERROR("Invalid text ID length %d", id_len);
 		return -ENOTSUP;
 	}
 
@@ -1097,7 +1097,7 @@ static void bt_hf_deferred_work(struct k_work *work)
 
 	err = hf_query_current_calls(hf);
 	if (err != 0) {
-		LOG_ERR("Failed to query current calls: %d", err);
+		LOG_ERROR("Failed to query current calls: %d", err);
 	}
 }
 
@@ -1343,23 +1343,22 @@ void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 	LOG_DBG("Index :%u, Value :%u", index, value);
 
 	if (index >= ARRAY_SIZE(hf->ind_table)) {
-		LOG_ERR("Invalid indicator index: %u", index);
+		LOG_ERROR("Invalid indicator index: %u", index);
 		return;
 	}
 
 	if (hf->ind_table[index] == HFP_HF_INDICATOR_INVALID) {
-		LOG_ERR("Indicator index %u not found", index);
+		LOG_ERROR("Indicator index %u not found", index);
 		return;
 	}
 
 	if (hf->ind_table[index] >= ARRAY_SIZE(ag_ind)) {
-		LOG_ERR("Max only %zu indicators are supported", ARRAY_SIZE(ag_ind));
+		LOG_ERROR("Max only %zu indicators are supported", ARRAY_SIZE(ag_ind));
 		return;
 	}
 
-	if (value > ag_ind[hf->ind_table[index]].max ||
-	    value < ag_ind[hf->ind_table[index]].min) {
-		LOG_ERR("Indicators out of range - value: %u", value);
+	if (value > ag_ind[hf->ind_table[index]].max || value < ag_ind[hf->ind_table[index]].min) {
+		LOG_ERROR("Indicators out of range - value: %u", value);
 		return;
 	}
 
@@ -1394,7 +1393,7 @@ void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 		}
 		break;
 	default:
-		LOG_ERR("Unknown AG indicator");
+		LOG_ERROR("Unknown AG indicator");
 		break;
 	}
 }
@@ -1409,7 +1408,7 @@ int cind_status_handle(struct at_client *hf_at)
 
 		ret = at_get_number(hf_at, &value);
 		if (ret < 0) {
-			LOG_ERR("could not get the value");
+			LOG_ERROR("could not get the value");
 			return ret;
 		}
 
@@ -1428,7 +1427,7 @@ int cind_status_resp(struct at_client *hf_at, struct net_buf *buf)
 	err = at_parse_cmd_input(hf_at, buf, "CIND", cind_status_handle,
 				 AT_CMD_TYPE_NORMAL);
 	if (err < 0) {
-		LOG_ERR("Error parsing CMD input");
+		LOG_ERROR("Error parsing CMD input");
 		hf_slc_error(hf_at);
 	}
 
@@ -1442,18 +1441,18 @@ int ciev_handle(struct at_client *hf_at)
 
 	ret = at_get_number(hf_at, &index);
 	if (ret < 0) {
-		LOG_ERR("could not get the Index");
+		LOG_ERROR("could not get the Index");
 		return ret;
 	}
 	/* The first element of the list shall have 1 */
 	if (!index) {
-		LOG_ERR("Invalid index value '0'");
+		LOG_ERROR("Invalid index value '0'");
 		return 0;
 	}
 
 	ret = at_get_number(hf_at, &value);
 	if (ret < 0) {
-		LOG_ERR("could not get the value");
+		LOG_ERROR("could not get the value");
 		return ret;
 	}
 
@@ -1528,12 +1527,12 @@ int vgm_handle(struct at_client *hf_at)
 
 	err = at_get_number(hf_at, &gain);
 	if (err) {
-		LOG_ERR("could not get the microphone gain");
+		LOG_ERROR("could not get the microphone gain");
 		return err;
 	}
 
 	if (gain > BT_HFP_HF_VGM_GAIN_MAX) {
-		LOG_ERR("Invalid microphone gain (%d > %d)", gain, BT_HFP_HF_VGM_GAIN_MAX);
+		LOG_ERROR("Invalid microphone gain (%d > %d)", gain, BT_HFP_HF_VGM_GAIN_MAX);
 		return -EINVAL;
 	}
 
@@ -1552,12 +1551,12 @@ int vgs_handle(struct at_client *hf_at)
 
 	err = at_get_number(hf_at, &gain);
 	if (err) {
-		LOG_ERR("could not get the speaker gain");
+		LOG_ERROR("could not get the speaker gain");
 		return err;
 	}
 
 	if (gain > BT_HFP_HF_VGS_GAIN_MAX) {
-		LOG_ERR("Invalid speaker gain (%d > %d)", gain, BT_HFP_HF_VGS_GAIN_MAX);
+		LOG_ERROR("Invalid speaker gain (%d > %d)", gain, BT_HFP_HF_VGS_GAIN_MAX);
 		return -EINVAL;
 	}
 
@@ -1577,12 +1576,12 @@ int bsir_handle(struct at_client *hf_at)
 
 	err = at_get_number(hf_at, &inband);
 	if (err) {
-		LOG_ERR("could not get bsir value");
+		LOG_ERROR("could not get bsir value");
 		return err;
 	}
 
 	if (inband > 1) {
-		LOG_ERR("Invalid %d bsir value", inband);
+		LOG_ERROR("Invalid %d bsir value", inband);
 		return -EINVAL;
 	}
 
@@ -1602,12 +1601,12 @@ int bcs_handle(struct at_client *hf_at)
 
 	err = at_get_number(hf_at, &codec_id);
 	if (err) {
-		LOG_ERR("could not get bcs value");
+		LOG_ERROR("could not get bcs value");
 		return err;
 	}
 
 	if (!(hf->hf_codec_ids & BIT(codec_id))) {
-		LOG_ERR("Invalid codec id %d", codec_id);
+		LOG_ERROR("Invalid codec id %d", codec_id);
 		err = bt_hfp_hf_set_codecs(hf, hf->hf_codec_ids);
 		return err;
 	}
@@ -1633,7 +1632,7 @@ static int btrh_handle(struct at_client *hf_at)
 
 	err = at_get_number(hf_at, &on_hold);
 	if (err < 0) {
-		LOG_ERR("Error getting value");
+		LOG_ERROR("Error getting value");
 		return err;
 	}
 
@@ -1689,7 +1688,7 @@ static int ccwa_handle(struct at_client *hf_at)
 
 	call = get_new_call(hf);
 	if (!call) {
-		LOG_ERR("Not available call object");
+		LOG_ERROR("Not available call object");
 		return 0;
 	}
 
@@ -1737,20 +1736,20 @@ int chld_handle(struct at_client *hf_at)
 
 	/* Parsing Example: CHLD: (0,1,2,3,4) */
 	if (at_open_list(hf_at) < 0) {
-		LOG_ERR("Could not get open list");
+		LOG_ERROR("Could not get open list");
 		goto error;
 	}
 
 	while (at_has_next_list(hf_at)) {
 		value = at_get_raw_string(hf_at, NULL);
 		if (value == NULL) {
-			LOG_ERR("Could not get value");
+			LOG_ERROR("Could not get value");
 			goto error;
 		}
 
 		err = get_chld_feature(value);
 		if (err < 0) {
-			LOG_ERR("Cannot parse the value %s", value);
+			LOG_ERROR("Cannot parse the value %s", value);
 			goto error;
 		}
 
@@ -1760,13 +1759,13 @@ int chld_handle(struct at_client *hf_at)
 	}
 
 	if (at_close_list(hf_at) < 0) {
-		LOG_ERR("Could not get close list");
+		LOG_ERROR("Could not get close list");
 		goto error;
 	}
 
 	if (!((chld_features & BIT(BT_HFP_CHLD_RELEASE_ACTIVE_ACCEPT_OTHER)) &&
-	    (chld_features & BIT(BT_HFP_CALL_HOLD_ACTIVE_ACCEPT_OTHER)))) {
-		LOG_ERR("AT+CHLD values 1 and 2 should be supported by AG");
+	      (chld_features & BIT(BT_HFP_CALL_HOLD_ACTIVE_ACCEPT_OTHER)))) {
+		LOG_ERROR("AT+CHLD values 1 and 2 should be supported by AG");
 		goto error;
 	}
 
@@ -1775,7 +1774,7 @@ int chld_handle(struct at_client *hf_at)
 	return 0;
 
 error:
-	LOG_ERR("Error on AT+CHLD=? response");
+	LOG_ERROR("Error on AT+CHLD=? response");
 	hf_slc_error(hf_at);
 	return -EINVAL;
 }
@@ -1844,7 +1843,7 @@ static int bind_handle(struct at_client *hf_at)
 		}
 
 		if (at_close_list(hf_at) < 0) {
-			LOG_ERR("Could not get close list");
+			LOG_ERROR("Could not get close list");
 			goto failed;
 		}
 
@@ -1874,7 +1873,7 @@ static int bind_handle(struct at_client *hf_at)
 	return 0;
 
 failed:
-	LOG_ERR("Error on AT+BIND response");
+	LOG_ERROR("Error on AT+BIND response");
 	hf_slc_error(hf_at);
 	return -EINVAL;
 }
@@ -1935,7 +1934,7 @@ int unsolicited_cb(struct at_client *hf_at, struct net_buf *buf)
 
 	handler = hfp_hf_unsol_lookup(hf_at);
 	if (!handler) {
-		LOG_ERR("Unhandled unsolicited response");
+		LOG_ERROR("Unhandled unsolicited response");
 		return -ENOMSG;
 	}
 
@@ -2095,8 +2094,8 @@ static int at_cmd_init_finish(struct at_client *hf_at, enum at_result result,
 			(void)finish(hf_at, result, cme_err);
 		}
 	} else {
-		LOG_ERR("Invalid indicator (%d>=%d)", hf->cmd_init_seq,
-		    ARRAY_SIZE(cmd_init_list));
+		LOG_ERROR("Invalid indicator (%d>=%d)", hf->cmd_init_seq,
+			  ARRAY_SIZE(cmd_init_list));
 	}
 
 	/* Goto next AT command */
@@ -2159,7 +2158,7 @@ static void slc_completed(struct at_client *hf_at)
 	/* Start with first AT command */
 	hf->cmd_init_seq = 0;
 	if (at_cmd_init_start(hf)) {
-		LOG_ERR("Fail to start AT command initialization");
+		LOG_ERROR("Fail to start AT command initialization");
 	}
 }
 
@@ -2329,8 +2328,8 @@ static int slc_init_finish(struct at_client *hf_at, enum at_result result,
 	}
 
 	if (ARRAY_SIZE(slc_init_list) <= hf->cmd_init_seq) {
-		LOG_ERR("Invalid indicator (%d>=%d)", hf->cmd_init_seq,
-		    ARRAY_SIZE(slc_init_list));
+		LOG_ERROR("Invalid indicator (%d>=%d)", hf->cmd_init_seq,
+			  ARRAY_SIZE(slc_init_list));
 	}
 
 	/* Goto next AT command */
@@ -2423,18 +2422,18 @@ int bt_hfp_hf_cli(struct bt_hfp_hf *hf, bool enable)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
-		LOG_ERR("SLC is not established on %p", hf);
+		LOG_ERROR("SLC is not established on %p", hf);
 		return -EINVAL;
 	}
 
 	err = hfp_hf_send_cmd(hf, NULL, cli_finish, "AT+CLIP=%d", enable ? 1 : 0);
 	if (err < 0) {
-		LOG_ERR("HFP HF CLI set failed on %p", hf);
+		LOG_ERROR("HFP HF CLI set failed on %p", hf);
 	}
 
 	return err;
@@ -2464,12 +2463,12 @@ int bt_hfp_hf_vgm(struct bt_hfp_hf *hf, uint8_t gain)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (gain > BT_HFP_HF_VGM_GAIN_MAX) {
-		LOG_ERR("Invalid gain %d>%d", gain, BT_HFP_HF_VGM_GAIN_MAX);
+		LOG_ERROR("Invalid gain %d>%d", gain, BT_HFP_HF_VGM_GAIN_MAX);
 		return -EINVAL;
 	}
 
@@ -2481,7 +2480,7 @@ int bt_hfp_hf_vgm(struct bt_hfp_hf *hf, uint8_t gain)
 
 	err = hfp_hf_send_cmd(hf, NULL, vgm_finish, "AT+VGM=%d", gain);
 	if (err < 0) {
-		LOG_ERR("HFP HF VGM set failed on %p", hf);
+		LOG_ERROR("HFP HF VGM set failed on %p", hf);
 	}
 
 	return err;
@@ -2511,12 +2510,12 @@ int bt_hfp_hf_vgs(struct bt_hfp_hf *hf, uint8_t gain)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (gain > BT_HFP_HF_VGM_GAIN_MAX) {
-		LOG_ERR("Invalid gain %d>%d", gain, BT_HFP_HF_VGM_GAIN_MAX);
+		LOG_ERROR("Invalid gain %d>%d", gain, BT_HFP_HF_VGM_GAIN_MAX);
 		return -EINVAL;
 	}
 
@@ -2528,7 +2527,7 @@ int bt_hfp_hf_vgs(struct bt_hfp_hf *hf, uint8_t gain)
 
 	err = hfp_hf_send_cmd(hf, NULL, vgs_finish, "AT+VGS=%d", gain);
 	if (err < 0) {
-		LOG_ERR("HFP HF VGS set failed on %p", hf);
+		LOG_ERROR("HFP HF VGS set failed on %p", hf);
 	}
 
 	return err;
@@ -2547,13 +2546,13 @@ static int cops_handle(struct at_client *hf_at)
 
 	err = at_get_number(hf_at, &mode);
 	if (err < 0) {
-		LOG_ERR("Error getting value");
+		LOG_ERROR("Error getting value");
 		return err;
 	}
 
 	err = at_get_number(hf_at, &format);
 	if (err < 0) {
-		LOG_ERR("Error getting value");
+		LOG_ERROR("Error getting value");
 		return err;
 	}
 
@@ -2575,7 +2574,7 @@ static int cops_resp(struct at_client *hf_at, struct net_buf *buf)
 	err = at_parse_cmd_input(hf_at, buf, "COPS", cops_handle,
 				 AT_CMD_TYPE_NORMAL);
 	if (err < 0) {
-		LOG_ERR("Cannot parse response of AT+COPS?");
+		LOG_ERROR("Cannot parse response of AT+COPS?");
 		return err;
 	}
 
@@ -2599,7 +2598,7 @@ int bt_hfp_hf_get_operator(struct bt_hfp_hf *hf)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
@@ -2609,7 +2608,7 @@ int bt_hfp_hf_get_operator(struct bt_hfp_hf *hf)
 
 	err = hfp_hf_send_cmd(hf, cops_resp, cops_finish, "AT+COPS?");
 	if (err < 0) {
-		LOG_ERR("Fail to read the currently selected operator on %p", hf);
+		LOG_ERROR("Fail to read the currently selected operator on %p", hf);
 	}
 
 	return err;
@@ -2640,7 +2639,7 @@ static int binp_resp(struct at_client *hf_at, struct net_buf *buf)
 	err = at_parse_cmd_input(hf_at, buf, "BINP", binp_handle,
 				 AT_CMD_TYPE_NORMAL);
 	if (err < 0) {
-		LOG_ERR("Cannot parse response of AT+BINP=1");
+		LOG_ERROR("Cannot parse response of AT+BINP=1");
 		return err;
 	}
 
@@ -2670,7 +2669,7 @@ int bt_hfp_hf_request_phone_number(struct bt_hfp_hf *hf)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
@@ -2682,7 +2681,7 @@ int bt_hfp_hf_request_phone_number(struct bt_hfp_hf *hf)
 
 	err = hfp_hf_send_cmd(hf, binp_resp, binp_finish, "AT+BINP=1");
 	if (err < 0) {
-		LOG_ERR("Fail to request phone number to the AG on %p", hf);
+		LOG_ERROR("Fail to request phone number to the AG on %p", hf);
 	}
 
 	return err;
@@ -2706,36 +2705,36 @@ int bt_hfp_hf_transmit_dtmf_code(struct bt_hfp_hf_call *call, char code)
 	LOG_DBG("");
 
 	if (!call) {
-		LOG_ERR("Invalid call");
+		LOG_ERROR("Invalid call");
 		return -ENOTCONN;
 	}
 
 	hf = call->hf;
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
-		LOG_ERR("SLC is not established on %p", hf);
+		LOG_ERROR("SLC is not established on %p", hf);
 		return -ENOTCONN;
 	}
 
 	if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING) ||
-		(!(!atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING_HELD) &&
-		(atomic_get(call->state) == BT_HFP_HF_CALL_STATE_ACTIVE)))) {
-		LOG_ERR("Invalid call status");
+	    (!(!atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING_HELD) &&
+	       (atomic_get(call->state) == BT_HFP_HF_CALL_STATE_ACTIVE)))) {
+		LOG_ERROR("Invalid call status");
 		return -EINVAL;
 	}
 
 	if (!IS_VALID_DTMF(code)) {
-		LOG_ERR("Invalid code");
+		LOG_ERROR("Invalid code");
 		return -EINVAL;
 	}
 
 	err = hfp_hf_send_cmd(hf, NULL, vts_finish, "AT+VTS=%c", code);
 	if (err < 0) {
-		LOG_ERR("Fail to tramsit DTMF Codes on %p", hf);
+		LOG_ERROR("Fail to tramsit DTMF Codes on %p", hf);
 	}
 
 	return err;
@@ -2758,18 +2757,18 @@ int bt_hfp_hf_query_subscriber(struct bt_hfp_hf *hf)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
-		LOG_ERR("SLC is not established on %p", hf);
+		LOG_ERROR("SLC is not established on %p", hf);
 		return -ENOTCONN;
 	}
 
 	err = hfp_hf_send_cmd(hf, NULL, cnum_finish, "AT+CNUM");
 	if (err < 0) {
-		LOG_ERR("Fail to query subscriber number information on %p", hf);
+		LOG_ERROR("Fail to query subscriber number information on %p", hf);
 	}
 
 	return err;
@@ -2795,12 +2794,12 @@ int bt_hfp_hf_indicator_status(struct bt_hfp_hf *hf, uint8_t status)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
-		LOG_ERR("SLC is not established on %p", hf);
+		LOG_ERROR("SLC is not established on %p", hf);
 		return -ENOTCONN;
 	}
 
@@ -2822,7 +2821,7 @@ int bt_hfp_hf_indicator_status(struct bt_hfp_hf *hf, uint8_t status)
 	}
 
 	if (bia_status <= &buffer[0]) {
-		LOG_ERR("Not found valid AG indicator on %p", hf);
+		LOG_ERROR("Not found valid AG indicator on %p", hf);
 		return -EINVAL;
 	}
 
@@ -2831,7 +2830,7 @@ int bt_hfp_hf_indicator_status(struct bt_hfp_hf *hf, uint8_t status)
 
 	err = hfp_hf_send_cmd(hf, NULL, bia_finish, "AT+BIA=%s", buffer);
 	if (err < 0) {
-		LOG_ERR("Fail to activated/deactivated AG indicators on %p", hf);
+		LOG_ERROR("Fail to activated/deactivated AG indicators on %p", hf);
 	}
 
 	return err;
@@ -2857,30 +2856,30 @@ int bt_hfp_hf_enhanced_safety(struct bt_hfp_hf *hf, bool enable)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
-		LOG_ERR("SLC is not established on %p", hf);
+		LOG_ERROR("SLC is not established on %p", hf);
 		return -ENOTCONN;
 	}
 
 	if (!((hf->hf_ind & BIT(HFP_HF_ENHANCED_SAFETY_IND)) &&
-		(hf->ag_ind & BIT(HFP_HF_ENHANCED_SAFETY_IND)))) {
-		LOG_ERR("The indicator is unsupported");
+	      (hf->ag_ind & BIT(HFP_HF_ENHANCED_SAFETY_IND)))) {
+		LOG_ERROR("The indicator is unsupported");
 		return -ENOTSUP;
 	}
 
 	if (!(hf->ind_enable & BIT(HFP_HF_ENHANCED_SAFETY_IND))) {
-		LOG_ERR("The indicator is disabled");
+		LOG_ERROR("The indicator is disabled");
 		return -EINVAL;
 	}
 
 	err = hfp_hf_send_cmd(hf, NULL, biev_enh_safety_finish, "AT+BIEV=%d,%d",
 		HFP_HF_ENHANCED_SAFETY_IND, enable ? 1 : 0);
 	if (err < 0) {
-		LOG_ERR("Fail to transfer enhanced safety value on %p", hf);
+		LOG_ERROR("Fail to transfer enhanced safety value on %p", hf);
 	}
 
 	return err;
@@ -2909,35 +2908,35 @@ int bt_hfp_hf_battery(struct bt_hfp_hf *hf, uint8_t level)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
-		LOG_ERR("SLC is not established on %p", hf);
+		LOG_ERROR("SLC is not established on %p", hf);
 		return -ENOTCONN;
 	}
 
 	if (!((hf->hf_ind & BIT(HFP_HF_BATTERY_LEVEL_IND)) &&
-		(hf->ag_ind & BIT(HFP_HF_BATTERY_LEVEL_IND)))) {
-		LOG_ERR("The indicator is unsupported");
+	      (hf->ag_ind & BIT(HFP_HF_BATTERY_LEVEL_IND)))) {
+		LOG_ERROR("The indicator is unsupported");
 		return -ENOTSUP;
 	}
 
 	if (!(hf->ind_enable & BIT(HFP_HF_BATTERY_LEVEL_IND))) {
-		LOG_ERR("The indicator is disabled");
+		LOG_ERROR("The indicator is disabled");
 		return -EINVAL;
 	}
 
 	if (!IS_VALID_BATTERY_LEVEL(level)) {
-		LOG_ERR("Invalid battery level %d", level);
+		LOG_ERROR("Invalid battery level %d", level);
 		return -EINVAL;
 	}
 
 	err = hfp_hf_send_cmd(hf, NULL, biev_battery_finish, "AT+BIEV=%d,%d",
 		HFP_HF_BATTERY_LEVEL_IND, level);
 	if (err < 0) {
-		LOG_ERR("Fail to transfer remaining battery level on %p", hf);
+		LOG_ERROR("Fail to transfer remaining battery level on %p", hf);
 	}
 
 	return err;
@@ -2975,31 +2974,31 @@ int bt_hfp_hf_accept(struct bt_hfp_hf_call *call)
 	LOG_DBG("");
 
 	if (!call) {
-		LOG_ERR("Invalid call");
+		LOG_ERROR("Invalid call");
 		return -EINVAL;
 	}
 
 	hf = call->hf;
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
-		LOG_ERR("No valid call");
+		LOG_ERROR("No valid call");
 		return -EINVAL;
 	}
 
 	count = get_using_call_count(call->hf);
 	if (count > 1) {
-		LOG_ERR("Unsupported 3Way call");
+		LOG_ERROR("Unsupported 3Way call");
 		return -EINVAL;
 	}
 
 	if (atomic_get(call->state) == BT_HFP_HF_CALL_STATE_WAITING) {
 		err = hfp_hf_send_cmd(hf, NULL, ata_finish, "ATA");
 		if (err < 0) {
-			LOG_ERR("Fail to accept the incoming call on %p", hf);
+			LOG_ERROR("Fail to accept the incoming call on %p", hf);
 		}
 		return err;
 	}
@@ -3009,7 +3008,7 @@ int bt_hfp_hf_accept(struct bt_hfp_hf_call *call)
 		err = hfp_hf_send_cmd(hf, NULL, btrh_finish, "AT+BTRH=%d",
 			BT_HFP_BTRH_ACCEPTED);
 		if (err < 0) {
-			LOG_ERR("Fail to accept the held incoming call on %p", hf);
+			LOG_ERROR("Fail to accept the held incoming call on %p", hf);
 		}
 		return err;
 	}
@@ -3036,36 +3035,36 @@ int bt_hfp_hf_reject(struct bt_hfp_hf_call *call)
 	LOG_DBG("");
 
 	if (!call) {
-		LOG_ERR("Invalid call");
+		LOG_ERROR("Invalid call");
 		return -EINVAL;
 	}
 
 	hf = call->hf;
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
-		LOG_ERR("No valid call");
+		LOG_ERROR("No valid call");
 		return -EINVAL;
 	}
 
 	count = get_using_call_count(call->hf);
 	if (count > 1) {
-		LOG_ERR("Unsupported 3Way call");
+		LOG_ERROR("Unsupported 3Way call");
 		return -EINVAL;
 	}
 
 	if (!(hf->ag_features & BT_HFP_AG_FEATURE_REJECT_CALL)) {
-		LOG_ERR("AG has not ability to reject call");
+		LOG_ERROR("AG has not ability to reject call");
 		return -ENOTSUP;
 	}
 
 	if (atomic_get(call->state) == BT_HFP_HF_CALL_STATE_WAITING) {
 		err = hfp_hf_send_cmd(hf, NULL, chup_finish, "AT+CHUP");
 		if (err < 0) {
-			LOG_ERR("Fail to reject the incoming call on %p", hf);
+			LOG_ERROR("Fail to reject the incoming call on %p", hf);
 		}
 		return err;
 	}
@@ -3075,7 +3074,7 @@ int bt_hfp_hf_reject(struct bt_hfp_hf_call *call)
 		err = hfp_hf_send_cmd(hf, NULL, btrh_finish, "AT+BTRH=%d",
 			BT_HFP_BTRH_REJECTED);
 		if (err < 0) {
-			LOG_ERR("Fail to reject the held incoming call on %p", hf);
+			LOG_ERROR("Fail to reject the held incoming call on %p", hf);
 		}
 		return err;
 	}
@@ -3092,35 +3091,35 @@ int bt_hfp_hf_terminate(struct bt_hfp_hf_call *call)
 	LOG_DBG("");
 
 	if (!call) {
-		LOG_ERR("Invalid call");
+		LOG_ERROR("Invalid call");
 		return -EINVAL;
 	}
 
 	hf = call->hf;
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
-		LOG_ERR("No valid call");
+		LOG_ERROR("No valid call");
 		return -EINVAL;
 	}
 
 	count = get_using_call_count(call->hf);
 	if (count > 1) {
-		LOG_ERR("Unsupported 3Way call");
+		LOG_ERROR("Unsupported 3Way call");
 		return -EINVAL;
 	}
 
 	if (atomic_get(call->state) == BT_HFP_HF_CALL_STATE_HELD) {
-		LOG_ERR("Held call cannot be terminated");
+		LOG_ERROR("Held call cannot be terminated");
 		return -EINVAL;
 	}
 
 	err = hfp_hf_send_cmd(hf, NULL, chup_finish, "AT+CHUP");
 	if (err < 0) {
-		LOG_ERR("Fail to terminate the none held call on %p", hf);
+		LOG_ERROR("Fail to terminate the none held call on %p", hf);
 	}
 
 	return err;
@@ -3135,36 +3134,36 @@ int bt_hfp_hf_hold_incoming(struct bt_hfp_hf_call *call)
 	LOG_DBG("");
 
 	if (!call) {
-		LOG_ERR("Invalid call");
+		LOG_ERROR("Invalid call");
 		return -EINVAL;
 	}
 
 	hf = call->hf;
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
-		LOG_ERR("No valid call");
+		LOG_ERROR("No valid call");
 		return -EINVAL;
 	}
 
 	count = get_using_call_count(call->hf);
 	if (count > 1) {
-		LOG_ERR("Unsupported 3Way call");
+		LOG_ERROR("Unsupported 3Way call");
 		return -EINVAL;
 	}
 
 	if (!(atomic_get(call->state) == BT_HFP_HF_CALL_STATE_WAITING)) {
-		LOG_ERR("No incoming call setup in progress");
+		LOG_ERROR("No incoming call setup in progress");
 		return -EINVAL;
 	}
 
 	err = hfp_hf_send_cmd(hf, NULL, btrh_finish, "AT+BTRH=%d",
 		BT_HFP_BTRH_ON_HOLD);
 	if (err < 0) {
-		LOG_ERR("Fail to hold the incoming call on %p", hf);
+		LOG_ERROR("Fail to hold the incoming call on %p", hf);
 	}
 
 	return err;
@@ -3179,18 +3178,18 @@ static int query_btrh_handle(struct at_client *hf_at)
 
 	err = at_get_number(hf_at, &value);
 	if (err < 0) {
-		LOG_ERR("Cannot get value");
+		LOG_ERROR("Cannot get value");
 		return err;
 	}
 
 	if (value) {
-		LOG_ERR("Only support value 0");
+		LOG_ERROR("Only support value 0");
 		return 0;
 	}
 
 	call = get_call_with_flag(hf, BT_HFP_HF_CALL_INCOMING_HELD);
 	if (!call) {
-		LOG_ERR("Held incoming call is not found");
+		LOG_ERROR("Held incoming call is not found");
 		return -EINVAL;
 	}
 
@@ -3208,7 +3207,7 @@ static int query_btrh_resp(struct at_client *hf_at, struct net_buf *buf)
 	err = at_parse_cmd_input(hf_at, buf, "BTRH", query_btrh_handle,
 				 AT_CMD_TYPE_NORMAL);
 	if (err < 0) {
-		LOG_ERR("Error parsing CMD input");
+		LOG_ERROR("Error parsing CMD input");
 		hf_slc_error(hf_at);
 	}
 
@@ -3232,13 +3231,13 @@ int bt_hfp_hf_query_respond_hold_status(struct bt_hfp_hf *hf)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	err = hfp_hf_send_cmd(hf, query_btrh_resp, query_btrh_finish, "AT+BTRH?");
 	if (err < 0) {
-		LOG_ERR("Fail to query respond and hold status of AG on %p", hf);
+		LOG_ERROR("Fail to query respond and hold status of AG on %p", hf);
 	}
 
 	return err;
@@ -3321,19 +3320,19 @@ int bt_hfp_hf_number_call(struct bt_hfp_hf *hf, const char *number)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	call = get_dialing_call(hf);
 	if (call) {
-		LOG_ERR("There is a call in alerting or waiting");
+		LOG_ERROR("There is a call in alerting or waiting");
 		return -EBUSY;
 	}
 
 	call = get_new_call(hf);
 	if (!call) {
-		LOG_ERR("Not available call object");
+		LOG_ERROR("Not available call object");
 		return -ENOMEM;
 	}
 
@@ -3341,7 +3340,7 @@ int bt_hfp_hf_number_call(struct bt_hfp_hf *hf, const char *number)
 
 	err = hfp_hf_send_cmd(hf, NULL, atd_finish, "ATD%s;", number);
 	if (err < 0) {
-		LOG_ERR("Fail to start phone number call on %p", hf);
+		LOG_ERROR("Fail to start phone number call on %p", hf);
 	}
 
 	return err;
@@ -3355,19 +3354,19 @@ int bt_hfp_hf_memory_dial(struct bt_hfp_hf *hf, const char *location)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	call = get_dialing_call(hf);
 	if (call) {
-		LOG_ERR("There is a call in alerting or waiting");
+		LOG_ERROR("There is a call in alerting or waiting");
 		return -EBUSY;
 	}
 
 	call = get_new_call(hf);
 	if (!call) {
-		LOG_ERR("Not available call object");
+		LOG_ERROR("Not available call object");
 		return -ENOMEM;
 	}
 
@@ -3375,7 +3374,7 @@ int bt_hfp_hf_memory_dial(struct bt_hfp_hf *hf, const char *location)
 
 	err = hfp_hf_send_cmd(hf, NULL, atd_finish, "ATD>%s;", location);
 	if (err < 0) {
-		LOG_ERR("Fail to last number re-Dial on %p", hf);
+		LOG_ERROR("Fail to last number re-Dial on %p", hf);
 	}
 
 	return err;
@@ -3421,19 +3420,19 @@ int bt_hfp_hf_redial(struct bt_hfp_hf *hf)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	call = get_dialing_call(hf);
 	if (call) {
-		LOG_ERR("There is a call in alerting or waiting");
+		LOG_ERROR("There is a call in alerting or waiting");
 		return -EBUSY;
 	}
 
 	call = get_new_call(hf);
 	if (!call) {
-		LOG_ERR("Not available call object");
+		LOG_ERROR("Not available call object");
 		return -ENOMEM;
 	}
 
@@ -3441,7 +3440,7 @@ int bt_hfp_hf_redial(struct bt_hfp_hf *hf)
 
 	err = hfp_hf_send_cmd(hf, NULL, bldn_finish, "AT+BLDN");
 	if (err < 0) {
-		LOG_ERR("Fail to start memory dialing on %p", hf);
+		LOG_ERROR("Fail to start memory dialing on %p", hf);
 	}
 
 	return err;
@@ -3498,21 +3497,21 @@ static int hfp_hf_set_voice_setting(struct bt_hfp_hf *hf)
 #if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
 	case BT_HFP_HF_CODEC_MSBC:
 		if (!IS_ENABLED(CONFIG_BT_HFP_HF_CODEC_MSBC)) {
-			LOG_ERR("mSBC is not enabled");
+			LOG_ERROR("mSBC is not enabled");
 			return -EINVAL;
 		}
 		air_coding_fmt = BT_HCI_VOICE_SETTING_AIR_CODING_FMT_TRANSPARENT;
 		break;
 	case BT_HFP_HF_CODEC_LC3_SWB:
 		if (!IS_ENABLED(CONFIG_BT_HFP_HF_CODEC_LC3_SWB)) {
-			LOG_ERR("LC3 SWB is not enabled");
+			LOG_ERROR("LC3 SWB is not enabled");
 			return -EINVAL;
 		}
 		air_coding_fmt = BT_HCI_VOICE_SETTING_AIR_CODING_FMT_TRANSPARENT;
 		break;
 #endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
 	default:
-		LOG_ERR("Unsupported codec ID %u", hf->active_codec_id);
+		LOG_ERROR("Unsupported codec ID %u", hf->active_codec_id);
 		return -EINVAL;
 	}
 
@@ -3540,7 +3539,7 @@ static int hfp_hf_create_sco(struct bt_hfp_hf *hf)
 
 	err = hfp_hf_set_voice_setting(hf);
 	if (err < 0) {
-		LOG_ERR("Failed to set voice setting");
+		LOG_ERROR("Failed to set voice setting");
 		return err;
 	}
 
@@ -3560,7 +3559,7 @@ static int hfp_hf_create_sco(struct bt_hfp_hf *hf)
 	}
 
 	if (sco == NULL) {
-		LOG_ERR("Failed to create SCO");
+		LOG_ERROR("Failed to create SCO");
 		return -ENOMEM;
 	}
 
@@ -3574,12 +3573,12 @@ int bt_hfp_hf_audio_connect(struct bt_hfp_hf *hf)
 	LOG_DBG("");
 
 	if (hf == NULL) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (atomic_ptr_get(&hf->sco_conn) != NULL) {
-		LOG_ERR("Audio connection has been connected");
+		LOG_ERROR("Audio connection has been connected");
 		return -ECONNREFUSED;
 	}
 
@@ -3592,7 +3591,7 @@ int bt_hfp_hf_audio_connect(struct bt_hfp_hf *hf)
 #if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
 	err = hfp_hf_send_cmd(hf, NULL, bcc_finish, "AT+BCC");
 	if (err < 0) {
-		LOG_ERR("Fail to setup audio connection on %p", hf);
+		LOG_ERROR("Fail to setup audio connection on %p", hf);
 	}
 
 	return err;
@@ -3625,23 +3624,23 @@ int bt_hfp_hf_select_codec(struct bt_hfp_hf *hf, uint8_t codec_id)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!(hf->hf_codec_ids & BIT(codec_id))) {
-		LOG_ERR("Codec ID is unsupported");
+		LOG_ERROR("Codec ID is unsupported");
 		return -ENOTSUP;
 	}
 
 	if (!atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_CODEC_CONN)) {
-		LOG_ERR("Invalid context");
+		LOG_ERROR("Invalid context");
 		return -ESRCH;
 	}
 
 	err = hfp_hf_send_cmd(hf, NULL, bcs_finish, "AT+BCS=%d", codec_id);
 	if (err < 0) {
-		LOG_ERR("Fail to select codec on %p", hf);
+		LOG_ERROR("Fail to select codec on %p", hf);
 		return err;
 	}
 
@@ -3672,12 +3671,12 @@ int bt_hfp_hf_set_codecs(struct bt_hfp_hf *hf, uint8_t codec_ids)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (codec_ids & BT_HFP_HF_CODEC_CVSD) {
-		LOG_ERR("CVSD should be supported");
+		LOG_ERROR("CVSD should be supported");
 		return -EINVAL;
 	}
 
@@ -3721,17 +3720,17 @@ int bt_hfp_hf_turn_off_ecnr(struct bt_hfp_hf *hf)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!(hf->ag_features & BT_HFP_AG_FEATURE_ECNR)) {
-		LOG_ERR("EC and/or NR functions is unsupported by AG");
+		LOG_ERROR("EC and/or NR functions is unsupported by AG");
 		return -ENOTSUP;
 	}
 
 	if (hf->chan.sco) {
-		LOG_ERR("Audio connection has been connected");
+		LOG_ERROR("Audio connection has been connected");
 		return -EBUSY;
 	}
 
@@ -3759,12 +3758,12 @@ int bt_hfp_hf_call_waiting_notify(struct bt_hfp_hf *hf, bool enable)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
-		LOG_ERR("Three-way calling is unsupported by AG");
+		LOG_ERROR("Three-way calling is unsupported by AG");
 		return -ENOTSUP;
 	}
 
@@ -3794,17 +3793,17 @@ int bt_hfp_hf_release_all_held(struct bt_hfp_hf *hf)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
-		LOG_ERR("Three-way calling is unsupported by AG");
+		LOG_ERROR("Three-way calling is unsupported by AG");
 		return -ENOTSUP;
 	}
 
 	if (!(hf->chld_features & BIT(BT_HFP_CHLD_RELEASE_ALL))) {
-		LOG_ERR("Releasing all held calls is unsupported by AG");
+		LOG_ERROR("Releasing all held calls is unsupported by AG");
 		return -ENOTSUP;
 	}
 
@@ -3834,17 +3833,17 @@ int bt_hfp_hf_set_udub(struct bt_hfp_hf *hf)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
-		LOG_ERR("Three-way calling is unsupported by AG");
+		LOG_ERROR("Three-way calling is unsupported by AG");
 		return -ENOTSUP;
 	}
 
 	if (!(hf->chld_features & BIT(BT_HFP_CHLD_RELEASE_ALL))) {
-		LOG_ERR("UDUB is unsupported by AG");
+		LOG_ERROR("UDUB is unsupported by AG");
 		return -ENOTSUP;
 	}
 
@@ -3874,12 +3873,12 @@ int bt_hfp_hf_release_active_accept_other(struct bt_hfp_hf *hf)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
-		LOG_ERR("Three-way calling is unsupported by AG");
+		LOG_ERROR("Three-way calling is unsupported by AG");
 		return -ENOTSUP;
 	}
 
@@ -3910,12 +3909,12 @@ int bt_hfp_hf_hold_active_accept_other(struct bt_hfp_hf *hf)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
-		LOG_ERR("Three-way calling is unsupported by AG");
+		LOG_ERROR("Three-way calling is unsupported by AG");
 		return -ENOTSUP;
 	}
 
@@ -3946,17 +3945,17 @@ int bt_hfp_hf_join_conversation(struct bt_hfp_hf *hf)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
-		LOG_ERR("Three-way calling is unsupported by AG");
+		LOG_ERROR("Three-way calling is unsupported by AG");
 		return -ENOTSUP;
 	}
 
 	if (!(hf->chld_features & BIT(BT_HFP_CALL_ACTIVE_HELD))) {
-		LOG_ERR("Adding a held call to the conversation is unsupported by AG");
+		LOG_ERROR("Adding a held call to the conversation is unsupported by AG");
 		return -ENOTSUP;
 	}
 
@@ -3987,17 +3986,17 @@ int bt_hfp_hf_explicit_call_transfer(struct bt_hfp_hf *hf)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
-		LOG_ERR("Three-way calling is unsupported by AG");
+		LOG_ERROR("Three-way calling is unsupported by AG");
 		return -ENOTSUP;
 	}
 
 	if (!(hf->chld_features & BIT(BT_HFP_CALL_QUITE))) {
-		LOG_ERR("Expliciting Call Transfer is unsupported by AG");
+		LOG_ERROR("Expliciting Call Transfer is unsupported by AG");
 		return -ENOTSUP;
 	}
 
@@ -4030,38 +4029,38 @@ int bt_hfp_hf_release_specified_call(struct bt_hfp_hf_call *call)
 	LOG_DBG("");
 
 	if (!call) {
-		LOG_ERR("Invalid call");
+		LOG_ERROR("Invalid call");
 		return -ENOTCONN;
 	}
 
 	hf = call->hf;
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
-		LOG_ERR("Three-way calling is unsupported by AG");
+		LOG_ERROR("Three-way calling is unsupported by AG");
 		return -ENOTSUP;
 	}
 
 	if (!(hf->ag_features & BT_HFP_AG_FEATURE_ECC)) {
-		LOG_ERR("Enhanced Call Control is unsupported by AG");
+		LOG_ERROR("Enhanced Call Control is unsupported by AG");
 		return -ENOTSUP;
 	}
 
 	if (!(hf->hf_features & BT_HFP_HF_FEATURE_ECC)) {
-		LOG_ERR("Enhanced Call Control is unsupported by HF");
+		LOG_ERROR("Enhanced Call Control is unsupported by HF");
 		return -ENOTSUP;
 	}
 
 	if (!(hf->chld_features & BIT(BT_HFP_CALL_RELEASE_SPECIFIED_ACTIVE))) {
-		LOG_ERR("Releasing a specific active call is unsupported by AG");
+		LOG_ERROR("Releasing a specific active call is unsupported by AG");
 		return -ENOTSUP;
 	}
 
 	if (!call->index) {
-		LOG_ERR("Invalid call index");
+		LOG_ERROR("Invalid call index");
 		return -EINVAL;
 	}
 
@@ -4094,38 +4093,38 @@ int bt_hfp_hf_private_consultation_mode(struct bt_hfp_hf_call *call)
 	LOG_DBG("");
 
 	if (!call) {
-		LOG_ERR("Invalid call");
+		LOG_ERROR("Invalid call");
 		return -ENOTCONN;
 	}
 
 	hf = call->hf;
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
-		LOG_ERR("Three-way calling is unsupported by AG");
+		LOG_ERROR("Three-way calling is unsupported by AG");
 		return -ENOTSUP;
 	}
 
 	if (!(hf->ag_features & BT_HFP_AG_FEATURE_ECC)) {
-		LOG_ERR("Enhanced Call Control is unsupported by AG");
+		LOG_ERROR("Enhanced Call Control is unsupported by AG");
 		return -ENOTSUP;
 	}
 
 	if (!(hf->hf_features & BT_HFP_HF_FEATURE_ECC)) {
-		LOG_ERR("Enhanced Call Control is unsupported by HF");
+		LOG_ERROR("Enhanced Call Control is unsupported by HF");
 		return -ENOTSUP;
 	}
 
 	if (!(hf->chld_features & BIT(BT_HFP_CALL_PRIVATE_CNLTN_MODE))) {
-		LOG_ERR("Private Consultation Mode is unsupported by AG");
+		LOG_ERROR("Private Consultation Mode is unsupported by AG");
 		return -ENOTSUP;
 	}
 
 	if (!call->index) {
-		LOG_ERR("Invalid call index");
+		LOG_ERROR("Invalid call index");
 		return -EINVAL;
 	}
 
@@ -4180,12 +4179,12 @@ int bt_hfp_hf_voice_recognition(struct bt_hfp_hf *hf, bool activate)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!(hf->ag_features & BT_HFP_AG_FEATURE_VOICE_RECG)) {
-		LOG_ERR("Voice recognition is unsupported by AG");
+		LOG_ERROR("Voice recognition is unsupported by AG");
 		return -ENOTSUP;
 	}
 
@@ -4220,22 +4219,22 @@ int bt_hfp_hf_ready_to_accept_audio(struct bt_hfp_hf *hf)
 	LOG_DBG("");
 
 	if (!hf) {
-		LOG_ERR("No HF connection found");
+		LOG_ERROR("No HF connection found");
 		return -ENOTCONN;
 	}
 
 	if (!(hf->ag_features & BT_HFP_AG_FEATURE_VOICE_RECG)) {
-		LOG_ERR("Voice recognition is unsupported by AG");
+		LOG_ERROR("Voice recognition is unsupported by AG");
 		return -ENOTSUP;
 	}
 
 	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_VRE_ACTIVATE)) {
-		LOG_ERR("Voice recognition is not activated");
+		LOG_ERROR("Voice recognition is not activated");
 		return -EINVAL;
 	}
 
 	if (!hf->chan.sco) {
-		LOG_ERR("SCO channel is not ready");
+		LOG_ERROR("SCO channel is not ready");
 		return -ENOTCONN;
 	}
 
@@ -4275,7 +4274,7 @@ static void hfp_hf_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 
 	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_RX_ONGOING);
 	if (at_parse_input(&hf->at, buf) < 0) {
-		LOG_ERR("Parsing failed");
+		LOG_ERROR("Parsing failed");
 	}
 	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_RX_ONGOING);
 	k_work_submit(&hf->work);
@@ -4317,7 +4316,7 @@ static void bt_hf_slc_work(struct k_work *work)
 
 	err = bt_hfp_hf_disconnect(hf);
 	if (err != 0) {
-		LOG_ERR("Failed to disconnect AG: %d", err);
+		LOG_ERROR("Failed to disconnect AG: %d", err);
 	}
 }
 
@@ -4334,20 +4333,20 @@ static uint8_t bt_hfp_hf_discover_cb(struct bt_conn *conn, struct bt_sdp_client_
 	hf = &bt_hfp_hf_pool[index];
 
 	if ((result == NULL) || (result->resp_buf == NULL)) {
-		LOG_ERR("SDP discovery failed");
+		LOG_ERROR("SDP discovery failed");
 		goto failed;
 	}
 
 	err = bt_sdp_get_profile_version(result->resp_buf, BT_SDP_HANDSFREE_SVCLASS,
 					 &hf->ag_sdp_version);
 	if (err != 0) {
-		LOG_ERR("Failed to get AG profile version");
+		LOG_ERROR("Failed to get AG profile version");
 		goto failed;
 	}
 
 	err = bt_sdp_get_features(result->resp_buf, &hf->ag_sdp_features);
 	if (err != 0) {
-		LOG_ERR("Failed to get AG feature");
+		LOG_ERROR("Failed to get AG feature");
 		goto failed;
 	}
 
@@ -4402,7 +4401,7 @@ static struct bt_hfp_hf *hfp_hf_create(struct bt_conn *conn)
 
 	hf = &bt_hfp_hf_pool[index];
 	if (hf->acl) {
-		LOG_ERR("HF connection (%p) is established", conn);
+		LOG_ERROR("HF connection (%p) is established", conn);
 		return NULL;
 	}
 
@@ -4489,7 +4488,7 @@ static int bt_hfp_hf_sco_accept(const struct bt_sco_accept_info *info,
 
 	hf = &bt_hfp_hf_pool[index];
 	if (hf->acl != info->acl) {
-		LOG_ERR("ACL %p of HF is unaligned with SCO's %p", hf->acl, info->acl);
+		LOG_ERROR("ACL %p of HF is unaligned with SCO's %p", hf->acl, info->acl);
 		return -EINVAL;
 	}
 
@@ -4497,7 +4496,7 @@ static int bt_hfp_hf_sco_accept(const struct bt_sco_accept_info *info,
 
 	err = hfp_hf_set_voice_setting(hf);
 	if (err < 0) {
-		LOG_ERR("Fail to set voice setting");
+		LOG_ERROR("Fail to set voice setting");
 		return err;
 	}
 
@@ -4627,7 +4626,7 @@ int bt_hfp_hf_query_list_of_current_calls(struct bt_hfp_hf *hf)
 	err = hf_query_current_calls(hf);
 	if (err != 0) {
 		atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_USR_CLCC_PND);
-		LOG_ERR("Failed to query current calls, err %d", err);
+		LOG_ERROR("Failed to query current calls, err %d", err);
 	}
 
 	return err;

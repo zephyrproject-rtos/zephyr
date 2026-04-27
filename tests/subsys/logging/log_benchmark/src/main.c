@@ -81,21 +81,22 @@ struct backend_cb backend_ctrl_blk;
  *
  * @param nargs Number of int arguments in the log message.
  */
-#define TEST_LOG_CAPACITY(nargs, inc_cnt, _print) do { \
-	int _cnt = 0; \
-	test_helpers_log_setup(); \
-	while (!test_helpers_log_dropped_pending()) { \
-		LOG_ERR("test" LISTIFY(nargs, TEST_FORMAT_SPEC, ()) \
-				LISTIFY(nargs, TEST_VALUE, ())); \
-		_cnt++; \
-	} \
-	_cnt--; \
-	inc_cnt += _cnt; \
-	if (_print) { \
-		DBG_PRINT("%d log message with %d arguments fit in %d space.\n", \
-			_cnt, nargs, CONFIG_LOG_BUFFER_SIZE); \
-	} \
-} while (0)
+#define TEST_LOG_CAPACITY(nargs, inc_cnt, _print)                                                  \
+	do {                                                                                       \
+		int _cnt = 0;                                                                      \
+		test_helpers_log_setup();                                                          \
+		while (!test_helpers_log_dropped_pending()) {                                      \
+			LOG_ERROR("test" LISTIFY(nargs, TEST_FORMAT_SPEC, ())                                                   \
+							 LISTIFY(nargs, TEST_VALUE, ()));            \
+			_cnt++;                                                                    \
+		}                                                                                  \
+		_cnt--;                                                                            \
+		inc_cnt += _cnt;                                                                   \
+		if (_print) {                                                                      \
+			DBG_PRINT("%d log message with %d arguments fit in %d space.\n", _cnt,     \
+				  nargs, CONFIG_LOG_BUFFER_SIZE);                                  \
+		}                                                                                  \
+	} while (0)
 
 /** Test how many messages fits in the logging buffer in deferred mode. Test
  * serves as the comparison between logging versions.
@@ -117,23 +118,24 @@ ZTEST(test_log_benchmark, test_log_capacity)
 	PRINT("In total %d message were stored.\n", total_cnt);
 }
 
-#define TEST_LOG_MESSAGE_STORE_NO_OVERFLOW(nargs, inc_time, inc_msg) do { \
-	int _msg_cnt = 0; \
-	TEST_LOG_CAPACITY(nargs, _msg_cnt, 0); \
-	test_helpers_log_setup(); \
-	uint32_t cyc = test_helpers_cycle_get(); \
-	for (int i = 0; i < _msg_cnt; i++) { \
-		LOG_ERR("test" LISTIFY(nargs, TEST_FORMAT_SPEC, ()) \
-				LISTIFY(nargs, TEST_VALUE, ())); \
-	} \
-	cyc = test_helpers_cycle_get() - cyc; \
-	inc_time += cyc; \
-	inc_msg += _msg_cnt; \
-	DBG_PRINT("%d arguments message logged in %u cycles (%u us). " \
-		  "%d message logged in %u cycles.\n", \
-			nargs, cyc / _msg_cnt, k_cyc_to_us_ceil32(cyc) / _msg_cnt, \
-			_msg_cnt, cyc); \
-} while (0)
+#define TEST_LOG_MESSAGE_STORE_NO_OVERFLOW(nargs, inc_time, inc_msg)                               \
+	do {                                                                                       \
+		int _msg_cnt = 0;                                                                  \
+		TEST_LOG_CAPACITY(nargs, _msg_cnt, 0);                                             \
+		test_helpers_log_setup();                                                          \
+		uint32_t cyc = test_helpers_cycle_get();                                           \
+		for (int i = 0; i < _msg_cnt; i++) {                                               \
+			LOG_ERROR("test" LISTIFY(nargs, TEST_FORMAT_SPEC, ())                                                   \
+							 LISTIFY(nargs, TEST_VALUE, ()));            \
+		}                                                                                  \
+		cyc = test_helpers_cycle_get() - cyc;                                              \
+		inc_time += cyc;                                                                   \
+		inc_msg += _msg_cnt;                                                               \
+		DBG_PRINT("%d arguments message logged in %u cycles (%u us). "                     \
+			  "%d message logged in %u cycles.\n",                                     \
+			  nargs, cyc / _msg_cnt, k_cyc_to_us_ceil32(cyc) / _msg_cnt, _msg_cnt,     \
+			  cyc);                                                                    \
+	} while (0)
 
 static void run_log_message_store_time_no_overwrite(void)
 {
@@ -162,23 +164,24 @@ ZTEST(test_log_benchmark, test_log_message_store_time_no_overwrite)
 	run_log_message_store_time_no_overwrite();
 }
 
-#define TEST_LOG_MESSAGE_STORE_OVERFLOW(nargs, _msg_cnt, inc_time, inc_msg) do { \
-	int _dummy = 0; \
-	/* Saturate buffer. */ \
-	TEST_LOG_CAPACITY(nargs, _dummy, 0); \
-	uint32_t cyc = test_helpers_cycle_get(); \
-	for (int i = 0; i < _msg_cnt; i++) { \
-		LOG_ERR("test" LISTIFY(nargs, TEST_FORMAT_SPEC, ()) \
-				LISTIFY(nargs, TEST_VALUE, ())); \
-	} \
-	cyc = test_helpers_cycle_get() - cyc; \
-	inc_time += cyc; \
-	inc_msg += _msg_cnt; \
-	DBG_PRINT("%d arguments message logged in %u cycles (%u us). " \
-		  "%d message logged in %u cycles.\n", \
-			nargs, cyc / _msg_cnt, k_cyc_to_us_ceil32(cyc) / _msg_cnt, \
-			_msg_cnt, cyc); \
-} while (0)
+#define TEST_LOG_MESSAGE_STORE_OVERFLOW(nargs, _msg_cnt, inc_time, inc_msg)                        \
+	do {                                                                                       \
+		int _dummy = 0;                                                                    \
+		/* Saturate buffer. */                                                             \
+		TEST_LOG_CAPACITY(nargs, _dummy, 0);                                               \
+		uint32_t cyc = test_helpers_cycle_get();                                           \
+		for (int i = 0; i < _msg_cnt; i++) {                                               \
+			LOG_ERROR("test" LISTIFY(nargs, TEST_FORMAT_SPEC, ())                                                   \
+							 LISTIFY(nargs, TEST_VALUE, ()));            \
+		}                                                                                  \
+		cyc = test_helpers_cycle_get() - cyc;                                              \
+		inc_time += cyc;                                                                   \
+		inc_msg += _msg_cnt;                                                               \
+		DBG_PRINT("%d arguments message logged in %u cycles (%u us). "                     \
+			  "%d message logged in %u cycles.\n",                                     \
+			  nargs, cyc / _msg_cnt, k_cyc_to_us_ceil32(cyc) / _msg_cnt, _msg_cnt,     \
+			  cyc);                                                                    \
+	} while (0)
 
 ZTEST(test_log_benchmark, test_log_message_store_time_overwrite)
 {
@@ -219,7 +222,7 @@ ZTEST(test_log_benchmark, test_log_message_with_string)
 	int repeat = 8;
 
 	for (int i = 0; i < repeat; i++) {
-		LOG_ERR("test with string to duplicate: %s", strbuf);
+		LOG_ERROR("test with string to duplicate: %s", strbuf);
 	}
 
 	cyc = test_helpers_cycle_get() - cyc;

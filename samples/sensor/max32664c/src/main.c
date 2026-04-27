@@ -30,7 +30,7 @@ static void update(void)
 		if (sensor_channel_get(sensor_hub, SENSOR_CHAN_ACCEL_X, &x) ||
 		    sensor_channel_get(sensor_hub, SENSOR_CHAN_ACCEL_Y, &y) ||
 		    sensor_channel_get(sensor_hub, SENSOR_CHAN_ACCEL_Z, &z)) {
-			LOG_ERR("Failed to get accelerometer data");
+			LOG_ERROR("Failed to get accelerometer data");
 			return;
 		}
 
@@ -41,7 +41,7 @@ static void update(void)
 		struct sensor_value hr;
 
 		if (sensor_channel_get(sensor_hub, SENSOR_CHAN_MAX32664C_HEARTRATE, &hr)) {
-			LOG_ERR("Failed to get heart rate data");
+			LOG_ERROR("Failed to get heart rate data");
 			return;
 		}
 
@@ -57,7 +57,7 @@ int main(void)
 	struct sensor_value value;
 
 	if (!device_is_ready(sensor_hub)) {
-		LOG_ERR("Sensor hub not ready!");
+		LOG_ERROR("Sensor hub not ready!");
 		return -1;
 	}
 

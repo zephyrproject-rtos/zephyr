@@ -156,12 +156,12 @@ void mfd_rv3032_set_irq_handler(const struct device *dev, const struct device *c
 	struct mfd_rv3032_child *child;
 
 	if ((child_idx <= RV3032_DEV_REG) || (child_idx >= RV3032_DEV_MAX)) {
-		LOG_ERR("Not valid child IRQ idx [%d]\n", child_idx);
+		LOG_ERROR("Not valid child IRQ idx [%d]\n", child_idx);
 		return;
 	}
 
 	if ((handler == NULL)  || (child_dev == NULL)) {
-		LOG_ERR("Child handler or dev pointer is NULL");
+		LOG_ERROR("Child handler or dev pointer is NULL");
 		return;
 	}
 
@@ -184,7 +184,7 @@ void mfd_rv3032_set_irq_handler(const struct device *dev, const struct device *c
 	case RV3032_DEV_REG:
 	case RV3032_DEV_MAX:
 	default:
-		LOG_ERR("Invalid child_id, out of usable range");
+		LOG_ERROR("Invalid child_id, out of usable range");
 		return;
 	}
 
@@ -204,7 +204,7 @@ int mfd_rv3032_read_regs(const struct device *dev, uint8_t addr, void *buf, size
 	err = i2c_write_read_dt(&config->i2c, &addr, sizeof(addr), buf, len);
 	mfd_rv3032_unlock_sem(dev);
 	if (err) {
-		LOG_ERR("failed to read reg addr 0x%02x, len %d (err %d)", addr, len, err);
+		LOG_ERROR("failed to read reg addr 0x%02x, len %d (err %d)", addr, len, err);
 	}
 
 	return err;
@@ -227,7 +227,7 @@ int mfd_rv3032_write_regs(const struct device *dev, uint8_t addr, void *buf, siz
 	err = i2c_write_dt(&config->i2c, block, sizeof(block));
 	mfd_rv3032_unlock_sem(dev);
 	if (err) {
-		LOG_ERR("failed to write reg addr 0x%02x, len %d (err %d)", addr, len, err);
+		LOG_ERROR("failed to write reg addr 0x%02x, len %d (err %d)", addr, len, err);
 	}
 
 	return err;
@@ -247,8 +247,8 @@ int mfd_rv3032_update_reg8(const struct device *dev, uint8_t addr, uint8_t mask,
 	err = i2c_reg_update_byte_dt(&config->i2c, addr, mask, val);
 	mfd_rv3032_unlock_sem(dev);
 	if (err) {
-		LOG_ERR("failed to update reg addr 0x%02x, mask 0x%02x, val 0x%02x (err %d)", addr,
-			mask, val, err);
+		LOG_ERROR("failed to update reg addr 0x%02x, mask 0x%02x, val 0x%02x (err %d)",
+			  addr, mask, val, err);
 	}
 
 	return err;
@@ -292,7 +292,7 @@ static int mfd_rv3032_init(const struct device *dev)
 	k_sem_init(&data->lock, 1, 1);
 
 	if (!i2c_is_ready_dt(&(config->i2c))) {
-		LOG_ERR("I2C bus not ready.");
+		LOG_ERROR("I2C bus not ready.");
 		return -ENODEV;
 	}
 
@@ -317,7 +317,7 @@ static int mfd_rv3032_init(const struct device *dev)
 		/* Clean all IRQ (RTC, Update, Counter) */
 		err = mfd_rv3032_read_reg8(dev, RV3032_REG_STATUS, &status);
 		if (err) {
-			LOG_ERR("Status register read failed after EEPROM refresh: %d", err);
+			LOG_ERROR("Status register read failed after EEPROM refresh: %d", err);
 			return err;
 		}
 
@@ -329,7 +329,7 @@ static int mfd_rv3032_init(const struct device *dev)
 		/* Clean all IRQs (RTC, Update, Counter) */
 		err = mfd_rv3032_write_reg8(dev, RV3032_REG_STATUS, status);
 		if (err) {
-			LOG_ERR("Status register write failed: %d", err);
+			LOG_ERROR("Status register write failed: %d", err);
 			return err;
 		}
 
@@ -339,26 +339,26 @@ static int mfd_rv3032_init(const struct device *dev)
 		 */
 		err = mfd_rv3032_write_regs(dev, RV3032_REG_CONTROL1, zero_buff, 6);
 		if (err) {
-			LOG_ERR("CONTROL register write failed after EEPROM refresh: %d", err);
+			LOG_ERROR("CONTROL register write failed after EEPROM refresh: %d", err);
 			return err;
 		}
 	}
 
 	if (config->gpio_int.port != NULL) {
 		if (!gpio_is_ready_dt(&config->gpio_int)) {
-			LOG_ERR("GPIO not ready");
+			LOG_ERROR("GPIO not ready");
 			return -ENODEV;
 		}
 
 		err = gpio_pin_configure_dt(&config->gpio_int, GPIO_INPUT);
 		if (err) {
-			LOG_ERR("failed to configure GPIO (err %d)", err);
+			LOG_ERROR("failed to configure GPIO (err %d)", err);
 			return -ENODEV;
 		}
 
 		err = gpio_pin_interrupt_configure_dt(&config->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 		if (err) {
-			LOG_ERR("failed to enable GPIO interrupt (err %d)", err);
+			LOG_ERROR("failed to enable GPIO interrupt (err %d)", err);
 			return err;
 		}
 
@@ -366,7 +366,7 @@ static int mfd_rv3032_init(const struct device *dev)
 
 		err = gpio_add_callback_dt(&config->gpio_int, &data->int_callback);
 		if (err) {
-			LOG_ERR("failed to add GPIO callback (err %d)", err);
+			LOG_ERROR("failed to add GPIO callback (err %d)", err);
 			return -ENODEV;
 		}
 

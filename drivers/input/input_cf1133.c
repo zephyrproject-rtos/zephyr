@@ -107,7 +107,7 @@ static int cf1133_get_chip_id(const struct device *dev)
 
 	ret = i2c_burst_read_dt(&config->bus, CHIP_ID, buffer, sizeof(buffer));
 	if (ret < 0) {
-		LOG_ERR("Read burst failed: %d", ret);
+		LOG_ERROR("Read burst failed: %d", ret);
 		return ret;
 	}
 	if (buffer[0] == 0) {
@@ -137,7 +137,7 @@ static int cf1133_get_protocol_type(const struct device *dev)
 	if (data->chip_id <= 3) {
 		ret = i2c_reg_read_byte_dt(&config->bus, I2C_PROTOCOL, &buffer);
 		if (ret < 0) {
-			LOG_ERR("read i2c protocol failed: %d", ret);
+			LOG_ERROR("read i2c protocol failed: %d", ret);
 			return ret;
 		}
 		data->touch_protocol_type = FIELD_GET(I2C_PROTOCOL_BMSK, buffer);
@@ -151,7 +151,7 @@ static int cf1133_get_protocol_type(const struct device *dev)
 
 		ret = i2c_reg_read_byte_dt(&config->bus, 0xf0, &buffer);
 		if (ret < 0) {
-			LOG_ERR("read sensing mode failed: (%d)", ret);
+			LOG_ERROR("read sensing mode failed: (%d)", ret);
 			return ret;
 		}
 		sensing_mode = FIELD_GET(ONE_D_SENSING_CONTROL_BMSK, buffer);
@@ -168,13 +168,13 @@ static int cf1133_ts_init(const struct device *dev)
 	/* Get device status before use to do at least once */
 	ret = cf1133_get_chip_id(dev);
 	if (ret < 0) {
-		LOG_ERR("Read chip id failed: %d", ret);
+		LOG_ERROR("Read chip id failed: %d", ret);
 		return ret;
 	}
 
 	ret = cf1133_get_protocol_type(dev);
 	if (ret < 0) {
-		LOG_ERR("Read protocol failed: %d", ret);
+		LOG_ERROR("Read protocol failed: %d", ret);
 		return ret;
 	}
 
@@ -200,7 +200,7 @@ static int cf1133_process(const struct device *dev)
 	ret = i2c_burst_read_dt(&config->bus, KEYS_REG, buffer,
 			      1 + SUPPORTED_POINT * data->pixel_length);
 	if (ret < 0) {
-		LOG_ERR("Read coordinates failed: %d", ret);
+		LOG_ERROR("Read coordinates failed: %d", ret);
 		return ret;
 	}
 
@@ -286,7 +286,7 @@ static int cf1133_init(const struct device *dev)
 
 	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Could not configure interrupt GPIO pin");
+		LOG_ERROR("Could not configure interrupt GPIO pin");
 		return ret;
 	}
 
@@ -294,13 +294,13 @@ static int cf1133_init(const struct device *dev)
 
 	ret = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
 	if (ret < 0) {
-		LOG_ERR("Could not set gpio callback");
+		LOG_ERROR("Could not set gpio callback");
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Could not configure interrupt GPIO interrupt.");
+		LOG_ERROR("Could not configure interrupt GPIO interrupt.");
 		return ret;
 	}
 #else
@@ -312,7 +312,7 @@ static int cf1133_init(const struct device *dev)
 
 	ret = cf1133_ts_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Init information of sensor failed: %d", ret);
+		LOG_ERROR("Init information of sensor failed: %d", ret);
 		return ret;
 	}
 	return 0;

@@ -16,7 +16,7 @@ struct net_if *dsa_user_get_iface(struct net_if *iface, int port_idx)
 	struct dsa_switch_context *dsa_switch_ctx;
 
 	if (eth_ctx == NULL || eth_ctx->dsa_switch_ctx == NULL) {
-		LOG_ERR("Iface %p context not available!", iface);
+		LOG_ERROR("Iface %p context not available!", iface);
 		return NULL;
 	}
 

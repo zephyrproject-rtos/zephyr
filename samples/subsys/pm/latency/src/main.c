@@ -31,7 +31,7 @@ int main(void)
 
 	dev = device_get_binding("dev_test");
 	if (!device_is_ready(dev)) {
-		LOG_ERR("Device not ready");
+		LOG_ERROR("Device not ready");
 		return 0;
 	}
 

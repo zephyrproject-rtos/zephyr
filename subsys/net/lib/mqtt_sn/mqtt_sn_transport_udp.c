@@ -56,7 +56,7 @@ static int get_multicast_ttl(struct mqtt_sn_transport_udp *udp, int *ttl, net_so
 					ttl_len);
 	}
 
-	LOG_ERR("Unknown AF");
+	LOG_ERROR("Unknown AF");
 	return -EINVAL;
 }
 
@@ -70,7 +70,7 @@ static int set_multicast_ttl(struct mqtt_sn_transport_udp *udp, int *ttl, net_so
 					ttl_len);
 	}
 
-	LOG_ERR("Unknown AF");
+	LOG_ERROR("Unknown AF");
 	return -EINVAL;
 }
 
@@ -137,14 +137,14 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 			break;
 		}
 	default:
-		LOG_ERR("Unknown AF");
+		LOG_ERROR("Unknown AF");
 		return -EINVAL;
 	}
 
 	err = zsock_bind(udp->sock, &addrm, sizeof(addrm));
 	if (err) {
 		errno_backup = errno;
-		LOG_ERR("Error during bind: %d", errno_backup);
+		LOG_ERROR("Error during bind: %d", errno_backup);
 		return errno_backup;
 	}
 
@@ -183,7 +183,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 			return -errno;
 		}
 	} else {
-		LOG_ERR("Unknown AF");
+		LOG_ERROR("Unknown AF");
 		return -EINVAL;
 	}
 

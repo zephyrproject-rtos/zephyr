@@ -276,7 +276,7 @@ int lbm_lora_send(const struct device *dev, uint8_t *msg, uint32_t msg_len)
 	ret = k_poll(&evt, 1, K_MSEC(10 + (2 * air_time)));
 	if (ret < 0) {
 		if (modem_release(dev)) {
-			LOG_ERR("Packet transmission failed!");
+			LOG_ERROR("Packet transmission failed!");
 		} else {
 			/* TX done interrupt is currently running */
 			k_poll(&evt, 1, K_FOREVER);
@@ -339,7 +339,7 @@ int lbm_lora_recv(const struct device *dev, uint8_t *msg, uint8_t msg_len, k_tim
 	}
 
 	if (done.result != 0) {
-		LOG_ERR("Receive error");
+		LOG_ERROR("Receive error");
 		ret = done.result;
 		goto release;
 	}
@@ -455,7 +455,7 @@ static int op_done_sync_rx(const struct device *dev)
 		LOG_HEXDUMP_DBG(data->rx_state.sync.msg, data->rx_state.sync.msg_len, "RX");
 		ret = 0;
 	} else {
-		LOG_ERR("Failed to retrieve packet payload");
+		LOG_ERROR("Failed to retrieve packet payload");
 		ret = -EIO;
 	}
 
@@ -485,7 +485,7 @@ static void op_done_async_rx(const struct device *dev)
 	/* Retrieve the packet payload */
 	status = ral_get_pkt_payload(&config->ralf.ral, sizeof(rx_buffer), rx_buffer, &size);
 	if (status != RAL_STATUS_OK) {
-		LOG_ERR("Failed to retrieve packet payload");
+		LOG_ERROR("Failed to retrieve packet payload");
 		return;
 	}
 	LOG_HEXDUMP_DBG(rx_buffer, size, "RX");
@@ -590,21 +590,21 @@ int lbm_lora_common_init(const struct device *dev)
 	/* Initialise the radio abstraction layer */
 	status = ral_init(&config->ralf.ral);
 	if (status != RAL_STATUS_OK) {
-		LOG_ERR("RAL init failure (%d)", status);
+		LOG_ERROR("RAL init failure (%d)", status);
 		return -EIO;
 	}
 
 	/* Enable all relevant interrupts */
 	status = ral_set_dio_irq_params(&config->ralf.ral, RAL_IRQ_LORA);
 	if (status != RAL_STATUS_OK) {
-		LOG_ERR("RAL DIO init failure (%d)", status);
+		LOG_ERROR("RAL DIO init failure (%d)", status);
 		return -EIO;
 	}
 
 	/* Idle in sleep mode */
 	status = ral_set_sleep(&config->ralf.ral, true);
 	if (status != RAL_STATUS_OK) {
-		LOG_ERR("Sleep failure (%d)", status);
+		LOG_ERROR("Sleep failure (%d)", status);
 		return -EIO;
 	}
 	return 0;

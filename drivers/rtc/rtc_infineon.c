@@ -271,7 +271,7 @@ static int ifx_cat1_rtc_get_time(const struct device *dev, struct rtc_time *time
 	cy_stc_rtc_config_t dateTime = {.hrFormat = CY_RTC_24_HOURS};
 
 	if (_ifx_cat1_rtc_get_state() != _IFX_CAT1_RTC_STATE_TIME_SET) {
-		LOG_ERR("Valid time has not been set with rtc_set_time yet");
+		LOG_ERROR("Valid time has not been set with rtc_set_time yet");
 		return -ENODATA;
 	}
 

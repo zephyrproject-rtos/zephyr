@@ -756,7 +756,7 @@ static int pll_update_freq(uintptr_t reg, uint8_t type)
 	int ret = 0;
 
 	if (sys_test_bit(reg + CODEC_PLL_STAT, AUDCODEC_PLL_STAT_UNLOCK_Pos)) {
-		LOG_ERR("pll lock fail! freq_type:%d", type);
+		LOG_ERROR("pll lock fail! freq_type:%d", type);
 		ret = -1;
 	} else {
 		LOG_DBG("pll lock! freq_type:%d", type);
@@ -1083,13 +1083,13 @@ static int codec_configure(const struct device *dev, struct audio_codec_cfg *cfg
 	int r;
 
 	if (cfg->dai_type != AUDIO_DAI_TYPE_PCM) {
-		LOG_ERR("dai_type must be AUDIO_DAI_TYPE_PCM");
+		LOG_ERROR("dai_type must be AUDIO_DAI_TYPE_PCM");
 		return -EINVAL;
 	}
 
 	r = sf32lb_clock_control_on_dt(&sf32lb_cfg->clock);
 	if (r < 0) {
-		LOG_ERR("Clock required is not on");
+		LOG_ERROR("Clock required is not on");
 		return r;
 	}
 	pcm_cfg = &cfg->dai_cfg.pcm;
@@ -1178,7 +1178,7 @@ void dma_tx_callback(const struct device *dev_dma, void *user_data, uint32_t cha
 			data->tx_done(dev, data->tx_cb_user_data);
 		}
 	} else {
-		LOG_ERR("dma tx err:%d", status);
+		LOG_ERROR("dma tx err:%d", status);
 	}
 }
 
@@ -1198,7 +1198,7 @@ void dma_rx_callback(const struct device *dev_dma, void *user_data, uint32_t cha
 				      data->rx_cb_user_data);
 		}
 	} else {
-		LOG_ERR("dma rx err:%d", status);
+		LOG_ERROR("dma rx err:%d", status);
 	}
 }
 
@@ -1229,25 +1229,25 @@ static int codec_start(const struct device *dev, audio_dai_dir_t dir)
 		bf0_audio_pll_config(cfg, data, &codec_adc_clk_config[hw_cfg->samplerate_index],
 				     &codec_dac_clk_config[hw_cfg->samplerate_index], dir);
 	} else {
-		LOG_ERR("start err");
+		LOG_ERROR("start err");
 		return -EIO;
 	}
 
 	if (start_rx) {
 		LOG_DBG("codec start rx, blk=%d", data->rx_half_dma_size);
 		if (!data->rx_buf) {
-			LOG_ERR("must configure before start rx");
+			LOG_ERROR("must configure before start rx");
 			return -EIO;
 		}
 
 		if (sf32lb_dma_reload_dt(&cfg->dma_rx, (uintptr_t)(cfg->reg + CODEC_ADC_CH0_ENTRY),
 					 (uintptr_t)data->rx_buf, data->rx_half_dma_size * 2) < 0) {
-			LOG_ERR("DMA Rx reload failed\n");
+			LOG_ERROR("DMA Rx reload failed\n");
 			return -EIO;
 		}
 
 		if (sf32lb_dma_start_dt(&cfg->dma_rx) < 0) {
-			LOG_ERR("DMA Rx start failed\n");
+			LOG_ERROR("DMA Rx start failed\n");
 			return -EIO;
 		}
 
@@ -1259,21 +1259,21 @@ static int codec_start(const struct device *dev, audio_dai_dir_t dir)
 	if (start_tx) {
 		LOG_DBG("codec start tx, blk=%d", data->tx_half_dma_size);
 		if (!data->tx_buf) {
-			LOG_ERR("must configure before start tx");
+			LOG_ERROR("must configure before start tx");
 			return -EIO;
 		}
 
 		if (sf32lb_dma_reload_dt(&cfg->dma_tx, (uintptr_t)data->tx_buf,
 					 (uintptr_t)(cfg->reg + CODEC_DAC_CH0_ENTRY),
 					 data->tx_half_dma_size * 2) < 0) {
-			LOG_ERR("DMA Tx reload failed\n");
+			LOG_ERROR("DMA Tx reload failed\n");
 			return -EIO;
 		}
 
 		mute_dac_path(dev, cfg->reg, 1);
 
 		if (sf32lb_dma_start_dt(&cfg->dma_tx) < 0) {
-			LOG_ERR("DMA Tx start failed\n");
+			LOG_ERROR("DMA Tx start failed\n");
 			return -EIO;
 		}
 
@@ -1344,7 +1344,7 @@ static int codec_stop(const struct device *dev, audio_dai_dir_t dir)
 		pll_turn_off(cfg->reg);
 		data->pll_state = AUDIO_PLL_CLOSED;
 	} else {
-		LOG_ERR("stop err");
+		LOG_ERROR("stop err");
 		r = -EIO;
 	}
 	return r;
@@ -1404,7 +1404,7 @@ static void config_audcodec_dma(const struct device *dev, uint8_t is_tx)
 	ret = sf32lb_dma_config_dt(spec, &config_dma);
 
 	if (ret < 0) {
-		LOG_ERR("dma cfg err=%d", ret);
+		LOG_ERROR("dma cfg err=%d", ret);
 	}
 }
 
@@ -1434,7 +1434,7 @@ static int codec_driver_init(const struct device *dev)
 
 	r = sf32lb_clock_control_on_dt(&cfg->clock);
 	if (r < 0) {
-		LOG_ERR("Clock required is not on");
+		LOG_ERROR("Clock required is not on");
 	} else {
 		config_audcodec_dma(dev, 1);
 		config_audcodec_dma(dev, 0);

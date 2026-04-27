@@ -545,7 +545,8 @@ static int64_t delete_blocks(struct ext2_data *fs, uint32_t block_num, int lvl,
 			 * offsets to decide which part of next block we want to remove.
 			 */
 			if (block_num2 == 0) {
-				LOG_ERR("Inode block that references other blocks must be nonzero");
+				LOG_ERROR(
+					"Inode block that references other blocks must be nonzero");
 				fs->flags |= EXT2_DATA_FLAGS_ERR;
 				removed = -EINVAL;
 				goto out;
@@ -685,7 +686,7 @@ int64_t ext2_inode_remove_blocks(struct ext2_inode *inode, uint32_t first)
 		 * remove it.
 		 */
 		if (inode->i_block[offsets[0]] == 0) {
-			LOG_ERR("Inode block that references other blocks must be nonzero");
+			LOG_ERROR("Inode block that references other blocks must be nonzero");
 			fs->flags |= EXT2_DATA_FLAGS_ERR;
 			return -EINVAL;
 		}

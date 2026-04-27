@@ -118,7 +118,7 @@ static int nunchuk_init(const struct device *dev)
 	/* Send the unencrypted init sequence */
 	ret = i2c_write_dt(&cfg->i2c_bus, init_seq_1, sizeof(init_seq_1));
 	if (ret < 0) {
-		LOG_ERR("I2C write failed (%d).", ret);
+		LOG_ERROR("I2C write failed (%d).", ret);
 		return ret;
 	}
 

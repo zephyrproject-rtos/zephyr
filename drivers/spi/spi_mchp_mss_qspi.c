@@ -480,12 +480,12 @@ static int mss_qspi_configure(const struct device *dev,
 	const struct mss_qspi_config *cfg = dev->config;
 
 	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode is not supported\n\r");
+		LOG_ERROR("Slave mode is not supported\n\r");
 		return -ENOTSUP;
 	}
 
 	if (spi_cfg->operation & SPI_MODE_LOOP) {
-		LOG_ERR("Loop back mode is not supported\n\r");
+		LOG_ERROR("Loop back mode is not supported\n\r");
 		return -ENOTSUP;
 	}
 
@@ -494,12 +494,12 @@ static int mss_qspi_configure(const struct device *dev,
 		 (spi_cfg->operation & (SPI_LINES_DUAL |
 			SPI_LINES_QUAD |
 		       SPI_LINES_OCTAL))))) {
-		LOG_ERR("Unsupported configuration\n\r");
+		LOG_ERROR("Unsupported configuration\n\r");
 		return -ENOTSUP;
 	}
 
 	if (mss_qspi_clk_gen_set(cfg, spi_cfg)) {
-		LOG_ERR("can't set clk divider\n");
+		LOG_ERROR("can't set clk divider\n");
 		return -EINVAL;
 	}
 

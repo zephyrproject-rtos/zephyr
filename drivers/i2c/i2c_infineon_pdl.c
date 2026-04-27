@@ -423,13 +423,13 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 			data->frequencyhal_hz = CAT1_I2C_SPEED_FAST_PLUS_HZ;
 			break;
 		default:
-			LOG_ERR("Unsupported speed");
+			LOG_ERROR("Unsupported speed");
 			return -ERANGE;
 		}
 
 		/* This is deprecated and could be ignored in the future */
 		if (dev_config & I2C_ADDR_10_BITS) {
-			LOG_ERR("10-bit addressing mode is not supported");
+			LOG_ERROR("10-bit addressing mode is not supported");
 			return -EIO;
 		}
 
@@ -464,7 +464,7 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 	/* Configure the I2C resource */
 	rslt = Cy_SCB_I2C_Init(config->base, &_i2c_default_config, &data->context);
 	if (rslt != CY_SCB_I2C_SUCCESS) {
-		LOG_ERR("I2C configure failed with err 0x%x", rslt);
+		LOG_ERROR("I2C configure failed with err 0x%x", rslt);
 		k_sem_give(&data->operation_sem);
 		return -EIO;
 	}
@@ -474,7 +474,7 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 			      (_i2c_default_config.i2cMode == CY_SCB_I2C_SLAVE));
 #elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 	if (_i2c_set_peri_divider_psoc4(dev, data->frequencyhal_hz, is_target_mode) != 0) {
-		LOG_ERR("Failed to configure I2C peripheral clock divider");
+		LOG_ERROR("Failed to configure I2C peripheral clock divider");
 		k_sem_give(&data->operation_sem);
 		return -EIO;
 	}
@@ -515,7 +515,7 @@ static int ifx_cat1_i2c_get_config(const struct device *dev, uint32_t *dev_confi
 		config = I2C_SPEED_SET(I2C_SPEED_FAST_PLUS);
 		break;
 	default:
-		LOG_ERR("Unsupported speed");
+		LOG_ERROR("Unsupported speed");
 		return -ERANGE;
 	}
 

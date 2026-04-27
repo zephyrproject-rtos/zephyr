@@ -122,7 +122,7 @@ void async_listener_work_handler(struct k_work *item)
 		__ASSERT(buf != NULL, "buf element required");
 
 		if (buf == NULL) {
-			LOG_ERR("Could not retrieve message from async listener fifo");
+			LOG_ERROR("Could not retrieve message from async listener fifo");
 			return;
 		}
 
@@ -278,8 +278,8 @@ static inline int _zbus_vded_exec(const struct zbus_channel *chan, k_timepoint_t
 
 		if (err) {
 			last_error = err;
-			LOG_ERR("could not deliver notification to observer %s. Error code %d",
-				_ZBUS_OBS_NAME(obs), err);
+			LOG_ERROR("could not deliver notification to observer %s. Error code %d",
+				  _ZBUS_OBS_NAME(obs), err);
 			if (err == -ENOMEM) {
 				if (IS_ENABLED(CONFIG_ZBUS_MSG_SUBSCRIBER)) {
 					net_buf_unref(buf);

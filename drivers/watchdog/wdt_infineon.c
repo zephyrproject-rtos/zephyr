@@ -294,12 +294,12 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 
 	/* Initialize the WDT */
 	if ((dev_data->timeout == 0) || (dev_data->timeout > IFX_WDT_MAX_TIMEOUT_MS)) {
-		LOG_ERR("Invalid timeout");
+		LOG_ERROR("Invalid timeout");
 		return -ENOTSUP;
 	}
 
 	if (dev_data->wdt_initialized) {
-		LOG_ERR("Already initialized");
+		LOG_ERROR("Already initialized");
 		return -EBUSY;
 	}
 
@@ -425,7 +425,7 @@ static int ifx_cat1_wdt_install_timeout(const struct device *dev, const struct w
 	struct ifx_cat1_wdt_data *dev_data = dev->data;
 
 	if (dev_data->timeout_installed) {
-		LOG_ERR("No more timeouts can be installed");
+		LOG_ERROR("No more timeouts can be installed");
 		return -ENOMEM;
 	}
 

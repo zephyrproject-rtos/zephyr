@@ -366,7 +366,7 @@ static int ds1337_alarm_get_supported_fields(const struct device *dev, uint16_t 
 		return 0;
 	}
 
-	LOG_ERR("Invalid alarm ID: %d", id);
+	LOG_ERROR("Invalid alarm ID: %d", id);
 	return -EINVAL;
 }
 
@@ -379,22 +379,22 @@ static int ds1337_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 	int err;
 
 	if (id >= DS1337_ALARMS_COUNT) {
-		LOG_ERR("Invalid alarm ID: %d", id);
+		LOG_ERROR("Invalid alarm ID: %d", id);
 		return -EINVAL;
 	}
 
 	if ((mask & RTC_ALARM_TIME_MASK_MONTHDAY) && (mask & RTC_ALARM_TIME_MASK_WEEKDAY)) {
-		LOG_ERR("Month day and week day alarms cannot be set simultaneously");
+		LOG_ERROR("Month day and week day alarms cannot be set simultaneously");
 		return -EINVAL;
 	}
 
 	if (!ds1337_validate_alarm_mask(mask, id)) {
-		LOG_ERR("Unsupported mask 0x%04X for alarm %d", mask, id);
+		LOG_ERROR("Unsupported mask 0x%04X for alarm %d", mask, id);
 		return -EINVAL;
 	}
 
 	if (!rtc_utils_validate_rtc_time(timeptr, mask)) {
-		LOG_ERR("Invalid alarm time");
+		LOG_ERROR("Invalid alarm time");
 		return -EINVAL;
 	}
 
@@ -457,7 +457,7 @@ static int ds1337_alarm_get_time(const struct device *dev, uint16_t id, uint16_t
 	int err;
 
 	if (id >= DS1337_ALARMS_COUNT) {
-		LOG_ERR("Invalid alarm ID: %d", id);
+		LOG_ERROR("Invalid alarm ID: %d", id);
 		return -EINVAL;
 	}
 
@@ -520,7 +520,7 @@ static int ds1337_alarm_is_pending(const struct device *dev, uint16_t id)
 	int err;
 
 	if (id >= DS1337_ALARMS_COUNT) {
-		LOG_ERR("Invalid alarm ID: %d", id);
+		LOG_ERROR("Invalid alarm ID: %d", id);
 		return -EINVAL;
 	}
 
@@ -573,7 +573,7 @@ static int ds1337_alarm_set_callback(const struct device *dev, uint16_t id,
 	}
 
 	if (id >= DS1337_ALARMS_COUNT) {
-		LOG_ERR("Invalid alarm ID: %d", id);
+		LOG_ERROR("Invalid alarm ID: %d", id);
 		return -EINVAL;
 	}
 
@@ -614,26 +614,26 @@ static int ds1337_init(const struct device *dev)
 	(void)k_sem_init(&data->lock, 1, 1);
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C bus not ready");
+		LOG_ERROR("I2C bus not ready");
 		return -ENODEV;
 	}
 
 #ifdef DS1337_INT_GPIOS_IN_USE
 	if (config->gpio_int.port != NULL) {
 		if (!gpio_is_ready_dt(&config->gpio_int)) {
-			LOG_ERR("GPIO not ready");
+			LOG_ERROR("GPIO not ready");
 			return -ENODEV;
 		}
 
 		err = gpio_pin_configure_dt(&config->gpio_int, GPIO_INPUT);
 		if (err) {
-			LOG_ERR("Failed to configure interrupt GPIO, error: %d", err);
+			LOG_ERROR("Failed to configure interrupt GPIO, error: %d", err);
 			return err;
 		}
 
 		err = gpio_pin_interrupt_configure_dt(&config->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 		if (err) {
-			LOG_ERR("Failed to enable GPIO interrupt, error: %d", err);
+			LOG_ERROR("Failed to enable GPIO interrupt, error: %d", err);
 			return err;
 		}
 
@@ -642,7 +642,7 @@ static int ds1337_init(const struct device *dev)
 
 		err = gpio_add_callback_dt(&config->gpio_int, &data->irq_callback);
 		if (err) {
-			LOG_ERR("Failed to add GPIO callback, error: %d", err);
+			LOG_ERROR("Failed to add GPIO callback, error: %d", err);
 			return err;
 		}
 

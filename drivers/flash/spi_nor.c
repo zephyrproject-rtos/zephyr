@@ -537,15 +537,15 @@ static int spi_nor_wait_until_ready(const struct device *dev, k_timeout_t poll_d
 			}
 			if (reg & SPI_NOR_FLSR_READY) {
 				if (reg & SPI_NOR_FLSR_ERASE_FAIL) {
-					LOG_ERR("Erase failure");
+					LOG_ERROR("Erase failure");
 					ret = -EIO;
 				}
 				if (reg & SPI_NOR_FLSR_PROGRAM_FAIL) {
-					LOG_ERR("Program failure");
+					LOG_ERROR("Program failure");
 					ret = -EIO;
 				}
 				if (reg & SPI_NOR_FLSR_PROT_ERROR) {
-					LOG_ERR("Protection violation");
+					LOG_ERROR("Protection violation");
 					ret = -EIO;
 				}
 
@@ -554,7 +554,8 @@ static int spi_nor_wait_until_ready(const struct device *dev, k_timeout_t poll_d
 					int ret2 = spi_nor_cmd_write(dev, SPI_NOR_CMD_CLRFLSR);
 
 					if (ret2) {
-						LOG_ERR("Failed to clear flag status register: %d",
+						LOG_ERROR(
+							"Failed to clear flag status register: %d",
 							ret2);
 					}
 				}
@@ -786,7 +787,7 @@ static int mxicy_wrcr(const struct device *dev,
 		int sr = spi_nor_rdsr(dev);
 
 		if (sr < 0) {
-			LOG_ERR("Read status register failed: %d", sr);
+			LOG_ERROR("Read status register failed: %d", sr);
 			return sr;
 		}
 
@@ -856,7 +857,7 @@ static int mxicy_configure(const struct device *dev, const uint8_t *jedec_id)
 		}
 
 		if (ret < 0) {
-			LOG_ERR("Enable high performance mode failed: %d", ret);
+			LOG_ERROR("Enable high performance mode failed: %d", ret);
 		}
 
 		release_device(dev);
@@ -1307,7 +1308,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 	data->flash_size = flash_size;
 #else /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 	if (flash_size != dev_flash_size(dev)) {
-		LOG_ERR("BFP flash size mismatch with devicetree");
+		LOG_ERROR("BFP flash size mismatch with devicetree");
 		return -EINVAL;
 	}
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
@@ -1329,7 +1330,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 		}
 
 		if (rc != 0) {
-			LOG_ERR("Unable to enter 4-byte mode: %d\n", rc);
+			LOG_ERROR("Unable to enter 4-byte mode: %d\n", rc);
 			return rc;
 		}
 	}
@@ -1355,14 +1356,14 @@ static int spi_nor_process_sfdp(const struct device *dev)
 
 	rc = spi_nor_sfdp_read(dev, 0, u_header.raw, sizeof(u_header.raw));
 	if (rc != 0) {
-		LOG_ERR("SFDP read failed: %d", rc);
+		LOG_ERROR("SFDP read failed: %d", rc);
 		return rc;
 	}
 
 	uint32_t magic = jesd216_sfdp_magic(hp);
 
 	if (magic != JESD216_SFDP_MAGIC) {
-		LOG_ERR("SFDP magic %08x invalid", magic);
+		LOG_ERROR("SFDP magic %08x invalid", magic);
 		return -EINVAL;
 	}
 
@@ -1433,7 +1434,7 @@ static int spi_nor_process_sfdp(const struct device *dev)
 				       JESD216_SFDP_4B_ADDR_DW1_1S_1S_1S_READ_13_SUP) &&
 				      (sys_le32_to_cpu(u2.dw[0]) &
 				       JESD216_SFDP_4B_ADDR_DW1_1S_1S_1S_PP_12_SUP))) {
-					LOG_ERR("4-byte addressing not supported");
+					LOG_ERROR("4-byte addressing not supported");
 					return -ENOTSUP;
 				}
 			}
@@ -1485,8 +1486,8 @@ static int setup_pages_layout(const struct device *dev)
 	 * erase size.
 	 */
 	if ((layout_page_size % erase_size) != 0) {
-		LOG_ERR("layout page %u not compatible with erase size %u",
-			layout_page_size, erase_size);
+		LOG_ERROR("layout page %u not compatible with erase size %u", layout_page_size,
+			  erase_size);
 		return -EINVAL;
 	}
 
@@ -1528,11 +1529,11 @@ static int spi_nor_configure(const struct device *dev)
 #if ANY_INST_HAS_SUPPLY_GPIOS
 	if (cfg->supply.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->supply)) {
-			LOG_ERR("Supply GPIO port is not ready");
+			LOG_ERROR("Supply GPIO port is not ready");
 			return -ENODEV;
 		}
 		if (gpio_pin_configure_dt(&cfg->supply, GPIO_OUTPUT_ACTIVE)) {
-			LOG_ERR("Failed to activate power supply GPIO");
+			LOG_ERROR("Failed to activate power supply GPIO");
 			return -EIO;
 		}
 	}
@@ -1541,11 +1542,11 @@ static int spi_nor_configure(const struct device *dev)
 #if ANY_INST_HAS_RESET_GPIOS
 	if (cfg->reset_gpios_exist) {
 		if (!gpio_is_ready_dt(&cfg->reset)) {
-			LOG_ERR("Reset pin not ready");
+			LOG_ERROR("Reset pin not ready");
 			return -ENODEV;
 		}
 		if (gpio_pin_configure_dt(&cfg->reset, GPIO_OUTPUT_ACTIVE)) {
-			LOG_ERR("Couldn't configure reset pin");
+			LOG_ERROR("Couldn't configure reset pin");
 			return -ENODEV;
 		}
 		rc = gpio_pin_set_dt(&cfg->reset, 0);
@@ -1568,7 +1569,7 @@ static int spi_nor_configure(const struct device *dev)
 
 	rc = exit_dpd(dev);
 	if (rc < 0) {
-		LOG_ERR("Failed to exit DPD (%d)", rc);
+		LOG_ERROR("Failed to exit DPD (%d)", rc);
 		release_device(dev);
 		return -ENODEV;
 	}
@@ -1580,7 +1581,7 @@ static int spi_nor_configure(const struct device *dev)
 	}
 	release_device(dev);
 	if (rc < 0) {
-		LOG_ERR("Failed to wait until flash is ready (%d)", rc);
+		LOG_ERROR("Failed to wait until flash is ready (%d)", rc);
 		return -ENODEV;
 	}
 
@@ -1590,7 +1591,7 @@ static int spi_nor_configure(const struct device *dev)
 
 	rc = spi_nor_read_jedec_id(dev, jedec_id);
 	if (rc != 0) {
-		LOG_ERR("JEDEC ID read failed: %d", rc);
+		LOG_ERROR("JEDEC ID read failed: %d", rc);
 		return -ENODEV;
 	}
 
@@ -1601,9 +1602,9 @@ static int spi_nor_configure(const struct device *dev)
 	 */
 
 	if (memcmp(jedec_id, cfg->jedec_id, sizeof(jedec_id)) != 0) {
-		LOG_ERR("Device id %02x %02x %02x does not match config %02x %02x %02x",
-			jedec_id[0], jedec_id[1], jedec_id[2],
-			cfg->jedec_id[0], cfg->jedec_id[1], cfg->jedec_id[2]);
+		LOG_ERROR("Device id %02x %02x %02x does not match config %02x %02x %02x",
+			  jedec_id[0], jedec_id[1], jedec_id[2], cfg->jedec_id[0], cfg->jedec_id[1],
+			  cfg->jedec_id[2]);
 		return -EINVAL;
 	}
 #endif
@@ -1626,7 +1627,7 @@ static int spi_nor_configure(const struct device *dev)
 		release_device(dev);
 
 		if (rc != 0) {
-			LOG_ERR("BP clear failed: %d\n", rc);
+			LOG_ERROR("BP clear failed: %d\n", rc);
 			return -ENODEV;
 		}
 	}
@@ -1639,7 +1640,7 @@ static int spi_nor_configure(const struct device *dev)
 		rc = spi_nor_set_address_mode(dev, cfg->enter_4byte_addr);
 
 		if (rc != 0) {
-			LOG_ERR("Unable to enter 4-byte mode: %d\n", rc);
+			LOG_ERROR("Unable to enter 4-byte mode: %d\n", rc);
 			return -ENODEV;
 		}
 	}
@@ -1650,14 +1651,14 @@ static int spi_nor_configure(const struct device *dev)
 	 */
 	rc = spi_nor_process_sfdp(dev);
 	if (rc != 0) {
-		LOG_ERR("SFDP read failed: %d", rc);
+		LOG_ERROR("SFDP read failed: %d", rc);
 		return -ENODEV;
 	}
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT) && defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 	rc = setup_pages_layout(dev);
 	if (rc != 0) {
-		LOG_ERR("layout setup failed: %d", rc);
+		LOG_ERROR("layout setup failed: %d", rc);
 		return -ENODEV;
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT && CONFIG_SPI_NOR_SFDP_RUNTIME */
@@ -1726,11 +1727,11 @@ static int spi_nor_init(const struct device *dev)
 #if ANY_INST_HAS_WP_GPIOS
 	if (DEV_CFG(dev)->wp_gpios_exist) {
 		if (!device_is_ready(DEV_CFG(dev)->wp.port)) {
-			LOG_ERR("Write-protect pin not ready");
+			LOG_ERROR("Write-protect pin not ready");
 			return -ENODEV;
 		}
 		if (gpio_pin_configure_dt(&(DEV_CFG(dev)->wp), GPIO_OUTPUT_ACTIVE)) {
-			LOG_ERR("Write-protect pin failed to set active");
+			LOG_ERROR("Write-protect pin failed to set active");
 			return -ENODEV;
 		}
 	}
@@ -1738,11 +1739,11 @@ static int spi_nor_init(const struct device *dev)
 #if ANY_INST_HAS_HOLD_GPIOS
 	if (DEV_CFG(dev)->hold_gpios_exist) {
 		if (!device_is_ready(DEV_CFG(dev)->hold.port)) {
-			LOG_ERR("Hold pin not ready");
+			LOG_ERROR("Hold pin not ready");
 			return -ENODEV;
 		}
 		if (gpio_pin_configure_dt(&(DEV_CFG(dev)->hold), GPIO_OUTPUT_INACTIVE)) {
-			LOG_ERR("Hold pin failed to set inactive");
+			LOG_ERROR("Hold pin failed to set inactive");
 			return -ENODEV;
 		}
 	}

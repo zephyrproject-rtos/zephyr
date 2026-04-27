@@ -116,7 +116,7 @@ static int mcux_snvs_set_alarm(const struct device *dev,
 	}
 
 	if (ticks < current) {
-		LOG_ERR("Invalid alarm ticks");
+		LOG_ERROR("Invalid alarm ticks");
 		return -EINVAL;
 	}
 
@@ -158,7 +158,7 @@ static int mcux_snvs_set_alarm(const struct device *dev,
 		config->base->LPCR |= SNVS_LPCR_LPTA_EN_MASK;
 #endif
 	} else {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 
@@ -191,7 +191,7 @@ static int mcux_snvs_cancel_alarm(const struct device *dev,
 		data->alarm_lp_srtc_callback = NULL;
 #endif
 	} else {
-		LOG_ERR("Invalid channel id");
+		LOG_ERROR("Invalid channel id");
 		return -EINVAL;
 	}
 

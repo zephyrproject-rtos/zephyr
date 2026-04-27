@@ -116,7 +116,7 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg, uint32_t ch
 	queue_element.size = data->rx.mem_block_len;
 
 	if (0 != k_msgq_put(&data->rx.queue, &queue_element, K_NO_WAIT)) {
-		LOG_ERR("RX overflow, no space in RX queue");
+		LOG_ERROR("RX overflow, no space in RX queue");
 		data->rx.state = I2S_STATE_ERROR;
 		return;
 	}
@@ -180,7 +180,7 @@ static void tx_fifo_trigger_handler(const struct device *dev)
 		i2s_tx_stream_disable(dev, false);
 		break;
 	default:
-		LOG_ERR("Tx trigger handler: unhandled state: %d", stream->state);
+		LOG_ERROR("Tx trigger handler: unhandled state: %d", stream->state);
 		break;
 	}
 }
@@ -206,7 +206,7 @@ static void rx_fifo_trigger_handler(const struct device *dev)
 		i2s_rx_stream_disable(dev, false);
 		break;
 	default:
-		LOG_ERR("Rx trigger handler: unhandled state: %d", stream->state);
+		LOG_ERROR("Rx trigger handler: unhandled state: %d", stream->state);
 		break;
 	}
 }
@@ -314,7 +314,7 @@ static int i2s_tx_stream_start(const struct device *dev)
 	data->tx_waiting_to_start = true;
 	ret = start_dma_tx_transfer(dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to start TX DMA transfer: %d", ret);
+		LOG_ERROR("Failed to start TX DMA transfer: %d", ret);
 		return ret;
 	}
 
@@ -452,15 +452,15 @@ static int ifx_i2s_configure(const struct device *dev, enum i2s_dir dir,
 		stream = &data->tx;
 		break;
 	case I2S_DIR_BOTH:
-		LOG_ERR("I2S_DIR_BOTH not supported");
+		LOG_ERROR("I2S_DIR_BOTH not supported");
 		return -ENOSYS;
 	default:
-		LOG_ERR("Invalid direction");
+		LOG_ERROR("Invalid direction");
 		return -EINVAL;
 	}
 
 	if (stream->state != I2S_STATE_NOT_READY && stream->state != I2S_STATE_READY) {
-		LOG_ERR("CFG ERR: %d", stream->state);
+		LOG_ERROR("CFG ERR: %d", stream->state);
 		return -EINVAL;
 	}
 
@@ -470,7 +470,7 @@ static int ifx_i2s_configure(const struct device *dev, enum i2s_dir dir,
 	}
 
 	if (bit_clk_target != frame_clk_target) {
-		LOG_ERR("Both bit clock and frame clock must be set to either master or slave");
+		LOG_ERROR("Both bit clock and frame clock must be set to either master or slave");
 		return -EINVAL;
 	} else if (bit_clk_target && frame_clk_target) {
 		master_mode = CY_TDM_DEVICE_SLAVE;
@@ -479,7 +479,7 @@ static int ifx_i2s_configure(const struct device *dev, enum i2s_dir dir,
 	}
 
 	if (i2s_cfg->channels != 2) {
-		LOG_ERR("Only stereo mode (2 channels) is supported");
+		LOG_ERROR("Only stereo mode (2 channels) is supported");
 		return -EINVAL;
 	}
 
@@ -521,13 +521,13 @@ static int ifx_i2s_configure(const struct device *dev, enum i2s_dir dir,
 		dma_data_size_bytes = 4;
 		break;
 	default:
-		LOG_ERR("Invalid word size %u", i2s_cfg->word_size);
+		LOG_ERROR("Invalid word size %u", i2s_cfg->word_size);
 		return -EINVAL;
 	}
 
 	/* Only the I2S data format is supported, so other format parameters are ignored */
 	if (I2S_FMT_DATA_FORMAT_I2S != (i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK)) {
-		LOG_ERR("Only I2S data format is supported");
+		LOG_ERROR("Only I2S data format is supported");
 		return -ENOTSUP;
 	}
 
@@ -538,12 +538,12 @@ static int ifx_i2s_configure(const struct device *dev, enum i2s_dir dir,
 
 	/* decode options (i2s_opt_t) */
 	if (I2S_OPT_BIT_CLK_GATED & i2s_cfg->options) {
-		LOG_ERR("Gated bit clock is not supported");
+		LOG_ERROR("Gated bit clock is not supported");
 		return -ENOTSUP;
 	}
 
 	if (I2S_OPT_PINGPONG & i2s_cfg->options) {
-		LOG_ERR("Ping-pong mode is not supported");
+		LOG_ERROR("Ping-pong mode is not supported");
 		return -ENOTSUP;
 	}
 
@@ -574,7 +574,7 @@ static int ifx_i2s_configure(const struct device *dev, enum i2s_dir dir,
 		 * trigger level + block size is smaller than the hardware fifo size
 		 */
 		if (i2s_cfg->block_size / dma_data_size_bytes > 84) {
-			LOG_ERR("TX block size too large, must be 84 entries or less");
+			LOG_ERROR("TX block size too large, must be 84 entries or less");
 			return -EINVAL;
 		}
 		config->tdm_config.tx_config->fifoTriggerLevel =
@@ -610,7 +610,7 @@ static int ifx_i2s_configure(const struct device *dev, enum i2s_dir dir,
 			Cy_AudioTDM_EnableTx(&config->reg_addr->TDM_TX_STRUCT);
 		}
 	} else {
-		LOG_ERR("TDM Init failed");
+		LOG_ERROR("TDM Init failed");
 		return -EINVAL;
 	}
 
@@ -631,10 +631,10 @@ static const struct i2s_config *ifx_i2s_config_get(const struct device *dev, enu
 		stream = &data->tx;
 		break;
 	case I2S_DIR_BOTH:
-		LOG_ERR("I2S_DIR_BOTH not supported");
+		LOG_ERROR("I2S_DIR_BOTH not supported");
 		return NULL;
 	default:
-		LOG_ERR("Invalid direction");
+		LOG_ERROR("Invalid direction");
 		return NULL;
 	}
 
@@ -689,7 +689,7 @@ static int ifx_i2s_write(const struct device *dev, void *mem_block, size_t size)
 
 	ret = k_msgq_put(&stream->queue, &queue_element, SYS_TIMEOUT_MS(stream->cfg.timeout));
 	if (ret) {
-		LOG_ERR("k_msgq_put failed %d", ret);
+		LOG_ERROR("k_msgq_put failed %d", ret);
 	}
 
 	return ret;
@@ -710,7 +710,7 @@ static int ifx_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 		stream = &data->tx;
 		break;
 	case I2S_DIR_BOTH:
-		LOG_ERR("I2S_DIR_BOTH not supported");
+		LOG_ERROR("I2S_DIR_BOTH not supported");
 		return -ENOSYS;
 	default:
 		return -EINVAL;
@@ -803,7 +803,7 @@ static int ifx_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 		break;
 
 	default:
-		LOG_ERR("Unsupported trigger command");
+		LOG_ERROR("Unsupported trigger command");
 		ret = -EINVAL;
 	}
 
@@ -905,7 +905,7 @@ static void i2s_tx_isr(const struct device *dev)
 
 	if (tx_int_status & CY_TDM_INTR_TX_IF_UNDERFLOW) {
 		stream->state = I2S_STATE_ERROR;
-		LOG_ERR("I2S TX IF underflow - indicates clocking issues");
+		LOG_ERROR("I2S TX IF underflow - indicates clocking issues");
 		__ASSERT(false, "I2S TX IF underflow - indicates clocking issues");
 	}
 
@@ -936,7 +936,7 @@ static void i2s_rx_isr(const struct device *dev)
 
 	if (rx_int_status & CY_TDM_INTR_RX_IF_UNDERFLOW) {
 		stream->state = I2S_STATE_ERROR;
-		LOG_ERR("I2S RX IF underflow - indicates clocking issues");
+		LOG_ERROR("I2S RX IF underflow - indicates clocking issues");
 		__ASSERT(false, "I2S RX IF underflow - indicates clocking issues");
 	}
 

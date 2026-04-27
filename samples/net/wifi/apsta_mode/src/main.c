@@ -89,30 +89,30 @@ static void enable_dhcpv4_server(void)
 	static struct net_in_addr netmaskAddr;
 
 	if (net_addr_pton(NET_AF_INET, CONFIG_WIFI_SAMPLE_AP_IP_ADDRESS, &addr)) {
-		LOG_ERR("Invalid address: %s", CONFIG_WIFI_SAMPLE_AP_IP_ADDRESS);
+		LOG_ERROR("Invalid address: %s", CONFIG_WIFI_SAMPLE_AP_IP_ADDRESS);
 		return;
 	}
 
 	if (net_addr_pton(NET_AF_INET, CONFIG_WIFI_SAMPLE_AP_NETMASK, &netmaskAddr)) {
-		LOG_ERR("Invalid netmask: %s", CONFIG_WIFI_SAMPLE_AP_NETMASK);
+		LOG_ERROR("Invalid netmask: %s", CONFIG_WIFI_SAMPLE_AP_NETMASK);
 		return;
 	}
 
 	net_if_ipv4_set_gw(ap_iface, &addr);
 
 	if (net_if_ipv4_addr_add(ap_iface, &addr, NET_ADDR_MANUAL, 0) == NULL) {
-		LOG_ERR("unable to set IP address for AP interface");
+		LOG_ERROR("unable to set IP address for AP interface");
 	}
 
 	if (!net_if_ipv4_set_netmask_by_addr(ap_iface, &addr, &netmaskAddr)) {
-		LOG_ERR("Unable to set netmask for AP interface: %s",
-			 CONFIG_WIFI_SAMPLE_AP_NETMASK);
+		LOG_ERROR("Unable to set netmask for AP interface: %s",
+			  CONFIG_WIFI_SAMPLE_AP_NETMASK);
 	}
 
 	addr.s4_addr[3] += 10; /* Starting IPv4 address for DHCPv4 address pool. */
 
 	if (net_dhcpv4_server_start(ap_iface, &addr) != 0) {
-		LOG_ERR("DHCP server is not started for desired IP");
+		LOG_ERROR("DHCP server is not started for desired IP");
 		return;
 	}
 
@@ -149,7 +149,7 @@ static int enable_ap_mode(void)
 	int ret = net_mgmt(NET_REQUEST_WIFI_AP_ENABLE, ap_iface, &ap_config,
 			   sizeof(struct wifi_connect_req_params));
 	if (ret) {
-		LOG_ERR("NET_REQUEST_WIFI_AP_ENABLE failed, err: %d", ret);
+		LOG_ERROR("NET_REQUEST_WIFI_AP_ENABLE failed, err: %d", ret);
 	}
 
 	return ret;
@@ -175,7 +175,7 @@ static int connect_to_wifi(void)
 	int ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, sta_iface, &sta_config,
 			   sizeof(struct wifi_connect_req_params));
 	if (ret) {
-		LOG_ERR("Unable to Connect to (%s)", CONFIG_WIFI_SAMPLE_SSID);
+		LOG_ERROR("Unable to Connect to (%s)", CONFIG_WIFI_SAMPLE_SSID);
 	}
 
 	return ret;

@@ -24,7 +24,7 @@ static int scmi_reboot_handler(int type)
 		ret = scmi_system_protocol_message_attributes(SCMI_SYSTEM_MSG_POWER_STATE_SET,
 							      &mesg_attr);
 		if (ret < 0) {
-			LOG_ERR("Failed to query SCMI system capabilities: %d", ret);
+			LOG_ERROR("Failed to query SCMI system capabilities: %d", ret);
 			return ret;
 		}
 
@@ -41,13 +41,13 @@ static int scmi_reboot_handler(int type)
 		break;
 
 	default:
-		LOG_ERR("Unsupported reboot type: %d", type);
+		LOG_ERROR("Unsupported reboot type: %d", type);
 		return -EINVAL;
 	}
 
 	ret = scmi_system_power_state_set(&cfg);
 	if (ret < 0) {
-		LOG_ERR("System reboot failed with error: %d", ret);
+		LOG_ERROR("System reboot failed with error: %d", ret);
 	}
 
 	return ret;

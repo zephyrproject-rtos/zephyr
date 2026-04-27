@@ -95,11 +95,11 @@ int usbh_req_setup(struct usb_device *const udev,
 	if (k_sem_take(&ch9_req_sync, K_MSEC(SETUP_REQ_TIMEOUT)) != 0) {
 		ret = usbh_xfer_dequeue(udev, xfer);
 		if (ret != 0) {
-			LOG_ERR("Failed to cancel transfer");
+			LOG_ERROR("Failed to cancel transfer");
 			return ret;
 		}
 
-		LOG_ERR("Timeout");
+		LOG_ERROR("Timeout");
 		return -ETIMEDOUT;
 	}
 

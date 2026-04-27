@@ -342,7 +342,7 @@ static void udc_mcux_event_submit(const struct device *dev,
 	ret = k_mem_slab_alloc(&udc_event_slab, (void **)&ev, K_NO_WAIT);
 	if (ret) {
 		udc_submit_event(dev, UDC_EVT_ERROR, ret);
-		LOG_ERR("Failed to allocate slab");
+		LOG_ERROR("Failed to allocate slab");
 		return;
 	}
 
@@ -379,12 +379,12 @@ static void udc_mcux_work_handler(struct k_work *item)
 			if (udc_ep_enable_internal(ev->dev, USB_CONTROL_EP_OUT,
 						USB_EP_TYPE_CONTROL,
 						USB_MCUX_EP0_SIZE, 0)) {
-				LOG_ERR("Failed to enable control endpoint");
+				LOG_ERROR("Failed to enable control endpoint");
 			}
 			if (udc_ep_enable_internal(ev->dev, USB_CONTROL_EP_IN,
 						USB_EP_TYPE_CONTROL,
 						USB_MCUX_EP0_SIZE, 0)) {
-				LOG_ERR("Failed to enable control endpoint");
+				LOG_ERROR("Failed to enable control endpoint");
 			}
 			udc_submit_event(ev->dev, UDC_EVT_RESET, 0);
 		} else {
@@ -606,12 +606,12 @@ static int udc_mcux_enable(const struct device *dev)
 {
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL,
 				   USB_MCUX_EP0_SIZE, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+		LOG_ERROR("Failed to enable control endpoint");
 	}
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL,
 				   USB_MCUX_EP0_SIZE, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+		LOG_ERROR("Failed to enable control endpoint");
 	}
 
 	return udc_mcux_control(dev, kUSB_DeviceControlRun, NULL);
@@ -772,7 +772,7 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
 		err = udc_register_ep(dev, &config->ep_cfg_out[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}
@@ -793,7 +793,7 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 		config->ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
 		err = udc_register_ep(dev, &config->ep_cfg_in[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}

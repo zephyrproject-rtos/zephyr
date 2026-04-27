@@ -37,7 +37,7 @@ static int hinge_init(const struct device *dev)
 			SENSING_SENSOR_TYPE_MOTION_ACCELEROMETER_3D,
 			data->reporters, HINGE_REPORTER_NUM);
 	if (ret != HINGE_REPORTER_NUM) {
-		LOG_ERR("%s: reporter mismatch:%d", dev->name, ret);
+		LOG_ERROR("%s: reporter mismatch:%d", dev->name, ret);
 		return -ENODEV;
 	}
 

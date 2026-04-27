@@ -178,7 +178,7 @@ static uint8_t micp_discover(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 

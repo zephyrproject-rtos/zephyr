@@ -21,7 +21,7 @@ int z_impl_magic_syscall(unsigned int *cookie)
 	LOG_DBG("magic syscall: got a cookie %u", *cookie);
 
 	if (*cookie > 42) {
-		LOG_ERR("bad cookie :(");
+		LOG_ERROR("bad cookie :(");
 		return -EINVAL;
 	}
 

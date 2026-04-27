@@ -52,7 +52,7 @@ int i2c_stm32_get_config(const struct device *dev, uint32_t *config)
 	struct i2c_stm32_data *data = dev->data;
 
 	if (!data->is_configured) {
-		LOG_ERR("I2C controller not configured");
+		LOG_ERROR("I2C controller not configured");
 		return -EIO;
 	}
 
@@ -93,13 +93,13 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	if (IS_ENABLED(I2C_STM32_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
 		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1],
 					   &i2c_clock) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
+			LOG_ERROR("Failed call clock_control_get_rate(pclken[1])");
 			return -EIO;
 		}
 	} else {
 		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[0],
 					   &i2c_clock) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
+			LOG_ERROR("Failed call clock_control_get_rate(pclken[0])");
 			return -EIO;
 		}
 	}
@@ -111,7 +111,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	ret = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (ret < 0) {
-		LOG_ERR("failure Enabling I2C clock");
+		LOG_ERROR("failure Enabling I2C clock");
 		return ret;
 	}
 #endif
@@ -129,7 +129,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (ret < 0) {
-		LOG_ERR("failure disabling I2C clock");
+		LOG_ERROR("failure disabling I2C clock");
 		return ret;
 	}
 #endif
@@ -260,15 +260,15 @@ static int i2c_stm32_recover_bus(const struct device *dev)
 	uint32_t bitrate_cfg;
 	int error = 0;
 
-	LOG_ERR("attempting to recover bus");
+	LOG_ERROR("attempting to recover bus");
 
 	if (!gpio_is_ready_dt(&config->scl)) {
-		LOG_ERR("SCL GPIO device not ready");
+		LOG_ERROR("SCL GPIO device not ready");
 		return -EIO;
 	}
 
 	if (!gpio_is_ready_dt(&config->sda)) {
-		LOG_ERR("SDA GPIO device not ready");
+		LOG_ERROR("SDA GPIO device not ready");
 		return -EIO;
 	}
 
@@ -276,13 +276,13 @@ static int i2c_stm32_recover_bus(const struct device *dev)
 
 	error = gpio_pin_configure_dt(&config->scl, GPIO_OUTPUT_HIGH);
 	if (error != 0) {
-		LOG_ERR("failed to configure SCL GPIO (err %d)", error);
+		LOG_ERROR("failed to configure SCL GPIO (err %d)", error);
 		goto restore;
 	}
 
 	error = gpio_pin_configure_dt(&config->sda, GPIO_OUTPUT_HIGH);
 	if (error != 0) {
-		LOG_ERR("failed to configure SDA GPIO (err %d)", error);
+		LOG_ERROR("failed to configure SDA GPIO (err %d)", error);
 		goto restore;
 	}
 
@@ -291,13 +291,13 @@ static int i2c_stm32_recover_bus(const struct device *dev)
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate) | I2C_MODE_CONTROLLER;
 	error = i2c_bitbang_configure(&bitbang_ctx, bitrate_cfg);
 	if (error != 0) {
-		LOG_ERR("failed to configure I2C bitbang (err %d)", error);
+		LOG_ERROR("failed to configure I2C bitbang (err %d)", error);
 		goto restore;
 	}
 
 	error = i2c_bitbang_recover_bus(&bitbang_ctx);
 	if (error != 0) {
-		LOG_ERR("failed to recover bus (err %d)", error);
+		LOG_ERROR("failed to recover bus (err %d)", error);
 	}
 
 restore:
@@ -375,7 +375,7 @@ static int i2c_stm32_init(const struct device *dev)
 
 	ret = i2c_stm32_runtime_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (ret < 0) {
-		LOG_ERR("i2c: failure initializing");
+		LOG_ERROR("i2c: failure initializing");
 		return ret;
 	}
 
@@ -422,7 +422,7 @@ void i2c_stm32_set_smbus_mode(const struct device *dev, enum i2c_stm32_mode mode
 		return;
 #endif
 	default:
-		LOG_ERR("%s: invalid mode %i", dev->name, mode);
+		LOG_ERROR("%s: invalid mode %i", dev->name, mode);
 		return;
 	}
 }
@@ -473,7 +473,7 @@ void i2c_stm32_dma_tx_cb(const struct device *dma_dev, void *user_data,
 
 	/* log DMA TX error */
 	if (status != 0) {
-		LOG_ERR("DMA error %d", status);
+		LOG_ERROR("DMA error %d", status);
 	}
 }
 
@@ -486,7 +486,7 @@ void i2c_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 
 	/* log DMA RX error */
 	if (status != 0) {
-		LOG_ERR("DMA error %d", status);
+		LOG_ERROR("DMA error %d", status);
 	}
 }
 

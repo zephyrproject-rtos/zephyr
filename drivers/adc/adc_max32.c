@@ -122,14 +122,14 @@ static void adc_max32_start_channel(const struct device *dev)
 	if (data->ctx.asynchronous) {
 		ret = Wrap_MXC_ADC_StartConversionAsync(&data->sample_channels, adc_complete_cb);
 		if (ret < 0) {
-			LOG_ERR("Error starting conversion (%d)", ret);
+			LOG_ERROR("Error starting conversion (%d)", ret);
 		}
 	} else {
 #endif /* CONFIG_ADC_ASYNC */
 		while (data->sample_channels) {
 			ret = Wrap_MXC_ADC_StartConversion(&data->sample_channels);
 			if (ret < 0) {
-				LOG_ERR("Error starting conversion (%d)", ret);
+				LOG_ERROR("Error starting conversion (%d)", ret);
 				return;
 			}
 			Wrap_MXC_ADC_GetData(&data->buffer);
@@ -169,7 +169,7 @@ static int start_read(const struct device *dev, const struct adc_sequence *seq)
 	int ret = 0;
 
 	if (seq->resolution != data->resolution) {
-		LOG_ERR("Unsupported resolution (%d)", seq->resolution);
+		LOG_ERROR("Unsupported resolution (%d)", seq->resolution);
 		return -ENOTSUP;
 	}
 	if (seq->channels == 0) {
@@ -216,7 +216,7 @@ static int start_read_stream(const struct device *dev, const struct adc_sequence
 	int ret = 0;
 
 	if (seq->resolution != data->resolution) {
-		LOG_ERR("Unsupported resolution (%d)", seq->resolution);
+		LOG_ERROR("Unsupported resolution (%d)", seq->resolution);
 		return -ENOTSUP;
 	}
 	if (seq->channels == 0) {
@@ -265,7 +265,7 @@ void adc_max32_submit_stream(const struct device *dev, struct rtio_iodev_sqe *io
 	adc_context_release(&data->ctx, rc);
 
 	if (rc < 0) {
-		LOG_ERR("Error starting conversion (%d)", rc);
+		LOG_ERROR("Error starting conversion (%d)", rc);
 	}
 }
 
@@ -386,17 +386,17 @@ static int adc_max32_channel_setup(const struct device *dev, const struct adc_ch
 	int ret = 0;
 
 	if (cfg->channel_id >= conf->channel_count) {
-		LOG_ERR("Invalid channel (%u)", cfg->channel_id);
+		LOG_ERROR("Invalid channel (%u)", cfg->channel_id);
 		return -EINVAL;
 	}
 
 	if (cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Invalid channel acquisition time");
+		LOG_ERROR("Invalid channel acquisition time");
 		return -EINVAL;
 	}
 
 	if (cfg->differential) {
-		LOG_ERR("Differential sampling not supported");
+		LOG_ERROR("Differential sampling not supported");
 		return -ENOTSUP;
 	}
 
@@ -415,7 +415,7 @@ static int adc_max32_channel_setup(const struct device *dev, const struct adc_ch
 	}
 	ret = Wrap_MXC_ADC_ReferenceSelect(adc_reference);
 	if (ret != 0) {
-		LOG_ERR("Reference is not supported.");
+		LOG_ERROR("Reference is not supported.");
 		return -ENOTSUP;
 	}
 
@@ -443,7 +443,7 @@ static int adc_max32_channel_setup(const struct device *dev, const struct adc_ch
 	}
 	ret = Wrap_MXC_ADC_SetExtScale(wrap_mxc_scale);
 	if (ret != 0) {
-		LOG_ERR("Gain value is not supported.");
+		LOG_ERROR("Gain value is not supported.");
 		return -ENOTSUP;
 	}
 

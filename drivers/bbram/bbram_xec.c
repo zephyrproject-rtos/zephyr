@@ -29,7 +29,7 @@ static int bbram_xec_check_invalid(const struct device *dev)
 
 	if (regs->PFRS & BIT(MCHP_VBATR_PFRS_VBAT_RST_POS)) {
 		regs->PFRS |= BIT(MCHP_VBATR_PFRS_VBAT_RST_POS);
-		LOG_ERR("VBAT power rail failure");
+		LOG_ERROR("VBAT power rail failure");
 		return -EFAULT;
 	}
 
@@ -50,7 +50,7 @@ static int bbram_xec_read(const struct device *dev, size_t offset, size_t size,
 	const struct bbram_xec_config *dcfg = dev->config;
 
 	if (size < 1 || offset + size > dcfg->size) {
-		LOG_ERR("Invalid params");
+		LOG_ERROR("Invalid params");
 		return -EFAULT;
 	}
 
@@ -64,7 +64,7 @@ static int bbram_xec_write(const struct device *dev, size_t offset, size_t size,
 	const struct bbram_xec_config *dcfg = dev->config;
 
 	if (size < 1 || offset + size > dcfg->size) {
-		LOG_ERR("Invalid params");
+		LOG_ERROR("Invalid params");
 		return -EFAULT;
 	}
 

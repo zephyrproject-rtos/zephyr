@@ -73,7 +73,7 @@ static void handle_read_preset_rsp(struct bt_has_client *inst, struct net_buf_si
 	LOG_DBG("conn %p buf %p", (void *)inst->conn, buf);
 
 	if (buf->len < sizeof(*pdu)) {
-		LOG_ERR("malformed PDU");
+		LOG_ERROR("malformed PDU");
 		return;
 	}
 
@@ -108,7 +108,7 @@ static void handle_generic_update(struct bt_has_client *inst, struct net_buf_sim
 	size_t name_len;
 
 	if (buf->len < sizeof(*pdu)) {
-		LOG_ERR("malformed PDU");
+		LOG_ERROR("malformed PDU");
 		return;
 	}
 
@@ -134,7 +134,7 @@ static void handle_preset_deleted(struct bt_has_client *inst, struct net_buf_sim
 				  bool is_last)
 {
 	if (buf->len < sizeof(uint8_t)) {
-		LOG_ERR("malformed PDU");
+		LOG_ERROR("malformed PDU");
 		return;
 	}
 
@@ -145,7 +145,7 @@ static void handle_preset_availability(struct bt_has_client *inst, struct net_bu
 				       bool available, bool is_last)
 {
 	if (buf->len < sizeof(uint8_t)) {
-		LOG_ERR("malformed PDU");
+		LOG_ERROR("malformed PDU");
 		return;
 	}
 
@@ -160,7 +160,7 @@ static void handle_preset_changed(struct bt_has_client *inst, struct net_buf_sim
 	LOG_DBG("conn %p buf %p", (void *)inst->conn, buf);
 
 	if (buf->len < sizeof(*pdu)) {
-		LOG_ERR("malformed PDU");
+		LOG_ERROR("malformed PDU");
 		return;
 	}
 
@@ -473,7 +473,7 @@ static uint8_t active_index_read_cb(struct bt_conn *conn, uint8_t att_err,
 
 	err = active_index_subscribe(inst, params->by_uuid.start_handle);
 	if (err) {
-		LOG_ERR("Subscribe failed (err %d)", err);
+		LOG_ERROR("Subscribe failed (err %d)", err);
 		goto fail;
 	}
 
@@ -520,7 +520,7 @@ static void control_point_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
 
 	err = active_index_read(inst);
 	if (err) {
-		LOG_ERR("Active Preset Index read failed (err %d)", err);
+		LOG_ERROR("Active Preset Index read failed (err %d)", err);
 		goto fail;
 	}
 
@@ -581,7 +581,7 @@ static uint8_t control_point_discover_cb(struct bt_conn *conn, const struct bt_g
 
 	err = control_point_subscribe(inst, chrc->value_handle, chrc->properties);
 	if (err) {
-		LOG_ERR("Subscribe failed (err %d)", err);
+		LOG_ERROR("Subscribe failed (err %d)", err);
 
 		/* Cleanup instance so that it can be reused */
 		inst_cleanup(inst);
@@ -643,7 +643,7 @@ static uint8_t features_read_cb(struct bt_conn *conn, uint8_t att_err,
 
 	err = control_point_discover(inst);
 	if (err) {
-		LOG_ERR("Control Point discover failed (err %d)", err);
+		LOG_ERROR("Control Point discover failed (err %d)", err);
 		goto fail;
 	}
 
@@ -687,7 +687,7 @@ static void features_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
 
 	err = features_read(inst, inst->features_subscription.value_handle);
 	if (err) {
-		LOG_ERR("Read failed (err %d)", err);
+		LOG_ERROR("Read failed (err %d)", err);
 		goto fail;
 	}
 
@@ -773,13 +773,13 @@ static uint8_t features_discover_cb(struct bt_conn *conn, const struct bt_gatt_a
 	if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 		err = features_subscribe(inst, chrc->value_handle);
 		if (err) {
-			LOG_ERR("Subscribe failed (err %d)", err);
+			LOG_ERROR("Subscribe failed (err %d)", err);
 			goto fail;
 		}
 	} else {
 		err = features_read(inst, chrc->value_handle);
 		if (err) {
-			LOG_ERR("Read failed (err %d)", err);
+			LOG_ERROR("Read failed (err %d)", err);
 			goto fail;
 		}
 	}

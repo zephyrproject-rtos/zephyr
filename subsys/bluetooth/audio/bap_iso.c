@@ -207,8 +207,8 @@ void bt_bap_setup_iso_data_path(struct bt_bap_stream *stream)
 
 	err = bt_iso_setup_data_path(&bap_iso->chan, dir, &path);
 	if (err != 0) {
-		LOG_ERR("Failed to set ISO data path for ep %p and codec_cfg %p: %d", ep, codec_cfg,
-			err);
+		LOG_ERROR("Failed to set ISO data path for ep %p and codec_cfg %p: %d", ep,
+			  codec_cfg, err);
 	}
 }
 
@@ -230,7 +230,7 @@ void bt_bap_remove_iso_data_path(struct bt_bap_stream *stream)
 
 	err = bt_iso_remove_data_path(&bap_iso->chan, dir);
 	if (err != 0) {
-		LOG_ERR("Failed to remove ISO data path for ep %p: %d", ep, err);
+		LOG_ERROR("Failed to remove ISO data path for ep %p: %d", ep, err);
 	}
 }
 

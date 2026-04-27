@@ -35,7 +35,7 @@ int dns_query(const char *host, uint16_t port, int family, int socktype, struct 
 	/* Perform DNS query */
 	rv = getaddrinfo(host, NULL, &hints, &res);
 	if (rv < 0) {
-		LOG_ERR("getaddrinfo failed (%d, errno %d)", rv, errno);
+		LOG_ERROR("getaddrinfo failed (%d, errno %d)", rv, errno);
 		return rv;
 	}
 	/* Store the first result */
@@ -59,7 +59,7 @@ static void sntp_service_handler(struct net_socket_service_event *pev)
 	/* Read the response from the socket */
 	rc = sntp_read_async(pev, &s_time);
 	if (rc != 0) {
-		LOG_ERR("Failed to read SNTP response (%d)", rc);
+		LOG_ERROR("Failed to read SNTP response (%d)", rc);
 		return;
 	}
 
@@ -85,20 +85,20 @@ static void do_sntp(int family)
 	rv = dns_query(CONFIG_NET_SAMPLE_SNTP_SERVER_ADDRESS, CONFIG_NET_SAMPLE_SNTP_SERVER_PORT,
 				   family, SOCK_DGRAM, &addr, &addrlen);
 	if (rv != 0) {
-		LOG_ERR("Failed to lookup %s SNTP server (%d)", family_str, rv);
+		LOG_ERROR("Failed to lookup %s SNTP server (%d)", family_str, rv);
 		return;
 	}
 
 	rv = sntp_init(&ctx, &addr, addrlen);
 	if (rv < 0) {
-		LOG_ERR("Failed to init SNTP %s ctx: %d", family_str, rv);
+		LOG_ERROR("Failed to init SNTP %s ctx: %d", family_str, rv);
 		goto end;
 	}
 
 	LOG_INF("Sending SNTP %s request...", family_str);
 	rv = sntp_query(&ctx, 4 * MSEC_PER_SEC, &s_time);
 	if (rv < 0) {
-		LOG_ERR("SNTP %s request failed: %d", family_str, rv);
+		LOG_ERROR("SNTP %s request failed: %d", family_str, rv);
 		goto end;
 	}
 
@@ -108,13 +108,13 @@ static void do_sntp(int family)
 
 	rv = sntp_init_async(&ctx, &addr, addrlen, &service_sntp_async);
 	if (rv < 0) {
-		LOG_ERR("Failed to initialise SNTP context (%d)", rv);
+		LOG_ERROR("Failed to initialise SNTP context (%d)", rv);
 		goto end;
 	}
 
 	rv = sntp_send_async(&ctx);
 	if (rv < 0) {
-		LOG_ERR("Failed to send SNTP query (%d)", rv);
+		LOG_ERROR("Failed to send SNTP query (%d)", rv);
 		goto end;
 	}
 

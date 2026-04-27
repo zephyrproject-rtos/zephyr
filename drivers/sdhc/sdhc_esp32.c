@@ -122,7 +122,7 @@ struct sdhc_esp32_data {
 static int sdmmc_host_set_clk_div(sdmmc_dev_t *sdio_hw, int div)
 {
 	if (!((div > 1) && (div <= 16))) {
-		LOG_ERR("Invalid parameter 'div'");
+		LOG_ERROR("Invalid parameter 'div'");
 		return ESP_ERR_INVALID_ARG;
 	}
 
@@ -506,9 +506,9 @@ static int handle_event(const struct device *dev, struct sdmmc_command *cmd,
 	int err = sdmmc_host_wait_for_event(data, cmd->timeout_ms, &event);
 
 	if (err != 0) {
-		LOG_ERR("sdmmc_handle_event: sdmmc_host_wait_for_event returned 0x%x, timeout %d "
-			"ms",
-			err, cmd->timeout_ms);
+		LOG_ERROR("sdmmc_handle_event: sdmmc_host_wait_for_event returned 0x%x, timeout %d "
+			  "ms",
+			  err, cmd->timeout_ms);
 		if (err == -EAGAIN) {
 			sdmmc_host_dma_stop(sdio_hw);
 		}
@@ -799,8 +799,8 @@ int sdmmc_host_set_card_clk(sdmmc_dev_t *sdio_hw, int slot, uint32_t freq_khz)
 	int err = sdmmc_host_clock_update_command(sdio_hw, slot);
 
 	if (err != 0) {
-		LOG_ERR("disabling clk failed");
-		LOG_ERR("%s: sdmmc_host_clock_update_command returned 0x%x", __func__, err);
+		LOG_ERROR("disabling clk failed");
+		LOG_ERROR("%s: sdmmc_host_clock_update_command returned 0x%x", __func__, err);
 		return err;
 	}
 
@@ -825,8 +825,8 @@ int sdmmc_host_set_card_clk(sdmmc_dev_t *sdio_hw, int slot, uint32_t freq_khz)
 	err = sdmmc_host_clock_update_command(sdio_hw, slot);
 
 	if (err != 0) {
-		LOG_ERR("setting clk div failed");
-		LOG_ERR("%s: sdmmc_host_clock_update_command returned 0x%x", __func__, err);
+		LOG_ERROR("setting clk div failed");
+		LOG_ERROR("%s: sdmmc_host_clock_update_command returned 0x%x", __func__, err);
 		return err;
 	}
 
@@ -837,8 +837,8 @@ int sdmmc_host_set_card_clk(sdmmc_dev_t *sdio_hw, int slot, uint32_t freq_khz)
 	err = sdmmc_host_clock_update_command(sdio_hw, slot);
 
 	if (err != 0) {
-		LOG_ERR("re-enabling clk failed");
-		LOG_ERR("%s: sdmmc_host_clock_update_command returned 0x%x", __func__, err);
+		LOG_ERROR("re-enabling clk failed");
+		LOG_ERROR("%s: sdmmc_host_clock_update_command returned 0x%x", __func__, err);
 		return err;
 	}
 
@@ -955,7 +955,7 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 	if (ios->clock) {
 		/* Check for frequency boundaries supported by host */
 		if (ios->clock > cfg->props.f_max || ios->clock < cfg->props.f_min) {
-			LOG_ERR("Proposed clock outside supported host range");
+			LOG_ERROR("Proposed clock outside supported host range");
 			return -EINVAL;
 		}
 
@@ -966,7 +966,7 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 			if (ret == 0) {
 				LOG_INF("Bus clock successfully set to %d kHz", ios->clock / 1000);
 			} else {
-				LOG_ERR("Error configuring card clock");
+				LOG_ERROR("Error configuring card clock");
 				return err_esp2zep(ret);
 			}
 
@@ -993,7 +993,7 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 			if (ret == 0) {
 				LOG_INF("Bus width set successfully to %d bit", bus_width);
 			} else {
-				LOG_ERR("Error configuring bus width");
+				LOG_ERROR("Error configuring bus width");
 				return err_esp2zep(ret);
 			}
 
@@ -1034,7 +1034,7 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 			case SDHC_TIMING_SDR104:
 			case SDHC_TIMING_HS200:
 			default:
-				LOG_ERR("Timing mode not supported for this device");
+				LOG_ERROR("Timing mode not supported for this device");
 				ret = -ENOTSUP;
 				break;
 			}
@@ -1274,7 +1274,7 @@ static int sdhc_esp32_init(const struct device *dev)
 		ret = gpio_pin_configure_dt(&cfg->pwr_gpio, GPIO_OUTPUT_INACTIVE);
 
 		if (ret) {
-			LOG_ERR("Failed to configure SDHC power pin");
+			LOG_ERROR("Failed to configure SDHC power pin");
 			return -EIO;
 		}
 	}
@@ -1295,7 +1295,7 @@ static int sdhc_esp32_init(const struct device *dev)
 		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 		if (ret < 0) {
-			LOG_ERR("Failed to configure SDHC I/O pins");
+			LOG_ERROR("Failed to configure SDHC I/O pins");
 			return -EINVAL;
 		}
 	}
@@ -1307,7 +1307,7 @@ static int sdhc_esp32_init(const struct device *dev)
 	ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
 
 	if (ret != 0) {
-		LOG_ERR("Error enabling SDHC clock");
+		LOG_ERROR("Error enabling SDHC clock");
 		return ret;
 	}
 

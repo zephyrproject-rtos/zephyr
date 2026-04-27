@@ -513,7 +513,7 @@ static int mc_ytphy_get_id(const struct device *dev, uint32_t *phy_id)
 	}
 
 	if (!found) {
-		LOG_ERR("PHY (%d) timeout to get PHY ID", config->phy_addr);
+		LOG_ERROR("PHY (%d) timeout to get PHY ID", config->phy_addr);
 		return -EIO;
 	}
 

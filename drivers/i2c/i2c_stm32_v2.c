@@ -134,7 +134,7 @@ static int configure_dma(struct stream const *dma, struct dma_config *dma_cfg,
 			 struct dma_block_config *blk_cfg)
 {
 	if (!device_is_ready(dma->dev_dma)) {
-		LOG_ERR("DMA device not ready");
+		LOG_ERROR("DMA device not ready");
 		return -ENODEV;
 	}
 
@@ -144,14 +144,14 @@ static int configure_dma(struct stream const *dma, struct dma_config *dma_cfg,
 	int ret = dma_config(dma->dev_dma, dma->dma_channel, dma_cfg);
 
 	if (ret != 0) {
-		LOG_ERR("Problem setting up DMA: %d", ret);
+		LOG_ERROR("Problem setting up DMA: %d", ret);
 		return ret;
 	}
 
 	ret = dma_start(dma->dev_dma, dma->dma_channel);
 
 	if (ret != 0) {
-		LOG_ERR("Problem starting DMA: %d", ret);
+		LOG_ERROR("Problem starting DMA: %d", ret);
 		return ret;
 	}
 
@@ -292,7 +292,7 @@ static void i2c_stm32_target_event(const struct device *dev)
 		 */
 		LL_I2C_TransmitData8(i2c, val);
 		if (ret < 0) {
-			LOG_ERR("Error continuing reading");
+			LOG_ERROR("Error continuing reading");
 		}
 
 		return;
@@ -333,7 +333,7 @@ static void i2c_stm32_target_event(const struct device *dev)
 		dir = LL_I2C_GetTransferDirection(i2c);
 		if (dir == LL_I2C_DIRECTION_WRITE) {
 			if (target_cb->write_requested(target_cfg) < 0) {
-				LOG_ERR("Error initiating writing");
+				LOG_ERROR("Error initiating writing");
 			} else {
 				LL_I2C_EnableIT_RX(i2c);
 			}
@@ -341,7 +341,7 @@ static void i2c_stm32_target_event(const struct device *dev)
 			uint8_t val;
 
 			if (target_cb->read_requested(target_cfg, &val) < 0) {
-				LOG_ERR("Error initiating reading");
+				LOG_ERROR("Error initiating reading");
 			} else {
 				LL_I2C_TransmitData8(i2c, val);
 				LL_I2C_EnableIT_TX(i2c);
@@ -381,7 +381,7 @@ int i2c_stm32_target_register(const struct device *dev,
 
 	ret = i2c_stm32_runtime_configure(dev, bitrate_cfg);
 	if (ret < 0) {
-		LOG_ERR("i2c: failure initializing");
+		LOG_ERROR("i2c: failure initializing");
 		return ret;
 	}
 
@@ -1258,8 +1258,8 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 		i2c_freq = I2C_BITRATE_FAST_PLUS;
 		break;
 	default:
-		LOG_ERR("i2c: speed ID %u (I2C_SPEED_*) not supported",
-			I2C_SPEED_GET(data->dev_config));
+		LOG_ERROR("i2c: speed ID %u (I2C_SPEED_*) not supported",
+			  I2C_SPEED_GET(data->dev_config));
 		return -EINVAL;
 	}
 
@@ -1334,8 +1334,8 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 		i2c_setup_time_min = 500U;
 		break;
 	default:
-		LOG_ERR("i2c: speed above \"fast\" requires manual timing configuration, "
-			"see \"timings\" property of st,stm32-i2c-v2 devicetree binding");
+		LOG_ERROR("i2c: speed above \"fast\" requires manual timing configuration, "
+			  "see \"timings\" property of st,stm32-i2c-v2 devicetree binding");
 		return -EINVAL;
 	}
 
@@ -1365,7 +1365,7 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 	} while (presc < 16);
 
 	if (presc >= 16U) {
-		LOG_ERR("I2C:failed to find prescaler value");
+		LOG_ERROR("I2C:failed to find prescaler value");
 		return -EINVAL;
 	}
 

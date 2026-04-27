@@ -985,7 +985,7 @@ static void data_ready_trigger_handler(const struct device *sensor,
 	const char *sensor_name;
 
 	if (sensor_idx < 0) {
-		LOG_ERR("Unable to find sensor trigger device");
+		LOG_ERROR("Unable to find sensor trigger device");
 		return;
 	}
 	stats = sensor_stats[sensor_idx];
@@ -997,7 +997,7 @@ static void data_ready_trigger_handler(const struct device *sensor,
 	}
 
 	if (sensor_sample_fetch(sensor)) {
-		LOG_ERR("Failed to fetch samples on data ready handler");
+		LOG_ERROR("Failed to fetch samples on data ready handler");
 	}
 	for (int i = 0; i < SENSOR_CHAN_ALL; ++i) {
 		int rc;

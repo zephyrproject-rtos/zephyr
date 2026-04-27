@@ -138,7 +138,7 @@ static int link_filters_init(const struct log_link *link)
 
 	link->ctrl_blk->filters = k_malloc(sizeof(uint32_t) * total_cnt);
 	if (link->ctrl_blk->filters == NULL) {
-		LOG_ERR("Failed to allocate buffer for runtime filtering.");
+		LOG_ERROR("Failed to allocate buffer for runtime filtering.");
 		__ASSERT(0, "Failed to allocate buffer.");
 		return -ENOMEM;
 	}

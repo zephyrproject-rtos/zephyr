@@ -422,25 +422,25 @@ static int bmp180_init(const struct device *dev)
 
 	/* reboot the chip */
 	if (bmp180_reg_write(dev, BMP180_REG_CMD, BMP180_CMD_SOFT_RESET) < 0) {
-		LOG_ERR("Cannot reboot chip.");
+		LOG_ERROR("Cannot reboot chip.");
 		return -EIO;
 	}
 
 	k_sleep(K_MSEC(2));
 
 	if (bmp180_reg_read(dev, BMP180_REG_CHIPID, &val, 1) < 0) {
-		LOG_ERR("Failed to read chip id.");
+		LOG_ERROR("Failed to read chip id.");
 		return -EIO;
 	}
 
 	if (val != BMP180_CHIP_ID) {
-		LOG_ERR("Unsupported chip detected (0x%x)!", val);
+		LOG_ERROR("Unsupported chip detected (0x%x)!", val);
 		return -ENODEV;
 	}
 
 	/* Read calibration data */
 	if (bmp180_get_calibration_data(dev) < 0) {
-		LOG_ERR("Failed to read calibration data.");
+		LOG_ERROR("Failed to read calibration data.");
 		return -EIO;
 	}
 

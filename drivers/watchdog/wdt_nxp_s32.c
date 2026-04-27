@@ -149,7 +149,7 @@ static int swt_unlock(const struct swt_nxp_s32_config *config)
 	int err = 0;
 
 	if (FIELD_GET(SWT_CR_HLK_MASK, REG_READ(SWT_CR)) != 0U) {
-		LOG_ERR("Watchdog hard-locked");
+		LOG_ERROR("Watchdog hard-locked");
 		err = -EFAULT;
 
 	} else if (FIELD_GET(SWT_CR_SLK_MASK, REG_READ(SWT_CR)) != 0U) {
@@ -159,7 +159,7 @@ static int swt_unlock(const struct swt_nxp_s32_config *config)
 		if (!WAIT_FOR(FIELD_GET(SWT_CR_SLK_MASK, REG_READ(SWT_CR)) == 0U,
 			      SWT_SOFT_LOCK_TIMEOUT_US, NULL)) {
 
-			LOG_ERR("Timed out while trying to unlock");
+			LOG_ERROR("Timed out while trying to unlock");
 			err = -ETIMEDOUT;
 			/* make sure is locked again before we leave */
 			REG_WRITE(SWT_CR, REG_READ(SWT_CR) | SWT_CR_SLK(1U));
@@ -183,7 +183,7 @@ static int swt_nxp_s32_setup(const struct device *dev, uint8_t options)
 	uint32_t reg_val;
 
 	if (!data->timeout_valid) {
-		LOG_ERR("No valid timeouts installed");
+		LOG_ERROR("No valid timeouts installed");
 		return -EINVAL;
 	}
 
@@ -253,13 +253,13 @@ static int swt_nxp_s32_install_timeout(const struct device *dev,
 	int err;
 
 	if (data->timeout_valid) {
-		LOG_ERR("No more timeouts can be installed");
+		LOG_ERROR("No more timeouts can be installed");
 		return -ENOMEM;
 	}
 
 	err = clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_rate);
 	if (err) {
-		LOG_ERR("Failed to get module clock frequency");
+		LOG_ERROR("Failed to get module clock frequency");
 		return err;
 	}
 
@@ -271,7 +271,7 @@ static int swt_nxp_s32_install_timeout(const struct device *dev,
 	}
 
 	if ((period < SWT_TO_WTO_MIN) || (period < window)) {
-		LOG_ERR("Invalid timeout");
+		LOG_ERROR("Invalid timeout");
 		return -EINVAL;
 	}
 
@@ -324,7 +324,7 @@ static int swt_nxp_s32_feed(const struct device *dev, int channel)
 		}
 		break;
 	default:
-		LOG_ERR("Invalid service mode");
+		LOG_ERROR("Invalid service mode");
 		err = -EINVAL;
 		break;
 	}

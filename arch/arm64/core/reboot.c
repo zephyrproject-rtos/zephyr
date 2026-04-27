@@ -21,7 +21,7 @@ void __weak sys_arch_reboot(int type)
 	} else if (type == SYS_REBOOT_WARM) {
 		reset_type = SYS_WARM_RESET;
 	} else {
-		LOG_ERR("Invalid reboot type");
+		LOG_ERROR("Invalid reboot type");
 		return;
 	}
 	pm_system_reset(reset_type);

@@ -52,7 +52,7 @@ static void health_get_registered(const struct bt_mesh_model *mod,
 					     net_buf_simple_tail(msg),
 					     &fault_count);
 		if (err) {
-			LOG_ERR("Failed to get faults (err %d)", err);
+			LOG_ERROR("Failed to get faults (err %d)", err);
 			*test_id = HEALTH_TEST_STANDARD;
 		} else {
 			net_buf_simple_add(msg, fault_count);
@@ -86,7 +86,7 @@ static size_t health_get_current(const struct bt_mesh_model *mod,
 					     net_buf_simple_tail(msg),
 					     &fault_count);
 		if (err) {
-			LOG_ERR("Failed to get faults (err %d)", err);
+			LOG_ERROR("Failed to get faults (err %d)", err);
 			sys_put_le16(comp->cid, company_ptr);
 			*test_id = HEALTH_TEST_STANDARD;
 			fault_count = 0U;
@@ -118,7 +118,7 @@ static int health_fault_get(const struct bt_mesh_model *model,
 	health_get_registered(model, company_id, &sdu);
 
 	if (bt_mesh_model_send(model, ctx, &sdu, NULL, NULL)) {
-		LOG_ERR("Unable to send Health Current Status response");
+		LOG_ERROR("Unable to send Health Current Status response");
 	}
 
 	return 0;
@@ -166,7 +166,7 @@ static int health_fault_clear(const struct bt_mesh_model *model,
 	health_get_registered(model, company_id, &sdu);
 
 	if (bt_mesh_model_send(model, ctx, &sdu, NULL, NULL)) {
-		LOG_ERR("Unable to send Health Current Status response");
+		LOG_ERROR("Unable to send Health Current Status response");
 	}
 
 	return 0;
@@ -221,7 +221,7 @@ static int health_fault_test(const struct bt_mesh_model *model,
 	health_get_registered(model, company_id, &sdu);
 
 	if (bt_mesh_model_send(model, ctx, &sdu, NULL, NULL)) {
-		LOG_ERR("Unable to send Health Current Status response");
+		LOG_ERROR("Unable to send Health Current Status response");
 	}
 
 	return 0;
@@ -244,7 +244,7 @@ static int send_attention_status(const struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, time);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Attention Status");
+		LOG_ERROR("Unable to send Attention Status");
 	}
 
 	return 0;
@@ -301,7 +301,7 @@ static int send_health_period_status(const struct bt_mesh_model *model,
 	net_buf_simple_add_u8(&msg, model->pub->period_div);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
-		LOG_ERR("Unable to send Health Period Status");
+		LOG_ERROR("Unable to send Health Period Status");
 	}
 
 	return 0;
@@ -422,12 +422,12 @@ static int health_srv_init(const struct bt_mesh_model *model)
 	struct bt_mesh_health_srv *srv = model->rt->user_data;
 
 	if (!srv) {
-		LOG_ERR("No Health Server context provided");
+		LOG_ERROR("No Health Server context provided");
 		return -EINVAL;
 	}
 
 	if (!model->pub) {
-		LOG_ERR("Health Server has no publication support");
+		LOG_ERROR("Health Server has no publication support");
 		return -EINVAL;
 	}
 

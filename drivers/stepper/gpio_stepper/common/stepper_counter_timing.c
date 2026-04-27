@@ -42,7 +42,7 @@ int step_counter_timing_source_update(const struct device *dev,
 	irq_unlock(key);
 
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to set counter top value (error: %d)", dev->name, ret);
+		LOG_ERROR("%s: Failed to set counter top value (error: %d)", dev->name, ret);
 		return ret;
 	}
 
@@ -57,7 +57,7 @@ int step_counter_timing_source_start(const struct device *dev)
 
 	ret = counter_start(config->counter);
 	if (ret < 0 && ret != -EALREADY) {
-		LOG_ERR("Failed to start counter: %d", ret);
+		LOG_ERROR("Failed to start counter: %d", ret);
 		return ret;
 	}
 
@@ -74,7 +74,7 @@ int step_counter_timing_source_stop(const struct device *dev)
 
 	ret = counter_stop(config->counter);
 	if (ret < 0 && ret != -EALREADY) {
-		LOG_ERR("Failed to stop counter: %d", ret);
+		LOG_ERROR("Failed to stop counter: %d", ret);
 		return ret;
 	}
 
@@ -102,7 +102,7 @@ int step_counter_timing_source_init(const struct device *dev)
 	struct gpio_stepper_common_data *data = dev->data;
 
 	if (!device_is_ready(config->counter)) {
-		LOG_ERR("Counter device is not ready");
+		LOG_ERROR("Counter device is not ready");
 		return -ENODEV;
 	}
 

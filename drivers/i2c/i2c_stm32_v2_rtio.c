@@ -140,7 +140,7 @@ static void i2c_stm32_target_event(const struct device *dev)
 		 */
 		LL_I2C_TransmitData8(i2c, val);
 		if (ret < 0) {
-			LOG_ERR("Error continuing reading");
+			LOG_ERROR("Error continuing reading");
 		}
 
 		return;
@@ -181,7 +181,7 @@ static void i2c_stm32_target_event(const struct device *dev)
 		dir = LL_I2C_GetTransferDirection(i2c);
 		if (dir == LL_I2C_DIRECTION_WRITE) {
 			if (target_cb->write_requested(target_cfg) < 0) {
-				LOG_ERR("Error initiating writing");
+				LOG_ERROR("Error initiating writing");
 			} else {
 				LL_I2C_EnableIT_RX(i2c);
 			}
@@ -189,7 +189,7 @@ static void i2c_stm32_target_event(const struct device *dev)
 			uint8_t val;
 
 			if (target_cb->read_requested(target_cfg, &val) < 0) {
-				LOG_ERR("Error initiating reading");
+				LOG_ERROR("Error initiating reading");
 			} else {
 				LL_I2C_TransmitData8(i2c, val);
 				LL_I2C_EnableIT_TX(i2c);
@@ -226,7 +226,7 @@ int i2c_stm32_target_register(const struct device *dev,
 
 	ret = i2c_stm32_runtime_configure(dev, bitrate_cfg);
 	if (ret < 0) {
-		LOG_ERR("i2c: failure initializing");
+		LOG_ERROR("i2c: failure initializing");
 		return ret;
 	}
 
@@ -592,8 +592,8 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 		i2c_setup_time_min = 500U;
 		break;
 	default:
-		LOG_ERR("i2c: speed above \"fast\" requires manual timing configuration, "
-				"see \"timings\" property of st,stm32-i2c-v2 devicetree binding");
+		LOG_ERROR("i2c: speed above \"fast\" requires manual timing configuration, "
+			  "see \"timings\" property of st,stm32-i2c-v2 devicetree binding");
 		return -EINVAL;
 	}
 

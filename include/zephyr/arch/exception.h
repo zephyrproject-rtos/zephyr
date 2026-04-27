@@ -90,8 +90,9 @@ static inline void arch_exception_call_dump_hook(const char *format, ...)
 #if defined(CONFIG_EXCEPTION_DUMP_HOOK_ONLY)
 #define EXCEPTION_DUMP(format, ...) arch_exception_call_dump_hook(format "\n",  ##__VA_ARGS__)
 #elif defined(CONFIG_LOG)
-#define EXCEPTION_DUMP(format, ...) arch_exception_call_dump_hook(format "\n",  ##__VA_ARGS__); \
-	LOG_ERR(format, ##__VA_ARGS__)
+#define EXCEPTION_DUMP(format, ...)                                                                \
+	arch_exception_call_dump_hook(format "\n", ##__VA_ARGS__);                                 \
+	LOG_ERROR(format, ##__VA_ARGS__)
 #else
 #define EXCEPTION_DUMP(format, ...) arch_exception_call_dump_hook(format "\n",  ##__VA_ARGS__); \
 	printk(format "\n", ##__VA_ARGS__)
@@ -100,7 +101,7 @@ static inline void arch_exception_call_dump_hook(const char *format, ...)
 #else
 
 #if defined(CONFIG_LOG)
-#define EXCEPTION_DUMP(...) LOG_ERR(__VA_ARGS__)
+#define EXCEPTION_DUMP(...) LOG_ERROR(__VA_ARGS__)
 #else
 #define EXCEPTION_DUMP(format, ...) printk(format "\n", ##__VA_ARGS__)
 #endif

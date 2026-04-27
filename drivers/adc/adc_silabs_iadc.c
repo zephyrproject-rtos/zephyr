@@ -105,7 +105,7 @@ static int iadc_find_or_create_adc_config(struct iadc_data *data, sl_hal_iadc_in
 	}
 
 	if (data->adc_config_count >= ARRAY_SIZE(init->configs)) {
-		LOG_ERR("Maximum of 2 different ADC configs supported");
+		LOG_ERROR("Maximum of 2 different ADC configs supported");
 		return -EINVAL;
 	}
 
@@ -142,13 +142,13 @@ static int iadc_dma_init(const struct device *dev)
 	}
 
 	if (!device_is_ready(dma->dma_dev)) {
-		LOG_ERR("DMA device not ready");
+		LOG_ERROR("DMA device not ready");
 		return -ENODEV;
 	}
 
 	dma->dma_channel = dma_request_channel(dma->dma_dev, NULL);
 	if (dma->dma_channel < 0) {
-		LOG_ERR("Failed to request DMA channel");
+		LOG_ERROR("Failed to request DMA channel");
 		return -ENODEV;
 	}
 
@@ -181,7 +181,7 @@ static int iadc_dma_start(const struct device *dev)
 
 	ret = dma_config(dma->dma_dev, dma->dma_channel, &dma->dma_cfg);
 	if (ret) {
-		LOG_ERR("DMA config error: %d", ret);
+		LOG_ERROR("DMA config error: %d", ret);
 		return ret;
 	}
 
@@ -189,7 +189,7 @@ static int iadc_dma_start(const struct device *dev)
 
 	ret = dma_start(dma->dma_dev, dma->dma_channel);
 	if (ret) {
-		LOG_ERR("DMA start error: %d", ret);
+		LOG_ERROR("DMA start error: %d", ret);
 		dma->enabled = false;
 		return ret;
 	}
@@ -217,7 +217,7 @@ static void iadc_dma_cb(const struct device *dma_dev, void *user_data, uint32_t 
 	const struct device *dev = data->dev;
 
 	if (status < 0) {
-		LOG_ERR("DMA transfer error: %d", status);
+		LOG_ERROR("DMA transfer error: %d", status);
 		adc_context_complete(&data->ctx, status);
 		return;
 	}
@@ -379,17 +379,17 @@ static int iadc_check_oversampling_and_resolution(const struct adc_sequence *seq
 	}
 
 	if (ospl > ARRAY_SIZE(ospl_table) - 1) {
-		LOG_ERR("Unsupported oversampling %d", sequence->oversampling);
+		LOG_ERROR("Unsupported oversampling %d", sequence->oversampling);
 		return -EINVAL;
 	}
 
 	if (ospl > 6 && IS_ENABLED(IADC_NO_DIGAVG)) {
-		LOG_ERR("Unsupported oversampling %d", ospl);
+		LOG_ERROR("Unsupported oversampling %d", ospl);
 		return -EINVAL;
 	}
 
 	if (res > 12 && IS_ENABLED(IADC_NO_EXTENDED_ALIGN)) {
-		LOG_ERR("Unsupported resolution %d", res);
+		LOG_ERROR("Unsupported resolution %d", res);
 		return -EINVAL;
 	}
 
@@ -404,7 +404,7 @@ static int iadc_check_oversampling_and_resolution(const struct adc_sequence *seq
 		data->alignment = _IADC_SCANFIFOCFG_ALIGNMENT_RIGHT20;
 		break;
 	default:
-		LOG_ERR("Unsupported resolution %d", res);
+		LOG_ERROR("Unsupported resolution %d", res);
 		return -EINVAL;
 	}
 
@@ -551,7 +551,7 @@ static void iadc_isr(void *arg)
 	}
 
 	if (err) {
-		LOG_ERR("IADC error, flags=%08x", err);
+		LOG_ERROR("IADC error, flags=%08x", err);
 		adc_context_complete(&data->ctx, -EIO);
 	}
 }
@@ -596,7 +596,7 @@ static int iadc_channel_setup(const struct device *dev, const struct adc_channel
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Selected ADC acquisition time is not valid");
+		LOG_ERROR("Selected ADC acquisition time is not valid");
 		return -EINVAL;
 	}
 
@@ -633,7 +633,7 @@ static int iadc_channel_setup(const struct device *dev, const struct adc_channel
 		chan_conf->gain = _IADC_CFG_ANALOGGAIN_ANAGAIN4;
 		break;
 	default:
-		LOG_ERR("unsupported channel gain '%d'", channel_cfg->gain);
+		LOG_ERROR("unsupported channel gain '%d'", channel_cfg->gain);
 		return -EINVAL;
 	}
 
@@ -649,7 +649,7 @@ static int iadc_channel_setup(const struct device *dev, const struct adc_channel
 		chan_conf->reference = _IADC_CFG_REFSEL_VREF;
 		break;
 	default:
-		LOG_ERR("unsupported channel reference type '%d'", channel_cfg->reference);
+		LOG_ERROR("unsupported channel reference type '%d'", channel_cfg->reference);
 		return -EINVAL;
 	}
 

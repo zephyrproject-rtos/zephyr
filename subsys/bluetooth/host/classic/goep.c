@@ -187,7 +187,7 @@ static int goep_rfcomm_init(struct bt_conn *conn, struct bt_goep *goep)
 
 	err = bt_obex_reg_transport(&goep->obex, &goep_rfcomm_transport_ops);
 	if (err != 0) {
-		LOG_ERR("Fail to reg transport ops");
+		LOG_ERROR("Fail to reg transport ops");
 		return err;
 	}
 
@@ -227,7 +227,7 @@ static int goep_rfcomm_accept(struct bt_conn *conn, struct bt_rfcomm_server *ser
 
 	err = goep_rfcomm_init(conn, goep);
 	if (err != 0) {
-		LOG_ERR("Fail to init goep");
+		LOG_ERROR("Fail to init goep");
 		return err;
 	}
 
@@ -276,13 +276,13 @@ int bt_goep_transport_rfcomm_connect(struct bt_conn *conn, struct bt_goep *goep,
 
 	err = goep_rfcomm_init(conn, goep);
 	if (err != 0) {
-		LOG_ERR("Fail to init goep");
+		LOG_ERROR("Fail to init goep");
 		return err;
 	}
 
 	err = bt_rfcomm_dlc_connect(conn, &goep->_transport.dlc, channel);
 	if (err != 0) {
-		LOG_ERR("Fail to create RFCOMM connection");
+		LOG_ERROR("Fail to create RFCOMM connection");
 		return err;
 	}
 
@@ -393,7 +393,7 @@ static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 
 	buf = net_buf_alloc(&goep_rx_pool, K_FOREVER);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 	}
 
 	return buf;
@@ -480,7 +480,7 @@ static int goep_l2cap_init(struct bt_conn *conn, struct bt_goep *goep)
 
 	err = bt_obex_reg_transport(&goep->obex, &goep_l2cap_transport_ops);
 	if (err != 0) {
-		LOG_ERR("Fail to reg transport ops");
+		LOG_ERROR("Fail to reg transport ops");
 		return err;
 	}
 
@@ -532,7 +532,7 @@ static int goep_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *serve
 
 	err = goep_l2cap_init(conn, goep);
 	if (err != 0) {
-		LOG_ERR("Fail to init goep");
+		LOG_ERROR("Fail to init goep");
 		return err;
 	}
 
@@ -587,13 +587,13 @@ int bt_goep_transport_l2cap_connect(struct bt_conn *conn, struct bt_goep *goep, 
 
 	err = goep_l2cap_init(conn, goep);
 	if (err != 0) {
-		LOG_ERR("Fail to init goep");
+		LOG_ERROR("Fail to init goep");
 		return err;
 	}
 
 	err = bt_l2cap_chan_connect(conn, &goep->_transport.chan.chan, psm);
 	if (err != 0) {
-		LOG_ERR("Fail to create L2CAP connection");
+		LOG_ERROR("Fail to create L2CAP connection");
 		return err;
 	}
 

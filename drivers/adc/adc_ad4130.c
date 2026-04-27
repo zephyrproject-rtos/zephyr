@@ -457,7 +457,7 @@ static int adc_ad4130_create_new_cfg(const struct device *dev, const struct adc_
 	enum ad4130_gain gain;
 
 	if (cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("invalid acquisition time %i", cfg->acquisition_time);
+		LOG_ERROR("invalid acquisition time %i", cfg->acquisition_time);
 		return -EINVAL;
 	}
 
@@ -475,7 +475,7 @@ static int adc_ad4130_create_new_cfg(const struct device *dev, const struct adc_
 		ref_source = AD4130_REF_AVDD_AVSS;
 		break;
 	default:
-		LOG_ERR("Invalid reference source (%u)", cfg->reference);
+		LOG_ERROR("Invalid reference source (%u)", cfg->reference);
 		return -EINVAL;
 	}
 
@@ -507,7 +507,7 @@ static int adc_ad4130_create_new_cfg(const struct device *dev, const struct adc_
 		gain = AD4130_GAIN_128;
 		break;
 	default:
-		LOG_ERR("Invalid gain value (%u)", cfg->gain);
+		LOG_ERROR("Invalid gain value (%u)", cfg->gain);
 		return -EINVAL;
 	}
 
@@ -560,7 +560,7 @@ static int adc_ad4130_channel_setup(const struct device *dev, const struct adc_c
 	int ret;
 
 	if (cfg->channel_id >= AD4130_MAX_CHANNELS) {
-		LOG_ERR("Invalid channel (%u)", cfg->channel_id);
+		LOG_ERROR("Invalid channel (%u)", cfg->channel_id);
 		return -EINVAL;
 	}
 
@@ -594,7 +594,7 @@ static int adc_ad4130_channel_setup(const struct device *dev, const struct adc_c
 	/* Setup the channel configuration */
 	ret = adc_ad4130_setup_cfg(dev, &data->channel_setup_cfg[cfg->channel_id]);
 	if (ret) {
-		LOG_ERR("Error setting up configuration");
+		LOG_ERROR("Error setting up configuration");
 		return ret;
 	}
 
@@ -607,13 +607,13 @@ static int adc_ad4130_channel_setup(const struct device *dev, const struct adc_c
 
 	ret = adc_ad4130_set_channel_setup(dev, cfg->channel_id, new_cfg.cfg_slot);
 	if (ret) {
-		LOG_ERR("Error setting up configuration");
+		LOG_ERROR("Error setting up configuration");
 		return ret;
 	}
 
 	ret = adc_ad4130_channel_en(dev, cfg->channel_id, true);
 	if (ret) {
-		LOG_ERR("Error setting up configuration");
+		LOG_ERROR("Error setting up configuration");
 		return ret;
 	}
 
@@ -843,14 +843,14 @@ static int adc_ad4130_perform_read(const struct device *dev)
 
 		ret = ad4130_reg_read(dev, AD4130_DATA_REG, data->buffer);
 		if (ret) {
-			LOG_ERR("reading sample failed");
+			LOG_ERROR("reading sample failed");
 			adc_context_complete(&data->ctx, ret);
 			return ret;
 		}
 
 		ret = adc_ad4130_get_read_channel_id(dev, &adc_ch_id);
 		if (ret) {
-			LOG_ERR("reading channel id failed");
+			LOG_ERROR("reading channel id failed");
 			adc_context_complete(&data->ctx, ret);
 			return ret;
 		}
@@ -878,17 +878,17 @@ static int adc_ad4130_validate_sequence(const struct device *dev,
 	size_t necessary;
 
 	if (sequence->resolution != config->resolution) {
-		LOG_ERR("invalid resolution");
+		LOG_ERROR("invalid resolution");
 		return -EINVAL;
 	}
 
 	if (!sequence->channels) {
-		LOG_ERR("no channel selected");
+		LOG_ERROR("no channel selected");
 		return -EINVAL;
 	}
 
 	if (sequence->oversampling) {
-		LOG_ERR("oversampling is not supported");
+		LOG_ERROR("oversampling is not supported");
 		return -EINVAL;
 	}
 
@@ -900,7 +900,7 @@ static int adc_ad4130_validate_sequence(const struct device *dev,
 	}
 
 	if (sequence->buffer_size < necessary) {
-		LOG_ERR("buffer size %u is too small, need %u", sequence->buffer_size, necessary);
+		LOG_ERROR("buffer size %u is too small, need %u", sequence->buffer_size, necessary);
 		return -ENOMEM;
 	}
 
@@ -910,12 +910,12 @@ static int adc_ad4130_validate_sequence(const struct device *dev,
 		}
 
 		if ((BIT(i) & sequence->channels) && !(BIT(i) & data->channels)) {
-			LOG_ERR("Channel-%d not enabled", i);
+			LOG_ERROR("Channel-%d not enabled", i);
 			return -EINVAL;
 		}
 
 		if (i >= AD4130_MAX_CHANNELS) {
-			LOG_ERR("invalid channel selection");
+			LOG_ERROR("invalid channel selection");
 			return -EINVAL;
 		}
 	}
@@ -931,7 +931,7 @@ static int adc_ad4130_start_read(const struct device *dev, const struct adc_sequ
 
 	result = adc_ad4130_validate_sequence(dev, sequence);
 	if (result != 0) {
-		LOG_ERR("sequence validation failed");
+		LOG_ERROR("sequence validation failed");
 		return result;
 	}
 
@@ -1017,7 +1017,7 @@ static int ad4130_init(const struct device *dev)
 	k_sem_init(&data->acquire_signal, 0, 1);
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("spi bus %s not ready", config->bus.bus->name);
+		LOG_ERROR("spi bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 

@@ -166,7 +166,7 @@ static int w6100_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 	ret = w6100_writebuf(dev, offset, ctx->buf, len);
 	if (ret < 0) {
-		LOG_ERR("returning");
+		LOG_ERROR("returning");
 		return ret;
 	}
 
@@ -568,18 +568,18 @@ static int w6100_init(const struct device *dev)
 	struct w6100_runtime *ctx = dev->data;
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI master port %s not ready", config->spi.bus->name);
+		LOG_ERROR("SPI master port %s not ready", config->spi.bus->name);
 		return -EINVAL;
 	}
 
 	if (!gpio_is_ready_dt(&config->interrupt)) {
-		LOG_ERR("GPIO port %s not ready", config->interrupt.port->name);
+		LOG_ERROR("GPIO port %s not ready", config->interrupt.port->name);
 		return -EINVAL;
 	}
 
 	err = gpio_pin_configure_dt(&config->interrupt, GPIO_INPUT);
 	if (err < 0) {
-		LOG_ERR("Unable to configure GPIO pin %u", config->interrupt.pin);
+		LOG_ERROR("Unable to configure GPIO pin %u", config->interrupt.pin);
 		return err;
 	}
 
@@ -588,26 +588,26 @@ static int w6100_init(const struct device *dev)
 
 	err = gpio_add_callback(config->interrupt.port, &(ctx->gpio_cb));
 	if (err < 0) {
-		LOG_ERR("Unable to add GPIO callback %u", config->interrupt.pin);
+		LOG_ERROR("Unable to add GPIO callback %u", config->interrupt.pin);
 		return err;
 	}
 
 	err = gpio_pin_interrupt_configure_dt(&config->interrupt,
 						GPIO_INT_EDGE_FALLING);
 	if (err < 0) {
-		LOG_ERR("Unable to enable GPIO INT %u", config->interrupt.pin);
+		LOG_ERROR("Unable to enable GPIO INT %u", config->interrupt.pin);
 		return err;
 	}
 
 	if (config->reset.port != NULL) {
 		if (!gpio_is_ready_dt(&config->reset)) {
-			LOG_ERR("GPIO port %s not ready", config->reset.port->name);
+			LOG_ERROR("GPIO port %s not ready", config->reset.port->name);
 			return -EINVAL;
 		}
 
 		err = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
 		if (err < 0) {
-			LOG_ERR("Unable to configure GPIO pin %u", config->reset.pin);
+			LOG_ERROR("Unable to configure GPIO pin %u", config->reset.pin);
 			return err;
 		}
 
@@ -620,7 +620,7 @@ static int w6100_init(const struct device *dev)
 	err = w6100_soft_reset(dev);
 
 	if (err != 0) {
-		LOG_ERR("Reset failed");
+		LOG_ERROR("Reset failed");
 		return err;
 	}
 
@@ -631,7 +631,7 @@ static int w6100_init(const struct device *dev)
 	/* check retry time value */
 	w6100_spi_read(dev, W6100_RTR, rtr, 2);
 		if (sys_get_be16(rtr) != RTR_DEFAULT) {
-			LOG_ERR("Unable to read RTR register");
+			LOG_ERROR("Unable to read RTR register");
 			return -ENODEV;
 		}
 

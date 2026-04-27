@@ -209,7 +209,7 @@ static uint8_t internal_read_volume_offset_state_cb(struct bt_conn *conn, uint8_
 	memset(params, 0, sizeof(*params));
 
 	if (!inst) {
-		LOG_ERR("Instance not found");
+		LOG_ERROR("Instance not found");
 		return BT_GATT_ITER_STOP;
 	}
 

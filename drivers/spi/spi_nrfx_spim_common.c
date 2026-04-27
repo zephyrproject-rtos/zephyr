@@ -521,33 +521,33 @@ int spi_nrfx_spim_common_configure(const struct device *dev, const struct spi_co
 	}
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Slave mode is not supported on %s", dev->name);
+		LOG_ERROR("Slave mode is not supported on %s", dev->name);
 		return -EINVAL;
 	}
 
 	if (spi_cfg->operation & SPI_MODE_LOOP) {
-		LOG_ERR("Loopback mode is not supported");
+		LOG_ERROR("Loopback mode is not supported");
 		return -EINVAL;
 	}
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
 	    (spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only single line mode is supported");
+		LOG_ERROR("Only single line mode is supported");
 		return -EINVAL;
 	}
 
 	if (SPI_WORD_SIZE_GET(spi_cfg->operation) != 8) {
-		LOG_ERR("Word sizes other than 8 bits are not supported");
+		LOG_ERROR("Word sizes other than 8 bits are not supported");
 		return -EINVAL;
 	}
 
 	if (spi_cfg->frequency < KHZ(125)) {
-		LOG_ERR("Frequencies lower than 125 kHz are not supported");
+		LOG_ERROR("Frequencies lower than 125 kHz are not supported");
 		return -EINVAL;
 	}
 
@@ -572,7 +572,7 @@ int spi_nrfx_spim_common_configure(const struct device *dev, const struct spi_co
 	}
 
 	if (ret) {
-		LOG_ERR("Failed to configure nrfx driver: %d", ret);
+		LOG_ERROR("Failed to configure nrfx driver: %d", ret);
 		return ret;
 	}
 

@@ -51,7 +51,7 @@ static int ot_aontimer_disable(const struct device *dev)
 	volatile uintptr_t regs = cfg->regs;
 
 	if (!sys_read32(regs + OT_REG_WDOG_REGWEN_OFFSET)) {
-		LOG_ERR("Cannot disable - watchdog settings locked.");
+		LOG_ERROR("Cannot disable - watchdog settings locked.");
 		return -EPERM;
 	}
 
@@ -113,7 +113,7 @@ static int ot_aontimer_install_timeout(const struct device *dev,
 	}
 
 	if (!sys_read32(reg_base + OT_REG_WDOG_REGWEN_OFFSET)) {
-		LOG_ERR("Cannot install timeout - watchdog settings locked.");
+		LOG_ERROR("Cannot install timeout - watchdog settings locked.");
 		return -ENOMEM;
 	}
 

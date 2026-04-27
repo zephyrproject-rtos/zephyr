@@ -138,7 +138,7 @@ static int bt_update_controller_baudrate(const struct device *bt_uart_dev, uint3
 	 */
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (buf == NULL) {
-		LOG_ERR("Unable to allocate command buffer");
+		LOG_ERROR("Unable to allocate command buffer");
 		return -ENOMEM;
 	}
 
@@ -203,7 +203,7 @@ static int bt_firmware_download(const uint8_t *firmware_image, uint32_t size)
 		/* Allocate buffer for hci_write_ram/hci_launch_ram command. */
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (buf == NULL) {
-			LOG_ERR("Unable to allocate command buffer");
+			LOG_ERROR("Unable to allocate command buffer");
 			return err;
 		}
 
@@ -242,7 +242,7 @@ static int bt_update_sco_route(void)
 	/* Allocate buffer for write pcm internal params command*/
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (buf == NULL) {
-		LOG_ERR("Unable to allocate command buffer");
+		LOG_ERROR("Unable to allocate command buffer");
 		return -ENOMEM;
 	}
 
@@ -273,16 +273,16 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 
 	/* Check BT REG_ON gpio instance */
 	if (!gpio_is_ready_dt(&bt_reg_on)) {
-		LOG_ERR("Error: failed to configure bt_reg_on %s pin %d",
-			bt_reg_on.port->name, bt_reg_on.pin);
+		LOG_ERROR("Error: failed to configure bt_reg_on %s pin %d", bt_reg_on.port->name,
+			  bt_reg_on.pin);
 		return -EIO;
 	}
 
 	/* Configure bt_reg_on as output  */
 	err = gpio_pin_configure_dt(&bt_reg_on, GPIO_OUTPUT_LOW);
 	if (err) {
-		LOG_ERR("Error %d: failed to configure bt_reg_on %s pin %d",
-			err, bt_reg_on.port->name, bt_reg_on.pin);
+		LOG_ERROR("Error %d: failed to configure bt_reg_on %s pin %d", err,
+			  bt_reg_on.port->name, bt_reg_on.pin);
 		return err;
 	}
 
@@ -377,7 +377,7 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 		 */
 		err = bt_update_sco_route();
 		if (err) {
-			LOG_ERR("Failed to update SCO route (err %d)", err);
+			LOG_ERROR("Failed to update SCO route (err %d)", err);
 			return err;
 		}
 	}

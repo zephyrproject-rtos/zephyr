@@ -67,7 +67,7 @@ static inline void dac_wait_sync(dac_registers_t *dac_reg, uint32_t sync_flag)
 {
 	if (WAIT_FOR(((dac_reg->DAC_SYNCBUSY & sync_flag) == 0U), TIMEOUT_VALUE_US,
 		     k_busy_wait(DELAY_US)) == false) {
-		LOG_ERR("Timeout waiting for DAC_SYNCBUSY bits to clear");
+		LOG_ERROR("Timeout waiting for DAC_SYNCBUSY bits to clear");
 	}
 }
 
@@ -88,7 +88,7 @@ static void dac_wait_ready(dac_registers_t *dac_reg, uint8_t channel_id)
 
 	if (WAIT_FOR(((dac_reg->DAC_STATUS & mask) == mask), TIMEOUT_VALUE_US,
 		     k_busy_wait(DELAY_US)) == false) {
-		LOG_ERR("Timeout waiting for DAC_STATUS_READY (mask=0x%x)", mask);
+		LOG_ERROR("Timeout waiting for DAC_STATUS_READY (mask=0x%x)", mask);
 	}
 }
 
@@ -328,14 +328,14 @@ static int dac_mchp_channel_setup(const struct device *dev,
 
 	if (channel_cfg->resolution != DAC_RESOLUTION || (channel_cfg->internal == 1) ||
 	    (channel_cfg->buffered == 1)) {
-		LOG_ERR("Unsupported configuration!");
+		LOG_ERROR("Unsupported configuration!");
 		return -ENOTSUP;
 	}
 
 	/* Channel ID validity */
 	if ((channel_cfg->channel_id >= DAC_MAX_CHANNELS) &&
 	    (channel_cfg->channel_id != DAC_CHANNELS_ALL)) {
-		LOG_ERR("Invalid Channel!");
+		LOG_ERROR("Invalid Channel!");
 		return -EINVAL;
 	}
 
@@ -371,7 +371,7 @@ static int dac_mchp_write_value(const struct device *dev, uint8_t channel, uint3
 	if (channel == DAC_CHANNELS_ALL) {
 		for (int i = 0; i < DAC_MAX_CHANNELS; i++) {
 			if (data->is_configured[i] == false) {
-				LOG_ERR("DAC write failed: channel %d not configured", i);
+				LOG_ERROR("DAC write failed: channel %d not configured", i);
 				return -EINVAL;
 			}
 		}
@@ -379,12 +379,12 @@ static int dac_mchp_write_value(const struct device *dev, uint8_t channel, uint3
 	/* Validate SINGLE channel */
 	else {
 		if (channel >= DAC_MAX_CHANNELS) {
-			LOG_ERR("DAC write failed: invalid channel %u", channel);
+			LOG_ERROR("DAC write failed: invalid channel %u", channel);
 			return -EINVAL;
 		}
 
 		if (data->is_configured[channel] == false) {
-			LOG_ERR("DAC write failed: channel %u not configured", channel);
+			LOG_ERROR("DAC write failed: channel %u not configured", channel);
 			return -EINVAL;
 		}
 	}
@@ -402,14 +402,14 @@ static int dac_mchp_init(const struct device *dev)
 	/* Enable GCLK */
 	ret = clock_control_on(dev_cfg->dac_clock.clock_dev, dev_cfg->dac_clock.gclk_sys);
 	if (ret != 0 && ret != -EALREADY) {
-		LOG_ERR("Failed to enable the GCLK for DAC: %d", ret);
+		LOG_ERROR("Failed to enable the GCLK for DAC: %d", ret);
 		return 0;
 	}
 
 	/* Enable MCLK */
 	ret = clock_control_on(dev_cfg->dac_clock.clock_dev, dev_cfg->dac_clock.mclk_sys);
 	if (ret != 0 && ret != -EALREADY) {
-		LOG_ERR("Failed to enable the MCLK for DAC: %d", ret);
+		LOG_ERROR("Failed to enable the MCLK for DAC: %d", ret);
 		return 0;
 	}
 

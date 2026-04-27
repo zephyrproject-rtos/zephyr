@@ -150,7 +150,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 
 	status = SPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
 	if (status != kStatus_Success) {
-		LOG_ERR("Transfer could not start");
+		LOG_ERROR("Transfer could not start");
 		spi_context_cs_control(ctx, false);
 		spi_context_complete(ctx, dev, -EIO);
 		pm_policy_device_power_lock_put(dev);
@@ -209,7 +209,7 @@ static int spi_mcux_configure(const struct device *dev,
 	force_reconfig = false;
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
@@ -223,7 +223,7 @@ static int spi_mcux_configure(const struct device *dev,
 		SPI_MasterGetDefaultConfig(&master_config);
 
 		if (!device_is_ready(config->clock_dev)) {
-			LOG_ERR("clock control device not ready");
+			LOG_ERROR("clock control device not ready");
 			return -ENODEV;
 		}
 
@@ -241,8 +241,7 @@ static int spi_mcux_configure(const struct device *dev,
 		max_slave -= 1;
 
 		if (spi_cfg->slave > max_slave) {
-			LOG_ERR("Slave %d is greater than max %d",
-				    spi_cfg->slave, max_slave);
+			LOG_ERROR("Slave %d is greater than max %d", spi_cfg->slave, max_slave);
 			return -EINVAL;
 		}
 
@@ -341,7 +340,7 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg,
 	struct spi_context *ctx = &data->ctx;
 
 	if (status < 0) {
-		LOG_ERR("DMA callback error with channel %d.", channel);
+		LOG_ERROR("DMA callback error with channel %d.", channel);
 		data->status_flags |= SPI_MCUX_FLEXCOMM_DMA_ERROR_FLAG;
 	} else {
 		/* identify the origin of this callback */
@@ -357,8 +356,7 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg,
 			spi_context_complete(ctx, spi_dev, 0);
 			pm_policy_device_power_lock_put(dev);
 		} else {
-			LOG_ERR("DMA callback channel %d is not valid.",
-								channel);
+			LOG_ERROR("DMA callback channel %d is not valid.", channel);
 			data->status_flags |= SPI_MCUX_FLEXCOMM_DMA_ERROR_FLAG;
 			spi_context_cs_control(ctx, false);
 			spi_context_complete(ctx, spi_dev, -EIO);
@@ -384,7 +382,7 @@ static uint32_t spi_mcux_get_last_tx_word(const struct spi_config *spi_cfg, cons
 	uint32_t value = def_char;
 
 	if (len < 1) {
-		LOG_ERR("Invalid len");
+		LOG_ERROR("Invalid len");
 		return -ECANCELED;
 	}
 
@@ -562,7 +560,7 @@ static int spi_mcux_dma_transfer(const struct device *dev, const struct spi_conf
 	while (1) {
 		block_length = spi_context_max_continuous_chunk(ctx);
 		if (block_length < 1) {
-			LOG_ERR("unexpected block length");
+			LOG_ERROR("unexpected block length");
 			return -ECANCELED;
 		}
 		if (ctx->tx_count <= 1 && ctx->rx_count <= 1 &&
@@ -581,13 +579,13 @@ static int spi_mcux_dma_transfer(const struct device *dev, const struct spi_conf
 		ret = spi_mcux_dma_rx_load(dev, ctx->rx_buf, block_length, dma_block,
 					   last_packet);
 		if (ret) {
-			LOG_ERR("could not load rx data to dma: %d", ret);
+			LOG_ERROR("could not load rx data to dma: %d", ret);
 			return ret;
 		}
 		ret = spi_mcux_dma_tx_load(dev, spi_cfg, ctx->tx_buf, block_length, dma_block,
 					   last_packet);
 		if (ret) {
-			LOG_ERR("could not load tx data to dma: %d", ret);
+			LOG_ERROR("could not load tx data to dma: %d", ret);
 			return ret;
 		}
 		spi_context_update_rx(ctx, data_size, block_length);
@@ -602,7 +600,7 @@ static int spi_mcux_dma_transfer(const struct device *dev, const struct spi_conf
 			break;
 		}
 		if (dma_block == CONFIG_SPI_MCUX_FLEXCOMM_DMA_MAX_BLOCKS) {
-			LOG_ERR("spi xfer exceeds dma block allocation");
+			LOG_ERROR("spi xfer exceeds dma block allocation");
 			return -ENOMEM;
 		}
 	}
@@ -613,13 +611,13 @@ static int spi_mcux_dma_transfer(const struct device *dev, const struct spi_conf
 
 	ret = spi_mcux_dma_rx_start(dev);
 	if (ret) {
-		LOG_ERR("could not start dma rx: %d", ret);
+		LOG_ERROR("could not start dma rx: %d", ret);
 		return -EIO;
 	}
 
 	ret = spi_mcux_dma_tx_start(dev, spi_cfg);
 	if (ret) {
-		LOG_ERR("could not start dma tx: %d", ret);
+		LOG_ERROR("could not start dma tx: %d", ret);
 		return -EIO;
 	}
 	return EXIT_SUCCESS;
@@ -686,7 +684,7 @@ static int transceive_dma(const struct device *dev,
 	int ret = 0;
 
 	if (word_size > SPI_MAX_DATA_WIDTH) {
-		LOG_ERR("Word size %d is greater than %d", word_size, SPI_MAX_DATA_WIDTH);
+		LOG_ERROR("Word size %d is greater than %d", word_size, SPI_MAX_DATA_WIDTH);
 		return -EINVAL;
 	}
 
@@ -796,12 +794,12 @@ static int transceive(const struct device *dev,
 	uint8_t word_size = (uint8_t)SPI_WORD_SIZE_GET(spi_cfg->operation);
 
 	if (word_size > SPI_MAX_DATA_WIDTH) {
-		LOG_ERR("Word size %d is greater than %d", word_size, SPI_MAX_DATA_WIDTH);
+		LOG_ERROR("Word size %d is greater than %d", word_size, SPI_MAX_DATA_WIDTH);
 		return -EINVAL;
 	}
 
 	if (word_size < SPI_MIN_DATA_WIDTH) {
-		LOG_ERR("Word size %d is less than %d", word_size, SPI_MIN_DATA_WIDTH);
+		LOG_ERROR("Word size %d is less than %d", word_size, SPI_MIN_DATA_WIDTH);
 		return -EINVAL;
 	}
 
@@ -877,7 +875,7 @@ static int spi_mcux_init_common(const struct device *dev)
 	int err = 0;
 
 	if (!device_is_ready(config->reset.dev)) {
-		LOG_ERR("Reset device not ready");
+		LOG_ERROR("Reset device not ready");
 		return -ENODEV;
 	}
 
@@ -899,12 +897,12 @@ static int spi_mcux_init_common(const struct device *dev)
 
 #ifdef CONFIG_SPI_MCUX_FLEXCOMM_DMA
 	if (!device_is_ready(data->dma_tx.dma_dev)) {
-		LOG_ERR("%s device is not ready", data->dma_tx.dma_dev->name);
+		LOG_ERROR("%s device is not ready", data->dma_tx.dma_dev->name);
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(data->dma_rx.dma_dev)) {
-		LOG_ERR("%s device is not ready", data->dma_rx.dma_dev->name);
+		LOG_ERROR("%s device is not ready", data->dma_rx.dma_dev->name);
 		return -ENODEV;
 	}
 #endif /* CONFIG_SPI_MCUX_FLEXCOMM_DMA */

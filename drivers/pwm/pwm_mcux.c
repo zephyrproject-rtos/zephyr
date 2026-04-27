@@ -79,7 +79,7 @@ static int mcux_pwm_set_cycles_internal(const struct device *dev, uint32_t chann
 
 #ifdef CONFIG_PWM_CAPTURE
 	if (data->capture_active) {
-		LOG_ERR("PWM capture is active, cannot set PWM output");
+		LOG_ERROR("PWM capture is active, cannot set PWM output");
 		return -EBUSY;
 	}
 #endif
@@ -115,7 +115,7 @@ static int mcux_pwm_set_cycles_internal(const struct device *dev, uint32_t chann
 				      &data->channel[channel], 1U,
 				      config->mode, pwm_clk_freq, data->clock_freq);
 		if (status != kStatus_Success) {
-			LOG_ERR("Could not set up pwm (%d)", status);
+			LOG_ERROR("Could not set up pwm (%d)", status);
 			return -ENOTSUP;
 		}
 
@@ -237,19 +237,18 @@ static int mcux_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	int result;
 
 	if (channel >= CHANNEL_COUNT) {
-		LOG_ERR("Invalid channel");
+		LOG_ERROR("Invalid channel");
 		return -EINVAL;
 	}
 
 	if (period_cycles == 0) {
-		LOG_ERR("Channel can not be set to inactive level");
+		LOG_ERROR("Channel can not be set to inactive level");
 		return -ENOTSUP;
 	}
 
 	if (period_cycles > UINT16_MAX) {
 		/* 16-bit resolution */
-		LOG_ERR("Too long period (%u), adjust pwm prescaler!",
-			period_cycles);
+		LOG_ERROR("Too long period (%u), adjust pwm prescaler!", period_cycles);
 		/* TODO: dynamically adjust prescaler */
 		return -EINVAL;
 	}
@@ -290,12 +289,12 @@ static int mcux_pwm_calc_ticks(uint16_t first_capture, uint16_t second_capture, 
 
 	/* Add additional overflows */
 	if (u32_mul_overflow(overflows, mod, &overflows)) {
-		LOG_ERR("overflow while calculating overflow cycles.");
+		LOG_ERROR("overflow while calculating overflow cycles.");
 		return -ERANGE;
 	}
 
 	if (u32_add_overflow(ticks, overflows, &ticks)) {
-		LOG_ERR("overflow while calculating capture cycles.");
+		LOG_ERROR("overflow while calculating capture cycles.");
 		return -ERANGE;
 	}
 
@@ -314,7 +313,7 @@ static void mcux_pwm_handle_capture(const struct device *dev, uint16_t first_edg
 	int err = overflow_err;
 
 	if (err != 0) {
-		LOG_ERR("overflow_count overflows.");
+		LOG_ERROR("overflow_count overflows.");
 	} else {
 		err = mcux_pwm_calc_ticks(first_edge_value, second_edge_value, modValue,
 				capture->overflow_count, &ticks);
@@ -402,7 +401,7 @@ static int check_channel(const struct device *dev, uint32_t channel)
 
 	/* Check if the channel is already used for PWM output */
 	if (channel < CHANNEL_COUNT && data->period_cycles[channel] != 0) {
-		LOG_ERR("Channel %d is already used for PWM output", channel);
+		LOG_ERROR("Channel %d is already used for PWM output", channel);
 		return -EBUSY;
 	}
 
@@ -410,23 +409,23 @@ static int check_channel(const struct device *dev, uint32_t channel)
 	if (channel == 0U) {
 #if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELA) && \
 	(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELA == 0U)
-		LOG_ERR("Channel A does not support capture on this hardware");
+		LOG_ERROR("Channel A does not support capture on this hardware");
 		return -ENOTSUP;
 #endif
 	} else if (channel == 1U) {
 #if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELB) && \
 	(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELB == 0U)
-		LOG_ERR("Channel B does not support capture on this hardware");
+		LOG_ERROR("Channel B does not support capture on this hardware");
 		return -ENOTSUP;
 #endif
 	} else if (channel == 2U) {
 #if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELX) && \
 	(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELX == 0U)
-		LOG_ERR("Channel X does not support capture on this hardware");
+		LOG_ERROR("Channel X does not support capture on this hardware");
 		return -ENOTSUP;
 #endif
 	} else {
-		LOG_ERR("Invalid channel %d", channel);
+		LOG_ERROR("Invalid channel %d", channel);
 		return -EINVAL;
 	}
 
@@ -453,22 +452,22 @@ static int mcux_pwm_configure_capture(const struct device *dev,
 	}
 
 	if (cb == NULL) {
-		LOG_ERR("PWM capture callback is not configured");
+		LOG_ERROR("PWM capture callback is not configured");
 		return -EINVAL;
 	}
 
 	if (data->capture_active) {
-		LOG_ERR("PWM capture already in progress");
+		LOG_ERROR("PWM capture already in progress");
 		return -EBUSY;
 	}
 
 	if (!(flags & PWM_CAPTURE_TYPE_MASK)) {
-		LOG_ERR("No capture type specified");
+		LOG_ERROR("No capture type specified");
 		return -EINVAL;
 	}
 
 	if ((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_BOTH) {
-		LOG_ERR("Cannot capture both period and pulse width");
+		LOG_ERROR("Cannot capture both period and pulse width");
 		return -ENOTSUP;
 	}
 
@@ -531,12 +530,12 @@ static int mcux_pwm_enable_capture(const struct device *dev, uint32_t channel)
 	}
 
 	if (!data->capture.callback) {
-		LOG_ERR("PWM capture not configured");
+		LOG_ERROR("PWM capture not configured");
 		return -EINVAL;
 	}
 
 	if (data->capture_active) {
-		LOG_ERR("PWM capture already enabled");
+		LOG_ERROR("PWM capture already enabled");
 		return -EBUSY;
 	}
 
@@ -613,13 +612,12 @@ static int pwm_mcux_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				   &data->clock_freq)) {
-		LOG_ERR("Could not get clock frequency");
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &data->clock_freq)) {
+		LOG_ERROR("Could not get clock frequency");
 		return -EINVAL;
 	}
 
@@ -646,7 +644,7 @@ static int pwm_mcux_init(const struct device *dev)
 
 	status = PWM_Init(config->base, config->index, &pwm_config);
 	if (status != kStatus_Success) {
-		LOG_ERR("Unable to init PWM");
+		LOG_ERROR("Unable to init PWM");
 		return -EIO;
 	}
 

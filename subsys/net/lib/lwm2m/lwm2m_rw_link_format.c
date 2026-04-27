@@ -299,8 +299,7 @@ static int put_corelink_ssid(struct lwm2m_output_context *out,
 		break;
 
 	default:
-		LOG_ERR("Invalid object ID for ssid attribute: %d",
-			path->obj_id);
+		LOG_ERROR("Invalid object ID for ssid attribute: %d", path->obj_id);
 		return -EINVAL;
 	}
 
@@ -612,7 +611,7 @@ static int put_corelink(struct lwm2m_output_context *out,
 		__fallthrough;
 
 	default:
-		LOG_ERR("Invalid corelink path level: %d", path->level);
+		LOG_ERROR("Invalid corelink path level: %d", path->level);
 		return -EINVAL;
 	}
 

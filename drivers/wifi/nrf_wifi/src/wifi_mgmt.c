@@ -37,21 +37,21 @@ int nrf_wifi_set_power_save(const struct device *dev,
 	unsigned int uapsd_queue = UAPSD_Q_MIN; /* Legacy mode */
 
 	if (!dev || !params) {
-		LOG_ERR("%s: dev or params is NULL", __func__);
+		LOG_ERROR("%s: dev or params is NULL", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = dev->data;
 
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -84,11 +84,9 @@ int nrf_wifi_set_power_save(const struct device *dev,
 #ifdef CONFIG_NRF70_PROMISC_DATA_RX
 		    && (vif_ctx_zep->if_type != NRF_WIFI_STA_PROMISC_TX_INJECTOR)
 #endif /* CONFIG_NRF70_PROMISC_DATA_RX */
-		   ) {
-			LOG_ERR("%s: Operation supported only in STA enabled mode",
-				__func__);
-			params->fail_reason =
-				WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL;
+		) {
+			LOG_ERROR("%s: Operation supported only in STA enabled mode", __func__);
+			params->fail_reason = WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL;
 			goto out;
 		}
 
@@ -142,10 +140,8 @@ int nrf_wifi_set_power_save(const struct device *dev,
 	}
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: Configuring PS param %d failed",
-			__func__, params->type);
-		params->fail_reason =
-			WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL;
+		LOG_ERROR("%s: Configuring PS param %d failed", __func__, params->type);
+		params->fail_reason = WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL;
 		goto out;
 	}
 
@@ -173,7 +169,7 @@ int nrf_wifi_get_power_save_config(const struct device *dev,
 	vif_ctx_zep = dev->data;
 
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -184,15 +180,14 @@ int nrf_wifi_get_power_save_config(const struct device *dev,
 #ifdef CONFIG_NRF70_PROMISC_DATA_RX
 	    && (vif_ctx_zep->if_type != NRF_WIFI_STA_PROMISC_TX_INJECTOR)
 #endif /* CONFIG_NRF70_PROMISC_DATA_RX */
-	    ) {
-		LOG_ERR("%s: Operation supported only in STA enabled mode",
-			__func__);
+	) {
+		LOG_ERROR("%s: Operation supported only in STA enabled mode", __func__);
 		return ret;
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -212,8 +207,7 @@ int nrf_wifi_get_power_save_config(const struct device *dev,
 						   vif_ctx_zep->vif_idx);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_get_power_save_info failed",
-			__func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_get_power_save_info failed", __func__);
 		goto out;
 	}
 
@@ -271,8 +265,7 @@ static unsigned char twt_wifi_mgmt_to_rpu_neg_type(enum wifi_twt_negotiation_typ
 		rpu_neg_type = NRF_WIFI_TWT_NEGOTIATION_TYPE_BROADCAST;
 		break;
 	default:
-		LOG_ERR("%s: Invalid negotiation type: %d",
-			__func__, neg_type);
+		LOG_ERROR("%s: Invalid negotiation type: %d", __func__, neg_type);
 		break;
 	}
 
@@ -291,8 +284,7 @@ static enum wifi_twt_negotiation_type twt_rpu_to_wifi_mgmt_neg_type(unsigned cha
 		wifi_neg_type = WIFI_TWT_BROADCAST;
 		break;
 	default:
-		LOG_ERR("%s: Invalid negotiation type: %d",
-			__func__, neg_type);
+		LOG_ERROR("%s: Invalid negotiation type: %d", __func__, neg_type);
 		break;
 	}
 
@@ -330,8 +322,7 @@ static enum wifi_twt_setup_cmd twt_rpu_to_wifi_mgmt_setup_cmd(signed int setup_c
 		wifi_setup_cmd = WIFI_TWT_SETUP_CMD_REJECT;
 		break;
 	default:
-		LOG_ERR("%s: Invalid setup command: %d",
-			__func__, setup_cmd);
+		LOG_ERROR("%s: Invalid setup command: %d", __func__, setup_cmd);
 		break;
 	}
 
@@ -368,8 +359,7 @@ static signed int twt_wifi_mgmt_to_rpu_setup_cmd(enum wifi_twt_setup_cmd setup_c
 		rpu_setup_cmd = NRF_WIFI_REJECT_TWT;
 		break;
 	default:
-		LOG_ERR("%s: Invalid setup command: %d",
-			__func__, setup_cmd);
+		LOG_ERROR("%s: Invalid setup command: %d", __func__, setup_cmd);
 		break;
 	}
 
@@ -443,14 +433,14 @@ int nrf_wifi_twt_teardown_flows(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep,
 	struct wifi_twt_params twt_params = {0};
 
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -469,8 +459,7 @@ int nrf_wifi_twt_teardown_flows(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep,
 						vif_ctx_zep->vif_idx,
 						&twt_info);
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
-			LOG_ERR("%s: TWT teardown for flow id %d failed",
-				__func__, flow_id);
+			LOG_ERROR("%s: TWT teardown for flow id %d failed", __func__, flow_id);
 			ret = -1;
 			continue;
 		}
@@ -498,21 +487,21 @@ int nrf_wifi_set_twt(const struct device *dev,
 	int ret = -1;
 
 	if (!dev || !twt_params) {
-		LOG_ERR("%s: dev or twt_params is NULL", __func__);
+		LOG_ERROR("%s: dev or twt_params is NULL", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = dev->data;
 
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -523,9 +512,8 @@ int nrf_wifi_set_twt(const struct device *dev,
 	}
 
 	if (!(twt_params->operation == WIFI_TWT_TEARDOWN && twt_params->teardown.teardown_all) &&
-		twt_params->flow_id >= WIFI_MAX_TWT_FLOWS) {
-		LOG_ERR("%s: Invalid flow id: %d",
-			__func__, twt_params->flow_id);
+	    twt_params->flow_id >= WIFI_MAX_TWT_FLOWS) {
+		LOG_ERROR("%s: Invalid flow id: %d", __func__, twt_params->flow_id);
 		twt_params->fail_reason = WIFI_TWT_FAIL_INVALID_FLOW_ID;
 		goto out;
 	}
@@ -589,20 +577,20 @@ int nrf_wifi_set_twt(const struct device *dev,
 						     start_flow_id,
 						     end_flow_id);
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
-			LOG_ERR("%s: TWT teardown failed: start_flow_id: %d, end_flow_id: %d",
-				__func__, start_flow_id, end_flow_id);
+			LOG_ERROR("%s: TWT teardown failed: start_flow_id: %d, end_flow_id: %d",
+				  __func__, start_flow_id, end_flow_id);
 			goto out;
 		}
 		break;
 
 	default:
-		LOG_ERR("Unknown TWT operation");
+		LOG_ERROR("Unknown TWT operation");
 		status = NRF_WIFI_STATUS_FAIL;
 		break;
 	}
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: Failed", __func__);
+		LOG_ERROR("%s: Failed", __func__);
 		goto out;
 	}
 
@@ -688,13 +676,13 @@ void nrf_wifi_event_proc_twt_sleep_zep(void *vif_ctx,
 	vif_ctx_zep = vif_ctx;
 
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		return;
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return;
 	}
 
@@ -709,7 +697,7 @@ void nrf_wifi_event_proc_twt_sleep_zep(void *vif_ctx,
 	sys_fpriv = wifi_fmac_priv(fmac_dev_ctx->fpriv);
 
 	if (!sleep_evnt) {
-		LOG_ERR("%s: sleep_evnt is NULL", __func__);
+		LOG_ERROR("%s: sleep_evnt is NULL", __func__);
 		return;
 	}
 
@@ -761,19 +749,19 @@ int nrf_wifi_mode(const struct device *dev,
 	int ret = -1;
 
 	if (!dev || !mode) {
-		LOG_ERR("%s: illegal input parameters", __func__);
+		LOG_ERROR("%s: illegal input parameters", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = dev->data;
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -787,15 +775,14 @@ int nrf_wifi_mode(const struct device *dev,
 	sys_dev_ctx = wifi_dev_priv(fmac_dev_ctx);
 
 	if (!device_is_ready(dev)) {
-		LOG_ERR("%s: Device %s is not ready",
-			__func__, dev->name);
+		LOG_ERROR("%s: Device %s is not ready", __func__, dev->name);
 		goto out;
 	}
 
 	if (mode->oper == WIFI_MGMT_SET) {
 		status = nrf_wifi_check_mode_validity(mode->mode);
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
-			LOG_ERR("%s: mode setting is not valid", __func__);
+			LOG_ERROR("%s: mode setting is not valid", __func__);
 			goto out;
 		}
 
@@ -805,9 +792,9 @@ int nrf_wifi_mode(const struct device *dev,
 				continue;
 			}
 			if (peer->authorized && (mode->mode == NRF_WIFI_MONITOR_MODE)) {
-				LOG_ERR("%s: Cannot set monitor mode when station is connected",
-					__func__);
-					goto out;
+				LOG_ERROR("%s: Cannot set monitor mode when station is connected",
+					  __func__);
+				goto out;
 			}
 		}
 
@@ -821,7 +808,7 @@ int nrf_wifi_mode(const struct device *dev,
 						    vif_ctx_zep->vif_idx,
 						    mode->mode);
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
-			LOG_ERR("%s: mode set operation failed", __func__);
+			LOG_ERROR("%s: mode set operation failed", __func__);
 			goto out;
 		}
 
@@ -863,19 +850,19 @@ int nrf_wifi_channel(const struct device *dev,
 	int ret = -1;
 
 	if (!dev || !channel) {
-		LOG_ERR("%s: illegal input parameters", __func__);
+		LOG_ERROR("%s: illegal input parameters", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = dev->data;
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -894,8 +881,8 @@ int nrf_wifi_channel(const struct device *dev,
 			continue;
 		}
 		if (peer->authorized) {
-			LOG_ERR("%s: Cannot change channel when in station connected mode",
-				__func__);
+			LOG_ERROR("%s: Cannot change channel when in station connected mode",
+				  __func__);
 			return ret;
 		}
 	}
@@ -912,7 +899,7 @@ int nrf_wifi_channel(const struct device *dev,
 						       channel->channel);
 
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
-			LOG_ERR("%s: set channel failed", __func__);
+			LOG_ERROR("%s: set channel failed", __func__);
 			goto out;
 		}
 	} else {
@@ -937,13 +924,13 @@ int nrf_wifi_filter(const struct device *dev,
 	int ret = -1;
 
 	if (!dev || !filter) {
-		LOG_ERR("%s: Illegal input parameters", __func__);
+		LOG_ERROR("%s: Illegal input parameters", __func__);
 		goto out;
 	}
 
 	vif_ctx_zep = dev->data;
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL\n", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL\n", __func__);
 		goto out;
 	}
 
@@ -994,7 +981,7 @@ int nrf_wifi_filter(const struct device *dev,
 							     vif_ctx_zep->vif_idx,
 							     filter->buffer_size);
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
-			LOG_ERR("%s: Set filter operation failed\n", __func__);
+			LOG_ERROR("%s: Set filter operation failed\n", __func__);
 			goto out;
 		}
 	} else {
@@ -1016,27 +1003,27 @@ int nrf_wifi_set_rts_threshold(const struct device *dev,
 	int ret = -1;
 
 	if (!dev) {
-		LOG_ERR("%s: dev is NULL", __func__);
+		LOG_ERROR("%s: dev is NULL", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = dev->data;
 
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
 
 	if (!rpu_ctx_zep->rpu_ctx) {
-		LOG_ERR("%s: RPU context not initialized", __func__);
+		LOG_ERROR("%s: RPU context not initialized", __func__);
 		return ret;
 	}
 
@@ -1045,7 +1032,7 @@ int nrf_wifi_set_rts_threshold(const struct device *dev,
 		 * For RTS off, -1 is passed to f/w.
 		 * All other negative values considered as invalid.
 		 */
-		LOG_ERR("%s: Invalid threshold value : %d", __func__, (int)rts_threshold);
+		LOG_ERROR("%s: Invalid threshold value : %d", __func__, (int)rts_threshold);
 		return ret;
 	}
 
@@ -1060,7 +1047,7 @@ int nrf_wifi_set_rts_threshold(const struct device *dev,
 						&wiphy_info);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: Configuring rts threshold failed\n", __func__);
+		LOG_ERROR("%s: Configuring rts threshold failed\n", __func__);
 		goto out;
 	}
 
@@ -1080,13 +1067,13 @@ int nrf_wifi_get_rts_threshold(const struct device *dev,
 	int ret = -1;
 
 	if (!dev) {
-		LOG_ERR("%s: dev is NULL", __func__);
+		LOG_ERROR("%s: dev is NULL", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = dev->data;
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
@@ -1104,27 +1091,27 @@ int nrf_wifi_set_bss_max_idle_period(const struct device *dev,
 	int ret = -1;
 
 	if (!dev) {
-		LOG_ERR("%s: dev is NULL", __func__);
+		LOG_ERROR("%s: dev is NULL", __func__);
 		return ret;
 	}
 
 	vif_ctx_zep = dev->data;
 
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return ret;
 	}
 
 
 	if (!rpu_ctx_zep->rpu_ctx) {
-		LOG_ERR("%s: RPU context not initialized", __func__);
+		LOG_ERROR("%s: RPU context not initialized", __func__);
 		return ret;
 	}
 
@@ -1132,7 +1119,7 @@ int nrf_wifi_set_bss_max_idle_period(const struct device *dev,
 		/* 0 or value less than 64000 is passed to f/w.
 		 * All other values considered as invalid.
 		 */
-		LOG_ERR("%s: Invalid max_idle_period value : %d", __func__, bss_max_idle_period);
+		LOG_ERROR("%s: Invalid max_idle_period value : %d", __func__, bss_max_idle_period);
 		return ret;
 	}
 

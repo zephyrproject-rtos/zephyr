@@ -387,7 +387,7 @@ static void litex_clk_check_DO(char *reg_name, uint8_t clk_reg_addr,
 
 	ret = litex_clk_get_DO(clk_reg_addr, res);
 	if (ret != 0) {
-		LOG_ERR("%s: read error: %d", reg_name, ret);
+		LOG_ERROR("%s: read error: %d", reg_name, ret);
 	} else {
 		LOG_DBG("%s:  0x%x", reg_name, *res);
 	}
@@ -976,13 +976,12 @@ static int litex_clk_set_duty_cycle(struct litex_clk_clkout *lcko,
 			lcko->id, duty->num, duty->den);
 		ret = litex_clk_calc_duty_normal(lcko, true);
 		if (ret != 0) {
-			LOG_ERR("CLKOUT%d: cannot set %d%% duty cycle",
-				clkout_nr, high_duty);
+			LOG_ERROR("CLKOUT%d: cannot set %d%% duty cycle", clkout_nr, high_duty);
 			return ret;
 		}
 	} else {
-		LOG_ERR("CLKOUT%d: cannot set duty cycle when fractional divider enabled",
-								     clkout_nr);
+		LOG_ERROR("CLKOUT%d: cannot set duty cycle when fractional divider enabled",
+			  clkout_nr);
 		return -EACCES;
 	}
 
@@ -1179,8 +1178,7 @@ int litex_clk_set_phase(struct litex_clk_clkout *lcko, int degrees)
 
 	ret = litex_clk_calc_phase(lcko);
 	if (ret != 0) {
-		LOG_ERR("CLKOUT%d: phase offset %d deg is too high",
-			 clkout_nr, degrees);
+		LOG_ERROR("CLKOUT%d: phase offset %d deg is too high", clkout_nr, degrees);
 		return ret;
 	}
 
@@ -1330,7 +1328,7 @@ static int litex_clk_calc_all_params(void)
 			}
 		}
 	}
-	LOG_ERR("Cannot find correct settings for all clock outputs!");
+	LOG_ERROR("Cannot find correct settings for all clock outputs!");
 	return -ENOTSUP;
 }
 
@@ -1612,14 +1610,14 @@ static int litex_clk_dts_timeout_read(struct litex_clk_timeout *timeout)
 	/* Read wait_lock timeout from device property*/
 	timeout->lock = LOCK_TIMEOUT;
 	if (timeout->lock < 1) {
-		LOG_ERR("LiteX CLK driver cannot wait shorter than ca. 1ms\n");
+		LOG_ERROR("LiteX CLK driver cannot wait shorter than ca. 1ms\n");
 		return -EINVAL;
 	}
 
 	/* Read wait_drdy timeout from device property*/
 	timeout->drdy = DRDY_TIMEOUT;
 	if (timeout->drdy < 1) {
-		LOG_ERR("LiteX CLK driver cannot wait shorter than ca. 1ms\n");
+		LOG_ERROR("LiteX CLK driver cannot wait shorter than ca. 1ms\n");
 		return -EINVAL;
 	}
 
@@ -1696,7 +1694,7 @@ static int litex_clk_dts_global_read(void)
 	clkouts = k_malloc(sizeof(struct litex_clk_clkout) * ldev->nclkout);
 	ldev->update_clkout = k_malloc(sizeof(uint8_t) * ldev->nclkout);
 	if (!clkouts || !ldev->update_clkout) {
-		LOG_ERR("CLKOUT memory allocation failure!");
+		LOG_ERROR("CLKOUT memory allocation failure!");
 		return -ENOMEM;
 	}
 	ldev->clkouts = clkouts;
@@ -1718,7 +1716,7 @@ static int litex_clk_init_glob_clk(void)
 	/* Power on MMCM module */
 	ret = litex_clk_change_value(FULL_REG_16, FULL_REG_16, POWER_REG);
 	if (ret != 0) {
-		LOG_ERR("MMCM initialization failure, ret: %d", ret);
+		LOG_ERROR("MMCM initialization failure, ret: %d", ret);
 		return ret;
 	}
 

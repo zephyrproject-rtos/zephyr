@@ -259,7 +259,7 @@ static int adc_max2253x_channel_setup(const struct device *dev,
 				      const struct adc_channel_cfg *channel_cfg)
 {
 	if (channel_cfg->channel_id >= MAX2253X_CH_COUNT) {
-		LOG_ERR("Invalid channel %d", channel_cfg->channel_id);
+		LOG_ERROR("Invalid channel %d", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
@@ -268,22 +268,22 @@ static int adc_max2253x_channel_setup(const struct device *dev,
 	 */
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("only x1 gain is supported");
+		LOG_ERROR("only x1 gain is supported");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("only internal reference is supported");
+		LOG_ERROR("only internal reference is supported");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("only default acquisition time is supported");
+		LOG_ERROR("only default acquisition time is supported");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("differential channel not supported");
+		LOG_ERROR("differential channel not supported");
 		return -EINVAL;
 	}
 
@@ -316,13 +316,13 @@ static int adc_max2253x_start_read(const struct device *dev, const struct adc_se
 	int ret;
 
 	if (sequence->resolution != MAX2253X_RESOLUTION_BITS) {
-		LOG_ERR("invalid resolution %d", sequence->resolution);
+		LOG_ERROR("invalid resolution %d", sequence->resolution);
 		return -EINVAL;
 	}
 
 	ret = adc_max2253x_validate_buffer_size(dev, sequence);
 	if (ret < 0) {
-		LOG_ERR("insufficient buffer size");
+		LOG_ERROR("insufficient buffer size");
 		return ret;
 	}
 
@@ -533,7 +533,7 @@ static void max2253x_acquisition_thread(void *p1, void *p2, void *p3)
 
 		ret = max2253x_read_raw_adc(data->dev, adc_raw, ARRAY_SIZE(adc_raw));
 		if (ret) {
-			LOG_ERR("Failed to read raw samples (err %d)", ret);
+			LOG_ERROR("Failed to read raw samples (err %d)", ret);
 			adc_context_complete(&data->ctx, ret);
 			continue;
 		}
@@ -577,13 +577,13 @@ static int max2253x_configure_irq(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("INT GPIO not ready");
+		LOG_ERROR("INT GPIO not ready");
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("failed to configure INT GPIO (err %d)", ret);
+		LOG_ERROR("failed to configure INT GPIO (err %d)", ret);
 		return ret;
 	}
 
@@ -592,7 +592,7 @@ static int max2253x_configure_irq(const struct device *dev)
 
 	ret = gpio_add_callback_dt(&config->int_gpio, &data->int_callback);
 	if (ret < 0) {
-		LOG_ERR("failed to add INT GPIO callback (err %d)", ret);
+		LOG_ERROR("failed to add INT GPIO callback (err %d)", ret);
 		return ret;
 	}
 
@@ -600,7 +600,7 @@ static int max2253x_configure_irq(const struct device *dev)
 	ret = max2253x_update_reg(dev, MAX2253X_INTERRUPT_ENABLE, MAX2253X_INTERRUPT_ENABLE_EEOC,
 				  FIELD_PREP(MAX2253X_INTERRUPT_ENABLE_EEOC, 1));
 	if (ret < 0) {
-		LOG_ERR("Failed to enable EOC interrupt (err %d)", ret);
+		LOG_ERROR("Failed to enable EOC interrupt (err %d)", ret);
 		return ret;
 	}
 
@@ -615,7 +615,7 @@ static int max2253x_init(const struct device *dev)
 	int ret;
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI not ready");
+		LOG_ERROR("SPI not ready");
 		return -ENODEV;
 	}
 
@@ -634,14 +634,14 @@ static int max2253x_init(const struct device *dev)
 	ret = max2253x_update_reg(dev, MAX2253X_CONTROL, MAX2253X_CONTROL_SRES,
 				  FIELD_PREP(MAX2253X_CONTROL_SRES, 1));
 	if (ret < 0) {
-		LOG_ERR("Failed to reset device %s", dev->name);
+		LOG_ERROR("Failed to reset device %s", dev->name);
 		return ret;
 	}
 
 #if CONFIG_ADC_MAX2253X_STREAM
 	ret = max2253x_configure_irq(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure IRQ (err %d)", ret);
+		LOG_ERROR("Failed to configure IRQ (err %d)", ret);
 		return ret;
 	}
 #endif

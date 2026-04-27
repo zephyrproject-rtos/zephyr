@@ -123,13 +123,13 @@ static int large_update_put(struct coap_resource *resource,
 
 	r = coap_update_from_block(request, &ctx);
 	if (r < 0) {
-		LOG_ERR("Invalid block size option from request");
+		LOG_ERROR("Invalid block size option from request");
 		return -EINVAL;
 	}
 
 	payload = coap_packet_get_payload(request, &len);
 	if (!last_block && payload == NULL) {
-		LOG_ERR("Packet without payload");
+		LOG_ERROR("Packet without payload");
 		return -EINVAL;
 	}
 
@@ -163,7 +163,7 @@ static int large_update_put(struct coap_resource *resource,
 
 	r = coap_append_block1_option(&response, &ctx);
 	if (r < 0) {
-		LOG_ERR("Could not add Block1 option to response");
+		LOG_ERROR("Could not add Block1 option to response");
 		return r;
 	}
 
@@ -203,13 +203,13 @@ static int large_create_post(struct coap_resource *resource,
 
 	r = coap_update_from_block(request, &ctx);
 	if (r < 0) {
-		LOG_ERR("Invalid block size option from request");
+		LOG_ERROR("Invalid block size option from request");
 		return -EINVAL;
 	}
 
 	payload = coap_packet_get_payload(request, &len);
 	if (!last_block && payload) {
-		LOG_ERR("Packet without payload");
+		LOG_ERROR("Packet without payload");
 		return -EINVAL;
 	}
 
@@ -235,7 +235,7 @@ static int large_create_post(struct coap_resource *resource,
 
 	r = coap_append_block1_option(&response, &ctx);
 	if (r < 0) {
-		LOG_ERR("Could not add Block1 option to response");
+		LOG_ERROR("Could not add Block1 option to response");
 		return r;
 	}
 

@@ -24,7 +24,7 @@ K_SEM_DEFINE(my_sem, 0, 1);
 void log_msgs(void)
 {
 	/* standard print */
-	LOG_ERR("Error message example.");
+	LOG_ERROR("Error message example.");
 
 #if CONFIG_LOG_MODE_DEFERRED && !(CONFIG_LOG_CUSTOM_FORMAT_SUPPORT)
 	/*

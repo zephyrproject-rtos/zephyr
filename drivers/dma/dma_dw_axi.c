@@ -296,12 +296,12 @@ static void dma_dw_axi_isr(const struct device *dev)
 	status = sys_read64(reg_base + DMA_DW_AXI_INTSTATUSREG);
 	channel = find_lsb_set(status) - 1;
 	if (channel < 0) {
-		LOG_ERR("Spurious interrupt received channel:%u\n", channel);
+		LOG_ERROR("Spurious interrupt received channel:%u\n", channel);
 		return;
 	}
 
 	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
-		LOG_ERR("Interrupt received on invalid channel:%d\n", channel);
+		LOG_ERROR("Interrupt received on invalid channel:%d\n", channel);
 		return;
 	}
 
@@ -311,16 +311,15 @@ static void dma_dw_axi_isr(const struct device *dev)
 	/* get dma transfer status */
 	ch_status = sys_read64(reg_base + DMA_DW_AXI_CH_INTSTATUS(channel));
 	if (!ch_status) {
-		LOG_ERR("Spurious interrupt received ch_status:0x%llx\n", ch_status);
+		LOG_ERROR("Spurious interrupt received ch_status:0x%llx\n", ch_status);
 		return;
 	}
 
 	/* handle dma transfer errors if any */
 	if (ch_status & DMA_DW_AXI_IRQ_ALL_ERR) {
-		sys_write64(DMA_DW_AXI_IRQ_ALL_ERR,
-			reg_base + DMA_DW_AXI_CH_INTCLEARREG(channel));
-		LOG_ERR("DMA Error: Channel:%d Channel interrupt status:0x%llx\n",
-				channel, ch_status);
+		sys_write64(DMA_DW_AXI_IRQ_ALL_ERR, reg_base + DMA_DW_AXI_CH_INTCLEARREG(channel));
+		LOG_ERROR("DMA Error: Channel:%d Channel interrupt status:0x%llx\n", channel,
+			  ch_status);
 		ret_status = -(ch_status & DMA_DW_AXI_IRQ_ALL_ERR);
 	}
 
@@ -361,8 +360,9 @@ static int dma_dw_axi_set_data_width(struct dma_lli *lli_desc,
 				uint32_t src_data_width, uint32_t dest_data_width)
 {
 	if (src_data_width > CONFIG_DMA_DW_AXI_DATA_WIDTH ||
-			dest_data_width > CONFIG_DMA_DW_AXI_DATA_WIDTH) {
-		LOG_ERR("transfer width more than %u not supported", CONFIG_DMA_DW_AXI_DATA_WIDTH);
+	    dest_data_width > CONFIG_DMA_DW_AXI_DATA_WIDTH) {
+		LOG_ERROR("transfer width more than %u not supported",
+			  CONFIG_DMA_DW_AXI_DATA_WIDTH);
 		return -ENOTSUP;
 	}
 
@@ -396,7 +396,7 @@ static int dma_dw_axi_set_data_width(struct dma_lli *lli_desc,
 		lli_desc->ctl |= DMA_DW_AXI_CTL_SRC_WIDTH(BITS_512);
 		break;
 	default:
-		LOG_ERR("Source transfer width not supported");
+		LOG_ERROR("Source transfer width not supported");
 		return -ENOTSUP;
 	}
 
@@ -430,7 +430,7 @@ static int dma_dw_axi_set_data_width(struct dma_lli *lli_desc,
 		lli_desc->ctl |= DMA_DW_AXI_CTL_DST_WIDTH(BITS_512);
 		break;
 	default:
-		LOG_ERR("Destination transfer width not supported");
+		LOG_ERROR("Destination transfer width not supported");
 		return -ENOTSUP;
 	}
 
@@ -449,40 +449,40 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 
 	/* check for invalid parameters before dereferencing them. */
 	if (cfg == NULL) {
-		LOG_ERR("invalid dma config :%p", cfg);
+		LOG_ERROR("invalid dma config :%p", cfg);
 		return -ENODATA;
 	}
 
 	/* check if the channel is valid */
 	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
-		LOG_ERR("invalid dma channel %d", channel);
+		LOG_ERROR("invalid dma channel %d", channel);
 		return -EINVAL;
 	}
 
 	/* return if the channel is not idle */
 	ch_state = dma_dw_axi_get_ch_status(dev, channel);
 	if (ch_state != DMA_DW_AXI_CH_IDLE) {
-		LOG_ERR("DMA channel:%d is not idle(status:%d)", channel, ch_state);
+		LOG_ERROR("DMA channel:%d is not idle(status:%d)", channel, ch_state);
 		return -EBUSY;
 	}
 
 	if (!cfg->block_count) {
-		LOG_ERR("no blocks to transfer");
+		LOG_ERROR("no blocks to transfer");
 		return -EINVAL;
 	}
 
 	/* descriptor should be less than max configured descriptor */
 	if (cfg->block_count > CONFIG_DMA_DW_AXI_MAX_DESC) {
-		LOG_ERR("dma:%s channel %d descriptor block count: %d larger than"
-			" max descriptors in pool: %d", dev->name, channel,
-			cfg->block_count, CONFIG_DMA_DW_AXI_MAX_DESC);
+		LOG_ERROR("dma:%s channel %d descriptor block count: %d larger than"
+			  " max descriptors in pool: %d",
+			  dev->name, channel, cfg->block_count, CONFIG_DMA_DW_AXI_MAX_DESC);
 		return -EINVAL;
 	}
 
 	if (cfg->source_burst_length > CONFIG_DMA_DW_AXI_MAX_BURST_TXN_LEN ||
-			cfg->dest_burst_length > CONFIG_DMA_DW_AXI_MAX_BURST_TXN_LEN ||
-			cfg->source_burst_length == 0 || cfg->dest_burst_length == 0) {
-		LOG_ERR("dma:%s burst length not supported", dev->name);
+	    cfg->dest_burst_length > CONFIG_DMA_DW_AXI_MAX_BURST_TXN_LEN ||
+	    cfg->source_burst_length == 0 || cfg->dest_burst_length == 0) {
+		LOG_ERROR("dma:%s burst length not supported", dev->name);
 		return -ENOTSUP;
 	}
 
@@ -491,7 +491,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 
 	/* check if the channel is currently idle */
 	if (chan_data->ch_state != DMA_DW_AXI_CH_IDLE) {
-		LOG_ERR("DMA channel:%d is busy", channel);
+		LOG_ERROR("DMA channel:%d is busy", channel);
 		return -EBUSY;
 	}
 
@@ -536,8 +536,8 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 		/* set block transfer size*/
 		lli_desc->block_ts_lo = (blk_cfg->block_size / cfg->source_data_size) - 1;
 		if (lli_desc->block_ts_lo > CONFIG_DMA_DW_AXI_MAX_BLOCK_TS) {
-			LOG_ERR("block transfer size more than %u not supported",
-				CONFIG_DMA_DW_AXI_MAX_BLOCK_TS);
+			LOG_ERROR("block transfer size more than %u not supported",
+				  CONFIG_DMA_DW_AXI_MAX_BLOCK_TS);
 			return -ENOTSUP;
 		}
 
@@ -568,8 +568,8 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 			chan_data->cfg |= DMA_DW_AXI_CFG_SRC_PER(cfg->dma_slot);
 
 		} else {
-			LOG_ERR("%s: dma %s channel %d invalid direction %d",
-				__func__, dev->name, channel, cfg->channel_direction);
+			LOG_ERROR("%s: dma %s channel %d invalid direction %d", __func__, dev->name,
+				  channel, cfg->channel_direction);
 
 			return -EINVAL;
 		}
@@ -644,14 +644,14 @@ static int dma_dw_axi_start(const struct device *dev, uint32_t channel)
 
 	/* validate channel number */
 	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
-		LOG_ERR("invalid dma channel %d", channel);
+		LOG_ERROR("invalid dma channel %d", channel);
 		return -EINVAL;
 	}
 
 	/* check whether channel is idle before initiating DMA transfer */
 	ch_state = dma_dw_axi_get_ch_status(dev, channel);
 	if (ch_state != DMA_DW_AXI_CH_IDLE) {
-		LOG_ERR("DMA channel:%d is not idle", channel);
+		LOG_ERROR("DMA channel:%d is not idle", channel);
 		return -EBUSY;
 	}
 
@@ -659,7 +659,7 @@ static int dma_dw_axi_start(const struct device *dev, uint32_t channel)
 	chan_data = &dw_dev_data->chan[channel];
 
 	if (chan_data->ch_state != DMA_DW_AXI_CH_PREPARED) {
-		LOG_ERR("DMA descriptors not configured");
+		LOG_ERROR("DMA descriptors not configured");
 		return -EINVAL;
 	}
 
@@ -706,7 +706,7 @@ static int dma_dw_axi_stop(const struct device *dev, uint32_t channel)
 
 	/* channel should be valid */
 	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
-		LOG_ERR("invalid dma channel %d", channel);
+		LOG_ERROR("invalid dma channel %d", channel);
 		return -EINVAL;
 	}
 
@@ -740,7 +740,7 @@ static int dma_dw_axi_stop(const struct device *dev, uint32_t channel)
 				(BIT(channel)), CONFIG_DMA_CHANNEL_STATUS_TIMEOUT,
 				k_busy_wait(10));
 		if (is_channel_busy) {
-			LOG_ERR("Channel abort failed");
+			LOG_ERROR("Channel abort failed");
 			return -EBUSY;
 		}
 	}
@@ -757,7 +757,7 @@ static int dma_dw_axi_resume(const struct device *dev, uint32_t channel)
 
 	/* channel should be valid */
 	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
-		LOG_ERR("invalid dma channel %d", channel);
+		LOG_ERROR("invalid dma channel %d", channel);
 		return -EINVAL;
 	}
 
@@ -788,7 +788,7 @@ static int dma_dw_axi_suspend(const struct device *dev, uint32_t channel)
 
 	/* channel should be valid */
 	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
-		LOG_ERR("invalid dma channel %u", channel);
+		LOG_ERROR("invalid dma channel %u", channel);
 		return -EINVAL;
 	}
 
@@ -805,7 +805,7 @@ static int dma_dw_axi_suspend(const struct device *dev, uint32_t channel)
 			DMA_DW_AXI_CH_SUSPENDED, CONFIG_DMA_CHANNEL_STATUS_TIMEOUT,
 			k_busy_wait(10));
 	if (ret == 0) {
-		LOG_ERR("channel suspend failed");
+		LOG_ERROR("channel suspend failed");
 		return ret;
 	}
 
@@ -825,14 +825,14 @@ static int dma_dw_axi_init(const struct device *dev)
 	if (dw_dma_config->reset.dev != NULL) {
 	/* check if reset manager is in ready state */
 		if (!device_is_ready(dw_dma_config->reset.dev)) {
-			LOG_ERR("reset controller device not found");
+			LOG_ERROR("reset controller device not found");
 			return -ENODEV;
 		}
 
 		/* assert and de-assert dma controller */
 		ret = reset_line_toggle(dw_dma_config->reset.dev, dw_dma_config->reset.id);
 		if (ret != 0) {
-			LOG_ERR("failed to reset dma controller");
+			LOG_ERROR("failed to reset dma controller");
 			return ret;
 		}
 	}

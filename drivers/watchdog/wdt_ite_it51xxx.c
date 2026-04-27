@@ -124,17 +124,17 @@ static int wdt_it51xxx_setup(const struct device *dev, uint8_t options)
 	irq_disable(DT_INST_IRQN(0));
 
 	if (!data->timeout_installed) {
-		LOG_ERR("No valid WDT timeout installed");
+		LOG_ERROR("No valid WDT timeout installed");
 		return -EINVAL;
 	}
 
 	if (it51xxx_watchdog_is_enabled(dev)) {
-		LOG_ERR("WDT is already running");
+		LOG_ERROR("WDT is already running");
 		return -EBUSY;
 	}
 
 	if ((options & WDT_OPT_PAUSE_IN_SLEEP) != 0) {
-		LOG_ERR("WDT_OPT_PAUSE_IN_SLEEP is not supported");
+		LOG_ERROR("WDT_OPT_PAUSE_IN_SLEEP is not supported");
 		return -ENOTSUP;
 	}
 

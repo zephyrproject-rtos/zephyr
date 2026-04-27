@@ -245,7 +245,7 @@ static int rpi_pico_prep_rx(const struct device *dev,
 
 	buf_ctrl = read_buf_ctrl_reg(dev, cfg->addr);
 	if (buf_ctrl & USB_BUF_CTRL_AVAIL) {
-		LOG_ERR("ep 0x%02x buffer is used by the controller", cfg->addr);
+		LOG_ERROR("ep 0x%02x buffer is used by the controller", cfg->addr);
 		return -EBUSY;
 	}
 
@@ -283,7 +283,7 @@ static int rpi_pico_prep_tx(const struct device *dev,
 
 	buf_ctrl = read_buf_ctrl_reg(dev, cfg->addr);
 	if (buf_ctrl & USB_BUF_CTRL_AVAIL) {
-		LOG_ERR("ep 0x%02x buffer is used by the controller", cfg->addr);
+		LOG_ERROR("ep 0x%02x buffer is used by the controller", cfg->addr);
 		return -EBUSY;
 	}
 
@@ -322,7 +322,7 @@ static inline int rpi_pico_handle_evt_dout(const struct device *dev,
 
 	buf = udc_buf_get(cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer for OUT ep 0x%02x", cfg->addr);
+		LOG_ERROR("No buffer for OUT ep 0x%02x", cfg->addr);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return -ENODATA;
 	}
@@ -339,7 +339,7 @@ static int rpi_pico_handle_evt_din(const struct device *dev,
 
 	buf = udc_buf_peek(cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer for ep 0x%02x", cfg->addr);
+		LOG_ERROR("No buffer for ep 0x%02x", cfg->addr);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return -ENOBUFS;
 	}
@@ -418,7 +418,7 @@ static ALWAYS_INLINE void rpi_pico_thread_handler(void *const arg)
 			if (!udc_ep_is_busy(ep_cfg)) {
 				rpi_pico_handle_xfer_next(dev, ep_cfg);
 			} else {
-				LOG_ERR("Endpoint 0x%02x busy", ep);
+				LOG_ERROR("Endpoint 0x%02x busy", ep);
 			}
 		}
 	}
@@ -436,7 +436,7 @@ static ALWAYS_INLINE void rpi_pico_thread_handler(void *const arg)
 			if (!udc_ep_is_busy(ep_cfg)) {
 				rpi_pico_handle_xfer_next(dev, ep_cfg);
 			} else {
-				LOG_ERR("Endpoint 0x%02x busy", ep);
+				LOG_ERROR("Endpoint 0x%02x busy", ep);
 			}
 		}
 	}
@@ -482,7 +482,7 @@ static void rpi_pico_handle_buff_status_in(const struct device *dev, const uint8
 
 	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer for ep 0x%02x", ep);
+		LOG_ERROR("No buffer for ep 0x%02x", ep);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return;
 	}
@@ -515,7 +515,7 @@ static void rpi_pico_handle_buff_status_out(const struct device *dev, const uint
 
 	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer for ep 0x%02x", ep);
+		LOG_ERROR("No buffer for ep 0x%02x", ep);
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return;
 	}
@@ -663,7 +663,7 @@ static void rpi_pico_isr_handler(const struct device *dev)
 		handled |= USB_INTS_ERROR_RX_TIMEOUT_BITS;
 		sie_status_clr(dev, USB_SIE_STATUS_RX_TIMEOUT_BITS);
 
-		LOG_ERR("RX timeout");
+		LOG_ERROR("RX timeout");
 		udc_submit_event(dev, UDC_EVT_ERROR, -EINVAL);
 	}
 
@@ -671,7 +671,7 @@ static void rpi_pico_isr_handler(const struct device *dev)
 		sie_status_clr(dev, USB_SIE_STATUS_RX_OVERFLOW_BITS);
 		handled |= USB_INTS_ERROR_RX_OVERFLOW_BITS;
 
-		LOG_ERR("RX overflow");
+		LOG_ERROR("RX overflow");
 		udc_submit_event(dev, UDC_EVT_ERROR, -EINVAL);
 	}
 
@@ -679,7 +679,7 @@ static void rpi_pico_isr_handler(const struct device *dev)
 		handled |= USB_INTS_ERROR_BIT_STUFF_BITS;
 		sie_status_clr(dev, USB_SIE_STATUS_BIT_STUFF_ERROR_BITS);
 
-		LOG_ERR("Bit Stuff Error");
+		LOG_ERROR("Bit Stuff Error");
 		udc_submit_event(dev, UDC_EVT_ERROR, -EINVAL);
 	}
 
@@ -687,7 +687,7 @@ static void rpi_pico_isr_handler(const struct device *dev)
 		handled |= USB_INTS_ERROR_CRC_BITS;
 		sie_status_clr(dev, USB_SIE_STATUS_CRC_ERROR_BITS);
 
-		LOG_ERR("CRC Error");
+		LOG_ERROR("CRC Error");
 		udc_submit_event(dev, UDC_EVT_ERROR, -EINVAL);
 	}
 
@@ -710,7 +710,7 @@ static void rpi_pico_isr_handler(const struct device *dev)
 	}
 
 	if (status ^ handled) {
-		LOG_ERR("Unhandled IRQ: 0x%x", status ^ handled);
+		LOG_ERROR("Unhandled IRQ: 0x%x", status ^ handled);
 	}
 }
 
@@ -765,8 +765,8 @@ static int udc_rpi_pico_ep_enable(const struct device *dev,
 
 		err = sys_mem_blocks_alloc(config->mem_block, blocks, &ep_data->buf);
 		if (err != 0) {
-			LOG_ERR("Failed to allocate %zu memory blocks for ep 0x%02x",
-				cfg->addr, blocks);
+			LOG_ERROR("Failed to allocate %zu memory blocks for ep 0x%02x", cfg->addr,
+				  blocks);
 			return err;
 		}
 
@@ -796,7 +796,7 @@ static int udc_rpi_pico_ep_disable(const struct device *dev,
 		write_ep_ctrl_reg(dev, cfg->addr, 0UL);
 		err = sys_mem_blocks_free(config->mem_block, blocks, &ep_data->buf);
 		if (err != 0) {
-			LOG_ERR("Failed to free memory blocks");
+			LOG_ERROR("Failed to free memory blocks");
 			return err;
 		}
 	}
@@ -938,15 +938,13 @@ static int udc_rpi_pico_enable(const struct device *dev)
 			    USB_USB_PWR_VBUS_DETECT_OVERRIDE_EN_BITS, (mm_reg_t)&base->pwr);
 	}
 
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL, 64, 0)) {
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL, 64, 0)) {
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
@@ -989,12 +987,12 @@ static int udc_rpi_pico_disable(const struct device *dev)
 	const struct rpi_pico_config *config = dev->config;
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
@@ -1013,7 +1011,7 @@ static int udc_rpi_pico_init(const struct device *dev)
 	if (pcfg != NULL) {
 		err = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
 		if (err) {
-			LOG_ERR("Failed to apply default pinctrl state (%d)", err);
+			LOG_ERROR("Failed to apply default pinctrl state (%d)", err);
 			return err;
 		}
 	}
@@ -1059,7 +1057,7 @@ static int udc_rpi_pico_driver_preinit(const struct device *dev)
 		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
 		err = udc_register_ep(dev, &config->ep_cfg_out[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}
@@ -1079,7 +1077,7 @@ static int udc_rpi_pico_driver_preinit(const struct device *dev)
 		config->ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
 		err = udc_register_ep(dev, &config->ep_cfg_in[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}

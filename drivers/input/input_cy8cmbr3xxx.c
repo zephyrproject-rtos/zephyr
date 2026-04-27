@@ -224,7 +224,7 @@ static int cy8cmbr3xxx_wait_for_command_completion(const struct device *dev, k_t
 		k_msleep(1);
 	} while (!sys_timepoint_expired(end));
 
-	LOG_ERR("Wait for command completion timed out");
+	LOG_ERROR("Wait for command completion timed out");
 
 	return -ETIMEDOUT;
 }
@@ -242,7 +242,7 @@ int cy8cmbr3xxx_configure(const struct device *dev, const struct cy8cmbr3xxx_con
 	/* Read the complete configuration */
 	ret = cy8cmbr3xxx_i2c_read(dev, CY8CMBR3XXX_SENSOR_EN, read_config, sizeof(read_config));
 	if (ret < 0) {
-		LOG_ERR("Failed to read i2c (%d)", ret);
+		LOG_ERROR("Failed to read i2c (%d)", ret);
 		return ret;
 	}
 
@@ -253,7 +253,7 @@ int cy8cmbr3xxx_configure(const struct device *dev, const struct cy8cmbr3xxx_con
 	/* Write the complete configuration of 128 bytes to the CY8CMBR3XXX controller */
 	ret = cy8cmbr3xxx_i2c_write(dev, CY8CMBR3XXX_SENSOR_EN, config->data, sizeof(config->data));
 	if (ret < 0) {
-		LOG_ERR("Failed to write i2c (%d)", ret);
+		LOG_ERROR("Failed to write i2c (%d)", ret);
 		return ret;
 	}
 
@@ -265,14 +265,14 @@ int cy8cmbr3xxx_configure(const struct device *dev, const struct cy8cmbr3xxx_con
 	command = CY8CMBR3XXX_CTRL_CMD_CALC_CRC;
 	ret = cy8cmbr3xxx_i2c_write(dev, CY8CMBR3XXX_CTRL_CMD, &command, 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to write i2c (%d)", ret);
+		LOG_ERROR("Failed to write i2c (%d)", ret);
 		return ret;
 	}
 
 	/* 600ms seems to be sufficient */
 	ret = cy8cmbr3xxx_wait_for_command_completion(dev, K_MSEC(600));
 	if (ret < 0) {
-		LOG_ERR("Failed to wait for command completion (%d)", ret);
+		LOG_ERROR("Failed to wait for command completion (%d)", ret);
 		return ret;
 	}
 
@@ -280,13 +280,13 @@ int cy8cmbr3xxx_configure(const struct device *dev, const struct cy8cmbr3xxx_con
 	command = CY8CMBR3XXX_CTRL_CMD_RESET;
 	ret = cy8cmbr3xxx_i2c_write(dev, CY8CMBR3XXX_CTRL_CMD, &command, 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to write i2c (%d)", ret);
+		LOG_ERROR("Failed to write i2c (%d)", ret);
 		return ret;
 	}
 
 	ret = cy8cmbr3xxx_wait_for_command_completion(dev, K_MSEC(50));
 	if (ret < 0) {
-		LOG_ERR("Failed to wait for command completion (%d)", ret);
+		LOG_ERROR("Failed to wait for command completion (%d)", ret);
 		return ret;
 	}
 
@@ -304,7 +304,7 @@ static int cy8cmbr3xxx_process(const struct device *dev)
 	/* Request button status */
 	ret = cy8cmbr3xxx_i2c_read(dev, CY8CMBR3XXX_BUTTON_STAT, &button_state, sizeof(uint16_t));
 	if (ret < 0) {
-		LOG_ERR("Failed to read button status (%d)", ret);
+		LOG_ERROR("Failed to read button status (%d)", ret);
 		return ret;
 	}
 
@@ -322,7 +322,7 @@ static int cy8cmbr3xxx_process(const struct device *dev)
 		ret = cy8cmbr3xxx_i2c_read(dev, CY8CMBR3XXX_PROX_STAT, &proximity_state,
 					   sizeof(uint8_t));
 		if (ret < 0) {
-			LOG_ERR("Failed to read proximity status (%d)", ret);
+			LOG_ERROR("Failed to read proximity status (%d)", ret);
 			return ret;
 		}
 
@@ -366,7 +366,7 @@ static void cy8cmbr3xxx_reset(const struct device *dev)
 
 	ret = gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Could not configure reset GPIO pin (%d)", ret);
+		LOG_ERROR("Could not configure reset GPIO pin (%d)", ret);
 		return;
 	}
 
@@ -374,7 +374,7 @@ static void cy8cmbr3xxx_reset(const struct device *dev)
 
 	ret = gpio_pin_set_dt(&config->rst_gpio, 0);
 	if (ret < 0) {
-		LOG_ERR("Could not set reset GPIO pin (%d)", ret);
+		LOG_ERROR("Could not set reset GPIO pin (%d)", ret);
 		return;
 	}
 }
@@ -403,13 +403,13 @@ static int cy8cmbr3xxx_init(const struct device *dev)
 
 	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Could not configure interrupt GPIO pin (%d)", ret);
+		LOG_ERROR("Could not configure interrupt GPIO pin (%d)", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Could not configure GPIO interrupt (%d)", ret);
+		LOG_ERROR("Could not configure GPIO interrupt (%d)", ret);
 		return ret;
 	}
 
@@ -417,7 +417,7 @@ static int cy8cmbr3xxx_init(const struct device *dev)
 
 	ret = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
 	if (ret < 0) {
-		LOG_ERR("Could not set gpio callback (%d)", ret);
+		LOG_ERROR("Could not set gpio callback (%d)", ret);
 		return ret;
 	}
 

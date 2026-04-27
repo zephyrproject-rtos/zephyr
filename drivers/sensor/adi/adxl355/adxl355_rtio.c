@@ -27,7 +27,7 @@ static void adxl355_submit_fetch(struct rtio_iodev_sqe *iodev_sqe)
 
 	rc = rtio_sqe_rx_buf(iodev_sqe, min_buffer_len, min_buffer_len, &buffer, &buffer_len);
 	if (rc != 0) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buffer_len);
+		LOG_ERROR("Failed to get a read buffer of size %u bytes", min_buffer_len);
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}

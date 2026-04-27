@@ -226,8 +226,8 @@ static ALWAYS_INLINE int nds_l2_cache_init(uint8_t line_size)
 			return 0;
 		}
 	} else {
-		LOG_ERR("Andes cache driver should be initialized after "
-			"syscon driver initialization");
+		LOG_ERROR("Andes cache driver should be initialized after "
+			  "syscon driver initialization");
 		return 0;
 	}
 #endif /* andestech_atcsmu100 dts node status okay */

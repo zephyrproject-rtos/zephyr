@@ -82,8 +82,7 @@ static int start_tcp_proto(struct data *data,
 				IPPROTO_TCP);
 #endif
 	if (data->tcp.sock < 0) {
-		LOG_ERR("Failed to create TCP socket (%s): %d", data->proto,
-			errno);
+		LOG_ERROR("Failed to create TCP socket (%s): %d", data->proto, errno);
 		return -errno;
 	}
 
@@ -98,8 +97,7 @@ static int start_tcp_proto(struct data *data,
 	ret = setsockopt(data->tcp.sock, SOL_TLS, TLS_SEC_TAG_LIST,
 			 sec_tag_list, sizeof(sec_tag_list));
 	if (ret < 0) {
-		LOG_ERR("Failed to set TCP secure option (%s): %d", data->proto,
-			errno);
+		LOG_ERROR("Failed to set TCP secure option (%s): %d", data->proto, errno);
 		ret = -errno;
 	}
 #endif
@@ -122,15 +120,13 @@ static int start_tcp_proto(struct data *data,
 
 	ret = bind(data->tcp.sock, bind_addr, bind_addrlen);
 	if (ret < 0) {
-		LOG_ERR("Failed to bind TCP socket (%s): %d", data->proto,
-			errno);
+		LOG_ERROR("Failed to bind TCP socket (%s): %d", data->proto, errno);
 		return -errno;
 	}
 
 	ret = listen(data->tcp.sock, MAX_CLIENT_QUEUE);
 	if (ret < 0) {
-		LOG_ERR("Failed to listen on TCP socket (%s): %d",
-			data->proto, errno);
+		LOG_ERROR("Failed to listen on TCP socket (%s): %d", data->proto, errno);
 		ret = -errno;
 	}
 
@@ -161,8 +157,7 @@ static void handle_data(void *ptr1, void *ptr2, void *ptr3)
 			break;
 		} else if (received < 0) {
 			/* Socket error */
-			LOG_ERR("TCP (%s): Connection error %d", data->proto,
-				errno);
+			LOG_ERROR("TCP (%s): Connection error %d", data->proto, errno);
 			break;
 		} else {
 			atomic_add(&data->tcp.bytes_received, received);
@@ -186,8 +181,9 @@ static void handle_data(void *ptr1, void *ptr2, void *ptr3)
 				      data->tcp.accepted[slot].recv_buffer,
 				      offset);
 			if (ret < 0) {
-				LOG_ERR("TCP (%s): Failed to send, "
-					"closing socket", data->proto);
+				LOG_ERROR("TCP (%s): Failed to send, "
+					  "closing socket",
+					  data->proto);
 				break;
 			}
 
@@ -238,13 +234,13 @@ static int process_tcp(struct data *data)
 	client = accept(data->tcp.sock, (struct sockaddr *)&client_addr,
 			&client_addr_len);
 	if (client < 0) {
-		LOG_ERR("%s accept error (%d)", data->proto, -errno);
+		LOG_ERROR("%s accept error (%d)", data->proto, -errno);
 		return -errno;
 	}
 
 	slot = get_free_slot(data);
 	if (slot < 0) {
-		LOG_ERR("Cannot accept more connections");
+		LOG_ERROR("Cannot accept more connections");
 		close(client);
 		return 0;
 	}

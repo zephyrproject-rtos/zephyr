@@ -45,16 +45,15 @@ static int perform_reg_ops(const struct device *dev, const struct reg_val_pair *
 		}
 
 		if (err) {
-			LOG_ERR("Failed op: %s, idx: %d, reg: 0x%02X, val: 0x%02X",
-				op.op_read ? "read" : "write", i,
-				op.reg, op.val);
+			LOG_ERROR("Failed op: %s, idx: %d, reg: 0x%02X, val: 0x%02X",
+				  op.op_read ? "read" : "write", i, op.reg, op.val);
 			return err;
 		}
 
 		if (op.handler) {
 			err = op.handler(dev, &op);
 			if (err) {
-				LOG_ERR("Failed to handle op: %d", err);
+				LOG_ERROR("Failed to handle op: %d", err);
 				return err;
 			}
 		}
@@ -105,7 +104,7 @@ static void pat9136_submit_one_shot(const struct device *dev, struct rtio_iodev_
 
 	err = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
 	CHECKIF(err) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
+		LOG_ERROR("Failed to get a read buffer of size %u bytes", min_buf_len);
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -114,7 +113,7 @@ static void pat9136_submit_one_shot(const struct device *dev, struct rtio_iodev_
 
 	err = pat9136_encode(dev, channels, num_channels, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to encode sensor data");
+		LOG_ERROR("Failed to encode sensor data");
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -123,7 +122,7 @@ static void pat9136_submit_one_shot(const struct device *dev, struct rtio_iodev_
 	struct rtio_sqe *read_sqe = rtio_sqe_acquire(data->rtio.ctx);
 
 	CHECKIF(!write_sqe || !read_sqe) {
-		LOG_ERR("Failed to acquire RTIO SQEs");
+		LOG_ERROR("Failed to acquire RTIO SQEs");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}
@@ -155,7 +154,7 @@ static void pat9136_submit_one_shot(const struct device *dev, struct rtio_iodev_
 		struct rtio_sqe *res_read_sqe = rtio_sqe_acquire(data->rtio.ctx);
 
 		CHECKIF(!res_write_sqe || !res_read_sqe) {
-			LOG_ERR("Failed to acquire RTIO SQEs");
+			LOG_ERROR("Failed to acquire RTIO SQEs");
 			rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 			return;
 		}
@@ -182,7 +181,7 @@ static void pat9136_submit_one_shot(const struct device *dev, struct rtio_iodev_
 	struct rtio_sqe *cb_sqe = rtio_sqe_acquire(data->rtio.ctx);
 
 	CHECKIF(!cb_sqe) {
-		LOG_ERR("Failed to acquire RTIO SQEs");
+		LOG_ERROR("Failed to acquire RTIO SQEs");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}
@@ -205,7 +204,7 @@ static void pat9136_submit(const struct device *dev, struct rtio_iodev_sqe *iode
 	} else if (IS_ENABLED(CONFIG_PAT9136_STREAM)) {
 		pat9136_stream_submit(dev, iodev_sqe);
 	} else {
-		LOG_ERR("Streaming not supported");
+		LOG_ERROR("Streaming not supported");
 		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 	}
 }
@@ -341,7 +340,7 @@ static int pat9136_configure(const struct device *dev)
 	val = POWER_UP_RESET_VAL;
 	err = pat9136_bus_write(dev, REG_POWER_UP_RESET, &val, 1);
 	if (err) {
-		LOG_ERR("Failed to write Power up reset reg");
+		LOG_ERROR("Failed to write Power up reset reg");
 		return err;
 	}
 	k_sleep(K_MSEC(50));
@@ -353,14 +352,14 @@ static int pat9136_configure(const struct device *dev)
 		val = 0x00;
 		err = pat9136_bus_write(dev, REG_OBSERVATION, &val, 1);
 		if (err) {
-			LOG_ERR("Failed to read Product ID");
+			LOG_ERROR("Failed to read Product ID");
 			return err;
 		}
 		k_sleep(K_MSEC(1));
 
 		err = pat9136_bus_read(dev, REG_OBSERVATION, &val, 1);
 		if (err) {
-			LOG_ERR("Failed to read observation register");
+			LOG_ERROR("Failed to read observation register");
 			return err;
 		}
 		if (REG_OBSERVATION_READ_IS_VALID(val)) {
@@ -369,28 +368,28 @@ static int pat9136_configure(const struct device *dev)
 	} while (err == 0 && (retries-- > 0));
 
 	if (!REG_OBSERVATION_READ_IS_VALID(val)) {
-		LOG_ERR("Invalid observation register value: 0x%02X", val);
+		LOG_ERROR("Invalid observation register value: 0x%02X", val);
 		return -EIO;
 	}
 
 	/** Load performance optimization settings */
 	err = pat9136_init_sequence(dev);
 	if (err) {
-		LOG_ERR("Failed to init sequence");
+		LOG_ERROR("Failed to init sequence");
 		return err;
 	}
 
 	/* Set resolution */
 	err = pat9136_set_resolution(dev);
 	if (err) {
-		LOG_ERR("Failed to set resolution");
+		LOG_ERROR("Failed to set resolution");
 		return err;
 	}
 
 	/* Read reg's 0x02-0x06 to clear motion data. */
 	err = pat9136_bus_read(dev, REG_MOTION, motion_data, sizeof(motion_data));
 	if (err) {
-		LOG_ERR("Failed to read motion data");
+		LOG_ERROR("Failed to read motion data");
 		return err;
 	}
 
@@ -408,24 +407,24 @@ static int pat9136_init(const struct device *dev)
 	/* Read Product ID */
 	err = pat9136_bus_read(dev, REG_PRODUCT_ID, &val, 1);
 	if (err) {
-		LOG_ERR("Failed to read Product ID");
+		LOG_ERROR("Failed to read Product ID");
 		return err;
 	} else if (val != PRODUCT_ID) {
-		LOG_ERR("Invalid Product ID: 0x%02X", val);
+		LOG_ERROR("Invalid Product ID: 0x%02X", val);
 		return -EIO;
 	}
 
 	if (IS_ENABLED(CONFIG_PAT9136_STREAM)) {
 		err = pat9136_stream_init(dev);
 		if (err) {
-			LOG_ERR("Failed to initialize streaming");
+			LOG_ERROR("Failed to initialize streaming");
 			return err;
 		}
 	}
 
 	err = pat9136_configure(dev);
 	if (err) {
-		LOG_ERR("Failed to configure");
+		LOG_ERROR("Failed to configure");
 		return err;
 	}
 

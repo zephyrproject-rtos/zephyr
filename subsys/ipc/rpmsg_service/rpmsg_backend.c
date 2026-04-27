@@ -158,7 +158,7 @@ static void ipc_virtio_notify(struct virtqueue *vq)
 #endif
 
 	if (status != 0) {
-		LOG_ERR("ipm_send failed to notify: %d", status);
+		LOG_ERROR("ipm_send failed to notify: %d", status);
 	}
 }
 
@@ -214,7 +214,7 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 	/* Libmetal setup */
 	err = metal_init(&metal_params);
 	if (err) {
-		LOG_ERR("metal_init: failed - error code %d", err);
+		LOG_ERROR("metal_init: failed - error code %d", err);
 		return err;
 	}
 
@@ -233,12 +233,12 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 	/* IPM setup */
 #if defined(CONFIG_RPMSG_SERVICE_DUAL_IPM_SUPPORT)
 	if (!device_is_ready(ipm_tx_handle)) {
-		LOG_ERR("IPM TX device is not ready");
+		LOG_ERROR("IPM TX device is not ready");
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(ipm_rx_handle)) {
-		LOG_ERR("IPM RX device is not ready");
+		LOG_ERROR("IPM RX device is not ready");
 		return -ENODEV;
 	}
 
@@ -246,13 +246,13 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 
 	err = ipm_set_enabled(ipm_rx_handle, 1);
 	if (err != 0) {
-		LOG_ERR("Could not enable IPM interrupts and callbacks for RX");
+		LOG_ERROR("Could not enable IPM interrupts and callbacks for RX");
 		return err;
 	}
 
 #elif defined(CONFIG_RPMSG_SERVICE_SINGLE_IPM_SUPPORT)
 	if (!device_is_ready(ipm_handle)) {
-		LOG_ERR("IPM device is not ready");
+		LOG_ERROR("IPM device is not ready");
 		return -ENODEV;
 	}
 
@@ -260,7 +260,7 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 
 	err = ipm_set_enabled(ipm_handle, 1);
 	if (err != 0) {
-		LOG_ERR("Could not enable IPM interrupts and callbacks");
+		LOG_ERROR("Could not enable IPM interrupts and callbacks");
 		return err;
 	}
 #endif
@@ -269,7 +269,7 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 	vring_rsc = rsc_table_get_vring0(rsc_table);
 	vqueue[0] = virtqueue_allocate(vring_rsc->num);
 	if (!vqueue[0]) {
-		LOG_ERR("virtqueue_allocate failed to alloc vqueue[0]");
+		LOG_ERROR("virtqueue_allocate failed to alloc vqueue[0]");
 		return -ENOMEM;
 	}
 
@@ -283,7 +283,7 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 	vring_rsc = rsc_table_get_vring1(rsc_table);
 	vqueue[1] = virtqueue_allocate(vring_rsc->num);
 	if (!vqueue[1]) {
-		LOG_ERR("virtqueue_allocate failed to alloc vqueue[1]");
+		LOG_ERROR("virtqueue_allocate failed to alloc vqueue[1]");
 		return -ENOMEM;
 	}
 
@@ -297,13 +297,13 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 	/* Virtqueue setup */
 	vqueue[0] = virtqueue_allocate(VRING_SIZE);
 	if (!vqueue[0]) {
-		LOG_ERR("virtqueue_allocate failed to alloc vqueue[0]");
+		LOG_ERROR("virtqueue_allocate failed to alloc vqueue[0]");
 		return -ENOMEM;
 	}
 
 	vqueue[1] = virtqueue_allocate(VRING_SIZE);
 	if (!vqueue[1]) {
-		LOG_ERR("virtqueue_allocate failed to alloc vqueue[1]");
+		LOG_ERROR("virtqueue_allocate failed to alloc vqueue[1]");
 		return -ENOMEM;
 	}
 

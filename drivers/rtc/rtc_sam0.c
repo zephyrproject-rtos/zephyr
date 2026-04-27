@@ -456,7 +456,7 @@ static int rtc_sam0_set_calibration(const struct device *dev, int32_t calibratio
 	}
 
 	if (abs_correction > RTC_SAM0_CALIBRATE_PPB_MAX) {
-		LOG_ERR("The calibration %d result in an out of range value %d",
+		LOG_ERROR("The calibration %d result in an out of range value %d",
 			calibration, abs_correction);
 		return -EINVAL;
 	}

@@ -118,7 +118,7 @@ static int i3c_renesas_ra_address_slots_init(const struct device *dev)
 
 	ret = i3c_addr_slots_init(dev);
 	if (ret) {
-		LOG_ERR("Apply i3c_addr_slots_init() fail %d", ret);
+		LOG_ERROR("Apply i3c_addr_slots_init() fail %d", ret);
 		return ret;
 	}
 
@@ -514,7 +514,7 @@ static int i3c_renesas_ra_configure(const struct device *dev, enum i3c_config_ty
 		/* Bitrate settings */
 		ret = i3c_renesas_ra_bitrate_setup(dev);
 		if (ret) {
-			LOG_ERR("Failed to resolve bitrate settings");
+			LOG_ERROR("Failed to resolve bitrate settings");
 			goto configure_exit;
 		}
 
@@ -536,7 +536,7 @@ static int i3c_renesas_ra_configure(const struct device *dev, enum i3c_config_ty
 		if (data->fsp_ctrl->open == I3C_RENESAS_RA_BUS_OPEN) {
 			fsp_err = R_I3C_Close(data->fsp_ctrl);
 			if (fsp_err != FSP_SUCCESS) {
-				LOG_ERR("Failed to init i3c bus, err=%d", fsp_err);
+				LOG_ERROR("Failed to init i3c bus, err=%d", fsp_err);
 				ret = -EIO;
 				goto configure_exit;
 			}
@@ -546,7 +546,7 @@ static int i3c_renesas_ra_configure(const struct device *dev, enum i3c_config_ty
 		data->fsp_cfg->device_type = I3C_DEVICE_TYPE_MAIN_MASTER;
 		fsp_err = R_I3C_Open(data->fsp_ctrl, data->fsp_cfg);
 		if (fsp_err != FSP_SUCCESS) {
-			LOG_ERR("Failed to init i3c bus, err=%d", fsp_err);
+			LOG_ERROR("Failed to init i3c bus, err=%d", fsp_err);
 			ret = -EIO;
 			goto configure_exit;
 		}
@@ -568,7 +568,7 @@ static int i3c_renesas_ra_configure(const struct device *dev, enum i3c_config_ty
 		/* Set this device as master role */
 		fsp_err = R_I3C_DeviceCfgSet(data->fsp_ctrl, data->fsp_master_cfg);
 		if (ret) {
-			LOG_ERR("Failed to init i3c controller, err=%d", ret);
+			LOG_ERROR("Failed to init i3c controller, err=%d", ret);
 			ret = -EIO;
 			goto configure_exit;
 		}
@@ -576,7 +576,7 @@ static int i3c_renesas_ra_configure(const struct device *dev, enum i3c_config_ty
 		/* Enable bus to apply bitrate setting */
 		fsp_err = R_I3C_Enable(data->fsp_ctrl);
 		if (fsp_err != FSP_SUCCESS) {
-			LOG_ERR("Failed to enable bus, err=%d", fsp_err);
+			LOG_ERROR("Failed to enable bus, err=%d", fsp_err);
 			ret = -EIO;
 			goto configure_exit;
 		}
@@ -1065,13 +1065,13 @@ static int i3c_renesas_ra_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->pin_cfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("Apply pinctrl fail %d", ret);
+		LOG_ERROR("Apply pinctrl fail %d", ret);
 		return ret;
 	}
 
 	ret = clock_control_on(config->pclk_dev, (clock_control_subsys_t)&config->pclk_subsys);
 	if (ret) {
-		LOG_ERR("Failed to start i3c bus clock, err=%d", ret);
+		LOG_ERROR("Failed to start i3c bus clock, err=%d", ret);
 		return ret;
 	}
 
@@ -1087,13 +1087,13 @@ static int i3c_renesas_ra_init(const struct device *dev)
 	/* Init address slots */
 	ret = i3c_renesas_ra_address_slots_init(dev);
 	if (ret) {
-		LOG_ERR("Failed to set controller address, err=%d", ret);
+		LOG_ERROR("Failed to set controller address, err=%d", ret);
 		return ret;
 	}
 
 	/* Configure bus */
 	if (i3c_configure(dev, I3C_CONFIG_CONTROLLER, &data->common.ctrl_config)) {
-		LOG_ERR("Failed to configure bus");
+		LOG_ERROR("Failed to configure bus");
 		return ret;
 	}
 
@@ -1103,7 +1103,7 @@ static int i3c_renesas_ra_init(const struct device *dev)
 		/* Perform bus initialization */
 		ret = i3c_bus_init(dev, &config->common.dev_list);
 		if (ret) {
-			LOG_ERR("Apply i3c_bus_init() fail %d", ret);
+			LOG_ERROR("Apply i3c_bus_init() fail %d", ret);
 			return ret;
 		}
 	}

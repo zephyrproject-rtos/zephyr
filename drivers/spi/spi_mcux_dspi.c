@@ -113,8 +113,8 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 			ret = dma_start(data->tx_dma_config.dma_dev,
 					data->tx_dma_config.dma_channel);
 			if (ret < 0) {
-				LOG_ERR("Failed to start DMA Ch%d (%d)",
-					data->tx_dma_config.dma_channel, ret);
+				LOG_ERROR("Failed to start DMA Ch%d (%d)",
+					  data->tx_dma_config.dma_channel, ret);
 				return ret;
 			}
 		}
@@ -127,8 +127,8 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 			ret = dma_start(data->rx_dma_config.dma_dev,
 					data->rx_dma_config.dma_channel);
 			if (ret < 0) {
-				LOG_ERR("Failed to start DMA Ch%d (%d)",
-					data->rx_dma_config.dma_channel, ret);
+				LOG_ERROR("Failed to start DMA Ch%d (%d)",
+					  data->rx_dma_config.dma_channel, ret);
 				return ret;
 			}
 		}
@@ -196,7 +196,7 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 
 	status = DSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
 	if (status != kStatus_Success) {
-		LOG_ERR("Transfer could not start on %s: %d", dev->name, status);
+		LOG_ERROR("Transfer could not start on %s: %d", dev->name, status);
 		return status == kDSPI_Busy ? -EBUSY : -EINVAL;
 	}
 
@@ -262,7 +262,7 @@ static int mcux_spi_context_data_update(const struct device *dev)
 
 	if (frame_size_bit > FSL_FEATURE_DSPI_MAX_DATA_WIDTH) {
 		/* TODO need set to continues PCS to have frame size larger than 16 */
-		LOG_ERR("frame size is larger than 16");
+		LOG_ERROR("frame size is larger than 16");
 		return -EINVAL;
 	}
 
@@ -271,9 +271,9 @@ static int mcux_spi_context_data_update(const struct device *dev)
 	if (CONFIG_MCUX_DSPI_BUFFER_SIZE * 4 <
 	    get_size_byte_by_frame_size(ctx->current_tx->len, frame_size_bit)) {
 		/* inner buffer can not hold all transferred data */
-		LOG_ERR("inner buffer is too small to hold all data esp %d, act %d",
-			ctx->current_tx->len * 8 / frame_size_bit,
-			(CONFIG_MCUX_DSPI_BUFFER_SIZE * 4 / frame_size_bit));
+		LOG_ERROR("inner buffer is too small to hold all data esp %d, act %d",
+			  ctx->current_tx->len * 8 / frame_size_bit,
+			  (CONFIG_MCUX_DSPI_BUFFER_SIZE * 4 / frame_size_bit));
 		return -EINVAL;
 	}
 
@@ -321,7 +321,7 @@ static int mcux_spi_context_data_update(const struct device *dev)
 		}
 	} else {
 		/* TODO for other size */
-		LOG_ERR("DMA mode only support 8/16 bits frame size");
+		LOG_ERROR("DMA mode only support 8/16 bits frame size");
 		return -EINVAL;
 	}
 
@@ -484,7 +484,7 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg,
 	LOG_DBG("=dma call back @channel %d=", channel);
 
 	if (error_code < 0) {
-		LOG_ERR("error happened no callback process %d", error_code);
+		LOG_ERROR("error happened no callback process %d", error_code);
 		return;
 	}
 
@@ -580,7 +580,7 @@ static int spi_mcux_configure(const struct device *dev,
 	}
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
@@ -599,15 +599,15 @@ static int spi_mcux_configure(const struct device *dev,
 		config->enable_modified_timing_format;
 
 	if (spi_cfg->slave > FSL_FEATURE_DSPI_CHIP_SELECT_COUNT) {
-		LOG_ERR("Slave %d is greater than %d",
-			    spi_cfg->slave, FSL_FEATURE_DSPI_CHIP_SELECT_COUNT);
+		LOG_ERROR("Slave %d is greater than %d", spi_cfg->slave,
+			  FSL_FEATURE_DSPI_CHIP_SELECT_COUNT);
 		return -EINVAL;
 	}
 
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if (word_size > FSL_FEATURE_DSPI_MAX_DATA_WIDTH) {
-		LOG_ERR("Word size %d is greater than %d",
-			    word_size, FSL_FEATURE_DSPI_MAX_DATA_WIDTH);
+		LOG_ERROR("Word size %d is greater than %d", word_size,
+			  FSL_FEATURE_DSPI_MAX_DATA_WIDTH);
 		return -EINVAL;
 	}
 
@@ -635,7 +635,7 @@ static int spi_mcux_configure(const struct device *dev,
 	ctar_config->betweenTransferDelayInNanoSec = config->transfer_delay;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 

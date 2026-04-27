@@ -245,7 +245,7 @@ static int shim_init(const struct device *dev)
 	LOG_DBG("waiting for nrfs backend connected");
 	err = nrfs_backend_wait_for_connection(K_FOREVER);
 	if (err != NRFS_SUCCESS) {
-		LOG_ERR("nrfs backend not connected");
+		LOG_ERROR("nrfs backend not connected");
 		return -ENODEV;
 	}
 
@@ -253,13 +253,13 @@ static int shim_init(const struct device *dev)
 
 	err = nrfs_audiopll_init(shim_nrfs_audiopll_init_evt_handler);
 	if (err != NRFS_SUCCESS) {
-		LOG_ERR("failed to init audiopll service");
+		LOG_ERROR("failed to init audiopll service");
 		return -ENODEV;
 	}
 
 	ret = shim_nrfs_request_prescaler_sync(dev, SHIM_DEFAULT_PRESCALER);
 	if (ret) {
-		LOG_ERR("failed to set prescaler divider");
+		LOG_ERROR("failed to set prescaler divider");
 		return ret;
 	}
 
@@ -271,14 +271,14 @@ static int shim_init(const struct device *dev)
 
 	ret = shim_nrfs_request_freq_sync(dev, freq_fraction);
 	if (ret) {
-		LOG_ERR("failed to set freq_fraction");
+		LOG_ERROR("failed to set freq_fraction");
 		return ret;
 	}
 
 	/* Requesting freq or prescaler automatically enables clock, disable it */
 	ret = shim_nrfs_request_disable_sync(dev);
 	if (ret) {
-		LOG_ERR("failed to disable clock");
+		LOG_ERROR("failed to disable clock");
 		return ret;
 	}
 
@@ -286,13 +286,13 @@ static int shim_init(const struct device *dev)
 
 	ret = onoff_manager_init(&dev_data->mgr, &shim_mgr_transitions);
 	if (ret < 0) {
-		LOG_ERR("failed to init onoff manager");
+		LOG_ERROR("failed to init onoff manager");
 		return ret;
 	}
 
 	err = nrfs_audiopll_init(shim_nrfs_audiopll_evt_handler);
 	if (err != NRFS_SUCCESS) {
-		LOG_ERR("failed to init audiopll service");
+		LOG_ERROR("failed to init audiopll service");
 		return -ENODEV;
 	}
 

@@ -51,17 +51,17 @@ static int mcux_gau_adc_channel_setup(const struct device *dev,
 	uint32_t tmp_reg;
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels not yet supported");
+		LOG_ERROR("Differential channels not yet supported");
 		return -ENOTSUP;
 	}
 
 	if (channel_id >= NUM_ADC_CHANNELS) {
-		LOG_ERR("ADC does not support more than %d channels", NUM_ADC_CHANNELS);
+		LOG_ERROR("ADC does not support more than %d channels", NUM_ADC_CHANNELS);
 		return -ENOTSUP;
 	}
 
 	if (source_channel > 12 && source_channel != 15) {
-		LOG_ERR("Invalid source channel");
+		LOG_ERROR("Invalid source channel");
 		return -EINVAL;
 	}
 
@@ -75,7 +75,7 @@ static int mcux_gau_adc_channel_setup(const struct device *dev,
 		base->ADC_REG_INTERVAL |=
 			ADC_ADC_REG_INTERVAL_WARMUP_TIME(channel_cfg->acquisition_time - 1);
 	} else {
-		LOG_ERR("Invalid acquisition time requested of ADC");
+		LOG_ERROR("Invalid acquisition time requested of ADC");
 		return -EINVAL;
 	}
 	/* If user changed the warmup time, warn  */
@@ -94,7 +94,7 @@ static int mcux_gau_adc_channel_setup(const struct device *dev,
 	} else if (channel_cfg->gain == ADC_GAIN_2) {
 		base->ADC_REG_ANA |= ADC_ADC_REG_ANA_INBUF_GAIN(kADC_InputGain2);
 	} else {
-		LOG_ERR("Invalid gain");
+		LOG_ERROR("Invalid gain");
 		return -EINVAL;
 	}
 	/* If user changed the gain, warn */
@@ -113,7 +113,7 @@ static int mcux_gau_adc_channel_setup(const struct device *dev,
 	} else if (channel_cfg->reference == ADC_REF_VDD_1) {
 		base->ADC_REG_ANA |= ADC_ADC_REG_ANA_VREF_SEL(kADC_Vref1P8V);
 	} else {
-		LOG_ERR("Vref not supported");
+		LOG_ERROR("Vref not supported");
 		return -ENOTSUP;
 	}
 	/* if user changed the reference voltage, warn */
@@ -160,7 +160,7 @@ static void mcux_gau_adc_isr(const struct device *dev)
 		/* offload and do not block during irq */
 		k_work_submit(&data->read_samples_work);
 	} else {
-		LOG_ERR("ADC received unimplemented interrupt");
+		LOG_ERROR("ADC received unimplemented interrupt");
 	}
 }
 
@@ -196,7 +196,7 @@ static int mcux_gau_adc_do_read(const struct device *dev,
 
 	/* if user selected channel >= NUM_ADC_CHANNELS that is invalid */
 	if (sequence->channels & (0xFFFF << NUM_ADC_CHANNELS)) {
-		LOG_ERR("Invalid channels selected for sequence");
+		LOG_ERROR("Invalid channels selected for sequence");
 		return -EINVAL;
 	}
 
@@ -209,7 +209,7 @@ static int mcux_gau_adc_do_read(const struct device *dev,
 	if ((sequence->options != NULL && sequence->buffer_size <
 	    ((1 + sequence->options->extra_samplings) * num_channels)) ||
 	    (sequence->options == NULL && sequence->buffer_size < num_channels)) {
-		LOG_ERR("Buffer size too small");
+		LOG_ERROR("Buffer size too small");
 		return -ENOMEM;
 	}
 
@@ -238,7 +238,7 @@ static int mcux_gau_adc_do_read(const struct device *dev,
 	} else if (sequence->resolution == 16 || sequence->resolution == 15) {
 		base->ADC_REG_ANA |= ADC_ADC_REG_ANA_RES_SEL(kADC_Resolution16Bit);
 	} else {
-		LOG_ERR("Invalid resolution");
+		LOG_ERROR("Invalid resolution");
 		return -EINVAL;
 	}
 
@@ -255,7 +255,7 @@ static int mcux_gau_adc_do_read(const struct device *dev,
 	} else if (sequence->oversampling == 4) {
 		base->ADC_REG_CONFIG |= ADC_ADC_REG_CONFIG_AVG_SEL(kADC_Average16);
 	} else {
-		LOG_ERR("Invalid oversampling setting");
+		LOG_ERROR("Invalid oversampling setting");
 		return -EINVAL;
 	}
 

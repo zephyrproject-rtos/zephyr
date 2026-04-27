@@ -43,7 +43,7 @@ static int lis2ds12_set_odr(const struct device *dev, uint8_t odr)
 	if ((odr >= LIS2DS12_DT_ODR_1600Hz && cfg->pm != LIS2DS12_DT_HIGH_FREQUENCY) ||
 	    (odr < LIS2DS12_DT_ODR_1600Hz && cfg->pm == LIS2DS12_DT_HIGH_FREQUENCY) ||
 	    (odr == LIS2DS12_DT_ODR_1Hz_LP && cfg->pm != LIS2DS12_DT_LOW_POWER)) {
-		LOG_ERR("%s: bad odr and pm combination", dev->name);
+		LOG_ERROR("%s: bad odr and pm combination", dev->name);
 		return -ENOTSUP;
 	}
 
@@ -89,7 +89,7 @@ static int lis2ds12_set_odr(const struct device *dev, uint8_t odr)
 		val = LIS2DS12_XL_ODR_6k4Hz_HF;
 		break;
 	default:
-		LOG_ERR("%s: bad odr %d", dev->name, odr);
+		LOG_ERROR("%s: bad odr %d", dev->name, odr);
 		return -ENOTSUP;
 	}
 
@@ -170,7 +170,7 @@ static int lis2ds12_sample_fetch_accel(const struct device *dev)
 
 	/* fetch raw data sample */
 	if (lis2ds12_acceleration_raw_get(ctx, buf) < 0) {
-		LOG_ERR("Failed to fetch raw data sample");
+		LOG_ERROR("Failed to fetch raw data sample");
 		return -EIO;
 	}
 
@@ -282,12 +282,12 @@ static int lis2ds12_init(const struct device *dev)
 	/* check chip ID */
 	ret = lis2ds12_device_id_get(ctx, &chip_id);
 	if (ret < 0) {
-		LOG_ERR("%s: Not able to read dev id", dev->name);
+		LOG_ERROR("%s: Not able to read dev id", dev->name);
 		return ret;
 	}
 
 	if (chip_id != LIS2DS12_ID) {
-		LOG_ERR("%s: Invalid chip ID 0x%02x", dev->name, chip_id);
+		LOG_ERROR("%s: Invalid chip ID 0x%02x", dev->name, chip_id);
 		return -EINVAL;
 	}
 
@@ -304,7 +304,7 @@ static int lis2ds12_init(const struct device *dev)
 #ifdef CONFIG_LIS2DS12_TRIGGER
 	ret = lis2ds12_trigger_init(dev);
 	if (ret < 0) {
-		LOG_ERR("%s: Failed to initialize triggers", dev->name);
+		LOG_ERROR("%s: Failed to initialize triggers", dev->name);
 		return ret;
 	}
 #endif
@@ -313,7 +313,7 @@ static int lis2ds12_init(const struct device *dev)
 	LOG_DBG("%s: pm: %d, odr: %d", dev->name, cfg->pm, cfg->odr);
 	ret = lis2ds12_set_odr(dev, (cfg->pm == 0) ? 0 : cfg->odr);
 	if (ret < 0) {
-		LOG_ERR("%s: odr init error (12.5 Hz)", dev->name);
+		LOG_ERROR("%s: odr init error (12.5 Hz)", dev->name);
 		return ret;
 	}
 
@@ -321,7 +321,7 @@ static int lis2ds12_init(const struct device *dev)
 	LOG_DBG("%s: range is %d", dev->name, cfg->range);
 	ret = lis2ds12_set_range(dev, cfg->range);
 	if (ret < 0) {
-		LOG_ERR("%s: range init error %d", dev->name, cfg->range);
+		LOG_ERROR("%s: range init error %d", dev->name, cfg->range);
 		return ret;
 	}
 

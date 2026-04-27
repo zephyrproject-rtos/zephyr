@@ -122,12 +122,12 @@ static int mdio_nxp_s32_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(cfg->clock_dev)) {
-		LOG_ERR("Clock control device not ready");
+		LOG_ERROR("Clock control device not ready");
 		return -ENODEV;
 	}
 
 	if (clock_control_get_rate(cfg->clock_dev, cfg->clock_subsys, &data->clock_freq)) {
-		LOG_ERR("Failed to get clock frequency");
+		LOG_ERROR("Failed to get clock frequency");
 		return -EIO;
 	}
 

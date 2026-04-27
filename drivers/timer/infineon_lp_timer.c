@@ -157,8 +157,8 @@ static int sys_clock_driver_init(void)
 		result = cyhal_lptimer_init(&lptimer_obj);
 
 		if (result != CY_RSLT_SUCCESS) {
-			LOG_ERR("LPTimer instance not found. Error: 0x%08X\n",
-				(unsigned int)result);
+			LOG_ERROR("LPTimer instance not found. Error: 0x%08X\n",
+				  (unsigned int)result);
 			return -EIO;
 		}
 
@@ -177,7 +177,7 @@ static int sys_clock_driver_init(void)
 	cyhal_lptimer_register_callback(&lptimer_obj, lptimer_interrupt_handler, NULL);
 
 	if (result != CY_RSLT_SUCCESS) {
-		LOG_ERR("Sys Clock initialization failed. Error: 0x%08X\n", (unsigned int)result);
+		LOG_ERROR("Sys Clock initialization failed. Error: 0x%08X\n", (unsigned int)result);
 		return -EIO;
 	}
 

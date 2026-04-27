@@ -160,12 +160,12 @@ static void ot_joiner_start_handler(otError error, void *context)
 	ARG_UNUSED(context);
 
 	if (error != OT_ERROR_NONE) {
-		LOG_ERR("Join failed [%d]", error);
+		LOG_ERROR("Join failed [%d]", error);
 	} else {
 		LOG_INF("Join success");
 		error = otThreadSetEnabled(openthread_instance, true);
 		if (error != OT_ERROR_NONE) {
-			LOG_ERR("Failed to start the OpenThread network [%d]", error);
+			LOG_ERROR("Failed to start the OpenThread network [%d]", error);
 		}
 	}
 }
@@ -194,41 +194,41 @@ static bool ot_setup_default_configuration(void)
 
 	error = otThreadSetNetworkName(openthread_instance, OT_NETWORK_NAME);
 	if (error != OT_ERROR_NONE) {
-		LOG_ERR("Failed to set %s [%d]", "network name", error);
+		LOG_ERROR("Failed to set %s [%d]", "network name", error);
 		return false;
 	}
 
 	error = otLinkSetChannel(openthread_instance, OT_CHANNEL);
 	if (error != OT_ERROR_NONE) {
-		LOG_ERR("Failed to set %s [%d]", "channel", error);
+		LOG_ERROR("Failed to set %s [%d]", "channel", error);
 		return false;
 	}
 
 	error = otLinkSetPanId(openthread_instance, OT_PANID);
 	if (error != OT_ERROR_NONE) {
-		LOG_ERR("Failed to set %s [%d]", "PAN ID", error);
+		LOG_ERROR("Failed to set %s [%d]", "PAN ID", error);
 		return false;
 	}
 
 	if (bytes_from_str(xpanid.m8, 8, (char *)OT_XPANID) != 0) {
-		LOG_ERR("Failed to parse extended PAN ID");
+		LOG_ERROR("Failed to parse extended PAN ID");
 		return false;
 	}
 	error = otThreadSetExtendedPanId(openthread_instance, &xpanid);
 	if (error != OT_ERROR_NONE) {
-		LOG_ERR("Failed to set %s [%d]", "ext PAN ID", error);
+		LOG_ERROR("Failed to set %s [%d]", "ext PAN ID", error);
 		return false;
 	}
 
 	if (strlen(OT_NETWORKKEY)) {
 		if (bytes_from_str(networkKey.m8, OT_NETWORK_KEY_SIZE, (char *)OT_NETWORKKEY) !=
 		    0) {
-			LOG_ERR("Failed to parse network key");
+			LOG_ERROR("Failed to parse network key");
 			return false;
 		}
 		error = otThreadSetNetworkKey(openthread_instance, &networkKey);
 		if (error != OT_ERROR_NONE) {
-			LOG_ERR("Failed to set %s [%d]", "network key", error);
+			LOG_ERROR("Failed to set %s [%d]", "network key", error);
 			return false;
 		}
 	}
@@ -262,7 +262,7 @@ void otTaskletsSignalPending(otInstance *instance)
 	int error = k_work_submit_to_queue(&openthread_work_q, &openthread_work);
 
 	if (error < 0) {
-		LOG_ERR("Failed to submit work to queue, error: %d", error);
+		LOG_ERROR("Failed to submit work to queue, error: %d", error);
 	}
 }
 
@@ -344,7 +344,7 @@ int openthread_init(void)
 	if (IS_ENABLED(CONFIG_OPENTHREAD_COPROCESSOR)) {
 		error = otPlatUartEnable();
 		if (error != OT_ERROR_NONE) {
-			LOG_ERR("Failed to enable UART: [%d]", error);
+			LOG_ERROR("Failed to enable UART: [%d]", error);
 		}
 
 		otNcpHdlcInit(openthread_instance, ncp_hdlc_send);
@@ -358,11 +358,11 @@ int openthread_init(void)
 		if (otIp4CidrFromString(CONFIG_OPENTHREAD_NAT64_CIDR, &nat64_cidr) ==
 		    OT_ERROR_NONE) {
 			if (otNat64SetIp4Cidr(openthread_instance, &nat64_cidr) != OT_ERROR_NONE) {
-				LOG_ERR("Incorrect NAT64 CIDR");
+				LOG_ERROR("Incorrect NAT64 CIDR");
 				return -EIO;
 			}
 		} else {
-			LOG_ERR("Failed to parse NAT64 CIDR");
+			LOG_ERROR("Failed to parse NAT64 CIDR");
 			return -EIO;
 		}
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR && !CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
@@ -370,7 +370,7 @@ int openthread_init(void)
 		error = otSetStateChangedCallback(openthread_instance, &ot_state_changed_handler,
 						  NULL);
 		if (error != OT_ERROR_NONE) {
-			LOG_ERR("Could not set state changed callback: %d", error);
+			LOG_ERROR("Could not set state changed callback: %d", error);
 			return -EIO;
 		}
 	}
@@ -397,7 +397,7 @@ int openthread_run(void)
 
 	error = otIp6SetEnabled(openthread_instance, true);
 	if (error != OT_ERROR_NONE) {
-		LOG_ERR("Failed to set %s [%d]", "IPv6 support", error);
+		LOG_ERROR("Failed to set %s [%d]", "IPv6 support", error);
 		goto exit;
 	}
 
@@ -412,13 +412,13 @@ int openthread_run(void)
 
 		error = otThreadSetLinkMode(openthread_instance, ot_mode);
 		if (error != OT_ERROR_NONE) {
-			LOG_ERR("Failed to set %s [%d]", "link mode", error);
+			LOG_ERROR("Failed to set %s [%d]", "link mode", error);
 			goto exit;
 		}
 
 		error = otLinkSetPollPeriod(openthread_instance, OT_POLL_PERIOD);
 		if (error != OT_ERROR_NONE) {
-			LOG_ERR("Failed to set %s [%d]", "poll period", error);
+			LOG_ERROR("Failed to set %s [%d]", "poll period", error);
 			goto exit;
 		}
 	}
@@ -437,7 +437,7 @@ int openthread_run(void)
 				      &ot_joiner_start_handler, NULL);
 
 		if (error != OT_ERROR_NONE) {
-			LOG_ERR("Failed to start joiner [%d]", error);
+			LOG_ERROR("Failed to start joiner [%d]", error);
 		}
 
 		goto exit;
@@ -455,7 +455,7 @@ int openthread_run(void)
 	/* Start the network. */
 	error = otThreadSetEnabled(openthread_instance, true);
 	if (error != OT_ERROR_NONE) {
-		LOG_ERR("Failed to start the OpenThread network [%d]", error);
+		LOG_ERROR("Failed to start the OpenThread network [%d]", error);
 	}
 
 exit:
@@ -535,7 +535,7 @@ void openthread_notify_border_router_work(void)
 	int error = k_work_submit_to_queue(&openthread_work_q, &openthread_border_router_work);
 
 	if (error < 0) {
-		LOG_ERR("Failed to submit work to queue, error: %d", error);
+		LOG_ERROR("Failed to submit work to queue, error: %d", error);
 	}
 }
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */

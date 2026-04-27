@@ -270,7 +270,7 @@ static int max1125x_read_reg(const struct device *dev, enum max1125x_reg reg_add
 
 	ret = spi_transceive_dt(&config->bus, &tx, &rx);
 	if (ret != 0) {
-		LOG_ERR("MAX1125X: error writing register 0x%X (%d)", reg_addr, ret);
+		LOG_ERROR("MAX1125X: error writing register 0x%X (%d)", reg_addr, ret);
 		return ret;
 	}
 	*buffer = buffer_rx[1];
@@ -292,7 +292,7 @@ static int max1125x_write_reg(const struct device *dev, enum max1125x_reg reg_ad
 
 	ret = spi_write_dt(&config->bus, &tx);
 	if (ret != 0) {
-		LOG_ERR("MAX1125X: error writing register 0x%X (%d)", reg_addr, ret);
+		LOG_ERROR("MAX1125X: error writing register 0x%X (%d)", reg_addr, ret);
 		return ret;
 	}
 
@@ -309,7 +309,7 @@ static int max1125x_send_command(const struct device *dev, enum max1125x_mode mo
 
 	ret = spi_write_dt(&config->bus, &tx);
 	if (ret != 0) {
-		LOG_ERR("MAX1125X: error writing register 0x%X (%d)", rate, ret);
+		LOG_ERROR("MAX1125X: error writing register 0x%X (%d)", rate, ret);
 		return ret;
 	}
 
@@ -333,12 +333,12 @@ static inline int max1125x_acq_time_to_dr(const struct device *dev, uint16_t acq
 	int odr = -EINVAL;
 
 	if (acq_time != ADC_ACQ_TIME_DEFAULT && ADC_ACQ_TIME_UNIT(acq_time) != ADC_ACQ_TIME_TICKS) {
-		LOG_ERR("MAX1125X: invalid acq time value (%d)", acq_time);
+		LOG_ERROR("MAX1125X: invalid acq time value (%d)", acq_time);
 		return -EINVAL;
 	}
 
 	if (acq_value < MAX1125X_CONFIG_RATE_1_9 || acq_value > MAX1125X_CONFIG_RATE_64000) {
-		LOG_ERR("MAX1125X: invalid acq value (%d)", acq_value);
+		LOG_ERROR("MAX1125X: invalid acq value (%d)", acq_value);
 		return -EINVAL;
 	}
 
@@ -388,7 +388,7 @@ static int max1125x_read_sample(const struct device *dev)
 
 	rc = spi_transceive_dt(&config->bus, &tx, &rx);
 	if (rc != 0) {
-		LOG_ERR("spi_transceive failed with error %i", rc);
+		LOG_ERROR("spi_transceive failed with error %i", rc);
 		return rc;
 	}
 
@@ -405,7 +405,7 @@ static int max1125x_read_sample(const struct device *dev)
 	 */
 
 	if (config->resolution > 24 || config->resolution < 1) {
-		LOG_ERR("Unsupported ADC resolution: %u", config->resolution);
+		LOG_ERROR("Unsupported ADC resolution: %u", config->resolution);
 		return -EINVAL;
 	}
 
@@ -430,7 +430,7 @@ static int max1125x_configure_chmap(const struct device *dev, const uint8_t chan
 	uint8_t chmap0_register[3] = {0};
 
 	if (channel_id > 6) {
-		LOG_ERR("MAX1125X: invalid channel (%u)", channel_id);
+		LOG_ERROR("MAX1125X: invalid channel (%u)", channel_id);
 		return -EINVAL;
 	}
 
@@ -521,9 +521,9 @@ static int max1125x_channel_setup(const struct device *dev,
 	/* configuration multiplexer */
 	if (max_config->multiplexer) {
 		if (!channel_cfg->differential) {
-			LOG_ERR("6 channel fully supported only supported differential "
-				"differemtial option %i",
-				channel_cfg->differential);
+			LOG_ERROR("6 channel fully supported only supported differential "
+				  "differemtial option %i",
+				  channel_cfg->differential);
 			return -ENOTSUP;
 		}
 	}
@@ -560,7 +560,7 @@ static int max1125x_channel_setup(const struct device *dev,
 			ctrl2_register |= MAX1125X_CTRL2_PGA_GAIN_128;
 			break;
 		default:
-			LOG_ERR("MAX1125X: unsupported channel gain '%d'", channel_cfg->gain);
+			LOG_ERROR("MAX1125X: unsupported channel gain '%d'", channel_cfg->gain);
 			return -ENOTSUP;
 		}
 	}
@@ -571,8 +571,8 @@ static int max1125x_channel_setup(const struct device *dev,
 	} else if (channel_cfg->reference == ADC_REF_EXTERNAL1) {
 		ctrl2_register &= ~BIT(MAX1125X_CTRL2_LDOEN);
 	} else {
-		LOG_ERR("MAX1125X: unsupported channel reference type '%d'",
-			channel_cfg->reference);
+		LOG_ERROR("MAX1125X: unsupported channel reference type '%d'",
+			  channel_cfg->reference);
 		return -ENOTSUP;
 	}
 	max1125x_write_reg(dev, MAX1125X_REG_CTRL2, &ctrl2_register, MAX1125X_REG_CTRL2_LEN);
@@ -615,13 +615,13 @@ static int max1125x_validate_sequence(const struct device *dev, const struct adc
 	int err;
 
 	if (sequence->oversampling) {
-		LOG_ERR("MAX1125X: oversampling not supported");
+		LOG_ERROR("MAX1125X: oversampling not supported");
 		return -ENOTSUP;
 	}
 
 	err = max1125x_validate_buffer_size(sequence);
 	if (err) {
-		LOG_ERR("MAX1125X: buffer size too small");
+		LOG_ERROR("MAX1125X: buffer size too small");
 		return -ENOTSUP;
 	}
 
@@ -685,7 +685,7 @@ static int max1125x_adc_perform_read(const struct device *dev)
 
 	rc = max1125x_read_sample(dev);
 	if (rc != 0) {
-		LOG_ERR("reading sample failed (err %d)", rc);
+		LOG_ERROR("reading sample failed (err %d)", rc);
 		adc_context_complete(&data->ctx, rc);
 		return rc;
 	}
@@ -712,7 +712,7 @@ static void max1125x_acquisition_thread(void *p1, void *p2, void *p3)
 
 		rc = max1125x_wait_data_ready(dev);
 		if (rc != 0) {
-			LOG_ERR("MAX1125X: failed to get ready status (err %d)", rc);
+			LOG_ERROR("MAX1125X: failed to get ready status (err %d)", rc);
 			adc_context_complete(&data->ctx, rc);
 			break;
 		}
@@ -733,7 +733,7 @@ static int max1125x_init(const struct device *dev)
 	k_sem_init(&data->data_ready_signal, 0, 1);
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("spi bus %s not ready", config->bus.bus->name);
+		LOG_ERROR("spi bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 
@@ -744,13 +744,13 @@ static int max1125x_init(const struct device *dev)
 
 	err = gpio_pin_configure_dt(&config->drdy_gpio, GPIO_INPUT);
 	if (err != 0) {
-		LOG_ERR("failed to initialize GPIO for data ready (err %d)", err);
+		LOG_ERROR("failed to initialize GPIO for data ready (err %d)", err);
 		return err;
 	}
 
 	err = gpio_pin_interrupt_configure_dt(&config->drdy_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (err != 0) {
-		LOG_ERR("failed to configure data ready interrupt (err %d)", err);
+		LOG_ERROR("failed to configure data ready interrupt (err %d)", err);
 		return -EIO;
 	}
 
@@ -758,7 +758,7 @@ static int max1125x_init(const struct device *dev)
 			   BIT(config->drdy_gpio.pin));
 	err = gpio_add_callback(config->drdy_gpio.port, &data->callback_data_ready);
 	if (err != 0) {
-		LOG_ERR("failed to add data ready callback (err %d)", err);
+		LOG_ERROR("failed to add data ready callback (err %d)", err);
 		return -EIO;
 	}
 

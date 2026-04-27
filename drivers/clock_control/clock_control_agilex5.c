@@ -70,7 +70,7 @@ static int clock_get_rate(const struct device *dev, clock_control_subsys_t sub_s
 		break;
 
 	default:
-		LOG_ERR("Clock ID %ld is not supported\n", (intptr_t)sub_system);
+		LOG_ERROR("Clock ID %ld is not supported\n", (intptr_t)sub_system);
 		return -ENOTSUP;
 	}
 

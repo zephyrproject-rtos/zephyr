@@ -78,7 +78,7 @@ static int dw_wdt_install_timeout(const struct device *dev, const struct wdt_tim
 	uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
 	if (config == NULL) {
-		LOG_ERR("watchdog timeout configuration missing");
+		LOG_ERROR("watchdog timeout configuration missing");
 		return -ENODATA;
 	}
 
@@ -87,7 +87,7 @@ static int dw_wdt_install_timeout(const struct device *dev, const struct wdt_tim
 #else
 	if (config->callback) {
 #endif
-		LOG_ERR("Interrupt is not configured, can't set a callback.");
+		LOG_ERROR("Interrupt is not configured, can't set a callback.");
 		return -ENOTSUP;
 	}
 
@@ -133,14 +133,14 @@ int dw_wdt_disable(const struct device *dev)
 	 */
 	if (dev_config->reset_spec.dev != NULL) {
 		if (!device_is_ready(dev_config->reset_spec.dev)) {
-			LOG_ERR("reset controller device not ready");
+			LOG_ERROR("reset controller device not ready");
 			return -ENODEV;
 		}
 
 		/* Assert and de-assert reset watchdog */
 		ret = reset_line_toggle(dev_config->reset_spec.dev, dev_config->reset_spec.id);
 		if (ret != 0) {
-			LOG_ERR("watchdog disable/reset failed");
+			LOG_ERROR("watchdog disable/reset failed");
 			return ret;
 		}
 	}
@@ -175,14 +175,14 @@ static int dw_wdt_init(const struct device *dev)
 	struct dw_wdt_dev_data *const dev_data = dev->data;
 
 	if (!device_is_ready(dev_config->clk_dev)) {
-		LOG_ERR("Clock controller device not ready");
+		LOG_ERROR("Clock controller device not ready");
 		return -ENODEV;
 	}
 
 	ret = clock_control_get_rate(dev_config->clk_dev, dev_config->clkid,
 				&dev_data->clk_freq);
 	if (ret != 0) {
-		LOG_ERR("Failed to get watchdog clock rate");
+		LOG_ERROR("Failed to get watchdog clock rate");
 		return ret;
 	}
 #endif

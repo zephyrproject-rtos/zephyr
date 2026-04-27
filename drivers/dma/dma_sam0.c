@@ -70,18 +70,18 @@ static int dma_sam0_config(const struct device *dev, uint32_t channel,
 	unsigned int key;
 
 	if (channel >= DMAC_CH_NUM) {
-		LOG_ERR("Unsupported channel");
+		LOG_ERROR("Unsupported channel");
 		return -EINVAL;
 	}
 
 	if (config->block_count > 1) {
-		LOG_ERR("Chained transfers not supported");
+		LOG_ERROR("Chained transfers not supported");
 		/* TODO: add support for chained transfers. */
 		return -ENOTSUP;
 	}
 
 	if (config->dma_slot >= DMAC_TRIG_NUM) {
-		LOG_ERR("Invalid trigger number");
+		LOG_ERROR("Invalid trigger number");
 		return -EINVAL;
 	}
 
@@ -117,7 +117,7 @@ static int dma_sam0_config(const struct device *dev, uint32_t channel,
 
 	/* Set the priority */
 	if (config->channel_priority >= DMAC_LVL_NUM) {
-		LOG_ERR("Invalid priority");
+		LOG_ERROR("Invalid priority");
 		goto inval;
 	}
 
@@ -149,13 +149,13 @@ static int dma_sam0_config(const struct device *dev, uint32_t channel,
 		chcfg->CHCTRLA.reg = DMAC_CHCTRLA_TRIGACT_BURST |
 				     DMAC_CHCTRLA_TRIGSRC(config->dma_slot);
 	} else {
-		LOG_ERR("Direction error. %d", config->channel_direction);
+		LOG_ERROR("Direction error. %d", config->channel_direction);
 		goto inval;
 	}
 
 	/* Set the priority */
 	if (config->channel_priority >= DMAC_LVL_NUM) {
-		LOG_ERR("Invalid priority");
+		LOG_ERROR("Invalid priority");
 		goto inval;
 	}
 
@@ -163,12 +163,12 @@ static int dma_sam0_config(const struct device *dev, uint32_t channel,
 
 	/* Set the burst length */
 	if (config->source_burst_length != config->dest_burst_length) {
-		LOG_ERR("Source and destination burst lengths must be equal");
+		LOG_ERROR("Source and destination burst lengths must be equal");
 		goto inval;
 	}
 
 	if (config->source_burst_length > 16U) {
-		LOG_ERR("Invalid burst length");
+		LOG_ERROR("Invalid burst length");
 		goto inval;
 	}
 
@@ -190,7 +190,7 @@ static int dma_sam0_config(const struct device *dev, uint32_t channel,
 
 	/* Set the beat (single transfer) size */
 	if (config->source_data_size != config->dest_data_size) {
-		LOG_ERR("Source and destination data sizes must be equal");
+		LOG_ERROR("Source and destination data sizes must be equal");
 		goto inval;
 	}
 
@@ -205,7 +205,7 @@ static int dma_sam0_config(const struct device *dev, uint32_t channel,
 		btctrl.bit.BEATSIZE = DMAC_BTCTRL_BEATSIZE_WORD_Val;
 		break;
 	default:
-		LOG_ERR("Invalid data size");
+		LOG_ERROR("Invalid data size");
 		goto inval;
 	}
 
@@ -223,7 +223,7 @@ static int dma_sam0_config(const struct device *dev, uint32_t channel,
 		desc->SRCADDR.reg = block->source_address;
 		break;
 	default:
-		LOG_ERR("Invalid source increment");
+		LOG_ERROR("Invalid source increment");
 		goto inval;
 	}
 
@@ -236,7 +236,7 @@ static int dma_sam0_config(const struct device *dev, uint32_t channel,
 		desc->DSTADDR.reg = block->dest_address;
 		break;
 	default:
-		LOG_ERR("Invalid destination increment");
+		LOG_ERROR("Invalid destination increment");
 		goto inval;
 	}
 

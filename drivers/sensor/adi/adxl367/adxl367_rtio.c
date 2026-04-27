@@ -25,7 +25,7 @@ static void adxl367_submit_fetch(struct rtio_iodev_sqe *iodev_sqe)
 
 	rc = rtio_sqe_rx_buf(iodev_sqe, min_buffer_len, min_buffer_len, &buffer, &buffer_len);
 	if (rc != 0) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buffer_len);
+		LOG_ERROR("Failed to get a read buffer of size %u bytes", min_buffer_len);
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}
@@ -38,7 +38,7 @@ static void adxl367_submit_fetch(struct rtio_iodev_sqe *iodev_sqe)
 
 	rc = adxl367_get_accel_data(dev, &enc_data->xyz);
 	if (rc != 0) {
-		LOG_ERR("Failed to fetch xyz samples");
+		LOG_ERROR("Failed to fetch xyz samples");
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}
@@ -48,7 +48,7 @@ static void adxl367_submit_fetch(struct rtio_iodev_sqe *iodev_sqe)
 
 	rc = adxl367_get_temp_data(dev, &enc_data->raw_temp, check_temp_data_ready);
 	if (rc != 0) {
-		LOG_ERR("Failed to fetch temp samples");
+		LOG_ERROR("Failed to fetch temp samples");
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}

@@ -434,7 +434,7 @@ static int gpio_pca953x_init(const struct device *dev)
 	int rc = 0;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("I2C bus device not found");
+		LOG_ERROR("I2C bus device not found");
 		goto out;
 	}
 
@@ -448,7 +448,7 @@ static int gpio_pca953x_init(const struct device *dev)
 
 	if (cfg->interrupt_enabled) {
 		if (!gpio_is_ready_dt(&cfg->gpio_int)) {
-			LOG_ERR("Cannot get pointer to gpio interrupt device");
+			LOG_ERROR("Cannot get pointer to gpio interrupt device");
 			rc = -EINVAL;
 			goto out;
 		}
@@ -491,7 +491,7 @@ static int gpio_pca953x_init(const struct device *dev)
 	}
 out:
 	if (rc) {
-		LOG_ERR("%s init failed: %d", dev->name, rc);
+		LOG_ERROR("%s init failed: %d", dev->name, rc);
 	} else {
 		LOG_INF("%s init ok", dev->name);
 	}

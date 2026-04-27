@@ -50,7 +50,7 @@ static int configure_device(const struct device *dev)
 	int err = max31865_spi_write(dev, WR(REG_CONFIG), cmd, 1);
 
 	if (err < 0) {
-		LOG_ERR("Error write SPI%d\n", err);
+		LOG_ERROR("Error write SPI%d\n", err);
 	}
 	return err;
 }
@@ -70,7 +70,7 @@ static int set_threshold_values(const struct device *dev)
 	int err = max31865_spi_write(dev, WR(REG_HIGH_FAULT_THR_MSB), cmd, 4);
 
 	if (err < 0) {
-		LOG_ERR("Error write SPI%d\n", err);
+		LOG_ERROR("Error write SPI%d\n", err);
 	}
 	return err;
 }
@@ -186,8 +186,8 @@ static int max31865_fault_register(const struct device *dev)
 	WRITE_BIT(data->config_control_bits, 1, 1);
 	data->config_control_bits &= ~FAULT_BITS_CLEAR_MASK;
 	configure_device(dev);
-	LOG_ERR("Fault Register: 0x%02x, %s", fault_register,
-		max31865_error_to_string(fault_register));
+	LOG_ERROR("Fault Register: 0x%02x, %s", fault_register,
+		  max31865_error_to_string(fault_register));
 	WRITE_BIT(data->config_control_bits, 1, 0);
 	data->config_control_bits |= saved_fault_bits;
 
@@ -218,7 +218,7 @@ static int max31865_get_temperature(const struct device *dev)
 	max31865_set_vbias(dev, false);
 
 	if (err < 0) {
-		LOG_ERR("SPI read %d\n", err);
+		LOG_ERROR("SPI read %d\n", err);
 		return -EIO;
 	}
 	read_reg.u16 = sys_be16_to_cpu(read_reg.u16);
@@ -267,7 +267,7 @@ static int max31865_init(const struct device *dev)
 static int max31865_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP) {
-		LOG_ERR("Invalid channel provided");
+		LOG_ERROR("Invalid channel provided");
 		return -ENOTSUP;
 	}
 	return max31865_get_temperature(dev);
@@ -290,7 +290,7 @@ static int max31865_attr_set(const struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr, const struct sensor_value *val)
 {
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP) {
-		LOG_ERR("Invalid channel provided");
+		LOG_ERROR("Invalid channel provided");
 		return -ENOTSUP;
 	}
 

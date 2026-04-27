@@ -157,7 +157,7 @@ static int pbp_broadcast_source_adv_setup(void)
 	struct bt_data ext_ad[3];
 
 	if (err) {
-		LOG_ERR("Unable to generate broadcast ID: %d\n", err);
+		LOG_ERROR("Unable to generate broadcast ID: %d\n", err);
 		return -EINVAL;
 	}
 
@@ -194,14 +194,14 @@ static int pbp_broadcast_source_adv_setup(void)
 						     ARRAY_SIZE(ext_ad), NULL, 0, &gap_settings,
 						     &source->ext_adv);
 		if (err != 0) {
-			LOG_ERR("Could not set up extended advertisement: %d", err);
+			LOG_ERROR("Could not set up extended advertisement: %d", err);
 			return -EINVAL;
 		}
 	} else {
 		err = bt_le_ext_adv_set_data(source->ext_adv, ext_ad, ARRAY_SIZE(ext_ad), NULL, 0);
 
 		if (err != 0) {
-			LOG_ERR("Could not set extended advertisement data: %d", err);
+			LOG_ERROR("Could not set extended advertisement data: %d", err);
 			return -EINVAL;
 		}
 	}
@@ -230,8 +230,8 @@ static uint8_t pbp_set_public_broadcast_announcement(const void *cmd, uint16_t c
 		memcpy(pbp_metadata_cached, cp->metadata, cp->metadata_len);
 		err = pbp_broadcast_source_adv_setup();
 	} else {
-		LOG_ERR("Metadata too long: %d > %d", cp->metadata_len,
-			PBP_EXT_ADV_METADATA_LEN_MAX);
+		LOG_ERROR("Metadata too long: %d > %d", cp->metadata_len,
+			  PBP_EXT_ADV_METADATA_LEN_MAX);
 	}
 
 	return BTP_STATUS_VAL(err);
@@ -248,8 +248,8 @@ static uint8_t pbp_set_broadcast_name(const void *cmd, uint16_t cmd_len, void *r
 		memcpy(pbp_broadcast_name_cached, cp->name, cp->name_len);
 		err = pbp_broadcast_source_adv_setup();
 	} else {
-		LOG_ERR("Broadcast name too long: %d > %d", cp->name_len,
-			BT_AUDIO_BROADCAST_NAME_LEN_MAX);
+		LOG_ERROR("Broadcast name too long: %d > %d", cp->name_len,
+			  BT_AUDIO_BROADCAST_NAME_LEN_MAX);
 	}
 
 	return BTP_STATUS_VAL(err);

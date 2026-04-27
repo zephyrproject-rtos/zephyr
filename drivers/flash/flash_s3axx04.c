@@ -84,7 +84,7 @@ static int flash_s3axx04_set_enable_write(const struct device *dev, bool enable_
 
 	ret = spi_write_dt(&config->spi, &tx_buf_set);
 	if (ret < 0) {
-		LOG_ERR("Failed to %s writes", enable_writes ? "enable" : "disable");
+		LOG_ERROR("Failed to %s writes", enable_writes ? "enable" : "disable");
 		return ret;
 	}
 
@@ -108,7 +108,7 @@ static int flash_s3axx04_soft_reset(const struct device *dev)
 
 	ret = spi_write_dt(&config->spi, &tx_buf_set);
 	if (ret < 0) {
-		LOG_ERR("Software reset failed");
+		LOG_ERROR("Software reset failed");
 		return ret;
 	}
 
@@ -142,12 +142,12 @@ static int flash_s3axx04_check(const struct device *dev)
 
 	ret = spi_transceive_dt(&config->spi, &tx_buf_set, &rx_buf_set);
 	if (ret < 0) {
-		LOG_ERR("Couldn't read device ID");
+		LOG_ERROR("Couldn't read device ID");
 		return ret;
 	}
 
 	if (id[1 + S3AXX04_ID_MFG_POS] != S3AXX04_ID_MFG) {
-		LOG_ERR("Manufacturer isn't Netsol");
+		LOG_ERROR("Manufacturer isn't Netsol");
 		return -ENOTSUP;
 	}
 
@@ -181,7 +181,7 @@ static int flash_s3axx04_set_configregs(const struct device *dev)
 
 	ret = spi_transceive_dt(&config->spi, &tx_buf_set, &rx_buf_set);
 	if (ret < 0) {
-		LOG_ERR("Couldn't read configuration registers");
+		LOG_ERROR("Couldn't read configuration registers");
 		return ret;
 	}
 
@@ -197,7 +197,7 @@ static int flash_s3axx04_set_configregs(const struct device *dev)
 
 	ret = flash_s3axx04_set_enable_write(dev, true);
 	if (ret < 0) {
-		LOG_ERR("Could not enable writes for configuration registers");
+		LOG_ERROR("Could not enable writes for configuration registers");
 		return ret;
 	}
 
@@ -205,7 +205,7 @@ static int flash_s3axx04_set_configregs(const struct device *dev)
 
 	ret = spi_write_dt(&config->spi, &rx_buf_set);
 	if (ret < 0) {
-		LOG_ERR("Could not set configuration registers");
+		LOG_ERROR("Could not set configuration registers");
 		return ret;
 	}
 
@@ -223,12 +223,12 @@ static int flash_s3axx04_read(const struct device *dev, off_t offset, void *data
 	}
 
 	if (offset < 0) {
-		LOG_ERR("Offset is negative");
+		LOG_ERROR("Offset is negative");
 		return -EINVAL;
 	}
 
 	if (offset > config->layout.pages_count || len > (config->layout.pages_count - offset)) {
-		LOG_ERR("Can not read more data than the device size");
+		LOG_ERROR("Can not read more data than the device size");
 		return -EINVAL;
 	}
 
@@ -260,7 +260,7 @@ static int flash_s3axx04_read(const struct device *dev, off_t offset, void *data
 
 	ret = spi_transceive_dt(&config->spi, &tx_buf_set, &rx_buf_set);
 	if (ret < 0) {
-		LOG_ERR("Failed to read from MRAM");
+		LOG_ERROR("Failed to read from MRAM");
 		return ret;
 	}
 
@@ -279,12 +279,12 @@ static int flash_s3axx04_write(const struct device *dev, off_t offset, const voi
 	}
 
 	if (offset < 0) {
-		LOG_ERR("Offset is negative");
+		LOG_ERROR("Offset is negative");
 		return -EINVAL;
 	}
 
 	if (offset > config->layout.pages_count || len > (config->layout.pages_count - offset)) {
-		LOG_ERR("Can not write more data than the device size");
+		LOG_ERROR("Can not write more data than the device size");
 		return -EINVAL;
 	}
 
@@ -311,7 +311,7 @@ static int flash_s3axx04_write(const struct device *dev, off_t offset, const voi
 		ret = flash_s3axx04_set_enable_write(dev, true);
 		if (ret < 0) {
 			k_sem_give(&dev_data->lock);
-			LOG_ERR("Could not enable writes");
+			LOG_ERROR("Could not enable writes");
 			return ret;
 		}
 	}
@@ -319,7 +319,7 @@ static int flash_s3axx04_write(const struct device *dev, off_t offset, const voi
 	ret = spi_write_dt(&config->spi, &tx_buf_set);
 	if (ret < 0) {
 		k_sem_give(&dev_data->lock);
-		LOG_ERR("Failed to write to MRAM");
+		LOG_ERROR("Failed to write to MRAM");
 		return ret;
 	}
 
@@ -327,7 +327,7 @@ static int flash_s3axx04_write(const struct device *dev, off_t offset, const voi
 		ret = flash_s3axx04_set_enable_write(dev, false);
 		if (ret < 0) {
 			k_sem_give(&dev_data->lock);
-			LOG_ERR("Could not disable writes");
+			LOG_ERROR("Could not disable writes");
 			return ret;
 		}
 	}
@@ -349,7 +349,7 @@ static int flash_s3axx04_erase(const struct device *dev, off_t start, size_t len
 	}
 
 	if (start > config->layout.pages_count || len > (config->layout.pages_count - start)) {
-		LOG_ERR("Can not erase more data than the device size");
+		LOG_ERROR("Can not erase more data than the device size");
 		return -EINVAL;
 	}
 
@@ -378,7 +378,7 @@ static int flash_s3axx04_init(const struct device *dev)
 	k_sem_init(&data->lock, 1, 1);
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus not ready");
+		LOG_ERROR("SPI bus not ready");
 		return -ENODEV;
 	}
 

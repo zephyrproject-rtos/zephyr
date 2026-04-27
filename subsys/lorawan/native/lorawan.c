@@ -82,26 +82,26 @@ int lorawan_start(void)
 
 	lora_dev = DEVICE_DT_GET(DT_ALIAS(lora0));
 	if (!device_is_ready(lora_dev)) {
-		LOG_ERR("LoRa device not ready");
+		LOG_ERROR("LoRa device not ready");
 		ret = -ENODEV;
 		goto err;
 	}
 
 	ret = lwan_crypto_init();
 	if (ret != 0) {
-		LOG_ERR("Crypto init failed: %d", ret);
+		LOG_ERROR("Crypto init failed: %d", ret);
 		goto err;
 	}
 
 	ret = radio_init(lora_dev);
 	if (ret != 0) {
-		LOG_ERR("Radio init failed: %d", ret);
+		LOG_ERROR("Radio init failed: %d", ret);
 		goto err;
 	}
 
 	if (lwan_ctx.region == NULL) {
-		LOG_ERR("No region set. Call lorawan_set_region() "
-			"when multiple regions are enabled.");
+		LOG_ERROR("No region set. Call lorawan_set_region() "
+			  "when multiple regions are enabled.");
 		ret = -EINVAL;
 		goto err;
 	}
@@ -109,7 +109,7 @@ int lorawan_start(void)
 	ret = lwan_ctx.region->get_default_channels(
 		lwan_ctx.channels, &lwan_ctx.channel_count);
 	if (ret != 0) {
-		LOG_ERR("Failed to get default channels: %d", ret);
+		LOG_ERROR("Failed to get default channels: %d", ret);
 		goto err;
 	}
 
@@ -139,7 +139,7 @@ int lorawan_join(const struct lorawan_join_config *config)
 	}
 
 	if (config->mode != LORAWAN_ACT_OTAA) {
-		LOG_ERR("Only OTAA is supported");
+		LOG_ERROR("Only OTAA is supported");
 		return -ENOTSUP;
 	}
 
@@ -166,7 +166,7 @@ int lorawan_join(const struct lorawan_join_config *config)
 
 	ret = engine_post_req(&msg);
 	if (ret != 0) {
-		LOG_ERR("Failed to post join request: %d", ret);
+		LOG_ERROR("Failed to post join request: %d", ret);
 		k_mutex_unlock(&join_mutex);
 		return ret;
 	}
@@ -227,7 +227,7 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len,
 
 	ret = engine_post_req(&msg);
 	if (ret != 0) {
-		LOG_ERR("Failed to post send request: %d", ret);
+		LOG_ERROR("Failed to post send request: %d", ret);
 		k_mutex_unlock(&send_mutex);
 		return ret;
 	}

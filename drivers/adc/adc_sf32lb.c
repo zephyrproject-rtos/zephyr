@@ -92,22 +92,22 @@ static int adc_sf32lb_channel_setup(const struct device *dev,
 	channel_id = channel_cfg->channel_id;
 
 	if (channel_cfg->channel_id >= ADC_MAX_CH) {
-		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
+		LOG_ERROR("Channel %d is not valid", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Acquisition time is not supported");
+		LOG_ERROR("Acquisition time is not supported");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Gain is not supported");
+		LOG_ERROR("Gain is not supported");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("External reference is not supported");
+		LOG_ERROR("External reference is not supported");
 		return -ENOTSUP;
 	}
 
@@ -146,8 +146,8 @@ static int check_buffer_size(const struct adc_sequence *sequence, uint8_t active
 	}
 
 	if (sequence->buffer_size < needed_buffer_size) {
-		LOG_ERR("Provided buffer is too small (%u/%u)", sequence->buffer_size,
-			needed_buffer_size);
+		LOG_ERROR("Provided buffer is too small (%u/%u)", sequence->buffer_size,
+			  needed_buffer_size);
 		return -ENOMEM;
 	}
 	return 0;
@@ -197,17 +197,17 @@ static int adc_sf32lb_read(const struct device *dev, const struct adc_sequence *
 	int error;
 
 	if (sequence->resolution != 12U) {
-		LOG_ERR("Resolution %d is not supported", sequence->resolution);
+		LOG_ERROR("Resolution %d is not supported", sequence->resolution);
 		return -ENOTSUP;
 	}
 
 	if (sequence->oversampling) {
-		LOG_ERR("Oversampling is not supported");
+		LOG_ERROR("Oversampling is not supported");
 		return -ENOTSUP;
 	}
 
 	if (sequence->calibrate) {
-		LOG_ERR("Calibration is not supported");
+		LOG_ERROR("Calibration is not supported");
 		return -ENOTSUP;
 	}
 
@@ -226,17 +226,17 @@ static int adc_sf32lb_read_async(const struct device *dev, const struct adc_sequ
 	int error;
 
 	if (sequence->resolution != 12U) {
-		LOG_ERR("Resolution %d is not supported", sequence->resolution);
+		LOG_ERROR("Resolution %d is not supported", sequence->resolution);
 		return -ENOTSUP;
 	}
 
 	if (sequence->oversampling) {
-		LOG_ERR("Oversampling is not supported");
+		LOG_ERROR("Oversampling is not supported");
 		return -ENOTSUP;
 	}
 
 	if (sequence->calibrate) {
-		LOG_ERR("Calibration is not supported");
+		LOG_ERROR("Calibration is not supported");
 		return -ENOTSUP;
 	}
 

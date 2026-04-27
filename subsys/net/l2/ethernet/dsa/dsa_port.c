@@ -32,7 +32,7 @@ int dsa_port_initialize(const struct device *dev)
 	if (dsa_switch_ctx->iface_conduit == NULL && cfg->ethernet_connection != NULL) {
 		dsa_switch_ctx->iface_conduit = net_if_lookup_by_dev(cfg->ethernet_connection);
 		if (dsa_switch_ctx->iface_conduit == NULL) {
-			LOG_ERR("DSA: Conduit iface NOT found!");
+			LOG_ERROR("DSA: Conduit iface NOT found!");
 		}
 
 		/* Set up tag protocol on the cpu port */
@@ -106,12 +106,12 @@ static void dsa_port_iface_init(struct net_if *iface)
 	net_if_carrier_off(iface);
 
 	if (!device_is_ready(cfg->phy_dev)) {
-		LOG_ERR("PHY device (%p) is not ready, cannot init iface", cfg->phy_dev);
+		LOG_ERROR("PHY device (%p) is not ready, cannot init iface", cfg->phy_dev);
 		return;
 	}
 
 	if (dsa_switch_ctx->dapi->port_phylink_change == NULL) {
-		LOG_ERR("require port_phylink_change callback");
+		LOG_ERROR("require port_phylink_change callback");
 		return;
 	}
 

@@ -123,7 +123,7 @@ static void pub_hb_sent_cb(const struct bt_mesh_hb_pub *pub)
 	}
 
 	if (pub_cnt < 0) {
-		LOG_ERR("Published more times than expected");
+		LOG_ERROR("Published more times than expected");
 		FAIL();
 	}
 }
@@ -156,7 +156,7 @@ static void publish_process(void)
 	publish_common();
 	/* +1 to avoid boundary time rally */
 	if (k_sem_take(&sem, K_SECONDS(PUBLISH_PERIOD_SEC * (PUBLISH_MSG_CNT + 1)))) {
-		LOG_ERR("Publishing timed out");
+		LOG_ERROR("Publishing timed out");
 		FAIL();
 	}
 }

@@ -103,7 +103,7 @@ static int tc_counter_wait_sync(const volatile uint32_t *sync_reg_addr, uint32_t
 			       TC_SYNCHRONIZATION_TIMEOUT_IN_US, k_busy_wait(DELAY_US));
 
 	if (success == 0) {
-		LOG_ERR("%s : Synchronization time-out occurred", __func__);
+		LOG_ERROR("%s : Synchronization time-out occurred", __func__);
 		return -ETIMEDOUT;
 	}
 	return 0;
@@ -115,7 +115,7 @@ static int tc_counter_ctrlb_wait_sync(const volatile uint8_t *sync_reg_addr, uin
 			       TC_SYNCHRONIZATION_TIMEOUT_IN_US, k_busy_wait(DELAY_US));
 
 	if (success == 0) {
-		LOG_ERR("%s : Synchronization time-out occurred", __func__);
+		LOG_ERROR("%s : Synchronization time-out occurred", __func__);
 		return -ETIMEDOUT;
 	}
 	return 0;
@@ -130,13 +130,13 @@ static int tc_counter_32bit_mode_init(tc_count32_registers_t *const p_regs,
 		p_regs->TC_CTRLA &= ~TC_CTRLA_ENABLE_Msk;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_ENABLE_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("ret_val = %d", ret_val);
+			LOG_ERROR("ret_val = %d", ret_val);
 			return ret_val;
 		}
 		p_regs->TC_CTRLA |= TC_CTRLA_SWRST_Msk;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_SWRST_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("ret_val = %d", ret_val);
+			LOG_ERROR("ret_val = %d", ret_val);
 			return ret_val;
 		}
 		p_regs->TC_CTRLA = ctrla_reg_value | TC_CTRLA_MODE(2u);
@@ -149,7 +149,7 @@ static int tc_counter_32bit_mode_init(tc_count32_registers_t *const p_regs,
 		p_regs->TC_EVCTRL = evctrl_reg_value;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, ALL_TC_SYNC_BITS);
 		if (ret_val < 0) {
-			LOG_ERR("ret_val = %d", ret_val);
+			LOG_ERROR("ret_val = %d", ret_val);
 			return ret_val;
 		}
 		ret_val = 0;
@@ -169,13 +169,13 @@ static int tc_counter_16bit_mode_init(tc_count16_registers_t *const p_regs,
 		p_regs->TC_CTRLA &= ~TC_CTRLA_ENABLE_Msk;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_ENABLE_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("ret_val = %d", ret_val);
+			LOG_ERROR("ret_val = %d", ret_val);
 			return ret_val;
 		}
 		p_regs->TC_CTRLA |= TC_CTRLA_SWRST_Msk;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_SWRST_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("ret_val = %d", ret_val);
+			LOG_ERROR("ret_val = %d", ret_val);
 			return ret_val;
 		}
 		p_regs->TC_CTRLA = ctrla_reg_value;
@@ -188,7 +188,7 @@ static int tc_counter_16bit_mode_init(tc_count16_registers_t *const p_regs,
 		p_regs->TC_EVCTRL = evctrl_reg_value;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, ALL_TC_SYNC_BITS);
 		if (ret_val < 0) {
-			LOG_ERR("ret_val = %d", ret_val);
+			LOG_ERROR("ret_val = %d", ret_val);
 			return ret_val;
 		}
 		ret_val = 0;
@@ -208,13 +208,13 @@ static int tc_counter_8bit_mode_init(tc_count8_registers_t *const p_regs, uint32
 		p_regs->TC_CTRLA &= ~TC_CTRLA_ENABLE_Msk;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_ENABLE_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("ret_val = %d", ret_val);
+			LOG_ERROR("ret_val = %d", ret_val);
 			return ret_val;
 		}
 		p_regs->TC_CTRLA |= TC_CTRLA_SWRST_Msk;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_SWRST_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("ret_val = %d", ret_val);
+			LOG_ERROR("ret_val = %d", ret_val);
 			return ret_val;
 		}
 		p_regs->TC_CTRLA = ctrla_reg_value | TC_CTRLA_MODE(1u);
@@ -228,7 +228,7 @@ static int tc_counter_8bit_mode_init(tc_count8_registers_t *const p_regs, uint32
 		p_regs->TC_EVCTRL = evctrl_reg_value;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, ALL_TC_SYNC_BITS);
 		if (ret_val < 0) {
-			LOG_ERR("ret_val = %d", ret_val);
+			LOG_ERROR("ret_val = %d", ret_val);
 			return ret_val;
 		}
 		ret_val = 0;
@@ -272,7 +272,7 @@ static int tc_counter_init(const void *tc_regs, uint32_t prescaler, const uint32
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_val = -ENOTSUP;
 		break;
 	}
@@ -291,24 +291,24 @@ static int32_t tc_counter_start(const void *tc_regs, const uint32_t max_bit_widt
 		p_regs->TC_CTRLA |= TC_CTRLA_ENABLE_Msk;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_ENABLE_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_CTRLB_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 
 		p_regs->TC_CTRLBSET |= TC_CTRLBSET_CMD_RETRIGGER;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_CTRLB_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = tc_counter_ctrlb_wait_sync(&p_regs->TC_CTRLBSET, TC_CTRLBSET_CMD_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = 0;
@@ -320,18 +320,18 @@ static int32_t tc_counter_start(const void *tc_regs, const uint32_t max_bit_widt
 		p_regs->TC_CTRLA |= TC_CTRLA_ENABLE_Msk;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_ENABLE_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		p_regs->TC_CTRLBSET |= TC_CTRLBSET_CMD_RETRIGGER;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_CTRLB_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = tc_counter_ctrlb_wait_sync(&p_regs->TC_CTRLBSET, TC_CTRLBSET_CMD_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = 0;
@@ -346,19 +346,19 @@ static int32_t tc_counter_start(const void *tc_regs, const uint32_t max_bit_widt
 		p_regs->TC_CTRLBSET |= TC_CTRLBSET_CMD_RETRIGGER;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_CTRLB_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = tc_counter_ctrlb_wait_sync(&p_regs->TC_CTRLBSET, TC_CTRLBSET_CMD_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = 0;
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_val = -ENOTSUP;
 		break;
 	}
@@ -377,12 +377,12 @@ static int32_t tc_counter_stop(const void *tc_regs, const uint32_t max_bit_width
 		p_regs->TC_CTRLBSET |= TC_CTRLBSET_CMD_STOP;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_CTRLB_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = tc_counter_ctrlb_wait_sync(&p_regs->TC_CTRLBSET, TC_CTRLBSET_CMD_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = 0;
@@ -394,12 +394,12 @@ static int32_t tc_counter_stop(const void *tc_regs, const uint32_t max_bit_width
 		p_regs->TC_CTRLBSET |= TC_CTRLBSET_CMD_STOP;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_CTRLB_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = tc_counter_ctrlb_wait_sync(&p_regs->TC_CTRLBSET, TC_CTRLBSET_CMD_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = 0;
@@ -411,19 +411,19 @@ static int32_t tc_counter_stop(const void *tc_regs, const uint32_t max_bit_width
 		p_regs->TC_CTRLBSET |= TC_CTRLBSET_CMD_STOP;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_CTRLB_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = tc_counter_ctrlb_wait_sync(&p_regs->TC_CTRLBSET, TC_CTRLBSET_CMD_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = 0;
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_val = -ENOTSUP;
 		break;
 	}
@@ -442,12 +442,12 @@ static int32_t tc_counter_retrigger(const void *tc_regs, const uint32_t max_bit_
 		p_regs->TC_CTRLBSET |= TC_CTRLBSET_CMD_RETRIGGER;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_CTRLB_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = tc_counter_ctrlb_wait_sync(&p_regs->TC_CTRLBSET, TC_CTRLBSET_CMD_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = 0;
@@ -459,12 +459,12 @@ static int32_t tc_counter_retrigger(const void *tc_regs, const uint32_t max_bit_
 		p_regs->TC_CTRLBSET |= TC_CTRLBSET_CMD_RETRIGGER;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_CTRLB_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = tc_counter_ctrlb_wait_sync(&p_regs->TC_CTRLBSET, TC_CTRLBSET_CMD_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		break;
@@ -475,19 +475,19 @@ static int32_t tc_counter_retrigger(const void *tc_regs, const uint32_t max_bit_
 		p_regs->TC_CTRLBSET |= TC_CTRLBSET_CMD_RETRIGGER;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_CTRLB_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = tc_counter_ctrlb_wait_sync(&p_regs->TC_CTRLBSET, TC_CTRLBSET_CMD_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = 0;
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_val = -ENOTSUP;
 		break;
 	}
@@ -507,12 +507,12 @@ static inline int32_t tc_counter_get_count(const void *tc_regs, uint32_t *const 
 		p_regs->TC_CTRLBSET |= TC_CTRLBSET_CMD_READSYNC;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_CTRLB_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = tc_counter_ctrlb_wait_sync(&p_regs->TC_CTRLBSET, TC_CTRLBSET_CMD_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		*counter_value = p_regs->TC_COUNT;
@@ -525,12 +525,12 @@ static inline int32_t tc_counter_get_count(const void *tc_regs, uint32_t *const 
 		p_regs->TC_CTRLBSET |= TC_CTRLBSET_CMD_READSYNC;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_CTRLB_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = tc_counter_ctrlb_wait_sync(&p_regs->TC_CTRLBSET, TC_CTRLBSET_CMD_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		*counter_value = p_regs->TC_COUNT;
@@ -543,12 +543,12 @@ static inline int32_t tc_counter_get_count(const void *tc_regs, uint32_t *const 
 		p_regs->TC_CTRLBSET |= TC_CTRLBSET_CMD_READSYNC;
 		ret_val = tc_counter_wait_sync(&p_regs->TC_SYNCBUSY, TC_SYNCBUSY_CTRLB_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		ret_val = tc_counter_ctrlb_wait_sync(&p_regs->TC_CTRLBSET, TC_CTRLBSET_CMD_Msk);
 		if (ret_val < 0) {
-			LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+			LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 			break;
 		}
 		*counter_value = p_regs->TC_COUNT;
@@ -556,12 +556,12 @@ static inline int32_t tc_counter_get_count(const void *tc_regs, uint32_t *const 
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_val = -ENOTSUP;
 		break;
 	}
 	if (ret_val < 0) {
-		LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+		LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 	}
 	return ret_val;
 }
@@ -594,12 +594,12 @@ static int32_t tc_counter_set_period(const void *tc_regs, const uint32_t period,
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_val = -ENOTSUP;
 		break;
 	}
 	if (ret_val < 0) {
-		LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+		LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 	}
 
 	return ret_val;
@@ -630,7 +630,7 @@ static int32_t tc_counter_get_period(const void *tc_regs, uint32_t *const period
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_val = -ENOTSUP;
 		break;
 	}
@@ -672,12 +672,12 @@ static int32_t tc_counter_set_compare(const void *tc_regs, const uint32_t chan_i
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_val = -EBUSY;
 		break;
 	}
 	if (ret_val < 0) {
-		LOG_ERR("%s : ret_val = %d", __func__, ret_val);
+		LOG_ERROR("%s : ret_val = %d", __func__, ret_val);
 	}
 	return ret_val;
 }
@@ -703,7 +703,7 @@ static int tc_counter_get_pending_irqs(const void *tc_regs, const uint32_t max_b
 		ret_status = p_regs->TC_INTFLAG;
 	} break;
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		break;
 	}
 
@@ -749,7 +749,7 @@ static int32_t tc_counter_alarm_irq_enable(const void *tc_regs, const uint32_t c
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_val = -ENOTSUP;
 		break;
 	}
@@ -796,7 +796,7 @@ static int32_t tc_counter_alarm_irq_disable(const void *tc_regs, const uint32_t 
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_val = -ENOTSUP;
 		break;
 	}
@@ -843,7 +843,7 @@ static int32_t tc_counter_alarm_irq_clear(const void *tc_regs, const uint32_t ch
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_val = -ENOTSUP;
 		break;
 	}
@@ -888,7 +888,7 @@ static bool tc_counter_alarm_irq_status(const uint32_t pending_irq_status,
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		break;
 	}
 
@@ -919,7 +919,7 @@ static int32_t tc_counter_top_irq_enable(const void *tc_regs, const uint32_t max
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_val = -ENOTSUP;
 		break;
 	}
@@ -951,7 +951,7 @@ static int32_t tc_counter_top_irq_disable(const void *tc_regs, const uint32_t ma
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_val = -ENOTSUP;
 		break;
 	}
@@ -983,7 +983,7 @@ static int32_t tc_counter_top_irq_clear(const void *tc_regs, const uint32_t max_
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_val = -ENOTSUP;
 		break;
 	}
@@ -1013,7 +1013,7 @@ static int32_t tc_counter_top_irq_status(const uint32_t pending_irq_status,
 		break;
 	}
 	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
+		LOG_ERROR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
 		ret_val = -ENOTSUP;
 		break;
 	}
@@ -1103,12 +1103,12 @@ static int32_t counter_mchp_set_alarm(const struct device *const dev, const uint
 
 	/* Check if the requested tick value is less than top (period) value */
 	if (ticks > top_value) {
-		LOG_ERR("%s : invalid value requested", __func__);
+		LOG_ERROR("%s : invalid value requested", __func__);
 		return -EINVAL;
 	}
 
 	if (NULL != data->channel_data[chan_id].callback) {
-		LOG_ERR("alarm already set");
+		LOG_ERROR("alarm already set");
 		return -EBUSY;
 	}
 
@@ -1118,7 +1118,7 @@ static int32_t counter_mchp_set_alarm(const struct device *const dev, const uint
 	 */
 	ret_status = tc_counter_get_count(cfg->regs, &count_value, cfg->max_bit_width);
 	if (ret_status < 0) {
-		LOG_ERR("%s : ret_val = %d", __func__, ret_status);
+		LOG_ERROR("%s : ret_val = %d", __func__, ret_status);
 		return ret_status;
 	}
 	furthest_count_value = tc_counter_ticks_sub(count_value, data->guard_period, top_value);
@@ -1126,12 +1126,12 @@ static int32_t counter_mchp_set_alarm(const struct device *const dev, const uint
 	ret_status = tc_counter_set_compare(cfg->regs, chan_id, furthest_count_value,
 					    cfg->max_bit_width);
 	if (ret_status < 0) {
-		LOG_ERR("%s : ret_val = %d", __func__, ret_status);
+		LOG_ERROR("%s : ret_val = %d", __func__, ret_status);
 		return ret_status;
 	}
 	ret_status = tc_counter_alarm_irq_clear(cfg->regs, chan_id, cfg->max_bit_width);
 	if (ret_status < 0) {
-		LOG_ERR("%s : ret_val = %d", __func__, ret_status);
+		LOG_ERROR("%s : ret_val = %d", __func__, ret_status);
 		return ret_status;
 	}
 	/* Update new callback functions */
@@ -1160,14 +1160,14 @@ static int32_t counter_mchp_set_alarm(const struct device *const dev, const uint
 			ret_status = tc_counter_set_compare(cfg->regs, chan_id, ticks,
 							    cfg->max_bit_width);
 			if (ret_status < 0) {
-				LOG_ERR("%s : ret_val = %d", __func__, ret_status);
+				LOG_ERROR("%s : ret_val = %d", __func__, ret_status);
 				return ret_status;
 			}
 			/* Enable interrupt at compare match */
 			ret_status =
 				tc_counter_alarm_irq_enable(cfg->regs, chan_id, cfg->max_bit_width);
 			if (ret_status < 0) {
-				LOG_ERR("%s : ret_val = %d", __func__, ret_status);
+				LOG_ERROR("%s : ret_val = %d", __func__, ret_status);
 				return ret_status;
 			}
 		}
@@ -1315,13 +1315,13 @@ static int32_t counter_init(const struct device *const dev)
 
 	max_counter_val = (uint32_t)((1ULL << cfg->max_bit_width) - 1u);
 	if (max_counter_val != cfg->info.max_top_value) {
-		LOG_ERR("%s : Maximum bit width not allowed", __func__);
+		LOG_ERROR("%s : Maximum bit width not allowed", __func__);
 		return -EINVAL;
 	}
 
 	ret_status = tc_counter_init(cfg->regs, cfg->prescaler, cfg->max_bit_width);
 	if (ret_status < 0) {
-		LOG_ERR("%s : Counter failed to initialize", __func__);
+		LOG_ERROR("%s : Counter failed to initialize", __func__);
 		return ret_status;
 	}
 	cfg->irq_config_func(dev);
@@ -1427,7 +1427,7 @@ static int32_t counter_mchp_init(const struct device *dev)
 	/* Enable host synchronous core clock */
 	ret_status = clock_control_on(clk->clock_dev, clk->host_mclk);
 	if ((ret_status < 0) && (ret_status != -EALREADY)) {
-		LOG_ERR("%s : Unable to initialize host clock", __func__);
+		LOG_ERROR("%s : Unable to initialize host clock", __func__);
 		return ret_status;
 	}
 
@@ -1436,11 +1436,11 @@ static int32_t counter_mchp_init(const struct device *dev)
 		if (clk->client_mclk != NULL) {
 			ret_status = clock_control_on(clk->clock_dev, clk->client_mclk);
 			if ((ret_status < 0) && (ret_status != -EALREADY)) {
-				LOG_ERR("%s : Unable to initialize client clock", __func__);
+				LOG_ERROR("%s : Unable to initialize client clock", __func__);
 				return ret_status;
 			}
 		} else {
-			LOG_ERR("Peripheral does not support 32 bit mode");
+			LOG_ERROR("Peripheral does not support 32 bit mode");
 			return -EINVAL;
 		}
 	}
@@ -1448,7 +1448,7 @@ static int32_t counter_mchp_init(const struct device *dev)
 	/* Enable peripheral asynchronous clock */
 	ret_status = clock_control_on(clk->clock_dev, clk->host_gclk);
 	if ((ret_status < 0) && (ret_status != -EALREADY)) {
-		LOG_ERR("%s : Unable to initialize peripheral clock", __func__);
+		LOG_ERROR("%s : Unable to initialize peripheral clock", __func__);
 		return ret_status;
 	}
 	ret_status = counter_init(dev);

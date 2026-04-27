@@ -36,7 +36,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 	ARG_UNUSED(reg);
 
 	if (!device_is_ready(slcr)) {
-		LOG_ERR("SLCR device not ready");
+		LOG_ERROR("SLCR device not ready");
 		return -ENODEV;
 	}
 
@@ -52,7 +52,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 
 		err = syscon_read_reg(slcr, addr, &val);
 		if (err != 0) {
-			LOG_ERR("failed to read SLCR addr 0x%04x (err %d)", addr, err);
+			LOG_ERROR("failed to read SLCR addr 0x%04x (err %d)", addr, err);
 			break;
 		}
 
@@ -66,7 +66,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 
 		err = syscon_write_reg(slcr, addr, val);
 		if (err != 0) {
-			LOG_ERR("failed to write SLCR addr 0x%04x (err %d)", addr, err);
+			LOG_ERROR("failed to write SLCR addr 0x%04x (err %d)", addr, err);
 			break;
 		}
 	}

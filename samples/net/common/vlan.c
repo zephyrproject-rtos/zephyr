@@ -64,13 +64,13 @@ static int setup_iface(struct net_if *eth_iface,
 
 	next = strstr(option, ";");
 	if (next == NULL) {
-		LOG_ERR("VLAN tag not found, invalid option \"%s\"", option);
+		LOG_ERROR("VLAN tag not found, invalid option \"%s\"", option);
 		return -EINVAL;
 	}
 
 	value = strtoul(option, &endptr, 10);
 	if (*endptr != '\0' && endptr != next) {
-		LOG_ERR("Invalid VLAN tag \"%s\"", option);
+		LOG_ERROR("Invalid VLAN tag \"%s\"", option);
 		return -EINVAL;
 	}
 
@@ -83,7 +83,7 @@ static int setup_iface(struct net_if *eth_iface,
 		next = net_ipaddr_parse_mask(addr_str, strlen(addr_str),
 					     paddr, &mask_len);
 		if (next == NULL) {
-			LOG_ERR("Cannot parse IP address \"%s\"", addr_str);
+			LOG_ERROR("Cannot parse IP address \"%s\"", addr_str);
 			return -EINVAL;
 		}
 
@@ -100,7 +100,7 @@ static int setup_iface(struct net_if *eth_iface,
 			ret = net_mask_len_to_netmask(NET_AF_INET, mask_len,
 						      (struct net_sockaddr *)&mask);
 			if (ret < 0) {
-				LOG_ERR("Invalid network mask length (%d)", ret);
+				LOG_ERROR("Invalid network mask length (%d)", ret);
 				return ret;
 			}
 
@@ -121,19 +121,19 @@ static int setup_iface(struct net_if *eth_iface,
 
 			if (!net_if_ipv6_prefix_add(vlan_iface, &netaddr6, mask_len,
 						    (uint32_t)0xffffffff)) {
-				LOG_ERR("Cannot add %s to interface %d", my_addr,
-					net_if_get_by_iface(vlan_iface));
+				LOG_ERROR("Cannot add %s to interface %d", my_addr,
+					  net_if_get_by_iface(vlan_iface));
 				return -EINVAL;
 			}
 
 		} else {
-			LOG_ERR("Cannot parse IP address \"%s\"", my_addr);
+			LOG_ERROR("Cannot parse IP address \"%s\"", my_addr);
 			return -EAFNOSUPPORT;
 		}
 
 		if (ifaddr == NULL) {
-			LOG_ERR("Cannot add IP address \"%s\" to interface %d",
-				my_addr, net_if_get_by_iface(vlan_iface));
+			LOG_ERROR("Cannot add IP address \"%s\" to interface %d", my_addr,
+				  net_if_get_by_iface(vlan_iface));
 			return -ENOENT;
 		}
 
@@ -142,7 +142,7 @@ static int setup_iface(struct net_if *eth_iface,
 
 	ret = net_eth_vlan_enable(eth_iface, vlan_tag);
 	if (ret < 0) {
-		LOG_ERR("Cannot enable VLAN for tag %d (%d)", vlan_tag, ret);
+		LOG_ERROR("Cannot enable VLAN for tag %d (%d)", vlan_tag, ret);
 	}
 
 	LOG_DBG("Interface %d VLAN tag %d setup done.",

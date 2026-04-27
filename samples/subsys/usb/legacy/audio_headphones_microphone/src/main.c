@@ -78,14 +78,14 @@ int main(void)
 	LOG_INF("Entered %s", __func__);
 
 	if (!device_is_ready(hp_dev)) {
-		LOG_ERR("Device USB Headphones is not ready");
+		LOG_ERROR("Device USB Headphones is not ready");
 		return 0;
 	}
 
 	LOG_INF("Found USB Headphones Device");
 
 	if (!device_is_ready(mic_dev)) {
-		LOG_ERR("Device USB Microphone is not ready");
+		LOG_ERROR("Device USB Microphone is not ready");
 		return 0;
 	}
 
@@ -97,7 +97,7 @@ int main(void)
 
 	ret = usb_enable(NULL);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable USB");
+		LOG_ERROR("Failed to enable USB");
 		return 0;
 	}
 

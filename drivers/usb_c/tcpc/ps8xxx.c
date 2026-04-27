@@ -83,7 +83,7 @@ static int ps8xxx_tcpc_init(const struct device *dev)
 
 	if (!data->initialized) {
 		if (data->init_retries > CONFIG_USBC_TCPC_PS8XXX_INIT_RETRIES) {
-			LOG_ERR("TCPC was not initialized correctly");
+			LOG_ERROR("TCPC was not initialized correctly");
 			return -EIO;
 		}
 
@@ -277,7 +277,7 @@ int ps8xxx_tcpc_get_rx_pending_msg(const struct device *dev, struct pd_msg *msg)
 
 	ret = i2c_transfer(cfg->bus.bus, buf, buf_count, cfg->bus.addr);
 	if (ret != 0) {
-		LOG_ERR("I2C transfer error: %d", ret);
+		LOG_ERROR("I2C transfer error: %d", ret);
 	} else {
 		msg->len = (msg_len > 3) ? msg_len - 3 : 0;
 		ret = sizeof(msg->header.raw_value) + msg->len;
@@ -583,7 +583,7 @@ void ps8xxx_init_work_cb(struct k_work *work)
 		data->init_retries++;
 
 		if (data->init_retries > CONFIG_USBC_TCPC_PS8XXX_INIT_RETRIES) {
-			LOG_ERR("Chip didn't respond");
+			LOG_ERROR("Chip didn't respond");
 			return;
 		}
 

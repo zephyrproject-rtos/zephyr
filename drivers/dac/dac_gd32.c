@@ -111,12 +111,12 @@ static int dac_gd32_channel_setup(const struct device *dev,
 	/* GD32 DAC only support 8 or 12 bits resolution */
 	if ((channel_cfg->resolution != 8U) &&
 	    (channel_cfg->resolution != 12U)) {
-		LOG_ERR("Only 8 and 12 bits resolutions are supported!");
+		LOG_ERROR("Only 8 and 12 bits resolutions are supported!");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->internal) {
-		LOG_ERR("Internal channels not supported");
+		LOG_ERROR("Internal channels not supported");
 		return -ENOTSUP;
 	}
 
@@ -156,7 +156,7 @@ static int dac_gd32_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Failed to apply pinctrl state");
+		LOG_ERROR("Failed to apply pinctrl state");
 		return ret;
 	}
 

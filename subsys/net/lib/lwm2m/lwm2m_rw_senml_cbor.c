@@ -132,7 +132,7 @@ static int fmt_range_check(struct cbor_out_fmt_data *fd)
 	if (fd->name_cnt >= CONFIG_LWM2M_RW_SENML_CBOR_RECORDS ||
 	    fd->objlnk_cnt >= CONFIG_LWM2M_RW_SENML_CBOR_RECORDS ||
 	    fd->input.lwm2m_senml_record_m_count >= CONFIG_LWM2M_RW_SENML_CBOR_RECORDS) {
-		LOG_ERR("CONFIG_LWM2M_RW_SENML_CBOR_RECORDS too small");
+		LOG_ERROR("CONFIG_LWM2M_RW_SENML_CBOR_RECORDS too small");
 		return -ENOMEM;
 	}
 
@@ -200,7 +200,7 @@ static int put_end(struct lwm2m_output_context *out, struct lwm2m_obj_path *path
 		cbor_encode_lwm2m_senml(CPKT_BUF_W_REGION(out->out_cpkt), input, &len);
 
 	if (ret != ZCBOR_SUCCESS) {
-		LOG_ERR("unable to encode senml cbor msg");
+		LOG_ERROR("unable to encode senml cbor msg");
 
 		return -E2BIG;
 	}
@@ -953,7 +953,7 @@ int do_composite_read_op_senml_cbor(struct lwm2m_message *msg)
 	/* Parse paths */
 	len = parse_composite_read_paths(msg, &lwm_path_list, &lwm_path_free_list);
 	if (len == 0) {
-		LOG_ERR("No Valid URL at msg");
+		LOG_ERROR("No Valid URL at msg");
 		return -ESRCH;
 	}
 
@@ -1060,7 +1060,7 @@ int do_composite_observe_parse_path_senml_cbor(struct lwm2m_message *msg,
 	len = parse_composite_read_paths(msg, lwm2m_path_list, lwm2m_path_free_list);
 
 	if (len == 0) {
-		LOG_ERR("No Valid URL at msg");
+		LOG_ERROR("No Valid URL at msg");
 		return -ESRCH;
 	}
 

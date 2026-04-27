@@ -119,8 +119,7 @@ static int adc_cmp_npcx_init(const struct device *dev)
 
 init_error:
 	if (ret) {
-		LOG_ERR("Error setting parameter %d - value %d",
-			(uint32_t)param.type, param.val);
+		LOG_ERROR("Error setting parameter %d - value %d", (uint32_t)param.type, param.val);
 	}
 
 	return ret;

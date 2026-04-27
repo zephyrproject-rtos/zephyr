@@ -218,7 +218,7 @@ static int pwm_bbled_xec_set_cycles(const struct device *dev, uint32_t channel,
 	uint32_t dc, ld;
 
 	if (channel > 0) {
-		LOG_ERR("Invalid channel: %u", channel);
+		LOG_ERROR("Invalid channel: %u", channel);
 		return -EIO;
 	}
 
@@ -288,7 +288,7 @@ static int pwm_bbled_xec_pm_action(const struct device *dev, enum pm_device_acti
 	case PM_DEVICE_ACTION_RESUME:
 		ret = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_DEFAULT);
 		if (ret != 0) {
-			LOG_ERR("XEC BBLED pinctrl setup failed (%d)", ret);
+			LOG_ERROR("XEC BBLED pinctrl setup failed (%d)", ret);
 		}
 
 		/* Turn on BBLED only if it is ON before sleep */
@@ -333,7 +333,7 @@ static int pwm_bbled_xec_init(const struct device *dev)
 	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret != 0) {
-		LOG_ERR("XEC PWM-BBLED pinctrl init failed (%d)", ret);
+		LOG_ERROR("XEC PWM-BBLED pinctrl init failed (%d)", ret);
 		return ret;
 	}
 

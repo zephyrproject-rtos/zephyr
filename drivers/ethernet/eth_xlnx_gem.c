@@ -283,8 +283,8 @@ static void eth_xlnx_gem_isr(const struct device *dev)
 	 * interrupt status register. -> For now, just log them
 	 */
 	if (reg_val & ETH_XLNX_GEM_IXR_ERRORS_MASK) {
-		LOG_ERR("%s error bit(s) set in Interrupt Status Reg.: 0x%08X",
-			dev->name, reg_val);
+		LOG_ERROR("%s error bit(s) set in Interrupt Status Reg.: 0x%08X", dev->name,
+			  reg_val);
 	}
 
 	/*
@@ -376,7 +376,7 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 
 	tx_data_length = tx_data_remaining = net_pkt_get_len(pkt);
 	if (tx_data_length == 0) {
-		LOG_ERR("%s cannot TX, zero packet length", dev->name);
+		LOG_ERROR("%s cannot TX, zero packet length", dev->name);
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 		dev_data->stats.errors.tx++;
 #endif
@@ -405,10 +405,9 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	if (bds_reqd > dev_data->tx_bd_ring.free_bds) {
-		LOG_ERR("%s cannot TX, packet length %hu requires "
-			"%hhu BDs, current free count = %hhu",
-			dev->name, tx_data_length, bds_reqd,
-			dev_data->tx_bd_ring.free_bds);
+		LOG_ERROR("%s cannot TX, packet length %hu requires "
+			  "%hhu BDs, current free count = %hhu",
+			  dev->name, tx_data_length, bds_reqd, dev_data->tx_bd_ring.free_bds);
 
 		if (dev_conf->defer_txd_to_queue) {
 			k_sem_give(&(dev_data->tx_bd_ring.ring_sem));
@@ -515,7 +514,7 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 	/* Block until TX has completed */
 	sem_status = k_sem_take(&dev_data->tx_done_sem, K_MSEC(100));
 	if (sem_status < 0) {
-		LOG_ERR("%s TX confirmation timed out", dev->name);
+		LOG_ERROR("%s TX confirmation timed out", dev->name);
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 		dev_data->stats.tx_timeout_count++;
 #endif
@@ -1554,8 +1553,8 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 			 * Although the current BD is marked as 'used', it
 			 * doesn't contain the SOF bit.
 			 */
-			LOG_ERR("%s unexpected missing SOF bit in RX BD [%u]",
-				dev->name, first_bd_idx);
+			LOG_ERROR("%s unexpected missing SOF bit in RX BD [%u]", dev->name,
+				  first_bd_idx);
 			break;
 		}
 
@@ -1589,8 +1588,7 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 		pkt = net_pkt_rx_alloc_with_buffer(dev_data->iface, rx_data_length,
 						   NET_AF_UNSPEC, 0, K_NO_WAIT);
 		if (pkt == NULL) {
-			LOG_ERR("RX packet buffer alloc failed: %u bytes",
-				rx_data_length);
+			LOG_ERROR("RX packet buffer alloc failed: %u bytes", rx_data_length);
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 			dev_data->stats.errors.rx++;
 			dev_data->stats.error_details.rx_no_buffer_count++;
@@ -1637,8 +1635,7 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 		/* Propagate the received packet to the network stack */
 		if (pkt != NULL) {
 			if (net_recv_data(dev_data->iface, pkt) < 0) {
-				LOG_ERR("%s RX packet hand-over to IP stack failed",
-					dev->name);
+				LOG_ERROR("%s RX packet hand-over to IP stack failed", dev->name);
 				net_pkt_unref(pkt);
 			}
 #ifdef CONFIG_NET_STATISTICS_ETHERNET

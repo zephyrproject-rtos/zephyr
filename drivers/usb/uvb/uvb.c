@@ -54,7 +54,7 @@ struct uvb_packet *uvb_alloc_pkt(const enum uvb_request request,
 	struct uvb_packet *pkt;
 
 	if (k_mem_slab_alloc(&uvb_pkt_slab, (void **)&pkt, K_NO_WAIT)) {
-		LOG_ERR("Failed to allocate packet memory");
+		LOG_ERROR("Failed to allocate packet memory");
 		return NULL;
 	}
 
@@ -86,7 +86,7 @@ static struct uvb_msg *uvb_alloc_msg(const struct uvb_node *const node)
 	struct uvb_msg *msg;
 
 	if (k_mem_slab_alloc(&uvb_msg_slab, (void **)&msg, K_NO_WAIT)) {
-		LOG_ERR("Failed to allocate msg memory");
+		LOG_ERROR("Failed to allocate msg memory");
 		return NULL;
 	}
 
@@ -220,7 +220,7 @@ static ALWAYS_INLINE void handle_msg_subscribe(struct uvb_msg *const msg)
 	host_node = (struct uvb_node *)msg->source;
 	dev_node = msg->sink;
 	if (atomic_get(&dev_node->subscribed)) {
-		LOG_ERR("%p already subscribed", dev_node);
+		LOG_ERROR("%p already subscribed", dev_node);
 		return;
 	}
 
@@ -244,7 +244,7 @@ static ALWAYS_INLINE void handle_msg_unsubscribe(struct uvb_msg *const msg)
 		LOG_DBG("unsubscribe %p", dev_node);
 		sys_dlist_remove(&dev_node->node);
 	} else {
-		LOG_ERR("%p is not subscribed", dev_node);
+		LOG_ERROR("%p is not subscribed", dev_node);
 	}
 }
 
@@ -271,7 +271,7 @@ static ALWAYS_INLINE void handle_msg_to_host(struct uvb_msg *const msg)
 
 	source = (struct uvb_node *)msg->source;
 	if (source->head) {
-		LOG_ERR("Host may not reply");
+		LOG_ERROR("Host may not reply");
 	}
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&source->node, host_node, node) {

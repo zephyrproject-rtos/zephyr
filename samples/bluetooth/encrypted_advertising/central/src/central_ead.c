@@ -68,7 +68,7 @@ static bool data_parse_cb(struct bt_data *data, void *user_data)
 		err = bt_ead_decrypt(keymat.session_key, keymat.iv, data->data, data->data_len,
 				     decrypted_data);
 		if (err < 0) {
-			LOG_ERR("Error during decryption (err %d)", err);
+			LOG_ERROR("Error during decryption (err %d)", err);
 		}
 
 		net_buf_simple_init_with_data(&decrypted_buf, &decrypted_data[0],
@@ -195,7 +195,7 @@ static uint8_t gatt_read_cb(struct bt_conn *conn, uint8_t att_err,
 		memcpy(gatt_read_res, data, read_len);
 		k_poll_signal_raise(&gatt_read_signal, 0);
 	} else {
-		LOG_ERR("ATT error (err %d)", att_err);
+		LOG_ERROR("ATT error (err %d)", att_err);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -384,7 +384,7 @@ static int init_bt(void)
 
 	err = bt_enable(NULL);
 	if (err) {
-		LOG_ERR("Bluetooth init failed (err %d)", err);
+		LOG_ERROR("Bluetooth init failed (err %d)", err);
 		return -1;
 	}
 
@@ -392,7 +392,7 @@ static int init_bt(void)
 
 	err = bt_unpair(BT_ID_DEFAULT, BT_ADDR_LE_ANY);
 	if (err) {
-		LOG_ERR("Unpairing failed (err %d)", err);
+		LOG_ERROR("Unpairing failed (err %d)", err);
 	}
 
 	central_cb.connected = connected;
@@ -447,7 +447,7 @@ int run_central_sample(int get_passkey_confirmation(struct bt_conn *conn),
 	/* Update connection security level */
 	err = bt_conn_set_security(default_conn, BT_SECURITY_L4);
 	if (err) {
-		LOG_ERR("Failed to set security (err %d)", err);
+		LOG_ERROR("Failed to set security (err %d)", err);
 		return -3;
 	}
 
@@ -455,7 +455,7 @@ int run_central_sample(int get_passkey_confirmation(struct bt_conn *conn),
 
 	err = get_passkey_confirmation(default_conn);
 	if (err) {
-		LOG_ERR("Security update failed");
+		LOG_ERROR("Security update failed");
 		return -4;
 	}
 
@@ -463,7 +463,7 @@ int run_central_sample(int get_passkey_confirmation(struct bt_conn *conn),
 	err = gatt_discover_primary_service(default_conn, BT_UUID_CUSTOM_SERVICE, &start_handle,
 					    &end_handle);
 	if (err) {
-		LOG_ERR("Service not found (err %d)", err);
+		LOG_ERROR("Service not found (err %d)", err);
 		return -5;
 	}
 
@@ -471,7 +471,7 @@ int run_central_sample(int get_passkey_confirmation(struct bt_conn *conn),
 	err = gatt_read(default_conn, BT_UUID_GATT_EDKM, sizeof(keymat), start_handle, end_handle,
 			(uint8_t *)&keymat);
 	if (err) {
-		LOG_ERR("GATT read failed (err %d)", err);
+		LOG_ERROR("GATT read failed (err %d)", err);
 		return -6;
 	}
 
@@ -485,7 +485,7 @@ int run_central_sample(int get_passkey_confirmation(struct bt_conn *conn),
 	/* Start a new scan to get and decrypt the Advertising Data */
 	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
-		LOG_ERR("Failed to disconnect.");
+		LOG_ERROR("Failed to disconnect.");
 		return -7;
 	}
 

@@ -45,7 +45,7 @@ static int led_gpio_init(const struct device *dev)
 	int err = 0;
 
 	if (!config->num_leds) {
-		LOG_ERR("%s: no LEDs found (DT child nodes missing)", dev->name);
+		LOG_ERROR("%s: no LEDs found (DT child nodes missing)", dev->name);
 		err = -ENODEV;
 	}
 
@@ -56,10 +56,10 @@ static int led_gpio_init(const struct device *dev)
 			err = gpio_pin_configure_dt(led, GPIO_OUTPUT_INACTIVE);
 
 			if (err) {
-				LOG_ERR("Cannot configure GPIO (err %d)", err);
+				LOG_ERROR("Cannot configure GPIO (err %d)", err);
 			}
 		} else {
-			LOG_ERR("%s: GPIO device not ready", dev->name);
+			LOG_ERROR("%s: GPIO device not ready", dev->name);
 			err = -ENODEV;
 		}
 	}

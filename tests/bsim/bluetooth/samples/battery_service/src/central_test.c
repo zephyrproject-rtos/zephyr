@@ -386,7 +386,7 @@ static unsigned char battery_level_status_indicate_cb(struct bt_conn *conn,
 		if (parse_battery_level_status(data, length)) {
 			LOG_INF("Notification parsed successfully");
 		} else {
-			LOG_ERR("Notification parsing failed");
+			LOG_ERROR("Notification parsing failed");
 		}
 
 		if (ind_received++ > BAS_BLS_IND_RECEIVED_COUNT) {
@@ -414,7 +414,7 @@ static uint8_t battery_level_status_notify_cb(struct bt_conn *conn,
 		if (parse_battery_level_status(data, length)) {
 			LOG_INF("Notification parsed successfully");
 		} else {
-			LOG_ERR("Notification parsing failed");
+			LOG_ERROR("Notification parsing failed");
 		}
 
 		if (notify_count++ > BAS_BLS_NTF_RECEIVED_COUNT) {

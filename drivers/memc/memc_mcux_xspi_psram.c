@@ -216,8 +216,8 @@ static int memc_mcux_xspi_w958d6nbkx_setup(const struct device *dev,
 
 		id = reg[1] & ID0_REG_ID_MASK;
 		if (id != PSRAM_MANUFACTURER_ID_WINBOND) {
-			LOG_ERR("Wrong manufacturer ID: 0x%X, expected: 0x%X", id,
-				PSRAM_MANUFACTURER_ID_WINBOND);
+			LOG_ERROR("Wrong manufacturer ID: 0x%X, expected: 0x%X", id,
+				  PSRAM_MANUFACTURER_ID_WINBOND);
 			ret = -ENODEV;
 			break;
 		}
@@ -308,7 +308,7 @@ static int memc_mcux_xspi_psram_probe(const struct device *dev)
 	}
 
 	if (xspi_psram_config == NULL) {
-		LOG_ERR("Unsupported device: %s", data->dev_name);
+		LOG_ERROR("Unsupported device: %s", data->dev_name);
 		return -ENOTSUP;
 	}
 
@@ -337,7 +337,7 @@ static int memc_mcux_xspi_psram_init(const struct device *dev)
 	const struct device *xspi_dev = psram_data->xspi_dev;
 
 	if (!device_is_ready(xspi_dev)) {
-		LOG_ERR("XSPI device is not ready");
+		LOG_ERROR("XSPI device is not ready");
 		return -ENODEV;
 	}
 

@@ -551,7 +551,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 	dev_data->flash_size = flash_size;
 #else /* CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME */
 	if (flash_size != dev_flash_size(dev)) {
-		LOG_ERR("BFP flash size mismatch with devicetree");
+		LOG_ERROR("BFP flash size mismatch with devicetree");
 		return -EINVAL;
 	}
 #endif /* CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME */
@@ -575,14 +575,14 @@ static int spi_nor_process_sfdp(const struct device *dev)
 
 	ret = read_sfdp(dev, 0, u_header.raw, sizeof(u_header.raw));
 	if (ret != 0) {
-		LOG_ERR("SFDP read failed: %d", ret);
+		LOG_ERROR("SFDP read failed: %d", ret);
 		return ret;
 	}
 
 	uint32_t magic = jesd216_sfdp_magic(hp);
 
 	if (magic != JESD216_SFDP_MAGIC) {
-		LOG_ERR("SFDP magic %08x invalid", magic);
+		LOG_ERROR("SFDP magic %08x invalid", magic);
 		return -EINVAL;
 	}
 
@@ -672,8 +672,8 @@ static int setup_pages_layout(const struct device *dev)
 	 * erase size.
 	 */
 	if ((layout_page_size % erase_size) != 0) {
-		LOG_ERR("layout page %u not compatible with erase size %u",
-			layout_page_size, erase_size);
+		LOG_ERROR("layout page %u not compatible with erase size %u", layout_page_size,
+			  erase_size);
 		return -EINVAL;
 	}
 
@@ -697,14 +697,14 @@ static int setup_pages_layout(const struct device *dev)
 	size_t layout_size = layout->pages_size * layout->pages_count;
 
 	if (!SPI_NOR_IS_SECTOR_ALIGNED(layout->pages_size)) {
-		LOG_ERR("ANDES_QSPI_FLASH_LAYOUT_PAGE_SIZE must be "
-			"multiple of 4096");
+		LOG_ERROR("ANDES_QSPI_FLASH_LAYOUT_PAGE_SIZE must be "
+			  "multiple of 4096");
 		return -EINVAL;
 	}
 
 	if (flash_size != layout_size) {
-		LOG_ERR("device size %zu mismatch %zu * %zu By pages",
-			flash_size, layout->pages_count, layout->pages_size);
+		LOG_ERROR("device size %zu mismatch %zu * %zu By pages", flash_size,
+			  layout->pages_count, layout->pages_size);
 		return -EINVAL;
 	}
 #else /* CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME */
@@ -841,30 +841,31 @@ static int flash_andes_qspi_init(const struct device *dev)
 
 	ret = flash_andes_qspi_read_jedec_id(dev, jedec_id);
 	if (ret != 0) {
-		LOG_ERR("JEDEC ID read failed: %d", ret);
+		LOG_ERROR("JEDEC ID read failed: %d", ret);
 		return -ENODEV;
 	}
 
 #ifndef CONFIG_FLASH_ANDES_QSPI_SFDP_RUNTIME
 
 	if (memcmp(jedec_id, config->jedec_id, sizeof(jedec_id)) != 0) {
-		LOG_ERR("Device id %02x %02x %02x does not match config"
-			"%02x %02x %02x", jedec_id[0], jedec_id[1], jedec_id[2],
-			config->jedec_id[0], config->jedec_id[1], config->jedec_id[2]);
+		LOG_ERROR("Device id %02x %02x %02x does not match config"
+			  "%02x %02x %02x",
+			  jedec_id[0], jedec_id[1], jedec_id[2], config->jedec_id[0],
+			  config->jedec_id[1], config->jedec_id[2]);
 		return -EINVAL;
 	}
 #endif
 
 	ret = spi_nor_process_sfdp(dev);
 	if (ret != 0) {
-		LOG_ERR("SFDP read failed: %d", ret);
+		LOG_ERROR("SFDP read failed: %d", ret);
 		return -ENODEV;
 	}
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	ret = setup_pages_layout(dev);
 	if (ret != 0) {
-		LOG_ERR("layout setup failed: %d", ret);
+		LOG_ERROR("layout setup failed: %d", ret);
 		return -ENODEV;
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */

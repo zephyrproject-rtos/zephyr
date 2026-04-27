@@ -213,8 +213,8 @@ static int create_socket(enum proto_type proto, int *sock)
 	err = errno;
 
 	if (tmp_sock < 0) {
-		LOG_ERR("Could not open receive socket (%s), err: %i",
-			smp_udp_proto_to_name(proto), err);
+		LOG_ERROR("Could not open receive socket (%s), err: %i",
+			  smp_udp_proto_to_name(proto), err);
 
 		return -err;
 	}
@@ -228,7 +228,7 @@ static int create_socket(enum proto_type proto, int *sock)
 			       sizeof(sec_tag_list));
 
 	if (err < 0) {
-		LOG_ERR("Failed to set UDP secure option: %d", errno);
+		LOG_ERROR("Failed to set UDP secure option: %d", errno);
 		return err;
 	}
 
@@ -237,15 +237,15 @@ static int create_socket(enum proto_type proto, int *sock)
 			       sizeof(socket_role));
 
 	if (err < 0) {
-		LOG_ERR("Failed to set DTLS role secure option: %d", errno);
+		LOG_ERROR("Failed to set DTLS role secure option: %d", errno);
 		return err;
 	}
 #endif
 
 	if (zsock_bind(tmp_sock, addr, addr_len) < 0) {
 		err = errno;
-		LOG_ERR("Could not bind to receive socket (%s), err: %i",
-			smp_udp_proto_to_name(proto), err);
+		LOG_ERROR("Could not bind to receive socket (%s), err: %i",
+			  smp_udp_proto_to_name(proto), err);
 
 		zsock_close(tmp_sock);
 
@@ -288,7 +288,7 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 			/* Store sender address in user data for reply */
 			nb = smp_packet_alloc();
 			if (!nb) {
-				LOG_ERR("Failed to allocate mcumgr buffer");
+				LOG_ERROR("Failed to allocate mcumgr buffer");
 				/* No free space, drop SMP frame */
 				continue;
 			}
@@ -298,8 +298,8 @@ static void smp_udp_receive_thread(void *p1, void *p2, void *p3)
 
 			smp_rx_req(&conf->smp_transport, nb);
 		} else if (len < 0) {
-			LOG_ERR("recvfrom error (%s): %i, %d", smp_udp_proto_to_name(conf->proto),
-				errno, len);
+			LOG_ERROR("recvfrom error (%s): %i, %d", smp_udp_proto_to_name(conf->proto),
+				  errno, len);
 		}
 	}
 }
@@ -358,7 +358,7 @@ int smp_udp_open(void)
 				TLS_CREDENTIAL_PUBLIC_CERTIFICATE, NULL, &len);
 
 	if (rc == -ENOENT) {
-		LOG_ERR("Missing DTLS public certificate credential");
+		LOG_ERROR("Missing DTLS public certificate credential");
 		return rc;
 	}
 
@@ -367,7 +367,7 @@ int smp_udp_open(void)
 				TLS_CREDENTIAL_PRIVATE_KEY, NULL, &len);
 
 	if (rc == -ENOENT) {
-		LOG_ERR("Missing DTLS private key credential");
+		LOG_ERROR("Missing DTLS private key credential");
 		return rc;
 	}
 #endif
@@ -379,7 +379,7 @@ int smp_udp_open(void)
 		create_thread(&smp_udp_configs.ipv4, "smp_udp4");
 		started = true;
 	} else {
-		LOG_ERR("IPv4 UDP MCUmgr thread is already running");
+		LOG_ERROR("IPv4 UDP MCUmgr thread is already running");
 	}
 #endif
 
@@ -390,7 +390,7 @@ int smp_udp_open(void)
 		create_thread(&smp_udp_configs.ipv6, "smp_udp6");
 		started = true;
 	} else {
-		LOG_ERR("IPv6 UDP MCUmgr thread is already running");
+		LOG_ERROR("IPv6 UDP MCUmgr thread is already running");
 	}
 #endif
 
@@ -414,7 +414,7 @@ int smp_udp_close(void)
 			smp_udp_configs.ipv4.sock = -1;
 		}
 	} else {
-		LOG_ERR("IPv4 UDP MCUmgr thread is not running");
+		LOG_ERROR("IPv4 UDP MCUmgr thread is not running");
 	}
 #endif
 
@@ -427,7 +427,7 @@ int smp_udp_close(void)
 			smp_udp_configs.ipv6.sock = -1;
 		}
 	} else {
-		LOG_ERR("IPv6 UDP MCUmgr thread is not running");
+		LOG_ERROR("IPv6 UDP MCUmgr thread is not running");
 	}
 #endif
 
@@ -459,7 +459,7 @@ static void smp_udp_start(void)
 	}
 #endif
 	if (rc) {
-		LOG_ERR("Failed to register IPv4 UDP MCUmgr SMP transport: %d", rc);
+		LOG_ERROR("Failed to register IPv4 UDP MCUmgr SMP transport: %d", rc);
 	}
 #endif
 
@@ -483,7 +483,7 @@ static void smp_udp_start(void)
 #endif
 
 	if (rc) {
-		LOG_ERR("Failed to register IPv6 UDP MCUmgr SMP transport: %d", rc);
+		LOG_ERROR("Failed to register IPv6 UDP MCUmgr SMP transport: %d", rc);
 	}
 #endif
 

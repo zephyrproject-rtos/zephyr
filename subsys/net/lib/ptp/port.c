@@ -973,7 +973,7 @@ static int port_enable(struct ptp_port *port)
 	port->l2_recvmsg_retry_at = 0;
 
 	if (ptp_transport_open(port)) {
-		LOG_ERR("Couldn't open socket on Port %d.", port->port_ds.id.port_number);
+		LOG_ERROR("Couldn't open socket on Port %d.", port->port_ds.id.port_number);
 		return -1;
 	}
 
@@ -1166,7 +1166,7 @@ enum ptp_port_event ptp_port_event_gen(struct ptp_port *port, int idx)
 
 	cnt = ptp_transport_recv(port, msg, idx);
 	if (cnt <= 0) {
-		LOG_ERR("Error during message reception");
+		LOG_ERROR("Error during message reception");
 		ptp_msg_unref(msg);
 		return PTP_EVT_FAULT_DETECTED;
 	}
@@ -1471,7 +1471,7 @@ int ptp_port_add_foreign_tt(struct ptp_port *port, struct ptp_msg *msg)
 		int ret = k_mem_slab_alloc(&foreign_tts_slab, (void **)&foreign, K_NO_WAIT);
 
 		if (ret) {
-			LOG_ERR("Couldn't allocate memory for new foreign timeTransmitter");
+			LOG_ERROR("Couldn't allocate memory for new foreign timeTransmitter");
 			return 0;
 		}
 

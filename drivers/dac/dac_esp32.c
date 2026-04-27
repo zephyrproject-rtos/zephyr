@@ -41,12 +41,12 @@ static int dac_esp32_channel_setup(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (channel_cfg->channel_id >= SOC_DAC_CHAN_NUM) {
-		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
+		LOG_ERROR("Channel %d is not valid", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->internal) {
-		LOG_ERR("Internal channels not supported");
+		LOG_ERROR("Internal channels not supported");
 		return -ENOTSUP;
 	}
 
@@ -60,17 +60,17 @@ static int dac_esp32_init(const struct device *dev)
 	const struct dac_esp32_config *cfg = dev->config;
 
 	if (!cfg->clock_dev) {
-		LOG_ERR("Clock device missing");
+		LOG_ERROR("Clock device missing");
 		return -EINVAL;
 	}
 
 	if (!device_is_ready(cfg->clock_dev)) {
-		LOG_ERR("Clock device not ready");
+		LOG_ERROR("Clock device not ready");
 		return -ENODEV;
 	}
 
 	if (clock_control_on(cfg->clock_dev, (clock_control_subsys_t)cfg->clock_subsys) != 0) {
-		LOG_ERR("DAC clock setup failed (%d)", -EIO);
+		LOG_ERROR("DAC clock setup failed (%d)", -EIO);
 		return -EIO;
 	}
 

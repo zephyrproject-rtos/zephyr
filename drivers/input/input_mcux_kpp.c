@@ -119,7 +119,7 @@ static void kpp_isr(const struct device *dev)
 	uint16_t status = KPP_GetStatusFlag(config->base);
 
 	if ((status & kKPP_keyDepressInterrupt) == 0) {
-		LOG_ERR("No key press or release detected");
+		LOG_ERROR("No key press or release detected");
 		return;
 	}
 
@@ -149,7 +149,7 @@ static int input_kpp_init(const struct device *dev)
 	int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to configure pin");
+		LOG_ERROR("Failed to configure pin");
 		return ret;
 	}
 
@@ -165,7 +165,7 @@ static int input_kpp_init(const struct device *dev)
 	stable = KPP_keyPressScanning(config->base, drv_data->read_keys_old, drv_data->clock_rate);
 
 	if (stable != kStatus_Success) {
-		LOG_ERR("Kpp key status not stable");
+		LOG_ERROR("Kpp key status not stable");
 		return -EIO;
 	}
 

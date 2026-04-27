@@ -621,7 +621,7 @@ static int adxl372_attr_set_thresh(const struct device *dev,
 	case SENSOR_CHAN_ACCEL_XYZ:
 		return adxl372_set_activity_threshold_xyz(dev, reg, &threshold);
 	default:
-		LOG_ERR("attr_set() not supported on this channel");
+		LOG_ERROR("attr_set() not supported on this channel");
 		return -ENOTSUP;
 	}
 }
@@ -723,7 +723,7 @@ static int adxl372_probe(const struct device *dev)
 	}
 
 	if (dev_id != ADXL372_DEVID_VAL || part_id != ADXL372_PARTID_VAL) {
-		LOG_ERR("failed to read id (0x%X:0x%X)", dev_id, part_id);
+		LOG_ERROR("failed to read id (0x%X:0x%X)", dev_id, part_id);
 		return -ENODEV;
 	}
 
@@ -810,7 +810,7 @@ static int adxl372_probe(const struct device *dev)
 
 #ifdef CONFIG_ADXL372_TRIGGER
 	if (adxl372_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupt!");
+		LOG_ERROR("Failed to initialize interrupt!");
 		return -EIO;
 	}
 #endif
@@ -835,7 +835,7 @@ static int adxl372_init(const struct device *dev)
 
 	ret = cfg->bus_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize sensor bus");
+		LOG_ERROR("Failed to initialize sensor bus");
 		return ret;
 	}
 

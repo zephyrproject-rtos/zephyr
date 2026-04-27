@@ -40,7 +40,7 @@ static int is31fl3216a_write_buffer(const struct i2c_dt_spec *i2c,
 
 	status = i2c_write_dt(i2c, buffer, num_bytes);
 	if (status < 0) {
-		LOG_ERR("Could not write buffer: %i", status);
+		LOG_ERROR("Could not write buffer: %i", status);
 		return status;
 	}
 
@@ -205,7 +205,7 @@ static int is31fl3216a_init(const struct device *dev)
 	LOG_DBG("Initializing @0x%x...", config->i2c.addr);
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C device not ready");
+		LOG_ERROR("I2C device not ready");
 		return -ENODEV;
 	}
 

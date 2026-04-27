@@ -282,8 +282,8 @@ static uint32_t i2c_xilinx_axi_wait_interrupt(const struct device *dev, uint32_t
 
 	LOG_DBG("Got ISR events 0x%02x", events);
 	if (!events) {
-		LOG_ERR("Timeout waiting for ISR events 0x%02x, SR 0x%02x, ISR 0x%02x", int_mask,
-			sys_read32(base + REG_SR), sys_read32(base + REG_ISR));
+		LOG_ERROR("Timeout waiting for ISR events 0x%02x, SR 0x%02x, ISR 0x%02x", int_mask,
+			  sys_read32(base + REG_SR), sys_read32(base + REG_ISR));
 	}
 	return events;
 }
@@ -325,7 +325,7 @@ static int i2c_xilinx_axi_wait_rx_full(const struct device *dev, uint32_t read_b
 		return -ETIMEDOUT;
 	}
 	if (events & ISR_ARB_LOST) {
-		LOG_ERR("Arbitration lost on RX");
+		LOG_ERROR("Arbitration lost on RX");
 		return -ENXIO;
 	}
 	return 0;
@@ -461,10 +461,10 @@ static int i2c_xilinx_axi_wait_tx_done(const struct device *dev)
 			return -ETIMEDOUT;
 		}
 		if (events & ISR_ARB_LOST) {
-			LOG_ERR("Arbitration lost on TX");
+			LOG_ERROR("Arbitration lost on TX");
 			return -EAGAIN;
 		}
-		LOG_ERR("TX received NAK");
+		LOG_ERROR("TX received NAK");
 		return -ENXIO;
 	}
 	return 0;
@@ -478,7 +478,7 @@ static int i2c_xilinx_axi_wait_not_busy(const struct device *dev)
 		uint32_t events = i2c_xilinx_axi_wait_interrupt(dev, ISR_BUS_NOT_BUSY);
 
 		if (events != ISR_BUS_NOT_BUSY) {
-			LOG_ERR("Bus stuck busy");
+			LOG_ERROR("Bus stuck busy");
 			i2c_xilinx_axi_reinit(dev);
 			return -EBUSY;
 		}

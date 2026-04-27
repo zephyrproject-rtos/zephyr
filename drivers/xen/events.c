@@ -268,7 +268,7 @@ int xen_events_init(void)
 
 	if (!HYPERVISOR_shared_info) {
 		/* shared info was not mapped */
-		LOG_ERR("%s: shared_info - NULL, can't setup events\n", __func__);
+		LOG_ERROR("%s: shared_info - NULL, can't setup events\n", __func__);
 		return -EINVAL;
 	}
 

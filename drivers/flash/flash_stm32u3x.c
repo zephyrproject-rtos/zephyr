@@ -55,7 +55,7 @@ static int write_nwords(const struct device *dev, off_t offset, const uint32_t *
 
 	/* if the non-secure control register is locked,do not fail silently */
 	if (regs->CR & FLASH_STM32_NSLOCK) {
-		LOG_ERR("NSCR locked");
+		LOG_ERROR("NSCR locked");
 		return -EIO;
 	}
 
@@ -81,7 +81,7 @@ static int write_nwords(const struct device *dev, off_t offset, const uint32_t *
 	if (!full_zero) {
 		for (i = 0; i < n; i++) {
 			if (flash[i] != 0xFFFFFFFFUL) {
-				LOG_ERR("Word at offs %ld not erased", (long)(offset + i));
+				LOG_ERROR("Word at offs %ld not erased", (long)(offset + i));
 				return -EIO;
 			}
 		}
@@ -116,7 +116,7 @@ static int erase_page(const struct device *dev, unsigned int offset)
 
 	/* if the non-secure control register is locked,do not fail silently */
 	if (regs->CR & FLASH_STM32_NSLOCK) {
-		LOG_ERR("NSCR locked");
+		LOG_ERROR("NSCR locked");
 		return -EIO;
 	}
 
@@ -153,7 +153,7 @@ static int erase_page(const struct device *dev, unsigned int offset)
 			page = (offset - BANK2_OFFSET) / FLASH_PAGE_SIZE;
 			LOG_DBG("Erase page %d on bank 2", page);
 		} else {
-			LOG_ERR("Offset %d does not exist", offset);
+			LOG_ERROR("Offset %d does not exist", offset);
 			return -EINVAL;
 		}
 	} else {

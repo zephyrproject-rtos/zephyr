@@ -81,7 +81,7 @@ int ps2_npcx_ctrl_configure(const struct device *dev, uint8_t channel_id,
 	struct ps2_npcx_ctrl_data *const data = dev->data;
 
 	if (channel_id >= NPCX_PS2_CH_COUNT) {
-		LOG_ERR("unexpected channel ID: %d", channel_id);
+		LOG_ERROR("unexpected channel ID: %d", channel_id);
 		return -EINVAL;
 	}
 
@@ -111,7 +111,7 @@ int ps2_npcx_ctrl_enable_interface(const struct device *dev, uint8_t channel_id,
 	irq_disable(DT_INST_IRQN(0));
 
 	if (channel_id >= NPCX_PS2_CH_COUNT) {
-		LOG_ERR("unexpected channel ID: %d", channel_id);
+		LOG_ERROR("unexpected channel ID: %d", channel_id);
 		irq_enable(DT_INST_IRQN(0));
 		k_sem_give(&data->lock);
 		return -EINVAL;
@@ -159,13 +159,13 @@ int ps2_npcx_ctrl_write(const struct device *dev, uint8_t channel_id,
 	int i = 0;
 
 	if (channel_id >= NPCX_PS2_CH_COUNT) {
-		LOG_ERR("unexpected channel ID: %d", channel_id);
+		LOG_ERROR("unexpected channel ID: %d", channel_id);
 		return -EINVAL;
 	}
 
 	if (!(ps2_npcx_ctrl_get_ch_clk_mask(channel_id) &
 	      data->channel_enabled_mask)) {
-		LOG_ERR("channel %d is not enabled", channel_id);
+		LOG_ERROR("channel %d is not enabled", channel_id);
 		return -EINVAL;
 	}
 
@@ -177,7 +177,7 @@ int ps2_npcx_ctrl_write(const struct device *dev, uint8_t channel_id,
 	}
 
 	if (unlikely(i == PS2_RETRY_COUNT)) {
-		LOG_ERR("PS2 write attempt timed out");
+		LOG_ERROR("PS2 write attempt timed out");
 		goto timeout_invalid;
 	}
 
@@ -198,7 +198,7 @@ int ps2_npcx_ctrl_write(const struct device *dev, uint8_t channel_id,
 	inst->PSOSIG |= ps2_npcx_ctrl_get_ch_clk_mask(channel_id);
 	if (k_sem_take(&data->tx_sync_sem, PS2_TRANSACTION_TIMEOUT) != 0) {
 		irq_disable(DT_INST_IRQN(0));
-		LOG_ERR("PS/2 Tx timeout");
+		LOG_ERROR("PS/2 Tx timeout");
 		/* Reset the shift mechanism */
 		inst->PSOSIG = NPCX_PS2_SHIFT_MECH_RESET;
 		/* Change the PS/2 module to receive mode */
@@ -228,10 +228,10 @@ static int ps2_npcx_ctrl_is_rx_error(const struct device *dev)
 	status = inst->PSTAT & (BIT(NPCX_PSTAT_PERR) | BIT(NPCX_PSTAT_RFERR));
 	if (status) {
 		if (status & BIT(NPCX_PSTAT_PERR)) {
-			LOG_ERR("RX parity error");
+			LOG_ERROR("RX parity error");
 		}
 		if (status & BIT(NPCX_PSTAT_RFERR)) {
-			LOG_ERR("RX Frame error");
+			LOG_ERROR("RX Frame error");
 		}
 		return -EIO;
 	}
@@ -339,7 +339,7 @@ static int ps2_npcx_ctrl_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(clk_dev)) {
-		LOG_ERR("%s device not ready", clk_dev->name);
+		LOG_ERROR("%s device not ready", clk_dev->name);
 		return -ENODEV;
 	}
 
@@ -347,7 +347,7 @@ static int ps2_npcx_ctrl_init(const struct device *dev)
 	ret = clock_control_on(clk_dev,
 			       (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
-		LOG_ERR("Turn on PS/2 clock fail %d", ret);
+		LOG_ERROR("Turn on PS/2 clock fail %d", ret);
 		return ret;
 	}
 

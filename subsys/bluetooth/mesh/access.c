@@ -391,7 +391,7 @@ static int comp_add_elem(struct net_buf_simple *buf, const struct bt_mesh_elem *
 			return 0;
 		}
 
-		LOG_ERR("Too large device composition");
+		LOG_ERROR("Too large device composition");
 		return -E2BIG;
 	}
 
@@ -627,7 +627,7 @@ static int bt_mesh_comp_data_get_page_1(struct net_buf_simple *buf, size_t offse
 				return 0;
 			}
 
-			LOG_ERR("Too large device composition");
+			LOG_ERROR("Too large device composition");
 			return -E2BIG;
 		}
 
@@ -660,7 +660,7 @@ static int bt_mesh_comp_data_get_page_1(struct net_buf_simple *buf, size_t offse
 static int bt_mesh_comp_data_get_page_2(struct net_buf_simple *buf, size_t offset)
 {
 	if (!dev_comp2) {
-		LOG_ERR("Composition data P2 not registered");
+		LOG_ERROR("Composition data P2 not registered");
 		return -ENODEV;
 	}
 
@@ -684,7 +684,7 @@ static int bt_mesh_comp_data_get_page_2(struct net_buf_simple *buf, size_t offse
 				return 0;
 			}
 
-			LOG_ERR("Too large device composition");
+			LOG_ERROR("Too large device composition");
 			return -E2BIG;
 		}
 
@@ -821,7 +821,7 @@ static void publish_sent(int err, void *user_data)
 static void publish_start(uint16_t duration, int err, void *user_data)
 {
 	if (err) {
-		LOG_ERR("Failed to publish: err %d", err);
+		LOG_ERROR("Failed to publish: err %d", err);
 		publish_sent(err, user_data);
 		return;
 	}
@@ -898,7 +898,7 @@ static int pub_delay_schedule(struct bt_mesh_model_pub *pub, int delay)
 	random = pub_delay_get(delay);
 	err = k_work_reschedule(&pub->timer, K_MSEC(random));
 	if (err < 0) {
-		LOG_ERR("Unable to delay publication (err %d)", err);
+		LOG_ERROR("Unable to delay publication (err %d)", err);
 		return err;
 	}
 
@@ -952,7 +952,7 @@ static void mod_publish(struct k_work *work)
 
 	err = publish_transmit(pub->mod);
 	if (err) {
-		LOG_ERR("Failed to publish (err %d)", err);
+		LOG_ERROR("Failed to publish (err %d)", err);
 		publish_sent(err, (void *)pub->mod);
 	}
 }
@@ -967,7 +967,7 @@ const struct bt_mesh_model *bt_mesh_model_get(bool vnd, uint8_t elem_idx, uint8_
 	const struct bt_mesh_elem *elem;
 
 	if (elem_idx >= dev_comp->elem_count) {
-		LOG_ERR("Invalid element index %u", elem_idx);
+		LOG_ERROR("Invalid element index %u", elem_idx);
 		return NULL;
 	}
 
@@ -975,14 +975,14 @@ const struct bt_mesh_model *bt_mesh_model_get(bool vnd, uint8_t elem_idx, uint8_
 
 	if (vnd) {
 		if (mod_idx >= elem->vnd_model_count) {
-			LOG_ERR("Invalid vendor model index %u", mod_idx);
+			LOG_ERROR("Invalid vendor model index %u", mod_idx);
 			return NULL;
 		}
 
 		return &elem->vnd_models[mod_idx];
 	} else {
 		if (mod_idx >= elem->model_count) {
-			LOG_ERR("Invalid SIG model index %u", mod_idx);
+			LOG_ERROR("Invalid SIG model index %u", mod_idx);
 			return NULL;
 		}
 
@@ -1002,9 +1002,9 @@ static int bt_mesh_vnd_mod_msg_cid_check(const struct bt_mesh_model *mod)
 			continue;
 		}
 
-		LOG_ERR("Invalid vendor model(company:0x%04x"
-		       " id:0x%04x) message opcode 0x%08x",
-		       mod->vnd.company, mod->vnd.id, op->opcode);
+		LOG_ERROR("Invalid vendor model(company:0x%04x"
+			  " id:0x%04x) message opcode 0x%08x",
+			  mod->vnd.company, mod->vnd.id, op->opcode);
 
 		return -EINVAL;
 	}
@@ -1341,7 +1341,7 @@ int bt_mesh_access_send(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf,
 	LOG_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
 	if (!bt_mesh_is_provisioned()) {
-		LOG_ERR("Local node is not yet provisioned");
+		LOG_ERROR("Local node is not yet provisioned");
 		return -EAGAIN;
 	}
 
@@ -1427,7 +1427,7 @@ static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode)
 	case 0x00:
 	case 0x01:
 		if (buf->data[0] == 0x7f) {
-			LOG_ERR("Ignoring RFU OpCode");
+			LOG_ERROR("Ignoring RFU OpCode");
 			return -EINVAL;
 		}
 
@@ -1435,7 +1435,7 @@ static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode)
 		return 0;
 	case 0x02:
 		if (buf->len < 2) {
-			LOG_ERR("Too short payload for 2-octet OpCode");
+			LOG_ERROR("Too short payload for 2-octet OpCode");
 			return -EINVAL;
 		}
 
@@ -1443,7 +1443,7 @@ static int get_opcode(struct net_buf_simple *buf, uint32_t *opcode)
 		return 0;
 	case 0x03:
 		if (buf->len < 3) {
-			LOG_ERR("Too short payload for 3-octet OpCode");
+			LOG_ERROR("Too short payload for 3-octet OpCode");
 			return -EINVAL;
 		}
 
@@ -1485,10 +1485,10 @@ static int element_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple
 	}
 
 	if ((op->len >= 0) && (buf->len < (size_t)op->len)) {
-		LOG_ERR("Too short message for OpCode 0x%08x", opcode);
+		LOG_ERROR("Too short message for OpCode 0x%08x", opcode);
 		return ACCESS_STATUS_MESSAGE_NOT_UNDERSTOOD;
 	} else if ((op->len < 0) && (buf->len != (size_t)(-op->len))) {
-		LOG_ERR("Invalid message size for OpCode 0x%08x", opcode);
+		LOG_ERROR("Invalid message size for OpCode 0x%08x", opcode);
 		return ACCESS_STATUS_MESSAGE_NOT_UNDERSTOOD;
 	}
 
@@ -1531,7 +1531,7 @@ int bt_mesh_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
 		index = ctx->recv_dst - dev_comp->elem[0].rt->addr;
 
 		if (index >= dev_comp->elem_count) {
-			LOG_ERR("Invalid address 0x%02x", ctx->recv_dst);
+			LOG_ERROR("Invalid address 0x%02x", ctx->recv_dst);
 			return ACCESS_STATUS_INVALID_ADDRESS;
 		} else {
 			const struct bt_mesh_elem *elem = &dev_comp->elem[index];
@@ -1584,7 +1584,7 @@ int bt_mesh_model_send(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx
 	}
 
 	if (!bt_mesh_model_has_key(model, ctx->app_idx)) {
-		LOG_ERR("Model not bound to AppKey 0x%04x", ctx->app_idx);
+		LOG_ERROR("Model not bound to AppKey 0x%04x", ctx->app_idx);
 		return -EINVAL;
 	}
 
@@ -1615,12 +1615,12 @@ int bt_mesh_model_publish(const struct bt_mesh_model *model)
 	}
 
 	if (!pub->msg || !pub->msg->len) {
-		LOG_ERR("No publication message");
+		LOG_ERROR("No publication message");
 		return -EINVAL;
 	}
 
 	if (pub->msg->len + BT_MESH_MIC_SHORT > BT_MESH_TX_SDU_MAX) {
-		LOG_ERR("Message does not fit maximum SDU size");
+		LOG_ERROR("Message does not fit maximum SDU size");
 		return -EMSGSIZE;
 	}
 
@@ -1752,7 +1752,7 @@ static int mod_rel_register(const struct bt_mesh_model *base,
 		}
 	}
 
-	LOG_ERR("CONFIG_BT_MESH_MODEL_EXTENSION_LIST_SIZE is too small");
+	LOG_ERROR("CONFIG_BT_MESH_MODEL_EXTENSION_LIST_SIZE is too small");
 	return -ENOMEM;
 }
 
@@ -1795,7 +1795,7 @@ register_extension:
 	if (MOD_REL_LIST_SIZE > 0) {
 		return mod_rel_register(base_mod, extending_mod, RELATION_TYPE_EXT);
 	} else if (IS_ENABLED(CONFIG_BT_MESH_COMP_PAGE_1)) {
-		LOG_ERR("CONFIG_BT_MESH_MODEL_EXTENSION_LIST_SIZE is too small");
+		LOG_ERROR("CONFIG_BT_MESH_MODEL_EXTENSION_LIST_SIZE is too small");
 		return -ENOMEM;
 	}
 
@@ -1860,7 +1860,7 @@ static int mod_set_bind(const struct bt_mesh_model *mod, size_t len_rd,
 
 	len = read_cb(cb_arg, mod->keys, mod->keys_cnt * sizeof(mod->keys[0]));
 	if (len < 0) {
-		LOG_ERR("Failed to read value (err %zd)", len);
+		LOG_ERROR("Failed to read value (err %zd)", len);
 		return len;
 	}
 
@@ -1886,7 +1886,7 @@ static int mod_set_sub(const struct bt_mesh_model *mod, size_t len_rd,
 
 	len = read_cb(cb_arg, mod->groups, size);
 	if (len < 0) {
-		LOG_ERR("Failed to read value (err %zd)", len);
+		LOG_ERROR("Failed to read value (err %zd)", len);
 		return len;
 	}
 
@@ -1916,7 +1916,7 @@ static int mod_set_sub_va(const struct bt_mesh_model *mod, size_t len_rd,
 
 	len = read_cb(cb_arg, uuidxs, sizeof(uuidxs));
 	if (len < 0) {
-		LOG_ERR("Failed to read value (err %zd)", len);
+		LOG_ERROR("Failed to read value (err %zd)", len);
 		return len;
 	}
 
@@ -1965,7 +1965,7 @@ static int mod_set_pub(const struct bt_mesh_model *mod, size_t len_rd,
 
 	err = bt_mesh_settings_set(read_cb, cb_arg, &pub, sizeof(pub));
 	if (err) {
-		LOG_ERR("Failed to set \'model-pub\'");
+		LOG_ERROR("Failed to set \'model-pub\'");
 		return err;
 	}
 
@@ -2014,7 +2014,7 @@ static int mod_set(bool vnd, const char *name, size_t len_rd,
 	const char *next;
 
 	if (!name) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
@@ -2026,13 +2026,13 @@ static int mod_set(bool vnd, const char *name, size_t len_rd,
 
 	mod = bt_mesh_model_get(vnd, elem_idx, mod_idx);
 	if (!mod) {
-		LOG_ERR("Failed to get model for elem_idx %u mod_idx %u", elem_idx, mod_idx);
+		LOG_ERROR("Failed to get model for elem_idx %u mod_idx %u", elem_idx, mod_idx);
 		return -ENOENT;
 	}
 
 	len = settings_name_next(name, &next);
 	if (!next) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -ENOENT;
 	}
 
@@ -2130,7 +2130,7 @@ static void store_pending_mod_bind(const struct bt_mesh_model *mod, bool vnd)
 	}
 
 	if (err) {
-		LOG_ERR("Failed to store %s value", path);
+		LOG_ERROR("Failed to store %s value", path);
 	} else {
 		LOG_DBG("Stored %s value", path);
 	}
@@ -2157,7 +2157,7 @@ static void store_pending_mod_sub(const struct bt_mesh_model *mod, bool vnd)
 	}
 
 	if (err) {
-		LOG_ERR("Failed to store %s value", path);
+		LOG_ERROR("Failed to store %s value", path);
 	} else {
 		LOG_DBG("Stored %s value", path);
 	}
@@ -2188,7 +2188,7 @@ static void store_pending_mod_sub_va(const struct bt_mesh_model *mod, bool vnd)
 	}
 
 	if (err) {
-		LOG_ERR("Failed to store %s value", path);
+		LOG_ERROR("Failed to store %s value", path);
 	} else {
 		LOG_DBG("Stored %s value", path);
 	}
@@ -2222,7 +2222,7 @@ static void store_pending_mod_pub(const struct bt_mesh_model *mod, bool vnd)
 	}
 
 	if (err) {
-		LOG_ERR("Failed to store %s value", path);
+		LOG_ERROR("Failed to store %s value", path);
 	} else {
 		LOG_DBG("Stored %s value", path);
 	}
@@ -2330,7 +2330,7 @@ size_t comp_page_2_size(void)
 	size_t size = 0;
 
 	if (!dev_comp2) {
-		LOG_ERR("Composition data P2 not registered");
+		LOG_ERROR("Composition data P2 not registered");
 		return size;
 	}
 
@@ -2372,13 +2372,13 @@ int bt_mesh_comp_store(void)
 
 		err = bt_mesh_comp_data_get_page(&buf, comp_data_pages[i].page, 0);
 		if (err) {
-			LOG_ERR("Failed to read CDP%d: %d", comp_data_pages[i].page, err);
+			LOG_ERROR("Failed to read CDP%d: %d", comp_data_pages[i].page, err);
 			return err;
 		}
 
 		err = settings_save_one(comp_data_pages[i].path, buf.data, buf.len);
 		if (err) {
-			LOG_ERR("Failed to store CDP%d: %d", comp_data_pages[i].page, err);
+			LOG_ERROR("Failed to store CDP%d: %d", comp_data_pages[i].page, err);
 			return err;
 		}
 
@@ -2404,8 +2404,7 @@ static void comp_data_clear(void)
 	for (int i = 0; i < ARRAY_SIZE(comp_data_pages); i++) {
 		err = settings_delete(comp_data_pages[i].path);
 		if (err) {
-			LOG_ERR("Failed to clear CDP%d: %d", comp_data_pages[i].page,
-				err);
+			LOG_ERROR("Failed to clear CDP%d: %d", comp_data_pages[i].page, err);
 		}
 	}
 
@@ -2452,7 +2451,7 @@ int bt_mesh_comp_read(struct net_buf_simple *buf, uint8_t page)
 	err = settings_load_subtree_direct(comp_data_pages[i].path, read_comp_cb, buf);
 
 	if (err) {
-		LOG_ERR("Failed reading composition data: %d", err);
+		LOG_ERROR("Failed reading composition data: %d", err);
 		return err;
 	}
 	if (buf->len == original_len) {
@@ -2481,7 +2480,7 @@ int bt_mesh_model_data_store(const struct bt_mesh_model *mod, bool vnd,
 	}
 
 	if (err) {
-		LOG_ERR("Failed to store %s value", path);
+		LOG_ERROR("Failed to store %s value", path);
 	} else {
 		LOG_DBG("Stored %s value", path);
 	}
@@ -2516,11 +2515,11 @@ int bt_mesh_models_metadata_store(void)
 
 	err = bt_mesh_metadata_get_page_0(&buf, 0);
 	if (err == -E2BIG) {
-		LOG_ERR("Metadata too large");
+		LOG_ERROR("Metadata too large");
 		return err;
 	}
 	if (err) {
-		LOG_ERR("Failed to read models metadata: %d", err);
+		LOG_ERROR("Failed to read models metadata: %d", err);
 		return err;
 	}
 
@@ -2528,7 +2527,7 @@ int bt_mesh_models_metadata_store(void)
 
 	err = settings_save_one("bt/mesh/metadata", buf.data, buf.len);
 	if (err) {
-		LOG_ERR("Failed to store models metadata: %d", err);
+		LOG_ERROR("Failed to store models metadata: %d", err);
 	} else {
 		LOG_DBG("Stored models metadata");
 	}
@@ -2550,7 +2549,7 @@ int bt_mesh_models_metadata_read(struct net_buf_simple *buf, size_t offset)
 
 	err = settings_load_subtree_direct("bt/mesh/metadata", read_comp_cb, &stored_buf);
 	if (err) {
-		LOG_ERR("Failed reading models metadata: %d", err);
+		LOG_ERROR("Failed reading models metadata: %d", err);
 		return err;
 	}
 
@@ -2582,7 +2581,7 @@ static void models_metadata_clear(void)
 
 	err = settings_delete("bt/mesh/metadata");
 	if (err) {
-		LOG_ERR("Failed to clear models metadata: %d", err);
+		LOG_ERROR("Failed to clear models metadata: %d", err);
 	} else {
 		LOG_DBG("Cleared models metadata");
 	}

@@ -124,27 +124,27 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 
 		ret = k_mem_slab_alloc(drv_data->mem_slab, &mem_slab_buffer, K_NO_WAIT);
 		if (ret < 0) {
-			LOG_ERR("Failed to allocate buffer: %d", ret);
+			LOG_ERROR("Failed to allocate buffer: %d", ret);
 			stop = true;
 		} else {
 			ret = dmm_buffer_in_prepare(drv_cfg->mem_reg, mem_slab_buffer,
 						    drv_data->block_size, &buffer);
 			if (ret < 0) {
-				LOG_ERR("Failed to prepare buffer: %d", ret);
+				LOG_ERROR("Failed to prepare buffer: %d", ret);
 				free_buffer(drv_data, mem_slab_buffer);
 				stop_pdm(drv_data);
 				return;
 			}
 			ret = k_msgq_put(&drv_data->mem_slab_queue, &mem_slab_buffer, K_NO_WAIT);
 			if (ret < 0) {
-				LOG_ERR("Unable to put mem slab in queue");
+				LOG_ERROR("Unable to put mem slab in queue");
 				free_buffer(drv_data, mem_slab_buffer);
 				stop_pdm(drv_data);
 				return;
 			}
 			err = nrfx_pdm_buffer_set(&drv_data->pdm, buffer, drv_data->block_size / 2);
 			if (err != 0) {
-				LOG_ERR("Failed to set buffer: %d", err);
+				LOG_ERROR("Failed to set buffer: %d", err);
 				stop = true;
 			}
 		}
@@ -154,13 +154,13 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 		if (evt->buffer_released) {
 			ret = k_msgq_get(&drv_data->mem_slab_queue, &mem_slab_buffer, K_NO_WAIT);
 			if (ret < 0) {
-				LOG_ERR("No buffers to free");
+				LOG_ERROR("No buffers to free");
 				return;
 			}
 			ret = dmm_buffer_in_release(drv_cfg->mem_reg, mem_slab_buffer,
 						    drv_data->block_size, evt->buffer_released);
 			if (ret < 0) {
-				LOG_ERR("Failed to release buffer: %d", ret);
+				LOG_ERROR("Failed to release buffer: %d", ret);
 				free_buffer(drv_data, mem_slab_buffer);
 				return;
 			}
@@ -171,21 +171,21 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 			drv_data->active = false;
 			ret = release_clock(drv_data);
 			if (ret < 0) {
-				LOG_ERR("Failed to release clock: %d", ret);
+				LOG_ERROR("Failed to release clock: %d", ret);
 				return;
 			}
 		}
 	} else if (evt->buffer_released) {
 		ret = k_msgq_get(&drv_data->mem_slab_queue, &mem_slab_buffer, K_NO_WAIT);
 		if (ret < 0) {
-			LOG_ERR("No buffers to free");
+			LOG_ERROR("No buffers to free");
 			stop_pdm(drv_data);
 			return;
 		}
 		ret = dmm_buffer_in_release(drv_cfg->mem_reg, mem_slab_buffer,
 					    drv_data->block_size, evt->buffer_released);
 		if (ret < 0) {
-			LOG_ERR("Failed to release buffer: %d", ret);
+			LOG_ERROR("Failed to release buffer: %d", ret);
 			free_buffer(drv_data, mem_slab_buffer);
 			stop_pdm(drv_data);
 			return;
@@ -194,7 +194,7 @@ static void event_handler(const struct device *dev, const nrfx_pdm_evt_t *evt)
 				 &mem_slab_buffer,
 				 K_NO_WAIT);
 		if (ret < 0) {
-			LOG_ERR("No room in RX queue");
+			LOG_ERROR("No room in RX queue");
 			stop = true;
 			free_buffer(drv_data, mem_slab_buffer);
 		} else {
@@ -218,7 +218,7 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 	int err;
 
 	if (drv_data->active) {
-		LOG_ERR("Cannot configure device while it is active");
+		LOG_ERROR("Cannot configure device while it is active");
 		return -EBUSY;
 	}
 
@@ -254,7 +254,7 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 	    (channel->req_chan_map_lo != def_map &&
 	     channel->req_chan_map_lo != alt_map) ||
 	    channel->req_chan_map_hi != channel->act_chan_map_hi) {
-		LOG_ERR("Requested configuration is not supported");
+		LOG_ERROR("Requested configuration is not supported");
 		return -EINVAL;
 	}
 
@@ -269,7 +269,7 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 	}
 
 	if (stream->pcm_width != 16) {
-		LOG_ERR("Only 16-bit samples are supported");
+		LOG_ERROR("Only 16-bit samples are supported");
 		return -EINVAL;
 	}
 
@@ -299,7 +299,7 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 	};
 
 	if (nrfx_pdm_prescalers_calc(&output_config, &nrfx_cfg.prescalers) != 0) {
-		LOG_ERR("Cannot find suitable PDM clock configuration.");
+		LOG_ERROR("Cannot find suitable PDM clock configuration.");
 		return -EINVAL;
 	}
 
@@ -310,7 +310,7 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 
 	err = nrfx_pdm_init(&drv_data->pdm, &nrfx_cfg, drv_cfg->event_handler);
 	if (err != 0) {
-		LOG_ERR("Failed to initialize PDM: %d", err);
+		LOG_ERROR("Failed to initialize PDM: %d", err);
 		return -EIO;
 	}
 
@@ -338,11 +338,11 @@ static int start_transfer(struct dmic_nrfx_pdm_drv_data *drv_data)
 		return 0;
 	}
 
-	LOG_ERR("Failed to start PDM: %d", err);
+	LOG_ERROR("Failed to start PDM: %d", err);
 
 	ret = release_clock(drv_data);
 	if (ret < 0) {
-		LOG_ERR("Failed to release clock: %d", ret);
+		LOG_ERROR("Failed to release clock: %d", ret);
 	}
 
 	drv_data->active = false;
@@ -365,7 +365,7 @@ static void clock_started_callback(struct onoff_manager *mgr,
 		int ret = release_clock(drv_data);
 
 		if (ret < 0) {
-			LOG_ERR("Failed to release clock: %d", ret);
+			LOG_ERROR("Failed to release clock: %d", ret);
 			return;
 		}
 	} else {
@@ -390,7 +390,7 @@ static int trigger_start(const struct device *dev)
 		if (ret < 0) {
 			drv_data->active = false;
 
-			LOG_ERR("Failed to request clock: %d", ret);
+			LOG_ERROR("Failed to request clock: %d", ret);
 			return -EIO;
 		}
 	} else {
@@ -420,7 +420,7 @@ static int dmic_nrfx_pdm_trigger(const struct device *dev,
 	case DMIC_TRIGGER_RELEASE:
 	case DMIC_TRIGGER_START:
 		if (!drv_data->configured) {
-			LOG_ERR("Device is not configured");
+			LOG_ERROR("Device is not configured");
 			return -EIO;
 		} else if (!drv_data->active) {
 			drv_data->stopping = false;
@@ -429,7 +429,7 @@ static int dmic_nrfx_pdm_trigger(const struct device *dev,
 		break;
 
 	default:
-		LOG_ERR("Invalid command: %d", cmd);
+		LOG_ERROR("Invalid command: %d", cmd);
 		return -EINVAL;
 	}
 
@@ -446,7 +446,7 @@ static int dmic_nrfx_pdm_read(const struct device *dev,
 	ARG_UNUSED(stream);
 
 	if (!drv_data->configured) {
-		LOG_ERR("Device is not configured");
+		LOG_ERROR("Device is not configured");
 		return -EIO;
 	}
 

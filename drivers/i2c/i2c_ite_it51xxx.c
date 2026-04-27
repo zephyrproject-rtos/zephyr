@@ -455,8 +455,8 @@ static void target_i2c_isr_fifo(const struct device *dev)
 			}
 #endif
 			if (len > sizeof(data->target_out_buffer)) {
-				LOG_ERR("I2CS ch%d: The length exceeds out_buffer size=%d",
-					config->port, sizeof(data->target_out_buffer));
+				LOG_ERROR("I2CS ch%d: The length exceeds out_buffer size=%d",
+					  config->port, sizeof(data->target_out_buffer));
 			} else {
 				memcpy(data->target_out_buffer, rdata, len);
 			}
@@ -494,8 +494,8 @@ static void target_i2c_isr_fifo(const struct device *dev)
 			/* Index to next 16 bytes of write buffer */
 			data->w_index += count;
 			if (data->w_index > sizeof(data->target_in_buffer)) {
-				LOG_ERR("I2CS ch%d: The write size exceeds in buffer size=%d",
-					config->port, sizeof(data->target_in_buffer));
+				LOG_ERROR("I2CS ch%d: The write size exceeds in buffer size=%d",
+					  config->port, sizeof(data->target_in_buffer));
 			}
 		}
 	}
@@ -617,7 +617,8 @@ static void target_i2c_isr_pio(const struct device *dev)
 				}
 #endif
 				if (len > sizeof(data->target_shared_fifo)) {
-					LOG_ERR("I2CS ch%d: The length exceeds shared fifo size=%d",
+					LOG_ERROR(
+						"I2CS ch%d: The length exceeds shared fifo size=%d",
 						config->port, sizeof(data->target_shared_fifo));
 				} else {
 					memcpy(data->target_shared_fifo, rdata, len);
@@ -688,23 +689,23 @@ static int i2c_parsing_return_value(const struct device *dev)
 
 	if (data->err == ETIMEDOUT) {
 		/* Connection timed out */
-		LOG_ERR("I2C ch%d Address:0x%X Transaction time out.", config->port,
-			data->addr_16bit);
+		LOG_ERROR("I2C ch%d Address:0x%X Transaction time out.", config->port,
+			  data->addr_16bit);
 	} else {
 		LOG_DBG("I2C ch%d Address:0x%X Host error bits message:", config->port,
 			data->addr_16bit);
 		/* Host error bits message*/
 		if (data->err & HOSTA_TMOE) {
-			LOG_ERR("Time-out error: hardware time-out error.");
+			LOG_ERROR("Time-out error: hardware time-out error.");
 		}
 		if (data->err & HOSTA_NACK) {
 			LOG_DBG("NACK error: device does not response ACK.");
 		}
 		if (data->err & HOSTA_FAIL) {
-			LOG_ERR("Fail: a processing transmission is killed.");
+			LOG_ERROR("Fail: a processing transmission is killed.");
 		}
 		if (data->err & HOSTA_BSER) {
-			LOG_ERR("BUS error: SMBus has lost arbitration.");
+			LOG_ERROR("BUS error: SMBus has lost arbitration.");
 		}
 	}
 
@@ -1040,7 +1041,7 @@ int i2c_tran_fifo_w2r_change_direction(const struct device *dev)
 	uint8_t hoctl2;
 
 	if (++data->msg_index >= data->num_msgs) {
-		LOG_ERR("%s: Current message index is error.", dev->name);
+		LOG_ERROR("%s: Current message index is error.", dev->name);
 		data->err = EINVAL;
 		/* W/C */
 		sys_write8(HOSTA_ALL_WC_BIT, config->host_base + SMB_HOSTA);
@@ -1426,7 +1427,7 @@ static int i2c_it51xxx_get_config(const struct device *dev, uint32_t *dev_config
 	uint32_t speed;
 
 	if (!data->bus_freq) {
-		LOG_ERR("The bus frequency is not initially configured.");
+		LOG_ERROR("The bus frequency is not initially configured.");
 		return -EIO;
 	}
 
@@ -1455,7 +1456,7 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 
 #ifdef CONFIG_I2C_TARGET
 	if (atomic_get(&data->num_registered_addrs) != 0) {
-		LOG_ERR("I2CS ch%d: Device is registered as target", config->port);
+		LOG_ERROR("I2CS ch%d: Device is registered as target", config->port);
 		return -EBUSY;
 	}
 #endif
@@ -1544,8 +1545,8 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 			data->err = ETIMEDOUT;
 			/* Reset i2c port */
 			i2c_reset(dev);
-			LOG_ERR("I2C ch%d:0x%X reset cause %d", config->port, data->addr_16bit,
-				I2C_RC_TIMEOUT);
+			LOG_ERROR("I2C ch%d:0x%X reset cause %d", config->port, data->addr_16bit,
+				  I2C_RC_TIMEOUT);
 			/* If this message is sent fail, drop the transaction. */
 			break;
 		}
@@ -1638,19 +1639,19 @@ static int i2c_it51xxx_recover_bus(const struct device *dev)
 
 	ret = i2c_bitbang_recover_bus(&data->bitbang);
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to recover bus (err %d)", dev->name, ret);
+		LOG_ERROR("%s: Failed to recover bus (err %d)", dev->name, ret);
 	}
 
 	/* Set GPIO back to I2C alternate function of SCL */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("%s: Failed to configure I2C pins", dev->name);
+		LOG_ERROR("%s: Failed to configure I2C pins", dev->name);
 		return ret;
 	}
 
 	/* Reset i2c port */
 	i2c_reset(dev);
-	LOG_ERR("I2C ch%d reset cause %d", config->port, I2C_RC_NO_IDLE_FOR_START);
+	LOG_ERROR("I2C ch%d reset cause %d", config->port, I2C_RC_NO_IDLE_FOR_START);
 
 	return 0;
 }
@@ -1672,15 +1673,15 @@ static int i2c_it51xxx_target_register(const struct device *dev,
 	}
 
 	if (atomic_get(&data->num_registered_addrs) >= MAX_I2C_TARGET_ADDRS) {
-		LOG_ERR("%s: One device supports at most two target addresses", __func__);
+		LOG_ERROR("%s: One device supports at most two target addresses", __func__);
 		return -ENOMEM;
 	}
 
 	/* Compare with the saved I2C address */
 	for (int i = 0; i < MAX_I2C_TARGET_ADDRS; i++) {
 		if (data->registered_addrs[i] == target_cfg->address) {
-			LOG_ERR("%s: I2C target address=%x already registered", __func__,
-				target_cfg->address);
+			LOG_ERROR("%s: I2C target address=%x already registered", __func__,
+				  target_cfg->address);
 			return -EALREADY;
 		}
 	}
@@ -1779,8 +1780,8 @@ static int i2c_it51xxx_target_unregister(const struct device *dev,
 	}
 
 	if (!match_reg) {
-		LOG_ERR("%s: I2C cannot be unregistered due to address=%x mismatch", __func__,
-			target_cfg->address);
+		LOG_ERROR("%s: I2C cannot be unregistered due to address=%x mismatch", __func__,
+			  target_cfg->address);
 		return -EINVAL;
 	}
 
@@ -1847,8 +1848,8 @@ static int i2c_it51xxx_init(const struct device *dev)
 			data->fifo_size_list = fifo_size_table;
 			for (int i = 0; i <= ARRAY_SIZE(fifo_size_table); i++) {
 				if (i == ARRAY_SIZE(fifo_size_table)) {
-					LOG_ERR("I2CS ch%d: Unsupported target FIFO size %d",
-						config->port, sizeof(data->target_shared_fifo));
+					LOG_ERROR("I2CS ch%d: Unsupported target FIFO size %d",
+						  config->port, sizeof(data->target_shared_fifo));
 					return -ENOTSUP;
 				}
 
@@ -1923,7 +1924,7 @@ static int i2c_it51xxx_init(const struct device *dev)
 	data->i2ccs = I2C_CH_NORMAL;
 
 	if (error) {
-		LOG_ERR("%s: Host failure initializing", dev->name);
+		LOG_ERROR("%s: Host failure initializing", dev->name);
 		return error;
 	}
 
@@ -1935,7 +1936,7 @@ pin_config:
 	/* Set the pin to I2C alternate function. */
 	status = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (status < 0) {
-		LOG_ERR("%s: Failed to configure I2C pins", dev->name);
+		LOG_ERROR("%s: Failed to configure I2C pins", dev->name);
 		return status;
 	}
 

@@ -127,7 +127,7 @@ static int lc709203f_read_word(const struct device *dev, uint8_t reg, uint16_t *
 
 	ret = i2c_write_read_dt(&config->i2c, &reg, sizeof(reg), buf, sizeof(buf));
 	if (ret) {
-		LOG_ERR("i2c_write_read failed (reg 0x%02x): %d", reg, ret);
+		LOG_ERROR("i2c_write_read failed (reg 0x%02x): %d", reg, ret);
 		return ret;
 	}
 
@@ -143,7 +143,7 @@ static int lc709203f_read_word(const struct device *dev, uint8_t reg, uint16_t *
 	uint8_t crc = crc8(crc_buf, sizeof(crc_buf), LC709203F_CRC_POLYNOMIAL, 0, false);
 
 	if (crc != buf[2]) {
-		LOG_ERR("CRC mismatch on reg 0x%02x", reg);
+		LOG_ERROR("CRC mismatch on reg 0x%02x", reg);
 		return -EIO;
 	}
 
@@ -395,7 +395,8 @@ enum lc709203f_battery_apa lc709203f_string_to_apa(const char *apa_string)
 			return apa_values[i];
 		}
 	}
-	LOG_ERR("Invalid apa_string: %s, returning default: %d", apa_string, LC709203F_APA_100MAH);
+	LOG_ERROR("Invalid apa_string: %s, returning default: %d", apa_string,
+		  LC709203F_APA_100MAH);
 	return LC709203F_APA_100MAH;
 }
 
@@ -407,7 +408,7 @@ enum lc709203f_power_mode lc709203f_num_to_power_mode(uint16_t num)
 	case 2:
 		return LC709203F_POWER_MODE_SLEEP;
 	default:
-		LOG_ERR("Invalid power mode: %d", num);
+		LOG_ERROR("Invalid power mode: %d", num);
 		return LC709203F_POWER_MODE_OPERATIONAL;
 	}
 }
@@ -422,7 +423,7 @@ enum lc709203f_current_direction lc709203f_num_to_current_direction(uint16_t num
 	case 0xFFFF:
 		return LC709203F_DIRECTION_DISCHARGE;
 	default:
-		LOG_ERR("Invalid current direction: %d", num);
+		LOG_ERROR("Invalid current direction: %d", num);
 		return LC709203F_DIRECTION_AUTO;
 	}
 }
@@ -436,7 +437,7 @@ static int lc709203f_init(const struct device *dev)
 	int ret = 0;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C bus not ready");
+		LOG_ERROR("I2C bus not ready");
 		return -ENODEV;
 	}
 
@@ -445,7 +446,7 @@ static int lc709203f_init(const struct device *dev)
 	LOG_DBG("Get power mode");
 	ret = lc709203f_get_power_mode(dev, &mode);
 	if (ret) {
-		LOG_ERR("Failed to get power mode: %d", ret);
+		LOG_ERROR("Failed to get power mode: %d", ret);
 	}
 
 	LOG_DBG("Power mode: %d", mode);
@@ -454,7 +455,7 @@ static int lc709203f_init(const struct device *dev)
 		ret = lc709203f_set_power_mode(dev, LC709203F_POWER_MODE_OPERATIONAL);
 
 		if (ret) {
-			LOG_ERR("Failed to set power mode: %d", ret);
+			LOG_ERROR("Failed to set power mode: %d", ret);
 		}
 	}
 
@@ -462,35 +463,35 @@ static int lc709203f_init(const struct device *dev)
 	ret = lc709203f_set_apa(dev, lc709203f_string_to_apa(config->battery_apa));
 
 	if (ret) {
-		LOG_ERR("Failed to set battery pack: %d", ret);
+		LOG_ERROR("Failed to set battery pack: %d", ret);
 	}
 
 	LOG_DBG("Set battery profile: %d", config->battery_profile);
 	ret = lc709203f_set_battery_profile(dev, config->battery_profile);
 
 	if (ret) {
-		LOG_ERR("Failed to set battery profile: %d", ret);
+		LOG_ERROR("Failed to set battery profile: %d", ret);
 	}
 
 	if (config->thermistor) {
 		LOG_DBG("Set temperature mode: %d", config->thermistor_mode);
 		lc709203f_set_temp_mode(dev, config->thermistor_mode);
 		if (ret) {
-			LOG_ERR("Failed to set temperature mode: %d", ret);
+			LOG_ERROR("Failed to set temperature mode: %d", ret);
 		}
 
 		LOG_DBG("Set thermistor B value: %d", config->thermistor_b_value);
 		ret = lc709203f_set_thermistor_b(dev, config->thermistor_b_value);
 
 		if (ret) {
-			LOG_ERR("Failed to set thermistor B value: %d", ret);
+			LOG_ERROR("Failed to set thermistor B value: %d", ret);
 		}
 
 		LOG_DBG("Set thermistor APT: %d", config->thermistor_apt);
 		ret = lc709203f_set_apt(dev, config->thermistor_apt);
 
 		if (ret) {
-			LOG_ERR("Failed to set thermistor APT: %d", ret);
+			LOG_ERROR("Failed to set thermistor APT: %d", ret);
 		}
 	}
 
@@ -499,7 +500,7 @@ static int lc709203f_init(const struct device *dev)
 		ret = lc709203f_set_initial_rsoc(dev);
 
 		if (ret) {
-			LOG_ERR("Quickstart failed: %d", ret);
+			LOG_ERROR("Quickstart failed: %d", ret);
 			return ret;
 		}
 	}
@@ -521,7 +522,7 @@ static int lc709203f_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		break;
 	case FUEL_GAUGE_TEMPERATURE:
 		if (!config->thermistor) {
-			LOG_ERR("Thermistor not enabled");
+			LOG_ERROR("Thermistor not enabled");
 			return -ENOTSUP;
 		}
 		rc = lc709203f_get_cell_temperature(dev, &val->temperature);
@@ -558,7 +559,7 @@ static int lc709203f_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 			val->design_cap = 3000;
 			break;
 		default:
-			LOG_ERR("Invalid battery capacity: %d", apa);
+			LOG_ERROR("Invalid battery capacity: %d", apa);
 			return -EINVAL;
 		}
 		break;

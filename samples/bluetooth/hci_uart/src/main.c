@@ -88,7 +88,7 @@ static uint32_t get_len(const uint8_t *hdr_buf, uint8_t type)
 	case H4_ACL:
 		return sys_le16_to_cpu(((const struct bt_hci_acl_hdr *)hdr_buf)->len);
 	default:
-		LOG_ERR("Invalid type: %u", type);
+		LOG_ERROR("Invalid type: %u", type);
 		return 0;
 	}
 }
@@ -104,7 +104,7 @@ static int hdr_len(uint8_t type)
 	case H4_ACL:
 		return sizeof(struct bt_hci_acl_hdr);
 	default:
-		LOG_ERR("Invalid type: %u", type);
+		LOG_ERROR("Invalid type: %u", type);
 		return 0;
 	}
 }
@@ -153,7 +153,7 @@ static void rx_isr(void)
 				buf = bt_buf_get_tx(bt_buf_type_from_h4(type, BT_BUF_OUT),
 						    K_NO_WAIT, NULL, 0);
 				if (!buf) {
-					LOG_ERR("No available command buffers!");
+					LOG_ERROR("No available command buffers!");
 					state = ST_IDLE;
 					return;
 				}
@@ -162,7 +162,7 @@ static void rx_isr(void)
 
 				net_buf_add_mem(buf, hdr_buf, hdr_len(type));
 				if (remaining > net_buf_tailroom(buf)) {
-					LOG_ERR("Not enough space in buffer");
+					LOG_ERROR("Not enough space in buffer");
 					net_buf_unref(buf);
 					state = ST_DISCARD;
 				} else {
@@ -259,7 +259,7 @@ static void tx_thread(void *p1, void *p2, void *p3)
 		/* Pass buffer to the stack */
 		err = bt_send(buf);
 		if (err) {
-			LOG_ERR("Unable to send (err %d)", err);
+			LOG_ERROR("Unable to send (err %d)", err);
 			net_buf_unref(buf);
 		}
 
@@ -310,12 +310,13 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 				len--;
 			}
 		} else {
-			LOG_ERR("Can't create Fatal Error HCI event: %s at %d", __FILE__, __LINE__);
+			LOG_ERROR("Can't create Fatal Error HCI event: %s at %d", __FILE__,
+				  __LINE__);
 		}
 
-		LOG_ERR("Halting system");
+		LOG_ERROR("Halting system");
 	} else {
-		LOG_ERR("Controller assert in: %s at %d", file, line);
+		LOG_ERROR("Controller assert in: %s at %d", file, line);
 	}
 
 	/* Flush the logs before locking the CPU */
@@ -360,11 +361,11 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
 				len--;
 			}
 		} else {
-			LOG_ERR("Can't create Fatal Error HCI event.\n");
+			LOG_ERROR("Can't create Fatal Error HCI event.\n");
 		}
 	}
 
-	LOG_ERR("Halting system");
+	LOG_ERROR("Halting system");
 
 	/* Flush the logs before locking the CPU */
 	LOG_PANIC();
@@ -382,7 +383,7 @@ static int hci_uart_init(void)
 	LOG_DBG("");
 
 	if (!device_is_ready(hci_uart_dev)) {
-		LOG_ERR("HCI UART %s is not ready", hci_uart_dev->name);
+		LOG_ERROR("HCI UART %s is not ready", hci_uart_dev->name);
 		return -EINVAL;
 	}
 
@@ -449,7 +450,7 @@ int main(void)
 		buf = k_fifo_get(&rx_queue, K_FOREVER);
 		err = h4_send(buf);
 		if (err) {
-			LOG_ERR("Failed to send");
+			LOG_ERROR("Failed to send");
 		}
 	}
 	return 0;

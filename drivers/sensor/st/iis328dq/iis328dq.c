@@ -50,7 +50,7 @@ static int iis328dq_set_range(const struct device *dev, uint8_t fs)
 		fs_reg = IIS328DQ_8g;
 		gain = 4;
 	} else {
-		LOG_ERR("FS too high");
+		LOG_ERROR("FS too high");
 		return -ENOTSUP;
 	}
 	err = iis328dq_full_scale_set(ctx, fs_reg);
@@ -91,12 +91,12 @@ static int iis328dq_set_odr(const struct device *dev, uint16_t odr)
 	} else if (odr <= 1000) {
 		odr_reg = IIS328DQ_ODR_1kHz;
 	} else {
-		LOG_ERR("ODR too high");
+		LOG_ERROR("ODR too high");
 		return -ENOTSUP;
 	}
 
 	if (iis328dq_data_rate_set(ctx, odr_reg) != 0) {
-		LOG_ERR("Failed to set ODR");
+		LOG_ERROR("Failed to set ODR");
 		return -EIO;
 	}
 
@@ -184,14 +184,14 @@ static int iis328dq_set_threshold(const struct device *dev, bool is_lower,
 		/* internal INT1 handles lower threshold */
 		err = iis328dq_int1_treshold_set(ctx, val_raw);
 		if (err) {
-			LOG_ERR("Could not set INT1_THS to 0x%02X, error %d", val_raw, err);
+			LOG_ERROR("Could not set INT1_THS to 0x%02X, error %d", val_raw, err);
 			return err;
 		}
 	} else {
 		/* internal INT2 handles lower threshold */
 		err = iis328dq_int2_treshold_set(ctx, val_raw);
 		if (err) {
-			LOG_ERR("Could not set INT2_THS to 0x%02X, error %d", val_raw, err);
+			LOG_ERROR("Could not set INT2_THS to 0x%02X, error %d", val_raw, err);
 			return err;
 		}
 	}
@@ -211,12 +211,12 @@ static int iis328dq_set_duration(const struct device *dev, uint16_t dur)
 
 	err = iis328dq_int1_dur_set(ctx, dur);
 	if (err) {
-		LOG_ERR("Could not set INT1_DUR to 0x%02X, error %d", dur, err);
+		LOG_ERROR("Could not set INT1_DUR to 0x%02X, error %d", dur, err);
 		return err;
 	}
 	err = iis328dq_int2_dur_set(ctx, dur);
 	if (err) {
-		LOG_ERR("Could not set INT2_DUR to 0x%02X, error %d", dur, err);
+		LOG_ERROR("Could not set INT2_DUR to 0x%02X, error %d", dur, err);
 		return err;
 	}
 	return 0;
@@ -236,13 +236,13 @@ static int iis328dq_dev_config(const struct device *dev, enum sensor_channel cha
 	case SENSOR_ATTR_LOWER_THRESH:
 	case SENSOR_ATTR_UPPER_THRESH:
 		if (chan != SENSOR_CHAN_ACCEL_XYZ) {
-			LOG_ERR("Threshold cannot be set per-channel");
+			LOG_ERROR("Threshold cannot be set per-channel");
 			return -ENOTSUP;
 		}
 		return iis328dq_set_threshold(dev, attr == SENSOR_ATTR_LOWER_THRESH, val);
 	case IIS328DQ_ATTR_DURATION:
 		if (chan != SENSOR_CHAN_ACCEL_XYZ) {
-			LOG_ERR("Duration cannot be set per-channel");
+			LOG_ERROR("Duration cannot be set per-channel");
 			return -ENOTSUP;
 		}
 		return iis328dq_set_duration(dev, val->val1);
@@ -317,7 +317,7 @@ static int iis328dq_init(const struct device *dev)
 	}
 
 	if (reg_value != IIS328DQ_ID) {
-		LOG_ERR("Invalid chip ID");
+		LOG_ERROR("Invalid chip ID");
 		return -EINVAL;
 	}
 
@@ -332,7 +332,7 @@ static int iis328dq_init(const struct device *dev)
 		return -EIO;
 	}
 	if (reg_value != PROPERTY_DISABLE) {
-		LOG_ERR("BOOT did not deassert");
+		LOG_ERROR("BOOT did not deassert");
 		return -EIO;
 	}
 
@@ -342,18 +342,18 @@ static int iis328dq_init(const struct device *dev)
 
 	/* set default odr to 12.5Hz acc */
 	if (iis328dq_set_odr(dev, 12) < 0) {
-		LOG_ERR("odr init error (12.5 Hz)");
+		LOG_ERROR("odr init error (12.5 Hz)");
 		return -EIO;
 	}
 
 	if (iis328dq_set_range(dev, cfg->range) < 0) {
-		LOG_ERR("range init error %d", cfg->range);
+		LOG_ERROR("range init error %d", cfg->range);
 		return -EIO;
 	}
 
 #ifdef CONFIG_IIS328DQ_TRIGGER
 	if (iis328dq_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupts");
+		LOG_ERROR("Failed to initialize interrupts");
 		return -EIO;
 	}
 #endif /* CONFIG_IIS328DQ_TRIGGER */

@@ -318,8 +318,8 @@ static struct has_client *client_alloc(struct bt_conn *conn)
 	if (client->context == NULL) {
 		client->context = context_alloc(info.le.dst);
 		if (client->context == NULL) {
-			LOG_ERR("Failed to allocate client_context for %s",
-				bt_addr_le_str(info.le.dst));
+			LOG_ERROR("Failed to allocate client_context for %s",
+				  bt_addr_le_str(info.le.dst));
 
 			client_free(client);
 
@@ -355,7 +355,7 @@ static void notify_work_reschedule(struct has_client *client, k_timeout_t delay)
 
 	err = k_work_reschedule(&client->notify_work, delay);
 	if (err < 0) {
-		LOG_ERR("Failed to reschedule notification work err %d", err);
+		LOG_ERROR("Failed to reschedule notification work err %d", err);
 	}
 }
 
@@ -373,13 +373,13 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 
 	client = client_alloc(conn);
 	if (unlikely(!client)) {
-		LOG_ERR("Failed to allocate client");
+		LOG_ERROR("Failed to allocate client");
 		return;
 	}
 
 	ret = bt_conn_get_info(client->conn, &info);
 	if (ret < 0) {
-		LOG_ERR("bt_conn_get_info err %d", ret);
+		LOG_ERROR("bt_conn_get_info err %d", ret);
 		return;
 	}
 
@@ -440,7 +440,7 @@ static void notify_work_handler(struct k_work *work)
 			atomic_set_bit(client->context->flags, FLAG_FEATURES_CHANGED);
 			notify_work_reschedule(client, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
 		} else if (err < 0) {
-			LOG_ERR("Notify features err %d", err);
+			LOG_ERROR("Notify features err %d", err);
 		}
 	}
 
@@ -451,7 +451,7 @@ static void notify_work_handler(struct k_work *work)
 			atomic_set_bit(client->context->flags, FLAG_PENDING_READ_PRESET_RESPONSE);
 			notify_work_reschedule(client, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
 		} else if (err < 0) {
-			LOG_ERR("Notify read preset response err %d", err);
+			LOG_ERROR("Notify read preset response err %d", err);
 		}
 	} else if (atomic_test_and_clear_bit(client->context->flags, FLAG_NOTIFY_PRESET_LIST)) {
 		err = preset_list_changed(client);
@@ -459,7 +459,7 @@ static void notify_work_handler(struct k_work *work)
 			atomic_set_bit(client->context->flags, FLAG_NOTIFY_PRESET_LIST);
 			notify_work_reschedule(client, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
 		} else if (err < 0) {
-			LOG_ERR("Notify preset list changed err %d", err);
+			LOG_ERROR("Notify preset list changed err %d", err);
 		}
 	} else if (atomic_test_and_clear_bit(client->context->flags,
 					     FLAG_NOTIFY_PRESET_LIST_GENERIC_UPDATE_TAIL)) {
@@ -469,7 +469,7 @@ static void notify_work_handler(struct k_work *work)
 				       FLAG_NOTIFY_PRESET_LIST_GENERIC_UPDATE_TAIL);
 			notify_work_reschedule(client, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
 		} else if (err < 0) {
-			LOG_ERR("Notify preset list changed generic update tail err %d", err);
+			LOG_ERROR("Notify preset list changed generic update tail err %d", err);
 		}
 	} else if (atomic_test_and_clear_bit(client->context->flags,
 					     FLAG_NOTIFY_PRESET_LIST_RECORD_DELETED_LAST)) {
@@ -479,7 +479,7 @@ static void notify_work_handler(struct k_work *work)
 				       FLAG_NOTIFY_PRESET_LIST_RECORD_DELETED_LAST);
 			notify_work_reschedule(client, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
 		} else if (err < 0) {
-			LOG_ERR("Notify preset list changed recoed deleted last err %d", err);
+			LOG_ERROR("Notify preset list changed recoed deleted last err %d", err);
 		}
 	}
 
@@ -498,7 +498,7 @@ static void notify_work_handler(struct k_work *work)
 			atomic_set_bit(client->context->flags, FLAG_ACTIVE_INDEX_CHANGED);
 			notify_work_reschedule(client, K_USEC(BT_AUDIO_NOTIFY_RETRY_DELAY_US));
 		} else if (err < 0) {
-			LOG_ERR("Notify active index err %d", err);
+			LOG_ERROR("Notify active index err %d", err);
 		}
 	}
 }
@@ -749,7 +749,7 @@ static void control_point_ind_complete(struct bt_conn *conn,
 {
 	if (err) {
 		/* TODO: Handle error somehow */
-		LOG_ERR("conn %p err 0x%02x", (void *)conn, err);
+		LOG_ERROR("conn %p err 0x%02x", (void *)conn, err);
 	}
 
 	control_point_ntf_complete(conn, NULL);
@@ -905,13 +905,13 @@ static int settings_set_cb(const char *name, size_t len_rd, settings_read_cb rea
 	int err;
 
 	if (!name) {
-		LOG_ERR("Insufficient number of arguments");
+		LOG_ERROR("Insufficient number of arguments");
 		return -EINVAL;
 	}
 
 	err = bt_settings_decode_key(name, &addr);
 	if (err) {
-		LOG_ERR("Unable to decode address %s", name);
+		LOG_ERROR("Unable to decode address %s", name);
 		return -EINVAL;
 	}
 
@@ -920,7 +920,8 @@ static int settings_set_cb(const char *name, size_t len_rd, settings_read_cb rea
 		/* Find and initialize a free entry */
 		context = context_alloc(&addr);
 		if (context == NULL) {
-			LOG_ERR("Failed to allocate client_context for %s", bt_addr_le_str(&addr));
+			LOG_ERROR("Failed to allocate client_context for %s",
+				  bt_addr_le_str(&addr));
 			return -ENOMEM;
 		}
 	}
@@ -928,7 +929,7 @@ static int settings_set_cb(const char *name, size_t len_rd, settings_read_cb rea
 	if (len_rd) {
 		len = read_cb(cb_arg, &store, sizeof(store));
 		if (len < 0) {
-			LOG_ERR("Failed to decode value (err %zd)", len);
+			LOG_ERROR("Failed to decode value (err %zd)", len);
 			return len;
 		}
 
@@ -957,7 +958,7 @@ static void store_client_context(struct client_context *context)
 
 	err = bt_settings_store("has", 0, &context->addr, &store, sizeof(store));
 	if (err != 0) {
-		LOG_ERR("Failed to store err %d", err);
+		LOG_ERROR("Failed to store err %d", err);
 	}
 }
 #else
@@ -1496,24 +1497,24 @@ int bt_has_preset_register(const struct bt_has_preset_register_param *param)
 	size_t name_len;
 
 	if (param == NULL) {
-		LOG_ERR("param is NULL");
+		LOG_ERROR("param is NULL");
 		return -EINVAL;
 	}
 
 	if (param->index == BT_HAS_PRESET_INDEX_NONE) {
-		LOG_ERR("param->index is invalid");
+		LOG_ERROR("param->index is invalid");
 		return -EINVAL;
 	}
 
 	if (param->name == NULL) {
-		LOG_ERR("param->name is NULL");
+		LOG_ERROR("param->name is NULL");
 		return -EINVAL;
 	}
 
 	name_len = strlen(param->name);
 
 	if (name_len < BT_HAS_PRESET_NAME_MIN) {
-		LOG_ERR("param->name is too short (%zu < %u)", name_len, BT_HAS_PRESET_NAME_MIN);
+		LOG_ERROR("param->name is too short (%zu < %u)", name_len, BT_HAS_PRESET_NAME_MIN);
 		return -EINVAL;
 	}
 
@@ -1522,12 +1523,12 @@ int bt_has_preset_register(const struct bt_has_preset_register_param *param)
 	}
 
 	if (param->ops == NULL) {
-		LOG_ERR("param->ops is NULL");
+		LOG_ERROR("param->ops is NULL");
 		return -EINVAL;
 	}
 
 	if (param->ops->select == NULL) {
-		LOG_ERR("param->ops->select is NULL");
+		LOG_ERROR("param->ops->select is NULL");
 		return -EINVAL;
 	}
 
@@ -1538,7 +1539,7 @@ int bt_has_preset_register(const struct bt_has_preset_register_param *param)
 
 	if (!IS_ENABLED(CONFIG_BT_HAS_PRESET_NAME_DYNAMIC) &&
 	    (param->properties & BT_HAS_PROP_WRITABLE) > 0) {
-		LOG_ERR("Writable presets are not supported");
+		LOG_ERROR("Writable presets are not supported");
 		return -ENOTSUP;
 	}
 
@@ -1561,7 +1562,7 @@ int bt_has_preset_unregister(uint8_t index)
 	int err;
 
 	if (index == BT_HAS_PRESET_INDEX_NONE) {
-		LOG_ERR("index is invalid");
+		LOG_ERROR("index is invalid");
 		return -EINVAL;
 	}
 
@@ -1596,7 +1597,7 @@ static int set_preset_availability(uint8_t index, bool available)
 	uint8_t change_id;
 
 	if (index == BT_HAS_PRESET_INDEX_NONE) {
-		LOG_ERR("index is invalid");
+		LOG_ERROR("index is invalid");
 		return -EINVAL;
 	}
 

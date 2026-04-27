@@ -20,13 +20,13 @@ int scmi_shmem_vendor_read_message(const struct scmi_shmem_layout *layout)
 
 	if (validation_type == SMT_CRC_CRC32) {
 		if (layout->res1[1] != crc32_ieee((const uint8_t *)&layout->msg_hdr, layout->len)) {
-			LOG_ERR("bad message crc");
+			LOG_ERROR("bad message crc");
 			return -EBADMSG;
 		}
 	} else if (validation_type == SMT_CRC_NONE) {
 		/* do nothing */
 	} else {
-		LOG_ERR("unsupported validation type 0x%x", validation_type);
+		LOG_ERROR("unsupported validation type 0x%x", validation_type);
 		return -EINVAL;
 	}
 
@@ -42,7 +42,7 @@ int scmi_shmem_vendor_write_message(struct scmi_shmem_layout *layout)
 	} else if (validation_type == SMT_CRC_NONE) {
 		/* do nothing */
 	} else {
-		LOG_ERR("unsupported validation type 0x%x", validation_type);
+		LOG_ERROR("unsupported validation type 0x%x", validation_type);
 		return -EINVAL;
 	}
 

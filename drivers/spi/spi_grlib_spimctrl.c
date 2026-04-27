@@ -46,47 +46,47 @@ struct data {
 static int spi_config(struct spi_context *ctx, const struct spi_config *config)
 {
 	if (config->slave != 0) {
-		LOG_ERR("More slaves than supported");
+		LOG_ERROR("More slaves than supported");
 		return -ENOTSUP;
 	}
 
 	if (SPI_WORD_SIZE_GET(config->operation) != 8) {
-		LOG_ERR("Word size must be 8");
+		LOG_ERROR("Word size must be 8");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_CS_ACTIVE_HIGH) {
-		LOG_ERR("CS active high not supported");
+		LOG_ERROR("CS active high not supported");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_LOCK_ON) {
-		LOG_ERR("Lock On not supported");
+		LOG_ERROR("Lock On not supported");
 		return -ENOTSUP;
 	}
 
 	if ((config->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only supports single mode");
+		LOG_ERROR("Only supports single mode");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_TRANSFER_LSB) {
-		LOG_ERR("LSB first not supported");
+		LOG_ERROR("LSB first not supported");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & (SPI_MODE_CPOL | SPI_MODE_CPHA)) {
-		LOG_ERR("Only supports CPOL=CPHA=0");
+		LOG_ERROR("Only supports CPOL=CPHA=0");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+		LOG_ERROR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_MODE_LOOP) {
-		LOG_ERR("Loopback not supported");
+		LOG_ERROR("Loopback not supported");
 		return -ENOTSUP;
 	}
 
@@ -110,7 +110,7 @@ static int transceive(const struct device *dev,
 
 	rc = spi_config(ctx, config);
 	if (rc) {
-		LOG_ERR("%s: config", __func__);
+		LOG_ERROR("%s: config", __func__);
 		spi_context_release(ctx, rc);
 		return rc;
 	}

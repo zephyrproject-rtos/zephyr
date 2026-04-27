@@ -31,7 +31,7 @@ static int mfd_adp5585_software_reset(const struct device *dev)
 
 out:
 	if (ret) {
-		LOG_ERR("%s: software reset failed: %d", dev->name, ret);
+		LOG_ERROR("%s: software reset failed: %d", dev->name, ret);
 	}
 	return ret;
 }
@@ -86,7 +86,7 @@ static int mfd_adp5585_init(const struct device *dev)
 	if (gpio_is_ready_dt(&config->reset_gpio)) {
 		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret) {
-			LOG_ERR("%s: configure reset pin failed: %d", dev->name, ret);
+			LOG_ERROR("%s: configure reset pin failed: %d", dev->name, ret);
 			return ret;
 		}
 	} else {
@@ -105,7 +105,7 @@ static int mfd_adp5585_init(const struct device *dev)
 		}
 		ret = gpio_pin_interrupt_configure_dt(&config->nint_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		if (ret != 0) {
-			LOG_ERR("%s: failed to configure INT interrupt: %d", dev->name, ret);
+			LOG_ERROR("%s: failed to configure INT interrupt: %d", dev->name, ret);
 			return ret;
 		}
 
@@ -113,7 +113,7 @@ static int mfd_adp5585_init(const struct device *dev)
 				   BIT(config->nint_gpio.pin));
 		ret = gpio_add_callback_dt(&config->nint_gpio, &data->int_gpio_cb);
 		if (ret != 0) {
-			LOG_ERR("%s: failed to add INT callback: %d", dev->name, ret);
+			LOG_ERROR("%s: failed to add INT callback: %d", dev->name, ret);
 			return ret;
 		}
 	} else {

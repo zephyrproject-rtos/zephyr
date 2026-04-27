@@ -28,7 +28,7 @@ static void pulse_led(int led, const struct device *const dev)
 	for (percent = 1 ; percent <= MAX_BRIGHTNESS ; percent++) {
 		status = led_set_brightness(dev, led, percent);
 		if (status) {
-			LOG_ERR("Could not change brightness: %i", status);
+			LOG_ERROR("Could not change brightness: %i", status);
 			return;
 		}
 		k_msleep(FADE_DELAY_MS);
@@ -38,7 +38,7 @@ static void pulse_led(int led, const struct device *const dev)
 	     percent <= MAX_BRIGHTNESS; percent--) {
 		status = led_set_brightness(dev, led, percent);
 		if (status) {
-			LOG_ERR("Could not change brightness: %i", status);
+			LOG_ERROR("Could not change brightness: %i", status);
 			return;
 		}
 		k_msleep(FADE_DELAY_MS);
@@ -57,7 +57,7 @@ static void pulse_leds(const struct device *const dev)
 					    WRITE_CHANNELS_LEDS_COUNT,
 					    brightness);
 		if (status) {
-			LOG_ERR("Could not change brightness: %i", status);
+			LOG_ERROR("Could not change brightness: %i", status);
 			return;
 		}
 		k_msleep(FADE_DELAY_MS);
@@ -70,7 +70,7 @@ static void pulse_leds(const struct device *const dev)
 					    WRITE_CHANNELS_LEDS_COUNT,
 					    brightness);
 		if (status) {
-			LOG_ERR("Could not change brightness: %i", status);
+			LOG_ERROR("Could not change brightness: %i", status);
 			return;
 		}
 		k_msleep(FADE_DELAY_MS);
@@ -84,10 +84,10 @@ int main(void)
 		DEVICE_DT_GET_ANY(issi_is31fl3216a);
 
 	if (!is31fl3216a) {
-		LOG_ERR("No device with compatible issi,is31fl3216a found");
+		LOG_ERROR("No device with compatible issi,is31fl3216a found");
 		return 0;
 	} else if (!device_is_ready(is31fl3216a)) {
-		LOG_ERR("LED controller %s is not ready", is31fl3216a->name);
+		LOG_ERROR("LED controller %s is not ready", is31fl3216a->name);
 		return 0;
 	}
 

@@ -26,7 +26,7 @@ static int tmcm3216_stepper_driver_enable(const struct device *dev)
 
 	err = tmcm3216_sap(dev, config->motor_index, TMCL_AP_MAX_CURRENT, run_current);
 	if (err != 0) {
-		LOG_ERR("Failed to set run current");
+		LOG_ERROR("Failed to set run current");
 		return err;
 	}
 
@@ -50,19 +50,19 @@ static int tmcm3216_stepper_driver_disable(const struct device *dev)
 
 	err = tmcm3216_send_command(dev, &cmd, &reply);
 	if (err != 0) {
-		LOG_ERR("Failed to stop motor");
+		LOG_ERROR("Failed to stop motor");
 		return err;
 	}
 
 	err = tmcm3216_sap(dev, config->motor_index, TMCL_AP_MAX_CURRENT, 0);
 	if (err != 0) {
-		LOG_ERR("Failed to set current to 0");
+		LOG_ERROR("Failed to set current to 0");
 		return err;
 	}
 
 	err = tmcm3216_sap(dev, config->motor_index, TMCL_AP_STANDBY_CURRENT, 0);
 	if (err != 0) {
-		LOG_ERR("Failed to set standby current to 0");
+		LOG_ERROR("Failed to set standby current to 0");
 		return err;
 	}
 
@@ -77,7 +77,7 @@ static int tmcm3216_stepper_driver_set_micro_step_res(const struct device *dev,
 	uint8_t mres_value;
 
 	if (res > STEPPER_MICRO_STEP_256) {
-		LOG_ERR("Invalid microstep resolution: %d", res);
+		LOG_ERROR("Invalid microstep resolution: %d", res);
 		return -EINVAL;
 	}
 
@@ -128,7 +128,7 @@ static int tmcm3216_stepper_driver_get_micro_step_res(const struct device *dev,
 		*res = STEPPER_MICRO_STEP_256;
 		break;
 	default:
-		LOG_ERR("Invalid microstep value from device: %d", mres_value);
+		LOG_ERROR("Invalid microstep value from device: %d", mres_value);
 		return -EIO;
 	}
 
@@ -144,14 +144,14 @@ static int tmcm3216_stepper_driver_init(const struct device *dev)
 
 	/* Verify parent controller is ready */
 	if (!device_is_ready(config->controller)) {
-		LOG_ERR("Parent controller not ready");
+		LOG_ERROR("Parent controller not ready");
 		return -ENODEV;
 	}
 
 	/* Set default microstep resolution */
 	err = tmcm3216_stepper_driver_set_micro_step_res(dev, config->default_micro_step_res);
 	if (err != 0) {
-		LOG_ERR("Failed to set default microstep resolution");
+		LOG_ERROR("Failed to set default microstep resolution");
 		return err;
 	}
 

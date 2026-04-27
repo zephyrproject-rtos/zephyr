@@ -50,7 +50,7 @@ int ft8xx_drv_init(const struct device *dev)
 	struct ft8xx_data *data = dev->data;
 
 	if (!spi_is_ready_dt(&data->spi)) {
-		LOG_ERR("SPI bus %s not ready", data->spi.bus->name);
+		LOG_ERROR("SPI bus %s not ready", data->spi.bus->name);
 		return -ENODEV;
 	}
 
@@ -58,7 +58,7 @@ int ft8xx_drv_init(const struct device *dev)
 	 * If not, use polling mode.
 	 */
 	if (!gpio_is_ready_dt(&data->irq_gpio)) {
-		LOG_ERR("GPIO device %s is not ready", data->irq_gpio.port->name);
+		LOG_ERROR("GPIO device %s is not ready", data->irq_gpio.port->name);
 		return -ENODEV;
 	}
 
@@ -107,7 +107,7 @@ int ft8xx_drv_write(const struct device *dev, uint32_t address, const uint8_t *d
 
 	ret = spi_write_dt(&dev_data->spi, &tx_bufs);
 	if (ret < 0) {
-		LOG_ERR("SPI write error: %d", ret);
+		LOG_ERROR("SPI write error: %d", ret);
 	}
 
 	return ret;
@@ -151,7 +151,7 @@ int ft8xx_drv_read(const struct device *dev, uint32_t address, uint8_t *data, un
 
 	ret = spi_transceive_dt(&dev_data->spi, &tx_bufs, &rx_bufs);
 	if (ret < 0) {
-		LOG_ERR("SPI transceive error: %d", ret);
+		LOG_ERROR("SPI transceive error: %d", ret);
 	}
 
 	return ret;
@@ -178,7 +178,7 @@ int ft8xx_drv_command(const struct device *dev, uint8_t command)
 
 	ret = spi_write_dt(&dev_data->spi, &tx_bufs);
 	if (ret < 0) {
-		LOG_ERR("SPI command error: %d", ret);
+		LOG_ERROR("SPI command error: %d", ret);
 	}
 
 	return ret;

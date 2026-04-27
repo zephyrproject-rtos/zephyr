@@ -166,7 +166,7 @@ static int reset_error_list_cb(uint16_t obj_inst_id,
 	if (IS_ENABLED(CONFIG_LWM2M_DEVICE_ERROR_CODE_SETTINGS)) {
 		ret = settings_delete(SETTINGS_SUBTREE_LWM2M_OBJ_DEVICE "/" ERROR_LIST_KEY);
 		if (ret != 0) {
-			LOG_ERR("Couldn't save error list: %d", ret);
+			LOG_ERROR("Couldn't save error list: %d", ret);
 		}
 	}
 
@@ -202,7 +202,7 @@ static int current_time_post_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 		return 0;
 	}
 
-	LOG_ERR("unknown size %u", data_len);
+	LOG_ERROR("unknown size %u", data_len);
 	return -EINVAL;
 }
 
@@ -235,7 +235,7 @@ int lwm2m_device_add_err(uint8_t error_code)
 		ret = settings_save_one(SETTINGS_SUBTREE_LWM2M_OBJ_DEVICE "/" ERROR_LIST_KEY,
 					error_code_list, i + 1);
 		if (ret != 0) {
-			LOG_ERR("Couldn't save error list: %d", ret);
+			LOG_ERROR("Couldn't save error list: %d", ret);
 		}
 	}
 
@@ -262,7 +262,7 @@ static int lwm2m_obj_device_settings_set(const char *name, size_t len,
 	if (IS_ENABLED(CONFIG_LWM2M_DEVICE_ERROR_CODE_SETTINGS)) {
 		if (settings_name_steq(name, ERROR_LIST_KEY, &next) && !next) {
 			if (len > sizeof(error_code_list)) {
-				LOG_ERR("Error code list too large: %zu", len);
+				LOG_ERROR("Error code list too large: %zu", len);
 				return -EINVAL;
 			}
 
@@ -284,7 +284,7 @@ static int lwm2m_obj_device_settings_set(const char *name, size_t len,
 				return 0;
 			}
 
-			LOG_ERR("Error code list read failure: %d", rc);
+			LOG_ERROR("Error code list read failure: %d", rc);
 
 			return rc;
 		}
@@ -382,10 +382,10 @@ static int lwm2m_device_init(void)
 		if (ret == 0) {
 			ret = settings_load_subtree(SETTINGS_SUBTREE_LWM2M_OBJ_DEVICE);
 			if (ret != 0) {
-				LOG_ERR("Settings load failed: %d", ret);
+				LOG_ERROR("Settings load failed: %d", ret);
 			}
 		} else {
-			LOG_ERR("Settings register failed: %d", ret);
+			LOG_ERROR("Settings register failed: %d", ret);
 		}
 	}
 

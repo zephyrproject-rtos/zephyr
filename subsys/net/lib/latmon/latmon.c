@@ -213,7 +213,7 @@ static int enqueue_sample_data(struct latmon_data *data)
 	/* Enqueue the data for transfer */
 	ret = k_msgq_put(&xfer_msgq, data, K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Failed to enqueue netdata (queue full)");
+		LOG_ERROR("Failed to enqueue netdata (queue full)");
 	}
 out:
 	/* Reset the data */
@@ -235,12 +235,12 @@ static void xfer_thread_func(void *p1, void *p2, void *p3)
 
 	for (;;) {
 		if (k_msgq_get(&xfer_msgq, &sample, K_FOREVER) != 0) {
-			LOG_ERR("Failed to get sample data to transfer");
+			LOG_ERROR("Failed to get sample data to transfer");
 			continue;
 		}
 
 		if (send_sample_data(latmus, &sample) < 0) {
-			LOG_ERR("Failed to transfer sample data");
+			LOG_ERROR("Failed to transfer sample data");
 			break;
 		}
 	}
@@ -303,7 +303,7 @@ static void monitor_thread_func(void *p1, void *p2, void *p3)
 		ret = measure(&delta, msg, data, conf);
 		if (ret != 0) {
 			if (ret < 0) {
-				LOG_ERR("\tExcessive overruns, abort!");
+				LOG_ERROR("\tExcessive overruns, abort!");
 				goto out;
 			}
 			continue;
@@ -332,13 +332,13 @@ static int broadcast_ip_address(struct net_in_addr *ip_addr)
 	int ret = -1;
 
 	if (ip_addr == NULL || ip_addr->s_addr == NET_INADDR_ANY) {
-		LOG_ERR("Invalid IP address for broadcast");
+		LOG_ERROR("Invalid IP address for broadcast");
 		return -1;
 	}
 
 	sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (sock < 0) {
-		LOG_ERR("Failed to create broadcast socket : %d", errno);
+		LOG_ERROR("Failed to create broadcast socket : %d", errno);
 		return -1;
 	}
 
@@ -347,7 +347,7 @@ static int broadcast_ip_address(struct net_in_addr *ip_addr)
 	broadcast.sin_family = NET_AF_INET;
 
 	if (net_addr_ntop(NET_AF_INET, ip_addr, ip_str, sizeof(ip_str)) == NULL) {
-		LOG_ERR("Failed to convert IP address to string");
+		LOG_ERROR("Failed to convert IP address to string");
 		ret = -1;
 		goto out;
 	}
@@ -377,19 +377,19 @@ int net_latmon_get_socket(struct net_sockaddr *connection_addr)
 
 	s = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	if (s < 0) {
-		LOG_ERR("failed to create latmon socket : %d", errno);
+		LOG_ERROR("failed to create latmon socket : %d", errno);
 		return -1;
 	}
 
 	zsock_setsockopt(s, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR, &on, sizeof(on));
 	if (zsock_bind(s, (struct net_sockaddr *)&addr, sizeof(addr)) < 0) {
-		LOG_ERR("failed to bind latmon socket : %d", errno);
+		LOG_ERROR("failed to bind latmon socket : %d", errno);
 		zsock_close(s);
 		return -1;
 	}
 
 	if (zsock_listen(s, 1) < 0) {
-		LOG_ERR("failed to listen on latmon socket : %d", errno);
+		LOG_ERROR("failed to listen on latmon socket : %d", errno);
 		zsock_close(s);
 		return -1;
 	}
@@ -412,12 +412,12 @@ int net_latmon_connect(int socket, struct net_in_addr *ip)
 	/* Broadcast Latmon's address every timeout seconds until connected */
 	ret = zsock_poll(fd, 1, timeout);
 	if (ret < 0) {
-		LOG_ERR("Poll error: %d", errno);
+		LOG_ERROR("Poll error: %d", errno);
 		return -1;
 	} else if (ret == 0) {
 		/* Timeout waiting for connection */
 		if (broadcast_ip_address(ip) < 0) {
-			LOG_ERR("Broadcast error");
+			LOG_ERROR("Broadcast error");
 			return -1;
 		}
 
@@ -463,19 +463,18 @@ static int get_latmus_conf(ssize_t len, struct latmon_net_request *req,
 	}
 
 	if (net_ntohl(req->period_usecs) == 0) {
-		LOG_ERR("null period received, invalid\n");
+		LOG_ERROR("null period received, invalid\n");
 		return -1;
 	}
 
 	if (net_ntohl(req->period_usecs) > MAX_SAMPLING_PERIOD_USEC) {
-		LOG_ERR("invalid period received: %u usecs\n",
-			net_ntohl(req->period_usecs));
+		LOG_ERROR("invalid period received: %u usecs\n", net_ntohl(req->period_usecs));
 		return -1;
 	}
 
 	if (net_ntohl(req->histogram_cells) > HISTOGRAM_CELLS_MAX) {
-		LOG_ERR("invalid histogram size received: %u > %u cells\n",
-			net_ntohl(req->histogram_cells), HISTOGRAM_CELLS_MAX);
+		LOG_ERROR("invalid histogram size received: %u > %u cells\n",
+			  net_ntohl(req->histogram_cells), HISTOGRAM_CELLS_MAX);
 		return -1;
 	}
 
@@ -518,7 +517,7 @@ static void handle_connection(struct latmon_message *msg)
 	ssize_t len;
 
 	if (conf == 0 || data == 0) {
-		LOG_ERR("Failed to allocate memory, check HEAP_MEM_POOL_SIZE");
+		LOG_ERROR("Failed to allocate memory, check HEAP_MEM_POOL_SIZE");
 		goto out;
 	}
 
@@ -543,7 +542,7 @@ out:
 	zsock_close(msg->latmus);
 	k_sem_give(&latmon_done);
 #else
-	LOG_ERR("No heap configured");
+	LOG_ERROR("No heap configured");
 #endif
 }
 

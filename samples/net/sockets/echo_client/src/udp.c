@@ -163,12 +163,12 @@ static int send_udp_data(struct sample_data *data)
 static int compare_udp_data(struct sample_data *data, const char *buf, uint32_t received)
 {
 	if (received != data->udp.expecting) {
-		LOG_ERR("Invalid amount of data received: UDP %s", data->proto);
+		LOG_ERROR("Invalid amount of data received: UDP %s", data->proto);
 		return -EIO;
 	}
 
 	if (memcmp(buf, lorem_ipsum, received) != 0) {
-		LOG_ERR("Invalid data received: UDP %s", data->proto);
+		LOG_ERROR("Invalid data received: UDP %s", data->proto);
 		return -EIO;
 	}
 
@@ -181,7 +181,7 @@ static void wait_reply(struct k_timer *timer)
 	struct udp_control *ctrl = CONTAINER_OF(timer, struct udp_control, rx_timer);
 	struct sample_data *data = (ctrl == conf.ipv4.udp.ctrl) ? &conf.ipv4 : &conf.ipv6;
 
-	LOG_ERR("UDP %s: Data packet not received", data->proto);
+	LOG_ERROR("UDP %s: Data packet not received", data->proto);
 
 	/* Send a new packet at this point */
 	k_poll_signal_raise(&ctrl->tx_signal, 0);
@@ -206,8 +206,7 @@ static int start_udp_proto(struct sample_data *data, sa_family_t family,
 	data->udp.sock = socket(family, SOCK_DGRAM, IPPROTO_UDP);
 #endif
 	if (data->udp.sock < 0) {
-		LOG_ERR("Failed to create UDP socket (%s): %d", data->proto,
-			errno);
+		LOG_ERROR("Failed to create UDP socket (%s): %d", data->proto, errno);
 		return -errno;
 	}
 
@@ -222,16 +221,14 @@ static int start_udp_proto(struct sample_data *data, sa_family_t family,
 	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_SEC_TAG_LIST,
 			 sec_tag_list, sizeof(sec_tag_list));
 	if (ret < 0) {
-		LOG_ERR("Failed to set TLS_SEC_TAG_LIST option (%s): %d",
-			data->proto, errno);
+		LOG_ERROR("Failed to set TLS_SEC_TAG_LIST option (%s): %d", data->proto, errno);
 		ret = -errno;
 	}
 
 	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_HOSTNAME,
 			 TLS_PEER_HOSTNAME, sizeof(TLS_PEER_HOSTNAME));
 	if (ret < 0) {
-		LOG_ERR("Failed to set TLS_HOSTNAME option (%s): %d",
-			data->proto, errno);
+		LOG_ERROR("Failed to set TLS_HOSTNAME option (%s): %d", data->proto, errno);
 		ret = -errno;
 	}
 #endif
@@ -247,8 +244,7 @@ static int start_udp_proto(struct sample_data *data, sa_family_t family,
 	/* Call connect so we can use send and recv. */
 	ret = connect(data->udp.sock, addr, addrlen);
 	if (ret < 0) {
-		LOG_ERR("Cannot connect to UDP remote (%s): %d", data->proto,
-			errno);
+		LOG_ERROR("Cannot connect to UDP remote (%s): %d", data->proto, errno);
 		ret = -errno;
 	}
 

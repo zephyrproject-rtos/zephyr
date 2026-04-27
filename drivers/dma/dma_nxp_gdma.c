@@ -91,30 +91,30 @@ static int dma_nxp_gdma_configure(const struct device *dev, uint32_t channel,
 	struct dma_block_config *block;
 
 	if (channel >= config->num_channels) {
-		LOG_ERR("Invalid channel %d (max %d)", channel, config->num_channels - 1);
+		LOG_ERROR("Invalid channel %d (max %d)", channel, config->num_channels - 1);
 		return -EINVAL;
 	}
 
 	ch_data = &data->channels[channel];
 
 	if (ch_data->busy) {
-		LOG_ERR("Channel %d is busy", channel);
+		LOG_ERROR("Channel %d is busy", channel);
 		return -EBUSY;
 	}
 
 	if (cfg->block_count != 1) {
-		LOG_ERR("Only single block transfers supported");
+		LOG_ERROR("Only single block transfers supported");
 		return -ENOTSUP;
 	}
 
 	block = cfg->head_block;
 	if (block == NULL) {
-		LOG_ERR("No block configuration provided");
+		LOG_ERROR("No block configuration provided");
 		return -EINVAL;
 	}
 
 	if (block->block_size > NXP_GDMA_MAX_XFER_LEN) {
-		LOG_ERR("Block size %d exceeds max %d", block->block_size, NXP_GDMA_MAX_XFER_LEN);
+		LOG_ERROR("Block size %d exceeds max %d", block->block_size, NXP_GDMA_MAX_XFER_LEN);
 		return -EINVAL;
 	}
 
@@ -125,7 +125,7 @@ static int dma_nxp_gdma_configure(const struct device *dev, uint32_t channel,
 	case PERIPHERAL_TO_MEMORY:
 		break;
 	default:
-		LOG_ERR("Unsupported direction %d", cfg->channel_direction);
+		LOG_ERROR("Unsupported direction %d", cfg->channel_direction);
 		return -ENOTSUP;
 	}
 
@@ -178,14 +178,14 @@ static int dma_nxp_gdma_start(const struct device *dev, uint32_t channel)
 	struct dma_nxp_gdma_channel *ch_data;
 
 	if (channel >= config->num_channels) {
-		LOG_ERR("Invalid channel %d", channel);
+		LOG_ERROR("Invalid channel %d", channel);
 		return -EINVAL;
 	}
 
 	ch_data = &data->channels[channel];
 
 	if (ch_data->busy) {
-		LOG_ERR("Channel %d is already busy", channel);
+		LOG_ERROR("Channel %d is already busy", channel);
 		return -EBUSY;
 	}
 
@@ -207,7 +207,7 @@ static int dma_nxp_gdma_stop(const struct device *dev, uint32_t channel)
 	struct dma_nxp_gdma_channel *ch_data;
 
 	if (channel >= config->num_channels) {
-		LOG_ERR("Invalid channel %d", channel);
+		LOG_ERROR("Invalid channel %d", channel);
 		return -EINVAL;
 	}
 
@@ -237,7 +237,7 @@ static int dma_nxp_gdma_get_status(const struct device *dev, uint32_t channel,
 	struct dma_nxp_gdma_channel *ch_data;
 
 	if (channel >= config->num_channels) {
-		LOG_ERR("Invalid channel %d", channel);
+		LOG_ERROR("Invalid channel %d", channel);
 		return -EINVAL;
 	}
 
@@ -301,7 +301,7 @@ static void dma_nxp_gdma_isr(const struct device *dev)
 
 		/* Check for errors */
 		if (flags & (kGDMA_AddressErrorFlag | kGDMA_BusErrorFlag)) {
-			LOG_ERR("GDMA channel %d transfer error, flags: 0x%08x", channel, flags);
+			LOG_ERROR("GDMA channel %d transfer error, flags: 0x%08x", channel, flags);
 			status = -EIO;
 		}
 

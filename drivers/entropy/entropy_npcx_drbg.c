@@ -83,7 +83,8 @@ static int entropy_npcx_drbg_enable_sha_power(void *ctx, bool enable)
 
 	ncl_ret = NPCX_NCL_SHA_POWER->power(ctx, enable);
 	if (ncl_ret != NCL_STATUS_OK) {
-		LOG_ERR("Fail to %s SHA power: err 0x%02x", enable ? "enable" : "disable", ncl_ret);
+		LOG_ERROR("Fail to %s SHA power: err 0x%02x", enable ? "enable" : "disable",
+			  ncl_ret);
 		return -EIO;
 	}
 
@@ -96,8 +97,8 @@ static int entropy_npcx_drbg_enable_drbg_power(void *ctx, bool enable)
 
 	ncl_ret = NPCX_NCL_DRBG->power(ctx, enable);
 	if (ncl_ret != NCL_STATUS_OK) {
-		LOG_ERR("Fail to %s DRBG power: err 0x%02x", enable ? "enable" : "disable",
-			ncl_ret);
+		LOG_ERROR("Fail to %s DRBG power: err 0x%02x", enable ? "enable" : "disable",
+			  ncl_ret);
 		return -EIO;
 	}
 
@@ -120,7 +121,7 @@ static int entropy_npcx_drbg_get_entropy(const struct device *dev, uint8_t *buf,
 
 	ncl_ret = NPCX_NCL_DRBG->generate(ctx, NULL, 0, buf, len);
 	if (ncl_ret != NCL_STATUS_OK) {
-		LOG_ERR("Fail to generate: err 0x%02x", ncl_ret);
+		LOG_ERROR("Fail to generate: err 0x%02x", ncl_ret);
 		ret = -EIO;
 		goto err_exit;
 	}
@@ -143,7 +144,7 @@ static int entropy_npcx_drbg_init(const struct device *dev)
 
 	handle_size_required = NPCX_NCL_DRBG->get_context_size();
 	if (handle_size_required != NPCX_DRBG_HANDLE_SIZE) {
-		LOG_ERR("Unexpected NCL DRBG context_size = %d", handle_size_required);
+		LOG_ERROR("Unexpected NCL DRBG context_size = %d", handle_size_required);
 		return -ENOSR;
 	}
 
@@ -159,25 +160,25 @@ static int entropy_npcx_drbg_init(const struct device *dev)
 
 	ncl_ret = NPCX_NCL_DRBG->init_context(ctx);
 	if (ncl_ret != NCL_STATUS_OK) {
-		LOG_ERR("Fail to init ctx: err 0x%02x", ncl_ret);
+		LOG_ERROR("Fail to init ctx: err 0x%02x", ncl_ret);
 		return -EIO;
 	}
 
 	ncl_ret = NPCX_NCL_DRBG->init(ctx, false);
 	if (ncl_ret != NCL_STATUS_OK) {
-		LOG_ERR("Fail to init: err 0x%02x", ncl_ret);
+		LOG_ERROR("Fail to init: err 0x%02x", ncl_ret);
 		return -EIO;
 	}
 
 	ncl_ret = NPCX_NCL_DRBG->config(ctx, NPCX_DRBG_RESEED_INTERVAL, false);
 	if (ncl_ret != NCL_STATUS_OK) {
-		LOG_ERR("Fail to config: err 0x%02x", ncl_ret);
+		LOG_ERROR("Fail to config: err 0x%02x", ncl_ret);
 		return -EIO;
 	}
 
 	ncl_ret = NPCX_NCL_DRBG->instantiate(ctx, NPCX_DRBG_SECURITY_STRENGTH, NULL, 0);
 	if (ncl_ret != NCL_STATUS_OK) {
-		LOG_ERR("Fail to config: err 0x%02x", ncl_ret);
+		LOG_ERROR("Fail to config: err 0x%02x", ncl_ret);
 		return -EIO;
 	}
 

@@ -98,7 +98,7 @@ static int nct38xx_gpio_init(const struct device *dev)
 
 	/* Verify multi-function parent is ready */
 	if (!device_is_ready(config->mfd)) {
-		LOG_ERR("%s device not ready", config->mfd->name);
+		LOG_ERROR("%s device not ready", config->mfd->name);
 		return -ENODEV;
 	}
 

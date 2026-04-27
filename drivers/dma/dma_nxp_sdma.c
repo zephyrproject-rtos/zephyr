@@ -160,8 +160,8 @@ void sdma_set_transfer_type(struct dma_config *config, sdma_transfer_type_t *typ
 		*type = kSDMA_PeripheralToPeripheral;
 		break;
 	default:
-		LOG_ERR("%s: channel direction not supported %d", __func__,
-			config->channel_direction);
+		LOG_ERROR("%s: channel direction not supported %d", __func__,
+			  config->channel_direction);
 		return;
 	}
 	LOG_DBG("%s: dir %d type = %d", __func__, config->channel_direction, *type);
@@ -279,7 +279,7 @@ static int dma_nxp_sdma_config(const struct device *dev, uint32_t channel,
 	int ret;
 
 	if (channel >= FSL_FEATURE_SDMA_MODULE_CHANNEL) {
-		LOG_ERR("sdma_config() invalid channel %d", channel);
+		LOG_ERROR("sdma_config() invalid channel %d", channel);
 		return -EINVAL;
 	}
 
@@ -296,7 +296,7 @@ static int dma_nxp_sdma_config(const struct device *dev, uint32_t channel,
 
 	ret = sdma_set_peripheral_type(config, &chan_data->peripheral);
 	if (ret < 0) {
-		LOG_ERR("%s: failed to set peripheral type", __func__);
+		LOG_ERROR("%s: failed to set peripheral type", __func__);
 		return ret;
 	}
 
@@ -311,7 +311,7 @@ static int dma_nxp_sdma_config(const struct device *dev, uint32_t channel,
 	dma_nxp_sdma_setup_bd(dev, channel, config);
 	ret = dma_nxp_sdma_init_stat(chan_data);
 	if (ret < 0) {
-		LOG_ERR("%s: failed to init stat", __func__);
+		LOG_ERROR("%s: failed to init stat", __func__);
 		return ret;
 	}
 
@@ -343,7 +343,7 @@ static int dma_nxp_sdma_start(const struct device *dev, uint32_t channel)
 	struct sdma_channel_data *chan_data;
 
 	if (channel >= FSL_FEATURE_SDMA_MODULE_CHANNEL) {
-		LOG_ERR("%s: invalid channel %d", __func__, channel);
+		LOG_ERROR("%s: invalid channel %d", __func__, channel);
 		return -EINVAL;
 	}
 
@@ -361,7 +361,7 @@ static int dma_nxp_sdma_stop(const struct device *dev, uint32_t channel)
 	struct sdma_channel_data *chan_data;
 
 	if (channel >= FSL_FEATURE_SDMA_MODULE_CHANNEL) {
-		LOG_ERR("%s: invalid channel %d", __func__, channel);
+		LOG_ERROR("%s: invalid channel %d", __func__, channel);
 		return -EINVAL;
 	}
 
@@ -425,7 +425,7 @@ static int dma_nxp_sdma_get_attribute(const struct device *dev, uint32_t type, u
 		*val = DMA_NXP_SDMA_BD_COUNT;
 		break;
 	default:
-		LOG_ERR("invalid attribute type: %d", type);
+		LOG_ERROR("invalid attribute type: %d", type);
 		return -EINVAL;
 	}
 	return 0;

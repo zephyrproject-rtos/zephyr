@@ -132,7 +132,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 	} else if (stm32_dma_is_unexpected_irq_happened(dma, id)) {
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
-			LOG_ERR("Unexpected irq happened.");
+			LOG_ERROR("Unexpected irq happened.");
 			stm32_dma_dump_stream_irq(dma, id);
 			stm32_dma_clear_stream_irq(dma, id);
 		}
@@ -140,7 +140,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 	} else {
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
-			LOG_ERR("Transfer Error.");
+			LOG_ERROR("Transfer Error.");
 			stream->busy = false;
 			dma_stm32_dump_stream_irq(dev, id);
 			dma_stm32_clear_stream_irq(dev, id);
@@ -193,7 +193,7 @@ static int dma_stm32_get_priority(uint8_t priority, uint32_t *ll_priority)
 		*ll_priority = LL_DMA_PRIORITY_VERYHIGH;
 		break;
 	default:
-		LOG_ERR("Priority error. %d", priority);
+		LOG_ERROR("Priority error. %d", priority);
 		return -EINVAL;
 	}
 
@@ -214,7 +214,7 @@ static int dma_stm32_get_direction(enum dma_channel_direction direction,
 		*ll_direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
 		break;
 	default:
-		LOG_ERR("Direction error. %d", direction);
+		LOG_ERROR("Direction error. %d", direction);
 		return -EINVAL;
 	}
 
@@ -234,7 +234,7 @@ static int dma_stm32_get_memory_increment(enum dma_addr_adj increment,
 	case DMA_ADDR_ADJ_DECREMENT:
 		return -ENOTSUP;
 	default:
-		LOG_ERR("Memory increment error. %d", increment);
+		LOG_ERROR("Memory increment error. %d", increment);
 		return -EINVAL;
 	}
 
@@ -254,7 +254,7 @@ static int dma_stm32_get_periph_increment(enum dma_addr_adj increment,
 	case DMA_ADDR_ADJ_DECREMENT:
 		return -ENOTSUP;
 	default:
-		LOG_ERR("Periph increment error. %d", increment);
+		LOG_ERROR("Periph increment error. %d", increment);
 		return -EINVAL;
 	}
 
@@ -295,18 +295,18 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	id = id - STM32_DMA_STREAM_OFFSET;
 
 	if (id >= dev_config->max_streams) {
-		LOG_ERR("cannot configure the dma stream %d.", id);
+		LOG_ERROR("cannot configure the dma stream %d.", id);
 		return -EINVAL;
 	}
 
 	stream = &dev_config->streams[id];
 	if (stream->busy) {
-		LOG_ERR("dma stream %d is busy.", id);
+		LOG_ERROR("dma stream %d is busy.", id);
 		return -EBUSY;
 	}
 
 	if (dma_stm32_disable_stream(dma, id) != 0) {
-		LOG_ERR("could not disable dma stream %d.", id);
+		LOG_ERROR("could not disable dma stream %d.", id);
 		return -EBUSY;
 	}
 
@@ -327,29 +327,25 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	}
 
 	if (config->head_block->block_size > DMA_STM32_MAX_DATA_ITEMS) {
-		LOG_ERR("Data size too big: %d\n",
-		       config->head_block->block_size);
+		LOG_ERROR("Data size too big: %d\n", config->head_block->block_size);
 		return -EINVAL;
 	}
 
 #ifdef CONFIG_DMA_STM32_V1
-	if ((config->channel_direction == MEMORY_TO_MEMORY) &&
-		(!dev_config->support_m2m)) {
-		LOG_ERR("Memcopy not supported for device %s",
-			dev->name);
+	if ((config->channel_direction == MEMORY_TO_MEMORY) && (!dev_config->support_m2m)) {
+		LOG_ERROR("Memcopy not supported for device %s", dev->name);
 		return -ENOTSUP;
 	}
 	/* Support only the same data width for source and dest */
 	if (config->dest_data_size != config->source_data_size) {
-		LOG_ERR("source and dest data size differ.");
+		LOG_ERROR("source and dest data size differ.");
 		return -EINVAL;
 	}
 #else /* CONFIG_DMA_STM32_V1 */
 	if (config->dest_data_size != 4U &&
 	    config->dest_data_size != 2U &&
 	    config->dest_data_size != 1U) {
-		LOG_ERR("invalid dest unit size: %d",
-			config->dest_data_size);
+		LOG_ERROR("invalid dest unit size: %d", config->dest_data_size);
 		return -EINVAL;
 	}
 #endif /* CONFIG_DMA_STM32_V1 */
@@ -357,8 +353,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	if (config->source_data_size != 4U &&
 	    config->source_data_size != 2U &&
 	    config->source_data_size != 1U) {
-		LOG_ERR("invalid source unit size: %d",
-			config->source_data_size);
+		LOG_ERROR("invalid source unit size: %d", config->source_data_size);
 		return -EINVAL;
 	}
 
@@ -366,10 +361,9 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	 * STM32's circular mode will auto reset both source address
 	 * counter and destination address counter.
 	 */
-	if (config->head_block->source_reload_en !=
-		config->head_block->dest_reload_en) {
-		LOG_ERR("source_reload_en and dest_reload_en must "
-			"be the same.");
+	if (config->head_block->source_reload_en != config->head_block->dest_reload_en) {
+		LOG_ERROR("source_reload_en and dest_reload_en must "
+			  "be the same.");
 		return -EINVAL;
 	}
 
@@ -435,8 +429,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 		break;
 	/* Direction has been asserted in dma_stm32_get_direction. */
 	default:
-		LOG_ERR("Channel direction error (%d).",
-				config->channel_direction);
+		LOG_ERROR("Channel direction error (%d).", config->channel_direction);
 		return -EINVAL;
 	}
 
@@ -475,12 +468,12 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 #if !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32MP1X)
 	if (config->channel_direction != MEMORY_TO_MEMORY) {
 		if (config->dma_slot >= 8) {
-			LOG_ERR("dma slot error.");
+			LOG_ERROR("dma slot error.");
 			return -EINVAL;
 		}
 	} else {
 		if (config->dma_slot >= 8) {
-			LOG_ERR("dma slot is too big, using 0 as default.");
+			LOG_ERROR("dma slot is too big, using 0 as default.");
 			config->dma_slot = 0;
 		}
 	}
@@ -664,9 +657,8 @@ static int dma_stm32_init(const struct device *dev)
 	const struct dma_stm32_config *config = dev->config;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	if (clock_control_on(clk,
-		(clock_control_subsys_t) &config->pclken) != 0) {
-		LOG_ERR("clock op failed\n");
+	if (clock_control_on(clk, (clock_control_subsys_t)&config->pclken) != 0) {
+		LOG_ERROR("clock op failed\n");
 		return -EIO;
 	}
 

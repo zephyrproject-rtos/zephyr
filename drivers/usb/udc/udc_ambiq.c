@@ -91,7 +91,7 @@ static int udc_ambiq_tx(const struct device *dev, uint8_t ep, struct net_buf *bu
 
 	if (status != AM_HAL_STATUS_SUCCESS) {
 		udc_ep_set_busy(cfg, false);
-		LOG_ERR("am_hal_usb_ep_xfer write failed(0x%02x), %d", ep, (int)status);
+		LOG_ERROR("am_hal_usb_ep_xfer write failed(0x%02x), %d", ep, (int)status);
 		return -EIO;
 	}
 
@@ -130,7 +130,7 @@ static int udc_ambiq_rx(const struct device *dev, uint8_t ep, struct net_buf *bu
 	status = am_hal_usb_ep_xfer(priv->usb_handle, ep, buf->data, rx_size);
 	if (status != AM_HAL_STATUS_SUCCESS) {
 		udc_ep_set_busy(ep_cfg, false);
-		LOG_ERR("am_hal_usb_ep_xfer read(rx) failed(0x%02x), %d", ep, (int)status);
+		LOG_ERROR("am_hal_usb_ep_xfer read(rx) failed(0x%02x), %d", ep, (int)status);
 		return -EIO;
 	}
 
@@ -203,7 +203,7 @@ static void udc_ambiq_ep_xfer_complete_callback(const struct device *dev, uint8_
 
 		buf = udc_buf_peek(ep_cfg);
 		if (buf == NULL) {
-			LOG_ERR("No buffer for ep 0x%02x", ep_addr);
+			LOG_ERROR("No buffer for ep 0x%02x", ep_addr);
 			udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 			return;
 		}
@@ -335,7 +335,7 @@ static int udc_ambiq_ep_enable(const struct device *dev, struct udc_ep_config *e
 
 	status = am_hal_usb_ep_init(priv->usb_handle, ep_cfg->addr, endpoint_type, ep_cfg->mps);
 	if (status != AM_HAL_STATUS_SUCCESS) {
-		LOG_ERR("am_hal_usb_ep_init failed(0x%02x), %d", ep_cfg->addr, (int)status);
+		LOG_ERROR("am_hal_usb_ep_init failed(0x%02x), %d", ep_cfg->addr, (int)status);
 		return -EIO;
 	}
 
@@ -602,11 +602,11 @@ static int udc_ambiq_init(const struct device *dev)
 
 	/* Enable Control Endpoints */
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL, EP0_MPS, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL, EP0_MPS, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 	/* Connect and enable USB interrupt */
@@ -625,11 +625,11 @@ static int udc_ambiq_shutdown(const struct device *dev)
 
 	/* Disable Control Endpoints */
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 	/* Disable USB interrupt */
@@ -692,7 +692,7 @@ static inline void ambiq_handle_evt_dout(const struct device *dev, struct udc_ep
 	/* retrieve endpoint buffer */
 	buf = udc_buf_get(cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer queued for control ep");
+		LOG_ERROR("No buffer queued for control ep");
 		return;
 	}
 
@@ -728,7 +728,7 @@ static void ambiq_handle_evt_din(const struct device *dev, struct udc_ep_config 
 	/* retrieve endpoint buffer */
 	buf = udc_buf_get(cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer queued for control ep");
+		LOG_ERROR("No buffer queued for control ep");
 		return;
 	}
 	LOG_DBG("DataIn ep 0x%02x len %u", cfg->addr, buf->size);
@@ -743,7 +743,7 @@ static void udc_event_xfer(const struct device *dev, struct udc_ep_config *const
 
 	buf = udc_buf_peek(cfg);
 	if (buf == NULL) {
-		LOG_ERR("No buffer for ep 0x%02x", cfg->addr);
+		LOG_ERROR("No buffer for ep 0x%02x", cfg->addr);
 		return;
 	}
 
@@ -838,7 +838,7 @@ static int udc_ambiq_driver_init(const struct device *dev)
 		cfg->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
 		err = udc_register_ep(dev, &cfg->ep_cfg_out[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}
@@ -858,7 +858,7 @@ static int udc_ambiq_driver_init(const struct device *dev)
 		cfg->ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
 		err = udc_register_ep(dev, &cfg->ep_cfg_in[i]);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}

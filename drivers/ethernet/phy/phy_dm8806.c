@@ -93,15 +93,15 @@ static int phy_dm8806_write_reg(const struct device *dev, uint8_t phyad, uint8_t
 		res = mdio_write(cfg->mdio, DM8806_SMI_BUS_CTRL_PHY_ADDRESS,
 				 DM8806_SMI_BUS_CTRL_REG_ADDRESS, DM8806_SMI_ECE);
 		if (res < 0) {
-			LOG_ERR("Failed to write data to PHY register: SMI_BUS_CTRL_REG_ADDRESS, "
-				"error code: %d",
-				res);
+			LOG_ERROR("Failed to write data to PHY register: SMI_BUS_CTRL_REG_ADDRESS, "
+				  "error code: %d",
+				  res);
 			return res;
 		}
 #endif
 		res = mdio_write(cfg->mdio, phyad, regad, data);
 		if (res < 0) {
-			LOG_ERR("Failed to read data from PHY, error code: %d", res);
+			LOG_ERROR("Failed to read data from PHY, error code: %d", res);
 			return res;
 		}
 #ifdef CONFIG_PHY_DM8806_SMI_BUS_CHECK
@@ -114,9 +114,9 @@ static int phy_dm8806_write_reg(const struct device *dev, uint8_t phyad, uint8_t
 		res = mdio_write(cfg->mdio, DM8806_SMI_BUS_ERR_CHK_PHY_ADDRESS,
 				 DM8806_SMI_BUS_ERR_CHK_REG_ADDRESS, sw_checksum);
 		if (res < 0) {
-			LOG_ERR("Failed to write calculated checksum to the PHY register, "
-				"error code: %d",
-				res);
+			LOG_ERROR("Failed to write calculated checksum to the PHY register, "
+				  "error code: %d",
+				  res);
 			return res;
 		}
 
@@ -126,7 +126,8 @@ static int phy_dm8806_write_reg(const struct device *dev, uint8_t phyad, uint8_t
 		res = mdio_read(cfg->mdio, DM8806_SMI_BUS_ERR_CHK_PHY_ADDRESS,
 				DM8806_SMI_BUS_ERR_CHK_REG_ADDRESS, &checksum_status);
 		if (res < 0) {
-			LOG_ERR("Failed to read hardware calculated checksum from PHY, error code: "
+			LOG_ERROR(
+				"Failed to read hardware calculated checksum from PHY, error code: "
 				"%d",
 				res);
 			return res;
@@ -145,7 +146,7 @@ static int phy_dm8806_write_reg(const struct device *dev, uint8_t phyad, uint8_t
 				LOG_WRN("%d repeat of PHY read procedure due to checksum error.",
 					repetition);
 				if (repetition >= CONFIG_PHY_DM8806_SMI_BUS_CHECK_REPETITION) {
-					LOG_ERR("Maximum number of PHY write repetition exceed.");
+					LOG_ERROR("Maximum number of PHY write repetition exceed.");
 					res = -EIO;
 				}
 			} else {
@@ -157,7 +158,7 @@ static int phy_dm8806_write_reg(const struct device *dev, uint8_t phyad, uint8_t
 			 */
 		} else {
 			if (checksum_mismatch) {
-				LOG_ERR("Wrong checksum, during PHY write procedure.");
+				LOG_ERROR("Wrong checksum, during PHY write procedure.");
 				res = -EIO;
 				break;
 			}
@@ -189,15 +190,15 @@ static int phy_dm8806_read_reg(const struct device *dev, uint8_t phyad, uint8_t 
 		res = mdio_write(cfg->mdio, DM8806_SMI_BUS_CTRL_PHY_ADDRESS,
 				 DM8806_SMI_BUS_CTRL_REG_ADDRESS, DM8806_SMI_ECE);
 		if (res < 0) {
-			LOG_ERR("Failed to write data to PHY register: SMI_BUS_CTRL_REG_ADDRESS, "
-				"error code: %d",
-				res);
+			LOG_ERROR("Failed to write data to PHY register: SMI_BUS_CTRL_REG_ADDRESS, "
+				  "error code: %d",
+				  res);
 			return res;
 		}
 #endif
 		res = mdio_read(cfg->mdio, phyad, regad, data);
 		if (res < 0) {
-			LOG_ERR("Failed to read data from PHY, error code: %d", res);
+			LOG_ERROR("Failed to read data from PHY, error code: %d", res);
 			return res;
 		}
 #ifdef CONFIG_PHY_DM8806_SMI_BUS_CHECK
@@ -205,7 +206,8 @@ static int phy_dm8806_read_reg(const struct device *dev, uint8_t phyad, uint8_t 
 		res = mdio_read(cfg->mdio, DM8806_SMI_BUS_ERR_CHK_PHY_ADDRESS,
 				DM8806_SMI_BUS_ERR_CHK_REG_ADDRESS, &hw_checksum);
 		if (res < 0) {
-			LOG_ERR("Failed to read hardware calculated checksum from PHY, error code: "
+			LOG_ERROR(
+				"Failed to read hardware calculated checksum from PHY, error code: "
 				"%d",
 				res);
 			return res;
@@ -222,12 +224,12 @@ static int phy_dm8806_read_reg(const struct device *dev, uint8_t phyad, uint8_t 
 			}
 			LOG_WRN("%d repeat PHY read procedure due to checksum error.", repetition);
 			if (repetition >= CONFIG_PHY_DM8806_SMI_BUS_CHECK_REPETITION) {
-				LOG_ERR("Maximum number of PHY read repetition exceed.");
+				LOG_ERROR("Maximum number of PHY read repetition exceed.");
 				res = -EIO;
 			}
 		} else {
 			if (hw_checksum != sw_checksum) {
-				LOG_ERR("Wrong checksum, during PHY read procedure.");
+				LOG_ERROR("Wrong checksum, during PHY read procedure.");
 				res = -EIO;
 				break;
 			}
@@ -265,14 +267,14 @@ static void phy_dm8806_thread_cb(const struct device *dev, struct phy_link_state
 	 */
 	res = mdio_read(cfg->mdio, DM8806_INT_STAT_PHY_ADDR, DM8806_INT_STAT_REG_ADDR, &data);
 	if (res < 0) {
-		LOG_ERR("Failed to read regad: %d, error: %d", DM8806_INT_STAT_REG_ADDR, res);
+		LOG_ERROR("Failed to read regad: %d, error: %d", DM8806_INT_STAT_REG_ADDR, res);
 	}
 
 	data |= 0x1;
 
 	res = mdio_write(cfg->mdio, DM8806_INT_STAT_PHY_ADDR, DM8806_INT_STAT_REG_ADDR, data);
 	if (res < 0) {
-		LOG_ERR("Failed to write regad: %d, error: %d", DM8806_INT_STAT_REG_ADDR, res);
+		LOG_ERROR("Failed to write regad: %d, error: %d", DM8806_INT_STAT_REG_ADDR, res);
 	}
 
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
@@ -297,13 +299,13 @@ int phy_dm8806_port_init(const struct device *dev)
 
 	res = gpio_pin_configure_dt(&cfg->gpio_rst, (GPIO_OUTPUT_INACTIVE | GPIO_PULL_UP));
 	if (res < 0) {
-		LOG_ERR("Failed to configure gpio reset pin for PHY DM886 as an output");
+		LOG_ERROR("Failed to configure gpio reset pin for PHY DM886 as an output");
 		return res;
 	}
 	/* Hardware reset of the PHY DM8806 */
 	res = gpio_pin_set_dt(&cfg->gpio_rst, true);
 	if (res < 0) {
-		LOG_ERR("Failed to assert gpio reset pin of the PHY DM886 to physical 0");
+		LOG_ERROR("Failed to assert gpio reset pin of the PHY DM886 to physical 0");
 		return res;
 	}
 	/* According to DM8806 datasheet (DM8806-DAVICOM.pdf), low active state on
@@ -312,7 +314,7 @@ int phy_dm8806_port_init(const struct device *dev)
 	k_msleep(10);
 	res = gpio_pin_set_dt(&cfg->gpio_rst, false);
 	if (res < 0) {
-		LOG_ERR("Failed to assert gpio reset pin of the PHY DM886 to physical 1");
+		LOG_ERROR("Failed to assert gpio reset pin of the PHY DM886 to physical 1");
 		return res;
 	}
 
@@ -334,14 +336,14 @@ int phy_dm8806_init_interrupt(const struct device *dev)
 	res = mdio_read(cfg->mdio, DM8806_INT_MASK_CTRL_PHY_ADDR, DM8806_INT_MASK_CTRL_REG_ADDR,
 			&data);
 	if (res < 0) {
-		LOG_ERR("Failed to read IRQ_LED_CONTROL, %i", res);
+		LOG_ERROR("Failed to read IRQ_LED_CONTROL, %i", res);
 		return res;
 	}
 	data |= 0x1;
 	res = mdio_write(cfg->mdio, DM8806_INT_MASK_CTRL_PHY_ADDR, DM8806_INT_MASK_CTRL_REG_ADDR,
 			 data);
 	if (res < 0) {
-		LOG_ERR("Failed to read IRQ_LED_CONTROL, %i", res);
+		LOG_ERROR("Failed to read IRQ_LED_CONTROL, %i", res);
 		return res;
 	}
 
@@ -351,14 +353,14 @@ int phy_dm8806_init_interrupt(const struct device *dev)
 	res = mdio_read(cfg->mdio, DM8806_WOLL_CTRL_REG_PHY_ADDR, DM8806_WOLL_CTRL_REG_REG_ADDR,
 			&data);
 	if (res < 0) {
-		LOG_ERR("Failed to read IRQ_LED_CONTROL, %i", res);
+		LOG_ERROR("Failed to read IRQ_LED_CONTROL, %i", res);
 		return res;
 	}
 	data |= 0xF;
 	res = mdio_write(cfg->mdio, DM8806_WOLL_CTRL_REG_PHY_ADDR, DM8806_WOLL_CTRL_REG_REG_ADDR,
 			 data);
 	if (res < 0) {
-		LOG_ERR("Failed to read IRQ_LED_CONTROL, %i", res);
+		LOG_ERROR("Failed to read IRQ_LED_CONTROL, %i", res);
 		return res;
 	}
 
@@ -367,13 +369,13 @@ int phy_dm8806_init_interrupt(const struct device *dev)
 	 * PHY DM8806 as external interrupt
 	 */
 	if (device_is_ready(cfg->gpio_int.port) != true) {
-		LOG_ERR("gpio_int gpio not ready");
+		LOG_ERROR("gpio_int gpio not ready");
 		return -ENODEV;
 	}
 	drv_data->dev = dev;
 	res = gpio_pin_configure_dt(&cfg->gpio_int, GPIO_INPUT);
 	if (res < 0) {
-		LOG_ERR("Failed to configure gpio interrupt pin for PHY DM886 as an input");
+		LOG_ERROR("Failed to configure gpio interrupt pin for PHY DM886 as an input");
 		return res;
 	}
 	/* Assign callback function to be fired by Davicom PHY DM8806 external
@@ -382,7 +384,7 @@ int phy_dm8806_init_interrupt(const struct device *dev)
 	gpio_init_callback(&drv_data->gpio_cb, phy_dm8806_gpio_callback, BIT(cfg->gpio_int.pin));
 	res = gpio_add_callback(cfg->gpio_int.port, &drv_data->gpio_cb);
 	if (res < 0) {
-		LOG_ERR("Failed to set PHY DM886 gpio callback");
+		LOG_ERROR("Failed to set PHY DM886 gpio callback");
 		return res;
 	}
 	k_sem_init(&drv_data->gpio_sem, 0, K_SEM_MAX_LIMIT);
@@ -394,8 +396,8 @@ int phy_dm8806_init_interrupt(const struct device *dev)
 	 */
 	res = gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 	if (res < 0) {
-		LOG_ERR("Failed to configure PHY DM886 gpio interrupt pin trigger for "
-			"active edge");
+		LOG_ERROR("Failed to configure PHY DM886 gpio interrupt pin trigger for "
+			  "active edge");
 		return res;
 	}
 
@@ -413,13 +415,13 @@ static int phy_dm8806_init(const struct device *dev)
 	 */
 	ret = phy_dm8806_port_init(dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to reset PHY DM8806 ");
+		LOG_ERROR("Failed to reset PHY DM8806 ");
 		return ret;
 	}
 
 	ret = mdio_read(cfg->mdio, DM8806_PHY_ADDRESS_18H, DM8806_PORT5_MAC_CONTROL, &val);
 	if (ret) {
-		LOG_ERR("Failed to read PORT5_MAC_CONTROL: %i", ret);
+		LOG_ERROR("Failed to read PORT5_MAC_CONTROL: %i", ret);
 		return ret;
 	}
 
@@ -429,13 +431,13 @@ static int phy_dm8806_init(const struct device *dev)
 
 	ret = mdio_write(cfg->mdio, DM8806_PHY_ADDRESS_18H, DM8806_PORT5_MAC_CONTROL, val);
 	if (ret) {
-		LOG_ERR("Failed to write PORT5_MAC_CONTROL, %i", ret);
+		LOG_ERROR("Failed to write PORT5_MAC_CONTROL, %i", ret);
 		return ret;
 	}
 
 	ret = mdio_read(cfg->mdio, DM8806_PHY_ADDRESS_18H, DM8806_IRQ_LED_CONTROL, &val);
 	if (ret) {
-		LOG_ERR("Failed to read IRQ_LED_CONTROL, %i", ret);
+		LOG_ERROR("Failed to read IRQ_LED_CONTROL, %i", ret);
 		return ret;
 	}
 
@@ -443,7 +445,7 @@ static int phy_dm8806_init(const struct device *dev)
 	val &= DM8806_LED_MODE_0;
 	ret = mdio_write(cfg->mdio, DM8806_PHY_ADDRESS_18H, DM8806_IRQ_LED_CONTROL, val);
 	if (ret) {
-		LOG_ERR("Failed to write IRQ_LED_CONTROL, %i", ret);
+		LOG_ERROR("Failed to write IRQ_LED_CONTROL, %i", ret);
 		return ret;
 	}
 
@@ -456,14 +458,14 @@ static int phy_dm8806_init(const struct device *dev)
 			ret = mdio_read(cfg->mdio, port_address,
 					DM8806_ENERGY_EFFICIENT_ETH_CTRL_REG_ADDR, &val);
 			if (ret) {
-				LOG_ERR("Failed to read ENERGY_EFFICIENT_ETH_CTRL_REG, %i", ret);
+				LOG_ERROR("Failed to read ENERGY_EFFICIENT_ETH_CTRL_REG, %i", ret);
 				return ret;
 			}
 			val &= (~DM8806_EEE_EN);
 			ret = mdio_write(cfg->mdio, port_address,
 					 DM8806_ENERGY_EFFICIENT_ETH_CTRL_REG_ADDR, val);
 			if (ret) {
-				LOG_ERR("Failed to write ENERGY_EFFICIENT_ETH_CTRL_REG, %i", ret);
+				LOG_ERROR("Failed to write ENERGY_EFFICIENT_ETH_CTRL_REG, %i", ret);
 				return ret;
 			}
 		}
@@ -472,7 +474,7 @@ static int phy_dm8806_init(const struct device *dev)
 #ifdef CONFIG_PHY_DM8806_TRIGGER
 	ret = phy_dm8806_init_interrupt(dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure interrupt for PHY DM8806");
+		LOG_ERROR("Failed to configure interrupt for PHY DM8806");
 		return ret;
 	}
 #endif
@@ -489,14 +491,14 @@ static int phy_dm8806_get_link_state(const struct device *dev, struct phy_link_s
 #ifdef CONFIG_PHY_DM8806_TRIGGER
 	ret = mdio_read(cfg->mdio, 0x18, 0x18, &data);
 	if (ret) {
-		LOG_ERR("Failed to read IRQ_LED_CONTROL, %i", ret);
+		LOG_ERROR("Failed to read IRQ_LED_CONTROL, %i", ret);
 		return ret;
 	}
 #endif
 	/* Read data from Switch Per-Port Register. */
 	ret = phy_dm8806_read_reg(dev, cfg->switch_addr, DM8806_PORTX_SWITCH_STATUS, &data);
 	if (ret) {
-		LOG_ERR("Failed to read data drom DM8806 Switch Per-Port Registers area");
+		LOG_ERROR("Failed to read data drom DM8806 Switch Per-Port Registers area");
 		return ret;
 	}
 	/* Extract speed and duplex status from Switch Per-Port Register: Per Port
@@ -559,21 +561,21 @@ static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv
 		break;
 
 	default:
-		LOG_ERR("Invalid speed %d for PHY (%d)", adv_speeds, cfg->phy_addr);
+		LOG_ERROR("Invalid speed %d for PHY (%d)", adv_speeds, cfg->phy_addr);
 		return -EINVAL;
 	}
 
 	/* Power down */
 	ret = phy_dm8806_read_reg(dev, cfg->phy_addr, DM8806_PORTX_PHY_CONTROL_REGISTER, &data);
 	if (ret) {
-		LOG_ERR("Failed to read data drom DM8806");
+		LOG_ERROR("Failed to read data drom DM8806");
 		return ret;
 	}
 	k_busy_wait(500);
 	data |= DM8806_POWER_DOWN;
 	ret = phy_dm8806_write_reg(dev, cfg->phy_addr, DM8806_PORTX_PHY_CONTROL_REGISTER, data);
 	if (ret) {
-		LOG_ERR("Failed to write data to DM8806");
+		LOG_ERROR("Failed to write data to DM8806");
 		return ret;
 	}
 	k_busy_wait(500);
@@ -581,14 +583,14 @@ static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv
 	/* Turn off the auto-negotiation process. */
 	ret = phy_dm8806_read_reg(dev, cfg->phy_addr, DM8806_PORTX_PHY_CONTROL_REGISTER, &data);
 	if (ret) {
-		LOG_ERR("Failed to write data to DM8806");
+		LOG_ERROR("Failed to write data to DM8806");
 		return ret;
 	}
 	k_busy_wait(500);
 	data &= ~(DM8806_AUTO_NEGOTIATION);
 	ret = phy_dm8806_write_reg(dev, cfg->phy_addr, DM8806_PORTX_PHY_CONTROL_REGISTER, data);
 	if (ret) {
-		LOG_ERR("Failed to write data to DM8806");
+		LOG_ERROR("Failed to write data to DM8806");
 		return ret;
 	}
 	k_busy_wait(500);
@@ -596,7 +598,7 @@ static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv
 	/* Change the link speed. */
 	ret = phy_dm8806_read_reg(dev, cfg->phy_addr, DM8806_PORTX_PHY_CONTROL_REGISTER, &data);
 	if (ret) {
-		LOG_ERR("Failed to read data from DM8806");
+		LOG_ERROR("Failed to read data from DM8806");
 		return ret;
 	}
 	k_busy_wait(500);
@@ -604,7 +606,7 @@ static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv
 	data |= req_speed;
 	ret = phy_dm8806_write_reg(dev, cfg->phy_addr, DM8806_PORTX_PHY_CONTROL_REGISTER, data);
 	if (ret) {
-		LOG_ERR("Failed to write data to DM8806");
+		LOG_ERROR("Failed to write data to DM8806");
 		return ret;
 	}
 	k_busy_wait(500);
@@ -612,14 +614,14 @@ static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv
 	/* Power up ethernet port*/
 	ret = phy_dm8806_read_reg(dev, cfg->phy_addr, DM8806_PORTX_PHY_CONTROL_REGISTER, &data);
 	if (ret) {
-		LOG_ERR("Failed to read data drom DM8806");
+		LOG_ERROR("Failed to read data drom DM8806");
 		return ret;
 	}
 	k_busy_wait(500);
 	data &= ~(DM8806_POWER_DOWN);
 	ret = phy_dm8806_write_reg(dev, cfg->phy_addr, DM8806_PORTX_PHY_CONTROL_REGISTER, data);
 	if (ret) {
-		LOG_ERR("Failed to write data to DM8806");
+		LOG_ERROR("Failed to write data to DM8806");
 		return ret;
 	}
 	k_busy_wait(500);
@@ -633,7 +635,7 @@ static int phy_dm8806_reg_read(const struct device *dev, uint16_t reg_addr, uint
 
 	res = mdio_read(cfg->mdio, cfg->switch_addr, reg_addr, (uint16_t *)data);
 	if (res < 0) {
-		LOG_ERR("Failed to read data from DM8806");
+		LOG_ERROR("Failed to read data from DM8806");
 		return res;
 	}
 	return res;
@@ -646,7 +648,7 @@ static int phy_dm8806_reg_write(const struct device *dev, uint16_t reg_addr, uin
 
 	res = mdio_write(cfg->mdio, cfg->switch_addr, reg_addr, data);
 	if (res < 0) {
-		LOG_ERR("Failed to write data to DM8806");
+		LOG_ERROR("Failed to write data to DM8806");
 		return res;
 	}
 	return res;

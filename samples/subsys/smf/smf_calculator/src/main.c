@@ -98,13 +98,13 @@ static void lv_btn_matrix_click_callback(lv_event_t *e)
 
 		id = lv_btnmatrix_get_selected_btn(obj);
 		if (id >= ARRAY_SIZE(buttons)) {
-			LOG_ERR("Invalid button: %d", id);
+			LOG_ERROR("Invalid button: %d", id);
 			return;
 		}
 
 		rc = post_calculator_event(&buttons[id].event, K_FOREVER);
 		if (rc != 0) {
-			LOG_ERR("could not post to msgq: %d", rc);
+			LOG_ERROR("could not post to msgq: %d", rc);
 		}
 	}
 }
@@ -115,7 +115,7 @@ static int setup_display(void)
 	int ret;
 
 	if (!device_is_ready(display_dev)) {
-		LOG_ERR("Device not ready, aborting setup");
+		LOG_ERROR("Device not ready, aborting setup");
 		return -ENODEV;
 	}
 
@@ -168,7 +168,7 @@ static int setup_display(void)
 	lv_task_handler();
 	ret = display_blanking_off(display_dev);
 	if (ret < 0 && ret != -ENOSYS) {
-		LOG_ERR("Failed to turn blanking off (error %d)", ret);
+		LOG_ERROR("Failed to turn blanking off (error %d)", ret);
 		return ret;
 	}
 

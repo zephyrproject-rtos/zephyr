@@ -207,8 +207,8 @@ static int ads1x1x_read_reg(const struct device *dev, enum ads1x1x_reg reg_addr,
 
 	ret = i2c_burst_read_dt(&config->bus, reg_addr, (uint8_t *)&reg_val, sizeof(reg_val));
 	if (ret != 0) {
-		LOG_ERR("ADS1X1X[0x%X]: error reading register 0x%X (%d)", config->bus.addr,
-			reg_addr, ret);
+		LOG_ERROR("ADS1X1X[0x%X]: error reading register 0x%X (%d)", config->bus.addr,
+			  reg_addr, ret);
 		return ret;
 	}
 
@@ -229,8 +229,8 @@ static int ads1x1x_write_reg(const struct device *dev, enum ads1x1x_reg reg_addr
 	ret = i2c_write_dt(&config->bus, buf, sizeof(buf));
 
 	if (ret != 0) {
-		LOG_ERR("ADS1X1X[0x%X]: error writing register 0x%X (%d)", config->bus.addr,
-			reg_addr, ret);
+		LOG_ERROR("ADS1X1X[0x%X]: error writing register 0x%X (%d)", config->bus.addr,
+			  reg_addr, ret);
 		return ret;
 	}
 
@@ -388,12 +388,12 @@ static int ads1x1x_channel_setup(const struct device *dev,
 	int dr = 0;
 
 	if (channel_cfg->channel_id != 0) {
-		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
+		LOG_ERROR("unsupported channel id '%d'", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("unsupported channel reference type '%d'", channel_cfg->reference);
+		LOG_ERROR("unsupported channel reference type '%d'", channel_cfg->reference);
 		return -ENOTSUP;
 	}
 
@@ -413,8 +413,8 @@ static int ads1x1x_channel_setup(const struct device *dev,
 				   channel_cfg->input_negative == 3) {
 				config |= ADS1X1X_CONFIG_MUX(ADS1X15_CONFIG_MUX_DIFF_2_3);
 			} else {
-				LOG_ERR("unsupported input positive '%d' and input negative '%d'",
-					channel_cfg->input_positive, channel_cfg->input_negative);
+				LOG_ERROR("unsupported input positive '%d' and input negative '%d'",
+					  channel_cfg->input_positive, channel_cfg->input_negative);
 				return -ENOTSUP;
 			}
 		} else {
@@ -427,8 +427,8 @@ static int ads1x1x_channel_setup(const struct device *dev,
 			} else if (channel_cfg->input_positive == 3) {
 				config |= ADS1X1X_CONFIG_MUX(ADS1X15_CONFIG_MUX_SINGLE_3);
 			} else {
-				LOG_ERR("unsupported input positive '%d'",
-					channel_cfg->input_positive);
+				LOG_ERROR("unsupported input positive '%d'",
+					  channel_cfg->input_positive);
 				return -ENOTSUP;
 			}
 		}
@@ -440,8 +440,8 @@ static int ads1x1x_channel_setup(const struct device *dev,
 
 	dr = ads1x1x_acq_time_to_dr(dev, channel_cfg->acquisition_time);
 	if (dr < 0) {
-		LOG_ERR("unsupported channel acquisition time 0x%02x",
-			channel_cfg->acquisition_time);
+		LOG_ERROR("unsupported channel acquisition time 0x%02x",
+			  channel_cfg->acquisition_time);
 		return -ENOTSUP;
 	}
 
@@ -469,13 +469,13 @@ static int ads1x1x_channel_setup(const struct device *dev,
 			config |= ADS1X1X_CONFIG_PGA(ADS1X1X_CONFIG_PGA_256);
 			break;
 		default:
-			LOG_ERR("unsupported channel gain '%d'", channel_cfg->gain);
+			LOG_ERROR("unsupported channel gain '%d'", channel_cfg->gain);
 			return -ENOTSUP;
 		}
 	} else {
 		/* no programmable gain amplifier, so only allow ADC_GAIN_1 */
 		if (channel_cfg->gain != ADC_GAIN_1) {
-			LOG_ERR("unsupported channel gain '%d'", channel_cfg->gain);
+			LOG_ERROR("unsupported channel gain '%d'", channel_cfg->gain);
 			return -ENOTSUP;
 		}
 	}
@@ -512,23 +512,23 @@ static int ads1x1x_validate_sequence(const struct device *dev, const struct adc_
 	int err;
 
 	if (sequence->resolution != resolution) {
-		LOG_ERR("unsupported resolution %d", sequence->resolution);
+		LOG_ERROR("unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}
 
 	if (sequence->channels != BIT(0)) {
-		LOG_ERR("only channel 0 supported");
+		LOG_ERROR("only channel 0 supported");
 		return -ENOTSUP;
 	}
 
 	if (sequence->oversampling) {
-		LOG_ERR("oversampling not supported");
+		LOG_ERROR("oversampling not supported");
 		return -ENOTSUP;
 	}
 
 	err = ads1x1x_validate_buffer_size(sequence);
 	if (err) {
-		LOG_ERR("buffer size too small");
+		LOG_ERROR("buffer size too small");
 		return -ENOTSUP;
 	}
 
@@ -585,12 +585,12 @@ static int ads1x1x_adc_start_read(const struct device *dev, const struct adc_seq
 	if (config->alert_rdy.port) {
 		rc = ads1x1x_setup_rdy_pin(dev, true);
 		if (rc < 0) {
-			LOG_ERR("Could not configure GPIO Alert/RDY");
+			LOG_ERROR("Could not configure GPIO Alert/RDY");
 			return rc;
 		}
 		rc = ads1x1x_setup_rdy_interrupt(dev, true);
 		if (rc < 0) {
-			LOG_ERR("Could not configure Alert/RDY interrupt");
+			LOG_ERROR("Could not configure Alert/RDY interrupt");
 			return rc;
 		}
 	}
@@ -657,7 +657,7 @@ static void ads1x1x_acquisition_thread(void *p1, void *p2, void *p3)
 
 		rc = ads1x1x_wait_data_ready(dev);
 		if (rc != 0) {
-			LOG_ERR("failed to get ready status (err %d)", rc);
+			LOG_ERROR("failed to get ready status (err %d)", rc);
 			adc_context_complete(&data->ctx, rc);
 			continue;
 		}
@@ -717,19 +717,19 @@ static int ads1x1x_init_interrupt(const struct device *dev)
 	/* Disable the interrupt */
 	rc = ads1x1x_setup_rdy_pin(dev, false);
 	if (rc < 0) {
-		LOG_ERR("Could disable the alert/rdy gpio pin.");
+		LOG_ERROR("Could disable the alert/rdy gpio pin.");
 		return rc;
 	}
 	rc = ads1x1x_setup_rdy_interrupt(dev, false);
 	if (rc < 0) {
-		LOG_ERR("Could disable the alert/rdy interrupts.");
+		LOG_ERROR("Could disable the alert/rdy interrupts.");
 		return rc;
 	}
 	gpio_init_callback(&data->gpio_cb, ads1x1x_conv_ready_cb,
 			   BIT(config->alert_rdy.pin));
 	rc = gpio_add_callback(config->alert_rdy.port, &data->gpio_cb);
 	if (rc) {
-		LOG_ERR("Could not set gpio callback.");
+		LOG_ERROR("Could not set gpio callback.");
 		return -rc;
 	}
 
@@ -738,7 +738,7 @@ static int ads1x1x_init_interrupt(const struct device *dev)
 
 	rc = ads1x1x_enable_conv_ready_signal(dev);
 	if (rc) {
-		LOG_ERR("failed to configure ALERT/RDY pin (err=%d)", rc);
+		LOG_ERROR("failed to configure ALERT/RDY pin (err=%d)", rc);
 		return rc;
 	}
 
@@ -756,14 +756,14 @@ static int ads1x1x_init(const struct device *dev)
 	k_sem_init(&data->acq_sem, 0, 1);
 
 	if (!device_is_ready(config->bus.bus)) {
-		LOG_ERR("I2C bus %s not ready", config->bus.bus->name);
+		LOG_ERROR("I2C bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 
 #ifdef ADC_ADS1X1X_TRIGGER
 	if (config->alert_rdy.port) {
 		if (ads1x1x_init_interrupt(dev) < 0) {
-			LOG_ERR("Failed to initialize interrupt.");
+			LOG_ERROR("Failed to initialize interrupt.");
 			return -EIO;
 		}
 	} else

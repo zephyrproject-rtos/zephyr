@@ -89,11 +89,11 @@ static int sfunc_request_handler(struct usbd_class_data *c_data,
 		}
 
 		if (usbd_ep_enqueue(c_data, buf)) {
-			LOG_ERR("Failed to enqueue buffer");
+			LOG_ERROR("Failed to enqueue buffer");
 			usbd_ep_buf_free(uds_ctx, buf);
 		}
 	} else {
-		LOG_ERR("Function is disabled or transfer failed");
+		LOG_ERROR("Function is disabled or transfer failed");
 		usbd_ep_buf_free(uds_ctx, buf);
 	}
 
@@ -149,12 +149,12 @@ static void sfunc_enable(struct usbd_class_data *const c_data)
 	if (!atomic_test_and_set_bit(&data->state, SAMPLE_FUNCTION_ENABLED)) {
 		buf = sfunc_buf_alloc(c_data, sfunc_get_bulk_out(c_data));
 		if (buf == NULL) {
-			LOG_ERR("Failed to allocate buffer");
+			LOG_ERROR("Failed to allocate buffer");
 			return;
 		}
 
 		if (usbd_ep_enqueue(c_data, buf)) {
-			LOG_ERR("Failed to enqueue buffer");
+			LOG_ERROR("Failed to enqueue buffer");
 			usbd_ep_buf_free(uds_ctx, buf);
 		}
 	}

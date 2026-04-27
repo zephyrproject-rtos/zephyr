@@ -25,7 +25,7 @@ static int board_init_exp_sel(void)
 	uint32_t pin_state = DT_ENUM_IDX(BOARD_EXP_SEL_NODE, mux);
 
 	if (!gpio_is_ready_dt(&mux)) {
-		LOG_ERR("EXP_SEL Pin port is not ready");
+		LOG_ERROR("EXP_SEL Pin port is not ready");
 		return -ENODEV;
 	}
 
@@ -38,7 +38,7 @@ static int board_init_exp_sel(void)
 
 	rc = gpio_pin_configure_dt(&mux, pin_state);
 	if (rc) {
-		LOG_ERR("Write EXP_SEL Pin error %d", rc);
+		LOG_ERROR("Write EXP_SEL Pin error %d", rc);
 		return rc;
 	}
 	LOG_INF("EXP_SEL mux %c with priority %d", pin_state ? 'B' : 'A',

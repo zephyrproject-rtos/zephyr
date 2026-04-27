@@ -323,7 +323,7 @@ Note that the list items must be constants, and they cannot be variables.
    ret = zsock_setsockopt(quic_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST,
 			       alpn_list, sizeof(alpn_list));
    if (ret < 0) {
-       LOG_ERR("Failed to set ALPN (%d)", -errno);
+       LOG_ERROR("Failed to set ALPN (%d)", -errno);
    }
 
 

@@ -299,31 +299,31 @@ static bool dma_emul_config_valid(const struct device *dev, uint32_t channel,
 	const struct dma_emul_config *config = dev->config;
 
 	if (xfer_config->dma_slot >= config->num_requests) {
-		LOG_ERR("invalid dma_slot %u", xfer_config->dma_slot);
+		LOG_ERROR("invalid dma_slot %u", xfer_config->dma_slot);
 		return false;
 	}
 
 	if (channel >= config->num_channels) {
-		LOG_ERR("invalid DMA channel %u", channel);
+		LOG_ERROR("invalid DMA channel %u", channel);
 		return false;
 	}
 
 	if (xfer_config->dest_burst_length != xfer_config->source_burst_length) {
-		LOG_ERR("burst length does not agree. source: %u dest: %u ",
-			xfer_config->source_burst_length, xfer_config->dest_burst_length);
+		LOG_ERROR("burst length does not agree. source: %u dest: %u ",
+			  xfer_config->source_burst_length, xfer_config->dest_burst_length);
 		return false;
 	}
 
 	for (i = 0, block = xfer_config->head_block; i < xfer_config->block_count;
 	     ++i, block = block->next_block) {
 		if (block == NULL) {
-			LOG_ERR("block %zu / %u is NULL", i + 1, xfer_config->block_count);
+			LOG_ERROR("block %zu / %u is NULL", i + 1, xfer_config->block_count);
 			return false;
 		}
 
 		if (i >= config->num_requests) {
-			LOG_ERR("not enough slots to store block %zu / %u", i + 1,
-				xfer_config->block_count);
+			LOG_ERROR("not enough slots to store block %zu / %u", i + 1,
+				  xfer_config->block_count);
 			return false;
 		}
 	}
@@ -386,7 +386,7 @@ static int dma_emul_configure(const struct device *dev, uint32_t channel,
 
 		break;
 	default:
-		LOG_ERR("attempt to configure DMA in state %d", state);
+		LOG_ERROR("attempt to configure DMA in state %d", state);
 		ret = -EBUSY;
 	}
 	k_spin_unlock(&data->lock, key);
@@ -444,7 +444,7 @@ static int dma_emul_start(const struct device *dev, uint32_t channel)
 		ret = (ret < 0) ? ret : 0;
 		break;
 	default:
-		LOG_ERR("attempt to start dma in invalid state %d", state);
+		LOG_ERROR("attempt to start dma in invalid state %d", state);
 		ret = -EIO;
 		break;
 	}

@@ -125,17 +125,17 @@ static int regulator_stm32_vrefbuf_init(const struct device *dev)
 		const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 		if (clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]) != 0) {
-			LOG_ERR("Could not enable clock");
+			LOG_ERROR("Could not enable clock");
 			return -EIO;
 		}
 
 		if (!device_is_ready(config->reset.dev)) {
-			LOG_ERR("Reset controller not ready");
+			LOG_ERROR("Reset controller not ready");
 			return -ENODEV;
 		}
 
 		if (reset_line_deassert_dt(&config->reset) != 0) {
-			LOG_ERR("Could not deassert reset line");
+			LOG_ERROR("Could not deassert reset line");
 			return -EIO;
 		}
 	}

@@ -882,8 +882,8 @@ static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
 #endif
 #endif
 		} else {
-			LOG_ERR("Unable to handle numerical checksum size %u",
-				group->output_size);
+			LOG_ERROR("Unable to handle numerical checksum size %u",
+				  group->output_size);
 
 			return MGMT_ERR_EUNKNOWN;
 		}

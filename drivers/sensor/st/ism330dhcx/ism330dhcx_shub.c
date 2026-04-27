@@ -755,7 +755,7 @@ int ism330dhcx_shub_init(const struct device *dev)
 	}
 
 	if (num_ext_dev == 0) {
-		LOG_ERR("shub: no slave devices found");
+		LOG_ERROR("shub: no slave devices found");
 		return -EINVAL;
 	}
 

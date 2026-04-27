@@ -60,7 +60,7 @@ static int max11102_17_switch_channel(const struct device *dev)
 
 	result = spi_read_dt(&bus, &rx);
 	if (result != 0) {
-		LOG_ERR("read failed with error %i", result);
+		LOG_ERROR("read failed with error %i", result);
 		return result;
 	}
 
@@ -68,7 +68,7 @@ static int max11102_17_switch_channel(const struct device *dev)
 
 	result = spi_read_dt(&config->bus, &rx);
 	if (result != 0) {
-		LOG_ERR("read failed with error %i", result);
+		LOG_ERROR("read failed with error %i", result);
 		return result;
 	}
 
@@ -83,27 +83,27 @@ static int max11102_17_channel_setup(const struct device *dev,
 	LOG_DBG("read from ADC channel %i", channel_cfg->channel_id);
 
 	if (channel_cfg->reference != ADC_REF_EXTERNAL0) {
-		LOG_ERR("invalid reference %i", channel_cfg->reference);
+		LOG_ERROR("invalid reference %i", channel_cfg->reference);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("invalid gain %i", channel_cfg->gain);
+		LOG_ERROR("invalid gain %i", channel_cfg->gain);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("invalid acquisition time %i", channel_cfg->acquisition_time);
+		LOG_ERROR("invalid acquisition time %i", channel_cfg->acquisition_time);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->differential != 0) {
-		LOG_ERR("differential inputs are not supported");
+		LOG_ERROR("differential inputs are not supported");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->channel_id > config->channel_count) {
-		LOG_ERR("invalid channel selection %i", channel_cfg->channel_id);
+		LOG_ERROR("invalid channel selection %i", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
@@ -134,7 +134,7 @@ static int max11102_17_validate_sequence(const struct device *dev,
 	const size_t channel_maximum = 8*sizeof(sequence->channels);
 
 	if (sequence->resolution != config->resolution) {
-		LOG_ERR("invalid resolution");
+		LOG_ERROR("invalid resolution");
 		return -EINVAL;
 	}
 
@@ -144,7 +144,7 @@ static int max11102_17_validate_sequence(const struct device *dev,
 		}
 
 		if (i > config->channel_count) {
-			LOG_ERR("invalid channel selection");
+			LOG_ERROR("invalid channel selection");
 			return -EINVAL;
 		}
 
@@ -153,17 +153,17 @@ static int max11102_17_validate_sequence(const struct device *dev,
 	}
 
 	if (sequence_channel_count == 0) {
-		LOG_ERR("no channel selected");
+		LOG_ERROR("no channel selected");
 		return -EINVAL;
 	}
 
 	if (sequence_channel_count > 1) {
-		LOG_ERR("multiple channels selected");
+		LOG_ERROR("multiple channels selected");
 		return -EINVAL;
 	}
 
 	if (sequence->oversampling) {
-		LOG_ERR("oversampling is not supported");
+		LOG_ERROR("oversampling is not supported");
 		return -EINVAL;
 	}
 
@@ -196,7 +196,7 @@ static int max11102_17_adc_start_read(const struct device *dev, const struct adc
 	result = max11102_17_validate_sequence(dev, sequence);
 
 	if (result != 0) {
-		LOG_ERR("sequence validation failed");
+		LOG_ERROR("sequence validation failed");
 		return result;
 	}
 
@@ -229,7 +229,7 @@ static int max11102_17_read_sample(const struct device *dev, int16_t *sample)
 	result = spi_read_dt(&config->bus, &rx);
 
 	if (result != 0) {
-		LOG_ERR("read failed with error %i", result);
+		LOG_ERROR("read failed with error %i", result);
 		return result;
 	}
 
@@ -258,7 +258,7 @@ static int max11102_17_adc_perform_read(const struct device *dev)
 
 	result = max11102_17_read_sample(dev, data->buffer);
 	if (result != 0) {
-		LOG_ERR("reading sample failed");
+		LOG_ERROR("reading sample failed");
 		adc_context_complete(&data->ctx, result);
 		return result;
 	}
@@ -339,31 +339,31 @@ static int max11102_17_init(const struct device *dev)
 	k_sem_init(&data->acquire_signal, 0, 1);
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI device is not ready");
+		LOG_ERROR("SPI device is not ready");
 		return -ENODEV;
 	}
 
 	switch (config->channel_count) {
 	case 1:
 		if (config->gpio_chsel.port != NULL) {
-			LOG_ERR("GPIO for chsel set with only one channel");
+			LOG_ERROR("GPIO for chsel set with only one channel");
 			return -EINVAL;
 		}
 		break;
 	case 2:
 		if (config->gpio_chsel.port == NULL) {
-			LOG_ERR("no GPIO for chsel set with two channels");
+			LOG_ERROR("no GPIO for chsel set with two channels");
 			return -EINVAL;
 		}
 
 		result = gpio_pin_configure_dt(&config->gpio_chsel, GPIO_OUTPUT_INACTIVE);
 		if (result != 0) {
-			LOG_ERR("failed to initialize GPIO for chsel");
+			LOG_ERROR("failed to initialize GPIO for chsel");
 			return result;
 		}
 		break;
 	default:
-		LOG_ERR("invalid number of channels (%i)", config->channel_count);
+		LOG_ERROR("invalid number of channels (%i)", config->channel_count);
 		return -EINVAL;
 	}
 
@@ -380,7 +380,7 @@ static int max11102_17_init(const struct device *dev)
 	/* power up time is one conversion cycle */
 	result = max11102_17_read_sample(dev, &sample);
 	if (result != 0) {
-		LOG_ERR("unable to read dummy sample for power up timing");
+		LOG_ERROR("unable to read dummy sample for power up timing");
 		return result;
 	}
 

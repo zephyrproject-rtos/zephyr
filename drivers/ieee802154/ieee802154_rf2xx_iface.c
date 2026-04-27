@@ -84,8 +84,7 @@ uint8_t rf2xx_iface_reg_read(const struct device *dev,
 	};
 
 	if (spi_transceive_dt(&conf->spi, &tx, &rx) != 0) {
-		LOG_ERR("Failed to exec rf2xx_reg_read CMD at address %d",
-			addr);
+		LOG_ERROR("Failed to exec rf2xx_reg_read CMD at address %d", addr);
 	}
 
 	LOG_DBG("Read Address: %02X, PhyStatus: %02X, RegVal: %02X",
@@ -127,8 +126,7 @@ void rf2xx_iface_reg_write(const struct device *dev,
 	};
 
 	if (spi_transceive_dt(&conf->spi, &tx, &rx) != 0) {
-		LOG_ERR("Failed to exec rf2xx_reg_write at address %d",
-			addr);
+		LOG_ERROR("Failed to exec rf2xx_reg_write at address %d", addr);
 	}
 
 	LOG_DBG("Write Address: %02X, PhyStatus: %02X, RegVal: %02X",
@@ -190,7 +188,7 @@ void rf2xx_iface_frame_read(const struct device *dev,
 	};
 
 	if (spi_transceive_dt(&conf->spi, &tx, &rx) != 0) {
-		LOG_ERR("Failed to exec rf2xx_frame_read PHR");
+		LOG_ERROR("Failed to exec rf2xx_frame_read PHR");
 	}
 
 	LOG_DBG("Frame R: PhyStatus: %02X. length: %02X", data[0], length);
@@ -241,7 +239,7 @@ void rf2xx_iface_frame_write(const struct device *dev,
 	};
 
 	if (spi_transceive_dt(&conf->spi, &tx, &rx) != 0) {
-		LOG_ERR("Failed to exec rf2xx_frame_write");
+		LOG_ERROR("Failed to exec rf2xx_frame_write");
 	}
 
 	LOG_DBG("Frame W: PhyStatus: %02X. length: %02X", status, length);
@@ -287,7 +285,7 @@ void rf2xx_iface_sram_read(const struct device *dev,
 	};
 
 	if (spi_transceive_dt(&conf->spi, &tx, &rx) != 0) {
-		LOG_ERR("Failed to exec rf2xx_sram_read");
+		LOG_ERROR("Failed to exec rf2xx_sram_read");
 	}
 
 	LOG_DBG("SRAM R: length: %02X, status: %02X", length, status[0]);

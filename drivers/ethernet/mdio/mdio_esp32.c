@@ -45,7 +45,7 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
 	k_sem_take(&dev_data->sem, K_FOREVER);
 
 	if (emac_ll_is_mii_busy(dev_data->hal.mac_regs)) {
-		LOG_ERR("phy busy");
+		LOG_ERROR("phy busy");
 		k_sem_give(&dev_data->sem);
 		return -EBUSY;
 	}
@@ -66,7 +66,7 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
 		}
 	}
 	if (!success) {
-		LOG_ERR("phy timeout");
+		LOG_ERROR("phy timeout");
 		k_sem_give(&dev_data->sem);
 		return -ETIMEDOUT;
 	}
@@ -101,7 +101,7 @@ static int emac_config_apll_clock(void)
 	esp_err_t ret = periph_rtc_apll_freq_set(expt_freq, &real_freq);
 
 	if (ret == ESP_ERR_INVALID_ARG) {
-		LOG_ERR("Set APLL clock coefficients failed");
+		LOG_ERROR("Set APLL clock coefficients failed");
 		return -EIO;
 	}
 
@@ -114,7 +114,7 @@ static int emac_config_apll_clock(void)
 	 * the APLL is unavailable
 	 */
 	if (abs((int)real_freq - (int)expt_freq) > 2500) {
-		LOG_ERR("The APLL is working at an unusable frequency");
+		LOG_ERROR("The APLL is working at an unusable frequency");
 		return -EIO;
 	}
 

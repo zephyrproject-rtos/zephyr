@@ -250,7 +250,7 @@ static int proxy_relay_send(struct bt_conn *conn, struct bt_mesh_adv *adv)
 
 	bt_mesh_adv_send_start(0, err, &adv->ctx);
 	if (err) {
-		LOG_ERR("Failed to send proxy message (err %d)", err);
+		LOG_ERROR("Failed to send proxy message (err %d)", err);
 
 		/* If segment_and_send() fails the buf_send_end() callback will
 		 * not be called, so we need to clear the user data (net_buf,

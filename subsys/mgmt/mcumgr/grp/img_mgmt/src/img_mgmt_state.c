@@ -226,7 +226,7 @@ static int read_directxip_state(int slot)
 	rc = boot_read_swap_state(fa, &bss);
 	flash_area_close(fa);
 	if (rc != 0) {
-		LOG_ERR("Failed to read state of slot %d with error %d", slot, rc);
+		LOG_ERROR("Failed to read state of slot %d with error %d", slot, rc);
 		return -1;
 	}
 
@@ -269,13 +269,12 @@ int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 		/* We do not really know what will happen, as we can not
 		 * read states from bootloader.
 		 */
-		LOG_ERR("img_mgmt_read_info_failed rca = %d, rcs = %d",
-			rca, rcs);
+		LOG_ERROR("img_mgmt_read_info_failed rca = %d, rcs = %d", rca, rcs);
 		goto out;
 	}
 	if (other_slot_state < 0 || active_slot_state < 0) {
-		LOG_ERR("Slot state read failed with status: active %d, other %d",
-			active_slot_state, other_slot_state);
+		LOG_ERROR("Slot state read failed with status: active %d, other %d",
+			  active_slot_state, other_slot_state);
 		/* We do not really know what will happen, as we can not
 		 * read states from bootloader.
 		 */
@@ -640,9 +639,9 @@ static int img_mgmt_set_next_boot_slot_common(int slot, int active_slot, bool co
 	rc = boot_set_next(fa, slot == active_slot, confirm);
 	if (rc != 0) {
 		/* Failed to set next slot for boot as desired */
-		LOG_ERR("Failed boot_set_next with code %d, for slot %d,"
-			" with active slot %d and confirm %d",
-			 rc, slot, active_slot, confirm);
+		LOG_ERROR("Failed boot_set_next with code %d, for slot %d,"
+			  " with active slot %d and confirm %d",
+			  rc, slot, active_slot, confirm);
 
 		/* Translate from boot util error code to IMG mgmt group error code */
 		if (rc == BOOT_EFLASH) {

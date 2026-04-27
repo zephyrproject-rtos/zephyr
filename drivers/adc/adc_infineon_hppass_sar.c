@@ -231,7 +231,7 @@ static int ifx_hppass_sar_configure_group(uint32_t channels, uint32_t group)
 	}
 
 	if (Cy_HPPASS_SAR_GroupConfig(group, &group_cfg) != 0) {
-		LOG_ERR("ADC Group configuration failed");
+		LOG_ERROR("ADC Group configuration failed");
 		return -EINVAL;
 	}
 
@@ -251,7 +251,7 @@ static int ifx_hppass_sar_configure_group(uint32_t channels, uint32_t group)
 static void ifx_hppass_get_group_results(uint32_t channels, struct ifx_hppass_sar_adc_data *data)
 {
 	if (data->buffer == NULL) {
-		LOG_ERR("ADC data buffer is NULL");
+		LOG_ERROR("ADC data buffer is NULL");
 		return;
 	}
 
@@ -286,10 +286,10 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	}
 
 	if (sequence->channels == 0) {
-		LOG_ERR("No channels specified");
+		LOG_ERROR("No channels specified");
 		data->result = -EINVAL;
 	} else if (ifx_hppass_sar_configure_group(sequence->channels, 0) != 0) {
-		LOG_ERR("Invalid channel group selection");
+		LOG_ERROR("Invalid channel group selection");
 		data->result = -EINVAL;
 	} else {
 		/* Trigger SAR ADC group 0 conversion */
@@ -338,27 +338,27 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 	struct ifx_hppass_sar_adc_data *data = dev->data;
 
 	if (sequence->buffer_size < (sizeof(int16_t) * POPCOUNT(sequence->channels))) {
-		LOG_ERR("Buffer too small");
+		LOG_ERROR("Buffer too small");
 		return -ENOMEM;
 	}
 
 	if (sequence->resolution != IFX_HPPASS_SAR_ADC_RESOLUTION) {
-		LOG_ERR("Unsupported resolution: %d", sequence->resolution);
+		LOG_ERROR("Unsupported resolution: %d", sequence->resolution);
 		return -EINVAL;
 	}
 
 	if (sequence->channels == 0) {
-		LOG_ERR("No channels specified");
+		LOG_ERROR("No channels specified");
 		return -EINVAL;
 	}
 
 	if ((sequence->channels ^ (data->enabled_channels & sequence->channels)) != 0) {
-		LOG_ERR("Channels not configured");
+		LOG_ERROR("Channels not configured");
 		return -EINVAL;
 	}
 
 	if (sequence->oversampling != 0) {
-		LOG_ERR("Oversampling not supported");
+		LOG_ERROR("Oversampling not supported");
 		return -EINVAL;
 	}
 
@@ -415,7 +415,7 @@ static void ifx_hppass_sar_adc_isr(const struct device *dev)
 				 * configured correctly all channels in the group will be complete
 				 * when this interrupt occurs.
 				 */
-				LOG_ERR("SAR Group 0: Not all channels completed.");
+				LOG_ERROR("SAR Group 0: Not all channels completed.");
 			}
 		}
 #endif /* CONFIG_ADC_ASYNC */
@@ -426,8 +426,8 @@ static void ifx_hppass_sar_adc_isr(const struct device *dev)
 	 * error.
 	 */
 	if (result_intr_status & ~CY_HPPASS_INTR_SAR_RESULT_GROUP_0) {
-		LOG_ERR("SAR Results Interrupt for unhandled groups: 0x%08X",
-			(uint32_t)(result_intr_status & ~CY_HPPASS_INTR_SAR_RESULT_GROUP_0));
+		LOG_ERROR("SAR Results Interrupt for unhandled groups: 0x%08X",
+			  (uint32_t)(result_intr_status & ~CY_HPPASS_INTR_SAR_RESULT_GROUP_0));
 	}
 }
 
@@ -528,18 +528,18 @@ static int ifx_hppass_sar_adc_channel_setup(const struct device *dev,
 	struct ifx_hppass_sar_adc_data *data = dev->data;
 
 	if (channel_cfg->channel_id >= HPPASS_SAR_ADC_MAX_CHANNELS) {
-		LOG_ERR("Invalid channel ID: %d", channel_cfg->channel_id);
+		LOG_ERROR("Invalid channel ID: %d", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels not supported");
+		LOG_ERROR("Differential channels not supported");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1 && channel_cfg->gain != ADC_GAIN_3 &&
 	    channel_cfg->gain != ADC_GAIN_6 && channel_cfg->gain != ADC_GAIN_12) {
-		LOG_ERR("Gain setting not supported");
+		LOG_ERROR("Gain setting not supported");
 		return -EINVAL;
 	}
 
@@ -550,7 +550,7 @@ static int ifx_hppass_sar_adc_channel_setup(const struct device *dev,
 	 */
 	if (channel_cfg->reference != ADC_REF_INTERNAL &&
 	    channel_cfg->reference != ADC_REF_EXTERNAL0) {
-		LOG_ERR("Reference setting not supported");
+		LOG_ERROR("Reference setting not supported");
 		return -EINVAL;
 	}
 
@@ -560,7 +560,7 @@ static int ifx_hppass_sar_adc_channel_setup(const struct device *dev,
 	 * configure the sample time for a group rather than individual channels.
 	 */
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Invalid channel acquisition time, expected ADC_ACQ_TIME_DEFAULT");
+		LOG_ERROR("Invalid channel acquisition time, expected ADC_ACQ_TIME_DEFAULT");
 		return -EINVAL;
 	}
 
@@ -582,7 +582,7 @@ static int ifx_hppass_sar_adc_channel_setup(const struct device *dev,
 		    channel_cfg->channel_id,
 		    &data->hppass_sar_chan_obj[channel_cfg->channel_id].pdl_channel_cfg) !=
 	    CY_HPPASS_SUCCESS) {
-		LOG_ERR("Channel %d configuration failed", channel_cfg->channel_id);
+		LOG_ERROR("Channel %d configuration failed", channel_cfg->channel_id);
 		return -EIO;
 	}
 
@@ -641,12 +641,12 @@ static int ifx_hppass_sar_adc_init(const struct device *dev)
 	ifx_init_channel_cfg(data);
 
 	if (Cy_HPPASS_SAR_Init(&data->hppass_sar_obj) != CY_RSLT_SUCCESS) {
-		LOG_ERR("Failed to initialize HPPASS SAR ADC");
+		LOG_ERROR("Failed to initialize HPPASS SAR ADC");
 		return -EIO;
 	}
 
 	if (ifx_hppass_ac_init_adc() != CY_RSLT_SUCCESS) {
-		LOG_ERR("HPPASS AC failed to initialize ADC");
+		LOG_ERROR("HPPASS AC failed to initialize ADC");
 		return -EIO;
 	}
 

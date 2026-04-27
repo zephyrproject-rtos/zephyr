@@ -120,7 +120,7 @@ static int can_loopback_send(const struct device *dev,
 #ifdef CONFIG_CAN_FD_MODE
 	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR |
 		CAN_FRAME_FDF | CAN_FRAME_BRS)) != 0) {
-		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		LOG_ERROR("unsupported CAN frame flags 0x%02x", frame->flags);
 		return -ENOTSUP;
 	}
 
@@ -133,13 +133,13 @@ static int can_loopback_send(const struct device *dev,
 	}
 #else /* CONFIG_CAN_FD_MODE */
 	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR)) != 0) {
-		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		LOG_ERROR("unsupported CAN frame flags 0x%02x", frame->flags);
 		return -ENOTSUP;
 	}
 #endif /* !CONFIG_CAN_FD_MODE */
 
 	if (frame->dlc > max_dlc) {
-		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, max_dlc);
+		LOG_ERROR("DLC of %d exceeds maximum (%d)", frame->dlc, max_dlc);
 		return -EINVAL;
 	}
 
@@ -182,7 +182,7 @@ static int can_loopback_add_rx_filter(const struct device *dev, can_rx_callback_
 	LOG_DBG("Setting filter ID: 0x%x, mask: 0x%x", filter->id, filter->mask);
 
 	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
-		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
+		LOG_ERROR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
 
@@ -190,7 +190,7 @@ static int can_loopback_add_rx_filter(const struct device *dev, can_rx_callback_
 	filter_id = get_free_filter(data->filters);
 
 	if (filter_id < 0) {
-		LOG_ERR("No free filter left");
+		LOG_ERROR("No free filter left");
 		k_mutex_unlock(&data->mtx);
 		return filter_id;
 	}
@@ -212,7 +212,7 @@ static void can_loopback_remove_rx_filter(const struct device *dev, int filter_i
 	struct can_loopback_data *data = dev->data;
 
 	if (filter_id < 0 || filter_id >= ARRAY_SIZE(data->filters)) {
-		LOG_ERR("filter ID %d out-of-bounds", filter_id);
+		LOG_ERROR("filter ID %d out-of-bounds", filter_id);
 		return;
 	}
 
@@ -273,12 +273,12 @@ static int can_loopback_set_mode(const struct device *dev, can_mode_t mode)
 
 #ifdef CONFIG_CAN_FD_MODE
 	if ((mode & ~(CAN_MODE_LOOPBACK | CAN_MODE_FD)) != 0) {
-		LOG_ERR("unsupported mode: 0x%08x", mode);
+		LOG_ERROR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
 #else
 	if ((mode & ~(CAN_MODE_LOOPBACK)) != 0) {
-		LOG_ERR("unsupported mode: 0x%08x", mode);
+		LOG_ERROR("unsupported mode: 0x%08x", mode);
 		return -ENOTSUP;
 	}
 #endif /* CONFIG_CAN_FD_MODE */
@@ -433,7 +433,7 @@ static int can_loopback_init(const struct device *dev)
 				 CONFIG_CAN_LOOPBACK_TX_THREAD_PRIORITY,
 				 0, K_NO_WAIT);
 	if (!tx_tid) {
-		LOG_ERR("ERROR spawning tx thread");
+		LOG_ERROR("ERROR spawning tx thread");
 		return -1;
 	}
 

@@ -123,13 +123,13 @@ static void uart_bridge_handle_rx(const struct device *dev,
 	recv_len = uart_fifo_read(dev, recv_buf, rb_len);
 	if (recv_len < 0) {
 		ring_buf_put_finish(&own_data->rb, 0);
-		LOG_ERR("%s: rx error: %d", dev->name, recv_len);
+		LOG_ERROR("%s: rx error: %d", dev->name, recv_len);
 		return;
 	}
 
 	ret = ring_buf_put_finish(&own_data->rb, recv_len);
 	if (ret < 0) {
-		LOG_ERR("%s: ring_buf_put_finish error: %d", dev->name, rb_len);
+		LOG_ERROR("%s: ring_buf_put_finish error: %d", dev->name, rb_len);
 		return;
 	}
 
@@ -161,13 +161,13 @@ static void uart_bridge_handle_tx(const struct device *dev,
 	sent_len = uart_fifo_fill(dev, send_buf, rb_len);
 	if (sent_len < 0) {
 		ring_buf_get_finish(&peer_data->rb, 0);
-		LOG_ERR("%s: tx error: %d", dev->name, sent_len);
+		LOG_ERROR("%s: tx error: %d", dev->name, sent_len);
 		return;
 	}
 
 	ret = ring_buf_get_finish(&peer_data->rb, sent_len);
 	if (ret < 0) {
-		LOG_ERR("ring_buf_get_finish error: %d", ret);
+		LOG_ERROR("ring_buf_get_finish error: %d", ret);
 		return;
 	}
 

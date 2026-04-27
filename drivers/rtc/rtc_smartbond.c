@@ -213,12 +213,12 @@ static int rtc_smartbond_set_time(const struct device *dev, const struct rtc_tim
 	uint32_t rtc_time_reg, rtc_calendar_reg, rtc_status_reg;
 
 	if (timeptr == NULL) {
-		LOG_ERR("No pointer is provided to set time");
+		LOG_ERROR("No pointer is provided to set time");
 		return -EINVAL;
 	}
 
 	if (timeptr->tm_year + TM_YEAR_REF < TM_YEAR_REF) {
-		LOG_ERR("RTC time exceeds HW capabilities");
+		LOG_ERROR("RTC time exceeds HW capabilities");
 		return -EINVAL;
 	}
 
@@ -262,7 +262,7 @@ static int rtc_smartbond_get_time(const struct device *dev, struct rtc_time *tim
 	struct rtc_smartbond_data *data = dev->data;
 
 	if (timeptr == NULL) {
-		LOG_ERR("No pointer is provided to store the requested time");
+		LOG_ERROR("No pointer is provided to store the requested time");
 		return -EINVAL;
 	}
 
@@ -411,22 +411,22 @@ static int rtc_smartbond_alarm_set_time(const struct device *dev, uint16_t id, u
 	uint32_t rtc_status_reg;
 
 	if (id >= RTC_ALARMS_COUNT) {
-		LOG_ERR("Alarm id is out of range");
+		LOG_ERROR("Alarm id is out of range");
 		return -EINVAL;
 	}
 
 	if (mask & ~RTC_SMARTBOND_SUPPORTED_ALARM_FIELDS) {
-		LOG_ERR("Invalid alarm mask");
+		LOG_ERROR("Invalid alarm mask");
 		return -EINVAL;
 	}
 
 	if ((timeptr == NULL) && (mask != 0)) {
-		LOG_ERR("No pointer is provided to set alarm");
+		LOG_ERROR("No pointer is provided to set alarm");
 		return -EINVAL;
 	}
 
 	if (!rtc_utils_validate_rtc_time(timeptr, mask)) {
-		LOG_ERR("Invalid alarm fields values");
+		LOG_ERROR("Invalid alarm fields values");
 		return -EINVAL;
 	}
 
@@ -475,12 +475,12 @@ static int rtc_smartbond_alarm_get_time(const struct device *dev, uint16_t id, u
 	struct rtc_smartbond_data *data = dev->data;
 
 	if (id >= RTC_ALARMS_COUNT) {
-		LOG_ERR("Alarm id is out of range");
+		LOG_ERROR("Alarm id is out of range");
 		return -EINVAL;
 	}
 
 	if ((timeptr == NULL) || (mask == NULL)) {
-		LOG_ERR("No pointer is provided to store the requested alarm time/mask");
+		LOG_ERROR("No pointer is provided to store the requested alarm time/mask");
 		return -EINVAL;
 	}
 
@@ -506,7 +506,7 @@ static int rtc_smartbond_alarm_is_pending(const struct device *dev, uint16_t id)
 	struct rtc_smartbond_data *data = dev->data;
 
 	if (id >= RTC_ALARMS_COUNT) {
-		LOG_ERR("Alarm id is out of range");
+		LOG_ERROR("Alarm id is out of range");
 		return -EINVAL;
 	}
 
@@ -526,7 +526,7 @@ static int rtc_smartbond_alarm_set_callback(const struct device *dev, uint16_t i
 	struct rtc_smartbond_data *data = dev->data;
 
 	if (id >= RTC_ALARMS_COUNT) {
-		LOG_ERR("Alarm id is out of range");
+		LOG_ERROR("Alarm id is out of range");
 		return -EINVAL;
 	}
 
@@ -544,12 +544,12 @@ static int rtc_smartbond_alarm_get_supported_fields(const struct device *dev, ui
 						uint16_t *mask)
 {
 	if (id >= RTC_ALARMS_COUNT) {
-		LOG_ERR("Alarm id is out of range");
+		LOG_ERROR("Alarm id is out of range");
 		return -EINVAL;
 	}
 
 	if (mask == NULL) {
-		LOG_ERR("Pointer to store the mask value is missed");
+		LOG_ERROR("Pointer to store the mask value is missed");
 		return -EINVAL;
 	}
 

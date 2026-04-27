@@ -77,21 +77,21 @@ static int advertise(void)
 
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &adv);
 	if (err) {
-		LOG_ERR("Failed to create advertising set: %d", err);
+		LOG_ERROR("Failed to create advertising set: %d", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
-		LOG_ERR("Failed to set advertising data: %d", err);
+		LOG_ERROR("Failed to set advertising data: %d", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err) {
-		LOG_ERR("Failed to start advertising set: %d", err);
+		LOG_ERROR("Failed to start advertising set: %d", err);
 
 		return err;
 	}
@@ -101,7 +101,7 @@ static int advertise(void)
 	/* Wait for connection*/
 	err = k_sem_take(&sem_state_change, K_FOREVER);
 	if (err != 0) {
-		LOG_ERR("Failed to take sem_state_change: err %d", err);
+		LOG_ERROR("Failed to take sem_state_change: err %d", err);
 
 		return err;
 	}
@@ -123,7 +123,7 @@ static int reset_ccp_call_control_server(void)
 
 		err = k_sem_take(&sem_state_change, K_FOREVER);
 		if (err != 0) {
-			LOG_ERR("Failed to take sem_state_change: %d", err);
+			LOG_ERROR("Failed to take sem_state_change: %d", err);
 			return err;
 		}
 	}
@@ -131,13 +131,13 @@ static int reset_ccp_call_control_server(void)
 	if (adv != NULL) {
 		err = bt_le_ext_adv_stop(adv);
 		if (err != 0) {
-			LOG_ERR("Failed to stop advertiser: %d", err);
+			LOG_ERROR("Failed to stop advertiser: %d", err);
 			return err;
 		}
 
 		err = bt_le_ext_adv_delete(adv);
 		if (err != 0) {
-			LOG_ERR("Failed to delete advertiser: %d", err);
+			LOG_ERROR("Failed to delete advertiser: %d", err);
 			return err;
 		}
 
@@ -164,7 +164,7 @@ static int init_ccp_call_control_server(void)
 
 	err = bt_enable(NULL);
 	if (err != 0) {
-		LOG_ERR("Bluetooth enable failed (err %d)", err);
+		LOG_ERROR("Bluetooth enable failed (err %d)", err);
 
 		return err;
 	}
@@ -173,7 +173,7 @@ static int init_ccp_call_control_server(void)
 
 	err = bt_ccp_call_control_server_register_bearer(&gtbs_param, &bearers[0]);
 	if (err < 0) {
-		LOG_ERR("Failed to register GTBS (err %d)", err);
+		LOG_ERROR("Failed to register GTBS (err %d)", err);
 
 		return err;
 	}
@@ -197,7 +197,7 @@ static int init_ccp_call_control_server(void)
 
 		err = bt_ccp_call_control_server_register_bearer(&tbs_param, &bearers[i]);
 		if (err < 0) {
-			LOG_ERR("Failed to register bearer[%d]: %d", i, err);
+			LOG_ERROR("Failed to register bearer[%d]: %d", i, err);
 
 			return err;
 		}
@@ -222,7 +222,7 @@ int main(void)
 	while (true) {
 		err = reset_ccp_call_control_server();
 		if (err != 0) {
-			LOG_ERR("Failed to reset");
+			LOG_ERROR("Failed to reset");
 
 			break;
 		}
@@ -243,7 +243,7 @@ int main(void)
 		/* Reset if disconnected */
 		err = k_sem_take(&sem_state_change, K_FOREVER);
 		if (err != 0) {
-			LOG_ERR("Failed to take sem_state_change: err %d", err);
+			LOG_ERROR("Failed to take sem_state_change: err %d", err);
 
 			break;
 		}

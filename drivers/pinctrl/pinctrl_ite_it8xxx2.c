@@ -104,7 +104,7 @@ static int pinctrl_it8xxx2_set(const pinctrl_soc_pin_t *pins)
 			     ~GPCR_PORT_PIN_MODE_PULLUP;
 		break;
 	default:
-		LOG_ERR("This pull level is not supported.");
+		LOG_ERROR("This pull level is not supported.");
 		return -EINVAL;
 	}
 
@@ -127,7 +127,7 @@ static int pinctrl_it8xxx2_set(const pinctrl_soc_pin_t *pins)
 			*reg_volt_sel |= gpio->volt_sel_mask[pin];
 			break;
 		default:
-			LOG_ERR("The voltage selection is not supported");
+			LOG_ERROR("The voltage selection is not supported");
 			return -EINVAL;
 		}
 	}
@@ -168,7 +168,7 @@ static int pinctrl_gpio_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 
 	/* Handle PIN configuration. */
 	if (pinctrl_it8xxx2_set(pins)) {
-		LOG_ERR("Pin configuration is invalid.");
+		LOG_ERROR("Pin configuration is invalid.");
 		return -EINVAL;
 	}
 
@@ -242,7 +242,7 @@ static int pinctrl_gpio_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 #endif /* PINCTRL_ALT_FUNC5_IS_DEFINED */
 		return 0;
 	default:
-		LOG_ERR("This function is not supported.");
+		LOG_ERROR("This function is not supported.");
 		return -EINVAL;
 	}
 
@@ -277,7 +277,7 @@ static int pinctrl_kscan_it8xxx2_set(const pinctrl_soc_pin_t *pins)
 		*reg_ctrl |= pullup_mask;
 		break;
 	default:
-		LOG_ERR("This pull level is not supported.");
+		LOG_ERROR("This pull level is not supported.");
 		return -EINVAL;
 	}
 
@@ -297,7 +297,7 @@ static int pinctrl_kscan_it8xxx2_set(const pinctrl_soc_pin_t *pins)
 			*reg_ctrl |= pp_od_mask;
 			break;
 		default:
-			LOG_ERR("This pull mode is not supported.");
+			LOG_ERROR("This pull mode is not supported.");
 			return -EINVAL;
 		}
 	}
@@ -345,7 +345,7 @@ static int pinctrl_kscan_it8xxx2_configure_pins(const pinctrl_soc_pin_t *pins)
 		break;
 #endif
 	default:
-		LOG_ERR("Alternate function not supported");
+		LOG_ERROR("Alternate function not supported");
 		return -ENOTSUP;
 	}
 
@@ -369,8 +369,8 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		}
 
 		if (status < 0) {
-			LOG_ERR("%s pin%d configuration is invalid.",
-				pins[i].pinctrls->name, pins[i].pin);
+			LOG_ERROR("%s pin%d configuration is invalid.", pins[i].pinctrls->name,
+				  pins[i].pin);
 			return status;
 		}
 	}

@@ -65,7 +65,7 @@ int mfd_adp5360_interrupt_trigger_set(const struct device *dev, enum adp5360_int
 
 	LOG_DBG("Setup Interrupt trigger");
 	if (handler == NULL) {
-		LOG_ERR("No handler set!");
+		LOG_ERROR("No handler set!");
 		return -EINVAL;
 	}
 
@@ -188,7 +188,7 @@ static void mfd_adp5360_interrupt_main_cb(const struct device *dev)
 	ret = mfd_adp5360_reg_burst_read(dev, ADP5360_MFD_REG_INT_STATUS1, int_status,
 					 ARRAY_SIZE(int_status));
 	if (ret < 0) {
-		LOG_ERR("Failed to read interrupt status registers");
+		LOG_ERROR("Failed to read interrupt status registers");
 		return;
 	}
 
@@ -232,7 +232,7 @@ static void mfd_adp5360_interrupt_main_cb(const struct device *dev)
 
 	ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio, GPIO_INT_EDGE_FALLING);
 	if (ret < 0) {
-		LOG_ERR("Failed to re-enable interrupt");
+		LOG_ERROR("Failed to re-enable interrupt");
 		return;
 	}
 	__ASSERT(ret == 0, "Interrupt Configuration Failed");
@@ -248,7 +248,7 @@ static void mfd_adp5360_interrupt_gpio_callback(const struct device *dev, struct
 	/* Disable the interrupt to prevent multiple triggers */
 	ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio, GPIO_INT_DISABLE);
 	if (ret < 0) {
-		LOG_ERR("Failed to disable interrupt");
+		LOG_ERROR("Failed to disable interrupt");
 		return;
 	}
 #if defined(CONFIG_ADP5360_TRIGGER_OWN_THREAD)
@@ -290,13 +290,13 @@ int mfd_adp5360_init_interrupt(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&config->interrupt_gpio)) {
-		LOG_ERR("Interrupt GPIO is not ready");
+		LOG_ERROR("Interrupt GPIO is not ready");
 		return -ENODEV;
 	}
 
 	ret = mfd_adp5360_interrupt_callback_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize interrupt callback");
+		LOG_ERROR("Failed to initialize interrupt callback");
 		return ret;
 	}
 
@@ -315,7 +315,7 @@ int mfd_adp5360_init_interrupt(const struct device *dev)
 
 	ret = gpio_pin_configure_dt(&config->interrupt_gpio, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure interrupt GPIO pin");
+		LOG_ERROR("Failed to configure interrupt GPIO pin");
 		return ret;
 	}
 
@@ -324,13 +324,13 @@ int mfd_adp5360_init_interrupt(const struct device *dev)
 			   BIT(config->interrupt_gpio.pin));
 	ret = gpio_add_callback(config->interrupt_gpio.port, &data->int_callback);
 	if (ret < 0) {
-		LOG_ERR("Failed to add GPIO callback");
+		LOG_ERROR("Failed to add GPIO callback");
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio, GPIO_INT_EDGE_FALLING);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure interrupt GPIO pin interrupt");
+		LOG_ERROR("Failed to configure interrupt GPIO pin interrupt");
 		return ret;
 	}
 
@@ -346,7 +346,7 @@ int mfd_adp5360_pgood_trigger_set(const struct device *dev, enum pgood_pin pin,
 
 	LOG_DBG("Setup PGOOD trigger");
 	if (handler == NULL) {
-		LOG_ERR("No handler set!");
+		LOG_ERROR("No handler set!");
 		return -EINVAL;
 	}
 
@@ -421,7 +421,7 @@ static void mfd_adp5360_pgood_main_cb(const struct device *dev)
 
 	ret = mfd_adp5360_reg_read(dev, ADP5360_MFD_REG_PGOOD_STATUS, &pgood_status);
 	if (ret < 0) {
-		LOG_ERR("Failed to read pgood status register");
+		LOG_ERROR("Failed to read pgood status register");
 		return;
 	}
 	/* Check which status asserted and run handlers if present */
@@ -442,7 +442,7 @@ static void mfd_adp5360_pgood_main_cb(const struct device *dev)
 
 	ret = gpio_pin_interrupt_configure_dt(&config->pgood1_gpio, GPIO_INT_EDGE_FALLING);
 	if (ret < 0) {
-		LOG_ERR("Failed to re-enable pgood1 interrupt");
+		LOG_ERROR("Failed to re-enable pgood1 interrupt");
 		return;
 	}
 
@@ -458,7 +458,7 @@ static void mfd_adp5360_pgood1_gpio_callback(const struct device *dev, struct gp
 	/* Disable the interrupt to prevent multiple triggers */
 	ret = gpio_pin_interrupt_configure_dt(&config->pgood1_gpio, GPIO_INT_DISABLE);
 	if (ret < 0) {
-		LOG_ERR("Failed to disable pgood1 interrupt");
+		LOG_ERROR("Failed to disable pgood1 interrupt");
 		return;
 	}
 
@@ -504,7 +504,7 @@ static void mfd_adp5360_pgood2_gpio_callback(const struct device *dev, struct gp
 	/* Disable the interrupt to prevent multiple triggers */
 	ret = gpio_pin_interrupt_configure_dt(&config->pgood2_gpio, GPIO_INT_DISABLE);
 	if (ret < 0) {
-		LOG_ERR("Failed to disable pgood2 interrupt");
+		LOG_ERROR("Failed to disable pgood2 interrupt");
 		return;
 	}
 #if defined(CONFIG_ADP5360_TRIGGER_OWN_THREAD)
@@ -550,7 +550,7 @@ int mfd_adp5360_init_pgood_interrupt(const struct device *dev)
 
 	if (config->pgood1_gpio.port) {
 		if (!gpio_is_ready_dt(&config->pgood1_gpio)) {
-			LOG_ERR("PGOOD1 GPIO is not ready");
+			LOG_ERROR("PGOOD1 GPIO is not ready");
 			return -ENODEV;
 		}
 
@@ -567,7 +567,7 @@ int mfd_adp5360_init_pgood_interrupt(const struct device *dev)
 
 		ret = gpio_pin_configure_dt(&config->pgood1_gpio, GPIO_INPUT);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure pgood1 GPIO pin");
+			LOG_ERROR("Failed to configure pgood1 GPIO pin");
 			return ret;
 		}
 
@@ -575,27 +575,27 @@ int mfd_adp5360_init_pgood_interrupt(const struct device *dev)
 				   BIT(config->pgood1_gpio.pin));
 		ret = gpio_add_callback(config->pgood1_gpio.port, &data->pgood1_callback);
 		if (ret < 0) {
-			LOG_ERR("Failed to add pgood1 GPIO callback");
+			LOG_ERROR("Failed to add pgood1 GPIO callback");
 			return ret;
 		}
 
 		ret = gpio_pin_interrupt_configure_dt(&config->pgood1_gpio, GPIO_INT_EDGE_FALLING);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure pgood1 GPIO pin interrupt");
+			LOG_ERROR("Failed to configure pgood1 GPIO pin interrupt");
 			return ret;
 		}
 
 		ret = mfd_adp5360_reg_update(dev, ADP5360_MFD_REG_PGOOD1_MASK,
 					     ADP5360_PGOOD1_REV_MASK, 1);
 		if (ret < 0) {
-			LOG_ERR("Failed to set pgood1 into active low");
+			LOG_ERROR("Failed to set pgood1 into active low");
 			return ret;
 		}
 	}
 
 	if (config->pgood2_gpio.port) {
 		if (!gpio_is_ready_dt(&config->pgood2_gpio)) {
-			LOG_ERR("PGOOD2 GPIO is not ready");
+			LOG_ERROR("PGOOD2 GPIO is not ready");
 			return -ENODEV;
 		}
 
@@ -612,7 +612,7 @@ int mfd_adp5360_init_pgood_interrupt(const struct device *dev)
 
 		ret = gpio_pin_configure_dt(&config->pgood2_gpio, GPIO_INPUT);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure pgood2 GPIO pin");
+			LOG_ERROR("Failed to configure pgood2 GPIO pin");
 			return ret;
 		}
 
@@ -620,20 +620,20 @@ int mfd_adp5360_init_pgood_interrupt(const struct device *dev)
 				   BIT(config->pgood2_gpio.pin));
 		ret = gpio_add_callback(config->pgood2_gpio.port, &data->pgood2_callback);
 		if (ret < 0) {
-			LOG_ERR("Failed to add pgood2 GPIO callback");
+			LOG_ERROR("Failed to add pgood2 GPIO callback");
 			return ret;
 		}
 
 		ret = gpio_pin_interrupt_configure_dt(&config->pgood2_gpio, GPIO_INT_EDGE_FALLING);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure pgood2 GPIO pin interrupt");
+			LOG_ERROR("Failed to configure pgood2 GPIO pin interrupt");
 			return ret;
 		}
 
 		ret = mfd_adp5360_reg_update(dev, ADP5360_MFD_REG_PGOOD2_MASK,
 					     ADP5360_PGOOD2_REV_MASK, 1);
 		if (ret < 0) {
-			LOG_ERR("Failed to set pgood2 into active low");
+			LOG_ERROR("Failed to set pgood2 into active low");
 			return ret;
 		}
 	}
@@ -641,7 +641,7 @@ int mfd_adp5360_init_pgood_interrupt(const struct device *dev)
 	/* Initialize pgood handlers to NULL */
 	ret = mfd_adp5360_pgood_callback_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize pgood callback");
+		LOG_ERROR("Failed to initialize pgood callback");
 		return ret;
 	}
 
@@ -655,7 +655,7 @@ int mfd_adp5360_reset_trigger_set(const struct device *dev, mfd_adp5360_interrup
 
 	LOG_DBG("Setup Reset trigger");
 	if (handler == NULL) {
-		LOG_ERR("No handler set!");
+		LOG_ERROR("No handler set!");
 		return -EINVAL;
 	}
 
@@ -689,7 +689,7 @@ static void mfd_adp5360_reset_cb(const struct device *dev)
 
 	ret = gpio_pin_interrupt_configure_dt(&config->reset_status_gpio, GPIO_INT_EDGE_FALLING);
 	if (ret < 0) {
-		LOG_ERR("Failed to re-enable interrupt");
+		LOG_ERROR("Failed to re-enable interrupt");
 		return;
 	}
 }
@@ -704,7 +704,7 @@ static void mfd_adp5360_reset_gpio_callback(const struct device *dev, struct gpi
 	/* Disable the interrupt to prevent multiple triggers */
 	ret = gpio_pin_interrupt_configure_dt(&config->reset_status_gpio, GPIO_INT_DISABLE);
 	if (ret < 0) {
-		LOG_ERR("Failed to disable reset status GPIO interrupt");
+		LOG_ERROR("Failed to disable reset status GPIO interrupt");
 		return;
 	}
 #if defined(CONFIG_ADP5360_TRIGGER_OWN_THREAD)
@@ -747,13 +747,13 @@ int mfd_adp5360_init_reset_status_interrupt(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&config->reset_status_gpio)) {
-		LOG_ERR("Reset status GPIO is not ready");
+		LOG_ERROR("Reset status GPIO is not ready");
 		return -ENODEV;
 	}
 
 	ret = mfd_adp5360_reset_callback_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize reset status callback");
+		LOG_ERROR("Failed to initialize reset status callback");
 		return ret;
 	}
 
@@ -772,7 +772,7 @@ int mfd_adp5360_init_reset_status_interrupt(const struct device *dev)
 
 	ret = gpio_pin_configure_dt(&config->reset_status_gpio, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure reset status GPIO pin");
+		LOG_ERROR("Failed to configure reset status GPIO pin");
 		return ret;
 	}
 
@@ -780,13 +780,13 @@ int mfd_adp5360_init_reset_status_interrupt(const struct device *dev)
 			   BIT(config->reset_status_gpio.pin));
 	ret = gpio_add_callback(config->reset_status_gpio.port, &data->reset_status_callback);
 	if (ret < 0) {
-		LOG_ERR("Failed to add pgood1 GPIO callback");
+		LOG_ERROR("Failed to add pgood1 GPIO callback");
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->reset_status_gpio, GPIO_INT_EDGE_RISING);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure reset status GPIO pin interrupt");
+		LOG_ERROR("Failed to configure reset status GPIO pin interrupt");
 		return ret;
 	}
 

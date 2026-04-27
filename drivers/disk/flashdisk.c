@@ -96,7 +96,7 @@ static int flashdisk_init_runtime(struct flashdisk_data *ctx,
 	if (IS_ENABLED(CONFIG_FLASHDISK_VERIFY_PAGE_LAYOUT) && flashdisk_with_erase(ctx)) {
 		rc = flash_get_page_info_by_offs(ctx->info.dev, ctx->offset, &page);
 		if (rc < 0) {
-			LOG_ERR("Error %d while getting page info", rc);
+			LOG_ERROR("Error %d while getting page info", rc);
 			return rc;
 		}
 
@@ -117,8 +117,7 @@ static int flashdisk_init_runtime(struct flashdisk_data *ctx,
 
 	if (IS_ENABLED(CONFIG_FLASHDISK_VERIFY_PAGE_LAYOUT) && flashdisk_with_erase(ctx)) {
 		if (ctx->offset != page.start_offset) {
-			LOG_ERR("Disk %s does not start at page boundary",
-				ctx->info.name);
+			LOG_ERROR("Disk %s does not start at page boundary", ctx->info.name);
 			return -EINVAL;
 		}
 
@@ -126,26 +125,24 @@ static int flashdisk_init_runtime(struct flashdisk_data *ctx,
 		while (offset < ctx->offset + ctx->size) {
 			rc = flash_get_page_info_by_offs(ctx->info.dev, offset, &page);
 			if (rc < 0) {
-				LOG_ERR("Error %d getting page info at offset %lx", rc, offset);
+				LOG_ERROR("Error %d getting page info at offset %lx", rc, offset);
 				return rc;
 			}
 			if (page.size != ctx->page_size) {
-				LOG_ERR("Non-uniform page size is not supported");
+				LOG_ERROR("Non-uniform page size is not supported");
 				return rc;
 			}
 			offset += page.size;
 		}
 
 		if (offset != ctx->offset + ctx->size) {
-			LOG_ERR("Last page crossess disk %s boundary",
-				ctx->info.name);
+			LOG_ERROR("Last page crossess disk %s boundary", ctx->info.name);
 			return -EINVAL;
 		}
 	}
 
 	if (ctx->page_size > ctx->cache_size) {
-		LOG_ERR("Cache too small (%zu needs %zu)",
-			ctx->cache_size, ctx->page_size);
+		LOG_ERROR("Cache too small (%zu needs %zu)", ctx->cache_size, ctx->page_size);
 		return -ENOMEM;
 	}
 
@@ -162,7 +159,7 @@ static int disk_flash_access_init(struct disk_info *disk)
 
 	rc = flash_area_open(ctx->area_id, &fap);
 	if (rc < 0) {
-		LOG_ERR("Flash area %u open error %d", ctx->area_id, rc);
+		LOG_ERROR("Flash area %u open error %d", ctx->area_id, rc);
 		return rc;
 	}
 
@@ -191,8 +188,8 @@ static bool sectors_in_range(struct flashdisk_data *ctx,
 		return true;
 	}
 
-	LOG_ERR("sector start %" PRIu32 " count %" PRIu32
-		" outside partition boundary", start_sector, sector_count);
+	LOG_ERROR("sector start %" PRIu32 " count %" PRIu32 " outside partition boundary",
+		  start_sector, sector_count);
 	return false;
 }
 
@@ -557,8 +554,8 @@ static int disk_flash_init(void)
 
 		rc = disk_access_register(&flash_disks[i].info);
 		if (rc < 0) {
-			LOG_ERR("Failed to register disk %s error %d",
-				flash_disks[i].info.name, rc);
+			LOG_ERROR("Failed to register disk %s error %d", flash_disks[i].info.name,
+				  rc);
 			err = rc;
 		}
 	}

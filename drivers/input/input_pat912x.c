@@ -154,7 +154,7 @@ int pat912x_set_resolution(const struct device *dev,
 
 	if (res_x_cpi >= 0) {
 		if (!IN_RANGE(res_x_cpi, 0, RES_MAX)) {
-			LOG_ERR("res_x_cpi out of range: %d", res_x_cpi);
+			LOG_ERROR("res_x_cpi out of range: %d", res_x_cpi);
 			return -EINVAL;
 		}
 
@@ -167,7 +167,7 @@ int pat912x_set_resolution(const struct device *dev,
 
 	if (res_y_cpi >= 0) {
 		if (!IN_RANGE(res_y_cpi, 0, RES_MAX)) {
-			LOG_ERR("res_y_cpi out of range: %d", res_y_cpi);
+			LOG_ERROR("res_y_cpi out of range: %d", res_y_cpi);
 			return -EINVAL;
 		}
 
@@ -193,7 +193,7 @@ static int pat912x_configure(const struct device *dev)
 	}
 
 	if (sys_get_be16(id) != PRODUCT_ID_PAT9125EL) {
-		LOG_ERR("Invalid product id: %04x", sys_get_be16(id));
+		LOG_ERROR("Invalid product id: %04x", sys_get_be16(id));
 		return -ENOTSUP;
 	}
 
@@ -242,7 +242,7 @@ static int pat912x_init(const struct device *dev)
 	int ret;
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("%s is not ready", cfg->i2c.bus->name);
+		LOG_ERROR("%s is not ready", cfg->i2c.bus->name);
 		return -ENODEV;
 	}
 
@@ -251,20 +251,20 @@ static int pat912x_init(const struct device *dev)
 	k_work_init(&data->motion_work, pat912x_motion_work_handler);
 
 	if (!gpio_is_ready_dt(&cfg->motion_gpio)) {
-		LOG_ERR("%s is not ready", cfg->motion_gpio.port->name);
+		LOG_ERROR("%s is not ready", cfg->motion_gpio.port->name);
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&cfg->motion_gpio, GPIO_INPUT);
 	if (ret != 0) {
-		LOG_ERR("Motion pin configuration failed: %d", ret);
+		LOG_ERROR("Motion pin configuration failed: %d", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&cfg->motion_gpio,
 					      GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0) {
-		LOG_ERR("Motion interrupt configuration failed: %d", ret);
+		LOG_ERROR("Motion interrupt configuration failed: %d", ret);
 		return ret;
 	}
 
@@ -273,13 +273,13 @@ static int pat912x_init(const struct device *dev)
 
 	ret = pat912x_configure(dev);
 	if (ret != 0) {
-		LOG_ERR("Device configuration failed: %d", ret);
+		LOG_ERROR("Device configuration failed: %d", ret);
 		return ret;
 	}
 
 	ret = gpio_add_callback_dt(&cfg->motion_gpio, &data->motion_cb);
 	if (ret < 0) {
-		LOG_ERR("Could not set motion callback: %d", ret);
+		LOG_ERROR("Could not set motion callback: %d", ret);
 		return ret;
 	}
 
@@ -288,7 +288,7 @@ static int pat912x_init(const struct device *dev)
 
 	ret = pm_device_runtime_enable(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable runtime power management");
+		LOG_ERROR("Failed to enable runtime power management");
 		return ret;
 	}
 

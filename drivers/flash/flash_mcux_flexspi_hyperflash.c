@@ -342,7 +342,7 @@ static int flash_flexspi_hyperflash_check_vendor_id(const struct device *dev)
 
 	ret = memc_flexspi_transfer(&data->controller, &transfer);
 	if (ret != 0) {
-		LOG_ERR("failed to CFI");
+		LOG_ERROR("failed to CFI");
 		return ret;
 	}
 
@@ -356,13 +356,13 @@ static int flash_flexspi_hyperflash_check_vendor_id(const struct device *dev)
 
 	ret = memc_flexspi_transfer(&data->controller, &transfer);
 	if (ret != 0) {
-		LOG_ERR("failed to read id");
+		LOG_ERROR("failed to read id");
 		return ret;
 	}
 	buffer[1] &= 0xFFFF;
 	/* Check that the data read out is  unicode "QRY" in big-endian order */
 	if ((buffer[0] != 0x52005100) || (buffer[1] != 0x5900)) {
-		LOG_ERR("data read out is wrong!");
+		LOG_ERROR("data read out is wrong!");
 		return -EINVAL;
 	}
 
@@ -377,7 +377,7 @@ static int flash_flexspi_hyperflash_check_vendor_id(const struct device *dev)
 
 	ret = memc_flexspi_transfer(&data->controller, &transfer);
 	if (ret != 0) {
-		LOG_ERR("failed to exit");
+		LOG_ERROR("failed to exit");
 		return ret;
 	}
 
@@ -478,7 +478,7 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 #endif
 		ret = flash_flexspi_hyperflash_write_enable(data, offset);
 		if (ret != 0) {
-			LOG_ERR("failed to enable write");
+			LOG_ERROR("failed to enable write");
 			break;
 		}
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
@@ -488,13 +488,13 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 		ret = flash_flexspi_hyperflash_page_program(data, offset, src, i);
 #endif
 		if (ret != 0) {
-			LOG_ERR("failed to write");
+			LOG_ERROR("failed to write");
 			break;
 		}
 
 		ret = flash_flexspi_hyperflash_wait_bus_busy(data);
 		if (ret != 0) {
-			LOG_ERR("failed to wait bus busy");
+			LOG_ERROR("failed to wait bus busy");
 			break;
 		}
 
@@ -542,12 +542,12 @@ static int flash_flexspi_hyperflash_erase(const struct device *dev, off_t offset
 	}
 
 	if (offset % SPI_HYPERFLASH_SECTOR_SIZE) {
-		LOG_ERR("Invalid offset");
+		LOG_ERROR("Invalid offset");
 		return -EINVAL;
 	}
 
 	if (size % SPI_HYPERFLASH_SECTOR_SIZE) {
-		LOG_ERR("Invalid offset");
+		LOG_ERROR("Invalid offset");
 		return -EINVAL;
 	}
 
@@ -564,7 +564,7 @@ static int flash_flexspi_hyperflash_erase(const struct device *dev, off_t offset
 	for (i = 0; i < num_sectors; i++) {
 		ret = flash_flexspi_hyperflash_write_enable(data, offset);
 		if (ret != 0) {
-			LOG_ERR("failed to write_enable");
+			LOG_ERROR("failed to write_enable");
 			break;
 		}
 
@@ -578,14 +578,14 @@ static int flash_flexspi_hyperflash_erase(const struct device *dev, off_t offset
 
 		ret = memc_flexspi_transfer(&data->controller, &transfer);
 		if (ret != 0) {
-			LOG_ERR("failed to erase");
+			LOG_ERROR("failed to erase");
 			break;
 		}
 
 		/* wait bus busy */
 		ret = flash_flexspi_hyperflash_wait_bus_busy(data);
 		if (ret != 0) {
-			LOG_ERR("failed to wait bus busy");
+			LOG_ERROR("failed to wait bus busy");
 			break;
 		}
 
@@ -638,7 +638,7 @@ static int flash_flexspi_hyperflash_init(const struct device *dev)
 	memcpy(&data->controller, config->controller, sizeof(struct device));
 
 	if (!device_is_ready(&data->controller)) {
-		LOG_ERR("Controller device not ready");
+		LOG_ERROR("Controller device not ready");
 		return -ENODEV;
 	}
 
@@ -648,14 +648,14 @@ static int flash_flexspi_hyperflash_init(const struct device *dev)
 	    (const uint32_t *)flash_flexspi_hyperflash_lut,
 	    sizeof(flash_flexspi_hyperflash_lut) / MEMC_FLEXSPI_CMD_SIZE,
 	    data->port)) {
-		LOG_ERR("Could not set device configuration");
+		LOG_ERROR("Could not set device configuration");
 		return -EINVAL;
 	}
 
 	memc_flexspi_reset(&data->controller);
 
 	if (flash_flexspi_hyperflash_check_vendor_id(dev)) {
-		LOG_ERR("Could not read vendor id");
+		LOG_ERROR("Could not read vendor id");
 		return -EIO;
 	}
 

@@ -121,7 +121,7 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 
 	for (buf = pkt->buffer; buf; buf = buf->frags) {
 		if (otMessageAppend(message, buf->data, buf->len) != OT_ERROR_NONE) {
-			LOG_ERR("Error while appending to otMessage");
+			LOG_ERROR("Error while appending to otMessage");
 			otMessageFree(message);
 			goto exit;
 		}
@@ -129,14 +129,14 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 #if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
 	if (is_ip4) {
 		if (otNat64Send(instance, message) != OT_ERROR_NONE) {
-			LOG_ERR("Error while calling otNat64Send");
+			LOG_ERROR("Error while calling otNat64Send");
 			goto exit;
 		}
 	} else {
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR*/
 
 		if (otIp6Send(instance, message) != OT_ERROR_NONE) {
-			LOG_ERR("Error while calling otIp6Send");
+			LOG_ERROR("Error while calling otIp6Send");
 			goto exit;
 		}
 #if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)

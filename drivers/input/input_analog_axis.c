@@ -176,7 +176,7 @@ static void analog_axis_loop(const struct device *dev)
 
 	err = adc_read(axis_cfg_0->adc.dev, &sequence);
 	if (err < 0) {
-		LOG_ERR("Could not read (%d)", err);
+		LOG_ERROR("Could not read (%d)", err);
 		return;
 	}
 
@@ -241,7 +241,7 @@ static void analog_axis_thread(void *arg1, void *arg2, void *arg3)
 
 		err = adc_channel_setup_dt(&axis_cfg->adc);
 		if (err < 0) {
-			LOG_ERR("Could not setup channel #%d (%d)", i, err);
+			LOG_ERROR("Could not setup channel #%d (%d)", i, err);
 			return;
 		}
 	}
@@ -274,16 +274,14 @@ static int analog_axis_validate(const struct device *dev)
 		const struct analog_axis_channel_config *axis_cfg = &cfg->channel_cfg[i];
 
 		if (axis_0_cfg->adc.dev != axis_cfg->adc.dev) {
-			LOG_ERR("Channels must use the same ADC: %s != %s",
-				axis_0_cfg->adc.dev->name,
-				axis_cfg->adc.dev->name);
+			LOG_ERROR("Channels must use the same ADC: %s != %s",
+				  axis_0_cfg->adc.dev->name, axis_cfg->adc.dev->name);
 			return -EINVAL;
 		}
 
 		if (axis_cfg->adc.channel_id < channel_id) {
-			LOG_ERR("Channel must have increasing id: %d < %d",
-				axis_cfg->adc.channel_id,
-				channel_id);
+			LOG_ERROR("Channel must have increasing id: %d < %d",
+				  axis_cfg->adc.channel_id, channel_id);
 			return -EINVAL;
 		}
 		channel_id = axis_cfg->adc.channel_id;
@@ -316,7 +314,7 @@ static int analog_axis_init(const struct device *dev)
 			      CONFIG_INPUT_ANALOG_AXIS_THREAD_PRIORITY,
 			      0, K_NO_WAIT);
 	if (!tid) {
-		LOG_ERR("thread creation failed");
+		LOG_ERROR("thread creation failed");
 		return -ENODEV;
 	}
 
@@ -333,7 +331,7 @@ static int analog_axis_init(const struct device *dev)
 	pm_device_init_suspended(dev);
 	ret = pm_device_runtime_enable(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable runtime power management");
+		LOG_ERROR("Failed to enable runtime power management");
 		return ret;
 	}
 #endif

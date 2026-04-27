@@ -82,7 +82,7 @@ static void cmd_ieee_csma_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 	LOG_DBG("e: 0x%" PRIx64, e);
 
 	if (e & RF_EventInternalError) {
-		LOG_ERR("Internal error");
+		LOG_ERROR("Internal error");
 	}
 }
 
@@ -102,7 +102,7 @@ static void cmd_ieee_rx_callback(RF_Handle h, RF_CmdHandle ch, RF_EventMask e)
 	}
 
 	if (e & RF_EventInternalError) {
-		LOG_ERR("Internal error");
+		LOG_ERROR("Internal error");
 	}
 
 	if (e & RF_EventRxEntryDone) {
@@ -139,7 +139,7 @@ static int ieee802154_cc13xx_cc26xx_cca(const struct device *dev)
 	status = RF_runImmediateCmd(drv_data->rf_handle,
 		(uint32_t *)&drv_data->cmd_ieee_cca_req);
 	if (status != RF_StatSuccess) {
-		LOG_ERR("Failed to request CCA (0x%x)", status);
+		LOG_ERROR("Failed to request CCA (0x%x)", status);
 		return -EIO;
 	}
 
@@ -207,7 +207,7 @@ static int ieee802154_cc13xx_cc26xx_do_set_channel(const struct device *dev,
 	reason = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_fs,
 			   RF_PriorityNormal, NULL, 0);
 	if (reason != RF_EventLastCmdDone) {
-		LOG_ERR("Failed to set frequency: 0x%" PRIx64, reason);
+		LOG_ERROR("Failed to set frequency: 0x%" PRIx64, reason);
 		ret = -EIO;
 		goto out;
 	}
@@ -219,7 +219,7 @@ static int ieee802154_cc13xx_cc26xx_do_set_channel(const struct device *dev,
 		(RF_Op *)&drv_data->cmd_ieee_rx, RF_PriorityNormal,
 		cmd_ieee_rx_callback, RF_EventRxEntryDone);
 	if (cmd_handle < 0) {
-		LOG_ERR("Failed to post RX command (%d)", cmd_handle);
+		LOG_ERROR("Failed to post RX command (%d)", cmd_handle);
 		ret = -EIO;
 		goto out;
 	}
@@ -288,7 +288,7 @@ ieee802154_cc13xx_cc26xx_filter(const struct device *dev, bool set,
 		(RF_Op *)&drv_data->cmd_ieee_rx, RF_PriorityNormal,
 		cmd_ieee_rx_callback, RF_EventRxEntryDone);
 	if (cmd_handle < 0) {
-		LOG_ERR("Failed to post RX command (%d)", cmd_handle);
+		LOG_ERROR("Failed to post RX command (%d)", cmd_handle);
 		return -EIO;
 	}
 	drv_data->rx_handle = cmd_handle;
@@ -309,13 +309,13 @@ static int ieee802154_cc13xx_cc26xx_set_txpower(const struct device *dev,
 	RF_TxPowerTable_Value power_table_value = RF_TxPowerTable_findValue(
 		(RF_TxPowerTable_Entry *)table, dbm);
 	if (power_table_value.rawValue == RF_TxPowerTable_INVALID_VALUE) {
-		LOG_ERR("RF_TxPowerTable_findValue() failed");
+		LOG_ERROR("RF_TxPowerTable_findValue() failed");
 		return -EINVAL;
 	}
 
 	status = RF_setTxPower(drv_data->rf_handle, power_table_value);
 	if (status != RF_StatSuccess) {
-		LOG_ERR("RF_setTxPower() failed: %d", status);
+		LOG_ERROR("RF_setTxPower() failed: %d", status);
 		return -EIO;
 	}
 
@@ -338,7 +338,7 @@ static int ieee802154_cc13xx_cc26xx_tx(const struct device *dev,
 	int retry = CONFIG_IEEE802154_CC13XX_CC26XX_RADIO_TX_RETRIES;
 
 	if (mode != IEEE802154_TX_MODE_CSMA_CA) {
-		LOG_ERR("TX mode %d not supported", mode);
+		LOG_ERROR("TX mode %d not supported", mode);
 		return -ENOTSUP;
 	}
 
@@ -696,7 +696,7 @@ static int ieee802154_cc13xx_cc26xx_init(const struct device *dev)
 		&rf_mode, (RF_RadioSetup *)&drv_data->cmd_radio_setup,
 		&rf_params);
 	if (drv_data->rf_handle == NULL) {
-		LOG_ERR("RF_open() failed");
+		LOG_ERROR("RF_open() failed");
 		return -EIO;
 	}
 
@@ -715,7 +715,7 @@ static int ieee802154_cc13xx_cc26xx_init(const struct device *dev)
 	reason = RF_runCmd(drv_data->rf_handle, (RF_Op *)&drv_data->cmd_fs,
 		RF_PriorityNormal, NULL, 0);
 	if (reason != RF_EventLastCmdDone) {
-		LOG_ERR("Failed to set frequency: 0x%" PRIx64, reason);
+		LOG_ERROR("Failed to set frequency: 0x%" PRIx64, reason);
 		return -EIO;
 	}
 

@@ -139,7 +139,7 @@ static int lis2mdl_channel_get(const struct device *dev,
 		lis2mdl_channel_get_temp(dev, val);
 		break;
 	default:
-		LOG_ERR("Channel not supported");
+		LOG_ERROR("Channel not supported");
 		return -ENOTSUP;
 	}
 
@@ -158,7 +158,7 @@ static int lis2mdl_config(const struct device *dev, enum sensor_channel chan,
 	case SENSOR_ATTR_OFFSET:
 		return lis2mdl_set_hard_iron(dev, chan, val);
 	default:
-		LOG_ERR("Mag attribute not supported");
+		LOG_ERROR("Mag attribute not supported");
 		return -ENOTSUP;
 	}
 
@@ -178,7 +178,7 @@ static int lis2mdl_attr_set(const struct device *dev,
 	case SENSOR_CHAN_MAGN_XYZ:
 		return lis2mdl_config(dev, chan, attr, val);
 	default:
-		LOG_ERR("attr_set() not supported on %d channel", chan);
+		LOG_ERROR("attr_set() not supported on %d channel", chan);
 		return -ENOTSUP;
 	}
 
@@ -195,20 +195,19 @@ static int get_single_mode_raw_data(const struct device *dev,
 
 	rc = lis2mdl_operating_mode_set(ctx, LIS2MDL_SINGLE_TRIGGER);
 	if (rc) {
-		LOG_ERR("set single mode failed");
+		LOG_ERROR("set single mode failed");
 		return rc;
 	}
 
 	if (k_sem_take(&lis2mdl->fetch_sem, K_MSEC(SAMPLE_FETCH_TIMEOUT_MS))) {
-		LOG_ERR("Magnetometer data not ready within %d ms",
-			SAMPLE_FETCH_TIMEOUT_MS);
+		LOG_ERROR("Magnetometer data not ready within %d ms", SAMPLE_FETCH_TIMEOUT_MS);
 		return -EIO;
 	}
 
 	/* fetch raw data sample */
 	rc = lis2mdl_magnetic_raw_get(ctx, raw_mag);
 	if (rc) {
-		LOG_ERR("Failed to read sample");
+		LOG_ERROR("Failed to read sample");
 		return rc;
 	}
 	return 0;
@@ -225,7 +224,7 @@ static int lis2mdl_sample_fetch_mag(const struct device *dev)
 	if (cfg->single_mode) {
 		rc = get_single_mode_raw_data(dev, raw_mag);
 		if (rc) {
-			LOG_ERR("Failed to read raw data");
+			LOG_ERROR("Failed to read raw data");
 			return rc;
 		}
 		lis2mdl->mag[0] = raw_mag[0];
@@ -243,7 +242,7 @@ static int lis2mdl_sample_fetch_mag(const struct device *dev)
 			 */
 			rc = get_single_mode_raw_data(dev, raw_mag);
 			if (rc) {
-				LOG_ERR("Failed to read raw data");
+				LOG_ERROR("Failed to read raw data");
 				return rc;
 			}
 			lis2mdl->mag[0] += raw_mag[0];
@@ -258,7 +257,7 @@ static int lis2mdl_sample_fetch_mag(const struct device *dev)
 		/* fetch raw data sample */
 		rc = lis2mdl_magnetic_raw_get(ctx, raw_mag);
 		if (rc) {
-			LOG_ERR("Failed to read sample");
+			LOG_ERROR("Failed to read sample");
 			return rc;
 		}
 		lis2mdl->mag[0] = raw_mag[0];
@@ -277,7 +276,7 @@ static int lis2mdl_sample_fetch_temp(const struct device *dev)
 
 	/* fetch raw temperature sample */
 	if (lis2mdl_temperature_raw_get(ctx, &raw_temp) < 0) {
-		LOG_ERR("Failed to read sample");
+		LOG_ERROR("Failed to read sample");
 		return -EIO;
 	}
 
@@ -347,13 +346,13 @@ static int lis2mdl_init(const struct device *dev)
 	}
 
 	if (wai != LIS2MDL_ID) {
-		LOG_ERR("Invalid chip ID: %02x", wai);
+		LOG_ERROR("Invalid chip ID: %02x", wai);
 		return -EINVAL;
 	}
 
 	/* reset sensor configuration */
-	if (lis2mdl_sw_reset(ctx) < 0) {
-		LOG_ERR("s/w reset failed");
+	if (lis2mdl_reset_set(ctx, PROPERTY_ENABLE) < 0) {
+		LOG_ERROR("s/w reset failed");
 		return -EIO;
 	}
 
@@ -368,13 +367,13 @@ static int lis2mdl_init(const struct device *dev)
 
 	/* enable BDU */
 	if (lis2mdl_block_data_update_set(ctx, PROPERTY_ENABLE) < 0) {
-		LOG_ERR("setting bdu failed");
+		LOG_ERROR("setting bdu failed");
 		return -EIO;
 	}
 
 	/* Set Output Data Rate */
 	if (lis2mdl_data_rate_set(ctx, LIS2MDL_ODR_10Hz)) {
-		LOG_ERR("set odr failed");
+		LOG_ERROR("set odr failed");
 		return -EIO;
 	}
 
@@ -382,16 +381,15 @@ static int lis2mdl_init(const struct device *dev)
 		/* Set offset cancellation, common for both single and
 		 * and continuous mode.
 		 */
-		if (lis2mdl_set_rst_mode_set(ctx,
-					LIS2MDL_SENS_OFF_CANC_EVERY_ODR)) {
-			LOG_ERR("reset sensor mode failed");
+		if (lis2mdl_set_rst_mode_set(ctx, LIS2MDL_SENS_OFF_CANC_EVERY_ODR)) {
+			LOG_ERROR("reset sensor mode failed");
 			return -EIO;
 		}
 	}
 
 	/* Enable temperature compensation */
 	if (lis2mdl_offset_temp_comp_set(ctx, PROPERTY_ENABLE)) {
-		LOG_ERR("enable temp compensation failed");
+		LOG_ERROR("enable temp compensation failed");
 		return -EIO;
 	}
 
@@ -402,7 +400,7 @@ static int lis2mdl_init(const struct device *dev)
 		rc = lis2mdl_set_rst_sensor_single_set(ctx,
 							PROPERTY_ENABLE);
 		if (rc) {
-			LOG_ERR("Set offset cancellation failed");
+			LOG_ERROR("Set offset cancellation failed");
 			return rc;
 		}
 	}
@@ -411,14 +409,14 @@ static int lis2mdl_init(const struct device *dev)
 		/* Set drdy on pin 7 */
 		rc = lis2mdl_drdy_on_pin_set(ctx, 1);
 		if (rc) {
-			LOG_ERR("set drdy on pin failed!");
+			LOG_ERROR("set drdy on pin failed!");
 			return rc;
 		}
 
 		/* Reboot sensor after setting the configuration registers */
 		rc = lis2mdl_reboot(ctx);
 		if (rc) {
-			LOG_ERR("Reboot failed.");
+			LOG_ERROR("Reboot failed.");
 			return rc;
 		}
 
@@ -429,7 +427,7 @@ static int lis2mdl_init(const struct device *dev)
 		rc = lis2mdl_operating_mode_set(ctx,
 						LIS2MDL_CONTINUOUS_MODE);
 		if (rc) {
-			LOG_ERR("set continuous mode failed");
+			LOG_ERROR("set continuous mode failed");
 			return rc;
 		}
 	}
@@ -437,7 +435,7 @@ static int lis2mdl_init(const struct device *dev)
 #ifdef CONFIG_LIS2MDL_TRIGGER
 	if (cfg->trig_enabled) {
 		if (lis2mdl_init_interrupt(dev) < 0) {
-			LOG_ERR("Failed to initialize interrupts");
+			LOG_ERROR("Failed to initialize interrupts");
 			return -EIO;
 		}
 	}
@@ -464,14 +462,14 @@ static int lis2mdl_pm_action(const struct device *dev,
 						LIS2MDL_CONTINUOUS_MODE);
 		}
 		if (status) {
-			LOG_ERR("Power up failed");
+			LOG_ERROR("Power up failed");
 		}
 		LOG_DBG("State changed to active");
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		status = lis2mdl_operating_mode_set(ctx, LIS2MDL_POWER_DOWN);
 		if (status) {
-			LOG_ERR("Power down failed");
+			LOG_ERROR("Power down failed");
 		}
 		LOG_DBG("State changed to inactive");
 		break;

@@ -72,8 +72,9 @@ int wdt_sam_convert_timeout(uint32_t timeout, uint32_t sclk)
 	min =  (SAM_PRESCALAR * 1000000) / sclk;
 	max = min * WDT_MAX_VALUE;
 	if ((timeout < min) || (timeout > max)) {
-		LOG_ERR("Invalid timeout value allowed range:"
-			"%d ms to %d ms", min / 1000U, max / 1000U);
+		LOG_ERROR("Invalid timeout value allowed range:"
+			  "%d ms to %d ms",
+			  min / 1000U, max / 1000U);
 		return -EINVAL;
 	}
 
@@ -113,7 +114,7 @@ static int wdt_sam_setup(const struct device *dev, uint8_t options)
 	struct wdt_sam_dev_data *data = dev->data;
 
 	if (!data->timeout_valid) {
-		LOG_ERR("No valid timeouts installed");
+		LOG_ERROR("No valid timeouts installed");
 		return -EINVAL;
 	}
 
@@ -148,7 +149,7 @@ static int wdt_sam_install_timeout(const struct device *dev,
 	struct wdt_sam_dev_data *data = dev->data;
 
 	if (data->timeout_valid) {
-		LOG_ERR("No more timeouts can be installed");
+		LOG_ERROR("No more timeouts can be installed");
 		return -ENOMEM;
 	}
 
@@ -180,7 +181,7 @@ static int wdt_sam_install_timeout(const struct device *dev,
 			wdt_mode = WDT_MR_WDFIEN;   /* WDT fault interrupt. */
 			data->cb = cfg->callback;
 		} else {
-			LOG_ERR("Invalid(NULL) ISR callback passed\n");
+			LOG_ERROR("Invalid(NULL) ISR callback passed\n");
 			return -EINVAL;
 		}
 		break;
@@ -195,7 +196,7 @@ static int wdt_sam_install_timeout(const struct device *dev,
 		break;
 #endif
 	default:
-		LOG_ERR("Unsupported watchdog config Flag\n");
+		LOG_ERROR("Unsupported watchdog config Flag\n");
 		return -ENOTSUP;
 	}
 

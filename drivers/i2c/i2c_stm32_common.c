@@ -52,14 +52,14 @@ int i2c_stm32_activate(const struct device *dev)
 	/* Move pins to active/default state */
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("I2C pinctrl setup failed (%d)", ret);
+		LOG_ERROR("I2C pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
 	/* Enable device clock. */
 	if (clock_control_on(clk,
 			     (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
-		LOG_ERR("i2c: failure enabling clock");
+		LOG_ERROR("i2c: failure enabling clock");
 		return -EIO;
 	}
 
@@ -76,7 +76,7 @@ int i2c_stm32_suspend(const struct device *dev)
 	/* Disable device clock. */
 	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (ret < 0) {
-		LOG_ERR("failure disabling I2C clock");
+		LOG_ERROR("failure disabling I2C clock");
 		return ret;
 	}
 

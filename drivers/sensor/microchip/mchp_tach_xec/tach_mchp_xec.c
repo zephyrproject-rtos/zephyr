@@ -163,7 +163,7 @@ static int tach_xec_init(const struct device *dev)
 	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret != 0) {
-		LOG_ERR("XEC TACH pinctrl init failed (%d)", ret);
+		LOG_ERROR("XEC TACH pinctrl init failed (%d)", ret);
 		return ret;
 	}
 

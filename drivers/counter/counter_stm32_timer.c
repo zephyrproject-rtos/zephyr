@@ -376,7 +376,7 @@ static int counter_stm32_init_timer(const struct device *dev)
 	/* Enable clock and store its speed */
 	r = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (r < 0) {
-		LOG_ERR("Could not initialize clock (%d)", r);
+		LOG_ERROR("Could not initialize clock (%d)", r);
 		return r;
 	}
 
@@ -384,24 +384,24 @@ static int counter_stm32_init_timer(const struct device *dev)
 		/* Enable Timer clock source */
 		r = clock_control_configure(clk, (clock_control_subsys_t)&cfg->pclken[1], NULL);
 		if (r != 0) {
-			LOG_ERR("Could not configure clock (%d)", r);
+			LOG_ERROR("Could not configure clock (%d)", r);
 			return r;
 		}
 
 		r = clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1], &tim_clk);
 		if (r < 0) {
-			LOG_ERR("Timer clock rate get error (%d)", r);
+			LOG_ERROR("Timer clock rate get error (%d)", r);
 			return r;
 		}
 	} else {
-		LOG_ERR("Timer clock source is not specified");
+		LOG_ERROR("Timer clock source is not specified");
 		return -EINVAL;
 	}
 
 	data->freq = tim_clk / (cfg->prescaler + 1U);
 
 	if (!device_is_ready(cfg->reset.dev)) {
-		LOG_ERR("reset controller not ready");
+		LOG_ERROR("reset controller not ready");
 		return -ENODEV;
 	}
 

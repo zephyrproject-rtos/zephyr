@@ -61,8 +61,7 @@ static int prepare_color_buffer(const struct led_info *info, uint8_t *buf,
 			buf[color] = colors[color_idx][2];
 			continue;
 		default:
-			LOG_ERR("Invalid color: %d",
-				info->color_mapping[color]);
+			LOG_ERROR("Invalid color: %d", info->color_mapping[color]);
 			return -EINVAL;
 		}
 	}
@@ -86,7 +85,7 @@ static int run_led_test(const struct device *lp50xx_dev, uint8_t led)
 
 	err = led_get_info(lp50xx_dev, led, &info);
 	if (err < 0) {
-		LOG_ERR("Failed to get LED %d info", led);
+		LOG_ERROR("Failed to get LED %d info", led);
 		return err;
 	}
 
@@ -96,16 +95,16 @@ static int run_led_test(const struct device *lp50xx_dev, uint8_t led)
 
 		err = prepare_color_buffer(info, buf, idx);
 		if (err < 0) {
-			LOG_ERR("Failed to set color buffer, err=%d", err);
+			LOG_ERROR("Failed to set color buffer, err=%d", err);
 			return err;
 		}
 
 		/* Update LED color. */
 		err = led_set_color(lp50xx_dev, led, 3, buf);
 		if (err < 0) {
-			LOG_ERR("Failed to set LED %d color to "
-				"%02x:%02x:%02x, err=%d", led,
-				buf[0], buf[1], buf[2], err);
+			LOG_ERROR("Failed to set LED %d color to "
+				  "%02x:%02x:%02x, err=%d",
+				  led, buf[0], buf[1], buf[2], err);
 			return err;
 		}
 		k_sleep(SLEEP_DELAY);
@@ -113,7 +112,7 @@ static int run_led_test(const struct device *lp50xx_dev, uint8_t led)
 		/* Turn LED on. */
 		err = led_on(lp50xx_dev, led);
 		if (err < 0) {
-			LOG_ERR("Failed to turn LED %d on, err=%d", led, err);
+			LOG_ERROR("Failed to turn LED %d on, err=%d", led, err);
 			return err;
 		}
 		k_sleep(SLEEP_DELAY);
@@ -121,7 +120,7 @@ static int run_led_test(const struct device *lp50xx_dev, uint8_t led)
 		/* Turn LED off. */
 		err = led_off(lp50xx_dev, led);
 		if (err < 0) {
-			LOG_ERR("Failed to turn LED %d off, err=%d", led, err);
+			LOG_ERROR("Failed to turn LED %d off, err=%d", led, err);
 			return err;
 		}
 		k_sleep(SLEEP_DELAY);
@@ -130,8 +129,9 @@ static int run_led_test(const struct device *lp50xx_dev, uint8_t led)
 		for (level = 0; level <= MAX_BRIGHTNESS; level++) {
 			err = led_set_brightness(lp50xx_dev, led, level);
 			if (err < 0) {
-				LOG_ERR("Failed to set LED %d brightness to %d"
-					", err=%d\n", led, level, err);
+				LOG_ERROR("Failed to set LED %d brightness to %d"
+					  ", err=%d\n",
+					  led, level, err);
 				return err;
 			}
 			k_sleep(FADE_DELAY);
@@ -141,7 +141,7 @@ static int run_led_test(const struct device *lp50xx_dev, uint8_t led)
 		/* Turn LED off. */
 		err = led_off(lp50xx_dev, led);
 		if (err < 0) {
-			LOG_ERR("Failed to turn LED %d off, err=%d", led, err);
+			LOG_ERROR("Failed to turn LED %d off, err=%d", led, err);
 			return err;
 		}
 		k_sleep(SLEEP_DELAY);
@@ -184,8 +184,7 @@ static int run_channel_test(const struct device *lp50xx_dev,
 			col = &buffer[info->index * 3];
 			err = prepare_color_buffer(info, col, idx);
 			if (err < 0) {
-				LOG_ERR("Failed to set color buffer, err=%d",
-					err);
+				LOG_ERROR("Failed to set color buffer, err=%d", err);
 				return err;
 			}
 		}
@@ -195,9 +194,9 @@ static int run_channel_test(const struct device *lp50xx_dev,
 					 max_leds,
 					 buffer);
 		if (err < 0) {
-			LOG_ERR("Failed to write channels, start=%d num=%d"
-				" err=%d\n", color_chan,
-				LP50XX_COLORS_PER_LED * max_leds, err);
+			LOG_ERROR("Failed to write channels, start=%d num=%d"
+				  " err=%d\n",
+				  color_chan, LP50XX_COLORS_PER_LED * max_leds, err);
 			return err;
 		}
 		k_sleep(SLEEP_DELAY);
@@ -211,9 +210,9 @@ static int run_channel_test(const struct device *lp50xx_dev,
 					 bright_chan,
 					 max_leds, buffer);
 		if (err < 0) {
-			LOG_ERR("Failed to write channels, start=%d num=%d"
-				" err=%d\n", bright_chan,
-				max_leds, err);
+			LOG_ERROR("Failed to write channels, start=%d num=%d"
+				  " err=%d\n",
+				  bright_chan, max_leds, err);
 			return err;
 		}
 		k_sleep(SLEEP_DELAY);
@@ -226,9 +225,9 @@ static int run_channel_test(const struct device *lp50xx_dev,
 					 bright_chan,
 					 max_leds, buffer);
 		if (err < 0) {
-			LOG_ERR("Failed to write channels, start=%d num=%d"
-				" err=%d\n", bright_chan,
-				max_leds, err);
+			LOG_ERROR("Failed to write channels, start=%d num=%d"
+				  " err=%d\n",
+				  bright_chan, max_leds, err);
 			return err;
 		}
 		k_sleep(SLEEP_DELAY);
@@ -242,10 +241,9 @@ static int run_channel_test(const struct device *lp50xx_dev,
 					bright_chan,
 					max_leds, buffer);
 			if (err < 0) {
-				LOG_ERR("Failed to write channels, start=%d"
-					" num=%d err=%d\n",
-					bright_chan,
-					max_leds, err);
+				LOG_ERROR("Failed to write channels, start=%d"
+					  " num=%d err=%d\n",
+					  bright_chan, max_leds, err);
 				return err;
 			}
 			k_sleep(FADE_DELAY);
@@ -260,9 +258,9 @@ static int run_channel_test(const struct device *lp50xx_dev,
 					 bright_chan,
 					 max_leds, buffer);
 		if (err < 0) {
-			LOG_ERR("Failed to write channels, start=%d "
-				"num=%d err=%d\n", bright_chan,
-				max_leds, err);
+			LOG_ERROR("Failed to write channels, start=%d "
+				  "num=%d err=%d\n",
+				  bright_chan, max_leds, err);
 			return err;
 		}
 		k_sleep(SLEEP_DELAY);
@@ -310,7 +308,7 @@ static int run_test(const struct device *const lp50xx_dev,
 
 	num_leds = led;
 	if (!num_leds) {
-		LOG_ERR("No LEDs found");
+		LOG_ERROR("No LEDs found");
 		return 0;
 	}
 
@@ -346,8 +344,7 @@ int main(void)
 				 LP50XX_LED_BRIGHT_CHAN_BASE,
 				 LP5012_LED_COL_CHAN_BASE);
 		} else {
-			LOG_ERR("LED controller %s is not ready",
-				lp50xx_dev->name);
+			LOG_ERROR("LED controller %s is not ready", lp50xx_dev->name);
 		}
 	}
 
@@ -362,8 +359,7 @@ int main(void)
 				 LP50XX_LED_BRIGHT_CHAN_BASE,
 				 LP5012_LED_COL_CHAN_BASE);
 		} else {
-			LOG_ERR("LED controller %s is not ready",
-				lp50xx_dev->name);
+			LOG_ERROR("LED controller %s is not ready", lp50xx_dev->name);
 		}
 	}
 
@@ -378,8 +374,7 @@ int main(void)
 				 LP50XX_LED_BRIGHT_CHAN_BASE,
 				 LP5024_LED_COL_CHAN_BASE);
 		} else {
-			LOG_ERR("LED controller %s is not ready",
-				lp50xx_dev->name);
+			LOG_ERROR("LED controller %s is not ready", lp50xx_dev->name);
 		}
 	}
 
@@ -394,8 +389,7 @@ int main(void)
 				 LP50XX_LED_BRIGHT_CHAN_BASE,
 				 LP5024_LED_COL_CHAN_BASE);
 		} else {
-			LOG_ERR("LED controller %s is not ready",
-				lp50xx_dev->name);
+			LOG_ERROR("LED controller %s is not ready", lp50xx_dev->name);
 		}
 	}
 
@@ -410,8 +404,7 @@ int main(void)
 				 LP50XX_LED_BRIGHT_CHAN_BASE,
 				 LP5036_LED_COL_CHAN_BASE);
 		} else {
-			LOG_ERR("LED controller %s is not ready",
-				lp50xx_dev->name);
+			LOG_ERROR("LED controller %s is not ready", lp50xx_dev->name);
 		}
 	}
 
@@ -426,13 +419,12 @@ int main(void)
 				 LP50XX_LED_BRIGHT_CHAN_BASE,
 				 LP5036_LED_COL_CHAN_BASE);
 		} else {
-			LOG_ERR("LED controller %s is not ready",
-				lp50xx_dev->name);
+			LOG_ERROR("LED controller %s is not ready", lp50xx_dev->name);
 		}
 	}
 
 	if (!found) {
-		LOG_ERR("No LP50XX LED controller found");
+		LOG_ERROR("No LP50XX LED controller found");
 	}
 	return 0;
 }

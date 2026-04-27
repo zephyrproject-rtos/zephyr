@@ -730,7 +730,7 @@ static int ifx_cat1_uart_async_tx(const struct device *dev, const uint8_t *tx_da
 	/* Configure dma to transfer */
 	err = ifx_cat1_uart_async_dma_config_buffer(dev, true);
 	if (err) {
-		LOG_ERR("Error Tx DMA configure (%d)", err);
+		LOG_ERROR("Error Tx DMA configure (%d)", err);
 		goto exit;
 	}
 
@@ -757,13 +757,13 @@ static int ifx_cat1_uart_async_tx_abort(const struct device *dev)
 
 	err = dma_stop(data->async.dma_tx.dma_dev, data->async.dma_tx.dma_channel);
 	if (err) {
-		LOG_ERR("Error stopping Tx DMA (%d)", err);
+		LOG_ERROR("Error stopping Tx DMA (%d)", err);
 		goto unlock;
 	}
 
 	err = dma_get_status(data->async.dma_tx.dma_dev, data->async.dma_tx.dma_channel, &stat);
 	if (err) {
-		LOG_ERR("Error stopping Tx DMA (%d)", err);
+		LOG_ERROR("Error stopping Tx DMA (%d)", err);
 		goto unlock;
 	}
 
@@ -953,7 +953,7 @@ static int ifx_cat1_uart_async_rx_enable(const struct device *dev, uint8_t *rx_d
 	/* Configure dma to transfer */
 	err = ifx_cat1_uart_async_dma_config_buffer(dev, false);
 	if (err) {
-		LOG_ERR("Error Rx DMA configure (%d)", err);
+		LOG_ERROR("Error Rx DMA configure (%d)", err);
 		goto unlock;
 	}
 

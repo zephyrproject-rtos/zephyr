@@ -446,8 +446,8 @@ static int udc_stm32_tx(const struct device *dev, struct udc_ep_config *ep_cfg,
 
 	status = hal_udc_set_endpoint_transmit(&priv->pcd, ep_cfg->addr, data, len);
 	if (status != HAL_OK) {
-		LOG_ERR("hal_udc_set_endpoint_transmit failed(0x%02x), %d",
-			ep_cfg->addr, (int)status);
+		LOG_ERROR("hal_udc_set_endpoint_transmit failed(0x%02x), %d", ep_cfg->addr,
+			  (int)status);
 		return -EIO;
 	}
 
@@ -508,8 +508,8 @@ static int udc_stm32_initiate_ep_rx(const struct device *dev,
 
 	status = hal_udc_set_endpoint_receive(&priv->pcd, ep_cfg->addr, buf->data, rx_size);
 	if (status != HAL_OK) {
-		LOG_ERR("hal_udc_set_endpoint_receive failed(0x%02x), %d",
-			ep_cfg->addr, (int)status);
+		LOG_ERROR("hal_udc_set_endpoint_receive failed(0x%02x), %d", ep_cfg->addr,
+			  (int)status);
 		return -EIO;
 	}
 
@@ -528,13 +528,13 @@ static int udc_stm32_clock_enable(const struct device *dev)
 
 	if (cfg->num_clocks > 1) {
 		if (clock_control_configure(clk, &cfg->pclken[1], NULL) != 0) {
-			LOG_ERR("Could not select USB domain clock");
+			LOG_ERROR("Could not select USB domain clock");
 			return -EIO;
 		}
 	}
 
 	if (clock_control_on(clk, &cfg->pclken[0]) != 0) {
-		LOG_ERR("Unable to enable USB clock");
+		LOG_ERROR("Unable to enable USB clock");
 		return -EIO;
 	}
 
@@ -542,12 +542,12 @@ static int udc_stm32_clock_enable(const struct device *dev)
 		uint32_t usb_clock_rate;
 
 		if (clock_control_get_rate(clk, &cfg->pclken[1], &usb_clock_rate) != 0) {
-			LOG_ERR("Failed to get USB domain clock rate");
+			LOG_ERROR("Failed to get USB domain clock rate");
 			return -EIO;
 		}
 
 		if (usb_clock_rate != MHZ(48)) {
-			LOG_ERR("USB Clock is not 48MHz (%d)", usb_clock_rate);
+			LOG_ERROR("USB Clock is not 48MHz (%d)", usb_clock_rate);
 			return -ENOTSUP;
 		}
 	}
@@ -566,7 +566,7 @@ static int udc_stm32_clock_enable(const struct device *dev)
 	if (cfg->phy != NULL) {
 		err = cfg->phy->enable(cfg->phy);
 		if (err != 0) {
-			LOG_ERR("Failed to enable USB PHY: %d", err);
+			LOG_ERROR("Failed to enable USB PHY: %d", err);
 			return err;
 		}
 	}
@@ -584,13 +584,13 @@ static int udc_stm32_clock_disable(const struct device *dev)
 	if (cfg->phy != NULL) {
 		err = cfg->phy->disable(cfg->phy);
 		if (err != 0) {
-			LOG_ERR("Failed to disable USB PHY: %d", err);
+			LOG_ERROR("Failed to disable USB PHY: %d", err);
 			return err;
 		}
 	}
 
 	if (clock_control_off(clk, &cfg->pclken[0]) != 0) {
-		LOG_ERR("Unable to disable USB clock");
+		LOG_ERROR("Unable to disable USB clock");
 		return -EIO;
 	}
 
@@ -610,7 +610,7 @@ void HAL_PCD_DataOutStageCallback(stm32_pcd_handle_t *hpcd, uint8_t epnum)
 
 	err = k_msgq_put(&priv->msgq_data, &msg, K_NO_WAIT);
 	if (err != 0) {
-		LOG_ERR("UDC Message queue overrun");
+		LOG_ERROR("UDC Message queue overrun");
 	}
 }
 
@@ -627,7 +627,7 @@ static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint
 
 	buf = udc_buf_peek(ep_cfg);
 	if (unlikely(buf == NULL)) {
-		LOG_ERR("ep 0x%02x queue is empty", ep);
+		LOG_ERROR("ep 0x%02x queue is empty", ep);
 		udc_ep_set_busy(ep_cfg, false);
 		return;
 	}
@@ -679,7 +679,7 @@ void HAL_PCD_DataInStageCallback(stm32_pcd_handle_t *hpcd, uint8_t epnum)
 
 	err = k_msgq_put(&priv->msgq_data, &msg, K_NO_WAIT);
 	if (err != 0) {
-		LOG_ERR("UDC Message queue overrun");
+		LOG_ERROR("UDC Message queue overrun");
 	}
 }
 
@@ -706,7 +706,7 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 
 		status = hal_udc_set_endpoint_transmit(&priv->pcd, ep, buf->data, len);
 		if (status != HAL_OK) {
-			LOG_ERR("hal_udc_set_endpoint_transmit failed: %d", status);
+			LOG_ERROR("hal_udc_set_endpoint_transmit failed: %d", status);
 			__ASSERT_NO_MSG(0);
 			return;
 		}
@@ -721,7 +721,7 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 		udc_ep_buf_clear_zlp(buf);
 		status = hal_udc_set_endpoint_transmit(&priv->pcd, ep, buf->data, 0);
 		if (status != HAL_OK) {
-			LOG_ERR("hal_udc_set_endpoint_transmit failed: %d", status);
+			LOG_ERROR("hal_udc_set_endpoint_transmit failed: %d", status);
 			__ASSERT_NO_MSG(0);
 		}
 
@@ -748,7 +748,7 @@ void HAL_PCD_SetupStageCallback(stm32_pcd_handle_t *hpcd)
 	err = k_msgq_put(&priv->msgq_data, &msg, K_NO_WAIT);
 
 	if (err < 0) {
-		LOG_ERR("UDC Message queue overrun");
+		LOG_ERROR("UDC Message queue overrun");
 	}
 }
 
@@ -829,7 +829,7 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 	}
 
 	if (priv->occupied_mem + size >= cfg->dram_size) {
-		LOG_ERR("Unable to allocate FIFO for 0x%02x", ep_cfg->addr);
+		LOG_ERROR("Unable to allocate FIFO for 0x%02x", ep_cfg->addr);
 		return -ENOMEM;
 	}
 
@@ -929,7 +929,7 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 	}
 
 	if (cfg->dram_size - priv->occupied_mem < words * 4) {
-		LOG_ERR("Unable to allocate FIFO for 0x%02x", ep_cfg->addr);
+		LOG_ERROR("Unable to allocate FIFO for 0x%02x", ep_cfg->addr);
 		return -ENOMEM;
 	}
 
@@ -1009,12 +1009,12 @@ int udc_stm32_init(const struct device *dev)
 
 	err = stm32_usb_pwr_enable();
 	if (err != 0) {
-		LOG_ERR("Error enabling USB power: %d", err);
+		LOG_ERROR("Error enabling USB power: %d", err);
 		return err;
 	}
 
 	if (udc_stm32_clock_enable(dev) < 0) {
-		LOG_ERR("Error enabling clock(s)");
+		LOG_ERROR("Error enabling clock(s)");
 		return -EIO;
 	}
 
@@ -1028,7 +1028,7 @@ int udc_stm32_init(const struct device *dev)
 	priv->pcd.endpoints_nbr = cfg->num_endpoints;
 	status = HAL_PCD_Init(&priv->pcd, priv->pcd.instance);
 	if (status != HAL_OK) {
-		LOG_ERR("PCD_Init failed, %d", (int)status);
+		LOG_ERROR("PCD_Init failed, %d", (int)status);
 		return -EIO;
 	}
 
@@ -1037,7 +1037,7 @@ int udc_stm32_init(const struct device *dev)
 	pcd_cfg.sof_enable = IS_ENABLED(CONFIG_UDC_ENABLE_SOF);
 	status = HAL_PCD_SetConfig(&priv->pcd, &pcd_cfg);
 	if (status != HAL_OK) {
-		LOG_ERR("PCD Config failed, %d", (int)status);
+		LOG_ERROR("PCD Config failed, %d", (int)status);
 		return -EIO;
 	}
 #else /* CONFIG_STM32_HAL2 */
@@ -1050,7 +1050,7 @@ int udc_stm32_init(const struct device *dev)
 
 	status = HAL_PCD_Init(&priv->pcd);
 	if (status != HAL_OK) {
-		LOG_ERR("PCD_Init failed, %d", (int)status);
+		LOG_ERROR("PCD_Init failed, %d", (int)status);
 		return -EIO;
 	}
 #endif /* CONFIG_STM32_HAL2 */
@@ -1075,7 +1075,7 @@ static int udc_stm32_enable(const struct device *dev)
 
 	status = HAL_PCD_Start(&priv->pcd);
 	if (status != HAL_OK) {
-		LOG_ERR("PCD_Start failed, %d", (int)status);
+		LOG_ERROR("PCD_Start failed, %d", (int)status);
 		return -EIO;
 	}
 
@@ -1083,7 +1083,7 @@ static int udc_stm32_enable(const struct device *dev)
 				     USB_EP_TYPE_CONTROL,
 				     UDC_STM32_EP0_MAX_PACKET_SIZE, 0);
 	if (ret != 0) {
-		LOG_ERR("Failed enabling ep 0x%02x", USB_CONTROL_EP_OUT);
+		LOG_ERROR("Failed enabling ep 0x%02x", USB_CONTROL_EP_OUT);
 		return ret;
 	}
 
@@ -1091,7 +1091,7 @@ static int udc_stm32_enable(const struct device *dev)
 				     USB_EP_TYPE_CONTROL,
 				     UDC_STM32_EP0_MAX_PACKET_SIZE, 0);
 	if (ret != 0) {
-		LOG_ERR("Failed enabling ep 0x%02x", USB_CONTROL_EP_IN);
+		LOG_ERROR("Failed enabling ep 0x%02x", USB_CONTROL_EP_IN);
 		return ret;
 	}
 
@@ -1109,18 +1109,18 @@ static int udc_stm32_disable(const struct device *dev)
 	irq_disable(cfg->irqn);
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT) != 0) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN) != 0) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
 	status = HAL_PCD_Stop(&priv->pcd);
 	if (status != HAL_OK) {
-		LOG_ERR("PCD_Stop failed, %d", (int)status);
+		LOG_ERROR("PCD_Stop failed, %d", (int)status);
 		return -EIO;
 	}
 
@@ -1138,19 +1138,19 @@ static int udc_stm32_shutdown(const struct device *dev)
 #else /* CONFIG_STM32_HAL2 */
 	stm32_status_t status = HAL_PCD_DeInit(&priv->pcd);
 	if (status != HAL_OK) {
-		LOG_ERR("PCD_DeInit failed, %d", (int)status);
+		LOG_ERROR("PCD_DeInit failed, %d", (int)status);
 		/* continue anyway */
 	}
 #endif /* CONFIG_STM32_HAL2 */
 
 	if (udc_stm32_clock_disable(dev) < 0) {
-		LOG_ERR("Error disabling clock(s)");
+		LOG_ERROR("Error disabling clock(s)");
 		/* continue anyway */
 	}
 
 	err = stm32_usb_pwr_disable();
 	if (err != 0) {
-		LOG_ERR("Error disabling USB power: %d", err);
+		LOG_ERROR("Error disabling USB power: %d", err);
 		/* continue anyway */
 	}
 
@@ -1170,8 +1170,7 @@ static int udc_stm32_set_address(const struct device *dev, const uint8_t addr)
 
 	status = hal_udc_set_device_address(&priv->pcd, addr);
 	if (status != HAL_OK) {
-		LOG_ERR("hal_udc_set_device_address failed(0x%02x), %d",
-			addr, (int)status);
+		LOG_ERROR("hal_udc_set_device_address failed(0x%02x), %d", addr, (int)status);
 		return -EIO;
 	}
 
@@ -1185,7 +1184,7 @@ static int udc_stm32_host_wakeup(const struct device *dev)
 
 	status = hal_udc_remote_wakeup_start(&priv->pcd);
 	if (status != HAL_OK) {
-		LOG_ERR("hal_udc_remote_wakeup_start, %d", (int)status);
+		LOG_ERROR("hal_udc_remote_wakeup_start, %d", (int)status);
 		return -EIO;
 	}
 
@@ -1238,8 +1237,7 @@ static int udc_stm32_ep_enable(const struct device *dev,
 	status = hal_udc_open_endpoint(&priv->pcd, ep_cfg->addr,
 				       udc_mps_ep_size(ep_cfg), ep_type);
 	if (status != HAL_OK) {
-		LOG_ERR("hal_udc_open_endpoint failed(0x%02x), %d",
-			ep_cfg->addr, (int)status);
+		LOG_ERROR("hal_udc_open_endpoint failed(0x%02x), %d", ep_cfg->addr, (int)status);
 		return -EIO;
 	}
 
@@ -1256,8 +1254,7 @@ static int udc_stm32_ep_disable(const struct device *dev,
 
 	status = hal_udc_close_endpoint(&priv->pcd, ep_cfg->addr);
 	if (status != HAL_OK) {
-		LOG_ERR("hal_udc_close_endpoint failed(0x%02x), %d",
-			ep_cfg->addr, (int)status);
+		LOG_ERROR("hal_udc_close_endpoint failed(0x%02x), %d", ep_cfg->addr, (int)status);
 		return -EIO;
 	}
 
@@ -1274,8 +1271,8 @@ static int udc_stm32_ep_set_halt(const struct device *dev,
 
 	status = hal_udc_set_endpoint_stall(&priv->pcd, ep_cfg->addr);
 	if (status != HAL_OK) {
-		LOG_ERR("hal_udc_set_endpoint_stall failed(0x%02x), %d",
-			ep_cfg->addr, (int)status);
+		LOG_ERROR("hal_udc_set_endpoint_stall failed(0x%02x), %d", ep_cfg->addr,
+			  (int)status);
 		return -EIO;
 	}
 
@@ -1299,8 +1296,8 @@ static int udc_stm32_ep_clear_halt(const struct device *dev,
 
 	status = hal_udc_clear_endpoint_stall(&priv->pcd, ep_cfg->addr);
 	if (status != HAL_OK) {
-		LOG_ERR("hal_udc_clear_endpoint_stall failed(0x%02x), %d",
-			ep_cfg->addr, (int)status);
+		LOG_ERROR("hal_udc_clear_endpoint_stall failed(0x%02x), %d", ep_cfg->addr,
+			  (int)status);
 		return -EIO;
 	}
 
@@ -1443,7 +1440,7 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 
 		err = udc_register_ep(dev, cfg->out_eps + i);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}
@@ -1458,7 +1455,7 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 
 		err = udc_register_ep(dev, cfg->in_eps + i);
 		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return err;
 		}
 	}
@@ -1491,7 +1488,7 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 
 	/* Ignore -ENOENT returned on series without pinctrl */
 	if (err < 0 && err != -ENOENT) {
-		LOG_ERR("USB pinctrl setup failed (%d)", err);
+		LOG_ERROR("USB pinctrl setup failed (%d)", err);
 		return err;
 	}
 
@@ -1504,18 +1501,18 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 	if (LL_APB2_GRP1_IsEnabledClock(LL_APB2_GRP1_PERIPH_SYSCFG)) {
 		LL_SYSCFG_EnableRemapIT_USB();
 	} else {
-		LOG_ERR("System Configuration Controller clock is "
-			"disabled. Unable to enable IRQ remapping.");
+		LOG_ERROR("System Configuration Controller clock is "
+			  "disabled. Unable to enable IRQ remapping.");
 	}
 #endif
 
 	if (cfg->ulpi_reset_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->ulpi_reset_gpio)) {
-			LOG_ERR("Reset GPIO device not ready");
+			LOG_ERROR("Reset GPIO device not ready");
 			return -EINVAL;
 		}
 		if (gpio_pin_configure_dt(&cfg->ulpi_reset_gpio, GPIO_OUTPUT_INACTIVE) != 0) {
-			LOG_ERR("Couldn't configure reset pin");
+			LOG_ERROR("Couldn't configure reset pin");
 			return -EIO;
 		}
 	}

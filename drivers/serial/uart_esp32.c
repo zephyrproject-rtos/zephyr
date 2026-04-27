@@ -775,7 +775,7 @@ static int uart_esp32_async_tx_abort(const struct device *dev)
 
 	err = dma_stop(config->dma_dev, config->tx_dma_channel);
 	if (err) {
-		LOG_ERR("Error stopping Tx DMA (%d)", err);
+		LOG_ERROR("Error stopping Tx DMA (%d)", err);
 		goto unlock;
 	}
 
@@ -882,19 +882,19 @@ static int uart_esp32_async_tx(const struct device *dev, const uint8_t *buf, siz
 	unsigned int key = irq_lock();
 
 	if (config->tx_dma_channel == 0xFF) {
-		LOG_ERR("Tx DMA channel is not configured");
+		LOG_ERROR("Tx DMA channel is not configured");
 		err = -ENOTSUP;
 		goto unlock;
 	}
 
 	err = dma_get_status(config->dma_dev, config->tx_dma_channel, &dma_status);
 	if (err) {
-		LOG_ERR("Unable to get Tx status (%d)", err);
+		LOG_ERROR("Unable to get Tx status (%d)", err);
 		goto unlock;
 	}
 
 	if (dma_status.busy) {
-		LOG_ERR("Tx DMA Channel is busy");
+		LOG_ERROR("Tx DMA Channel is busy");
 		err = -EBUSY;
 		goto unlock;
 	}
@@ -913,7 +913,7 @@ static int uart_esp32_async_tx(const struct device *dev, const uint8_t *buf, siz
 
 	err = dma_config(config->dma_dev, config->tx_dma_channel, &dma_cfg);
 	if (err) {
-		LOG_ERR("Error configuring Tx DMA (%d)", err);
+		LOG_ERROR("Error configuring Tx DMA (%d)", err);
 		goto unlock;
 	}
 
@@ -925,7 +925,7 @@ static int uart_esp32_async_tx(const struct device *dev, const uint8_t *buf, siz
 
 	err = dma_start(config->dma_dev, config->tx_dma_channel);
 	if (err) {
-		LOG_ERR("Error starting Tx DMA (%d)", err);
+		LOG_ERROR("Error starting Tx DMA (%d)", err);
 		goto unlock;
 	}
 
@@ -946,18 +946,18 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	struct uart_event evt = {0};
 
 	if (config->rx_dma_channel == 0xFF) {
-		LOG_ERR("Rx DMA channel is not configured");
+		LOG_ERROR("Rx DMA channel is not configured");
 		return -ENOTSUP;
 	}
 
 	err = dma_get_status(config->dma_dev, config->rx_dma_channel, &dma_status);
 	if (err) {
-		LOG_ERR("Unable to get Rx status (%d)", err);
+		LOG_ERROR("Unable to get Rx status (%d)", err);
 		return err;
 	}
 
 	if (dma_status.busy) {
-		LOG_ERR("Rx DMA Channel is busy");
+		LOG_ERROR("Rx DMA Channel is busy");
 		return -EBUSY;
 	}
 
@@ -978,7 +978,7 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 
 	err = dma_config(config->dma_dev, config->rx_dma_channel, &dma_cfg);
 	if (err) {
-		LOG_ERR("Error configuring Rx DMA (%d)", err);
+		LOG_ERROR("Error configuring Rx DMA (%d)", err);
 		goto unlock;
 	}
 
@@ -990,7 +990,7 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 
 	err = dma_start(config->dma_dev, config->rx_dma_channel);
 	if (err) {
-		LOG_ERR("Error starting Rx DMA (%d)", err);
+		LOG_ERROR("Error starting Rx DMA (%d)", err);
 		goto unlock;
 	}
 
@@ -1052,7 +1052,7 @@ static int uart_esp32_async_rx_disable(const struct device *dev)
 
 	err = dma_stop(config->dma_dev, config->rx_dma_channel);
 	if (err) {
-		LOG_ERR("Error stopping Rx DMA (%d)", err);
+		LOG_ERROR("Error stopping Rx DMA (%d)", err);
 		goto unlock;
 	}
 
@@ -1119,7 +1119,7 @@ static int uart_esp32_pm_action(const struct device *dev, enum pm_device_action 
 
 		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 		if (ret) {
-			LOG_ERR("Failed to configure UART pins (%d)", ret);
+			LOG_ERROR("Failed to configure UART pins (%d)", ret);
 			return ret;
 		}
 		break;
@@ -1154,7 +1154,7 @@ static int uart_esp32_init(const struct device *dev)
 
 	ret = uart_esp32_configure(dev, &data->uart_config);
 	if (ret < 0) {
-		LOG_ERR("Error configuring UART (%d)", ret);
+		LOG_ERROR("Error configuring UART (%d)", ret);
 		return ret;
 	}
 
@@ -1164,14 +1164,14 @@ static int uart_esp32_init(const struct device *dev)
 				     ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
 			     (intr_handler_t)uart_esp32_isr, (void *)dev, NULL);
 	if (ret < 0) {
-		LOG_ERR("Error allocating UART interrupt (%d)", ret);
+		LOG_ERROR("Error allocating UART interrupt (%d)", ret);
 		return ret;
 	}
 #endif
 #if CONFIG_UART_ASYNC_API
 	if (config->dma_dev) {
 		if (!device_is_ready(config->dma_dev)) {
-			LOG_ERR("DMA device is not ready");
+			LOG_ERROR("DMA device is not ready");
 			return -ENODEV;
 		}
 

@@ -64,8 +64,8 @@ static int handle_sequence(const struct bt_mesh_model *model,
 	while (buf->len > 0) {
 		err = bt_mesh_op_agg_decode_msg(&msg, buf);
 		if (err) {
-			LOG_ERR("Unable to parse Opcodes Aggregator Sequence message (err %d)",
-				err);
+			LOG_ERROR("Unable to parse Opcodes Aggregator Sequence message (err %d)",
+				  err);
 			return err;
 		}
 	}
@@ -102,7 +102,7 @@ send:
 	srv.ctx.initialized = false;
 	err = bt_mesh_model_send(model, ctx, srv.ctx.sdu, NULL, NULL);
 	if (err) {
-		LOG_ERR("Unable to send Opcodes Aggregator Status");
+		LOG_ERROR("Unable to send Opcodes Aggregator Status");
 		return err;
 	}
 
@@ -117,7 +117,7 @@ const struct bt_mesh_model_op _bt_mesh_op_agg_srv_op[] = {
 static int op_agg_srv_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
-		LOG_ERR("Opcodes Aggregator Server only allowed in primary element");
+		LOG_ERROR("Opcodes Aggregator Server only allowed in primary element");
 		return -EINVAL;
 	}
 

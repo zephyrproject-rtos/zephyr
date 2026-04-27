@@ -109,7 +109,7 @@ static int rts5912_kbd_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure KSI and KSO pins: %d", ret);
+		LOG_ERROR("Failed to configure KSI and KSO pins: %d", ret);
 		return ret;
 	}
 
@@ -120,7 +120,7 @@ static int rts5912_kbd_init(const struct device *dev)
 
 	ret = clock_control_on(config->clk_dev, (clock_control_subsys_t)&config->sccon_cfg);
 	if (ret != 0) {
-		LOG_ERR("kbd clock power on fail: %d", ret);
+		LOG_ERROR("kbd clock power on fail: %d", ret);
 		return ret;
 	}
 
@@ -167,7 +167,7 @@ static int input_kbd_matrix_pm_action_suspend(const struct device *dev)
 
 	ret = clock_control_off(config->clk_dev, (clock_control_subsys_t)&config->sccon_cfg);
 	if (ret != 0) {
-		LOG_ERR("clock_control_off failed: %d", ret);
+		LOG_ERROR("clock_control_off failed: %d", ret);
 		return ret;
 	}
 	inst->int_en = 0;
@@ -187,7 +187,7 @@ static int input_kbd_matrix_pm_action_suspend(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
 	if (ret < 0) {
-		LOG_ERR("pinctrl_apply_state failed: %d", ret);
+		LOG_ERROR("pinctrl_apply_state failed: %d", ret);
 		return ret;
 	}
 
@@ -205,7 +205,7 @@ static int input_kbd_matrix_pm_action_resume(const struct device *dev)
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("pinctrl_apply_state failed: %d", ret);
+		LOG_ERROR("pinctrl_apply_state failed: %d", ret);
 		return ret;
 	}
 	inst->ctrl |= KBM_CTRL_KSOTYPE_Msk;
@@ -222,7 +222,7 @@ static int input_kbd_matrix_pm_action_resume(const struct device *dev)
 	inst->int_en |= ksi_mask;
 	ret = clock_control_on(config->clk_dev, (clock_control_subsys_t)&config->sccon_cfg);
 	if (ret != 0) {
-		LOG_ERR("clock_control_on failed: %d", ret);
+		LOG_ERROR("clock_control_on failed: %d", ret);
 		return ret;
 	}
 
@@ -238,24 +238,24 @@ static int input_kbd_matrix_pm_action_rts5912(const struct device *dev,
 	case PM_DEVICE_ACTION_RESUME:
 		ret = input_kbd_matrix_pm_action_resume(dev);
 		if (ret != 0) {
-			LOG_ERR("kbd rts5912 resume fail: %d", ret);
+			LOG_ERROR("kbd rts5912 resume fail: %d", ret);
 			return ret;
 		}
 		ret = input_kbd_matrix_pm_action(dev, action);
 		if (ret != 0) {
-			LOG_ERR("kbd pm resume fail: %d", ret);
+			LOG_ERROR("kbd pm resume fail: %d", ret);
 			return ret;
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		ret = input_kbd_matrix_pm_action_suspend(dev);
 		if (ret != 0) {
-			LOG_ERR("kbd rts5912 suspend fail: %d", ret);
+			LOG_ERROR("kbd rts5912 suspend fail: %d", ret);
 			return ret;
 		}
 		ret = input_kbd_matrix_pm_action(dev, action);
 		if (ret != 0) {
-			LOG_ERR("kbd pm suspend fail: %d", ret);
+			LOG_ERROR("kbd pm suspend fail: %d", ret);
 			return ret;
 		}
 		break;

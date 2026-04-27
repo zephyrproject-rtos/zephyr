@@ -546,7 +546,7 @@ static void dw_i3c_deftgts_work_fn(struct k_work *work)
 		k_malloc(sizeof(uint8_t) + sizeof(struct i3c_ccc_deftgts_active_controller) +
 			 ((count - 1) * sizeof(struct i3c_ccc_deftgts_target)));
 	if (!data->common.deftgts) {
-		LOG_ERR("%s: Failed to allocate memory for DEFTGTS", dev->name);
+		LOG_ERROR("%s: Failed to allocate memory for DEFTGTS", dev->name);
 		return;
 	}
 
@@ -788,7 +788,7 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 
 	pos = get_i3c_addr_pos(dev, target->dynamic_addr, false);
 	if (pos < 0) {
-		LOG_ERR("%s: Invalid slave device", dev->name);
+		LOG_ERROR("%s: Invalid slave device", dev->name);
 		return -EINVAL;
 	}
 
@@ -806,7 +806,7 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 
 	ret = k_mutex_lock(&data->mt, K_MSEC(1000));
 	if (ret) {
-		LOG_ERR("%s: Mutex err (%d)", dev->name, ret);
+		LOG_ERROR("%s: Mutex err (%d)", dev->name, ret);
 		return ret;
 	}
 
@@ -847,7 +847,7 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 						rd_speed = COMMAND_PORT_SPEED_I3C_DDR;
 					} else {
 						/* DDR support not configured with this */
-						LOG_ERR("%s: HDR-DDR not supported", dev->name);
+						LOG_ERROR("%s: HDR-DDR not supported", dev->name);
 						ret = -ENOTSUP;
 						goto error;
 					}
@@ -858,13 +858,13 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 						rd_speed = COMMAND_PORT_SPEED_I3C_TS;
 					} else {
 						/* TS support not configured with this */
-						LOG_ERR("%s: HDR-TS not supported", dev->name);
+						LOG_ERROR("%s: HDR-TS not supported", dev->name);
 						ret = -ENOTSUP;
 						goto error;
 					}
 				} else {
-					LOG_ERR("%s: HDR %d not supported", dev->name,
-						msgs[i].hdr_mode);
+					LOG_ERROR("%s: HDR %d not supported", dev->name,
+						  msgs[i].hdr_mode);
 					ret = -ENOTSUP;
 					goto error;
 				}
@@ -888,7 +888,7 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 						wr_speed = COMMAND_PORT_SPEED_I3C_DDR;
 					} else {
 						/* DDR support not configured with this */
-						LOG_ERR("%s: HDR-DDR not supported", dev->name);
+						LOG_ERROR("%s: HDR-DDR not supported", dev->name);
 						ret = -ENOTSUP;
 						goto error;
 					}
@@ -899,13 +899,13 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 						wr_speed = COMMAND_PORT_SPEED_I3C_TS;
 					} else {
 						/* TS support not configured with this */
-						LOG_ERR("%s: HDR-TS not supported", dev->name);
+						LOG_ERROR("%s: HDR-TS not supported", dev->name);
 						ret = -ENOTSUP;
 						goto error;
 					}
 				} else {
-					LOG_ERR("%s: HDR %d not supported", dev->name,
-						msgs[i].hdr_mode);
+					LOG_ERROR("%s: HDR %d not supported", dev->name,
+						  msgs[i].hdr_mode);
 					ret = -ENOTSUP;
 					goto error;
 				}
@@ -927,7 +927,7 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 
 	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
 	if (ret) {
-		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
+		LOG_ERROR("%s: Semaphore err (%d)", dev->name, ret);
 		goto error;
 	}
 
@@ -1025,7 +1025,7 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 
 	ret = k_mutex_lock(&data->mt, K_MSEC(1000));
 	if (ret) {
-		LOG_ERR("%s: Mutex err (%d)", dev->name, ret);
+		LOG_ERROR("%s: Mutex err (%d)", dev->name, ret);
 		return ret;
 	}
 
@@ -1037,7 +1037,7 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 	 */
 	ret = dw_i3c_i2c_attach_device(dev, target);
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to attach I2C device (%d)", dev->name, ret);
+		LOG_ERROR("%s: Failed to attach I2C device (%d)", dev->name, ret);
 		goto error_attach;
 	}
 	pos = ((struct dw_i3c_i2c_dev_data *)target->controller_priv)->id;
@@ -1084,7 +1084,7 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 
 	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
 	if (ret) {
-		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
+		LOG_ERROR("%s: Semaphore err (%d)", dev->name, ret);
 		goto error;
 	}
 
@@ -1200,7 +1200,7 @@ static int i3c_dw_endis_ibi(const struct device *dev, struct i3c_device_desc *ta
 
 	pos = get_i3c_addr_pos(dev, target->dynamic_addr, false);
 	if (pos < 0) {
-		LOG_ERR("%s: Invalid Slave address", dev->name);
+		LOG_ERROR("%s: Invalid Slave address", dev->name);
 		return pos;
 	}
 
@@ -1233,8 +1233,8 @@ static int i3c_dw_endis_ibi(const struct device *dev, struct i3c_device_desc *ta
 	i3c_events.events = I3C_CCC_EVT_INTR;
 	ret = i3c_ccc_do_events_set(target, en, &i3c_events);
 	if (ret != 0) {
-		LOG_ERR("%s: Error sending IBI ENEC for 0x%02x (%d)", dev->name,
-			target->dynamic_addr, ret);
+		LOG_ERROR("%s: Error sending IBI ENEC for 0x%02x (%d)", dev->name,
+			  target->dynamic_addr, ret);
 		return ret;
 	}
 
@@ -1262,7 +1262,7 @@ static void dw_i3c_handle_tir(const struct device *dev, uint32_t ibi_status)
 
 	pos = get_i3c_addr_pos(dev, addr, false);
 	if (pos < 0) {
-		LOG_ERR("%s: Invalid Slave address", dev->name);
+		LOG_ERROR("%s: Invalid Slave address", dev->name);
 		return;
 	}
 
@@ -1277,7 +1277,7 @@ static void dw_i3c_handle_tir(const struct device *dev, uint32_t ibi_status)
 	}
 
 	if (i3c_ibi_work_enqueue_target_irq(desc, ibi_data, len) != 0) {
-		LOG_ERR("%s: Error enqueue IBI IRQ work", dev->name);
+		LOG_ERROR("%s: Error enqueue IBI IRQ work", dev->name);
 	}
 }
 
@@ -1289,7 +1289,7 @@ static void dw_i3c_handle_hj(const struct device *dev, uint32_t ibi_status)
 	}
 
 	if (i3c_ibi_work_enqueue_hotjoin(dev) != 0) {
-		LOG_ERR("%s: Error enqueue IBI HJ work", dev->name);
+		LOG_ERROR("%s: Error enqueue IBI HJ work", dev->name);
 	}
 }
 
@@ -1305,12 +1305,12 @@ static void dw_i3c_handle_mr(const struct device *dev, uint32_t ibi_status)
 	struct i3c_device_desc *desc = i3c_dev_list_i3c_addr_find(dev, addr);
 
 	if (desc == NULL) {
-		LOG_ERR("%s: MR from unknown addr 0x%02x", dev->name, addr);
+		LOG_ERROR("%s: MR from unknown addr 0x%02x", dev->name, addr);
 		return;
 	}
 
 	if (i3c_ibi_work_enqueue_controller_request(desc) != 0) {
-		LOG_ERR("%s: Error enqueue IBI MR work", dev->name);
+		LOG_ERROR("%s: Error enqueue IBI MR work", dev->name);
 	}
 }
 
@@ -1331,7 +1331,7 @@ static void ibis_handle(const struct device *dev)
 		} else if (IBI_TYPE_MR(ibi_stat)) {
 			dw_i3c_handle_mr(dev, ibi_stat);
 		} else {
-			LOG_ERR("%s: Unknown IBI type", dev->name);
+			LOG_ERROR("%s: Unknown IBI type", dev->name);
 		}
 	}
 }
@@ -1344,16 +1344,16 @@ static int dw_i3c_target_ibi_raise_hj(const struct device *dev)
 	int ret;
 
 	if (!(sys_read32(config->regs + HW_CAPABILITY) & HW_CAPABILITY_SLV_HJ_CAP)) {
-		LOG_ERR("%s: HJ not supported", dev->name);
+		LOG_ERROR("%s: HJ not supported", dev->name);
 		return -ENOTSUP;
 	}
 	if (sys_read32(config->regs + DEVICE_ADDR) & DEVICE_ADDR_DYNAMIC_ADDR_VALID) {
-		LOG_ERR("%s: HJ not available, DA already assigned", dev->name);
+		LOG_ERROR("%s: HJ not available, DA already assigned", dev->name);
 		return -EACCES;
 	}
 	/* if this is set, then it is assumed it is already trying */
 	if ((sys_read32(config->regs + SLV_EVENT_STATUS) & SLV_EVENT_STATUS_HJ_EN)) {
-		LOG_ERR("%s: HJ requests are currently disabled by DISEC", dev->name);
+		LOG_ERROR("%s: HJ requests are currently disabled by DISEC", dev->name);
 		return -EAGAIN;
 	}
 
@@ -1386,17 +1386,17 @@ static int dw_i3c_target_ibi_raise_tir(const struct device *dev, struct i3c_ibi 
 	uint32_t slv_intr_req, slv_ibi_resp;
 
 	if (!(sys_read32(config->regs + HW_CAPABILITY) & HW_CAPABILITY_SLV_IBI_CAP)) {
-		LOG_ERR("%s: IBI TIR not supported", dev->name);
+		LOG_ERROR("%s: IBI TIR not supported", dev->name);
 		return -ENOTSUP;
 	}
 
 	if (!(sys_read32(config->regs + DEVICE_ADDR) & DEVICE_ADDR_DYNAMIC_ADDR_VALID)) {
-		LOG_ERR("%s: IBI TIR not available, DA not assigned", dev->name);
+		LOG_ERROR("%s: IBI TIR not available, DA not assigned", dev->name);
 		return -EACCES;
 	}
 
 	if (!(sys_read32(config->regs + SLV_EVENT_STATUS) & SLV_EVENT_STATUS_SIR_EN)) {
-		LOG_ERR("%s: IBI TIR requests are currently disabled by DISEC", dev->name);
+		LOG_ERROR("%s: IBI TIR requests are currently disabled by DISEC", dev->name);
 		return -EAGAIN;
 	}
 
@@ -1443,11 +1443,11 @@ static int dw_i3c_target_ibi_raise_tir(const struct device *dev, struct i3c_ibi 
 		LOG_DBG("%s: Controller ACKed IBI TIR", dev->name);
 		return 0;
 	case SLV_IBI_RESP_IBI_STS_NACK:
-		LOG_ERR("%s: Controller NACKed IBI TIR", dev->name);
+		LOG_ERROR("%s: Controller NACKed IBI TIR", dev->name);
 		return -EAGAIN;
 	case SLV_IBI_RESP_IBI_STS_EARLY_TERMINATE:
-		LOG_ERR("%s: Controller aborted IBI TIR with %lu remaining", dev->name,
-			SLV_IBI_RESP_DATA_LENGTH(slv_ibi_resp));
+		LOG_ERROR("%s: Controller aborted IBI TIR with %lu remaining", dev->name,
+			  SLV_IBI_RESP_DATA_LENGTH(slv_ibi_resp));
 		return -EIO;
 	default:
 		return -EIO;
@@ -1461,17 +1461,17 @@ static int dw_i3c_target_ibi_raise_mr(const struct device *dev)
 	int ret;
 
 	if (!(sys_read32(config->regs + HW_CAPABILITY) & HW_CAPABILITY_SLV_IBI_CAP)) {
-		LOG_ERR("%s: IBI not supported by HW", dev->name);
+		LOG_ERROR("%s: IBI not supported by HW", dev->name);
 		return -ENOTSUP;
 	}
 
 	if (!(sys_read32(config->regs + DEVICE_ADDR) & DEVICE_ADDR_DYNAMIC_ADDR_VALID)) {
-		LOG_ERR("%s: MR not available, DA not assigned", dev->name);
+		LOG_ERROR("%s: MR not available, DA not assigned", dev->name);
 		return -EACCES;
 	}
 
 	if (!(sys_read32(config->regs + SLV_EVENT_STATUS) & SLV_EVENT_STATUS_MR_EN)) {
-		LOG_ERR("%s: MR requests are currently disabled by DISEC", dev->name);
+		LOG_ERROR("%s: MR requests are currently disabled by DISEC", dev->name);
 		return -EAGAIN;
 	}
 
@@ -1490,7 +1490,7 @@ static int dw_i3c_target_ibi_raise_mr(const struct device *dev)
 		LOG_DBG("%s: Controller ACKed MR", dev->name);
 		return 0;
 	case SLV_IBI_RESP_IBI_STS_NACK:
-		LOG_ERR("%s: Controller NACKed MR", dev->name);
+		LOG_ERROR("%s: Controller NACKed MR", dev->name);
 		return -EAGAIN;
 	default:
 		return -EIO;
@@ -1649,7 +1649,7 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 #endif /* CONFIG_I3C_CONTROLLER */
 
 	if (clock_control_get_rate(config->clock, config->clock_subsys, &core_rate) != 0) {
-		LOG_ERR("%s: get clock rate failed", dev->name);
+		LOG_ERROR("%s: get clock rate failed", dev->name);
 		return -EINVAL;
 	}
 
@@ -1658,7 +1658,7 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 	__ASSERT((ctrl_cfg != NULL), "Controller configuration should not be NULL");
 
 	if (ctrl_cfg->scl_od_min.low_ns < I3C_OD_TLOW_MIN_NS) {
-		LOG_ERR("%s: Open Drain Low Period is out of range", dev->name);
+		LOG_ERROR("%s: Open Drain Low Period is out of range", dev->name);
 		return -EINVAL;
 	}
 
@@ -1749,7 +1749,7 @@ static int dw_i3c_attach_device(const struct device *dev, struct i3c_device_desc
 	uint8_t addr = desc->dynamic_addr ? desc->dynamic_addr : desc->static_addr;
 
 	if (pos < 0) {
-		LOG_ERR("%s: no space for i3c device: %s", dev->name, desc->dev->name);
+		LOG_ERROR("%s: no space for i3c device: %s", dev->name, desc->dev->name);
 		return -ENOSPC;
 	}
 
@@ -1776,7 +1776,7 @@ static int dw_i3c_reattach_device(const struct device *dev, struct i3c_device_de
 	uint32_t dat;
 
 	if (dw_i3c_device_data == NULL) {
-		LOG_ERR("%s: %s: device not attached", dev->name, desc->dev->name);
+		LOG_ERROR("%s: %s: device not attached", dev->name, desc->dev->name);
 		return -EINVAL;
 	}
 	/* TODO: investigate clearing table beforehand */
@@ -1799,7 +1799,7 @@ static int dw_i3c_detach_device(const struct device *dev, struct i3c_device_desc
 	struct dw_i3c_i2c_dev_data *dw_i3c_device_data = desc->controller_priv;
 
 	if (dw_i3c_device_data == NULL) {
-		LOG_ERR("%s: %s: device not attached", dev->name, desc->dev->name);
+		LOG_ERROR("%s: %s: device not attached", dev->name, desc->dev->name);
 		return -EINVAL;
 	}
 
@@ -1945,7 +1945,7 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 		}
 	} else {
 		if (!(payload->targets.payloads)) {
-			LOG_ERR("%s: Direct CCC Payload structure Empty", dev->name);
+			LOG_ERROR("%s: Direct CCC Payload structure Empty", dev->name);
 			ret = -EINVAL;
 			goto error;
 		}
@@ -1956,7 +1956,7 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 			pos = get_i3c_addr_pos(dev, payload->targets.payloads[i].addr,
 					       payload->ccc.id == I3C_CCC_SETDASA);
 			if (pos < 0) {
-				LOG_ERR("%s: Invalid Slave address with pos %d", dev->name, pos);
+				LOG_ERROR("%s: Invalid Slave address with pos %d", dev->name, pos);
 				ret = -ENOSPC;
 				goto error;
 			}
@@ -1976,7 +1976,7 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 				cmd->cmd_lo |= COMMAND_PORT_DBP;
 				cmd->cmd_hi |= COMMAND_PORT_ARG_DB(payload->ccc.data[0]);
 			} else if (payload->ccc.data_len > 1) {
-				LOG_ERR("%s: direct CCCs defining byte >1", dev->name);
+				LOG_ERROR("%s: direct CCCs defining byte >1", dev->name);
 				ret = -EINVAL;
 				goto error;
 			}
@@ -1994,7 +1994,7 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 
 	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
 	if (ret) {
-		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
+		LOG_ERROR("%s: Semaphore err (%d)", dev->name, ret);
 		goto error;
 	}
 
@@ -2188,13 +2188,13 @@ static int dw_i3c_do_daa(const struct device *dev)
 
 	pos = get_free_pos(data->free_pos);
 	if (pos < 0) {
-		LOG_ERR("%s: find free pos failed", dev->name);
+		LOG_ERROR("%s: find free pos failed", dev->name);
 		return -ENOSPC;
 	}
 
 	ret = k_mutex_lock(&data->mt, K_MSEC(1000));
 	if (ret) {
-		LOG_ERR("%s: Mutex err (%d)", dev->name, ret);
+		LOG_ERROR("%s: Mutex err (%d)", dev->name, ret);
 		return ret;
 	}
 
@@ -2218,7 +2218,7 @@ static int dw_i3c_do_daa(const struct device *dev)
 	k_mutex_unlock(&data->mt);
 
 	if (ret) {
-		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
+		LOG_ERROR("%s: Semaphore err (%d)", dev->name, ret);
 		return ret;
 	}
 
@@ -2564,7 +2564,7 @@ static int dw_i3c_target_tx_write(const struct device *dev, uint8_t *buf, uint16
 		start_xfer(dev);
 	} else {
 		k_mutex_unlock(&data->mt);
-		LOG_ERR("%s: Unsupported HDR Mode %d", dev->name, hdr_mode);
+		LOG_ERROR("%s: Unsupported HDR Mode %d", dev->name, hdr_mode);
 		return -ENOTSUP;
 	}
 
@@ -2740,7 +2740,7 @@ static int dw_i3c_init(const struct device *dev)
 
 	ret = dw_i3c_init_scl_timing(dev, ctrl_config);
 	if (ret != 0) {
-		LOG_ERR("%s: Clock setting failed", dev->name);
+		LOG_ERROR("%s: Clock setting failed", dev->name);
 		return ret;
 	}
 

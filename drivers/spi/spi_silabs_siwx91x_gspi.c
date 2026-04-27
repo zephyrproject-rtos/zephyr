@@ -101,24 +101,24 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 	/* Validate unsupported configurations */
 	if (spi_cfg->operation & (SPI_HALF_DUPLEX | SPI_CS_ACTIVE_HIGH | SPI_TRANSFER_LSB |
 				  SPI_OP_MODE_SLAVE | SPI_MODE_LOOP)) {
-		LOG_ERR("Unsupported configuration 0x%X!", spi_cfg->operation);
+		LOG_ERROR("Unsupported configuration 0x%X!", spi_cfg->operation);
 		return -ENOTSUP;
 	}
 
 	if (SPI_WORD_SIZE_GET(spi_cfg->operation) != 8 &&
 	    SPI_WORD_SIZE_GET(spi_cfg->operation) != 16) {
-		LOG_ERR("Word size incorrect %d!", SPI_WORD_SIZE_GET(spi_cfg->operation));
+		LOG_ERROR("Word size incorrect %d!", SPI_WORD_SIZE_GET(spi_cfg->operation));
 		return -ENOTSUP;
 	}
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
 	    (spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only supports single mode!");
+		LOG_ERROR("Only supports single mode!");
 		return -ENOTSUP;
 	}
 
 	if (!!(spi_cfg->operation & SPI_MODE_CPOL) != !!(spi_cfg->operation & SPI_MODE_CPHA)) {
-		LOG_ERR("Only SPI mode 0 and 3 supported!");
+		LOG_ERROR("Only SPI mode 0 and 3 supported!");
 		return -ENOTSUP;
 	}
 

@@ -211,7 +211,7 @@ static bool is_hash_equal(struct bt_mesh_subnet *sub, struct find_net_id *res, u
 	memcpy(&in[8], res->data.priv.rand, 8);
 	err = bt_mesh_encrypt(&sub->keys[idx].identity, in, out);
 	if (err) {
-		LOG_ERR("Failed to generate hash (err: %d)", err);
+		LOG_ERROR("Failed to generate hash (err: %d)", err);
 		return false;
 	}
 

@@ -46,37 +46,37 @@ static int bd8lb600fs_gpio_pin_configure(const struct device *dev, gpio_pin_t pi
 	}
 
 	if (pin >= config->gpios_count) {
-		LOG_ERR("invalid pin number %i", pin);
+		LOG_ERROR("invalid pin number %i", pin);
 		return -EINVAL;
 	}
 
 	if ((flags & GPIO_INPUT) != 0) {
-		LOG_ERR("cannot configure pin as input");
+		LOG_ERROR("cannot configure pin as input");
 		return -ENOTSUP;
 	}
 
 	if ((flags & GPIO_OUTPUT) == 0) {
-		LOG_ERR("pin must be configured as an output");
+		LOG_ERROR("pin must be configured as an output");
 		return -ENOTSUP;
 	}
 
 	if ((flags & GPIO_SINGLE_ENDED) == 0) {
-		LOG_ERR("pin must be configured as single ended");
+		LOG_ERROR("pin must be configured as single ended");
 		return -ENOTSUP;
 	}
 
 	if ((flags & GPIO_LINE_OPEN_DRAIN) == 0) {
-		LOG_ERR("pin must be configured as open drain");
+		LOG_ERROR("pin must be configured as open drain");
 		return -ENOTSUP;
 	}
 
 	if ((flags & GPIO_PULL_UP) != 0) {
-		LOG_ERR("pin cannot have a pull up configured");
+		LOG_ERROR("pin cannot have a pull up configured");
 		return -ENOTSUP;
 	}
 
 	if ((flags & GPIO_PULL_DOWN) != 0) {
-		LOG_ERR("pin cannot have a pull down configured");
+		LOG_ERROR("pin cannot have a pull down configured");
 		return -ENOTSUP;
 	}
 
@@ -99,7 +99,7 @@ static int bd8lb600fs_gpio_pin_configure(const struct device *dev, gpio_pin_t pi
 
 static int bd8lb600fs_gpio_port_get_raw(const struct device *dev, uint32_t *value)
 {
-	LOG_ERR("input pins are not available");
+	LOG_ERROR("input pins are not available");
 	return -ENOTSUP;
 }
 
@@ -169,14 +169,14 @@ static int bd8lb600fs_gpio_init(const struct device *dev)
 	struct bd8lb600fs_gpio_data *data = dev->data;
 
 	if (!device_is_ready(config->parent_dev)) {
-		LOG_ERR("MFD parent is not ready");
+		LOG_ERROR("MFD parent is not ready");
 		return -ENODEV;
 	}
 
 	int result = k_mutex_init(&data->lock);
 
 	if (result != 0) {
-		LOG_ERR("unable to initialize mutex");
+		LOG_ERROR("unable to initialize mutex");
 		return result;
 	}
 

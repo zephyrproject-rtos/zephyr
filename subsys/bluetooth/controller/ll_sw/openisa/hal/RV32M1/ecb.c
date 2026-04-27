@@ -42,13 +42,13 @@ void ecb_encrypt_be(uint8_t const *const key_be, uint8_t const *const clear_text
 	/* Loads the key into CAU3's DMEM and expands the AES key schedule */
 	status = CAU3_AES_SetKey(CAU3, &handle, keyAes, sizeof(keyAes));
 	if (status != kStatus_Success) {
-		LOG_ERR("CAUv3 AES key set failed %d", status);
+		LOG_ERROR("CAUv3 AES key set failed %d", status);
 		return;
 	}
 
 	status = CAU3_AES_Encrypt(CAU3, &handle, clear_text_be, cipher_text_be);
 	if (status != kStatus_Success) {
-		LOG_ERR("CAUv3 AES encrypt failed %d", status);
+		LOG_ERROR("CAUv3 AES encrypt failed %d", status);
 		return;
 	}
 }
@@ -84,13 +84,13 @@ void ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le
 	/* Loads the key into CAU3's DMEM and expands the AES key schedule */
 	status = CAU3_AES_SetKey(CAU3, &handle, keyAes, sizeof(keyAes));
 	if (status != kStatus_Success) {
-		LOG_ERR("CAUv3 AES key set failed %d", status);
+		LOG_ERROR("CAUv3 AES key set failed %d", status);
 		return;
 	}
 
 	status = CAU3_AES_Encrypt(CAU3, &handle, clear, cipher);
 	if (status != kStatus_Success) {
-		LOG_ERR("CAUv3 AES encrypt failed %d", status);
+		LOG_ERROR("CAUv3 AES encrypt failed %d", status);
 		return;
 	}
 

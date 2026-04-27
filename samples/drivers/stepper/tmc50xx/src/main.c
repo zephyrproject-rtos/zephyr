@@ -38,7 +38,7 @@ int main(void)
 {
 	LOG_INF("Starting tmc50xx stepper sample");
 	if (!device_is_ready(stepper_ctrl)) {
-		LOG_ERR("Device %s is not ready", stepper_ctrl->name);
+		LOG_ERROR("Device %s is not ready", stepper_ctrl->name);
 		return -ENODEV;
 	}
 	LOG_DBG("stepper is %p, name is %s", stepper_ctrl, stepper_ctrl->name);
@@ -72,7 +72,7 @@ int main(void)
 			if (ret == 0) {
 				LOG_INF("Actual position: %d", actual_position);
 			} else {
-				LOG_ERR("Failed to get actual position");
+				LOG_ERROR("Failed to get actual position");
 			}
 		}
 	}

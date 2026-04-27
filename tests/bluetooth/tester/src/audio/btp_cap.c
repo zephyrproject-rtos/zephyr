@@ -209,7 +209,7 @@ static uint8_t btp_cap_discover(const void *cmd, uint16_t cmd_len,
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -279,7 +279,7 @@ static uint8_t btp_cap_unicast_setup_ase(const void *cmd, uint16_t cmd_len,
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 
 		return BTP_STATUS_FAILED;
 	}
@@ -332,7 +332,7 @@ static uint8_t btp_cap_unicast_audio_start(const void *cmd, uint16_t cmd_len,
 
 	err = btp_bap_unicast_group_create(cp->cig_id, &u_group);
 	if (err != 0) {
-		LOG_ERR("Failed to create unicast group");
+		LOG_ERROR("Failed to create unicast group");
 
 		return BTP_STATUS_FAILED;
 	}
@@ -368,7 +368,7 @@ static uint8_t btp_cap_unicast_audio_start(const void *cmd, uint16_t cmd_len,
 
 	err = bt_cap_initiator_unicast_audio_start(&start_param);
 	if (err != 0) {
-		LOG_ERR("Failed to start unicast audio: %d", err);
+		LOG_ERROR("Failed to start unicast audio: %d", err);
 
 		return BTP_STATUS_FAILED;
 	}
@@ -403,7 +403,7 @@ static uint8_t btp_cap_unicast_audio_update(const void *cmd, uint16_t cmd_len,
 
 		conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &update_data->address);
 		if (!conn) {
-			LOG_ERR("Unknown connection");
+			LOG_ERROR("Unknown connection");
 
 			return BTP_STATUS_FAILED;
 		}
@@ -435,7 +435,7 @@ static uint8_t btp_cap_unicast_audio_update(const void *cmd, uint16_t cmd_len,
 
 	err = bt_cap_initiator_unicast_audio_update(&param);
 	if (err != 0) {
-		LOG_ERR("Failed to start unicast audio: %d", err);
+		LOG_ERROR("Failed to start unicast audio: %d", err);
 
 		return BTP_STATUS_FAILED;
 	}
@@ -482,7 +482,7 @@ static uint8_t btp_cap_unicast_audio_stop(const void *cmd, uint16_t cmd_len,
 
 	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
-		LOG_ERR("Failed to start unicast audio: %d", err);
+		LOG_ERROR("Failed to start unicast audio: %d", err);
 
 		return BTP_STATUS_FAILED;
 	}
@@ -533,7 +533,7 @@ static uint8_t btp_cap_broadcast_source_setup_stream(const void *cmd, uint16_t c
 		LOG_DBG("Could not allocate stream");
 
 		if (err != 0) {
-			LOG_ERR("Failed to free allocated broadcast source: %d", err);
+			LOG_ERROR("Failed to free allocated broadcast source: %d", err);
 		}
 
 		return BTP_STATUS_FAILED;
@@ -760,7 +760,7 @@ static uint8_t btp_cap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	memset(&cap_params->cap_subgroup_params, 0, sizeof(cap_params->cap_subgroup_params));
 	memset(&create_param, 0, sizeof(create_param));
 	if (err != 0) {
-		LOG_ERR("Failed to create audio source: %d", err);
+		LOG_ERROR("Failed to create audio source: %d", err);
 
 		return BTP_STATUS_FAILED;
 	}
@@ -886,7 +886,7 @@ static uint8_t btp_cap_broadcast_source_start(const void *cmd, uint16_t cmd_len,
 
 	err = bt_cap_initiator_broadcast_audio_start(source->cap_broadcast, source->ext_adv);
 	if (err != 0) {
-		LOG_ERR("Failed to start audio source: %d", err);
+		LOG_ERROR("Failed to start audio source: %d", err);
 
 		return BTP_STATUS_FAILED;
 	}
@@ -909,7 +909,7 @@ static uint8_t btp_cap_broadcast_source_stop(const void *cmd, uint16_t cmd_len,
 
 	err = bt_cap_initiator_broadcast_audio_stop(source->cap_broadcast);
 	if (err != 0) {
-		LOG_ERR("Failed to stop audio source: %d", err);
+		LOG_ERROR("Failed to stop audio source: %d", err);
 
 		return BTP_STATUS_FAILED;
 	}
@@ -917,7 +917,7 @@ static uint8_t btp_cap_broadcast_source_stop(const void *cmd, uint16_t cmd_len,
 	/* Make sure source is stopped before proceeding */
 	err = k_sem_take(&source_stopped_sem, K_SECONDS(1));
 	if (err) {
-		LOG_ERR("Semaphore timed out: %d", err);
+		LOG_ERROR("Semaphore timed out: %d", err);
 
 		return BTP_STATUS_FAILED;
 	}
@@ -949,7 +949,7 @@ static uint8_t btp_cap_broadcast_source_update(const void *cmd, uint16_t cmd_len
 	err = bt_cap_initiator_broadcast_audio_update(source->cap_broadcast, cp->metadata_ltvs,
 						      cp->metadata_ltvs_len);
 	if (err != 0) {
-		LOG_ERR("Failed to update audio source: %d", err);
+		LOG_ERROR("Failed to update audio source: %d", err);
 
 		return BTP_STATUS_FAILED;
 	}

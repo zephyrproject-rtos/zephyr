@@ -128,7 +128,7 @@ static int mbox_stm32_hsem_send(const struct device *dev, uint32_t channel,
 			 const struct mbox_msg *msg)
 {
 	if (msg) {
-		LOG_ERR("Sending data not supported.");
+		LOG_ERROR("Sending data not supported.");
 		return -EINVAL;
 	}
 

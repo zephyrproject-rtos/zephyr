@@ -81,7 +81,7 @@ static int spim_xfer_rx(unsigned int addr, void *data, unsigned int len, unsigne
 	const struct spi_buf_set rx = { .buffers = rx_buf, .count = 2 };
 
 	if (discard_bytes > MAX_DISCARD_BYTES) {
-		LOG_ERR("Discard bytes too large, please adjust buf size");
+		LOG_ERROR("Discard bytes too large, please adjust buf size");
 		return -EINVAL;
 	}
 
@@ -133,7 +133,7 @@ int spim_write_reg(const struct spi_dt_spec *spi_spec, uint32_t reg_addr, const 
 	err = spi_transceive_dt(spi_spec, &tx, NULL);
 
 	if (err) {
-		LOG_ERR("SPI error: %d", err);
+		LOG_ERROR("SPI error: %d", err);
 	}
 
 	return err;
@@ -206,7 +206,7 @@ int _spim_wait_while_rpu_awake(void)
 	}
 
 	if (ret || !(val & RPU_AWAKE_BIT)) {
-		LOG_ERR("RPU is not awake even after 10ms");
+		LOG_ERROR("RPU is not awake even after 10ms");
 		return -1;
 	}
 
@@ -233,7 +233,7 @@ int spim_wait_while_rpu_wake_write(void)
 	}
 
 	if (ret || !(val & RPU_WAKEUP_NOW)) {
-		LOG_ERR("RPU wakeup write ACK failed even after 10ms");
+		LOG_ERROR("RPU wakeup write ACK failed even after 10ms");
 		return -1;
 	}
 
@@ -262,7 +262,7 @@ unsigned int spim_cmd_sleep_rpu(void)
 	err = spi_transceive_dt(&spi_spec, &tx, NULL);
 
 	if (err) {
-		LOG_ERR("SPI error: %d", err);
+		LOG_ERROR("SPI error: %d", err);
 	}
 
 	return 0;
@@ -271,7 +271,7 @@ unsigned int spim_cmd_sleep_rpu(void)
 int spim_init(struct qspi_config *config)
 {
 	if (!spi_is_ready_dt(&spi_spec)) {
-		LOG_ERR("Device %s is not ready", spi_spec.bus->name);
+		LOG_ERROR("Device %s is not ready", spi_spec.bus->name);
 		return -ENODEV;
 	}
 
@@ -308,9 +308,9 @@ int spim_deinit(void)
 static void spim_addr_check(unsigned int addr, const void *data, unsigned int len)
 {
 	if ((addr % 4 != 0) || (((unsigned int)data) % 4 != 0) || (len % 4 != 0)) {
-		LOG_ERR("%s : Unaligned address %x %x %d %x %x", __func__, addr,
-		       (unsigned int)data, (addr % 4 != 0), (((unsigned int)data) % 4 != 0),
-		       (len % 4 != 0));
+		LOG_ERROR("%s : Unaligned address %x %x %d %x %x", __func__, addr,
+			  (unsigned int)data, (addr % 4 != 0), (((unsigned int)data) % 4 != 0),
+			  (len % 4 != 0));
 	}
 }
 

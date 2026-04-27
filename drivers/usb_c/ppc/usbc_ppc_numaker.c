@@ -47,7 +47,7 @@ static int numaker_ppc_init(const struct device *dev)
 
 	/* Rely on TCPC */
 	if (!device_is_ready(tcpc_dev)) {
-		LOG_ERR("TCPC device not ready");
+		LOG_ERROR("TCPC device not ready");
 		return -ENODEV;
 	}
 

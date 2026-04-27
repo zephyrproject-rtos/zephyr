@@ -112,21 +112,21 @@ static int can_infineon_init(const struct device *dev)
 
 	/* Ensure the parent controller (MRAM + channel clocks) is ready */
 	if (!device_is_ready(infineon_cfg->ctrl_dev)) {
-		LOG_ERR("CAN FD controller device not ready");
+		LOG_ERROR("CAN FD controller device not ready");
 		return -ENODEV;
 	}
 
 	/* Configure dt provided device signals when available */
 	ret = pinctrl_apply_state(infineon_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
-		LOG_ERR("CAN pinctrl setup failed (%d)", ret);
+		LOG_ERROR("CAN pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
 	/* Connect this CAN instance to the peripheral clock divider */
 	result = ifx_cat1_utils_peri_pclk_assign_divider(infineon_cfg->clk_dst, &data->clock);
 	if (result != CY_RSLT_SUCCESS) {
-		LOG_ERR("CAN clock assign failed (%d)", (int)result);
+		LOG_ERROR("CAN clock assign failed (%d)", (int)result);
 		return -EIO;
 	}
 
@@ -137,7 +137,7 @@ static int can_infineon_init(const struct device *dev)
 
 	ret = can_mcan_init(dev);
 	if (ret != 0) {
-		LOG_ERR("can_mcan_init failed (%d)", ret);
+		LOG_ERROR("can_mcan_init failed (%d)", ret);
 		return ret;
 	}
 

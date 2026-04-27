@@ -49,7 +49,7 @@ static int icm42670_set_gyro_odr(struct icm42x70_data *drv_data, const struct se
 		inv_imu_disable_gyro(&drv_data->driver);
 		drv_data->gyro_hz = val->val1;
 	} else {
-		LOG_ERR("Incorrect sampling value");
+		LOG_ERROR("Incorrect sampling value");
 		return -EINVAL;
 	}
 	return 0;
@@ -60,7 +60,7 @@ static int icm42670_set_gyro_fs(struct icm42x70_data *drv_data, const struct sen
 	int32_t val_dps = sensor_rad_to_degrees(val);
 
 	if (val_dps > 2000 || val_dps < 250) {
-		LOG_ERR("Incorrect fullscale value");
+		LOG_ERROR("Incorrect fullscale value");
 		return -EINVAL;
 	}
 	inv_imu_set_gyro_fsr(&drv_data->driver,
@@ -80,13 +80,13 @@ int icm42670_gyro_config(struct icm42x70_data *drv_data, enum sensor_attribute a
 
 	} else if ((enum sensor_attribute_icm42x70)attr == SENSOR_ATTR_BW_FILTER_LPF) {
 		if (val->val1 > 180) {
-			LOG_ERR("Incorrect low pass filter bandwidth value");
+			LOG_ERROR("Incorrect low pass filter bandwidth value");
 			return -EINVAL;
 		}
 		inv_imu_set_gyro_ln_bw(&drv_data->driver, convert_ln_bw_to_bitfield(val->val1));
 
 	} else {
-		LOG_ERR("Unsupported attribute");
+		LOG_ERROR("Unsupported attribute");
 		return -EINVAL;
 	}
 	return 0;

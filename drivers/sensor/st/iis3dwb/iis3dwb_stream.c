@@ -109,7 +109,7 @@ void iis3dwb_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 		pin_int.drdy_xl = (trig_cfg.int_drdy) ? 1 : 0;
 		iis3dwb_route_int2(dev, pin_int);
 	} else {
-		LOG_ERR("Bad drdy pin number");
+		LOG_ERROR("Bad drdy pin number");
 		return;
 	}
 
@@ -282,7 +282,7 @@ static void iis3dwb_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, int
 	uint32_t req_len = fifo_read_size + sizeof(struct iis3dwb_fifo_data);
 
 	if (rtio_sqe_rx_buf(iis3dwb->streaming_sqe, req_len, req_len, &buf, &buf_len) != 0) {
-		LOG_ERR("Failed to get buffer");
+		LOG_ERROR("Failed to get buffer");
 		rtio_iodev_sqe_err(iis3dwb->streaming_sqe, -ENOMEM);
 		iis3dwb->streaming_sqe = NULL;
 		gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
@@ -421,7 +421,7 @@ static void iis3dwb_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe, i
 
 		if (rtio_sqe_rx_buf(iis3dwb->streaming_sqe, req_len, req_len, &buf, &buf_len) !=
 		    0) {
-			LOG_ERR("Failed to get buffer");
+			LOG_ERROR("Failed to get buffer");
 			rtio_iodev_sqe_err(iis3dwb->streaming_sqe, -ENOMEM);
 			iis3dwb->streaming_sqe = NULL;
 			gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
@@ -491,7 +491,7 @@ void iis3dwb_stream_irq_handler(const struct device *dev)
 
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
+		LOG_ERROR("Failed to get sensor clock cycles");
 		rtio_iodev_sqe_err(iis3dwb->streaming_sqe, rc);
 		return;
 	}

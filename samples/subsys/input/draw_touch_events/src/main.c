@@ -81,7 +81,7 @@ static int clear_screen(void)
 
 			ret = display_write(display_dev, x, y, &ddesc, buffer_cross_empty);
 			if (ret < 0) {
-				LOG_ERR("Failed to write to display (error %d)", ret);
+				LOG_ERROR("Failed to write to display (error %d)", ret);
 				return ret;
 			}
 		}
@@ -129,29 +129,29 @@ int main(void)
 	LOG_INF("Touch sample for touchscreen: %s, dc: %s", touch_dev->name, display_dev->name);
 
 	if (!device_is_ready(touch_dev)) {
-		LOG_ERR("Device %s not found. Aborting sample.", touch_dev->name);
+		LOG_ERROR("Device %s not found. Aborting sample.", touch_dev->name);
 		return 0;
 	}
 
 	if (!device_is_ready(display_dev)) {
-		LOG_ERR("Device %s not found. Aborting sample.", display_dev->name);
+		LOG_ERROR("Device %s not found. Aborting sample.", display_dev->name);
 		return 0;
 	}
 
 	if (BPP == 0 || BPP > 4) {
-		LOG_ERR("Unsupported BPP=%d", BPP);
+		LOG_ERROR("Unsupported BPP=%d", BPP);
 		return 0;
 	}
 	fill_cross_buffer();
 	ret = display_blanking_off(display_dev);
 	if (ret < 0 && ret != -ENOSYS) {
-		LOG_ERR("Failed to turn blanking off (error %d)", ret);
+		LOG_ERROR("Failed to turn blanking off (error %d)", ret);
 		return 0;
 	}
 
 	ret = clear_screen();
 	if (ret < 0) {
-		LOG_ERR("Failed to clear the screen");
+		LOG_ERROR("Failed to clear the screen");
 		return 0;
 	}
 
@@ -172,7 +172,7 @@ int main(void)
 				    get_draw_position(touch_point_drawn.y, HEIGHT), &buf_desc,
 				    buffer_cross_empty);
 		if (ret < 0) {
-			LOG_ERR("Failed to write to display (error %d)", ret);
+			LOG_ERROR("Failed to write to display (error %d)", ret);
 			return 0;
 		}
 
@@ -180,7 +180,7 @@ int main(void)
 				    get_draw_position(touch_point.y, HEIGHT), &buf_desc,
 				    buffer_cross);
 		if (ret < 0) {
-			LOG_ERR("Failed to write to display (error %d)", ret);
+			LOG_ERROR("Failed to write to display (error %d)", ret);
 			return 0;
 		}
 

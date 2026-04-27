@@ -33,7 +33,7 @@ static int netusb_send(const struct device *dev, struct net_pkt *pkt)
 	LOG_DBG("Send pkt, len %zu", net_pkt_get_len(pkt));
 
 	if (!netusb_enabled()) {
-		LOG_ERR("interface disabled");
+		LOG_ERROR("interface disabled");
 		return -ENODEV;
 	}
 
@@ -55,7 +55,7 @@ void netusb_recv(struct net_pkt *pkt)
 	LOG_DBG("Recv pkt, len %zu", net_pkt_get_len(pkt));
 
 	if (net_recv_data(netusb.iface, pkt) < 0) {
-		LOG_ERR("Packet %p dropped by NET stack", pkt);
+		LOG_ERROR("Packet %p dropped by NET stack", pkt);
 		net_pkt_unref(pkt);
 	}
 }
@@ -65,7 +65,7 @@ static int netusb_connect_media(void)
 	LOG_DBG("");
 
 	if (!netusb_enabled()) {
-		LOG_ERR("interface disabled");
+		LOG_ERROR("interface disabled");
 		return -ENODEV;
 	}
 
@@ -81,7 +81,7 @@ static int netusb_disconnect_media(void)
 	LOG_DBG("");
 
 	if (!netusb_enabled()) {
-		LOG_ERR("interface disabled");
+		LOG_ERROR("interface disabled");
 		return -ENODEV;
 	}
 

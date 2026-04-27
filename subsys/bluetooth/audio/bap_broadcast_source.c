@@ -115,8 +115,8 @@ static void broadcast_source_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
 		}
 		break;
 	default:
-		LOG_ERR("Invalid broadcast sync endpoint state: %s",
-			bt_bap_ep_state_str(old_state));
+		LOG_ERROR("Invalid broadcast sync endpoint state: %s",
+			  bt_bap_ep_state_str(old_state));
 		return;
 	}
 
@@ -144,13 +144,13 @@ static void broadcast_source_iso_sent(struct bt_iso_chan *chan)
 	struct bt_bap_ep *ep = iso->tx.ep;
 
 	if (ep == NULL) {
-		LOG_ERR("iso %p not bound with ep", chan);
+		LOG_ERROR("iso %p not bound with ep", chan);
 		return;
 	}
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream for ep %p", ep);
+		LOG_ERROR("No stream for ep %p", ep);
 		return;
 	}
 
@@ -173,13 +173,13 @@ static void broadcast_source_iso_connected(struct bt_iso_chan *chan)
 	struct bt_bap_ep *ep = iso->tx.ep;
 
 	if (ep == NULL) {
-		LOG_ERR("iso %p not bound with ep", chan);
+		LOG_ERROR("iso %p not bound with ep", chan);
 		return;
 	}
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream for ep %p", ep);
+		LOG_ERROR("No stream for ep %p", ep);
 		return;
 	}
 
@@ -213,13 +213,13 @@ static void broadcast_source_iso_disconnected(struct bt_iso_chan *chan, uint8_t 
 	struct bt_bap_ep *ep = iso->tx.ep;
 
 	if (ep == NULL) {
-		LOG_ERR("iso %p not bound with ep", chan);
+		LOG_ERROR("iso %p not bound with ep", chan);
 		return;
 	}
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream for ep %p", ep);
+		LOG_ERROR("No stream for ep %p", ep);
 		return;
 	}
 

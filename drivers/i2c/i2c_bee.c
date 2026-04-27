@@ -173,23 +173,23 @@ static void i2c_bee_log_err(struct i2c_bee_data *data)
 {
 	switch (data->errs) {
 	case I2C_ABRT_7B_ADDR_NOACK:
-		LOG_ERR("7 bit address no ack");
+		LOG_ERROR("7 bit address no ack");
 		break;
 	case I2C_ABRT_10ADDR1_NOACK:
 	case I2C_ABRT_10ADDR2_NOACK:
-		LOG_ERR("10 bit address no ack");
+		LOG_ERROR("10 bit address no ack");
 		break;
 	case I2C_ABRT_TXDATA_NOACK:
-		LOG_ERR("data no ack");
+		LOG_ERROR("data no ack");
 		break;
 	case I2C_ARB_LOST:
-		LOG_ERR("arbitration lost");
+		LOG_ERROR("arbitration lost");
 		break;
 	case I2C_ERR_TIMEOUT:
-		LOG_ERR("timeout");
+		LOG_ERROR("timeout");
 		break;
 	default:
-		LOG_ERR("unknown status: 0x%02x", data->errs);
+		LOG_ERROR("unknown status: 0x%02x", data->errs);
 		break;
 	}
 }

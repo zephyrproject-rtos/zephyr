@@ -102,7 +102,7 @@ static void tcc_counter_wait_sync(const volatile uint32_t *sync_reg_addr, uint32
 {
 	if (false == WAIT_FOR((((*sync_reg_addr) & bit_mask) == 0u),
 			      TCC_SYNCHRONIZATION_TIMEOUT_IN_US, k_busy_wait(DELAY_US))) {
-		LOG_ERR("%s : Synchronization time-out occurred", __func__);
+		LOG_ERROR("%s : Synchronization time-out occurred", __func__);
 	}
 }
 
@@ -110,7 +110,7 @@ static void tcc_counter_ctrlbset_sync(tcc_registers_t *const p_regs, uint32_t bi
 {
 	if (false == WAIT_FOR((((p_regs->TCC_CTRLBSET) & bit_mask) == 0u), TCC_CTRLB_TIMEOUT_IN_US,
 			      k_busy_wait(DELAY_US))) {
-		LOG_ERR("%s : CTRLBSET time-out occurred", __func__);
+		LOG_ERROR("%s : CTRLBSET time-out occurred", __func__);
 	}
 }
 
@@ -209,7 +209,7 @@ static int32_t tcc_counter_alarm_irq_enable(tcc_registers_t *const p_regs, uint8
 		p_regs->TCC_INTENSET = TCC_INTFLAG_MC0_Msk << channel_id;
 		ret_val = COUNTER_RET_PASSED;
 	} else {
-		LOG_ERR("channel id is greater than max channel %s", __func__);
+		LOG_ERROR("channel id is greater than max channel %s", __func__);
 		ret_val = COUNTER_RET_FAILED;
 	}
 
@@ -225,7 +225,7 @@ static int32_t tcc_counter_alarm_irq_disable(tcc_registers_t *const p_regs, uint
 		p_regs->TCC_INTENCLR = TCC_INTFLAG_MC0_Msk << channel_id;
 		ret_val = COUNTER_RET_PASSED;
 	} else {
-		LOG_ERR("channel id is greater than max channel %s", __func__);
+		LOG_ERROR("channel id is greater than max channel %s", __func__);
 		ret_val = COUNTER_RET_FAILED;
 	}
 
@@ -241,7 +241,7 @@ static int32_t tcc_counter_alarm_irq_clear(tcc_registers_t *const p_regs, uint8_
 		p_regs->TCC_INTFLAG = TCC_INTFLAG_MC0_Msk << channel_id;
 		ret_val = COUNTER_RET_PASSED;
 	} else {
-		LOG_ERR("channel id is greater than max channel %s", __func__);
+		LOG_ERROR("channel id is greater than max channel %s", __func__);
 		ret_val = COUNTER_RET_FAILED;
 	}
 
@@ -366,12 +366,12 @@ static int32_t counter_mchp_set_alarm(const struct device *const dev, const uint
 	__ASSERT_NO_MSG(data->guard_period < top_value);
 
 	if (ticks > top_value) {
-		LOG_ERR("requested tick value is less than top period");
+		LOG_ERROR("requested tick value is less than top period");
 		return -EINVAL;
 	}
 
 	if (NULL != data->channel_data[chan_id].callback) {
-		LOG_ERR("Counter Alarm is already set");
+		LOG_ERROR("Counter Alarm is already set");
 		return -EBUSY;
 	}
 
@@ -467,7 +467,7 @@ static int32_t counter_mchp_set_top_value(const struct device *const dev,
 	/* Check if alarm callback function is already in progress */
 	for (uint8_t i = 0; i < counter_get_num_of_channels(dev); i++) {
 		if (NULL != data->channel_data[i].callback) {
-			LOG_ERR("callback already specified %s", __func__);
+			LOG_ERROR("callback already specified %s", __func__);
 			return -EBUSY;
 		}
 	}
@@ -540,7 +540,7 @@ static int32_t counter_mchp_set_guard_period(const struct device *dev, uint32_t 
 	const struct counter_mchp_dev_config *const cfg = dev->config;
 
 	if (guard > tcc_counter_get_period(cfg->regs)) {
-		LOG_ERR("guard period set is invalid");
+		LOG_ERROR("guard period set is invalid");
 		return -EINVAL;
 	}
 	data->guard_period = guard;
@@ -576,7 +576,7 @@ static int32_t counter_mchp_init(const struct device *const dev)
 	ret_val = clock_control_on(clk->clock_dev, clk->host_core_sync_clk);
 
 	if ((ret_val < 0) && (ret_val != -EALREADY)) {
-		LOG_ERR("%s : Unable to initialize host clock", __func__);
+		LOG_ERROR("%s : Unable to initialize host clock", __func__);
 		return ret_val;
 	}
 
@@ -584,7 +584,7 @@ static int32_t counter_mchp_init(const struct device *const dev)
 	ret_val = clock_control_on(clk->clock_dev, clk->periph_async_clk);
 
 	if ((ret_val < 0) && (ret_val != -EALREADY)) {
-		LOG_ERR("%s : Unable to initialize peripheral clock", __func__);
+		LOG_ERROR("%s : Unable to initialize peripheral clock", __func__);
 		return ret_val;
 	}
 

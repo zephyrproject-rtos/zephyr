@@ -61,7 +61,7 @@ static int drv84xx_set_microstep_pin(const struct device *dev, const struct gpio
 	/* Reset microstep pin as it may have been disconnected. */
 	ret = gpio_pin_configure_dt(pin, GPIO_OUTPUT_INACTIVE);
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to reset micro-step pin (error: %d)", dev->name, ret);
+		LOG_ERROR("%s: Failed to reset micro-step pin (error: %d)", dev->name, ret);
 		return ret;
 	}
 
@@ -84,7 +84,7 @@ static int drv84xx_set_microstep_pin(const struct device *dev, const struct gpio
 	}
 
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to set micro-step pin (error: %d)", dev->name, ret);
+		LOG_ERROR("%s: Failed to set micro-step pin (error: %d)", dev->name, ret);
 		return ret;
 	}
 	return 0;
@@ -104,15 +104,15 @@ int drv84xx_microstep_recovery(const struct device *dev)
 
 	ret = drv84xx_set_microstep_pin(dev, &config->common.m0_pin, m0_value);
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to restore microstep configuration (error: %d)", dev->name,
-			ret);
+		LOG_ERROR("%s: Failed to restore microstep configuration (error: %d)", dev->name,
+			  ret);
 		return ret;
 	}
 
 	ret = drv84xx_set_microstep_pin(dev, &config->common.m1_pin, m1_value);
 	if (ret != 0) {
-		LOG_ERR("%s: Failed to restore microstep configuration (error: %d)", dev->name,
-			ret);
+		LOG_ERROR("%s: Failed to restore microstep configuration (error: %d)", dev->name,
+			  ret);
 		return ret;
 	}
 
@@ -125,8 +125,8 @@ static int drv84xx_check_en_sleep_pin(const struct drv84xx_config *config)
 	bool has_enable_pin = config->common.en_pin.port != NULL;
 
 	if (!has_sleep_pin && !has_enable_pin) {
-		LOG_ERR("Failed to enable/disable device, neither sleep pin nor enable pin are "
-			"available. The device is always on.");
+		LOG_ERROR("Failed to enable/disable device, neither sleep pin nor enable pin are "
+			  "available. The device is always on.");
 		return -ENOTSUP;
 	}
 
@@ -143,7 +143,7 @@ static int drv84xx_set_en_pin_state(const struct device *dev, bool enable)
 	if (has_enable_pin) {
 		ret = gpio_pin_set_dt(&config->common.en_pin, enable);
 		if (ret != 0) {
-			LOG_ERR("%s: Failed to set en_pin (error: %d)", dev->name, ret);
+			LOG_ERROR("%s: Failed to set en_pin (error: %d)", dev->name, ret);
 			return ret;
 		}
 		data->pin_states.en = enable ? 1U : 0U;
@@ -162,7 +162,7 @@ static int drv84xx_set_sleep_pin_state(const struct device *dev, bool enable)
 	if (has_sleep_pin) {
 		ret = gpio_pin_set_dt(&config->sleep_pin, !enable);
 		if (ret != 0) {
-			LOG_ERR("%s: Failed to set sleep_pin (error: %d)", dev->name, ret);
+			LOG_ERROR("%s: Failed to set sleep_pin (error: %d)", dev->name, ret);
 			return ret;
 		}
 		data->pin_states.sleep = enable ? 0U : 1U;
@@ -211,7 +211,7 @@ static int drv84xx_enable(const struct device *dev)
 		k_sleep(enable_timeout);
 		ret = gpio_add_callback_dt(&config->fault_pin, &data->fault_cb_data);
 		if (ret != 0) {
-			LOG_ERR("%s: Failed to add fault callback (error: %d)", dev->name, ret);
+			LOG_ERROR("%s: Failed to add fault callback (error: %d)", dev->name, ret);
 			return ret;
 		}
 	}
@@ -244,7 +244,8 @@ static int drv84xx_disable(const struct device *dev)
 	if (has_fault_pin) {
 		ret = gpio_remove_callback_dt(&config->fault_pin, &data->fault_cb_data);
 		if (ret != 0) {
-			LOG_ERR("%s: Failed to remove fault callback (error: %d)", dev->name, ret);
+			LOG_ERROR("%s: Failed to remove fault callback (error: %d)", dev->name,
+				  ret);
 			return ret;
 		}
 	}
@@ -275,9 +276,9 @@ static int drv84xx_set_micro_step_res(const struct device *dev,
 
 	if ((config->common.m0_pin.port == NULL) || (config->common.m1_pin.port == NULL)) {
 
-		LOG_ERR("%s: Failed to set microstep resolution: microstep pins are not defined "
-			"(error: %d)",
-			dev->name, -ENOTSUP);
+		LOG_ERROR("%s: Failed to set microstep resolution: microstep pins are not defined "
+			  "(error: %d)",
+			  dev->name, -ENOTSUP);
 		return -ENOTSUP;
 	}
 
@@ -374,7 +375,7 @@ static int drv84xx_init(const struct device *dev)
 	if (config->sleep_pin.port != NULL) {
 		ret = gpio_pin_configure_dt(&config->sleep_pin, GPIO_OUTPUT_ACTIVE);
 		if (ret != 0) {
-			LOG_ERR("%s: Failed to configure sleep_pin (error: %d)", dev->name, ret);
+			LOG_ERROR("%s: Failed to configure sleep_pin (error: %d)", dev->name, ret);
 			return ret;
 		}
 		data->pin_states.sleep = 1U;
@@ -384,7 +385,7 @@ static int drv84xx_init(const struct device *dev)
 	if (config->common.en_pin.port != NULL) {
 		ret = gpio_pin_configure_dt(&config->common.en_pin, GPIO_OUTPUT_INACTIVE);
 		if (ret != 0) {
-			LOG_ERR("%s: Failed to configure en_pin (error: %d)", dev->name, ret);
+			LOG_ERROR("%s: Failed to configure en_pin (error: %d)", dev->name, ret);
 			return ret;
 		}
 		data->pin_states.en = 0U;
@@ -394,7 +395,7 @@ static int drv84xx_init(const struct device *dev)
 	if (config->common.m0_pin.port != NULL) {
 		ret = gpio_pin_configure_dt(&config->common.m0_pin, GPIO_OUTPUT_INACTIVE);
 		if (ret != 0) {
-			LOG_ERR("%s: Failed to configure m0_pin (error: %d)", dev->name, ret);
+			LOG_ERROR("%s: Failed to configure m0_pin (error: %d)", dev->name, ret);
 			return ret;
 		}
 		data->pin_states.m0 = 0U;
@@ -404,7 +405,7 @@ static int drv84xx_init(const struct device *dev)
 	if (config->common.m1_pin.port != NULL) {
 		ret = gpio_pin_configure_dt(&config->common.m1_pin, GPIO_OUTPUT_INACTIVE);
 		if (ret != 0) {
-			LOG_ERR("%s: Failed to configure m1_pin (error: %d)", dev->name, ret);
+			LOG_ERROR("%s: Failed to configure m1_pin (error: %d)", dev->name, ret);
 			return ret;
 		}
 		data->pin_states.m1 = 0U;
@@ -421,15 +422,15 @@ static int drv84xx_init(const struct device *dev)
 	if (config->fault_pin.port != NULL) {
 		ret = gpio_pin_configure_dt(&config->fault_pin, GPIO_INPUT);
 		if (ret != 0) {
-			LOG_ERR("%s: Failed to configure fault_pin (error: %d)", dev->name, ret);
+			LOG_ERROR("%s: Failed to configure fault_pin (error: %d)", dev->name, ret);
 			return ret;
 		}
 
 		ret = gpio_pin_interrupt_configure_dt(&config->fault_pin,
 						      GPIO_INT_EDGE_TO_INACTIVE);
 		if (ret != 0) {
-			LOG_ERR("Error %d: failed to configure interrupt on %s pin %d", ret,
-				config->fault_pin.port->name, config->fault_pin.pin);
+			LOG_ERROR("Error %d: failed to configure interrupt on %s pin %d", ret,
+				  config->fault_pin.port->name, config->fault_pin.pin);
 			return ret;
 		}
 

@@ -74,7 +74,7 @@ static int obex_transport_disconn(struct bt_obex *obex)
 
 	err = obex->_transport_ops->disconnect(obex);
 	if (err) {
-		LOG_ERR("Fail to disconnect transport (err %d)", err);
+		LOG_ERROR("Fail to disconnect transport (err %d)", err);
 	}
 	return err;
 }
@@ -864,7 +864,7 @@ failed:
 	LOG_WRN("Failed to process request");
 	buf = obex_alloc_buf(obex);
 	if (!buf) {
-		LOG_ERR("Failed to allocate buf");
+		LOG_ERROR("Failed to allocate buf");
 		return -ENOBUFS;
 	}
 
@@ -882,7 +882,7 @@ failed:
 
 	err = obex_send(obex, BT_OBEX_MIN_MTU, buf);
 	if (err) {
-		LOG_ERR("Failed to send obex rep err %d", err);
+		LOG_ERROR("Failed to send obex rep err %d", err);
 		net_buf_unref(buf);
 	}
 
@@ -1426,28 +1426,28 @@ int bt_obex_recv(struct bt_obex *obex, struct net_buf *buf)
 int bt_obex_server_register(struct bt_obex_server *server, const struct bt_uuid_128 *uuid)
 {
 	if (server == NULL || server->obex == NULL) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return -EINVAL;
 	}
 
 	if (server->ops == NULL || server->ops->connect == NULL ||
 	    server->ops->disconnect == NULL) {
-		LOG_ERR("Invalid OBEX role");
+		LOG_ERROR("Invalid OBEX role");
 		return -EINVAL;
 	}
 
 	if (atomic_get(&server->_state) != BT_OBEX_DISCONNECTED) {
-		LOG_ERR("Invalid state, connect is %u", (uint8_t)atomic_get(&server->_state));
+		LOG_ERROR("Invalid state, connect is %u", (uint8_t)atomic_get(&server->_state));
 		return -EINPROGRESS;
 	}
 
 	if (sys_slist_find(&server->obex->_servers, &server->_node, NULL)) {
-		LOG_ERR("server %p has been registered", server);
+		LOG_ERROR("server %p has been registered", server);
 		return -EALREADY;
 	}
 
 	if (!sys_slist_is_empty(&server->obex->_servers) && server->uuid == NULL) {
-		LOG_ERR("UUID of server %p should not be NULL", server);
+		LOG_ERROR("UUID of server %p should not be NULL", server);
 		return -EINVAL;
 	}
 
@@ -1465,17 +1465,17 @@ int bt_obex_server_register(struct bt_obex_server *server, const struct bt_uuid_
 int bt_obex_server_unregister(struct bt_obex_server *server)
 {
 	if (server == NULL || server->obex == NULL) {
-		LOG_ERR("Invalid parameter");
+		LOG_ERROR("Invalid parameter");
 		return -EINVAL;
 	}
 
 	if (!sys_slist_find(&server->obex->_servers, &server->_node, NULL)) {
-		LOG_ERR("server %p has not been registered", server);
+		LOG_ERROR("server %p has not been registered", server);
 		return -EALREADY;
 	}
 
 	if (atomic_get(&server->_state) != BT_OBEX_DISCONNECTED) {
-		LOG_ERR("Invalid state, connect is %u", (uint8_t)atomic_get(&server->_state));
+		LOG_ERROR("Invalid state, connect is %u", (uint8_t)atomic_get(&server->_state));
 		return -EINPROGRESS;
 	}
 
@@ -1520,7 +1520,7 @@ int bt_obex_connect(struct bt_obex_client *client, uint16_t mopl, struct net_buf
 
 	if (!sys_slist_is_empty(&client->obex->_clients) &&
 	    !bt_obex_has_header(buf, BT_OBEX_HEADER_ID_TARGET)) {
-		LOG_ERR("The Header target should be added");
+		LOG_ERROR("The Header target should be added");
 		return -EINVAL;
 	}
 
@@ -1540,7 +1540,7 @@ int bt_obex_connect(struct bt_obex_client *client, uint16_t mopl, struct net_buf
 	if (atomic_test_bit(&client->_flags, BT_OBEX_HAS_TARGET)) {
 		err = bt_obex_get_header_target(buf, &target_len, &target_data);
 		if (err != 0) {
-			LOG_ERR("Invalid target header");
+			LOG_ERROR("Invalid target header");
 			return err;
 		}
 
@@ -1635,13 +1635,13 @@ int bt_obex_connect_rsp(struct bt_obex_server *server, uint8_t rsp_code, uint16_
 	if (rsp_code == BT_OBEX_RSP_CODE_SUCCESS) {
 		if (bt_obex_has_header(buf, BT_OBEX_HEADER_ID_WHO) !=
 		    bt_obex_has_header(buf, BT_OBEX_HEADER_ID_CONN_ID)) {
-			LOG_ERR("Missing required who or connect id headers");
+			LOG_ERROR("Missing required who or connect id headers");
 			return -EINVAL;
 		}
 
 		if (atomic_test_bit(&server->_flags, BT_OBEX_HAS_TARGET) !=
 		    bt_obex_has_header(buf, BT_OBEX_HEADER_ID_WHO)) {
-			LOG_ERR("Missing required who header");
+			LOG_ERROR("Missing required who header");
 			return -EINVAL;
 		}
 
@@ -1650,13 +1650,13 @@ int bt_obex_connect_rsp(struct bt_obex_server *server, uint8_t rsp_code, uint16_
 
 			err = bt_obex_get_header_conn_id(buf, &server->_conn_id);
 			if (err != 0) {
-				LOG_ERR("Invalid connection id header");
+				LOG_ERROR("Invalid connection id header");
 				return err;
 			}
 
 			err = bt_obex_get_header_who(buf, &who_len, &who_data);
 			if (err != 0) {
-				LOG_ERR("Invalid who header");
+				LOG_ERROR("Invalid who header");
 				return err;
 			}
 

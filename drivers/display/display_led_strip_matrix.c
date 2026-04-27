@@ -113,7 +113,7 @@ static int led_strip_matrix_write(const struct device *dev, const uint16_t x, co
 
 	rc = check_descriptor(config, x, y, desc);
 	if (rc) {
-		LOG_ERR("Invalid descriptor: %d", rc);
+		LOG_ERROR("Invalid descriptor: %d", rc);
 		return rc;
 	}
 
@@ -146,7 +146,7 @@ static int led_strip_matrix_write(const struct device *dev, const uint16_t x, co
 		rc = led_strip_update_rgb(config->strips[i].dev, config->strips[i].pixels,
 					  config->width * config->height);
 		if (rc) {
-			LOG_ERR("couldn't update strip: %d", rc);
+			LOG_ERROR("couldn't update strip: %d", rc);
 		}
 	}
 
@@ -162,7 +162,7 @@ static int led_strip_matrix_read(const struct device *dev, const uint16_t x, con
 
 	rc = check_descriptor(config, x, y, desc);
 	if (rc) {
-		LOG_ERR("Invalid descriptor: %d", rc);
+		LOG_ERROR("Invalid descriptor: %d", rc);
 		return rc;
 	}
 
@@ -215,7 +215,7 @@ static int led_strip_matrix_init(const struct device *dev)
 
 	for (size_t i = 0; i < config->num_of_strips; i++) {
 		if (!device_is_ready(config->strips[i].dev)) {
-			LOG_ERR("LED strip device %s is not ready", config->strips[i].dev->name);
+			LOG_ERROR("LED strip device %s is not ready", config->strips[i].dev->name);
 			return -EINVAL;
 		}
 	}

@@ -458,7 +458,7 @@ static int float_to_string(double *value)
 
 	len = lwm2m_ftoa(value, pt_buffer, sizeof(pt_buffer), 15);
 	if (len < 0 || len >= sizeof(pt_buffer)) {
-		LOG_ERR("Failed to encode float value");
+		LOG_ERROR("Failed to encode float value");
 		return -EINVAL;
 	}
 
@@ -1173,7 +1173,7 @@ static int get_float(struct lwm2m_input_context *in, double *value)
 	buf[i] = '\0';
 
 	if (lwm2m_atof(buf, value) != 0) {
-		LOG_ERR("Failed to parse float value");
+		LOG_ERROR("Failed to parse float value");
 	}
 
 	return len;
@@ -1357,7 +1357,7 @@ static int put_data_timestamp(struct lwm2m_output_context *out, time_t value)
 	fd = engine_get_out_user_data(out);
 
 	if (!out->out_cpkt || !fd) {
-		LOG_ERR("Timestamp fail");
+		LOG_ERROR("Timestamp fail");
 		return -EINVAL;
 	}
 
@@ -1495,7 +1495,7 @@ int do_write_op_senml_json(struct lwm2m_message *msg)
 	engine_set_in_user_data(&msg->in, &fd);
 
 	if (msg->in.block_ctx) {
-		LOG_ERR("Json library not support Coap Block");
+		LOG_ERROR("Json library not support Coap Block");
 		ret = -EOPNOTSUPP;
 		goto end_of_operation;
 	}
@@ -1519,7 +1519,7 @@ int do_write_op_senml_json(struct lwm2m_message *msg)
 		} else if (fd.object_bit_field < 0 ||
 			   ((fd.object_bit_field & JSON_NAME_MASK) == 0 ||
 			    (fd.object_bit_field & JSON_VALUE_MASK) == 0)) {
-			LOG_ERR("Json Write Parse object fail %d", fd.object_bit_field);
+			LOG_ERROR("Json Write Parse object fail %d", fd.object_bit_field);
 			ret = -EINVAL;
 			goto end_of_operation;
 		}
@@ -1547,7 +1547,7 @@ int do_write_op_senml_json(struct lwm2m_message *msg)
 
 		ret = lwm2m_string_to_path(full_name, &resource_path, '/');
 		if (ret < 0) {
-			LOG_ERR("Relative name too long");
+			LOG_ERROR("Relative name too long");
 			ret = -EINVAL;
 			goto end_of_operation;
 		}
@@ -1599,7 +1599,7 @@ static uint8_t json_parse_composite_read_paths(struct lwm2m_message *msg,
 		bit_field = json_arr_separate_parse_object(&json_object, senml_descr,
 						  ARRAY_SIZE(senml_descr), &ts);
 		if (bit_field < 0) {
-			LOG_ERR("Json Read Parse object fail %d", bit_field);
+			LOG_ERROR("Json Read Parse object fail %d", bit_field);
 			break;
 		} else if (JSON_BIT_CHECK(bit_field, JSON_NAME_MASK) == 0) {
 			break;
@@ -1664,7 +1664,7 @@ int do_composite_read_op_senml_json(struct lwm2m_message *msg)
 	/* Parse Path's from SenML JSO payload */
 	path_list_size = json_parse_composite_read_paths(msg, &path_list, &free_list);
 	if (path_list_size == 0) {
-		LOG_ERR("No Valid Url at msg");
+		LOG_ERROR("No Valid Url at msg");
 		return -ESRCH;
 	}
 
@@ -1699,7 +1699,7 @@ int do_composite_observe_parse_path_senml_json(struct lwm2m_message *msg,
 	/* Parse Path's from SenML JSON payload */
 	list_size = json_parse_composite_read_paths(msg, lwm2m_path_list, lwm2m_path_free_list);
 	if (list_size == 0) {
-		LOG_ERR("No Valid Url at msg");
+		LOG_ERROR("No Valid Url at msg");
 		return -ESRCH;
 	}
 

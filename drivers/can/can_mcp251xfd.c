@@ -169,7 +169,7 @@ static int mcp251xfd_fifo_write(const struct device *dev, int mailbox_idx,
 	/* read fifosta and ua at the same time */
 	regs = mcp251xfd_read_crc(dev, MCP251XFD_REG_TXQSTA, MCP251XFD_REG_SIZE * 2);
 	if (!regs) {
-		LOG_ERR("Failed to read 8 bytes from REG_TXQSTA");
+		LOG_ERROR("Failed to read 8 bytes from REG_TXQSTA");
 		return -EINVAL;
 	}
 
@@ -273,7 +273,7 @@ static int mcp251xfd_reg_check_value_wtimeout(const struct device *dev, uint16_t
 		}
 
 		if (--retries < 0) {
-			LOG_ERR("Timeout validating 0x%x", addr);
+			LOG_ERROR("Timeout validating 0x%x", addr);
 			return -EIO;
 		}
 
@@ -351,7 +351,7 @@ static int mcp251xfd_set_mode_internal(const struct device *dev, uint8_t request
 
 	ret = mcp251xfd_write(dev, MCP251XFD_REG_CON, MCP251XFD_REG_SIZE);
 	if (ret < 0) {
-		LOG_ERR("Failed to write REG_CON register [%d]", MCP251XFD_REG_CON);
+		LOG_ERROR("Failed to write REG_CON register [%d]", MCP251XFD_REG_CON);
 		goto done;
 	}
 
@@ -429,7 +429,7 @@ static int mcp251xfd_set_timing(const struct device *dev, const struct can_timin
 
 	ret = mcp251xfd_write(dev, MCP251XFD_REG_NBTCFG, MCP251XFD_REG_SIZE);
 	if (ret < 0) {
-		LOG_ERR("Failed to write NBTCFG register [%d]", ret);
+		LOG_ERROR("Failed to write NBTCFG register [%d]", ret);
 	}
 
 	k_mutex_unlock(&dev_data->mutex);
@@ -471,7 +471,7 @@ static int mcp251xfd_set_timing_data(const struct device *dev, const struct can_
 
 	ret = mcp251xfd_write(dev, MCP251XFD_REG_DBTCFG, MCP251XFD_REG_SIZE);
 	if (ret < 0) {
-		LOG_ERR("Failed to write DBTCFG register [%d]", ret);
+		LOG_ERROR("Failed to write DBTCFG register [%d]", ret);
 	}
 
 	k_mutex_unlock(&dev_data->mutex);
@@ -502,7 +502,7 @@ static int mcp251xfd_send(const struct device *dev, const struct can_frame *msg,
 	}
 
 	if ((msg->flags & CAN_FRAME_FDF) == 0 && msg->dlc > CAN_MAX_DLC) {
-		LOG_ERR("DLC of %d without fd flag set.", msg->dlc);
+		LOG_ERROR("DLC of %d without fd flag set.", msg->dlc);
 		return -EINVAL;
 	}
 
@@ -580,7 +580,7 @@ static int mcp251xfd_add_rx_filter(const struct device *dev, can_rx_callback_t r
 	*reg = sys_cpu_to_le32(tmp);
 	ret = mcp251xfd_write(dev, MCP251XFD_REG_FLTOBJ(filter_idx), MCP251XFD_REG_SIZE);
 	if (ret < 0) {
-		LOG_ERR("Failed to write FLTOBJ register [%d]", ret);
+		LOG_ERROR("Failed to write FLTOBJ register [%d]", ret);
 		goto done;
 	}
 
@@ -597,7 +597,7 @@ static int mcp251xfd_add_rx_filter(const struct device *dev, can_rx_callback_t r
 
 	ret = mcp251xfd_write(dev, MCP251XFD_REG_FLTMASK(filter_idx), MCP251XFD_REG_SIZE);
 	if (ret < 0) {
-		LOG_ERR("Failed to write FLTMASK register [%d]", ret);
+		LOG_ERROR("Failed to write FLTMASK register [%d]", ret);
 		goto done;
 	}
 
@@ -607,7 +607,7 @@ static int mcp251xfd_add_rx_filter(const struct device *dev, can_rx_callback_t r
 
 	ret = mcp251xfd_write(dev, MCP251XFD_REG_BYTE_FLTCON(filter_idx), 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to write FLTCON register [%d]", ret);
+		LOG_ERROR("Failed to write FLTCON register [%d]", ret);
 		goto done;
 	}
 
@@ -630,7 +630,7 @@ static void mcp251xfd_remove_rx_filter(const struct device *dev, int filter_idx)
 	int ret;
 
 	if (filter_idx < 0 || filter_idx >= CONFIG_CAN_MCP251XFD_MAX_FILTERS) {
-		LOG_ERR("Filter ID %d out of bounds", filter_idx);
+		LOG_ERROR("Filter ID %d out of bounds", filter_idx);
 		return;
 	}
 
@@ -641,7 +641,7 @@ static void mcp251xfd_remove_rx_filter(const struct device *dev, int filter_idx)
 
 	ret = mcp251xfd_write(dev, MCP251XFD_REG_BYTE_FLTCON(filter_idx), 1);
 	if (ret < 0) {
-		LOG_ERR("Failed to write FLTCON register [%d]", ret);
+		LOG_ERROR("Failed to write FLTCON register [%d]", ret);
 		goto done;
 	}
 
@@ -652,7 +652,7 @@ static void mcp251xfd_remove_rx_filter(const struct device *dev, int filter_idx)
 
 	ret = mcp251xfd_write(dev, MCP251XFD_REG_FLTCON(filter_idx), MCP251XFD_REG_SIZE);
 	if (ret < 0) {
-		LOG_ERR("Failed to write FLTCON register [%d]", ret);
+		LOG_ERROR("Failed to write FLTCON register [%d]", ret);
 	}
 
 done:
@@ -811,7 +811,7 @@ static int mcp251xfd_handle_fifo_read(const struct device *dev, const struct mcp
 
 		data = mcp251xfd_read_reg(dev, memory_addr, len * fifo->item_size);
 		if (!data) {
-			LOG_ERR("Error fetching batch message");
+			LOG_ERROR("Error fetching batch message");
 			ret = -EINVAL;
 			goto done;
 		}
@@ -831,7 +831,7 @@ static int mcp251xfd_handle_fifo_read(const struct device *dev, const struct mcp
 	for (int i = 0; i < ui_inc; i++) {
 		ret = mcp251xfd_write(dev, fifo->reg_fifocon_addr + 1, 1);
 		if (ret < 0) {
-			LOG_ERR("Failed to increment pointer");
+			LOG_ERROR("Failed to increment pointer");
 			goto done;
 		}
 	}
@@ -1063,7 +1063,7 @@ static void mcp251xfd_handle_interrupts(const struct device *dev)
 
 			ret = mcp251xfd_write(dev, MCP251XFD_REG_INT, sizeof(*reg_int_hw));
 			if (ret) {
-				LOG_ERR("Error clearing REG_INT interrupts [%d]", ret);
+				LOG_ERROR("Error clearing REG_INT interrupts [%d]", ret);
 			}
 		}
 
@@ -1073,7 +1073,7 @@ static void mcp251xfd_handle_interrupts(const struct device *dev)
 			ret = mcp251xfd_handle_fifo_read(dev, &dev_cfg->rx_fifo,
 							 MCP251XFD_FIFO_TYPE_RX);
 			if (ret < 0) {
-				LOG_ERR("Error handling RXIF [%d]", ret);
+				LOG_ERROR("Error handling RXIF [%d]", ret);
 			}
 		}
 
@@ -1081,21 +1081,21 @@ static void mcp251xfd_handle_interrupts(const struct device *dev)
 			ret = mcp251xfd_handle_fifo_read(dev, &dev_cfg->tef_fifo,
 							 MCP251XFD_FIFO_TYPE_TEF);
 			if (ret < 0) {
-				LOG_ERR("Error handling TEFIF [%d]", ret);
+				LOG_ERROR("Error handling TEFIF [%d]", ret);
 			}
 		}
 
 		if ((reg_int & MCP251XFD_REG_INT_IVMIF) != 0) {
 			ret = mcp251xfd_handle_ivmif(dev);
 			if (ret < 0) {
-				LOG_ERR("Error handling IVMIF [%d]", ret);
+				LOG_ERROR("Error handling IVMIF [%d]", ret);
 			}
 		}
 
 		if ((reg_int & MCP251XFD_REG_INT_MODIF) != 0) {
 			ret = mcp251xfd_handle_modif(dev);
 			if (ret < 0) {
-				LOG_ERR("Error handling MODIF [%d]", ret);
+				LOG_ERROR("Error handling MODIF [%d]", ret);
 			}
 		}
 
@@ -1108,7 +1108,7 @@ static void mcp251xfd_handle_interrupts(const struct device *dev)
 		    dev_data->state > CAN_STATE_ERROR_ACTIVE) {
 			ret = mcp251xfd_handle_cerrif(dev);
 			if (ret < 0) {
-				LOG_ERR("Error handling CERRIF [%d]", ret);
+				LOG_ERROR("Error handling CERRIF [%d]", ret);
 			}
 		}
 
@@ -1116,7 +1116,7 @@ static void mcp251xfd_handle_interrupts(const struct device *dev)
 		if ((reg_int & MCP251XFD_REG_INT_RXOVIF) != 0) {
 			ret = mcp251xfd_handle_rxovif(dev);
 			if (ret < 0) {
-				LOG_ERR("Error handling RXOVIF [%d]", ret);
+				LOG_ERROR("Error handling RXOVIF [%d]", ret);
 			}
 		}
 #endif
@@ -1125,7 +1125,7 @@ static void mcp251xfd_handle_interrupts(const struct device *dev)
 		consecutive_calls++;
 		ret = gpio_pin_get_dt(&dev_cfg->int_gpio_dt);
 		if (ret < 0) {
-			LOG_ERR("Couldn't read INT pin [%d]", ret);
+			LOG_ERROR("Couldn't read INT pin [%d]", ret);
 		} else if (ret == 0) {
 			/* All interrupt flags handled */
 			break;
@@ -1152,7 +1152,7 @@ static void mcp251xfd_int_thread(const struct device *dev)
 		/* Re-enable pin interrupts */
 		ret = gpio_pin_interrupt_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INT_LEVEL_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Couldn't enable pin interrupt [%d]", ret);
+			LOG_ERROR("Couldn't enable pin interrupt [%d]", ret);
 			k_oops();
 		}
 	}
@@ -1170,7 +1170,7 @@ static void mcp251xfd_int_gpio_callback(const struct device *dev_gpio, struct gp
 	/* Disable pin interrupts */
 	ret = gpio_pin_interrupt_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INT_DISABLE);
 	if (ret < 0) {
-		LOG_ERR("Couldn't disable pin interrupt [%d]", ret);
+		LOG_ERROR("Couldn't disable pin interrupt [%d]", ret);
 		k_oops();
 	}
 
@@ -1206,7 +1206,7 @@ static int mcp251xfd_start(const struct device *dev)
 	if (dev_cfg->common.phy != NULL) {
 		ret = can_transceiver_enable(dev_cfg->common.phy, dev_data->common.mode);
 		if (ret < 0) {
-			LOG_ERR("Failed to enable CAN transceiver [%d]", ret);
+			LOG_ERROR("Failed to enable CAN transceiver [%d]", ret);
 			return ret;
 		}
 	}
@@ -1217,7 +1217,7 @@ static int mcp251xfd_start(const struct device *dev)
 
 	ret = mcp251xfd_set_mode_internal(dev, dev_data->next_mcp251xfd_mode);
 	if (ret < 0) {
-		LOG_ERR("Failed to set the mode [%d]", ret);
+		LOG_ERROR("Failed to set the mode [%d]", ret);
 		if (dev_cfg->common.phy != NULL) {
 			/* Attempt to disable the CAN transceiver in case of error */
 			(void)can_transceiver_disable(dev_cfg->common.phy);
@@ -1278,7 +1278,7 @@ static int mcp251xfd_stop(const struct device *dev)
 	if (dev_cfg->common.phy != NULL) {
 		ret = can_transceiver_disable(dev_cfg->common.phy);
 		if (ret < 0) {
-			LOG_ERR("Failed to disable CAN transceiver [%d]", ret);
+			LOG_ERROR("Failed to disable CAN transceiver [%d]", ret);
 			return ret;
 		}
 	}
@@ -1318,7 +1318,7 @@ static void mcp251xfd_tef_fifo_handler(const struct device *dev, void *data)
 	mailbox_idx = FIELD_GET(MCP251XFD_OBJ_FLAGS_SEQ_MASK, tefobj->flags);
 	if (mailbox_idx >= MCP251XFD_TX_QUEUE_ITEMS) {
 		mcp251xfd_reset_tx_fifos(dev, -EIO);
-		LOG_ERR("Invalid mailbox index");
+		LOG_ERROR("Invalid mailbox index");
 		return;
 	}
 
@@ -1527,13 +1527,13 @@ static int mcp251xfd_init(const struct device *dev)
 		uint32_t clk_id = dev_cfg->clk_id;
 
 		if (!device_is_ready(dev_cfg->clk_dev)) {
-			LOG_ERR("Clock controller not ready");
+			LOG_ERROR("Clock controller not ready");
 			return -ENODEV;
 		}
 
 		ret = clock_control_on(dev_cfg->clk_dev, (clock_control_subsys_t)clk_id);
 		if (ret < 0) {
-			LOG_ERR("Failed to enable clock [%d]", ret);
+			LOG_ERROR("Failed to enable clock [%d]", ret);
 			return ret;
 		}
 	}
@@ -1544,17 +1544,17 @@ static int mcp251xfd_init(const struct device *dev)
 	k_mutex_init(&dev_data->mutex);
 
 	if (!spi_is_ready_dt(&dev_cfg->bus)) {
-		LOG_ERR("SPI bus %s not ready", dev_cfg->bus.bus->name);
+		LOG_ERROR("SPI bus %s not ready", dev_cfg->bus.bus->name);
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&dev_cfg->int_gpio_dt)) {
-		LOG_ERR("GPIO port not ready");
+		LOG_ERROR("GPIO port not ready");
 		return -ENODEV;
 	}
 
 	if (gpio_pin_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INPUT) < 0) {
-		LOG_ERR("Unable to configure GPIO pin");
+		LOG_ERROR("Unable to configure GPIO pin");
 		return -EINVAL;
 	}
 
@@ -1578,14 +1578,14 @@ static int mcp251xfd_init(const struct device *dev)
 
 	ret = mcp251xfd_reset(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to reset the device [%d]", ret);
+		LOG_ERROR("Failed to reset the device [%d]", ret);
 		return ret;
 	}
 
 	ret = can_calc_timing(dev, &timing, dev_cfg->common.bitrate,
 			      dev_cfg->common.sample_point);
 	if (ret < 0) {
-		LOG_ERR("Can't find timing for given param");
+		LOG_ERROR("Can't find timing for given param");
 		return ret;
 	}
 
@@ -1597,7 +1597,7 @@ static int mcp251xfd_init(const struct device *dev)
 	ret = can_calc_timing_data(dev, &timing_data, dev_cfg->common.bitrate_data,
 				   dev_cfg->common.sample_point_data);
 	if (ret < 0) {
-		LOG_ERR("Can't find data timing for given param");
+		LOG_ERROR("Can't find data timing for given param");
 		return ret;
 	}
 
@@ -1616,7 +1616,7 @@ static int mcp251xfd_init(const struct device *dev)
 	opmod = FIELD_GET(MCP251XFD_REG_CON_OPMOD_MASK, *reg);
 
 	if (opmod != MCP251XFD_REG_CON_MODE_CONFIG) {
-		LOG_ERR("Device did not reset into configuration mode [%d]", opmod);
+		LOG_ERROR("Device did not reset into configuration mode [%d]", opmod);
 		return -EIO;
 	}
 
@@ -1629,7 +1629,7 @@ static int mcp251xfd_init(const struct device *dev)
 
 	ret = mcp251xfd_init_osc_reg(dev);
 	if (ret < 0) {
-		LOG_ERR("Error initializing OSC register [%d]", ret);
+		LOG_ERROR("Error initializing OSC register [%d]", ret);
 		return ret;
 	}
 

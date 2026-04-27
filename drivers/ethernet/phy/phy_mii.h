@@ -134,7 +134,7 @@ static inline int phy_mii_set_bmcr_reg_autoneg_disabled(const struct device *dev
 	} else if (PHY_LINK_IS_SPEED_10M(adv_speeds)) {
 		bmcr_reg |= MII_BMCR_SPEED_10;
 	} else {
-		LOG_ERR("Invalid speed %d", adv_speeds);
+		LOG_ERROR("Invalid speed %d", adv_speeds);
 		return -EINVAL;
 	}
 

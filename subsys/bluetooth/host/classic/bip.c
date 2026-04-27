@@ -328,7 +328,7 @@ int bt_bip_set_supported_capabilities(struct bt_bip *bip, uint8_t capabilities)
 	}
 
 	if (bip->role != BT_BIP_ROLE_INITIATOR) {
-		LOG_ERR("Invalid role %u", bip->role);
+		LOG_ERROR("Invalid role %u", bip->role);
 		return -EINVAL;
 	}
 
@@ -343,7 +343,7 @@ int bt_bip_set_supported_features(struct bt_bip *bip, uint16_t features)
 	}
 
 	if (bip->role != BT_BIP_ROLE_INITIATOR) {
-		LOG_ERR("Invalid role %u", bip->role);
+		LOG_ERROR("Invalid role %u", bip->role);
 		return -EINVAL;
 	}
 
@@ -358,7 +358,7 @@ int bt_bip_set_supported_functions(struct bt_bip *bip, uint32_t functions)
 	}
 
 	if (bip->role != BT_BIP_ROLE_INITIATOR) {
-		LOG_ERR("Invalid role %u", bip->role);
+		LOG_ERROR("Invalid role %u", bip->role);
 		return -EINVAL;
 	}
 
@@ -500,7 +500,7 @@ static void bip_client_abort(struct bt_obex_client *client, uint8_t rsp_code, st
 
 	err = bt_bip_disconnect(c, NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to send BIP disconnect");
+		LOG_ERROR("Failed to send BIP disconnect");
 	}
 }
 
@@ -521,7 +521,7 @@ static void bip_server_connect(struct bt_obex_server *server, uint8_t version, u
 
 	if (!is_bip_primary_connect(s->_type) && s->_primary_client != NULL &&
 	    atomic_get(&s->_primary_client->_state) != BT_BIP_STATE_CONNECTED) {
-		LOG_ERR("Primary conn needs to be connected firstly");
+		LOG_ERROR("Primary conn needs to be connected firstly");
 		bt_bip_connect_rsp(s, BT_OBEX_RSP_CODE_NOT_ALLOW, NULL);
 		return;
 	}
@@ -1025,7 +1025,7 @@ failed:
 	s->_req_cb = NULL;
 	err = bt_obex_put_rsp(server, rsp_code, NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to send put rsp %d", err);
+		LOG_ERROR("Failed to send put rsp %d", err);
 	}
 }
 
@@ -1059,7 +1059,7 @@ failed:
 	s->_req_cb = NULL;
 	err = bt_obex_get_rsp(server, rsp_code, NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to send get rsp %d", err);
+		LOG_ERROR("Failed to send get rsp %d", err);
 	}
 }
 
@@ -1075,7 +1075,7 @@ static void bip_server_abort(struct bt_obex_server *server, struct net_buf *buf)
 
 	err = bt_obex_abort_rsp(server, BT_OBEX_RSP_CODE_NOT_IMPL, NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to send abort rsp %d", err);
+		LOG_ERROR("Failed to send abort rsp %d", err);
 	}
 }
 
@@ -1106,42 +1106,42 @@ static int bt_bip_server_register(struct bt_bip *bip, struct bt_bip_server *serv
 	int err;
 
 	if (atomic_get(&server->_state) != BT_BIP_STATE_DISCONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&server->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&server->_state));
 		return -EINVAL;
 	}
 
 	if (is_bip_primary_connect(type)) {
 		if (bip->role == BT_BIP_ROLE_INITIATOR) {
-			LOG_ERR("Invalid role initiator");
+			LOG_ERROR("Invalid role initiator");
 			return -EINVAL;
 		}
 
 		if (primary_client != NULL) {
-			LOG_ERR("primary client should be NULL");
+			LOG_ERROR("primary client should be NULL");
 			return -EINVAL;
 		}
 	} else {
 		struct bt_bip *primary_bip;
 
 		if (bip->role == BT_BIP_ROLE_RESPONDER) {
-			LOG_ERR("Invalid role responder");
+			LOG_ERROR("Invalid role responder");
 			return -EINVAL;
 		}
 
 		if (primary_client == NULL || primary_client->_bip == NULL) {
-			LOG_ERR("Invalid primary client");
+			LOG_ERROR("Invalid primary client");
 			return -EINVAL;
 		}
 
 		primary_bip = primary_client->_bip;
 		if (!sys_slist_find(&primary_bip->_clients, &primary_client->_node, NULL)) {
-			LOG_ERR("Primary client %p is not found", primary_client);
+			LOG_ERROR("Primary client %p is not found", primary_client);
 			return -EINVAL;
 		}
 	}
 
 	if (sys_slist_find(&bip->_servers, &server->_node, NULL)) {
-		LOG_ERR("Server %p has been registered", server);
+		LOG_ERROR("Server %p has been registered", server);
 		return -EALREADY;
 	}
 
@@ -1153,7 +1153,7 @@ static int bt_bip_server_register(struct bt_bip *bip, struct bt_bip_server *serv
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bip->_servers, s, next, _node) {
 		if (bt_uuid_cmp(&uuid->uuid, &s->_uuid->uuid) == 0) {
-			LOG_ERR("UUID has been registered");
+			LOG_ERROR("UUID has been registered");
 			return -EALREADY;
 		}
 	}
@@ -1199,18 +1199,18 @@ int bt_bip_server_unregister(struct bt_bip_server *server)
 	}
 
 	if (atomic_get(&server->_state) != BT_BIP_STATE_DISCONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&server->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&server->_state));
 		return -EINVAL;
 	}
 
 	if (!sys_slist_find(&server->_bip->_servers, &server->_node, NULL)) {
-		LOG_ERR("Server %p has not found", server);
+		LOG_ERROR("Server %p has not found", server);
 		return -EALREADY;
 	}
 
 	err = bt_obex_server_unregister(&server->_server);
 	if (err != 0) {
-		LOG_ERR("Failed to unregister %d", err);
+		LOG_ERROR("Failed to unregister %d", err);
 		return err;
 	}
 
@@ -1225,12 +1225,12 @@ static int bip_check_conn_id(uint32_t id, struct net_buf *buf)
 
 	err = bt_obex_get_header_conn_id(buf, &conn_id);
 	if (err != 0) {
-		LOG_ERR("Failed to get conn id %d", err);
+		LOG_ERROR("Failed to get conn id %d", err);
 		return err;
 	}
 
 	if (conn_id != id) {
-		LOG_ERR("Conn id is mismatched %u != %u", conn_id, id);
+		LOG_ERROR("Conn id is mismatched %u != %u", conn_id, id);
 		return -EINVAL;
 	}
 
@@ -1246,18 +1246,18 @@ static int bip_check_who(const struct bt_uuid *uuid, struct net_buf *buf)
 
 	err = bt_obex_get_header_who(buf, &len, &who);
 	if (err != 0) {
-		LOG_ERR("Failed to get who %d", err);
+		LOG_ERROR("Failed to get who %d", err);
 		return err;
 	}
 
 	err = bt_obex_make_uuid(&obex_uuid, who, len);
 	if (err != 0) {
-		LOG_ERR("Invalid UUID of who %d", err);
+		LOG_ERROR("Invalid UUID of who %d", err);
 		return err;
 	}
 
 	if (bt_uuid_cmp(uuid, &obex_uuid.uuid) != 0) {
-		LOG_ERR("WHO is mismatched");
+		LOG_ERROR("WHO is mismatched");
 		return -EINVAL;
 	}
 
@@ -1330,66 +1330,66 @@ static int bt_bip_client_connect(struct bt_bip *bip, struct bt_bip_client *clien
 	bool allocated = false;
 
 	if (atomic_get(&client->_state) != BT_BIP_STATE_DISCONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&client->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&client->_state));
 		return -EINVAL;
 	}
 
 	if (is_bip_primary_connect(type)) {
 		if (bip->role == BT_BIP_ROLE_RESPONDER) {
-			LOG_ERR("Invalid role responder");
+			LOG_ERROR("Invalid role responder");
 			return -EINVAL;
 		}
 
 		if (primary_server != NULL) {
-			LOG_ERR("primary server should be NULL");
+			LOG_ERROR("primary server should be NULL");
 			return -EINVAL;
 		}
 
 		err = bip_check_features(bip, type);
 		if (err != 0) {
-			LOG_ERR("Unsupported features for connection type %d", type);
+			LOG_ERROR("Unsupported features for connection type %d", type);
 			return err;
 		}
 	} else {
 		struct bt_bip *primary_bip;
 
 		if (bip->role == BT_BIP_ROLE_INITIATOR) {
-			LOG_ERR("Invalid role initiator");
+			LOG_ERROR("Invalid role initiator");
 			return -EINVAL;
 		}
 
 		if (primary_server == NULL || primary_server->_bip == NULL) {
-			LOG_ERR("Invalid primary client");
+			LOG_ERROR("Invalid primary client");
 			return -EINVAL;
 		}
 
 		if (type == BT_BIP_2ND_CONN_TYPE_REFERENCED_OBJECTS &&
 		    primary_server->_type != BT_BIP_PRIM_CONN_TYPE_ADVANCED_IMAGE_PRINTING) {
-			LOG_ERR("Invalid primary connection type for referenced objects");
+			LOG_ERROR("Invalid primary connection type for referenced objects");
 			return -EINVAL;
 		}
 
 		if (type == BT_BIP_2ND_CONN_TYPE_ARCHIVED_OBJECTS &&
 		    primary_server->_type != BT_BIP_PRIM_CONN_TYPE_AUTO_ARCHIVE) {
-			LOG_ERR("Invalid primary connection type for referenced objects");
+			LOG_ERROR("Invalid primary connection type for referenced objects");
 			return -EINVAL;
 		}
 
 		if (atomic_get(&primary_server->_state) != BT_BIP_STATE_CONNECTED) {
-			LOG_ERR("Invalid primary server state %u",
-				(uint8_t)atomic_get(&primary_server->_state));
+			LOG_ERROR("Invalid primary server state %u",
+				  (uint8_t)atomic_get(&primary_server->_state));
 			return -EINVAL;
 		}
 
 		primary_bip = primary_server->_bip;
 		if (!sys_slist_find(&primary_bip->_servers, &primary_server->_node, NULL)) {
-			LOG_ERR("Primary server %p is not found", primary_server);
+			LOG_ERROR("Primary server %p is not found", primary_server);
 			return -EINVAL;
 		}
 	}
 
 	if (sys_slist_find(&bip->_clients, &client->_node, NULL)) {
-		LOG_ERR("Client %p is not idle", client);
+		LOG_ERROR("Client %p is not idle", client);
 		return -EALREADY;
 	}
 
@@ -1401,26 +1401,26 @@ static int bt_bip_client_connect(struct bt_bip *bip, struct bt_bip_client *clien
 
 		err = bt_obex_get_header_target(buf, &len, &target);
 		if (err != 0) {
-			LOG_ERR("Failed to get target %d", err);
+			LOG_ERROR("Failed to get target %d", err);
 			return err;
 		}
 
 		err = bt_obex_make_uuid(&obex_uuid, target, len);
 		if (err != 0) {
-			LOG_ERR("Invalid UUID of target %d", err);
+			LOG_ERROR("Invalid UUID of target %d", err);
 			return err;
 		}
 		uuid = &obex_uuid.u128;
 	}
 
 	if (uuid == NULL) {
-		LOG_ERR("Invalid UUID");
+		LOG_ERROR("Invalid UUID");
 		return -EINVAL;
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bip->_clients, c, next, _node) {
 		if (bt_uuid_cmp(&uuid->uuid, &c->_uuid.uuid) == 0) {
-			LOG_ERR("UUID has been registered");
+			LOG_ERROR("UUID has been registered");
 			return -EALREADY;
 		}
 	}
@@ -1428,7 +1428,7 @@ static int bt_bip_client_connect(struct bt_bip *bip, struct bt_bip_client *clien
 	if (buf == NULL) {
 		buf = bt_goep_create_pdu(&bip->goep, NULL);
 		if (buf == NULL) {
-			LOG_ERR("Failed to allocate buffer");
+			LOG_ERROR("Failed to allocate buffer");
 			return -ENOBUFS;
 		}
 
@@ -1447,14 +1447,14 @@ static int bt_bip_client_connect(struct bt_bip *bip, struct bt_bip_client *clien
 		sys_memcpy_swap(val, client->_uuid.val, sizeof(val));
 		err = bt_obex_add_header_target(buf, sizeof(val), val);
 		if (err != 0) {
-			LOG_ERR("Failed to add header target");
+			LOG_ERROR("Failed to add header target");
 			goto failed;
 		}
 	}
 
 	err = bt_obex_connect(&client->_client, bip->goep.obex.rx.mtu, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send conn req");
+		LOG_ERROR("Failed to send conn req");
 		goto failed;
 	}
 
@@ -1494,21 +1494,21 @@ int bt_bip_connect_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct ne
 	}
 
 	if (atomic_get(&server->_state) != BT_BIP_STATE_CONNECTING) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&server->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&server->_state));
 		return -EINVAL;
 	}
 
 	if (rsp_code == BT_OBEX_RSP_CODE_SUCCESS && !is_bip_primary_connect(server->_type) &&
 	    server->_primary_client != NULL &&
 	    atomic_get(&server->_primary_client->_state) != BT_BIP_STATE_CONNECTED) {
-		LOG_ERR("Primary conn needs to be connected firstly");
+		LOG_ERROR("Primary conn needs to be connected firstly");
 		return -EINVAL;
 	}
 
 	if (buf == NULL) {
 		buf = bt_goep_create_pdu(&server->_bip->goep, NULL);
 		if (buf == NULL) {
-			LOG_ERR("Failed to allocate buffer");
+			LOG_ERROR("Failed to allocate buffer");
 			return -ENOBUFS;
 		}
 		allocated = true;
@@ -1533,7 +1533,7 @@ int bt_bip_connect_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct ne
 			sys_memcpy_swap(val, server->_uuid->val, sizeof(val));
 			err = bt_obex_add_header_who(buf, sizeof(val), val);
 			if (err != 0) {
-				LOG_ERR("Failed to add header target %d", err);
+				LOG_ERROR("Failed to add header target %d", err);
 				goto failed;
 			}
 		}
@@ -1541,7 +1541,7 @@ int bt_bip_connect_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct ne
 		if (!bt_obex_has_header(buf, BT_OBEX_HEADER_ID_CONN_ID)) {
 			err = bt_obex_add_header_conn_id(buf, server->_conn_id);
 			if (err != 0) {
-				LOG_ERR("Failed to add header conn id %d", err);
+				LOG_ERROR("Failed to add header conn id %d", err);
 				goto failed;
 			}
 		}
@@ -1549,7 +1549,7 @@ int bt_bip_connect_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct ne
 
 	err = bt_obex_connect_rsp(&server->_server, rsp_code, server->_bip->goep.obex.rx.mtu, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send conn rsp %d", err);
+		LOG_ERROR("Failed to send conn rsp %d", err);
 		goto failed;
 	}
 
@@ -1573,20 +1573,20 @@ int bt_bip_disconnect(struct bt_bip_client *client, struct net_buf *buf)
 	}
 
 	if (atomic_get(&client->_state) != BT_BIP_STATE_CONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&client->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&client->_state));
 		return -EINVAL;
 	}
 
 	if (is_bip_primary_connect(client->_type) && client->_secondary_server != NULL &&
 	    atomic_get(&client->_secondary_server->_state) == BT_BIP_STATE_CONNECTED) {
-		LOG_ERR("Secondary conn needs to be disconnected firstly");
+		LOG_ERROR("Secondary conn needs to be disconnected firstly");
 		return -EINVAL;
 	}
 
 	if (buf == NULL) {
 		buf = bt_goep_create_pdu(&client->_bip->goep, NULL);
 		if (buf == NULL) {
-			LOG_ERR("Failed to allocate buffer");
+			LOG_ERROR("Failed to allocate buffer");
 			return -ENOBUFS;
 		}
 		allocated = true;
@@ -1595,7 +1595,7 @@ int bt_bip_disconnect(struct bt_bip_client *client, struct net_buf *buf)
 	if (!bt_obex_has_header(buf, BT_OBEX_HEADER_ID_CONN_ID)) {
 		err = bt_obex_add_header_conn_id(buf, client->_conn_id);
 		if (err != 0) {
-			LOG_ERR("Failed to add header conn id %d", err);
+			LOG_ERROR("Failed to add header conn id %d", err);
 			goto failed;
 		}
 	} else {
@@ -1607,7 +1607,7 @@ int bt_bip_disconnect(struct bt_bip_client *client, struct net_buf *buf)
 
 	err = bt_obex_disconnect(&client->_client, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send conn rsp %d", err);
+		LOG_ERROR("Failed to send conn rsp %d", err);
 		goto failed;
 	}
 
@@ -1629,20 +1629,20 @@ int bt_bip_disconnect_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct
 	}
 
 	if (atomic_get(&server->_state) != BT_BIP_STATE_DISCONNECTING) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&server->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&server->_state));
 		return -EINVAL;
 	}
 
 	if (rsp_code == BT_OBEX_RSP_CODE_SUCCESS && is_bip_primary_connect(server->_type) &&
 	    server->_secondary_client != NULL &&
 	    atomic_get(&server->_secondary_client->_state) == BT_BIP_STATE_CONNECTED) {
-		LOG_ERR("Secondary conn needs to be disconnected firstly");
+		LOG_ERROR("Secondary conn needs to be disconnected firstly");
 		return -EINVAL;
 	}
 
 	err = bt_obex_disconnect_rsp(&server->_server, rsp_code, NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to send conn rsp %d", err);
+		LOG_ERROR("Failed to send conn rsp %d", err);
 		return err;
 	}
 
@@ -1664,19 +1664,19 @@ int bt_bip_abort(struct bt_bip_client *client, struct net_buf *buf)
 	}
 
 	if (atomic_get(&client->_state) != BT_BIP_STATE_CONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&client->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&client->_state));
 		return -EINVAL;
 	}
 
 	if (client->_rsp_cb == NULL) {
-		LOG_ERR("No operation is ongoing");
+		LOG_ERROR("No operation is ongoing");
 		return -EINVAL;
 	}
 
 	if (buf == NULL) {
 		buf = bt_goep_create_pdu(&client->_bip->goep, NULL);
 		if (buf == NULL) {
-			LOG_ERR("Failed to allocate buffer");
+			LOG_ERROR("Failed to allocate buffer");
 			return -ENOBUFS;
 		}
 		allocated = true;
@@ -1690,14 +1690,14 @@ int bt_bip_abort(struct bt_bip_client *client, struct net_buf *buf)
 	} else {
 		err = bt_obex_add_header_conn_id(buf, client->_conn_id);
 		if (err != 0) {
-			LOG_ERR("Failed to add header conn id %d", err);
+			LOG_ERROR("Failed to add header conn id %d", err);
 			goto failed;
 		}
 	}
 
 	err = bt_obex_abort(&client->_client, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send abort request %d", err);
+		LOG_ERROR("Failed to send abort request %d", err);
 		goto failed;
 	}
 
@@ -1719,13 +1719,13 @@ int bt_bip_abort_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct net_
 	}
 
 	if (atomic_get(&server->_state) != BT_BIP_STATE_CONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&server->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&server->_state));
 		return -EINVAL;
 	}
 
 	err = bt_obex_abort_rsp(&server->_server, rsp_code, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send abort rsp %d", err);
+		LOG_ERROR("Failed to send abort rsp %d", err);
 		return err;
 	}
 
@@ -1758,7 +1758,7 @@ static int bip_client_get_req_cb(struct bt_bip_client *client, const char *type,
 	}
 
 	if (client->_bip == NULL) {
-		LOG_ERR("Invalid BIP client context");
+		LOG_ERROR("Invalid BIP client context");
 		return -EINVAL;
 	}
 
@@ -1827,7 +1827,7 @@ static int bip_get_or_put(struct bt_bip_client *client, bool is_get, const char 
 	}
 
 	if (atomic_get(&client->_state) != BT_BIP_STATE_CONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&client->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&client->_state));
 		return -EINVAL;
 	}
 
@@ -1837,12 +1837,12 @@ static int bip_get_or_put(struct bt_bip_client *client, bool is_get, const char 
 	if (client->_rsp_cb == NULL || bt_obex_has_header(buf, BT_OBEX_HEADER_ID_TYPE)) {
 		err = bip_client_get_req_cb(client, type, buf, is_get, &cb, &req_type);
 		if (err != 0) {
-			LOG_ERR("Invalid request %d", err);
+			LOG_ERROR("Invalid request %d", err);
 			return err;
 		}
 
 		if (client->_rsp_cb != NULL && cb != client->_rsp_cb) {
-			LOG_ERR("Previous operation is not completed");
+			LOG_ERROR("Previous operation is not completed");
 			return -EINVAL;
 		}
 
@@ -1851,7 +1851,7 @@ static int bip_get_or_put(struct bt_bip_client *client, bool is_get, const char 
 	}
 
 	if (client->_req_type != NULL && strcmp(client->_req_type, type) != 0) {
-		LOG_ERR("Invalid request type %s != %s", client->_req_type, type);
+		LOG_ERROR("Invalid request type %s != %s", client->_req_type, type);
 		err = -EINVAL;
 		goto failed;
 	}
@@ -1873,7 +1873,7 @@ failed:
 	if (err != 0) {
 		client->_rsp_cb = old_cb;
 		client->_req_type = old_req_type;
-		LOG_ERR("Failed to send get/put req %d", err);
+		LOG_ERROR("Failed to send get/put req %d", err);
 	}
 
 	return err;
@@ -1904,25 +1904,25 @@ static int bip_get_or_put_rsp(struct bt_bip_server *server, bool is_get, const c
 	}
 
 	if (atomic_get(&server->_state) != BT_BIP_STATE_CONNECTED) {
-		LOG_ERR("Invalid state %u", (uint8_t)atomic_get(&server->_state));
+		LOG_ERROR("Invalid state %u", (uint8_t)atomic_get(&server->_state));
 		return -EINVAL;
 	}
 
 	if (server->_optype != NULL && strcmp(server->_optype, type) != 0) {
-		LOG_ERR("Invalid operation type %s != %s", server->_optype, type);
+		LOG_ERROR("Invalid operation type %s != %s", server->_optype, type);
 		return -EINVAL;
 	}
 
 	if (is_get) {
 		if (server->_opcode != BT_OBEX_OPCODE_GET) {
-			LOG_ERR("Operation %u != %u", server->_opcode, BT_OBEX_OPCODE_GET);
+			LOG_ERROR("Operation %u != %u", server->_opcode, BT_OBEX_OPCODE_GET);
 			return -EINVAL;
 		}
 
 		err = bt_obex_get_rsp(&server->_server, rsp_code, buf);
 	} else {
 		if (server->_opcode != BT_OBEX_OPCODE_PUT) {
-			LOG_ERR("Operation %u != %u", server->_opcode, BT_OBEX_OPCODE_PUT);
+			LOG_ERROR("Operation %u != %u", server->_opcode, BT_OBEX_OPCODE_PUT);
 			return -EINVAL;
 		}
 
@@ -1930,7 +1930,7 @@ static int bip_get_or_put_rsp(struct bt_bip_server *server, bool is_get, const c
 	}
 
 	if (err != 0) {
-		LOG_ERR("Failed to send get/put rsp %d", err);
+		LOG_ERROR("Failed to send get/put rsp %d", err);
 		return err;
 	}
 

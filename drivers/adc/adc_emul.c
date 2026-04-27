@@ -113,7 +113,7 @@ int adc_emul_const_value_set(const struct device *dev, unsigned int chan,
 	struct adc_emul_chan_cfg *chan_cfg;
 
 	if (chan >= config->num_channels) {
-		LOG_ERR("unsupported channel %d", chan);
+		LOG_ERROR("unsupported channel %d", chan);
 		return -EINVAL;
 	}
 
@@ -136,7 +136,7 @@ int adc_emul_const_raw_value_set(const struct device *dev, unsigned int chan, ui
 	struct adc_emul_chan_cfg *chan_cfg;
 
 	if (chan >= config->num_channels) {
-		LOG_ERR("unsupported channel %d", chan);
+		LOG_ERROR("unsupported channel %d", chan);
 		return -EINVAL;
 	}
 
@@ -160,7 +160,7 @@ int adc_emul_value_func_set(const struct device *dev, unsigned int chan, adc_emu
 	struct adc_emul_chan_cfg *chan_cfg;
 
 	if (chan >= config->num_channels) {
-		LOG_ERR("unsupported channel %d", chan);
+		LOG_ERROR("unsupported channel %d", chan);
 		return -EINVAL;
 	}
 
@@ -185,7 +185,7 @@ int adc_emul_raw_value_func_set(const struct device *dev, unsigned int chan,
 	struct adc_emul_chan_cfg *chan_cfg;
 
 	if (chan >= config->num_channels) {
-		LOG_ERR("unsupported channel %d", chan);
+		LOG_ERROR("unsupported channel %d", chan);
 		return -EINVAL;
 	}
 
@@ -287,13 +287,12 @@ static int adc_emul_channel_setup(const struct device *dev,
 	struct adc_emul_data *data = dev->data;
 
 	if (channel_cfg->channel_id >= config->num_channels) {
-		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
+		LOG_ERROR("unsupported channel id '%d'", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (adc_emul_get_ref_voltage(data, channel_cfg->reference) == 0) {
-		LOG_ERR("unsupported channel reference '%d'",
-			channel_cfg->reference);
+		LOG_ERROR("unsupported channel reference '%d'", channel_cfg->reference);
 		return -ENOTSUP;
 	}
 
@@ -368,21 +367,19 @@ static int adc_emul_start_read(const struct device *dev,
 	struct adc_emul_data *data = dev->data;
 	int err;
 
-	if (sequence->resolution > ADC_EMUL_MAX_RESOLUTION ||
-	    sequence->resolution == 0) {
-		LOG_ERR("unsupported resolution %d", sequence->resolution);
+	if (sequence->resolution > ADC_EMUL_MAX_RESOLUTION || sequence->resolution == 0) {
+		LOG_ERROR("unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}
 
 	if (find_msb_set(sequence->channels) > config->num_channels) {
-		LOG_ERR("unsupported channels in mask: 0x%08x",
-			sequence->channels);
+		LOG_ERROR("unsupported channels in mask: 0x%08x", sequence->channels);
 		return -ENOTSUP;
 	}
 
 	err = adc_emul_check_buffer_size(dev, sequence);
 	if (err) {
-		LOG_ERR("buffer size too small");
+		LOG_ERROR("buffer size too small");
 		return err;
 	}
 
@@ -479,8 +476,7 @@ static int adc_emul_get_chan_value(struct adc_emul_data *data,
 		err = chan_cfg->func(data->dev, chan, chan_cfg->func_data,
 				     &input_mV);
 		if (err) {
-			LOG_ERR("failed to read channel %d (err %d)",
-				chan, err);
+			LOG_ERROR("failed to read channel %d (err %d)", chan, err);
 			goto out;
 		}
 		break;
@@ -492,14 +488,14 @@ static int adc_emul_get_chan_value(struct adc_emul_data *data,
 	case ADC_EMUL_CUSTOM_FUNC_RAW_VALUE:
 		err = chan_cfg->func(data->dev, chan, chan_cfg->func_data, &input_mV);
 		if (err) {
-			LOG_ERR("failed to read channel %d (err %d)", chan, err);
+			LOG_ERROR("failed to read channel %d (err %d)", chan, err);
 			goto out;
 		}
 		temp = input_mV;
 		goto check_bound_and_out;
 
 	default:
-		LOG_ERR("unknown input source %d", chan_cfg->input);
+		LOG_ERROR("unknown input source %d", chan_cfg->input);
 		err = -EINVAL;
 		goto out;
 	}
@@ -508,7 +504,7 @@ static int adc_emul_get_chan_value(struct adc_emul_data *data,
 	ref_v = adc_emul_get_ref_voltage(data, chan_cfg->ref);
 	err = adc_gain_invert(chan_cfg->gain, &ref_v);
 	if (ref_v == 0 || err) {
-		LOG_ERR("failed to get ref voltage (channel %d)", chan);
+		LOG_ERROR("failed to get ref voltage (channel %d)", chan);
 		err = -EINVAL;
 		goto out;
 	}

@@ -361,7 +361,7 @@ static int os_mgmt_taskstat_read(struct smp_streamer *ctxt)
 	k_thread_foreach(os_mgmt_taskstat_encode_one, (void *)&iterator_ctx);
 
 	if (!iterator_ctx.ok) {
-		LOG_ERR("Task iterator status is not OK");
+		LOG_ERROR("Task iterator status is not OK");
 	}
 
 	if (!iterator_ctx.ok ||
@@ -406,7 +406,7 @@ static int os_mgmt_mpstat_read(struct smp_streamer *ctxt)
 			ok = smp_mgmt_reset_zse(ctxt) &&
 			     smp_add_cmd_err(zse, MGMT_GROUP_ID_OS,
 					     OS_MGMT_ERR_HEAP_STATS_FETCH_FAILED);
-			LOG_ERR("Failed to get heap stats from address %p: %d", heap[i], rc);
+			LOG_ERROR("Failed to get heap stats from address %p: %d", heap[i], rc);
 			goto end;
 		}
 

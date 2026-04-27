@@ -197,7 +197,7 @@ static int is31fl319x_write_channels(const struct device *dev, uint32_t start_ch
 	}
 
 	if (ret != 0) {
-		LOG_ERR("%s: LED write failed: %d", dev->name, ret);
+		LOG_ERROR("%s: LED write failed: %d", dev->name, ret);
 	}
 
 	return ret;
@@ -215,10 +215,8 @@ static int is31fl319x_set_color(const struct device *dev, uint32_t led, uint8_t 
 	}
 
 	if (num_colors != info->num_colors) {
-		LOG_ERR("%s: invalid number of colors: got=%d, expected=%d",
-			dev->name,
-			num_colors,
-			info->num_colors);
+		LOG_ERROR("%s: invalid number of colors: got=%d, expected=%d", dev->name,
+			  num_colors, info->num_colors);
 		return -EINVAL;
 	}
 
@@ -257,7 +255,7 @@ static int is31fl319x_set_brightness(const struct device *dev, uint32_t led, uin
 	}
 
 	if (ret != 0) {
-		LOG_ERR("%s: LED write failed", dev->name);
+		LOG_ERROR("%s: LED write failed", dev->name);
 	}
 
 	return ret;
@@ -299,13 +297,13 @@ static int is31fl319x_init(const struct device *dev)
 	}
 
 	if (!i2c_is_ready_dt(&config->bus)) {
-		LOG_ERR("%s: I2C device not ready", dev->name);
+		LOG_ERROR("%s: I2C device not ready", dev->name);
 		return -ENODEV;
 	}
 
 	ret = i2c_reg_read_byte_dt(&config->bus, model->prod_id_reg, &prod_id);
 	if (ret != 0) {
-		LOG_ERR("%s: failed to read product ID", dev->name);
+		LOG_ERROR("%s: failed to read product ID", dev->name);
 		return ret;
 	}
 
@@ -313,14 +311,14 @@ static int is31fl319x_init(const struct device *dev)
 	if (model->features & FEATURE_ID_IS_ADDR) {
 		/* The product ID (8 bit) should be the I2C address(7 bit) */
 		if (prod_id != (config->bus.addr << 1)) {
-			LOG_ERR("%s: invalid product ID 0x%02x (expected 0x%02x)", dev->name,
-				prod_id, config->bus.addr << 1);
+			LOG_ERROR("%s: invalid product ID 0x%02x (expected 0x%02x)", dev->name,
+				  prod_id, config->bus.addr << 1);
 			return -ENODEV;
 		}
 	} else {
 		if (prod_id != model->prod_id_val) {
-			LOG_ERR("%s: invalid product ID 0x%02x (expected 0x%02x)", dev->name,
-				prod_id, model->prod_id_val);
+			LOG_ERROR("%s: invalid product ID 0x%02x (expected 0x%02x)", dev->name,
+				  prod_id, model->prod_id_val);
 			return -ENODEV;
 		}
 	}
@@ -340,7 +338,7 @@ static int is31fl319x_init(const struct device *dev)
 
 		ret = i2c_reg_write_byte_dt(&config->bus, model->current_reg, current_reg);
 		if (ret != 0) {
-			LOG_ERR("%s: failed to set current limit", dev->name);
+			LOG_ERROR("%s: failed to set current limit", dev->name);
 			return ret;
 		}
 	}
@@ -348,7 +346,7 @@ static int is31fl319x_init(const struct device *dev)
 		ret = i2c_reg_write_byte_dt(&config->bus, model->shutdown_reg,
 					    model->shutdown_reg_val);
 		if (ret != 0) {
-			LOG_ERR("%s: failed to set current limit", dev->name);
+			LOG_ERROR("%s: failed to set current limit", dev->name);
 			return ret;
 		}
 	}

@@ -108,13 +108,13 @@ static int ap_memory_write_reg(XSPI_HandleTypeDef *hxspi, uint32_t address, uint
 
 	/* Configure the command */
 	if (HAL_XSPI_Command(hxspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-		LOG_ERR("XSPI write command failed");
+		LOG_ERROR("XSPI write command failed");
 		return -EIO;
 	}
 
 	/* Transmission of the data */
 	if (HAL_XSPI_Transmit(hxspi, value, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-		LOG_ERR("XSPI transmit failed");
+		LOG_ERROR("XSPI transmit failed");
 		return -EIO;
 	}
 
@@ -148,13 +148,13 @@ static int ap_memory_read_reg(XSPI_HandleTypeDef *hxspi, uint32_t address, uint8
 
 	/* Configure the command */
 	if (HAL_XSPI_Command(hxspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-		LOG_ERR("XSPI read command failed");
+		LOG_ERROR("XSPI read command failed");
 		return -EIO;
 	}
 
 	/* Reception of the data */
 	if (HAL_XSPI_Receive(hxspi, value, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-		LOG_ERR("XSPI receive failed");
+		LOG_ERROR("XSPI receive failed");
 		return -EIO;
 	}
 
@@ -241,20 +241,20 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	/* Signals configuration */
 	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("XSPI pinctrl setup failed (%d)", ret);
+		LOG_ERROR("XSPI pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
 	/* Clock configuration */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 			     (clock_control_subsys_t) &dev_cfg->pclken) != 0) {
-		LOG_ERR("Could not enable XSPI clock");
+		LOG_ERROR("Could not enable XSPI clock");
 		return -EIO;
 	}
 	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				   (clock_control_subsys_t) &dev_cfg->pclken,
 				   &ahb_clock_freq) < 0) {
-		LOG_ERR("Failed call clock_control_get_rate(pclken)");
+		LOG_ERROR("Failed call clock_control_get_rate(pclken)");
 		return -EIO;
 	}
 
@@ -263,14 +263,14 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					(clock_control_subsys_t) &dev_cfg->pclken_ker,
 					NULL) != 0) {
-		LOG_ERR("Could not select XSPI domain clock");
+		LOG_ERROR("Could not select XSPI domain clock");
 		return -EIO;
 	}
 
 	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					(clock_control_subsys_t) &dev_cfg->pclken_ker,
 					&ahb_clock_freq) < 0) {
-		LOG_ERR("Failed call clock_control_get_rate(pclken_ker)");
+		LOG_ERROR("Failed call clock_control_get_rate(pclken_ker)");
 		return -EIO;
 	}
 #endif
@@ -279,7 +279,7 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	/* Clock domain corresponding to the IO-Mgr (XSPIM) */
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				(clock_control_subsys_t) &dev_cfg->pclken_mgr) != 0) {
-		LOG_ERR("Could not enable XSPI Manager clock");
+		LOG_ERROR("Could not enable XSPI Manager clock");
 		return -EIO;
 	}
 #endif
@@ -293,7 +293,7 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	}
 
 	if (prescaler > STM32_XSPI_CLOCK_PRESCALER_MAX) {
-		LOG_ERR("XSPI could not find valid prescaler value");
+		LOG_ERROR("XSPI could not find valid prescaler value");
 		return -EINVAL;
 	}
 
@@ -301,7 +301,7 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	hxspi->Init.MemorySize = find_msb_set(dev_cfg->memory_size) - 2;
 
 	if (HAL_XSPI_Init(hxspi) != HAL_OK) {
-		LOG_ERR("XSPI Init failed");
+		LOG_ERROR("XSPI Init failed");
 		return -EIO;
 	}
 
@@ -318,11 +318,11 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 		} else if (hxspi->Instance == STM32_XSPI2) {
 			cfg.IOPort = HAL_XSPIM_IOPORT_2;
 		} else {
-			LOG_ERR("XSPIMgr Instance failed");
+			LOG_ERROR("XSPIMgr Instance failed");
 			return -EIO;
 		}
 		if (HAL_XSPIM_Config(hxspi, &cfg, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
-			LOG_ERR("XSPIMgr Init failed");
+			LOG_ERROR("XSPIMgr Init failed");
 			return -EIO;
 		}
 	}
@@ -343,7 +343,7 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 		dlyb_cfg.PhaseSel /= 4; /* empiric value given by the stm32Cube */
 		LL_DLYB_SetDelay(DLYB_OCTOSPI2, &dlyb_cfg);
 	} else {
-		LOG_ERR("XSPI Delay block failed");
+		LOG_ERROR("XSPI Delay block failed");
 		return -EIO;
 	}
 
@@ -351,7 +351,7 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	/* Configure AP memory registers */
 	ret = ap_memory_configure(hxspi);
 	if (ret != 0) {
-		LOG_ERR("AP memory configuration failed");
+		LOG_ERROR("AP memory configuration failed");
 		return -EIO;
 	}
 

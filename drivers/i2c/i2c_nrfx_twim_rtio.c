@@ -95,14 +95,14 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev)
 		if (!nrf_dma_accessible_check(&config->common.twim, sqe->tx.buf)) {
 			/* Validate buffer will fit */
 			if (sqe->tx.buf_len > config->common.msg_buf_size) {
-				LOG_ERR("Need to use the internal driver "
-					"buffer but its size is insufficient "
-					"(%u > %u). "
-					"Adjust the zephyr,concat-buf-size or "
-					"zephyr,flash-buf-max-size property "
-					"(the one with greater value) in the "
-					"\"%s\"' node.",
-					sqe->tx.buf_len, config->common.msg_buf_size, dev->name);
+				LOG_ERROR("Need to use the internal driver "
+					  "buffer but its size is insufficient "
+					  "(%u > %u). "
+					  "Adjust the zephyr,concat-buf-size or "
+					  "zephyr,flash-buf-max-size property "
+					  "(the one with greater value) in the "
+					  "\"%s\"' node.",
+					  sqe->tx.buf_len, config->common.msg_buf_size, dev->name);
 				return i2c_rtio_complete(ctx, -ENOSPC);
 			}
 			memcpy(config->common.msg_buf, sqe->tx.buf, sqe->tx.buf_len);
@@ -127,7 +127,7 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev)
 					    (void *)dev);
 		return false;
 	default:
-		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
+		LOG_ERROR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
 		return i2c_rtio_complete(ctx, -EINVAL);
 	}
 }

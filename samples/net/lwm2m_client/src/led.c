@@ -37,7 +37,7 @@ static int led_on_off_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_ins
 			 * post_write_cb, as there is not much that can be
 			 * done here.
 			 */
-			LOG_ERR("Fail to write to GPIO %d", led_gpio.pin);
+			LOG_ERROR("Fail to write to GPIO %d", led_gpio.pin);
 			return ret;
 		}
 

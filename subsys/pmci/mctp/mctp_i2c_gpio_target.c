@@ -59,7 +59,7 @@ int mctp_i2c_gpio_target_write_received(struct i2c_target_config *config, uint8_
 		}
 		break;
 	default:
-		LOG_ERR("Write when reg_addr is %d", b->reg_addr);
+		LOG_ERROR("Write when reg_addr is %d", b->reg_addr);
 		ret = -EIO;
 		break;
 	}
@@ -184,7 +184,7 @@ int mctp_i2c_gpio_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pk
 
 	rc = gpio_pin_set_dt(&b->endpoint_gpio, 1);
 	if (rc != 0) {
-		LOG_ERR("failed to set gpio pin");
+		LOG_ERROR("failed to set gpio pin");
 		b->tx_pkt = NULL;
 		goto out;
 	}
@@ -193,7 +193,7 @@ int mctp_i2c_gpio_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pk
 
 	rc = gpio_pin_set_dt(&b->endpoint_gpio, 0);
 	if (rc != 0) {
-		LOG_ERR("failed to clear gpio pin");
+		LOG_ERROR("failed to clear gpio pin");
 	}
 
 out:
@@ -210,14 +210,14 @@ int mctp_i2c_gpio_target_start(struct mctp_binding *binding)
 	/* Register i2c target */
 	rc = i2c_target_register(b->i2c, &b->i2c_target_cfg);
 	if (rc != 0) {
-		LOG_ERR("failed to register i2c target");
+		LOG_ERROR("failed to register i2c target");
 		goto out;
 	}
 
 	/* Configure pin to use as data ready signaling */
 	rc = gpio_pin_configure_dt(&b->endpoint_gpio, GPIO_OUTPUT_INACTIVE);
 	if (rc != 0) {
-		LOG_ERR("failed to configure gpio");
+		LOG_ERROR("failed to configure gpio");
 		goto out;
 	}
 

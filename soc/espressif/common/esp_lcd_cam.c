@@ -33,7 +33,7 @@ static int esp32_lcd_cam_init(void)
 
 	ret = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("pinctrl setup failed (%d)", ret);
+		LOG_ERROR("pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
@@ -51,7 +51,7 @@ static int esp32_lcd_cam_init(void)
 		cam_ll_select_clk_src(0, CAM_CLK_SRC_PLL160M);
 		cam_ll_set_group_clock_coeff(0, ESP32_CLK_CPU_PLL_160M / cam_clk, 0, 0);
 	} else {
-		LOG_ERR("Invalid cam_clk value. It must be a non-zero divisor of 160M");
+		LOG_ERROR("Invalid cam_clk value. It must be a non-zero divisor of 160M");
 		return -EINVAL;
 	}
 #endif

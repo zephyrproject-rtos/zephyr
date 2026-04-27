@@ -107,7 +107,7 @@ static struct bt_mesh_blob_target *target_get(struct bt_mesh_blob_cli *cli,
 		}
 	}
 
-	LOG_ERR("Unknown target 0x%04x", addr);
+	LOG_ERROR("Unknown target 0x%04x", addr);
 	return NULL;
 }
 
@@ -515,7 +515,7 @@ void blob_cli_broadcast(struct bt_mesh_blob_cli *cli,
 			const struct blob_cli_broadcast_ctx *ctx)
 {
 	if (cli->tx.ctx.is_inited || cli->tx.sending) {
-		LOG_ERR("BLOB cli busy");
+		LOG_ERROR("BLOB cli busy");
 		return;
 	}
 
@@ -591,7 +591,7 @@ static int tx(struct bt_mesh_blob_cli *cli, uint16_t addr,
 
 	err = bt_mesh_model_send(cli->mod, &ctx, buf, &end_cb, cli);
 	if (err) {
-		LOG_ERR("Send err: %d", err);
+		LOG_ERROR("Send err: %d", err);
 		send_end(err, cli);
 		return err;
 	}
@@ -602,7 +602,7 @@ static int tx(struct bt_mesh_blob_cli *cli, uint16_t addr,
 static void send_start(uint16_t duration, int err, void *cb_data)
 {
 	if (err) {
-		LOG_ERR("TX Start failed: %d", err);
+		LOG_ERROR("TX Start failed: %d", err);
 		send_end(err, cb_data);
 	}
 }
@@ -1394,7 +1394,7 @@ static int handle_block_status(const struct bt_mesh_model *mod, struct bt_mesh_m
 		while (buf->len) {
 			idx = chunk_idx_decode(buf);
 			if (idx < 0 || idx >= status.block.chunk_count) {
-				LOG_ERR("Invalid encoding");
+				LOG_ERROR("Invalid encoding");
 				return -EINVAL;
 			}
 
@@ -1512,7 +1512,7 @@ int bt_mesh_blob_cli_caps_get(struct bt_mesh_blob_cli *cli,
 	cli->caps.modes = BT_MESH_BLOB_XFER_MODE_ALL;
 
 	if (!targets_reset(cli)) {
-		LOG_ERR("No valid targets");
+		LOG_ERROR("No valid targets");
 		return -ENODEV;
 	}
 
@@ -1527,14 +1527,14 @@ int bt_mesh_blob_cli_send(struct bt_mesh_blob_cli *cli,
 			  const struct bt_mesh_blob_io *io)
 {
 	if (bt_mesh_blob_cli_is_busy(cli)) {
-		LOG_ERR("BLOB Client is busy");
+		LOG_ERROR("BLOB Client is busy");
 		return -EBUSY;
 	}
 
 	if (!(xfer->mode & BT_MESH_BLOB_XFER_MODE_ALL) || xfer->block_size_log < 0x06 ||
 	    xfer->block_size_log > 0x20 || xfer->chunk_size < 8 ||
 	    xfer->chunk_size > BLOB_TX_CHUNK_SIZE) {
-		LOG_ERR("Incompatible transfer parameters");
+		LOG_ERROR("Incompatible transfer parameters");
 		return -EINVAL;
 	}
 
@@ -1551,12 +1551,12 @@ int bt_mesh_blob_cli_send(struct bt_mesh_blob_cli *cli,
 	block_set(cli, 0);
 
 	if (cli->block.chunk_count > CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX) {
-		LOG_ERR("Too many chunks");
+		LOG_ERROR("Too many chunks");
 		return -EINVAL;
 	}
 
 	if (!targets_reset(cli)) {
-		LOG_ERR("No valid targets");
+		LOG_ERROR("No valid targets");
 		return -ENODEV;
 	}
 
@@ -1607,7 +1607,7 @@ int bt_mesh_blob_cli_resume(struct bt_mesh_blob_cli *cli)
 	}
 
 	if (!targets_reset(cli)) {
-		LOG_ERR("No valid targets");
+		LOG_ERROR("No valid targets");
 		return -ENODEV;
 	}
 

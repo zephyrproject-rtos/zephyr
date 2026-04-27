@@ -662,7 +662,7 @@ static int lsm6dsv16x_attr_set(const struct device *dev,
 	case SENSOR_CHAN_PRESS:
 	case SENSOR_CHAN_HUMIDITY:
 		if (!data->shub_inited) {
-			LOG_ERR("shub not inited.");
+			LOG_ERROR("shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -1248,7 +1248,7 @@ static int lsm6dsv16x_channel_get(const struct device *dev,
 	case SENSOR_CHAN_MAGN_Z:
 	case SENSOR_CHAN_MAGN_XYZ:
 		if (!data->shub_inited) {
-			LOG_ERR("attr_set() shub not inited.");
+			LOG_ERROR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -1257,7 +1257,7 @@ static int lsm6dsv16x_channel_get(const struct device *dev,
 
 	case SENSOR_CHAN_HUMIDITY:
 		if (!data->shub_inited) {
-			LOG_ERR("attr_set() shub not inited.");
+			LOG_ERROR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -1266,7 +1266,7 @@ static int lsm6dsv16x_channel_get(const struct device *dev,
 
 	case SENSOR_CHAN_PRESS:
 		if (!data->shub_inited) {
-			LOG_ERR("attr_set() shub not inited.");
+			LOG_ERROR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -1275,7 +1275,7 @@ static int lsm6dsv16x_channel_get(const struct device *dev,
 
 	case SENSOR_CHAN_AMBIENT_TEMP:
 		if (!data->shub_inited) {
-			LOG_ERR("attr_set() shub not inited.");
+			LOG_ERROR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -1319,7 +1319,7 @@ static int lsm6dsv16x_init_chip(const struct device *dev)
 		 */
 		lsm6dsv16x->i3c_dev = i3c_device_find(cfg->i3c.bus, &cfg->i3c.dev_id);
 		if (lsm6dsv16x->i3c_dev == NULL) {
-			LOG_ERR("Cannot find I3C device descriptor");
+			LOG_ERROR("Cannot find I3C device descriptor");
 			return -ENODEV;
 		}
 	}
@@ -1380,7 +1380,7 @@ static int lsm6dsv16x_init_chip(const struct device *dev)
 	fs = cfg->accel_range;
 	LOG_DBG("accel range is %d", fs);
 	if (lsm6dsv16x_accel_set_fs_raw(dev, fs) < 0) {
-		LOG_ERR("failed to set accelerometer range %d", fs);
+		LOG_ERROR("failed to set accelerometer range %d", fs);
 		return -EIO;
 	}
 	lsm6dsv16x->acc_gain = lsm6dsv16x_calc_accel_gain(dev, fs);
@@ -1388,14 +1388,14 @@ static int lsm6dsv16x_init_chip(const struct device *dev)
 	odr = cfg->accel_odr;
 	LOG_DBG("accel odr is %d", odr);
 	if (lsm6dsv16x_accel_set_odr_raw(dev, odr) < 0) {
-		LOG_ERR("failed to set accelerometer odr %d", odr);
+		LOG_ERROR("failed to set accelerometer odr %d", odr);
 		return -EIO;
 	}
 
 	fs = cfg->gyro_range;
 	LOG_DBG("gyro range is %d", fs);
 	if (lsm6dsv16x_gyro_set_fs_raw(dev, fs) < 0) {
-		LOG_ERR("failed to set gyroscope range %d", fs);
+		LOG_ERROR("failed to set gyroscope range %d", fs);
 		return -EIO;
 	}
 	lsm6dsv16x->gyro_gain = lsm6dsv16x_calc_gyro_gain(fs);
@@ -1403,7 +1403,7 @@ static int lsm6dsv16x_init_chip(const struct device *dev)
 	odr = cfg->gyro_odr;
 	LOG_DBG("gyro odr is %d", odr);
 	if (lsm6dsv16x_gyro_set_odr_raw(dev, odr) < 0) {
-		LOG_ERR("failed to set gyroscope odr %d", odr);
+		LOG_ERROR("failed to set gyroscope odr %d", odr);
 		return -EIO;
 	}
 
@@ -1418,7 +1418,7 @@ static int lsm6dsv16x_init_chip(const struct device *dev)
 			.ibi_len = lsm6dsv16x->i3c_dev->data_length.max_ibi,
 		};
 		if (i3c_ccc_do_setmrl(lsm6dsv16x->i3c_dev, &setmrl) < 0) {
-			LOG_ERR("failed to set mrl");
+			LOG_ERROR("failed to set mrl");
 			return -EIO;
 		}
 	}
@@ -1450,7 +1450,7 @@ static int lsm6dsv16x_init(const struct device *dev)
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
 	if (cfg->trig_enabled) {
 		if (lsm6dsv16x_init_interrupt(dev) < 0) {
-			LOG_ERR("Failed to initialize interrupt.");
+			LOG_ERROR("Failed to initialize interrupt.");
 			return -EIO;
 		}
 	}
@@ -1480,21 +1480,21 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		if (lsm6dsv16x_xl_data_rate_set(ctx, data->accel_freq) < 0) {
-			LOG_ERR("failed to set accelerometer odr %d", (int)data->accel_freq);
+			LOG_ERROR("failed to set accelerometer odr %d", (int)data->accel_freq);
 			ret = -EIO;
 		}
 		if (lsm6dsv16x_gy_data_rate_set(ctx, data->gyro_freq) < 0) {
-			LOG_ERR("failed to set gyroscope odr %d", (int)data->gyro_freq);
+			LOG_ERROR("failed to set gyroscope odr %d", (int)data->gyro_freq);
 			ret = -EIO;
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		if (lsm6dsv16x_xl_data_rate_set(ctx, LSM6DSVXXX_DT_ODR_OFF) < 0) {
-			LOG_ERR("failed to disable accelerometer");
+			LOG_ERROR("failed to disable accelerometer");
 			ret = -EIO;
 		}
 		if (lsm6dsv16x_gy_data_rate_set(ctx, LSM6DSVXXX_DT_ODR_OFF) < 0) {
-			LOG_ERR("failed to disable gyroscope");
+			LOG_ERROR("failed to disable gyroscope");
 			ret = -EIO;
 		}
 		break;

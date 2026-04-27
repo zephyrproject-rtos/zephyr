@@ -56,7 +56,7 @@ LOG_MODULE_REGISTER(NRFX_MODULE_PREFIX, NRFX_MODULE_LOG_LEVEL);
  * @param ... printf-style format string, optionally followed by arguments
  *            to be formatted and inserted in the resulting string.
  */
-#define NRFX_LOG_ERROR(...)  LOG_ERR(__VA_ARGS__)
+#define NRFX_LOG_ERROR(...) LOG_ERROR(__VA_ARGS__)
 
 /**
  * @brief Macro for logging a message with the severity level WARNING.
@@ -125,7 +125,7 @@ LOG_MODULE_REGISTER(NRFX_MODULE_PREFIX, NRFX_MODULE_LOG_LEVEL);
  *
  * @return String containing the textual representation of the error code.
  */
-#define NRFX_LOG_ERROR_STRING_GET(error_code)  nrfx_error_string_get(error_code)
+#define NRFX_LOG_ERROR_STRING_GET(error_code) nrfx_error_string_get(error_code)
 extern char const *nrfx_error_string_get(int code);
 
 /** @} */

@@ -535,7 +535,7 @@ static int eusart_async_tx(const struct device *dev, const uint8_t *tx_data, siz
 
 	ret = dma_config(data->dma_tx.dma_dev, data->dma_tx.dma_channel, &data->dma_tx.dma_cfg);
 	if (ret) {
-		LOG_ERR("dma tx config error!");
+		LOG_ERROR("dma tx config error!");
 		return ret;
 	}
 
@@ -548,7 +548,7 @@ static int eusart_async_tx(const struct device *dev, const uint8_t *tx_data, siz
 
 	ret = dma_start(data->dma_tx.dma_dev, data->dma_tx.dma_channel);
 	if (ret) {
-		LOG_ERR("UART err: TX DMA start failed!");
+		LOG_ERROR("UART err: TX DMA start failed!");
 		data->dma_tx.enabled = false;
 		k_work_cancel_delayable(&data->dma_tx.timeout_work);
 		return ret;
@@ -614,7 +614,7 @@ static int eusart_async_rx_enable(const struct device *dev, uint8_t *rx_buf, siz
 	ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.dma_channel, &data->dma_rx.dma_cfg);
 
 	if (ret) {
-		LOG_ERR("UART ERR: RX DMA config failed!");
+		LOG_ERROR("UART ERR: RX DMA config failed!");
 		return -EINVAL;
 	}
 
@@ -622,7 +622,7 @@ static int eusart_async_rx_enable(const struct device *dev, uint8_t *rx_buf, siz
 	eusart_pm_lock_get(dev, EUSART_PM_LOCK_RX);
 
 	if (dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel)) {
-		LOG_ERR("UART ERR: RX DMA start failed!");
+		LOG_ERROR("UART ERR: RX DMA start failed!");
 		data->dma_rx.enabled = false;
 		eusart_pm_lock_put(dev, EUSART_PM_LOCK_RX);
 		return -EFAULT;
@@ -717,7 +717,7 @@ static int eusart_async_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_
 	ret = silabs_ldma_append_block(data->dma_rx.dma_dev, data->dma_rx.dma_channel,
 				       &data->dma_rx.dma_cfg);
 	if (ret) {
-		LOG_ERR("UART ERR: RX DMA append failed!");
+		LOG_ERROR("UART ERR: RX DMA append failed!");
 		return -EINVAL;
 	}
 

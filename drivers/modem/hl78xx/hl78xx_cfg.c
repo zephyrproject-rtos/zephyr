@@ -55,7 +55,7 @@ int hl78xx_enable_lte_coverage_urc(struct hl78xx_data *data, bool *modem_require
 	ret = modem_dynamic_cmd_send(data, NULL, cmd, strlen(cmd), hl78xx_get_ok_match(),
 				     hl78xx_get_ok_match_size(), MDM_CMD_TIMEOUT, false);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable LTE coverage URC: %d", ret);
+		LOG_ERROR("Failed to enable LTE coverage URC: %d", ret);
 	} else {
 		data->status.kcellmeas_timeout = timeout_s;
 	}
@@ -172,7 +172,8 @@ int hl78xx_band_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 		ret = hl78xx_get_band_default_config_for_rat(rat, bnd_bitmap,
 							     ARRAY_SIZE(bnd_bitmap));
 		if (ret) {
-			LOG_ERR("%d %s error get band default config %d", __LINE__, __func__, ret);
+			LOG_ERROR("%d %s error get band default config %d", __LINE__, __func__,
+				  ret);
 			goto error;
 		}
 		modem_trimmed = hl78xx_trim_leading_zeros(data->status.kbndcfg[rat].bnd_bitmap);
@@ -292,7 +293,7 @@ int hl78xx_set_apn_internal(struct hl78xx_data *data, const char *apn, uint16_t 
 	data->status.apn.state = APN_STATE_CONFIGURED;
 	return 0;
 error:
-	LOG_ERR("Set APN to %s, result: %d", apn, ret);
+	LOG_ERROR("Set APN to %s, result: %d", apn, ret);
 	return ret;
 }
 
@@ -314,7 +315,7 @@ int hl78xx_gsm_pdp_activate(struct hl78xx_data *data)
 				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
 				     MDM_CMD_TIMEOUT, false);
 	if (ret < 0) {
-		LOG_ERR("GSM PDP activation failed: %d", ret);
+		LOG_ERROR("GSM PDP activation failed: %d", ret);
 		return ret;
 	}
 	return 0;
@@ -392,7 +393,7 @@ int modem_detect_apn(struct hl78xx_data *data, const char *associated_number)
 		rc = find_apn(CONFIG_MODEM_HL78XX_APN_PROFILES, mmcmnc, data->identity.apn,
 			      APN_PREFIX_LEN);
 		if (rc < 0) {
-			LOG_ERR("%d %s APN Parser error %d", __LINE__, __func__, rc);
+			LOG_ERROR("%d %s APN Parser error %d", __LINE__, __func__, rc);
 		}
 	}
 	if (rc == 0) {
@@ -927,7 +928,7 @@ void hl78xx_bitmap_to_hex_string_trimmed(const uint8_t *bitmap, char *hex_str, s
 int hl78xx_hex_string_to_bitmap(const char *hex_str, uint8_t *bitmap_out)
 {
 	if (strlen(hex_str) >= MDM_BAND_HEX_STR_LEN) {
-		LOG_ERR("Invalid hex string length: %zu", strlen(hex_str));
+		LOG_ERROR("Invalid hex string length: %zu", strlen(hex_str));
 		return -EINVAL;
 	}
 
@@ -935,7 +936,7 @@ int hl78xx_hex_string_to_bitmap(const char *hex_str, uint8_t *bitmap_out)
 		unsigned int byte_val;
 
 		if (sscanf(&hex_str[i * 2], "%2x", &byte_val) != 1) {
-			LOG_ERR("Failed to parse byte at position %d", i);
+			LOG_ERROR("Failed to parse byte at position %d", i);
 			return -EINVAL;
 		}
 		bitmap_out[i] = (uint8_t)byte_val;
@@ -1016,7 +1017,7 @@ int hl78xx_get_uart_config(struct hl78xx_data *data)
 	/* Get current UART configuration */
 	ret = uart_config_get(config->uart, &uart_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to get UART config: %d", ret);
+		LOG_ERROR("Failed to get UART config: %d", ret);
 		return ret;
 	}
 	data->status.uart.current_baudrate = uart_cfg.baudrate;
@@ -1034,7 +1035,7 @@ int configure_uart_for_auto_baudrate(struct hl78xx_data *data, uint32_t baudrate
 	/* Get current UART configuration */
 	ret = uart_config_get(config->uart, &uart_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to get UART config: %d", ret);
+		LOG_ERROR("Failed to get UART config: %d", ret);
 		return ret;
 	}
 
@@ -1044,7 +1045,7 @@ int configure_uart_for_auto_baudrate(struct hl78xx_data *data, uint32_t baudrate
 	/* Apply new UART configuration */
 	ret = uart_configure(config->uart, &uart_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to set UART baud rate to %d: %d", baudrate, ret);
+		LOG_ERROR("Failed to set UART baud rate to %d: %d", baudrate, ret);
 		return ret;
 	}
 
@@ -1115,7 +1116,7 @@ int hl78xx_detect_current_baudrate(struct hl78xx_data *data)
 		}
 	}
 
-	LOG_ERR("Failed to detect modem baud rate");
+	LOG_ERROR("Failed to detect modem baud rate");
 	return -ENOENT;
 }
 
@@ -1140,7 +1141,7 @@ int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate)
 				     hl78xx_get_ok_match_size(), MDM_CMD_TIMEOUT, false);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to send baud rate change command: %d", ret);
+		LOG_ERROR("Failed to send baud rate change command: %d", ret);
 		return ret;
 	}
 
@@ -1151,7 +1152,7 @@ int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate)
 	/* Get current UART configuration */
 	ret = uart_config_get(config->uart, &uart_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to get UART config: %d", ret);
+		LOG_ERROR("Failed to get UART config: %d", ret);
 		return ret;
 	}
 
@@ -1159,7 +1160,7 @@ int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate)
 	uart_cfg.baudrate = target_baudrate;
 	ret = uart_configure(config->uart, &uart_cfg);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure new baud rate: %d", ret);
+		LOG_ERROR("Failed to configure new baud rate: %d", ret);
 		return ret;
 	}
 
@@ -1174,7 +1175,7 @@ int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate)
 				     CONFIG_MODEM_HL78XX_AUTOBAUD_TIMEOUT, false);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to communicate at new baud rate %d", target_baudrate);
+		LOG_ERROR("Failed to communicate at new baud rate %d", target_baudrate);
 		return ret;
 	}
 

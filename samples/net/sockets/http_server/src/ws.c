@@ -135,7 +135,7 @@ static void ws_echo_handler(void *ptr1, void *ptr2, void *ptr3)
 	 */
 	while (true) {
 		if (poll(cfg->fds, 1, -1) < 0) {
-			LOG_ERR("Error in poll:%d", errno);
+			LOG_ERROR("Error in poll:%d", errno);
 			continue;
 		}
 
@@ -159,7 +159,7 @@ static void ws_echo_handler(void *ptr1, void *ptr2, void *ptr3)
 			break;
 		} else if (received < 0) {
 			/* Socket error */
-			LOG_ERR("[%d] Connection error %d", slot, errno);
+			LOG_ERROR("[%d] Connection error %d", slot, errno);
 			break;
 		}
 
@@ -178,8 +178,7 @@ static void ws_echo_handler(void *ptr1, void *ptr2, void *ptr3)
 #endif
 			ret = sendall(client, cfg->recv_buffer, offset);
 			if (ret < 0) {
-				LOG_ERR("[%d] Failed to send data, closing socket",
-					slot);
+				LOG_ERROR("[%d] Failed to send data, closing socket", slot);
 				break;
 			}
 
@@ -247,7 +246,7 @@ static int netstats_collect(char *buf, size_t maxlen)
 	ret = snprintf(buf, maxlen, net_stats_json_template, bytes_recv, bytes_sent, ipv6_recv,
 		       ipv6_sent, ipv4_recv, ipv4_sent, tcp_recv, tcp_sent);
 	if (ret >= maxlen) {
-		LOG_ERR("Net stats do not fit in buffer");
+		LOG_ERROR("Net stats do not fit in buffer");
 		return -ENOSPC;
 	}
 
@@ -267,7 +266,7 @@ static void netstats_handler(struct k_work *work)
 
 	ret = netstats_collect(tx_buf, sizeof(tx_buf));
 	if (ret < 0) {
-		LOG_ERR("Unable to collect network statistics, err %d", ret);
+		LOG_ERROR("Unable to collect network statistics, err %d", ret);
 		goto unregister;
 	}
 
@@ -281,7 +280,7 @@ static void netstats_handler(struct k_work *work)
 	ret = k_work_reschedule_for_queue(&ws_netstats_queue, &ctx->work,
 					  K_MSEC(CONFIG_NET_SAMPLE_WEBSOCKET_STATS_INTERVAL));
 	if (ret < 0) {
-		LOG_ERR("Failed to schedule netstats work, err %d", ret);
+		LOG_ERROR("Failed to schedule netstats work, err %d", ret);
 		goto unregister;
 	}
 
@@ -314,7 +313,7 @@ int ws_echo_setup(int ws_socket, struct http_request_ctx *request_ctx, void *use
 
 	slot = get_free_echo_slot(config);
 	if (slot < 0) {
-		LOG_ERR("Cannot accept more connections");
+		LOG_ERROR("Cannot accept more connections");
 		/* The caller will close the connection in this case */
 		return -ENOENT;
 	}
@@ -351,7 +350,7 @@ int ws_netstats_setup(int ws_socket, struct http_request_ctx *request_ctx, void 
 
 	slot = get_free_netstats_slot();
 	if (slot < 0) {
-		LOG_ERR("Cannot accept more netstats websocket connections");
+		LOG_ERROR("Cannot accept more netstats websocket connections");
 		return -ENOENT;
 	}
 
@@ -359,7 +358,7 @@ int ws_netstats_setup(int ws_socket, struct http_request_ctx *request_ctx, void 
 
 	ret = k_work_reschedule_for_queue(&ws_netstats_queue, &netstats_ctx[slot].work, K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Failed to schedule netstats work, err %d", ret);
+		LOG_ERROR("Failed to schedule netstats work, err %d", ret);
 		return ret;
 	}
 

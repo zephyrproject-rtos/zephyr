@@ -389,8 +389,7 @@ static int esp_socket_send_one_pkt(struct esp_socket *sock)
 
 	ret = _sock_send(sock, pkt);
 	if (ret < 0) {
-		LOG_ERR("Failed to send data: link %d, ret %d",
-			sock->link_id, ret);
+		LOG_ERROR("Failed to send data: link %d, ret %d", sock->link_id, ret);
 
 		/*
 		 * If this is stream data, then we should stop pushing anything
@@ -532,13 +531,12 @@ static int cmd_ciprecvdata_parse(struct esp_socket *sock,
 	if (endptr == &cmd_buf[len] ||
 	    (*endptr == 0 && match_len >= CIPRECVDATA_CMD_MAX_LEN) ||
 	    *data_len > CIPRECVDATA_MAX_LEN) {
-		LOG_ERR("Invalid cmd: %s", cmd_buf);
+		LOG_ERROR("Invalid cmd: %s", cmd_buf);
 		return -EBADMSG;
 	} else if (*endptr == 0) {
 		return -EAGAIN;
 	} else if (*endptr != _CIPRECVDATA_END) {
-		LOG_ERR("Invalid end of cmd: 0x%02x != 0x%02x", *endptr,
-			_CIPRECVDATA_END);
+		LOG_ERROR("Invalid end of cmd: 0x%02x != 0x%02x", *endptr, _CIPRECVDATA_END);
 		return -EBADMSG;
 	}
 
@@ -565,7 +563,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 
 	sock = esp_socket_ref(dev->rx_sock);
 	if (!sock) {
-		LOG_ERR("No rx_sock socket");
+		LOG_ERROR("No rx_sock socket");
 		return -ENOTCONN;
 	}
 
@@ -607,7 +605,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 	remote_ip_addr[remote_ip_str_len] = '\0';
 
 	if (net_addr_pton(NET_AF_INET, remote_ip_addr, &recv_addr->sin_addr) < 0) {
-		LOG_ERR("Invalid src addr %s", remote_ip_addr);
+		LOG_ERROR("Invalid src addr %s", remote_ip_addr);
 		err = -EIO;
 		goto socket_unref;
 	}
@@ -643,8 +641,7 @@ void esp_recvdata_work(struct k_work *work)
 
 	ret = esp_cmd_send(data, cmds, ARRAY_SIZE(cmds), cmd, ESP_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Error during rx: link %d, ret %d", sock->link_id,
-			ret);
+		LOG_ERROR("Error during rx: link %d, ret %d", sock->link_id, ret);
 	}
 }
 
@@ -775,7 +772,7 @@ static int esp_get(net_sa_family_t family,
 
 	sock = esp_socket_get(dev, *context);
 	if (!sock) {
-		LOG_ERR("No socket available!");
+		LOG_ERROR("No socket available!");
 		return -ENOMEM;
 	}
 

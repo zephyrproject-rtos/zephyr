@@ -52,7 +52,7 @@ static int siwx91x_memc_init(const struct device *dev)
 
 	ret = sl_si91x_psram_device_init();
 	if (ret) {
-		LOG_ERR("sl_si91x_psram_init() returned %d", ret);
+		LOG_ERROR("sl_si91x_psram_init() returned %d", ret);
 		return -EIO;
 	}
 

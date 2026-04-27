@@ -82,7 +82,7 @@ int mctp_i3c_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 	/* Some I3C IP need to have data at TX fifo before raising IBI */
 	ret = i3c_target_tx_write(b->i3c, pkt->data + pkt->start, pkt->end - pkt->start, 0);
 	if (ret < 0) {
-		LOG_ERR("i3c_target_tx_write failed: %d", ret);
+		LOG_ERROR("i3c_target_tx_write failed: %d", ret);
 		goto out;
 	}
 
@@ -105,7 +105,7 @@ int mctp_i3c_target_start(struct mctp_binding *binding)
 	/* Register i3c target */
 	rc = i3c_target_register(b->i3c, &b->i3c_target_cfg);
 	if (rc != 0) {
-		LOG_ERR("Failed to register i3c target");
+		LOG_ERROR("Failed to register i3c target");
 		goto out;
 	}
 	mctp_binding_set_tx_enabled(binding, true);

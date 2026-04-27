@@ -27,7 +27,7 @@ int lwan_crypto_init(void)
 
 	status = psa_crypto_init();
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_crypto_init failed: %d", (int)status);
+		LOG_ERROR("psa_crypto_init failed: %d", (int)status);
 		return -EIO;
 	}
 
@@ -50,8 +50,8 @@ static psa_key_id_t import_aes_key(psa_key_usage_t usage,
 
 	status = psa_import_key(&attr, key, AES_KEY_SIZE, &key_id);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_import_key (0x%08x) failed: %d",
-			(unsigned int)algorithm, (int)status);
+		LOG_ERROR("psa_import_key (0x%08x) failed: %d", (unsigned int)algorithm,
+			  (int)status);
 		return PSA_KEY_ID_NULL;
 	}
 
@@ -78,7 +78,7 @@ static int ecb_encrypt_block(psa_key_id_t key_id,
 				    in, AES_BLOCK_SIZE, out, AES_BLOCK_SIZE,
 				    &out_len);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_cipher_encrypt failed: %d", (int)status);
+		LOG_ERROR("psa_cipher_encrypt failed: %d", (int)status);
 		return -EIO;
 	}
 
@@ -95,7 +95,7 @@ int lwan_crypto_compute_mic(psa_key_id_t cmac_key, const uint8_t *msg,
 	status = psa_mac_compute(cmac_key, PSA_ALG_CMAC, msg, msg_len,
 				 cmac, sizeof(cmac), &cmac_len);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_mac_compute failed: %d", (int)status);
+		LOG_ERROR("psa_mac_compute failed: %d", (int)status);
 		return -EIO;
 	}
 
@@ -114,7 +114,7 @@ int lwan_crypto_decrypt_join_accept(psa_key_id_t ecb_key,
 	 * Process each 16-byte block in-place.
 	 */
 	if (len != AES_BLOCK_SIZE && len != 2 * AES_BLOCK_SIZE) {
-		LOG_ERR("Invalid join accept length: %zu", len);
+		LOG_ERROR("Invalid join accept length: %zu", len);
 		return -EINVAL;
 	}
 

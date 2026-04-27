@@ -507,7 +507,7 @@ static int usbd_hid_init(struct usbd_class_data *const c_data)
 	struct hid_device_data *const ddata = dev->data;
 
 	if (ddata->ops == NULL ||  ddata->rdesc == NULL || !ddata->rsize) {
-		LOG_ERR("HID device does not seem to be registered");
+		LOG_ERROR("HID device does not seem to be registered");
 		return -EINVAL;
 	}
 
@@ -516,7 +516,7 @@ static int usbd_hid_init(struct usbd_class_data *const c_data)
 
 	if (dcfg->if_desc_data != NULL && desc->if0.iInterface == 0) {
 		if (usbd_add_descriptor(uds_ctx, dcfg->if_desc_data)) {
-			LOG_ERR("Failed to add interface string descriptor");
+			LOG_ERROR("Failed to add interface string descriptor");
 		} else {
 			desc->if0.iInterface = usbd_str_desc_get_idx(dcfg->if_desc_data);
 		}
@@ -587,13 +587,13 @@ static void hid_dev_output_handler(struct k_work *work)
 
 	buf = hid_buf_alloc(dcfg, hid_get_out_ep(c_data));
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		return;
 	}
 
 	if (usbd_ep_enqueue(c_data, buf)) {
 		net_buf_unref(buf);
-		LOG_ERR("Failed to enqueue buffer");
+		LOG_ERROR("Failed to enqueue buffer");
 	}
 }
 
@@ -615,7 +615,7 @@ static int hid_dev_submit_report(const struct device *dev,
 
 	buf = hid_buf_alloc_ext(dcfg, size, (void *)report, hid_get_in_ep(c_data));
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate net_buf");
+		LOG_ERROR("Failed to allocate net_buf");
 		return -ENOMEM;
 	}
 
@@ -696,13 +696,13 @@ static int hid_dev_register(const struct device *dev,
 
 	/* Get Report is required for all HID device types. */
 	if (ops == NULL || ops->get_report == NULL) {
-		LOG_ERR("get_report callback is missing");
+		LOG_ERROR("get_report callback is missing");
 		return -EINVAL;
 	}
 
 	/* Set Report is required when an output report is declared. */
 	if (desc->out_ep.bLength && ops->set_report == NULL) {
-		LOG_ERR("set_report callback is missing");
+		LOG_ERROR("set_report callback is missing");
 		return -EINVAL;
 	}
 
@@ -711,7 +711,7 @@ static int hid_dev_register(const struct device *dev,
 	 * Get Protocol is handled internally, no callback is required.
 	 */
 	if (desc->if0.bInterfaceSubClass && ops->set_protocol == NULL) {
-		LOG_ERR("set_protocol callback is missing");
+		LOG_ERROR("set_protocol callback is missing");
 		return -EINVAL;
 	}
 

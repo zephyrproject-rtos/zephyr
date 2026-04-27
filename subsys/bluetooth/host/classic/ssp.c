@@ -441,7 +441,7 @@ void bt_hci_pin_code_req(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERROR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
@@ -456,7 +456,7 @@ void bt_hci_link_key_notify(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERROR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
@@ -483,7 +483,7 @@ void bt_hci_link_key_notify(struct net_buf *buf)
 		conn->br.link_key = bt_keys_get_link_key(&evt->bdaddr);
 	}
 	if (!conn->br.link_key) {
-		LOG_ERR("Can't update keys for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERROR("Can't update keys for %s", bt_addr_str(&evt->bdaddr));
 		bt_conn_unref(conn);
 		return;
 	}
@@ -541,7 +541,7 @@ void link_key_neg_reply(const bt_addr_t *bdaddr)
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
-		LOG_ERR("Out of command buffers");
+		LOG_ERROR("Out of command buffers");
 		return;
 	}
 
@@ -559,7 +559,7 @@ void link_key_reply(const bt_addr_t *bdaddr, const uint8_t *lk)
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
-		LOG_ERR("Out of command buffers");
+		LOG_ERROR("Out of command buffers");
 		return;
 	}
 
@@ -578,7 +578,7 @@ void bt_hci_link_key_req(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERROR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		link_key_neg_reply(&evt->bdaddr);
 		return;
 	}
@@ -615,7 +615,7 @@ void io_capa_neg_reply(const bt_addr_t *bdaddr, const uint8_t reason)
 
 	resp_buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!resp_buf) {
-		LOG_ERR("Out of command buffers");
+		LOG_ERROR("Out of command buffers");
 		return;
 	}
 
@@ -634,14 +634,14 @@ void bt_hci_io_capa_resp(struct net_buf *buf)
 		evt->authentication);
 
 	if (evt->authentication > BT_HCI_GENERAL_BONDING_MITM) {
-		LOG_ERR("Invalid remote authentication requirements");
+		LOG_ERROR("Invalid remote authentication requirements");
 		io_capa_neg_reply(&evt->bdaddr,
 				  BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 		return;
 	}
 
 	if (evt->capability > BT_IO_NO_INPUT_OUTPUT) {
-		LOG_ERR("Invalid remote io capability requirements");
+		LOG_ERROR("Invalid remote io capability requirements");
 		io_capa_neg_reply(&evt->bdaddr,
 				  BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
 		return;
@@ -649,7 +649,7 @@ void bt_hci_io_capa_resp(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERROR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
@@ -696,7 +696,7 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERROR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
@@ -770,7 +770,7 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 
 	resp_buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!resp_buf) {
-		LOG_ERR("Out of command buffers");
+		LOG_ERROR("Out of command buffers");
 		bt_conn_unref(conn);
 		return;
 	}
@@ -793,7 +793,7 @@ void bt_hci_ssp_complete(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERROR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
@@ -817,7 +817,7 @@ void bt_hci_user_confirm_req(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERROR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
@@ -834,7 +834,7 @@ void bt_hci_user_passkey_notify(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERROR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
@@ -849,7 +849,7 @@ void bt_hci_user_passkey_req(struct net_buf *buf)
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
-		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		LOG_ERROR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
@@ -866,7 +866,7 @@ static void link_encr(const uint16_t handle)
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
-		LOG_ERR("Out of command buffers");
+		LOG_ERROR("Out of command buffers");
 		return;
 	}
 
@@ -887,7 +887,7 @@ void bt_hci_auth_complete(struct net_buf *buf)
 
 	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_BR);
 	if (!conn) {
-		LOG_ERR("Can't find conn for handle %u", handle);
+		LOG_ERROR("Can't find conn for handle %u", handle);
 		return;
 	}
 

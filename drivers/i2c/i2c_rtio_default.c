@@ -73,8 +73,8 @@ void i2c_iodev_submit_work_handler(struct rtio_iodev_sqe *txn_first)
 			num_msgs++;
 			break;
 		default:
-			LOG_ERR("Invalid op code %d for submission %p", txn_last->sqe.op,
-				(void *)&txn_last->sqe);
+			LOG_ERROR("Invalid op code %d for submission %p", txn_last->sqe.op,
+				  (void *)&txn_last->sqe);
 			rc = -EIO;
 			break;
 		}
@@ -92,9 +92,9 @@ void i2c_iodev_submit_work_handler(struct rtio_iodev_sqe *txn_first)
 	 * register address, and another to read/write the register into an array
 	 */
 	if (num_msgs > CONFIG_I2C_RTIO_FALLBACK_MSGS) {
-		LOG_ERR("At most CONFIG_I2C_RTIO_FALLBACK_MSGS"
-			" submissions in a transaction are"
-			" allowed in the default handler");
+		LOG_ERROR("At most CONFIG_I2C_RTIO_FALLBACK_MSGS"
+			  " submissions in a transaction are"
+			  " allowed in the default handler");
 		rtio_iodev_sqe_err(txn_first, -ENOMEM);
 		return;
 	}

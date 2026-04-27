@@ -164,7 +164,7 @@ static void renesas_ra_sci_spi_retransmit(struct renesas_ra_sci_spi_data *data)
 	}
 
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("SCI SPI transfer failed %d", fsp_err);
+		LOG_ERROR("SCI SPI transfer failed %d", fsp_err);
 		return;
 	}
 }
@@ -233,38 +233,38 @@ static int renesas_ra_sci_spi_configure(const struct device *dev, const struct s
 	}
 
 	if ((config->operation & SPI_FRAME_FORMAT_TI) == SPI_FRAME_FORMAT_TI) {
-		LOG_ERR("TI frame format is not supported");
+		LOG_ERROR("TI frame format is not supported");
 		return -ENOTSUP;
 	}
 
 	if (SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) {
-		LOG_ERR("Internal hardware loopback is not supported");
+		LOG_ERROR("Internal hardware loopback is not supported");
 		return -ENOTSUP;
 	}
 
 	if (SPI_WORD_SIZE_GET(config->operation) != 8) {
-		LOG_ERR("Word sizes other than 8 bits are not supported");
+		LOG_ERROR("Word sizes other than 8 bits are not supported");
 		return -ENOTSUP;
 	}
 
 	if ((config->operation & SPI_OP_MODE_SLAVE) && !IS_ENABLED(CONFIG_SPI_SLAVE)) {
-		LOG_ERR("Kconfig for enable SPI in slave mode is not enabled");
+		LOG_ERROR("Kconfig for enable SPI in slave mode is not enabled");
 		return -ENOTSUP;
 	}
 
 	if (config->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	if ((SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) &&
 	    (config->frequency == 0)) {
-		LOG_ERR("Invalid frequency value");
+		LOG_ERROR("Invalid frequency value");
 		return -EINVAL;
 	}
 
 	if (config->frequency > 2500000) {
-		LOG_ERR("Frequencies more than 2,5 MHz are not supported");
+		LOG_ERROR("Frequencies more than 2,5 MHz are not supported");
 		return -EINVAL;
 	}
 
@@ -319,7 +319,7 @@ static int renesas_ra_sci_spi_configure(const struct device *dev, const struct s
 
 	fsp_err = R_SCI_SPI_Open(&data->fsp_ctrl, &data->fsp_cfg);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("Failed to apply spi configuration");
+		LOG_ERROR("Failed to apply spi configuration");
 		return -EINVAL;
 	}
 

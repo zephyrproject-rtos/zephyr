@@ -101,12 +101,12 @@ siwx91x_configure_scan_dwell_time(sl_wifi_scan_type_t scan_type, uint16_t dwell_
 	int ret;
 
 	if (dwell_time_active && (dwell_time_active < 5 || dwell_time_active > 1000)) {
-		LOG_ERR("Invalid active scan dwell time");
+		LOG_ERROR("Invalid active scan dwell time");
 		return -EINVAL;
 	}
 
 	if (dwell_time_passive && (dwell_time_passive < 10 || dwell_time_passive > 1000)) {
-		LOG_ERR("Invalid passive scan dwell time");
+		LOG_ERROR("Invalid passive scan dwell time");
 		return -EINVAL;
 	}
 
@@ -167,18 +167,18 @@ int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_scan_confi
 	__ASSERT(z_scan_config, "z_scan_config cannot be NULL");
 
 	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
-		LOG_ERR("Interface not in STA mode");
+		LOG_ERROR("Interface not in STA mode");
 		return -EINVAL;
 	}
 
 	if (sidev->state != WIFI_STATE_DISCONNECTED && sidev->state != WIFI_STATE_INACTIVE &&
 	    sidev->state != WIFI_STATE_COMPLETED) {
-		LOG_ERR("Command given in invalid state");
+		LOG_ERROR("Command given in invalid state");
 		return -EBUSY;
 	}
 
 	if (z_scan_config->bands & ~(BIT(WIFI_FREQ_BAND_UNKNOWN) | BIT(WIFI_FREQ_BAND_2_4_GHZ))) {
-		LOG_ERR("Invalid band entered");
+		LOG_ERROR("Invalid band entered");
 		return -EINVAL;
 	}
 
@@ -190,13 +190,13 @@ int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_scan_confi
 
 		ret = sl_wifi_set_advanced_scan_configuration(&advanced_scan_config);
 		if (ret) {
-			LOG_ERR("Advanced scan configuration failed with status %x", ret);
+			LOG_ERROR("Advanced scan configuration failed with status %x", ret);
 			return -EINVAL;
 		}
 
 		ret = sl_wifi_set_roam_configuration(interface, &roam_configuration);
 		if (ret) {
-			LOG_ERR("Roaming configuration failed with status %x", ret);
+			LOG_ERROR("Roaming configuration failed with status %x", ret);
 			return -EINVAL;
 		}
 
@@ -218,7 +218,7 @@ int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_scan_confi
 								NULL);
 		}
 		if (ret) {
-			LOG_ERR("Failed to configure timeout");
+			LOG_ERROR("Failed to configure timeout");
 			return -EINVAL;
 		}
 	}
@@ -236,7 +236,7 @@ int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_scan_confi
 	}
 
 	if (z_scan_config->band_chan[0].channel && !sl_scan_config.channel_bitmap_2g4) {
-		LOG_ERR("No supported channels in the request");
+		LOG_ERROR("No supported channels in the request");
 		return -EINVAL;
 	}
 

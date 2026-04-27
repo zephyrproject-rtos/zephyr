@@ -179,7 +179,7 @@ void esp_socket_rx(struct esp_socket *sock, struct net_buf *buf,
 
 	pkt = esp_socket_prepare_pkt(sock, buf, offset, len);
 	if (!pkt) {
-		LOG_ERR("Failed to get net_pkt: len %zu", len);
+		LOG_ERROR("Failed to get net_pkt: len %zu", len);
 		if (esp_socket_type(sock) == NET_SOCK_STREAM) {
 			if (!esp_socket_flags_test_and_set(sock,
 						ESP_SOCK_CLOSE_PENDING)) {
@@ -250,8 +250,7 @@ void esp_socket_close(struct esp_socket *sock)
 		 * If link doesn't close correctly here, esp_get could
 		 * allocate a socket with an already open link.
 		 */
-		LOG_ERR("Failed to close link %d, ret %d",
-			sock->link_id, ret);
+		LOG_ERROR("Failed to close link %d, ret %d", sock->link_id, ret);
 	}
 }
 

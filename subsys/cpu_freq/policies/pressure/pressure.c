@@ -115,7 +115,7 @@ int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 	int cpu_id = 0;
 
 	if (NULL == pstate_out) {
-		LOG_ERR("On-Demand Policy: pstate_out is NULL");
+		LOG_ERROR("On-Demand Policy: pstate_out is NULL");
 		return -EINVAL;
 	}
 
@@ -127,7 +127,7 @@ int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 	sys_pressure = get_normalized_sys_pressure();
 
 	if (sys_pressure < 0) {
-		LOG_ERR("Unable to retrieve system pressure");
+		LOG_ERROR("Unable to retrieve system pressure");
 		return sys_pressure;
 	}
 
@@ -190,7 +190,7 @@ const struct pstate *cpu_freq_policy_pstate_set(const struct pstate *state)
 
 	ret = cpu_freq_pstate_set(state);
 	if (ret != 0) {
-		LOG_ERR("Failed to set P-state: %d", ret);
+		LOG_ERROR("Failed to set P-state: %d", ret);
 		return NULL;
 	}
 

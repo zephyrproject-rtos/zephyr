@@ -104,8 +104,8 @@ static int spi_gd32_get_err(const struct spi_gd32_config *cfg)
 	uint32_t stat = SPI_STAT(cfg->reg);
 
 	if (stat & SPI_GD32_ERR_MASK) {
-		LOG_ERR("spi%u error status detected, err = %u",
-			cfg->reg, stat & (uint32_t)SPI_GD32_ERR_MASK);
+		LOG_ERROR("spi%u error status detected, err = %u", cfg->reg,
+			  stat & (uint32_t)SPI_GD32_ERR_MASK);
 
 		return -EIO;
 	}
@@ -131,7 +131,7 @@ static int spi_gd32_configure(const struct device *dev,
 	}
 
 	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+		LOG_ERROR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 
@@ -308,13 +308,13 @@ static uint32_t spi_gd32_dma_setup(const struct device *dev, const uint32_t dir)
 
 	ret = dma_config(dma->dev, dma->channel, dma_cfg);
 	if (ret < 0) {
-		LOG_ERR("dma_config %p failed %d\n", dma->dev, ret);
+		LOG_ERROR("dma_config %p failed %d\n", dma->dev, ret);
 		return ret;
 	}
 
 	ret = dma_start(dma->dev, dma->channel);
 	if (ret < 0) {
-		LOG_ERR("dma_start %p failed %d\n", dma->dev, ret);
+		LOG_ERROR("dma_start %p failed %d\n", dma->dev, ret);
 		return ret;
 	}
 
@@ -512,8 +512,7 @@ static void spi_gd32_dma_callback(const struct device *dma_dev, void *arg,
 	int err = 0;
 
 	if (status < 0) {
-		LOG_ERR("dma:%p ch:%d callback gets error: %d", dma_dev, channel,
-			status);
+		LOG_ERROR("dma:%p ch:%d callback gets error: %d", dma_dev, channel, status);
 		spi_gd32_complete(dev, status);
 		return;
 	}
@@ -597,27 +596,26 @@ int spi_gd32_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("Failed to apply pinctrl state");
+		LOG_ERROR("Failed to apply pinctrl state");
 		return ret;
 	}
 
 #ifdef CONFIG_SPI_GD32_DMA
-	if ((cfg->dma[RX].dev && !cfg->dma[TX].dev) ||
-	    (cfg->dma[TX].dev && !cfg->dma[RX].dev)) {
-		LOG_ERR("DMA must be enabled for both TX and RX channels");
+	if ((cfg->dma[RX].dev && !cfg->dma[TX].dev) || (cfg->dma[TX].dev && !cfg->dma[RX].dev)) {
+		LOG_ERROR("DMA must be enabled for both TX and RX channels");
 		return -ENODEV;
 	}
 
 	for (size_t i = 0; i < spi_gd32_dma_enabled_num(dev); i++) {
 		if (!device_is_ready(cfg->dma[i].dev)) {
-			LOG_ERR("DMA %s not ready", cfg->dma[i].dev->name);
+			LOG_ERROR("DMA %s not ready", cfg->dma[i].dev->name);
 			return -ENODEV;
 		}
 
 		ch_filter = BIT(cfg->dma[i].channel);
 		ret = dma_request_channel(cfg->dma[i].dev, &ch_filter);
 		if (ret < 0) {
-			LOG_ERR("dma_request_channel failed %d", ret);
+			LOG_ERROR("dma_request_channel failed %d", ret);
 			return ret;
 		}
 	}

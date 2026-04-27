@@ -264,7 +264,7 @@ struct flash_bflb_data {
 static bool flash_bflb_is_in_xip(void *func)
 {
 	if ((uint32_t)func > BFLB_XIP_BASE && (uint32_t)func < BFLB_XIP_END) {
-		LOG_ERR("function at %p is in XIP and will crash the device", func);
+		LOG_ERROR("function at %p is in XIP and will crash the device", func);
 		return true;
 	}
 
@@ -414,7 +414,7 @@ static int flash_bflb_set_command_iahb(struct flash_bflb_data *data,
 	tmp = FLASH_READ32(data->reg_copy + SF_CTRL_1_OFFSET);
 
 	if ((tmp & SF_CTRL_SF_IF_FN_SEL_MSK) == 0) {
-		LOG_ERR("Flash's Bus must be Instruction AHB and not System AHB");
+		LOG_ERROR("Flash's Bus must be Instruction AHB and not System AHB");
 		return -EINVAL;
 	}
 
@@ -568,7 +568,7 @@ static int flash_bflb_send_command(struct flash_bflb_data *data, struct bflb_fla
 
 	tmp = FLASH_READ32(data->reg_copy + SF_CTRL_1_OFFSET);
 	if (tmp & SF_CTRL_SF_IF_FN_SEL_MSK) {
-		LOG_ERR("Flash's Bus must be System AHB and not Instruction AHB");
+		LOG_ERROR("Flash's Bus must be System AHB and not Instruction AHB");
 		return -EINVAL;
 	}
 
@@ -1451,13 +1451,13 @@ static int flash_bflb_config_init(const struct device *dev)
 		&& header.magic_2.magic[1] == BFLB_FLASH_MAGIC_2[1]
 		&& header.magic_2.magic[2] == BFLB_FLASH_MAGIC_2[2]
 		&& header.magic_2.magic[3] == BFLB_FLASH_MAGIC_2[3])) {
-		LOG_ERR("Flash data magic is incorrect");
+		LOG_ERROR("Flash data magic is incorrect");
 		return -EINVAL;
 	}
 
 	tmp = bflb_soft_crc32(0, (uint8_t *)(&header.flash_cfg), sizeof(struct bflb_flash_cfg));
 	if (tmp != header.flash_cfg_crc) {
-		LOG_ERR("Flash data crc is incorrect %d vs %d", tmp, header.flash_cfg_crc);
+		LOG_ERROR("Flash data crc is incorrect %d vs %d", tmp, header.flash_cfg_crc);
 		return -EINVAL;
 	}
 	flash_bflb_xip_memcpy((uint8_t *)&(header.flash_cfg),

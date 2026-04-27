@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 /* Undef to override those macros. */
-#undef LOG_ERR
+#undef LOG_ERROR
 #undef LOG_WRN
 #undef LOG_INF
 #undef LOG_DBG
@@ -94,7 +94,7 @@ extern "C" {
 			}))))
 
 /* Overridden logging API macros. */
-#define LOG_ERR(...) Z_LOG_STMESP(LOG_LEVEL_ERR, Z_LOG_CURRENT_DATA(), __VA_ARGS__)
+#define LOG_ERROR(...) Z_LOG_STMESP(LOG_LEVEL_ERR, Z_LOG_CURRENT_DATA(), __VA_ARGS__)
 #define LOG_WRN(...) Z_LOG_STMESP(LOG_LEVEL_WRN, Z_LOG_CURRENT_DATA(), __VA_ARGS__)
 #define LOG_INF(...) Z_LOG_STMESP(LOG_LEVEL_INF, Z_LOG_CURRENT_DATA(), __VA_ARGS__)
 #define LOG_DBG(...) Z_LOG_STMESP(LOG_LEVEL_DBG, Z_LOG_CURRENT_DATA(), __VA_ARGS__)

@@ -18,7 +18,7 @@ void board_late_init_hook(void)
 	const struct gpio_dt_spec simctrl = GPIO_DT_SPEC_GET(DT_PATH(sim_select), sim_gpios);
 
 	if (!gpio_is_ready_dt(&simctrl)) {
-		LOG_ERR("SIM select GPIO not available");
+		LOG_ERROR("SIM select GPIO not available");
 		return;
 	}
 

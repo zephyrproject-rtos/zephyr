@@ -162,7 +162,7 @@ static void modem_backend_uart_async_hwfc_event_handler(const struct device *dev
 		err = uart_rx_buf_rsp(backend->uart, buf->buf,
 				      backend->async.rx_buf_size - sizeof(struct rx_buf_t));
 		if (err) {
-			LOG_ERR("uart_rx_buf_rsp: %d", err);
+			LOG_ERROR("uart_rx_buf_rsp: %d", err);
 			rx_buf_unref(&backend->async, buf->buf);
 		}
 		break;
@@ -225,7 +225,7 @@ static int modem_backend_uart_async_hwfc_open(void *data)
 
 	ret = pm_device_runtime_get(backend->uart);
 	if (ret < 0) {
-		LOG_ERR("Failed to power on UART: %d", ret);
+		LOG_ERROR("Failed to power on UART: %d", ret);
 		return ret;
 	}
 	if (backend->dtr_gpio) {
@@ -297,8 +297,8 @@ static int modem_backend_uart_async_hwfc_transmit(void *data, const uint8_t *buf
 #endif
 
 	if (ret != 0) {
-		LOG_ERR("Failed to %s %u bytes. (%d)",
-			"start async transmit for", bytes_to_transmit, ret);
+		LOG_ERROR("Failed to %s %u bytes. (%d)", "start async transmit for",
+			  bytes_to_transmit, ret);
 		return ret;
 	}
 
@@ -377,7 +377,7 @@ static int modem_backend_uart_async_hwfc_close(void *data)
 	}
 	ret = pm_device_runtime_put_async(backend->uart, K_NO_WAIT);
 	if (ret < 0) {
-		LOG_ERR("Failed to power off UART: %d", ret);
+		LOG_ERROR("Failed to power off UART: %d", ret);
 		return ret;
 	}
 

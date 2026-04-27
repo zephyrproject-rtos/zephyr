@@ -148,7 +148,7 @@ static void print_supported_reset_cause(void)
 		LOG_INF("hwinfo_get_supported_reset_cause() is NOT supported");
 		supported = 0;
 	} else {
-		LOG_ERR("hwinfo_get_supported_reset_cause() failed (ret = %d)", ret);
+		LOG_ERROR("hwinfo_get_supported_reset_cause() failed (ret = %d)", ret);
 	}
 	sys_cache_data_flush_range((void *) &supported, sizeof(supported));
 	print_bar();
@@ -217,7 +217,7 @@ static void print_current_reset_cause(uint32_t *cause)
 		LOG_INF("hwinfo_get_reset_cause() is NOT supported");
 		*cause = 0;
 	} else {
-		LOG_ERR("hwinfo_get_reset_cause() failed (ret = %d)", ret);
+		LOG_ERROR("hwinfo_get_reset_cause() failed (ret = %d)", ret);
 	}
 	print_bar();
 }
@@ -233,7 +233,7 @@ static void test_clear_reset_cause(void)
 	} else if (ret == -ENOSYS) {
 		LOG_INF("hwinfo_get_reset_cause() is NOT supported");
 	} else {
-		LOG_ERR("hwinfo_get_reset_cause() failed (ret = %d)", ret);
+		LOG_ERROR("hwinfo_get_reset_cause() failed (ret = %d)", ret);
 	}
 	print_bar();
 
@@ -243,7 +243,7 @@ static void test_clear_reset_cause(void)
 	if (temp == 0) {
 		LOG_INF("PASS: reset causes were cleared");
 	} else {
-		LOG_ERR("FAIL: reset case = %u while expected is 0", temp);
+		LOG_ERROR("FAIL: reset case = %u while expected is 0", temp);
 	}
 	print_bar();
 }
@@ -270,7 +270,7 @@ void test_reset_software(uint32_t cause)
 				/* Check RESET_SOFTWARE can be cleared */
 				test_clear_reset_cause();
 			} else {
-				LOG_ERR("FAIL: RESET_SOFTWARE not set");
+				LOG_ERROR("FAIL: RESET_SOFTWARE not set");
 				print_bar();
 			}
 			/* Cleanup */
@@ -291,7 +291,7 @@ void test_reset_watchdog(uint32_t cause)
 			uint32_t watchdog_window = 2000U;
 
 			if (!device_is_ready(my_wdt_device)) {
-				LOG_ERR("WDT device %s is not ready", my_wdt_device->name);
+				LOG_ERROR("WDT device %s is not ready", my_wdt_device->name);
 				return;
 			}
 
@@ -301,13 +301,13 @@ void test_reset_watchdog(uint32_t cause)
 			m_cfg_wdt0.window.min = 0U;
 			my_wdt_channel = wdt_install_timeout(my_wdt_device, &m_cfg_wdt0);
 			if (my_wdt_channel < 0) {
-				LOG_ERR("wdt_install_timeout() returned %d", my_wdt_channel);
+				LOG_ERROR("wdt_install_timeout() returned %d", my_wdt_channel);
 				return;
 			}
 
 			ret = wdt_setup(my_wdt_device, WDT_OPT_PAUSE_HALTED_BY_DBG);
 			if (ret < 0) {
-				LOG_ERR("wdt_setup() returned %d", ret);
+				LOG_ERROR("wdt_setup() returned %d", ret);
 				return;
 			}
 
@@ -325,7 +325,7 @@ void test_reset_watchdog(uint32_t cause)
 				/* Check RESET_WATCHDOG can be cleared */
 				test_clear_reset_cause();
 			} else {
-				LOG_ERR("FAIL: RESET_WATCHDOG not set");
+				LOG_ERROR("FAIL: RESET_WATCHDOG not set");
 				print_bar();
 			}
 			/* Cleanup */
@@ -367,7 +367,7 @@ void test_reset_cpu_lockup(uint32_t cause)
 				/* Check RESET_SOFTWARE can be cleared */
 				test_clear_reset_cause();
 			} else {
-				LOG_ERR("FAIL: RESET_CPU_LOCKUP not set");
+				LOG_ERROR("FAIL: RESET_CPU_LOCKUP not set");
 				print_bar();
 			}
 			/* Cleanup */

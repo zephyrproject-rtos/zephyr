@@ -995,7 +995,7 @@ static void smp_br_timeout(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct bt_smp_br *smp = CONTAINER_OF(dwork, struct bt_smp_br, work);
 
-	LOG_ERR("SMP Timeout");
+	LOG_ERROR("SMP Timeout");
 
 	smp_pairing_br_complete(smp, BT_SMP_ERR_UNSPECIFIED);
 	atomic_set_bit(smp->flags, SMP_FLAG_TIMEOUT);
@@ -1008,7 +1008,7 @@ static void smp_br_send(struct bt_smp_br *smp, struct net_buf *buf,
 
 	if (err) {
 		if (err == -ENOBUFS) {
-			LOG_ERR("Ran out of TX buffers or contexts.");
+			LOG_ERROR("Ran out of TX buffers or contexts.");
 		}
 
 		net_buf_unref(buf);
@@ -1103,7 +1103,7 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 
 	keys = bt_keys_get_type(BT_KEYS_LTK_P256, conn->id, &addr);
 	if (!keys) {
-		LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&addr));
+		LOG_ERROR("Unable to get keys for %s", bt_addr_le_str(&addr));
 		return;
 	}
 
@@ -1198,7 +1198,7 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 
 	keys = bt_keys_get_addr(conn->id, &addr);
 	if (!keys) {
-		LOG_ERR("No keys space for %s", bt_addr_le_str(&addr));
+		LOG_ERROR("No keys space for %s", bt_addr_le_str(&addr));
 		return;
 	}
 
@@ -1214,7 +1214,7 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 		buf = smp_br_create_pdu(smp, BT_SMP_CMD_IDENT_INFO,
 					sizeof(*id_info));
 		if (!buf) {
-			LOG_ERR("Unable to allocate Ident Info buffer");
+			LOG_ERROR("Unable to allocate Ident Info buffer");
 			return;
 		}
 
@@ -1226,7 +1226,7 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 		buf = smp_br_create_pdu(smp, BT_SMP_CMD_IDENT_ADDR_INFO,
 				     sizeof(*id_addr_info));
 		if (!buf) {
-			LOG_ERR("Unable to allocate Ident Addr Info buffer");
+			LOG_ERROR("Unable to allocate Ident Addr Info buffer");
 			return;
 		}
 
@@ -1248,14 +1248,14 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 		buf = smp_br_create_pdu(smp, BT_SMP_CMD_SIGNING_INFO,
 					sizeof(*info));
 		if (!buf) {
-			LOG_ERR("Unable to allocate Signing Info buffer");
+			LOG_ERROR("Unable to allocate Signing Info buffer");
 			return;
 		}
 
 		info = net_buf_add(buf, sizeof(*info));
 
 		if (bt_rand(info->csrk, sizeof(info->csrk))) {
-			LOG_ERR("Unable to get random bytes");
+			LOG_ERROR("Unable to get random bytes");
 			return;
 		}
 
@@ -1486,7 +1486,7 @@ static uint8_t smp_br_pairing_failed(struct bt_smp_br *smp, struct net_buf *buf)
 {
 	struct bt_smp_pairing_fail *req = (void *)buf->data;
 
-	LOG_ERR("pairing failed (peer reason 0x%x)", req->reason);
+	LOG_ERROR("pairing failed (peer reason 0x%x)", req->reason);
 
 	smp_pairing_br_complete(smp, req->reason);
 	smp_br_reset(smp);
@@ -1514,7 +1514,7 @@ static uint8_t smp_br_ident_info(struct bt_smp_br *smp, struct net_buf *buf)
 
 	keys = bt_keys_get_type(BT_KEYS_IRK, conn->id, &addr);
 	if (!keys) {
-		LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&addr));
+		LOG_ERROR("Unable to get keys for %s", bt_addr_le_str(&addr));
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -1578,7 +1578,7 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
 	if (keys) {
 		bt_conn_foreach(BT_CONN_TYPE_LE, convert_to_id_on_irk_match, keys);
 	} else {
-		LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&addr));
+		LOG_ERROR("Unable to get keys for %s", bt_addr_le_str(&addr));
 	}
 
 	if (conn->role == BT_CONN_ROLE_CENTRAL && !smp->remote_dist) {
@@ -1616,7 +1616,7 @@ static uint8_t smp_br_signing_info(struct bt_smp_br *smp, struct net_buf *buf)
 
 	keys = bt_keys_get_type(BT_KEYS_REMOTE_CSRK, conn->id, &addr);
 	if (!keys) {
-		LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&addr));
+		LOG_ERROR("Unable to get keys for %s", bt_addr_le_str(&addr));
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -1697,7 +1697,7 @@ static int bt_smp_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	uint8_t err;
 
 	if (buf->len < sizeof(*hdr)) {
-		LOG_ERR("Too small SMP PDU received");
+		LOG_ERROR("Too small SMP PDU received");
 		return 0;
 	}
 
@@ -1728,7 +1728,7 @@ static int bt_smp_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 
 	if (buf->len != br_handlers[hdr->code].expect_len) {
-		LOG_ERR("Invalid len %u for code 0x%02x", buf->len, hdr->code);
+		LOG_ERROR("Invalid len %u for code 0x%02x", buf->len, hdr->code);
 		smp_br_error(smp, BT_SMP_ERR_INVALID_PARAMS);
 		return 0;
 	}
@@ -1784,7 +1784,7 @@ static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		return 0;
 	}
 
-	LOG_ERR("No available SMP context for conn %p", conn);
+	LOG_ERROR("No available SMP context for conn %p", conn);
 
 	return -ENOMEM;
 }
@@ -1795,7 +1795,7 @@ static struct bt_smp_br *smp_br_chan_get(struct bt_conn *conn)
 
 	chan = bt_l2cap_br_lookup_rx_cid(conn, BT_L2CAP_CID_BR_SMP);
 	if (!chan) {
-		LOG_ERR("Unable to find SMP channel");
+		LOG_ERROR("Unable to find SMP channel");
 		return NULL;
 	}
 
@@ -2033,9 +2033,9 @@ static void smp_timeout(struct k_work *work)
 	BUILD_ASSERT(ATOMIC_BITMAP_SIZE(SMP_NUM_FLAGS) == 1);
 	BUILD_ASSERT(ATOMIC_BITMAP_SIZE(BT_SMP_NUM_CMDS) == 1);
 
-	LOG_ERR("SMP Timeout (flags:0x%08x allowed_cmds:0x%08x)",
-		(unsigned int)atomic_get(&smp->flags[0]),
-		(unsigned int)atomic_get(&smp->allowed_cmds[0]));
+	LOG_ERROR("SMP Timeout (flags:0x%08x allowed_cmds:0x%08x)",
+		  (unsigned int)atomic_get(&smp->flags[0]),
+		  (unsigned int)atomic_get(&smp->allowed_cmds[0]));
 
 	smp_pairing_complete(smp, BT_SMP_ERR_UNSPECIFIED);
 
@@ -2054,7 +2054,7 @@ static void smp_send(struct bt_smp *smp, struct net_buf *buf,
 
 	if (err) {
 		if (err == -ENOBUFS) {
-			LOG_ERR("Ran out of TX buffers or contexts.");
+			LOG_ERROR("Ran out of TX buffers or contexts.");
 		}
 
 		net_buf_unref(buf);
@@ -2201,7 +2201,7 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 		r |= 0x80;
 		break;
 	default:
-		LOG_ERR("Unknown pairing method (%u)", smp->method);
+		LOG_ERROR("Unknown pairing method (%u)", smp->method);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -2249,14 +2249,14 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 		} rand;
 
 		if (bt_rand((void *)&rand, sizeof(rand))) {
-			LOG_ERR("Unable to get random bytes");
+			LOG_ERROR("Unable to get random bytes");
 			return;
 		}
 
 		buf = smp_create_pdu(smp, BT_SMP_CMD_ENCRYPT_INFO,
 				     sizeof(*info));
 		if (!buf) {
-			LOG_ERR("Unable to allocate Encrypt Info buffer");
+			LOG_ERROR("Unable to allocate Encrypt Info buffer");
 			return;
 		}
 
@@ -2274,7 +2274,7 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 		buf = smp_create_pdu(smp, BT_SMP_CMD_CENTRAL_IDENT,
 				     sizeof(*ident));
 		if (!buf) {
-			LOG_ERR("Unable to allocate Central Ident buffer");
+			LOG_ERROR("Unable to allocate Central Ident buffer");
 			return;
 		}
 
@@ -2304,7 +2304,7 @@ static uint8_t bt_smp_distribute_keys(struct bt_smp *smp)
 	struct bt_keys *keys = conn->le.keys;
 
 	if (!keys) {
-		LOG_ERR("No keys space for %s", bt_addr_le_str(&conn->le.dst));
+		LOG_ERROR("No keys space for %s", bt_addr_le_str(&conn->le.dst));
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -2324,7 +2324,7 @@ static uint8_t bt_smp_distribute_keys(struct bt_smp *smp)
 		buf = smp_create_pdu(smp, BT_SMP_CMD_IDENT_INFO,
 				     sizeof(*id_info));
 		if (!buf) {
-			LOG_ERR("Unable to allocate Ident Info buffer");
+			LOG_ERROR("Unable to allocate Ident Info buffer");
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -2336,7 +2336,7 @@ static uint8_t bt_smp_distribute_keys(struct bt_smp *smp)
 		buf = smp_create_pdu(smp, BT_SMP_CMD_IDENT_ADDR_INFO,
 				     sizeof(*id_addr_info));
 		if (!buf) {
-			LOG_ERR("Unable to allocate Ident Addr Info buffer");
+			LOG_ERROR("Unable to allocate Ident Addr Info buffer");
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -2355,7 +2355,7 @@ static uint8_t bt_smp_distribute_keys(struct bt_smp *smp)
 		buf = smp_create_pdu(smp, BT_SMP_CMD_SIGNING_INFO,
 				     sizeof(*info));
 		if (!buf) {
-			LOG_ERR("Unable to allocate Signing Info buffer");
+			LOG_ERROR("Unable to allocate Signing Info buffer");
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -2492,7 +2492,7 @@ static uint8_t legacy_request_tk(struct bt_smp *smp)
 	if (keys && (keys->flags & BT_KEYS_AUTHENTICATED) &&
 	    (smp->method == JUST_WORKS || smp->method == PASSKEY_DISPLAY ||
 	     smp->method == PASSKEY_INPUT)) {
-		LOG_ERR("Pairing failed, authenticated keys present");
+		LOG_ERROR("Pairing failed, authenticated keys present");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -2556,7 +2556,7 @@ static uint8_t legacy_request_tk(struct bt_smp *smp)
 	case JUST_WORKS:
 		break;
 	default:
-		LOG_ERR("Unknown pairing method (%u)", smp->method);
+		LOG_ERROR("Unknown pairing method (%u)", smp->method);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -2667,7 +2667,7 @@ static uint8_t legacy_pairing_random(struct bt_smp *smp)
 		(void)memset(rand, 0, sizeof(rand));
 		if (bt_conn_le_start_encryption(conn, rand, ediv, tmp,
 						get_encryption_key_size(smp))) {
-			LOG_ERR("Failed to start encryption");
+			LOG_ERROR("Failed to start encryption");
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -2692,7 +2692,7 @@ static uint8_t legacy_pairing_random(struct bt_smp *smp)
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
 		err = smp_s1(smp->tk, smp->prnd, smp->rrnd, tmp);
 		if (err) {
-			LOG_ERR("Calculate STK failed");
+			LOG_ERROR("Calculate STK failed");
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -2772,7 +2772,7 @@ static uint8_t smp_encrypt_info(struct bt_smp *smp, struct net_buf *buf)
 
 		keys = bt_keys_get_type(BT_KEYS_LTK, conn->id, &conn->le.dst);
 		if (!keys) {
-			LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&conn->le.dst));
+			LOG_ERROR("Unable to get keys for %s", bt_addr_le_str(&conn->le.dst));
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -2797,7 +2797,7 @@ static uint8_t smp_central_ident(struct bt_smp *smp, struct net_buf *buf)
 
 		keys = bt_keys_get_type(BT_KEYS_LTK, conn->id, &conn->le.dst);
 		if (!keys) {
-			LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&conn->le.dst));
+			LOG_ERROR("Unable to get keys for %s", bt_addr_le_str(&conn->le.dst));
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -3017,7 +3017,7 @@ static struct bt_smp *smp_chan_get(struct bt_conn *conn)
 
 	chan = bt_l2cap_le_lookup_rx_cid(conn, BT_L2CAP_CID_SMP);
 	if (!chan) {
-		LOG_ERR("Unable to find SMP channel");
+		LOG_ERROR("Unable to find SMP channel");
 		return NULL;
 	}
 
@@ -3608,7 +3608,7 @@ static uint8_t smp_pairing_confirm(struct bt_smp *smp, struct net_buf *buf)
 	case JUST_WORKS:
 	case PASSKEY_CONFIRM:
 	default:
-		LOG_ERR("Unknown pairing method (%u)", smp->method);
+		LOG_ERROR("Unknown pairing method (%u)", smp->method);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 }
@@ -3654,21 +3654,21 @@ static uint8_t compute_and_send_central_dhcheck(struct bt_smp *smp)
 		}
 		break;
 	default:
-		LOG_ERR("Unknown pairing method (%u)", smp->method);
+		LOG_ERROR("Unknown pairing method (%u)", smp->method);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
 	/* calculate LTK and mackey */
 	if (bt_crypto_f5(smp->dhkey, smp->prnd, smp->rrnd, &smp->chan.chan.conn->le.init_addr,
 			 &smp->chan.chan.conn->le.resp_addr, smp->mackey, smp->tk)) {
-		LOG_ERR("Calculate LTK failed");
+		LOG_ERROR("Calculate LTK failed");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 	/* calculate local DHKey check */
 	if (bt_crypto_f6(smp->mackey, smp->prnd, smp->rrnd, r, &smp->preq[1],
 			 &smp->chan.chan.conn->le.init_addr, &smp->chan.chan.conn->le.resp_addr,
 			 e)) {
-		LOG_ERR("Calculate local DHKey check failed");
+		LOG_ERROR("Calculate local DHKey check failed");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -3699,14 +3699,14 @@ static uint8_t compute_and_check_and_send_periph_dhcheck(struct bt_smp *smp)
 		}
 		break;
 	default:
-		LOG_ERR("Unknown pairing method (%u)", smp->method);
+		LOG_ERROR("Unknown pairing method (%u)", smp->method);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
 	/* calculate LTK and mackey */
 	if (bt_crypto_f5(smp->dhkey, smp->rrnd, smp->prnd, &smp->chan.chan.conn->le.init_addr,
 			 &smp->chan.chan.conn->le.resp_addr, smp->mackey, smp->tk)) {
-		LOG_ERR("Calculate LTK failed");
+		LOG_ERROR("Calculate LTK failed");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -3714,7 +3714,7 @@ static uint8_t compute_and_check_and_send_periph_dhcheck(struct bt_smp *smp)
 	if (bt_crypto_f6(smp->mackey, smp->prnd, smp->rrnd, r, &smp->prsp[1],
 			 &smp->chan.chan.conn->le.resp_addr, &smp->chan.chan.conn->le.init_addr,
 			 e)) {
-		LOG_ERR("Calculate local DHKey check failed");
+		LOG_ERROR("Calculate local DHKey check failed");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -3730,7 +3730,7 @@ static uint8_t compute_and_check_and_send_periph_dhcheck(struct bt_smp *smp)
 	if (bt_crypto_f6(smp->mackey, smp->rrnd, smp->prnd, r, &smp->preq[1],
 			 &smp->chan.chan.conn->le.init_addr, &smp->chan.chan.conn->le.resp_addr,
 			 re)) {
-		LOG_ERR("Calculate remote DHKey check failed");
+		LOG_ERROR("Calculate remote DHKey check failed");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -3760,7 +3760,7 @@ static uint8_t smp_dhkey_generate(struct bt_smp *smp)
 	if (err) {
 		atomic_clear_bit(smp->flags, SMP_FLAG_DHKEY_GEN);
 
-		LOG_ERR("Failed to generate DHKey");
+		LOG_ERROR("Failed to generate DHKey");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -3866,12 +3866,12 @@ static uint8_t sc_smp_check_confirm(struct bt_smp *smp)
 		r |= 0x80;
 		break;
 	default:
-		LOG_ERR("Unknown pairing method (%u)", smp->method);
+		LOG_ERROR("Unknown pairing method (%u)", smp->method);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
 	if (bt_crypto_f4(smp->pkey, sc_public_key, smp->rrnd, r, cfm)) {
-		LOG_ERR("Calculate confirm failed");
+		LOG_ERROR("Calculate confirm failed");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -3985,7 +3985,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 				       BT_SMP_CMD_PAIRING_CONFIRM);
 			return smp_send_pairing_confirm(smp);
 		default:
-			LOG_ERR("Unknown pairing method (%u)", smp->method);
+			LOG_ERROR("Unknown pairing method (%u)", smp->method);
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -4063,7 +4063,7 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 			return BT_SMP_ERR_OOB_NOT_AVAIL;
 		}
 	default:
-		LOG_ERR("Unknown pairing method (%u)", smp->method);
+		LOG_ERROR("Unknown pairing method (%u)", smp->method);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -4081,7 +4081,7 @@ static uint8_t smp_pairing_failed(struct bt_smp *smp, struct net_buf *buf)
 	const struct bt_conn_auth_cb *smp_auth_cb = latch_auth_cb(smp);
 	struct bt_smp_pairing_fail *req = (void *)buf->data;
 
-	LOG_ERR("pairing failed (peer reason 0x%x)", req->reason);
+	LOG_ERROR("pairing failed (peer reason 0x%x)", req->reason);
 
 	if (atomic_test_and_clear_bit(smp->flags, SMP_FLAG_USER) ||
 	    atomic_test_and_clear_bit(smp->flags, SMP_FLAG_DISPLAY)) {
@@ -4107,7 +4107,7 @@ static uint8_t smp_ident_info(struct bt_smp *smp, struct net_buf *buf)
 
 		keys = bt_keys_get_type(BT_KEYS_IRK, conn->id, &conn->le.dst);
 		if (!keys) {
-			LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&conn->le.dst));
+			LOG_ERROR("Unable to get keys for %s", bt_addr_le_str(&conn->le.dst));
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -4189,8 +4189,8 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 	smp->remote_dist &= ~BT_SMP_DIST_ID_KEY;
 
 	if (!bt_addr_le_is_identity(&req->addr)) {
-		LOG_ERR("Invalid identity %s", bt_addr_le_str(&req->addr));
-		LOG_ERR(" for %s", bt_addr_le_str(&conn->le.dst));
+		LOG_ERROR("Invalid identity %s", bt_addr_le_str(&req->addr));
+		LOG_ERROR(" for %s", bt_addr_le_str(&conn->le.dst));
 		return BT_SMP_ERR_INVALID_PARAMS;
 	}
 
@@ -4212,7 +4212,7 @@ static uint8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 
 		keys = bt_keys_get_type(BT_KEYS_IRK, conn->id, &conn->le.dst);
 		if (!keys) {
-			LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&conn->le.dst));
+			LOG_ERROR("Unable to get keys for %s", bt_addr_le_str(&conn->le.dst));
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -4295,7 +4295,7 @@ static uint8_t smp_signing_info(struct bt_smp *smp, struct net_buf *buf)
 		keys = bt_keys_get_type(BT_KEYS_REMOTE_CSRK, conn->id,
 					&conn->le.dst);
 		if (!keys) {
-			LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&conn->le.dst));
+			LOG_ERROR("Unable to get keys for %s", bt_addr_le_str(&conn->le.dst));
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -4408,11 +4408,9 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 		goto pair;
 	}
 
-	if (bt_conn_le_start_encryption(conn, conn->le.keys->ltk.rand,
-					conn->le.keys->ltk.ediv,
-					conn->le.keys->ltk.val,
-					conn->le.keys->enc_size) < 0) {
-		LOG_ERR("Failed to start encryption");
+	if (bt_conn_le_start_encryption(conn, conn->le.keys->ltk.rand, conn->le.keys->ltk.ediv,
+					conn->le.keys->ltk.val, conn->le.keys->enc_size) < 0) {
+		LOG_ERROR("Failed to start encryption");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -4540,7 +4538,7 @@ static uint8_t smp_public_key_periph(struct bt_smp *smp)
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_RANDOM);
 		break;
 	default:
-		LOG_ERR("Unknown pairing method (%u)", smp->method);
+		LOG_ERROR("Unknown pairing method (%u)", smp->method);
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -4648,7 +4646,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 			}
 			break;
 		default:
-			LOG_ERR("Unknown pairing method (%u)", smp->method);
+			LOG_ERROR("Unknown pairing method (%u)", smp->method);
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -4698,7 +4696,7 @@ static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 			}
 			break;
 		default:
-			LOG_ERR("Unknown pairing method (%u)", smp->method);
+			LOG_ERROR("Unknown pairing method (%u)", smp->method);
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -4718,9 +4716,9 @@ static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 		/* Rand and EDiv are 0 */
 		(void)memset(ediv, 0, sizeof(ediv));
 		(void)memset(rand, 0, sizeof(rand));
-		if (bt_conn_le_start_encryption(smp->chan.chan.conn, rand, ediv,
-						smp->tk, enc_size) < 0) {
-			LOG_ERR("Failed to start encryption");
+		if (bt_conn_le_start_encryption(smp->chan.chan.conn, rand, ediv, smp->tk,
+						enc_size) < 0) {
+			LOG_ERROR("Failed to start encryption");
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
@@ -4842,7 +4840,7 @@ static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	uint8_t err;
 
 	if (buf->len < sizeof(*hdr)) {
-		LOG_ERR("Too small SMP PDU received");
+		LOG_ERROR("Too small SMP PDU received");
 		return 0;
 	}
 
@@ -4885,7 +4883,7 @@ static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 
 	if (buf->len != handlers[hdr->code].expect_len) {
-		LOG_ERR("Invalid len %u for code 0x%02x", buf->len, hdr->code);
+		LOG_ERROR("Invalid len %u for code 0x%02x", buf->len, hdr->code);
 		smp_error(smp, BT_SMP_ERR_INVALID_PARAMS);
 		return 0;
 	}
@@ -5152,7 +5150,7 @@ static int smp_sign_buf(const uint8_t *key, uint8_t *msg, uint16_t len)
 
 	err = bt_crypto_aes_cmac(key_s, m, len + sizeof(cnt), tmp);
 	if (err) {
-		LOG_ERR("Data signing failed");
+		LOG_ERROR("Data signing failed");
 		return err;
 	}
 
@@ -5183,7 +5181,7 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 
 	keys = bt_keys_find(BT_KEYS_REMOTE_CSRK, conn->id, &conn->le.dst);
 	if (!keys) {
-		LOG_ERR("Unable to find Remote CSRK for %s", bt_addr_le_str(&conn->le.dst));
+		LOG_ERROR("Unable to find Remote CSRK for %s", bt_addr_le_str(&conn->le.dst));
 		return -ENOENT;
 	}
 
@@ -5197,12 +5195,12 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 	err = smp_sign_buf(keys->remote_csrk.val, buf->data,
 			   buf->len - sizeof(sig));
 	if (err) {
-		LOG_ERR("Unable to create signature for %s", bt_addr_le_str(&conn->le.dst));
+		LOG_ERROR("Unable to create signature for %s", bt_addr_le_str(&conn->le.dst));
 		return -EIO;
 	}
 
 	if (memcmp(sig, net_buf_tail(buf) - sizeof(sig), sizeof(sig))) {
-		LOG_ERR("Unable to verify signature for %s", bt_addr_le_str(&conn->le.dst));
+		LOG_ERROR("Unable to verify signature for %s", bt_addr_le_str(&conn->le.dst));
 		return -EBADMSG;
 	}
 
@@ -5219,7 +5217,7 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 
 	keys = bt_keys_find(BT_KEYS_LOCAL_CSRK, conn->id, &conn->le.dst);
 	if (!keys) {
-		LOG_ERR("Unable to find local CSRK for %s", bt_addr_le_str(&conn->le.dst));
+		LOG_ERROR("Unable to find local CSRK for %s", bt_addr_le_str(&conn->le.dst));
 		return -ENOENT;
 	}
 
@@ -5235,7 +5233,7 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 
 	err = smp_sign_buf(keys->local_csrk.val, buf->data, buf->len - 12);
 	if (err) {
-		LOG_ERR("Unable to create signature for %s", bt_addr_le_str(&conn->le.dst));
+		LOG_ERROR("Unable to create signature for %s", bt_addr_le_str(&conn->le.dst));
 		return -EIO;
 	}
 
@@ -5317,7 +5315,7 @@ static int aes_test(const char *prefix, const uint8_t *in_key, const uint8_t *m,
 	if (!memcmp(out, mac, 16)) {
 		LOG_DBG("%s: Success", prefix);
 	} else {
-		LOG_ERR("%s: Failed", prefix);
+		LOG_ERROR("%s: Failed", prefix);
 		return -1;
 	}
 
@@ -5392,7 +5390,7 @@ static int sign_test(const char *prefix, const uint8_t *sign_key, const uint8_t 
 	if (!memcmp(msg, orig, len + sizeof(uint32_t))) {
 		LOG_DBG("%s: Original message intact", prefix);
 	} else {
-		LOG_ERR("%s: Original message modified", prefix);
+		LOG_ERROR("%s: Original message modified", prefix);
 		LOG_DBG("%s: orig %s", prefix, bt_hex(orig, sizeof(orig)));
 		LOG_DBG("%s: msg %s", prefix, bt_hex(msg, sizeof(msg)));
 		return -1;
@@ -5401,7 +5399,7 @@ static int sign_test(const char *prefix, const uint8_t *sign_key, const uint8_t 
 	if (!memcmp(out, sig, 12)) {
 		LOG_DBG("%s: Success", prefix);
 	} else {
-		LOG_ERR("%s: Failed", prefix);
+		LOG_ERROR("%s: Failed", prefix);
 		return -1;
 	}
 
@@ -5660,56 +5658,56 @@ static int smp_self_test(void)
 
 	err = smp_aes_cmac_test();
 	if (err) {
-		LOG_ERR("SMP AES-CMAC self tests failed");
+		LOG_ERROR("SMP AES-CMAC self tests failed");
 		return err;
 	}
 
 	err = smp_sign_test();
 	if (err) {
-		LOG_ERR("SMP signing self tests failed");
+		LOG_ERROR("SMP signing self tests failed");
 		return err;
 	}
 
 	err = smp_f4_test();
 	if (err) {
-		LOG_ERR("SMP f4 self test failed");
+		LOG_ERROR("SMP f4 self test failed");
 		return err;
 	}
 
 	err = smp_f5_test();
 	if (err) {
-		LOG_ERR("SMP f5 self test failed");
+		LOG_ERROR("SMP f5 self test failed");
 		return err;
 	}
 
 	err = smp_f6_test();
 	if (err) {
-		LOG_ERR("SMP f6 self test failed");
+		LOG_ERROR("SMP f6 self test failed");
 		return err;
 	}
 
 	err = smp_g2_test();
 	if (err) {
-		LOG_ERR("SMP g2 self test failed");
+		LOG_ERROR("SMP g2 self test failed");
 		return err;
 	}
 
 #if defined(CONFIG_BT_CLASSIC)
 	err = smp_h6_test();
 	if (err) {
-		LOG_ERR("SMP h6 self test failed");
+		LOG_ERROR("SMP h6 self test failed");
 		return err;
 	}
 
 	err = smp_h7_test();
 	if (err) {
-		LOG_ERR("SMP h7 self test failed");
+		LOG_ERROR("SMP h7 self test failed");
 		return err;
 	}
 #endif /* CONFIG_BT_CLASSIC */
 	err = smp_h8_test();
 	if (err) {
-		LOG_ERR("SMP h8 self test failed");
+		LOG_ERROR("SMP h8 self test failed");
 		return err;
 	}
 
@@ -5803,13 +5801,12 @@ int bt_smp_auth_keypress_notify(struct bt_conn *conn, enum bt_conn_auth_keypress
 
 	if (!IN_RANGE(type, BT_CONN_AUTH_KEYPRESS_ENTRY_STARTED,
 		      BT_CONN_AUTH_KEYPRESS_ENTRY_COMPLETED)) {
-		LOG_ERR("Refusing to send unknown event type %u", type);
+		LOG_ERROR("Refusing to send unknown event type %u", type);
 		return -EINVAL;
 	}
 
-	if (smp->method != PASSKEY_INPUT ||
-	    !atomic_test_bit(smp->flags, SMP_FLAG_USER)) {
-		LOG_ERR("Refusing to send keypress: Not waiting for passkey input.");
+	if (smp->method != PASSKEY_INPUT || !atomic_test_bit(smp->flags, SMP_FLAG_USER)) {
+		LOG_ERROR("Refusing to send keypress: Not waiting for passkey input.");
 		return -EINVAL;
 	}
 
@@ -6147,7 +6144,7 @@ int bt_smp_auth_cancel(struct bt_conn *conn)
 	case JUST_WORKS:
 		return smp_error(smp, BT_SMP_ERR_UNSPECIFIED);
 	default:
-		LOG_ERR("Unknown pairing method (%u)", smp->method);
+		LOG_ERROR("Unknown pairing method (%u)", smp->method);
 		return 0;
 	}
 }
@@ -6298,7 +6295,7 @@ void bt_smp_update_keys(struct bt_conn *conn)
 
 	conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
 	if (!conn->le.keys) {
-		LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&conn->le.dst));
+		LOG_ERROR("Unable to get keys for %s", bt_addr_le_str(&conn->le.dst));
 		smp_error(smp, BT_SMP_ERR_UNSPECIFIED);
 		return;
 	}
@@ -6390,7 +6387,7 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		return 0;
 	}
 
-	LOG_ERR("No available SMP context for conn %p", conn);
+	LOG_ERROR("No available SMP context for conn %p", conn);
 
 	return -ENOMEM;
 }
@@ -6408,7 +6405,7 @@ int bt_smp_init(void)
 {
 	sc_supported = le_sc_supported();
 	if (IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) && !sc_supported) {
-		LOG_ERR("SC Pair Only Mode selected but LE SC not supported");
+		LOG_ERROR("SC Pair Only Mode selected but LE SC not supported");
 		return -ENOENT;
 	}
 

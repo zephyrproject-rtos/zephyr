@@ -68,7 +68,7 @@ int tagoio_connect(struct tagoio_context *ctx)
 	}
 
 	if (ret < 0) {
-		LOG_ERR("Could not resolve dns, error: %d", ret);
+		LOG_ERROR("Could not resolve dns, error: %d", ret);
 		return ret;
 	}
 
@@ -82,18 +82,16 @@ int tagoio_connect(struct tagoio_context *ctx)
 			   hints.ai_socktype,
 			   hints.ai_protocol);
 	if (ctx->sock < 0) {
-		LOG_ERR("Failed to create %s HTTP socket (%d)",
-			(addr->ai_family == AF_INET ? "IPv4" : "IPv6"),
-			-errno);
+		LOG_ERROR("Failed to create %s HTTP socket (%d)",
+			  (addr->ai_family == AF_INET ? "IPv4" : "IPv6"), -errno);
 
 		freeaddrinfo(addr);
 		return -errno;
 	}
 
 	if (connect(ctx->sock, addr->ai_addr, addr->ai_addrlen) < 0) {
-		LOG_ERR("Cannot connect to %s remote (%d)",
-			(addr->ai_family == AF_INET ? "IPv4" : "IPv6"),
-			-errno);
+		LOG_ERROR("Cannot connect to %s remote (%d)",
+			  (addr->ai_family == AF_INET ? "IPv4" : "IPv6"), -errno);
 
 		freeaddrinfo(addr);
 		return -errno;

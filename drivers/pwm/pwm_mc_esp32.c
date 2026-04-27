@@ -190,7 +190,7 @@ static int mcpwm_esp32_get_cycles_per_sec(const struct device *dev, uint32_t cha
 	struct mcpwm_esp32_data *data = (struct mcpwm_esp32_data *const)(dev)->data;
 
 	if (!channel) {
-		LOG_ERR("Error getting channel %d", channel_idx);
+		LOG_ERROR("Error getting channel %d", channel_idx);
 		return -EINVAL;
 	}
 
@@ -222,7 +222,7 @@ static int mcpwm_esp32_set_cycles(const struct device *dev, uint32_t channel_idx
 	struct mcpwm_esp32_channel_config *channel = &config->channel_config[channel_idx];
 
 	if (!channel) {
-		LOG_ERR("Error getting channel %d", channel_idx);
+		LOG_ERROR("Error getting channel %d", channel_idx);
 		return -EINVAL;
 	}
 
@@ -267,22 +267,22 @@ static int mcpwm_esp32_configure_capture(const struct device *dev, uint32_t chan
 	struct mcpwm_esp32_capture_config *capture = &channel->capture;
 
 	if (!channel) {
-		LOG_ERR("Error getting channel %d", channel_idx);
+		LOG_ERROR("Error getting channel %d", channel_idx);
 		return -EINVAL;
 	}
 
 	if ((channel->idx < CAPTURE_CHANNEL_IDX) || (channel->idx > CAPTURE_CHANNEL_IDX + 2)) {
-		LOG_ERR("PWM capture only supported on channels 6, 7 and 8");
+		LOG_ERROR("PWM capture only supported on channels 6, 7 and 8");
 		return -EINVAL;
 	}
 
 	if (data->hal.dev->cap_chn_cfg[capture->capture_signal].capn_en) {
-		LOG_ERR("PWM Capture already in progress");
+		LOG_ERROR("PWM Capture already in progress");
 		return -EBUSY;
 	}
 
 	if (!(flags & PWM_CAPTURE_TYPE_MASK)) {
-		LOG_ERR("No PWM capture type specified");
+		LOG_ERROR("No PWM capture type specified");
 		return -EINVAL;
 	}
 
@@ -305,12 +305,12 @@ static int mcpwm_esp32_disable_capture(const struct device *dev, uint32_t channe
 	struct mcpwm_esp32_capture_config *capture = &channel->capture;
 
 	if (!channel) {
-		LOG_ERR("Error getting channel %d", channel_idx);
+		LOG_ERROR("Error getting channel %d", channel_idx);
 		return -EINVAL;
 	}
 
 	if ((channel->idx < CAPTURE_CHANNEL_IDX) || (channel->idx > CAPTURE_CHANNEL_IDX + 2)) {
-		LOG_ERR("PWM capture only supported on channels 6, 7 and 8");
+		LOG_ERROR("PWM capture only supported on channels 6, 7 and 8");
 		return -EINVAL;
 	}
 
@@ -328,22 +328,22 @@ static int mcpwm_esp32_enable_capture(const struct device *dev, uint32_t channel
 	struct mcpwm_esp32_capture_config *capture = &channel->capture;
 
 	if (!channel) {
-		LOG_ERR("Error getting channel %d", channel_idx);
+		LOG_ERROR("Error getting channel %d", channel_idx);
 		return -EINVAL;
 	}
 
 	if (!capture->callback) {
-		LOG_ERR("Capture not configured");
+		LOG_ERROR("Capture not configured");
 		return -EINVAL;
 	}
 
 	if ((channel->idx < CAPTURE_CHANNEL_IDX) || (channel->idx > CAPTURE_CHANNEL_IDX + 2)) {
-		LOG_ERR("PWM capture only supported on channels 6, 7 and 8");
+		LOG_ERROR("PWM capture only supported on channels 6, 7 and 8");
 		return -EINVAL;
 	}
 
 	if (data->hal.dev->cap_chn_cfg[capture->capture_signal].capn_en) {
-		LOG_ERR("PWM Capture already in progress");
+		LOG_ERROR("PWM Capture already in progress");
 		return -EBUSY;
 	}
 
@@ -390,19 +390,19 @@ int mcpwm_esp32_init(const struct device *dev)
 	struct mcpwm_esp32_data *data = (struct mcpwm_esp32_data *const)(dev)->data;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("PWM pinctrl setup failed (%d)", ret);
+		LOG_ERROR("PWM pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret < 0) {
-		LOG_ERR("Could not initialize clock (%d)", ret);
+		LOG_ERROR("Could not initialize clock (%d)", ret);
 		return ret;
 	}
 
@@ -421,7 +421,7 @@ int mcpwm_esp32_init(const struct device *dev)
 	ret = config->irq_config_func(dev);
 
 	if (ret != 0) {
-		LOG_ERR("could not allocate interrupt (err %d)", ret);
+		LOG_ERROR("could not allocate interrupt (err %d)", ret);
 	}
 #endif /* CONFIG_PWM_CAPTURE */
 	return ret;

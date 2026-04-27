@@ -52,29 +52,29 @@ static int spi_rts5912_configure(const struct device *dev, const struct spi_conf
 	volatile struct spi_reg *const spi = spi_config->spi_reg_base;
 
 	if (spi_cfg->slave > 1) {
-		LOG_ERR("Slave %d is greater than 1", spi_cfg->slave);
+		LOG_ERROR("Slave %d is greater than 1", spi_cfg->slave);
 		return -EINVAL;
 	}
 
 	LOG_DBG("chip select: %d, operation: 0x%x", spi_cfg->slave, spi_cfg->operation);
 
 	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Unsupported SPI slave mode");
+		LOG_ERROR("Unsupported SPI slave mode");
 		return -ENOTSUP;
 	}
 
 	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_LOOP) {
-		LOG_ERR("Unsupported loopback mode");
+		LOG_ERROR("Unsupported loopback mode");
 		return -ENOTSUP;
 	}
 
 	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA) {
-		LOG_ERR("Unsupported cpha mode");
+		LOG_ERROR("Unsupported cpha mode");
 		return -ENOTSUP;
 	}
 
 	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL) {
-		LOG_ERR("Unsupported cpol mode");
+		LOG_ERROR("Unsupported cpol mode");
 		return -ENOTSUP;
 	}
 
@@ -84,17 +84,17 @@ static int spi_rts5912_configure(const struct device *dev, const struct spi_conf
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
 	    (spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		LOG_ERR("Only single line mode is supported");
+		LOG_ERROR("Only single line mode is supported");
 		return -EINVAL;
 	}
 
 	if (ctx->rx_len > 0) {
-		LOG_ERR("Can't support Pure RX");
+		LOG_ERROR("Can't support Pure RX");
 		return -EINVAL;
 	}
 
 	if (spi_cfg->frequency < RTS5912_SPI_FREQUENCY_BUS_MINIMUM) {
-		LOG_ERR("Can't support frequency %d", spi_cfg->frequency);
+		LOG_ERROR("Can't support frequency %d", spi_cfg->frequency);
 		return -EINVAL;
 	}
 
@@ -257,7 +257,7 @@ static int spi_rts5912_spi_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("Failed to set default pinctrl");
+		LOG_ERROR("Failed to set default pinctrl");
 		return ret;
 	}
 

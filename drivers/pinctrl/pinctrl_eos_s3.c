@@ -95,7 +95,7 @@ static int pinctrl_eos_s3_configure_pin(const pinctrl_soc_pin_t *pin)
 		WRITE_BIT(reg_value, PAD_DRIVE_STRENGTH_BIT1, 1);
 		break;
 	default:
-		LOG_ERR("Selected drive-strength is not supported: %d\n", pin->drive_strength);
+		LOG_ERROR("Selected drive-strength is not supported: %d\n", pin->drive_strength);
 	}
 
 	/* Enable pull-up by default; overwrite if any setting was chosen. */

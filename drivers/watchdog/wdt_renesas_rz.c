@@ -102,7 +102,7 @@ static int wdt_rz_timeout_calculate(const struct device *dev, const struct wdt_t
 		if (config->window.min != data->timeout.window.min ||
 		    config->window.max != data->timeout.window.max ||
 		    config->flags != data->timeout.flags) {
-			LOG_ERR("wdt support only one timeout setting value");
+			LOG_ERROR("wdt support only one timeout setting value");
 			return -EINVAL;
 		}
 
@@ -121,7 +121,7 @@ static int wdt_rz_timeout_calculate(const struct device *dev, const struct wdt_t
 	 */
 	best_period_cycle = ((convert_window_to_sec * data->clock_rate) / (1024 * 1024)) - 1;
 	if ((best_period_cycle > WDT_RZ_PERIOD_MAX) || (best_period_cycle < WDT_RZ_PERIOD_MIN)) {
-		LOG_ERR("wdt timeout out of range");
+		LOG_ERROR("wdt timeout out of range");
 		return -EINVAL;
 	}
 	wdt_rz_cfg_extend->wdt_timeout = (uint16_t)round(best_period_cycle);
@@ -161,7 +161,7 @@ static int wdt_rz_timeout_calculate(const struct device *dev, const struct wdt_t
 	}
 
 	if (min_delta == UINT_MAX) {
-		LOG_ERR("wdt timeout out of range");
+		LOG_ERROR("wdt timeout out of range");
 		return -EINVAL;
 	}
 
@@ -173,7 +173,7 @@ static int wdt_rz_timeout_calculate(const struct device *dev, const struct wdt_t
 	}
 
 	if (config->window.min > best_period_ms) {
-		LOG_ERR("window_min invalid");
+		LOG_ERROR("window_min invalid");
 		return -EINVAL;
 	} else if (config->window.min == 0) {
 		window_end_idx = 0;
@@ -203,20 +203,20 @@ static int wdt_rz_setup(const struct device *dev, uint8_t options)
 	int ret = 0;
 
 	if ((options & WDT_OPT_PAUSE_IN_SLEEP) != 0) {
-		LOG_ERR("wdt pause in sleep mode not supported");
+		LOG_ERROR("wdt pause in sleep mode not supported");
 		return -ENOTSUP;
 	}
 
 	wdt_rz_inst_lock(dev);
 
 	if (atomic_test_bit(&data->device_state, WDT_RZ_ATOMIC_ENABLE)) {
-		LOG_ERR("wdt has been already setup");
+		LOG_ERROR("wdt has been already setup");
 		ret = -EBUSY;
 		goto end;
 	}
 
 	if (!atomic_test_bit(&data->device_state, WDT_RZ_ATOMIC_TIMEOUT_SET)) {
-		LOG_ERR("wdt timeout should be installed before");
+		LOG_ERROR("wdt timeout should be installed before");
 		ret = -EFAULT;
 		goto end;
 	}
@@ -236,13 +236,13 @@ static int wdt_rz_setup(const struct device *dev, uint8_t options)
 	}
 #endif
 	if (cfg->fsp_api->open(data->fsp_ctrl, data->fsp_cfg) != FSP_SUCCESS) {
-		LOG_ERR("wdt setup failed!");
+		LOG_ERROR("wdt setup failed!");
 		ret = -EIO;
 		goto end;
 	}
 
 	if (cfg->fsp_api->refresh(data->fsp_ctrl) != FSP_SUCCESS) {
-		LOG_ERR("wdt start failed!");
+		LOG_ERROR("wdt start failed!");
 		ret = -EIO;
 		goto end;
 	}
@@ -260,11 +260,11 @@ static int wdt_rz_disable(const struct device *dev)
 	struct wdt_rz_data *data = dev->data;
 
 	if (!atomic_test_bit(&data->device_state, WDT_RZ_ATOMIC_ENABLE)) {
-		LOG_ERR("wdt has not been enabled yet");
+		LOG_ERROR("wdt has not been enabled yet");
 		return -EFAULT;
 	}
 
-	LOG_ERR("watchdog cannot be stopped once started unless SOC gets a reset");
+	LOG_ERROR("watchdog cannot be stopped once started unless SOC gets a reset");
 	return -EPERM;
 }
 
@@ -278,14 +278,14 @@ static int wdt_rz_install_timeout(const struct device *dev, const struct wdt_tim
 	}
 
 	if (config->callback == NULL && (config->flags & WDT_FLAG_RESET_MASK) == 0) {
-		LOG_ERR("no timeout response was chosen");
+		LOG_ERROR("no timeout response was chosen");
 		return -EINVAL;
 	}
 
 	wdt_rz_inst_lock(dev);
 
 	if (atomic_test_bit(&data->device_state, WDT_RZ_ATOMIC_ENABLE)) {
-		LOG_ERR("cannot change timeout settings after wdt setup");
+		LOG_ERROR("cannot change timeout settings after wdt setup");
 		ret = -EBUSY;
 		goto end;
 	}
@@ -311,17 +311,17 @@ static int wdt_rz_feed(const struct device *dev, int channel_id)
 	struct wdt_rz_data *data = dev->data;
 
 	if (!atomic_test_bit(&data->device_state, WDT_RZ_ATOMIC_ENABLE)) {
-		LOG_ERR("WDT has not been enabled yet!");
+		LOG_ERROR("WDT has not been enabled yet!");
 		return -EINVAL;
 	}
 
 	if (channel_id != 0) {
-		LOG_ERR("Incorrect channel_id!");
+		LOG_ERROR("Incorrect channel_id!");
 		return -EINVAL;
 	}
 
 	if (cfg->fsp_api->refresh(data->fsp_ctrl) != FSP_SUCCESS) {
-		LOG_ERR("Fail to refresh watchdog!");
+		LOG_ERROR("Fail to refresh watchdog!");
 		return -EIO;
 	}
 

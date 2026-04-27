@@ -108,10 +108,10 @@ static int ifx_tcpwm_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	    ((period_cycles > UINT16_MAX) || (pulse_cycles > UINT16_MAX))) {
 		/* 16-bit resolution */
 		if (period_cycles > UINT16_MAX) {
-			LOG_ERR("Period cycles more than 16-bits (%u)", period_cycles);
+			LOG_ERROR("Period cycles more than 16-bits (%u)", period_cycles);
 		}
 		if (pulse_cycles > UINT16_MAX) {
-			LOG_ERR("Pulse cycles more than 16-bits (%u)", pulse_cycles);
+			LOG_ERROR("Pulse cycles more than 16-bits (%u)", pulse_cycles);
 		}
 		return -EINVAL;
 	}

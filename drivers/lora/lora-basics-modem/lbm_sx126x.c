@@ -459,7 +459,7 @@ int lbm_driver_add_dio1_gpio_callback(const struct device *dev,
 
 	ret = gpio_add_callback(config->dio1.port, callback);
 	if (ret < 0) {
-		LOG_ERR("Failed to add GPIO callback: %d", ret);
+		LOG_ERROR("Failed to add GPIO callback: %d", ret);
 		return ret;
 	}
 
@@ -485,7 +485,7 @@ int lbm_driver_remove_dio1_gpio_callback(const struct device *dev,
 
 	ret = gpio_remove_callback(config->dio1.port, callback);
 	if (ret < 0) {
-		LOG_ERR("Failed to remove GPIO callback: %d", ret);
+		LOG_ERROR("Failed to remove GPIO callback: %d", ret);
 		return ret;
 	}
 
@@ -503,14 +503,14 @@ int lbm_driver_radio_init(const struct device *dev)
 	/* Reset chip */
 	status = ral_reset(&config->lbm_common.ralf.ral);
 	if (status != RAL_STATUS_OK) {
-		LOG_ERR("Reset failure (%d)", status);
+		LOG_ERROR("Reset failure (%d)", status);
 		return -EIO;
 	}
 
 	/* Wait for chip to be ready */
 	ret = sx126x_ensure_device_ready(dev, K_MSEC(100));
 	if (ret) {
-		LOG_ERR("Failed to return to ready after reset");
+		LOG_ERROR("Failed to return to ready after reset");
 		return -EIO;
 	}
 
@@ -523,7 +523,7 @@ int lbm_driver_radio_init(const struct device *dev)
 	/* Configure and enable interrupts */
 	gpio_init_callback(&data->dio1_callback, sx126x_dio1_callback, BIT(config->dio1.pin));
 	if (gpio_add_callback(config->dio1.port, &data->dio1_callback) < 0) {
-		LOG_ERR("Could not set GPIO callback for DIO1 interrupt.");
+		LOG_ERROR("Could not set GPIO callback for DIO1 interrupt.");
 		return -EIO;
 	}
 	gpio_pin_interrupt_configure_dt(&config->dio1, GPIO_INT_EDGE_TO_ACTIVE);
@@ -539,7 +539,7 @@ static int sx126x_init(const struct device *dev)
 
 	/* Validate hardware is ready */
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus %s not ready", config->spi.bus->name);
+		LOG_ERROR("SPI bus %s not ready", config->spi.bus->name);
 		return -ENODEV;
 	}
 
@@ -547,7 +547,7 @@ static int sx126x_init(const struct device *dev)
 	if (gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE) ||
 	    gpio_pin_configure_dt(&config->busy, GPIO_INPUT) ||
 	    gpio_pin_configure_dt(&config->dio1, GPIO_INPUT)) {
-		LOG_ERR("GPIO configuration failed.");
+		LOG_ERROR("GPIO configuration failed.");
 		return -EIO;
 	}
 	if (config->ant_enable.port) {

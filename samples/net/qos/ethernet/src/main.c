@@ -203,7 +203,7 @@ static void try_recv_data(struct net_if *iface, uint16_t ptype, enum service_typ
 
 	res = net_recv_data(net_pkt_iface(pkt), pkt);
 	if (res < 0) {
-		LOG_ERR("Failed to enqueue frame into RX queue: %d", res);
+		LOG_ERROR("Failed to enqueue frame into RX queue: %d", res);
 		goto error;
 	}
 
@@ -318,7 +318,7 @@ int main(int argc, char **argv)
 
 	iface = net_if_lookup_by_dev(DEVICE_GET(net_if_fake));
 	if (iface == NULL) {
-		LOG_ERR("No device");
+		LOG_ERROR("No device");
 		return 1;
 	}
 

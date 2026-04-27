@@ -61,7 +61,7 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 
 	ret = sl_wifi_get_interface_info(interface, &wlan_info);
 	if (ret) {
-		LOG_ERR("Failed to get the wireless info: 0x%x", ret);
+		LOG_ERROR("Failed to get the wireless info: 0x%x", ret);
 		return -EIO;
 	}
 
@@ -89,7 +89,7 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 
 		ret = sl_wifi_get_mfp(interface, &mfp);
 		if (ret) {
-			LOG_ERR("Failed to get MFP configuration: 0x%x", ret);
+			LOG_ERROR("Failed to get MFP configuration: 0x%x", ret);
 			return -EINVAL;
 		}
 		/* The Wiseconnect mfp values match the values expected by
@@ -99,7 +99,7 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 
 		ret = sl_wifi_get_signal_strength(SL_WIFI_CLIENT_INTERFACE, &rssi);
 		if (ret) {
-			LOG_ERR("Failed to get signal strength: 0x%x", ret);
+			LOG_ERROR("Failed to get signal strength: 0x%x", ret);
 			return -EINVAL;
 		}
 		status->rssi = rssi;
@@ -107,7 +107,7 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 		ret = sl_wifi_get_operational_statistics(SL_WIFI_CLIENT_INTERFACE,
 							 &operational_statistics);
 		if (ret) {
-			LOG_ERR("Failed to get operational statistics: 0x%x", ret);
+			LOG_ERROR("Failed to get operational statistics: 0x%x", ret);
 			return -EINVAL;
 		}
 
@@ -119,7 +119,7 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 
 		ret = sl_wifi_get_ap_configuration(SL_WIFI_AP_INTERFACE, &sl_ap_cfg);
 		if (ret) {
-			LOG_ERR("Failed to get the AP configuration: 0x%x", ret);
+			LOG_ERROR("Failed to get the AP configuration: 0x%x", ret);
 			return -EINVAL;
 		}
 		status->twt_capable = false;
@@ -221,7 +221,7 @@ static int siwx91x_mode(const struct device *dev, struct wifi_mode_info *mode)
 
 			ret = siwx91x_set_max_tx_power(siwx91x_cfg);
 			if (ret != SL_STATUS_OK) {
-				LOG_ERR("Failed to set max tx power:%x", ret);
+				LOG_ERROR("Failed to set max tx power:%x", ret);
 				return -EINVAL;
 			}
 		}
@@ -241,7 +241,7 @@ static int siwx91x_send(const struct device *dev, struct net_pkt *pkt)
 	int ret;
 
 	if (net_pkt_get_len(pkt) > _NET_ETH_MAX_FRAME_SIZE) {
-		LOG_ERR("unexpected buffer size");
+		LOG_ERROR("unexpected buffer size");
 		return -ENOBUFS;
 	}
 	buf = net_buf_alloc(&siwx91x_tx_pool, K_FOREVER);
@@ -285,17 +285,17 @@ sl_status_t sl_si91x_host_process_data_frame(sl_wifi_interface_t interface,
 
 	pkt = net_pkt_rx_alloc_with_buffer(iface, buffer->length, AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
-		LOG_ERR("net_pkt_rx_alloc_with_buffer() failed");
+		LOG_ERROR("net_pkt_rx_alloc_with_buffer() failed");
 		return SL_STATUS_FAIL;
 	}
 	ret = net_pkt_write(pkt, si_pkt->data, si_pkt->length);
 	if (ret < 0) {
-		LOG_ERR("net_pkt_write(): %d", ret);
+		LOG_ERROR("net_pkt_write(): %d", ret);
 		goto unref;
 	}
 	ret = net_recv_data(iface, pkt);
 	if (ret < 0) {
-		LOG_ERR("net_recv_data((): %d", ret);
+		LOG_ERROR("net_recv_data((): %d", ret);
 		goto unref;
 	}
 	return 0;
@@ -334,8 +334,8 @@ static int siwx91x_set_config(const struct device *dev,
 
 		status = sl_wifi_configure_multicast_filter(&filter_info);
 		if (status != SL_STATUS_OK) {
-			LOG_ERR("Failed to %s multicast filter: 0x%x",
-				config->filter.set ? "add" : "remove", status);
+			LOG_ERROR("Failed to %s multicast filter: 0x%x",
+				  config->filter.set ? "add" : "remove", status);
 			return -EIO;
 		}
 
@@ -380,7 +380,7 @@ static int siwx91x_stats(const struct device *dev, struct net_stats_wifi *stats)
 
 	ret = sl_wifi_get_statistics(FIELD_GET(SIWX91X_INTERFACE_MASK, interface), &statistics);
 	if (ret) {
-		LOG_ERR("Failed to get stat: 0x%x", ret);
+		LOG_ERROR("Failed to get stat: 0x%x", ret);
 		return -EINVAL;
 	}
 
@@ -472,7 +472,7 @@ static int siwx91x_wifi_reg_domain(const struct device *dev, struct wifi_reg_dom
 		region_code = siwx91x_map_country_code_to_region(reg_domain->country_code);
 		ret = sl_si91x_set_device_region(oper_mode, SL_WIFI_BAND_MODE_2_4GHZ, region_code);
 		if (ret) {
-			LOG_ERR("Failed to set device region: %x", ret);
+			LOG_ERROR("Failed to set device region: %x", ret);
 			return -EINVAL;
 		}
 
@@ -530,19 +530,19 @@ static void siwx91x_iface_init(struct net_if *iface)
 
 	ret = siwx91x_set_max_tx_power(siwx91x_cfg);
 	if (ret != SL_STATUS_OK) {
-		LOG_ERR("Failed to set max tx power:%x", ret);
+		LOG_ERROR("Failed to set max tx power:%x", ret);
 		return;
 	}
 
 	ret = sl_wifi_set_advanced_client_configuration(SL_WIFI_CLIENT_INTERFACE, &client_config);
 	if (ret != SL_STATUS_OK) {
-		LOG_ERR("Failed to set advanced client config: 0x%x", ret);
+		LOG_ERROR("Failed to set advanced client config: 0x%x", ret);
 		return;
 	}
 
 	ret = sl_wifi_get_mac_address(SL_WIFI_CLIENT_INTERFACE, &sidev->macaddr);
 	if (ret) {
-		LOG_ERR("sl_wifi_get_mac_address(): %#04x", ret);
+		LOG_ERROR("sl_wifi_get_mac_address(): %#04x", ret);
 		return;
 	}
 	net_if_set_link_addr(iface, sidev->macaddr.octet, sizeof(sidev->macaddr.octet),
@@ -566,13 +566,13 @@ int siwx91x_get_rts_threshold(const struct device *dev, unsigned int *rts_thresh
 	__ASSERT(rts_threshold, "rts_threshold cannot be NULL");
 
 	if (sidev->state == WIFI_STATE_INTERFACE_DISABLED) {
-		LOG_ERR("Command given in invalid state");
+		LOG_ERROR("Command given in invalid state");
 		return -EINVAL;
 	}
 
 	ret = sl_wifi_get_rts_threshold(interface, &rts_val);
 	if (ret) {
-		LOG_ERR("Failed to get RTS threshold: 0x%x", ret);
+		LOG_ERROR("Failed to get RTS threshold: 0x%x", ret);
 		return -EIO;
 	}
 	*rts_threshold = rts_val;
@@ -589,18 +589,18 @@ int siwx91x_set_rts_threshold(const struct device *dev, unsigned int rts_thresho
 	__ASSERT(sidev, "sidev cannot be NULL");
 
 	if (sidev->state == WIFI_STATE_INTERFACE_DISABLED) {
-		LOG_ERR("Command given in invalid state");
+		LOG_ERROR("Command given in invalid state");
 		return -EINVAL;
 	}
 
 	if (rts_threshold > SIWX91X_MAX_RTS_THRESHOLD) {
-		LOG_ERR("RTS threshold out of range: %u", rts_threshold);
+		LOG_ERROR("RTS threshold out of range: %u", rts_threshold);
 		return -EINVAL;
 	}
 
 	ret = sl_wifi_set_rts_threshold(interface, rts_threshold);
 	if (ret) {
-		LOG_ERR("Failed to set RTS threshold: 0x%x", ret);
+		LOG_ERROR("Failed to set RTS threshold: 0x%x", ret);
 		return -EIO;
 	}
 
@@ -612,7 +612,7 @@ static int siwx91x_dev_init(const struct device *dev)
 	const struct siwx91x_config *siwx91x_cfg = dev->config;
 
 	if (!device_is_ready(siwx91x_cfg->nwp_dev)) {
-		LOG_ERR("NWP device not ready");
+		LOG_ERROR("NWP device not ready");
 		return -ENODEV;
 	}
 

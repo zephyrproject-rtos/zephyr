@@ -29,7 +29,7 @@ int wifi_credentials_backend_init(void)
 		if (ret == PSA_SUCCESS && length_read == ENTRY_MAX_LEN) {
 			wifi_credentials_cache_ssid(i, (struct wifi_credentials_header *)buf);
 		} else if (ret != PSA_ERROR_INVALID_HANDLE) {
-			LOG_ERR("psa_export_key failed, err: %d", ret);
+			LOG_ERROR("psa_export_key failed, err: %d", ret);
 			return -EFAULT;
 		}
 	}
@@ -52,10 +52,10 @@ int wifi_credentials_store_entry(size_t idx, const void *buf, size_t buf_len)
 
 	ret = psa_import_key(&key_attributes, buf, buf_len, &key_id);
 	if (ret == PSA_ERROR_ALREADY_EXISTS) {
-		LOG_ERR("psa_import_key failed, duplicate key: %d", ret);
+		LOG_ERROR("psa_import_key failed, duplicate key: %d", ret);
 		return -EEXIST;
 	} else if (ret != PSA_SUCCESS) {
-		LOG_ERR("psa_import_key failed, err: %d", ret);
+		LOG_ERROR("psa_import_key failed, err: %d", ret);
 		return -EFAULT;
 	}
 
@@ -67,7 +67,7 @@ int wifi_credentials_delete_entry(size_t idx)
 	psa_status_t ret = psa_destroy_key(idx + ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_BEGIN);
 
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("psa_destroy_key failed, err: %d", ret);
+		LOG_ERROR("psa_destroy_key failed, err: %d", ret);
 		return -EFAULT;
 	}
 
@@ -82,7 +82,7 @@ int wifi_credentials_load_entry(size_t idx, void *buf, size_t buf_len)
 
 	ret = psa_export_key(key_id, buf, buf_len, &length_read);
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("psa_export_key failed, err: %d", ret);
+		LOG_ERROR("psa_export_key failed, err: %d", ret);
 		return -EFAULT;
 	}
 

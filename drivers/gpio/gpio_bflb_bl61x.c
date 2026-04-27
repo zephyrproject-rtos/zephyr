@@ -771,7 +771,7 @@ int bl61x_wo_configure(const struct bl61x_wo_config *const config,
 	gpio_pin_t p_check_overlap[BL61X_WO_PIN_CNT];
 
 	if (pin_cnt > BL61X_WO_PIN_CNT) {
-		LOG_ERR("Too many pins");
+		LOG_ERROR("Too many pins");
 		return -EINVAL;
 	}
 
@@ -788,7 +788,7 @@ int bl61x_wo_configure(const struct bl61x_wo_config *const config,
 		if (pins[i] < wo_data.p_config->ngpios) {
 			ret = bl61x_wo_get_port_for_pin(pins[i], &port);
 			if (ret < 0) {
-				LOG_ERR("No port for pin %u", pins[i]);
+				LOG_ERROR("No port for pin %u", pins[i]);
 				goto end;
 			}
 			p_local = ret;
@@ -796,7 +796,7 @@ int bl61x_wo_configure(const struct bl61x_wo_config *const config,
 
 			for (size_t j = 0; j < i; j++) {
 				if (p_check_overlap[i] == p_check_overlap[j]) {
-					LOG_ERR("Pin %u overlaps with pin %u", pins[i], pins[j]);
+					LOG_ERROR("Pin %u overlaps with pin %u", pins[i], pins[j]);
 					goto end;
 				}
 			}
@@ -804,7 +804,7 @@ int bl61x_wo_configure(const struct bl61x_wo_config *const config,
 							 GPIO_BFLB_MODE_FIFO_VALUE);
 		} else {
 			ret = -EINVAL;
-			LOG_ERR("No port for pin %u", pins[i]);
+			LOG_ERROR("No port for pin %u", pins[i]);
 			goto end;
 		}
 	}
@@ -829,7 +829,7 @@ int bl61x_wo_configure_dt(const struct bl61x_wo_config *const config,
 	gpio_pin_t p_check_overlap[BL61X_WO_PIN_CNT];
 
 	if (pin_cnt > BL61X_WO_PIN_CNT) {
-		LOG_ERR("Too many pins");
+		LOG_ERROR("Too many pins");
 		return -EINVAL;
 	}
 
@@ -847,8 +847,8 @@ int bl61x_wo_configure_dt(const struct bl61x_wo_config *const config,
 			p_check_overlap[i] = pins[i].pin % BL61X_WO_PIN_CNT;
 			for (size_t j = 0; j < i; j++) {
 				if (p_check_overlap[i] == p_check_overlap[j]) {
-					LOG_ERR("Pin %u overlaps with pin %u",
-						pins[i].pin, pins[j].pin);
+					LOG_ERROR("Pin %u overlaps with pin %u", pins[i].pin,
+						  pins[j].pin);
 					goto end;
 				}
 			}
@@ -857,7 +857,7 @@ int bl61x_wo_configure_dt(const struct bl61x_wo_config *const config,
 							 GPIO_BFLB_MODE_FIFO_VALUE);
 		} else {
 			ret = -EINVAL;
-			LOG_ERR("Invalid port");
+			LOG_ERROR("Invalid port");
 			goto end;
 		}
 	}

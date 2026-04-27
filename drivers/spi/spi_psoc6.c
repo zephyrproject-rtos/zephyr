@@ -218,14 +218,13 @@ static int spi_psoc6_configure(const struct device *dev,
 	}
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if (word_size > SPI_MAX_DATA_WIDTH) {
-		LOG_ERR("Word size %d is greater than %d",
-			word_size, SPI_MAX_DATA_WIDTH);
+		LOG_ERROR("Word size %d is greater than %d", word_size, SPI_MAX_DATA_WIDTH);
 		return -EINVAL;
 	}
 
@@ -233,8 +232,8 @@ static int spi_psoc6_configure(const struct device *dev,
 		spi_psoc6_master_get_defaults(&data->cfg);
 
 		if (spi_cfg->slave > SPI_CHIP_SELECT_COUNT) {
-			LOG_ERR("Slave %d is greater than %d",
-				spi_cfg->slave, SPI_CHIP_SELECT_COUNT);
+			LOG_ERROR("Slave %d is greater than %d", spi_cfg->slave,
+				  SPI_CHIP_SELECT_COUNT);
 			return -EINVAL;
 		}
 

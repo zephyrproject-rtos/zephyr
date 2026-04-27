@@ -76,13 +76,13 @@ static int init_leds(void)
 
 	for (int i = 0; i < ARRAY_SIZE(led_dev); i++) {
 		if (!gpio_is_ready_dt(&led_dev[i])) {
-			LOG_ERR("LED%u GPIO device not ready", i);
+			LOG_ERROR("LED%u GPIO device not ready", i);
 			return -ENODEV;
 		}
 
 		err = gpio_pin_configure_dt(&led_dev[i], GPIO_OUTPUT_INACTIVE);
 		if (err != 0) {
-			LOG_ERR("Failed to configure LED%u pin", i);
+			LOG_ERROR("Failed to configure LED%u pin", i);
 			return err;
 		}
 	}
@@ -204,8 +204,7 @@ static int init_modbus_server(void)
 	server_iface = modbus_iface_get_by_name(iface_name);
 
 	if (server_iface < 0) {
-		LOG_ERR("Failed to get iface index for %s",
-			iface_name);
+		LOG_ERROR("Failed to get iface index for %s", iface_name);
 		return -ENODEV;
 	}
 
@@ -256,12 +255,12 @@ static int modbus_tcp_connection(int client)
 
 	LOG_HEXDUMP_DBG(tmp_adu.data, tmp_adu.length, "d:>");
 	if (modbus_raw_submit_rx(server_iface, &tmp_adu)) {
-		LOG_ERR("Failed to submit raw ADU");
+		LOG_ERROR("Failed to submit raw ADU");
 		return -EIO;
 	}
 
 	if (k_sem_take(&received, K_MSEC(1000)) != 0) {
-		LOG_ERR("MODBUS RAW wait time expired");
+		LOG_ERROR("MODBUS RAW wait time expired");
 		modbus_raw_set_server_failure(&tmp_adu);
 	}
 
@@ -275,19 +274,19 @@ int main(void)
 	static int counter;
 
 	if (init_modbus_server()) {
-		LOG_ERR("Modbus TCP server initialization failed");
+		LOG_ERROR("Modbus TCP server initialization failed");
 		return 0;
 	}
 
 	if (init_leds()) {
-		LOG_ERR("Modbus TCP server initialization failed");
+		LOG_ERROR("Modbus TCP server initialization failed");
 		return 0;
 	}
 
 	serv = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
 	if (serv < 0) {
-		LOG_ERR("error: socket: %d", errno);
+		LOG_ERROR("error: socket: %d", errno);
 		return 0;
 	}
 
@@ -296,12 +295,12 @@ int main(void)
 	bind_addr.sin_port = htons(MODBUS_TCP_PORT);
 
 	if (bind(serv, (struct sockaddr *)&bind_addr, sizeof(bind_addr)) < 0) {
-		LOG_ERR("error: bind: %d", errno);
+		LOG_ERROR("error: bind: %d", errno);
 		return 0;
 	}
 
 	if (listen(serv, 5) < 0) {
-		LOG_ERR("error: listen: %d", errno);
+		LOG_ERROR("error: listen: %d", errno);
 		return 0;
 	}
 
@@ -318,7 +317,7 @@ int main(void)
 				&client_addr_len);
 
 		if (client < 0) {
-			LOG_ERR("error: accept: %d", errno);
+			LOG_ERROR("error: accept: %d", errno);
 			continue;
 		}
 

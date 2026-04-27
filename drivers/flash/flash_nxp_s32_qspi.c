@@ -43,10 +43,10 @@ int nxp_s32_qspi_wait_until_ready(const struct device *dev)
 	} while ((status == STATUS_QSPI_IP_BUSY) && (timeout > 0));
 
 	if (status != STATUS_QSPI_IP_SUCCESS) {
-		LOG_ERR("Failed to read memory status (%d)", status);
+		LOG_ERROR("Failed to read memory status (%d)", status);
 		ret = -EIO;
 	} else if (timeout == 0) {
-		LOG_ERR("Timeout, memory is busy");
+		LOG_ERROR("Timeout, memory is busy");
 		ret = -ETIMEDOUT;
 	}
 
@@ -77,7 +77,7 @@ int nxp_s32_qspi_read(const struct device *dev, off_t offset, void *dest, size_t
 		status = Qspi_Ip_Read(data->instance, (uint32_t)offset, (uint8_t *)dest,
 				      (uint32_t)size);
 		if (status != STATUS_QSPI_IP_SUCCESS) {
-			LOG_ERR("Failed to read %zu bytes at 0x%lx (%d)", size, offset, status);
+			LOG_ERROR("Failed to read %zu bytes at 0x%lx (%d)", size, offset, status);
 			ret = -EIO;
 		}
 
@@ -118,7 +118,7 @@ int nxp_s32_qspi_write(const struct device *dev, off_t offset, const void *src, 
 		status = Qspi_Ip_Program(data->instance, (uint32_t)offset, (const uint8_t *)src,
 					 (uint32_t)len);
 		if (status != STATUS_QSPI_IP_SUCCESS) {
-			LOG_ERR("Failed to write %zu bytes at 0x%lx (%d)", len, offset, status);
+			LOG_ERROR("Failed to write %zu bytes at 0x%lx (%d)", len, offset, status);
 			ret = -EIO;
 			break;
 		}
@@ -132,7 +132,8 @@ int nxp_s32_qspi_write(const struct device *dev, off_t offset, const void *src, 
 			status = Qspi_Ip_ProgramVerify(data->instance, (uint32_t)offset,
 						       (const uint8_t *)src, (uint32_t)len);
 			if (status != STATUS_QSPI_IP_SUCCESS) {
-				LOG_ERR("Write verification failed at 0x%lx (%d)", offset, status);
+				LOG_ERROR("Write verification failed at 0x%lx (%d)", offset,
+					  status);
 				ret = -EIO;
 				break;
 			}
@@ -175,12 +176,12 @@ static int nxp_s32_qspi_erase_block(const struct device *dev, off_t offset, size
 		*erase_size = BIT(etp->size);
 		status = Qspi_Ip_EraseBlock(data->instance, (uint32_t)offset, *erase_size);
 		if (status != STATUS_QSPI_IP_SUCCESS) {
-			LOG_ERR("Failed to erase %zu bytes at 0x%lx (%d)", *erase_size,
-				(long)offset, status);
+			LOG_ERROR("Failed to erase %zu bytes at 0x%lx (%d)", *erase_size,
+				  (long)offset, status);
 			ret = -EIO;
 		}
 	} else {
-		LOG_ERR("Can't find erase size to erase %zu bytes", size);
+		LOG_ERROR("Can't find erase size to erase %zu bytes", size);
 		ret = -EINVAL;
 	}
 
@@ -208,7 +209,7 @@ int nxp_s32_qspi_erase(const struct device *dev, off_t offset, size_t size)
 	if (size == memory_cfg->memSize) {
 		status = Qspi_Ip_EraseChip(data->instance);
 		if (status != STATUS_QSPI_IP_SUCCESS) {
-			LOG_ERR("Failed to erase chip (%d)", status);
+			LOG_ERROR("Failed to erase chip (%d)", status);
 			ret = -EIO;
 		}
 	} else {
@@ -229,8 +230,8 @@ int nxp_s32_qspi_erase(const struct device *dev, off_t offset, size_t size)
 				status = Qspi_Ip_EraseVerify(data->instance, (uint32_t)offset,
 							     erase_size);
 				if (status != STATUS_QSPI_IP_SUCCESS) {
-					LOG_ERR("Erase verification failed at 0x%lx (%d)", offset,
-						status);
+					LOG_ERROR("Erase verification failed at 0x%lx (%d)", offset,
+						  status);
 					ret = -EIO;
 					break;
 				}
@@ -275,7 +276,7 @@ int nxp_s32_qspi_read_id(const struct device *dev, uint8_t *id)
 
 	status = Qspi_Ip_ReadId(data->instance, id);
 	if (status != STATUS_QSPI_IP_SUCCESS) {
-		LOG_ERR("Failed to read device ID (%d)", status);
+		LOG_ERROR("Failed to read device ID (%d)", status);
 		ret = -EIO;
 	}
 

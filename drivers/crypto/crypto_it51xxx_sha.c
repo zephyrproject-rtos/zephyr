@@ -237,12 +237,12 @@ static int it51xxx_hash_begin_session(const struct device *dev, struct hash_ctx 
 				      enum hash_algo algo)
 {
 	if (algo != CRYPTO_HASH_ALGO_SHA256) {
-		LOG_ERR("Unsupported algorithm");
+		LOG_ERROR("Unsupported algorithm");
 		return -ENOTSUP;
 	}
 
 	if (ctx->flags & ~(it51xxx_query_hw_caps(dev))) {
-		LOG_ERR("Unsupported flag");
+		LOG_ERROR("Unsupported flag");
 		return -ENOTSUP;
 	}
 

@@ -55,7 +55,7 @@ static inline int aes_setkey_dir(const uint8_t *key, size_t keylen, int dir)
 	uint8_t written = aes_hal_setkey(key, keylen, dir);
 
 	if (written != keylen) {
-		LOG_ERR("HAL setkey failed: wrote %u/%zu bytes", written, keylen);
+		LOG_ERROR("HAL setkey failed: wrote %u/%zu bytes", written, keylen);
 		return -EIO;
 	}
 
@@ -119,18 +119,18 @@ static int aes_begin_session(const struct device *dev, struct cipher_ctx *zctx,
 	ARG_UNUSED(dev);
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
-		LOG_ERR("Unsupported algorithm: %d", algo);
+		LOG_ERROR("Unsupported algorithm: %d", algo);
 		return -ENOTSUP;
 	}
 
 	if (!(mode == CRYPTO_CIPHER_MODE_ECB || mode == CRYPTO_CIPHER_MODE_CBC ||
 	      mode == CRYPTO_CIPHER_MODE_CTR)) {
-		LOG_ERR("Unsupported mode: %d", mode);
+		LOG_ERROR("Unsupported mode: %d", mode);
 		return -ENOTSUP;
 	}
 
 	if (!(zctx->keylen == 16 || zctx->keylen == 24 || zctx->keylen == 32)) {
-		LOG_ERR("Invalid key length: %zu", zctx->keylen);
+		LOG_ERROR("Invalid key length: %zu", zctx->keylen);
 		return -EINVAL;
 	}
 
@@ -189,7 +189,7 @@ static int aes_ecb_op(struct cipher_ctx *zctx, struct cipher_pkt *pkt)
 	size_t blocks;
 
 	if (!ctx || (pkt->in_len % 16U) != 0U) {
-		LOG_ERR("Invalid ECB op: ctx=%p, in_len=%zu", ctx, ctx ? pkt->in_len : 0);
+		LOG_ERROR("Invalid ECB op: ctx=%p, in_len=%zu", ctx, ctx ? pkt->in_len : 0);
 		return -EINVAL;
 	}
 
@@ -300,7 +300,7 @@ static int aes_cbc_op(struct cipher_ctx *zctx, struct cipher_pkt *pkt, uint8_t *
 	int ret;
 
 	if (!ctx || (pkt->in_len % 16U) != 0U) {
-		LOG_ERR("Invalid CBC op: ctx=%p, in_len=%zu", ctx, ctx ? pkt->in_len : 0);
+		LOG_ERROR("Invalid CBC op: ctx=%p, in_len=%zu", ctx, ctx ? pkt->in_len : 0);
 		return -EINVAL;
 	}
 
@@ -341,7 +341,7 @@ static int aes_ctr_op(struct cipher_ctx *zctx, struct cipher_pkt *pkt, uint8_t *
 	ctr_len_bits = zctx->mode_params.ctr_info.ctr_len;
 
 	if (ctr_len_bits == 0 || (ctr_len_bits % 8) != 0 || ctr_len_bits > 128) {
-		LOG_ERR("Invalid CTR counter length: %u bits", ctr_len_bits);
+		LOG_ERROR("Invalid CTR counter length: %u bits", ctr_len_bits);
 		return -EINVAL;
 	}
 
@@ -442,12 +442,12 @@ static int aes_init(const struct device *dev)
 	const struct esp_aes_config *cfg = dev->config;
 
 	if (!device_is_ready(cfg->clock_dev)) {
-		LOG_ERR("Clock device not ready");
+		LOG_ERROR("Clock device not ready");
 		return -ENODEV;
 	}
 
 	if (clock_control_on(cfg->clock_dev, cfg->clock_subsys) != 0) {
-		LOG_ERR("Failed to enable AES peripheral clock");
+		LOG_ERROR("Failed to enable AES peripheral clock");
 		return -EIO;
 	}
 

@@ -117,7 +117,7 @@ static void lvgl_log(lv_log_level_t level, const char *buf)
 {
 	switch (level) {
 	case LV_LOG_LEVEL_ERROR:
-		LOG_ERR("%s", buf + (sizeof("[Error] ") - 1));
+		LOG_ERROR("%s", buf + (sizeof("[Error] ") - 1));
 		break;
 	case LV_LOG_LEVEL_WARN:
 		LOG_WRN("%s", buf + (sizeof("[Warn] ") - 1));
@@ -194,7 +194,7 @@ static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 
 	buf0 = lv_malloc(buf_size);
 	if (buf0 == NULL) {
-		LOG_ERR("Failed to allocate memory for rendering buffer");
+		LOG_ERROR("Failed to allocate memory for rendering buffer");
 		return -ENOMEM;
 	}
 
@@ -202,7 +202,7 @@ static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 	buf1 = lv_malloc(buf_size);
 	if (buf1 == NULL) {
 		lv_free(buf0);
-		LOG_ERR("Failed to allocate memory for rendering buffer");
+		LOG_ERROR("Failed to allocate memory for rendering buffer");
 		return -ENOMEM;
 	}
 #endif
@@ -213,7 +213,7 @@ static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 	if (vtile_buf == NULL) {
 		lv_free(buf0);
 		lv_free(buf1);
-		LOG_ERR("Failed to allocate memory for vtile buffer");
+		LOG_ERROR("Failed to allocate memory for vtile buffer");
 		return -ENOMEM;
 	}
 	lvgl_set_mono_conversion_buffer(vtile_buf, buf_size);
@@ -321,7 +321,7 @@ int lvgl_init(void)
 	/* clang-format on */
 	for (int i = 0; i < DT_ZEPHYR_DISPLAYS_COUNT; i++) {
 		if (!device_is_ready(display_dev[i])) {
-			LOG_ERR("Display device %d is not ready", i);
+			LOG_ERROR("Display device %d is not ready", i);
 			return -ENODEV;
 		}
 	}
@@ -351,13 +351,13 @@ int lvgl_init(void)
 		lv_displays[i] = lv_display_create(p_disp_data->cap.x_resolution,
 						   p_disp_data->cap.y_resolution);
 		if (!lv_displays[i]) {
-			LOG_ERR("Failed to create display %d LV object.", i);
+			LOG_ERROR("Failed to create display %d LV object.", i);
 			return -ENOMEM;
 		}
 
 		lv_display_set_user_data(lv_displays[i], p_disp_data);
 		if (set_lvgl_rendering_cb(lv_displays[i]) != 0) {
-			LOG_ERR("Display %d not supported.", i);
+			LOG_ERROR("Display %d not supported.", i);
 			return -ENOTSUP;
 		}
 
@@ -377,7 +377,7 @@ int lvgl_init(void)
 
 	err = lvgl_init_input_devices();
 	if (err < 0) {
-		LOG_ERR("Failed to initialize input devices.");
+		LOG_ERROR("Failed to initialize input devices.");
 		return err;
 	}
 

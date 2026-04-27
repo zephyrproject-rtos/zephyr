@@ -396,7 +396,7 @@ static int i2c_omap_recover_bus(const struct device *dev)
 	i2c_bitbang_init(&bitbang_omap, &bitbang_omap_io, (void *)dev);
 	error = i2c_bitbang_recover_bus(&bitbang_omap);
 	if (error != 0) {
-		LOG_ERR("failed to recover bus (err %d)", error);
+		LOG_ERROR("failed to recover bus (err %d)", error);
 		goto restore;
 	}
 
@@ -428,7 +428,7 @@ static int i2c_omap_wait_for_bb(const struct device *dev)
 
 	while (i2c_base_addr->STAT & I2C_OMAP_STAT_BB) {
 		if (k_uptime_get_32() > timeout) {
-			LOG_ERR("Bus busy timeout");
+			LOG_ERROR("Bus busy timeout");
 #ifdef CONFIG_I2C_OMAP_BUS_RECOVERY
 			return i2c_omap_recover_bus(dev);
 #else
@@ -696,14 +696,14 @@ static int i2c_omap_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("failed to apply pinctrl");
+		LOG_ERROR("failed to apply pinctrl");
 		return ret;
 	}
 
 	k_sem_init(&data->lock, 1, 1);
 	/* Set the speed for I2C */
 	if (i2c_omap_set_speed(dev, cfg->speed)) {
-		LOG_ERR("Failed to set speed");
+		LOG_ERROR("Failed to set speed");
 		return -ENOTSUP;
 	}
 	i2c_omap_init_ll(dev);

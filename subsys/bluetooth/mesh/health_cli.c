@@ -420,7 +420,7 @@ static int health_cli_init(const struct bt_mesh_model *model)
 	LOG_DBG("primary %u", bt_mesh_model_in_primary(model));
 
 	if (!cli) {
-		LOG_ERR("No Health Client context provided");
+		LOG_ERROR("No Health Client context provided");
 		return -EINVAL;
 	}
 

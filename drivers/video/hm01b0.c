@@ -272,14 +272,14 @@ static int hm01b0_apply_configuration(const struct device *dev, enum hm01b0_reso
 	ret = video_write_cci_multiregs(&config->i2c, hm01b0_init_regs[resolution],
 					ARRAY_SIZE(hm01b0_160x120_regs));
 	if (ret < 0) {
-		LOG_ERR("Failed to write config list registers (%d)", ret);
+		LOG_ERROR("Failed to write config list registers (%d)", ret);
 		return ret;
 	}
 
 	/* REG_BIT_CONTROL */
 	ret = video_write_cci_reg(&config->i2c, HM01B0_CCI_BIT_CONTROL, config->ctrl_val);
 	if (ret < 0) {
-		LOG_ERR("Failed to write BIT_CONTROL reg (%d)", ret);
+		LOG_ERROR("Failed to write BIT_CONTROL reg (%d)", ret);
 		return ret;
 	}
 
@@ -287,14 +287,14 @@ static int hm01b0_apply_configuration(const struct device *dev, enum hm01b0_reso
 	ret = video_write_cci_reg(&config->i2c, HM01B0_CCI_INTEGRATION,
 				  hm01b0_init_regs[resolution][HM01B0_LINE_LEN_PCLK_IDX].data / 2);
 	if (ret < 0) {
-		LOG_ERR("Failed to write INTEGRATION_H reg (%d)", ret);
+		LOG_ERROR("Failed to write INTEGRATION_H reg (%d)", ret);
 		return ret;
 	}
 
 	/* GRP_PARAM_HOLD */
 	ret = video_write_cci_reg(&config->i2c, HM01B0_CCI_GRP_PARAM_HOLD, 0x01);
 	if (ret < 0) {
-		LOG_ERR("Failed to write GRP_PARAM_HOLD reg (%d)", ret);
+		LOG_ERROR("Failed to write GRP_PARAM_HOLD reg (%d)", ret);
 		return ret;
 	}
 
@@ -319,7 +319,7 @@ static int hm01b0_set_fmt(const struct device *dev, struct video_format *fmt)
 
 	ret = video_format_caps_index(hm01b0_fmts, fmt, &idx);
 	if (ret != 0) {
-		LOG_ERR("Image resolution not supported\n");
+		LOG_ERROR("Image resolution not supported\n");
 		return ret;
 	}
 
@@ -331,7 +331,7 @@ static int hm01b0_set_fmt(const struct device *dev, struct video_format *fmt)
 	ret = hm01b0_apply_configuration(dev, (enum hm01b0_resolution)idx);
 	if (ret != 0) {
 		/* Camera is not capable of handling given format */
-		LOG_ERR("Image resolution not supported");
+		LOG_ERROR("Image resolution not supported");
 		return ret;
 	}
 	data->fmt = *fmt;
@@ -366,7 +366,7 @@ static int hm01b0_soft_reset(const struct device *dev)
 
 	ret = video_write_cci_reg(&config->i2c, HM01B0_CCI_RESET, 0x01);
 	if (ret < 0) {
-		LOG_ERR("Error writing HM01B0_CCI_RESET (%d)", ret);
+		LOG_ERROR("Error writing HM01B0_CCI_RESET (%d)", ret);
 		return ret;
 	}
 
@@ -378,7 +378,7 @@ static int hm01b0_soft_reset(const struct device *dev)
 		k_msleep(100);
 	}
 	if (ret != 0) {
-		LOG_ERR("Soft reset error (%d)", ret);
+		LOG_ERROR("Soft reset error (%d)", ret);
 	}
 
 	return ret;
@@ -414,14 +414,14 @@ static int hm01b0_set_frmival(const struct device *dev, struct video_frmival *fr
 
 	ret = video_write_cci_reg(&config->i2c, HM01B0_CCI_OSC_CLOCK_DIV, osc_div);
 	if (ret < 0) {
-		LOG_ERR("Failed to write OSC_CLK_DIV = %x reg (%d)", osc_div, ret);
+		LOG_ERROR("Failed to write OSC_CLK_DIV = %x reg (%d)", osc_div, ret);
 		return ret;
 	}
 
 	/* GRP_PARAM_HOLD */
 	ret = video_write_cci_reg(&config->i2c, HM01B0_CCI_GRP_PARAM_HOLD, 0x01);
 	if (ret < 0) {
-		LOG_ERR("Failed to write GRP_PARAM_HOLD reg (%d)", ret);
+		LOG_ERROR("Failed to write GRP_PARAM_HOLD reg (%d)", ret);
 		return ret;
 	}
 
@@ -442,7 +442,7 @@ static int hm01b0_get_frmival(const struct device *dev, struct video_frmival *fr
 	/* lets compute the frmival from the HM01B0_CCI_OSC_CLOCK_DIV registervalue */
 	ret = video_read_cci_reg(&config->i2c, HM01B0_CCI_OSC_CLOCK_DIV, &reg);
 	if (ret < 0) {
-		LOG_ERR("Failed to write OSC_CLK_DIV reg (%d)", ret);
+		LOG_ERROR("Failed to write OSC_CLK_DIV reg (%d)", ret);
 		return ret;
 	}
 
@@ -558,7 +558,7 @@ static bool hm01b0_check_connection(const struct device *dev)
 
 	ret = video_read_cci_reg(&config->i2c, HM01B0_CCI_ID, &model_id);
 	if (ret < 0) {
-		LOG_ERR("Error reading id reg (%d)", ret);
+		LOG_ERROR("Error reading id reg (%d)", ret);
 		return false;
 	}
 
@@ -571,13 +571,13 @@ static int hm01b0_init(const struct device *dev)
 	int ret;
 
 	if (!hm01b0_check_connection(dev)) {
-		LOG_ERR("%s is not ready", dev->name);
+		LOG_ERROR("%s is not ready", dev->name);
 		return -ENODEV;
 	}
 
 	ret = hm01b0_soft_reset(dev);
 	if (ret != 0) {
-		LOG_ERR("error soft reset (%d)", ret);
+		LOG_ERROR("error soft reset (%d)", ret);
 		return ret;
 	}
 
@@ -585,7 +585,7 @@ static int hm01b0_init(const struct device *dev)
 	ret = video_write_cci_multiregs(&config->i2c, hm01b0_default_regs,
 					ARRAY_SIZE(hm01b0_default_regs));
 	if (ret < 0) {
-		LOG_ERR("Failed to write config list registers (%d)", ret);
+		LOG_ERROR("Failed to write config list registers (%d)", ret);
 		return ret;
 	}
 
@@ -598,7 +598,7 @@ static int hm01b0_init(const struct device *dev)
 
 	ret = hm01b0_set_fmt(dev, &fmt);
 	if (ret != 0) {
-		LOG_ERR("Error setting video format (%d)", ret);
+		LOG_ERROR("Error setting video format (%d)", ret);
 		return ret;
 	}
 

@@ -105,7 +105,7 @@ static inline void check_errata(uint32_t regbase, uint32_t updownreg)
 		/* print error message on failure */
 		if (failc0 || failc1) {
 			if (fails == 0) {
-				LOG_ERR("DDR error in fixing up");
+				LOG_ERROR("DDR error in fixing up");
 			}
 			char slicelsc = '0';
 			char slicemsc = '0';
@@ -114,7 +114,7 @@ static inline void check_errata(uint32_t regbase, uint32_t updownreg)
 			slicelsc += (dq % 10);
 			slicemsc += (dq / 10);
 
-			LOG_ERR("S %c%c%c", slicemsc, slicelsc, failc0 ? 'U' : 'D');
+			LOG_ERROR("S %c%c%c", slicemsc, slicelsc, failc0 ? 'U' : 'D');
 		}
 	}
 }

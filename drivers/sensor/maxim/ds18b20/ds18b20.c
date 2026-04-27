@@ -262,7 +262,7 @@ static int ds18b20_configure(const struct device *dev)
 	int ret;
 
 	if (w1_reset_bus(cfg->bus) <= 0) {
-		LOG_ERR("No 1-Wire slaves connected");
+		LOG_ERROR("No 1-Wire slaves connected");
 		return -ENODEV;
 	}
 
@@ -273,12 +273,12 @@ static int ds18b20_configure(const struct device *dev)
 		}
 	} else if (w1_rom_to_uint64(&data->config.rom) == 0ULL) {
 		LOG_DBG("nr: %d", w1_get_slave_count(cfg->bus));
-		LOG_ERR("ROM required, because multiple slaves are on the bus");
+		LOG_ERROR("ROM required, because multiple slaves are on the bus");
 		return -EINVAL;
 	}
 
 	if ((cfg->family != 0) && (cfg->family != data->config.rom.family)) {
-		LOG_ERR("Found 1-Wire slave is not a %s", dev->name);
+		LOG_ERROR("Found 1-Wire slave is not a %s", dev->name);
 		return -EINVAL;
 	}
 

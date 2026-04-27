@@ -118,7 +118,7 @@ static int init_modbus_server(void)
 	iface = modbus_iface_get_by_name(iface_name);
 
 	if (iface < 0) {
-		LOG_ERR("Failed to get iface index for %s", iface_name);
+		LOG_ERROR("Failed to get iface index for %s", iface_name);
 		return iface;
 	}
 
@@ -131,13 +131,13 @@ int main(void)
 
 	for (int i = 0; i < ARRAY_SIZE(led_dev); i++) {
 		if (!gpio_is_ready_dt(&led_dev[i])) {
-			LOG_ERR("LED%u GPIO device not ready", i);
+			LOG_ERROR("LED%u GPIO device not ready", i);
 			return 0;
 		}
 
 		err = gpio_pin_configure_dt(&led_dev[i], GPIO_OUTPUT_INACTIVE);
 		if (err != 0) {
-			LOG_ERR("Failed to configure LED%u pin", i);
+			LOG_ERROR("Failed to configure LED%u pin", i);
 			return 0;
 		}
 	}
@@ -159,7 +159,7 @@ int main(void)
 #endif
 
 	if (init_modbus_server()) {
-		LOG_ERR("Modbus RTU server initialization failed");
+		LOG_ERROR("Modbus RTU server initialization failed");
 	}
 	return 0;
 }

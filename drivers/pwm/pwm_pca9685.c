@@ -93,7 +93,7 @@ static int set_reg(const struct device *dev, uint8_t addr, uint8_t value)
 
 	ret = i2c_write_dt(&config->i2c, buf, sizeof(buf));
 	if (ret != 0) {
-		LOG_ERR("I2C write [0x%02X]=0x%02X: %d", addr, value, ret);
+		LOG_ERROR("I2C write [0x%02X]=0x%02X: %d", addr, value, ret);
 	} else {
 		LOG_DBG("[0x%02X]=0x%02X", addr, value);
 	}
@@ -108,7 +108,7 @@ static int get_reg(const struct device *dev, uint8_t addr, uint8_t *value)
 	ret = i2c_write_read_dt(&config->i2c, &addr, sizeof(addr), value,
 				sizeof(*value));
 	if (ret != 0) {
-		LOG_ERR("I2C write [0x%02X]=0x%02X: %d", addr, *value, ret);
+		LOG_ERROR("I2C write [0x%02X]=0x%02X: %d", addr, *value, ret);
 	}
 	return ret;
 }
@@ -184,12 +184,10 @@ static int pca9685_set_cycles(const struct device *dev,
 	pre_scale = DIV_ROUND_UP((int64_t)period_count, PWM_STEPS) - 1;
 
 	if (pre_scale < PRE_SCALE_MIN) {
-		LOG_ERR("period_count %u < %u (min)", period_count,
-			PWM_PERIOD_COUNT_MIN);
+		LOG_ERROR("period_count %u < %u (min)", period_count, PWM_PERIOD_COUNT_MIN);
 		return -ENOTSUP;
 	} else if (pre_scale > PRE_SCALE_MAX) {
-		LOG_ERR("period_count %u > %u (max)", period_count,
-			PWM_PERIOD_COUNT_MAX);
+		LOG_ERROR("period_count %u > %u (max)", period_count, PWM_PERIOD_COUNT_MAX);
 		return -ENOTSUP;
 	}
 
@@ -245,13 +243,13 @@ static int pca9685_init(const struct device *dev)
 	(void)k_mutex_init(&data->mutex);
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C device not ready");
+		LOG_ERROR("I2C device not ready");
 		return -ENODEV;
 	}
 
 	ret = set_reg(dev, ADDR_MODE1, AUTO_INC);
 	if (ret != 0) {
-		LOG_ERR("set_reg MODE1: %d", ret);
+		LOG_ERROR("set_reg MODE1: %d", ret);
 		return ret;
 	}
 
@@ -264,7 +262,7 @@ static int pca9685_init(const struct device *dev)
 	}
 	ret = set_reg(dev, ADDR_MODE2, value);
 	if (ret != 0) {
-		LOG_ERR("set_reg MODE2: %d", ret);
+		LOG_ERROR("set_reg MODE2: %d", ret);
 		return ret;
 	}
 

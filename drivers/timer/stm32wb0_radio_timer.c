@@ -56,7 +56,7 @@ static void radio_timer_error_isr(void *args)
 	 * due to AHB down converter latency
 	 */
 	debug_cmd = BLUE->DEBUGCMDREG;
-	LOG_ERR("Timer error");
+	LOG_ERROR("Timer error");
 }
 
 static void radio_timer_cpu_wkup_isr(void *args)

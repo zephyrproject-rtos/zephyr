@@ -61,7 +61,7 @@ static int nxp_vref_enable(const struct device *dev)
 			CONFIG_REGULATOR_NXP_VREFV1_READY_TIMEOUT_MS;
 		while ((config->base->SC & VREF_SC_VREFST_MASK) == 0U) {
 			if (k_uptime_get() >= deadline) {
-				LOG_ERR("VREF ready timeout");
+				LOG_ERROR("VREF ready timeout");
 				return -ETIMEDOUT;
 			}
 
@@ -200,7 +200,7 @@ static int nxp_vref_init(const struct device *dev)
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 
 	if (ret) {
-		LOG_ERR("Device clock turn on failed");
+		LOG_ERROR("Device clock turn on failed");
 		return ret;
 	}
 

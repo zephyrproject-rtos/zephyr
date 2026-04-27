@@ -70,7 +70,7 @@ static void kbd_it8801_drive_column(const struct device *dev, int col)
 
 	ret = i2c_reg_write_byte_dt(&config->i2c_dev, config->reg_ksomcr, kso_val);
 	if (ret != 0) {
-		LOG_ERR("Failed to drive column (ret %d)", ret);
+		LOG_ERROR("Failed to drive column (ret %d)", ret);
 		return;
 	}
 }
@@ -83,7 +83,7 @@ static kbd_row_t kbd_it8801_read_row(const struct device *dev)
 
 	ret = i2c_reg_read_byte_dt(&config->i2c_dev, config->reg_ksidr, &value);
 	if (ret != 0) {
-		LOG_ERR("Failed to read row (ret %d)", ret);
+		LOG_ERROR("Failed to read row (ret %d)", ret);
 	}
 
 	/* Bits are active-low, so invert returned levels */
@@ -98,14 +98,14 @@ static void it8801_input_alert_handler(const struct device *dev)
 
 	ret = i2c_reg_read_byte_dt(&config->i2c_dev, config->reg_ksieer, &ksieer_val);
 	if (ret != 0) {
-		LOG_ERR("Failed to read KBD interrupt status (ret %d)", ret);
+		LOG_ERROR("Failed to read KBD interrupt status (ret %d)", ret);
 	}
 
 	if (ksieer_val != 0) {
 		/* Clear pending interrupts */
 		ret = i2c_reg_write_byte_dt(&config->i2c_dev, config->reg_ksieer, GENMASK(7, 0));
 		if (ret != 0) {
-			LOG_ERR("Failed to clear pending interrupts (ret %d)", ret);
+			LOG_ERROR("Failed to clear pending interrupts (ret %d)", ret);
 		}
 
 		input_kbd_matrix_poll_start(dev);
@@ -121,20 +121,20 @@ static void kbd_it8801_set_detect_mode(const struct device *dev, bool enable)
 		/* Clear pending interrupts */
 		ret = i2c_reg_write_byte_dt(&config->i2c_dev, config->reg_ksieer, GENMASK(7, 0));
 		if (ret != 0) {
-			LOG_ERR("Failed to clear pending interrupts (ret %d)", ret);
+			LOG_ERROR("Failed to clear pending interrupts (ret %d)", ret);
 			return;
 		}
 		/* Enable KSI falling edge event trigger interrupt */
 		ret = i2c_reg_write_byte_dt(&config->i2c_dev, config->reg_ksiier, GENMASK(7, 0));
 		if (ret != 0) {
-			LOG_ERR("Failed to enable KSI event trigger interrupt (ret %d)", ret);
+			LOG_ERROR("Failed to enable KSI event trigger interrupt (ret %d)", ret);
 			return;
 		}
 	} else {
 		/* Disable KSI falling edge event trigger interrupt */
 		ret = i2c_reg_write_byte_dt(&config->i2c_dev, config->reg_ksiier, 0x00);
 		if (ret != 0) {
-			LOG_ERR("Failed to disable KSI event trigger interrupt (ret %d)", ret);
+			LOG_ERROR("Failed to disable KSI event trigger interrupt (ret %d)", ret);
 			return;
 		}
 	}
@@ -158,7 +158,7 @@ static int kbd_it8801_init(const struct device *dev)
 						   config->altctrl[i].pin,
 						   config->altctrl[i].alt_func);
 		if (status != 0) {
-			LOG_ERR("Failed to configure KSO[21:18] pins");
+			LOG_ERROR("Failed to configure KSO[21:18] pins");
 			return status;
 		}
 	}
@@ -169,19 +169,19 @@ static int kbd_it8801_init(const struct device *dev)
 	/* Start with KEYBOARD_COLUMN_ALL, KSO[22:11, 6:0] output low */
 	ret = i2c_reg_write_byte_dt(&config->i2c_dev, config->reg_ksomcr, IT8801_REG_MASK_AKSOSC);
 	if (ret != 0) {
-		LOG_ERR("Failed to set all KSO output low (ret %d)", ret);
+		LOG_ERROR("Failed to set all KSO output low (ret %d)", ret);
 		return ret;
 	}
 	/* Gather KSI interrupt enable */
 	ret = i2c_reg_write_byte_dt(&config->i2c_dev, IT8801_REG_GIECR, IT8801_REG_MASK_GKSIIE);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable gather KSI interrupt (ret %d)", ret);
+		LOG_ERROR("Failed to enable gather KSI interrupt (ret %d)", ret);
 		return ret;
 	}
 	/* Alert response enable */
 	ret = i2c_reg_write_byte_dt(&config->i2c_dev, IT8801_REG_SMBCR, IT8801_REG_MASK_ARE);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable alert response (ret %d)", ret);
+		LOG_ERROR("Failed to enable alert response (ret %d)", ret);
 		return ret;
 	}
 

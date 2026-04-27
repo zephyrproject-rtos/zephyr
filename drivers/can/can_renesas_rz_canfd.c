@@ -857,20 +857,20 @@ static int can_renesas_rz_init(const struct device *dev)
 	/* Configure dt provided device signals when available */
 	ret = pinctrl_apply_state(cfg->pin_config, PINCTRL_STATE_DEFAULT);
 	if (ret) {
-		LOG_ERR("pin function initial failed");
+		LOG_ERROR("pin function initial failed");
 		return ret;
 	}
 
 	/* Apply config and setting for CAN controller HW */
 	ret = can_renesas_rz_apply_default_config(dev);
 	if (ret) {
-		LOG_ERR("invalid default configuration");
+		LOG_ERROR("invalid default configuration");
 		return ret;
 	}
 
 	ret = cfg->fsp_api->open(data->fsp_ctrl, data->fsp_cfg);
 	if (ret != FSP_SUCCESS) {
-		LOG_ERR("CAN bus initialize failed");
+		LOG_ERROR("CAN bus initialize failed");
 		return -EIO;
 	}
 
@@ -879,7 +879,7 @@ static int can_renesas_rz_init(const struct device *dev)
 					   CAN_TEST_MODE_DISABLED);
 	if (ret != FSP_SUCCESS) {
 		cfg->fsp_api->close(data->fsp_ctrl);
-		LOG_ERR("CAN stop failed");
+		LOG_ERROR("CAN stop failed");
 		return -EIO;
 	}
 

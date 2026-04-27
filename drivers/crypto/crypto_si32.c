@@ -86,7 +86,7 @@ static void crypto_si32_dma_completed(const struct device *dev, void *user_data,
 		LOG_DBG("AES0 XOR DMA channel %s", result);
 		break;
 	default:
-		LOG_ERR("Unknown DMA channel number: %d", channel);
+		LOG_ERROR("Unknown DMA channel number: %d", channel);
 		break;
 	}
 }
@@ -108,8 +108,9 @@ static void crypto_si32_irq_error_handler(const struct device *dev)
 	 * overrun (XORF = 1) occurs.
 	 */
 	if (SI32_AES_0->STATUS.ERRI) {
-		LOG_ERR("AES0 FIFO overrun (%u), underrun (%u), XOR FIF0 overrun (%u)",
-			SI32_AES_0->STATUS.DORF, SI32_AES_0->STATUS.DURF, SI32_AES_0->STATUS.XORF);
+		LOG_ERROR("AES0 FIFO overrun (%u), underrun (%u), XOR FIF0 overrun (%u)",
+			  SI32_AES_0->STATUS.DORF, SI32_AES_0->STATUS.DURF,
+			  SI32_AES_0->STATUS.XORF);
 		SI32_AES_A_clear_error_interrupt(SI32_AES_0);
 	}
 }
@@ -178,7 +179,7 @@ static int crypto_si32_aes_set_key(const uint8_t *key, uint8_t key_len)
 		SI32_AES_0->HWKEY0.U32 = key_as_word[0];
 		break;
 	default:
-		LOG_ERR("Invalid key len: %" PRIu16, key_len);
+		LOG_ERROR("Invalid key len: %" PRIu16, key_len);
 		return -EINVAL;
 	}
 
@@ -238,7 +239,7 @@ static int crypto_si32_aes_calc_decryption_key(const struct cipher_ctx *ctx,
 		decryption_key_word[0] = SI32_AES_0->HWKEY0.U32;
 		break;
 	default:
-		LOG_ERR("Invalid key len: %" PRIu16, ctx->keylen);
+		LOG_ERROR("Invalid key len: %" PRIu16, ctx->keylen);
 		return -EINVAL;
 	}
 
@@ -258,7 +259,7 @@ static int crypto_si32_aes_set_key_size(const struct cipher_ctx *ctx)
 		SI32_AES_A_select_key_size_128(SI32_AES_0);
 		break;
 	default:
-		LOG_ERR("Invalid key len: %" PRIu16, ctx->keylen);
+		LOG_ERROR("Invalid key len: %" PRIu16, ctx->keylen);
 		return -EINVAL;
 	}
 
@@ -333,7 +334,7 @@ static int crypto_si32_dma_setup_tx(struct cipher_pkt *pkt, unsigned int in_buf_
 	}
 
 	if (pkt->in_len % 16) {
-		LOG_ERR("Data size must be 4-word aligned");
+		LOG_ERROR("Data size must be 4-word aligned");
 		return -EINVAL;
 	}
 
@@ -357,19 +358,19 @@ static int crypto_si32_dma_setup_tx(struct cipher_pkt *pkt, unsigned int in_buf_
 	/* Stop channel to ensure we are not messing with an ongoing DMA operation */
 	ret = dma_stop(dma, DMA_CHANNEL_ID_TX);
 	if (ret) {
-		LOG_ERR("TX DMA channel stop failed: %d", ret);
+		LOG_ERROR("TX DMA channel stop failed: %d", ret);
 		return ret;
 	}
 
 	ret = dma_config(dma, DMA_CHANNEL_ID_TX, &dma_cfg);
 	if (ret) {
-		LOG_ERR("TX DMA channel setup failed: %d", ret);
+		LOG_ERROR("TX DMA channel setup failed: %d", ret);
 		return ret;
 	}
 
 	ret = dma_start(dma, DMA_CHANNEL_ID_TX);
 	if (ret) {
-		LOG_ERR("TX DMA channel start failed: %d", ret);
+		LOG_ERROR("TX DMA channel start failed: %d", ret);
 		return ret;
 	}
 
@@ -409,7 +410,7 @@ static int crypto_si32_dma_setup_rx(struct cipher_pkt *pkt, unsigned int in_buf_
 	}
 
 	if (pkt->in_len % 16) {
-		LOG_ERR("Data size must be 4-word aligned");
+		LOG_ERROR("Data size must be 4-word aligned");
 		return -EINVAL;
 	}
 
@@ -418,7 +419,7 @@ static int crypto_si32_dma_setup_rx(struct cipher_pkt *pkt, unsigned int in_buf_
 		dest_address = (uintptr_t)pkt->in_buf;
 	} else {
 		if ((pkt->out_buf_max - out_buf_offset) < (pkt->in_len - in_buf_offset)) {
-			LOG_ERR("Output buf too small");
+			LOG_ERROR("Output buf too small");
 			return -ENOMEM;
 		}
 
@@ -446,19 +447,19 @@ static int crypto_si32_dma_setup_rx(struct cipher_pkt *pkt, unsigned int in_buf_
 	/* Stop channel to ensure we are not messing with an ongoing DMA operation */
 	ret = dma_stop(dma, DMA_CHANNEL_ID_RX);
 	if (ret) {
-		LOG_ERR("RX DMA channel stop failed: %d", ret);
+		LOG_ERROR("RX DMA channel stop failed: %d", ret);
 		return ret;
 	}
 
 	ret = dma_config(dma, DMA_CHANNEL_ID_RX, &dma_cfg);
 	if (ret) {
-		LOG_ERR("RX DMA channel setup failed: %d", ret);
+		LOG_ERROR("RX DMA channel setup failed: %d", ret);
 		return ret;
 	}
 
 	ret = dma_start(dma, DMA_CHANNEL_ID_RX);
 	if (ret) {
-		LOG_ERR("RX DMA channel start failed: %d", ret);
+		LOG_ERROR("RX DMA channel start failed: %d", ret);
 		return ret;
 	}
 
@@ -498,7 +499,7 @@ static int crypto_si32_dma_setup_xor(struct cipher_pkt *pkt)
 	}
 
 	if (pkt->in_len % 16) {
-		LOG_ERR("Data size must be 4-word aligned");
+		LOG_ERROR("Data size must be 4-word aligned");
 		return -EINVAL;
 	}
 
@@ -522,19 +523,19 @@ static int crypto_si32_dma_setup_xor(struct cipher_pkt *pkt)
 	/* Stop channel to ensure we are not messing with an ongoing DMA operation */
 	ret = dma_stop(dma, DMA_CHANNEL_ID_XOR);
 	if (ret) {
-		LOG_ERR("XOR DMA channel stop failed: %d", ret);
+		LOG_ERROR("XOR DMA channel stop failed: %d", ret);
 		return ret;
 	}
 
 	ret = dma_config(dma, DMA_CHANNEL_ID_XOR, &dma_cfg);
 	if (ret) {
-		LOG_ERR("XOR DMA channel setup failed: %d", ret);
+		LOG_ERROR("XOR DMA channel setup failed: %d", ret);
 		return ret;
 	}
 
 	ret = dma_start(dma, DMA_CHANNEL_ID_XOR);
 	if (ret) {
-		LOG_ERR("XOR DMA channel start failed: %d", ret);
+		LOG_ERROR("XOR DMA channel start failed: %d", ret);
 		return ret;
 	}
 
@@ -579,12 +580,12 @@ static int crypto_si32_aes_ecb_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt
 	}
 
 	if (pkt->in_len % 16) {
-		LOG_ERR("Can't work on partial blocks");
+		LOG_ERROR("Can't work on partial blocks");
 		return -EINVAL;
 	}
 
 	if (pkt->in_len > 16) {
-		LOG_ERR("Refusing to work on multiple ECB blocks");
+		LOG_ERROR("Refusing to work on multiple ECB blocks");
 		return -EINVAL;
 	}
 
@@ -594,7 +595,7 @@ static int crypto_si32_aes_ecb_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt
 	}
 
 	if ((ctx->flags & CAP_INPLACE_OPS) && (pkt->out_buf != NULL)) {
-		LOG_ERR("In-place must not have an out_buf");
+		LOG_ERROR("In-place must not have an out_buf");
 		return -EINVAL;
 	}
 
@@ -637,7 +638,7 @@ static int crypto_si32_aes_ecb_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt
 		}
 		break;
 	default:
-		LOG_ERR("Unsupported cipher_op: %d", op);
+		LOG_ERROR("Unsupported cipher_op: %d", op);
 		return -ENOSYS;
 	}
 
@@ -661,7 +662,7 @@ static int crypto_si32_aes_ecb_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt
 			SI32_AES_A_select_decryption_mode(SI32_AES_0);
 			break;
 		default:
-			LOG_ERR("Unsupported cipher_op: %d", op);
+			LOG_ERROR("Unsupported cipher_op: %d", op);
 			return -ENOSYS;
 		}
 
@@ -685,7 +686,7 @@ static int crypto_si32_aes_ecb_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt
 
 	ret = k_sem_take(&crypto_si32_work_done, Z_TIMEOUT_MS(50)); /* TODO: Verify 50 ms */
 	if (ret) {
-		LOG_ERR("AES operation timed out: %d", ret);
+		LOG_ERROR("AES operation timed out: %d", ret);
 		return -EIO;
 	}
 
@@ -715,7 +716,7 @@ static int crypto_si32_aes_cbc_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt
 	}
 
 	if (pkt->in_len % 16) {
-		LOG_ERR("Can't work on partial blocks");
+		LOG_ERROR("Can't work on partial blocks");
 		return -EINVAL;
 	}
 
@@ -729,11 +730,11 @@ static int crypto_si32_aes_cbc_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt
 		switch (op) {
 		case CRYPTO_CIPHER_OP_ENCRYPT:
 			if (pkt->out_buf_max < 16) {
-				LOG_ERR("Output buf too small");
+				LOG_ERROR("Output buf too small");
 				return -ENOMEM;
 			}
 			if (!pkt->out_buf) {
-				LOG_ERR("Missing output buf");
+				LOG_ERROR("Missing output buf");
 				return -EINVAL;
 			}
 			memcpy(pkt->out_buf, iv, 16);
@@ -743,7 +744,7 @@ static int crypto_si32_aes_cbc_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt
 			in_buf_offset = 16;
 			break;
 		default:
-			LOG_ERR("Unsupported cipher_op: %d", op);
+			LOG_ERROR("Unsupported cipher_op: %d", op);
 			return -ENOSYS;
 		}
 	}
@@ -795,7 +796,7 @@ static int crypto_si32_aes_cbc_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt
 		}
 		break;
 	default:
-		LOG_ERR("Unsupported cipher_op: %d", op);
+		LOG_ERROR("Unsupported cipher_op: %d", op);
 		return -ENOSYS;
 	}
 
@@ -833,7 +834,7 @@ static int crypto_si32_aes_cbc_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt
 			SI32_AES_A_disable_key_capture(SI32_AES_0);
 			break;
 		default:
-			LOG_ERR("Unsupported cipher_op: %d", op);
+			LOG_ERROR("Unsupported cipher_op: %d", op);
 			return -ENOSYS;
 		}
 
@@ -855,7 +856,7 @@ static int crypto_si32_aes_cbc_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt
 
 	ret = k_sem_take(&crypto_si32_work_done, Z_TIMEOUT_MS(50)); /* TODO: Verify 50 ms */
 	if (ret) {
-		LOG_ERR("AES operation timed out: %d", ret);
+		LOG_ERROR("AES operation timed out: %d", ret);
 		return -EIO;
 	}
 
@@ -888,7 +889,7 @@ static int crypto_si32_aes_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt
 	}
 
 	if (pkt->in_len % 16) {
-		LOG_ERR("Can't work on partial blocks");
+		LOG_ERROR("Can't work on partial blocks");
 		return -EINVAL;
 	}
 
@@ -924,7 +925,8 @@ static int crypto_si32_aes_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt
 		SI32_AES_0->HWCTR0.U32 = *((uint32_t *)iv);
 		break;
 	default:
-		LOG_ERR("Unsupported counter length: %" PRIu16, ctx->mode_params.ctr_info.ctr_len);
+		LOG_ERROR("Unsupported counter length: %" PRIu16,
+			  ctx->mode_params.ctr_info.ctr_len);
 		ret = -ENOSYS;
 		goto out_unlock;
 	}
@@ -978,7 +980,7 @@ static int crypto_si32_aes_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt
 
 	ret = k_sem_take(&crypto_si32_work_done, Z_TIMEOUT_MS(50)); /* TODO: Verify 50 ms */
 	if (ret) {
-		LOG_ERR("AES operation timed out: %d", ret);
+		LOG_ERROR("AES operation timed out: %d", ret);
 		ret = -EIO;
 		goto out_unlock;
 	}
@@ -989,7 +991,8 @@ static int crypto_si32_aes_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt
 		session->current_ctr = sys_be32_to_cpu(SI32_AES_0->HWCTR3.U32);
 		break;
 	default:
-		LOG_ERR("Unsupported counter length: %" PRIu16, ctx->mode_params.ctr_info.ctr_len);
+		LOG_ERROR("Unsupported counter length: %" PRIu16,
+			  ctx->mode_params.ctr_info.ctr_len);
 		ret = -ENOSYS;
 		goto out_unlock;
 	}
@@ -1054,35 +1057,35 @@ static int crypto_si32_begin_session(const struct device *dev, struct cipher_ctx
 	struct crypto_session *session = 0;
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
-		LOG_ERR("This driver supports only AES");
+		LOG_ERROR("This driver supports only AES");
 		return -ENOTSUP;
 	}
 
 	if (!(ctx->flags & CAP_SYNC_OPS)) {
-		LOG_ERR("This driver supports only synchronous mode");
+		LOG_ERROR("This driver supports only synchronous mode");
 		return -ENOTSUP;
 	}
 
 	if (ctx->key.bit_stream == NULL) {
-		LOG_ERR("No key provided");
+		LOG_ERROR("No key provided");
 		return -EINVAL;
 	}
 
 	if (ctx->keylen != 16) {
-		LOG_ERR("Only AES-128 implemented");
+		LOG_ERROR("Only AES-128 implemented");
 		return -ENOSYS;
 	}
 
 	switch (mode) {
 	case CRYPTO_CIPHER_MODE_CBC:
 		if (ctx->flags & CAP_INPLACE_OPS && (ctx->flags & CAP_NO_IV_PREFIX) == 0) {
-			LOG_ERR("In-place requires no IV prefix");
+			LOG_ERROR("In-place requires no IV prefix");
 			return -EINVAL;
 		}
 		break;
 	case CRYPTO_CIPHER_MODE_CTR:
 		if (ctx->mode_params.ctr_info.ctr_len != 32U) {
-			LOG_ERR("Only 32 bit counter implemented");
+			LOG_ERROR("Only 32 bit counter implemented");
 			return -ENOSYS;
 		}
 		break;
@@ -1127,7 +1130,7 @@ static int crypto_si32_begin_session(const struct device *dev, struct cipher_ctx
 		case CRYPTO_CIPHER_MODE_CCM:
 		case CRYPTO_CIPHER_MODE_GCM:
 		default:
-			LOG_ERR("Unsupported encryption mode: %d", mode);
+			LOG_ERROR("Unsupported encryption mode: %d", mode);
 			ret = -ENOSYS;
 			goto out;
 		}
@@ -1155,13 +1158,13 @@ static int crypto_si32_begin_session(const struct device *dev, struct cipher_ctx
 		case CRYPTO_CIPHER_MODE_CCM:
 		case CRYPTO_CIPHER_MODE_GCM:
 		default:
-			LOG_ERR("Unsupported decryption mode: %d", mode);
+			LOG_ERROR("Unsupported decryption mode: %d", mode);
 			ret = -ENOSYS;
 			goto out;
 		}
 		break;
 	default:
-		LOG_ERR("Unsupported cipher_op: %d", op);
+		LOG_ERROR("Unsupported cipher_op: %d", op);
 		ret = -ENOSYS;
 		goto out;
 	}

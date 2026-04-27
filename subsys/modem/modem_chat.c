@@ -299,7 +299,8 @@ static bool modem_chat_send_script_request_part(struct modem_chat *chat)
 	ret = modem_pipe_transmit(chat->pipe, request_part, request_part_size);
 	if (ret < 1) {
 		if (ret < 0) {
-			LOG_ERR("Failed to %s %u bytes. (%d)", "transmit", request_part_size, ret);
+			LOG_ERROR("Failed to %s %u bytes. (%d)", "transmit", request_part_size,
+				  ret);
 		}
 		return false;
 	}

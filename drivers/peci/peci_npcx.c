@@ -59,7 +59,7 @@ static int peci_npcx_wait_completion(const struct device *dev)
 
 	ret = k_sem_take(&data->trans_sync_sem, PECI_TIMEOUT);
 	if (ret != 0) {
-		LOG_ERR("%s: Timeout", __func__);
+		LOG_ERROR("%s: Timeout", __func__);
 		return -ETIMEDOUT;
 	}
 
@@ -222,10 +222,10 @@ static void peci_npcx_isr(const struct device *dev)
 
 	if (IS_BIT_SET(status, NPCX_PECI_CTL_STS_ABRT_ERR)) {
 		data->trans_error = NPCX_PECI_WR_ABORT_ERROR;
-		LOG_ERR("PECI Nego or Wr FCS(0x%02x) error", reg->PECI_WR_FCS);
+		LOG_ERROR("PECI Nego or Wr FCS(0x%02x) error", reg->PECI_WR_FCS);
 	} else if (IS_BIT_SET(status, NPCX_PECI_CTL_STS_CRC_ERR)) {
 		data->trans_error = NPCX_PECI_RD_CRC_ERROR;
-		LOG_ERR("PECI Rd FCS(0x%02x) error", reg->PECI_WR_FCS);
+		LOG_ERROR("PECI Rd FCS(0x%02x) error", reg->PECI_WR_FCS);
 	} else {
 		data->trans_error = NPCX_PECI_NO_ERROR;
 	}
@@ -248,27 +248,27 @@ static int peci_npcx_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(clk_dev)) {
-		LOG_ERR("%s device not ready", clk_dev->name);
+		LOG_ERROR("%s device not ready", clk_dev->name);
 		return -ENODEV;
 	}
 
 	ret = clock_control_on(clk_dev, (clock_control_subsys_t)&config->clk_cfg);
 	if (ret < 0) {
-		LOG_ERR("Turn on PECI clock fail %d", ret);
+		LOG_ERROR("Turn on PECI clock fail %d", ret);
 		return ret;
 	}
 
 	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)&config->clk_cfg,
 				     &data->peci_src_clk_freq);
 	if (ret < 0) {
-		LOG_ERR("Get PECI source clock rate error %d", ret);
+		LOG_ERROR("Get PECI source clock rate error %d", ret);
 		return ret;
 	}
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret != 0) {
-		LOG_ERR("NPCX PECI pinctrl init failed (%d)", ret);
+		LOG_ERROR("NPCX PECI pinctrl init failed (%d)", ret);
 		return ret;
 	}
 

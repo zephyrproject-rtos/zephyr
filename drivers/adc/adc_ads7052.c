@@ -43,22 +43,22 @@ static int adc_ads7052_channel_setup(const struct device *dev,
 	const struct ads7052_config *config = dev->config;
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("unsupported channel gain '%d'", channel_cfg->gain);
+		LOG_ERROR("unsupported channel gain '%d'", channel_cfg->gain);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->reference != ADC_REF_VDD_1) {
-		LOG_ERR("unsupported channel reference '%d'", channel_cfg->reference);
+		LOG_ERROR("unsupported channel reference '%d'", channel_cfg->reference);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("unsupported acquisition_time '%d'", channel_cfg->acquisition_time);
+		LOG_ERROR("unsupported acquisition_time '%d'", channel_cfg->acquisition_time);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->channel_id >= config->channels) {
-		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
+		LOG_ERROR("unsupported channel id '%d'", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 	return 0;
@@ -114,12 +114,12 @@ static int ads7052_start_read(const struct device *dev, const struct adc_sequenc
 	int err;
 
 	if (sequence->resolution != ADS7052_RESOLUTION) {
-		LOG_ERR("unsupported resolution %d", sequence->resolution);
+		LOG_ERROR("unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}
 
 	if (find_msb_set(sequence->channels) > config->channels) {
-		LOG_ERR("unsupported channels in mask: 0x%08x", sequence->channels);
+		LOG_ERROR("unsupported channels in mask: 0x%08x", sequence->channels);
 		return -ENOTSUP;
 	}
 
@@ -129,7 +129,7 @@ static int ads7052_start_read(const struct device *dev, const struct adc_sequenc
 
 	err = ads7052_validate_buffer_size(dev, sequence);
 	if (err) {
-		LOG_ERR("buffer size too small");
+		LOG_ERROR("buffer size too small");
 		return err;
 	}
 
@@ -231,7 +231,7 @@ static void ads7052_acquisition_thread(void *p1, void *p2, void *p3)
 
 	err = ads7052_send_calibration(data->dev, true);
 	if (err) {
-		LOG_ERR("failed to send powerup sequence (err %d)", err);
+		LOG_ERROR("failed to send powerup sequence (err %d)", err);
 	}
 
 	while (true) {
@@ -244,7 +244,7 @@ static void ads7052_acquisition_thread(void *p1, void *p2, void *p3)
 
 			err = ads7052_read_channel(data->dev, channel, &result);
 			if (err) {
-				LOG_ERR("failed to read channel %d (err %d)", channel, err);
+				LOG_ERROR("failed to read channel %d (err %d)", channel, err);
 				adc_context_complete(&data->ctx, err);
 				break;
 			}
@@ -270,7 +270,7 @@ static int adc_ads7052_init(const struct device *dev)
 	k_sem_init(&data->sem, 0, 1);
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
+		LOG_ERROR("SPI bus %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 

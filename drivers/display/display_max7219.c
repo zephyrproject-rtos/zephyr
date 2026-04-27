@@ -209,7 +209,7 @@ static int max7219_set_brightness(const struct device *dev, const uint8_t bright
 	 */
 	ret = max7219_transmit_all(dev, MAX7219_REG_INTENSITY, brightness >> 4);
 	if (ret < 0) {
-		LOG_ERR("Failed to set brightness");
+		LOG_ERROR("Failed to set brightness");
 		return ret;
 	}
 
@@ -269,7 +269,7 @@ static int max7219_init(const struct device *dev)
 	int ret;
 
 	if (!spi_is_ready_dt(&dev_config->spi)) {
-		LOG_ERR("SPI device not ready");
+		LOG_ERROR("SPI device not ready");
 		return -ENODEV;
 	}
 
@@ -279,31 +279,31 @@ static int max7219_init(const struct device *dev)
 
 	ret = max7219_transmit_all(dev, MAX7219_REG_DISPLAY_TEST, MAX7219_LEAVE_DISPLAY_TEST_MODE);
 	if (ret < 0) {
-		LOG_ERR("Failed to disable display test");
+		LOG_ERROR("Failed to disable display test");
 		return ret;
 	}
 
 	ret = max7219_transmit_all(dev, MAX7219_REG_DECODE_MODE, MAX7219_NO_DECODE);
 	if (ret < 0) {
-		LOG_ERR("Failed to set decode mode");
+		LOG_ERROR("Failed to set decode mode");
 		return ret;
 	}
 
 	ret = max7219_transmit_all(dev, MAX7219_REG_INTENSITY, dev_config->intensity);
 	if (ret < 0) {
-		LOG_ERR("Failed to set global brightness");
+		LOG_ERROR("Failed to set global brightness");
 		return ret;
 	}
 
 	ret = max7219_transmit_all(dev, MAX7219_REG_SCAN_LIMIT, dev_config->scan_limit);
 	if (ret < 0) {
-		LOG_ERR("Failed to set scan limit");
+		LOG_ERROR("Failed to set scan limit");
 		return ret;
 	}
 
 	ret = max7219_transmit_all(dev, MAX7219_REG_SHUTDOWN, MAX7219_LEAVE_SHUTDOWN_MODE);
 	if (ret < 0) {
-		LOG_ERR("Failed to leave shutdown state");
+		LOG_ERROR("Failed to leave shutdown state");
 		return ret;
 	}
 

@@ -102,22 +102,22 @@ static int adc_rpi_channel_setup(const struct device *dev,
 	const struct adc_rpi_config *config = dev->config;
 
 	if (channel_cfg->channel_id >= config->num_channels) {
-		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
+		LOG_ERROR("unsupported channel id '%d'", channel_cfg->channel_id);
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		LOG_ERR("Acquisition time is not valid");
+		LOG_ERROR("Acquisition time is not valid");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("unsupported differential mode");
+		LOG_ERROR("unsupported differential mode");
 		return -ENOTSUP;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Gain is not valid");
+		LOG_ERROR("Gain is not valid");
 		return -EINVAL;
 	}
 
@@ -179,21 +179,19 @@ static int adc_rpi_start_read(const struct device *dev,
 	struct adc_rpi_data *data = dev->data;
 	int err;
 
-	if (sequence->resolution > ADC_RPI_MAX_RESOLUTION ||
-	    sequence->resolution == 0) {
-		LOG_ERR("unsupported resolution %d", sequence->resolution);
+	if (sequence->resolution > ADC_RPI_MAX_RESOLUTION || sequence->resolution == 0) {
+		LOG_ERROR("unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}
 
 	if (find_msb_set(sequence->channels) > config->num_channels) {
-		LOG_ERR("unsupported channels in mask: 0x%08x",
-			sequence->channels);
+		LOG_ERROR("unsupported channels in mask: 0x%08x", sequence->channels);
 		return -ENOTSUP;
 	}
 
 	err = adc_rpi_check_buffer_size(dev, sequence);
 	if (err) {
-		LOG_ERR("buffer size too small");
+		LOG_ERROR("buffer size too small");
 		return err;
 	}
 

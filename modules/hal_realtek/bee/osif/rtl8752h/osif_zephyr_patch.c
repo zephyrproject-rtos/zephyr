@@ -92,7 +92,7 @@ struct k_heap *get_heap_by_address(void *ptr)
 	}
 
 	/* Invalid address */
-	LOG_ERR("Address %p not in any known heap range", ptr);
+	LOG_ERROR("Address %p not in any known heap range", ptr);
 	return NULL;
 }
 

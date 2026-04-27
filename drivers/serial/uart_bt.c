@@ -74,7 +74,7 @@ static void bt_received(struct bt_conn *conn, const void *data, uint16_t len, vo
 
 	put_len = ring_buf_put(ringbuf, (const uint8_t *)data, len);
 	if (put_len < len) {
-		LOG_ERR("RX Ring buffer full. received: %d, added to queue: %d", len, put_len);
+		LOG_ERROR("RX Ring buffer full. received: %d, added to queue: %d", len, put_len);
 	}
 
 	k_work_submit_to_queue(&nus_work_queue, &dev_data->uart.cb_work);
@@ -143,7 +143,7 @@ static void tx_work_handler(struct k_work *work)
 		if (len > 0) {
 			err = bt_nus_inst_send(NULL, dev_data->bt.inst, data, len);
 			if (err) {
-				LOG_ERR("Failed to send data over BT: %d", err);
+				LOG_ERROR("Failed to send data over BT: %d", err);
 			}
 		}
 

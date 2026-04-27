@@ -77,7 +77,7 @@ static int ft8xx_init(const struct device *dev)
 
 	ret = ft8xx_drv_init(dev);
 	if (ret < 0) {
-		LOG_ERR("FT8xx driver initialization failed with %d", ret);
+		LOG_ERROR("FT8xx driver initialization failed with %d", ret);
 		return ret;
 	}
 
@@ -97,7 +97,7 @@ static int ft8xx_init(const struct device *dev)
 	wait();
 
 	if (!verify_chip(dev)) {
-		LOG_ERR("FT8xx chip not recognized");
+		LOG_ERROR("FT8xx chip not recognized");
 		return -ENODEV;
 	}
 

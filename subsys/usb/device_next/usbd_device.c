@@ -194,7 +194,7 @@ int usbd_wakeup_request(struct usbd_context *const uds_ctx)
 	usbd_device_lock(uds_ctx);
 
 	if (!caps.rwup) {
-		LOG_ERR("Remote wakeup feature not supported");
+		LOG_ERROR("Remote wakeup feature not supported");
 		ret = -ENOTSUP;
 		goto wakeup_request_error;
 	}
@@ -248,7 +248,7 @@ int usbd_init(struct usbd_context *const uds_ctx)
 	}
 
 	if (!device_is_ready(uds_ctx->dev)) {
-		LOG_ERR("USB device controller is not ready");
+		LOG_ERROR("USB device controller is not ready");
 		ret = -ENODEV;
 		goto init_exit;
 	}
@@ -328,13 +328,13 @@ int usbd_enable(struct usbd_context *const uds_ctx)
 
 	ret = udc_enable(uds_ctx->dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable controller");
+		LOG_ERROR("Failed to enable controller");
 		goto enable_exit;
 	}
 
 	ret = usbd_preallocate(uds_ctx);
 	if (ret != 0) {
-		LOG_ERR("Buffer preallocation failed");
+		LOG_ERROR("Buffer preallocation failed");
 		udc_disable(uds_ctx->dev);
 		goto enable_exit;
 	}
@@ -367,12 +367,12 @@ int usbd_disable(struct usbd_context *const uds_ctx)
 
 	ret = usbd_config_set(uds_ctx, 0);
 	if (ret) {
-		LOG_ERR("Failed to reset configuration");
+		LOG_ERROR("Failed to reset configuration");
 	}
 
 	ret = udc_disable(uds_ctx->dev);
 	if (ret) {
-		LOG_ERR("Failed to disable USB device");
+		LOG_ERROR("Failed to disable USB device");
 	}
 
 	uds_ctx->status.enabled = false;
@@ -390,12 +390,12 @@ int usbd_shutdown(struct usbd_context *const uds_ctx)
 
 	ret = usbd_device_shutdown_core(uds_ctx);
 	if (ret) {
-		LOG_ERR("Failed to shutdown USB device");
+		LOG_ERROR("Failed to shutdown USB device");
 	}
 
 	ret = udc_purge_queues(uds_ctx->dev);
 	if (ret) {
-		LOG_ERR("Failed to purge endpoint queues");
+		LOG_ERROR("Failed to purge endpoint queues");
 	}
 
 	usbd_free_preallocated(uds_ctx);

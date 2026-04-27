@@ -128,14 +128,13 @@ void lwm2m_firmware_set_update_state_inst(uint16_t obj_inst_id, uint8_t state)
 	case STATE_IDLE:
 		break;
 	default:
-		LOG_ERR("Unhandled state: %u", state);
+		LOG_ERROR("Unhandled state: %u", state);
 		lwm2m_registry_unlock();
 		return;
 	}
 
 	if (error) {
-		LOG_ERR("Invalid state transition: %u -> %u",
-			update_state[obj_inst_id], state);
+		LOG_ERROR("Invalid state transition: %u -> %u", update_state[obj_inst_id], state);
 	}
 
 	path.res_id = FIRMWARE_STATE_ID;
@@ -214,14 +213,13 @@ void lwm2m_firmware_set_update_result_inst(uint16_t obj_inst_id, uint8_t result)
 		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_IDLE);
 		break;
 	default:
-		LOG_ERR("Unhandled result: %u", result);
+		LOG_ERROR("Unhandled result: %u", result);
 		lwm2m_registry_unlock();
 		return;
 	}
 
 	if (error) {
-		LOG_ERR("Unexpected result(%u) set while state is %u",
-			result, state);
+		LOG_ERROR("Unexpected result(%u) set while state is %u", result, state);
 	}
 
 	lwm2m_set_u8(&path, result);
@@ -394,7 +392,7 @@ static int firmware_update_cb(uint16_t obj_inst_id,
 
 	state = lwm2m_firmware_get_update_state_inst(obj_inst_id);
 	if (state != STATE_DOWNLOADED) {
-		LOG_ERR("State other than downloaded: %d", state);
+		LOG_ERROR("State other than downloaded: %d", state);
 		return -EPERM;
 	}
 
@@ -404,10 +402,10 @@ static int firmware_update_cb(uint16_t obj_inst_id,
 	if (callback) {
 		ret = callback(obj_inst_id, args, args_len);
 		if (ret < 0) {
-			LOG_ERR("Failed to update firmware: %d", ret);
-			lwm2m_firmware_set_update_result_inst(obj_inst_id,
-				ret == -EINVAL ? RESULT_INTEGRITY_FAILED :
-						 RESULT_UPDATE_FAILED);
+			LOG_ERROR("Failed to update firmware: %d", ret);
+			lwm2m_firmware_set_update_result_inst(
+				obj_inst_id,
+				ret == -EINVAL ? RESULT_INTEGRITY_FAILED : RESULT_UPDATE_FAILED);
 			return 0;
 		}
 	}
@@ -422,8 +420,9 @@ static struct lwm2m_engine_obj_inst *firmware_create(uint16_t obj_inst_id)
 	/* Check that there is no other instance with this ID */
 	for (index = 0; index < MAX_INSTANCE_COUNT; index++) {
 		if (inst[index].obj && inst[index].obj_inst_id == obj_inst_id) {
-			LOG_ERR("Can not create instance - "
-				"already existing: %u", obj_inst_id);
+			LOG_ERROR("Can not create instance - "
+				  "already existing: %u",
+				  obj_inst_id);
 			return NULL;
 		}
 	}
@@ -435,8 +434,9 @@ static struct lwm2m_engine_obj_inst *firmware_create(uint16_t obj_inst_id)
 	}
 
 	if (index >= MAX_INSTANCE_COUNT) {
-		LOG_ERR("Can not create instance - "
-			"no more room: %u", obj_inst_id);
+		LOG_ERROR("Can not create instance - "
+			  "no more room: %u",
+			  obj_inst_id);
 		return NULL;
 	}
 

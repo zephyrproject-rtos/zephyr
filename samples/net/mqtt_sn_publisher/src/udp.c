@@ -89,7 +89,7 @@ static int do_work(void)
 
 	err = mqtt_sn_input(&mqtt_client);
 	if (err < 0) {
-		LOG_ERR("failed: input: %d", err);
+		LOG_ERROR("failed: input: %d", err);
 		return err;
 	}
 
@@ -108,7 +108,7 @@ static int do_work(void)
 
 		err = snprintk(out, sizeof(out), "%" PRIi64, ts);
 		if (err < 0) {
-			LOG_ERR("failed: snprintf");
+			LOG_ERROR("failed: snprintf");
 			return err;
 		}
 
@@ -116,7 +116,7 @@ static int do_work(void)
 
 		err = mqtt_sn_publish(&mqtt_client, MQTT_SN_QOS_0, &topic_p, false, &pubdata);
 		if (err < 0) {
-			LOG_ERR("failed: publish: %d", err);
+			LOG_ERROR("failed: publish: %d", err);
 			return err;
 		}
 	}
@@ -185,7 +185,7 @@ static void process_thread(void)
 		err = do_work();
 	}
 
-	LOG_ERR("Exiting thread: %d", err);
+	LOG_ERROR("Exiting thread: %d", err);
 }
 
 void start_thread(void)
@@ -194,14 +194,14 @@ void start_thread(void)
 #if defined(CONFIG_USERSPACE)
 	rc = k_mem_domain_add_thread(&app_domain, udp_thread_id);
 	if (rc < 0) {
-		LOG_ERR("Failed: k_mem_domain_add_thread() %d", rc);
+		LOG_ERROR("Failed: k_mem_domain_add_thread() %d", rc);
 		return;
 	}
 #endif
 
 	rc = k_thread_name_set(udp_thread_id, "udp");
 	if (rc < 0 && rc != -ENOSYS) {
-		LOG_ERR("Failed: k_thread_name_set() %d", rc);
+		LOG_ERROR("Failed: k_thread_name_set() %d", rc);
 		return;
 	}
 
@@ -210,6 +210,6 @@ void start_thread(void)
 	rc = k_thread_join(udp_thread_id, K_FOREVER);
 
 	if (rc != 0) {
-		LOG_ERR("Failed: k_thread_join() %d", rc);
+		LOG_ERROR("Failed: k_thread_join() %d", rc);
 	}
 }

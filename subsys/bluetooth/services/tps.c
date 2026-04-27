@@ -34,7 +34,7 @@ static ssize_t read_tx_power_level(struct bt_conn *conn,
 
 	err = bt_conn_le_get_tx_power_level(conn, &tx_power_level);
 	if (err) {
-		LOG_ERR("Failed to read Tx Power Level over HCI: %d", err);
+		LOG_ERROR("Failed to read Tx Power Level over HCI: %d", err);
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 

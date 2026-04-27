@@ -261,7 +261,7 @@ static int mcux_sdif_transfer(const struct device *dev,
 		 * bit is set in the CMD register.
 		 */
 		if (!SDIF_SendCardActive(config->base, MCUX_SDIF_DEFAULT_TIMEOUT)) {
-			LOG_ERR("Card clock init failed");
+			LOG_ERROR("Card clock init failed");
 			return -EIO;
 		}
 		return 0;
@@ -392,7 +392,7 @@ static int mcux_sdif_request(const struct device *dev,
 
 	ret = k_mutex_lock(&dev_data->access_mutex, K_MSEC(cmd->timeout_ms));
 	if (ret) {
-		LOG_ERR("Could not access card");
+		LOG_ERROR("Could not access card");
 		return -EBUSY;
 	}
 	do {

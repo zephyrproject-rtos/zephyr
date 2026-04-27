@@ -158,7 +158,7 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 
 	/* Not inherently an underrun/overrun as we may have a buffer to fill next time */
 	if (current_sqe == NULL) {
-		LOG_ERR("No pending SQE");
+		LOG_ERROR("No pending SQE");
 		gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
 		return;
 	}
@@ -170,7 +170,7 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	uint32_t buf_len;
 
 	if (rtio_sqe_rx_buf(current_sqe, min_read_size, ideal_read_size, &buf, &buf_len) != 0) {
-		LOG_ERR("Failed to get buffer");
+		LOG_ERROR("Failed to get buffer");
 		rtio_iodev_sqe_err(current_sqe, -ENOMEM);
 		gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_EDGE_TO_ACTIVE);
 		return;
@@ -213,7 +213,7 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 		cqe = rtio_cqe_consume(data->rtio_ctx);
 		if (cqe != NULL) {
 			if ((cqe->result < 0 && res == 0)) {
-				LOG_ERR("Bus error: %d", cqe->result);
+				LOG_ERROR("Bus error: %d", cqe->result);
 				res = cqe->result;
 			}
 			rtio_cqe_release(data->rtio_ctx, cqe);
@@ -315,7 +315,7 @@ static void adxl345_process_status1_cb(struct rtio *r, const struct rtio_sqe *sq
 		cqe = rtio_cqe_consume(data->rtio_ctx);
 		if (cqe != NULL) {
 			if ((cqe->result < 0) && (res == 0)) {
-				LOG_ERR("Bus error: %d", cqe->result);
+				LOG_ERROR("Bus error: %d", cqe->result);
 				res = cqe->result;
 			}
 			rtio_cqe_release(data->rtio_ctx, cqe);
@@ -395,7 +395,7 @@ void adxl345_stream_irq_handler(const struct device *dev)
 
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
+		LOG_ERROR("Failed to get sensor clock cycles");
 		rtio_iodev_sqe_err(data->sqe, rc);
 		return;
 	}

@@ -48,7 +48,7 @@ IF_ENABLED(HAS_LINES_64_95, (							\
 		_fn(64_95, line);						\
 ))										\
 	} else {								\
-		LOG_ERR("Invalid line number %u", line_num);			\
+		LOG_ERROR("Invalid line number %u", line_num);			\
 		__ASSERT_NO_MSG(0);						\
 	}
 
@@ -64,7 +64,7 @@ IF_ENABLED(HAS_LINES_64_95, (							\
 		*ret = _fn(64_95, line);					\
 ))										\
 	} else {								\
-		LOG_ERR("Invalid line number %u", line_num);			\
+		LOG_ERROR("Invalid line number %u", line_num);			\
 		__ASSERT_NO_MSG(0);						\
 	}
 
@@ -75,7 +75,7 @@ bool stm32_exti_is_pending(uint32_t line_num)
 	const uint32_t line = exti_linenum_to_ll_exti_line(line_num);
 
 	if (!IS_VALID_EXTI_LINE_NUM(line_num)) {
-		LOG_ERR("Invalid line number %u", line_num);
+		LOG_ERROR("Invalid line number %u", line_num);
 		return false;
 	}
 
@@ -97,7 +97,7 @@ int stm32_exti_clear_pending(uint32_t line_num)
 	const uint32_t line = exti_linenum_to_ll_exti_line(line_num);
 
 	if (!IS_VALID_EXTI_LINE_NUM(line_num)) {
-		LOG_ERR("Invalid line number %u", line_num);
+		LOG_ERROR("Invalid line number %u", line_num);
 		return -EINVAL;
 	}
 
@@ -115,7 +115,7 @@ int stm32_exti_sw_interrupt(uint32_t line_num)
 	const uint32_t line = exti_linenum_to_ll_exti_line(line_num);
 
 	if (!IS_VALID_EXTI_LINE_NUM(line_num)) {
-		LOG_ERR("Invalid line number %u", line_num);
+		LOG_ERROR("Invalid line number %u", line_num);
 		return -EINVAL;
 	}
 
@@ -247,7 +247,7 @@ static void stm32_exti_select_line_trigger(uint32_t line_num, uint32_t line,
 		stm32_exti_enable_falling_trig(line_num, line);
 		break;
 	default:
-		LOG_ERR("Unsupported EXTI trigger 0x%X", trg);
+		LOG_ERROR("Unsupported EXTI trigger 0x%X", trg);
 		break;
 	}
 }
@@ -302,7 +302,7 @@ static void stm32_exti_set_mode(uint32_t line_num, uint32_t line,
 		stm32_exti_enable_event(line_num, line);
 		break;
 	default:
-		LOG_ERR("Unsupported EXTI mode %u", mode);
+		LOG_ERROR("Unsupported EXTI mode %u", mode);
 		break;
 	}
 }
@@ -313,7 +313,7 @@ int stm32_exti_enable(uint32_t line_num, stm32_exti_trigger_type trigger,
 	const uint32_t line = exti_linenum_to_ll_exti_line(line_num);
 
 	if (!IS_VALID_EXTI_LINE_NUM(line_num)) {
-		LOG_ERR("Invalid line number %u", line_num);
+		LOG_ERROR("Invalid line number %u", line_num);
 		return -EINVAL;
 	}
 
@@ -332,7 +332,7 @@ int stm32_exti_disable(uint32_t line_num)
 	const uint32_t line = exti_linenum_to_ll_exti_line(line_num);
 
 	if (!IS_VALID_EXTI_LINE_NUM(line_num)) {
-		LOG_ERR("Invalid line number %u", line_num);
+		LOG_ERROR("Invalid line number %u", line_num);
 		return -EINVAL;
 	}
 

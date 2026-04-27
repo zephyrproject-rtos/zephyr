@@ -105,7 +105,7 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 
 	while ((FLASH_STM32_REGS(dev)->FLASH_STM32_SR & busy_flags)) {
 		if (expired) {
-			LOG_ERR("Timeout! val: %d ms", STM32_FLASH_TIMEOUT);
+			LOG_ERROR("Timeout! val: %d ms", STM32_FLASH_TIMEOUT);
 			return -EIO;
 		}
 
@@ -149,7 +149,7 @@ static void flash_stm32_flush_caches(const struct device *dev, off_t offset, siz
 static int flash_stm32_read(const struct device *dev, off_t offset, void *data, size_t len)
 {
 	if (!flash_stm32_valid_range(dev, offset, len, false)) {
-		LOG_ERR("Read range invalid. Offset: %ld, len: %zu", (long)offset, len);
+		LOG_ERROR("Read range invalid. Offset: %ld, len: %zu", (long)offset, len);
 		return -EINVAL;
 	}
 
@@ -169,7 +169,7 @@ static int flash_stm32_erase(const struct device *dev, off_t offset, size_t len)
 	int rc;
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
-		LOG_ERR("Erase range invalid. Offset: %ld, len: %zu", (long)offset, len);
+		LOG_ERROR("Erase range invalid. Offset: %ld, len: %zu", (long)offset, len);
 		return -EINVAL;
 	}
 
@@ -204,7 +204,7 @@ static int flash_stm32_write(const struct device *dev, off_t offset, const void 
 	int rc;
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
-		LOG_ERR("Write range invalid. Offset: %ld, len: %zu", (long)offset, len);
+		LOG_ERROR("Write range invalid. Offset: %ld, len: %zu", (long)offset, len);
 		return -EINVAL;
 	}
 
@@ -377,7 +377,7 @@ int flash_stm32_cr_lock(const struct device *dev, bool enable)
 			regs->PRGKEYR = FLASH_PRGKEY2;
 		}
 		if (FLASH->PECR & FLASH_PECR_PRGLOCK) {
-			LOG_ERR("Unlock failed");
+			LOG_ERROR("Unlock failed");
 			rc = -EIO;
 		}
 	}
@@ -538,7 +538,7 @@ static int stm32_flash_init(const struct device *dev)
 
 	/* enable clock */
 	if (clock_control_on(clk, (clock_control_subsys_t)&p->pclken) != 0) {
-		LOG_ERR("Failed to enable clock");
+		LOG_ERROR("Failed to enable clock");
 		return -EIO;
 	}
 #endif

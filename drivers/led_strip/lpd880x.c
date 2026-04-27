@@ -78,7 +78,7 @@ static int lpd880x_update(const struct device *dev, void *data, size_t size)
 
 	rc = spi_write_dt(&config->bus, &tx);
 	if (rc) {
-		LOG_ERR("can't update strip: %zu", rc);
+		LOG_ERROR("can't update strip: %zu", rc);
 	}
 
 	return rc;
@@ -138,7 +138,7 @@ static int lpd880x_strip_init(const struct device *dev)
 	const struct lpd880x_config *config = dev->config;
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI device %s not ready", config->bus.bus->name);
+		LOG_ERROR("SPI device %s not ready", config->bus.bus->name);
 		return -ENODEV;
 	}
 

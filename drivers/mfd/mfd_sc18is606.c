@@ -49,7 +49,7 @@ int nxp_sc18is606_transfer(const struct device *dev, const uint8_t *tx_data, uin
 		}
 
 		if (ret != 0) {
-			LOG_ERR("SPI write failed: %d", ret);
+			LOG_ERROR("SPI write failed: %d", ret);
 			goto out;
 		}
 	}
@@ -78,7 +78,7 @@ int nxp_sc18is606_transfer(const struct device *dev, const uint8_t *tx_data, uin
 		} while (!sys_timepoint_expired(end)); /*Keep reading while in the deadline*/
 
 		if (ret < 0) {
-			LOG_ERR("Failed to read data (%d)", ret);
+			LOG_ERROR("Failed to read data (%d)", ret);
 			goto out;
 		}
 	}
@@ -104,19 +104,19 @@ static int int_gpios_setup(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&cfg->int_gpios)) {
-		LOG_ERR("SC18IS606 Int GPIO not ready");
+		LOG_ERROR("SC18IS606 Int GPIO not ready");
 		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&cfg->int_gpios, GPIO_INPUT);
 	if (ret != 0U) {
-		LOG_ERR("Failed to configure SC18IS606 int gpio (%d)", ret);
+		LOG_ERROR("Failed to configure SC18IS606 int gpio (%d)", ret);
 		return ret;
 	}
 
 	ret = k_sem_init(&data->int_sem, 0, 1);
 	if (ret != 0U) {
-		LOG_ERR("Failed to Initialize Interrupt Semaphore (%d)", ret);
+		LOG_ERROR("Failed to Initialize Interrupt Semaphore (%d)", ret);
 		return ret;
 	}
 
@@ -124,13 +124,13 @@ static int int_gpios_setup(const struct device *dev)
 
 	ret = gpio_add_callback(cfg->int_gpios.port, &data->int_cb);
 	if (ret != 0U) {
-		LOG_ERR("Failed to assign the Interrupt callback (%d)", ret);
+		LOG_ERROR("Failed to assign the Interrupt callback (%d)", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&cfg->int_gpios, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0U) {
-		LOG_ERR("Failed to configure the GPIO interrupt edge (%d)", ret);
+		LOG_ERROR("Failed to configure the GPIO interrupt edge (%d)", ret);
 		return ret;
 	}
 
@@ -143,7 +143,7 @@ static int sc18is606_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(cfg->i2c_controller.bus)) {
-		LOG_ERR("I2C controller %s not found", cfg->i2c_controller.bus->name);
+		LOG_ERROR("I2C controller %s not found", cfg->i2c_controller.bus->name);
 		return -ENODEV;
 	}
 
@@ -151,19 +151,19 @@ static int sc18is606_init(const struct device *dev)
 
 	if (cfg->reset_gpios.port) {
 		if (!gpio_is_ready_dt(&cfg->reset_gpios)) {
-			LOG_ERR("SC18IS606 Reset GPIO not ready");
+			LOG_ERROR("SC18IS606 Reset GPIO not ready");
 			return -ENODEV;
 		}
 
 		ret = gpio_pin_configure_dt(&cfg->reset_gpios, GPIO_OUTPUT_ACTIVE);
 		if (ret != 0U) {
-			LOG_ERR("Failed to configure SC18IS606 reset GPIO (%d)", ret);
+			LOG_ERROR("Failed to configure SC18IS606 reset GPIO (%d)", ret);
 			return ret;
 		}
 
 		ret = gpio_pin_set_dt(&cfg->reset_gpios, 0);
 		if (ret != 0U) {
-			LOG_ERR("Failed to reset Bridge via Reset pin (%d)", ret);
+			LOG_ERROR("Failed to reset Bridge via Reset pin (%d)", ret);
 			return ret;
 		}
 	}
@@ -171,7 +171,7 @@ static int sc18is606_init(const struct device *dev)
 	if (cfg->int_gpios.port) {
 		ret = int_gpios_setup(dev);
 		if (ret != 0U) {
-			LOG_ERR("Could not set up device int_gpios (%d)", ret);
+			LOG_ERROR("Could not set up device int_gpios (%d)", ret);
 			return ret;
 		}
 	}

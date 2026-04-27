@@ -41,7 +41,7 @@ int tmcm3216_sap(const struct device *dev, uint8_t motor, uint8_t parameter, uin
 	k_sem_give(&parent_data->sem);
 
 	if (err < 0) {
-		LOG_ERR("SAP failed: motor=%d param=%d value=%d", motor, parameter, value);
+		LOG_ERROR("SAP failed: motor=%d param=%d value=%d", motor, parameter, value);
 		return err;
 	}
 	return 0;
@@ -69,7 +69,7 @@ int tmcm3216_gap(const struct device *dev, uint8_t motor, uint8_t parameter, uin
 	k_sem_give(&parent_data->sem);
 
 	if (err < 0) {
-		LOG_ERR("GAP failed: motor=%d param=%d", motor, parameter);
+		LOG_ERROR("GAP failed: motor=%d param=%d", motor, parameter);
 		return err;
 	}
 	return 0;
@@ -91,7 +91,7 @@ int tmcm3216_send_command(const struct device *dev, struct tmcm_rs485_cmd *cmd, 
 	k_sem_give(&parent_data->sem);
 
 	if (err < 0) {
-		LOG_ERR("RS485 command failed: %d", err);
+		LOG_ERROR("RS485 command failed: %d", err);
 		return err;
 	}
 
@@ -106,20 +106,20 @@ static int tmcm3216_init(const struct device *dev)
 
 	/* Verify UART/RS485 device is ready */
 	if (!device_is_ready(config->rs485)) {
-		LOG_ERR("RS485 UART device not ready");
+		LOG_ERROR("RS485 UART device not ready");
 		return -ENODEV;
 	}
 
 	/* Configure DE pin if specified */
 	if (config->de_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->de_gpio)) {
-			LOG_ERR("DE GPIO device not ready");
+			LOG_ERROR("DE GPIO device not ready");
 			return -ENODEV;
 		}
 
 		err = gpio_pin_configure_dt(&config->de_gpio, GPIO_OUTPUT_INACTIVE);
 		if (err != 0) {
-			LOG_ERR("Failed to configure DE pin: %d", err);
+			LOG_ERROR("Failed to configure DE pin: %d", err);
 			return err;
 		}
 

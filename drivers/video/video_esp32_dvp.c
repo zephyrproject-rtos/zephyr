@@ -77,20 +77,20 @@ static int video_esp32_reload_dma(struct video_esp32_data *data)
 	int ret = 0;
 
 	if (data->active_vbuf == NULL) {
-		LOG_ERR("No video buffer available. Enqueue some buffers first.");
+		LOG_ERROR("No video buffer available. Enqueue some buffers first.");
 		return -EAGAIN;
 	}
 
 	ret = dma_reload(cfg->dma_dev, cfg->rx_dma_channel, 0, (uint32_t)data->active_vbuf->buffer,
 			 data->active_vbuf->bytesused);
 	if (ret < 0) {
-		LOG_ERR("Unable to reload DMA (%d)", ret);
+		LOG_ERROR("Unable to reload DMA (%d)", ret);
 		return ret;
 	}
 
 	ret = dma_start(cfg->dma_dev, cfg->rx_dma_channel);
 	if (ret < 0) {
-		LOG_ERR("Unable to start DMA (%d)", ret);
+		LOG_ERROR("Unable to start DMA (%d)", ret);
 		return ret;
 	}
 
@@ -109,13 +109,13 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 
 	if (status != DMA_STATUS_COMPLETE) {
 		VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_ERROR)
-		LOG_ERR("DMA error: %d", status);
+		LOG_ERROR("DMA error: %d", status);
 		return;
 	}
 
 	if (data->active_vbuf == NULL) {
 		VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_ERROR)
-		LOG_ERR("No video buffer available. Enqueue some buffers first.");
+		LOG_ERROR("No video buffer available. Enqueue some buffers first.");
 		return;
 	}
 
@@ -152,7 +152,7 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 		data->is_streaming = false;
 		error = dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
 		if (error) {
-			LOG_ERR("Unable to stop DMA (%d)", error);
+			LOG_ERROR("Unable to stop DMA (%d)", error);
 			return error;
 		}
 
@@ -170,18 +170,18 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 	error = dma_get_status(cfg->dma_dev, cfg->rx_dma_channel, &dma_status);
 
 	if (error) {
-		LOG_ERR("Unable to get Rx status (%d)", error);
+		LOG_ERROR("Unable to get Rx status (%d)", error);
 		return error;
 	}
 
 	if (dma_status.busy) {
-		LOG_ERR("Rx DMA Channel %d is busy", cfg->rx_dma_channel);
+		LOG_ERROR("Rx DMA Channel %d is busy", cfg->rx_dma_channel);
 		return -EBUSY;
 	}
 
 	data->active_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
 	if (!data->active_vbuf) {
-		LOG_ERR("No enqueued video buffers available.");
+		LOG_ERROR("No enqueued video buffers available.");
 		return -EAGAIN;
 	}
 
@@ -203,8 +203,8 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 	}
 
 	if (dma_block_iter->next_block) {
-		LOG_ERR("Not enough descriptors available. Increase "
-			"CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
+		LOG_ERROR("Not enough descriptors available. Increase "
+			  "CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
 		return -ENOBUFS;
 	}
 
@@ -217,13 +217,13 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 
 	error = dma_config(cfg->dma_dev, cfg->rx_dma_channel, &dma_cfg);
 	if (error) {
-		LOG_ERR("Unable to configure DMA (%d)", error);
+		LOG_ERROR("Unable to configure DMA (%d)", error);
 		return error;
 	}
 
 	error = dma_start(cfg->dma_dev, cfg->rx_dma_channel);
 	if (error) {
-		LOG_ERR("Unable to start DMA (%d)", error);
+		LOG_ERROR("Unable to start DMA (%d)", error);
 		return error;
 	}
 
@@ -257,7 +257,7 @@ static int video_esp32_get_fmt(const struct device *dev, struct video_format *fm
 
 	ret = video_get_format(cfg->source_dev, fmt);
 	if (ret < 0) {
-		LOG_ERR("Failed to get format from source");
+		LOG_ERROR("Failed to get format from source");
 		return ret;
 	}
 
@@ -402,7 +402,7 @@ static int video_esp32_init(const struct device *dev)
 	video_esp32_cam_ctrl_init(dev);
 
 	if (!device_is_ready(cfg->dma_dev)) {
-		LOG_ERR("DMA device not ready");
+		LOG_ERROR("DMA device not ready");
 		return -ENODEV;
 	}
 
@@ -422,7 +422,7 @@ int video_esp32_set_selection(const struct device *dev, struct video_selection *
 
 	ret = video_get_format(cfg->source_dev, &data->video_format);
 	if (ret < 0) {
-		LOG_ERR("Failed to get format from source device");
+		LOG_ERROR("Failed to get format from source device");
 		return ret;
 	}
 

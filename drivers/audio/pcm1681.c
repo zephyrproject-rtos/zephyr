@@ -111,12 +111,12 @@ static int pcm1681_set_volume(const struct device *dev, uint8_t channel, uint8_t
 	uint8_t reg;
 
 	if (channel == 0 || channel > 8) {
-		LOG_ERR("Invalid channel (%d)", channel);
+		LOG_ERROR("Invalid channel (%d)", channel);
 		return -EINVAL;
 	}
 
 	if (volume > 100) {
-		LOG_ERR("Volume > 100 (%d)", volume);
+		LOG_ERROR("Volume > 100 (%d)", volume);
 		return -EINVAL;
 	}
 
@@ -150,7 +150,7 @@ static int pcm1681_set_mute(const struct device *dev, uint8_t channel, bool mute
 	uint8_t reg;
 
 	if (channel == 0 || channel > 8) {
-		LOG_ERR("Invalid channel (%d)", channel);
+		LOG_ERROR("Invalid channel (%d)", channel);
 		return -EINVAL;
 	}
 
@@ -174,7 +174,7 @@ static int pcm1681_set_dac(const struct device *dev, uint8_t channel, bool enabl
 	uint8_t reg;
 
 	if (channel == 0 || channel > 8) {
-		LOG_ERR("Invalid channel (%d)", channel);
+		LOG_ERROR("Invalid channel (%d)", channel);
 		return -EINVAL;
 	}
 
@@ -196,7 +196,7 @@ static int pcm1681_configure(const struct device *dev, struct audio_codec_cfg *c
 	struct pcm1681_data *data = dev->data;
 
 	if (cfg->dai_type != AUDIO_DAI_TYPE_I2S) {
-		LOG_ERR("Only AUDIO_DAI_TYPE_I2S supported");
+		LOG_ERROR("Only AUDIO_DAI_TYPE_I2S supported");
 		return -EINVAL;
 	}
 
@@ -204,7 +204,7 @@ static int pcm1681_configure(const struct device *dev, struct audio_codec_cfg *c
 	case I2S_FMT_DATA_FORMAT_I2S:
 		if ((cfg->dai_cfg.i2s.word_size != AUDIO_PCM_WIDTH_16_BITS) &
 		    (cfg->dai_cfg.i2s.word_size != AUDIO_PCM_WIDTH_24_BITS)) {
-			LOG_ERR("Word size %d not supported for i2s", cfg->dai_cfg.i2s.word_size);
+			LOG_ERROR("Word size %d not supported for i2s", cfg->dai_cfg.i2s.word_size);
 		}
 		pcm1681_reg_update_masked(&data->reg_map[PCM1681_FMTx_REG], PCM1681_FMT_I2S_16_24,
 					  PCM1681_FMTx_POS, PCM1681_FMTx_MASK);
@@ -212,8 +212,8 @@ static int pcm1681_configure(const struct device *dev, struct audio_codec_cfg *c
 	case I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED:
 		if ((cfg->dai_cfg.i2s.word_size != AUDIO_PCM_WIDTH_16_BITS) &
 		    (cfg->dai_cfg.i2s.word_size != AUDIO_PCM_WIDTH_24_BITS)) {
-			LOG_ERR("Word size %d not supported for left justified",
-				cfg->dai_cfg.i2s.word_size);
+			LOG_ERROR("Word size %d not supported for left justified",
+				  cfg->dai_cfg.i2s.word_size);
 		}
 		pcm1681_reg_update_masked(&data->reg_map[PCM1681_FMTx_REG],
 					  PCM1681_FMT_LEFT_JUSTIFIED_16_24, PCM1681_FMTx_POS,
@@ -229,13 +229,13 @@ static int pcm1681_configure(const struct device *dev, struct audio_codec_cfg *c
 						  PCM1681_FMT_RIGHT_JUSTIFIED_24, PCM1681_FMTx_POS,
 						  PCM1681_FMTx_MASK);
 		} else {
-			LOG_ERR("Word size %d not supported for right justified",
-				cfg->dai_cfg.i2s.word_size);
+			LOG_ERROR("Word size %d not supported for right justified",
+				  cfg->dai_cfg.i2s.word_size);
 			return -EINVAL;
 		}
 		break;
 	default:
-		LOG_ERR("I2S format not supported");
+		LOG_ERROR("I2S format not supported");
 		return -EINVAL;
 	}
 
@@ -249,7 +249,7 @@ static void pcm1681_start_output(const struct device *dev)
 	for (size_t i = 1; i <= PCM1681_N_CHANNELS; i++) {
 		ret = pcm1681_set_dac(dev, i, true);
 		if (ret < 0) {
-			LOG_ERR("Failed to enable channel %d (%d)", i, ret);
+			LOG_ERROR("Failed to enable channel %d (%d)", i, ret);
 			return;
 		}
 	}
@@ -264,7 +264,7 @@ static void pcm1681_stop_output(const struct device *dev)
 	for (size_t i = 1; i <= PCM1681_N_CHANNELS; i++) {
 		ret = pcm1681_set_dac(dev, i, false);
 		if (ret < 0) {
-			LOG_ERR("Failed to disable channel %d (%d)", i, ret);
+			LOG_ERROR("Failed to disable channel %d (%d)", i, ret);
 			return;
 		}
 	}
@@ -280,32 +280,32 @@ static int pcm1681_set_property(const struct device *dev, audio_property_t prope
 	switch (property) {
 	case AUDIO_PROPERTY_OUTPUT_VOLUME:
 		if (channel != AUDIO_CHANNEL_ALL) {
-			LOG_ERR("Volume only supported for all channels");
+			LOG_ERROR("Volume only supported for all channels");
 			return -EINVAL;
 		}
 		for (size_t i = 1; i <= PCM1681_N_CHANNELS; i++) {
 			ret = pcm1681_set_volume(dev, i, val.vol);
 			if (ret < 0) {
-				LOG_ERR("Failed to set volume for channel %d (%d)", i, ret);
+				LOG_ERROR("Failed to set volume for channel %d (%d)", i, ret);
 				return ret;
 			}
 		}
 		break;
 	case AUDIO_PROPERTY_OUTPUT_MUTE:
 		if (channel != AUDIO_CHANNEL_ALL) {
-			LOG_ERR("Mute only supported for all channels");
+			LOG_ERROR("Mute only supported for all channels");
 			return -EINVAL;
 		}
 		for (size_t i = 1; i <= PCM1681_N_CHANNELS; i++) {
 			ret = pcm1681_set_mute(dev, i, val.mute);
 			if (ret < 0) {
-				LOG_ERR("Failed to set mute for channel %d (%d)", i, ret);
+				LOG_ERROR("Failed to set mute for channel %d (%d)", i, ret);
 				return ret;
 			}
 		}
 		break;
 	default:
-		LOG_ERR("Property %d not supported", property);
+		LOG_ERROR("Property %d not supported", property);
 		return -EINVAL;
 	}
 
@@ -319,7 +319,7 @@ static int pcm1681_apply_properties(const struct device *dev)
 	int ret;
 
 	if (!config->bus_io.is_ready(&config->bus_spec)) {
-		LOG_ERR("Bus not ready");
+		LOG_ERROR("Bus not ready");
 		return -ENODEV;
 	}
 
@@ -330,7 +330,7 @@ static int pcm1681_apply_properties(const struct device *dev)
 
 		ret = config->bus_io.reg_write(&config->bus_spec, reg, data->reg_map[reg]);
 		if (ret < 0) {
-			LOG_ERR("Failed to write register %d", ret);
+			LOG_ERROR("Failed to write register %d", ret);
 			return ret;
 		}
 	}
@@ -353,7 +353,7 @@ static int pcm1681_init(const struct device *dev)
 	/* Reset all registers to their default value */
 	ret = pcm1681_apply_properties(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to apply default properties (%d)", ret);
+		LOG_ERROR("Failed to apply default properties (%d)", ret);
 		return ret;
 	}
 

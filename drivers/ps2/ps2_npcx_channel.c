@@ -82,14 +82,14 @@ static int ps2_npcx_channel_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->ps2_ctrl)) {
-		LOG_ERR("%s device not ready", config->ps2_ctrl->name);
+		LOG_ERROR("%s device not ready", config->ps2_ctrl->name);
 		return -ENODEV;
 	}
 
 	/* Configure pin-mux for PS/2 device */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("PS2 pinctrl setup failed (%d)", ret);
+		LOG_ERROR("PS2 pinctrl setup failed (%d)", ret);
 		return ret;
 	}
 

@@ -78,7 +78,7 @@ static int mbedtls_ecb(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 	 * more than one block. Use CBC mode instead.
 	 */
 	if (pkt->in_len > 16) {
-		LOG_ERR("Cannot encrypt more than 1 block");
+		LOG_ERROR("Cannot encrypt more than 1 block");
 		return -EINVAL;
 	}
 
@@ -97,7 +97,7 @@ static int mbedtls_ecb(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 	pkt->out_len = out_len;
 
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_cipher_[en|de]crypt() failed (%d)", status);
+		LOG_ERROR("psa_cipher_[en|de]crypt() failed (%d)", status);
 		return -EINVAL;
 	}
 
@@ -124,7 +124,7 @@ int mbedtls_cbc(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
 		status = psa_cipher_decrypt_setup(&psa_op, session->key_id, PSA_ALG_CBC_NO_PADDING);
 	}
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_cipher_[en|de]crypt_setup() failed (%d)", status);
+		LOG_ERROR("psa_cipher_[en|de]crypt_setup() failed (%d)", status);
 		return -EINVAL;
 	}
 
@@ -145,14 +145,14 @@ int mbedtls_cbc(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
 
 	status = psa_cipher_set_iv(&psa_op, iv, 16);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_cipher_set_iv() failed (%d)", status);
+		LOG_ERROR("psa_cipher_set_iv() failed (%d)", status);
 		return -EINVAL;
 	}
 
 	status = psa_cipher_update(&psa_op, in_buf_ptr, in_buf_size,
 				   out_buf_ptr, out_buf_size, &out_len);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_cipher_update() failed (%d)", status);
+		LOG_ERROR("psa_cipher_update() failed (%d)", status);
 		return -EINVAL;
 	}
 	out_buf_ptr += out_len;
@@ -161,7 +161,7 @@ int mbedtls_cbc(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
 
 	status = psa_cipher_finish(&psa_op, out_buf_ptr, out_buf_size, &out_len);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_cipher_finish() failed (%d)", status);
+		LOG_ERROR("psa_cipher_finish() failed (%d)", status);
 		return -EINVAL;
 	}
 
@@ -198,25 +198,25 @@ static int mbedtls_aead(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt, ui
 		status = psa_aead_decrypt_setup(&psa_op, session->key_id, psa_alg);
 	}
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_aead_[en|de]crypt_setup() failed (%d)", status);
+		LOG_ERROR("psa_aead_[en|de]crypt_setup() failed (%d)", status);
 		return -EIO;
 	}
 
 	status = psa_aead_set_nonce(&psa_op, nonce, nonce_len);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_aead_set_nonce() failed (%d)", status);
+		LOG_ERROR("psa_aead_set_nonce() failed (%d)", status);
 		return -EIO;
 	}
 
 	status = psa_aead_set_lengths(&psa_op, apkt->ad_len, apkt->pkt->in_len);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_aead_set_lengths() failed (%d)", status);
+		LOG_ERROR("psa_aead_set_lengths() failed (%d)", status);
 		return -EIO;
 	}
 
 	status = psa_aead_update_ad(&psa_op, apkt->ad, apkt->ad_len);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_aead_update_ad() failed (%d)", status);
+		LOG_ERROR("psa_aead_update_ad() failed (%d)", status);
 		return -EIO;
 	}
 
@@ -225,7 +225,7 @@ static int mbedtls_aead(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt, ui
 	status = psa_aead_update(&psa_op, apkt->pkt->in_buf, apkt->pkt->in_len,
 				 out_buf_ptr, out_buf_size, &out_len);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_aead_update() failed (%d)", status);
+		LOG_ERROR("psa_aead_update() failed (%d)", status);
 		return -EIO;
 	}
 
@@ -243,7 +243,7 @@ static int mbedtls_aead(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt, ui
 		apkt->pkt->out_len += out_len;
 	}
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_aead_[finish|verify]() failed (%d)", status);
+		LOG_ERROR("psa_aead_[finish|verify]() failed (%d)", status);
 		return -EIO;
 	}
 
@@ -262,23 +262,23 @@ static int mbedtls_cipher_session_setup(const struct device *dev,
 	struct mbedtls_shim_session *session;
 
 	if (ctx->flags & ~(MBEDTLS_SUPPORT)) {
-		LOG_ERR("Unsupported flag");
+		LOG_ERROR("Unsupported flag");
 		return -EINVAL;
 	}
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
-		LOG_ERR("Unsupported algo");
+		LOG_ERROR("Unsupported algo");
 		return -EINVAL;
 	}
 
 	if (ctx->keylen != 16U) {
-		LOG_ERR("%u key size is not supported", ctx->keylen);
+		LOG_ERROR("%u key size is not supported", ctx->keylen);
 		return -EINVAL;
 	}
 
 	session = mbedtls_get_unused_session();
 	if (session == NULL) {
-		LOG_ERR("No free session for now");
+		LOG_ERROR("No free session for now");
 		return -ENOSPC;
 	}
 
@@ -316,7 +316,7 @@ static int mbedtls_cipher_session_setup(const struct device *dev,
 #endif /* CONFIG_PSA_WANT_ALG_GCM */
 #endif /* CONFIG_PSA_WANT_KEY_TYPE_AES*/
 	default:
-		LOG_ERR("Unsupported mode");
+		LOG_ERROR("Unsupported mode");
 		mbedtls_free_session(session);
 		return -ENOTSUP;
 	}
@@ -332,7 +332,7 @@ static int mbedtls_cipher_session_setup(const struct device *dev,
 	status = psa_import_key(&key_attr, ctx->key.bit_stream, ctx->keylen, &session->key_id);
 	psa_reset_key_attributes(&key_attr);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("psa_import_key() failed (%d)", status);
+		LOG_ERROR("psa_import_key() failed (%d)", status);
 		mbedtls_free_session(session);
 		return -EIO;
 	}
@@ -362,7 +362,7 @@ static int mbedtls_hash_compute(struct hash_ctx *ctx, struct hash_pkt *pkt, bool
 	if (!ctx->started) {
 		status = psa_hash_setup(&session->hash_op, session->psa_alg);
 		if (status != PSA_SUCCESS) {
-			LOG_ERR("PSA hash operation setup failed");
+			LOG_ERROR("PSA hash operation setup failed");
 			return -EIO;
 		}
 		ctx->started = true;
@@ -370,7 +370,7 @@ static int mbedtls_hash_compute(struct hash_ctx *ctx, struct hash_pkt *pkt, bool
 
 	status = psa_hash_update(&session->hash_op, pkt->in_buf, pkt->in_len);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Could not update the hash");
+		LOG_ERROR("Could not update the hash");
 		ctx->started = false;
 		return -EINVAL;
 	}
@@ -384,7 +384,7 @@ static int mbedtls_hash_compute(struct hash_ctx *ctx, struct hash_pkt *pkt, bool
 		status = psa_hash_finish(&session->hash_op, pkt->out_buf,
 					 PSA_HASH_LENGTH(session->psa_alg), &hash_out_len);
 		if (status != PSA_SUCCESS) {
-			LOG_ERR("Could not compute the hash");
+			LOG_ERROR("Could not compute the hash");
 			return -EINVAL;
 		}
 	}
@@ -399,13 +399,13 @@ static int mbedtls_hash_session_setup(const struct device *dev,
 	struct mbedtls_shim_session *session;
 
 	if (ctx->flags & ~(MBEDTLS_SUPPORT)) {
-		LOG_ERR("Unsupported flag");
+		LOG_ERROR("Unsupported flag");
 		return -ENOTSUP;
 	}
 
 	session = mbedtls_get_unused_session();
 	if (session == NULL) {
-		LOG_ERR("No free session for now");
+		LOG_ERROR("No free session for now");
 		return -ENOSPC;
 	}
 
@@ -432,7 +432,7 @@ static int mbedtls_hash_session_setup(const struct device *dev,
 		break;
 #endif
 	default:
-		LOG_ERR("Unsupported algo: %d", algo);
+		LOG_ERROR("Unsupported algo: %d", algo);
 		mbedtls_free_session(session);
 		return -EINVAL;
 	}
@@ -449,7 +449,7 @@ static int mbedtls_hash_session_free(const struct device *dev, struct hash_ctx *
 	struct mbedtls_shim_session *session = ctx->drv_sessn_state;
 
 	if (psa_hash_abort(&session->hash_op) != PSA_SUCCESS) {
-		LOG_ERR("PSA hash abort failed");
+		LOG_ERROR("PSA hash abort failed");
 		return -EIO;
 	}
 

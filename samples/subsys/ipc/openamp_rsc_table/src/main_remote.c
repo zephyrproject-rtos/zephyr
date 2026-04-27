@@ -131,8 +131,7 @@ static void receive_message(unsigned char **msg, unsigned int *len)
 static void new_service_cb(struct rpmsg_device *rdev, const char *name,
 			   uint32_t src)
 {
-	LOG_ERR("%s: unexpected ns service receive for name %s",
-		__func__, name);
+	LOG_ERROR("%s: unexpected ns service receive for name %s", __func__, name);
 }
 
 int mailbox_notify(void *priv, uint32_t id)
@@ -153,7 +152,7 @@ int platform_init(void)
 
 	status = metal_init(&metal_params);
 	if (status) {
-		LOG_ERR("metal_init: failed: %d", status);
+		LOG_ERROR("metal_init: failed: %d", status);
 		return -1;
 	}
 
@@ -170,7 +169,7 @@ int platform_init(void)
 
 	/* setup IPM */
 	if (!device_is_ready(ipm_handle)) {
-		LOG_ERR("IPM device is not ready");
+		LOG_ERROR("IPM device is not ready");
 		return -1;
 	}
 
@@ -178,7 +177,7 @@ int platform_init(void)
 
 	status = ipm_set_enabled(ipm_handle, 1);
 	if (status) {
-		LOG_ERR("ipm_set_enabled failed");
+		LOG_ERROR("ipm_set_enabled failed");
 		return -1;
 	}
 
@@ -207,7 +206,7 @@ platform_create_rpmsg_vdev(unsigned int vdev_index,
 					rsc_io, NULL, mailbox_notify, NULL);
 
 	if (!vdev) {
-		LOG_ERR("failed to create vdev");
+		LOG_ERROR("failed to create vdev");
 		return NULL;
 	}
 
@@ -219,7 +218,7 @@ platform_create_rpmsg_vdev(unsigned int vdev_index,
 				      (void *)vring_rsc->da, rsc_io,
 				      vring_rsc->num, vring_rsc->align);
 	if (ret) {
-		LOG_ERR("failed to init vring 0");
+		LOG_ERROR("failed to init vring 0");
 		goto failed;
 	}
 
@@ -228,13 +227,13 @@ platform_create_rpmsg_vdev(unsigned int vdev_index,
 				      (void *)vring_rsc->da, rsc_io,
 				      vring_rsc->num, vring_rsc->align);
 	if (ret) {
-		LOG_ERR("failed to init vring 1");
+		LOG_ERROR("failed to init vring 1");
 		goto failed;
 	}
 
 	ret = rpmsg_init_vdev(&rvdev, vdev, ns_cb, shm_io, NULL);
 	if (ret) {
-		LOG_ERR("failed rpmsg_init_vdev");
+		LOG_ERROR("failed rpmsg_init_vdev");
 		goto failed;
 	}
 
@@ -263,7 +262,7 @@ void app_rpmsg_client_sample(void *arg1, void *arg2, void *arg3)
 			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
 			       rpmsg_recv_cs_callback, NULL);
 	if (ret) {
-		LOG_ERR("[Linux sample client] Could not create endpoint: %d", ret);
+		LOG_ERROR("[Linux sample client] Could not create endpoint: %d", ret);
 		goto task_end;
 	}
 
@@ -298,7 +297,7 @@ void app_rpmsg_tty(void *arg1, void *arg2, void *arg3)
 			       RPMSG_ADDR_ANY, RPMSG_ADDR_ANY,
 			       rpmsg_recv_tty_callback, NULL);
 	if (ret) {
-		LOG_ERR("[Linux TTY] Could not create endpoint: %d", ret);
+		LOG_ERROR("[Linux TTY] Could not create endpoint: %d", ret);
 		goto task_end;
 	}
 
@@ -336,7 +335,7 @@ void rpmsg_mng_task(void *arg1, void *arg2, void *arg3)
 	/* Initialize platform */
 	ret = platform_init();
 	if (ret) {
-		LOG_ERR("Failed to initialize platform");
+		LOG_ERROR("Failed to initialize platform");
 		ret = -1;
 		goto task_end;
 	}
@@ -344,7 +343,7 @@ void rpmsg_mng_task(void *arg1, void *arg2, void *arg3)
 	rpdev = platform_create_rpmsg_vdev(0, VIRTIO_DEV_DEVICE, NULL,
 					   new_service_cb);
 	if (!rpdev) {
-		LOG_ERR("Failed to create rpmsg virtio device");
+		LOG_ERROR("Failed to create rpmsg virtio device");
 		ret = -1;
 		goto task_end;
 	}

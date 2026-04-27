@@ -245,7 +245,7 @@ static int i2s_tx_reload_multiple_dma_blocks(const struct device *dev, uint8_t *
 		ret = dma_reload(dev_data->dev_dma, strm->dma_channel, (uint32_t)q_entry.mem_block,
 				 (uint32_t)&base->TDR[strm->start_channel], q_entry.size);
 		if (ret != 0) {
-			LOG_ERR("dma_reload() failed with error 0x%x", ret);
+			LOG_ERROR("dma_reload() failed with error 0x%x", ret);
 			break;
 		}
 
@@ -253,8 +253,8 @@ static int i2s_tx_reload_multiple_dma_blocks(const struct device *dev, uint8_t *
 
 		ret = k_msgq_put(&strm->out_queue, &q_entry, K_NO_WAIT);
 		if (ret != 0) {
-			LOG_ERR("buffer %p -> out %p err %d", q_entry.mem_block, &strm->out_queue,
-				ret);
+			LOG_ERROR("buffer %p -> out %p err %d", q_entry.mem_block, &strm->out_queue,
+				  ret);
 			break;
 		}
 
@@ -284,12 +284,12 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg, uint32_
 		k_mem_slab_free(strm->cfg.mem_slab, q_entry.mem_block);
 		(strm->free_tx_dma_blocks)++;
 	} else {
-		LOG_ERR("no buf in out_queue for channel %u", channel);
+		LOG_ERROR("no buf in out_queue for channel %u", channel);
 	}
 
 	if (strm->free_tx_dma_blocks > MAX_TX_DMA_BLOCKS) {
 		strm->state = I2S_STATE_ERROR;
-		LOG_ERR("free_tx_dma_blocks exceeded maximum, now %d", strm->free_tx_dma_blocks);
+		LOG_ERROR("free_tx_dma_blocks exceeded maximum, now %d", strm->free_tx_dma_blocks);
 		goto disabled_exit_no_drop;
 	}
 
@@ -368,12 +368,12 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_
 	LOG_DBG("RX cb");
 
 	if (strm->state == I2S_STATE_ERROR) {
-		LOG_ERR("State = I2S_STATE_ERROR");
+		LOG_ERROR("State = I2S_STATE_ERROR");
 		i2s_rx_stream_disable(dev, true, true);
 	}
 
 	if (strm->state != I2S_STATE_STOPPING && strm->state != I2S_STATE_RUNNING) {
-		LOG_ERR("Invalid state (%d)", strm->state);
+		LOG_ERROR("Invalid state (%d)", strm->state);
 		return;
 	}
 
@@ -384,8 +384,8 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_
 	/* put entry to output queue */
 	ret = k_msgq_put(&strm->out_queue, &q_entry, K_NO_WAIT);
 	if (ret != 0) {
-		LOG_ERR("buffer %p -> out_queue %p err %d", q_entry.mem_block, &strm->out_queue,
-			ret);
+		LOG_ERROR("buffer %p -> out_queue %p err %d", q_entry.mem_block, &strm->out_queue,
+			  ret);
 		goto error;
 	}
 
@@ -401,7 +401,7 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_
 	/* allocate new buffer for next audio frame */
 	ret = k_mem_slab_alloc(strm->cfg.mem_slab, &q_entry.mem_block, K_NO_WAIT);
 	if (ret != 0) {
-		LOG_ERR("buffer alloc from slab %p err %d", strm->cfg.mem_slab, ret);
+		LOG_ERROR("buffer alloc from slab %p err %d", strm->cfg.mem_slab, ret);
 		goto error;
 	}
 	q_entry.size = strm->cfg.block_size;
@@ -412,13 +412,13 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_
 			 (uint32_t)&base->RDR[data_path], (uint32_t)q_entry.mem_block,
 			 q_entry.size);
 	if (ret != 0) {
-		LOG_ERR("dma_reload() failed with error 0x%x", ret);
+		LOG_ERROR("dma_reload() failed with error 0x%x", ret);
 		goto error;
 	}
 
 	ret = k_msgq_put(&strm->in_queue, &q_entry, K_NO_WAIT);
 	if (ret != 0) {
-		LOG_ERR("%p -> in_queue %p err %d", q_entry.mem_block, &strm->in_queue, ret);
+		LOG_ERROR("%p -> in_queue %p err %d", q_entry.mem_block, &strm->in_queue, ret);
 	}
 
 	return;
@@ -457,7 +457,7 @@ static void get_mclk_rate(const struct device *dev, uint32_t *mclk)
 	if (device_is_ready(ccm_dev)) {
 		clock_control_get_rate(ccm_dev, clk_sub_sys, &rate);
 	} else {
-		LOG_ERR("CCM driver is not installed");
+		LOG_ERROR("CCM driver is not installed");
 		*mclk = rate;
 		return;
 	}
@@ -476,7 +476,7 @@ static void set_mclk_rate(const struct device *dev, uint32_t rate)
 					(clock_control_subsys_rate_t)rate);
 		clock_control_on(ccm_dev, clk_sub_sys);
 	} else {
-		LOG_ERR("CCM driver is not installed");
+		LOG_ERROR("CCM driver is not installed");
 		return;
 	}
 }
@@ -505,27 +505,27 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	    (dev_data->tx.state != I2S_STATE_READY) &&
 	    (dev_data->rx.state != I2S_STATE_NOT_READY) &&
 	    (dev_data->rx.state != I2S_STATE_READY)) {
-		LOG_ERR("invalid state tx(%u) rx(%u)", dev_data->tx.state, dev_data->rx.state);
+		LOG_ERROR("invalid state tx(%u) rx(%u)", dev_data->tx.state, dev_data->rx.state);
 		goto invalid_config;
 	}
 
 	if (i2s_cfg->frame_clk_freq == 0U) {
-		LOG_ERR("Invalid frame_clk_freq %u", i2s_cfg->frame_clk_freq);
+		LOG_ERROR("Invalid frame_clk_freq %u", i2s_cfg->frame_clk_freq);
 		goto invalid_config;
 	}
 
 	if (word_size_bits < SAI_WORD_SIZE_BITS_MIN || word_size_bits > SAI_WORD_SIZE_BITS_MAX) {
-		LOG_ERR("Unsupported I2S word size %u", word_size_bits);
+		LOG_ERROR("Unsupported I2S word size %u", word_size_bits);
 		goto invalid_config;
 	}
 
 	if (num_words < SAI_WORD_PER_FRAME_MIN || num_words > SAI_WORD_PER_FRAME_MAX) {
-		LOG_ERR("Unsupported words length %u", num_words);
+		LOG_ERROR("Unsupported words length %u", num_words);
 		goto invalid_config;
 	}
 
 	if ((i2s_cfg->options & I2S_OPT_PINGPONG) == I2S_OPT_PINGPONG) {
-		LOG_ERR("Ping-pong mode not supported");
+		LOG_ERROR("Ping-pong mode not supported");
 		ret = -ENOTSUP;
 		goto invalid_config;
 	}
@@ -588,7 +588,7 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		config.bitClock.bclkPolarity = kSAI_SampleOnFallingEdge;
 		break;
 	default:
-		LOG_ERR("Unsupported I2S data format");
+		LOG_ERROR("Unsupported I2S data format");
 		ret = -EINVAL;
 		goto invalid_config;
 	}
@@ -740,7 +740,7 @@ static int i2s_tx_stream_start(const struct device *dev)
 	/* retrieve entry from input queue */
 	ret = k_msgq_get(&strm->in_queue, &q_entry, K_NO_WAIT);
 	if (ret != 0) {
-		LOG_ERR("No entry in input queue to start");
+		LOG_ERROR("No entry in input queue to start");
 		return -EIO;
 	}
 
@@ -772,7 +772,7 @@ static int i2s_tx_stream_start(const struct device *dev)
 	/* put entry in output queue */
 	ret = k_msgq_put(&strm->out_queue, &q_entry, K_NO_WAIT);
 	if (ret != 0) {
-		LOG_ERR("failed to put entry in output queue");
+		LOG_ERROR("failed to put entry in output queue");
 		return ret;
 	}
 
@@ -780,13 +780,13 @@ static int i2s_tx_stream_start(const struct device *dev)
 
 	ret = i2s_tx_reload_multiple_dma_blocks(dev, &blocks_queued);
 	if (ret) {
-		LOG_ERR("i2s_tx_reload_multiple_dma_blocks() failed (%d)", ret);
+		LOG_ERROR("i2s_tx_reload_multiple_dma_blocks() failed (%d)", ret);
 		return ret;
 	}
 
 	ret = dma_start(dev_dma, strm->dma_channel);
 	if (ret < 0) {
-		LOG_ERR("dma_start failed (%d)", ret);
+		LOG_ERROR("dma_start failed (%d)", ret);
 		return ret;
 	}
 
@@ -853,7 +853,7 @@ static int i2s_rx_stream_start(const struct device *dev)
 	/* put entry in input queue */
 	ret = k_msgq_put(&strm->in_queue, &q_entry, K_NO_WAIT);
 	if (ret != 0) {
-		LOG_ERR("failed to put entry in input queue, ret1 %d", ret);
+		LOG_ERROR("failed to put entry in input queue, ret1 %d", ret);
 		return ret;
 	}
 
@@ -863,7 +863,7 @@ static int i2s_rx_stream_start(const struct device *dev)
 		/* allocate receive entry from SLAB */
 		ret = k_mem_slab_alloc(strm->cfg.mem_slab, &q_entry.mem_block, K_NO_WAIT);
 		if (ret != 0) {
-			LOG_ERR("entry alloc from mem_slab failed (%d)", ret);
+			LOG_ERROR("entry alloc from mem_slab failed (%d)", ret);
 			return ret;
 		}
 		q_entry.size = blk_cfg->block_size;
@@ -871,14 +871,14 @@ static int i2s_rx_stream_start(const struct device *dev)
 		ret = dma_reload(dev_dma, strm->dma_channel, (uint32_t)&base->RDR[data_path],
 				 (uint32_t)q_entry.mem_block, q_entry.size);
 		if (ret != 0) {
-			LOG_ERR("dma_reload() failed with error 0x%x", ret);
+			LOG_ERROR("dma_reload() failed with error 0x%x", ret);
 			return ret;
 		}
 
 		/* put entry in input queue */
 		ret = k_msgq_put(&strm->in_queue, &q_entry, K_NO_WAIT);
 		if (ret != 0) {
-			LOG_ERR("failed to put entry in input queue, ret2 %d", ret);
+			LOG_ERROR("failed to put entry in input queue, ret2 %d", ret);
 			return ret;
 		}
 	}
@@ -886,7 +886,7 @@ static int i2s_rx_stream_start(const struct device *dev)
 	LOG_DBG("Starting DMA Ch%u", strm->dma_channel);
 	ret = dma_start(dev_dma, strm->dma_channel);
 	if (ret < 0) {
-		LOG_ERR("Failed to start DMA Ch%d (%d)", strm->dma_channel, ret);
+		LOG_ERROR("Failed to start DMA Ch%d (%d)", strm->dma_channel, ret);
 		return ret;
 	}
 
@@ -919,7 +919,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 	switch (cmd) {
 	case I2S_TRIGGER_START:
 		if (strm->state != I2S_STATE_READY) {
-			LOG_ERR("START trigger: invalid state %u", strm->state);
+			LOG_ERROR("START trigger: invalid state %u", strm->state);
 			ret = -EIO;
 			break;
 		}
@@ -942,7 +942,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 
 	case I2S_TRIGGER_DROP:
 		if (strm->state == I2S_STATE_NOT_READY) {
-			LOG_ERR("DROP trigger: invalid state %d", strm->state);
+			LOG_ERROR("DROP trigger: invalid state %d", strm->state);
 			ret = -EIO;
 			break;
 		}
@@ -957,7 +957,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 
 	case I2S_TRIGGER_STOP:
 		if (strm->state != I2S_STATE_RUNNING) {
-			LOG_ERR("STOP trigger: invalid state %d", strm->state);
+			LOG_ERROR("STOP trigger: invalid state %d", strm->state);
 			ret = -EIO;
 			break;
 		}
@@ -968,7 +968,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 
 	case I2S_TRIGGER_DRAIN:
 		if (strm->state != I2S_STATE_RUNNING) {
-			LOG_ERR("DRAIN/STOP trigger: invalid state %d", strm->state);
+			LOG_ERROR("DRAIN/STOP trigger: invalid state %d", strm->state);
 			ret = -EIO;
 			break;
 		}
@@ -978,7 +978,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 
 	case I2S_TRIGGER_PREPARE:
 		if (strm->state != I2S_STATE_ERROR) {
-			LOG_ERR("PREPARE trigger: invalid state %d", strm->state);
+			LOG_ERROR("PREPARE trigger: invalid state %d", strm->state);
 			ret = -EIO;
 			break;
 		}
@@ -991,7 +991,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 		break;
 
 	default:
-		LOG_ERR("Unsupported trigger command");
+		LOG_ERROR("Unsupported trigger command");
 		ret = -EINVAL;
 	}
 
@@ -1008,7 +1008,7 @@ static int i2s_mcux_read(const struct device *dev, void **mem_block, size_t *siz
 
 	LOG_DBG("i2s_mcux_read");
 	if (strm->state == I2S_STATE_NOT_READY) {
-		LOG_ERR("invalid state %d", strm->state);
+		LOG_ERROR("invalid state %d", strm->state);
 		return -EIO;
 	}
 
@@ -1037,7 +1037,7 @@ static int i2s_mcux_write(const struct device *dev, void *mem_block, size_t size
 
 	LOG_DBG("i2s_mcux_write");
 	if (strm->state != I2S_STATE_RUNNING && strm->state != I2S_STATE_READY) {
-		LOG_ERR("invalid state (%d)", strm->state);
+		LOG_ERROR("invalid state (%d)", strm->state);
 		return -EIO;
 	}
 
@@ -1058,7 +1058,7 @@ static int i2s_mcux_write(const struct device *dev, void *mem_block, size_t size
 			SAI_TxEnable(base, true);
 			LOG_WRN("TX is resumed");
 		} else {
-			LOG_ERR("TX block reload err, TX is not resumed");
+			LOG_ERROR("TX block reload err, TX is not resumed");
 			return ret;
 		}
 	}
@@ -1156,7 +1156,7 @@ static int i2s_mcux_initialize(const struct device *dev)
 	int err;
 
 	if (!dev_data->dev_dma) {
-		LOG_ERR("DMA device not found");
+		LOG_ERROR("DMA device not found");
 		return -ENODEV;
 	}
 
@@ -1178,7 +1178,7 @@ static int i2s_mcux_initialize(const struct device *dev)
 	/* pinctrl */
 	err = pinctrl_apply_state(dev_cfg->pinctrl, PINCTRL_STATE_DEFAULT);
 	if (err) {
-		LOG_ERR("mclk pinctrl setup failed (%d)", err);
+		LOG_ERROR("mclk pinctrl setup failed (%d)", err);
 		return err;
 	}
 

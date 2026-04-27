@@ -56,7 +56,7 @@ static uint64_t *new_table(void)
 	}
 
 #if defined(CONFIG_LOG)
-	LOG_ERR("CONFIG_MAX_XLAT_TABLES is too small");
+	LOG_ERROR("CONFIG_MAX_XLAT_TABLES is too small");
 #else
 	printk("ERROR: CONFIG_MAX_XLAT_TABLES is too small\n");
 #endif
@@ -353,9 +353,9 @@ static int set_mapping(uint64_t *top_table, uintptr_t virt, size_t size,
 		}
 
 		if (!may_overwrite && !is_free_desc(*pte)) {
-			LOG_ERR("entry already in use: "
-				"level %d pte %p *pte 0x%016llx",
-				level, pte, *pte);
+			LOG_ERROR("entry already in use: "
+				  "level %d pte %p *pte 0x%016llx",
+				  level, pte, *pte);
 			return -EBUSY;
 		}
 
@@ -1084,7 +1084,7 @@ static void sync_domains(uintptr_t virt, size_t size, const char *name)
 		ret = globalize_page_range(domain_ptables, &kernel_ptables,
 					   virt, size, name);
 		if (ret) {
-			LOG_ERR("globalize_page_range() returned %d", ret);
+			LOG_ERROR("globalize_page_range() returned %d", ret);
 		}
 	}
 	k_spin_unlock(&z_mem_domain_lock, key);
@@ -1163,7 +1163,7 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	int ret = __arch_mem_map(virt, phys, size, flags);
 
 	if (ret) {
-		LOG_ERR("__arch_mem_map() returned %d", ret);
+		LOG_ERROR("__arch_mem_map() returned %d", ret);
 		k_panic();
 	} else {
 		sync_domains((uintptr_t)virt, size, "mem_map");
@@ -1632,7 +1632,7 @@ void arch_mem_scratch(uintptr_t phys)
 	int ret = add_map(&kernel_ptables, "scratch", phys, virt, size, MT_SCRATCH);
 
 	if (ret) {
-		LOG_ERR("add_map() returned %d", ret);
+		LOG_ERROR("add_map() returned %d", ret);
 	} else {
 		sync_domains(virt, size, "scratch");
 		invalidate_tlb_page(virt);

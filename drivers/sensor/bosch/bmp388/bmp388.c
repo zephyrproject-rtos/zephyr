@@ -462,31 +462,31 @@ static int bmp388_init(const struct device *dev)
 
 	/* reboot the chip */
 	if (bmp388_reg_write(dev, BMP388_REG_CMD, BMP388_CMD_SOFT_RESET) < 0) {
-		LOG_ERR("Cannot reboot chip.");
+		LOG_ERROR("Cannot reboot chip.");
 		return -EIO;
 	}
 
 	k_busy_wait(2000);
 
 	if (bmp388_reg_read(dev, BMP388_REG_CHIPID, &val, 1) < 0) {
-		LOG_ERR("Failed to read chip id.");
+		LOG_ERROR("Failed to read chip id.");
 		return -EIO;
 	}
 
 	if (val != bmp3xx->chip_id) {
-		LOG_ERR("Unsupported chip detected (0x%x)!", val);
+		LOG_ERROR("Unsupported chip detected (0x%x)!", val);
 		return -ENODEV;
 	}
 
 	/* Read calibration data */
 	if (bmp388_get_calibration_data(dev) < 0) {
-		LOG_ERR("Failed to read calibration data.");
+		LOG_ERROR("Failed to read calibration data.");
 		return -EIO;
 	}
 
 	/* Set ODR */
 	if (bmp388_reg_field_update(dev, BMP388_REG_ODR, BMP388_ODR_MASK, bmp3xx->odr) < 0) {
-		LOG_ERR("Failed to set ODR.");
+		LOG_ERROR("Failed to set ODR.");
 		return -EIO;
 	}
 
@@ -494,14 +494,14 @@ static int bmp388_init(const struct device *dev)
 	val = (bmp3xx->osr_pressure << BMP388_OSR_PRESSURE_POS);
 	val |= (bmp3xx->osr_temp << BMP388_OSR_TEMP_POS);
 	if (bmp388_reg_write(dev, BMP388_REG_OSR, val) < 0) {
-		LOG_ERR("Failed to set OSR.");
+		LOG_ERROR("Failed to set OSR.");
 		return -EIO;
 	}
 
 	/* Set IIR filter coefficient */
 	val = (cfg->iir_filter << BMP388_IIR_FILTER_POS) & BMP388_IIR_FILTER_MASK;
 	if (bmp388_reg_write(dev, BMP388_REG_CONFIG, val) < 0) {
-		LOG_ERR("Failed to set IIR coefficient.");
+		LOG_ERROR("Failed to set IIR coefficient.");
 		return -EIO;
 	}
 
@@ -509,25 +509,25 @@ static int bmp388_init(const struct device *dev)
 	if (bmp388_reg_write(dev,
 			     BMP388_REG_PWR_CTRL,
 			     BMP388_PWR_CTRL_ON) < 0) {
-		LOG_ERR("Failed to enable sensors.");
+		LOG_ERROR("Failed to enable sensors.");
 		return -EIO;
 	}
 
 	/* Read error register */
 	if (bmp388_reg_read(dev, BMP388_REG_ERR_REG, &val, 1) < 0) {
-		LOG_ERR("Failed get sensors error register.");
+		LOG_ERROR("Failed get sensors error register.");
 		return -EIO;
 	}
 
 	/* OSR and ODR config not proper */
 	if (val & BMP388_STATUS_CONF_ERR) {
-		LOG_ERR("OSR and ODR configuration is not proper");
+		LOG_ERROR("OSR and ODR configuration is not proper");
 		return -EINVAL;
 	}
 
 #ifdef CONFIG_BMP388_TRIGGER
 	if (cfg->gpio_int.port != NULL && bmp388_trigger_mode_init(dev) < 0) {
-		LOG_ERR("Cannot set up trigger mode.");
+		LOG_ERROR("Cannot set up trigger mode.");
 		return -EINVAL;
 	}
 #endif

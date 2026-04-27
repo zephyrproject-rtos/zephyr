@@ -65,18 +65,18 @@ static int adc_b91_validate_sequence(const struct adc_sequence *sequence)
 	int status;
 
 	if (sequence->channels != BIT(0)) {
-		LOG_ERR("Only channel 0 is supported.");
+		LOG_ERROR("Only channel 0 is supported.");
 		return -ENOTSUP;
 	}
 
 	if (sequence->oversampling) {
-		LOG_ERR("Oversampling is not supported.");
+		LOG_ERROR("Oversampling is not supported.");
 		return -ENOTSUP;
 	}
 
 	status = adc_b91_validate_buffer_size(sequence);
 	if (status) {
-		LOG_ERR("Buffer size too small.");
+		LOG_ERROR("Buffer size too small.");
 		return status;
 	}
 
@@ -202,7 +202,7 @@ static int adc_b91_adc_start_read(const struct device *dev, const struct adc_seq
 		data->resolution_divider = 64;
 		break;
 	default:
-		LOG_ERR("Selected ADC resolution is not supported.");
+		LOG_ERROR("Selected ADC resolution is not supported.");
 		return -EINVAL;
 	}
 
@@ -289,13 +289,13 @@ static int adc_b91_channel_setup(const struct device *dev,
 
 	/* Check channel ID */
 	if (channel_cfg->channel_id > 0) {
-		LOG_ERR("Only channel 0 is supported.");
+		LOG_ERROR("Only channel 0 is supported.");
 		return -EINVAL;
 	}
 
 	/* Check reference */
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		LOG_ERR("Selected ADC reference is not supported.");
+		LOG_ERROR("Selected ADC reference is not supported.");
 		return -EINVAL;
 	}
 
@@ -308,7 +308,7 @@ static int adc_b91_channel_setup(const struct device *dev,
 		vref_internal_mv = ADC_VREF_1P2V;
 		break;
 	default:
-		LOG_ERR("Selected reference voltage is not supported.");
+		LOG_ERROR("Selected reference voltage is not supported.");
 		return -EINVAL;
 	}
 
@@ -324,7 +324,7 @@ static int adc_b91_channel_setup(const struct device *dev,
 		sample_freq = ADC_SAMPLE_FREQ_96K;
 		break;
 	default:
-		LOG_ERR("Selected sample frequency is not supported.");
+		LOG_ERROR("Selected sample frequency is not supported.");
 		return -EINVAL;
 	}
 
@@ -337,7 +337,7 @@ static int adc_b91_channel_setup(const struct device *dev,
 		pre_scale = ADC_PRESCALE_1F4;
 		break;
 	default:
-		LOG_ERR("Selected ADC gain is not supported.");
+		LOG_ERROR("Selected ADC gain is not supported.");
 		return -EINVAL;
 	}
 
@@ -370,7 +370,7 @@ static int adc_b91_channel_setup(const struct device *dev,
 		break;
 
 	default:
-		LOG_ERR("Selected ADC acquisition time is not supported.");
+		LOG_ERROR("Selected ADC acquisition time is not supported.");
 		return -EINVAL;
 	}
 
@@ -379,10 +379,10 @@ static int adc_b91_channel_setup(const struct device *dev,
 	input_negative = adc_b91_get_pin(channel_cfg->input_negative);
 	if ((input_positive == (uint8_t)ADC_VBAT || input_negative == (uint8_t)ADC_VBAT) &&
 		channel_cfg->differential) {
-		LOG_ERR("VBAT pin is not available for differential mode.");
+		LOG_ERROR("VBAT pin is not available for differential mode.");
 		return -EINVAL;
 	} else if (channel_cfg->differential && (input_negative == (uint8_t)NOINPUTN)) {
-		LOG_ERR("Negative input is not selected.");
+		LOG_ERROR("Negative input is not selected.");
 		return -EINVAL;
 	}
 

@@ -102,7 +102,7 @@ static int ra_spi_b_configure(const struct device *dev, const struct spi_config 
 	}
 
 	if (word_size < 4 || word_size > 32) {
-		LOG_ERR("Unsupported SPI word size: %u", word_size);
+		LOG_ERROR("Unsupported SPI word size: %u", word_size);
 		return -ENOTSUP;
 	}
 
@@ -151,7 +151,7 @@ static int ra_spi_b_configure(const struct device *dev, const struct spi_config 
 	data->fsp_config.p_context = (void *)dev;
 	fsp_err = R_SPI_B_Open(&data->spi, &data->fsp_config);
 	if (fsp_err != FSP_SUCCESS) {
-		LOG_ERR("R_SPI_B_Open error: %d", fsp_err);
+		LOG_ERROR("R_SPI_B_Open error: %d", fsp_err);
 		return -EINVAL;
 	}
 	data->ctx.config = config;

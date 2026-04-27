@@ -62,8 +62,7 @@ static int memc_nxp_s32_qspi_init(const struct device *dev)
 
 	status = Qspi_Ip_ControllerInit(data->instance, config->controller_cfg);
 	if (status != STATUS_QSPI_IP_SUCCESS) {
-		LOG_ERR("Fail to initialize QSPI controller %d (%d)",
-			data->instance, status);
+		LOG_ERROR("Fail to initialize QSPI controller %d (%d)", data->instance, status);
 		return -EIO;
 	}
 

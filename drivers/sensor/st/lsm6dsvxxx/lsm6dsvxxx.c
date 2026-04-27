@@ -189,7 +189,7 @@ static void lsm6dsvxxx_submit_one_shot(const struct device *dev, struct rtio_iod
 	/* Get the buffer for the frame, it may be allocated dynamically by the rtio context */
 	rc = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
 	if (rc != 0) {
-		LOG_ERR("Failed to get a read buffer of size %u bytes", min_buf_len);
+		LOG_ERROR("Failed to get a read buffer of size %u bytes", min_buf_len);
 		return;
 	}
 
@@ -201,7 +201,7 @@ static void lsm6dsvxxx_submit_one_shot(const struct device *dev, struct rtio_iod
 
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
-		LOG_ERR("Failed to get sensor clock cycles");
+		LOG_ERROR("Failed to get sensor clock cycles");
 		rtio_iodev_sqe_err(iodev_sqe, rc);
 		return;
 	}
@@ -364,7 +364,7 @@ static int lsm6dsvxxx_init(const struct device *dev)
 
 #ifdef CONFIG_LSM6DSVXXX_TRIGGER
 	if (cfg->trig_enabled && (lsm6dsvxxx_init_interrupt(dev) < 0)) {
-		LOG_ERR("Failed to initialize interrupt.");
+		LOG_ERROR("Failed to initialize interrupt.");
 		return -EIO;
 	}
 #endif

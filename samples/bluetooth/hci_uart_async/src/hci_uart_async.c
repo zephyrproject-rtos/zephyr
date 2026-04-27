@@ -61,7 +61,7 @@ static int uart_c2h_tx(const uint8_t *data, size_t size)
 	err = uart_tx(hci_uart_dev, data, size, SYS_FOREVER_US);
 
 	if (err) {
-		LOG_ERR("uart c2h tx: err %d", err);
+		LOG_ERROR("uart c2h tx: err %d", err);
 		return err;
 	}
 
@@ -83,7 +83,7 @@ static uint32_t hci_payload_size(const uint8_t *hdr_buf, uint8_t h4_type)
 		return bt_iso_hdr_len(
 			sys_le16_to_cpu(((const struct bt_hci_iso_hdr *)hdr_buf)->len));
 	default:
-		LOG_ERR("Invalid type: %u", h4_type);
+		LOG_ERROR("Invalid type: %u", h4_type);
 		return 0;
 	}
 }
@@ -98,7 +98,7 @@ static uint8_t hci_hdr_size(uint8_t h4_type)
 	case BT_HCI_H4_ISO:
 		return sizeof(struct bt_hci_iso_hdr);
 	default:
-		LOG_ERR("Unexpected h4 type: %u", h4_type);
+		LOG_ERROR("Unexpected h4 type: %u", h4_type);
 		return 0;
 	}
 }
@@ -129,7 +129,7 @@ static int uart_h2c_rx(uint8_t *dst, size_t size)
 	err = uart_rx_enable(hci_uart_dev, dst, size, SYS_FOREVER_US);
 
 	if (err) {
-		LOG_ERR("uart h2c rx: err %d", err);
+		LOG_ERROR("uart h2c rx: err %d", err);
 		return err;
 	}
 
@@ -292,7 +292,7 @@ static void h2c_h4_transport(void)
 			err = bt_send(buf);
 			if (err) {
 				/* This is not a transport error. */
-				LOG_ERR("bt_send err %d", err);
+				LOG_ERROR("bt_send err %d", err);
 				net_buf_unref(buf);
 				buf = NULL;
 			}
@@ -338,7 +338,7 @@ static int hci_uart_init(void)
 	LOG_DBG("");
 
 	if (!device_is_ready(hci_uart_dev)) {
-		LOG_ERR("HCI UART %s is not ready", hci_uart_dev->name);
+		LOG_ERROR("HCI UART %s is not ready", hci_uart_dev->name);
 		return -EINVAL;
 	}
 

@@ -53,7 +53,7 @@ static inline int app_setup_display(const struct device *const display_dev, cons
 	LOG_INF("Display device: %s", display_dev->name);
 
 	if (!device_is_ready(display_dev)) {
-		LOG_ERR("%s: display device not ready.", display_dev->name);
+		LOG_ERROR("%s: display device not ready.", display_dev->name);
 		return -ENOSYS;
 	}
 
@@ -90,11 +90,11 @@ static inline int app_setup_display(const struct device *const display_dev, cons
 		}
 		break;
 	default:
-		LOG_ERR("Display pixel format not supported by this sample");
+		LOG_ERROR("Display pixel format not supported by this sample");
 		return -ENOTSUP;
 	}
 	if (ret < 0) {
-		LOG_ERR("Unable to set display format");
+		LOG_ERROR("Unable to set display format");
 		return ret;
 	}
 
@@ -140,7 +140,7 @@ static int app_setup_video_selection(const struct device *const camera_dev,
 
 		ret = video_set_selection(camera_dev, &sel);
 		if (ret < 0) {
-			LOG_ERR("Unable to set selection crop");
+			LOG_ERROR("Unable to set selection crop");
 			return ret;
 		}
 
@@ -160,14 +160,14 @@ static int app_query_video_info(const struct device *const camera_dev,
 	LOG_INF("Camera device: %s", camera_dev->name);
 
 	if (!device_is_ready(camera_dev)) {
-		LOG_ERR("%s: camera device is not ready", camera_dev->name);
+		LOG_ERROR("%s: camera device is not ready", camera_dev->name);
 		return -ENOSYS;
 	}
 
 	/* Get capabilities */
 	ret = video_get_caps(camera_dev, caps);
 	if (ret < 0) {
-		LOG_ERR("Unable to retrieve video capabilities");
+		LOG_ERROR("Unable to retrieve video capabilities");
 		return ret;
 	}
 
@@ -184,7 +184,7 @@ static int app_query_video_info(const struct device *const camera_dev,
 	/* Get default/native format */
 	ret = video_get_format(camera_dev, fmt);
 	if (ret < 0) {
-		LOG_ERR("Unable to retrieve video format");
+		LOG_ERROR("Unable to retrieve video format");
 	}
 
 	/* Adjust video format according to the configuration */
@@ -211,7 +211,7 @@ static int app_setup_video_format(const struct device *const camera_dev,
 
 	ret = video_set_compose_format(camera_dev, fmt);
 	if (ret < 0) {
-		LOG_ERR("Unable to set format");
+		LOG_ERROR("Unable to set format");
 		return ret;
 	}
 
@@ -245,7 +245,7 @@ static int app_setup_video_frmival(const struct device *const camera_dev,
 	if (ret == -ENOTSUP || ret == -ENOSYS) {
 		LOG_WRN("The video source does not support frame rate control");
 	} else if (ret < 0) {
-		LOG_ERR("Error while getting the frame interval");
+		LOG_ERROR("Error while getting the frame interval");
 		return ret;
 	} else if (ret == 0) {
 		LOG_INF("- Default frame rate : %f fps",
@@ -279,7 +279,7 @@ static int app_setup_video_controls(const struct device *const camera_dev)
 	if (IS_ENABLED(CONFIG_VIDEO_CTRL_HFLIP)) {
 		ret = video_set_ctrl(camera_dev, &ctrl);
 		if (ret < 0) {
-			LOG_ERR("Failed to set horizontal flip");
+			LOG_ERROR("Failed to set horizontal flip");
 			return ret;
 		}
 	}
@@ -288,7 +288,7 @@ static int app_setup_video_controls(const struct device *const camera_dev)
 		ctrl.id = VIDEO_CID_VFLIP;
 		ret = video_set_ctrl(camera_dev, &ctrl);
 		if (ret < 0) {
-			LOG_ERR("Failed to set vertical flip");
+			LOG_ERROR("Failed to set vertical flip");
 			return ret;
 		}
 	}
@@ -312,7 +312,7 @@ static int app_setup_video_buffers(const struct device *const camera_dev,
 
 	/* Alloc video buffers and enqueue for capture */
 	if (caps->min_vbuf_count > CONFIG_VIDEO_CAM_NUM_BUFS) {
-		LOG_ERR("Not enough buffers to start streaming");
+		LOG_ERROR("Not enough buffers to start streaming");
 		return -EINVAL;
 	}
 
@@ -326,7 +326,7 @@ static int app_setup_video_buffers(const struct device *const camera_dev,
 		vbuf = video_buffer_aligned_alloc(fmt->size, CONFIG_VIDEO_BUFFER_POOL_ALIGN,
 						  K_NO_WAIT);
 		if (vbuf == NULL) {
-			LOG_ERR("Unable to alloc video buffer");
+			LOG_ERROR("Unable to alloc video buffer");
 			return -ENOMEM;
 		}
 
@@ -334,7 +334,7 @@ static int app_setup_video_buffers(const struct device *const camera_dev,
 
 		ret = video_enqueue(camera_dev, vbuf);
 		if (ret < 0) {
-			LOG_ERR("Failed to enqueue video buffer");
+			LOG_ERROR("Failed to enqueue video buffer");
 			return ret;
 		}
 	}
@@ -401,7 +401,7 @@ int main(void)
 	ret = app_setup_video_transform(transform_dev, &camera_fmt, &transformed_fmt,
 					&transformed_vbuf);
 	if (ret < 0) {
-		LOG_ERR("Unable to setup video transform");
+		LOG_ERROR("Unable to setup video transform");
 		goto err;
 	}
 
@@ -419,7 +419,7 @@ int main(void)
 
 	ret = video_stream_start(camera_dev, VIDEO_BUF_TYPE_OUTPUT);
 	if (ret < 0) {
-		LOG_ERR("Unable to start capture (interface)");
+		LOG_ERROR("Unable to start capture (interface)");
 		goto err;
 	}
 
@@ -429,7 +429,7 @@ int main(void)
 	while (1) {
 		ret = video_dequeue(camera_dev, &camera_vbuf, K_FOREVER);
 		if (ret < 0) {
-			LOG_ERR("Unable to dequeue video buf");
+			LOG_ERROR("Unable to dequeue video buf");
 			goto err;
 		}
 
@@ -440,7 +440,7 @@ int main(void)
 
 		ret = app_transform_frame(transform_dev, camera_vbuf, &transformed_vbuf);
 		if (ret < 0) {
-			LOG_ERR("Unable to transform video frame");
+			LOG_ERROR("Unable to transform video frame");
 			goto err;
 		}
 
@@ -453,12 +453,12 @@ int main(void)
 
 		ret = video_enqueue(camera_dev, camera_vbuf);
 		if (ret < 0) {
-			LOG_ERR("Unable to requeue video buf");
+			LOG_ERROR("Unable to requeue video buf");
 			goto err;
 		}
 	}
 
 err:
-	LOG_ERR("Aborting sample");
+	LOG_ERROR("Aborting sample");
 	return 0;
 }

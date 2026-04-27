@@ -52,7 +52,7 @@ int bt_testlib_att_exchange_mtu(struct bt_conn *conn)
 
 	err = bt_gatt_exchange_mtu(conn, &exchange_mtu_params);
 	if (err != 0) {
-		LOG_ERR("Failed to exchange MTU (err %d)", err);
+		LOG_ERROR("Failed to exchange MTU (err %d)", err);
 
 		k_mutex_unlock(&exchange_mtu_lock);
 

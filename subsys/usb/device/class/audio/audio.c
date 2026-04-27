@@ -355,7 +355,7 @@ static void audio_cb_usb_status(struct usb_cfg_data *cfg,
 	dev_data = usb_get_dev_data_by_cfg(&usb_audio_data_devlist, cfg);
 
 	if (dev_data == NULL) {
-		LOG_ERR("Device data not found for cfg %p", cfg);
+		LOG_ERROR("Device data not found for cfg %p", cfg);
 		return;
 	}
 
@@ -573,14 +573,14 @@ static int handle_fu_volume_req(struct usb_audio_dev_data *audio_dev_data,
 	if (usb_reqtype_is_to_device(setup)) {
 		/* Check if *len has valid value */
 		if (*len != LEN(1, VOLUME)) {
-			LOG_ERR("*len: %d, LEN(1, VOLUME): %d", *len, LEN(1, VOLUME));
+			LOG_ERROR("*len: %d, LEN(1, VOLUME): %d", *len, LEN(1, VOLUME));
 			return -EINVAL;
 		}
 		if (setup->bRequest == USB_AUDIO_SET_CUR) {
 			target_vol = sys_get_le16(*data);
 			if (!IN_RANGE(target_vol, audio_dev_data->volumes.volume_min,
 				      audio_dev_data->volumes.volume_max)) {
-				LOG_ERR("Volume out of range: %d", target_vol);
+				LOG_ERROR("Volume out of range: %d", target_vol);
 				return -EINVAL;
 			}
 			if (target_vol % audio_dev_data->volumes.volume_res != 0) {
@@ -734,7 +734,7 @@ static int handle_interface_req(struct usb_setup_packet *pSetup,
 	audio_dev_data = get_audio_dev_data_by_entity(&entity);
 
 	if (audio_dev_data == NULL) {
-		LOG_ERR("Device data not found for entity %u", entity.id);
+		LOG_ERROR("Device data not found for entity %u", entity.id);
 		return -ENODEV;
 	}
 
@@ -846,7 +846,7 @@ static int audio_class_handle_req(struct usb_setup_packet *pSetup,
 	case USB_REQTYPE_RECIPIENT_INTERFACE:
 		return handle_interface_req(pSetup, len, data);
 	default:
-		LOG_ERR("Request recipient invalid");
+		LOG_ERROR("Request recipient invalid");
 		return -EINVAL;
 	}
 }
@@ -892,7 +892,7 @@ int usb_audio_send(const struct device *dev, struct net_buf *buffer,
 	uint8_t ep = cfg->endpoint[0].ep_addr;
 
 	if (!(ep & USB_EP_DIR_MASK)) {
-		LOG_ERR("Wrong device");
+		LOG_ERROR("Wrong device");
 		return -EINVAL;
 	}
 
@@ -902,7 +902,7 @@ int usb_audio_send(const struct device *dev, struct net_buf *buffer,
 	}
 
 	if (len > buffer->size) {
-		LOG_ERR("Cannot send %zu bytes, to much data", len);
+		LOG_ERROR("Cannot send %zu bytes, to much data", len);
 		return -EINVAL;
 	}
 
@@ -952,14 +952,14 @@ static void audio_receive_cb(uint8_t ep, enum usb_dc_ep_cb_status_code status)
 	if (audio_dev_data->ops && audio_dev_data->ops->data_received_cb) {
 		buffer = net_buf_alloc(audio_dev_data->pool, K_NO_WAIT);
 		if (!buffer) {
-			LOG_ERR("Failed to allocate data buffer");
+			LOG_ERROR("Failed to allocate data buffer");
 			return;
 		}
 
 		ret = usb_read(ep, buffer->data, buffer->size, &ret_bytes);
 
 		if (ret) {
-			LOG_ERR("ret=%d ", ret);
+			LOG_ERROR("ret=%d ", ret);
 			net_buf_unref(buffer);
 			return;
 		}

@@ -84,7 +84,8 @@ static int store_entries(void)
 
 		status = SETTINGS_PSA_SET(uid, write_size, data_ptr, PSA_STORAGE_FLAG_NONE);
 		if (status) {
-			LOG_ERR("Error storing %d bytes of metadata! Bytes Remaining: %d, status: "
+			LOG_ERROR(
+				"Error storing %d bytes of metadata! Bytes Remaining: %d, status: "
 				"%d",
 				write_size, remaining, status);
 			return status;
@@ -151,7 +152,7 @@ static ssize_t settings_psa_read_fn(void *back_end, void *data, size_t len)
 	LOG_DBG("reading index: %d", index);
 
 	if (index < 0 || index >= CONFIG_SETTINGS_TFM_PSA_NUM_ENTRIES) {
-		LOG_ERR("Invalid index %d in metadata", index);
+		LOG_ERROR("Invalid index %d in metadata", index);
 		return 0;
 	}
 
@@ -193,13 +194,13 @@ static int settings_psa_save(struct settings_store *cs, const char *name, const 
 	bool delete;
 
 	if (entries_count >= CONFIG_SETTINGS_TFM_PSA_NUM_ENTRIES) {
-		LOG_ERR("%s: Max settings reached: %d", __func__,
-			CONFIG_SETTINGS_TFM_PSA_NUM_ENTRIES);
+		LOG_ERROR("%s: Max settings reached: %d", __func__,
+			  CONFIG_SETTINGS_TFM_PSA_NUM_ENTRIES);
 		return -ENOMEM;
 	}
 
 	if (val_len > SETTINGS_MAX_VAL_LEN) {
-		LOG_ERR("%s: Invalid settings size - val_len: %d", __func__, val_len);
+		LOG_ERROR("%s: Invalid settings size - val_len: %d", __func__, val_len);
 		return -EINVAL;
 	}
 
@@ -274,14 +275,14 @@ int settings_backend_init(void)
 
 	if (status != PSA_SUCCESS) {
 		if (status != PSA_ERROR_DOES_NOT_EXIST) {
-			LOG_ERR("Error %s metadata: status %d", "loading", status);
+			LOG_ERROR("Error %s metadata: status %d", "loading", status);
 			return -EIO;
 		}
 
 		/* If resource does not exist, we need to allocate it */
 		status = store_entries();
 		if (status != PSA_SUCCESS) {
-			LOG_ERR("Error %s metadata: status %d", "storing", status);
+			LOG_ERROR("Error %s metadata: status %d", "storing", status);
 			return -EIO;
 		}
 	}

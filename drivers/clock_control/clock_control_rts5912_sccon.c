@@ -97,10 +97,10 @@ static int rts5912_periph_clock_control(const struct device *dev, clock_control_
 		LOG_DBG("Turn GRP2-%d clock <%s>", clk_idx, on_off ? "ON" : "OFF");
 		break;
 	case RTS5912_SCCON_SYS:
-		LOG_ERR("Not support peripheral group #%d-%d", clk_grp, clk_idx);
+		LOG_ERROR("Not support peripheral group #%d-%d", clk_grp, clk_idx);
 		return -ENOTSUP;
 	default:
-		LOG_ERR("Unknown peripheral group #%d", clk_grp);
+		LOG_ERROR("Unknown peripheral group #%d", clk_grp);
 		return -EINVAL;
 	}
 
@@ -209,10 +209,10 @@ static int rts5912_clock_control_get_rate(const struct device *dev,
 	case RTS5912_SCCON_PERIPH_GRP1:
 		__fallthrough;
 	case RTS5912_SCCON_PERIPH_GRP2:
-		LOG_ERR("Not support peripheral group #%d-%d", clk_grp, clk_idx);
+		LOG_ERROR("Not support peripheral group #%d-%d", clk_grp, clk_idx);
 		return -ENOTSUP;
 	default:
-		LOG_ERR("Unknown peripheral group #%d", clk_grp);
+		LOG_ERROR("Unknown peripheral group #%d", clk_grp);
 		return -EINVAL;
 	}
 

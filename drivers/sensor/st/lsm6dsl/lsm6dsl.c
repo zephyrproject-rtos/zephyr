@@ -812,20 +812,20 @@ static int lsm6dsl_init(const struct device *dev)
 
 	ret = config->bus_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize sensor bus");
+		LOG_ERROR("Failed to initialize sensor bus");
 		return ret;
 	}
 
 	ret = lsm6dsl_init_chip(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize chip");
+		LOG_ERROR("Failed to initialize chip");
 		return ret;
 	}
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
 	ret = lsm6dsl_init_interrupt(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize interrupt.");
+		LOG_ERROR("Failed to initialize interrupt.");
 		return ret;
 	}
 #endif
@@ -833,7 +833,7 @@ static int lsm6dsl_init(const struct device *dev)
 #ifdef CONFIG_LSM6DSL_SENSORHUB
 	ret = lsm6dsl_shub_init_external_chip(dev);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize external chip");
+		LOG_ERROR("Failed to initialize external chip");
 		return ret;
 	}
 #endif
@@ -856,13 +856,13 @@ static int lsm6dsl_pm_action(const struct device *dev,
 		accel_odr = lsm6dsl_freq_to_odr_val(data->accel_freq);
 		ret = lsm6dsl_accel_set_odr_raw(dev, accel_odr);
 		if (ret < 0) {
-			LOG_ERR("Failed to resume accelerometer");
+			LOG_ERROR("Failed to resume accelerometer");
 			break;
 		}
 		gyro_odr = lsm6dsl_freq_to_odr_val(data->gyro_freq);
 		ret = lsm6dsl_gyro_set_odr_raw(dev, gyro_odr);
 		if (ret < 0) {
-			LOG_ERR("Failed to resume gyro");
+			LOG_ERROR("Failed to resume gyro");
 			break;
 		}
 		break;
@@ -874,14 +874,14 @@ static int lsm6dsl_pm_action(const struct device *dev,
 		ret = data->hw_tf->update_reg(dev, LSM6DSL_REG_CTRL1_XL,
 					      LSM6DSL_MASK_CTRL1_XL_ODR_XL, 0);
 		if (ret < 0) {
-			LOG_ERR("Failed to suspend accelerometer");
+			LOG_ERROR("Failed to suspend accelerometer");
 			break;
 		}
 		/* Set gyro ODR to power-down */
 		ret = data->hw_tf->update_reg(dev, LSM6DSL_REG_CTRL2_G,
 					      LSM6DSL_MASK_CTRL2_G_ODR_G, 0);
 		if (ret < 0) {
-			LOG_ERR("Failed to suspend gyro");
+			LOG_ERROR("Failed to suspend gyro");
 			break;
 		}
 

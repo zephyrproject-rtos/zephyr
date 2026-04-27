@@ -160,7 +160,7 @@ static int feedback_edge_counter_setup(void)
 
 	err = nrfx_timer_init(&feedback_timer_instance, &cfg, NULL);
 	if (err != 0) {
-		LOG_ERR("nrfx timer init error (sample clk feedback) - Return value: %d", err);
+		LOG_ERROR("nrfx timer init error (sample clk feedback) - Return value: %d", err);
 		return err;
 	}
 
@@ -169,7 +169,7 @@ static int feedback_edge_counter_setup(void)
 	tep = nrfx_timer_task_address_get(&feedback_timer_instance, NRF_TIMER_TASK_COUNT);
 	err = nrfx_gppi_conn_alloc(eep, tep, &feedback_gppi_handle);
 	if (err < 0) {
-		LOG_ERR("gppi_conn_alloc failed with: %d\n", err);
+		LOG_ERROR("gppi_conn_alloc failed with: %d\n", err);
 		return err;
 	}
 
@@ -191,7 +191,7 @@ static int feedback_relative_timer_setup(void)
 
 	err = nrfx_timer_init(&feedback_timer_instance, &cfg, NULL);
 	if (err != 0) {
-		LOG_ERR("nrfx timer init error (relative timer) - Return value: %d", err);
+		LOG_ERROR("nrfx timer init error (relative timer) - Return value: %d", err);
 	}
 
 	return err;
@@ -224,7 +224,7 @@ struct feedback_ctx *feedback_init(void)
 	/* Subscribe TIMER CAPTURE task to USBD SOF event */
 	err = nrfx_gppi_conn_alloc(USB_SOF_EVENT_ADDRESS, tsk1, &usbd_sof_gppi_handle);
 	if (err < 0) {
-		LOG_ERR("gppi_conn_alloc failed with: %d\n", err);
+		LOG_ERROR("gppi_conn_alloc failed with: %d\n", err);
 		return &fb_ctx;
 	}
 
@@ -237,7 +237,7 @@ struct feedback_ctx *feedback_init(void)
 	/* Subscribe TIMER CAPTURE task to I2S FRAMESTART event */
 	err = nrfx_gppi_conn_alloc(I2S_FRAMESTART_EVENT_ADDRESS, tsk2, &i2s_framestart_gppi_handle);
 	if (err < 0) {
-		LOG_ERR("gppi_conn_alloc failed with: %d\n", err);
+		LOG_ERROR("gppi_conn_alloc failed with: %d\n", err);
 		return &fb_ctx;
 	}
 

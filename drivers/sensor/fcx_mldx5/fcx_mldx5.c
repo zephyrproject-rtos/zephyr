@@ -135,10 +135,11 @@ static int fcx_mldx5_frame_check_error(const struct fcx_mldx5_data *data, const 
 
 	if (data_received[0] != 'E' || char2hex(data_received[1], &error) != 0 ||
 	    error >= ARRAY_SIZE(fcx_mldx5_errors)) {
-		LOG_ERR("Could not parse error value %.*s",
-			fcx_mldx5_cmds_data_len[FCX_MLDX5_CMD_ERROR], data_received);
+		LOG_ERROR("Could not parse error value %.*s",
+			  fcx_mldx5_cmds_data_len[FCX_MLDX5_CMD_ERROR], data_received);
 	} else {
-		LOG_ERR("Command '%s' received error '%s'", command_sent, fcx_mldx5_errors[error]);
+		LOG_ERROR("Command '%s' received error '%s'", command_sent,
+			  fcx_mldx5_errors[error]);
 	}
 
 	return -EIO;
@@ -155,18 +156,18 @@ static int fcx_mldx5_frame_verify(const struct fcx_mldx5_data *data, enum fcx_ml
 	if (fcx_mldx5_frame_check_error(data, command) != 0) {
 		return -EIO;
 	} else if (data->frame_len != frame_len) {
-		LOG_ERR("Expected command %s frame length %u not %u", command, frame_len,
-			data->frame_len);
+		LOG_ERROR("Expected command %s frame length %u not %u", command, frame_len,
+			  data->frame_len);
 		return -EIO;
 	} else if (data->frame[FCX_MLDX5_STX_INDEX] != FCX_MLDX5_STX) {
-		LOG_ERR("No STX");
+		LOG_ERROR("No STX");
 		return -EIO;
 	} else if (strncmp(command, command_received, FCX_MLDX5_CMD_LEN) != 0) {
-		LOG_ERR("Expected command %s not %.*s", command, FCX_MLDX5_CMD_LEN,
-			command_received);
+		LOG_ERROR("Expected command %s not %.*s", command, FCX_MLDX5_CMD_LEN,
+			  command_received);
 		return -EIO;
 	} else if (data->frame[FCX_MLDX5_ETX_INDEX(data->frame_len)] != FCX_MLDX5_ETX) {
-		LOG_ERR("No ETX");
+		LOG_ERROR("No ETX");
 		return -EIO;
 	}
 
@@ -176,7 +177,7 @@ static int fcx_mldx5_frame_verify(const struct fcx_mldx5_data *data, enum fcx_ml
 	checksum_received =
 		strtol(&data->frame[FCX_MLDX5_CHECKSUM_INDEX(data->frame_len)], NULL, 16);
 	if (checksum != checksum_received) {
-		LOG_ERR("Expected checksum 0x%02x not 0x%02x", checksum, checksum_received);
+		LOG_ERROR("Expected checksum 0x%02x not 0x%02x", checksum, checksum_received);
 		return -EIO;
 	}
 
@@ -209,7 +210,7 @@ static void fcx_mldx5_uart_isr(const struct device *uart_dev, void *user_data)
 			  : -ENOMEM;
 
 	if (rc < 0) {
-		LOG_ERR("UART read failed: %d", rc < 0 ? rc : -ERANGE);
+		LOG_ERROR("UART read failed: %d", rc < 0 ? rc : -ERANGE);
 		fcx_mldx5_uart_flush(uart_dev);
 		LOG_HEXDUMP_ERR(data->frame, data->frame_len, "Discarding");
 	} else {
@@ -240,7 +241,7 @@ static void fcx_mldx5_uart_send(const struct device *dev, enum fcx_mldx5_cmd cmd
 		if ((FCX_MLDX5_DATA_INDEX + cmd_data_len) <= FCX_MLDX5_MAX_FRAME_LEN) {
 			memcpy(&buf[FCX_MLDX5_DATA_INDEX], cmd_data, cmd_data_len);
 		} else {
-			LOG_ERR("%s: cmd_data too large for buffer", __func__);
+			LOG_ERROR("%s: cmd_data too large for buffer", __func__);
 			return;
 		}
 	}
@@ -285,7 +286,7 @@ static int fcx_mldx5_read_status_value(struct fcx_mldx5_data *data, uint8_t data
 	uint8_t value;
 
 	if (cmd_data_received[0] != '0' || char2hex(cmd_data_received[1], &value)) {
-		LOG_ERR("Could not parse status value %.*s", data_len, cmd_data_received);
+		LOG_ERROR("Could not parse status value %.*s", data_len, cmd_data_received);
 		return -EIO;
 	}
 
@@ -299,7 +300,7 @@ static int fcx_mldx5_read_status_value(struct fcx_mldx5_data *data, uint8_t data
 	case FCX_MLDX5_STATUS_ERROR:
 		break;
 	default:
-		LOG_ERR("Status value %u invalid", value);
+		LOG_ERROR("Status value %u invalid", value);
 		return -EIO;
 	}
 
@@ -351,7 +352,7 @@ static int fcx_mldx5_buffer_process(struct fcx_mldx5_data *data, enum fcx_mldx5_
 	case FCX_MLDX5_CMD_RESET:
 		return 0;
 	default:
-		LOG_ERR("Unknown command 0x%02x", cmd);
+		LOG_ERROR("Unknown command 0x%02x", cmd);
 		return -EIO;
 	}
 }
@@ -369,7 +370,7 @@ static int fcx_mldx5_uart_transceive(const struct device *dev, enum fcx_mldx5_cm
 
 	rc = fcx_mldx5_await_receive(dev);
 	if (rc != 0) {
-		LOG_ERR("%s did not receive a response: %d", fcx_mldx5_cmds[cmd], rc);
+		LOG_ERROR("%s did not receive a response: %d", fcx_mldx5_cmds[cmd], rc);
 	} else {
 		rc = fcx_mldx5_buffer_process(data, cmd, cmd_data);
 	}
@@ -464,7 +465,7 @@ static int fcx_mldx5_init(const struct device *dev)
 
 	rc = uart_irq_callback_user_data_set(cfg->uart_dev, cfg->cb, (void *)dev);
 	if (rc != 0) {
-		LOG_ERR("UART IRQ setup failed: %d", rc);
+		LOG_ERROR("UART IRQ setup failed: %d", rc);
 		return rc;
 	}
 
@@ -473,7 +474,7 @@ static int fcx_mldx5_init(const struct device *dev)
 	 */
 	if (!WAIT_FOR(fcx_mldx5_uart_transceive(dev, FCX_MLDX5_CMD_READ_STATUS, NULL) == 0,
 		      1000 * USEC_PER_MSEC, k_msleep(10))) {
-		LOG_ERR("Read status failed");
+		LOG_ERROR("Read status failed");
 		return -EIO;
 	}
 

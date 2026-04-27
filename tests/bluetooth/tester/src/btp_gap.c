@@ -409,7 +409,7 @@ static void oob_data_request(struct bt_conn *conn,
 	case BT_CONN_OOB_LE_SC:
 	{
 		if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
-			LOG_ERR("OOB LE SC not supported");
+			LOG_ERROR("OOB LE SC not supported");
 			break;
 		}
 
@@ -452,7 +452,7 @@ static void oob_data_request(struct bt_conn *conn,
 
 	case BT_CONN_OOB_LE_LEGACY:
 		if (IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY)) {
-			LOG_ERR("OOB LE Legacy not supported");
+			LOG_ERROR("OOB LE Legacy not supported");
 			break;
 		}
 
@@ -461,12 +461,12 @@ static void oob_data_request(struct bt_conn *conn,
 
 		err = bt_le_oob_set_legacy_tk(conn, oob_legacy_tk);
 		if (err < 0) {
-			LOG_ERR("Failed to set OOB TK: %d", err);
+			LOG_ERROR("Failed to set OOB TK: %d", err);
 		}
 
 		break;
 	default:
-		LOG_ERR("Unhandled OOB type %d", oob_info->type);
+		LOG_ERROR("Unhandled OOB type %d", oob_info->type);
 		break;
 	}
 }
@@ -516,7 +516,7 @@ static uint8_t set_powered(const void *cmd, uint16_t cmd_len,
 	if (cp->powered) {
 		err = bt_enable(NULL);
 		if (err < 0) {
-			LOG_ERR("Unable to enable Bluetooth: %d", err);
+			LOG_ERROR("Unable to enable Bluetooth: %d", err);
 			return BTP_STATUS_FAILED;
 		}
 		bt_conn_cb_register(&conn_callbacks);
@@ -524,7 +524,7 @@ static uint8_t set_powered(const void *cmd, uint16_t cmd_len,
 	} else {
 		err = bt_disable();
 		if (err < 0) {
-			LOG_ERR("Unable to disable Bluetooth: %d", err);
+			LOG_ERROR("Unable to disable Bluetooth: %d", err);
 			return BTP_STATUS_FAILED;
 		}
 		bt_conn_cb_unregister(&conn_callbacks);
@@ -584,7 +584,7 @@ struct bt_le_ext_adv *tester_gap_ext_adv_get(uint8_t ext_adv_idx)
 	}
 
 	if (ext_adv_idx >= ARRAY_SIZE(ext_adv_sets)) {
-		LOG_ERR("Invalid ext_adv_id: %d", ext_adv_idx);
+		LOG_ERROR("Invalid ext_adv_id: %d", ext_adv_idx);
 		return NULL;
 	}
 
@@ -630,13 +630,13 @@ int tester_gap_start_ext_adv(struct bt_le_ext_adv *ext_adv)
 	int err;
 
 	if (ext_adv == NULL) {
-		LOG_ERR("Invalid ext_adv");
+		LOG_ERROR("Invalid ext_adv");
 		return -EINVAL;
 	}
 
 	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
-		LOG_ERR("Failed to start advertising");
+		LOG_ERROR("Failed to start advertising");
 		return -EINVAL;
 	}
 
@@ -654,13 +654,13 @@ int tester_gap_stop_ext_adv(struct bt_le_ext_adv *ext_adv)
 	int err;
 
 	if (ext_adv == NULL) {
-		LOG_ERR("Invalid ext_adv");
+		LOG_ERROR("Invalid ext_adv");
 		return -EINVAL;
 	}
 
 	err = bt_le_ext_adv_stop(ext_adv);
 	if (err != 0) {
-		LOG_ERR("Failed to stop advertising");
+		LOG_ERROR("Failed to stop advertising");
 
 		return -EINVAL;
 	}
@@ -780,14 +780,14 @@ int tester_gap_clear_adv_instance(struct bt_le_ext_adv *ext_adv)
 	}
 
 	if (ext_adv == NULL) {
-		LOG_ERR("Invalid ext_adv");
+		LOG_ERROR("Invalid ext_adv");
 		return -EINVAL;
 	}
 
 	int index = tester_gap_ext_adv_idx_get(ext_adv);
 
 	if (index < 0) {
-		LOG_ERR("Failed to get ext_adv index");
+		LOG_ERROR("Failed to get ext_adv index");
 		return -EINVAL;
 	}
 
@@ -861,7 +861,7 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param,
 		int index = tester_gap_ext_adv_idx_free_get();
 
 		if (index < 0) {
-			LOG_ERR("No free ext_adv index");
+			LOG_ERROR("No free ext_adv index");
 			return -ENOMEM;
 		}
 
@@ -870,7 +870,7 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param,
 
 		err = bt_le_ext_adv_create(param, NULL, &ext_adv_sets[index]);
 		if (err != 0) {
-			LOG_ERR("Failed to create ext adv(err %d)", err);
+			LOG_ERROR("Failed to create ext adv(err %d)", err);
 			return err;
 		}
 
@@ -916,7 +916,7 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 
 	for (i = 0, adv_len = 1U; i < cp->adv_data_len; adv_len++) {
 		if (adv_len >= ARRAY_SIZE(ad)) {
-			LOG_ERR("ad[] Out of memory");
+			LOG_ERROR("ad[] Out of memory");
 			return BTP_STATUS_FAILED;
 		}
 
@@ -928,7 +928,7 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 
 	for (sd_len = 0U; i < cp->adv_data_len + cp->scan_rsp_len; sd_len++) {
 		if (sd_len >= ARRAY_SIZE(sd)) {
-			LOG_ERR("sd[] Out of memory");
+			LOG_ERROR("sd[] Out of memory");
 			return BTP_STATUS_FAILED;
 		}
 
@@ -953,7 +953,7 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 
 	/* BTP API don't allow to set empty scan response data. */
 	if (err < 0) {
-		LOG_ERR("Failed to start advertising");
+		LOG_ERROR("Failed to start advertising");
 
 		return BTP_STATUS_FAILED;
 	}
@@ -981,7 +981,7 @@ static uint8_t start_directed_advertising(const void *cmd, uint16_t cmd_len,
 	bool peer_car_supported = false;
 
 	if (bt_addr_le_eq(&cp->address, &bt_addr_le_any)) {
-		LOG_ERR("Invalid peer address");
+		LOG_ERROR("Invalid peer address");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1023,7 +1023,7 @@ static uint8_t start_directed_advertising(const void *cmd, uint16_t cmd_len,
 	adv_param.peer = &cp->address;
 
 	if (bt_le_adv_start(&adv_param, NULL, 0, NULL, 0) < 0) {
-		LOG_ERR("Failed to start advertising");
+		LOG_ERROR("Failed to start advertising");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1049,7 +1049,7 @@ static uint8_t stop_advertising(const void *cmd, uint16_t cmd_len,
 
 	if (err < 0) {
 		tester_rsp(BTP_SERVICE_ID_GAP, BTP_GAP_STOP_ADVERTISING, BTP_STATUS_FAILED);
-		LOG_ERR("Failed to stop advertising: %d", err);
+		LOG_ERROR("Failed to stop advertising: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1286,14 +1286,14 @@ static uint8_t set_le_discovery_params(const void *cmd, uint16_t cmd_len, void *
 
 	if (!IN_RANGE(cp->interval, MIN_SCAN_INTERVAL, MAX_SCAN_INTERVAL) ||
 	    !IN_RANGE(cp->window, MIN_SCAN_WINDOW, MAX_SCAN_WINDOW)) {
-		LOG_ERR("Invalid discovery parameters interval %u window %u", cp->interval,
-			cp->window);
+		LOG_ERROR("Invalid discovery parameters interval %u window %u", cp->interval,
+			  cp->window);
 		return BTP_STATUS_FAILED;
 	}
 
 	/* 1M default we do not need to test for it */
 	if ((cp->phy & ~(BTP_GAP_PHY_LE_1M | BTP_GAP_PHY_LE_CODED)) != 0) {
-		LOG_ERR("Invalid PHY %u", cp->phy);
+		LOG_ERROR("Invalid PHY %u", cp->phy);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1326,7 +1326,7 @@ static uint8_t start_discovery(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (bt_le_scan_start(&scan_param, device_found) < 0) {
-		LOG_ERR("Failed to start scanning");
+		LOG_ERROR("Failed to start scanning");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1344,14 +1344,14 @@ static uint8_t stop_discovery(const void *cmd, uint16_t cmd_len,
 	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
 		err = bt_br_discovery_stop();
 		if ((err < 0) && (err != -EALREADY)) {
-			LOG_ERR("Failed to stop discovery: %d", err);
+			LOG_ERROR("Failed to stop discovery: %d", err);
 			return BTP_STATUS_FAILED;
 		}
 	}
 
 	err = bt_le_scan_stop();
 	if (err < 0) {
-		LOG_ERR("Failed to stop scanning: %d", err);
+		LOG_ERROR("Failed to stop scanning: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1365,7 +1365,7 @@ static uint8_t br_connect(const struct btp_gap_connect_cmd *cp)
 
 	conn = bt_conn_create_br(&cp->address.a, BT_BR_CONN_PARAM_DEFAULT);
 	if (conn == NULL) {
-		LOG_ERR("Failed to create connection");
+		LOG_ERROR("Failed to create connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1403,7 +1403,7 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 
 		err = bt_conn_le_create(&cp->address, BT_CONN_LE_CREATE_CONN, &conn_param, &conn);
 		if (err) {
-			LOG_ERR("Failed to create connection (%d)", err);
+			LOG_ERROR("Failed to create connection (%d)", err);
 			return BTP_STATUS_FAILED;
 		}
 
@@ -1411,7 +1411,7 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 	} else {
 		err = bt_conn_le_create_auto(BT_CONN_LE_CREATE_CONN, &conn_param);
 		if (err) {
-			LOG_ERR("Failed to create auto connection (%d)", err);
+			LOG_ERROR("Failed to create auto connection (%d)", err);
 			return BTP_STATUS_FAILED;
 		}
 	}
@@ -1437,12 +1437,12 @@ static uint8_t disconnect(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (conn == NULL) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
 	if (bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN)) {
-		LOG_ERR("Failed to disconnect");
+		LOG_ERROR("Failed to disconnect");
 		status = BTP_STATUS_FAILED;
 	} else {
 		status = BTP_STATUS_SUCCESS;
@@ -1708,7 +1708,7 @@ static uint8_t pair(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1718,7 +1718,7 @@ static uint8_t pair(const void *cmd, uint16_t cmd_len,
 	 * Just ignore the error.
 	 */
 	if ((err < 0) && (err != -EBUSY)) {
-		LOG_ERR("Failed to set security: %d", err);
+		LOG_ERROR("Failed to set security: %d", err);
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
@@ -1751,7 +1751,7 @@ static uint8_t pair_v2(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *r
 	}
 
 	if (conn == NULL) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1762,7 +1762,7 @@ static uint8_t pair_v2(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *r
 
 	err = bt_conn_set_security(conn, level);
 	if (err < 0) {
-		LOG_ERR("Failed to set security: %d", err);
+		LOG_ERROR("Failed to set security: %d", err);
 		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
@@ -1792,7 +1792,7 @@ static uint8_t br_unpair(const struct btp_gap_unpair_cmd *cp)
 	bt_conn_unref(conn);
 
 	if (err < 0) {
-		LOG_ERR("Failed to disconnect: %d", err);
+		LOG_ERROR("Failed to disconnect: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 keys:
@@ -1827,7 +1827,7 @@ static uint8_t unpair(const void *cmd, uint16_t cmd_len,
 	bt_conn_unref(conn);
 
 	if (err < 0) {
-		LOG_ERR("Failed to disconnect: %d", err);
+		LOG_ERROR("Failed to disconnect: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 keys:
@@ -1857,7 +1857,7 @@ static uint8_t passkey_entry(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1865,7 +1865,7 @@ static uint8_t passkey_entry(const void *cmd, uint16_t cmd_len,
 	bt_conn_unref(conn);
 
 	if (err < 0) {
-		LOG_ERR("Failed to enter passkey: %d", err);
+		LOG_ERROR("Failed to enter passkey: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1890,19 +1890,19 @@ static uint8_t passkey_confirm(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
 	if (cp->match) {
 		err = bt_conn_auth_passkey_confirm(conn);
 		if (err < 0) {
-			LOG_ERR("Failed to confirm passkey: %d", err);
+			LOG_ERROR("Failed to confirm passkey: %d", err);
 		}
 	} else {
 		err = bt_conn_auth_cancel(conn);
 		if (err < 0) {
-			LOG_ERR("Failed to cancel auth: %d", err);
+			LOG_ERROR("Failed to cancel auth: %d", err);
 		}
 	}
 
@@ -1939,7 +1939,7 @@ static uint8_t conn_param_update(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1947,7 +1947,7 @@ static uint8_t conn_param_update(const void *cmd, uint16_t cmd_len,
 	bt_conn_unref(conn);
 
 	if (err < 0) {
-		LOG_ERR("Failed to update params: %d", err);
+		LOG_ERROR("Failed to update params: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 	return BTP_STATUS_SUCCESS;
@@ -2181,7 +2181,7 @@ int tester_gap_padv_configure(struct bt_le_ext_adv *ext_adv,
 						     BTP_GAP_ADDR_TYPE_IDENTITY, ad, 1, NULL, 0,
 						     NULL, &ext_adv);
 		if (err != 0) {
-			LOG_ERR("Failed to create adv instance (err %d)\n", err);
+			LOG_ERROR("Failed to create adv instance (err %d)\n", err);
 			return -EINVAL;
 		}
 	}
@@ -2191,7 +2191,7 @@ int tester_gap_padv_configure(struct bt_le_ext_adv *ext_adv,
 	 */
 	err = bt_le_per_adv_set_param(ext_adv, param);
 	if (err != 0) {
-		LOG_ERR("Failed to set periodic advertising parameters (err %d)\n", err);
+		LOG_ERROR("Failed to set periodic advertising parameters (err %d)\n", err);
 	}
 
 	return err;
@@ -2335,7 +2335,7 @@ static uint8_t padv_set_data(const void *cmd, uint16_t cmd_len,
 
 	for (uint8_t i = 0; i < cp->data_len; padv_len++) {
 		if (padv_len >= ARRAY_SIZE(padv)) {
-			LOG_ERR("padv[] Out of memory");
+			LOG_ERROR("padv[] Out of memory");
 			return BTP_STATUS_FAILED;
 		}
 
@@ -2585,7 +2585,7 @@ static void iso_sync_receiver_big_started_cb(struct bt_iso_big *big)
 	__ASSERT(found, "Failed to find the valid ISO info");
 
 	if (!found) {
-		LOG_ERR("Failed to find the valid ISO info");
+		LOG_ERROR("Failed to find the valid ISO info");
 		return;
 	}
 
@@ -2642,7 +2642,7 @@ static void iso_sync_receiver_recv(struct bt_iso_chan *chan, const struct bt_iso
 
 	err = bt_iso_chan_get_index(chan);
 	if (err < 0) {
-		LOG_ERR("Failed to get BIS channel index: %d", err);
+		LOG_ERROR("Failed to get BIS channel index: %d", err);
 		return;
 	}
 
@@ -2680,14 +2680,14 @@ static void iso_sync_receiver_connected(struct bt_iso_chan *chan)
 
 	err = bt_iso_chan_get_index(chan);
 	if (err < 0) {
-		LOG_ERR("Failed to get BIS channel index: %d", err);
+		LOG_ERROR("Failed to get BIS channel index: %d", err);
 		return;
 	}
 	ev.bis_id = (uint8_t)err;
 
 	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST, &hci_path);
 	if (err != 0) {
-		LOG_ERR("Failed to setup ISO RX data path: %d", err);
+		LOG_ERROR("Failed to setup ISO RX data path: %d", err);
 		return;
 	}
 
@@ -2702,7 +2702,7 @@ static void iso_sync_receiver_disconnected(struct bt_iso_chan *chan, uint8_t rea
 
 	err = bt_iso_remove_data_path(chan, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
 	if (err != 0) {
-		LOG_ERR("Failed to remove ISO RX data path: %d", err);
+		LOG_ERROR("Failed to remove ISO RX data path: %d", err);
 	}
 }
 
@@ -2730,7 +2730,7 @@ static void iso_broadcaster_connected(struct bt_iso_chan *chan)
 
 	err = bt_iso_chan_get_index(chan);
 	if (err < 0) {
-		LOG_ERR("Failed to get BIS channel index: %d", err);
+		LOG_ERROR("Failed to get BIS channel index: %d", err);
 		return;
 	}
 	ev.bis_id = (uint8_t)err;
@@ -2740,7 +2740,7 @@ static void iso_broadcaster_connected(struct bt_iso_chan *chan)
 
 	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
 	if (err != 0) {
-		LOG_ERR("Failed to setup ISO TX data path: %d", err);
+		LOG_ERROR("Failed to setup ISO TX data path: %d", err);
 		return;
 	}
 
@@ -2796,24 +2796,24 @@ static uint8_t big_create_sync(const void *cmd, uint16_t cmd_len, void *rsp, uin
 
 	if ((cmd_len < sizeof(*cp)) ||
 	    (cmd_len != (sizeof(*cp) + sizeof(param.bcode) * cp->encryption))) {
-		LOG_ERR("Invalid cmd len");
+		LOG_ERROR("Invalid cmd len");
 		return BTP_STATUS_FAILED;
 	}
 
 	if (!(cp->encryption == BTP_GAP_BIG_CREATE_SYNC_ENC_DISABLE ||
 	      cp->encryption == BTP_GAP_BIG_CREATE_SYNC_ENC_ENABLE)) {
-		LOG_ERR("Invalid encryption %u", cp->encryption);
+		LOG_ERROR("Invalid encryption %u", cp->encryption);
 		return BTP_STATUS_FAILED;
 	}
 
 	if ((pa_sync == NULL) || !bt_addr_le_eq(&cp->address, &pa_sync->addr) ||
 	    (cp->sid != pa_sync->sid)) {
-		LOG_ERR("Invalid PA sync or SID");
+		LOG_ERROR("Invalid PA sync or SID");
 		return BTP_STATUS_FAILED;
 	}
 
 	if (cp->num_bis > ARRAY_SIZE(bis_channels)) {
-		LOG_ERR("BIS num exceeds %u > %u", cp->num_bis, ARRAY_SIZE(bis_channels));
+		LOG_ERROR("BIS num exceeds %u > %u", cp->num_bis, ARRAY_SIZE(bis_channels));
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2834,7 +2834,7 @@ static uint8_t big_create_sync(const void *cmd, uint16_t cmd_len, void *rsp, uin
 
 	err = bt_iso_big_sync(pa_sync, &param, &iso_sync_receiver_big);
 	if (err != 0) {
-		LOG_ERR("Unable to sync to BIG (err %d)", err);
+		LOG_ERROR("Unable to sync to BIG (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2861,23 +2861,23 @@ static uint8_t create_big(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t
 
 	if ((cmd_len < sizeof(*cp)) ||
 	    (cmd_len != (sizeof(*cp) + sizeof(param.bcode) * cp->encryption))) {
-		LOG_ERR("Invalid cmd len");
+		LOG_ERROR("Invalid cmd len");
 		return BTP_STATUS_FAILED;
 	}
 
 	if (!(cp->encryption == BTP_GAP_CREATE_BIG_ENC_DISABLE ||
 	      cp->encryption == BTP_GAP_CREATE_BIG_ENC_ENABLE)) {
-		LOG_ERR("Invalid encryption %u", cp->encryption);
+		LOG_ERROR("Invalid encryption %u", cp->encryption);
 		return BTP_STATUS_FAILED;
 	}
 
 	if ((ext_adv == NULL) || (cp->id != ext_adv->id)) {
-		LOG_ERR("Invalid extended adv");
+		LOG_ERROR("Invalid extended adv");
 		return BTP_STATUS_FAILED;
 	}
 
 	if (cp->num_bis > ARRAY_SIZE(bis_channels)) {
-		LOG_ERR("BIS num exceeds %u > %u", cp->num_bis, ARRAY_SIZE(bis_channels));
+		LOG_ERROR("BIS num exceeds %u > %u", cp->num_bis, ARRAY_SIZE(bis_channels));
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2905,7 +2905,7 @@ static uint8_t create_big(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t
 
 	err = bt_iso_big_create(ext_adv, &param, &iso_broadcaster_big);
 	if (err != 0) {
-		LOG_ERR("Unable to create BIG (err %d)", err);
+		LOG_ERROR("Unable to create BIG (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2948,7 +2948,7 @@ static uint8_t bis_broadcast(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 
 	buf = net_buf_alloc(&bis_tx_pool, K_NO_WAIT);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERROR("Failed to allocate buffer");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2956,7 +2956,7 @@ static uint8_t bis_broadcast(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 
 	if (cp->data_len > net_buf_tailroom(buf)) {
 		net_buf_unref(buf);
-		LOG_ERR("Data length exceeds buffer tailroom");
+		LOG_ERROR("Data length exceeds buffer tailroom");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2967,7 +2967,7 @@ static uint8_t bis_broadcast(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 
 	err = bt_iso_chan_send(&bis_iso_chan, buf, bis_sn_last);
 	if (err < 0) {
-		LOG_ERR("Unable to broadcast: %d", -err);
+		LOG_ERROR("Unable to broadcast: %d", -err);
 		net_buf_unref(buf);
 		return BTP_STATUS_FAILED;
 	}
@@ -3014,7 +3014,7 @@ static uint8_t ead_encrypt_data(const void *cmd, uint16_t cmd_len, void *rsp, ui
 
 	encrypted_size = BT_EAD_ENCRYPTED_PAYLOAD_SIZE(cp->adv_data_len);
 	if (encrypted_size > BTP_GAP_EAD_MAX_DATA_LEN) {
-		LOG_ERR("Plain text data length exceeds max supported");
+		LOG_ERROR("Plain text data length exceeds max supported");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3022,7 +3022,7 @@ static uint8_t ead_encrypt_data(const void *cmd, uint16_t cmd_len, void *rsp, ui
 			     cp->adv_data, cp->adv_data_len, rp->encrypted_data);
 
 	if (err < 0) {
-		LOG_ERR("Failed to encrypt data: %d", err);
+		LOG_ERROR("Failed to encrypt data: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3046,7 +3046,7 @@ static uint8_t ead_decrypt_data(const void *cmd, uint16_t cmd_len, void *rsp, ui
 			     cp->encrypted_data, cp->encrypted_data_len, rp->decrypted_data);
 
 	if (err < 0) {
-		LOG_ERR("Failed to decrypt data: %d", err);
+		LOG_ERROR("Failed to decrypt data: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3079,7 +3079,7 @@ static uint8_t send_subrate_request(const void *cmd, uint16_t cmd_len, void *rsp
 	int err = bt_conn_le_subrate_request(conn, &param);
 
 	if (err != 0) {
-		LOG_ERR("Failed to send subrate request: %d", err);
+		LOG_ERROR("Failed to send subrate request: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3345,7 +3345,7 @@ uint8_t tester_init_gap(void)
 
 	err = bt_enable(NULL);
 	if (err < 0) {
-		LOG_ERR("Unable to enable Bluetooth: %d", err);
+		LOG_ERROR("Unable to enable Bluetooth: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 

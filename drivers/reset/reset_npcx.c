@@ -43,7 +43,7 @@ static int reset_npcx_line_toggle(const struct device *dev, uint32_t id)
 	int ret = 0;
 
 	if (!IN_RANGE(id, NPCX_RESET_ID_START, NPCX_RESET_ID_END)) {
-		LOG_ERR("Invalid Reset ID");
+		LOG_ERROR("Invalid Reset ID");
 		return -EINVAL;
 	}
 	reg_offset = NPCX_RESET_CTL_REG_OFFSET(id);
@@ -57,7 +57,7 @@ static int reset_npcx_line_toggle(const struct device *dev, uint32_t id)
 
 	if (!WAIT_FOR((reg->SWRST_TRG == NPCX_SWRST_TRG_WORD_DONE), NPCX_SWRST_DONE_TIMEOUT_US,
 		     NULL)) {
-		LOG_ERR("Reset trig timeout");
+		LOG_ERROR("Reset trig timeout");
 		ret = -EBUSY;
 	}
 

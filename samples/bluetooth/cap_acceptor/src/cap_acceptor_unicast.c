@@ -206,7 +206,7 @@ static int unicast_server_metadata_cb(struct bt_bap_stream *bap_stream, const ui
 	}
 
 	if (!func_param.stream_context_present) {
-		LOG_ERR("Stream audio context not present");
+		LOG_ERROR("Stream audio context not present");
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED,
 				       BT_BAP_ASCS_REASON_NONE);
 
@@ -278,7 +278,7 @@ static void unicast_stream_enabled_cb(struct bt_bap_stream *bap_stream)
 
 	err = bt_bap_ep_get_info(bap_stream->ep, &ep_info);
 	if (err != 0) {
-		LOG_ERR("Failed to get ep info: %d", err);
+		LOG_ERROR("Failed to get ep info: %d", err);
 
 		return;
 	}
@@ -287,7 +287,7 @@ static void unicast_stream_enabled_cb(struct bt_bap_stream *bap_stream)
 		/* Automatically do the receiver start ready operation */
 		err = bt_bap_stream_start(bap_stream);
 		if (err != 0) {
-			LOG_ERR("Failed to start: %d", err);
+			LOG_ERROR("Failed to start: %d", err);
 
 			return;
 		}
@@ -385,7 +385,7 @@ static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 						peer->tx_seq_num++;
 						continue; /* Attempt to send again ASAP */
 					} else {
-						LOG_ERR("Unable to send: %d", err);
+						LOG_ERROR("Unable to send: %d", err);
 						net_buf_unref(buf);
 					}
 				}
@@ -422,14 +422,14 @@ int init_cap_acceptor_unicast(struct peer_config *peer)
 
 		err = bt_bap_unicast_server_register(&param);
 		if (err != 0) {
-			LOG_ERR("Failed to register BAP unicast server: %d", err);
+			LOG_ERROR("Failed to register BAP unicast server: %d", err);
 
 			return -ENOEXEC;
 		}
 
 		err = bt_bap_unicast_server_register_cb(&unicast_server_cb);
 		if (err != 0) {
-			LOG_ERR("Failed to register BAP unicast server callbacks: %d", err);
+			LOG_ERROR("Failed to register BAP unicast server callbacks: %d", err);
 
 			return -ENOEXEC;
 		}

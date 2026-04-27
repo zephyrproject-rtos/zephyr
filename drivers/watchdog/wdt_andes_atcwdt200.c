@@ -176,7 +176,7 @@ static int wdt_atcwdt200_setup(const struct device *dev, uint8_t options)
 	uint32_t ret = 0;
 
 	if (!data->timeout_valid) {
-		LOG_ERR("No valid timeouts installed");
+		LOG_ERROR("No valid timeouts installed");
 		return -EINVAL;
 	}
 
@@ -249,7 +249,7 @@ static int wdt_atcwdt200_install_timeout(const struct device *dev,
 	rst_period = wdt_atcwdt200_convtime(cfg->window.max, &scaler);
 
 	if (rst_period < 0 || WDOGCFG_PERIOD_MAX < rst_period) {
-		LOG_ERR("Unsupported watchdog timeout\n");
+		LOG_ERROR("Unsupported watchdog timeout\n");
 		return -EINVAL;
 	}
 
@@ -275,7 +275,7 @@ static int wdt_atcwdt200_install_timeout(const struct device *dev,
 	case WDT_FLAG_RESET_NONE:
 	case WDT_FLAG_RESET_CPU_CORE:
 	default:
-		LOG_ERR("Unsupported watchdog config flags\n");
+		LOG_ERROR("Unsupported watchdog config flags\n");
 		k_spin_unlock(&data->lock, key);
 		return -ENOTSUP;
 	}

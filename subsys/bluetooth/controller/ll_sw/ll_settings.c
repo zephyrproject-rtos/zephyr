@@ -54,8 +54,9 @@ static int ctlr_set(const char *name, size_t len_rd,
 	if (!strncmp(name, "company", nlen)) {
 		len = read_cb(store, &company_id, sizeof(company_id));
 		if (len < 0) {
-			LOG_ERR("Failed to read Company Id from storage"
-			       " (err %zd)", len);
+			LOG_ERROR("Failed to read Company Id from storage"
+				  " (err %zd)",
+				  len);
 		} else {
 			LOG_DBG("Company Id set to %04x", company_id);
 		}
@@ -64,8 +65,9 @@ static int ctlr_set(const char *name, size_t len_rd,
 	if (!strncmp(name, "subver", nlen)) {
 		len = read_cb(store, &subversion, sizeof(subversion));
 		if (len < 0) {
-			LOG_ERR("Failed to read Subversion from storage"
-			       " (err %zd)", len);
+			LOG_ERROR("Failed to read Subversion from storage"
+				  " (err %zd)",
+				  len);
 		} else {
 			LOG_DBG("Subversion set to %04x", subversion);
 		}
@@ -77,8 +79,9 @@ static int ctlr_set(const char *name, size_t len_rd,
 	if (!strncmp(name, "smi_tx", nlen)) {
 		len = read_cb(store, &smi_tx, sizeof(smi_tx));
 		if (len < 0) {
-			LOG_ERR("Failed to read SMI TX flag from storage"
-			       " (err %zd)", len);
+			LOG_ERROR("Failed to read SMI TX flag from storage"
+				  " (err %zd)",
+				  len);
 		} else {
 			LOG_DBG("SMI TX flag set to %04x", smi_tx);
 		}

@@ -209,14 +209,14 @@ static int coap_client_init_request(struct coap_client *client, struct coap_clie
 			       internal_req->last_id);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to init CoAP message %d", ret);
+		LOG_ERROR("Failed to init CoAP message %d", ret);
 		goto out;
 	}
 
 	ret = coap_packet_set_path(&internal_req->request, req->path);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to parse path to options %d", ret);
+		LOG_ERROR("Failed to parse path to options %d", ret);
 		goto out;
 	}
 
@@ -226,7 +226,7 @@ static int coap_client_init_request(struct coap_client *client, struct coap_clie
 					     COAP_OPTION_CONTENT_FORMAT, req->fmt);
 
 		if (ret < 0) {
-			LOG_ERR("Failed to append content format option");
+			LOG_ERROR("Failed to append content format option");
 			goto out;
 		}
 	}
@@ -238,7 +238,7 @@ static int coap_client_init_request(struct coap_client *client, struct coap_clie
 						&internal_req->recv_blk_ctx);
 
 		if (ret < 0) {
-			LOG_ERR("Failed to append block 2 option");
+			LOG_ERROR("Failed to append block 2 option");
 			goto out;
 		}
 	}
@@ -257,7 +257,7 @@ static int coap_client_init_request(struct coap_client *client, struct coap_clie
 						req->options[i].value, req->options[i].len);
 
 		if (ret < 0) {
-			LOG_ERR("Failed to append %d option", req->options[i].code);
+			LOG_ERROR("Failed to append %d option", req->options[i].code);
 			goto out;
 		}
 	}
@@ -287,18 +287,18 @@ static int coap_client_init_request(struct coap_client *client, struct coap_clie
 			ret = req->payload_cb(offset, &payload, &len, &last_block,
 					      req->user_data);
 			if (ret < 0) {
-				LOG_ERR("Payload callback reported error, %d", ret);
+				LOG_ERROR("Payload callback reported error, %d", ret);
 				goto out;
 			}
 
 			if (len > block_size || (len < block_size && !last_block)) {
-				LOG_ERR("Invalid payload size");
+				LOG_ERROR("Invalid payload size");
 				ret = -EINVAL;
 				goto out;
 			}
 
 			if (payload == NULL) {
-				LOG_ERR("No payload provided");
+				LOG_ERROR("No payload provided");
 				ret = -EINVAL;
 				goto out;
 			}
@@ -364,7 +364,7 @@ static int coap_client_init_request(struct coap_client *client, struct coap_clie
 							&internal_req->send_blk_ctx);
 
 			if (ret < 0) {
-				LOG_ERR("Failed to append block1 option");
+				LOG_ERROR("Failed to append block1 option");
 				goto out;
 			}
 
@@ -373,7 +373,7 @@ static int coap_client_init_request(struct coap_client *client, struct coap_clie
 				COAP_TOKEN_MAX_LEN);
 
 			if (ret < 0) {
-				LOG_ERR("Failed to append request tag option");
+				LOG_ERROR("Failed to append request tag option");
 				goto out;
 			}
 		}
@@ -381,7 +381,7 @@ static int coap_client_init_request(struct coap_client *client, struct coap_clie
 		ret = coap_packet_append_payload_marker(&internal_req->request);
 
 		if (ret < 0) {
-			LOG_ERR("Failed to append payload marker to CoAP message");
+			LOG_ERROR("Failed to append payload marker to CoAP message");
 			goto out;
 		}
 
@@ -389,7 +389,7 @@ static int coap_client_init_request(struct coap_client *client, struct coap_clie
 						 payload_len);
 
 		if (ret < 0) {
-			LOG_ERR("Failed to append payload to CoAP message");
+			LOG_ERROR("Failed to append payload to CoAP message");
 			goto out;
 		}
 
@@ -461,7 +461,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 #if defined(CONFIG_COAP_CLIENT_MULTICAST)
 	if (internal_req->is_mcast) {
 		if (req->confirmable) {
-			LOG_ERR("Multicast requests must be non-confirmable");
+			LOG_ERROR("Multicast requests must be non-confirmable");
 			ret = -EINVAL;
 			goto release;
 		}
@@ -469,7 +469,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 		internal_req->mcast_timeout = sys_timepoint_calc(K_MSEC(req->multicast_timeout_ms));
 	} else {
 		if (req->multicast_timeout_ms > 0) {
-			LOG_ERR("Multicast timeout not supported for unicast");
+			LOG_ERROR("Multicast timeout not supported for unicast");
 			ret = -EINVAL;
 			goto release;
 		}
@@ -478,7 +478,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 
 	ret = coap_client_init_request(client, req, internal_req);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize coap request");
+		LOG_ERROR("Failed to initialize coap request");
 		goto release;
 	}
 
@@ -486,7 +486,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 		ret = coap_packet_append_option(&internal_req->request, COAP_OPTION_ECHO,
 						client->echo_option.value, client->echo_option.len);
 		if (ret < 0) {
-			LOG_ERR("Failed to append echo option");
+			LOG_ERROR("Failed to append echo option");
 			goto release;
 		}
 		client->send_echo = false;
@@ -498,7 +498,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 				net_sad(&internal_req->addr), params);
 
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize pending struct");
+		LOG_ERROR("Failed to initialize pending struct");
 		goto release;
 	}
 
@@ -513,7 +513,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 
 #if defined(CONFIG_COAP_CLIENT_MULTICAST)
 	if (internal_req->is_observe && internal_req->is_mcast) {
-		LOG_ERR("Multicast requests can't observe");
+		LOG_ERROR("Multicast requests can't observe");
 		ret = -EINVAL;
 		goto release;
 	}
@@ -529,7 +529,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 
 release:
 	if (ret < 0) {
-		LOG_ERR("Failed to send request: %d", ret);
+		LOG_ERROR("Failed to send request: %d", ret);
 		reset_internal_request(internal_req);
 	} else {
 		/* Do not return the number of bytes sent */
@@ -603,7 +603,7 @@ static int resend_request(struct coap_client *client,
 	if (internal_req->request_ongoing &&
 	    internal_req->pending.timeout != 0 &&
 	    coap_pending_cycle(&internal_req->pending)) {
-		LOG_ERR("Timeout, retrying send");
+		LOG_ERROR("Timeout, retrying send");
 
 		ret = send_request(
 			client->fd, internal_req->request.data, internal_req->request.offset, 0,
@@ -616,10 +616,10 @@ static int resend_request(struct coap_client *client,
 			/* Not a fatal socket error, will trigger a retry */
 			ret = 0;
 		} else {
-			LOG_ERR("Failed to resend request, %d", ret);
+			LOG_ERROR("Failed to resend request, %d", ret);
 		}
 	} else {
-		LOG_ERR("Timeout, no more retries left");
+		LOG_ERROR("Timeout, no more retries left");
 		ret = -ETIMEDOUT;
 	}
 
@@ -725,7 +725,7 @@ static int handle_poll(void)
 
 	if (ret < 0) {
 		ret = -errno;
-		LOG_ERR("Error in poll:%d", ret);
+		LOG_ERROR("Error in poll:%d", ret);
 		return ret;
 	}
 
@@ -735,7 +735,7 @@ static int handle_poll(void)
 		net_socklen_t addrlen = sizeof(addr);
 
 		if (!client) {
-			LOG_ERR("No client found for socket %d", fds[i].fd);
+			LOG_ERROR("No client found for socket %d", fds[i].fd);
 			continue;
 		}
 
@@ -749,7 +749,7 @@ static int handle_poll(void)
 				if (ret == -EAGAIN) {
 					continue;
 				}
-				LOG_ERR("Error receiving response");
+				LOG_ERROR("Error receiving response");
 				cancel_requests_with(client, -EIO);
 				continue;
 			}
@@ -758,21 +758,21 @@ static int handle_poll(void)
 			ret = handle_response(client, net_sad(&addr), addrlen, &response,
 					      response_truncated);
 			if (ret < 0) {
-				LOG_ERR("Error handling response");
+				LOG_ERROR("Error handling response");
 			}
 
 			k_mutex_unlock(&client->lock);
 		}
 		if (fds[i].revents & ZSOCK_POLLERR) {
-			LOG_ERR("Error in poll for socket %d", fds[i].fd);
+			LOG_ERROR("Error in poll for socket %d", fds[i].fd);
 			cancel_requests_with(client, -EIO);
 		}
 		if (fds[i].revents & ZSOCK_POLLHUP) {
-			LOG_ERR("Error in poll: POLLHUP for socket %d", fds[i].fd);
+			LOG_ERROR("Error in poll: POLLHUP for socket %d", fds[i].fd);
 			cancel_requests_with(client, -EIO);
 		}
 		if (fds[i].revents & ZSOCK_POLLNVAL) {
-			LOG_ERR("Error in poll: POLLNVAL - fd %d not open", fds[i].fd);
+			LOG_ERROR("Error in poll: POLLNVAL - fd %d not open", fds[i].fd);
 			cancel_requests_with(client, -EIO);
 		}
 	}
@@ -816,7 +816,7 @@ static int recv_response(struct coap_client *client, struct net_sockaddr *addr,
 
 	ret = coap_packet_parse(response, client->recv_buf, available_len, NULL, 0);
 	if (ret < 0) {
-		LOG_ERR("Invalid data received");
+		LOG_ERROR("Invalid data received");
 	}
 
 	return ret;
@@ -831,13 +831,13 @@ static int send_ack(int sock_fd, const struct net_sockaddr *addr, net_socklen_t 
 
 	ret = coap_ack_init(&ack, req, ack_buf, sizeof(ack_buf), response_code);
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize CoAP ACK-message");
+		LOG_ERROR("Failed to initialize CoAP ACK-message");
 		return ret;
 	}
 
 	ret = send_request(sock_fd, ack.data, ack.offset, 0, addr, addrlen);
 	if (ret < 0) {
-		LOG_ERR("Error sending a CoAP ACK-message");
+		LOG_ERROR("Error sending a CoAP ACK-message");
 		return ret;
 	}
 
@@ -853,13 +853,13 @@ static int send_rst(int sock_fd, const struct net_sockaddr *addr, net_socklen_t 
 
 	ret = coap_rst_init(&rst, req, rst_buf, sizeof(rst_buf));
 	if (ret < 0) {
-		LOG_ERR("Failed to initialize CoAP RST-message");
+		LOG_ERROR("Failed to initialize CoAP RST-message");
 		return ret;
 	}
 
 	ret = send_request(sock_fd, rst.data, rst.offset, 0, addr, addrlen);
 	if (ret < 0) {
-		LOG_ERR("Error sending a CoAP RST-message");
+		LOG_ERROR("Error sending a CoAP RST-message");
 		return ret;
 	}
 
@@ -985,7 +985,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 						       internal_req);
 
 			if (ret < 0) {
-				LOG_ERR("Error creating a CoAP request");
+				LOG_ERROR("Error creating a CoAP request");
 				goto fail;
 			}
 
@@ -993,7 +993,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 							client->echo_option.value,
 							client->echo_option.len);
 			if (ret < 0) {
-				LOG_ERR("Failed to append echo option");
+				LOG_ERROR("Failed to append echo option");
 				goto fail;
 			}
 
@@ -1004,7 +1004,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 							&internal_req->request,
 							net_sad(&internal_req->addr), &params);
 				if (ret < 0) {
-					LOG_ERR("Error creating pending");
+					LOG_ERROR("Error creating pending");
 					goto fail;
 				}
 
@@ -1015,7 +1015,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 					   internal_req->request.offset, 0,
 					   net_sad(&internal_req->addr), internal_req->addrlen);
 			if (ret < 0) {
-				LOG_ERR("Error sending a CoAP request");
+				LOG_ERROR("Error sending a CoAP request");
 				goto fail;
 			} else {
 				return 1;
@@ -1098,7 +1098,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 
 		ret = coap_update_from_block(response, &internal_req->recv_blk_ctx);
 		if (ret < 0) {
-			LOG_ERR("Error updating block context");
+			LOG_ERROR("Error updating block context");
 		}
 		coap_next_block(response, &internal_req->recv_blk_ctx);
 	} else {
@@ -1170,7 +1170,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 		ret = coap_client_init_request(client, &internal_req->coap_request, internal_req);
 
 		if (ret < 0) {
-			LOG_ERR("Error creating a CoAP request");
+			LOG_ERROR("Error creating a CoAP request");
 			goto fail;
 		}
 
@@ -1178,7 +1178,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 		ret = coap_pending_init(&internal_req->pending, &internal_req->request,
 					net_sad(&internal_req->addr), &params);
 		if (ret < 0) {
-			LOG_ERR("Error creating pending");
+			LOG_ERROR("Error creating pending");
 			goto fail;
 		}
 		coap_pending_cycle(&internal_req->pending);
@@ -1187,7 +1187,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 				   internal_req->request.offset, 0, net_sad(&internal_req->addr),
 				   internal_req->addrlen);
 		if (ret < 0) {
-			LOG_ERR("Error sending a CoAP request");
+			LOG_ERROR("Error sending a CoAP request");
 			goto fail;
 		} else {
 			return 1;
@@ -1298,7 +1298,7 @@ void coap_client_recv(void *coap_cl, void *a, void *b)
 		ret = handle_poll();
 		if (ret < 0) {
 			/* Error in polling */
-			LOG_ERR("Error in poll");
+			LOG_ERROR("Error in poll");
 			goto idle;
 		}
 
@@ -1347,7 +1347,7 @@ struct coap_client_option coap_client_option_initial_block2(void)
 bool coap_client_has_ongoing_exchange(struct coap_client *client)
 {
 	if (client == NULL) {
-		LOG_ERR("Invalid (NULL) Client");
+		LOG_ERROR("Invalid (NULL) Client");
 		return false;
 	}
 

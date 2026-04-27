@@ -45,8 +45,8 @@ void *os_mem_alloc_intern_zephyr(RAM_TYPE ram_type, size_t size, const char *p_f
 
 	ptr = k_heap_alloc(h, size, K_NO_WAIT);
 	if (ptr == NULL) {
-		LOG_ERR("Mem alloc failed! Type: %d, Size: %zu, Caller: %s:%u", ram_type, size,
-			p_func, file_line);
+		LOG_ERROR("Mem alloc failed! Type: %d, Size: %zu, Caller: %s:%u", ram_type, size,
+			  p_func, file_line);
 	}
 	return ptr;
 }
@@ -74,8 +74,8 @@ void *os_mem_aligned_alloc_intern_zephyr(RAM_TYPE ram_type, size_t size, uint8_t
 
 	ptr = k_heap_aligned_alloc(h, alignment, size, K_NO_WAIT);
 	if (ptr == NULL) {
-		LOG_ERR("Aligned alloc failed! Type: %d, Caller: %s:%u", ram_type, p_func,
-			file_line);
+		LOG_ERROR("Aligned alloc failed! Type: %d, Caller: %s:%u", ram_type, p_func,
+			  file_line);
 	}
 	return ptr;
 }
@@ -93,7 +93,7 @@ void os_mem_free_zephyr(void *block)
 	if (h) {
 		k_heap_free(h, block);
 	} else {
-		LOG_ERR("Invalid pointer free attempt: %p", block);
+		LOG_ERROR("Invalid pointer free attempt: %p", block);
 		__ASSERT(false, "Attempted to free invalid memory address");
 	}
 }
@@ -113,7 +113,7 @@ size_t os_mem_peek_zephyr(RAM_TYPE ram_type)
 		sys_heap_runtime_stats_get(&h->heap, &stats);
 		return stats.free_bytes;
 	}
-	LOG_ERR("Invalid heap type");
+	LOG_ERROR("Invalid heap type");
 	return 0;
 #else
 	ARG_UNUSED(ram_type);
@@ -219,14 +219,14 @@ bool os_task_create_zephyr(void **handle_ptr, const char *name, void (*routine)(
 	int heap_type = RAM_TYPE_DATA_ON;
 
 	if (priority > OSIF_TASK_MAX_PRIORITY || priority < OSIF_TASK_MIN_PRIORITY) {
-		LOG_ERR("Invalid priority. OSIF Task Priority is expected to %d ~ %d.",
-			OSIF_TASK_MIN_PRIORITY, OSIF_TASK_MAX_PRIORITY);
+		LOG_ERROR("Invalid priority. OSIF Task Priority is expected to %d ~ %d.",
+			  OSIF_TASK_MIN_PRIORITY, OSIF_TASK_MAX_PRIORITY);
 		return false;
 	}
 
 	if (k_mem_slab_alloc(&osif_task_slab, (void **)&task, K_NO_WAIT) != 0) {
-		LOG_ERR("Exceeded max number of tasks: %d!",
-			CONFIG_REALTEK_BEE_OSIF_TASK_MAX_COUNT);
+		LOG_ERROR("Exceeded max number of tasks: %d!",
+			  CONFIG_REALTEK_BEE_OSIF_TASK_MAX_COUNT);
 		return false;
 	}
 	memset(task, 0, sizeof(struct osif_task));
@@ -243,7 +243,7 @@ bool os_task_create_zephyr(void **handle_ptr, const char *name, void (*routine)(
 
 	if (stack_buffer == NULL) {
 		k_mem_slab_free(&osif_task_slab, (void *)task);
-		LOG_ERR("Alloc thread stack failed (heap full)");
+		LOG_ERROR("Alloc thread stack failed (heap full)");
 		return false;
 	}
 
@@ -439,12 +439,12 @@ bool os_task_notify_take_zephyr(long clear_count_on_exit, uint32_t wait_ticks, u
 	int key;
 
 	if (notify == NULL) {
-		LOG_ERR("%s: input notify pointer cannot be NULL!", __func__);
+		LOG_ERROR("%s: input notify pointer cannot be NULL!", __func__);
 		return false;
 	}
 
 	if (k_is_in_isr()) {
-		LOG_ERR("%s cannot be called in ISR!", __func__);
+		LOG_ERROR("%s cannot be called in ISR!", __func__);
 		return false;
 	}
 
@@ -456,7 +456,7 @@ bool os_task_notify_take_zephyr(long clear_count_on_exit, uint32_t wait_ticks, u
 	if (retval == -EAGAIN) {
 		return false; /* Timeout */
 	} else if (retval != 0) {
-		LOG_ERR("k_poll error: %d", retval);
+		LOG_ERROR("k_poll error: %d", retval);
 		return false;
 	}
 
@@ -484,7 +484,7 @@ bool os_task_notify_give_zephyr(void *handle)
 	int key;
 
 	if (task == NULL) {
-		LOG_ERR("%s: Target task handle is a NULL pointer!", __func__);
+		LOG_ERROR("%s: Target task handle is a NULL pointer!", __func__);
 		return false;
 	}
 
@@ -563,8 +563,8 @@ bool os_sem_create_zephyr(void **handle_ptr, const char *name, uint32_t init_cou
 	ARG_UNUSED(name);
 
 	if (k_mem_slab_alloc(&osif_sem_slab, (void **)&sem, K_NO_WAIT) != 0) {
-		LOG_ERR("Exceeded max number of semaphores: %d!",
-			CONFIG_REALTEK_BEE_OSIF_SEM_MAX_COUNT);
+		LOG_ERROR("Exceeded max number of semaphores: %d!",
+			  CONFIG_REALTEK_BEE_OSIF_SEM_MAX_COUNT);
 		return false;
 	}
 
@@ -615,8 +615,8 @@ bool os_mutex_create_zephyr(void **handle_ptr)
 	struct k_mutex *mutex;
 
 	if (k_mem_slab_alloc(&osif_mutex_slab, (void **)&mutex, K_NO_WAIT) != 0) {
-		LOG_ERR("Exceeded max number of mutexs: %d!",
-			CONFIG_REALTEK_BEE_OSIF_MUTEX_MAX_COUNT);
+		LOG_ERROR("Exceeded max number of mutexs: %d!",
+			  CONFIG_REALTEK_BEE_OSIF_MUTEX_MAX_COUNT);
 		return false;
 	}
 
@@ -672,8 +672,8 @@ bool os_msg_queue_create_intern_zephyr(void **handle_ptr, const char *name, uint
 	}
 
 	if (k_mem_slab_alloc(&osif_msgq_slab, (void **)&msgq, K_NO_WAIT) != 0) {
-		LOG_ERR("Exceeded max number of msgqs: %d!",
-			CONFIG_REALTEK_BEE_OSIF_MSGQ_MAX_COUNT);
+		LOG_ERROR("Exceeded max number of msgqs: %d!",
+			  CONFIG_REALTEK_BEE_OSIF_MSGQ_MAX_COUNT);
 		return false;
 	}
 	memset(msgq, 0, sizeof(struct k_msgq));
@@ -682,7 +682,7 @@ bool os_msg_queue_create_intern_zephyr(void **handle_ptr, const char *name, uint
 		k_heap_aligned_alloc(get_heap_by_type(RAM_TYPE_DATA_ON), 4, total_size, K_NO_WAIT);
 	if (!queue_buffer) {
 		k_mem_slab_free(&osif_msgq_slab, (void *)msgq);
-		LOG_ERR("alloc queue buffer failed");
+		LOG_ERROR("alloc queue buffer failed");
 		return false;
 	}
 
@@ -777,8 +777,8 @@ bool os_timer_create_zephyr(void **handle_ptr, const char *timer_name, uint32_t 
 	irq_unlock(key);
 
 	if (timer == NULL) {
-		LOG_ERR("Exceeded max number of timers: %d!",
-			CONFIG_REALTEK_BEE_OSIF_TIMER_MAX_COUNT);
+		LOG_ERROR("Exceeded max number of timers: %d!",
+			  CONFIG_REALTEK_BEE_OSIF_TIMER_MAX_COUNT);
 		*handle_ptr = NULL;
 		return false;
 	}
@@ -802,7 +802,7 @@ bool os_timer_start_zephyr(void **handle_ptr)
 	k_timeout_t period;
 
 	if (!handle_ptr || !*handle_ptr) {
-		LOG_ERR("%s: Invalid timer handle (NULL)", __func__);
+		LOG_ERROR("%s: Invalid timer handle (NULL)", __func__);
 		return false;
 	}
 
@@ -822,7 +822,7 @@ bool os_timer_restart_zephyr(void **handle_ptr, uint32_t interval_ms)
 	uint32_t key;
 
 	if (!handle_ptr || !*handle_ptr) {
-		LOG_ERR("%s: Invalid timer handle (NULL)", __func__);
+		LOG_ERROR("%s: Invalid timer handle (NULL)", __func__);
 		return false;
 	}
 

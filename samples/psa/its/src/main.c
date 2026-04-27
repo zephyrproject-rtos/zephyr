@@ -29,7 +29,7 @@ static int write_and_read_data(void)
 
 	ret = psa_its_set(SAMPLE_DATA_UID, sizeof(p_data_write), p_data_write, SAMPLE_DATA_FLAGS);
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("Writing the data to ITS failed. (%d)", ret);
+		LOG_ERROR("Writing the data to ITS failed. (%d)", ret);
 		return -1;
 	}
 
@@ -45,20 +45,20 @@ static int write_and_read_data(void)
 	ret = psa_its_get(SAMPLE_DATA_UID, data_offset, sizeof(p_data_read), p_data_read,
 			  &p_data_length);
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("Reading back the data from ITS failed. (%d).", ret);
+		LOG_ERROR("Reading back the data from ITS failed. (%d).", ret);
 		return -1;
 	}
 
 	if (p_data_length != SAMPLE_DATA_SIZE - data_offset) {
-		LOG_ERR("Unexpected amount of bytes read back. (%zu != %zu)",
-			p_data_length, SAMPLE_DATA_SIZE - data_offset);
+		LOG_ERROR("Unexpected amount of bytes read back. (%zu != %zu)", p_data_length,
+			  SAMPLE_DATA_SIZE - data_offset);
 		return -1;
 	}
 
 	if (memcmp(p_data_write + data_offset, p_data_read, p_data_length)) {
 		LOG_HEXDUMP_INF(p_data_write + data_offset, p_data_length, "Data written:");
 		LOG_HEXDUMP_INF(p_data_read, p_data_length, "Data read back:");
-		LOG_ERR("The data read back doesn't match the data written.");
+		LOG_ERROR("The data read back doesn't match the data written.");
 		return -1;
 	}
 
@@ -76,15 +76,14 @@ static int read_info(void)
 
 	ret = psa_its_get_info(SAMPLE_DATA_UID, &p_info);
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("Failed to retrieve the entry's metadata. (%d)", ret);
+		LOG_ERROR("Failed to retrieve the entry's metadata. (%d)", ret);
 		return -1;
 	}
 
-	if (p_info.capacity != SAMPLE_DATA_SIZE
-	 || p_info.size != SAMPLE_DATA_SIZE
-	 || p_info.flags != SAMPLE_DATA_FLAGS) {
-		LOG_ERR("Entry metadata unexpected. (capacity:%zu size:%zu flags:0x%x)",
-			p_info.capacity, p_info.size, p_info.flags);
+	if (p_info.capacity != SAMPLE_DATA_SIZE || p_info.size != SAMPLE_DATA_SIZE ||
+	    p_info.flags != SAMPLE_DATA_FLAGS) {
+		LOG_ERROR("Entry metadata unexpected. (capacity:%zu size:%zu flags:0x%x)",
+			  p_info.capacity, p_info.size, p_info.flags);
 		return -1;
 	}
 
@@ -99,7 +98,7 @@ static int remove_entry(void)
 
 	ret = psa_its_remove(SAMPLE_DATA_UID);
 	if (ret != PSA_SUCCESS) {
-		LOG_ERR("Failed to remove the entry. (%d)", ret);
+		LOG_ERROR("Failed to remove the entry. (%d)", ret);
 		return -1;
 	}
 

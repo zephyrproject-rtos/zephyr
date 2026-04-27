@@ -97,7 +97,7 @@ static int ramdisk_read(void *const priv, const uint32_t block, const uint16_t s
 
 	if (block == 0) {
 		if (init_dfu_ramdisk_data(data)) {
-			LOG_ERR("Failed to init ramdisk data");
+			LOG_ERROR("Failed to init ramdisk data");
 			return -EINVAL;
 		}
 
@@ -117,7 +117,7 @@ static int ramdisk_read(void *const priv, const uint32_t block, const uint16_t s
 
 	err = disk_access_read(data->name, buf, block, 1);
 	if (err) {
-		LOG_ERR("Failed to read from RAMdisk");
+		LOG_ERROR("Failed to read from RAMdisk");
 		return err;
 	}
 
@@ -136,7 +136,7 @@ static int ramdisk_write(void *const priv, const uint32_t block, const uint16_t 
 
 	if (block == 0) {
 		if (init_dfu_ramdisk_data(data)) {
-			LOG_ERR("Failed to init ramdisk data");
+			LOG_ERROR("Failed to init ramdisk data");
 			return -EINVAL;
 		}
 
@@ -156,7 +156,7 @@ static int ramdisk_write(void *const priv, const uint32_t block, const uint16_t 
 
 	err = disk_access_write(data->name, buf, block, 1);
 	if (err) {
-		LOG_ERR("Failed to write to RAMdisk");
+		LOG_ERROR("Failed to write to RAMdisk");
 		return err;
 	}
 
@@ -181,13 +181,13 @@ static void msg_cb(struct usbd_context *const usbd_ctx,
 	if (usbd_can_detect_vbus(usbd_ctx)) {
 		if (msg->type == USBD_MSG_VBUS_READY) {
 			if (usbd_enable(usbd_ctx)) {
-				LOG_ERR("Failed to enable device support");
+				LOG_ERROR("Failed to enable device support");
 			}
 		}
 
 		if (msg->type == USBD_MSG_VBUS_REMOVED) {
 			if (usbd_disable(usbd_ctx)) {
-				LOG_ERR("Failed to disable device support");
+				LOG_ERROR("Failed to disable device support");
 			}
 		}
 	}
@@ -214,20 +214,20 @@ static void switch_to_dfu_mode(struct usbd_context *const ctx)
 
 	err = usbd_add_descriptor(&dfu_usbd, &sample_lang);
 	if (err) {
-		LOG_ERR("Failed to initialize language descriptor (%d)", err);
+		LOG_ERROR("Failed to initialize language descriptor (%d)", err);
 		return;
 	}
 
 	if (usbd_caps_speed(&dfu_usbd) == USBD_SPEED_HS) {
 		err = usbd_add_configuration(&dfu_usbd, USBD_SPEED_HS, &sample_hs_config);
 		if (err) {
-			LOG_ERR("Failed to add High-Speed configuration");
+			LOG_ERROR("Failed to add High-Speed configuration");
 			return;
 		}
 
 		err = usbd_register_class(&dfu_usbd, "dfu_dfu", USBD_SPEED_HS, 1);
 		if (err) {
-			LOG_ERR("Failed to add register classes");
+			LOG_ERROR("Failed to add register classes");
 			return;
 		}
 
@@ -236,13 +236,13 @@ static void switch_to_dfu_mode(struct usbd_context *const ctx)
 
 	err = usbd_add_configuration(&dfu_usbd, USBD_SPEED_FS, &sample_fs_config);
 	if (err) {
-		LOG_ERR("Failed to add Full-Speed configuration");
+		LOG_ERROR("Failed to add Full-Speed configuration");
 		return;
 	}
 
 	err = usbd_register_class(&dfu_usbd, "dfu_dfu", USBD_SPEED_FS, 1);
 	if (err) {
-		LOG_ERR("Failed to add register classes");
+		LOG_ERROR("Failed to add register classes");
 		return;
 	}
 
@@ -250,19 +250,19 @@ static void switch_to_dfu_mode(struct usbd_context *const ctx)
 
 	err = usbd_init(&dfu_usbd);
 	if (err) {
-		LOG_ERR("Failed to initialize USB device support");
+		LOG_ERROR("Failed to initialize USB device support");
 		return;
 	}
 
 	err = usbd_msg_register_cb(&dfu_usbd, msg_cb);
 	if (err) {
-		LOG_ERR("Failed to register message callback");
+		LOG_ERROR("Failed to register message callback");
 		return;
 	}
 
 	err = usbd_enable(&dfu_usbd);
 	if (err) {
-		LOG_ERR("Failed to enable USB device support");
+		LOG_ERROR("Failed to enable USB device support");
 	}
 }
 
@@ -273,14 +273,14 @@ int main(void)
 
 	sample_usbd = sample_usbd_init_device(msg_cb);
 	if (sample_usbd == NULL) {
-		LOG_ERR("Failed to initialize USB device");
+		LOG_ERROR("Failed to initialize USB device");
 		return -ENODEV;
 	}
 
 	if (!usbd_can_detect_vbus(sample_usbd)) {
 		ret = usbd_enable(sample_usbd);
 		if (ret) {
-			LOG_ERR("Failed to enable device support");
+			LOG_ERROR("Failed to enable device support");
 			return ret;
 		}
 	}

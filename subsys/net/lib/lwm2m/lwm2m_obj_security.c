@@ -118,8 +118,9 @@ static struct lwm2m_engine_obj_inst *security_create(uint16_t obj_inst_id)
 	/* Check that there is no other instance with this ID */
 	for (index = 0; index < MAX_INSTANCE_COUNT; index++) {
 		if (inst[index].obj && inst[index].obj_inst_id == obj_inst_id) {
-			LOG_ERR("Can not create instance - "
-				"already existing: %u", obj_inst_id);
+			LOG_ERROR("Can not create instance - "
+				  "already existing: %u",
+				  obj_inst_id);
 			return NULL;
 		}
 	}
@@ -131,8 +132,9 @@ static struct lwm2m_engine_obj_inst *security_create(uint16_t obj_inst_id)
 	}
 
 	if (index >= MAX_INSTANCE_COUNT) {
-		LOG_ERR("Can not create instance - "
-			"no more room: %u", obj_inst_id);
+		LOG_ERROR("Can not create instance - "
+			  "no more room: %u",
+			  obj_inst_id);
 		return NULL;
 	}
 
@@ -255,7 +257,7 @@ static int lwm2m_security_init(void)
 	/* auto create the first instance */
 	ret = lwm2m_create_obj_inst(LWM2M_OBJECT_SECURITY_ID, 0, &obj_inst);
 	if (ret < 0) {
-		LOG_ERR("Create LWM2M security instance 0 error: %d", ret);
+		LOG_ERROR("Create LWM2M security instance 0 error: %d", ret);
 	}
 
 	return ret;

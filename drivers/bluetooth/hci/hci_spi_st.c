@@ -312,7 +312,7 @@ static int bt_spi_get_header(uint8_t op, uint16_t *size)
 
 	/* Wait up to a maximum time of 100 ms */
 	if (!WAIT_FOR(IS_IRQ_HIGH, 100000, k_usleep(100))) {
-		LOG_ERR("IRQ pin did not raise");
+		LOG_ERROR("IRQ pin did not raise");
 		return -EIO;
 	}
 
@@ -372,7 +372,7 @@ static int bt_spi_bluenrg_setup(const struct device *dev,
 			addr->val, sizeof(addr->val));
 
 		if (ret != 0) {
-			LOG_ERR("Failed to set BlueNRG public address (%d)", ret);
+			LOG_ERROR("Failed to set BlueNRG public address (%d)", ret);
 			return ret;
 		}
 	}
@@ -446,7 +446,7 @@ static int bt_spi_rx_buf_construct(uint8_t *msg, struct net_buf **bufp, uint16_t
 
 		len = sizeof(struct bt_hci_evt_hdr) + msg[EVT_HEADER_SIZE];
 		if (len > net_buf_tailroom(buf)) {
-			LOG_ERR("Event too long: %d", len);
+			LOG_ERROR("Event too long: %d", len);
 			net_buf_unref(buf);
 			return -ENOMEM;
 		}
@@ -464,7 +464,7 @@ static int bt_spi_rx_buf_construct(uint8_t *msg, struct net_buf **bufp, uint16_t
 		memcpy(&acl_hdr, &msg[1], sizeof(acl_hdr));
 		len = sizeof(acl_hdr) + sys_le16_to_cpu(acl_hdr.len);
 		if (len > net_buf_tailroom(buf)) {
-			LOG_ERR("ACL too long: %d", len);
+			LOG_ERROR("ACL too long: %d", len);
 			net_buf_unref(buf);
 			return -ENOMEM;
 		}
@@ -479,11 +479,11 @@ static int bt_spi_rx_buf_construct(uint8_t *msg, struct net_buf **bufp, uint16_t
 			memcpy(&iso_hdr, &msg[1], sizeof(iso_hdr));
 			len = sizeof(iso_hdr) + bt_iso_hdr_len(sys_le16_to_cpu(iso_hdr.len));
 		} else {
-			LOG_ERR("No available ISO buffers!");
+			LOG_ERROR("No available ISO buffers!");
 			return -ENOMEM;
 		}
 		if (len > net_buf_tailroom(buf)) {
-			LOG_ERR("ISO too long: %d", len);
+			LOG_ERROR("ISO too long: %d", len);
 			net_buf_unref(buf);
 			return -ENOMEM;
 		}
@@ -491,7 +491,7 @@ static int bt_spi_rx_buf_construct(uint8_t *msg, struct net_buf **bufp, uint16_t
 		break;
 #endif /* CONFIG_BT_ISO */
 	default:
-		LOG_ERR("Unknown BT buf type %d", msg[0]);
+		LOG_ERROR("Unknown BT buf type %d", msg[0]);
 		return -ENOTSUP;
 	}
 
@@ -539,7 +539,7 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 
 			if (ret || size == 0) {
 				if (ret) {
-					LOG_ERR("Error %d", ret);
+					LOG_ERROR("Error %d", ret);
 				}
 				continue;
 			}
@@ -568,7 +568,7 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 	LOG_DBG("");
 
 	if (buf->len > SPI_MAX_MSG_LEN) {
-		LOG_ERR("Message too long (%d)", buf->len);
+		LOG_ERROR("Message too long (%d)", buf->len);
 		return -EINVAL;
 	}
 
@@ -602,7 +602,7 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 	k_sem_give(&sem_busy);
 
 	if (ret) {
-		LOG_ERR("Error %d", ret);
+		LOG_ERROR("Error %d", ret);
 		return ret;
 	}
 
@@ -727,17 +727,17 @@ static int bt_spi_init(const struct device *dev)
 {
 
 	if (!spi_is_ready_dt(&bus)) {
-		LOG_ERR("SPI device not ready");
+		LOG_ERROR("SPI device not ready");
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&irq_gpio)) {
-		LOG_ERR("IRQ GPIO device not ready");
+		LOG_ERROR("IRQ GPIO device not ready");
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&rst_gpio)) {
-		LOG_ERR("Reset GPIO device not ready");
+		LOG_ERROR("Reset GPIO device not ready");
 		return -ENODEV;
 	}
 

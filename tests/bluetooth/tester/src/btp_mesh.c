@@ -392,7 +392,7 @@ static int dfu_meta_check(struct bt_mesh_dfu_srv *srv,
 
 	for (i = 0; i <= len; i++) {
 		if (string[i] != metadata_data[i]) {
-			LOG_ERR("Wrong Firmware Metadata");
+			LOG_ERROR("Wrong Firmware Metadata");
 			return -EINVAL;
 		}
 	}
@@ -416,7 +416,7 @@ static void dfu_end(struct bt_mesh_dfu_srv *srv,
 		    const struct bt_mesh_dfu_img *img, bool success)
 {
 	if (!success) {
-		LOG_ERR("DFU failed");
+		LOG_ERROR("DFU failed");
 		return;
 	}
 
@@ -714,7 +714,7 @@ static uint8_t priv_beacon_get(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_priv_beacon_cli_get(net.net_idx, cp->dst, &val);
 	if (err) {
-		LOG_ERR("Failed to send Private Beacon Get (err %d)", err);
+		LOG_ERROR("Failed to send Private Beacon Get (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -734,7 +734,7 @@ static uint8_t priv_beacon_set(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_priv_beacon_cli_set(net.net_idx, cp->dst, &val, &val);
 	if (err) {
-		LOG_ERR("Failed to send Private Beacon Set (err %d)", err);
+		LOG_ERROR("Failed to send Private Beacon Set (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -751,7 +751,7 @@ static uint8_t priv_gatt_proxy_get(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_priv_beacon_cli_gatt_proxy_get(net.net_idx, cp->dst, &state);
 	if (err) {
-		LOG_ERR("Failed to send Private GATT Proxy Get (err %d)", err);
+		LOG_ERROR("Failed to send Private GATT Proxy Get (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -771,7 +771,7 @@ static uint8_t priv_gatt_proxy_set(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_priv_beacon_cli_gatt_proxy_set(net.net_idx, cp->dst, state, &state);
 	if (err) {
-		LOG_ERR("Failed to send Private GATT Proxy Set (err %d)", err);
+		LOG_ERROR("Failed to send Private GATT Proxy Set (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -790,7 +790,7 @@ static uint8_t priv_node_id_get(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_priv_beacon_cli_node_id_get(net.net_idx, cp->dst, key_net_idx, &val);
 	if (err) {
-		LOG_ERR("Failed to send Private Node Identity Get (err %d)", err);
+		LOG_ERROR("Failed to send Private Node Identity Get (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -810,7 +810,7 @@ static uint8_t priv_node_id_set(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_priv_beacon_cli_node_id_set(net.net_idx, cp->dst, &val, &val);
 	if (err) {
-		LOG_ERR("Failed to send Private Node Identity Set (err %d)", err);
+		LOG_ERROR("Failed to send Private Node Identity Set (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -833,7 +833,7 @@ static uint8_t proxy_private_identity_enable(const void *cmd, uint16_t cmd_len,
 	count = bt_mesh_subnets_get(net_idx, ARRAY_SIZE(net_idx), 0);
 
 	if (count <= 0) {
-		LOG_ERR("No subnet (err:%i)", count);
+		LOG_ERROR("No subnet (err:%i)", count);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -844,8 +844,8 @@ static uint8_t proxy_private_identity_enable(const void *cmd, uint16_t cmd_len,
 	for (int i = 0; i < count; i++) {
 		err = bt_mesh_subnet_priv_node_id_set(net_idx[i], priv_node_id);
 		if (err) {
-			LOG_ERR("Failed to %s proxy private identity for net idx:%x (err %d)",
-				cp->enabled ? "enable" : "disable", net_idx[i], err);
+			LOG_ERROR("Failed to %s proxy private identity for net idx:%x (err %d)",
+				  cp->enabled ? "enable" : "disable", net_idx[i], err);
 			return BTP_STATUS_FAILED;
 		}
 	}
@@ -873,7 +873,7 @@ static uint8_t od_priv_proxy_get(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_od_priv_proxy_cli_get(net.net_idx, cp->dst, &val_rsp);
 	if (err) {
-		LOG_ERR("Failed to get On-Demand Private Proxy state (err %d)", err);
+		LOG_ERROR("Failed to get On-Demand Private Proxy state (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -893,7 +893,7 @@ static uint8_t od_priv_proxy_set(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_od_priv_proxy_cli_set(net.net_idx, cp->dst, cp->val, &val_rsp);
 	if (err) {
-		LOG_ERR("Failed to set On-Demand Private Proxy state (err %d)", err);
+		LOG_ERROR("Failed to set On-Demand Private Proxy state (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -931,7 +931,7 @@ static uint8_t srpl_clear(const void *cmd, uint16_t cmd_len,
 		err = bt_mesh_sol_pdu_rpl_clear_unack(&ctx, cp->range_start, cp->range_len);
 	}
 	if (err) {
-		LOG_ERR("Failed to clear SRPL (err %d)", err);
+		LOG_ERROR("Failed to clear SRPL (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -948,7 +948,7 @@ static uint8_t proxy_solicit(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_proxy_solicit(cp->net_idx);
 	if (err) {
-		LOG_ERR("Failed to advertise solicitation PDU (err %d)", err);
+		LOG_ERROR("Failed to advertise solicitation PDU (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1142,7 +1142,7 @@ static void link_open(bt_mesh_prov_bearer_t bearer)
 		ev.bearer = BTP_MESH_PROV_BEARER_REMOTE;
 		break;
 	default:
-		LOG_ERR("Invalid bearer");
+		LOG_ERROR("Invalid bearer");
 
 		return;
 	}
@@ -1167,7 +1167,7 @@ static void link_close(bt_mesh_prov_bearer_t bearer)
 		ev.bearer = BTP_MESH_PROV_BEARER_REMOTE;
 		break;
 	default:
-		LOG_ERR("Invalid bearer");
+		LOG_ERROR("Invalid bearer");
 
 		return;
 	}
@@ -1181,7 +1181,7 @@ static int output_numeric(bt_mesh_output_action_t action, uint8_t *numeric, size
 	uint32_t number;
 
 	if (size > sizeof(number)) {
-		LOG_ERR("Unsupported size %zu", size);
+		LOG_ERROR("Unsupported size %zu", size);
 		return -EINVAL;
 	}
 
@@ -1362,7 +1362,7 @@ static uint8_t config_prov(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1396,21 +1396,21 @@ static uint8_t provision_node(const void *cmd, uint16_t cmd_len,
 
 		err = bt_mesh_prov_remote_pub_key_set(pub_key);
 		if (err) {
-			LOG_ERR("err %d", err);
+			LOG_ERROR("err %d", err);
 			return BTP_STATUS_FAILED;
 		}
 	}
 #if defined(CONFIG_BT_MESH_PROVISIONER)
 	err = bt_mesh_cdb_create(net_key);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 #endif
 	err = bt_mesh_provision(net_key, net_key_idx, flags, iv_index, addr,
 				dev_key);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1429,7 +1429,7 @@ static uint8_t provision_adv(const void *cmd, uint16_t cmd_len,
 				    sys_le16_to_cpu(cp->address),
 				    cp->attention_duration);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1543,7 +1543,7 @@ static uint8_t input_string(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (strlen(cp->string) < input_size) {
-		LOG_ERR("Too short input (%u chars required)", input_size);
+		LOG_ERROR("Too short input (%u chars required)", input_size);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1576,7 +1576,7 @@ static uint8_t ivu_toggle_state(const void *cmd, uint16_t cmd_len,
 
 	result = bt_mesh_iv_update();
 	if (!result) {
-		LOG_ERR("Failed to toggle the IV Update state");
+		LOG_ERROR("Failed to toggle the IV Update state");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1594,7 +1594,7 @@ static uint8_t lpn(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_lpn_set(cp->enable ? true : false);
 	if (err) {
-		LOG_ERR("Failed to toggle LPN (err %d)", err);
+		LOG_ERROR("Failed to toggle LPN (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1610,7 +1610,7 @@ static uint8_t lpn_poll(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_lpn_poll();
 	if (err) {
-		LOG_ERR("Failed to send poll msg (err %d)", err);
+		LOG_ERROR("Failed to send poll msg (err %d)", err);
 	}
 
 	return BTP_STATUS_SUCCESS;
@@ -1653,7 +1653,7 @@ static uint8_t net_send(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_model_send(&vnd_models[0], &ctx, &msg, NULL, NULL);
 	if (err) {
-		LOG_ERR("Failed to send (err %d)", err);
+		LOG_ERROR("Failed to send (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1670,7 +1670,7 @@ static uint8_t va_add(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_va_add(cp->label_uuid, &va);
 	if (err) {
-		LOG_ERR("Failed to add Label UUID (err %d)", err);
+		LOG_ERROR("Failed to add Label UUID (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1689,13 +1689,13 @@ static uint8_t va_del(const void *cmd, uint16_t cmd_len,
 
 	va = bt_mesh_va_find(cp->label_uuid);
 	if (!va) {
-		LOG_ERR("Failed to find Label UUID");
+		LOG_ERROR("Failed to find Label UUID");
 		return BTP_STATUS_FAILED;
 	}
 
 	err = bt_mesh_va_del(va->uuid);
 	if (err) {
-		LOG_ERR("Failed to delete Label UUID (err %d)", err);
+		LOG_ERROR("Failed to delete Label UUID (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1778,7 +1778,7 @@ static uint8_t model_send(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (!model) {
-		LOG_ERR("Model not found");
+		LOG_ERROR("Model not found");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1789,7 +1789,7 @@ static uint8_t model_send(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_model_send(model, &ctx, &msg, NULL, NULL);
 	if (err) {
-		LOG_ERR("Failed to send (err %d)", err);
+		LOG_ERROR("Failed to send (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1809,7 +1809,7 @@ static uint8_t lpn_subscribe(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_test_lpn_group_add(address);
 	if (err) {
-		LOG_ERR("Failed to subscribe (err %d)", err);
+		LOG_ERROR("Failed to subscribe (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1827,7 +1827,7 @@ static uint8_t lpn_unsubscribe(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_test_lpn_group_remove(&address, 1);
 	if (err) {
-		LOG_ERR("Failed to unsubscribe (err %d)", err);
+		LOG_ERROR("Failed to unsubscribe (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1844,7 +1844,7 @@ static uint8_t rpl_clear(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_test_rpl_clear();
 	if (err) {
-		LOG_ERR("Failed to clear RPL (err %d)", err);
+		LOG_ERROR("Failed to clear RPL (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1861,7 +1861,7 @@ static uint8_t proxy_identity_enable(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_proxy_identity_enable();
 	if (err) {
-		LOG_ERR("Failed to enable proxy identity (err %d)", err);
+		LOG_ERROR("Failed to enable proxy identity (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1877,7 +1877,7 @@ static uint8_t proxy_connect(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_proxy_connect(cp->net_idx);
 	if (err) {
-		LOG_ERR("Failed to connect to GATT Proxy (err %d)", err);
+		LOG_ERROR("Failed to connect to GATT Proxy (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1900,7 +1900,7 @@ static uint8_t sar_transmitter_get(const void *cmd, uint16_t cmd_len,
 	err = bt_mesh_sar_cfg_cli_transmitter_get(
 		net_key_idx, sys_le16_to_cpu(cp->dst), &tx_rsp);
 	if (err) {
-		LOG_ERR("err=%d", err);
+		LOG_ERROR("err=%d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1931,7 +1931,7 @@ static uint8_t sar_transmitter_set(const void *cmd, uint16_t cmd_len,
 						  sys_le16_to_cpu(cp->dst),
 						  &set, &tx_rsp);
 	if (err) {
-		LOG_ERR("err=%d", err);
+		LOG_ERROR("err=%d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1950,7 +1950,7 @@ static uint8_t sar_receiver_get(const void *cmd, uint16_t cmd_len,
 	err = bt_mesh_sar_cfg_cli_receiver_get(net_key_idx,
 					       sys_le16_to_cpu(cp->dst), &rx_rsp);
 	if (err) {
-		LOG_ERR("err=%d", err);
+		LOG_ERROR("err=%d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1976,7 +1976,7 @@ static uint8_t sar_receiver_set(const void *cmd, uint16_t cmd_len,
 					       sys_le16_to_cpu(cp->dst), &set,
 					       &rx_rsp);
 	if (err) {
-		LOG_ERR("err=%d", err);
+		LOG_ERROR("err=%d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2003,7 +2003,7 @@ static uint8_t large_comp_data_get(const void *cmd, uint16_t cmd_len,
 				    sys_le16_to_cpu(cp->addr), cp->page,
 				    sys_le16_to_cpu(cp->offset), &comp);
 	if (err) {
-		LOG_ERR("Large Composition Data Get failed (err %d)", err);
+		LOG_ERROR("Large Composition Data Get failed (err %d)", err);
 
 		return BTP_STATUS_FAILED;
 	}
@@ -2033,7 +2033,7 @@ static uint8_t models_metadata_get(const void *cmd, uint16_t cmd_len,
 					  sys_le16_to_cpu(cp->offset), &metadata);
 
 	if (err) {
-		LOG_ERR("Models Metadata Get failed (err %d)", err);
+		LOG_ERROR("Models Metadata Get failed (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2053,7 +2053,7 @@ static uint8_t subnet_bridge_get(const void *cmd, uint16_t cmd_len, void *rsp, u
 
 	err = bt_mesh_brg_cfg_cli_get(net.net_idx, sys_le16_to_cpu(cp->addr), &state);
 	if (err) {
-		LOG_ERR("err=%d", err);
+		LOG_ERROR("err=%d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2072,7 +2072,7 @@ static uint8_t subnet_bridge_set(const void *cmd, uint16_t cmd_len, void *rsp, u
 
 	err = bt_mesh_brg_cfg_cli_set(net.net_idx, sys_le16_to_cpu(cp->addr), state, &state);
 	if (err) {
-		LOG_ERR("err=%d", err);
+		LOG_ERROR("err=%d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2098,7 +2098,7 @@ static uint8_t bridging_table_add(const void *cmd, uint16_t cmd_len, void *rsp, 
 
 	err = bt_mesh_brg_cfg_cli_table_add(net_key_idx, sys_le16_to_cpu(cp->addr), &entry, &rp);
 	if (err) {
-		LOG_ERR("err=%d", err);
+		LOG_ERROR("err=%d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2120,7 +2120,7 @@ static uint8_t bridging_table_remove(const void *cmd, uint16_t cmd_len, void *rs
 		sys_le16_to_cpu(cp->addr2), &rp);
 
 	if (err) {
-		LOG_ERR("err=%d", err);
+		LOG_ERROR("err=%d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2147,7 +2147,7 @@ static uint8_t bridged_subnets_get(const void *cmd, uint16_t cmd_len, void *rsp,
 	err = bt_mesh_brg_cfg_cli_subnets_get(net_key_idx, sys_le16_to_cpu(cp->addr),
 					      filter_net_idx, cp->start_idx, &rp);
 	if (err) {
-		LOG_ERR("err=%d", err);
+		LOG_ERROR("err=%d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2171,7 +2171,7 @@ static uint8_t bridging_table_get(const void *cmd, uint16_t cmd_len, void *rsp, 
 		net_key_idx, sys_le16_to_cpu(cp->addr), sys_le16_to_cpu(cp->net_idx1),
 		sys_le16_to_cpu(cp->net_idx2), sys_le16_to_cpu(cp->start_idx), &rp);
 	if (err) {
-		LOG_ERR("err=%d", err);
+		LOG_ERROR("err=%d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2189,7 +2189,7 @@ static uint8_t bridging_table_size_get(const void *cmd, uint16_t cmd_len, void *
 
 	err = bt_mesh_brg_cfg_cli_table_size_get(net_key_idx, sys_le16_to_cpu(cp->addr), &size);
 	if (err) {
-		LOG_ERR("err=%d", err);
+		LOG_ERROR("err=%d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2216,7 +2216,7 @@ static uint8_t composition_data_get(const void *cmd, uint16_t cmd_len, void *rsp
 					    sys_le16_to_cpu(cp->address),
 					    cp->page, &page, comp);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2266,7 +2266,7 @@ static uint8_t config_krp_get(const void *cmd, uint16_t cmd_len,
 				      &status, &phase);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2294,7 +2294,7 @@ static uint8_t config_krp_set(const void *cmd, uint16_t cmd_len,
 				      sys_le16_to_cpu(cp->key_net_idx),
 				      cp->transition, &status, &phase);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2319,7 +2319,7 @@ static uint8_t config_beacon_get(const void *cmd, uint16_t cmd_len,
 	err = bt_mesh_cfg_cli_beacon_get(sys_le16_to_cpu(cp->net_idx),
 					 sys_le16_to_cpu(cp->address), &status);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2343,7 +2343,7 @@ static uint8_t config_beacon_set(const void *cmd, uint16_t cmd_len,
 					 sys_le16_to_cpu(cp->address), cp->val,
 					 &status);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2367,7 +2367,7 @@ static uint8_t config_default_ttl_get(const void *cmd, uint16_t cmd_len,
 				      sys_le16_to_cpu(cp->address), &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2392,7 +2392,7 @@ static uint8_t config_default_ttl_set(const void *cmd, uint16_t cmd_len,
 				      &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2416,7 +2416,7 @@ static uint8_t config_gatt_proxy_get(const void *cmd, uint16_t cmd_len,
 					     sys_le16_to_cpu(cp->address),
 					     &status);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2440,7 +2440,7 @@ static uint8_t config_gatt_proxy_set(const void *cmd, uint16_t cmd_len,
 					     sys_le16_to_cpu(cp->address),
 					     cp->val, &status);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2465,7 +2465,7 @@ static uint8_t config_friend_get(const void *cmd, uint16_t cmd_len,
 					 &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2490,7 +2490,7 @@ static uint8_t config_friend_set(const void *cmd, uint16_t cmd_len,
 					 cp->val, &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2516,7 +2516,7 @@ static uint8_t config_relay_get(const void *cmd, uint16_t cmd_len,
 					&transmit);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2543,7 +2543,7 @@ static uint8_t config_relay_set(const void *cmd, uint16_t cmd_len,
 					&status, &transmit);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2571,7 +2571,7 @@ static uint8_t config_mod_pub_get(const void *cmd, uint16_t cmd_len,
 					  &pub, &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2607,7 +2607,7 @@ static uint8_t config_mod_pub_set(const void *cmd, uint16_t cmd_len,
 					  &pub, &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2642,7 +2642,7 @@ static uint8_t config_mod_pub_va_set(const void *cmd, uint16_t cmd_len,
 					  &pub, &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2670,7 +2670,7 @@ static uint8_t config_mod_sub_add(const void *cmd, uint16_t cmd_len,
 					  &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2697,7 +2697,7 @@ static uint8_t config_mod_sub_ovw(const void *cmd, uint16_t cmd_len,
 						sys_le16_to_cpu(cp->model_id),
 						&status);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2724,7 +2724,7 @@ static uint8_t config_mod_sub_del(const void *cmd, uint16_t cmd_len,
 					  sys_le16_to_cpu(cp->model_id),
 					  &status);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2751,7 +2751,7 @@ static uint8_t config_mod_sub_del_all(const void *cmd, uint16_t cmd_len,
 					      &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2779,7 +2779,7 @@ static uint8_t config_mod_sub_get(const void *cmd, uint16_t cmd_len,
 					  sys_le16_to_cpu(cp->model_id),
 					  &status, &subs, &sub_cn);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2808,7 +2808,7 @@ static uint8_t config_mod_sub_get_vnd(const void *cmd, uint16_t cmd_len,
 					      sys_le16_to_cpu(cp->cid),
 					      &status, &subs, &sub_cn);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2837,7 +2837,7 @@ static uint8_t config_mod_sub_va_add(const void *cmd, uint16_t cmd_len,
 					     &virt_addr_rcv, &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2866,7 +2866,7 @@ static uint8_t config_mod_sub_va_del(const void *cmd, uint16_t cmd_len,
 					     &virt_addr_rcv, &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2895,7 +2895,7 @@ static uint8_t config_mod_sub_va_ovw(const void *cmd, uint16_t cmd_len,
 						   &virt_addr_rcv, &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2921,7 +2921,7 @@ static uint8_t config_netkey_add(const void *cmd, uint16_t cmd_len,
 					  cp->net_key, &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2948,7 +2948,7 @@ static uint8_t config_netkey_update(const void *cmd, uint16_t cmd_len,
 					     &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2973,7 +2973,7 @@ static uint8_t config_netkey_get(const void *cmd, uint16_t cmd_len,
 					  sys_le16_to_cpu(cp->address),
 					  &keys, &key_cnt);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3000,7 +3000,7 @@ static uint8_t config_netkey_del(const void *cmd, uint16_t cmd_len,
 					  &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3028,7 +3028,7 @@ static uint8_t config_appkey_add(const void *cmd, uint16_t cmd_len,
 					  &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3056,7 +3056,7 @@ static uint8_t config_appkey_update(const void *cmd, uint16_t cmd_len,
 					     &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3083,7 +3083,7 @@ static uint8_t config_appkey_del(const void *cmd, uint16_t cmd_len,
 					  &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3111,7 +3111,7 @@ static uint8_t config_appkey_get(const void *cmd, uint16_t cmd_len,
 					  &status, &keys, &key_cnt);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3142,7 +3142,7 @@ static uint8_t config_model_app_bind(const void *cmd, uint16_t cmd_len,
 					   &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3171,7 +3171,7 @@ static uint8_t config_model_app_bind_vnd(const void *cmd, uint16_t cmd_len,
 					       &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3198,7 +3198,7 @@ static uint8_t config_model_app_unbind(const void *cmd, uint16_t cmd_len,
 					     sys_le16_to_cpu(cp->mod_id),
 					     &status);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3228,7 +3228,7 @@ static uint8_t config_model_app_get(const void *cmd, uint16_t cmd_len,
 					  &status, &apps, &app_cnt);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3257,7 +3257,7 @@ static uint8_t config_model_app_vnd_get(const void *cmd, uint16_t cmd_len,
 					      sys_le16_to_cpu(cp->cid),
 					      &status, &apps, &app_cnt);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3290,7 +3290,7 @@ static uint8_t config_hb_pub_set(const void *cmd, uint16_t cmd_len,
 					 &pub, &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3316,7 +3316,7 @@ static uint8_t config_hb_pub_get(const void *cmd, uint16_t cmd_len,
 					 &pub, &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3346,7 +3346,7 @@ static uint8_t config_hb_sub_set(const void *cmd, uint16_t cmd_len,
 					 &sub, &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3372,7 +3372,7 @@ static uint8_t config_hb_sub_get(const void *cmd, uint16_t cmd_len,
 					 &sub, &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3397,7 +3397,7 @@ static uint8_t config_net_trans_get(const void *cmd, uint16_t cmd_len,
 					       &transmit);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3422,7 +3422,7 @@ static uint8_t config_net_trans_set(const void *cmd, uint16_t cmd_len,
 					       cp->transmit, &transmit);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3450,7 +3450,7 @@ static uint8_t config_node_identity_set(const void *cmd, uint16_t cmd_len,
 						&status, &identity);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3478,7 +3478,7 @@ static uint8_t config_node_identity_get(const void *cmd, uint16_t cmd_len,
 						&status, &identity);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3504,7 +3504,7 @@ static uint8_t config_node_reset(const void *cmd, uint16_t cmd_len,
 					 &status);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3530,7 +3530,7 @@ static uint8_t config_lpn_timeout_get(const void *cmd, uint16_t cmd_len,
 					      &polltimeout);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3561,7 +3561,7 @@ static uint8_t health_fault_get(const void *cmd, uint16_t cmd_len,
 					   faults, &fault_count);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3608,7 +3608,7 @@ static uint8_t health_fault_clear(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3667,7 +3667,7 @@ static uint8_t health_fault_test(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3701,7 +3701,7 @@ static uint8_t health_period_get(const void *cmd, uint16_t cmd_len,
 	err = bt_mesh_health_cli_period_get(&health_cli, &ctx, &divisor);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3734,7 +3734,7 @@ static uint8_t health_period_set(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3766,7 +3766,7 @@ static uint8_t health_attention_get(const void *cmd, uint16_t cmd_len,
 	err = bt_mesh_health_cli_attention_get(&health_cli, &ctx, &attention);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3799,7 +3799,7 @@ static uint8_t health_attention_set(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3825,7 +3825,7 @@ static uint8_t opcodes_aggregator_init(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_op_agg_cli_seq_start(cp->net_idx, cp->app_idx, cp->dst, cp->elem_addr);
 	if (err) {
-		LOG_ERR("Failed to init Opcodes Aggregator Context (err %d)", err);
+		LOG_ERROR("Failed to init Opcodes Aggregator Context (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3841,7 +3841,7 @@ static uint8_t opcodes_aggregator_send(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_op_agg_cli_seq_send();
 	if (err) {
-		LOG_ERR("Failed to send Opcodes Aggregator message (err %d)", err);
+		LOG_ERROR("Failed to send Opcodes Aggregator message (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3870,7 +3870,7 @@ static uint8_t rpr_scan_start(const void *cmd, uint16_t cmd_len,
 				     BT_MESH_RPR_SCAN_MAX_DEVS_ANY, &status);
 
 	if (err) {
-		LOG_ERR("Scan start failed: %d", err);
+		LOG_ERROR("Scan start failed: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3892,7 +3892,7 @@ static uint8_t rpr_ext_scan_start(const void *cmd, uint16_t cmd_len,
 					 cp->timeout, cp->ad_types,
 					 cp->ad_count);
 	if (err) {
-		LOG_ERR("Scan start failed: %d", err);
+		LOG_ERROR("Scan start failed: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3913,7 +3913,7 @@ static uint8_t rpr_scan_caps_get(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_rpr_scan_caps_get(&rpr_cli, &srv, &caps);
 	if (err) {
-		LOG_ERR("Scan capabilities get failed: %d", err);
+		LOG_ERROR("Scan capabilities get failed: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3940,7 +3940,7 @@ static uint8_t rpr_scan_get(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_rpr_scan_get(&rpr_cli, &srv, &status);
 	if (err) {
-		LOG_ERR("Scan get failed: %d", err);
+		LOG_ERROR("Scan get failed: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -3991,7 +3991,7 @@ static uint8_t rpr_link_get(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_rpr_link_get(&rpr_cli, &srv, &link);
 	if (err) {
-		LOG_ERR("Link get failed: %d %u", err, link.status);
+		LOG_ERROR("Link get failed: %d %u", err, link.status);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4016,7 +4016,7 @@ static uint8_t rpr_link_close(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_rpr_link_close(&rpr_cli, &srv, &link);
 	if (err) {
-		LOG_ERR("Link close failed: %d %u", err, link.status);
+		LOG_ERROR("Link close failed: %d %u", err, link.status);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4041,7 +4041,7 @@ static uint8_t rpr_prov_remote(const void *cmd, uint16_t cmd_len,
 	err = bt_mesh_provision_remote(&rpr_cli, &srv, cp->uuid,
 				       cp->net_idx, cp->addr);
 	if (err) {
-		LOG_ERR("Prov remote start failed: %d", err);
+		LOG_ERROR("Prov remote start failed: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4060,7 +4060,7 @@ static uint8_t rpr_reprov_remote(const void *cmd, uint16_t cmd_len,
 	int err;
 
 	if (!BT_MESH_ADDR_IS_UNICAST(cp->addr)) {
-		LOG_ERR("Must be a valid unicast address");
+		LOG_ERROR("Must be a valid unicast address");
 		err = -EINVAL;
 		return BTP_STATUS_FAILED;
 	}
@@ -4068,7 +4068,7 @@ static uint8_t rpr_reprov_remote(const void *cmd, uint16_t cmd_len,
 	err = bt_mesh_reprovision_remote(&rpr_cli, &srv, cp->addr,
 					 cp->comp_change);
 	if (err) {
-		LOG_ERR("Reprovisioning failed: %d", err);
+		LOG_ERROR("Reprovisioning failed: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4107,13 +4107,13 @@ static void dfu_tx_prepare(void)
 static void dfu_target(uint8_t img_idx, uint16_t addr)
 {
 	if (dfu_tx.target_cnt == ARRAY_SIZE(dfu_tx.targets)) {
-		LOG_ERR("No room.");
+		LOG_ERROR("No room.");
 		return;
 	}
 
 	for (int i = 0; i < dfu_tx.target_cnt; i++) {
 		if (dfu_tx.targets[i].blob.addr == addr) {
-			LOG_ERR("Target 0x%04x already exists", addr);
+			LOG_ERROR("Target 0x%04x already exists", addr);
 			return;
 		}
 	}
@@ -4135,19 +4135,19 @@ static void dfu_slot_add(size_t size, uint8_t *fwid, size_t fwid_len,
 	slot = bt_mesh_dfu_slot_reserve();
 	err = bt_mesh_dfu_slot_info_set(slot, size, metadata, metadata_len);
 	if (err) {
-		LOG_ERR("Failed to set slot info: %d", err);
+		LOG_ERROR("Failed to set slot info: %d", err);
 		return;
 	}
 
 	err = bt_mesh_dfu_slot_fwid_set(slot, fwid, fwid_len);
 	if (err) {
-		LOG_ERR("Failed to set slot fwid: %d", err);
+		LOG_ERROR("Failed to set slot fwid: %d", err);
 		return;
 	}
 
 	err = bt_mesh_dfu_slot_commit(slot);
 	if (err) {
-		LOG_ERR("Failed to commit slot: %d", err);
+		LOG_ERROR("Failed to commit slot: %d", err);
 		return;
 	}
 
@@ -4167,7 +4167,7 @@ static enum bt_mesh_dfu_iter dfu_img_cb(struct bt_mesh_dfu_cli *cli,
 	if (img->fwid_len <= sizeof(fwid)) {
 		len = bin2hex(img->fwid, img->fwid_len, fwid, sizeof(fwid));
 	} else {
-		LOG_ERR("FWID is too big");
+		LOG_ERROR("FWID is too big");
 		return BT_MESH_DFU_ITER_STOP;
 	}
 
@@ -4198,7 +4198,7 @@ static uint8_t dfu_info_get(const void *cmd, uint16_t cmd_len,
 
 	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_DFU_CLI);
 	if (!model_bound) {
-		LOG_ERR("Model not found");
+		LOG_ERROR("Model not found");
 		return BTP_STATUS_FAILED;
 	}
 	ctx.addr = model_bound->addr;
@@ -4239,7 +4239,7 @@ static uint8_t dfu_update_metadata_check(const void *cmd, uint16_t cmd_len,
 
 	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_DFU_CLI);
 	if (!model_bound) {
-		LOG_ERR("Model not found");
+		LOG_ERROR("Model not found");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4260,7 +4260,7 @@ static uint8_t dfu_update_metadata_check(const void *cmd, uint16_t cmd_len,
 
 	slot = bt_mesh_dfu_slot_at(slot_idx);
 	if (!slot) {
-		LOG_ERR("No image in slot %u", slot_idx);
+		LOG_ERROR("No image in slot %u", slot_idx);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4268,7 +4268,7 @@ static uint8_t dfu_update_metadata_check(const void *cmd, uint16_t cmd_len,
 					     &rsp_data);
 
 	if (err) {
-		LOG_ERR("ERR %d", err);
+		LOG_ERROR("ERR %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4297,7 +4297,7 @@ static uint8_t dfu_firmware_update_get(const void *cmd, uint16_t cmd_len,
 
 	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_DFU_CLI);
 	if (!model_bound) {
-		LOG_ERR("Model not found");
+		LOG_ERROR("Model not found");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4306,7 +4306,7 @@ static uint8_t dfu_firmware_update_get(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_dfu_cli_status_get(&dfd_srv.dfu, &ctx, &rsp_data);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4329,7 +4329,7 @@ static uint8_t dfu_firmware_update_cancel(const void *cmd, uint16_t cmd_len,
 
 	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_DFU_CLI);
 	if (!model_bound) {
-		LOG_ERR("Model not found");
+		LOG_ERROR("Model not found");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4338,7 +4338,7 @@ static uint8_t dfu_firmware_update_cancel(const void *cmd, uint16_t cmd_len,
 
 	err = bt_mesh_dfu_cli_cancel(&dfd_srv.dfu, &ctx);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4366,7 +4366,7 @@ static uint8_t dfu_firmware_update_start(const void *cmd, uint16_t cmd_len,
 
 	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_DFU_CLI);
 	if (!model_bound) {
-		LOG_ERR("Model not found");
+		LOG_ERROR("Model not found");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4394,7 +4394,7 @@ static uint8_t dfu_firmware_update_start(const void *cmd, uint16_t cmd_len,
 
 	xfer.slot = bt_mesh_dfu_slot_at(slot_idx);
 	if (!xfer.slot) {
-		LOG_ERR("No image in slot %u", slot_idx);
+		LOG_ERROR("No image in slot %u", slot_idx);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4407,7 +4407,7 @@ static uint8_t dfu_firmware_update_start(const void *cmd, uint16_t cmd_len,
 	dfu_tx_prepare();
 
 	if (!dfu_tx.target_cnt) {
-		LOG_ERR("No targets.");
+		LOG_ERROR("No targets.");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4423,7 +4423,7 @@ static uint8_t dfu_firmware_update_start(const void *cmd, uint16_t cmd_len,
 	err = bt_mesh_dfu_cli_send(&dfd_srv.dfu, &dfu_tx.inputs, &dummy_blob_io, &xfer);
 
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4440,13 +4440,13 @@ static uint8_t dfu_firmware_update_apply(const void *cmd, uint16_t cmd_len,
 
 	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_DFU_CLI);
 	if (!model_bound) {
-		LOG_ERR("Model not found");
+		LOG_ERROR("Model not found");
 		return BTP_STATUS_FAILED;
 	}
 
 	err = bt_mesh_dfu_cli_apply(&dfd_srv.dfu);
 	if (err) {
-		LOG_ERR("err %d", err);
+		LOG_ERROR("err %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4485,7 +4485,7 @@ static int cmd_blob_target(uint16_t addr)
 	struct bt_mesh_blob_target *t;
 
 	if (blob_cli_xfer.target_count == ARRAY_SIZE(blob_cli_xfer.targets)) {
-		LOG_ERR("No more room");
+		LOG_ERROR("No more room");
 		return -ENOMEM;
 	}
 
@@ -4512,7 +4512,7 @@ static uint8_t blob_info_get(const void *cmd, uint16_t cmd_len,
 
 	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_BLOB_CLI);
 	if (!model_bound) {
-		LOG_ERR("Model not found");
+		LOG_ERROR("Model not found");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4521,7 +4521,7 @@ static uint8_t blob_info_get(const void *cmd, uint16_t cmd_len,
 			(cp->addr[i * sizeof(uint16_t)] << 8);
 		err = cmd_blob_target(addr);
 		if (err) {
-			LOG_ERR("err target %d", err);
+			LOG_ERROR("err target %d", err);
 			return BTP_STATUS_FAILED;
 		}
 	}
@@ -4533,7 +4533,7 @@ static uint8_t blob_info_get(const void *cmd, uint16_t cmd_len,
 	}
 
 	if (!blob_cli_xfer.target_count) {
-		LOG_ERR("Failed: No targets");
+		LOG_ERROR("Failed: No targets");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4559,12 +4559,12 @@ static uint8_t blob_transfer_start(const void *cmd, uint16_t cmd_len,
 
 	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_BLOB_CLI);
 	if (!model_bound) {
-		LOG_ERR("Model not found");
+		LOG_ERROR("Model not found");
 		return BTP_STATUS_FAILED;
 	}
 
 	if (!blob_cli_xfer.target_count) {
-		LOG_ERR("Failed: No targets");
+		LOG_ERROR("Failed: No targets");
 		return BTP_STATUS_FAILED;
 	}
 	blob_cli_xfer.xfer.id = cp->id;
@@ -4617,7 +4617,7 @@ static uint8_t blob_transfer_get(const void *cmd, uint16_t cmd_len,
 
 	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_BLOB_CLI);
 	if (!model_bound) {
-		LOG_ERR("Model not found");
+		LOG_ERROR("Model not found");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4625,12 +4625,12 @@ static uint8_t blob_transfer_get(const void *cmd, uint16_t cmd_len,
 
 	err = cmd_blob_target(group);
 	if (err) {
-		LOG_ERR("err target %d", err);
+		LOG_ERROR("err target %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
 	if (!blob_cli_xfer.target_count) {
-		LOG_ERR("Failed: No targets");
+		LOG_ERROR("Failed: No targets");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4639,7 +4639,7 @@ static uint8_t blob_transfer_get(const void *cmd, uint16_t cmd_len,
 	err = bt_mesh_blob_cli_xfer_progress_get(&blob_cli, &blob_cli_xfer.inputs);
 
 	if (err) {
-		LOG_ERR("ERR %d", err);
+		LOG_ERROR("ERR %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4663,7 +4663,7 @@ static uint8_t blob_srv_recv(const void *cmd, uint16_t cmd_len,
 
 	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_BLOB_SRV);
 	if (!model_bound) {
-		LOG_ERR("Model not found");
+		LOG_ERROR("Model not found");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4681,7 +4681,7 @@ static uint8_t blob_srv_recv(const void *cmd, uint16_t cmd_len,
 				    timeout_base);
 
 	if (err) {
-		LOG_ERR("ERR %d", err);
+		LOG_ERROR("ERR %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4702,7 +4702,7 @@ static uint8_t blob_srv_cancel(const void *cmd, uint16_t cmd_len,
 
 	model_bound = lookup_model_bound(BT_MESH_MODEL_ID_BLOB_SRV);
 	if (!model_bound) {
-		LOG_ERR("Model not found");
+		LOG_ERROR("Model not found");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -4711,7 +4711,7 @@ static uint8_t blob_srv_cancel(const void *cmd, uint16_t cmd_len,
 	err = bt_mesh_blob_srv_cancel(srv);
 
 	if (err) {
-		LOG_ERR("ERR %d", err);
+		LOG_ERROR("ERR %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -5322,7 +5322,7 @@ void net_recv_ev(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst, const voi
 		ttl, ctl, src, dst, payload_len);
 
 	if (payload_len > net_buf_simple_tailroom(&buf)) {
-		LOG_ERR("Payload size exceeds buffer size");
+		LOG_ERROR("Payload size exceeds buffer size");
 		return;
 	}
 
@@ -5346,7 +5346,7 @@ void model_recv_ev(uint16_t src, uint16_t dst, const void *payload,
 	LOG_DBG("src 0x%04x dst 0x%04x payload_len %zu", src, dst, payload_len);
 
 	if (payload_len + sizeof(*ev) > net_buf_simple_tailroom(&buf)) {
-		LOG_ERR("Payload size exceeds buffer size");
+		LOG_ERROR("Payload size exceeds buffer size");
 		return;
 	}
 
@@ -5377,7 +5377,7 @@ static void model_bound_cb(uint16_t addr, const struct bt_mesh_model *model,
 		}
 	}
 
-	LOG_ERR("model_bound is full");
+	LOG_ERROR("model_bound is full");
 }
 
 static void model_unbound_cb(uint16_t addr, const struct bt_mesh_model *model,

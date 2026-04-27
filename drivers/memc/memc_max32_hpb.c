@@ -91,14 +91,14 @@ static int memc_max32_hpb_init(const struct device *dev)
 	const mxc_hpb_mem_config_t *mem0 = NULL, *mem1 = NULL;
 
 	if (!device_is_ready(config->clock)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERROR("clock control device not ready");
 		return -ENODEV;
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(perclks); i++) {
 		r = clock_control_on(config->clock, (clock_control_subsys_t)&perclks[i]);
 		if (r < 0) {
-			LOG_ERR("Could not initialize HPB clock (%d)", r);
+			LOG_ERROR("Could not initialize HPB clock (%d)", r);
 			return r;
 		}
 	}
@@ -114,13 +114,13 @@ static int memc_max32_hpb_init(const struct device *dev)
 	/* configure pinmux */
 	r = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (r < 0) {
-		LOG_ERR("HPB pinctrl setup failed (%d)", r);
+		LOG_ERROR("HPB pinctrl setup failed (%d)", r);
 		return r;
 	}
 
 	r = MXC_HPB_Init(mem0, mem1);
 	if (r < 0) {
-		LOG_ERR("HPB init failed (%d)", r);
+		LOG_ERROR("HPB init failed (%d)", r);
 		return r;
 	}
 

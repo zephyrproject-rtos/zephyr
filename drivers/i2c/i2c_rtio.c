@@ -176,7 +176,7 @@ int i2c_rtio_transfer(struct i2c_rtio *ctx, struct i2c_msg *msgs, uint8_t num_ms
 
 	sqe = i2c_rtio_copy(r, iodev, msgs, num_msgs);
 	if (sqe == NULL) {
-		LOG_ERR("Not enough submission queue entries");
+		LOG_ERROR("Not enough submission queue entries");
 		res = -ENOMEM;
 		goto out;
 	}
@@ -207,7 +207,7 @@ int i2c_rtio_configure(struct i2c_rtio *ctx, uint32_t i2c_config)
 
 	sqe = rtio_sqe_acquire(r);
 	if (sqe == NULL) {
-		LOG_ERR("Not enough submission queue entries");
+		LOG_ERROR("Not enough submission queue entries");
 		res = -ENOMEM;
 		goto out;
 	}
@@ -244,7 +244,7 @@ int i2c_rtio_recover(struct i2c_rtio *ctx)
 
 	sqe = rtio_sqe_acquire(r);
 	if (sqe == NULL) {
-		LOG_ERR("Not enough submission queue entries");
+		LOG_ERROR("Not enough submission queue entries");
 		res = -ENOMEM;
 		goto out;
 	}

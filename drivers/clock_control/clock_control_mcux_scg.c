@@ -117,7 +117,7 @@ static int mcux_scg_get_rate(const struct device *dev,
 
 
 	default:
-		LOG_ERR("Unsupported clock name");
+		LOG_ERROR("Unsupported clock name");
 		return -EINVAL;
 	}
 

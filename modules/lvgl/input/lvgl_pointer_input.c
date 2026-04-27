@@ -115,7 +115,7 @@ static void lvgl_pointer_process_event(struct input_event *evt, void *user_data)
 		point->y = tmp_point.x;
 		break;
 	default:
-		LOG_ERR("Invalid display orientation");
+		LOG_ERROR("Invalid display orientation");
 		break;
 	}
 

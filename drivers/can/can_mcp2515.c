@@ -299,7 +299,7 @@ const int mcp2515_set_mode_int(const struct device *dev, uint8_t mcp2515_mode)
 	while (((canstat & MCP2515_CANSTAT_MODE_MASK) >> MCP2515_CANSTAT_MODE_POS) !=
 	       mcp2515_mode) {
 		if (--retries < 0) {
-			LOG_ERR("Timeout trying to set MCP2515 operation mode");
+			LOG_ERROR("Timeout trying to set MCP2515 operation mode");
 			return -EIO;
 		}
 
@@ -396,19 +396,19 @@ static int mcp2515_set_timing(const struct device *dev, const struct can_timing 
 
 	ret = mcp2515_cmd_write_reg(dev, MCP2515_ADDR_CNF3, config_buf, sizeof(config_buf));
 	if (ret < 0) {
-		LOG_ERR("Failed to write the configuration [%d]", ret);
+		LOG_ERROR("Failed to write the configuration [%d]", ret);
 		goto done;
 	}
 
 	ret = mcp2515_cmd_bit_modify(dev, MCP2515_ADDR_RXB0CTRL, rx0_ctrl, rx0_ctrl);
 	if (ret < 0) {
-		LOG_ERR("Failed to write RXB0CTRL [%d]", ret);
+		LOG_ERROR("Failed to write RXB0CTRL [%d]", ret);
 		goto done;
 	}
 
 	ret = mcp2515_cmd_bit_modify(dev, MCP2515_ADDR_RXB1CTRL, rx1_ctrl, rx1_ctrl);
 	if (ret < 0) {
-		LOG_ERR("Failed to write RXB1CTRL [%d]", ret);
+		LOG_ERROR("Failed to write RXB1CTRL [%d]", ret);
 		goto done;
 	}
 
@@ -439,7 +439,7 @@ static int mcp2515_start(const struct device *dev)
 	if (dev_cfg->common.phy != NULL) {
 		ret = can_transceiver_enable(dev_cfg->common.phy, dev_data->common.mode);
 		if (ret != 0) {
-			LOG_ERR("Failed to enable CAN transceiver [%d]", ret);
+			LOG_ERROR("Failed to enable CAN transceiver [%d]", ret);
 			return ret;
 		}
 	}
@@ -450,7 +450,7 @@ static int mcp2515_start(const struct device *dev)
 
 	ret = mcp2515_set_mode_int(dev, dev_data->mcp2515_mode);
 	if (ret < 0) {
-		LOG_ERR("Failed to set the mode [%d]", ret);
+		LOG_ERROR("Failed to set the mode [%d]", ret);
 
 		if (dev_cfg->common.phy != NULL) {
 			/* Attempt to disable the CAN transceiver in case of error */
@@ -489,7 +489,7 @@ static int mcp2515_stop(const struct device *dev)
 
 	ret = mcp2515_set_mode_int(dev, MCP2515_MODE_CONFIGURATION);
 	if (ret < 0) {
-		LOG_ERR("Failed to enter configuration mode [%d]", ret);
+		LOG_ERROR("Failed to enter configuration mode [%d]", ret);
 		k_mutex_unlock(&dev_data->mutex);
 		return ret;
 	}
@@ -505,7 +505,7 @@ static int mcp2515_stop(const struct device *dev)
 	if (dev_cfg->common.phy != NULL) {
 		ret = can_transceiver_disable(dev_cfg->common.phy);
 		if (ret != 0) {
-			LOG_ERR("Failed to disable CAN transceiver [%d]", ret);
+			LOG_ERROR("Failed to disable CAN transceiver [%d]", ret);
 			return ret;
 		}
 	}
@@ -532,7 +532,7 @@ static int mcp2515_set_mode(const struct device *dev, can_mode_t mode)
 		dev_data->mcp2515_mode = MCP2515_MODE_LOOPBACK;
 		break;
 	default:
-		LOG_ERR("Unsupported CAN Mode %u", mode);
+		LOG_ERROR("Unsupported CAN Mode %u", mode);
 		return -ENOTSUP;
 	}
 
@@ -552,12 +552,12 @@ static int mcp2515_send(const struct device *dev, const struct can_frame *frame,
 	uint8_t tx_frame[MCP2515_FRAME_LEN];
 
 	if (frame->dlc > CAN_MAX_DLC) {
-		LOG_ERR("DLC of %d exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
+		LOG_ERROR("DLC of %d exceeds maximum (%d)", frame->dlc, CAN_MAX_DLC);
 		return -EINVAL;
 	}
 
 	if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR)) != 0) {
-		LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
+		LOG_ERROR("unsupported CAN frame flags 0x%02x", frame->flags);
 		return -ENOTSUP;
 	}
 
@@ -615,7 +615,7 @@ static int mcp2515_add_rx_filter(const struct device *dev, can_rx_callback_t rx_
 	__ASSERT(rx_cb != NULL, "response_ptr can not be null");
 
 	if ((filter->flags & ~(CAN_FILTER_IDE)) != 0) {
-		LOG_ERR("unsupported CAN filter flags 0x%02x", filter->flags);
+		LOG_ERROR("unsupported CAN filter flags 0x%02x", filter->flags);
 		return -ENOTSUP;
 	}
 
@@ -649,7 +649,7 @@ static void mcp2515_remove_rx_filter(const struct device *dev, int filter_id)
 	struct mcp2515_data *dev_data = dev->data;
 
 	if (filter_id < 0 || filter_id >= CONFIG_CAN_MCP2515_MAX_FILTERS) {
-		LOG_ERR("filter ID %d out of bounds", filter_id);
+		LOG_ERROR("filter ID %d out of bounds", filter_id);
 		return;
 	}
 
@@ -728,7 +728,7 @@ static int mcp2515_get_state(const struct device *dev, enum can_state *state,
 
 	ret = mcp2515_cmd_read_reg(dev, MCP2515_ADDR_EFLG, &eflg, sizeof(eflg));
 	if (ret < 0) {
-		LOG_ERR("Failed to read error register [%d]", ret);
+		LOG_ERROR("Failed to read error register [%d]", ret);
 		return -EIO;
 	}
 
@@ -749,7 +749,7 @@ static int mcp2515_get_state(const struct device *dev, enum can_state *state,
 	if (err_cnt != NULL) {
 		ret = mcp2515_cmd_read_reg(dev, MCP2515_ADDR_TEC, err_cnt_buf, sizeof(err_cnt_buf));
 		if (ret < 0) {
-			LOG_ERR("Failed to read error counters [%d]", ret);
+			LOG_ERROR("Failed to read error counters [%d]", ret);
 			return -EIO;
 		}
 
@@ -765,7 +765,7 @@ static int mcp2515_get_state(const struct device *dev, enum can_state *state,
 					     eflg & (MCP2515_EFLG_RX0OVR | MCP2515_EFLG_RX1OVR),
 					     0U);
 		if (ret < 0) {
-			LOG_ERR("Failed to clear RX overrun flags [%d]", ret);
+			LOG_ERROR("Failed to clear RX overrun flags [%d]", ret);
 			return -EIO;
 		}
 	}
@@ -785,7 +785,7 @@ static void mcp2515_handle_errors(const struct device *dev)
 
 	err = mcp2515_get_state(dev, &state, state_change_cb ? &err_cnt : NULL);
 	if (err != 0) {
-		LOG_ERR("Failed to get CAN controller state [%d]", err);
+		LOG_ERROR("Failed to get CAN controller state [%d]", err);
 		return;
 	}
 
@@ -805,7 +805,7 @@ static void mcp2515_handle_interrupts(const struct device *dev)
 	while (1) {
 		ret = mcp2515_cmd_read_reg(dev, MCP2515_ADDR_CANINTF, &canintf, 1);
 		if (ret != 0) {
-			LOG_ERR("Couldn't read INTF register %d", ret);
+			LOG_ERROR("Couldn't read INTF register %d", ret);
 			continue;
 		}
 
@@ -856,7 +856,7 @@ static void mcp2515_handle_interrupts(const struct device *dev)
 		/* Break from loop if INT pin is inactive */
 		ret = gpio_pin_get_dt(&dev_cfg->int_gpio);
 		if (ret < 0) {
-			LOG_ERR("Couldn't read INT pin");
+			LOG_ERROR("Couldn't read INT pin");
 		} else if (ret == 0) {
 			/* All interrupt flags handled */
 			break;
@@ -930,29 +930,29 @@ static int mcp2515_init(const struct device *dev)
 	k_sem_init(&dev_data->tx_sem, MCP2515_TX_CNT, MCP2515_TX_CNT);
 
 	if (dev_cfg->common.phy != NULL && !device_is_ready(dev_cfg->common.phy)) {
-		LOG_ERR("CAN transceiver not ready");
+		LOG_ERROR("CAN transceiver not ready");
 		return -ENODEV;
 	}
 
 	if (!spi_is_ready_dt(&dev_cfg->bus)) {
-		LOG_ERR("SPI bus %s not ready", dev_cfg->bus.bus->name);
+		LOG_ERROR("SPI bus %s not ready", dev_cfg->bus.bus->name);
 		return -ENODEV;
 	}
 
 	/* Reset MCP2515 */
 	if (mcp2515_cmd_soft_reset(dev)) {
-		LOG_ERR("Soft-reset failed");
+		LOG_ERROR("Soft-reset failed");
 		return -EIO;
 	}
 
 	/* Initialize interrupt handling  */
 	if (!gpio_is_ready_dt(&dev_cfg->int_gpio)) {
-		LOG_ERR("Interrupt GPIO port not ready");
+		LOG_ERROR("Interrupt GPIO port not ready");
 		return -ENODEV;
 	}
 
 	if (gpio_pin_configure_dt(&dev_cfg->int_gpio, GPIO_INPUT)) {
-		LOG_ERR("Unable to configure interrupt GPIO");
+		LOG_ERROR("Unable to configure interrupt GPIO");
 		return -EINVAL;
 	}
 
@@ -978,7 +978,7 @@ static int mcp2515_init(const struct device *dev)
 
 	ret = can_calc_timing(dev, &timing, dev_cfg->common.bitrate, dev_cfg->common.sample_point);
 	if (ret == -EINVAL) {
-		LOG_ERR("Can't find timing for given param");
+		LOG_ERROR("Can't find timing for given param");
 		return -EIO;
 	}
 

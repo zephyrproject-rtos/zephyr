@@ -401,7 +401,7 @@ populate:
 			handle = attrs->handle;
 		} else if (find_attr(attrs->handle)) {
 			/* Service has conflicting handles */
-			LOG_ERR("Mock: Unable to register handle 0x%04x", attrs->handle);
+			LOG_ERROR("Mock: Unable to register handle 0x%04x", attrs->handle);
 			return -EINVAL;
 		}
 
@@ -517,7 +517,7 @@ int bt_gatt_discover(struct bt_conn *conn, struct bt_gatt_discover_params *param
 	case BT_GATT_DISCOVER_ATTRIBUTE:
 		break;
 	default:
-		LOG_ERR("Invalid discovery type: %u", params->type);
+		LOG_ERROR("Invalid discovery type: %u", params->type);
 		return -EINVAL;
 	}
 

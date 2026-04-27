@@ -420,7 +420,7 @@ static int icm4268x_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			 * to store timestamp delta will overflow. Better error reporting?
 			 */
 			if (ts_delta > UINT32_MAX) {
-				LOG_ERR("Timestamp delta overflow");
+				LOG_ERROR("Timestamp delta overflow");
 				buffer = frame_end;
 				continue;
 			}
@@ -454,7 +454,7 @@ static int icm4268x_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			 * to store timestamp delta will overflow. Better error reporting?
 			 */
 			if (ts_delta > UINT32_MAX) {
-				LOG_ERR("Timestamp delta overflow");
+				LOG_ERROR("Timestamp delta overflow");
 				buffer = frame_end;
 				continue;
 			}
@@ -502,7 +502,7 @@ static int icm4268x_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			 * to store timestamp delta will overflow. Better error reporting?
 			 */
 			if (ts_delta > UINT32_MAX) {
-				LOG_ERR("Timestamp delta overflow");
+				LOG_ERROR("Timestamp delta overflow");
 				buffer = frame_end;
 				continue;
 			}

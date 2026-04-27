@@ -294,7 +294,7 @@ static bool max32_start(const struct device *dev)
 		res = max32_do_configure(dev, sqe->i2c_config);
 		return i2c_rtio_complete(data->ctx, res);
 	default:
-		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
+		LOG_ERROR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
 		return i2c_rtio_complete(data->ctx, -EINVAL);
 	}
 }
@@ -316,7 +316,7 @@ static void max32_complete(const struct device *dev, int status)
 		 * delay. This doesn't happen when using Fast
 		 * Bitrate 400Hz.
 		 */
-		LOG_ERR("For Standard speed HW needs more time to run");
+		LOG_ERROR("For Standard speed HW needs more time to run");
 		return;
 	}
 

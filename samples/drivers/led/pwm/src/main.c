@@ -78,7 +78,7 @@ static void run_led_test(const struct device *led_pwm, uint8_t led)
 	/* Turn LED on. */
 	err = led_on(led_pwm, led);
 	if (err < 0) {
-		LOG_ERR("err=%d", err);
+		LOG_ERROR("err=%d", err);
 		return;
 	}
 	LOG_INF("  Turned on");
@@ -87,7 +87,7 @@ static void run_led_test(const struct device *led_pwm, uint8_t led)
 	/* Turn LED off. */
 	err = led_off(led_pwm, led);
 	if (err < 0) {
-		LOG_ERR("err=%d", err);
+		LOG_ERROR("err=%d", err);
 		return;
 	}
 	LOG_INF("  Turned off");
@@ -98,7 +98,7 @@ static void run_led_test(const struct device *led_pwm, uint8_t led)
 	for (level = 0; level <= MAX_BRIGHTNESS; level++) {
 		err = led_set_brightness(led_pwm, led, level);
 		if (err < 0) {
-			LOG_ERR("err=%d brightness=%d\n", err, level);
+			LOG_ERROR("err=%d brightness=%d\n", err, level);
 			return;
 		}
 		k_sleep(K_MSEC(CONFIG_FADE_DELAY));
@@ -110,7 +110,7 @@ static void run_led_test(const struct device *led_pwm, uint8_t led)
 	for (level = MAX_BRIGHTNESS; level >= 0; level--) {
 		err = led_set_brightness(led_pwm, led, level);
 		if (err < 0) {
-			LOG_ERR("err=%d brightness=%d\n", err, level);
+			LOG_ERROR("err=%d brightness=%d\n", err, level);
 			return;
 		}
 		k_sleep(K_MSEC(CONFIG_FADE_DELAY));
@@ -129,7 +129,7 @@ static void run_led_test(const struct device *led_pwm, uint8_t led)
 			(uint32_t)CONFIG_BLINK_DELAY_SHORT_LED_PERIOD_DIV);
 #endif
 		if (err < 0) {
-			LOG_ERR("err=%d", err);
+			LOG_ERROR("err=%d", err);
 			return;
 		}
 	}
@@ -149,7 +149,7 @@ static void run_led_test(const struct device *led_pwm, uint8_t led)
 			(uint32_t)CONFIG_BLINK_DELAY_LONG_LED_PERIOD_DIV);
 #endif
 		if (err < 0) {
-			LOG_ERR("err=%d", err);
+			LOG_ERROR("err=%d", err);
 			LOG_INF("  Cycle period not supported - on: %u msec, "
 				"off: %u msec", led_delay, led_delay);
 		}
@@ -161,7 +161,7 @@ static void run_led_test(const struct device *led_pwm, uint8_t led)
 	/* Turn LED off. */
 	err = led_off(led_pwm, led);
 	if (err < 0) {
-		LOG_ERR("err=%d", err);
+		LOG_ERROR("err=%d", err);
 		return;
 	}
 	LOG_INF("  Turned off, loop end");
@@ -174,12 +174,12 @@ int main(void)
 
 	led_pwm = DEVICE_DT_GET(LED_PWM_NODE_ID);
 	if (!device_is_ready(led_pwm)) {
-		LOG_ERR("Device %s is not ready", led_pwm->name);
+		LOG_ERROR("Device %s is not ready", led_pwm->name);
 		return 0;
 	}
 
 	if (!num_leds) {
-		LOG_ERR("No LEDs found for %s", led_pwm->name);
+		LOG_ERROR("No LEDs found for %s", led_pwm->name);
 		return 0;
 	}
 

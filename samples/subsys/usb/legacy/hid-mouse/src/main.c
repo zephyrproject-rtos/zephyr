@@ -86,7 +86,7 @@ static void input_cb(struct input_event *evt, void *user_data)
 	}
 
 	if (k_msgq_put(&mouse_msgq, tmp, K_NO_WAIT) != 0) {
-		LOG_ERR("Failed to put new input event");
+		LOG_ERROR("Failed to put new input event");
 	}
 
 	tmp[MOUSE_X_REPORT_IDX] = 0U;
@@ -112,19 +112,19 @@ int main(void)
 	int ret;
 
 	if (!gpio_is_ready_dt(&led0)) {
-		LOG_ERR("LED device %s is not ready", led0.port->name);
+		LOG_ERROR("LED device %s is not ready", led0.port->name);
 		return 0;
 	}
 
 	hid_dev = device_get_binding("HID_0");
 	if (hid_dev == NULL) {
-		LOG_ERR("Cannot get USB HID Device");
+		LOG_ERROR("Cannot get USB HID Device");
 		return 0;
 	}
 
 	ret = gpio_pin_configure_dt(&led0, GPIO_OUTPUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to configure the LED pin, error: %d", ret);
+		LOG_ERROR("Failed to configure the LED pin, error: %d", ret);
 		return 0;
 	}
 
@@ -136,7 +136,7 @@ int main(void)
 
 	ret = usb_enable(status_cb);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable USB");
+		LOG_ERROR("Failed to enable USB");
 		return 0;
 	}
 
@@ -147,7 +147,7 @@ int main(void)
 
 		ret = hid_int_ep_write(hid_dev, report, MOUSE_REPORT_COUNT, NULL);
 		if (ret) {
-			LOG_ERR("HID write error, %d", ret);
+			LOG_ERROR("HID write error, %d", ret);
 		} else {
 			k_sem_take(&ep_write_sem, K_FOREVER);
 			/* Toggle LED on sent report */

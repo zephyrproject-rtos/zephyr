@@ -268,7 +268,7 @@ static inline int _get_region_index(uint32_t start, uint32_t size)
 static inline int _dynamic_region_allocate_index(void)
 {
 	if (dynamic_region_index >= get_num_regions()) {
-		LOG_ERR("no enough mpu entries %d", dynamic_region_index);
+		LOG_ERROR("no enough mpu entries %d", dynamic_region_index);
 		return -EINVAL;
 	}
 
@@ -553,9 +553,8 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
 	}
 	guard_start -= Z_ARC_STACK_GUARD_SIZE;
 
-	if (_mpu_configure(THREAD_STACK_GUARD_REGION, guard_start,
-		Z_ARC_STACK_GUARD_SIZE) < 0) {
-		LOG_ERR("thread %p's stack guard failed", thread);
+	if (_mpu_configure(THREAD_STACK_GUARD_REGION, guard_start, Z_ARC_STACK_GUARD_SIZE) < 0) {
+		LOG_ERROR("thread %p's stack guard failed", thread);
 		return;
 	}
 #endif /* CONFIG_MPU_STACK_GUARD */
@@ -567,7 +566,7 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
 		if (_mpu_configure(THREAD_STACK_USER_REGION,
 				   (uint32_t)thread->stack_info.start,
 				   thread->stack_info.size) < 0) {
-			LOG_ERR("thread %p's stack failed", thread);
+			LOG_ERROR("thread %p's stack failed", thread);
 			return;
 		}
 	}
@@ -590,11 +589,9 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
 
 	for (uint32_t i = 0; i < num_partitions; i++) {
 		if (pparts->size) {
-			if (_dynamic_region_allocate_and_init(pparts->start,
-				pparts->size, pparts->attr) < 0) {
-				LOG_ERR(
-				"thread %p's mem region: %p failed",
-				 thread, pparts);
+			if (_dynamic_region_allocate_and_init(pparts->start, pparts->size,
+							      pparts->attr) < 0) {
+				LOG_ERROR("thread %p's mem region: %p failed", thread, pparts);
 				return;
 			}
 		}
@@ -847,10 +844,8 @@ void arc_mpu_init(void)
 
 		/* record the static region which can be split */
 		if (mpu_config.mpu_regions[i].attr & REGION_DYNAMIC) {
-			if (dynamic_regions_num >=
-			MPU_DYNAMIC_REGION_AREAS_NUM) {
-				LOG_ERR("not enough dynamic regions %d",
-				 dynamic_regions_num);
+			if (dynamic_regions_num >= MPU_DYNAMIC_REGION_AREAS_NUM) {
+				LOG_ERROR("not enough dynamic regions %d", dynamic_regions_num);
 				return;
 			}
 

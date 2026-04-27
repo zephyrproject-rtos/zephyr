@@ -44,13 +44,13 @@ static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
 	}
 
 	if (config->operation & SPI_HALF_DUPLEX) {
-		LOG_ERR("Half-duplex not supported");
+		LOG_ERROR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
 	/* Simple SPI only supports master mode */
 	if (spi_context_is_slave(&spi->ctx)) {
-		LOG_ERR("Slave mode not supported");
+		LOG_ERROR("Slave mode not supported");
 		return -ENOTSUP;
 	}
 
@@ -58,7 +58,7 @@ static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
 	    (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
 	     (config->operation &
 	      (SPI_LINES_DUAL | SPI_LINES_QUAD | SPI_LINES_OCTAL)))) {
-		LOG_ERR("Unsupported configuration");
+		LOG_ERROR("Unsupported configuration");
 		return -EINVAL;
 	}
 

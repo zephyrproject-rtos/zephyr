@@ -47,7 +47,7 @@ int main(void)
 		LOG_HEXDUMP_INF(update->firmware, 8, "First 8 bytes of encrypted fw:");
 		LOG_INF("Reboot the device to trigger the update");
 	} else {
-		LOG_ERR("The request to update failed");
+		LOG_ERROR("The request to update failed");
 	}
 
 	return 0;

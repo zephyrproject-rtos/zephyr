@@ -110,7 +110,7 @@ static int ncp5623_set_brightness(const struct device *dev, uint32_t led, uint8_
 	ret = i2c_reg_write_byte_dt(&config->bus, led_channels[led] | value, 0x70);
 
 	if (ret < 0) {
-		LOG_ERR("%s: LED write failed", dev->name);
+		LOG_ERROR("%s: LED write failed", dev->name);
 	}
 
 	return ret;
@@ -130,7 +130,7 @@ static int ncp5623_led_init(const struct device *dev)
 			  NCP5623_LED_PWM2};
 
 	if (!i2c_is_ready_dt(&config->bus)) {
-		LOG_ERR("%s: I2C device not ready", dev->name);
+		LOG_ERROR("%s: I2C device not ready", dev->name);
 		return -ENODEV;
 	}
 
@@ -142,8 +142,8 @@ static int ncp5623_led_init(const struct device *dev)
 		}
 
 		if (led_info->num_colors != NCP5623_CHANNEL_COUNT) {
-			LOG_ERR("%s: invalid number of colors %d (must be %d with a single LED)",
-				dev->name, led_info->num_colors, NCP5623_CHANNEL_COUNT);
+			LOG_ERROR("%s: invalid number of colors %d (must be %d with a single LED)",
+				  dev->name, led_info->num_colors, NCP5623_CHANNEL_COUNT);
 			return -EINVAL;
 		}
 	} else if (config->num_leds <= 3) { /* three single-channel LEDs */
@@ -155,20 +155,21 @@ static int ncp5623_led_init(const struct device *dev)
 			}
 
 			if (led_info->num_colors > 1) {
-				LOG_ERR("%s: invalid number of colors %d (must be 1 when defining "
+				LOG_ERROR(
+					"%s: invalid number of colors %d (must be 1 when defining "
 					"multiple leds)",
 					dev->name, led_info->num_colors);
 				return -EINVAL;
 			}
 		}
 	} else {
-		LOG_ERR("%s: invalid number of leds %d (max %d)", dev->name, config->num_leds,
-			NCP5623_CHANNEL_COUNT);
+		LOG_ERROR("%s: invalid number of leds %d (max %d)", dev->name, config->num_leds,
+			  NCP5623_CHANNEL_COUNT);
 		return -EINVAL;
 	}
 
 	if (i2c_write_dt(&config->bus, buf, sizeof(buf))) {
-		LOG_ERR("%s: LED write failed", dev->name);
+		LOG_ERROR("%s: LED write failed", dev->name);
 		return -EIO;
 	}
 

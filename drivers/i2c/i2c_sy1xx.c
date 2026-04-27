@@ -108,13 +108,13 @@ static int sy1xx_i2c_configure(const struct device *dev, uint32_t flags)
 	struct sy1xx_i2c_dev_data *const data = dev->data;
 
 	if (!(flags & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Master Mode is required");
+		LOG_ERROR("Master Mode is required");
 		return -EIO;
 	}
 
 	if (flags & I2C_ADDR_10_BITS) {
-		LOG_ERR("I2C 10-bit addressing is currently not supported");
-		LOG_ERR("Please submit a patch");
+		LOG_ERROR("I2C 10-bit addressing is currently not supported");
+		LOG_ERROR("Please submit a patch");
 		return -EIO;
 	}
 
@@ -134,7 +134,7 @@ static int sy1xx_i2c_configure(const struct device *dev, uint32_t flags)
 		break;
 
 	default:
-		LOG_ERR("Unsupported I2C speed value");
+		LOG_ERROR("Unsupported I2C speed value");
 		return -EIO;
 	}
 
@@ -251,13 +251,13 @@ static int sy1xx_i2c_read(const struct device *dev, struct i2c_msg *msg, uint16_
 
 		/* make sure all is transferred to fifo */
 		if (SY1XX_UDMA_GET_REMAINING_TX(cfg->base)) {
-			LOG_ERR("filling fifo failed");
+			LOG_ERROR("filling fifo failed");
 			return -EIO;
 		}
 
 		if (SY1XX_UDMA_GET_REMAINING_RX(cfg->base)) {
-			LOG_ERR("missing read bytes, %d bytes left",
-				SY1XX_UDMA_GET_REMAINING_RX(cfg->base));
+			LOG_ERROR("missing read bytes, %d bytes left",
+				  SY1XX_UDMA_GET_REMAINING_RX(cfg->base));
 			return -EIO;
 		}
 
@@ -331,7 +331,7 @@ static int sy1xx_i2c_write(const struct device *dev, struct i2c_msg *msg, uint16
 
 		/* make sure all is transferred to fifo */
 		if (SY1XX_UDMA_GET_REMAINING_TX(cfg->base)) {
-			LOG_ERR("filling fifo failed");
+			LOG_ERROR("filling fifo failed");
 			return -EIO;
 		}
 

@@ -175,7 +175,7 @@ static int gpio_ameba_pin_interrupt_configure(const struct device *dev, gpio_pin
 				gpio_initstruct.GPIO_ITTrigger = GPIO_INT_Trigger_BOTHEDGE;
 				break;
 			default:
-				LOG_ERR("GPIO Edge interrupt type invalid");
+				LOG_ERROR("GPIO Edge interrupt type invalid");
 				return -ENOTSUP;
 			}
 		} else {
@@ -190,7 +190,7 @@ static int gpio_ameba_pin_interrupt_configure(const struct device *dev, gpio_pin
 				gpio_initstruct.GPIO_PuPd = GPIO_PuPd_DOWN;
 				break;
 			default:
-				LOG_ERR("GPIO level interrupt doesn't support both high and low");
+				LOG_ERROR("GPIO level interrupt doesn't support both high and low");
 				return -ENOTSUP;
 			}
 		}

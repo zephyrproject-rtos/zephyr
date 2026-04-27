@@ -226,7 +226,7 @@ int zperf_prepare_upload_sock(const struct net_sockaddr *peer_addr, uint8_t tos,
 		break;
 
 	default:
-		LOG_ERR("Invalid address family (%d)", peer_addr->sa_family);
+		LOG_ERROR("Invalid address family (%d)", peer_addr->sa_family);
 		return -EINVAL;
 	}
 

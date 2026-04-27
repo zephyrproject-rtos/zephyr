@@ -60,7 +60,7 @@ static int lp3943_get_led_reg(uint32_t *led, uint8_t *reg)
 	static const uint8_t regs[] = {LP3943_LS0, LP3943_LS1, LP3943_LS2, LP3943_LS3};
 
 	if (*led >= ARRAY_SIZE(regs) * 4U) {
-		LOG_ERR("Invalid LED specified");
+		LOG_ERROR("Invalid LED specified");
 		return -EINVAL;
 	}
 
@@ -84,7 +84,7 @@ static int lp3943_set_dim_states(const struct lp3943_config *config,
 	/* Set DIMx states for the LEDs */
 	if (i2c_reg_update_byte_dt(&config->bus, reg, LP3943_MASK << (led << 1),
 				   mode << (led << 1))) {
-		LOG_ERR("LED reg update failed");
+		LOG_ERROR("LED reg update failed");
 		return -EIO;
 	}
 
@@ -119,7 +119,7 @@ static int lp3943_led_blink(const struct device *dev, uint32_t led,
 
 	val = period * 255U / LP3943_MAX_PERIOD;
 	if (i2c_reg_write_byte_dt(&config->bus, reg, val)) {
-		LOG_ERR("LED write failed");
+		LOG_ERROR("LED write failed");
 		return -EIO;
 	}
 
@@ -153,7 +153,7 @@ static int lp3943_led_set_brightness(const struct device *dev, uint32_t led,
 
 	val = (value * 255U) / LED_BRIGHTNESS_MAX;
 	if (i2c_reg_write_byte_dt(&config->bus, reg, val)) {
-		LOG_ERR("LED write failed");
+		LOG_ERROR("LED write failed");
 		return -EIO;
 	}
 
@@ -180,7 +180,7 @@ static inline int lp3943_led_on(const struct device *dev, uint32_t led)
 	mode = LP3943_ON;
 	if (i2c_reg_update_byte_dt(&config->bus, reg, LP3943_MASK << (led << 1),
 				   mode << (led << 1))) {
-		LOG_ERR("LED reg update failed");
+		LOG_ERROR("LED reg update failed");
 		return -EIO;
 	}
 
@@ -201,7 +201,7 @@ static inline int lp3943_led_off(const struct device *dev, uint32_t led)
 	/* Set LED state to OFF */
 	if (i2c_reg_update_byte_dt(&config->bus, reg, LP3943_MASK << (led << 1),
 				   0)) {
-		LOG_ERR("LED reg update failed");
+		LOG_ERROR("LED reg update failed");
 		return -EIO;
 	}
 
@@ -213,7 +213,7 @@ static int lp3943_led_init(const struct device *dev)
 	const struct lp3943_config *config = dev->config;
 
 	if (!device_is_ready(config->bus.bus)) {
-		LOG_ERR("I2C device not ready");
+		LOG_ERROR("I2C device not ready");
 		return -ENODEV;
 	}
 

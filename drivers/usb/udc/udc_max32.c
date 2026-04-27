@@ -111,7 +111,7 @@ static void udc_event_xfer_in(const struct device *dev, struct udc_ep_config *ep
 
 	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("Failed to peek net_buf for ep 0x%02x", ep_cfg->addr);
+		LOG_ERROR("Failed to peek net_buf for ep 0x%02x", ep_cfg->addr);
 		return;
 	}
 
@@ -133,7 +133,7 @@ static void udc_event_xfer_in(const struct device *dev, struct udc_ep_config *ep
 	ret = MXC_USB_WriteEndpoint(ep_request);
 	if (ret != 0) {
 		udc_ep_set_busy(ep_cfg, false);
-		LOG_ERR("ep 0x%02x error: %x", ep_cfg->addr, ret);
+		LOG_ERROR("ep 0x%02x error: %x", ep_cfg->addr, ret);
 		udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 	}
 }
@@ -152,7 +152,7 @@ static void udc_event_xfer_out(const struct device *dev, struct udc_ep_config *e
 
 	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("Failed to peek net_buf for ep 0x%02x", ep_cfg->addr);
+		LOG_ERROR("Failed to peek net_buf for ep 0x%02x", ep_cfg->addr);
 		return;
 	}
 
@@ -193,7 +193,7 @@ static void udc_event_xfer_out(const struct device *dev, struct udc_ep_config *e
 	ret = MXC_USB_ReadEndpoint(ep_request);
 	if (ret != 0) {
 		udc_ep_set_busy(ep_cfg, false);
-		LOG_ERR("ep 0x%02x error: %x", ep_cfg->addr, ret);
+		LOG_ERROR("ep 0x%02x error: %x", ep_cfg->addr, ret);
 		udc_submit_ep_event(dev, buf, -ECONNREFUSED);
 	}
 }
@@ -212,7 +212,7 @@ static void udc_event_xfer_in_done(const struct device *dev, struct udc_ep_confi
 	udc_ep_set_busy(ep_cfg, false);
 
 	if (ep_request->error_code) {
-		LOG_ERR("ep 0x%02x error: %x", ep_cfg->addr, ep_request->error_code);
+		LOG_ERROR("ep 0x%02x error: %x", ep_cfg->addr, ep_request->error_code);
 		udc_submit_ep_event(dev, buf, ep_request->error_code);
 		return;
 	}
@@ -241,7 +241,7 @@ static void udc_event_xfer_out_done(const struct device *dev, struct udc_ep_conf
 	udc_ep_set_busy(ep_cfg, false);
 
 	if (ep_request->error_code) {
-		LOG_ERR("ep 0x%02x error: %x", ep_cfg->addr, ep_request->error_code);
+		LOG_ERROR("ep 0x%02x error: %x", ep_cfg->addr, ep_request->error_code);
 		udc_submit_ep_event(dev, buf, ep_request->error_code);
 		return;
 	}
@@ -262,7 +262,7 @@ static int udc_event_setup(const struct device *dev)
 	/* Get setup data from FIFO */
 	ret = MXC_USB_GetSetup(&setup_pkt);
 	if (ret != 0) {
-		LOG_ERR("Failed to get setup data");
+		LOG_ERROR("Failed to get setup data");
 		return ret;
 	}
 
@@ -274,7 +274,7 @@ static int udc_event_setup(const struct device *dev)
 	/* Clear EP0 previous requests */
 	ret = MXC_USB_ResetEp(0);
 	if (ret != 0) {
-		LOG_ERR("Failed to reset EP0");
+		LOG_ERROR("Failed to reset EP0");
 		return ret;
 	}
 
@@ -364,13 +364,13 @@ static int udc_max32_ep_enable(const struct device *dev, struct udc_ep_config *c
 	} else if (cfg->caps.out) {
 		ep_type = MAXUSB_EP_TYPE_OUT;
 	} else {
-		LOG_ERR("ep 0x%02x is not IN or OUT", cfg->addr);
+		LOG_ERROR("ep 0x%02x is not IN or OUT", cfg->addr);
 		return -ENODEV;
 	}
 
 	ret = MXC_USB_ConfigEp(USB_EP_GET_IDX(cfg->addr), ep_type, cfg->mps);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure ep 0x%02x", cfg->addr);
+		LOG_ERROR("Failed to configure ep 0x%02x", cfg->addr);
 		return ret;
 	}
 
@@ -403,7 +403,7 @@ static int udc_max32_ep_set_halt(const struct device *dev, struct udc_ep_config 
 
 	ret = MXC_USB_Stall(USB_EP_GET_IDX(cfg->addr));
 	if (ret != 0) {
-		LOG_ERR("Failed to set halt ep 0x%02x", cfg->addr);
+		LOG_ERROR("Failed to set halt ep 0x%02x", cfg->addr);
 		return ret;
 	}
 
@@ -425,7 +425,7 @@ static int udc_max32_ep_clear_halt(const struct device *dev, struct udc_ep_confi
 
 	ret = MXC_USB_Unstall(USB_EP_GET_IDX(cfg->addr));
 	if (ret != 0) {
-		LOG_ERR("Failed to clear halt ep 0x%02x", cfg->addr);
+		LOG_ERROR("Failed to clear halt ep 0x%02x", cfg->addr);
 		return ret;
 	}
 
@@ -452,7 +452,7 @@ static int udc_max32_set_address(const struct device *dev, const uint8_t addr)
 
 	ret = MXC_USB_SetFuncAddr(addr);
 	if (ret != 0) {
-		LOG_ERR("Failed to set device address %u", addr);
+		LOG_ERROR("Failed to set device address %u", addr);
 		return -EINVAL;
 	}
 
@@ -531,28 +531,28 @@ static int udc_max32_enable(const struct device *dev)
 	MXC_USB_EventClear(MAXUSB_EVENT_SUDAV);
 	ret = MXC_USB_EventEnable(MAXUSB_EVENT_SUDAV, udc_max32_event_callback, (void *)dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable SUDAV event.");
+		LOG_ERROR("Failed to enable SUDAV event.");
 		return ret;
 	}
 
 	MXC_USB_EventClear(MAXUSB_EVENT_SUSP);
 	ret = MXC_USB_EventEnable(MAXUSB_EVENT_SUSP, udc_max32_event_callback, (void *)dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable SUSP event.");
+		LOG_ERROR("Failed to enable SUSP event.");
 		return ret;
 	}
 
 	MXC_USB_EventClear(MAXUSB_EVENT_DPACT);
 	ret = MXC_USB_EventEnable(MAXUSB_EVENT_DPACT, udc_max32_event_callback, (void *)dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable DPACT event.");
+		LOG_ERROR("Failed to enable DPACT event.");
 		return ret;
 	}
 
 	MXC_USB_EventClear(MAXUSB_EVENT_BRST);
 	ret = MXC_USB_EventEnable(MAXUSB_EVENT_BRST, udc_max32_event_callback, (void *)dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable BRST event.");
+		LOG_ERROR("Failed to enable BRST event.");
 		return ret;
 	}
 
@@ -593,7 +593,7 @@ static int udc_max32_init(const struct device *dev)
 	/* Enable clock */
 	ret = clock_control_on(config->clock, (clock_control_subsys_t)&config->perclk);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable USB peripheral clock");
+		LOG_ERROR("Failed to enable USB peripheral clock");
 		return ret;
 	}
 
@@ -601,28 +601,28 @@ static int udc_max32_init(const struct device *dev)
 
 	ret = Wrap_MXC_USB_Init(&usb_opts);
 	if (ret != 0) {
-		LOG_ERR("Failed to initialize USB.");
+		LOG_ERROR("Failed to initialize USB.");
 		return ret;
 	}
 
 	ret = MXC_USB_EventEnable(MAXUSB_EVENT_NOVBUS, udc_max32_event_callback, (void *)dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable NOVBUS event.");
+		LOG_ERROR("Failed to enable NOVBUS event.");
 		return ret;
 	}
 	ret = MXC_USB_EventEnable(MAXUSB_EVENT_VBUS, udc_max32_event_callback, (void *)dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable VBUS event.");
+		LOG_ERROR("Failed to enable VBUS event.");
 		return ret;
 	}
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
+		LOG_ERROR("Failed to enable control endpoint");
 		return -EIO;
 	}
 
@@ -637,12 +637,12 @@ static int udc_max32_shutdown(const struct device *dev)
 	irq_disable(DT_INST_IRQN(0));
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_IN)) {
-		LOG_ERR("Failed to disable control endpoint");
+		LOG_ERROR("Failed to disable control endpoint");
 		return -EIO;
 	}
 
@@ -683,7 +683,7 @@ static int udc_max32_driver_preinit(const struct device *dev)
 		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
 		ret = udc_register_ep(dev, &config->ep_cfg_out[i]);
 		if (ret != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return ret;
 		}
 	}
@@ -706,7 +706,7 @@ static int udc_max32_driver_preinit(const struct device *dev)
 
 		ret = udc_register_ep(dev, &config->ep_cfg_in[i]);
 		if (ret != 0) {
-			LOG_ERR("Failed to register endpoint");
+			LOG_ERROR("Failed to register endpoint");
 			return ret;
 		}
 	}

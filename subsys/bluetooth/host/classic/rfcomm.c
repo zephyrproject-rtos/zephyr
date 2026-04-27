@@ -207,7 +207,7 @@ static void rfcomm_dlc_tx_trigger(struct bt_rfcomm_dlc *dlc)
 
 	err = k_work_submit(&dlc->tx_work);
 	if (err < 0) {
-		LOG_ERR("Failed to submit tx work: %d", err);
+		LOG_ERROR("Failed to submit tx work: %d", err);
 	}
 }
 
@@ -470,7 +470,7 @@ static struct bt_rfcomm_dlc *rfcomm_dlc_accept(struct bt_rfcomm_session *session
 	channel = BT_RFCOMM_GET_CHANNEL(dlci);
 	server = rfcomm_server_lookup_channel(channel);
 	if (!server) {
-		LOG_ERR("Server Channel not registered");
+		LOG_ERROR("Server Channel not registered");
 		return NULL;
 	}
 
@@ -609,7 +609,7 @@ static void rfcomm_dlc_tx_worker(struct k_work *work)
 			/* This fails only if channel is disconnected */
 			dlc->state = BT_RFCOMM_STATE_DISCONNECTED;
 			bt_rfcomm_tx_destroy(dlc, buf);
-			LOG_ERR("Failed to send buffer, disconnected");
+			LOG_ERROR("Failed to send buffer, disconnected");
 			goto disconnect;
 		}
 
@@ -738,7 +738,7 @@ int bt_rfcomm_send_rpn_cmd(struct bt_rfcomm_dlc *dlc, struct bt_rfcomm_rpn *rpn)
 
 	/* Validate baud rate */
 	if (rpn->baud_rate > BT_RFCOMM_RPN_BAUD_RATE_230400) {
-		LOG_ERR("Invalid baud rate: %u", rpn->baud_rate);
+		LOG_ERROR("Invalid baud rate: %u", rpn->baud_rate);
 		return -EINVAL;
 	}
 
@@ -1262,7 +1262,7 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 		}
 
 		if (!BT_RFCOMM_CHECK_MTU(pn->mtu)) {
-			LOG_ERR("Invalid mtu %d", pn->mtu);
+			LOG_ERROR("Invalid mtu %d", pn->mtu);
 			rfcomm_send_dm(session, pn->dlci);
 			return;
 		}
@@ -1295,7 +1295,7 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 		/* If its a command */
 		if (cr) {
 			if (!BT_RFCOMM_CHECK_MTU(pn->mtu)) {
-				LOG_ERR("Invalid mtu %d", pn->mtu);
+				LOG_ERROR("Invalid mtu %d", pn->mtu);
 				rfcomm_dlc_close(dlc);
 				return;
 			}
@@ -1358,7 +1358,7 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session,
 	uint8_t msg_type, len, cr;
 
 	if (buf->len < sizeof(*hdr)) {
-		LOG_ERR("Too small RFCOMM message");
+		LOG_ERROR("Too small RFCOMM message");
 		return;
 	}
 
@@ -1391,7 +1391,7 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session,
 		break;
 	case BT_RFCOMM_FCON:
 		if (session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
-			LOG_ERR("FCON received when CFC is supported ");
+			LOG_ERROR("FCON received when CFC is supported ");
 			return;
 		}
 
@@ -1408,7 +1408,7 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session,
 		break;
 	case BT_RFCOMM_FCOFF:
 		if (session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
-			LOG_ERR("FCOFF received when CFC is supported ");
+			LOG_ERROR("FCOFF received when CFC is supported ");
 			return;
 		}
 
@@ -1464,7 +1464,7 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session,
 
 	dlc = rfcomm_dlcs_lookup_dlci(session, dlci);
 	if (!dlc) {
-		LOG_ERR("Data recvd in non existing DLC");
+		LOG_ERROR("Data recvd in non existing DLC");
 		rfcomm_send_dm(session, dlci);
 		return;
 	}
@@ -1484,9 +1484,8 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session,
 	}
 
 	if (buf->len > BT_RFCOMM_FCS_SIZE) {
-		if (dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED &&
-		    !dlc->rx_credit) {
-			LOG_ERR("Data recvd when rx credit is 0");
+		if (dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED && !dlc->rx_credit) {
+			LOG_ERROR("Data recvd when rx credit is 0");
 			rfcomm_dlc_close(dlc);
 			return;
 		}
@@ -1555,7 +1554,7 @@ static int rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	/* Need to consider FCS also*/
 	if (buf->len < (sizeof(*hdr) + sizeof(fcs))) {
-		LOG_ERR("Too small RFCOMM Frame");
+		LOG_ERROR("Too small RFCOMM Frame");
 		return 0;
 	}
 
@@ -1573,15 +1572,15 @@ static int rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 
 	if (buf->len < (hdr_len + msg_len + sizeof(fcs))) {
-		LOG_ERR("Too small RFCOMM information (%u < %zu)", buf->len,
-			hdr_len + msg_len + sizeof(fcs));
+		LOG_ERROR("Too small RFCOMM information (%u < %zu)", buf->len,
+			  hdr_len + msg_len + sizeof(fcs));
 		return 0;
 	}
 
 	fcs_len = (frame_type == BT_RFCOMM_UIH) ? BT_RFCOMM_FCS_LEN_UIH : hdr_len;
 	fcs = *(net_buf_tail(buf) - sizeof(fcs));
 	if (!rfcomm_check_fcs(fcs_len, buf->data, fcs)) {
-		LOG_ERR("FCS check failed");
+		LOG_ERROR("FCS check failed");
 		return 0;
 	}
 
@@ -1767,7 +1766,7 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 		k_work_cancel_delayable(&session->rtx_work);
 		break;
 	default:
-		LOG_ERR("Invalid session state %d", session->state);
+		LOG_ERROR("Invalid session state %d", session->state);
 		ret = -EINVAL;
 		goto fail;
 	}
@@ -1818,7 +1817,7 @@ static int rfcomm_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 		return 0;
 	}
 
-	LOG_ERR("No available RFCOMM context for conn %p", conn);
+	LOG_ERROR("No available RFCOMM context for conn %p", conn);
 
 	return -ENOMEM;
 }
@@ -1840,7 +1839,7 @@ void bt_rfcomm_init(void)
 
 	err = bt_l2cap_br_server_register(&server);
 	if ((err != 0) && (err != -EEXIST)) {
-		LOG_ERR("Failed to register L2CAP server for RFCOMM (err %d)", err);
+		LOG_ERROR("Failed to register L2CAP server for RFCOMM (err %d)", err);
 		return;
 	}
 

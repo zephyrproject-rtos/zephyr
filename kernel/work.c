@@ -640,8 +640,8 @@ static void work_timeout_handler(struct _timeout *record)
 		space = "";
 	}
 
-	LOG_ERR("queue %p%s%s blocked by work %p with handler %p",
-		queue, space, name, work, handler);
+	LOG_ERROR("queue %p%s%s blocked by work %p with handler %p", queue, space, name, work,
+		  handler);
 
 	k_thread_abort(queue->thread_id);
 }

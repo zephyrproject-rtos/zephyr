@@ -198,7 +198,7 @@ static int stm32_jpeg_start_codec(const struct device *dev)
 
 		hret = HAL_JPEG_ConfigEncoding(&data->hjpeg, &jpeg_conf);
 		if (hret != HAL_OK) {
-			LOG_ERR("Failed to configure codec for encoding");
+			LOG_ERROR("Failed to configure codec for encoding");
 			ret = -EIO;
 			goto error;
 		}
@@ -211,12 +211,12 @@ static int stm32_jpeg_start_codec(const struct device *dev)
 		hret = HAL_JPEG_Encode_IT(&data->hjpeg, data->mcu_ycbcr, YCBCR_420_MCU_BLOCK_SIZE,
 					  data->current_out->buffer, data->current_out->size);
 		if (hret != HAL_OK) {
-			LOG_ERR("Failed to request encoding");
+			LOG_ERROR("Failed to request encoding");
 			ret = -EIO;
 			goto error;
 		}
 	} else {
-		LOG_ERR("Decoder not yet implemented");
+		LOG_ERROR("Decoder not yet implemented");
 		ret = -EINVAL;
 		goto error;
 	}
@@ -264,7 +264,7 @@ void HAL_JPEG_EncodeCpltCallback(JPEG_HandleTypeDef *hjpeg)
 	/* Try to restart the next processing if needed */
 	ret = stm32_jpeg_start_codec(data->dev);
 	if (ret) {
-		LOG_ERR("Failed to start codec, err: %d", ret);
+		LOG_ERROR("Failed to start codec, err: %d", ret);
 		goto out;
 	}
 
@@ -319,8 +319,8 @@ static int stm32_jpeg_set_fmt(const struct device *dev, struct video_format *fmt
 		return -EINVAL;
 	}
 	if (fmt->width % conf->hmcu_div || fmt->height % conf->vmcu_div) {
-		LOG_ERR("Format %s: %d pixels width / %d pixels height multiple required",
-			VIDEO_FOURCC_TO_STR(fmt->pixelformat), conf->hmcu_div, conf->vmcu_div);
+		LOG_ERROR("Format %s: %d pixels width / %d pixels height multiple required",
+			  VIDEO_FOURCC_TO_STR(fmt->pixelformat), conf->hmcu_div, conf->vmcu_div);
 		return -EINVAL;
 	}
 
@@ -365,7 +365,7 @@ static int stm32_jpeg_set_stream(const struct device *dev, bool enable, enum vid
 	/* Input & Output resolutions are always same so ensure this here */
 	if (data->m2m.in.fmt.width != data->m2m.out.fmt.width ||
 	    data->m2m.in.fmt.height != data->m2m.out.fmt.height) {
-		LOG_ERR("Input & output resolution should match");
+		LOG_ERROR("Input & output resolution should match");
 		return -EINVAL;
 	}
 
@@ -405,7 +405,7 @@ static int stm32_jpeg_enqueue(const struct device *dev, struct video_buffer *vbu
 	if (!data->codec_is_running) {
 		ret = stm32_jpeg_start_codec(dev);
 		if (ret) {
-			LOG_ERR("Failed to start codec, err: %d", ret);
+			LOG_ERROR("Failed to start codec, err: %d", ret);
 			goto out;
 		}
 	}
@@ -499,17 +499,17 @@ static int stm32_jpeg_init(const struct device *dev)
 
 	ret = stm32_jpeg_enable_clock(dev);
 	if (ret < 0) {
-		LOG_ERR("Clock enabling failed.");
+		LOG_ERROR("Clock enabling failed.");
 		return ret;
 	}
 
 	if (!device_is_ready(cfg->reset_jpeg.dev)) {
-		LOG_ERR("reset controller not ready");
+		LOG_ERROR("reset controller not ready");
 		return -ENODEV;
 	}
 	ret = reset_line_toggle_dt(&cfg->reset_jpeg);
 	if (ret < 0 && ret != -ENOSYS) {
-		LOG_ERR("Failed to reset the device.");
+		LOG_ERROR("Failed to reset the device.");
 		return ret;
 	}
 
@@ -543,7 +543,7 @@ static int stm32_jpeg_init(const struct device *dev)
 	/* Initialize JPEG peripheral */
 	hret = HAL_JPEG_Init(&data->hjpeg);
 	if (hret != HAL_OK) {
-		LOG_ERR("JPEG initialization failed.");
+		LOG_ERROR("JPEG initialization failed.");
 		return -EIO;
 	}
 

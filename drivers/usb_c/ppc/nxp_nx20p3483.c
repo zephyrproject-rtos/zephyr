@@ -65,7 +65,7 @@ static int read_reg(const struct device *dev, uint8_t reg, uint8_t *value)
 
 	ret = i2c_reg_read_byte(cfg->bus.bus, cfg->bus.addr, reg, value);
 	if (ret != 0) {
-		LOG_ERR("Error reading reg %02x: %d", reg, ret);
+		LOG_ERROR("Error reading reg %02x: %d", reg, ret);
 		return ret;
 	}
 
@@ -79,7 +79,7 @@ static int write_reg(const struct device *dev, uint8_t reg, uint8_t value)
 
 	ret = i2c_reg_write_byte(cfg->bus.bus, cfg->bus.addr, reg, value);
 	if (ret != 0) {
-		LOG_ERR("Error writing reg %02x: %d", reg, ret);
+		LOG_ERROR("Error writing reg %02x: %d", reg, ret);
 		return ret;
 	}
 
@@ -96,7 +96,7 @@ static int nx20p3483_set_snk_ovp_limit(const struct device *dev, uint8_t u_thres
 
 	ret = write_reg(dev, NX20P3483_REG_OVLO_THRESHOLD, u_thresh);
 	if (ret != 0) {
-		LOG_ERR("Couldn't set SNK OVP: %d", ret);
+		LOG_ERROR("Couldn't set SNK OVP: %d", ret);
 		return ret;
 	}
 
@@ -247,13 +247,13 @@ static int nx20p3483_set_src_ovc_limit(const struct device *dev, uint8_t i_thres
 
 	if (i_thresh_5v < NX20P3483_I_THRESHOLD_0_400 ||
 	    i_thresh_5v > NX20P3483_I_THRESHOLD_3_400) {
-		LOG_ERR("Invalid SRC 5V ovc threshold: %d", i_thresh_5v);
+		LOG_ERROR("Invalid SRC 5V ovc threshold: %d", i_thresh_5v);
 		return -EINVAL;
 	}
 
 	if (i_thresh_hv < NX20P3483_I_THRESHOLD_0_400 ||
 	    i_thresh_hv > NX20P3483_I_THRESHOLD_3_400) {
-		LOG_ERR("Invalid SRC HV ovc threshold: %d", i_thresh_hv);
+		LOG_ERROR("Invalid SRC HV ovc threshold: %d", i_thresh_hv);
 		return -EINVAL;
 	}
 
@@ -297,13 +297,13 @@ static void nx20p3483_irq_worker(struct k_work *work)
 
 	ret = read_reg(dev, NX20P3483_REG_INT1, &irq1);
 	if (ret != 0) {
-		LOG_ERR("Couldn't read irq1");
+		LOG_ERROR("Couldn't read irq1");
 		return;
 	}
 
 	ret = read_reg(dev, NX20P3483_REG_INT2, &irq2);
 	if (ret != 0) {
-		LOG_ERR("Couldn't read irq2");
+		LOG_ERROR("Couldn't read irq2");
 		return;
 	}
 

@@ -42,7 +42,7 @@ static int rts_fp_wdt_setup(const struct device *dev, uint8_t options)
 	uint32_t value;
 
 	if ((options & WDT_OPT_PAUSE_IN_SLEEP) || (options & WDT_OPT_PAUSE_HALTED_BY_DBG)) {
-		LOG_ERR("Pause in sleep or halted by dbg is not supported");
+		LOG_ERROR("Pause in sleep or halted by dbg is not supported");
 		return -ENOTSUP;
 	}
 
@@ -69,7 +69,8 @@ static int rts_fp_wdt_install_timeout(const struct device *dev, const struct wdt
 	uint32_t value;
 
 	if (cfg->window.min > 0 || cfg->window.max > 8000) {
-		LOG_ERR("watchdog window.min should be equal to 0 and window.max should not exceed "
+		LOG_ERROR(
+			"watchdog window.min should be equal to 0 and window.max should not exceed "
 			"8000");
 		return -ENOTSUP;
 	}
@@ -82,7 +83,7 @@ static int rts_fp_wdt_install_timeout(const struct device *dev, const struct wdt
 	case WDT_FLAG_RESET_CPU_CORE:
 	case WDT_FLAG_RESET_SOC:
 		if (cfg->callback != NULL) {
-			LOG_ERR("watchdog callback is not supported");
+			LOG_ERROR("watchdog callback is not supported");
 			return -ENOTSUP;
 		}
 
@@ -106,7 +107,7 @@ static int rts_fp_wdt_install_timeout(const struct device *dev, const struct wdt
 		break;
 
 	default:
-		LOG_ERR("unknown watchdog flags");
+		LOG_ERROR("unknown watchdog flags");
 		return -EINVAL;
 	}
 

@@ -294,7 +294,7 @@ static int eth_intel_igc_connect_queue_msix_vector(pcie_bdf_t bdf, const struct 
 		info->mac = dev;
 		if (!pcie_msi_vector_connect(bdf, &data->msi_vec[msix],
 					     (void *)eth_intel_igc_queue_isr, info, 0)) {
-			LOG_ERR("Failed to connect queue_%d interrupt handler", msix);
+			LOG_ERROR("Failed to connect queue_%d interrupt handler", msix);
 			return -EIO;
 		}
 	}
@@ -311,14 +311,14 @@ static int eth_intel_igc_pcie_msix_setup(const struct device *dev)
 
 	bdf = eth_intel_get_pcie_bdf(cfg->platform);
 	if (bdf == PCIE_BDF_NONE) {
-		LOG_ERR("Failed to get PCIe BDF");
+		LOG_ERROR("Failed to get PCIe BDF");
 		return -EINVAL;
 	}
 
 	ret = pcie_msi_vectors_allocate(bdf, CONFIG_ETH_INTEL_IGC_INT_PRIORITY, data->msi_vec,
 					cfg->num_msix);
 	if (ret < cfg->num_msix) {
-		LOG_ERR("Failed to allocate MSI-X vectors");
+		LOG_ERROR("Failed to allocate MSI-X vectors");
 		return -EIO;
 	}
 
@@ -328,7 +328,7 @@ static int eth_intel_igc_pcie_msix_setup(const struct device *dev)
 	}
 
 	if (!pcie_msi_enable(bdf, data->msi_vec, cfg->num_msix, 0)) {
-		LOG_ERR("Failed to enable MSI-X vectors");
+		LOG_ERROR("Failed to enable MSI-X vectors");
 		return -EIO;
 	}
 
@@ -456,7 +456,7 @@ static void eth_intel_igc_iface_init(struct net_if *iface)
 	/* Set MAC address */
 	if (net_if_set_link_addr(data->iface, data->mac_addr, sizeof(data->mac_addr),
 				 NET_LINK_ETHERNET) < 0) {
-		LOG_ERR("Failed to set mac address");
+		LOG_ERROR("Failed to set mac address");
 		return;
 	}
 
@@ -467,7 +467,7 @@ static void eth_intel_igc_iface_init(struct net_if *iface)
 	if (device_is_ready(cfg->phy)) {
 		phy_link_callback_set(cfg->phy, eth_intel_igc_phylink_cb, (void *)iface);
 	} else {
-		LOG_ERR("PHY device is not ready");
+		LOG_ERROR("PHY device is not ready");
 		return;
 	}
 
@@ -554,7 +554,7 @@ static void eth_intel_igc_tx_clean(struct eth_intel_igc_mac_data *data, uint8_t 
 	for (uint8_t count = 0; count < clean_count; count++) {
 		desc = eth_intel_igc_release_tx_desc(data->mac, queue);
 		if (desc == NULL) {
-			LOG_ERR("No more transmit descriptor available to release");
+			LOG_ERROR("No more transmit descriptor available to release");
 			continue;
 		}
 
@@ -579,7 +579,7 @@ static int eth_intel_igc_tx_frag(const struct device *dev, struct net_pkt *pkt,
 
 	desc = eth_intel_igc_get_tx_desc(dev, queue);
 	if (desc == NULL) {
-		LOG_ERR("No more transmit descriptors available");
+		LOG_ERROR("No more transmit descriptors available");
 		return -ENOMEM;
 	}
 
@@ -620,7 +620,7 @@ static int eth_intel_igc_tx_data(const struct device *dev, struct net_pkt *pkt)
 	int ret = 0;
 
 	if (!net_if_is_up(data->iface)) {
-		LOG_ERR("Ethernet interface is down");
+		LOG_ERROR("Ethernet interface is down");
 		return -ENETDOWN;
 	}
 
@@ -640,7 +640,7 @@ static int eth_intel_igc_tx_data(const struct device *dev, struct net_pkt *pkt)
 
 		ret = eth_intel_igc_tx_frag(dev, pkt, frag, queue);
 		if (ret < 0) {
-			LOG_ERR("Failed to transmit in queue number: %d", queue);
+			LOG_ERROR("Failed to transmit in queue number: %d", queue);
 		}
 	}
 
@@ -679,7 +679,7 @@ static void eth_intel_igc_rx_data_hdl(struct eth_intel_igc_mac_data *data, uint8
 	sys_write32(idx, data->base + INTEL_IGC_RDT(queue));
 	desc = eth_intel_igc_get_rx_desc(data->mac, queue);
 	if (desc == NULL) {
-		LOG_ERR("No more rx descriptor available");
+		LOG_ERROR("No more rx descriptor available");
 		return;
 	}
 
@@ -718,12 +718,12 @@ static void eth_intel_igc_rx_data(struct eth_intel_igc_mac_data *data, uint8_t q
 		idx = data->rx.ring_rd_ptr[queue];
 		desc = eth_intel_igc_release_rx_desc(data->mac, queue);
 		if (desc == NULL) {
-			LOG_ERR("RX descriptor is NULL");
+			LOG_ERROR("RX descriptor is NULL");
 			continue;
 		}
 
 		if (!net_if_is_up(data->iface) || !desc->writeback.pkt_len) {
-			LOG_ERR("RX interface is down or pkt_len is %d", desc->writeback.pkt_len);
+			LOG_ERROR("RX interface is down or pkt_len is %d", desc->writeback.pkt_len);
 			eth_intel_igc_rx_data_hdl_err(data, queue, idx, desc, NULL);
 			continue;
 		}
@@ -736,7 +736,7 @@ static void eth_intel_igc_rx_data(struct eth_intel_igc_mac_data *data, uint8_t q
 						   eth_intel_igc_get_sa_family(rx_buf), 0,
 						   K_MSEC(200));
 		if (pkt == NULL) {
-			LOG_ERR("Failed to allocate Receive buffer");
+			LOG_ERROR("Failed to allocate Receive buffer");
 			eth_intel_igc_rx_data_hdl_err(data, queue, idx, desc, NULL);
 			continue;
 		}
@@ -744,7 +744,7 @@ static void eth_intel_igc_rx_data(struct eth_intel_igc_mac_data *data, uint8_t q
 		/* Write DMA buffer to packet */
 		ret = net_pkt_write(pkt, (void *)rx_buf, desc->writeback.pkt_len);
 		if (ret < 0) {
-			LOG_ERR("Failed to write Receive buffer to packet");
+			LOG_ERROR("Failed to write Receive buffer to packet");
 			eth_intel_igc_rx_data_hdl_err(data, queue, idx, desc, pkt);
 			continue;
 		}
@@ -752,7 +752,7 @@ static void eth_intel_igc_rx_data(struct eth_intel_igc_mac_data *data, uint8_t q
 		/* Process received packet */
 		ret = net_recv_data(data->iface, pkt);
 		if (ret < 0) {
-			LOG_ERR("Failed to enqueue the Receive packet: %d", queue);
+			LOG_ERROR("Failed to enqueue the Receive packet: %d", queue);
 			eth_intel_igc_rx_data_hdl_err(data, queue, idx, desc, pkt);
 			continue;
 		}
@@ -846,7 +846,7 @@ static int eth_intel_igc_tx_dma_init(const struct device *dev)
 	size = ROUND_UP(size, sizeof(union dma_tx_desc));
 	data->tx.desc = (union dma_tx_desc *)eth_intel_igc_aligned_alloc(size);
 	if (data->tx.desc == NULL) {
-		LOG_ERR("Transmit descriptor buffer alloc failed");
+		LOG_ERROR("Transmit descriptor buffer alloc failed");
 		return -ENOBUFS;
 	}
 
@@ -894,7 +894,7 @@ static int eth_intel_igc_rx_desc_prepare(const struct device *dev)
 	/* Allocate memory for receive DMA buffer */
 	data->rx.buf = (uint8_t *)k_calloc(cfg->num_queues * cfg->num_rx_desc, ETH_MAX_FRAME_SZ);
 	if (data->rx.buf == NULL) {
-		LOG_ERR("Receive DMA buffer alloc failed");
+		LOG_ERROR("Receive DMA buffer alloc failed");
 		return -ENOBUFS;
 	}
 
@@ -997,7 +997,7 @@ static int eth_intel_igc_rx_dma_init(const struct device *dev)
 	/* Allocate memory for the RX descriptor buffer */
 	data->rx.desc = (union dma_rx_desc *)eth_intel_igc_aligned_alloc(size);
 	if (data->rx.desc == NULL) {
-		LOG_ERR("Receive descriptor buffer alloc failed");
+		LOG_ERROR("Receive descriptor buffer alloc failed");
 		return -ENOBUFS;
 	}
 
@@ -1008,7 +1008,7 @@ static int eth_intel_igc_rx_dma_init(const struct device *dev)
 
 	ret = eth_intel_igc_rx_desc_prepare(dev);
 	if (ret < 0) {
-		LOG_ERR("Receive descriptor prepare failed");
+		LOG_ERROR("Receive descriptor prepare failed");
 		return ret;
 	}
 	eth_intel_igc_rctl_setup(data->base + INTEL_IGC_RCTL);
@@ -1116,7 +1116,7 @@ static int eth_intel_igc_disable_pcie_master(mm_reg_t base)
 		return 0;
 	}
 
-	LOG_ERR("Timeout waiting for GIO Master Request to complete");
+	LOG_ERROR("Timeout waiting for GIO Master Request to complete");
 	return -ETIMEDOUT;
 }
 
@@ -1171,7 +1171,7 @@ static int eth_intel_igc_init(const struct device *dev)
 	data->mac = dev;
 	data->base = DEVICE_MMIO_GET(cfg->platform);
 	if (!data->base) {
-		LOG_ERR("Failed to get MMIO base address");
+		LOG_ERROR("Failed to get MMIO base address");
 		return -ENODEV;
 	}
 

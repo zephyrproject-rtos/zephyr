@@ -44,7 +44,7 @@ static int analog_axis_calibration_load(const char *key, size_t len_rd,
 
 	nlen = settings_name_next(key, &next);
 	if (nlen + 1 > sizeof(dev_name)) {
-		LOG_ERR("Setting name too long: %d", nlen);
+		LOG_ERROR("Setting name too long: %d", nlen);
 		return -EINVAL;
 	}
 
@@ -53,19 +53,19 @@ static int analog_axis_calibration_load(const char *key, size_t len_rd,
 
 	dev = device_get_binding(dev_name);
 	if (dev == NULL) {
-		LOG_ERR("Cannot restore: device %s not available", dev_name);
+		LOG_ERROR("Cannot restore: device %s not available", dev_name);
 		return -ENODEV;
 	}
 
 	len = read_cb(cb_arg, cal, sizeof(cal));
 	if (len < 0) {
-		LOG_ERR("Data restore error: %d", len);
+		LOG_ERROR("Data restore error: %d", len);
 	}
 
 	axes = analog_axis_num_axes(dev);
 	if (len != sizeof(struct analog_axis_calibration) * axes) {
-		LOG_ERR("Invalid settings data length: %d, expected %d",
-			len, sizeof(struct analog_axis_calibration) * axes);
+		LOG_ERROR("Invalid settings data length: %d, expected %d", len,
+			  sizeof(struct analog_axis_calibration) * axes);
 		return -EIO;
 	}
 
@@ -103,7 +103,7 @@ int analog_axis_calibration_save(const struct device *dev)
 	ret = settings_save_one(path, &cal[0],
 				sizeof(struct analog_axis_calibration) * axes);
 	if (ret < 0) {
-		LOG_ERR("Settings save errord: %d", ret);
+		LOG_ERROR("Settings save errord: %d", ret);
 		return ret;
 	}
 

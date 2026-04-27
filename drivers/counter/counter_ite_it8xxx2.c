@@ -165,7 +165,7 @@ static int counter_it8xxx2_cancel_alarm(const struct device *dev, uint8_t chan_i
 	struct counter_it8xxx2_data *data = dev->data;
 
 	if (chan_id != 0) {
-		LOG_ERR("Invalid channel id %u", chan_id);
+		LOG_ERROR("Invalid channel id %u", chan_id);
 		return -ENOTSUP;
 	}
 
@@ -186,7 +186,7 @@ static int counter_it8xxx2_set_top_value(const struct device *dev,
 	struct counter_it8xxx2_data *data = dev->data;
 
 	if (top_cfg == NULL) {
-		LOG_ERR("Invalid top value configuration");
+		LOG_ERROR("Invalid top value configuration");
 		return -EINVAL;
 	}
 
@@ -204,7 +204,7 @@ static int counter_it8xxx2_set_top_value(const struct device *dev,
 
 	/* top value cannot be updated without reset */
 	if (top_cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
-		LOG_ERR("Updating top value without reset is not supported");
+		LOG_ERROR("Updating top value without reset is not supported");
 		return -ENOTSUP;
 	}
 

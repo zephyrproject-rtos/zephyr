@@ -10,7 +10,7 @@
 #include <zephyr/ztest.h>
 
 #define N_PRIOS  8
-/* avoid clashing with Zephyr's LOG_ERR() */
+/* avoid clashing with Zephyr's LOG_ERROR() */
 #define _LOG_ERR 3
 
 ZTEST(xsi_system_logging, test_syslog)

@@ -18,7 +18,7 @@ int esp_hosted_hal_init(const struct device *dev)
 	const esp_hosted_config_t *config = dev->config;
 
 	if (!spi_is_ready_dt(&config->spi_bus)) {
-		LOG_ERR("SPI device is not ready");
+		LOG_ERROR("SPI device is not ready");
 		return -ENODEV;
 	}
 
@@ -76,7 +76,7 @@ int esp_hosted_hal_spi_transfer(const struct device *dev, void *tx, void *rx, ui
 
 	/* Transfer SPI buffers. */
 	if (spi_transceive_dt(&config->spi_bus, &tx_set, &rx_set)) {
-		LOG_ERR("spi_transceive failed");
+		LOG_ERROR("spi_transceive failed");
 		ret = -EIO;
 	}
 

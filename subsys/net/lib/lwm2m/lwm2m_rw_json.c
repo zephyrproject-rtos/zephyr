@@ -231,7 +231,7 @@ static int float_to_string(double *value)
 
 	len = lwm2m_ftoa(value, pt_buffer, sizeof(pt_buffer), 15);
 	if (len < 0 || len >= sizeof(pt_buffer)) {
-		LOG_ERR("Failed to encode float value");
+		LOG_ERROR("Failed to encode float value");
 		return -EINVAL;
 	}
 
@@ -780,7 +780,7 @@ static int get_float(struct lwm2m_input_context *in, double *value)
 	buf[i] = '\0';
 
 	if (lwm2m_atof(buf, value) != 0) {
-		LOG_ERR("Failed to parse float value");
+		LOG_ERROR("Failed to parse float value");
 		return -EBADMSG;
 	}
 
@@ -927,7 +927,7 @@ int do_write_op_json(struct lwm2m_message *msg)
 		json_obj_parse(data_ptr, in_len, json_descr, ARRAY_SIZE(json_descr), &main_object);
 
 	if (obj_bit_field < 0 || (obj_bit_field & 2) == 0 || main_object.obj_array.length == 0) {
-		LOG_ERR("JSON object bits not valid %d", obj_bit_field);
+		LOG_ERROR("JSON object bits not valid %d", obj_bit_field);
 		ret = -EINVAL;
 		goto end_of_operation;
 	}
@@ -955,7 +955,7 @@ int do_write_op_json(struct lwm2m_message *msg)
 			break;
 		} else if (fd.object_bit_field < 0 ||
 			   ((fd.object_bit_field & JSON_VAL_MASK) == 0)) {
-			LOG_ERR("Json Write Parse object fail %d", fd.object_bit_field);
+			LOG_ERROR("Json Write Parse object fail %d", fd.object_bit_field);
 			ret = -EINVAL;
 			goto end_of_operation;
 		}
@@ -988,7 +988,7 @@ int do_write_op_json(struct lwm2m_message *msg)
 		/* parse full_name into path */
 		ret = lwm2m_string_to_path(full_name, &msg->path, '/');
 		if (ret < 0) {
-			LOG_ERR("Relative name too long");
+			LOG_ERROR("Relative name too long");
 			ret = -EINVAL;
 			goto end_of_operation;
 		}

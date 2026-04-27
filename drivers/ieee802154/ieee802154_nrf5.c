@@ -179,8 +179,8 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 
 #if defined(CONFIG_NET_BUF_DATA_SIZE)
 		if (pkt_len > CONFIG_NET_BUF_DATA_SIZE) {
-			LOG_ERR("Received a frame exceeding the buffer size (%u): %u",
-				CONFIG_NET_BUF_DATA_SIZE, pkt_len);
+			LOG_ERROR("Received a frame exceeding the buffer size (%u): %u",
+				  CONFIG_NET_BUF_DATA_SIZE, pkt_len);
 			LOG_HEXDUMP_ERR(rx_frame->psdu, rx_frame->psdu[0] + 1, "Received PSDU");
 			goto drop;
 		}
@@ -217,7 +217,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 			 pkt_len, rx_frame->lqi);
 
 		if (net_recv_data(nrf5_radio->iface, pkt) < 0) {
-			LOG_ERR("Packet dropped by NET stack");
+			LOG_ERROR("Packet dropped by NET stack");
 			goto drop;
 		}
 
@@ -434,7 +434,7 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 	ack_pkt = net_pkt_rx_alloc_with_buffer(nrf5_radio->iface, ack_len,
 					       NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!ack_pkt) {
-		LOG_ERR("No free packet available.");
+		LOG_ERROR("No free packet available.");
 		err = -ENOMEM;
 		goto free_nrf_ack;
 	}
@@ -442,9 +442,8 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 	/* Upper layers expect the frame to start at the MAC header, skip the
 	 * PHY header (1 byte).
 	 */
-	if (net_pkt_write(ack_pkt, nrf5_radio->ack_frame.psdu + 1,
-			  ack_len) < 0) {
-		LOG_ERR("Failed to write to a packet.");
+	if (net_pkt_write(ack_pkt, nrf5_radio->ack_frame.psdu + 1, ack_len) < 0) {
+		LOG_ERROR("Failed to write to a packet.");
 		err = -ENOMEM;
 		goto free_net_ack;
 	}
@@ -593,7 +592,7 @@ static int nrf5_tx(const struct device *dev,
 	bool ret = true;
 
 	if (payload_len > IEEE802154_MTU) {
-		LOG_ERR("Payload too large: %d", payload_len);
+		LOG_ERROR("Payload too large: %d", payload_len);
 		return -EMSGSIZE;
 	}
 
@@ -627,12 +626,12 @@ static int nrf5_tx(const struct device *dev,
 		break;
 #endif /* CONFIG_NET_PKT_TXTIME */
 	default:
-		LOG_ERR("TX mode %d not supported", mode);
+		LOG_ERROR("TX mode %d not supported", mode);
 		return -ENOTSUP;
 	}
 
 	if (!ret) {
-		LOG_ERR("Cannot send frame");
+		LOG_ERROR("Cannot send frame");
 		return -EIO;
 	}
 
@@ -706,7 +705,7 @@ static int nrf5_start(const struct device *dev)
 	nrf_802154_tx_power_set(nrf5_data.txpwr);
 
 	if (!nrf_802154_receive()) {
-		LOG_ERR("Failed to enter receive state");
+		LOG_ERROR("Failed to enter receive state");
 		return -EIO;
 	}
 
@@ -732,7 +731,7 @@ static int nrf5_stop(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	if (!nrf_802154_sleep()) {
-		LOG_ERR("Error while stopping radio");
+		LOG_ERROR("Error while stopping radio");
 		return -EIO;
 	}
 #endif
@@ -750,7 +749,7 @@ static int nrf5_continuous_carrier(const struct device *dev)
 	nrf_802154_tx_power_set(nrf5_data.txpwr);
 
 	if (!nrf_802154_continuous_carrier()) {
-		LOG_ERR("Failed to enter continuous carrier state");
+		LOG_ERROR("Failed to enter continuous carrier state");
 		return -EIO;
 	}
 
@@ -767,7 +766,7 @@ static int nrf_modulated_carrier(const struct device *dev, const uint8_t *data)
 	nrf_802154_tx_power_set(nrf5_data.txpwr);
 
 	if (!nrf_802154_modulated_carrier(data)) {
-		LOG_ERR("Failed to enter modulated carrier state");
+		LOG_ERROR("Failed to enter modulated carrier state");
 		return -EIO;
 	}
 

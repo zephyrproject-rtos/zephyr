@@ -312,7 +312,7 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 
 	ret = net_if_get_name(iface, ifname, sizeof(ifname) - 1);
 	if (ret < 0) {
-		LOG_ERR("Cannot get interface %d (%p) name", net_if_get_by_iface(iface), iface);
+		LOG_ERROR("Cannot get interface %d (%p) name", net_if_get_by_iface(iface), iface);
 		goto out;
 	}
 
@@ -321,7 +321,7 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 	ret = zephyr_wpa_cli_global_cmd_v("interface_add %s %s %s %s",
 					  ifname, "zephyr", "zephyr", "zephyr");
 	if (ret) {
-		LOG_ERR("Failed to add interface %s", ifname);
+		LOG_ERROR("Failed to add interface %s", ifname);
 		goto out;
 	}
 
@@ -331,7 +331,7 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 
 	wpa_s = wpa_supplicant_get_iface(ctx->supplicant, ifname);
 	if (wpa_s == NULL) {
-		LOG_ERR("Failed to add iface %s", ifname);
+		LOG_ERROR("Failed to add iface %s", ifname);
 		goto out;
 	}
 
@@ -346,7 +346,7 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 
 	ret = zephyr_wpa_ctrl_init(wpa_s);
 	if (ret) {
-		LOG_ERR("Failed to initialize supplicant control interface");
+		LOG_ERROR("Failed to initialize supplicant control interface");
 		goto out;
 	}
 
@@ -354,8 +354,7 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 					      WIFI_TYPE_STA,
 					      iface);
 	if (ret) {
-		LOG_ERR("Failed to register mgd iface with native stack %s (%d)",
-			ifname, ret);
+		LOG_ERROR("Failed to register mgd iface with native stack %s (%d)", ifname, ret);
 		goto out;
 	}
 
@@ -382,7 +381,7 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 
 	ret = net_if_get_name(iface, ifname, sizeof(ifname) - 1);
 	if (ret < 0) {
-		LOG_ERR("Cannot get interface %d (%p) name", net_if_get_by_iface(iface), iface);
+		LOG_ERROR("Cannot get interface %d (%p) name", net_if_get_by_iface(iface), iface);
 		goto out;
 	}
 
@@ -391,14 +390,14 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 	event = os_zalloc(sizeof(*event));
 	if (!event) {
 		ret = -ENOMEM;
-		LOG_ERR("Failed to allocate event data");
+		LOG_ERROR("Failed to allocate event data");
 		goto out;
 	}
 
 	wpa_s = wpa_supplicant_get_iface(ctx->supplicant, ifname);
 	if (!wpa_s) {
 		ret = -ENOENT;
-		LOG_ERR("Failed to get wpa_s handle for %s", ifname);
+		LOG_ERROR("Failed to get wpa_s handle for %s", ifname);
 		goto free;
 	}
 
@@ -433,7 +432,7 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 	}
 
 	if (wpa_s->wpa_state != WPA_INTERFACE_DISABLED) {
-		LOG_ERR("Failed to notify remove interface %s", ifname);
+		LOG_ERROR("Failed to notify remove interface %s", ifname);
 		supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVED, -1);
 		goto out;
 	}
@@ -442,7 +441,7 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 
 	ret = zephyr_wpa_cli_global_cmd_v("interface_remove %s", ifname);
 	if (ret) {
-		LOG_ERR("Failed to remove interface %s", ifname);
+		LOG_ERROR("Failed to remove interface %s", ifname);
 		supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVED,
 					  -EINVAL);
 		goto out;
@@ -450,8 +449,7 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 
 	ret = wifi_nm_unregister_mgd_iface(wifi_nm_get_instance("wifi_supplicant"), iface);
 	if (ret) {
-		LOG_ERR("Failed to unregister mgd iface %s with native stack (%d)",
-			ifname, ret);
+		LOG_ERROR("Failed to unregister mgd iface %s with native stack (%d)", ifname, ret);
 		goto out;
 	}
 
@@ -479,8 +477,8 @@ static void iface_work_handler(struct k_work *work)
 
 	ret = (*ctx->iface_handler)(ctx, ctx->iface);
 	if (ret < 0) {
-		LOG_ERR("Interface %d (%p) handler failed (%d)",
-			net_if_get_by_iface(ctx->iface), ctx->iface, ret);
+		LOG_ERROR("Interface %d (%p) handler failed (%d)", net_if_get_by_iface(ctx->iface),
+			  ctx->iface, ret);
 	}
 }
 
@@ -576,18 +574,18 @@ static void event_socket_handler(int sock, void *eloop_ctx, void *user_data)
 
 		msg = k_fifo_get(&ctx->fifo, K_NO_WAIT);
 		if (msg == NULL) {
-			LOG_ERR("fifo(event): %s", "empty");
+			LOG_ERROR("fifo(event): %s", "empty");
 			return;
 		}
 
 		if (msg->data == NULL) {
-			LOG_ERR("fifo(event): %s", "no data");
+			LOG_ERROR("fifo(event): %s", "no data");
 			goto out;
 		}
 
 		if (msg->len != sizeof(event_msg)) {
-			LOG_ERR("Received incomplete message: got: %d, expected:%d",
-				msg->len, sizeof(event_msg));
+			LOG_ERROR("Received incomplete message: got: %d, expected:%d", msg->len,
+				  sizeof(event_msg));
 			goto out;
 		}
 
@@ -655,7 +653,7 @@ static int register_supplicant_event_socket(struct supplicant_context *ctx)
 	ret = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
 	if (ret < 0) {
 		ret = -errno;
-		LOG_ERR("Failed to initialize socket (%d)", ret);
+		LOG_ERROR("Failed to initialize socket (%d)", ret);
 		return ret;
 	}
 
@@ -700,14 +698,14 @@ static void handler(void)
 
 	ctx->supplicant = wpa_supplicant_init(&params);
 	if (ctx->supplicant == NULL) {
-		LOG_ERR("Failed to initialize %s", "wpa_supplicant");
+		LOG_ERROR("Failed to initialize %s", "wpa_supplicant");
 		goto err;
 	}
 
 	LOG_INF("%s initialized", "wpa_supplicant");
 
 	if (fst_global_init()) {
-		LOG_ERR("Failed to initialize %s", "FST");
+		LOG_ERROR("Failed to initialize %s", "FST");
 		goto out;
 	}
 

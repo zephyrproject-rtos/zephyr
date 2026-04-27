@@ -117,7 +117,7 @@ static void check_ctrl_request(struct usb_device *const udev,
 	case USB_SREQ_SET_INTERFACE:
 		LOG_INF("Set Interface");
 		if (usbh_device_interface_set(udev, setup.wIndex, setup.wValue, true)) {
-			LOG_ERR("Failed to apply Set Interface request");
+			LOG_ERROR("Failed to apply Set Interface request");
 		}
 		break;
 	default:
@@ -178,7 +178,7 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 
 	err = usbip_send(dev_ctx->connfd, &ret, sizeof(ret));
 	if (err != 0) {
-		LOG_ERR("Send RET_SUBMIT failed err %d errno %d", err, errno);
+		LOG_ERROR("Send RET_SUBMIT failed err %d errno %d", err, errno);
 		goto usbip_req_cb_error;
 	}
 
@@ -186,8 +186,7 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 		LOG_INF("Send RET_SUBMIT transfer_buffer len %u", buf->len);
 		err = usbip_send(dev_ctx->connfd, buf->data, buf->len);
 		if (err != 0) {
-			LOG_ERR("Send transfer_buffer failed err %d errno %d",
-				err, errno);
+			LOG_ERROR("Send transfer_buffer failed err %d errno %d", err, errno);
 			goto usbip_req_cb_error;
 		}
 	}
@@ -284,7 +283,7 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 		}
 
 		if (buf == NULL) {
-			LOG_ERR("Failed to allocate net_buf");
+			LOG_ERROR("Failed to allocate net_buf");
 			return -ENOMEM;
 		}
 	}
@@ -317,7 +316,7 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 		cmd->hdr.devid, cmd->hdr.seqnum, cmd->submit.length, ep, cmd->submit.flags);
 
 	if (k_mem_slab_alloc(&usbip_slab, (void **)&cmd_nd, K_MSEC(1000)) != 0) {
-		LOG_ERR("Failed to allocate slab");
+		LOG_ERROR("Failed to allocate slab");
 		net_buf_unref(buf);
 		return -ENOMEM;
 	}
@@ -329,7 +328,7 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 
 	ret = usbip_submit_req(cmd_nd, ep, &setup, buf);
 	if (ret != 0) {
-		LOG_ERR("Failed to submit request %d", ret);
+		LOG_ERROR("Failed to submit request %d", ret);
 		return ret;
 	}
 
@@ -398,7 +397,7 @@ static int usbip_handle_cmd(struct usbip_dev_ctx *const dev_ctx)
 		ret = usbip_handle_unlink(dev_ctx, &cmd);
 		break;
 	default:
-		LOG_ERR("Unknown command: 0x%x", net_ntohl(cmd.hdr.command));
+		LOG_ERROR("Unknown command: 0x%x", net_ntohl(cmd.hdr.command));
 		break;
 	}
 
@@ -483,7 +482,7 @@ static int handle_devlist_device_iface(struct usb_device *const udev, int connfd
 
 		err = usbip_send(connfd, &iface, sizeof(iface));
 		if (err != 0) {
-			LOG_ERR("Failed to send interface info %d", err);
+			LOG_ERROR("Failed to send interface info %d", err);
 			return err;
 		}
 	}
@@ -584,13 +583,13 @@ static int usbip_handle_import(struct usbip_bus_ctx *const bus_ctx, int connfd)
 	dev_ctx = get_free_dev_ctx(bus_ctx);
 	if (dev_ctx == NULL) {
 		rep_hdr.status = net_htonl(-1);
-		LOG_ERR("No free device context to export a device");
+		LOG_ERROR("No free device context to export a device");
 	} else {
 		dev_ctx->udev = get_device_by_busid(bus_ctx, busid);
 		if (dev_ctx->udev == NULL) {
 			rep_hdr.status = net_htonl(-1);
 			dev_ctx = NULL;
-			LOG_ERR("No USB device with busid %s", busid);
+			LOG_ERROR("No USB device with busid %s", busid);
 		}
 	}
 
@@ -600,7 +599,7 @@ static int usbip_handle_import(struct usbip_bus_ctx *const bus_ctx, int connfd)
 	}
 
 	if (rep_hdr.status || dev_ctx == NULL) {
-		LOG_ERR("Device does not exits or cannot be exported");
+		LOG_ERROR("Device does not exits or cannot be exported");
 		return -1;
 	}
 
@@ -641,7 +640,7 @@ static int usbip_handle_connection(struct usbip_bus_ctx *const bus_ctx, int conn
 		}
 		break;
 	default:
-		LOG_ERR("Unknown request: 0x%x", net_ntohs(hdr.code));
+		LOG_ERROR("Unknown request: 0x%x", net_ntohs(hdr.code));
 		ret = -1;
 		break;
 	}
@@ -661,7 +660,7 @@ static void usbip_thread_handler(void *const a, void *const b, void *const c)
 
 	listenfd = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	if (listenfd < 0) {
-		LOG_ERR("socket() failed: %s", strerror(errno));
+		LOG_ERROR("socket() failed: %s", strerror(errno));
 		return;
 	}
 
@@ -675,12 +674,12 @@ static void usbip_thread_handler(void *const a, void *const b, void *const c)
 	srv.sin_port = net_htons(USBIP_PORT);
 
 	if (zsock_bind(listenfd, (struct net_sockaddr *)&srv, sizeof(srv)) < 0) {
-		LOG_ERR("bind() failed: %s", strerror(errno));
+		LOG_ERROR("bind() failed: %s", strerror(errno));
 		return;
 	}
 
 	if (zsock_listen(listenfd, 1) < 0) {
-		LOG_ERR("listen() failed: %s", strerror(errno));
+		LOG_ERROR("listen() failed: %s", strerror(errno));
 		return;
 	}
 
@@ -693,7 +692,7 @@ static void usbip_thread_handler(void *const a, void *const b, void *const c)
 		connfd = zsock_accept(listenfd, (struct net_sockaddr *)&client_addr,
 				      &client_addr_len);
 		if (connfd < 0) {
-			LOG_ERR("accept() failed: %d", errno);
+			LOG_ERROR("accept() failed: %d", errno);
 			continue;
 		}
 
@@ -717,19 +716,19 @@ static int usbip_init(void)
 
 	err = usbh_init(&usbip_uhs_ctx);
 	if (err) {
-		LOG_ERR("Failed to initialize host support");
+		LOG_ERROR("Failed to initialize host support");
 		return err;
 	}
 
 	err = usbh_enable(&usbip_uhs_ctx);
 	if (err) {
-		LOG_ERR("Failed to enable host support");
+		LOG_ERROR("Failed to enable host support");
 		return err;
 	}
 
 	err = uhc_sof_enable(usbip_uhs_ctx.dev);
 	if (err) {
-		LOG_ERR("Failed to start SoF");
+		LOG_ERROR("Failed to start SoF");
 		return err;
 	}
 

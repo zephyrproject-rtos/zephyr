@@ -319,7 +319,7 @@ static void usb_handle_control_transfer(uint8_t ep,
 
 		if (usb_reqtype_is_to_device(setup)) {
 			if (setup->wLength > CONFIG_USB_REQUEST_BUFFER_SIZE) {
-				LOG_ERR("Request buffer too small");
+				LOG_ERROR("Request buffer too small");
 				usb_dc_ep_set_stall(USB_CONTROL_EP_IN);
 				usb_dc_ep_set_stall(USB_CONTROL_EP_OUT);
 				return;
@@ -532,7 +532,7 @@ static uint32_t get_ep_bm_from_addr(uint8_t ep)
 
 	ep_idx = ep & (~USB_EP_DIR_IN);
 	if (ep_idx > 15) {
-		LOG_ERR("Endpoint 0x%02x is invalid", ep);
+		LOG_ERROR("Endpoint 0x%02x is invalid", ep);
 		goto done;
 	}
 
@@ -582,7 +582,7 @@ static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 	if (ret == -EALREADY) {
 		LOG_WRN("Endpoint 0x%02x already configured", ep_cfg.ep_addr);
 	} else if (ret) {
-		LOG_ERR("Failed to configure endpoint 0x%02x", ep_cfg.ep_addr);
+		LOG_ERROR("Failed to configure endpoint 0x%02x", ep_cfg.ep_addr);
 		return false;
 	} else {
 		;
@@ -592,7 +592,7 @@ static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 	if (ret == -EALREADY) {
 		LOG_WRN("Endpoint 0x%02x already enabled", ep_cfg.ep_addr);
 	} else if (ret) {
-		LOG_ERR("Failed to enable endpoint 0x%02x", ep_cfg.ep_addr);
+		LOG_ERROR("Failed to enable endpoint 0x%02x", ep_cfg.ep_addr);
 		return false;
 	} else {
 		;
@@ -613,7 +613,7 @@ static int disable_endpoint(uint8_t ep_addr)
 	if (ret == -EALREADY) {
 		LOG_WRN("Endpoint 0x%02x already disabled", ep_addr);
 	} else if (ret) {
-		LOG_ERR("Failed to disable endpoint 0x%02x", ep_addr);
+		LOG_ERROR("Failed to disable endpoint 0x%02x", ep_addr);
 		return ret;
 	}
 
@@ -1618,7 +1618,7 @@ int usb_enable(usb_dc_status_callback status_cb)
 	if (usb_dev.descriptors == NULL) {
 		usb_set_config(usb_get_device_descriptor());
 		if (usb_dev.descriptors == NULL) {
-			LOG_ERR("Failed to configure USB device stack");
+			LOG_ERROR("Failed to configure USB device stack");
 			ret =  -1;
 			goto out;
 		}
@@ -1647,7 +1647,7 @@ int usb_enable(usb_dc_status_callback status_cb)
 
 	if (dev_desc->bDescriptorType != USB_DESC_DEVICE ||
 	    dev_desc->bMaxPacketSize0 == 0) {
-		LOG_ERR("Erroneous device descriptor or bMaxPacketSize0");
+		LOG_ERROR("Erroneous device descriptor or bMaxPacketSize0");
 		ret = -EINVAL;
 		goto out;
 	}

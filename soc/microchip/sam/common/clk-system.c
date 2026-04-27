@@ -126,7 +126,7 @@ int clk_register_system(pmc_registers_t *const pmc, const char *name,
 
 	sys = &clocks_sys[clocks_sys_idx++];
 	if (clocks_sys_idx > ARRAY_SIZE(clocks_sys)) {
-		LOG_ERR("Array for system clock not enough");
+		LOG_ERROR("Array for system clock not enough");
 		return -ENOMEM;
 	}
 

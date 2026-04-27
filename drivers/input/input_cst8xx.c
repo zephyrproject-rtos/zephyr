@@ -144,20 +144,20 @@ static int cst8xx_process(const struct device *dev)
 
 	ret = i2c_burst_read_dt(&cfg->i2c, CST8XX_REG_GESTURE_ID, &gesture, sizeof(gesture));
 	if (ret < 0) {
-		LOG_ERR("Could not read gesture-ID data (%d)", ret);
+		LOG_ERROR("Could not read gesture-ID data (%d)", ret);
 		return ret;
 	}
 #endif
 
 	ret = i2c_burst_read_dt(&cfg->i2c, CST8XX_REG_XPOS_H, (uint8_t *)&x, sizeof(x));
 	if (ret < 0) {
-		LOG_ERR("Could not read x data (%d)", ret);
+		LOG_ERROR("Could not read x data (%d)", ret);
 		return ret;
 	}
 
 	ret = i2c_burst_read_dt(&cfg->i2c, CST8XX_REG_YPOS_H, (uint8_t *)&y, sizeof(y));
 	if (ret < 0) {
-		LOG_ERR("Could not read y data (%d)", ret);
+		LOG_ERROR("Could not read y data (%d)", ret);
 		return ret;
 	}
 	col = sys_be16_to_cpu(x) & 0x0fff;
@@ -222,7 +222,7 @@ static void cst8xx_chip_reset(const struct device *dev)
 	if (gpio_is_ready_dt(&config->rst_gpio)) {
 		ret = gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
-			LOG_ERR("Could not configure reset GPIO pin (%d)", ret);
+			LOG_ERROR("Could not configure reset GPIO pin (%d)", ret);
 			return;
 		}
 		k_msleep(CST8XX_RESET_DELAY);
@@ -247,7 +247,7 @@ static int cst8xx_chip_init(const struct device *dev)
 
 	ret = i2c_reg_read_byte_dt(&cfg->i2c, CST8XX_REG_CHIP_ID, &chip_id);
 	if (ret < 0) {
-		LOG_ERR("Failed reading chip id (%d)", ret);
+		LOG_ERROR("Failed reading chip id (%d)", ret);
 		return ret;
 	}
 
@@ -260,14 +260,14 @@ static int cst8xx_chip_init(const struct device *dev)
 		break;
 
 	default:
-		LOG_ERR("CST8XXX unsupported chip id: returned 0x%x", chip_id);
+		LOG_ERROR("CST8XXX unsupported chip id: returned 0x%x", chip_id);
 		return -ENODEV;
 	}
 
 	ret = i2c_reg_update_byte_dt(&cfg->i2c, CST8XX_REG_MOTION_MASK, CST8XX_MOTION_EN_DCLICK,
 				     CST8XX_MOTION_EN_DCLICK);
 	if (ret < 0) {
-		LOG_ERR("Could not enable double-click motion mask (%d)", ret);
+		LOG_ERROR("Could not enable double-click motion mask (%d)", ret);
 		return ret;
 	}
 
@@ -279,7 +279,7 @@ static int cst8xx_chip_init(const struct device *dev)
 
 	ret = i2c_reg_update_byte_dt(&cfg->i2c, CST8XX_REG_IRQ_CTL, irq_mask, irq_mask);
 	if (ret < 0) {
-		LOG_ERR("Could not enable irq (%d)", ret);
+		LOG_ERROR("Could not enable irq (%d)", ret);
 		return ret;
 	}
 	return 0;
@@ -308,13 +308,13 @@ static int cst8xx_init(const struct device *dev)
 
 	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
-		LOG_ERR("Could not configure interrupt GPIO pin (%d)", ret);
+		LOG_ERROR("Could not configure interrupt GPIO pin (%d)", ret);
 		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Could not configure interrupt GPIO interrupt (%d)", ret);
+		LOG_ERROR("Could not configure interrupt GPIO interrupt (%d)", ret);
 		return ret;
 	}
 
@@ -322,7 +322,7 @@ static int cst8xx_init(const struct device *dev)
 
 	ret = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
 	if (ret < 0) {
-		LOG_ERR("Could not set gpio callback (%d)", ret);
+		LOG_ERROR("Could not set gpio callback (%d)", ret);
 		return ret;
 	}
 #else
@@ -360,7 +360,7 @@ static int cst8xx_pm_action(const struct device *dev, enum pm_device_action acti
 	cst8xx_chip_reset(dev);
 	ret = cst8xx_chip_init(dev);
 	if (ret < 0) {
-		LOG_ERR("Chip init failed during PM action (%d)", ret);
+		LOG_ERROR("Chip init failed during PM action (%d)", ret);
 		return ret;
 	}
 

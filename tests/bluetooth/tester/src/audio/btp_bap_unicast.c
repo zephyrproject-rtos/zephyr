@@ -536,7 +536,7 @@ static void stream_state_changed(struct bt_bap_stream *stream)
 	} else {
 		err = bt_bap_ep_get_info(stream->ep, &info);
 		if (err != 0) {
-			LOG_ERR("Failed to get info: %d", err);
+			LOG_ERROR("Failed to get info: %d", err);
 
 			return;
 		}
@@ -650,7 +650,7 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &u_conn->address);
 	if (conn == NULL) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return;
 	}
 
@@ -694,7 +694,7 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 
 		err = btp_bap_audio_stream_tx_register(&u_stream->audio_stream);
 		if (err != 0) {
-			LOG_ERR("Failed to register stream: %d", err);
+			LOG_ERROR("Failed to register stream: %d", err);
 		}
 	}
 
@@ -711,7 +711,7 @@ static void stream_connected_cb(struct bt_bap_stream *stream)
 
 	err = bt_bap_ep_get_info(stream->ep, &ep_info);
 	if (err != 0) {
-		LOG_ERR("Failed to get info: %d", err);
+		LOG_ERROR("Failed to get info: %d", err);
 
 		return;
 	}
@@ -728,7 +728,7 @@ static void stream_connected_cb(struct bt_bap_stream *stream)
 				 */
 				err = bt_bap_stream_start(stream);
 				if (err != 0) {
-					LOG_ERR("Failed to start stream %p", stream);
+					LOG_ERROR("Failed to start stream %p", stream);
 				}
 			}
 		} else {
@@ -747,7 +747,7 @@ static void stream_connected_cb(struct bt_bap_stream *stream)
 			 */
 			err = bt_bap_stream_start(stream);
 			if (err != 0) {
-				LOG_ERR("Failed to start stream %p", stream);
+				LOG_ERROR("Failed to start stream %p", stream);
 			}
 		}
 	}
@@ -773,7 +773,7 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 
 		err = btp_bap_audio_stream_tx_unregister(&u_stream->audio_stream);
 		if (err != 0) {
-			LOG_ERR("Failed to unregister stream: %d", err);
+			LOG_ERROR("Failed to unregister stream: %d", err);
 		}
 	}
 
@@ -937,7 +937,7 @@ static void unicast_client_start_cb(struct bt_bap_stream *stream,
 
 	err = bt_bap_ep_get_info(stream->ep, &ep_info);
 	if (err != 0) {
-		LOG_ERR("Failed to get ep info: %d", err);
+		LOG_ERROR("Failed to get ep info: %d", err);
 
 		return;
 	}
@@ -1125,7 +1125,7 @@ uint8_t btp_bap_discover(const void *cmd, uint16_t cmd_len,
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1445,7 +1445,7 @@ uint8_t btp_ascs_configure_codec(const void *cmd, uint16_t cmd_len, void *rsp, u
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1545,7 +1545,7 @@ uint8_t btp_ascs_configure_qos(const void *cmd, uint16_t cmd_len, void *rsp, uin
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 
 		return BTP_STATUS_FAILED;
 	}
@@ -1592,7 +1592,7 @@ uint8_t btp_ascs_enable(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1626,7 +1626,7 @@ uint8_t btp_ascs_disable(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1651,7 +1651,7 @@ uint8_t btp_ascs_disable(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 
 		err = bt_conn_get_info(conn, &conn_info);
 		if (err != 0) {
-			LOG_ERR("Failed to get conn info: %d", err);
+			LOG_ERROR("Failed to get conn info: %d", err);
 			return BTP_STATUS_FAILED;
 		}
 
@@ -1682,13 +1682,13 @@ uint8_t btp_ascs_receiver_start_ready(const void *cmd, uint16_t cmd_len,
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
 	err = bt_conn_get_info(conn, &conn_info);
 	if (err != 0) {
-		LOG_ERR("Failed to get conn info: %d", err);
+		LOG_ERROR("Failed to get conn info: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1752,7 +1752,7 @@ uint8_t btp_ascs_receiver_stop_ready(const void *cmd, uint16_t cmd_len,
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1776,7 +1776,7 @@ uint8_t btp_ascs_receiver_stop_ready(const void *cmd, uint16_t cmd_len,
 
 		err = bt_conn_get_info(conn, &conn_info);
 		if (err != 0) {
-			LOG_ERR("Failed to get conn info: %d", err);
+			LOG_ERROR("Failed to get conn info: %d", err);
 			return BTP_STATUS_FAILED;
 		}
 
@@ -1802,7 +1802,7 @@ uint8_t btp_ascs_release(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1826,7 +1826,7 @@ uint8_t btp_ascs_release(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 
 		err = bt_conn_get_info(conn, &conn_info);
 		if (err != 0) {
-			LOG_ERR("Failed to get conn info: %d", err);
+			LOG_ERROR("Failed to get conn info: %d", err);
 			return BTP_STATUS_FAILED;
 		}
 
@@ -1858,7 +1858,7 @@ uint8_t btp_ascs_update_metadata(const void *cmd, uint16_t cmd_len,
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1882,7 +1882,7 @@ uint8_t btp_ascs_update_metadata(const void *cmd, uint16_t cmd_len,
 
 		err = bt_conn_get_info(conn, &conn_info);
 		if (err != 0) {
-			LOG_ERR("Failed to get conn info: %d", err);
+			LOG_ERROR("Failed to get conn info: %d", err);
 			return BTP_STATUS_FAILED;
 		}
 
@@ -1910,7 +1910,7 @@ uint8_t btp_ascs_add_ase_to_cis(const void *cmd, uint16_t cmd_len,
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
-		LOG_ERR("Unknown connection");
+		LOG_ERROR("Unknown connection");
 
 		return BTP_STATUS_FAILED;
 	}

@@ -167,7 +167,7 @@ void nrf_wifi_event_proc_scan_done_zep(void *vif_ctx,
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = vif_ctx;
 
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		return;
 	}
 
@@ -187,7 +187,7 @@ void nrf_wifi_event_proc_scan_done_zep(void *vif_ctx,
 		break;
 #endif /* CONFIG_NRF70_STA_MODE */
 	default:
-		LOG_ERR("%s: Scan type = %d not supported yet", __func__, vif_ctx_zep->scan_type);
+		LOG_ERROR("%s: Scan type = %d not supported yet", __func__, vif_ctx_zep->scan_type);
 		return;
 	}
 }
@@ -242,13 +242,13 @@ void nrf_wifi_disp_scan_res_work_handler(struct k_work *work)
 	vif_ctx_zep = CONTAINER_OF(work, struct nrf_wifi_vif_ctx_zep, disp_scan_res_work);
 
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		return;
 	}
 
 	status = nrf_wifi_disp_scan_res_get_zep(vif_ctx_zep);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_disp_scan_res_get_zep failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_disp_scan_res_get_zep failed", __func__);
 		return;
 	}
 	vif_ctx_zep->scan_in_progress = false;
@@ -262,14 +262,14 @@ static void nrf_wifi_process_rssi_from_rx(void *vif_ctx,
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		return;
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 
 	if (!(rpu_ctx_zep && rpu_ctx_zep->rpu_ctx)) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return;
 	}
 
@@ -293,7 +293,7 @@ void nrf_wifi_event_get_reg_zep(void *vif_ctx,
 		   get_reg_event->nrf_wifi_alpha2[1]);
 
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		return;
 	}
 
@@ -301,7 +301,7 @@ void nrf_wifi_event_get_reg_zep(void *vif_ctx,
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
 
 	if (fmac_dev_ctx->alpha2_valid) {
-		LOG_ERR("%s: Unsolicited regulatory get!", __func__);
+		LOG_ERROR("%s: Unsolicited regulatory get!", __func__);
 		return;
 	}
 
@@ -339,20 +339,20 @@ int nrf_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_do
 	vif_ctx_zep = dev->data;
 
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		goto out;
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		goto out;
 	}
 
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
 	if (!fmac_dev_ctx) {
-		LOG_ERR("%s: fmac_dev_ctx is NULL", __func__);
+		LOG_ERROR("%s: fmac_dev_ctx is NULL", __func__);
 		goto out;
 	}
 
@@ -364,7 +364,7 @@ int nrf_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_do
 
 		status = nrf_wifi_fmac_set_reg(fmac_dev_ctx, &reg_domain_info);
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
-			LOG_ERR("%s: Failed to set regulatory domain", __func__);
+			LOG_ERROR("%s: Failed to set regulatory domain", __func__);
 			goto out;
 		}
 
@@ -373,18 +373,18 @@ int nrf_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_do
 	}
 #endif
 	if (reg_domain->oper != WIFI_MGMT_GET) {
-		LOG_ERR("%s: Invalid operation: %d", __func__, reg_domain->oper);
+		LOG_ERROR("%s: Invalid operation: %d", __func__, reg_domain->oper);
 		goto out;
 	}
 
-	if (!reg_domain->chan_info)	{
-		LOG_ERR("%s: Invalid regulatory info (NULL)\n", __func__);
+	if (!reg_domain->chan_info) {
+		LOG_ERROR("%s: Invalid regulatory info (NULL)\n", __func__);
 		goto out;
 	}
 
 	status = nrf_wifi_fmac_get_reg(fmac_dev_ctx, &reg_domain_info);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: Failed to get regulatory domain", __func__);
+		LOG_ERROR("%s: Failed to get regulatory domain", __func__);
 		goto out;
 	}
 
@@ -414,7 +414,7 @@ void nrf_wifi_event_proc_cookie_rsp(void *vif_ctx,
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = vif_ctx;
 
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		return;
 	}
 
@@ -451,19 +451,19 @@ void reg_change_callbk_fn(void *vif_ctx,
 	LOG_DBG("%s: Regulatory change event received", __func__);
 
 	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: vif_ctx_zep is NULL", __func__);
 		return;
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep) {
-		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
+		LOG_ERROR("%s: rpu_ctx_zep is NULL", __func__);
 		return;
 	}
 
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
 	if (!fmac_dev_ctx) {
-		LOG_ERR("%s: fmac_dev_ctx is NULL", __func__);
+		LOG_ERROR("%s: fmac_dev_ctx is NULL", __func__);
 		return;
 	}
 
@@ -476,7 +476,7 @@ void reg_change_callbk_fn(void *vif_ctx,
 	fmac_dev_ctx->reg_change = nrf_wifi_osal_mem_alloc(sizeof(struct
 							   nrf_wifi_event_regulatory_change));
 	if (!fmac_dev_ctx->reg_change) {
-		LOG_ERR("%s: Failed to allocate memory for reg_change", __func__);
+		LOG_ERROR("%s: Failed to allocate memory for reg_change", __func__);
 		return;
 	}
 
@@ -614,7 +614,7 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 #endif /* CONFIG_NRF70_RADIO_TEST */
 
 	if (!rpu_ctx) {
-		LOG_ERR("%s: nrf_wifi_fmac_dev_add failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_fmac_dev_add failed", __func__);
 		rpu_ctx_zep = NULL;
 		goto err;
 	}
@@ -623,7 +623,7 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 
 	status = nrf_wifi_fw_load(rpu_ctx);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fw_load failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_fw_load failed", __func__);
 		goto err;
 	}
 
@@ -631,7 +631,7 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 				       &fw_ver);
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: FW version read failed", __func__);
+		LOG_ERROR("%s: FW version read failed", __func__);
 		goto err;
 	}
 
@@ -653,7 +653,7 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 			alt_swctrl1_function_bt_coex_status1,
 			invert_bt_coex_grant_output);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: Failed to configure GPIO control register", __func__);
+		LOG_ERROR("%s: Failed to configure GPIO control register", __func__);
 		goto err;
 	}
 #endif /* CONFIG_NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL  && CONFIG_NRF70_SYSTEM_MODE */
@@ -686,7 +686,7 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 
 
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_sys_fmac_dev_init failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_sys_fmac_dev_init failed", __func__);
 		goto err;
 	}
 
@@ -733,7 +733,7 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	static unsigned char fixed_vif_cnt;
 
 	if (fixed_vif_cnt >= MAX_NUM_VIFS) {
-		LOG_ERR("%s: Max number of VIFs reached", __func__);
+		LOG_ERROR("%s: Max number of VIFs reached", __func__);
 		return -ENOMEM;
 	}
 
@@ -763,8 +763,7 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	 */
 	ret = nrf_wifi_gpio_config_early();
 	if (ret) {
-		LOG_ERR("%s: nrf_wifi_gpio_config_early failed with error %d",
-			__func__, ret);
+		LOG_ERROR("%s: nrf_wifi_gpio_config_early failed with error %d", __func__, ret);
 		return ret;
 	}
 
@@ -848,8 +847,7 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	rpu_drv_priv_zep.fmac_priv = nrf_wifi_rt_fmac_init();
 #endif /* CONFIG_NRF70_RADIO_TEST */
 	if (rpu_drv_priv_zep.fmac_priv == NULL) {
-		LOG_ERR("%s: nrf_wifi_fmac_init failed",
-			__func__);
+		LOG_ERROR("%s: nrf_wifi_fmac_init failed", __func__);
 		goto err;
 	}
 
@@ -872,7 +870,7 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 #ifdef CONFIG_NRF70_RADIO_TEST
 	status = nrf_wifi_fmac_dev_add_zep(&rpu_drv_priv_zep);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
-		LOG_ERR("%s: nrf_wifi_fmac_dev_add_zep failed", __func__);
+		LOG_ERROR("%s: nrf_wifi_fmac_dev_add_zep failed", __func__);
 		goto fmac_deinit;
 	}
 #endif /* CONFIG_NRF70_RADIO_TEST */

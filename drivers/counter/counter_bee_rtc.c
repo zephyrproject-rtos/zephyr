@@ -180,7 +180,7 @@ static int counter_bee_rtc_set_top_value(const struct device *dev,
 
 	LOG_DBG("ticks=%x\n", top_cfg->ticks);
 	if (top_cfg->ticks != cfg->counter_info.max_top_value) {
-		LOG_ERR("Unspported set top value");
+		LOG_ERROR("Unspported set top value");
 		return -ENOTSUP;
 	}
 

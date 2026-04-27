@@ -85,7 +85,7 @@ static int pwm_rts5912_init(const struct device *dev)
 #ifdef CONFIG_PINCTRL
 	rc = pinctrl_apply_state(pwm_config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (rc < 0) {
-		LOG_ERR("PWM pinctrl setup failed (%d)", rc);
+		LOG_ERROR("PWM pinctrl setup failed (%d)", rc);
 		return rc;
 	}
 #endif

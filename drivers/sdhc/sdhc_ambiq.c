@@ -128,13 +128,13 @@ static int ambiq_sdio_reset(const struct device *dev)
 	ret = pm_device_runtime_get(dev);
 
 	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_get failed: %d", ret);
+		LOG_ERROR("pm_device_runtime_get failed: %d", ret);
 	}
 
 	LOG_DBG("SDHC Software Reset");
 	ui32Status = am_hal_sdhc_software_reset(config->pSDHC, AM_HAL_SDHC_SW_RESET_ALL);
 	if (ui32Status) {
-		LOG_ERR("SDHC software reset failed, ui32Status = %u", ui32Status);
+		LOG_ERROR("SDHC software reset failed, ui32Status = %u", ui32Status);
 		ret = -EIO;
 	}
 
@@ -144,7 +144,7 @@ static int ambiq_sdio_reset(const struct device *dev)
 	ret = pm_device_runtime_put_async(dev, K_MSEC(2));
 
 	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_put failed: %d", ret);
+		LOG_ERROR("pm_device_runtime_put failed: %d", ret);
 	}
 
 	return ret;
@@ -246,7 +246,7 @@ static int ambiq_sdio_set_io(const struct device *dev, struct sdhc_io *ios)
 	ret = pm_device_runtime_get(dev);
 
 	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_get failed: %d", ret);
+		LOG_ERROR("pm_device_runtime_get failed: %d", ret);
 	}
 
 	/* Change SDIO Host Bus Voltage */
@@ -302,7 +302,7 @@ static int ambiq_sdio_set_io(const struct device *dev, struct sdhc_io *ios)
 	ret = pm_device_runtime_put_async(dev, K_MSEC(2));
 
 	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_put failed: %d", ret);
+		LOG_ERROR("pm_device_runtime_put failed: %d", ret);
 	}
 
 	return ret;
@@ -328,7 +328,7 @@ static int ambiq_sdio_init(const struct device *dev)
 	data->host = am_hal_get_card_host(AM_HAL_SDHC_CARD_HOST + config->inst, true);
 
 	if (data->host == NULL) {
-		LOG_ERR("No such card host and stop");
+		LOG_ERROR("No such card host and stop");
 		return -ENODEV;
 	}
 
@@ -393,7 +393,7 @@ static int ambiq_sdio_execute_tuning(const struct device *dev)
 		ret = pm_device_runtime_get(dev);
 
 		if (ret < 0) {
-			LOG_ERR("pm_device_runtime_get failed: %d", ret);
+			LOG_ERROR("pm_device_runtime_get failed: %d", ret);
 		}
 
 		am_hal_card_host_set_txrx_delay(data->host, ui8TxRxDelays);
@@ -404,7 +404,7 @@ static int ambiq_sdio_execute_tuning(const struct device *dev)
 		ret = pm_device_runtime_put_async(dev, K_MSEC(2));
 
 		if (ret < 0) {
-			LOG_ERR("pm_device_runtime_put failed: %d", ret);
+			LOG_ERROR("pm_device_runtime_put failed: %d", ret);
 		}
 	}
 
@@ -423,7 +423,7 @@ static int ambiq_sdio_get_card_present(const struct device *dev)
 	ret = pm_device_runtime_get(dev);
 
 	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_get failed: %d", ret);
+		LOG_ERROR("pm_device_runtime_get failed: %d", ret);
 	}
 	LOG_DBG("Get card present status");
 	status = data->host->ops->get_cd(data->host->pHandle);
@@ -433,7 +433,7 @@ static int ambiq_sdio_get_card_present(const struct device *dev)
 	ret = pm_device_runtime_put_async(dev, K_MSEC(2));
 
 	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_put failed: %d", ret);
+		LOG_ERROR("pm_device_runtime_put failed: %d", ret);
 	}
 	return status;
 }
@@ -450,7 +450,7 @@ static int ambiq_sdio_card_busy(const struct device *dev)
 	ret = pm_device_runtime_get(dev);
 
 	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_get failed: %d", ret);
+		LOG_ERROR("pm_device_runtime_get failed: %d", ret);
 	}
 	ui32Status = data->host->ops->card_busy(data->host->pHandle, DEFAULT_GET_STATUS_TIMEOUT_MS);
 	LOG_DBG("Check card busy status");
@@ -460,7 +460,7 @@ static int ambiq_sdio_card_busy(const struct device *dev)
 	ret = pm_device_runtime_put_async(dev, K_MSEC(2));
 
 	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_put failed: %d", ret);
+		LOG_ERROR("pm_device_runtime_put failed: %d", ret);
 	}
 
 
@@ -486,7 +486,7 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 		sdio_cmd.ui32RespType = cmd->response_type;
 		sdio_cmd.bASync = false;
 	} else {
-		LOG_ERR("Invalid CMD");
+		LOG_ERROR("Invalid CMD");
 		return -EINVAL;
 	}
 
@@ -542,14 +542,14 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 
 	ret = k_mutex_lock(&dev_data->access_mutex, K_MSEC(cmd->timeout_ms));
 	if (ret) {
-		LOG_ERR("Could not access card");
+		LOG_ERROR("Could not access card");
 		return -EBUSY;
 	}
 
 	ret = pm_device_runtime_get(dev);
 
 	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_get failed: %d", ret);
+		LOG_ERROR("pm_device_runtime_get failed: %d", ret);
 	}
 
 	if (data) {
@@ -615,7 +615,7 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 	ret = pm_device_runtime_put_async(dev, K_MSEC(2));
 
 	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_put failed: %d", ret);
+		LOG_ERROR("pm_device_runtime_put failed: %d", ret);
 	}
 
 	return ret;

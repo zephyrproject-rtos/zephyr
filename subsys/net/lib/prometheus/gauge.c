@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(pm_gauge, CONFIG_PROMETHEUS_LOG_LEVEL);
 int prometheus_gauge_set(struct prometheus_gauge *gauge, double value)
 {
 	if (value < 0) {
-		LOG_ERR("Invalid value");
+		LOG_ERROR("Invalid value");
 		return -EINVAL;
 	}
 

@@ -403,7 +403,7 @@ static void mcux_lpuart_irq_callback_set(const struct device *dev,
 
 #if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
 	if (data->api_type == LPUART_ASYNC) {
-		LOG_ERR("UART irq and async api are exclusive");
+		LOG_ERROR("UART irq and async api are exclusive");
 	}
 #endif
 
@@ -583,7 +583,7 @@ static void mcux_lpuart_async_rx_flush(const struct device *dev)
 			async_evt_rx_rdy(dev);
 		}
 	} else {
-		LOG_ERR("Error getting DMA status");
+		LOG_ERROR("Error getting DMA status");
 	}
 }
 
@@ -611,7 +611,7 @@ static int mcux_lpuart_rx_disable(const struct device *dev)
 
 	/* No active RX buffer, cannot disable */
 	if (!data->async.rx_dma_params.buf) {
-		LOG_ERR("No buffers to release from RX DMA!");
+		LOG_ERROR("No buffers to release from RX DMA!");
 	} else {
 		mcux_lpuart_async_rx_flush(dev);
 		async_evt_rx_buf_release(dev);
@@ -629,7 +629,7 @@ static int mcux_lpuart_rx_disable(const struct device *dev)
 				 config->rx_dma_config.dma_channel);
 
 	if (ret != 0) {
-		LOG_ERR("Error stopping rx DMA. Reason: %x", ret);
+		LOG_ERROR("Error stopping rx DMA. Reason: %x", ret);
 	}
 	LOG_DBG("RX: Disabled");
 	struct uart_event disabled_event = {
@@ -668,14 +668,13 @@ static int configure_and_start_rx_dma(
 			     (struct dma_config *)&config->rx_dma_config.dma_cfg);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to Configure RX DMA: err: %d", ret);
+		LOG_ERROR("Failed to Configure RX DMA: err: %d", ret);
 		return ret;
 	}
 	ret = dma_start(config->rx_dma_config.dma_dev, config->rx_dma_config.dma_channel);
 	if (ret < 0) {
-		LOG_ERR("Failed to start DMA(Rx) Ch %d(%d)",
-			config->rx_dma_config.dma_channel,
-			ret);
+		LOG_ERROR("Failed to start DMA(Rx) Ch %d(%d)", config->rx_dma_config.dma_channel,
+			  ret);
 	}
 	LPUART_EnableRxDMA(lpuart, true);
 	return ret;
@@ -698,7 +697,7 @@ static int uart_mcux_lpuart_dma_replace_rx_buffer(const struct device *dev)
 			   (uint32_t)data->async.next_rx_buffer, data->async.next_rx_buffer_len);
 
 	if (success != 0) {
-		LOG_ERR("Error %d reloading DMA with next RX buffer", success);
+		LOG_ERROR("Error %d reloading DMA with next RX buffer", success);
 	}
 
 	return success;
@@ -717,14 +716,14 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg, uint3
 	const int get_status_result = dma_get_status(dma_dev, channel, &status);
 
 	if (get_status_result < 0) {
-		LOG_ERR("error on status get: %d", get_status_result);
+		LOG_ERROR("error on status get: %d", get_status_result);
 	} else {
 		LOG_DBG("DMA Status: b: %d dir: %d len_remain: %d", status.busy, status.dir,
 			status.pending_length);
 	}
 
 	if (dma_status < 0) {
-		LOG_ERR("Got error : %d", dma_status);
+		LOG_ERROR("Got error : %d", dma_status);
 	}
 
 
@@ -761,7 +760,7 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg, uint3
 			mcux_lpuart_rx_disable(dev);
 		}
 	} else {
-		LOG_ERR("Got unexpected DMA Channel: %d", channel);
+		LOG_ERROR("Got unexpected DMA Channel: %d", channel);
 	}
 }
 
@@ -774,7 +773,7 @@ static int mcux_lpuart_callback_set(const struct device *dev, uart_callback_t ca
 
 #if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
 	if (data->api_type == LPUART_IRQ_DRIVEN) {
-		LOG_ERR("UART irq and async api are exclusive");
+		LOG_ERROR("UART irq and async api are exclusive");
 		return -ENOTSUP;
 	}
 #endif
@@ -808,7 +807,7 @@ static int mcux_lpuart_tx(const struct device *dev, const uint8_t *buf, size_t l
 
 	if (get_status_result < 0) {
 		irq_unlock(key);
-		LOG_ERR("Failed to get DMA(Tx) status (%d)", get_status_result);
+		LOG_ERROR("Failed to get DMA(Tx) status (%d)", get_status_result);
 		return get_status_result;
 	}
 
@@ -841,12 +840,12 @@ static int mcux_lpuart_tx(const struct device *dev, const uint8_t *buf, size_t l
 				config->tx_dma_config.dma_channel);
 		LPUART_EnableTxDMA(lpuart, true);
 		if (ret != 0) {
-			LOG_ERR("Failed to start DMA(Tx) Ch %d",
-				config->tx_dma_config.dma_channel);
+			LOG_ERROR("Failed to start DMA(Tx) Ch %d",
+				  config->tx_dma_config.dma_channel);
 		}
 		async_timer_start(&data->async.tx_dma_params.timeout_work, timeout_us);
 	} else {
-		LOG_ERR("Error configuring UART DMA: %x", ret);
+		LOG_ERROR("Error configuring UART DMA: %x", ret);
 	}
 	irq_unlock(key);
 	return ret;
@@ -866,7 +865,7 @@ static int mcux_lpuart_tx_abort(const struct device *dev)
 						     &status);
 
 	if (get_status_result < 0) {
-		LOG_ERR("Error querying TX DMA Status during abort.");
+		LOG_ERROR("Error querying TX DMA Status during abort.");
 	}
 
 	const size_t bytes_transmitted = (get_status_result == 0) ?
@@ -903,7 +902,7 @@ static int mcux_lpuart_rx_enable(const struct device *dev, uint8_t *buf, const s
 
 	if (get_status_result < 0) {
 		irq_unlock(key);
-		LOG_ERR("Failed to get DMA(Rx) status (%d)", get_status_result);
+		LOG_ERROR("Failed to get DMA(Rx) status (%d)", get_status_result);
 		return get_status_result;
 	}
 
@@ -1273,7 +1272,7 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 		/* Check if error is due to lack of support */
 		if (ret != -ENOSYS) {
 			/* Real error occurred */
-			LOG_ERR("Failed to configure clock: %d", ret);
+			LOG_ERROR("Failed to configure clock: %d", ret);
 			return ret;
 		}
 	}
@@ -1293,7 +1292,7 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys,
 								&clock_freq);
 	if (ret) {
-		LOG_ERR("Failed to get clock rate: %d", ret);
+		LOG_ERROR("Failed to get clock rate: %d", ret);
 		return -EINVAL;
 	}
 

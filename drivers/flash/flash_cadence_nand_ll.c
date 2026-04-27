@@ -18,7 +18,7 @@ static inline int32_t cdns_nand_wait_idle(uintptr_t base_address)
 	/* Wait status command response ready */
 	if (!WAIT_FOR(CNF_GET_CTRL_BUSY(sys_read32(CNF_CMDREG(base_address, CTRL_STATUS))) == 0U,
 		      IDLE_TIME_OUT, k_msleep(1))) {
-		LOG_ERR("Timed out waiting for wait idle response");
+		LOG_ERROR("Timed out waiting for wait idle response");
 		return -ETIMEDOUT;
 	}
 	return 0;
@@ -74,7 +74,7 @@ static int cdns_nand_device_info(struct cadence_nand_params *params)
 	reg_value = sys_read32(CNF_CTRLPARAM(base_address, DEV_PARAMS0));
 	type = CNF_GET_DEV_TYPE(reg_value);
 	if (type == CNF_DT_UNKNOWN) {
-		LOG_ERR("%s: device type unknown", __func__);
+		LOG_ERROR("%s: device type unknown", __func__);
 		return -ENXIO;
 	}
 
@@ -134,7 +134,7 @@ static int cdns_wait_for_thread(uintptr_t base_address, uint8_t thread)
 
 	if (!WAIT_FOR((sys_read32((base_address) + THR_STATUS) & BIT(thread)) == 0U,
 		      THREAD_IDLE_TIME_OUT, k_msleep(1))) {
-		LOG_ERR("Timed out waiting for thread response");
+		LOG_ERROR("Timed out waiting for thread response");
 		return -ETIMEDOUT;
 	}
 
@@ -189,17 +189,17 @@ static int cdns_pio_transfer_complete(uintptr_t base_address, uint8_t thread)
 			  k_msleep(1));
 
 	if (status == 0) {
-		LOG_ERR("Timed out waiting for thread status response");
+		LOG_ERROR("Timed out waiting for thread status response");
 		return -ETIMEDOUT;
 	}
 
 	if ((status & (BIT(F_CSTAT_COMP)))) {
 		if ((status & (BIT(F_CSTAT_FAIL)))) {
-			LOG_ERR("Cadence status operation failed %s", __func__);
+			LOG_ERROR("Cadence status operation failed %s", __func__);
 			return -EIO;
 		}
 	} else {
-		LOG_ERR("Cadence status complete failed %s", __func__);
+		LOG_ERROR("Cadence status complete failed %s", __func__);
 		return -EIO;
 	}
 	return 0;
@@ -262,7 +262,7 @@ static int cdns_nand_set_opr_mode(uintptr_t base_address, uint8_t opr_mode)
 	/* Wait for controller to be in idle state */
 	ret = cdns_nand_wait_idle(base_address);
 	if (ret != 0) {
-		LOG_ERR("Wait for controller to be in idle state Failed");
+		LOG_ERROR("Wait for controller to be in idle state Failed");
 		return ret;
 	}
 
@@ -270,7 +270,7 @@ static int cdns_nand_set_opr_mode(uintptr_t base_address, uint8_t opr_mode)
 	device_type = CNF_GET_DEV_TYPE(sys_read32(CNF_CTRLPARAM(base_address, DEV_PARAMS0)));
 
 	if (device_type != ONFI_INTERFACE) {
-		LOG_ERR("Driver does not support this interface");
+		LOG_ERROR("Driver does not support this interface");
 		return -ENOTSUP;
 	}
 	/* Reset DLL PHY */
@@ -279,7 +279,7 @@ static int cdns_nand_set_opr_mode(uintptr_t base_address, uint8_t opr_mode)
 	/* Wait for controller to be in idle state */
 	ret = cdns_nand_wait_idle(base_address);
 	if (ret != 0) {
-		LOG_ERR("Wait for controller to be in idle state Failed");
+		LOG_ERROR("Wait for controller to be in idle state Failed");
 		return ret;
 	}
 
@@ -291,13 +291,13 @@ static int cdns_nand_set_opr_mode(uintptr_t base_address, uint8_t opr_mode)
 
 	ret = cdns_pio_transfer_complete(base_address, NF_TDEF_TRD_NUM);
 	if (ret != 0) {
-		LOG_ERR("cdns pio check failed");
+		LOG_ERROR("cdns pio check failed");
 		return ret;
 	}
 
 	ret = cdns_nand_wait_idle(base_address);
 	if (ret != 0) {
-		LOG_ERR("Wait for controller to be in idle state Failed");
+		LOG_ERROR("Wait for controller to be in idle state Failed");
 		return ret;
 	}
 
@@ -306,7 +306,7 @@ static int cdns_nand_set_opr_mode(uintptr_t base_address, uint8_t opr_mode)
 
 	ret = cdns_nand_wait_idle(base_address);
 	if (ret != 0) {
-		LOG_ERR("Wait for controller to be in idle state Failed");
+		LOG_ERROR("Wait for controller to be in idle state Failed");
 		return ret;
 	}
 
@@ -326,7 +326,7 @@ static int cdns_nand_transfer_config(uintptr_t base_address)
 	ret = cdns_nand_wait_idle(base_address);
 
 	if (ret != 0) {
-		LOG_ERR("Wait for controller to be in idle state Failed");
+		LOG_ERROR("Wait for controller to be in idle state Failed");
 		return ret;
 	}
 
@@ -357,12 +357,12 @@ int cdns_nand_init(struct cadence_nand_params *params)
 
 	if (!WAIT_FOR(CNF_GET_INIT_COMP(sys_read32(CNF_CMDREG(base_address, CTRL_STATUS))) != 0U,
 		      IDLE_TIME_OUT, k_msleep(1))) {
-		LOG_ERR("Timed out waiting for NAND Controller Init complete status response");
+		LOG_ERROR("Timed out waiting for NAND Controller Init complete status response");
 		return -ETIMEDOUT;
 	}
 
 	if (CNF_GET_INIT_FAIL(sys_read32(CNF_CMDREG(base_address, CTRL_STATUS))) != 0) {
-		LOG_ERR("NAND Controller Init complete Failed!!!");
+		LOG_ERROR("NAND Controller Init complete Failed!!!");
 		return -ENODEV;
 	}
 
@@ -388,7 +388,7 @@ int cdns_nand_init(struct cadence_nand_params *params)
 	ret = cdns_nand_wait_idle(base_address);
 
 	if (ret != 0) {
-		LOG_ERR("Wait for controller to be in idle state Failed");
+		LOG_ERROR("Wait for controller to be in idle state Failed");
 		return ret;
 	}
 	sys_write32(DEV_STAT_DEF_VALUE, CNF_CTRLCFG(base_address, DEV_STAT));
@@ -408,7 +408,7 @@ int cdns_nand_init(struct cadence_nand_params *params)
 	/* Wait for controller to be in idle state */
 	ret = cdns_nand_wait_idle(base_address);
 	if (ret != 0) {
-		LOG_ERR("Wait for controller to be in idle state Failed");
+		LOG_ERROR("Wait for controller to be in idle state Failed");
 		return ret;
 	}
 
@@ -425,7 +425,7 @@ int cdns_nand_init(struct cadence_nand_params *params)
 				find_msb_set((params->nblocks_per_lun) - 1);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to establish device access width!");
+		LOG_ERROR("Failed to establish device access width!");
 		return -EINVAL;
 	}
 	/* Enable Global Interrupt for NAND*/
@@ -496,11 +496,11 @@ static int cdns_transfer_complete(struct cdns_cdma_command_descriptor *desc_ptr,
 	status = sys_read32((params->nand_base + CMD_STAT_CMD_STATUS));
 	if ((status & (BIT(F_CSTAT_COMP)))) {
 		if ((status & (BIT(F_CSTAT_FAIL)))) {
-			LOG_ERR("Cadence status operation failed %s", __func__);
+			LOG_ERROR("Cadence status operation failed %s", __func__);
 			return -EIO;
 		}
 	} else {
-		LOG_ERR("Cadence status complete failed %s", __func__);
+		LOG_ERROR("Cadence status complete failed %s", __func__);
 		return -EIO;
 	}
 #else
@@ -508,11 +508,11 @@ static int cdns_transfer_complete(struct cdns_cdma_command_descriptor *desc_ptr,
 
 	if (!WAIT_FOR(((desc_ptr->status & (BIT(F_CSTAT_COMP))) != 0), IDLE_TIME_OUT,
 		      k_msleep(1))) {
-		LOG_ERR("Timed out waiting for thread status response");
+		LOG_ERROR("Timed out waiting for thread status response");
 		return -ETIMEDOUT;
 	}
 	if ((desc_ptr->status & (BIT(F_CSTAT_FAIL))) != 0) {
-		LOG_ERR("Cadence status operation failed %s", __func__);
+		LOG_ERROR("Cadence status operation failed %s", __func__);
 		return -EIO;
 	}
 #endif
@@ -568,7 +568,7 @@ static int cdns_cdma_desc_transfer_finish(struct cadence_nand_params *params, ui
 	cdma_desc = k_malloc(sizeof(struct cdns_cdma_command_descriptor) * page_buffer_size);
 
 	if (cdma_desc == NULL) {
-		LOG_ERR("Memory allocation error occurred %s", __func__);
+		LOG_ERROR("Memory allocation error occurred %s", __func__);
 		return -ENOSR;
 	}
 
@@ -883,7 +883,7 @@ static int cdns_generic_send_cmd(struct cadence_nand_params *params, uint64_t mi
 	ret = cdns_nand_wait_idle(base_address);
 
 	if (ret != 0) {
-		LOG_ERR("Wait for controller to be in idle state Failed");
+		LOG_ERROR("Wait for controller to be in idle state Failed");
 		return ret;
 	}
 	sys_write32(mini_ctrl_cmd_l, (base_address + CDNS_CMD_REG2));
@@ -933,7 +933,7 @@ static int cdns_wait_sdma(uintptr_t base_address)
 
 	if (!WAIT_FOR(((sys_read32(base_address + INTR_STATUS) & BIT(SDMA_TRIGG)) != 0),
 		      IDLE_TIME_OUT, k_msleep(1))) {
-		LOG_ERR("Timed out waiting for sdma response");
+		LOG_ERROR("Timed out waiting for sdma response");
 		return -ETIMEDOUT;
 	}
 	sys_set_bit((base_address + INTR_STATUS), SDMA_TRIGG);
@@ -1086,14 +1086,14 @@ static int cdns_nand_gen_read_write(struct cadence_nand_params *params, uint32_t
 			ret = cdns_generic_page_read(params, address,
 						     buffer + (index * (params->page_size)));
 			if (ret != 0) {
-				LOG_ERR("Cadence NAND Generic Page Read Error!!");
+				LOG_ERROR("Cadence NAND Generic Page Read Error!!");
 				return ret;
 			}
 		} else {
 			ret = cdns_generic_page_write(params, address,
 						      buffer + (index * (params->page_size)));
 			if (ret != 0) {
-				LOG_ERR("Cadence NAND Generic Page write Error!!");
+				LOG_ERROR("Cadence NAND Generic Page write Error!!");
 				return ret;
 			}
 		}
@@ -1181,7 +1181,7 @@ int cdns_nand_read(struct cadence_nand_params *params, const void *buffer, uint3
 	uint8_t *last_end_page;
 
 	if (params == NULL) {
-		LOG_ERR("Wrong parameter passed!!");
+		LOG_ERROR("Wrong parameter passed!!");
 		return -EINVAL;
 	}
 
@@ -1190,7 +1190,7 @@ int cdns_nand_read(struct cadence_nand_params *params, const void *buffer, uint3
 	}
 
 	if ((offset >= params->device_size) || (size > (params->device_size - offset))) {
-		LOG_ERR("Wrong offset or size value passed!!");
+		LOG_ERROR("Wrong offset or size value passed!!");
 		return -EINVAL;
 	}
 
@@ -1218,7 +1218,7 @@ int cdns_nand_read(struct cadence_nand_params *params, const void *buffer, uint3
 		if (first_end_page != NULL) {
 			memset(first_end_page, 0xFF, sizeof(char) * (params->page_size));
 		} else {
-			LOG_ERR("Memory allocation error occurred %s", __func__);
+			LOG_ERROR("Memory allocation error occurred %s", __func__);
 			return -ENOSR;
 		}
 		ret = cdns_read_data(params, start_page_number, first_end_page, page_count);
@@ -1235,7 +1235,7 @@ int cdns_nand_read(struct cadence_nand_params *params, const void *buffer, uint3
 		if (first_end_page != NULL) {
 			memset(first_end_page, 0xFF, sizeof(char) * (params->page_size * 2));
 		} else {
-			LOG_ERR("Memory allocation error occurred %s", __func__);
+			LOG_ERROR("Memory allocation error occurred %s", __func__);
 			return -ENOSR;
 		}
 		ret = cdns_read_data(params, start_page_number, first_end_page, page_count);
@@ -1251,7 +1251,7 @@ int cdns_nand_read(struct cadence_nand_params *params, const void *buffer, uint3
 		if (first_end_page != NULL) {
 			memset(first_end_page, 0xFF, sizeof(char) * (params->page_size));
 		} else {
-			LOG_ERR("Memory allocation error occurred %s", __func__);
+			LOG_ERROR("Memory allocation error occurred %s", __func__);
 			return -ENOSR;
 		}
 		ret = cdns_read_data(params, end_page_number, first_end_page, 1);
@@ -1275,7 +1275,7 @@ int cdns_nand_read(struct cadence_nand_params *params, const void *buffer, uint3
 		if (first_end_page != NULL) {
 			memset(first_end_page, 0xFF, sizeof(char) * (params->page_size));
 		} else {
-			LOG_ERR("Memory allocation error occurred %s", __func__);
+			LOG_ERROR("Memory allocation error occurred %s", __func__);
 			return -ENOSR;
 		}
 		ret = cdns_read_data(params, start_page_number, first_end_page, 1);
@@ -1301,7 +1301,7 @@ int cdns_nand_read(struct cadence_nand_params *params, const void *buffer, uint3
 			memset(first_end_page, 0xFF, sizeof(char) * (params->page_size));
 			memset(last_end_page, 0xFF, sizeof(char) * (params->page_size));
 		} else {
-			LOG_ERR("Memory allocation error occurred %s", __func__);
+			LOG_ERROR("Memory allocation error occurred %s", __func__);
 			return -ENOSR;
 		}
 		ret = cdns_read_data(params, start_page_number, first_end_page, 1);
@@ -1354,7 +1354,7 @@ int cdns_nand_write(struct cadence_nand_params *params, const void *buffer, uint
 	int ret = 0;
 
 	if (params == NULL) {
-		LOG_ERR("Wrong parameter passed!!");
+		LOG_ERROR("Wrong parameter passed!!");
 		return -EINVAL;
 	}
 
@@ -1363,17 +1363,17 @@ int cdns_nand_write(struct cadence_nand_params *params, const void *buffer, uint
 	}
 
 	if ((offset >= params->device_size) || (len > (params->device_size - offset))) {
-		LOG_ERR("Wrong offset or len value passed!!");
+		LOG_ERROR("Wrong offset or len value passed!!");
 		return -EINVAL;
 	}
 
 	if ((offset % params->page_size) != 0) {
-		LOG_ERR("offset not page aligned!!! Page size = 0x%x", params->page_size);
+		LOG_ERROR("offset not page aligned!!! Page size = 0x%x", params->page_size);
 		return -EINVAL;
 	}
 
 	if ((len % params->page_size) != 0) {
-		LOG_ERR("length not page aligned!!! Page size = 0x%x", params->page_size);
+		LOG_ERROR("length not page aligned!!! Page size = 0x%x", params->page_size);
 		return -EINVAL;
 	}
 
@@ -1391,7 +1391,7 @@ int cdns_nand_write(struct cadence_nand_params *params, const void *buffer, uint
 				       CDNS_WRITE);
 #endif
 	if (ret != 0) {
-		LOG_ERR("Cadence driver write Failed!!!");
+		LOG_ERROR("Cadence driver write Failed!!!");
 	}
 
 	return ret;
@@ -1413,7 +1413,7 @@ int cdns_nand_erase(struct cadence_nand_params *params, uint32_t offset, uint32_
 	int ret;
 
 	if (params == NULL) {
-		LOG_ERR("Wrong parameter passed!!");
+		LOG_ERROR("Wrong parameter passed!!");
 		return -EINVAL;
 	}
 
@@ -1422,17 +1422,17 @@ int cdns_nand_erase(struct cadence_nand_params *params, uint32_t offset, uint32_
 	}
 
 	if ((offset >= params->device_size) || (size > (params->device_size - offset))) {
-		LOG_ERR("Wrong offset or size value passed!!");
+		LOG_ERROR("Wrong offset or size value passed!!");
 		return -EINVAL;
 	}
 	if ((offset % (params->block_size)) != 0) {
-		LOG_ERR("Offset value not aligned with block size!! Erase block size = %x",
-			params->block_size);
+		LOG_ERROR("Offset value not aligned with block size!! Erase block size = %x",
+			  params->block_size);
 		return -EINVAL;
 	}
 	if ((size % (params->block_size)) != 0) {
-		LOG_ERR("Length value not aligned with block size!! Erase block size = %x",
-			params->block_size);
+		LOG_ERROR("Length value not aligned with block size!! Erase block size = %x",
+			  params->block_size);
 		return -EINVAL;
 	}
 
@@ -1449,7 +1449,7 @@ int cdns_nand_erase(struct cadence_nand_params *params, uint32_t offset, uint32_
 	ret = cdns_nand_gen_erase(params, start_block_number, ++block_count);
 #endif
 	if (ret != 0) {
-		LOG_ERR("Cadence driver Erase Failed!!!");
+		LOG_ERROR("Cadence driver Erase Failed!!!");
 	}
 
 	return ret;

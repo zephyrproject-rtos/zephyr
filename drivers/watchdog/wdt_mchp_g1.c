@@ -82,7 +82,7 @@ static inline bool wdt_is_enabled(const wdt_registers_t *regs)
 static void wdt_sync_wait(const wdt_registers_t *regs)
 {
 	if (WAIT_FOR((regs->WDT_SYNCBUSY == 0), TIMEOUT_VALUE_US, k_busy_wait(DELAY_US)) == false) {
-		LOG_ERR("Timeout waiting for WDT_SYNCBUSY to clear");
+		LOG_ERROR("Timeout waiting for WDT_SYNCBUSY to clear");
 	}
 }
 /*
@@ -102,7 +102,7 @@ static int wdt_enable(wdt_registers_t *regs, bool enable)
 		if (0 == (regs->WDT_CTRLA & WDT_CTRLA_ALWAYSON(1))) {
 			regs->WDT_CTRLA &= ~WDT_CTRLA_ENABLE(1);
 		} else {
-			LOG_ERR("watchdog disable not supported when always on bit is enabled");
+			LOG_ERROR("watchdog disable not supported when always on bit is enabled");
 			ret = -ENOTSUP;
 		}
 	}
@@ -201,13 +201,13 @@ static int wdt_validate_window(uint32_t timeout_min, uint32_t timeout_max)
 	 * than the maximum possible value in window mode
 	 */
 	if ((timeout_max >= MAX_TIMEOUT_WINDOW_MODE) && (timeout_min != 0)) {
-		LOG_ERR("invalid timeout values");
+		LOG_ERROR("invalid timeout values");
 		return -EINVAL;
 	}
 
 	/* check whether the timeout max given is zero */
 	if (timeout_max == 0) {
-		LOG_ERR("invalid timeout values %d", __LINE__);
+		LOG_ERROR("invalid timeout values %d", __LINE__);
 		return -EINVAL;
 	}
 
@@ -215,13 +215,13 @@ static int wdt_validate_window(uint32_t timeout_min, uint32_t timeout_max)
 	 * less than the minimum possible window
 	 */
 	if ((timeout_min < PERIOD_VALUE(0)) && (timeout_min != 0)) {
-		LOG_ERR("invalid timeout values %d", __LINE__);
+		LOG_ERROR("invalid timeout values %d", __LINE__);
 		return -EINVAL;
 	}
 
 	/* Ensure that a window is available) */
 	if (timeout_min > (timeout_max >> 1)) {
-		LOG_ERR("invalid timeout values %d", __LINE__);
+		LOG_ERROR("invalid timeout values %d", __LINE__);
 		return -EINVAL;
 	}
 
@@ -229,7 +229,7 @@ static int wdt_validate_window(uint32_t timeout_min, uint32_t timeout_max)
 	 * the limit for both normal mode and window mode
 	 */
 	if ((timeout_max - timeout_min) > MAX_TIMEOUT_WINDOW) {
-		LOG_ERR("invalid timeout values %d", __LINE__);
+		LOG_ERROR("invalid timeout values %d", __LINE__);
 		return -EINVAL;
 	}
 
@@ -287,7 +287,7 @@ static int wdt_apply_options(wdt_registers_t *regs, uint8_t options)
 {
 	/* WDT_OPT_PAUSE_HALTED_BY_DBG is supported by default by the peripheral */
 	if ((options & WDT_OPT_PAUSE_IN_SLEEP) != 0) {
-		LOG_ERR("unsupported option selected %s", __func__);
+		LOG_ERROR("unsupported option selected %s", __func__);
 		return -ENOTSUP;
 	}
 
@@ -315,25 +315,25 @@ static int wdt_mchp_setup(const struct device *wdt_dev, uint8_t options)
 	k_mutex_lock(&mchp_wdt_data->lock, WDT_LOCK_TIMEOUT);
 	if (wdt_is_enabled(regs) == true) {
 		k_mutex_unlock(&mchp_wdt_data->lock);
-		LOG_ERR("Watchdog already setup");
+		LOG_ERROR("Watchdog already setup");
 		return -EBUSY;
 	}
 
 	if (mchp_wdt_data->installed_timeout_cnt == 0) {
 		k_mutex_unlock(&mchp_wdt_data->lock);
-		LOG_ERR("No valid timeout installed");
+		LOG_ERROR("No valid timeout installed");
 		return -EINVAL;
 	}
 	ret = wdt_apply_options(regs, options);
 	if (ret < 0) {
 		k_mutex_unlock(&mchp_wdt_data->lock);
-		LOG_ERR("ret val apply = %d", ret);
+		LOG_ERROR("ret val apply = %d", ret);
 		return ret;
 	}
 	ret = wdt_enable(regs, true);
 	if (ret < 0) {
 		k_mutex_unlock(&mchp_wdt_data->lock);
-		LOG_ERR("wdt_enable failed %d", ret);
+		LOG_ERROR("wdt_enable failed %d", ret);
 		return ret;
 	}
 	LOG_DBG("watchdog enabled : 0x%x\n\r", wdt_is_enabled(regs));
@@ -356,13 +356,13 @@ static int wdt_mchp_disable(const struct device *wdt_dev)
 	/* if watchdog is not enabled, then return fault */
 	if (wdt_is_enabled(regs) == false) {
 		irq_unlock(irq_key);
-		LOG_ERR("wdg is already disabled");
+		LOG_ERROR("wdg is already disabled");
 		return -EFAULT;
 	}
 	ret = wdt_enable(regs, false);
 	if (ret < 0) {
 		irq_unlock(irq_key);
-		LOG_ERR("wdg was not disabled = %d", ret);
+		LOG_ERROR("wdg was not disabled = %d", ret);
 		return -EPERM;
 	}
 	irq_unlock(irq_key);
@@ -388,7 +388,7 @@ static int wdt_mchp_install_timeout(const struct device *wdt_dev, const struct w
 	/* CONFIG is enable protected, error out if already enabled */
 	if (wdt_is_enabled(regs) != 0) {
 		k_mutex_unlock(&mchp_wdt_data->lock);
-		LOG_ERR("Watchdog already setup");
+		LOG_ERROR("Watchdog already setup");
 		return -EBUSY;
 	}
 
@@ -401,7 +401,7 @@ static int wdt_mchp_install_timeout(const struct device *wdt_dev, const struct w
 		if ((new_set_timeout.window.min != channel_data[0].window.min) ||
 		    (new_set_timeout.window.max != channel_data[0].window.max)) {
 			k_mutex_unlock(&mchp_wdt_data->lock);
-			LOG_ERR("invalid timeout val");
+			LOG_ERROR("invalid timeout val");
 			return -EINVAL;
 		}
 	}
@@ -412,7 +412,7 @@ static int wdt_mchp_install_timeout(const struct device *wdt_dev, const struct w
 	 */
 	if (mchp_wdt_data->installed_timeout_cnt == MAX_INSTALLABLE_TIMEOUT_COUNT) {
 		k_mutex_unlock(&mchp_wdt_data->lock);
-		LOG_ERR("No more timeouts available");
+		LOG_ERROR("No more timeouts available");
 		return -ENOMEM;
 	}
 
@@ -420,7 +420,7 @@ static int wdt_mchp_install_timeout(const struct device *wdt_dev, const struct w
 	ret = wdt_reset_type_set(cfg->flags);
 	if (ret < 0) {
 		k_mutex_unlock(&mchp_wdt_data->lock);
-		LOG_ERR("error in setting reset type %d", ret);
+		LOG_ERROR("error in setting reset type %d", ret);
 		return ret;
 	}
 
@@ -428,7 +428,7 @@ static int wdt_mchp_install_timeout(const struct device *wdt_dev, const struct w
 	ret = wdt_validate_window(cfg->window.min, cfg->window.max);
 	if (ret < 0) {
 		k_mutex_unlock(&mchp_wdt_data->lock);
-		LOG_ERR("timeout out of range");
+		LOG_ERROR("timeout out of range");
 		return -EINVAL;
 	}
 
@@ -438,7 +438,7 @@ static int wdt_mchp_install_timeout(const struct device *wdt_dev, const struct w
 		ret = wdt_interrupt_enable(regs);
 		if (ret < 0) {
 			k_mutex_unlock(&mchp_wdt_data->lock);
-			LOG_ERR("Interrupt is not supported for this peripeheral");
+			LOG_ERROR("Interrupt is not supported for this peripeheral");
 			return -ENOTSUP;
 		}
 	}
@@ -456,8 +456,8 @@ static int wdt_mchp_install_timeout(const struct device *wdt_dev, const struct w
 	channel_data[mchp_wdt_data->installed_timeout_cnt].window.min =
 		actual_set_timeout.window.min;
 
-	LOG_ERR("Rounded off timeout min to %d\nRounded off timeout max to %d",
-		actual_set_timeout.window.min, actual_set_timeout.window.max);
+	LOG_ERROR("Rounded off timeout min to %d\nRounded off timeout max to %d",
+		  actual_set_timeout.window.min, actual_set_timeout.window.max);
 
 	/* this will return the channel id and then increment the
 	 * count which will then be used for the next channel.
@@ -477,15 +477,15 @@ static int wdt_mchp_feed(const struct device *wdt_dev, int channel_id)
 	wdt_registers_t *regs = mchp_wdt_cfg->regs;
 
 	if (wdt_is_enabled(regs) == false) {
-		LOG_ERR("Watchdog not setup");
+		LOG_ERROR("Watchdog not setup");
 		return -EINVAL;
 	}
 	if ((channel_id < 0) || (channel_id >= (mchp_wdt_data->installed_timeout_cnt))) {
-		LOG_ERR("Invalid channel selected");
+		LOG_ERROR("Invalid channel selected");
 		return -EINVAL;
 	}
 	if (mchp_wdt_data->installed_timeout_cnt == 0) {
-		LOG_ERR("No valid timeout installed");
+		LOG_ERROR("No valid timeout installed");
 		return -EINVAL;
 	}
 
@@ -513,7 +513,7 @@ static int wdt_mchp_init(const struct device *wdt_dev)
 #if defined(CONFIG_WDT_DISABLE_AT_BOOT)
 	ret_val = wdt_mchp_disable(wdt_dev);
 	if (ret_val < 0) {
-		LOG_ERR("Watchdog could not be disabled on startup");
+		LOG_ERROR("Watchdog could not be disabled on startup");
 		return -EPERM;
 	}
 #endif /* CONFIG_WDT_DISABLE_AT_BOOT */
@@ -521,7 +521,7 @@ static int wdt_mchp_init(const struct device *wdt_dev)
 	ret_val = clock_control_on(mchp_wdt_cfg->wdt_clock.clock_dev,
 				   mchp_wdt_cfg->wdt_clock.mclk_sys);
 	if ((ret_val < 0) && (ret_val != -EALREADY)) {
-		LOG_ERR("Clock control on failed for MCLK %d", ret_val);
+		LOG_ERROR("Clock control on failed for MCLK %d", ret_val);
 		return ret_val;
 	}
 

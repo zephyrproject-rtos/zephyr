@@ -117,7 +117,7 @@ static int dac_mcp4725_init(const struct device *dev)
 	const struct mcp4725_config *config = dev->config;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C device not found");
+		LOG_ERROR("I2C device not found");
 		return -EINVAL;
 	}
 

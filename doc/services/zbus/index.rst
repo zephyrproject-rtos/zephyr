@@ -811,7 +811,7 @@ listener.
    static void async_listener_callback(const struct zbus_channel *chan, const void *message)
    {
            if (chan != &chan_event) {
-                   LOG_ERR("Unexpected channel");
+                   LOG_ERROR("Unexpected channel");
                    return;
            }
 

@@ -272,7 +272,7 @@ static void unicast_client_ep_iso_recv(struct bt_iso_chan *chan,
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream for ep %p", ep);
+		LOG_ERROR("No stream for ep %p", ep);
 		return;
 	}
 
@@ -298,13 +298,13 @@ static void unicast_client_ep_iso_sent(struct bt_iso_chan *chan)
 	struct bt_bap_ep *ep = iso->tx.ep;
 
 	if (ep == NULL) {
-		LOG_ERR("iso %p not bound with ep", chan);
+		LOG_ERROR("iso %p not bound with ep", chan);
 		return;
 	}
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream for ep %p", ep);
+		LOG_ERROR("No stream for ep %p", ep);
 		return;
 	}
 
@@ -334,7 +334,7 @@ static void unicast_client_ep_iso_connected(struct bt_bap_ep *ep)
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream for ep %p", ep);
+		LOG_ERROR("No stream for ep %p", ep);
 		return;
 	}
 
@@ -357,7 +357,7 @@ static void unicast_client_iso_connected(struct bt_iso_chan *chan)
 	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
 
 	if (iso->rx.ep == NULL && iso->tx.ep == NULL) {
-		LOG_ERR("iso %p not bound with ep", chan);
+		LOG_ERROR("iso %p not bound with ep", chan);
 		return;
 	}
 
@@ -377,7 +377,7 @@ static void unicast_client_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t rea
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("Stream not associated with an ep");
+		LOG_ERROR("Stream not associated with an ep");
 		return;
 	}
 
@@ -403,7 +403,7 @@ static void unicast_client_iso_disconnected(struct bt_iso_chan *chan, uint8_t re
 	struct bt_bap_iso *iso = CONTAINER_OF(chan, struct bt_bap_iso, chan);
 
 	if (iso->rx.ep == NULL && iso->tx.ep == NULL) {
-		LOG_ERR("iso %p not bound with ep", chan);
+		LOG_ERROR("iso %p not bound with ep", chan);
 		return;
 	}
 
@@ -804,7 +804,7 @@ static void unicast_client_ep_idle_state(struct bt_bap_ep *ep)
 		err = bt_bap_stream_disconnect(stream);
 
 		if (err != 0) {
-			LOG_ERR("Failed to disconnect stream: %d", err);
+			LOG_ERROR("Failed to disconnect stream: %d", err);
 		}
 
 		return;
@@ -885,7 +885,7 @@ static void unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_
 	}
 
 	if (buf->len < sizeof(*cfg)) {
-		LOG_ERR("Config status too short");
+		LOG_ERROR("Config status too short");
 		return;
 	}
 
@@ -897,9 +897,13 @@ static void unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_
 
 	cfg = net_buf_simple_pull_mem(buf, sizeof(*cfg));
 
+	if (stream->codec_cfg == NULL) {
+		LOG_ERROR("Stream %p does not have a codec configured", stream);
+		return;
+	}
 	if (buf->len < cfg->cc_len) {
-		LOG_ERR("Malformed ASE Config status: buf->len %u < %u cc_len", buf->len,
-			cfg->cc_len);
+		LOG_ERROR("Malformed ASE Config status: buf->len %u < %u cc_len", buf->len,
+			  cfg->cc_len);
 		return;
 	}
 
@@ -957,13 +961,13 @@ static void unicast_client_ep_qos_state(struct bt_bap_ep *ep, struct net_buf_sim
 	ep->receiver_ready = false;
 
 	if (buf->len < sizeof(*qos)) {
-		LOG_ERR("QoS status too short");
+		LOG_ERROR("QoS status too short");
 		return;
 	}
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream active for endpoint");
+		LOG_ERROR("No stream active for endpoint");
 		return;
 	}
 	ops = stream->ops;
@@ -1051,7 +1055,7 @@ static void unicast_client_ep_qos_state(struct bt_bap_ep *ep, struct net_buf_sim
 		const int err = bt_bap_stream_disconnect(stream);
 
 		if (err != 0) {
-			LOG_ERR("Failed to disconnect stream: %d", err);
+			LOG_ERROR("Failed to disconnect stream: %d", err);
 		}
 	}
 
@@ -1072,21 +1076,21 @@ static void unicast_client_ep_enabling_state(struct bt_bap_ep *ep, struct net_bu
 	void *metadata;
 
 	if (buf->len < sizeof(*enable)) {
-		LOG_ERR("Enabling status too short");
+		LOG_ERROR("Enabling status too short");
 		return;
 	}
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream active for endpoint");
+		LOG_ERROR("No stream active for endpoint");
 		return;
 	}
 
 	enable = net_buf_simple_pull_mem(buf, sizeof(*enable));
 
 	if (buf->len < enable->metadata_len) {
-		LOG_ERR("Malformed PDU: remaining len %u expected %u", buf->len,
-			enable->metadata_len);
+		LOG_ERROR("Malformed PDU: remaining len %u expected %u", buf->len,
+			  enable->metadata_len);
 		return;
 	}
 
@@ -1123,21 +1127,21 @@ static void unicast_client_ep_streaming_state(struct bt_bap_ep *ep, struct net_b
 	void *metadata;
 
 	if (buf->len < sizeof(*stream_status)) {
-		LOG_ERR("Streaming status too short");
+		LOG_ERROR("Streaming status too short");
 		return;
 	}
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream active for endpoint");
+		LOG_ERROR("No stream active for endpoint");
 		return;
 	}
 
 	stream_status = net_buf_simple_pull_mem(buf, sizeof(*stream_status));
 
 	if (buf->len < stream_status->metadata_len) {
-		LOG_ERR("Malformed PDU: remaining len %u expected %u", buf->len,
-			stream_status->metadata_len);
+		LOG_ERROR("Malformed PDU: remaining len %u expected %u", buf->len,
+			  stream_status->metadata_len);
 		return;
 	}
 
@@ -1180,13 +1184,13 @@ static void unicast_client_ep_disabling_state(struct bt_bap_ep *ep, struct net_b
 	ep->receiver_ready = false;
 
 	if (buf->len < sizeof(*disable)) {
-		LOG_ERR("Disabling status too short");
+		LOG_ERROR("Disabling status too short");
 		return;
 	}
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream active for endpoint");
+		LOG_ERROR("No stream active for endpoint");
 		return;
 	}
 
@@ -1210,7 +1214,7 @@ static void unicast_client_ep_releasing_state(struct bt_bap_ep *ep, struct net_b
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream active for endpoint");
+		LOG_ERROR("No stream active for endpoint");
 		return;
 	}
 
@@ -1226,7 +1230,7 @@ static void unicast_client_ep_releasing_state(struct bt_bap_ep *ep, struct net_b
 		const int err = bt_bap_stream_disconnect(stream);
 
 		if (err != 0) {
-			LOG_ERR("Failed to disconnect stream: %d", err);
+			LOG_ERROR("Failed to disconnect stream: %d", err);
 		}
 	}
 }
@@ -1500,7 +1504,7 @@ static int unicast_client_set_codec_cap(uint8_t id, uint16_t cid, uint16_t vid, 
 
 			/* Check if all entries could be parsed */
 			if (buf.len) {
-				LOG_ERR("Unable to parse Codec capabilities: len %u", buf.len);
+				LOG_ERROR("Unable to parse Codec capabilities: len %u", buf.len);
 				return -EINVAL;
 			}
 		}
@@ -1519,7 +1523,7 @@ static int unicast_client_set_codec_cap(uint8_t id, uint16_t cid, uint16_t vid, 
 
 		/* Check if all entries could be parsed */
 		if (buf.len) {
-			LOG_ERR("Unable to parse Codec metadata: len %u", buf.len);
+			LOG_ERROR("Unable to parse Codec metadata: len %u", buf.len);
 			return -EINVAL;
 		}
 
@@ -1570,7 +1574,7 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 	net_buf_simple_init_with_data(&buf, (void *)data, length);
 
 	if (buf.len < sizeof(*rsp)) {
-		LOG_ERR("Control Point Notification too small");
+		LOG_ERROR("Control Point Notification too small");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1589,7 +1593,7 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 		struct bt_bap_stream *stream;
 
 		if (buf.len < sizeof(*ase_rsp)) {
-			LOG_ERR("Control Point Notification too small: %u", buf.len);
+			LOG_ERROR("Control Point Notification too small: %u", buf.len);
 			return BT_GATT_ITER_STOP;
 		}
 
@@ -1827,7 +1831,7 @@ static uint8_t unicast_client_ep_notify(struct bt_conn *conn,
 	net_buf_simple_init_with_data(&buf, (void *)data, length);
 
 	if (buf.len < sizeof(struct bt_ascs_ase_status)) {
-		LOG_ERR("Notification too small");
+		LOG_ERROR("Notification too small");
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1967,7 +1971,7 @@ static int unicast_client_ep_config(struct bt_bap_ep *ep, struct net_buf_simple 
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
+		LOG_ERROR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
@@ -1993,7 +1997,22 @@ static int unicast_client_add_qos(struct bt_bap_ep *ep, struct net_buf_simple *b
 	struct bt_ascs_qos *req;
 	struct bt_conn_iso *conn_iso;
 
-	LOG_DBG("ep %p buf %p (%u / %u) qos %p", ep, buf, buf->len, buf->size, qos);
+	if (ep == NULL || ep->iso == NULL || ep->iso->chan.iso == NULL) {
+		LOG_DBG("Invalid endpoint %p (%p (%p))", ep, ep == NULL ? NULL : ep->iso,
+			(ep == NULL || ep->iso == NULL) ? NULL : ep->iso->chan.iso);
+		return -EINVAL;
+	}
+
+	switch (ep->state) {
+	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
+	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		/* or 0x02 (QoS Configured) */
+	case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		break;
+	default:
+		LOG_ERROR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
+		return -EINVAL;
+	}
 
 	conn_iso = &ep->iso->chan.iso->iso;
 
@@ -2033,7 +2052,7 @@ static int unicast_client_ep_enable(struct bt_bap_ep *ep, struct net_buf_simple 
 	}
 
 	if (ep->state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
+		LOG_ERROR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
@@ -2066,7 +2085,7 @@ static int unicast_client_ep_metadata(struct bt_bap_ep *ep, struct net_buf_simpl
 	case BT_BAP_EP_STATE_STREAMING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
+		LOG_ERROR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
@@ -2090,7 +2109,7 @@ static int unicast_client_ep_start(struct bt_bap_ep *ep, struct net_buf_simple *
 	}
 
 	if (ep->state != BT_BAP_EP_STATE_ENABLING && ep->state != BT_BAP_EP_STATE_DISABLING) {
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
+		LOG_ERROR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
@@ -2116,7 +2135,7 @@ static int unicast_client_ep_disable(struct bt_bap_ep *ep, struct net_buf_simple
 	case BT_BAP_EP_STATE_STREAMING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
+		LOG_ERROR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
@@ -2137,7 +2156,7 @@ static int unicast_client_ep_stop(struct bt_bap_ep *ep, struct net_buf_simple *b
 
 	/* Valid only if ASE_State field value = 0x05 (Disabling). */
 	if (ep->state != BT_BAP_EP_STATE_DISABLING) {
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
+		LOG_ERROR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
@@ -2169,7 +2188,7 @@ static int unicast_client_ep_release(struct bt_bap_ep *ep, struct net_buf_simple
 	case BT_BAP_EP_STATE_DISABLING:
 		break;
 	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
+		LOG_ERROR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return -EINVAL;
 	}
 
@@ -2393,7 +2412,7 @@ static int bt_audio_cig_create(struct bt_bap_unicast_group *group)
 
 	err = bt_iso_cig_create(&param, &group->cig);
 	if (err != 0) {
-		LOG_ERR("bt_iso_cig_create failed: %d", err);
+		LOG_ERROR("bt_iso_cig_create failed: %d", err);
 		return err;
 	}
 
@@ -2424,7 +2443,7 @@ static int bt_audio_cig_reconfigure(struct bt_bap_unicast_group *group)
 
 	err = bt_iso_cig_reconfigure(group->cig, &param);
 	if (err != 0) {
-		LOG_ERR("bt_iso_cig_create failed: %d", err);
+		LOG_ERROR("bt_iso_cig_create failed: %d", err);
 		return err;
 	}
 
@@ -3412,7 +3431,7 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 			/* This can only happen if the stream was somehow added
 			 * to a group without the bap_iso being bound to it
 			 */
-			LOG_ERR("Could not find bap_iso for stream %p", stream);
+			LOG_ERROR("Could not find bap_iso for stream %p", stream);
 			return -EINVAL;
 		}
 	}
@@ -3755,7 +3774,7 @@ static uint8_t unicast_client_cp_discover_func(struct bt_conn *conn,
 	uint16_t value_handle;
 
 	if (!attr) {
-		LOG_ERR("Unable to find ASE Control Point");
+		LOG_ERROR("Unable to find ASE Control Point");
 
 		unicast_client_discover_complete(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
 		return BT_GATT_ITER_STOP;
@@ -3908,7 +3927,7 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn, const struct
 		} else {
 			err = unicast_client_ase_cp_discover(conn);
 			if (err != 0) {
-				LOG_ERR("Unable to discover ASE Control Point");
+				LOG_ERROR("Unable to discover ASE Control Point");
 
 				unicast_client_discover_complete(conn, err);
 			}
@@ -3996,7 +4015,7 @@ static uint8_t unicast_client_pacs_avail_ctx_read_func(struct bt_conn *conn, uin
 	/* Read ASE instances */
 	cb_err = unicast_client_ase_discover(conn, BT_ATT_FIRST_ATTRIBUTE_HANDLE);
 	if (cb_err != 0) {
-		LOG_ERR("Unable to read ASE: %d", cb_err);
+		LOG_ERROR("Unable to read ASE: %d", cb_err);
 
 		unicast_client_discover_complete(conn, cb_err);
 	}
@@ -4020,7 +4039,7 @@ static uint8_t unicast_client_pacs_avail_ctx_notify_cb(struct bt_conn *conn,
 	}
 
 	if (length != sizeof(context)) {
-		LOG_ERR("Available context notification incorrect size: %u", length);
+		LOG_ERROR("Available context notification incorrect size: %u", length);
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -4063,7 +4082,7 @@ static uint8_t unicast_client_pacs_avail_ctx_discover_cb(struct bt_conn *conn,
 		/* If available_ctx is not found, we terminate the discovery as
 		 * the characteristic is mandatory
 		 */
-		LOG_ERR("Unable to find available PAC context");
+		LOG_ERROR("Unable to find available PAC context");
 
 		unicast_client_discover_complete(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
 
@@ -4175,7 +4194,7 @@ static uint8_t unicast_client_pacs_location_read_func(struct bt_conn *conn, uint
 	/* Read available contexts */
 	cb_err = unicast_client_pacs_avail_ctx_discover(conn);
 	if (cb_err != 0) {
-		LOG_ERR("Unable to read available contexts: %d", cb_err);
+		LOG_ERROR("Unable to read available contexts: %d", cb_err);
 
 		unicast_client_discover_complete(conn, cb_err);
 	}
@@ -4200,7 +4219,7 @@ static uint8_t unicast_client_pacs_location_notify_cb(struct bt_conn *conn,
 	}
 
 	if (length != sizeof(location)) {
-		LOG_ERR("Location notification incorrect size: %u", length);
+		LOG_ERROR("Location notification incorrect size: %u", length);
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -4209,7 +4228,7 @@ static uint8_t unicast_client_pacs_location_notify_cb(struct bt_conn *conn,
 	} else if (params == &uni_cli_insts[bt_conn_index(conn)].src_loc_subscribe) {
 		dir = BT_AUDIO_DIR_SOURCE;
 	} else {
-		LOG_ERR("Invalid notification");
+		LOG_ERROR("Invalid notification");
 
 		return BT_GATT_ITER_CONTINUE;
 	}
@@ -4253,7 +4272,7 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 		 */
 		err = unicast_client_pacs_avail_ctx_discover(conn);
 		if (err != 0) {
-			LOG_ERR("Unable to read available contexts: %d", err);
+			LOG_ERROR("Unable to read available contexts: %d", err);
 
 			unicast_client_discover_complete(conn, err);
 		}
@@ -4289,7 +4308,7 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 			err = bt_gatt_subscribe(conn, sub_params);
 			if (err != 0) {
 				(void)memset(sub_params, 0, sizeof(*sub_params));
-				LOG_ERR("Failed to subscribe to location: %d", err);
+				LOG_ERROR("Failed to subscribe to location: %d", err);
 			}
 		}
 	}
@@ -4354,7 +4373,7 @@ static uint8_t unicast_client_pacs_supp_ctx_notify_cb(struct bt_conn *conn,
 	}
 
 	if (length != sizeof(context)) {
-		LOG_ERR("Supported context notification incorrect size: %u", length);
+		LOG_ERROR("Supported context notification incorrect size: %u", length);
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -4404,7 +4423,7 @@ static uint8_t unicast_client_pacs_supp_context_read_func(struct bt_conn *conn, 
 	/* Read ASE instances */
 	cb_err = unicast_client_pacs_location_discover(conn);
 	if (cb_err != 0) {
-		LOG_ERR("Unable to read PACS location: %d", cb_err);
+		LOG_ERROR("Unable to read PACS location: %d", cb_err);
 
 		unicast_client_discover_complete(conn, cb_err);
 	}
@@ -4436,7 +4455,7 @@ unicast_client_pacs_supp_context_discover_cb(struct bt_conn *conn, const struct 
 	int err;
 
 	if (attr == NULL) {
-		LOG_ERR("Unable to find supported PAC context");
+		LOG_ERROR("Unable to find supported PAC context");
 
 		unicast_client_discover_complete(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
 
@@ -4568,36 +4587,38 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 		LOG_DBG("pac #%u/%u", i + 1, rsp->num_pac);
 
 		if (buf->len < sizeof(*pac_codec)) {
-			LOG_ERR("Malformed PAC: remaining len %u expected %zu", buf->len,
-				sizeof(*pac_codec));
+			LOG_ERROR("Malformed PAC: remaining len %u expected %zu", buf->len,
+				  sizeof(*pac_codec));
 			break;
 		}
 
 		pac_codec = net_buf_simple_pull_mem(buf, sizeof(*pac_codec));
 
 		if (buf->len < sizeof(*cc)) {
-			LOG_ERR("Malformed PAC: remaining len %u expected %zu", buf->len,
-				sizeof(*cc));
+			LOG_ERROR("Malformed PAC: remaining len %u expected %zu", buf->len,
+				  sizeof(*cc));
 			break;
 		}
 
 		cc = net_buf_simple_pull_mem(buf, sizeof(*cc));
 		if (buf->len < cc->len) {
-			LOG_ERR("Malformed PAC: remaining len %u expected %zu", buf->len, cc->len);
+			LOG_ERROR("Malformed PAC: remaining len %u expected %zu", buf->len,
+				  cc->len);
 			break;
 		}
 
 		cc_ltv = net_buf_simple_pull_mem(buf, cc->len);
 
 		if (buf->len < sizeof(*meta)) {
-			LOG_ERR("Malformed PAC: remaining len %u expected %zu", buf->len,
-				sizeof(*meta));
+			LOG_ERROR("Malformed PAC: remaining len %u expected %zu", buf->len,
+				  sizeof(*meta));
 			break;
 		}
 
 		meta = net_buf_simple_pull_mem(buf, sizeof(*meta));
 		if (buf->len < meta->len) {
-			LOG_ERR("Malformed PAC: remaining len %u expected %u", buf->len, meta->len);
+			LOG_ERROR("Malformed PAC: remaining len %u expected %u", buf->len,
+				  meta->len);
 			break;
 		}
 
@@ -4606,7 +4627,7 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 		if (unicast_client_set_codec_cap(pac_codec->id, sys_le16_to_cpu(pac_codec->cid),
 						 sys_le16_to_cpu(pac_codec->vid), cc_ltv, cc->len,
 						 meta_ltv, meta->len, &codec_cap)) {
-			LOG_ERR("Unable to parse Codec");
+			LOG_ERROR("Unable to parse Codec");
 			break;
 		}
 
@@ -4627,7 +4648,7 @@ static uint8_t unicast_client_read_func(struct bt_conn *conn, uint8_t err,
 	/* Read PACS contexts */
 	cb_err = unicast_client_pacs_supp_context_discover(conn);
 	if (cb_err != 0) {
-		LOG_ERR("Unable to read PACS context: %d", cb_err);
+		LOG_ERROR("Unable to read PACS context: %d", cb_err);
 		goto fail;
 	}
 

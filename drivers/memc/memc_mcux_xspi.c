@@ -68,7 +68,7 @@ int memc_xspi_set_device_config(const struct device *dev, const xspi_device_conf
 	/* Configure flash settings according to serial flash feature. */
 	status = XSPI_SetDeviceConfig(base, (xspi_device_config_t *)device_config);
 	if (status != kStatus_Success) {
-		LOG_ERR("XSPI_SetDeviceConfig failed with status %u\n", status);
+		LOG_ERROR("XSPI_SetDeviceConfig failed with status %u\n", status);
 		return -ENODEV;
 	}
 
@@ -112,7 +112,7 @@ static int memc_mcux_xspi_init(const struct device *dev)
 
 	ret = pinctrl_apply_state(pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
-		LOG_ERR("Failed to apply pinctrl state: %d", ret);
+		LOG_ERROR("Failed to apply pinctrl state: %d", ret);
 		return ret;
 	}
 

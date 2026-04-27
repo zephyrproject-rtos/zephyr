@@ -27,7 +27,7 @@ int main(void)
 
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
-		LOG_ERR("Device not ready, aborting test");
+		LOG_ERROR("Device not ready, aborting test");
 		return 0;
 	}
 
@@ -64,7 +64,7 @@ int main(void)
 
 	ret = display_blanking_off(display_dev);
 	if (ret < 0 && ret != -ENOSYS) {
-		LOG_ERR("Failed to turn blanking off (error %d)", ret);
+		LOG_ERROR("Failed to turn blanking off (error %d)", ret);
 		return 0;
 	}
 

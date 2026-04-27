@@ -28,7 +28,7 @@ static int sbs_cmd_reg_read(const struct device *dev, uint8_t reg_addr, uint16_t
 	cfg = dev->config;
 	status = i2c_burst_read_dt(&cfg->i2c, reg_addr, i2c_data, sizeof(i2c_data));
 	if (status < 0) {
-		LOG_ERR("Unable to read register");
+		LOG_ERROR("Unable to read register");
 		return status;
 	}
 
@@ -151,7 +151,7 @@ static int sbs_charger_init(const struct device *dev)
 	const struct sbs_charger_config *cfg = dev->config;
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERROR("Bus device is not ready");
 		return -ENODEV;
 	}
 

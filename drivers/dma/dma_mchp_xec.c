@@ -210,29 +210,29 @@ static int is_dma_config_valid(const struct device *dev, struct dma_config *conf
 	const struct dma_xec_config * const devcfg = dev->config;
 
 	if (config->dma_slot >= (uint32_t)devcfg->dma_requests) {
-		LOG_ERR("XEC DMA config dma slot > exceeds number of request lines");
+		LOG_ERROR("XEC DMA config dma slot > exceeds number of request lines");
 		return 0;
 	}
 
 	if (config->source_data_size != config->dest_data_size) {
-		LOG_ERR("XEC DMA requires source and dest data size identical");
+		LOG_ERROR("XEC DMA requires source and dest data size identical");
 		return 0;
 	}
 
 	if (!((config->channel_direction == MEMORY_TO_MEMORY) ||
 	      (config->channel_direction == MEMORY_TO_PERIPHERAL) ||
 	      (config->channel_direction == PERIPHERAL_TO_MEMORY))) {
-		LOG_ERR("XEC DMA only support M2M, M2P, P2M");
+		LOG_ERROR("XEC DMA only support M2M, M2P, P2M");
 		return 0;
 	}
 
 	if (!is_dma_data_size_valid(config->source_data_size)) {
-		LOG_ERR("XEC DMA requires xfr unit size of 1, 2 or 4 bytes");
+		LOG_ERROR("XEC DMA requires xfr unit size of 1, 2 or 4 bytes");
 		return 0;
 	}
 
 	if (config->block_count != 1) {
-		LOG_ERR("XEC DMA block count != 1");
+		LOG_ERROR("XEC DMA block count != 1");
 		return 0;
 	}
 
@@ -243,7 +243,7 @@ static int check_blocks(struct dma_xec_channel *chdata, struct dma_block_config 
 			uint32_t block_count, uint32_t unit_size)
 {
 	if (!block || !chdata) {
-		LOG_ERR("bad pointer");
+		LOG_ERROR("bad pointer");
 		return -EINVAL;
 	}
 
@@ -252,12 +252,13 @@ static int check_blocks(struct dma_xec_channel *chdata, struct dma_block_config 
 	for (uint32_t i = 0; i < block_count; i++) {
 		if ((block->source_addr_adj == DMA_ADDR_ADJ_DECREMENT) ||
 		    (block->dest_addr_adj == DMA_ADDR_ADJ_DECREMENT)) {
-			LOG_ERR("XEC DMA HW does not support address decrement. Block index %u", i);
+			LOG_ERROR("XEC DMA HW does not support address decrement. Block index %u",
+				  i);
 			return -EINVAL;
 		}
 
 		if (!is_data_aligned(block->source_address, block->dest_address, unit_size)) {
-			LOG_ERR("XEC DMA block at index %u violates source/dest unit size", i);
+			LOG_ERROR("XEC DMA block at index %u violates source/dest unit size", i);
 			return -EINVAL;
 		}
 
@@ -585,7 +586,7 @@ static int dma_xec_get_status(const struct device *dev, uint32_t channel,
 	uint32_t chan_ctrl = 0U;
 
 	if ((channel >= (uint32_t)devcfg->dma_channels) || (!status)) {
-		LOG_ERR("unsupported channel");
+		LOG_ERROR("unsupported channel");
 		return -EINVAL;
 	}
 

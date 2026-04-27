@@ -23,7 +23,7 @@ int main(void)
 	LOG_DBG("Debug log %u", dummy_1);
 	LOG_INF("Info log %u", dummy_2);
 	LOG_WRN("Warning log %u", dummy_3);
-	LOG_ERR("Error log %u", dummy_4);
+	LOG_ERROR("Error log %u", dummy_4);
 
 	for (int i = 0; i < 10; i++) {
 		LOG_WRN_ONCE("Warning on the first execution only %u", dummy_5);

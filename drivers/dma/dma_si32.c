@@ -66,7 +66,7 @@ static void dma_si32_isr_handler(const uint8_t channel)
 	irq_disable(DMACH0_IRQn + channel);
 
 	if (SI32_DMACTRL_A_is_bus_error_set(SI32_DMACTRL_0)) {
-		LOG_ERR("Bus error on channel %" PRIu8, channel);
+		LOG_ERROR("Bus error on channel %" PRIu8, channel);
 		result = -EIO;
 	} else {
 		result = DMA_STATUS_COMPLETE;
@@ -137,7 +137,7 @@ static int dma_si32_config(const struct device *dev, uint32_t channel, struct dm
 	LOG_INF("Configuring channel %" PRIu8, channel);
 
 	if (channel >= CHANNEL_COUNT) {
-		LOG_ERR("Invalid channel (id %" PRIu32 ", have %d)", channel, CHANNEL_COUNT);
+		LOG_ERROR("Invalid channel (id %" PRIu32 ", have %d)", channel, CHANNEL_COUNT);
 		return -EINVAL;
 	}
 
@@ -145,60 +145,61 @@ static int dma_si32_config(const struct device *dev, uint32_t channel, struct dm
 	 * is required by the Zephyr DMA API.
 	 */
 	if (SI32_DMACTRL_A_is_channel_enabled(SI32_DMACTRL_0, channel)) {
-		LOG_ERR("DMA channel is currently in use");
+		LOG_ERROR("DMA channel is currently in use");
 		return -EBUSY;
 	}
 
 	channel_descriptor = &channel_descriptors[channel];
 
 	if (cfg == NULL) {
-		LOG_ERR("Missing config");
+		LOG_ERROR("Missing config");
 		return -EINVAL;
 	}
 
 	if (cfg->complete_callback_en > 1) {
-		LOG_ERR("Callback on each block not implemented");
+		LOG_ERROR("Callback on each block not implemented");
 		return -ENOTSUP;
 	}
 
 	if (cfg->error_callback_dis > 1) {
-		LOG_ERR("Error callback disabling not implemented");
+		LOG_ERROR("Error callback disabling not implemented");
 		return -ENOTSUP;
 	}
 
 	if (cfg->source_handshake > 1 || cfg->dest_handshake > 1) {
-		LOG_ERR("Handshake not implemented");
+		LOG_ERROR("Handshake not implemented");
 		return -ENOTSUP;
 	}
 
 	if (cfg->channel_priority > 1) {
-		LOG_ERR("Channel priority not implemented");
+		LOG_ERROR("Channel priority not implemented");
 		return -ENOTSUP;
 	}
 
 	if (cfg->source_chaining_en > 1 || cfg->dest_chaining_en > 1) {
-		LOG_ERR("Chaining not implemented");
+		LOG_ERROR("Chaining not implemented");
 		return -ENOTSUP;
 	}
 
 	if (cfg->linked_channel > 1) {
-		LOG_ERR("Linked channel not implemented");
+		LOG_ERROR("Linked channel not implemented");
 		return -ENOTSUP;
 	}
 
 	if (cfg->cyclic > 1) {
-		LOG_ERR("Cyclic transfer not implemented");
+		LOG_ERROR("Cyclic transfer not implemented");
 		return -ENOTSUP;
 	}
 
 	if (cfg->source_data_size != 1 && cfg->source_data_size != 2 &&
 	    cfg->source_data_size != 4) {
-		LOG_ERR("source_data_size must be 1, 2, or 4 (%" PRIu32 ")", cfg->source_data_size);
+		LOG_ERROR("source_data_size must be 1, 2, or 4 (%" PRIu32 ")",
+			  cfg->source_data_size);
 		return -ENOTSUP;
 	}
 
 	if (cfg->dest_data_size != 1 && cfg->dest_data_size != 2 && cfg->dest_data_size != 4) {
-		LOG_ERR("dest_data_size must be 1, 2, or 4 (%" PRIu32 ")", cfg->dest_data_size);
+		LOG_ERROR("dest_data_size must be 1, 2, or 4 (%" PRIu32 ")", cfg->dest_data_size);
 		return -ENOTSUP;
 	}
 
@@ -206,17 +207,17 @@ static int dma_si32_config(const struct device *dev, uint32_t channel, struct dm
 		 "The destination size (DSTSIZE) must equal the source size (SRCSIZE).");
 
 	if (cfg->source_burst_length != cfg->dest_burst_length) {
-		LOG_ERR("Individual burst modes not supported");
+		LOG_ERROR("Individual burst modes not supported");
 		return -ENOTSUP;
 	}
 
 	if (POPCOUNT(cfg->source_burst_length) > 1) {
-		LOG_ERR("Burst lengths must be power of two");
+		LOG_ERROR("Burst lengths must be power of two");
 		return -ENOTSUP;
 	}
 
 	if (cfg->block_count > 1) {
-		LOG_ERR("Scatter-Gather not implemented");
+		LOG_ERROR("Scatter-Gather not implemented");
 		return -ENOTSUP;
 	}
 
@@ -245,30 +246,31 @@ static int dma_si32_config(const struct device *dev, uint32_t channel, struct dm
 			cfg->source_burst_length ? find_msb_set(cfg->source_burst_length) - 1 : 0;
 		break;
 	default:
-		LOG_ERR("source_data_size must be 1, 2, or 4 (%" PRIu32 ")", cfg->source_data_size);
+		LOG_ERROR("source_data_size must be 1, 2, or 4 (%" PRIu32 ")",
+			  cfg->source_data_size);
 		return -EINVAL;
 	}
 
 	/* Configuration evaluated and extracted, except for its (first) block. Do this now. */
 	if (!cfg->head_block || cfg->block_count == 0) {
-		LOG_ERR("Missing head block");
+		LOG_ERROR("Missing head block");
 		return -EINVAL;
 	}
 
 	block = cfg->head_block;
 
 	if (block->block_size % cfg->source_data_size != 0) {
-		LOG_ERR("Block size not a multiple of data size");
+		LOG_ERROR("Block size not a multiple of data size");
 		return -EINVAL;
 	}
 
 	if (block->source_address % cfg->source_data_size != 0) {
-		LOG_ERR("Block source address not aligned with source data size");
+		LOG_ERROR("Block source address not aligned with source data size");
 		return -EINVAL;
 	}
 
 	if (block->dest_address % cfg->dest_data_size != 0) {
-		LOG_ERR("Block dest address not aligned with dest data size");
+		LOG_ERROR("Block dest address not aligned with dest data size");
 		return -EINVAL;
 	}
 
@@ -276,7 +278,7 @@ static int dma_si32_config(const struct device *dev, uint32_t channel, struct dm
 
 	/* NCOUNT (10 bits wide) works only for values up to 1023 (1024 transfers) */
 	if (ncount >= 1024) {
-		LOG_ERR("Transfer size exceeded");
+		LOG_ERROR("Transfer size exceeded");
 		return -EINVAL;
 	}
 
@@ -302,7 +304,7 @@ static int dma_si32_config(const struct device *dev, uint32_t channel, struct dm
 		SI32_DMACTRL_A_enable_data_request(SI32_DMACTRL_0, channel);
 		break;
 	default: /* everything else is not (yet) supported */
-		LOG_ERR("Channel direction not implemented: %d", cfg->channel_direction);
+		LOG_ERROR("Channel direction not implemented: %d", cfg->channel_direction);
 		return -ENOTSUP;
 	}
 
@@ -313,14 +315,14 @@ static int dma_si32_config(const struct device *dev, uint32_t channel, struct dm
 		channel_descriptor->CONFIG.SRCAIMD = channel_descriptor->CONFIG.SRCSIZE;
 		break;
 	case 0b01: /* decrement */
-		LOG_ERR("source_addr_adj value not supported by HW");
+		LOG_ERROR("source_addr_adj value not supported by HW");
 		return -ENOTSUP;
 	case 0b10: /* no change */
 		channel_descriptor->SRCEND.U32 = block->source_address;
 		channel_descriptor->CONFIG.SRCAIMD = 0b11;
 		break;
 	default:
-		LOG_ERR("Unknown source_addr_adj value");
+		LOG_ERROR("Unknown source_addr_adj value");
 		return -EINVAL;
 	}
 
@@ -330,14 +332,14 @@ static int dma_si32_config(const struct device *dev, uint32_t channel, struct dm
 		channel_descriptor->CONFIG.DSTAIMD = channel_descriptor->CONFIG.DSTSIZE;
 		break;
 	case 0b01: /* decrement */
-		LOG_ERR("dest_addr_adj value not supported by HW");
+		LOG_ERROR("dest_addr_adj value not supported by HW");
 		return -ENOTSUP;
 	case 0b10: /* no change */
 		channel_descriptor->DSTEND.U32 = block->dest_address;
 		channel_descriptor->CONFIG.DSTAIMD = 0b11;
 		break;
 	default:
-		LOG_ERR("Unknown dest_addr_adj value");
+		LOG_ERROR("Unknown dest_addr_adj value");
 		return -EINVAL;
 	}
 
@@ -354,7 +356,7 @@ static int dma_si32_start(const struct device *dev, const uint32_t channel)
 	LOG_INF("Starting channel %" PRIu8, channel);
 
 	if (channel >= CHANNEL_COUNT) {
-		LOG_ERR("Invalid channel (id %" PRIu32 ", have %d)", channel, CHANNEL_COUNT);
+		LOG_ERROR("Invalid channel (id %" PRIu32 ", have %d)", channel, CHANNEL_COUNT);
 		return -EINVAL;
 	}
 
@@ -404,7 +406,7 @@ static int dma_si32_stop(const struct device *dev, const uint32_t channel)
 	ARG_UNUSED(dev);
 
 	if (channel >= CHANNEL_COUNT) {
-		LOG_ERR("Invalid channel (id %" PRIu32 ", have %d)", channel, CHANNEL_COUNT);
+		LOG_ERROR("Invalid channel (id %" PRIu32 ", have %d)", channel, CHANNEL_COUNT);
 		return -EINVAL;
 	}
 

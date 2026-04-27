@@ -52,7 +52,7 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 		if (buf != NULL) {
 			rc = uart_tx(dev, buf->data, buf->len, 0);
 			if (rc != 0) {
-				LOG_ERR("TX from ISR failed (%d)", rc);
+				LOG_ERROR("TX from ISR failed (%d)", rc);
 				net_buf_unref(buf);
 			} else {
 				tx_pending_buffer = buf;
@@ -113,7 +113,7 @@ int main(void)
 				LOG_DBG("Queuing buffer %p", tx_buf);
 				k_fifo_put(&tx_queue, tx_buf);
 			} else {
-				LOG_ERR("Unknown error (%d)", rc);
+				LOG_ERROR("Unknown error (%d)", rc);
 			}
 		}
 
