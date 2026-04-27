@@ -34,6 +34,7 @@ if(CONFIG_BT_BFLB_BL70XL)
   zephyr_sources(
     ble/btblecontroller_port_hw.c
     bflb_platform_shim.c
+    bflb_rf.c
     rf_callbacks.c
   )
 endif()

@@ -19,7 +19,6 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/bluetooth.h>
-#include <zephyr/drivers/hwinfo.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 #include <string.h>
@@ -30,23 +29,29 @@
 
 #include <bflb_soc.h>
 #include <ble_lib_api.h>
-#include <bl702_rf_public.h>
 
 #define bflb_controller_init(prio)     ble_controller_init(prio)
 #define bflb_controller_deinit()       ble_controller_deinit()
-#define bflb_rf_set_init_tsen_value(v) rf702_set_init_tsen_value(v)
 
 #elif defined(CONFIG_BT_BFLB_BL70XL)
 
 #include <btble_lib_api.h>
 #include <btblecontroller_port.h>
-#include <bl702l_rf.h>
 
 #define bflb_controller_init(prio)     btble_controller_init(prio)
 #define bflb_controller_deinit()       btble_controller_deinit()
-#define bflb_rf_set_init_tsen_value(v) rf_set_init_tsen_value(v)
+
+#elif defined(CONFIG_BT_BFLB_BL61X)
+
+#include <btble_lib_api.h>
+#include <btblecontroller_port.h>
+
+#define bflb_controller_init(prio)     btble_controller_init(prio)
+#define bflb_controller_deinit()       btble_controller_deinit()
 
 #endif
+
+extern int bflb_rf_init(void);
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_bflb, CONFIG_BT_HCI_DRIVER_LOG_LEVEL);
@@ -60,8 +65,6 @@ struct bt_bflb_data {
 
 static K_FIFO_DEFINE(rx_fifo);
 
-/* Forward declarations for platform shims */
-extern int bl_wireless_mac_addr_set(uint8_t mac[8]);
 #if defined(CONFIG_BT_BFLB_BL70X)
 extern void bflb_ble_irq_setup(void);
 #endif
@@ -278,21 +281,6 @@ done:
 	return ret;
 }
 
-static void bflb_ble_rf_init(void)
-{
-	uint8_t mac[8] = {0U};
-
-	/*
-	 * hwinfo returns the MAC in network (big-endian) byte order;
-	 * bl_wireless_mac_addr_set expects little-endian order.
-	 */
-	hwinfo_get_device_id(mac, 6);
-	sys_mem_swap(mac, 6);
-
-	bl_wireless_mac_addr_set(mac);
-	bflb_rf_set_init_tsen_value(0U);
-}
-
 static int bt_bflb_open(const struct device *dev, bt_hci_recv_t recv)
 {
 	struct bt_bflb_data *hci = dev->data;
@@ -300,7 +288,7 @@ static int bt_bflb_open(const struct device *dev, bt_hci_recv_t recv)
 
 	hci->recv = recv;
 
-	bflb_ble_rf_init();
+	bflb_rf_init();
 
 #if defined(CONFIG_BT_BFLB_BL70X)
 	bflb_ble_irq_setup();
