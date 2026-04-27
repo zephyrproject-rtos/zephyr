@@ -1159,6 +1159,12 @@ int handle_crypto_frame(struct quic_endpoint *ep,
 			 const uint8_t *data,
 			 size_t len,
 			 size_t *consumed);
+int parse_certificate(struct quic_tls_context *ctx,
+		      const uint8_t *data, size_t len);
+int process_handshake_message(struct quic_tls_context *ctx,
+			      uint8_t msg_type,
+			      const uint8_t *msg, size_t msg_len,
+			      const uint8_t *full_msg, size_t full_msg_len);
 int quic_stream_receive_data(struct quic_stream *stream,
 			     uint64_t offset,
 			     const uint8_t *data,
