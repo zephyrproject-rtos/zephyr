@@ -416,7 +416,14 @@ linkcheck_anchors = False
 api_overview_doxygen_out_dir = str(doxyrunner_projects["zephyr"]["outdir"])
 api_overview_base_url = "https://github.com/zephyrproject-rtos/zephyr"
 
+
+def _set_html_permalinks_icon(_, config):
+    config.html_permalinks_icon = ""
+
+
 def setup(app):
     # theme customizations
     app.add_css_file("css/custom.css")
     app.add_js_file("js/custom.js")
+    # RTD theme hard codes a Font Awesome link icon in its setup() code, but we want no icon
+    app.connect("config-inited", _set_html_permalinks_icon, priority=900)
