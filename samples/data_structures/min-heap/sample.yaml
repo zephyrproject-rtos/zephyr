@@ -14,7 +14,8 @@ tests:
       - native_sim
     harness_config:
       type: multi_line
-      ordered: false
+      ordered: true
       regex:
         - "Top of heap: key=2 value=400"
-        - "Found element with key 5 at index 1,removing it..."
+        - "Found element with key 5, removing it\\.\\.\\."
+        - "Heap after removal:"

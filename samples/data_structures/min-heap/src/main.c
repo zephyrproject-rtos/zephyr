@@ -9,37 +9,28 @@
 #include <zephyr/sys/min_heap.h>
 
 struct data {
+	struct min_heap_handle handle;
 	int key;
 	int value;
 };
 
-static int compare(const void *a, const void *b)
+static int compare(const struct min_heap_handle *a, const struct min_heap_handle *b)
 {
-	const struct data *da = a;
-	const struct data *db = b;
+	const struct data *da = CONTAINER_OF(a, struct data, handle);
+	const struct data *db = CONTAINER_OF(b, struct data, handle);
 
 	return da->key - db->key;
 }
 
-static bool match_key(const void *a, const void *b)
-{
-	const struct data *da = a;
-	const int *key = b;
-
-	return da->key == *key;
-}
-
 #define HEAP_CAPACITY 8
 
-MIN_HEAP_DEFINE_STATIC(my_heap, HEAP_CAPACITY, sizeof(struct data),
-		       __alignof__(struct data), compare);
+MIN_HEAP_DEFINE_STATIC(my_heap, HEAP_CAPACITY, compare);
 
 int main(void)
 {
-	void *elem;
 	int target_key = 5;
-	size_t index;
-	struct data *top, *found, removed;
+	struct data *found = NULL;
+	struct data *d;
 
 	printk("Min-heap sample using static storage\n");
 
@@ -51,35 +42,42 @@ int main(void)
 	};
 
 	for (int i = 0; i < ARRAY_SIZE(elements); i++) {
-		if (min_heap_push(&my_heap, &elements[i]) != 0) {
+		if (min_heap_push(&my_heap, &elements[i].handle) != 0) {
 			printk("Insert failed at index %d\n", i);
 		}
 	}
 
 	printk("Heap elements by order of priority:\n");
-	MIN_HEAP_FOREACH(&my_heap, elem) {
-		struct data *d = elem;
-
+	MIN_HEAP_FOREACH_CONTAINER(&my_heap, d, handle)
+	{
 		printk("key=%d value=%d\n", d->key, d->value);
 	}
 
 	printk("Top of heap: ");
-	top = min_heap_peek(&my_heap);
-	if (top) {
+	const struct min_heap_handle *top_handle = min_heap_peek(&my_heap);
+
+	if (top_handle) {
+		const struct data *top = CONTAINER_OF(top_handle, struct data, handle);
+
 		printk("key=%d value=%d\n", top->key, top->value);
 	}
 
-	found = min_heap_find(&my_heap, match_key, &target_key, &index);
+	MIN_HEAP_FOREACH_CONTAINER(&my_heap, d, handle)
+	{
+		if (d->key == target_key) {
+			found = d;
+			break;
+		}
+	}
+
 	if (found) {
-		printk("Found element with key %d at index %zu,"
-			 "removing it...\n", target_key, index);
-		min_heap_remove(&my_heap, index, &removed);
+		printk("Found element with key %d, removing it...\n", target_key);
+		min_heap_remove(&my_heap, &found->handle);
 	}
 
 	printk("Heap after removal:\n");
-	MIN_HEAP_FOREACH(&my_heap, elem) {
-		struct data *d = elem;
-
+	MIN_HEAP_FOREACH_CONTAINER(&my_heap, d, handle)
+	{
 		printk("key=%d value=%d\n", d->key, d->value);
 	}
 
