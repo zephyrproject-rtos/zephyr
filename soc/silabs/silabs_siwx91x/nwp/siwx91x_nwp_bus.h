@@ -29,6 +29,9 @@ struct net_buf *siwx91x_nwp_send_frame(const struct device *dev, struct net_buf 
 void siwx91x_nwp_tx_flush_lock(const struct device *dev);
 void siwx91x_nwp_tx_unlock(const struct device *dev);
 
+void siwx91x_nwp_wakeup_nwp(const struct device *dev);
+void siwx91x_nwp_release_nwp(const struct device *dev);
+
 void siwx91x_nwp_isr(const struct device *dev);
 void siwx91x_nwp_thread(void *arg1, void *arg2, void *arg3);
 

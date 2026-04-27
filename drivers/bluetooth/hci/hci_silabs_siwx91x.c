@@ -11,8 +11,11 @@
 #include "siwx91x_nwp.h"
 #include "siwx91x_nwp_bus.h"
 #include "siwx91x_nwp_api.h"
+
 #include "device/silabs/si91x/wireless/ble/inc/rsi_ble_common_config.h"
 #include "device/silabs/si91x/wireless/ble/inc/rsi_ble.h"
+#include "device/silabs/si91x/mcu/drivers/service/clock_manager/inc/sli_si91x_clock_manager.h"
+#include "device/silabs/si91x/mcu/drivers/service/power_manager/inc/sl_si91x_power_manager.h"
 
 LOG_MODULE_REGISTER(siwx91x_bt, CONFIG_BT_HCI_DRIVER_LOG_LEVEL);
 
@@ -118,19 +121,23 @@ static int siwx91x_bt_set_tx_power(const struct device *dev, uint8_t protocol_mo
 static int siwx91x_bt_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
 	const struct siwx91x_bt_config *config = dev->config;
+	sli_wifi_power_save_request_t ps_params = {
+		.power_mode = SLI_CONNECTED_M4_BASED_PS,
+		.ulp_mode_enable = 1, /* SLI_ULP_WITH_RAM_RETENTION */
+	};
 	int ret;
 
 	ret = siwx91x_bt_set_tx_power(dev, SIWX91X_BLE_MODE, RSI_BLE_PWR_INX);
 	if (ret) {
 		return ret;
 	}
-	ret = siwx91x_nwp_apply_power_profile(config->nwp_dev);
-	if (ret < 0) {
-		return ret;
+	if (IS_ENABLED(CONFIG_PM)) {
+		sli_si91x_config_clocks_to_mhz_rc();
+		/* FIXME: ps_requirements does not prevent Wifi to change PS parameters */
+		sl_si91x_power_manager_remove_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
+		siwx91x_nwp_ps_enable(config->nwp_dev, &ps_params);
 	}
-
 	return 0;
-
 }
 
 static int siwx91x_bt_init(const struct device *dev)
@@ -141,6 +148,9 @@ static int siwx91x_bt_init(const struct device *dev)
 		return -ENODEV;
 	}
 	siwx91x_nwp_register_bt(config->nwp_dev, &config->nwp_ops);
+	/* These 2 commands are required to enable NWP Power Management */
+	siwx91x_nwp_set_band(config->nwp_dev, SL_WIFI_BAND_MODE_2_4GHZ);
+	siwx91x_nwp_wifi_init(config->nwp_dev);
 
 	return 0;
 }

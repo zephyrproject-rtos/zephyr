@@ -8,15 +8,12 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/pm.h>
-#include "sl_si91x_power_manager.h"
-#include "sli_si91x_clock_manager.h"
-#include "sli_siwx917_soc.h"
-#include "sl_rsi_utility.h"
-#include "sl_si91x_m4_ps.h"
+#include "siwx91x_nwp.h"
+
+#include "device/silabs/si91x/mcu/drivers/service/power_manager/inc/sl_si91x_power_manager.h"
+#include "device/silabs/si91x/mcu/drivers/service/clock_manager/inc/sli_si91x_clock_manager.h"
 
 LOG_MODULE_REGISTER(soc_power, CONFIG_SOC_LOG_LEVEL);
-
-extern uint32_t frontend_switch_control;
 
 /*
  * Power state map:
@@ -25,57 +22,46 @@ extern uint32_t frontend_switch_control;
  */
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
-	ARG_UNUSED(substate_id);
-
-	/* Set PRIMASK */
-	__disable_irq();
-	/* Set BASEPRI to 0. */
-	irq_unlock(0);
-
+	const struct device *dev_nwp = DEVICE_DT_GET(DT_NODELABEL(nwp));
+	int ret;
 
 	if (state == PM_STATE_RUNTIME_IDLE) {
-		sl_si91x_power_manager_standby();
-	} else {
-		if (!sl_si91x_power_manager_is_ok_to_sleep()) {
-			/* Deep-sleep path is not ready yet; skip this suspend attempt. */
-			goto out;
-		}
-
-		if (sli_si91x_config_clocks_to_mhz_rc() != 0) {
-			LOG_ERR("Failed to configure clocks for sleep mode");
-			goto out;
-		}
-
-		if (!(M4_ULP_SLP_STATUS_REG & ULP_MODE_SWITCHED_NPSS)) {
-			if (!sl_si91x_is_device_initialized()) {
-				LOG_ERR("Device is not initialized");
-				goto out;
-			}
-			sli_si91x_xtal_turn_off_request_from_m4_to_TA();
-		}
-
-		sl_si91x_power_manager_sleep();
-
-		if (!(M4_ULP_SLP_STATUS_REG & ULP_MODE_SWITCHED_NPSS)) {
-			if (frontend_switch_control != 0) {
-				sli_si91x_configure_wireless_frontend_controls(
-					frontend_switch_control);
-			}
-
-			sl_si91x_host_clear_sleep_indicator();
-			sli_si91x_m4_ta_wakeup_configurations();
-
-		}
+		k_cpu_idle();
+		return;
 	}
-out:
-	/* Clear PRIMASK */
+	if (!device_is_ready(dev_nwp)) {
+		k_cpu_idle();
+		return;
+	}
+	if (sl_si91x_get_lowest_ps() != SL_SI91X_POWER_MANAGER_SLEEP) {
+		arch_cpu_idle();
+		return;
+	}
+	__disable_irq();
+	__set_BASEPRI(0);
+	ret = siwx91x_nwp_prepare_sleep(dev_nwp);
+	if (ret) {
+		ret = 0;
+		k_cpu_idle();
+		goto fail_prepare;
+	}
+	ret = sli_si91x_config_clocks_to_mhz_rc();
+	if (ret) {
+		ret = 0;
+		k_cpu_idle();
+		goto fail_clock;
+	}
+	siwx91x_nwp_enter_sleep(dev_nwp);
+	ret = sl_si91x_power_manager_sleep();
+fail_clock:
+	siwx91x_nwp_exit_sleep(dev_nwp);
+fail_prepare:
 	__enable_irq();
+	__ASSERT(!ret, "sl_si91x_power_manager_sleep: Failure: %d", ret);
 }
 
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	ARG_UNUSED(state);
-	ARG_UNUSED(substate_id);
 }
 
 void siwx91x_power_init(void)
@@ -91,7 +77,7 @@ void siwx91x_power_init(void)
 		.ulpss_ram_size_kb = 4,
 	};
 
-	sli_si91x_platform_init();
+	RSI_Set_Cntrls_To_M4();
 	sl_si91x_power_manager_init();
 	sl_si91x_power_manager_remove_peripheral_requirement(&peripheral_config);
 	sl_si91x_power_manager_configure_ram_retention(&ram_configuration);

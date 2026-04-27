@@ -160,6 +160,7 @@ struct siwx91x_nwp_data {
 
 	struct k_sem global_lock;
 	struct k_sem firmware_ready;
+	atomic_t nwp_use_cnt;
 
 	struct k_thread thread_id;
 	struct k_sem refresh_queues_state;
@@ -195,6 +196,8 @@ void siwx91x_nwp_register_wifi(const struct device *dev, const struct siwx91x_nw
 void siwx91x_nwp_register_bt(const struct device *dev, const struct siwx91x_nwp_bt_cb *val);
 int siwx91x_nwp_reset(const struct device *dev, uint8_t oper_mode, bool hidden_ssid,
 		      uint8_t max_num_sta);
-int siwx91x_nwp_apply_power_profile(const struct device *dev);
+int siwx91x_nwp_prepare_sleep(const struct device *dev);
+void siwx91x_nwp_enter_sleep(const struct device *dev);
+void siwx91x_nwp_exit_sleep(const struct device *dev);
 
 #endif
