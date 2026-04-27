@@ -402,6 +402,24 @@
 		sram0: memory@42020000 {
 			compatible = "mmio-sram";
 			reg = <0x42020000 DT_SIZE_K(176)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x42020000 DT_SIZE_K(176)>;
+
+			/*
+			 * When BLE is enabled, 8 KB of exchange memory (EM)
+			 * is carved from the top of SRAM (GLB_EM_SEL=3).
+			 * Point zephyr,sram here when using BT.
+			 */
+			sram0_btle: sram@0 {
+				compatible = "mmio-sram";
+				reg = <0x0 DT_SIZE_K(168)>;
+			};
+		};
+
+		bt_hci_bflb: bt-hci {
+			compatible = "bflb,bt-hci";
+			status = "disabled";
 		};
 	};
 };
