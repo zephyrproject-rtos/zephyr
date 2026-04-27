@@ -39,7 +39,7 @@ and print the results. Expected output resembles:
         key=30 value=300
         key=10 value=100
         Top of heap: key=2 value=400
-        Found element with key 5 at index 1,removing it...
+        Found element with key 5, removing it...
         Heap after removal:
         key=2 value=400
         key=10 value=100
