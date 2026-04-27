@@ -910,6 +910,89 @@ static bool uart_mchp_handle_rx_error(const struct device *dev, sercom_registers
 
 	return true;
 }
+
+/* Initialize DMA channels for UART. */
+static int uart_dma_init(const struct device *dev)
+{
+	const uart_mchp_dev_cfg_t *const cfg = dev->config;
+	uart_mchp_dev_data_t *const dev_data = dev->data;
+	sercom_registers_t *regs = cfg->regs;
+	bool is_clock_external = cfg->is_clock_external;
+	int retval = UART_SUCCESS;
+
+	if (cfg->uart_dma.dma_dev == NULL) {
+		return UART_SUCCESS;
+	}
+
+	if (!device_is_ready(cfg->uart_dma.dma_dev)) {
+		return -ENODEV;
+	}
+
+	/* TX DMA configuration */
+	int dma_ch = cfg->uart_dma.tx_dma_channel;
+	int dma_ch_request = dma_request_channel(cfg->uart_dma.dma_dev, (void *)&dma_ch);
+
+	if ((cfg->uart_dma.tx_dma_channel != 0xFFU) &&
+	    (dma_ch_request == cfg->uart_dma.tx_dma_channel)) {
+		struct dma_config dma_cfg = {0};
+		struct dma_block_config dma_blk = {0};
+
+		dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+		dma_cfg.source_data_size = 1;
+		dma_cfg.dest_data_size = 1;
+		dma_cfg.user_data = dev_data;
+		dma_cfg.dma_callback = uart_mchp_dma_tx_done;
+		dma_cfg.block_count = 1;
+		dma_cfg.head_block = &dma_blk;
+		dma_cfg.dma_slot = cfg->uart_dma.tx_dma_request;
+
+		dma_blk.block_size = 1;
+		dma_blk.dest_address = (uint32_t)(uart_get_data_reg_addr(regs, is_clock_external));
+		dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+
+		retval = dma_config(cfg->uart_dma.dma_dev, cfg->uart_dma.tx_dma_channel, &dma_cfg);
+		if (retval != 0) {
+			return retval;
+		}
+	} else {
+		LOG_WRN("UART TX DMA unavailable (configured=%d, allocated=%d)",
+			cfg->uart_dma.tx_dma_channel, dma_ch_request);
+	}
+
+	/* RX DMA configuration */
+	dma_ch = cfg->uart_dma.rx_dma_channel;
+	dma_ch_request = dma_request_channel(cfg->uart_dma.dma_dev, (void *)&dma_ch);
+
+	if ((cfg->uart_dma.rx_dma_channel != 0xFFU) &&
+	    (dma_ch_request == cfg->uart_dma.rx_dma_channel)) {
+		struct dma_config dma_cfg = {0};
+		struct dma_block_config dma_blk = {0};
+
+		dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+		dma_cfg.source_data_size = 1;
+		dma_cfg.dest_data_size = 1;
+		dma_cfg.user_data = dev_data;
+		dma_cfg.dma_callback = uart_mchp_dma_rx_done;
+		dma_cfg.block_count = 1;
+		dma_cfg.head_block = &dma_blk;
+		dma_cfg.dma_slot = cfg->uart_dma.rx_dma_request;
+
+		dma_blk.block_size = 1;
+		dma_blk.source_address =
+			(uint32_t)(uart_get_data_reg_addr(regs, is_clock_external));
+		dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+
+		retval = dma_config(cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel, &dma_cfg);
+		if (retval != 0) {
+			return retval;
+		}
+	} else {
+		LOG_WRN("UART RX DMA unavailable (configured=%d, allocated=%d)",
+			cfg->uart_dma.rx_dma_channel, dma_ch_request);
+	}
+
+	return UART_SUCCESS;
+}
 #endif /* CONFIG_UART_MCHP_ASYNC */
 
 /**
@@ -1101,72 +1184,13 @@ static int uart_mchp_init(const struct device *dev)
 #ifdef CONFIG_UART_MCHP_ASYNC
 	dev_data->dev = dev;
 	dev_data->cfg = cfg;
-	if (device_is_ready(cfg->uart_dma.dma_dev) == false) {
-		return -ENODEV;
-	}
 
 	k_work_init_delayable(&dev_data->tx_timeout_work, uart_mchp_tx_timeout);
 	k_work_init_delayable(&dev_data->rx_timeout_work, uart_mchp_rx_timeout);
 
-	int dma_ch = cfg->uart_dma.tx_dma_channel;
-	int dma_ch_request = dma_request_channel(cfg->uart_dma.dma_dev, (void *)&dma_ch);
-
-	if ((cfg->uart_dma.tx_dma_channel != 0xFFU) &&
-	    (dma_ch_request == cfg->uart_dma.tx_dma_channel)) {
-		struct dma_config dma_cfg = {0};
-		struct dma_block_config dma_blk = {0};
-
-		dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
-		dma_cfg.source_data_size = 1;
-		dma_cfg.dest_data_size = 1;
-		dma_cfg.user_data = dev_data;
-		dma_cfg.dma_callback = uart_mchp_dma_tx_done;
-		dma_cfg.block_count = 1;
-		dma_cfg.head_block = &dma_blk;
-		dma_cfg.dma_slot = cfg->uart_dma.tx_dma_request;
-
-		dma_blk.block_size = 1;
-		dma_blk.dest_address = (uint32_t)(uart_get_data_reg_addr(regs, is_clock_external));
-		dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-
-		retval = dma_config(cfg->uart_dma.dma_dev, cfg->uart_dma.tx_dma_channel, &dma_cfg);
-		if (retval != 0) {
-			return retval;
-		}
-	} else {
-		LOG_WRN("UART TX DMA unavailable (configured=%d, allocated=%d)",
-			cfg->uart_dma.tx_dma_channel, dma_ch_request);
-	}
-
-	dma_ch = cfg->uart_dma.rx_dma_channel;
-	dma_ch_request = dma_request_channel(cfg->uart_dma.dma_dev, (void *)&dma_ch);
-
-	if ((cfg->uart_dma.rx_dma_channel != 0xFFU) &&
-	    (dma_ch_request == cfg->uart_dma.rx_dma_channel)) {
-		struct dma_config dma_cfg = {0};
-		struct dma_block_config dma_blk = {0};
-
-		dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
-		dma_cfg.source_data_size = 1;
-		dma_cfg.dest_data_size = 1;
-		dma_cfg.user_data = dev_data;
-		dma_cfg.dma_callback = uart_mchp_dma_rx_done;
-		dma_cfg.block_count = 1;
-		dma_cfg.head_block = &dma_blk;
-		dma_cfg.dma_slot = cfg->uart_dma.rx_dma_request;
-
-		dma_blk.block_size = 1;
-		dma_blk.source_address =
-			(uint32_t)(uart_get_data_reg_addr(regs, is_clock_external));
-		dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-
-		retval = dma_config(cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel, &dma_cfg);
-		if (retval != 0) {
-			return retval;
-		}
-	} else {
-		LOG_WRN("UART RX DMA unavailable (configured=%d, allocated=%d)",
-			cfg->uart_dma.rx_dma_channel, dma_ch_request);
+	retval = uart_dma_init(dev);
+	if (retval != 0) {
+		return retval;
 	}
 #endif /* CONFIG_UART_MCHP_ASYNC */
 
@@ -2004,7 +2028,7 @@ static int uart_mchp_tx(const struct device *dev, const uint8_t *buf, size_t len
 	int retval = UART_SUCCESS;
 
 	do {
-		if (cfg->uart_dma.tx_dma_channel == 0xFFU) {
+		if (cfg->uart_dma.dma_dev == NULL) {
 			retval = -ENOTSUP;
 			break;
 		}
@@ -2063,7 +2087,7 @@ static int uart_mchp_tx_abort(const struct device *dev)
 	int retval = UART_SUCCESS;
 
 	do {
-		if (cfg->uart_dma.tx_dma_channel == 0xFFU) {
+		if (cfg->uart_dma.dma_dev == NULL) {
 			retval = -ENOTSUP;
 			break;
 		}
@@ -2142,7 +2166,7 @@ static int uart_mchp_rx_enable(const struct device *dev, uint8_t *buf, size_t le
 	int retval = UART_SUCCESS;
 
 	do {
-		if (cfg->uart_dma.rx_dma_channel == 0xFFU) {
+		if (cfg->uart_dma.dma_dev == NULL) {
 			retval = -ENOTSUP;
 			break;
 		}
@@ -2350,11 +2374,18 @@ static DEVICE_API(uart, uart_mchp_driver_api) = {
 
 #ifdef CONFIG_UART_MCHP_ASYNC
 #define UART_MCHP_DMA_CHANNELS(n)                                                                  \
-	.uart_dma.dma_dev = DEVICE_DT_GET(MCHP_DT_INST_DMA_CTLR(n, tx)),                           \
-	.uart_dma.tx_dma_request = MCHP_DT_INST_DMA_TRIGSRC(n, tx),                                \
-	.uart_dma.tx_dma_channel = MCHP_DT_INST_DMA_CHANNEL(n, tx),                                \
-	.uart_dma.rx_dma_request = MCHP_DT_INST_DMA_TRIGSRC(n, rx),                                \
-	.uart_dma.rx_dma_channel = MCHP_DT_INST_DMA_CHANNEL(n, rx),
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),                                                \
+		(                                                                                  \
+			.uart_dma.dma_dev = DEVICE_DT_GET(MCHP_DT_INST_DMA_CTLR(n, tx)),           \
+			.uart_dma.tx_dma_request = MCHP_DT_INST_DMA_TRIGSRC(n, tx),                \
+			.uart_dma.tx_dma_channel = MCHP_DT_INST_DMA_CHANNEL(n, tx),                \
+			.uart_dma.rx_dma_request = MCHP_DT_INST_DMA_TRIGSRC(n, rx),                \
+			.uart_dma.rx_dma_channel = MCHP_DT_INST_DMA_CHANNEL(n, rx),                \
+		),                                                                                 \
+		(                                                                                  \
+			.uart_dma.dma_dev = NULL,                                                  \
+		)                                                                                  \
+	)
 #else /* CONFIG_UART_MCHP_ASYNC */
 #define UART_MCHP_DMA_CHANNELS(n)
 #endif /* CONFIG_UART_MCHP_ASYNC */
