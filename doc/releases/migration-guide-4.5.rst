@@ -109,7 +109,7 @@ Bluetooth Audio
     :c:func:`bt_bap_unicast_group_create`, :c:func:`bt_bap_unicast_group_reconfig`,
     :c:func:`bt_bap_broadcast_source_create` or :c:func:`bt_bap_broadcast_source_reconfig`.
     (:github:`104887`)
-  * Almost all API uses of ``struct bt_bap_qos_cfg *`` is now const, which means that once the
+  * Almost all API uses of ``struct bt_bap_qos_cfg *`` are now ``const``, which means that once the
     ``qos`` has been stored in a parameter struct like
     :c:struct:`bt_bap_broadcast_source_param` or
     :c:struct:`bt_bap_unicast_group_stream_param`, then the parameter's pointer cannot be used
@@ -123,15 +123,15 @@ Bluetooth Audio
     requirements of BAP before doing any discovery. In most cases this requires a call to
     :c:func:`bt_conn_set_security` for new devices. Bonded devices that reconnect should not require
     anything.
+  * Almost all API uses of ``struct bt_audio_codec_cfg *`` are now ``const``, which means that once
+    the ``codec_cfg`` has been stored in a parameter struct like
+    :c:struct:`bt_bap_stream` or
+    :c:struct:`bt_bap_broadcast_source_subgroup_param`, then the parameter's pointer cannot be used
+    to modify the ``codec_cfg``, and the actual definition of the struct should be modified instead.
+    (:github:`104219`)
 
 * CAP
 
-  * Almost all API uses of ``struct bt_audio_codec_cfg *`` is now const, which means that once the
-    ``codec_cfg`` has been stored in a parameter struct like
-    :c:struct:`bt_cap_initiator_broadcast_subgroup_param` or
-    :c:struct:`bt_cap_unicast_audio_start_stream_param`, then the parameter's pointer cannot be used
-    to modify the ``codec_cfg``, and the actual definition of the struct should be modified instead.
-    (:github:`104219`)
   * :c:func:`bt_cap_commander_broadcast_reception_start` now waits for the CAP acceptors to sync to
     the broadcast before completing. This means that if the broadcast source is offline,
     including colocated broadcast sources like the ones created by
