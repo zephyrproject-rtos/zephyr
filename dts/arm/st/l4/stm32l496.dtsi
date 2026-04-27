@@ -68,6 +68,13 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 10)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 		};
+
+		dma2d: dma@4002b000 {
+			compatible = "st,stm32-dma2d";
+			reg = <0x4002b000 0x1000>;
+			interrupts = <90 0>;
+			status = "disabled";
+		};
 	};
 
 	die_temp: dietemp {

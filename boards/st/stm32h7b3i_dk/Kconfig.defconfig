@@ -13,14 +13,9 @@ config MEMC
 
 if LVGL
 
-config LV_USE_DRAW_DMA2D
-	default y
-
+# Double frame buffer maintained by lvgl.
 config STM32_LTDC_FB_NUM
-	default 2
-
-config LV_Z_VDB_SIZE
-	default 100
+	default 0
 
 config LV_Z_DOUBLE_VDB
 	default y

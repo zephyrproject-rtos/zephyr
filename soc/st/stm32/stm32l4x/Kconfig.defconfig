@@ -13,4 +13,12 @@ configdefault SHARED_INTERRUPTS
 	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers16)
 	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers17)
 
+# Add LVGL HAL include file for SOC supporting DMA2D
+if LVGL && DT_HAS_ST_STM32_DMA2D_ENABLED
+
+config LV_DRAW_DMA2D_HAL_INCLUDE
+	default "stm32l4xx.h"
+
+endif # LVGL
+
 endif # SOC_SERIES_STM32L4X

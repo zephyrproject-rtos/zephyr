@@ -39,3 +39,7 @@
 	hs-active-high;
 	de-active-high;
 };
+
+&dma2d {
+	status = "okay";
+};
