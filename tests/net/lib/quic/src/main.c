@@ -3402,4 +3402,45 @@ ZTEST(net_socket_quic, test_450_client_can_disable_server_verification)
 						false, true);
 }
 
+ZTEST(net_socket_quic, test_455_required_peer_verification_rejects_empty_certificate)
+{
+	static const uint8_t empty_certificate[] = { 0, 0, 0, 0 };
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_tls_context ctx = { 0 };
+	int ret;
+
+	ep->is_server = false;
+	ctx.ep = ep;
+	ctx.options.verify_level = -1;
+
+	ret = parse_certificate(&ctx, empty_certificate, sizeof(empty_certificate));
+	zassert_equal(ret, -EACCES,
+		      "Expected empty required peer certificate to fail (%d)", ret);
+	zassert_equal(ctx.peer_cert_len, 0,
+		      "Empty peer certificate must not populate peer_cert_len");
+}
+
+ZTEST(net_socket_quic, test_460_required_peer_verification_rejects_finished_without_certificate)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_tls_context ctx = { 0 };
+	static const uint8_t finished_body[] = { 0 };
+	static const uint8_t finished_msg[] = { 0 };
+	int ret;
+
+	ep->is_server = false;
+	ctx.ep = ep;
+	ctx.options.verify_level = -1;
+	ctx.peer_cert_len = 0;
+
+	ret = process_handshake_message(&ctx, TLS_HS_FINISHED,
+					finished_body, sizeof(finished_body),
+					finished_msg, sizeof(finished_msg));
+	zassert_equal(ret, -EACCES,
+		      "Expected Finished without required peer certificate to fail (%d)",
+		      ret);
+	zassert_not_equal(ctx.state, QUIC_TLS_STATE_CONNECTED,
+			  "Handshake must not reach CONNECTED without peer certificate");
+}
+
 ZTEST_SUITE(net_socket_quic, NULL, setup, before, after, NULL);
