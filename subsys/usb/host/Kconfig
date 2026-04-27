@@ -32,6 +32,7 @@ config USBH_USB_DEVICE_HEAP
 config USBH_SHELL
 	bool "USB host shell"
 	depends on SHELL
+	depends on $(dt_nodelabel_enabled,zephyr_uhc0)
 	help
 	  Shell commands for USB host support.
 
