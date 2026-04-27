@@ -2416,7 +2416,7 @@ const uint8_t *coap_tcp_packet_get_payload(const struct coap_packet *cpkt,
 		return NULL;
 	}
 
-	payload_len = cpkt->max_len - cpkt->hdr_len - cpkt->opt_len;
+	payload_len = cpkt->offset - cpkt->hdr_len - cpkt->opt_len;
 	if (payload_len > 1) {
 		*len = payload_len - 1;	/* subtract payload marker length */
 	} else {
