@@ -136,6 +136,7 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 				 const struct bt_audio_codec_cfg *codec_cfg)
 {
 	struct bt_bap_unicast_client_cb *listener, *next;
+	struct bt_audio_codec_cfg *ep_codec_cfg;
 	int err;
 
 	if (stream == NULL || stream->ep == NULL || codec_cfg == NULL) {
@@ -156,7 +157,14 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 	if (err != 0) {
 		return err;
 	}
+
 	stream->codec_cfg = &stream->ep->codec_cfg;
+
+	ep_codec_cfg = &stream->ep->codec_cfg;
+	ep_codec_cfg->path_id = codec_cfg->path_id;
+	ep_codec_cfg->ctlr_transcode = codec_cfg->ctlr_transcode;
+	ep_codec_cfg->target_latency = codec_cfg->target_latency;
+	ep_codec_cfg->target_phy = codec_cfg->target_phy;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
 		if (listener->config != NULL) {
