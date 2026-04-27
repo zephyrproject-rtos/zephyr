@@ -1,0 +1,5 @@
+# Copyright (c) 2026 NotioNext Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ESP32S3_BOX3_AT581X
+	def_bool $(shields_list_contains,esp32s3_box3_at581x)

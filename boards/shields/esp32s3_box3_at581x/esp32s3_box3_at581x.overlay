@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2026 NotioNext Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
+
+&pinctrl {
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_GPIO41>,
+				 <I2C1_SCL_GPIO40>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+
+	at581x: at581x@28 {
+		compatible = "andar,at581x";
+		reg = <0x28>;
+		int-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};

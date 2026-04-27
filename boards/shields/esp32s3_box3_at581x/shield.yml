@@ -1,0 +1,6 @@
+shield:
+  name: esp32s3_box3_at581x
+  full_name: ESP32-S3-BOX-3 AT581X Radar Sensor Shield
+  vendor: espressif
+  supported_features:
+    - sensor

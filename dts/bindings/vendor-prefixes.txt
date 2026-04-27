@@ -63,6 +63,7 @@ ampire	Ampire Co., Ltd.
 ams	AMS AG
 amstaos	AMS-Taos Inc.
 analogix	Analogix Semiconductor, Inc.
+andar	Andar Technologies
 andestech	Andes Technology Corporation
 antmicro	Antmicro
 anvo	Anvo-Systems Dresden GmbH

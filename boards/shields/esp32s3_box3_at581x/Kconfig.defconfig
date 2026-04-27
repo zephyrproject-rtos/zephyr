@@ -1,0 +1,9 @@
+# Copyright (c) 2026 NotioNext Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_ESP32S3_BOX3_AT581X
+
+config SENSOR
+	default y
+
+endif # SHIELD_ESP32S3_BOX3_AT581X
