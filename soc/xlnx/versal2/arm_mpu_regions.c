@@ -2,6 +2,9 @@
  * Copyright (c) 2025 Advanced Micro Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * OCM follows memory@bbf00000 in dts/vendor/amd/versal2.dtsi (1 MiB span).
+ * Map OCM as non-cacheable RAM for split-core AMP (same policy as VersalNet RPU).
  */
 
 #include <zephyr/kernel.h>
@@ -10,6 +13,8 @@
 
 #define DEVICE_REGION_START	0xE2000000U
 #define DEVICE_REGION_END	0xF8000000U
+#define OCM_REGION_START	0xBBF00000U
+#define OCM_REGION_END		0xBC000000U
 
 static const struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("vector",
@@ -27,6 +32,10 @@ static const struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("SRAM_DATA",
 			 (uintptr_t)__rom_region_end,
 			 REGION_RAM_ATTR((uintptr_t)__kernel_ram_end)),
+
+	MPU_REGION_ENTRY("OCM",
+			 OCM_REGION_START,
+			 REGION_RAM_NOCACHE_ATTR(OCM_REGION_END)),
 
 	MPU_REGION_ENTRY("DEVICE",
 			 DEVICE_REGION_START,
