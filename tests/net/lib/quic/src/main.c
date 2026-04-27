@@ -965,6 +965,28 @@ ZTEST(net_socket_quic, test_150_stream_rx_flow_control_limit)
 		      "Highest offset changed on rejected data");
 	zassert_equal(ep->rx_fc.bytes_received, 0,
 		      "Connection RX accounting changed on rejected data");
+	zassert_false(ep->recovery.closing,
+		      "Synthetic endpoints must not enter recovery shutdown");
+}
+
+ZTEST(net_socket_quic, test_155_stream_rx_buffer_overflow_skips_close_on_test_endpoint)
+{
+	static struct quic_stream stream;
+	static uint8_t oversize[CONFIG_QUIC_STREAM_RX_BUFFER_SIZE + 1];
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	int ret;
+
+	init_test_rx_stream(&stream, ep, sizeof(oversize), sizeof(oversize), 1);
+
+	ret = quic_stream_receive_data(&stream, 0, oversize, sizeof(oversize), false);
+	zassert_equal(ret, -EPROTO,
+		      "Expected RX buffer overflow to be fatal (%d)", ret);
+	zassert_equal(stream.fc_bytes_received, 0,
+		      "Overflow must not change stream RX accounting");
+	zassert_equal(ep->rx_fc.bytes_received, 0,
+		      "Overflow must not change connection RX accounting");
+	zassert_false(ep->recovery.closing,
+		      "Synthetic endpoints must not enter recovery shutdown");
 }
 
 ZTEST(net_socket_quic, test_160_connection_rx_flow_control_limit)
@@ -1119,6 +1141,8 @@ ZTEST(net_socket_quic, test_175_rx_flow_control_ooo_unbufferable_is_fatal)
 		      "Fatal OOO data must not change stream accounting");
 	zassert_equal(ep->rx_fc.bytes_received, queued_bytes,
 		      "Fatal OOO data must not change connection accounting");
+	zassert_false(ep->recovery.closing,
+		      "Synthetic endpoints must not enter recovery shutdown");
 
 	init_test_rx_stream(&stream, ep, 4096, 4096, 1);
 
@@ -1132,6 +1156,8 @@ ZTEST(net_socket_quic, test_175_rx_flow_control_ooo_unbufferable_is_fatal)
 		      "Oversized OOO data must not change stream accounting");
 	zassert_equal(ep->rx_fc.bytes_received, 0,
 		      "Oversized OOO data must not change connection accounting");
+	zassert_false(ep->recovery.closing,
+		      "Synthetic endpoints must not enter recovery shutdown");
 }
 
 /*
