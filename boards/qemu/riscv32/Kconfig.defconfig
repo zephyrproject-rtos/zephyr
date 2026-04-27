@@ -3,6 +3,26 @@
 
 if BOARD_QEMU_RISCV32
 
+if NETWORKING
+
+choice NET_QEMU_NETWORKING
+	default NET_QEMU_USER
+endchoice
+
+configdefault USB_HOST_STACK
+	default y
+
+configdefault USBH_CDC_ECM_CLASS
+	default y
+
+endif # NETWORKING
+
+configdefault NET_DRIVERS
+	default n
+
+configdefault NET_L2_ETHERNET
+	default y
+
 # Use thread local storage by default so that this feature gets more CI coverage.
 config THREAD_LOCAL_STORAGE
 	default y

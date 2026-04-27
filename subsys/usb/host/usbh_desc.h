@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
+ * SPDX-FileCopyrightText: Coryright 2025 - 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -122,6 +123,16 @@ bool usbh_desc_is_valid_association(const void *const desc);
 bool usbh_desc_is_valid_endpoint(const void *const desc);
 
 /**
+ * @brief Checks that the pointed descriptor is an string descriptor.
+ *
+ * @param[in] desc The descriptor to validate
+ *
+ * @return true if the descriptor size and type are correct
+ * @return false if the descriptor size or type is wrong
+ */
+bool usbh_desc_is_valid_string(const void *const desc);
+
+/**
  * @brief Get the next function in the descriptor list.
  *
  * This searches the interface or interface association of the next USB
@@ -151,4 +162,36 @@ const void *usbh_desc_get_next_function(const void *const desc);
  */
 const void *usbh_desc_get_next_alt_setting(const void *const desc);
 
+/**
+ * @brief Get supported USB LANGIDs.
+ *
+ * Retrieves the list of language IDs supported by the USB device.
+ *
+ * @param[in] udev Pointer to the USB device.
+ * @param[out] lang_ids Array to store the supported LANGIDs.
+ * @param[in] lang_ids_len Length of the LANGIDs array.
+ *
+ * @retval number of supported IDs.
+ * @retval Negative error code from getting the string descriptor.
+ * @retval -ENOMEM if memory allocation failed.
+ * @retval -EBADMSG if the descriptor is invalid.
+ */
+int usbh_desc_get_supported_langs(struct usb_device *const udev, uint16_t *const lang_ids,
+				  const uint8_t lang_ids_len);
+
+/**
+ * @brief Convert UTF16LE encoded string descriptor to ASCII.
+ *
+ * Converts the UTF16LE encoded string descriptor descriptor to an ASCII string.
+ * The ASCII string is always null-terminated.
+ *
+ * @param[in] buf Buffer containing the string descriptor.
+ * @param[out] ascii_buf Buffer to store the converted ASCII string.
+ * @param[in] ascii_buf_len Maximum length of the ASCII buffer (including null terminator).
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if descriptor is malformed or conversion is not possilbe.
+ */
+int usbh_desc_str_utfle16_to_ascii(const struct net_buf *const buf, char *const ascii_buf,
+				   const uint16_t ascii_buf_len);
 #endif /* ZEPHYR_INCLUDE_USBH_DESC_H */

@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
- * SPDX-FileCopyrightText: Copyright 2025 NXP
+ * SPDX-FileCopyrightText: Copyright 2025 - 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,6 +10,8 @@
 
 #include "usbh_class.h"
 #include "usbh_desc.h"
+#include "usbh_ch9.h"
+#include "usbh_device.h"
 
 LOG_MODULE_REGISTER(usbh_desc, CONFIG_USBH_LOG_LEVEL);
 
@@ -57,6 +59,12 @@ bool usbh_desc_is_valid_endpoint(const void *const desc)
 {
 	return usbh_desc_is_valid(desc, sizeof(struct usb_ep_descriptor),
 				  USB_DESC_ENDPOINT);
+}
+
+bool usbh_desc_is_valid_string(const void *const desc)
+{
+	return usbh_desc_is_valid(desc, sizeof(struct usb_string_descriptor),
+				  USB_DESC_STRING);
 }
 
 const void *usbh_desc_get_next(const void *const desc)
@@ -217,4 +225,75 @@ const void *usbh_desc_get_next_function(const void *const desc)
 	}
 
 	return NULL;
+}
+
+int usbh_desc_get_supported_langs(struct usb_device *const udev, uint16_t *const lang_ids,
+				  const uint8_t lang_ids_len)
+{
+	struct net_buf *buf;
+	uint16_t len;
+	int ret;
+
+	buf = usbh_xfer_buf_alloc(udev, lang_ids_len * sizeof(uint16_t) + 2);
+	if (buf == NULL) {
+		return -ENOMEM;
+	}
+
+	ret = usbh_req_desc_str(udev, 0, 0, buf);
+	if (ret != 0) {
+		goto done;
+	}
+
+	if (!usbh_desc_is_valid_string(buf->data)) {
+		ret = -EBADMSG;
+		goto done;
+	}
+
+	len = net_buf_pull_u8(buf) - 2;
+	net_buf_pull_u8(buf);
+	len = MIN(len, buf->len) / 2;
+	for (ret = 0; ret < len; ret++) {
+		lang_ids[ret] = net_buf_pull_le16(buf);
+	}
+
+done:
+	if (buf != NULL) {
+		usbh_xfer_buf_free(udev, buf);
+	}
+
+	return ret;
+}
+
+int usbh_desc_str_utfle16_to_ascii(const struct net_buf *const buf, char *const ascii_buf,
+				   const uint16_t ascii_buf_len)
+{
+	uint16_t len;
+	uint16_t utf16le_code;
+	struct net_buf_simple tmp_buf;
+
+	if (!usbh_desc_is_valid_string(buf->data)) {
+		return -EINVAL;
+	}
+
+	net_buf_simple_clone(&buf->b, &tmp_buf);
+
+	len = net_buf_simple_pull_u8(&tmp_buf) - 2;
+	net_buf_simple_pull_u8(&tmp_buf);
+	len = MIN(MIN(tmp_buf.len, len) / 2, ascii_buf_len - 1);
+	for (unsigned int i = 0; i < len; i++) {
+		utf16le_code = net_buf_simple_pull_le16(&tmp_buf);
+
+		if (utf16le_code > 0x7F) {
+			return -EINVAL;
+		}
+
+		ascii_buf[i] = (char)utf16le_code;
+
+		if (utf16le_code == 0) {
+			break;
+		}
+	}
+	ascii_buf[len] = '\0';
+
+	return 0;
 }

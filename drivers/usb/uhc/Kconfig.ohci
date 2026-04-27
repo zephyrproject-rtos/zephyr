@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config UHC_OHCI
+	bool "Generic OHCI USB host controller driver"
+	default y
+	depends on DT_HAS_GENERIC_OHCI_ENABLED
+	depends on !64BIT
+	select EVENTS
+	help
+	  Generic OHCI USB host controller driver for any OHCI
+	  controller (OpenHCI 1.0a compatible). Only supported on
+	  32 bit, as OHCI only uses 32 bit registers for addresses.
+
+if UHC_OHCI
+
+config UHC_OHCI_PCI
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_GENERIC_OHCI),pcie)
+	select PCIE
+	select DYNAMIC_INTERRUPTS if !PCIE_CONTROLLER
+
+config UHC_OHCI_BULK_SLOTS
+	int "Number of concurrent bulk/interrupt transfer slots"
+	range 1 8
+	default 3
+	help
+	  Number of concurrently active bulk/interrupt transfer slots. One slot
+	  is always reserved for control transfers. Each additional slot allows
+	  one more bulk or interrupt endpoint to stay posted simultaneously
+	  (e.g. both IN and OUT for CDC-ECM data plus the interrupt notification
+	  endpoint). Memory cost is one ED plus UHC_OHCI_MAX_TDS transfer
+	  descriptors per slot.
+
+config UHC_OHCI_MAX_TDS
+	int "Maximum TDs per transfer slot"
+	range 4 128
+	default 64
+	help
+	  Maximum number of OHCI transfer descriptors per slot. The driver
+	  allocates one pool of this size for the control slot and for each
+	  bulk/interrupt slot (see UHC_OHCI_BULK_SLOTS).
+
+endif # UHC_OHCI
