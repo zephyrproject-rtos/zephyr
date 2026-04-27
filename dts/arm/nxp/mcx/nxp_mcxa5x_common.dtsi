@@ -739,6 +739,11 @@
 		interrupts = <93 0>;
 		interrupt-names = "t1s";
 	};
+
+	cmc: system-modules@c6000 {
+		compatible = "nxp,cmc";
+		reg = <0xc6000 0x1000>;
+	};
 };
 
 &systick {
