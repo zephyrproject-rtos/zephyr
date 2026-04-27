@@ -29,3 +29,7 @@ tests:
       - CONFIG_NET_IPV4=y
       - CONFIG_NET_SOCKETS_DNS_TIMEOUT=5
       - CONFIG_ZTEST_STACK_SIZE=1280
+  net.dns.resolve.private_rr:
+    extra_configs:
+      - CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT=y
+      - CONFIG_DNS_RESOLVER_MAX_PRIVATE_DATA_LEN=128
