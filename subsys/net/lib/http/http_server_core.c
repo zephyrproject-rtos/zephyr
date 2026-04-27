@@ -1088,6 +1088,24 @@ static void handle_h3_conn_pollin(struct http_server_ctx *ctx, int i)
 		return;
 	}
 
+	if (ret == H3_STREAM_IGNORED) {
+		return;
+	}
+
+	if (new_socket != INVALID_SOCK) {
+		/* Real stream accepted */
+		client = &ctx->clients[i - ctx->listen_fds];
+		ret = add_h3_stream_poll(client, &ctx->fds[ctx->client_fds],
+					 ARRAY_SIZE(ctx->fds) - ctx->client_fds,
+					 new_socket);
+		if (ret == -ENOMEM) {
+			LOG_DBG("No free slot for new H3 stream %d", new_socket);
+			zsock_close(new_socket);
+		}
+
+		return;
+	}
+
 	if (ret == -EAGAIN) {
 		/*
 		 * No stream queued but POLLIN fired. This happens when
@@ -1110,20 +1128,6 @@ static void handle_h3_conn_pollin(struct http_server_ctx *ctx, int i)
 				zsock_close(ctx->fds[i].fd);
 				invalidate_poll_fd(&ctx->fds[i]);
 			}
-		}
-
-		return;
-	}
-
-	if (new_socket != INVALID_SOCK) {
-		/* Real stream accepted */
-		client = &ctx->clients[i - ctx->listen_fds];
-		ret = add_h3_stream_poll(client, &ctx->fds[ctx->client_fds],
-					 ARRAY_SIZE(ctx->fds) - ctx->client_fds,
-					 new_socket);
-		if (ret == -ENOMEM) {
-			LOG_DBG("No free slot for new H3 stream %d", new_socket);
-			zsock_close(new_socket);
 		}
 
 		return;
@@ -1232,6 +1236,11 @@ static void handle_h3_uni_stream(struct http_server_ctx *ctx, int i,
 				}
 			}
 
+			return;
+		}
+
+		if (ret == H3_STREAM_IGNORED) {
+			invalidate_poll_fd(&ctx->fds[i]);
 			return;
 		}
 
