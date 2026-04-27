@@ -117,6 +117,12 @@ Libraries / Subsystems
     LoRaWAN 1.0.x Class A directly on top of the LoRa radio driver, without
     the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
 
+Devicetree
+**********
+
+  * :c:macro:`DT_NODELABEL_C_TOKEN`
+  * :c:macro:`DT_NODELABEL_C_TOKEN_BY_IDX`
+
 Other notable changes
 *********************
 
