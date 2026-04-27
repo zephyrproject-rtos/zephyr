@@ -15,6 +15,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "llext_priv.h"
@@ -676,6 +677,14 @@ static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext,
 	return 0;
 }
 
+static int llext_compare_symbols(const void *left, const void *right)
+{
+	const struct llext_symbol *left_sym = left;
+	const struct llext_symbol *right_sym = right;
+
+	return strcmp(left_sym->name, right_sym->name);
+}
+
 static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 			      const struct llext_load_param *ldr_parm)
 {
@@ -751,6 +760,9 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 			j++;
 		}
 	}
+
+	qsort(sym_tab->syms, sym_tab->sym_cnt, sizeof(sym_tab->syms[0]), llext_compare_symbols);
+	sym_tab->sorted = true;
 
 	return 0;
 }

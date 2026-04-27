@@ -85,6 +85,9 @@ struct llext_symtable {
 
 	/** Array of symbols */
 	struct llext_symbol *syms;
+
+	/** Whether the symbols are sorted in ascending order */
+	bool sorted;
 };
 
 /** @cond INTERNAL_HIDDEN */
