@@ -344,6 +344,7 @@ static int nsos_poll_update(struct nsos_socket *sock, struct zsock_pollfd *pfd,
 
 	if (!sys_dnode_is_linked(&poll->node)) {
 		nsos_adapt_poll_update(&poll->mid);
+		pfd->revents = poll->mid.revents;
 		return 0;
 	}
 
