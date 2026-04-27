@@ -103,7 +103,7 @@ def generate_header_content(symbols: List[str]) -> str:
     for sym in symbols:
         output.append("""
 #if defined(CONFIG_{0})
-#define {0}   1
+#define {0} 1
 #endif
 """.format(sym))
 
