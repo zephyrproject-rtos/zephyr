@@ -647,7 +647,7 @@ struct quic_endpoint {
 	/** Connection-level flow control, RX (receiving from peer) */
 	struct {
 		uint64_t max_data;       /* Max data we allow peer to send */
-		uint64_t bytes_received; /* Total bytes received on all streams */
+		uint64_t bytes_received; /* Connection flow-control credit consumed */
 		uint64_t max_data_sent;  /* Last MAX_DATA value we sent */
 		bool need_window_update; /* Flag to send MAX_DATA */
 	} rx_fc;
@@ -880,8 +880,8 @@ __net_socket struct quic_stream {
 	/** RX flow control, max data we allow peer to send on this stream */
 	uint64_t local_max_data;
 
-	/** RX flow control, total bytes counted against this stream's limit */
-	uint64_t bytes_received;
+	/** RX flow control, stream flow-control credit consumed */
+	uint64_t fc_bytes_received;
 
 	/** RX flow control, highest received stream end offset (offset + len) */
 	uint64_t highest_offset_received;
