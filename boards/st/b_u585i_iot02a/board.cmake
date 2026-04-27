@@ -1,15 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
-if(CONFIG_BUILD_WITH_TFM)
-  set(TFM_FLASH_BASE_ADDRESS 0x0C000000)
 
+if(CONFIG_BUILD_WITH_TFM)
   # Flash merged TF-M + Zephyr binary
   set_property(TARGET runners_yaml_props_target PROPERTY hex_file tfm_merged.hex)
 
-  if(CONFIG_HAS_FLASH_LOAD_OFFSET)
-    MATH(EXPR TFM_HEX_BASE_ADDRESS_NS "${TFM_FLASH_BASE_ADDRESS}+${CONFIG_FLASH_LOAD_OFFSET}")
-  else()
-    set(TFM_HEX_BASE_ADDRESS_NS ${TFM_TFM_FLASH_BASE_ADDRESS})
-  endif()
+  # Flash is set all secure (<build>/tfm/api_ns/regression.sh) before flash programming
+  # hence locate non-secure image from the secure flash base address in HEX file.
+  set(flash_secure_base_address 0x0c000000)
+  math(EXPR TFM_HEX_BASE_ADDRESS_NS "${flash_secure_base_address}+${CONFIG_FLASH_LOAD_OFFSET}")
 endif()
 
 # keep first
