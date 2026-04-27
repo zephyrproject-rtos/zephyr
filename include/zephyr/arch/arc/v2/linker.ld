@@ -140,7 +140,8 @@ SECTIONS {
 		*(.gnu.linkonce.r.*)
 #if defined(CONFIG_LLEXT) && defined(CONFIG_HARVARD) && \
 	!defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
-		*(.llext_instr_heap)
+		*(".llext_instr_heap")
+		*(".llext_instr_heap.*")
 #endif /* CONFIG_LLEXT && CONFIG_HARVARD && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
 
 /* Located in generated directory. This file is populated by the
