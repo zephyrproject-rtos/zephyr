@@ -558,6 +558,13 @@ static void phy_link_state_changed(const struct device *phy_dev,
 	}
 }
 
+static const struct device *dwmac_get_phy(const struct device *dev)
+{
+	const struct dwmac_config *cfg = dev->config;
+
+	return cfg->phy_dev;
+}
+
 static void dwmac_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -696,5 +703,6 @@ const struct ethernet_api dwmac_api = {
 	.iface_api.init		= dwmac_iface_init,
 	.get_capabilities	= dwmac_caps,
 	.set_config		= dwmac_set_config,
+	.get_phy		= dwmac_get_phy,
 	.send			= dwmac_send,
 };
