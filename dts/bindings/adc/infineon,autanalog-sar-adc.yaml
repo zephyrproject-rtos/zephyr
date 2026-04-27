@@ -152,6 +152,62 @@ properties:
 
       Only effective when lp-mode is also set.
 
+  limit-cond-0:
+    type: array
+    description: |
+      Range detection condition 0. Channels that set limit =
+      IFX_AUTANALOG_SAR_LIMIT_STC0 use this condition. The array contains
+      three integers: <condition low high>.
+
+      condition uses IFX_AUTANALOG_SAR_COND_* constants from
+      <dt-bindings/adc/infineon-autanalog-sar.h>:
+        IFX_AUTANALOG_SAR_COND_BELOW   (0) - result < low
+        IFX_AUTANALOG_SAR_COND_INSIDE  (1) - low <= result < high
+        IFX_AUTANALOG_SAR_COND_ABOVE   (2) - result > high
+        IFX_AUTANALOG_SAR_COND_OUTSIDE (3) - result < low OR result >= high
+
+      low and high are signed 32-bit threshold values in ADC counts.
+
+  limit-cond-1:
+    type: array
+    description: |
+      Range detection condition 1. See limit-cond-0 for format.
+
+  limit-cond-2:
+    type: array
+    description: |
+      Range detection condition 2. See limit-cond-0 for format.
+
+  limit-cond-3:
+    type: array
+    description: |
+      Range detection condition 3. See limit-cond-0 for format.
+
+  gain-corr:
+    type: array
+    description: |
+      Array of 8 gain correction coefficients, one per coefficient slot
+      (COEFF0 through COEFF7). Each value is an unsigned 16-bit fixed-point
+      number in the format X.XXXXXXXXXXXXXXX where:
+        - 0x0001 = 1/32768 = 0.000030517578125
+        - 0x8000 = 1.0 (default / unity gain)
+        - 0xFFFF = 2 - 1/32768 = 1.999969482421875
+
+      Channels select which coefficient slot to use via the per-channel
+      pos-coeff and neg-coeff properties.
+
+  offset-corr:
+    type: array
+    description: |
+      Array of 8 signed offset correction coefficients, one per coefficient
+      slot (COEFF0 through COEFF7). Each value is a signed 16-bit integer
+      added to the 12-bit ADC result:
+        - Range: -2048 (0xF800) to +2047 (0x07FF)
+        - Default: 0 (no offset correction)
+
+      Channels select which coefficient slot to use via the per-channel
+      pos-coeff and neg-coeff properties.
+
 child-binding:
   properties:
     mux-buf-bypass:

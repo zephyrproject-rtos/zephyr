@@ -43,6 +43,8 @@ LOG_MODULE_REGISTER(ifx_autanalog_sar_adc, CONFIG_ADC_LOG_LEVEL);
 
 #define IFX_AUTANALOG_SAR_SAMPLETIME_COUNT 4
 #define IFX_AUTANALOG_SAR_MAX_FIR_FILTERS  2
+#define IFX_AUTANALOG_SAR_LIMIT_CFG_NUM    4
+#define IFX_AUTANALOG_SAR_CORR_COEFF_NUM   8
 
 #define IFX_AUTANALOG_HF_CLK_SRC 9
 
@@ -137,6 +139,12 @@ struct ifx_autanalog_sar_fir_config {
 	uint8_t fifo_sel;
 };
 
+struct ifx_autanalog_sar_limit_config {
+	uint8_t condition;
+	int32_t low;
+	int32_t high;
+};
+
 struct ifx_autanalog_sar_seq_hs_config {
 	uint8_t gpio_channels;
 	uint8_t mux_mode;
@@ -184,6 +192,11 @@ struct ifx_autanalog_sar_adc_config {
 	const struct ifx_autanalog_sar_seq_lp_config *lp_seq;
 	bool lp_mode;
 	bool lp_diff_en;
+	struct ifx_autanalog_sar_limit_config limit_cond[IFX_AUTANALOG_SAR_LIMIT_CFG_NUM];
+	uint8_t limit_cond_mask; /* bitmask of which limit conditions are configured */
+	bool has_gain_offset_corr;
+	uint16_t gain_corr[IFX_AUTANALOG_SAR_CORR_COEFF_NUM];
+	int16_t offset_corr[IFX_AUTANALOG_SAR_CORR_COEFF_NUM];
 };
 
 struct ifx_autanalog_sar_adc_channel_config {
@@ -251,6 +264,9 @@ struct ifx_autanalog_sar_adc_data {
 
 	/* PDL structure for FIFO configuration */
 	cy_stc_autanalog_fifo_cfg_t pdl_fifo_cfg;
+
+	/* PDL structures for range detection / limit conditions */
+	cy_stc_autanalog_sar_limit_t pdl_limit_cond[IFX_AUTANALOG_SAR_LIMIT_CFG_NUM];
 
 	/* FIFO watermark callback */
 	adc_ifx_autanalog_sar_fifo_callback_t fifo_callback;
@@ -394,10 +410,22 @@ static void ifx_init_pdl_structs(struct ifx_autanalog_sar_adc_data *data,
 		.chanID = cfg->fifo_chan_id,
 		.shiftMode = cfg->shift_mode,
 		.intMuxChan = {NULL}, /* MUX channels configured during channel setup */
-		.limitCond = {NULL},  /* We don't expose the range detection */
+		.limitCond = {NULL},
 		.muxResultMask = 0u,  /* MUX result mask updated during channel setup */
 		.firResultMask = cfg->fir_result_mask,
 	};
+
+	/* Populate range detection limit conditions from DT */
+	for (uint8_t i = 0; i < IFX_AUTANALOG_SAR_LIMIT_CFG_NUM; i++) {
+		if ((cfg->limit_cond_mask & BIT(i)) != 0) {
+			data->pdl_limit_cond[i] = (cy_stc_autanalog_sar_limit_t){
+				.cond = (cy_en_autanalog_sar_cond_t)cfg->limit_cond[i].condition,
+				.low = cfg->limit_cond[i].low,
+				.high = cfg->limit_cond[i].high,
+			};
+			data->pdl_adc_top_static_obj.limitCond[i] = &data->pdl_limit_cond[i];
+		}
+	}
 
 	if (!cfg->lp_mode) {
 		data->pdl_adc_hs_static_obj = (cy_stc_autanalog_sar_sta_hs_t){
@@ -1262,7 +1290,6 @@ static int ifx_autanalog_sar_adc_channel_setup(const struct device *dev,
 		return 0;
 	}
 
-	/* Determine if this is a MUX channel based on channel_id range */
 	is_mux_channel = (channel_cfg->channel_id >= IFX_AUTANALOG_SAR_MUX_CHANNEL_OFFSET);
 
 	/* LP mode only supports MUX channels */
@@ -1377,6 +1404,16 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 	if (result_val != CY_AUTANALOG_SUCCESS) {
 		LOG_ERR("Failed to initialize AutAnalog SAR ADC");
 		return -EIO;
+	}
+
+	/* Load offset and gain correction coefficients if provided via DT */
+	if (cfg->has_gain_offset_corr) {
+		result_val = Cy_AutAnalog_SAR_LoadOffsetGainCorr(
+			0, (uint16_t *)cfg->gain_corr, (int16_t *)cfg->offset_corr);
+		if (result_val != CY_AUTANALOG_SUCCESS) {
+			LOG_ERR("Failed to load offset/gain correction coefficients");
+			return -EIO;
+		}
 	}
 
 	/* Note: We can only partially initialize the AutAnalog system here.  If we try to
@@ -2297,6 +2334,35 @@ static int ifx_autanalog_sar_get_decoder(const struct device *dev,
 		DT_INST_FOREACH_CHILD(n, IFX_SEQ_LP_CFG_ENTRY)                                     \
 	}
 
+/* Limit condition configuration from DT properties limit-cond-0 through limit-cond-3.
+ * Each property is an array of <condition low high>.
+ */
+#define IFX_LIMIT_COND_INIT(n, idx)                                                                \
+	{                                                                                          \
+		.condition = (uint8_t)DT_INST_PROP_BY_IDX(n, limit_cond_##idx, 0),                 \
+		.low = (int32_t)DT_INST_PROP_BY_IDX(n, limit_cond_##idx, 1),                      \
+		.high = (int32_t)DT_INST_PROP_BY_IDX(n, limit_cond_##idx, 2),                     \
+	}
+
+#define IFX_LIMIT_COND_MASK(n)                                                                     \
+	((DT_INST_NODE_HAS_PROP(n, limit_cond_0) << 0) |                                          \
+	 (DT_INST_NODE_HAS_PROP(n, limit_cond_1) << 1) |                                          \
+	 (DT_INST_NODE_HAS_PROP(n, limit_cond_2) << 2) |                                          \
+	 (DT_INST_NODE_HAS_PROP(n, limit_cond_3) << 3))
+
+/* Gain/offset correction: true if either gain-corr or offset-corr is defined */
+#define IFX_HAS_GAIN_OFFSET_CORR(n)                                                                \
+	(DT_INST_NODE_HAS_PROP(n, gain_corr) || DT_INST_NODE_HAS_PROP(n, offset_corr))
+
+/* Default gain is 0x8000 (unity).  Default offset is 0. */
+#define IFX_GAIN_CORR_ELEM(n, idx)                                                                 \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, gain_corr),                                          \
+		    ((uint16_t)DT_INST_PROP_BY_IDX(n, gain_corr, idx)), (0x8000u))
+
+#define IFX_OFFSET_CORR_ELEM(n, idx)                                                               \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, offset_corr),                                        \
+		    ((int16_t)DT_INST_PROP_BY_IDX(n, offset_corr, idx)), (0))
+
 /* Device Instantiation */
 #define IFX_AUTANALOG_SAR_ADC_INIT(n)                                                              \
 	ADC_IFX_AUTANALOG_SAR_DRIVER_API(n);                                     \
@@ -2349,6 +2415,30 @@ static int ifx_autanalog_sar_get_decoder(const struct device *dev,
 		.lp_seq = (IFX_LP_SEQ_DT_COUNT(n) > 0) ? ifx_sar_seq_lp_cfg_##n : NULL, \
 		.lp_mode = DT_INST_PROP(n, lp_mode),                                               \
 		.lp_diff_en = DT_INST_PROP(n, lp_diff_en),                                         \
+		.limit_cond = {                                                                    \
+			COND_CODE_1(DT_INST_NODE_HAS_PROP(n, limit_cond_0),                        \
+				    (IFX_LIMIT_COND_INIT(n, 0)), ({0})),                           \
+			COND_CODE_1(DT_INST_NODE_HAS_PROP(n, limit_cond_1),                        \
+				    (IFX_LIMIT_COND_INIT(n, 1)), ({0})),                           \
+			COND_CODE_1(DT_INST_NODE_HAS_PROP(n, limit_cond_2),                        \
+				    (IFX_LIMIT_COND_INIT(n, 2)), ({0})),                           \
+			COND_CODE_1(DT_INST_NODE_HAS_PROP(n, limit_cond_3),                        \
+				    (IFX_LIMIT_COND_INIT(n, 3)), ({0})),                           \
+		},                                                                                 \
+		.limit_cond_mask = IFX_LIMIT_COND_MASK(n),                                         \
+		.has_gain_offset_corr = IFX_HAS_GAIN_OFFSET_CORR(n),                               \
+		.gain_corr = {                                                                     \
+			IFX_GAIN_CORR_ELEM(n, 0), IFX_GAIN_CORR_ELEM(n, 1),                       \
+			IFX_GAIN_CORR_ELEM(n, 2), IFX_GAIN_CORR_ELEM(n, 3),                       \
+			IFX_GAIN_CORR_ELEM(n, 4), IFX_GAIN_CORR_ELEM(n, 5),                       \
+			IFX_GAIN_CORR_ELEM(n, 6), IFX_GAIN_CORR_ELEM(n, 7),                       \
+		},                                                                                 \
+		.offset_corr = {                                                                   \
+			IFX_OFFSET_CORR_ELEM(n, 0), IFX_OFFSET_CORR_ELEM(n, 1),                   \
+			IFX_OFFSET_CORR_ELEM(n, 2), IFX_OFFSET_CORR_ELEM(n, 3),                   \
+			IFX_OFFSET_CORR_ELEM(n, 4), IFX_OFFSET_CORR_ELEM(n, 5),                   \
+			IFX_OFFSET_CORR_ELEM(n, 6), IFX_OFFSET_CORR_ELEM(n, 7),                   \
+		},                                                                                 \
 	};                                                                                     \
 	static struct ifx_autanalog_sar_adc_data ifx_autanalog_sar_adc_data_##n = {                \
 		ADC_CONTEXT_INIT_LOCK(ifx_autanalog_sar_adc_data_##n, ctx),                        \
