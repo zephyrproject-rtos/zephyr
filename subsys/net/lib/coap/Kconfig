@@ -108,13 +108,21 @@ config COAP_OVER_RELIABLE_TRANSPORT
 	  Enables the implementation support of RFC8323
 	  (CoAP (Constrained Application Protocol) over TCP, TLS, and WebSockets)
 
+config COAP_CLIENT_COMMON
+	bool
+	help
+	  Hidden helper selected by either CoAP client implementation
+	  (COAP_CLIENT or COAP_CLIENT_TCP). Gates options shared between
+	  both clients (thread priority, buffer sizes, request slots, etc.).
+
 config COAP_CLIENT
 	bool "CoAP client support [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	select COAP_CLIENT_COMMON
 	help
 	  This option enables the API for CoAP-client for sending CoAP requests
 
-if COAP_CLIENT
+if COAP_CLIENT_COMMON
 
 config COAP_CLIENT_THREAD_PRIORITY
 	int "Coap client thread priority"
@@ -122,19 +130,13 @@ config COAP_CLIENT_THREAD_PRIORITY
 	help
 	  Priority of receive thread of the CoAP client.
 
-config COAP_CLIENT_BLOCK_SIZE
-	int "CoAP block-wise transfer block size"
-	default 256
-	range 64 1024
-	help
-	  CoAP block size used by CoAP client when performing block-wise
-	  transfers. Possible values: 64, 128, 256, 512 and 1024.
-
 config COAP_CLIENT_MESSAGE_SIZE
 	int "Message payload size"
-	default COAP_CLIENT_BLOCK_SIZE
+	default COAP_CLIENT_BLOCK_SIZE if COAP_CLIENT
+	default 256
 	help
-	  CoAP client message payload size. Can't be smaller than COAP_CLIENT_BLOCK_SIZE.
+	  CoAP client message payload size. For UDP it must not be smaller
+	  than COAP_CLIENT_BLOCK_SIZE.
 
 config COAP_CLIENT_MESSAGE_HEADER_SIZE
 	int "Room for CoAP header data"
@@ -169,6 +171,18 @@ config COAP_CLIENT_MAX_REQUESTS
 	help
 	  Maximum number of CoAP requests a single client can handle at a time
 
+endif # COAP_CLIENT_COMMON
+
+if COAP_CLIENT
+
+config COAP_CLIENT_BLOCK_SIZE
+	int "CoAP block-wise transfer block size"
+	default 256
+	range 64 1024
+	help
+	  CoAP block size used by CoAP client when performing block-wise
+	  transfers. Possible values: 64, 128, 256, 512 and 1024.
+
 config COAP_CLIENT_TRUNCATE_MSGS
 	bool "Receive notification when blocks are truncated"
 	default y
@@ -192,6 +206,7 @@ if COAP_OVER_RELIABLE_TRANSPORT
 
 config COAP_CLIENT_TCP
 	bool "CoAP TCP client support"
+	select COAP_CLIENT_COMMON
 	help
 	  This option enables the CoAP client for reliable transports
 	  (TCP/TLS) as specified in RFC 8323.
