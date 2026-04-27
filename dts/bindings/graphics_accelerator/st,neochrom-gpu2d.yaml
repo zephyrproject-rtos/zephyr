@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Silicon Signals Pvt. Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 NeoChrom-GPU2D accelerator
+
+compatible: "st,neochrom-gpu2d"
+
+include: [reset-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  resets:
+    required: true

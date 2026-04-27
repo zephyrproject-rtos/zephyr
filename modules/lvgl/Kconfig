@@ -231,5 +231,6 @@ rsource "Kconfig.memory"
 rsource "Kconfig.input"
 rsource "Kconfig.shell"
 
+rsource "nemagfx/Kconfig"
 
 endif
