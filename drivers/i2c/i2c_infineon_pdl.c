@@ -557,6 +557,7 @@ static int _i2c_master_transfer_async(const struct device *dev, uint16_t address
 
 	if (tx_size) {
 		data->pending = (rx_size) ? CAT1_I2C_PENDING_TX_RX : CAT1_I2C_PENDING_TX;
+		data->tx_config.xferPending = (rx_size != 0u);
 		Cy_SCB_I2C_MasterWrite(config->base, &data->tx_config, &data->context);
 		/* Receive covered by interrupt handler - i2c_isr_handler() */
 	} else if (rx_size) {
