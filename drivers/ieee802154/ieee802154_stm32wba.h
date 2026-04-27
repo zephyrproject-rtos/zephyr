@@ -223,6 +223,12 @@ struct stm32wba_802154_data_t {
 	/* TX result, updated in radio transmit callbacks. */
 	uint8_t tx_result;
 
+	/* TX frame length, including FCS, of the frame currently in flight. */
+	uint8_t tx_psdu_len;
+
+	/* Indicates if tx_done callback provided valid TX PSDU bytes. */
+	bool tx_psdu_from_tx_done;
+
 	/* A buffer for the received ACK frame. psdu pointer be NULL if no
 	 * ACK was requested/received.
 	 */
