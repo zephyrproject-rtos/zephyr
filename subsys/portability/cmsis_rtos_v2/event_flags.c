@@ -95,7 +95,7 @@ uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags, uint32_t optio
 {
 	struct cmsis_rtos_event_cb *events = (struct cmsis_rtos_event_cb *)ef_id;
 	uint32_t sub_opt = options & (osFlagsWaitAll | osFlagsNoClear);
-	uint32_t rv;
+	uint32_t rv = 0;
 	k_timeout_t event_timeout;
 
 	/*
