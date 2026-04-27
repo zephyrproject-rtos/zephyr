@@ -765,10 +765,8 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 		 */
 		if (dir_curr == SW_SWITCH_TX) {
 			delay = HAL_RADIO_NS2US_ROUND(
-			    hal_radio_tx_ready_delay_ns_get(phy_next,
-							    flags_next) +
-			    hal_radio_tx_chain_delay_ns_get(phy_curr,
-							    flags_curr));
+			    hal_radio_tifs_tx_ready_delay_ns_get(phy_next, flags_next) +
+			    hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr));
 
 			hal_radio_b2b_txen_on_sw_switch(cc, ppi);
 		} else {
@@ -776,8 +774,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 			 * Assumption being, S8 has higher delay.
 			 */
 			delay = HAL_RADIO_NS2US_ROUND(
-			    hal_radio_tx_ready_delay_ns_get(phy_next,
-							    flags_next) +
+			    hal_radio_tifs_tx_ready_delay_ns_get(phy_next, flags_next) +
 			    hal_radio_rx_chain_delay_ns_get(phy_curr, 1));
 
 			hal_radio_txen_on_sw_switch(cc, ppi);
@@ -816,8 +813,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 
 			/* Calculate assuming reception on S2 coding scheme. */
 			delay_s2 = HAL_RADIO_NS2US_ROUND(
-				hal_radio_tx_ready_delay_ns_get(phy_next,
-								flags_next) +
+				hal_radio_tifs_tx_ready_delay_ns_get(phy_next, flags_next) +
 				hal_radio_rx_chain_delay_ns_get(phy_curr, 0));
 
 			new_cc_s2_value = SW_SWITCH_TIMER->CC[cc];
@@ -865,19 +861,15 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 		/* Calculate delay with respect to current and next PHY. */
 		if (dir_curr) {
 			delay = HAL_RADIO_NS2US_CEIL(
-				hal_radio_rx_ready_delay_ns_get(phy_next,
-								flags_next) +
-				hal_radio_tx_chain_delay_ns_get(phy_curr,
-								flags_curr)) +
+				hal_radio_tifs_rx_ready_delay_ns_get(phy_next, flags_next) +
+				hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr)) +
 				(EVENT_CLOCK_JITTER_US << 1);
 
 			hal_radio_rxen_on_sw_switch(cc, ppi);
 		} else {
 			delay = HAL_RADIO_NS2US_CEIL(
-				hal_radio_rx_ready_delay_ns_get(phy_next,
-								flags_next) +
-				hal_radio_rx_chain_delay_ns_get(phy_curr,
-								flags_curr)) +
+				hal_radio_tifs_rx_ready_delay_ns_get(phy_next, flags_next) +
+				hal_radio_rx_chain_delay_ns_get(phy_curr, flags_curr)) +
 				(EVENT_CLOCK_JITTER_US << 1);
 
 			hal_radio_b2b_rxen_on_sw_switch(cc, ppi);
