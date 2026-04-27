@@ -109,6 +109,7 @@ static int region_allocate_and_init(const uint8_t index,
  */
 static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 {
+#if defined(CONFIG_MEM_ATTR)
 	const struct mem_attr_region_t *region;
 	size_t num_regions;
 
@@ -180,7 +181,9 @@ static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 
 		(*reg_index)++;
 	}
-
+#else
+	ARG_UNUSED(reg_index);
+#endif /* CONFIG_MEM_ATTR */
 	return 0;
 }
 #endif /* CONFIG_MEM_ATTR */
