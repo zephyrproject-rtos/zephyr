@@ -2115,13 +2115,13 @@ int h3_identify_uni_stream(struct http_client_ctx *client, int fd)
 		/* Server should not receive push streams */
 		LOG_DBG("[%p] H3: Received push stream (unexpected for server)", client);
 		zsock_close(fd);
-		return 0;
+		return H3_STREAM_IGNORED;
 
 	default:
 		/* Unknown stream types MUST be ignored per RFC 9114 */
 		LOG_DBG("[%p] H3: Unknown uni stream type 0x%llx", client, stream_type);
 		zsock_close(fd);
-		return 0;
+		return H3_STREAM_IGNORED;
 	}
 
 	return 0;
@@ -2316,8 +2316,9 @@ static bool h3_is_server_initiated_stream(int fd)
 
 /**
  * Handle accepted HTTP/3 stream and determine its type.
- * For unidirectional streams, identifies the stream type and registers it.
- * For bidirectional streams, returns the fd for request processing.
+ * For unidirectional streams, identifies the stream type and tells the caller
+ * whether the fd still needs polling. For bidirectional streams, the caller
+ * should always register the accepted fd for request processing.
  */
 static int handle_accepted_stream(struct http_client_ctx *client,
 				  int conn_sock,
@@ -2353,7 +2354,7 @@ static int handle_accepted_stream(struct http_client_ctx *client,
 			LOG_DBG("[%p] H3: Ignoring server-initiated uni stream (fd=%d)",
 				client, stream_sock);
 			/* Don't close as this is our stream that we already track */
-			return -EAGAIN;
+			return H3_STREAM_IGNORED;
 		}
 
 		LOG_DBG("[%p] H3: Accepted peer unidirectional stream (fd=%d)", client,
@@ -2368,14 +2369,22 @@ static int handle_accepted_stream(struct http_client_ctx *client,
 		} else {
 			/* No client context yet, close and let it reconnect */
 			zsock_close(stream_sock);
+			return H3_STREAM_IGNORED;
 		}
 
-		/* Unidirectional stream handled internally */
-		return -EAGAIN;
+		if (ret == H3_STREAM_IGNORED) {
+			return H3_STREAM_IGNORED;
+		}
+
+		/*
+		 * Register the peer uni stream so the poll loop can finish
+		 * identification or handle later control/QPACK data.
+		 */
+		return 0;
 	}
 
-	/* Bidirectional request stream, return fd for processing */
-	return stream_sock;
+	/* Bidirectional request stream needs normal poll handling */
+	return 0;
 }
 
 int accept_h3_connection(int h3_listen_sock)
@@ -2439,19 +2448,9 @@ int accept_h3_stream(int h3_conn_sock, int *stream_sock)
 		ret = handle_accepted_stream(client, h3_conn_sock,
 					     new_socket,
 					     &addr, addrlen, idx);
-		if (ret == -EAGAIN) {
-			/* Uni stream not yet identified, park in h3_stream_sock[]
-			 * so POLLIN can route it back to this client
-			 */
-			for (int j = 0; j < ARRAY_SIZE(client->h3.stream_sock); j++) {
-				if (client->h3.stream_sock[j] == INVALID_SOCK) {
-					client->h3.stream_sock[j] = new_socket;
-					break;
-				}
-			}
+		if (ret == 0) {
+			*stream_sock = new_socket;
 		}
-
-		*stream_sock = new_socket;
 	}
 
 	return ret;

@@ -17,6 +17,8 @@
 #include <zephyr/net/http/frame.h>
 
 #define INVALID_SOCK -1
+/* Stream helper consumed or intentionally ignored the fd. */
+#define H3_STREAM_IGNORED 1
 
 /* HTTP1/HTTP2 state handling */
 int handle_http_frame_rst_stream(struct http_client_ctx *client);
