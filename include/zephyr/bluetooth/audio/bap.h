@@ -2723,7 +2723,9 @@ int bt_bap_scan_delegator_register(struct bt_bap_scan_delegator_cb *cb);
  * Unregister the scan delegator and Broadcast Audio Scan Service (BASS)
  * dynamically at runtime.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 Success
+ * @retval -EALREADY Already unregistering
+ * @retval -EAGAIN Not registered
  */
 int bt_bap_scan_delegator_unregister(void);
 
@@ -2792,7 +2794,12 @@ struct bt_bap_scan_delegator_add_src_param {
  *
  * @param param The parameters for adding the new source
  *
- * @return int  errno on failure, or source ID on success.
+ * @return The source ID of the new state if return value is >= 0
+ * @retval -EAGAIN Service not yet registered with bt_bap_scan_delegator_register()
+ * @retval -EINVAL Invalid parameters
+ * @retval -ENOMEM Could not add any more receive states
+ * @retval -EALREADY A receive state with the same advertiser address type, SID, and
+ *          broadcast ID already exists
  */
 int bt_bap_scan_delegator_add_src(const struct bt_bap_scan_delegator_add_src_param *param);
 
