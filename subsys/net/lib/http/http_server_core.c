@@ -124,7 +124,7 @@ static int setup_h1_h2_socket(const struct http_service_desc *svc, int af,
 		if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
 				     svc->sec_tag_list,
 				     svc->sec_tag_list_size) < 0) {
-			LOG_ERR("setsockopt: %d", errno);
+			LOG_ERR("%s: setsockopt(%s): %d", "h1/2", "TLS_SEC_TAG_LIST", errno);
 			zsock_close(fd);
 			return -errno;
 		}
@@ -132,7 +132,7 @@ static int setup_h1_h2_socket(const struct http_service_desc *svc, int af,
 #if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
 		if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST, alpn_list,
 				     sizeof(alpn_list)) < 0) {
-			LOG_ERR("setsockopt: %d", errno);
+			LOG_ERR("%s: setsockopt(%s): %d", "h1/2", "TLS_ALPN_LIST", errno);
 			zsock_close(fd);
 			return -errno;
 		}
@@ -142,7 +142,7 @@ static int setup_h1_h2_socket(const struct http_service_desc *svc, int af,
 
 	if (zsock_setsockopt(fd, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR, &(int){1},
 			     sizeof(int)) < 0) {
-		LOG_ERR("setsockopt: %d", errno);
+		LOG_ERR("%s: setsockopt(%s): %d", "h1/2", "SO_REUSEADDR", errno);
 		zsock_close(fd);
 		return -errno;
 	}
@@ -212,7 +212,7 @@ static int setup_h3_socket(const struct http_service_desc *svc, int af,
 			     svc->sec_tag_list,
 			     svc->sec_tag_list_size) < 0) {
 		ret = -errno;
-		LOG_ERR("setsockopt: %d", ret);
+		LOG_ERR("%s: setsockopt(%s): %d", "h3", "TLS_SEC_TAG_LIST", ret);
 		zsock_close(quic_sock);
 		goto out;
 	}
@@ -221,7 +221,7 @@ static int setup_h3_socket(const struct http_service_desc *svc, int af,
 	if (zsock_setsockopt(quic_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST,
 			     alpn_list, sizeof(alpn_list)) < 0) {
 		ret = -errno;
-		LOG_ERR("setsockopt: %d", ret);
+		LOG_ERR("%s: setsockopt(%s): %d", "h3", "TLS_ALPN_LIST", ret);
 		zsock_close(quic_sock);
 		goto out;
 	}
