@@ -471,6 +471,21 @@ Bluetooth Audio
     :c:struct:`bt_bap_broadcast_source_subgroup_param`, then the parameter's pointer cannot be used
     to modify the ``codec_cfg``, and the actual definition of the struct should be modified instead.
     (:github:`104219`)
+  * All BAP roles now require :kconfig:option:`CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE` to be at least
+    19 octets, as mandated by the BAP spec.
+    If :kconfig:option:`CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE` is set to a lower value when used
+    with BAP, then applications need to set it to at least 19 octets. The following Kconfig options
+    are affected:
+
+    * :kconfig:option:`CONFIG_BT_ASCS`
+    * :kconfig:option:`CONFIG_BT_BAP_UNICAST_SERVER`
+    * :kconfig:option:`CONFIG_BT_BAP_UNICAST_CLIENT`
+    * :kconfig:option:`CONFIG_BT_BAP_BROADCAST_SOURCE`
+    * :kconfig:option:`CONFIG_BT_BAP_BROADCAST_SINK`
+    * :kconfig:option:`CONFIG_BT_BAP_SCAN_DELEGATOR`
+    * :kconfig:option:`CONFIG_BT_BAP_BROADCAST_ASSISTANT`
+
+    (:github:`107989`)
 
 * CAP
 
