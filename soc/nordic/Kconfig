@@ -242,4 +242,25 @@ config NRF_CUSTOM_ON_ENTER_CPU_IDLE_HOOK
 	  implement the SoC-specific code in the hook that is present in the default
 	  implementation.
 
+# Backward-compatibility aliases for symbols removed during the Haltium / Lumos
+# Kconfig cleanup. Slated for removal in a future release.
+
+config NRF_PLATFORM_HALTIUM
+	bool "[DEPRECATED] Replaced by SOC_SERIES_NRF54H / SOC_SERIES_NRF92"
+	default y if SOC_SERIES_NRF54H || SOC_SERIES_NRF92
+	select DEPRECATED
+	help
+	  This option has been removed. Use SOC_SERIES_NRF54H or SOC_SERIES_NRF92
+	  directly. The symbol is kept temporarily so that out-of-tree code that
+	  still references it continues to build, with a deprecation warning.
+
+config NRF_PLATFORM_LUMOS
+	bool "[DEPRECATED] Replaced by SOC_SERIES_NRF54L / SOC_SERIES_NRF71"
+	default y if SOC_SERIES_NRF54L || SOC_SERIES_NRF71
+	select DEPRECATED
+	help
+	  This option has been removed. Use SOC_SERIES_NRF54L or SOC_SERIES_NRF71
+	  directly. The symbol is kept temporarily so that out-of-tree code that
+	  still references it continues to build, with a deprecation warning.
+
 endif # SOC_FAMILY_NORDIC_NRF
