@@ -14,21 +14,77 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/net/http/parser.h>
 #include <zephyr/sys/util.h>
 
+#if defined(CONFIG_HTTP_SERVER)
+static const char *http_protocols_str(const struct http_service_desc *svc)
+{
+	static char buf[sizeof("HTTP/1.x | HTTP/2.0 | HTTP/3.0")];
+	const struct http_service_config *cfg = svc->config;
+	int pos = 0;
+	bool print_sep = false;
+
+	if (cfg != NULL) {
+		if (cfg->http_ver & HTTP_VERSION_1) {
+			pos += snprintk(buf + pos, sizeof(buf) - pos, "HTTP/1.x");
+			print_sep = true;
+		}
+
+		if (cfg->http_ver & HTTP_VERSION_2) {
+			pos += snprintk(buf + pos, sizeof(buf) - pos, "%sHTTP/2.0",
+					print_sep ? " | " : "");
+			print_sep = true;
+		}
+
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+		if ((cfg->http_ver & HTTP_VERSION_3) && svc->sec_tag_list != NULL) {
+			pos += snprintk(buf + pos, sizeof(buf) - pos, "%sHTTP/3.0",
+					print_sep ? " | " : "");
+		}
+#endif
+	} else {
+		if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_1)) {
+			pos += snprintk(buf + pos, sizeof(buf) - pos, "HTTP/1.x");
+			print_sep = true;
+		}
+
+		if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2)) {
+			pos += snprintk(buf + pos, sizeof(buf) - pos, "%sHTTP/2.0",
+					print_sep ? " | " : "");
+			print_sep = true;
+		}
+
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+		if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3) && svc->sec_tag_list != NULL) {
+			pos += snprintk(buf + pos, sizeof(buf) - pos, "%sHTTP/3.0",
+					print_sep ? " | " : "");
+		}
+#endif
+	}
+
+	return buf;
+}
+#endif
+
 static int cmd_net_http(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_HTTP_SERVER)
 	int res_count = 0, serv_count = 0;
 
-	PR("%-15s\t%-12s\n",
-	   "Host:Port", "Concurrent/Backlog");
+	PR("%-15s\t%-19s\t%s\n",
+	   "Host:Port", "Concurrent/Backlog", "Protocols");
 	PR("\tResource type\tMethods\t\tEndpoint\n");
 
 	HTTP_SERVICE_FOREACH(svc) {
+		char backlog_buf[sizeof("xxxxx/xxxxx")];
+
+		snprintk(backlog_buf, sizeof(backlog_buf), "%zu/%zu",
+			 svc->concurrent, svc->backlog);
+
 		PR("\n");
-		PR("%s:%d\t%zu/%zu\n",
+		PR("%s:%d\t%-19s\t%s\n",
 		   svc->host == NULL || svc->host[0] == '\0' ?
 		   "<any>" : svc->host, svc->port ? *svc->port : 0,
-		   svc->concurrent, svc->backlog);
+		   backlog_buf,
+		   http_protocols_str(svc));
 
 		HTTP_SERVICE_FOREACH_RESOURCE(svc, res) {
 			struct http_resource_detail *detail = res->detail;
