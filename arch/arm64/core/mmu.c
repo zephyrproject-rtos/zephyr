@@ -98,11 +98,6 @@ static int table_usage(uint64_t *table, int adjustment)
 	return new_count;
 }
 
-static inline void inc_table_ref(uint64_t *table)
-{
-	table_usage(table, XLAT_REF_COUNT_UNIT);
-}
-
 static inline void dec_table_ref(uint64_t *table)
 {
 	int ref_unit = XLAT_REF_COUNT_UNIT;
@@ -113,11 +108,6 @@ static inline void dec_table_ref(uint64_t *table)
 static inline bool is_table_unused(uint64_t *table)
 {
 	return (table_usage(table, 0) & XLAT_PTE_COUNT_MASK) == 0;
-}
-
-static inline bool is_table_single_referenced(uint64_t *table)
-{
-	return table_usage(table, 0) < (2 * XLAT_REF_COUNT_UNIT);
 }
 
 #ifdef CONFIG_TEST
@@ -152,12 +142,6 @@ int arm64_mmu_tables_total_usage(void)
 static inline bool is_free_desc(uint64_t desc)
 {
 	return desc == 0;
-}
-
-static inline bool is_inval_desc(uint64_t desc)
-{
-	/* invalid descriptors aren't necessarily free */
-	return (desc & PTE_DESC_TYPE_MASK) == PTE_INVALID_DESC;
 }
 
 static inline bool is_table_desc(uint64_t desc, unsigned int level)
@@ -200,6 +184,12 @@ static inline bool is_desc_superset(uint64_t desc1, uint64_t desc2,
 }
 
 #if DUMP_PTE
+static inline bool is_inval_desc(uint64_t desc)
+{
+	/* invalid descriptors aren't necessarily free */
+	return (desc & PTE_DESC_TYPE_MASK) == PTE_INVALID_DESC;
+}
+
 static void debug_show_pte(uint64_t *pte, unsigned int level)
 {
 	MMU_DEBUG("%.*s", level * 2U, ". . . ");
@@ -428,6 +418,15 @@ static void del_mapping(uint64_t *table, uintptr_t virt, size_t size,
 }
 
 #ifdef CONFIG_USERSPACE
+static inline void inc_table_ref(uint64_t *table)
+{
+	table_usage(table, XLAT_REF_COUNT_UNIT);
+}
+
+static inline bool is_table_single_referenced(uint64_t *table)
+{
+	return table_usage(table, 0) < (2 * XLAT_REF_COUNT_UNIT);
+}
 
 static uint64_t *dup_table(uint64_t *src_table, unsigned int level)
 {
@@ -809,20 +808,6 @@ static void invalidate_tlb_all(void)
 	__asm__ volatile (
 	"dsb ishst; tlbi vmalle1; dsb ish; isb"
 	: : : "memory");
-#endif
-}
-
-static inline void invalidate_tlb_page(uintptr_t virt)
-{
-#ifdef CONFIG_SMP
-	/* Use IS variant to broadcast to all CPUs in Inner Shareable domain */
-	__asm__ volatile (
-	"dsb ishst; tlbi vae1is, %0; dsb ish; isb"
-	: : "r" (virt >> PAGE_SIZE_SHIFT) : "memory");
-#else
-	__asm__ volatile (
-	"dsb ishst; tlbi vae1, %0; dsb ish; isb"
-	: : "r" (virt >> PAGE_SIZE_SHIFT) : "memory");
 #endif
 }
 
@@ -1448,6 +1433,19 @@ void z_arm64_swap_mem_domains(struct k_thread *incoming)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_DEMAND_PAGING
+static inline void invalidate_tlb_page(uintptr_t virt)
+{
+#ifdef CONFIG_SMP
+	/* Use IS variant to broadcast to all CPUs in Inner Shareable domain */
+	__asm__ volatile (
+	"dsb ishst; tlbi vae1is, %0; dsb ish; isb"
+	: : "r" (virt >> PAGE_SIZE_SHIFT) : "memory");
+#else
+	__asm__ volatile (
+	"dsb ishst; tlbi vae1, %0; dsb ish; isb"
+	: : "r" (virt >> PAGE_SIZE_SHIFT) : "memory");
+#endif
+}
 
 static uint64_t *get_pte_location(struct arm_mmu_ptables *ptables,
 				  uintptr_t virt)
