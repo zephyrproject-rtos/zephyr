@@ -20,4 +20,7 @@ tests:
     depends_on: edac
     platform_allow:
       - frdm_mcxa156
+      - frdm_mcxa266
       - frdm_mcxa344
+      - frdm_mcxa346
+      - frdm_mcxa366

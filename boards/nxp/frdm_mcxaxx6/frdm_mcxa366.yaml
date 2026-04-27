@@ -29,4 +29,5 @@ supported:
   - can
   - arduino_gpio
   - usbd
+  - edac
 vendor: nxp
