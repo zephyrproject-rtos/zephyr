@@ -18,6 +18,8 @@ else()
   set(QEMU_MACH virt)
 endif()
 
+set(QEMU_PCI_OHCI_FLAGS addr=2.0)
+
 set(QEMU_BOARD_FLAGS
   -machine ${QEMU_MACH}
   -bios none
