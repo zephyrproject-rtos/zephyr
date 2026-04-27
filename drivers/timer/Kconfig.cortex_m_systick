@@ -42,6 +42,26 @@ config CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
 	  This is set to y by default when the hardware clock is fast enough
 	  to wrap sys_clock_cycle_get_32() in about a minute or less.
 
+config CORTEX_M_SYSTICK_INTERRUPT_PRIORITY
+	int "Cortex-M SYSTICK timer interrupt priority"
+	depends on CORTEX_M_SYSTICK
+	default 0
+	help
+	  This option specifies the interrupt priority used by the Cortex-M
+	  SysTick timer, expressed the same way as any priority
+	  passed to IRQ_CONNECT():
+	  0 is the most urgent (kernel) level and the kernel reserved-level
+	  offset (_IRQ_PRIO_OFFSET) is applied internally.
+
+	  Valid values range from 0 up to the lowest usable IRQ priority for
+	  the target core (IRQ_PRIO_LOWEST)
+
+	  Lowering the priority (higher number) reduces the SysTick latency
+	  impact on higher-priority interrupts.
+
+	  The default (0) preserves the historical behavior of running
+	  SysTick at the highest maskable/kernel IRQ priority level.
+
 if CORTEX_M_SYSTICK
 
 # Deprecated SysTick-specific Kconfig symbols.
