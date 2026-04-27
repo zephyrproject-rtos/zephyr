@@ -182,6 +182,12 @@ Libraries / Subsystems
     the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
   * :c:member:`lora_modem_config.sync_word`
 
+Devicetree
+**********
+
+  * :c:macro:`DT_NODELABEL_C_TOKEN`
+  * :c:macro:`DT_NODELABEL_C_TOKEN_BY_IDX`
+
 Other notable changes
 *********************
 
