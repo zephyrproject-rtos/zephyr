@@ -5261,7 +5261,7 @@ ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
 
 			k_mutex_unlock(&stream->cond.data_available);
 
-			if (ep != NULL) {
+			if (ep != NULL && ep->sock >= 0) {
 				quic_endpoint_send_connection_close(
 					ep,
 					QUIC_ERROR_FLOW_CONTROL_ERROR,
@@ -5340,7 +5340,7 @@ unlock:
 flow_control_error:
 	k_mutex_unlock(&stream->cond.data_available);
 
-	if (ep != NULL) {
+	if (ep != NULL && ep->sock >= 0) {
 		quic_endpoint_send_connection_close(ep,
 						    QUIC_ERROR_FLOW_CONTROL_ERROR,
 						    "stream data exceeds flow control");
@@ -5351,7 +5351,7 @@ flow_control_error:
 ooo_flow_control_error:
 	k_mutex_unlock(&stream->cond.data_available);
 
-	if (ep != NULL) {
+	if (ep != NULL && ep->sock >= 0) {
 		quic_endpoint_send_connection_close(
 			ep, QUIC_ERROR_FLOW_CONTROL_ERROR,
 			"out-of-order stream data exceeds receive capacity");
