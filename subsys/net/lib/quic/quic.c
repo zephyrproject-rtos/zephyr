@@ -399,9 +399,13 @@ ZTESTABLE_STATIC bool quic_endpoint_can_send_unvalidated(const struct quic_endpo
 	}
 
 	budget = (uint64_t)ep->anti_amplification.bytes_received * 3U;
-	bytes_sent = (uint64_t)ep->anti_amplification.bytes_sent + bytes;
+	bytes_sent = ep->anti_amplification.bytes_sent;
 
-	return bytes_sent <= budget;
+	if (bytes_sent > budget) {
+		return false;
+	}
+
+	return (uint64_t)bytes <= budget - bytes_sent;
 #else
 	ARG_UNUSED(ep);
 	ARG_UNUSED(bytes);
