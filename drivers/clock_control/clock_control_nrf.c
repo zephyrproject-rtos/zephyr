@@ -599,6 +599,8 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 		? NRF_CLOCK_LFCLK_XTAL
 		: CLOCK_CONTROL_NRF_K32SRC;
 	nrf_clock_lfclk_t type;
+	bool atomic_idle_wait;
+	int key;
 
 	if ((mode == CLOCK_CONTROL_NRF_LF_START_AVAILABLE) &&
 	    (target_type == NRF_CLOCK_LFCLK_XTAL) &&
@@ -612,47 +614,60 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 		return;
 	}
 
-	bool isr_mode = k_is_in_isr() || k_is_pre_kernel();
-	int key = isr_mode ? irq_lock() : 0;
+	/* Use atomic idle to await LFCLKSTARTED event if the current context can't yield */
+	atomic_idle_wait = k_is_in_isr() ||
+			   k_is_pre_kernel() ||
+			   !IS_ENABLED(CONFIG_MULTITHREADING);
 
-	if (!isr_mode) {
+	if (!atomic_idle_wait) {
 		nrf_clock_int_disable(NRF_CLOCK, NRF_CLOCK_INT_LF_STARTED_MASK);
 	}
 
-	while (!(nrfx_clock_is_running(d, (void *)&type)
-		 && ((type == target_type)
-		     || (mode == CLOCK_CONTROL_NRF_LF_START_AVAILABLE)))) {
-		/* Synth source start is almost instant and LFCLKSTARTED may
-		 * happen before calling idle. That would lead to deadlock.
-		 */
-		if (!IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_SYNTH)) {
-			if (isr_mode || !IS_ENABLED(CONFIG_MULTITHREADING)) {
-				k_cpu_atomic_idle(key);
-			} else {
-				k_msleep(1);
+	/* Silence spurious "key may be used uninitialized" warning */
+	key = 0;
+
+	while (true) {
+		if (atomic_idle_wait) {
+			/* Check the clock state and set new state in a critical section */
+			key = irq_lock();
+
+			/*
+			 * Clear the IRQ at the start of the critical section to ensure we will
+			 * wake the CPU if the IRQ triggers before we potentially enter CPU idle.
+			 */
+			NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
+		}
+
+		if (nrfx_clock_is_running(d, (void *)&type)) {
+			if (type == target_type) {
+				/* LFCLK is running stable with target source */
+				break;
+			}
+
+			if (target_type == NRF_CLOCK_LFCLK_XTAL &&
+			    nrf_clock_lf_src_get(NRF_CLOCK) == NRF_CLOCK_LFCLK_RC &&
+			    nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_LFCLKSTARTED)) {
+				/* Switch LFCLK source to target */
+				nrf_clock_event_clear(NRF_CLOCK, NRF_CLOCK_EVENT_LFCLKSTARTED);
+				nrf_clock_lf_src_set(NRF_CLOCK, CLOCK_CONTROL_NRF_K32SRC);
+				nrf_clock_task_trigger(NRF_CLOCK, NRF_CLOCK_TASK_LFCLKSTART);
+			}
+
+			if (mode == CLOCK_CONTROL_NRF_LF_START_AVAILABLE) {
+				/* LFCLK is running and will switch to target source */
+				break;
 			}
 		}
 
-		/* Clock interrupt is locked, LFCLKSTARTED is handled here. */
-		if ((target_type ==  NRF_CLOCK_LFCLK_XTAL)
-		    && (nrf_clock_lf_src_get(NRF_CLOCK) == NRF_CLOCK_LFCLK_RC)
-		    && nrf_clock_event_check(NRF_CLOCK,
-					     NRF_CLOCK_EVENT_LFCLKSTARTED)) {
-			nrf_clock_event_clear(NRF_CLOCK,
-					      NRF_CLOCK_EVENT_LFCLKSTARTED);
-			nrf_clock_lf_src_set(NRF_CLOCK,
-					     CLOCK_CONTROL_NRF_K32SRC);
-
-			/* Clear pending interrupt, otherwise new clock event
-			 * would not wake up from idle.
-			 */
-			NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
-			nrf_clock_task_trigger(NRF_CLOCK,
-					       NRF_CLOCK_TASK_LFCLKSTART);
+		if (atomic_idle_wait) {
+			/* Implicitly functions like calling k_cpu_idle() + irq_unlock() */
+			k_cpu_atomic_idle(key);
+		} else {
+			k_msleep(1);
 		}
 	}
 
-	if (isr_mode) {
+	if (atomic_idle_wait) {
 		irq_unlock(key);
 	} else {
 		nrf_clock_int_enable(NRF_CLOCK, NRF_CLOCK_INT_LF_STARTED_MASK);
