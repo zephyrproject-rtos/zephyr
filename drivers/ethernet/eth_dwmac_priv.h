@@ -591,7 +591,7 @@ extern const struct ethernet_api dwmac_api;
 #define MAC_MDIO_ADDRESS_PA			GENMASK(25, 21)
 #define MAC_MDIO_ADDRESS_RDA			GENMASK(20, 16)
 #define MAC_MDIO_ADDRESS_NTC			GENMASK(14, 12)
-#define MAC_MDIO_ADDRESS_CR			BIT(11, 8)
+#define MAC_MDIO_ADDRESS_CR			GENMASK(11, 8)
 #define MAC_MDIO_ADDRESS_SKAP			BIT(4)
 #define MAC_MDIO_ADDRESS_GOC_1			BIT(3)
 #define MAC_MDIO_ADDRESS_GOC_0			BIT(2)
