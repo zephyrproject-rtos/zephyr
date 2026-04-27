@@ -132,8 +132,6 @@
 			reg = <0x42430000 0x10000>;
 			interrupts = <29 4>;
 			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <1>;
 
 			lpcomp0_0: lpcomp0-0 {
 				compatible = "infineon,lp-comp-channel";
