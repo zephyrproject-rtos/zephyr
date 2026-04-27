@@ -5880,13 +5880,6 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 	NET_HEXDUMP_DBG(dst_conn_id, dst_conn_id_len, "Destination Conn ID:");
 	NET_HEXDUMP_DBG(src_conn_id, src_conn_id_len, "Source Conn ID:");
 
-	if (ptype == QUIC_PACKET_TYPE_INITIAL &&
-	    dst_conn_id_len < QUIC_INITIAL_DCID_MIN_LEN) {
-		NET_WARN("[EP:%p/%d] Dropping Initial packet with too-short DCID len %d",
-			 ep, quic_get_by_ep(ep), dst_conn_id_len);
-		return -EINVAL;
-	}
-
 	if (version != QUIC_VERSION_1) {
 		if (version == QUIC_VERSION_NEGOTIATION) {
 			NET_DBG("[EP:%p/%d] Ignoring Version Negotiation packet",
@@ -5905,6 +5898,13 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 		}
 
 		return 1;
+	}
+
+	if (ptype == QUIC_PACKET_TYPE_INITIAL &&
+	    dst_conn_id_len < QUIC_INITIAL_DCID_MIN_LEN) {
+		NET_WARN("[EP:%p/%d] Dropping Initial packet with too-short DCID len %d",
+			 ep, quic_get_by_ep(ep), dst_conn_id_len);
+		return -EINVAL;
 	}
 
 	/* All the crypto stuff is done in a separate thread.

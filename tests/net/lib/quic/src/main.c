@@ -2277,6 +2277,59 @@ ZTEST(net_socket_quic, test_330_quic_initial_dcid_too_short)
 	zassert_equal(ret, -EINVAL, "Expected too-short DCID to be rejected (%d)", ret);
 }
 
+ZTEST(net_socket_quic, test_335_quic_vn_ignores_initial_dcid_check)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct net_sockaddr_in src_addr = { 0 };
+	uint8_t packet[] = {
+		0xc0,
+		0x00, 0x00, 0x00, 0x00,
+		0x07, 0x83, 0x94, 0xc8, 0xf0, 0x3e, 0x51, 0x57,
+		0x08, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+		0x00,
+	};
+	int ret;
+
+	src_addr.sin_family = NET_AF_INET;
+	src_addr.sin_port = net_htons(4242);
+	net_addr_pton(NET_AF_INET, REMOTE_ADDR_IPV4, &src_addr.sin_addr);
+
+	ep->local_addr.ss_family = NET_AF_INET;
+
+	ret = process_long_header(ep, (struct net_sockaddr *)&src_addr,
+				  sizeof(src_addr), packet,
+				  0, 0, sizeof(packet), 0, 1200);
+	zassert_equal(ret, 1,
+		      "Expected Version Negotiation packet to be ignored (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_336_quic_unsupported_version_before_initial_validation)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct net_sockaddr_in src_addr = { 0 };
+	uint8_t packet[] = {
+		0xc0,
+		0x00, 0x00, 0x00, 0x02,
+		0x07, 0x83, 0x94, 0xc8, 0xf0, 0x3e, 0x51, 0x57,
+		0x08, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+		0x00,
+	};
+	int ret;
+
+	src_addr.sin_family = NET_AF_INET;
+	src_addr.sin_port = net_htons(4242);
+	net_addr_pton(NET_AF_INET, REMOTE_ADDR_IPV4, &src_addr.sin_addr);
+
+	ep->local_addr.ss_family = NET_AF_INET;
+
+	ret = process_long_header(ep, (struct net_sockaddr *)&src_addr,
+				  sizeof(src_addr), packet,
+				  0, 0, sizeof(packet), 0, 1200);
+	zassert_equal(ret, 1,
+		      "Expected unsupported version path before Initial validation (%d)",
+		      ret);
+}
+
 ZTEST(net_socket_quic, test_340_quic_check_retransmissions)
 {
 	static uint8_t tx_buf[sizeof(LOREM_IPSUM_LONG)];
