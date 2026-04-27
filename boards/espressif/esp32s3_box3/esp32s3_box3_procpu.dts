@@ -9,6 +9,7 @@
 #include <espressif/esp32s3/esp32s3_wroom_n16.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x0_amp_16M.dtsi>
+#include "esp32s3_box3-pinctrl.dtsi"
 
 / {
 	model = "Espressif ESP32S3-BOX-3 PROCPU";
@@ -17,6 +18,8 @@
 	aliases {
 		watchdog0 = &wdt0;
 		sw0 = &button0;
+		audio-codec-spk = &es8311;
+		audio-i2s = &i2s0;
 	};
 
 	chosen {
@@ -25,6 +28,7 @@
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,audio = &i2s0;
 	};
 
 	buttons {
@@ -35,7 +39,42 @@
 			label = "BOOT Button";
 			zephyr,code = <INPUT_KEY_0>;
 		};
+
+		button1: button_1 {
+			gpios = <&gpio0 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "MUTE Button";
+			zephyr,code = <INPUT_KEY_1>;
+		};
 	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		pa_ctrl: pa_ctrl {
+			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+			label = "Speaker PA Control";
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	es8311: es8311@18 {
+		compatible = "everest,es8311";
+		reg = <0x18>;
+		pa-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};
+
+&i2s0 {
+	status = "okay";
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
 };
 
 &usb_serial {
