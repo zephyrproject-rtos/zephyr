@@ -73,6 +73,13 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* Bluetooth
+
+  * Audio
+
+    * :c:func:`bt_bap_unicast_client_qos_from_group`
+    * :c:func:`bt_bap_qos_cfg_eq`
+
 * :c:func:`lora_recv_duty_cycle_async`
 
 .. zephyr-keep-sorted-stop
