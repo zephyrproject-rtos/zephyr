@@ -1,0 +1,169 @@
+# Copyright (c) 2026, BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config TFM_PROFILE_TYPE_NOT_SET
+	imply PSA_WANT_ALG_CBC_NO_PADDING
+	imply PSA_WANT_ALG_CBC_PKCS7
+	imply PSA_WANT_ALG_CCM
+	imply PSA_WANT_ALG_CMAC
+	imply PSA_WANT_ALG_CFB
+	imply PSA_WANT_ALG_CTR
+	imply PSA_WANT_ALG_DETERMINISTIC_ECDSA
+	imply PSA_WANT_ALG_ECB_NO_PADDING
+	imply PSA_WANT_ALG_ECDH
+	imply PSA_WANT_ALG_ECDSA
+	imply PSA_WANT_ALG_GCM
+	imply PSA_WANT_ALG_HKDF
+	imply PSA_WANT_ALG_HMAC
+	imply PSA_WANT_ALG_OFB
+	imply PSA_WANT_ALG_PBKDF2_HMAC
+	imply PSA_WANT_ALG_RSA_OAEP
+	imply PSA_WANT_ALG_RSA_PKCS1V15_CRYPT
+	imply PSA_WANT_ALG_RSA_PKCS1V15_SIGN
+	imply PSA_WANT_ALG_RSA_PSS
+	imply PSA_WANT_ALG_SHA_224
+	imply PSA_WANT_ALG_SHA_256
+	imply PSA_WANT_ALG_SHA_384
+	imply PSA_WANT_ALG_SHA_512
+	imply PSA_WANT_ALG_TLS12_PRF
+	imply PSA_WANT_ALG_TLS12_PSK_TO_MS
+	imply PSA_WANT_ECC_MONTGOMERY_255
+	imply PSA_WANT_ECC_MONTGOMERY_448
+	imply PSA_WANT_ECC_SECP_K1_256
+	imply PSA_WANT_ECC_SECP_R1_256
+	imply PSA_WANT_ECC_SECP_R1_384
+	imply PSA_WANT_ECC_SECP_R1_521
+	imply PSA_WANT_KEY_TYPE_DERIVE
+	imply PSA_WANT_KEY_TYPE_HMAC
+	imply PSA_WANT_KEY_TYPE_AES
+	imply PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	imply PSA_WANT_KEY_TYPE_RAW_DATA
+	imply PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE
+	imply PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC
+	imply PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT
+	imply PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT
+	imply PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE
+	help
+	  Automatically select crypto features which are enabled in TF-M when
+	  no profile is specified. These are taken from
+	  "lib/ext/mbedcrypto/crypto_config_default.h".
+
+
+config TFM_PROFILE_TYPE_SMALL
+	imply PSA_WANT_ALG_CCM
+	imply PSA_WANT_ALG_HMAC
+	imply PSA_WANT_ALG_SHA_224
+	imply PSA_WANT_ALG_SHA_256
+	imply PSA_WANT_ALG_TLS12_PRF
+	imply PSA_WANT_ALG_TLS12_PSK_TO_MS
+	imply PSA_WANT_KEY_TYPE_DERIVE
+	imply PSA_WANT_KEY_TYPE_HMAC
+	imply PSA_WANT_KEY_TYPE_AES
+	imply PSA_WANT_KEY_TYPE_RAW_DATA
+	help
+	  Automatically select crypto features which are enabled in TF-M when
+	  small profile is specified. These are taken from
+	  "lib/ext/mbedcrypto/crypto_config_profile_small.h".
+
+config TFM_PROFILE_TYPE_MEDIUM
+	imply PSA_WANT_ALG_CCM
+	imply PSA_WANT_ALG_ECDH
+	imply PSA_WANT_ALG_ECDSA
+	imply PSA_WANT_ALG_HKDF
+	imply PSA_WANT_ALG_HMAC
+	imply PSA_WANT_ALG_SHA_224
+	imply PSA_WANT_ALG_SHA_256
+	imply PSA_WANT_ALG_TLS12_PRF
+	imply PSA_WANT_ALG_TLS12_PSK_TO_MS
+	imply PSA_WANT_ECC_SECP_R1_256
+	imply PSA_WANT_KEY_TYPE_DERIVE
+	imply PSA_WANT_KEY_TYPE_HMAC
+	imply PSA_WANT_KEY_TYPE_AES
+	imply PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	imply PSA_WANT_KEY_TYPE_RAW_DATA
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	help
+	  Automatically select crypto features which are enabled in TF-M when
+	  medium profile is specified. These are taken from
+	  "lib/ext/mbedcrypto/crypto_config_profile_medium.h".
+
+config TFM_PROFILE_TYPE_AROTLESS
+	imply PSA_WANT_ALG_CCM
+	imply PSA_WANT_ALG_ECDH
+	imply PSA_WANT_ALG_ECDSA
+	imply PSA_WANT_ALG_HKDF
+	imply PSA_WANT_ALG_HMAC
+	imply PSA_WANT_ALG_SHA_224
+	imply PSA_WANT_ALG_SHA_256
+	imply PSA_WANT_ALG_TLS12_PRF
+	imply PSA_WANT_ALG_TLS12_PSK_TO_MS
+	imply PSA_WANT_ECC_SECP_R1_256
+	imply PSA_WANT_KEY_TYPE_DERIVE
+	imply PSA_WANT_KEY_TYPE_HMAC
+	imply PSA_WANT_KEY_TYPE_AES
+	imply PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	imply PSA_WANT_KEY_TYPE_RAW_DATA
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	help
+	  Automatically select crypto features which are enabled in TF-M when
+	  medium-arotless profile is specified. These are taken from
+	  "lib/ext/mbedcrypto/crypto_config_profile_medium.h".
+
+config TFM_PROFILE_TYPE_LARGE
+	imply PSA_WANT_ALG_CBC_NO_PADDING
+	imply PSA_WANT_ALG_CBC_PKCS7
+	imply PSA_WANT_ALG_CCM
+	imply PSA_WANT_ALG_CMAC
+	imply PSA_WANT_ALG_CFB
+	imply PSA_WANT_ALG_CTR
+	imply PSA_WANT_ALG_DETERMINISTIC_ECDSA
+	imply PSA_WANT_ALG_ECDH
+	imply PSA_WANT_ALG_ECDSA
+	imply PSA_WANT_ALG_GCM
+	imply PSA_WANT_ALG_HKDF
+	imply PSA_WANT_ALG_HMAC
+	imply PSA_WANT_ALG_PBKDF2_HMAC
+	imply PSA_WANT_ALG_RSA_OAEP
+	imply PSA_WANT_ALG_RSA_PKCS1V15_CRYPT
+	imply PSA_WANT_ALG_RSA_PKCS1V15_SIGN
+	imply PSA_WANT_ALG_RSA_PSS
+	imply PSA_WANT_ALG_SHA_224
+	imply PSA_WANT_ALG_SHA_256
+	imply PSA_WANT_ALG_SHA_384
+	imply PSA_WANT_ALG_SHA_512
+	imply PSA_WANT_ALG_TLS12_PRF
+	imply PSA_WANT_ALG_TLS12_PSK_TO_MS
+	imply PSA_WANT_ECC_SECP_K1_256
+	imply PSA_WANT_ECC_SECP_R1_256
+	imply PSA_WANT_ECC_SECP_R1_384
+	imply PSA_WANT_KEY_TYPE_DERIVE
+	imply PSA_WANT_KEY_TYPE_HMAC
+	imply PSA_WANT_KEY_TYPE_AES
+	imply PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	imply PSA_WANT_KEY_TYPE_RAW_DATA
+	imply PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE
+	imply PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC
+	imply PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT
+	imply PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT
+	imply PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE
+	help
+	  Automatically select crypto features which are enabled in TF-M when
+	  large profile is specified. These are taken from
+	  "lib/ext/mbedcrypto/crypto_config_profile_large.h".
+
+source "Kconfig.zephyr"

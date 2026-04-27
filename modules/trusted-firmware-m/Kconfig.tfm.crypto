@@ -3,8 +3,6 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if BUILD_WITH_TFM
-
 if TFM_PARTITION_CRYPTO
 
 config TFM_CRYPTO_RNG_MODULE_ENABLED
@@ -79,5 +77,3 @@ config TFM_CRYPTO_KEY_DERIVATION_MODULE_ENABLED
 	  is not used.
 
 endif # TFM_PARTITION_CRYPTO
-
-endif # BUILD_WITH_TFM
