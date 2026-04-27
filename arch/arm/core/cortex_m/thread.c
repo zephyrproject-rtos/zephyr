@@ -474,8 +474,10 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 {
 	uint32_t sp = min_stack(fault_addr, psp);
 
-	if (sp != 0 && IS_ENABLED(CONFIG_USE_SWITCH)) {
+	if (sp != 0) {
+	#if defined(CONFIG_USE_SWITCH)
 		sp += arm_m_switch_stack_buffer;
+	#endif
 	}
 	return sp;
 }
