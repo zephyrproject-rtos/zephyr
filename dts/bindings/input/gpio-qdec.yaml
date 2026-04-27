@@ -70,6 +70,11 @@ properties:
       Timeout for the last detected transition before stopping the sampling
       timer and going back to idle state.
 
+  invert-direction:
+    type: boolean
+    description: |
+      Invert the reported direction.
+
 examples:
   - |
     #include <zephyr/dt-bindings/input/input-event-codes.h>
