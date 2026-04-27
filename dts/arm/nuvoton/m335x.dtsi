@@ -270,6 +270,20 @@
 			alarms-count = <1>;
 		};
 
+		usbd: usbd@400c0000 {
+			compatible = "nuvoton,numaker-usbd";
+			reg = <0x400c0000 0x1000>;
+			interrupts = <53 0>;
+			resets = <&rst NUMAKER_USBD_RST>;
+			clocks = <&pcc NUMAKER_USBD_MODULE NUMAKER_CLK_CLKSEL0_USBSEL_HIRC
+				  NUMAKER_CLK_CLKDIV0_USB(1)>;
+			dma-buffer-size = <1024>;
+			status = "disabled";
+			num-bidir-endpoints = <23>;
+			disallow-iso-in-out-same-number;
+			allow-disable-usb-on-unplug;
+		};
+
 		wwdt: watchdog@40096000 {
 			compatible = "nuvoton,numaker-wwdt";
 			reg = <0x40096000 0x10>;

@@ -78,3 +78,11 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+zephyr_udc0: &usbd {
+	/*
+	 * Clock source defaults to HIRC, which runs at required 48MHz.
+	 * Pinctrl is unneeded because pins are dedicated.
+	 */
+	status = "okay";
+};
