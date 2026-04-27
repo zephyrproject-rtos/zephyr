@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip flash controller
+
+compatible: "microchip,nvmctrl-g3"
+
+include: flash-controller.yaml
+
+examples:
+  - |
+    /*
+     * clock-parent phandle referes to the node label that
+     * holds clock device in the tree. Flash driver uses this
+     * phandle to initialize clocks for flash operations
+     *
+     */
+    nvmctrl: flash-controller@44002000 {
+      compatible = "microchip,nvmctrl-g3";
+      reg = <0x44002000 0x7c>, <0x44004000 0x60>;
+      /* ... */
+      clock-parent = <&clock>;
+
+      flash0: flash@8000000 {
+        compatible = "microchip,flash-g3", "soc-nv-flash";
+        /* ... */
+      };
+    };
+
+properties:
+  clock-parent:
+    type: phandle
+    description: Reference to the clock node
