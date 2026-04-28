@@ -28,6 +28,8 @@ struct flash_cad_priv {
 	const struct device *clk_dev;
 	/* Identifier for timer to get clock freq from clk manager */
 	clock_control_subsys_t clkid;
+	/* Mutex to prevent multiple processes from accessing the same driver api */
+	struct k_mutex qspi_mutex;
 };
 
 struct flash_cad_config {
@@ -58,13 +60,21 @@ static int flash_cad_read(const struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
+	rc = k_mutex_lock(&priv->qspi_mutex, K_FOREVER);
+	if (rc != 0) {
+		LOG_ERR("Mutex lock Failed");
+		return rc;
+	}
+
 	rc = cad_qspi_read(cad_params, data, (uint32_t)offset, len);
 
 	if (rc < 0) {
 		LOG_ERR("Cadence QSPI Flash Read Failed");
+		k_mutex_unlock(&priv->qspi_mutex);
 		return rc;
 	}
 
+	k_mutex_unlock(&priv->qspi_mutex);
 	return 0;
 }
 
@@ -80,13 +90,21 @@ static int flash_cad_erase(const struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
+	rc = k_mutex_lock(&priv->qspi_mutex, K_FOREVER);
+	if (rc != 0) {
+		LOG_ERR("Mutex lock Failed");
+		return rc;
+	}
+
 	rc = cad_qspi_erase(cad_params, (uint32_t)offset, len);
 
 	if (rc < 0) {
 		LOG_ERR("Cadence QSPI Flash Erase Failed!");
+		k_mutex_unlock(&priv->qspi_mutex);
 		return rc;
 	}
 
+	k_mutex_unlock(&priv->qspi_mutex);
 	return 0;
 }
 
@@ -102,13 +120,21 @@ static int flash_cad_write(const struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
+	rc = k_mutex_lock(&priv->qspi_mutex, K_FOREVER);
+	if (rc != 0) {
+		LOG_ERR("Mutex lock Failed");
+		return rc;
+	}
+
 	rc = cad_qspi_write(cad_params, (void *)data, (uint32_t)offset, len);
 
 	if (rc < 0) {
 		LOG_ERR("Cadence QSPI Flash Write Failed!");
+		k_mutex_unlock(&priv->qspi_mutex);
 		return rc;
 	}
 
+	k_mutex_unlock(&priv->qspi_mutex);
 	return 0;
 }
 
@@ -166,6 +192,11 @@ static int flash_cad_init(const struct device *dev)
 		}
 	}
 
+	rc = k_mutex_init(&priv->qspi_mutex);
+	if (rc != 0) {
+		LOG_ERR("Mutex creation Failed");
+		return rc;
+	}
 
 	cad_params->reg_base = DEVICE_MMIO_NAMED_GET(dev, qspi_reg);
 	cad_params->data_base = DEVICE_MMIO_NAMED_GET(dev, qspi_data);
