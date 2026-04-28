@@ -1308,9 +1308,6 @@ static void handle_h3_uni_stream(struct http_server_ctx *ctx, int i,
 		/* Stream ended or errored */
 		zsock_close(stream_fd);
 		invalidate_poll_fd(&ctx->fds[i]);
-	} else {
-		/* Disable POLLIN until more data arrives */
-		ctx->fds[i].events = 0;
 	}
 }
 
