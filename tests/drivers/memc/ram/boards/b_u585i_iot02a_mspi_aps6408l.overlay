@@ -34,7 +34,7 @@
 			status = "okay";
 
 			memc: aps6408l: memory@0 {
-				compatible = "st,psram-device", "mspi-aps-z8";
+				compatible = "st,psram-device", "aps-z8";
 				reg = <0>;
 				size = <DT_SIZE_M(64)>;
 				mspi-max-frequency = <DT_FREQ_M(133)>;

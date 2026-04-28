@@ -57,7 +57,7 @@
 
 #elif defined(CONFIG_FLASH_MSPI_NOR) && defined(CONFIG_SOC_NRF54H20_CPUAPP)
 
-#define EXTFLASH_NODE	DT_INST(0, jedec_mspi_nor)
+#define EXTFLASH_NODE	DT_INST(0, jedec_nor)
 #define EXTFLASH_ADDR	0x60000000
 #define EXTFLASH_SIZE	DT_PROP_OR(EXTFLASH_NODE, size_in_bytes, \
 				   DT_PROP(EXTFLASH_NODE, size) / 8)
