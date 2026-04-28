@@ -416,7 +416,7 @@ struct net_buf *net_pkt_get_reserve_data(struct net_buf_pool *pool,
 	net_pkt_alloc_add(frag, false, caller, line);
 
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-	NET_DBG("%s (%s) [%d] frag %p ref %d (%s():%d)",
+	NET_DBG("%s (%s) [%d] frag %p ref %u (%s():%d)",
 		pool2str(pool), get_name(pool), get_frees(pool),
 		frag, frag->ref, caller, line);
 #endif
@@ -571,7 +571,7 @@ void net_pkt_unref(struct net_pkt *pkt)
 	frag = pkt->frags;
 	while (frag) {
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-		NET_DBG("%s (%s) [%d] frag %p ref %d frags %p (%s():%d)",
+		NET_DBG("%s (%s) [%d] frag %p ref %u frags %p (%s():%d)",
 			pool2str(net_buf_pool_get(frag->pool_id)),
 			get_name(net_buf_pool_get(frag->pool_id)),
 			get_frees(net_buf_pool_get(frag->pool_id)), frag,
@@ -665,7 +665,7 @@ struct net_buf *net_pkt_frag_ref(struct net_buf *frag)
 	}
 
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-	NET_DBG("%s (%s) [%d] frag %p ref %d (%s():%d)",
+	NET_DBG("%s (%s) [%d] frag %p ref %u (%s():%d)",
 		pool2str(net_buf_pool_get(frag->pool_id)),
 		get_name(net_buf_pool_get(frag->pool_id)),
 		get_frees(net_buf_pool_get(frag->pool_id)),
@@ -690,19 +690,73 @@ void net_pkt_frag_unref(struct net_buf *frag)
 		return;
 	}
 
+	/*
+	 * Walk the frag chain like net_buf_unref() does, but slot the
+	 * net_pkt_alloc_del() tracker call in atomically with the
+	 * "I'm the last reference" decision.
+	 *
+	 * The previous pattern --
+	 *
+	 *	if (frag->ref == 1U) net_pkt_alloc_del(...);
+	 *	net_buf_unref(frag);
+	 *
+	 * -- was racy under SMP: two threads could both observe ref==1
+	 * (and both call alloc_del) or neither does (alloc_del skipped
+	 * even though one of them is going to free the buf). Doing the
+	 * atomic dec here makes "am I the last reference?" authoritative,
+	 * and the value returned by atomic_dec() is what the log reports.
+	 *
+	 * Snapshot the chain link and the pool *before* the atomic dec:
+	 * once our reference is dropped, another holder may free the
+	 * frag at any moment, so frag->frags and frag->pool_id can no
+	 * longer be safely read. The pool itself is a static struct
+	 * that remains valid in either case.
+	 */
+	while (frag) {
+		struct net_buf *next = frag->frags;
+		struct net_buf_pool *pool = net_buf_pool_get(frag->pool_id);
+		uint8_t old_ref = atomic_dec(&frag->ref_word);
+
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-	NET_DBG("%s (%s) [%d] frag %p ref %d (%s():%d)",
-		pool2str(net_buf_pool_get(frag->pool_id)),
-		get_name(net_buf_pool_get(frag->pool_id)),
-		get_frees(net_buf_pool_get(frag->pool_id)),
-		frag, frag->ref - 1U, caller, line);
+		NET_DBG("%s (%s) [%d] frag %p ref %u (%s():%d)",
+			pool2str(pool), get_name(pool), get_frees(pool),
+			frag, old_ref - 1U, caller, line);
 #endif
 
-	if (frag->ref == 1U) {
-		net_pkt_alloc_del(frag, caller, line);
-	}
+		__ASSERT(old_ref != 0, "frag %p double free", frag);
+		if (old_ref != 1) {
+			/*
+			 * Not the last reference (or a double free that
+			 * wrapped past zero). Some other holder still
+			 * owns the rest of the frag chain; we must not
+			 * touch the buffer further.
+			 */
+			return;
+		}
 
-	net_buf_unref(frag);
+		/*
+		 * Last reference: record the unref site, then finalize
+		 * destruction (mirrors net_buf_unref()'s last-ref block).
+		 */
+		net_pkt_alloc_del(frag, caller, line);
+
+		frag->data = NULL;
+		frag->frags = NULL;
+
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+		__maybe_unused atomic_val_t old_avail =
+			atomic_inc(&pool->avail_count);
+
+		__ASSERT_NO_MSG(old_avail + 1 <= pool->buf_count);
+#endif
+		if (pool->destroy) {
+			pool->destroy(frag);
+		} else {
+			net_buf_destroy(frag);
+		}
+
+		frag = next;
+	}
 }
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
@@ -716,29 +770,36 @@ struct net_buf *net_pkt_frag_del(struct net_pkt *pkt,
 				 struct net_buf *frag)
 #endif
 {
+	struct net_buf *next;
+
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 	NET_DBG("pkt %p parent %p frag %p ref %u (%s:%d)",
 		pkt, parent, frag, frag->ref, caller, line);
 #endif
 
-	if (pkt->frags == frag && !parent) {
-		struct net_buf *tmp;
-
-		if (frag->ref == 1U) {
-			net_pkt_alloc_del(frag, caller, line);
-		}
-
-		tmp = net_buf_frag_del(NULL, frag);
-		pkt->frags = tmp;
-
-		return tmp;
+	/*
+	 * Unlink frag from its chain ourselves, then route the unref
+	 * through net_pkt_frag_unref() so the alloc_del tracker call
+	 * is performed atomically with the "I'm the last reference"
+	 * decision (see the comment in net_pkt_frag_unref()).
+	 */
+	if (parent) {
+		__ASSERT_NO_MSG(parent->frags == frag);
+		parent->frags = frag->frags;
+	} else if (pkt->frags == frag) {
+		pkt->frags = frag->frags;
 	}
 
-	if (frag->ref == 1U) {
-		net_pkt_alloc_del(frag, caller, line);
-	}
+	next = frag->frags;
+	frag->frags = NULL;
 
-	return net_buf_frag_del(parent, frag);
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+	net_pkt_frag_unref_debug(frag, caller, line);
+#else
+	net_pkt_frag_unref(frag);
+#endif
+
+	return next;
 }
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
@@ -991,7 +1052,7 @@ static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
 
 		net_pkt_alloc_add(new, false, caller, line);
 
-		NET_DBG("%s (%s) [%d] frag %p ref %d (%s():%d)",
+		NET_DBG("%s (%s) [%d] frag %p ref %u (%s():%d)",
 			pool2str(pool), get_name(pool), get_frees(pool),
 			new, new->ref, caller, line);
 #endif
@@ -1049,7 +1110,7 @@ static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
 
 	net_pkt_alloc_add(buf, false, caller, line);
 
-	NET_DBG("%s (%s) [%d] frag %p ref %d (%s():%d)",
+	NET_DBG("%s (%s) [%d] frag %p ref %u (%s():%d)",
 		pool2str(pool), get_name(pool), get_frees(pool),
 		buf, buf->ref, caller, line);
 #endif
