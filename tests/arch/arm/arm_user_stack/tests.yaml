@@ -1,5 +1,7 @@
 common:
   tags:
+    - arm_user_stack
+  arch_allow:
     - arm
     - userspace
   arch_allow:
