@@ -509,8 +509,7 @@ static int usbd_cdc_acm_cth(struct usbd_class_data *const c_data,
 
 	if (setup->bRequest == GET_LINE_CODING) {
 		if (buf == NULL) {
-			errno = -ENOMEM;
-			return 0;
+			return -ENOMEM;
 		}
 
 		min_len = MIN(sizeof(data->line_coding), setup->wLength);
@@ -521,9 +520,7 @@ static int usbd_cdc_acm_cth(struct usbd_class_data *const c_data,
 
 	LOG_DBG("bmRequestType 0x%02x bRequest 0x%02x unsupported",
 		setup->bmRequestType, setup->bRequest);
-	errno = -ENOTSUP;
-
-	return 0;
+	return -ENOTSUP;
 }
 
 static int usbd_cdc_acm_ctd(struct usbd_class_data *const c_data,
@@ -539,8 +536,7 @@ static int usbd_cdc_acm_ctd(struct usbd_class_data *const c_data,
 	case SET_LINE_CODING:
 		len = sizeof(data->line_coding);
 		if (setup->wLength != len) {
-			errno = -ENOTSUP;
-			return 0;
+			return -ENOTSUP;
 		}
 
 		if (buf == NULL) {
@@ -555,8 +551,7 @@ static int usbd_cdc_acm_ctd(struct usbd_class_data *const c_data,
 
 	case SET_CONTROL_LINE_STATE:
 		if (setup->wLength != 0) {
-			errno = -ENOTSUP;
-			return 0;
+			return -ENOTSUP;
 		}
 
 		data->line_state = setup->wValue;
@@ -570,9 +565,7 @@ static int usbd_cdc_acm_ctd(struct usbd_class_data *const c_data,
 
 	LOG_DBG("bmRequestType 0x%02x bRequest 0x%02x unsupported",
 		setup->bmRequestType, setup->bRequest);
-	errno = -ENOTSUP;
-
-	return 0;
+	return -ENOTSUP;
 }
 
 static int usbd_cdc_acm_init(struct usbd_class_data *const c_data)
