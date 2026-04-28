@@ -57,4 +57,13 @@ config DMA_DW_AXI_MAX_BLOCK_TS
 	help
 	  update this config to set maximum value of block size
 
+config CCU_SUPPORT
+	bool "support for Cache Coherence Unit"
+	help
+	  This flag should be enabled if hardware has cache coherence support.
+	  Because of this hardware support, there is no need of software cache
+	  maintenance operations needed.
+	  e.g. If Cache Coherency Unit interconnect is configured to get same
+	  data view as processor from DMA.
+
 endif # DMA_DW_AXI
