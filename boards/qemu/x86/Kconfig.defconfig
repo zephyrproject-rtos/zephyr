@@ -108,6 +108,6 @@ config X86_EXTRA_PAGE_TABLE_PAGES
 
 config DEMAND_PAGING_PAGE_FRAMES_RESERVE
 	# Need to accommodate the heap for newlib or common malloc in libc-hook.c
-	default 6 if NEWLIB_LIBC || (COMMON_LIBC_MALLOC && COMMON_LIBC_MALLOC_ARENA_SIZE != 0)
+	default 6 if NEWLIB_LIBC || (COMMON_LIBC_MALLOC_SHARED && COMMON_LIBC_MALLOC_ARENA_SIZE != 0)
 
 endif # BOARD_QEMU_X86_TINY

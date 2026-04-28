@@ -25,8 +25,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
-#ifdef CONFIG_COMMON_LIBC_MALLOC
-
 #if (CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE != 0)
 
 /* Figure out where the malloc variables live */
@@ -302,5 +300,3 @@ void *realloc(void *ptr, size_t size)
 	return malloc(size);
 }
 #endif /* else no malloc arena */
-
-#endif /* CONFIG_COMMON_LIBC_MALLOC */

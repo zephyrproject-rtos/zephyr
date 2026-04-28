@@ -43,7 +43,7 @@
 #ifdef CONFIG_NEWLIB_LIBC
 #include <unistd.h>
 #endif
-#ifdef CONFIG_COMMON_LIBC_MALLOC
+#ifdef CONFIG_COMMON_LIBC_MALLOC_SHARED
 #include <sys_malloc.h>
 #endif
 
@@ -1324,7 +1324,7 @@ ZTEST(libc_common, test_exit)
  */
 ZTEST(libc_common, test_malloc)
 {
-#if defined(CONFIG_COMMON_LIBC_MALLOC) && CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE > 220
+#if defined(CONFIG_COMMON_LIBC_MALLOC_SHARED) && CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE > 220
 	char *buf = NULL, *temp_buf = NULL;
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	int rc;
@@ -1355,7 +1355,7 @@ ZTEST(libc_common, test_malloc)
 	free(buf);
 #else
 	ztest_test_skip();
-#endif /* CONFIG_COMMON_LIBC_MALLOC && CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE > 220 */
+#endif /* CONFIG_COMMON_LIBC_MALLOC_SHARED && CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE > 220 */
 }
 /**
  * @}

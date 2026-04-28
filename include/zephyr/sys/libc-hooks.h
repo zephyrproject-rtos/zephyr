@@ -47,7 +47,7 @@ __syscall size_t zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
 void __stdout_hook_install(int (*hook)(int));
 
 #ifdef CONFIG_USERSPACE
-#ifdef CONFIG_COMMON_LIBC_MALLOC
+#ifdef CONFIG_COMMON_LIBC_MALLOC_SHARED
 
 /* When using the common malloc implementation with CONFIG_USERSPACE, the
  * heap will be in a separate partition when there's an MPU or MMU

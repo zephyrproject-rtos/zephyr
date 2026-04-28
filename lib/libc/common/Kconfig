@@ -52,29 +52,34 @@ config COMMON_LIBC_MALLOC_SUPPORTED
 	help
 	  Hidden option to signal that malloc is supported.
 
-choice
+choice COMMON_LIBC_MALLOC
 	prompt "Common C library malloc support"
-	optional
-	default COMMON_LIBC_MALLOC if PICOLIBC || MINIMAL_LIBC
+	default COMMON_LIBC_MALLOC_SHARED if PICOLIBC || MINIMAL_LIBC
+	default COMMON_LIBC_MALLOC_NONE
 	help
-	  If enabled the malloc family of functions will be available.
+	  Defines whether the malloc family of functions will be available.
 
-config COMMON_LIBC_MALLOC
-	bool "Common C library malloc implementation with shared heap"
+config COMMON_LIBC_MALLOC_NONE
+	bool "None"
+	help
+	  No malloc support.
+
+config COMMON_LIBC_MALLOC_SHARED
+	bool "Shared"
 	select COMMON_LIBC_MALLOC_SUPPORTED
 	select NEED_LIBC_MEM_PARTITION if COMMON_LIBC_MALLOC_ARENA_SIZE != 0
 	help
-	  Common implementation of malloc family that uses the kernel heap
-	  API.
+	  Common implementation of malloc family that uses a shared heap in a
+	  dedicated memory partition.
 
 config COMMON_LIBC_MALLOC_TLS
-	bool "Common C library malloc implementation with TLS-based per-thread heaps"
+	bool "Per-thread"
 	select COMMON_LIBC_MALLOC_SUPPORTED
 	depends on THREAD_LOCAL_STORAGE
 	depends on SYS_SYNC_HEAP
 	help
-	  Common implementation of malloc family that uses per-thread assigned
-	  heaps for user and kernel threads.
+	  Common implementation of malloc family that uses TLS-based per-thread
+	  assigned heaps for user and kernel threads.
 
 endchoice
 
@@ -86,7 +91,7 @@ config COMMON_LIBC_MALLOC_REQUIRED
 
 config COMMON_LIBC_MALLOC_ARENA_SIZE
 	int "Size of the common C library malloc arena"
-	depends on COMMON_LIBC_MALLOC
+	depends on COMMON_LIBC_MALLOC_SHARED
 	default 0 if MINIMAL_LIBC
 	default 16384 if MMU
 	default 2048 if USERSPACE && MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
