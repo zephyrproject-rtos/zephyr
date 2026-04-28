@@ -110,6 +110,18 @@ By default, :c:func:`zms_mount` returns an error if the partition cannot be moun
 For recovery-oriented use cases, :c:func:`zms_mount_force` can be used to automatically
 wipe and reinitialize the partition when the first mount attempt fails.
 
+Mount flags
+-----------
+
+ZMS mount behavior can be controlled with optional flags in ``zms_fs.mount_flags``.
+
+- Default behavior (no optional flags set, ``mount_flags = 0``): if the partition is erased and no valid
+  ZMS header is found, :c:func:`zms_mount` formats the partition by creating the
+  initial ZMS header.
+- ``ZMS_MOUNT_FLAG_NO_FORMAT``: if the partition is erased and no valid ZMS
+  header is found, :c:func:`zms_mount` does not format the partition and returns
+  ``-ENOTSUP``.
+
 To mount the filesystem the following elements in the :c:struct:`zms_fs` structure must be initialized:
 
 .. code-block:: c
@@ -124,6 +136,9 @@ To mount the filesystem the following elements in the :c:struct:`zms_fs` structu
 		uint32_t sector_size;
 		/** Number of sectors in the file system */
 		uint32_t sector_count;
+
+		/** Optional mount behavior flags (enum zms_mount_flags) */
+		uint32_t mount_flags;
 
 		/** Flash device runtime structure */
 		const struct device *flash_device;
