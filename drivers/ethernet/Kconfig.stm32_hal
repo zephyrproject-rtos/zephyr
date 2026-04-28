@@ -16,8 +16,7 @@ menuconfig ETH_STM32_HAL
 	imply NVMEM if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_ETHERNET),nvmem-cells)
 	imply CRC
 	help
-	  Enable STM32 HAL based Ethernet driver. It is available for
-	  all Ethernet enabled variants of the F2, F4, F7 and H7 series.
+	  Enable STM32 HAL based Ethernet driver.
 
 if ETH_STM32_HAL
 
