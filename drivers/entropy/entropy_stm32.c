@@ -279,10 +279,14 @@ static void configure_rng(void)
 
 static void acquire_rng(void)
 {
-	entropy_stm32_resume();
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 	/* Lock the RNG to prevent concurrent access */
 	z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
+#endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
+
+	entropy_stm32_resume();
+
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 	/* RNG configuration could have been changed by the other core */
 	configure_rng();
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
