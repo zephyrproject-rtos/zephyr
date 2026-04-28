@@ -1,5 +1,7 @@
 common:
   filter: CONFIG_ARM_MPU_PXN
+  arch_allow:
+    - arm
   tags:
     - arm
     - mpu
