@@ -362,7 +362,6 @@ static int cmd_desc_device(const struct shell *sh,
 		return -ENOMEM;
 	}
 
-	shell_error(sh, "host: USB device with address %u", addr);
 	err = usbh_req_desc_dev(udev, sizeof(desc), &desc);
 	if (err) {
 		shell_print(sh, "host: Failed to request device descriptor");
@@ -429,7 +428,7 @@ static int cmd_desc_string(const struct shell *sh,
 
 	err = usbh_req_desc(udev, type, idx, id, 128, buf);
 	if (err) {
-		shell_print(sh, "host: Failed to request configuration descriptor");
+		shell_print(sh, "host: Failed to request string descriptor");
 	} else {
 		shell_hexdump(sh, buf->data, buf->len);
 	}
