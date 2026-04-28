@@ -228,6 +228,24 @@ int usbh_disable(struct usbh_context *uhs_ctx);
 int usbh_shutdown(struct usbh_context *const uhs_ctx);
 
 /**
+ * @brief Look up the USB host support context by UHC device
+ *
+ * @param[in] dev Pointer to UHC device
+ *
+ * @return Pointer to USB host support context, or NULL if not found.
+ */
+struct usbh_context *usbh_context_lookup_by_dev(const struct device *dev);
+
+/**
+ * @brief Look up the USB host support context by index
+ *
+ * @param[in] idx Index of the USB host support context
+ *
+ * @return Pointer to USB host support context, or NULL if not found.
+ */
+struct usbh_context *usbh_context_lookup_by_idx(unsigned int idx);
+
+/**
  * @}
  */
 
