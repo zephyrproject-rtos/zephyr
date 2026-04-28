@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	zephyr,user {
+		io-channels = <&adc0 3>;
+		/*
+		 * MEC175x SoC does not include a DAC peripheral.
+		 * ADC channel 3 (GPIO203) is used as the single-ended input. (JP124.11)
+		 * Close JP124 (10-11) to connect GPIO203 to VCHIP_VREF_ADC (internal reference)
+		 */
+		reference-mv = <3300>;
+		expected-accuracy = <10>;
+	};
+};
+
+&adc0 {
+	compatible = "microchip,xec-adc";
+	status = "okay";
+
+	pinctrl-0 = <&adc03_gpio203>;
+	pinctrl-names = "default";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
