@@ -16,6 +16,18 @@ config DISPLAY_INIT_PRIORITY
 	help
 	  Display devices initialization priority.
 
+config DISPLAY_COLOR_PALETTE
+	bool "Support for color palette"
+	help
+	  Enable support for color palette in display drivers.
+
+config DISPLAY_COLOR_PALETTE_MAX_SIZE
+	int "Maximum size of color palette"
+	default 8
+	depends on DISPLAY_COLOR_PALETTE
+	help
+	  Maximum size of color palette in display drivers.
+
 module = DISPLAY
 module-str = display
 source "subsys/logging/Kconfig.template.log_config"
