@@ -162,6 +162,8 @@ static int cap_handover_broadcast_audio_stopped(struct bt_cap_common_proc *activ
 	 * it successfully stops the broadcast
 	 */
 
+	LOG_DBG("Deleting broadcast_source %p", proc_param->broadcast_to_unicast.broadcast_source);
+
 	err = bt_cap_initiator_broadcast_audio_delete(
 		proc_param->broadcast_to_unicast.broadcast_source);
 	if (err != 0) {
@@ -197,8 +199,8 @@ void bt_cap_handover_commander_proc_complete(struct bt_cap_common_proc *active_p
 	if (proc_type == BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_START) {
 		bt_cap_handover_complete(active_proc);
 	} else if (proc_type == BT_CAP_COMMON_PROC_TYPE_BROADCAST_RECEPTION_STOP) {
-		/* Delete source and start unicast */
-		const int err = cap_handover_broadcast_audio_stopped(active_proc);
+		/* Trigger next step (stopping broadcast source) */
+		const int err = bt_cap_handover_broadcast_reception_stopped(active_proc);
 
 		if (err != 0) {
 			active_proc->err = err;
@@ -221,7 +223,8 @@ void bt_cap_handover_broadcast_source_stopped(uint8_t reason)
 	struct bt_cap_handover_proc_param *proc_param = &active_proc->proc_param.handover;
 
 	if (proc_param->is_unicast_to_broadcast) {
-		LOG_DBG("Unexpected broadcast source stop with reason 0x%02x", reason);
+		LOG_DBG("Unexpected broadcast source %p stop with reason 0x%02x",
+			proc_param->unicast_to_broadcast.broadcast_source, reason);
 
 		__maybe_unused const int err = bt_cap_initiator_broadcast_audio_delete(
 			proc_param->unicast_to_broadcast.broadcast_source);
@@ -232,6 +235,9 @@ void bt_cap_handover_broadcast_source_stopped(uint8_t reason)
 		active_proc->err = reason;
 		bt_cap_handover_complete(active_proc);
 	} else {
+		LOG_DBG("broadcast_source %p stopped with reason 0x%02x",
+			proc_param->broadcast_to_unicast.broadcast_source, reason);
+
 		if (reason == BT_HCI_ERR_LOCALHOST_TERM_CONN) {
 			/* Successfully stopped the broadcast source */
 			const int err = cap_handover_broadcast_audio_stopped(active_proc);
