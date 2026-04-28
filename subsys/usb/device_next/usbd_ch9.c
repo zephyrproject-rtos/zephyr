@@ -74,18 +74,15 @@ static int sreq_set_address(struct usbd_context *const uds_ctx)
 
 	/* Not specified if wIndex or wLength is non-zero, treat as error */
 	if (setup->wValue > 127 || setup->wIndex || setup->wLength) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_DEVICE) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (usbd_state_is_configured(uds_ctx)) {
-		errno = -EPERM;
-		return 0;
+		return -EPERM;
 	}
 
 	if (caps.addr_before_status) {
@@ -120,23 +117,19 @@ static int sreq_set_configuration(struct usbd_context *const uds_ctx)
 
 	/* Not specified if wLength is non-zero, treat as error */
 	if (setup->wValue > UINT8_MAX || setup->wLength) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_DEVICE) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (usbd_state_is_default(uds_ctx)) {
-		errno = -EPERM;
-		return 0;
+		return -EPERM;
 	}
 
 	if (setup->wValue && !usbd_config_exist(uds_ctx, speed, setup->wValue)) {
-		errno = -EPERM;
-		return 0;
+		return -EPERM;
 	}
 
 	if (setup->wValue == usbd_get_config_value(uds_ctx)) {
@@ -171,31 +164,25 @@ static int sreq_set_interface(struct usbd_context *const uds_ctx)
 	int ret;
 
 	if (setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_INTERFACE) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	/* Not specified if wLength is non-zero, treat as error */
 	if (setup->wLength) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (setup->wValue > UINT8_MAX || setup->wIndex > UINT8_MAX) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (!usbd_state_is_configured(uds_ctx)) {
-		errno = -EPERM;
-		return 0;
+		return -EPERM;
 	}
 
 	ret = usbd_interface_set(uds_ctx, setup->wIndex, setup->wValue);
 	if (ret == -ENOENT) {
 		LOG_INF("Interface or alternate does not exist");
-		errno = ret;
-		ret = 0;
 	}
 
 	return ret;
@@ -219,26 +206,22 @@ static int sreq_clear_feature(struct usbd_context *const uds_ctx)
 
 	/* Not specified if wLength is non-zero, treat as error */
 	if (setup->wLength) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	/* Not specified in default state, treat as error */
 	if (usbd_state_is_default(uds_ctx)) {
-		errno = -EPERM;
-		return 0;
+		return -EPERM;
 	}
 
 	if (usbd_state_is_address(uds_ctx) && setup->wIndex) {
-		errno = -EPERM;
-		return 0;
+		return -EPERM;
 	}
 
 	switch (setup->RequestType.recipient) {
 	case USB_REQTYPE_RECIPIENT_DEVICE:
 		if (setup->wIndex != 0) {
-			errno = -EPERM;
-			return 0;
+			return -EPERM;
 		}
 
 		if (setup->wValue == USB_SFS_REMOTE_WAKEUP) {
@@ -249,9 +232,8 @@ static int sreq_clear_feature(struct usbd_context *const uds_ctx)
 	case USB_REQTYPE_RECIPIENT_ENDPOINT:
 		if (setup->wValue == USB_SFS_ENDPOINT_HALT) {
 			/* UDC checks if endpoint is enabled */
-			errno = usbd_ep_clear_halt(uds_ctx, ep);
-			ret = (errno == -EPERM) ? errno : 0;
-			if (ret == 0) {
+			ret = usbd_ep_clear_halt(uds_ctx, ep);
+			if (ret != -EPERM) {
 				/* Notify class instance */
 				sreq_feature_halt_notify(uds_ctx, ep, false);
 			}
@@ -273,13 +255,11 @@ static int set_feature_test_mode(struct usbd_context *const uds_ctx)
 
 	if (setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_DEVICE ||
 	    SF_TEST_LOWER_BYTE(setup->wIndex) != 0) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (udc_test_mode(uds_ctx->dev, mode, true) != 0) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	uds_ctx->ch9_data.post_status = true;
@@ -295,8 +275,7 @@ static int sreq_set_feature(struct usbd_context *const uds_ctx)
 
 	/* Not specified if wLength is non-zero, treat as error */
 	if (setup->wLength) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (unlikely(setup->wValue == USB_SFS_TEST_MODE)) {
@@ -308,20 +287,17 @@ static int sreq_set_feature(struct usbd_context *const uds_ctx)
 	 * as an error.
 	 */
 	if (usbd_state_is_default(uds_ctx)) {
-		errno = -EPERM;
-		return 0;
+		return -EPERM;
 	}
 
 	if (usbd_state_is_address(uds_ctx) && setup->wIndex) {
-		errno = -EPERM;
-		return 0;
+		return -EPERM;
 	}
 
 	switch (setup->RequestType.recipient) {
 	case USB_REQTYPE_RECIPIENT_DEVICE:
 		if (setup->wIndex != 0) {
-			errno = -EPERM;
-			return 0;
+			return -EPERM;
 		}
 
 		if (setup->wValue == USB_SFS_REMOTE_WAKEUP) {
@@ -332,9 +308,8 @@ static int sreq_set_feature(struct usbd_context *const uds_ctx)
 	case USB_REQTYPE_RECIPIENT_ENDPOINT:
 		if (setup->wValue == USB_SFS_ENDPOINT_HALT) {
 			/* UDC checks if endpoint is enabled */
-			errno = usbd_ep_set_halt(uds_ctx, ep);
-			ret = (errno == -EPERM) ? errno : 0;
-			if (ret == 0) {
+			ret = usbd_ep_set_halt(uds_ctx, ep);
+			if (ret != -EPERM) {
 				/* Notify class instance */
 				sreq_feature_halt_notify(uds_ctx, ep, true);
 			}
@@ -372,8 +347,7 @@ static int std_request_to_device(struct usbd_context *const uds_ctx,
 		ret = sreq_set_feature(uds_ctx);
 		break;
 	default:
-		errno = -ENOTSUP;
-		ret = 0;
+		ret = -ENOTSUP;
 		break;
 	}
 
@@ -388,26 +362,22 @@ static int sreq_get_status(struct usbd_context *const uds_ctx,
 	uint16_t response = 0;
 
 	if (setup->wLength != sizeof(response)) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	/* Not specified in default state, treat as error */
 	if (usbd_state_is_default(uds_ctx)) {
-		errno = -EPERM;
-		return 0;
+		return -EPERM;
 	}
 
 	if (usbd_state_is_address(uds_ctx) && setup->wIndex) {
-		errno = -EPERM;
-		return 0;
+		return -EPERM;
 	}
 
 	switch (setup->RequestType.recipient) {
 	case USB_REQTYPE_RECIPIENT_DEVICE:
 		if (setup->wIndex != 0) {
-			errno = -EPERM;
-			return 0;
+			return -EPERM;
 		}
 
 		response = uds_ctx->status.rwup ?
@@ -428,8 +398,7 @@ static int sreq_get_status(struct usbd_context *const uds_ctx,
 	}
 
 	if (net_buf_tailroom(buf) < setup->wLength) {
-		errno = -ENOMEM;
-		return 0;
+		return -ENOMEM;
 	}
 
 	LOG_DBG("Get Status response 0x%04x", response);
@@ -463,8 +432,7 @@ static int sreq_get_desc_cfg(struct usbd_context *const uds_ctx,
 	 */
 	if (other_cfg && !(USBD_SUPPORTS_HIGH_SPEED &&
 	    (usbd_caps_speed(uds_ctx) == USBD_SPEED_HS))) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (other_cfg) {
@@ -480,8 +448,7 @@ static int sreq_get_desc_cfg(struct usbd_context *const uds_ctx,
 	cfg_nd = usbd_config_get(uds_ctx, get_desc_speed, idx + 1);
 	if (cfg_nd == NULL) {
 		LOG_ERR("Configuration descriptor %u not found", idx + 1);
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (other_cfg) {
@@ -549,8 +516,8 @@ static ssize_t get_sn_from_hwid(uint8_t sn[static USBD_SN_ASCII7_LENGTH])
 }
 
 /* Copy and convert ASCII-7 string descriptor to UTF16-LE */
-static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
-				     struct net_buf *const buf, const uint16_t wLength)
+static int string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
+				    struct net_buf *const buf, const uint16_t wLength)
 {
 	uint8_t sn_ascii7_str[USBD_SN_ASCII7_LENGTH];
 	struct usb_desc_header head = {
@@ -565,8 +532,7 @@ static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
 		ssize_t sn_ascii7_str_len = get_sn_from_hwid(sn_ascii7_str);
 
 		if (sn_ascii7_str_len < 0) {
-			errno = -ENOTSUP;
-			return;
+			return -ENOTSUP;
 		}
 
 		head.bLength = sizeof(head) + sn_ascii7_str_len * 2;
@@ -595,6 +561,8 @@ static void string_ascii7_to_utf16le(struct usbd_desc_node *const dn,
 	if (len & 1) {
 		net_buf_add_u8(buf, ascii7_str[i]);
 	}
+
+	return 0;
 }
 
 static int sreq_get_desc_dev(struct usbd_context *const uds_ctx,
@@ -614,8 +582,7 @@ static int sreq_get_desc_dev(struct usbd_context *const uds_ctx,
 		head = uds_ctx->hs_desc;
 		break;
 	default:
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (head == NULL) {
@@ -637,8 +604,7 @@ static int sreq_get_desc_str(struct usbd_context *const uds_ctx,
 	/* Get string descriptor */
 	d_nd = usbd_get_descriptor(uds_ctx, USB_DESC_STRING, idx);
 	if (d_nd == NULL) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (usbd_str_desc_get_idx(d_nd) == 0U) {
@@ -653,7 +619,7 @@ static int sreq_get_desc_str(struct usbd_context *const uds_ctx,
 		net_buf_add_mem(buf, &langid, MIN(len, langid.bLength));
 	} else {
 		/* String descriptors in ASCII7 format */
-		string_ascii7_to_utf16le(d_nd, buf, setup->wLength);
+		return string_ascii7_to_utf16le(d_nd, buf, setup->wLength);
 	}
 
 	return 0;
@@ -680,8 +646,7 @@ static int sreq_get_dev_qualifier(struct usbd_context *const uds_ctx,
 	 */
 	if (!USBD_SUPPORTS_HIGH_SPEED ||
 	    usbd_caps_speed(uds_ctx) != USBD_SPEED_HS) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (d_desc == NULL) {
@@ -730,8 +695,7 @@ static int sreq_get_desc_bos(struct usbd_context *const uds_ctx,
 	size_t len;
 
 	if (!IS_ENABLED(CONFIG_USBD_BOS_SUPPORT)) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	switch (usbd_bus_speed(uds_ctx)) {
@@ -742,8 +706,7 @@ static int sreq_get_desc_bos(struct usbd_context *const uds_ctx,
 		dev_dsc = uds_ctx->hs_desc;
 		break;
 	default:
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (dev_dsc == NULL) {
@@ -751,8 +714,7 @@ static int sreq_get_desc_bos(struct usbd_context *const uds_ctx,
 	}
 
 	if (sys_le16_to_cpu(dev_dsc->bcdUSB) < 0x0201U) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	desc_fill_bos_root(uds_ctx, &bos);
@@ -822,8 +784,7 @@ static int sreq_get_descriptor(struct usbd_context *const uds_ctx,
 		break;
 	}
 
-	errno = -ENOTSUP;
-	return 0;
+	return -ENOTSUP;
 }
 
 static int sreq_get_configuration(struct usbd_context *const uds_ctx,
@@ -835,18 +796,15 @@ static int sreq_get_configuration(struct usbd_context *const uds_ctx,
 
 	/* Not specified in default state, treat as error */
 	if (usbd_state_is_default(uds_ctx)) {
-		errno = -EPERM;
-		return 0;
+		return -EPERM;
 	}
 
 	if (setup->wLength != sizeof(cfg)) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (net_buf_tailroom(buf) < setup->wLength) {
-		errno = -ENOMEM;
-		return 0;
+		return -ENOMEM;
 	}
 
 	net_buf_add_u8(buf, cfg);
@@ -863,41 +821,35 @@ static int sreq_get_interface(struct usbd_context *const uds_ctx,
 	uint8_t cur_alt;
 
 	if (setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_INTERFACE) {
-		errno = -EPERM;
-		return 0;
+		return -EPERM;
 	}
 
 	/* Treat as error in default (not specified) and addressed states. */
 	cfg_nd = usbd_config_get_current(uds_ctx);
 	if (cfg_nd == NULL) {
-		errno = -EPERM;
-		return 0;
+		return -EPERM;
 	}
 
 	cfg_desc = cfg_nd->desc;
 
 	if (setup->wIndex > UINT8_MAX ||
 	    setup->wIndex > cfg_desc->bNumInterfaces) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (usbd_get_alt_value(uds_ctx, setup->wIndex, &cur_alt)) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	LOG_DBG("Get Interfaces %u, alternate %u",
 		setup->wIndex, cur_alt);
 
 	if (setup->wLength != sizeof(cur_alt)) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (net_buf_tailroom(buf) < setup->wLength) {
-		errno = -ENOMEM;
-		return 0;
+		return -ENOMEM;
 	}
 
 	net_buf_add_u8(buf, cur_alt);
@@ -925,8 +877,7 @@ static int std_request_to_host(struct usbd_context *const uds_ctx,
 		ret = sreq_get_interface(uds_ctx, buf);
 		break;
 	default:
-		errno = -ENOTSUP;
-		ret = 0;
+		ret = -ENOTSUP;
 		break;
 	}
 
@@ -940,30 +891,25 @@ static int vendor_device_request(struct usbd_context *const uds_ctx,
 	struct usbd_vreq_node *vreq_nd;
 
 	if (!IS_ENABLED(CONFIG_USBD_VREQ_SUPPORT)) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	vreq_nd = usbd_device_get_vreq(uds_ctx, setup->bRequest);
 	if (vreq_nd == NULL) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (reqtype_is_to_device(setup) && vreq_nd->to_dev != NULL) {
 		LOG_DBG("Vendor request 0x%02x to device", setup->bRequest);
-		errno = vreq_nd->to_dev(uds_ctx, setup, buf);
-		return 0;
+		return vreq_nd->to_dev(uds_ctx, setup, buf);
 	}
 
 	if (reqtype_is_to_host(setup) && vreq_nd->to_host != NULL) {
 		LOG_DBG("Vendor request 0x%02x to host", setup->bRequest);
-		errno = vreq_nd->to_host(uds_ctx, setup, buf);
-		return 0;
+		return vreq_nd->to_host(uds_ctx, setup, buf);
 	}
 
-	errno = -ENOTSUP;
-	return 0;
+	return -ENOTSUP;
 }
 
 static int nonstd_request(struct usbd_context *const uds_ctx,
@@ -1021,17 +967,21 @@ static int handle_setup_request(struct usbd_context *const uds_ctx,
 		ret = nonstd_request(uds_ctx, buf);
 		break;
 	default:
-		errno = -ENOTSUP;
-		ret = 0;
+		ret = -ENOTSUP;
 	}
 
-	if (errno) {
+	if (errno && (ret == 0)) {
+		LOG_WRN_RATELIMIT("Indicating error via errno is deprecated");
+		ret = errno;
+	}
+
+	if (ret) {
 		LOG_INF("protocol error:");
 		LOG_HEXDUMP_INF(setup, sizeof(*setup), "setup:");
-		if (errno == -ENOTSUP) {
+		if (ret == -ENOTSUP) {
 			LOG_INF("not supported");
 		}
-		if (errno == -EPERM) {
+		if (ret == -EPERM) {
 			LOG_INF("not permitted in device state %u",
 				uds_ctx->ch9_data.state);
 		}
@@ -1199,19 +1149,11 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 		 * data buffer or is NULL.
 		 */
 		ret = handle_setup_request(uds_ctx, next_buf);
-		if ((ret || errno) && next_buf) {
-			net_buf_unref(next_buf);
-		}
-
 		if (ret) {
-			return ret;
-		}
+			if (next_buf) {
+				net_buf_unref(next_buf);
+			}
 
-		if (errno) {
-			/*
-			 * Halt, only protocol errors are recoverable.
-			 * Free data stage and linked status stage buffer.
-			 */
 			goto ctrl_xfer_stall;
 		}
 

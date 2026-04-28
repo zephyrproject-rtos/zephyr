@@ -150,6 +150,7 @@ static int handle_set_idle(const struct device *dev,
 	const uint8_t id = HID_GET_IDLE_ID(setup->wValue);
 	struct hid_device_data *const ddata = dev->data;
 	const struct hid_device_ops *ops = ddata->ops;
+	int ret = 0;
 
 	if (id == 0U) {
 		/* Only the common idle rate is stored. */
@@ -159,12 +160,12 @@ static int handle_set_idle(const struct device *dev,
 	if (ops->set_idle != NULL) {
 		ops->set_idle(dev, id, duration * 4UL);
 	} else {
-		errno = -ENOTSUP;
+		ret = -ENOTSUP;
 	}
 
 	LOG_DBG("Set Idle, Report ID %u Duration %u", id, duration);
 
-	return 0;
+	return ret;
 }
 
 static int handle_get_idle(const struct device *dev,
@@ -177,8 +178,7 @@ static int handle_get_idle(const struct device *dev,
 	uint32_t duration;
 
 	if (setup->wLength != 1U) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	/*
@@ -186,8 +186,7 @@ static int handle_get_idle(const struct device *dev,
 	 * protocol error if no callback is provided but ID is 0.
 	 */
 	if (id != 0U && ops->get_idle == NULL) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (id == 0U) {
@@ -211,32 +210,32 @@ static int handle_set_report(const struct device *dev,
 	const uint8_t id = HID_GET_REPORT_ID(setup->wValue);
 	struct hid_device_data *const ddata = dev->data;
 	const struct hid_device_ops *ops = ddata->ops;
+	int ret;
 
 	if (ops->set_report == NULL) {
-		errno = -ENOTSUP;
 		LOG_DBG("Set Report not supported");
-		return 0;
+		return -ENOTSUP;
 	}
 
 	switch (type) {
 	case HID_REPORT_TYPE_INPUT:
 		LOG_DBG("Set Report, Input Report ID %u", id);
-		errno = ops->set_report(dev, type, id, buf->len, buf->data);
+		ret = ops->set_report(dev, type, id, buf->len, buf->data);
 		break;
 	case HID_REPORT_TYPE_OUTPUT:
 		LOG_DBG("Set Report, Output Report ID %u", id);
-		errno = ops->set_report(dev, type, id, buf->len, buf->data);
+		ret = ops->set_report(dev, type, id, buf->len, buf->data);
 		break;
 	case HID_REPORT_TYPE_FEATURE:
 		LOG_DBG("Set Report, Feature Report ID %u", id);
-		errno = ops->set_report(dev, type, id, buf->len, buf->data);
+		ret = ops->set_report(dev, type, id, buf->len, buf->data);
 		break;
 	default:
-		errno = -ENOTSUP;
+		ret = -ENOTSUP;
 		break;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int handle_get_report(const struct device *dev,
@@ -264,7 +263,7 @@ static int handle_get_report(const struct device *dev,
 		ret = ops->get_report(dev, type, id, size, buf->data);
 		break;
 	default:
-		errno = -ENOTSUP;
+		ret = -ENOTSUP;
 		break;
 	}
 
@@ -272,11 +271,12 @@ static int handle_get_report(const struct device *dev,
 		__ASSERT(ret <= net_buf_tailroom(buf),
 			 "Buffer overflow in the HID driver");
 		net_buf_add(buf, MIN(net_buf_tailroom(buf), ret));
-	} else {
-		errno = ret ? ret : -ENOTSUP;
+		ret = 0;
+	} else if (ret == 0) {
+		ret = -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int handle_set_protocol(const struct device *dev,
@@ -290,8 +290,7 @@ static int handle_set_protocol(const struct device *dev,
 
 	if (protocol > HID_PROTOCOL_REPORT) {
 		/* Can only be 0 (Boot Protocol) or 1 (Report Protocol). */
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (desc->if0.bInterfaceSubClass == 0) {
@@ -299,8 +298,7 @@ static int handle_set_protocol(const struct device *dev,
 		 * The device does not support the boot protocol and we will
 		 * not notify it.
 		 */
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	LOG_DBG("Set Protocol: %s", protocol ? "Report" : "Boot");
@@ -325,14 +323,12 @@ static int handle_get_protocol(const struct device *dev,
 	struct usbd_hid_descriptor *const desc = dcfg->desc;
 
 	if (setup->wValue != 0 || setup->wLength != 1) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (desc->if0.bInterfaceSubClass == 0) {
 		/* The device does not support the boot protocol */
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	LOG_DBG("Get Protocol: %s", ddata->protocol ? "Report" : "Boot");
@@ -350,6 +346,7 @@ static int handle_get_descriptor(const struct device *dev,
 	uint8_t desc_type = USB_GET_DESCRIPTOR_TYPE(setup->wValue);
 	uint8_t desc_idx = USB_GET_DESCRIPTOR_INDEX(setup->wValue);
 	struct usbd_hid_descriptor *const desc = dcfg->desc;
+	int ret = 0;
 
 	switch (desc_type) {
 	case USB_DESC_HID_REPORT:
@@ -362,14 +359,14 @@ static int handle_get_descriptor(const struct device *dev,
 		break;
 	case USB_DESC_HID_PHYSICAL:
 		LOG_DBG("Get descriptor physical %u", desc_idx);
-		errno = -ENOTSUP;
+		ret = -ENOTSUP;
 		break;
 	default:
-		errno = -ENOTSUP;
+		ret = -ENOTSUP;
 		break;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int usbd_hid_ctd(struct usbd_class_data *const c_data,
@@ -390,7 +387,7 @@ static int usbd_hid_ctd(struct usbd_class_data *const c_data,
 		ret = handle_set_protocol(dev, setup);
 		break;
 	default:
-		errno = -ENOTSUP;
+		ret = -ENOTSUP;
 		break;
 	}
 
@@ -418,7 +415,7 @@ static int usbd_hid_cth(struct usbd_class_data *const c_data,
 		ret = handle_get_descriptor(dev, setup, buf);
 		break;
 	default:
-		errno = -ENOTSUP;
+		ret = -ENOTSUP;
 		break;
 	}
 
