@@ -1,0 +1,17 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Use STM as the system timer for this test, without changing the board default. */
+
+/ {
+	chosen {
+		zephyr,system-timer = &stm_0;
+	};
+};
+
+&systick {
+	status = "disabled";
+};
