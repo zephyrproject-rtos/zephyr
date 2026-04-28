@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32c6/esp32c6_lpcore.dtsi>
+#include <espressif/partitions_0x0_default.dtsi>
+
+/ {
+	model = "Arduino Nesso N1 LP Core";
+	compatible = "arduino,nesso-n1";
+
+	chosen {
+		zephyr,sram = &ulp_ram;
+		zephyr,code-partition = &slot0_lpcore_partition;
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};

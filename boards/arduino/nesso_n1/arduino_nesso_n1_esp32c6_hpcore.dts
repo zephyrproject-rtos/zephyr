@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32c6/esp32c6_common.dtsi>
+#include "arduino_nesso_n1-pinctrl.dtsi"
+#include <espressif/partitions_0x0_default.dtsi>
+
+/ {
+	model = "Arduino Nesso N1";
+	compatible = "arduino,nesso-n1";
+
+	chosen {
+		zephyr,sram = &sramhp;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+		accel0 = &bmi270;
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	bmi270: bmi270@68 {
+		compatible = "bosch,bmi270";
+		reg = <0x68>;
+		status = "okay";
+	};
+};
+
+&wifi {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
