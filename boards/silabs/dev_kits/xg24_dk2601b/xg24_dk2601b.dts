@@ -29,6 +29,7 @@
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
+		pressure-sensor = &bmp384;
 		pwm-led0 = &red_pwm_led;
 		pwm-led1 = &green_pwm_led;
 		pwm-led2 = &blue_pwm_led;
@@ -227,6 +228,14 @@
 	si7021: si7021@40 {
 		compatible = "silabs,si7006";
 		reg = <0x40>;
+	};
+
+	bmp384: bmp384@77 {
+		compatible = "bosch,bmp388";
+		reg = <0x77>;
+		odr = "50";
+		osr-press = <4>;
+		osr-temp = <2>;
 	};
 };
 
