@@ -11,6 +11,7 @@ tests:
     platform_exclude:
       - stm32h7s78_dk
       - gd32f350r_eval
+      - lp_em_cc2340r5moda
     harness: shell
     extra_configs:
       - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
