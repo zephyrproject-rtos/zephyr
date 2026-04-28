@@ -28,6 +28,6 @@ zephyr_library_sources_ifdef(CONFIG_CRYPTO_RTS5912_SHA crypto_rts5912_sha.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_SF32LB crypto_sf32lb.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_SI32 crypto_si32.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_SMARTBOND crypto_smartbond.c)
-zephyr_library_sources_ifdef(CONFIG_CRYPTO_STM32 crypto_stm32.c)
+zephyr_library_sources_ifdef(CONFIG_CRYPTO_STM32 crypto_stm32_aes_common.c crypto_stm32_aes.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_STM32_HASH crypto_stm32_hash.c)
 # zephyr-keep-sorted-stop
