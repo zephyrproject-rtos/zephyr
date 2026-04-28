@@ -635,7 +635,7 @@ static int uhc_vrt_driver_preinit(const struct device *dev)
 	return 0;
 }
 
-static const struct uhc_api uhc_vrt_api = {
+static DEVICE_API(uhc, uhc_vrt_api) = {
 	.lock = uhc_vrt_lock,
 	.unlock = uhc_vrt_unlock,
 	.init = uhc_vrt_init,

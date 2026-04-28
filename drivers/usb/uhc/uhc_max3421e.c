@@ -1106,7 +1106,7 @@ static int max3421e_driver_init(const struct device *dev)
 	return 0;
 }
 
-static const struct uhc_api max3421e_uhc_api = {
+static DEVICE_API(uhc, max3421e_uhc_api) = {
 	.lock = max3421e_lock,
 	.unlock = max3421e_unlock,
 	.init = uhc_max3421e_init,
