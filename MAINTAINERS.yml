@@ -303,8 +303,6 @@ Aesc Platform:
     - soc/aesc/
     - dts/riscv/aesc/
     - boards/aesc/
-  files-regex:
-    - ^drivers/.*aesc(\.c)?$
   labels:
     - "platform: Aesc Silicon"
 
