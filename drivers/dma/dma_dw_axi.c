@@ -10,6 +10,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/reset.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/cache.h>
 
 LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
@@ -250,7 +251,7 @@ struct dma_dw_axi_ch_data {
 	/* lli current descriptor */
 	struct dma_lli *lli_desc_current;
 	/* dma channel state */
-	enum dma_dw_axi_ch_state ch_state;
+	atomic_t ch_state;
 	/* direction of transfer */
 	uint32_t direction;
 	/* number of descriptors */
@@ -387,7 +388,7 @@ static void dma_dw_axi_isr(const struct device *dev)
 		if (chan_data->dma_xfer_callback) {
 			chan_data->dma_xfer_callback(dev, chan_data->priv_data_xfer,
 						channel, ret_status);
-			chan_data->ch_state = dma_dw_axi_get_ch_status(dev, channel);
+			atomic_set(&chan_data->ch_state, dma_dw_axi_get_ch_status(dev, channel));
 		}
 	}
 }
@@ -534,7 +535,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	chan_data = &dw_dev_data->chan[channel];
 
 	/* check if the channel is currently idle */
-	if (chan_data->ch_state != DMA_DW_AXI_CH_IDLE) {
+	if (atomic_get(&chan_data->ch_state) != DMA_DW_AXI_CH_IDLE) {
 		LOG_ERR("DMA channel:%d is busy", channel);
 		return -EBUSY;
 	}
@@ -684,8 +685,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	}
 
 	/* dma descriptors are configured, ready to start dma transfer */
-	chan_data->ch_state = DMA_DW_AXI_CH_PREPARED;
-
+	atomic_set(&chan_data->ch_state, DMA_DW_AXI_CH_PREPARED);
 	return 0;
 }
 
@@ -713,7 +713,7 @@ static int dma_dw_axi_start(const struct device *dev, uint32_t channel)
 	/* get channel specific data pointer */
 	chan_data = &dw_dev_data->chan[channel];
 
-	if (chan_data->ch_state != DMA_DW_AXI_CH_PREPARED) {
+	if (atomic_get(&chan_data->ch_state) != DMA_DW_AXI_CH_PREPARED) {
 		LOG_ERR("DMA descriptors not configured");
 		return -EINVAL;
 	}
@@ -746,9 +746,7 @@ static int dma_dw_axi_start(const struct device *dev, uint32_t channel)
 
 	/* Enable the channel which will initiate DMA transfer */
 	sys_write64(CH_EN(channel), reg_base + DMA_DW_AXI_CHENREG);
-
-	chan_data->ch_state = dma_dw_axi_get_ch_status(dev, channel);
-
+	atomic_set(&chan_data->ch_state, dma_dw_axi_get_ch_status(dev, channel));
 	return 0;
 }
 
@@ -896,8 +894,9 @@ static int dma_dw_axi_init(const struct device *dev)
 	/* initialize channel state variable */
 	for (i = 0; i < dw_dev_data->dma_ctx.dma_channels; i++) {
 		chan_data = &dw_dev_data->chan[i];
-		/* initialize channel state */
-		chan_data->ch_state = DMA_DW_AXI_CH_IDLE;
+
+		/* initialize atomic variable */
+		atomic_set(&chan_data->ch_state, DMA_DW_AXI_CH_IDLE);
 	}
 
 	/* configure and enable interrupt lines */
