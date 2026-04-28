@@ -2155,7 +2155,22 @@ int h3_handle_uni_stream_data(struct http_client_ctx *client, int fd)
  *         -EAGAIN if more request data is needed, <0 on error to close
  *         the connection.
  */
-static int h3_process_frames(struct http_client_ctx *client)
+static bool h3_request_body_pending(const struct http_client_ctx *client)
+{
+	if (client->current_detail == NULL) {
+		return false;
+	}
+
+	if (client->current_detail->type != HTTP_RESOURCE_TYPE_DYNAMIC) {
+		return false;
+	}
+
+	return client->method == HTTP_POST ||
+	       client->method == HTTP_PUT ||
+	       client->method == HTTP_PATCH;
+}
+
+static int h3_process_frames(struct http_client_ctx *client, bool stream_fin)
 {
 	bool need_more_data = false;
 	size_t pos = 0;
@@ -2235,6 +2250,10 @@ static int h3_process_frames(struct http_client_ctx *client)
 				return ret;
 			}
 
+			if (h3_request_body_pending(client)) {
+				need_more_data = true;
+			}
+
 			break;
 
 		case H3_FRAME_SETTINGS:
@@ -2268,6 +2287,29 @@ static int h3_process_frames(struct http_client_ctx *client)
 		client->data_len -= pos;
 	} else if (pos >= client->data_len) {
 		client->data_len = 0;
+	}
+
+	if (stream_fin) {
+		int ret;
+
+		if (client->data_len > 0) {
+			LOG_DBG("[%p] H3: stream FIN with incomplete frame (%zu bytes buffered)",
+				client, client->data_len);
+			return -EINVAL;
+		}
+
+		if (!h3_request_body_pending(client)) {
+			return 0;
+		}
+
+		ret = h3_process_data_frame(client, NULL, 0, true);
+		if (ret < 0) {
+			return ret;
+		}
+
+		client->current_detail = NULL;
+
+		return 0;
 	}
 
 	return (need_more_data || client->data_len > 0) ? -EAGAIN : 0;
@@ -2458,7 +2500,12 @@ int accept_h3_stream(int h3_conn_sock, int *stream_sock)
 
 int handle_http3_request(struct http_client_ctx *client)
 {
-	return h3_process_frames(client);
+	return h3_process_frames(client, false);
+}
+
+int handle_http3_stream_fin(struct http_client_ctx *client)
+{
+	return h3_process_frames(client, true);
 }
 
 static void remove_from_polled(int fd,

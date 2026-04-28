@@ -77,6 +77,7 @@ struct h3_conn_ctx {
 int accept_h3_connection(int h3_listen_sock);
 int accept_h3_stream(int h3_conn_sock, int *stream_sock);
 int handle_http3_request(struct http_client_ctx *client);
+int handle_http3_stream_fin(struct http_client_ctx *client);
 int h3_open_uni_streams(struct http_client_ctx *client, int quic_sock);
 int h3_identify_uni_stream(struct http_client_ctx *client, int fd);
 int h3_handle_control_stream(struct http_client_ctx *client, int fd);
