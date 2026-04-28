@@ -1297,9 +1297,8 @@ static void handle_h3_uni_stream(struct http_server_ctx *ctx, int i,
 		if (ret < 0) {
 			zsock_close(stream_fd);
 			invalidate_poll_fd(&ctx->fds[i]);
+			return;
 		}
-
-		return;
 	}
 
 	/* Identified: pass to the appropriate stream data handler */
