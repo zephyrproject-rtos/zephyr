@@ -37,3 +37,7 @@ endif()
 if(SB_CONFIG_SOC_NRF71_GENERATE_UICR)
   include(${CMAKE_CURRENT_LIST_DIR}/nrf71/uicr/sysbuild.cmake)
 endif()
+
+if(SB_CONFIG_SOC_NRF71_GENERATE_WICR)
+  include(${CMAKE_CURRENT_LIST_DIR}/nrf71/wicr/sysbuild.cmake)
+endif()
