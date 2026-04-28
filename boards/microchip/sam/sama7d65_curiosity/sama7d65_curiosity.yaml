@@ -11,6 +11,7 @@ ram: 128
 supported:
   - crypto
   - eeprom
+  - entropy
   - i2c
   - pinctrl
   - rtc
