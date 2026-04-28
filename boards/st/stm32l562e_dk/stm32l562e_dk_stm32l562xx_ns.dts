@@ -45,9 +45,9 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * Flash layout:
@@ -57,31 +57,38 @@
 		 *  - Scratch
 		 */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00000000 DT_SIZE_K(68)>;
 			read-only;
 		};
 
 		scratch_partition: partition@11000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00011000 DT_SIZE_K(8)>;
 		};
 
 		otp_partition: partition@13000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00013000 DT_SIZE_K(8)>;
 		};
 
 		general_secure_storage_partition: partition@15000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00015000 DT_SIZE_K(8)>;
 		};
 
 		internal_secure_storage_partition: partition@17000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00017000 DT_SIZE_K(8)>;
 		};
 
 		slot0_partition: partition@19000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00019000 DT_SIZE_K(240)>;
 		};
 
 		slot0_ns_partition: partition@55000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00055000 DT_SIZE_K(172)>;
 		};
 	};

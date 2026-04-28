@@ -536,7 +536,7 @@ int main(void)
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return 0;
 	}
@@ -617,7 +617,7 @@ int main(void)
 
 		/* Set periodic advertising parameters */
 		err = bt_le_per_adv_set_param(adv, BT_BAP_PER_ADV_PARAM_BROADCAST_FAST);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to set periodic advertising parameters (err %d)\n", err);
 			return 0;
 		}
@@ -633,7 +633,7 @@ int main(void)
 		broadcast_id = CONFIG_BROADCAST_ID;
 #else
 		err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
-		if (err) {
+		if (err != 0) {
 			printk("Unable to generate broadcast ID: %d\n", err);
 			return err;
 		}
@@ -675,14 +675,14 @@ int main(void)
 
 		/* Start extended advertising */
 		err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to start extended advertising: %d\n", err);
 			return 0;
 		}
 
 		/* Enable Periodic Advertising */
 		err = bt_le_per_adv_start(adv);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to enable periodic advertising: %d\n", err);
 			return 0;
 		}
@@ -735,19 +735,19 @@ int main(void)
 		seq_num = 0;
 
 		err = bt_le_per_adv_stop(adv);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to stop periodic advertising (err %d)\n", err);
 			return 0;
 		}
 
 		err = bt_le_ext_adv_stop(adv);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to stop extended advertising (err %d)\n", err);
 			return 0;
 		}
 
 		err = bt_le_ext_adv_delete(adv);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to delete extended advertising (err %d)\n", err);
 			return 0;
 		}

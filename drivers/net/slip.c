@@ -134,28 +134,8 @@ static struct net_pkt *slip_poll_handler(struct slip_context *slip)
 	return NULL;
 }
 
-static inline struct net_if *get_iface(struct slip_context *context,
-				       uint16_t vlan_tag)
-{
-#if defined(CONFIG_NET_VLAN)
-	struct net_if *iface;
-
-	iface = net_eth_get_vlan_iface(context->iface, vlan_tag);
-	if (!iface) {
-		return context->iface;
-	}
-
-	return iface;
-#else
-	ARG_UNUSED(vlan_tag);
-
-	return context->iface;
-#endif
-}
-
 static void process_msg(struct slip_context *slip)
 {
-	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct net_pkt *pkt;
 
 	pkt = slip_poll_handler(slip);
@@ -163,21 +143,7 @@ static void process_msg(struct slip_context *slip)
 		return;
 	}
 
-#if defined(CONFIG_NET_VLAN)
-	{
-		struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
-
-		if (net_ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
-			struct net_eth_vlan_hdr *hdr_vlan =
-				(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-
-			net_pkt_set_vlan_tci(pkt, net_ntohs(hdr_vlan->vlan.tci));
-			vlan_tag = net_pkt_vlan_tag(pkt);
-		}
-	}
-#endif
-
-	if (net_recv_data(get_iface(slip, vlan_tag), pkt) < 0) {
+	if (net_recv_data(slip->iface, pkt) < 0) {
 		net_pkt_unref(pkt);
 	}
 
@@ -305,11 +271,6 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 		CONTAINER_OF(buf, struct slip_context, buf[0]);
 	size_t i;
 
-	if (!slip->init_done) {
-		*off = 0;
-		return buf;
-	}
-
 	for (i = 0; i < *off; i++) {
 		if (slip_input_byte(slip, buf[i])) {
 
@@ -345,28 +306,10 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 	return buf;
 }
 
-int slip_init(const struct device *dev)
-{
-	struct slip_context *slip = dev->data;
-
-	LOG_DBG("[%p] dev %p", slip, dev);
-
-	slip->state = STATE_OK;
-	slip->rx = NULL;
-	slip->first = false;
-
-#if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_IPV4)
-	LOG_DBG("ARP enabled");
-#endif
-
-	uart_pipe_register(slip->buf, sizeof(slip->buf), recv_cb);
-
-	return 0;
-}
-
 void slip_iface_init(struct net_if *iface)
 {
 	struct slip_context *slip = net_if_get_device(iface)->data;
+	uint8_t mac_addr[6];
 	int err;
 
 #if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_L2_ETHERNET)
@@ -377,34 +320,32 @@ void slip_iface_init(struct net_if *iface)
 	net_lldp_set_lldpdu(iface);
 #endif
 
-	if (slip->init_done) {
-		return;
-	}
-
-	slip->init_done = true;
 	slip->iface = iface;
+	slip->state = STATE_OK;
 
 	if (CONFIG_SLIP_MAC_ADDR[0] != 0) {
-		if (net_bytes_from_str(slip->mac_addr, sizeof(slip->mac_addr),
+		if (net_bytes_from_str(mac_addr, sizeof(mac_addr),
 				       CONFIG_SLIP_MAC_ADDR) < 0) {
 			goto use_random_mac;
 		}
 	} else {
 use_random_mac:
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
-		slip->mac_addr[0] = 0x00;
-		slip->mac_addr[1] = 0x00;
-		slip->mac_addr[2] = 0x5E;
-		slip->mac_addr[3] = 0x00;
-		slip->mac_addr[4] = 0x53;
-		slip->mac_addr[5] = sys_rand8_get();
+		mac_addr[0] = 0x00;
+		mac_addr[1] = 0x00;
+		mac_addr[2] = 0x5E;
+		mac_addr[3] = 0x00;
+		mac_addr[4] = 0x53;
+		mac_addr[5] = sys_rand8_get();
 	}
-	net_if_set_link_addr(iface, slip->mac_addr, sizeof(slip->mac_addr), NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, mac_addr, sizeof(mac_addr), NET_LINK_ETHERNET);
 
 	err = net_if_set_name(iface, CONFIG_SLIP_DRV_NAME);
 	if (err < 0) {
 		LOG_ERR("Could not set the interface name: %d", err);
 	}
+
+	uart_pipe_register(slip->buf, sizeof(slip->buf), recv_cb);
 }
 
 
@@ -420,7 +361,7 @@ static const struct dummy_api slip_if_api = {
 #define _SLIP_L2_LAYER DUMMY_L2
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 
-NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, NULL,
+NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, NULL, NULL,
 		&slip_context_data, NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&slip_if_api, _SLIP_L2_LAYER, _SLIP_L2_CTX_TYPE, _SLIP_MTU);
 #endif

@@ -629,7 +629,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 				bt_addr_le_str(info->addr), sr_info.broadcast_id);
 
 			err = bt_le_scan_stop();
-			if (err) {
+			if (err != 0) {
 				bt_shell_error("Failed to stop scan: %d", err);
 			}
 
@@ -642,7 +642,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 			param.subgroups = &auto_scan.subgroup;
 
 			err = bt_bap_broadcast_assistant_add_src(default_conn, &param);
-			if (err) {
+			if (err != 0) {
 				bt_shell_print("Failed to add source: %d", err);
 			}
 
@@ -754,7 +754,7 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 	}
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
-	if (err) {
+	if (err != 0) {
 		shell_print(sh, "Fail to start scanning: %d", err);
 
 		return -ENOEXEC;
@@ -822,7 +822,7 @@ static int cmd_bap_broadcast_assistant_add_broadcast_name(const struct shell *sh
 	}
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
-	if (err) {
+	if (err != 0) {
 		shell_print(sh, "Fail to start scanning: %d", err);
 
 		return -ENOEXEC;

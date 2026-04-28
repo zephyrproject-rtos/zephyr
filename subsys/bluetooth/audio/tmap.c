@@ -121,7 +121,7 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 
 		/* Discovered TMAS - Search for TMAP Role characteristic */
 		err = bt_gatt_discover(conn, &discover_params[conn_id]);
-		if (err) {
+		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)\n", err);
 		}
 	} else if (!bt_uuid_cmp(discover_params[conn_id].uuid, BT_UUID_GATT_TMAPR)) {
@@ -225,7 +225,7 @@ int bt_tmap_register(enum bt_tmap_role role)
 	tmas = (struct bt_gatt_service)BT_GATT_SERVICE(svc_attrs);
 
 	err = bt_gatt_service_register(&tmas);
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Could not register the TMAS service");
 		return -ENOEXEC;
 	}

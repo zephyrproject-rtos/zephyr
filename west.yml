@@ -168,7 +168,7 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: c71e1197e7e9e0fd7be801844e09533c030b56a9
+      revision: 8ee5e121da0d3800f0723280b6640038cb1bad95
       groups:
         - hal
     - name: hal_espressif
@@ -361,7 +361,7 @@ manifest:
       revision: 158b9710d6e10c57b2c623f8f4178f0bbc85c23f
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: cebea8e27ceb91a7d4580d17db65f93669befe72
+      revision: 48a31a7149b019f7cc592a727c479361951f304b
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: 5efe7974f9546582e99f5a842a816ea4b65f5227

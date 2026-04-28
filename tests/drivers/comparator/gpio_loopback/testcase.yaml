@@ -78,3 +78,10 @@ tests:
   drivers.comparator.gpio_loopback.ite:
     platform_allow:
       - it51xxx_evb/it51526aw
+  drivers.comparator.gpio_loopback.infineon_lpcomp:
+    platform_allow:
+      - kit_psc3m5_evk
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m55

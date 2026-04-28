@@ -1474,7 +1474,7 @@ uint8_t btp_ascs_configure_codec(const void *cmd, uint16_t cmd_len, void *rsp, u
 
 	bt_conn_unref(conn);
 
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Failed to configure stream (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}

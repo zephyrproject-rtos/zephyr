@@ -1,0 +1,17 @@
+# Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_BL808
+	select CACHE_MANAGEMENT
+	select CLOCK_CONTROL
+	select CODE_DATA_RELOCATION
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select CPU_XUANTIE_E907
+	select REGULATOR
+	select RISCV
+	select SOC_EARLY_INIT_HOOK
+	select SOC_PREP_HOOK
+	select SYSCON
+	select XIP

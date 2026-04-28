@@ -6,12 +6,13 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Reserve 4KiB of flash for storage_partition. */
 		storage_partition: partition@f0000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x000f0000 DT_SIZE_K(4)>;
 		};

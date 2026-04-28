@@ -152,6 +152,16 @@ static inline void stats(struct net_if *iface)
 			 GET_STAT(iface, udp.chkerr));
 #endif
 
+#if defined(CONFIG_NET_STATISTICS_RAW)
+		NET_INFO("Raw recv       %u\tsent\t%u\tdrop\t%u",
+			 GET_STAT(iface, raw.recv),
+			 GET_STAT(iface, raw.sent),
+			 GET_STAT(iface, raw.drop));
+		NET_INFO("Raw bytes recv %llu\tsent\t%llu",
+			 GET_STAT(iface, raw.bytes.received),
+			 GET_STAT(iface, raw.bytes.sent));
+#endif
+
 #if defined(CONFIG_NET_STATISTICS_TCP)
 		NET_INFO("TCP bytes recv %llu\tsent\t%llu",
 			 GET_STAT(iface, tcp.bytes.received),
@@ -322,6 +332,12 @@ static int net_stats_get(uint64_t mgmt_request, struct net_if *iface,
 		src = GET_STAT_ADDR(iface, udp);
 		break;
 #endif
+#if defined(CONFIG_NET_STATISTICS_RAW)
+	case NET_REQUEST_STATS_CMD_GET_RAW:
+		len_chk = sizeof(struct net_stats_raw);
+		src = GET_STAT_ADDR(iface, raw);
+		break;
+#endif
 #if defined(CONFIG_NET_STATISTICS_TCP)
 	case NET_REQUEST_STATS_CMD_GET_TCP:
 		len_chk = sizeof(struct net_stats_tcp);
@@ -389,6 +405,11 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ICMP,
 
 #if defined(CONFIG_NET_STATISTICS_UDP)
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_UDP,
+				  net_stats_get);
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_RAW)
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_RAW,
 				  net_stats_get);
 #endif
 

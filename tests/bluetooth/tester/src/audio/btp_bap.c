@@ -268,7 +268,7 @@ static uint8_t pacs_set_available_contexts(const void *cmd, uint16_t cmd_len,
 
 	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
 					     (enum bt_audio_context)cp->sink_contexts);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE,
@@ -285,7 +285,7 @@ static uint8_t pacs_set_supported_contexts(const void *cmd, uint16_t cmd_len,
 
 	err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK,
 					     (enum bt_audio_context)cp->sink_contexts);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 	err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE,

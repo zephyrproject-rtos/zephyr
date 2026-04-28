@@ -73,14 +73,14 @@ static uint8_t has_remove_preset(const void *cmd, uint16_t cmd_len,
 			uint8_t index = find_lsb_set(has_presets);
 
 			err = bt_has_preset_unregister(index);
-			if (err) {
+			if (err != 0) {
 				break;
 			}
 			has_presets &= ~(1 << (index - 1));
 		}
 	} else {
 		err = bt_has_preset_unregister(cp->index);
-		if (!err) {
+		if (err == 0) {
 			has_presets &= ~(1 << (cp->index - 1));
 		}
 	}
@@ -112,7 +112,7 @@ static uint8_t has_add_preset(const void *cmd, uint16_t cmd_len,
 			cp->index, cp->props, temp_name, &has_preset_ops
 		};
 		err = bt_has_preset_register(&preset_params);
-		if (!err) {
+		if (err == 0) {
 			has_presets |= 1 << (cp->index - 1);
 		}
 	}

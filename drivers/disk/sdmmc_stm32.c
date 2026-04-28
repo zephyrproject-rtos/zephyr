@@ -708,6 +708,7 @@ static int stm32_sdmmc_access_erase(struct disk_info *disk, uint32_t sector, uin
 	int err;
 
 	k_sem_take(&priv->thread_lock, K_FOREVER);
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
 #ifdef CONFIG_SDMMC_STM32_EMMC
 	err = HAL_MMC_Erase(&priv->hsd, sector, sector + count);
@@ -724,6 +725,7 @@ static int stm32_sdmmc_access_erase(struct disk_info *disk, uint32_t sector, uin
 	}
 
 end:
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	k_sem_give(&priv->thread_lock);
 	return err;
 }

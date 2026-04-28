@@ -64,3 +64,11 @@ tests:
   drivers.pwm.max2221x.build:
     platform_allow: nucleo_l476rg
     extra_args: DTC_OVERLAY_FILE=max2221x.overlay
+  drivers.pwm.bitbang.build:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_args: DTC_OVERLAY_FILE=bitbang.overlay
+    extra_configs:
+      - CONFIG_COUNTER=y
+      - CONFIG_GPIO=y

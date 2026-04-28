@@ -715,7 +715,7 @@ static void notify(struct bt_csip_set_member_svc_inst *svc_inst, struct bt_conn 
 	}
 
 	err = bt_gatt_notify(conn, attr, data, len);
-	if (err) {
+	if (err != 0) {
 		if (err == -ENOTCONN) {
 			LOG_DBG("Notification error: ENOTCONN (%d)", err);
 		} else {

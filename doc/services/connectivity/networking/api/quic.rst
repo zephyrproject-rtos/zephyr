@@ -52,92 +52,6 @@ between **Connections** and **Streams**.
   This is where the actual application data (``send`` or ``recv``) flows.
 
 
-Public API Reference
-********************
-
-The public API is defined in :zephyr_file:`include/zephyr/net/quic.h`.
-
-Connection Management
----------------------
-
-:c:func:`quic_connection_open`
-
-Creates a new QUIC connection context. This serves as the foundation for all
-subsequent communication.
-
-.. code-block:: c
-
-   int quic_connection_open(const struct net_sockaddr *remote_addr,
-                            const struct net_sockaddr *local_addr);
-
-
-* **Parameters**:
-
-  * ``remote_addr``: The address of the peer.
-
-    * **Client Mode**: Set this to the server's IP and port.
-    * **Server Mode**: Set to ``NULL`` (or unspecified) if binding a listener.
-
-  * ``local_addr``: The local address to bind to.
-
-    * **Client Mode**: Can be ``NULL`` (system will auto-bind).
-    * **Server Mode**: Set this to the local interface and port to listen on.
-
-* **Returns**: A file descriptor (socket ID) representing the connection,
-  or ``< 0`` on error.
-
-:c:func:`quic_connection_close`
-
-Closes the connection and terminates the TLS session. The ``zsock_close`` could
-be used here too.
-
-.. code-block:: c
-
-   int quic_connection_close(int sock);
-
-
-Stream Management
------------------
-
-:c:func:`quic_stream_open`
-
-Creates a new stream within an established connection.
-
-.. code-block:: c
-
-   int quic_stream_open(int connection_sock,
-                        enum quic_stream_initiator initiator,
-                        enum quic_stream_direction direction,
-                        uint8_t priority);
-
-
-* **Parameters**:
-
-  * ``connection_sock``: The socket FD returned by ``quic_connection_open``.
-  * ``initiator``: Who is opening the stream?
-
-    * ``QUIC_STREAM_CLIENT``
-    * ``QUIC_STREAM_SERVER``
-
-  * ``direction``:
-
-    * ``QUIC_STREAM_BIDIRECTIONAL``: Both sides can read/write.
-    * ``QUIC_STREAM_UNIDIRECTIONAL``: Only the initiator can write.
-
-  * ``priority``: Priority level (0-255) for scheduling data.
-
-* **Returns**: A new file descriptor (socket ID) specific to this stream.
-
-:c:func:`quic_stream_close`
-
-Closes a specific stream without closing the underlying connection. The ``zsock_close``
-could be used here too.
-
-.. code-block:: c
-
-   int quic_stream_close(int sock);
-
-
 Application Workflow
 ********************
 
@@ -405,12 +319,12 @@ a window smaller than the buffer under-utilises available memory.
      - Initial receive window for unidirectional streams opened by the peer.
        Only relevant when :kconfig:option:`CONFIG_QUIC_MAX_STREAMS_UNI` > 0.
    * - :kconfig:option:`CONFIG_QUIC_INITIAL_MAX_STREAMS_BIDI`
-     - =QUIC_MAX_STREAMS_BIDI
+     - QUIC_MAX_STREAMS_BIDI
      - Maximum number of bidirectional streams the peer may open before
        receiving a ``MAX_STREAMS`` frame.  Defaults to the local build-time
        limit.
    * - :kconfig:option:`CONFIG_QUIC_INITIAL_MAX_STREAMS_UNI`
-     - =QUIC_MAX_STREAMS_UNI
+     - QUIC_MAX_STREAMS_UNI
      - Maximum number of unidirectional streams the peer may open.
    * - :kconfig:option:`CONFIG_QUIC_STREAM_RX_WINDOW_UPDATE_THRESHOLD`
      - 25
@@ -468,7 +382,7 @@ breakdown of how these interact.
        Size to at least the bandwidth-delay product:
        ``throughput_bytes_per_ms × rtt_ms``.
    * - :kconfig:option:`CONFIG_QUIC_STREAM_RX_BUFFER_SIZE`
-     - =QUIC_STREAM_TX_BUFFER_SIZE
+     - QUIC_STREAM_TX_BUFFER_SIZE
      - Per-stream receive buffer.  Defaults to the TX buffer size, which
        is optimal for symmetric request/response patterns.  Can be
        reduced independently for asymmetric workloads (e.g. download-only
@@ -553,7 +467,7 @@ Service Thread Options
        only if RAM is extremely constrained and profiling confirms the stack
        headroom is not needed.
    * - :kconfig:option:`CONFIG_QUIC_PKT_COUNT`
-     - =QUIC_MAX_ENDPOINTS
+     - QUIC_MAX_ENDPOINTS
      - Number of simultaneous pending packet receive operations.  Defaults
        to the number of endpoints so that one packet per endpoint can be
        in flight concurrently.  Increase (e.g. 2× endpoints) for

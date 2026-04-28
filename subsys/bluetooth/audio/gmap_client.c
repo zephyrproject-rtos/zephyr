@@ -240,7 +240,7 @@ static uint8_t bgs_feat_read_cb(struct bt_conn *conn, uint8_t att_err,
 		return BT_GATT_ITER_STOP;
 	}
 
-	if (err) {
+	if (err != 0) {
 		discover_failed(gmap_cli, err);
 	}
 
@@ -341,7 +341,7 @@ static uint8_t ugt_feat_read_cb(struct bt_conn *conn, uint8_t att_err,
 		return BT_GATT_ITER_STOP;
 	}
 
-	if (err) {
+	if (err != 0) {
 		discover_failed(gmap_cli, err);
 	}
 
@@ -444,7 +444,7 @@ static uint8_t ugg_feat_read_cb(struct bt_conn *conn, uint8_t att_err,
 		return BT_GATT_ITER_STOP;
 	}
 
-	if (err) {
+	if (err != 0) {
 		discover_failed(gmap_cli, err);
 	}
 
@@ -548,7 +548,7 @@ static uint8_t role_read_cb(struct bt_conn *conn, uint8_t att_err,
 		err = -ECANCELED;
 	}
 
-	if (err) {
+	if (err != 0) {
 		discover_failed(gmap_cli, err);
 	}
 

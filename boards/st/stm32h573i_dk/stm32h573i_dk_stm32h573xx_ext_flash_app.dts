@@ -20,17 +20,19 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Set the partitions with first MB to make use of the whole Bank1 */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
 		};
 
 		storage_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x00010000 DT_SIZE_K(960)>;
 		};

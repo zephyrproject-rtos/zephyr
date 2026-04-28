@@ -24,6 +24,7 @@ extern enum bst_result_t bst_result;
 
 CREATE_FLAG(flag_discovery_complete);
 CREATE_FLAG(flag_bearer_name_read);
+CREATE_FLAG(flag_bearer_uci);
 
 static struct bt_ccp_call_control_client *call_control_client;
 static struct bt_ccp_call_control_client_bearers client_bearers;
@@ -65,6 +66,21 @@ static void ccp_call_control_client_read_bearer_provider_name_cb(
 	SET_FLAG(flag_bearer_name_read);
 }
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI)
+static void
+ccp_call_control_client_read_bearer_uci_cb(struct bt_ccp_call_control_client_bearer *bearer,
+					   int err, const char *uci, void *user_data)
+{
+	if (err != 0) {
+		FAIL("Failed to read bearer %p UCI: %d\n", (void *)bearer, err);
+		return;
+	}
+
+	LOG_INF("Bearer %p UCI: %s", (void *)bearer, uci);
+
+	SET_FLAG(flag_bearer_uci);
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI */
 
 static void discover_tbs(void)
 {
@@ -73,7 +89,7 @@ static void discover_tbs(void)
 	UNSET_FLAG(flag_discovery_complete);
 
 	err = bt_ccp_call_control_client_discover(default_conn, &call_control_client);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to discover TBS: %d", err);
 		return;
 	}
@@ -96,15 +112,42 @@ static void read_bearer_name(struct bt_ccp_call_control_client_bearer *bearer)
 	WAIT_FOR_FLAG(flag_bearer_name_read);
 }
 
-static void read_bearer_names(void)
+static void read_bearer_uci(struct bt_ccp_call_control_client_bearer *bearer)
+{
+	int err;
+
+	UNSET_FLAG(flag_bearer_uci);
+
+	err = bt_ccp_call_control_client_read_bearer_uci(bearer);
+	if (err != 0) {
+		FAIL("Failed to read UCI of bearer %p: %d", bearer, err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_bearer_uci);
+}
+
+static void read_bearer_values(void)
 {
 #if defined(CONFIG_BT_TBS_CLIENT_GTBS)
-	read_bearer_name(client_bearers.gtbs_bearer);
+	if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)) {
+		read_bearer_name(client_bearers.gtbs_bearer);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_UCI)) {
+		read_bearer_uci(client_bearers.gtbs_bearer);
+	}
 #endif /* CONFIG_BT_TBS_CLIENT_GTBS */
 
 #if defined(CONFIG_BT_TBS_CLIENT_TBS)
 	for (size_t i = 0; i < client_bearers.tbs_count; i++) {
-		read_bearer_name(client_bearers.tbs_bearers[i]);
+		if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)) {
+			read_bearer_name(client_bearers.tbs_bearers[i]);
+		}
+
+		if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_UCI)) {
+			read_bearer_uci(client_bearers.tbs_bearers[i]);
+		}
 	}
 #endif /* CONFIG_BT_TBS_CLIENT_TBS */
 }
@@ -114,8 +157,11 @@ static void init(void)
 	static struct bt_ccp_call_control_client_cb ccp_call_control_client_cbs = {
 		.discover = ccp_call_control_client_discover_cb,
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
-		.bearer_provider_name = ccp_call_control_client_read_bearer_provider_name_cb
+		.bearer_provider_name = ccp_call_control_client_read_bearer_provider_name_cb,
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI)
+		.bearer_uci = ccp_call_control_client_read_bearer_uci_cb,
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI */
 	};
 	int err;
 
@@ -148,9 +194,7 @@ static void test_main(void)
 	discover_tbs();
 	discover_tbs(); /* test that we can discover twice */
 
-	if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)) {
-		read_bearer_names();
-	}
+	read_bearer_values();
 
 	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err != 0) {

@@ -102,21 +102,21 @@ static int advertise(void)
 	int err;
 
 	err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_CONN_QUICK, NULL, &adv);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Failed to create advertising set: %d", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Failed to set advertising data: %d", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Failed to start advertising set: %d", err);
 
 		return err;
@@ -281,7 +281,7 @@ static int init_cap_acceptor(void)
 	LOG_INF("Bluetooth initialized");
 
 	err = bt_pacs_register(&pacs_param);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Could not register PACS (err %d)", err);
 		return 0;
 	}

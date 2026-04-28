@@ -100,6 +100,11 @@ config SOC_NRF54H20_CPURAD_ENABLE_DEBUG_WAIT
 
 endif # SOC_NRF54H20_CPURAD_ENABLE
 
+config SOC_NRF54H20_PM_S2RAM_OVERRIDE
+	bool "Override `pm_s2ram` implementation"
+	help
+	  Override Nordic s2ram implementation.
+
 config SOC_NRF54H20_CPURAD
 	select SOC_NRF54H20_CPURAD_COMMON
 

@@ -13,6 +13,7 @@
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/reset/stm32u0_reset.h>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -125,7 +126,8 @@
 
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
-
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <8>;
 				erase-block-size = <2048>;
 				/* maximum erase time(ms) for a 2K sector */
@@ -486,6 +488,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers2: timers@40000000 {
@@ -509,6 +517,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers3: timers@40000400 {
@@ -530,6 +544,12 @@
 
 			counter {
 				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
 				status = "disabled";
 			};
 		};

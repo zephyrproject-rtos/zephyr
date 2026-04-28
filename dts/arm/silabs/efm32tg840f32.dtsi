@@ -19,4 +19,5 @@
 
 &flash0 {
 	reg = <0 DT_SIZE_K(32)>;
+	ranges = <0 0 DT_SIZE_K(32)>;
 };

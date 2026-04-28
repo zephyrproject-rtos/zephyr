@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(input_bflb_irx, CONFIG_INPUT_LOG_LEVEL);
 #define IRX_OFFSET_PIN	16
 #define IRX_PIN_OFFSET	GLB_LED_DRIVER_OFFSET
 #define IRX_FIFO_OFFSET	IRRX_SWM_FIFO_CONFIG_0_OFFSET
-#elif defined(CONFIG_SOC_SERIES_BL61X)
+#elif defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 #define IRX_MIN_PIN	9
 #define IRX_MAX_PIN	23
 #define IRX_OFFSET_PIN	8
@@ -159,7 +159,7 @@ static int bflb_irx_configure(struct device const *dev)
 	tmp = end_threshold << IR_CR_IRRX_END_TH_SHIFT | data_threshold;
 	sys_write32(tmp, cfg->reg + IRRX_PW_CONFIG_OFFSET);
 
-#if defined(CONFIG_SOC_SERIES_BL61X)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 	tmp = sys_read32(cfg->reg + IR_FIFO_CONFIG_1_OFFSET);
 	tmp &= ~IR_RX_FIFO_TH_MASK;
 	tmp |= IRX_FIFO_THRES << IR_RX_FIFO_TH_SHIFT;
@@ -170,11 +170,11 @@ static int bflb_irx_configure(struct device const *dev)
 	tmp = sys_read32(cfg->reg + IRRX_INT_STS_OFFSET);
 	tmp |= IR_CR_IRRX_END_EN;
 	tmp |= IR_CR_IRRX_END_CLR;
-#if defined(CONFIG_SOC_SERIES_BL61X)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 	tmp |= IR_CR_IRRX_FRDY_EN | IR_CR_IRRX_FER_EN;
 #endif
 	tmp &= ~IR_CR_IRRX_END_MASK;
-#if defined(CONFIG_SOC_SERIES_BL61X)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 	if (cfg->protocol == PROTOCOL_PW) {
 		tmp &= ~IR_CR_IRRX_FRDY_MASK;
 	}
@@ -210,7 +210,7 @@ static void bflb_irx_isr_handle_prot(const struct device *dev)
 	}
 }
 
-#if defined(CONFIG_SOC_SERIES_BL61X)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 
 static void bflb_irx_isr_handle_pw(const struct device *dev)
 {
@@ -352,7 +352,7 @@ static int bflb_irx_init(struct device const *dev)
 	return 0;
 }
 
-#if defined(CONFIG_SOC_SERIES_BL61X)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 static void bflb_irx_isr(const struct device *dev)
 {
 	const struct bflb_irx_config *cfg = dev->config;

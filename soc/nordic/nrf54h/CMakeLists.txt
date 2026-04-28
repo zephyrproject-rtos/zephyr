@@ -9,7 +9,9 @@ if(CONFIG_ARM)
     FILTER ".*\\.cache_retain_and_sleep"
     LOCATION PMLocalRamfunc_TEXT
   )
-  zephyr_library_sources_ifdef(CONFIG_PM_S2RAM soc_pm_s2ram.c)
+  if(NOT CONFIG_SOC_NRF54H20_PM_S2RAM_OVERRIDE)
+    zephyr_library_sources_ifdef(CONFIG_PM_S2RAM soc_pm_s2ram.c)
+  endif()
 endif()
 
 if(CONFIG_NRFX_GPPI AND NOT CONFIG_NRFX_GPPI_V1)

@@ -238,9 +238,6 @@
 };
 
 &adc1 {
-	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
-		 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
-	clock-names = "adcx", "adc_ker";
 	pinctrl-0 = <&adc1_inp6_pf12>; /* Arduino A5 */
 	pinctrl-names = "default";
 	st,adc-clock-source = "ASYNC";
@@ -249,9 +246,6 @@
 };
 
 &adc3 {
-	clocks = <&rcc STM32_CLOCK(AHB2, 24)>,
-		 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
-	clock-names = "adcx", "adc_ker";
 	pinctrl-0 = <&adc3_inp6_pe12>; /* Arduino A1 */
 	pinctrl-names = "default";
 	st,adc-clock-source = "ASYNC";

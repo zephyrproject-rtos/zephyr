@@ -993,7 +993,7 @@ static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len)
 {
 	int err = bt_gatt_notify_uuid(NULL, uuid, mcs.attrs, data, len);
 
-	if (err) {
+	if (err != 0) {
 		if (err == -ENOTCONN) {
 			LOG_DBG("Notification error: ENOTCONN (%d)", err);
 		} else {
@@ -1572,7 +1572,7 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 
 	/* Initialize OTS instance. */
 	err = bt_ots_init(ots, &ots_init);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Failed to init OTS (err:%d)\n", err);
 		return err;
 	}
@@ -1587,7 +1587,7 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 
 	err = bt_gatt_service_register(&mcs);
 
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Could not register the MCS service");
 #ifdef CONFIG_BT_OTS
 		/* TODO: How does one un-register the OTS? */

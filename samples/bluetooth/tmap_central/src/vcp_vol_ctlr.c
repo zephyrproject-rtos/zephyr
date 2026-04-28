@@ -85,7 +85,7 @@ static int process_profile_connection(struct bt_conn *conn)
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	if (err) {
+	if (err != 0) {
 		printk("Connection failed, err %d %s\n", err, bt_hci_err_to_str(err));
 		return;
 	}

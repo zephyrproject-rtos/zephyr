@@ -69,6 +69,18 @@ Flash
   of each plane in the flash device. For devices with a single plane, this should be set to the
   same value as ``size-bytes``.
 
+GPIO
+====
+
+* The STM32 GPIO driver now returns ``-EINVAL`` when attempting to configure a GPIO pin in disabled
+  state with a pull-up/pull-down resistor using :c:func:`gpio_pin_configure`. The driver would
+  previously return ``0`` without actually honoring those flags (no PU/PD resistor was enabled).
+  Applications encountering this error should remove :c:macro:`GPIO_PULL_UP`/ :c:macro:`GPIO_PULL_DOWN`
+  from the ``flags`` they provide to :c:func:`gpio_pin_configure`; this will result in the same
+  behavior as before since these flags were effectively ignored. (:github:`104690`)
+
+* On STM32F1 series, GPIO output pins now use 50 MHz max. speed instead of 10 MHz. (:github:`104690`)
+
 STM32
 =====
 

@@ -1,0 +1,34 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+title: Bouffalolab MM (Multimedia) Subsystem Clock
+
+description: |
+  Bouffalolab MM (Multimedia) Subsystem Clock
+  Controls the clock for the MM subsystem (DSP core, VRAM, DRAM, peripherals).
+  Source -> / divider -> MM CLK
+
+  The MM subsystem clock has its own root mux at MM_GLB_BASE.
+  XCLK source (RC32M or crystal) is always safe.
+  PLL sources require the corresponding PLL to be enabled.
+
+compatible: "bflb,mm-clk"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clocks:
+    type: phandle-array
+    required: true
+    description: |
+      Source clock for MM subsystem.
+      Use RC32M or crystal for XCLK source.
+      Use a PLL phandle (e.g. wifipll) for PLL source.
+
+  divider:
+    type: int
+    default: 1
+    description: Divide source clock by this value (1 to 256).
+
+  "#clock-cells":
+    const: 0

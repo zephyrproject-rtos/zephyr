@@ -376,7 +376,7 @@ int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user
 }
 
 int sx12xx_lora_config(const struct device *dev,
-		       struct lora_modem_config *config)
+		       const struct lora_modem_config *config)
 {
 	bool crc = !config->packet_crc_disable;
 	uint32_t bw_idx;

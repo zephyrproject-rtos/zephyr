@@ -111,7 +111,7 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	int err;
 
 	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
-	if (err) {
+	if (err != 0) {
 		FAIL("Unable to generate broadcast ID: %d\n", err);
 		return err;
 	}
@@ -181,21 +181,21 @@ static int stop_extended_adv(struct bt_le_ext_adv *adv)
 	int err;
 
 	err = bt_le_per_adv_stop(adv);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to stop periodic advertising: %d\n", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_stop(adv);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to stop extended advertising: %d\n", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_delete(adv);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to delete extended advertising: %d\n", err);
 
 		return err;
@@ -216,7 +216,7 @@ static void test_main(void)
 	int count = 0;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		FAIL("Bluetooth enable failed (err %d)\n", err);
 
 		return;

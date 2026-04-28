@@ -192,6 +192,23 @@ struct net_stats_udp {
 };
 
 /**
+ * @brief Raw packet socket statistics
+ */
+struct net_stats_raw {
+	/** Amount of received and sent raw packet data. */
+	struct net_stats_bytes bytes;
+
+	/** Number of dropped raw packets. */
+	net_stats_t drop;
+
+	/** Number of received raw packets. */
+	net_stats_t recv;
+
+	/** Number of sent raw packets. */
+	net_stats_t sent;
+};
+
+/**
  * @brief IPv6 neighbor discovery statistics
  */
 struct net_stats_ipv6_nd {
@@ -443,6 +460,11 @@ struct net_stats {
 #if defined(CONFIG_NET_STATISTICS_UDP)
 	/** UDP statistics */
 	struct net_stats_udp udp;
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_RAW)
+	/** Raw packet socket statistics */
+	struct net_stats_raw raw;
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_IPV6_ND)
@@ -751,6 +773,7 @@ enum net_request_stats_cmd {
 	NET_REQUEST_STATS_CMD_GET_IPV4_PMTU,
 	NET_REQUEST_STATS_CMD_GET_ICMP,
 	NET_REQUEST_STATS_CMD_GET_UDP,
+	NET_REQUEST_STATS_CMD_GET_RAW,
 	NET_REQUEST_STATS_CMD_GET_TCP,
 	NET_REQUEST_STATS_CMD_GET_ETHERNET,
 	NET_REQUEST_STATS_CMD_GET_PPP,
@@ -864,6 +887,16 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ICMP);
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_UDP);
 /** @endcond */
 #endif /* CONFIG_NET_STATISTICS_UDP */
+
+#if defined(CONFIG_NET_STATISTICS_RAW)
+/** Request raw packet socket statistics */
+#define NET_REQUEST_STATS_GET_RAW				\
+	(NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_RAW)
+
+/** @cond INTERNAL_HIDDEN */
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_RAW);
+/** @endcond */
+#endif /* CONFIG_NET_STATISTICS_RAW */
 
 #if defined(CONFIG_NET_STATISTICS_TCP)
 /** Request TCP statistics */
@@ -1118,6 +1151,50 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_RESET_WIFI);
 		&(iface)->stats.udp.chkerr)
 #else
 #define NET_STATS_PROMETHEUS_UDP(iface, dev_id, sfx)
+#endif
+
+/* Raw packet socket statistics */
+#if defined(CONFIG_NET_STATISTICS_RAW)
+#define NET_STATS_PROMETHEUS_RAW(iface, dev_id, sfx)			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"Raw packets sent",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, raw_sent),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, raw_sent),		\
+		&(iface)->stats.raw.sent);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"Raw packets received",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, raw_recv),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, raw_recv),		\
+		&(iface)->stats.raw.recv);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"Raw packets dropped",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, raw_drop),		\
+		"packet_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, raw_drop),		\
+		&(iface)->stats.raw.drop);				\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"Raw bytes sent",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, raw_bytes_sent),	\
+		"byte_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, raw_bytes_sent),		\
+		&(iface)->stats.raw.bytes.sent);			\
+	NET_STATS_PROMETHEUS_COUNTER_DEFINE(				\
+		"Raw bytes received",					\
+		NET_STATS_GET_INSTANCE(dev_id, sfx, raw_bytes_recv),	\
+		"byte_count",						\
+		NET_STATS_GET_COLLECTOR_NAME(dev_id, sfx),		\
+		NET_STATS_GET_VAR(dev_id, sfx, raw_bytes_recv),		\
+		&(iface)->stats.raw.bytes.received)
+#else
+/** @cond INTERNAL_HIDDEN */
+#define NET_STATS_PROMETHEUS_RAW(iface, dev_id, sfx)
+/** @endcond */
 #endif
 
 /* TCP layer statistics */
@@ -1536,6 +1613,7 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_RESET_WIFI);
 	NET_STATS_PROMETHEUS_IPV4(iface, dev_id, sfx);			\
 	NET_STATS_PROMETHEUS_ICMP(iface, dev_id, sfx);			\
 	NET_STATS_PROMETHEUS_UDP(iface, dev_id, sfx);			\
+	NET_STATS_PROMETHEUS_RAW(iface, dev_id, sfx);			\
 	NET_STATS_PROMETHEUS_TCP(iface, dev_id, sfx);			\
 	NET_STATS_PROMETHEUS_IPV6_ND(iface, dev_id, sfx);		\
 	NET_STATS_PROMETHEUS_IPV6_PMTU(iface, dev_id, sfx);		\

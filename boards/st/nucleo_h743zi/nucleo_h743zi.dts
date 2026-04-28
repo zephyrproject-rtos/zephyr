@@ -246,12 +246,13 @@ zephyr_udc0: &usbotg_fs {
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* 128KB for bootloader */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(128)>;
 			read-only;
@@ -259,24 +260,28 @@ zephyr_udc0: &usbotg_fs {
 
 		/* storage: 128KB for settings */
 		storage_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x00020000 DT_SIZE_K(128)>;
 		};
 
 		/* application image slot: 256KB */
 		slot0_partition: partition@40000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00040000 DT_SIZE_K(256)>;
 		};
 
 		/* backup slot: 256KB */
 		slot1_partition: partition@80000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x00080000 DT_SIZE_K(256)>;
 		};
 
 		/* swap slot: 128KB */
 		scratch_partition: partition@c0000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-scratch";
 			reg = <0x000c0000 DT_SIZE_K(128)>;
 		};

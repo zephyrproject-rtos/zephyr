@@ -137,7 +137,7 @@ static void csip_set_coordinator_ordered_access_cb(
 	const struct bt_csip_set_coordinator_set_info *set_info, int err,
 	bool locked, struct bt_csip_set_coordinator_set_member *member)
 {
-	if (err) {
+	if (err != 0) {
 		printk("Ordered access failed with err %d\n", err);
 	} else if (locked) {
 		printk("Cannot do ordered access as member %p is locked\n",

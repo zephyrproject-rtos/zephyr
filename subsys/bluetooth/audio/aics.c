@@ -621,7 +621,7 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 	}
 
 	err = bt_gatt_service_register(aics->srv.service_p);
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Could not register AICS service");
 		return err;
 	}

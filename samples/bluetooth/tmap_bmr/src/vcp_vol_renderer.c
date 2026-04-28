@@ -21,7 +21,7 @@ static struct bt_vcp_included vcp_included;
 
 static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t mute)
 {
-	if (err) {
+	if (err != 0) {
 		printk("VCS state get failed (%d)\n", err);
 	} else {
 		printk("VCS volume %u, mute %u\n", volume, mute);
@@ -30,7 +30,7 @@ static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t 
 
 static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 {
-	if (err) {
+	if (err != 0) {
 		printk("VCS flags get failed (%d)\n", err);
 	} else {
 		printk("VCS flags 0x%02X\n", flags);
@@ -55,7 +55,7 @@ int vcp_vol_renderer_init(void)
 	vcp_register_param.cb = &vcp_cbs;
 
 	err = bt_vcp_vol_rend_register(&vcp_register_param);
-	if (err) {
+	if (err != 0) {
 		return err;
 	}
 

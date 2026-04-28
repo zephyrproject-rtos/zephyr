@@ -642,7 +642,7 @@ static int init(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		FAIL("Bluetooth enable failed (err %d)\n", err);
 		return err;
 	}
@@ -650,25 +650,25 @@ static int init(void)
 	printk("Bluetooth initialized\n");
 
 	err = bt_pacs_register(&pacs_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("Could not register PACS (err %d)\n", err);
 		return err;
 	}
 
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
-	if (err) {
+	if (err != 0) {
 		FAIL("Capability register failed (err %d)\n", err);
 		return err;
 	}
 
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &vs_cap);
-	if (err) {
+	if (err != 0) {
 		FAIL("VS capability register failed (err %d)\n", err);
 		return err;
 	}
 
 	err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
-	if (err) {
+	if (err != 0) {
 		FAIL("Scan delegator register failed (err %d)\n", err);
 		return err;
 	}
@@ -941,7 +941,7 @@ static void test_common(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		FAIL("Init failed (err %d)\n", err);
 		return;
 	}
@@ -1056,7 +1056,7 @@ static void test_sink_encrypted(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		FAIL("Init failed (err %d)\n", err);
 		return;
 	}
@@ -1108,7 +1108,7 @@ static void test_sink_encrypted_incorrect_code(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		FAIL("Init failed (err %d)\n", err);
 		return;
 	}
@@ -1150,7 +1150,7 @@ static void broadcast_sink_with_assistant(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		FAIL("Init failed (err %d)\n", err);
 		return;
 	}
@@ -1206,7 +1206,7 @@ static void broadcast_sink_with_assistant_incorrect_code(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		FAIL("Init failed (err %d)\n", err);
 		return;
 	}

@@ -30,7 +30,19 @@ enum nsos_resolve_status {
 	NSOS_MID_EAI_OVERFLOW    = -12,
 };
 
+/** Flags for getaddrinfo() hints */
+#define NSOS_MID_AI_PASSIVE     0x1
+#define NSOS_MID_AI_CANONNAME   0x2
+#define NSOS_MID_AI_NUMERICHOST 0x4
+#define NSOS_MID_AI_V4MAPPED    0x8
+#define NSOS_MID_AI_ALL         0x10
+#define NSOS_MID_AI_ADDRCONFIG  0x20
+#define NSOS_MID_AI_NUMERICSERV 0x400
+
 int eai_to_nsos_mid(int err);
 int eai_from_nsos_mid(int err);
+
+int addrinfo_flags_to_nsos_mid(int flags, int *flags_mid);
+int addrinfo_flags_from_nsos_mid(int flags_mid, int *flags);
 
 #endif /* __DRIVERS_NET_NSOS_NETDB_H__ */

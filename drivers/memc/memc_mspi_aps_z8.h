@@ -5,6 +5,7 @@
  */
 
 enum memc_mspi_aps_z8_rlc {
+	MEMC_MSPI_APS_Z8_RLC_3,
 	MEMC_MSPI_APS_Z8_RLC_4,
 	MEMC_MSPI_APS_Z8_RLC_5,
 	MEMC_MSPI_APS_Z8_RLC_6,
@@ -112,4 +113,10 @@ struct memc_mspi_aps_z8_reg {
 			uint8_t:            1;
 		} MR8_b;
 	};
+};
+
+enum memc_aps_version {
+	MEMC_DEFAULT,
+	MEMC_APS256,
+	MEMC_APS6408L,
 };

@@ -179,7 +179,7 @@ int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t m
 	}
 
 
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Metadata failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
 		return err;
 	}

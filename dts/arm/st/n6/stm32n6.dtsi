@@ -1347,6 +1347,15 @@
 				};
 			};
 
+			rtc: rtc@6004000 {
+				compatible = "st,stm32-rtc";
+				reg = <0x46004000 0x400>;
+				interrupts = <16 0>;
+				clocks = <&rcc STM32_CLOCK(APB4, 16)>;
+				alarms-count = <2>;
+				status = "disabled";
+			};
+
 			xspim: xspim@802b400 {
 				compatible = "st,stm32-xspim";
 				reg = <0x802b400 0x400>;

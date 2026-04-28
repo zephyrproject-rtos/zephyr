@@ -74,8 +74,9 @@
 		adc3: adc@4202d800 {
 			compatible = "st,stm32-adc";
 			reg = <0x4202d800 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 24)>;
-			clock-names = "adcx";
+			clocks = <&rcc STM32_CLOCK(AHB2, 24)>,
+				 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
+			clock-names = "adcx", "adc_ker";
 			interrupts = <149 0>;
 			vref-mv = <3300>;
 			#io-channel-cells = <1>;

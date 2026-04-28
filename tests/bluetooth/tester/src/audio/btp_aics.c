@@ -503,7 +503,7 @@ static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain, uint8_t mu
 
 	bt_aics_client_conn_get(inst, &conn);
 
-	if (err) {
+	if (err != 0) {
 		if (err < 0) {
 			err = BT_ATT_ERR_UNLIKELY;
 		}

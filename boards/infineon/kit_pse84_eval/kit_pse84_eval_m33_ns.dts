@@ -30,6 +30,7 @@
 		zephyr,sram = &m33_data;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
+		zephyr,bt-hci = &bt_hci_uart;
 	};
 };
 
@@ -43,4 +44,70 @@
 
 &mcwdt0 {
 	status = "okay";
+};
+
+&peri1_group2_8bit_0 {
+	status = "okay";
+	clock-div = <2>;
+};
+
+&sdhc0 {
+	status = "okay";
+
+	/* SDIO pins */
+	pinctrl-0 = <&p21_0_sdhc0_card_cmd &p12_0_sdhc0_clk_card &p12_1_sdhc0_card_dat_3to0
+		     &p12_2_sdhc0_card_dat_3to0 &p12_4_sdhc0_card_dat_3to0
+		     &p12_5_sdhc0_card_dat_3to0>;
+	pinctrl-names = "default";
+
+	clocks = <&peri1_group2_8bit_0>;
+	bus-width = <4>;
+	max-bus-freq = <50000000>;
+	min-bus-freq = <400000>;
+	power-delay-ms = <1000>;
+	no-1-8-v;
+
+	/* Wi-Fi configuration */
+	airoc-wifi {
+		status = "okay";
+		compatible = "infineon,airoc-wifi";
+
+		/* Wi-Fi control gpios */
+		wifi-reg-on-gpios = <&gpio_prt11 6 GPIO_ACTIVE_HIGH>;
+		wifi-host-wake-gpios = <&gpio_prt11 4 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&peri0_group1_16_5bit_0 {
+	status = "okay";
+	clock-div = <1>;
+};
+
+uart4: &scb4 {
+	compatible = "infineon,uart";
+	status = "okay";
+
+	current-speed = <115200>;
+
+	clocks = <&peri0_group1_16_5bit_0>;
+
+	/* HCI-UART pins */
+	pinctrl-0 = <&p10_1_scb4_uart_tx &p10_0_scb4_uart_rx &p10_3_scb4_uart_rts
+		     &p10_2_scb4_uart_cts>;
+	pinctrl-names = "default";
+
+	/* HW Flow control must be enabled for HCI H4 */
+	hw-flow-control;
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+
+		cyw55513 {
+			status = "okay";
+			compatible = "infineon,bt-hci-uart";
+			bt-reg-on-gpios = <&gpio_prt11 0 GPIO_ACTIVE_HIGH>;
+			fw-download-speed = <115200>;
+			hci-operation-speed = <115200>;
+		};
+	};
 };

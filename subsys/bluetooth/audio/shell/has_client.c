@@ -29,7 +29,7 @@ static void has_client_discover_cb(struct bt_conn *conn, int err, struct bt_has 
 				   enum bt_has_hearing_aid_type type,
 				   enum bt_has_capabilities caps)
 {
-	if (err) {
+	if (err != 0) {
 		bt_shell_error("HAS discovery (err %d)", err);
 		return;
 	}
@@ -52,7 +52,7 @@ static void has_client_preset_switch_cb(struct bt_has *has, int err, uint8_t ind
 static void has_client_preset_read_rsp_cb(struct bt_has *has, int err,
 					  const struct bt_has_preset_record *record, bool is_last)
 {
-	if (err) {
+	if (err != 0) {
 		bt_shell_error("Preset Read operation failed (err %d)", err);
 		return;
 	}

@@ -309,8 +309,9 @@
 		adc2: adc@42028100 {
 			compatible = "st,stm32-adc";
 			reg = <0x42028100 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 10)>;
-			clock-names = "adcx";
+			clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
+				 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
+			clock-names = "adcx", "adc_ker";
 			interrupts = <69 0>;
 			vref-mv = <3300>;
 			#io-channel-cells = <1>;
@@ -580,4 +581,8 @@
 		i2c = <&i2c4>;
 		status = "disabled";
 	};
+};
+
+&vbat {
+	io-channels = <&adc2 16>;
 };

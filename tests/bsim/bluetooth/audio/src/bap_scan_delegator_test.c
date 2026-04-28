@@ -680,7 +680,7 @@ static int remove_source(struct sync_state *state)
 
 	/* We don't actually need to sync to the BIG/BISes */
 	err = bt_bap_scan_delegator_rem_src(state->src_id);
-	if (err) {
+	if (err != 0) {
 		return err;
 	}
 
@@ -702,8 +702,8 @@ static void remove_all_sources(void)
 			printk("[%zu]: Removing source\n", i);
 
 			err = remove_source(state);
-			if (err) {
-				FAIL("[%zu]: Remove source failed (err %d)\n", err);
+			if (err != 0) {
+				FAIL("[%zu]: Remove source failed (err %d)\n", i, err);
 				return;
 			}
 
@@ -770,7 +770,7 @@ static int sync_broadcast(struct sync_state *state)
 
 	/* We don't actually need to sync to the BIG/BISes */
 	err = bt_bap_scan_delegator_set_bis_sync_state(state->src_id, state->bis_sync_req);
-	if (err) {
+	if (err != 0) {
 		return err;
 	}
 
@@ -806,7 +806,7 @@ static int common_init(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 		return err;
 	}
@@ -814,7 +814,7 @@ static int common_init(void)
 	printk("Bluetooth initialized\n");
 
 	err = bt_bap_scan_delegator_register(&scan_delegator_cb);
-	if (err) {
+	if (err != 0) {
 		FAIL("Scan delegator register failed (err %d)\n", err);
 		return err;
 	}
@@ -833,7 +833,7 @@ static void test_main_client_sync(void)
 	int err;
 
 	err = common_init();
-	if (err) {
+	if (err != 0) {
 		FAIL("common init failed (err %d)\n", err);
 		return;
 	}
@@ -871,7 +871,7 @@ static void test_main_server_sync_client_rem(void)
 	int err;
 
 	err = common_init();
-	if (err) {
+	if (err != 0) {
 		FAIL("common init failed (err %d)\n", err);
 		return;
 	}
@@ -920,7 +920,7 @@ static void test_main_server_sync_server_rem(void)
 	int err;
 
 	err = common_init();
-	if (err) {
+	if (err != 0) {
 		FAIL("common init failed (err %d)\n", err);
 		return;
 	}

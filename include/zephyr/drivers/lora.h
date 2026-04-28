@@ -233,7 +233,7 @@ typedef void (*lora_cad_cb)(const struct device *dev, bool activity_detected,
  * @see lora_config() for argument descriptions.
  */
 typedef int (*lora_api_config)(const struct device *dev,
-			       struct lora_modem_config *config);
+			       const struct lora_modem_config *config);
 
 /**
  * @typedef lora_api_airtime()
@@ -343,7 +343,7 @@ __subsystem struct lora_driver_api {
  * @return 0 on success, negative on error
  */
 static inline int lora_config(const struct device *dev,
-			      struct lora_modem_config *config)
+			      const struct lora_modem_config *config)
 {
 	return DEVICE_API_GET(lora, dev)->config(dev, config);
 }

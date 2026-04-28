@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,9 +11,9 @@
 #include <soc.h>
 
 /* Board xtal frequency in Hz */
-#define BOARD_XTAL_CLK_HZ                         32000U
+#define BOARD_XTAL_CLK_HZ     32000U
 /* Core clock frequency: 96MHz */
-#define CLOCK_INIT_CORE_CLOCK                     96000000U
+#define CLOCK_INIT_CORE_CLOCK 96000000U
 /* System clock frequency. */
 extern uint32_t SystemCoreClock;
 
@@ -109,6 +109,19 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFROdiv1_to_AON_COM);
 	CLOCK_SetClockDiv(kCLOCK_DIVAonCMP, 1U);
 	CLOCK_EnableClock(kCLOCK_GateAonUART);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rtc))
+	if (!CLOCK_IsRoscInitialized()) {
+		rosc_init_config_t rosc_init_config;
+
+		CLOCK_GetDefaultInitRoscConfig(&rosc_init_config);
+		rosc_init_config.detectionDelay = 50U;
+		rosc_init_config.detectionTimeout = 0U;
+		rosc_init_config.detectionDelaySwitchedMode = 50U;
+		rosc_init_config.detectionTimeoutSwitchedMode = 50U;
+		(void)CLOCK_InitRosc(&rosc_init_config);
+	}
 #endif
 
 	/* Set SystemCoreClock variable. */

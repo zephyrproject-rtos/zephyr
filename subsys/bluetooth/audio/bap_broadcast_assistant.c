@@ -75,8 +75,6 @@ struct bap_broadcast_assistant_instance {
 	uint8_t pa_sync;
 	uint8_t recv_state_cnt;
 
-	uint16_t start_handle;
-	uint16_t end_handle;
 	uint16_t cp_handle;
 	uint16_t recv_state_handles[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
 
@@ -106,8 +104,8 @@ struct bap_broadcast_assistant_instance {
 static sys_slist_t broadcast_assistant_cbs = SYS_SLIST_STATIC_INIT(&broadcast_assistant_cbs);
 
 static struct bap_broadcast_assistant_instance broadcast_assistants[CONFIG_BT_MAX_CONN];
-static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
+static const struct bt_uuid *bass_uuid = BT_UUID_BASS;
 #define ATT_BUF_SIZE BT_ATT_MAX_ATTRIBUTE_LEN
 NET_BUF_SIMPLE_DEFINE_STATIC(att_buf, ATT_BUF_SIZE);
 
@@ -396,7 +394,7 @@ static uint8_t broadcast_assistant_bap_ntf_read_func(struct bt_conn *conn, uint8
 
 	LOG_DBG("conn %p err 0x%02x len %u", (void *)conn, err, length);
 
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Failed to read: %u", err);
 		memset(read, 0, sizeof(*read));
 		bap_long_read_reset(inst);
@@ -678,7 +676,7 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 		}
 
 		if (sub_params != NULL) {
-			sub_params->end_handle = inst->end_handle;
+			sub_params->end_handle = params->end_handle;
 			sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = attr->handle + 1;
@@ -727,12 +725,10 @@ static uint8_t service_discover_func(struct bt_conn *conn,
 
 	if (params->type == BT_GATT_DISCOVER_PRIMARY) {
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
-		inst->start_handle = attr->handle + 1;
-		inst->end_handle = prim_service->end_handle;
 
 		inst->disc_params.uuid = NULL;
-		inst->disc_params.start_handle = inst->start_handle;
-		inst->disc_params.end_handle = inst->end_handle;
+		inst->disc_params.start_handle = attr->handle + 1U;
+		inst->disc_params.end_handle = prim_service->end_handle;
 		inst->disc_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 		inst->disc_params.func = char_discover_func;
 
@@ -924,8 +920,6 @@ static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *in
 	inst->scanning = false;
 	inst->pa_sync = 0U;
 	inst->recv_state_cnt = 0U;
-	inst->start_handle = 0U;
-	inst->end_handle = 0U;
 	inst->cp_handle = 0U;
 	inst->long_read_handle = 0;
 	(void)k_work_cancel_delayable(&inst->bap_read_work);
@@ -1027,9 +1021,8 @@ int bt_bap_broadcast_assistant_discover(struct bt_conn *conn)
 	/* Discover BASS on peer, setup handles and notify */
 	discover_init(inst);
 
-	(void)memcpy(&uuid, BT_UUID_BASS, sizeof(uuid));
 	inst->disc_params.func = service_discover_func;
-	inst->disc_params.uuid = &uuid.uuid;
+	inst->disc_params.uuid = bass_uuid;
 	inst->disc_params.type = BT_GATT_DISCOVER_PRIMARY;
 	inst->disc_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	inst->disc_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;

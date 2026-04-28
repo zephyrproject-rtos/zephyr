@@ -54,7 +54,7 @@ static void test_common(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		FAIL("Bluetooth enable failed (err %d)\n", err);
 		return;
 	}
@@ -67,7 +67,7 @@ static void test_common(void)
 	has_param.preset_sync_support = true;
 
 	err = bt_has_register(&has_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("HAS register failed (err %d)\n", err);
 		return;
 	}
@@ -76,7 +76,7 @@ static void test_common(void)
 	has_param.preset_sync_support = false;
 
 	err = bt_has_features_set(&has_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("HAS register failed (err %d)\n", err);
 		return;
 	}
@@ -87,7 +87,7 @@ static void test_common(void)
 	preset_param.ops = &preset_ops,
 
 	err = bt_has_preset_register(&preset_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("Preset register failed (err %d)\n", err);
 		return;
 	}
@@ -97,7 +97,7 @@ static void test_common(void)
 	preset_param.name = test_preset_name_1;
 
 	err = bt_has_preset_register(&preset_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("Preset register failed (err %d)\n", err);
 		return;
 	}
@@ -132,7 +132,7 @@ static void test_offline_behavior(void)
 	preset_param.ops = &preset_ops,
 
 	err = bt_has_preset_register(&preset_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("Preset register failed (err %d)\n", err);
 		return;
 	}
@@ -141,13 +141,13 @@ static void test_offline_behavior(void)
 	has_param.preset_sync_support = true;
 
 	err = bt_has_features_set(&has_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("Features set failed (err %d)\n", err);
 		return;
 	}
 
 	err = bt_has_preset_active_set(test_preset_index_3);
-	if (err) {
+	if (err != 0) {
 		FAIL("Preset activation failed (err %d)\n", err);
 		return;
 	}

@@ -18,6 +18,7 @@ supported:
   - memc
   - netif:eth
   - pwm
+  - rtc
   - spi
   - uart
   - usb_device

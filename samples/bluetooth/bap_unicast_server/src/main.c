@@ -670,7 +670,7 @@ int main(void)
 	printk("Bluetooth initialized\n");
 
 	err = bt_pacs_register(&pacs_param);
-	if (err) {
+	if (err != 0) {
 		printk("Could not register PACS (err %d)\n", err);
 		return 0;
 	}
@@ -711,20 +711,20 @@ int main(void)
 
 	/* Create a connectable advertising set */
 	err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_CONN_QUICK, NULL, &adv);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to create advertising set (err %d)\n", err);
 		return 0;
 	}
 
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to set advertising data (err %d)\n", err);
 		return 0;
 	}
 
 	while (true) {
 		err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to start advertising set (err %d)\n", err);
 			return 0;
 		}
