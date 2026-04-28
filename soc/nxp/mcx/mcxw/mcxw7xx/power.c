@@ -8,7 +8,6 @@
 #include <fsl_cmc.h>
 #include <fsl_spc.h>
 #include <fsl_vbat.h>
-#include <fsl_wuu.h>
 
 #include <zephyr/logging/log.h>
 
