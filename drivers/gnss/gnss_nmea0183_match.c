@@ -79,6 +79,35 @@ void gnss_nmea0183_match_rmc_callback(struct modem_chat *chat, char **argv, uint
 	gnss_nmea0183_match_publish(data);
 }
 
+#if CONFIG_GNSS_ACCURACY
+void gnss_nmea0183_match_gst_callback(struct modem_chat *chat, char **argv, uint16_t argc,
+				      void *user_data)
+{
+	struct gnss_nmea0183_match_data *data = user_data;
+	struct gnss_accuracy accuracy;
+
+	ARG_UNUSED(chat);
+
+	if (gnss_nmea0183_parse_gst((const char **)argv, argc, &accuracy) < 0) {
+		return;
+	}
+
+	gnss_publish_accuracy(data->gnss, &accuracy);
+}
+#endif
+
+#if CONFIG_GNSS_RAW_NMEA
+void gnss_nmea0183_match_raw_tap(struct modem_chat *chat,
+				 const char *line, size_t len, void *user_data)
+{
+	struct gnss_nmea0183_match_data *data = user_data;
+
+	ARG_UNUSED(chat);
+
+	gnss_publish_raw_nmea(data->gnss, line, len);
+}
+#endif
+
 #if CONFIG_GNSS_SATELLITES
 void gnss_nmea0183_match_gsv_callback(struct modem_chat *chat, char **argv, uint16_t argc,
 				      void *user_data)

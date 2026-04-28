@@ -38,3 +38,33 @@ void gnss_publish_satellites(const struct device *dev, const struct gnss_satelli
 	k_sem_give(&semlock);
 }
 #endif
+
+#if CONFIG_GNSS_ACCURACY
+void gnss_publish_accuracy(const struct device *dev, const struct gnss_accuracy *accuracy)
+{
+	(void)k_sem_take(&semlock, K_FOREVER);
+
+	STRUCT_SECTION_FOREACH(gnss_accuracy_callback, callback) {
+		if (callback->dev == NULL || callback->dev == dev) {
+			callback->callback(dev, accuracy);
+		}
+	}
+
+	k_sem_give(&semlock);
+}
+#endif
+
+#if CONFIG_GNSS_RAW_NMEA
+void gnss_publish_raw_nmea(const struct device *dev, const char *sentence, size_t len)
+{
+	(void)k_sem_take(&semlock, K_FOREVER);
+
+	STRUCT_SECTION_FOREACH(gnss_raw_nmea_callback, callback) {
+		if (callback->dev == NULL || callback->dev == dev) {
+			callback->callback(dev, sentence, len);
+		}
+	}
+
+	k_sem_give(&semlock);
+}
+#endif
