@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "am13e.dtsi"
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	soc {
+		sram0_1_2: memory@20000000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x20000000 DT_SIZE_K(96)>;
+			zephyr,memory-region = "SRAM012";
+		};
+
+		sram3_cahb: memory@c18000 {
+			compatible = "zephyr,memory-region";
+			reg = <0xC18000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "SRAM3CAHB";
+		};
+
+		sram3_sahb: memory@20018000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x20018000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "SRAM3SAHB";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <mem.h>
+#include <freq.h>
+
+/{
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			clock-frequency = <DT_FREQ_M(32)>;
+		};
+
+		mpu: mpu@e000ed90 {
+			compatible = "arm,armv8m-mpu";
+			reg = <0xE000ED90 0x40>;
+		};
+	};
+};
