@@ -10,6 +10,15 @@
 	soc {
 		compatible = "st,stm32wba23", "st,stm32wba", "simple-bus";
 
+		flash: flash-controller@40022000 {
+			flash0: flash@8000000 {
+				write-block-size = <8>;
+				erase-block-size = <4096>;
+				/* maximum erase time (ms) for a 4K sector */
+				max-erase-time = <15>;
+			};
+		};
+
 		lpdma1: dma@40020000 {
 			compatible = "st,stm32u5-dma";
 			#dma-cells = <3>;
