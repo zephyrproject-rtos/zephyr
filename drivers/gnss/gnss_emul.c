@@ -46,6 +46,11 @@ struct gnss_emul_data {
 	struct gnss_satellite satellites[GNSS_EMUL_SUPPORTED_SYSTEMS_COUNT];
 	uint8_t satellites_len;
 #endif
+
+#ifdef CONFIG_GNSS_ACCURACY
+	struct gnss_accuracy accuracy;
+	bool has_accuracy;
+#endif
 };
 
 static void gnss_emul_lock_sem(const struct device *dev)
@@ -298,7 +303,20 @@ void gnss_emul_clear_data(const struct device *dev)
 	struct gnss_emul_data *data = dev->data;
 
 	memset(&data->data, 0, sizeof(data->data));
+
+#ifdef CONFIG_GNSS_ACCURACY
+	memset(&data->accuracy, 0, sizeof(data->accuracy));
+	data->has_accuracy = false;
+#endif
 }
+
+#ifdef CONFIG_GNSS_RAW_NMEA
+void gnss_emul_inject_raw_sentence(const struct device *dev,
+				   const char *sentence, size_t len)
+{
+	gnss_publish_raw_nmea(dev, sentence, len);
+}
+#endif
 
 static void gnss_emul_set_utc(const struct device *dev)
 {
@@ -334,6 +352,16 @@ void gnss_emul_set_data(const struct device *dev, const struct navigation_data *
 	data->boot_realtime_ms = boot_realtime_ms;
 	gnss_emul_set_utc(dev);
 }
+
+#ifdef CONFIG_GNSS_ACCURACY
+void gnss_emul_set_accuracy(const struct device *dev, const struct gnss_accuracy *accuracy)
+{
+	struct gnss_emul_data *data = dev->data;
+
+	data->accuracy = *accuracy;
+	data->has_accuracy = true;
+}
+#endif /* CONFIG_GNSS_ACCURACY */
 
 #else
 
@@ -437,6 +465,12 @@ static void gnss_emul_work_handler(struct k_work *work)
 #ifdef CONFIG_GNSS_SATELLITES
 	gnss_emul_set_satellites(dev);
 	gnss_publish_satellites(dev, data->satellites, data->satellites_len);
+#endif
+
+#ifdef CONFIG_GNSS_ACCURACY
+	if (data->has_accuracy) {
+		gnss_publish_accuracy(dev, &data->accuracy);
+	}
 #endif
 
 	gnss_emul_update_fix_timestamp(dev, false);
