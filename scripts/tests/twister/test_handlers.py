@@ -870,6 +870,15 @@ TESTDATA_13 = [
     ),
     (
         None,
+        'openocd',
+        'Raspberry Pi Debug Probe (CMSIS-DAP)',
+        None,
+        ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
+         '--runner', 'openocd', '--base-param1', '--base-param2',
+         '--', '--cmd-pre-init', 'cmsis_dap_serial 12345', '--runner-param1', '--runner-param2']
+    ),
+    (
+        None,
         'jlink',
         'product',
         None,
@@ -914,8 +923,8 @@ TESTDATA_13_2 = [(True), (False)]
     ids=['default', '--west-flash', 'one west flash value',
          'multiple west flash values', 'generic runner', 'pyocd',
          'nrfjprog', 'openocd, STM32 STLink', 'openocd, STLINK-v3',
-         'openocd, EDBG CMSIS-DAP', 'jlink', 'stm32cubeprogrammer',
-         'flash_command', 'flash_command with args']
+         'openocd, EDBG CMSIS-DAP', 'openocd, Raspberry Pi Debug Probe (CMSIS-DAP)',
+         'jlink', 'stm32cubeprogrammer', 'flash_command', 'flash_command with args']
 )
 @pytest.mark.parametrize('hardware_probe', TESTDATA_13_2, ids=['probe', 'id'])
 def test_devicehandler_create_command(
