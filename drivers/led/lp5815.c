@@ -549,7 +549,7 @@ static DEVICE_API(led, lp5815_led_api) = {
 		.bus		= I2C_DT_SPEC_INST_GET(n),		\
 		.num_leds	= ARRAY_SIZE(lp5815_leds_##n),		\
 		.leds_info	= lp5815_leds_##n,			\
-		.max_current	= DT_INST_PROP(n, max_current_51mA),	\
+		.max_current	= DT_INST_PROP(n, max_current_51ma),	\
 		.out_dot_current = {					\
 			DT_INST_PROP(n, out0_dot_current),		\
 			DT_INST_PROP(n, out1_dot_current),		\
