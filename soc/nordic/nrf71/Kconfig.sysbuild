@@ -16,3 +16,12 @@ config SOC_NRF71_GENERATE_UICR
 	  When enabled, a UICR generator image is included in the build.
 	  This generates a standalone hex containing UICR values derived from
 	  the devicetree (nordic,nrf71-uicr binding).
+
+config SOC_NRF71_GENERATE_WICR
+	bool "Generate nRF71 WICR hex"
+	depends on SOC_SERIES_NRF71
+	default y
+	help
+	  When enabled, a WICR generator image is included in the build.
+	  This generates a standalone hex containing WICR values derived from
+	  the devicetree (nordic,nrf-wicr binding).
