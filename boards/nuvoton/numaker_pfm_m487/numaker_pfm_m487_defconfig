@@ -13,3 +13,6 @@ CONFIG_SERIAL=y
 # Console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
+
+# Enable hex output for openocd
+CONFIG_BUILD_OUTPUT_HEX=y
