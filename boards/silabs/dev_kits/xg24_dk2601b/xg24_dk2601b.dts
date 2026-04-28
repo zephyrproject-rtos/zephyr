@@ -26,9 +26,12 @@
 	};
 
 	aliases {
+		dht0 = &si7021;
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
+		light-sensor = &veml6035;
+		magn0 = &si7210;
 		pressure-sensor = &bmp384;
 		pwm-led0 = &red_pwm_led;
 		pwm-led1 = &green_pwm_led;
