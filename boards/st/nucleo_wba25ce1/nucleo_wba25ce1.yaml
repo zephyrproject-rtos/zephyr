@@ -17,6 +17,7 @@ supported:
   - rtc
   - spi
   - watchdog
+  - bluetooth
 ram: 64
 flash: 512
 vendor: st
