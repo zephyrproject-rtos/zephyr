@@ -28,9 +28,44 @@ config ZTEST_BENCHMARK_OUTPUT_VERBOSE
 config ZTEST_BENCHMARK_OUTPUT_CSV
 	bool "Output benchmark results in CSV format"
 	help
-	  Formats test output for machine parsing.
-	  It will output results in CSV format, which can be easily parsed by scripts or tools for
-	  further analysis.
+	  Formats benchmark output as comma-separated values for machine parsing.
+
+	  Each row is prefixed with a single-letter record type that indicates the benchmark kind
+	  and determines the column layout.
+
+	  Sampled benchmarks (created with ZTEST_BENCHMARK() or ZTEST_BENCHMARK_SETUP_TEARDOWN()),
+	  emit rows of the form:
+
+	    S, suite, name, samples, total_cycles, mean, stddev, std_error, min, min_sample, max,
+	    max_sample
+
+	  All cycle values are noise-corrected against the control measurement.
+
+	  - suite: test suite name
+	  - name: benchmark name
+	  - samples: number of iterations
+	  - total_cycles: aggregate cycle count
+	  - mean: average cycles per iteration
+	  - stddev: standard deviation
+	  - std_error: standard error of the mean
+	  - min / max: extreme cycle values
+	  - min_sample / max_sample: iteration at which each extreme occurred
+
+	  Timed benchmarks (created with ZTEST_BENCHMARK_TIMED() or
+	  ZTEST_BENCHMARK_TIMED_SETUP_TEARDOWN()) emit rows of the form:
+
+	    T, suite, name, iterations, total_cycles, net_cycles, ops_per_sec, cycles_per_op
+
+	  - suite: test suite name
+	  - name: benchmark name
+	  - iterations: number of completed runs
+	  - total_cycles: gross cycle count
+	  - net_cycles: cycles after subtracting loop overhead
+	  - ops_per_sec: throughput (operations per second)
+	  - cycles_per_op: average cost per operation
+
+	  If measured overhead exceeds the total time, the row contains INCONCLUSIVE instead of
+	  numeric results (e.g. "T, my_suite, my_benchmark, INCONCLUSIVE").
 endchoice
 
 endif

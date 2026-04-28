@@ -139,21 +139,9 @@ static struct bt_gatt_read_params read_car_params = {
 static void le_connected(struct bt_conn *conn, uint8_t err)
 {
 	struct btp_gap_device_connected_ev ev;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	struct bt_conn_info info;
 
-	(void)memset(addr_str, 0, sizeof(addr_str));
-
-	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
-	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
-		(void)bt_addr_to_str(bt_conn_get_dst_br(conn), addr_str, sizeof(addr_str));
-	} else {
-		LOG_WRN("Unsupported transport");
-		return;
-	}
-
-	LOG_DBG("%s: 0x%02x", addr_str, err);
+	LOG_DBG("%s: 0x%02x", bt_conn_dst_str(conn), err);
 
 	if (err) {
 		return;
@@ -187,27 +175,18 @@ static void le_connected(struct bt_conn *conn, uint8_t err)
 static void le_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct btp_gap_device_disconnected_ev ev;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 
 	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		const bt_addr_le_t *addr;
-
-		addr = bt_conn_get_dst(conn);
-		(void)bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-		bt_addr_le_copy(&ev.address, addr);
+		bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
-		const bt_addr_t *br_addr;
-
-		br_addr = bt_conn_get_dst_br(conn);
-		(void)bt_addr_to_str(br_addr, addr_str, sizeof(addr_str));
 		ev.address.type = BTP_BR_ADDRESS_TYPE;
-		bt_addr_copy(&ev.address.a, br_addr);
+		bt_addr_copy(&ev.address.a, bt_conn_get_dst_br(conn));
 	} else {
 		LOG_WRN("Unsupported transport");
 		return;
 	}
 
-	LOG_DBG("%s: 0x%02x", addr_str, reason);
+	LOG_DBG("%s: 0x%02x", bt_conn_dst_str(conn), reason);
 
 	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_DEVICE_DISCONNECTED, &ev, sizeof(ev));
 }
@@ -426,10 +405,6 @@ static void oob_data_request(struct bt_conn *conn,
 		return;
 	}
 
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
-
 	switch (oob_info->type) {
 	case BT_CONN_OOB_LE_SC:
 	{
@@ -440,7 +415,7 @@ static void oob_data_request(struct bt_conn *conn,
 
 		LOG_DBG("Set %s OOB SC data for %s, ",
 			oob_config_str(oob_info->lesc.oob_config),
-			addr);
+			bt_addr_le_str(info.le.dst));
 
 		struct bt_le_oob_sc_data *oobd_local =
 			oob_info->lesc.oob_config != BT_CONN_OOB_REMOTE_ONLY ?
@@ -461,9 +436,8 @@ static void oob_data_request(struct bt_conn *conn,
 
 		if (oobd_local &&
 		    !bt_addr_le_eq(info.le.local, &oob_sc_local.addr)) {
-			bt_addr_le_to_str(info.le.local, addr, sizeof(addr));
 			LOG_DBG("No OOB data available for local %s",
-				addr);
+				bt_addr_le_str(info.le.local));
 			bt_conn_auth_cancel(conn);
 			return;
 		}
@@ -482,7 +456,8 @@ static void oob_data_request(struct bt_conn *conn,
 			break;
 		}
 
-		LOG_DBG("Legacy OOB TK requested from remote %s", addr);
+		LOG_DBG("Legacy OOB TK requested from remote %s",
+			bt_addr_le_str(info.le.dst));
 
 		err = bt_le_oob_set_legacy_tk(conn, oob_legacy_tk);
 		if (err < 0) {
@@ -859,14 +834,7 @@ int tester_gap_create_adv_instance(struct bt_le_adv_param *param,
 		}
 		break;
 	case BTP_GAP_ADDR_TYPE_NON_RESOLVABLE_PRIVATE:
-		if (!IS_ENABLED(CONFIG_BT_PRIVACY)) {
-			return -EINVAL;
-		}
-
-		/* NRPA is used only for non-connectable advertising */
-		if (atomic_test_bit(&current_settings, BTP_GAP_SETTINGS_CONNECTABLE)) {
-			return -EINVAL;
-		}
+		param->options |= BT_LE_ADV_OPT_USE_NRPA;
 		break;
 	default:
 		return -EINVAL;
@@ -999,8 +967,8 @@ static uint8_t start_advertising(const void *cmd, uint16_t cmd_len,
 
 /**
  * Start directed advertising with a peer address with or without RPA.
- * If privacy is enabled and the peer does not support Central Address Resolution,
- * the advertisement will be started as undirected with RPA.
+ * If privacy is enabled and the peer does not support Central Address
+ * Resolution PTS expects IUT request to fail.
  */
 static uint8_t start_directed_advertising(const void *cmd, uint16_t cmd_len,
 					  void *rsp, uint16_t *rsp_len)
@@ -1010,35 +978,49 @@ static uint8_t start_directed_advertising(const void *cmd, uint16_t cmd_len,
 	struct bt_le_adv_param adv_param = BT_LE_ADV_PARAM_INIT(
 		BT_LE_ADV_OPT_CONN, BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL);
 	uint16_t options = sys_le16_to_cpu(cp->options);
+	bool peer_car_supported = false;
 
 	if (bt_addr_le_eq(&cp->address, &bt_addr_le_any)) {
 		LOG_ERR("Invalid peer address");
 		return BTP_STATUS_FAILED;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_PRIVACY) && (options & BTP_GAP_START_DIRECTED_ADV_PEER_RPA)) {
-		/**
-		 * In accordance with the test spec for test case GAP/CONN/DCON/BV-05-C, if the peer
-		 * does not support Central Address Resolution, the advertisement will be started
-		 * as undirected.
-		 */
+	/*
+	 * For GAP/CONN/DCON/BV-05-C PTS expects IUT to fail operation
+	 * if the peer does not support Central Address Resolution.
+	 *
+	 * In Test Set there is ALT to start undirected advertising instead
+	 * but PTS interpretation is that IUT shall reject directed request
+	 * regardless and may then later on follow up with underected
+	 * advertising (which PTS doesn't validate). To keep this simple
+	 * just reject here.
+	 */
+	if ((options & BTP_GAP_START_DIRECTED_ADV_PEER_RPA) != 0U) {
+		if (!IS_ENABLED(CONFIG_BT_PRIVACY)) {
+			return BTP_STATUS_FAILED;
+		}
+
 		for (int i = 0; i < CONFIG_BT_MAX_PAIRED; i++) {
 			if (bt_addr_le_eq(&cp->address, &peers_with_car[i].addr) &&
 			    peers_with_car[i].supported) {
-				adv_param.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
-				adv_param.peer = &cp->address;
-				if ((options & BTP_GAP_START_DIRECTED_ADV_HD) == 0U) {
-					adv_param.options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
-				}
+				peer_car_supported = true;
 				break;
 			}
 		}
-	} else {
-		adv_param.peer = &cp->address;
-		if ((options & BTP_GAP_START_DIRECTED_ADV_HD) == 0U) {
-			adv_param.options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
+
+		if (peer_car_supported == false) {
+			LOG_WRN("Peer doesn't support CAR");
+			return BTP_STATUS_FAILED;
 		}
+
+		adv_param.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
 	}
+
+	if ((options & BTP_GAP_START_DIRECTED_ADV_HD) == 0U) {
+		adv_param.options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
+	}
+
+	adv_param.peer = &cp->address;
 
 	if (bt_le_adv_start(&adv_param, NULL, 0, NULL, 0) < 0) {
 		LOG_ERR("Failed to start advertising");

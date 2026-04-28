@@ -33,3 +33,15 @@ properties:
       Size of each fingerprint template in bytes.
       - GT-511C1R: 506 bytes
       - GT-511C3/GT-521F32/GT-521F52: 498 bytes
+
+examples: |
+    &uart1 {
+      status = "okay";
+
+      fingerprint0: fingerprint0 {
+        compatible = "adh-tech,gt5x";
+        status = "okay";
+        max-templates = <200>;
+        template-size = <498>;
+      };
+    };

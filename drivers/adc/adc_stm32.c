@@ -1005,9 +1005,14 @@ static int adc_stm32_preselection_setup(const struct device *dev, uint32_t chann
 	ADC_TypeDef *adc = config->base;
 	uint32_t channel = STM32_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
 	int err;
+#ifdef STM32H72X_ADC
+	volatile uint32_t *pcsel_reg = &adc->PCSEL_RES0;
+#else /* STM32H72X_ADC */
+	volatile uint32_t *pcsel_reg = &adc->PCSEL;
+#endif /* STM32H72X_ADC */
 
 	if (!config->has_channel_preselection ||
-	    (stm32_reg_read(&adc->PCSEL) & channel) == channel) {
+	    (stm32_reg_read(pcsel_reg) & channel) == channel) {
 		/* Nothing to configure */
 		return 0;
 	}
@@ -1701,10 +1706,9 @@ static int adc_stm32_channel_setup(const struct device *dev,
 #endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION && CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
 #ifdef CONFIG_SOC_SERIES_STM32H5X
-	if (adc == ADC1) {
-		if (channel_cfg->channel_id == 0) {
-			LL_ADC_EnableChannel0_GPIO(adc);
-		}
+	if (channel_cfg->channel_id == 0) {
+		/* To read channel 0 of either ADC on H5, Option bit 0 of ADC1 must be set. */
+		LL_ADC_EnableChannel0_GPIO(ADC1);
 	}
 #endif
 

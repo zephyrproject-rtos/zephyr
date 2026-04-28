@@ -205,6 +205,17 @@ class TypeLookup:
                 parts.append(chunk["content"])
         return "".join(parts)
 
+    def plain_name(self, btype):
+        """
+        Human-readable type title without RST markup, for sorting and display logic.
+        """
+        chunks = self.type2name.get(btype, [{"type": "text", "content": btype}])
+        parts = [
+            f"{c['abbr']} ({c['explanation']})" if c["type"] == "acronym" else c["content"]
+            for c in chunks
+        ]
+        return "".join(parts)
+
     def target(self, btype):
         return self.type2ref_target.get(btype, f"dt_type_{btype}")
 
@@ -221,7 +232,7 @@ class TypeLookup:
             return binding.compatible
 
         type2bindings = {}
-        for btype in sorted(unsorted, key=lambda t: self.name(t).casefold()):
+        for btype in sorted(unsorted, key=lambda t: self.plain_name(t).casefold()):
             type2bindings[btype] = sorted(unsorted[btype], key=binding_key)
 
         return type2bindings

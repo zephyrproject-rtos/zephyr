@@ -148,6 +148,12 @@ in echo_client/src/tcp.c.
         #define SOCKS5_PROXY_V6_ADDR IPV6_ADDR
         #define SOCKS5_PROXY_PORT    1080
 
+Wi-Fi
+=====
+
+The IPv4 Wi-Fi support can be enabled in the sample with
+:ref:`Wi-Fi snippet <snippet-wifi-ipv4>`.
+
 Running echo-server in Linux Host
 =================================
 

@@ -48,7 +48,7 @@ static uint8_t g_active_index;
 static void discover_cb(struct bt_conn *conn, int err, struct bt_has *has,
 			enum bt_has_hearing_aid_type type, enum bt_has_capabilities caps)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to discover HAS (err %d)\n", err);
 		return;
 	}
@@ -84,7 +84,7 @@ static void check_preset_record(const struct bt_has_preset_record *record,
 static void preset_read_rsp_cb(struct bt_has *has, int err,
 			       const struct bt_has_preset_record *record, bool is_last)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("%s: err %d\n", __func__, err);
 		return;
 	}
@@ -451,7 +451,7 @@ static uint8_t discover_features_cb(struct bt_conn *conn, const struct bt_gatt_a
 		subscribe_params->value_handle = bt_gatt_attr_value_handle(attr);
 
 		err = bt_gatt_discover(conn, &discover_params);
-		if (err) {
+		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)", err);
 		}
 	} else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
@@ -463,7 +463,7 @@ static uint8_t discover_features_cb(struct bt_conn *conn, const struct bt_gatt_a
 		subscribe_params->subscribe = subscribe_cb;
 
 		err = bt_gatt_subscribe(conn, subscribe_params);
-		if (err && err != -EALREADY) {
+		if (err != 0 && err != -EALREADY) {
 			LOG_DBG("Subscribe failed (err %d)", err);
 		}
 	} else {
@@ -517,7 +517,7 @@ static uint8_t discover_active_preset_index_cb(struct bt_conn *conn,
 		subscribe_params->value_handle = bt_gatt_attr_value_handle(attr);
 
 		err = bt_gatt_discover(conn, &discover_params);
-		if (err) {
+		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)", err);
 		}
 	} else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
@@ -529,7 +529,7 @@ static uint8_t discover_active_preset_index_cb(struct bt_conn *conn,
 		subscribe_params->subscribe = subscribe_cb;
 
 		err = bt_gatt_subscribe(conn, subscribe_params);
-		if (err && err != -EALREADY) {
+		if (err != 0 && err != -EALREADY) {
 			LOG_DBG("Subscribe failed (err %d)", err);
 		}
 	} else {
@@ -582,7 +582,7 @@ static uint8_t discover_control_point_cb(struct bt_conn *conn, const struct bt_g
 		subscribe_params->value_handle = bt_gatt_attr_value_handle(attr);
 
 		err = bt_gatt_discover(conn, &discover_params);
-		if (err) {
+		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)", err);
 		}
 	} else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
@@ -594,7 +594,7 @@ static uint8_t discover_control_point_cb(struct bt_conn *conn, const struct bt_g
 		subscribe_params->subscribe = subscribe_cb;
 
 		err = bt_gatt_subscribe(conn, subscribe_params);
-		if (err && err != -EALREADY) {
+		if (err != 0 && err != -EALREADY) {
 			LOG_DBG("Subscribe failed (err %d)", err);
 		}
 	} else {
@@ -649,11 +649,7 @@ static void test_gatt_client(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 
-	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
-	if (err) {
-		FAIL("Failed to set security level %d (err %d)", BT_SECURITY_L2, err);
-		return;
-	}
+	update_security(default_conn);
 
 	WAIT_FOR_COND(security_level == BT_SECURITY_L2);
 
@@ -682,11 +678,7 @@ static void test_gatt_client(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 
-	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
-	if (err) {
-		FAIL("Failed to set security level %d (err %d)\n", BT_SECURITY_L2, err);
-		return;
-	}
+	update_security(default_conn);
 
 	WAIT_FOR_FLAG(flag_all_notifications_received);
 

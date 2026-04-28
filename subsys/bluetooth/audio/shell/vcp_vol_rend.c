@@ -31,7 +31,7 @@ static struct bt_vcp_included vcp_included;
 
 static void vcp_vol_rend_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t mute)
 {
-	if (err) {
+	if (err != 0) {
 		bt_shell_error("VCP state get failed (%d)", err);
 	} else {
 		bt_shell_print("VCP volume %u, mute %u", volume, mute);
@@ -40,7 +40,7 @@ static void vcp_vol_rend_state_cb(struct bt_conn *conn, int err, uint8_t volume,
 
 static void vcp_vol_rend_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 {
-	if (err) {
+	if (err != 0) {
 		bt_shell_error("VCP flags get failed (%d)", err);
 	} else {
 		bt_shell_print("VCP flags 0x%02X", flags);
@@ -50,7 +50,7 @@ static void vcp_vol_rend_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 			  uint8_t mute, uint8_t mode)
 {
-	if (err) {
+	if (err != 0) {
 		bt_shell_error("AICS state get failed (%d) for inst %p",
 			       err, inst);
 	} else {
@@ -62,7 +62,7 @@ static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
 				 int8_t minimum, int8_t maximum)
 {
-	if (err) {
+	if (err != 0) {
 		bt_shell_error("AICS gain settings get failed (%d) for inst %p",
 			       err, inst);
 	} else {
@@ -74,7 +74,7 @@ static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
 static void aics_input_type_cb(struct bt_aics *inst, int err,
 			       uint8_t input_type)
 {
-	if (err) {
+	if (err != 0) {
 		bt_shell_error("AICS input type get failed (%d) for inst %p",
 			       err, inst);
 	} else {
@@ -85,7 +85,7 @@ static void aics_input_type_cb(struct bt_aics *inst, int err,
 
 static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 {
-	if (err) {
+	if (err != 0) {
 		bt_shell_error("AICS status get failed (%d) for inst %p",
 			       err, inst);
 	} else {
@@ -97,7 +97,7 @@ static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 static void aics_description_cb(struct bt_aics *inst, int err,
 				char *description)
 {
-	if (err) {
+	if (err != 0) {
 		bt_shell_error("AICS description get failed (%d) for inst %p",
 			       err, inst);
 	} else {
@@ -108,7 +108,7 @@ static void aics_description_cb(struct bt_aics *inst, int err,
 
 static void vocs_state_cb(struct bt_vocs *inst, int err, int16_t offset)
 {
-	if (err) {
+	if (err != 0) {
 		bt_shell_error("VOCS state get failed (%d) for inst %p", err, inst);
 	} else {
 		bt_shell_print("VOCS inst %p offset %d", inst, offset);
@@ -117,7 +117,7 @@ static void vocs_state_cb(struct bt_vocs *inst, int err, int16_t offset)
 
 static void vocs_location_cb(struct bt_vocs *inst, int err, uint32_t location)
 {
-	if (err) {
+	if (err != 0) {
 		bt_shell_error("VOCS location get failed (%d) for inst %p", err, inst);
 	} else {
 		bt_shell_print("VOCS inst %p location %u", inst, location);
@@ -127,7 +127,7 @@ static void vocs_location_cb(struct bt_vocs *inst, int err, uint32_t location)
 static void vocs_description_cb(struct bt_vocs *inst, int err,
 				char *description)
 {
-	if (err) {
+	if (err != 0) {
 		bt_shell_error("VOCS description get failed (%d) for inst %p", err, inst);
 	} else {
 		bt_shell_print("VOCS inst %p description %s", inst, description);

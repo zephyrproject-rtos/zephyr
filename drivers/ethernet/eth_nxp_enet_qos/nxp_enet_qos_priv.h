@@ -23,13 +23,18 @@
 #define NXP_OUI_BYTE_1 0x9A
 #define NXP_OUI_BYTE_2 0x22
 
-#define FIRST_DESCRIPTOR_FLAG BIT(29)
-#define LAST_DESCRIPTOR_FLAG BIT(28)
-#define OWN_FLAG BIT(31)
+/* receive descriptor 3 */
+#define LAST_DESCRIPTOR_FLAG            BIT(28)
+#define FIRST_DESCRIPTOR_FLAG           BIT(29)
+#define RECEIVE_CONTEXT_DESCRIPTOR_FLAG BIT(30)
+#define OWN_FLAG                        BIT(31)
+
 #define RX_INTERRUPT_ON_COMPLETE_FLAG BIT(30)
 #define TX_INTERRUPT_ON_COMPLETE_FLAG BIT(31)
-#define BUF1_ADDR_VALID_FLAG BIT(24)
-#define DESC_RX_PKT_LEN GENMASK(14, 0)
+#define TX_TIMESTAMP_ENABLE_FLAG      BIT(30)
+#define TX_TIMESTAMP_STATUS_FLAG      BIT(17)
+#define BUF1_ADDR_VALID_FLAG          BIT(24)
+#define DESC_RX_PKT_LEN               GENMASK(14, 0)
 
 #define ENET_QOS_RX_BUFFER_SIZE (CONFIG_NET_BUF_DATA_SIZE & 0xFFFFFFFC)
 #define ENET_QOS_MAX_NORMAL_FRAME_LEN 1518 /* Including FCS */
@@ -101,11 +106,15 @@ struct nxp_enet_qos_mac_config {
 	struct nxp_enet_qos_hw_info hw_info;
 	void (*irq_config_func)(void);
 	enum mac_address_source mac_addr_source;
+#if IS_ENABLED(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+	const struct device *ptp_clock;
+#endif
 };
 
 struct nxp_enet_qos_tx_data {
 	struct k_sem tx_sem;
 	struct net_pkt *pkt;
+	int num_descs;
 	volatile union nxp_enet_qos_tx_desc descriptors[NUM_TX_BUFDESC];
 };
 

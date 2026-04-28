@@ -96,8 +96,7 @@ static inline int z_impl_entropy_get_entropy(const struct device *dev,
 					     uint8_t *buffer,
 					     uint16_t length)
 {
-	const struct entropy_driver_api *api =
-		(const struct entropy_driver_api *)dev->api;
+	const struct entropy_driver_api *api = DEVICE_API_GET(entropy, dev);
 
 	__ASSERT(api->get_entropy != NULL,
 		"Callback pointer should not be NULL");
@@ -120,8 +119,7 @@ static inline int entropy_get_entropy_isr(const struct device *dev,
 					  uint16_t length,
 					  uint32_t flags)
 {
-	const struct entropy_driver_api *api =
-		(const struct entropy_driver_api *)dev->api;
+	const struct entropy_driver_api *api = DEVICE_API_GET(entropy, dev);
 
 	if (unlikely(api->get_entropy_isr == NULL)) {
 		return -ENOSYS;

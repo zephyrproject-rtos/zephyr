@@ -5035,8 +5035,8 @@ sub process {
 		if ($sline =~ /\breturn(?:\s*\(+\s*|\s+)(E[A-Z]+)(?:\s*\)+\s*|\s*)[;:,]/) {
 			my $name = $1;
 			if ($name ne 'EOF' && $name ne 'ERROR') {
-				# only print this warning if not dealing with 'lib/posix/*.c'
-				if ($realfile =~ /.*\/lib\/posix\/*.c/) {
+				# only print this warning if not dealing with 'subsys/portability/posix/*.c'
+				if ($realfile =~ /.*\/subsys\/portability\/posix\/*.c/) {
 					WARN("USE_NEGATIVE_ERRNO",
 						"return of an errno should typically be negative (ie: return -$1)\n" . $herecurr);
 				}

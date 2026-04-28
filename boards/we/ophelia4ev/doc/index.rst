@@ -9,6 +9,9 @@ Overview
    SoC Datasheet), see the `nRF54L15 documentation`_ page.
 
 The OPHELIA-IV EV board is an evaluation board of the Ophelia-IV radio module.
+Please use the article number 2621129024001 (EV-Kit Proteus-IV) to order it.
+Alternativly the article number 2621119022001 (MiniEV-board Ophelia-IV) is also
+compatible to that board file.
 
 Hardware
 ********

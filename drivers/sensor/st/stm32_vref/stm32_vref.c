@@ -14,9 +14,9 @@
 #include <zephyr/nvmem.h>
 #include <zephyr/pm/device_runtime.h>
 #include <stm32_ll_adc.h>
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32C5X)
 #include <zephyr/cache.h>
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
+#endif /* CONFIG_SOC_SERIES_STM32H5X || CONFIG_SOC_SERIES_STM32C5X */
 
 LOG_MODULE_REGISTER(stm32_vref, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -152,7 +152,7 @@ static int stm32_vref_init(const struct device *dev)
 	k_mutex_init(&data->mutex);
 
 	if (!device_is_ready(cfg->adc)) {
-		LOG_ERR("Device %s is not ready", cfg->adc->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->adc);
 		return -ENODEV;
 	}
 
@@ -180,15 +180,15 @@ static int stm32_vref_init(const struct device *dev)
 		return res;
 	}
 #else /* CONFIG_STM32_VREF_READ_CALIB_VIA_NVMEM */
-# if defined(CONFIG_SOC_SERIES_STM32H5X)
+# if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32C5X)
 	sys_cache_instr_disable();
-# endif /* CONFIG_SOC_SERIES_STM32H5X */
+# endif /* CONFIG_SOC_SERIES_STM32H5X || CONFIG_SOC_SERIES_STM32C5X */
 
 	vrefint_cal = *cfg->vrefint_cal;
 
-# if defined(CONFIG_SOC_SERIES_STM32H5X)
+# if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32C5X)
 	sys_cache_instr_enable();
-# endif /* CONFIG_SOC_SERIES_STM32H5X */
+# endif /* CONFIG_SOC_SERIES_STM32H5X || CONFIG_SOC_SERIES_STM32C5X */
 #endif /* CONFIG_STM32_VREF_READ_CALIB_VIA_NVMEM */
 
 	data->vrefint_cal_numerator = cfg->cal_mv * (vrefint_cal >> cfg->cal_shift);

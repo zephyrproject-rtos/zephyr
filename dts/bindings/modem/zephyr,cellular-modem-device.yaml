@@ -60,6 +60,13 @@ properties:
       When runtime power management is enabled, this closes the UART.
       This requires modem to support waking up the UART using RING signal.
 
+  autostarts:
+    type: boolean
+    description: |
+      Set when the modem starts automatically at power-on without requiring
+      an external power or reset pulse. When set, the host waits for a ready
+      indication from the modem before sending AT commands.
+
   cmux-idle-timeout-ms:
     type: int
     description: Time in milliseconds after which CMUX will enter power save mode.

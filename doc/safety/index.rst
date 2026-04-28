@@ -1,7 +1,7 @@
 .. _safety_section:
 
 Safety
-########
+######
 
 These documents describe the processes, developer guidelines and requirements
 for ensuring safety is addressed within the Zephyr project.
@@ -11,4 +11,4 @@ for ensuring safety is addressed within the Zephyr project.
    :glob:
 
    safety_overview.rst
-   safety_requirements.rst
+   safety_requirements/index

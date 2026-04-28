@@ -45,8 +45,8 @@
 				power-state-name = "suspend-to-ram";
 				substate-id = <0>;
 
-				/* One millisecond seems reasonable for now. */
-				min-residency-us = <1000>;
+				/* 1.5ms seems to be a sufficient margin. */
+				min-residency-us = <1500>;
 
 				/* exit-latency-us property is not needed
 				 * since the same concept is applied by the hardware automatically.
@@ -158,6 +158,8 @@
 
 			flash0: flash@10040000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <4>;
 				erase-block-size = <2048>;
 				/* maximum erase time(ms) for a page (2K) */

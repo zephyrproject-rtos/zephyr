@@ -220,7 +220,10 @@ bool pm_system_suspend(int32_t kernel_ticks)
 		 * is not passed as the next timeout.
 		 *
 		 */
+		k_spinlock_key_t key = sys_clock_lock();
+
 		sys_clock_set_timeout(MAX(0, (int64_t)ticks - (int64_t)exit_latency_ticks), true);
+		sys_clock_unlock(key);
 	}
 
 	/*

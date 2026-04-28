@@ -4,6 +4,13 @@
 
 / {
 	soc {
+		dac0: dac@40018000 {
+			compatible = "ti,mspm0-dac";
+			reg = <0x40018000 0x2000>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
 		canfd0: can@40508000 {
 			compatible = "ti,mspm0-canfd";
 			reg = <0x40508000 0x8000>, <0x4050f000 0x1000>, <0x40508000 0x400>;

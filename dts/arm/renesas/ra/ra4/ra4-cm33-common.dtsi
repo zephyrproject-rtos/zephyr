@@ -586,6 +586,14 @@
 			clocks = <&pclkb 0 0>;
 			status = "disabled";
 		};
+
+		rtc: rtc@40083000 {
+			compatible = "renesas,ra-rtc";
+			reg = <40083000 0x80>;
+			clocks = <&subclk>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
 	};
 
 	usbfs_phy: usbfs-phy {

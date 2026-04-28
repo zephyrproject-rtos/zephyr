@@ -142,6 +142,7 @@ int mctp_i2c_gpio_target_stop(struct i2c_target_config *config)
 			LOG_DBG("stop rx msg, give pkt");
 			/* Give message to mctp to process */
 			mctp_bus_rx(&b->binding, b->rx_pkt);
+			mctp_pktbuf_free(b->rx_pkt);
 			b->rx_pkt = NULL;
 			break;
 		case MCTP_I2C_GPIO_RX_MSG_LEN_ADDR:
@@ -224,4 +225,9 @@ int mctp_i2c_gpio_target_start(struct mctp_binding *binding)
 
 out:
 	return 0;
+}
+
+int mctp_i2c_gpio_target_unregister(struct mctp_binding_i2c_gpio_target *b)
+{
+	return i2c_target_unregister(b->i2c, &b->i2c_target_cfg);
 }

@@ -24,3 +24,10 @@ config ITE_IT51XXX_WUC
 	  This option enables the wakeup controller interface for IT51XXX
 	  family.
 	  This is required for KSCAN, UART, eSPI, GPIO etc., interrupt support.
+
+config ITE_IT51XXX_WUC_EITHER_EDGE_HW
+	bool "Hardware either-edge triggering support for IT51XXX WUC"
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ITE_IT51XXX_WUC),hw-either-edge-supported,True)
+	help
+	  Select this option if hardware supports either-edge triggering.

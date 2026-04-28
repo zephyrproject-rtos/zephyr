@@ -47,3 +47,6 @@ set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/soc/infineon/edge/pse84/linker_exclude_sysl
 
 zephyr_linker_sources_ifdef(CONFIG_CPU_CORTEX_M33 RWDATA rwdata.ld)
 zephyr_linker_sources_ifdef(CONFIG_CPU_CORTEX_M55 RWDATA rwdata.ld)
+
+zephyr_linker_sources_ifdef(CONFIG_CPU_CORTEX_M55 ITCM_SECTION itcm_mem.ld)
+zephyr_linker_sources_ifdef(CONFIG_CPU_CORTEX_M33 RAMFUNC_SECTION ramfunc_mem.ld)

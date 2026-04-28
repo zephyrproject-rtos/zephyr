@@ -94,6 +94,8 @@
 
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
 				erase-block-size = <1024>;
 				write-block-size = <2>;
 				/* maximum erase time for a 2K sector */
@@ -230,7 +232,7 @@
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
-			interrupts = <25 3>;
+			interrupts = <25 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
@@ -256,7 +258,7 @@
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x40002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
-			interrupts = <0 2>;
+			interrupts = <0 0>;
 			status = "disabled";
 		};
 

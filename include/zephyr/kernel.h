@@ -4788,6 +4788,7 @@ struct k_work_q {
 	struct _timeout work_timeout_record;
 	struct k_work *work;
 	k_timeout_t work_timeout;
+	bool finished;
 #endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
 /**
  * INTERNAL_HIDDEN @endcond

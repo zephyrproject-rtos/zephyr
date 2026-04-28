@@ -98,6 +98,7 @@ static int lsm6dsv320x_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 		}
 
 		data->out_xl = LSM6DSV320X_OUTX_L_A;
+		data->out_gy = LSM6DSV320X_OUTX_L_G;
 	} else if (lsm6dsv320x_is_hg_fs(fs)) { /* 32g/64g/128g/256g/320g */
 		lsm6dsv320x_hg_xl_full_scale_t val = (fs - 4);
 
@@ -106,6 +107,7 @@ static int lsm6dsv320x_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 		}
 
 		data->out_xl = LSM6DSV320X_UI_OUTX_L_A_OIS_HG;
+		data->out_gy = LSM6DSV320X_UI_OUTX_L_G_OIS_EIS;
 	} else {
 		return -EINVAL;
 	}
@@ -146,7 +148,7 @@ static int lsm6dsv320x_accel_set_odr_raw(const struct device *dev, uint8_t odr)
 			return -EIO;
 		}
 	} else {
-		if (lsm6dsv320x_xl_data_rate_set(ctx, odr) < 0) {
+		if (lsm6dsv320x_xl_setup(ctx, odr, LSM6DSV320X_XL_UNCHANGED_MD) < 0) {
 			return -EIO;
 		}
 	}
@@ -246,7 +248,7 @@ static int32_t lsm6dsv320x_accel_set_mode(const struct device *dev, int32_t mode
 		return -EIO;
 	}
 
-	return lsm6dsv320x_xl_mode_set(ctx, mode);
+	return lsm6dsv320x_xl_setup(ctx, LSM6DSV320X_ODR_UNCHANGED, mode);
 }
 
 static int32_t lsm6dsv320x_accel_get_fs(const struct device *dev, int32_t *range)
@@ -382,7 +384,7 @@ static int lsm6dsv320x_gyro_set_odr_raw(const struct device *dev, uint8_t odr)
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct lsm6dsvxxx_data *data = dev->data;
 
-	if (lsm6dsv320x_gy_data_rate_set(ctx, odr) < 0) {
+	if (lsm6dsv320x_gy_setup(ctx, odr, LSM6DSV320X_GY_UNCHANGED_MD) < 0) {
 		return -EIO;
 	}
 
@@ -419,6 +421,9 @@ static int32_t lsm6dsv320x_gyro_set_mode(const struct device *dev, int32_t mode)
 	case 1: /* High Accuracy */
 		mode = LSM6DSV320X_GY_HIGH_ACCURACY_ODR_MD;
 		break;
+	case 3: /* ODR triggered */
+		mode = LSM6DSV320X_GY_ODR_TRIGGERED_MD;
+		break;
 	case 4: /* Sleep */
 		mode = LSM6DSV320X_GY_SLEEP_MD;
 		break;
@@ -429,7 +434,7 @@ static int32_t lsm6dsv320x_gyro_set_mode(const struct device *dev, int32_t mode)
 		return -EIO;
 	}
 
-	return lsm6dsv320x_gy_mode_set(ctx, mode);
+	return lsm6dsv320x_gy_setup(ctx, LSM6DSV320X_ODR_UNCHANGED, mode);
 }
 
 static int32_t lsm6dsv320x_gyro_get_fs(const struct device *dev, int32_t *range)
@@ -456,6 +461,9 @@ static int32_t lsm6dsv320x_gyro_get_mode(const struct device *dev, int32_t *mode
 		break;
 	case LSM6DSV320X_GY_HIGH_ACCURACY_ODR_MD:
 		*mode = 1;
+		break;
+	case LSM6DSV320X_GY_ODR_TRIGGERED_MD:
+		*mode = 3;
 		break;
 	case LSM6DSV320X_GY_SLEEP_MD:
 		*mode = 4;
@@ -554,6 +562,7 @@ static int lsm6dsv320x_init_chip(const struct device *dev)
 	}
 
 	data->out_xl = LSM6DSV320X_OUTX_L_A;
+	data->out_gy = LSM6DSV320X_OUTX_L_G;
 	data->out_tp = LSM6DSV320X_OUT_TEMP_L;
 
 	fs = cfg->accel_range;
@@ -621,21 +630,23 @@ static int lsm6dsv320x_pm_action(const struct device *dev, enum pm_device_action
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		if (lsm6dsv320x_xl_data_rate_set(ctx, data->accel_freq) < 0) {
+		if (lsm6dsv320x_xl_setup(ctx, data->accel_freq, LSM6DSV320X_XL_UNCHANGED_MD) < 0) {
 			LOG_ERR("failed to set accelerometer odr %d", (int)data->accel_freq);
 			ret = -EIO;
 		}
-		if (lsm6dsv320x_gy_data_rate_set(ctx, data->gyro_freq) < 0) {
+		if (lsm6dsv320x_gy_setup(ctx, data->gyro_freq, LSM6DSV320X_GY_UNCHANGED_MD) < 0) {
 			LOG_ERR("failed to set gyroscope odr %d", (int)data->gyro_freq);
 			ret = -EIO;
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		if (lsm6dsv320x_xl_data_rate_set(ctx, LSM6DSVXXX_DT_ODR_OFF) < 0) {
+		if (lsm6dsv320x_xl_setup(ctx, LSM6DSVXXX_DT_ODR_OFF,
+					 LSM6DSV320X_XL_UNCHANGED_MD) < 0) {
 			LOG_ERR("failed to disable accelerometer");
 			ret = -EIO;
 		}
-		if (lsm6dsv320x_gy_data_rate_set(ctx, LSM6DSVXXX_DT_ODR_OFF) < 0) {
+		if (lsm6dsv320x_gy_setup(ctx, LSM6DSVXXX_DT_ODR_OFF,
+					 LSM6DSV320X_GY_UNCHANGED_MD) < 0) {
 			LOG_ERR("failed to disable gyroscope");
 			ret = -EIO;
 		}
@@ -725,9 +736,12 @@ static void lsm6dsv320x_config_fifo(const struct device *dev, struct trigger_con
 	lsm6dsv320x_sflp_game_rotation_set(ctx, PROPERTY_ENABLE);
 
 	/*
-	 * Temporarly set Accel and gyro odr same as sensor fusion LP in order to
+	 * Temporarily set Accel and gyro odr same as sensor fusion LP in order to
 	 * make the SFLP gbias setting effective. Then restore it to saved values.
 	 */
+	uint8_t xl_odr_tmp = data->accel_freq;
+	uint8_t gy_odr_tmp = data->gyro_freq;
+
 	switch (sflp_odr) {
 	case LSM6DSVXXX_DT_SFLP_ODR_AT_480Hz:
 		lsm6dsv320x_accel_set_odr_raw(dev, LSM6DSVXXX_DT_ODR_AT_480Hz);
@@ -768,8 +782,8 @@ static void lsm6dsv320x_config_fifo(const struct device *dev, struct trigger_con
 	lsm6dsv320x_sflp_game_gbias_set(ctx, &gbias);
 
 	/* restore accel/gyro odr to saved values */
-	lsm6dsv320x_accel_set_odr_raw(dev, data->accel_freq);
-	lsm6dsv320x_gyro_set_odr_raw(dev, data->gyro_freq);
+	lsm6dsv320x_accel_set_odr_raw(dev, xl_odr_tmp);
+	lsm6dsv320x_gyro_set_odr_raw(dev, gy_odr_tmp);
 
 	/* Set pin interrupt (fifo_th could be on or off) */
 	if ((config->drdy_pin == 1) || (ON_I3C_BUS(config) && (!I3C_INT_PIN(config)))) {

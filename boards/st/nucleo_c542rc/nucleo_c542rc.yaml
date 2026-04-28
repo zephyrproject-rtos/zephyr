@@ -1,5 +1,5 @@
-identifier: nucleo_c562re
-name: ST Nucleo C562RE
+identifier: nucleo_c542rc
+name: ST Nucleo C542RC
 type: mcu
 arch: arm
 toolchain:

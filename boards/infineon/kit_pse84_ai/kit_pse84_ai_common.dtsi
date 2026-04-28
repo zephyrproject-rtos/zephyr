@@ -12,6 +12,9 @@
 	aliases {
 		sw0 = &user_bt;
 		watchdog0 = &watchdog0;
+
+		/* Sensor Aliases */
+		pressure-sensor = &dps368;
 	};
 
 	leds {
@@ -74,11 +77,35 @@ uart2: &scb2 {
 	clock-div = <1>;
 };
 
-&gpio_prt0 {
+i2c0: &scb0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "infineon,i2c";
 	status = "okay";
+	clocks = <&peri0_group1_16bit_3>;
+	pinctrl-0 = <&p8_0_scb0_i2c_scl &p8_1_scb0_i2c_sda>;
+	pinctrl-names = "default";
+
+	dps368: dps368@77 {
+		compatible = "infineon,dps368", "infineon,dps310";
+		status = "okay";
+		reg = <0x77>;
+	};
+
+	sht4x@44 {
+		status = "okay";
+		compatible = "sensirion,sht4x";
+		reg = <0x44>;
+		repeatability = <2>;
+	};
 };
 
-&gpio_prt16 {
+&peri0_group1_16bit_3 {
+	status = "okay";
+	clock-div = <1000>;
+};
+
+&gpio_prt0 {
 	status = "okay";
 };
 
@@ -87,6 +114,10 @@ uart2: &scb2 {
 };
 
 &gpio_prt7 {
+	status = "okay";
+};
+
+&gpio_prt8 {
 	status = "okay";
 };
 
@@ -103,6 +134,10 @@ uart2: &scb2 {
 };
 
 &gpio_prt14 {
+	status = "okay";
+};
+
+&gpio_prt16 {
 	status = "okay";
 };
 

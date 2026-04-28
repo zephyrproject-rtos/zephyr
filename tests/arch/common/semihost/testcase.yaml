@@ -4,5 +4,6 @@ tests:
       - arm
       - arm64
       - riscv
+      - xtensa
     platform_type:
       - qemu

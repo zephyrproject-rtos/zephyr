@@ -202,10 +202,6 @@
 		compatible = "microchip,vsc8541";
 		reg = <0>;
 		microchip,interface-type = "gmii";
-		/* Board limitations are currently being analyzed.
-		 * Will be improved in the future
-		 */
-		default-speeds = "100BASE Full-Duplex";
 		status = "okay";
 	};
 

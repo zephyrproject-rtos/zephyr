@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * SPDX-FileCopyrightText: Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,7 +69,7 @@ static int cmd_qbv_enable(const struct shell *sh, size_t argc, char **argv)
 #if defined(CONFIG_NET_QBV) && defined(CONFIG_NET_L2_ETHERNET_MGMT)
 	struct net_if *iface;
 	struct ethernet_req_params params;
-	int ret;
+	int ret = 0;
 	bool enable;
 
 	iface = get_iface_from_shell(sh, argc, argv);
@@ -114,7 +114,7 @@ static int cmd_qbv_set_config(const struct shell *sh, size_t argc, char **argv)
 	struct net_if *iface;
 	struct ethernet_req_params params;
 	uint32_t list_len;
-	int ret;
+	int ret = 0;
 
 	iface = get_iface_from_shell(sh, argc, argv);
 	if (!iface) {
@@ -189,7 +189,7 @@ static int cmd_qbv_set_gc(const struct shell *sh, size_t argc, char **argv)
 	uint32_t row;
 	uint32_t interval;
 	uint32_t gc;
-	int ret;
+	int ret = 0;
 
 	iface = get_iface_from_shell(sh, argc, argv);
 	if (!iface) {

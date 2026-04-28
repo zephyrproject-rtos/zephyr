@@ -72,10 +72,7 @@ static K_SEM_DEFINE(sem_state_change, 0, 1);
 
 static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-	LOG_INF("Connected: %s", addr);
+	LOG_INF("Connected: %s", bt_conn_dst_str(conn));
 
 	peer.conn = bt_conn_ref(conn);
 	k_sem_give(&sem_state_change);
@@ -83,14 +80,12 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
 	if (conn != peer.conn) {
 		return;
 	}
 
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-	LOG_INF("Disconnected: %s, reason 0x%02x %s", addr, reason, bt_hci_err_to_str(reason));
+	LOG_INF("Disconnected: %s, reason 0x%02x %s", bt_conn_dst_str(conn),
+		reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(peer.conn);
 	peer.conn = NULL;
@@ -107,21 +102,21 @@ static int advertise(void)
 	int err;
 
 	err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_CONN_QUICK, NULL, &adv);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Failed to create advertising set: %d", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Failed to set advertising data: %d", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Failed to start advertising set: %d", err);
 
 		return err;
@@ -286,7 +281,7 @@ static int init_cap_acceptor(void)
 	LOG_INF("Bluetooth initialized");
 
 	err = bt_pacs_register(&pacs_param);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Could not register PACS (err %d)", err);
 		return 0;
 	}

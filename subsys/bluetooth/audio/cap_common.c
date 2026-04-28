@@ -72,7 +72,7 @@ void bt_cap_common_clear_proc(struct bt_cap_common_proc *proc)
 
 void bt_cap_common_set_proc(enum bt_cap_common_proc_type proc_type, size_t proc_cnt)
 {
-	LOG_DBG("Setting proc to %d for %zu streams", proc_type, proc_cnt);
+	LOG_DBG("Setting proc to %d for %zu procedures", proc_type, proc_cnt);
 
 	active_proc.proc_cnt = proc_cnt;
 	active_proc.proc_type = proc_type;
@@ -80,7 +80,7 @@ void bt_cap_common_set_proc(enum bt_cap_common_proc_type proc_type, size_t proc_
 	active_proc.proc_initiated_cnt = 0U;
 }
 
-#if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
+#if defined(CONFIG_BT_CAP_SUBPROC_SUPPORT)
 void bt_cap_common_set_subproc(enum bt_cap_common_subproc_type subproc_type)
 {
 	LOG_DBG("Setting subproc to %d", subproc_type);
@@ -99,7 +99,7 @@ bool bt_cap_common_subproc_is_type(enum bt_cap_common_subproc_type subproc_type)
 {
 	return active_proc.subproc_type == subproc_type;
 }
-#endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
+#endif /* CONFIG_BT_CAP_SUBPROC_SUPPORT */
 
 #if defined(CONFIG_BT_CAP_HANDOVER)
 void bt_cap_common_set_handover_active(void)
@@ -172,10 +172,13 @@ void bt_cap_common_abort_proc(struct bt_conn *conn, int err)
 	}
 
 #if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
-	LOG_DBG("Aborting proc %d with subproc %d for %p: %d", active_proc.proc_type,
-		active_proc.subproc_type, (void *)conn, err);
+	LOG_DBG("Aborting proc %d with subproc %d for %p: %d (%zu/%zu done, %zu initiated)",
+		active_proc.proc_type, active_proc.subproc_type, (void *)conn, err,
+		active_proc.proc_done_cnt, active_proc.proc_cnt, active_proc.proc_initiated_cnt);
 #else  /* !CONFIG_BT_CAP_INITIATOR_UNICAST */
-	LOG_DBG("Aborting proc %d for %p: %d", active_proc.proc_type, (void *)conn, err);
+	LOG_DBG("Aborting proc %d for %p: %d (%zu/%zu done, %zu initiated)", active_proc.proc_type,
+		(void *)conn, err, active_proc.proc_done_cnt, active_proc.proc_cnt,
+		active_proc.proc_initiated_cnt);
 #endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
 
 	active_proc.err = err;

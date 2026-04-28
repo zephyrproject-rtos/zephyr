@@ -697,11 +697,11 @@ SECTIONS
     . = ALIGN(4);
     *(.noinit)
     *(.noinit.*)
-#ifdef CONFIG_LLEXT
+#if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
     *(.llext_heap)
     *(.llext_ext_heap)
     *(.llext_metadata_heap)
-#endif /* CONFIG_LLEXT */
+#endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
     . = ALIGN(4);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
@@ -892,7 +892,8 @@ SECTIONS
    * This is used to calculate the size of the _image_drom_size variable */
   .flash.rodata_end : ALIGN(0x10)
   {
-    . = ALIGN(4);
+    /* Enforce flash segment size alignment */
+    LONG(0);
     _rodata_reserved_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)

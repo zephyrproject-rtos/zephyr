@@ -110,7 +110,7 @@ struct pcie_vc_resource_regs {
 			uint32_t _reserved1            : 16;
 			/** Port Arbitration Table Status */
 			uint32_t pa_table_status       : 1;
-			/** Virtual Channel Negociation Pending */
+			/** Virtual Channel Negotiation Pending */
 			uint32_t vc_negocation_pending : 1;
 			uint32_t _reserved2            : 14;
 		};

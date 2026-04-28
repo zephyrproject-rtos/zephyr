@@ -468,7 +468,7 @@ static int adxl345_init(const struct device *dev)
 	uint8_t dev_id, full_res;
 
 	if (!adxl345_bus_is_ready(dev)) {
-		LOG_ERR("bus not ready");
+		LOG_ERR_DEVICE_NOT_READY(dev);
 		return -ENODEV;
 	}
 

@@ -14,7 +14,6 @@
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
-#include <zephyr/sys/check.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
@@ -137,7 +136,7 @@ static int hrs_init(void)
 
 int bt_hrs_cb_register(struct bt_hrs_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -148,7 +147,7 @@ int bt_hrs_cb_register(struct bt_hrs_cb *cb)
 
 int bt_hrs_cb_unregister(struct bt_hrs_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 

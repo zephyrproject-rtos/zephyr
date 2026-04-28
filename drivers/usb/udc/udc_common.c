@@ -218,6 +218,7 @@ static bool ep_check_config(const struct device *dev,
 {
 	bool dir_is_in = USB_EP_DIR_IS_IN(ep);
 	bool dir_is_out = USB_EP_DIR_IS_OUT(ep);
+	uint8_t transfer_type = ep_attrib_get_transfer(attributes);
 
 	LOG_DBG("cfg d:%c|%c t:%c|%c|%c|%c, mps %u",
 		cfg->caps.in ? 'I' : '-',
@@ -227,6 +228,14 @@ static bool ep_check_config(const struct device *dev,
 		cfg->caps.interrupt ? 'I' : '-',
 		cfg->caps.control ? 'C' : '-',
 		cfg->caps.mps);
+	LOG_DBG("req d:%c|%c t:%c|%c|%c|%c, mps %u",
+		dir_is_in ? 'I' : '-',
+		dir_is_out ? 'O' : '-',
+		(transfer_type == USB_EP_TYPE_ISO) ? 'S' : '-',
+		(transfer_type == USB_EP_TYPE_BULK) ? 'B' : '-',
+		(transfer_type == USB_EP_TYPE_INTERRUPT) ? 'I' : '-',
+		(transfer_type == USB_EP_TYPE_CONTROL) ? 'C' : '-',
+		mps);
 
 	if (dir_is_out && !cfg->caps.out) {
 		return false;
@@ -240,7 +249,7 @@ static bool ep_check_config(const struct device *dev,
 		return false;
 	}
 
-	switch (ep_attrib_get_transfer(attributes)) {
+	switch (transfer_type) {
 	case USB_EP_TYPE_BULK:
 		if (!cfg->caps.bulk) {
 			return false;

@@ -14,6 +14,7 @@ This incorporates results from various other scripts:
 '''
 
 import argparse
+import contextlib
 import glob
 import html
 import io
@@ -27,6 +28,8 @@ import subprocess
 import sys
 import webbrowser
 from datetime import datetime
+from functools import partial
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 
 import jinja2
@@ -386,6 +389,7 @@ class ZephyrDashboard:
             str(self.elf_file),
             '-z',
             str(self.zephyr_base.absolute()),
+            f'--workspace={self.topdir}',
             '--json',
             str(self.output_path / '{target}_report.json'),
             '--quiet',
@@ -543,6 +547,10 @@ class ZephyrDashboard:
 
         def create_tree_node(dt_node, expanded=False):
             edt_node = edt.get_node(dt_node.path)
+            if edt_node and edt_node.binding_path:
+                binding_path = self._safe_relpath(edt_node.binding_path)
+            else:
+                binding_path = ""
 
             return {
                 "id": dt_node.path,
@@ -554,6 +562,7 @@ class ZephyrDashboard:
                     "filename": self._safe_relpath(dt_node.filename),
                     "lineno": dt_node.lineno,
                     "description": edt_node.description if edt_node else "",
+                    "bindingPath": binding_path,
                 },
             }
 
@@ -581,6 +590,7 @@ class ZephyrDashboard:
                     "lineno": dt_prop.lineno,
                     "description": edt_prop.description if edt_prop else "",
                     "typeSpec": edt_prop.type if edt_prop else "",
+                    "bindingPath": "",
                 },
             }
 
@@ -767,10 +777,18 @@ class ZephyrDashboard:
     def open_browser(self):
         '''
         Open the default web browser to the index page of the dashboard.
+
+        Uses a one-shot HTTP server so that the browser loads from
+        http://localhost, which works reliably across most platforms.
         '''
 
-        fname = self.output_path / "index.html"
-        webbrowser.open(str(fname))
+        handler = partial(SimpleHTTPRequestHandler, directory=str(self.output_path))
+        server = HTTPServer(("127.0.0.1", 0), handler)
+        url = f"http://127.0.0.1:{server.server_port}/index.html"
+        logger.info("Serving dashboard at %s (Ctrl+C to stop)", url)
+        webbrowser.open(url)
+        with contextlib.suppress(KeyboardInterrupt):
+            server.serve_forever()
 
 
 def parse_args():
@@ -836,30 +854,5 @@ def main():
         build.open_browser()
 
 
-def fix_pygments_devicetree_lexer():
-    '''
-    Fix the Pygments devicetree lexer to avoid a catastrophic backtracking pattern issue.
-
-    Pygments (at least up to 2.19.2) devicetree lexer has a bug when parsing properties
-    with a large number of spaces in them. The regex used results in a "catastropic
-    backtracking pattern" and the time taken grows exponentially with the number of
-    spaces. The cleanly indented dts that Zephyr creates hits this problem.
-
-    *** Remove this code when the bug is fixed in Pygments. ***
-    '''
-    from pygments.token import Name
-
-    ws = DevicetreeLexer._ws
-    bad_expr = r'[a-zA-Z_][\w-]*(?=(?:\s*,\s*[a-zA-Z_][\w-]*|(?:' + ws + r'))*\s*[=;])'
-    fixed_expr = r'[a-zA-Z_][\w-]*(?=(?:\s*,' + ws + r'[a-zA-Z_][\w-]*)*' + ws + r'[=;])'
-
-    for idx, statement in enumerate(DevicetreeLexer.tokens['statements']):
-        if statement[0] == bad_expr:
-            logger.info("Fixing buggy pygments Devicetree lexer.")
-            DevicetreeLexer.tokens['statements'][idx] = (fixed_expr, Name)
-            break
-
-
 if __name__ == "__main__":
-    fix_pygments_devicetree_lexer()
     main()

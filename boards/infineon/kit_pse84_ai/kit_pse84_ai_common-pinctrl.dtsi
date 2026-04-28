@@ -29,3 +29,14 @@
 &p10_2_scb4_uart_cts {
 	input-enable;
 };
+
+/* Configure pin control bias mode for i2c0 pins */
+&p8_0_scb0_i2c_scl {
+	drive-open-drain;
+	input-enable;
+};
+
+&p8_1_scb0_i2c_sda {
+	drive-open-drain;
+	input-enable;
+};

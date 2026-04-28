@@ -124,6 +124,10 @@ ZTEST(lib_stream_flash, test_stream_flash_init)
 		      FLASH_AVAILABLE + 4, NULL);
 	zassert_true(rc < 0, "should fail as size is more than available");
 
+	/* End address overflows `size_t` */
+	rc = stream_flash_init(&ctx, fdev, generic_buf, BUF_LEN, FLASH_BASE, SIZE_MAX, NULL);
+	zassert_equal(rc, -EFAULT, "should fail as offset + size overflows");
+
 	rc = stream_flash_init(NULL, fdev, generic_buf, BUF_LEN, FLASH_BASE, 0, NULL);
 	zassert_true(rc < 0, "should fail as ctx is NULL");
 

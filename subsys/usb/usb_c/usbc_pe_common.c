@@ -967,7 +967,16 @@ enum smf_state_result pe_get_sink_cap_run(void *obj)
 
 static void pe_suspend_entry(void *obj)
 {
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
 	LOG_INF("PE_SUSPEND");
+
+	/* Invalidate explicit contract */
+	atomic_clear_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT);
+
+	/* Inform Device Policy Manager that PD is not connected */
+	policy_notify(dev, NOT_PD_CONNECTED);
 }
 
 static enum smf_state_result pe_suspend_run(void *obj)
@@ -1251,7 +1260,7 @@ static enum smf_state_result pe_sender_response_run(void *obj)
 			pe_set_state(dev, PE_SNK_HARD_RESET);
 			break;
 		case PE_DRS_SEND_SWAP:
-			pe_set_state(dev, PE_SNK_READY);
+			pe_set_ready_state(dev);
 			break;
 
 		/* This should not happen. Implementation error */

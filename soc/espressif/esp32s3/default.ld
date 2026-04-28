@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2026 Espressif Systems (Shanghai) Co., Ltd.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -395,7 +395,7 @@ SECTIONS
 
     /* [mapping:esp_psram] */
     *libzephyr.a:mmu_psram_flash.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:esp_psram_impl_quad.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_psram_impl_ap_quad.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_psram_impl_octal.*(.literal .literal.* .text .text.*)
 
     /* [mapping:hal] */
@@ -464,6 +464,7 @@ SECTIONS
     *libzephyr.a:systimer.*(.literal .literal.* .text .text.*)
     *libzephyr.a:mspi_timing_config.*(.literal .literal.* .text .text.*)
     *libzephyr.a:mspi_timing_tuning.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:mspi_timing_by_mspi_delay.*(.literal .literal.* .text .text.*)
     *libzephyr.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
     *(.literal.sar_periph_ctrl_power_enable .text.sar_periph_ctrl_power_enable)
 
@@ -644,7 +645,7 @@ SECTIONS
     /* [mapping:esp_psram] */
     *libzephyr.a:mmu_psram_flash.*(.rodata .rodata.*)
     *libzephyr.a:esp_psram_impl_octal.*(.rodata .rodata.*)
-    *libzephyr.a:esp_psram_impl_quad.*(.rodata .rodata.*)
+    *libzephyr.a:esp_psram_impl_ap_quad.*(.rodata .rodata.*)
 
     /* [mapping:hal] */
     *libzephyr.a:efuse_hal.*(.rodata .rodata.*)
@@ -709,6 +710,7 @@ SECTIONS
     *libzephyr.a:systimer.*(.rodata .rodata.*)
     *libzephyr.a:mspi_timing_config.*(.rodata .rodata.*)
     *libzephyr.a:mspi_timing_tuning.*(.rodata .rodata.*)
+    *libzephyr.a:mspi_timing_by_mspi_delay.*(.rodata .rodata.*)
     *(.rodata.sar_periph_ctrl_power_enable)
 
     /* [mapping:soc_pm] */
@@ -815,11 +817,11 @@ SECTIONS
     *(.noinit)
     *(.noinit.*)
 #endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
-#ifdef CONFIG_LLEXT
+#if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
     *(.llext_heap)
     *(.llext_ext_heap)
     *(.llext_metadata_heap)
-#endif /* CONFIG_LLEXT */
+#endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
     __dram_noinit_end = ABSOLUTE(.);
     . = ALIGN(4) ;
   } GROUP_LINK_IN(RAMABLE_REGION)
@@ -846,8 +848,9 @@ SECTIONS
     *(.sbss2.*)
     *(.gnu.linkonce.sb2.*)
     *(.dynbss)
-    *(.bss)
-    *(.bss.*)
+
+#include <esp_spiram_relocate_bss.ld.inc>
+
     *(.share.mem)
     *(.gnu.linkonce.b.*)
     *(COMMON)
@@ -998,7 +1001,8 @@ SECTIONS
    * This is used to calculate the size of the _image_drom_size variable */
   .flash.rodata_end : ALIGN(0x10)
   {
-    . = ALIGN(4);
+    /* Enforce flash segment size alignment */
+    LONG(0);
     _rodata_reserved_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
@@ -1038,12 +1042,17 @@ SECTIONS
     *(.ext_ram.bss*)
     . = ALIGN(16);
 
+#include <esp_spiram_relocate_bss_ext_ram.ld.inc>
+    . = ALIGN(16);
+
     /* Custom modules sections list */
     KEEP(*(.lvgl_buf*))
     . = ALIGN(16);
     KEEP(*(.lvgl_heap*))
     . = ALIGN(16);
     KEEP(*(.mbedtls_heap*))
+    . = ALIGN(16);
+    KEEP(*(.ot_msg_pool*))
     . = ALIGN(16);
 
     _ext_ram_bss_end = ABSOLUTE(.);

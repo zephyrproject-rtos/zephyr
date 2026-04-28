@@ -8,6 +8,12 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		main_adc0_pd: power-domain@0 {
+			compatible = "arm,scmi-power-domain";
+			reg = <0>;
+			#power-domain-cells = <0>;
+		};
+
 		main_uart0_pd: power-domain@59 {
 			compatible = "arm,scmi-power-domain";
 			reg = <89>;
@@ -95,6 +101,30 @@
 		main_i2c3_pd: power-domain@38 {
 			compatible = "arm,scmi-power-domain";
 			reg = <56>;
+			#power-domain-cells = <0>;
+		};
+
+		main_timer0_pd: power-domain@0f {
+			compatible = "arm,scmi-power-domain";
+			reg = <15>;
+			#power-domain-cells = <0>;
+		};
+
+		main_timer1_pd: power-domain@10 {
+			compatible = "arm,scmi-power-domain";
+			reg = <16>;
+			#power-domain-cells = <0>;
+		};
+
+		main_timer2_pd: power-domain@11 {
+			compatible = "arm,scmi-power-domain";
+			reg = <17>;
+			#power-domain-cells = <0>;
+		};
+
+		main_timer3_pd: power-domain@12 {
+			compatible = "arm,scmi-power-domain";
+			reg = <18>;
 			#power-domain-cells = <0>;
 		};
 	};

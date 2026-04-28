@@ -381,7 +381,7 @@ static int set_supported_contexts(uint16_t contexts, uint16_t *supported,
 	/* Update available contexts if needed*/
 	if ((contexts & *available) != *available) {
 		err = set_available_contexts(contexts & *available, available, contexts);
-		if (err) {
+		if (err != 0) {
 			*available = tmp_available;
 			*supported = tmp_supported;
 
@@ -1132,7 +1132,7 @@ static int pacs_gatt_notify(struct bt_conn *conn,
 		atomic_clear_bit(pacs.flags, PACS_FLAG_NOTIFY_RDY);
 	}
 
-	if (err && err != -ENOTCONN) {
+	if (err != 0 && err != -ENOTCONN) {
 		return err;
 	}
 
@@ -1173,7 +1173,7 @@ static void notify_cb(struct bt_conn *conn, void *data)
 	    bt_gatt_is_subscribed(conn, pacs.snk_pac_attr, BT_GATT_CCC_NOTIFY)) {
 		LOG_DBG("Notifying Sink PAC");
 		err = pac_notify(conn, BT_AUDIO_DIR_SINK);
-		if (!err) {
+		if (err == 0) {
 			atomic_clear_bit(client->flags, FLAG_SINK_PAC_CHANGED);
 		}
 	}
@@ -1184,7 +1184,7 @@ static void notify_cb(struct bt_conn *conn, void *data)
 	    bt_gatt_is_subscribed(conn, pacs.snk_pac_loc_attr, BT_GATT_CCC_NOTIFY)) {
 		LOG_DBG("Notifying Sink Audio Location");
 		err = pac_notify_loc(conn, BT_AUDIO_DIR_SINK);
-		if (!err) {
+		if (err == 0) {
 			atomic_clear_bit(client->flags, FLAG_SINK_AUDIO_LOCATIONS_CHANGED);
 		}
 	}
@@ -1195,7 +1195,7 @@ static void notify_cb(struct bt_conn *conn, void *data)
 	    bt_gatt_is_subscribed(conn, pacs.src_pac_attr, BT_GATT_CCC_NOTIFY)) {
 		LOG_DBG("Notifying Source PAC");
 		err = pac_notify(conn, BT_AUDIO_DIR_SOURCE);
-		if (!err) {
+		if (err == 0) {
 			atomic_clear_bit(client->flags, FLAG_SOURCE_PAC_CHANGED);
 		}
 	}
@@ -1206,7 +1206,7 @@ static void notify_cb(struct bt_conn *conn, void *data)
 	    bt_gatt_is_subscribed(conn, pacs.src_pac_loc_attr, BT_GATT_CCC_NOTIFY)) {
 		LOG_DBG("Notifying Source Audio Location");
 		err = pac_notify_loc(conn, BT_AUDIO_DIR_SOURCE);
-		if (!err) {
+		if (err == 0) {
 			atomic_clear_bit(client->flags, FLAG_SOURCE_AUDIO_LOCATIONS_CHANGED);
 		}
 	}
@@ -1216,7 +1216,7 @@ static void notify_cb(struct bt_conn *conn, void *data)
 	    bt_gatt_is_subscribed(conn, pacs.available_ctx_attr, BT_GATT_CCC_NOTIFY)) {
 		LOG_DBG("Notifying Available Contexts");
 		err = available_contexts_notify(conn);
-		if (!err) {
+		if (err == 0) {
 			atomic_clear_bit(client->flags, FLAG_AVAILABLE_AUDIO_CONTEXT_CHANGED);
 		}
 	}
@@ -1226,7 +1226,7 @@ static void notify_cb(struct bt_conn *conn, void *data)
 	    bt_gatt_is_subscribed(conn, pacs.supported_ctx_attr, BT_GATT_CCC_NOTIFY)) {
 		LOG_DBG("Notifying Supported Contexts");
 		err = supported_contexts_notify(conn);
-		if (!err) {
+		if (err == 0) {
 			atomic_clear_bit(client->flags, FLAG_SUPPORTED_AUDIO_CONTEXT_CHANGED);
 		}
 	}
@@ -1240,7 +1240,7 @@ static void deferred_nfy_work_handler(struct k_work *work)
 
 static void pacs_auth_pairing_complete(struct bt_conn *conn, bool bonded)
 {
-	LOG_DBG("%s paired (%sbonded)", bt_addr_le_str(bt_conn_get_dst(conn)),
+	LOG_DBG("%s paired (%sbonded)", bt_conn_dst_str(conn),
 		bonded ? "" : "not ");
 
 	if (!bonded) {
@@ -1290,7 +1290,7 @@ static void pacs_security_changed(struct bt_conn *conn, bt_security_t level,
 	struct bt_conn_info info;
 	int err;
 
-	LOG_DBG("%s changed security level to %d", bt_addr_le_str(bt_conn_get_dst(conn)), level);
+	LOG_DBG("%s changed security level to %d", bt_conn_dst_str(conn), level);
 
 	if (sec_err != BT_SECURITY_ERR_SUCCESS || level <= BT_SECURITY_L1) {
 		return;
@@ -1389,12 +1389,9 @@ static void add_bonded_addr_to_client_list(const struct bt_bond_info *info, void
 	for (uint8_t i = 0; i < ARRAY_SIZE(pacs.clients); i++) {
 		/* Check if device is registered, it not, add it */
 		if (!atomic_test_bit(pacs.clients[i].flags, FLAG_ACTIVE)) {
-			char addr_str[BT_ADDR_LE_STR_LEN];
-
 			atomic_set_bit(pacs.clients[i].flags, FLAG_ACTIVE);
 			memcpy(&pacs.clients[i].addr, &info->addr, sizeof(bt_addr_le_t));
-			bt_addr_le_to_str(&pacs.clients[i].addr, addr_str, sizeof(addr_str));
-			LOG_DBG("Added %s to bonded list\n", addr_str);
+			LOG_DBG("Added %s to bonded list\n", bt_addr_le_str(&pacs.clients[i].addr));
 			return;
 		}
 	}

@@ -190,10 +190,7 @@ static int pa_sync_no_past(struct sync_state *state,
 	if (err != 0) {
 		printk("Could not sync per adv: %d\n", err);
 	} else {
-		char addr_str[BT_ADDR_LE_STR_LEN];
-
-		bt_addr_le_to_str(&recv_state->addr, addr_str, sizeof(addr_str));
-		printk("PA sync pending for addr %s\n", addr_str);
+		printk("PA sync pending for addr %s\n", bt_addr_le_str(&recv_state->addr));
 		state->pa_syncing = true;
 		k_work_init_delayable(&state->pa_timer, pa_timer_handler);
 		(void)k_work_reschedule(&state->pa_timer,
@@ -489,7 +486,6 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 {
 	struct bt_le_per_adv_sync_param sync_create_param = { 0 };
 	const struct bt_le_scan_recv_info *info = user_data;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	struct bt_uuid_16 adv_uuid;
 	struct sync_state *state;
 	int err;
@@ -512,10 +508,9 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 	}
 
 	g_broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
-	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
 
 	printk("Found BAP broadcast source with address %s and ID 0x%06X\n",
-	       addr_str, g_broadcast_id);
+	       bt_addr_le_str(info->addr), g_broadcast_id);
 
 	state = sync_state_get_or_new(NULL);
 	if (state == NULL) {
@@ -685,7 +680,7 @@ static int remove_source(struct sync_state *state)
 
 	/* We don't actually need to sync to the BIG/BISes */
 	err = bt_bap_scan_delegator_rem_src(state->src_id);
-	if (err) {
+	if (err != 0) {
 		return err;
 	}
 
@@ -707,8 +702,8 @@ static void remove_all_sources(void)
 			printk("[%zu]: Removing source\n", i);
 
 			err = remove_source(state);
-			if (err) {
-				FAIL("[%zu]: Remove source failed (err %d)\n", err);
+			if (err != 0) {
+				FAIL("[%zu]: Remove source failed (err %d)\n", i, err);
 				return;
 			}
 
@@ -775,7 +770,7 @@ static int sync_broadcast(struct sync_state *state)
 
 	/* We don't actually need to sync to the BIG/BISes */
 	err = bt_bap_scan_delegator_set_bis_sync_state(state->src_id, state->bis_sync_req);
-	if (err) {
+	if (err != 0) {
 		return err;
 	}
 
@@ -811,7 +806,7 @@ static int common_init(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 		return err;
 	}
@@ -819,7 +814,7 @@ static int common_init(void)
 	printk("Bluetooth initialized\n");
 
 	err = bt_bap_scan_delegator_register(&scan_delegator_cb);
-	if (err) {
+	if (err != 0) {
 		FAIL("Scan delegator register failed (err %d)\n", err);
 		return err;
 	}
@@ -838,7 +833,7 @@ static void test_main_client_sync(void)
 	int err;
 
 	err = common_init();
-	if (err) {
+	if (err != 0) {
 		FAIL("common init failed (err %d)\n", err);
 		return;
 	}
@@ -876,7 +871,7 @@ static void test_main_server_sync_client_rem(void)
 	int err;
 
 	err = common_init();
-	if (err) {
+	if (err != 0) {
 		FAIL("common init failed (err %d)\n", err);
 		return;
 	}
@@ -925,7 +920,7 @@ static void test_main_server_sync_server_rem(void)
 	int err;
 
 	err = common_init();
-	if (err) {
+	if (err != 0) {
 		FAIL("common init failed (err %d)\n", err);
 		return;
 	}

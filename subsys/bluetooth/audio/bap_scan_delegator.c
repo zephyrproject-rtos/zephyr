@@ -92,7 +92,7 @@ struct bt_bap_scan_delegator_inst {
 
 enum scan_delegator_flag {
 	SCAN_DELEGATOR_FLAG_REGISTERED_CONN_CB,
-	SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELIGATOR,
+	SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELEGATOR,
 
 	SCAN_DELEGATOR_FLAG_NUM,
 };
@@ -1126,8 +1126,10 @@ static int scan_delegator_rem_src(struct bt_conn *conn,
 
 	state = &internal_state->state;
 
-	if (internal_state->pa_sync_requested) {
-		LOG_DBG("Cannot remove source ID 0x%02x while PA is synced or syncing",
+	if (internal_state->pa_sync_requested ||
+	    state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ ||
+	    state->pa_sync_state == BT_BAP_PA_STATE_SYNCED) {
+		LOG_DBG("Cannot remove source ID 0x%02x while PA is syncing or synced",
 			state->src_id);
 		err = k_mutex_unlock(&internal_state->mutex);
 		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
@@ -1358,7 +1360,7 @@ static int bass_register(void)
 	int err;
 
 	err = bt_gatt_service_register(&bass_svc);
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Failed to register BASS service (err %d)", err);
 		return err;
 	}
@@ -1373,7 +1375,7 @@ static int bass_unregister(void)
 	int err;
 
 	err = bt_gatt_service_unregister(&bass_svc);
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Failed to unregister BASS service (err %d)", err);
 		return err;
 	}
@@ -1389,15 +1391,15 @@ int bt_bap_scan_delegator_register(struct bt_bap_scan_delegator_cb *cb)
 	int err;
 
 	if (atomic_test_and_set_bit(scan_delegator_flags,
-				    SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELIGATOR)) {
+				    SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELEGATOR)) {
 		LOG_DBG("Scan delegator already registered");
 		return -EALREADY;
 	}
 
 	err = bass_register();
-	if (err) {
+	if (err != 0) {
 		atomic_clear_bit(scan_delegator_flags,
-				 SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELIGATOR);
+				 SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELEGATOR);
 		return err;
 	}
 
@@ -1432,15 +1434,14 @@ int bt_bap_scan_delegator_unregister(void)
 	int err;
 
 	if (!atomic_test_and_clear_bit(scan_delegator_flags,
-				       SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELIGATOR)) {
+				       SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELEGATOR)) {
 		LOG_DBG("Scan delegator not yet registered");
 		return -EALREADY;
 	}
 
 	err = bass_unregister();
-	if (err) {
-		atomic_set_bit(scan_delegator_flags,
-			       SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELIGATOR);
+	if (err != 0) {
+		atomic_set_bit(scan_delegator_flags, SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELEGATOR);
 		return err;
 	}
 

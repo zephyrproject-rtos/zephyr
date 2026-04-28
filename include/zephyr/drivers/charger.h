@@ -396,9 +396,7 @@ __syscall int charger_get_prop(const struct device *dev, const charger_prop_t pr
 static inline int z_impl_charger_get_prop(const struct device *dev, const charger_prop_t prop,
 					  union charger_propval *val)
 {
-	const struct charger_driver_api *api = (const struct charger_driver_api *)dev->api;
-
-	return api->get_property(dev, prop, val);
+	return DEVICE_API_GET(charger, dev)->get_property(dev, prop, val);
 }
 
 /**
@@ -417,9 +415,7 @@ __syscall int charger_set_prop(const struct device *dev, const charger_prop_t pr
 static inline int z_impl_charger_set_prop(const struct device *dev, const charger_prop_t prop,
 					  const union charger_propval *val)
 {
-	const struct charger_driver_api *api = (const struct charger_driver_api *)dev->api;
-
-	return api->set_property(dev, prop, val);
+	return DEVICE_API_GET(charger, dev)->set_property(dev, prop, val);
 }
 
 /**
@@ -436,9 +432,7 @@ __syscall int charger_charge_enable(const struct device *dev, const bool enable)
 
 static inline int z_impl_charger_charge_enable(const struct device *dev, const bool enable)
 {
-	const struct charger_driver_api *api = (const struct charger_driver_api *)dev->api;
-
-	return api->charge_enable(dev, enable);
+	return DEVICE_API_GET(charger, dev)->charge_enable(dev, enable);
 }
 
 /**

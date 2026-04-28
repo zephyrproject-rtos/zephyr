@@ -315,7 +315,7 @@ int lm75_init(const struct device *dev)
 #endif /* LM75_TRIGGER_SUPPORT */
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("I2C dev not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 
@@ -348,7 +348,7 @@ int lm75_init(const struct device *dev)
 		k_work_init(&data->work, lm75_trigger_work_handler);
 
 		if (!device_is_ready(cfg->int_gpio.port)) {
-			LOG_ERR("INT GPIO not ready");
+			LOG_ERR_DEVICE_NOT_READY(cfg->int_gpio.port);
 			return -EINVAL;
 		}
 

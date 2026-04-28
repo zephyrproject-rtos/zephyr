@@ -126,7 +126,8 @@ static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 #if defined(CONFIG_SOC_SERIES_STM32WB0X)
 		/* STM32WB0 watchdog does not support halt by debugger */
 		return -ENOTSUP;
-#elif defined(CONFIG_SOC_SERIES_STM32F0X)
+#else
+#if defined(CONFIG_SOC_SERIES_STM32F0X)
 		LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_DBGMCU);
 #elif defined(CONFIG_SOC_SERIES_STM32C0X) || defined(CONFIG_SOC_SERIES_STM32G0X)
 		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_DBGMCU);
@@ -147,6 +148,7 @@ static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 #else
 		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_IWDG_STOP);
 #endif
+#endif /* CONFIG_SOC_SERIES_STM32WB0X */
 	}
 
 	if (options & WDT_OPT_PAUSE_IN_SLEEP) {

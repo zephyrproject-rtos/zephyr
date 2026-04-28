@@ -200,7 +200,7 @@ static int hids_2525020210002_init(const struct device *dev)
 	HIDS_Get_Default_Interface(&data->sensor_interface);
 	data->sensor_interface.interfaceType = WE_i2c;
 	if (!i2c_is_ready_dt(&config->bus_cfg.i2c)) {
-		LOG_ERR("I2C bus device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->bus_cfg.i2c.bus);
 		return -ENODEV;
 	}
 	data->sensor_interface.handle = (void *)&config->bus_cfg.i2c;

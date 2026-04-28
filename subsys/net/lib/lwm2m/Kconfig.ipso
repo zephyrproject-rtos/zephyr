@@ -141,6 +141,20 @@ endchoice
 
 endif # LWM2M_IPSO_PRESSURE_SENSOR
 
+config LWM2M_IPSO_TIME
+	bool "IPSO Time Support"
+	help
+	  This Object is used to represent a time source and to synchronize
+	  the device clock with an LwM2M server.
+
+config LWM2M_IPSO_TIME_INSTANCE_COUNT
+	int "Maximum # of IPSO Time object instances"
+	default 1
+	depends on LWM2M_IPSO_TIME
+	help
+	  This setting establishes the total count of IPSO Time
+	  instances available to the LWM2M client.
+
 config LWM2M_IPSO_LIGHT_CONTROL
 	bool "IPSO Light Control Support"
 	help

@@ -168,8 +168,6 @@ static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 		sys_sfnode_init(data, 0x0);
 	}
 
-	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_queue, queue_insert, queue, alloc, K_FOREVER);
-
 	sys_sflist_insert(&queue->data_q, prev, data);
 	resched = handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
 

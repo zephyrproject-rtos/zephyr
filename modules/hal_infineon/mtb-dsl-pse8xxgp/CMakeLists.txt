@@ -9,6 +9,14 @@ set(hal_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-dsl-pse8xxgp/hal)
 set(pdl_drv_dir ${pdl_dir}/drivers)
 set(pdl_dev_edge_dir ${pdl_dir}/devices)
 
+if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
+  set(sram_code M33SCODE)
+elseif(CONFIG_CPU_CORTEX_M33)
+  set(sram_code M33CODE)
+else()
+  set(sram_code ITCM)
+endif()
+
 # Generate PDL specific SOC defines
 zephyr_library_compile_definitions($<UPPER_CASE:${CONFIG_SOC}>)
 
@@ -22,8 +30,10 @@ zephyr_library_sources(${pdl_dev_edge_dir}/source/cy_device.c)
 
 if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "armclang")
   zephyr_library_sources(${pdl_drv_dir}/source/TOOLCHAIN_ARM/cy_syslib_ext.S)
+  zephyr_code_relocate(FILES ${pdl_drv_dir}/source/TOOLCHAIN_ARM/cy_syslib_ext.S LOCATION ${sram_code})
 else()
   zephyr_library_sources(${pdl_drv_dir}/source/TOOLCHAIN_GCC_ARM/cy_syslib_ext.S)
+  zephyr_code_relocate(FILES ${pdl_drv_dir}/source/TOOLCHAIN_GCC_ARM/cy_syslib_ext.S LOCATION ${sram_code})
 endif()
 
 # Peripheral drivers
@@ -40,8 +50,12 @@ zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TIMER ${pdl_drv_dir}/source/cy_
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_UART ${pdl_drv_dir}/source/cy_scb_uart.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_WDT ${pdl_drv_dir}/source/cy_wdt.c)
 
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_AUTANALOG_SAR_ADC ${pdl_drv_dir}/source/cy_systrimm.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_AUTANALOG_SAR_ADC ${pdl_drv_dir}/source/cy_rram.c)
+if(CONFIG_USE_INFINEON_AUTANALOG_SAR_ADC OR CONFIG_USE_INFINEON_LPCOMP)
+zephyr_library_sources(${pdl_drv_dir}/source/cy_rram.c)
+zephyr_library_sources(${pdl_drv_dir}/source/cy_systrimm.c)
+endif()
+
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_LPCOMP ${pdl_drv_dir}/source/cy_lpcomp.c)
 
 if(CONFIG_USE_INFINEON_TRNG)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto.c)
@@ -56,22 +70,22 @@ endif()
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_DMA ${pdl_drv_dir}/source/cy_dma.c)
 
 zephyr_library_sources(${pdl_drv_dir}/source/cy_syspm_v4.c)
-zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_syspm_v4.c LOCATION RAM)
+zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_syspm_v4.c LOCATION ${sram_code})
 
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SMIF ${pdl_drv_dir}/source/cy_smif.c)
-zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif.c LOCATION RAM)
+zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif.c LOCATION ${sram_code})
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SMIF ${pdl_drv_dir}/source/cy_smif_sfdp.c)
-zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif_sfdp.c LOCATION RAM)
+zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif_sfdp.c LOCATION ${sram_code})
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SMIF ${pdl_drv_dir}/source/cy_smif_memslot.c)
-zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif_memslot.c LOCATION RAM)
+zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif_memslot.c LOCATION ${sram_code})
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SMIF ${pdl_drv_dir}/source/cy_smif_hb_flash.c)
-zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif_hb_flash.c LOCATION RAM)
+zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif_hb_flash.c LOCATION ${sram_code})
 
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SMIF ${pdl_drv_dir}/source/cy_smif_memnum.c)
-zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif_memnum.c LOCATION RAM)
+zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_smif_memnum.c LOCATION ${sram_code})
 
 zephyr_library_sources(${pdl_drv_dir}/source/cy_syslib.c)
-zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_syslib.c LOCATION RAM)
+zephyr_code_relocate(FILES ${pdl_drv_dir}/source/cy_syslib.c LOCATION ${sram_code})
 
 zephyr_library_sources(${pdl_drv_dir}/source/cy_autanalog.c)
 zephyr_library_sources(${pdl_drv_dir}/source/cy_autanalog_sar.c)
@@ -97,3 +111,19 @@ zephyr_library_sources(${pdl_drv_dir}/source/cy_trigmux.c)
 
 zephyr_include_directories(${hal_dir}/include)
 zephyr_library_sources(${hal_dir}/source/mtb_hal_clock.c)
+
+if(CONFIG_BUILD_WITH_TFM)
+  zephyr_library_sources(${hal_dir}/source/mtb_hal_system.c)
+
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_pdl_srf.c)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_pdl_srf_common.c)
+
+  set(tfm_ifx_dir ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/infineon/common)
+
+  zephyr_include_directories(${tfm_ifx_dir}/interface/include)
+  zephyr_library_sources(${tfm_ifx_dir}/interface/src/ifx_mtb_srf.c)
+
+  zephyr_include_directories(${tfm_ifx_dir}/spe/services/ifx_ext_sp)
+  zephyr_include_directories(${tfm_ifx_dir}/spe/svc)
+  zephyr_library_sources(${tfm_ifx_dir}/spe/services/ifx_ext_sp/ifx_ext_sp_api.c)
+endif()

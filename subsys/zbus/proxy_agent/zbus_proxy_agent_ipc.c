@@ -181,6 +181,3 @@ const struct zbus_proxy_agent_backend_api zbus_proxy_agent_ipc_backend_api = {
 	.backend_send = zbus_proxy_agent_ipc_backend_send,
 	.backend_set_recv_cb = zbus_proxy_agent_ipc_backend_set_recv_cb,
 };
-
-ZBUS_PROXY_AGENT_BACKEND_DEFINE(zbus_proxy_agent_ipc_backend_desc, ZBUS_PROXY_AGENT_BACKEND_IPC,
-				&zbus_proxy_agent_ipc_backend_api);

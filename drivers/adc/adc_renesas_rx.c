@@ -259,7 +259,7 @@ static int adc_rx_start_read(const struct device *dev, const struct adc_sequence
 		return -EINVAL;
 	}
 
-	/** Select AVERAGE for addtion/average mode */
+	/** Select AVERAGE for addition/average mode */
 	data->p_regs->ADADC.BIT.AVEE = 1;
 
 	data->buf_id = 0;

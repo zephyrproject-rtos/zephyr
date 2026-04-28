@@ -853,6 +853,12 @@
 			status = "disabled";
 			interrupts = <139 0>, <140 0>, <141 0>;
 			interrupt-names = "mac", "power", "lpi";
+
+			enet_ptp_clock: ptp_clock {
+				compatible = "nxp,enet-qos-ptp-clock";
+				clocks = <&syscon MCUX_ENET_QOS_PTP_CLK>;
+				status = "disabled";
+			};
 		};
 
 		enet_mdio: mdio {

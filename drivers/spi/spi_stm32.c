@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(spi_stm32);
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
@@ -947,7 +947,7 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 #endif /* !(CONFIG_SPI_RTIO && CONFIG_SPI_STM32_DMA) */
 
 #ifdef CONFIG_SPI_RTIO
-/* Forward declaration for RTIO handlers conveniance */
+/* Forward declaration for RTIO handlers convenience */
 static void spi_stm32_iodev_complete(const struct device *dev, int status);
 static int spi_stm32_configure(const struct device *dev,
 			       const struct spi_config *config,

@@ -23,6 +23,9 @@ LOG_MODULE_REGISTER(eth_nxp_enet_qos_mac, CONFIG_ETHERNET_LOG_LEVEL);
 #include <ethernet/eth_stats.h>
 #include "../eth.h"
 #include "nxp_enet_qos_priv.h"
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+#include <zephyr/drivers/ptp_clock.h>
+#endif
 
 /* Verify configuration */
 BUILD_ASSERT((ENET_QOS_RX_BUFFER_SIZE * NUM_RX_BUFDESC) >= ENET_QOS_MAX_NORMAL_FRAME_LEN,
@@ -124,7 +127,7 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	volatile union nxp_enet_qos_tx_desc *last_desc_ptr;
 
 	struct net_buf *fragment = pkt->frags;
-	int frags_count = 0, total_bytes = 0;
+	int frags_count = 0, total_bytes = 0, frags_idx = 0;
 	int ret;
 
 	/* Only allow send of the maximum normal packet size */
@@ -161,32 +164,53 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 
 	/* Setting up the descriptors  */
 	fragment = pkt->frags;
-	tx_desc_ptr->read.control2 |= FIRST_DESCRIPTOR_FLAG;
-	for (int i = 0; i < frags_count; i++) {
+	tx_desc_ptr->read.control2 = FIRST_DESCRIPTOR_FLAG;
+	while (frags_idx < frags_count) {
 		net_pkt_frag_ref(fragment);
 
 		tx_desc_ptr->read.buf1_addr = (uint32_t)fragment->data;
 		tx_desc_ptr->read.control1 = FIELD_PREP(0x3FFF, fragment->len);
 		tx_desc_ptr->read.control2 |= FIELD_PREP(0x7FFF, total_bytes);
 
+		/* if there are more fragments use buffer2 - ringbuffer mode */
+		if (frags_idx + 1 < frags_count) {
+			fragment = fragment->frags;
+			net_pkt_frag_ref(fragment);
+
+			tx_desc_ptr->read.buf2_addr = (uint32_t)fragment->data;
+			tx_desc_ptr->read.control1 |= FIELD_PREP(0x3FFF0000, fragment->len);
+			frags_idx++;
+		}
+
 		fragment = fragment->frags;
 		tx_desc_ptr++;
+		frags_idx++;
 	}
 	last_desc_ptr = tx_desc_ptr - 1;
 	last_desc_ptr->read.control2 |= LAST_DESCRIPTOR_FLAG;
 	last_desc_ptr->read.control1 |= TX_INTERRUPT_ON_COMPLETE_FLAG;
 
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+	if (net_pkt_is_tx_timestamping(pkt)) {
+		LOG_DBG("SET TX TIMESTAMP %p control %x", pkt, base->MAC_TIMESTAMP_CONTROL);
+		last_desc_ptr->read.control1 |= TX_TIMESTAMP_ENABLE_FLAG;
+	}
+#endif
+
 	LOG_DBG("Starting TX DMA on packet %p", pkt);
+	data->tx.num_descs = (frags_count + 1) / 2;
 
 	/* Set the DMA ownership of all the used descriptors */
-	for (int i = 0; i < frags_count; i++) {
+	__DMB();
+	for (int i = 0; i < data->tx.num_descs; i++) {
 		data->tx.descriptors[i].read.control2 |= OWN_FLAG;
 	}
+	__DSB();
 
 	/* This implementation is clearly naive and basic, it just changes the
 	 * ring length for every TX send, there is room for optimization
 	 */
-	base->DMA_CH[0].DMA_CHX_TXDESC_RING_LENGTH = frags_count - 1;
+	base->DMA_CH[0].DMA_CHX_TXDESC_RING_LENGTH = data->tx.num_descs - 1;
 	base->DMA_CH[0].DMA_CHX_TXDESC_TAIL_PTR =
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TXDESC_TAIL_PTR, TDTP,
 			ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t) tx_desc_ptr));
@@ -208,6 +232,22 @@ static void tx_dma_done(const struct device *dev)
 		LOG_DBG("TX DMA completed on packet %p", pkt);
 	}
 
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+	volatile union nxp_enet_qos_tx_desc *last_desc =
+		&tx_data->descriptors[tx_data->num_descs - 1];
+
+	if (last_desc->write.status & LAST_DESCRIPTOR_FLAG) {
+		LOG_DBG("LAST DESCRIPTOR : status: %X", last_desc->write.status);
+	}
+	if (last_desc->write.status & TX_TIMESTAMP_STATUS_FLAG) {
+		pkt->timestamp.nanosecond = last_desc->write.timestamp_low;
+		pkt->timestamp.second = last_desc->write.timestamp_high;
+		LOG_DBG("TX HARD TIMESTAMP %llu.%09u", pkt->timestamp.second,
+			pkt->timestamp.nanosecond);
+		net_if_add_tx_timestamp(pkt);
+	}
+#endif
+
 	/* Returning the buffers and packet to the pool */
 	while (fragment != NULL) {
 		net_pkt_frag_unref(fragment);
@@ -226,12 +266,15 @@ skip:
 
 static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct device *dev)
 {
-	return ETHERNET_LINK_100BASE |
-		ETHERNET_LINK_10BASE |
+	enum ethernet_hw_caps caps = ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE;
+
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
-		ETHERNET_PROMISC_MODE |
+	caps |= ETHERNET_PROMISC_MODE;
 #endif
-		ENET_MAC_PACKET_FILTER_PM_MASK;
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+	caps |= ETHERNET_PTP;
+#endif
+	return caps;
 }
 
 static bool software_owns_descriptor(volatile union nxp_enet_qos_rx_desc *desc)
@@ -361,6 +404,37 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 		if ((desc->write.control3 & LAST_DESCRIPTOR_FLAG) == LAST_DESCRIPTOR_FLAG) {
 			/* Propagate completed packet to network stack */
 			LOG_DBG("Receiving RX packet");
+
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+			/*
+			 * When PTP timestamping is enabled the hardware appends a
+			 * context descriptor (RDES3 bit 30 = CTXT) immediately after
+			 * the last regular descriptor.  Peek at that slot; if it is
+			 * software-owned and carries the CTXT flag, extract the RX
+			 * timestamp (RDES0 = nanoseconds, RDES1 = seconds) and
+			 * recycle the slot as a regular RX descriptor.
+			 */
+			{
+				uint32_t ctx_idx = rx_data->next_desc_idx;
+				volatile union nxp_enet_qos_rx_desc *ctx_desc = &desc_arr[ctx_idx];
+
+				if (!(ctx_desc->write.control3 & OWN_FLAG) &&
+				    (ctx_desc->write.control3 & RECEIVE_CONTEXT_DESCRIPTOR_FLAG)) {
+					pkt->timestamp.nanosecond = ctx_desc->write.vlan_tag;
+					pkt->timestamp.second = ctx_desc->write.control1;
+
+					/* Recycle the context descriptor slot as a
+					 * regular RX descriptor — the reserved_buf at
+					 * this index was untouched by the context write.
+					 */
+					ctx_desc->read.buf1_addr =
+						(uint32_t)data->rx.reserved_bufs[ctx_idx]->data;
+					ctx_desc->read.control = rx_desc_refresh_flags;
+					rx_data->next_desc_idx = (ctx_idx + 1U) % NUM_RX_BUFDESC;
+				}
+			}
+#endif /* CONFIG_PTP_CLOCK_NXP_ENET_QOS */
+
 			if (net_recv_data(data->iface, pkt)) {
 				LOG_WRN("RECV failed on pkt %p", pkt);
 				/* Error during processing, we continue with new buffer */
@@ -785,7 +859,14 @@ static const struct device *eth_nxp_enet_qos_get_phy(const struct device *dev)
 	return config->phy_dev;
 }
 
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+static const struct device *eth_nxp_enet_qos_get_ptp_clock(const struct device *dev)
+{
+	const struct nxp_enet_qos_mac_config *config = dev->config;
 
+	return config->ptp_clock;
+}
+#endif
 
 static int eth_nxp_enet_qos_set_config(const struct device *dev,
 			       enum ethernet_config_type type,
@@ -839,7 +920,10 @@ static const struct ethernet_api api_funcs = {
 	.send = eth_nxp_enet_qos_tx,
 	.get_capabilities = eth_nxp_enet_qos_get_capabilities,
 	.get_phy = eth_nxp_enet_qos_get_phy,
-	.set_config	= eth_nxp_enet_qos_set_config,
+	.set_config = eth_nxp_enet_qos_set_config,
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+	.get_ptp_clock = eth_nxp_enet_qos_get_ptp_clock,
+#endif
 };
 
 #define NXP_ENET_QOS_NODE_HAS_MAC_ADDR_CHECK(n)                                                    \
@@ -880,7 +964,8 @@ static const struct ethernet_api api_funcs = {
 			},                                                                         \
 		.irq_config_func = nxp_enet_qos_##n##_irq_config_func,                             \
 		.mac_addr_source = NXP_ENET_QOS_MAC_ADDR_SOURCE(n),                                \
-	};                                                                                         \
+		IF_ENABLED(CONFIG_PTP_CLOCK_NXP_ENET_QOS,                                          \
+			(.ptp_clock = DEVICE_DT_GET(DT_CHILD(DT_DRV_INST(n), ptp_clock)),)) };     \
 	static struct nxp_enet_qos_mac_data enet_qos_##n##_mac_data = {                            \
 		.mac_addr.addr = DT_INST_PROP_OR(n, local_mac_address, {0}),                       \
 	};

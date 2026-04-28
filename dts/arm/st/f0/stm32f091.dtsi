@@ -11,10 +11,9 @@
 		compatible = "st,stm32f091", "st,stm32f0", "simple-bus";
 
 		/*
-		 * USARTs 3-8 share the same IRQ on stm32f091xx devices. This
-		 * configuration is not currently supported, so at most one of
-		 * these may be enabled at a time. Enabling more than one will
-		 * result in a build failure.
+		 * USARTs 3-8 share the same IRQ on STM32F091xx devices.
+		 * CONFIG_SHARED_INTERRUPTS is enabled by default by the
+		 * SoC Kconfig when two or more of these are active.
 		 */
 		usart5: serial@40005000 {
 			compatible = "st,stm32-usart", "st,stm32-uart";

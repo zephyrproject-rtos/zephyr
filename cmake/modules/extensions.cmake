@@ -3095,11 +3095,11 @@ endfunction()
 #   zephyr_file_suffix(<filename> SUFFIX <suffix>)
 #
 # Zephyr file add suffix extension.
-# This function will check the provied filename or list of filenames to see if they have a
+# This function will check the provided filename or list of filenames to see if they have a
 # `_<suffix>` extension to them and if so, updates the supplied variable/list with the new
 # path/paths.
 #
-# <filename>: Variable (singlular or list) of absolute path filename(s) which should be checked
+# <filename>: Variable (singular or list) of absolute path filename(s) which should be checked
 #             and updated if there is a filename which has the <suffix> present.
 # <suffix>: The suffix to test for and append to the end of the provided filename.
 #
@@ -3825,7 +3825,7 @@ endfunction()
 #   build_info(<tag>... VALUE <value>...)
 #   build_info(<tag>... PATH  <path>...)
 #
-# This function populates the build_info.yml info file with exchangable build
+# This function populates the build_info.yml info file with exchangeable build
 # information related to the current build.
 #
 # Example:

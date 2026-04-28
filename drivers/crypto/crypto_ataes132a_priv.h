@@ -124,7 +124,11 @@ void ataes132a_atmel_crc(uint8_t *input, uint8_t length,
 			bit = !!(input[i] & BIT(j));
 			higher_crc_bit = crc >> 15;
 			double_carry = (crc & BIT(8)) << 1;
-			crc <<= 1;
+			/*
+			 * Explicitly mask to 16-bit to prevent
+			 * overflow/promotion warnings
+			 */
+			crc = (crc << 1) & 0xFFFF;
 			crc |= double_carry;
 
 			if ((bit ^ higher_crc_bit)) {

@@ -212,7 +212,7 @@ static int api_set_rate(const struct device *dev, clock_control_subsys_t clkcfg,
 	return syna_clk_set_rate(dev, clock_id, (uint32_t)rate);
 }
 
-static const struct clock_control_driver_api syna_clkctrl_api = {
+static DEVICE_API(clock_control, syna_clkctrl_api) = {
 	.on = api_on,
 	.off = api_off,
 	.get_rate = api_get_rate,

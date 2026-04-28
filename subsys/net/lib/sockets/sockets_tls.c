@@ -6,6 +6,7 @@
  */
 
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
@@ -46,6 +47,10 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include "sockets_internal.h"
 #include "tls_internal.h"
 #include "../../ip/net_private.h"
+
+#if defined(CONFIG_NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT)
+#include <zephyr/settings/settings.h>
+#endif
 
 #if defined(CONFIG_MBEDTLS_DEBUG)
 #include <zephyr_mbedtls_priv.h>
@@ -305,6 +310,114 @@ static struct tls_session_cache client_cache[CONFIG_NET_SOCKETS_TLS_MAX_CLIENT_S
 static mbedtls_ssl_cache_context server_cache;
 #endif
 
+#if defined(CONFIG_NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT)
+
+#define TLS_SETTINGS_PREFIX CONFIG_NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT_PREFIX
+
+static int tls_session_cache_settings_set(const char *key, size_t len, settings_read_cb read_cb,
+					  void *cb_arg)
+{
+	const char *next;
+	size_t name_len;
+	long idx;
+	ssize_t rc;
+	char *end;
+
+	name_len = settings_name_next(key, &next);
+	if (next == NULL) {
+		return -ENOENT;
+	}
+
+	idx = strtol(key, &end, 10);
+	if (end != key + name_len || idx < 0 ||
+	    idx >= CONFIG_NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT) {
+		return -ENOENT;
+	}
+
+	if (strcmp(next, "addr") == 0) {
+		if (len != sizeof(struct net_sockaddr_storage)) {
+			return -EINVAL;
+		}
+		rc = read_cb(cb_arg, &client_cache[idx].peer_addr, len);
+		if (rc < 0) {
+			return rc;
+		}
+		client_cache[idx].timestamp = k_uptime_get();
+	} else if (strcmp(next, "data") == 0) {
+		uint8_t *buf = mbedtls_calloc(1, len);
+
+		if (buf == NULL) {
+			NET_ERR("TLS session alloc failed for slot %ld", idx);
+			return -ENOMEM;
+		}
+		rc = read_cb(cb_arg, buf, len);
+		if (rc < 0) {
+			mbedtls_free(buf);
+			return rc;
+		}
+		if (client_cache[idx].session != NULL) {
+			mbedtls_free(client_cache[idx].session);
+		}
+		client_cache[idx].session = buf;
+		client_cache[idx].session_len = len;
+		NET_DBG("TLS session %ld restored from settings", idx);
+	} else {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
+SETTINGS_STATIC_HANDLER_DEFINE(tls_session_cache, TLS_SETTINGS_PREFIX, NULL,
+			       tls_session_cache_settings_set, NULL, NULL);
+
+static void tls_session_cache_settings_save(int idx)
+{
+	char key[32];
+
+	if (client_cache[idx].session == NULL) {
+		return;
+	}
+
+	snprintk(key, sizeof(key), TLS_SETTINGS_PREFIX "/%d/addr", idx);
+	settings_save_one(key, &client_cache[idx].peer_addr, sizeof(client_cache[idx].peer_addr));
+
+	snprintk(key, sizeof(key), TLS_SETTINGS_PREFIX "/%d/data", idx);
+	settings_save_one(key, client_cache[idx].session, client_cache[idx].session_len);
+
+	NET_DBG("TLS session %d saved to settings", idx);
+}
+
+static void tls_session_cache_settings_load(void)
+{
+	int rc;
+
+	rc = settings_subsys_init();
+	if (rc) {
+		NET_ERR("TLS session cache: settings_subsys_init failed (%d)", rc);
+		return;
+	}
+
+	rc = settings_load_subtree(TLS_SETTINGS_PREFIX);
+	if (rc) {
+		NET_ERR("TLS session cache: settings_load_subtree failed (%d)", rc);
+	}
+}
+
+static void tls_session_cache_settings_clear(void)
+{
+	char key[32];
+
+	for (int i = 0; i < CONFIG_NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT; i++) {
+		snprintk(key, sizeof(key), TLS_SETTINGS_PREFIX "/%d/addr", i);
+		settings_delete(key);
+		snprintk(key, sizeof(key), TLS_SETTINGS_PREFIX "/%d/data", i);
+		settings_delete(key);
+	}
+}
+
+#endif /* CONFIG_NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT */
+
 /* A mutex for protecting TLS context allocation. */
 static struct k_mutex context_lock;
 
@@ -422,6 +535,10 @@ static int tls_init(void)
 
 #if defined(MBEDTLS_SSL_CACHE_C)
 	mbedtls_ssl_cache_init(&server_cache);
+#endif
+
+#if defined(CONFIG_NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT)
+	tls_session_cache_settings_load();
 #endif
 
 	return 0;
@@ -719,6 +836,10 @@ static int tls_session_save(const struct net_sockaddr *peer_addr,
 	entry->timestamp = k_uptime_get();
 	memcpy(&entry->peer_addr, peer_addr, sizeof(*peer_addr));
 
+#if defined(CONFIG_NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT)
+	tls_session_cache_settings_save(entry - client_cache);
+#endif
+
 	return 0;
 }
 
@@ -815,6 +936,8 @@ static void tls_session_restore(struct tls_context *context,
 	ret = mbedtls_ssl_set_session(&context->active_session->ssl, &session);
 	if (ret < 0) {
 		NET_ERR("Failed to set session for %p", context);
+	} else {
+		NET_DBG("Cached session found for %p, attempting resumption", context);
 	}
 
 exit:
@@ -824,6 +947,10 @@ exit:
 static void tls_session_purge(void)
 {
 	tls_session_cache_reset();
+
+#if defined(CONFIG_NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT)
+	tls_session_cache_settings_clear();
+#endif
 
 #if defined(MBEDTLS_SSL_CACHE_C)
 	mbedtls_ssl_cache_free(&server_cache);

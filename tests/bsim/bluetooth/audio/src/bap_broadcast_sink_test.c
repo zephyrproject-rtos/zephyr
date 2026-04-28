@@ -299,7 +299,6 @@ static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 {
 	const struct bt_le_scan_recv_info *info = user_data;
-	char le_addr[BT_ADDR_LE_STR_LEN];
 	struct bt_uuid_16 adv_uuid;
 	uint32_t broadcast_id;
 
@@ -326,10 +325,8 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	printk("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X\n", broadcast_id,
-	       le_addr, info->sid);
+	       bt_addr_le_str(info->addr), info->sid);
 
 	SET_FLAG(flag_broadcaster_found);
 
@@ -456,7 +453,7 @@ static struct bt_bap_scan_delegator_cb scan_delegator_cbs = {
 
 static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 {
-	struct bt_audio_codec_cfg *codec_cfg = stream->codec_cfg;
+	const struct bt_audio_codec_cfg *codec_cfg = stream->codec_cfg;
 	enum bt_audio_location chan_allocation;
 	uint8_t frames_blocks_per_sdu;
 	size_t min_sdu_size_required;
@@ -645,7 +642,7 @@ static int init(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		FAIL("Bluetooth enable failed (err %d)\n", err);
 		return err;
 	}
@@ -653,25 +650,25 @@ static int init(void)
 	printk("Bluetooth initialized\n");
 
 	err = bt_pacs_register(&pacs_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("Could not register PACS (err %d)\n", err);
 		return err;
 	}
 
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
-	if (err) {
+	if (err != 0) {
 		FAIL("Capability register failed (err %d)\n", err);
 		return err;
 	}
 
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &vs_cap);
-	if (err) {
+	if (err != 0) {
 		FAIL("VS capability register failed (err %d)\n", err);
 		return err;
 	}
 
 	err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
-	if (err) {
+	if (err != 0) {
 		FAIL("Scan delegator register failed (err %d)\n", err);
 		return err;
 	}
@@ -944,7 +941,7 @@ static void test_common(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		FAIL("Init failed (err %d)\n", err);
 		return;
 	}
@@ -1059,7 +1056,7 @@ static void test_sink_encrypted(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		FAIL("Init failed (err %d)\n", err);
 		return;
 	}
@@ -1111,7 +1108,7 @@ static void test_sink_encrypted_incorrect_code(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		FAIL("Init failed (err %d)\n", err);
 		return;
 	}
@@ -1153,7 +1150,7 @@ static void broadcast_sink_with_assistant(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		FAIL("Init failed (err %d)\n", err);
 		return;
 	}
@@ -1209,7 +1206,7 @@ static void broadcast_sink_with_assistant_incorrect_code(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		FAIL("Init failed (err %d)\n", err);
 		return;
 	}

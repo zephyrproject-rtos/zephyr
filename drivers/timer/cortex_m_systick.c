@@ -520,7 +520,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	/*
 	 * Add elapsed cycles while computing the new load to cycle_count.
 	 *
-	 * Note that comparing val1 and val2 is normaly not good enough to
+	 * Note that comparing val1 and val2 is normally not good enough to
 	 * guess if the counter wrapped during this interval. Indeed if val1 is
 	 * close to LOAD, then there are little chances to catch val2 between
 	 * val1 and LOAD after a wrap. COUNTFLAG should be checked in addition.
@@ -624,7 +624,7 @@ void sys_clock_idle_exit(void)
 		announced_cycles += dticks * CYC_PER_TICK;
 		sys_clock_announce(dticks);
 
-		/* We've alredy performed all needed operations */
+		/* We've already performed all needed operations */
 		timeout_idle = false;
 	}
 #endif /* !CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */

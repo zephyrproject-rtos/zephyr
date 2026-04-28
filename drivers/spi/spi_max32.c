@@ -13,7 +13,7 @@
 #endif
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <zephyr/drivers/clock_control/adi_max32_clock_control.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -81,10 +81,9 @@ struct max32_spi_data {
 #define SPI_MAX32_DMA_DONE_FLAG    (SPI_MAX32_DMA_RX_DONE_FLAG | SPI_MAX32_DMA_TX_DONE_FLAG)
 #endif /* CONFIG_SPI_MAX32_DMA */
 
-#if defined(CONFIG_SPI_MAX32_INTERRUPT) &&                                                         \
-	(!defined(CONFIG_SPI_MAX32_RTIO) || !defined(CONFIG_SPI_MAX32_DMA))
+#if defined(CONFIG_SPI_MAX32_INTERRUPT)
 static void spi_max32_callback(mxc_spi_req_t *req, int error);
-#endif /* CONFIG_SPI_MAX32_INTERRUPT && (!CONFIG_SPI_MAX32_RTIO || !CONFIG_SPI_MAX32_DMA) */
+#endif /* CONFIG_SPI_MAX32_INTERRUPT */
 
 static int spi_configure(const struct device *dev, const struct spi_config *config)
 {
@@ -114,10 +113,6 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_SPI_MAX32_REG_WRITE_WAIT_WORKAROUND
-	k_busy_wait(10);
-#endif
-
 	int cpol = (SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) ? 1 : 0;
 	int cpha = (SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) ? 1 : 0;
 
@@ -133,10 +128,6 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 	if (ret) {
 		return -EINVAL;
 	}
-
-#ifdef CONFIG_SPI_MAX32_REG_WRITE_WAIT_WORKAROUND
-	k_busy_wait(1);
-#endif
 
 	ret = MXC_SPI_SetDataSize(regs, SPI_WORD_SIZE_GET(config->operation));
 	if (ret) {
@@ -163,10 +154,6 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 	if (ret) {
 		return -EINVAL;
 	}
-#endif
-
-#ifdef CONFIG_SPI_MAX32_REG_WRITE_WAIT_WORKAROUND
-	k_busy_wait(1);
 #endif
 
 	data->ctx.config = config;
@@ -331,12 +318,12 @@ static int spi_max32_transceive(const struct device *dev)
 		len = sqe->rx.buf_len;
 		data->req.rxData = sqe->rx.buf;
 		data->req.rxLen = sqe->rx.buf_len;
-#ifndef CONFIG_SPI_MAX32_DMA
-		if (data->req.rxData == NULL) {
+		if (data->req.rxData == NULL &&
+		    (COND_CODE_1(IS_ENABLED(CONFIG_SPI_MAX32_DMA),
+				 (cfg->rx_dma.channel == 0xFF), (true)))) {
 			data->req.rxData = data->dummy;
 			data->req.rxLen = 0;
 		}
-#endif
 		data->req.txData = NULL;
 		data->req.txLen = len;
 		break;
@@ -360,12 +347,12 @@ static int spi_max32_transceive(const struct device *dev)
 		data->req.rxData = sqe->txrx.rx_buf;
 		data->req.txLen = len;
 		data->req.rxLen = len;
-#ifndef CONFIG_SPI_MAX32_DMA
-		if (data->req.rxData == NULL) {
+		if (data->req.rxData == NULL &&
+		    (COND_CODE_1(IS_ENABLED(CONFIG_SPI_MAX32_DMA),
+				 (cfg->rx_dma.channel == 0xFF), (true)))) {
 			data->req.rxData = data->dummy;
 			data->req.rxLen = 0;
 		}
-#endif
 		break;
 	default:
 		break;
@@ -416,67 +403,64 @@ static int spi_max32_transceive(const struct device *dev)
 #if defined(CONFIG_SPI_MAX32_DMA) && defined(CONFIG_SPI_MAX32_RTIO)
 	struct dma_status status;
 
-	MXC_SPI_ClearTXFIFO(cfg->regs);
-	MXC_SPI_ClearRXFIFO(cfg->regs);
+	if (cfg->tx_dma.channel != 0xFF && cfg->rx_dma.channel != 0xFF) {
+		MXC_SPI_ClearTXFIFO(cfg->regs);
+		MXC_SPI_ClearRXFIFO(cfg->regs);
 
-	if (!cfg->tx_dma.dev || !cfg->rx_dma.dev) {
-		return -ENODEV;
-	}
+		if (!cfg->tx_dma.dev || !cfg->rx_dma.dev) {
+			return -ENODEV;
+		}
 
-	/* Not enough to wait for DMA callback, need to be sure the FIFO is emptied */
-	if (sqe->op == RTIO_OP_TX || sqe->op == RTIO_OP_TINY_TX) {
-		MXC_SPI_EnableInt(cfg->regs, ADI_MAX32_SPI_INT_EN_TX_EMPTY);
-	}
+		/* Not enough to wait for DMA callback, need to be sure the FIFO is emptied */
+		if (sqe->op == RTIO_OP_TX || sqe->op == RTIO_OP_TINY_TX) {
+			MXC_SPI_EnableInt(cfg->regs, ADI_MAX32_SPI_INT_EN_TX_EMPTY);
+		}
 
-	ret = dma_get_status(cfg->tx_dma.dev, cfg->tx_dma.channel, &status);
-	if (ret < 0 || status.busy) {
-		return ret < 0 ? ret : -EBUSY;
-	}
+		ret = dma_get_status(cfg->tx_dma.dev, cfg->tx_dma.channel, &status);
+		if (ret < 0 || status.busy) {
+			return ret < 0 ? ret : -EBUSY;
+		}
 
-	ret = dma_get_status(cfg->rx_dma.dev, cfg->rx_dma.channel, &status);
-	if (ret < 0 || status.busy) {
-		return ret < 0 ? ret : -EBUSY;
-	}
+		ret = dma_get_status(cfg->rx_dma.dev, cfg->rx_dma.channel, &status);
+		if (ret < 0 || status.busy) {
+			return ret < 0 ? ret : -EBUSY;
+		}
 
-	/* Word sizes less than 8-bits are not supported in DMA mode */
-	if (SPI_WORD_SIZE_GET(ctx->config->operation) < 8) {
-		return -ENOTSUP;
-	}
+		/* Word sizes less than 8-bits are not supported in DMA mode */
+		if (SPI_WORD_SIZE_GET(ctx->config->operation) < 8) {
+			return -ENOTSUP;
+		}
 
-	ret = spi_configure(dev, ctx->config);
-	if (ret != 0) {
-		return ret;
-	}
+		MXC_SPI_SetSlave(cfg->regs, ctx->config->slave);
 
-	/* Assert the CS line */
-	spi_cs_assert(dev);
+		ret = spi_max32_rx_dma_setup(dev, data->req.rxData, data->req.rxLen,
+					     data->req.rxLen >> dfs_shift, dfs_shift);
+		if (ret < 0) {
+			LOG_ERR("RX DMA setup failed: %d", ret);
+			goto dma_rtio_exit;
+		}
 
-	MXC_SPI_SetSlave(cfg->regs, ctx->config->slave);
+		ret = spi_max32_tx_dma_setup(dev, data->req.txData, data->req.txLen,
+					     data->req.txLen >> dfs_shift, dfs_shift);
+		if (ret < 0) {
+			LOG_ERR("TX DMA setup failed: %d", ret);
+			goto dma_rtio_exit;
+		}
 
-	ret = spi_max32_rx_dma_setup(dev, data->req.rxData, data->req.rxLen,
-				     data->req.rxLen >> dfs_shift, dfs_shift);
-	if (ret < 0) {
-		LOG_ERR("RX DMA setup failed: %d", ret);
-		goto dma_rtio_exit;
-	}
-
-	ret = spi_max32_tx_dma_setup(dev, data->req.txData, data->req.txLen,
-				     data->req.txLen >> dfs_shift, dfs_shift);
-	if (ret < 0) {
-		LOG_ERR("TX DMA setup failed: %d", ret);
-		goto dma_rtio_exit;
-	}
-
-	MXC_SPI_StartTransmission(cfg->regs);
+		MXC_SPI_StartTransmission(cfg->regs);
 
 dma_rtio_exit:
-	if (ret < 0) {
-		MXC_SPI_DisableInt(cfg->regs, ADI_MAX32_SPI_INT_EN_TX_EMPTY);
-		dma_stop(cfg->tx_dma.dev, cfg->tx_dma.channel);
-		dma_stop(cfg->rx_dma.dev, cfg->rx_dma.channel);
-	}
+		if (ret < 0) {
+			MXC_SPI_DisableInt(cfg->regs, ADI_MAX32_SPI_INT_EN_TX_EMPTY);
+			dma_stop(cfg->tx_dma.dev, cfg->tx_dma.channel);
+			dma_stop(cfg->rx_dma.dev, cfg->rx_dma.channel);
+		}
 
-#elif defined(CONFIG_SPI_MAX32_INTERRUPT)
+		return ret;
+	}
+#endif
+
+#if defined(CONFIG_SPI_MAX32_INTERRUPT)
 	MXC_SPI_SetTXThreshold(cfg->regs, 1 << dfs_shift);
 	if (data->req.rxLen) {
 		MXC_SPI_SetRXThreshold(cfg->regs, 2 << dfs_shift);
@@ -613,6 +597,8 @@ static void spi_max32_dma_callback(const struct device *dev, void *arg, uint32_t
 		data->dma_stat |= SPI_MAX32_DMA_TX_DONE_FLAG;
 	} else if (channel == config->rx_dma.channel) {
 		data->dma_stat |= SPI_MAX32_DMA_RX_DONE_FLAG;
+	} else {
+		return;
 	}
 
 #ifdef CONFIG_SPI_MAX32_RTIO
@@ -1004,22 +990,27 @@ static int api_transceive_async(const struct device *dev, const struct spi_confi
 
 #ifdef CONFIG_SPI_MAX32_INTERRUPT
 
-#if !defined(CONFIG_SPI_MAX32_RTIO) || !defined(CONFIG_SPI_MAX32_DMA)
+#ifdef CONFIG_SPI_RTIO
 static void spi_max32_callback(mxc_spi_req_t *req, int error)
 {
 	struct max32_spi_data *data = CONTAINER_OF(req, struct max32_spi_data, req);
-	struct spi_context *ctx = &data->ctx;
-	const struct device *dev = data->dev;
-	uint32_t len;
-	uint8_t dfs;
-
-#ifdef CONFIG_SPI_RTIO
 	struct spi_rtio *rtio_ctx = data->rtio_ctx;
 
 	if (rtio_ctx->txn_head != NULL) {
 		spi_max32_iodev_complete(data->dev, 0);
 	}
-#endif
+}
+
+#else
+
+static void spi_max32_callback(mxc_spi_req_t *req, int error)
+{
+	struct max32_spi_data *data = CONTAINER_OF(req, struct max32_spi_data, req);
+	const struct device *dev = data->dev;
+	struct spi_context *ctx = &data->ctx;
+	uint32_t len;
+	uint8_t dfs;
+
 	dfs = spi_max32_get_dfs_shift(ctx) ? 2 : 1;
 	len = spi_context_max_continuous_chunk(ctx);
 	spi_context_update_tx(ctx, dfs, len);
@@ -1036,7 +1027,7 @@ static void spi_max32_callback(mxc_spi_req_t *req, int error)
 #endif
 }
 
-#endif /* !CONFIG_SPI_MAX32_RTIO || !CONFIG_SPI_MAX32_DMA */
+#endif
 
 #ifdef CONFIG_SPI_ASYNC
 void spi_max32_async_work_handler(struct k_work *work)
@@ -1058,10 +1049,16 @@ static void spi_max32_isr(const struct device *dev)
 	mxc_spi_regs_t *spi = cfg->regs;
 	uint32_t flags;
 
-	flags = MXC_SPI_GetFlags(spi);
-	MXC_SPI_ClearFlags(spi);
+	flags = MXC_SPI_GetAndClearFlags(spi);
 
-#if !(defined(CONFIG_SPI_MAX32_RTIO) && defined(CONFIG_SPI_MAX32_DMA))
+#if defined(CONFIG_SPI_MAX32_DMA) && defined(CONFIG_SPI_MAX32_RTIO)
+	if (cfg->tx_dma.channel != 0xFF && cfg->rx_dma.channel != 0xFF) {
+		MXC_SPI_DisableInt(spi, ADI_MAX32_SPI_INT_EN_TX_EMPTY);
+		spi_max32_iodev_complete(dev, 0);
+		return;
+	}
+#endif
+
 	struct max32_spi_data *data = dev->data;
 	mxc_spi_req_t *req = &data->req;
 	uint32_t remain;
@@ -1101,10 +1098,6 @@ static void spi_max32_isr(const struct device *dev)
 			spi_max32_callback(req, 0);
 		}
 	}
-#else
-	MXC_SPI_DisableInt(spi, ADI_MAX32_SPI_INT_EN_TX_EMPTY);
-	spi_max32_iodev_complete(dev, 0);
-#endif
 }
 #endif /* CONFIG_SPI_MAX32_INTERRUPT */
 

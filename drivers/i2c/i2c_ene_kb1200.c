@@ -85,7 +85,7 @@ static void i2c_kb1200_isr(const struct device *dev)
 		data->index += receive_bytes;
 		if (config->fsmbm->FSMBMPF & FSMBM_BLOCK_FINISH_EVENT) {
 			/* continue block */
-			/* Check next protocl information */
+			/* Check next protocol information */
 			remain = data->msg_len - data->index;
 			uint32_t NextLen =
 				(remain > FSMBM_BUFFER_SIZE) ? FSMBM_BUFFER_SIZE : remain;

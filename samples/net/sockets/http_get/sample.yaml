@@ -52,6 +52,12 @@ tests:
       - native_sim
       - native_sim/native/64
     extra_args: EXTRA_CONF_FILE="overlay-nsos.conf;overlay-tls.conf"
+  sample.net.sockets.http_get.tls_session_cache:
+    harness: net
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_args: EXTRA_CONF_FILE="overlay-tls.conf;overlay-tls-session-cache.conf"
   sample.net.sockets.http_get.wifi.nrf70dk:
     extra_args:
       - SNIPPET=wifi-ipv4

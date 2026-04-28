@@ -1,0 +1,15 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: i.MX RT118x ARM PLL clock provider
+
+compatible: "nxp,imxrt118x-arm-pll"
+
+include: nxp,imxrt-arm-pll-common.yaml
+
+properties:
+  loop-div:
+    required: true
+
+  post-div:
+    required: true

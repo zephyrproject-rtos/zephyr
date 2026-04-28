@@ -57,7 +57,7 @@ config ARM64
 	select ARCH_HAS_DEMAND_MAPPING
 	select ARCH_SUPPORTS_EVICTION_TRACKING
 	select EVICTION_TRACKING if DEMAND_PAGING
-	select MEM_DOMAIN_HAS_THREAD_LIST if ARM_MPU
+	select MEM_DOMAIN_HAS_THREAD_LIST if ARM_MPU && USERSPACE
 	help
 	  ARM64 (AArch64) architecture
 
@@ -75,6 +75,7 @@ config OPENRISC
 	select BIG_ENDIAN
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	help
 	  OpenRISC architecture
 
@@ -440,6 +441,17 @@ config DYNAMIC_OBJECTS
 	  API call, or when the number of references to that object drops to
 	  zero.
 
+config DYNAMIC_OBJECTS_FORCE_STACK_CACHED
+	bool "Force allocated thread stack objects to be in cached area"
+	default y
+	depends on USERSPACE
+	depends on KERNEL_COHERENCE
+	help
+	  With kernel coherence enabled, it is possible that the stack has been
+	  allocated on uncached area, which has performance implications.
+	  If this is enabled, the stack pointer will be forcibly converted to be
+	  in cached area.
+
 config NOCACHE_MEMORY
 	bool "Support for uncached memory"
 	depends on ARCH_HAS_NOCACHE_MEMORY_SUPPORT
@@ -587,9 +599,36 @@ config GEN_SW_ISR_TABLE
 	depends on GEN_ISR_TABLES
 	help
 	  This option controls whether a platform using gen_isr_tables
-	  needs a software ISR table table created. This is an array of struct
-	  _isr_table_entry containing the interrupt service routine and supplied
-	  parameter.
+	  needs a software ISR table created.
+	  It can be generated as either an array or a switch-case.
+	  See CONFIG_GEN_SW_ISR_TABLE_TYPE.
+
+choice GEN_SW_ISR_TABLE_TYPE
+	prompt "Allows to chose how ISR table is implemented"
+	depends on GEN_SW_ISR_TABLE
+	default GEN_SW_ISR_TABLE_ARRAY
+	help
+	  CONFIG_GEN_SW_ISR_TABLE_ARRAY is a default option.
+	  It should be used when in doubt.
+	  GEN_SW_ISR_TABLE_SWITCH allows for binary size optimization
+	  in certain scenarios, but may also increase latency, to execution of ISR with higher number, if there is significant number of ISR assigned in your system.
+
+config GEN_SW_ISR_TABLE_ARRAY
+	bool "Generate an array of ISR entries"
+	help
+	  This is an array of struct _isr_table_entry containing
+	  the interrupt service routine and supplied parameter.
+	  All interrupts have their own entry.
+
+config GEN_SW_ISR_TABLE_SWITCH
+	bool "Generate a function with a switch-case"
+	help
+	  Use a switch-case instead of an array.
+	  This helps to limit binary size when most of the IRQs are not used.
+	  In such case common, duplicated entries are grouped in a single default block
+	  while few used interrupts have their own case blocks.
+
+endchoice
 
 config ARCH_SW_ISR_TABLE_ALIGN
 	int "Alignment size of a software ISR table"
@@ -710,6 +749,19 @@ endmenu
 #
 # Architecture Capabilities
 #
+config ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS
+	bool
+	help
+	  This hidden option is selected by the target architecture if
+	  the architecture supports isolating thread stacks for threads
+	  within the same memory domain.
+
+config ARCH_MEM_DOMAIN_SUPPORTS_DEINIT
+	bool
+	select MEM_DOMAIN_HAS_THREAD_LIST
+	help
+	  This hidden option is selected by the target architecture if
+	  the architecture supports de-initializing a memory domain.
 
 config ARCH_HAS_SINGLE_THREAD_SUPPORT
 	bool

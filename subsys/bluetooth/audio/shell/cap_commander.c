@@ -563,7 +563,7 @@ static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, s
 	}
 
 	err = bt_addr_le_from_str(argv[1], argv[2], &member_param->addr);
-	if (err) {
+	if (err != 0) {
 		shell_error(sh, "Invalid peer address (err %d)", err);
 
 		return -ENOEXEC;
@@ -603,7 +603,7 @@ static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, s
 		unsigned long pa_interval;
 
 		pa_interval = shell_strtoul(argv[5], 0, &err);
-		if (err) {
+		if (err != 0) {
 			shell_error(sh, "Could not parse pa_interval: %d", err);
 
 			return -ENOEXEC;
@@ -626,7 +626,7 @@ static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, s
 		unsigned long bis_sync;
 
 		bis_sync = shell_strtoul(argv[6], 0, &err);
-		if (err) {
+		if (err != 0) {
 			shell_error(sh, "Could not parse bis_sync: %d", err);
 
 			return -ENOEXEC;

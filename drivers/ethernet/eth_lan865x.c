@@ -89,6 +89,16 @@ static void lan865x_iface_init(struct net_if *iface)
 	struct lan865x_data *ctx = dev->data;
 	int ret;
 
+#if defined(CONFIG_NET_VLAN)
+
+	/* Increase the maximum accepted frame size to 1536 bytes. */
+	ret = oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR, LAN865x_MAC_NCFGR_MAXFS);
+	if (ret < 0) {
+		LOG_ERR("LAN865x VLAN MAXFS config failed: %d", ret);
+		return;
+	}
+#endif
+
 	ret = lan865x_enable_sync(dev);
 	if (ret) {
 		LOG_ERR("LAN865x sync enable failed: %d\n", ret);
@@ -108,7 +118,11 @@ static void lan865x_iface_init(struct net_if *iface)
 static enum ethernet_hw_caps lan865x_port_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	return ETHERNET_LINK_10BASE | ETHERNET_PROMISC_MODE;
+	return ETHERNET_LINK_10BASE | ETHERNET_PROMISC_MODE
+#if defined(CONFIG_NET_VLAN)
+	       | ETHERNET_HW_VLAN
+#endif
+		;
 }
 
 static int lan865x_gpio_reset(const struct device *dev);

@@ -87,8 +87,9 @@ MEMORY
   drom0_0_seg(R):  org = DROM_SEG_ORG, len = DROM_SEG_LEN
 
 #if defined(CONFIG_ESP_SPIRAM)
-  /* PSRAM is mapped after the flash DROM region in the unified cache address space */
-  ext_dram_seg(RW): org = DROM_SEG_ORG + DROM_SEG_LEN, len = CONFIG_ESP_SPIRAM_SIZE
+  /* ext_dram_seg and irom0_0_seg share the same bus (unified cache address space).
+   * A dummy section is used to skip flash content and avoid overlap. */
+  ext_dram_seg(RW): org = IROM_SEG_ORG, len = CONFIG_ESP_SPIRAM_SIZE
 #endif
 
 #if CONFIG_ESP32_ULP_COPROC_ENABLED
@@ -769,11 +770,11 @@ SECTIONS
     *(.user_stacks*)
     z_user_stacks_end = .;
 #endif /* CONFIG_USERSPACE */
-#ifdef CONFIG_LLEXT
+#if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
     *(.llext_heap)
     *(.llext_ext_heap)
     *(.llext_metadata_heap)
-#endif /* CONFIG_LLEXT */
+#endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
     . = ALIGN(4);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
@@ -806,8 +807,9 @@ SECTIONS
     *(.sbss2.*)
     *(.gnu.linkonce.sb2.*)
     *(.dynbss)
-    *(.bss)
-    *(.bss.*)
+
+#include <esp_spiram_relocate_bss.ld.inc>
+
     *(.share.mem)
     *(.gnu.linkonce.b.*)
     *(COMMON)
@@ -979,7 +981,8 @@ SECTIONS
    * This is used to calculate the size of the _image_drom_size variable */
   .flash.rodata_end : ALIGN(0x10)
   {
-    . = ALIGN(4);
+    /* Enforce flash segment size alignment */
+    LONG(0);
     _rodata_reserved_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
@@ -989,6 +992,17 @@ SECTIONS
   /* --- START OF SPIRAM --- */
 
 #if defined(CONFIG_ESP_SPIRAM)
+  /* This section is required to skip flash content because ext_dram_seg
+   * and irom0_0_seg/drom0_0_seg share the same bus (unified cache).
+   * The MMU reserves pages for both IROM and DROM from the same address
+   * region, so the dummy must account for both to match the runtime
+   * free_head used by esp_mmu_map_reserve_block_with_caps(). */
+  .ext_ram.dummy (NOLOAD):
+  {
+    . += ALIGN(_instruction_reserved_end - _instruction_reserved_start, CACHE_ALIGN);
+    . += ALIGN(_rodata_reserved_end - _rodata_reserved_start, CACHE_ALIGN);
+  } GROUP_LINK_IN(EXT_DRAM_REGION)
+
   /* This section holds .ext_ram.bss data, and will be put in PSRAM */
   .ext_ram.data (NOLOAD) :
   {
@@ -1003,11 +1017,16 @@ SECTIONS
     *(.ext_ram.bss*)
     . = ALIGN(16);
 
+#include <esp_spiram_relocate_bss_ext_ram.ld.inc>
+    . = ALIGN(16);
+
     KEEP(*(.lvgl_buf*))
     . = ALIGN(16);
     KEEP(*(.lvgl_heap*))
     . = ALIGN(16);
     KEEP(*(.mbedtls_heap*))
+    . = ALIGN(16);
+    KEEP(*(.ot_msg_pool*))
     . = ALIGN(16);
 
     _ext_ram_bss_end = ABSOLUTE(.);

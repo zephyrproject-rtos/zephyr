@@ -1351,7 +1351,7 @@ static int outs(cbprintf_cb __out,
 		const char *ep)
 {
 	size_t count = 0;
-	cbprintf_cb_local out = __out;
+	cbprintf_cb out = __out;
 
 	while ((sp < ep) || ((ep == NULL) && *sp)) {
 		int rc = out((int)*sp, ctx);
@@ -1372,7 +1372,7 @@ int z_cbvprintf_impl(cbprintf_cb __out, void *ctx, const char *fp,
 	char buf[CONVERTED_BUFLEN];
 	size_t count = 0;
 	sint_value_type sint;
-	cbprintf_cb_local out = __out;
+	cbprintf_cb out = __out;
 
 	const bool tagged_ap = (flags & Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS)
 			       == Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS;

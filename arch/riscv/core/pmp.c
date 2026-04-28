@@ -151,6 +151,24 @@ void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
 #if CONFIG_PMP_SLOTS > 8
 	pmp_cfg[1] = csr_read(pmpcfg2);
 #endif
+#if CONFIG_PMP_SLOTS > 16
+	pmp_cfg[2] = csr_read(pmpcfg4);
+#endif
+#if CONFIG_PMP_SLOTS > 24
+	pmp_cfg[3] = csr_read(pmpcfg6);
+#endif
+#if CONFIG_PMP_SLOTS > 32
+	pmp_cfg[4] = csr_read(pmpcfg8);
+#endif
+#if CONFIG_PMP_SLOTS > 40
+	pmp_cfg[5] = csr_read(pmpcfg10);
+#endif
+#if CONFIG_PMP_SLOTS > 48
+	pmp_cfg[6] = csr_read(pmpcfg12);
+#endif
+#if CONFIG_PMP_SLOTS > 56
+	pmp_cfg[7] = csr_read(pmpcfg14);
+#endif
 #else
 	/* RV32: Each pmpcfg register holds 4 entries. */
 	pmp_cfg[0] = csr_read(pmpcfg0);
@@ -158,6 +176,30 @@ void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
 #if CONFIG_PMP_SLOTS > 8
 	pmp_cfg[2] = csr_read(pmpcfg2);
 	pmp_cfg[3] = csr_read(pmpcfg3);
+#endif
+#if CONFIG_PMP_SLOTS > 16
+	pmp_cfg[4] = csr_read(pmpcfg4);
+	pmp_cfg[5] = csr_read(pmpcfg5);
+#endif
+#if CONFIG_PMP_SLOTS > 24
+	pmp_cfg[6] = csr_read(pmpcfg6);
+	pmp_cfg[7] = csr_read(pmpcfg7);
+#endif
+#if CONFIG_PMP_SLOTS > 32
+	pmp_cfg[8] = csr_read(pmpcfg8);
+	pmp_cfg[9] = csr_read(pmpcfg9);
+#endif
+#if CONFIG_PMP_SLOTS > 40
+	pmp_cfg[10] = csr_read(pmpcfg10);
+	pmp_cfg[11] = csr_read(pmpcfg11);
+#endif
+#if CONFIG_PMP_SLOTS > 48
+	pmp_cfg[12] = csr_read(pmpcfg12);
+	pmp_cfg[13] = csr_read(pmpcfg13);
+#endif
+#if CONFIG_PMP_SLOTS > 56
+	pmp_cfg[14] = csr_read(pmpcfg14);
+	pmp_cfg[15] = csr_read(pmpcfg15);
 #endif
 #endif
 }
@@ -178,11 +220,30 @@ void z_riscv_pmp_read_addr(unsigned long *pmp_addr, size_t pmp_addr_size)
 	__ASSERT(pmp_addr_size == (size_t)(CONFIG_PMP_SLOTS), "PMP address array size mismatch");
 
 #define PMPADDR_READ(x) pmp_addr[x] = csr_read(pmpaddr##x)
-	FOR_EACH(PMPADDR_READ, (;), 0, 1, 2, 3, 4, 5, 6, 7);
 
+	FOR_EACH(PMPADDR_READ, (;), 0, 1, 2, 3, 4, 5, 6, 7);
 #if CONFIG_PMP_SLOTS > 8
 	FOR_EACH(PMPADDR_READ, (;), 8, 9, 10, 11, 12, 13, 14, 15);
 #endif
+#if CONFIG_PMP_SLOTS > 16
+	FOR_EACH(PMPADDR_READ, (;), 16, 17, 18, 19, 20, 21, 22, 23);
+#endif
+#if CONFIG_PMP_SLOTS > 24
+	FOR_EACH(PMPADDR_READ, (;), 24, 25, 26, 27, 28, 29, 30, 31);
+#endif
+#if CONFIG_PMP_SLOTS > 32
+	FOR_EACH(PMPADDR_READ, (;), 32, 33, 34, 35, 36, 37, 38, 39);
+#endif
+#if CONFIG_PMP_SLOTS > 40
+	FOR_EACH(PMPADDR_READ, (;), 40, 41, 42, 43, 44, 45, 46, 47);
+#endif
+#if CONFIG_PMP_SLOTS > 48
+	FOR_EACH(PMPADDR_READ, (;), 48, 49, 50, 51, 52, 53, 54, 55);
+#endif
+#if CONFIG_PMP_SLOTS > 56
+	FOR_EACH(PMPADDR_READ, (;), 56, 57, 58, 59, 60, 61, 62, 63);
+#endif
+
 #undef PMPADDR_READ
 }
 

@@ -363,7 +363,7 @@ __syscall int auxdisplay_display_on(const struct device *dev);
 
 static inline int z_impl_auxdisplay_display_on(const struct device *dev)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->display_on) {
 		return -ENOSYS;
@@ -385,7 +385,7 @@ __syscall int auxdisplay_display_off(const struct device *dev);
 
 static inline int z_impl_auxdisplay_display_off(const struct device *dev)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->display_off) {
 		return -ENOSYS;
@@ -410,7 +410,7 @@ __syscall int auxdisplay_cursor_set_enabled(const struct device *dev,
 static inline int z_impl_auxdisplay_cursor_set_enabled(const struct device *dev,
 						       bool enabled)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->cursor_set_enabled) {
 		return -ENOSYS;
@@ -435,7 +435,7 @@ __syscall int auxdisplay_position_blinking_set_enabled(const struct device *dev,
 static inline int z_impl_auxdisplay_position_blinking_set_enabled(const struct device *dev,
 								  bool enabled)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->position_blinking_set_enabled) {
 		return -ENOSYS;
@@ -464,7 +464,7 @@ static inline int z_impl_auxdisplay_cursor_shift_set(const struct device *dev,
 						     uint8_t direction,
 						     bool display_shift)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->cursor_shift_set) {
 		return -ENOSYS;
@@ -498,7 +498,7 @@ static inline int z_impl_auxdisplay_cursor_position_set(const struct device *dev
 							enum auxdisplay_position type,
 							int16_t x, int16_t y)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->cursor_position_set) {
 		return -ENOSYS;
@@ -529,7 +529,7 @@ __syscall int auxdisplay_cursor_position_get(const struct device *dev,
 static inline int z_impl_auxdisplay_cursor_position_get(const struct device *dev,
 							int16_t *x, int16_t *y)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->cursor_position_get) {
 		return -ENOSYS;
@@ -559,7 +559,7 @@ static inline int z_impl_auxdisplay_display_position_set(const struct device *de
 							 enum auxdisplay_position type,
 							 int16_t x, int16_t y)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->display_position_set) {
 		return -ENOSYS;
@@ -590,7 +590,7 @@ __syscall int auxdisplay_display_position_get(const struct device *dev,
 static inline int z_impl_auxdisplay_display_position_get(const struct device *dev,
 							 int16_t *x, int16_t *y)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->display_position_get) {
 		return -ENOSYS;
@@ -614,9 +614,7 @@ __syscall int auxdisplay_capabilities_get(const struct device *dev,
 static inline int z_impl_auxdisplay_capabilities_get(const struct device *dev,
 						     struct auxdisplay_capabilities *capabilities)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	return api->capabilities_get(dev, capabilities);
+	return DEVICE_API_GET(auxdisplay, dev)->capabilities_get(dev, capabilities);
 }
 
 /**
@@ -633,9 +631,7 @@ __syscall int auxdisplay_clear(const struct device *dev);
 
 static inline int z_impl_auxdisplay_clear(const struct device *dev)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	return api->clear(dev);
+	return DEVICE_API_GET(auxdisplay, dev)->clear(dev);
 }
 
 /**
@@ -654,7 +650,7 @@ __syscall int auxdisplay_brightness_get(const struct device *dev,
 static inline int z_impl_auxdisplay_brightness_get(const struct device *dev,
 						   uint8_t *brightness)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->brightness_get) {
 		return -ENOSYS;
@@ -680,7 +676,7 @@ __syscall int auxdisplay_brightness_set(const struct device *dev,
 static inline int z_impl_auxdisplay_brightness_set(const struct device *dev,
 						   uint8_t brightness)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->brightness_set) {
 		return -ENOSYS;
@@ -705,7 +701,7 @@ __syscall int auxdisplay_backlight_get(const struct device *dev,
 static inline int z_impl_auxdisplay_backlight_get(const struct device *dev,
 						  uint8_t *backlight)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->backlight_get) {
 		return -ENOSYS;
@@ -731,7 +727,7 @@ __syscall int auxdisplay_backlight_set(const struct device *dev,
 static inline int z_impl_auxdisplay_backlight_set(const struct device *dev,
 						  uint8_t backlight)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->backlight_set) {
 		return -ENOSYS;
@@ -754,7 +750,7 @@ __syscall int auxdisplay_is_busy(const struct device *dev);
 
 static inline int z_impl_auxdisplay_is_busy(const struct device *dev)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->is_busy) {
 		return -ENOSYS;
@@ -789,7 +785,7 @@ __syscall int auxdisplay_custom_character_set(const struct device *dev,
 static inline int z_impl_auxdisplay_custom_character_set(const struct device *dev,
 							 struct auxdisplay_character *character)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->custom_character_set) {
 		return -ENOSYS;
@@ -815,9 +811,7 @@ __syscall int auxdisplay_write(const struct device *dev, const uint8_t *data,
 static inline int z_impl_auxdisplay_write(const struct device *dev,
 					  const uint8_t *data, uint16_t len)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	return api->write(dev, data, len);
+	return DEVICE_API_GET(auxdisplay, dev)->write(dev, data, len);
 }
 
 /**
@@ -837,7 +831,7 @@ __syscall int auxdisplay_custom_command(const struct device *dev,
 static inline int z_impl_auxdisplay_custom_command(const struct device *dev,
 						   struct auxdisplay_custom_data *data)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->custom_command) {
 		return -ENOSYS;

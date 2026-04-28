@@ -113,6 +113,7 @@ void pe_src_startup_entry(void *obj)
 	/* Invalidate explicit contract */
 	atomic_clear_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT);
 
+	/* Inform Device Policy Manager that PD is not connected */
 	policy_notify(dev, NOT_PD_CONNECTED);
 }
 
@@ -359,10 +360,6 @@ void pe_src_transition_supply_exit(void *obj)
 		pe->snk_request_reply = SNK_REQUEST_REJECT;
 		/* Send PS Ready */
 		pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_PS_RDY);
-		/* Explicit Contract is now in place */
-		atomic_set_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT);
-		/* Update present contract */
-		pe->present_contract = pe->snk_request;
 	}
 }
 
@@ -396,6 +393,25 @@ enum smf_state_result pe_src_ready_run(void *obj)
 	const struct device *dev = pe->dev;
 	struct usbc_port_data *data = dev->data;
 	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
+	struct protocol_layer_tx_t *prl_tx = data->prl_tx;
+
+	/*
+	 * Check if PS_RDY was successfully transmitted, which establishes
+	 * the explicit contract.
+	 */
+	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE) &&
+	    prl_tx->msg_type == PD_CTRL_PS_RDY) {
+		/* Update present contract */
+		pe->present_contract = pe->snk_request;
+		/*
+		 * Only notify DPM PD_CONNECTED if this is the first contract
+		 * and not a renegotiation.
+		 */
+		if (!atomic_test_and_set_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT)) {
+			/* Inform Device Policy Manager that PD is connected */
+			policy_notify(dev, PD_CONNECTED);
+		}
+	}
 
 	/* Handle incoming messages */
 	if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {

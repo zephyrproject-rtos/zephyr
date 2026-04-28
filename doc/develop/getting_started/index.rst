@@ -336,12 +336,12 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
             .. code-tab:: bat
 
                cd %HOMEPATH%
-               python -m venv zephyrproject\.venv
+               py -3.12 -m venv zephyrproject\.venv
 
             .. code-tab:: powershell
 
                cd $Env:HOMEPATH
-               python -m venv zephyrproject\.venv
+               py -3.12 -m venv zephyrproject\.venv
 
       #. Activate the virtual environment:
 

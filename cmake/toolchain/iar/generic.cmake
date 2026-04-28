@@ -23,7 +23,7 @@ endif()
 set(IAR_TOOLCHAIN_VARIANT ${IAR_COMPILER})
 
 # iar relies on Zephyr SDK for the use of C preprocessor (devicetree) and objcopy
-find_package(Zephyr-sdk 0.16 REQUIRED)
+find_package(Zephyr-sdk 1.0 REQUIRED)
 message(STATUS "Found Zephyr SDK at ${ZEPHYR_SDK_INSTALL_DIR}")
 
 set(TOOLCHAIN_HOME ${IAR_TOOLCHAIN_PATH})

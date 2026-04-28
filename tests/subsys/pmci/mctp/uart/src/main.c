@@ -26,11 +26,18 @@ struct reply_data {
 	struct k_work work;
 	struct mctp *mctp_ctx;
 	uint8_t eid;
+	const void *reply_msg;
+	size_t reply_len;
 };
 
 bool ping_pong_done;
 
 static struct reply_data reply_handler;
+
+static const char big_message[] =
+	"0123456789012345678901234567890123456789012345678901234567890123456789012345678 "
+	"0123456789012345678901234567890123456789012345678901234567890123456789012345678 "
+	"01234567890123456789012345678END";
 
 static void target_reply(struct k_work *item)
 {
@@ -44,8 +51,9 @@ static void target_reply(struct k_work *item)
 	zassert_ok(rc, "Failed to stop endpoint RX");
 	mctp_uart_start_rx(&mctp_uart_host);
 
-	TC_PRINT("Target replying \"pong\" to endpoint %d\n", reply->eid);
-	rc = mctp_message_tx(reply->mctp_ctx, reply->eid, false, 0, "pong", sizeof("pong"));
+	TC_PRINT("Target replying to endpoint %d\n", reply->eid);
+	rc = mctp_message_tx(reply->mctp_ctx, reply->eid, false, 0, (void *)reply->reply_msg,
+			     reply->reply_len);
 	zassert_ok(rc, "Failed to send reply message");
 }
 
@@ -60,11 +68,30 @@ static void rx_message_target(uint8_t eid, bool tag_owner, uint8_t msg_tag, void
 	TC_PRINT("Target received message \"%s\" from endpoint %d, queuing reply\n",
 		(char *)msg, eid);
 
+	zassert_ok(memcmp(msg, "ping", sizeof("ping")));
+
 	reply_handler.eid = eid;
 	k_work_submit(&reply_handler.work);
 }
 
-static struct mctp *init_target(void)
+static void rx_message_target_big_msg(uint8_t eid, bool tag_owner, uint8_t msg_tag, void *data,
+				      void *msg, size_t len)
+{
+	ARG_UNUSED(tag_owner);
+	ARG_UNUSED(msg_tag);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+
+	TC_PRINT("Target received message \"%s\" from endpoint %d, queuing reply\n", (char *)msg,
+		 eid);
+	zassert_ok(memcmp(msg, big_message, sizeof(big_message)));
+
+	reply_handler.eid = eid;
+	k_work_submit(&reply_handler.work);
+}
+
+static struct mctp *init_target(void (*rx_callback)(uint8_t eid, bool tag_owner, uint8_t msg_tag,
+						    void *data, void *msg, size_t len))
 {
 	struct mctp *mctp_ctx;
 
@@ -73,7 +100,7 @@ static struct mctp *init_target(void)
 
 	zassert_not_null(mctp_ctx, "Failed to initialize MCTP target context");
 	mctp_register_bus(mctp_ctx, &mctp_uart_endpoint.binding, ENDPOINT_EID);
-	mctp_set_rx_all(mctp_ctx, rx_message_target, NULL);
+	mctp_set_rx_all(mctp_ctx, rx_callback, NULL);
 	mctp_uart_start_rx(&mctp_uart_endpoint);
 
 	reply_handler.mctp_ctx = mctp_ctx;
@@ -88,6 +115,24 @@ static void rx_message(uint8_t eid, bool tag_owner, uint8_t msg_tag, void *data,
 	TC_PRINT("Received message \"%s\" from endpoint %d to %d, msg_tag %d, len %zu\n",
 		(char *)msg, eid, HOST_EID, msg_tag, len);
 
+	zassert_ok(memcmp(msg, "pong", sizeof("pong")));
+
+	ping_pong_done = true;
+	k_sem_give(&mctp_rx);
+}
+
+static void rx_message_big(uint8_t eid, bool tag_owner, uint8_t msg_tag, void *data, void *msg,
+			   size_t len)
+{
+	ARG_UNUSED(tag_owner);
+	ARG_UNUSED(msg_tag);
+	ARG_UNUSED(data);
+
+	TC_PRINT("Received big message from endpoint %d to %d, len %zu\n", eid, HOST_EID, len);
+
+	zassert_equal(len, sizeof(big_message));
+	zassert_ok(memcmp(msg, big_message, sizeof(big_message)));
+
 	ping_pong_done = true;
 	k_sem_give(&mctp_rx);
 }
@@ -97,8 +142,6 @@ ZTEST(mctp_uart_test_suite, test_mctp_uart_ping_pong)
 	int rc;
 	struct mctp *mctp_ctx, *mctp_ctx_target;
 
-	mctp_ctx_target = init_target();
-
 	TC_PRINT("MCTP Host EID:%d on %s\n", HOST_EID, CONFIG_BOARD_TARGET);
 	mctp_ctx = mctp_init();
 
@@ -106,9 +149,13 @@ ZTEST(mctp_uart_test_suite, test_mctp_uart_ping_pong)
 	mctp_register_bus(mctp_ctx, &mctp_uart_host.binding, HOST_EID);
 	mctp_set_rx_all(mctp_ctx, rx_message, NULL);
 
+	mctp_ctx_target = init_target(rx_message_target);
+	reply_handler.reply_msg = "pong";
+	reply_handler.reply_len = sizeof("pong");
+
 	TC_PRINT("Sending message \"ping\" to endpoint %u\n", ENDPOINT_EID);
 
-	rc = mctp_message_tx(mctp_ctx, ENDPOINT_EID, false, 0, "ping", sizeof("ping"));
+	rc = mctp_message_tx(mctp_ctx, ENDPOINT_EID, false, 0, (void *)"ping", sizeof("ping"));
 	zassert_ok(rc, "Failed to send message");
 
 	/* Wait ping-pong to complete */
@@ -120,4 +167,47 @@ ZTEST(mctp_uart_test_suite, test_mctp_uart_ping_pong)
 	mctp_destroy(mctp_ctx_target);
 }
 
-ZTEST_SUITE(mctp_uart_test_suite, NULL, NULL, NULL, NULL, NULL);
+ZTEST(mctp_uart_test_suite, test_mctp_uart_ping_pong_big_message)
+{
+	int rc;
+	struct mctp *mctp_ctx, *mctp_ctx_target;
+
+	TC_PRINT("MCTP Host EID:%d on %s\n", HOST_EID, CONFIG_BOARD_TARGET);
+	mctp_ctx = mctp_init();
+
+	zassert_not_null(mctp_ctx, "Failed to initialize MCTP context");
+	mctp_register_bus(mctp_ctx, &mctp_uart_host.binding, HOST_EID);
+	mctp_set_rx_all(mctp_ctx, rx_message_big, NULL);
+
+	mctp_ctx_target = init_target(rx_message_target_big_msg);
+	reply_handler.reply_msg = big_message;
+	reply_handler.reply_len = sizeof(big_message);
+
+	TC_PRINT("Sending big message to endpoint %u\n", ENDPOINT_EID);
+
+	rc = mctp_message_tx(mctp_ctx, ENDPOINT_EID, false, 0, (void *)big_message,
+			     sizeof(big_message));
+	zassert_ok(rc, "Failed to send message");
+
+	/* Wait ping-pong to complete */
+	k_sem_take(&mctp_rx, K_SECONDS(5));
+
+	zassert_true(ping_pong_done, "Ping-pong message exchange failed");
+
+	mctp_destroy(mctp_ctx);
+	mctp_destroy(mctp_ctx_target);
+}
+
+extern sys_slist_t mctp_uart_bindings;
+
+static void cleanup(void *p)
+{
+	ARG_UNUSED(p);
+
+	ping_pong_done = false;
+	mctp_uart_stop_rx(&mctp_uart_host);
+
+	sys_slist_init(&mctp_uart_bindings);
+}
+
+ZTEST_SUITE(mctp_uart_test_suite, NULL, NULL, NULL, cleanup, NULL);

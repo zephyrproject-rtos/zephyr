@@ -10,44 +10,47 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 
-/*
- * This function will allow execute from sram region.
- */
-#ifdef CONFIG_ARM_MPU
-void disable_mpu_rasr_xn(void)
-{
-	uint32_t index;
 
-	/*
-	 * Kept the max index as 8(irrespective of soc) because the sram
-	 * would most likely be set at index 2.
-	 */
-	for (index = 0U; index < 8; index++) {
-		MPU->RNR = index;
-#if defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)
-		if (MPU->RBAR & MPU_RBAR_XN_Msk) {
-			MPU->RBAR ^= MPU_RBAR_XN_Msk;
-		}
-#else
-		if (MPU->RASR & MPU_RASR_XN_Msk) {
-			MPU->RASR ^= MPU_RASR_XN_Msk;
-		}
-#endif /* CONFIG_ARMV8_M_BASELINE || CONFIG_ARMV8_M_MAINLINE */
-	}
-}
-#endif /* CONFIG_ARM_MPU */
+#define PSE84_CPU_FREQ_HZ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
+
+#if defined(CONFIG_BUILD_WITH_TFM)
+#include "mtb_srf_pool_init.h"
+#include "cy_syslib.h"
+
+mtb_srf_pool_t cy_pdl_srf_default_pool;
+CY_SECTION_SHAREDMEM _MTB_SRF_DATA_ALIGN uint32_t cy_pdl_srf_default_pool_memory[
+								(MTB_SRF_POOL_ENTRY_SIZE(
+								MTB_SRF_MAX_ARG_IN_SIZE,
+								MTB_SRF_MAX_ARG_OUT_SIZE)
+								* MTB_SRF_POOL_SIZE) /
+								sizeof(uint32_t)];
+#endif /* defined(CONFIG_BUILD_WITH_TFM) */
+
 
 void soc_early_init_hook(void)
 {
-#ifdef CONFIG_ARM_MPU
-	disable_mpu_rasr_xn();
-#endif /* CONFIG_ARM_MPU */
-
 	/* Initialize SystemCoreClock variable. */
-	SystemCoreClockUpdate();
+	SystemCoreClockSetup(PSE84_CPU_FREQ_HZ, PSE84_CPU_FREQ_HZ);
+
+#ifdef CONFIG_BUILD_WITH_TFM
+	cy_rslt_t srf_init = mtb_srf_pool_init(&cy_pdl_srf_default_pool,
+							&cy_pdl_srf_default_pool_memory[0],
+							MTB_SRF_POOL_SIZE,
+							MTB_SRF_MAX_ARG_IN_SIZE,
+							MTB_SRF_MAX_ARG_OUT_SIZE);
+
+	if (srf_init != CY_RSLT_SUCCESS) {
+		/*If SRF pool initialization fails then panic as TF-M relies
+		 * on this pool for handling secure requests
+		 */
+		k_panic();
+	}
+#endif /* CONFIG_BUILD_WITH_TFM */
+
 }
 
 void soc_late_init_hook(void)

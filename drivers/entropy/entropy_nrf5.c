@@ -329,7 +329,7 @@ static int entropy_nrf5_init(const struct device *dev)
 	/* Locking semaphore initialized to 1 (unlocked) */
 	k_sem_init(&entropy_nrf5_data.sem_lock, 1, 1);
 
-	/* Synching semaphore */
+	/* Syncing semaphore */
 	k_sem_init(&entropy_nrf5_data.sem_sync, 0, 1);
 
 	rng_pool_init((struct rng_pool *)(entropy_nrf5_data.thr),

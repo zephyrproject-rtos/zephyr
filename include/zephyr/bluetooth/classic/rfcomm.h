@@ -112,7 +112,9 @@ struct bt_rfcomm_dlc {
 
 	struct bt_rfcomm_session  *session;
 	struct bt_rfcomm_dlc_ops  *ops;
-	struct bt_rfcomm_dlc      *_next;
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t                _node;
 
 	bt_security_t              required_sec_level;
 	bt_rfcomm_role_t           role;

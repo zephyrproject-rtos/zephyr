@@ -264,7 +264,7 @@ __subsystem struct hwspinlock_driver_api {
 static inline int hw_spin_trylock(const struct device *dev, hwspinlock_ctx_t *ctx, uint32_t id,
 				  k_spinlock_key_t *key)
 {
-	const struct hwspinlock_driver_api *api = (const struct hwspinlock_driver_api *)dev->api;
+	const struct hwspinlock_driver_api *api = DEVICE_API_GET(hwspinlock, dev);
 	int ret;
 
 	if (api->trylock == NULL) {
@@ -313,7 +313,7 @@ static inline int hw_spin_trylock(const struct device *dev, hwspinlock_ctx_t *ct
 static inline k_spinlock_key_t hw_spin_lock(const struct device *dev, hwspinlock_ctx_t *ctx,
 					    uint32_t id)
 {
-	const struct hwspinlock_driver_api *api = (const struct hwspinlock_driver_api *)dev->api;
+	const struct hwspinlock_driver_api *api = DEVICE_API_GET(hwspinlock, dev);
 	k_spinlock_key_t k;
 
 	__ASSERT(api->lock != NULL, "hwspinlock lock callback must be implemented");
@@ -338,7 +338,7 @@ static inline k_spinlock_key_t hw_spin_lock(const struct device *dev, hwspinlock
 static inline void hw_spin_unlock(const struct device *dev, hwspinlock_ctx_t *ctx, uint32_t id,
 				  k_spinlock_key_t key)
 {
-	const struct hwspinlock_driver_api *api = (const struct hwspinlock_driver_api *)dev->api;
+	const struct hwspinlock_driver_api *api = DEVICE_API_GET(hwspinlock, dev);
 
 	__ASSERT(api->unlock != NULL, "hwspinlock unlock callback must be implemented");
 
@@ -358,7 +358,7 @@ static inline void hw_spin_unlock(const struct device *dev, hwspinlock_ctx_t *ct
  */
 static inline uint32_t hw_spinlock_get_max_id(const struct device *dev)
 {
-	const struct hwspinlock_driver_api *api = (const struct hwspinlock_driver_api *)dev->api;
+	const struct hwspinlock_driver_api *api = DEVICE_API_GET(hwspinlock, dev);
 
 	__ASSERT(api->get_max_id != NULL, "hwspinlock get_max_id callback must be implemented");
 

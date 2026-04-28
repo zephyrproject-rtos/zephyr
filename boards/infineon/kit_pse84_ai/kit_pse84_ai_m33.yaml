@@ -16,9 +16,12 @@ supported:
   - counter
   - dma
   - gpio
+  - i2c
+  - i2s
   - pinctrl
   - pwm
   - spi
   - uart
-  - i2s
+  - rtc
   - watchdog
+  - comparator

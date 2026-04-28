@@ -917,7 +917,7 @@ static int stm32_ospi_mem_reset(const struct device *dev)
 	gpio_pin_set_dt(&dev_cfg->reset, 0);
 #else
 
-	/* Reset command sent sucessively for each mode SPI/OPS & STR/DTR */
+	/* Reset command sent successively for each mode SPI/OPS & STR/DTR */
 	OSPI_RegularCmdTypeDef s_command = {
 		.OperationType = HAL_OSPI_OPTYPE_COMMON_CFG,
 		.FlashId = HAL_OSPI_FLASH_ID_1,
@@ -1437,7 +1437,7 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 
 /*
  * Function to write the flash (page program) : with possible OSPI/SPI and STR/DTR
- * NOTE: writing  in MemoryMapped mode is not guaranted
+ * NOTE: writing  in MemoryMapped mode is not guaranteed
  */
 static int flash_stm32_ospi_write(const struct device *dev, off_t addr,
 				  const void *data, size_t size)

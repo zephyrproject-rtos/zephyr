@@ -22,7 +22,7 @@
 		zephyr,console = &lpuart3;
 		zephyr,shell-uart = &lpuart3;
 		zephyr,flash = &itcm;
-		zephyr,flash-controller = &w25q128jv;
+		zephyr,flash-controller = &ext_flash_ctrl;
 		nxp,m7-partition = &slot1_partition;
 	};
 

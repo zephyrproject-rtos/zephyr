@@ -148,7 +148,7 @@ static void csip_set_coordinator_ordered_access_cb(
 {
 	LOG_DBG("");
 
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Ordered access failed with err %d", err);
 	} else if (locked) {
 		LOG_DBG("Ordered access procedure locked member %p", member);
@@ -244,7 +244,7 @@ static uint8_t btp_csip_set_coordinator_lock(const void *cmd, uint16_t cmd_len, 
 
 	err = bt_csip_set_coordinator_lock(members, members_count, &cur_csis_inst->info);
 
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Failed to lock set members");
 		return BTP_STATUS_FAILED;
 	}
@@ -275,7 +275,7 @@ static uint8_t btp_csip_set_coordinator_release(const void *cmd, uint16_t cmd_le
 
 	err = bt_csip_set_coordinator_release(members, members_count, &cur_csis_inst->info);
 
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Failed to release set members");
 		return BTP_STATUS_FAILED;
 	}

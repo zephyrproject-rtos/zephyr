@@ -269,7 +269,7 @@ struct bt_cap_unicast_group_stream_param {
 	struct bt_cap_stream *stream;
 
 	/** The QoS settings for the stream object. */
-	struct bt_bap_qos_cfg *qos_cfg;
+	const struct bt_bap_qos_cfg *qos_cfg;
 };
 
 /**
@@ -469,7 +469,7 @@ struct bt_cap_unicast_audio_start_stream_param {
 	 * This value is assigned to the @p stream, and shall remain valid while the stream is
 	 * non-idle.
 	 */
-	struct bt_audio_codec_cfg *codec_cfg;
+	const struct bt_audio_codec_cfg *codec_cfg;
 };
 
 /** Parameters for the bt_cap_initiator_unicast_audio_start() function */
@@ -654,7 +654,7 @@ struct bt_cap_initiator_broadcast_subgroup_param {
 	struct bt_cap_initiator_broadcast_stream_param *stream_params;
 
 	/** Subgroup Codec configuration. */
-	struct bt_audio_codec_cfg *codec_cfg;
+	const struct bt_audio_codec_cfg *codec_cfg;
 };
 
 /** Parameters for * bt_cap_initiator_broadcast_audio_create() */
@@ -666,7 +666,7 @@ struct bt_cap_initiator_broadcast_create_param {
 	struct bt_cap_initiator_broadcast_subgroup_param *subgroup_params;
 
 	/** Quality of Service configuration. */
-	struct bt_bap_qos_cfg *qos;
+	const struct bt_bap_qos_cfg *qos;
 
 	/**
 	 * @brief Broadcast Source packing mode.

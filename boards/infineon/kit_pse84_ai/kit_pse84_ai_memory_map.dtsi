@@ -29,6 +29,8 @@
 		};
 
 		m33s_code: memory@34002000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "M33SCODE";
 			reg = <0x34002000 DT_SIZE_K(212)>;
 		};
 
@@ -37,6 +39,8 @@
 		};
 
 		m33_code: memory@24058000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "M33CODE";
 			reg = <0x24058000 DT_SIZE_K(404)>;
 		};
 

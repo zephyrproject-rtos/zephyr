@@ -103,9 +103,9 @@ void app_b_entry(void *p1, void *p2, void *p3)
 	 */
 	k_thread_heap_assign(k_current_get(), &app_b_resource_pool);
 
-	/* We are about to drop to user mode and become the monitor thread.
+	/* We are about to drop to user mode and become the processor thread.
 	 * Grant ourselves access to the kernel objects we need for
-	 * the monitor thread to function.
+	 * the processor thread to function.
 	 *
 	 * In this case, we need access to both shared queue objects. We
 	 * don't need access to the sample driver, App A handles all that

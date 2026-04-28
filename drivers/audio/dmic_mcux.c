@@ -658,7 +658,7 @@ static int dmic_mcux_read(const struct device *dev,
 	return 0;
 }
 
-static const struct _dmic_ops dmic_ops = {
+static DEVICE_API(dmic, dmic_ops) = {
 	.configure = dmic_mcux_configure,
 	.trigger = dmic_mcux_trigger,
 	.read = dmic_mcux_read,

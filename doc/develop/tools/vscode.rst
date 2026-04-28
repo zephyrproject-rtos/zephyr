@@ -52,7 +52,7 @@ required information (ex. include paths). You may do it from VS Code embedded te
 .. code-block:: console
 
    $ cd zephyr
-   $ west build -p always -b native_sim/native/64 samples/blinky
+   $ west build -p always -b native_sim/native/64 samples/basic/blinky
 
 
 Configure the C/C++ extension

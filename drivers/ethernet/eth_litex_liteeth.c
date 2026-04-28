@@ -33,7 +33,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 struct eth_litex_dev_data {
 	struct net_if *iface;
-	uint8_t mac_addr[6];
 	uint8_t txslot;
 	struct k_sem sem_tx_ready;
 };
@@ -42,18 +41,18 @@ struct eth_litex_config {
 	const struct device *phy_dev;
 	void (*config_func)(const struct device *dev);
 	struct net_eth_mac_config mcfg;
-	uint32_t rx_slot_addr;
-	uint32_t rx_length_addr;
-	uint32_t rx_ev_pending_addr;
-	uint32_t rx_ev_enable_addr;
-	uint32_t tx_start_addr;
-	uint32_t tx_ready_addr;
-	uint32_t tx_slot_addr;
-	uint32_t tx_length_addr;
-	uint32_t tx_ev_pending_addr;
-	uint32_t tx_ev_enable_addr;
-	uint32_t tx_buf_addr;
-	uint32_t rx_buf_addr;
+	mem_addr_t rx_slot_addr;
+	mem_addr_t rx_length_addr;
+	mem_addr_t rx_ev_pending_addr;
+	mem_addr_t rx_ev_enable_addr;
+	mem_addr_t tx_start_addr;
+	mem_addr_t tx_ready_addr;
+	mem_addr_t tx_slot_addr;
+	mem_addr_t tx_length_addr;
+	mem_addr_t tx_ev_pending_addr;
+	mem_addr_t tx_ev_enable_addr;
+	mem_addr_t tx_buf_addr;
+	mem_addr_t rx_buf_addr;
 	uint8_t tx_buf_n;
 	uint8_t rx_buf_n;
 };
@@ -66,8 +65,6 @@ static int eth_initialize(const struct device *dev)
 	k_sem_init(&context->sem_tx_ready, 1, 1);
 
 	config->config_func(dev);
-
-	(void)net_eth_mac_load(&config->mcfg, context->mac_addr);
 
 	return 0;
 }
@@ -169,15 +166,17 @@ static void eth_irq_handler(const struct device *port)
 	}
 }
 
-static int eth_set_config(const struct device *dev, enum ethernet_config_type type,
-			  const struct ethernet_config *config)
+static int eth_set_config(const struct device *dev __unused,
+			  enum ethernet_config_type type,
+			  const struct ethernet_config *config __unused)
 {
-	struct eth_litex_dev_data *context = dev->data;
-
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
-		memcpy(context->mac_addr, config->mac_address.addr, sizeof(context->mac_addr));
 		return 0;
+#ifdef CONFIG_NET_PROMISCUOUS_MODE
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		return 0;
+#endif /* CONFIG_NET_PROMISCUOUS_MODE */
 	default:
 		break;
 	}
@@ -220,19 +219,16 @@ static const struct device *eth_get_phy(const struct device *dev)
 	return config->phy_dev;
 }
 
-static void phy_link_state_changed(const struct device *phy_dev,
+static void phy_link_state_changed(const struct device *phy_dev __unused,
 				   struct phy_link_state *state,
 				   void *user_data)
 {
-	const struct device *dev = (const struct device *)user_data;
-	struct eth_litex_dev_data *context = dev->data;
-
-	ARG_UNUSED(phy_dev);
+	struct net_if *iface = (struct net_if *)user_data;
 
 	if (state->is_up) {
-		net_eth_carrier_on(context->iface);
+		net_eth_carrier_on(iface);
 	} else {
-		net_eth_carrier_off(context->iface);
+		net_eth_carrier_off(iface);
 	}
 }
 
@@ -241,6 +237,7 @@ static void eth_iface_init(struct net_if *iface)
 	const struct device *port = net_if_get_device(iface);
 	const struct eth_litex_config *config = port->config;
 	struct eth_litex_dev_data *context = port->data;
+	uint8_t mac_addr[NET_ETH_ADDR_LEN] = {0};
 
 	/* set interface */
 	context->iface = iface;
@@ -248,12 +245,12 @@ static void eth_iface_init(struct net_if *iface)
 	/* initialize ethernet L2 */
 	ethernet_init(iface);
 
+	(void)net_eth_mac_load(&config->mcfg, mac_addr);
+
 	/* set MAC address */
-	if (net_if_set_link_addr(iface, context->mac_addr, sizeof(context->mac_addr),
-			     NET_LINK_ETHERNET) < 0) {
-		LOG_ERR("setting mac failed");
-		return;
-	}
+	(void)net_if_set_link_addr(iface, mac_addr, sizeof(mac_addr), NET_LINK_ETHERNET);
+
+	net_lldp_set_lldpdu(iface);
 
 	if (config->phy_dev == NULL) {
 		LOG_WRN("No PHY device");
@@ -263,7 +260,7 @@ static void eth_iface_init(struct net_if *iface)
 	net_if_carrier_off(iface);
 
 	if (device_is_ready(config->phy_dev)) {
-		phy_link_callback_set(config->phy_dev, phy_link_state_changed, (void *)port);
+		phy_link_callback_set(config->phy_dev, phy_link_state_changed, (void *)iface);
 	} else {
 		LOG_ERR("PHY device not ready");
 	}
@@ -276,6 +273,12 @@ static enum ethernet_hw_caps eth_caps(const struct device *dev)
 	return
 #ifdef CONFIG_NET_VLAN
 		ETHERNET_HW_VLAN |
+#endif
+#ifdef CONFIG_NET_PROMISCUOUS_MODE
+		ETHERNET_PROMISC_MODE |
+#endif
+#ifdef CONFIG_NET_LLDP
+		ETHERNET_LLDP |
 #endif
 		ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
 }

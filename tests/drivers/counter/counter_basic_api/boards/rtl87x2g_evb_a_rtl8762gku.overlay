@@ -93,3 +93,8 @@
 		status = "okay";
 	};
 };
+
+&rtc_counter {
+	prescaler = <1>;
+	status = "okay";
+};

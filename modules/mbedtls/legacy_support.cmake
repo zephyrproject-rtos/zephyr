@@ -17,6 +17,7 @@ if(CONFIG_MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS)
   )
   set(MBEDTLS_PRIVATE_INCLUDE_PATH "${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/include/mbedtls/private")
   set(legacy_headers
+    ${MBEDTLS_PRIVATE_INCLUDE_PATH}/aes.h
     ${MBEDTLS_PRIVATE_INCLUDE_PATH}/bignum.h
     ${MBEDTLS_PRIVATE_INCLUDE_PATH}/cipher.h
     ${MBEDTLS_PRIVATE_INCLUDE_PATH}/cmac.h
@@ -28,6 +29,13 @@ if(CONFIG_MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS)
     ${MBEDTLS_PRIVATE_INCLUDE_PATH}/rsa.h
   )
   file(COPY ${legacy_headers} DESTINATION ${CMAKE_BINARY_DIR}/legacy-mbedtls-headers/mbedtls/)
+  if(CONFIG_MCUBOOT)
+    set(MBEDTLS_BUILTIN_SRC_PATH "${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/src")
+    set(legacy_headers
+      ${MBEDTLS_BUILTIN_SRC_PATH}/rsa_alt_helpers.h
+    )
+    file(COPY ${legacy_headers} DESTINATION ${CMAKE_BINARY_DIR}/legacy-mbedtls-headers/)
+  endif()
   target_include_directories(mbedTLS INTERFACE
     ${CMAKE_BINARY_DIR}/legacy-mbedtls-headers/
   )
@@ -54,6 +62,51 @@ if(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT)
     -DMBEDTLS_DES_C
     -DMBEDTLS_DHM_C
   )
+  # In PSA client mode (e.g. TF-M NS builds) MBEDTLS_PSA_CRYPTO_C is not
+  # set, so crypto_adjust_config_enable_builtins.h is skipped in the config
+  # processing chain (build_info.h guards it with MBEDTLS_PSA_CRYPTO_C).
+  # Without it MBEDTLS_ECP_C, MBEDTLS_BIGNUM_C and the curve macros are
+  # never derived from PSA_WANT_*.  The builtin source files (ecp.c,
+  # bignum.c, ecp_curves.c) are always GLOBbed into the builtin target
+  # but compile to empty without these symbols.  Manually define what
+  # enable_builtins.h would have set so the implementations are compiled
+  # (PRIVATE on builtin) and the declarations are visible to consumers
+  # (INTERFACE on mbedTLS).
+  #
+  # These symbols are flagged as removed by the tf-psa-crypto config
+  # validation in tf_psa_crypto_config.c.  The builtin target already
+  # has TF_PSA_CRYPTO_CONFIG_CHECK_BYPASS; extend the bypass to the
+  # tfpsacrypto core target so the INTERFACE definitions do not trip
+  # the check there either.
+  if(CONFIG_BUILD_WITH_TFM)
+    target_compile_definitions(builtin PRIVATE
+      MBEDTLS_ECP_C
+      MBEDTLS_BIGNUM_C
+      MBEDTLS_ECP_DP_SECP256R1_ENABLED
+      MBEDTLS_ECP_DP_SECP384R1_ENABLED
+      MBEDTLS_ECP_DP_SECP521R1_ENABLED
+      MBEDTLS_ECP_DP_BP256R1_ENABLED
+      MBEDTLS_ECP_DP_BP384R1_ENABLED
+      MBEDTLS_ECP_DP_BP512R1_ENABLED
+      MBEDTLS_ECP_DP_CURVE25519_ENABLED
+      MBEDTLS_ECP_DP_CURVE448_ENABLED
+    )
+    target_compile_definitions(mbedTLS INTERFACE
+      MBEDTLS_ECP_C
+      MBEDTLS_BIGNUM_C
+      MBEDTLS_ECP_DP_SECP256R1_ENABLED
+      MBEDTLS_ECP_DP_SECP384R1_ENABLED
+      MBEDTLS_ECP_DP_SECP521R1_ENABLED
+      MBEDTLS_ECP_DP_BP256R1_ENABLED
+      MBEDTLS_ECP_DP_BP384R1_ENABLED
+      MBEDTLS_ECP_DP_BP512R1_ENABLED
+      MBEDTLS_ECP_DP_CURVE25519_ENABLED
+      MBEDTLS_ECP_DP_CURVE448_ENABLED
+    )
+    target_compile_definitions(tfpsacrypto PRIVATE
+      TF_PSA_CRYPTO_CONFIG_CHECK_BYPASS
+    )
+  endif()
   set(MBEDTLS_EXPORT_REMOVED_HEADERS  ON)
 endif()
 

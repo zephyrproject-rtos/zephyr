@@ -158,7 +158,6 @@ static bool data_cb(struct bt_data *data, void *user_data)
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	char name[NAME_LEN];
 	int err;
 
@@ -185,7 +184,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
 				&default_conn);
 	if (err) {
-		printk("Create conn to %s failed (%u)\n", addr_str, err);
+		printk("Create conn to %s failed (%u)\n", bt_addr_le_str(addr), err);
 	}
 }
 

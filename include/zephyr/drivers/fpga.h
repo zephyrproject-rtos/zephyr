@@ -128,8 +128,7 @@ __subsystem struct fpga_driver_api {
  */
 static inline enum FPGA_status fpga_get_status(const struct device *dev)
 {
-	const struct fpga_driver_api *api =
-		(const struct fpga_driver_api *)dev->api;
+	const struct fpga_driver_api *api = DEVICE_API_GET(fpga, dev);
 
 	if (api->get_status == NULL) {
 		/* assume it can never be reprogrammed if it
@@ -151,8 +150,7 @@ static inline enum FPGA_status fpga_get_status(const struct device *dev)
  */
 static inline int fpga_reset(const struct device *dev)
 {
-	const struct fpga_driver_api *api =
-		(const struct fpga_driver_api *)dev->api;
+	const struct fpga_driver_api *api = DEVICE_API_GET(fpga, dev);
 
 	if (api->reset == NULL) {
 		return -ENOTSUP;
@@ -174,8 +172,7 @@ static inline int fpga_reset(const struct device *dev)
 static inline int fpga_load(const struct device *dev, uint32_t *image_ptr,
 			    uint32_t img_size)
 {
-	const struct fpga_driver_api *api =
-		(const struct fpga_driver_api *)dev->api;
+	const struct fpga_driver_api *api = DEVICE_API_GET(fpga, dev);
 
 	if (api->load == NULL) {
 		return -ENOTSUP;
@@ -194,8 +191,7 @@ static inline int fpga_load(const struct device *dev, uint32_t *image_ptr,
  */
 static inline int fpga_on(const struct device *dev)
 {
-	const struct fpga_driver_api *api =
-		(const struct fpga_driver_api *)dev->api;
+	const struct fpga_driver_api *api = DEVICE_API_GET(fpga, dev);
 
 	if (api->on == NULL) {
 		return -ENOTSUP;
@@ -215,8 +211,7 @@ static inline int fpga_on(const struct device *dev)
  */
 static inline const char *fpga_get_info(const struct device *dev)
 {
-	const struct fpga_driver_api *api =
-		(const struct fpga_driver_api *)dev->api;
+	const struct fpga_driver_api *api = DEVICE_API_GET(fpga, dev);
 
 	if (api->get_info == NULL) {
 		return FPGA_GET_INFO_DEFAULT;
@@ -235,8 +230,7 @@ static inline const char *fpga_get_info(const struct device *dev)
  */
 static inline int fpga_off(const struct device *dev)
 {
-	const struct fpga_driver_api *api =
-		(const struct fpga_driver_api *)dev->api;
+	const struct fpga_driver_api *api = DEVICE_API_GET(fpga, dev);
 
 	if (api->off == NULL) {
 		return -ENOTSUP;

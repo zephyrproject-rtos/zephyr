@@ -8,20 +8,21 @@ toolchain:
 ram: 128
 flash: 512
 supported:
+  - adc
   - arduino_gpio
   - arduino_i2c
   - arduino_spi
-  - nvs
-  - pwm
-  - i2c
-  - gpio
+  - can
   - counter
-  - spi
-  - watchdog
-  - adc
+  - crc
   - dac
   - dma
-  - can
-  - rtc
+  - gpio
+  - i2c
+  - nvs
   - opamp
+  - pwm
+  - rtc
+  - spi
+  - watchdog
 vendor: st

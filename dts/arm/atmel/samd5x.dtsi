@@ -47,7 +47,6 @@
 	};
 
 	chosen {
-		zephyr,flash-controller = &nvmctrl;
 		zephyr,entropy = &trng;
 		zephyr,flash-controller = &nvmctrl;
 	};

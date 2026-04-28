@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -472,7 +472,7 @@ static bool parse_ascs_ad_data(struct bt_data *data, void *user_data)
 
 	err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN, BT_BAP_CONN_PARAM_RELAXED,
 				&default_conn);
-	if (err) {
+	if (err != 0) {
 		FAIL("Could not connect to peer: %d", err);
 		return false;
 	}
@@ -483,8 +483,6 @@ static bool parse_ascs_ad_data(struct bt_data *data, void *user_data)
 
 static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
-
 	if (default_conn) {
 		return;
 	}
@@ -498,8 +496,7 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 		return;
 	}
 
-	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
-	printk("Device found: %s (RSSI %d)\n", addr_str, info->rssi);
+	printk("Device found: %s (RSSI %d)\n", bt_addr_le_str(info->addr), info->rssi);
 
 	bt_data_parse(ad, parse_ascs_ad_data, (void *)info);
 }
@@ -569,6 +566,8 @@ static void scan_and_connect(void)
 
 	printk("Scanning successfully started\n");
 	WAIT_FOR_FLAG(flag_connected);
+
+	update_security(default_conn);
 }
 
 static void disconnect_acl(void)

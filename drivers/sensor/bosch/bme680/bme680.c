@@ -238,7 +238,7 @@ static int bme680_sample_fetch(const struct device *dev,
 	do {
 		/* Wait for a maximum of 250ms for data.
 		 * Initial delay after boot has been measured at 170ms.
-		 * Subequent triggers are < 1ms.
+		 * Subsequent triggers are < 1ms.
 		 */
 		if (cnt++ > 250) {
 			return -EAGAIN;
@@ -473,7 +473,7 @@ static int bme680_init(const struct device *dev)
 
 	err = bme680_bus_check(dev);
 	if (err < 0) {
-		LOG_ERR("Bus not ready for '%s'", dev->name);
+		LOG_ERR_DEVICE_NOT_READY(dev);
 		return err;
 	}
 

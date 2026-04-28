@@ -1,5 +1,5 @@
 /*
- * Copyright 2022, 2024-2025 NXP
+ * Copyright 2022, 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -124,6 +124,12 @@
 	media_blk_ctrl: mediamix@4ac10000 {
 		compatible = "nxp,imx93-mediamix";
 		reg = <0x4ac10000 0x1000>;
+		status = "disabled";
+	};
+
+	video_pll: videopll@44481400 {
+		compatible = "nxp,imx93-video-pll";
+		reg = <0x44481400 0x1000>;
 		status = "disabled";
 	};
 
@@ -552,7 +558,7 @@
 	};
 
 	enet: enet@42890000 {
-		compatible = "nxp,enet1g";
+		compatible = "nxp,enet";
 		reg = <0x42890000 DT_SIZE_K(64)>;
 		clocks = <&ccm IMX_CCM_ENET_CLK 0 0>;
 		status = "disabled";

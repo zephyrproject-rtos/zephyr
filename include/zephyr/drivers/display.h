@@ -216,10 +216,20 @@ enum display_pixel_format {
 	PIXEL_FORMAT_BGRA_8888 = BIT(12), /**< 32-bit BGRA */
 
 	/**
-	 * This and higher values are display specific.
-	 * Refer to the display header file.
+	 * @brief 4-bit indexed color format with 2 pixels packed per byte.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   | Byte 1   |
+	 *   7......0   7......0
+	 * | IiiiJjjj | KkkkLlll | ...
+	 * @endcode
+	 *
+	 * The high nibble stores the left pixel and the low nibble stores the
+	 * right pixel. Palette semantics are display-specific.
 	 */
-	PIXEL_FORMAT_PRIV_START = (PIXEL_FORMAT_BGRA_8888 << 1),
+	PIXEL_FORMAT_I_4 = BIT(13), /**< Packed 4-bit indexed color */
 };
 
 /**
@@ -227,8 +237,7 @@ enum display_pixel_format {
  *
  * This macro expands to the number of bits required for a given display
  * format. It can be used to allocate a framebuffer based on a given
- * display format type. This does not work with any private
- * pixel formats.
+ * display format type
  */
 #define DISPLAY_BITS_PER_PIXEL(fmt)						\
 	((((fmt & PIXEL_FORMAT_RGB_888) >> 0) * 24U) +				\
@@ -243,7 +252,9 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_BGR_888) >> 9) * 24U) +				\
 	(((fmt & PIXEL_FORMAT_ABGR_8888) >> 10) * 32U) +			\
 	(((fmt & PIXEL_FORMAT_RGBA_8888) >> 11) * 32U) +			\
-	(((fmt & PIXEL_FORMAT_BGRA_8888) >> 12) * 32U))
+	(((fmt & PIXEL_FORMAT_BGRA_8888) >> 12) * 32U) +			\
+	(((fmt & PIXEL_FORMAT_I_4) >> 13) * 4U))
+
 /**
  * @brief Display screen information
  */
@@ -545,10 +556,7 @@ static inline int display_write(const struct device *dev, const uint16_t x,
 				const struct display_buffer_descriptor *desc,
 				const void *buf)
 {
-	struct display_driver_api *api =
-		(struct display_driver_api *)dev->api;
-
-	return api->write(dev, x, y, desc, buf);
+	return DEVICE_API_GET(display, dev)->write(dev, x, y, desc, buf);
 }
 
 /**
@@ -568,8 +576,7 @@ static inline int display_read(const struct device *dev, const uint16_t x,
 			       const struct display_buffer_descriptor *desc,
 			       void *buf)
 {
-	struct display_driver_api *api =
-		(struct display_driver_api *)dev->api;
+	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
 
 	if (api->read == NULL) {
 		return -ENOSYS;
@@ -588,8 +595,7 @@ static inline int display_read(const struct device *dev, const uint16_t x,
  */
 static inline int display_clear(const struct device *dev)
 {
-	struct display_driver_api *api =
-		(struct display_driver_api *)dev->api;
+	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
 
 	if (api->clear == NULL) {
 		return -ENOSYS;
@@ -609,8 +615,7 @@ static inline int display_clear(const struct device *dev)
  */
 static inline void *display_get_framebuffer(const struct device *dev)
 {
-	struct display_driver_api *api =
-		(struct display_driver_api *)dev->api;
+	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
 
 	if (api->get_framebuffer == NULL) {
 		return NULL;
@@ -640,8 +645,7 @@ static inline void *display_get_framebuffer(const struct device *dev)
  */
 static inline int display_blanking_on(const struct device *dev)
 {
-	struct display_driver_api *api =
-		(struct display_driver_api *)dev->api;
+	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
 
 	if (api->blanking_on == NULL) {
 		return -ENOSYS;
@@ -664,8 +668,7 @@ static inline int display_blanking_on(const struct device *dev)
  */
 static inline int display_blanking_off(const struct device *dev)
 {
-	struct display_driver_api *api =
-		(struct display_driver_api *)dev->api;
+	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
 
 	if (api->blanking_off == NULL) {
 		return -ENOSYS;
@@ -689,8 +692,7 @@ static inline int display_blanking_off(const struct device *dev)
 static inline int display_set_brightness(const struct device *dev,
 					 uint8_t brightness)
 {
-	struct display_driver_api *api =
-		(struct display_driver_api *)dev->api;
+	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
 
 	if (api->set_brightness == NULL) {
 		return -ENOSYS;
@@ -713,8 +715,7 @@ static inline int display_set_brightness(const struct device *dev,
  */
 static inline int display_set_contrast(const struct device *dev, uint8_t contrast)
 {
-	struct display_driver_api *api =
-		(struct display_driver_api *)dev->api;
+	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
 
 	if (api->set_contrast == NULL) {
 		return -ENOSYS;
@@ -733,10 +734,7 @@ static inline void display_get_capabilities(const struct device *dev,
 					    struct display_capabilities *
 					    capabilities)
 {
-	struct display_driver_api *api =
-		(struct display_driver_api *)dev->api;
-
-	api->get_capabilities(dev, capabilities);
+	DEVICE_API_GET(display, dev)->get_capabilities(dev, capabilities);
 }
 
 /**
@@ -752,8 +750,7 @@ static inline int
 display_set_pixel_format(const struct device *dev,
 			 const enum display_pixel_format pixel_format)
 {
-	struct display_driver_api *api =
-		(struct display_driver_api *)dev->api;
+	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
 
 	if (api->set_pixel_format == NULL) {
 		return -ENOSYS;
@@ -775,8 +772,7 @@ static inline int display_set_orientation(const struct device *dev,
 					  const enum display_orientation
 					  orientation)
 {
-	struct display_driver_api *api =
-		(struct display_driver_api *)dev->api;
+	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
 
 	if (api->set_orientation == NULL) {
 		return -ENOSYS;
@@ -815,7 +811,9 @@ static inline int display_register_event_cb(const struct device *dev,
 					    uint32_t event_mask, bool in_isr,
 					    uint32_t *out_reg_handle)
 {
-	struct display_driver_api *api = (struct display_driver_api *)dev->api;
+	__ASSERT(cb != NULL, "Registration failed: callback function pointer is NULL");
+
+	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
 
 	if (api->register_event_cb == NULL) {
 		return -ENOSYS;
@@ -837,7 +835,7 @@ static inline int display_register_event_cb(const struct device *dev,
  */
 static inline int display_unregister_event_cb(const struct device *dev, uint32_t reg_handle)
 {
-	struct display_driver_api *api = (struct display_driver_api *)dev->api;
+	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
 
 	if (api->unregister_event_cb == NULL || api->register_event_cb == NULL) {
 		return -ENOSYS;

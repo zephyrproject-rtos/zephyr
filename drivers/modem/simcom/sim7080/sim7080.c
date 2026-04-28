@@ -113,7 +113,15 @@ static bool offload_is_supported(int family, int type, int proto)
 	}
 
 	if (proto != NET_IPPROTO_TCP &&
-	    proto != NET_IPPROTO_UDP) {
+	    proto != NET_IPPROTO_UDP
+#if defined(CONFIG_MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS)
+		&& proto != NET_IPPROTO_TLS_1_0 &&
+		proto != NET_IPPROTO_TLS_1_1 &&
+		proto != NET_IPPROTO_TLS_1_2 &&
+		proto != NET_IPPROTO_DTLS_1_0 &&
+		proto != NET_IPPROTO_DTLS_1_2
+#endif
+	) {
 		return false;
 	}
 
@@ -424,6 +432,13 @@ MODEM_CMD_DEFINE(on_urc_httptofs)
 	return 0;
 }
 
+MODEM_CMD_DEFINE(on_urc_download)
+{
+	LOG_INF("Modem ready for download");
+	k_sem_give(&mdata.fs_sem);
+	return 0;
+}
+
 /*
  * Possible responses by the sim7080.
  */
@@ -448,6 +463,7 @@ static const struct modem_cmd unsolicited_cmds[] = {
 	MODEM_CMD("NORMAL POWER DOWN", on_urc_pwr_down, 0U, ""),
 	MODEM_CMD("+CPIN: ", on_urc_cpin, 1U, ","),
 	MODEM_CMD("+HTTPTOFS: ", on_urc_httptofs, 2U, ","),
+	MODEM_CMD("DOWNLOAD", on_urc_download, 0U, ""),
 };
 
 /*
@@ -777,6 +793,7 @@ static int modem_init(const struct device *dev)
 	k_sem_init(&mdata.sem_http, 0, 1);
 	k_sem_init(&mdata.boot_sem, 0, 1);
 	k_sem_init(&mdata.pdp_sem, 0, 1);
+	k_sem_init(&mdata.fs_sem, 0, 1);
 	k_work_queue_start(&modem_workq, modem_workq_stack,
 			   K_KERNEL_STACK_SIZEOF(modem_workq_stack), K_PRIO_COOP(7), NULL);
 
@@ -792,6 +809,15 @@ static int modem_init(const struct device *dev)
 				MDM_BASE_SOCKET_NUM, true, &offload_socket_fd_op_vtable);
 	if (ret < 0) {
 		goto error;
+	}
+
+	memset(mdata.socket_data, 0, sizeof(mdata.socket_data));
+	for (size_t i = 0; i < ARRAY_SIZE(mdata.sockets); i++) {
+		mdata.sockets[i].data = &mdata.socket_data[i];
+#if defined(CONFIG_MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS)
+		/* This only works if there are equal or less sockets than ssl contexts */
+		mdata.socket_data[i].ssl_ctx_idx = i;
+#endif
 	}
 
 	sim7080_change_state(SIM7080_STATE_OFF);

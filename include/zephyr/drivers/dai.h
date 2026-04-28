@@ -360,9 +360,7 @@ __syscall int dai_probe(const struct device *dev);
 
 static inline int z_impl_dai_probe(const struct device *dev)
 {
-	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
-
-	return api->probe(dev);
+	return DEVICE_API_GET(dai, dev)->probe(dev);
 }
 
 /**
@@ -379,9 +377,7 @@ __syscall int dai_remove(const struct device *dev);
 
 static inline int z_impl_dai_remove(const struct device *dev)
 {
-	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
-
-	return api->remove(dev);
+	return DEVICE_API_GET(dai, dev)->remove(dev);
 }
 
 /**
@@ -416,9 +412,7 @@ static inline int z_impl_dai_config_set(const struct device *dev,
 					const void *bespoke_cfg,
 					size_t size)
 {
-	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
-
-	return api->config_set(dev, cfg, bespoke_cfg, size);
+	return DEVICE_API_GET(dai, dev)->config_set(dev, cfg, bespoke_cfg, size);
 }
 
 /**
@@ -437,9 +431,7 @@ static inline int z_impl_dai_config_get(const struct device *dev,
 					struct dai_config *cfg,
 					enum dai_dir dir)
 {
-	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
-
-	return api->config_get(dev, cfg, dir);
+	return DEVICE_API_GET(dai, dev)->config_get(dev, cfg, dir);
 }
 
 /**
@@ -456,9 +448,7 @@ static inline const struct dai_properties *dai_get_properties(const struct devic
 							      enum dai_dir dir,
 							      int stream_id)
 {
-	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
-
-	return api->get_properties(dev, dir, stream_id);
+	return DEVICE_API_GET(dai, dev)->get_properties(dev, dir, stream_id);
 }
 
 /**
@@ -486,7 +476,7 @@ static inline int z_impl_dai_get_properties_copy(const struct device *dev,
 						 int stream_id,
 						 struct dai_properties *dst)
 {
-	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
+	const struct dai_driver_api *api = DEVICE_API_GET(dai, dev);
 
 	if (!api->get_properties_copy) {
 		return -ENOSYS;
@@ -520,9 +510,7 @@ static inline int z_impl_dai_trigger(const struct device *dev,
 				     enum dai_dir dir,
 				     enum dai_trigger_cmd cmd)
 {
-	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
-
-	return api->trigger(dev, dir, cmd);
+	return DEVICE_API_GET(dai, dev)->trigger(dev, dir, cmd);
 }
 
 /**
@@ -538,7 +526,7 @@ __syscall int dai_ts_config(const struct device *dev, struct dai_ts_cfg *cfg);
 
 static inline int z_impl_dai_ts_config(const struct device *dev, struct dai_ts_cfg *cfg)
 {
-	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
+	const struct dai_driver_api *api = DEVICE_API_GET(dai, dev);
 
 	if (!api->ts_config) {
 		return -EINVAL;
@@ -560,7 +548,7 @@ __syscall int dai_ts_start(const struct device *dev, struct dai_ts_cfg *cfg);
 
 static inline int z_impl_dai_ts_start(const struct device *dev, struct dai_ts_cfg *cfg)
 {
-	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
+	const struct dai_driver_api *api = DEVICE_API_GET(dai, dev);
 
 	if (!api->ts_start) {
 		return -EINVAL;
@@ -582,7 +570,7 @@ __syscall int dai_ts_stop(const struct device *dev, struct dai_ts_cfg *cfg);
 
 static inline int z_impl_dai_ts_stop(const struct device *dev, struct dai_ts_cfg *cfg)
 {
-	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
+	const struct dai_driver_api *api = DEVICE_API_GET(dai, dev);
 
 	if (!api->ts_stop) {
 		return -EINVAL;
@@ -607,7 +595,7 @@ __syscall int dai_ts_get(const struct device *dev, struct dai_ts_cfg *cfg,
 static inline int z_impl_dai_ts_get(const struct device *dev, struct dai_ts_cfg *cfg,
 				    struct dai_ts_data *tsd)
 {
-	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
+	const struct dai_driver_api *api = DEVICE_API_GET(dai, dev);
 
 	if (!api->ts_get) {
 		return -EINVAL;
@@ -643,7 +631,7 @@ static inline int z_impl_dai_config_update(const struct device *dev,
 					   const void *bespoke_cfg,
 					   size_t size)
 {
-	const struct dai_driver_api *api = (const struct dai_driver_api *)dev->api;
+	const struct dai_driver_api *api = DEVICE_API_GET(dai, dev);
 
 	if (!api->config_update) {
 		return -ENOSYS;

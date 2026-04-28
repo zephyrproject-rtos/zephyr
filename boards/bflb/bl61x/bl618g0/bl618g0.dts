@@ -1,0 +1,119 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <bflb/bl618.dtsi>
+#include "bl618g0-pinctrl.dtsi"
+
+/ {
+	model = "Bouffalo Lab BL618 G0 evaluation board";
+	compatible = "bflb,bl618";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,itcm = &sram1;
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,entropy = &sec_eng_trng;
+	};
+
+	aliases {
+		led0 = &led0;
+		sw0 = &button_0;
+		watchdog0 = &wdt0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+			label = "LED0";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button_0: sw0 {
+			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+			label = "SW0";
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(320)>;
+};
+
+&flashctrl {
+	flash0: flash@a0000000 {
+		compatible = "soc-nv-flash", "winbond,w25q64";
+		/* Capacity - Header */
+		reg = <0xa0000000 (DT_SIZE_M(8) - DT_SIZE_K(8))>;
+		ranges = <0x0 0xa0000000 (DT_SIZE_M(8) - DT_SIZE_K(8))>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		write-block-size = <1>;
+		erase-block-size = <DT_SIZE_K(4)>;
+
+		partitions {
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "mcuboot";
+				reg = <0x0 DT_SIZE_K(64)>;
+				read-only;
+			};
+
+			slot0_partition: partition@10000 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-0";
+				reg = <DT_SIZE_K(64) (DT_SIZE_M(4) - DT_SIZE_K(64))>;
+			};
+
+			slot1_partition: partition@400000 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-1";
+				reg = <DT_SIZE_M(4) (DT_SIZE_M(4) - DT_SIZE_K(64))>;
+			};
+
+			storage_partition: partition@7f0000 {
+				compatible = "zephyr,mapped-partition";
+				label = "storage";
+				reg = <0x7f0000 (DT_SIZE_K(64) - DT_SIZE_K(8))>;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&sec_eng_trng {
+	status = "okay";
+};

@@ -919,8 +919,6 @@ static void numaker_hsusbd_cep_th(const struct device *dev, uint32_t cepintsts)
 		/* Block until next CEP trigger */
 		base->CEPINTEN &= ~HSUSBD_CEPINTEN_RXPKIEN_Msk;
 
-		base->CEPINTSTS = HSUSBD_CEPINTSTS_RXPKIF_Msk;
-
 		/* Message for bottom-half processing */
 		msg.type = NUMAKER_USBD_MSG_TYPE_OUT;
 		msg.out.ep = USB_CONTROL_EP_OUT;
@@ -929,8 +927,6 @@ static void numaker_hsusbd_cep_th(const struct device *dev, uint32_t cepintsts)
 
 	/* Data packet transmitted */
 	if (cepintsts & HSUSBD_CEPINTSTS_TXPKIF_Msk) {
-		base->CEPINTSTS = HSUSBD_CEPINTSTS_TXPKIF_Msk;
-
 		/* Message for bottom-half processing */
 		msg.type = NUMAKER_USBD_MSG_TYPE_IN;
 		msg.in.ep = USB_CONTROL_EP_IN;
@@ -940,8 +936,6 @@ static void numaker_hsusbd_cep_th(const struct device *dev, uint32_t cepintsts)
 	/* Status stage completed */
 	if (cepintsts & HSUSBD_CEPINTSTS_STSDONEIF_Msk) {
 		struct udc_numaker_data *priv = udc_get_private(dev);
-
-		base->CEPINTSTS = HSUSBD_CEPINTSTS_STSDONEIF_Msk;
 
 		/* Message for bottom-half processing */
 		msg.type = NUMAKER_USBD_MSG_TYPE_STATUS;
@@ -961,9 +955,6 @@ static void numaker_hsusbd_cep_th(const struct device *dev, uint32_t cepintsts)
 	if (cepintsts & HSUSBD_CEPINTSTS_SETUPPKIF_Msk) {
 		/* Disable RXPKIEN until Data OUT is enqueued */
 		base->CEPINTEN &= ~HSUSBD_CEPINTEN_RXPKIEN_Msk;
-
-		/* HSUSBD will not set RXPKIF before SETUPPKIF */
-		base->CEPINTSTS = HSUSBD_CEPINTSTS_SETUPPKIF_Msk;
 
 		/* By USB spec, following transactions, regardless of Data/Status stage,
 		 * will always be DATA1. HSUSBD will handle the toggle by itself and needn't
@@ -2122,13 +2113,6 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 		priv->ctrlout_tailroom -= data_len;
 	}
 
-	if (data_rmn) {
-		LOG_ERR("Buffer (%p) queued for ep=0x%02x cannot accommodate packet", buf, ep);
-		LOG_ERR("net_buf_tailroom(buf)=%d, data_len=%d, data_rmn=%d", net_buf_tailroom(buf),
-			data_len, data_rmn);
-		return -ENOBUFS;
-	}
-
 	/* CTRL DATA OUT/STATUS OUT stage completed */
 	if (ep == USB_CONTROL_EP_OUT) {
 		if (priv->ctrlout_tailroom != 0) {
@@ -2147,7 +2131,7 @@ static int numaker_usbd_msg_handle_out(const struct device *dev, struct numaker_
 	}
 
 	if ((net_buf_tailroom(buf) == 0) || (data_len < ep_cfg->mps) ||
-		   (ep_type == USB_EP_TYPE_ISO)) {
+	    (ep_type == USB_EP_TYPE_ISO)) {
 		/* Fix submit condition for non-control transfer
 		 *
 		 * Do submit when any of the following conditions is met:
@@ -2272,8 +2256,15 @@ static int numaker_usbd_msg_handle_xfer(const struct device *dev, struct numaker
 
 	if (config->is_hsusbd) {
 		struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
-		struct net_buf *buf = udc_buf_peek(ep_cfg);
-		struct udc_buf_info *bi = udc_get_buf_info(buf);
+		struct net_buf *buf;
+		struct udc_buf_info *bi;
+
+		buf = udc_buf_peek(ep_cfg);
+		if (buf == NULL) {
+			return 0;
+		}
+
+		bi = udc_get_buf_info(buf);
 
 		if (bi->setup) {
 			return 0;
@@ -2544,6 +2535,9 @@ __maybe_unused static void numaker_hsusbd_isr(const struct device *dev)
 		uint32_t cepintsts = base->CEPINTSTS;
 
 		cepintsts &= base->CEPINTEN;
+
+		/* Clear event flag */
+		base->CEPINTSTS = cepintsts;
 
 		numaker_hsusbd_cep_th(dev, cepintsts);
 	}

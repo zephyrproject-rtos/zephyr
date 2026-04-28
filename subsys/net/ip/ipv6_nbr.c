@@ -1222,7 +1222,7 @@ int net_ipv6_send_na(struct net_if *iface, const struct net_in6_addr *src,
 		goto drop;
 	}
 
-	net_stats_update_icmp_sent(net_pkt_iface(pkt));
+	net_stats_update_icmp_sent(iface);
 	net_stats_update_ipv6_nd_sent(iface);
 
 	return 0;
@@ -1280,6 +1280,7 @@ static enum net_verdict handle_ns_input(struct net_icmp_ctx *ctx,
 	struct net_in6_addr ns_tgt, ns_src, ns_dst;
 	struct net_linkaddr src_lladdr;
 	struct net_pkt_cursor backup;
+	int ret;
 
 	src_lladdr.len = 0;
 
@@ -1313,7 +1314,11 @@ static enum net_verdict handle_ns_input(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	net_pkt_acknowledge_data(pkt, &ns_access);
+	ret = net_pkt_acknowledge_data(pkt, &ns_access);
+	if (ret < 0) {
+		NET_ERR("DROP: failed to acknowledge NS data");
+		goto drop;
+	}
 
 	net_pkt_set_ipv6_ext_opt_len(pkt, sizeof(struct net_icmpv6_ns_hdr));
 	length -= (sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr));
@@ -1325,7 +1330,11 @@ static enum net_verdict handle_ns_input(struct net_icmp_ctx *ctx,
 	       net_pkt_ipv6_ext_opt_len(pkt) < length) {
 		uint8_t prev_opt_len;
 
-		net_pkt_acknowledge_data(pkt, &nd_access);
+		ret = net_pkt_acknowledge_data(pkt, &nd_access);
+		if (ret < 0) {
+			NET_ERR("DROP: failed to acknowledge ND data");
+			goto drop;
+		}
 
 		switch (nd_opt_hdr->type) {
 		case NET_ICMPV6_ND_OPT_SLLAO:
@@ -1903,6 +1912,7 @@ static enum net_verdict handle_na_input(struct net_icmp_ctx *ctx,
 	struct net_in6_addr na_tgt, na_dst;
 	struct net_if_addr *ifaddr;
 	struct net_pkt_cursor backup;
+	int ret;
 
 	if (net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_IPV6_NO_ND)) {
 		goto drop;
@@ -1936,7 +1946,11 @@ static enum net_verdict handle_na_input(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	net_pkt_acknowledge_data(pkt, &na_access);
+	ret = net_pkt_acknowledge_data(pkt, &na_access);
+	if (ret < 0) {
+		NET_ERR("DROP: failed to acknowledge NA data");
+		goto drop;
+	}
 
 	net_pkt_set_ipv6_ext_opt_len(pkt, sizeof(struct net_icmpv6_na_hdr));
 	length -= (sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr));
@@ -1972,7 +1986,12 @@ static enum net_verdict handle_na_input(struct net_icmp_ctx *ctx,
 			goto drop;
 		}
 
-		net_pkt_acknowledge_data(pkt, &nd_access);
+		ret = net_pkt_acknowledge_data(pkt, &nd_access);
+		if (ret < 0) {
+			NET_ERR("DROP: failed to acknowledge ND data");
+			goto drop;
+		}
+
 		nd_opt_hdr = (struct net_icmpv6_nd_opt_hdr *)
 					net_pkt_get_data(pkt, &nd_access);
 	}
@@ -2158,7 +2177,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 	net_ipv6_nbr_unlock();
 
-	net_stats_update_icmp_sent(net_pkt_iface(pkt));
+	net_stats_update_icmp_sent(iface);
 	net_stats_update_ipv6_nd_sent(iface);
 
 	return 0;
@@ -2230,7 +2249,7 @@ int net_ipv6_send_rs(struct net_if *iface)
 		goto drop;
 	}
 
-	net_stats_update_icmp_sent(net_pkt_iface(pkt));
+	net_stats_update_icmp_sent(iface);
 	net_stats_update_ipv6_nd_sent(iface);
 
 	return 0;
@@ -2425,6 +2444,7 @@ static inline bool handle_ra_prefix(struct net_pkt *pkt)
 				   struct net_icmpv6_nd_opt_prefix_info);
 	struct net_icmpv6_nd_opt_prefix_info *pfx_info;
 	uint32_t valid_lifetime, preferred_lifetime;
+	int ret;
 
 	pfx_info = (struct net_icmpv6_nd_opt_prefix_info *)
 				net_pkt_get_data(pkt, &rapfx_access);
@@ -2432,7 +2452,10 @@ static inline bool handle_ra_prefix(struct net_pkt *pkt)
 		return false;
 	}
 
-	net_pkt_acknowledge_data(pkt, &rapfx_access);
+	ret = net_pkt_acknowledge_data(pkt, &rapfx_access);
+	if (ret < 0) {
+		return false;
+	}
 
 	valid_lifetime = net_ntohl(pfx_info->valid_lifetime);
 	preferred_lifetime = net_ntohl(pfx_info->preferred_lifetime);
@@ -2642,6 +2665,7 @@ static enum net_verdict handle_ra_input(struct net_icmp_ctx *ctx,
 	uint16_t router_lifetime;
 	struct net_in6_addr ra_src;
 	struct net_pkt_cursor backup;
+	int ret;
 
 	ARG_UNUSED(user_data);
 
@@ -2673,7 +2697,11 @@ static enum net_verdict handle_ra_input(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	net_pkt_acknowledge_data(pkt, &ra_access);
+	ret = net_pkt_acknowledge_data(pkt, &ra_access);
+	if (ret < 0) {
+		NET_ERR("DROP: failed to acknowledge RA data");
+		goto drop;
+	}
 
 	router_lifetime = net_ntohs(ra_hdr->router_lifetime);
 	reachable_time = net_ntohl(ra_hdr->reachable_time);
@@ -2707,7 +2735,11 @@ static enum net_verdict handle_ra_input(struct net_icmp_ctx *ctx,
 				net_pkt_get_data(pkt, &nd_access);
 
 	while (nd_opt_hdr) {
-		net_pkt_acknowledge_data(pkt, &nd_access);
+		ret = net_pkt_acknowledge_data(pkt, &nd_access);
+		if (ret < 0) {
+			NET_ERR("DROP: failed to acknowledge ND data");
+			goto drop;
+		}
 
 		switch (nd_opt_hdr->type) {
 		case NET_ICMPV6_ND_OPT_SLLAO:
@@ -2914,7 +2946,11 @@ static enum net_verdict handle_ptb_input(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	net_pkt_acknowledge_data(pkt, &ptb_access);
+	ret = net_pkt_acknowledge_data(pkt, &ptb_access);
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge PTB data");
+		goto drop;
+	}
 
 	mtu = net_ntohl(ptb_hdr->mtu);
 

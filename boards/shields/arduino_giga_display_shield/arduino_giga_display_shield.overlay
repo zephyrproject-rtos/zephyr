@@ -26,7 +26,6 @@
 		gip-eb = [eb 02 01 e4 e4 44 00 40];
 		gip-ec = [ec 02 01];
 		gip-ed = [ed ab 89 76 54 01 ff ff ff ff ff ff 10 45 67 98 ba];
-		gip-ed = [ed ab 89 76 54 01 ff ff ff ff ff ff 10 45 67 98 ba];
 		pvgamctrl = [b0 40 c9 91 0d 12 07 02 09 09 1f 04 50 0f e4 29 df];
 		nvgamctrl = [b1 40 cb d0 11 92 07 00 08 07 1c 06 53 12 63 eb df];
 

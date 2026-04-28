@@ -1,0 +1,10 @@
+# Copyright 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config ED2208_GCA
+	bool "ED2208-GCA (EL073TF1) display controller"
+	default y
+	depends on DT_HAS_EINK_ED2208_GCA_ENABLED
+	select MIPI_DBI
+	help
+	  Enable driver for ED2208-GCA (EL073TF1) Spectra 6 e-ink displays.

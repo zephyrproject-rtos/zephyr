@@ -1,3 +1,6 @@
+/* Copyright (c) 2024 Nordic Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
 / {
 	chosen {
 		zephyr,console = &uart0;
@@ -10,7 +13,7 @@
  */
 
 &uart1 {
-	status = "okay";
+	status = "disabled";
 	compatible = "zephyr,native-pty-uart";
 	/delete-property/ pinctrl-0;
 	/delete-property/ pinctrl-1;

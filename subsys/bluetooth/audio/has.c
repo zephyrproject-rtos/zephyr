@@ -747,7 +747,7 @@ static void control_point_ind_complete(struct bt_conn *conn,
 				       struct bt_gatt_indicate_params *params,
 				       uint8_t err)
 {
-	if (err) {
+	if (err != 0) {
 		/* TODO: Handle error somehow */
 		LOG_ERR("conn %p err 0x%02x", (void *)conn, err);
 	}
@@ -820,7 +820,7 @@ static int control_point_send_all(struct net_buf_simple *buf)
 		}
 
 		err = control_point_send(client, buf);
-		if (err) {
+		if (err != 0) {
 			result = err;
 			/* continue anyway */
 		}
@@ -910,7 +910,7 @@ static int settings_set_cb(const char *name, size_t len_rd, settings_read_cb rea
 	}
 
 	err = bt_settings_decode_key(name, &addr);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Unable to decode address %s", name);
 		return -EINVAL;
 	}
@@ -1294,7 +1294,7 @@ static uint8_t handle_write_preset_name(struct bt_conn *conn, struct net_buf_sim
 		return BT_ATT_ERR_OUT_OF_RANGE;
 	} else if (err == -EPERM) {
 		return BT_HAS_ERR_WRITE_NAME_NOT_ALLOWED;
-	} else if (err) {
+	} else if (err != 0) {
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
@@ -1325,7 +1325,7 @@ static uint8_t preset_select(struct has_preset *preset, bool sync)
 		return BT_HAS_ERR_OPERATION_NOT_POSSIBLE;
 	}
 
-	if (err) {
+	if (err != 0) {
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
@@ -1482,7 +1482,7 @@ static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_at
 	net_buf_simple_init_with_data(&buf, (void *)data, len);
 
 	err = handle_control_point_op(conn, &buf);
-	if (err) {
+	if (err != 0) {
 		LOG_WRN("handle_control_point_op err 0x%02x", err);
 		return BT_GATT_ERR(err);
 	}

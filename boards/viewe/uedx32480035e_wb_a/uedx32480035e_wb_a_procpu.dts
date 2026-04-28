@@ -1,0 +1,237 @@
+/*
+ * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2026 VIEWE Display Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/led/worldsemi_ws2812c.h>
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+#include "uedx32480035e_wb_a-pinctrl.dtsi"
+
+/ {
+	model = "VIEWE UEDX32480035E-WB-A PROCPU";
+	compatible = "viewe,uedx32480035e_wb_a", "espressif,esp32s3";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,display = &st7796s;
+		zephyr,touch = &chsc6x;
+		zephyr,sdhc = &sdhc0;
+	};
+
+	aliases {
+		led0 = &buzzer;
+		led-strip = &rgb_led;
+		sw0 = &button;
+		watchdog0 = &wdt0;
+		sdhc0 = &sdhc0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		buzzer: buzzer {
+			gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+			label = "Buzzer";
+		};
+	};
+
+	keys: keys {
+		compatible = "gpio-keys";
+		debounce-interval-ms = <10>;
+
+		button: button {
+			gpios = <&gpio0 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "BOOT Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	lcd_backlight_en {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd_backlight_enable";
+		enable-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;  /* IO13-BL-EN */
+		regulator-boot-on;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		spi-dev = <&spi2>;
+		dc-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		write-only;
+
+		st7796s: st7796s@0 {
+			compatible = "sitronix,st7796s";
+			status = "okay";
+			reg = <0>;
+			mipi-max-frequency = <DT_FREQ_M(80)>;
+			width = <320>;
+			height = <480>;
+			rgb-is-inverted;
+			color-invert;
+			/*
+			 * Vendor init sequence from BOARD_VIEWE_UEDX32480035E_WB_A.h
+			 */
+			bpc = [1f 50 00 20];
+			pwr1 = [80 04];
+			pwr2 = <0x13>;
+			vcmpctl = <0x16>;
+			doca = [40 8a 00 00 29 19 a5 33];
+			pgc = [f0 19 20 10 11 0a 46 44 57 09 1a 1b 2a 2d];
+			ngc = [f0 12 1a 0a 0c 18 45 44 56 3f 15 11 24 26];
+			madctl = <0x48>;
+		};
+	};
+};
+
+&dma {
+	status = "okay";
+};
+
+&timer0 {
+	status = "disabled";
+};
+
+&timer1 {
+	status = "disabled";
+};
+
+&timer2 {
+	status = "disabled";
+};
+
+&timer3 {
+	status = "disabled";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+
+	/*
+	 * IM0 and IM1 pins select the MCU interface mode for the GC9A01.
+	 * For 4-wire SPI mode: IM0=LOW, IM1=HIGH.
+	 */
+	lcd-im0-hog {
+		gpio-hog;
+		gpios = <15 GPIO_ACTIVE_HIGH>;  /* IO47 - IM0 */
+		output-high;
+	};
+
+	lcd-im1-hog {
+		gpio-hog;
+		gpios = <16 GPIO_ACTIVE_HIGH>;  /* IO48 - IM1 */
+		output-high;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	chsc6x: chsc6x@2e {
+		status = "okay";
+		compatible = "chipsemi,chsc6540";
+		reg = <0x2e>;
+		irq-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>; /* IO42 */
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim3_ws2812_led>;
+	pinctrl-names = "default";
+	line-idle-low;
+
+	rgb_led: ws2812@0 {
+		compatible = "worldsemi,ws2812-spi";
+		reg = <0>;
+		spi-max-frequency = <WS2812C_SPI_FREQ>;
+		chain-length = <1>;
+		color-mapping = <LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_BLUE>;
+		spi-one-frame = <WS2812C_ONE_FRAME>;
+		spi-zero-frame = <WS2812C_ZERO_FRAME>;
+	};
+};
+
+&sdhc {
+	sdhc0: sdhc@0 {
+		status = "okay";
+		pinctrl-0 = <&sdhc0_default>;
+		pinctrl-names = "default";
+		max-bus-freq = <52000000>;
+		bus-width = <4>;
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};

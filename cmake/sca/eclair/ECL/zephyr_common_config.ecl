@@ -1,3 +1,5 @@
+-eval_file=toolchain.ecl
+
 -eval_file=out_of_initial_scope.ecl
 -eval_file=language_extensions.ecl
 -eval_file=call_properties.ecl
@@ -94,7 +96,7 @@
 -doc="Use of CODE_UNREACHABLE is defensive programming."
 -config=MC3A2.R2.1,reports+={safe,"any_area(any_loc(any_exp(macro(name(CODE_UNREACHABLE)))))"}
 
--doc_begin="Identifers beginning with _ are tolerated."
+-doc_begin="Identifiers beginning with _ are tolerated."
 -config=MC3A2.R21.1,macros={relied,"^_.*$"}
 -config=MC3A2.R21.2,declarations={relied,"^(.*::)?_.*$"}
 -doc_end

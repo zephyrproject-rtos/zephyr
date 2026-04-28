@@ -278,10 +278,7 @@ __syscall int peci_config(const struct device *dev, uint32_t bitrate);
 static inline int z_impl_peci_config(const struct device *dev,
 				     uint32_t bitrate)
 {
-	struct peci_driver_api *api;
-
-	api = (struct peci_driver_api *)dev->api;
-	return api->config(dev, bitrate);
+	return DEVICE_API_GET(peci, dev)->config(dev, bitrate);
 }
 
 /**
@@ -296,10 +293,7 @@ __syscall int peci_enable(const struct device *dev);
 
 static inline int z_impl_peci_enable(const struct device *dev)
 {
-	struct peci_driver_api *api;
-
-	api = (struct peci_driver_api *)dev->api;
-	return api->enable(dev);
+	return DEVICE_API_GET(peci, dev)->enable(dev);
 }
 
 /**
@@ -314,10 +308,7 @@ __syscall int peci_disable(const struct device *dev);
 
 static inline int z_impl_peci_disable(const struct device *dev)
 {
-	struct peci_driver_api *api;
-
-	api = (struct peci_driver_api *)dev->api;
-	return api->disable(dev);
+	return DEVICE_API_GET(peci, dev)->disable(dev);
 }
 
 /**
@@ -335,10 +326,7 @@ __syscall int peci_transfer(const struct device *dev, struct peci_msg *msg);
 static inline int z_impl_peci_transfer(const struct device *dev,
 				       struct peci_msg *msg)
 {
-	struct peci_driver_api *api;
-
-	api = (struct peci_driver_api *)dev->api;
-	return api->transfer(dev, msg);
+	return DEVICE_API_GET(peci, dev)->transfer(dev, msg);
 }
 
 

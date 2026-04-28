@@ -1,6 +1,6 @@
 board:
   name: ophelia4ev
-  full_name: Ophelia-IV DK
+  full_name: Ophelia-IV EV
   vendor: we
   socs:
   - name: nrf54l15

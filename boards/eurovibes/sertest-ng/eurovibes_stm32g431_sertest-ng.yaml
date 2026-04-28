@@ -1,0 +1,21 @@
+identifier: eurovibes_stm32g431_sertest-ng
+name: Eurovibes STM32G431 based Sertest-NG Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 32
+flash: 128
+supported:
+  - can
+  - counter
+  - gpio
+  - i2c
+  - nvs
+  - pinctrl
+  - rtc
+  - uart
+  - usbd
+  - watchdog
+vendor: eurovibes

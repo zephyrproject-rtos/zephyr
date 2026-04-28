@@ -258,7 +258,7 @@ static int litex_clk_wait(uint32_t reg)
 		k_sleep(K_MSEC(1));
 	}
 	if (timeout == 0) {
-		LOG_WRN("Timeout occured when waiting for the register: 0x%x", reg);
+		LOG_WRN("Timeout occurred when waiting for the register: 0x%x", reg);
 		return -ETIME;
 	}
 	return 0;

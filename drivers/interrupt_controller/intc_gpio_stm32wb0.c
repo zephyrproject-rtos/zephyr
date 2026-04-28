@@ -86,7 +86,7 @@ static inline stm32_gpio_irq_line_t portpin_to_ll_exti_line(uint32_t port, gpio_
 }
 
 /**
- * @returns a 32-bit value contaning:
+ * @returns a 32-bit value containing:
  *	- <5:5> port number (0 = PORTA, 1 = PORTB)
  *	- <4:0> pin number (0~15)
  *

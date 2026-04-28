@@ -3,13 +3,13 @@
 
 config CMSIS_RTOS_V2
 	bool "CMSIS RTOS v2 API"
-	depends on POLL
 	depends on THREAD_NAME
 	depends on THREAD_STACK_INFO
 	depends on THREAD_MONITOR
 	depends on INIT_STACKS
 	depends on NUM_PREEMPT_PRIORITIES >= 56
 	select EVENTS
+	select POLL
 	help
 	  This enables CMSIS RTOS v2 API support. This is an OS-integration
 	  layer which allows applications using CMSIS RTOS V2 APIs to build

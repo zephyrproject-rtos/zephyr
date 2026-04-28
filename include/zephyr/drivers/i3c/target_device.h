@@ -299,8 +299,7 @@ __subsystem struct i3c_target_driver_api {
 static inline int i3c_target_controller_handoff(const struct device *dev,
 				      bool accept)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->target_controller_handoff == NULL) {
 		return -ENOSYS;
@@ -336,8 +335,7 @@ static inline int i3c_target_controller_handoff(const struct device *dev,
 static inline int i3c_target_tx_write(const struct device *dev,
 				      uint8_t *buf, uint16_t len, uint8_t hdr_mode)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->target_tx_write == NULL) {
 		return -ENOSYS;
@@ -372,8 +370,7 @@ static inline int i3c_target_tx_write(const struct device *dev,
 static inline int i3c_target_register(const struct device *dev,
 				      struct i3c_target_config *cfg)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->target_register == NULL) {
 		return -ENOSYS;
@@ -401,8 +398,7 @@ static inline int i3c_target_register(const struct device *dev,
 static inline int i3c_target_unregister(const struct device *dev,
 					struct i3c_target_config *cfg)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->target_unregister == NULL) {
 		return -ENOSYS;

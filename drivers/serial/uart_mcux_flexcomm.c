@@ -131,7 +131,7 @@ static void mcux_flexcomm_pm_unlock_if_idle(const struct device *dev)
 		data->pm_policy_state_lock = false;
 		pm_policy_device_power_lock_put(dev);
 	} else {
-		/* can't block systemn workqueue so keep re-submitting until it's done */
+		/* can't block system workqueue so keep re-submitting until it's done */
 		k_work_submit(&data->pm_lock_work);
 	}
 }

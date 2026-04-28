@@ -244,7 +244,7 @@ The following modems are already supported in
 * SIMCom SIM7080, A76xx
 * u-blox SARA-R4, SARA-R5, LARA-R6
 * Sierra Wireless HL7800
-* Telit ME910G1, ME310G1
+* Telit ME910G1, ME310G1, LE910C1 Thread-x
 * Nordic Semiconductor nRF91 SLM
 * Sequans GM02S
 

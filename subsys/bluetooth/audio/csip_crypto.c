@@ -115,7 +115,7 @@ static int k1(const uint8_t *n, size_t n_size,
 
 	LOG_DBG("BE: t %s", bt_hex(t, sizeof(t)));
 
-	if (err) {
+	if (err != 0) {
 		return err;
 	}
 
@@ -176,14 +176,14 @@ int bt_csip_sef(const uint8_t k[BT_CSIP_CRYPTO_KEY_SIZE], const uint8_t sirk[BT_
 	LOG_DBG("BE: k %s", bt_hex(k1_tmp, sizeof(k1_tmp)));
 
 	err = s1(m, sizeof(m), s1_out);
-	if (err) {
+	if (err != 0) {
 		return err;
 	}
 
 	LOG_DBG("BE: s1 result %s", bt_hex(s1_out, sizeof(s1_out)));
 
 	err = k1(k1_tmp, sizeof(k1_tmp), s1_out, p, sizeof(p), k1_out);
-	if (err) {
+	if (err != 0) {
 		return err;
 	}
 

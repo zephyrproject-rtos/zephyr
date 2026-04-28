@@ -125,18 +125,16 @@ static const char *phy2str(uint8_t phy)
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
 	char name[NAME_LEN];
 
 	(void)memset(name, 0, sizeof(name));
 
 	bt_data_parse(buf, data_cb, name);
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i %s "
 	       "C:%u S:%u D:%u SR:%u E:%u Prim: %s, Secn: %s, "
 	       "Interval: 0x%04x (%u ms), SID: %u\n",
-	       le_addr, info->adv_type, info->tx_power, info->rssi, name,
+	       bt_addr_le_str(info->addr), info->adv_type, info->tx_power, info->rssi, name,
 	       (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
 	       (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
 	       (info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0,
@@ -155,14 +153,10 @@ static struct bt_le_scan_cb scan_callbacks = {
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (err) {
 		struct bt_conn_info conn_info;
 
-		printk("Failed to connect to %s (%u)\n", addr, err);
+		printk("Failed to connect to %s (%u)\n", bt_conn_dst_str(conn), err);
 
 		err = bt_conn_get_info(conn, &conn_info);
 		if (err) {
@@ -170,7 +164,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 			return;
 		}
 
-		printk("%s: %s role %u\n", __func__, addr, conn_info.role);
+		printk("%s: %s role %u\n", __func__, bt_conn_dst_str(conn), conn_info.role);
 
 		if (conn_info.role == BT_CONN_ROLE_CENTRAL) {
 			bt_conn_unref(conn);
@@ -179,7 +173,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 
-	printk("Connected: %s\n", addr);
+	printk("Connected: %s\n", bt_conn_dst_str(conn));
 
 	k_sem_give(&sem_peer_conn);
 }
@@ -187,12 +181,9 @@ static void connected(struct bt_conn *conn, uint8_t err)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct bt_conn_info conn_info;
-	char addr[BT_ADDR_LE_STR_LEN];
 	int err;
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Disconnected: %s (reason 0x%02x)\n", addr, reason);
+	printk("Disconnected: %s (reason 0x%02x)\n", bt_conn_dst_str(conn), reason);
 
 	err = bt_conn_get_info(conn, &conn_info);
 	if (err) {
@@ -200,7 +191,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	printk("%s: %s role %u\n", __func__, addr, conn_info.role);
+	printk("%s: %s role %u\n", __func__, bt_conn_dst_str(conn), conn_info.role);
 
 	if (conn_info.role == BT_CONN_ROLE_CENTRAL) {
 		bt_conn_unref(conn);
@@ -216,15 +207,12 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 static void disconnect(struct bt_conn *conn, void *data)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	int err;
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Disconnecting %s...\n", addr);
+	printk("Disconnecting %s...\n", bt_conn_dst_str(conn));
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
-		FAIL("Failed disconnection %s.\n", addr);
+		FAIL("Failed disconnection %s.\n", bt_conn_dst_str(conn));
 		return;
 	}
 	printk("success.\n");

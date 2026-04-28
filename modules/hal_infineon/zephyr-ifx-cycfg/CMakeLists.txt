@@ -4,14 +4,28 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+if(CONFIG_BUILD_WITH_TFM)
+  set(zephyr_ifx_cycfg_dir ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/infineon/pse84/epc2/board/KIT_PSOCE84_EVK/shared/design/default/GeneratedSource)
+
+  zephyr_include_directories(${zephyr_ifx_cycfg_dir})
+  zephyr_library_sources(${zephyr_ifx_cycfg_dir}/cycfg_qspi_memslot.c)
+
+  zephyr_include_directories(${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/infineon/pse84/shared/device/include)
+
+  set(zephyr_ifx_cy_dev_headers_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/zephyr-ifx-cycfg/kit_pse84_eval/device_headers)
+  zephyr_include_directories(${zephyr_ifx_cy_dev_headers_dir})
+else()
+
   set(zephyr_ifx_cycfg_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/zephyr-ifx-cycfg/kit_pse84_eval)
 
   zephyr_include_directories(${zephyr_ifx_cycfg_dir})
   zephyr_include_directories(${zephyr_ifx_cycfg_dir}/device_headers)
   zephyr_library_sources(${zephyr_ifx_cycfg_dir}/cycfg_qspi_memslot.c)
   zephyr_library_sources(${zephyr_ifx_cycfg_dir}/ifx_cycfg_init.c)
-  zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_AUTANALOG_SAR_ADC
-    ${zephyr_ifx_cycfg_dir}/ifx_autanalog.c)
+  if(CONFIG_USE_INFINEON_AUTANALOG_SAR_ADC AND NOT CONFIG_MFD_INFINEON_AUTANALOG)
+    zephyr_library_sources(${zephyr_ifx_cycfg_dir}/ifx_autanalog.c)
+  endif()
+endif()
 endif()
 
 if(CONFIG_SOC_SERIES_PSC3)

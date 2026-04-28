@@ -318,7 +318,7 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 							   NET_AF_UNSPEC, 0,
 							   K_MSEC(CONFIG_ETH_ADIN2111_TIMEOUT));
 			if (!pkt) {
-				LOG_ERR("OA RX: cannot allcate packet space, skipping.");
+				LOG_ERR("OA RX: cannot allocate packet space, skipping.");
 				return -ENOMEM;
 			}
 			/* Skipping CRC32 */

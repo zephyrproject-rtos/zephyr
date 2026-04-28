@@ -17,3 +17,15 @@ config USE_MSPM0_DL_TIMER
 
 config USE_MSPM0_DL_MCAN
 	bool
+
+config USE_MSPM0_DL_DAC12
+	bool
+
+config USE_MSPM0_DL_SPI
+	bool
+
+config USE_MSPM0_DL_VREF
+	bool
+
+config USE_MSPM0_DL_ADC
+	bool

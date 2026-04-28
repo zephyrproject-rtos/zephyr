@@ -17,3 +17,33 @@ config RISCV_CORE_NORDIC_VPR
 	imply XIP
 	help
 	  Enable support for the RISC-V Nordic VPR core.
+
+choice NORDIC_VPR_SLEEP_MODE
+	prompt "Default sleep mode"
+	depends on RISCV_CORE_NORDIC_VPR
+	default NORDIC_VPR_SLEEP if SOC_NRF54H20_CPUFLPR
+	default NORDIC_VPR_DEEPSLEEP if SOC_NRF54H20_CPUPPR
+	default NORDIC_VPR_HIBERNATE
+
+config NORDIC_VPR_SLEEP
+	bool "Sleep"
+	help
+	  Significantly higher power consumption but very short wake up time.
+
+config NORDIC_VPR_DEEPSLEEP
+	bool "Deep sleep"
+	depends on SOC_NRF54H20_CPUPPR
+	help
+	  Deep sleep can reach less than 5 uA in system-on-idle state only on nRF54H20.
+	  Wake up time is comparable to the 'sleep' mode.
+
+config NORDIC_VPR_HIBERNATE
+	bool "Hibernation"
+	depends on !SOC_NRF54H20
+	help
+	  It has the lowest power consumption and it must be used to reach less than 5 uA in
+	  the system-on-idle state on targets other than nRF54H20. It has slightly longer
+	  wake up time (additional 1 us). Hibernation is using a RAM block to store the VPR
+	  state and parent core must configure the memory so that it is powered on and retained.
+
+endchoice

@@ -117,7 +117,7 @@ __syscall int w1_change_bus_lock(const struct device *dev, bool lock);
 static inline int z_impl_w1_change_bus_lock(const struct device *dev, bool lock)
 {
 	struct w1_master_data *ctrl_data = (struct w1_master_data *)dev->data;
-	const struct w1_driver_api *api = (const struct w1_driver_api *)dev->api;
+	const struct w1_driver_api *api = DEVICE_API_GET(w1, dev);
 
 	if (api->change_bus_lock) {
 		return api->change_bus_lock(dev, lock);
@@ -193,9 +193,7 @@ __syscall int w1_reset_bus(const struct device *dev);
 
 static inline int z_impl_w1_reset_bus(const struct device *dev)
 {
-	const struct w1_driver_api *api = (const struct w1_driver_api *)dev->api;
-
-	return api->reset_bus(dev);
+	return DEVICE_API_GET(w1, dev)->reset_bus(dev);
 }
 
 /**
@@ -210,9 +208,7 @@ __syscall int w1_read_bit(const struct device *dev);
 
 static inline int z_impl_w1_read_bit(const struct device *dev)
 {
-	const struct w1_driver_api *api = (const struct w1_driver_api *)dev->api;
-
-	return api->read_bit(dev);
+	return DEVICE_API_GET(w1, dev)->read_bit(dev);
 }
 
 /**
@@ -228,9 +224,7 @@ __syscall int w1_write_bit(const struct device *dev, const bool bit);
 
 static inline int z_impl_w1_write_bit(const struct device *dev, bool bit)
 {
-	const struct w1_driver_api *api = (const struct w1_driver_api *)dev->api;
-
-	return api->write_bit(dev, bit);
+	return DEVICE_API_GET(w1, dev)->write_bit(dev, bit);
 }
 
 /**
@@ -245,9 +239,7 @@ __syscall int w1_read_byte(const struct device *dev);
 
 static inline int z_impl_w1_read_byte(const struct device *dev)
 {
-	const struct w1_driver_api *api = (const struct w1_driver_api *)dev->api;
-
-	return api->read_byte(dev);
+	return DEVICE_API_GET(w1, dev)->read_byte(dev);
 }
 
 /**
@@ -263,9 +255,7 @@ __syscall int w1_write_byte(const struct device *dev, uint8_t byte);
 
 static inline int z_impl_w1_write_byte(const struct device *dev, uint8_t byte)
 {
-	const struct w1_driver_api *api = (const struct w1_driver_api *)dev->api;
-
-	return api->write_byte(dev, byte);
+	return DEVICE_API_GET(w1, dev)->write_byte(dev, byte);
 }
 
 /**
@@ -331,9 +321,7 @@ __syscall int w1_configure(const struct device *dev,
 static inline int z_impl_w1_configure(const struct device *dev,
 				      enum w1_settings_type type, uint32_t value)
 {
-	const struct w1_driver_api *api = (const struct w1_driver_api *)dev->api;
-
-	return api->configure(dev, type, value);
+	return DEVICE_API_GET(w1, dev)->configure(dev, type, value);
 }
 
 /**

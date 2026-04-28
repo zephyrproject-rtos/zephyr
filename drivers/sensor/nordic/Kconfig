@@ -7,4 +7,5 @@ source "drivers/sensor/nordic/npm13xx_charger/Kconfig"
 source "drivers/sensor/nordic/npm2100_vbat/Kconfig"
 source "drivers/sensor/nordic/qdec_nrfx/Kconfig"
 source "drivers/sensor/nordic/temp/Kconfig"
+source "drivers/sensor/nordic/vbat/Kconfig"
 # zephyr-keep-sorted-stop

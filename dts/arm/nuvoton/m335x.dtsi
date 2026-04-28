@@ -69,8 +69,8 @@
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				erase-block-size = <1024>;
-				write-block-size = <4>;
+				erase-block-size = <8192>;
+				write-block-size = <8>;
 			};
 		};
 

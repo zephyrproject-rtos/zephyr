@@ -8,3 +8,17 @@ tests:
     tags:
       - net
       - ocpp
+
+  sample.net.ocpp.tls:
+    harness: net
+    depends_on: netif
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-tls13.conf"
+      - USE_DUMMY_CREDS=1
+    tags:
+      - net
+      - ocpp
+      - tls
+    platform_allow:
+      - qemu_x86
+      - native_sim

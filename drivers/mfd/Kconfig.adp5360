@@ -1,0 +1,68 @@
+# Copyright 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MFD_ADP5360
+	bool "ADP5360 Battery Management PMIC With Buck and Buck Boost"
+	default y
+	depends on DT_HAS_ADI_ADP5360_ENABLED
+	select I2C
+	help
+	  Enable driver for ADI ADP5360.
+
+if MFD_ADP5360
+
+config MFD_ADP5360_TRIGGER
+	bool
+
+choice ADP5360_TRIGGER_MODE
+	prompt "Set option of interrupt handling"
+	default ADP5360_TRIGGER_NONE
+	help
+	  Choose how interrupt handling for the ADP5360 mfd driver should be implemented.
+	  This allows selecting between different interrupt handling mechanisms based
+	  on the application requirements.
+
+config ADP5360_TRIGGER_NONE
+	bool "No trigger"
+
+config ADP5360_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select MFD_ADP5360_TRIGGER
+	help
+	  Use global thread for the interrupt handler
+
+config ADP5360_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select MFD_ADP5360_TRIGGER
+	help
+	  Use own thread for the interrupt handler
+
+endchoice # ADP5360_TRIGGER_MODE
+
+config ADP5360_THREAD_PRIORITY
+	int "thread priority"
+	depends on ADP5360_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Set the priority of the thread used for handling interrupts when using own thread.
+	  A higher value indicates a higher priority.
+
+config ADP5360_THREAD_STACK_SIZE
+	int "thread stack size"
+	depends on ADP5360_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Specify the stack size (in bytes) for the thread used to handle interrupts when
+	  "Use own thread" is selected. Ensure the stack size is sufficient for the interrupt
+	  handling logic to avoid stack overflows.
+
+config MFD_ADP5360_INIT_PRIORITY
+	int "MFD ADP5360 Init Priority"
+	default 70
+	depends on MFD_ADP5360
+	help
+	  Init priority for the Analog Devices ADP5360 MFD Subsystem.
+
+endif # MFD_ADP5360

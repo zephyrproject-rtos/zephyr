@@ -54,3 +54,16 @@ properties:
     description: |
       Synchronous mode.
       When present, the SAI controller is configured to work in synchronous mode.
+
+  fifo-threshold:
+    type: string
+    default: "full"
+    description: |
+      SAI Block Fifo Threshold defines the fill level at which the peripheral
+      triggers a DMA request or interrupt to transfer data
+    enum:
+      - "empty"
+      - "1/4"
+      - "1/2"
+      - "3/4"
+      - "full"

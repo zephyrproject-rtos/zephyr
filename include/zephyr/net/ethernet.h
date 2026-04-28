@@ -946,7 +946,7 @@ int net_eth_get_hw_config(struct net_if *iface, enum ethernet_config_type type,
 			 struct ethernet_config *config)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *eth = dev->api;
+	const struct ethernet_api *eth = (struct ethernet_api *)dev->api;
 
 	if (!eth->get_config) {
 		return -ENOTSUP;
@@ -1541,6 +1541,20 @@ static inline bool net_eth_type_is_wifi(struct net_if *iface)
 		net_if_l2_data(iface);
 
 	return ctx->eth_if_type == L2_ETH_IF_TYPE_WIFI;
+}
+
+/**
+ * @brief Check if the Ethernet L2 network interface is cabled ethernet.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if interface is cabled ethernet, False otherwise.
+ */
+static inline bool net_eth_type_is_ethernet(struct net_if *iface)
+{
+	const struct ethernet_context *ctx = (struct ethernet_context *)net_if_l2_data(iface);
+
+	return ctx->eth_if_type == L2_ETH_IF_TYPE_ETHERNET;
 }
 
 /**

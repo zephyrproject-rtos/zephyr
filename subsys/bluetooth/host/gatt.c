@@ -270,6 +270,8 @@ static bool update_range(uint16_t *start, uint16_t *end, uint16_t new_start,
 	LOG_DBG("start 0x%04x end 0x%04x new_start 0x%04x new_end 0x%04x", *start, *end, new_start,
 		new_end);
 
+	__ASSERT(new_start <= new_end, "New start is greater than new end");
+
 	/* Check if inside existing range */
 	if (new_start >= *start && new_end <= *end) {
 		return false;
@@ -1029,6 +1031,32 @@ static void bt_gatt_identity_resolved(struct bt_conn *conn, const bt_addr_le_t *
 		bt_addr_le_copy(&cfg->peer, id_addr);
 		if (is_bonded) {
 			bt_gatt_store_cf(conn->id, &conn->le.dst);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)) {
+		/* Keep Service Changed bookkeeping aligned with the bonded identity
+		 * address so restore-on-reconnect works when privacy is enabled.
+		 */
+		struct gatt_sc_cfg *sc = find_sc_cfg(conn->id, private_addr);
+
+		if (sc != NULL) {
+			struct gatt_sc_cfg *sc_id = find_sc_cfg(conn->id, id_addr);
+
+			if ((sc_id != NULL) && (sc_id != sc)) {
+				if (sc->data.start != 0U || sc->data.end != 0U) {
+					(void)update_range(&sc_id->data.start, &sc_id->data.end,
+							   sc->data.start, sc->data.end);
+				}
+				clear_sc_cfg(sc);
+				sc = sc_id;
+			} else {
+				bt_addr_le_copy(&sc->peer, id_addr);
+			}
+
+			if (is_bonded) {
+				sc_store(sc);
+			}
 		}
 	}
 }

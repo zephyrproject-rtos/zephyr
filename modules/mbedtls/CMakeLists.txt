@@ -39,22 +39,17 @@ if(CONFIG_MBEDTLS)
     # This creates 3 libraries: mbedtls, mbedx509 and tfpsacrypto.
     add_subdirectory(${ZEPHYR_MBEDTLS_MODULE_DIR} mbedtls)
 
-    # Build all the libraries with the same compile options and imacros used for
-    # Zephyr build.
-    target_link_libraries(tfpsacrypto PRIVATE zephyr_interface)
-    target_link_libraries(mbedx509 PRIVATE zephyr_interface)
-    target_link_libraries(mbedtls PRIVATE zephyr_interface)
-
-    # Mbed TLS libraries are normal CMake libraries.
-    # To ensure Mbed TLS libraries are including Zephyr include directories and
-    # Zephyr compile options we link those libraries with 'zephyr_interface'.
-    target_link_libraries(builtin PRIVATE zephyr_interface)
-    target_link_libraries(p256-m PRIVATE zephyr_interface)
-    target_link_libraries(everest PRIVATE zephyr_interface)
-    target_link_libraries(pqcp PRIVATE zephyr_interface)
-    target_link_libraries(extras PRIVATE zephyr_interface)
-    target_link_libraries(platform PRIVATE zephyr_interface)
-    target_link_libraries(utilities PRIVATE zephyr_interface)
+    foreach(lib mbedtls mbedx509 tfpsacrypto builtin p256-m everest pqcp extras platform utilities)
+      # Mbed TLS libraries are normal CMake libraries.
+      # To ensure Mbed TLS libraries are including Zephyr include directories and
+      # Zephyr compile options we link those libraries with 'zephyr_interface'.
+      target_link_libraries(${lib} PRIVATE zephyr_interface)
+      # Mbed TLS libraries are external CMake targets (not zephyr_library()),
+      # so they miss the automatic add_dependencies on zephyr_generated_headers
+      # that zephyr_library() targets get. Without this, generated headers
+      # like heap_constants.h may not exist when Mbed TLS sources compile.
+      add_dependencies(${lib} zephyr_generated_headers)
+    endforeach()
 
     # Custom macro to tell that a TF-PSA-Crypto source file is being compiled.
     # This is used by Secure Storage.
