@@ -1281,7 +1281,20 @@ static void handle_h3_bidi_stream(struct http_server_ctx *ctx, int i,
 		closed_fd = ctx->fds[i].fd;
 
 		if (ret == 0) {
-			LOG_DBG("Stream closed for client");
+			LOG_DBG("[%p] H3: stream fd %d reached FIN", client, closed_fd);
+
+			conn_fd = client->fd;
+			client->fd = closed_fd;
+			ret = handle_http3_stream_fin(client);
+			client->fd = conn_fd;
+
+			if (ret < 0) {
+				LOG_ERR("[%p] H3: request completion on FIN failed (%d)",
+					client, ret);
+				close_h3_or_plain_client(client, ctx->fds,
+							 ARRAY_SIZE(ctx->fds));
+				return;
+			}
 		} else {
 			LOG_DBG("[%p] Error reading from socket %d (%d)",
 				client, ctx->fds[i].fd, -errno);
@@ -1319,7 +1332,7 @@ static void handle_h3_bidi_stream(struct http_server_ctx *ctx, int i,
 		close_h3_or_plain_client(client, ctx->fds, ARRAY_SIZE(ctx->fds));
 
 	} else if (ret == 0) {
-		/* Response complete — shutdown+FIN already sent; clear poll slot */
+		/* Response complete, shutdown+FIN already sent; clear poll slot */
 		closed_fd = ctx->fds[i].fd;
 
 		zsock_close(closed_fd);
@@ -1418,7 +1431,8 @@ static int http_server_run(struct http_server_ctx *ctx)
 				continue;
 			}
 
-			if (ctx->fds[i].revents & ZSOCK_POLLHUP) {
+			if ((ctx->fds[i].revents & ZSOCK_POLLHUP) &&
+			    !(ctx->fds[i].revents & ZSOCK_POLLIN)) {
 				LOG_DBG("Stream #%d is closed", i - ctx->client_fds);
 				invalidate_poll_fd(&ctx->fds[i]);
 				continue;
