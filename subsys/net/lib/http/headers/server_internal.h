@@ -51,6 +51,11 @@ struct h3_peer_settings {
 	bool received;                      /* True if SETTINGS has been received */
 };
 
+struct h3_uni_stream_rx_ctx {
+	uint8_t buffer[HTTP_SERVER_CLIENT_BUFFER_SIZE];
+	size_t data_len;
+};
+
 /**
  * HTTP/3 connection context for tracking unidirectional streams.
  * This is stored per H3 connection (QUIC context socket).
@@ -65,6 +70,11 @@ struct h3_conn_ctx {
 	int local_control_stream;
 	int local_qpack_encoder_stream;
 	int local_qpack_decoder_stream;
+
+	/* Buffered peer unidirectional stream data */
+	struct h3_uni_stream_rx_ctx peer_control_rx;
+	struct h3_uni_stream_rx_ctx peer_qpack_encoder_rx;
+	struct h3_uni_stream_rx_ctx peer_qpack_decoder_rx;
 
 	/* Peer settings */
 	struct h3_peer_settings peer_settings;

@@ -162,6 +162,9 @@ static void h3_init_conn_ctx(struct h3_conn_ctx *ctx)
 	ctx->local_control_stream = INVALID_SOCK;
 	ctx->local_qpack_encoder_stream = INVALID_SOCK;
 	ctx->local_qpack_decoder_stream = INVALID_SOCK;
+	ctx->peer_control_rx.data_len = 0;
+	ctx->peer_qpack_encoder_rx.data_len = 0;
+	ctx->peer_qpack_decoder_rx.data_len = 0;
 
 	ctx->peer_settings.qpack_max_table_capacity = 0;
 	ctx->peer_settings.max_field_section_size = UINT64_MAX;
@@ -170,6 +173,97 @@ static void h3_init_conn_ctx(struct h3_conn_ctx *ctx)
 
 	ctx->settings_sent = false;
 	ctx->initialized = true;
+}
+
+static struct h3_uni_stream_rx_ctx *h3_get_peer_uni_stream_rx_ctx(struct h3_conn_ctx *ctx,
+								  int fd)
+{
+	if (ctx == NULL) {
+		return NULL;
+	}
+
+	if (fd == ctx->peer_control_stream) {
+		return &ctx->peer_control_rx;
+	}
+
+	if (fd == ctx->peer_qpack_encoder_stream) {
+		return &ctx->peer_qpack_encoder_rx;
+	}
+
+	if (fd == ctx->peer_qpack_decoder_stream) {
+		return &ctx->peer_qpack_decoder_rx;
+	}
+
+	return NULL;
+}
+
+static int h3_store_peer_uni_stream_data(struct h3_uni_stream_rx_ctx *rx_ctx,
+					 const uint8_t *buf, size_t buflen)
+{
+	if (rx_ctx == NULL) {
+		return -EINVAL;
+	}
+
+	if (buflen > sizeof(rx_ctx->buffer)) {
+		return -ENOBUFS;
+	}
+
+	if (buflen > 0) {
+		memcpy(rx_ctx->buffer, buf, buflen);
+	}
+
+	rx_ctx->data_len = buflen;
+
+	return 0;
+}
+
+static void h3_compact_peer_uni_stream_data(struct h3_uni_stream_rx_ctx *rx_ctx,
+					    size_t consumed)
+{
+	if (rx_ctx == NULL || consumed == 0) {
+		return;
+	}
+
+	if (consumed >= rx_ctx->data_len) {
+		rx_ctx->data_len = 0;
+		return;
+	}
+
+	memmove(rx_ctx->buffer, rx_ctx->buffer + consumed,
+		rx_ctx->data_len - consumed);
+	rx_ctx->data_len -= consumed;
+}
+
+static int h3_recv_peer_uni_stream_data(struct h3_uni_stream_rx_ctx *rx_ctx, int fd)
+{
+	ssize_t len;
+
+	if (rx_ctx == NULL) {
+		return -EINVAL;
+	}
+
+	if (rx_ctx->data_len == sizeof(rx_ctx->buffer)) {
+		return 0;
+	}
+
+	len = zsock_recv(fd, rx_ctx->buffer + rx_ctx->data_len,
+			 sizeof(rx_ctx->buffer) - rx_ctx->data_len,
+			 ZSOCK_MSG_DONTWAIT);
+	if (len < 0) {
+		if (errno == EAGAIN || errno == EWOULDBLOCK) {
+			return 0;
+		}
+
+		return -errno;
+	}
+
+	if (len == 0) {
+		return -H3_CLOSED_CRITICAL_STREAM;
+	}
+
+	rx_ctx->data_len += (size_t)len;
+
+	return (int)len;
 }
 
 /**
@@ -1771,52 +1865,79 @@ static int h3_send_settings(struct http_client_ctx *client, int fd)
  */
 int h3_handle_control_stream(struct http_client_ctx *client, int fd)
 {
-	uint8_t buf[256];
-	ssize_t len;
+	struct h3_conn_ctx *h3_ctx = h3_get_conn_ctx(client);
+	struct h3_uni_stream_rx_ctx *rx_ctx;
 	size_t pos = 0;
 	uint64_t frame_type;
 	uint64_t frame_len;
 	int ret;
 
-	len = zsock_recv(fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
-	if (len < 0) {
-		if (errno == EAGAIN || errno == EWOULDBLOCK) {
-			return 0;
-		}
-		return -errno;
+	if (h3_ctx == NULL) {
+		return -EINVAL;
 	}
 
-	if (len == 0) {
+	rx_ctx = h3_get_peer_uni_stream_rx_ctx(h3_ctx, fd);
+	if (rx_ctx == NULL) {
+		return -EINVAL;
+	}
+
+	ret = h3_recv_peer_uni_stream_data(rx_ctx, fd);
+	if (ret == -H3_CLOSED_CRITICAL_STREAM) {
 		/* Control stream closed, this is a connection error */
 		LOG_DBG("[%p] H3: Control stream closed unexpectedly", client);
 		return -H3_CLOSED_CRITICAL_STREAM;
 	}
 
-	LOG_DBG("[%p] H3: Control stream received %zd bytes", client, len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (rx_ctx->data_len == 0) {
+		return 0;
+	}
+
+	LOG_DBG("[%p] H3: Control stream buffered %zu bytes", client, rx_ctx->data_len);
 
 	/* Parse frames on control stream */
-	while (pos < (size_t)len) {
+	while (pos < rx_ctx->data_len) {
 		int hdr_bytes;
 
-		ret = h3_parse_frame_header(buf + pos, len - pos,
+		ret = h3_parse_frame_header(rx_ctx->buffer + pos,
+					    rx_ctx->data_len - pos,
 					    &frame_type, &frame_len);
 		if (ret < 0) {
 			LOG_DBG("[%p] H3: Incomplete frame header on control stream", client);
-			return 0; /* Need more data */
+			h3_compact_peer_uni_stream_data(rx_ctx, pos);
+
+			if (rx_ctx->data_len == sizeof(rx_ctx->buffer)) {
+				LOG_ERR("[%p] H3: Control stream RX buffer too small",
+					client);
+				return -ENOBUFS;
+			}
+
+			return 0;
 		}
 
 		hdr_bytes = ret;
 
-		if (pos + hdr_bytes + frame_len > (size_t)len) {
+		if (pos + hdr_bytes + frame_len > rx_ctx->data_len) {
 			LOG_DBG("[%p] H3: Incomplete frame on control stream", client);
-			return 0; /* Need more data */
+			h3_compact_peer_uni_stream_data(rx_ctx, pos);
+
+			if (rx_ctx->data_len == sizeof(rx_ctx->buffer)) {
+				LOG_ERR("[%p] H3: Control stream RX buffer too small",
+					client);
+				return -ENOBUFS;
+			}
+
+			return 0;
 		}
 
 		switch (frame_type) {
 		case H3_FRAME_SETTINGS:
 			LOG_DBG("[%p] H3: Control stream SETTINGS, len=%llu",
 				client, frame_len);
-			ret = h3_parse_settings(client, buf + pos + hdr_bytes,
+			ret = h3_parse_settings(client, rx_ctx->buffer + pos + hdr_bytes,
 						(size_t)frame_len);
 			if (ret < 0) {
 				return ret;
@@ -1845,6 +1966,8 @@ int h3_handle_control_stream(struct http_client_ctx *client, int fd)
 		pos += hdr_bytes + frame_len;
 	}
 
+	rx_ctx->data_len = 0;
+
 	return 0;
 }
 
@@ -1858,24 +1981,35 @@ int h3_handle_control_stream(struct http_client_ctx *client, int fd)
  */
 int h3_handle_qpack_encoder_stream(struct http_client_ctx *client, int fd)
 {
-	uint8_t buf[64];
-	ssize_t len;
+	struct h3_conn_ctx *h3_ctx = h3_get_conn_ctx(client);
+	struct h3_uni_stream_rx_ctx *rx_ctx;
+	int ret;
 
-	len = zsock_recv(fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
-	if (len < 0) {
-		if (errno == EAGAIN || errno == EWOULDBLOCK) {
-			return 0;
-		}
-		return -errno;
+	if (h3_ctx == NULL) {
+		return -EINVAL;
 	}
 
-	if (len == 0) {
+	rx_ctx = h3_get_peer_uni_stream_rx_ctx(h3_ctx, fd);
+	if (rx_ctx == NULL) {
+		return -EINVAL;
+	}
+
+	ret = h3_recv_peer_uni_stream_data(rx_ctx, fd);
+	if (ret == -H3_CLOSED_CRITICAL_STREAM) {
 		LOG_DBG("[%p] H3: QPACK encoder stream closed", client);
 		return -H3_CLOSED_CRITICAL_STREAM;
 	}
 
+	if (ret < 0) {
+		return ret;
+	}
+
 	/* We ignore encoder instructions since we don't use dynamic table */
-	LOG_DBG("[%p] H3: QPACK encoder stream received %zd bytes (ignored)", client, len);
+	if (rx_ctx->data_len > 0) {
+		LOG_DBG("[%p] H3: QPACK encoder stream received %zu bytes (ignored)",
+			client, rx_ctx->data_len);
+		rx_ctx->data_len = 0;
+	}
 
 	return 0;
 }
@@ -1890,24 +2024,35 @@ int h3_handle_qpack_encoder_stream(struct http_client_ctx *client, int fd)
  */
 int h3_handle_qpack_decoder_stream(struct http_client_ctx *client, int fd)
 {
-	uint8_t buf[64];
-	ssize_t len;
+	struct h3_conn_ctx *h3_ctx = h3_get_conn_ctx(client);
+	struct h3_uni_stream_rx_ctx *rx_ctx;
+	int ret;
 
-	len = zsock_recv(fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
-	if (len < 0) {
-		if (errno == EAGAIN || errno == EWOULDBLOCK) {
-			return 0;
-		}
-		return -errno;
+	if (h3_ctx == NULL) {
+		return -EINVAL;
 	}
 
-	if (len == 0) {
+	rx_ctx = h3_get_peer_uni_stream_rx_ctx(h3_ctx, fd);
+	if (rx_ctx == NULL) {
+		return -EINVAL;
+	}
+
+	ret = h3_recv_peer_uni_stream_data(rx_ctx, fd);
+	if (ret == -H3_CLOSED_CRITICAL_STREAM) {
 		LOG_DBG("[%p] H3: QPACK decoder stream closed", client);
 		return -H3_CLOSED_CRITICAL_STREAM;
 	}
 
+	if (ret < 0) {
+		return ret;
+	}
+
 	/* We ignore decoder feedback since we don't use dynamic table */
-	LOG_DBG("[%p] H3: QPACK decoder stream received %zd bytes (ignored)", client, len);
+	if (rx_ctx->data_len > 0) {
+		LOG_DBG("[%p] H3: QPACK decoder stream received %zu bytes (ignored)",
+			client, rx_ctx->data_len);
+		rx_ctx->data_len = 0;
+	}
 
 	return 0;
 }
@@ -2064,6 +2209,7 @@ int h3_open_uni_streams(struct http_client_ctx *client, int quic_sock)
 int h3_identify_uni_stream(struct http_client_ctx *client, int fd)
 {
 	struct h3_conn_ctx *h3_ctx = h3_get_conn_ctx(client);
+	struct h3_uni_stream_rx_ctx *rx_ctx = NULL;
 	uint64_t stream_type;
 	uint8_t buf[8];
 	ssize_t len;
@@ -2108,13 +2254,8 @@ int h3_identify_uni_stream(struct http_client_ctx *client, int fd)
 		}
 
 		h3_ctx->peer_control_stream = fd;
+		rx_ctx = &h3_ctx->peer_control_rx;
 		LOG_DBG("[%p] H3: Peer control stream identified (fd=%d)", client, fd);
-
-		/* Process any remaining data in buf after stream type */
-		if (len > ret) {
-			/* There's frame data after the stream type */
-			/* For now, we'll handle it on next poll */
-		}
 		break;
 
 	case H3_UNI_STREAM_QPACK_ENCODER:
@@ -2124,6 +2265,7 @@ int h3_identify_uni_stream(struct http_client_ctx *client, int fd)
 		}
 
 		h3_ctx->peer_qpack_encoder_stream = fd;
+		rx_ctx = &h3_ctx->peer_qpack_encoder_rx;
 		LOG_DBG("[%p] H3: Peer QPACK encoder stream identified (fd=%d)",
 			client, fd);
 		break;
@@ -2135,6 +2277,7 @@ int h3_identify_uni_stream(struct http_client_ctx *client, int fd)
 		}
 
 		h3_ctx->peer_qpack_decoder_stream = fd;
+		rx_ctx = &h3_ctx->peer_qpack_decoder_rx;
 		LOG_DBG("[%p] H3: Peer QPACK decoder stream identified (fd=%d)",
 			client, fd);
 		break;
@@ -2150,6 +2293,13 @@ int h3_identify_uni_stream(struct http_client_ctx *client, int fd)
 		LOG_DBG("[%p] H3: Unknown uni stream type 0x%llx", client, stream_type);
 		zsock_close(fd);
 		return H3_STREAM_IGNORED;
+	}
+
+	ret = h3_store_peer_uni_stream_data(rx_ctx, buf + ret, (size_t)len - ret);
+	if (ret < 0) {
+		LOG_ERR("[%p] H3: Failed to buffer peer uni stream data (%d)",
+			client, ret);
+		return ret;
 	}
 
 	return 0;
@@ -2385,10 +2535,11 @@ static bool h3_is_server_initiated_stream(int fd)
 }
 
 /**
- * Handle accepted HTTP/3 stream and determine its type.
- * For unidirectional streams, identifies the stream type and tells the caller
- * whether the fd still needs polling. For bidirectional streams, the caller
- * should always register the accepted fd for request processing.
+ * Handle accepted HTTP/3 stream.
+ * For peer unidirectional streams, defer stream-type parsing to the poll loop
+ * so any bytes already queued on the stream remain available to the normal
+ * buffered handling path. For bidirectional streams, the caller should always
+ * register the accepted fd for request processing.
  */
 static int handle_accepted_stream(struct http_client_ctx *client,
 				  int conn_sock,
@@ -2397,8 +2548,6 @@ static int handle_accepted_stream(struct http_client_ctx *client,
 				  net_socklen_t addrlen,
 				  int idx)
 {
-	int ret;
-
 	if (IS_ENABLED(CONFIG_NET_HTTP_SERVER_LOG_LEVEL_DBG)) {
 		char addr_str[NET_INET6_ADDRSTRLEN];
 
@@ -2430,25 +2579,15 @@ static int handle_accepted_stream(struct http_client_ctx *client,
 		LOG_DBG("[%p] H3: Accepted peer unidirectional stream (fd=%d)", client,
 			stream_sock);
 
-		if (client != NULL) {
-			ret = h3_identify_uni_stream(client, stream_sock);
-			if (ret < 0 && ret != -EAGAIN) {
-				zsock_close(stream_sock);
-				return ret;
-			}
-		} else {
+		if (client == NULL) {
 			/* No client context yet, close and let it reconnect */
 			zsock_close(stream_sock);
 			return H3_STREAM_IGNORED;
 		}
 
-		if (ret == H3_STREAM_IGNORED) {
-			return H3_STREAM_IGNORED;
-		}
-
 		/*
-		 * Register the peer uni stream so the poll loop can finish
-		 * identification or handle later control/QPACK data.
+		 * Register the peer uni stream so the poll loop can identify it
+		 * and process any subsequent control/QPACK data.
 		 */
 		return 0;
 	}
@@ -2565,6 +2704,7 @@ int h3_client_cleanup(struct http_client_ctx *client,
 					   fds, max_fds_count);
 			(void)zsock_close(ctx->peer_control_stream);
 			ctx->peer_control_stream = INVALID_SOCK;
+			ctx->peer_control_rx.data_len = 0;
 		}
 
 		if (ctx->peer_qpack_encoder_stream >= 0) {
@@ -2572,6 +2712,7 @@ int h3_client_cleanup(struct http_client_ctx *client,
 					   fds, max_fds_count);
 			(void)zsock_close(ctx->peer_qpack_encoder_stream);
 			ctx->peer_qpack_encoder_stream = INVALID_SOCK;
+			ctx->peer_qpack_encoder_rx.data_len = 0;
 		}
 
 		if (ctx->peer_qpack_decoder_stream >= 0) {
@@ -2579,6 +2720,7 @@ int h3_client_cleanup(struct http_client_ctx *client,
 					   fds, max_fds_count);
 			(void)zsock_close(ctx->peer_qpack_decoder_stream);
 			ctx->peer_qpack_decoder_stream = INVALID_SOCK;
+			ctx->peer_qpack_decoder_rx.data_len = 0;
 		}
 
 		if (ctx->local_control_stream >= 0) {
