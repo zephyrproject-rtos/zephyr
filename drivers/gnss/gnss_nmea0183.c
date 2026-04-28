@@ -557,6 +557,98 @@ int gnss_nmea0183_parse_gga(const char **argv, uint16_t argc, struct gnss_data *
 	return 0;
 }
 
+/* Parse one optional GST decimal-meter field into millimetres. Empty arg → 0. */
+static int parse_gst_meters_to_mm(const char *str, uint32_t *out_mm)
+{
+	int64_t tmp;
+
+	if (str[0] == '\0') {
+		*out_mm = 0;
+		return 0;
+	}
+
+	if ((gnss_parse_dec_to_milli(str, &tmp) < 0) ||
+	    (tmp < 0) ||
+	    (tmp > UINT32_MAX)) {
+		return -EINVAL;
+	}
+
+	*out_mm = (uint32_t)tmp;
+	return 0;
+}
+
+/* Parse hhmmss.sss into milliseconds since midnight UTC. */
+static int parse_gst_utc_ms(const char *hhmmss, uint32_t *out_ms)
+{
+	struct gnss_time t = {0};
+	int ret;
+
+	ret = gnss_nmea0183_parse_hhmmss(hhmmss, &t);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*out_ms = (uint32_t)t.hour * 3600000U +
+		  (uint32_t)t.minute * 60000U +
+		  (uint32_t)t.millisecond;
+	return 0;
+}
+
+int gnss_nmea0183_parse_gst(const char **argv, uint16_t argc, struct gnss_accuracy *accuracy)
+{
+	int64_t tmp;
+
+	__ASSERT(argv != NULL, "argv argument must be provided");
+	__ASSERT(accuracy != NULL, "accuracy argument must be provided");
+
+	/* sentence id + 8 fields + checksum */
+	if (argc < 10) {
+		return -EINVAL;
+	}
+
+	if (parse_gst_utc_ms(argv[1], &accuracy->utc_ms) < 0) {
+		return -EINVAL;
+	}
+
+	if (parse_gst_meters_to_mm(argv[2], &accuracy->rms_total_mm) < 0) {
+		return -EINVAL;
+	}
+
+	if (parse_gst_meters_to_mm(argv[3], &accuracy->err_ellipse_major_mm) < 0) {
+		return -EINVAL;
+	}
+
+	if (parse_gst_meters_to_mm(argv[4], &accuracy->err_ellipse_minor_mm) < 0) {
+		return -EINVAL;
+	}
+
+	/* Orientation, in degrees true north → 1/100 degrees */
+	if (argv[5][0] == '\0') {
+		accuracy->err_ellipse_orientation_cdeg = 0;
+	} else if ((gnss_parse_dec_to_milli(argv[5], &tmp) < 0) ||
+		   (tmp < 0) ||
+		   (tmp > 35999999)) {
+			return -EINVAL;
+	} else {
+		/* milli-deg → centi-deg */
+		accuracy->err_ellipse_orientation_cdeg = (uint16_t)(tmp / 10);
+	}
+
+	if (parse_gst_meters_to_mm(argv[6], &accuracy->lat_err_mm) < 0) {
+		return -EINVAL;
+	}
+
+	if (parse_gst_meters_to_mm(argv[7], &accuracy->lon_err_mm) < 0) {
+		return -EINVAL;
+	}
+
+	if (parse_gst_meters_to_mm(argv[8], &accuracy->alt_err_mm) < 0) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int parse_gsv_svs(struct gnss_satellite *satellites, const struct gsv_sv_args *svs,
 			 uint16_t svs_size)
 {
