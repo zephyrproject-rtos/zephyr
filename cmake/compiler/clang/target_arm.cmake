@@ -20,7 +20,7 @@ if(CONFIG_FPU)
     set(FORCE_FP_HARDABI TRUE)
   endif()
 
-  if    (CONFIG_FP_HARDABI OR FORCE_FP_HARDABI)
+  if(CONFIG_FP_HARDABI OR FORCE_FP_HARDABI)
     list(APPEND ARM_C_FLAGS   -mfloat-abi=hard)
   elseif(CONFIG_FP_SOFTABI)
     list(APPEND ARM_C_FLAGS   -mfloat-abi=softfp)
@@ -40,3 +40,20 @@ if(CONFIG_FP16)
 endif()
 list(APPEND TOOLCHAIN_C_FLAGS ${ARM_C_FLAGS})
 list(APPEND TOOLCHAIN_GROUPED_LD_FLAGS ARM_C_FLAGS)
+
+# Flags not supported by llext linker
+# (regexps are supported and match whole word)
+set(LLEXT_REMOVE_FLAGS
+  -fno-pic
+  -fno-pie
+  -ffunction-sections
+  -fdata-sections
+  -Os
+)
+
+# Flags to be added to llext code compilation
+set(LLEXT_APPEND_FLAGS
+  -mlong-calls
+  -mthumb
+  -fno-unwind-tables
+)
