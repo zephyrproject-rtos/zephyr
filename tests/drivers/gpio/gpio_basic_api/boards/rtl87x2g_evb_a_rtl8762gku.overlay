@@ -10,7 +10,7 @@
 	resources {
 		compatible = "test-gpio-basic-api";
 		out-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
-		in-gpios = <&gpioa 2 (GPIO_ACTIVE_HIGH | BEE_GPIO_INPUT_DEBOUNCE_MS(8))>;
+		in-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
 	};
 };
 
