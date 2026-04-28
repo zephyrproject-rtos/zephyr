@@ -259,7 +259,7 @@ struct ethernet_qav_param {
 		unsigned int oper_idle_slope;
 		/** Traffic class the queue is bound to */
 		unsigned int traffic_class;
-	};
+	} /**< Value for the selected Qav parameter type */;
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -328,7 +328,7 @@ struct ethernet_qbv_param {
 			/** Extension time (nanoseconds) */
 			uint32_t extension_time;
 		};
-	};
+	} /**< Value for the selected Qbv parameter type */;
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -379,7 +379,7 @@ struct ethernet_qbu_param {
 		 * fragment size is (additional_fragment_size + 1) * 64 octets
 		 */
 		uint8_t additional_fragment_size : 2;
-	};
+	} /**< Value for the selected Qbu parameter type */;
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -468,7 +468,7 @@ struct ethernet_config {
 		struct ethernet_filter filter;
 
 		uint16_t extra_tx_pkt_headroom;
-	};
+	} /**< Value for the selected Ethernet configuration type */;
 };
 
 /** @endcond */
