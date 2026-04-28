@@ -1181,7 +1181,6 @@ static void spi_stm32_complete(const struct device *dev, int status)
 
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
 
-
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	/* Flush RX buffer */
 	while (ll_rx_is_not_empty(spi)) {
@@ -1296,6 +1295,19 @@ static void spi_stm32_isr(const struct device *dev)
 			return;
 		}
 	}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo) && !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER &&
+	    STM32_SPI_HALF_DUPLEX_RX == ll_get_transfer_direction(spi) &&
+	    !spi_context_rx_on(&data->ctx)) {
+		/* In half-duplex RX master mode, disable the SPI as soon as the last byte is
+		 * received to stop the transfer and prevent further reception of dummy bytes.
+		 */
+		ll_disable_spi(spi);
+		spi_stm32_complete(dev, err);
+		return;
+	}
+#endif /* st_stm32_spi_fifo && !st_stm32h7_spi */
 
 	uint32_t transfer_dir = ll_get_transfer_direction(spi);
 
