@@ -24,8 +24,8 @@ def tool_options(request):
 
 
 @pytest.fixture()
-def config(device_object):
-    build_dir = Path(device_object.device_config.build_dir)
+def config(request):
+    build_dir = Path(request.config.getoption('--build-dir'))
     file_name = build_dir / 'zephyr' / '.config'
 
     cfgs = {}

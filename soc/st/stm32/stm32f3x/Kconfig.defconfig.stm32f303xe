@@ -5,6 +5,9 @@
 
 if SOC_STM32F303XE
 
+config NUM_IRQS
+	default 85
+
 config CPU_HAS_ARM_MPU
 	default y
 

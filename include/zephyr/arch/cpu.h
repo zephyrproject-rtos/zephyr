@@ -25,8 +25,6 @@
 #include <zephyr/arch/xtensa/arch.h>
 #elif defined(CONFIG_MIPS)
 #include <zephyr/arch/mips/arch.h>
-#elif defined(CONFIG_OPENRISC)
-#include <zephyr/arch/openrisc/arch.h>
 #elif defined(CONFIG_ARCH_POSIX)
 #include <zephyr/arch/posix/arch.h>
 #elif defined(CONFIG_SPARC)

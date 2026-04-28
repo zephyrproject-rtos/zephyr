@@ -12,5 +12,4 @@ supported:
   - uart
   - spi
   - sdhc
-  - netif:eth
 vendor: renesas

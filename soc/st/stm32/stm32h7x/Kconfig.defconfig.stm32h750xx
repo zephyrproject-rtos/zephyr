@@ -1,0 +1,11 @@
+# ST STM32H750XX MCU configuration options
+
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32H750XX
+
+config NUM_IRQS
+	default 150
+
+endif # SOC_STM32H750XX

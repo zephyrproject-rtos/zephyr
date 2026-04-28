@@ -44,8 +44,7 @@ WestCommand
 
    .. py:attribute:: help
 
-      As passed to the constructor. Required by built-in commands, ignored by
-      extensions, see https://github.com/zephyrproject-rtos/west/issues/927
+      As passed to the constructor.
 
    .. py:attribute:: description
 

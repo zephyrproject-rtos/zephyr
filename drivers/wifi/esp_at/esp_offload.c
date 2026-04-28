@@ -790,7 +790,7 @@ static struct net_offload esp_offload = {
 
 int esp_offload_init(struct net_if *iface)
 {
-	net_if_offload_set(iface, &esp_offload);
+	iface->if_dev->offload = &esp_offload;
 
 	return 0;
 }

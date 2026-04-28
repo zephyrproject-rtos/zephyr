@@ -31,19 +31,11 @@ extern "C" {
 
 /** Time as returned by SNTP API, fractional seconds since 1 Jan 1970 */
 struct sntp_time {
-	/** Second value */
-	uint64_t seconds;
-	/** Fractional seconds value */
-	uint32_t fraction;
-	/** Estimated delay between server sending response and client
-	 *  receiving in microseconds.
-	 */
-	uint32_t rsp_delay_us;
+	uint64_t seconds;        /**< Second value */
+	uint32_t fraction;       /**< Fractional seconds value */
 #if defined(CONFIG_SNTP_UNCERTAINTY)
-	/** Uptime in microseconds */
-	uint64_t uptime_us;
-	/** Uncertainty in microseconds */
-	uint32_t uncertainty_us;
+	uint64_t uptime_us;      /**< Uptime in microseconds */
+	uint32_t uncertainty_us; /**< Uncertainty in microseconds */
 #endif
 };
 
@@ -74,7 +66,7 @@ struct sntp_ctx {
  *
  * @return 0 if ok, <0 if error.
  */
-int sntp_init(struct sntp_ctx *ctx, const struct net_sockaddr *addr,
+int sntp_init(struct sntp_ctx *ctx, struct net_sockaddr *addr,
 	      net_socklen_t addr_len);
 
 /**
@@ -120,7 +112,7 @@ void sntp_close(struct sntp_ctx *ctx);
  *
  * @return 0 if ok, <0 if error.
  */
-int sntp_init_async(struct sntp_ctx *ctx, const struct net_sockaddr *addr, net_socklen_t addr_len,
+int sntp_init_async(struct sntp_ctx *ctx, struct net_sockaddr *addr, net_socklen_t addr_len,
 		    const struct net_socket_service_desc *service);
 
 /**

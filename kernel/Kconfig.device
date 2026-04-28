@@ -39,7 +39,8 @@ config DEVICE_DEINIT_SUPPORT
 	  In very specific case, it might be necessary to de-initialize
 	  a device at runtime. This is possible by providing a function
 	  to do so. Note, that this will grow every struct device by a
-	  function pointer.
+	  function pointer. All device drivers that use the relevant
+	  macros and provide such function should select this option.
 
 endmenu
 

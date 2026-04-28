@@ -81,10 +81,7 @@ extern "C" {
 #define BT_VCP_STATE_MUTED                     0x01
 /** @} */
 
-/**
- * @struct bt_vcp_vol_ctlr
- * @brief Opaque Volume Control Service instance.
- */
+/** @brief Opaque Volume Control Service instance. */
 struct bt_vcp_vol_ctlr;
 
 /** Register structure for Volume Control Service */

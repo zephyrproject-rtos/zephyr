@@ -16,7 +16,6 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #if defined(CONFIG_NET_TCP_ISN_RFC6528)
 #include <psa/crypto.h>
 #endif
-#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/udp.h>

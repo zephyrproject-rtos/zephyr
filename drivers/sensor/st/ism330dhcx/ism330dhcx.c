@@ -350,47 +350,36 @@ static int ism330dhcx_sample_fetch_shub(const struct device *dev)
 static int ism330dhcx_sample_fetch(const struct device *dev,
 				   enum sensor_channel chan)
 {
-	int ret = 0;
-
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
-		ret = ism330dhcx_sample_fetch_accel(dev);
+		ism330dhcx_sample_fetch_accel(dev);
 #if defined(CONFIG_ISM330DHCX_SENSORHUB)
 		ism330dhcx_sample_fetch_shub(dev);
 #endif
 		break;
 	case SENSOR_CHAN_GYRO_XYZ:
-		ret = ism330dhcx_sample_fetch_gyro(dev);
+		ism330dhcx_sample_fetch_gyro(dev);
 		break;
 #if defined(CONFIG_ISM330DHCX_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP:
-		ret = ism330dhcx_sample_fetch_temp(dev);
+		ism330dhcx_sample_fetch_temp(dev);
 		break;
 #endif
 	case SENSOR_CHAN_ALL:
-		ret = ism330dhcx_sample_fetch_accel(dev);
-		if (ret != 0) {
-			break;
-		}
-		ret = ism330dhcx_sample_fetch_gyro(dev);
-		if (ret != 0) {
-			break;
-		}
+		ism330dhcx_sample_fetch_accel(dev);
+		ism330dhcx_sample_fetch_gyro(dev);
 #if defined(CONFIG_ISM330DHCX_ENABLE_TEMP)
-		ret = ism330dhcx_sample_fetch_temp(dev);
-		if (ret != 0) {
-			break;
-		}
+		ism330dhcx_sample_fetch_temp(dev);
 #endif
 #if defined(CONFIG_ISM330DHCX_SENSORHUB)
-		ret = ism330dhcx_sample_fetch_shub(dev);
+		ism330dhcx_sample_fetch_shub(dev);
 #endif
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	return ret;
+	return 0;
 }
 
 static inline void ism330dhcx_accel_convert(struct sensor_value *val, int raw_val,

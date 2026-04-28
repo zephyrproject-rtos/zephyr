@@ -23,13 +23,12 @@ typedef union {
 		uint32_t pupd_reg: 6;
 		uint32_t iolh_reg: 4;
 		uint32_t isel_reg: 2;
-		uint32_t pmc_reg: 1;
-		uint32_t sr_reg: 1;
+		uint32_t pmc_reg: 2;
 		uint32_t ien_reg: 1;
 		uint32_t filonoff_reg: 1;
 		uint32_t filnum_reg: 2;
 		uint32_t filclksel_reg: 2;
-		uint32_t pfc_reg: 4;
+		uint32_t pfc_reg: 3;
 	} cfg_b;
 } pinctrl_cfg_data_t;
 
@@ -75,16 +74,6 @@ typedef struct pinctrl_soc_pin {
 	(RZG_GET_FUNC(DT_PROP_BY_IDX(node_id, state_prop, idx)))
 #endif
 
-#if defined(CONFIG_SOC_SERIES_RZG3S)
-#define RZG_GET_SLEW_RATE(node_id) 0
-#elif defined(CONFIG_SOC_SERIES_RZG3E)
-#define RZG_GET_SLEW_RATE(node_id)                                                                 \
-	DT_ENUM_IDX(node_id, slew_rate) == 0 ? 1U : 0U
-#else
-#define RZG_GET_SLEW_RATE(node_id)                                                                 \
-	DT_ENUM_IDX(node_id, slew_rate) == 0 ? 0U : 1U
-#endif
-
 /* Process pinmux cfg */
 #define Z_PINCTRL_PINMUX_INIT(node_id, state_prop, idx)                                            \
 	{                                                                                          \
@@ -97,7 +86,6 @@ typedef struct pinctrl_soc_pin {
 				.iolh_reg = DT_PROP(node_id, drive_strength),                      \
 				.isel_reg = 0,                                                     \
 				.pmc_reg = 1,                                                      \
-				.sr_reg = RZG_GET_SLEW_RATE(node_id),                              \
 				.ien_reg = DT_PROP(node_id, input_enable),                         \
 				.filonoff_reg = RZG_FILTER_ON_OFF(node_id),                        \
 				.filnum_reg = RZG_GET_FILNUM(node_id),                             \
@@ -117,7 +105,6 @@ typedef struct pinctrl_soc_pin {
 				.iolh_reg = DT_PROP(node_id, drive_strength),                      \
 				.isel_reg = 0,                                                     \
 				.pmc_reg = 0,                                                      \
-				.sr_reg = RZG_GET_SLEW_RATE(node_id),                              \
 				.ien_reg = DT_PROP(node_id, input_enable),                         \
 				.filonoff_reg = RZG_FILTER_ON_OFF(node_id),                        \
 				.filnum_reg = RZG_GET_FILNUM(node_id),                             \

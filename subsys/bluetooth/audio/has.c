@@ -27,7 +27,6 @@
 #include <zephyr/settings/settings.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/clock.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -565,17 +564,12 @@ static struct has_preset {
 static sys_slist_t preset_list = SYS_SLIST_STATIC_INIT(&preset_list);
 static sys_slist_t preset_free_list = SYS_SLIST_STATIC_INIT(&preset_free_list);
 
-typedef bool (*preset_func_t)(const struct has_preset *preset, void *user_data);
+typedef uint8_t (*preset_func_t)(const struct has_preset *preset, void *user_data);
 
-static int preset_foreach(uint8_t start_index, uint8_t end_index, preset_func_t func,
-			  void *user_data)
+static void preset_foreach(uint8_t start_index, uint8_t end_index, preset_func_t func,
+			   void *user_data)
 {
 	struct has_preset *preset, *tmp;
-
-	if (func == NULL) {
-		LOG_DBG("func is NULL");
-		return -EINVAL;
-	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&preset_list, preset, tmp, node) {
 		if (preset->index < start_index) {
@@ -583,24 +577,22 @@ static int preset_foreach(uint8_t start_index, uint8_t end_index, preset_func_t 
 		}
 
 		if (preset->index > end_index) {
-			break;
+			return;
 		}
 
-		if (!func(preset, user_data)) {
-			return -ECANCELED;
+		if (func(preset, user_data) == BT_HAS_PRESET_ITER_STOP) {
+			return;
 		}
 	}
-
-	return 0;
 }
 
-static bool preset_found(const struct has_preset *preset, void *user_data)
+static uint8_t preset_found(const struct has_preset *preset, void *user_data)
 {
 	const struct has_preset **found = user_data;
 
 	*found = preset;
 
-	return false;
+	return BT_HAS_PRESET_ITER_STOP;
 }
 
 static void preset_insert(struct has_preset *preset)
@@ -993,9 +985,8 @@ static int read_preset_response(struct has_client *client)
 
 	__ASSERT_NO_MSG(client != NULL);
 
-	err = preset_foreach(client->read_presets_req.start_index, BT_HAS_PRESET_INDEX_LAST,
-			     preset_found, &preset);
-	__ASSERT(err != -EINVAL, "preset_foreach returned %d", err);
+	preset_foreach(client->read_presets_req.start_index, BT_HAS_PRESET_INDEX_LAST,
+		       preset_found, &preset);
 
 	if (unlikely(preset == NULL)) {
 		return bt_has_cp_read_preset_rsp(client, NULL, BT_HAS_IS_LAST);
@@ -1004,9 +995,7 @@ static int read_preset_response(struct has_client *client)
 	if (client->read_presets_req.num_presets > 1) {
 		const struct has_preset *next = NULL;
 
-		err = preset_foreach(preset->index + 1, BT_HAS_PRESET_INDEX_LAST, preset_found,
-				     &next);
-		__ASSERT(err != -EINVAL, "preset_foreach returned %d", err);
+		preset_foreach(preset->index + 1, BT_HAS_PRESET_INDEX_LAST, preset_found, &next);
 
 		is_last = next == NULL;
 	}
@@ -1115,16 +1104,14 @@ static int preset_list_changed(struct has_client *client)
 		return 0;
 	}
 
-	err = preset_foreach(client->preset_changed_index_next, BT_HAS_PRESET_INDEX_LAST,
-			     preset_found, &preset);
-	__ASSERT(err != -EINVAL, "preset_foreach returned %d", err);
+	preset_foreach(client->preset_changed_index_next, BT_HAS_PRESET_INDEX_LAST,
+		       preset_found, &preset);
 
 	if (preset == NULL) {
 		return 0;
 	}
 
-	err = preset_foreach(preset->index + 1, BT_HAS_PRESET_INDEX_LAST, preset_found, &next);
-	__ASSERT(err != -EINVAL, "preset_foreach returned %d", err);
+	preset_foreach(preset->index + 1, BT_HAS_PRESET_INDEX_LAST, preset_found, &next);
 
 	/* It is last Preset Changed notification if there are no presets left to notify and the
 	 * currently notified preset have the highest index known to the client.
@@ -1174,7 +1161,6 @@ static uint8_t handle_read_preset_req(struct bt_conn *conn, struct net_buf_simpl
 	const struct bt_has_cp_read_presets_req *req;
 	const struct has_preset *preset = NULL;
 	struct has_client *client;
-	__maybe_unused int err;
 
 	if (buf->len < sizeof(*req)) {
 		return BT_HAS_ERR_INVALID_PARAM_LEN;
@@ -1198,8 +1184,7 @@ static uint8_t handle_read_preset_req(struct bt_conn *conn, struct net_buf_simpl
 	LOG_DBG("start_index %d num_presets %d", req->start_index, req->num_presets);
 
 	/* Abort if there is no preset in requested index range */
-	err = preset_foreach(req->start_index, BT_HAS_PRESET_INDEX_LAST, preset_found, &preset);
-	__ASSERT(err != -EINVAL, "preset_foreach returned %d", err);
+	preset_foreach(req->start_index, BT_HAS_PRESET_INDEX_LAST, preset_found, &preset);
 
 	if (preset == NULL) {
 		return BT_ATT_ERR_OUT_OF_RANGE;
@@ -1222,7 +1207,6 @@ static uint8_t handle_read_preset_req(struct bt_conn *conn, struct net_buf_simpl
 static int set_preset_name(uint8_t index, const char *name, size_t len)
 {
 	struct has_preset *preset = NULL;
-	__maybe_unused int err;
 
 	LOG_DBG("index %d name_len %zu", index, len);
 
@@ -1231,8 +1215,7 @@ static int set_preset_name(uint8_t index, const char *name, size_t len)
 	}
 
 	/* Abort if there is no preset in requested index range */
-	err = preset_foreach(index, BT_HAS_PRESET_INDEX_LAST, preset_found, &preset);
-	__ASSERT(err != -EINVAL, "preset_foreach returned %d", err);
+	preset_foreach(index, BT_HAS_PRESET_INDEX_LAST, preset_found, &preset);
 
 	if (preset == NULL) {
 		return -ENOENT;
@@ -1639,25 +1622,20 @@ struct bt_has_preset_foreach_data {
 	void *user_data;
 };
 
-static bool bt_has_preset_foreach_func(const struct has_preset *preset, void *user_data)
+static uint8_t bt_has_preset_foreach_func(const struct has_preset *preset, void *user_data)
 {
 	const struct bt_has_preset_foreach_data *data = user_data;
 
 	return data->func(preset->index, preset->properties, preset->name, data->user_data);
 }
 
-int bt_has_preset_foreach(uint8_t index, bt_has_preset_func_t func, void *user_data)
+void bt_has_preset_foreach(uint8_t index, bt_has_preset_func_t func, void *user_data)
 {
 	uint8_t start_index, end_index;
 	struct bt_has_preset_foreach_data data = {
 		.func = func,
 		.user_data = user_data,
 	};
-
-	if (func == NULL) {
-		LOG_DBG("func is NULL");
-		return -EINVAL;
-	}
 
 	if (index == BT_HAS_PRESET_INDEX_NONE) {
 		start_index = BT_HAS_PRESET_INDEX_FIRST;
@@ -1666,7 +1644,7 @@ int bt_has_preset_foreach(uint8_t index, bt_has_preset_func_t func, void *user_d
 		start_index = end_index = index;
 	}
 
-	return preset_foreach(start_index, end_index, bt_has_preset_foreach_func, &data);
+	preset_foreach(start_index, end_index, bt_has_preset_foreach_func, &data);
 }
 
 int bt_has_preset_active_set(uint8_t index)

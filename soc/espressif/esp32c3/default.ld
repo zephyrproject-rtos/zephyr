@@ -166,9 +166,9 @@ SECTIONS
      * 15. Flash offset (LMA) for start of IROM region
      * 16. Size of IROM region
      */
-    LONG(ADDR(.text))
-    LONG(LOADADDR(.text))
-    LONG(SIZEOF(.text))
+    LONG(ADDR(.flash.text))
+    LONG(LOADADDR(.flash.text))
+    LONG(SIZEOF(.flash.text))
 
     /* DROM metadata:
      * 17. Destination address (VMA) for DROM region
@@ -366,16 +366,12 @@ SECTIONS
     *libzephyr.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_wrap.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_ops.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:spi_flash_os_func_app.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:spi_flash_os_func_noos.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_mmap.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_flash_api.*(.literal .literal.* .text .text.*)
 
     /* [mapping:esp_system] */
     *libzephyr.a:esp_err.*(.literal .literal.* .text .text.*)
     *(.literal.esp_system_abort .text.esp_system_abort)
-    *(.literal.esp_restart_noos .text.esp_restart_noos)
-    *(.literal.esp_system_reset_modules_on_exit .text.esp_system_reset_modules_on_exit)
 
     /* [mapping:esp_hw_support] */
     *(.literal.esp_cpu_stall .text.esp_cpu_stall)
@@ -400,13 +396,11 @@ SECTIONS
 
     /* [mapping:esp_rom] */
     *libzephyr.a:esp_rom_spiflash.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:esp_rom_sys.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_rom_systimer.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_rom_wdt.*(.literal .literal.* .text .text.*)
 
     /* [mapping:esp_mm] */
-    *libzephyr.a:esp_cache_utils.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:esp_cache_msync.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_cache.*(.literal .literal.* .text .text.*)
     *libzephyr.a:cache_utils.*(.literal .text .literal.* .text.*)
 
     *libzephyr.a:bootloader_random*.*(.literal.bootloader_random_disable .text.bootloader_random_disable)
@@ -598,14 +592,11 @@ SECTIONS
     *libzephyr.a:spi_flash_wrap.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_ops.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_qio_mode.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:spi_flash_os_func_app.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:spi_flash_os_func_noos.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_mmap.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .srodata .srodata.*)
 
     /* [mapping:esp_mm] */
-    *libzephyr.a:esp_cache_utils.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:esp_cache_msync.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:esp_cache.*(.rodata .rodata.* .srodata .srodata.*)
 
     /* [mapping:esp_hw_support] */
     *(.rodata.esp_cpu_stall)
@@ -626,8 +617,6 @@ SECTIONS
     /* [mapping:esp_system] */
     *libzephyr.a:esp_err.*(.rodata .rodata.*)
     *(.rodata.esp_system_abort)
-    *(.rodata.esp_restart_noos)
-    *(.rodata.esp_system_reset_modules_on_exit)
 
     *libphy.a:(.rodata .rodata.* .srodata .srodata.*)
 
@@ -638,12 +627,6 @@ SECTIONS
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)
     . = ALIGN(4);
-
-    _btdm_data_start = ABSOLUTE(.);
-    *libbtdm_app.a:(.data .data.*)
-    . = ALIGN(4);
-    _btdm_data_end = ABSOLUTE(.);
-
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #ifdef CONFIG_ESP_SIMPLE_BOOT
@@ -673,8 +656,8 @@ SECTIONS
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif /* CONFIG_ESP_SIMPLE_BOOT */
 
-  #include <zephyr/linker/common-ram.ld>
   #include <snippets-data-sections.ld>
+  #include <zephyr/linker/common-ram.ld>
   #include <snippets-ram-sections.ld>
   #include <zephyr/linker/cplusplus-ram.ld>
 
@@ -697,11 +680,6 @@ SECTIONS
     . = ALIGN(4);
     *(.noinit)
     *(.noinit.*)
-#ifdef CONFIG_LLEXT
-    *(.llext_heap)
-    *(.llext_ext_heap)
-    *(.llext_metadata_heap)
-#endif /* CONFIG_LLEXT */
     . = ALIGN(4);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
@@ -745,19 +723,19 @@ SECTIONS
 
   /* --- END OF DRAM --- */
 
-  /* --- START OF .text --- */
+  /* --- START OF .flash.text --- */
 
-  .text_dummy (NOLOAD):
+  .flash.text_dummy (NOLOAD):
   {
     . = ALIGN(CACHE_ALIGN);
   } GROUP_LINK_IN(ROMABLE_REGION)
 
   /* Symbols used during the application memory mapping */
-  _image_irom_start = LOADADDR(.text);
-  _image_irom_size = SIZEOF(.text);
-  _image_irom_vaddr = ADDR(.text);
+  _image_irom_start = LOADADDR(.flash.text);
+  _image_irom_size = SIZEOF(.flash.text);
+  _image_irom_vaddr = ADDR(.flash.text);
 
-  .text : ALIGN(CACHE_ALIGN)
+  .flash.text : ALIGN(CACHE_ALIGN)
   {
     _stext = .;
     _instruction_reserved_start = ABSOLUTE(.);
@@ -802,7 +780,7 @@ SECTIONS
 
   } GROUP_DATA_LINK_IN(FLASH_CODE_REGION, ROMABLE_REGION)
 
-  /* --- END OF .text --- */
+  /* --- END OF .flash.text --- */
 
   /* --- START OF .rodata --- */
 
@@ -816,7 +794,7 @@ SECTIONS
   {
     /* Spacer in the IROM address to avoid interfering with the DROM address
      * because DROM and IROM regions share the same address space */
-    . += SIZEOF(.text);
+    . += SIZEOF(.flash.text);
     . = ALIGN(CACHE_ALIGN);
   } GROUP_LINK_IN(RODATA_REGION)
 

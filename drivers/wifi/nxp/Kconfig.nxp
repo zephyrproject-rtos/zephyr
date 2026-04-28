@@ -591,22 +591,6 @@ config NXP_WIFI_MAX_RESCAN_LIMIT
 	help
 	  This option sets the max scan limit.
 
-config NXP_WIFI_SCHED_SCAN_DEFAULT_ITERATION
-	int "Scheduled scan default iteration when planned iteration is 0"
-	default 6
-	help
-	  Provide limited iteration when the sched_scan plan iteration is 0.
-	  After sched_scan stop, the hostap will re-trigger a sched_scan.
-	  This is to avoid unexpected infinite scan in some corner cases.
-	  Set to 0 to use infinite scan.
-
-config NXP_WIFI_SCHED_SCAN_MIN_INTERVAL
-	int "Scheduled scan minimum interval for each scan"
-	default 30
-	range 1 65535
-	help
-	  Minimum intreval in seconds of sched_scan plan.
-	  This is to save power for some use cases.
 endmenu
 
 config NXP_WIFI_WMM_UAPSD
@@ -879,20 +863,6 @@ config NXP_WIFI_WLS
 	depends on NXP_WIFI_CSI
 	help
 	  Enable/Disable Wireless Location Service(WLS) feature.
-
-config NXP_WIFI_MAX_CSI_LOCAL_BUF
-	int "Max csi local buffer entry"
-	default 20
-	depends on NXP_WIFI_CSI
-	help
-	  This option sets the max csi local buffer entry.
-
-config NXP_WIFI_CSI_LOCAL_BUF_ENTRY_SIZE
-	int "Max size of every csi local buffer entry"
-	default 768
-	depends on NXP_WIFI_CSI
-	help
-	  This option sets the size of every csi local buffer entry.
 
 config NXP_WIFI_RESET
 	bool "Wi-Fi reset"

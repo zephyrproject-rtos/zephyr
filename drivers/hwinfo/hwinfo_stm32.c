@@ -8,7 +8,7 @@
 #include <stm32_bitops.h>
 #include <stm32_ll_utils.h>
 #include <stm32_ll_rcc.h>
-#if defined(CONFIG_SOC_SERIES_STM32C5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
 #include <zephyr/cache.h>
 #endif /* CONFIG_SOC_SERIES_STM32H5X */
 #include <stm32_ll_pwr.h>
@@ -40,22 +40,13 @@ struct stm32_uid {
 	uint32_t id[3];
 };
 
-static void ll_hwinfo_force_clear_reset_flags(void)
-{
-#ifdef CONFIG_STM32_HAL2
-	LL_RCC_ForceClearResetFlags();
-#else /* CONFIG_STM32_HAL2 */
-	LL_RCC_ClearResetFlags();
-#endif /* CONFIG_STM32_HAL2 */
-}
-
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	struct stm32_uid dev_id;
 
-#if defined(CONFIG_SOC_SERIES_STM32C5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
 	sys_cache_instr_disable();
-#endif /* CONFIG_SOC_SERIES_STM32C5X || CONFIG_SOC_SERIES_STM32H5X */
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 	/* zephyr-keep-sorted-start */
 	dev_id.id[0] = sys_cpu_to_be32(STM32_UID_WORD_0);
@@ -63,9 +54,9 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	dev_id.id[2] = sys_cpu_to_be32(STM32_UID_WORD_2);
 	/* zephyr-keep-sorted-stop */
 
-#if defined(CONFIG_SOC_SERIES_STM32C5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
 	sys_cache_instr_enable();
-#endif /* CONFIG_SOC_SERIES_STM32C5X || CONFIG_SOC_SERIES_STM32H5X */
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 	if (length > sizeof(dev_id.id)) {
 		length = sizeof(dev_id.id);
@@ -100,17 +91,17 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 {
 	uint32_t flags = 0;
 
-#if defined(RCC_FLAG_SFTRST) || defined(RCC_RSR_SFTRSTF)
+#if defined(RCC_FLAG_SFTRST)
 	if (LL_RCC_IsActiveFlag_SFTRST()) {
 		flags |= RESET_SOFTWARE;
 	}
 #endif
-#if defined(RCC_FLAG_PINRST) || defined(RCC_RSR_PINRSTF)
+#if defined(RCC_FLAG_PINRST)
 	if (LL_RCC_IsActiveFlag_PINRST()) {
 		flags |= RESET_PIN;
 	}
 #endif
-#if defined(RCC_FLAG_IWDGRST) || (defined(RCC_RSR_IWDGRSTF) && !defined(CONFIG_SOC_SERIES_STM32H7X))
+#if defined(RCC_FLAG_IWDGRST)
 	if (LL_RCC_IsActiveFlag_IWDGRST()) {
 		flags |= RESET_WATCHDOG;
 	}
@@ -125,7 +116,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		flags |= RESET_WATCHDOG;
 	}
 #endif
-#if defined(RCC_FLAG_WWDGRST) || (defined(RCC_RSR_WWDGRSTF) && !defined(CONFIG_SOC_SERIES_STM32H7X))
+#if defined(RCC_FLAG_WWDGRST)
 	if (LL_RCC_IsActiveFlag_WWDGRST()) {
 		flags |= RESET_WATCHDOG;
 	}
@@ -145,7 +136,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		flags |= RESET_SECURITY;
 	}
 #endif
-#if defined(RCC_FLAG_BORRST) || defined(RCC_RSR_BORRSTF)
+#if defined(RCC_FLAG_BORRST)
 	if (LL_RCC_IsActiveFlag_BORRST()) {
 		flags |= RESET_BROWNOUT;
 	}
@@ -160,7 +151,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		flags |= RESET_POR;
 	}
 #endif
-#if defined(RCC_FLAG_LPWRRST) || defined(RCC_CSR_LPWRRSTF)
+#if defined(RCC_FLAG_LPWRRST)
 	if (LL_RCC_IsActiveFlag_LPWRRST()) {
 		flags |= RESET_LOW_POWER_WAKE;
 	}
@@ -190,7 +181,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	if (LL_PWR_IsActiveFlag_C1SB()) {
 		flags |= RESET_LOW_POWER_WAKE;
 	}
-#elif defined(PWR_FLAG_SB) || defined(PWR_FLAG_SBF) || defined(PWR_PMSR_SBF)
+#elif defined(PWR_FLAG_SB) || defined(PWR_FLAG_SBF)
 	if (LL_PWR_IsActiveFlag_SB()) {
 		flags |= RESET_LOW_POWER_WAKE;
 	}
@@ -203,7 +194,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 
 int z_impl_hwinfo_clear_reset_cause(void)
 {
-	ll_hwinfo_force_clear_reset_flags();
+	LL_RCC_ClearResetFlags();
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CORE_CM4)
 	LL_PWR_ClearFlag_CPU2();
@@ -221,7 +212,7 @@ int z_impl_hwinfo_clear_reset_cause(void)
 	LL_PWR_ClearFlag_C1STOP_C1STB();
 #elif defined(CONFIG_SOC_SERIES_STM32U0X) && defined(PWR_FLAG_SB)
 	LL_PWR_ClearFlag_CSB();
-#elif defined(PWR_FLAG_SB) || defined(PWR_PMSR_SBF)
+#elif defined(PWR_FLAG_SB)
 	LL_PWR_ClearFlag_SB();
 #endif /* PWR_FLAG_SB */
 

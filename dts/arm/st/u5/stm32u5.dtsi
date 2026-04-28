@@ -24,7 +24,6 @@
 
 / {
 	chosen {
-		zephyr,crc = &crc;
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
 	};
@@ -156,7 +155,6 @@
 	mcos {
 		mco1: mco1 {
 			compatible = "st,stm32-clock-mco";
-			clock-names = "clksel";
 			status = "disabled";
 		};
 	};
@@ -177,42 +175,6 @@
 				erase-block-size = <8192>;
 				/* maximum erase time(ms) for a 8K sector */
 				max-erase-time = <5>;
-			};
-
-			st_nvm_user_otp: flash@bfa0000 {
-				compatible = "st,stm32-nvm-otp";
-				reg = <0x0bfa0000 512>;
-				status = "disabled";
-			};
-
-			/* Undocumented/unnamed RO area */
-			flash@bfa0500 {
-				compatible = "st,stm32-nvm-otp";
-				reg = <0x0bfa0500 6912>;
-
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					ts_cal1_otp: ts-cal1@210 {
-						reg = <0x210 0x2>;
-						#nvmem-cell-cells = <0>;
-						read-only;
-					};
-
-					ts_cal2_otp: ts-cal2@242 {
-						reg = <0x242 0x2>;
-						#nvmem-cell-cells = <0>;
-						read-only;
-					};
-
-					vrefint_otp: vrefint@2a5 {
-						reg = <0x2a5 0x2>;
-						#nvmem-cell-cells = <0>;
-						read-only;
-					};
-				};
 			};
 		};
 
@@ -907,7 +869,6 @@
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;
 			st,adc-has-differential-support;
-			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -1045,14 +1006,6 @@
 					     <&gpiob 10 STM32_PWR_WKUP_EVT_SRC_2>;
 			};
 		};
-
-		crc: crc@40023000 {
-			compatible = "st,stm32-crc";
-			reg = <0x40023000 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB1, 12)>;
-			resets = <&rctl STM32_RESET(AHB1, 12)>;
-			status = "disabled";
-		};
 	};
 
 	swj_port: swj_port {
@@ -1067,8 +1020,8 @@
 
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
-		nvmem-cells = <&ts_cal1_otp>, <&ts_cal2_otp>;
-		nvmem-cell-names = "TS_CAL1", "TS_CAL2";
+		ts-cal1-addr = <0x0bfa0710>;
+		ts-cal2-addr = <0x0bfa0742>;
 		ts-cal1-temp = <30>;
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3000>;
@@ -1079,7 +1032,7 @@
 
 	vref1: vref_1 {
 		compatible = "st,stm32-vref";
-		nvmem-cells = <&vrefint_otp>;
+		vrefint-cal-addr = <0x0bfa07a5>;
 		vrefint-cal-mv = <3000>;
 		vrefint-cal-resolution = <14>;
 		io-channels = <&adc1 0>;
@@ -1088,7 +1041,7 @@
 
 	vref4: vref_4 {
 		compatible = "st,stm32-vref";
-		nvmem-cells = <&vrefint_otp>;
+		vrefint-cal-addr = <0x0bfa07a5>;
 		vrefint-cal-mv = <3000>;
 		vrefint-cal-resolution = <14>;
 		io-channels = <&adc4 0>;

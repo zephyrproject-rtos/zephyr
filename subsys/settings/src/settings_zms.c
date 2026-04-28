@@ -19,9 +19,9 @@
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 #if DT_HAS_CHOSEN(zephyr_settings_partition)
-#define SETTINGS_PARTITION DT_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
+#define SETTINGS_PARTITION DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
 #else
-#define SETTINGS_PARTITION PARTITION_ID(storage_partition)
+#define SETTINGS_PARTITION FIXED_PARTITION_ID(storage_partition)
 #endif
 
 struct settings_zms_read_fn_arg {
@@ -38,13 +38,11 @@ static void *settings_zms_storage_get(struct settings_store *cs);
 static int settings_zms_get_last_hash_ids(struct settings_zms *cf);
 static ssize_t settings_zms_get_val_len(struct settings_store *cs, const char *name);
 
-static const struct settings_store_itf settings_zms_itf = {
-	.csi_load = settings_zms_load,
-	.csi_load_one = settings_zms_load_one,
-	.csi_save = settings_zms_save,
-	.csi_storage_get = settings_zms_storage_get,
-	.csi_get_val_len = settings_zms_get_val_len
-};
+static struct settings_store_itf settings_zms_itf = {.csi_load = settings_zms_load,
+						     .csi_load_one = settings_zms_load_one,
+						     .csi_save = settings_zms_save,
+						     .csi_storage_get = settings_zms_storage_get,
+						     .csi_get_val_len = settings_zms_get_val_len};
 
 static ssize_t settings_zms_read_fn(void *back_end, void *data, size_t len)
 {

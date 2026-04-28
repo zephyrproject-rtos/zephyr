@@ -8,9 +8,6 @@ from typing import List, Type
 
 from west.commands import WestCommand
 
-class ZephyrBlobException(Exception):
-    pass
-
 class ZephyrBlobFetcher(ABC):
 
     @staticmethod

@@ -9,7 +9,6 @@
 
 #include <stdint.h>
 
-#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys_clock.h>

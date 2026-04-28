@@ -4,6 +4,3 @@ board:
   vendor: nxp
   socs:
   - name: mcxa577
-    variants:
-    - name: ns
-    - name: t1s

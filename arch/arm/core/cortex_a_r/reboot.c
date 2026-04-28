@@ -14,7 +14,6 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/linker/linker-defs.h>
-#include <zephyr/arch/common/init.h>
 
 #if defined(CONFIG_AARCH32_ARMV8_R)
 
@@ -47,7 +46,7 @@ void __weak relocate_vector_table(void)
 	!defined(CONFIG_XIP) && (CONFIG_SRAM_BASE_ADDRESS != 0)
 	write_sctlr(read_sctlr() & ~HIVECS);
 	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
-	(void)arch_early_memcpy(VECTOR_ADDRESS, _vector_start, vector_size);
+	(void)memcpy(VECTOR_ADDRESS, _vector_start, vector_size);
 #endif
 }
 

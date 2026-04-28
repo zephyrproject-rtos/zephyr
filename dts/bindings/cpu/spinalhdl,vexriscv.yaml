@@ -5,4 +5,4 @@ description: VexRiscv core
 
 compatible: "spinalhdl,vexriscv"
 
-include: riscv-common.yaml
+include: riscv,cpus.yaml

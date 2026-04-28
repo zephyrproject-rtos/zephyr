@@ -22,7 +22,6 @@ supported:
   - dma
   - crypto
   - retained_mem
-  - netif:wifi
 testing:
   ignore_tags:
     - bluetooth

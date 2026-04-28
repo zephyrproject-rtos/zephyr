@@ -23,6 +23,4 @@ supported:
   - usbd
   - rtc
   - can
-  - dac
-  - adc
 vendor: st

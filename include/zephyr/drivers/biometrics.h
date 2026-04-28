@@ -140,91 +140,105 @@ struct biometric_capture_result {
 };
 
 /**
- * @def_driverbackendgroup{Biometrics,biometrics_interface}
- * @{
+ * @cond INTERNAL_HIDDEN
+ *
+ * For internal use only, skip these in public documentation.
  */
 
 /**
- * @brief Callback API to get sensor capabilities.
+ * @typedef biometric_api_get_capabilities
+ * @brief Callback API to get sensor capabilities
  * See biometric_get_capabilities() for argument description
  */
 typedef int (*biometric_api_get_capabilities)(const struct device *dev,
 					      struct biometric_capabilities *caps);
 
 /**
- * @brief Callback API to set a sensor attribute.
- * See biometric_attr_set() for argument description.
+ * @typedef biometric_api_attr_set
+ * @brief Callback API to set a sensor attribute
+ * See biometric_attr_set() for argument description
  */
 typedef int (*biometric_api_attr_set)(const struct device *dev, enum biometric_attribute attr,
 				      int32_t val);
 
 /**
- * @brief Callback API to get a sensor attribute.
+ * @typedef biometric_api_attr_get
+ * @brief Callback API to get a sensor attribute
  * See biometric_attr_get() for argument description
  */
 typedef int (*biometric_api_attr_get)(const struct device *dev, enum biometric_attribute attr,
 				      int32_t *val);
 
 /**
- * @brief Callback API to start enrollment.
+ * @typedef biometric_api_enroll_start
+ * @brief Callback API to start enrollment
  * See biometric_enroll_start() for argument description
  */
 typedef int (*biometric_api_enroll_start)(const struct device *dev, uint16_t template_id);
 
 /**
- * @brief Callback API to capture enrollment samples.
+ * @typedef biometric_api_enroll_capture
+ * @brief Callback API to capture enrollment samples
  * See biometric_enroll_capture() for argument description
  */
 typedef int (*biometric_api_enroll_capture)(const struct device *dev, k_timeout_t timeout,
 					    struct biometric_capture_result *result);
 
 /**
- * @brief Callback API to finalize enrollment.
+ * @typedef biometric_api_enroll_finalize
+ * @brief Callback API to finalize enrollment
  * See biometric_enroll_finalize() for argument description
  */
 typedef int (*biometric_api_enroll_finalize)(const struct device *dev);
 
 /**
- * @brief Callback API to abort enrollment.
+ * @typedef biometric_api_enroll_abort
+ * @brief Callback API to abort enrollment
  * See biometric_enroll_abort() for argument description
  */
 typedef int (*biometric_api_enroll_abort)(const struct device *dev);
 
 /**
- * @brief Callback API to store template.
+ * @typedef biometric_api_template_store
+ * @brief Callback API to store template
  * See biometric_template_store() for argument description
  */
 typedef int (*biometric_api_template_store)(const struct device *dev, uint16_t id,
 					    const uint8_t *data, size_t size);
 
 /**
- * @brief Callback API to read template data.
+ * @typedef biometric_api_template_read
+ * @brief Callback API to read template data
  * See biometric_template_read() for argument description
  */
 typedef int (*biometric_api_template_read)(const struct device *dev, uint16_t id, uint8_t *data,
 					   size_t size);
 
 /**
- * @brief Callback API to delete template.
+ * @typedef biometric_api_template_delete
+ * @brief Callback API to delete template
  * See biometric_template_delete() for argument description
  */
 typedef int (*biometric_api_template_delete)(const struct device *dev, uint16_t id);
 
 /**
- * @brief Callback API to delete all templates.
+ * @typedef biometric_api_template_delete_all
+ * @brief Callback API to delete all templates
  * See biometric_template_delete_all() for argument description
  */
 typedef int (*biometric_api_template_delete_all)(const struct device *dev);
 
 /**
- * @brief Callback API to list template IDs.
+ * @typedef biometric_api_template_list
+ * @brief Callback API to list template IDs
  * See biometric_template_list() for argument description
  */
 typedef int (*biometric_api_template_list)(const struct device *dev, uint16_t *ids,
 					   size_t max_count, size_t *actual_count);
 
 /**
- * @brief Callback API to start matching operation.
+ * @typedef biometric_api_match
+ * @brief Callback API to start matching operation
  * See biometric_match() for argument description
  */
 typedef int (*biometric_api_match)(const struct device *dev, enum biometric_match_mode mode,
@@ -232,75 +246,34 @@ typedef int (*biometric_api_match)(const struct device *dev, enum biometric_matc
 				   struct biometric_match_result *result);
 
 /**
- * @brief Callback API to control LED state.
+ * @typedef biometric_api_led_control
+ * @brief Callback API to control LED state
  * See biometric_led_control() for argument description
  */
 typedef int (*biometric_api_led_control)(const struct device *dev, enum biometric_led_state state);
 
 /**
- * @driver_ops{Biometrics}
+ * @brief Biometric driver API
  */
 __subsystem struct biometric_driver_api {
-	/**
-	 * @driver_ops_mandatory @copybrief biometric_get_capabilities
-	 */
 	biometric_api_get_capabilities get_capabilities;
-	/**
-	 * @driver_ops_optional @copybrief biometric_attr_set
-	 */
 	biometric_api_attr_set attr_set;
-	/**
-	 * @driver_ops_optional @copybrief biometric_attr_get
-	 */
 	biometric_api_attr_get attr_get;
-	/**
-	 * @driver_ops_mandatory @copybrief biometric_enroll_start
-	 */
 	biometric_api_enroll_start enroll_start;
-	/**
-	 * @driver_ops_mandatory @copybrief biometric_enroll_capture
-	 */
 	biometric_api_enroll_capture enroll_capture;
-	/**
-	 * @driver_ops_mandatory @copybrief biometric_enroll_finalize
-	 */
 	biometric_api_enroll_finalize enroll_finalize;
-	/**
-	 * @driver_ops_optional @copybrief biometric_enroll_abort
-	 */
 	biometric_api_enroll_abort enroll_abort;
-	/**
-	 * @driver_ops_optional @copybrief biometric_template_store
-	 */
 	biometric_api_template_store template_store;
-	/**
-	 * @driver_ops_optional @copybrief biometric_template_read
-	 */
 	biometric_api_template_read template_read;
-	/**
-	 * @driver_ops_mandatory @copybrief biometric_template_delete
-	 */
 	biometric_api_template_delete template_delete;
-	/**
-	 * @driver_ops_optional @copybrief biometric_template_delete_all
-	 */
 	biometric_api_template_delete_all template_delete_all;
-	/**
-	 * @driver_ops_optional @copybrief biometric_template_list
-	 */
 	biometric_api_template_list template_list;
-	/**
-	 * @driver_ops_mandatory @copybrief biometric_match
-	 */
 	biometric_api_match match;
-	/**
-	 * @driver_ops_optional @copybrief biometric_led_control
-	 */
 	biometric_api_led_control led_control;
 };
 
 /**
- * @}
+ * @endcond
  */
 
 /**
@@ -485,7 +458,6 @@ static inline int z_impl_biometric_enroll_finalize(const struct device *dev)
  *
  * @retval 0 on success
  * @retval -EALREADY No enrollment in progress
- * @retval -ENOSYS Not supported by device
  * @retval -errno code on failure
  */
 __syscall int biometric_enroll_abort(const struct device *dev);
@@ -609,7 +581,6 @@ static inline int z_impl_biometric_template_delete(const struct device *dev, uin
  * @param dev Pointer to the biometric device
  *
  * @retval 0 Success
- * @retval -ENOSYS Not supported by device
  * @retval -errno Negative errno code on failure
  */
 __syscall int biometric_template_delete_all(const struct device *dev);

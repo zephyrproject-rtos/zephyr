@@ -530,13 +530,10 @@ TESTDATA_6 = [
     (
         {
             'returncode': 0,
-            'stdout': (
-                '{\"ZEPHYR_TOOLCHAIN_VARIANT\": \"dummy toolchain\", '
-                '\"TOOLCHAIN_VARIANT_COMPILER\": \"gnu\"}'
-            )
+            'stdout': '{\"ZEPHYR_TOOLCHAIN_VARIANT\": \"dummy toolchain\"}'
         },
         None,
-        'Using \'dummy toolchain/gnu\' toolchain variant.'
+        'Using \'dummy toolchain\' toolchain.'
     ),
     (
         {'returncode': 1, "returnmsg": "something went wrong"},

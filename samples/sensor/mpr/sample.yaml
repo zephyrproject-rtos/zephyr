@@ -1,0 +1,9 @@
+sample:
+  name: MPR Pressure Sensor
+tests:
+  sample.sensor.mpr:
+    harness: sensor
+    tags: sensors
+    platform_allow: arduino_due
+    integration_platforms:
+      - arduino_due

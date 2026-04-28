@@ -221,59 +221,33 @@ static uint32_t get_pllsrc_frequency(void)
 }
 
 __unused
-static uint32_t get_startup_hclk_frequency(void)
+static uint32_t get_hclk_frequency(void)
 {
 	uint32_t sysclk = 0;
 
+	/* Get the current system clock source */
 	switch (LL_RCC_GetSysClkSource()) {
+	case LL_RCC_SYS_CLKSOURCE_STATUS_HSI:
+		sysclk = STM32_HSI_FREQ/STM32_HSI_DIVISOR;
+		break;
 	case LL_RCC_SYS_CLKSOURCE_STATUS_CSI:
 		sysclk = STM32_CSI_FREQ;
-		break;
-	case LL_RCC_SYS_CLKSOURCE_STATUS_HSI:
-		/* Use HAL define instead of STM32_HSI_FREQ, which can be 0 when node is disabled */
-		sysclk = HSI_VALUE;
 		break;
 	case LL_RCC_SYS_CLKSOURCE_STATUS_HSE:
 		sysclk = STM32_HSE_FREQ;
 		break;
+#if defined(STM32_PLL_ENABLED)
 	case LL_RCC_SYS_CLKSOURCE_STATUS_PLL1:
-#ifdef CONFIG_BOOTLOADER_MCUBOOT
-		/* When using a bootloader, we can't rely on the #define values as the bootloader
-		 * may have configured the clock tree differently. Instead, we must read the actual
-		 * clock configuration from the RCC registers to determine the current HCLK
-		 * frequency.
-		 */
-		return HAL_RCC_GetHCLKFreq();
-#else
-		sysclk = get_pllsrc_frequency();
+		sysclk = get_pllout_frequency(get_pllsrc_frequency(),
+					      STM32_PLL_M_DIVISOR,
+					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_FRACN_VALUE,
+					      STM32_PLL_P_DIVISOR);
 		break;
-#endif
-	default:
-		__ASSERT(0, "Unexpected startup freq");
-		return 0;
+#endif /* STM32_PLL_ENABLED */
 	}
 
-	return sysclk / STM32_HPRE;
-}
-
-static uint32_t get_sysclk_frequency(void)
-{
-#if defined(STM32_SYSCLK_SRC_PLL)
-	return get_pllout_frequency(get_pllsrc_frequency(),
-				    STM32_PLL_M_DIVISOR,
-				    STM32_PLL_N_MULTIPLIER,
-				    STM32_PLL_FRACN_VALUE,
-				    STM32_PLL_R_DIVISOR);
-#elif defined(STM32_SYSCLK_SRC_CSI)
-	return STM32_CSI_FREQ;
-#elif defined(STM32_SYSCLK_SRC_HSE)
-	return STM32_HSE_FREQ;
-#elif defined(STM32_SYSCLK_SRC_HSI)
-	return STM32_HSI_FREQ;
-#else
-	__ASSERT(0, "No SYSCLK Source configured");
-	return 0;
-#endif
+	return get_bus_clock(sysclk, STM32_HPRE);
 }
 
 #if !defined(CONFIG_CPU_CORTEX_M4)
@@ -282,11 +256,10 @@ static int32_t prepare_regulator_voltage_scale(void)
 {
 	/* Make sure to put the CPU in highest Voltage scale during clock configuration */
 	/* Highest voltage is SCALE0 */
-#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	while (LL_PWR_IsActiveFlag_VOSRDY() == 0) {
 #else
-	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
 	while (LL_PWR_IsActiveFlag_VOS() == 0) {
 #endif
 	}
@@ -558,7 +531,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 	case STM32_SRC_SYSCLK:
-		*rate = get_sysclk_frequency();
+		*rate = get_hclk_frequency();
 		break;
 #if defined(STM32_CKPER_ENABLED)
 	case STM32_SRC_CKPER:
@@ -784,9 +757,8 @@ static void set_up_fixed_clock_sources(void)
 		LL_RCC_HSE_Enable();
 		while (LL_RCC_HSE_IsReady() != 1) {
 		}
-
-#ifdef STM32_HSE_CSS
-		/* Enable HSE clock security system */
+		/* Check if we need to enable HSE clock security system or not */
+#if STM32_HSE_CSS
 		z_arm_nmi_set_handler(HAL_RCC_NMI_IRQHandler);
 		LL_RCC_HSE_EnableCSS();
 #endif /* STM32_HSE_CSS */
@@ -1137,9 +1109,6 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Configure Voltage scale to comply with the desired system frequency */
 	prepare_regulator_voltage_scale();
 
-	/* Current hclk value */
-	old_hclk_freq = get_startup_hclk_frequency();
-
 	/* Set up PLLs */
 	r = set_up_plls();
 	if (r < 0) {
@@ -1147,6 +1116,8 @@ int stm32_clock_control_init(const struct device *dev)
 		return r;
 	}
 
+	/* Current hclk value */
+	old_hclk_freq = get_hclk_frequency();
 	/* AHB is HCLK clock to configure */
 	new_hclk_freq = get_bus_clock(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
 				      STM32_HPRE);
@@ -1158,6 +1129,13 @@ int stm32_clock_control_init(const struct device *dev)
 	if (new_hclk_freq > old_hclk_freq) {
 		LL_SetFlashLatency(new_hclk_freq);
 	}
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	/*
+	 * The default Flash latency is 3 WS which is not enough,
+	 * set higher and correct later if needed
+	 */
+	LL_FLASH_SetLatency(LL_FLASH_LATENCY_6);
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
 	/* Preset the prescalers prior to choosing SYSCLK */
 	/* Prevents APB clock to go over limits */
@@ -1237,7 +1215,7 @@ void HAL_RCC_CSSCallback(void)
 {
 	stm32_hse_css_callback();
 }
-#endif /* STM32_HSE_CSS */
+#endif
 
 /**
  * @brief RCC device, note that priority is intentionally set to 1 so

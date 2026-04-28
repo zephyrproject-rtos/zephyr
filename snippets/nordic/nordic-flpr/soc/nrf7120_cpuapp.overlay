@@ -23,7 +23,7 @@
 	};
 };
 
-&uart30 {
+&uart00 {
 	status = "reserved";
 };
 

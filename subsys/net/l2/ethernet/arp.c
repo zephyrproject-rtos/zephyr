@@ -15,7 +15,6 @@ LOG_MODULE_REGISTER(net_arp, CONFIG_NET_ARP_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
-#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_mgmt.h>
 

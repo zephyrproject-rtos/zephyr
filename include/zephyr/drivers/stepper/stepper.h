@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @ingroup stepper_hw_driver
+ * @ingroup stepper_interface
  * @brief Main header file for stepper hardware driver API.
  */
 
@@ -26,7 +26,7 @@ extern "C" {
  * @defgroup stepper_interface Stepper
  * @ingroup io_interfaces
  *
- * @defgroup stepper_hw_driver Stepper Hardware Driver
+ * @defgroup stepper_hw_driver_interface Stepper Hardware Driver Interface
  * @brief Interfaces for stepper hardware drivers
  * @ingroup stepper_interface
  * @since 4.0
@@ -162,7 +162,9 @@ __syscall int stepper_enable(const struct device *dev);
 static inline int z_impl_stepper_enable(const struct device *dev)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	return DEVICE_API_GET(stepper, dev)->enable(dev);
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
+
+	return api->enable(dev);
 }
 
 /**
@@ -181,7 +183,9 @@ __syscall int stepper_disable(const struct device *dev);
 static inline int z_impl_stepper_disable(const struct device *dev)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	return DEVICE_API_GET(stepper, dev)->disable(dev);
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
+
+	return api->disable(dev);
 }
 
 /**
@@ -202,10 +206,12 @@ static inline int z_impl_stepper_set_micro_step_res(const struct device *dev,
 							enum stepper_micro_step_resolution res)
 {
 	__ASSERT_NO_MSG(dev != NULL);
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
+
 	if (!VALID_MICRO_STEP_RES(res)) {
 		return -EINVAL;
 	}
-	return DEVICE_API_GET(stepper, dev)->set_micro_step_res(dev, res);
+	return api->set_micro_step_res(dev, res);
 }
 
 /**
@@ -225,7 +231,9 @@ static inline int z_impl_stepper_get_micro_step_res(const struct device *dev,
 {
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(res != NULL);
-	return DEVICE_API_GET(stepper, dev)->get_micro_step_res(dev, res);
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
+
+	return api->get_micro_step_res(dev, res);
 }
 
 /**
@@ -246,11 +254,13 @@ static inline int z_impl_stepper_set_event_cb(const struct device *dev,
 						  stepper_event_cb_t cb, void *user_data)
 {
 	__ASSERT_NO_MSG(dev != NULL);
-	if (DEVICE_API_GET(stepper, dev)->set_event_cb == NULL) {
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
+
+	if (api->set_event_cb == NULL) {
 		return -ENOSYS;
 	}
 
-	return DEVICE_API_GET(stepper, dev)->set_event_cb(dev, cb, user_data);
+	return api->set_event_cb(dev, cb, user_data);
 }
 
 /**

@@ -7,7 +7,6 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
-  - counter
   - i2c
   - uart
   - gpio

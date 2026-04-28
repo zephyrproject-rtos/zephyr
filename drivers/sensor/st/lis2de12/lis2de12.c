@@ -192,31 +192,26 @@ static int lis2de12_sample_fetch_temp(const struct device *dev)
 static int lis2de12_sample_fetch(const struct device *dev,
 				 enum sensor_channel chan)
 {
-	int ret = 0;
-
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
-		ret = lis2de12_sample_fetch_accel(dev);
+		lis2de12_sample_fetch_accel(dev);
 		break;
 #if defined(CONFIG_LIS2DE12_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP:
-		ret = lis2de12_sample_fetch_temp(dev);
+		lis2de12_sample_fetch_temp(dev);
 		break;
 #endif
 	case SENSOR_CHAN_ALL:
-		ret = lis2de12_sample_fetch_accel(dev);
-		if (ret != 0) {
-			break;
-		}
+		lis2de12_sample_fetch_accel(dev);
 #if defined(CONFIG_LIS2DE12_ENABLE_TEMP)
-		ret = lis2de12_sample_fetch_temp(dev);
+		lis2de12_sample_fetch_temp(dev);
 #endif
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	return ret;
+	return 0;
 }
 
 static inline void lis2de12_accel_convert(struct sensor_value *val, int raw_val,

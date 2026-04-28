@@ -443,9 +443,7 @@ void arch_cpu_idle(void)
 {
 	uint32_t cpu = arch_proc_id();
 
-#if defined(CONFIG_TRACING)
 	sys_trace_idle();
-#endif
 
 	/*
 	 * unlock and invalidate icache if clock gating is allowed

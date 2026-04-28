@@ -10,4 +10,3 @@ Tools and IDEs
    coccinelle.rst
    stm32cubeide.rst
    vscode.rst
-   workbench_for_zephyr.rst

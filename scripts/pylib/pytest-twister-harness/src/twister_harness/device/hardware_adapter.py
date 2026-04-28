@@ -51,15 +51,13 @@ class HardwareAdapter(DeviceAdapter):
 
         command = [
             self.west,
-            self.device_config.west_flash_cmd or 'flash',
+            'flash',
             '--no-rebuild',
             '--build-dir',
             str(self.device_config.build_dir),
         ]
 
         command_extra_args = []
-        if self.device_config.west_flash_cmd == 'debug':
-            command_extra_args.append('--batch')
         if self.device_config.west_flash_extra_args:
             command_extra_args.extend(self.device_config.west_flash_extra_args)
 

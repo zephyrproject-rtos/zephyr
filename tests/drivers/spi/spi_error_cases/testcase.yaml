@@ -11,7 +11,6 @@ tests:
   drivers.spi.spi_error_cases:
     platform_allow:
       - nrf52840dk/nrf52840
-      - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf54h20dk/nrf54h20/cpurad

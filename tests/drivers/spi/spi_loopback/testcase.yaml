@@ -58,7 +58,6 @@ tests:
     platform_allow:
       - b_u585i_iot02a
       - nucleo_c071rb
-      - nucleo_c5a3zg
       - nucleo_g071rb
       - nucleo_g474re
       - nucleo_f207zg
@@ -97,7 +96,6 @@ tests:
     platform_allow:
       - b_u585i_iot02a
       - nucleo_c071rb
-      - nucleo_c5a3zg
       - nucleo_f207zg
       - nucleo_f429zi
       - nucleo_f746zg
@@ -124,7 +122,6 @@ tests:
     platform_allow:
       - b_u585i_iot02a
       - nucleo_c071rb
-      - nucleo_c5a3zg
       - nucleo_f207zg
       - nucleo_f429zi
       - nucleo_f746zg
@@ -140,30 +137,6 @@ tests:
       - nucleo_wb55rg
       - nucleo_wl55jc
       - stm32f3_disco
-      - stm32h573i_dk
-      - stm32n6570_dk/stm32n657xx/sb
-      - stm32u083c_dk
-    integration_platforms:
-      - stm32h573i_dk
-  drivers.spi.stm32_spi_rtio_dma.loopback:
-    extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-rtio-dma.conf"
-    platform_allow:
-      - b_u585i_iot02a
-      - nucleo_c071rb
-      - nucleo_c5a3zg
-      - nucleo_f207zg
-      - nucleo_f429zi
-      - nucleo_f746zg
-      - nucleo_f767zi
-      - nucleo_g474re
-      - nucleo_h743zi
-      - nucleo_h753zi
-      - nucleo_h745zi_q/stm32h745xx/m4
-      - nucleo_h745zi_q/stm32h745xx/m7
-      - nucleo_l152re
-      - nucleo_wba55cg
-      - nucleo_wb55rg
-      - nucleo_wl55jc
       - stm32h573i_dk
       - stm32n6570_dk/stm32n657xx/sb
       - stm32u083c_dk
@@ -448,7 +421,6 @@ tests:
     platform_allow:
       - ek_ra8p1/r7ka8p1kflcac/cm85
       - mck_ra8t2/r7ka8t2lflcac/cm85
-      - ek_ra8t2/r7ka8t2lflcac/cm85
     extra_args:
       - DTC_OVERLAY_FILE="boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
       - CONF_FILE="prj.conf" # to exclude "boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}.overlay"
@@ -459,7 +431,6 @@ tests:
     platform_allow:
       - ek_ra8p1/r7ka8p1kflcac/cm85
       - mck_ra8t2/r7ka8t2lflcac/cm85
-      - ek_ra8t2/r7ka8t2lflcac/cm85
     extra_configs:
       - CONFIG_SPI_ASYNC=n
     extra_args:

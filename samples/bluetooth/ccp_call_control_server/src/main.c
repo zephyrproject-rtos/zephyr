@@ -4,14 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
-#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/audio/ccp.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -163,7 +161,7 @@ static int init_ccp_call_control_server(void)
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_TBS_TECHNOLOGY_3G,
-		.supported_features = BT_TBS_FEATURE_HOLD,
+		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
 	};
 	int err;
 
@@ -195,7 +193,7 @@ static int init_ccp_call_control_server(void)
 			.authorization_required = false,
 			/* Set different technologies per bearer */
 			.technology = (i % BT_TBS_TECHNOLOGY_WCDMA) + 1,
-			.supported_features = BT_TBS_FEATURE_HOLD,
+			.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
 		};
 
 		snprintf(prov_name, sizeof(prov_name), "Telephone Bearer #%d", i);

@@ -277,8 +277,6 @@ struct tcpc_data {
 	tcpc_vconn_control_cb_t vconn_cb;
 	/* VCONN Discharge callback function */
 	tcpc_vconn_discharge_cb_t vconn_discharge_cb;
-	/* USB-C connector device passed to VCONN callbacks */
-	const struct device *usbc_dev;
 	/* Alert information */
 	struct alert_info alert_info;
 

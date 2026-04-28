@@ -22,6 +22,4 @@ supported:
   - netif:openthread
   - gpio
   - spi
-  - adc
-  - counter
 vendor: nordic

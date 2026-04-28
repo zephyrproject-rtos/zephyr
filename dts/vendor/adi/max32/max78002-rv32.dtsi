@@ -19,10 +19,6 @@
 	interrupts = <6 0>;
 };
 
-&mbox {
-	interrupts = <4 0>;
-};
-
 &uart3 {
 	interrupts = <21 0>;
 };

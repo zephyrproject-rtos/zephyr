@@ -355,23 +355,14 @@ static void w6100_iface_init(struct net_if *iface)
 			     sizeof(ctx->mac_addr),
 			     NET_LINK_ETHERNET);
 
-	ctx->iface = iface;
+	if (ctx->iface == NULL) {
+		ctx->iface = iface;
+	}
 
 	ethernet_init(iface);
 
 	/* Do not start the interface until PHY link is up */
 	net_if_carrier_off(iface);
-
-	/* Fetch initial link status */
-	w6100_update_link_status(dev);
-
-	k_thread_create(&ctx->thread, ctx->thread_stack,
-			CONFIG_ETH_W6100_RX_THREAD_STACK_SIZE,
-			w6100_thread,
-			(void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_ETH_W6100_RX_THREAD_PRIO),
-			0, K_NO_WAIT);
-	k_thread_name_set(&ctx->thread, "eth_w6100");
 }
 
 static enum ethernet_hw_caps w6100_get_capabilities(const struct device *dev)
@@ -407,6 +398,11 @@ static int w6100_set_config(const struct device *dev,
 			ctx->mac_addr[0], ctx->mac_addr[1],
 			ctx->mac_addr[2], ctx->mac_addr[3],
 			ctx->mac_addr[4], ctx->mac_addr[5]);
+
+		/* Register Ethernet MAC Address with the upper layer */
+		net_if_set_link_addr(ctx->iface, ctx->mac_addr,
+			sizeof(ctx->mac_addr),
+			NET_LINK_ETHERNET);
 
 		return 0;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
@@ -634,6 +630,14 @@ static int w6100_init(const struct device *dev)
 			LOG_ERR("Unable to read RTR register");
 			return -ENODEV;
 		}
+
+	k_thread_create(&ctx->thread, ctx->thread_stack,
+			CONFIG_ETH_W6100_RX_THREAD_STACK_SIZE,
+			w6100_thread,
+			(void *)dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_ETH_W6100_RX_THREAD_PRIO),
+			0, K_NO_WAIT);
+	k_thread_name_set(&ctx->thread, "eth_w6100");
 
 	LOG_INF("W6100 Initialized");
 

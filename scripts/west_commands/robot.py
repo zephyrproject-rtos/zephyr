@@ -16,8 +16,9 @@ class Robot(WestCommand):
     def __init__(self):
         super().__init__(
             'robot',
-            '',
-            description=EXPORT_DESCRIPTION,
+            # Keep this in sync with the string in west-commands.yml.
+            'run RobotFramework test suites',
+            EXPORT_DESCRIPTION,
             accepts_unknown_args=True)
 
         self.runner_key = 'robot-runner'  # in runners.yaml

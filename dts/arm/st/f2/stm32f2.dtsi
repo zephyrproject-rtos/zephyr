@@ -92,12 +92,6 @@
 				/* maximum erase time(ms) for a 128K sector */
 				max-erase-time = <4000>;
 			};
-
-			st_nvm_user_otp: flash@1fff7800 {
-				compatible = "st,stm32-nvm-otp";
-				reg = <0x1fff7800 512>;
-				status = "disabled";
-			};
 		};
 
 		rcc: rcc@40023800 {
@@ -387,7 +381,6 @@
 			st,adc-sequencer = "programmable";
 			st,adc-oversampler = "none";
 			st,adc-internal-regulator = "none";
-			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -404,7 +397,6 @@
 			st,adc-sequencer = "programmable";
 			st,adc-oversampler = "none";
 			st,adc-internal-regulator = "none";
-			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -421,7 +413,6 @@
 			st,adc-sequencer = "programmable";
 			st,adc-oversampler = "none";
 			st,adc-internal-regulator = "none";
-			st,adc-has-injected-support;
 			status = "disabled";
 		};
 

@@ -117,13 +117,6 @@ SECTIONS
   #include <zephyr/linker/rel-sections.ld>
   #include <zephyr/linker/llext-sections.ld>
 
-  .rtc.force_slow (NOLOAD) :
-  {
-    . = ALIGN(4);
-    *(.rtc.force_slow .rtc.force_slow.*)
-    . = ALIGN(4);
-  } GROUP_LINK_IN(RAMABLE_REGION)
-
   /* --- START OF IRAM --- */
 
   /* Send .iram0 code to iram */
@@ -212,7 +205,7 @@ SECTIONS
     _iram_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
 
-  .text : ALIGN(16)
+  .flash.text : ALIGN(16)
   {
     _stext = .;
     _text_start = ABSOLUTE(.);
@@ -408,11 +401,6 @@ SECTIONS
     . = ALIGN (8);
     *(.noinit)
     *(.noinit.*)
-#ifdef CONFIG_LLEXT
-    *(.llext_heap)
-    *(.llext_ext_heap)
-    *(.llext_metadata_heap)
-#endif /* CONFIG_LLEXT */
     . = ALIGN (8);
   } GROUP_LINK_IN(RAMABLE_REGION)
 

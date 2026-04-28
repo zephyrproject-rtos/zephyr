@@ -48,6 +48,7 @@ static void set_cmc_configuration(void)
 {
 	CMC_SetPowerModeProtection(MCXW7_CMC_ADDR, kCMC_AllowAllLowPowerModes);
 	CMC_LockPowerModeProtectionSetting(MCXW7_CMC_ADDR);
+	CMC_EnableDebugOperation(MCXW7_CMC_ADDR, IS_ENABLED(CONFIG_DEBUG));
 	CMC_ConfigFlashMode(MCXW7_CMC_ADDR, false, false, false);
 }
 

@@ -65,7 +65,6 @@ tests:
       or dt_label_with_parent_compat_enabled("storage_partition", "nordic,owned-partitions")))
     platform_exclude:
       - nrf54lm20dk/nrf54lm20a/cpuapp
-      - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
       - qemu_x86
@@ -97,7 +96,6 @@ tests:
   drivers.flash.common.nrf54lm20a:
     platform_allow:
       - nrf54lm20dk/nrf54lm20a/cpuapp
-      - nrf54lm20dk/nrf54lm20b/cpuapp
     harness_config:
       fixture: external_flash
   drivers.flash.common.tfm_ns:
@@ -193,16 +191,6 @@ tests:
       and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
     platform_exclude:
       - beagleconnect_freedom/cc1352p7
-      - nrf54lm20dk/nrf54lm20a/cpuapp
-      - nrf54lm20dk/nrf54lm20b/cpuapp
-    extra_args:
-      - CONFIG_TEST_FORCE_STORAGE_PARTITION=y
-  drivers.flash.common.test_storage_partition.nrf54lm20:
-    platform_allow:
-      - nrf54lm20dk/nrf54lm20a/cpuapp
-      - nrf54lm20dk/nrf54lm20b/cpuapp
-    harness_config:
-      fixture: external_flash
     extra_args:
       - CONFIG_TEST_FORCE_STORAGE_PARTITION=y
   drivers.flash.common.ra_ospi_b_nor:
@@ -264,14 +252,3 @@ tests:
       - EXTRA_DTC_OVERLAY_FILE="boards/mx25uw63_single_io.overlay;boards/mx25uw63_freq_1M.overlay"
     harness_config:
       fixture: gpio_loopback
-  drivers.flash.common.spi_nand.mikroe_flash_5_click:
-    platform_allow:
-      - frdm_mcxn947/mcxn947/cpu0
-    extra_args:
-      - SHIELD=mikroe_flash_5_click
-      - DTC_OVERLAY_FILE="./boards/mikroe_flash_5_click.overlay"
-      - EXTRA_CONF_FILE="./boards/mikroe_flash_5_click.conf"
-  drivers.flash.common.versalnet:
-    build_only: true
-    platform_allow:
-      - versalnet_rpu/amd_versalnet_rpu

@@ -289,30 +289,25 @@ static int lis2mdl_sample_fetch_temp(const struct device *dev)
 static int lis2mdl_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
-	int ret = 0;
-
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
 	case SENSOR_CHAN_MAGN_Y:
 	case SENSOR_CHAN_MAGN_Z:
 	case SENSOR_CHAN_MAGN_XYZ:
-		ret = lis2mdl_sample_fetch_mag(dev);
+		lis2mdl_sample_fetch_mag(dev);
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
-		ret = lis2mdl_sample_fetch_temp(dev);
+		lis2mdl_sample_fetch_temp(dev);
 		break;
 	case SENSOR_CHAN_ALL:
-		ret = lis2mdl_sample_fetch_mag(dev);
-		if (ret != 0) {
-			break;
-		}
-		ret = lis2mdl_sample_fetch_temp(dev);
+		lis2mdl_sample_fetch_mag(dev);
+		lis2mdl_sample_fetch_temp(dev);
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	return ret;
+	return 0;
 }
 
 static DEVICE_API(sensor, lis2mdl_driver_api) = {

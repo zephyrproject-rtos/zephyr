@@ -3,7 +3,7 @@
 
 # Common fields for SiFive RISC-V CPUs
 
-include: riscv-common.yaml
+include: riscv,cpus.yaml
 
 properties:
   hardware-exec-breakpoint-count:

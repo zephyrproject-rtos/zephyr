@@ -24,6 +24,5 @@ supported:
   - usbd
   - memc
   - can
-  - mbox
 ram: 128
 flash: 3072

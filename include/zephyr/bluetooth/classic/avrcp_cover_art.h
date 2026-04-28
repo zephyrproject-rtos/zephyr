@@ -29,15 +29,9 @@
 extern "C" {
 #endif
 
-/**
- * @struct bt_avrcp_ct
- * @brief AVRCP CT structure
- */
+/** @brief AVRCP CT structure */
 struct bt_avrcp_ct;
-/**
- * @struct bt_avrcp_tg
- * @brief AVRCP TG structure
- */
+/** @brief AVRCP TG structure */
 struct bt_avrcp_tg;
 
 /**

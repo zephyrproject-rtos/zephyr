@@ -35,7 +35,6 @@ LOG_MODULE_REGISTER(net_test, ICMP_LOG_LEVEL);
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/icmp.h>
-#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_offload.h>
@@ -335,7 +334,6 @@ static int offload_ping_handler(struct net_icmp_ctx *ctx,
 	struct net_ipv4_hdr *ipv4_hdr;
 	struct net_ipv6_hdr *ipv6_hdr;
 	net_icmp_handler_t resp_handler;
-	enum net_verdict verdict;
 	int ret;
 
 	ret = net_icmp_get_offload_rsp_handler(icmp_offload_ctx, &resp_handler);
@@ -375,13 +373,12 @@ static int offload_ping_handler(struct net_icmp_ctx *ctx,
 		ip_hdr.ipv6 = ipv6_hdr;
 	}
 
-	verdict = resp_handler(ctx, reply, &ip_hdr, icmp_hdr, user_data);
-	if (verdict != NET_OK) {
+	ret = resp_handler(ctx, reply, &ip_hdr, icmp_hdr, user_data);
+	if (ret < 0) {
 		LOG_ERR("Cannot send response (%d)", ret);
-		return -EIO;
 	}
 
-	return 0;
+	return ret;
 }
 
 static void offload_iface_init(struct net_if *iface)
@@ -401,7 +398,7 @@ static void offload_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, ctx->mac, sizeof(ctx->mac), NET_LINK_ETHERNET);
 
 	/* A dummy placeholder to allow network stack to pass offloaded data to our interface */
-	net_if_offload_set(iface, &offload_dummy);
+	iface->if_dev->offload = &offload_dummy;
 
 	/* This will cause ping requests to be re-directed to our offload handler */
 	ret = net_icmp_register_offload_ping(&offload_data, iface, offload_ping_handler);
@@ -426,11 +423,11 @@ NET_DEVICE_OFFLOAD_INIT(test_offload, "test_offload", NULL, NULL, &offload_ctx, 
 			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &offload_api, 1500);
 #endif /* CONFIG_NET_OFFLOADING_SUPPORT */
 
-static enum net_verdict icmp_handler(struct net_icmp_ctx *ctx,
-				     struct net_pkt *pkt,
-				     struct net_icmp_ip_hdr *hdr,
-				     struct net_icmp_hdr *icmp_hdr,
-				     void *user_data)
+static int icmp_handler(struct net_icmp_ctx *ctx,
+			struct net_pkt *pkt,
+			struct net_icmp_ip_hdr *hdr,
+			struct net_icmp_hdr *icmp_hdr,
+			void *user_data)
 {
 	struct test_icmp_context *test = user_data;
 
@@ -448,13 +445,13 @@ static enum net_verdict icmp_handler(struct net_icmp_ctx *ctx,
 			net_sprint_ipv6_addr(&ip_hdr->src),
 			net_sprint_ipv6_addr(&ip_hdr->dst));
 	} else {
-		return NET_CONTINUE;
+		return -ENOENT;
 	}
 
 	test->req_received = true;
 	k_sem_give(&test->tx_sem);
 
-	return NET_OK;
+	return 0;
 }
 
 ZTEST(icmp_tests, test_icmpv6_echo_request)
@@ -627,15 +624,15 @@ ZTEST(icmp_tests, test_offload_icmpv6_echo_request)
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV6)
 static K_SEM_DEFINE(test_req_sem, 0, 1);
 
-static enum net_verdict icmp_request_handler(struct net_icmp_ctx *ctx,
-					     struct net_pkt *pkt,
-					     struct net_icmp_ip_hdr *hdr,
-					     struct net_icmp_hdr *icmp_hdr,
-					     void *user_data)
+static int icmp_request_handler(struct net_icmp_ctx *ctx,
+				struct net_pkt *pkt,
+				struct net_icmp_ip_hdr *hdr,
+				struct net_icmp_hdr *icmp_hdr,
+				void *user_data)
 {
 	k_sem_give(&test_req_sem);
 
-	return NET_OK;
+	return 0;
 }
 
 ZTEST(icmp_tests, test_malformed_icmpv6_echo_request_on_ipv4)

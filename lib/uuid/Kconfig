@@ -5,19 +5,22 @@
 menu "Universally Unique Identifier (UUID)"
 
 config UUID
-	bool "UUID support"
+	bool "UUID support [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  Enable use of the UUID library.
 
 config UUID_V4
-	bool "UUID version 4 generation support"
+	bool "UUID version 4 generation support [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	depends on UUID
 	depends on ENTROPY_GENERATOR
 	help
 	  Enable generation of UUID v4.
 
 config UUID_V5
-	bool "UUID version 5 generation support"
+	bool "UUID version 5 generation support [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	depends on UUID
 	depends on MBEDTLS
 	depends on MBEDTLS_PSA_CRYPTO_C
@@ -31,7 +34,8 @@ config UUID_V5
 	  Enable generation of UUID v5.
 
 config UUID_BASE64
-	bool "UUID Base64 support"
+	bool "UUID Base64 support [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	depends on UUID
 	depends on BASE64
 	help

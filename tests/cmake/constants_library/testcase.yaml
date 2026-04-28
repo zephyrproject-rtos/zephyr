@@ -1,5 +1,0 @@
-tests:
-  buildsystem.constants_library:
-    tags: build_system
-    integration_platforms:
-      - native_sim

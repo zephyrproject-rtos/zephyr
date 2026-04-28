@@ -22,7 +22,6 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_core.h>
-#include <zephyr/net/net_log.h>
 #include <zephyr/net/coap.h>
 #include <zephyr/net/coap_mgmt.h>
 
@@ -1677,7 +1676,7 @@ struct coap_observer *coap_observer_next_unused(
 	size_t i;
 
 	for (i = 0, o = observers; i < len; i++, o++) {
-		if (is_addr_unspecified(net_sad(&o->addr))) {
+		if (is_addr_unspecified(&o->addr)) {
 			return o;
 		}
 	}
@@ -1962,7 +1961,7 @@ void coap_observer_init(struct coap_observer *observer,
 {
 	observer->tkl = coap_header_get_token(request, observer->token);
 
-	memcpy(&observer->addr, addr, net_family2size(addr->sa_family));
+	memcpy(&observer->addr, addr, sizeof(*addr));
 }
 
 static inline void coap_observer_raise_event(struct coap_resource *resource,
@@ -2063,7 +2062,7 @@ struct coap_observer *coap_find_observer(
 
 		if (o->tkl == token_len &&
 		    memcmp(o->token, token, token_len) == 0 &&
-		    sockaddr_equal(net_sad(&o->addr), addr)) {
+		    sockaddr_equal(&o->addr, addr)) {
 			return o;
 		}
 	}
@@ -2080,7 +2079,7 @@ struct coap_observer *coap_find_observer_by_addr(
 	for (i = 0; i < len; i++) {
 		struct coap_observer *o = &observers[i];
 
-		if (sockaddr_equal(net_sad(&o->addr), addr)) {
+		if (sockaddr_equal(&o->addr, addr)) {
 			return o;
 		}
 	}

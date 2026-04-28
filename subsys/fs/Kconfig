@@ -114,12 +114,12 @@ config FUSE_FS_ACCESS
 choice FUSE_LIBRARY_VERSION
 	prompt "Host FUSE library version"
 	depends on FUSE_FS_ACCESS
-	default FUSE_LIBRARY_V3
+	default FUSE_LIBRARY_V2
 
 config FUSE_LIBRARY_V2
 	bool "Use libfuse(2)"
 	help
-	  Use v2 of the host FUSE library. This may not be available in newer distributions.
+	  Use v2 of the host FUSE library.
 
 config FUSE_LIBRARY_V3
 	bool "Use libfuse3"

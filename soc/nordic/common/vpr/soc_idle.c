@@ -13,9 +13,7 @@
  */
 void arch_cpu_idle(void)
 {
-#if defined(CONFIG_TRACING)
 	sys_trace_idle();
-#endif
 	barrier_dsync_fence_full();
 	irq_unlock(MSTATUS_IEN);
 	__asm__ volatile("wfi");
@@ -23,9 +21,7 @@ void arch_cpu_idle(void)
 
 void arch_cpu_atomic_idle(unsigned int key)
 {
-#if defined(CONFIG_TRACING)
 	sys_trace_idle();
-#endif
 	barrier_dsync_fence_full();
 	irq_unlock(MSTATUS_IEN);
 	__asm__ volatile("wfi");

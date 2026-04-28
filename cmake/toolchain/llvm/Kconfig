@@ -1,0 +1,28 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+choice LLVM_LINKER
+	prompt "LLVM Linker"
+	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "llvm"
+	default LLVM_USE_LD
+
+config LLVM_USE_LD
+	bool "GNU ld"
+	help
+	  Use binutils ld linker with llvm/clang.
+
+config LLVM_USE_LLD
+	bool "LLVM lld"
+	help
+	  Use LLVM built-in lld linker with llvm/clang.
+
+endchoice
+
+config TOOLCHAIN_LLVM_SUPPORTS_THREAD_LOCAL_STORAGE
+	depends on RISCV || ARM || ARM64
+	def_bool y
+	select TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+
+config TOOLCHAIN_LLVM_SUPPORTS_GNU_EXTENSIONS
+	def_bool y
+	select TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS

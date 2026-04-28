@@ -1,6 +1,0 @@
-board:
-  name: inkplate_6color
-  full_name: Inkplate 6Color
-  vendor: solderedelectronics
-  socs:
-  - name: esp32

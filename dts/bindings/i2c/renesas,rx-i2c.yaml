@@ -12,9 +12,8 @@ properties:
     required: true
     type: int
 
-  interrupt-names:
+  interrupts:
     required: true
 
-  dtc:
-    type: phandle
-    description: DTC controller
+  interrupt-names:
+    required: true

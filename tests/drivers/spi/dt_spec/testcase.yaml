@@ -7,4 +7,3 @@ tests:
     depends_on:
       - spi
       - gpio
-    harness: ztest

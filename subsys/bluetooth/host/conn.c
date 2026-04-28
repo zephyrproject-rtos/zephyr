@@ -32,6 +32,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -953,7 +954,7 @@ static struct bt_conn *get_conn_ready(void)
 			continue;
 		}
 
-		if (dont_have_methods(conn)) {
+		CHECKIF(dont_have_methods(conn)) {
 			/* When a connection is missing mandatory methods, try next connection. */
 			LOG_DBG("conn %p (type %d) is missing mandatory methods", conn, conn->type);
 			prev = &conn->_conn_ready;
@@ -2149,6 +2150,29 @@ static int send_conn_le_param_update(struct bt_conn *conn,
 	return bt_l2cap_update_conn_param(conn, param);
 }
 
+#if defined(CONFIG_BT_ISO_UNICAST)
+static struct bt_conn *conn_lookup_iso(struct bt_conn *conn)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(iso_conns); i++) {
+		struct bt_conn *iso = bt_conn_ref(&iso_conns[i]);
+
+		if (iso == NULL) {
+			continue;
+		}
+
+		if (iso->iso.acl == conn) {
+			return iso;
+		}
+
+		bt_conn_unref(iso);
+	}
+
+	return NULL;
+}
+#endif /* CONFIG_BT_ISO */
+
 #if defined(CONFIG_BT_CLASSIC)
 static struct bt_conn *conn_lookup_sco(struct bt_conn *conn)
 {
@@ -2182,7 +2206,7 @@ static void deferred_work(struct k_work *work)
 
 	if (conn->state == BT_CONN_DISCONNECTED) {
 #if defined(CONFIG_BT_ISO_UNICAST)
-		bool acl_coupled_with_cis;
+		struct bt_conn *iso;
 
 		if (bt_conn_is_iso(conn)) {
 			/* bt_iso_disconnected is responsible for unref'ing the
@@ -2193,36 +2217,23 @@ static void deferred_work(struct k_work *work)
 			return;
 		}
 
-		/* Mark all CIS still associated with the ACL conn as disconnecting.
-		 * If any CIS are associated with the ACL, we postpone the disconnect work until
-		 * after the CIS has been disconnected from a HCI Disconnect event.
+		/* Mark all ISO channels associated
+		 * with ACL conn as not connected, and
+		 * remove ACL reference
 		 */
-		acl_coupled_with_cis = false;
-		ARRAY_FOR_EACH_PTR(iso_conns, iso_conn) {
-			struct bt_conn *iso = bt_conn_ref(iso_conn);
+		iso = conn_lookup_iso(conn);
+		while (iso != NULL) {
+			struct bt_iso_chan *chan = iso->iso.chan;
 
-			if (iso == NULL) {
-				continue;
+			if (chan != NULL) {
+				bt_iso_chan_set_state(chan,
+						      BT_ISO_STATE_DISCONNECTING);
 			}
 
-			if (iso->iso.acl == conn) {
-				struct bt_iso_chan *chan = iso->iso.chan;
-
-				if (chan != NULL) {
-					bt_iso_chan_set_state(chan, BT_ISO_STATE_DISCONNECTING);
-				}
-
-				acl_coupled_with_cis = true;
-			}
+			bt_iso_cleanup_acl(iso);
 
 			bt_conn_unref(iso);
-		}
-
-		if (acl_coupled_with_cis) {
-			LOG_DBG("acl %p is pending on CIS disconnects, wait for CIS disconnects",
-				conn);
-
-			return;
+			iso = conn_lookup_iso(conn);
 		}
 #endif
 #if defined(CONFIG_BT_CLASSIC)
@@ -2563,6 +2574,9 @@ void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 {
 	reset_pairing(conn);
 	bt_l2cap_security_changed(conn, hci_err);
+	if (IS_ENABLED(CONFIG_BT_ISO_CENTRAL)) {
+		bt_iso_security_changed(conn, hci_err);
+	}
 
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->security_changed) {
@@ -2679,7 +2693,7 @@ int bt_conn_cb_register(struct bt_conn_cb *cb)
 
 int bt_conn_cb_unregister(struct bt_conn_cb *cb)
 {
-	if (cb == NULL) {
+	CHECKIF(cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -4043,11 +4057,11 @@ int bt_conn_le_create(const bt_addr_le_t *peer, const struct bt_conn_le_create_p
 	struct bt_conn *conn;
 	int err;
 
-	if (ret_conn == NULL) {
+	CHECKIF(ret_conn == NULL) {
 		return -EINVAL;
 	}
 
-	if (*ret_conn != NULL) {
+	CHECKIF(*ret_conn != NULL) {
 		/* This rule helps application developers prevent leaks of connection references. If
 		 * a bt_conn variable is not null, it presumably holds a reference and must not be
 		 * overwritten. To avoid this warning, initialize the variables to null, and set
@@ -4125,11 +4139,11 @@ int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
 	struct bt_conn *conn;
 	int err;
 
-	if (ret_conn == NULL) {
+	CHECKIF(ret_conn == NULL) {
 		return -EINVAL;
 	}
 
-	if (*ret_conn != NULL) {
+	CHECKIF(*ret_conn != NULL) {
 		/* This rule helps application developers prevent leaks of connection references. If
 		 * a bt_conn variable is not null, it presumably holds a reference and must not be
 		 * overwritten. To avoid this warning, initialize the variables to null, and set
@@ -4263,7 +4277,7 @@ int bt_conn_auth_cb_overlay(struct bt_conn *conn, const struct bt_conn_auth_cb *
 
 int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb)
 {
-	if (cb == NULL) {
+	CHECKIF(cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -4278,7 +4292,7 @@ int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb)
 
 int bt_conn_auth_info_cb_unregister(struct bt_conn_auth_info_cb *cb)
 {
-	if (cb == NULL) {
+	CHECKIF(cb == NULL) {
 		return -EINVAL;
 	}
 

@@ -1,7 +1,3 @@
-common:
-  tags:
-    - ipc
-
 tests:
   ipc.icmsg_pbuf:
     # For native(POSIX arch) targets, let's skip those which do not produce an executable

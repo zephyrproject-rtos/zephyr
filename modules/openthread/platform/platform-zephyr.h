@@ -20,29 +20,18 @@
 #include <zephyr/net/net_pkt.h>
 
 /**
- * This function initializes the millisecond-based alarm service used by OpenThread.
+ * This function initializes the alarm service used by OpenThread.
+ *
  */
-void platformAlarmMilliInit(void);
+void platformAlarmInit(void);
 
 /**
- * This function performs millisecond-based alarm driver processing.
+ * This function performs alarm driver processing.
  *
  * @param[in]  aInstance  The OpenThread instance structure.
- */
-void platformAlarmMilliProcess(otInstance *aInstance);
-
-/**
- * This function initializes the microsecond-based alarm (k_timer or counter-based) service used by
- * OpenThread.
- */
-void platformAlarmMicroInit(void);
-
-/**
- * This function performs microsecond-based alarm driver processing.
  *
- * @param[in]  aInstance  The OpenThread instance structure.
  */
-void platformAlarmMicroProcess(otInstance *aInstance);
+void platformAlarmProcess(otInstance *aInstance);
 
 /**
  * This function initializes the radio service used by OpenThread.

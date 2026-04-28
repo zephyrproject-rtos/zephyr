@@ -1,6 +1,0 @@
-board:
-  name: bl706_iot_dvk
-  full_name: Bouffalo Lab BL706-IoT-DVK
-  vendor: bflb
-  socs:
-    - name: bl706c00q2i

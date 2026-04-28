@@ -20,7 +20,7 @@
  *
  * These defines must match those present in the display_pixel_format enum.
  * They are required because the enum cannot be reused within devicetree,
- * since C enums are not valid devicetree syntax.
+ * since enum definitions are not supported by devicetree tooling.
  */
 
 #define PANEL_PIXEL_FORMAT_RGB_888   (0x1 << 0)
@@ -31,7 +31,6 @@
 #define PANEL_PIXEL_FORMAT_RGB_565X  (0x1 << 5)
 #define PANEL_PIXEL_FORMAT_L_8       (0x1 << 6)
 #define PANEL_PIXEL_FORMAT_AL_88     (0x1 << 7)
-#define PANEL_PIXEL_FORMAT_XRGB_8888 (0x1 << 8) /**< 32-bit ARGB */
 
 /**
  * @}

@@ -1,0 +1,11 @@
+# STMicroelectronics STM32L100XB MCU
+
+# Copyright (c) 2025 Conny Marco Menebröcker
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32L100XB
+
+config NUM_IRQS
+	default 46
+
+endif # SOC_STM32L100XB

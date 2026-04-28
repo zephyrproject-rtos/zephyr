@@ -82,7 +82,3 @@
 	pinctrl-0 = <&lpuart3_default>;
 	pinctrl-names = "default";
 };
-
-&lptmr1 {
-	status = "okay";
-};

@@ -1114,7 +1114,7 @@ static int mcr20a_tx(const struct device *dev,
 	int retval;
 
 	if (mode != IEEE802154_TX_MODE_DIRECT) {
-		LOG_ERR("TX mode %d not supported", mode);
+		NET_ERR("TX mode %d not supported", mode);
 		return -ENOTSUP;
 	}
 

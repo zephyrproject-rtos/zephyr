@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2026 Analog Devices, Inc.
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,9 +64,6 @@ struct max32_spi_data {
 
 #ifdef CONFIG_SPI_ASYNC
 	struct k_work async_work;
-#ifdef CONFIG_SPI_MAX32_DMA
-	struct k_work dma_work;
-#endif /* CONFIG_SPI_MAX32_DMA */
 #endif /* CONFIG_SPI_ASYNC */
 
 #ifdef CONFIG_SPI_RTIO
@@ -114,10 +111,6 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_SPI_MAX32_REG_WRITE_WAIT_WORKAROUND
-	k_busy_wait(10);
-#endif
-
 	int cpol = (SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) ? 1 : 0;
 	int cpha = (SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) ? 1 : 0;
 
@@ -134,9 +127,7 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_SPI_MAX32_REG_WRITE_WAIT_WORKAROUND
 	k_busy_wait(1);
-#endif
 
 	ret = MXC_SPI_SetDataSize(regs, SPI_WORD_SIZE_GET(config->operation));
 	if (ret) {
@@ -165,9 +156,7 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 	}
 #endif
 
-#ifdef CONFIG_SPI_MAX32_REG_WRITE_WAIT_WORKAROUND
 	k_busy_wait(1);
-#endif
 
 	data->ctx.config = config;
 
@@ -595,24 +584,13 @@ static void spi_max32_dma_callback(const struct device *dev, void *arg, uint32_t
 
 	if (status < 0) {
 		LOG_ERR("DMA callback error for channel %u: %d", channel, status);
-#ifndef CONFIG_SPI_MAX32_RTIO
-#ifdef CONFIG_SPI_ASYNC
-		if (data->ctx.asynchronous) {
-			dma_stop(config->tx_dma.dev, config->tx_dma.channel);
-			dma_stop(config->rx_dma.dev, config->rx_dma.channel);
-			spi_cs_deassert(spi_dev);
+	} else {
+		/* identify the origin of this callback */
+		if (channel == config->tx_dma.channel) {
+			data->dma_stat |= SPI_MAX32_DMA_TX_DONE_FLAG;
+		} else if (channel == config->rx_dma.channel) {
+			data->dma_stat |= SPI_MAX32_DMA_RX_DONE_FLAG;
 		}
-#endif /* CONFIG_SPI_ASYNC */
-		spi_context_complete(&data->ctx, spi_dev, -EIO);
-		return;
-#endif /* CONFIG_SPI_MAX32_RTIO */
-	}
-
-	/* identify the origin of this callback */
-	if (channel == config->tx_dma.channel) {
-		data->dma_stat |= SPI_MAX32_DMA_TX_DONE_FLAG;
-	} else if (channel == config->rx_dma.channel) {
-		data->dma_stat |= SPI_MAX32_DMA_RX_DONE_FLAG;
 	}
 
 #ifdef CONFIG_SPI_MAX32_RTIO
@@ -639,31 +617,16 @@ static void spi_max32_dma_callback(const struct device *dev, void *arg, uint32_t
 		break;
 	}
 #else
-	struct spi_context *ctx = &data->ctx;
 	uint32_t len;
-	uint8_t dfs = spi_max32_get_dfs_shift(ctx) ? 2 : 1;
+	uint8_t dfs = spi_max32_get_dfs_shift(&data->ctx) ? 2 : 1;
 
 	if ((data->dma_stat & SPI_MAX32_DMA_DONE_FLAG) == SPI_MAX32_DMA_DONE_FLAG) {
-		len = spi_context_max_continuous_chunk(ctx);
-		spi_context_update_tx(ctx, dfs, len);
-		spi_context_update_rx(ctx, dfs, len);
-
-#ifdef CONFIG_SPI_ASYNC
-		if (!ctx->asynchronous) {
-			spi_context_complete(ctx, spi_dev, 0);
-		} else {
-			if ((spi_context_tx_on(ctx) || spi_context_rx_on(ctx))) {
-				k_work_submit(&data->dma_work);
-			} else {
-				spi_cs_deassert(spi_dev);
-				spi_context_complete(ctx, spi_dev, 0);
-			}
-		}
-#else
-		spi_context_complete(ctx, spi_dev, 0);
-#endif /* CONFIG_SPI_ASYNC */
+		len = spi_context_max_continuous_chunk(&data->ctx);
+		spi_context_update_tx(&data->ctx, dfs, len);
+		spi_context_update_rx(&data->ctx, dfs, len);
+		spi_context_complete(&data->ctx, spi_dev, status == 0 ? 0 : -EIO);
 	}
-#endif /* CONFIG_SPI_MAX32_RTIO */
+#endif
 }
 
 static int spi_max32_tx_dma_load(const struct device *dev, const uint8_t *buf, uint32_t len,
@@ -771,69 +734,6 @@ static int spi_max32_rx_dma_setup(const struct device *dev, const uint8_t *buf, 
 }
 
 #if !defined(CONFIG_SPI_MAX32_RTIO)
-static int spi_max32_transceive_dma(const struct device *dev)
-{
-	int ret = 0;
-	const struct max32_spi_config *cfg = dev->config;
-	struct max32_spi_data *data = dev->data;
-	struct spi_context *ctx = &data->ctx;
-	mxc_spi_regs_t *spi = cfg->regs;
-	uint32_t len, word_count;
-	uint8_t dfs_shift;
-	uint8_t dfs;
-
-	len = spi_context_max_continuous_chunk(ctx);
-	dfs_shift = spi_max32_get_dfs_shift(ctx);
-	word_count = len >> dfs_shift;
-
-	if (word_count == 0) {
-		/* Nothing to do, handle next work if async, otherwise return */
-		dfs = dfs_shift ? 2 : 1;
-		spi_context_update_tx(ctx, dfs, len);
-		spi_context_update_rx(ctx, dfs, len);
-#ifdef CONFIG_SPI_ASYNC
-		if (ctx->asynchronous) {
-			if ((spi_context_tx_on(ctx) || spi_context_rx_on(ctx))) {
-				k_work_submit(&data->dma_work);
-			} else {
-				spi_cs_deassert(dev);
-				spi_context_complete(ctx, dev, 0);
-			}
-		}
-#endif /* CONFIG_SPI_ASYNC */
-		return ret;
-	}
-
-	ret = spi_max32_rx_dma_setup(dev, ctx->rx_buf, len, word_count, dfs_shift);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = spi_max32_tx_dma_setup(dev, ctx->tx_buf, len, word_count, dfs_shift);
-	if (ret < 0) {
-		return ret;
-	}
-
-	MXC_SPI_StartTransmission(spi);
-	ret = spi_context_wait_for_completion(ctx);
-
-	return ret;
-}
-
-#ifdef CONFIG_SPI_ASYNC
-void spi_max32_dma_work_handler(struct k_work *work)
-{
-	struct max32_spi_data *data = CONTAINER_OF(work, struct max32_spi_data, dma_work);
-	const struct device *dev = data->dev;
-	int ret;
-
-	ret = spi_max32_transceive_dma(dev);
-	if (ret < 0) {
-		spi_context_complete(&data->ctx, dev, -EIO);
-	}
-}
-#endif /* CONFIG_SPI_ASYNC */
-
 static int transceive_dma(const struct device *dev, const struct spi_config *config,
 			  const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
 			  bool async, spi_callback_t cb, void *userdata)
@@ -844,6 +744,8 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 	struct spi_context *ctx = &data->ctx;
 	mxc_spi_regs_t *spi = cfg->regs;
 	struct dma_status status;
+	uint32_t len, word_count;
+	uint8_t dfs_shift;
 
 	spi_context_lock(ctx, async, cb, userdata, config);
 
@@ -881,8 +783,28 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 	MXC_SPI_SetSlave(cfg->regs, ctx->config->slave);
 
 	do {
-		ret = spi_max32_transceive_dma(dev);
-	} while (!async && !ret && (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)));
+		len = spi_context_max_continuous_chunk(ctx);
+		dfs_shift = spi_max32_get_dfs_shift(ctx);
+		word_count = len >> dfs_shift;
+
+		if (word_count == 0) {
+			/* Nothing to do, continue */
+			continue;
+		}
+
+		ret = spi_max32_rx_dma_setup(dev, ctx->rx_buf, len, word_count, dfs_shift);
+		if (ret < 0) {
+			goto unlock;
+		}
+
+		ret = spi_max32_tx_dma_setup(dev, ctx->tx_buf, len, word_count, dfs_shift);
+		if (ret < 0) {
+			goto unlock;
+		}
+
+		MXC_SPI_StartTransmission(spi);
+		ret = spi_context_wait_for_completion(ctx);
+	} while (!ret && (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)));
 
 	if (ret < 0) {
 		dma_stop(cfg->tx_dma.dev, cfg->tx_dma.channel);
@@ -891,9 +813,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 
 unlock:
 	/* Deassert the CS line */
-	if (!async || ret < 0) {
-		spi_cs_deassert(dev);
-	}
+	spi_cs_deassert(dev);
 
 	spi_context_release(ctx, ret);
 
@@ -991,13 +911,6 @@ static int api_transceive_async(const struct device *dev, const struct spi_confi
 				const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				void *userdata)
 {
-#ifdef CONFIG_SPI_MAX32_DMA
-	const struct max32_spi_config *cfg = dev->config;
-
-	if (cfg->tx_dma.channel != 0xFF && cfg->rx_dma.channel != 0xFF) {
-		return transceive_dma(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
-	}
-#endif /* CONFIG_SPI_MAX32_DMA */
 	return transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif /* CONFIG_SPI_ASYNC */
@@ -1164,12 +1077,6 @@ static int spi_max32_init(const struct device *dev)
 	cfg->irq_config_func(dev);
 #ifdef CONFIG_SPI_ASYNC
 	k_work_init(&data->async_work, spi_max32_async_work_handler);
-#endif
-#endif
-
-#ifdef CONFIG_SPI_MAX32_DMA
-#ifdef CONFIG_SPI_ASYNC
-	k_work_init(&data->dma_work, spi_max32_dma_work_handler);
 #endif
 #endif
 

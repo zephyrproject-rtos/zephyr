@@ -380,16 +380,10 @@ SECTIONS
     KEEP (*(.fw_ready_metadata))
   } >sdram0 :sdram0_phdr
 
-  .noinit (NOLOAD) : ALIGN(4)
+  .noinit : ALIGN(4)
   {
     *(.noinit)
     *(.noinit.*)
-
-/* Located in generated directory. This file is populated by the
- * zephyr_linker_sources() CMake function.
- */
-#include <snippets-noinit.ld>
-
   } >sdram0 :sdram0_phdr
 
   .data : ALIGN(4)

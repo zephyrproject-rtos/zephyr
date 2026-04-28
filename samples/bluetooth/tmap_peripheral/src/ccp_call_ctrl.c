@@ -8,7 +8,6 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 

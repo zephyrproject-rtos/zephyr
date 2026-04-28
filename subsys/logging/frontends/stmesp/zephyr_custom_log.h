@@ -40,7 +40,9 @@ extern "C" {
  */
 #define Z_LOG_STMESP_0(_level, _source, ...)                                                       \
 	do {                                                                                       \
-		Z_LOG_LEVEL_ALL_CHECK_BREAK(_level, __log_current_const_data, _source)             \
+		if (!Z_LOG_LEVEL_ALL_CHECK(_level, __log_current_const_data, _source)) {           \
+			break;                                                                     \
+		}                                                                                  \
 		LOG_FRONTEND_STMESP_LOG0(_source, STRINGIFY(_level) __VA_ARGS__);                  \
 	} while (0)
 
@@ -70,7 +72,9 @@ extern "C" {
 				(Z_LOG(_level, __VA_ARGS__)));                                     \
 			break;                                                                     \
 		}                                                                                  \
-		Z_LOG_LEVEL_ALL_CHECK_BREAK(_level, __log_current_const_data, _source)             \
+		if (!Z_LOG_LEVEL_ALL_CHECK(_level, __log_current_const_data, _source)) {           \
+			break;                                                                     \
+		}                                                                                  \
 		LOG_FRONTEND_STMESP_LOG1(_source, STRINGIFY(_level) __VA_ARGS__, dummy);           \
 	} while (0)
 

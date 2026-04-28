@@ -39,6 +39,7 @@ int scmi_clock_rate_get(struct scmi_protocol *proto,
 	struct scmi_message msg, reply;
 	int ret;
 	struct scmi_clock_rate_set_reply reply_buffer;
+	bool use_polling;
 
 	/* input validation */
 	if (!proto || !rate) {
@@ -58,7 +59,9 @@ int scmi_clock_rate_get(struct scmi_protocol *proto,
 	reply.len = sizeof(reply_buffer);
 	reply.content = &reply_buffer;
 
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	use_polling = k_is_pre_kernel();
+
+	ret = scmi_send_message(proto, &msg, &reply, use_polling);
 	if (ret < 0) {
 		return ret;
 	}
@@ -76,6 +79,7 @@ int scmi_clock_rate_set(struct scmi_protocol *proto, struct scmi_clock_rate_conf
 {
 	struct scmi_message msg, reply;
 	int status, ret;
+	bool use_polling;
 
 	/* input validation */
 	if (!proto || !cfg) {
@@ -99,7 +103,9 @@ int scmi_clock_rate_set(struct scmi_protocol *proto, struct scmi_clock_rate_conf
 	reply.len = sizeof(status);
 	reply.content = &status;
 
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	use_polling = k_is_pre_kernel();
+
+	ret = scmi_send_message(proto, &msg, &reply, use_polling);
 	if (ret < 0) {
 		return ret;
 	}
@@ -112,6 +118,7 @@ int scmi_clock_parent_get(struct scmi_protocol *proto, uint32_t clk_id, uint32_t
 	struct scmi_message msg, reply;
 	int ret;
 	struct scmi_clock_parent_get_reply reply_buffer;
+	bool use_polling;
 
 	/* input validation */
 	if (!proto || !parent_id) {
@@ -131,7 +138,9 @@ int scmi_clock_parent_get(struct scmi_protocol *proto, uint32_t clk_id, uint32_t
 	reply.len = sizeof(reply_buffer);
 	reply.content = &reply_buffer;
 
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	use_polling = k_is_pre_kernel();
+
+	ret = scmi_send_message(proto, &msg, &reply, use_polling);
 	if (ret < 0) {
 		return ret;
 	}
@@ -150,6 +159,7 @@ int scmi_clock_parent_set(struct scmi_protocol *proto, uint32_t clk_id, uint32_t
 	struct scmi_clock_parent_config cfg = {.clk_id = clk_id, .parent_id = parent_id};
 	struct scmi_message msg, reply;
 	int status, ret;
+	bool use_polling;
 
 	/* input validation */
 	if (!proto) {
@@ -169,7 +179,9 @@ int scmi_clock_parent_set(struct scmi_protocol *proto, uint32_t clk_id, uint32_t
 	reply.len = sizeof(status);
 	reply.content = &status;
 
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	use_polling = k_is_pre_kernel();
+
+	ret = scmi_send_message(proto, &msg, &reply, use_polling);
 	if (ret < 0) {
 		return ret;
 	}
@@ -182,6 +194,7 @@ int scmi_clock_config_set(struct scmi_protocol *proto,
 {
 	struct scmi_message msg, reply;
 	int status, ret;
+	bool use_polling;
 
 	/* input validation */
 	if (!proto || !cfg) {
@@ -216,7 +229,9 @@ int scmi_clock_config_set(struct scmi_protocol *proto,
 	reply.len = sizeof(status);
 	reply.content = &status;
 
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	use_polling = k_is_pre_kernel();
+
+	ret = scmi_send_message(proto, &msg, &reply, use_polling);
 	if (ret < 0) {
 		return ret;
 	}
@@ -229,6 +244,7 @@ int scmi_clock_protocol_attributes(struct scmi_protocol *proto, uint32_t *attrib
 	struct scmi_message msg, reply;
 	struct scmi_clock_attributes_reply reply_buffer;
 	int ret;
+	bool use_polling;
 
 	/* input validation */
 	if (!proto || !attributes) {
@@ -249,7 +265,9 @@ int scmi_clock_protocol_attributes(struct scmi_protocol *proto, uint32_t *attrib
 	reply.len = sizeof(reply_buffer);
 	reply.content = &reply_buffer;
 
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	use_polling = k_is_pre_kernel();
+
+	ret = scmi_send_message(proto, &msg, &reply, use_polling);
 	if (ret < 0) {
 		return ret;
 	}
@@ -261,35 +279,4 @@ int scmi_clock_protocol_attributes(struct scmi_protocol *proto, uint32_t *attrib
 	*attributes = reply_buffer.attributes;
 
 	return 0;
-}
-
-int scmi_clock_attributes(struct scmi_protocol *proto, uint32_t clk_id,
-			  struct scmi_clock_attributes *attributes)
-{
-	struct scmi_message msg, reply;
-	int ret;
-
-	if (!proto || !attributes) {
-		return -EINVAL;
-	}
-
-	if (proto->id != SCMI_PROTOCOL_CLOCK) {
-		return -EINVAL;
-	}
-
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_CLOCK_ATTRIBUTES,
-					SCMI_COMMAND, proto->id, 0x0);
-	msg.len = sizeof(clk_id);
-	msg.content = &clk_id;
-
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(*attributes);
-	reply.content = attributes;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return scmi_status_to_errno(attributes->status);
 }

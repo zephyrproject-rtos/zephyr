@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/lc3.h>
@@ -1412,7 +1411,7 @@ static bool bap_broadcast_source_foreach_stream_cb(struct bt_bap_stream *stream,
 
 	(*cnt)++;
 
-	return true;
+	return false;
 }
 
 static ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_foreach_stream)
@@ -1437,7 +1436,7 @@ static bool bap_broadcast_source_foreach_stream_return_early_cb(struct bt_bap_st
 
 	(*cnt)++;
 
-	return false;
+	return true;
 }
 
 static ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_foreach_stream_return_early)

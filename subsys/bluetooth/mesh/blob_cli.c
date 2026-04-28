@@ -1248,16 +1248,6 @@ static int handle_xfer_status(const struct bt_mesh_model *mod, struct bt_mesh_ms
 
 	if (cli->state == BT_MESH_BLOB_CLI_STATE_START) {
 		expected_phase = BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_BLOCK;
-		/* If a transfer is resumed quickly (before the server's rx_timeout
-		 * fires), the server is still in WAITING_FOR_CHUNK. The server's
-		 * idempotency logic replies Success without changing its phase.
-		 * Accept WAITING_FOR_CHUNK here so the client can proceed to
-		 * BLOCK_START, which will reset the server's timeout timer.
-		 */
-		if (info.status == BT_MESH_BLOB_SUCCESS &&
-		    info.phase == BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_CHUNK) {
-			expected_phase = info.phase;
-		}
 	} else if (cli->state == BT_MESH_BLOB_CLI_STATE_XFER_CHECK) {
 		expected_phase = BT_MESH_BLOB_XFER_PHASE_COMPLETE;
 	} else if (cli->state != BT_MESH_BLOB_CLI_STATE_XFER_PROGRESS_GET) {
@@ -1611,14 +1601,7 @@ int bt_mesh_blob_cli_resume(struct bt_mesh_blob_cli *cli)
 		return -ENODEV;
 	}
 
-	/* Resume from the current block, not block 0. If the server hasn't
-	 * timed out yet (still in WAITING_FOR_CHUNK), it will reject a
-	 * BLOCK_START for a different block number with WRONG_PHASE
-	 * (MshMBTv1.0 5.2.2.3). Starting from the same block the client
-	 * was on when it suspended avoids this mismatch. Earlier blocks
-	 * are already completed by all active targets.
-	 */
-	block_set(cli, cli->block.number);
+	block_set(cli, 0);
 	return xfer_start(cli);
 }
 

@@ -21,6 +21,5 @@ supported:
   - pwm
   - w1
   - flash
-  - mbox
 ram: 48
 flash: 352

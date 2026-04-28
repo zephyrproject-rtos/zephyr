@@ -8,7 +8,7 @@
 
 / {
 	chosen {
-		zephyr,display = &zephyr_lcdif;
+		zephyr,display = &lcdif;
 		zephyr,touch = &gt911_rk055hdmipi4ma0;
 	};
 
@@ -57,12 +57,13 @@
 	};
 
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	data-bus-width = "24-bit";
 	backlight-gpios = <&nxp_mipi_connector 0 GPIO_ACTIVE_HIGH>;
 };
 
 &zephyr_mipi_dsi {
 	status = "okay";
-	nxp,lcdif = <&zephyr_lcdif>;
+	nxp,lcdif = <&lcdif>;
 	dpi-color-coding = "24-bit";
 	dpi-pixel-packet = "24-bit";
 	dpi-video-mode = "burst";

@@ -271,6 +271,9 @@ int main(void)
 
 	iso_chan.ops = &iso_ops;
 	iso_chan.qos = &iso_qos;
+#if defined(CONFIG_BT_SMP)
+	iso_chan.required_sec_level = BT_SECURITY_L2,
+#endif /* CONFIG_BT_SMP */
 
 	channels[0] = &iso_chan;
 	param.cis_channels = channels;

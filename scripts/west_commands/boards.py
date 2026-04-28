@@ -23,14 +23,16 @@ class Boards(WestCommand):
     def __init__(self):
         super().__init__(
             'boards',
-            '',
-            description='Display information about boards',
+            # Keep this in sync with the string in west-commands.yml.
+            'display information about supported boards',
+            'Display information about boards',
             accepts_unknown_args=False)
 
     def do_add_parser(self, parser_adder):
         default_fmt = '{name}'
         parser = parser_adder.add_parser(
             self.name,
+            help=self.help,
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=self.description,
             epilog=textwrap.dedent(f'''\
@@ -63,10 +65,6 @@ class Boards(WestCommand):
         parser.add_argument('-n', '--name', dest='name_re',
                             help='''a regular expression; only boards whose
                             names match NAME_RE will be listed''')
-        parser.add_argument('-a', '--all-targets', action='store_true',
-                            help='''Output all valid combinations of {name},
-                            {revisions}, and {qualifiers} that can be used as a board
-                            target''')
         list_boards.add_args(parser)
 
         return parser
@@ -93,36 +91,24 @@ class Boards(WestCommand):
         args.board_roots += module_settings['board_root']
         args.soc_roots += module_settings['soc_root']
 
-        all_targets: list[str] = []
         for board in list_boards.find_v2_boards(args).values():
             if name_re is not None and not name_re.search(board.name):
                 continue
 
-            if args.all_targets:
-                all_targets += [f"{board.name}/{qualifier}"
-                                for qualifier in list_boards.board_v2_qualifiers(board)]
-                if board.revisions:
-                    all_targets += [f"{board.name}@{revision.name}/{qualifier}"
-                                    for qualifier in list_boards.board_v2_qualifiers(board)
-                                    for revision in board.revisions]
+            if board.revisions:
+                revisions_list = ' '.join([rev.name for rev in board.revisions])
             else:
-                if board.revisions:
-                    revisions_list = ','.join([rev.name for rev in board.revisions])
-                else:
-                    revisions_list = 'None'
+                revisions_list = 'None'
 
-                self.inf(
-                    args.format.format(
-                        name=board.name,
-                        full_name=board.full_name,
-                        revision_default=board.revision_default,
-                        revisions=revisions_list,
-                        dir=board.dir,
-                        hwm=board.hwm,
-                        vendor=board.vendor,
-                        qualifiers=list_boards.board_v2_qualifiers_csv(board),
-                    )
+            self.inf(
+                args.format.format(
+                    name=board.name,
+                    full_name=board.full_name,
+                    revision_default=board.revision_default,
+                    revisions=revisions_list,
+                    dir=board.dir,
+                    hwm=board.hwm,
+                    vendor=board.vendor,
+                    qualifiers=list_boards.board_v2_qualifiers_csv(board),
                 )
-
-        if args.all_targets:
-            self.inf(os.linesep.join(all_targets))
+            )

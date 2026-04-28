@@ -241,7 +241,8 @@ static int axi_eth_lite_set_config(const struct device *dev, enum ethernet_confi
 		LOG_DBG("Programming MAC address!");
 		axi_eth_lite_program_mac_address(dev_config, data);
 		LOG_DBG("MAC address set!");
-		return 0;
+		return net_if_set_link_addr(data->iface, data->mac_addr, sizeof(data->mac_addr),
+					    NET_LINK_ETHERNET);
 	default:
 		LOG_ERR("Unsupported configuration set: %u", type);
 		return -ENOTSUP;

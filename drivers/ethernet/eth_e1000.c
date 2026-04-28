@@ -273,10 +273,12 @@ static void e1000_iface_init(struct net_if *iface)
 	struct e1000_dev *dev = net_if_get_device(iface)->data;
 	const struct e1000_config *config = net_if_get_device(iface)->config;
 
-	dev->iface = iface;
+	if (dev->iface == NULL) {
+		dev->iface = iface;
 
-	/* Do the phy link up only once */
-	config->config_func(dev);
+		/* Do the phy link up only once */
+		config->config_func(dev);
+	}
 
 	ethernet_init(iface);
 

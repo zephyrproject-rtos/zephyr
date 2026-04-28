@@ -1,8 +1,0 @@
-/*
- * Copyright The Zephyr Project Contributors
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
-#include <bflb/bl70xl.dtsi>
-#include <zephyr/dt-bindings/pinctrl/bl704lx-pinctrl.h>

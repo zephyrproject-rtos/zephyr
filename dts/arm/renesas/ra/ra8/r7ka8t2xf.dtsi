@@ -9,7 +9,6 @@
 
 /delete-node/ &usbhs;
 /delete-node/ &usbhs_phy;
-/delete-node/ &drw;
 
 / {
 	clocks: clocks {

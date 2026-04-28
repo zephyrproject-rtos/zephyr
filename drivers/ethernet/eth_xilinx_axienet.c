@@ -440,7 +440,8 @@ static int xilinx_axienet_set_config(const struct device *dev, enum ethernet_con
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(data->mac_addr, config->mac_address.addr, sizeof(data->mac_addr));
 		xilinx_axienet_set_mac_address(dev_config, data);
-		return 0;
+		return net_if_set_link_addr(data->interface, data->mac_addr,
+			sizeof(data->mac_addr), NET_LINK_ETHERNET);
 	default:
 		LOG_ERR("Unsupported configuration set: %u", type);
 		return -EINVAL;

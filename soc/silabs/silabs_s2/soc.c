@@ -61,7 +61,7 @@ void soc_early_init_hook(void)
 		sl_power_manager_init();
 	}
 	if (IS_ENABLED(CONFIG_SOC_GECKO_USE_RAIL)) {
-		soc_radio_init();
+		rail_isr_installer();
 	}
 }
 

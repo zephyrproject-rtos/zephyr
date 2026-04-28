@@ -131,9 +131,7 @@
 
 		flexspi: spi@402a8000 {
 			compatible = "nxp,imx-flexspi";
-			/* ahb address and size need to be updated by board */
-			reg = <0x402a8000 0x4000>, <0x0 DT_SIZE_M(1)>;
-			reg-names = "reg_base", "ahb";
+			reg = <0x402a8000 0x4000>;
 			interrupts = <108 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -145,9 +143,7 @@
 
 		flexspi2: spi@402a4000 {
 			compatible = "nxp,imx-flexspi";
-			/* ahb address and size need to be updated by board */
-			reg = <0x402a4000 0x4000>, <0x0 DT_SIZE_M(1)>;
-			reg-names = "reg_base", "ahb";
+			reg = <0x402a4000 0x4000>;
 			interrupts = <107 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -961,8 +957,7 @@
 			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
 				     <4 0>, <5 0>, <6 0>, <7 0>,
 				     <8 0>, <9 0>, <10 0>, <11 0>,
-				     <12 0>, <13 0>, <14 0>, <15 0>,
-				     <16 0>;
+				     <12 0>, <13 0>, <14 0>, <15 0>;
 			irq-shared-offset = <16>;
 			clocks = <&ccm IMX_CCM_EDMA_CLK 0x7c 0x000000c0>;
 			status = "disabled";

@@ -114,7 +114,37 @@ config NRFX_EGU130
 	select NRFX_EGU
 
 config NRFX_GPIOTE
-	bool "GPIOTE driver"
+	bool
+
+config NRFX_GPIOTE0
+	bool "GPIOTE0 driver instance"
+	depends on $(dt_nodelabel_exists,gpiote0)
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE1
+	bool "GPIOTE1 driver instance"
+	depends on $(dt_nodelabel_exists,gpiote1)
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE20
+	bool "NRFX_GPIOTE20 driver instance"
+	depends on $(dt_nodelabel_exists,gpiote20)
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE30
+	bool "NRFX_GPIOTE30 driver instance"
+	depends on $(dt_nodelabel_exists,gpiote30)
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE130
+	bool "NRFX_GPIOTE130 driver instance"
+	depends on $(dt_nodelabel_exists,gpiote130)
+	select NRFX_GPIOTE
+
+config NRFX_GPIOTE131
+	bool "NRFX_GPIOTE131 driver instance"
+	depends on $(dt_nodelabel_exists,gpiote131)
+	select NRFX_GPIOTE
 
 config NRFX_GPIOTE_NONUNIFORM_INSTANCES
 	def_bool $(dt_nodelabel_enabled,gpiote0)
@@ -137,6 +167,7 @@ config NRFX_GPPI
 config NRFX_GPPI_V1
 	bool "GPPI layer legacy"
 	depends on NRFX_GPPI
+	default y if SOC_SERIES_NRF54H
 	help
 	  When enabled then legacy version of Generic PPI layer is used.
 
@@ -150,11 +181,6 @@ config NRFX_I2S
 config NRFX_IPC
 	bool "IPC driver"
 	depends on $(dt_nodelabel_exists,ipc)
-
-config NRFX_KMU
-	bool "Key Management Unit driver"
-	help
-	   Enable the nrfx_kmu driver.
 
 config NRFX_LPCOMP
 	bool "LPCOMP driver"
@@ -226,9 +252,6 @@ config NRFX_SYSTICK
 config NRFX_TBM
 	bool "TBM driver"
 	depends on $(dt_nodelabel_exists,tbm)
-
-config NRFX_TDM
-	bool "TDM driver"
 
 config NRFX_TEMP
 	bool "TEMP driver"
@@ -302,26 +325,6 @@ config NRFX_PRS_BOX_3
 
 config NRFX_PRS_BOX_4
 	bool "PRS box 4"
-	select NRFX_PRS
-
-config NRFX_PRS_BOX_5
-	bool "PRS box 5"
-	select NRFX_PRS
-
-config NRFX_PRS_BOX_6
-	bool "PRS box 6"
-	select NRFX_PRS
-
-config NRFX_PRS_BOX_7
-	bool "PRS box 7"
-	select NRFX_PRS
-
-config NRFX_PRS_BOX_8
-	bool "PRS box 8"
-	select NRFX_PRS
-
-config NRFX_PRS_BOX_9
-	bool "PRS box 9"
 	select NRFX_PRS
 
 endmenu

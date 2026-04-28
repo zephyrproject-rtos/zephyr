@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(hwinfo_cmc, CONFIG_HWINFO_LOG_LEVEL);
 
 #ifdef CMC_SRS_CDOG1_MASK
 #define CMC_RESET_MASK_CDOG (CMC_SRS_CDOG0_MASK | CMC_SRS_CDOG1_MASK)
-#elif defined(CMC_SRS_CDOG0_MASK)
+#else
 #define CMC_RESET_MASK_CDOG CMC_SRS_CDOG0_MASK
 #endif
 
@@ -73,15 +73,9 @@ static uint32_t hwinfo_mcux_cmc_xlate_reset_sources(uint32_t sources)
 		mask |= RESET_PIN;
 	}
 
-	if (sources & CMC_SRS_DAP_MASK) {
+	if (sources & (CMC_SRS_JTAG_MASK | CMC_SRS_DAP_MASK)) {
 		mask |= RESET_DEBUG;
 	}
-
-#ifdef CMC_SRS_JTAG_MASK
-	if (sources & CMC_SRS_JTAG_MASK) {
-		mask |= RESET_DEBUG;
-	}
-#endif
 
 	if (sources & CMC_SRS_SCG_MASK) {
 		mask |= RESET_CLOCK;
@@ -99,11 +93,9 @@ static uint32_t hwinfo_mcux_cmc_xlate_reset_sources(uint32_t sources)
 		mask |= RESET_CPU_LOCKUP;
 	}
 
-#ifdef CMC_RESET_MASK_CDOG
 	if (sources & CMC_RESET_MASK_CDOG) {
 		mask |= RESET_WATCHDOG;
 	}
-#endif
 
 #ifdef CMC_SRS_SECVIO_MASK
 	if (sources & CMC_SRS_SECVIO_MASK) {

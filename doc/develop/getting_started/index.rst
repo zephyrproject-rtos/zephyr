@@ -38,10 +38,6 @@ Click the operating system you are using.
       On other versions, see `this Apple support topic
       <https://support.apple.com/en-us/HT201541>`_.
 
-      .. note::
-
-         x86-64 macOS is not supported.
-
    .. group-tab:: Windows
 
       Select *Start* > *Settings* > *Update & Security* > *Windows Update*.
@@ -115,10 +111,14 @@ The current minimum required version for the main dependencies are:
       #. After the Homebrew installation script completes, follow the on-screen
          instructions to add the Homebrew installation to the path.
 
-         .. code-block:: bash
+         * On macOS running on Apple Silicon, this is achieved with:
 
-            (echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> ~/.zprofile
-            source ~/.zprofile
+           .. code-block:: bash
+
+              (echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> ~/.zprofile
+              source ~/.zprofile
+
+         * On macOS running on Intel, use the command for Apple Silicon, but replace ``/opt/homebrew/`` with ``/usr/local/``.
 
       #. Use ``brew`` to install the required dependencies:
 
@@ -419,7 +419,7 @@ contains toolchains for each of Zephyr's supported architectures, which
 include a compiler, assembler, linker and other programs required to build
 Zephyr applications.
 
-It also contains additional host tools, such as custom QEMU and OpenOCD builds
+For Linux, it also contains additional host tools, such as custom QEMU and OpenOCD builds
 that are used to emulate, flash and debug Zephyr applications.
 
 

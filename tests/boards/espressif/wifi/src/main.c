@@ -116,9 +116,8 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb, uint64_t
 	}
 }
 
-static enum net_verdict icmp_event(struct net_icmp_ctx *ctx, struct net_pkt *pkt,
-				   struct net_icmp_ip_hdr *hdr, struct net_icmp_hdr *icmp_hdr,
-				   void *user_data)
+static int icmp_event(struct net_icmp_ctx *ctx, struct net_pkt *pkt, struct net_icmp_ip_hdr *hdr,
+		      struct net_icmp_hdr *icmp_hdr, void *user_data)
 {
 	struct net_ipv4_hdr *ip_hdr = hdr->ipv4;
 	size_t hdr_offset = net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) +
@@ -145,7 +144,7 @@ static enum net_verdict icmp_event(struct net_icmp_ctx *ctx, struct net_pkt *pkt
 sem_give:
 	k_sem_give(&wifi_event);
 
-	return wifi_ctx.result == 0 ? NET_OK : NET_DROP;
+	return 0;
 }
 
 static int wifi_scan(void)

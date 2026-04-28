@@ -13,7 +13,6 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
-  - can
   - gpio
   - spi
   - timer

@@ -227,20 +227,18 @@ static int lis2du12_sample_fetch_accel(const struct device *dev)
 static int lis2du12_sample_fetch(const struct device *dev,
 				 enum sensor_channel chan)
 {
-	int ret = 0;
-
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
-		ret = lis2du12_sample_fetch_accel(dev);
+		lis2du12_sample_fetch_accel(dev);
 		break;
 	case SENSOR_CHAN_ALL:
-		ret = lis2du12_sample_fetch_accel(dev);
+		lis2du12_sample_fetch_accel(dev);
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	return ret;
+	return 0;
 }
 
 static inline void lis2du12_accel_convert(struct sensor_value *val, int raw_val,

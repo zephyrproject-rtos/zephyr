@@ -16,5 +16,6 @@
 };
 
 &peri_clk_div3 {
+	resource-channel = <1>;
 	status = "okay";
 };

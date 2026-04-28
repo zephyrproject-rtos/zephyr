@@ -13,12 +13,9 @@
 #include "sx126x_hal.h"
 #include "sx126x_regs.h"
 
-enum sx126x_state {
-	SX126X_STATE_SLEEP = 0,
-	SX126X_STATE_IDLE,
-	SX126X_STATE_TX,
-	SX126X_STATE_RX,
-};
+#define SX126X_STATE_IDLE 0
+#define SX126X_STATE_TX   1
+#define SX126X_STATE_RX   2
 
 struct sx126x_tx_result {
 	int status;

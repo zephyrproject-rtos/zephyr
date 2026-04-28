@@ -2960,7 +2960,7 @@ static void uarte_pm_resume(const struct device *dev)
 	}
 }
 
-static int uarte_pm_suspend(const struct device *dev)
+static void uarte_pm_suspend(const struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	const struct uarte_nrfx_config *cfg = dev->config;
@@ -2970,11 +2970,11 @@ static int uarte_pm_suspend(const struct device *dev)
 
 #ifdef UARTE_ANY_ASYNC
 	if (data->async) {
-		/* Entering inactive state requires device to have no active asynchronous calls. */
-		if (data->async->rx.enabled || (data->async->tx.len > 0)) {
-			return -EAGAIN;
-		}
-
+		/* Entering inactive state requires device to be no
+		 * active asynchronous calls.
+		 */
+		__ASSERT_NO_MSG(!data->async->rx.enabled);
+		__ASSERT_NO_MSG(!data->async->tx.len);
 		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 			/* If runtime PM is enabled then reference counting ensures that
 			 * suspend will not occur when TX is active.
@@ -3025,22 +3025,20 @@ static int uarte_pm_suspend(const struct device *dev)
 	}
 
 	nrf_uarte_disable(uarte);
-	return pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+	(void)pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
 }
 
 static int uarte_nrfx_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	int err = 0;
-
 	if (action == PM_DEVICE_ACTION_RESUME) {
 		uarte_pm_resume(dev);
 	} else if (IS_ENABLED(CONFIG_PM_DEVICE) && (action == PM_DEVICE_ACTION_SUSPEND)) {
-		err = uarte_pm_suspend(dev);
+		uarte_pm_suspend(dev);
 	} else {
-		err = -ENOTSUP;
+		return -ENOTSUP;
 	}
 
-	return err;
+	return 0;
 }
 
 static int uarte_tx_path_init(const struct device *dev)

@@ -5,7 +5,6 @@
  */
 
 #include <soc.h>
-#include <zephyr/arch/riscv/irq.h>
 #include <zephyr/dt-bindings/interrupt-controller/ite-it51xxx-intc.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -178,7 +177,7 @@ uint8_t ite_intc_get_irq_num(void)
 	return intc_irq;
 }
 
-unsigned long __soc_handle_irq(unsigned long arg)
+uint8_t get_irq(void *arg)
 {
 	ARG_UNUSED(arg);
 	/* wait until two equal interrupt values are read */

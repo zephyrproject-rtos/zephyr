@@ -142,7 +142,7 @@
 	status = "okay";
 };
 
-&lptmr1 {
+&lptmr2 {
 	status = "okay";
 };
 

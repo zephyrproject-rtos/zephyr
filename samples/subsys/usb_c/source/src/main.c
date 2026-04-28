@@ -14,23 +14,21 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #include "power_ctrl.h"
 
-#define USBC_PORT0_NODE         DT_ALIAS(usbc_port0)
-#define USBC_PORT0_PWRCTRL_NODE DT_ALIAS(usbc_port0_pwrctrl)
+#define USBC_PORT0_NODE		DT_ALIAS(usbc_port0)
+#define USBC_PORT0_POWER_ROLE	DT_ENUM_IDX(USBC_PORT0_NODE, power_role)
 
-#if !DT_NODE_HAS_STATUS(USBC_PORT0_PWRCTRL_NODE, okay)
-#error "Unsupported board: usbc-port0-pwrctrl devicetree alias is not defined"
+/* A Source power role evauates to 1. See usbc_tc.h: TC_ROLE_SOURCE */
+#if (USBC_PORT0_POWER_ROLE != 1)
+#error "Unsupported board: Only Source device supported"
 #endif
 
-BUILD_ASSERT(DT_ENUM_IDX(USBC_PORT0_NODE, power_role) == TC_ROLE_CAP_SOURCE,
-	     "Unsupported board: Only Source device supported");
+#define SOURCE_PDO(node_id, prop, idx)	(DT_PROP_BY_IDX(node_id, prop, idx)),
 
 /* usbc.rst port data object start */
 /**
  * @brief A structure that encapsulates Port data.
  */
 static struct port0_data_t {
-	/** Power controller device */
-	const struct device *pwrctrl;
 	/** Source Capabilities */
 	uint32_t src_caps[DT_PROP_LEN(USBC_PORT0_NODE, source_pdos)];
 	/** Number of Source Capabilities */
@@ -51,7 +49,7 @@ static struct port0_data_t {
 	atomic_t show_sink_request;
 } port0_data = {
 	.rp = DT_ENUM_IDX(USBC_PORT0_NODE, typec_power_opmode),
-	.src_caps = DT_PROP(USBC_PORT0_NODE, source_pdos),
+	.src_caps = {DT_FOREACH_PROP_ELEM(USBC_PORT0_NODE, source_pdos, SOURCE_PDO)},
 	.src_cap_cnt = DT_PROP_LEN(USBC_PORT0_NODE, source_pdos),
 };
 
@@ -71,15 +69,13 @@ static void dump_sink_request_rdo(const uint32_t rdo)
 	LOG_INF("\tNo USB Suspend:\t\t %d", request.fixed.no_usb_suspend);
 	LOG_INF("\tUnchunk Ext MSG Support: %d", request.fixed.unchunked_ext_msg_supported);
 	LOG_INF("\tOperating Current:\t %d mA",
-		PD_CONVERT_FIXED_PDO_CURRENT_TO_MA(request.fixed.operating_current));
+			PD_CONVERT_FIXED_PDO_CURRENT_TO_MA(request.fixed.operating_current));
 	if (request.fixed.giveback) {
 		LOG_INF("\tMax Operating Current:\t %d mA",
-			PD_CONVERT_FIXED_PDO_CURRENT_TO_MA(
-				request.fixed.min_or_max_operating_current));
+		PD_CONVERT_FIXED_PDO_CURRENT_TO_MA(request.fixed.min_or_max_operating_current));
 	} else {
 		LOG_INF("\tMin Operating Current:\t %d mA",
-			PD_CONVERT_FIXED_PDO_CURRENT_TO_MA(
-				request.fixed.min_or_max_operating_current));
+		PD_CONVERT_FIXED_PDO_CURRENT_TO_MA(request.fixed.min_or_max_operating_current));
 	}
 }
 
@@ -87,7 +83,8 @@ static void dump_sink_request_rdo(const uint32_t rdo)
 /**
  * @brief PE calls this function when it needs to set the Rp on CC
  */
-int port0_policy_cb_get_src_rp(const struct device *dev, enum tc_rp_value *rp)
+int port0_policy_cb_get_src_rp(const struct device *dev,
+			       enum tc_rp_value *rp)
 {
 	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
@@ -102,9 +99,7 @@ int port0_policy_cb_get_src_rp(const struct device *dev, enum tc_rp_value *rp)
  */
 int port0_policy_cb_src_en(const struct device *dev, bool en)
 {
-	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
-
-	source_ctrl_set(dpm_data->pwrctrl, en ? SOURCE_5V : SOURCE_0V);
+	source_ctrl_set(en ? SOURCE_5V : SOURCE_0V);
 
 	return 0;
 }
@@ -112,22 +107,21 @@ int port0_policy_cb_src_en(const struct device *dev, bool en)
 /**
  * @brief PE calls this function to Enable or Disable VCONN
  */
-int port0_policy_cb_vconn_en(const struct device *tcpc_dev, const struct device *usbc_dev,
-			     enum tc_cc_polarity pol, bool en)
+int port0_policy_cb_vconn_en(const struct device *dev, enum tc_cc_polarity pol, bool en)
 {
-	struct port0_data_t *dpm_data = usbc_get_dpm_data(usbc_dev);
+	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
 	dpm_data->vconn_pol = pol;
 
 	if (en == false) {
 		/* Disable VCONN on CC1 and CC2 */
-		vconn_ctrl_set(dpm_data->pwrctrl, VCONN_OFF);
+		vconn_ctrl_set(VCONN_OFF);
 	} else if (pol == TC_POLARITY_CC1) {
 		/* set VCONN on CC1 */
-		vconn_ctrl_set(dpm_data->pwrctrl, VCONN1_ON);
+		vconn_ctrl_set(VCONN1_ON);
 	} else {
 		/* set VCONN on CC2 */
-		vconn_ctrl_set(dpm_data->pwrctrl, VCONN2_ON);
+		vconn_ctrl_set(VCONN2_ON);
 	}
 
 	return 0;
@@ -137,8 +131,8 @@ int port0_policy_cb_vconn_en(const struct device *tcpc_dev, const struct device 
  * @brief PE calls this function to get the Source Caps that will be sent
  *	  to the Sink
  */
-int port0_policy_cb_get_src_caps(const struct device *dev, const uint32_t **pdos,
-				 uint32_t *num_pdos)
+int port0_policy_cb_get_src_caps(const struct device *dev,
+			const uint32_t **pdos, uint32_t *num_pdos)
 {
 	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
@@ -152,7 +146,7 @@ int port0_policy_cb_get_src_caps(const struct device *dev, const uint32_t **pdos
  * @brief PE calls this function to verify that a Sink's request if valid
  */
 static enum usbc_snk_req_reply_t port0_policy_cb_check_sink_request(const struct device *dev,
-								    const uint32_t request_msg)
+					const uint32_t request_msg)
 {
 	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 	union pd_fixed_supply_pdo_source pdo;
@@ -195,6 +189,7 @@ static bool port0_policy_cb_is_ps_ready(const struct device *dev)
 {
 	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
+
 	/* Return true to inform that the Power Supply is ready */
 	return dpm_data->ps_ready;
 }
@@ -204,7 +199,7 @@ static bool port0_policy_cb_is_ps_ready(const struct device *dev)
  *	  valid
  */
 static bool port0_policy_cb_present_contract_is_valid(const struct device *dev,
-						      const uint32_t present_contract)
+					const uint32_t present_contract)
 {
 	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 	union pd_fixed_supply_pdo_source pdo;
@@ -232,7 +227,8 @@ static bool port0_policy_cb_present_contract_is_valid(const struct device *dev,
 /* usbc.rst callbacks end */
 
 /* usbc.rst notify start */
-static void port0_notify(const struct device *dev, const enum usbc_policy_notify_t policy_notify)
+static void port0_notify(const struct device *dev,
+			      const enum usbc_policy_notify_t policy_notify)
 {
 	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
@@ -270,9 +266,9 @@ static void port0_notify(const struct device *dev, const enum usbc_policy_notify
 		 */
 
 		/* Power off VCONN */
-		vconn_ctrl_set(dpm_data->pwrctrl, VCONN_OFF);
+		vconn_ctrl_set(VCONN_OFF);
 		/* Transition PS to Default level */
-		source_ctrl_set(dpm_data->pwrctrl, SOURCE_5V);
+		source_ctrl_set(SOURCE_5V);
 		break;
 	default:
 	}
@@ -280,7 +276,8 @@ static void port0_notify(const struct device *dev, const enum usbc_policy_notify
 /* usbc.rst notify end */
 
 /* usbc.rst check start */
-bool port0_policy_check(const struct device *dev, const enum usbc_policy_check_t policy_check)
+bool port0_policy_check(const struct device *dev,
+			const enum usbc_policy_check_t policy_check)
 {
 	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
 
@@ -303,13 +300,14 @@ bool port0_policy_check(const struct device *dev, const enum usbc_policy_check_t
 		 */
 
 		/* Power on VCONN */
-		vconn_ctrl_set(dpm_data->pwrctrl, dpm_data->vconn_pol);
+		vconn_ctrl_set(dpm_data->vconn_pol);
 
 		/* PS should be at default level after receiving a Hard Reset */
 		return true;
 	default:
 		/* Reject all other policy checks */
 		return false;
+
 	}
 }
 /* usbc.rst check end */
@@ -322,13 +320,6 @@ int main(void)
 	usbc_port0 = DEVICE_DT_GET(USBC_PORT0_NODE);
 	if (!device_is_ready(usbc_port0)) {
 		LOG_ERR("PORT0 device not ready");
-		return 0;
-	}
-
-	/* Get the power controller device for this port */
-	port0_data.pwrctrl = DEVICE_DT_GET(USBC_PORT0_PWRCTRL_NODE);
-	if (!device_is_ready(port0_data.pwrctrl)) {
-		LOG_ERR("PORT0 power controller not ready");
 		return 0;
 	}
 
@@ -353,7 +344,7 @@ int main(void)
 	usbc_set_policy_cb_is_ps_ready(usbc_port0, port0_policy_cb_is_ps_ready);
 	/* Register Policy callback to check if Present Contract is still valid */
 	usbc_set_policy_cb_present_contract_is_valid(usbc_port0,
-						     port0_policy_cb_present_contract_is_valid);
+				port0_policy_cb_present_contract_is_valid);
 
 	/* usbc.rst register end */
 
@@ -384,7 +375,7 @@ int main(void)
 			 * Transition Power Supply to new voltage.
 			 * Okay if this blocks.
 			 */
-			source_ctrl_set(port0_data.pwrctrl, port0_data.obj_pos);
+			source_ctrl_set(port0_data.obj_pos);
 			port0_data.ps_ready = true;
 			port0_data.ps_tran_start = false;
 		}

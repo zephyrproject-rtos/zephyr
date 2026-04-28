@@ -73,19 +73,19 @@ extern "C" {
 /** CRC8_REFLECT polynomial */
 #define CRC8_REFLECT_POLY 0xE0
 
-/** CRC16 polynomial */
+/** CRC8_ROHC polynomial */
 #define CRC16_POLY 0x8005
 
 /** CRC16_ANSI polynomial */
 #define CRC16_REFLECT_POLY 0xA001
 
-/** CRC16_CCITT/CRC16_ITU_T polynomial */
+/** CRC16_CCITT polynomial */
 #define CRC16_CCITT_POLY 0x1021
 
-/**  CRC24_PGP polynomial */
+/** CRC16_ITU_T polynomial */
 #define CRC24_PGP_POLY 0x01864CFBU
 
-/** CRC32_IEEE polynomial */
+/** CRC32_C polynomial */
 #define CRC32_IEEE_POLY 0x04C11DB7U
 
 /** CRC32C polynomial */

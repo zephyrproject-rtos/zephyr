@@ -68,4 +68,3 @@ Peripherals
    tgpio.rst
    video.rst
    watchdog.rst
-   wuc.rst

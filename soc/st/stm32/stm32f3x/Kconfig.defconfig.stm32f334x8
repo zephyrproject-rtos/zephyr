@@ -1,0 +1,11 @@
+# STMicroelectronics STM32F334X8 MCU
+
+# Copyright (c) 2016 RnDity Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F334X8
+
+config NUM_IRQS
+	default 82
+
+endif # SOC_STM32F334X8

@@ -88,7 +88,6 @@
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;
 			st,adc-has-differential-support;
-			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -113,7 +112,6 @@
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;
 			st,adc-has-differential-support;
-			st,adc-has-injected-support;
 			status = "disabled";
 		};
 

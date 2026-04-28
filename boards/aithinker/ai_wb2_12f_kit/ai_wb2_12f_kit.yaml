@@ -24,7 +24,4 @@ supported:
   - input
   - pwm
   - adc
-  - entropy
-  - crypto
-  - counter
 vendor: bflb

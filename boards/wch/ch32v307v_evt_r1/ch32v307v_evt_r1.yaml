@@ -6,11 +6,7 @@ toolchain:
   - cross-compile
   - zephyr
 ram: 32
-flash: 480
+flash: 256
 supported:
   - gpio
   - i2c
-  - netif:eth
-  - uart
-  - spi
-vendor: wch

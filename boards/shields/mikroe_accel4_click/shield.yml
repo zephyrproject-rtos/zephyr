@@ -1,6 +1,0 @@
-shield:
-  name: mikroe_accel4_click
-  full_name: ACCEL 4 Click
-  vendor: mikroe
-  supported_features:
-    - sensor

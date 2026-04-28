@@ -1,0 +1,11 @@
+# ST Microelectronics STM32L422XX MCU
+
+# Copyright (c) 2020 Aurelien Jarno
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32L422XX
+
+config NUM_IRQS
+	default 83
+
+endif # SOC_STM32L422XX

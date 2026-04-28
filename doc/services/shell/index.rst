@@ -241,13 +241,6 @@ File-System
 - :kconfig:option:`CONFIG_FILE_SYSTEM`
 - :kconfig:option:`CONFIG_FILE_SYSTEM_SHELL`
 
-ADC
----
-
-- :kconfig:option:`CONFIG_ADC`
-- :kconfig:option:`CONFIG_ADC_SHELL`
-- :kconfig:option:`CONFIG_ADC_EMUL_SHELL` (requires :kconfig:option:`CONFIG_ADC_EMUL`)
-
 Creating commands
 =================
 

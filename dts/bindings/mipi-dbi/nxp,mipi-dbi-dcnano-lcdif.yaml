@@ -1,4 +1,4 @@
-# Copyright 2025,2026 NXP
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -17,7 +17,7 @@ description: |
 
 compatible: "nxp,mipi-dbi-dcnano-lcdif"
 
-include: ["mipi-dbi-controller.yaml", "pinctrl-device.yaml"]
+include: [base.yaml]
 
 properties:
   clock-frequency:

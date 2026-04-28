@@ -74,17 +74,17 @@ struct {
 
 struct op_args_truncate {
 	const char *path;
-	int64_t size;
+	off_t size;
 };
 struct op_args_ftruncate {
 	uint64_t fh;
-	int64_t size;
+	off_t size;
 };
 struct op_args_readwrite {
 	uint64_t fh;
 	char *buf;
-	uint64_t size;
-	int64_t off;
+	off_t size;
+	off_t off;
 };
 struct op_args_create {
 	const char *path;

@@ -27,4 +27,4 @@ properties:
       - 6
       - 8
     description: |
-      Clock divider selection value.
+      Clock divider selction value.

@@ -213,30 +213,25 @@ static int iis2mdc_sample_fetch_temp(const struct device *dev)
 static int iis2mdc_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
-	int ret = 0;
-
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
 	case SENSOR_CHAN_MAGN_Y:
 	case SENSOR_CHAN_MAGN_Z:
 	case SENSOR_CHAN_MAGN_XYZ:
-		ret = iis2mdc_sample_fetch_mag(dev);
+		iis2mdc_sample_fetch_mag(dev);
 		break;
 	case SENSOR_CHAN_DIE_TEMP:
-		ret = iis2mdc_sample_fetch_temp(dev);
+		iis2mdc_sample_fetch_temp(dev);
 		break;
 	case SENSOR_CHAN_ALL:
-		ret = iis2mdc_sample_fetch_mag(dev);
-		if (ret != 0) {
-			break;
-		}
-		ret = iis2mdc_sample_fetch_temp(dev);
+		iis2mdc_sample_fetch_mag(dev);
+		iis2mdc_sample_fetch_temp(dev);
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	return ret;
+	return 0;
 }
 
 static DEVICE_API(sensor, iis2mdc_driver_api) = {

@@ -129,14 +129,6 @@
 	status = "okay";
 };
 
-&gpdma1 {
-	status = "okay";
-};
-
-&hpdma1 {
-	status = "okay";
-};
-
 &rtc {
 	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
@@ -144,6 +136,10 @@
 };
 
 &iwdg {
+	status = "okay";
+};
+
+&wwdg {
 	status = "okay";
 };
 

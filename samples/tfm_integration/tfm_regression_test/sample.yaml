@@ -11,7 +11,6 @@ common:
     - v2m_musca_s1/musca_s1/ns
     - stm32h573i_dk/stm32h573xx/ns
     - frdm_mcxn947/mcxn947/cpu0/ns
-    - frdm_mcxa577/mcxa577/ns
   integration_platforms:
     - nrf5340dk/nrf5340/cpuapp/ns
   harness: console

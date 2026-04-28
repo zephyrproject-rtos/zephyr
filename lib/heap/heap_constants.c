@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * Build-time computation of heap sizing constants from actual struct
- * layouts.  This file is NOT compiled into the final binary.  It is
- * only used by zephyr_constants_library() to produce the generated
- * heap_constants.h header.  See doc/build/cmake/index.rst for details.
+ * Build-time computation of heap constants from actual struct layouts.
+ * Compiled as part of the offsets library so that the generated offsets.h
+ * header provides heap sizing values derived from real structure sizes,
+ * eliminating manual synchronization of magic numbers in kernel.h.
  *
  * The heap layout for a single allocation looks like:
  *
@@ -29,7 +29,7 @@
  */
 
 #include <gen_offset.h>
-#include <zephyr/sys/util.h>
+#include <zephyr/kernel.h>
 #include "heap.h"
 
 /*
@@ -55,7 +55,7 @@
 /* min_chunk_size: smallest allocatable chunk (in chunk units) */
 #define _MINC  (_CHUNKSZ(_HDR + 1) + CHUNK_TRAILER_SIZE)
 
-/* --- emit symbols into heap_constants.h --- */
+/* --- emit symbols into offsets.h --- */
 
 GEN_ABS_SYM_BEGIN(_HeapConstantAbsSyms)
 

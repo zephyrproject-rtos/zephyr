@@ -1656,12 +1656,7 @@ int z_cbvprintf_impl(cbprintf_cb __out, void *ctx, const char *fp,
 			break;
 		case 'c':
 			bps = buf;
-			/* Use if-else to avoid -Wsign-compare warning */
-			if (CHAR_IS_SIGNED) {
-				buf[0] = value->sint;
-			} else {
-				buf[0] = value->uint;
-			}
+			buf[0] = CHAR_IS_SIGNED ? value->sint : value->uint;
 			bpe = buf + 1;
 			break;
 		case 'd':

@@ -46,9 +46,10 @@ Example building for the nrf52840dk/nrf52840 for RCP:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/openthread/coprocessor
+   :host-os: unix
    :board: nrf52840dk/nrf52840
-   :goals: build flash
-   :gen-args: -DEXTRA_CONF_FILE=overlay-rcp.conf
+   :conf: "prj.conf overlay-rcp.conf"
+   :goals: run
    :compact:
 
 There are configuration files for different boards and setups in the

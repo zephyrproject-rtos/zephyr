@@ -314,13 +314,13 @@ int enabled_clock(uint32_t src_clk)
 		}
 		break;
 #endif /* STM32_SRC_PLLSAI2_R */
-#if defined(STM32_SRC_PLLSAI2_POST_R)
-	case STM32_SRC_PLLSAI2_POST_R:
+#if defined(STM32_SRC_PLLSAI2_DIVR)
+	case STM32_SRC_PLLSAI2_DIVR:
 		if (!IS_ENABLED(STM32_PLLSAI2_R_ENABLED)) {
 			r = -ENOTSUP;
 		}
 		break;
-#endif /* STM32_SRC_PLLSAI2_POST_R */
+#endif /* STM32_SRC_PLLSAI2_DIVR */
 #if defined(STM32_SRC_PLL2CLK)
 	case STM32_SRC_PLL2CLK:
 		if (!IS_ENABLED(STM32_PLL2_ENABLED)) {
@@ -666,15 +666,16 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 					      STM32_PLLSAI2_R_DIVISOR);
 		break;
 #endif /* STM32_SRC_PLLSAI2_R */
-#if defined(STM32_SRC_PLLSAI2_POST_R) && STM32_PLLSAI2_R_ENABLED && STM32_PLLSAI2_POST_R_ENABLED
-	case STM32_SRC_PLLSAI2_POST_R:
+#if defined(STM32_SRC_PLLSAI2_DIVR) && STM32_PLLSAI2_R_ENABLED && STM32_PLLSAI2_DIVR_ENABLED && \
+	defined(STM32_PLLSAI2_DIVR_DIVISOR)
+	case STM32_SRC_PLLSAI2_DIVR:
 		*rate = get_pll_div_frequency(get_pllsai2src_frequency(),
 					      STM32_PLLSAI2_M_DIVISOR,
 					      STM32_PLLSAI2_N_MULTIPLIER,
 					      STM32_PLLSAI2_R_DIVISOR);
-		*rate /= STM32_PLLSAI2_POST_R_DIVISOR;
+		*rate /= STM32_PLLSAI2_DIVR_DIVISOR;
 		break;
-#endif /* STM32_SRC_PLLSAI2_POST_R */
+#endif /* STM32_SRC_PLLSAI2_DIVR */
 #if defined(STM32_SRC_LSE)
 	case STM32_SRC_LSE:
 		*rate = STM32_LSE_FREQ;
@@ -936,9 +937,8 @@ static void set_up_fixed_clock_sources(void)
 		while (LL_RCC_HSE_IsReady() != 1) {
 		/* Wait for HSE ready */
 		}
-
-#ifdef STM32_HSE_CSS
-		/* Enable HSE clock security system */
+		/* Check if we need to enable HSE clock security system or not */
+#if STM32_HSE_CSS
 		z_arm_nmi_set_handler(HAL_RCC_NMI_IRQHandler);
 		LL_RCC_HSE_EnableCSS();
 #endif /* STM32_HSE_CSS */
@@ -1208,7 +1208,7 @@ void HAL_RCC_CSSCallback(void)
 {
 	stm32_hse_css_callback();
 }
-#endif /* STM32_HSE_CSS */
+#endif
 
 void __weak config_regulator_voltage(uint32_t hclk_freq) {}
 /**

@@ -6,7 +6,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/micp.h>
 #include <zephyr/kernel.h>

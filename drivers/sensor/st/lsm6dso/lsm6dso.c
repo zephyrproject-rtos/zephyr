@@ -353,38 +353,28 @@ static int lsm6dso_sample_fetch(const struct device *dev,
 #if defined(CONFIG_LSM6DSO_SENSORHUB)
 	struct lsm6dso_data *data = dev->data;
 #endif /* CONFIG_LSM6DSO_SENSORHUB */
-	int ret = 0;
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
-		ret = lsm6dso_sample_fetch_accel(dev);
+		lsm6dso_sample_fetch_accel(dev);
 		break;
 	case SENSOR_CHAN_GYRO_XYZ:
-		ret = lsm6dso_sample_fetch_gyro(dev);
+		lsm6dso_sample_fetch_gyro(dev);
 		break;
 #if defined(CONFIG_LSM6DSO_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP:
-		ret = lsm6dso_sample_fetch_temp(dev);
+		lsm6dso_sample_fetch_temp(dev);
 		break;
 #endif
 	case SENSOR_CHAN_ALL:
-		ret = lsm6dso_sample_fetch_accel(dev);
-		if (ret != 0) {
-			break;
-		}
-		ret = lsm6dso_sample_fetch_gyro(dev);
-		if (ret != 0) {
-			break;
-		}
+		lsm6dso_sample_fetch_accel(dev);
+		lsm6dso_sample_fetch_gyro(dev);
 #if defined(CONFIG_LSM6DSO_ENABLE_TEMP)
-		ret = lsm6dso_sample_fetch_temp(dev);
-		if (ret != 0) {
-			break;
-		}
+		lsm6dso_sample_fetch_temp(dev);
 #endif
 #if defined(CONFIG_LSM6DSO_SENSORHUB)
 		if (data->shub_inited) {
-			ret = lsm6dso_sample_fetch_shub(dev);
+			lsm6dso_sample_fetch_shub(dev);
 		}
 #endif
 		break;
@@ -392,7 +382,7 @@ static int lsm6dso_sample_fetch(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	return ret;
+	return 0;
 }
 
 static inline void lsm6dso_accel_convert(struct sensor_value *val, int raw_val,

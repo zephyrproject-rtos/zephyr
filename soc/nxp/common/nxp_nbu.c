@@ -13,7 +13,6 @@
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
 #include <zephyr/irq.h>
-#include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
 /* -------------------------------------------------------------------------- */
@@ -42,10 +41,6 @@
 /* -------------------------------------------------------------------------- */
 extern int32_t nbu_handler(void);
 extern int32_t nbu_wakeup_done_handler(void);
-
-#if DT_INST_NODE_HAS_PROP(0, pinctrl_0)
-PINCTRL_DT_INST_DEFINE(0);
-#endif
 
 /* -------------------------------------------------------------------------- */
 /*                             Public function                                */
@@ -80,10 +75,5 @@ void nxp_nbu_init(void)
 #endif
 #if (DT_INST_PROP(0, wakeup_source)) && CONFIG_PM
 	NXP_ENABLE_WAKEUP_SIGNAL(NBU_RX_IRQ_N);
-#endif
-#if DT_INST_NODE_HAS_PROP(0, pinctrl_0)
-	/* NBU HDI pin configuration */
-	const struct pinctrl_dev_config *pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(0));
-	(void)pinctrl_apply_state(pincfg, PINCTRL_STATE_DEFAULT);
 #endif
 }

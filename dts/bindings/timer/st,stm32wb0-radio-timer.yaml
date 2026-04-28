@@ -5,8 +5,6 @@ description: STM32WB0 Bluetooth LE Radio Timer
 
 compatible: "st,stm32wb0-radio-timer"
 
-include: base.yaml
-
 properties:
   compensated-timer-freq:
     type: int

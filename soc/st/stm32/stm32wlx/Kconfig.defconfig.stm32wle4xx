@@ -1,0 +1,11 @@
+# STMicroelectronics STM32WLE4 MCU
+
+# Copyright (c) 2021 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32WLE4XX
+
+config NUM_IRQS
+	default 62
+
+endif # SOC_STM32WLE4XX

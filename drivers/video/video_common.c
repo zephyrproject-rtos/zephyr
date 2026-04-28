@@ -9,7 +9,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/video/video.h>
+#include <zephyr/drivers/video.h>
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -62,15 +62,23 @@ static void *video_buffer_k_heap_aligned_alloc(size_t align, size_t bytes, k_tim
 
 static struct video_buffer video_buf[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
 
+struct mem_block {
+	void *data;
+};
+
+static struct mem_block video_block[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
+
 struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_timeout_t timeout)
 {
 	struct video_buffer *vbuf = NULL;
+	struct mem_block *block;
+	int i;
 
 	/* find available video buffer */
-	for (uint16_t i = 0; i < ARRAY_SIZE(video_buf); i++) {
+	for (i = 0; i < ARRAY_SIZE(video_buf); i++) {
 		if (video_buf[i].buffer == NULL) {
 			vbuf = &video_buf[i];
-			vbuf->index = i;
+			block = &video_block[i];
 			break;
 		}
 	}
@@ -80,12 +88,12 @@ struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_tim
 	}
 
 	/* Alloc buffer memory */
-	vbuf->buffer = VIDEO_COMMON_HEAP_ALLOC(align, size, timeout);
-	if (vbuf->buffer == NULL) {
+	block->data = VIDEO_COMMON_HEAP_ALLOC(align, size, timeout);
+	if (block->data == NULL) {
 		return NULL;
 	}
 
-	vbuf->memory = VIDEO_MEMORY_INTERNAL;
+	vbuf->buffer = block->data;
 	vbuf->size = size;
 	vbuf->bytesused = 0;
 
@@ -97,86 +105,33 @@ struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout)
 	return video_buffer_aligned_alloc(size, sizeof(void *), timeout);
 }
 
-int video_buffer_release(struct video_buffer *vbuf)
+void video_buffer_release(struct video_buffer *vbuf)
 {
-	if (vbuf == NULL || vbuf->index >= ARRAY_SIZE(video_buf)) {
-		LOG_ERR("Invalid buffer index: %u", vbuf->index);
-		return -EINVAL;
-	}
+	struct mem_block *block = NULL;
+	int i;
 
-	if (video_buf[vbuf->index].buffer == NULL) {
-		LOG_ERR("Buffer %u is already released", vbuf->index);
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(vbuf != NULL);
 
-	if (video_buf[vbuf->index].memory == VIDEO_MEMORY_INTERNAL) {
-		VIDEO_COMMON_FREE(video_buf[vbuf->index].buffer);
-	}
-
-	video_buf[vbuf->index].buffer = NULL;
-
-	return 0;
-}
-
-int video_import_buffer(uint8_t *mem, size_t sz, uint16_t *idx)
-{
-	uint16_t ind;
-
-	if (mem == NULL || sz == 0) {
-		LOG_ERR("Invalid memory address or size");
-		return -EINVAL;
-	}
-
-	/* Find the 1st available slot in the video buffer pool */
-	for (ind = 0; ind < ARRAY_SIZE(video_buf); ind++) {
-		if (video_buf[ind].buffer == NULL) {
+	/* vbuf to block */
+	for (i = 0; i < ARRAY_SIZE(video_block); i++) {
+		if (video_block[i].data == vbuf->buffer) {
+			block = &video_block[i];
 			break;
 		}
 	}
 
-	if (ind == ARRAY_SIZE(video_buf)) {
-		return -ENOBUFS;
+	vbuf->buffer = NULL;
+	if (block) {
+		VIDEO_COMMON_FREE(block->data);
 	}
-
-	/* Populate the internal buffer */
-	video_buf[ind].index = ind;
-	video_buf[ind].size = sz;
-	video_buf[ind].memory = VIDEO_MEMORY_EXTERNAL;
-	video_buf[ind].buffer = mem;
-	video_buf[ind].bytesused = 0;
-	video_buf[ind].timestamp = 0;
-
-	/* Return the buffer index to the requester */
-	*idx = ind;
-
-	return 0;
-}
-
-int video_enqueue(const struct device *dev, struct video_buffer *buf)
-{
-	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
-
-	if (dev == NULL || buf == NULL || buf->index >= CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
-	    (buf->type != VIDEO_BUF_TYPE_INPUT && buf->type != VIDEO_BUF_TYPE_OUTPUT)) {
-		return -EINVAL;
-	}
-
-	api = (const struct video_driver_api *)dev->api;
-	if (api->enqueue == NULL) {
-		return -ENOSYS;
-	}
-
-	video_buf[buf->index].type = buf->type;
-
-	return api->enqueue(dev, &video_buf[buf->index]);
 }
 
 int video_format_caps_index(const struct video_format_cap *fmts, const struct video_format *fmt,
 			    size_t *idx)
 {
-	if (fmts == NULL || fmt == NULL || idx == NULL) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(fmts != NULL);
+	__ASSERT_NO_MSG(fmt != NULL);
+	__ASSERT_NO_MSG(idx != NULL);
 
 	for (int i = 0; fmts[i].pixelformat != 0; i++) {
 		if (fmts[i].pixelformat == fmt->pixelformat &&
@@ -189,13 +144,13 @@ int video_format_caps_index(const struct video_format_cap *fmts, const struct vi
 	return -ENOENT;
 }
 
-int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
-				   const struct video_frmival *desired,
-				   struct video_frmival *match)
+void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
+				    const struct video_frmival *desired,
+				    struct video_frmival *match)
 {
-	if (stepwise == NULL || desired == NULL || match == NULL) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(stepwise != NULL);
+	__ASSERT_NO_MSG(desired != NULL);
+	__ASSERT_NO_MSG(match != NULL);
 
 	uint64_t min = stepwise->min.numerator;
 	uint64_t max = stepwise->max.numerator;
@@ -208,9 +163,10 @@ int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise
 	step *= stepwise->min.denominator * stepwise->max.denominator * desired->denominator;
 	goal *= stepwise->min.denominator * stepwise->max.denominator * stepwise->step.denominator;
 
+	__ASSERT_NO_MSG(step != 0U);
 	/* Prevent division by zero */
 	if (step == 0U) {
-		return -EINVAL;
+		return;
 	}
 	/* Saturate the desired value to the min/max supported */
 	goal = CLAMP(goal, min, max);
@@ -219,21 +175,20 @@ int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise
 	match->numerator = min + DIV_ROUND_CLOSEST(goal - min, step) * step;
 	match->denominator = stepwise->min.denominator * stepwise->max.denominator *
 			     stepwise->step.denominator * desired->denominator;
-
-	return 0;
 }
 
-int video_closest_frmival(const struct device *dev, struct video_frmival_enum *match)
+void video_closest_frmival(const struct device *dev, struct video_frmival_enum *match)
 {
-	if (dev == NULL || match == NULL || match->type == VIDEO_FRMIVAL_TYPE_STEPWISE) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(match != NULL);
 
 	struct video_frmival desired = match->discrete;
 	struct video_frmival_enum fie = {.format = match->format};
 	uint64_t best_diff_nsec = INT32_MAX;
 	uint64_t goal_nsec = video_frmival_nsec(&desired);
-	int ret = 0;
+
+	__ASSERT(match->type != VIDEO_FRMIVAL_TYPE_STEPWISE,
+		 "cannot find range matching the range, only a value matching the range");
 
 	for (fie.index = 0; video_enum_frmival(dev, &fie) == 0; fie.index++) {
 		struct video_frmival tmp = {0};
@@ -245,7 +200,7 @@ int video_closest_frmival(const struct device *dev, struct video_frmival_enum *m
 			tmp = fie.discrete;
 			break;
 		case VIDEO_FRMIVAL_TYPE_STEPWISE:
-			ret = video_closest_frmival_stepwise(&fie.stepwise, &desired, &tmp);
+			video_closest_frmival_stepwise(&fie.stepwise, &desired, &tmp);
 			break;
 		default:
 			CODE_UNREACHABLE;
@@ -265,8 +220,6 @@ int video_closest_frmival(const struct device *dev, struct video_frmival_enum *m
 			break;
 		}
 	}
-
-	return ret;
 }
 
 static int video_read_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, size_t size_w,
@@ -301,9 +254,10 @@ int video_read_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32_
 	uint8_t *data_ptr;
 	int ret;
 
-	if (i2c == NULL || reg_data == NULL || addr_size == 0 || data_size == 0) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(i2c != NULL);
+	__ASSERT_NO_MSG(reg_data != NULL);
+	__ASSERT(addr_size > 0, "The address must have a address size flag");
+	__ASSERT(data_size > 0, "The address must have a data size flag");
 
 	*reg_data = 0;
 
@@ -341,9 +295,8 @@ static int video_write_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, 
 {
 	int ret;
 
-	if (i2c == NULL || buf_w == NULL) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(i2c != NULL);
+	__ASSERT_NO_MSG(buf_w != NULL);
 
 	for (int i = 0;; i++) {
 		ret = i2c_write_dt(i2c, buf_w, size);
@@ -372,9 +325,9 @@ int video_write_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32
 	uint8_t *data_ptr;
 	int ret;
 
-	if (i2c == NULL || addr_size == 0 || data_size == 0) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(i2c != NULL);
+	__ASSERT(addr_size > 0, "The address must have a address size flag");
+	__ASSERT(data_size > 0, "The address must have a data size flag");
 
 	if (big_endian) {
 		/* Casting between data sizes in big-endian requires re-aligning */
@@ -427,9 +380,7 @@ int video_write_cci_multiregs(const struct i2c_dt_spec *i2c, const struct video_
 {
 	int ret;
 
-	if (regs == NULL) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(regs != NULL);
 
 	for (int i = 0; i < num_regs; i++) {
 		ret = video_write_cci_reg(i2c, regs[i].addr, regs[i].data);
@@ -446,9 +397,7 @@ int video_write_cci_multiregs8(const struct i2c_dt_spec *i2c, const struct video
 {
 	int ret;
 
-	if (regs == NULL) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(regs != NULL);
 
 	for (int i = 0; i < num_regs; i++) {
 		ret = video_write_cci_reg(i2c, regs[i].addr | VIDEO_REG_ADDR8_DATA8, regs[i].data);
@@ -465,9 +414,7 @@ int video_write_cci_multiregs16(const struct i2c_dt_spec *i2c, const struct vide
 {
 	int ret;
 
-	if (regs == NULL) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(regs != NULL);
 
 	for (int i = 0; i < num_regs; i++) {
 		ret = video_write_cci_reg(i2c, regs[i].addr | VIDEO_REG_ADDR16_DATA8, regs[i].data);

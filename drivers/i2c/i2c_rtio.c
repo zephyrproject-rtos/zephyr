@@ -220,12 +220,8 @@ int i2c_rtio_configure(struct i2c_rtio *ctx, uint32_t i2c_config)
 	rtio_submit(r, 1);
 
 	cqe = rtio_cqe_consume(r);
-	if (unlikely(cqe != NULL)) {
-		res = cqe->result;
-		rtio_cqe_release(r, cqe);
-	} else {
-		res = -EIO;
-	}
+	res = cqe->result;
+	rtio_cqe_release(r, cqe);
 
 out:
 	k_sem_give(&ctx->lock);
@@ -256,12 +252,8 @@ int i2c_rtio_recover(struct i2c_rtio *ctx)
 	rtio_submit(r, 1);
 
 	cqe = rtio_cqe_consume(r);
-	if (unlikely(cqe != NULL)) {
-		res = cqe->result;
-		rtio_cqe_release(r, cqe);
-	} else {
-		res = -EIO;
-	}
+	res = cqe->result;
+	rtio_cqe_release(r, cqe);
 
 out:
 	k_sem_give(&ctx->lock);

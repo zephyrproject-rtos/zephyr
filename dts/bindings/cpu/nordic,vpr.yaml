@@ -5,7 +5,7 @@ description: Nordic Semiconductor RISC-V VPR CPU
 
 compatible: "nordic,vpr"
 
-include: riscv-common.yaml
+include: riscv,cpus.yaml
 
 properties:
   nordic,bus-width:

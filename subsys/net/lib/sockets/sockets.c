@@ -12,7 +12,6 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include <zephyr/tracing/tracing.h>
-#include <zephyr/net/net_log.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/internal/syscall_handler.h>
 
@@ -392,22 +391,16 @@ static inline ssize_t z_vrfy_zsock_sendmsg(int sock,
 					   int flags)
 {
 	struct net_msghdr msg_copy;
-	size_t msg_iov_size;
 	size_t i;
 	int ret;
-
-	if (size_mul_overflow(msg->msg_iovlen, sizeof(struct net_iovec),
-			      &msg_iov_size)) {
-		errno = EFAULT;
-		return -1;
-	}
 
 	K_OOPS(k_usermode_from_copy(&msg_copy, (void *)msg, sizeof(msg_copy)));
 
 	msg_copy.msg_name = NULL;
 	msg_copy.msg_control = NULL;
 
-	msg_copy.msg_iov = k_usermode_alloc_from_copy(msg->msg_iov, msg_iov_size);
+	msg_copy.msg_iov = k_usermode_alloc_from_copy(msg->msg_iov,
+				       msg->msg_iovlen * sizeof(struct net_iovec));
 	if (!msg_copy.msg_iov) {
 		errno = ENOMEM;
 		goto fail;
@@ -551,7 +544,6 @@ ssize_t z_impl_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 ssize_t z_vrfy_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 {
 	struct net_msghdr msg_copy;
-	size_t msg_iov_size;
 	size_t iovlen;
 	size_t i;
 	int ret;
@@ -566,12 +558,6 @@ ssize_t z_vrfy_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 		return -1;
 	}
 
-	if (size_mul_overflow(msg->msg_iovlen, sizeof(struct net_iovec),
-			      &msg_iov_size)) {
-		errno = EFAULT;
-		return -1;
-	}
-
 	K_OOPS(k_usermode_from_copy(&msg_copy, (void *)msg, sizeof(msg_copy)));
 
 	k_usermode_from_copy(&iovlen, &msg->msg_iovlen, sizeof(iovlen));
@@ -579,7 +565,8 @@ ssize_t z_vrfy_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 	msg_copy.msg_name = NULL;
 	msg_copy.msg_control = NULL;
 
-	msg_copy.msg_iov = k_usermode_alloc_from_copy(msg->msg_iov, msg_iov_size);
+	msg_copy.msg_iov = k_usermode_alloc_from_copy(msg->msg_iov,
+				       msg->msg_iovlen * sizeof(struct net_iovec));
 	if (!msg_copy.msg_iov) {
 		errno = ENOMEM;
 		goto fail;
@@ -589,7 +576,7 @@ ssize_t z_vrfy_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 	 * next loop fails, we do not try to free non allocated memory
 	 * in fail branch.
 	 */
-	memset(msg_copy.msg_iov, 0, msg_iov_size);
+	memset(msg_copy.msg_iov, 0, msg->msg_iovlen * sizeof(struct net_iovec));
 
 	for (i = 0; i < iovlen; i++) {
 		/* TODO: In practice we do not need to copy the actual data

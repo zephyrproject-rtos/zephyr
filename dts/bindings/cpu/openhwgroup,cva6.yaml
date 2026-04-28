@@ -5,7 +5,7 @@ description: OpenHW Group CVA6 CPU
 
 compatible: "openhwgroup,cva6"
 
-include: riscv-common.yaml
+include: riscv,cpus.yaml
 
 properties:
   timebase-frequency:

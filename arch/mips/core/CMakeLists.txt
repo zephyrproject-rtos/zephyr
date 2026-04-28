@@ -14,5 +14,3 @@ zephyr_library_sources(
 )
 
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
-
-zephyr_linker_sources(NOINIT noinit.ld)

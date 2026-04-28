@@ -19,14 +19,6 @@ typedef struct {
 	void *arg2;
 	void *arg3;
 
-#if defined(CONFIG_ARCH_POSIX_UPDATE_STACK_INFO)
-	/* Original Zephyr-allocated stack info, saved before being
-	 * overwritten with the real pthread stack bounds.
-	 */
-	uintptr_t zephyr_stack_start;
-	size_t zephyr_stack_size;
-#endif
-
 	int thread_idx;
 
 #if defined(CONFIG_ARCH_HAS_THREAD_ABORT)
@@ -39,13 +31,9 @@ typedef struct {
 	 * Note: If more elements are added to this structure, remember to
 	 * update ARCH_POSIX_RECOMMENDED_STACK_SIZE in the configuration.
 	 *
-	 * Without CONFIG_ARCH_POSIX_UPDATE_STACK_INFO or CONFIG_ARCH_HAS_THREAD_ABORT:
-	 *   4 pointers + 1 int
-	 *   32-bit: 4*4 + 1*4 = 20 bytes
-	 *   64-bit: 4*8 + 1*4 = 36 bytes
-	 * With CONFIG_ARCH_HAS_THREAD_ABORT adds 1 int (4 bytes).
-	 * With CONFIG_ARCH_POSIX_UPDATE_STACK_INFO adds 1 pointer + 1 size_t
-	 *   (32-bit: 8 bytes, 64-bit: 16 bytes).
+	 * Currently there are 4 pointers + 2 ints, on a 32-bit build this will result in 24 bytes
+	 * (4*4 + 2*4).
+	 * For a 64-bit build the recommended stack size will be 40 bytes ( 4*8 + 2*4 ).
 	 */
 } posix_thread_status_t;
 
@@ -59,7 +47,6 @@ int posix_new_thread(void *payload);
 void posix_abort_thread(int thread_idx);
 int posix_arch_get_unique_thread_id(int thread_idx);
 int posix_arch_thread_name_set(int thread_idx, const char *str);
-void posix_arch_get_thread_stack(int thread_idx, void **stack_addr, unsigned long *stack_size);
 
 #ifndef POSIX_ARCH_DEBUG_PRINTS
 #define POSIX_ARCH_DEBUG_PRINTS 0

@@ -74,8 +74,7 @@ static uint32_t uart_bflb_get_clock(void)
 	uint32_t uclk;
 	const struct device *clock_ctrl =  DEVICE_DT_GET_ANY(bflb_clock_controller);
 
-#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) \
-	|| defined(CONFIG_SOC_SERIES_BL70XL)
+#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X)
 	uart_divider = sys_read32(GLB_BASE + GLB_CLK_CFG2_OFFSET);
 	uart_divider = (uart_divider & GLB_UART_CLK_DIV_MSK) >> GLB_UART_CLK_DIV_POS;
 	clock_control_get_rate(clock_ctrl, (void *)BFLB_CLKID_CLK_ROOT, &uclk);
@@ -518,10 +517,8 @@ static int uart_bflb_pm_control(const struct device *dev,
 		/* Ungate clock to peripheral */
 		if (cfg->base_reg == UART0_BASE) {
 			tmp |= (1 << 16);
-#ifdef UART1_BASE
 		} else if (cfg->base_reg == UART1_BASE) {
 			tmp |= (1 << 17);
-#endif
 		} else {
 			return -EINVAL;
 		}
@@ -536,10 +533,8 @@ static int uart_bflb_pm_control(const struct device *dev,
 		/* Gate clock to peripheral */
 		if (cfg->base_reg == UART0_BASE) {
 			tmp &= ~(1 << 16);
-#ifdef UART1_BASE
 		} else if (cfg->base_reg == UART1_BASE) {
 			tmp &= ~(1 << 17);
-#endif
 		} else {
 			return -EINVAL;
 		}

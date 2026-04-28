@@ -26,7 +26,6 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/net_buf.h>
-#include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>

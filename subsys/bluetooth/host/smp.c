@@ -31,6 +31,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -5808,8 +5809,9 @@ int bt_smp_auth_keypress_notify(struct bt_conn *conn, enum bt_conn_auth_keypress
 		return -EINVAL;
 	}
 
-	if (!IN_RANGE(type, BT_CONN_AUTH_KEYPRESS_ENTRY_STARTED,
-		      BT_CONN_AUTH_KEYPRESS_ENTRY_COMPLETED)) {
+	CHECKIF(!IN_RANGE(type,
+			  BT_CONN_AUTH_KEYPRESS_ENTRY_STARTED,
+			  BT_CONN_AUTH_KEYPRESS_ENTRY_COMPLETED)) {
 		LOG_ERR("Refusing to send unknown event type %u", type);
 		return -EINVAL;
 	}

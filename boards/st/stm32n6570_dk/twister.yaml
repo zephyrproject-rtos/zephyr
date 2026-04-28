@@ -22,7 +22,6 @@ supported:
   - usb_device
   - usbd
   - video
-  - watchdog
 variants:
   stm32n6570_dk/stm32n657xx:
     twister: false

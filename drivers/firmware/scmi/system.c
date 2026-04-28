@@ -45,6 +45,7 @@ int scmi_system_power_state_set(struct scmi_system_power_state_config *cfg)
 	struct scmi_message msg, reply;
 	int32_t status;
 	int ret;
+	bool use_polling;
 
 	/* input validation */
 	if (!proto || !cfg) {
@@ -64,7 +65,9 @@ int scmi_system_power_state_set(struct scmi_system_power_state_config *cfg)
 	reply.len = sizeof(status);
 	reply.content = &status;
 
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	use_polling = k_is_pre_kernel();
+
+	ret = scmi_send_message(proto, &msg, &reply, use_polling);
 	if (ret < 0) {
 		return ret;
 	}

@@ -449,10 +449,7 @@ static int imx335_set_frmival(const struct device *dev, struct video_frmival *fr
 		.type = VIDEO_FRMIVAL_TYPE_DISCRETE,
 		.discrete = *frmival,
 	};
-	ret = video_closest_frmival(dev, &match);
-	if (ret < 0) {
-		return ret;
-	}
+	video_closest_frmival(dev, &match);
 
 	uint16_t hmax;
 

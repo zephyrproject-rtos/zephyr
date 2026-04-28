@@ -321,9 +321,10 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 	 * (which is always available without any additional actions),
 	 * it is required to request the proper clock to be running
 	 * before starting the transfer itself.
+	 * Targets using CLKSELECT register to select clock source
+	 * do not need to request audio clock.
 	 */
-	drv_data->request_clock = (drv_cfg->clk_src != PCLK32M &&
-				   IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF));
+	drv_data->request_clock = (drv_cfg->clk_src != PCLK32M && !NRF_PDM_HAS_CLKSELECT);
 	drv_data->configured = true;
 	return 0;
 }

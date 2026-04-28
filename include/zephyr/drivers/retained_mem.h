@@ -38,18 +38,14 @@ BUILD_ASSERT(!(sizeof(off_t) > sizeof(size_t)),
  */
 
 /**
- * @def_driverbackendgroup{Retained Memory,retained_mem_interface}
- * @ingroup retained_mem_interface
- * @{
- */
-
-/**
+ * @typedef	retained_mem_size_api
  * @brief	Callback API to get size of retained memory area.
  * See retained_mem_size() for argument description.
  */
 typedef ssize_t (*retained_mem_size_api)(const struct device *dev);
 
 /**
+ * @typedef	retained_mem_read_api
  * @brief	Callback API to read from retained memory area.
  * See retained_mem_read() for argument description.
  */
@@ -57,6 +53,7 @@ typedef int (*retained_mem_read_api)(const struct device *dev, off_t offset, uin
 				     size_t size);
 
 /**
+ * @typedef	retained_mem_write_api
  * @brief	Callback API to write to retained memory area.
  * See retained_mem_write() for argument description.
  */
@@ -64,14 +61,14 @@ typedef int (*retained_mem_write_api)(const struct device *dev, off_t offset,
 				      const uint8_t *buffer, size_t size);
 
 /**
+ * @typedef	retained_mem_clear_api
  * @brief	Callback API to clear retained memory area (reset all data to 0x00).
  * See retained_mem_clear() for argument description.
  */
 typedef int (*retained_mem_clear_api)(const struct device *dev);
 
 /**
- * @driver_ops{Retained Memory}
- *
+ * @brief Retained memory driver API
  * API which can be used by a device to store data in a retained memory area. Retained memory is
  * memory that is retained while the device is powered but is lost when power to the device is
  * lost (note that low power modes in some devices may clear the data also). This may be in a
@@ -82,17 +79,11 @@ typedef int (*retained_mem_clear_api)(const struct device *dev);
  * Note that drivers must implement all functions, none of the functions are optional.
  */
 __subsystem struct retained_mem_driver_api {
-	/** @driver_ops_mandatory @copybrief retained_mem_size */
 	retained_mem_size_api size;
-	/** @driver_ops_mandatory @copybrief retained_mem_read */
 	retained_mem_read_api read;
-	/** @driver_ops_mandatory @copybrief retained_mem_write */
 	retained_mem_write_api write;
-	/** @driver_ops_mandatory @copybrief retained_mem_clear */
 	retained_mem_clear_api clear;
 };
-
-/** @} */
 
 /**
  * @brief		Returns the size of the retained memory area.

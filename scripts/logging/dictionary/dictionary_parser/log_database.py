@@ -34,9 +34,6 @@ ARCHS = {
     "x86": {
         "kconfig": "CONFIG_X86",
     },
-    "openrisc": {
-        "kconfig": "CONFIG_OPENRISC",
-    },
     "posix": {
         "kconfig": "CONFIG_ARCH_POSIX",
     },

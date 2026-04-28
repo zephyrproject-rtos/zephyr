@@ -73,8 +73,7 @@ static void efuse_bflb_efuse_read(const struct device *dev)
 	tmp =	EF_CTRL_EFUSE_CTRL_PROTECT
 		| (EF_CTRL_OP_MODE_AUTO << EF_CTRL_EF_IF_0_MANUAL_EN_POS)
 		| (EF_CTRL_PARA_DFT << EF_CTRL_EF_IF_0_CYC_MODIFY_POS)
-#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) || \
-	defined(CONFIG_SOC_SERIES_BL70XL)
+#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X)
 		| (EF_CTRL_SAHB_CLK << EF_CTRL_EF_CLK_SAHB_DATA_SEL_POS)
 #endif
 		| (1 << EF_CTRL_EF_IF_AUTO_RD_EN_POS)
@@ -96,8 +95,7 @@ static void efuse_bflb_efuse_read(const struct device *dev)
 	tmp =	EF_CTRL_EFUSE_CTRL_PROTECT
 		| (EF_CTRL_OP_MODE_AUTO << EF_CTRL_EF_IF_0_MANUAL_EN_POS)
 		| (EF_CTRL_PARA_DFT << EF_CTRL_EF_IF_0_CYC_MODIFY_POS)
-#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) || \
-	defined(CONFIG_SOC_SERIES_BL70XL)
+#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X)
 		| (EF_CTRL_EF_CLK << EF_CTRL_EF_CLK_SAHB_DATA_SEL_POS)
 #endif
 		| (1 << EF_CTRL_EF_IF_AUTO_RD_EN_POS)
@@ -111,8 +109,7 @@ static void efuse_bflb_efuse_read(const struct device *dev)
 	tmp =	EF_CTRL_EFUSE_CTRL_PROTECT
 		| (EF_CTRL_OP_MODE_AUTO << EF_CTRL_EF_IF_0_MANUAL_EN_POS)
 		| (EF_CTRL_PARA_DFT << EF_CTRL_EF_IF_0_CYC_MODIFY_POS)
-#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) || \
-	defined(CONFIG_SOC_SERIES_BL70XL)
+#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X)
 		| (EF_CTRL_EF_CLK << EF_CTRL_EF_CLK_SAHB_DATA_SEL_POS)
 #endif
 		| (1 << EF_CTRL_EF_IF_AUTO_RD_EN_POS)
@@ -134,8 +131,7 @@ static void efuse_bflb_efuse_read(const struct device *dev)
 	tmp =	EF_CTRL_EFUSE_CTRL_PROTECT
 		| (EF_CTRL_OP_MODE_AUTO << EF_CTRL_EF_IF_0_MANUAL_EN_POS)
 		| (EF_CTRL_PARA_DFT << EF_CTRL_EF_IF_0_CYC_MODIFY_POS)
-#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) || \
-	defined(CONFIG_SOC_SERIES_BL70XL)
+#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X)
 		| (EF_CTRL_SAHB_CLK << EF_CTRL_EF_CLK_SAHB_DATA_SEL_POS)
 #endif
 		| (1 << EF_CTRL_EF_IF_AUTO_RD_EN_POS)

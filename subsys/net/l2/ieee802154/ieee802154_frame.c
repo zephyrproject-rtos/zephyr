@@ -19,7 +19,6 @@ LOG_MODULE_REGISTER(net_ieee802154_frame, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
-#include <zephyr/net/net_log.h>
 
 #include <ipv6.h>
 #include <nbr.h>

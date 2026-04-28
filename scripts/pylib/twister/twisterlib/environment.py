@@ -24,7 +24,6 @@ from typing import Any
 import zephyr_module
 from twisterlib.constants import SUPPORTED_SIMS, ZEPHYR_BASE
 from twisterlib.coverage import supported_coverage_formats
-from twisterlib.hardwaremap import HardwareMap
 from twisterlib.log_helper import log_command
 
 logger = logging.getLogger('twister')
@@ -257,16 +256,6 @@ Artificially long but functional example:
         E.g "twister --device-testing --device-serial /dev/ttyACM0
                          --west-flash --west-runner=pyocd"
         will translate to "west flash --runner pyocd"
-        """
-    )
-
-    parser.add_argument(
-        "--west-flash-cmd", choices=['flash', 'debug'],
-        help="""Uses the specified west command. twister will use flash if not set
-
-        E.g "twister --device-testing --device-serial /dev/ttyACM0
-                         --west-flash-cmd="flash"
-        will translate to "west flash ..."
         """
     )
 
@@ -1088,7 +1077,7 @@ class TwisterEnv:
                 self.arch_roots.append(project / Path(arch_root))
 
         self.modules = [m.meta for m in modules]
-        self.hwm: HardwareMap | None = None
+        self.hwm = None
 
         self.test_config = options.test_config
 
@@ -1189,10 +1178,5 @@ class TwisterEnv:
         if result['returncode'] != 0:
             print(f"E: {result['returnmsg']}")
             sys.exit(2)
-        _variant = json.loads(result['stdout'])['ZEPHYR_TOOLCHAIN_VARIANT']
-        self.compiler = json.loads(result['stdout'])['TOOLCHAIN_VARIANT_COMPILER']
-        self.toolchain = f"{_variant}"
-        if self.compiler:
-            # Only add "/..." if TOOLCHAIN_VARIANT_COMPILER is not empty
-            self.toolchain += f"/{self.compiler}"
-        logger.info(f"Using '{self.toolchain}' toolchain variant.")
+        self.toolchain = json.loads(result['stdout'])['ZEPHYR_TOOLCHAIN_VARIANT']
+        logger.info(f"Using '{self.toolchain}' toolchain.")

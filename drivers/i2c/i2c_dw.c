@@ -116,6 +116,7 @@ static int i2c_dw_error_chk(const struct device *dev)
 	uint32_t reg_base = get_regs(dev);
 	union ic_interrupt_register intr_stat;
 	union ic_txabrt_register ic_txabrt_src;
+	uint32_t value;
 	/* Cache ic_intr_stat and txabrt_src for processing,
 	 * so there is no need to read the register multiple times.
 	 */
@@ -138,13 +139,9 @@ static int i2c_dw_error_chk(const struct device *dev)
 			dw->state |= I2C_DW_USER_ABRT;
 			LOG_ERR("User Abort on %s", dev->name);
 		}
-		/* TX abrt because STOP */
-		if (intr_stat.bits.stop_det) {
-			dw->state |= I2C_DW_USER_ABRT;
-			LOG_ERR_RATELIMIT("ABR and STOP on %s", dev->name);
-		}
+		/* clear RTS5912_INTR_STAT_TX_ABRT */
+		value = read_clr_tx_abrt(reg_base);
 	}
-
 	/* check SCL stuck low */
 	if (intr_stat.bits.scl_stuck_low) {
 		dw->state |= I2C_DW_SCL_STUCK;
@@ -525,7 +522,6 @@ static void i2c_dw_isr(const struct device *port)
 		    intr_stat.raw) {
 			dw->state = I2C_DW_CMD_ERROR;
 			i2c_dw_error_chk(port);
-			value = read_clr_tx_abrt(reg_base);
 #if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
 			dw->need_setup = true;
 #endif
@@ -1252,8 +1248,8 @@ static int i2c_dw_initialize(const struct device *dev)
 	const struct i2c_dw_rom_config *const rom = dev->config;
 	struct i2c_dw_dev_config *const dw = dev->data;
 	union ic_sdahold_register sda_hold;
+	uint32_t reg_base = get_regs(dev);
 	union ic_con_register ic_con;
-	uint32_t reg_base;
 	int ret = 0;
 #ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
 	uint32_t sda_timeout = rom->sda_timeout_value * CONFIG_I2C_DW_CLOCK_SPEED * 1000;
@@ -1317,7 +1313,6 @@ static int i2c_dw_initialize(const struct device *dev)
 	k_sem_init(&dw->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 	k_sem_init(&dw->bus_sem, 1, 1);
 
-	reg_base = get_regs(dev);
 	clear_bit_enable_en(reg_base);
 
 	/* Set up SDAHOLD timing register */
@@ -1467,7 +1462,7 @@ static int i2c_dw_initialize(const struct device *dev)
 		I2C_CONFIG_REG_INIT(n).config_func = i2c_config_##n,                               \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
 		.sda_hold_tx = DT_INST_PROP_OR(n, sda_hold_tx, SDA_HOLD_INVALID),                  \
-		.sda_hold_rx = DT_INST_PROP_OR(n, sda_hold_rx, SDA_HOLD_INVALID),                  \
+		.sda_hold_rx = DT_INST_PROP_OR(n, scl_hold_rx, SDA_HOLD_INVALID),                  \
 		.irqnumber = DT_INST_IRQN(n),                                                      \
 		.lcnt_offset = (int16_t)DT_INST_PROP_OR(n, lcnt_offset, 0),                        \
 		.hcnt_offset = (int16_t)DT_INST_PROP_OR(n, hcnt_offset, 0),                        \

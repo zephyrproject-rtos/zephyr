@@ -14,7 +14,6 @@
 #include <reg/reg_gpio.h>
 #include "i2c_realtek_rts5912.h"
 #include <zephyr/logging/log.h>
-#include <errno.h>
 
 LOG_MODULE_REGISTER(i2c_rts5912, CONFIG_I2C_LOG_LEVEL);
 
@@ -29,8 +28,7 @@ BUILD_ASSERT(CONFIG_I2C_RTS5912_INIT_PRIORITY > CONFIG_I2C_INIT_PRIORITY,
 #define DT_DRV_COMPAT realtek_rts5912_i2c
 #endif
 
-#define RECOVERY_TIME    31 /* in ms, need bigger than DW_IC_REG_SCL_TIMEOUT */
-#define RECOVERY_TIME_US (RECOVERY_TIME * 1000)
+#define RECOVERY_TIME 30 /* in ms */
 
 struct i2c_rts5912_config {
 	const struct device *clk_dev;
@@ -47,82 +45,6 @@ static inline uint32_t get_regs(const struct device *dev)
 	return (uint32_t)DEVICE_MMIO_GET(dev);
 }
 
-static inline int i2c_rts5912_disable(const struct device *dev)
-{
-	struct i2c_rts5912_config const *config = dev->config;
-	struct device const *dw_i2c_dev = config->dw_i2c_dev;
-	uint32_t reg_base = get_regs(dw_i2c_dev);
-	int ret = 0;
-
-	clear_bit_enable_en(reg_base);
-
-	if (!WAIT_FOR(!test_bit_enable_sts(reg_base), RECOVERY_TIME_US, NULL)) {
-		LOG_ERR("Disable Fail");
-		ret = -EIO;
-	} else {
-		LOG_DBG("Disable success");
-	}
-
-	return ret;
-}
-
-static inline int i2c_rts5912_abort(const struct device *dev)
-{
-	struct i2c_rts5912_config const *config = dev->config;
-	struct device const *dw_i2c_dev = config->dw_i2c_dev;
-	uint32_t reg_base = get_regs(dw_i2c_dev);
-	int ret = 0;
-
-	/* the controller initiates the transfer abort */
-	LOG_DBG("ABORT transfer");
-	set_bit_enable_abort(reg_base);
-
-	if (!WAIT_FOR(!test_bit_enable_abort(reg_base), RECOVERY_TIME_US, NULL)) {
-		LOG_ERR("ERROR: ABORT Fail!");
-		ret = -EIO;
-	} else {
-		LOG_DBG("ABORT success");
-	}
-
-	return ret;
-}
-
-static inline int i2c_rts5912_reset_sda_stuck(const struct device *dev)
-{
-	struct i2c_rts5912_config const *config = dev->config;
-	struct device const *dw_i2c_dev = config->dw_i2c_dev;
-	uint32_t reg_base = get_regs(dw_i2c_dev);
-	int ret = 0;
-
-	/*
-	 * initiate the SDA Recovery Mechanism
-	 * (that is, send at most 9 SCL clocks and STOP to release the
-	 * SDA line) and then this bit gets auto clear
-	 */
-	LOG_DBG("CLK Recovery Start");
-	/* initiate the Master Clock Reset */
-	set_bit_enable_clk_reset(reg_base);
-	if (!WAIT_FOR(!test_bit_enable_clk_reset(reg_base), RECOVERY_TIME_US, NULL)) {
-		LOG_ERR("ERROR: CLK recovery Fail");
-		ret = -EIO;
-	} else {
-		LOG_DBG("CLK Recovery Success");
-	}
-
-	LOG_DBG("SDA Recovery Start");
-	set_bit_enable_sdarecov(reg_base);
-	WAIT_FOR(!test_bit_enable_sdarecov(reg_base), RECOVERY_TIME_US, NULL);
-	/* Check if bus is not clear */
-	if (test_bit_status_sdanotrecov(reg_base)) {
-		LOG_ERR("ERROR: SDA Recovery Fail");
-		ret = -EIO;
-	} else {
-		LOG_DBG("SDA Recovery Success");
-	}
-
-	return ret;
-}
-
 static int i2c_rts5912_recover_bus(const struct device *dev)
 {
 	struct i2c_rts5912_config const *config = dev->config;
@@ -134,7 +56,8 @@ static int i2c_rts5912_recover_bus(const struct device *dev)
 	uint32_t reg_base = get_regs(dw_i2c_dev);
 
 	uint32_t value;
-	int ret = 0, pin_ret = 0;
+	uint32_t start;
+	int ret = 0;
 	gpio_flags_t flags;
 	int i;
 
@@ -145,15 +68,62 @@ static int i2c_rts5912_recover_bus(const struct device *dev)
 	set_bit_enable_en(reg_base);
 
 	if (bus->state & I2C_DW_SDA_STUCK) {
-		ret |= i2c_rts5912_reset_sda_stuck(dev);
-	} else if (bus->state & I2C_DW_SCL_STUCK) {
-		ret |= i2c_rts5912_abort(dev);
-	}
+		/*
+		 * initiate the SDA Recovery Mechanism
+		 * (that is, send at most 9 SCL clocks and STOP to release the
+		 * SDA line) and then this bit gets auto clear
+		 */
+		LOG_DBG("CLK Recovery Start");
+		/* initiate the Master Clock Reset */
+		start = k_uptime_get_32();
+		set_bit_enable_clk_reset(reg_base);
+		while (test_bit_enable_clk_reset(reg_base) &&
+		       (k_uptime_get_32() - start < RECOVERY_TIME)) {
+			;
+		}
+		/* check if SCL bus clk is not reset */
+		if (test_bit_enable_clk_reset(reg_base)) {
+			LOG_ERR("ERROR: CLK recovery Fail");
+			ret = -1;
+		} else {
+			LOG_DBG("CLK Recovery Success");
+		}
 
+		LOG_DBG("SDA Recovery Start");
+		start = k_uptime_get_32();
+		set_bit_enable_sdarecov(reg_base);
+		while (test_bit_enable_sdarecov(reg_base) &&
+		       (k_uptime_get_32() - start < RECOVERY_TIME)) {
+			;
+		}
+		/* Check if bus is not clear */
+		if (test_bit_status_sdanotrecov(reg_base)) {
+			LOG_ERR("ERROR: SDA Recovery Fail");
+			ret = -1;
+		} else {
+			LOG_DBG("SDA Recovery Success");
+		}
+	} else if (bus->state & I2C_DW_SCL_STUCK) {
+		/* the controller initiates the transfer abort */
+		LOG_DBG("ABORT transfer");
+		start = k_uptime_get_32();
+		set_bit_enable_abort(reg_base);
+		while (test_bit_enable_abort(reg_base) &&
+		       (k_uptime_get_32() - start < RECOVERY_TIME)) {
+			;
+		}
+		/* check if Controller is not abort */
+		if (test_bit_enable_abort(reg_base)) {
+			LOG_ERR("ERROR: ABORT Fail!");
+			ret = -1;
+		} else {
+			LOG_DBG("ABORT success");
+		}
+	}
 	value = read_clr_intr(reg_base);
 	value = read_clr_tx_abrt(reg_base);
 	/* disable controller */
-	ret |= i2c_rts5912_disable(dev);
+	clear_bit_enable_en(reg_base);
 
 	/* Input type selection */
 	flags = GPIO_INPUT | RTS5912_GPIO_SCHEN;
@@ -163,7 +133,7 @@ static int i2c_rts5912_recover_bus(const struct device *dev)
 	gpio_pin_get_dt(&config->scl_gpios);
 
 	/* Output type selection */
-	flags = GPIO_OUTPUT_HIGH | RTS5912_GPIO_SCHEN | GPIO_OPEN_DRAIN;
+	flags = GPIO_OUTPUT_HIGH | RTS5912_GPIO_SCHEN;
 	/* Set SCL of I2C as GPIO pin */
 	gpio_pin_configure_dt(&config->scl_gpios, flags);
 	/* Set SDA of I2C as GPIO pin */
@@ -194,25 +164,32 @@ static int i2c_rts5912_recover_bus(const struct device *dev)
 	k_busy_wait(10);
 
 	/* Set GPIO back to I2C alternate function */
-	pin_ret = pinctrl_apply_state(rom->pcfg, PINCTRL_STATE_DEFAULT);
-	if (pin_ret < 0) {
+	ret = pinctrl_apply_state(rom->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
 		LOG_ERR("Failed to configure I2C pins");
-		return pin_ret;
+		return ret;
 	}
 
 	/* enable controller */
 	set_bit_enable_en(reg_base);
 
-	/* abort controller */
-	ret |= i2c_rts5912_abort(dev);
-
+	start = k_uptime_get_32();
+	set_bit_enable_abort(reg_base);
+	while (test_bit_enable_abort(reg_base) && (k_uptime_get_32() - start < RECOVERY_TIME)) {
+		;
+	}
+	if (test_bit_enable_abort(reg_base)) {
+		LOG_ERR("ERROR: ABORT Fail!");
+		ret = -1;
+	} else {
+		LOG_DBG("ABORT success");
+	}
 	/* disable controller */
-	ret |= i2c_rts5912_disable(dev);
+	clear_bit_enable_en(reg_base);
 
 	if (ret) {
-		LOG_ERR("ERROR: Bus Recover Fail, a device may be faulty or require a power reset, "
-			"EC try reset i2c bus");
-		ret = i2c_rts5912_reset_sda_stuck(dev);
+		LOG_ERR("ERROR: Bus Recover Fail, a slave device may be faulty or require a power "
+			"reset");
 	} else {
 		LOG_DBG("BUS Recover success");
 	}
@@ -242,9 +219,8 @@ static int i2c_rts5912_initialize(const struct device *dev)
 	}
 
 	uint32_t reg_base = get_regs(config->dw_i2c_dev);
-	/* disable controller */
-	ret = i2c_rts5912_disable(dev);
-
+	/* clear enable register */
+	clear_bit_enable_en(reg_base);
 	/* disable block mode */
 	clear_bit_enable_block(reg_base);
 

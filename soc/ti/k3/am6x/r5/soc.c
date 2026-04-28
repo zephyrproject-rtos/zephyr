@@ -8,7 +8,6 @@
 #include <zephyr/fatal.h>
 
 #include "soc.h"
-#include <zephyr/cache.h>
 #include <common/ctrl_partitions.h>
 
 unsigned int z_soc_irq_get_active(void)
@@ -52,8 +51,5 @@ int z_soc_irq_is_enabled(unsigned int irq)
 
 void soc_early_init_hook(void)
 {
-	sys_cache_data_enable();
-	sys_cache_instr_enable();
-
 	k3_unlock_all_ctrl_partitions();
 }

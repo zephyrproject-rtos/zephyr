@@ -40,6 +40,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		slot0_partition: partition@0 {
 			reg = <0x0 DT_SIZE_K(60)>;
@@ -115,9 +116,5 @@
 	txpo = <0>;
 	pinctrl-0 = <&sercom1_uart_default>;
 	pinctrl-names = "default";
-	status = "okay";
-};
-
-&dmac {
 	status = "okay";
 };

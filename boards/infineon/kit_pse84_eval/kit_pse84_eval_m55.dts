@@ -64,11 +64,15 @@
 
 &peri1_group2_8bit_0 {
 	status = "okay";
+	resource-type = <IFX_RSC_SDHC>;
+	resource-instance = <0>;
 	clock-div = <2>;
 };
 
 &peri1_group3_8bit_0 {
 	status = "okay";
+	resource-type = <IFX_RSC_SDHC>;
+	resource-instance = <1>;
 	clock-div = <2>;
 };
 
@@ -114,7 +118,7 @@
 	min-bus-freq = <400000>;
 	power-delay-ms = <1000>;
 	/* Card detect gpios */
-	cd-gpios = <&gpio_prt17 7 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpio_prt17 7 GPIO_PULL_UP>;
 
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";

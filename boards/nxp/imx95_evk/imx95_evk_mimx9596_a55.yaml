@@ -13,12 +13,10 @@ toolchain:
   - cross-compile
 ram: 1024
 supported:
-  - can
   - counter
   - i2c
   - uart
   - net
-  - watchdog
 testing:
   binaries:
     - flash.bin

@@ -6,7 +6,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/arch/riscv/irq.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(intc_it8xxx2, LOG_LEVEL_DBG);
@@ -201,7 +200,7 @@ bool __soc_ram_code ite_intc_no_irq(void)
 	return (IVECT == IVECT_OFFSET_WITH_IRQ);
 }
 
-unsigned long __soc_ram_code __soc_handle_irq(unsigned long arg)
+uint8_t __soc_ram_code get_irq(void *arg)
 {
 	ARG_UNUSED(arg);
 

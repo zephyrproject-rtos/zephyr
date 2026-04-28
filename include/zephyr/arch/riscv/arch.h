@@ -58,27 +58,11 @@
 		 Z_RISCV_STACK_PMP_ALIGN)
 #define ARCH_KERNEL_STACK_OBJ_ALIGN	Z_RISCV_STACK_PMP_ALIGN
 #endif
-#elif defined(CONFIG_CUSTOM_STACK_GUARD)
-/*
- * The custom stack guard reserved area is located at the bottom of the
- * kernel-mode stack. When a stack overflow occurs, this area is used to
- * save the exception stack frame and to handle the resulting fault.
- * Therefore, the reserved area must be large enough to hold the esf, plus
- * some configurable stack wiggle room to execute fault-handling code safely.
- */
-#define Z_RISCV_STACK_GUARD_SIZE \
-	ROUND_UP(sizeof(struct arch_esf) + CONFIG_CUSTOM_STACK_GUARD_RESERVED_SIZE, \
-		 ARCH_STACK_PTR_ALIGN)
-#else /* !CONFIG_PMP_STACK_GUARD && !CONFIG_CUSTOM_STACK_GUARD */
-#define Z_RISCV_STACK_GUARD_SIZE 0
-#endif
 
-#if defined(CONFIG_PMP_STACK_GUARD) || defined(CONFIG_CUSTOM_STACK_GUARD)
 /* Kernel-only stacks have the following layout if a stack guard is enabled:
  *
  * +------------+ <- thread.stack_obj
- * | Guard /    | } Z_RISCV_STACK_GUARD_SIZE
- * | Reserved   |
+ * | Guard      | } Z_RISCV_STACK_GUARD_SIZE
  * +------------+ <- thread.stack_info.start
  * | Kernel     |
  * | stack      |
@@ -88,6 +72,9 @@
  * +------------+ <- thread.stack_info.start + thread.stack_info.size
  */
 #define ARCH_KERNEL_STACK_RESERVED	Z_RISCV_STACK_GUARD_SIZE
+
+#else /* !CONFIG_PMP_STACK_GUARD */
+#define Z_RISCV_STACK_GUARD_SIZE 0
 #endif
 
 #ifdef CONFIG_PMP_POWER_OF_TWO_ALIGNMENT
@@ -95,8 +82,7 @@
  * generated at build time by gen_kobject_list.py
  *
  * +------------+ <- thread.arch.priv_stack_start
- * | Guard /    | } Z_RISCV_STACK_GUARD_SIZE
- * | Reserved   |
+ * | Guard      | } Z_RISCV_STACK_GUARD_SIZE
  * +------------+
  * | Priv Stack | } CONFIG_PRIVILEGED_STACK_SIZE
  * +------------+ <- thread.arch.priv_stack_start +
@@ -107,8 +93,7 @@
  * mode so we need to make room for a possible stack guard area when enabled:
  *
  * +------------+ <- thread.stack_obj
- * | Guard /    | } Z_RISCV_STACK_GUARD_SIZE
- * | Reserved   |
+ * | Guard      | } Z_RISCV_STACK_GUARD_SIZE
  * +............| <- thread.stack_info.start
  * | Thread     |
  * | stack      |
@@ -138,12 +123,11 @@
 
 #else /* !CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
 
-/* The stack object will contain the PMP guard (or custom stack guard reserved area),
- * the privilege stack, and then the usermode stack buffer in that order:
+/* The stack object will contain the PMP guard, the privilege stack, and then
+ * the usermode stack buffer in that order:
  *
  * +------------+ <- thread.stack_obj
- * | Guard /    | } Z_RISCV_STACK_GUARD_SIZE
- * | Reserved   |
+ * | Guard      | } Z_RISCV_STACK_GUARD_SIZE
  * +------------+
  * | Priv Stack | } CONFIG_PRIVILEGED_STACK_SIZE
  * +------------+ <- thread.stack_info.start

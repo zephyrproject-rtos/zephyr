@@ -9,5 +9,4 @@ toolchain:
 supported:
   - gpio
   - uart
-  - netif:eth
 vendor: renesas

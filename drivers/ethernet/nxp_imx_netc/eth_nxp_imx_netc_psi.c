@@ -60,7 +60,14 @@ static void netc_eth_iface_init(struct net_if *iface)
 	const struct netc_eth_config *cfg = dev->config;
 	status_t result;
 
-	data->iface = iface;
+	/*
+	 * For VLAN, this value is only used to get the correct L2 driver.
+	 * The iface pointer in context should contain the main interface
+	 * if the VLANs are enabled.
+	 */
+	if (data->iface == NULL) {
+		data->iface = iface;
+	}
 
 	/* Set MAC address */
 	result = EP_SetPrimaryMacAddr(&data->handle, (uint8_t *)data->mac_addr);

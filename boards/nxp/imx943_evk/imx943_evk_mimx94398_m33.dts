@@ -21,11 +21,6 @@
 		zephyr,console = &lpuart8;
 		zephyr,shell-uart = &lpuart8;
 	};
-
-	aliases {
-		i2s-codec-tx = &i2s1;
-		i2s-tx = &i2s1;
-	};
 };
 
 &flexio1 {
@@ -100,14 +95,5 @@
 };
 
 &edma4 {
-	status = "okay";
-};
-
-&i2s1 {
-	mclk-output;
-	status = "okay";
-};
-
-&edma1 {
 	status = "okay";
 };

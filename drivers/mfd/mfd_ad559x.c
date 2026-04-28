@@ -64,15 +64,13 @@ static int mfd_ad559x_init(const struct device *dev)
 		return ret;
 	}
 
-	if (config->reset_gpio.port) {
-		if (!gpio_is_ready_dt(&config->reset_gpio)) {
-			return -ENODEV;
-		}
+	if (!gpio_is_ready_dt(&config->reset_gpio)) {
+		return -ENODEV;
+	}
 
-		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
-		if (ret < 0) {
-			return ret;
-		}
+	ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
+	if (ret < 0) {
+		return ret;
 	}
 
 	ret = mfd_add559x_software_reset(dev);
@@ -101,7 +99,7 @@ static int mfd_ad559x_init(const struct device *dev)
 #define MFD_AD559X_DEFINE(inst)                                                                    \
 	static struct mfd_ad559x_data mfd_ad559x_data_##inst;                                      \
 	static const struct mfd_ad559x_config mfd_ad559x_config_##inst = {                         \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                    \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),                            \
 		MFD_AD559X_DEFINE_BUS(inst),                                                       \
 	};                                                                                         \
                                                                                                    \

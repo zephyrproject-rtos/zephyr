@@ -18,7 +18,6 @@ supported:
   - i2c
   - net
   - uart
-  - watchdog
 testing:
   ignore_tags:
     - bluetooth

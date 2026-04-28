@@ -12,7 +12,6 @@
 LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 
 #include "usbc_stack.h"
-#include "usbc_config.h"
 
 /**
  * @file
@@ -610,12 +609,12 @@ static enum smf_state_result prl_tx_wait_for_message_request_run(void *obj)
 
 	/* Clear any AMS flags and state if we are no longer in an AMS */
 	if (pe_dpm_initiated_ams(dev) == false) {
-		if (IS_ENABLED(CONFIG_USBC_CSM_SUPPORTS_SOURCE)) {
-			/* Note PRL_Tx_Src_Sink_Tx is embedded here. */
-			if (atomic_test_and_clear_bit(&prl_tx->flags, PRL_FLAGS_SINK_NG)) {
-				tc_select_src_collision_rp(dev, SINK_TX_OK);
-			}
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+		/* Note PRL_Tx_Src_Sink_Tx is embedded here. */
+		if (atomic_test_and_clear_bit(&prl_tx->flags, PRL_FLAGS_SINK_NG)) {
+			tc_select_src_collision_rp(dev, SINK_TX_OK);
 		}
+#endif
 		atomic_clear_bit(&prl_tx->flags, PRL_FLAGS_WAIT_SINK_OK);
 	}
 
@@ -637,7 +636,7 @@ static enum smf_state_result prl_tx_wait_for_message_request_run(void *obj)
 			 * Start of AMS notification received from
 			 * Policy Engine
 			 */
-			if (IS_ENABLED(CONFIG_USBC_CSM_SUPPORTS_SOURCE) &&
+			if (IS_ENABLED(CONFIG_USBC_CSM_SOURCE_ONLY) &&
 			    pe_get_power_role(dev) == TC_ROLE_SOURCE) {
 				atomic_set_bit(&prl_tx->flags, PRL_FLAGS_SINK_NG);
 				prl_tx_set_state(dev, PRL_TX_SRC_SOURCE_TX);
@@ -769,7 +768,7 @@ static void prl_tx_wait_for_phy_response_exit(void *obj)
 	increment_msgid_counter(dev);
 }
 
-#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
 /**
  * @brief 6.11.2.2.2.1 PRL_Tx_Src_Source_Tx
  */
@@ -799,7 +798,7 @@ static enum smf_state_result prl_tx_src_source_tx_run(void *obj)
 	return SMF_EVENT_PROPAGATE;
 }
 #endif
-#ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
+#if CONFIG_USBC_CSM_SINK_ONLY
 /**
  * @brief PRL_Tx_Snk_Start_of_AMS Entry State
  */
@@ -826,7 +825,7 @@ static enum smf_state_result prl_tx_snk_start_ams_run(void *obj)
 	return SMF_EVENT_PROPAGATE;
 }
 #endif
-#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
 /**
  * @brief PRL_Tx_Src_Pending Entry State
  */
@@ -886,7 +885,7 @@ static void prl_tx_src_pending_exit(void *obj)
 }
 #endif
 
-#ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
+#ifdef CONFIG_USBC_CSM_SINK_ONLY
 /**
  * @brief PRL_Tx_Snk_Pending Entry State
  */
@@ -1304,7 +1303,7 @@ static const struct smf_state prl_tx_states[PRL_TX_STATE_COUNT] = {
 		NULL,
 		NULL,
 		NULL),
-#ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
+#ifdef CONFIG_USBC_CSM_SINK_ONLY
 	[PRL_TX_SNK_START_AMS] = SMF_CREATE_STATE(
 		prl_tx_snk_start_ams_entry,
 		prl_tx_snk_start_ams_run,
@@ -1318,7 +1317,7 @@ static const struct smf_state prl_tx_states[PRL_TX_STATE_COUNT] = {
 		NULL,
 		NULL),
 #endif
-#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
 	[PRL_TX_SRC_SOURCE_TX] = SMF_CREATE_STATE(
 		prl_tx_src_source_tx_entry,
 		prl_tx_src_source_tx_run,

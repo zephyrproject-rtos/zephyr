@@ -73,6 +73,18 @@
 	status = "okay";
 };
 
+&gpiog {
+	status = "okay";
+};
+
+&gpioj {
+	status = "okay";
+};
+
+&gpioz {
+	status = "okay";
+};
+
 &mailbox {
 	status = "okay";
 };

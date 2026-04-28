@@ -109,6 +109,7 @@ struct eth_xmc4xxx_data {
 	sys_slist_t tx_frame_list;
 	struct net_buf *rx_frag_list[NUM_RX_DMA_DESCRIPTORS];
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
+	const struct device *ptp_clock;
 	uint32_t timestamp_addend;
 #endif
 };
@@ -116,9 +117,6 @@ struct eth_xmc4xxx_data {
 struct eth_xmc4xxx_config {
 	ETH_GLOBAL_TypeDef *regs;
 	const struct device *phy_dev;
-#if defined(CONFIG_PTP_CLOCK_XMC4XXX)
-	const struct device *ptp_clock;
-#endif
 	void (*irq_config_func)(void);
 	const struct pinctrl_dev_config *pcfg;
 	const uint8_t phy_connection_type;
@@ -1142,6 +1140,8 @@ static int eth_xmc4xxx_set_config(const struct device *dev, enum ethernet_config
 			dev_data->mac_addr[3], dev_data->mac_addr[4], dev_data->mac_addr[5]);
 
 		eth_xmc4xxx_set_mac_address(dev_cfg->regs, dev_data->mac_addr);
+		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
+				     sizeof(dev_data->mac_addr), NET_LINK_ETHERNET);
 		return 0;
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE: {
@@ -1174,9 +1174,9 @@ static void eth_xmc4xxx_irq_config(void)
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
 static const struct device *eth_xmc4xxx_get_ptp_clock(const struct device *dev)
 {
-	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
+	struct eth_xmc4xxx_data *dev_data = dev->data;
 
-	return dev_cfg->ptp_clock;
+	return dev_data->ptp_clock;
 }
 #endif
 
@@ -1221,17 +1221,10 @@ static const struct ethernet_api eth_xmc4xxx_api = {
 
 PINCTRL_DT_INST_DEFINE(0);
 
-#if defined(CONFIG_PTP_CLOCK_XMC4XXX)
-DEVICE_DECLARE(xmc4xxx_ptp_clock_0);
-#endif
-
 static struct eth_xmc4xxx_config eth_xmc4xxx_config = {
 	.regs = (ETH_GLOBAL_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(0)),
 	.irq_config_func = eth_xmc4xxx_irq_config,
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
-#if defined(CONFIG_PTP_CLOCK_XMC4XXX)
-	.ptp_clock = DEVICE_GET(xmc4xxx_ptp_clock_0),
-#endif
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.port_ctrl = {
 		.rxd0 = DT_INST_ENUM_IDX(0, rxd0_port_ctrl),
@@ -1256,9 +1249,16 @@ ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_xmc4xxx_init, NULL, &eth_xmc4xxx_data, &eth
 
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
 
+struct ptp_context {
+	const struct device *eth_dev;
+};
+
+static struct ptp_context ptp_xmc4xxx_context_0;
+
 static int eth_xmc4xxx_ptp_clock_set(const struct device *dev, struct net_ptp_time *tm)
 {
-	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
+	struct ptp_context *ptp_context = dev->data;
+	const struct eth_xmc4xxx_config *dev_cfg = ptp_context->eth_dev->config;
 
 	dev_cfg->regs->SYSTEM_TIME_NANOSECONDS_UPDATE = tm->nanosecond;
 	dev_cfg->regs->SYSTEM_TIME_SECONDS_UPDATE = tm->second;
@@ -1274,7 +1274,8 @@ static int eth_xmc4xxx_ptp_clock_set(const struct device *dev, struct net_ptp_ti
 
 static int eth_xmc4xxx_ptp_clock_get(const struct device *dev, struct net_ptp_time *tm)
 {
-	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
+	struct ptp_context *ptp_context = dev->data;
+	const struct eth_xmc4xxx_config *dev_cfg = ptp_context->eth_dev->config;
 
 	uint32_t nanosecond_0 = dev_cfg->regs->SYSTEM_TIME_NANOSECONDS;
 	uint32_t second_0 = dev_cfg->regs->SYSTEM_TIME_SECONDS;
@@ -1297,7 +1298,8 @@ static int eth_xmc4xxx_ptp_clock_get(const struct device *dev, struct net_ptp_ti
 
 static int eth_xmc4xxx_ptp_clock_adjust(const struct device *dev, int increment)
 {
-	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
+	struct ptp_context *ptp_context = dev->data;
+	const struct eth_xmc4xxx_config *dev_cfg = ptp_context->eth_dev->config;
 	uint32_t increment_tmp;
 
 	if ((increment <= -(int)NSEC_PER_SEC) || (increment >= (int)NSEC_PER_SEC)) {
@@ -1325,8 +1327,9 @@ static int eth_xmc4xxx_ptp_clock_adjust(const struct device *dev, int increment)
 
 static int eth_xmc4xxx_ptp_clock_rate_adjust(const struct device *dev, double ratio)
 {
-	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
-	struct eth_xmc4xxx_data *dev_data = dev->data;
+	struct ptp_context *ptp_context = dev->data;
+	const struct eth_xmc4xxx_config *dev_cfg = ptp_context->eth_dev->config;
+	struct eth_xmc4xxx_data *dev_data = ptp_context->eth_dev->data;
 	uint64_t K = dev_data->timestamp_addend;
 
 	if (ratio < ETH_PTP_RATE_ADJUST_RATIO_MIN || ratio > ETH_PTP_RATE_ADJUST_RATIO_MAX) {
@@ -1357,8 +1360,20 @@ static DEVICE_API(ptp_clock, ptp_api_xmc4xxx) = {
 	.rate_adjust = eth_xmc4xxx_ptp_clock_rate_adjust,
 };
 
-DEVICE_DEFINE(xmc4xxx_ptp_clock_0, PTP_CLOCK_NAME, NULL,  NULL,
-	      &eth_xmc4xxx_data, &eth_xmc4xxx_config, POST_KERNEL, CONFIG_ETH_INIT_PRIORITY,
+static int ptp_clock_xmc4xxx_init(const struct device *port)
+{
+	const struct device *const eth_dev = DEVICE_DT_INST_GET(0);
+	struct eth_xmc4xxx_data *dev_data = eth_dev->data;
+	struct ptp_context *ptp_context = port->data;
+
+	dev_data->ptp_clock = port;
+	ptp_context->eth_dev = eth_dev;
+
+	return 0;
+}
+
+DEVICE_DEFINE(xmc4xxx_ptp_clock_0, PTP_CLOCK_NAME, ptp_clock_xmc4xxx_init, NULL,
+	      &ptp_xmc4xxx_context_0, NULL, POST_KERNEL, CONFIG_PTP_CLOCK_INIT_PRIORITY,
 	      &ptp_api_xmc4xxx);
 
 #endif /* CONFIG_PTP_CLOCK_XMC4XXX */

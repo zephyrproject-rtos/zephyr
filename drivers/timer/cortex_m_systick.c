@@ -12,7 +12,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/drivers/timer/system_timer_lpm.h>
+
+#include "cortex_m_systick.h"
 
 #define COUNTER_MAX 0x00ffffff
 #define TIMER_STOPPED 0xff000000
@@ -152,7 +153,7 @@ void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
 }
 #endif /* CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE */
 
-#if !defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE)
+#if !defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_NONE)
 /* This local variable indicates that the timeout was set right before
  * entering idle state.
  *
@@ -162,21 +163,12 @@ void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
  */
 static bool timeout_idle;
 
-#if !defined(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)
+#if !defined(CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM)
 /* Cycle counter before entering the idle state. */
 static cycle_t cycle_pre_idle;
-#endif /* !CONFIG_SYSTEM_TIMER_RESET_BY_LPM */
+#endif /* !CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM */
 
-#if defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER)
-#if DT_HAS_CHOSEN(zephyr_system_timer_companion)
-#define SYSTEM_TIMER_COMPANION_NODE DT_CHOSEN(zephyr_system_timer_companion)
-#else
-/* Compatibility fallback for the deprecated /chosen/zephyr,cortex-m-idle-timer.
- * Scheduled for removal in Zephyr 4.6.0.
- */
-#define SYSTEM_TIMER_COMPANION_NODE DT_CHOSEN(zephyr_cortex_m_idle_timer)
-#endif
-
+#if defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER)
 /* Idle timer value before entering the idle state. */
 static uint32_t idle_timer_pre_idle;
 
@@ -187,7 +179,7 @@ static uint32_t idle_timer_pre_idle;
 static uint32_t idle_timer_scheduled_sleep_ticks;
 
 /* Idle timer used for timer while entering the idle state */
-static const struct device *idle_timer = DEVICE_DT_GET(SYSTEM_TIMER_COMPANION_NODE);
+static const struct device *idle_timer = DEVICE_DT_GET(DT_CHOSEN(zephyr_cortex_m_idle_timer));
 
 /* Stub callback to satisfy Counter API (cannot be NULL) */
 static void idle_timer_alarm_stub(const struct device *dev, uint8_t chan_id,
@@ -198,15 +190,16 @@ static void idle_timer_alarm_stub(const struct device *dev, uint8_t chan_id,
 	ARG_UNUSED(ticks);
 	ARG_UNUSED(user_data);
 }
-#endif /* CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER */
-#endif /* !CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */
+#endif /* CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER */
+#endif /* !CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_NONE */
 
-#if defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER)
+#if defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER)
 /**
- * Use the Counter API as the low-power companion provider when the
- * hook-based companion path is not selected.
+ * To simplify the driver, implement the callout to Counter API
+ * as hooks that would be provided by platform drivers if
+ * CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_HOOKS was selected instead.
  */
-void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
+void z_cms_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
 {
 	struct counter_alarm_cfg cfg = {
 		.callback = idle_timer_alarm_stub,
@@ -234,7 +227,7 @@ void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 	idle_timer_scheduled_sleep_ticks = cfg.ticks;
 }
 
-uint64_t z_sys_clock_lpm_exit(void)
+uint64_t z_cms_lptim_hook_on_lpm_exit(void)
 {
 	/**
 	 * Calculate how much time elapsed according to counter.
@@ -273,7 +266,7 @@ uint64_t z_sys_clock_lpm_exit(void)
 
 	return (uint64_t)counter_ticks_to_us(idle_timer, idle_timer_diff);
 }
-#endif /* CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER */
+#endif /* CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER */
 
 /* This internal function calculates the amount of HW cycles that have
  * elapsed since the last time the absolute HW cycles counter has been
@@ -364,7 +357,7 @@ __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 	cycle_count += overflow_cyc;
 	overflow_cyc = 0;
 
-#if defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER)
+#if defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER)
 	/* Rare case, when the interrupt was triggered, with previously programmed
 	 * LOAD value, just before entering the idle mode (SysTick is clocked) or right
 	 * after exiting the idle mode, before executing the procedure in the
@@ -376,7 +369,7 @@ __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 
 		return;
 	}
-#endif /* CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER */
+#endif /* CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER */
 
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* In TICKLESS mode, the SysTick.LOAD is re-programmed
@@ -423,7 +416,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-#if !defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE)
+#if !defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_NONE)
 	if (idle) {
 		uint64_t timeout_us =
 			((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
@@ -434,15 +427,15 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		 * Invoke platform-specific layer to configure LPTIM
 		 * such that system wakes up after timeout elapses.
 		 */
-		z_sys_clock_lpm_enter(timeout_us);
+		z_cms_lptim_hook_on_lpm_entry(timeout_us);
 
-#if !defined(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)
+#if !defined(CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM)
 		/* Store current value of SysTick counter to be able to
 		 * calculate a difference in measurements after exiting
 		 * the low-power state.
 		 */
 		cycle_pre_idle = cycle_count + elapsed();
-#else /* CONFIG_SYSTEM_TIMER_RESET_BY_LPM */
+#else /* CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM */
 		/**
 		 * SysTick will be placed under reset once we enter
 		 * low-power mode. Turn it off right now then update
@@ -464,10 +457,10 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 		cycle_count += elapsed();
 		overflow_cyc = 0;
-#endif /* !CONFIG_SYSTEM_TIMER_RESET_BY_LPM */
+#endif /* !CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM */
 		return;
 	}
-#endif /* !CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */
+#endif /* !CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_NONE */
 
 #if defined(CONFIG_TICKLESS_KERNEL)
 	uint32_t delay;
@@ -573,13 +566,13 @@ uint64_t sys_clock_cycle_get_64(void)
 
 void sys_clock_idle_exit(void)
 {
-#if !defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE)
+#if !defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_NONE)
 	if (timeout_idle) {
 		cycle_t systick_diff, missed_cycles;
 		uint32_t dcycles, dticks;
 		uint64_t systick_us, idle_timer_us;
 
-#if !defined(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)
+#if !defined(CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM)
 		/**
 		 * Get current value for SysTick and calculate how
 		 * much time has passed since last measurement.
@@ -587,15 +580,15 @@ void sys_clock_idle_exit(void)
 		systick_diff = cycle_count + elapsed() - cycle_pre_idle;
 		systick_us =
 			((uint64_t)systick_diff * USEC_PER_SEC) / sys_clock_hw_cycles_per_sec();
-#else /* CONFIG_SYSTEM_TIMER_RESET_BY_LPM */
+#else /* CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM */
 		/* SysTick was placed under reset so it didn't tick */
 		systick_diff = systick_us = 0;
-#endif /* !CONFIG_SYSTEM_TIMER_RESET_BY_LPM */
+#endif /* !CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM */
 
 		/**
 		 * Query platform-specific code for elapsed time according to LPTIM.
 		 */
-		idle_timer_us = z_sys_clock_lpm_exit();
+		idle_timer_us = z_cms_lptim_hook_on_lpm_exit();
 
 		/* Calculate difference in measurements to get how much time
 		 * the SysTick missed in idle state.
@@ -627,9 +620,9 @@ void sys_clock_idle_exit(void)
 		/* We've alredy performed all needed operations */
 		timeout_idle = false;
 	}
-#endif /* !CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */
+#endif /* !CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_NONE */
 
-	if (last_load == TIMER_STOPPED || IS_ENABLED(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)) {
+	if (last_load == TIMER_STOPPED || IS_ENABLED(CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM)) {
 		/* SysTick was stopped or placed under reset.
 		 * Restart the timer from scratch.
 		 */
@@ -637,7 +630,7 @@ void sys_clock_idle_exit(void)
 			last_load = CYC_PER_TICK;
 			SysTick->LOAD = last_load - 1;
 			SysTick->VAL = 0; /* resets timer to last_load */
-			if (!IS_ENABLED(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)) {
+			if (!IS_ENABLED(CONFIG_CORTEX_M_SYSTICK_RESET_BY_LPM)) {
 				SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
 			} else {
 				NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);

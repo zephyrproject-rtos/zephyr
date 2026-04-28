@@ -13,7 +13,6 @@
 #include <zephyr/posix/fcntl.h>
 #include <zephyr/posix/pthread.h>
 #include <zephyr/posix/semaphore.h>
-#include <wait_q.h>
 
 struct nsem_obj {
 	sys_snode_t snode;
@@ -91,7 +90,7 @@ int sem_destroy(sem_t *semaphore)
 		return -1;
 	}
 
-	if (z_waitq_head(&semaphore->wait_q) != NULL) {
+	if (k_sem_count_get(semaphore)) {
 		errno = EBUSY;
 		return -1;
 	}

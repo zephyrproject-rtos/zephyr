@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: dsa
    :name: DSA (Distributed Switch Architecture)
-   :relevant-api: dsa_core
+   :relevant-api: DSA
 
    Test and debug Distributed Switch Architecture
 
@@ -19,6 +19,8 @@ Requirements
 
 Building and Running
 ********************
+
+Host machine with :zephyr:board:`ip_k66f` board from Segger.
 
 Follow these steps to build the DSA sample application:
 

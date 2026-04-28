@@ -14,7 +14,6 @@
 		zephyr,itcm = &tcm1;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
-		zephyr,bt-hci = &bee_bt_hci;
 	};
 
 	aliases {
@@ -64,8 +63,4 @@
 
 &cpu {
 	clock-frequency = <40000000>;
-};
-
-&bee_bt_hci {
-	status = "okay";
 };

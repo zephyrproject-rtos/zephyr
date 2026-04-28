@@ -28,5 +28,5 @@ void mutex_test(void)
 	et = timing_cycles_get(&start, &end);
 
 	PRINT_F(FORMAT, "average lock and unlock mutex",
-		test_timing_cycles_to_ns_avg(et, (2 * NR_OF_MUTEX_RUNS)));
+		timing_cycles_to_ns_avg(et, (2 * NR_OF_MUTEX_RUNS)));
 }

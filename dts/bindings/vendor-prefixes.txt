@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: Copyright (c) 2026 The Linux Foundation
-# SPDX-License-Identifier: Apache-2.0
-#
 # Device tree binding vendor prefix registry. Keep this list in
 # alphabetical order.
 #
@@ -77,7 +74,7 @@ arc	Synopsys, Inc. (formerly ARC International PLC)
 archermind	ArcherMind Technology (Nanjing) Co., Ltd.
 arctic	Arctic Sand
 arcx	arcx Inc. / Archronix Inc.
-arducam	Arducam Technology Co., Limited
+arducam	Arducam
 arduino	Arduino
 aries	Aries Embedded GmbH
 arm	ARM Ltd.
@@ -325,7 +322,6 @@ hzgrow	Hangzhou Grow Technology Co., Ltd.
 i2se	I2SE GmbH
 iar	IAR Systems AB
 ibm	International Business Machines (IBM)
-iclegend	Iclegend Microelectronics Co., Ltd.
 icplus	IC Plus Corp.
 idt	Integrated Device Technologies, Inc.
 ifi	Ingenieurburo Fur Ic-Technologie (I/F/I)
@@ -427,7 +423,6 @@ mapleboard	Mapleboard.org
 marvell	Marvell Technology Group Ltd.
 maxbotix	MaxBotix Inc.
 maxim	Maxim Integrated Products
-maxlinear	Maxlinear, Inc.
 mbvl	Mobiveil Inc.
 mcube	mCube
 meas	Measurement Specialties
@@ -578,7 +573,6 @@ qiaodian	QiaoDian XianShi Corporation
 qihua	Chengdu Kaixuan Information Technology Co., Ltd.
 qnap	QNAP Systems, Inc.
 qorvo	Qorvo, Inc.
-qst	QST Corporation
 quectel	Quectel Wireless Solutions Co., Ltd.
 quicklogic	QuickLogic Corp.
 radxa	Radxa
@@ -595,7 +589,6 @@ remarkable	reMarkable AS
 renesas	Renesas Electronics Corporation
 renode	Antmicro's open source simulation and virtual development framework
 rervision	Shenzhen Rervision Technology Co., Ltd.
-retronix	Retronix Technology Inc.
 revotics	Revolution Robotics, Inc. (Revotics)
 rex	iMX6 Rex Project
 reyax	Reyax Technology Co., Ltd.
@@ -660,7 +653,7 @@ simtek	Cypress Semiconductor Corporation (Simtek Corporation)
 sinlinx	Sinlinx Electronics Technology Co., LTD
 sinovoip	SinoVoip Co., Ltd
 sinowealth	Sino Wealth Electronic Ltd
-sipeed	Shenzhen Sipeed Technology Co., Ltd.
+sipeed	Shenzhen Sipeed Technology Co., Ltd.
 sirf	SiRF Technology, Inc.
 sis	Silicon Integrated Systems Corp.
 sitronix	Sitronix Technology Corporation
@@ -670,7 +663,6 @@ smsc	Standard Microsystems Corporation
 snps	Synopsys, Inc.
 sochip	Shenzhen SoChip Technology Co., Ltd.
 socionext	Socionext Inc.
-solderedelectronics	Soldered Electronics
 solderparty	Solder Party AB
 solidrun	SolidRun
 solomon	Solomon Systech Limited
@@ -715,7 +707,6 @@ terasic	Terasic Inc.
 tfc	Three Five Corp
 thine	THine Electronics, Inc.
 thingyjp	thingy.jp
-thirdreality	Third Reality, Inc.
 ti	Texas Instruments
 tianma	Tianma Micro-electronics Co., Ltd.
 titanmec	Shenzhen Titan Micro Electronics Co., Ltd.
@@ -824,7 +815,6 @@ zb	Zbit Semiconductor, Inc.
 zealz	Zealz
 zeitec	ZEITEC Semiconductor Co., LTD.
 zephyr	Zephyr Project
-zhaw	Zurich University of Applied Sciences
 zhiantec	Hangzhou Zhian Technology Co., Ltd.
 zidoo	Shenzhen Zidoo Technology Co., Ltd.
 zii	Zodiac Inflight Innovations

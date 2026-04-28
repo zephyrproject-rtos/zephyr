@@ -69,6 +69,17 @@
  */
 #if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(watchdog0))
 #define WDT_NODE DT_ALIAS(watchdog0)
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
+#define WDT_NODE            DT_INST(0, st_stm32_window_watchdog)
+#define TIMEOUTS            0
+#if defined(CONFIG_SOC_SERIES_STM32F7X)
+#define WDT_TEST_MAX_WINDOW 170
+#else
+#define WDT_TEST_MAX_WINDOW 200
+#endif
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_watchdog)
+#define WDT_NODE DT_INST(0, st_stm32_watchdog)
+#define TIMEOUTS 0
 #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_wdt)
 #define WDT_NODE DT_INST(0, nordic_nrf_wdt)
 #define TIMEOUTS 2
@@ -97,6 +108,10 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_wwdt)
 #define WDT_NODE DT_INST(0, nuvoton_numaker_wwdt)
 #define TIMEOUTS 1
+#elif DT_HAS_COMPAT_STATUS_OKAY(andestech_atcwdt200)
+#define WDT_NODE            DT_INST(0, andestech_atcwdt200)
+#define TIMEOUTS            0
+#define WDT_TEST_MAX_WINDOW 200U
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_watchdog)
 #define WDT_TEST_MAX_WINDOW 8000U
@@ -115,18 +130,6 @@
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(bflb_wdt)
 #define WDT_TEST_MAX_WINDOW 1999U
-#endif
-#if DT_HAS_COMPAT_STATUS_OKAY(andestech_atcwdt200)
-#define TIMEOUTS            0
-#define WDT_TEST_MAX_WINDOW 200U
-#endif
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
-#define TIMEOUTS            0
-#if defined(CONFIG_SOC_SERIES_STM32F7X)
-#define WDT_TEST_MAX_WINDOW 170
-#else
-#define WDT_TEST_MAX_WINDOW 200
-#endif
 #endif
 
 #define WDT_TEST_STATE_IDLE        0
@@ -171,11 +174,15 @@ static struct wdt_timeout_cfg m_cfg_wdt1;
 #define DATATYPE uint32_t
 #endif
 
-/* Set NOINIT_SECTION based on Kconfig settings.
- * Defaults are '.noinit.test_wdt' and '.dtcm_noinit.test_wdt', based on
- * configuration.
+/*
+ * Exclude all STM32 SoCs from using the DTCM noinit section,
+ * as it may break WDT state retention.
  */
-#define NOINIT_SECTION CONFIG_TEST_WDT_NOINIT_SECTION
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) && !defined(CONFIG_SOC_FAMILY_STM32)
+#define NOINIT_SECTION ".dtcm_noinit.test_wdt"
+#else
+#define NOINIT_SECTION ".noinit.test_wdt"
+#endif
 
 /* m_state indicates state of particular test. Used to check whether testcase
  * should go to reset state or check other values after reset.

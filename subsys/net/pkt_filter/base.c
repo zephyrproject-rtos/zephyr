@@ -8,7 +8,6 @@
 LOG_MODULE_REGISTER(npf_base, CONFIG_NET_PKT_FILTER_LOG_LEVEL);
 
 #include <zephyr/net/net_core.h>
-#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt_filter.h>
 #include <zephyr/spinlock.h>
 

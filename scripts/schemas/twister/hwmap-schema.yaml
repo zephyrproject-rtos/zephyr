@@ -56,8 +56,6 @@ items:
         post_flash_timeout:
           type: integer
       additionalProperties: false
-    west_flash_cmd:
-      type: string
   required:
     - connected
     - id

@@ -10,10 +10,7 @@ Description
 This sample application configures the MTCH9010 in either
 capacitive or conductive sensing mode, triggers a sample
 once per second, and reports the data received from the
-sensor node. This sample is described in further detail in
-`AN6386 - Setting up the MTCH9010 in Zephyr® RTOS`_.
-
-.. _AN6386 - Setting up the MTCH9010 in Zephyr® RTOS: https://www.microchip.com/en-us/application-notes/an6386
+sensor node.
 
 Requirements
 ************

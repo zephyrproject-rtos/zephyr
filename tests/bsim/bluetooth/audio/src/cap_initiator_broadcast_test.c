@@ -10,7 +10,6 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
-#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
@@ -183,7 +182,7 @@ static void init(void)
 			.gtbs = true,
 			.authorization_required = false,
 			.technology = BT_TBS_TECHNOLOGY_3G,
-			.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
+			.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
 		};
 
 		err = bt_tbs_register_bearer(&gtbs_param);

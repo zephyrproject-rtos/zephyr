@@ -249,7 +249,8 @@ const size_t unified_mpc_domains_count = sizeof(unified_mpc_domains) / sizeof(cy
 const cy_stc_ppc_attribute_t cycfg_unused_ppc_cfg = {
 	.pcMask = 0xFF,
 	.secAttribute = CY_PPC_NON_SECURE,
-	.privAttribute = CY_PPC_NONPRIV,
+	.secPrivAttribute = CY_PPC_SEC_NONPRIV,
+	.nsPrivAttribute = CY_PPC_NON_SEC_NONPRIV,
 };
 
 cy_rslt_t cy_ppc_unsecure_init(PPC_Type *base, cy_en_prot_region_t start, cy_en_prot_region_t end)

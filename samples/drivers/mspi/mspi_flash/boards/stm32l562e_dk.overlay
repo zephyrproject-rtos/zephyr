@@ -18,7 +18,6 @@
 			clock-names = "ospix", "ospi-ker";
 			clocks = <&rcc STM32_CLOCK(AHB3, 8)>,
 				 <&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>;
-			clock-frequency = <DT_FREQ_M(50)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			op-mode = "MSPI_OP_MODE_CONTROLLER";
@@ -35,7 +34,7 @@
 			status = "okay";
 
 			mx25lm51245: ospi-nor-flash@0 {
-				compatible = "mxicy,mx25u", "jedec,mspi-nor";
+				compatible = "jedec,mspi-nor";
 				reg = <0>;
 				size = <DT_SIZE_M(512)>; /* 512 Megabits */
 				mspi-max-frequency = <DT_FREQ_M(50)>;

@@ -7,7 +7,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 
-#include <zephyr/net/net_log.h>
 #include <zephyr/drivers/ptp_clock.h>
 
 #include "gptp_messages.h"

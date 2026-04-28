@@ -419,8 +419,7 @@
 			reg = <0x40004000 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <20 2>;
-			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(13, 0)>;
-			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 10)>;
+			girqs = <13 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -430,8 +429,7 @@
 			reg = <0x40004400 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <21 2>;
-			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(13, 1)>;
-			pcr-scr = <MCHP_XEC_SCR_ENCODE(3, 13)>;
+			girqs = <13 1>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -441,8 +439,7 @@
 			reg = <0x40004800 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <22 2>;
-			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(13, 2)>;
-			pcr-scr = <MCHP_XEC_SCR_ENCODE(3, 14)>;
+			girqs = <13 2>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -452,8 +449,7 @@
 			reg = <0x40004c00 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <23 2>;
-			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(13, 3)>;
-			pcr-scr = <MCHP_XEC_SCR_ENCODE(3, 15)>;
+			girqs = <13 3>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -463,8 +459,7 @@
 			reg = <0x40005000 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <158 2>;
-			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(13, 4)>;
-			pcr-scr = <MCHP_XEC_SCR_ENCODE(3, 20)>;
+			girqs = <13 4>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";

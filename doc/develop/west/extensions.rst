@@ -96,9 +96,9 @@ details on the west APIs you can use, see :ref:`west-apis`.
        def __init__(self):
            super().__init__(
                'my-command-name',  # gets stored as self.name
-               '', # ignored self.help, will not be required by future west versions
+               'one-line help for what my-command-name does',  # self.help
                # self.description:
-               description=dedent('''
+               dedent('''
                A multi-line description of my-command.
 
                You can split this up into multiple paragraphs and they'll get
@@ -112,6 +112,7 @@ details on the west APIs you can use, see :ref:`west-apis`.
            # type of argparse handling you want. The "parser_adder" argument is
            # the return value of an argparse.ArgumentParser.add_subparsers() call.
            parser = parser_adder.add_parser(self.name,
+                                            help=self.help,
                                             description=self.description)
 
            # Add some example options using the standard argparse module API.

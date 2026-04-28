@@ -122,9 +122,6 @@ static otError tx_result;
 K_FIFO_DEFINE(rx_pkt_fifo);
 K_FIFO_DEFINE(tx_pkt_fifo);
 
-void transmit_message(struct k_work *tx_job_item);
-static K_WORK_DEFINE(tx_job, transmit_message);
-
 static int8_t get_transmit_power_for_channel(uint8_t aChannel)
 {
 	int8_t channel_max_power = OT_RADIO_POWER_INVALID;
@@ -382,11 +379,11 @@ static void radio_set_channel(uint16_t ch)
 	radio_api->set_channel(radio_dev, ch);
 }
 
-void transmit_message(struct k_work *tx_job_item)
+void transmit_message(struct k_work *tx_job)
 {
 	int tx_err;
 
-	ARG_UNUSED(tx_job_item);
+	ARG_UNUSED(tx_job);
 
 	enum ieee802154_hw_caps radio_caps = radio_api->get_capabilities(radio_dev);
 
@@ -483,11 +480,6 @@ void transmit_message(struct k_work *tx_job_item)
 
 static inline void handle_tx_done(otInstance *aInstance)
 {
-	struct k_work_sync sync;
-
-	/* Wait for work item to complete */
-	k_work_flush(&tx_job, &sync);
-
 	sTransmitFrame.mInfo.mTxInfo.mIsSecurityProcessed =
 		net_pkt_ieee802154_frame_secured(tx_pkt);
 	sTransmitFrame.mInfo.mTxInfo.mIsHeaderUpdated = net_pkt_ieee802154_mac_hdr_rdy(tx_pkt);
@@ -566,7 +558,7 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 	otMessageSettings settings;
 	bool is_ip6 = PKT_IS_IPv6(pkt);
 
-	LOG_DBG("Sending %s packet to ot stack", is_ip6 ? "IPv6" : "IPv4");
+	NET_DBG("Sending %s packet to ot stack", is_ip6 ? "IPv6" : "IPv4");
 
 	settings.mPriority = OT_MESSAGE_PRIORITY_NORMAL;
 	settings.mLinkSecurityEnabled = true;
@@ -574,7 +566,7 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 	message = is_ip6 ? otIp6NewMessage(instance, &settings)
 			 : openthread_ip4_new_msg(instance, &settings);
 	if (!message) {
-		LOG_ERR("Cannot allocate new message buffer");
+		NET_ERR("Cannot allocate new message buffer");
 		goto exit;
 	}
 
@@ -587,7 +579,7 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 
 	for (buf = pkt->buffer; buf; buf = buf->frags) {
 		if (otMessageAppend(message, buf->data, buf->len) != OT_ERROR_NONE) {
-			LOG_ERR("Error while appending to otMessage");
+			NET_ERR("Error while appending to otMessage");
 			otMessageFree(message);
 			goto exit;
 		}
@@ -596,7 +588,7 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 	error = is_ip6 ? otIp6Send(instance, message) : openthread_nat64_send(instance, message);
 
 	if (error != OT_ERROR_NONE) {
-		LOG_ERR("Error while calling %s [error: %d]",
+		NET_ERR("Error while calling %s [error: %d]",
 			is_ip6 ? "otIp6Send" : "openthread_nat64_send", error);
 	}
 
@@ -622,6 +614,8 @@ int notify_new_tx_frame(struct net_pkt *pkt)
 
 static int run_tx_task(otInstance *aInstance)
 {
+	static K_WORK_DEFINE(tx_job, transmit_message);
+
 	ARG_UNUSED(aInstance);
 
 	if (!k_work_is_pending(&tx_job)) {

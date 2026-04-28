@@ -20,14 +20,6 @@
 	pinctrl-names = "default";
 };
 
-&sec_eng_aes {
-	status = "okay";
-};
-
-&sec_eng_sha {
-	status = "okay";
-};
-
 &spi0 {
 	status = "okay";
 

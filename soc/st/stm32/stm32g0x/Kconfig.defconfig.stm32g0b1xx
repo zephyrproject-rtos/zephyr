@@ -5,6 +5,9 @@
 
 if SOC_STM32G0B1XX
 
+config NUM_IRQS
+	default 31
+
 if CAN_STM32_FDCAN
 
 configdefault SHARED_INTERRUPTS

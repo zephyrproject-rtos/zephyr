@@ -143,7 +143,7 @@ static uint32_t get_sysclk_frequency(void)
 
 
 /** @brief Verifies clock is part of active clock configuration */
-int enabled_clock(uint32_t src_clk)
+static int enabled_clock(uint32_t src_clk)
 {
 	if ((src_clk == STM32_SRC_SYSCLK) ||
 	    (src_clk == STM32_SRC_HCLK1) ||

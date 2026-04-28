@@ -9,6 +9,7 @@ set(QEMU_ARCH xilinx-aarch64)
 set(QEMU_CPU_TYPE_${ARCH} cortex-a9)
 
 set(QEMU_FLAGS_${ARCH}
+  -nographic
   -machine arm-generic-fdt-7series
   -dtb ${CMAKE_CURRENT_LIST_DIR}/fdt-zynq7000s.dtb
   )

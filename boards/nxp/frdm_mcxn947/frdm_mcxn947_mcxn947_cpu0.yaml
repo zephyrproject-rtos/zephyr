@@ -35,7 +35,6 @@ supported:
   - rtc
   - sdhc
   - spi
-  - tsi
   - usb_device
   - usbd
   - video

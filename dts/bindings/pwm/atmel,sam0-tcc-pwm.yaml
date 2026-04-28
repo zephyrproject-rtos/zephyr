@@ -32,7 +32,9 @@ properties:
     required: true
 
   channels:
+    type: int
     required: true
+    description: Number of channels this TCC has
     enum:
       - 2
       - 3

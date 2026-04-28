@@ -16,7 +16,6 @@ supported:
   - memc
   - pwm
   - spi
-  - usbd
   - watchdog
   - xplained_gpio
   - xplained_i2c

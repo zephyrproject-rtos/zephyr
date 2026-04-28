@@ -107,8 +107,7 @@ void k_mbox_init(struct k_mbox *mbox)
  * @param tx_msg Pointer to transmit message descriptor.
  * @param rx_msg Pointer to receive message descriptor.
  *
- * @retval 0 Success.
- * @retval -1 Not matched.
+ * @return 0 if successfully matched, otherwise -1.
  */
 static int mbox_message_match(struct k_mbox_msg *tx_msg,
 			       struct k_mbox_msg *rx_msg)
@@ -206,9 +205,7 @@ static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
  *        Use K_NO_WAIT to return immediately, or K_FOREVER to wait as long
  *        as necessary.
  *
- * @retval 0 Success.
- * @retval -ENOMSG Failed immediately.
- * @retval -EAGAIN Timed out.
+ * @return 0 if successful, -ENOMSG if failed immediately, -EAGAIN if timed out
  */
 static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			     k_timeout_t timeout)
@@ -365,7 +362,7 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer)
  * @param rx_msg Pointer to receive message descriptor.
  * @param buffer Pointer to buffer to receive data.
  *
- * @retval 0 Always returns 0.
+ * @return 0
  */
 static int mbox_message_data_check(struct k_mbox_msg *rx_msg, void *buffer)
 {

@@ -261,46 +261,16 @@ static void spi_cdns_send(const struct device *dev)
 				break;
 			}
 		}
-		if (data->tx_remain_entry > 0) {
-			data->tx_remain_entry--;
-			data->fifo_diff++;
+		if ((spi_context_tx_buf_on(ctx) || spi_context_rx_buf_on(ctx))) {
+			if (data->tx_remain_entry > 0) {
+				data->tx_remain_entry--;
+				data->fifo_diff++;
+			}
 		}
 		spi_context_update_tx(&data->ctx, dfs, 1);
 	}
 
 	sys_write32(val, SPI_REG(dev, SPI_TX_DATA));
-}
-
-static inline void spi_cdns_rx_store(const struct spi_cdns_cfg *config,
-		struct spi_context *ctx,
-		uint32_t val, uint8_t dfs, int idx)
-{
-	switch (dfs) {
-	case 1:
-		if (config->fifo_width == 8) {
-			UNALIGNED_PUT(val & 0xFF, (uint8_t *)ctx->rx_buf);
-		} else if (config->fifo_width == 16) {
-			UNALIGNED_PUT((val >> 8 * (1 - idx)) & 0xFF,
-					(uint8_t *)ctx->rx_buf);
-		} else if (config->fifo_width == 32) {
-			UNALIGNED_PUT((val >> 8 * (3 - idx)) & 0xFF,
-					(uint8_t *)ctx->rx_buf);
-		}
-		break;
-	case 2:
-		if (config->fifo_width == 16) {
-			UNALIGNED_PUT(val & 0xFFFF, (uint16_t *)ctx->rx_buf);
-		} else if (config->fifo_width == 32) {
-			UNALIGNED_PUT((val >> 16 * (1 - idx)) & 0xFFFF,
-					(uint16_t *)ctx->rx_buf);
-		}
-		break;
-	case 4:
-		if (config->fifo_width == 32) {
-			UNALIGNED_PUT(val, (uint32_t *)ctx->rx_buf);
-		}
-		break;
-	}
 }
 
 /**
@@ -323,15 +293,32 @@ static void spi_cdns_recv(const struct device *dev)
 	loop = (config->fifo_width / 8) / dfs;
 	for (i = 0; i < loop; i++) {
 		if (spi_context_rx_buf_on(ctx)) {
-			spi_cdns_rx_store(config, ctx, val, dfs, i);
-
-			/* Slave: advance RX only when a buffer is present */
-			if (spi_context_is_slave(ctx)) {
-				spi_context_update_rx(ctx, dfs, 1);
+			switch (dfs) {
+			case 1:
+				if (config->fifo_width == 8) {
+					UNALIGNED_PUT(val & 0xFF, (uint8_t *)ctx->rx_buf);
+				} else if (config->fifo_width == 16) {
+					UNALIGNED_PUT((val >> 8 * (1 - i)) & 0xFF,
+						      (uint8_t *)ctx->rx_buf);
+				} else if (config->fifo_width == 32) {
+					UNALIGNED_PUT((val >> 8 * (3 - i)) & 0xFF,
+						      (uint8_t *)ctx->rx_buf);
+				}
+				break;
+			case 2:
+				if (config->fifo_width == 16) {
+					UNALIGNED_PUT(val & 0xFFFF, (uint16_t *)ctx->rx_buf);
+				} else if (config->fifo_width == 32) {
+					UNALIGNED_PUT((val >> 16 * (1 - i)) & 0xFFFF,
+						      (uint16_t *)ctx->rx_buf);
+				}
+				break;
+			case 4:
+				if (config->fifo_width == 32) {
+					UNALIGNED_PUT(val, (uint32_t *)ctx->rx_buf);
+				}
+				break;
 			}
-		}
-		/* Master: always advance RX per received frame */
-		if (!spi_context_is_slave(ctx)) {
 			spi_context_update_rx(ctx, dfs, 1);
 		}
 		if (data->fifo_diff > 0) {

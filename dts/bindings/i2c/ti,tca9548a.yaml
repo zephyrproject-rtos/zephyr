@@ -5,3 +5,6 @@ description: Texas Instruments TCA9548A
 compatible: "ti,tca9548a"
 
 include: ti,tca954x-base.yaml
+
+child-binding:
+  compatible: "ti,tca9548a-channel"

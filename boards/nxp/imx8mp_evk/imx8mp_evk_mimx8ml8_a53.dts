@@ -15,10 +15,6 @@
 	model = "NXP i.MX8MP A53";
 	compatible = "fsl,mimx8mp";
 
-	aliases {
-		watchdog0 = &wdog1;
-	};
-
 	chosen {
 		zephyr,canbus = &flexcan1;
 		zephyr,console = &uart4;
@@ -133,9 +129,5 @@
 };
 
 &gpio5 {
-	status = "okay";
-};
-
-&wdog1 {
 	status = "okay";
 };

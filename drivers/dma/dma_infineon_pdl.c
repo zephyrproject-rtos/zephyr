@@ -29,15 +29,13 @@ LOG_MODULE_REGISTER(ifx_cat1_dma, CONFIG_DMA_LOG_LEVEL);
 #define CY_REMAP_ADDRESS_CBUS_TO_SAHB(addr) (addr)
 #endif
 
-#define DESCRIPTOR_COUNT (CONFIG_DMA_INFINEON_DESCRIPTOR_COUNT)
-
 struct ifx_cat1_dma_channel {
 	uint32_t channel_direction: 3;
 	uint32_t complete_callback_en: 1;
 	uint32_t error_callback_dis: 1;
 	uint32_t sw_triggered: 1;
 
-	cy_stc_dma_descriptor_t descr[DESCRIPTOR_COUNT];
+	cy_stc_dma_descriptor_t descr;
 	IRQn_Type irq;
 
 	/* store config data from dma_config structure */
@@ -47,6 +45,8 @@ struct ifx_cat1_dma_channel {
 
 struct ifx_cat1_dma_data {
 	struct ifx_cat1_dma_channel *channels;
+	cy_stc_dma_descriptor_t descriptor_pool[CONFIG_INFINEON_DESCRIPTOR_POOL_SIZE];
+	ATOMIC_DEFINE(desc_allocated, CONFIG_INFINEON_DESCRIPTOR_POOL_SIZE);
 };
 
 struct ifx_cat1_dma_config {
@@ -55,6 +55,20 @@ struct ifx_cat1_dma_config {
 	bool enable_chaining;
 	uint8_t num_channels;
 };
+
+static cy_stc_dma_descriptor_t *ifx_cat1_dma_alloc_descriptor(const struct device *dev)
+{
+	uint32_t i;
+	struct ifx_cat1_dma_data *data = dev->data;
+
+	for (i = 0u; i < CONFIG_INFINEON_DESCRIPTOR_POOL_SIZE; i++) {
+		if (!atomic_test_and_set_bit(data->desc_allocated, i)) {
+			return &data->descriptor_pool[i];
+		}
+	}
+
+	return NULL;
+}
 
 int ifx_cat1_dma_trig(const struct device *dev, uint32_t channel)
 {
@@ -154,7 +168,7 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 		(config->channel_direction == MEMORY_TO_MEMORY) ? 1 : config->source_handshake;
 
 	/* Get first descriptor */
-	descriptor = &data->channels[channel].descr[0];
+	descriptor = &data->channels[channel].descr;
 
 	/* Retrigger descriptor immediately */
 	descriptor_config.retrigger = CY_DMA_RETRIG_IM;
@@ -232,14 +246,6 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 			descriptor_config.yCount = 1;
 			descriptor_config.srcYincrement = 0;
 			descriptor_config.dstYincrement = 0;
-			/* For 1D transfers, use dest_scatter_interval to specify the
-			 * destination address increment value.
-			 */
-			if (block_config->dest_scatter_interval != 0) {
-				descriptor_config.dstXincrement =
-					descriptor_config.dstXincrement *
-					block_config->dest_scatter_interval;
-			}
 		}
 
 		/* Set source and destination for descriptor
@@ -253,11 +259,10 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 
 		/* Allocate next descriptor if need */
 		if (i + 1u < config->block_count) {
-			if (i + 1u >= DESCRIPTOR_COUNT) {
-				LOG_ERR("Not enough descriptors available for channel %d", channel);
-				return -ENOMEM;
+			descriptor_config.nextDescriptor = ifx_cat1_dma_alloc_descriptor(dev);
+			if (descriptor_config.nextDescriptor == NULL) {
+				LOG_ERR("ERROR: can not allocate DMA descriptor");
 			}
-			descriptor_config.nextDescriptor = &data->channels[channel].descr[i + 1u];
 		} else {
 			if (cfg->enable_chaining) {
 				descriptor_config.nextDescriptor = descriptor;
@@ -277,7 +282,7 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 	}
 
 	/* Set a descriptor for the specified DMA channel */
-	channel_config.descriptor = &data->channels[channel].descr[0];
+	channel_config.descriptor = &data->channels[channel].descr;
 
 	/* Set a priority for the DMA channel */
 	Cy_DMA_Channel_SetPriority(cfg->regs, channel, config->channel_priority);
@@ -341,7 +346,7 @@ int ifx_cat1_dma_reload(const struct device *dev, uint32_t channel, uint32_t src
 {
 	struct ifx_cat1_dma_data *data = dev->data;
 	const struct ifx_cat1_dma_config *const cfg = dev->config;
-	cy_stc_dma_descriptor_t *descriptor = &data->channels[channel].descr[0];
+	cy_stc_dma_descriptor_t *descriptor = &data->channels[channel].descr;
 
 	if (channel >= cfg->num_channels) {
 		LOG_ERR("Unsupported channel");
@@ -383,7 +388,7 @@ static uint32_t get_total_size(const struct device *dev, uint32_t channel)
 	}
 
 	/* start from the head descriptor for the channel */
-	curr_descr = &data->channels[channel].descr[0];
+	curr_descr = &data->channels[channel].descr;
 
 	while (curr_descr != NULL) {
 		x_size = Cy_DMA_Descriptor_GetXloopDataCount(curr_descr);
@@ -408,7 +413,7 @@ static uint32_t get_transferred_size(const struct device *dev, uint32_t channel)
 	uint32_t y_size = 0;
 
 	/* head descriptor for the channel */
-	cy_stc_dma_descriptor_t *next_descr = &data->channels[channel].descr[0];
+	cy_stc_dma_descriptor_t *next_descr = &data->channels[channel].descr;
 	/* current descriptor from PDL */
 	cy_stc_dma_descriptor_t *curr_descr =
 		Cy_DMA_Channel_GetCurrentDescriptor(cfg->regs, channel);
@@ -458,7 +463,7 @@ static int ifx_cat1_dma_get_status(const struct device *dev, uint32_t channel,
 			     : false;
 
 	/* Check if the channel has a configured head descriptor by inspecting its src/dst */
-	cy_stc_dma_descriptor_t *head = &data->channels[channel].descr[0];
+	cy_stc_dma_descriptor_t *head = &data->channels[channel].descr;
 
 	if (head != NULL && (head->src != 0 || head->dst != 0)) {
 		uint32_t total_transfer_size = get_total_size(dev, channel);

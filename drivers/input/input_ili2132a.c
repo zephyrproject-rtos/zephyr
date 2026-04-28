@@ -77,17 +77,17 @@ static int ili2132a_init(const struct device *dev)
 	int ret;
 
 	if (!i2c_is_ready_dt(&dev_cfg->i2c)) {
-		LOG_ERR_DEVICE_NOT_READY(dev_cfg->i2c.bus);
+		LOG_ERR("%s is not ready", dev_cfg->i2c.bus->name);
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&dev_cfg->rst)) {
-		LOG_ERR_DEVICE_NOT_READY(dev_cfg->rst.port);
+		LOG_ERR("Reset GPIO controller device not ready");
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&dev_cfg->irq)) {
-		LOG_ERR_DEVICE_NOT_READY(dev_cfg->irq.port);
+		LOG_ERR("Interrupt GPIO controller device not ready");
 		return -ENODEV;
 	}
 

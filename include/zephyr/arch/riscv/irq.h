@@ -109,7 +109,7 @@ static inline void arch_isr_direct_header(void)
 	++(arch_curr_cpu()->nested);
 }
 
-extern unsigned long __soc_handle_irq(unsigned long mcause);
+extern void __soc_handle_irq(unsigned long mcause);
 
 static inline void arch_isr_direct_footer(int swap)
 {

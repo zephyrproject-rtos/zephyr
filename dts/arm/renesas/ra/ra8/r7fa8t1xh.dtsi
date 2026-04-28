@@ -12,7 +12,6 @@
 /delete-node/ &i2s1;
 /delete-node/ &battery_backup;
 /delete-node/ &ceu;
-/delete-node/ &drw;
 
 / {
 	clocks: clocks {

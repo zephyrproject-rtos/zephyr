@@ -28,14 +28,15 @@ class Packages(WestCommand):
     def __init__(self):
         super().__init__(
             "packages",
-            "",
-            description="List and Install packages for Zephyr and modules",
+            "manage packages for Zephyr",
+            "List and Install packages for Zephyr and modules",
             accepts_unknown_args=True,
         )
 
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(
             self.name,
+            help=self.help,
             description=self.description,
             formatter_class=argparse.RawDescriptionHelpFormatter,
             epilog=textwrap.dedent(

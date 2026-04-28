@@ -35,10 +35,9 @@ class Artifacts:
                 if t['status'] != TwisterStatus.FILTER:
                     p = t['platform']
                     normalized  = p.replace("/", "_")
-                    toolchain_normalized = t['toolchain'].replace("/", "_")
                     dirs.append(
                         os.path.join(
-                            self.options.outdir, normalized, toolchain_normalized, t['name']
+                            self.options.outdir, normalized, t['toolchain'], t['name']
                         )
                     )
 

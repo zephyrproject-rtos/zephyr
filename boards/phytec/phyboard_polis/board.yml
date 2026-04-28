@@ -4,6 +4,3 @@ board:
   vendor: phytec
   socs:
     - name: mimx8mm6
-      variants:
-        - name: smp
-          cpucluster: a53

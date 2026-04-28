@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-description: SweRV EH1 PIC (Programmable Interrupt Controller) (Deprecated)
+description: SweRV EH1 PIC (Programmable Interrupt Controller)
 
 compatible: "swerv,pic"
 

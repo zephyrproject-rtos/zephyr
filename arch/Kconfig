@@ -68,16 +68,6 @@ config MIPS
 	help
 	  MIPS architecture
 
-config OPENRISC
-	bool
-	select ARCH_IS_SET
-	select ATOMIC_OPERATIONS_BUILTIN
-	select BIG_ENDIAN
-	select USE_SWITCH
-	select USE_SWITCH_SUPPORTED
-	help
-	  OpenRISC architecture
-
 config SPARC
 	bool
 	select ARCH_IS_SET
@@ -251,7 +241,7 @@ config XIP
 	  option increases both the code and data footprint of the image.
 
 
-if ARC || ARM || ARM64 || X86 || RISCV || RX || OPENRISC || ARCH_POSIX
+if ARC || ARM || ARM64 || X86 || RISCV || RX || ARCH_POSIX
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -274,7 +264,7 @@ config FLASH_BASE_ADDRESS
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARM64 || ARC || X86 || RISCV || RX || OPENRISC || ARCH_POSIX
+endif # ARM || ARM64 || ARC || X86 || RISCV || RX || ARCH_POSIX
 
 if ARCH_HAS_TRUSTED_EXECUTION
 
@@ -492,7 +482,6 @@ config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
 config ISR_TABLES_LOCAL_DECLARATION
 	bool "ISR tables created locally and placed by linker"
 	depends on ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
-	depends on GEN_IRQ_VECTOR_TABLE
 	help
 	  Enable new scheme of interrupt tables generation.
 	  This is totally different generator that would create tables entries locally
@@ -1059,7 +1048,7 @@ config FPU
 
 config FPU_SHARING
 	bool "FPU register sharing"
-	depends on FPU
+	depends on FPU && MULTITHREADING
 	help
 	  This option enables preservation of the hardware floating point registers
 	  across context switches to allow multiple threads to perform concurrent

@@ -119,10 +119,14 @@ static int udc_skeleton_ep_dequeue(const struct device *dev,
 				   struct udc_ep_config *const cfg)
 {
 	unsigned int lock_key;
+	struct net_buf *buf;
 
 	lock_key = irq_lock();
 
-	udc_ep_cancel_queued(dev, cfg);
+	buf = udc_buf_get_all(cfg);
+	if (buf) {
+		udc_submit_ep_event(dev, buf, -ECONNABORTED);
+	}
 
 	irq_unlock(lock_key);
 

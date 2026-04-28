@@ -16,8 +16,9 @@ class Simulate(WestCommand):
     def __init__(self):
         super().__init__(
             'simulate',
-            '',
-            description=EXPORT_DESCRIPTION,
+            # Keep this in sync with the string in west-commands.yml.
+            'simulate board',
+            EXPORT_DESCRIPTION,
             accepts_unknown_args=True)
 
         self.runner_key = 'sim-runner'  # in runners.yaml

@@ -8,7 +8,6 @@
 
 &fast_peripheral1 {
 	smu2: smu2@1c0000 {
-		ranges = <0x0 0x1c0000 DT_SIZE_K(40)>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "zephyr,memory-region", "mmio-sram";
@@ -68,6 +67,10 @@
 
 &portd {
 	reg = <0x45000 0xdc>;
+};
+
+&smu2 {
+	ranges = <0x0 0x1c0000 DT_SIZE_K(40)>;
 };
 
 &rtc {

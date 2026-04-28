@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2026 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 
 #include <nxp/imxrt/nxp_rt118x_cm33.dtsi>
 #include "mimxrt1180_evk.dtsi"
-#include <freq.h>
 
 / {
 	model = "NXP MIMXRT1180-EVK board";
@@ -62,10 +61,6 @@
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 		status = "okay";
 	};
-};
-
-&cpu0 {
-	clock-frequency = <DT_FREQ_M(240)>;
 };
 
 &lpuart1 {
@@ -150,10 +145,5 @@ temp_sensor: &tmpsns {
 };
 
 &flexspi {
-	status = "okay";
-};
-
-&sema1 {
-	domain-id = <8>;
 	status = "okay";
 };

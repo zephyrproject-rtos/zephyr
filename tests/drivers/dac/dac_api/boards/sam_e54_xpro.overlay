@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/ {
-	zephyr,user {
-		io-channels = <&dac 0>;
-		io-channel-names = "dac1";
-	};
-};
-
 &dac {
 	status = "okay";
 	refsel = "int_ref";
@@ -20,6 +13,5 @@
 	dac0: channel@0 {
 		reg = <0>;
 		rate = <1000>;
-		zephyr,resolution = <12>;
 	};
 };

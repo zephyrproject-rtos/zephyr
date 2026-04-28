@@ -1,0 +1,9 @@
+/*
+ * Copyright 2021 Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dac0 {
+	status = "okay";
+};

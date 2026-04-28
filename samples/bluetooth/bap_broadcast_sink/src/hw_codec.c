@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/device.h>
@@ -20,7 +21,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/audio/codec.h>
-#include <zephyr/sys/ring_buffer.h>
 
 LOG_MODULE_REGISTER(codec, CONFIG_LOG_DEFAULT_LEVEL);
 

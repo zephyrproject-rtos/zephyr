@@ -44,7 +44,11 @@ static int log_output_func(uint8_t *data, size_t length, void *output_ctx)
 	param.message_id = sys_rand32_get();
 #endif
 
-	(void)mqtt_publish(client, &param);
+	int ret = mqtt_publish(client, &param);
+
+	if (ret != 0) {
+		return ret;
+	}
 
 	return length;
 }

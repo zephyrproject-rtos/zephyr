@@ -654,10 +654,7 @@ static int hm0360_set_frmival(const struct device *dev, struct video_frmival *fr
 		highres = true;
 	}
 
-	ret = video_closest_frmival(dev, &fie);
-	if (ret < 0) {
-		return ret;
-	}
+	video_closest_frmival(dev, &fie);
 	LOG_DBG("Applying frame interval number %u", fie.index);
 
 	switch (fie.index) {

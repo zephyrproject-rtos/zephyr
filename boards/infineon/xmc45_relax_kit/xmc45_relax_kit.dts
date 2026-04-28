@@ -83,6 +83,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		code_partition: partition@0 {
 			reg = <0x0 0x80000>;

@@ -2,9 +2,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import os
 import requests
+import sys
 
-from fetchers.core import ZephyrBlobException, ZephyrBlobFetcher
+from fetchers.core import ZephyrBlobFetcher
 
 class HTTPFetcher(ZephyrBlobFetcher):
 
@@ -19,8 +21,10 @@ class HTTPFetcher(ZephyrBlobFetcher):
             resp = requests.get(url)
             resp.raise_for_status()  # Raises an HTTPError for bad status codes (4xx or 5xx)
         except requests.exceptions.HTTPError as e:
-            raise ZephyrBlobException(f'HTTP error occurred: {e}') from e
+            west_command.err(f'HTTP error occurred: {e}')
+            sys.exit(os.EX_NOHOST)
         except requests.exceptions.RequestException as e:
-            raise ZephyrBlobException(f'An error occurred: {e}') from e
+            west_command.err(f'An error occurred: {e}')
+            sys.exit(os.EX_DATAERR)
         with open(path, "wb") as f:
             f.write(resp.content)

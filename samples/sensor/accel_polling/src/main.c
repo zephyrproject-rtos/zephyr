@@ -26,11 +26,15 @@ static const struct device *const sensors[] = {LISTIFY(10, ACCELEROMETER_DEVICE,
 #define ACCEL_IODEV_SYM(id) CONCAT(accel_iodev, id)
 #define ACCEL_IODEV_PTR(id, _) &ACCEL_IODEV_SYM(id)
 
-#define ACCEL_DEFINE_IODEV(id, _)                 \
-	SENSOR_DT_READ_IODEV(                     \
+#define ACCEL_TRIGGERS                                   \
+	{SENSOR_TRIG_FIFO_FULL, SENSOR_STREAM_DATA_INCLUDE}, \
+	{SENSOR_TRIG_FIFO_WATERMARK, SENSOR_STREAM_DATA_INCLUDE}
+
+#define ACCEL_DEFINE_IODEV(id, _)         \
+	SENSOR_DT_STREAM_IODEV(               \
 		ACCEL_IODEV_SYM(id),              \
 		ACCEL_ALIAS(id),                  \
-		{SENSOR_CHAN_ACCEL_XYZ, 0});
+		ACCEL_TRIGGERS);
 
 LISTIFY(NUM_SENSORS, ACCEL_DEFINE_IODEV, (;));
 
@@ -38,42 +42,85 @@ struct rtio_iodev *iodevs[NUM_SENSORS] = { LISTIFY(NUM_SENSORS, ACCEL_IODEV_PTR,
 
 RTIO_DEFINE_WITH_MEMPOOL(accel_ctx, NUM_SENSORS, NUM_SENSORS, NUM_SENSORS*20, 256, sizeof(void *));
 
-static int print_accels_rtio(const struct device *dev, struct rtio_iodev *iodev)
+static int print_accels_stream(const struct device *dev, struct rtio_iodev *iodev)
 {
 	int rc = 0;
 	struct sensor_three_axis_data accel_data = {0};
 	const struct sensor_decoder_api *decoder;
+	struct rtio_cqe *cqe;
+	uint8_t *buf;
+	uint32_t buf_len;
+	struct rtio_sqe *handles[NUM_SENSORS];
+
+	/* Start the streams */
+	for (int i = 0; i < NUM_SENSORS; i++) {
+		printk("sensor_stream\n");
+		sensor_stream(iodevs[i], &accel_ctx, NULL, &handles[i]);
+	}
 
 	while (1) {
-		for (size_t i = 0; i < ARRAY_SIZE(sensors); i++) {
-			uint8_t buf[128];
+		cqe = rtio_cqe_consume_block(&accel_ctx);
 
-			rc = sensor_read(iodevs[i], &accel_ctx, buf, 128);
-
-			if (rc != 0) {
-				printk("%s: sensor_read() failed: %d\n", dev->name, rc);
-				return rc;
-			}
-
-			rc = sensor_get_decoder(dev, &decoder);
-
-			if (rc != 0) {
-				printk("%s: sensor_get_decode() failed: %d\n", dev->name, rc);
-				return rc;
-			}
-
-			uint32_t accel_fit = 0;
-
-			/* decode and print Accelerometer FIFO frames */
-			decoder->decode(buf, (struct sensor_chan_spec) {SENSOR_CHAN_ACCEL_XYZ, 0},
-				&accel_fit, 8, &accel_data);
-
-			printf("XL data for %s %lluns (%" PRIq(6) ", %" PRIq(6)
-			       ", %" PRIq(6) ")\n", dev->name,
-			       PRIsensor_three_axis_data_arg(accel_data, 0));
+		if (cqe->result != 0) {
+			printk("async read failed %d\n", cqe->result);
+			return cqe->result;
 		}
-		k_msleep(500);
+
+		rc = rtio_cqe_get_mempool_buffer(&accel_ctx, cqe, &buf, &buf_len);
+
+		if (rc != 0) {
+			printk("get mempool buffer failed %d\n", rc);
+			return rc;
+		}
+
+		const struct device *sensor = dev;
+
+		rtio_cqe_release(&accel_ctx, cqe);
+
+		rc = sensor_get_decoder(sensor, &decoder);
+
+		if (rc != 0) {
+			printk("sensor_get_decoder failed %d\n", rc);
+			return rc;
+		}
+
+		/* Frame iterator values when data comes from a FIFO */
+		uint32_t accel_fit = 0;
+
+		/* Number of accelerometer data frames */
+		uint16_t frame_count;
+
+		rc = decoder->get_frame_count(buf,
+				(struct sensor_chan_spec) {SENSOR_CHAN_ACCEL_XYZ, 0}, &frame_count);
+
+		if (rc != 0) {
+			printk("sensor_get_decoder failed %d\n", rc);
+			return rc;
+		}
+
+		/* If a tap has occurred lets print it out */
+		if (decoder->has_trigger(buf, SENSOR_TRIG_TAP)) {
+			printk("Tap! Sensor %s\n", dev->name);
+		}
+
+		/* Decode all available accelerometer sample frames */
+		for (int i = 0; i < frame_count; i++) {
+			decoder->decode(buf, (struct sensor_chan_spec) {SENSOR_CHAN_ACCEL_XYZ, 0},
+					&accel_fit, 1, &accel_data);
+
+			printk("Accel data for %s (%" PRIq(6) ", %" PRIq(6)
+					", %" PRIq(6) ") %lluns\n", dev->name,
+			PRIq_arg(accel_data.readings[0].x, 6, accel_data.shift),
+			PRIq_arg(accel_data.readings[0].y, 6, accel_data.shift),
+			PRIq_arg(accel_data.readings[0].z, 6, accel_data.shift),
+			(accel_data.header.base_timestamp_ns
+			+ accel_data.readings[0].timestamp_delta));
+		}
+
+		rtio_release_buffer(&accel_ctx, buf, buf_len);
 	}
+
+	return rc;
 }
 #else
 
@@ -148,11 +195,11 @@ int main(void)
 #ifndef CONFIG_COVERAGE
 	while (1) {
 #else
-	for (int k = 0; k < 5; k++) {
+	for (int i = 0; i < 5; i++) {
 #endif
 		for (size_t i = 0; i < ARRAY_SIZE(sensors); i++) {
 #ifdef CONFIG_SENSOR_ASYNC_API
-			ret = print_accels_rtio(sensors[i], iodevs[i]);
+			ret = print_accels_stream(sensors[i], iodevs[i]);
 #else
 			ret = print_accels(sensors[i]);
 #endif /*CONFIG_SENSOR_ASYNC_API*/

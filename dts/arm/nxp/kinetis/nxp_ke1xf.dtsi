@@ -18,7 +18,6 @@
 
 	chosen {
 		zephyr,flash-controller = &ftfe;
-		zephyr,system-timer = &lptmr0;
 	};
 
 	cpus {

@@ -42,7 +42,6 @@ struct dwmac_priv {
 	mem_addr_t base_addr;
 	struct net_if *iface;
 	const struct device *clock;
-	const struct device *phy_dev;
 
 	uint8_t mac_addr[6];
 
@@ -83,7 +82,7 @@ struct dwmac_priv {
 
 int dwmac_probe(const struct device *dev);
 int dwmac_bus_init(struct dwmac_priv *p);
-int dwmac_platform_init(struct dwmac_priv *p);
+void dwmac_platform_init(struct dwmac_priv *p);
 void dwmac_isr(const struct device *ddev);
 extern const struct ethernet_api dwmac_api;
 

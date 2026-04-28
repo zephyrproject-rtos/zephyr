@@ -66,10 +66,7 @@ extern "C" {
 #define BT_VOCS_MAX_OFFSET                         255
 /** @} */
 
-/**
- * @struct bt_vocs
- * @brief Opaque Volume Offset Control Service instance.
- */
+/** @brief Opaque Volume Offset Control Service instance. */
 struct bt_vocs;
 
 /** @brief Structure for registering a Volume Offset Control Service instance. */

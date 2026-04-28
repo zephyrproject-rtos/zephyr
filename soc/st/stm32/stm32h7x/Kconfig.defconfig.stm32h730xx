@@ -1,0 +1,12 @@
+# ST STM32H730X MCU configuration options
+
+# Copyright (c) 2022 Georgij Cernysiov <geo.cgv@gmail.com>
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32H730XX || SOC_STM32H730XXQ
+
+config NUM_IRQS
+	default 163
+
+endif # SOC_STM32H730XX || SOC_STM32H730XXQ

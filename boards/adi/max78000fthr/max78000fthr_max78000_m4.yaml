@@ -15,7 +15,6 @@ supported:
   - gpio
   - i2c
   - pwm
-  - rtc_counter
   - serial
   - spi
   - trng

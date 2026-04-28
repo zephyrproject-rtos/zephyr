@@ -873,7 +873,7 @@ size_t k_mem_free_get(void)
  * @param[in] phys Physical address of region to be mapped, aligned to MMU_PAGE_SIZE
  * @param[in] size Size of region to be mapped, aligned to MMU_PAGE_SIZE
  *
- * @return alignment to apply on the virtual address of this region
+ * @retval alignment to apply on the virtual address of this region
  */
 static size_t virt_region_align(uintptr_t phys, size_t size)
 {

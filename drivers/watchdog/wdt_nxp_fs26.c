@@ -98,15 +98,9 @@ static const uint32_t fs26_period_values[] = {
 	0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 64, 128, 256, 512, 1024
 };
 
-/*
- * Duty cycle numerators (denominator is 16).
- * 5/16=31.25%, 6/16=37.50%, 8/16=50%, 10/16=62.50%,
- * 11/16=68.75%, 12/16=75%, 13/16=81.25%
- */
-static const uint8_t fs26_dc_closed_num[] = {
-	5, 6, 8, 10, 11, 12, 13
+static const double fs26_dc_closed_values[] = {
+	0.3125, 0.375, 0.5, 0.625, 0.6875, 0.75, 0.8125
 };
-#define FS26_DC_DENOM 16
 
 /* CRC lookup table */
 static const uint8_t FS26_CRC_TABLE[FS26_CRC_TABLE_SIZE] = {
@@ -295,7 +289,7 @@ static int fs26_wd_refresh(const struct device *dev)
 	struct fs26_spi_rx_frame rx_frame;
 
 	if (config->wd_type == FS26_WD_SIMPLE) {
-		if (fs26_setreg(&config->spi, FS26_FS_WD_ANSWER, data->token)) {
+		if (fs26_setreg(&config->spi, FS26_FS_WD_ANSWER, data->token) == 0) {
 			LOG_ERR("Failed to write answer");
 			retval = -EIO;
 		}
@@ -509,24 +503,22 @@ static int wdt_nxp_fs26_install_timeout(const struct device *dev,
 	 * Find nearest duty cycle value based on new period, that results in a
 	 * window's minimum near the requested (rounded up)
 	 */
-	for (i = 0; i < ARRAY_SIZE(fs26_dc_closed_num); i++) {
-		window_min = (fs26_dc_closed_num[i]
-				* fs26_period_values[data->window_period])
-				/ FS26_DC_DENOM;
+	for (i = 0; i < ARRAY_SIZE(fs26_dc_closed_values); i++) {
+		window_min = (uint32_t)(fs26_dc_closed_values[i]
+					* fs26_period_values[data->window_period]);
 		if (window_min >= cfg->window.min) {
 			break;
 		}
 	}
-	if (i >= ARRAY_SIZE(fs26_dc_closed_num)) {
+	if (i >= ARRAY_SIZE(fs26_dc_closed_values)) {
 		LOG_ERR("Watchdog opened window too small");
 		return -EINVAL;
 	}
 	data->window_duty_cycle = i;
 
-	LOG_DBG("window.min requested %d ms, using %d ms (%d.%02d%%)",
+	LOG_DBG("window.min requested %d ms, using %d ms (%.2f%%)",
 		cfg->window.min, window_min,
-		fs26_dc_closed_num[data->window_duty_cycle] * 100 / FS26_DC_DENOM,
-		(fs26_dc_closed_num[data->window_duty_cycle] * 10000 / FS26_DC_DENOM) % 100);
+		fs26_dc_closed_values[data->window_duty_cycle] * 100);
 
 	/* Fail-safe reaction configuration */
 	switch (cfg->flags) {

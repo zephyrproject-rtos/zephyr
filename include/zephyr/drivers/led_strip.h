@@ -60,58 +60,46 @@ struct led_rgb {
 };
 
 /**
- * @def_driverbackendgroup{LED Strip,led_strip_interface}
- * @{
- */
-
-/**
+ * @typedef led_api_update_rgb
  * @brief Callback API for updating an RGB LED strip
  *
- * See @a led_strip_update_rgb() for argument descriptions.
+ * @see led_strip_update_rgb() for argument descriptions.
  */
 typedef int (*led_api_update_rgb)(const struct device *dev,
 				  struct led_rgb *pixels,
 				  size_t num_pixels);
 
 /**
+ * @typedef led_api_update_channels
  * @brief Callback API for updating channels without an RGB interpretation.
  *
- * See @a led_strip_update_channels() for argument descriptions.
+ * @see led_strip_update_channels() for argument descriptions.
  */
 typedef int (*led_api_update_channels)(const struct device *dev,
 				       uint8_t *channels,
 				       size_t num_channels);
 
 /**
+ * @typedef led_api_length
  * @brief Callback API for getting length of an LED strip.
  *
- * See @a led_strip_length() for argument descriptions.
+ * @see led_strip_length() for argument descriptions.
  */
 typedef size_t (*led_api_length)(const struct device *dev);
 
 /**
- * @driver_ops{LED Strip}
+ * @brief LED strip driver API
  */
 __subsystem struct led_strip_driver_api {
-	/**
-	 * @driver_ops_mandatory @copybrief led_strip_update_rgb
-	 */
+	/* Mandatory callbacks. */
 	led_api_update_rgb update_rgb;
-	/**
-	 * @driver_ops_mandatory @copybrief led_strip_length
-	 */
 	led_api_length length;
-	/**
-	 * @driver_ops_optional @copybrief led_strip_update_channels
-	 */
+	/* Optional callbacks. */
 	led_api_update_channels update_channels;
 };
-/**
- * @}
- */
 
 /**
- * @brief		Update an LED strip with the given RGB array.
+ * @brief		Mandatory function to update an LED strip with the given RGB array.
  *
  * @param dev		LED strip device.
  * @param pixels	Array of pixel data.
@@ -143,8 +131,8 @@ static inline int led_strip_update_rgb(const struct device *dev,
 }
 
 /**
- * @brief		Update an LED strip with the given channel array.
- *			Each channel byte corresponds to an individually addressable color
+ * @brief		Optional function to update an LED strip with the given channel array
+ *			(each channel byte corresponding to an individually addressable color
  *			channel or LED. Channels are updated linearly in strip order.
  *
  * @param dev		LED strip device.
@@ -172,7 +160,7 @@ static inline int led_strip_update_channels(const struct device *dev,
 }
 
 /**
- * @brief	Get chain length (in pixels) of an LED strip device.
+ * @brief	Mandatory function to get chain length (in pixels) of an LED strip device.
  *
  * @param dev	LED strip device.
  *

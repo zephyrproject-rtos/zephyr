@@ -18,12 +18,7 @@ Requires plotly to be installed, for example with pip:
 
 import argparse
 import json
-
-try:
-    import plotly.graph_objects as go
-except ImportError:
-    print("Missing dependency: You need to install plotly (see scripts/requirements-extra.txt).")
-    raise
+import sys
 
 
 def parse_args():
@@ -45,7 +40,17 @@ def parse_args():
     return parser.parse_args()
 
 
-def generate_figure(data, depth=4):
+def main():
+    args = parse_args()
+
+    try:
+        import plotly.graph_objects as go
+    except ImportError:
+        sys.exit("Missing dependency: You need to install plotly.")
+
+    with open(args.input) as f:
+        data = json.load(f)
+
     totalsize = data.get('total_size', 0)
     ids = []
     labels = []
@@ -93,23 +98,12 @@ def generate_figure(data, depth=4):
             values=values,
             hovertext=hovertext,
             branchvalues='total',
-            maxdepth=depth,
+            maxdepth=args.depth,
         ),
         skip_invalid=True,
     )
     fig.update_layout(margin={'t': 0, 'l': 0, 'r': 0, 'b': 0})
     fig.update_traces(textfont=dict(size=24))
-
-    return fig
-
-
-def main():
-    args = parse_args()
-
-    with open(args.input) as f:
-        data = json.load(f)
-
-    fig = generate_figure(data, args.depth)
 
     if args.html:
         fig.write_html(args.html, auto_open=False)

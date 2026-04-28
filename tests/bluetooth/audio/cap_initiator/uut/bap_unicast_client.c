@@ -744,7 +744,9 @@ int bt_bap_unicast_group_foreach_stream(struct bt_bap_unicast_group *unicast_gro
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_group->streams, stream, next, _node) {
-		if (!func(stream, user_data)) {
+		const bool stop = func(stream, user_data);
+
+		if (stop) {
 			return -ECANCELED;
 		}
 	}

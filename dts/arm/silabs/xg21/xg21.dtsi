@@ -18,7 +18,6 @@
 / {
 	chosen {
 		silabs,sleeptimer = &rtcc0;
-		zephyr,crc = &gpcrc;
 		zephyr,entropy = &se;
 		zephyr,flash-controller = &msc;
 	};
@@ -166,7 +165,7 @@
 	};
 
 	hwinfo: hwinfo {
-		compatible = "silabs,series2-hwinfo";
+		compatible = "silabs,gecko-hwinfo";
 		status = "disabled";
 	};
 
@@ -244,7 +243,6 @@
 			reg = <0x50030000 0x4000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_HCLK>;
 			interrupt-names = "msc";
 			interrupts = <51 2>;
 
@@ -470,13 +468,6 @@
 			compatible = "silabs,buram";
 			reg = <0x50080000 0x80>;
 			status = "disabled";
-		};
-
-		gpcrc: gpcrc@50088000 {
-			compatible = "silabs,gpcrc";
-			reg = <0x50088000 0x4000>;
-			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_HCLK>;
-			status = "okay";
 		};
 
 		rtcc0: rtcc@58000000 {

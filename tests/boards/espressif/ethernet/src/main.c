@@ -56,9 +56,8 @@ static void ipv4_event(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 	k_sem_give(&net_event);
 }
 
-static enum net_verdict icmp_event(struct net_icmp_ctx *ctx, struct net_pkt *pkt,
-				   struct net_icmp_ip_hdr *hdr, struct net_icmp_hdr *icmp_hdr,
-				   void *user_data)
+static int icmp_event(struct net_icmp_ctx *ctx, struct net_pkt *pkt, struct net_icmp_ip_hdr *hdr,
+		      struct net_icmp_hdr *icmp_hdr, void *user_data)
 {
 	struct net_ipv4_hdr *ip_hdr = hdr->ipv4;
 
@@ -66,7 +65,7 @@ static enum net_verdict icmp_event(struct net_icmp_ctx *ctx, struct net_pkt *pkt
 
 	k_sem_give(&net_event);
 
-	return NET_OK;
+	return 0;
 }
 
 static void option_handler(struct net_dhcpv4_option_callback *cb, size_t length,

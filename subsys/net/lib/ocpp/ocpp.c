@@ -611,31 +611,31 @@ static inline void bootnotification_fill_resource(struct ocpp_cp_info *cp,
 
 	cp->model = strdup(cpi->model);
 	cp->vendor = strdup(cpi->vendor);
-	if (cpi->sl_no != NULL) {
+	if (cp->sl_no != NULL) {
 		cp->sl_no = strdup(cpi->sl_no);
 	}
 
-	if (cpi->box_sl_no != NULL) {
+	if (cp->box_sl_no != NULL) {
 		cp->box_sl_no = strdup(cpi->box_sl_no);
 	}
 
-	if (cpi->fw_ver != NULL) {
+	if (cp->fw_ver != NULL) {
 		cp->fw_ver = strdup(cpi->fw_ver);
 	}
 
-	if (cpi->iccid != NULL) {
+	if (cp->iccid != NULL) {
 		cp->iccid = strdup(cpi->iccid);
 	}
 
-	if (cpi->imsi != NULL) {
+	if (cp->imsi != NULL) {
 		cp->imsi = strdup(cpi->imsi);
 	}
 
-	if (cpi->meter_sl_no != NULL) {
+	if (cp->meter_sl_no != NULL) {
 		cp->meter_sl_no = strdup(cpi->meter_sl_no);
 	}
 
-	if (cpi->meter_type != NULL) {
+	if (cp->meter_type != NULL) {
 		cp->meter_type = strdup(cpi->meter_type);
 	}
 

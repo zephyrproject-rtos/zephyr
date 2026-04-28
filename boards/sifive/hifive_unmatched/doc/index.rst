@@ -41,21 +41,13 @@ Current version has not yet supported flashing binary to onboard Flash ROM.
 This board has USB-JTAG interface and this can be used with OpenOCD.
 Load applications on DDR and run as follows:
 
-.. tabs::
+.. code-block:: console
 
-   .. group-tab:: S7
-
-      .. zephyr-app-commands::
-         :zephyr-app: samples/hello_world
-         :board: hifive_unleashed//s7
-         :goals: flash
-
-   .. group-tab:: U74
-
-      .. zephyr-app-commands::
-         :zephyr-app: samples/hello_world
-         :board: hifive_unmatched///u74
-         :goals: flash
+   openocd -c 'bindto 0.0.0.0' \
+           -f boards/riscv/hifive_unmatched/support/openocd_hifive_unmatched.cfg
+   riscv64-zephyr-elf-gdb build/zephyr/zephyr.elf
+   (gdb) target remote :3333
+   (gdb) c
 
 Debugging
 =========

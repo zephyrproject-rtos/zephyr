@@ -202,38 +202,31 @@ static int lsm6ds0_sample_fetch(const struct device *dev,
 			chan == SENSOR_CHAN_DIE_TEMP ||
 #endif
 			chan == SENSOR_CHAN_GYRO_XYZ);
-	int ret = 0;
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
-		ret = lsm6ds0_sample_fetch_accel(dev);
+		lsm6ds0_sample_fetch_accel(dev);
 		break;
 	case SENSOR_CHAN_GYRO_XYZ:
-		ret = lsm6ds0_sample_fetch_gyro(dev);
+		lsm6ds0_sample_fetch_gyro(dev);
 		break;
 #if defined(CONFIG_LSM6DS0_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP:
-		ret = lsm6ds0_sample_fetch_temp(dev);
+		lsm6ds0_sample_fetch_temp(dev);
 		break;
 #endif
 	case SENSOR_CHAN_ALL:
-		ret = lsm6ds0_sample_fetch_accel(dev);
-		if (ret != 0) {
-			break;
-		}
-		ret = lsm6ds0_sample_fetch_gyro(dev);
-		if (ret != 0) {
-			break;
-		}
+		lsm6ds0_sample_fetch_accel(dev);
+		lsm6ds0_sample_fetch_gyro(dev);
 #if defined(CONFIG_LSM6DS0_ENABLE_TEMP)
-		ret = lsm6ds0_sample_fetch_temp(dev);
+		lsm6ds0_sample_fetch_temp(dev);
 #endif
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	return ret;
+	return 0;
 }
 
 static inline void lsm6ds0_accel_convert(struct sensor_value *val, int raw_val,

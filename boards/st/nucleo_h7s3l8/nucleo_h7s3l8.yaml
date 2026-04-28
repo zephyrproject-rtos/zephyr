@@ -10,7 +10,6 @@ supported:
   - gpio
   - uart
   - watchdog
-  - dma
   - entropy
   - adc
   - octospi

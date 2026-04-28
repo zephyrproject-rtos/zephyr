@@ -1,8 +1,4 @@
-/*
- * Copyright (c) 2026 Texas Instruments
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+/* SPDX-License-Identifier: Apache-2.0 */
 
 #include <ti/mspm0/g/mspm0g.dtsi>
 
@@ -65,8 +61,4 @@
 			};
 		};
 	};
-};
-
-&rtc {
-	ti,rtc-x;
 };

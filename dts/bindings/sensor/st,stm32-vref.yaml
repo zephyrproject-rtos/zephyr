@@ -5,14 +5,15 @@ description: STM32 VREF+.
 
 compatible: "st,stm32-vref"
 
-include: [nvmem-consumer.yaml, sensor-device.yaml]
+include: sensor-device.yaml
 
 properties:
-  nvmem-cells:
+  vrefint-cal-addr:
+    type: int
     required: true
     description: |
-      One entry corresponding to the VREFINT_CAL calibration parameter
-      (factory-measured calibration bandgap voltage) must be provided.
+      Device engineering bytes address containing the factory-measured
+      calibration bandgap voltage (VREFINT_CAL).
 
   vrefint-cal-mv:
     type: int

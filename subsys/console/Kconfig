@@ -15,8 +15,8 @@ choice
 
 config CONSOLE_GETCHAR
 	bool "Character by character input and output"
-	select UART_INTERRUPT_DRIVEN
-	select EVENTS
+	select UART_CONSOLE_DEBUG_SERVER_HOOKS
+	select CONSOLE_HANDLER
 
 config CONSOLE_GETLINE
 	bool "Line by line input"

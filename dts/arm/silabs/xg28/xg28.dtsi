@@ -16,7 +16,6 @@
 / {
 	chosen {
 		silabs,sleeptimer = &sysrtc0;
-		zephyr,crc = &gpcrc;
 		zephyr,entropy = &se;
 		zephyr,flash-controller = &msc;
 	};
@@ -510,13 +509,6 @@
 			status = "disabled";
 		};
 
-		gpcrc: gpcrc@50088000 {
-			compatible = "silabs,gpcrc";
-			reg = <0x50088000 0x4000>;
-			clocks = <&cmu CLOCK_GPCRC0 CLOCK_BRANCH_PCLK>;
-			status = "okay";
-		};
-
 		dcdc: dcdc@50094000 {
 			compatible = "silabs,series2-dcdc";
 			reg = <0x50094000 0x4000>;
@@ -604,7 +596,7 @@
 			#address-cells = <1>;
 			#io-channel-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&cmu CLOCK_VDAC0 CLOCK_BRANCH_VDAC0CLK>;
+			clocks = <&cmu CLOCK_VDAC0 CLOCK_BRANCH_INVALID>;
 			interrupt-names = "vdac0";
 			interrupts = <55 2>;
 			status = "disabled";

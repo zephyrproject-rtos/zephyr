@@ -24,7 +24,6 @@
 	aliases {
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &led0;
-		adc = &adc;
 	};
 };
 
@@ -49,10 +48,6 @@
 &vregmain {
 	status = "okay";
 	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
-};
-
-&vregusb {
-	status = "okay";
 };
 
 &grtc {
@@ -98,7 +93,7 @@
 	status = "okay";
 };
 
-temp_sensor: &temp {
+&temp {
 	status = "okay";
 };
 
@@ -137,10 +132,6 @@ zephyr_udc0: &usbhs {
 		t-exit-dpd = <35000>;
 		reset-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 	};
-};
-
-&adc {
-	status = "okay";
 };
 
 /*

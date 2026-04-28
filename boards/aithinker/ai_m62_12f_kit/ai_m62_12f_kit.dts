@@ -106,14 +106,6 @@
 	pinctrl-names = "default";
 };
 
-&sec_eng_aes {
-	status = "okay";
-};
-
-&sec_eng_sha {
-	status = "okay";
-};
-
 &adc0 {
 	status = "okay";
 

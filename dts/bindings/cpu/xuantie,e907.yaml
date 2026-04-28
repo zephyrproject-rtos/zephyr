@@ -5,7 +5,7 @@ description: Xuantie E907 Core CPU
 
 compatible: "xuantie,e907"
 
-include: riscv-common.yaml
+include: riscv,cpus.yaml
 
 properties:
   hardware-exec-breakpoint-count:

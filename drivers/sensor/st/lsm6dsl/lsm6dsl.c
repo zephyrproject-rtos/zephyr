@@ -426,61 +426,47 @@ static int lsm6dsl_sample_fetch_press(const struct device *dev)
 static int lsm6dsl_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
-	int ret = 0;
-
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
-		ret = lsm6dsl_sample_fetch_accel(dev);
+		lsm6dsl_sample_fetch_accel(dev);
 		break;
 	case SENSOR_CHAN_GYRO_XYZ:
-		ret = lsm6dsl_sample_fetch_gyro(dev);
+		lsm6dsl_sample_fetch_gyro(dev);
 		break;
 #if defined(CONFIG_LSM6DSL_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP:
-		ret = lsm6dsl_sample_fetch_temp(dev);
+		lsm6dsl_sample_fetch_temp(dev);
 		break;
 #endif
 #if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL) || defined(CONFIG_LSM6DSL_EXT0_LIS3MDL)
 	case SENSOR_CHAN_MAGN_XYZ:
-		ret = lsm6dsl_sample_fetch_magn(dev);
+		lsm6dsl_sample_fetch_magn(dev);
 		break;
 #endif
 #if defined(CONFIG_LSM6DSL_EXT0_LPS22HB)
 	case SENSOR_CHAN_AMBIENT_TEMP:
 	case SENSOR_CHAN_PRESS:
-		ret = lsm6dsl_sample_fetch_press(dev);
+		lsm6dsl_sample_fetch_press(dev);
 		break;
 #endif
 	case SENSOR_CHAN_ALL:
-		ret = lsm6dsl_sample_fetch_accel(dev);
-		if (ret != 0) {
-			break;
-		}
-		ret = lsm6dsl_sample_fetch_gyro(dev);
-		if (ret != 0) {
-			break;
-		}
+		lsm6dsl_sample_fetch_accel(dev);
+		lsm6dsl_sample_fetch_gyro(dev);
 #if defined(CONFIG_LSM6DSL_ENABLE_TEMP)
-		ret = lsm6dsl_sample_fetch_temp(dev);
-		if (ret != 0) {
-			break;
-		}
+		lsm6dsl_sample_fetch_temp(dev);
 #endif
 #if defined(CONFIG_LSM6DSL_EXT0_LIS2MDL) || defined(CONFIG_LSM6DSL_EXT0_LIS3MDL)
-		ret = lsm6dsl_sample_fetch_magn(dev);
-		if (ret != 0) {
-			break;
-		}
+		lsm6dsl_sample_fetch_magn(dev);
 #endif
 #if defined(CONFIG_LSM6DSL_EXT0_LPS22HB)
-		ret = lsm6dsl_sample_fetch_press(dev);
+		lsm6dsl_sample_fetch_press(dev);
 #endif
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	return ret;
+	return 0;
 }
 
 static inline void lsm6dsl_accel_convert(struct sensor_value *val, int raw_val,
