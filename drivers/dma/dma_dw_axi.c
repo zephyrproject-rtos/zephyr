@@ -297,6 +297,8 @@ struct dma_dw_axi_dev_cfg {
 #endif
 	/* dma controller interrupt configuration function pointer */
 	void (*irq_config)(void);
+	/* max number of channel supported by dma controller */
+	uint32_t max_channel;
 };
 
 /**
@@ -339,12 +341,13 @@ static void dma_dw_axi_isr(const struct device *dev)
 	struct dma_dw_axi_ch_data *chan_data;
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, dma_mmio);
 	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
+	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
 
 	/* read interrupt status register to find interrupt is for which channel */
 	status = sys_read64(reg_base + DMA_DW_AXI_INTSTATUSREG);
 	channel = find_lsb_set(status) - 1;
 
-	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
+	if (channel > dw_dma_config->max_channel - 1) {
 		LOG_ERR("Interrupt received on invalid channel:%d\n", channel);
 		return;
 	}
@@ -490,6 +493,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	struct dma_block_config *blk_cfg;
 	struct dma_lli *lli_desc;
 	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
+	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
 
 	/* check for invalid parameters before dereferencing them. */
 	if (cfg == NULL) {
@@ -498,7 +502,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	}
 
 	/* check if the channel is valid */
-	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
+	if (channel > dw_dma_config->max_channel - 1) {
 		LOG_ERR("invalid dma channel %d", channel);
 		return -EINVAL;
 	}
@@ -558,7 +562,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	blk_cfg = cfg->head_block;
 
 	/* max channel priority can be MAX_CHANNEL - 1 */
-	if (cfg->channel_priority < dw_dev_data->dma_ctx.dma_channels) {
+	if (cfg->channel_priority < dw_dma_config->max_channel - 1) {
 		chan_data->cfg |= DMA_DW_AXI_CFG_PRIORITY(cfg->channel_priority);
 	}
 
@@ -694,10 +698,11 @@ static int dma_dw_axi_start(const struct device *dev, uint32_t channel)
 	struct dma_dw_axi_ch_data *chan_data;
 	struct dma_lli *lli_desc;
 	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
+	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, dma_mmio);
 
 	/* validate channel number */
-	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
+	if (channel > dw_dma_config->max_channel - 1) {
 		LOG_ERR("invalid dma channel %d", channel);
 		return -EINVAL;
 	}
@@ -753,11 +758,11 @@ static int dma_dw_axi_stop(const struct device *dev, uint32_t channel)
 {
 	bool is_channel_busy;
 	uint32_t ch_state;
-	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
+	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, dma_mmio);
 
 	/* channel should be valid */
-	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
+	if (channel > dw_dma_config->max_channel - 1) {
 		LOG_ERR("invalid dma channel %d", channel);
 		return -EINVAL;
 	}
@@ -804,11 +809,11 @@ static int dma_dw_axi_resume(const struct device *dev, uint32_t channel)
 {
 	uint32_t reg;
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, dma_mmio);
-	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
+	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
 	uint32_t ch_state;
 
 	/* channel should be valid */
-	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
+	if (channel > dw_dma_config->max_channel - 1) {
 		LOG_ERR("invalid dma channel %d", channel);
 		return -EINVAL;
 	}
@@ -835,11 +840,11 @@ static int dma_dw_axi_suspend(const struct device *dev, uint32_t channel)
 {
 	int ret;
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, dma_mmio);
-	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
+	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
 	uint32_t ch_state;
 
 	/* channel should be valid */
-	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
+	if (channel > dw_dma_config->max_channel - 1) {
 		LOG_ERR("invalid dma channel %u", channel);
 		return -EINVAL;
 	}
@@ -890,8 +895,8 @@ static int dma_dw_axi_init(const struct device *dev)
 	}
 #endif
 
-	/* initialize channel state variable */
-	for (i = 0; i < dw_dev_data->dma_ctx.dma_channels; i++) {
+	/* initialize mutex and channel state variable */
+	for (i = 0; i < dw_dma_config->max_channel; i++) {
 		chan_data = &dw_dev_data->chan[i];
 
 		/* initialize atomic variable */
@@ -947,6 +952,7 @@ static DEVICE_API(dma, dma_dw_axi_driver_api) = {
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, resets),				\
 			(DW_AXI_DMA_RESET_SPEC_INIT(inst)))				\
 		.irq_config = dw_dma_irq_config_##inst,					\
+		.max_channel = DT_INST_PROP(inst, dma_channels), \
 	};										\
 											\
 	DEVICE_DT_INST_DEFINE(inst,							\
