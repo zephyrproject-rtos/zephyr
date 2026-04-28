@@ -354,6 +354,7 @@ static int pac194x_parse_sensor_acc_avg(const struct device *dev, uint16_t ch_id
 			 (int64_t)config->channels[ch_idx].shunt_resistor_uohm;
 		break;
 	case PAC194X_ACCUM_CONFIG_VPOWER:
+	{
 		/* FSR Power in microwatts (uW) */
 		int64_t power_fsr_uw;
 		uint64_t denominator;
@@ -410,6 +411,7 @@ static int pac194x_parse_sensor_acc_avg(const struct device *dev, uint16_t ch_id
 		}
 
 		break;
+	}
 	default:
 		return -ENOTSUP;
 	}
@@ -577,6 +579,7 @@ static int pac194x_attr_set(const struct device *dev,
 		 */
 		return pac194x_cmd_refresh(dev);
 	case SENSOR_ATTR_CHANNEL_ENABLED:
+	{
 		uint8_t regval;
 		bool enable = (val->val1 > 0);
 
@@ -608,6 +611,7 @@ static int pac194x_attr_set(const struct device *dev,
 		 * PAC194X_CTRL_REG change.
 		 */
 		return pac194x_cmd_refresh(dev);
+	}
 	case SENSOR_ATTR_REFRESH_MODE:
 		switch (val->val1) {
 		case PAC194X_SENSOR_ATTR_REFRESH_MODE_AUTO_NOWAIT:
@@ -635,7 +639,7 @@ static int pac194x_attr_set(const struct device *dev,
 	return -EINVAL;
 }
 
-static const DEVICE_API(sensor, pac194x_api_funcs) = {
+static DEVICE_API(sensor, pac194x_api_funcs) = {
 	.sample_fetch = pac194x_sample_fetch,
 	.channel_get = pac194x_channel_get,
 	.attr_set = pac194x_attr_set,
