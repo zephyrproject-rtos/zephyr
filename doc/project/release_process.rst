@@ -433,13 +433,20 @@ LTS *N+2*.
 The list of currently supported LTS releases and their EOL dates can be found
 :ref:`here <supported_releases>`.
 
-.. figure:: lts.svg
-    :align: center
-    :alt: Long Term Support Release
-    :figclass: align-center
-    :width: 80%
+.. mermaid::
+   :caption: Long Term Support Release
 
-    Long Term Support Release
+   gitGraph
+       commit id: "3.5"
+       commit id: "3.6"
+       commit id: "3.7"
+       branch "LTS"
+       checkout "LTS"
+       commit id: "3.7.1"
+       commit id: "3.7.2"
+       checkout main
+       commit id: "4.0"
+       commit id: "4.1"
 
 Changes and fixes flow in both directions. However, changes from main branch to an
 LTS branch will be limited to fixes that apply to both branches and for existing
