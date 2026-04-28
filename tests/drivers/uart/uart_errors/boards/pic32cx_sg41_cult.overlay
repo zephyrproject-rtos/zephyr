@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*connect the PB24(EXT2.16) to PC12(EXT1.14) and PB25(EXT2.18) to PC13(EXT1.13)*/
+
+dut: &sercom0 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+
+	rxpo = <1>;
+	txpo = <0>;
+
+	pinctrl-0 = <&sercom0_uart_default>;
+	pinctrl-names = "default";
+
+	dmas = <&dmac 5 0x04>, <&dmac 6 0x05>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+dut_aux: &sercom6 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+
+	rxpo = <1>;
+	txpo = <0>;
+
+	pinctrl-0 = <&sercom6_uart_default>;
+	pinctrl-names = "default";
+
+	dmas = <&dmac 3 0x10>, <&dmac 4 0x11>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&pinctrl {
+	sercom0_uart_default: sercom0_uart_default {
+		group1 {
+			pinmux = <PB24C_SERCOM0_PAD0>,
+				 <PB25C_SERCOM0_PAD1>;
+		};
+	};
+
+	sercom6_uart_default: sercom6_uart_default {
+		group1 {
+			pinmux = <PC13D_SERCOM6_PAD0>,
+				 <PC12D_SERCOM6_PAD1>;
+		};
+	};
+};
