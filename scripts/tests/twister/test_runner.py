@@ -2315,6 +2315,7 @@ def test_projectbuilder_run(
 ):
     pytest_mock = mock.Mock(spec=Pytest)
     harness_mock = mock.Mock()
+    harness_mock.run = mock.Mock(return_value=False)
 
     def mock_harness(name):
         if name == 'Pytest':
@@ -2353,7 +2354,7 @@ def test_projectbuilder_run(
                                                        'dummy_arg2']
 
     if expect_pytest:
-        pytest_mock.pytest_run.assert_called_once_with(60)
+        pytest_mock.run.assert_called_once_with(60)
 
     if expect_handle:
         pb.instance.handler.handle.assert_called_once_with(harness_mock)
