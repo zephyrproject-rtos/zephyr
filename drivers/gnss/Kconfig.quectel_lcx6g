@@ -35,4 +35,44 @@ config GNSS_QUECTEL_LCX6G_SAT_ARRAY_SIZE
 
 endif # GNSS_SATELLITES
 
+if GNSS_ACCURACY
+
+config GNSS_QUECTEL_LCX6G_ENABLE_GST
+	bool "Send PAIR062 to enable GST output at boot"
+	help
+	  When enabled, the driver appends a $PAIR062 command to the
+	  resume script to enable GST sentence output on the chip at
+	  boot. Default n: GST is parsed if the chip emits it, but the
+	  driver does not actively enable it. The exact $PAIR062 index
+	  used to enable GST varies by Quectel model and is not yet
+	  confirmed for the LC76G — see catfish-team upstream PR for
+	  issue #17 / PLAN.md Risks.
+
+config GNSS_QUECTEL_LCX6G_PAIR062_GST_INDEX
+	int "PAIR062 sentence index for GST"
+	depends on GNSS_QUECTEL_LCX6G_ENABLE_GST
+	default 6
+	range 0 31
+	help
+	  Sentence-output-rate index passed in $PAIR062,<idx>,1 to enable
+	  GST. The default 6 is a placeholder pending datasheet
+	  confirmation; verify against the Quectel LC76G manual before
+	  flipping this on.
+
+endif # GNSS_ACCURACY
+
+if GNSS_RAW_NMEA
+
+config GNSS_QUECTEL_LCX6G_RAW_TAP_BUF_SIZE
+	int "Size of the modem_chat raw-line capture buffer"
+	default 128
+	range 64 512
+	help
+	  Bytes reserved for the byte-faithful capture buffer used by the
+	  modem_chat line_tap to forward raw NMEA sentences. Lines longer
+	  than this are truncated. NMEA 0183 standard caps lines at 82
+	  bytes, but proprietary $PQTM / $PAIR sentences can be longer.
+
+endif # GNSS_RAW_NMEA
+
 endif # GNSS_QUECTEL_LCX6G

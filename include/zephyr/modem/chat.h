@@ -42,6 +42,32 @@ typedef void (*modem_chat_match_callback)(struct modem_chat *chat, char **argv, 
 					  void *user_data);
 
 /**
+ * @brief Callback invoked once per complete line, before matcher dispatch
+ *
+ * @details Fires once for every delimited line received, regardless of whether
+ * any match callback subsequently dispatches. Useful for forensic logging,
+ * forwarding raw text to a peer (e.g. CDC-ACM), or detecting comms degradation.
+ *
+ * If the chat instance was configured with a @ref modem_chat_config.tap_buf,
+ * the @p line buffer is a byte-faithful copy of the wire bytes (separators
+ * intact). If no @c tap_buf was provided, @p line points into the live
+ * receive buffer, where separator characters of matched lines may have been
+ * replaced by '\0' as part of argument parsing.
+ *
+ * The callback must NOT modify the buffer and the buffer is invalid after
+ * the callback returns; consumers must copy the bytes if they need to retain
+ * them.
+ *
+ * @param chat Chat instance
+ * @param line Pointer to received line bytes (delimiter stripped)
+ * @param line_len Length of @p line in bytes
+ * @param user_data Free to use user data set during modem_chat_init()
+ */
+typedef void (*modem_chat_line_tap_t)(struct modem_chat *chat,
+				      const char *line, size_t line_len,
+				      void *user_data);
+
+/**
  * @brief Modem chat match
  */
 struct modem_chat_match {
@@ -281,6 +307,13 @@ struct modem_chat {
 	uint16_t parse_arg_len;
 	uint16_t parse_match_type;
 
+	/* Optional line tap, fires once per complete delimited line */
+	modem_chat_line_tap_t line_tap;
+	/* Optional byte-faithful capture buffer for the line tap; NULL when not used */
+	uint8_t *tap_buf;
+	uint16_t tap_buf_size;
+	uint16_t tap_buf_len;
+
 	/* Process received data */
 	struct k_work receive_work;
 
@@ -317,6 +350,21 @@ struct modem_chat_config {
 	const struct modem_chat_match *unsol_matches;
 	/** Elements in array of unsolicited matches */
 	uint16_t unsol_matches_size;
+	/** Optional callback invoked once per complete line, before matcher dispatch.
+	 *  May be NULL (default — no tap). When set, the callback receives
+	 *  @ref user_data as its trailing argument. See @ref modem_chat_line_tap_t.
+	 */
+	modem_chat_line_tap_t line_tap;
+	/** Optional byte-faithful capture buffer for @ref line_tap.
+	 *  When provided, the chat parser copies each incoming byte (excluding
+	 *  delimiters) into this buffer, preserving separators that would
+	 *  otherwise be replaced by '\0' during argv parsing. Lines longer than
+	 *  @ref tap_buf_size are truncated; the tap callback receives the
+	 *  truncated length. May be NULL — see @ref modem_chat_line_tap_t for
+	 *  the no-buffer semantics. */
+	uint8_t *tap_buf;
+	/** Size of @ref tap_buf in bytes. Ignored when @ref tap_buf is NULL. */
+	uint16_t tap_buf_size;
 };
 
 /**

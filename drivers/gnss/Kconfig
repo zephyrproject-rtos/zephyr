@@ -14,6 +14,24 @@ config GNSS_SATELLITES
 	help
 	  Enable GNSS satellites callback.
 
+config GNSS_ACCURACY
+	bool "GNSS per-axis position accuracy support"
+	help
+	  Enable the GNSS accuracy callback API and NMEA GST sentence
+	  parsing. When enabled, drivers that support per-axis accuracy
+	  reporting (typically via the NMEA GST sentence) publish a
+	  struct gnss_accuracy via gnss_publish_accuracy(), and consumers
+	  may register callbacks via GNSS_DT_ACCURACY_CALLBACK_DEFINE().
+
+config GNSS_RAW_NMEA
+	bool "GNSS raw NMEA sentence forwarding"
+	help
+	  Enable forwarding of every received NMEA sentence (parseable or
+	  not) to consumers via the gnss_raw_nmea callback. Drivers wire
+	  the raw forwarding through the modem_chat line_tap mechanism.
+	  Useful for forensic logging, forwarding to a host (e.g. USB
+	  CDC-ACM survey app), or detecting GNSS comms degradation.
+
 config GNSS_DUMP
 	bool "GNSS dump support"
 	depends on LOG

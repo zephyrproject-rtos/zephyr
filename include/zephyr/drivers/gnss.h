@@ -269,6 +269,59 @@ struct gnss_satellites_callback {
 	gnss_satellites_callback_t callback;
 };
 
+/** GNSS per-axis position accuracy (typically derived from NMEA GST) */
+struct gnss_accuracy {
+	/** UTC time of fix in milliseconds since midnight, matching the linked epoch */
+	uint32_t utc_ms;
+	/** RMS value of the standard deviation of the range inputs, in millimeters */
+	uint32_t rms_total_mm;
+	/** Standard deviation of semi-major axis of error ellipse, in millimeters */
+	uint32_t err_ellipse_major_mm;
+	/** Standard deviation of semi-minor axis of error ellipse, in millimeters */
+	uint32_t err_ellipse_minor_mm;
+	/** Orientation of semi-major axis of error ellipse, in 1/100 degrees true north */
+	uint16_t err_ellipse_orientation_cdeg;
+	/** Standard deviation of latitude error, in millimeters */
+	uint32_t lat_err_mm;
+	/** Standard deviation of longitude error, in millimeters */
+	uint32_t lon_err_mm;
+	/** Standard deviation of altitude error, in millimeters */
+	uint32_t alt_err_mm;
+};
+
+/** Template for GNSS accuracy callback */
+typedef void (*gnss_accuracy_callback_t)(const struct device *dev,
+					 const struct gnss_accuracy *accuracy);
+
+/** GNSS accuracy callback structure */
+struct gnss_accuracy_callback {
+	/** Filter callback to GNSS accuracy from this device if not NULL */
+	const struct device *dev;
+	/** Callback called when GNSS accuracy is published */
+	gnss_accuracy_callback_t callback;
+};
+
+/** Template for GNSS raw NMEA sentence callback
+ *
+ * @param dev Device instance which received the sentence
+ * @param sentence Pointer to sentence bytes — NOT null-terminated, byte-faithful
+ *                 to what arrived on the wire (delimiter stripped, checksum kept)
+ * @param len Length of @p sentence in bytes
+ *
+ * @note The buffer is owned by the driver; it must be copied if the callee needs
+ *       to keep the bytes beyond the callback's return.
+ */
+typedef void (*gnss_raw_nmea_callback_t)(const struct device *dev,
+					 const char *sentence, size_t len);
+
+/** GNSS raw NMEA callback structure */
+struct gnss_raw_nmea_callback {
+	/** Filter callback to GNSS raw NMEA from this device if not NULL */
+	const struct device *dev;
+	/** Callback called when a raw NMEA sentence is received */
+	gnss_raw_nmea_callback_t callback;
+};
+
 /**
  * @brief Set the GNSS fix rate
  *
@@ -507,6 +560,58 @@ static inline int z_impl_gnss_get_latest_timepulse(const struct device *dev,
 #else
 #define GNSS_SATELLITES_CALLBACK_DEFINE(_dev, _callback)
 #define GNSS_DT_SATELLITES_CALLBACK_DEFINE(_node_id, _callback)
+#endif
+
+/**
+ * @brief Register a callback structure for GNSS accuracy published
+ *
+ * @param _dev Device pointer
+ * @param _callback The callback function
+ */
+#if CONFIG_GNSS_ACCURACY
+#define GNSS_ACCURACY_CALLBACK_DEFINE(_dev, _callback)                                          \
+	static const STRUCT_SECTION_ITERABLE(gnss_accuracy_callback,                            \
+					     _gnss_accuracy_callback__##_callback) = {          \
+		.dev = _dev,                                                                    \
+		.callback = _callback,                                                          \
+	}
+
+#define GNSS_DT_ACCURACY_CALLBACK_DEFINE(_node_id, _callback)                                      \
+	static const STRUCT_SECTION_ITERABLE(                                                      \
+		gnss_accuracy_callback,                                                            \
+		CONCAT(_gnss_accuracy_callback_, DT_DEP_ORD(_node_id), _, _callback)) = {          \
+		.dev = DEVICE_DT_GET(_node_id),                                                    \
+		.callback = _callback,                                                             \
+	}
+#else
+#define GNSS_ACCURACY_CALLBACK_DEFINE(_dev, _callback)
+#define GNSS_DT_ACCURACY_CALLBACK_DEFINE(_node_id, _callback)
+#endif
+
+/**
+ * @brief Register a callback structure for raw NMEA sentences published
+ *
+ * @param _dev Device pointer
+ * @param _callback The callback function
+ */
+#if CONFIG_GNSS_RAW_NMEA
+#define GNSS_RAW_NMEA_CALLBACK_DEFINE(_dev, _callback)                                          \
+	static const STRUCT_SECTION_ITERABLE(gnss_raw_nmea_callback,                            \
+					     _gnss_raw_nmea_callback__##_callback) = {          \
+		.dev = _dev,                                                                    \
+		.callback = _callback,                                                          \
+	}
+
+#define GNSS_DT_RAW_NMEA_CALLBACK_DEFINE(_node_id, _callback)                                      \
+	static const STRUCT_SECTION_ITERABLE(                                                      \
+		gnss_raw_nmea_callback,                                                            \
+		CONCAT(_gnss_raw_nmea_callback_, DT_DEP_ORD(_node_id), _, _callback)) = {          \
+		.dev = DEVICE_DT_GET(_node_id),                                                    \
+		.callback = _callback,                                                             \
+	}
+#else
+#define GNSS_RAW_NMEA_CALLBACK_DEFINE(_dev, _callback)
+#define GNSS_DT_RAW_NMEA_CALLBACK_DEFINE(_node_id, _callback)
 #endif
 
 /**
