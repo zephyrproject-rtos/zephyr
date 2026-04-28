@@ -89,6 +89,7 @@ void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream, st
 	}
 
 	stream->ep = ep;
+	stream->codec_cfg = &ep->codec_cfg;
 	ep->stream = stream;
 }
 
@@ -169,6 +170,32 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 	}
 
 	return 0;
+}
+
+bool bt_bap_qos_cfg_eq(const struct bt_bap_qos_cfg *a, const struct bt_bap_qos_cfg *b)
+{
+	if (a == b) {
+		return true;
+	}
+
+	if (a == NULL || b == NULL) {
+		return false;
+	}
+
+	return a->pd == b->pd &&
+	       a->framing == b->framing &&
+	       a->phy == b->phy &&
+	       a->rtn == b->rtn &&
+	       a->sdu == b->sdu &&
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	       a->latency == b->latency &&
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	       a->max_pdu == b->max_pdu &&
+	       a->burst_number == b->burst_number &&
+	       a->num_subevents == b->num_subevents &&
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+	       a->interval == b->interval;
 }
 
 struct bt_conn *bt_bap_ep_get_conn(const struct bt_bap_ep *ep)
@@ -828,11 +855,9 @@ int bt_bap_stream_reconfig(struct bt_bap_stream *stream, const struct bt_audio_c
 
 	if (err != 0) {
 		LOG_DBG("reconfiguring stream failed: %d", err);
-	} else {
-		stream->codec_cfg = codec_cfg;
 	}
 
-	return 0;
+	return err;
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)

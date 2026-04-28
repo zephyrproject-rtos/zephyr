@@ -46,13 +46,18 @@ BUILD_ASSERT(CONFIG_BT_MAX_CONN * (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT +
 #define INDEX_TO_DIR(_idx) (((_idx) & 1U) + 1U)
 
 struct cap_initiator_test_unicast_start_fixture {
+	struct bt_cap_unicast_group_stream_pair_param
+		group_pair_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
 	struct bt_cap_stream cap_streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+	struct bt_cap_unicast_group_stream_param
+		group_stream_param[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
 	struct bt_bap_ep *snk_eps[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 	struct bt_bap_ep *src_eps[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
 	struct bt_cap_unicast_audio_start_stream_param
 		audio_start_stream_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
 	struct bt_cap_unicast_audio_start_param audio_start_param;
 	struct bt_cap_unicast_group *unicast_group;
+	struct bt_cap_unicast_group_param group_param;
 	struct bt_conn conns[CONFIG_BT_MAX_CONN];
 	struct bt_bap_lc3_preset preset;
 };
@@ -60,11 +65,6 @@ struct cap_initiator_test_unicast_start_fixture {
 static void cap_initiator_test_unicast_start_fixture_init(
 	struct cap_initiator_test_unicast_start_fixture *fixture)
 {
-	struct bt_cap_unicast_group_stream_pair_param
-		group_pair_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT] = {0};
-	struct bt_cap_unicast_group_stream_param
-		group_stream_param[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT] = {0};
-	struct bt_cap_unicast_group_param group_param = {0};
 	size_t stream_cnt = 0U;
 	size_t pair_idx = 0U;
 	int err;
@@ -76,29 +76,31 @@ static void cap_initiator_test_unicast_start_fixture_init(
 		test_conn_init(&fixture->conns[i], i);
 	}
 
-	while (stream_cnt < ARRAY_SIZE(group_stream_param)) {
+	while (stream_cnt < ARRAY_SIZE(fixture->group_stream_param)) {
 		const enum bt_audio_dir dir = INDEX_TO_DIR(stream_cnt);
 
 		pair_idx = stream_cnt / 2U;
 
-		group_stream_param[stream_cnt].stream = &fixture->cap_streams[stream_cnt];
-		group_stream_param[stream_cnt].qos_cfg = &fixture->preset.qos;
+		fixture->group_stream_param[stream_cnt].stream = &fixture->cap_streams[stream_cnt];
+		fixture->group_stream_param[stream_cnt].qos_cfg = &fixture->preset.qos;
 
 		/* Switch between sink and source depending on index*/
 		if (dir == BT_AUDIO_DIR_SINK) {
-			group_pair_params[pair_idx].tx_param = &group_stream_param[stream_cnt];
+			fixture->group_pair_params[pair_idx].tx_param =
+				&fixture->group_stream_param[stream_cnt];
 		} else {
-			group_pair_params[pair_idx].rx_param = &group_stream_param[stream_cnt];
+			fixture->group_pair_params[pair_idx].rx_param =
+				&fixture->group_stream_param[stream_cnt];
 		}
 
 		stream_cnt++;
 	}
 
-	group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
-	group_param.params_count = pair_idx + 1U;
-	group_param.params = group_pair_params;
+	fixture->group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	fixture->group_param.params_count = pair_idx + 1U;
+	fixture->group_param.params = fixture->group_pair_params;
 
-	err = bt_cap_unicast_group_create(&group_param, &fixture->unicast_group);
+	err = bt_cap_unicast_group_create(&fixture->group_param, &fixture->unicast_group);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 }
 
@@ -387,13 +389,23 @@ static ZTEST_F(cap_initiator_test_unicast_start,
 static ZTEST_F(cap_initiator_test_unicast_start,
 	       test_initiator_unicast_start_state_codec_configured)
 {
+	/* Use a different preset than fixture->preset to also verify that the codec_cfg data is
+	 * updated
+	 */
+	struct bt_bap_lc3_preset preset =
+		(struct bt_bap_lc3_preset)BT_BAP_LC3_UNICAST_PRESET_48_2_1(
+			BT_AUDIO_LOCATION_MONO_AUDIO, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 	int err;
 
 	ARRAY_FOR_EACH_PTR(fixture->audio_start_stream_params, stream_param) {
 		test_unicast_set_state(stream_param->stream, stream_param->member.member,
-				       stream_param->ep, &fixture->preset,
+				       stream_param->ep, &preset.codec_cfg,
 				       BT_BAP_EP_STATE_CODEC_CONFIGURED);
 	}
+
+	/* Ensure that the 2 codec_cfgs are different */
+	zassert_true(!util_eq(preset.codec_cfg.data, preset.codec_cfg.data_len,
+			      fixture->preset.codec_cfg.data, fixture->preset.codec_cfg.data_len));
 
 	err = bt_cap_initiator_unicast_audio_start(&fixture->audio_start_param);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
@@ -407,21 +419,55 @@ static ZTEST_F(cap_initiator_test_unicast_start,
 
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
+		const struct bt_audio_codec_cfg *codec_cfg = bap_stream->codec_cfg;
 		const enum bt_bap_ep_state state = bap_stream->ep->state;
 
 		zassert_equal(state, BT_BAP_EP_STATE_STREAMING,
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
+
+		/* Verify that the codec config data was updated */
+		zassert_true(util_eq(fixture->preset.codec_cfg.data,
+				     fixture->preset.codec_cfg.data_len, codec_cfg->data,
+				     codec_cfg->data_len));
 	}
 }
 
 static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_state_qos_configured)
 {
+	/* Use a different preset than fixture->preset to also verify that the codec_cfg data is
+	 * updated
+	 */
+	struct bt_bap_lc3_preset preset =
+		(struct bt_bap_lc3_preset)BT_BAP_LC3_UNICAST_PRESET_48_2_1(
+			BT_AUDIO_LOCATION_MONO_AUDIO, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 	int err;
 
 	ARRAY_FOR_EACH_PTR(fixture->audio_start_stream_params, stream_param) {
 		test_unicast_set_state(stream_param->stream, stream_param->member.member,
-				       stream_param->ep, &fixture->preset,
+				       stream_param->ep, &fixture->preset.codec_cfg,
 				       BT_BAP_EP_STATE_QOS_CONFIGURED);
+	}
+
+	/* Ensure that the 2 QoS are different */
+	zassert_true(!bt_bap_qos_cfg_eq(&preset.qos, &fixture->preset.qos));
+
+	/* Reconfigure the group with different QoS after the streams have been QoS configured */
+	ARRAY_FOR_EACH_PTR(fixture->group_stream_param, group_stream_param) {
+		if (group_stream_param->qos_cfg == NULL) {
+			break;
+		}
+
+		group_stream_param->qos_cfg = &preset.qos;
+	}
+	err = bt_cap_unicast_group_reconfig(fixture->unicast_group, &fixture->group_param);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	/* Ensure that the stream and group QoS are different at this point*/
+	ARRAY_FOR_EACH(fixture->cap_streams, i) {
+		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
+
+		/* Verify that the QoS config was updated */
+		zassert_true(!bt_bap_qos_cfg_eq(&preset.qos, bap_stream->qos));
 	}
 
 	err = bt_cap_initiator_unicast_audio_start(&fixture->audio_start_param);
@@ -440,18 +486,31 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_st
 
 		zassert_equal(state, BT_BAP_EP_STATE_STREAMING,
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
+
+		/* Verify that the QoS config was updated */
+		zassert_true(bt_bap_qos_cfg_eq(&fixture->preset.qos, bap_stream->qos));
 	}
 }
 
 static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_state_enabling)
 {
+	/* Use a different preset than fixture->preset to also verify that the codec_cfg data is
+	 * updated
+	 */
+	struct bt_bap_lc3_preset preset =
+		(struct bt_bap_lc3_preset)BT_BAP_LC3_UNICAST_PRESET_48_2_1(
+			BT_AUDIO_LOCATION_MONO_AUDIO, BT_AUDIO_CONTEXT_TYPE_RINGTONE);
 	int err;
 
 	ARRAY_FOR_EACH_PTR(fixture->audio_start_stream_params, stream_param) {
 		test_unicast_set_state(stream_param->stream, stream_param->member.member,
-				       stream_param->ep, &fixture->preset,
+				       stream_param->ep, &fixture->preset.codec_cfg,
 				       BT_BAP_EP_STATE_ENABLING);
 	}
+
+	/* Ensure that the 2 codec_cfgs' metadata are different */
+	zassert_true(!util_eq(preset.codec_cfg.meta, preset.codec_cfg.meta_len,
+			      fixture->preset.codec_cfg.meta, fixture->preset.codec_cfg.meta_len));
 
 	err = bt_cap_initiator_unicast_audio_start(&fixture->audio_start_param);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
@@ -465,22 +524,38 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_st
 
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
+		const struct bt_audio_codec_cfg *codec_cfg = bap_stream->codec_cfg;
 		const enum bt_bap_ep_state state = bap_stream->ep->state;
 
 		zassert_equal(state, BT_BAP_EP_STATE_STREAMING,
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
+
+		/* Verify that the codec config data was updated */
+		zassert_true(util_eq(fixture->preset.codec_cfg.meta,
+				     fixture->preset.codec_cfg.meta_len, codec_cfg->meta,
+				     codec_cfg->meta_len));
 	}
 }
 
 static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_state_streaming)
 {
+	/* Use a different preset than fixture->preset to also verify that the codec_cfg data is
+	 * updated
+	 */
+	struct bt_bap_lc3_preset preset =
+		(struct bt_bap_lc3_preset)BT_BAP_LC3_UNICAST_PRESET_48_2_1(
+			BT_AUDIO_LOCATION_MONO_AUDIO, BT_AUDIO_CONTEXT_TYPE_RINGTONE);
 	int err;
 
 	ARRAY_FOR_EACH_PTR(fixture->audio_start_stream_params, stream_param) {
 		test_unicast_set_state(stream_param->stream, stream_param->member.member,
-				       stream_param->ep, &fixture->preset,
+				       stream_param->ep, &fixture->preset.codec_cfg,
 				       BT_BAP_EP_STATE_STREAMING);
 	}
+
+	/* Ensure that the 2 codec_cfgs' metadata are different */
+	zassert_true(!util_eq(preset.codec_cfg.meta, preset.codec_cfg.meta_len,
+			      fixture->preset.codec_cfg.meta, fixture->preset.codec_cfg.meta_len));
 
 	err = bt_cap_initiator_unicast_audio_start(&fixture->audio_start_param);
 	zassert_equal(err, -EALREADY, "Unexpected return value %d", err);
@@ -490,9 +565,15 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_st
 
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
+		const struct bt_audio_codec_cfg *codec_cfg = bap_stream->codec_cfg;
 		const enum bt_bap_ep_state state = bap_stream->ep->state;
 
 		zassert_equal(state, BT_BAP_EP_STATE_STREAMING,
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
+
+		/* Verify that the codec config data was updated */
+		zassert_true(util_eq(fixture->preset.codec_cfg.meta,
+				     fixture->preset.codec_cfg.meta_len, codec_cfg->meta,
+				     codec_cfg->meta_len));
 	}
 }
