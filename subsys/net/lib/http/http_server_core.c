@@ -80,6 +80,10 @@ static const char *const h3_alpn_list[] = {
 #endif
 
 static void close_client_connection(struct http_client_ctx *client);
+static int get_h3_stream_slot(const struct http_client_ctx *client, int stream_fd);
+static void reset_h3_stream_slot(struct http_client_ctx *client, int slot);
+static void restore_h3_stream_state(struct http_client_ctx *client, int slot);
+static void store_h3_stream_state(struct http_client_ctx *client, int slot);
 
 HTTP_SERVER_CONTENT_TYPE(html, "text/html")
 HTTP_SERVER_CONTENT_TYPE(css, "text/css")
@@ -582,8 +586,7 @@ void http_server_release_client(struct http_client_ctx *client)
 					/* Close the fd to trigger quic_stream_unref() */
 					if (client->h3.stream_sock[j] != INVALID_SOCK) {
 						(void)zsock_close(client->h3.stream_sock[j]);
-						client->h3.stream_sock[j] = INVALID_SOCK;
-						client->h3.headers_sent[j] = false;
+						reset_h3_stream_slot(client, j);
 					}
 
 					break;
@@ -702,8 +705,7 @@ static void init_client_ctx(struct http_client_ctx *client, const struct http_se
 		client->h3.conn_sock = INVALID_SOCK;
 
 		for (int i = 0; i < ARRAY_SIZE(client->h3.stream_sock); i++) {
-			client->h3.stream_sock[i] = INVALID_SOCK;
-			client->h3.headers_sent[i] = false;
+			reset_h3_stream_slot(client, i);
 		}
 	}
 
@@ -884,6 +886,46 @@ struct http_client_ctx *get_h3_client_by_stream_fd(struct http_server_ctx *ctx,
 	return NULL;
 }
 
+static int get_h3_stream_slot(const struct http_client_ctx *client, int stream_fd)
+{
+	for (int i = 0; i < ARRAY_SIZE(client->h3.stream_sock); i++) {
+		if (client->h3.stream_sock[i] == stream_fd) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+static void reset_h3_stream_slot(struct http_client_ctx *client, int slot)
+{
+	client->h3.stream_sock[slot] = INVALID_SOCK;
+	client->h3.headers_sent[slot] = false;
+	memset(&client->h3.streams[slot], 0, sizeof(client->h3.streams[slot]));
+}
+
+static void restore_h3_stream_state(struct http_client_ctx *client, int slot)
+{
+	struct http3_stream_ctx *stream = &client->h3.streams[slot];
+
+	memcpy(client->buffer, stream->buffer, sizeof(client->buffer));
+	client->data_len = stream->data_len;
+	client->current_detail = stream->current_detail;
+	memcpy(client->url_buffer, stream->url_buffer, sizeof(client->url_buffer));
+	client->method = stream->method;
+}
+
+static void store_h3_stream_state(struct http_client_ctx *client, int slot)
+{
+	struct http3_stream_ctx *stream = &client->h3.streams[slot];
+
+	memcpy(stream->buffer, client->buffer, sizeof(stream->buffer));
+	stream->data_len = client->data_len;
+	stream->current_detail = client->current_detail;
+	memcpy(stream->url_buffer, client->url_buffer, sizeof(stream->url_buffer));
+	stream->method = client->method;
+}
+
 static int add_h3_stream_poll(struct http_client_ctx *client,
 			      struct zsock_pollfd *fds,
 			      int fd_count,
@@ -895,6 +937,8 @@ static int add_h3_stream_poll(struct http_client_ctx *client,
 		if (client->h3.stream_sock[i] == INVALID_SOCK) {
 			client->h3.stream_sock[i] = stream_sock;
 			client->h3.headers_sent[i] = false;
+			memset(&client->h3.streams[i], 0,
+			       sizeof(client->h3.streams[i]));
 			pos = i;
 			break;
 		}
@@ -917,8 +961,7 @@ static int add_h3_stream_poll(struct http_client_ctx *client,
 		return 0;
 	}
 
-	client->h3.stream_sock[pos] = INVALID_SOCK;
-	client->h3.headers_sent[pos] = false;
+	reset_h3_stream_slot(client, pos);
 
 	return -ENOMEM;
 }
@@ -1224,8 +1267,7 @@ static void handle_h3_uni_stream(struct http_server_ctx *ctx, int i,
 	 */
 	for (j = 0; j < ARRAY_SIZE(client->h3.stream_sock); j++) {
 		if (client->h3.stream_sock[j] == stream_fd) {
-			client->h3.stream_sock[j] = INVALID_SOCK;
-			client->h3.headers_sent[j] = false;
+			reset_h3_stream_slot(client, j);
 			break;
 		}
 	}
@@ -1238,6 +1280,8 @@ static void handle_h3_uni_stream(struct http_server_ctx *ctx, int i,
 				if (client->h3.stream_sock[j] == INVALID_SOCK) {
 					client->h3.stream_sock[j] = stream_fd;
 					client->h3.headers_sent[j] = false;
+					memset(&client->h3.streams[j], 0,
+					       sizeof(client->h3.streams[j]));
 					break;
 				}
 			}
@@ -1279,7 +1323,18 @@ static void handle_h3_bidi_stream(struct http_server_ctx *ctx, int i,
 {
 	int closed_fd;
 	int conn_fd;
+	int slot;
 	int ret;
+
+	slot = get_h3_stream_slot(client, ctx->fds[i].fd);
+	if (slot < 0) {
+		LOG_ERR("[%p] H3: missing stream slot for fd %d",
+			client, ctx->fds[i].fd);
+		close_h3_or_plain_client(client, ctx->fds, ARRAY_SIZE(ctx->fds));
+		return;
+	}
+
+	restore_h3_stream_state(client, slot);
 
 	ret = zsock_recv(ctx->fds[i].fd, client->buffer + client->data_len,
 			 sizeof(client->buffer) - client->data_len, 0);
@@ -1309,13 +1364,7 @@ static void handle_h3_bidi_stream(struct http_server_ctx *ctx, int i,
 		zsock_close(closed_fd);
 		invalidate_poll_fd(&ctx->fds[i]);
 
-		for (int k = 0; k < ARRAY_SIZE(client->h3.stream_sock); k++) {
-			if (client->h3.stream_sock[k] == closed_fd) {
-				client->h3.stream_sock[k] = INVALID_SOCK;
-				client->h3.headers_sent[k] = false;
-				break;
-			}
-		}
+		reset_h3_stream_slot(client, slot);
 
 		return;
 	}
@@ -1345,13 +1394,7 @@ static void handle_h3_bidi_stream(struct http_server_ctx *ctx, int i,
 		zsock_close(closed_fd);
 		invalidate_poll_fd(&ctx->fds[i]);
 
-		for (int k = 0; k < ARRAY_SIZE(client->h3.stream_sock); k++) {
-			if (client->h3.stream_sock[k] == closed_fd) {
-				client->h3.stream_sock[k] = INVALID_SOCK;
-				client->h3.headers_sent[k] = false;
-				break;
-			}
-		}
+		reset_h3_stream_slot(client, slot);
 
 		LOG_DBG("[%p] H3: stream fd %d closed after complete response",
 			client, closed_fd);
@@ -1359,6 +1402,8 @@ static void handle_h3_bidi_stream(struct http_server_ctx *ctx, int i,
 	} else if (client->data_len == sizeof(client->buffer)) {
 		LOG_ERR("RX buffer too small to handle request");
 		close_h3_or_plain_client(client, ctx->fds, ARRAY_SIZE(ctx->fds));
+	} else {
+		store_h3_stream_state(client, slot);
 	}
 }
 
