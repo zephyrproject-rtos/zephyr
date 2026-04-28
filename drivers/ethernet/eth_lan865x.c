@@ -130,9 +130,7 @@ static void lan865x_write_macaddress(const struct device *dev);
 static int lan865x_set_config(const struct device *dev, enum ethernet_config_type type,
 			      const struct ethernet_config *config)
 {
-	const struct lan865x_config *cfg = dev->config;
 	struct lan865x_data *ctx = dev->data;
-	struct phy_plca_cfg plca_cfg;
 
 	if (type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
 		return oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR, LAN865x_MAC_NCFGR_CAF);
@@ -144,19 +142,6 @@ static int lan865x_set_config(const struct device *dev, enum ethernet_config_typ
 		lan865x_write_macaddress(dev);
 
 		return 0;
-	}
-
-	if (type == ETHERNET_CONFIG_TYPE_T1S_PARAM) {
-		if (config->t1s_param.type == ETHERNET_T1S_PARAM_TYPE_PLCA_CONFIG) {
-			plca_cfg.enable = config->t1s_param.plca.enable;
-			plca_cfg.node_id = config->t1s_param.plca.node_id;
-			plca_cfg.node_count = config->t1s_param.plca.node_count;
-			plca_cfg.burst_count = config->t1s_param.plca.burst_count;
-			plca_cfg.burst_timer = config->t1s_param.plca.burst_timer;
-			plca_cfg.to_timer = config->t1s_param.plca.to_timer;
-
-			return phy_set_plca_cfg(cfg->phy, &plca_cfg);
-		}
 	}
 
 	return -ENOTSUP;
