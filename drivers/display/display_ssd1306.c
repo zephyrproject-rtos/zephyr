@@ -56,6 +56,7 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 #define SSD1306_SET_CHARGE_PERIOD		0xd9 /* 1 byte args: A[3:0] Phase1 A[7:4] Phase2 */
 #define SSD1306_SET_PADS_HW_CONFIG		0xda /* 1 byte args: A[5:4] COM configuration */
 #define SSD1306_SET_VCOM_DESELECT_LEVEL		0xdb /* 1 byte args: A[5:4] Voltage */
+#define SSD1306_SOFT_RESET			0xe4 /* Undocumented soft reset */
 
 /*
  * Configuration Constants
@@ -143,6 +144,7 @@ struct ssd1306_config {
 	bool sh1106_compatible;
 	int ready_time_ms;
 	bool use_internal_iref;
+	bool softreset;
 };
 
 struct ssd1306_data {
@@ -309,6 +311,21 @@ static inline int ssd1306_set_iref_mode(const struct device *dev)
 	};
 
 	if (config->use_internal_iref) {
+		ret = ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
+	}
+
+	return ret;
+}
+
+static int ssd1306_softreset(const struct device *dev)
+{
+	int ret = 0;
+	const struct ssd1306_config *config = dev->config;
+	uint8_t cmd_buf[] = {
+		SSD1306_SOFT_RESET,
+	};
+
+	if (config->softreset) {
 		ret = ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 	}
 
@@ -564,6 +581,8 @@ static int ssd1306_init_device(const struct device *dev)
 		k_sleep(K_MSEC(SSD1306_RESET_DELAY));
 		gpio_pin_set_dt(&config->reset, 0);
 		k_sleep(K_MSEC(SSD1306_RESET_DELAY));
+	} else {
+		ssd1306_softreset(dev);
 	}
 
 	/* Turn display off */
@@ -710,6 +729,7 @@ static DEVICE_API(display, ssd1306_driver_api) = {
 		.sh1106_compatible = DT_NODE_HAS_COMPAT(node_id, sinowealth_sh1106),               \
 		.ready_time_ms = DT_PROP(node_id, ready_time_ms),                                  \
 		.use_internal_iref = DT_PROP(node_id, use_internal_iref),                          \
+		.softreset = DT_PROP(node_id, softreset_on),                                       \
 		COND_CODE_1(DT_ON_BUS(node_id, spi), (SSD1306_CONFIG_SPI(node_id)),                \
 			    (SSD1306_CONFIG_I2C(node_id)))                                         \
 	};                                                                                         \
