@@ -14,5 +14,14 @@
 			interrupts = <93 0>;
 			status = "disabled";
 		};
+
+		saes: saes@420c0c00 {
+			compatible = "st,stm32-saes";
+			reg = <0x420c0c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 20)>;
+			resets = <&rctl STM32_RESET(AHB2L, 20)>;
+			interrupts = <28 0>;
+			status = "disabled";
+		};
 	};
 };
