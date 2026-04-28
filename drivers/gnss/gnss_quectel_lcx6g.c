@@ -46,6 +46,13 @@ struct quectel_lcx6g_data {
 #if CONFIG_GNSS_SATELLITES
 	struct gnss_satellite satellites[CONFIG_GNSS_QUECTEL_LCX6G_SAT_ARRAY_SIZE];
 #endif
+#if CONFIG_GNSS_RAW_NMEA
+	/* Byte-faithful capture buffer for the modem_chat line tap; sized via
+	 * CONFIG_GNSS_QUECTEL_LCX6G_RAW_TAP_BUF_SIZE. Lines longer than this
+	 * are silently truncated by modem_chat.
+	 */
+	uint8_t raw_tap_buf[CONFIG_GNSS_QUECTEL_LCX6G_RAW_TAP_BUF_SIZE];
+#endif
 
 	/* UART backend */
 	struct modem_pipe *uart_pipe;
@@ -113,7 +120,57 @@ MODEM_CHAT_MATCHES_DEFINE(unsol_matches,
 #if CONFIG_GNSS_SATELLITES
 	MODEM_CHAT_MATCH_WILDCARD("$??GSV,", ",*", gnss_nmea0183_match_gsv_callback),
 #endif
+#if CONFIG_GNSS_ACCURACY
+	MODEM_CHAT_MATCH_WILDCARD("$??GST,", ",*", gnss_nmea0183_match_gst_callback),
+#endif
 );
+
+#if CONFIG_GNSS_QUECTEL_LCX6G_ENABLE_GST
+/**
+ * @brief Send PAIR062 to enable GST sentence output at the configured rate
+ *
+ * @details Reuses the existing pair_script infrastructure to issue
+ * "$PAIR062,<idx>,1" at runtime; this avoids precomputing a checksum at
+ * compile time, which would couple the resume_script to a specific
+ * GST_INDEX value. The chip's ack pattern ($PAIR001,062,0) is the same
+ * regardless of which sub-index PAIR062 was targeting.
+ *
+ * @param dev Device instance
+ *
+ * @retval 0 if the command was sent and acknowledged
+ * @retval -errno on snprintk / chat-script failure
+ */
+static int quectel_lcx6g_enable_gst(const struct device *dev)
+{
+	struct quectel_lcx6g_data *data = dev->data;
+	int ret;
+
+	ret = gnss_nmea0183_snprintk(data->pair_request_buf, sizeof(data->pair_request_buf),
+				     "PAIR062,%u,1",
+				     CONFIG_GNSS_QUECTEL_LCX6G_PAIR062_GST_INDEX);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = modem_chat_script_chat_set_request(&data->pair_script_chat, data->pair_request_buf);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = gnss_nmea0183_snprintk(data->pair_match_buf, sizeof(data->pair_match_buf),
+				     "PAIR001,062,0");
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = modem_chat_match_set_match(&data->pair_match, data->pair_match_buf);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return modem_chat_run_script(&data->chat, &data->pair_script);
+}
+#endif /* CONFIG_GNSS_QUECTEL_LCX6G_ENABLE_GST */
 
 static int quectel_lcx6g_configure_pps(const struct device *dev)
 {
@@ -229,6 +286,15 @@ static int quectel_lcx6g_resume(const struct device *dev)
 		modem_pipe_close(data->uart_pipe, K_SECONDS(10));
 		return ret;
 	}
+
+#if CONFIG_GNSS_QUECTEL_LCX6G_ENABLE_GST
+	ret = quectel_lcx6g_enable_gst(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable GST output");
+		modem_pipe_close(data->uart_pipe, K_SECONDS(10));
+		return ret;
+	}
+#endif
 
 	LOG_INF("Resumed");
 	return ret;
@@ -772,6 +838,11 @@ static int quectel_lcx6g_init_chat(const struct device *dev)
 		.argv_size = ARRAY_SIZE(data->chat_argv),
 		.unsol_matches = unsol_matches,
 		.unsol_matches_size = ARRAY_SIZE(unsol_matches),
+#if CONFIG_GNSS_RAW_NMEA
+		.line_tap = gnss_nmea0183_match_raw_tap,
+		.tap_buf = data->raw_tap_buf,
+		.tap_buf_size = ARRAY_SIZE(data->raw_tap_buf),
+#endif
 	};
 
 	return modem_chat_init(&data->chat, &chat_config);
