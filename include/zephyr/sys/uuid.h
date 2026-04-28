@@ -87,6 +87,17 @@ int uuid_generate_v5(const struct uuid *ns, const void *data, size_t data_size,
 		     struct uuid *out);
 
 /**
+ * @brief Compare two UUIDs.
+ *
+ * @param a First UUID to compare.
+ * @param b Second UUID to compare.
+ *
+ * @retval 0 The UUIDs are equal.
+ * @retval nonzero The UUIDs are not equal.
+ */
+int uuid_cmp(const struct uuid *a, const struct uuid *b);
+
+/**
  * @brief Copy an UUID into another UUID.
  *
  * @param data Input data to copy.
