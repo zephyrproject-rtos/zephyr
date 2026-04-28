@@ -180,6 +180,8 @@ int stm32_gpioport_configure_pin(const struct device *port,
 		} else {
 			LL_GPIO_SetAFPin_8_15(gpio, pin_ll, afnum);
 		}
+		/* Configure output type - it also affects operation in AF mode */
+		LL_GPIO_SetPinOutputType(gpio, pin_ll, _FLD2VAL(STM32_OTYPER, config));
 	} else if (mode == STM32_MODER_OUTPUT_MODE) {
 		/* Output mode: configure output type and set level if requested */
 		LL_GPIO_SetPinOutputType(gpio, pin_ll, _FLD2VAL(STM32_OTYPER, config));
