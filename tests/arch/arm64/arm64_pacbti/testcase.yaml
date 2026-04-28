@@ -5,6 +5,7 @@ common:
     - security
   timeout: 30
   filter: CONFIG_ARMV9_A
+  arch_allow: arm64
 tests:
   arch.arm64.pacbti:
     integration_platforms:

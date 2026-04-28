@@ -1,5 +1,7 @@
 common:
   tags:
+    - arm_user_stack
+  arch_allow:
     - arm
   timeout: 120
   # TODO: remove the platform_exclude once the MPS2 issue is fixed
