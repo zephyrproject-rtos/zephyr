@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  * Emulate a memory device on MSPI emulator bus
  */
-#define DT_DRV_COMPAT zephyr_mspi_emul_flash
+#define DT_DRV_COMPAT zephyr_emul_flash
 
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
