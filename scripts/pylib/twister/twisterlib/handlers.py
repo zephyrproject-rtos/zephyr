@@ -596,6 +596,9 @@ class DeviceHandler(Handler):
                 ]:
                     command_extra_args.append("--cmd-pre-init")
                     command_extra_args.append(f"hla_serial {board_id}")
+                elif runner == 'openocd' and product == "Raspberry Pi Debug Probe (CMSIS-DAP)":
+                    command_extra_args.append("--cmd-pre-init")
+                    command_extra_args.append(f"cmsis_dap_serial {board_id}")
                 elif runner == "openocd" and (product in ("EDBG CMSIS-DAP", "LPC-LINK2 CMSIS-DAP")):
                     command_extra_args.append("--cmd-pre-init")
                     command_extra_args.append(f"adapter serial {board_id}")
