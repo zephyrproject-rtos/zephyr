@@ -296,6 +296,8 @@ int http_server_init(struct http_server_ctx *ctx)
 		/* set the default address (in6addr_any / NET_INADDR_ANY are all 0) */
 		memset(&addr_storage, 0, sizeof(struct net_sockaddr_storage));
 
+		h1 = h2 = h3 = false;
+
 		/* Set up the server address struct according to address family */
 		if (IS_ENABLED(CONFIG_NET_IPV6) && svc->host != NULL &&
 		    zsock_inet_pton(NET_AF_INET6, svc->host, &addr.addr6->sin6_addr) == 1) {
