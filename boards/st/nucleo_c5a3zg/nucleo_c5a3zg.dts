@@ -185,6 +185,17 @@
 	status = "okay";
 };
 
+&i3c1 {
+	pinctrl-0 = <&i3c1_scl_pb6 &i3c1_sda_pb7>;
+	pinctrl-names = "default";
+
+	i2c-scl-hz = <400000>;
+	i3c-scl-hz = <6000000>;
+
+	/* Due to pin conflict with i2c1, keep it disabled  */
+	/* status = "okay"; */
+};
+
 &iwdg {
 	status = "okay";
 };
