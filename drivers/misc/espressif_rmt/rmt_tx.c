@@ -344,10 +344,12 @@ int rmt_new_tx_channel(const struct device *dev, const rmt_tx_channel_config_t *
 	}
 #endif
 
+#if !RMT_SLEEP_RETENTION_ENABLED
 	if (config->flags.allow_pd) {
 		LOG_ERR("Not able to power down in light sleep");
 		return -EINVAL;
 	}
+#endif
 
 	/* malloc channel memory */
 	tx_channel = k_calloc(1, sizeof(rmt_tx_channel_t) + sizeof(rmt_tx_trans_desc_t)
@@ -375,6 +377,12 @@ int rmt_new_tx_channel(const struct device *dev, const rmt_tx_channel_config_t *
 	rmt_group_t *group = tx_channel->base.group;
 	rmt_hal_context_t *hal = &group->hal;
 	int channel_id = tx_channel->base.channel_id;
+
+#if RMT_SLEEP_RETENTION_ENABLED
+	if (config->flags.allow_pd != 0) {
+		rmt_create_retention_module(group);
+	}
+#endif
 
 	/* reset channel, make sure the TX engine is not working, and events are cleared */
 	key = k_spin_lock(&group->spinlock);

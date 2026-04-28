@@ -294,10 +294,12 @@ int rmt_new_rx_channel(const struct device *dev, const rmt_rx_channel_config_t *
 			* sizeof(rmt_symbol_word_t) / RMT_DMA_DESC_BUF_MAX_SIZE + 1;
 	}
 #endif
+#if !RMT_SLEEP_RETENTION_ENABLED
 	if (config->flags.allow_pd) {
 		LOG_ERR("Not able to power down in light sleep");
 		return -EINVAL;
 	}
+#endif
 	/* malloc channel memory */
 #if SOC_RMT_SUPPORT_DMA
 	rx_channel = k_calloc(1, sizeof(rmt_rx_channel_t) + num_dma_nodes
@@ -324,6 +326,12 @@ int rmt_new_rx_channel(const struct device *dev, const rmt_rx_channel_config_t *
 	rmt_group_t *group = rx_channel->base.group;
 	rmt_hal_context_t *hal = &group->hal;
 	int channel_id = rx_channel->base.channel_id;
+
+#if RMT_SLEEP_RETENTION_ENABLED
+	if (config->flags.allow_pd != 0) {
+		rmt_create_retention_module(group);
+	}
+#endif
 
 	/* reset channel, make sure the RX engine is not working, and events are cleared */
 	key = k_spin_lock(&group->spinlock);

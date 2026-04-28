@@ -9,6 +9,9 @@
 #include "clk_ctrl_os.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
+#if RMT_SLEEP_RETENTION_ENABLED
+#include "esp_private/sleep_retention.h"
+#endif
 
 #include <zephyr/logging/log.h>
 
@@ -22,6 +25,10 @@ typedef struct rmt_platform_t {
 } rmt_platform_t;
 
 static rmt_platform_t s_platform; /* singleton platform */
+
+#if RMT_SLEEP_RETENTION_ENABLED
+static int rmt_create_sleep_retention_link_cb(void *arg);
+#endif
 
 rmt_group_t *rmt_acquire_group_handle(int group_id)
 {
@@ -54,6 +61,26 @@ rmt_group_t *rmt_acquire_group_handle(int group_id)
 				rmt_ll_enable_bus_clock(group_id, true);
 				rmt_ll_reset_register(group_id);
 			}
+#if RMT_SLEEP_RETENTION_ENABLED
+			sleep_retention_module_t module = rmt_reg_retention_info[group_id].module;
+			sleep_retention_module_init_param_t init_param = {
+				.cbs = {
+					.create = {
+						.handle = rmt_create_sleep_retention_link_cb,
+						.arg = group,
+					},
+				},
+				.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
+			};
+			if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
+				/**
+				 * Even though the sleep retention module init failed,
+				 * RMT driver should still work, so just warning here
+				 */
+				LOG_WRN("Init sleep retention failed %d, power domain may be "
+					"turned off during sleep", group_id);
+			}
+#endif
 			/* hal layer initialize */
 			rmt_hal_init(&group->hal);
 		}
@@ -112,6 +139,16 @@ void rmt_release_group_handle(rmt_group_t *group)
 	}
 
 	if (do_deinitialize) {
+#if RMT_SLEEP_RETENTION_ENABLED
+		sleep_retention_module_t module = rmt_reg_retention_info[group->group_id].module;
+
+		if (sleep_retention_is_module_created(module)) {
+			sleep_retention_module_free(module);
+		}
+		if (sleep_retention_is_module_inited(module)) {
+			sleep_retention_module_deinit(module);
+		}
+#endif
 		LOG_DBG("del group(%d)", group->group_id);
 		k_free(group);
 	}
@@ -378,3 +415,39 @@ int rmt_isr_priority_to_flags(rmt_group_t *group)
 
 	return isr_flags;
 }
+
+#if RMT_SLEEP_RETENTION_ENABLED
+static int rmt_create_sleep_retention_link_cb(void *arg)
+{
+	rmt_group_t *group = (rmt_group_t *)arg;
+
+	if (!sleep_retention_entries_create(
+		rmt_reg_retention_info[group->group_id].regdma_entry_array,
+		rmt_reg_retention_info[group->group_id].array_size, REGDMA_LINK_PRI_RMT,
+		rmt_reg_retention_info[group->group_id].module)) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+void rmt_create_retention_module(rmt_group_t *group)
+{
+	unsigned int key;
+	sleep_retention_module_t module = rmt_reg_retention_info[group->group_id].module;
+
+	key = irq_lock();
+	if (sleep_retention_is_module_inited(module) &&
+		!sleep_retention_is_module_created(module)) {
+		if (sleep_retention_module_allocate(module) != ESP_OK) {
+			/**
+			 * Even though the sleep retention module create failed,
+			 * RMT driver should still work, so just warning here
+			 */
+			LOG_WRN("Create retention link failed, "
+				"power domain will not be turned off during sleep");
+		}
+	}
+	irq_unlock(key);
+}
+#endif

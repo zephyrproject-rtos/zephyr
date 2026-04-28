@@ -56,6 +56,13 @@ extern "C" {
 /* Uninitialized priority value */
 #define RMT_GROUP_INTR_PRIORITY_UNINITIALIZED (-1)
 
+/* RMT sleep retention support */
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_RMT_SUPPORT_SLEEP_RETENTION
+#define RMT_SLEEP_RETENTION_ENABLED 1
+#else
+#define RMT_SLEEP_RETENTION_ENABLED 0
+#endif
+
 typedef struct {
 	struct {
 		rmt_symbol_word_t symbols[SOC_RMT_MEM_WORDS_PER_CHANNEL];
@@ -299,6 +306,17 @@ bool rmt_set_intr_priority_to_group(rmt_group_t *group, int intr_priority);
  * @retval ISR flags value.
  */
 int rmt_isr_priority_to_flags(rmt_group_t *group);
+
+#if RMT_SLEEP_RETENTION_ENABLED
+
+/**
+ * @brief Create sleep retention link
+ *
+ * @param group RMT group.
+ */
+void rmt_create_retention_module(rmt_group_t *group);
+
+#endif
 
 #ifdef __cplusplus
 }
