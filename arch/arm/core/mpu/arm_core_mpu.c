@@ -143,7 +143,7 @@ static const struct z_arm_mpu_partition static_regions[] = {
  */
 void z_arm_configure_static_mpu_regions(void)
 {
-	struct z_arm_mpu_partition regions[ARRAY_SIZE(static_regions)];
+	struct z_arm_mpu_partition regions[ARRAY_SIZE(static_regions) + 1U];
 	uint8_t regions_num = 0U;
 
 	for (size_t i = 0U; i < ARRAY_SIZE(static_regions); i++) {
