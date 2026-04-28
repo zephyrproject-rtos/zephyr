@@ -441,9 +441,15 @@ static int mce_mas_transport_connect(struct bt_conn *conn, struct bt_map_mce_mas
 	atomic_set(&mce_mas->_transport_state, BT_MAP_TRANSPORT_STATE_CONNECTING);
 
 	if (type == MAP_TRANSPORT_TYPE_L2CAP) {
+		mce_mas->goep_v2.goep = &mce_mas->goep;
+		mce_mas->goep.v2 = &mce_mas->goep_v2;
+		mce_mas->goep.v1 = NULL;
 		LOG_DBG("Connecting via L2CAP PSM 0x%04x", psm);
 		err = bt_goep_transport_l2cap_connect(conn, &mce_mas->goep, psm);
 	} else {
+		mce_mas->goep_v1.goep = &mce_mas->goep;
+		mce_mas->goep.v1 = &mce_mas->goep_v1;
+		mce_mas->goep.v2 = NULL;
 		LOG_DBG("Connecting via RFCOMM channel %u", channel);
 		err = bt_goep_transport_rfcomm_connect(conn, &mce_mas->goep, channel);
 	}
@@ -970,7 +976,7 @@ static int mce_mas_get_or_put(struct bt_map_mce_mas *mce_mas, bool is_get, const
 	old_req_type = mce_mas->_req_type;
 
 	if (mce_mas->_rsp_cb == NULL || bt_obex_has_header(buf, BT_OBEX_HEADER_ID_TYPE)) {
-		if (is_get && mce_mas->goep._goep_v2 &&
+		if (is_get && mce_mas->goep.v2 != NULL &&
 		    !bt_obex_has_header(buf, BT_OBEX_HEADER_ID_SRM)) {
 			LOG_ERR("Failed to get SRM");
 			return -ENODATA;
@@ -1349,6 +1355,15 @@ static int mce_mns_accept(struct bt_conn *conn, void *server, uint8_t type, stru
 
 	mce_mns->_transport_type = type;
 	mce_mns->goep.transport_ops = &mce_mns_transport_ops;
+	if (type == MAP_TRANSPORT_TYPE_RFCOMM) {
+		mce_mns->goep_v1.goep = &mce_mns->goep;
+		mce_mns->goep.v1 = &mce_mns->goep_v1;
+		mce_mns->goep.v2 = NULL;
+	} else {
+		mce_mns->goep_v2.goep = &mce_mns->goep;
+		mce_mns->goep.v2 = &mce_mns->goep_v2;
+		mce_mns->goep.v1 = NULL;
+	}
 	mce_mns->_server.ops = &mce_mns_ops;
 	mce_mns->_server.obex = &mce_mns->goep.obex;
 	mce_mns->_conn_id = map_get_connect_id();
@@ -1953,6 +1968,15 @@ static int mse_mas_accept(struct bt_conn *conn, void *server, uint8_t type, stru
 
 	mse_mas->_transport_type = type;
 	mse_mas->goep.transport_ops = &mse_mas_transport_ops;
+	if (type == MAP_TRANSPORT_TYPE_RFCOMM) {
+		mse_mas->goep_v1.goep = &mse_mas->goep;
+		mse_mas->goep.v1 = &mse_mas->goep_v1;
+		mse_mas->goep.v2 = NULL;
+	} else {
+		mse_mas->goep_v2.goep = &mse_mas->goep;
+		mse_mas->goep.v2 = &mse_mas->goep_v2;
+		mse_mas->goep.v1 = NULL;
+	}
 	mse_mas->_server.ops = &mse_mas_ops;
 	mse_mas->_server.obex = &mse_mas->goep.obex;
 	mse_mas->_conn_id = map_get_connect_id();
@@ -2332,9 +2356,15 @@ static int mse_mns_transport_connect(struct bt_conn *conn, struct bt_map_mse_mns
 	atomic_set(&mse_mns->_transport_state, BT_MAP_TRANSPORT_STATE_CONNECTING);
 
 	if (type == MAP_TRANSPORT_TYPE_L2CAP) {
+		mse_mns->goep_v2.goep = &mse_mns->goep;
+		mse_mns->goep.v2 = &mse_mns->goep_v2;
+		mse_mns->goep.v1 = NULL;
 		LOG_DBG("Connecting via L2CAP PSM 0x%04x", psm);
 		err = bt_goep_transport_l2cap_connect(conn, &mse_mns->goep, psm);
 	} else {
+		mse_mns->goep_v1.goep = &mse_mns->goep;
+		mse_mns->goep.v1 = &mse_mns->goep_v1;
+		mse_mns->goep.v2 = NULL;
 		LOG_DBG("Connecting via RFCOMM channel %u", channel);
 		err = bt_goep_transport_rfcomm_connect(conn, &mse_mns->goep, channel);
 	}
@@ -2768,7 +2798,7 @@ static int mse_mns_get_or_put(struct bt_map_mse_mns *mse_mns, bool is_get, const
 	old_req_type = mse_mns->_req_type;
 
 	if (mse_mns->_rsp_cb == NULL || bt_obex_has_header(buf, BT_OBEX_HEADER_ID_TYPE)) {
-		if (is_get && mse_mns->goep._goep_v2 &&
+		if (is_get && mse_mns->goep.v2 != NULL &&
 		    !bt_obex_has_header(buf, BT_OBEX_HEADER_ID_SRM)) {
 			LOG_ERR("Failed to get SRM");
 			return -ENODATA;
