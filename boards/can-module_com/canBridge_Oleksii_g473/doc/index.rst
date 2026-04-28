@@ -10,7 +10,7 @@ CAN_Bridge  &  USBCANFD  3ch. up to 5 Mbps
 
 can-module.com
 
-.. figure:: img/CanBridge473.png
+.. figure:: img/CanBridge.png
      :align: center
      :alt:  CanBridge_3ch
 
