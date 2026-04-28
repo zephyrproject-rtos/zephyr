@@ -40,4 +40,5 @@ supported:
   - usbd
   - video
   - watchdog
+  - edac
 vendor: nxp
