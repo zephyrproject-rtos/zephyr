@@ -152,14 +152,15 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
  */
 static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 {
-	int table_cnt, i;
+	int i;
 	int shstrtab_ndx = ldr->hdr.e_shstrndx;
 	int strtab_ndx = -1;
+	int symtab_ndx = -1;
 
 	memset(ldr->sects, 0, sizeof(ldr->sects));
 
-	/* Find symbol and string tables */
-	for (i = 0, table_cnt = 0; i < ext->sect_cnt && table_cnt < 3; ++i) {
+	/* Find symbol table and section-name string table. */
+	for (i = 0; i < ext->sect_cnt; ++i) {
 		elf_shdr_t *shdr = ext->sect_hdrs + i;
 
 		LOG_DBG("section %d at %#zx: name %d, type %d, flags %#zx, "
@@ -177,26 +178,33 @@ static int llext_find_tables(struct llext_loader *ldr, struct llext *ext)
 
 		if (shdr->sh_type == SHT_SYMTAB && ldr->hdr.e_type == ET_REL) {
 			LOG_DBG("symtab at %d", i);
-			memcpy(&ldr->sects[LLEXT_MEM_SYMTAB], shdr, sizeof(*shdr));
-			ldr->sect_map[i].mem_idx = LLEXT_MEM_SYMTAB;
+			symtab_ndx = i;
 			strtab_ndx = shdr->sh_link;
-			table_cnt++;
 		} else if (shdr->sh_type == SHT_DYNSYM && ldr->hdr.e_type == ET_DYN) {
 			LOG_DBG("dynsym at %d", i);
-			memcpy(&ldr->sects[LLEXT_MEM_SYMTAB], shdr, sizeof(*shdr));
-			ldr->sect_map[i].mem_idx = LLEXT_MEM_SYMTAB;
+			symtab_ndx = i;
 			strtab_ndx = shdr->sh_link;
-			table_cnt++;
 		} else if (shdr->sh_type == SHT_STRTAB && i == shstrtab_ndx) {
 			LOG_DBG("shstrtab at %d", i);
 			memcpy(&ldr->sects[LLEXT_MEM_SHSTRTAB], shdr, sizeof(*shdr));
 			ldr->sect_map[i].mem_idx = LLEXT_MEM_SHSTRTAB;
-			table_cnt++;
-		} else if (shdr->sh_type == SHT_STRTAB && i == strtab_ndx) {
-			LOG_DBG("strtab at %d", i);
-			memcpy(&ldr->sects[LLEXT_MEM_STRTAB], shdr, sizeof(*shdr));
-			ldr->sect_map[i].mem_idx = LLEXT_MEM_STRTAB;
-			table_cnt++;
+		}
+	}
+
+	if (symtab_ndx >= 0) {
+		elf_shdr_t *symtab = ext->sect_hdrs + symtab_ndx;
+
+		memcpy(&ldr->sects[LLEXT_MEM_SYMTAB], symtab, sizeof(*symtab));
+		ldr->sect_map[symtab_ndx].mem_idx = LLEXT_MEM_SYMTAB;
+	}
+
+	if (strtab_ndx >= 0 && strtab_ndx < ext->sect_cnt) {
+		elf_shdr_t *strtab = ext->sect_hdrs + strtab_ndx;
+
+		if (strtab->sh_type == SHT_STRTAB) {
+			LOG_DBG("strtab at %d", strtab_ndx);
+			memcpy(&ldr->sects[LLEXT_MEM_STRTAB], strtab, sizeof(*strtab));
+			ldr->sect_map[strtab_ndx].mem_idx = LLEXT_MEM_STRTAB;
 		}
 	}
 
