@@ -3948,7 +3948,8 @@ static int tls_data_check(struct tls_context *ctx)
 		}
 
 		if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
-		    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+		    ret == MBEDTLS_ERR_SSL_WANT_WRITE ||
+		    ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
 			return 0;
 		}
 
