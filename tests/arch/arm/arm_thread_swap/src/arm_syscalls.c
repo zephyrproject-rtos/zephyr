@@ -243,7 +243,8 @@ void z_impl_test_arm_cpu_write_reg(void)
 	__asm__ volatile("ldr r0, =0xDEADBEEF;\n\t"
 			 "ldr r1, =0xDEADBEEF;\n\t"
 			 "ldr r2, =0xDEADBEEF;\n\t"
-			 "ldr r3, =0xDEADBEEF;\n\t");
+			 "ldr r3, =0xDEADBEEF;\n\t"
+			 : : : "r0", "r1", "r2", "r3", "memory");
 	TC_PRINT("Exit from system call\n");
 }
 
