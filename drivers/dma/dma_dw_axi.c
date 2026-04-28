@@ -658,8 +658,11 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 		blk_cfg = blk_cfg->next_block;
 	}
 
-	arch_dcache_flush_range((void *)chan_data->lli_desc_base,
+#if !defined(CONFIG_NOCACHE_MEMORY) && !defined(CONFIG_DMA_DW_AXI_CCU_SUPPORT)
+	sys_cache_data_flush_range((void *)chan_data->lli_desc_base,
 				sizeof(struct dma_lli) * cfg->block_count);
+#endif
+
 
 	chan_data->lli_desc_current = chan_data->lli_desc_base;
 
@@ -934,7 +937,7 @@ static DEVICE_API(dma, dma_dw_axi_driver_api) = {
 	static struct dma_dw_axi_ch_data chan_##inst[DT_INST_PROP(inst, dma_channels)];	\
 	static struct dma_lli								\
 		dma_desc_pool_##inst[DT_INST_PROP(inst, dma_channels) *			\
-			CONFIG_DMA_DW_AXI_MAX_DESC];					\
+			CONFIG_DMA_DW_AXI_MAX_DESC] __nocache;					\
 	ATOMIC_DEFINE(dma_dw_axi_atomic##inst,						\
 		      DT_INST_PROP(inst, dma_channels));				\
 	static struct dma_dw_axi_dev_data dma_dw_axi_data_##inst = {			\
