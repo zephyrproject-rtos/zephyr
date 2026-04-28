@@ -1,0 +1,16 @@
+# Texas Instruments AM13E MCU Series
+#
+# Copyright (c) 2026 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_AM13E230X
+	select ARM
+	select ARMV8_M_DSP
+	select BUILD_OUTPUT_BIN
+	select BUILD_OUTPUT_HEX
+	select CPU_CORTEX_M33
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
