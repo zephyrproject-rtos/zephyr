@@ -2080,7 +2080,7 @@ static int uhc_dwc2_shutdown(const struct device *const dev)
 /*
  * Device Definition and Initialization
  */
-static const struct uhc_api uhc_dwc2_api = {
+static DEVICE_API(uhc, uhc_dwc2_api) = {
 	/* Common */
 	.lock = uhc_dwc2_lock,
 	.unlock = uhc_dwc2_unlock,
