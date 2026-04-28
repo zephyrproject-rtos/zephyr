@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,6 +39,21 @@ enum ifx_autanalog_periph {
 	IFX_AUTANALOG_PERIPH_PTCOMP0, /**< Programmable Threshold Comparator 0 */
 	IFX_AUTANALOG_PERIPH_AC,      /**< Autonomous Controller */
 	IFX_AUTANALOG_PERIPH_COUNT,   /**< Number of AutAnalog peripheral types */
+};
+
+/**
+ * @brief AC firmware trigger indices
+ *
+ * Corresponds to cy_en_autanalog_fw_trigger_t in the PDL.
+ * Used with ifx_autanalog_fw_trigger() to assert sticky FW triggers
+ * that the AC state machine can test via TR_AUTANALOG_IN0..IN3 conditions.
+ */
+enum ifx_autanalog_ac_fw_trigger {
+	IFX_AUTANALOG_AC_FW_TRIGGER_0 = 0, /**< FW trigger 0 (TR_AUTANALOG_IN0) */
+	IFX_AUTANALOG_AC_FW_TRIGGER_1 = 1, /**< FW trigger 1 (TR_AUTANALOG_IN1) */
+	IFX_AUTANALOG_AC_FW_TRIGGER_2 = 2, /**< FW trigger 2 (TR_AUTANALOG_IN2) */
+	IFX_AUTANALOG_AC_FW_TRIGGER_3 = 3, /**< FW trigger 3 (TR_AUTANALOG_IN3) */
+	IFX_AUTANALOG_AC_FW_TRIGGER_COUNT, /**< Number of FW triggers */
 };
 
 /** ISR handler type for AutAnalog child devices */
@@ -97,6 +112,19 @@ int ifx_autanalog_start_autonomous_control(const struct device *dev);
  * @return 0 on success, negative error code on failure
  */
 int ifx_autanalog_pause_autonomous_control(const struct device *dev);
+
+/**
+ * @brief Send a firmware trigger to the Autonomous Controller
+ *
+ * Asserts a sticky FW trigger that the AC state machine can test via
+ * TR_AUTANALOG_IN0..IN3 conditions.  The trigger is cleared when the AC
+ * executes a state whose condition matches the corresponding TR_INx.
+ *
+ * @param dev AutAnalog MFD device
+ * @param trigger Trigger index, use enum ifx_autanalog_ac_fw_trigger values
+ * @return 0 on success, -EINVAL if trigger index is out of range
+ */
+int ifx_autanalog_fw_trigger(const struct device *dev, uint8_t trigger);
 
 #ifdef __cplusplus
 }

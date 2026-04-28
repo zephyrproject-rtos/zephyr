@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -128,6 +128,14 @@
 #define IFX_AUTANALOG_DAC_DIR_DISABLED 0 /**< Direction not selected */
 #define IFX_AUTANALOG_DAC_DIR_FORWARD  1 /**< Forward / increment */
 #define IFX_AUTANALOG_DAC_DIR_REVERSE  2 /**< Backward / decrement */
+/** @} */
+
+/**
+ * @name AC Timer clock source values (cy_en_autanalog_timer_clk_src_t)
+ * @{
+ */
+#define IFX_AUTANALOG_TIMER_CLK_LP 0 /**< CLK_LPOSC (nominally 4.096 MHz) */
+#define IFX_AUTANALOG_TIMER_CLK_LF 1 /**< CLK_LF (nominally 32 kHz) */
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_MFD_INFINEON_AUTANALOG_H_ */

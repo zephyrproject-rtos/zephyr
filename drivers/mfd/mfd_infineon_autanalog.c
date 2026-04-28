@@ -549,6 +549,19 @@ int ifx_autanalog_pause_autonomous_control(const struct device *dev)
 	return 0;
 }
 
+int ifx_autanalog_fw_trigger(const struct device *dev, uint8_t trigger)
+{
+	ARG_UNUSED(dev);
+
+	if (trigger > CY_AUTANALOG_FW_TRIGGER3) {
+		return -EINVAL;
+	}
+
+	Cy_AutAnalog_FwTrigger((cy_en_autanalog_fw_trigger_t)trigger);
+
+	return 0;
+}
+
 /**
  * @brief Shared ISR for the AutAnalog subsystem
  *
@@ -662,9 +675,10 @@ int ifx_autanalog_init(void)
 			},                                                                     \
 		.timer =                                                                       \
 			{                                                                      \
-				.enable = false,                                               \
-				.clkSrc = CY_AUTANALOG_TIMER_CLK_LP,                           \
-				.period = 0U,                                                  \
+				.enable = DT_INST_PROP(n, ac_timer_enable),                    \
+				.clkSrc = (cy_en_autanalog_timer_clk_src_t)                    \
+					DT_INST_PROP(n, ac_timer_clk_src),                         \
+				.period = (uint16_t)DT_INST_PROP(n, ac_timer_period),          \
 			},                                                                     \
 	};                                                                                     \
                                                                                                \
