@@ -41,6 +41,28 @@ LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 #define DMA_DW_AXI_RESETREG                      0x58
 #define DMA_DW_AXI_LOWPOWER_CFGREG               0x60
 
+/* AXI AxCACHE[3:0]
+ * AxCACHE[0]:
+ *	1: bufferable 0: non-bufferable
+ * AxCACHE[1]:
+ *	1: cacheable 0: non-cacheable
+ * AxCACHE[2]:
+ *	1: Read allocate
+ * AxCACHE[3]:
+ *	1: write allocate
+ */
+#define DMA_DW_AXI_AXCACHE                       BIT(0) | BIT(1) | BIT(2) | BIT(3)
+
+/* AXI AxPROT[2:0]
+ * AxProt[0]:
+ *	1: Privileged access 0: unprivileged access
+ * AxProt[1]:
+ *	1: non-secure transaction 0: secure transaction
+ * AxProt[2]
+ *	1: instruction access 0: data access
+ */
+#define DMA_DW_AXI_AXPROT                        BIT(1)
+
 /* Channel enable by setting ch_en and ch_en_we */
 #define CH_EN(chan)    (BIT64(8 + (chan - 1)) | BIT64(chan - 1))
 /* Channel enable by setting ch_susp and ch_susp_we */
@@ -122,6 +144,15 @@ LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 #define DMA_DW_AXI_CTL_AWLEN_EN                  BIT64(47)
 /* destination burst length(considered when corresponding enable bit is set) */
 #define DMA_DW_AXI_CTL_AWLEN(x)                  FIELD_PREP(GENMASK64(55, 48), x)
+
+/* axi write transaction prot signal */
+#define DMA_DW_AXI_CTL_AW_PROT_WIDTH(x)          FIELD_PREP(GENMASK64(37, 35), x)
+/* axi read transaction prot signal */
+#define DMA_DW_AXI_CTL_AR_PROT_WIDTH(x)          FIELD_PREP(GENMASK64(34, 32), x)
+/* axi write transaction cache signal */
+#define DMA_DW_AXI_CTL_AW_CACHE_WIDTH(x)         FIELD_PREP(GENMASK64(29, 26), x)
+/* axi read transaction cache signal */
+#define DMA_DW_AXI_CTL_AR_CACHE_WIDTH(x)         FIELD_PREP(GENMASK64(25, 22), x)
 
 /* source burst transaction length */
 #define DMA_DW_AXI_CTL_SRC_MSIZE(x)              FIELD_PREP(GENMASK64(17, 14), x)
@@ -573,6 +604,17 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 
 			return -EINVAL;
 		}
+
+		/*
+		 * Axprot is set to Unprivileged access, Non-secure access and data access
+		 */
+
+		lli_desc->ctl |= DMA_DW_AXI_CTL_AR_PROT_WIDTH(DMA_DW_AXI_AXPROT);
+		lli_desc->ctl |= DMA_DW_AXI_CTL_AW_PROT_WIDTH(DMA_DW_AXI_AXPROT);
+
+		/* bufferable, cacheable, Read-allocate and write-allocate */
+		lli_desc->ctl |= DMA_DW_AXI_CTL_AR_CACHE_WIDTH(DMA_DW_AXI_AXCACHE);
+		lli_desc->ctl |= DMA_DW_AXI_CTL_AW_CACHE_WIDTH(DMA_DW_AXI_AXCACHE);
 
 		/* set pointer to the next descriptor */
 		lli_desc->llp = ((uint64_t)(lli_desc + 1));
