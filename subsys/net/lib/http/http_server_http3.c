@@ -2620,6 +2620,8 @@ int h3_client_cleanup(struct http_client_ctx *client,
 			(void)zsock_close(sfd);
 			client->h3.stream_sock[j] = INVALID_SOCK;
 			client->h3.headers_sent[j] = false;
+			memset(&client->h3.streams[j], 0,
+			       sizeof(client->h3.streams[j]));
 
 			LOG_DBG("[%p] H3: closed stream fd %d on cleanup", client, sfd);
 		}

@@ -378,6 +378,24 @@ struct http2_frame {
 	uint8_t padding_len; /**< Frame padding length. */
 };
 
+/** @brief HTTP/3 bidirectional request stream state. */
+struct http3_stream_ctx {
+	/** Buffered request data for this stream. */
+	unsigned char buffer[HTTP_SERVER_CLIENT_BUFFER_SIZE];
+
+	/** Data left to process in the stream buffer. */
+	size_t data_len;
+
+	/** Currently processed resource detail for this stream. */
+	struct http_resource_detail *current_detail;
+
+	/** Request URL for this stream. */
+	unsigned char url_buffer[HTTP_SERVER_MAX_URL_LENGTH];
+
+	/** Request method for this stream. */
+	enum http_method method;
+};
+
 /** @cond INTERNAL_HIDDEN */
 /** @brief Context for capturing HTTP headers */
 struct http_header_capture_ctx {
@@ -514,6 +532,9 @@ struct http_client_ctx {
 
 		/** Per-stream flag indicating response headers were sent. */
 		bool headers_sent[HTTP3_SERVER_MAX_STREAMS];
+
+		/** Per-stream request state for bidirectional HTTP/3 streams. */
+		struct http3_stream_ctx streams[HTTP3_SERVER_MAX_STREAMS];
 #else
 		/* This is here in order to avoid adding #ifdefs in the code related
 		 * to the HTTP/3.
@@ -522,6 +543,7 @@ struct http_client_ctx {
 			int conn_sock;
 			int stream_sock[1];
 			bool headers_sent[1];
+			struct http3_stream_ctx streams[1];
 		};
 
 #define HTTP3_SERVER_MAX_STREAMS 0
