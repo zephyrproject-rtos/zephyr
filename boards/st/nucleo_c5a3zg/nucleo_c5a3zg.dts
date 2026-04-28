@@ -201,6 +201,31 @@
 	status = "okay";
 };
 
+&mac {
+	pinctrl-0 = <&eth1_rmii_crs_dv_pd1
+		     &eth1_rmii_ref_clk_pa1
+		     &eth1_rmii_rxd0_pc4
+		     &eth1_rmii_rxd1_pc5
+		     &eth1_rmii_txd0_pg13
+		     &eth1_rmii_txd1_pg12
+		     &eth1_rmii_tx_en_pg11>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&eth1_mdc_pc1 &eth1_mdio_pe12>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+	};
+};
+
 &rcc {
 	clocks = <&clk_hsis>;
 	clock-frequency = <DT_FREQ_M(144)>;
