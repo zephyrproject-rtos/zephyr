@@ -179,7 +179,7 @@ int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t m
 	}
 
 
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Metadata failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
 		return err;
 	}
@@ -211,15 +211,15 @@ int bt_bap_unicast_server_release(struct bt_bap_stream *stream)
 }
 
 int bt_bap_unicast_server_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
-				     struct bt_audio_codec_cfg *codec_cfg,
+				     const struct bt_audio_codec_cfg *codec_cfg,
 				     const struct bt_bap_qos_cfg_pref *qos_pref)
 {
 	return bt_ascs_config_ase(conn, stream, codec_cfg, qos_pref);
 }
 
-void bt_bap_unicast_server_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data)
+int bt_bap_unicast_server_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data)
 {
-	bt_ascs_foreach_ep(conn, func, user_data);
+	return bt_ascs_foreach_ep(conn, func, user_data);
 }
 
 bool bt_bap_unicast_server_has_ep(const struct bt_bap_ep *ep)

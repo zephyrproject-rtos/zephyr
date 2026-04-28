@@ -21,6 +21,10 @@
 	};
 };
 
+&lpcomp0 {
+	interrupts = <45 4>;
+};
+
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };

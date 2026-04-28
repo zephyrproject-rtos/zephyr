@@ -161,7 +161,7 @@ __syscall int sent_start_listening(const struct device *dev, uint8_t channel);
 
 static inline int z_impl_sent_start_listening(const struct device *dev, uint8_t channel)
 {
-	const struct sent_driver_api *api = (const struct sent_driver_api *)dev->api;
+	const struct sent_driver_api *api = DEVICE_API_GET(sent, dev);
 
 	if (api->start_listening) {
 		return api->start_listening(dev, channel);
@@ -184,7 +184,7 @@ __syscall int sent_stop_listening(const struct device *dev, uint8_t channel);
 
 static inline int z_impl_sent_stop_listening(const struct device *dev, uint8_t channel)
 {
-	const struct sent_driver_api *api = (const struct sent_driver_api *)dev->api;
+	const struct sent_driver_api *api = DEVICE_API_GET(sent, dev);
 
 	if (api->stop_listening) {
 		return api->stop_listening(dev, channel);
@@ -208,7 +208,7 @@ __syscall int sent_register_callback(const struct device *dev, uint8_t channel,
 static inline int z_impl_sent_register_callback(const struct device *dev, uint8_t channel,
 						struct sent_rx_callback_configs callback_configs)
 {
-	const struct sent_driver_api *api = (const struct sent_driver_api *)dev->api;
+	const struct sent_driver_api *api = DEVICE_API_GET(sent, dev);
 
 	if (api->register_callback) {
 		return api->register_callback(dev, channel, callback_configs);

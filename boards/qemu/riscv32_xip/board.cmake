@@ -8,4 +8,4 @@ set(QEMU_FLAGS_${ARCH}
   -machine sifive_e
 )
 
-board_set_debugger_ifnset(qemu)
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

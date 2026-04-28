@@ -142,7 +142,6 @@ static void wdt_cc32xx_isr(const struct device *dev)
 static int wdt_cc32xx_init(const struct device *dev)
 {
 	const struct wdt_cc32xx_cfg *config = dev->config;
-	int rv;
 
 	LOG_DBG("init");
 	config->irq_cfg_func();

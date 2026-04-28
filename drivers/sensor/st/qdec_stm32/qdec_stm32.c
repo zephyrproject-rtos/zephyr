@@ -36,6 +36,7 @@ struct qdec_stm32_dev_cfg {
 	const struct pinctrl_dev_config *pin_config;
 	struct stm32_pclken pclken;
 	TIM_TypeDef *timer_inst;
+	uint32_t prescaler;
 	uint32_t encoder_mode;
 	bool is_input_polarity_inverted;
 	uint8_t input_filtering_level;
@@ -132,6 +133,8 @@ static int qdec_stm32_initialize(const struct device *dev)
 	}
 	LL_TIM_SetAutoReload(dev_cfg->timer_inst, max_counter_value);
 
+	LL_TIM_SetPrescaler(dev_cfg->timer_inst, dev_cfg->prescaler);
+
 	LL_TIM_SetClockSource(dev_cfg->timer_inst, dev_cfg->encoder_mode);
 
 	qdec_stm32_initialize_channel(dev, LL_TIM_CHANNEL_CH1);
@@ -160,6 +163,7 @@ static DEVICE_API(sensor, qdec_stm32_driver_api) = {
 	static const struct qdec_stm32_dev_cfg qdec##n##_stm32_config = {                          \
 		.pin_config = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                   \
 		.timer_inst = ((TIM_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(n))),                     \
+		.prescaler = DT_PROP(DT_INST_PARENT(n), st_prescaler),                             \
 		.pclken = STM32_CLOCK_INFO(0, DT_INST_PARENT(n)),				   \
 		.encoder_mode = DT_INST_PROP(n, st_encoder_mode),                                  \
 		.is_input_polarity_inverted = DT_INST_PROP(n, st_input_polarity_inverted),         \

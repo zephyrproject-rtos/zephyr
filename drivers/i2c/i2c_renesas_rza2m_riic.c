@@ -469,7 +469,7 @@ static void i2c_rza2m_riic_calc_bitrate(const struct device *dev, uint32_t total
 	const uint32_t peripheral_clock = data->clk_rate;
 	uint32_t constant_add = 0;
 
-	/* A constant is added to BRL and BRH in all formulas. This constand is 3 + nf when CKS ==
+	/* A constant is added to BRL and BRH in all formulas. This constant is 3 + nf when CKS ==
 	 * 0, or 2 + nf when CKS != 0.
 	 */
 	if (divider == 0) {

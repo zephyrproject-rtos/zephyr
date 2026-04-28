@@ -82,6 +82,7 @@ enum net_ip_protocol_secure {
 	NET_IPPROTO_TLS_1_3 = 259,     /**< TLS 1.3 protocol */
 	NET_IPPROTO_DTLS_1_0 = 272,    /**< DTLS 1.0 protocol */
 	NET_IPPROTO_DTLS_1_2 = 273,    /**< DTLS 1.2 protocol */
+	NET_IPPROTO_QUIC = 511,        /**< QUIC protocol     */
 };
 
 /** Socket type */
@@ -1904,6 +1905,19 @@ static inline bool net_ipv6_addr_based_on_ll(const struct net_in6_addr *addr,
 static inline struct net_sockaddr *net_sad(const struct net_sockaddr_storage *addr)
 {
 	return (struct net_sockaddr *)addr;
+}
+
+/**
+ * @brief Get net_sockaddr_storage from net_sockaddr. This is a helper so that
+ * the code calling this function can be made shorter.
+ *
+ * @param addr Socket address
+ *
+ * @return Pointer to socket storage address (struct net_sockaddr_storage)
+ */
+static inline struct net_sockaddr_storage *net_sas(const struct net_sockaddr *addr)
+{
+	return (struct net_sockaddr_storage *)addr;
 }
 
 /**

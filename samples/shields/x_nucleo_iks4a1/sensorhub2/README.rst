@@ -45,11 +45,11 @@ Sample Output
 
     X-NUCLEO-IKS01A4 sensor dashboard
 
-    LSM6DSO16IS: Accel (m.s-2): x: 0.081, y: -0.177, z: 9.945
-    LSM6DSO16IS: GYro (dps): x: 0.001, y: -0.000, z: 0.004
-    LSM6DSO16IS: Magn (gauss): x: 0.217, y: 0.015, z: -0.415
+    LSM6DSO16IS: Accel (m/s^2): x: 0.081, y: -0.177, z: 9.945
+    LSM6DSO16IS: Gyro (rad/s): x: 0.001, y: -0.000, z: 0.004
+    LSM6DSO16IS: Magn (G): x: 0.217, y: 0.015, z: -0.415
     LSM6DSO16IS: Temperature: 20.8 C
-    LSM6DSO16IS: Pressure:99.756 kpa
+    LSM6DSO16IS: Pressure:99.756 kPa
     736:: lsm6dso16is acc trig 314944
 
     <updated endlessly every 2 seconds>

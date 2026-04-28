@@ -1,0 +1,16 @@
+name: file_list
+append:
+  EXTRA_CONF_FILE:
+    - file_list1.conf
+    - file_list2.conf
+  EXTRA_DTC_OVERLAY_FILE:
+    - file_list1.overlay
+    - file_list2.overlay
+  DTS_EXTRA_CPPFLAGS: -DCMAKE_DTS_CONFIGURE
+
+boards:
+  native_sim/native:
+    append:
+      EXTRA_CONF_FILE:
+        - boards/board1.conf
+        - boards/board2.conf

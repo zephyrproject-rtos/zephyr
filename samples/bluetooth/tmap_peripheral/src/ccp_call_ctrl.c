@@ -8,6 +8,7 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -37,7 +38,7 @@ static void discover_cb(struct bt_conn *conn, int err, uint8_t tbs_count, bool g
 
 	printk("CCP: Discovered GTBS\n");
 
-	if (err) {
+	if (err != 0) {
 		printk("%s (err %d)\n", __func__, err);
 		return;
 	}
@@ -53,7 +54,7 @@ static void originate_call_cb(struct bt_conn *conn, int err, uint8_t inst_index,
 		return;
 	}
 
-	if (err) {
+	if (err != 0) {
 		printk("%s (err %d)\n", __func__, err);
 		return;
 	}
@@ -69,7 +70,7 @@ static void terminate_call_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	if (err) {
+	if (err != 0) {
 		printk("%s (err %d)\n", __func__, err);
 		return;
 	}
@@ -86,7 +87,7 @@ static void read_uri_schemes_string_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	if (err) {
+	if (err != 0) {
 		printk("%s (err %d)\n", __func__, err);
 		return;
 	}

@@ -144,6 +144,10 @@
 	status = "okay";
 };
 
+&ext_flash_ctrl {
+	status = "okay";
+};
+
 &w25q64jwtbjq {
 	status = "okay";
 

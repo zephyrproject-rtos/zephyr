@@ -1,14 +1,20 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #include "testing_common_defs.h"
 
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/fff.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
 
 #include <host/hci_core.h>
 #include <host/id.h>
@@ -251,4 +257,58 @@ ZTEST(bt_id_create, test_public_address)
 		     bt_dev.id_count);
 	zassert_mem_equal(&bt_dev.id_addr[new_id], BT_LE_ADDR, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
+}
+
+/*
+ * Test creating the maximum number of new identities
+ *
+ * A unique random address is provided for each call
+ *
+ * Constraints:
+ * - Input address is a unique random address
+ * - Input IRK is NULL
+ * - 'BT_DEV_ENABLE' flag is set in bt_dev.flags
+ *
+ * Expected behaviour:
+ * - A new identity is created and the address is loaded to bt_dev.id_addr[]
+ * - bt_dev.id_count is incremented
+ * - The generated ID is unique
+ */
+static ZTEST(bt_id_create, test_id_create_max)
+{
+	uint8_t ids[CONFIG_BT_ID_MAX];
+	int err;
+
+	atomic_set_bit(bt_dev.flags, BT_DEV_ENABLE);
+
+	for (int i = 0; i < CONFIG_BT_ID_MAX; i++) {
+		bt_addr_le_t addr = *BT_STATIC_RANDOM_LE_ADDR_1;
+		uint8_t id_count;
+		int id;
+
+		/* Make addresses unique */
+		addr.a.val[3] = i;
+
+		id_count = bt_dev.id_count;
+
+		id = bt_id_create(&addr, NULL);
+
+		zassert_true(id >= 0, "[%d]: Unexpected error code '%d' was returned", i, id);
+		zassert_true(bt_dev.id_count == (id_count + 1U),
+			     "[%d]: Incorrect ID count %d was set (expected (%u))", i,
+			     bt_dev.id_count, id_count + 1U);
+		zassert_mem_equal(&bt_dev.id_addr[id], &addr, sizeof(bt_addr_le_t),
+				  "[%d]: Incorrect address was set", i);
+
+		ids[i] = (uint8_t)id;
+		/* Check for duplicates */
+		for (size_t j = 0U; j < i; j++) {
+			zassert_true(ids[j] != ids[i],
+				     "[%d]: Unexpected duplicate id '%d' was returned", i, ids[i]);
+		}
+	}
+
+	/* Attempt to create one more that should fail */
+	err = bt_id_create(BT_STATIC_RANDOM_LE_ADDR_2, NULL);
+	zassert_true(err == -ENOMEM, "Unexpected return value %d", err);
 }

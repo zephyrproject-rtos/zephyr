@@ -214,16 +214,14 @@ static __ramfunc void qspi_nor_read_fifo(const struct device *dev, uint8_t cmd, 
 
 		/* grab data */
 		for (size_t i = 0U; i < (chunk_len / 4U); i++) {
-			uint32_t dr;
+			uint32_t dr = sys_read32(data->mpi + MPI_DR);
 
-			dr = sys_read32(data->mpi + MPI_DR);
 			memcpy(&cbuf[i * 4U], &dr, 4U);
 		}
 
 		if (chunk_len & 3U) {
-			uint32_t dr;
+			uint32_t dr = sys_read32(data->mpi + MPI_DR);
 
-			dr = sys_read32(data->mpi + MPI_DR);
 			memcpy(&cbuf[chunk_len & ~3U], &dr, chunk_len & 3U);
 		}
 
@@ -248,14 +246,14 @@ static __ramfunc void qspi_nor_write_fifo(const struct device *dev, uint8_t cmd,
 
 		/* push data */
 		for (size_t i = 0U; i < (chunk_len / 4U); i++) {
-			uint32_t dr;
+			uint32_t dr = 0U;
 
 			memcpy(&dr, &cbuf[i * 4U], 4U);
 			sys_write32(dr, data->mpi + MPI_DR);
 		}
 
 		if (chunk_len & 3U) {
-			uint32_t dr;
+			uint32_t dr = 0U;
 
 			memcpy(&dr, &cbuf[chunk_len & ~3U], chunk_len & 3U);
 			sys_write32(dr, data->mpi + MPI_DR);
@@ -355,7 +353,7 @@ static int flash_sf32lb_mpi_qspi_nor_write(const struct device *dev, off_t offse
 		/* wait for DMA completion (polling) */
 		do {
 			ret = sf32lb_dma_get_status_dt(&data->dma, &status);
-		} while ((ret == 0) && status.busy);
+		} while ((ret == 0) && (status.pending_length != 0U));
 
 		(void)sf32lb_dma_stop_dt(&data->dma);
 
@@ -399,8 +397,6 @@ static int flash_sf32lb_mpi_qspi_nor_erase(const struct device *dev, off_t offse
 		return -EINVAL;
 	}
 
-	qspi_nor_cinstr(dev, SPI_NOR_CMD_WREN);
-
 	do {
 		uint8_t cmd;
 		uint32_t adj;
@@ -427,6 +423,7 @@ static int flash_sf32lb_mpi_qspi_nor_erase(const struct device *dev, off_t offse
 		}
 
 		key = k_spin_lock(&data->lock);
+		qspi_nor_cinstr(dev, SPI_NOR_CMD_WREN);
 		qspi_nor_cinstr_seq_ready_wait(dev, cmd, ccrx, offset);
 		k_spin_unlock(&data->lock, key);
 

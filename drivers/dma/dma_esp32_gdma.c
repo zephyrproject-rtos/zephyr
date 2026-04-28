@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2022-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #include <zephyr/drivers/dma/dma_esp32.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/pm/policy.h>
 
 #define DMA_MAX_CHANNEL GDMA_LL_PAIRS_PER_INST
 
@@ -37,6 +38,9 @@ static int get_m2m_periph_id(void)
 
 struct dma_esp32_data {
 	gdma_hal_context_t hal;
+#if CONFIG_PM
+	bool pm_policy_state_on;
+#endif
 };
 
 enum dma_channel_dir {
@@ -58,6 +62,9 @@ struct dma_esp32_channel {
 	dma_callback_t cb;
 	void *user_data;
 	dma_descriptor_t desc_list[CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM];
+#if CONFIG_PM
+	bool m2m_transfer;
+#endif
 };
 
 struct dma_esp32_config {
@@ -71,27 +78,65 @@ struct dma_esp32_config {
 	clock_control_subsys_t clock_subsys;
 };
 
+#if CONFIG_PM
+static void IRAM_ATTR dma_esp32_pm_policy_state_lock_get(const struct device *dev)
+{
+	struct dma_esp32_data *data = dev->data;
+	unsigned int key = irq_lock();
+
+	if (!data->pm_policy_state_on) {
+		data->pm_policy_state_on = true;
+		pm_policy_state_all_lock_get();
+	}
+
+	irq_unlock(key);
+}
+
+static void IRAM_ATTR dma_esp32_pm_policy_state_lock_put(const struct device *dev)
+{
+	struct dma_esp32_data *data = dev->data;
+	unsigned int key = irq_lock();
+
+	if (data->pm_policy_state_on) {
+		data->pm_policy_state_on = false;
+		pm_policy_state_all_lock_put();
+	}
+
+	irq_unlock(key);
+}
+#endif
+
 static void IRAM_ATTR dma_esp32_isr_handle_rx(const struct device *dev,
 					      struct dma_esp32_channel *rx, uint32_t intr_status)
 {
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
+	int status = -EIO;
+	bool pm_unlock = false;
 
 	gdma_ll_rx_clear_interrupt_status(data->hal.dev, rx->channel_id, intr_status);
-	if (rx->cb) {
-		int status;
 
-		if (intr_status & GDMA_LL_EVENT_RX_SUC_EOF) {
-			status = DMA_STATUS_COMPLETE;
-		} else if (intr_status & GDMA_LL_EVENT_RX_DONE) {
-			status = DMA_STATUS_BLOCK;
+	if (intr_status & GDMA_LL_EVENT_RX_SUC_EOF) {
+		status = DMA_STATUS_COMPLETE;
+		pm_unlock = true;
+	} else if (intr_status & GDMA_LL_EVENT_RX_DONE) {
+		status = DMA_STATUS_BLOCK;
 #if defined(CONFIG_SOC_SERIES_ESP32S3)
-		} else if (intr_status & GDMA_LL_EVENT_RX_WATER_MARK) {
-			status = DMA_STATUS_BLOCK;
+	} else if (intr_status & GDMA_LL_EVENT_RX_WATER_MARK) {
+		status = DMA_STATUS_BLOCK;
 #endif
-		} else {
-			status = -intr_status;
-		}
+	} else {
+		status = -intr_status;
+		pm_unlock = true;
+	}
 
+#if CONFIG_PM
+	if (pm_unlock && rx->m2m_transfer) {
+		rx->m2m_transfer = false;
+		dma_esp32_pm_policy_state_lock_put(dev);
+	}
+#endif
+
+	if (rx->cb) {
 		rx->cb(dev, rx->user_data, rx->channel_id * 2, status);
 	}
 }
@@ -380,6 +425,10 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 		struct dma_esp32_channel *dma_channel_tx =
 			&config->dma_channel[(dma_channel->channel_id * 2) + 1];
 
+#if CONFIG_PM
+		dma_channel_rx->m2m_transfer = true;
+		dma_esp32_pm_policy_state_lock_get(dev);
+#endif
 		gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
 					GDMA_LL_EVENT_RX_SUC_EOF | GDMA_LL_EVENT_RX_DONE, true);
 		gdma_ll_tx_enable_interrupt(data->hal.dev, dma_channel->channel_id,
@@ -433,6 +482,15 @@ static int dma_esp32_stop(const struct device *dev, uint32_t channel)
 					    GDMA_LL_TX_EVENT_MASK, false);
 		gdma_ll_rx_stop(data->hal.dev, dma_channel->channel_id);
 		gdma_ll_tx_stop(data->hal.dev, dma_channel->channel_id);
+#if CONFIG_PM
+		struct dma_esp32_channel *dma_channel_rx =
+			&config->dma_channel[dma_channel->channel_id * 2];
+
+		if (dma_channel_rx->m2m_transfer) {
+			dma_channel_rx->m2m_transfer = false;
+			dma_esp32_pm_policy_state_lock_put(dev);
+		}
+#endif
 	}
 
 	if (dma_channel->dir == DMA_RX) {

@@ -78,9 +78,9 @@ static int otp_stm32_nvm_read(const struct device *dev, off_t offset, void *buf,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32C5X)
 	sys_cache_instr_disable();
-#endif
+#endif /* CONFIG_SOC_SERIES_STM32H5X || CONFIG_SOC_SERIES_STM32C5X */
 	/*
 	 * The OTP/RO area is mapped via the AHB interface which does not
 	 * support 8-bit reads on series such as STM32H5 or STM32H7R/S.
@@ -109,9 +109,9 @@ static int otp_stm32_nvm_read(const struct device *dev, off_t offset, void *buf,
 		slow_otp_readout(buf, &config->base[start], len);
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32C5X)
 	sys_cache_instr_enable();
-#endif
+#endif /* CONFIG_SOC_SERIES_STM32H5X || CONFIG_SOC_SERIES_STM32C5X */
 
 	return 0;
 }

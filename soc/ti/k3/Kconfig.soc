@@ -1,4 +1,6 @@
+# Copyright (c) 2023 Enphase Energy
 # Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright (c) 2026 Siemens Mobility GmbH
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_TI_K3
@@ -8,3 +10,20 @@ config SOC_FAMILY
 	default "ti_k3" if SOC_FAMILY_TI_K3
 
 rsource "*/Kconfig.soc"
+
+config SOC_SERIES
+	default "am62x" if SOC_SERIES_AM62X
+	default "am62lx" if SOC_SERIES_AM62LX
+	default "am64x" if SOC_SERIES_AM64X
+	default "j721e" if SOC_SERIES_J721E
+	default "j722s" if SOC_SERIES_J722S
+
+config SOC
+	default "am2434" if SOC_AM2434_M4 || SOC_AM2434_R5F0_0
+	default "am6232" if SOC_AM6232_M4 || SOC_AM6232_A53
+	default "am6234" if SOC_AM6234_M4 || SOC_AM6234_A53
+	default "am6254" if SOC_AM6254_M4 || SOC_AM6254_A53
+	default "am62l3" if SOC_AM62L3_A53
+	default "am6442" if SOC_AM6442_M4 || SOC_AM6442_R5F0_0 || SOC_AM6442_R5F0_1 || SOC_AM6442_R5F1_0 || SOC_AM6442_R5F1_1
+	default "j721e" if SOC_J721E_MAIN_R5F0_0
+	default "j722s" if SOC_J722S_MAIN_R5F0_0 || SOC_J722S_MCU_R5F0_0

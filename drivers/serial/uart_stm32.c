@@ -1553,7 +1553,7 @@ static inline void uart_stm32_dma_tx_disable(const struct device *dev)
 	/*
 	 * Errata Sheet ES0499 : STM32U575xx and STM32U585xx device errata
 	 * USART does not generate DMA requests after setting/clearing DMAT bit
-	 * (also seen on stm32H5 serie)
+	 * (also seen on stm32H5 series)
 	 */
 #else
 	const struct uart_stm32_config *config = dev->config;
@@ -1566,9 +1566,25 @@ static inline void uart_stm32_dma_rx_enable(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
+	USART_TypeDef *usart = config->usart;
 
-	LL_USART_EnableDMAReq_RX(config->usart);
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
+	/*
+	 * Workaround for STM32H5/U5: USART does not generate DMA requests
+	 * after clearing/setting DMAR. This issue is not documented in the
+	 * errata but behaves similarly to the documented DMAT issue.
+	 * Toggle UE (USART Enable) to reset the USART internal state machine
+	 * before re-enabling DMAR.
+	 */
+	LL_USART_Disable(usart);
+	LL_USART_Enable(usart);
+	/* Wait for USART to be ready after re-enable */
+	while (!LL_USART_IsActiveFlag_TEACK(usart)) {
+		/* busy-wait for transmit enable acknowledge */
+	}
+#endif /* CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED */
 
+	LL_USART_EnableDMAReq_RX(usart);
 	data->dma_rx.enabled = true;
 }
 
@@ -1751,7 +1767,7 @@ static int uart_stm32_async_tx(const struct device *dev,
 	}
 #endif
 
-	/* Check size of singl character (1 or 2 bytes) */
+	/* Check size of single character (1 or 2 bytes) */
 	const int char_size = (IS_ENABLED(CONFIG_UART_WIDE_DATA) &&
 			       (LL_USART_GetDataWidth(usart) == STM32_USART_DATAWIDTH_9_BIT) &&
 			       (LL_USART_GetParity(usart) == LL_USART_PARITY_NONE))
@@ -2589,9 +2605,34 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 
 #define STM32_UART_IRQ_HANDLER_FUNC(index)					\
 	.irq_config_func = uart_stm32_irq_config_func_##index,
+
+/*
+ * Detect at build time if multiple enabled UART instances share the same IRQ
+ * number (common on STM32G0, STM32F0, and similar series with limited NVIC
+ * lines). When sharing is detected, CONFIG_SHARED_INTERRUPTS must be enabled
+ * so gen_isr_tables can wire up z_shared_isr to dispatch to each driver ISR.
+ * This could be detected and reported by gen_isr_table with a user-friendly
+ * error message but is not done today. This should be dropped when a more
+ * generic solution is implemented at gen_isr_table level.
+ */
+#define STM32_UART_COUNT_MATCHING_IRQ(inst, irq_num)				\
+	+ ((DT_INST_IRQN(inst) == (irq_num)) ? 1 : 0)
+
+#define STM32_UART_CHECK_SHARED_IRQ(index)					\
+	BUILD_ASSERT(								\
+		(0 DT_INST_FOREACH_STATUS_OKAY_VARGS(				\
+			STM32_UART_COUNT_MATCHING_IRQ,				\
+			DT_INST_IRQN(index))) <= 1 ||				\
+		IS_ENABLED(CONFIG_SHARED_INTERRUPTS),				\
+		"Node " DT_NODE_PATH(DT_DRV_INST(index))			\
+		" shares its interrupt line with another "			\
+		"st,stm32-uart instance: "					\
+		"enable CONFIG_SHARED_INTERRUPTS");
+
 #else
 #define STM32_UART_IRQ_HANDLER_DEFINE(index) /* Not used */
 #define STM32_UART_IRQ_HANDLER_FUNC(index) /* Not used */
+#define STM32_UART_CHECK_SHARED_IRQ(index) /* Not used */
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM */
 
 #ifdef CONFIG_UART_ASYNC_API
@@ -2750,6 +2791,7 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 	STM32_UART_CHECK_DT_PARITY(index)					\
 	STM32_UART_CHECK_DT_DATA_BITS(index)					\
 	STM32_UART_CHECK_DT_STOP_BITS_0_5(index)				\
-	STM32_UART_CHECK_DT_STOP_BITS_1_5(index)
+	STM32_UART_CHECK_DT_STOP_BITS_1_5(index)				\
+	STM32_UART_CHECK_SHARED_IRQ(index)
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_UART_INIT)

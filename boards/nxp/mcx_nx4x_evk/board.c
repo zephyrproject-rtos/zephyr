@@ -249,6 +249,12 @@ void board_early_init_hook(void)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
 	CLOCK_AttachClk(kNONE_to_ENETRMII);
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+	/* Attach PLL0 (150 MHz) to the ENET QoS PTP reference clock. */
+	CLOCK_AttachClk(kPLL0_to_ENETPTPREF);
+	CLOCK_SetClkDiv(kCLOCK_DivEnetptprefClk, 1u);
+#endif
+
 	CLOCK_EnableClock(kCLOCK_Enet);
 	SYSCON0->PRESETCTRL2 = SYSCON_PRESETCTRL2_ENET_RST_MASK;
 	SYSCON0->PRESETCTRL2 &= ~SYSCON_PRESETCTRL2_ENET_RST_MASK;
@@ -298,7 +304,7 @@ void board_early_init_hook(void)
 #if CONFIG_FLASH_MCUX_FLEXSPI_NOR || CONFIG_FLASH_MCUX_FLEXSPI_XIP
 	/* Setup the FlexSPI clock */
 	flexspi_clock_set_freq(MCUX_FLEXSPI_CLK,
-			       DT_PROP(DT_NODELABEL(w25q64jwtbjq), spi_max_frequency));
+			       DT_PROP(DT_NODELABEL(ext_flash_ctrl), spi_max_frequency));
 	enable_cache64();
 #endif
 

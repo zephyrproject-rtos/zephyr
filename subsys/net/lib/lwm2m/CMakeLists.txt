@@ -97,11 +97,17 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_HUMIDITY_SENSOR
 zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_PRESSURE_SENSOR
     ipso_pressure_sensor.c
     )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_TIME
+    ipso_time.c
+    )
 zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_LIGHT_CONTROL
     ipso_light_control.c
     )
 zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_ACCELEROMETER
     ipso_accelerometer.c
+    )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_MAGNETOMETER
+    ipso_magnetometer.c
     )
 zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_BUZZER
     ipso_buzzer.c

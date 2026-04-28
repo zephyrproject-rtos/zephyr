@@ -36,6 +36,8 @@ tests:
       - mimxrt1170_evk/mimxrt1176/cm7
       - bg29_rb4420a
       - xg29_rb4412a
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     integration_platforms:
       - robokit1
   drivers.spi.mcux_dspi_dma.loopback:
@@ -58,6 +60,7 @@ tests:
     platform_allow:
       - b_u585i_iot02a
       - nucleo_c071rb
+      - nucleo_c5a3zg
       - nucleo_g071rb
       - nucleo_g474re
       - nucleo_f207zg
@@ -96,6 +99,7 @@ tests:
     platform_allow:
       - b_u585i_iot02a
       - nucleo_c071rb
+      - nucleo_c5a3zg
       - nucleo_f207zg
       - nucleo_f429zi
       - nucleo_f746zg
@@ -122,6 +126,7 @@ tests:
     platform_allow:
       - b_u585i_iot02a
       - nucleo_c071rb
+      - nucleo_c5a3zg
       - nucleo_f207zg
       - nucleo_f429zi
       - nucleo_f746zg
@@ -147,6 +152,7 @@ tests:
     platform_allow:
       - b_u585i_iot02a
       - nucleo_c071rb
+      - nucleo_c5a3zg
       - nucleo_f207zg
       - nucleo_f429zi
       - nucleo_f746zg
@@ -352,10 +358,10 @@ tests:
       - frdm_ke17z512
   drivers.spi.max32_dma.loopback:
     extra_args: EXTRA_CONF_FILE="overlay-max32-spi-dma.conf"
-    filter: CONFIG_SOC_FAMILY_MAX32
+    filter: CONFIG_SOC_FAMILY_MAX32 and not CONFIG_SOC_FAMILY_MAX32_RV32
   drivers.spi.max32_rtio_dma.loopback:
     extra_args: EXTRA_CONF_FILE="overlay-max32-spi-rtio-dma.conf"
-    filter: CONFIG_SOC_FAMILY_MAX32
+    filter: CONFIG_SOC_FAMILY_MAX32 and not CONFIG_SOC_FAMILY_MAX32_RV32
   drivers.spi.s32z_dspi.loopback:
     extra_args:
       - DTC_OVERLAY_FILE=boards/s32z2xxdc2_s32z270_dspi.overlay
@@ -461,3 +467,6 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
       - CONF_FILE="prj.conf" # to exclude "boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}.overlay"
+  drivers.spi.mspm0.loopback:
+    platform_allow:
+      - lp_mspm0g3507

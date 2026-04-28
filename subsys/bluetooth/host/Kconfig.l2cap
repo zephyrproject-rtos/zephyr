@@ -1,4 +1,4 @@
-# Bluetooth ATT/GATT configuration options
+# Bluetooth L2CAP configuration options
 
 # Copyright (c) 2019 Intel Corporation
 # Copyright (c) 2023 Nordic Semiconductor
@@ -76,4 +76,9 @@ config BT_L2CAP_RECONFIGURE_EXPLICIT
 	  Enable API for explicit reconfiguration of an L2CAP channel's MTU and
 	  MPS.
 
+config BT_L2CAP_CONN_RTX_TIMEOUT
+	int
+	prompt "L2CAP RTX timer for conn requests (seconds)" if BT_TESTING
+	default 40
+	range 1 60
 endmenu

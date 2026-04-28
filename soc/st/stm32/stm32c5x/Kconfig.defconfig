@@ -5,8 +5,6 @@
 
 if SOC_SERIES_STM32C5X
 
-rsource "Kconfig.defconfig.stm32c5*"
-
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 

@@ -23,28 +23,17 @@ static bool g_received_size_error;
 static size_t g_received_size;
 static int g_max_transfer_size_bytes;
 
-#define CHANNELS_TO_TEST 4
 #define TX_CHANNEL_INDEX 0
 #define RX_CHANNEL_INDEX 1
 
-static const struct mbox_dt_spec channels[CHANNELS_TO_TEST][2] = {
-	{
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx0),
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx0),
-	},
-	{
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx1),
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx1),
-	},
-	{
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx2),
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx2),
-	},
-	{
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx3),
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx3),
-	},
-};
+#define CHANNEL_ENTRY(_i, ...)                                                                     \
+	{                                                                                          \
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), CONCAT(tx, _i)),                          \
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), CONCAT(rx, _i)),                          \
+	}
+
+static const struct mbox_dt_spec channels[CONFIG_CHANNELS_TO_TEST][2] = {
+	LISTIFY(CONFIG_CHANNELS_TO_TEST, CHANNEL_ENTRY, (,)) };
 
 static uint32_t current_channel_index;
 
@@ -66,7 +55,8 @@ static void callback(const struct device *dev, uint32_t channel, void *user_data
 
 static void mbox_data_tests_before(void *f)
 {
-	zassert_false(current_channel_index >= CHANNELS_TO_TEST, "Channel to test is out of range");
+	zassert_false(current_channel_index >= CONFIG_CHANNELS_TO_TEST,
+		      "Channel to test is out of range");
 
 	const struct mbox_dt_spec *tx_channel = &channels[current_channel_index][TX_CHANNEL_INDEX];
 	const struct mbox_dt_spec *rx_channel = &channels[current_channel_index][RX_CHANNEL_INDEX];
@@ -89,7 +79,8 @@ static void mbox_data_tests_before(void *f)
 
 static void mbox_data_tests_after(void *f)
 {
-	zassert_false(current_channel_index >= CHANNELS_TO_TEST, "Channel to test is out of range");
+	zassert_false(current_channel_index >= CONFIG_CHANNELS_TO_TEST,
+		      "Channel to test is out of range");
 
 	const struct mbox_dt_spec *rx_channel = &channels[current_channel_index][RX_CHANNEL_INDEX];
 
@@ -173,6 +164,8 @@ ZTEST(mbox_data_tests, test_ping_pong_1)
 	mbox_test(0xADADADAD);
 }
 
+#if CONFIG_CHANNELS_TO_TEST >= 2
+
 /**
  * @brief MBOX Data transfer by ping pong for second set of channels
  *
@@ -183,6 +176,10 @@ ZTEST(mbox_data_tests, test_ping_pong_2)
 {
 	mbox_test(0xDADADADA);
 }
+
+#endif
+
+#if CONFIG_CHANNELS_TO_TEST >= 3
 
 /**
  * @brief MBOX Data transfer by ping pong for third set of channels
@@ -195,6 +192,10 @@ ZTEST(mbox_data_tests, test_ping_pong_3)
 	mbox_test(0xADADADAD);
 }
 
+#endif
+
+#if CONFIG_CHANNELS_TO_TEST >= 4
+
 /**
  * @brief MBOX Data transfer by ping pong for forth set of channels
  *
@@ -205,5 +206,7 @@ ZTEST(mbox_data_tests, test_ping_pong_4)
 {
 	mbox_test(0xDADADADA);
 }
+
+#endif
 
 ZTEST_SUITE(mbox_data_tests, NULL, NULL, mbox_data_tests_before, mbox_data_tests_after, NULL);

@@ -437,7 +437,7 @@ static int npm10xx_charger_set_prop(const struct device *dev, const charger_prop
 
 	switch (prop) {
 
-	/* Iset for diffent NTC regions */
+	/* Iset for different NTC regions */
 	case NPM10XX_CHARGER_PROP_CONSTANT_CHARGE_CURRENT_COOL_UA:
 		addr += 1U;
 		/* fall-through */
@@ -829,7 +829,7 @@ static int npm10xx_charger_init(const struct device *dev)
 		}
 	}
 
-	/* Additinal SYSREG configuration */
+	/* Additional SYSREG configuration */
 	if (config->vbusilim != UINT8_MAX) {
 		ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_SYS_VBUSILIM,
 					    FIELD_PREP(SYS_VBUSILIM_LVL_Msk, config->vbusilim));

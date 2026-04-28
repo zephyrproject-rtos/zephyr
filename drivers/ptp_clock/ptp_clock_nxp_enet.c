@@ -2,7 +2,7 @@
  * Copyright 2023-2024 NXP
  *
  * Based on a commit to drivers/ethernet/eth_mcux.c which was:
- * Copyright (c) 2018 Intel Coporation
+ * Copyright (c) 2018 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */

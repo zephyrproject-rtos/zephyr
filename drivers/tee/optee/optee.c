@@ -497,7 +497,7 @@ static int optee_notif_wait(const struct device *dev, uint32_t key)
 	}
 
 	/*
-	 * If key is already registred, then skip.
+	 * If key is already registered, then skip.
 	 */
 	if (key_is_pending(data, key)) {
 		rc = -EBUSY;
@@ -989,7 +989,7 @@ static int optee_shm_register(const struct device *dev, struct tee_shm *shm)
 
 	/* for this command op-tee os should support CFG_CORE_DYN_SHM */
 	msg_arg->cmd = OPTEE_MSG_CMD_REGISTER_SHM;
-	/* op-tee OS ingnore this cmd in case when TYPE_TMEM_OUTPUT and NONCONTIG aren't set */
+	/* op-tee OS ignore this cmd in case when TYPE_TMEM_OUTPUT and NONCONTIG aren't set */
 	msg_arg->params->attr = OPTEE_MSG_ATTR_TYPE_TMEM_OUTPUT | OPTEE_MSG_ATTR_NONCONTIG;
 	msg_arg->num_params = 1;
 	msg_arg->params->u.tmem.buf_ptr = pl_phys_and_offset;
@@ -1276,7 +1276,7 @@ static DEVICE_API(tee, optee_driver_api) = {
 };
 
 /*
- * Bitmap of the ongoing notificatons, received from OP-TEE. Maximum number is
+ * Bitmap of the ongoing notifications, received from OP-TEE. Maximum number is
  * CONFIG_OPTEE_MAX_NOTIF. This bitmap is needed to handle case when SEND command
  * was received before WAIT command from OP-TEE. In this case WAIT will not create
  * locks.

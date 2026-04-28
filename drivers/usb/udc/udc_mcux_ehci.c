@@ -525,13 +525,8 @@ static int udc_mcux_ep_enqueue(const struct device *dev,
 static int udc_mcux_ep_dequeue(const struct device *dev,
 			       struct udc_ep_config *const cfg)
 {
-	struct net_buf *buf;
-
 	cfg->stat.halted = false;
-	buf = udc_buf_get_all(cfg);
-	if (buf) {
-		udc_submit_ep_event(dev, buf, -ECONNABORTED);
-	}
+	udc_ep_cancel_queued(dev, cfg);
 
 	udc_mcux_lock(dev);
 	udc_ep_set_busy(cfg, false);

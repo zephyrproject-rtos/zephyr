@@ -890,7 +890,7 @@ int i3c_ccc_do_getmxds(const struct i3c_device_desc *target,
 			if (len == SIZEOF_FIELD(union i3c_ccc_getmxds, fmt1)) {
 				mxds->fmt1.maxwr = data[0];
 				mxds->fmt1.maxrd = data[1];
-				/* It is unknown wither format 1 or format 2 is returned ahead of
+				/* It is unknown whether format 1 or format 2 is returned ahead of
 				 * time
 				 */
 				memset(&mxds->fmt2.maxrdturn, 0, sizeof(mxds->fmt2.maxrdturn));

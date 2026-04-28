@@ -15,4 +15,5 @@ supported:
   - i2c
   - pwm
   - spi
+  - netif:wifi
 vendor: espressif

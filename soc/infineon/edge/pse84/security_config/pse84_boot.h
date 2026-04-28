@@ -10,6 +10,7 @@
 #include <infineon_kconfig.h>
 #include <cy_sysint.h>
 #include <system_edge.h>
+#include "pse84_s_sau.h"
 #include "cy_pdl.h"
 
 #if defined(CONFIG_SOC_PSE84_M55_ENABLE)
@@ -17,7 +18,6 @@
 #include <zephyr/drivers/timer/system_timer.h>
 
 #include "pse84_s_system.h"
-#include "pse84_s_sau.h"
 #include "pse84_s_protection.h"
 #include "pse84_s_mpc.h"
 

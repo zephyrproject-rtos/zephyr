@@ -78,10 +78,10 @@ static const char *modem_cellular_state_str(enum modem_cellular_state state)
 		return "run apn script";
 	case MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT:
 		return "run dial script";
-	case MODEM_CELLULAR_STATE_CARRIER_ON:
-		return "carrier on";
-	case MODEM_CELLULAR_STATE_DORMANT:
-		return "dormant";
+	case MODEM_CELLULAR_STATE_REGISTERED:
+		return "registered";
+	case MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD:
+		return "await PPP dead";
 	case MODEM_CELLULAR_STATE_INIT_POWER_OFF:
 		return "init power off";
 	case MODEM_CELLULAR_STATE_RUN_SHUTDOWN_SCRIPT:
@@ -534,7 +534,8 @@ MODEM_CHAT_MATCHES_DEFINE(__maybe_unused unsol_matches,
 			  MODEM_CHAT_MATCH("+CEREG: ", ",", modem_cellular_chat_on_cxreg),
 			  MODEM_CHAT_MATCH("+CGREG: ", ",", modem_cellular_chat_on_cxreg),
 			  MODEM_CHAT_MATCH("+CGEV: ", ",", modem_cellular_chat_on_cgev),
-			  MODEM_CHAT_MATCH("APP RDY", "", modem_cellular_chat_on_modem_ready));
+			  MODEM_CHAT_MATCH("APP RDY", "", modem_cellular_chat_on_modem_ready),
+			  MODEM_CHAT_MATCH("Ready", "", modem_cellular_chat_on_modem_ready));
 
 MODEM_CHAT_MATCHES_DEFINE(abort_matches, MODEM_CHAT_MATCH("ERROR", "", NULL));
 
@@ -1255,7 +1256,7 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		modem_chat_attach(&data->chat, data->dlci1_pipe);
+		modem_chat_attach(&data->chat, data->dlci2_pipe);
 		modem_chat_run_script_async(&data->chat, config->dial_chat_script);
 		break;
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
@@ -1298,7 +1299,10 @@ static int modem_cellular_on_run_dial_script_state_leave(struct modem_cellular_d
 
 static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_data *data)
 {
-	if (modem_ppp_attach(data->ppp, data->dlci1_pipe) < 0) {
+	/* PHY is now up and searching for network */
+	net_if_carrier_on(modem_ppp_get_iface(data->ppp));
+
+	if (modem_ppp_attach(data->ppp, data->dlci2_pipe) < 0) {
 		return -EAGAIN;
 	}
 
@@ -1308,7 +1312,7 @@ static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_
 	}
 
 	modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
-	return modem_chat_attach(&data->chat, data->dlci2_pipe);
+	return modem_chat_attach(&data->chat, data->dlci1_pipe);
 }
 
 static void modem_cellular_await_registered_event_handler(struct modem_cellular_data *data,
@@ -1338,10 +1342,11 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 		break;
 
 	case MODEM_CELLULAR_EVENT_REGISTERED:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_CARRIER_ON);
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_REGISTERED);
 		break;
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
+		net_if_carrier_off(modem_ppp_get_iface(data->ppp));
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
 		break;
 	case MODEM_CELLULAR_EVENT_RING:
@@ -1359,14 +1364,14 @@ static int modem_cellular_on_await_registered_state_leave(struct modem_cellular_
 	return 0;
 }
 
-static int modem_cellular_on_carrier_on_state_enter(struct modem_cellular_data *data)
+static int modem_cellular_on_registered_state_enter(struct modem_cellular_data *data)
 {
-	net_if_carrier_on(modem_ppp_get_iface(data->ppp));
+	net_if_dormant_off(modem_ppp_get_iface(data->ppp));
 	modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 	return 0;
 }
 
-static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data *data,
+static void modem_cellular_registered_event_handler(struct modem_cellular_data *data,
 						    enum modem_cellular_event evt)
 {
 	const struct modem_cellular_config *config =
@@ -1400,11 +1405,11 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data *
 		break;
 
 	case MODEM_CELLULAR_EVENT_DEREGISTERED:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_DORMANT);
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD);
 		break;
 	case MODEM_CELLULAR_EVENT_PPP_DEAD:
 		if (net_if_is_admin_up(modem_ppp_get_iface(data->ppp))) {
-			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_DORMANT);
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD);
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
 		}
 		break;
@@ -1424,28 +1429,34 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data *
 	}
 }
 
-static int modem_cellular_on_carrier_on_state_leave(struct modem_cellular_data *data)
+static int modem_cellular_on_registered_state_leave(struct modem_cellular_data *data)
 {
 	modem_cellular_stop_timer(data);
 
 	return 0;
 }
 
-static int modem_cellular_on_dormant_state_enter(struct modem_cellular_data *data)
+static int modem_cellular_on_await_ppp_dead_state_enter(struct modem_cellular_data *data)
 {
 	net_if_dormant_on(modem_ppp_get_iface(data->ppp));
 
 	return 0;
 }
 
-static void modem_cellular_dormant_event_handler(struct modem_cellular_data *data,
+static void modem_cellular_await_ppp_dead_event_handler(struct modem_cellular_data *data,
 						 enum modem_cellular_event evt)
 {
+	const struct modem_cellular_config *config =
+		(const struct modem_cellular_config *)data->dev->config;
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_RING:
 		LOG_DBG("RING received!");
 		modem_pipe_open_async(data->uart_pipe);
 	case MODEM_CELLULAR_EVENT_PPP_DEAD:
+		/* Wait for the channel to return to AT mode after PPP termination */
+		modem_cellular_start_timer(data, K_MSEC(config->reset_pulse_duration_ms));
+		break;
+	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
 		break;
 	default:
@@ -1453,12 +1464,11 @@ static void modem_cellular_dormant_event_handler(struct modem_cellular_data *dat
 	}
 }
 
-static int modem_cellular_on_dormant_state_leave(struct modem_cellular_data *data)
+static int modem_cellular_on_await_ppp_dead_state_leave(struct modem_cellular_data *data)
 {
 	net_if_carrier_off(modem_ppp_get_iface(data->ppp));
 	modem_chat_release(&data->chat);
 	modem_ppp_release(data->ppp);
-	net_if_dormant_off(modem_ppp_get_iface(data->ppp));
 
 	return 0;
 }
@@ -1659,12 +1669,12 @@ static int modem_cellular_on_state_enter(struct modem_cellular_data *data)
 		ret = modem_cellular_on_await_registered_state_enter(data);
 		break;
 
-	case MODEM_CELLULAR_STATE_CARRIER_ON:
-		ret = modem_cellular_on_carrier_on_state_enter(data);
+	case MODEM_CELLULAR_STATE_REGISTERED:
+		ret = modem_cellular_on_registered_state_enter(data);
 		break;
 
-	case MODEM_CELLULAR_STATE_DORMANT:
-		ret = modem_cellular_on_dormant_state_enter(data);
+	case MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD:
+		ret = modem_cellular_on_await_ppp_dead_state_enter(data);
 		break;
 
 	case MODEM_CELLULAR_STATE_INIT_POWER_OFF:
@@ -1728,12 +1738,12 @@ static int modem_cellular_on_state_leave(struct modem_cellular_data *data)
 		ret = modem_cellular_on_await_registered_state_leave(data);
 		break;
 
-	case MODEM_CELLULAR_STATE_CARRIER_ON:
-		ret = modem_cellular_on_carrier_on_state_leave(data);
+	case MODEM_CELLULAR_STATE_REGISTERED:
+		ret = modem_cellular_on_registered_state_leave(data);
 		break;
 
-	case MODEM_CELLULAR_STATE_DORMANT:
-		ret = modem_cellular_on_dormant_state_leave(data);
+	case MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD:
+		ret = modem_cellular_on_await_ppp_dead_state_leave(data);
 		break;
 
 	case MODEM_CELLULAR_STATE_INIT_POWER_OFF:
@@ -1843,12 +1853,12 @@ static void modem_cellular_event_handler(struct modem_cellular_data *data,
 		modem_cellular_await_registered_event_handler(data, evt);
 		break;
 
-	case MODEM_CELLULAR_STATE_CARRIER_ON:
-		modem_cellular_carrier_on_event_handler(data, evt);
+	case MODEM_CELLULAR_STATE_REGISTERED:
+		modem_cellular_registered_event_handler(data, evt);
 		break;
 
-	case MODEM_CELLULAR_STATE_DORMANT:
-		modem_cellular_dormant_event_handler(data, evt);
+	case MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD:
+		modem_cellular_await_ppp_dead_event_handler(data, evt);
 		break;
 
 	case MODEM_CELLULAR_STATE_INIT_POWER_OFF:
@@ -1954,7 +1964,7 @@ static int modem_cellular_get_signal(const struct device *dev,
 	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
 
 	if ((data->state != MODEM_CELLULAR_STATE_AWAIT_REGISTERED) &&
-	    (data->state != MODEM_CELLULAR_STATE_CARRIER_ON)) {
+	    (data->state != MODEM_CELLULAR_STATE_REGISTERED)) {
 		return -ENODATA;
 	}
 
@@ -2789,6 +2799,65 @@ MODEM_CHAT_SCRIPT_DEFINE(u_blox_lara_r6_periodic_chat_script,
 			 modem_cellular_chat_callback_handler, 4);
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(trasna_lexi_r10)
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(trasna_lexi_r10_set_baudrate_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+IPR="
+					STRINGIFY(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE), ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r10_set_baudrate_chat_script,
+			 trasna_lexi_r10_set_baudrate_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 1);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(trasna_lexi_r10_init_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGEREP=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMI", cgmi_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", cgmr_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CCID", ccid_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0,5,"
+					STRINGIFY(CONFIG_MODEM_CMUX_MTU), ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r10_init_chat_script, trasna_lexi_r10_init_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(trasna_lexi_r10_dial_chat_script_cmds,
+				  MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
+				  MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 1000),);
+
+MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r10_dial_chat_script, trasna_lexi_r10_dial_chat_script_cmds,
+			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(trasna_lexi_r10_periodic_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r10_periodic_chat_script,
+			 trasna_lexi_r10_periodic_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 4);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(trasna_lexi_r10_shutdown_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPWROFF", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r10_shutdown_chat_script,
+			      trasna_lexi_r10_shutdown_chat_script_cmds, abort_matches,
+			      modem_cellular_chat_callback_handler, 40);
+#endif
+
 #if DT_HAS_COMPAT_STATUS_OKAY(swir_hl7800)
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(swir_hl7800_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 1000),
@@ -2904,7 +2973,62 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me310g1_shutdown_chat_script,
 
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(telit_le910c1tx)
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(telit_le910c1tx_init_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+ICCID", iccid_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+IPR=115200", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMI", cgmi_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", cgmr_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 5000),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127", 1000));
+
+MODEM_CHAT_SCRIPT_DEFINE(telit_le910c1tx_init_chat_script, telit_le910c1tx_init_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(telit_le910c1tx_dial_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0));
+
+MODEM_CHAT_SCRIPT_DEFINE(telit_le910c1tx_dial_chat_script, telit_le910c1tx_dial_chat_script_cmds,
+			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(telit_le910c1tx_periodic_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG?", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(telit_le910c1tx_periodic_chat_script,
+			 telit_le910c1tx_periodic_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 4);
+
+#endif
+
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf91_slm)
+MODEM_CHAT_MATCH_DEFINE(xiccid_match, "+%XICCID: ", "", modem_cellular_chat_on_iccid);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf91_slm_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT", allow_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
@@ -2926,6 +3050,10 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_init_chat_script, nordic_nrf91_slm_ini
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf91_slm_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT#XPPP=0", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT%XICCID", xiccid_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT#XPPP=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT#XCMUX=2", ok_match));
@@ -3136,6 +3264,24 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 				       &u_blox_lara_r6_periodic_chat_script,                       \
 				       NULL)
 
+#define MODEM_CELLULAR_DEVICE_TRASNA_LEXI_R10(inst)                                                \
+	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);   \
+                                                                                                   \
+	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
+		.chat_delimiter = "\r",                                                            \
+		.chat_filter = "\n",                                                               \
+		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
+	};                                                                                         \
+                                                                                                   \
+	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
+                                                                                                   \
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 9000, 5000, false,                         \
+				       &trasna_lexi_r10_set_baudrate_chat_script,                  \
+				       &trasna_lexi_r10_init_chat_script,                          \
+				       &trasna_lexi_r10_dial_chat_script,                          \
+				       &trasna_lexi_r10_periodic_chat_script,                      \
+				       &trasna_lexi_r10_shutdown_chat_script)
+
 #define MODEM_CELLULAR_DEVICE_SWIR_HL7800(inst)                                                    \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);   \
                                                                                                    \
@@ -3172,6 +3318,25 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 				       &telit_mex10g1_init_chat_script,                            \
 				       &telit_mex10g1_dial_chat_script,                            \
 				       &telit_mex10g1_periodic_chat_script,                        \
+				       NULL)
+
+#define MODEM_CELLULAR_DEVICE_TELIT_LE910C1TX(inst)                                                \
+	MODEM_PPP_DEFINE(MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);                 \
+                                                                                                   \
+	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
+		.chat_delimiter = "\r",                                                            \
+		.chat_filter = "\n",                                                               \
+		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
+	};                                                                                         \
+                                                                                                   \
+	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                                            \
+						  (user_pipe_0, 3))				   \
+                                                                                                   \
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 5050, 250, 20000, 5000, false,                        \
+				       NULL,                                                       \
+				       &telit_le910c1tx_init_chat_script,                          \
+				       &telit_le910c1tx_dial_chat_script,                          \
+				       &telit_le910c1tx_periodic_chat_script,                      \
 				       NULL)
 
 #define MODEM_CELLULAR_DEVICE_TELIT_ME310G1(inst)                                                  \
@@ -3266,6 +3431,10 @@ DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_U_BLOX_SARA_R5)
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_U_BLOX_LARA_R6)
 #undef DT_DRV_COMPAT
 
+#define DT_DRV_COMPAT trasna_lexi_r10
+DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_TRASNA_LEXI_R10)
+#undef DT_DRV_COMPAT
+
 #define DT_DRV_COMPAT swir_hl7800
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_SWIR_HL7800)
 #undef DT_DRV_COMPAT
@@ -3276,6 +3445,10 @@ DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_TELIT_ME910G1)
 
 #define DT_DRV_COMPAT telit_me310g1
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_TELIT_ME310G1)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT telit_le910c1tx
+DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_TELIT_LE910C1TX)
 #undef DT_DRV_COMPAT
 
 #define DT_DRV_COMPAT nordic_nrf91_slm

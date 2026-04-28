@@ -38,3 +38,4 @@ config REMOTE_BOARD
 	default "$(BOARD)/max32655/rv32" if SOC_MAX32655_M4
 	default "$(BOARD)/max32690/rv32" if SOC_MAX32690_M4
 	default "$(BOARD)/max78002/rv32" if SOC_MAX78002_M4
+	default "$(BOARD)/max32666/cpu1" if SOC_MAX32666_CPU0

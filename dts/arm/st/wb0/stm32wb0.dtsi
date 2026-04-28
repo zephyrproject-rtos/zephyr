@@ -45,8 +45,8 @@
 				power-state-name = "suspend-to-ram";
 				substate-id = <0>;
 
-				/* One millisecond seems reasonable for now. */
-				min-residency-us = <1000>;
+				/* 1.5ms seems to be a sufficient margin. */
+				min-residency-us = <1500>;
 
 				/* exit-latency-us property is not needed
 				 * since the same concept is applied by the hardware automatically.
@@ -158,6 +158,8 @@
 
 			flash0: flash@10040000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <4>;
 				erase-block-size = <2048>;
 				/* maximum erase time(ms) for a page (2K) */
@@ -346,11 +348,19 @@
 
 	bt_hci_wb0: bt_hci_wb0 {
 		compatible = "st,hci-stm32wb0";
+		interrupt-parent = <&nvic>;
+		interrupts = <18 0>, <22 0>, <25 0>;
+		interrupt-names = "radio-txrx", "radio-rrm", "radio-txrx-seq";
 		status = "disabled";
 	};
 
 	radio_timer: radio_timer {
 		compatible = "st,stm32wb0-radio-timer";
+		interrupt-parent = <&nvic>;
+		interrupts = <20 0>, <23 0>, <24 0>;
+		interrupt-names = "radio-timer-error",
+				  "radio-timer-cpu-wkup",
+				  "radio-timer-txrx-wkup";
 		compensated-timer-freq = <409600>;
 		max-hs-startup-time = <320>;
 		status = "disabled";

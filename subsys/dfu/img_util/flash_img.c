@@ -23,17 +23,8 @@ LOG_MODULE_REGISTER(flash_img, CONFIG_IMG_MANAGER_LOG_LEVEL);
 #include <bootutil/bootutil_public.h>
 #endif
 
-#if defined(CONFIG_FLASH_USES_MAPPED_PARTITION)
 #define PARTITION_IS_RUNNING_APP_PARTITION(label) \
 	DT_SAME_NODE(DT_CHOSEN(zephyr_code_partition), DT_NODELABEL(label))
-#else
-#define PARTITION_IS_RUNNING_APP_PARTITION(label)                                            \
-	DT_SAME_NODE(PARTITION_NODE_MTD(DT_CHOSEN(zephyr_code_partition)),                   \
-		PARTITION_MTD(label)) && (PARTITION_ADDRESS(label) <=                  \
-				(CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET) &&          \
-			PARTITION_ADDRESS(label) + PARTITION_SIZE(label) >             \
-				(CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET))
-#endif
 
 #if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && (CONFIG_TFM_MCUBOOT_IMAGE_NUMBER == 2)
 #define UPLOAD_FLASH_AREA_LABEL slot1_ns_partition

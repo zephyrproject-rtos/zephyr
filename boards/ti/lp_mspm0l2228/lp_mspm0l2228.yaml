@@ -12,4 +12,6 @@ supported:
   - gpio
   - pinctrl
   - uart
+  - spi
+  - vref
 vendor: ti

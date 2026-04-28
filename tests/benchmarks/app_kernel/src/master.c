@@ -89,13 +89,31 @@ timing_t z_impl_timing_timestamp_get(void)
 	return timing_counter_get();
 }
 
+/**
+ * @brief Convert cycles to nanoseconds with averaging
+ *
+ * Architecture timestamp routines often require MMIO that is not mapped to
+ * the user threads. Use a custom system call to convert the number of cycles
+ * to nanoseconds (with averaging).
+ */
+uint64_t z_impl_test_timing_cycles_to_ns_avg(uint64_t cycles, uint32_t count)
+{
+	return timing_cycles_to_ns_avg(cycles, count);
+}
+
 #ifdef CONFIG_USERSPACE
-static timing_t z_vrfy_timing_timestamp_get(void)
+timing_t z_vrfy_timing_timestamp_get(void)
 {
 	return z_impl_timing_timestamp_get();
 }
-
 #include <zephyr/syscalls/timing_timestamp_get_mrsh.c>
+
+uint64_t z_vrfy_test_timing_cycles_to_ns_avg(uint64_t cycles, uint32_t count)
+{
+	return z_impl_test_timing_cycles_to_ns_avg(cycles, count);
+}
+
+#include <zephyr/syscalls/test_timing_cycles_to_ns_avg_mrsh.c>
 #endif
 
 /*

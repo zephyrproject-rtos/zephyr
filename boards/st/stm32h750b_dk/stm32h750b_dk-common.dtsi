@@ -60,6 +60,7 @@
 	aliases {
 		led0 = &green_led;
 		led1 = &red_led;
+		rtc = &rtc;
 		sw0 = &user_button;
 		die-temp0 = &die_temp;
 	};

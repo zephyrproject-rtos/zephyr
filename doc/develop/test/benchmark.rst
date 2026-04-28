@@ -173,17 +173,19 @@ Benchmark Output Options
 The benchmarking framework provides several options for outputting results of benchmarking data. By
 default, results are printed in a verbose human-readable format that is easy to understand and
 interpret.
-Alterantively, you can enable the ``CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV`` Kconfig option to output
-results in a CSV format that can be easily imported by scripts for further analysis.
+Alternatively, you can enable the :kconfig:option:`CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV` Kconfig option
+to output results in a CSV format that can be easily imported by scripts for further analysis.
 The CSV output includes all the same metrics as the verbose output, but in a
 format that is more conducive to automated analysis and reporting.
 
 The standard benchmark csv output format is as follows:
+
 .. code-block:: console
 
    S,<suite name>,<benchmark name>,<sample size>,<total cycles>,<mean>,<stddev>,<stderr>,<min>,<min sample>,<max>,<max sample>
 
 The timed benchmark csv output format is as follows:
+
 .. code-block:: console
 
    T,<suite name>,<benchmark name>,<samples>,<total time>,<work time>,<ops/sec>,<cycles/op>

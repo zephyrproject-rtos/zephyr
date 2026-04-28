@@ -472,7 +472,7 @@ static int phy_dm8806_init(const struct device *dev)
 #ifdef CONFIG_PHY_DM8806_TRIGGER
 	ret = phy_dm8806_init_interrupt(dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to configure interrupt fot PHY DM8806");
+		LOG_ERR("Failed to configure interrupt for PHY DM8806");
 		return ret;
 	}
 #endif
@@ -496,7 +496,7 @@ static int phy_dm8806_get_link_state(const struct device *dev, struct phy_link_s
 	/* Read data from Switch Per-Port Register. */
 	ret = phy_dm8806_read_reg(dev, cfg->switch_addr, DM8806_PORTX_SWITCH_STATUS, &data);
 	if (ret) {
-		LOG_ERR("Failes to read data drom DM8806 Switch Per-Port Registers area");
+		LOG_ERR("Failed to read data drom DM8806 Switch Per-Port Registers area");
 		return ret;
 	}
 	/* Extract speed and duplex status from Switch Per-Port Register: Per Port
@@ -566,7 +566,7 @@ static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv
 	/* Power down */
 	ret = phy_dm8806_read_reg(dev, cfg->phy_addr, DM8806_PORTX_PHY_CONTROL_REGISTER, &data);
 	if (ret) {
-		LOG_ERR("Failes to read data drom DM8806");
+		LOG_ERR("Failed to read data drom DM8806");
 		return ret;
 	}
 	k_busy_wait(500);
@@ -612,7 +612,7 @@ static int phy_dm8806_cfg_link(const struct device *dev, enum phy_link_speed adv
 	/* Power up ethernet port*/
 	ret = phy_dm8806_read_reg(dev, cfg->phy_addr, DM8806_PORTX_PHY_CONTROL_REGISTER, &data);
 	if (ret) {
-		LOG_ERR("Failes to read data drom DM8806");
+		LOG_ERR("Failed to read data drom DM8806");
 		return ret;
 	}
 	k_busy_wait(500);

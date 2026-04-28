@@ -5,9 +5,6 @@
 
 if SOC_SERIES_STM32G4X
 
-configdefault NUM_IRQS
-	default 102
-
 configdefault SHARED_INTERRUPTS
 	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers15)
 	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers16)

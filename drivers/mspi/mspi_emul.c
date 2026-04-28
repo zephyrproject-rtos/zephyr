@@ -57,7 +57,7 @@ struct mspi_emul_data {
 	struct mspi_scramble_cfg      scramble_cfg;
 	/* Timing configurations */
 	struct mspi_timing_cfg        timing_cfg;
-	/* local storage of mspi callback hanlder */
+	/* local storage of mspi callback handler */
 	mspi_callback_handler_t       cbs[MSPI_BUS_EVENT_MAX];
 	/* local storage of mspi callback context */
 	struct mspi_callback_context  *cb_ctxs[MSPI_BUS_EVENT_MAX];

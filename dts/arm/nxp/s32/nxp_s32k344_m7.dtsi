@@ -74,7 +74,7 @@
 			ranges = <0x0 0x00400000 DT_SIZE_K(4048)>; /* 4048 KiB Flash window */
 
 			flash0: flash@0 {
-				compatible = "nxp,c40-flash";
+				compatible = "nxp,c40-flash", "soc-nv-flash";
 				reg = <0x0 DT_SIZE_K(4048)>;
 				erase-block-size = <DT_SIZE_K(8)>;  /* 8 KiB sectors */
 				write-block-size = <8>;             /* 8-byte min program unit */

@@ -11,4 +11,8 @@ flash: 512
 supported:
   - uart
   - gpio
+  - can
+  - dac
+  - spi
+  - vref
 vendor: ti

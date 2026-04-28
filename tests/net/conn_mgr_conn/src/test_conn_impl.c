@@ -213,6 +213,13 @@ static void test_init(struct conn_mgr_conn_binding *const binding, bool a)
 	net_if_dormant_on(binding->iface);
 }
 
+static bool test_has_connection_config_a(struct conn_mgr_conn_binding *const binding)
+{
+	struct test_conn_data *data = binding->ctx;
+
+	return !data->missing_connection_config;
+}
+
 static void test_init_a(struct conn_mgr_conn_binding *const binding)
 {
 	test_init(binding, true);
@@ -244,6 +251,7 @@ static int test_disconnect_b(struct conn_mgr_conn_binding *const binding)
 }
 
 static struct conn_mgr_conn_api test_conn_api_a = {
+	.has_connection_config = test_has_connection_config_a,
 	.connect = test_connect_a,
 	.disconnect = test_disconnect_a,
 	.init = test_init_a,

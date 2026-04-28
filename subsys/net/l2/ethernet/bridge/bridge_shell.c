@@ -30,7 +30,7 @@ static int get_idx(const struct shell *sh, char *index_str)
 
 static int cmd_bridge_addif(const struct shell *sh, size_t argc, char *argv[])
 {
-#if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+#if defined(CONFIG_NET_DSA)
 	struct ethernet_context *eth_ctx;
 #endif
 	int ret = 0, br_idx, if_idx;
@@ -65,7 +65,7 @@ static int cmd_bridge_addif(const struct shell *sh, size_t argc, char *argv[])
 			continue;
 		}
 
-#if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
+#if defined(CONFIG_NET_DSA)
 		eth_ctx = net_if_l2_data(iface);
 		if (eth_ctx->dsa_port != DSA_USER_PORT &&
 		    !(net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE)) {

@@ -12,6 +12,11 @@
 #include <zephyr/arch/cpu.h>
 #include "asm_macros.inc"
 
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+GTEXT(z_riscv_custom_stack_guard_enable)
+GTEXT(z_riscv_custom_stack_guard_disable)
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
+
 /* Convenience macros for loading/storing register states. */
 
 #define DO_CALLEE_SAVED(op, reg) \
@@ -46,8 +51,33 @@ SECTION_FUNC(TEXT, z_riscv_switch)
 	/* Set thread->switch_handle = thread to mark completion */
 	sr a1, ___thread_t_switch_handle_OFFSET(a1)
 
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/* Disable the custom stack guard */
+	mv s0, a0
+	call z_riscv_custom_stack_guard_disable
+	mv a0, s0
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
+
 	/* Get the new thread's stack pointer */
 	lr sp, _thread_offset_to_sp(a0)
+
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+#ifdef CONFIG_USERSPACE
+	/*
+	 * Check whether the new thread is a user thread.
+	 * If it is, skip enabling the custom stack guard.
+	 */
+	lh t0, _thread_offset_to_user_options(a0)
+	andi t0, t0, K_USER
+	bnez t0, 1f
+#endif /* CONFIG_USERSPACE */
+
+	/* Kernel thread: enable the custom stack guard */
+	mv s0, a0
+	call z_riscv_custom_stack_guard_enable
+	mv a0, s0
+1:
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
 
 #if defined(CONFIG_THREAD_LOCAL_STORAGE)
 	/* Get the new thread's tls pointer */

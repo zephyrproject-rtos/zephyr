@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022-2025 Macronix International Co., Ltd.
  * Copyright (c) 2025 Embeint Pty Ltd
+ * Copyright (c) 2026 CodeWrights GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,10 +49,18 @@ struct spi_nand_config {
 	uint32_t addr_offset_mask;
 	/* Shift to apply to get page address */
 	uint8_t addr_page_shift;
+	/* Shift to apply to get erase block address */
+	uint8_t addr_block_shift;
+	/* Number of bits used for plane selection */
+	uint8_t plane_addr_bits;
 	/* Expected JEDEC ID, from jedec-id property */
 	const uint8_t *jedec_id;
 	/* Length of the JEDEC ID */
 	uint8_t jedec_id_len;
+	/* Program commands support plane select */
+	bool has_program_plane_select;
+	/* Read commands support plane select */
+	bool has_read_plane_select;
 };
 
 struct spi_nand_data {
@@ -84,6 +93,9 @@ struct spi_nand_data {
 /* Indicates that a dummy byte is to be sent following the address.
  */
 #define NAND_ACCESS_DUMMY_BYTE BIT(6)
+
+/* Offset of the bad block marker in the spare area */
+#define BAD_BLOCK_MARKER_OFFSET 0x00
 
 LOG_MODULE_REGISTER(spi_nand, CONFIG_FLASH_LOG_LEVEL);
 
@@ -337,13 +349,36 @@ static int spi_nand_page_read_to_cache(const struct device *dev, uint32_t page)
 }
 
 /** Read data from cache, assumes device already acquired */
-static int spi_nand_read_from_cache(const struct device *dev, uint16_t offset, void *dest,
-				    size_t size)
+static int spi_nand_read_from_cache(const struct device *dev, uint8_t plane, uint16_t offset,
+				    void *dest, size_t size)
 {
+	const struct spi_nand_config *config = dev->config;
+
+	/* Some chips require plane address for read from cache command */
+	if (config->has_read_plane_select) {
+		offset |= (plane << (config->addr_page_shift + 1));
+	}
+
 	return spi_nand_access(dev, SPI_NAND_CMD_READ_CACHE,
 			       NAND_ACCESS_ADDRESSED | NAND_ACCESS_16BIT_ADDR |
 				       NAND_ACCESS_DUMMY_BYTE,
 			       offset, dest, size);
+}
+
+/** Write data to cache, assumes device already acquired */
+static int spi_nand_write_to_cache(const struct device *dev, uint8_t plane, uint16_t offset,
+				   void *src, size_t size)
+{
+	const struct spi_nand_config *config = dev->config;
+
+	/* Some chips require plane address for write to cache command */
+	if (config->has_program_plane_select) {
+		offset |= (plane << (config->addr_page_shift + 1));
+	}
+
+	return spi_nand_access(dev, SPI_NAND_CMD_PROGRAM_LOAD,
+			       NAND_ACCESS_WRITE | NAND_ACCESS_ADDRESSED | NAND_ACCESS_16BIT_ADDR,
+			       offset, src, size);
 }
 
 static bool valid_region(const struct device *dev, off_t addr, size_t size)
@@ -362,6 +397,7 @@ static int spi_nand_read(const struct device *dev, off_t addr, void *dest, size_
 	const struct spi_nand_config *config = dev->config;
 	uint8_t *dest_u8 = dest;
 	uint32_t page_address;
+	uint8_t plane;
 	uint16_t page_offset;
 	uint16_t bytes_to_end;
 	uint16_t bytes_to_read;
@@ -382,6 +418,9 @@ static int spi_nand_read(const struct device *dev, off_t addr, void *dest, size_
 	while (size > 0) {
 		page_address = addr >> config->addr_page_shift;
 		page_offset = addr & config->addr_offset_mask;
+		plane = config->plane_addr_bits > 0 ? (addr >> config->addr_block_shift) &
+							      ((1 << config->plane_addr_bits) - 1)
+						    : 0;
 		bytes_to_end = config->parameters->write_block_size - page_offset;
 		bytes_to_read = MIN(size, bytes_to_end);
 
@@ -394,7 +433,7 @@ static int spi_nand_read(const struct device *dev, off_t addr, void *dest, size_
 		}
 
 		/* Read data out of cache */
-		ret = spi_nand_read_from_cache(dev, page_offset, dest_u8, bytes_to_read);
+		ret = spi_nand_read_from_cache(dev, plane, page_offset, dest_u8, bytes_to_read);
 		if (ret != 0) {
 			LOG_DBG("Read from device cache failed (%d)", ret);
 			break;
@@ -415,6 +454,9 @@ static int spi_nand_write(const struct device *dev, off_t addr, const void *src,
 	const struct spi_nand_config *config = dev->config;
 	uint32_t write_block = config->parameters->write_block_size;
 	uint8_t *src_u8 = (void *)src;
+	uint8_t plane = config->plane_addr_bits > 0 ? (addr >> config->addr_block_shift) &
+							      ((1 << config->plane_addr_bits) - 1)
+						    : 0;
 	uint32_t page_address;
 	uint8_t status;
 	int ret = 0;
@@ -450,10 +492,7 @@ static int spi_nand_write(const struct device *dev, off_t addr, const void *src,
 		LOG_DBG("Write %d to %06x:000", write_block, page_address);
 
 		/* Copy data to cache (at offset 0) */
-		ret = spi_nand_access(dev, SPI_NAND_CMD_PROGRAM_LOAD,
-				      NAND_ACCESS_WRITE | NAND_ACCESS_ADDRESSED |
-					      NAND_ACCESS_16BIT_ADDR,
-				      0, src_u8, write_block);
+		ret = spi_nand_write_to_cache(dev, plane, 0, src_u8, write_block);
 		if (ret != 0) {
 			LOG_DBG("Copy to device cache failed (%d)", ret);
 			break;
@@ -584,18 +623,138 @@ static void spi_nand_pages_layout(const struct device *dev,
 
 #if defined(CONFIG_FLASH_EX_OP_ENABLED)
 
+static int spi_nand_is_bad_block(const struct device *dev, off_t addr,
+				 enum flash_block_status *status)
+{
+	const struct spi_nand_config *config = dev->config;
+	const uint32_t bad_block_marker_offset =
+		config->parameters->write_block_size + BAD_BLOCK_MARKER_OFFSET;
+	uint8_t plane = config->plane_addr_bits > 0 ? (addr >> config->addr_block_shift) &
+							      ((1 << config->plane_addr_bits) - 1)
+						    : 0;
+	uint32_t page_address;
+	uint8_t bad_block_marker;
+	int ret;
+
+	/* Address must be in subregion of device */
+	if (!valid_region(dev, addr, 1)) {
+		return -EINVAL;
+	}
+
+	/* Address must be aligned to erase block */
+	if (addr % config->block_size) {
+		return -EINVAL;
+	}
+
+	page_address = addr >> config->addr_page_shift;
+
+	/* Copy data from main storage to cache (ignore ECC errors) */
+	ret = spi_nand_page_read_to_cache(dev, page_address);
+	if ((ret != 0) && (ret != -EBADMSG)) {
+		LOG_DBG("Copy from NAND to device cache failed (%d)", ret);
+		return ret;
+	}
+
+	/* Read bad block marker out of cache */
+	ret = spi_nand_read_from_cache(dev, plane, bad_block_marker_offset, &bad_block_marker,
+				       sizeof(bad_block_marker));
+	if (ret != 0) {
+		LOG_DBG("Read from device cache failed (%d)", ret);
+		return ret;
+	}
+
+	/* Verify bad block marker */
+	if (bad_block_marker != 0xff) {
+		LOG_DBG("Block at address %06x is bad (marker %02x)", page_address,
+			bad_block_marker);
+		*status = FLASH_BLOCK_BAD;
+	} else {
+		LOG_DBG("Block at address %06x is good", page_address);
+		*status = FLASH_BLOCK_GOOD;
+	}
+
+	return 0;
+}
+
+static int spi_nand_mark_bad_block(const struct device *dev, off_t addr)
+{
+	const struct spi_nand_config *config = dev->config;
+	const uint32_t bad_block_marker_offset =
+		config->parameters->write_block_size + BAD_BLOCK_MARKER_OFFSET;
+	uint8_t plane = config->plane_addr_bits > 0 ? (addr >> config->addr_block_shift) &
+							      ((1 << config->plane_addr_bits) - 1)
+						    : 0;
+	uint8_t bad_block_marker = 0x00;
+	uint32_t page_address;
+	uint8_t status;
+	int ret;
+
+	/* Address must be in subregion of device */
+	if (!valid_region(dev, addr, 1)) {
+		return -EINVAL;
+	}
+
+	/* Address must be aligned to erase block */
+	if (addr % config->block_size) {
+		return -EINVAL;
+	}
+
+	page_address = addr >> config->addr_page_shift;
+	LOG_DBG("Marking block starting at %06x as bad", page_address);
+
+	/* Enable write operation */
+	ret = spi_nand_cmd_write(dev, SPI_NAND_CMD_WRITE_ENABLE);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Copy bad block marker to cache (all other bytes stay reset at 0xff) */
+	ret = spi_nand_write_to_cache(dev, plane, bad_block_marker_offset, &bad_block_marker,
+				      sizeof(bad_block_marker));
+	if (ret != 0) {
+		LOG_DBG("Copy to device cache failed (%d)", ret);
+		return ret;
+	}
+
+	/* Program the cache to the appropriate page */
+	ret = spi_nand_access(dev, SPI_NAND_CMD_PROGRAM_EXECUTE,
+			      NAND_ACCESS_WRITE | NAND_ACCESS_ADDRESSED | NAND_ACCESS_24BIT_ADDR,
+			      page_address, NULL, 0);
+	if (ret != 0) {
+		LOG_DBG("Program from cache to NAND failed (%d)", ret);
+		return ret;
+	}
+
+	/* Wait for the write to complete (poll every 0.1ms) */
+	ret = spi_nand_wait_until_ready(dev, "write", config->page_program_us, 100, &status);
+	if (ret != 0) {
+		return ret;
+	}
+	if (status & SPI_NAND_FEATURE_STATUS_PROGRAM_FAIL) {
+		LOG_ERR("Program operation failed");
+		ret = -EIO;
+		return ret;
+	}
+
+	return 0;
+}
+
 static int spi_nand_ex_op(const struct device *dev, uint16_t code, const uintptr_t in, void *out)
 {
 	int ret;
-
-	ARG_UNUSED(in);
-	ARG_UNUSED(out);
 
 	acquire_device(dev);
 
 	switch (code) {
 	case FLASH_EX_OP_RESET:
 		ret = spi_nand_reset(dev);
+		break;
+	case FLASH_EX_OP_IS_BAD_BLOCK:
+		ret = spi_nand_is_bad_block(dev, *(const off_t *)in,
+					    (enum flash_block_status *)out);
+		break;
+	case FLASH_EX_OP_MARK_BAD_BLOCK:
+		ret = spi_nand_mark_bad_block(dev, *(const off_t *)in);
 		break;
 	default:
 		ret = -ENOTSUP;
@@ -680,7 +839,7 @@ static int onfi_parameters_load(const struct device *dev)
 	 */
 	page_size = config->parameters->write_block_size;
 	for (int i = 0; i < page_size; i += sizeof(onfi)) {
-		ret = spi_nand_read_from_cache(dev, i, &onfi, sizeof(onfi));
+		ret = spi_nand_read_from_cache(dev, 0, i, &onfi, sizeof(onfi));
 		if (ret != 0) {
 			return ret;
 		}
@@ -702,13 +861,14 @@ static int onfi_parameters_load(const struct device *dev)
 	 * "%{N}s" pads a string to N characters.
 	 * "%.{N}s" prints at most N characters.
 	 */
-	LOG_DBG("     Manufacturer: %.12s", onfi.device_manufacturer);
-	LOG_DBG("            Model: %.20s", onfi.device_model);
-	LOG_DBG(" Page Size (data): %d", onfi.data_bytes_per_page);
-	LOG_DBG("Page Size (spare): %d", onfi.spare_bytes_per_page);
-	LOG_DBG("  Pages per Block: %d", onfi.pages_per_block);
-	LOG_DBG("  Blocks per Unit: %d", onfi.blocks_per_lun);
-	LOG_DBG("            Units: %d", onfi.num_lun);
+	LOG_DBG("      Manufacturer: %.12s", onfi.device_manufacturer);
+	LOG_DBG("             Model: %.20s", onfi.device_model);
+	LOG_DBG("  Page Size (data): %d", onfi.data_bytes_per_page);
+	LOG_DBG(" Page Size (spare): %d", onfi.spare_bytes_per_page);
+	LOG_DBG("   Pages per Block: %d", onfi.pages_per_block);
+	LOG_DBG("   Blocks per Unit: %d", onfi.blocks_per_lun);
+	LOG_DBG("             Units: %d", onfi.num_lun);
+	LOG_DBG("Plane Address Bits: %d", onfi.plane_address_bits);
 
 	/* Validate ONFI data against devicetree */
 	block_size = onfi.data_bytes_per_page * onfi.pages_per_block;
@@ -720,6 +880,11 @@ static int onfi_parameters_load(const struct device *dev)
 	if (block_size != config->block_size) {
 		LOG_WRN("Devicetree block size does not match ONFI block size (%d != %d)",
 			block_size, config->block_size);
+	}
+	if (onfi.plane_address_bits != config->plane_addr_bits) {
+		LOG_WRN("Devicetree plane address bits does not match ONFI plane address bits (%d "
+			"!= %d)",
+			onfi.plane_address_bits, config->plane_addr_bits);
 	}
 	if (total_size != config->flash_size) {
 		LOG_WRN("Devicetree total size does not match ONFI total size (%d != %d)",
@@ -851,11 +1016,15 @@ static DEVICE_API(flash, spi_nand_api) = {
 		     "write-block-size must be a power of 2");                                     \
 	BUILD_ASSERT(IS_POWER_OF_TWO(DT_INST_PROP(idx, erase_block_size)),                         \
 		     "erase-block-size must be a power of 2");                                     \
+	BUILD_ASSERT(IS_POWER_OF_TWO(DT_INST_PROP(idx, plane_bytes)),                              \
+		     "plane-bytes must be a power of 2");                                          \
 	BUILD_ASSERT(DT_INST_PROP(idx, erase_block_size) % DT_INST_PROP(idx, write_block_size) ==  \
 			     0,                                                                    \
 		     "erase-block-size must be a multiple of write-block-size");                   \
-	BUILD_ASSERT(DT_INST_PROP(idx, size_bytes) % DT_INST_PROP(idx, erase_block_size) == 0,     \
-		     "size-bytes must be a multiple of erase-block-size");                         \
+	BUILD_ASSERT(DT_INST_PROP(idx, plane_bytes) % DT_INST_PROP(idx, erase_block_size) == 0,    \
+		     "plane-bytes must be a multiple of erase-block-size");                        \
+	BUILD_ASSERT(DT_INST_PROP(idx, size_bytes) % DT_INST_PROP(idx, plane_bytes) == 0,          \
+		     "size-bytes must be a multiple of plane-bytes");                              \
 	static const struct flash_parameters spi_nand_##idx##_parameters = {                       \
 		.write_block_size = DT_INST_PROP(idx, write_block_size),                           \
 		.erase_value = 0xff,                                                               \
@@ -873,8 +1042,13 @@ static DEVICE_API(flash, spi_nand_api) = {
 		.reset_us = DT_INST_PROP(idx, reset_duration_max),                                 \
 		.addr_offset_mask = DT_INST_PROP(idx, write_block_size) - 1,                       \
 		.addr_page_shift = LOG2(DT_INST_PROP(idx, write_block_size)),                      \
+		.addr_block_shift = LOG2(DT_INST_PROP(idx, erase_block_size)),                     \
+		.plane_addr_bits =                                                                 \
+			LOG2(DT_INST_PROP(idx, size_bytes) / DT_INST_PROP(idx, plane_bytes)),      \
 		.jedec_id = spi_nand_##idx##_jedec_id,                                             \
 		.jedec_id_len = ARRAY_SIZE(spi_nand_##idx##_jedec_id),                             \
+		.has_program_plane_select = DT_INST_PROP(idx, has_program_plane_select),           \
+		.has_read_plane_select = DT_INST_PROP(idx, has_read_plane_select),                 \
 		DEFINE_PAGE_LAYOUT(idx)};                                                          \
 	static struct spi_nand_data spi_nand_##idx##_data;                                         \
 	PM_DEVICE_DT_INST_DEFINE(idx, spi_nand_pm_control);                                        \

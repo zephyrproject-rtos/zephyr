@@ -556,6 +556,7 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 	LOG_DBG("Configured stream %p, ep %u, dir %u", stream, info.id, info.dir);
 
 	u_stream->conn_id = bt_conn_index(stream->conn);
+	u_stream->ase_id = info.id;
 	u_conn = &connections[u_stream->conn_id];
 
 	stream_state_changed(stream);
@@ -866,11 +867,18 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 	LOG_DBG("dir %u loc %X", dir, loc);
 }
 
+static void unicast_client_supported_contexts_cb(struct bt_conn *conn,
+						 enum bt_audio_context snk_ctx,
+						 enum bt_audio_context src_ctx)
+{
+	LOG_DBG("Supported snk ctx %u src ctx %u", snk_ctx, src_ctx);
+}
+
 static void unicast_client_available_contexts_cb(struct bt_conn *conn,
 						 enum bt_audio_context snk_ctx,
 						 enum bt_audio_context src_ctx)
 {
-	LOG_DBG("snk ctx %u src ctx %u", snk_ctx, src_ctx);
+	LOG_DBG("Available snk ctx %u src ctx %u", snk_ctx, src_ctx);
 }
 
 static void unicast_client_config_cb(struct bt_bap_stream *stream,
@@ -1091,6 +1099,7 @@ static struct bt_bap_unicast_server_register_param param = {
 
 static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.location = unicast_client_location_cb,
+	.supported_contexts = unicast_client_supported_contexts_cb,
 	.available_contexts = unicast_client_available_contexts_cb,
 	.config = unicast_client_config_cb,
 	.qos = unicast_client_qos_cb,
@@ -1465,7 +1474,7 @@ uint8_t btp_ascs_configure_codec(const void *cmd, uint16_t cmd_len, void *rsp, u
 
 	bt_conn_unref(conn);
 
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Failed to configure stream (err %d)", err);
 		return BTP_STATUS_FAILED;
 	}
@@ -1929,16 +1938,13 @@ struct btp_bap_unicast_connection *btp_bap_unicast_conn_get(size_t conn_index)
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	struct btp_bap_unicast_connection *u_conn;
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0) {
-		LOG_DBG("Failed to connect to %s (%u)", addr, err);
+		LOG_DBG("Failed to connect to %s (%u)", bt_conn_dst_str(conn), err);
 		return;
 	}
 
-	LOG_DBG("Connected: %s", addr);
+	LOG_DBG("Connected: %s", bt_conn_dst_str(conn));
 
 	u_conn = &connections[bt_conn_index(conn)];
 	memset(u_conn, 0, sizeof(*u_conn));
@@ -1947,11 +1953,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_DBG("Disconnected: %s (reason 0x%02x)", addr, reason);
+	LOG_DBG("Disconnected: %s (reason 0x%02x)", bt_conn_dst_str(conn), reason);
 }
 
 static struct bt_conn_cb conn_callbacks = {

@@ -22,4 +22,11 @@
 			bias-high-impedance;
 		};
 	};
+
+	usb_default: usb-default {
+		group1 {
+			pinmux = <BFLB_PINMUX(7, usb, dp, analog)>,
+				 <BFLB_PINMUX(8, usb, dm, analog)>;
+		};
+	};
 };

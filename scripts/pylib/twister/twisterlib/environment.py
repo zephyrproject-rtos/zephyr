@@ -1191,5 +1191,8 @@ class TwisterEnv:
             sys.exit(2)
         _variant = json.loads(result['stdout'])['ZEPHYR_TOOLCHAIN_VARIANT']
         self.compiler = json.loads(result['stdout'])['TOOLCHAIN_VARIANT_COMPILER']
-        self.toolchain = f"{_variant}/{self.compiler}"
+        self.toolchain = f"{_variant}"
+        if self.compiler:
+            # Only add "/..." if TOOLCHAIN_VARIANT_COMPILER is not empty
+            self.toolchain += f"/{self.compiler}"
         logger.info(f"Using '{self.toolchain}' toolchain variant.")

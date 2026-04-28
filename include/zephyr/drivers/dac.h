@@ -495,10 +495,7 @@ __syscall int dac_channel_setup(const struct device *dev,
 static inline int z_impl_dac_channel_setup(const struct device *dev,
 					   const struct dac_channel_cfg *channel_cfg)
 {
-	const struct dac_driver_api *api =
-				(const struct dac_driver_api *)dev->api;
-
-	return api->channel_setup(dev, channel_cfg);
+	return DEVICE_API_GET(dac, dev)->channel_setup(dev, channel_cfg);
 }
 
 /**
@@ -535,10 +532,7 @@ __syscall int dac_write_value(const struct device *dev, uint8_t channel,
 static inline int z_impl_dac_write_value(const struct device *dev,
 						uint8_t channel, uint32_t value)
 {
-	const struct dac_driver_api *api =
-				(const struct dac_driver_api *)dev->api;
-
-	return api->write_value(dev, channel, value);
+	return DEVICE_API_GET(dac, dev)->write_value(dev, channel, value);
 }
 
 /**

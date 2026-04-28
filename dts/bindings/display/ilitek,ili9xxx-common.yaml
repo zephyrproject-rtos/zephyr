@@ -31,3 +31,8 @@ properties:
     description:
       Display inversion mode. Every bit is inverted from the frame memory to
       the display.
+
+  red-blue-swap:
+    type: boolean
+    description: |
+      Panel controller expects RGB color channel order (not byte-order) instead of BGR.

@@ -402,7 +402,7 @@ Educational resources
 * `Linux Foundation CRA Readiness Report <https://www.linuxfoundation.org/research/cra-readiness>`_
 * `Linux Foundation CRA Compliance Best Practices
   <https://www.linuxfoundation.org/research/cra-compliance-best-practices>`_
-* `OpenSSF CRA Guidance <https://openssf.org/cra/>`_
+* `OpenSSF CRA Guidance <https://openssf.org/public-policy/eu-cyber-resilience-act/>`_
 
 Zephyr-specific resources
 =========================

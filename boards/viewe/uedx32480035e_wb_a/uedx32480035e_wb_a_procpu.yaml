@@ -1,0 +1,19 @@
+identifier: uedx32480035e_wb_a/esp32s3/procpu
+name: VIEWE UEDX32480035E-WB-A PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - counter
+  - watchdog
+  - entropy
+  - pwm
+  - dma
+  - input
+  - display
+vendor: viewe

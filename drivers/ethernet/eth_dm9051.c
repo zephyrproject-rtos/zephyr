@@ -749,9 +749,6 @@ static int eth_dm9051_set_config(const struct device *dev,
 			data->mac_addr[2], data->mac_addr[3],
 			data->mac_addr[4], data->mac_addr[5]);
 
-		net_if_set_link_addr(data->iface, data->mac_addr, sizeof(data->mac_addr),
-				     NET_LINK_ETHERNET);
-
 		return ret;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		if (!IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {

@@ -326,7 +326,6 @@ void hl78xx_release_socket_comms(struct hl78xx_data *data)
 	k_sem_give(&socket_data->lpm_wakeup_sem);
 }
 
-#if defined(CONFIG_MODEM_HL78XX_00)
 void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data)
 {
 	struct hl78xx_socket_data *socket_data =
@@ -356,7 +355,6 @@ void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data)
 		socket_data->udp_conn_status[i].err_code = UDP_SOCKET_ERROR;
 	}
 }
-#endif /* CONFIG_MODEM_HL78XX_00 */
 
 static void hl78xx_send_wakeup_signal(struct hl78xx_socket_data *socket_data)
 {
@@ -372,38 +370,39 @@ static int hl78xx_ensure_modem_awake(struct hl78xx_socket_data *socket_data)
 	}
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 	struct hl78xx_data *mdata = socket_data->mdata_global;
+#if defined(CONFIG_MODEM_HL78XX_PSM) || defined(CONFIG_MODEM_HL78XX_EDRX)
+	const struct hl78xx_config *config = (const struct hl78xx_config *)mdata->dev->config;
+#endif /* CONFIG_MODEM_HL78XX_PSM || CONFIG_MODEM_HL78XX_EDRX */
 	bool in_lpm = false;
 
 #ifdef CONFIG_MODEM_HL78XX_PSM
-	in_lpm = in_lpm ||
-		 (mdata->status.psmev.current == HL78XX_PSM_EVENT_EXIT &&
-		  mdata->status.psmev.previous == HL78XX_PSM_EVENT_ENTER) ||
-		 (mdata->status.psmev.current == HL78XX_PSM_EVENT_ENTER);
+	LOG_DBG("PSMEV previous: %d, current: %d, socket_lpm_recreate_required: %d",
+		mdata->status.psmev.previous, mdata->status.psmev.current,
+		config->variant->socket_lpm_recreate_required);
+	/* HL7800: keep ENTER->EXIT transition as "still in LPM" until restore completes.
+	 * HL7812: sockets/context are retained; treat ENTER->EXIT as awake.
+	 */
+	in_lpm = in_lpm || (mdata->status.psmev.current == HL78XX_PSM_EVENT_ENTER) ||
+		 ((mdata->status.psmev.current == HL78XX_PSM_EVENT_EXIT) &&
+		  (mdata->status.psmev.previous == HL78XX_PSM_EVENT_ENTER) &&
+		  config->variant->socket_lpm_recreate_required);
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 #ifdef CONFIG_MODEM_HL78XX_EDRX
-#ifdef CONFIG_MODEM_HL78XX_12
-	in_lpm = in_lpm || (mdata->status.edrxev.current == HL78XX_EDRX_EVENT_IDLE_ENTER);
+	{
+		bool early_return = false;
 
-	LOG_DBG("EDRX status: current=%d previous=%d is_edrx_idle_requested=%d",
-		mdata->status.edrxev.current, mdata->status.edrxev.previous,
-		mdata->status.edrxev.is_edrx_idle_requested);
+		if (config->variant->check_lpm_state) {
+			config->variant->check_lpm_state(mdata, &in_lpm, &early_return);
+		}
 
-	if (!in_lpm && !mdata->status.edrxev.is_edrx_idle_requested) {
-		return 0;
+		LOG_DBG("EDRX status: current=%d previous=%d is_edrx_idle_requested=%d",
+			mdata->status.edrxev.current, mdata->status.edrxev.previous,
+			mdata->status.edrxev.is_edrx_idle_requested);
+
+		if (early_return) {
+			return 0;
+		}
 	}
-#else /* CONFIG_MODEM_HL78XX_00 */
-	in_lpm = in_lpm || (mdata->status.edrxev.current == HL78XX_EDRX_EVENT_IDLE_ENTER) ||
-		 (mdata->status.edrxev.current == HL78XX_EDRX_EVENT_IDLE_EXIT &&
-		  mdata->status.edrxev.previous == HL78XX_EDRX_EVENT_IDLE_ENTER);
-	LOG_DBG("EDRX status: current=%d previous=%d is_edrx_idle_requested=%d",
-		mdata->status.edrxev.current, mdata->status.edrxev.previous,
-		mdata->status.edrxev.is_edrx_idle_requested);
-	/* Not currently in eDRX sleep and no idle sleep requested → awake */
-	if (!in_lpm && !mdata->status.edrxev.is_edrx_idle_requested) {
-		return 0;
-	}
-
-#endif /* CONFIG_MODEM_HL78XX_12 */
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
 	in_lpm = in_lpm || (mdata->status.power_down.current == POWER_DOWN_EVENT_ENTER);
@@ -650,7 +649,7 @@ exit:
 }
 
 #ifdef CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
-#ifdef CONFIG_MODEM_HL78XX_12
+#ifdef CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC
 /**
  * @brief Handle modem state update from +KSTATE URC of RAT Scan Finish.
  * This command is intended to report events for different important state transitions and system
@@ -690,7 +689,7 @@ void hl78xx_on_kstatev_parser(struct hl78xx_data *data, int state, int rat_mode)
 		break;
 	}
 }
-#endif
+#endif /* CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC */
 /**
  * @brief This function doesn't handle incoming UDP data.
  * It is just a placeholder for verbose debug logging of incoming UDP data.
@@ -1311,7 +1310,7 @@ void notif_carrier_on(const struct device *dev)
 	net_if_carrier_on(socket_data->net_iface);
 }
 
-void iface_status_work_cb(struct hl78xx_data *data, modem_chat_script_callback script_user_callback)
+int iface_status_work_cb(struct hl78xx_data *data, modem_chat_script_callback script_user_callback)
 {
 
 	const char *cmd = "AT+CGCONTRDP=1";
@@ -1320,9 +1319,18 @@ void iface_status_work_cb(struct hl78xx_data *data, modem_chat_script_callback s
 	ret = modem_dynamic_cmd_send(data, script_user_callback, cmd, strlen(cmd),
 				     hl78xx_get_cgdcontrdp_match(), 1, MDM_CMD_TIMEOUT, false);
 	if (ret < 0) {
-		LOG_ERR("Failed to send AT+CGCONTRDP command: %d", ret);
-		return;
+		int err = (errno > 0) ? -errno : ret;
+
+		if (err == -EBUSY) {
+			LOG_WRN("AT+CGCONTRDP busy, will retry");
+		} else {
+			LOG_ERR("Failed to send AT+CGCONTRDP command: %d", err);
+		}
+
+		return err;
 	}
+
+	return 0;
 }
 
 int dns_work_cb(const struct device *dev, bool hard_reset)
@@ -2313,13 +2321,17 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 		return -1;
 	}
 
-#if defined(CONFIG_MODEM_HL78XX_00) && defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)
+#if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)
 	/* HL7800: after PSM/eDRX wake, modem-side socket contexts are lost.
 	 * If the socket ID was invalidated, transparently re-create it.
 	 * For TCP, offload_connect() handles this. For UDP, sendto() is
 	 * the first point of contact so we re-create here.
 	 */
-	if (!modem_socket_id_is_assigned(&socket_data->socket_config, sock)) {
+	const struct hl78xx_config *config =
+		(const struct hl78xx_config *)socket_data->mdata_global->dev->config;
+
+	if (config->variant->socket_lpm_recreate_required &&
+	    !modem_socket_id_is_assigned(&socket_data->socket_config, sock)) {
 		const struct net_sockaddr *recreate_addr = to ? to : &sock->dst;
 
 		if (recreate_addr->sa_family == 0) {
@@ -2339,7 +2351,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 		}
 		LOG_DBG("Socket fd=%d re-created with modem_id=%d", sock->sock_fd, sock->id);
 	}
-#endif /* CONFIG_MODEM_HL78XX_00 && CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
 	/* Only send up to MTU bytes. */
 	if (len > MDM_MAX_DATA_LENGTH) {

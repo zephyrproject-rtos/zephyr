@@ -14,7 +14,6 @@
 		led7 = &led7;
 		sw0 = &switch0;
 		sw1 = &switch1;
-		sw2 = &switch2;
 		sw2 = &switch3;
 	};
 

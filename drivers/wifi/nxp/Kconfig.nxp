@@ -1,4 +1,4 @@
-# Copyright 2022-2025 NXP
+# Copyright 2022-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig WIFI_NXP
@@ -675,7 +675,6 @@ config NXP_WIFI_MAX_PRIO
 
 config NXP_WIFI_SOFTAP_SUPPORT
 	bool "Wi-Fi SoftAP Support"
-	select NET_DHCPV4_SERVER
 	select WIFI_NM_HOSTAPD_AP if WIFI_NM_WPA_SUPPLICANT
 	imply WIFI_NM_HOSTAPD_WPS if WIFI_NM_HOSTAPD_AP && WIFI_NM_WPA_SUPPLICANT_WPS
 	imply WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE if WIFI_NM_HOSTAPD_AP && WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
@@ -700,6 +699,11 @@ config NXP_WIFI_SOFTAP_IP_MASK
 config NXP_WIFI_SOFTAP_IP_BASE
 	string "NXP SoftAP base address"
 	default "192.168.10.2"
+
+config NXP_WIFI_SOFTAP_DHCP_SERVER
+	bool "DHCP server for SoftAP"
+	default y
+	select NET_DHCPV4_SERVER
 
 config NXP_WIFI_CAPA
 	bool "Wi-Fi Soft AP Capability"
@@ -828,7 +832,7 @@ config NXP_WIFI_5GHz_SUPPORT
 
 config NXP_WIFI_TX_RX_ZERO_COPY
 	bool "Zero memory copy TX/RX data packets"
-	depends on NXP_RW610 || SDHC_SUPPORTS_SCATTER_GATHER_TRANSFER
+	depends on (NXP_RW610 || SDHC_SUPPORTS_SCATTER_GATHER_TRANSFER) && NXP_WIFI_WMM
 	select SDHC_SCATTER_GATHER_TRANSFER if !NXP_RW610
 	select NET_L2_ETHERNET_RESERVE_HEADER if !NXP_RW610
 	imply NET_IPV4_FRAGMENT
@@ -887,18 +891,12 @@ config NXP_WIFI_MAX_CSI_LOCAL_BUF
 	help
 	  This option sets the max csi local buffer entry.
 
-config NXP_WIFI_CSI_LOCAL_BUF_ENTRY_SIZE
-	int "Max size of every csi local buffer entry"
-	default 768
-	depends on NXP_WIFI_CSI
-	help
-	  This option sets the size of every csi local buffer entry.
-
 config NXP_WIFI_RESET
 	bool "Wi-Fi reset"
 	default y
-	imply NXP_WIFI_IND_DNLD if NXP_IW610 && !NXP_WIFI_CUSTOM_HOST
-	imply NXP_WIFI_IND_RESET if NXP_IW610 && !NXP_WIFI_CUSTOM_HOST
+	imply NXP_WIFI_IND_DNLD if (NXP_IW610 || NXP_IW61X || NXP_IW416)
+	imply NXP_WIFI_IND_RESET if (NXP_IW610 || NXP_IW61X || NXP_IW416)
+	imply NXP_WIFI_IND_OOB_RESET if (NXP_IW610 || NXP_IW61X || NXP_IW416) && !NXP_WIFI_CUSTOM_HOST
 	help
 	  This option is used to enable/disable/reset Wi-Fi.
 
@@ -1175,7 +1173,7 @@ config NXP_WIFI_CUSTOM_CALDATA
 	help
 	  This option force to use custom calibration data.
 
-if NXP_88W8987 || NXP_IW416 || NXP_IW610
+if NXP_88W8987 || NXP_IW416 || NXP_IW610 || NXP_IW61X
 
 config NXP_WIFI_FW_AUTO_RECONNECT
 	bool "Firmware Auto Reconnect"
@@ -1193,6 +1191,11 @@ config NXP_WIFI_IND_RESET
 	help
 	  This option enables the use of Wi-Fi independent reset support.
 
+config NXP_WIFI_IND_OOB_RESET
+	bool "Wi-Fi Independent Out-of-band Reset"
+	depends on NXP_WIFI_IND_RESET && NXP_WIFI_IND_DNLD
+	help
+	  Add another Wi-Fi independent reset option by external GPIO.
 endif
 
 config NXP_WIFI_SMOKE_TESTS

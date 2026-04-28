@@ -42,6 +42,7 @@ struct dwmac_priv {
 	mem_addr_t base_addr;
 	struct net_if *iface;
 	const struct device *clock;
+	const struct device *phy_dev;
 
 	uint8_t mac_addr[6];
 

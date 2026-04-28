@@ -304,8 +304,8 @@ wdog: watchdog@40000400 {
 	compatible = "microchip,xec-watchdog";
 	reg = <0x40000400 0x400>;
 	interrupts = <171 0>;
-	girqs = <21 2>;
-	pcrs = <1 9>;
+	girqs = <MCHP_XEC_ECIA_GIRQ_ENC(21, 2)>;
+	pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 9)>;
 };
 
 rtimer: timer@40007400 {
@@ -506,7 +506,6 @@ i2c_smb_0: i2c@40004000 {
 	reg = <0x40004000 0x80>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <20 1>;
-	girqs = <13 0>;
 	girqs = <MCHP_XEC_ECIA_GIRQ_ENC(13, 0)>;
 	pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 10)>;
 	#address-cells = <1>;
@@ -721,8 +720,8 @@ kbd0: kbd@40009c00 {
 	compatible = "microchip,xec-kbd";
 	reg = <0x40009c00 0x18>;
 	interrupts = <135 0>;
-	girqs = <21 25>;
-	pcrs = <3 11>;
+	girqs = <MCHP_XEC_ECIA_GIRQ_ENC(21, 25)>;
+	pcrs = <MCHP_XEC_SCR_ENCODE(3, 11)>;
 	status = "disabled";
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -1045,12 +1044,12 @@ espi0: espi@400f3400 {
 	};
 
 	rtc0: rtc@400f5000 {
-		compatible = "microchip,xec-espi-host-dev";
+		compatible = "microchip,xec-rtc";
 		reg = <0x400f5000 0x100>;
 		interrupts = <119 3>, <120 3>;
 		girqs = <MCHP_XEC_ECIA(21, 8, 13, 119)
 			 MCHP_XEC_ECIA(21, 9, 13, 120)>;
-		pcrs = <2 18>;
+		pcr-scr = <MCHP_XEC_SCR_ENCODE(2, 18)>;
 		ldn = <20>;
 		status = "disabled";
 	};
@@ -1082,8 +1081,8 @@ symcr: symcr@40100000 {
 	compatible = "microchip,xec-symcr";
 	reg = <0x40100000 0x1000>;
 	interrupts = <68 1>;
-	clocks = <&pcr 3 26 MCHP_XEC_PCR_CLK_PERIPH>;
-	girqs = <16 3>;
+	pcr = <MCHP_XEC_SCR_ENCODE(3, 26)>;
+	girqs = <MCHP_XEC_ECIA_GIRQ_ENC(16, 3)>;
 	status = "disabled";
 	#address-cells = <1>;
 	#size-cells = <1>;

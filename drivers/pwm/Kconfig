@@ -1,7 +1,6 @@
 # PWM configuration options
 
 # Copyright (c) 2015 Intel Corporation
-# Copyright (c) 2025 Siemens SA
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig PWM
@@ -40,16 +39,11 @@ config PWM_EVENT
 	  This option extends the Zephyr PWM API with the ability to configure
 	  and receive PWM events.
 
-config PWM_WITH_DMA
-	bool "Provide API for using PWM with DMA"
-	help
-	  This option extends the Zephyr PWM API with the ability to trigger DMA
-	  requests from PWM channels.
-
 # zephyr-keep-sorted-start
 source "drivers/pwm/Kconfig.ambiq_timer"
 source "drivers/pwm/Kconfig.b91"
 source "drivers/pwm/Kconfig.bflb"
+source "drivers/pwm/Kconfig.bitbang"
 source "drivers/pwm/Kconfig.cc13xx_cc26xx_timer"
 source "drivers/pwm/Kconfig.cc23x0_timer"
 source "drivers/pwm/Kconfig.ene"

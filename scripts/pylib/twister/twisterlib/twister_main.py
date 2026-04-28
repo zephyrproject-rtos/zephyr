@@ -81,7 +81,7 @@ class Twister:
 
     def clean_previous_results(self) -> str | None:
         """Run cleanup and return a results from previous session."""
-        previous_results = None
+        previous_results: str | None = None
         if (
             self.options.no_clean
             or self.options.only_failed
@@ -95,18 +95,17 @@ class Twister:
                 print("Keeping artifacts untouched")
         elif self.options.last_metrics:
             ls = os.path.join(self.options.outdir, "twister.json")
-            if os.path.exists(ls):
-                with open(ls) as fp:
-                    previous_results = fp.read()
-            else:
+            if not os.path.exists(ls):
                 sys.exit(f"Can't compare metrics with non existing file {ls}")
+            with open(ls) as fp:
+                previous_results = fp.read()
         elif os.path.exists(self.options.outdir):
             if self.options.clobber_output:
                 print(f"Deleting output directory {self.options.outdir}")
                 shutil.rmtree(self.options.outdir)
             else:
                 for i in range(1, 100):
-                    new_out = self.options.outdir + f".{i}"
+                    new_out = f"{self.options.outdir}.{i}"
                     if not os.path.exists(new_out):
                         print(f"Renaming previous output directory to {new_out}")
                         shutil.move(self.options.outdir, new_out)
@@ -127,12 +126,12 @@ class Twister:
 
     def export_previous_results(self, previous_results: str | None) -> str | None:
         """Export previous results to a file and return path to that file."""
-        previous_results_file = None
-        os.makedirs(self.options.outdir, exist_ok=True)
-        if self.options.last_metrics and previous_results:
-            previous_results_file = os.path.join(self.options.outdir, "baseline.json")
-            with open(previous_results_file, "w") as fp:
-                fp.write(previous_results)
+        if not (self.options.last_metrics and previous_results):
+            return
+
+        previous_results_file = os.path.join(self.options.outdir, "baseline.json")
+        with open(previous_results_file, "w") as fp:
+            fp.write(previous_results)
         return previous_results_file
 
     def create_test_plan(self, env: TwisterEnv) -> TestPlan:
@@ -141,7 +140,7 @@ class Twister:
         try:
             tplan.discover()
         except RuntimeError as e:
-            self.logger.error(f"{e}")
+            self.logger.error(str(e))
             raise SystemExit(1) from e
 
         if tplan.report() == 0:
@@ -150,7 +149,7 @@ class Twister:
         try:
             tplan.load()
         except RuntimeError as e:
-            self.logger.error(f"{e}")
+            self.logger.error(str(e))
             raise SystemExit(1) from e
 
         return tplan
@@ -167,16 +166,15 @@ class Twister:
         """Print additional info for verbose."""
         for i in tplan.instances.values():
             if i.status in [TwisterStatus.SKIP, TwisterStatus.FILTER]:
-                if (
-                    self.options.platform
-                    and not tplan.check_platform(i.platform, self.options.platform)
+                if self.options.platform and not tplan.check_platform(
+                    i.platform, self.options.platform
                 ):
                     continue
                 # Filtered tests should be visible only when verbosity > 1
                 if self.options.verbose < 2 and i.status == TwisterStatus.FILTER:
                     continue
                 res = i.reason
-                if "Quarantine" in i.reason:
+                if "Quarantine" in i.reason:  # type: ignore[union-attr]
                     res = "Quarantined"
                 self.logger.info(
                     f"{i.platform.name:<25} {i.testsuite.name:<50}"
@@ -239,19 +237,19 @@ class Twister:
         duration = time.time() - self.start_time
 
         if self.options.verbose > 1:
-            self.runner.results.summary()
+            self.runner.results.summary()  # type: ignore[union-attr]
 
-        report.summary(self.runner.results, duration)
+        report.summary(self.runner.results, duration)  # type: ignore[union-attr]
 
         report.coverage_status = True
         if self.options.coverage and not self.options.disable_coverage_aggregation:
             if not self.options.build_only:
-                report.coverage_status, report.coverage = run_coverage(self.options, self.tplan)
+                report.coverage_status, _ = run_coverage(self.options, self.tplan)
             else:
                 self.logger.info("Skipping coverage report generation due to --build-only.")
 
         if self.options.device_testing and not self.options.build_only:
-            self.hwm.summary(self.tplan.selected_platforms)
+            self.hwm.summary(self.tplan.selected_platforms)  # type: ignore[union-attr]
 
         report.save_reports(
             self.options.report_name,
@@ -268,12 +266,12 @@ class Twister:
             artifacts.package()
 
         if (
-            self.runner.results.failed
-            or self.runner.results.error
-            or (self.tplan.warnings and self.options.warnings_as_errors)
+            self.runner.results.failed  # type: ignore[union-attr]
+            or self.runner.results.error  # type: ignore[union-attr]
+            or (self.tplan.warnings and self.options.warnings_as_errors)  # type: ignore[union-attr]
             or (self.options.coverage and not report.coverage_status)
         ):
-            if self.env.options.quit_on_failure:
+            if self.env.options.quit_on_failure:  # type: ignore[union-attr]
                 self.logger.info("twister aborted because of a failure/error")
             else:
                 self.logger.info("Run completed")
@@ -287,6 +285,8 @@ class Twister:
         self.configure_color_output()
 
         previous_results = self.clean_previous_results()
+        if not os.path.exists(self.options.outdir):
+            os.makedirs(self.options.outdir, exist_ok=True)
         previous_results_file = self.export_previous_results(previous_results)
 
         setup_logging(
@@ -299,7 +299,7 @@ class Twister:
         self.env = TwisterEnv(self.options, self.default_options)
         self.env.discover()
 
-        self.hwm = self.env.hwm = self.discover_hardware_map(self.env)
+        self.hwm = self.env.hwm = self.discover_hardware_map(self.env)  # type: ignore[union-attr]
 
         self.tplan = self.create_test_plan(self.env)
 
@@ -342,7 +342,7 @@ def twister(options: argparse.Namespace, default_options: argparse.Namespace) ->
     warnings.warn(
         "Function `twister` is deprecated, use `Twister` class instead",
         DeprecationWarning,
-        stacklevel=2
+        stacklevel=2,
     )
     return Twister(options, default_options).run()
 

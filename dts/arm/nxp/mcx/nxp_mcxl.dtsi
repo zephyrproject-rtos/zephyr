@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -269,6 +269,15 @@
 		/* DMA channels 0 and 1 muxed to LPUART0 RX and TX */
 		dmas = <&edma0 0 113>, <&edma0 1 114>;
 		dma-names = "rx", "tx";
+	};
+
+	rtc: rtc@9a000 {
+		compatible = "nxp,rtc-analog";
+		reg = <0x9a000 0x1000>;
+		interrupts = <140 0>, <141 0>, <142 0>;
+		interrupt-names = "alarm0", "alarm1", "alarm2";
+		alarms-count = <3>;
+		status = "disabled";
 	};
 };
 

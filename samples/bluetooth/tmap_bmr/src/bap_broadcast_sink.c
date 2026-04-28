@@ -5,10 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/lc3.h>
@@ -294,7 +296,7 @@ static int reset(void)
 	if (broadcast_sink != NULL) {
 		int err = bt_bap_broadcast_sink_delete(broadcast_sink);
 
-		if (err) {
+		if (err != 0) {
 			printk("Deleting broadcast sink failed (err %d)\n", err);
 
 			return err;
@@ -320,7 +322,7 @@ int bap_broadcast_sink_init(void)
 	int err;
 
 	err = bt_pacs_register(&pacs_param);
-	if (err) {
+	if (err != 0) {
 		printk("Could not register PACS (err %d)\n", err);
 		return err;
 	}
@@ -329,7 +331,7 @@ int bap_broadcast_sink_init(void)
 	bt_le_per_adv_sync_cb_register(&broadcast_sync_cb);
 
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
-	if (err) {
+	if (err != 0) {
 		printk("Capability register failed (err %d)\n", err);
 		return err;
 	}
@@ -358,7 +360,7 @@ int bap_broadcast_sink_run(void)
 		bt_le_scan_cb_register(&broadcast_scan_cb);
 		/* Start scanning */
 		err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
-		if (err) {
+		if (err != 0) {
 			printk("Scan start failed (err %d)\n", err);
 			return err;
 		}

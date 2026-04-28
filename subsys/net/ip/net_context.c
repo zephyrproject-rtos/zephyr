@@ -596,6 +596,7 @@ int net_context_get(net_sa_family_t family, enum net_sock_type type, uint16_t pr
 			if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
 				struct net_sockaddr_in6 *addr6 =
 					(struct net_sockaddr_in6 *)&contexts[i].local;
+				addr6->sin6_family = NET_AF_INET6;
 				addr6->sin6_port =
 					find_available_port(&contexts[i],
 							    (struct net_sockaddr *)addr6);
@@ -616,6 +617,7 @@ int net_context_get(net_sa_family_t family, enum net_sock_type type, uint16_t pr
 				struct net_sockaddr_in *addr =
 					(struct net_sockaddr_in *)&contexts[i].local;
 
+				addr->sin_family = NET_AF_INET;
 				addr->sin_port =
 					find_available_port(&contexts[i],
 							    (struct net_sockaddr *)addr);
@@ -2258,9 +2260,19 @@ static int context_setup_raw_ip_packet(net_sa_family_t family,
 
 		if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt),
 						 NET_IF_CHECKSUM_IPV4_HEADER)) {
+			uint16_t chksum = 0;
+
 			ipv4_hdr->chksum = 0;
-			ipv4_hdr->chksum = net_calc_chksum_ipv4(pkt);
-			net_pkt_set_data(pkt, &ipv4_access);
+			ret = net_calc_chksum_ipv4(pkt, &chksum);
+			if (ret < 0) {
+				return ret;
+			}
+
+			ipv4_hdr->chksum = chksum;
+			ret = net_pkt_set_data(pkt, &ipv4_access);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 
 		net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
@@ -2788,6 +2800,16 @@ skip_alloc:
 			goto fail;
 		}
 
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMPING)
+		if (context->options.timestamping & ZSOCK_SOF_TIMESTAMPING_TX_HARDWARE) {
+			net_pkt_set_tx_timestamping(pkt, true);
+		}
+
+		if (context->options.timestamping & ZSOCK_SOF_TIMESTAMPING_RX_HARDWARE) {
+			net_pkt_set_rx_timestamping(pkt, true);
+		}
+#endif
+
 		net_pkt_cursor_init(pkt);
 
 		struct net_sockaddr_ll_ptr *ll_src_addr;
@@ -2808,6 +2830,7 @@ skip_alloc:
 
 		net_pkt_set_ll_proto_type(pkt, net_ntohs(ll_dst_addr->sll_protocol));
 
+		net_stats_update_raw_sent(net_pkt_iface(pkt), len);
 		net_if_try_queue_tx(net_pkt_iface(pkt), pkt, timeout);
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == NET_AF_CAN &&
 		   net_context_get_proto(context) == NET_CAN_RAW) {

@@ -15,28 +15,17 @@ static K_SEM_DEFINE(g_mbox_data_rx_sem, 0, 1);
 static uint32_t g_mbox_received_data;
 static uint32_t g_mbox_received_channel;
 
-#define CHANNELS_TO_TEST 4
 #define TX_CHANNEL_INDEX 0
 #define RX_CHANNEL_INDEX 1
 
-static const struct mbox_dt_spec channels[CHANNELS_TO_TEST][2] = {
-	{
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx0),
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx0),
-	},
-	{
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx1),
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx1),
-	},
-	{
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx2),
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx2),
-	},
-	{
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), tx3),
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), rx3),
-	},
-};
+#define CHANNEL_ENTRY(_i, ...)                                                                     \
+	{                                                                                          \
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), CONCAT(tx, _i)),                          \
+		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), CONCAT(rx, _i)),                          \
+	}
+
+static const struct mbox_dt_spec channels[CONFIG_CHANNELS_TO_TEST][2] = {
+	LISTIFY(CONFIG_CHANNELS_TO_TEST, CHANNEL_ENTRY, (,)) };
 
 static void callback(const struct device *dev, uint32_t channel, void *user_data,
 		     struct mbox_msg *data)

@@ -103,6 +103,7 @@
 			reg = <0>;
 			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
+			d-cache-line-size = <32>;
 			hardware-exec-breakpoint-count = <4>;
 			status = "okay";
 
@@ -337,10 +338,19 @@
 			reg = <0x4000b000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 			status = "okay";
 
 			interrupts = <39 0>;
 			interrupt-parent = <&clic>;
+		};
+
+		usb0: usb@4000d800 {
+			compatible = "bflb,udc-1";
+			reg = <0x4000d800 0x200>;
+			interrupts = <37 0>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		dma0: dma@4000c000 {
@@ -414,7 +424,7 @@
 		};
 
 		bt_hci_bflb: bt-hci {
-			compatible = "bflb,bl70x-bt-hci";
+			compatible = "bflb,bt-hci";
 			status = "disabled";
 		};
 	};

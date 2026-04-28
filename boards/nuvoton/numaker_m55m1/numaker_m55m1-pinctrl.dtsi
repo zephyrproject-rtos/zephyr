@@ -62,4 +62,17 @@
 				 <PA15MFP_USB_OTG_ID>;
 		};
 	};
+
+	/* SDHC multi-function pins for DAT0-DAT3, CMD, CLK, and nCD */
+	sdhc0_default: sdhc0_default {
+		group0 {
+			pinmux = <PE2MFP_SD0_DAT0>,
+				 <PE3MFP_SD0_DAT1>,
+				 <PE4MFP_SD0_DAT2>,
+				 <PE5MFP_SD0_DAT3>,
+				 <PE7MFP_SD0_CMD>,
+				 <PE6MFP_SD0_CLK>,
+				 <PD13MFP_SD0_nCD>;
+		};
+	};
 };

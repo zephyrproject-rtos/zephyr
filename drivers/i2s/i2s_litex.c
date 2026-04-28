@@ -400,7 +400,7 @@ static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
 
 #if CONFIG_I2S_LITEX_CHANNELS_CONCATENATED
 #if CONFIG_I2S_LITEX_DATA_BIG_ENDIAN
-	LOG_ERR("Big endian is not uspported "
+	LOG_ERR("Big endian is not supported "
 			"when channels are conncatenated");
 	return -EINVAL;
 #endif

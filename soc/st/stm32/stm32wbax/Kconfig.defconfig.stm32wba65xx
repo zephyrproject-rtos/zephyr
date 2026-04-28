@@ -5,11 +5,11 @@
 
 if SOC_STM32WBA65XX
 
-config NUM_IRQS
-	default 82
-
 # BL2 implementation not available yet
 config TFM_BL2_NOT_SUPPORTED
 	default y
+
+config STM32_INT_FLASH_SECURE_BASE_ADDRESS
+	default 0x0c000000
 
 endif # SOC_STM32WBA65XX

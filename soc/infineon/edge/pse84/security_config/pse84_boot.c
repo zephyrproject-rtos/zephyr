@@ -10,9 +10,6 @@
 #if defined(CONFIG_SOC_PSE84_M55_ENABLE)
 void ifx_pse84_cm55_startup(void)
 {
-	/* SAU Init */
-	cy_sau_init();
-
 	/* Setup System Control Block */
 	SysCtrlBlk_Setup();
 	/* Setup NS NVIC interrupts */

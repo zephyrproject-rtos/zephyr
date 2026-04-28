@@ -296,7 +296,7 @@ __syscall int sdhc_hw_reset(const struct device *dev);
 
 static inline int z_impl_sdhc_hw_reset(const struct device *dev)
 {
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = DEVICE_API_GET(sdhc, dev);
 
 	if (!api->reset) {
 		return -ENOSYS;
@@ -326,7 +326,7 @@ static inline int z_impl_sdhc_request(const struct device *dev,
 				      struct sdhc_command *cmd,
 				      struct sdhc_data *data)
 {
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = DEVICE_API_GET(sdhc, dev);
 
 	if (!api->request) {
 		return -ENOSYS;
@@ -352,7 +352,7 @@ __syscall int sdhc_set_io(const struct device *dev, struct sdhc_io *io);
 static inline int z_impl_sdhc_set_io(const struct device *dev,
 				     struct sdhc_io *io)
 {
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = DEVICE_API_GET(sdhc, dev);
 
 	if (!api->set_io) {
 		return -ENOSYS;
@@ -376,7 +376,7 @@ __syscall int sdhc_card_present(const struct device *dev);
 
 static inline int z_impl_sdhc_card_present(const struct device *dev)
 {
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = DEVICE_API_GET(sdhc, dev);
 
 	if (!api->get_card_present) {
 		return -ENOSYS;
@@ -401,7 +401,7 @@ __syscall int sdhc_execute_tuning(const struct device *dev);
 
 static inline int z_impl_sdhc_execute_tuning(const struct device *dev)
 {
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = DEVICE_API_GET(sdhc, dev);
 
 	if (!api->execute_tuning) {
 		return -ENOSYS;
@@ -425,7 +425,7 @@ __syscall int sdhc_card_busy(const struct device *dev);
 
 static inline int z_impl_sdhc_card_busy(const struct device *dev)
 {
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = DEVICE_API_GET(sdhc, dev);
 
 	if (!api->card_busy) {
 		return -ENOSYS;
@@ -451,7 +451,7 @@ __syscall int sdhc_get_host_props(const struct device *dev,
 static inline int z_impl_sdhc_get_host_props(const struct device *dev,
 					     struct sdhc_host_props *props)
 {
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = DEVICE_API_GET(sdhc, dev);
 
 	if (!api->get_host_props) {
 		return -ENOSYS;
@@ -483,7 +483,7 @@ static inline int z_impl_sdhc_enable_interrupt(const struct device *dev,
 					       sdhc_interrupt_cb_t callback,
 					       int sources, void *user_data)
 {
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = DEVICE_API_GET(sdhc, dev);
 
 	if (!api->enable_interrupt) {
 		return -ENOSYS;
@@ -509,7 +509,7 @@ __syscall int sdhc_disable_interrupt(const struct device *dev, int sources);
 static inline int z_impl_sdhc_disable_interrupt(const struct device *dev,
 						int sources)
 {
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
+	const struct sdhc_driver_api *api = DEVICE_API_GET(sdhc, dev);
 
 	if (!api->disable_interrupt) {
 		return -ENOSYS;

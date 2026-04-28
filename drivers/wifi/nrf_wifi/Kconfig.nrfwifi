@@ -228,6 +228,13 @@ config NRF70_SR_COEX_SWCTRL1_OUTPUT
 config NRF70_SR_COEX_BT_GRANT_ACTIVE_LOW
 	int "Configure BT grant active low"
 	default 1
+
+config NRF70_BT_SLOT_TIME
+	int "BT slot allocation time in Wi-Fi scan (ms)"
+	range 0 255
+	default 0
+	help
+	  Time allocated in milliseconds for SR between successive Wi-Fi channel scan.
 endif # NRF70_SR_COEX
 
 config NRF70_WORKQ_STACK_SIZE
@@ -612,10 +619,10 @@ if NETWORKING
 # Note: These will take effect only if the symbol is not defined already
 # (i.e., the original symbol is processed after "drivers/Kconfig")
 config NET_TX_STACK_SIZE
-	default 4096
+	default 4096 if !NRF70_SCAN_ONLY
 
 config NET_RX_STACK_SIZE
-	default 4096
+	default 4096 if !NRF70_SCAN_ONLY
 
 config NET_TC_TX_COUNT
 	default 1

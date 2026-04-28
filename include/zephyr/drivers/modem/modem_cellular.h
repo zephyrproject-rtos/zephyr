@@ -53,6 +53,10 @@ extern "C" {
 #define MODEM_CELLULAR_MAX_APN_CMDS          (2)
 #define MODEM_CELLULAR_APN_BUF_SIZE          (64)
 
+/* Zephyr networking interface states:
+ *    NET_IF_LOWER_UP: Carrier is on in AWAIT_REGISTERED and REGISTERED
+ *     NET_IF_DORMANT: Interface is dormant in every state except REGISTERED
+ */
 enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_IDLE = 0,
 	MODEM_CELLULAR_STATE_RESET_PULSE,
@@ -68,8 +72,8 @@ enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_RUN_APN_SCRIPT,
 	MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT,
 	MODEM_CELLULAR_STATE_AWAIT_REGISTERED,
-	MODEM_CELLULAR_STATE_CARRIER_ON,
-	MODEM_CELLULAR_STATE_DORMANT,
+	MODEM_CELLULAR_STATE_REGISTERED,
+	MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD,
 	MODEM_CELLULAR_STATE_INIT_POWER_OFF,
 	MODEM_CELLULAR_STATE_RUN_SHUTDOWN_SCRIPT,
 	MODEM_CELLULAR_STATE_POWER_OFF_PULSE,
@@ -119,7 +123,7 @@ struct modem_cellular_data {
 	struct modem_cmux_dlci dlci2;
 	struct modem_pipe *dlci1_pipe;
 	struct modem_pipe *dlci2_pipe;
-	/* Points to dlci2_pipe or NULL. Used for shutdown script if not NULL */
+	/* Points to dlci1_pipe or NULL. Used for shutdown script if not NULL */
 	struct modem_pipe *cmd_pipe;
 	uint8_t dlci1_receive_buf[MODEM_CMUX_WORK_BUFFER_SIZE];
 	/* DLCI 2 is only used for chat scripts. */

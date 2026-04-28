@@ -106,7 +106,7 @@ static int nxp_tempsense_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("Clock device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->clock_dev);
 		return -ENODEV;
 	}
 
@@ -118,7 +118,7 @@ static int nxp_tempsense_init(const struct device *dev)
 	}
 
 	if (!device_is_ready(config->adc)) {
-		LOG_ERR("ADC device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->adc);
 		return -ENODEV;
 	}
 

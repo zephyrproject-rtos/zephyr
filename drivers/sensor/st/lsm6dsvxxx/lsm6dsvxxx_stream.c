@@ -68,6 +68,8 @@ int lsm6dsvxxx_gbias_get_config(const struct device *dev, enum sensor_channel ch
 	return 0;
 }
 
+void lsm6dsvxxx_stream_irq_handler(const struct device *dev);
+
 void lsm6dsvxxx_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	struct lsm6dsvxxx_data *data = dev->data;
@@ -112,6 +114,11 @@ void lsm6dsvxxx_submit_stream(const struct device *dev, struct rtio_iodev_sqe *i
 	}
 
 	data->streaming_sqe = iodev_sqe;
+
+	/* if GPIO is already at high level then serve interrupt */
+	if (gpio_pin_get_dt(data->drdy_gpio)) {
+		lsm6dsvxxx_stream_irq_handler(data->dev);
+	}
 
 	lsm6dsvxxx_gpio_pin_enable(config, data->drdy_gpio);
 }
@@ -187,7 +194,7 @@ static void lsm6dsvxxx_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	bool has_fifo_ths_trig = fifo_ths_cfg != NULL && fifo_th == 1;
 	bool has_fifo_full_trig = fifo_full_cfg != NULL && fifo_full == 1;
 
-	/* check if no theshold/full fifo interrupt or spurious interrupts */
+	/* check if no threshold/full fifo interrupt or spurious interrupts */
 	if (!has_fifo_ths_trig && !has_fifo_full_trig) {
 		/* complete operation with no error */
 		rtio_iodev_sqe_ok(sqe->userdata, 0);

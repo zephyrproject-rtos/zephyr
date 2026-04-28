@@ -1,3 +1,6 @@
+# Copyright (c) 2025 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
 *.ssid max_size:32 max_length:31
 *.bssid max_size:17
 *.mac max_size:17

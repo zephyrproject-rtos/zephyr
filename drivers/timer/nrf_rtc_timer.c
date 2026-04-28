@@ -288,7 +288,7 @@ static int set_alarm(int32_t chan, uint32_t req_cc, bool exact)
 
 #if CUSTOM_COUNTER_BIT_WIDTH
 		/* If a CC value is 0 when a CLEAR task is set, this will not
-		 * trigger a COMAPRE event. Need to use 1 instead.
+		 * trigger a COMPARE event. Need to use 1 instead.
 		 */
 		if ((cc_val & COUNTER_MAX) == 0) {
 			cc_val = 1;

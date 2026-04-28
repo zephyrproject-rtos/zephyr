@@ -136,6 +136,18 @@
 #define NRF_FUN_QSPI_IO2 33U
 /** QSPI IO3 */
 #define NRF_FUN_QSPI_IO3 34U
+/** MSPI SCK */
+#define NRF_FUN_MSPI_SCK NRF_FUN_QSPI_SCK
+/** MSPI CSN */
+#define NRF_FUN_MSPI_CSN NRF_FUN_QSPI_CSN
+/** MSPI IO0 */
+#define NRF_FUN_MSPI_IO0 NRF_FUN_QSPI_IO0
+/** MSPI IO1 */
+#define NRF_FUN_MSPI_IO1 NRF_FUN_QSPI_IO1
+/** MSPI IO2 */
+#define NRF_FUN_MSPI_IO2 NRF_FUN_QSPI_IO2
+/** MSPI IO3 */
+#define NRF_FUN_MSPI_IO3 NRF_FUN_QSPI_IO3
 /** EXMIF CK */
 #define NRF_FUN_EXMIF_CK 35U
 /** EXMIF DQ0 */
@@ -267,7 +279,7 @@
 /**
  * @brief Utility macro to build nRF psels property entry.
  *
- * @param fun Pin function configuration (see NRF_FUNC_{name} macros).
+ * @param fun Pin function configuration (see NRF_FUN_{name} macros).
  * @param port Port (0 or 15).
  * @param pin Pin (0..31).
  */

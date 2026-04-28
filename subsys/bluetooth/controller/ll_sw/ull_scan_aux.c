@@ -869,7 +869,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		}
 
 		/* Associate the auxiliary context with sync context, we do this
-		 * for ULL scheduling also in constrast to how extended
+		 * for ULL scheduling also in contrast to how extended
 		 * advertising only associates when LLL scheduling is used.
 		 * Each Periodic Advertising chain is received by unique sync
 		 * context, hence LLL and ULL scheduling is always associated
@@ -2239,7 +2239,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		}
 
 		/* Associate the auxiliary context with sync context, we do this
-		 * for ULL scheduling also in constrast to how extended
+		 * for ULL scheduling also in contrast to how extended
 		 * advertising only associates when LLL scheduling is used.
 		 * Each Periodic Advertising chain is received by unique sync
 		 * context, hence LLL and ULL scheduling is always associated

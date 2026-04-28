@@ -518,7 +518,7 @@ static void config_dac_path_volume(uintptr_t reg, int volume)
 	 *   0xb   5.5db
 	 *   0xc   mute
 	 *   -----------------------------------------------------------
-	 *   dac rough volume contrl range from -36db to 54db, step is 6db.
+	 *   dac rough volume control range from -36db to 54db, step is 6db.
 	 *   0x0   -36db
 	 *   0x1   -30db
 	 *    ....

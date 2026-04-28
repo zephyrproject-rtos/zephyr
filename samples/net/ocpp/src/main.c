@@ -27,6 +27,10 @@
 
 #include "net_sample_common.h"
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+#include "credentials/certificate.h"
+#endif
+
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 #define NO_OF_CONN 2
@@ -327,7 +331,12 @@ int main(void)
 	int i;
 	char *ip = NULL;
 
-	struct ocpp_cp_info cpi = { "basic", "zephyr", .num_of_con = NO_OF_CONN };
+	struct ocpp_cp_info cpi = {
+		"basic",   "zephyr",  .num_of_con = NO_OF_CONN,
+		"SNCP001", "SNBX001", "v0.1",
+		"ICCIS",   "IMSI",    "MPMSN001",
+		"MPMTYPE",
+	};
 	struct ocpp_cs_info csi = {NULL,
 				   CONFIG_NET_SAMPLE_OCPP_WS_PATH,
 				   CONFIG_NET_SAMPLE_OCPP_PORT,
@@ -346,6 +355,23 @@ int main(void)
 
 	ocpp_get_time_from_sntp();
 
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	sec_tag_t tags[] = {CA_CERTIFICATE_TAG};
+
+	ret = tls_credential_add(CA_CERTIFICATE_TAG,
+				 TLS_CREDENTIAL_CA_CERTIFICATE,
+				 ca_certificate,
+				 sizeof(ca_certificate));
+	if (ret < 0) {
+		LOG_ERR("Failed to register CA certificate: %d", ret);
+		return ret;
+	}
+
+	csi.creds.sec_tag_list = tags;
+	csi.creds.tls_hostname = TLS_PEER_HOSTNAME;
+	csi.creds.sec_tag_list_size = sizeof(tags);
+	csi.creds.tls_hostname_size = strlen(TLS_PEER_HOSTNAME);
+#endif
 	ret = ocpp_init(&cpi,
 			&csi,
 			user_notify_cb,

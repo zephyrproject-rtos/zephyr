@@ -275,7 +275,7 @@ static int clock_on(const struct clock_mchp_config *config, const union clock_mc
 	switch (subsys.bits.type) {
 	case SUBSYS_TYPE_OSCHF:
 	case SUBSYS_TYPE_OSC32K:
-		/* Subsytem is on by default*/
+		/* Subsystem is on by default*/
 		break;
 
 	case SUBSYS_TYPE_XOSC32K:
@@ -323,7 +323,7 @@ static int clock_off(const struct clock_mchp_config *config, const union clock_m
 	switch (subsys.bits.type) {
 	case SUBSYS_TYPE_OSCHF:
 	case SUBSYS_TYPE_OSC32K:
-		/* Subsytem cannot be turned off */
+		/* Subsystem cannot be turned off */
 		ret_status = -ENOTSUP;
 		break;
 

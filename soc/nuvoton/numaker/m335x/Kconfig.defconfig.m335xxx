@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_M335XXX
+
+config NUM_IRQS
+	default 139
+
+endif # SOC_M335XXX

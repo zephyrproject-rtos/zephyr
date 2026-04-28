@@ -173,7 +173,7 @@ static int ifx_tcpwm_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	}
 
 	/* Special case, if period_cycles is 0, set the period and compare to zero.  If we were to
-	 * disable the PWM, the output would be set to High-Z, wheras this will set the output to
+	 * disable the PWM, the output would be set to High-Z, whereas this will set the output to
 	 * the zero duty cycle state instead.
 	 */
 	if (period_cycles == 0) {

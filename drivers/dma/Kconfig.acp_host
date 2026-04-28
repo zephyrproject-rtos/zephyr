@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# Copyright (c) 2026 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DMA_AMD_ACP_HOST
+	bool "AMD ACP host DMA driver"
+	default y
+	depends on DMA && DT_HAS_AMD_ACP_HOST_DMA_ENABLED
+	help
+	  Enable support for AMD Audio Co-Processor (ACP) host DMA driver.
+	  This driver provides DMA functionality for host memory transfers
+	  in AMD ACP 7.0 audio subsystem, supporting audio data movement
+	  between system memory and ACP audio processing units.
+
+if DMA_AMD_ACP_HOST
+
+config DMA_AMD_ACP_HOST_CHANNEL_COUNT
+	int "Maximum channel count"
+	default 10
+	help
+	  Maximum number of host DMA channels.
+
+config DMA_AMD_ACP_BUFFER_ALIGN
+	int "Buffer alignment in bytes"
+	default 64
+	help
+	  Alignment in bytes for memory regions passed to this driver,
+	  used to adjust a memory region's size and base address.
+
+config DMA_AMD_ACP_BUFFER_ADDRESS_ALIGN
+	int "Buffer address alignment in bytes"
+	default 64
+	help
+	  Alignment in bytes for buffer addresses passed to this driver,
+	  used to adjust a memory region's buffer address.
+
+config DMA_AMD_ACP_ATTR_MAX_BLOCK_COUNT
+	int "Maximum block count"
+	default 2
+	help
+	  Maximum number of blocks per DMA transfer.
+
+endif # DMA_AMD_ACP_HOST

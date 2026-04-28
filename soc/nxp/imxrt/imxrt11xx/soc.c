@@ -42,6 +42,29 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #include <cmsis_core.h>
 
 #define DUAL_CORE_MU_ENABLED (CONFIG_SECOND_CORE_MCUX && CONFIG_IPM && CONFIG_IPM_IMX)
+#define ARM_PLL_NODE           DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_imxrt11xx_arm_pll)
+#define ARM_PLL_HAS_LOOP_DIV   DT_NODE_HAS_PROP(ARM_PLL_NODE, loop_div)
+#define ARM_PLL_HAS_POST_DIV   DT_NODE_HAS_PROP(ARM_PLL_NODE, post_div)
+#define ARM_PLL_HAS_CLOCK_DIV  DT_NODE_HAS_PROP(ARM_PLL_NODE, clock_div)
+#define ARM_PLL_HAS_CLOCK_MULT DT_NODE_HAS_PROP(ARM_PLL_NODE, clock_mult)
+
+#if ARM_PLL_HAS_CLOCK_MULT
+#define ARM_PLL_LOOP_DIV (DT_PROP(ARM_PLL_NODE, clock_mult) * 2)
+#else
+#define ARM_PLL_LOOP_DIV DT_PROP(ARM_PLL_NODE, loop_div)
+#endif
+
+#if ARM_PLL_HAS_CLOCK_DIV
+#define ARM_PLL_POST_DIV DT_PROP(ARM_PLL_NODE, clock_div)
+#else
+#define ARM_PLL_POST_DIV DT_PROP(ARM_PLL_NODE, post_div)
+#endif
+
+#define ARM_PLL_POST_DIV_ENUM \
+	((ARM_PLL_POST_DIV == 1) ? kCLOCK_PllPostDiv1 : \
+	(ARM_PLL_POST_DIV == 2) ? kCLOCK_PllPostDiv2 : \
+	(ARM_PLL_POST_DIV == 4) ? kCLOCK_PllPostDiv4 : \
+	kCLOCK_PllPostDiv8)
 
 #if DUAL_CORE_MU_ENABLED
 /* Dual core mode is enabled, and messaging unit is present */
@@ -157,7 +180,6 @@ __weak void clock_init(void)
 
 	/* Init OSC RC 400M */
 	CLOCK_OSC_EnableOscRc400M();
-	CLOCK_OSC_GateOscRc400M(true);
 
 	/* Init OSC RC 48M */
 	CLOCK_OSC_EnableOsc48M(true);
@@ -202,9 +224,19 @@ __weak void clock_init(void)
 	 * changed in the following PLL/PFD configuration code.
 	 */
 
+	BUILD_ASSERT(ARM_PLL_HAS_LOOP_DIV || ARM_PLL_HAS_CLOCK_MULT,
+		     "ARM PLL requires loop-div or deprecated clock-mult");
+	BUILD_ASSERT(ARM_PLL_HAS_POST_DIV || ARM_PLL_HAS_CLOCK_DIV,
+		     "ARM PLL requires post-div or deprecated clock-div");
+	BUILD_ASSERT((ARM_PLL_POST_DIV == 1) || (ARM_PLL_POST_DIV == 2) ||
+		     (ARM_PLL_POST_DIV == 4) || (ARM_PLL_POST_DIV == 8),
+		     "ARM PLL post divider must be 1, 2, 4, or 8");
+	BUILD_ASSERT(ARM_PLL_LOOP_DIV >= 104 && ARM_PLL_LOOP_DIV <= 208,
+		     "ARM PLL loop divider must be in range 104-208");
+
 	static const clock_arm_pll_config_t armPllConfig = {
-		.postDivider = CONCAT(kCLOCK_PllPostDiv, DT_PROP(DT_NODELABEL(arm_pll), clock_div)),
-		.loopDivider = DT_PROP(DT_NODELABEL(arm_pll), clock_mult) * 2,
+		.postDivider = ARM_PLL_POST_DIV_ENUM,
+		.loopDivider = ARM_PLL_LOOP_DIV,
 	};
 
 	if (IS_ENABLED(CONFIG_INIT_ARM_PLL)) {
@@ -556,7 +588,7 @@ __weak void clock_init(void)
 #endif
 #endif
 
-#if !(DT_NODE_HAS_COMPAT(DT_PARENT(DT_CHOSEN(zephyr_flash)), nxp_imx_flexspi)) &&  \
+#if !(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_flash_controller), nxp_imx_flexspi_nor)) &&  \
 	defined(CONFIG_MEMC_MCUX_FLEXSPI) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi))
 	/* Configure FLEXSPI1 using OSC_RC_48M_DIV2 */
 	rootCfg.mux = kCLOCK_FLEXSPI1_ClockRoot_MuxOscRc48MDiv2;
@@ -564,7 +596,7 @@ __weak void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Flexspi1, &rootCfg);
 #endif
 
-#if !(DT_NODE_HAS_COMPAT(DT_PARENT(DT_CHOSEN(zephyr_flash)), nxp_imx_flexspi)) &&  \
+#if !(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_flash_controller), nxp_imx_flexspi_nor)) &&  \
 	defined(CONFIG_MEMC_MCUX_FLEXSPI) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi2))
 	/* Configure FLEXSPI2 using OSC_RC_48M_DIV2 */
 	rootCfg.mux = kCLOCK_FLEXSPI2_ClockRoot_MuxOscRc48MDiv2;
@@ -759,11 +791,7 @@ static int imxrt_init(void)
 	/* Initialize system clock */
 	clock_init();
 
-#if defined(CONFIG_IMX_USDHC) && defined(CONFIG_CPU_CORTEX_M7) &&                                  \
-	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1)) ||                                          \
-	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc2)))
-	/* USDHC ERR050396 workaround */
-
+#if defined(CONFIG_CPU_CORTEX_M7)
 	/* ERR050396
 	 * Errata description:
 	 *  AXI to AHB conversion for CM7 AHBS port (port to access CM7 to TCM) is by a NIC301
@@ -773,9 +801,20 @@ static int imxrt_init(void)
 	 * Errata workaround:
 	 *  For uSDHC, don't set the bit#1 of IOMUXC_GPR28 (AXI transaction is cacheable), if write
 	 *  data to TCM aligned in 4 bytes; No such write access limitation for OCRAM or external
-	 *  RAM
+	 *  RAM.
+	 *  For ENET, clear CACHE_ENET if TCM is used as the write destination.
 	 */
+#if defined(CONFIG_IMX_USDHC) && \
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1)) || \
+	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc2)))
+	/* USDHC ERR050396 workaround */
 	IOMUXC_GPR->GPR28 &= (~IOMUXC_GPR_GPR28_AWCACHE_USDHC_MASK);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet)) && defined(IOMUXC_GPR_GPR28_CACHE_ENET_MASK)
+	/* ENET ERR050396 workaround */
+	IOMUXC_GPR->GPR28 &= (~IOMUXC_GPR_GPR28_CACHE_ENET_MASK);
+#endif
 #endif
 
 	return 0;

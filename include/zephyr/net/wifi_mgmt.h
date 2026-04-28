@@ -863,6 +863,8 @@ struct wifi_iface_status {
 	enum wifi_wpa3_enterprise_type wpa3_ent_type;
 	/** Security type, see enum wifi_security_type */
 	enum wifi_security_type security;
+	/** WEP key type (64-bit or 128-bit), see enum wifi_wep_key_type */
+	enum wifi_wep_key_type wep_key_type;
 	/** MFP options, see enum wifi_mfp_options */
 	enum wifi_mfp_options mfp;
 	/** RSSI */
@@ -1199,8 +1201,13 @@ struct wifi_filter_info {
 
 /** @brief Wi-Fi channel setting for monitor and TX-injection modes */
 struct wifi_channel_info {
-	/** Channel value to set */
+	/** Channel value to set or get */
 	uint16_t channel;
+	/** Frequency band for the channel (2.4 / 5 / 6 GHz). Use WIFI_FREQ_BAND_UNKNOWN
+	 *  to let the driver infer when unambiguous (e.g. 36-165 is 5 GHz). Required
+	 *  when channel is ambiguous (e.g. 1-14 can be 2.4 or 6 GHz).
+	 */
+	enum wifi_frequency_bands band;
 	/** Interface index */
 	uint8_t if_index;
 	/** Get or set operation */

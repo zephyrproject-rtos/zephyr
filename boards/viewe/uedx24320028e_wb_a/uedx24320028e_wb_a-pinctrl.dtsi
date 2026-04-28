@@ -47,4 +47,17 @@
 			output-low;
 		};
 	};
+
+	sdhc0_default: sdhc0_default {
+		group1 {
+			pinmux = <SDHC0_CMD_GPIO17>,
+				 <SDHC0_CLKOUT_GPIO14>,
+				 <SDHC0_DATA0_GPIO16>,
+				 <SDHC0_DATA1_GPIO18>,
+				 <SDHC0_DATA2_GPIO15>,
+				 <SDHC0_DATA3_GPIO21>;
+			bias-pull-up;
+			output-high;
+		};
+	};
 };

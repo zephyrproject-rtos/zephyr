@@ -27,7 +27,7 @@ static void arc_shared_intc_init(void)
 {
 	/*
 	 * Initialize all IDU interrupts:
-	 * - select round-robbin
+	 * - select round-robin
 	 * - disable all lines
 	 */
 	BUILD_ASSERT(CONFIG_NUM_IRQS > ARC_CONNECT_IDU_IRQ_START);

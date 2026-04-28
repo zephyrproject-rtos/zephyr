@@ -41,3 +41,10 @@ set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
 if(CONFIG_INTEL_ADSP_FWREADY_MSG)
   zephyr_library_sources(fw_ready.c)
 endif()
+
+zephyr_linker_sources(NOINIT noinit.ld)
+
+zephyr_library_sources_ifdef(
+  CONFIG_KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK
+  custom_mem_range_check.c
+)

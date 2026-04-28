@@ -15,6 +15,7 @@ tests:
       - esp32c3_devkitc
       - esp32c6_devkitc/esp32c6/hpcore
       - nucleo_c071rb
+      - nucleo_c5a3zg
       - nucleo_f091rc
       - nucleo_f207zg
       - nucleo_f429zi

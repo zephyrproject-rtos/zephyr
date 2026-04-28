@@ -54,21 +54,66 @@ config GENVIF_INPUT_VIF_XML_PATH
 	  Absolute path or relative path (w.r.to the application source
 	  directory) of the GenVIF input VIF XML file.
 
+config USBC_CSM_SUPPORTS_SINK
+	bool
+	help
+	  Indicates that the USB-C state machine supports sink operation.
+
+config USBC_CSM_SUPPORTS_SOURCE
+	bool
+	help
+	  Indicates that the USB-C state machine supports source operation.
+
 choice USBC_CSM_TYPE
 	prompt "USB-C Connection State Machine"
 	default USBC_CSM_SINK_ONLY
 
 config USBC_CSM_SINK_ONLY
 	bool "Sink USB-C Connection State Machine"
+	select USBC_CSM_SUPPORTS_SINK
 	help
 	  Allows the USB-C state machine to function as a Sink
 
 config USBC_CSM_SOURCE_ONLY
-	bool "Source USBC Connection State Machine"
+	bool "Source USB-C Connection State Machine"
+	select USBC_CSM_SUPPORTS_SOURCE
 	help
 	  Allow the USB-C state machine to function as a Source
 
+config USBC_CSM_DRP
+	bool "Dual Role Power (DRP) USB-C Connection State Machine"
+	select USBC_CSM_SUPPORTS_SINK
+	select USBC_CSM_SUPPORTS_SOURCE
+	help
+	  Allows the USB-C state machine to function as a Dual Role Power.
+	  Per USB Type-C specification, DRP toggles between Source (Rp) and
+	  Sink (Rd) roles when unattached, starting in Unattached.SNK state.
+
 endchoice
+
+config USBC_DRP_PERIOD_MS
+	int "DRP toggle period (tDRP) in milliseconds"
+	depends on USBC_CSM_DRP
+	default 75
+	range 50 100
+	help
+	  The period a DRP shall complete a Source to Sink and back
+	  advertisement. Per USB Type-C spec: tDRP = 50-100ms.
+	  This is the total time for one complete toggle cycle.
+
+config USBC_DRP_DUTY_CYCLE
+	int "DRP Source duty cycle percentage"
+	depends on USBC_CSM_DRP
+	default 50
+	range 30 70
+	help
+	  The percent of tDRP that a DRP shall advertise Source (Rp).
+	  Per USB Type-C spec: 30-70%.
+
+	  Examples:
+	    50% = Equal time as Source and Sink (balanced)
+	    30% = Prefer Sink role (70% as Sink, 30% as Source)
+	    70% = Prefer Source role (70% as Source, 30% as Sink)
 
 module = USBC_STACK
 module-str = usbc stack

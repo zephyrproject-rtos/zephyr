@@ -734,15 +734,11 @@ static int udc_rpi_pico_ep_dequeue(const struct device *dev,
 				   struct udc_ep_config *const cfg)
 {
 	unsigned int lock_key;
-	struct net_buf *buf;
 
 	lock_key = irq_lock();
 
 	rpi_pico_ep_cancel(dev, cfg->addr);
-	buf = udc_buf_get_all(cfg);
-	if (buf) {
-		udc_submit_ep_event(dev, buf, -ECONNABORTED);
-	}
+	udc_ep_cancel_queued(dev, cfg);
 
 	irq_unlock(lock_key);
 

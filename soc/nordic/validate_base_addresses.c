@@ -263,12 +263,24 @@ CHECK_DT_REG(reset, NRF_RESET);
 CHECK_DT_REG(cpuapp_resetinfo, NRF_APPLICATION_RESETINFO);
 CHECK_DT_REG(cpurad_resetinfo, NRF_RADIOCORE_RESETINFO);
 CHECK_DT_REG(rng, NRF_RNG);
+#ifdef NRF_RTC
 CHECK_DT_REG(rtc, NRF_RTC);
+#endif
+#ifdef NRF_RTC0
 CHECK_DT_REG(rtc0, NRF_RTC0);
+#endif
+#ifdef NRF_RTC1
 CHECK_DT_REG(rtc1, NRF_RTC1);
+#endif
+#ifdef NRF_RTC2
 CHECK_DT_REG(rtc2, NRF_RTC2);
+#endif
+#ifdef NRF_RTC130
 CHECK_DT_REG(rtc130, NRF_RTC130);
+#endif
+#ifdef NRF_RTC131
 CHECK_DT_REG(rtc131, NRF_RTC131);
+#endif
 CHECK_SPI_REG(spi0, 0);
 CHECK_SPI_REG(spi1, 1);
 CHECK_SPI_REG(spi2, 2);
@@ -361,7 +373,7 @@ CHECK_DT_REG(cpuflpr_clic, NRF_FLPR_VPRCLIC);
 CHECK_DT_REG(cpuppr_clic, NRF_PPR_VPRCLIC);
 #if defined(CONFIG_SOC_SERIES_NRF54L)
 CHECK_DT_REG(cpuflpr_vpr, NRF_VPR00);
-#elif defined(CONFIG_NRF_PLATFORM_HALTIUM)
+#elif defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)
 CHECK_DT_REG(cpuflpr_vpr, NRF_VPR121);
 CHECK_DT_REG(cpuppr_vpr, NRF_VPR130);
 #endif

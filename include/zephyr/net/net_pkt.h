@@ -1,6 +1,9 @@
 /** @file
  * @brief Network packet buffer descriptor API
  *
+ * @note This structure is not thread-safe. Single-thread access is expected
+ * for a given net_pkt instance at any one time (Exclusive Ownership model).
+ *
  * Network data is passed between different parts of the stack via
  * net_buf struct.
  */

@@ -36,7 +36,7 @@ static void test_main(void)
 	};
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
@@ -47,7 +47,7 @@ static void test_main(void)
 
 	/* Set adv data */
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to set advertising data (err %d)\n", err);
 		return;
 	}

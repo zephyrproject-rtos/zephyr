@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-#define STACK_SIZE 256
+#define STACK_SIZE   1024
 #define THREAD_COUNT 7
 
 static struct k_thread threads[THREAD_COUNT];

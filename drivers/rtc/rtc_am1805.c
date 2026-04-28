@@ -431,7 +431,7 @@ static int am1805_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 		goto unlock;
 	}
 
-	/* Enable timer after the initialization for the config of repetation */
+	/* Enable timer after the initialization for the config of repetition */
 	err = i2c_reg_update_byte_dt(&config->int_i2c, REG_TIMER_CTRL_ADDR,
 					TIMER_CTRL_ALM_SEC, TIMER_CTRL_ALM_SEC);
 
@@ -490,7 +490,7 @@ static void am1805_interrupt_thread(const struct device *dev)
 		k_sem_take(&data->int_sem, K_FOREVER);
 
 		if (data->alarm_user_callback == NULL) {
-			LOG_DBG("Interrupt received, But No Alarm-Callback Initilized!!\n");
+			LOG_DBG("Interrupt received, But No Alarm-Callback Initialized!!\n");
 			continue;
 		}
 		data->alarm_user_callback(dev, 0, data->alarm_user_data);

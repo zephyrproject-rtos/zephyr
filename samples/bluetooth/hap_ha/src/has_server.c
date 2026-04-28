@@ -5,6 +5,7 @@
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -95,7 +96,7 @@ int has_server_init(void)
 	}
 
 	err = bt_has_register(&features);
-	if (err) {
+	if (err != 0) {
 		return err;
 	}
 

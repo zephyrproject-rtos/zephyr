@@ -63,7 +63,7 @@ Before running an application, certain images provided by Realtek must be progra
 
 .. code-block:: console
 
-   $ west blobs fetch hal_realtek --allow-regex 'bee/rtl8752h/bin/.*'
+   $ west blobs fetch hal_realtek --allow-regex 'bee/rtl8752h/.*'
 
 These images need to be downloaded using ``mpcli``. For guidance on how to use mpcli and how to put the board into download mode, please refer to :ref:`Using MPCli <using_mpcli>`.
 

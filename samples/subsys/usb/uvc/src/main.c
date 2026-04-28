@@ -105,7 +105,7 @@ static int app_add_format(uint32_t pixfmt, uint32_t width, uint32_t height, bool
 		return 0;
 	}
 
-	ret = uvc_add_format(uvc_dev, &fmt);
+	ret = uvc_device_add_format(uvc_dev, &fmt);
 	if (ret == -ENOMEM) {
 		/* If there are too many formats, ignore the error, just list fewer formats */
 		return 0;
@@ -345,11 +345,17 @@ int main(void)
 		uvc_buf_count /= 2;
 	}
 
-	/* Must be called before usb_enable() */
-	uvc_set_video_dev(uvc_dev, uvc_src_dev);
+	/* Initialize control descriptors from the video device */
+	uvc_device_init(uvc_dev, uvc_src_dev);
 
-	/* Must be called before usb_enable() */
+	/* Fill the table of formats */
 	ret = app_add_filtered_formats();
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Prepare the UVC device for being run */
+	ret = uvc_device_enable(uvc_dev);
 	if (ret != 0) {
 		return ret;
 	}

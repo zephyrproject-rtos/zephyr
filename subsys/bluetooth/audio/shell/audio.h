@@ -173,7 +173,8 @@ void bap_usb_get_frame(struct shell_stream *sh_stream, enum bt_audio_location ch
 size_t bap_usb_get_frame_size(const struct shell_stream *sh_stream);
 
 struct broadcast_source {
-	bool is_cap;
+	bool is_cap: 1;
+	bool handover_in_progress: 1;
 	union {
 		struct bt_bap_broadcast_source *bap_source;
 		struct bt_cap_broadcast_source *cap_source;
@@ -233,6 +234,7 @@ struct scan_delegator_sync_state {
 #define BAP_UNICAST_AC_MAX_SRC    (2U * BAP_UNICAST_AC_MAX_CONN)
 #define BAP_UNICAST_AC_MAX_PAIR   MAX(BAP_UNICAST_AC_MAX_SNK, BAP_UNICAST_AC_MAX_SRC)
 #define BAP_UNICAST_AC_MAX_STREAM (BAP_UNICAST_AC_MAX_SNK + BAP_UNICAST_AC_MAX_SRC)
+#define BAP_BROADCAST_AC_MAX_STREAMS 2U
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 
@@ -267,11 +269,30 @@ extern struct named_lc3_preset default_sink_preset;
 extern struct named_lc3_preset default_source_preset;
 
 int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *param);
+
+#if defined(CONFIG_BT_CAP_INITIATOR)
+#define CAP_UNICAST_CLIENT_STREAM_COUNT ARRAY_SIZE(unicast_streams)
+
+extern struct bt_cap_unicast_audio_start_stream_param
+	cap_initiator_audio_start_stream_params[CAP_UNICAST_CLIENT_STREAM_COUNT];
+extern struct bt_cap_unicast_group_stream_param
+	cap_initiator_unicast_group_stream_params[CAP_UNICAST_CLIENT_STREAM_COUNT];
+extern struct bt_cap_unicast_group_stream_pair_param
+	cap_initiator_unicast_group_pair_params[CAP_UNICAST_CLIENT_STREAM_COUNT];
+extern struct bt_cap_unicast_audio_start_param cap_initiator_unicast_audio_start_param;
+extern struct bt_cap_unicast_group_param cap_initiator_unicast_group_param;
+#endif /* CONFIG_BT_CAP_INITIATOR */
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
 
 #if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
 extern struct broadcast_assistant_recv_state broadcast_assistant_recv_states[CONFIG_BT_MAX_CONN];
+
+#if defined(CONFIG_BT_CAP_COMMANDER)
+extern struct bt_cap_commander_broadcast_reception_stop_param cap_commander_reception_stop_param;
+extern struct bt_cap_commander_broadcast_reception_stop_member_param
+	cap_commander_reception_stop_member_params[CONFIG_BT_MAX_CONN];
+#endif /* CONFIG_BT_CAP_COMMANDER */
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 #if defined(CONFIG_BT_BAP_SCAN_DELEGATOR)
 extern struct scan_delegator_sync_state
@@ -842,6 +863,21 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 extern struct shell_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 extern struct broadcast_source default_source;
 extern struct named_lc3_preset default_broadcast_source_preset;
+
+#if defined(CONFIG_BT_CAP_INITIATOR)
+#define MAX_CAP_BROADCAST_STREAMS                                                                  \
+	MAX(BAP_BROADCAST_AC_MAX_STREAMS,                                                          \
+	    COND_CODE_1(CONFIG_BT_CAP_HANDOVER, (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT), (0)))
+BUILD_ASSERT(CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT >= MAX_CAP_BROADCAST_STREAMS,
+	     "CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT needs to be equal to or greater than "
+	     "MAX_CAP_BROADCAST_STREAMS");
+
+extern struct bt_cap_initiator_broadcast_stream_param
+	cap_initiator_broadcast_stream_params[MAX_CAP_BROADCAST_STREAMS];
+
+extern struct bt_cap_initiator_broadcast_subgroup_param cap_initiator_broadcast_subgroup_param;
+extern struct bt_cap_initiator_broadcast_create_param cap_initiator_broadcast_create_param;
+#endif /* CONFIG_BT_CAP_INITIATOR */
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 static inline bool print_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis,

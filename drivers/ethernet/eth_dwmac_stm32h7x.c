@@ -83,7 +83,7 @@ PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *eth0_pcfg =
 	PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
-static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(DT_INST_PARENT(0));
+static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
 static struct net_eth_mac_config mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0);
 
 int dwmac_bus_init(struct dwmac_priv *p)
@@ -93,9 +93,16 @@ int dwmac_bus_init(struct dwmac_priv *p)
 	p->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	for (size_t n = 0; n < ARRAY_SIZE(pclken); n++) {
-		ret  = clock_control_on(p->clock, (clock_control_subsys_t)&pclken[n]);
-		if (ret) {
-			LOG_ERR("Failed to enable ethernet clock #%zu", n);
+		if (IN_RANGE(pclken[n].bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
+			ret = clock_control_on(p->clock, (clock_control_subsys_t)&pclken[n]);
+		} else {
+			ret = clock_control_configure(p->clock,
+						      (clock_control_subsys_t)&pclken[n],
+						      NULL);
+		}
+
+		if (ret != 0) {
+			LOG_ERR("Failed to setup ethernet clock #%zu", n);
 			return -EIO;
 		}
 	}
@@ -108,7 +115,7 @@ int dwmac_bus_init(struct dwmac_priv *p)
 
 	STM32_CONFIGURE_ETH_PHY_MODE();
 
-	p->base_addr = DT_REG_ADDR(DT_INST_PARENT(0));
+	p->base_addr = DT_INST_REG_ADDR(0);
 	return 0;
 }
 
@@ -125,6 +132,8 @@ static struct dwmac_dma_desc dwmac_rx_descs[NB_RX_DESCS] __desc_mem;
 int dwmac_platform_init(struct dwmac_priv *p)
 {
 	int ret;
+
+	p->phy_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, phy_handle));
 
 	p->tx_descs = dwmac_tx_descs;
 	p->rx_descs = dwmac_rx_descs;

@@ -792,6 +792,7 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
             children.append(node_output_dir)
         if node_others.height != 0:
             # Only include "others" node if there is something.
+            node_others._size = sum_node_children_size(node_others)
             children.append(node_others)
 
         if args.workspace:

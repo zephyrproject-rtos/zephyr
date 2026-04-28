@@ -1225,7 +1225,7 @@ static void csip_set_coordinator_lock_state_read_cb(int err, bool locked)
 	const struct bt_csip_set_coordinator_set_info *info = &active.info;
 	struct bt_csip_set_coordinator_set_member *cur_member = NULL;
 
-	if (err || locked) {
+	if (err != 0 || locked) {
 		cur_member = active.members[active.members_handled];
 	} else if (active.oap_cb == NULL || !active.oap_cb(info, active.members,
 		   active.members_count)) {

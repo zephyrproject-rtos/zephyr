@@ -44,6 +44,8 @@ int dwmac_platform_init(struct dwmac_priv *p)
 	uint8_t *desc_uncached_addr;
 	uintptr_t desc_phys_addr;
 
+	p->phy_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, phy_handle));
+
 	/* make sure no valid cache lines map to the descriptor area */
 	sys_cache_data_invd_range(dwmac_tx_rx_descriptors,
 				  sizeof(dwmac_tx_rx_descriptors));

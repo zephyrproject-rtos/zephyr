@@ -534,7 +534,7 @@ static uint16_t fw_upload_wait_length(uint8_t flag)
 	}
 
 	len = sys_get_le16(buffer);
-	len_comp = sys_get_le16(buffer);
+	len_comp = sys_get_le16(&buffer[2]);
 
 	if ((len ^ len_comp) == 0xFFFF) {
 		LOG_DBG("remote asks for %d bytes", len);
@@ -734,7 +734,9 @@ static int fw_upload_write_hdr_and_payload(uint16_t len_to_send, uint8_t *buffer
 		}
 
 		if (fw_upload_len_valid(fw_upload.last_5bytes_buffer, &len_to_send) == 0) {
-			fw_upload_send_ack(V1_REQUEST_ACK);
+			uint8_t ack = V1_REQUEST_ACK;
+
+			fw_upload_write_data(&ack, sizeof(ack));
 			LOG_DBG("BOOT_HEADER_ACK 0x5a sent");
 		}
 	}
@@ -1315,7 +1317,7 @@ static int bt_nxp_set_calibration_data_annex55(void)
 							/* BIT[1] Disable Pwr Ctrl for class 2=0 */
 							/* BIT[2] MiscFlg(to indicate ext.XTAL)=0 */
 							/* BIT[3] Used Internal Sleep Clock = 0 */
-							/* BIT[4] BT AOA localtion support = 0 */
+							/* BIT[4] BT AOA location support = 0 */
 							/* BIT[5] Force Class 1 mode = 0 */
 							/* BIT[7:6] Reserved */
 			0x00,        /* AOANumberOfAntennas: 0x00 */

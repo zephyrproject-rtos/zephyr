@@ -23,7 +23,7 @@ CREATE_FLAG(g_service_discovered);
 
 static void discover_cb(struct bt_conn *conn, int err)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to discover IAS (err %d)\n", err);
 		return;
 	}

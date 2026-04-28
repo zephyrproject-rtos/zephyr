@@ -27,6 +27,8 @@ module-str = dma
 source "subsys/logging/Kconfig.template.log_config"
 
 # zephyr-keep-sorted-start
+source "drivers/dma/Kconfig.acp_host"
+source "drivers/dma/Kconfig.acp_sdw"
 source "drivers/dma/Kconfig.andes_atcdmacx00"
 source "drivers/dma/Kconfig.bflb"
 source "drivers/dma/Kconfig.dma_pl330"
@@ -50,6 +52,7 @@ source "drivers/dma/Kconfig.nios2_msgdma"
 source "drivers/dma/Kconfig.npcx"
 source "drivers/dma/Kconfig.nxp_4ch_dma"
 source "drivers/dma/Kconfig.nxp_edma"
+source "drivers/dma/Kconfig.nxp_gdma"
 source "drivers/dma/Kconfig.nxp_sdma"
 source "drivers/dma/Kconfig.nxp_sof_host_dma"
 source "drivers/dma/Kconfig.renesas_ra"

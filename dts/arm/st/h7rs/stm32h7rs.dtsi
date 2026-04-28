@@ -193,6 +193,8 @@
 
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <32>;
 				erase-block-size = <DT_SIZE_K(8)>;
 				/* maximum erase time for a 8K sector */
@@ -457,6 +459,12 @@
 			alarms-count = <2>;
 			alrm-exti-line = <17>;
 			status = "disabled";
+
+			bbram: backup_regs {
+				compatible = "st,stm32-bbram";
+				st,backup-regs = <32>;
+				status = "disabled";
+			};
 		};
 
 		i2c1: i2c@40005400 {
@@ -570,7 +578,7 @@
 			reg = <0x40013000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI1_SEL(0)>;
-			interrupts = <35 3>;
+			interrupts = <35 0>;
 			status = "disabled";
 		};
 
@@ -633,7 +641,7 @@
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x40002c00 0x1000>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
-			interrupts = <4 7>;
+			interrupts = <4 0>;
 			status = "disabled";
 		};
 
@@ -930,7 +938,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40002400 0x400>;
-			interrupts = <119 1>;
+			interrupts = <119 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
@@ -949,6 +957,7 @@
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-deep-powerdown;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -966,6 +975,7 @@
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-deep-powerdown;
 			st,adc-has-differential-support;
+			st,adc-has-injected-support;
 			status = "disabled";
 		};
 
@@ -979,20 +989,16 @@
 			status = "disabled";
 		};
 
-		ethernet@40028000 {
+		mac: ethernet@40028000 {
+			compatible = "st,stm32h7-ethernet", "st,stm32-ethernet";
 			reg = <0x40028000 0x8000>;
-			compatible = "st,stm32-ethernet-controller";
 			clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx";
 			clocks = <&rcc STM32_CLOCK(AHB1, 15)>,
 				 <&rcc STM32_CLOCK(AHB1, 16)>,
 				 <&rcc STM32_CLOCK(AHB1, 17)>;
-
-			mac: ethernet {
-				compatible = "st,stm32h7-ethernet", "st,stm32-ethernet";
-				interrupts = <92 0>;
-				memory-regions = <&sram2>;
-				status = "disabled";
-			};
+			interrupts = <92 0>;
+			memory-regions = <&sram2>;
+			status = "disabled";
 
 			mdio: mdio {
 				compatible = "st,stm32-mdio";
@@ -1025,6 +1031,21 @@
 				      133 0 134 0 135 0 136 0 137 0 138 0 139 0 140 0>;
 			dma-channels = <16>;
 			dma-requests = <109>;
+			dma-offset = <0>;
+			status = "disabled";
+		};
+
+		hpdma1: dma@52000000 {
+			compatible = "st,stm32u5-dma";
+			#dma-cells = <3>;
+			reg = <0x52000000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 0)>;
+			interrupts = <64 0>, <65 0>, <66 0>, <67 0>,
+				     <68 0>, <69 0>, <70 0>, <71 0>,
+				     <141 0>, <142 0>, <143 0>, <144 0>,
+				     <145 0>, <146 0>, <147 0>, <148 0>;
+			dma-channels = <16>;
+			dma-requests = <20>;
 			dma-offset = <0>;
 			status = "disabled";
 		};

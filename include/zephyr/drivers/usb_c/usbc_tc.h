@@ -1,5 +1,7 @@
 /*
  * Copyright 2022 The Chromium OS Authors
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -91,6 +93,20 @@ extern "C" {
  *	  See Table 4-30 DRP Timing Parameters
  */
 #define TC_T_DRP_MAX_MS 100
+
+/**
+ * @brief The minimum time a DRP shall advertise as Source or Sink role.
+ *	  DRP Toggle Pulse Width Minimum (tDRP min * dcSRC.DRP min)
+ *	  See Table 4-30 DRP Timing Parameters
+ */
+#define TC_T_DRP_PW_MIN_MS 15
+
+/**
+ * @brief The maximum time a DRP shall advertise as Source or Sink role.
+ *	  DRP Toggle Pulse Width Maximum (tDRP max * dcSRC.DRP max)
+ *	  See Table 4-30 DRP Timing Parameters
+ */
+#define TC_T_DRP_PW_MAX_MS 70
 
 /**
  * @brief The minimum time a DRP shall complete transitions between Source and Sink roles
@@ -314,7 +330,7 @@ enum tc_cc_voltage_state {
 	TC_CC_VOLT_RD           = 2,
 	/** Port partner is applying Rp (0.5A) */
 	TC_CC_VOLT_RP_DEF       = 5,
-	/*8 Port partner is applying Rp (1.5A) */
+	/** Port partner is applying Rp (1.5A) */
 	TC_CC_VOLT_RP_1A5       = 6,
 	/** Port partner is applying Rp (3.0A) */
 	TC_CC_VOLT_RP_3A0       = 7,
@@ -371,6 +387,23 @@ enum tc_cable_plug {
 	PD_PLUG_FROM_DFP_UFP = 0,
 	/* Message originated from a Cable Plug or VPD */
 	PD_PLUG_FROM_CABLE_VPD = 1
+};
+
+/**
+ * @brief Power Delivery Power Role Capability
+ *	  This enum represents the configured capability of a port.
+ *
+ *	  NOTE: Must match the 'power-role' devicetree binding enum indices:
+ *	        "sink" (0), "source" (1), "dual" (2)
+ *	  See: dts/bindings/usb-c/usb-c-connector.yaml
+ */
+enum tc_power_role_capability {
+	/** Power role capability is sink only */
+	TC_ROLE_CAP_SINK = 0,
+	/** Power role capability is source only */
+	TC_ROLE_CAP_SOURCE = 1,
+	/** Power role capability is drp (Sink and Source) */
+	TC_ROLE_CAP_DRP = 2
 };
 
 /**

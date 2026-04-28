@@ -56,7 +56,7 @@ struct gpio_ra_irq_data {
 /**
  * @brief setting interrupt for gpio input
  *
- * @param dev devive instance for gpio interrupt line
+ * @param dev device instance for gpio interrupt line
  * @param callback setting context for the callback
  * @retval 0 if success
  * @retval -EBUSY if interrupt line is inuse

@@ -64,9 +64,7 @@ __subsystem struct virtio_driver_api {
  */
 static inline struct virtq *virtio_get_virtqueue(const struct device *dev, uint16_t queue_idx)
 {
-	const struct virtio_driver_api *api = dev->api;
-
-	return api->get_virtqueue(dev, queue_idx);
+	return DEVICE_API_GET(virtio, dev)->get_virtqueue(dev, queue_idx);
 }
 
 /**
@@ -81,9 +79,7 @@ static inline struct virtq *virtio_get_virtqueue(const struct device *dev, uint1
  */
 static inline void virtio_notify_virtqueue(const struct device *dev, uint16_t queue_idx)
 {
-	const struct virtio_driver_api *api = dev->api;
-
-	api->notify_virtqueue(dev, queue_idx);
+	DEVICE_API_GET(virtio, dev)->notify_virtqueue(dev, queue_idx);
 }
 
 /**
@@ -94,9 +90,7 @@ static inline void virtio_notify_virtqueue(const struct device *dev, uint16_t qu
  */
 static inline void *virtio_get_device_specific_config(const struct device *dev)
 {
-	const struct virtio_driver_api *api = dev->api;
-
-	return api->get_device_specific_config(dev);
+	return DEVICE_API_GET(virtio, dev)->get_device_specific_config(dev);
 }
 
 /**
@@ -108,9 +102,7 @@ static inline void *virtio_get_device_specific_config(const struct device *dev)
  */
 static inline bool virtio_read_device_feature_bit(const struct device *dev, int bit)
 {
-	const struct virtio_driver_api *api = dev->api;
-
-	return api->read_device_feature_bit(dev, bit);
+	return DEVICE_API_GET(virtio, dev)->read_device_feature_bit(dev, bit);
 }
 
 /**
@@ -123,9 +115,7 @@ static inline bool virtio_read_device_feature_bit(const struct device *dev, int 
  */
 static inline int virtio_write_driver_feature_bit(const struct device *dev, int bit, bool value)
 {
-	const struct virtio_driver_api *api = dev->api;
-
-	return api->write_driver_feature_bit(dev, bit, value);
+	return DEVICE_API_GET(virtio, dev)->write_driver_feature_bit(dev, bit, value);
 }
 
 /**
@@ -136,9 +126,7 @@ static inline int virtio_write_driver_feature_bit(const struct device *dev, int 
  */
 static inline int virtio_commit_feature_bits(const struct device *dev)
 {
-	const struct virtio_driver_api *api = dev->api;
-
-	return api->commit_feature_bits(dev);
+	return DEVICE_API_GET(virtio, dev)->commit_feature_bits(dev);
 }
 
 /**
@@ -153,9 +141,7 @@ static inline int virtio_commit_feature_bits(const struct device *dev)
 static inline int virtio_init_virtqueues(
 	const struct device *dev, uint16_t num_queues, virtio_enumerate_queues cb, void *opaque)
 {
-	const struct virtio_driver_api *api = dev->api;
-
-	return api->init_virtqueues(dev, num_queues, cb, opaque);
+	return DEVICE_API_GET(virtio, dev)->init_virtqueues(dev, num_queues, cb, opaque);
 }
 
 /**
@@ -165,9 +151,7 @@ static inline int virtio_init_virtqueues(
  */
 static inline void virtio_finalize_init(const struct device *dev)
 {
-	const struct virtio_driver_api *api = dev->api;
-
-	api->finalize_init(dev);
+	DEVICE_API_GET(virtio, dev)->finalize_init(dev);
 }
 
 /**

@@ -187,7 +187,7 @@ static int memc_smartbond_pm_action(const struct device *dev, enum pm_device_act
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
 		/*
-		 * CLK_AMBA_REG, that controlls QSPIC2, is retained during sleep
+		 * CLK_AMBA_REG, that controls QSPIC2, is retained during sleep
 		 * (resides in PD_AON). However, unused blocks should be disabled
 		 * to minimize power consumption at sleep.
 		 */
@@ -209,7 +209,7 @@ static int memc_smartbond_pm_action(const struct device *dev, enum pm_device_act
 		 * so QSPIC2 auto mode re-initialization is required.
 		 *
 		 * XXX: It's assumed that memory device's power rail, that should
-		 * be 1V8P, is not turned off and so the device itsef does not
+		 * be 1V8P, is not turned off and so the device itself does not
 		 * require re-initialization. Revisit this part if power settings
 		 * are changed in the future, that should include:
 		 *
@@ -232,7 +232,7 @@ static int memc_smartbond_pm_action(const struct device *dev, enum pm_device_act
 #define SMARTBOND_MEMC_INIT(inst)	\
 	BUILD_ASSERT(inst == 0, "multiple instances are not permitted");	\
 	BUILD_ASSERT(DT_INST_PROP(inst, is_ram),	\
-	"current driver version suports only PSRAM devices");	\
+	"current driver version supports only PSRAM devices");	\
 			\
 	PM_DEVICE_DT_INST_DEFINE(inst, memc_smartbond_pm_action);	\
 			\

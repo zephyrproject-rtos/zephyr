@@ -533,7 +533,7 @@ static int dsi_mcux_attach(const struct device *dev,
 	/* Calculate the delay before entering ULPS. After the last cycle of data has
 	 * been accepted from the controller to the PHY, the data still needs to be
 	 * serialized, transmitted, then the appropriate timing must be met before
-	 * entering the ULPS. The data lane rate can impact this, so calcuate the time
+	 * entering the ULPS. The data lane rate can impact this, so calculate the time
 	 * it takes for one data lane to send 1 bit in HS and LP mode first.
 	 */
 	uint32_t hs_bit_ns = 1000000000UL / dphy_bit_clk_freq;

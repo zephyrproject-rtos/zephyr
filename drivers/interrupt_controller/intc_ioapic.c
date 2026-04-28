@@ -98,7 +98,7 @@ static __pinned_bss uint32_t ioapic_rtes;
 
 #define BIT_POS_FOR_IRQ_OPTION(irq, option) ((irq) * BITS_PER_IRQ + (option))
 
-/* Allocating up to 256 irq bits bufffer for RTEs, RTEs are dynamically found
+/* Allocating up to 256 irq bits buffer for RTEs, RTEs are dynamically found
  * so let's just assume the maximum, it's only 128 bytes in total.
  */
 #define SUSPEND_BITS_REQD (ROUND_UP((256 * BITS_PER_IRQ), 32))

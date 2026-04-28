@@ -39,7 +39,7 @@ properties:
       - "source"
       - "dual"
     description: |
-      The Port power role. "dual" for Dual Role Port.
+      The Port power role. "dual" for Dual Role Power.
 
   try-power-role:
     type: string
@@ -144,9 +144,10 @@ properties:
 
 examples:
   - |
-    /** USB-C connector attached to a STM32 UCPD typec port controller
-      * which has power delivery support and enables SINK.
-      */
+    /*
+     * USB-C connector attached to a STM32 UCPD Type-C port controller
+     * which has power delivery support and enables SINK.
+     */
     vbus1: vbus {
       compatible = "zephyr,usb-c-vbus-adc";
       io-channels = <&adc2 8>;
@@ -154,10 +155,10 @@ examples:
       full-ohms = <(330000 + 49900)>;
     };
 
-  - |
     ports {
       #address-cells = <1>;
       #size-cells = <0>;
+
       port1: usb-c-port@1 {
         compatible = "usb-c-connector";
         reg = <1>;

@@ -123,7 +123,8 @@
 			flash0: flash@8000000 {
 				compatible = "st,stm32l0-nv-flash", "st,stm32-nv-flash",
 					     "soc-nv-flash";
-
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <4>;
 				/* maximum erase time(ms) for a 128B page */
 				max-erase-time = <4>;
@@ -249,7 +250,7 @@
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x40002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
-			interrupts = <0 2>;
+			interrupts = <0 0>;
 			status = "disabled";
 		};
 
@@ -289,7 +290,7 @@
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
-			interrupts = <25 3>;
+			interrupts = <25 0>;
 			st,spi-data-width = "limited-8-16-bit";
 			status = "disabled";
 		};
@@ -353,7 +354,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40007c00 0x400>;
-			interrupts = <13 1>;
+			interrupts = <13 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};

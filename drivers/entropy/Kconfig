@@ -62,4 +62,12 @@ config ENTROPY_HAS_DRIVER
 	  This is an option to be enabled by individual entropy driver
 	  to signal that there is a true entropy driver.
 
+config ENTROPY_NEEDS_PRNG
+	bool
+	help
+	  Promptless option to signal that the entropy driver is not capable
+	  of providing large amount of data in a relatively short amount of time.
+	  For this reason crypto algorithms such as CTR_DRBG or HMAC_DRBG are
+	  used to resolve this limitation.
+
 endif

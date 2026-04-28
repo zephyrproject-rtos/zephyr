@@ -56,6 +56,13 @@ typedef struct {
 	struct net_stats_wifi stats;
 #endif
 	enum wifi_iface_state state[2];
+	struct {
+		uint32_t major1;
+		uint32_t major2;
+		uint32_t minor;
+		uint32_t rev_patch1;
+		uint32_t rev_patch2;
+	} fw_version;
 } esp_hosted_data_t;
 
 #define TLV_HEADER_SIZE      (14)

@@ -6,7 +6,6 @@
 
 #include <errno.h>
 #include <stdint.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_ias_client, CONFIG_BT_IAS_CLIENT_LOG_LEVEL);
@@ -67,7 +66,7 @@ int bt_ias_client_alert_write(struct bt_conn *conn, enum bt_ias_alert_lvl lvl)
 	int err;
 	uint8_t lvl_u8;
 
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		return -ENOTCONN;
 	}
 
@@ -151,7 +150,7 @@ int bt_ias_discover(struct bt_conn *conn)
 	int err;
 	struct bt_ias_client *client = client_by_conn(conn);
 
-	CHECKIF(!conn || !ias_client_cb || !ias_client_cb->discover) {
+	if (!conn || !ias_client_cb || !ias_client_cb->discover) {
 		return -EINVAL;
 	}
 
@@ -178,15 +177,15 @@ int bt_ias_discover(struct bt_conn *conn)
 
 int bt_ias_client_cb_register(const struct bt_ias_client_cb *cb)
 {
-	CHECKIF(!cb) {
+	if (!cb) {
 		return -EINVAL;
 	}
 
-	CHECKIF(cb->discover == NULL) {
+	if (cb->discover == NULL) {
 		return -EINVAL;
 	}
 
-	CHECKIF(ias_client_cb) {
+	if (ias_client_cb) {
 		return -EALREADY;
 	}
 

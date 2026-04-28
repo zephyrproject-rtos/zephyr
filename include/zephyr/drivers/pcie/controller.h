@@ -197,10 +197,7 @@ __subsystem struct pcie_ctrl_driver_api {
 static inline uint32_t pcie_ctrl_conf_read(const struct device *dev, pcie_bdf_t bdf,
 					   unsigned int reg)
 {
-	const struct pcie_ctrl_driver_api *api =
-		(const struct pcie_ctrl_driver_api *)dev->api;
-
-	return api->conf_read(dev, bdf, reg);
+	return DEVICE_API_GET(pcie_ctrl, dev)->conf_read(dev, bdf, reg);
 }
 
 /**
@@ -217,10 +214,7 @@ static inline uint32_t pcie_ctrl_conf_read(const struct device *dev, pcie_bdf_t 
 static inline void pcie_ctrl_conf_write(const struct device *dev, pcie_bdf_t bdf,
 					unsigned int reg, uint32_t data)
 {
-	const struct pcie_ctrl_driver_api *api =
-		(const struct pcie_ctrl_driver_api *)dev->api;
-
-	api->conf_write(dev, bdf, reg, data);
+	DEVICE_API_GET(pcie_ctrl, dev)->conf_write(dev, bdf, reg, data);
 }
 
 /**
@@ -244,10 +238,8 @@ static inline bool pcie_ctrl_region_allocate(const struct device *dev, pcie_bdf_
 					     bool mem, bool mem64, size_t bar_size,
 					     uintptr_t *bar_bus_addr)
 {
-	const struct pcie_ctrl_driver_api *api =
-		(const struct pcie_ctrl_driver_api *)dev->api;
-
-	return api->region_allocate(dev, bdf, mem, mem64, bar_size, bar_bus_addr);
+	return DEVICE_API_GET(pcie_ctrl, dev)->region_allocate(dev, bdf, mem, mem64, bar_size,
+							       bar_bus_addr);
 }
 
 /**
@@ -269,10 +261,8 @@ static inline bool pcie_ctrl_region_get_allocate_base(const struct device *dev, 
 						      bool mem, bool mem64, size_t align,
 						      uintptr_t *bar_base_addr)
 {
-	const struct pcie_ctrl_driver_api *api =
-		(const struct pcie_ctrl_driver_api *)dev->api;
-
-	return api->region_get_allocate_base(dev, bdf, mem, mem64, align, bar_base_addr);
+	return DEVICE_API_GET(pcie_ctrl, dev)->region_get_allocate_base(dev, bdf, mem, mem64, align,
+									bar_base_addr);
 }
 
 /**
@@ -297,8 +287,7 @@ static inline bool pcie_ctrl_region_translate(const struct device *dev, pcie_bdf
 					  bool mem, bool mem64, uintptr_t bar_bus_addr,
 					  uintptr_t *bar_addr)
 {
-	const struct pcie_ctrl_driver_api *api =
-		(const struct pcie_ctrl_driver_api *)dev->api;
+	const struct pcie_ctrl_driver_api *api = DEVICE_API_GET(pcie_ctrl, dev);
 
 	if (!api->region_translate) {
 		*bar_addr = bar_bus_addr;
@@ -312,10 +301,7 @@ static inline bool pcie_ctrl_region_translate(const struct device *dev, pcie_bdf
 static inline uint8_t pcie_ctrl_msi_device_setup(const struct device *dev, unsigned int priority,
 						 msi_vector_t *vectors, uint8_t n_vector)
 {
-	const struct pcie_ctrl_driver_api *api =
-		(const struct pcie_ctrl_driver_api *)dev->api;
-
-	return api->msi_device_setup(dev, priority, vectors, n_vector);
+	return DEVICE_API_GET(pcie_ctrl, dev)->msi_device_setup(dev, priority, vectors, n_vector);
 }
 #endif
 

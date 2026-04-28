@@ -6,3 +6,4 @@ board:
   - name: psc3m5fds2afq1
     variants:
     - name: 'ns'
+    - name: 'norflash'

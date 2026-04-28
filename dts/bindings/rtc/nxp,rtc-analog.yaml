@@ -1,0 +1,18 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP RTC Analog module.
+
+  Sub-second resolution is 10ms (hundredths of a second). The tm_nsec
+  field is truncated to 10ms granularity for both time setting and alarm
+  matching.
+
+compatible: "nxp,rtc-analog"
+
+include:
+  - name: rtc-device.yaml
+
+properties:
+  reg:
+    required: true

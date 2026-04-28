@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Shield overlay for the X-NUCLEO-GNSS1A1 expansion board. The board carries an ST Teseo-LIV3F
+ * GNSS module connected via UART on Arduino D0/D1.
+ *
+ * Default jumper configuration assumed (active jumpers):
+ *   J5  (UART-TX  → D0)   J2  (UART-RX → D1)
+ *   J13 (RESET    → D7)   J9  (WAKEUP  → D13)
+ *   J6  (PPS      → D6)
+ *
+ * RESET is active-low; WAKEUP must be driven high for the module to run. Both are held high via
+ * GPIO hogs so no driver support is required.
+ *
+ * SPI1 must be disabled on boards that route SCK to D13, otherwise the SPI clock interferes with
+ * the WAKEUP line.
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+/ {
+	aliases {
+		gnss = &teseo_liv3f;
+	};
+};
+
+&arduino_serial {
+	current-speed = <9600>;
+	status = "okay";
+
+	teseo_liv3f: gnss-nmea-generic {
+		compatible = "gnss-nmea-generic";
+	};
+};

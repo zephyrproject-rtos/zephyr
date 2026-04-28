@@ -15,19 +15,22 @@
 	model = "STMicroelectronics STM32C5A3ZG-NUCLEO board";
 	compatible = "st,stm32c5a3zg-nucleo";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
+		zephyr,canbus = &fdcan1;
 		zephyr,console = &lpuart1;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,sram = &sram1;
 		zephyr,flash = &flash0;
 	};
 
 	aliases {
+		die-temp0 = &die_temp;
 		led0 = &green_led;
 		sw0 = &user_button;
+		rtc = &rtc;
+		volt-sensor0 = &vref;
+		watchdog0 = &iwdg;
 	};
 
 	gpio_keys {
@@ -44,6 +47,7 @@
 		compatible = "gpio-leds";
 
 		green_led: led_1 {
+			/* LD1 may conflict with SPI1 SCK on PA5 */
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
 			label = "LD1";
 		};
@@ -60,8 +64,49 @@
 	};
 };
 
+&adc1 {
+	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
+		 <&rcc STM32_SRC_HSIK ADCDAC_SEL(3)>;
+	status = "okay";
+};
+
+&adc2 {
+	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
+		 <&rcc STM32_SRC_HSIK ADCDAC_SEL(3)>;
+	clock-names = "adcx", "adc_ker";
+	pinctrl-0 = <&adc2_in12_ph4 &adc2_in13_ph5>; /* Arduino A1 & A2 */
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dac1 {
+	clocks = <&rcc STM32_CLOCK(AHB2, 11)>,
+		 <&rcc STM32_SRC_PSIK ADCDAC_SEL(2)>;
+	pinctrl-0 = <&dac1_out1_pa4>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(48)>;
+	status = "okay";
+};
+
+&clk_hsidiv3 {
+	status = "okay";
+};
+
+&clk_hsik {
+	clock-frequency = <DT_FREQ_M(32)>;
+	xsik-div = "4.5";
+	status = "okay";
+};
+
+&clk_hsis {
 	status = "okay";
 };
 
@@ -69,37 +114,79 @@
 	status = "okay";
 };
 
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_psik {
+	clock-frequency = <DT_FREQ_M(80)>;
+	xsik-div = "2";
+	status = "okay";
+};
+
 &clk_psis {
-	clock-frequency = <DT_FREQ_M(144)>;
+	clock-frequency = <DT_FREQ_M(160)>;
+	status = "okay";
+};
+
+&fdcan1 {
+	clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
+		 <&rcc STM32_SRC_PSIK FDCAN_SEL(2)>;
+	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
 		};
 
 		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(472)>;
 		};
 
 		slot1_partition: partition@82000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x00082000 DT_SIZE_K(480)>;
 		};
 
 		storage_partition: partition@fa000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x000fa000 DT_SIZE_K(24)>;
 		};
 	};
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb4>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
 };
 
 &lpdma1 {
@@ -115,14 +202,20 @@
 };
 
 &rcc {
-	clocks = <&clk_psis>;
+	clocks = <&clk_hsis>;
 	clock-frequency = <DT_FREQ_M(144)>;
 	ahb-prescaler = <1>;
 	apb1-prescaler = <2>;
 	apb2-prescaler = <2>;
 	apb3-prescaler = <2>;
-	st,psi-frequency = <144>;
+	st,psi-frequency = <160>;
 	st,psi-source = "HSE";
+};
+
+&rng {
+	clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
+		 <&rcc STM32_SRC_CK48 CK48_SEL(2)>;
+	status = "okay";
 };
 
 &rtc {
@@ -131,9 +224,29 @@
 	status = "okay";
 };
 
+&spi1 {
+	/* SPI1 SCK may conflict with LD1 (Green LED) on PA5 */
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiob 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+};
+
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	clocks = <&rcc STM32_CLOCK(APB2, 24)>,
+		 <&rcc STM32_SRC_CK48 CK48_SEL(2)>;
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&vref {
 	status = "okay";
 };

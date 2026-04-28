@@ -36,5 +36,5 @@ void memorymap_test(void)
 	et = timing_cycles_get(&start, &end);
 
 	PRINT_F(FORMAT, "average alloc and dealloc memory page",
-		timing_cycles_to_ns_avg(et, (2 * NR_OF_MAP_RUNS)));
+		test_timing_cycles_to_ns_avg(et, (2 * NR_OF_MAP_RUNS)));
 }

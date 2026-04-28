@@ -312,12 +312,16 @@ static void test_modem_ppp_before(void *f)
 
 	/* Reset mock pipe */
 	modem_backend_mock_reset(&mock);
+
+	/* Reset the attached pipe */
+	modem_ppp_release(&ppp);
+	modem_ppp_attach(&ppp, mock_pipe);
 }
 
 /*************************************************************************************************/
 /*                                             Tests                                             */
 /*************************************************************************************************/
-ZTEST(modem_ppp, test_ppp_frame_receive)
+static void put_and_validate_wrapped_frame(void)
 {
 	struct net_pkt *pkt;
 	size_t pkt_len;
@@ -343,6 +347,53 @@ ZTEST(modem_ppp, test_ppp_frame_receive)
 
 	zassert_true(memcmp(buffer, ppp_frame_unwrapped, pkt_len) == 0,
 		     "Received net pkt data incorrect");
+}
+
+ZTEST(modem_ppp, test_ppp_frame_receive)
+{
+	/* Basic wrapped frame */
+	put_and_validate_wrapped_frame();
+}
+
+ZTEST(modem_ppp, test_ppp_no_connect_received)
+{
+	static const char *unsolicited_no_connect = "\r\nNO CARRIER\r\n";
+
+	/* Not dead to start with */
+	zassert_false(ppp.state & BIT(MODEM_PPP_STATE_DEAD_BIT));
+
+	/* Partial message doesn't result in anything */
+	modem_backend_mock_put(&mock, unsolicited_no_connect, strlen(unsolicited_no_connect) - 1);
+
+	/* Link continues to work */
+	put_and_validate_wrapped_frame();
+
+	/* Put full 'NO CONNECT' message */
+	modem_backend_mock_put(&mock, unsolicited_no_connect, strlen(unsolicited_no_connect));
+
+	/* Give modem ppp time to process received frame */
+	k_msleep(1000);
+
+	/* Dead after receiving the 'NO CARRIER' message */
+	zassert_true(ppp.state & BIT(MODEM_PPP_STATE_DEAD_BIT));
+}
+
+
+ZTEST(modem_ppp, test_ppp_no_connect_received_first)
+{
+	static const char *unsolicited_no_connect = "\r\nNO CARRIER\r\n";
+
+	/* Not dead to start with */
+	zassert_false(ppp.state & BIT(MODEM_PPP_STATE_DEAD_BIT));
+
+	/* Put full 'NO CONNECT' message as first message on pipe */
+	modem_backend_mock_put(&mock, unsolicited_no_connect, strlen(unsolicited_no_connect));
+
+	/* Give modem ppp time to process received frame */
+	k_msleep(1000);
+
+	/* Dead after receiving the 'NO CARRIER' message */
+	zassert_true(ppp.state & BIT(MODEM_PPP_STATE_DEAD_BIT));
 }
 
 ZTEST(modem_ppp, test_corrupt_start_end_ppp_frame_receive)

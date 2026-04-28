@@ -524,6 +524,15 @@ struct i3c_config_custom {
 };
 
 /**
+ * @brief I3C callback for asynchronous transfer requests
+ *
+ * @param dev I3C device which is notifying of transfer completion or error
+ * @param result Result code of the transfer request. 0 is success, -errno for failure.
+ * @param data Transfer requester supplied data which is passed along to the callback.
+ */
+typedef void (*i3c_callback_t)(const struct device *dev, int result, void *data);
+
+/**
  * @cond INTERNAL_HIDDEN
  *
  * These are for internal use only, so skip these in
@@ -711,7 +720,47 @@ __subsystem struct i3c_driver_api {
 			 struct i3c_device_desc *target,
 			 struct i3c_msg *msgs,
 			 uint8_t num_msgs);
+#if defined(CONFIG_I3C_CALLBACK) || defined(__DOXYGEN__)
+	/**
+	 * Send async Common Command Code (CCC) with a callback.
+	 *
+	 * Controller only API.
+	 *
+	 * @see i3c_do_ccc_cb()
+	 *
+	 * @param dev Pointer to controller device driver instance.
+	 * @param payload Pointer to the CCC payload.
+	 * @param cb Function pointer for completion callback.
+	 * @param userdata Userdata passed to callback.
+	 *
+	 * @return See i3c_do_ccc_cb()
+	 */
+	int (*do_ccc_cb)(const struct device *dev,
+			 struct i3c_ccc_payload *payload,
+			 i3c_callback_t cb,
+			 void *userdata);
 
+	/**
+	 * Transfer async messages in I3C mode with a callback.
+	 *
+	 * @see i3c_transfer_cb()
+	 *
+	 * @param dev Pointer to controller device driver instance.
+	 * @param target Pointer to target device descriptor.
+	 * @param msg Pointer to I3C messages.
+	 * @param num_msgs Number of messages to transfer.
+	 * @param cb Function pointer for completion callback.
+	 * @param userdata Userdata passed to callback.
+	 *
+	 * @return See i3c_transfer_cb()
+	 */
+	int (*i3c_xfers_cb)(const struct device *dev,
+			    struct i3c_device_desc *target,
+			    struct i3c_msg *msgs,
+			    uint8_t num_msgs,
+			    i3c_callback_t cb,
+			    void *userdata);
+#endif
 	/**
 	 * Find a registered I3C target device.
 	 *
@@ -758,6 +807,19 @@ __subsystem struct i3c_driver_api {
 	 */
 	int (*ibi_hj_response)(const struct device *dev,
 			       bool ack);
+
+	/**
+	 * ACK or NACK IBI Controller Role Requests
+	 *
+	 * @see i3c_ibi_crr_response()
+	 *
+	 * @param target Pointer to target device descriptor.
+	 * @param ack True to ack, False to nack
+	 *
+	 * @return See i3c_ibi_crr_response()
+	 */
+	int (*ibi_crr_response)(struct i3c_device_desc *target,
+				bool ack);
 
 	/**
 	 * Enable receiving IBI from a target.
@@ -1219,6 +1281,9 @@ struct i3c_driver_config {
 
 	/** I3C Primary Controller Dynamic Address */
 	uint8_t primary_controller_da;
+
+	/** Driver config flags */
+	uint8_t flags;
 #elif defined(CONFIG_CPP)
        /* Empty struct has size 0 in C, size 1 in C++. Force them to be the same. */
 	uint8_t unused_cpp_size_compatibility;
@@ -1431,8 +1496,7 @@ int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
 static inline int i3c_configure(const struct device *dev,
 				enum i3c_config_type type, void *config)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->configure == NULL) {
 		return -ENOSYS;
@@ -1507,8 +1571,7 @@ static inline int i3c_configure_target(const struct device *dev,
 static inline int i3c_config_get(const struct device *dev,
 				 enum i3c_config_type type, void *config)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->config_get == NULL) {
 		return -ENOSYS;
@@ -1573,8 +1636,7 @@ static inline int i3c_config_get_target(const struct device *dev,
  */
 static inline int i3c_recover_bus(const struct device *dev)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->recover_bus == NULL) {
 		return -ENOSYS;
@@ -1652,6 +1714,29 @@ int i3c_reattach_i3c_device(struct i3c_device_desc *target, uint8_t old_dyn_addr
 int i3c_detach_i3c_device(struct i3c_device_desc *target);
 
 /**
+ * @brief Check if an I3C device is attached to the bus
+ *
+ * Checks whether @p target is present in the controller's attached device
+ * list.
+ *
+ * @param target Pointer to the target device descriptor
+ *
+ * @retval true  If the device is attached.
+ * @retval false If the device is not attached.
+ */
+static inline bool i3c_is_i3c_device_attached(struct i3c_device_desc *target)
+{
+	struct i3c_device_desc *desc;
+
+	I3C_BUS_FOR_EACH_I3CDEV(target->bus, desc) {
+		if (desc == target) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
  * @brief Attach an I2C device
  *
  * Called to attach a I2C device to the addresses. This will
@@ -1691,6 +1776,29 @@ int i3c_attach_i2c_device(struct i3c_i2c_device_desc *target);
 int i3c_detach_i2c_device(struct i3c_i2c_device_desc *target);
 
 /**
+ * @brief Check if an I2C device is attached to the bus
+ *
+ * Checks whether @p target is present in the controller's attached device
+ * list.
+ *
+ * @param target Pointer to the target device descriptor
+ *
+ * @retval true  If the device is attached.
+ * @retval false If the device is not attached.
+ */
+static inline bool i3c_is_i2c_device_attached(struct i3c_i2c_device_desc *target)
+{
+	struct i3c_i2c_device_desc *desc;
+
+	I3C_BUS_FOR_EACH_I2CDEV(target->bus, desc) {
+		if (desc == target) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
  * @brief Perform Dynamic Address Assignment on the I3C bus.
  *
  * This routine asks the controller to perform dynamic address assignment
@@ -1715,8 +1823,7 @@ int i3c_detach_i2c_device(struct i3c_i2c_device_desc *target);
  */
 static inline int i3c_do_daa(const struct device *dev)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->do_daa == NULL) {
 		return -ENOSYS;
@@ -1744,8 +1851,7 @@ __syscall int i3c_do_ccc(const struct device *dev,
 static inline int z_impl_i3c_do_ccc(const struct device *dev,
 				    struct i3c_ccc_payload *payload)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->do_ccc == NULL) {
 		return -ENOSYS;
@@ -1753,6 +1859,48 @@ static inline int z_impl_i3c_do_ccc(const struct device *dev,
 
 	return api->do_ccc(dev, payload);
 }
+
+#if defined(CONFIG_I3C_CALLBACK) || defined(__DOXYGEN__)
+/**
+ * @brief Send an async CCC to the bus with a callback.
+ *
+ * This routine provides a generic interface to perform a CCC
+ * to another I3C device asynchronously with a callback completion.
+ *
+ * @see i3c_do_ccc()
+ *
+ * @param dev Pointer to the device structure for the controller driver
+ *            instance.
+ * @param payload Pointer to the structure describing the CCC payload.
+ * @param cb Function pointer for completion callback.
+ * @param userdata Userdata passed to callback.
+ *
+ * @retval 0 If successful.
+ * @retval -EBUSY Bus is busy.
+ * @retval -EIO General Input / output error.
+ * @retval -EINVAL Invalid valid set in the payload structure.
+ * @retval -ENOSYS Not implemented.
+ */
+__syscall int i3c_do_ccc_cb(const struct device *dev,
+			    struct i3c_ccc_payload *payload,
+			    i3c_callback_t cb,
+			    void *userdata);
+
+static inline int z_impl_i3c_do_ccc_cb(const struct device *dev,
+				      struct i3c_ccc_payload *payload,
+				      i3c_callback_t cb,
+				      void *userdata)
+{
+	const struct i3c_driver_api *api =
+		(const struct i3c_driver_api *)dev->api;
+
+	if (api->do_ccc_cb == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->do_ccc_cb(dev, payload, cb, userdata);
+}
+#endif
 
 /**
  * @addtogroup i3c_transfer_api
@@ -1791,11 +1939,59 @@ __syscall int i3c_transfer(struct i3c_device_desc *target,
 static inline int z_impl_i3c_transfer(struct i3c_device_desc *target,
 				      struct i3c_msg *msgs, uint8_t num_msgs)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)target->bus->api;
-
-	return api->i3c_xfers(target->bus, target, msgs, num_msgs);
+	return DEVICE_API_GET(i3c, target->bus)->i3c_xfers(target->bus, target, msgs, num_msgs);
 }
+
+#if defined(CONFIG_I3C_CALLBACK) || defined(__DOXYGEN__)
+/**
+ * @brief Perform an async data transfer from the controller to a I3C target device
+ * with a callback.
+ *
+ * This routine provides a generic interface to perform data transfer
+ * to a target device asynchronously.
+ *
+ * The array of message @p msgs must not be `NULL`.  The number of
+ * message @p num_msgs may be zero, in which case no transfer occurs.
+ *
+ * @note Not all scatter/gather transactions can be supported by all
+ * drivers.  As an example, a gather write (multiple consecutive
+ * i3c_msg buffers all configured for #I3C_MSG_WRITE) may be packed
+ * into a single transaction by some drivers, but others may emit each
+ * fragment as a distinct write transaction, which will not produce
+ * the same behavior.  See the documentation of i3c_msg for
+ * limitations on support for multi-message bus transactions.
+ *
+ * @param target I3C target device descriptor.
+ * @param msgs Array of messages to transfer.
+ * @param num_msgs Number of messages to transfer.
+ * @param cb Function pointer for completion callback.
+ * @param userdata Userdata passed to callback.
+ *
+ * @retval 0 If successful.
+ * @retval -EBUSY Bus is busy.
+ * @retval -EIO General input / output error.
+ */
+__syscall int i3c_transfer_cb(struct i3c_device_desc *target,
+			      struct i3c_msg *msgs,
+			      uint8_t num_msgs,
+			      i3c_callback_t cb,
+			      void *userdata);
+
+static inline int z_impl_i3c_transfer_cb(struct i3c_device_desc *target,
+					 struct i3c_msg *msgs,
+					 uint8_t num_msgs,
+					 i3c_callback_t cb,
+					 void *userdata)
+{
+	const struct i3c_driver_api *api = (const struct i3c_driver_api *)target->bus->api;
+
+	if (api->i3c_xfers_cb == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->i3c_xfers_cb(target->bus, target, msgs, num_msgs, cb, userdata);
+}
+#endif
 
 /** @} */
 
@@ -1817,8 +2013,7 @@ static inline
 struct i3c_device_desc *i3c_device_find(const struct device *dev,
 					const struct i3c_device_id *id)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->i3c_device_find == NULL) {
 		return NULL;
@@ -1849,14 +2044,38 @@ struct i3c_device_desc *i3c_device_find(const struct device *dev,
 static inline int i3c_ibi_hj_response(const struct device *dev,
 				      bool ack)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->ibi_hj_response == NULL) {
 		return -ENOSYS;
 	}
 
 	return api->ibi_hj_response(dev, ack);
+}
+
+/**
+ * @brief ACK or NACK IBI Controller Role Requests
+ *
+ * This tells the controller to Acknowledge or Not Acknowledge
+ * In-Band Interrupt Controller Role Requests from a specific target.
+ *
+ * @param target Pointer to target device descriptor.
+ * @param ack True to ack, False to nack
+ *
+ * @retval 0 if operation is successful.
+ * @retval -EIO General input / output error.
+ */
+static inline int i3c_ibi_crr_response(struct i3c_device_desc *target,
+					bool ack)
+{
+	const struct i3c_driver_api *api =
+		(const struct i3c_driver_api *)target->bus->api;
+
+	if (api->ibi_crr_response == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->ibi_crr_response(target, ack);
 }
 #endif /* CONFIG_I3C_CONTROLLER */
 #if defined(CONFIG_I3C_TARGET) || defined(__DOXYGEN__)
@@ -1874,8 +2093,7 @@ static inline int i3c_ibi_hj_response(const struct device *dev,
 static inline int i3c_ibi_raise(const struct device *dev,
 				struct i3c_ibi *request)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, dev);
 
 	if (api->ibi_raise == NULL) {
 		return -ENOSYS;
@@ -1901,8 +2119,7 @@ static inline int i3c_ibi_raise(const struct device *dev,
  */
 static inline int i3c_ibi_enable(struct i3c_device_desc *target)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)target->bus->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, target->bus);
 
 	if (api->ibi_enable == NULL) {
 		return -ENOSYS;
@@ -1925,8 +2142,7 @@ static inline int i3c_ibi_enable(struct i3c_device_desc *target)
  */
 static inline int i3c_ibi_disable(struct i3c_device_desc *target)
 {
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)target->bus->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, target->bus);
 
 	if (api->ibi_disable == NULL) {
 		return -ENOSYS;
@@ -2761,7 +2977,7 @@ static inline void i3c_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct i3c_iodev_data *data =
 		(const struct i3c_iodev_data *)iodev_sqe->sqe.iodev->data;
-	const struct i3c_driver_api *api = (const struct i3c_driver_api *)data->bus->api;
+	const struct i3c_driver_api *api = DEVICE_API_GET(i3c, data->bus);
 
 	if (api->iodev_submit == NULL) {
 		rtio_iodev_sqe_err(iodev_sqe, -ENOSYS);

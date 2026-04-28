@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026 BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "pocketbeagle_2_mspm0l1105-common.dtsi"
+
+/ {
+	model = "BeagleBoard.org PocketBeagle 2 Industrial";
+	compatible = "beagle,pocketbeagle_2_industrial_mspm0l1105";
+};

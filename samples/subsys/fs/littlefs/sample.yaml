@@ -24,7 +24,6 @@ tests:
       - stm32h747i_disco/stm32h747xx/m7
       - stm32h750b_dk
       - nrf54l15dk/nrf54l15/cpuapp
-      - ophelia4ev/nrf54l15/cpuapp
       - frdm_ke17z
       - frdm_ke17z512
       - s32z2xxdc2/s32z270/rtu0
@@ -86,3 +85,9 @@ tests:
       - CONF_FILE=prj_blk.conf
     extra_configs:
       - CONFIG_SDMMC_STM32_HWFC=y
+  sample.filesystem.littlefs.frdm_rw612_nand:
+    build_only: true
+    platform_allow: frdm_rw612
+    extra_args:
+      - EXTRA_CONF_FILE=boards/frdm_rw612_nand.conf
+      - DTC_OVERLAY_FILE=boards/frdm_rw612_nand.overlay

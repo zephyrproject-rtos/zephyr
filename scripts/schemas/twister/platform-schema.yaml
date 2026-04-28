@@ -41,6 +41,7 @@ $defs:
                 - armfvp
                 - native
                 - custom
+                - whisper
             exec:
               type: string
           required:
@@ -54,6 +55,7 @@ $defs:
           - arm64
           - mips
           - nios2
+          - openrisc
           - posix
           - riscv
           - rx

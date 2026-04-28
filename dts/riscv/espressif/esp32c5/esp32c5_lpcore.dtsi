@@ -49,9 +49,9 @@
 				zephyr,memory-region = "SRAMLP_ULP";
 			};
 
-			ulp_shm: memory@3bf0 {
+			ulp_shm: memory@3c00 {
 				compatible = "zephyr,memory-region", "mmio-sram";
-				reg = <0x3bf0 0x10>;
+				reg = <0x3c00 0x10>;
 				zephyr,memory-region = "SRAMLP_ULP_SHM";
 			};
 
@@ -88,18 +88,21 @@
 			reg = <0x60002000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				erase-block-size = <4096>;
 				write-block-size = <4>;
-				/* Flash size is specified in SOC/SIP dtsi */
+				#address-cells = <1>;
+				#size-cells = <1>;
+				/* reg and ranges are specified in SOC/SIP dtsi */
 			};
 		};
 
 		lp_uart: uart@600b1400 {
 			compatible = "espressif,esp32-lpuart";
-			reg = <0x600b1400 DT_SIZE_K(4)>;
+			reg = <0x600b1400 DT_SIZE_K(1)>;
 			status = "disabled";
 		};
 
@@ -107,7 +110,7 @@
 			compatible = "espressif,esp32-gpio";
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x600b4400 DT_SIZE_K(4)>;
+			reg = <0x600b4400 DT_SIZE_K(1)>;
 			ngpios = <7>;
 		};
 	};

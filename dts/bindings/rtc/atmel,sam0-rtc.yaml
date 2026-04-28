@@ -66,7 +66,7 @@ properties:
       - "clock"
     description: |
       Configure the RTC counter operating mode. In mode 0, the counter
-      register is configured as a 32-bit counter. In mode 1, simmilar
+      register is configured as a 32-bit counter. In mode 1, similar
       to mode 0, the counter register is only 16-bit counter. In mode
       2 the counter register is configured as a clock/calendar.
 

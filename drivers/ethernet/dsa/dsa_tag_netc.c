@@ -21,25 +21,35 @@ struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 		(struct dsa_tag_netc_data *)(dsa_switch_ctx->tagger_data);
 #endif
 	void *header = pkt->frags->data;
-	uint16_t tag_len = sizeof(struct netc_switch_tag_host);
+	uint16_t payload_len = pkt->frags->len - NET_ETH_ADDR_LEN * 2;
+	uint16_t tag_len = sizeof(struct netc_switch_tag_common);
 	struct netc_switch_tag_common *tag_common;
 	struct net_if *iface_dst = iface;
 	uint8_t *ptr;
 
-	/* Tag is inserted after DMAC/SMAC fields. Check the smallest tag type header size. */
-	if (pkt->frags->len < NET_ETH_ADDR_LEN * 2 + tag_len) {
+	/* Tag is inserted after DMAC/SMAC fields. Get tag common part. */
+	if (payload_len < tag_len) {
 		LOG_ERR("tag len error");
 		return iface_dst;
 	}
 
-	/* Handle tag type */
 	tag_common = (struct netc_switch_tag_common *)((uintptr_t)pkt->frags->data +
 			NET_ETH_ADDR_LEN * 2);
+
+	/* Check port index */
+	if (tag_common->port >= DSA_PORT_MAX_COUNT ||
+	    dsa_switch_ctx->iface_user[tag_common->port] == NULL) {
+		LOG_ERR("port index error");
+		return iface_dst;
+	}
+
+	/* Handle tag per type */
 	if (tag_common->type == NETC_SWITCH_TAG_TYPE_FORWARD) {
-
-		/* Update tag length per tag type */
 		tag_len = sizeof(struct netc_switch_tag_forward);
-
+		if (payload_len < tag_len) {
+			LOG_ERR("tag len error");
+			return iface_dst;
+		}
 	} else if (tag_common->type == NETC_SWITCH_TAG_TYPE_TO_HOST) {
 #ifdef CONFIG_NET_L2_PTP
 		struct netc_switch_tag_host_rx_ts *tag_rx_ts;
@@ -50,8 +60,18 @@ struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 		switch (tag_common->subtype) {
 		case NETC_SWITCH_TAG_SUBTYPE_TO_HOST_NO_TS:
 			/* Normal case */
+			tag_len = sizeof(struct netc_switch_tag_host);
+			if (payload_len < tag_len) {
+				LOG_ERR("tag len error");
+				return iface_dst;
+			}
 			break;
 		case NETC_SWITCH_TAG_SUBTYPE_TO_HOST_RX_TS:
+			tag_len = sizeof(struct netc_switch_tag_host_rx_ts);
+			if (payload_len < tag_len) {
+				LOG_ERR("tag len error");
+				return iface_dst;
+			}
 #ifdef CONFIG_NET_L2_PTP
 			tag_rx_ts = (struct netc_switch_tag_host_rx_ts *)tag_common;
 			ts = net_ntohll(tag_rx_ts->timestamp);
@@ -60,10 +80,13 @@ struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 			pkt->timestamp.nanosecond = ts % NSEC_PER_SEC;
 			pkt->timestamp.second = ts / NSEC_PER_SEC;
 #endif
-			/* Update tag length per tag type */
-			tag_len = sizeof(struct netc_switch_tag_host_rx_ts);
 			break;
 		case NETC_SWITCH_TAG_SUBTYPE_TO_HOST_TX_TS:
+			tag_len = sizeof(struct netc_switch_tag_host_tx_ts);
+			if (payload_len < tag_len) {
+				LOG_ERR("tag len error");
+				return iface_dst;
+			}
 #ifdef CONFIG_NET_L2_PTP
 			tag_tx_ts = (struct netc_switch_tag_host_tx_ts *)tag_common;
 			ts = net_ntohll(tag_tx_ts->timestamp);
@@ -73,15 +96,14 @@ struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 					tag_tx_ts->ts_req_id, ts);
 			}
 #endif
-			/* Update tag length per tag type */
-			tag_len = sizeof(struct netc_switch_tag_host_tx_ts);
 			break;
 		default:
 			LOG_ERR("tag sub-type error");
-			break;
+			return iface_dst;
 		}
 	} else {
 		LOG_ERR("tag type error");
+		return iface_dst;
 	}
 
 	/* redirect to user port */

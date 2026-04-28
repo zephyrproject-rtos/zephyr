@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,10 @@ extern enum bst_result_t bst_result;
 static struct audio_test_stream test_streams[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 static struct bt_bap_ep *g_sinks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 static struct bt_bap_ep *g_sources[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
+static enum bt_audio_context cached_avail_snk_ctx = BT_AUDIO_CONTEXT_TYPE_NONE;
+static enum bt_audio_context cached_avail_src_ctx = BT_AUDIO_CONTEXT_TYPE_NONE;
+static enum bt_audio_context cached_supp_snk_ctx = BT_AUDIO_CONTEXT_TYPE_NONE;
+static enum bt_audio_context cached_supp_src_ctx = BT_AUDIO_CONTEXT_TYPE_NONE;
 
 static struct bt_bap_unicast_group_stream_pair_param pair_params[ARRAY_SIZE(test_streams)];
 static struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(test_streams)];
@@ -67,6 +71,10 @@ CREATE_FLAG(flag_stream_disabled);
 CREATE_FLAG(flag_stream_stopped);
 CREATE_FLAG(flag_stream_released);
 CREATE_FLAG(flag_operation_success);
+CREATE_FLAG(flag_sink_avail_ctx_changed);
+CREATE_FLAG(flag_sink_supp_ctx_changed);
+CREATE_FLAG(flag_source_avail_ctx_changed);
+CREATE_FLAG(flag_source_supp_ctx_changed);
 
 static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg_pref *pref)
 {
@@ -197,13 +205,40 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 	printk("dir %u loc %X\n", dir, loc);
 }
 
+static void supported_contexts_cb(struct bt_conn *conn, enum bt_audio_context snk_ctx,
+				  enum bt_audio_context src_ctx)
+{
+	printk("Supported snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
+	printk("cached %d %d\n", cached_supp_snk_ctx, cached_supp_src_ctx);
+
+	if (snk_ctx != cached_supp_snk_ctx) {
+		cached_supp_snk_ctx = snk_ctx;
+		SET_FLAG(flag_sink_supp_ctx_changed);
+	}
+
+	if (src_ctx != cached_supp_src_ctx) {
+		cached_supp_src_ctx = src_ctx;
+		SET_FLAG(flag_source_supp_ctx_changed);
+	}
+}
+
 static void available_contexts_cb(struct bt_conn *conn,
 				  enum bt_audio_context snk_ctx,
 				  enum bt_audio_context src_ctx)
 {
-	printk("snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
-}
+	printk("Available snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
+	printk("cached %d %d\n", cached_avail_snk_ctx, cached_avail_src_ctx);
 
+	if (snk_ctx != cached_avail_snk_ctx) {
+		cached_avail_snk_ctx = snk_ctx;
+		SET_FLAG(flag_sink_avail_ctx_changed);
+	}
+
+	if (src_ctx != cached_avail_src_ctx) {
+		cached_avail_src_ctx = src_ctx;
+		SET_FLAG(flag_source_avail_ctx_changed);
+	}
+}
 
 static void config_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
 		      enum bt_bap_ascs_reason reason)
@@ -363,6 +398,7 @@ static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_b
 
 static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.location = unicast_client_location_cb,
+	.supported_contexts = supported_contexts_cb,
 	.available_contexts = available_contexts_cb,
 	.config = config_cb,
 	.qos = qos_cb,
@@ -436,7 +472,7 @@ static bool parse_ascs_ad_data(struct bt_data *data, void *user_data)
 
 	err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN, BT_BAP_CONN_PARAM_RELAXED,
 				&default_conn);
-	if (err) {
+	if (err != 0) {
 		FAIL("Could not connect to peer: %d", err);
 		return false;
 	}
@@ -447,8 +483,6 @@ static bool parse_ascs_ad_data(struct bt_data *data, void *user_data)
 
 static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
-
 	if (default_conn) {
 		return;
 	}
@@ -462,8 +496,7 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 		return;
 	}
 
-	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
-	printk("Device found: %s (RSSI %d)\n", addr_str, info->rssi);
+	printk("Device found: %s (RSSI %d)\n", bt_addr_le_str(info->addr), info->rssi);
 
 	bt_data_parse(ad, parse_ascs_ad_data, (void *)info);
 }
@@ -533,6 +566,8 @@ static void scan_and_connect(void)
 
 	printk("Scanning successfully started\n");
 	WAIT_FOR_FLAG(flag_connected);
+
+	update_security(default_conn);
 }
 
 static void disconnect_acl(void)
@@ -559,9 +594,15 @@ static void discover_sinks(void)
 
 	unicast_client_cbs.discover = discover_sinks_cb;
 
+	UNSET_FLAG(flag_sink_avail_ctx_changed);
+	UNSET_FLAG(flag_sink_supp_ctx_changed);
 	UNSET_FLAG(flag_codec_cap_found);
 	UNSET_FLAG(flag_sink_discovered);
 	UNSET_FLAG(flag_endpoint_found);
+
+	(void)memset(g_sinks, 0, sizeof(g_sinks));
+	cached_avail_snk_ctx = BT_AUDIO_CONTEXT_TYPE_NONE;
+	cached_supp_snk_ctx = BT_AUDIO_CONTEXT_TYPE_NONE;
 
 	err = bt_bap_unicast_client_discover(default_conn, BT_AUDIO_DIR_SINK);
 	if (err != 0) {
@@ -569,10 +610,11 @@ static void discover_sinks(void)
 		return;
 	}
 
-	memset(g_sinks, 0, sizeof(g_sinks));
-
 	WAIT_FOR_FLAG(flag_codec_cap_found);
 	WAIT_FOR_FLAG(flag_endpoint_found);
+
+	WAIT_FOR_FLAG(flag_sink_avail_ctx_changed);
+	WAIT_FOR_FLAG(flag_sink_supp_ctx_changed);
 	WAIT_FOR_FLAG(flag_sink_discovered);
 }
 
@@ -582,8 +624,14 @@ static void discover_sources(void)
 
 	unicast_client_cbs.discover = discover_sources_cb;
 
+	UNSET_FLAG(flag_source_avail_ctx_changed);
+	UNSET_FLAG(flag_source_supp_ctx_changed);
 	UNSET_FLAG(flag_codec_cap_found);
 	UNSET_FLAG(flag_source_discovered);
+
+	(void)memset(g_sources, 0, sizeof(g_sources));
+	cached_avail_src_ctx = BT_AUDIO_CONTEXT_TYPE_NONE;
+	cached_supp_src_ctx = BT_AUDIO_CONTEXT_TYPE_NONE;
 
 	err = bt_bap_unicast_client_discover(default_conn, BT_AUDIO_DIR_SOURCE);
 	if (err != 0) {
@@ -591,8 +639,8 @@ static void discover_sources(void)
 		return;
 	}
 
-	memset(g_sources, 0, sizeof(g_sources));
-
+	WAIT_FOR_FLAG(flag_source_avail_ctx_changed);
+	WAIT_FOR_FLAG(flag_source_supp_ctx_changed);
 	WAIT_FOR_FLAG(flag_codec_cap_found);
 	WAIT_FOR_FLAG(flag_source_discovered);
 }
@@ -1069,6 +1117,18 @@ static void test_main(void)
 
 	discover_sources();
 	discover_sources(); /* test that we can discover twice */
+
+	/* Send signal to trigger a change to context types on the unicast server */
+	UNSET_FLAG(flag_sink_avail_ctx_changed);
+	UNSET_FLAG(flag_sink_supp_ctx_changed);
+	UNSET_FLAG(flag_source_avail_ctx_changed);
+	UNSET_FLAG(flag_source_supp_ctx_changed);
+	backchannel_sync_send_all();
+
+	WAIT_FOR_FLAG(flag_sink_avail_ctx_changed);
+	WAIT_FOR_FLAG(flag_sink_supp_ctx_changed);
+	WAIT_FOR_FLAG(flag_source_avail_ctx_changed);
+	WAIT_FOR_FLAG(flag_source_supp_ctx_changed);
 
 	/* Run the stream setup multiple time to ensure states are properly
 	 * set and reset

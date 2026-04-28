@@ -362,10 +362,16 @@ SECTIONS {
   __common_rom_region_end = .;
     __rodata_region_end = .;
 
-  .noinit SEGSTART_UNCACHED : HDR_MMU_PAGE_ALIGN {
+  .noinit SEGSTART_UNCACHED (NOLOAD) : HDR_MMU_PAGE_ALIGN {
     __data_start = .;
     *(.noinit)
     *(.noinit.*)
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() CMake function.
+ */
+#include <snippets-noinit.ld>
+
   } >ucram
 
 #include <zephyr/linker/kobject-priv-stacks.ld>
@@ -462,6 +468,17 @@ SECTIONS {
   .bss SEGSTART_UNCACHED (NOLOAD) :
   {
     __bss_start = .;
+
+#if defined(CONFIG_XTENSA_MMU)
+    /* Explicitly place these here and together instead of letting linker
+     * decide where to put these. This keeps a large piece of memory
+     * allocated continuously to avoid fragmenting the virtual address
+     * space.
+     */
+    *:ptables.c.obj(.bss.l1_page_tables)
+    *:ptables.c.obj(.bss.l2_page_tables)
+    *:ptables.c.obj(.bss.l1_page_tables_track .bss.l2_page_tables_counter)
+#endif /* CONFIG_XTENSA_MMU */
 
 #if defined(CONFIG_ZTEST) && defined(CONFIG_SIMULATOR_XTENSA)
     /* For some weird unknown reasons, the simulator really do not

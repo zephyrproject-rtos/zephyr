@@ -86,7 +86,7 @@ static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt
 {
 	switch (mgmt_event) {
 	case NET_EVENT_IPV4_DHCP_BOUND:
-		wifi_mgmt_raise_connect_result_event(iface, 0);
+		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_SUCCESS);
 		break;
 	default:
 		break;
@@ -239,6 +239,7 @@ static void scan_done_handler(void)
 		strncpy(res.ssid, ap_record.ssid, ssid_len);
 		res.rssi = ap_record.rssi;
 		res.channel = ap_record.primary;
+		res.band = ap_record.primary <= 14 ? WIFI_FREQ_BAND_2_4_GHZ : WIFI_FREQ_BAND_5_GHZ;
 
 		memcpy(res.mac, ap_record.bssid, WIFI_MAC_ADDR_LEN);
 		res.mac_length = WIFI_MAC_ADDR_LEN;
@@ -297,38 +298,58 @@ static void esp_wifi_handle_sta_connect_event(void *event_data)
 #if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
 	net_dhcpv4_start(esp32_wifi_iface);
 #else
-	wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, 0);
+	wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, WIFI_STATUS_CONN_SUCCESS);
 #endif
 }
 
 static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 {
 	wifi_event_sta_disconnected_t *event = (wifi_event_sta_disconnected_t *)event_data;
+	struct wifi_status result;
 
 	if (esp32_data.state == ESP32_STA_CONNECTED) {
 #if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
 		net_dhcpv4_stop(esp32_wifi_iface);
 #endif
-		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, 0);
+		switch (event->reason) {
+		case WIFI_REASON_ASSOC_LEAVE:
+			result.disconn_reason = WIFI_REASON_DISCONN_USER_REQUEST;
+			break;
+		case WIFI_REASON_AUTH_LEAVE:
+			result.disconn_reason = WIFI_REASON_DISCONN_AP_LEAVING;
+			break;
+		case WIFI_REASON_DISASSOC_DUE_TO_INACTIVITY:
+			result.disconn_reason = WIFI_REASON_DISCONN_INACTIVITY;
+			break;
+		default:
+			result.disconn_reason = WIFI_REASON_DISCONN_UNSPECIFIED;
+			break;
+		}
+		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, result.status);
 	} else {
-		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, -1);
+		switch (event->reason) {
+		case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
+			result.conn_status = WIFI_STATUS_CONN_WRONG_PASSWORD;
+			break;
+		case WIFI_REASON_HANDSHAKE_TIMEOUT:
+		case WIFI_REASON_AUTH_EXPIRE:
+			result.conn_status = WIFI_STATUS_CONN_TIMEOUT;
+			break;
+		case WIFI_REASON_NO_AP_FOUND:
+		case WIFI_REASON_NO_AP_FOUND_W_COMPATIBLE_SECURITY:
+		case WIFI_REASON_NO_AP_FOUND_IN_AUTHMODE_THRESHOLD:
+		case WIFI_REASON_NO_AP_FOUND_IN_RSSI_THRESHOLD:
+			result.conn_status = WIFI_STATUS_CONN_AP_NOT_FOUND;
+			break;
+		case WIFI_REASON_AUTH_FAIL:
+		case WIFI_REASON_MIC_FAILURE:
+		default:
+			result.conn_status = WIFI_STATUS_CONN_FAIL;
+			break;
+		}
+		wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, result.status);
 	}
-
 	LOG_DBG("Disconnect reason: %d", event->reason);
-	switch (event->reason) {
-	case WIFI_REASON_AUTH_EXPIRE:
-	case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
-	case WIFI_REASON_AUTH_FAIL:
-	case WIFI_REASON_HANDSHAKE_TIMEOUT:
-	case WIFI_REASON_MIC_FAILURE:
-		LOG_DBG("STA Auth Error");
-		break;
-	case WIFI_REASON_NO_AP_FOUND:
-		LOG_DBG("AP Not found");
-		break;
-	default:
-		break;
-	}
 
 	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_RECONNECT) &&
 	    (event->reason != WIFI_REASON_ASSOC_LEAVE)) {
@@ -444,12 +465,12 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 	case WIFI_EVENT_AP_START:
 		ap_data->state = ESP32_AP_STARTED;
 		net_eth_carrier_on(iface_ap);
-		wifi_mgmt_raise_ap_enable_result_event(iface_ap, 0);
+		wifi_mgmt_raise_ap_enable_result_event(iface_ap, WIFI_STATUS_AP_SUCCESS);
 		break;
 	case WIFI_EVENT_AP_STOP:
 		ap_data->state = ESP32_AP_STOPPED;
 		net_eth_carrier_off(iface_ap);
-		wifi_mgmt_raise_ap_disable_result_event(iface_ap, 0);
+		wifi_mgmt_raise_ap_disable_result_event(iface_ap, WIFI_STATUS_AP_SUCCESS);
 		break;
 	case WIFI_EVENT_AP_STACONNECTED:
 		ap_data->state = ESP32_AP_CONNECTED;
@@ -485,7 +506,7 @@ static int esp32_wifi_connect(const struct device *dev,
 	int ret;
 
 	if (data->state == ESP32_STA_CONNECTING || data->state == ESP32_STA_CONNECTED) {
-		wifi_mgmt_raise_connect_result_event(iface, -1);
+		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_FAIL);
 		return -EALREADY;
 	}
 
@@ -514,7 +535,7 @@ static int esp32_wifi_connect(const struct device *dev,
 
 	if (data->state != ESP32_STA_STARTED) {
 		LOG_ERR("Wi-Fi not in station mode");
-		wifi_mgmt_raise_connect_result_event(iface, -1);
+		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_FAIL);
 		return -EIO;
 	}
 
@@ -536,6 +557,7 @@ static int esp32_wifi_connect(const struct device *dev,
 		wifi_config.sta.pmf_cfg.required = false;
 		break;
 	case WIFI_SECURITY_TYPE_PSK:
+	case WIFI_SECURITY_TYPE_PSK_SHA256:
 		memcpy(wifi_config.sta.password, params->psk, params->psk_length);
 		wifi_config.sta.password[params->psk_length] = '\0';
 		wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
@@ -543,6 +565,8 @@ static int esp32_wifi_connect(const struct device *dev,
 		data->status.security = WIFI_AUTH_WPA2_PSK;
 		break;
 	case WIFI_SECURITY_TYPE_SAE:
+	case WIFI_SECURITY_TYPE_SAE_H2E:
+	case WIFI_SECURITY_TYPE_SAE_AUTO:
 #if defined(CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE)
 		if (params->sae_password) {
 			memcpy(wifi_config.sta.password, params->sae_password,
@@ -554,7 +578,15 @@ static int esp32_wifi_connect(const struct device *dev,
 		}
 		data->status.security = WIFI_AUTH_WPA3_PSK;
 		wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA3_PSK;
-		wifi_config.sta.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
+		wifi_config.sta.pmf_cfg.capable = true;
+		wifi_config.sta.pmf_cfg.required = true;
+		if (params->security == WIFI_SECURITY_TYPE_SAE_H2E) {
+			wifi_config.sta.sae_pwe_h2e = WPA3_SAE_PWE_HASH_TO_ELEMENT;
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
+			wifi_config.sta.sae_pwe_h2e = WPA3_SAE_PWE_HUNT_AND_PECK;
+		} else {
+			wifi_config.sta.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
+		}
 		break;
 #else
 		LOG_ERR("WPA3 not supported for STA mode. Enable "
@@ -636,18 +668,21 @@ static int esp32_wifi_scan(const struct device *dev, struct wifi_scan_params *pa
 
 	if (ret) {
 		LOG_ERR("Failed to set Wi-Fi mode (%d)", ret);
+		data->scan_cb = NULL;
 		return -EINVAL;
 	}
 
 	ret = esp_wifi_start();
 	if (ret) {
 		LOG_ERR("Failed to start Wi-Fi driver (%d)", ret);
+		data->scan_cb = NULL;
 		return -EAGAIN;
 	}
 
 	ret = esp_wifi_scan_start(&scan_config, false);
 	if (ret != ESP_OK) {
-		LOG_ERR("Failed to start Wi-Fi scanning");
+		LOG_ERR("Failed to start Wi-Fi scanning (%d)", ret);
+		data->scan_cb = NULL;
 		return -EAGAIN;
 	}
 
@@ -689,6 +724,33 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		data->status.security = WIFI_AUTH_WPA2_PSK;
 		wifi_config.ap.pmf_cfg.required = false;
 		break;
+	case WIFI_SECURITY_TYPE_SAE:
+	case WIFI_SECURITY_TYPE_SAE_H2E:
+	case WIFI_SECURITY_TYPE_SAE_AUTO:
+#if defined(CONFIG_ESP32_WIFI_SOFTAP_SAE_SUPPORT)
+		if (params->sae_password) {
+			strncpy((char *)wifi_config.ap.password, params->sae_password,
+				params->sae_password_length);
+		} else {
+			strncpy((char *)wifi_config.ap.password, params->psk, params->psk_length);
+		}
+		wifi_config.ap.authmode = WIFI_AUTH_WPA3_PSK;
+		data->status.security = WIFI_AUTH_WPA3_PSK;
+		wifi_config.ap.pmf_cfg.capable = true;
+		wifi_config.ap.pmf_cfg.required = true;
+		if (params->security == WIFI_SECURITY_TYPE_SAE_H2E) {
+			wifi_config.ap.sae_pwe_h2e = WPA3_SAE_PWE_HASH_TO_ELEMENT;
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
+			wifi_config.ap.sae_pwe_h2e = WPA3_SAE_PWE_HUNT_AND_PECK;
+		} else {
+			wifi_config.ap.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
+		}
+		break;
+#else
+		LOG_ERR("WPA3 not supported for AP mode. Enable "
+			"CONFIG_ESP32_WIFI_SOFTAP_SAE_SUPPORT");
+		return -EINVAL;
+#endif
 	default:
 		LOG_ERR("Authentication method not supported");
 		return -EINVAL;
@@ -1054,8 +1116,6 @@ static int esp32_wifi_set_config(const struct device *dev, enum ethernet_config_
 		}
 
 		memcpy(dev_data->mac_addr, config->mac_address.addr, sizeof(dev_data->mac_addr));
-		net_if_set_link_addr(esp32_wifi_iface, dev_data->mac_addr,
-				     sizeof(dev_data->mac_addr), NET_LINK_ETHERNET);
 
 		return 0;
 	}

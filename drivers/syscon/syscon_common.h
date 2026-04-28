@@ -13,22 +13,22 @@ extern "C" {
 #endif
 
 /**
- * @brief Align and check register address
+ * @brief Validate register address alignment and bounds
  *
- * @param reg Pointer to the register address in question.
+ * @param reg The register offset to validate.
  * @param reg_size The size of the syscon register region.
  * @param reg_width The width of a single register (in bytes).
  *
- * @retval 0 if the register read is valid.
- * @retval -EINVAL if the read is invalid.
+ * @retval 0 if the register address is valid.
+ * @retval -EINVAL if the address is misaligned or out of bounds.
  */
-static inline int syscon_sanitize_reg(uint16_t *reg, size_t reg_size, uint8_t reg_width)
+static inline int syscon_sanitize_reg(uint16_t reg, size_t reg_size, uint8_t reg_width)
 {
-	/* Avoid unaligned readings */
-	*reg = ROUND_DOWN(*reg, reg_width);
+	if (reg % reg_width != 0) {
+		return -EINVAL;
+	}
 
-	/* Check for out-of-bounds readings */
-	if (*reg >= reg_size) {
+	if (reg >= reg_size) {
 		return -EINVAL;
 	}
 

@@ -291,6 +291,21 @@ enum video_exposure_type {
  */
 #define VIDEO_CID_IRIS_RELATIVE (VIDEO_CID_CAMERA_CLASS_BASE + 18)
 
+/**
+ * @brief Automatic exposure compensation.
+ *
+ * Determines the automatic exposure compensation. It is effective only when
+ * VIDEO_CID_EXPOSURE_AUTO control is set to AUTO, SHUTTER_PRIORITY, or
+ * APERTURE_PRIORITY. It is expressed in terms of EV; drivers should interpret
+ * the values as 0.001 EV units, where the value 1000 stands for +1 EV.
+ *
+ * Increasing the exposure compensation value is equivalent to decreasing the
+ * exposure value (EV) and will increase the amount of light at the image sensor.
+ * The camera performs the exposure compensation by adjusting absolute exposure
+ * time and/or aperture.
+ */
+#define VIDEO_CID_AUTO_EXPOSURE_BIAS (VIDEO_CID_CAMERA_CLASS_BASE + 19)
+
 /** Enables or disables the camera's wide dynamic range feature.
  * This feature allows to obtain clear images in situations where intensity of the illumination
  * varies significantly throughout the scene, i.e. there are simultaneously very dark and very

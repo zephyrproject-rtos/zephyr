@@ -35,7 +35,7 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 
 /** Check driver bits for this header are available */
-BUILD_ASSERT(IS_ENABLED(CONFIG_GPIO_BL61X_WO),
+BUILD_ASSERT(IS_ENABLED(CONFIG_GPIO_BL61X_808_WO),
 	     "BFLB Wire Out must be activated to use this header");
 
 /** Time size validator */

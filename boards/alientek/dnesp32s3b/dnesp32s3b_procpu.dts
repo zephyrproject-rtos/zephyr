@@ -8,6 +8,7 @@
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "dnesp32s3b-pinctrl.dtsi"
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	model = "DNESP32S3B PROCPU";
@@ -156,7 +157,7 @@
 		gctrl = <0x35>;
 		mdac = <0x60>; /* RGB order, swap XY, mirror X */
 		lcm = <0x2c>;
-		colmod = <0x55>; /* RGB565 16bit */
+		pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 		gamma = <0x01>;
 		porch-param = [0c 0c 00 33 33];
 		cmd2en-param = [5a 69 02 01];

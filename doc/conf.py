@@ -76,6 +76,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.graphviz",
     "sphinxcontrib.jquery",
+    "sphinxcontrib.mermaid",
     "sphinxcontrib.programoutput",
     "zephyr.application",
     "zephyr.html_redirects",
@@ -219,8 +220,8 @@ html_context = {
     "current_version": version,
     "versions": (
         ("latest", "/"),
+        ("4.4.0", "/4.4.0/"),
         ("4.3.0", "/4.3.0/"),
-        ("4.2.0", "/4.2.0/"),
         ("3.7.0 (LTS)", "/3.7.0/"),
     ),
     "display_gh_links": True,
@@ -266,6 +267,7 @@ latex_documents = [
     ("index-tex", "zephyr.tex", "Zephyr Project Documentation", author, "manual"),
 ]
 latex_engine = "xelatex"
+figure_align = "H" # Place figures exactly where they are defined in the source file.
 
 # -- Options for zephyr.doxyrunner plugin ---------------------------------
 
@@ -385,6 +387,15 @@ copybutton_prompt_is_regexp = True
 # -- Options for sphinx-sitemap ----------------------------------------
 
 sitemap_url_scheme = "{link}"
+
+#-- Options for sphinxcontrib-mermaid -------------------------------------
+
+mermaid_version = "11.14.0"
+d3_version = "7.9.0"
+
+if tags.has("no-external-deps"): # pylint: disable=undefined-variable  # noqa: F821
+    mermaid_use_local = "../../_static/js/mermaid/mermaid.esm.mjs"
+    d3_use_local = "../../_static/js/d3/d3.min.js"
 
 # -- Linkcheck options ----------------------------------------------------
 

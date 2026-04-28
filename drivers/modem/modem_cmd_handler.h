@@ -308,8 +308,8 @@ int modem_cmd_handler_setup_cmds_nolock(struct modem_iface *iface,
  * @param user_data Free to use data which can be retrieved from within command handlers
  * @param response_cmds Array of response command handlers
  * @param response_cmds_len Length of response command handlers array
- * @param unsol_cmds Array of unsolicitet command handlers
- * @param unsol_cmds_len Length of unsolicitet command handlers array
+ * @param unsol_cmds Array of unsolicited command handlers
+ * @param unsol_cmds_len Length of unsolicited command handlers array
  */
 struct modem_cmd_handler_config {
 	char *match_buf;

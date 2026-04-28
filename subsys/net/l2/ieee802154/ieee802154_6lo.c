@@ -13,7 +13,7 @@
 LOG_MODULE_REGISTER(net_ieee802154_6lo, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 #include "ieee802154_6lo.h"
-#include "ieee802154_frame.h"
+#include <zephyr/net/ieee802154_frame.h>
 #include "ieee802154_security.h"
 
 #include <6lo.h>

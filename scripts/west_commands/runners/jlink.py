@@ -56,6 +56,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                  gdb_host='',
                  gdb_port=DEFAULT_JLINK_GDB_PORT,
                  rtt_port=DEFAULT_JLINK_RTT_PORT,
+                 rtt_channel=None,
                  tui=False, tool_opt=None, dev_id_type=None, batch=False,
                  pre_script_cmds=None):
         super().__init__(cfg)
@@ -83,6 +84,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.tui_arg = ['-tui'] if tui else []
         self.loader = loader
         self.rtt_port = rtt_port
+        self.rtt_channel = rtt_channel
         self.dev_id_type = dev_id_type
         self.is_batch = batch
         self.pre_script_cmds = pre_script_cmds
@@ -200,6 +202,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             help='RTT client, default is JLinkRTTClient')
         parser.add_argument('--rtt-port', default=DEFAULT_JLINK_RTT_PORT,
                             help=f'jlink rtt port, defaults to {DEFAULT_JLINK_RTT_PORT}')
+        parser.add_argument('--rtt-channel', type=int, default=None,
+                            help='jlink rtt channel, not send by default')
         parser.add_argument('--flash-sram', default=False, action='store_true',
                             help='if given, flashing the image to SRAM and '
                             'modify PC register to be SRAM base address')
@@ -229,6 +233,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  gdb_host=args.gdb_host,
                                  gdb_port=args.gdb_port,
                                  rtt_port=args.rtt_port,
+                                 rtt_channel=args.rtt_channel,
                                  tui=args.tui, tool_opt=args.tool_opt,
                                  dev_id_type=args.dev_id_type,
                                  batch=args.batch,
@@ -399,10 +404,26 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                         # a non-recoverable state, hence let's wait and try
                         # again.
                         if e.errno in (errno.ECONNREFUSED, errno.EINVAL):
-                            time.sleep(0.1)
+                            time.sleep(0.05)
                         else:
                             raise e
-                self.run_telnet_client('localhost', self.rtt_port, sock)
+
+                if self.rtt_channel is not None:
+                    # The config string has to be sent within 100 ms after
+                    # establishing the connection, otherwise it would be ignored
+                    # and no channel selection would be applied.
+                    rtt_config = f'$$SEGGER_TELNET_ConfigStr=RTTCh;{self.rtt_channel}$$'
+                else:
+                    rtt_config = None
+
+                self.run_telnet_client('localhost', self.rtt_port, sock,
+                                       send_on_connect=rtt_config)
+            except ValueError as e:
+                # ValueError exception is thrown, if PC can't connect to the J-Link and
+                # we still try to open a socket to it.
+                # Silently capture the exception, the prompt from JLinkExe already
+                # contains good message about what happened.
+                self.logger.debug(f'ValueError during RTT connection: {e}')
             except OSError as e:
                 self.logger.error(
                     f'Failed to connect to the localhost:{self.rtt_port} socket: {e}',
@@ -410,6 +431,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             finally:
                 server_proc.terminate()
                 server_proc.wait()
+                # Print a single newline so that terminal prompt appears on a separate
+                # line.
+                print()
         else:
             if self.gdb_cmd is None:
                 raise ValueError('Cannot debug; gdb is missing')
@@ -450,7 +474,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 self.print_gdbserver_message()
                 self.run_server_and_client(server_cmd, client_cmd)
             else:
-                self.run_client(client_cmd)
+                self.check_call_ignore_sigint(client_cmd)
 
     def get_default_flash_commands(self):
         lines = self.pre_script_cmds or [] # Prepend custom script commands

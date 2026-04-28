@@ -40,9 +40,9 @@ enum {
 
 /* IDs of different messages posted from Coexistence Driver to Coexistence Manager */
 enum {
-	/* To insturct Coexistence Manager to collect and post SR traffic information */
+	/* To instruct Coexistence Manager to collect and post SR traffic information */
 	COLLECT_SR_TRAFFIC_INFO = 1,
-	/* To insturct Coexistence Manager to allocate a priority window to SR */
+	/* To instruct Coexistence Manager to allocate a priority window to SR */
 	ALLOCATE_PTI_WINDOW,
 	/* To do configuration of hardware related to coexistence */
 	HW_CONFIGURATION,
@@ -113,7 +113,7 @@ struct coex_allocate_pti_window {
 /**
  * struct coex_allocate_ppw - Message from CD to CM  to allocate Periodic Priority Windows.
  * @message_id: Indicates message ID. This is to be set to ALLOCATE_PPW.
- * @start_or_stop: Indiates start or stop allocation of PPWs.
+ * @start_or_stop: Indicates start or stop allocation of PPWs.
  * @first_pti_window: Indicates first priority window in the series of PPWs.
  * @ps_mechanism: Indicates recommended powersave mechanism for Wi-Fi's downlink.
  * @wifi_window_duration: Indicates duration of Wi-Fi priority window.
@@ -172,7 +172,7 @@ struct coex_config_cm_params {
  * @message_id: Indicates message ID. This is to be set to SR_TRAFFIC_INFO.
  * @sr_traffic_info: Traffic information buffer.
  *
- * Message from CM to CD to post SR traffic inforamtion
+ * Message from CM to CD to post SR traffic information
  */
 struct coex_sr_traffic_info {
 	uint32_t message_id;

@@ -25,8 +25,8 @@
 			compatible = "ilitek,ili9340";
 			mipi-max-frequency = <15151515>;
 			reg = <0>;
-			width = <320>;
-			height = <240>;
+			width = <240>;
+			height = <320>;
 			pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 			rotation = <90>;
 			frmctr1 = [00 18];

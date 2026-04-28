@@ -104,17 +104,10 @@ int hl78xx_run_init_fail_script_async(struct hl78xx_data *data);
 int hl78xx_run_enable_ksup_urc_script_async(struct hl78xx_data *data);
 int hl78xx_run_pwroff_script_async(struct hl78xx_data *data);
 int hl78xx_run_post_restart_script_async(struct hl78xx_data *data);
-#ifdef CONFIG_MODEM_HL78XX_12
-#if defined(CONFIG_MODEM_HL78XX_RAT_GSM) ||                     \
-	defined(CONFIG_MODEM_HL78XX_AUTORAT)
 /* Run the LTE disable GSM enable registration status script */
 int hl78xx_run_lte_dis_gsm_en_reg_status_script(struct hl78xx_data *data);
-#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
-#ifdef CONFIG_NTN_POSITION_SOURCE_MANUAL
 /* Run the NTN position setting script */
 int hl78xx_run_ntn_pos_script_async(struct hl78xx_data *data);
-#endif /* CONFIG_NTN_POSITION_SOURCE_MANUAL */
-#endif /* CONFIG_MODEM_HL78XX_12 */
 /* Run the GSM disable LTE enable registration status script */
 int hl78xx_run_gsm_dis_lte_en_reg_status_script(struct hl78xx_data *data);
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
@@ -132,9 +125,7 @@ int hl78xx_run_gnss_init_chat_script_async(struct hl78xx_data *data);
 int hl78xx_run_gnss_stop_search_chat_script(struct hl78xx_data *data);
 int hl78xx_run_gnss_terminate_nmea_chat_script(struct hl78xx_data *data);
 int hl78xx_run_gnss_gnssloc_script(struct hl78xx_data *data);
-#if defined(CONFIG_MODEM_HL78XX_00) /* && defined(CONFIG_MODEM_HL78XX_EDRX) */
 int hl78xx_run_rrc_query_script_async(struct hl78xx_data *data);
-#endif /* CONFIG_MODEM_HL78XX_00 && CONFIG_MODEM_HL78XX_EDRX */
 #endif /* CONFIG_HL78XX_GNSS */
 #ifndef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 int hl78xx_disable_pmc(struct hl78xx_data *data);

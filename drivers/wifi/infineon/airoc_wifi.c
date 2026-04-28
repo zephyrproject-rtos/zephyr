@@ -546,6 +546,11 @@ static int airoc_mgmt_scan(const struct device *dev, struct wifi_scan_params *pa
 			   scan_result_cb_t cb)
 {
 	struct airoc_wifi_data *data = dev->data;
+	enum wifi_scan_type scan_type = WIFI_SCAN_TYPE_ACTIVE;
+
+	if (params != NULL) {
+		scan_type = params->scan_type;
+	}
 
 	if (data->scan_rslt_cb != NULL) {
 		LOG_INF("Scan callback in progress");
@@ -559,8 +564,8 @@ static int airoc_mgmt_scan(const struct device *dev, struct wifi_scan_params *pa
 	data->scan_rslt_cb = cb;
 
 	/* Connect to the network */
-	if (whd_wifi_scan(airoc_sta_if, params->scan_type, WHD_BSS_TYPE_ANY, &(data->ssid), NULL,
-			  NULL, NULL, scan_callback, &(data->scan_result), data) != WHD_SUCCESS) {
+	if (whd_wifi_scan(airoc_sta_if, scan_type, WHD_BSS_TYPE_ANY, &(data->ssid), NULL, NULL,
+			  NULL, scan_callback, &(data->scan_result), data) != WHD_SUCCESS) {
 		LOG_ERR("Failed to start scan");
 		k_sem_give(&data->sema_common);
 		return -EAGAIN;

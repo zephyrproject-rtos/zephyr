@@ -16,6 +16,6 @@ dut_timer2: &timer134 {
 	status = "reserved";
 };
 
-&comp {
+&pdm0 {
 	status = "reserved";
 };

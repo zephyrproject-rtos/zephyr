@@ -33,7 +33,7 @@
  * leaves us with the bitbanging option. Of course, on lower-end
  * microcontrollers, the amount of time required to execute something
  * like gpio_pin_configure_dt() dwarfs the 2*500 nanoseconds needed to
- * achieve the minimum 1 MHz clock rate for loading the iCE40 bistream. So
+ * achieve the minimum 1 MHz clock rate for loading the iCE40 bitstream. So
  * in order to bitbang on lower-end microcontrollers, we actually require
  * direct register access to the set and clear registers.
  */

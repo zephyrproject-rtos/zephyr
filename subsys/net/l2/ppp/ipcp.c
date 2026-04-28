@@ -34,7 +34,13 @@ static enum net_verdict ipcp_handle(struct ppp_context *ctx,
 static int ipcp_add_address(struct ppp_context *ctx, struct net_pkt *pkt,
 			    struct net_in_addr *addr)
 {
-	net_pkt_write_u8(pkt, 1 + 1 + sizeof(addr->s_addr));
+	int ret;
+
+	ret = net_pkt_write_u8(pkt, 1 + 1 + sizeof(addr->s_addr));
+	if (ret < 0) {
+		return ret;
+	}
+
 	return net_pkt_write(pkt, &addr->s_addr, sizeof(addr->s_addr));
 }
 

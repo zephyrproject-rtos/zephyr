@@ -32,22 +32,12 @@ struct sensor_data_header {
 
 /**
  * Data for a sensor channel which reports on three axes. This is used by:
- * - :c:enum:`SENSOR_CHAN_ACCEL_X`
- * - :c:enum:`SENSOR_CHAN_ACCEL_Y`
- * - :c:enum:`SENSOR_CHAN_ACCEL_Z`
  * - :c:enum:`SENSOR_CHAN_ACCEL_XYZ`
- * - :c:enum:`SENSOR_CHAN_GYRO_X`
- * - :c:enum:`SENSOR_CHAN_GYRO_Y`
- * - :c:enum:`SENSOR_CHAN_GYRO_Z`
  * - :c:enum:`SENSOR_CHAN_GYRO_XYZ`
- * - :c:enum:`SENSOR_CHAN_MAGN_X`
- * - :c:enum:`SENSOR_CHAN_MAGN_Y`
- * - :c:enum:`SENSOR_CHAN_MAGN_Z`
  * - :c:enum:`SENSOR_CHAN_MAGN_XYZ`
- * - :c:enum:`SENSOR_CHAN_POS_DX`
- * - :c:enum:`SENSOR_CHAN_POS_DY`
- * - :c:enum:`SENSOR_CHAN_POS_DZ`
  * - :c:enum:`SENSOR_CHAN_POS_DXYZ`
+ * - :c:enum:`SENSOR_CHAN_GRAVITY_VECTOR`
+ * - :c:enum:`SENSOR_CHAN_GBIAS_XYZ`
  */
 struct sensor_three_axis_data {
 	struct sensor_data_header header;
@@ -121,6 +111,9 @@ struct sensor_occurrence_data {
 #define PRIsensor_occurrence_data_arg(data_, readings_offset_)                                     \
 	(data_).header.base_timestamp_ns + (data_).readings[(readings_offset_)].timestamp_delta
 
+/**
+ * Data for a sensor channel which reports a scalar data.
+ */
 struct sensor_q31_data {
 	struct sensor_data_header header;
 	int8_t shift;

@@ -6,6 +6,7 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -61,7 +62,7 @@ int csip_generate_rsi(uint8_t *rsi)
 	}
 
 	err = bt_csip_set_member_generate_rsi(svc_inst, rsi);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to generate RSI (err %d)\n", err);
 		return err;
 	}

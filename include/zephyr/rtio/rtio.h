@@ -260,7 +260,13 @@ extern struct k_mem_partition rtio_partition;
  * If CONFIG_USERSPACE is disabled, allocate as plain static:
  *   static
  */
+#if CONFIG_RTIO_BLOCK_POOL_PLACEMENT_DTCM
+#define RTIO_BMEM Z_GENERIC_SECTION(".dtcm_bss") static
+#elif defined(CONFIG_RTIO_BLOCK_POOL_PLACEMENT_NOCACHE)
+#define RTIO_BMEM __nocache static
+#else
 #define RTIO_BMEM COND_CODE_1(CONFIG_USERSPACE, (K_APP_BMEM(rtio_partition) static), (static))
+#endif
 
 /**
  * @brief Allocate as initialized memory if available
@@ -271,7 +277,13 @@ extern struct k_mem_partition rtio_partition;
  * If CONFIG_USERSPACE is disabled, allocate as plain static:
  *   static
  */
+#if CONFIG_RTIO_BLOCK_POOL_PLACEMENT_DTCM
+#define RTIO_DMEM Z_GENERIC_SECTION(".dtcm_data") static
+#elif defined(CONFIG_RTIO_BLOCK_POOL_PLACEMENT_NOCACHE)
+#define RTIO_DMEM __nocache_load static
+#else
 #define RTIO_DMEM COND_CODE_1(CONFIG_USERSPACE, (K_APP_DMEM(rtio_partition) static), (static))
+#endif
 
 /* clang-format off */
 /* @cond ignore */
