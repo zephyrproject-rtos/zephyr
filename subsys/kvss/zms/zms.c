@@ -1862,7 +1862,7 @@ static ssize_t zms_free_space(struct zms_fs *fs, uint32_t data_wra, uint32_t ate
 	}
 
 	/* initial value: available space for data at the top of the sector */
-	free_space = ate_wra - data_wra - fs->ate_size;
+	free_space = (int)(ate_wra - data_wra - fs->ate_size);
 
 	if (free_space < 0) {
 		/* not enough room for an ATE */
