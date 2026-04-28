@@ -1,3 +1,7 @@
+# Copyright (c) 2026 Kristina Kisiuk, Aliensense
+# SPDX-License-Identifier: Apache-2.0
+
+
 config LP5815
 	bool "LP5815 LED driver"
 	default y
