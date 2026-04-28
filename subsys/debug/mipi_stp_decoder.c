@@ -8,7 +8,9 @@
 
 #if defined(CONFIG_CPU_CORTEX_M) && \
 	!defined(CONFIG_CPU_CORTEX_M0) && \
-	!defined(CONFIG_CPU_CORTEX_M0PLUS)
+	!defined(CONFIG_CPU_CORTEX_M0PLUS) && \
+	!defined(CONFIG_TRAP_UNALIGNED_ACCESS) && \
+	!defined(__clang__)
 #define UNALIGNED_ACCESS_SUPPORTED 1
 #else
 #define UNALIGNED_ACCESS_SUPPORTED 0
