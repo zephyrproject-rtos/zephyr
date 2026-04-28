@@ -1,0 +1,59 @@
+name: Block outbound internet access
+description: Blocks outbound internet access by overriding DNS and setting proxy environment variables
+
+runs:
+  using: composite
+  steps:
+    - name: Block outbound internet access
+      shell: bash
+      run: |
+        cp /etc/resolv.conf /etc/resolv.conf.bak
+        # Prepend a non-listening nameserver to drop external DNS queries, but
+        # preserve the original cluster nameservers as fallbacks so that
+        # Kubernetes-internal names (e.g. *.svc.cluster.local for ccache) still
+        # resolve via the cluster's DNS.
+        {
+          echo "nameserver 127.0.0.1"
+          grep -v '^nameserver' /etc/resolv.conf.bak
+          grep '^nameserver' /etc/resolv.conf.bak
+        } > /etc/resolv.conf
+        echo "http_proxy=http://127.0.0.1:1" >> $GITHUB_ENV
+        echo "https_proxy=http://127.0.0.1:1" >> $GITHUB_ENV
+        echo "HTTP_PROXY=http://127.0.0.1:1" >> $GITHUB_ENV
+        echo "HTTPS_PROXY=http://127.0.0.1:1" >> $GITHUB_ENV
+        echo "no_proxy=localhost,127.0.0.1,*.cluster.local" >> $GITHUB_ENV
+        echo "NO_PROXY=localhost,127.0.0.1,*.cluster.local" >> $GITHUB_ENV
+
+    - name: Verify internet is blocked
+      shell: bash
+      run: |
+        if getent hosts github.com; then
+          echo "ERROR: DNS resolution succeeded - blocking failed"
+          exit 1
+        fi
+        if curl --silent --max-time 5 https://github.com; then
+          echo "ERROR: HTTPS connection succeeded - blocking failed"
+          exit 1
+        fi
+        echo "Internet access successfully blocked"
+
+    - name: Verify cluster-local DNS and connectivity
+      shell: bash
+      run: |
+        # kubernetes.default.svc.cluster.local is the Kubernetes API server
+        # service, present in every cluster — a reliable probe for cluster DNS
+        # and connectivity.
+        if ! getent hosts kubernetes.default.svc.cluster.local; then
+          echo "ERROR: cluster-local DNS resolution failed - ccache remote storage will not work"
+          exit 1
+        fi
+        echo "Cluster-local DNS resolution is working"
+
+        # Verify we can open a TCP connection to the API server (port 443).
+        # nc -z performs a connect-only probe; success means cluster-local
+        # traffic is not blocked by the proxy or routing changes.
+        if ! nc -z -w 5 kubernetes.default.svc.cluster.local 443; then
+          echo "ERROR: TCP connection to cluster-local host failed - ccache remote storage will not work"
+          exit 1
+        fi
+        echo "Cluster-local TCP connectivity is working"

@@ -232,6 +232,9 @@ jobs:
           west update
           make everything -s -j 8
 
+      - name: Block outbound internet access
+        uses: ./.github/actions/block-internet
+
       - if: github.event_name == 'push'
         name: Run Tests with Twister (Push)
         id: run_twister
@@ -275,6 +278,10 @@ jobs:
               ./scripts/twister +module_tests.args --outdir module_tests ${TWISTER_COMMON} ${WEEKLY_OPTIONS}
             fi
           fi
+
+      - name: Restore outbound internet access
+        if: always()
+        uses: ./.github/actions/restore-internet
 
       - name: Print ccache stats
         if: always()
