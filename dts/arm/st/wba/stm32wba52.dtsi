@@ -9,6 +9,15 @@
 	soc {
 		compatible = "st,stm32wba52", "st,stm32wba", "simple-bus";
 
+		flash: flash-controller@40022000 {
+			flash0: flash@8000000 {
+				write-block-size = <16>;
+				erase-block-size = <8192>;
+				/* maximum erase time (ms) for a 8K sector */
+				max-erase-time = <5>;
+			};
+		};
+
 		spi1: spi@40013000 {
 			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
