@@ -1,4 +1,4 @@
-.. zephyr:code-sample:: mctp_i2c_bus_owner
+.. zephyr:code-sample:: mctp_i2c_bus_host
    :name: MCTP I2C GPIO Top Node Sample
 
    Create an MCTP top node controlling I2C with GPIO signaling.
@@ -20,7 +20,7 @@ Building and Running
 ********************
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/pmci/mctp/i2c_gpio_bus_owner
+   :zephyr-app: samples/subsys/pmci/mctp/i2c_gpio_bus_host
    :host-os: unix
    :board: frdm_mcxn947_mcxn947_cpu0
    :goals: run

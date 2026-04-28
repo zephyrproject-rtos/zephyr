@@ -13,7 +13,7 @@
 #include <zephyr/pmci/mctp/mctp_i3c_controller.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(mctp_i3c_bus_owner);
+LOG_MODULE_REGISTER(mctp_i3c_bus_host);
 
 #define LOCAL_EID 20
 
