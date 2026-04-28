@@ -13,6 +13,29 @@
 
 LOG_MODULE_REGISTER(flash_cadence_ll, CONFIG_FLASH_LOG_LEVEL);
 
+#define SET_L(x) ((uint64_t)(x) & BIT64_MASK(32))
+#define SET_H(x) ((((uint64_t)x) & BIT64_MASK(32)) << 32)
+
+#define CONVERTTOMHZ(x)          (x / 1000000)
+#define WRITE_WATER_LEVEL_MARK   100
+
+#ifdef CONFIG_CAD_QSPI_INTERRUPT_SUPPORT
+struct transfer_params {
+	uint32_t requested_bytes;
+	uint32_t transferred_bytes;
+	uint32_t offset;
+	uint8_t *buffer;
+};
+
+struct transfer_params *read_req;
+struct transfer_params *write_req;
+
+int cad_qspi_indirect_page_bound_write_using_interrupt(struct cad_qspi_params *cad_params,
+					uint32_t offset, uint8_t *buffer, uint32_t len);
+int cad_qspi_read_bank_using_interrupt(struct cad_qspi_params *cad_params, uint8_t *buffer,
+				uint32_t offset, uint32_t size);
+#endif
+
 int cad_qspi_idle(struct cad_qspi_params *cad_params)
 {
 	if (cad_params == NULL) {
@@ -91,6 +114,30 @@ int cad_qspi_set_write_config(struct cad_qspi_params *cad_params, uint32_t opcod
 	return 0;
 }
 
+void cad_qspi_disable_interrupt_mask(struct cad_qspi_params *cad_params, uint32_t irq_bitmask)
+{
+	uint32_t temp_mask = sys_read32(cad_params->reg_base + CAD_QSPI_INTRMSKREG);
+
+	temp_mask &= (~irq_bitmask);
+	sys_write32(temp_mask, cad_params->reg_base + CAD_QSPI_INTRMSKREG);
+}
+
+void cad_qspi_clr_int_mask(struct cad_qspi_params *cad_params, uint32_t cler_en_mask)
+{
+	uint32_t temp_mask = sys_read32(cad_params->reg_base + CAD_QSPI_INTRMSKREG);
+
+	temp_mask &= cler_en_mask;
+	sys_write32(temp_mask, cad_params->reg_base + CAD_QSPI_INTRMSKREG);
+}
+
+void cad_qspi_enable_interrupt_mask(struct cad_qspi_params *cad_params, uint32_t  irq_bitmask)
+{
+	uint32_t temp_mask = sys_read32(cad_params->reg_base + CAD_QSPI_INTRMSKREG);
+
+	temp_mask |= irq_bitmask;
+	sys_write32(temp_mask, cad_params->reg_base + CAD_QSPI_INTRMSKREG);
+}
+
 int cad_qspi_timing_config(struct cad_qspi_params *cad_params, uint32_t clkphase, uint32_t clkpol,
 			   uint32_t csda, uint32_t csdads, uint32_t cseot, uint32_t cssot,
 			   uint32_t rddatacap)
@@ -167,7 +214,7 @@ int cad_qspi_stig_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, uint3
 }
 
 int cad_qspi_stig_read_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, uint32_t dummy,
-			   uint32_t num_bytes, uint32_t *output)
+			   uint32_t num_bytes, uint64_t *output)
 {
 	if (dummy > ((1 << CAD_QSPI_FLASHCMD_NUM_DUMMYBYTES_MAX) - 1)) {
 		LOG_ERR("Faulty dummy byes\n");
@@ -195,10 +242,10 @@ int cad_qspi_stig_read_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, 
 		return -1;
 	}
 
-	output[0] = sys_read32(cad_params->reg_base + CAD_QSPI_FLASHCMD_RDDATA0);
+	*output = SET_L(sys_read32(cad_params->reg_base + CAD_QSPI_FLASHCMD_RDDATA0));
 
 	if (num_bytes > 4) {
-		output[1] = sys_read32(cad_params->reg_base + CAD_QSPI_FLASHCMD_RDDATA1);
+		*output |= SET_H(sys_read32(cad_params->reg_base + CAD_QSPI_FLASHCMD_RDDATA1));
 	}
 
 	return 0;
@@ -285,7 +332,7 @@ int cad_qspi_device_bank_select(struct cad_qspi_params *cad_params, uint32_t ban
 	return cad_qspi_stig_cmd(cad_params, CAD_QSPI_STIG_OPCODE_WRDIS, 0);
 }
 
-int cad_qspi_device_status(struct cad_qspi_params *cad_params, uint32_t *status)
+int cad_qspi_device_status(struct cad_qspi_params *cad_params, uint64_t *status)
 {
 	return cad_qspi_stig_read_cmd(cad_params, CAD_QSPI_STIG_OPCODE_RDSR, 0, 1, status);
 }
@@ -302,12 +349,13 @@ int cad_qspi_n25q_enable(struct cad_qspi_params *cad_params)
 
 int cad_qspi_n25q_wait_for_program_and_erase(struct cad_qspi_params *cad_params, int program_only)
 {
-	uint32_t status, flag_sr;
+	uint64_t status, flag_sr;
 	int count = 0;
+	int ret = 0;
 
 	while (count < CAD_QSPI_COMMAND_TIMEOUT) {
-		status = cad_qspi_device_status(cad_params, &status);
-		if (status != 0) {
+		ret = cad_qspi_device_status(cad_params, &status);
+		if (ret != 0) {
 			LOG_ERR("Error getting device status\n");
 			return -1;
 		}
@@ -325,11 +373,11 @@ int cad_qspi_n25q_wait_for_program_and_erase(struct cad_qspi_params *cad_params,
 	count = 0;
 
 	while (count < CAD_QSPI_COMMAND_TIMEOUT) {
-		status = cad_qspi_stig_read_cmd(cad_params, CAD_QSPI_STIG_OPCODE_RDFLGSR, 0, 1,
-						&flag_sr);
-		if (status != 0) {
+		ret = cad_qspi_stig_read_cmd(cad_params, CAD_QSPI_STIG_OPCODE_RDFLGSR, 0, 1,
+					     &flag_sr);
+		if (ret != 0) {
 			LOG_ERR("Error waiting program and erase.\n");
-			return status;
+			return ret;
 		}
 
 		if ((program_only && CAD_QSPI_STIG_FLAGSR_PROGRAMREADY(flag_sr)) ||
@@ -363,9 +411,10 @@ int cad_qspi_indirect_read_start_bank(struct cad_qspi_params *cad_params, uint32
 
 	sys_write32(flash_addr, cad_params->reg_base + CAD_QSPI_INDRDSTADDR);
 	sys_write32(num_bytes, cad_params->reg_base + CAD_QSPI_INDRDCNT);
+#ifndef CONFIG_CAD_QSPI_INTERRUPT_SUPPORT
 	sys_write32(CAD_QSPI_INDRD_START | CAD_QSPI_INDRD_IND_OPS_DONE,
 		    cad_params->reg_base + CAD_QSPI_INDRD);
-
+#endif
 	return 0;
 }
 
@@ -388,9 +437,25 @@ int cad_qspi_indirect_write_start_bank(struct cad_qspi_params *cad_params, uint3
 int cad_qspi_indirect_write_finish(struct cad_qspi_params *cad_params)
 {
 
+	uint32_t status, count = 0;
+
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
 		return -EINVAL;
+	}
+
+	while (count < CAD_QSPI_COMMAND_TIMEOUT) {
+		status = CAD_QSPI_INDWR_RDSTAT(sys_read32(cad_params->reg_base + CAD_QSPI_INDWR));
+		if ((status & 0x60) == 0) {
+			sys_write32(0x60, cad_params->reg_base + CAD_QSPI_INDWR);
+			break;
+		}
+		count++;
+	}
+
+	if (count >= CAD_QSPI_COMMAND_TIMEOUT) {
+		LOG_ERR("Timed out waiting for idle\n");
+		return -1;
 	}
 
 #if CAD_QSPI_MICRON_N25Q_SUPPORT
@@ -501,14 +566,15 @@ void cad_qspi_calibration(struct cad_qspi_params *cad_params, uint32_t dev_clk,
 	int status;
 	uint32_t dev_sclk_mhz = 27; /*min value to get biggest 0xF div factor*/
 	uint32_t data_cap_delay;
-	uint32_t sample_rdid;
-	uint32_t rdid;
+	uint64_t sample_rdid;
+	uint64_t rdid;
 	uint32_t div_actual;
 	uint32_t div_bits;
 	int first_pass, last_pass;
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
+		return;
 	}
 
 	/*1.  Set divider to bigger value (slowest SCLK)
@@ -530,7 +596,7 @@ void cad_qspi_calibration(struct cad_qspi_params *cad_params, uint32_t dev_clk,
 	 *7.  Find the range of read delay that have same as
 	 *    item 2 and divide it to 2
 	 */
-	div_actual = (qspi_clk_mhz + (dev_clk - 1)) / dev_clk;
+	div_actual = (CONVERTTOMHZ(qspi_clk_mhz) + (dev_clk - 1)) / dev_clk;
 	div_bits = (((div_actual + 1) / 2) - 1);
 	status = cad_qspi_set_baudrate_div(cad_params, div_bits);
 
@@ -543,9 +609,6 @@ void cad_qspi_calibration(struct cad_qspi_params *cad_params, uint32_t dev_clk,
 	last_pass = -1;
 
 	do {
-		if (status != 0) {
-			break;
-		}
 
 		status = cad_qspi_stig_read_cmd(cad_params, CAD_QSPI_STIG_OPCODE_RDID, 0, 3, &rdid);
 		if (status != 0) {
@@ -598,15 +661,15 @@ int cad_qspi_int_disable(struct cad_qspi_params *cad_params, uint32_t mask)
 		return -1;
 	}
 
-	sys_write32(mask, cad_params->reg_base + CAD_QSPI_IRQMSK);
+	sys_write32(~mask, cad_params->reg_base + CAD_QSPI_IRQMSK);
 	return 0;
 }
 
 void cad_qspi_set_chip_select(struct cad_qspi_params *cad_params, int cs)
 {
-
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
+		return;
 	}
 
 	cad_params->cad_qspi_cs = cs;
@@ -618,7 +681,7 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 {
 	int status = 0;
 	uint32_t qspi_desired_clk_freq;
-	uint32_t rdid = 0;
+	uint64_t rdid;
 	uint32_t cap_code;
 
 	LOG_INF("Initializing Qspi");
@@ -655,7 +718,7 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 		return status;
 	}
 
-	qspi_desired_clk_freq = 100;
+	qspi_desired_clk_freq = 90;
 	cad_qspi_calibration(cad_params, qspi_desired_clk_freq, cad_params->clk_rate);
 
 	status = cad_qspi_stig_read_cmd(cad_params, CAD_QSPI_STIG_OPCODE_RDID, 0, 3, &rdid);
@@ -687,11 +750,11 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 	 */
 
 	cap_code = CAD_QSPI_STIG_RDID_CAPACITYID(rdid);
+	if (((cap_code >> 4) < 0x9) && ((cap_code & 0xf) < 0x9)) {
+		uint32_t decoded_cap = (uint32_t)(((cap_code >> 4) * 10) + (cap_code & 0xf));
 
-	if (!(((cap_code >> 4) > 0x9) || ((cap_code & 0xf) > 0x9))) {
-		uint32_t decoded_cap = ((cap_code >> 4) * 10) + (cap_code & 0xf);
-
-		cad_params->qspi_device_size = 1 << (decoded_cap + 6);
+		decoded_cap = decoded_cap > 25?25:decoded_cap;
+		cad_params->qspi_device_size = (uint32_t)(1 << (decoded_cap + 6));
 		LOG_INF("QSPI Capacity: %x", cad_params->qspi_device_size);
 
 	} else {
@@ -699,8 +762,16 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 		return -1;
 	}
 
-	cad_qspi_configure_dev_size(cad_params, QSPI_ADDR_BYTES, QSPI_BYTES_PER_DEV,
-				    QSPI_BYTES_PER_BLOCK);
+	status = cad_qspi_configure_dev_size(cad_params, cad_params->qspi_device_address_byte,
+				    cad_params->qspi_device_page_size,
+				    cad_params->qspi_device_bytes_per_block);
+	if (status != 0) {
+		LOG_ERR("Failed to configure device size\n");
+		return status;
+	}
+
+	status = sys_read32(cad_params->reg_base + CAD_QSPI_INTRSTREG);
+	sys_write32(status, cad_params->reg_base + CAD_QSPI_INTRSTREG);
 
 	LOG_INF("Flash size: %d Bytes", cad_params->qspi_device_size);
 
@@ -710,8 +781,9 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 int cad_qspi_indirect_page_bound_write(struct cad_qspi_params *cad_params, uint32_t offset,
 				       uint8_t *buffer, uint32_t len)
 {
-	int status = 0, i;
+	int status = 0;
 	uint32_t write_count, write_capacity, *write_data, space, write_fill_level, sram_partition;
+	uint8_t *write_byte_data;
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
@@ -735,11 +807,18 @@ int cad_qspi_indirect_page_bound_write(struct cad_qspi_params *cad_params, uint3
 		space = MIN(write_capacity - write_fill_level,
 			    (len - write_count) / sizeof(uint32_t));
 		write_data = (uint32_t *)(buffer + write_count);
-		for (i = 0; i < space; ++i) {
+		for (uint32_t i = 0; i < space; ++i) {
 			sys_write32(*write_data++, cad_params->data_base);
 		}
-
 		write_count += space * sizeof(uint32_t);
+
+		if ((len - write_count) < 4) {
+			write_byte_data = (uint8_t *)write_data;
+			while (len - write_count) {
+				sys_write8(*write_byte_data++, cad_params->data_base);
+				write_count++;
+			}
+		}
 	}
 	return cad_qspi_indirect_write_finish(cad_params);
 }
@@ -748,8 +827,11 @@ int cad_qspi_read_bank(struct cad_qspi_params *cad_params, uint8_t *buffer, uint
 		       uint32_t size)
 {
 	int status;
-	uint32_t read_count = 0, *read_data;
-	int level = 1, count = 0, i;
+	uint32_t read_count = 0;
+	uint32_t *read_data;
+	int level = 1, i;
+	uint32_t words_to_read = size/4;
+	uint8_t bytes_to_read = size%4;
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
@@ -768,14 +850,23 @@ int cad_qspi_read_bank(struct cad_qspi_params *cad_params, uint8_t *buffer, uint
 				sys_read32(cad_params->reg_base + CAD_QSPI_SRAMFILL));
 			read_data = (uint32_t *)(buffer + read_count);
 			for (i = 0; i < level; ++i) {
-				*read_data++ = sys_read32(cad_params->data_base);
-			}
+				if (words_to_read) {
+					*read_data++ = sys_read32(cad_params->data_base);
+					words_to_read--;
+				} else {
+					uint32_t temp = sys_read32(cad_params->data_base);
 
+					if (size > 4) {
+						buffer = buffer + (size/4)*sizeof(uint32_t);
+						memcpy(buffer, &temp, bytes_to_read);
+					} else {
+						memcpy(buffer, &temp, bytes_to_read);
+					}
+				}
+			}
 			read_count += level * sizeof(uint32_t);
-			count++;
 		} while (level > 0);
 	}
-
 	return 0;
 }
 
@@ -783,14 +874,19 @@ int cad_qspi_write_bank(struct cad_qspi_params *cad_params, uint32_t offset, uin
 			uint32_t size)
 {
 	int status = 0;
+#ifndef CONFIG_CAD_QSPI_INTERRUPT_SUPPORT
 	uint32_t page_offset = offset & (CAD_QSPI_PAGE_SIZE - 1);
 	uint32_t write_size = MIN(size, CAD_QSPI_PAGE_SIZE - page_offset);
-
+#endif
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
 		return -EINVAL;
 	}
-
+#ifdef CONFIG_CAD_QSPI_INTERRUPT_SUPPORT
+	status = cad_qspi_indirect_page_bound_write_using_interrupt(cad_params, offset,
+			buffer, size);
+	return status;
+#else
 	while (size) {
 		status = cad_qspi_indirect_page_bound_write(cad_params, offset, buffer, write_size);
 		if (status != 0) {
@@ -803,18 +899,25 @@ int cad_qspi_write_bank(struct cad_qspi_params *cad_params, uint32_t offset, uin
 		write_size = MIN(size, CAD_QSPI_PAGE_SIZE);
 	}
 	return status;
+#endif
 }
 
 int cad_qspi_read(struct cad_qspi_params *cad_params, void *buffer, uint32_t offset, uint32_t size)
 {
 	uint32_t bank_count, bank_addr, bank_offset, copy_len;
 	uint8_t *read_data;
-	int i, status;
+	int status;
 
 	status = 0;
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
+		return -EINVAL;
+	}
+
+	if ((offset >= cad_params->qspi_device_size) ||
+	    (offset + size - 1 >= cad_params->qspi_device_size) || (size == 0)) {
+		LOG_ERR("Invalid read parameter\n");
 		return -EINVAL;
 	}
 
@@ -844,14 +947,18 @@ int cad_qspi_read(struct cad_qspi_params *cad_params, void *buffer, uint32_t off
 
 	copy_len = MIN(size, CAD_QSPI_BANK_SIZE - bank_offset);
 
-	for (i = 0; i < bank_count; ++i) {
+	for (uint32_t i = 0; i < bank_count; ++i) {
 		status = cad_qspi_device_bank_select(cad_params, CAD_QSPI_BANK_ADDR(bank_addr));
 		if (status != 0) {
 			break;
 		}
-
-		status = cad_qspi_read_bank(cad_params, read_data, bank_offset, copy_len);
-
+#ifdef CONFIG_CAD_QSPI_INTERRUPT_SUPPORT
+		status = cad_qspi_read_bank_using_interrupt(cad_params, read_data,
+					bank_offset, copy_len);
+#else
+		status = cad_qspi_read_bank(cad_params, read_data, bank_offset,
+					copy_len);
+#endif
 		if (status != 0) {
 			break;
 		}
@@ -869,13 +976,14 @@ int cad_qspi_read(struct cad_qspi_params *cad_params, void *buffer, uint32_t off
 int cad_qspi_erase(struct cad_qspi_params *cad_params, uint32_t offset, uint32_t size)
 {
 	int status = 0;
-	uint32_t subsector_offset = offset & (CAD_QSPI_SUBSECTOR_SIZE - 1);
-	uint32_t erase_size = MIN(size, CAD_QSPI_SUBSECTOR_SIZE - subsector_offset);
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
 		return -EINVAL;
 	}
+
+	uint32_t subsector_offset = offset & (cad_params->qspi_device_subsector_size - 1);
+	uint32_t erase_size = MIN(size, cad_params->qspi_device_subsector_size - subsector_offset);
 
 	while (size) {
 		status = cad_qspi_erase_subsector(cad_params, offset);
@@ -886,7 +994,7 @@ int cad_qspi_erase(struct cad_qspi_params *cad_params, uint32_t offset, uint32_t
 
 		offset += erase_size;
 		size -= erase_size;
-		erase_size = MIN(size, CAD_QSPI_SUBSECTOR_SIZE);
+		erase_size = MIN(size, cad_params->qspi_device_subsector_size);
 	}
 	return status;
 }
@@ -970,3 +1078,268 @@ void cad_qspi_reset(struct cad_qspi_params *cad_params)
 	cad_qspi_stig_cmd(cad_params, CAD_QSPI_STIG_OPCODE_RESET_EN, 0);
 	cad_qspi_stig_cmd(cad_params, CAD_QSPI_STIG_OPCODE_RESET_MEM, 0);
 }
+
+#ifdef CONFIG_CAD_QSPI_INTERRUPT_SUPPORT
+uint32_t cad_qspi_read_data_using_interrupt(struct cad_qspi_params *cad_params, uint8_t *buffer,
+			uint32_t offset, uint32_t size)
+{
+	uint8_t *read_data = buffer;
+	uint32_t *read_word = (uint32_t *)buffer;
+	uint32_t transferred_bytes = 0;
+	volatile int level = 1;
+	uint32_t read_bytes;
+
+	if (size >= sizeof(uint32_t)) {
+		level = CAD_QSPI_SRAMFILL_INDRDPART(
+				sys_read32(cad_params->reg_base + CAD_QSPI_SRAMFILL));
+
+		read_bytes = MIN(level, size / sizeof(uint32_t));
+		for (uint32_t i = 0; i < read_bytes; ++i) {
+			*read_word++ = sys_read32(cad_params->data_base);
+		}
+		transferred_bytes = (read_bytes * sizeof(uint32_t));
+		read_data = (uint8_t *)read_word;
+		size -= transferred_bytes;
+	}
+
+	if ((size < 4)) {
+		level = CAD_QSPI_SRAMFILL_INDRDPART(
+				sys_read32(cad_params->reg_base + CAD_QSPI_SRAMFILL));
+		read_bytes = MIN(level*sizeof(uint32_t), size);
+
+		for (uint32_t i = 0; i < read_bytes; ++i) {
+			*read_data++ = sys_read8(cad_params->data_base);
+		}
+
+		transferred_bytes += read_bytes;
+	}
+	return transferred_bytes;
+}
+
+int cad_qspi_read_bank_using_interrupt(struct cad_qspi_params *cad_params, uint8_t *buffer,
+				uint32_t offset, uint32_t size)
+{
+	int status;
+	uint32_t byte_transferred, remaining_bytes, level;
+
+	if (cad_params == NULL) {
+		LOG_ERR("Wrong parameter\n");
+		return -EINVAL;
+	}
+
+	/* Disable RX interrupt */
+	cad_qspi_disable_interrupt_mask(cad_params, CAD_QSPI_INDOPDONE|CAD_QSPI_INDXFRLVL);
+
+	status = cad_qspi_indirect_read_start_bank(cad_params, offset, size);
+	if (status != 0) {
+		return status;
+	}
+
+	/* Store the calling parameter */
+	read_req = k_malloc(sizeof(struct transfer_params));
+	read_req->requested_bytes = size;
+	read_req->transferred_bytes = 0;
+	read_req->offset = offset;
+	read_req->buffer = buffer;
+
+	/* Read interrupt status */
+	status = sys_read32(cad_params->reg_base + CAD_QSPI_INTRSTREG);
+
+	/* Clear interrupt status*/
+	sys_write32(status, cad_params->reg_base + CAD_QSPI_INTRSTREG);
+
+	remaining_bytes = read_req->requested_bytes - read_req->transferred_bytes;
+
+	level = sys_read32(cad_params->reg_base + CAD_QSPI_SRAMPART);
+	sys_write32(level*4, cad_params->reg_base + CAD_QSPI_INDRDWATER);
+
+	/* Enable RX interrupt */
+	cad_qspi_enable_interrupt_mask(cad_params, CAD_QSPI_INDOPDONE | CAD_QSPI_INDXFRLVL);
+
+	/* Trigger Indirect Read access */
+	sys_write32(CAD_QSPI_INDRD_START | CAD_QSPI_INDRD_IND_OPS_DONE,
+			cad_params->reg_base + CAD_QSPI_INDRD);
+	while (remaining_bytes) {
+		/* Wait to receive data */
+		k_sem_take(&cad_params->qspi_intr_sem, K_FOREVER);
+
+		/* Enable RX interrupt */
+		cad_qspi_enable_interrupt_mask(cad_params, CAD_QSPI_INDOPDONE | CAD_QSPI_INDXFRLVL);
+
+		/* Read the date form internal buffer*/
+		byte_transferred = cad_qspi_read_data_using_interrupt(cad_params, read_req->buffer,
+						read_req->offset, remaining_bytes);
+
+		buffer += byte_transferred;
+		offset += byte_transferred;
+		read_req->transferred_bytes += byte_transferred;
+		read_req->buffer = buffer;
+		read_req->offset = offset;
+
+		remaining_bytes = read_req->requested_bytes - read_req->transferred_bytes;
+	}
+
+	/* Disable RX interrupt */
+	cad_qspi_disable_interrupt_mask(cad_params, CAD_QSPI_INDOPDONE|CAD_QSPI_INDXFRLVL|0x1000);
+	free(read_req);
+
+	return 0;
+}
+
+int cad_qspi_indirect_write_page_data(struct cad_qspi_params *cad_params,
+						uint32_t offset, uint8_t *buffer, uint32_t len)
+{
+	int status = 0;
+	uint32_t write_count, write_capacity, space, write_fill_level, sram_partition;
+	uint8_t *write_byte_data;
+	uint32_t *write_data;
+
+	uint32_t page_offset = offset & (CAD_QSPI_PAGE_SIZE - 1);
+	uint32_t write_size = MIN(len, CAD_QSPI_PAGE_SIZE - page_offset);
+
+	status = cad_qspi_indirect_write_start_bank(cad_params, offset, write_size);
+	if (status != 0) {
+		LOG_ERR("Failed to set bank parameter\n");
+		return status;
+	}
+
+	write_count = 0;
+	sram_partition =
+		CAD_QSPI_SRAMPART_ADDR(sys_read32(cad_params->reg_base + CAD_QSPI_SRAMPART));
+	write_capacity = (uint32_t)CAD_QSPI_SRAM_FIFO_ENTRY_COUNT - sram_partition;
+
+	while (write_count < write_size) {
+		write_fill_level = CAD_QSPI_SRAMFILL_INDWRPART(
+			sys_read32(cad_params->reg_base + CAD_QSPI_SRAMFILL));
+
+		space = MIN(write_capacity - write_fill_level,
+			    (write_size - write_count) / sizeof(uint32_t));
+
+		write_data = (uint32_t *)(buffer + write_count);
+
+		for (uint32_t i = 0; i < space; i++) {
+			sys_write32(*write_data, cad_params->data_base);
+			write_data++;
+		}
+		write_count += space * sizeof(uint32_t);
+
+		if ((write_size - write_count) < 4) {
+			write_byte_data = (uint8_t *)write_data;
+			while (write_size - write_count) {
+				sys_write8(*write_byte_data++, cad_params->data_base);
+				write_count++;
+			}
+		}
+	}
+
+	return write_count;
+}
+
+int cad_qspi_indirect_page_bound_write_using_interrupt(struct cad_qspi_params *cad_params,
+						uint32_t offset, uint8_t *buffer, uint32_t len)
+{
+	int status = 0;
+	uint32_t byte_written;
+	uint8_t *p_buffer = buffer;
+
+	if (cad_params == NULL) {
+		LOG_ERR("Wrong parameter\n");
+		return -EINVAL;
+	}
+
+	/* Store the calling parameter */
+	write_req = k_malloc(sizeof(struct transfer_params));
+	write_req->requested_bytes = len;
+	write_req->transferred_bytes = 0;
+	write_req->offset = offset;
+	write_req->buffer = buffer;
+
+	/* Read interrupt status */
+	status = sys_read32(cad_params->reg_base + CAD_QSPI_INTRSTREG);
+
+	/* Clear interrupt status*/
+	sys_write32(status, cad_params->reg_base + CAD_QSPI_INTRSTREG);
+
+	/* Set the watermark level */
+	sys_write32(WRITE_WATER_LEVEL_MARK, cad_params->reg_base + CAD_QSPI_INDWRWATER);
+
+	if (len > WRITE_WATER_LEVEL_MARK) {
+		cad_qspi_enable_interrupt_mask(cad_params, CAD_QSPI_INDOPDONE|
+							CAD_QSPI_INDXFRLVL);
+	} else {
+		cad_qspi_enable_interrupt_mask(cad_params, CAD_QSPI_INDOPDONE);
+	}
+	while (write_req->requested_bytes > write_req->transferred_bytes) {
+		byte_written = cad_qspi_indirect_write_page_data(cad_params,
+				write_req->offset, write_req->buffer,
+				(write_req->requested_bytes - write_req->transferred_bytes));
+
+		write_req->transferred_bytes += byte_written;
+		p_buffer += byte_written;
+		write_req->offset += byte_written;
+		write_req->buffer = p_buffer;
+
+		cad_qspi_enable_interrupt_mask(cad_params, CAD_QSPI_INDOPDONE|
+					CAD_QSPI_INDXFRLVL);
+		k_sem_take(&cad_params->qspi_intr_sem, K_FOREVER);
+
+	}
+	free(write_req);
+
+	return cad_qspi_indirect_write_finish(cad_params);
+}
+
+void cad_qspi_irq_handler_ll(struct cad_qspi_params *cad_params)
+{
+	volatile uint32_t status = 0;
+	volatile uint32_t read_value = 0;
+
+	/* Read interrupt status */
+	status = sys_read32(cad_params->reg_base + CAD_QSPI_INTRSTREG);
+
+	/* Clear interrupt status */
+	sys_write32(status, cad_params->reg_base + CAD_QSPI_INTRSTREG);
+
+	/* Check the watermark level reached for write FIFO or transfer done,
+	 * then send the remaining bytes.
+	 */
+	if ((status & CAD_QSPI_INDWROPRCMP) || (status & CAD_QSPI_INDRDWATERLVLBRCH)) {
+		/* Write Operation */
+		/* Write operation is in progress and waterlevel mark reached */
+		if ((sys_read32(cad_params->reg_base + CAD_QSPI_INDWR) & CAD_QSPI_INDWROPRCMP) &&
+		   (status & CAD_QSPI_INDRDWATERLVLBRCH)) {
+			cad_qspi_disable_interrupt_mask(cad_params,
+				CAD_QSPI_INDOPDONE | CAD_QSPI_INDXFRLVL);
+		}
+		if (sys_read32(cad_params->reg_base + CAD_QSPI_INDWR) &
+			CAD_QSPI_INDWRMULTIOPSCOMP) {
+			sys_write32(CAD_QSPI_INDWRMULTIOPSCOMP,
+						cad_params->reg_base + CAD_QSPI_INDWR);
+			cad_qspi_disable_interrupt_mask(cad_params,
+				CAD_QSPI_INDOPDONE | CAD_QSPI_INDXFRLVL);
+		} else {
+			/* Read Operation */
+			/* Read operation is in progress and waterlevel mark reached */
+			if ((sys_read32(cad_params->reg_base + CAD_QSPI_INDRD) &
+				CAD_QSPI_INDRDOPRCMP) && (status & CAD_QSPI_INDRDWATERLVLBRCH)) {
+				cad_qspi_disable_interrupt_mask(cad_params, CAD_QSPI_INDOPDONE |
+				CAD_QSPI_INDXFRLVL | CAD_QSPI_INDSRAMFULL);
+			} else {
+				read_value = sys_read32(cad_params->reg_base + CAD_QSPI_INDRD);
+				if (read_value & CAD_QSPI_INDRDMULTIOPSCOMP) {
+					sys_write32(read_value,
+						cad_params->reg_base + CAD_QSPI_INDRD);
+					/* Disable interrupt */
+					cad_qspi_disable_interrupt_mask(cad_params,
+						CAD_QSPI_INDOPDONE | CAD_QSPI_INDXFRLVL);
+				}
+			}
+		}
+	} else if (status & CAD_QSPI_INDSRAMFULL) {
+		/* SRAM is FULL */
+		/* Disable interrupt */
+		cad_qspi_disable_interrupt_mask(cad_params, CAD_QSPI_INDSRAMFULL);
+	}
+	k_sem_give(&cad_params->qspi_intr_sem);
+}
+#endif
