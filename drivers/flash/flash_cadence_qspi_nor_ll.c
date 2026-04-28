@@ -31,6 +31,7 @@ int cad_qspi_set_baudrate_div(struct cad_qspi_params *cad_params, uint32_t div)
 	}
 
 	if (div > 0xf) {
+		LOG_ERR("Invalid divider value div = %x\n", div);
 		return CAD_INVALID;
 	}
 
@@ -122,7 +123,7 @@ int cad_qspi_stig_cmd_helper(struct cad_qspi_params *cad_params, int cs, uint32_
 		return -EINVAL;
 	}
 
-	/* chip select */
+	/* Chip select */
 	sys_write32((sys_read32(cad_params->reg_base + CAD_QSPI_CFG) & CAD_QSPI_CFG_CS_MSK) |
 			    CAD_QSPI_CFG_CS(cs),
 		    cad_params->reg_base + CAD_QSPI_CFG);
@@ -174,6 +175,7 @@ int cad_qspi_stig_read_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, 
 	}
 
 	if ((num_bytes > 8) || (num_bytes == 0)) {
+		LOG_ERR("Invalid number of bytes\n");
 		return -1;
 	}
 
@@ -206,11 +208,12 @@ int cad_qspi_stig_wr_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, ui
 			 uint32_t num_bytes, uint32_t *input)
 {
 	if (dummy > ((1 << CAD_QSPI_FLASHCMD_NUM_DUMMYBYTES_MAX) - 1)) {
-		LOG_ERR("Faulty dummy byes\n");
+		LOG_ERR("Faulty dummy bytes\n");
 		return -1;
 	}
 
 	if ((num_bytes > 8) || (num_bytes == 0)) {
+		LOG_ERR("Invalid number of bytes\n");
 		return -1;
 	}
 
@@ -241,6 +244,7 @@ int cad_qspi_stig_addr_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, 
 	uint32_t cmd;
 
 	if (dummy > ((1 << CAD_QSPI_FLASHCMD_NUM_DUMMYBYTES_MAX) - 1)) {
+		LOG_ERR("Faulty dummy bytes\n");
 		return -1;
 	}
 
@@ -586,6 +590,7 @@ int cad_qspi_int_disable(struct cad_qspi_params *cad_params, uint32_t mask)
 	}
 
 	if (cad_qspi_idle(cad_params) == 0) {
+		LOG_ERR("QSPI is not idle\n");
 		return -1;
 	}
 
@@ -623,14 +628,15 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 	}
 
 	if (cad_qspi_idle(cad_params) == 0) {
-		LOG_ERR("device not idle");
+		LOG_ERR("Device not idle");
 		return -EBUSY;
 	}
+
 	status = cad_qspi_timing_config(cad_params, clk_phase, clk_pol, csda, csdads, cseot, cssot,
 					rddatacap);
 
 	if (status != 0) {
-		LOG_ERR("config set timing failure\n");
+		LOG_ERR("Config set timing failure\n");
 		return status;
 	}
 
@@ -638,14 +644,14 @@ int cad_qspi_init(struct cad_qspi_params *cad_params, uint32_t clk_phase, uint32
 
 	status = cad_qspi_int_disable(cad_params, CAD_QSPI_INT_STATUS_ALL);
 	if (status != 0) {
-		LOG_ERR("failed disable\n");
+		LOG_ERR("Failed to disable QSPI\n");
 		return status;
 	}
 
 	cad_qspi_set_baudrate_div(cad_params, 0xf);
 	status = cad_qspi_enable(cad_params);
 	if (status != 0) {
-		LOG_ERR("failed enable\n");
+		LOG_ERR("Failed to enable QSPI\n");
 		return status;
 	}
 
@@ -900,6 +906,7 @@ int cad_qspi_write(struct cad_qspi_params *cad_params, void *buffer, uint32_t of
 
 	if ((offset >= cad_params->qspi_device_size) ||
 	    (offset + size - 1 >= cad_params->qspi_device_size) || (size == 0)) {
+		LOG_ERR("Invalid write parameter\n");
 		return -EINVAL;
 	}
 
@@ -951,6 +958,7 @@ int cad_qspi_update(struct cad_qspi_params *cad_params, void *Buffer, uint32_t o
 	status = cad_qspi_erase(cad_params, offset, size);
 
 	if (status != 0) {
+		LOG_ERR("Erase Failed\n");
 		return status;
 	}
 
