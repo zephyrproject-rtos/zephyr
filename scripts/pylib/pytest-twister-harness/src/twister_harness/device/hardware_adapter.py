@@ -103,6 +103,11 @@ class HardwareAdapter(DeviceAdapter):
             ]:
                 extra_args.append('--cmd-pre-init')
                 extra_args.append(f'hla_serial {board_id}')
+            elif runner == 'openocd' and (
+                self.device_config.product == "Raspberry Pi Debug Probe (CMSIS-DAP)"
+            ):
+                extra_args.append('--cmd-pre-init')
+                extra_args.append(f'cmsis_dap_serial {board_id}')
             elif runner == "openocd" and (
                 self.device_config.product in ('EDBG CMSIS-DAP', 'LPC-LINK2 CMSIS-DAP')
             ):
