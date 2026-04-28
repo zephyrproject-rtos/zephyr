@@ -300,9 +300,21 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 		case LLEXT_MEM_PREINIT:
 		case LLEXT_MEM_INIT:
 		case LLEXT_MEM_FINI:
-			if (shdr->sh_entsize != sizeof(void *) ||
-			    shdr->sh_size % shdr->sh_entsize != 0) {
-				LOG_ERR("Invalid %s array in section %d", name, i);
+			/*
+			 * Validate that the section is a valid array of pointers.
+			 * Both GCC and Clang may set sh_entsize to 0 (variable) or
+			 * sizeof(void *). Accept both and validate size is divisible
+			 * by pointer size, or allow any size if entsize is 0.
+			 */
+			if (shdr->sh_entsize != 0 && shdr->sh_entsize != sizeof(void *)) {
+				LOG_ERR("Invalid %s array entry size %zu in section %d",
+					name, shdr->sh_entsize, i);
+				return -ENOEXEC;
+			}
+			if (shdr->sh_entsize != 0 && (shdr->sh_size % shdr->sh_entsize != 0)) {
+				LOG_ERR("Invalid %s array size %zu not multiple of entry size %zu "
+					"in section %d",
+					name, shdr->sh_size, shdr->sh_entsize, i);
 				return -ENOEXEC;
 			}
 		default:
@@ -501,8 +513,18 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			 * Test file offsets. BSS sections store no
 			 * data in the file and must not be included
 			 * in checks to avoid false positives.
+			 *
+			 * Also skip this check for relocatable objects, as Clang may
+			 * interleave sections from different memory regions in the ELF file,
+			 * which is valid for relocatable objects. The loader handles this
+			 * correctly regardless of file layout.
 			 */
 			if (i == LLEXT_MEM_BSS || j == LLEXT_MEM_BSS) {
+				continue;
+			}
+
+			if (ldr->hdr.e_type != ET_EXEC && ldr->hdr.e_type != ET_DYN) {
+				/* Skip overlap check for ET_REL and other relocatable types */
 				continue;
 			}
 
