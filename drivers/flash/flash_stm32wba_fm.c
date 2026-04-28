@@ -25,8 +25,9 @@ LOG_MODULE_REGISTER(flash_stm32wba, CONFIG_FLASH_LOG_LEVEL);
  */
 #define STM32_FLASH_TIMEOUT (2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
 
-extern struct k_work_q ble_ctlr_work_q;
+struct k_work_q flash_mngr_work_q;
 struct k_work fm_work;
+K_THREAD_STACK_DEFINE(flash_mngr_work_area, CONFIG_STM32WBA_FLASH_MNGR_THREAD_STACK_SIZE);
 
 static const struct flash_parameters flash_stm32_parameters = {
 	.write_block_size = FLASH_STM32_WRITE_BLOCK_SIZE,
@@ -46,7 +47,7 @@ struct FM_CallbackNode cb_ptr = {.Callback = flash_callback};
 
 void FM_ProcessRequest(void)
 {
-	k_work_submit_to_queue(&ble_ctlr_work_q, &fm_work);
+	k_work_submit_to_queue(&flash_mngr_work_q, &fm_work);
 }
 
 void FM_BackgroundProcess_Entry(struct k_work *work)
@@ -304,9 +305,17 @@ static DEVICE_API(flash, flash_stm32_api) = {
 
 static int stm32_flash_init(const struct device *dev)
 {
+	struct k_work_queue_config flash_mngr_cfg = {.name = "flash manager thread"};
+
 	k_sem_init(&FLASH_STM32_PRIV(dev)->sem, 1, 1);
 
 	LOG_DBG("Flash initialized. BS: %zu", flash_stm32_parameters.write_block_size);
+
+	k_work_queue_init(&flash_mngr_work_q);
+	k_work_queue_start(&flash_mngr_work_q, flash_mngr_work_area,
+				K_THREAD_STACK_SIZEOF(flash_mngr_work_area),
+				K_PRIO_COOP(CONFIG_STM32WBA_FLASH_MNGR_THREAD_PRIO),
+				&flash_mngr_cfg);
 
 	k_work_init(&fm_work, &FM_BackgroundProcess_Entry);
 
