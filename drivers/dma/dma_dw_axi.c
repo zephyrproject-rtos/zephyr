@@ -259,6 +259,20 @@ struct dma_dw_axi_ch_data {
 	struct k_mutex ch_mutex_lock;
 };
 
+#if defined(CONFIG_DMA_BOTTOM_HALF_WORK_QUEUE)
+/* work queue information */
+struct dma_work {
+	/* dma controller driver device instance */
+	const struct device *dev;
+	/* work queue object to submit work */
+	struct k_work work;
+	/* dma channel */
+	uint32_t channel;
+	/* dma transfer status */
+	int status;
+};
+#endif
+
 /* dma controller driver data structure */
 struct dma_dw_axi_dev_data {
 	/* dma context */
@@ -266,6 +280,9 @@ struct dma_dw_axi_dev_data {
 
 	/* mmio address mapping info for dma controller */
 	DEVICE_MMIO_NAMED_RAM(dma_mmio);
+#if defined(CONFIG_DMA_BOTTOM_HALF_WORK_QUEUE)
+	struct dma_work *work;
+#endif
 	/* pointer to store channel specific info */
 	struct dma_dw_axi_ch_data *chan;
 	/* pointer to hold descriptor base address */
@@ -317,6 +334,39 @@ static enum dma_dw_axi_ch_state dma_dw_axi_get_ch_status(const struct device *de
 	return DMA_DW_AXI_CH_IDLE;
 }
 
+/**
+ * @brief perform the work scheduled for dma bottom half in process context
+ *
+ * @param item pointer to work submitted
+ */
+#if defined(CONFIG_DMA_BOTTOM_HALF_WORK_QUEUE)
+static void dma_schedule_irq_work(struct k_work *item)
+{
+	uint32_t channel;
+	int status;
+	struct dma_dw_axi_ch_data *chan_data;
+	struct dma_work *dma_work = CONTAINER_OF(item, struct dma_work, work);
+	const struct device *dev = dma_work->dev;
+	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
+
+	channel = dma_work->channel;
+	chan_data = &dw_dev_data->chan[channel - 1];
+	status = dma_work->status;
+
+	/* invoke user callback */
+	if (chan_data->dma_blk_xfer_callback) {
+		chan_data->dma_blk_xfer_callback(dev,
+				chan_data->priv_data_blk_tfr, channel, status);
+	} else {
+		chan_data->dma_xfer_callback(dev, chan_data->priv_data_xfer,
+						channel, status);
+
+		atomic_set(&chan_data->ch_state, dma_dw_axi_get_ch_status(dev, channel));
+	}
+
+}
+#endif
+
 static void dma_dw_axi_isr(const struct device *dev)
 {
 	unsigned int channel;
@@ -364,8 +414,13 @@ static void dma_dw_axi_isr(const struct device *dev)
 				reg_base + DMA_DW_AXI_CH_INTCLEARREG(channel));
 
 		if (chan_data->dma_blk_xfer_callback) {
+#if defined(CONFIG_DMA_BOTTOM_HALF_WORK_QUEUE)
+			dw_dev_data->work[channel - 1].status = ret_status;
+			k_work_submit(&dw_dev_data->work[channel - 1].work);
+#else
 			chan_data->dma_blk_xfer_callback(dev,
 				chan_data->priv_data_blk_tfr, channel, ret_status);
+#endif
 		}
 	}
 
@@ -373,8 +428,11 @@ static void dma_dw_axi_isr(const struct device *dev)
 	if (ch_status & DMA_DW_AXI_IRQ_DMA_TFR) {
 		sys_write64(DMA_DW_AXI_IRQ_ALL_ERR | DMA_DW_AXI_IRQ_DMA_TFR,
 				reg_base + DMA_DW_AXI_CH_INTCLEARREG(channel));
-
 		if (chan_data->dma_xfer_callback) {
+#if defined(CONFIG_DMA_BOTTOM_HALF_WORK_QUEUE)
+			dw_dev_data->work[channel - 1].status = ret_status;
+			k_work_submit(&dw_dev_data->work[channel - 1].work);
+#else
 			chan_data->dma_xfer_callback(dev, chan_data->priv_data_xfer,
 						channel, ret_status);
 			atomic_set(&chan_data->ch_state, dma_dw_axi_get_ch_status(dev, channel));
@@ -907,6 +965,13 @@ static int dma_dw_axi_init(const struct device *dev)
 		/* initialize atomic variable */
 		atomic_set(&chan_data->ch_state, DMA_DW_AXI_CH_IDLE);
 
+#if defined(CONFIG_DMA_BOTTOM_HALF_WORK_QUEUE)
+		/* setting up work queue for all the channels */
+		dw_dev_data->work[i].dev = dev;
+		/* initialize a work structure */
+		k_work_init(&dw_dev_data->work[i].work, dma_schedule_irq_work);
+		dw_dev_data->work[i].channel = i + 1;
+#endif
 	}
 
 	/* configure and enable interrupt lines */
@@ -937,6 +1002,8 @@ static DEVICE_API(dma, dma_dw_axi_driver_api) = {
 	.reset = RESET_DT_SPEC_INST_GET(inst), \
 
 #define DW_AXI_DMAC_INIT(inst)								\
+IF_ENABLED(CONFIG_DMA_BOTTOM_HALF_WORK_QUEUE, \
+		(static struct dma_work work_##inst[DT_INST_PROP(inst, dma_channels)];)) \
 	static struct dma_dw_axi_ch_data chan_##inst[DT_INST_PROP(inst, dma_channels)];	\
 	static struct dma_lli								\
 		dma_desc_pool_##inst[DT_INST_PROP(inst, dma_channels) *			\
@@ -950,6 +1017,8 @@ static DEVICE_API(dma, dma_dw_axi_driver_api) = {
 			.dma_channels = DT_INST_PROP(inst, dma_channels),		\
 		},									\
 		.chan = chan_##inst,							\
+		IF_ENABLED(CONFIG_DMA_BOTTOM_HALF_WORK_QUEUE, \
+        	(.work = work_##inst,)) \
 		.dma_desc_pool = dma_desc_pool_##inst,					\
 		};									\
 	static void dw_dma_irq_config_##inst(void);					\
