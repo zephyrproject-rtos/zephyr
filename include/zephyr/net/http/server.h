@@ -511,6 +511,9 @@ struct http_client_ctx {
 		/** HTTP/3 client stream sockets.
 		 */
 		int stream_sock[HTTP3_SERVER_MAX_STREAMS];
+
+		/** Per-stream flag indicating response headers were sent. */
+		bool headers_sent[HTTP3_SERVER_MAX_STREAMS];
 #else
 		/* This is here in order to avoid adding #ifdefs in the code related
 		 * to the HTTP/3.
@@ -518,6 +521,7 @@ struct http_client_ctx {
 		union {
 			int conn_sock;
 			int stream_sock[1];
+			bool headers_sent[1];
 		};
 
 #define HTTP3_SERVER_MAX_STREAMS 0

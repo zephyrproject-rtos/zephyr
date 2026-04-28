@@ -1004,6 +1004,17 @@ out:
  *
  * Mirrors http2_dynamic_response from the HTTP/2 implementation.
  */
+static bool *h3_stream_headers_sent(struct http_client_ctx *client)
+{
+	for (int i = 0; i < ARRAY_SIZE(client->h3.stream_sock); i++) {
+		if (client->h3.stream_sock[i] == client->fd) {
+			return &client->h3.headers_sent[i];
+		}
+	}
+
+	return NULL;
+}
+
 static int h3_dynamic_response(struct http_client_ctx *client,
 				struct http_response_ctx *rsp,
 				enum http_transaction_status status,
@@ -1070,7 +1081,7 @@ static int h3_dynamic_get_del_opts(
 	enum http_transaction_status status;
 	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
-	bool headers_sent = false;
+	bool *headers_sent;
 
 	if (dynamic_detail->common.path_len >= sizeof(client->url_buffer) ||
 	    dynamic_detail->common.path_len < 0) {
@@ -1082,6 +1093,10 @@ static int h3_dynamic_get_del_opts(
 	ptr = (char *)&client->url_buffer[dynamic_detail->common.path_len];
 	len = strlen(ptr);
 	status = HTTP_SERVER_REQUEST_DATA_FINAL;
+	headers_sent = h3_stream_headers_sent(client);
+	if (headers_sent == NULL) {
+		return -ENOENT;
+	}
 
 	do {
 		memset(&response_ctx, 0, sizeof(response_ctx));
@@ -1095,7 +1110,7 @@ static int h3_dynamic_get_del_opts(
 		}
 
 		ret = h3_dynamic_response(client, &response_ctx, status,
-					  dynamic_detail, &headers_sent);
+					  dynamic_detail, headers_sent);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1146,6 +1161,7 @@ static int h3_handle_dynamic_resource(
 	struct http_resource_detail_dynamic *dynamic_detail,
 	struct http_client_ctx *client)
 {
+	bool *headers_sent;
 	uint32_t user_method;
 
 	if (dynamic_detail->cb == NULL) {
@@ -1172,6 +1188,13 @@ static int h3_handle_dynamic_resource(
 	}
 
 	dynamic_detail->holder = client;
+	headers_sent = h3_stream_headers_sent(client);
+	if (headers_sent == NULL) {
+		dynamic_detail->holder = NULL;
+		return -ENOENT;
+	}
+
+	*headers_sent = false;
 
 	switch (client->method) {
 	case HTTP_GET:
@@ -1251,7 +1274,7 @@ static int h3_process_data_frame(struct http_client_ctx *client,
 	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
 	enum http_transaction_status status;
-	bool headers_sent = false;
+	bool *headers_sent;
 	int ret;
 
 	if (client->current_detail == NULL) {
@@ -1271,6 +1294,11 @@ static int h3_process_data_frame(struct http_client_ctx *client,
 		return -ESRCH;
 	}
 
+	headers_sent = h3_stream_headers_sent(client);
+	if (headers_sent == NULL) {
+		return -ENOENT;
+	}
+
 	status = fin ? HTTP_SERVER_REQUEST_DATA_FINAL
 		     : HTTP_SERVER_REQUEST_DATA_MORE;
 
@@ -1285,7 +1313,7 @@ static int h3_process_data_frame(struct http_client_ctx *client,
 
 	if (http_response_is_provided(&response_ctx)) {
 		ret = h3_dynamic_response(client, &response_ctx, status,
-					  dynamic_detail, &headers_sent);
+					  dynamic_detail, headers_sent);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1305,7 +1333,7 @@ static int h3_process_data_frame(struct http_client_ctx *client,
 		}
 
 		ret = h3_dynamic_response(client, &response_ctx, status,
-					  dynamic_detail, &headers_sent);
+					  dynamic_detail, headers_sent);
 		if (ret < 0) {
 			return ret;
 		}
@@ -2591,6 +2619,7 @@ int h3_client_cleanup(struct http_client_ctx *client,
 			remove_from_polled(sfd, fds, max_fds_count);
 			(void)zsock_close(sfd);
 			client->h3.stream_sock[j] = INVALID_SOCK;
+			client->h3.headers_sent[j] = false;
 
 			LOG_DBG("[%p] H3: closed stream fd %d on cleanup", client, sfd);
 		}

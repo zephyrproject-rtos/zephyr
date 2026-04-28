@@ -583,6 +583,7 @@ void http_server_release_client(struct http_client_ctx *client)
 					if (client->h3.stream_sock[j] != INVALID_SOCK) {
 						(void)zsock_close(client->h3.stream_sock[j]);
 						client->h3.stream_sock[j] = INVALID_SOCK;
+						client->h3.headers_sent[j] = false;
 					}
 
 					break;
@@ -702,6 +703,7 @@ static void init_client_ctx(struct http_client_ctx *client, const struct http_se
 
 		for (int i = 0; i < ARRAY_SIZE(client->h3.stream_sock); i++) {
 			client->h3.stream_sock[i] = INVALID_SOCK;
+			client->h3.headers_sent[i] = false;
 		}
 	}
 
@@ -892,6 +894,7 @@ static int add_h3_stream_poll(struct http_client_ctx *client,
 	for (int i = 0; i < ARRAY_SIZE(client->h3.stream_sock); i++) {
 		if (client->h3.stream_sock[i] == INVALID_SOCK) {
 			client->h3.stream_sock[i] = stream_sock;
+			client->h3.headers_sent[i] = false;
 			pos = i;
 			break;
 		}
@@ -915,6 +918,7 @@ static int add_h3_stream_poll(struct http_client_ctx *client,
 	}
 
 	client->h3.stream_sock[pos] = INVALID_SOCK;
+	client->h3.headers_sent[pos] = false;
 
 	return -ENOMEM;
 }
@@ -1221,6 +1225,7 @@ static void handle_h3_uni_stream(struct http_server_ctx *ctx, int i,
 	for (j = 0; j < ARRAY_SIZE(client->h3.stream_sock); j++) {
 		if (client->h3.stream_sock[j] == stream_fd) {
 			client->h3.stream_sock[j] = INVALID_SOCK;
+			client->h3.headers_sent[j] = false;
 			break;
 		}
 	}
@@ -1232,6 +1237,7 @@ static void handle_h3_uni_stream(struct http_server_ctx *ctx, int i,
 			for (j = 0; j < ARRAY_SIZE(client->h3.stream_sock); j++) {
 				if (client->h3.stream_sock[j] == INVALID_SOCK) {
 					client->h3.stream_sock[j] = stream_fd;
+					client->h3.headers_sent[j] = false;
 					break;
 				}
 			}
@@ -1306,6 +1312,7 @@ static void handle_h3_bidi_stream(struct http_server_ctx *ctx, int i,
 		for (int k = 0; k < ARRAY_SIZE(client->h3.stream_sock); k++) {
 			if (client->h3.stream_sock[k] == closed_fd) {
 				client->h3.stream_sock[k] = INVALID_SOCK;
+				client->h3.headers_sent[k] = false;
 				break;
 			}
 		}
@@ -1341,6 +1348,7 @@ static void handle_h3_bidi_stream(struct http_server_ctx *ctx, int i,
 		for (int k = 0; k < ARRAY_SIZE(client->h3.stream_sock); k++) {
 			if (client->h3.stream_sock[k] == closed_fd) {
 				client->h3.stream_sock[k] = INVALID_SOCK;
+				client->h3.headers_sent[k] = false;
 				break;
 			}
 		}
