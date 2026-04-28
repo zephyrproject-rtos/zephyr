@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,7 @@
 #include <stddef.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/sys/slist.h>
@@ -143,6 +144,31 @@ int bt_ccp_call_control_server_get_bearer_provider_name(
 int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_bearer *bearer,
 					      char uci[BT_TBS_MAX_UCI_SIZE]);
 
+/**
+ * @brief Set a new bearer technology.
+ *
+ * @param[out] bearer The bearer to set the name for.
+ * @param tech The new bearer technology.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer or is NULL or @p tech is invalid.
+ * @retval -EFAULT @p bearer is not registered.
+ */
+int bt_ccp_call_control_server_set_bearer_tech(struct bt_ccp_call_control_server_bearer *bearer,
+					       enum bt_bearer_tech tech);
+
+/**
+ * @brief Get the bearer technology.
+ *
+ * @param[in] bearer The bearer to get the technology for.
+ * @param[out] tech Pointer that will be updated to be the bearer technology.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p bearer or @p tech is NULL.
+ * @retval -EFAULT @p bearer is not registered.
+ */
+int bt_ccp_call_control_server_get_bearer_tech(
+	const struct bt_ccp_call_control_server_bearer *bearer, enum bt_bearer_tech *tech);
 /** @} */ /* End of group bt_ccp_call_control_server */
 
 /**
@@ -239,6 +265,21 @@ struct bt_ccp_call_control_client_cb {
 			   const char *uci, void *user_data);
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI */
 
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY) || defined(__DOXYGEN__)
+	/**
+	 * @brief Callback function for bt_ccp_call_control_client_read_bearer_tech().
+	 *
+	 * This callback is called once the read bearer technology procedure is completed.
+	 *
+	 * @param bearer Call Control Client bearer pointer.
+	 * @param err Error value. 0 on success, GATT error on positive
+	 *            value or errno on negative value.
+	 * @param tech The technology of the bearer.
+	 */
+	void (*bearer_tech)(struct bt_ccp_call_control_client_bearer *bearer, int err,
+			    enum bt_bearer_tech tech, void *user_data);
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY */
+
 #if defined(CONFIG_BT_CCP_CALL_CONTROL_CLIENT_CB_USER_DATA) || defined(__DOXYGEN__)
 	/** User data that will be supplied to all callbacks */
 	void *user_data;
@@ -319,6 +360,7 @@ int bt_ccp_call_control_client_get_bearers(struct bt_ccp_call_control_client *cl
  * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
  * instance of @p bearer is busy.
  * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected
+ * @retval -ENOEXEC Rejected by the GATT layer for expected reasons
  */
 int bt_ccp_call_control_client_read_bearer_provider_name(
 	struct bt_ccp_call_control_client_bearer *bearer);
@@ -337,8 +379,27 @@ int bt_ccp_call_control_client_read_bearer_provider_name(
  * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
  * instance of @p bearer is busy.
  * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected
+ * @retval -ENOEXEC Rejected by the GATT layer for expected reasons
  */
 int bt_ccp_call_control_client_read_bearer_uci(struct bt_ccp_call_control_client_bearer *bearer);
+
+/**
+ * @brief Read the bearer technology of a remote TBS bearer.
+ *
+ * @kconfig_dep{CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY}
+ *
+ * @param bearer The bearer to read the technology from
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer is NULL
+ * @retval -EFAULT @p bearer has not been discovered
+ * @retval -EEXIST A @ref bt_ccp_call_control_client could not be identified for @p bearer
+ * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
+ * instance of @p bearer is busy.
+ * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected
+ * @retval -ENOEXEC Rejected by the GATT layer for expected reasons
+ */
+int bt_ccp_call_control_client_read_bearer_tech(struct bt_ccp_call_control_client_bearer *bearer);
 /** @} */ /* End of group bt_ccp_call_control_client */
 #ifdef __cplusplus
 }
