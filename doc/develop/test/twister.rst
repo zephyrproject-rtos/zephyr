@@ -563,6 +563,8 @@ harness: <string>
     - shell
     - power
     - display_capture
+    - script
+    - bsim
 
     See :ref:`twister_harnesses` for more information.
 
@@ -1373,16 +1375,51 @@ the configured ``threshold``, the test passes.
      increases comparison time.
    - Fingerprints are specific to both the test scenario and platform.
 
+.. _twister_script_harness:
+
+Script
+======
+
+The ``script`` harness executes shell scripts as test cases. It resolves scripts
+from the ``tests_scripts`` harness configuration option, runs each script as
+a subprocess, and reports individual pass/fail results based on the script
+exit code.
+
+The ``script`` harness also serves as a base class for the ``bsim``, ``pytest``,
+and ``ctest`` harnesses, providing shared subprocess execution, output
+streaming, and log handling.
+
+tests_scripts: <list of script paths> (default tests_scripts)
+    Specify a list of shell script paths, relative to the test source
+    directory, that need to be executed when a test scenario runs.
+    Each entry can be a path to a single file or a directory.
+    When a directory is specified, all ``.sh`` files in that directory
+    are collected (excluding files starting with ``_``). The default
+    is the ``tests_scripts`` directory.
+
+    .. code-block:: yaml
+
+        harness: script
+        harness_config:
+          tests_scripts:
+            - tests_scripts/test_a.sh
+            - ../../test/test_b.sh
+            - $ENV_VAR/tests_scripts
+
+Extra arguments following ``--`` on the twister command line are passed to
+every script as additional positional arguments.
+
 .. _twister_bsim_harness:
 
 Bsim
 ====
 
-Harness ``bsim`` is implemented in limited way - it helps only to copy the
-final executable (``zephyr.exe``) from build directory to BabbleSim's
-``bin`` directory (``${BSIM_OUT_PATH}/bin``).
+The ``bsim`` harness extends the ``script`` harness to support BabbleSim tests.
+During the build phase it copies the final executable (``zephyr.exe``) from
+the build directory to BabbleSim's ``bin`` directory
+(``${BSIM_OUT_PATH}/bin``). During the run phase it executes the test scripts
+listed in ``tests_scripts``.
 
-This action is useful to allow BabbleSim's tests to directly run after.
 By default, the executable file name is (with dots and slashes
 replaced by underscores): ``bs_<platform_name>_<test_path>_<test_scenario_name>``.
 This name can be overridden with the ``bsim_exe_name`` option in
@@ -1392,6 +1429,32 @@ bsim_exe_name: <string>
     If provided, the executable filename when copying to BabbleSim's bin
     directory, will be ``bs_<platform_name>_<bsim_exe_name>`` instead of the
     default based on the test path and scenario name.
+
+Example configuration with a multi-images BabbleSim test where the advertiser
+is build-only and the scanner references it via ``required_applications``:
+
+.. code-block:: yaml
+
+    common:
+      platform_allow:
+        - nrf52_bsim/native
+      harness: bsim
+    tests:
+      bluetooth.host.adv.extended.advertiser:
+        build_only: true
+        harness_config:
+          bsim_exe_name: tests_bsim_bluetooth_host_adv_extended_prj_advertiser_conf
+        extra_args:
+          CONF_FILE=prj_advertiser.conf
+      bluetooth.host.adv.extended.scanner:
+        harness_config:
+          bsim_exe_name: tests_bsim_bluetooth_host_adv_extended_prj_scanner_conf
+          tests_scripts:
+            - tests_scripts/run_adv_extended.sh
+        extra_args:
+          CONF_FILE=prj_scanner.conf
+        required_applications:
+          - name: bluetooth.host.adv.extended.advertiser
 
 .. _twister_shell_harness:
 
