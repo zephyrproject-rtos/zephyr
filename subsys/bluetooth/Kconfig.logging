@@ -279,14 +279,6 @@ module-str = "Media Control Client"
 source "subsys/logging/Kconfig.template.log_config_inherit"
 endif # BT_MCC
 
-# MCTL
-
-if MCTL
-module = MCTL
-module-str = "Media control"
-source "subsys/logging/Kconfig.template.log_config_inherit"
-endif # MCTL
-
 # MICP
 
 if BT_MICP_MIC_DEV
@@ -301,13 +293,13 @@ module-str = "Microphone Control Profile Microphone Controller"
 source "subsys/logging/Kconfig.template.log_config_inherit"
 endif # BT_MICP_MIC_CTLR
 
-# MPL
+# MCP
 
-if BT_MPL
-module = BT_MPL
+if BT_MCP_MEDIA_CONTROL_SERVER
+module = BT_MCP_MEDIA_CONTROL_SERVER
 module-str = "Media player"
 source "subsys/logging/Kconfig.template.log_config_inherit"
-endif # BT_MPL
+endif # BT_MCP_MEDIA_CONTROL_SERVER
 
 # PACS
 

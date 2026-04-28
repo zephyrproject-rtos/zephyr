@@ -17,7 +17,6 @@
 #include <zephyr/bluetooth/audio/mcc.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/mcs.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -39,19 +38,6 @@
 #include "common/bt_str.h"
 #include "mcc_internal.h"
 #include "mcs_internal.h"
-
-/* TODO: Temporarily copied here from media_proxy_internal.h - clean up */
-/* Debug output of 48 bit Object ID value */
-/* (Zephyr does not yet support debug output of more than 32 bit values.) */
-/* Takes a text and a 64-bit integer as input */
-#define LOG_DBG_OBJ_ID(text, id64) \
-	do { \
-		if (IS_ENABLED(CONFIG_BT_MCS_LOG_LEVEL)) { \
-			char t[BT_OTS_OBJ_ID_STR_LEN]; \
-			(void)bt_ots_obj_id_to_str(id64, t, sizeof(t)); \
-			LOG_DBG(text "0x%s", t); \
-		} \
-	} while (0)
 
 LOG_MODULE_REGISTER(bt_mcc, CONFIG_BT_MCC_LOG_LEVEL);
 
@@ -151,7 +137,7 @@ static uint8_t mcc_read_icon_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	} else {
 		LOG_HEXDUMP_DBG(pid, length, "Icon Object ID");
 		id = sys_get_le48(pid);
-		LOG_DBG_OBJ_ID("Icon Object ID: ", id);
+		LOG_DBG("Icon Object ID: 0x%012llX", id);
 
 		if (!BT_MCS_VALID_OBJ_ID(id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -451,7 +437,7 @@ static uint8_t mcc_read_segments_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	} else {
 		LOG_HEXDUMP_DBG(pid, length, "Segments Object ID");
 		id = sys_get_le48(pid);
-		LOG_DBG_OBJ_ID("Segments Object ID: ", id);
+		LOG_DBG("Segments Object ID: 0x%012llX", id);
 
 		if (!BT_MCS_VALID_OBJ_ID(id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -480,7 +466,7 @@ static void mcc_current_track_obj_id_cb(struct bt_conn *conn, uint8_t err, const
 	} else {
 		LOG_HEXDUMP_DBG(pid, length, "Current Track Object ID");
 		id = sys_get_le48(pid);
-		LOG_DBG_OBJ_ID("Current Track Object ID: ", id);
+		LOG_DBG("Current Track Object ID: 0x%012llX", id);
 
 		if (!BT_MCS_VALID_OBJ_ID(id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -519,7 +505,7 @@ static void mcs_write_current_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
 		obj_id = sys_get_le48((const uint8_t *)params->data);
-		LOG_DBG_OBJ_ID("Object ID: ", obj_id);
+		LOG_DBG("Object ID: 0x%012llX", obj_id);
 
 		if (!BT_MCS_VALID_OBJ_ID(obj_id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -548,7 +534,7 @@ static void mcc_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err, const vo
 	} else {
 		LOG_HEXDUMP_DBG(pid, length, "Next Track Object ID");
 		id = sys_get_le48(pid);
-		LOG_DBG_OBJ_ID("Next Track Object ID: ", id);
+		LOG_DBG("Next Track Object ID: 0x%012llX", id);
 
 		if (!BT_MCS_VALID_OBJ_ID(id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -587,7 +573,7 @@ static void mcs_write_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
 		obj_id = sys_get_le48((const uint8_t *)params->data);
-		LOG_DBG_OBJ_ID("Object ID: ", obj_id);
+		LOG_DBG("Object ID: 0x%012llX", obj_id);
 
 		if (!BT_MCS_VALID_OBJ_ID(obj_id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -614,7 +600,7 @@ static void mcc_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err, const 
 	} else {
 		LOG_HEXDUMP_DBG(pid, length, "Parent Group Object ID");
 		id = sys_get_le48(pid);
-		LOG_DBG_OBJ_ID("Parent Group Object ID: ", id);
+		LOG_DBG("Parent Group Object ID: 0x%012llX", id);
 
 		if (!BT_MCS_VALID_OBJ_ID(id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -653,7 +639,7 @@ static void mcc_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err, const
 	} else {
 		LOG_HEXDUMP_DBG(pid, length, "Current Group Object ID");
 		id = sys_get_le48(pid);
-		LOG_DBG_OBJ_ID("Current Group Object ID: ", id);
+		LOG_DBG("Current Group Object ID: 0x%012llX", id);
 
 		if (!BT_MCS_VALID_OBJ_ID(id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -692,7 +678,7 @@ static void mcs_write_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
 		obj_id = sys_get_le48((const uint8_t *)params->data);
-		LOG_DBG_OBJ_ID("Object ID: ", obj_id);
+		LOG_DBG("Object ID: 0x%012llX", obj_id);
 
 		if (!BT_MCS_VALID_OBJ_ID(obj_id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -836,7 +822,7 @@ static void mcs_write_cp_cb(struct bt_conn *conn, uint8_t err,
 {
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, write_params);
 	int cb_err = err;
-	struct mpl_cmd cmd = {0};
+	struct bt_mcs_cmd cmd = {0};
 
 	atomic_clear_bit(mcs_inst->flags, MCC_FLAG_BUSY);
 
@@ -909,14 +895,13 @@ static void mcs_write_scp_cb(struct bt_conn *conn, uint8_t err,
 {
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, write_params);
 	int cb_err = err;
-	struct mpl_search search = {0};
+	struct bt_mcs_search search = {0};
 
 	atomic_clear_bit(mcs_inst->flags, MCC_FLAG_BUSY);
 
 	if (err != 0) {
 		LOG_DBG("err: 0x%02x", err);
-	} else if (!params->data ||
-		   (params->length > SEARCH_LEN_MAX)) {
+	} else if (!params->data || (params->length > BT_MCS_SEARCH_LEN_MAX)) {
 		LOG_DBG("length: %d, data: %p", params->length, params->data);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
@@ -948,7 +933,7 @@ static void mcc_search_results_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
 		id = sys_get_le48(pid);
-		LOG_DBG_OBJ_ID("Search Results Object ID: ", id);
+		LOG_DBG("Search Results Object ID: 0x%012llX", id);
 
 		if (!BT_MCS_VALID_OBJ_ID(id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -1110,7 +1095,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 	} else if (handle == mcs_inst->cp_handle) {
 		/* The control point is a special case - only */
 		/* writable and notifiable.  Handle directly here. */
-		struct mpl_cmd_ntf ntf = {0};
+		struct bt_mcs_cmd_ntf ntf = {0};
 		int cb_err = 0;
 
 		LOG_DBG("Control Point notification");
@@ -3051,7 +3036,7 @@ int bt_mcc_read_media_state(struct bt_conn *conn)
 #endif /* defined(CONFIG_BT_MCC_READ_MEDIA_STATE) */
 
 #if defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT)
-int bt_mcc_send_cmd(struct bt_conn *conn, const struct mpl_cmd *cmd)
+int bt_mcc_send_cmd(struct bt_conn *conn, const struct bt_mcs_cmd *cmd)
 {
 	struct mcs_instance_t *mcs_inst;
 	size_t length;
@@ -3155,7 +3140,7 @@ int bt_mcc_read_opcodes_supported(struct bt_conn *conn)
 #endif /* defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED) */
 
 #ifdef CONFIG_BT_MCC_OTS
-int bt_mcc_send_search(struct bt_conn *conn, const struct mpl_search *search)
+int bt_mcc_send_search(struct bt_conn *conn, const struct bt_mcs_search *search)
 {
 	struct mcs_instance_t *mcs_inst;
 	int err;
@@ -3172,7 +3157,7 @@ int bt_mcc_send_search(struct bt_conn *conn, const struct mpl_search *search)
 		return -EINVAL;
 	}
 
-	if (!IN_RANGE(search->len, SEARCH_LEN_MIN, SEARCH_LEN_MAX)) {
+	if (!IN_RANGE(search->len, BT_MCS_SEARCH_LEN_MIN, BT_MCS_SEARCH_LEN_MAX)) {
 		LOG_DBG("Invalid search->len: %u", search->len);
 
 		return -EINVAL;
@@ -3316,7 +3301,7 @@ void on_obj_selected(struct bt_ots_client *otc_inst,
 }
 
 /* TODO: Merge the object callback functions into one */
-/* Use a notion of the "active" object, as done in mpl.c, for tracking  */
+/* Use a notion of the "active" object, as done in mcp_media_control_server.c, for tracking  */
 int on_icon_content(struct bt_ots_client *otc_inst, struct bt_conn *conn,
 		    uint32_t offset, uint32_t len, uint8_t *data_p,
 		    bool is_complete)
