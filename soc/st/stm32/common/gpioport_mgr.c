@@ -171,6 +171,10 @@ int stm32_gpioport_configure_pin(const struct device *port,
 
 	z_stm32_hsem_lock(CFG_HW_GPIO_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
+	if ((mode == STM32_MODER_ALT_MODE) || (mode == STM32_MODER_OUTPUT_MODE)) {
+		LL_GPIO_SetPinOutputType(gpio, pin_ll, _FLD2VAL(STM32_OTYPER, config));
+	}
+
 	if (mode == STM32_MODER_ALT_MODE) {
 		/* Alternate Function mode: configure AF mux */
 		const uint32_t afnum = _FLD2VAL(STM32_AF, config);
@@ -181,9 +185,7 @@ int stm32_gpioport_configure_pin(const struct device *port,
 			LL_GPIO_SetAFPin_8_15(gpio, pin_ll, afnum);
 		}
 	} else if (mode == STM32_MODER_OUTPUT_MODE) {
-		/* Output mode: configure output type and set level if requested */
-		LL_GPIO_SetPinOutputType(gpio, pin_ll, _FLD2VAL(STM32_OTYPER, config));
-
+		/* Output mode: set level if requested */
 		if (apply_out_level) {
 			const uint32_t odata = _FLD2VAL(STM32_ODR, config);
 
