@@ -18,13 +18,18 @@ extern "C" {
  * @{
  */
 
+ /**
+  * @brief Synchronized heap struct
+  */
 struct sys_sync_heap {
+	/** @cond INTERNAL_HIDDEN */
 	struct sys_heap heap;
 	/* Replace this with sys_mutex once this works purely in user
 	 * and can be created dynamically
 	 * See https://github.com/zephyrproject-rtos/zephyr/issues/15138
 	 */
 	struct k_mutex *lock;
+	/** @endcond */
 };
 
 /** @brief Initialize sys_sync_heap

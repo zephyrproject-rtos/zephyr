@@ -53,7 +53,7 @@ union aligntest {
 };
 
 
-#if defined(CONFIG_COMMON_LIBC_MALLOC) && \
+#if defined(CONFIG_COMMON_LIBC_MALLOC_SHARED) && \
 	(CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE == 0)
 __no_optimization void _test_no_mem_malloc(void)
 {
