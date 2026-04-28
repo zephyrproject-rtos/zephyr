@@ -91,6 +91,44 @@ void gnss_nmea0183_match_gsv_callback(struct modem_chat *chat, char **argv, uint
 				      void *user_data);
 
 /**
+ * @brief Match callback for the NMEA GST NMEA0183 message
+ *
+ * @details Should be used as the callback of a modem_chat match which matches
+ * "$??GST,". Parses the sentence into a struct gnss_accuracy and publishes it
+ * via gnss_publish_accuracy() on every successful parse — no pairing with
+ * GGA/RMC. Malformed sentences (parser returns -EINVAL) are silently dropped.
+ *
+ * @param chat Pointer to the chat instance that received the sentence
+ * @param argv Array of comma-split arguments, including message id and checksum
+ * @param argc Number of arguments in @p argv
+ * @param user_data User data set during modem_chat_init(); must point to a
+ *                  struct gnss_nmea0183_match_data (driver-private context —
+ *                  typically the first member of the driver data struct so
+ *                  the cast works through structural aliasing)
+ */
+void gnss_nmea0183_match_gst_callback(struct modem_chat *chat, char **argv, uint16_t argc,
+				      void *user_data);
+
+/**
+ * @brief modem_chat line-tap dispatcher that publishes raw NMEA sentences
+ *
+ * @details Should be used as @ref modem_chat_config.line_tap when the driver
+ * wires raw NMEA forwarding. Forwards every complete delimited line to
+ * gnss_publish_raw_nmea() — does not parse, validate, or filter; the receiver
+ * sees every sentence the chip emits, parseable or not.
+ *
+ * @param chat Pointer to the chat instance that received the line
+ * @param line Pointer to the line bytes (delimiter stripped, NOT null-terminated)
+ * @param len Length of @p line in bytes
+ * @param user_data User data set in @ref modem_chat_config.user_data; must
+ *                  point to a struct gnss_nmea0183_match_data (driver-private
+ *                  context — typically the first member of the driver data
+ *                  struct so the cast works through structural aliasing)
+ */
+void gnss_nmea0183_match_raw_tap(struct modem_chat *chat,
+				 const char *line, size_t len, void *user_data);
+
+/**
  * @brief Initialize a GNSS NMEA0183 match instance
  *
  * @param data GNSS NMEA0183 match instance to initialize
