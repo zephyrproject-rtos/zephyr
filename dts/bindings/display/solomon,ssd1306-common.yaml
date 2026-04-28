@@ -65,3 +65,8 @@ properties:
     type: boolean
     description: |
       Use internal Iref, not common but sometime used to save component cost.
+
+  softreset-on:
+    type: boolean
+    description: |
+      Send a reset command on startup, if no reset GPIO pin is connected.
