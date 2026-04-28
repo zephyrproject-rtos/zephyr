@@ -8,9 +8,7 @@
 #include <stm32_bitops.h>
 #include <stm32_ll_utils.h>
 #include <stm32_ll_rcc.h>
-#if defined(CONFIG_SOC_SERIES_STM32C5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
 #include <zephyr/cache.h>
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
 #include <stm32_ll_pwr.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <string.h>
@@ -53,9 +51,9 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	struct stm32_uid dev_id;
 
-#if defined(CONFIG_SOC_SERIES_STM32C5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
-	sys_cache_instr_disable();
-#endif /* CONFIG_SOC_SERIES_STM32C5X || CONFIG_SOC_SERIES_STM32H5X */
+	if (IS_ENABLED(CONFIG_HAS_STM32_UNCACHED_ACCESS_ONLY_OTP)) {
+		sys_cache_instr_disable();
+	}
 
 	/* zephyr-keep-sorted-start */
 	dev_id.id[0] = sys_cpu_to_be32(STM32_UID_WORD_0);
@@ -63,9 +61,9 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	dev_id.id[2] = sys_cpu_to_be32(STM32_UID_WORD_2);
 	/* zephyr-keep-sorted-stop */
 
-#if defined(CONFIG_SOC_SERIES_STM32C5X) || defined(CONFIG_SOC_SERIES_STM32H5X)
-	sys_cache_instr_enable();
-#endif /* CONFIG_SOC_SERIES_STM32C5X || CONFIG_SOC_SERIES_STM32H5X */
+	if (IS_ENABLED(CONFIG_HAS_STM32_UNCACHED_ACCESS_ONLY_OTP)) {
+		sys_cache_instr_enable();
+	}
 
 	if (length > sizeof(dev_id.id)) {
 		length = sizeof(dev_id.id);
