@@ -102,3 +102,26 @@ int usbh_shutdown(struct usbh_context *const uhs_ctx)
 
 	return ret;
 }
+
+struct usbh_context *usbh_context_lookup_by_dev(const struct device *dev)
+{
+	STRUCT_SECTION_FOREACH(usbh_context, uhs_ctx) {
+		if (uhs_ctx->dev == dev) {
+			return uhs_ctx;
+		}
+	}
+
+	return NULL;
+}
+
+struct usbh_context *usbh_context_lookup_by_idx(unsigned int idx)
+{
+	STRUCT_SECTION_FOREACH(usbh_context, uhs_ctx) {
+		if (idx == 0) {
+			return uhs_ctx;
+		}
+		idx--;
+	}
+
+	return NULL;
+}
