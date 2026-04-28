@@ -3,7 +3,7 @@
 
 description: Generic NOR flash on MSPI bus
 
-compatible: "jedec,mspi-nor"
+compatible: "jedec,nor"
 
 include:
   - name: mspi-device.yaml

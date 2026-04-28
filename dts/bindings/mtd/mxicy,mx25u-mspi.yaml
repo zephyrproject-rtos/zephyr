@@ -5,4 +5,4 @@ description: Macronix MX25U series SPI NOR flash
 
 compatible: "mxicy,mx25u"
 
-include: jedec,mspi-nor.yaml
+include: jedec,nor-mspi.yaml
