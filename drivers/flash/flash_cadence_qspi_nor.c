@@ -38,6 +38,9 @@ struct flash_cad_config {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	struct flash_pages_layout pages_layout;
 #endif
+#if defined(CONFIG_CAD_QSPI_INTERRUPT_SUPPORT)
+	void (*irq_config)(void);
+#endif
 };
 
 static const struct flash_parameters flash_cad_parameters = {
@@ -67,7 +70,6 @@ static int flash_cad_read(const struct device *dev, off_t offset,
 	}
 
 	rc = cad_qspi_read(cad_params, data, (uint32_t)offset, len);
-
 	if (rc < 0) {
 		LOG_ERR("Cadence QSPI Flash Read Failed");
 		k_mutex_unlock(&priv->qspi_mutex);
@@ -166,9 +168,22 @@ static DEVICE_API(flash, flash_cad_api) = {
 #endif
 };
 
+#ifdef CONFIG_CAD_QSPI_INTERRUPT_SUPPORT
+static void cad_qspi_irq_handler(const struct device *qspi_dev)
+{
+	struct flash_cad_priv *const priv = DEV_DATA(qspi_dev);
+	struct cad_qspi_params *cad_params = &priv->params;
+
+	cad_qspi_irq_handler_ll(cad_params);
+}
+#endif
+
 static int flash_cad_init(const struct device *dev)
 {
-	struct flash_cad_priv *priv = dev->data;
+#ifdef CONFIG_CAD_QSPI_INTERRUPT_SUPPORT
+	const struct flash_cad_config *qspi_config = DEV_CFG(dev);
+#endif
+	struct flash_cad_priv *priv = DEV_DATA(dev);
 	struct cad_qspi_params *cad_params = &priv->params;
 	int rc;
 
@@ -212,31 +227,69 @@ static int flash_cad_init(const struct device *dev)
 		return rc;
 	}
 
+#ifdef CONFIG_CAD_QSPI_INTERRUPT_SUPPORT
+	if (qspi_config->irq_config == NULL) {
+		LOG_ERR("Interrupt function not initialized!!");
+		return -EINVAL;
+	}
+	qspi_config->irq_config();
+	rc = k_sem_init(&cad_params->qspi_intr_sem, 0, 1);
+	if (rc != 0) {
+		LOG_ERR("Semaphore creation Failed");
+		return rc;
+	}
+#endif
 	return 0;
 }
 
-#define CREATE_FLASH_CADENCE_QSPI_DEVICE(inst)				\
-	static struct flash_cad_priv flash_cad_priv_##inst = {		\
-		.params = {						\
-			.clk_rate = DT_INST_PROP(inst, clock_frequency),\
-			.data_size = DT_INST_REG_SIZE_BY_IDX(inst, 1),  \
-		},							\
-	};								\
-									\
-	static struct flash_cad_config flash_cad_config_##inst = {	\
-		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(			\
-				qspi_reg, DT_DRV_INST(inst)),		\
-		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(			\
-				qspi_data, DT_DRV_INST(inst)),		\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(inst,					\
-			flash_cad_init,					\
-			NULL,						\
-			&flash_cad_priv_##inst,				\
-			&flash_cad_config_##inst,			\
-			POST_KERNEL,					\
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			&flash_cad_api);
+#define CAD_QSPI_CLOCK_RATE_INIT(inst)                                                             \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clock_frequency),                                  \
+		    (.freq = DT_INST_PROP(inst, clock_frequency), .clk_dev = NULL,                 \
+		     .clkid = (clock_control_subsys_t)0,),                                         \
+		    (.freq = 0, .clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),               \
+		     .clkid = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, clkid),))
+
+#define CREATE_FLASH_CADENCE_QSPI_DEVICE(inst)                                                     \
+	IF_ENABLED(CONFIG_CAD_QSPI_INTERRUPT_SUPPORT,                                              \
+		   (static void cad_qspi_irq_config_##inst(void);))                                \
+	enum {                                                                                     \
+		INST_##inst##_BYTES = (DT_PROP(DEVICE_NODE, size) / 8),                            \
+		INST_##inst##_PAGES = (INST_##inst##_BYTES / DT_PROP(DEVICE_NODE, page_size)),     \
+	};                                                                                         \
+	static struct flash_cad_priv flash_cad_priv_##inst = {                                     \
+		.params =                                                                          \
+			{                                                                          \
+				.data_size = DT_INST_REG_SIZE_BY_IDX(inst, 1),                     \
+				.qspi_device_subsector_size =                                      \
+					(DT_PROP(DEVICE_NODE, subsector_size)),                    \
+				.qspi_device_address_byte = (DT_PROP(DEVICE_NODE, address_byte)),  \
+				.qspi_device_page_size = DT_PROP(DEVICE_NODE, page_size),          \
+				.qspi_device_bytes_per_block =                                     \
+					DT_PROP(DEVICE_NODE, bytes_per_block),                     \
+			},                                                                         \
+		CAD_QSPI_CLOCK_RATE_INIT(inst)};                                                   \
+                                                                                                   \
+	static struct flash_cad_config flash_cad_config_##inst = {                                 \
+		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(qspi_reg, DT_DRV_INST(inst)),                   \
+		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(qspi_data, DT_DRV_INST(inst)),                  \
+		IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,                                               \
+			   (.pages_layout = {                                                      \
+				    .pages_count = INST_##inst##_PAGES,                            \
+				    .pages_size = DT_PROP(DEVICE_NODE, page_size),                 \
+			    },                                                                     \
+		IF_ENABLED(CONFIG_CAD_QSPI_INTERRUPT_SUPPORT,                                      \
+				   (.irq_config = cad_qspi_irq_config_##inst,))                    \
+			    ))};                                                                   \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, flash_cad_init, NULL, &flash_cad_priv_##inst,                  \
+			      &flash_cad_config_##inst, POST_KERNEL,                               \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_cad_api);                 \
+	IF_ENABLED(CONFIG_CAD_QSPI_INTERRUPT_SUPPORT,                                              \
+		   (static void cad_qspi_irq_config_##inst(void)                                   \
+		   {                                                                               \
+			   IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),            \
+				       cad_qspi_irq_handler, DEVICE_DT_INST_GET(inst), 0);         \
+			   irq_enable(DT_INST_IRQN(inst));                                         \
+		   }))
 
 DT_INST_FOREACH_STATUS_OKAY(CREATE_FLASH_CADENCE_QSPI_DEVICE)
