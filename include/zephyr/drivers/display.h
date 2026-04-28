@@ -18,7 +18,7 @@
  * @brief Interfaces for display controllers.
  * @defgroup display_interface Display
  * @since 1.14
- * @version 0.9.0
+ * @version 0.10.0
  * @ingroup io_interfaces
  * @{
  *
@@ -293,6 +293,22 @@ enum display_orientation {
 	DISPLAY_ORIENTATION_ROTATED_270, /**< Rotated 270 degrees clockwise */
 };
 
+#if defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__)
+
+/** @brief Structure representing a color palette entry in ARGB8888 format. */
+struct display_palette_color {
+	/** Blue component (0-255) */
+	uint8_t b;
+	/** Green component (0-255) */
+	uint8_t g;
+	/** Red component (0-255) */
+	uint8_t r;
+	/** Alpha component (0-255) */
+	uint8_t a;
+};
+
+#endif /* defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__) */
+
 /** @brief Structure holding display capabilities. */
 struct display_capabilities {
 	/** Display resolution in the X direction */
@@ -307,6 +323,10 @@ struct display_capabilities {
 	enum display_pixel_format current_pixel_format;
 	/** Current display orientation */
 	enum display_orientation current_orientation;
+#if defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__)
+	/** Color palette supported by the display, indexed by pixel value */
+	struct display_palette_color color_palette[CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE];
+#endif /* defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__) */
 };
 
 /** @brief Structure to describe display data buffer layout */
