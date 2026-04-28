@@ -12,6 +12,9 @@
 	aliases {
 		sw0 = &user_bt;
 		watchdog0 = &watchdog0;
+
+		/* Sensor Alisases */
+		accel0 = &bosch_bmi270;
 	};
 
 	leds {
@@ -68,11 +71,41 @@ uart2: &scb2 {
 	clock-div = <1>;
 };
 
+i2c0: &scb0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "infineon,i2c";
+	status = "okay";
+	clocks = <&peri0_group1_16bit_3>;
+	pinctrl-0 = <&p8_0_scb0_i2c_scl &p8_1_scb0_i2c_sda>;
+	pinctrl-names = "default";
+
+	bosch_bmi270: bmi270@68 {
+		compatible = "bosch,bmi270";
+		reg = <0x68>;
+		status = "okay";
+		irq-gpios = <&gpio_prt7 7 GPIO_ACTIVE_HIGH>, <&gpio_prt6 6 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&peri0_group1_16bit_3 {
+	status = "okay";
+	clock-div = <1000>;
+};
+
 &gpio_prt0 {
 	status = "okay";
 };
 
 &gpio_prt2 {
+	status = "okay";
+};
+
+&gpio_prt6 {
+	status = "okay";
+};
+
+&gpio_prt7 {
 	status = "okay";
 };
 

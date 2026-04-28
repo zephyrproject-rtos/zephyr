@@ -15,6 +15,7 @@
 
 		/* Sensor Aliases */
 		pressure-sensor = &dps368;
+		accel0 = &bosch_bmi270;
 	};
 
 	leds {
@@ -86,6 +87,13 @@ i2c0: &scb0 {
 	pinctrl-0 = <&p8_0_scb0_i2c_scl &p8_1_scb0_i2c_sda>;
 	pinctrl-names = "default";
 
+	bosch_bmi270: bmi270@68 {
+		compatible = "bosch,bmi270";
+		reg = <0x68>;
+		status = "okay";
+		irq-gpios = <&gpio_prt7 7 GPIO_ACTIVE_HIGH>, <&gpio_prt6 6 GPIO_ACTIVE_HIGH>;
+	};
+
 	dps368: dps368@77 {
 		compatible = "infineon,dps368", "infineon,dps310";
 		status = "okay";
@@ -110,6 +118,10 @@ i2c0: &scb0 {
 };
 
 &gpio_prt2 {
+	status = "okay";
+};
+
+&gpio_prt6 {
 	status = "okay";
 };
 
