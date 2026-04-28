@@ -97,6 +97,15 @@
 			status = "disabled";
 		};
 
+		trng: rng@e160c000 {
+			compatible = "microchip,trng-g2-entropy";
+			reg = <0xe160c000 0x100>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 92 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 92>;
+			status = "disabled";
+		};
+
 		pit64b0: timer@e1800000 {
 			compatible = "microchip,sam-pit64b", "microchip,sam9x60-pit64b";
 			reg = <0xe1800000 0x4000>;
