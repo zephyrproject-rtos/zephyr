@@ -3,7 +3,7 @@
 
 description: ISSI IS25(W/L)X0(32/64) on MSPI bus
 
-compatible: "mspi-is25xX0xx"
+compatible: "is25xX0xx"
 
 include: [mspi-device.yaml, "jedec,jesd216.yaml"]
 

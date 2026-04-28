@@ -3,6 +3,6 @@
 
 description: Zephyr MSPI flash emulator
 
-compatible: "zephyr,mspi-emul-flash"
+compatible: "zephyr,emul-flash"
 
-include: ["zephyr,mspi-emul-device.yaml", "jedec,jesd216.yaml"]
+include: ["zephyr,emul-device-mspi.yaml", "jedec,jesd216.yaml"]
