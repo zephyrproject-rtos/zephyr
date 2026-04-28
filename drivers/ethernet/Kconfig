@@ -91,6 +91,7 @@ source "drivers/ethernet/eth_nxp_enet_qos/Kconfig"
 source "drivers/ethernet/intel/Kconfig"
 source "drivers/ethernet/nxp_imx_netc/Kconfig"
 source "drivers/ethernet/phy/Kconfig"
+source "drivers/ethernet/usb/Kconfig"
 # zephyr-keep-sorted-stop
 
 endif # "Ethernet Drivers"

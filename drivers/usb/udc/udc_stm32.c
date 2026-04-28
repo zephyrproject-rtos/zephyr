@@ -1588,7 +1588,12 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 #define UDC_STM32_FOREACH_DEFINE(node_id, _irq_name)						\
 	UDC_STM32_DEFINE(node_id, USB_STM32_PHY(node_id), DT_DEP_ORD(node_id), _irq_name)
 
+#define UDC_STM32_FOREACH_DEFINE_IF_PERIPHERAL(node_id, _irq_name)				\
+	COND_CODE_1(USB_STM32_NODE_HAS_PERIPHERAL_ROLE(node_id),				\
+		    (UDC_STM32_DEFINE(node_id, USB_STM32_PHY(node_id),			\
+				      DT_DEP_ORD(node_id), _irq_name)), ())
+
 /* Third argument = name of global IRQ */
-DT_FOREACH_STATUS_OKAY_VARGS(st_stm32_otghs, UDC_STM32_FOREACH_DEFINE, otghs)
+DT_FOREACH_STATUS_OKAY_VARGS(st_stm32_otghs, UDC_STM32_FOREACH_DEFINE_IF_PERIPHERAL, otghs)
 DT_FOREACH_STATUS_OKAY_VARGS(st_stm32_otgfs, UDC_STM32_FOREACH_DEFINE, otgfs)
 DT_FOREACH_STATUS_OKAY_VARGS(st_stm32_usb, UDC_STM32_FOREACH_DEFINE, usb)

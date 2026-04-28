@@ -1,0 +1,32 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Narek Aydinyan
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,uhc = &usbotg_hs;
+	};
+};
+
+&usbotg_hs {
+	lan78xx: ethernet {
+		compatible = "microchip,lan78xx";
+		local-mac-address = [02 00 00 00 00 01];
+		phy-handle = <&lan78xx_phy>;
+
+		lan78xx_mdio: lan78xx_mdio {
+			compatible = "microchip,lan78xx-mdio";
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			lan78xx_phy: ethernet-phy@1 {
+				reg = <0x1>;
+				status = "okay";
+			};
+		};
+
+		status = "okay";
+	};
+};
