@@ -8,7 +8,7 @@
 #include <zephyr/drivers/emul.h>
 #include <zephyr/drivers/mspi.h>
 #include <zephyr/drivers/mspi_emul.h>
-#define DT_DRV_COMPAT zephyr_mspi_emul_device
+#define DT_DRV_COMPAT zephyr_emul_device
 
 /* Stub out a mspi device struct to use mspi_device emulator. */
 static int emul_mspi_device_init_stub(const struct device *dev)

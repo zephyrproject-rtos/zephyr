@@ -4,7 +4,7 @@ tests:
   sample.drivers.mspi.async:
     tags:
       - mspi
-    filter: dt_compat_enabled("mspi-aps6404l")
+    filter: dt_compat_enabled("aps6404l")
     platform_exclude:
       - hifive_unmatched/fu740/s7
       - hifive_unmatched/fu740/u74
