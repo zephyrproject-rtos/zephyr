@@ -42,18 +42,18 @@ LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 #define DMA_DW_AXI_LOWPOWER_CFGREG               0x60
 
 /* Channel enable by setting ch_en and ch_en_we */
-#define CH_EN(chan)    (BIT64(8 + chan) | BIT64(chan))
+#define CH_EN(chan)    (BIT64(8 + (chan - 1)) | BIT64(chan - 1))
 /* Channel enable by setting ch_susp and ch_susp_we */
-#define CH_SUSP(chan)  (BIT64(24 + chan) | BIT64(16 + chan))
+#define CH_SUSP(chan)  (BIT64(24 + (chan - 1)) | BIT64(16 + (chan - 1)))
 /* Channel enable by setting ch_abort and ch_abort_we */
-#define CH_ABORT(chan) (BIT64(40 + chan) | BIT64(32 + chan))
+#define CH_ABORT(chan) (BIT64(40 + (chan - 1)) | BIT64(32 + (chan - 1)))
 
 /* channel susp/resume write enable pos */
-#define CH_RESUME_WE(chan) (BIT64(24 + chan))
+#define CH_RESUME_WE(chan) BIT64(24 + (chan - 1))
 /* channel resume bit pos */
-#define CH_RESUME(chan)    (BIT64(16 + chan))
+#define CH_RESUME(chan)    BIT64(16 + (chan - 1))
 
-#define DMA_DW_AXI_CHAN_OFFSET(chan)             (0x100 * chan)
+#define DMA_DW_AXI_CHAN_OFFSET(chan)             (0x100 * (chan - 1))
 
 /* source address register for a channel */
 #define DMA_DW_AXI_CH_SAR(chan)                  (0x100 + DMA_DW_AXI_CHAN_OFFSET(chan))
@@ -268,13 +268,13 @@ static enum dma_dw_axi_ch_state dma_dw_axi_get_ch_status(const struct device *de
 	ch_status = sys_read64(reg_base + DMA_DW_AXI_CHENREG);
 
 	/* channel is active/busy in the dma transfer */
-	bit_status = ((ch_status >> ch) & 1);
+	bit_status = ((ch_status >> (channel - 1)) & 1);
 	if (bit_status) {
 		return DMA_DW_AXI_CH_ACTIVE;
 	}
 
 	/* channel is currently suspended */
-	bit_status = ((ch_status >> (16 + ch)) & 1);
+	bit_status = ((ch_status >> (16 + channel - 1)) & 1);
 	if (bit_status) {
 		return DMA_DW_AXI_CH_SUSPENDED;
 	}
@@ -294,8 +294,8 @@ static void dma_dw_axi_isr(const struct device *dev)
 
 	/* read interrupt status register to find interrupt is for which channel */
 	status = sys_read64(reg_base + DMA_DW_AXI_INTSTATUSREG);
-	channel = find_lsb_set(status) - 1;
-	if (channel < 0) {
+	channel = find_lsb_set(status);
+	if (!channel) {
 		LOG_ERR("Spurious interrupt received channel:%u\n", channel);
 		return;
 	}
@@ -306,7 +306,7 @@ static void dma_dw_axi_isr(const struct device *dev)
 	}
 
 	/* retrieve channel specific data pointer for a channel */
-	chan_data = &dw_dev_data->chan[channel];
+	chan_data = &dw_dev_data->chan[channel - 1];
 
 	/* get dma transfer status */
 	ch_status = sys_read64(reg_base + DMA_DW_AXI_CH_INTSTATUS(channel));
@@ -487,7 +487,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	}
 
 	/* get channel specific data pointer */
-	chan_data = &dw_dev_data->chan[channel];
+	chan_data = &dw_dev_data->chan[channel - 1];
 
 	/* check if the channel is currently idle */
 	if (chan_data->ch_state != DMA_DW_AXI_CH_IDLE) {
@@ -505,7 +505,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	chan_data->direction = cfg->channel_direction;
 
 	chan_data->lli_desc_base =
-			&dw_dev_data->dma_desc_pool[channel * CONFIG_DMA_DW_AXI_MAX_DESC];
+			&dw_dev_data->dma_desc_pool[(channel - 1) * CONFIG_DMA_DW_AXI_MAX_DESC];
 	chan_data->lli_desc_count = cfg->block_count;
 	memset(chan_data->lli_desc_base, 0,
 			sizeof(struct dma_lli) * chan_data->lli_desc_count);
@@ -656,7 +656,7 @@ static int dma_dw_axi_start(const struct device *dev, uint32_t channel)
 	}
 
 	/* get channel specific data pointer */
-	chan_data = &dw_dev_data->chan[channel];
+	chan_data = &dw_dev_data->chan[channel - 1];
 
 	if (chan_data->ch_state != DMA_DW_AXI_CH_PREPARED) {
 		LOG_ERR("DMA descriptors not configured");
@@ -728,16 +728,15 @@ static int dma_dw_axi_stop(const struct device *dev, uint32_t channel)
 	sys_write64(CH_SUSP(channel), reg_base + DMA_DW_AXI_CHENREG);
 
 	/* Try to disable the channel */
-	sys_clear_bit(reg_base + DMA_DW_AXI_CHENREG, channel);
-
-	is_channel_busy = WAIT_FOR((sys_read64(reg_base + DMA_DW_AXI_CHENREG)) & (BIT(channel)),
+	sys_clear_bit(reg_base + DMA_DW_AXI_CHENREG, (channel - 1));
+	is_channel_busy = WAIT_FOR((sys_read64(reg_base + DMA_DW_AXI_CHENREG)) & (BIT(channel-1)),
 						CONFIG_DMA_CHANNEL_STATUS_TIMEOUT, k_busy_wait(10));
 	if (is_channel_busy) {
 		LOG_WRN("No response from handshaking interface... Aborting a channel...");
 		sys_write64(CH_ABORT(channel), reg_base + DMA_DW_AXI_CHENREG);
 
 		is_channel_busy = WAIT_FOR((sys_read64(reg_base + DMA_DW_AXI_CHENREG)) &
-				(BIT(channel)), CONFIG_DMA_CHANNEL_STATUS_TIMEOUT,
+				(BIT(channel-1)), CONFIG_DMA_CHANNEL_STATUS_TIMEOUT,
 				k_busy_wait(10));
 		if (is_channel_busy) {
 			LOG_ERR("Channel abort failed");
