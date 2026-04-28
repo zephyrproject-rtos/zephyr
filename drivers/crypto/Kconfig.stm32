@@ -6,7 +6,7 @@
 menuconfig CRYPTO_STM32
 	bool "STM32 Cryptographic Accelerator driver"
 	default y
-	depends on DT_HAS_ST_STM32_AES_ENABLED || DT_HAS_ST_STM32_CRYP_ENABLED
+	depends on DT_HAS_ST_STM32_AES_ENABLED || DT_HAS_ST_STM32_CRYP_ENABLED || DT_HAS_ST_STM32_SAES_ENABLED
 	select USE_STM32_HAL_CRYP
 	select USE_STM32_HAL_CRYP_EX
 	select RESET
