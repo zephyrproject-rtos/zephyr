@@ -901,8 +901,7 @@ static int usbd_cdc_ncm_ctd(struct usbd_class_data *const c_data,
 
 		LOG_DBG("bmRequestType 0x%02x bRequest 0x%02x wLength %u unsupported",
 			setup->bmRequestType, setup->bRequest, setup->wLength);
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_INTERFACE) {
@@ -927,9 +926,7 @@ static int usbd_cdc_ncm_ctd(struct usbd_class_data *const c_data,
 
 	LOG_DBG("bmRequestType 0x%02x bRequest 0x%02x unsupported",
 		setup->bmRequestType, setup->bRequest);
-	errno = -ENOTSUP;
-
-	return 0;
+	return -ENOTSUP;
 }
 
 static int usbd_cdc_ncm_cth(struct usbd_class_data *const c_data,
@@ -940,8 +937,7 @@ static int usbd_cdc_ncm_cth(struct usbd_class_data *const c_data,
 		setup->wLength, setup->wIndex, setup->wValue);
 
 	if (setup->RequestType.type != USB_REQTYPE_TYPE_CLASS) {
-		errno = ENOTSUP;
-		goto out;
+		return -ENOTSUP;
 	}
 
 	switch (setup->bRequest) {
@@ -982,11 +978,9 @@ static int usbd_cdc_ncm_cth(struct usbd_class_data *const c_data,
 
 	default:
 		LOG_DBG("bRequest 0x%02x not supported", setup->bRequest);
-		errno = ENOTSUP;
-		break;
+		return -ENOTSUP;
 	}
 
-out:
 	return 0;
 }
 

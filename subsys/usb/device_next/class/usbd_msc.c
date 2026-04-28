@@ -809,7 +809,7 @@ static int msc_bot_control_to_dev(struct usbd_class_data *const c_data,
 	    setup->wValue == 0 && setup->wLength == 0) {
 		msc_bot_schedule_reset(c_data);
 	} else {
-		errno = -ENOTSUP;
+		return -ENOTSUP;
 	}
 
 	return 0;
@@ -832,7 +832,7 @@ static int msc_bot_control_to_host(struct usbd_class_data *const c_data,
 		max_lun = ctx->registered_luns ? ctx->registered_luns - 1 : 0;
 		net_buf_add_mem(buf, &max_lun, 1);
 	} else {
-		errno = -ENOTSUP;
+		return -ENOTSUP;
 	}
 
 	return 0;
