@@ -758,14 +758,14 @@ int i2c_stm32_error(const struct device *dev)
 	 */
 	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
 		LL_I2C_ClearFlag_BERR(i2c);
-		data->current.is_err = 1U;
 #if defined(CONFIG_I2C_TARGET)
-		if (error_cb != NULL) {
-			error_cb(data->target_cfg, I2C_ERROR_GENERIC);
+		if (!data->controller_active) {
+			if (error_cb != NULL) {
+				error_cb(data->target_cfg, I2C_ERROR_GENERIC);
+			}
 			goto end;
 		}
 #endif
-		return 0;
 	}
 
 #if defined(CONFIG_SMBUS_STM32_SMBALERT)
