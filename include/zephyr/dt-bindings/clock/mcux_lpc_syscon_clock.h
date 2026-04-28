@@ -97,6 +97,10 @@
 
 #define MCUX_LPADC1_CLK MCUX_LPC_CLK_ID(0x0F, 0x00)
 #define MCUX_LPADC2_CLK MCUX_LPC_CLK_ID(0x0F, 0x01)
+/** LPADC3 clock control identifier. */
+#define MCUX_LPADC3_CLK MCUX_LPC_CLK_ID(0x0F, 0x02)
+/** LPADC4 clock control identifier. */
+#define MCUX_LPADC4_CLK MCUX_LPC_CLK_ID(0x0F, 0x03)
 
 #define MCUX_FLEXCAN0_CLK MCUX_LPC_CLK_ID(0x10, 0x00)
 #define MCUX_FLEXCAN1_CLK MCUX_LPC_CLK_ID(0x10, 0x01)

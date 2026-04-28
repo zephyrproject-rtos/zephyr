@@ -676,11 +676,22 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		*rate = CLOCK_GetAdcClkFreq(0);
 #endif
 		break;
-#if (FSL_FEATURE_SOC_LPADC_COUNT == 2)
+#if (FSL_FEATURE_SOC_LPADC_COUNT >= 2)
 	case MCUX_LPADC2_CLK:
 		*rate = CLOCK_GetAdcClkFreq(1);
 		break;
 #endif
+#if (FSL_FEATURE_SOC_LPADC_COUNT >= 3)
+	case MCUX_LPADC3_CLK:
+		*rate = CLOCK_GetAdcClkFreq(2);
+		break;
+#endif
+#if (FSL_FEATURE_SOC_LPADC_COUNT >= 4)
+	case MCUX_LPADC4_CLK:
+		*rate = CLOCK_GetAdcClkFreq(3);
+		break;
+#endif
+
 #endif /* CONFIG_ADC_MCUX_LPADC */
 
 #if defined(CONFIG_CAN_MCUX_FLEXCAN)
