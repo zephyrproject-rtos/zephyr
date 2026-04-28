@@ -97,10 +97,22 @@ static int esp32_wifi_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct esp32_wifi_runtime *data = dev->data;
 	const int pkt_len = net_pkt_get_len(pkt);
-	esp_interface_t ifx = data->state == ESP32_AP_CONNECTED ? ESP_IF_WIFI_AP : ESP_IF_WIFI_STA;
+	esp_interface_t ifx = ESP_IF_WIFI_STA;
 
-	if (data->state != ESP32_STA_CONNECTED && data->state != ESP32_AP_CONNECTED) {
-		return -EIO;
+#if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+	if (data == &esp32_ap_sta_data) {
+		ifx = ESP_IF_WIFI_AP;
+	}
+#endif
+
+	if (ifx == ESP_IF_WIFI_STA) {
+		if (data->state != ESP32_STA_CONNECTED) {
+			return -EIO;
+		}
+	} else {
+		if (data->state == ESP32_AP_STOPPED || data->state < ESP32_AP_STARTED) {
+			return -EIO;
+		}
 	}
 
 	/* Read the packet payload */
@@ -295,6 +307,7 @@ static void esp_wifi_handle_sta_connect_event(void *event_data)
 {
 	ARG_UNUSED(event_data);
 	esp32_data.state = ESP32_STA_CONNECTED;
+	net_eth_carrier_on(esp32_wifi_iface);
 #if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
 	net_dhcpv4_start(esp32_wifi_iface);
 #else
@@ -311,6 +324,7 @@ static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 #if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
 		net_dhcpv4_stop(esp32_wifi_iface);
 #endif
+		net_eth_carrier_off(esp32_wifi_iface);
 		switch (event->reason) {
 		case WIFI_REASON_ASSOC_LEAVE:
 			result.disconn_reason = WIFI_REASON_DISCONN_USER_REQUEST;
@@ -447,11 +461,9 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 	switch (event_id) {
 	case WIFI_EVENT_STA_START:
 		esp32_data.state = ESP32_STA_STARTED;
-		net_eth_carrier_on(esp32_wifi_iface);
 		break;
 	case WIFI_EVENT_STA_STOP:
 		esp32_data.state = ESP32_STA_STOPPED;
-		net_eth_carrier_off(esp32_wifi_iface);
 		break;
 	case WIFI_EVENT_STA_CONNECTED:
 		esp_wifi_handle_sta_connect_event(event_data);
