@@ -149,6 +149,10 @@ set_compiler_property(PROPERTY diagnostic -fcolor-diagnostics)
 # clang flag to disable macro backtrace in diagnostics (can't fully disable it, so limit to 1)
 set_compiler_property(PROPERTY no_track_macro_expansion "-fmacro-backtrace-limit=1")
 
-set_compiler_property(PROPERTY no_global_merge "-mno-global-merge")
+if(CONFIG_RISCV)
+  set_compiler_property(PROPERTY no_global_merge "")
+else()
+  set_compiler_property(PROPERTY no_global_merge "-mno-global-merge")
+endif()
 
 set_compiler_property(PROPERTY specs)
