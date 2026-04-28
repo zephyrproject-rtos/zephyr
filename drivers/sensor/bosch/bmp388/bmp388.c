@@ -460,13 +460,15 @@ static int bmp388_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	k_busy_wait(BMP388_STARTUP_TIME_US);
+
 	/* reboot the chip */
 	if (bmp388_reg_write(dev, BMP388_REG_CMD, BMP388_CMD_SOFT_RESET) < 0) {
 		LOG_ERR("Cannot reboot chip.");
 		return -EIO;
 	}
 
-	k_busy_wait(2000);
+	k_busy_wait(BMP388_STARTUP_TIME_US);
 
 	if (bmp388_reg_read(dev, BMP388_REG_CHIPID, &val, 1) < 0) {
 		LOG_ERR("Failed to read chip id.");
