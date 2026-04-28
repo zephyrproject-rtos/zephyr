@@ -13,6 +13,9 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/cache.h>
 
+/* check if reset property is defined */
+#define DMA_DW_AXI_RESET_SUPPORTED DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
+
 LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 
 #define DEV_CFG(_dev)	((const struct dma_dw_axi_dev_cfg *)(_dev)->config)
@@ -294,7 +297,7 @@ struct dma_dw_axi_dev_cfg {
 	/* dma address space to map */
 	DEVICE_MMIO_NAMED_ROM(dma_mmio);
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
+#if DMA_DW_AXI_RESET_SUPPORTED
 	/* Reset controller device configurations */
 	const struct reset_dt_spec reset;
 #endif
@@ -310,7 +313,7 @@ struct dma_dw_axi_dev_cfg {
  *
  * @retval status of the channel
  */
-static enum dma_dw_axi_ch_state dma_dw_axi_get_ch_status(const struct device *dev, uint32_t ch)
+static uint32_t dma_dw_axi_get_ch_status(const struct device *dev, uint32_t channel)
 {
 	uint32_t bit_status;
 	uint64_t ch_status;
@@ -369,7 +372,7 @@ static void dma_schedule_irq_work(struct k_work *item)
 
 static void dma_dw_axi_isr(const struct device *dev)
 {
-	unsigned int channel;
+	uint32_t channel;
 	uint64_t status, ch_status;
 	int ret_status = 0;
 	struct dma_dw_axi_ch_data *chan_data;
@@ -933,7 +936,7 @@ static int dma_dw_axi_init(const struct device *dev)
 	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
 	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
+#if DMA_DW_AXI_RESET_SUPPORTED
 
 	if (dw_dma_config->reset.dev != NULL) {
 	/* check if reset manager is in ready state */
