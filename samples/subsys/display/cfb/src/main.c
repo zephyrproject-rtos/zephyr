@@ -72,7 +72,7 @@ int main(void)
 		for (int i = 0; i < MIN(x_res, y_res); i++) {
 			cfb_framebuffer_clear(dev, false);
 			if (cfb_print(dev,
-				      "0123456789mMgj!\"§$%&/()=",
+				      "0123456789mMgj!\"\xc2\xA7$%&/()=",
 				      i, i)) {
 				printf("Failed to print a string\n");
 				continue;
