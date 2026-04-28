@@ -118,6 +118,9 @@ New Samples
   Same as above, this will also be recomputed at the time of the release.
  Just link the sample, further details go in the sample documentation itself.
 
+* :zephyr:code-sample:`mctp_i2c_bus_host` (renamed from ``mctp_i2c_bus_owner``)
+* :zephyr:code-sample:`mctp_i3c_bus_host` (renamed from ``mctp_i3c_bus_owner``)
+
 Libraries / Subsystems
 **********************
 

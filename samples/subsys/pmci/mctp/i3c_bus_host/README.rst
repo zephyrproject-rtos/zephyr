@@ -1,4 +1,4 @@
-.. zephyr:code-sample:: mctp_i3c_bus_owner
+.. zephyr:code-sample:: mctp_i3c_bus_host
    :name: MCTP I3C Top Node Sample
 
    Create an MCTP top node controlling I3C.
@@ -19,7 +19,7 @@ Building and Running
 ********************
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/pmci/mctp/i3c_bus_owner
+   :zephyr-app: samples/subsys/pmci/mctp/i3c_bus_host
    :host-os: unix
    :board: frdm_mcxn947_mcxn947_cpu0
    :goals: run
