@@ -1,0 +1,6 @@
+board:
+  name: at_start_f405
+  full_name: Artery AT-START-F405
+  vendor: artery
+  socs:
+    - name: at32f405
