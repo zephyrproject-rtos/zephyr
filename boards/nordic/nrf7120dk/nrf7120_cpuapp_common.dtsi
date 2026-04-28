@@ -172,7 +172,7 @@
 	op-mode = "MSPI_OP_MODE_CONTROLLER";
 
 	mx25u25645g: flash@0 {
-		compatible = "jedec,mspi-nor";
+		compatible = "jedec,nor";
 		status = "disabled";
 		reg = <0>;
 		jedec-id = [c2 25 39];

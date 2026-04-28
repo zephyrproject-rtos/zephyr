@@ -23,7 +23,7 @@ tests:
       - mimxrt1170_evk/mimxrt1176/cm4
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54lm20dk/nrf54lm20b/cpuapp
-    filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("jedec,mspi-nor")
+    filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("jedec,nor")
     depends_on: spi
   sample.drivers.jesd216.nrf52840dk_spi:
     extra_args:

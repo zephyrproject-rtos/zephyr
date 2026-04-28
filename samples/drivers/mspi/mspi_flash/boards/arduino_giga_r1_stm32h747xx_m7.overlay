@@ -41,7 +41,7 @@
 			status = "okay";
 
 			n25q128a: qspi-nor-flash@0 {
-				compatible = "jedec,mspi-nor";
+				compatible = "jedec,nor";
 				reg = <0>;
 				size = <DT_SIZE_M(128)>; /* 128 Mbits */
 				status = "okay";
