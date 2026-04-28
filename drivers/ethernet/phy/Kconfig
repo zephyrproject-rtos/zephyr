@@ -20,6 +20,12 @@ source "drivers/ethernet/phy/Kconfig.dm8806"
 source "drivers/ethernet/phy/Kconfig.microchip_t1s"
 source "drivers/ethernet/phy/Kconfig.nxp_t1s"
 
+config ETH_PHY_API_PLCA
+	bool
+	help
+	  Ethernet phy drivers should select this, if they implement the plca
+	  related api functions
+
 config PHY_INIT_PRIORITY
 	int "Ethernet PHY driver init priority"
 	default ETH_INIT_PRIORITY
