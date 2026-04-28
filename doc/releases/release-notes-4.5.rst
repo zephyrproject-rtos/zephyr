@@ -73,6 +73,7 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* :c:func:`lora_recv_duty_cycle`
 * :c:func:`lora_recv_duty_cycle_async`
 
 .. zephyr-keep-sorted-stop

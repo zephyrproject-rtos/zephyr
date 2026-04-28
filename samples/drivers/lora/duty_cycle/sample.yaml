@@ -5,7 +5,7 @@ common:
   harness_config:
     type: one_line
     regex:
-      - "<inf> lora_duty_cycle: RX duty cycle started"
+      - "<inf> lora_duty_cycle: Synchronous duty cycle reception"
 sample:
   description: Demonstration of LoRa RX duty cycle (wake-on-radio)
   name: LoRa Duty Cycle Sample
