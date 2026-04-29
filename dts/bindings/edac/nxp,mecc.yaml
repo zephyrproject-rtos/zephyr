@@ -1,0 +1,25 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MECC (Memory ECC Controller) EDAC binding
+
+compatible: "nxp,mecc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  memory-start-address:
+    type: int
+    required: true
+    description: Start address of OCRAM memory region to enable ECC
+
+  memory-end-address:
+    type: int
+    required: true
+    description: End address of OCRAM memory region to enable ECC
