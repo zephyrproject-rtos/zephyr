@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/counter.h>
+#include <zephyr/pm/device.h>
 
 #include "r_agt.h"
 #include "rp_agt.h"
@@ -511,6 +512,27 @@ static void counter_renesas_ra_agt_agtcmai_isr(const struct device *dev)
 	agtcmai_isr();
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int counter_renesas_ra_agt_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct counter_renesas_ra_agt_data *data = dev->data;
+	fsp_err_t fsp_err = FSP_SUCCESS;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		fsp_err = R_AGT_Close(&data->agt_ctrl);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		fsp_err = R_AGT_Open(&data->agt_ctrl, &data->agt_cfg);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return (fsp_err == FSP_SUCCESS) ? 0 : -EIO;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(counter, agt_renesas_ra_driver_api) = {
 	.start = counter_renesas_ra_agt_start,
 	.stop = counter_renesas_ra_agt_stop,
@@ -593,7 +615,8 @@ static DEVICE_API(counter, agt_renesas_ra_driver_api) = {
 		.guard_period = 0,                                                                 \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, counter_renesas_ra_agt_init, NULL,                             \
+	PM_DEVICE_DT_INST_DEFINE(inst, counter_renesas_ra_agt_pm_action);			   \
+	DEVICE_DT_INST_DEFINE(inst, counter_renesas_ra_agt_init, PM_DEVICE_DT_INST_GET(inst),      \
 			      &counter_renesas_ra_agt_data##inst,                                  \
 			      &counter_renesas_ra_agt_config##inst, POST_KERNEL,                   \
 			      CONFIG_COUNTER_INIT_PRIORITY, &agt_renesas_ra_driver_api);
