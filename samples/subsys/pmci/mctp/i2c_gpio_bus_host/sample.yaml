@@ -1,11 +1,11 @@
 sample:
-  name: MCTP I2C+GPIO Bus Owner
+  name: MCTP I2C+GPIO Bus Host
 common:
   tags:
     - pmci
     - mctp
 tests:
-  sample.pmci.mctp.i2c_gpio_bus_owner:
+  sample.pmci.mctp.i2c_gpio_bus_host:
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
     harness: console
