@@ -32,3 +32,11 @@ The Zephyr ICS file for the Host features can be downloaded here:
 </tests/bluetooth/qualification/ICS_Zephyr_Bluetooth_Host.pts>`.
 
 Use the `Bluetooth Qualification website`_ to view and edit the ICS.
+
+Qualified releases
+******************
+========= =============== =========
+ Release   Design Number   Details
+========= =============== =========
+ v4.4      Q385945         https://qualification.bluetooth.com/ListingDetails/332380
+========= =============== =========
