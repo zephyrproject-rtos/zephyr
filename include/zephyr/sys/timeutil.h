@@ -694,6 +694,161 @@ static inline k_timeout_t timespec_to_timeout(const struct timespec *req, struct
  * @}
  */
 
+/**
+ * @defgroup timeutil_tz_apis Timezone Conversion APIs
+ * @ingroup timeutil_apis
+ * @{
+ */
+
+/** DST transition rule types for POSIX TZ strings. */
+enum timeutil_tz_rule_type {
+	/** Mm.w.d — month/week/day-of-week rule */
+	TIMEUTIL_TZ_RULE_MWD,
+	/** Jn — Julian day (1-365, no leap day counted) */
+	TIMEUTIL_TZ_RULE_JULIAN_NOLP,
+	/** n — Julian day (0-365, leap day counted) */
+	TIMEUTIL_TZ_RULE_JULIAN_LP,
+};
+
+/**
+ * @brief DST transition rule.
+ *
+ * Encodes when a DST transition occurs within a year, using one of
+ * three POSIX TZ rule forms.
+ */
+struct timeutil_tz_rule {
+	/** Rule type */
+	enum timeutil_tz_rule_type type;
+	/** Rule-specific parameters */
+	union {
+		/** Month/week/day-of-week parameters for MWD rules */
+		struct {
+			/** Month [1, 12] */
+			uint8_t month;
+			/** Week [1, 5] where 5 means "last" */
+			uint8_t week;
+			/** Day of week [0, 6] where 0 = Sunday */
+			uint8_t day;
+		} mwd;
+		/** Julian day for JULIAN_NOLP [1, 365] or JULIAN_LP [0, 365] */
+		uint16_t julian_day;
+	};
+	/** Transition time in seconds from midnight (default 7200 = 02:00) */
+	int32_t time;
+};
+
+/** Maximum abbreviation length including NUL. */
+#define TIMEUTIL_TZ_ABBR_SIZE 7
+
+/**
+ * @brief Full timezone descriptor.
+ *
+ * Holds the standard offset, optional DST offset, abbreviations,
+ * and DST transition rules parsed from a POSIX TZ string.
+ */
+struct timeutil_tz_info {
+	/** Standard time abbreviation */
+	char std_abbr[TIMEUTIL_TZ_ABBR_SIZE];
+	/** Standard time UTC offset in seconds (POSIX sign: positive = west) */
+	int32_t std_offset;
+	/** Whether this zone uses DST */
+	bool has_dst;
+	/** DST abbreviation */
+	char dst_abbr[TIMEUTIL_TZ_ABBR_SIZE];
+	/** DST UTC offset in seconds (defaults to std_offset - 3600) */
+	int32_t dst_offset;
+	/** Rule for when DST starts */
+	struct timeutil_tz_rule dst_start;
+	/** Rule for when DST ends */
+	struct timeutil_tz_rule dst_end;
+};
+
+/**
+ * @brief Parse a POSIX TZ string into a timezone descriptor.
+ *
+ * Parses strings like @c "EST5EDT,M3.2.0/2,M11.1.0/2" into a
+ * @ref timeutil_tz_info struct.
+ *
+ * @kconfig_dep{CONFIG_TIMEUTIL_TIMEZONE}
+ *
+ * @note @p tz_str and @p tz must not be NULL.
+ *
+ * @param tz_str the POSIX TZ string to parse
+ * @param[out] tz pointer to the timezone descriptor to populate
+ *
+ * @retval 0 On success
+ * @retval -EINVAL The TZ string is malformed
+ */
+int timeutil_tz_from_posix(const char *tz_str, struct timeutil_tz_info *tz);
+
+/**
+ * @brief Convert a UTC epoch time to local broken-down time.
+ *
+ * Applies the timezone rules in @p tz to convert the given UTC
+ * epoch @p epoch to a local @c struct @c tm, setting @c tm_isdst
+ * appropriately.
+ *
+ * @kconfig_dep{CONFIG_TIMEUTIL_TIMEZONE}
+ *
+ * @note @p tz and @p tp must not be NULL.
+ *
+ * @param tz pointer to timezone descriptor
+ * @param epoch UTC time as seconds since the Unix epoch
+ * @param[out] tp pointer to struct tm to populate
+ *
+ * @retval 0 On success
+ * @retval -EINVAL The DST rules in @p tz are invalid
+ * @retval -EOVERFLOW The resulting year does not fit in @c tm_year
+ */
+int timeutil_tz_utc_to_local(const struct timeutil_tz_info *tz, int64_t epoch, struct tm *tp);
+
+/**
+ * @brief Convert local broken-down time to a UTC epoch time.
+ *
+ * Uses @c tm_isdst as a hint to resolve ambiguous times during
+ * DST fall-back. Normalizes @p tp on output (like @c mktime).
+ *
+ * @kconfig_dep{CONFIG_TIMEUTIL_TIMEZONE}
+ *
+ * @note @p tz, @p tp, and @p epoch must not be NULL.
+ *
+ * @param tz pointer to timezone descriptor
+ * @param[in,out] tp pointer to broken-down local time (normalized on output)
+ * @param[out] epoch pointer to store the resulting UTC epoch time
+ *
+ * @retval 0 On success
+ * @retval -EINVAL The DST rules in @p tz are invalid
+ */
+int timeutil_tz_local_to_utc(const struct timeutil_tz_info *tz, struct tm *tp, int64_t *epoch);
+
+/**
+ * @brief Apply timezone to a UTC broken-down time, converting it to local time in-place.
+ *
+ * Converts @p tp from UTC to local time by applying the timezone rules
+ * in @p tz, including DST if applicable. The @c tm_isdst field is set
+ * accordingly.
+ *
+ * @kconfig_dep{CONFIG_TIMEUTIL_TIMEZONE}
+ *
+ * @note @p tz and @p tp must not be NULL.
+ *
+ * @param tz pointer to timezone descriptor
+ * @param[in,out] tp pointer to broken-down UTC time (converted to local time on output)
+ *
+ * @retval 0 On success
+ * @retval -EINVAL The DST rules in @p tz are invalid
+ */
+static inline int timeutil_tz_apply(const struct timeutil_tz_info *tz, struct tm *tp)
+{
+	int64_t utc_epoch = timeutil_timegm64(tp);
+
+	return timeutil_tz_utc_to_local(tz, utc_epoch, tp);
+}
+
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif
