@@ -316,13 +316,14 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 			 */
 			if (shdr->sh_entsize != 0 && shdr->sh_entsize != sizeof(void *)) {
 				LOG_ERR("Invalid %s array entry size %zu in section %d",
-					name, shdr->sh_entsize, i);
+					name, (size_t)shdr->sh_entsize, i);
 				return -ENOEXEC;
 			}
 			if (shdr->sh_entsize != 0 && (shdr->sh_size % shdr->sh_entsize != 0)) {
 				LOG_ERR("Invalid %s array size %zu not multiple of entry size %zu "
 					"in section %d",
-					name, shdr->sh_size, shdr->sh_entsize, i);
+					name, (size_t)shdr->sh_size,
+					(size_t)shdr->sh_entsize, i);
 				return -ENOEXEC;
 			}
 		default:
