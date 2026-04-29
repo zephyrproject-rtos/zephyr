@@ -3,6 +3,7 @@
 
 # zephyr-keep-sorted-start
 source "drivers/sensor/sensirion/scd4x/Kconfig"
+source "drivers/sensor/sensirion/sen6x/Kconfig"
 source "drivers/sensor/sensirion/sgp40/Kconfig"
 source "drivers/sensor/sensirion/sht3xd/Kconfig"
 source "drivers/sensor/sensirion/sht4x/Kconfig"
