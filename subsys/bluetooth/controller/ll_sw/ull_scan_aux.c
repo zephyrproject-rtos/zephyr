@@ -652,6 +652,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	aux_offset_us -= window_widening_us;
 
 	ticks_aux_offset = HAL_TICKER_US_TO_TICKS(aux_offset_us);
+	printk("Offset from scan window: %u (radio end %u)\n", aux_offset_us, ftr->radio_end_us);
 
 	/* Check if too late to ULL schedule an auxiliary PDU reception */
 	if (!ftr->aux_lll_sched) {
