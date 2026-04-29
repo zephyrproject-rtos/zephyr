@@ -2100,8 +2100,7 @@ try_resolve:
 	if (IS_ENABLED(CONFIG_MDNS_RESOLVER)) {
 		const char *ptr = strrchr(query, '.');
 
-		/* Note that we memcmp() the \0 here too */
-		if (ptr && !memcmp(ptr, (const void *){ ".local" }, 7)) {
+		if (ptr && strcmp(ptr, ".local") == 0) {
 			mdns_query = true;
 
 			ctx->queries[i].id = 0;
