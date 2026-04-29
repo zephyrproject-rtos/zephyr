@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Siratul Islam <email@sirat.me>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "User Verification"
+
+config FIDO2_PIN_PROTOCOL
+	bool "Client PIN support"
+	default y
+	help
+	  Enable CTAP2 client PIN protocol for user verification.
+
+config FIDO2_PIN_MAX_RETRIES
+	int "Maximum PIN retries"
+	default 8
+	depends on FIDO2_PIN_PROTOCOL
+
+config FIDO2_UV_BIOMETRIC
+	bool "Biometric user verification"
+	depends on BIOMETRICS
+	help
+	  Use a biometrics driver for FIDO2 user verification.
+
+endmenu

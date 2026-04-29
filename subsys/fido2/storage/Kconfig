@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Siratul Islam <email@sirat.me>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Credential Storage"
+
+choice FIDO2_STORAGE_BACKEND
+	prompt "Credential storage backend"
+	default FIDO2_STORAGE_SETTINGS
+
+config FIDO2_STORAGE_SETTINGS
+	bool "Zephyr settings subsystem"
+	depends on SETTINGS
+	help
+	  Store FIDO2 credentials using the Zephyr settings subsystem.
+
+config FIDO2_STORAGE_SECURE
+	bool "Secure storage subsystem"
+	depends on SECURE_STORAGE
+	help
+	  Store FIDO2 credentials using the secure storage subsystem.
+
+endchoice
+
+endmenu
