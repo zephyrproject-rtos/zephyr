@@ -12,4 +12,5 @@ supported:
   - watchdog
   - entropy
   - lora
+  - display
 vendor: arduino
