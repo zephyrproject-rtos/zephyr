@@ -415,6 +415,7 @@ static void pa_timer_handler(struct k_work *work)
 {
 	if (req_recv_state != NULL) {
 		enum bt_bap_pa_state pa_state;
+		int err;
 
 		if (req_recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
 			pa_state = BT_BAP_PA_STATE_NO_PAST;
@@ -422,7 +423,10 @@ static void pa_timer_handler(struct k_work *work)
 			pa_state = BT_BAP_PA_STATE_FAILED;
 		}
 
-		bt_bap_scan_delegator_set_pa_state(req_recv_state->src_id, pa_state);
+		err = bt_bap_scan_delegator_set_pa_state(req_recv_state->src_id, pa_state);
+		if (err != 0) {
+			printk("Failed to set PA state: %d\n", err);
+		}
 	}
 
 	printk("PA timeout\n");
@@ -943,7 +947,7 @@ static int reset(void)
 	}
 
 	if (pa_sync != NULL) {
-		bt_le_per_adv_sync_delete(pa_sync);
+		err = bt_le_per_adv_sync_delete(pa_sync);
 		if (err != 0) {
 			printk("Deleting PA sync failed (err %d)\n", err);
 
@@ -1345,7 +1349,8 @@ wait_for_pa_sync:
 		}
 
 		printk("Waiting for PA disconnected\n");
-		k_sem_take(&sem_pa_sync_lost, K_FOREVER);
+		err = k_sem_take(&sem_pa_sync_lost, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 
 		printk("Waiting for sink to stop\n");
 		err = k_sem_take(&sem_broadcast_sink_stopped, SEM_TIMEOUT);

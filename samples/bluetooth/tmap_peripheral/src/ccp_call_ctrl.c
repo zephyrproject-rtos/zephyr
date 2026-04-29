@@ -16,6 +16,7 @@
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 
@@ -44,7 +45,10 @@ static void discover_cb(struct bt_conn *conn, int err, uint8_t tbs_count, bool g
 	}
 
 	/* Read Bearer URI Schemes Supported List Characteristic */
-	bt_tbs_client_read_uri_list(conn, BT_TBS_GTBS_INDEX);
+	err = bt_tbs_client_read_uri_list(conn, BT_TBS_GTBS_INDEX);
+	if (err != 0) {
+		printk("%s (err %d)\n", __func__, err);
+	}
 }
 
 static void originate_call_cb(struct bt_conn *conn, int err, uint8_t inst_index, uint8_t call_index)
@@ -136,7 +140,8 @@ int ccp_call_ctrl_init(struct bt_conn *conn)
 	if (err != 0) {
 		return err;
 	}
-	k_sem_take(&sem_discovery_done, K_FOREVER);
+	err = k_sem_take(&sem_discovery_done, K_FOREVER);
+	__ASSERT_NO_MSG(err == 0);
 
 	return err;
 }

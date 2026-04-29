@@ -24,6 +24,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/types.h>
@@ -317,7 +318,8 @@ int main(void)
 		return err;
 	}
 
-	k_sem_take(&sem_discovery_done, K_FOREVER);
+	err = k_sem_take(&sem_discovery_done, K_FOREVER);
+	__ASSERT_NO_MSG(err == 0);
 
 	/* Send a VCP command */
 	err = vcp_vol_ctlr_mute();

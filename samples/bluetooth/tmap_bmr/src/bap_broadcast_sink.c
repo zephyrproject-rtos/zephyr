@@ -23,6 +23,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
@@ -388,7 +389,7 @@ int bap_broadcast_sink_run(void)
 			return err;
 		}
 
-		k_sem_take(&sem_syncable, SEM_TIMEOUT);
+		err = k_sem_take(&sem_syncable, SEM_TIMEOUT);
 		if (err != 0) {
 			printk("sem_syncable timed out\n");
 			return err;
@@ -403,7 +404,8 @@ int bap_broadcast_sink_run(void)
 			return err;
 		}
 
-		k_sem_take(&sem_pa_sync_lost, K_FOREVER);
+		err = k_sem_take(&sem_pa_sync_lost, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	return 0;

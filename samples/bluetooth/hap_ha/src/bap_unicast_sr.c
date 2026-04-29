@@ -560,13 +560,30 @@ int bap_unicast_sr_init(void)
 		return err;
 	}
 
-	bt_bap_unicast_server_register(&param);
-	bt_bap_unicast_server_register_cb(&unicast_server_cb);
+	err = bt_bap_unicast_server_register(&param);
+	if (err != 0) {
+		printk("Could not register unicast server (err %d)\n", err);
+		return err;
+	}
 
-	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
+	err = bt_bap_unicast_server_register_cb(&unicast_server_cb);
+	if (err != 0) {
+		printk("Could not register unicast server callbacks (err %d)\n", err);
+		return err;
+	}
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
+	if (err != 0) {
+		printk("Could not register sink capability (err %d)\n", err);
+		return err;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SRC)) {
-		bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
+		err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
+		if (err != 0) {
+			printk("Could not register source capability (err %d)\n", err);
+			return err;
+		}
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {

@@ -22,6 +22,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -479,7 +480,8 @@ int cap_initiator_setup(struct bt_conn *conn)
 		return err;
 	}
 
-	k_sem_take(&sem_audio_start, K_FOREVER);
+	err = k_sem_take(&sem_audio_start, K_FOREVER);
+	__ASSERT_NO_MSG(err == 0);
 
 	k_work_schedule(&audio_send_work, K_MSEC(0));
 
