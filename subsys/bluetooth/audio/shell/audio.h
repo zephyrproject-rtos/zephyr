@@ -204,13 +204,7 @@ struct unicast_group {
 };
 
 struct broadcast_assistant_recv_state {
-	/* Number of receive state on the remote device */
-	uint8_t recv_state_count;
-
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
-	/* Contains the src_id representing our local default_broadcast */
-	uint8_t default_source_src_id;
-	uint8_t default_source_subgroup_count;
 	bool default_source_big_synced;
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 };

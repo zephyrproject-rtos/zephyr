@@ -112,8 +112,6 @@ static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 		bt_shell_error("BASS discover failed (%d)", err);
 	} else {
 		bt_shell_print("BASS discover done with %u recv states", recv_state_count);
-		broadcast_assistant_recv_states[bt_conn_index(conn)].recv_state_count =
-			recv_state_count;
 	}
 }
 
@@ -291,9 +289,6 @@ static void bap_broadcast_assistant_recv_state_cb(
 	    state->adv_sid == default_source.adv_sid) {
 		struct broadcast_assistant_recv_state *recv_state =
 			&broadcast_assistant_recv_states[bt_conn_index(conn)];
-
-		recv_state->default_source_src_id = state->src_id;
-		recv_state->default_source_subgroup_count = state->num_subgroups;
 
 		recv_state->default_source_big_synced = false;
 		for (uint8_t i = 0U; i < state->num_subgroups; i++) {
