@@ -541,10 +541,13 @@ int usbh_device_init(struct usb_device *const udev)
 	}
 
 	/*
-	 * Limit mps0 to the minimum supported by full-speed devices until the
-	 * device descriptor is read.
+	 * HS EP0 always uses 64-byte packets per USB 2.0 spec (5.5.3).
+	 * For FS the actual mps0 is unknown until the device descriptor
+	 * is read, but 64 is a safe upper bound for the initial 8-byte
+	 * read since wLength fits in a single packet at any FS mps0.
 	 */
-	udev->dev_desc.bMaxPacketSize0 = 8;
+	udev->dev_desc.bMaxPacketSize0 = 64;
+
 	err = usbh_req_desc_dev(udev, 8, &udev->dev_desc);
 	if (err) {
 		LOG_ERR("Failed to read device descriptor");
@@ -553,18 +556,6 @@ int usbh_device_init(struct usb_device *const udev)
 
 	err = validate_device_mps0(udev);
 	if (err) {
-		goto error;
-	}
-
-	err = usbh_req_desc_dev(udev, sizeof(udev->dev_desc), &udev->dev_desc);
-	if (err) {
-		LOG_ERR("Failed to read device descriptor");
-		goto error;
-	}
-
-	if (!udev->dev_desc.bNumConfigurations) {
-		LOG_ERR("Device has no configurations, bNumConfigurations %d",
-			udev->dev_desc.bNumConfigurations);
 		goto error;
 	}
 
@@ -580,6 +571,18 @@ int usbh_device_init(struct usb_device *const udev)
 	}
 
 	LOG_INF("New device with address %u state %u", udev->addr, udev->state);
+
+	err = usbh_req_desc_dev(udev, sizeof(udev->dev_desc), &udev->dev_desc);
+	if (err) {
+		LOG_ERR("Failed to read device descriptor");
+		goto error;
+	}
+
+	if (!udev->dev_desc.bNumConfigurations) {
+		LOG_ERR("Device has no configurations, bNumConfigurations %d",
+			udev->dev_desc.bNumConfigurations);
+		goto error;
+	}
 
 	err = usbh_device_set_configuration(udev, 1);
 	if (err) {
