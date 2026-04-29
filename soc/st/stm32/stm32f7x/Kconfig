@@ -14,4 +14,5 @@ config SOC_SERIES_STM32F7X
 	select HAS_STM32_FLASH_PREFETCH
 	select CPU_HAS_ARM_MPU
 	select HAS_SWO
+	select HAS_PM
 	select SOC_EARLY_INIT_HOOK
