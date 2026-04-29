@@ -22,7 +22,8 @@
 LOG_MODULE_REGISTER(aesc_uart, CONFIG_UART_LOG_LEVEL);
 
 struct uart_aesc_data {
-	DEVICE_MMIO_NAMED_RAM(regs);
+	DEVICE_MMIO_RAM;
+	uintptr_t reg_base;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_cb;
 	void *irq_cb_data;
@@ -30,7 +31,7 @@ struct uart_aesc_data {
 };
 
 struct uart_aesc_config {
-	DEVICE_MMIO_NAMED_ROM(regs);
+	DEVICE_MMIO_ROM;
 	uint64_t sys_clk_freq;
 	uint32_t current_speed;
 	const struct pinctrl_dev_config *pcfg;
@@ -57,8 +58,8 @@ struct uart_aesc_regs {
 
 #define DEV_CFG(dev) ((struct uart_aesc_config *)(dev)->config)
 #define DEV_DATA(dev) ((struct uart_aesc_data *)(dev)->data)
-#define DEV_UART(dev)							     \
-	((struct uart_aesc_regs *)DEVICE_MMIO_NAMED_GET(dev, regs))
+#define DEV_UART(dev)							      \
+	((volatile struct uart_aesc_regs *)DEV_DATA(dev)->reg_base)
 
 #define AESC_UART_IRQ_TX_EN			BIT(0)
 #define AESC_UART_IRQ_RX_EN			BIT(1)
@@ -83,7 +84,7 @@ static void uart_aesc_poll_out(const struct device *dev, unsigned char c)
 
 static int uart_aesc_poll_in(const struct device *dev, unsigned char *c)
 {
-	const struct uart_aesc_regs *uart = DEV_UART(dev);
+	volatile struct uart_aesc_regs *uart = DEV_UART(dev);
 	int val;
 
 	val = uart->read_write;
@@ -232,19 +233,21 @@ static void uart_aesc_isr(const struct device *dev)
 
 static int uart_aesc_init(const struct device *dev)
 {
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 	const struct uart_aesc_config *cfg = DEV_CFG(dev);
-	volatile uintptr_t *base_addr = (volatile uintptr_t *)DEV_UART(dev);
+	volatile uintptr_t *base_addr =
+		(volatile uintptr_t *)DEVICE_MMIO_GET(dev);
+	struct uart_aesc_data *data = DEV_DATA(dev);
 	volatile struct uart_aesc_regs *uart;
 	int ret;
 
-	DEVICE_MMIO_NAMED_MAP(dev, regs, K_MEM_CACHE_NONE);
 	LOG_DBG("IP core version: %i.%i.%i.",
 		ip_id_get_major_version(base_addr),
 		ip_id_get_minor_version(base_addr),
 		ip_id_get_patchlevel(base_addr)
 	);
-	DEVICE_MMIO_NAMED_GET(dev, regs) = ip_id_relocate_driver(base_addr);
-	LOG_DBG("Relocate driver to address 0x%lx.", DEVICE_MMIO_NAMED_GET(dev, regs));
+	data->reg_base = ip_id_relocate_driver(base_addr);
+	LOG_DBG("Relocate driver to address 0x%lx.", data->reg_base);
 	uart = DEV_UART(dev);
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -309,8 +312,7 @@ static DEVICE_API(uart, uart_aesc_driver_api) = {
 	AESC_UART_IRQ_INIT(no)						     \
 	static struct uart_aesc_data uart_aesc_dev_data_##no;		     \
 	static struct uart_aesc_config uart_aesc_dev_cfg_##no = {	     \
-		DEVICE_MMIO_NAMED_ROM_INIT(regs,			     \
-					   DT_INST(no, aesc_uart)),	     \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(no)),			     \
 		.sys_clk_freq =						     \
 			DT_PROP(DT_INST(no, aesc_uart), clock_frequency),    \
 		.current_speed =					     \
