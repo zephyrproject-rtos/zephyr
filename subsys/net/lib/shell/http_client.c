@@ -24,6 +24,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #define HTTP_SCHEMA_LEN   sizeof("https://")
 #define HTTP_PROTOCOL_LEN sizeof("HTTP/1.1")
+#define HTTP_HEADERS_LEN  2
 
 #if defined(CONFIG_HTTP_CLIENT)
 static struct net_mgmt_event_callback l4_cb;
@@ -38,7 +39,6 @@ enum http_client_options {
 	HTTP_CLIENT_SSL_CERTIFICATE_TAG,
 	HTTP_CLIENT_SSL_VERIFYHOST,
 	HTTP_CLIENT_SSL_VERIFYPEER,
-	HTTP_CLIENT_USERPWD,
 	HTTP_CLIENT_WRITEFUNCTION,
 };
 
@@ -60,11 +60,12 @@ struct http_client_sh_ctx {
 	uint8_t payload[NET_IPV4_MTU];
 	uint16_t payload_size;
 	uint8_t protocol[HTTP_PROTOCOL_LEN];
-	const char **headers;
+	const char *headers[HTTP_HEADERS_LEN];
 	bool is_ssl_verifyhost;
 	int is_ssl_verifypeer;
 	int sec_tag;
 	int err;
+	bool verbose;
 	const struct shell *sh;
 };
 
@@ -377,31 +378,21 @@ static int http_client_certificate(void)
 SYS_INIT(http_client_certificate, APPLICATION, 0);
 #endif /* CONFIG_NET_SHELL_HTTP_CLIENT_HAS_CERTIFICATE */
 
-static int http_client_init(struct http_client_sh_ctx *ctx, const uint8_t *url)
+static int http_client_handler(struct http_response *rsp, enum http_final_call final_data,
+			       void *user_data)
 {
-	int ret;
+	struct http_client_sh_ctx *ctx = (struct http_client_sh_ctx *)user_data;
 	const struct shell *sh = ctx->sh;
 
-	memset(ctx, 0, sizeof(struct http_client_sh_ctx));
-
-	ctx->sh = sh;
-	ctx->is_ssl_verifyhost = true;
-	ctx->is_ssl_verifypeer = true;
-
-#if defined(CONFIG_TLS_CREDENTIALS)
-	ctx->sec_tag = CONFIG_NET_SHELL_HTTP_CLIENT_CERTIFICATE_TAG;
-#endif
-
-	ret = http_client_url_parser(ctx, url);
-	if (ret < 0) {
-		PR_ERROR("Failed to parse URL (%d)\n", ret);
-		return ret;
+	if (rsp->http_status_code == 0) {
+		PR_WARNING("No HTTP response received\n");
+		return -ENODATA;
 	}
 
-	ret = http_client_dns_lookup(ctx);
-	if (ret < 0) {
-		PR_ERROR("Failed to resolve DNS address (%d)\n", ret);
-		return ret;
+	if (ctx->verbose && rsp->recv_buf_len > 0) {
+		shell_print(sh, "%.*s", rsp->recv_buf_len, rsp->recv_buf);
+	} else if (!ctx->verbose && rsp->body_frag_len > 0) {
+		shell_print(sh, "%.*s", rsp->body_frag_len, rsp->body_frag_start);
 	}
 
 	return 0;
@@ -411,9 +402,6 @@ static void http_client_setopt(struct http_client_sh_ctx *ctx, enum http_client_
 			       void *parameter)
 {
 	switch (option) {
-	case HTTP_CLIENT_HEADERS:
-		ctx->headers = (const char **)parameter;
-		break;
 	case HTTP_CLIENT_POSTFIELDS:
 		memcpy(ctx->payload, (uint8_t *)parameter, sizeof(ctx->payload));
 		break;
@@ -438,6 +426,104 @@ static void http_client_setopt(struct http_client_sh_ctx *ctx, enum http_client_
 	default:
 		break;
 	}
+}
+
+static int http_client_init(struct http_client_sh_ctx *ctx, const uint8_t *url)
+{
+	int ret;
+	const struct shell *sh = ctx->sh;
+
+	memset(ctx, 0, sizeof(struct http_client_sh_ctx));
+	ctx->sh = sh;
+	ctx->is_ssl_verifyhost = true;
+	ctx->is_ssl_verifypeer = true;
+	ctx->verbose = false;
+
+#if defined(CONFIG_TLS_CREDENTIALS)
+	ctx->sec_tag = CONFIG_NET_SHELL_HTTP_CLIENT_CERTIFICATE_TAG;
+#endif
+
+	ret = http_client_url_parser(ctx, url);
+	if (ret < 0) {
+		PR_ERROR("Failed to parse URL (%d)\n", ret);
+		return ret;
+	}
+
+	ret = http_client_dns_lookup(ctx);
+	if (ret < 0) {
+		PR_ERROR("Failed to resolve DNS address (%d)\n", ret);
+		return ret;
+	}
+
+	http_client_setopt(ctx, HTTP_CLIENT_PROTOCOL, "HTTP/1.1");
+	http_client_setopt(ctx, HTTP_CLIENT_WRITEFUNCTION, &http_client_handler);
+
+	return 0;
+}
+
+static int http_client_args_to_params(const struct shell *sh, size_t argc, char *argv[],
+				      struct http_client_sh_ctx *ctx)
+{
+	struct sys_getopt_state *state;
+	uint8_t header_data[64];
+	int opt_index = 0;
+	int opt, ret;
+
+	static const struct sys_getopt_option long_options[] = {
+		{"header", sys_getopt_required_argument, 0, 'H'},
+		{"data", sys_getopt_required_argument, 0, 'd'},
+		{"proto", sys_getopt_required_argument, 0, 'p'},
+		{"insecure", sys_getopt_no_argument, 0, 'k'},
+		{"verbose", sys_getopt_no_argument, 0, 'v'},
+		{0, 0, 0, 0}
+	};
+
+	while ((opt = sys_getopt_long(argc, argv, "E:H:d:p:k:v", long_options,
+				      &opt_index)) != -1) {
+		state = sys_getopt_state_get();
+		switch (opt) {
+		case 'E':
+			ctx->sec_tag = (int)shell_strtol(state->optarg, 10, &ret);
+			if (ret < 0) {
+				PR_ERROR("Invalid certificate tag: %s\n", state->optarg);
+				return -EINVAL;
+			}
+			http_client_setopt(ctx, HTTP_CLIENT_SSL_CERTIFICATE_TAG, &ctx->sec_tag);
+			break;
+		case 'H':
+			if (strlen(state->optarg) >= sizeof(header_data) - 2) {
+				PR_ERROR("Header data is too long\n");
+				return -EINVAL;
+			}
+			snprintf(header_data, sizeof(header_data), "%s\r\n", state->optarg);
+			ctx->headers[0] = header_data;
+			ctx->headers[1] = NULL;
+			break;
+		case 'd':
+			ctx->payload_size = (uint16_t)strlen(state->optarg) + 1;
+			http_client_setopt(ctx, HTTP_CLIENT_POSTFIELDS_SIZE, &ctx->payload_size);
+			http_client_setopt(ctx, HTTP_CLIENT_POSTFIELDS, state->optarg);
+			break;
+		case 'p':
+			http_client_setopt(ctx, HTTP_CLIENT_PROTOCOL, state->optarg);
+			break;
+		case 'k':
+			ctx->is_ssl_verifypeer = 0;
+			http_client_setopt(ctx, HTTP_CLIENT_SSL_VERIFYPEER,
+					   &ctx->is_ssl_verifypeer);
+			break;
+		case 'v':
+			ctx->verbose = true;
+			break;
+		case '?':
+		default:
+			PR_ERROR("Invalid option or option usage: %s\n",
+				 argv[opt_index + 1]);
+			return -ENOEXEC;
+		}
+	}
+
+	return 0;
 }
 
 static int http_client_perform(struct http_client_sh_ctx *ctx, enum http_method method)
@@ -471,24 +557,6 @@ static int http_client_perform(struct http_client_sh_ctx *ctx, enum http_method 
 
 	return ret;
 }
-
-static int http_client_handler(struct http_response *rsp, enum http_final_call final_data,
-			       void *user_data)
-{
-	struct http_client_sh_ctx *ctx = (struct http_client_sh_ctx *)user_data;
-	const struct shell *sh = ctx->sh;
-
-	if (rsp->http_status_code == 0) {
-		PR_WARNING("No HTTP response received\n");
-		return -ENODATA;
-	}
-
-	if (rsp->body_frag_len > 0) {
-		shell_print(sh, "%.*s", rsp->body_frag_len, rsp->body_frag_start);
-	}
-
-	return 0;
-}
 #endif /* CONFIG_HTTP_CLIENT */
 
 static int cmd_http_get(const struct shell *sh, size_t argc, char **argv)
@@ -498,14 +566,16 @@ static int cmd_http_get(const struct shell *sh, size_t argc, char **argv)
 	struct http_client_sh_ctx ctx;
 
 	ctx.sh = sh;
-	ret = http_client_init(&ctx, argv[1]);
+	ret = http_client_init(&ctx, argv[argc - 1]);
 	if (ret < 0) {
-		PR_ERROR("Failed to initialize http_client (%d)\n", ret);
+		PR_ERROR("Failed to initialize http client (%d)\n", ret);
 		return ret;
 	}
 
-	http_client_setopt(&ctx, HTTP_CLIENT_PROTOCOL, "HTTP/1.1");
-	http_client_setopt(&ctx, HTTP_CLIENT_WRITEFUNCTION, http_client_handler);
+	ret = http_client_args_to_params(sh, argc, argv, &ctx);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ret = http_client_perform(&ctx, HTTP_GET);
 	if (ret < 0) {
@@ -523,20 +593,19 @@ static int cmd_http_post(const struct shell *sh, size_t argc, char **argv)
 {
 #if defined(CONFIG_HTTP_CLIENT)
 	int ret;
-	uint16_t payload_size = strlen(argv[2]) + 1;
 	struct http_client_sh_ctx ctx;
 
 	ctx.sh = sh;
-	ret = http_client_init(&ctx, argv[1]);
+	ret = http_client_init(&ctx, argv[argc - 1]);
 	if (ret < 0) {
-		PR_ERROR("Failed to initialize http_client (%d)\n", ret);
+		PR_ERROR("Failed to initialize http client (%d)", ret);
 		return ret;
 	}
 
-	http_client_setopt(&ctx, HTTP_CLIENT_PROTOCOL, "HTTP/1.1");
-	http_client_setopt(&ctx, HTTP_CLIENT_WRITEFUNCTION, http_client_handler);
-	http_client_setopt(&ctx, HTTP_CLIENT_POSTFIELDS, argv[2]);
-	http_client_setopt(&ctx, HTTP_CLIENT_POSTFIELDS_SIZE, &payload_size);
+	ret = http_client_args_to_params(sh, argc, argv, &ctx);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ret = http_client_perform(&ctx, HTTP_POST);
 	if (ret < 0) {
@@ -554,20 +623,19 @@ static int cmd_http_put(const struct shell *sh, size_t argc, char **argv)
 {
 #if defined(CONFIG_HTTP_CLIENT)
 	int ret;
-	uint16_t payload_size = strlen(argv[2]) + 1;
 	struct http_client_sh_ctx ctx;
 
 	ctx.sh = sh;
-	ret = http_client_init(&ctx, argv[1]);
+	ret = http_client_init(&ctx, argv[argc - 1]);
 	if (ret < 0) {
-		PR_ERROR("Failed to initialize http_client (%d)\n", ret);
+		PR_ERROR("Failed to initialize http client (%d)", ret);
 		return ret;
 	}
 
-	http_client_setopt(&ctx, HTTP_CLIENT_PROTOCOL, "HTTP/1.1");
-	http_client_setopt(&ctx, HTTP_CLIENT_WRITEFUNCTION, http_client_handler);
-	http_client_setopt(&ctx, HTTP_CLIENT_POSTFIELDS, argv[2]);
-	http_client_setopt(&ctx, HTTP_CLIENT_POSTFIELDS_SIZE, &payload_size);
+	ret = http_client_args_to_params(sh, argc, argv, &ctx);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ret = http_client_perform(&ctx, HTTP_PUT);
 	if (ret < 0) {
@@ -588,14 +656,16 @@ static int cmd_http_delete(const struct shell *sh, size_t argc, char **argv)
 	struct http_client_sh_ctx ctx;
 
 	ctx.sh = sh;
-	ret = http_client_init(&ctx, argv[1]);
+	ret = http_client_init(&ctx, argv[argc - 1]);
 	if (ret < 0) {
-		PR_ERROR("Failed to initialize http client (%d)\n", ret);
+		PR_ERROR("Failed to initialize http client (%d)", ret);
 		return ret;
 	}
 
-	http_client_setopt(&ctx, HTTP_CLIENT_PROTOCOL, "HTTP/1.1");
-	http_client_setopt(&ctx, HTTP_CLIENT_WRITEFUNCTION, http_client_handler);
+	ret = http_client_args_to_params(sh, argc, argv, &ctx);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ret = http_client_perform(&ctx, HTTP_DELETE);
 	if (ret < 0) {
@@ -610,19 +680,33 @@ static int cmd_http_delete(const struct shell *sh, size_t argc, char **argv)
 }
 
 /* clang-format off */
+#define HTTP_DATA_OPT \
+	"-d, --data     <data>          HTTP POST data\n"
+
+#define HTTP_COMMON_OPTS \
+	"-H, --header   <header>        Custom HTTP header\n" \
+	"-p, --proto    <protocol>      HTTP protocol version\n" \
+	"-E, --cert     <sec_tag>       TLS credential security tag\n" \
+	"-k, --insecure                 Disable SSL certificate verification\n" \
+	"-v, --verbose                  Make the operation more talkative\n"
+
 SHELL_SUBCMD_ADD((net, http), get, NULL,
-		 SHELL_HELP("Perform HTTP GET request", "<url>"),
-		 cmd_http_get, 2, 0);
+		 SHELL_HELP("Perform HTTP GET request",
+			    "[options] <url>\n" HTTP_COMMON_OPTS),
+		 cmd_http_get, 2, 8);
 
 SHELL_SUBCMD_ADD((net, http), post, NULL,
-		 SHELL_HELP("Perform HTTP POST request", "<url> <body>"),
-		 cmd_http_post, 3, 0);
+		 SHELL_HELP("Perform HTTP POST request",
+			    "[options] <url>\n" HTTP_DATA_OPT HTTP_COMMON_OPTS),
+		 cmd_http_post, 2, 10);
 
 SHELL_SUBCMD_ADD((net, http), put, NULL,
-		 SHELL_HELP("Perform HTTP PUT request", "<url> <body>"),
-		 cmd_http_put, 3, 0);
+		 SHELL_HELP("Perform HTTP PUT request",
+			    "[options] <url>\n" HTTP_DATA_OPT HTTP_COMMON_OPTS),
+		 cmd_http_put, 2, 10);
 
 SHELL_SUBCMD_ADD((net, http), delete, NULL,
-		 SHELL_HELP("Perform HTTP DELETE request", "<url>"),
-		 cmd_http_delete, 2, 0);
+		 SHELL_HELP("Perform HTTP DELETE request",
+			    "[options] <url>\n" HTTP_COMMON_OPTS),
+		 cmd_http_delete, 2, 8);
 /* clang-format on */
