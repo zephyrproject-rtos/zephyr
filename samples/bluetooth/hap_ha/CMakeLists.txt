@@ -9,6 +9,12 @@ target_sources(app PRIVATE
   src/has_server.c
   src/main.c
   src/vcp_vol_renderer.c
+  src/bap_broadcast_snk.c
+  src/stream_rx.c
+)
+
+target_sources_ifdef(CONFIG_ENABLE_LC3 app PRIVATE
+  src/lc3.c
 )
 
 target_sources_ifdef(CONFIG_HAP_HA_HEARING_AID_BINAURAL app PRIVATE

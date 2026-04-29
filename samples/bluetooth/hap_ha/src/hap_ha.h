@@ -64,3 +64,15 @@ int ccp_call_ctrl_init(void);
  * @return 0 if success, errno on failure.
  */
 int has_server_init(void);
+
+/**
+ * @brief Initialize the Broadcast Sink role
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bap_broadcast_snk_init(void);
+
+/**
+ * @brief Initialize the Broadcast Sink thread
+ */
+void bap_broadcast_snk_start_thread(void);
