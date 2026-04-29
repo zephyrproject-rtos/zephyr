@@ -180,6 +180,19 @@ static int quic_tls_set_own_cert(struct quic_tls_context *ctx,
 	return 0;
 }
 
+static int quic_tls_effective_verify_level(const struct quic_tls_context *ctx)
+{
+	if (ctx->options.verify_level != -1) {
+		return ctx->options.verify_level;
+	}
+
+	if (ctx->ep != NULL && !ctx->ep->is_server) {
+		return MBEDTLS_SSL_VERIFY_REQUIRED;
+	}
+
+	return MBEDTLS_SSL_VERIFY_NONE;
+}
+
 /*
  * Verify peer certificate using mbedtls
  * Called when processing Certificate message from peer
@@ -190,6 +203,7 @@ static int verify_peer_certificate(struct quic_tls_context *ctx,
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	mbedtls_x509_crt peer_crt;
 	uint32_t flags = 0;
+	int verify_level = quic_tls_effective_verify_level(ctx);
 	int ret;
 	psa_key_attributes_t pk_attr = PSA_KEY_ATTRIBUTES_INIT;
 	mbedtls_svc_key_id_t pub_key_id = MBEDTLS_SVC_KEY_ID_INIT;
@@ -214,14 +228,20 @@ static int verify_peer_certificate(struct quic_tls_context *ctx,
 			NET_WARN("Certificate verification failed: -0x%04x, flags=0x%08x",
 				 -ret, flags);
 
-			/* Check verification level */
-			if (ctx->options.verify_level > 0) {
+			if (verify_level == MBEDTLS_SSL_VERIFY_REQUIRED) {
 				ret = -EACCES;
 				goto out;
 			}
-			/* If verify_level is 0, continue despite errors */
+
+			ret = 0;
 		}
 	} else {
+		if (verify_level == MBEDTLS_SSL_VERIFY_REQUIRED) {
+			NET_WARN("No CA certificate configured for required peer verification");
+			ret = -EACCES;
+			goto out;
+		}
+
 		NET_WARN("No CA certificate configured, skipping verification");
 	}
 
@@ -1162,13 +1182,13 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 
 	val_size = quic_get_varint_size(CONFIG_QUIC_MAX_IDLE_TIMEOUT);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
 
 	ret = quic_put_varint(&buf[pos], max_len - pos, CONFIG_QUIC_MAX_IDLE_TIMEOUT);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
@@ -1196,13 +1216,13 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 
 	val_size = quic_get_varint_size(max_payload_size);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
 
 	ret = quic_put_varint(&buf[pos], max_len - pos, max_payload_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
@@ -1216,14 +1236,14 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 
 	val_size = quic_get_varint_size(CONFIG_QUIC_INITIAL_MAX_DATA);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
 
 	ret = quic_put_varint(&buf[pos], max_len - pos,
 			      CONFIG_QUIC_INITIAL_MAX_DATA);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
@@ -1237,14 +1257,14 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 
 	val_size = quic_get_varint_size(CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
 
 	ret = quic_put_varint(&buf[pos], max_len - pos,
 			      CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
@@ -1258,14 +1278,14 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 
 	val_size = quic_get_varint_size(CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
 
 	ret = quic_put_varint(&buf[pos], max_len - pos,
 			      CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
@@ -1279,14 +1299,14 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 
 	val_size = quic_get_varint_size(CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_UNI);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
 
 	ret = quic_put_varint(&buf[pos], max_len - pos,
 			      CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_UNI);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
@@ -1300,14 +1320,14 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 
 	val_size = quic_get_varint_size(CONFIG_QUIC_INITIAL_MAX_STREAMS_BIDI);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
 
 	ret = quic_put_varint(&buf[pos], max_len - pos,
 			      CONFIG_QUIC_INITIAL_MAX_STREAMS_BIDI);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
@@ -1321,14 +1341,14 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 
 	val_size = quic_get_varint_size(CONFIG_QUIC_INITIAL_MAX_STREAMS_UNI);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
 
 	ret = quic_put_varint(&buf[pos], max_len - pos,
 			      CONFIG_QUIC_INITIAL_MAX_STREAMS_UNI);
-	if (ret == 0) {
+	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
@@ -2818,14 +2838,15 @@ static int handle_client_hello(struct quic_tls_context *ctx,
 /*
  * Parse Certificate message from peer
  */
-static int parse_certificate(struct quic_tls_context *ctx,
-			     const uint8_t *data, size_t len)
+ZTESTABLE_STATIC int parse_certificate(struct quic_tls_context *ctx,
+				       const uint8_t *data, size_t len)
 {
 	size_t pos = 0;
 	uint8_t context_len;
 	uint32_t cert_list_len;
 	int cert_count = 0;
 	size_t cert_list_end;
+	int verify_level = quic_tls_effective_verify_level(ctx);
 
 	if (len < 4) {
 		return -EINVAL;
@@ -2860,17 +2881,19 @@ static int parse_certificate(struct quic_tls_context *ctx,
 		return -EINVAL;
 	}
 
-	/* Empty certificate list is valid (no client cert) */
-	if (cert_list_len == 0) {
-		if (ctx->expecting_client_cert) {
-			if (ctx->options.verify_level == MBEDTLS_SSL_VERIFY_REQUIRED) {
-				NET_DBG("Client certificate required but not provided");
-				return -EACCES;
-			}
+	ctx->peer_cert_len = 0;
 
+	/* Empty certificate list is only valid when peer auth is optional. */
+	if (cert_list_len == 0) {
+		if (verify_level == MBEDTLS_SSL_VERIFY_REQUIRED) {
+			NET_DBG("Peer certificate required but not provided");
+			return -EACCES;
+		}
+
+		if (ctx->expecting_client_cert) {
 			NET_DBG("Client did not provide certificate (client auth optional)");
 		} else {
-			NET_DBG("Peer sent empty certificate (no client auth)");
+			NET_DBG("Peer sent empty certificate");
 		}
 
 		return 0;
@@ -3310,10 +3333,10 @@ static int verify_certificate_verify(struct quic_tls_context *ctx,
 /*
  * Process a single handshake message
  */
-static int process_handshake_message(struct quic_tls_context *ctx,
-				     uint8_t msg_type,
-				     const uint8_t *msg, size_t msg_len,
-				     const uint8_t *full_msg, size_t full_msg_len)
+ZTESTABLE_STATIC int process_handshake_message(struct quic_tls_context *ctx,
+					       uint8_t msg_type,
+					       const uint8_t *msg, size_t msg_len,
+					       const uint8_t *full_msg, size_t full_msg_len)
 {
 	int ret;
 
@@ -3366,7 +3389,7 @@ static int process_handshake_message(struct quic_tls_context *ctx,
 			ret = verify_peer_certificate(ctx, ctx->peer_cert, ctx->peer_cert_len);
 			if (ret != 0) {
 				NET_DBG("Peer certificate verification failed: %d", ret);
-				/* Continue if verify_level allows it (checked inside function) */
+				return ret;
 			}
 		}
 		break;
@@ -3408,6 +3431,11 @@ static int process_handshake_message(struct quic_tls_context *ctx,
 
 	case TLS_HS_FINISHED:
 		NET_DBG("[%p] HS finished", ctx);
+		if (quic_tls_effective_verify_level(ctx) == MBEDTLS_SSL_VERIFY_REQUIRED &&
+		    ctx->peer_cert_len == 0) {
+			NET_DBG("Peer certificate required but not provided");
+			return -EACCES;
+		}
 		/* Update transcript with Finished message */
 		ret = transcript_update(ctx, full_msg, full_msg_len);
 		if (ret != 0) {
@@ -4024,6 +4052,105 @@ static int quic_apply_header_protection_split(uint8_t *header, size_t header_len
 	return 0;
 }
 
+static int quic_send_packet(struct quic_endpoint *ep,
+			    enum quic_secret_level level,
+			    const uint8_t *payload,
+			    size_t payload_len);
+
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+static struct quic_deferred_crypto_payload *
+quic_pending_crypto_payload(struct quic_endpoint *ep, enum quic_secret_level level)
+{
+	if (ep == NULL || level > QUIC_SECRET_LEVEL_HANDSHAKE) {
+		return NULL;
+	}
+
+	return &ep->crypto.pending[level];
+}
+
+static int quic_queue_deferred_crypto_payload(struct quic_endpoint *ep,
+					      enum quic_secret_level level,
+					      size_t payload_len,
+					      size_t data_len)
+{
+	struct quic_deferred_crypto_payload *pending;
+
+	pending = quic_pending_crypto_payload(ep, level);
+	if (pending == NULL) {
+		return -EAGAIN;
+	}
+
+	if (payload_len > sizeof(pending->data) - pending->len) {
+		NET_ERR("[EP:%p/%d] Deferred CRYPTO payload overflow at level %d "
+			"(pending=%zu, new=%zu, max=%zu)",
+			ep, quic_get_by_ep(ep), level,
+			pending->len, payload_len, sizeof(pending->data));
+		return -ENOBUFS;
+	}
+
+	memcpy(&pending->data[pending->len], ep->crypto.tx_buffer, payload_len);
+	pending->len += payload_len;
+	pending->valid = true;
+	ep->crypto.stream[level].tx_offset += data_len;
+
+	NET_DBG("[EP:%p/%d] Deferred %zu CRYPTO bytes at level %d "
+		"(queued payload=%zu)",
+		ep, quic_get_by_ep(ep), data_len, level, pending->len);
+
+	return 0;
+}
+
+/*
+ * Deferred CRYPTO payloads are owned by the QUIC worker thread.
+ * Flushes happen from packet processing after RX credit has already been
+ * recorded, or when address validation occurs on that same thread.
+ */
+int quic_flush_deferred_crypto(struct quic_endpoint *ep)
+{
+	enum quic_secret_level level;
+	int ret;
+
+	if (ep == NULL) {
+		return -EINVAL;
+	}
+
+	for (level = QUIC_SECRET_LEVEL_INITIAL;
+	     level <= QUIC_SECRET_LEVEL_HANDSHAKE;
+	     level++) {
+		struct quic_deferred_crypto_payload *pending =
+			quic_pending_crypto_payload(ep, level);
+
+		if (pending == NULL || !pending->valid || pending->len == 0U) {
+			continue;
+		}
+
+		ret = quic_send_packet(ep, level, pending->data, pending->len);
+		if (ret == -EAGAIN) {
+			return 0;
+		}
+
+		if (ret < 0) {
+			NET_WARN("[EP:%p/%d] Failed to flush deferred CRYPTO payload "
+				 "at level %d (%d)",
+				 ep, quic_get_by_ep(ep), level, ret);
+			return ret;
+		}
+
+		pending->len = 0U;
+		pending->valid = false;
+	}
+
+	return 0;
+}
+#else
+int quic_flush_deferred_crypto(struct quic_endpoint *ep)
+{
+	ARG_UNUSED(ep);
+
+	return 0;
+}
+#endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
+
 /*
  * Build CRYPTO frame directly into endpoint's TX buffer
  * Returns pointer to where TLS data should be written
@@ -4180,6 +4307,23 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 		return ret;
 	}
 
+	total_len = header_len + ciphertext_len;
+
+	if (!quic_endpoint_can_send_unvalidated(ep, total_len)) {
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+		NET_WARN("[EP:%p/%d] Anti-amplification budget exhausted "
+			 "(rx=%" PRIu32 ", tx=%" PRIu32 ", attempted=%zu)",
+			 ep, quic_get_by_ep(ep),
+			 ep->anti_amplification.bytes_received,
+			 ep->anti_amplification.bytes_sent,
+			 total_len);
+#else
+		NET_WARN("[EP:%p/%d] Anti-amplification budget exhausted", ep,
+			 quic_get_by_ep(ep));
+#endif
+		return -EAGAIN;
+	}
+
 	/* Send using scatter-gather I/O */
 	struct net_iovec iov[2] = {
 		{ .iov_base = header, .iov_len = header_len },
@@ -4220,10 +4364,11 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 	}
 
 	/* XXX: TODO: Handle partial sends properly */
-	total_len = header_len + ciphertext_len;
 	if ((size_t)sent != total_len) {
 		NET_WARN("Partial send: %zd of %zu bytes", sent, total_len);
 	}
+
+	quic_endpoint_note_unvalidated_tx(ep, MIN((size_t)sent, total_len));
 
 	quic_recovery_on_packet_sent(ep, level, packet_number, total_len, ack_eliciting);
 
@@ -4255,11 +4400,24 @@ static int quic_send_prepared_frame(struct quic_endpoint *ep,
 				    size_t data_len)
 {
 	size_t total_frame_len = frame_header_len + data_len;
+	int ret;
 
-	/* Update crypto stream offset */
-	ep->crypto.stream[level].tx_offset += data_len;
+	ret = quic_send_packet(ep, level, ep->crypto.tx_buffer, total_frame_len);
+	if (ret == -EAGAIN) {
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+		return quic_queue_deferred_crypto_payload(ep, level,
+							 total_frame_len,
+							 data_len);
+#else
+		return ret;
+#endif
+	}
 
-	return quic_send_packet(ep, level, ep->crypto.tx_buffer, total_frame_len);
+	if (ret == 0) {
+		ep->crypto.stream[level].tx_offset += data_len;
+	}
+
+	return ret;
 }
 
 /* Updated TLS send callback, zero copy for TLS data */
@@ -4890,6 +5048,43 @@ static int tls_opt_sec_tag_list_set(struct quic_tls_context *context,
 	context->options.sec_tag_list.sec_tag_count = sec_tag_cnt;
 
 	NET_DBG("Configured %d sec tags to TLS context %p", sec_tag_cnt, context);
+
+	if (context->is_initialized) {
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+		if (context->signing_key_id != 0) {
+			psa_destroy_key(context->signing_key_id);
+			context->signing_key_id = 0;
+		}
+
+		context->ca_cert = false;
+		context->my_cert = NULL;
+		context->my_cert_len = 0;
+		context->my_key = NULL;
+		context->my_key_len = 0;
+
+		mbedtls_x509_crt_free(&context->ca_chain);
+		mbedtls_x509_crt_free(&context->own_cert);
+		mbedtls_pk_free(&context->priv_key);
+
+		mbedtls_x509_crt_init(&context->ca_chain);
+		mbedtls_x509_crt_init(&context->own_cert);
+		mbedtls_pk_init(&context->priv_key);
+#endif
+
+		ret = quic_tls_mbedtls_set_credentials(context);
+		if (ret != 0) {
+			NET_DBG("Cannot refresh credentials (%d)", ret);
+			return ret;
+		}
+
+		ret = quic_tls_set_own_cert(context, context->my_cert,
+					    context->my_cert_len,
+					    context->my_key,
+					    context->my_key_len);
+		if (ret != 0) {
+			NET_DBG("Cannot refresh own certificate, will retry later");
+		}
+	}
 
 	return 0;
 }

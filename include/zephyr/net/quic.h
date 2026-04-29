@@ -19,6 +19,11 @@
  * @since 4.5
  * @version 0.1.0
  * @ingroup networking
+ *
+ * @note Server mode sends Version Negotiation for unsupported versions and can
+ * enforce the RFC 9000 anti-amplification limit before peer address
+ * validation. Retry and NEW_TOKEN-based address-validation tokens are not yet
+ * implemented.
  * @{
  */
 
