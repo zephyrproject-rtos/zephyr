@@ -13,6 +13,10 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
+	chosen {
+		zephyr,entropy = &trng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -27,7 +31,6 @@
 	rom {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		rom_s: memory@0 {
 			/* secure rom code region */
@@ -438,6 +441,12 @@
 			interrupts = <8 0>;
 			channels = <4>;
 			status = "disabled";
+		};
+
+		trng: trng@400c2400 {
+			compatible = "realtek,bee-trng";
+			reg = <0x400c2400 0x68>;
+			status = "okay";
 		};
 	};
 };
