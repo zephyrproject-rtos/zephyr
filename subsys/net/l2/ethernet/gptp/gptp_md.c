@@ -184,7 +184,7 @@ static void gptp_md_pdelay_reset(int port)
 	struct gptp_pdelay_req_state *state;
 	struct gptp_port_ds *port_ds;
 
-	NET_WARN("Reset Pdelay requests");
+	NET_DBG("Reset Pdelay requests");
 
 	state = &GPTP_PORT_STATE(port)->pdelay_req;
 	port_ds = GPTP_PORT_DS(port);

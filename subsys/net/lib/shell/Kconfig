@@ -202,7 +202,8 @@ config NET_SHELL_WEBSOCKET_SUPPORTED
 config NET_SHELL_QBV_SUPPORTED
 	bool "Qbv Shell"
 	default y
-	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || (NET_QBV && NET_L2_ETHERNET_MGMT)
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_QBV
+	select PTP_CLOCK_SHELL if NET_QBV
 	help
 	  Enable Qbv Shell.
 	  The Qbv shell currently supports set/enable operations.
