@@ -21,7 +21,7 @@
 		zephyr,wifi = &wlan0;
 	};
 
-	/* Single IPC channel: 4KB shared memory for TX+RX */
+	/* Single IPC channel: 4KB + 16KB shared memory for TX+RX */
 	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -29,8 +29,8 @@
 
 		ipc_shm_area_cpuapp_cpuuma: memory@200c0000 {
 			compatible = "mmio-sram";
-			reg = <0x200c0000 0x1000>;
-			ranges = <0x0 0x200c0000 0x1000>;
+			reg = <0x200c0000 0x5000>;
+			ranges = <0x0 0x200c0000 0x5000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
@@ -41,6 +41,10 @@
 
 			ipc_shm_cpuuma_cpuapp_0: memory@800 {
 				reg = <0x800 0x800>;
+			};
+
+			ipc_shm_sparembox: memory@1000 {
+				reg = <0x1000 0x4000>;
 			};
 		};
 	};
@@ -56,6 +60,17 @@
 			status = "okay";
 		};
 	};
+};
+
+&wicr {
+	status = "okay";
+	firmware-lmacinitpc = <&wifi_lmac_rom>;
+	firmware-umacinitpc = <&wifi_umac_rom>;
+	firmware-lmacrompatchaddr = <&wifi_lmac_patch_partition>;
+	firmware-umacrompatchaddr = <&wifi_umac_patch_partition>;
+	ipcconfig-commandmbox = <&ipc_shm_cpuapp_cpuuma_0>;
+	ipcconfig-eventmbox = <&ipc_shm_cpuuma_cpuapp_0>;
+	ipcconfig-sparembox = <&ipc_shm_sparembox>;
 };
 
 &cpuapp_sram {
