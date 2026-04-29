@@ -37,6 +37,11 @@ properties:
 
         port = <1>;
 
+  latch-detect:
+    type: boolean
+    description: |
+      Enable latch detect mode for this GPIO port.
+
 gpio-cells:
   - pin
   - flags
