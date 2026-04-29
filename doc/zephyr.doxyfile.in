@@ -318,6 +318,9 @@ ALIASES               += "driver_ops{1}=\brief \htmlonly <span class=\"mlabel\">
 ALIASES               += "driver_ops_mandatory=\htmlonly<span class=\"op-badge op-req\" title=\"This operation MUST be implemented by the driver.\">REQ</span>\endhtmlonly"
 ALIASES               += "driver_ops_optional=\htmlonly<span class=\"op-badge op-opt\" title=\"This operation MAY optionally be implemented by the driver.\">OPT</span>\endhtmlonly"
 
+ALIASES               += "nonnull=\htmlonly<span class=\"op-badge op-req\" title=\"This parameter MUST not be NULL.\">Non-Null</span>\endhtmlonly"
+ALIASES               += "nullable=\htmlonly<span class=\"op-badge op-opt\" title=\"This parameter MAY be NULL.\">Nullable</span>\endhtmlonly"
+
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources
 # only. Doxygen will then generate output that is more tailored for C. For
 # instance, some of the names that are used will be different. The list of all

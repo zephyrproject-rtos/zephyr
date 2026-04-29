@@ -314,8 +314,8 @@ struct nvmem_cell {
 /**
  * @brief Read data from an NVMEM cell.
  *
- * @param cell NVMEM cell to read from.
- * @param[out] data Buffer to store the read data.
+ * @param cell @nonnull NVMEM cell to read from.
+ * @param[out] data @nonnull Buffer to store the read data.
  *                  Must be at least @p len bytes.
  * @param off Offset within the cell to start reading from, in bytes.
  *            Must be less than the cell size.
@@ -334,9 +334,9 @@ int nvmem_cell_read(const struct nvmem_cell *cell, void *data, off_t off, size_t
 /**
  * @brief Write data to an NVMEM cell.
  *
- * @param cell NVMEM cell to write to.
+ * @param cell @nonnull NVMEM cell to write to.
  *             Must not be read-only.
- * @param data Buffer containing data to write.
+ * @param data @nonnull Buffer containing data to write.
  *             Must be at least @p len bytes.
  * @param off Offset within the cell to start writing to, in bytes.
  *            Must be less than the cell size.
@@ -356,7 +356,7 @@ int nvmem_cell_write(const struct nvmem_cell *cell, const void *data, off_t off,
 /**
  * @brief Check if an NVMEM cell is ready.
  *
- * @param cell NVMEM cell to check. May be NULL.
+ * @param cell @nullable NVMEM cell to check.
  *
  * @return True if the NVMEM cell is ready for use and false otherwise.
  */
@@ -368,7 +368,7 @@ static inline bool nvmem_cell_is_ready(const struct nvmem_cell *cell)
 /**
  * @brief Check if an NVMEM cell is read-only.
  *
- * @param cell NVMEM cell to check. Can't be NULL.
+ * @param cell @nonnull NVMEM cell to check.
  *
  * @return True if the NVMEM cell is read-only and false otherwise.
  */
@@ -380,8 +380,8 @@ static inline bool nvmem_cell_is_read_only(const struct nvmem_cell *cell)
 /**
  * @brief Read a little-endian 16-bit value from an NVMEM cell.
  *
- * @param cell NVMEM cell to read from.
- * @param[out] val Pointer to store the host-endian result.
+ * @param cell @nonnull NVMEM cell to read from.
+ * @param[out] val @nonnull Pointer to store the host-endian result.
  * @param off Offset within the cell to start reading from, in bytes.
  *
  * @return 0 on success, or a negative error code.
@@ -402,8 +402,8 @@ static inline int nvmem_cell_read_le16(const struct nvmem_cell *cell, uint16_t *
 /**
  * @brief Read a big-endian 16-bit value from an NVMEM cell.
  *
- * @param cell NVMEM cell to read from.
- * @param[out] val Pointer to store the host-endian result.
+ * @param cell @nonnull NVMEM cell to read from.
+ * @param[out] val @nonnull Pointer to store the host-endian result.
  * @param off Offset within the cell to start reading from, in bytes.
  *
  * @return 0 on success, or a negative error code.
@@ -424,8 +424,8 @@ static inline int nvmem_cell_read_be16(const struct nvmem_cell *cell, uint16_t *
 /**
  * @brief Read a little-endian 32-bit value from an NVMEM cell.
  *
- * @param cell NVMEM cell to read from.
- * @param[out] val Pointer to store the host-endian result.
+ * @param cell @nonnull NVMEM cell to read from.
+ * @param[out] val @nonnull Pointer to store the host-endian result.
  * @param off Offset within the cell to start reading from, in bytes.
  *
  * @return 0 on success, or a negative error code.
@@ -446,8 +446,8 @@ static inline int nvmem_cell_read_le32(const struct nvmem_cell *cell, uint32_t *
 /**
  * @brief Read a big-endian 32-bit value from an NVMEM cell.
  *
- * @param cell NVMEM cell to read from.
- * @param[out] val Pointer to store the host-endian result.
+ * @param cell @nonnull NVMEM cell to read from.
+ * @param[out] val @nonnull Pointer to store the host-endian result.
  * @param off Offset within the cell to start reading from, in bytes.
  *
  * @return 0 on success, or a negative error code.
@@ -468,8 +468,8 @@ static inline int nvmem_cell_read_be32(const struct nvmem_cell *cell, uint32_t *
 /**
  * @brief Read a little-endian 48-bit value from an NVMEM cell.
  *
- * @param cell NVMEM cell to read from.
- * @param[out] val Pointer to store the host-endian result.
+ * @param cell @nonnull NVMEM cell to read from.
+ * @param[out] val @nonnull Pointer to store the host-endian result.
  * @param off Offset within the cell to start reading from, in bytes.
  *
  * @return 0 on success, or a negative error code.
@@ -490,8 +490,8 @@ static inline int nvmem_cell_read_le48(const struct nvmem_cell *cell, uint64_t *
 /**
  * @brief Read a big-endian 48-bit value from an NVMEM cell.
  *
- * @param cell NVMEM cell to read from.
- * @param[out] val Pointer to store the host-endian result.
+ * @param cell @nonnull NVMEM cell to read from.
+ * @param[out] val @nonnull Pointer to store the host-endian result.
  * @param off Offset within the cell to start reading from, in bytes.
  *
  * @return 0 on success, or a negative error code.
@@ -512,8 +512,8 @@ static inline int nvmem_cell_read_be48(const struct nvmem_cell *cell, uint64_t *
 /**
  * @brief Read a little-endian 64-bit value from an NVMEM cell.
  *
- * @param cell NVMEM cell to read from.
- * @param[out] val Pointer to store the host-endian result.
+ * @param cell @nonnull NVMEM cell to read from.
+ * @param[out] val @nonnull Pointer to store the host-endian result.
  * @param off Offset within the cell to start reading from, in bytes.
  *
  * @return 0 on success, or a negative error code.
@@ -534,8 +534,8 @@ static inline int nvmem_cell_read_le64(const struct nvmem_cell *cell, uint64_t *
 /**
  * @brief Read a big-endian 64-bit value from an NVMEM cell.
  *
- * @param cell NVMEM cell to read from.
- * @param[out] val Pointer to store the host-endian result.
+ * @param cell @nonnull NVMEM cell to read from.
+ * @param[out] val @nonnull Pointer to store the host-endian result.
  * @param off Offset within the cell to start reading from, in bytes.
  *
  * @return 0 on success, or a negative error code.
@@ -556,7 +556,7 @@ static inline int nvmem_cell_read_be64(const struct nvmem_cell *cell, uint64_t *
 /**
  * @brief Write a little-endian 16-bit value to an NVMEM cell.
  *
- * @param cell NVMEM cell to write to.
+ * @param cell @nonnull NVMEM cell to write to.
  * @param val Host-endian value to write.
  * @param off Offset within the cell to start writing to, in bytes.
  *
@@ -574,7 +574,7 @@ static inline int nvmem_cell_write_le16(const struct nvmem_cell *cell, uint16_t 
 /**
  * @brief Write a big-endian 16-bit value to an NVMEM cell.
  *
- * @param cell NVMEM cell to write to.
+ * @param cell @nonnull NVMEM cell to write to.
  * @param val Host-endian value to write.
  * @param off Offset within the cell to start writing to, in bytes.
  *
@@ -592,7 +592,7 @@ static inline int nvmem_cell_write_be16(const struct nvmem_cell *cell, uint16_t 
 /**
  * @brief Write a little-endian 32-bit value to an NVMEM cell.
  *
- * @param cell NVMEM cell to write to.
+ * @param cell @nonnull NVMEM cell to write to.
  * @param val Host-endian value to write.
  * @param off Offset within the cell to start writing to, in bytes.
  *
@@ -610,7 +610,7 @@ static inline int nvmem_cell_write_le32(const struct nvmem_cell *cell, uint32_t 
 /**
  * @brief Write a big-endian 32-bit value to an NVMEM cell.
  *
- * @param cell NVMEM cell to write to.
+ * @param cell @nonnull NVMEM cell to write to.
  * @param val Host-endian value to write.
  * @param off Offset within the cell to start writing to, in bytes.
  *
@@ -628,7 +628,7 @@ static inline int nvmem_cell_write_be32(const struct nvmem_cell *cell, uint32_t 
 /**
  * @brief Write a little-endian 48-bit value to an NVMEM cell.
  *
- * @param cell NVMEM cell to write to.
+ * @param cell @nonnull NVMEM cell to write to.
  * @param val Host-endian value to write.
  * @param off Offset within the cell to start writing to, in bytes.
  *
@@ -646,7 +646,7 @@ static inline int nvmem_cell_write_le48(const struct nvmem_cell *cell, uint64_t 
 /**
  * @brief Write a big-endian 48-bit value to an NVMEM cell.
  *
- * @param cell NVMEM cell to write to.
+ * @param cell @nonnull NVMEM cell to write to.
  * @param val Host-endian value to write.
  * @param off Offset within the cell to start writing to, in bytes.
  *
@@ -664,7 +664,7 @@ static inline int nvmem_cell_write_be48(const struct nvmem_cell *cell, uint64_t 
 /**
  * @brief Write a little-endian 64-bit value to an NVMEM cell.
  *
- * @param cell NVMEM cell to write to.
+ * @param cell @nonnull NVMEM cell to write to.
  * @param val Host-endian value to write.
  * @param off Offset within the cell to start writing to, in bytes.
  *
@@ -682,7 +682,7 @@ static inline int nvmem_cell_write_le64(const struct nvmem_cell *cell, uint64_t 
 /**
  * @brief Write a big-endian 64-bit value to an NVMEM cell.
  *
- * @param cell NVMEM cell to write to.
+ * @param cell @nonnull NVMEM cell to write to.
  * @param val Host-endian value to write.
  * @param off Offset within the cell to start writing to, in bytes.
  *
