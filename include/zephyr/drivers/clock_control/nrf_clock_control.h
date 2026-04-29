@@ -211,6 +211,10 @@ uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void);
 		(_CLOCK_CONTROL_NRF_AUXPLL_MAP_FREQ(DT_PROP(node, nordic_frequency))), \
 		(0))
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
 struct nrf_clock_spec {
 	uint32_t frequency;
 	uint16_t accuracy : 15;
@@ -235,6 +239,12 @@ __subsystem struct nrf_clock_control_driver_api {
 				const struct nrf_clock_spec *spec,
 				uint32_t *startup_time_us);
 };
+
+DEVICE_API_EXTENDS(nrf_clock_control, clock_control, std_api);
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Request a reservation to use a given clock with specified attributes.
