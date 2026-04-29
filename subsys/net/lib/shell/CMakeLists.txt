@@ -59,6 +59,6 @@ if(CONFIG_NET_SHELL_HTTP_CLIENT_HAS_CERTIFICATE)
   generate_inc_file_for_target(
     app
     ${CERTIFICATE_PATH}
-    ${ZEPHYR_BINARY_DIR}/include/generated/certs.der.inc
+    ${ZEPHYR_BINARY_DIR}/include/generated/net_shell_http_client_ca.der.inc
   )
 endif()
