@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include <renesas/ra/ra8/r7fa8e1afdcfb.dtsi>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <zephyr/dt-bindings/adc/adc.h>
@@ -70,6 +71,62 @@
 			   <5 0 &ioport1 6 0>,	/* IO6 */
 			   <6 0 &ioport1 7 0>,	/* IO7 */
 			   <7 0 &ioport8 9 0>;	/* IO8 */
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &ioport0 4 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &ioport0 3 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &ioport0 7 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &ioport0 1 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &ioport0 14 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &ioport1 15 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &ioport3 9 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &ioport3 10 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &ioport3 0 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &ioport4 5 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &ioport9 5 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &ioport1 14 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &ioport1 13 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &ioport3 2 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &ioport3 3 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &ioport1 12 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &ioport2 4 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &ioport2 2 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &ioport3 13 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &ioport2 3 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &ioport5 11 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &ioport5 12 0>;
+	};
+
+	arduino_adc: analog-connector {
+		compatible = "arduino,uno-adc";
+		#io-channel-cells = <1>;
+		io-channel-map = <ARDUINO_HEADER_R3_A0 &adc1 0>,	/* P004 = AN000 */
+				 <ARDUINO_HEADER_R3_A1 &adc0 0>,	/* P003 = AN104 */
+				 <ARDUINO_HEADER_R3_A2 &adc0 1>,	/* P007 = AN004 */
+				 <ARDUINO_HEADER_R3_A3 &adc0 2>,	/* P001 = AN101 */
+				 <ARDUINO_HEADER_R3_A4 &adc0 21>,       /* P014 = AN007 */
+				 <ARDUINO_HEADER_R3_A5 &adc0 22>;       /* P015 = AN105 */
+	};
+
+	arduino_pwm: connector-pwm {
+		compatible = "arduino-header-pwm";
+		#pwm-cells = <3>;
+		pwm-map-mask = <0xffffffff 0x0 0x0>;
+		pwm-map-pass-thru = <0x0 0xffffffff 0xffffffff>;
+		pwm-map = <ARDUINO_HEADER_R3_D2 0 0 &pwm3 0 0 0>,       /* P300 = GPT1_A */
+			  <ARDUINO_HEADER_R3_D3 0 0 &pwm0 0 0 0>,       /* P415 = GPT1_B */
+			  <ARDUINO_HEADER_R3_D5 0 0 &pwm2 1 0 0>,       /* P114 = GPT2_B */
+			  <ARDUINO_HEADER_R3_D6 0 0 &pwm2 0 0 0>,       /* P113 = GPT0_B */
+			  <ARDUINO_HEADER_R3_D7 0 0 &pwm4 0 0 0>,       /* P302 = GPT0_A */
+			  <ARDUINO_HEADER_R3_D9 0 0 &pwm3 1 0 0>,       /* P112 = GPT7_B */
+			  <ARDUINO_HEADER_R3_D10 0 0 &pwm4 1 0 0>,      /* P204 = GPT3_B */
+			  <ARDUINO_HEADER_R3_D11 0 0 &pwm5 1 0 0>,      /* P202 = GPT3_B */
+			  <ARDUINO_HEADER_R3_D13 0 0 &pwm5 0 0 0>;      /* P203 = GPT3_A */
 	};
 
 	buttons {
@@ -193,6 +250,16 @@
 	};
 };
 
+&sci3 {
+	pinctrl-0 = <&sci3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart3: uart {
+		current-speed = <115200>;
+	};
+};
+
 &sci9 {
 	pinctrl-0 = <&sci9_default>;
 	pinctrl-names = "default";
@@ -229,6 +296,12 @@
 	status = "okay";
 };
 
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &spi1 {
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
@@ -254,6 +327,16 @@
 			reg = <0x0 DT_SIZE_K(12)>;
 		};
 	};
+};
+
+&port_irq4 {
+	interrupts = <87 12>;
+	status = "okay";
+};
+
+&port_irq8 {
+	interrupts = <88 12>;
+	status = "okay";
 };
 
 &port_irq13 {
@@ -292,3 +375,9 @@ pmod2_serial: &uart2 {};
 pmod_serial: &pmod1_serial {};
 
 pmod_header: &pmod1_header {};
+
+arduino_i2c: &iic1 {};
+
+arduino_spi: &spi0 {};
+
+arduino_serial: &uart3 {};
