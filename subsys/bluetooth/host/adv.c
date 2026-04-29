@@ -1192,7 +1192,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	return 0;
 }
 
-int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
+static int adv_start_ext(struct bt_le_ext_adv *adv,
 			const struct bt_le_adv_param *param,
 			const struct bt_data *ad, size_t ad_len,
 			const struct bt_data *sd, size_t sd_len)
@@ -1215,6 +1215,10 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 
 	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		return -EALREADY;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SMP) && atomic_test_bit(bt_dev.flags, BT_DEV_ID_PENDING)) {
+		bt_id_pending_keys_update();
 	}
 
 	adv->id = param->id;
@@ -1291,7 +1295,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-		err = bt_le_adv_start_ext(adv, param, ad, ad_len, sd, sd_len);
+		err = adv_start_ext(adv, param, ad, ad_len, sd, sd_len);
 	} else {
 		err = adv_start_legacy(adv, param, ad, ad_len, sd, sd_len);
 	}
