@@ -59,6 +59,20 @@ config NRF_GRTC_TIMER_AUTO_KEEP_ALIVE
 
 if NRF_GRTC_START_SYSCOUNTER
 
+config NRF_GRTC_TIMER_STOP_AT_UNINIT
+	bool "Automatically stop the GRTC when uninitialized"
+	default y if !MCUBOOT
+	help
+	  If enabled, the GRTC timer will be stopped automatically
+	  when the driver is uninitialized (e.g. when sys_clock_disable() is called).
+
+config NRF_GRTC_TIMER_CLEAR_AT_UNINIT
+	bool "Automatically clear the GRTC when uninitialized"
+	default y if !MCUBOOT
+	help
+	  If enabled, the GRTC timer will be cleared automatically
+	  when the driver is uninitialized (e.g. when sys_clock_disable() is called).
+
 choice NRF_GRTC_TIMER_SOURCE
 	prompt "nRF GRTC clock source"
 	# Default to LFLPRC if CLOCK_CONTROL_NRF_K32SRC_RC for backwards compatibility
