@@ -279,6 +279,28 @@ void coap_client_cancel_requests(struct coap_client *client);
 void coap_client_cancel_request(struct coap_client *client, struct coap_client_request *req);
 
 /**
+ * @brief Deregister matching CoAP observe subscriptions.
+ *
+ * Sends a GET with Observe option set to 1 (deregister) using the same token as the original
+ * observe request, per RFC 7641 Section 3.6. The CON/NON type mirrors the original request.
+ *
+ * For Confirmable requests the operation is asynchronous: retransmissions are handled by the
+ * library and the response callback is invoked with the server's final response once the
+ * deregistration is acknowledged.
+ *
+ * For Non-confirmable requests the deregister is sent once and the request is released
+ * immediately; the response callback is invoked with @c -ECANCELED.
+ *
+ * The matching rules are the same as @ref coap_client_cancel_request.
+ *
+ * @param client Pointer to the CoAP client instance.
+ * @param req Pointer to the CoAP client request to match for deregistration.
+ *
+ * @return 0 on success, a negative error code otherwise.
+ */
+int coap_client_deregister_observe(struct coap_client *client, struct coap_client_request *req);
+
+/**
  * @brief Initialise a Block2 option to be added to a request
  *
  * If the application expects a request to require a blockwise transfer, it may pre-emptively
