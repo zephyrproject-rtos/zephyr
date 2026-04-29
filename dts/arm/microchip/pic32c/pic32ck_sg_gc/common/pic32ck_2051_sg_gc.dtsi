@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2026 Microchip Technology Inc.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 / {
 	soc {
 		flash-controller@44004000 {
@@ -19,6 +20,28 @@
 
 		sram0: memory@20000000 {
 			reg = <0x20000000 DT_SIZE_K(512)>;
+		};
+
+		sercom6: sercom@45004000 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x45004000 0x38>;
+			interrupts = <108 0>, <109 0>, <110 0>, <111 0>, <112 0>, <113 0>;
+			interrupt-names = "error", "dre", "txc", "rxc", "rxs", "ctsic";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_SERCOM6_APB>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM6_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		sercom7: sercom@45008000 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x45008000 0x38>;
+			interrupts = <114 0>, <115 0>, <116 0>, <117 0>, <118 0>, <119 0>;
+			interrupt-names = "error", "dre", "txc", "rxc", "rxs", "ctsic";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_SERCOM7_APB>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM7_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
 		};
 	};
 };
