@@ -24,6 +24,7 @@ if(CONFIG_SMP)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_FPU_SHARING fpu.c fpu.S)
+zephyr_library_sources_ifdef(CONFIG_PM_S2RAM pm_s2ram.c pm_s2ram.S)
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_USE_ISR_WRAPPER isr.S)

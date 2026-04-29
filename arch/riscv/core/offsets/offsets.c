@@ -142,4 +142,18 @@ GEN_OFFSET_SYM(_cpu_arch_t, user_exc_tmp0);
 GEN_OFFSET_SYM(_cpu_arch_t, user_exc_tmp1);
 #endif
 
+#ifdef CONFIG_PM_S2RAM
+#include <pm_s2ram_struct.h>
+
+GEN_OFFSET_SYM(_cpu_context_t, mstatus);
+GEN_OFFSET_SYM(_cpu_context_t, mtvec);
+GEN_OFFSET_SYM(_cpu_context_t, mscratch);
+#ifdef CONFIG_RISCV_HAS_CLIC
+GEN_OFFSET_SYM(_cpu_context_t, mtvt);
+#else
+GEN_OFFSET_SYM(_cpu_context_t, mie);
+#endif
+GEN_OFFSET_SYM(_cpu_context_t, sp);
+#endif /* CONFIG_PM_S2RAM */
+
 GEN_ABS_SYM_END
