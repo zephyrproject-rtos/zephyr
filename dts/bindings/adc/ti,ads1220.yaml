@@ -1,0 +1,37 @@
+# Copyright (c) 2026 Vaisala Oyj
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments 2 channel 24-bit SPI ADC
+
+compatible: "ti,ads1220"
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+  drdy-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO for data ready, becomes active when a conversion result is ready.
+      By default, it is active low signal.
+
+  idac-current:
+    type: int
+    enum:
+      - 0
+      - 10
+      - 50
+      - 100
+      - 250
+      - 500
+      - 1000
+      - 1500
+    default: 0
+    description: |
+      IDAC current in microampere, the default value turns the current source off
+
+io-channel-cells:
+  - input
