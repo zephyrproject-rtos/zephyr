@@ -21,7 +21,7 @@ currently supported by Zephyr is summarized below:
      - ARM
      - System Control and Management Interface
      - `Link <https://developer.arm.com/documentation/den0056/latest/>`__
-     - N/A
+     - :ref:`Link <arm_scmi>`
 
    * - TISCI
      - TI

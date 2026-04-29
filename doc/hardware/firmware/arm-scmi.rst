@@ -1,3 +1,5 @@
+:orphan:
+
 .. _arm_scmi:
 
 ARM System Control and Management Interface
