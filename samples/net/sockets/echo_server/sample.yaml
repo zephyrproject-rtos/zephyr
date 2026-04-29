@@ -152,7 +152,9 @@ tests:
         - "Waiting for UDP.*IPv6"
   sample.net.sockets.echo_server.802154.subg:
     extra_args: EXTRA_CONF_FILE="overlay-802154-subg.conf"
-    platform_allow: beagleconnect_freedom
+    platform_allow:
+      - beagleconnect_freedom@C5/cc1352p
+      - beagleconnect_freedom@C7/cc1352p7
   sample.net.sockets.echo_server.ws_console:
     platform_allow:
       - native_sim
