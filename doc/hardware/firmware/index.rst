@@ -43,3 +43,11 @@ Samples
 *******
 
 See :zephyr:code-sample-category:`firmware`.
+
+Resources
+*********
+
+.. toctree::
+   :maxdepth: 1
+
+   arm-scmi
