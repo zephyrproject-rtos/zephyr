@@ -241,6 +241,25 @@ follows:
 
 Connect J10 pin 1-2., the DAC output is available on TP9.
 
+Building and Running for FRDM-IMXRT1186
+=======================================
+The sample can be built and executed for the :zephyr:board:`frdm_imxrt1186` as
+follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: frdm_imxrt1186/mimxrt1186/cm33
+   :goals: flash
+   :compact:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: frdm_imxrt1186/mimxrt1186/cm7
+   :goals: flash
+   :compact:
+
+Connect J37 pin 1-2., the DAC output is available on TP14.
+
 Sample output
 =============
 
