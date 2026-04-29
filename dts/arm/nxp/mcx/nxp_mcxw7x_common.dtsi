@@ -391,6 +391,7 @@
 		interrupt-names = "common";
 		clocks = <&scg SCG_K4_FIRC_CLK 0xec>;
 		number-of-mb = <32>;
+		timing-registers = "encbt";
 		status = "disabled";
 	};
 
