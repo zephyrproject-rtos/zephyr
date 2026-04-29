@@ -1310,25 +1310,31 @@ bool coap_block_has_more(struct coap_packet *cpkt)
 	return more;
 }
 
-int coap_append_block1_option(struct coap_packet *cpkt,
-			      struct coap_block_context *ctx)
+int coap_append_block1_option_with_size(struct coap_packet *cpkt, struct coap_block_context *ctx,
+					uint16_t payload_len)
 {
-	uint16_t bytes = coap_block_size_to_bytes(ctx->block_size);
+	/* For BERT, NUM is always in 1024-byte units regardless of how many
+	 * units a single packet carries (RFC 8323 §4.4). For non-BERT the
+	 * unit equals the negotiated block size in bytes.
+	 */
+	uint16_t unit = (ctx->block_size == COAP_BLOCK_BERT)
+				? 1024
+				: coap_block_size_to_bytes(ctx->block_size);
 	unsigned int val = 0U;
-	int r;
 
+	SET_BLOCK_SIZE(val, ctx->block_size);
 	if (coap_packet_is_request(cpkt)) {
-		SET_BLOCK_SIZE(val, ctx->block_size);
-		SET_MORE(val, ctx->current + bytes < ctx->total_size);
-		SET_NUM(val, ctx->current / bytes);
-	} else {
-		SET_BLOCK_SIZE(val, ctx->block_size);
-		SET_NUM(val, ctx->current / bytes);
+		SET_MORE(val, ctx->current + payload_len < ctx->total_size);
 	}
+	SET_NUM(val, ctx->current / unit);
 
-	r = coap_append_option_int(cpkt, COAP_OPTION_BLOCK1, val);
+	return coap_append_option_int(cpkt, COAP_OPTION_BLOCK1, val);
+}
 
-	return r;
+int coap_append_block1_option(struct coap_packet *cpkt, struct coap_block_context *ctx)
+{
+	return coap_append_block1_option_with_size(cpkt, ctx,
+						   coap_block_size_to_bytes(ctx->block_size));
 }
 
 int coap_append_block2_option(struct coap_packet *cpkt,
@@ -2410,7 +2416,7 @@ const uint8_t *coap_tcp_packet_get_payload(const struct coap_packet *cpkt,
 		return NULL;
 	}
 
-	payload_len = cpkt->max_len - cpkt->hdr_len - cpkt->opt_len;
+	payload_len = cpkt->offset - cpkt->hdr_len - cpkt->opt_len;
 	if (payload_len > 1) {
 		*len = payload_len - 1;	/* subtract payload marker length */
 	} else {

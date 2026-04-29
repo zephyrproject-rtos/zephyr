@@ -909,6 +909,26 @@ int coap_append_block1_option(struct coap_packet *cpkt,
 			      struct coap_block_context *ctx);
 
 /**
+ * @brief Append BLOCK1 option with an explicit chunk length.
+ *
+ * Same as @ref coap_append_block1_option but lets the caller specify the
+ * number of payload bytes that will be appended to this packet. This is
+ * required for correct M-bit semantics under BERT, where one packet may
+ * carry multiple 1024-byte units and the legacy helper's
+ * `current + block_size_unit < total_size` test gives the wrong answer
+ * on the final BERT packet.
+ *
+ * @param cpkt Packet to be updated
+ * @param ctx Block context
+ * @param payload_len Number of payload bytes that will follow this Block1
+ *                    option in the same packet
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_append_block1_option_with_size(struct coap_packet *cpkt, struct coap_block_context *ctx,
+					uint16_t payload_len);
+
+/**
  * @brief Append BLOCK2 option to the packet.
  *
  * @param cpkt Packet to be updated

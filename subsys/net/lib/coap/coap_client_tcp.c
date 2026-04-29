@@ -397,10 +397,12 @@ static int coap_client_tcp_init_request(struct coap_client_tcp *client,
 				LOG_ERR("Payload callback failed: %d", ret);
 				return ret;
 			}
-			total_len = cb_len;
-			if (!last_block) {
-				/* Trigger blockwise - we don't know total size yet */
-				total_len = cb_len + 1;
+			/* If the caller declared the body size via req->len, honor
+			 * it. Only fall back to a streaming sentinel when req->len
+			 * is zero (true unknown-size streaming).
+			 */
+			if (req->len == 0) {
+				total_len = last_block ? cb_len : SIZE_MAX;
 			}
 		}
 
@@ -421,35 +423,22 @@ static int coap_client_tcp_init_request(struct coap_client_tcp *client,
 
 				memcpy(internal_req->request_tag, tag, COAP_TOKEN_MAX_LEN);
 			}
-
-			ret = coap_append_block1_option(&internal_req->request,
-							&internal_req->send_blk_ctx);
-			if (ret < 0) {
-				LOG_ERR("Failed to append block1 option");
-				return ret;
-			}
-
-			ret = coap_packet_append_option(&internal_req->request,
-							COAP_OPTION_REQUEST_TAG,
-							internal_req->request_tag,
-							COAP_TOKEN_MAX_LEN);
-			if (ret < 0) {
-				LOG_ERR("Failed to append request tag option");
-				return ret;
-			}
 		} else if (total_len > CONFIG_COAP_CLIENT_MESSAGE_SIZE) {
 			/* TCP streaming mode - no Block options, TCP handles large messages */
 			LOG_DBG("Using TCP streaming for large payload (%zu bytes)", total_len);
 		}
 
-		ret = coap_packet_append_payload_marker(&internal_req->request);
-		if (ret < 0) {
-			LOG_ERR("Failed to append payload marker");
-			return ret;
-		}
-
+		/* Compute payload_len before appending the Block1 option so the
+		 * More bit reflects whether this packet actually carries the
+		 * last bytes of the body (matters for BERT, where one packet
+		 * may carry multiple 1024-byte units).
+		 */
 		if (use_blockwise && internal_req->send_blk_ctx.total_size > 0) {
-			/* Blockwise mode: chunk the payload */
+			/* Blockwise mode: chunk the payload. When total_size is
+			 * SIZE_MAX (streaming sentinel), the subtraction below
+			 * narrows to 0xFFFF and the immediately-following clip
+			 * reduces it to the per-packet limit.
+			 */
 			payload_len = internal_req->send_blk_ctx.total_size -
 				      internal_req->send_blk_ctx.current;
 
@@ -467,11 +456,39 @@ static int coap_client_tcp_init_request(struct coap_client_tcp *client,
 				}
 			}
 
-			offset = internal_req->send_blk_ctx.current;
+			/* offset indexes into payload_ptr. For a contiguous
+			 * req->payload buffer that's send_blk_ctx.current; for
+			 * a payload_cb that fills a fresh buffer per block it's
+			 * always 0, otherwise we'd walk off the cb buffer.
+			 */
+			offset = (req->payload_cb != NULL) ? 0 : internal_req->send_blk_ctx.current;
 		} else {
 			/* Non-blockwise mode: send entire payload (TCP handles fragmentation) */
 			payload_len = total_len;
 			offset = 0;
+		}
+
+		if (use_blockwise) {
+			ret = coap_append_block1_option_with_size(
+				&internal_req->request, &internal_req->send_blk_ctx, payload_len);
+			if (ret < 0) {
+				LOG_ERR("Failed to append block1 option");
+				return ret;
+			}
+
+			ret = coap_packet_append_option(
+				&internal_req->request, COAP_OPTION_REQUEST_TAG,
+				internal_req->request_tag, COAP_TOKEN_MAX_LEN);
+			if (ret < 0) {
+				LOG_ERR("Failed to append request tag option");
+				return ret;
+			}
+		}
+
+		ret = coap_packet_append_payload_marker(&internal_req->request);
+		if (ret < 0) {
+			LOG_ERR("Failed to append payload marker");
+			return ret;
 		}
 
 		internal_req->last_payload_len = payload_len;
