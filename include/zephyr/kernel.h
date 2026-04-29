@@ -1833,12 +1833,13 @@ struct k_timer_observer {
 /**
  * @cond INTERNAL_HIDDEN
  */
+/* clang-format off */
 #define Z_TIMER_INITIALIZER(obj, expiry, stop) \
 	{ \
 	.timeout = { \
-		.node = {},\
+		IF_DISABLED(CONFIG_TIMEOUT_USE_MIN_HEAP, (.node = {},)) \
 		.fn = z_timer_expiration_handler, \
-		.dticks = 0, \
+		IF_DISABLED(CONFIG_TIMEOUT_USE_MIN_HEAP, (.dticks = 0,)) \
 	}, \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.expiry_fn = expiry, \
@@ -1847,6 +1848,7 @@ struct k_timer_observer {
 	.status = 0, \
 	.user_data = 0, \
 	}
+/* clang-format on */
 /**
  * INTERNAL_HIDDEN @endcond
  */
