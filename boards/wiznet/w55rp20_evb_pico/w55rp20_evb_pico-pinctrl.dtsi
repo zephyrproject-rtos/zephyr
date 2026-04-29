@@ -1,0 +1,82 @@
+/*
+ * Copyright (c) 2026, Mason Lee
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_P0>;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_P1>;
+			input-enable;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_P12>, <I2C0_SCL_P13>;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_P14>, <I2C1_SCL_P15>;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+
+	pwm_ch4b_default: pwm_ch4b_default {
+		group1 {
+			pinmux = <PWM_4B_P9>;
+		};
+	};
+
+	adc_default: adc_default {
+		group1 {
+			pinmux = <ADC_CH0_P26>, <ADC_CH1_P27>, <ADC_CH2_P28>;
+			input-enable;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <SPI0_CSN_P5>, <SPI0_SCK_P2>, <SPI0_TX_P3>;
+		};
+
+		group2 {
+			pinmux = <SPI0_RX_P4>;
+			input-enable;
+		};
+	};
+
+	pio_spi_default: pio_spi_default {
+		/* SCK and MOSI - high drive strength (12mA), fast slew rate */
+		group1 {
+			pinmux = <PIO0_P21>, <PIO0_P23>;
+			drive-strength = <12>;
+			slew-rate = <1>;
+		};
+
+		/* MISO - input with schmitt trigger and pull-down */
+		group2 {
+			pinmux = <PIO0_P22>;
+			input-enable;
+			input-schmitt-enable;
+			bias-pull-down;
+		};
+
+		/* CS - high drive strength */
+		group3 {
+			pinmux = <PIO0_P20>;
+			drive-strength = <12>;
+		};
+	};
+};
