@@ -1,0 +1,9 @@
+# Copyright (c) 2024 SiFli Technologies(Nanjing) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_SF32LB
+	bool "SF32LB USB device controller driver"
+	depends on DT_HAS_SIFLI_SF32LB_USBD_ENABLED
+	default y
+	help
+	  SF32LB USB device controller driver.

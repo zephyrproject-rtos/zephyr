@@ -192,3 +192,10 @@ temp_sensor: &tsen {
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
 };
+
+zephyr_udc0: &usbd {
+	status = "okay";
+	maximum-speed = "full-speed";
+	pinctrl-0 = <&usb_default>;
+	pinctrl-names = "default";
+};
