@@ -404,6 +404,71 @@ int z_shell_find_alias(const char *cmd_str, const char **output)
 #endif
 }
 
+int z_shell_expand_alias(char *cmd_buf, size_t cmd_buf_size)
+{
+#if defined(CONFIG_SHELL_ALIASES)
+	const char *alias = NULL;
+	char *first_space = strstr(cmd_buf, " ");
+	char *remaining_cmd = first_space ? first_space + 1 : NULL;
+	size_t alias_len;
+	size_t cmd_buf_len;
+	size_t separator_len;
+	size_t new_cmd_len;
+	int ret;
+
+	if (first_space != NULL) {
+		/* Temporarily terminate command buffer at first space to get root
+		 * command for alias search.
+		 */
+		*first_space = '\0';
+	}
+
+	ret = z_shell_find_alias(cmd_buf, &alias);
+	if ((ret != 0) || (alias == NULL)) {
+		if (first_space != NULL) {
+			*first_space = ' ';
+		}
+
+		return ret;
+	}
+
+	alias_len = z_shell_strlen(alias);
+	cmd_buf_len = z_shell_strlen(remaining_cmd);
+	separator_len = (remaining_cmd != NULL) ? 1U : 0U;
+	new_cmd_len = alias_len + separator_len + cmd_buf_len + 1U;
+
+	if (new_cmd_len > cmd_buf_size) {
+		if (first_space != NULL) {
+			*first_space = ' ';
+		}
+
+		return -E2BIG;
+	}
+
+	/* Move the part of command buffer after root command to the end of the
+	 * alias.
+	 */
+	if (remaining_cmd != NULL) {
+		memmove(cmd_buf + alias_len + 1, remaining_cmd, cmd_buf_len + 1);
+	}
+
+	/* Copy alias to the beginning of command buffer. */
+	memcpy(cmd_buf, alias, alias_len);
+
+	if (remaining_cmd == NULL) {
+		cmd_buf[alias_len] = '\0';
+	} else {
+		cmd_buf[alias_len] = ' ';
+	}
+
+	return 0;
+#else
+	ARG_UNUSED(cmd_buf);
+	ARG_UNUSED(cmd_buf_size);
+	return -ENOTSUP;
+#endif
+}
+
 const struct shell_static_entry *z_shell_get_last_command(
 					const struct shell_static_entry *entry,
 					size_t argc,
