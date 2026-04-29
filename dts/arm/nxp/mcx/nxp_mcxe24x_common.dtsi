@@ -560,9 +560,9 @@
 			compatible = "nxp,lptmr";
 			reg = <0x40040000 0x1000>;
 			interrupts = <58 0>;
-			clock-frequency = <1000>;
+			clock-frequency = <32000>;
 			prescale-glitch-filter-bypass;
-			clk-source = <1>;
+			clk-source = <2>;
 			resolution = <16>;
 			status = "disabled";
 		};
