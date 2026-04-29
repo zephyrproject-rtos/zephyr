@@ -220,7 +220,10 @@ void setup_connectable_adv(struct bt_le_ext_adv **ext_adv)
 	if (err != 0) {
 		FAIL("Unable to set extended advertising data: %d\n", err);
 
-		bt_le_ext_adv_delete(*ext_adv);
+		err = bt_le_ext_adv_delete(*ext_adv);
+		if (err != 0) {
+			FAIL("Failed to delete extended advertising set (err %d)\n", err);
+		}
 
 		return;
 	}
@@ -229,7 +232,10 @@ void setup_connectable_adv(struct bt_le_ext_adv **ext_adv)
 	if (err != 0) {
 		FAIL("Failed to start advertising set (err %d)\n", err);
 
-		bt_le_ext_adv_delete(*ext_adv);
+		err = bt_le_ext_adv_delete(*ext_adv);
+		if (err != 0) {
+			FAIL("Failed to delete extended advertising set (err %d)\n", err);
+		}
 
 		return;
 	}

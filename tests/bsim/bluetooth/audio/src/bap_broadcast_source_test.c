@@ -25,6 +25,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -462,7 +463,8 @@ static void test_broadcast_source_start(struct bt_bap_broadcast_source *source,
 	/* Wait for all to be started */
 	printk("Waiting for %lu streams to be started\n", stream_cnt);
 	for (size_t i = 0U; i < stream_cnt; i++) {
-		k_sem_take(&sem_stream_started, K_FOREVER);
+		err = k_sem_take(&sem_stream_started, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	WAIT_FOR_FLAG(flag_source_started);
@@ -514,7 +516,8 @@ static void test_broadcast_source_stop(struct bt_bap_broadcast_source *source)
 	/* Wait for all to be stopped */
 	printk("Waiting for %lu streams to be stopped\n", stream_cnt);
 	for (size_t i = 0U; i < stream_cnt; i++) {
-		k_sem_take(&sem_stream_stopped, K_FOREVER);
+		err = k_sem_take(&sem_stream_stopped, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	WAIT_FOR_UNSET_FLAG(flag_source_started);
