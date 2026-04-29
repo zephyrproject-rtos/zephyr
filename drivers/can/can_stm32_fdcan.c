@@ -12,6 +12,7 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/__assert.h>
 #include <soc.h>
 #include <zephyr/logging/log.h>
@@ -468,52 +469,113 @@ static int can_stm32fd_clock_enable(const struct device *dev)
 	return 0;
 }
 
-static int can_stm32fd_init(const struct device *dev)
+#ifdef CONFIG_PM_DEVICE
+static int can_stm32fd_clock_disable(const struct device *dev)
+{
+	const struct can_mcan_config *mcan_cfg = dev->config;
+	const struct can_stm32fd_config *stm32fd_cfg = mcan_cfg->custom;
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+
+	return clock_control_off(clk, (clock_control_subsys_t)&stm32fd_cfg->pclken[0]);
+}
+#endif
+
+static int can_stm32fd_pm_action(const struct device *dev,
+			       enum pm_device_action action)
 {
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_stm32fd_config *stm32fd_cfg = mcan_cfg->custom;
 	uint32_t rxgfc;
 	int ret;
 
-	/* Configure dt provided device signals when available */
-	ret = pinctrl_apply_state(stm32fd_cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		LOG_ERR("CAN pinctrl setup failed (%d)", ret);
-		return ret;
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* Configure pins for active mode */
+		ret = pinctrl_apply_state(stm32fd_cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			LOG_ERR("CAN pinctrl setup failed (%d)", ret);
+			return ret;
+		}
+		/* enable clock */
+		ret = can_stm32fd_clock_enable(dev);
+		if (ret < 0) {
+
+			LOG_ERR("Could not turn on CAN clock (%d)", ret);
+			return ret;
+		}
+
+		can_mcan_enable_configuration_change(dev);
+
+		/* Setup STM32 FDCAN Global Filter Configuration register */
+		ret = can_mcan_read_reg(dev, CAN_STM32FD_RXGFC, &rxgfc);
+		if (ret != 0) {
+			return ret;
+		}
+
+		rxgfc |= FIELD_PREP(CAN_STM32FD_RXGFC_LSS,
+				    CONFIG_CAN_STM32_FDCAN_MAX_STD_ID_FILTERS) |
+			 FIELD_PREP(CAN_STM32FD_RXGFC_LSE,
+				    CONFIG_CAN_STM32_FDCAN_MAX_EXT_ID_FILTERS);
+
+		ret = can_mcan_write_reg(dev, CAN_STM32FD_RXGFC, rxgfc);
+		if (ret != 0) {
+			return ret;
+		}
+
+		/* Setup STM32 FDCAN Tx buffer configuration register */
+		ret = can_mcan_write_reg(dev, CAN_MCAN_TXBC, CAN_STM32FD_TXBC_TFQM);
+		if (ret != 0) {
+			return ret;
+		}
+
+		ret = can_mcan_init(dev);
+		if (ret != 0) {
+			return ret;
+		}
+
+		break;
+#ifdef CONFIG_PM_DEVICE
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Configure pins for sleep mode. Do this first so it's not skipped in case the
+		 * other function calls return an error.
+		 */
+		ret = pinctrl_apply_state(stm32fd_cfg->pcfg, PINCTRL_STATE_SLEEP);
+		if (ret < 0) {
+			LOG_ERR("CAN pinctrl setup failed (%d)", ret);
+			return ret;
+		}
+
+		/* Stop can controller (if active)*/
+		ret = can_mcan_stop(dev);
+		if (ret != 0 && ret != -EALREADY) {
+			LOG_ERR("Failed to stop CAN controller (%d)", ret);
+			return ret;
+		}
+
+		/* Stop device clock. */
+		ret = can_stm32fd_clock_disable(dev);
+		if (ret != 0) {
+			LOG_ERR("Could not turn off CAN clock (%d)", ret);
+			return ret;
+		}
+
+		return 0;
+#endif
+	default:
+		return -ENOTSUP;
 	}
 
-	ret = can_stm32fd_clock_enable(dev);
-	if (ret < 0) {
-		LOG_ERR("Could not turn on CAN clock (%d)", ret);
-		return ret;
-	}
+	return 0;
+}
 
-	can_mcan_enable_configuration_change(dev);
+static int can_stm32fd_init(const struct device *dev)
+{
+	const struct can_mcan_config *mcan_cfg = dev->config;
+	const struct can_stm32fd_config *stm32fd_cfg = mcan_cfg->custom;
+	int ret;
 
-	/* Setup STM32 FDCAN Global Filter Configuration register */
-	ret = can_mcan_read_reg(dev, CAN_STM32FD_RXGFC, &rxgfc);
-	if (ret != 0) {
-		return ret;
-	}
-
-	rxgfc |= FIELD_PREP(CAN_STM32FD_RXGFC_LSS, CONFIG_CAN_STM32_FDCAN_MAX_STD_ID_FILTERS) |
-		 FIELD_PREP(CAN_STM32FD_RXGFC_LSE, CONFIG_CAN_STM32_FDCAN_MAX_EXT_ID_FILTERS);
-
-	ret = can_mcan_write_reg(dev, CAN_STM32FD_RXGFC, rxgfc);
-	if (ret != 0) {
-		return ret;
-	}
-
-	/* Setup STM32 FDCAN Tx buffer configuration register */
-	ret = can_mcan_write_reg(dev, CAN_MCAN_TXBC, CAN_STM32FD_TXBC_TFQM);
-	if (ret != 0) {
-		return ret;
-	}
-
-	ret = can_mcan_init(dev);
-	if (ret != 0) {
-		return ret;
-	}
+	/* Let PM handle the device configuration */
+	ret = pm_device_driver_init(dev, can_stm32fd_pm_action);
 
 
 #ifdef CONFIG_CAN_RX_TIMESTAMP
@@ -643,16 +705,18 @@ static const struct can_mcan_ops can_stm32fd_ops = {
 		CAN_MCAN_DATA_INITIALIZER(NULL);
 
 #define CAN_STM32FD_DEVICE_INST(inst)						\
-	CAN_DEVICE_DT_INST_DEFINE(inst, can_stm32fd_init, NULL,			\
+	CAN_DEVICE_DT_INST_DEFINE(inst, can_stm32fd_init,			\
+				  PM_DEVICE_DT_INST_GET(inst),			\
 				  &can_mcan_data_##inst, &can_mcan_cfg_##inst,	\
 				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,	\
 				  &can_stm32fd_driver_api);
 
-#define CAN_STM32FD_INST(inst)			\
-	CAN_STM32FD_BUILD_ASSERT_MRAM_CFG(inst)	\
-	CAN_STM32FD_IRQ_CFG_FUNCTION(inst)	\
-	CAN_STM32FD_CFG_INST(inst)		\
-	CAN_STM32FD_DATA_INST(inst)		\
+#define CAN_STM32FD_INST(inst)					\
+	CAN_STM32FD_BUILD_ASSERT_MRAM_CFG(inst)			\
+	CAN_STM32FD_IRQ_CFG_FUNCTION(inst)			\
+	CAN_STM32FD_CFG_INST(inst)				\
+	CAN_STM32FD_DATA_INST(inst)				\
+	PM_DEVICE_DT_INST_DEFINE(inst, can_stm32fd_pm_action);	\
 	CAN_STM32FD_DEVICE_INST(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_STM32FD_INST)
