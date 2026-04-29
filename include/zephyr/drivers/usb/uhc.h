@@ -293,7 +293,7 @@ static inline bool uhc_is_enabled(const struct device *dev)
 /**
  * @cond INTERNAL_HIDDEN
  */
-struct uhc_api {
+__subsystem struct uhc_driver_api {
 	int (*lock)(const struct device *dev);
 	int (*unlock)(const struct device *dev);
 
@@ -329,7 +329,7 @@ struct uhc_api {
  */
 static inline int uhc_bus_reset(const struct device *dev)
 {
-	const struct uhc_api *api = dev->api;
+	const struct uhc_driver_api *api = dev->api;
 	int ret;
 
 	api->lock(dev);
@@ -351,7 +351,7 @@ static inline int uhc_bus_reset(const struct device *dev)
  */
 static inline int uhc_sof_enable(const struct device *dev)
 {
-	const struct uhc_api *api = dev->api;
+	const struct uhc_driver_api *api = dev->api;
 	int ret;
 
 	api->lock(dev);
@@ -374,7 +374,7 @@ static inline int uhc_sof_enable(const struct device *dev)
  */
 static inline int uhc_bus_suspend(const struct device *dev)
 {
-	const struct uhc_api *api = dev->api;
+	const struct uhc_driver_api *api = dev->api;
 	int ret;
 
 	api->lock(dev);
@@ -397,7 +397,7 @@ static inline int uhc_bus_suspend(const struct device *dev)
  */
 static inline int uhc_bus_resume(const struct device *dev)
 {
-	const struct uhc_api *api = dev->api;
+	const struct uhc_driver_api *api = dev->api;
 	int ret;
 
 	api->lock(dev);

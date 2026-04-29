@@ -65,13 +65,17 @@ struct usbh_context {
 };
 
 #define USBH_CONTROLLER_DEFINE(device_name, uhc_dev)			\
-	SYS_BITARRAY_DEFINE_STATIC(ba_##device_name, 128);		\
+	SYS_BITARRAY_DEFINE_STATIC(CONCAT(ba_, device_name), 128);	\
 	static STRUCT_SECTION_ITERABLE(usbh_context, device_name) = {	\
 		.name = STRINGIFY(device_name),				\
 		.mutex = Z_MUTEX_INITIALIZER(device_name.mutex),	\
 		.dev = uhc_dev,						\
-		.addr_ba = &ba_##device_name,				\
-	}
+		.addr_ba = &CONCAT(ba_, device_name),			\
+	};
+
+#define USBH_CONTROLLER_DT_DEFINE(node_id)                                                         \
+	USBH_CONTROLLER_DEFINE(CONCAT(DT_NODE_FULL_NAME_TOKEN(node_id), _ctx),                     \
+			       DEVICE_DT_GET(node_id))
 
 struct usbh_class_data;
 
@@ -226,6 +230,24 @@ int usbh_disable(struct usbh_context *uhs_ctx);
  * @return 0 on success, other values on fail.
  */
 int usbh_shutdown(struct usbh_context *const uhs_ctx);
+
+/**
+ * @brief Look up the USB host support context by UHC device
+ *
+ * @param[in] dev Pointer to UHC device
+ *
+ * @return Pointer to USB host support context, or NULL if not found.
+ */
+struct usbh_context *usbh_context_lookup_by_dev(const struct device *dev);
+
+/**
+ * @brief Look up the USB host support context by index
+ *
+ * @param[in] idx Index of the USB host support context
+ *
+ * @return Pointer to USB host support context, or NULL if not found.
+ */
+struct usbh_context *usbh_context_lookup_by_idx(unsigned int idx);
 
 /**
  * @}

@@ -18,8 +18,6 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
-USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
-
 /* Wait for video device connection */
 static void wait_for_video_connection(const struct device *uvc_dev, struct video_format *fmt,
 				     enum video_buf_type type)
@@ -292,6 +290,7 @@ int main(void)
 	enum video_buf_type type = VIDEO_BUF_TYPE_OUTPUT;
 	uint32_t frame_count = 0;
 	uint8_t allocated_count = 0;
+	struct usbh_context *uhs_ctx = usbh_context_lookup_by_idx(0);
 	int err;
 
 	if (!device_is_ready(uvc_dev)) {
@@ -299,13 +298,13 @@ int main(void)
 		return 0;
 	}
 
-	err = usbh_init(&uhs_ctx);
+	err = usbh_init(uhs_ctx);
 	if (err) {
 		LOG_ERR("Failed to initialize host support");
 		return err;
 	}
 
-	err = usbh_enable(&uhs_ctx);
+	err = usbh_enable(uhs_ctx);
 	if (err) {
 		LOG_ERR("Failed to enable USB host support");
 		return err;
