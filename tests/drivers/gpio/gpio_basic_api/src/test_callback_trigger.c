@@ -65,7 +65,7 @@ static int test_callback(int mode)
 	drv_data->mode = mode;
 	gpio_init_callback(&drv_data->gpio_cb, callback, BIT(PIN_IN));
 	rc = gpio_add_callback(dev_in, &drv_data->gpio_cb);
-	if (rc == -ENOTSUP) {
+	if (rc == -ENOTSUP || rc == -ENOSYS) {
 		TC_PRINT("interrupts not supported\n");
 		return TC_PASS;
 	} else if (rc != 0) {
@@ -76,7 +76,7 @@ static int test_callback(int mode)
 	/* 3. enable callback, trigger PIN_IN interrupt by operate PIN_OUT */
 	cb_cnt = 0;
 	rc = gpio_pin_interrupt_configure(dev_in, PIN_IN, mode);
-	if (rc == -ENOTSUP) {
+	if (rc == -ENOTSUP || rc == -ENOSYS) {
 		TC_PRINT("Mode %x not supported\n", mode);
 		goto pass_exit;
 	} else if (rc != 0) {
