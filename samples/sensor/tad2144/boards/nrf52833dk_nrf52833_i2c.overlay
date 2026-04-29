@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2024, TDK Invensense
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&gpio0 {
+	status = "okay";
+
+	/* Configure I2C address LSB as described in TAD specification */
+	sa1_high_hog: sa1-high-hog {
+		gpio-hog;
+		gpios = <17 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+
+	sa2_high_hog: sa2-high-hog {
+		gpio-hog;
+		gpios = <22 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&arduino_i2c {
+	status = "okay";
+	clock-frequency = <400000>;
+
+	tad2144: tad2144@65 {
+		compatible = "invensense,tad2144";
+		reg = <0x65>;
+		int-gpios = <&arduino_header 2 GPIO_ACTIVE_HIGH>;
+	};
+};
