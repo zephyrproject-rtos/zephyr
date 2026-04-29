@@ -25,7 +25,7 @@
 #endif /* CONFIG_BT_VOCS */
 
 /* VOCS opcodes */
-#define BT_VOCS_OPCODE_SET_OFFSET                  0x01
+#define BT_VOCS_OPCODE_SET_OFFSET                  0x01U
 
 struct bt_vocs_control {
 	uint8_t opcode;

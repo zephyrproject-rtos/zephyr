@@ -36,8 +36,8 @@
 
 LOG_MODULE_REGISTER(bt_mpl, CONFIG_BT_MPL_LOG_LEVEL);
 
-#define TRACK_STATUS_INVALID 0x00
-#define TRACK_STATUS_VALID 0x01
+#define TRACK_STATUS_INVALID 0x00U
+#define TRACK_STATUS_VALID 0x01U
 
 #define TRACK_POS_WORK_DELAY_MS 1000
 #define TRACK_POS_WORK_DELAY    K_MSEC(TRACK_POS_WORK_DELAY_MS)
@@ -254,7 +254,7 @@ static struct mpl_mediaplayer media_player = {
 	.playing_order		  = MEDIA_PROXY_PLAYING_ORDER_INORDER_REPEAT,
 	.playing_orders_supported = MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_INORDER_ONCE |
 				    MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_INORDER_REPEAT,
-	.opcodes_supported	  = 0x001fffff, /* All opcodes */
+	.opcodes_supported	  = 0x001fffffU, /* All opcodes */
 #ifdef CONFIG_BT_MPL_OBJECTS
 	.search_results_id	  = 0,
 	.calls = { 0 },

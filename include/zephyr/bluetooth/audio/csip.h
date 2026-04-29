@@ -58,13 +58,13 @@ extern "C" {
 #endif /* CONFIG_BT_CSIP_SET_COORDINATOR */
 
 /** Accept the request to read the SIRK as plaintext */
-#define BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT        0x00
+#define BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT        0x00U
 /** Accept the request to read the SIRK, but return encrypted SIRK */
-#define BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT_ENC    0x01
+#define BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT_ENC    0x01U
 /** Reject the request to read the SIRK */
-#define BT_CSIP_READ_SIRK_REQ_RSP_REJECT        0x02
+#define BT_CSIP_READ_SIRK_REQ_RSP_REJECT        0x02U
 /** SIRK is available only via an OOB procedure */
-#define BT_CSIP_READ_SIRK_REQ_RSP_OOB_ONLY      0x03
+#define BT_CSIP_READ_SIRK_REQ_RSP_OOB_ONLY      0x03U
 
 /** Size of the Set Identification Resolving Key (SIRK) */
 #define BT_CSIP_SIRK_SIZE 16
@@ -74,15 +74,15 @@ extern "C" {
 
 /* Coordinate Set Identification Service Error codes */
 /** Service is already locked */
-#define BT_CSIP_ERROR_LOCK_DENIED               0x80
+#define BT_CSIP_ERROR_LOCK_DENIED               0x80U
 /** Service is not locked */
-#define BT_CSIP_ERROR_LOCK_RELEASE_DENIED       0x81
+#define BT_CSIP_ERROR_LOCK_RELEASE_DENIED       0x81U
 /** Invalid lock value */
-#define BT_CSIP_ERROR_LOCK_INVAL_VALUE          0x82
+#define BT_CSIP_ERROR_LOCK_INVAL_VALUE          0x82U
 /** SIRK only available out-of-band */
-#define BT_CSIP_ERROR_SIRK_OOB_ONLY             0x83
+#define BT_CSIP_ERROR_SIRK_OOB_ONLY             0x83U
 /** Client is already owner of the lock */
-#define BT_CSIP_ERROR_LOCK_ALREADY_GRANTED      0x84
+#define BT_CSIP_ERROR_LOCK_ALREADY_GRANTED      0x84U
 
 /**
  * @brief Helper to declare bt_data array including RSI

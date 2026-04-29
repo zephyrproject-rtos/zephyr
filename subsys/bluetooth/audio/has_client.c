@@ -29,7 +29,7 @@
 LOG_MODULE_REGISTER(bt_has_client, CONFIG_BT_HAS_CLIENT_LOG_LEVEL);
 
 #define HAS_INST(_has) CONTAINER_OF(_has, struct bt_has_client, has)
-#define HANDLE_IS_VALID(handle) ((handle) != 0x0000)
+#define HANDLE_IS_VALID(handle) ((handle) != 0x0000U)
 static struct bt_has_client clients[CONFIG_BT_MAX_CONN];
 static const struct bt_has_client_cb *client_cb;
 

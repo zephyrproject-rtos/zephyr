@@ -40,35 +40,35 @@ extern "C" {
 /** A characteristic value has changed while a Read Long Value Characteristic sub-procedure is in
  * progress
  */
-#define BT_TBS_ERR_VAL_CHANGED 0x80
+#define BT_TBS_ERR_VAL_CHANGED 0x80U
 
 /**
  * @name Call States
  * @{
  */
 /** A remote party is calling (incoming call). */
-#define BT_TBS_CALL_STATE_INCOMING                      0x00
+#define BT_TBS_CALL_STATE_INCOMING                      0x00U
 /**
  * The process to call the remote party has started on the server, but the remote party is not
  * being alerted (outgoing call).
  */
-#define BT_TBS_CALL_STATE_DIALING                       0x01
+#define BT_TBS_CALL_STATE_DIALING                       0x01U
 /** A remote party is being alerted (outgoing call). */
-#define BT_TBS_CALL_STATE_ALERTING                      0x02
+#define BT_TBS_CALL_STATE_ALERTING                      0x02U
 /** The call is in an active conversation. */
-#define BT_TBS_CALL_STATE_ACTIVE                        0x03
+#define BT_TBS_CALL_STATE_ACTIVE                        0x03U
 /**
  * The call is connected but held locally. Locally Held implies that either the server or the
  * client can affect the state.
  */
-#define BT_TBS_CALL_STATE_LOCALLY_HELD                  0x04
+#define BT_TBS_CALL_STATE_LOCALLY_HELD                  0x04U
 /**
  *The call is connected but held remotely. Remotely Held means that the state is controlled by the
  * remote party of a call.
  */
-#define BT_TBS_CALL_STATE_REMOTELY_HELD                 0x05
+#define BT_TBS_CALL_STATE_REMOTELY_HELD                 0x05U
 /** The call is connected but held both locally and remotely. */
-#define BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD     0x06
+#define BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD     0x06U
 /** @} */
 
 /**
@@ -76,25 +76,25 @@ extern "C" {
  * @{
  */
 /** The URI value used to originate a call was formed improperly. */
-#define BT_TBS_REASON_BAD_REMOTE_URI                    0x00
+#define BT_TBS_REASON_BAD_REMOTE_URI                    0x00U
 /** The call failed. */
-#define BT_TBS_REASON_CALL_FAILED                       0x01
+#define BT_TBS_REASON_CALL_FAILED                       0x01U
 /** The remote party ended the call. */
-#define BT_TBS_REASON_REMOTE_ENDED_CALL                 0x02
+#define BT_TBS_REASON_REMOTE_ENDED_CALL                 0x02U
 /** The call ended from the server. */
-#define BT_TBS_REASON_SERVER_ENDED_CALL                 0x03
+#define BT_TBS_REASON_SERVER_ENDED_CALL                 0x03U
 /** The line was busy. */
-#define BT_TBS_REASON_LINE_BUSY                         0x04
+#define BT_TBS_REASON_LINE_BUSY                         0x04U
 /** Network congestion. */
-#define BT_TBS_REASON_NETWORK_CONGESTED                 0x05
+#define BT_TBS_REASON_NETWORK_CONGESTED                 0x05U
 /** The client terminated the call. */
-#define BT_TBS_REASON_CLIENT_TERMINATED                 0x06
+#define BT_TBS_REASON_CLIENT_TERMINATED                 0x06U
 /** No service. */
-#define BT_TBS_REASON_NO_SERVICE                        0x07
+#define BT_TBS_REASON_NO_SERVICE                        0x07U
 /** No answer. */
-#define BT_TBS_REASON_NO_ANSWER                         0x08
+#define BT_TBS_REASON_NO_ANSWER                         0x08U
 /** Unspecified. */
-#define BT_TBS_REASON_UNSPECIFIED                       0x09
+#define BT_TBS_REASON_UNSPECIFIED                       0x09U
 /** @} */
 
 /**
@@ -102,22 +102,22 @@ extern "C" {
  * @{
  */
 /** The opcode write was successful. */
-#define BT_TBS_RESULT_CODE_SUCCESS                0x00
+#define BT_TBS_RESULT_CODE_SUCCESS                0x00U
 /** An invalid opcode was used for the Call Control Point write. */
-#define BT_TBS_RESULT_CODE_OPCODE_NOT_SUPPORTED   0x01
+#define BT_TBS_RESULT_CODE_OPCODE_NOT_SUPPORTED   0x01U
 /** The requested operation cannot be completed. */
-#define BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE 0x02
+#define BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE 0x02U
 /** The Call Index used for the Call Control Point write is invalid. */
-#define BT_TBS_RESULT_CODE_INVALID_CALL_INDEX     0x03
+#define BT_TBS_RESULT_CODE_INVALID_CALL_INDEX     0x03U
 /**
  * The opcode written to the Call Control Point was received when the current Call State for the
  * Call Index was not in the expected state.
  */
-#define BT_TBS_RESULT_CODE_STATE_MISMATCH         0x04
+#define BT_TBS_RESULT_CODE_STATE_MISMATCH         0x04U
 /** Lack of internal resources to complete the requested action. */
-#define BT_TBS_RESULT_CODE_OUT_OF_RESOURCES       0x05
+#define BT_TBS_RESULT_CODE_OUT_OF_RESOURCES       0x05U
 /** The Outgoing URI is incorrect or invalid when an Originate opcode is sent. */
-#define BT_TBS_RESULT_CODE_INVALID_URI            0x06
+#define BT_TBS_RESULT_CODE_INVALID_URI            0x06U
 /** @} */
 
 /**
@@ -152,23 +152,23 @@ extern "C" {
  * @{
  */
 /** 3G */
-#define BT_TBS_TECHNOLOGY_3G                       0x01
+#define BT_TBS_TECHNOLOGY_3G                       0x01U
 /** 4G */
-#define BT_TBS_TECHNOLOGY_4G                       0x02
+#define BT_TBS_TECHNOLOGY_4G                       0x02U
 /** Long-term evolution (LTE) */
-#define BT_TBS_TECHNOLOGY_LTE                      0x03
+#define BT_TBS_TECHNOLOGY_LTE                      0x03U
 /** Wifi */
-#define BT_TBS_TECHNOLOGY_WIFI                     0x04
+#define BT_TBS_TECHNOLOGY_WIFI                     0x04U
 /** 5G */
-#define BT_TBS_TECHNOLOGY_5G                       0x05
+#define BT_TBS_TECHNOLOGY_5G                       0x05U
 /** Global System for Mobile Communications (GSM) */
-#define BT_TBS_TECHNOLOGY_GSM                      0x06
+#define BT_TBS_TECHNOLOGY_GSM                      0x06U
 /** Code-Division Multiple Access (CDMA) */
-#define BT_TBS_TECHNOLOGY_CDMA                     0x07
+#define BT_TBS_TECHNOLOGY_CDMA                     0x07U
 /** 2G */
-#define BT_TBS_TECHNOLOGY_2G                       0x08
+#define BT_TBS_TECHNOLOGY_2G                       0x08U
 /** Wideband Code-Division Multiple Access (WCDMA) */
-#define BT_TBS_TECHNOLOGY_WCDMA                    0x09
+#define BT_TBS_TECHNOLOGY_WCDMA                    0x09U
 /** @} */
 
 /**
@@ -199,7 +199,7 @@ extern "C" {
  * whenever the client should perform on action on the GTBS instance of the
  * server, rather than any of the specific Telephone Bearer Service instances.
  */
-#define BT_TBS_GTBS_INDEX 0xFF
+#define BT_TBS_GTBS_INDEX 0xFFU
 
 /** Maximum size of bearer uniform caller identifier (UCI)
  *

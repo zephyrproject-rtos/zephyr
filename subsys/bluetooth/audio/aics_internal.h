@@ -28,15 +28,15 @@
 #endif /* CONFIG_BT_AICS */
 
 /* AICS opcodes */
-#define BT_AICS_OPCODE_SET_GAIN                    0x01
-#define BT_AICS_OPCODE_UNMUTE                      0x02
-#define BT_AICS_OPCODE_MUTE                        0x03
-#define BT_AICS_OPCODE_SET_MANUAL                  0x04
-#define BT_AICS_OPCODE_SET_AUTO                    0x05
+#define BT_AICS_OPCODE_SET_GAIN                    0x01U
+#define BT_AICS_OPCODE_UNMUTE                      0x02U
+#define BT_AICS_OPCODE_MUTE                        0x03U
+#define BT_AICS_OPCODE_SET_MANUAL                  0x04U
+#define BT_AICS_OPCODE_SET_AUTO                    0x05U
 
 /* AICS status */
-#define BT_AICS_STATUS_INACTIVE                    0x00
-#define BT_AICS_STATUS_ACTIVE                      0x01
+#define BT_AICS_STATUS_INACTIVE                    0x00U
+#define BT_AICS_STATUS_ACTIVE                      0x01U
 
 #define BT_AICS_INPUT_MODE_IMMUTABLE(gain_mode) \
 	((gain_mode) == BT_AICS_MODE_MANUAL_ONLY || (gain_mode) == BT_AICS_MODE_AUTO_ONLY)

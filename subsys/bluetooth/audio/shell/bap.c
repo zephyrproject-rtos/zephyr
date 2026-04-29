@@ -3932,7 +3932,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 		}
 	} else {
 		len = MIN(default_stream->qos->sdu, sizeof(data));
-		memset(data, 0xff, len);
+		memset(data, 0xffU, len);
 	}
 
 	buf = net_buf_alloc(&tx_pool, K_FOREVER);
@@ -4225,7 +4225,7 @@ static size_t connectable_ad_data_add(struct bt_data *data_array, size_t data_ar
 		sys_put_le16(src_context, &ad_bap_announcement[5]);
 
 		/* Metadata length */
-		ad_bap_announcement[7] = 0x00;
+		ad_bap_announcement[7] = 0x00U;
 
 		__ASSERT(data_array_size > ad_len, "No space for AD_BAP_ANNOUNCEMENT");
 		data_array[ad_len].type = BT_DATA_SVC_DATA16;

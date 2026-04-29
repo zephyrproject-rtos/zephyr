@@ -87,7 +87,7 @@ extern "C" {
  */
 #define BT_AUDIO_CODEC_CAP_LC3(_freq, _duration, _chan_count, _len_min, _len_max,                  \
 			       _max_frames_per_sdu, _prefer_context)                               \
-	BT_AUDIO_CODEC_CAP(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000,                               \
+	BT_AUDIO_CODEC_CAP(BT_HCI_CODING_FORMAT_LC3, 0x0000U, 0x0000U,                               \
 			   BT_AUDIO_CODEC_CAP_LC3_DATA(_freq, _duration, _chan_count, _len_min,    \
 						       _len_max, _max_frames_per_sdu),             \
 			   BT_AUDIO_CODEC_CAP_LC3_META(_prefer_context))
@@ -132,7 +132,7 @@ extern "C" {
  */
 #define BT_AUDIO_CODEC_LC3_CONFIG(_freq, _duration, _loc, _len, _frames_per_sdu, _stream_context)  \
 	BT_AUDIO_CODEC_CFG(                                                                        \
-		BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000,                                          \
+		BT_HCI_CODING_FORMAT_LC3, 0x0000U, 0x0000U,                                          \
 		BT_AUDIO_CODEC_CFG_LC3_DATA(_freq, _duration, _loc, _len, _frames_per_sdu),        \
 		BT_AUDIO_CODEC_CFG_LC3_META(_stream_context))
 
