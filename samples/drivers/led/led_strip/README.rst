@@ -65,6 +65,10 @@ Building and Running
 The sample updates the LED strip periodically. The update frequency can be
 modified by changing the :kconfig:option:`CONFIG_SAMPLE_LED_UPDATE_DELAY`.
 
+The LEDs are updated using different methods to showcase the LED strip API.
+Delay between type can be modified by changing the
+:kconfig:option:`CONFIG_SAMPLE_LED_TYPE_DELAY`.
+
 The brightness level of each LED can be adjusted by changing the
 :kconfig:option:`CONFIG_SAMPLE_LED_BRIGHTNESS` configuration option.
 
