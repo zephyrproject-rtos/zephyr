@@ -1,0 +1,27 @@
+#
+# Copyright 2025 emtrion GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: emsbc_neon_cm7@R3
+name: emtrion emSBC-Neon-CM7 (HW rev. 3)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 384
+flash: 2048
+supported:
+  - i2c
+  - spi
+  - gpio
+  - netif:eth
+  - memc
+  - kscan:touch
+  - adc
+  - can
+  - usb_device
+  - eeprom
+vendor: emtrion

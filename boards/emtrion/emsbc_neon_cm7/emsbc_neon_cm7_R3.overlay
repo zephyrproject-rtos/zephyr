@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2025 emtrion GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		eeprom-0 = &eeprom0;
+	};
+};
+
+&i2c1 {
+	eeprom0: eeprom@50 {
+		/* 24AA02E48T */
+		compatible = "st,m24xxx", "atmel,at24";
+		reg = <0x50>;
+		size = <256>;
+		pagesize = <16>;
+		address-width = <8>;
+		timeout = <5>;
+		status = "okay";
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			eeprom0_eui48: eui48@fa {
+				reg = <0xfa 6>;
+				#nvmem-cell-cells = <0>;
+				read-only;
+			};
+		};
+	};
+};
+
+&mac {
+	nvmem-cells = <&eeprom0_eui48>;
+	nvmem-cell-names = "mac-address";
+};
