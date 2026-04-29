@@ -364,6 +364,7 @@ static void test_udc_ep_mps(uint8_t type)
 		.wMaxPacketSize = sys_cpu_to_le16(0),
 		.bInterval = 0,
 	};
+	bool ep_type_supported = false;
 	const struct device *dev;
 	uint16_t supported = 0;
 	int err;
@@ -387,22 +388,23 @@ static void test_udc_ep_mps(uint8_t type)
 					ed.bInterval);
 		if (!err) {
 			ed.bEndpointAddress = i;
+			ep_type_supported = true;
 			break;
 		}
 	}
 
-	zassert_ok(err, "Failed to determine MPS");
+	if (ep_type_supported) {
+		for (int i = 0; i < ARRAY_SIZE(mps); i++) {
+			if (mps[i] > supported) {
+				continue;
+			}
 
-	for (int i = 0; i < ARRAY_SIZE(mps); i++) {
-		if (mps[i] > supported) {
-			continue;
+			ed.wMaxPacketSize = sys_cpu_to_le16(mps[i]);
+			test_udc_ep_api(dev, &ed);
+
+			ed.bEndpointAddress |= USB_EP_DIR_IN;
+			test_udc_ep_api(dev, &ed);
 		}
-
-		ed.wMaxPacketSize = sys_cpu_to_le16(mps[i]);
-		test_udc_ep_api(dev, &ed);
-
-		ed.bEndpointAddress |= USB_EP_DIR_IN;
-		test_udc_ep_api(dev, &ed);
 	}
 
 	err = udc_disable(dev);
@@ -410,9 +412,17 @@ static void test_udc_ep_mps(uint8_t type)
 
 	err = udc_shutdown(dev);
 	zassert_ok(err, "Failed to shoot-down UDC driver");
+
+	if (!ep_type_supported) {
+		TC_PRINT("endpoint type not supported\n");
+		ztest_test_skip();
+	}
 }
 
-static void *test_udc_device_get(void)
+static struct usb_ep_descriptor ed_bulk_out;
+static struct usb_ep_descriptor ed_bulk_in;
+
+static void *test_udc_device_get_and_setup(void)
 {
 	struct udc_device_caps caps;
 	const struct device *dev;
@@ -430,6 +440,27 @@ static void *test_udc_device_get(void)
 			K_PRIO_COOP(9), 0, K_NO_WAIT);
 
 	k_thread_name_set(&test_udc_thread_data, "test-udc");
+
+	/* search for an endpoint that supports bulk mode */
+	for (uint8_t i = 1; i < 16U; i++) {
+		uint16_t mps = 0;
+		int err = udc_ep_try_config(dev, i | USB_EP_DIR_OUT, USB_EP_TYPE_BULK, &mps, 0);
+
+		if (!err) {
+			ed_bulk_out.bEndpointAddress = i;
+			break;
+		}
+	}
+
+	for (uint8_t i = 1; i < 16U; i++) {
+		uint16_t mps = 0;
+		int err = udc_ep_try_config(dev, i | USB_EP_DIR_IN, USB_EP_TYPE_BULK, &mps, 0);
+
+		if (!err) {
+			ed_bulk_in.bEndpointAddress = i;
+			break;
+		}
+	}
 
 	return (void *)dev;
 }
@@ -606,4 +637,4 @@ ZTEST(udc_driver_test, test_udc_ep_iso)
 	test_udc_ep_mps(USB_EP_TYPE_ISO);
 }
 
-ZTEST_SUITE(udc_driver_test, NULL, test_udc_device_get, NULL, NULL, NULL);
+ZTEST_SUITE(udc_driver_test, NULL, test_udc_device_get_and_setup, NULL, NULL, NULL);
