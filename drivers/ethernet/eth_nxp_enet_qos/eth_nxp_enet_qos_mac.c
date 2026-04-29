@@ -117,6 +117,71 @@ static void eth_nxp_enet_qos_iface_init(struct net_if *iface)
 	}
 }
 
+static int eth_nxp_enet_qos_start(const struct device *dev)
+{
+	const struct nxp_enet_qos_mac_config *config = dev->config;
+	struct nxp_enet_qos_config *module_cfg = ENET_QOS_MODULE_CFG(config->enet_dev);
+	enet_qos_t *base = module_cfg->base;
+
+	/* Set start bits of the RX and TX DMAs */
+	base->DMA_CH[0].DMA_CHX_RX_CTRL |=
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RX_CTRL, SR, 0b1);
+	base->DMA_CH[0].DMA_CHX_TX_CTRL |=
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TX_CTRL, ST, 0b1);
+
+	/* Enable interrupts */
+	base->DMA_CH[0].DMA_CHX_INT_EN =
+		/* Normal interrupts (includes tx, rx) */
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, NIE, 0b1) |
+		/* Transmit interrupt */
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, TIE, 0b1) |
+		/* Receive interrupt */
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, RIE, 0b1) |
+		/* Abnormal interrupts (includes rbu, rs) */
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, AIE, 0b1) |
+		/* Receive buffer unavailable */
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, RBUE, 0b1) |
+		/* Receive stopped */
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, RSE, 0b1);
+	base->MAC_INTERRUPT_ENABLE =
+		/* Receive and Transmit IRQs */
+		ENET_QOS_REG_PREP(MAC_INTERRUPT_ENABLE, TXSTSIE, 0b1) |
+		ENET_QOS_REG_PREP(MAC_INTERRUPT_ENABLE, RXSTSIE, 0b1);
+
+	/* Start the TX and RX on the MAC */
+	base->MAC_CONFIGURATION |=
+		ENET_QOS_REG_PREP(MAC_CONFIGURATION, TE, 0b1) |
+		ENET_QOS_REG_PREP(MAC_CONFIGURATION, RE, 0b1);
+
+	return 0;
+}
+
+static int eth_nxp_enet_qos_stop(const struct device *dev)
+{
+	const struct nxp_enet_qos_mac_config *config = dev->config;
+	struct nxp_enet_qos_config *module_cfg = ENET_QOS_MODULE_CFG(config->enet_dev);
+	enet_qos_t *base = module_cfg->base;
+
+	/* Stop the TX and RX on the MAC */
+	base->MAC_CONFIGURATION &=
+		~(ENET_QOS_REG_PREP(MAC_CONFIGURATION, TE, 0b1) |
+		ENET_QOS_REG_PREP(MAC_CONFIGURATION, RE, 0b1));
+
+	/* Stop DMA TX and RX channels */
+	base->DMA_CH[0].DMA_CHX_RX_CTRL &=
+		~ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RX_CTRL, SR, 0b1);
+	base->DMA_CH[0].DMA_CHX_TX_CTRL &=
+		~ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TX_CTRL, ST, 0b1);
+
+	/* Disable DMA interrupts */
+	base->DMA_CH[0].DMA_CHX_INT_EN = 0;
+
+	/* Disable MAC interrupts */
+	base->MAC_INTERRUPT_ENABLE = 0;
+
+	return 0;
+}
+
 static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	const struct nxp_enet_qos_mac_config *config = dev->config;
@@ -142,7 +207,6 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 			return -E2BIG;
 		}
 	}
-
 
 	/* One TX at a time in the current implementation */
 	ret = k_sem_take(&data->tx.tx_sem, K_NO_WAIT);
@@ -650,39 +714,6 @@ static inline void enet_qos_mac_config_init(enet_qos_t *base, struct nxp_enet_qo
 #endif
 }
 
-static inline void enet_qos_start(enet_qos_t *base)
-{
-	/* Set start bits of the RX and TX DMAs */
-	base->DMA_CH[0].DMA_CHX_RX_CTRL |=
-		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RX_CTRL, SR, 0b1);
-	base->DMA_CH[0].DMA_CHX_TX_CTRL |=
-		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TX_CTRL, ST, 0b1);
-
-	/* Enable interrupts */
-	base->DMA_CH[0].DMA_CHX_INT_EN =
-		/* Normal interrupts (includes tx, rx) */
-		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, NIE, 0b1) |
-		/* Transmit interrupt */
-		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, TIE, 0b1) |
-		/* Receive interrupt */
-		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, RIE, 0b1) |
-		/* Abnormal interrupts (includes rbu, rs) */
-		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, AIE, 0b1) |
-		/* Receive buffer unavailable */
-		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, RBUE, 0b1) |
-		/* Receive stopped */
-		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, RSE, 0b1);
-	base->MAC_INTERRUPT_ENABLE =
-		/* Receive and Transmit IRQs */
-		ENET_QOS_REG_PREP(MAC_INTERRUPT_ENABLE, TXSTSIE, 0b1) |
-		ENET_QOS_REG_PREP(MAC_INTERRUPT_ENABLE, RXSTSIE, 0b1);
-
-	/* Start the TX and RX on the MAC */
-	base->MAC_CONFIGURATION |=
-		ENET_QOS_REG_PREP(MAC_CONFIGURATION, TE, 0b1) |
-		ENET_QOS_REG_PREP(MAC_CONFIGURATION, RE, 0b1);
-}
-
 static inline void enet_qos_tx_desc_init(enet_qos_t *base, struct nxp_enet_qos_tx_data *tx)
 {
 	memset((void *)tx->descriptors, 0, sizeof(union nxp_enet_qos_tx_desc) * NUM_TX_BUFDESC);
@@ -830,9 +861,6 @@ static int eth_nxp_enet_qos_mac_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Clearly, start the cogs to motion. */
-	enet_qos_start(base);
-
 	/* The tx sem is taken during ethernet send function,
 	 * and given when DMA transmission is finished. Ie, send calls will be blocked
 	 * until the DMA is available again. This is therefore a simple but naive implementation.
@@ -921,6 +949,8 @@ static const struct ethernet_api api_funcs = {
 	.get_capabilities = eth_nxp_enet_qos_get_capabilities,
 	.get_phy = eth_nxp_enet_qos_get_phy,
 	.set_config = eth_nxp_enet_qos_set_config,
+	.start = eth_nxp_enet_qos_start,
+	.stop = eth_nxp_enet_qos_stop,
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
 	.get_ptp_clock = eth_nxp_enet_qos_get_ptp_clock,
 #endif
