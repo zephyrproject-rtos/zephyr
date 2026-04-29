@@ -161,6 +161,11 @@ static void rram_write(off_t addr, const void *data, uint8_t fill_val, size_t le
 #endif
 
 	size_t chunk_len = len;
+#if WRITE_BUFFER_ENABLE
+	/* Preserve the original write start address and length for commit_changes(). */
+	const off_t commit_addr = addr;
+	const size_t commit_len = len;
+#endif
 
 #ifdef CONFIG_SOC_FLASH_NRF_THROTTLING
 	while (len > 0) {
@@ -182,7 +187,7 @@ static void rram_write(off_t addr, const void *data, uint8_t fill_val, size_t le
 	barrier_dmem_fence_full(); /* Barrier following our last write. */
 
 #if WRITE_BUFFER_ENABLE
-	commit_changes(addr, len);
+	commit_changes(commit_addr, commit_len);
 #endif
 
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
