@@ -570,7 +570,7 @@ const struct flash_simulator_params *z_vrfy_flash_simulator_get_params(const str
 
 #define MOCK_FLASH_SECTION(n)                                                                      \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, memory_region),                                       \
-	(Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME(DT_INST_PHANDLE(n, memory_region)))), ())
+	(Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME_TOKEN(DT_INST_PHANDLE(n, memory_region)))), ())
 
 #define FLASH_SIMULATOR_INIT(n)                                                                    \
 	IF_DISABLED(CONFIG_ARCH_POSIX, (                                                           \
