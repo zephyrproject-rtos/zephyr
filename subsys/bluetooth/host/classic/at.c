@@ -123,7 +123,7 @@ static bool str_has_prefix(struct at_client *at, const char *prefix)
 		return false;
 	}
 
-	if (strncmp(at->rsp_buf.data, prefix, len) != 0) {
+	if (strncmp((char *)at->rsp_buf.data, prefix, len) != 0) {
 		return false;
 	}
 
@@ -139,13 +139,15 @@ static int at_parse_result(struct at_client *at, struct net_buf *buf,
 	size_t error_len = strlen(error);
 
 	/* Map the result and check for end lf */
-	if ((at->rsp_buf.len >= ok_len) && (strncmp(at->rsp_buf.data, ok, ok_len) == 0) &&
+	if ((at->rsp_buf.len >= ok_len) &&
+	    (strncmp((char *)at->rsp_buf.data, ok, ok_len) == 0) &&
 	    (at_check_byte(buf, '\n') == 0)) {
 		*result = AT_RESULT_OK;
 		return 0;
 	}
 
-	if ((at->rsp_buf.len >= error_len) && (strncmp(at->rsp_buf.data, error, error_len) == 0) &&
+	if ((at->rsp_buf.len >= error_len) &&
+	    (strncmp((char *)at->rsp_buf.data, error, error_len) == 0) &&
 	    (at_check_byte(buf, '\n') == 0)) {
 		*result = AT_RESULT_ERROR;
 		return 0;
@@ -202,11 +204,11 @@ static bool is_vgm_or_vgs(struct at_client *at)
 		return false;
 	}
 
-	if (!strncmp(at->rsp_buf.data, "VGM", strlen("VGM"))) {
+	if (!strncmp((char *)at->rsp_buf.data, "VGM", strlen("VGM"))) {
 		return true;
 	}
 
-	if (!strncmp(at->rsp_buf.data, "VGS", strlen("VGS"))) {
+	if (!strncmp((char *)at->rsp_buf.data, "VGS", strlen("VGS"))) {
 		return true;
 	}
 
@@ -301,7 +303,7 @@ static bool is_cmer(struct at_client *at)
 		return false;
 	}
 
-	if (strncmp(at->rsp_buf.data, cmer, len) == 0) {
+	if (strncmp((char *)at->rsp_buf.data, cmer, len) == 0) {
 		return true;
 	}
 
@@ -338,7 +340,7 @@ static bool is_ring(struct at_client *at)
 		return false;
 	}
 
-	if (strncmp(at->rsp_buf.data, ring, len) == 0) {
+	if (strncmp((char *)at->rsp_buf.data, ring, len) == 0) {
 		return true;
 	}
 

@@ -926,7 +926,7 @@ static void smp_br_id_add_replace(struct bt_keys *keys)
 
 	conflict = bt_id_find_conflict(keys);
 	if (conflict != NULL) {
-		int err;
+		__maybe_unused int err;
 
 		LOG_DBG("Un-pairing old conflicting bond and finalizing new.");
 
