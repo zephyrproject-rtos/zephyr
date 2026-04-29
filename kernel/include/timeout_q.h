@@ -22,6 +22,66 @@ extern "C" {
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
+#ifdef CONFIG_TIMEOUT_USE_MIN_HEAP
+
+/*
+ * abs_ticks sentinels for the heap backend.
+ *
+ * Real abs_ticks values are always >= 1 (absolute tick counts from boot).
+ * INT64_MIN and INT64_MIN+1 are unreachable as valid absolute tick counts.
+ *
+ * Note: K_TICKS(INT64_MIN) is a valid k_timeout_t.ticks value produced by
+ * K_TIMEOUT_SUM overflow, but it maps to abs_ticks = INT64_MAX-1 via
+ * Z_TICK_ABS() — never stored as INT64_MIN in abs_ticks.
+ */
+#define TIMEOUT_ABS_TICKS_ANNOUNCING  INT64_MIN
+#define TIMEOUT_ABS_TICKS_ABORTED    (INT64_MIN + 1)
+
+static inline void z_init_timeout(struct _timeout *to)
+{
+	to->heap_handle.idx = 0U;
+}
+
+/**
+ * Adds the timeout to the queue.
+ *
+ * @return Absolute tick value when timeout will expire.
+ */
+k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t
+			timeout);
+
+/**
+ * Mark the timeout node as aborted
+ *
+ * @return 0 on success, -EINVAL on error.
+ */
+int z_abort_timeout(struct _timeout *to);
+
+/* Backend-specific announcing check used by z_is_timeout_handler_canceled(). */
+#define _TIMEOUT_IS_ANNOUNCING(to) ((to)->abs_ticks == TIMEOUT_ABS_TICKS_ANNOUNCING)
+
+/**
+ * Checks if a timeout node is active
+ *
+ * @return Return true if inactive (idle, announcing, or aborted)
+ */
+static inline bool z_is_inactive_timeout(const struct _timeout *to)
+{
+	return to->heap_handle.idx == 0U;
+}
+
+/**
+ * Checks if the timeout was aborted.
+ *
+ * @return Return true if aborted.
+ */
+static inline bool z_is_aborted_timeout(const struct _timeout *to)
+{
+	return to->abs_ticks == TIMEOUT_ABS_TICKS_ABORTED;
+}
+
+#else /* !CONFIG_TIMEOUT_USE_MIN_HEAP : dlist backend */
+
 /* Value written to dticks when timeout is aborted. */
 #define TIMEOUT_DTICKS_ABORTED (IS_ENABLED(CONFIG_TIMEOUT_64BIT) ? INT64_MIN : INT32_MIN)
 
@@ -41,23 +101,8 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 
 int z_abort_timeout(struct _timeout *to);
 
-/* Determine if the timeout handler should continue.
- *
- * The routine sys_clock_announce() both removes the timeout from the timeout
- * list and unlocks interrupts prior to invoking the timeout handler. This
- * provides a small gap where another ISR (or thread on another CPU) could
- * do something that would cause the timeout handler to be canceled (e.g.
- * restarting a k_timer). This routine allows the timeout handler to check if
- * it should continue or if it should just return immediately. It assumes that
- * the handler has already locked interrupts / relevant spinlocks.
- *
- * Testing if the timeout node is linked is insufficient as the timeout node
- * could have been reused.
- */
-static inline bool z_is_timeout_handler_canceled(const struct _timeout *to)
-{
-	return (to->dticks != TIMEOUT_DTICKS_ANNOUNCING);
-}
+/* Backend-specific announcing check used by z_is_timeout_handler_canceled(). */
+#define _TIMEOUT_IS_ANNOUNCING(to) ((to)->dticks == TIMEOUT_DTICKS_ANNOUNCING)
 
 static inline bool z_is_inactive_timeout(const struct _timeout *to)
 {
@@ -68,6 +113,26 @@ static inline bool z_is_aborted_timeout(const struct _timeout *to)
 {
 	/* When timeout is aborted then dticks is set to special value. */
 	return to->dticks == TIMEOUT_DTICKS_ABORTED;
+}
+
+#endif /* CONFIG_TIMEOUT_USE_MIN_HEAP */
+
+/* Determine if the timeout handler should continue.
+ *
+ * The routine sys_clock_announce() both removes the timeout from the timeout
+ * list/heap and unlocks interrupts prior to invoking the timeout handler. This
+ * provides a small gap where another ISR (or thread on another CPU) could
+ * do something that would cause the timeout handler to be canceled (e.g.
+ * restarting a k_timer). This routine allows the timeout handler to check if
+ * it should continue or if it should just return immediately. It assumes that
+ * the handler has already locked interrupts / relevant spinlocks.
+ *
+ * Testing if the timeout node is inactive is insufficient as the timeout
+ * struct could have been reused.
+ */
+static inline bool z_is_timeout_handler_canceled(const struct _timeout *to)
+{
+	return !_TIMEOUT_IS_ANNOUNCING(to);
 }
 
 static inline void z_init_thread_timeout(struct _thread_base *thread_base)
