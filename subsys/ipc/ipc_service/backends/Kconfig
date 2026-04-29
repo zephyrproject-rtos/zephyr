@@ -16,6 +16,14 @@ config IPC_SERVICE_BACKEND_RPMSG
 	select IPC_SERVICE_STATIC_VRINGS
 	select OPENAMP
 
+config IPC_SERVICE_BACKEND_RPMSG_LITE
+	bool "RPMSG-Lite backend"
+	default y
+	depends on MBOX
+	depends on DT_HAS_NXP_IPC_RPMSG_LITE_ENABLED
+	select RPMSGLITE
+	select RPMSGLITE_NS
+
 config IPC_SERVICE_BACKEND_ICMSG
 	bool "ICMSG backend with SPSC packet buffer"
 	default y
@@ -52,3 +60,4 @@ rsource "Kconfig.icmsg_me"
 rsource "Kconfig.icbmsg"
 rsource "Kconfig.intel_adsp"
 rsource "Kconfig.rpmsg"
+rsource "Kconfig.rpmsg-lite"

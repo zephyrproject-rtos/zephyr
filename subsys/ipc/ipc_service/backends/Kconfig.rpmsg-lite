@@ -1,0 +1,71 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if IPC_SERVICE_BACKEND_RPMSG_LITE
+
+config IPC_SERVICE_BACKEND_RPMSG_LITE_WQ_STACK_SIZE
+	int "Size of RX work queue stack"
+	default 1024
+	help
+	  Size of stack used by work queue RX thread. This work queue is
+	  created in the multi-instance / multi-core RPMSG-Lite backend module to
+	  prevent notifying service users about received data from the system
+	  work queue. Size is the same for all instances.
+
+config IPC_SERVICE_BACKEND_RPMSG_LITE_NUM_ENDPOINTS_PER_INSTANCE
+	int "Max number of registered endpoints per instance"
+	default 2
+	help
+	  Maximal number of endpoints that can be registered for one instance
+	  for RPMSG-Lite backend.
+
+choice IPC_SERVICE_BACKEND_RPMSG_LITE_NOTIFY_MODE
+	prompt "MBOX notification processing mode"
+	default IPC_SERVICE_BACKEND_RPMSG_LITE_NOTIFY_DIRECT
+	help
+	  Select how MBOX notifications are processed.
+
+config IPC_SERVICE_BACKEND_RPMSG_LITE_NOTIFY_QUEUE
+	bool "Queue-based notification (more reliable)"
+	help
+	  Use message queue to buffer incoming MBOX notifications.
+	  This significantly reduces the risk of lost notifications
+	  during high message rates by queuing up to 4 pending signals.
+
+	  Pros:
+	  - Greatly reduced notification loss (not eliminated)
+	  - Better handling of burst traffic
+	  - More predictable behavior under load
+
+	  Cons:
+	  - Slightly higher latency (~5-15%)
+	  - Additional RAM: 40 bytes per IPC instance
+	  - Extra k_msgq overhead
+
+config IPC_SERVICE_BACKEND_RPMSG_LITE_NOTIFY_DIRECT
+	bool "Direct notification (lower latency)"
+	help
+	  Store only the latest notification without queuing.
+	  This minimizes latency and RAM usage but notifications
+	  can be lost if multiple MBOX interrupts arrive before
+	  the work handler runs.
+
+	  Pros:
+	  - Lowest possible latency
+	  - Minimal RAM usage (4 bytes vs 44 bytes)
+	  - Simpler code path
+
+	  Cons:
+	  - Higher notification loss under heavy load
+	  - Only latest notification preserved
+	  - May coalesce multiple signals into one
+
+	  Recommended for low-to-moderate traffic where latency
+	  is critical and occasional notification loss is acceptable.
+
+endchoice
+
+endif # IPC_SERVICE_BACKEND_RPMSG_LITE
