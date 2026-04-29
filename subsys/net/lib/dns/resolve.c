@@ -1248,6 +1248,21 @@ static int dns_validate_record(struct dns_resolve_context *ctx, struct dns_msg_t
 
 		break;
 	}
+
+#if defined(CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT)
+	case DNS_RESPONSE_PRIVATE:
+		pos = dns_msg->msg + dns_msg->response_position;
+
+		info->ai_family = NET_AF_UNSPEC;
+		info->ai_extension = DNS_RESOLVE_PRIVATE;
+		info->ai_private.type = *answer_type;
+		info->ai_private.datalen = MIN(dns_msg->response_length,
+					       DNS_MAX_PRIVATE_DATA_SIZE);
+		memcpy(info->ai_private.data, pos, info->ai_private.datalen);
+
+		break;
+#endif /* CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT */
+
 	case DNS_RESPONSE_CNAME_NO_IP:
 		/* Instead of using the QNAME at DNS_QUERY_POS,
 		 * we will use this CNAME
@@ -1398,7 +1413,7 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 		 * type of answer we got. Currently only A or AAAA
 		 * are supported.
 		 */
-		if (ctx->queries[*query_idx].query_type == (enum dns_query_type)DNS_RR_TYPE_ANY &&
+		if (ctx->queries[*query_idx].query_type == DNS_QUERY_TYPE_ANY &&
 		    answer_type != DNS_RR_TYPE_AAAA && answer_type != DNS_RR_TYPE_A) {
 			ret = DNS_EAI_ADDRFAMILY;
 			goto quit;
@@ -1410,6 +1425,21 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 			 * for query redirection.
 			 */
 			continue;
+		}
+
+		if (IS_ENABLED(CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT) &&
+		    dns_query_type_is_private(ctx->queries[*query_idx].query_type)) {
+			if (dns_msg->response_type == DNS_RESPONSE_PRIVATE) {
+				unsigned int queried_type;
+
+				queried_type = dns_query_type_raw(
+					ctx->queries[*query_idx].query_type);
+
+				if (answer_type != queried_type) {
+					ret = DNS_EAI_ADDRFAMILY;
+					goto quit;
+				}
+			}
 		}
 
 		invoke_query_callback(DNS_EAI_INPROGRESS, &info, &ctx->queries[*query_idx]);
@@ -1845,6 +1875,33 @@ static void query_timeout(struct k_work *work)
 	k_mutex_unlock(&pending_query->ctx->lock);
 }
 
+static inline bool check_query_valid_type(enum dns_query_type type)
+{
+
+	bool valid_query_type = false;
+
+	switch (type) {
+	case DNS_QUERY_TYPE_A:
+	case DNS_QUERY_TYPE_CNAME:
+	case DNS_QUERY_TYPE_PTR:
+	case DNS_QUERY_TYPE_TXT:
+	case DNS_QUERY_TYPE_AAAA:
+	case DNS_QUERY_TYPE_SRV:
+	case DNS_QUERY_TYPE_ANY:
+		valid_query_type = true;
+		break;
+	default:
+		/* Check if this is a private RR type */
+		if (IS_ENABLED(CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT) &&
+		    dns_query_type_is_private(type)) {
+			valid_query_type = true;
+		}
+		break;
+	}
+
+	return valid_query_type;
+}
+
 int dns_resolve_name_internal(struct dns_resolve_context *ctx,
 			      const char *query,
 			      enum dns_query_type type,
@@ -1861,12 +1918,18 @@ int dns_resolve_name_internal(struct dns_resolve_context *ctx,
 	int ret, i = -1, j = 0;
 	int ntry = 0, nfail = 0;
 	bool mdns_query = false;
+	bool valid_query_type = false;
 	uint8_t hop_limit;
 #ifdef CONFIG_DNS_RESOLVER_CACHE
 	struct dns_addrinfo cached_info[CONFIG_DNS_RESOLVER_AI_MAX_ENTRIES] = {0};
 #endif /* CONFIG_DNS_RESOLVER_CACHE */
 
 	if (!ctx || !query || !cb) {
+		return -EINVAL;
+	}
+
+	valid_query_type = check_query_valid_type(type);
+	if (!valid_query_type) {
 		return -EINVAL;
 	}
 

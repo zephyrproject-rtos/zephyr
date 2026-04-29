@@ -87,6 +87,18 @@ struct net_if_test {
 	struct net_linkaddr ll_addr;
 };
 
+#if defined(CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT)
+static uint8_t test_private_data[CONFIG_DNS_RESOLVER_MAX_PRIVATE_DATA_LEN];
+
+static void init_test_private_data(void)
+{
+	/* Initialize with test pattern */
+	for (int i = 0; i < CONFIG_DNS_RESOLVER_MAX_PRIVATE_DATA_LEN; i++) {
+		test_private_data[i] = 0x01 + i;
+	}
+}
+#endif /* CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT */
+
 static uint8_t *net_iface_get_mac(const struct device *dev)
 {
 	struct net_if_test *data = dev->data;
@@ -258,6 +270,11 @@ static void *test_init(void)
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
+#endif
+
+#if defined(CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT)
+	/* Initialize test data for private RR tests */
+	init_test_private_data();
 #endif
 
 	net_if_up(iface1);
@@ -1120,5 +1137,198 @@ ZTEST(dns_resolve, test_dns_unpack_name_overflow)
 		net_buf_unref(result);
 	}
 }
+
+#if defined(CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT)
+
+#define PRIVATE_RR_TYPE_TEST 65280  /* Start of private range */
+
+struct expected_private_status {
+	uint16_t expected_type;
+	size_t expected_datalen;
+	int status1;
+	int status2;
+	const char *caller;
+	bool verified;
+};
+
+void dns_result_private_cb(enum dns_resolve_status status,
+			   struct dns_addrinfo *info,
+			   void *user_data)
+{
+	struct expected_private_status *expected = user_data;
+
+	if (status != expected->status1 && status != expected->status2) {
+		DBG("Result status %d\n", status);
+		DBG("Expected status1 %d\n", expected->status1);
+		DBG("Expected status2 %d\n", expected->status2);
+		DBG("Caller %s\n", expected->caller);
+
+		zassert_true(false, "Invalid status");
+	}
+
+	if (status == DNS_EAI_INPROGRESS && info) {
+		zassert_equal(info->ai_family, NET_AF_UNSPEC,
+			      "Private RR should use NET_AF_UNSPEC");
+		zassert_equal(info->ai_extension, DNS_RESOLVE_PRIVATE,
+			      "Extension type should be DNS_RESOLVE_PRIVATE");
+		zassert_equal(info->ai_private.type, expected->expected_type,
+			      "Private RR type mismatch");
+		zassert_equal(info->ai_private.datalen, expected->expected_datalen,
+			      "Private RR data length mismatch");
+
+		/* Verify the actual data content matches test pattern */
+		zassert_equal(memcmp(info->ai_private.data, test_private_data,
+				     expected->expected_datalen), 0,
+			      "Private RR data content mismatch");
+
+		expected->verified = true;
+	}
+
+	k_sem_give(&wait_data2);
+}
+
+ZTEST(dns_resolve, test_dns_query_private_rr_success)
+{
+	struct expected_private_status status = {
+		.expected_type = PRIVATE_RR_TYPE_TEST,
+		.expected_datalen = CONFIG_DNS_RESOLVER_MAX_PRIVATE_DATA_LEN,
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+		.verified = false,
+	};
+	int ret;
+
+	timeout_query = false;
+
+	/* Setup addrinfo for private RR response */
+	memset(&addrinfo, 0, sizeof(addrinfo));
+	addrinfo.ai_family = NET_AF_UNSPEC;
+	addrinfo.ai_extension = DNS_RESOLVE_PRIVATE;
+	addrinfo.ai_private.type = PRIVATE_RR_TYPE_TEST;
+	addrinfo.ai_private.datalen = CONFIG_DNS_RESOLVER_MAX_PRIVATE_DATA_LEN;
+
+	memcpy(addrinfo.ai_private.data, test_private_data,
+	       CONFIG_DNS_RESOLVER_MAX_PRIVATE_DATA_LEN);
+
+	ret = dns_get_addr_info("test.private.local",
+				PRIVATE_RR_TYPE_TEST,
+				&current_dns_id,
+				dns_result_private_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create private RR query");
+
+	DBG("Private RR Query id %u\n", current_dns_id);
+
+	k_yield();
+
+	if (k_sem_take(&wait_data2, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting for private RR data");
+	}
+
+	zassert_true(status.verified, "Private RR data was not verified");
+}
+
+ZTEST(dns_resolve, test_dns_query_invalid_rr_type)
+{
+	int ret;
+	uint16_t dns_id;
+
+	/* Test 1: Type just below private range (65279) - should be rejected */
+	ret = dns_get_addr_info("invalid1.test",
+				(enum dns_query_type)65279,
+				&dns_id,
+				dns_result_cb_dummy,
+				NULL,
+				DNS_TIMEOUT);
+	zassert_not_equal(ret, 0, "Type 65279 should be rejected (below private range)");
+	DBG("Type 65279 correctly rejected with code: %d\n", ret);
+
+	/* Test 2: Reserved type (65535) - should be rejected */
+	ret = dns_get_addr_info("invalid2.test",
+				DNS_QUERY_TYPE_RESERVED,
+				&dns_id,
+				dns_result_cb_dummy,
+				NULL,
+				DNS_TIMEOUT);
+	zassert_not_equal(ret, 0, "Type 65535 (RESERVED) should be rejected");
+	DBG("Type 65535 (RESERVED) correctly rejected with code: %d\n", ret);
+
+	/* Test 3: Undefined standard type (e.g., 100) - should be rejected */
+	ret = dns_get_addr_info("invalid3.test",
+				(enum dns_query_type)100,
+				&dns_id,
+				dns_result_cb_dummy,
+				NULL,
+				DNS_TIMEOUT);
+	zassert_not_equal(ret, 0, "Undefined type 100 should be rejected");
+	DBG("Type 100 correctly rejected with code: %d\n", ret);
+
+	/* Test 4: Type 0 (INVALID) - should be rejected */
+	ret = dns_get_addr_info("invalid4.test",
+				(enum dns_query_type)DNS_RR_TYPE_INVALID,
+				&dns_id,
+				dns_result_cb_dummy,
+				NULL,
+				DNS_TIMEOUT);
+	zassert_not_equal(ret, 0, "Type 0 (INVALID) should be rejected");
+	DBG("Type 0 (INVALID) correctly rejected with code: %d\n", ret);
+
+	/* Verify no resource leaks - all queries should be cleaned up */
+	verify_cancelled();
+}
+
+ZTEST(dns_resolve, test_dns_query_private_rr_cancel)
+{
+	int expected_status = DNS_EAI_CANCELED;
+	uint16_t dns_id;
+	int ret;
+
+	timeout_query = true;
+
+	ret = dns_get_addr_info("cancel.private.test",
+				PRIVATE_RR_TYPE_TEST,
+				&dns_id,
+				dns_result_cb_timeout,
+				INT_TO_POINTER(expected_status),
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create private RR query for cancellation");
+
+	ret = dns_cancel_addr_info(dns_id);
+	zassert_equal(ret, 0, "Cannot cancel private RR query");
+
+	if (k_sem_take(&wait_data, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting for cancel confirmation");
+	}
+
+	verify_cancelled();
+
+	timeout_query = false;
+}
+
+ZTEST(dns_resolve, test_dns_query_private_rr_timeout)
+{
+	int expected_status = DNS_EAI_CANCELED;
+	int ret;
+
+	timeout_query = true;
+
+	ret = dns_get_addr_info("timeout.private.test",
+				PRIVATE_RR_TYPE_TEST,
+				NULL,
+				dns_result_cb_timeout,
+				INT_TO_POINTER(expected_status),
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create private RR timeout query");
+
+	if (k_sem_take(&wait_data, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting for timeout callback");
+	}
+
+	timeout_query = false;
+}
+
+#endif /* CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT */
 
 ZTEST_SUITE(dns_resolve, NULL, test_init, NULL, NULL, NULL);
