@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ethernet/eth_stats.h>
 #include <zephyr/drivers/pcie/pcie.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/barrier.h>
 #include "eth_e1000_priv.h"
 
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
@@ -100,27 +101,45 @@ static const struct device *e1000_get_ptp_clock(const struct device *dev)
 }
 #endif
 
+static inline uint8_t e1000_rx_desc_status(volatile struct e1000_rx *desc)
+{
+	compiler_barrier();
+	return desc->sta;
+}
+
+static inline uint8_t e1000_tx_desc_status(volatile struct e1000_tx *desc)
+{
+	compiler_barrier();
+	return desc->sta;
+}
+
 static int e1000_tx(struct e1000_dev *dev, void *buf, size_t len)
 {
+	volatile struct e1000_tx *desc = &dev->tx[dev->next_tx_desc];
+	uint8_t status;
+
 	hexdump(buf, len, "%zu byte(s)", len);
 
-	dev->tx[dev->next_tx_desc].addr = POINTER_TO_INT(buf);
-	dev->tx[dev->next_tx_desc].len = len;
-	dev->tx[dev->next_tx_desc].cmd = TDESC_EOP | TDESC_RS;
-	dev->tx[dev->next_tx_desc].sta = 0;
+	desc->addr = POINTER_TO_UINT(buf);
+	desc->len = len;
+	desc->cmd = TDESC_EOP | TDESC_RS;
+	desc->sta = 0;
+	compiler_barrier();
+	barrier_dmem_fence_full();
 
 	uint32_t old_tx_desc = dev->next_tx_desc;
 
 	dev->next_tx_desc = (dev->next_tx_desc + 1) % CONFIG_ETH_E1000_TX_QUEUE_SIZE;
 	iow32(dev, TDT, dev->next_tx_desc);
+	barrier_dmem_fence_full();
 
-	while (!(dev->tx[old_tx_desc].sta)) {
+	while (!(status = e1000_tx_desc_status(&dev->tx[old_tx_desc]))) {
 		k_yield();
 	}
 
-	LOG_DBG("tx.sta: 0x%02hx", dev->tx[old_tx_desc].sta);
+	LOG_DBG("tx.sta: 0x%02hhx", status);
 
-	return (dev->tx[old_tx_desc].sta & TDESC_STA_DD) ? 0 : -EIO;
+	return (status & TDESC_STA_DD) ? 0 : -EIO;
 }
 
 static int e1000_send(const struct device *ddev, struct net_pkt *pkt)
@@ -142,20 +161,29 @@ static int e1000_send(const struct device *ddev, struct net_pkt *pkt)
 static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 {
 	struct net_pkt *pkt = NULL;
+	volatile struct e1000_rx *desc = &dev->rx[dev->next_rx_desc];
 	void *buf;
 	ssize_t len;
+	uint8_t status;
+	uint16_t desc_len;
+	uintptr_t addr;
 
-	LOG_DBG("rx.sta: 0x%02hx", dev->rx[dev->next_rx_desc].sta);
+	status = e1000_rx_desc_status(desc);
+	LOG_DBG("rx.sta: 0x%02hhx", status);
 
-	if (!(dev->rx[dev->next_rx_desc].sta & RDESC_STA_DD)) {
+	if (!(status & RDESC_STA_DD)) {
 		return NULL;
 	}
 
-	buf = INT_TO_POINTER((uint32_t)dev->rx[dev->next_rx_desc].addr);
-	len = dev->rx[dev->next_rx_desc].len - 4;
+	barrier_dmem_fence_full();
+	compiler_barrier();
+	addr = (uintptr_t)desc->addr;
+	desc_len = desc->len;
+	buf = (void *)addr;
+	len = desc_len - 4;
 
 	if (len <= 0) {
-		LOG_ERR("Invalid RX descriptor length: %hu", dev->rx[dev->next_rx_desc].len);
+		LOG_ERR("Invalid RX descriptor length: %hu", desc_len);
 		goto err;
 	}
 
@@ -179,8 +207,11 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 err:
 	eth_stats_update_errors_rx(get_iface(dev));
 out:
-	dev->rx[dev->next_rx_desc].sta = 0;
+	desc->sta = 0;
+	compiler_barrier();
+	barrier_dmem_fence_full();
 	iow32(dev, RDT, dev->next_rx_desc);
+	barrier_dmem_fence_full();
 	dev->next_rx_desc = (dev->next_rx_desc + 1) % CONFIG_ETH_E1000_RX_QUEUE_SIZE;
 
 	return pkt;
