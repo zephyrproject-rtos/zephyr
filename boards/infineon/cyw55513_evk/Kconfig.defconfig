@@ -1,0 +1,30 @@
+# AIROC CYW55513 Evaluation Kit
+
+# Copyright (c) 2026 Infineon Technologies AG.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CYW55513_EVK
+
+if WIFI
+
+# Enable L2 Ethernet for Wi-Fi connectivity
+config NET_L2_ETHERNET
+	default y
+
+# Heap Pool Size
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 10000
+
+endif # WIFI
+
+if BT
+
+# Heap Pool Size for Bluetooth
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 5000
+
+endif # BT
+
+endif # BOARD_CYW55513_EVK

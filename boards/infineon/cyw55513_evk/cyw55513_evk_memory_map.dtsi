@@ -1,0 +1,90 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * CYW20829B0LKML Memory Layout:
+ * SRAM: 256KB  (0x20000000 - 0x2003ffff)
+ *   - Application: 240KB (0x20000000 - 0x2003bfff)
+ *   - Bootstrap: 16KB (0x2003c000 - 0x2003ffff)
+ * Flash: 2MB (external via QSPI)
+ */
+
+#include <mem.h>
+#include <zephyr/dt-bindings/misc/ifx_cyw20829.h>
+
+/ {
+	sram0: memory@20000000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		compatible = "mmio-sram";
+		reg = <SRAM0_SAHB_BASE SRAM0_SIZE>;
+
+		/* SRAM aliased address path */
+		sram_sahb: sram_sahb@20000000 {
+			reg = <SRAM0_SAHB_BASE SRAM0_SIZE>;  /* SAHB address */
+		};
+
+		sram_cbus: sram_cbus@4000000 {
+			reg = <SRAM0_CBUS_BASE SRAM0_SIZE>;  /* CBUS address */
+		};
+	};
+
+	/* Bootstrap SRAM: 16KB at the end of SRAM */
+	sram_bootstrap: memory@2003c000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "BOOTSTRAP_RAM";
+		reg = <BOOTSTRAP_SAHB_BASE BOOTSTRAP_SIZE>;
+
+		/* SRAM aliased address path */
+		sram_bootstrap_sahb: sram_bootstrap_sahb@2003c000 {
+			reg = <BOOTSTRAP_SAHB_BASE BOOTSTRAP_SIZE>;  /* SAHB address */
+		};
+
+		sram_bootstrap_cbus: sram_bootstrap_cbus@403c000 {
+			reg = <BOOTSTRAP_CBUS_BASE BOOTSTRAP_SIZE>;  /* CBUS address */
+		};
+	};
+
+	/* External Flash: 2MB (via QSPI) */
+	flash0: flash@0 {
+		compatible = "soc-nv-flash";
+		reg = <0x0 0x200000>; /* 2MB */
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		bootstrap_region: bootstrap_region@0 {
+			reg = <0x0 BOOTSTRAP_SIZE>;
+		};
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x0 0x20000>;
+				read-only;
+			};
+
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x20000 0x60000>;
+			};
+
+			slot1_partition: partition@80000 {
+				label = "image-1";
+				reg = <0x80000 0x60000>;
+			};
+
+			storage_partition: partition@e0000 {
+				label = "storage";
+				compatible = "soc-nv-flash";
+				reg = <0xe0000 0x20000>;
+			};
+		};
+	};
+};

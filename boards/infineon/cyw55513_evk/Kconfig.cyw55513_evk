@@ -1,0 +1,8 @@
+# AIROC CYW55513 Evaluation Kit
+
+# Copyright (c) 2026 Infineon Technologies AG.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CYW55513_EVK
+	bool "AIROC CYW55513 Evaluation Kit"
+	select SOC_CYW20829B0LKML

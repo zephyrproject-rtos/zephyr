@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/infineon/cat1b/cyw20829/system_clocks.dtsi>
+#include <arm/infineon/cat1b/mpns/cyw20829b0lkml.dtsi>
+#include "cyw55513_evk.dtsi"
+
+/ {
+	model = "AIROC CYW55513 Evaluation Kit";
+	compatible = "infineon,cyw55513_evk", "infineon,cyw20829b0lkml";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,bt-hci = &bluetooth;
+	};
+};
+
+uart2: &scb2 {
+	compatible = "infineon,uart";
+	status = "okay";
+	current-speed = <115200>;
+	hw-flow-control;
+
+	pinctrl-0 = <&p3_3_scb2_uart_tx &p3_2_scb2_uart_rx &p3_1_scb2_uart_rts &p3_0_scb2_uart_cts>;
+	pinctrl-names = "default";
+
+	dmas = <&dma0 8>, <&dma0 9>;
+	dma-names = "tx", "rx";
+};
+
+&dma0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "infineon,dma";
+	status = "okay";
+};
+
+&fll0 {
+	status = "okay";
+};
+
+&bluetooth {
+	status = "okay";
+};
