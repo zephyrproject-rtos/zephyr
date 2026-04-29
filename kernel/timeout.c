@@ -239,12 +239,14 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
 	announce_remaining = ticks;
 
 	struct _timeout *t;
+	int batch = 0;
 
 	for (t = first();
-	     (t != NULL) && (t->dticks <= announce_remaining);
+	     (t != NULL) && (t->dticks <= announce_remaining - batch);
 	     t = first()) {
 		int dt = t->dticks;
 
+		batch += dt;
 		curr_tick += dt;
 		t->dticks = 0;
 		remove_timeout(t);
@@ -253,7 +255,21 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
 		k_spin_unlock(&timeout_lock, key);
 		t->fn(t);
 		key = k_spin_lock(&timeout_lock);
-		announce_remaining -= dt;
+
+		/*
+		 * Hold announce_remaining steady across all timeouts that
+		 * share the current tick (queued with dticks == 0 relative
+		 * to the previous one). This makes announce_remaining an
+		 * honest "in-announce" indicator for the entire same-tick
+		 * group: the SMP early-return at the top of this function
+		 * and the elapsed() helper above both rely on it being
+		 * non-zero for as long as we hold (and intermittently
+		 * release) the lock inside the loop.
+		 */
+		if (first() == NULL || first()->dticks != 0) {
+			announce_remaining -= batch;
+			batch = 0;
+		}
 	}
 
 	if (t != NULL) {
