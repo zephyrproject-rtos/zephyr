@@ -32,6 +32,14 @@ function(compiler_simple_options simple_options_out)
 
   endforeach()
 
+  # Keep runtime multilib selection aligned with C++ Kconfig choices.
+  if(NOT CONFIG_CPP_EXCEPTIONS)
+    list(APPEND simple_options -fno-exceptions)
+  endif()
+  if(NOT CONFIG_CPP_RTTI)
+    list(APPEND simple_options -fno-rtti)
+  endif()
+
   set(${simple_options_out} "${simple_options}" PARENT_SCOPE)
 endfunction()
 
