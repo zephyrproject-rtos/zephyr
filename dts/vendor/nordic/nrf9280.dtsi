@@ -151,6 +151,14 @@
 				write-block-size = <16>;
 				#address-cells = <1>;
 				#size-cells = <1>;
+
+				mram10: mram-bank@0 {
+					reg = <0 DT_SIZE_K(6144)>;
+				};
+
+				mram11: mram-bank@600000 {
+					reg = <DT_SIZE_K(6144) DT_SIZE_K(2048)>;
+				};
 			};
 		};
 
