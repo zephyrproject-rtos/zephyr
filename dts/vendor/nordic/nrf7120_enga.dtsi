@@ -125,6 +125,12 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		wicr: wicr@3fd000 {
+			compatible = "nordic,nrf-wicr";
+			reg = <0x3fd000 0x1000>;
+			status = "disabled";
+		};
+
 		ficr: ficr@ffc000 {
 			compatible = "nordic,nrf-ficr";
 			reg = <0xffc000 0x1000>;
@@ -173,6 +179,15 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x200e0000 0x1e000>;
+		};
+
+		/* Wi-Fi ROM regions */
+		wifi_lmac_rom: memory@28080000 {
+			reg = <0x28080000 DT_SIZE_K(320)>;
+		};
+
+		wifi_umac_rom: memory@28180000 {
+			reg = <0x28180000 DT_SIZE_K(512)>;
 		};
 
 #ifdef USE_NON_SECURE_ADDRESS_MAP
