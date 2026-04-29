@@ -73,6 +73,14 @@
 	ITERABLE_SECTION_ROM(gnss_satellites_callback, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 
+#if defined(CONFIG_GNSS_ACCURACY)
+	ITERABLE_SECTION_ROM(gnss_accuracy_callback, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
+#if defined(CONFIG_GNSS_RAW_NMEA)
+	ITERABLE_SECTION_ROM(gnss_raw_nmea_callback, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
 #if defined(CONFIG_GNSS_RTK)
 	ITERABLE_SECTION_ROM(gnss_rtk_data_callback, Z_LINK_ITERABLE_SUBALIGN)
 #endif
