@@ -116,7 +116,7 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x40000000 0x10000000>;
 
-			#include "mps4_common_soc_peripheral.dtsi"
+#include "mps4_common_soc_peripheral.dtsi"
 		};
 	};
 };

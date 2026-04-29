@@ -187,7 +187,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x50000000 0x10000000>;
-			#include "nrf7120_enga_secure_peripherals.dtsi"
+#include "nrf7120_enga_secure_peripherals.dtsi"
 #endif
 
 			dppic00: dppic@42000 {

@@ -98,7 +98,7 @@
 			 * one value in the reg property, so we comment out the
 			 * second flash bank for now
 			 */
-			reg = <0x0 0x0 0x0 DT_SIZE_M(64) /* 0x4000000 DT_SIZE_M(64) */ >;
+			reg = <0x0 0x0 0x0 DT_SIZE_M(64) /* 0x4000000 DT_SIZE_M(64) */>;
 		};
 
 		pcie: pcie@4010000000 {

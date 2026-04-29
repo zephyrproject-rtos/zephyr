@@ -170,7 +170,7 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x40000000 0x10000000>;
 
-			#include "mps2_an521-common.dtsi"
+#include "mps2_an521-common.dtsi"
 		};
 	};
 };

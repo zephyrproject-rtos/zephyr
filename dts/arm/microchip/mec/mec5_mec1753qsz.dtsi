@@ -19,12 +19,12 @@
 	};
 
 	soc {
-		#include "mec5/mec5_dma_chan20.dtsi"
-		#include "mec5/mec5_eeprom_8kb.dtsi"
-		#include "mec5/mec5_gpspi_v2.dtsi"
-		#include "mec5/mec5_i3c.dtsi"
-		#include "mec5/mec5_rcid.dtsi"
-		#include "mec5/mec5_bclink.dtsi"
+#include "mec5/mec5_dma_chan20.dtsi"
+#include "mec5/mec5_eeprom_8kb.dtsi"
+#include "mec5/mec5_gpspi_v2.dtsi"
+#include "mec5/mec5_i3c.dtsi"
+#include "mec5/mec5_rcid.dtsi"
+#include "mec5/mec5_bclink.dtsi"
 
 		ps2_1: ps2@40009040 {
 			reg = <0x40009040 0x40>;
