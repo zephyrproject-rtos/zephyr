@@ -42,6 +42,364 @@ extern "C" {
 #error "CONFIG_ATOMIC_OPERATIONS_* not defined"
 #endif
 
+/*
+ * Atomic unsigned char operations.
+ *
+ * Some architectures (RISC-V, Xtensa, ARC, RX, Cortex-M0/M0+) don't have
+ * native byte-sized atomic instructions. On these platforms, atomic_uchar_t
+ * is typedef'd to atomic_t and we simply use the existing word-sized
+ * atomic functions.
+ *
+ * On architectures with native byte atomics (ARM Cortex-M3+, x86), we use
+ * either C11 stdatomic (when available in C mode) or GCC __atomic_* builtins
+ * (in C++ mode or when C11 is not available).
+ */
+
+#if defined(CONFIG_RISCV) || defined(CONFIG_XTENSA) || \
+	defined(CONFIG_CPU_CORTEX_M0) || defined(CONFIG_CPU_CORTEX_M0PLUS) || \
+	defined(CONFIG_RX) || defined(CONFIG_ARC)
+/*
+ * On platforms without byte-sized atomics, atomic_uchar_t is atomic_t,
+ * so we just map to the existing atomic_* functions using inline functions
+ * (not macros) to avoid unused-value warnings.
+ */
+
+/**
+ * @brief Atomic unsigned char compare-and-set.
+ */
+static inline bool atomic_uchar_cas(atomic_uchar_t *target,
+				    unsigned char old_value,
+				    unsigned char new_value)
+{
+	return atomic_cas(target, (atomic_val_t)old_value,
+			  (atomic_val_t)new_value);
+}
+
+/**
+ * @brief Atomic unsigned char addition.
+ */
+static inline unsigned char atomic_uchar_add(atomic_uchar_t *target,
+					     unsigned char value)
+{
+	return (unsigned char)atomic_add(target, (atomic_val_t)value);
+}
+
+/**
+ * @brief Atomic unsigned char subtraction.
+ */
+static inline unsigned char atomic_uchar_sub(atomic_uchar_t *target,
+					     unsigned char value)
+{
+	return (unsigned char)atomic_sub(target, (atomic_val_t)value);
+}
+
+/**
+ * @brief Atomic unsigned char increment.
+ */
+static inline unsigned char atomic_uchar_inc(atomic_uchar_t *target)
+{
+	return (unsigned char)atomic_inc(target);
+}
+
+/**
+ * @brief Atomic unsigned char decrement.
+ */
+static inline unsigned char atomic_uchar_dec(atomic_uchar_t *target)
+{
+	return (unsigned char)atomic_dec(target);
+}
+
+/**
+ * @brief Atomic unsigned char get.
+ */
+static inline unsigned char atomic_uchar_get(const atomic_uchar_t *target)
+{
+	return (unsigned char)atomic_get(target);
+}
+
+/**
+ * @brief Atomic unsigned char set.
+ */
+static inline unsigned char atomic_uchar_set(atomic_uchar_t *target,
+					     unsigned char value)
+{
+	return (unsigned char)atomic_set(target, (atomic_val_t)value);
+}
+
+/**
+ * @brief Atomic unsigned char clear.
+ */
+static inline unsigned char atomic_uchar_clear(atomic_uchar_t *target)
+{
+	return (unsigned char)atomic_clear(target);
+}
+
+/**
+ * @brief Atomic unsigned char OR.
+ */
+static inline unsigned char atomic_uchar_or(atomic_uchar_t *target,
+					    unsigned char value)
+{
+	return (unsigned char)atomic_or(target, (atomic_val_t)value);
+}
+
+/**
+ * @brief Atomic unsigned char XOR.
+ */
+static inline unsigned char atomic_uchar_xor(atomic_uchar_t *target,
+					     unsigned char value)
+{
+	return (unsigned char)atomic_xor(target, (atomic_val_t)value);
+}
+
+/**
+ * @brief Atomic unsigned char AND.
+ */
+static inline unsigned char atomic_uchar_and(atomic_uchar_t *target,
+					     unsigned char value)
+{
+	return (unsigned char)atomic_and(target, (atomic_val_t)value);
+}
+
+/**
+ * @brief Atomic unsigned char NAND.
+ */
+static inline unsigned char atomic_uchar_nand(atomic_uchar_t *target,
+					      unsigned char value)
+{
+	return (unsigned char)atomic_nand(target, (atomic_val_t)value);
+}
+
+#elif defined(ZEPHYR_HAS_C11_STDATOMIC)
+/*
+ * Tier 1: C11 stdatomic available. Use C11 stdatomic operations directly.
+ * GCC __atomic_* builtins cannot operate on _Atomic qualified types in clang.
+ */
+
+/**
+ * @brief Atomic unsigned char compare-and-set.
+ */
+static inline bool atomic_uchar_cas(atomic_uchar_t *target,
+				    unsigned char old_value,
+				    unsigned char new_value)
+{
+	return atomic_compare_exchange_strong(target, &old_value, new_value);
+}
+
+/**
+ * @brief Atomic unsigned char addition.
+ */
+static inline unsigned char atomic_uchar_add(atomic_uchar_t *target,
+					     unsigned char value)
+{
+	return atomic_fetch_add(target, value);
+}
+
+/**
+ * @brief Atomic unsigned char subtraction.
+ */
+static inline unsigned char atomic_uchar_sub(atomic_uchar_t *target,
+					     unsigned char value)
+{
+	return atomic_fetch_sub(target, value);
+}
+
+/**
+ * @brief Atomic unsigned char increment.
+ */
+static inline unsigned char atomic_uchar_inc(atomic_uchar_t *target)
+{
+	return atomic_fetch_add(target, 1);
+}
+
+/**
+ * @brief Atomic unsigned char decrement.
+ */
+static inline unsigned char atomic_uchar_dec(atomic_uchar_t *target)
+{
+	return atomic_fetch_sub(target, 1);
+}
+
+/**
+ * @brief Atomic unsigned char get.
+ */
+static inline unsigned char atomic_uchar_get(const atomic_uchar_t *target)
+{
+	return atomic_load(target);
+}
+
+/**
+ * @brief Atomic unsigned char set.
+ */
+static inline unsigned char atomic_uchar_set(atomic_uchar_t *target,
+					     unsigned char value)
+{
+	return atomic_exchange(target, value);
+}
+
+/**
+ * @brief Atomic unsigned char clear.
+ */
+static inline unsigned char atomic_uchar_clear(atomic_uchar_t *target)
+{
+	return atomic_exchange(target, 0);
+}
+
+/**
+ * @brief Atomic unsigned char OR.
+ */
+static inline unsigned char atomic_uchar_or(atomic_uchar_t *target,
+					    unsigned char value)
+{
+	return atomic_fetch_or(target, value);
+}
+
+/**
+ * @brief Atomic unsigned char XOR.
+ */
+static inline unsigned char atomic_uchar_xor(atomic_uchar_t *target,
+					     unsigned char value)
+{
+	return atomic_fetch_xor(target, value);
+}
+
+/**
+ * @brief Atomic unsigned char AND.
+ */
+static inline unsigned char atomic_uchar_and(atomic_uchar_t *target,
+					     unsigned char value)
+{
+	return atomic_fetch_and(target, value);
+}
+
+/**
+ * @brief Atomic unsigned char NAND.
+ *
+ * C11 stdatomic has no fetch_nand, so use a CAS loop.
+ */
+static inline unsigned char atomic_uchar_nand(atomic_uchar_t *target,
+					      unsigned char value)
+{
+	unsigned char old_val = atomic_load(target);
+
+	while (!atomic_compare_exchange_weak(target, &old_val,
+					     (unsigned char)~(old_val & value))) {
+		/* old_val is updated by compare_exchange_weak on failure */
+	}
+	return old_val;
+}
+
+#else /* Tier 2: C++ mode or no C11 - use GCC __atomic_* builtins */
+
+/**
+ * @brief Atomic unsigned char compare-and-set.
+ */
+static inline bool atomic_uchar_cas(atomic_uchar_t *target,
+				    unsigned char old_value,
+				    unsigned char new_value)
+{
+	return __atomic_compare_exchange_n(target, &old_value, new_value,
+					   0, __ATOMIC_SEQ_CST,
+					   __ATOMIC_SEQ_CST);
+}
+
+/**
+ * @brief Atomic unsigned char addition.
+ */
+static inline unsigned char atomic_uchar_add(atomic_uchar_t *target,
+					     unsigned char value)
+{
+	return __atomic_fetch_add(target, value, __ATOMIC_SEQ_CST);
+}
+
+/**
+ * @brief Atomic unsigned char subtraction.
+ */
+static inline unsigned char atomic_uchar_sub(atomic_uchar_t *target,
+					     unsigned char value)
+{
+	return __atomic_fetch_sub(target, value, __ATOMIC_SEQ_CST);
+}
+
+/**
+ * @brief Atomic unsigned char increment.
+ */
+static inline unsigned char atomic_uchar_inc(atomic_uchar_t *target)
+{
+	return __atomic_fetch_add(target, 1, __ATOMIC_SEQ_CST);
+}
+
+/**
+ * @brief Atomic unsigned char decrement.
+ */
+static inline unsigned char atomic_uchar_dec(atomic_uchar_t *target)
+{
+	return __atomic_fetch_sub(target, 1, __ATOMIC_SEQ_CST);
+}
+
+/**
+ * @brief Atomic unsigned char get.
+ */
+static inline unsigned char atomic_uchar_get(const atomic_uchar_t *target)
+{
+	return __atomic_load_n(target, __ATOMIC_SEQ_CST);
+}
+
+/**
+ * @brief Atomic unsigned char set.
+ */
+static inline unsigned char atomic_uchar_set(atomic_uchar_t *target,
+					     unsigned char value)
+{
+	return __atomic_exchange_n(target, value, __ATOMIC_SEQ_CST);
+}
+
+/**
+ * @brief Atomic unsigned char clear.
+ */
+static inline unsigned char atomic_uchar_clear(atomic_uchar_t *target)
+{
+	return __atomic_exchange_n(target, 0, __ATOMIC_SEQ_CST);
+}
+
+/**
+ * @brief Atomic unsigned char OR.
+ */
+static inline unsigned char atomic_uchar_or(atomic_uchar_t *target,
+					    unsigned char value)
+{
+	return __atomic_fetch_or(target, value, __ATOMIC_SEQ_CST);
+}
+
+/**
+ * @brief Atomic unsigned char XOR.
+ */
+static inline unsigned char atomic_uchar_xor(atomic_uchar_t *target,
+					     unsigned char value)
+{
+	return __atomic_fetch_xor(target, value, __ATOMIC_SEQ_CST);
+}
+
+/**
+ * @brief Atomic unsigned char AND.
+ */
+static inline unsigned char atomic_uchar_and(atomic_uchar_t *target,
+					     unsigned char value)
+{
+	return __atomic_fetch_and(target, value, __ATOMIC_SEQ_CST);
+}
+
+/**
+ * @brief Atomic unsigned char NAND.
+ */
+static inline unsigned char atomic_uchar_nand(atomic_uchar_t *target,
+					      unsigned char value)
+{
+	return __atomic_fetch_nand(target, value, __ATOMIC_SEQ_CST);
+}
+
+#endif /* CONFIG_RISCV || CONFIG_XTENSA */
+
 /* Portable higher-level utilities: */
 
 /**
