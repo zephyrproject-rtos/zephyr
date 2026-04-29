@@ -753,6 +753,32 @@ config TIMEOUT_64BIT
 	  availability of absolute timeout values (which require the
 	  extra precision).
 
+config TIMEOUT_USE_MIN_HEAP
+	bool "Use min-heap data structure for timeout queue"
+	depends on SYS_CLOCK_EXISTS && TIMEOUT_64BIT
+	default n
+	help
+	  When enabled, the kernel timeout subsystem uses a binary min-heap
+	  instead of the default doubly-linked list.
+	  If unsure, leave disabled (default dlist behaviour).
+
+config TIMEOUT_HEAP_MAX_ENTRIES
+	int "Maximum simultaneous pending timeouts in heap"
+	depends on TIMEOUT_USE_MIN_HEAP
+	default 128
+	help
+	  Static capacity of the timeout min-heap array.
+
+	  Set this to peak number of simultaneously pending timeouts
+	  your application requires. As a starting point, count:
+		- Active threads (each may have one pending timeout)
+		- Active k_timer instances
+		- Delayable work items
+		- Network socket timeouts
+
+	  Overflow causes k_panic() at runtime. If you see unexpected
+	  panics, increase this value and rebuild.
+
 config SYS_CLOCK_MAX_TIMEOUT_DAYS
 	int "Max timeout (in days) used in conversions"
 	default 365
