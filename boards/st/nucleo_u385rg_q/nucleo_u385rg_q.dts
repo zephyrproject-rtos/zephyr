@@ -73,22 +73,22 @@
 			reg = <0x00000000 DT_SIZE_K(64)>;
 		};
 
-		slot0_partition: partition@c000 {
+		slot0_partition: partition@10000 {
 			compatible = "zephyr,mapped-partition";
 			label = "image-0";
-			reg = <0x0000c000 DT_SIZE_K(472)>;
+			reg = <0x00010000 DT_SIZE_K(472)>;
 		};
 
-		slot1_partition: partition@44000 {
+		slot1_partition: partition@86000 {
 			compatible = "zephyr,mapped-partition";
 			label = "image-1";
-			reg = <0x00044000 DT_SIZE_K(476)>;
+			reg = <0x00086000 DT_SIZE_K(476)>;
 		};
 
 		storage_partition: partition@fd000 {
 			compatible = "zephyr,mapped-partition";
 			label = "storage";
-			reg = <0x0007d000 DT_SIZE_K(12)>;
+			reg = <0x000fd000 DT_SIZE_K(12)>;
 		};
 	};
 };
