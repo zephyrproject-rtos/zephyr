@@ -1869,17 +1869,17 @@ void bt_conn_connected(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BT_CLASSIC)
-void bt_conn_role_changed(struct bt_conn *conn, uint8_t status)
+void bt_conn_br_role_changed(struct bt_conn *conn, uint8_t status)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
-		if (callback->role_changed) {
-			callback->role_changed(conn, status);
+		if (callback->br.role_changed) {
+			callback->br.role_changed(conn, status);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
-		if (cb->role_changed) {
-			cb->role_changed(conn, status);
+		if (cb->br.role_changed) {
+			cb->br.role_changed(conn, status);
 		}
 	}
 }
@@ -4657,17 +4657,15 @@ int bt_conn_br_exit_sniff_mode(struct bt_conn *conn)
 
 void bt_conn_notify_mode_changed(struct bt_conn *conn, uint8_t mode, uint16_t interval)
 {
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
-		if (callback->br_mode_changed) {
-			callback->br_mode_changed(conn, mode, interval);
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
+		if (callback->br.mode_changed) {
+			callback->br.mode_changed(conn, mode, interval);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
-		if (cb->br_mode_changed) {
-			cb->br_mode_changed(conn, mode, interval);
+		if (cb->br.mode_changed) {
+			cb->br.mode_changed(conn, mode, interval);
 		}
 	}
 }
