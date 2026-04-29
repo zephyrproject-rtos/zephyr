@@ -9,11 +9,12 @@ This provides parsing of domains yaml file and creation of objects of the
 Domain class.
 '''
 
+import logging
+import os
 from dataclasses import dataclass
 
-import yaml
 import pykwalify.core
-import logging
+import yaml
 
 DOMAINS_SCHEMA = '''
 ## A pykwalify schema for basic validation of the structure of a
@@ -59,7 +60,7 @@ logger.addHandler(handler)
 
 class Domains:
 
-    def __init__(self, data: dict):
+    def __init__(self, data: dict, base_dir: str | None = None):
         try:
             pykwalify.core.Core(source_data=data,
                                 schema_data=schema).validate()
@@ -67,9 +68,10 @@ class Domains:
             logger.critical(f'malformed domains.yaml: {e}')
             exit(1)
 
-        self._build_dir = data['build_dir']
+        self._build_dir = self._resolve_build_dir(data['build_dir'], base_dir)
+        domain_base_dir = self._build_dir if base_dir is not None else None
         self._domains = {
-            d['name']: Domain(d['name'], d['build_dir'])
+            d['name']: Domain(d['name'], self._resolve_build_dir(d['build_dir'], domain_base_dir))
             for d in data['domains']
         }
 
@@ -79,6 +81,13 @@ class Domains:
         # the common checks in self.get_domain to verify this.
         self._default_domain = self.get_domain(data['default'])
         self._flash_order = self.get_domains(data.get('flash_order', []))
+
+    @staticmethod
+    def _resolve_build_dir(build_dir: str, base_dir: str | None = None) -> str:
+        if base_dir is None or os.path.isabs(build_dir):
+            return build_dir
+
+        return os.path.normpath(os.path.join(base_dir, build_dir))
 
     @staticmethod
     def from_file(domains_file):
@@ -91,15 +100,15 @@ class Domains:
             logger.critical(f'domains.yaml file not found: {domains_file}')
             exit(1)
 
-        return Domains.from_yaml(domains_yaml)
+        return Domains.from_yaml(domains_yaml, os.path.dirname(os.path.abspath(domains_file)))
 
     @staticmethod
-    def from_yaml(domains_yaml):
+    def from_yaml(domains_yaml, base_dir: str | None = None):
         '''Load domains from a string with YAML contents.
         '''
         try:
             domains_yaml = yaml.safe_load(domains_yaml)
-            return Domains(domains_yaml)
+            return Domains(domains_yaml, base_dir)
         except yaml.YAMLError as e:
             logger.critical(f'Invalid domains.yaml: {e}')
             exit(1)
