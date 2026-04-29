@@ -8,275 +8,101 @@ ARM System Control and Management Interface
 Overview
 ********
 
-What is SCMI?
-=============
-
 System Control and Management Interface (SCMI) is a specification developed by
 ARM, which describes a set of OS-agnostic software interfaces used to perform
-system management (e.g: clock control, pinctrl, etc...).
+system management (e.g: clock control, pinctrl, etc...). In this context, Zephyr
+acts as an SCMI agent.
 
+Supported protocols
+*******************
 
-Agent, platform, protocol and transport
-=======================================
+The set of supported **standard** [#]_ protocols is summarized below:
 
-The SCMI specification defines **four** key terms, which will also be used throughout
-this documentation:
+.. list-table::
+   :align: center
 
-#. Agent
-	Entity that performs SCMI requests (e.g: gating a clock or configuring
-	a pin). In this context, Zephyr itself is an agent.
+   * - ID
+     - Name
+     - Supported version
 
-#. Platform
-	This refers to a set of hardware components that handle the requests from
-	agents and provide the necessary functionality. In some cases, the requests
-	are handled by a firmware, running on a core dedicated to performing system
-	management tasks.
+   * - 0x11
+     - Power domain management protocol
+     - 3.1
 
-#. Protocol
-	A protocol is a set of messages grouped by functionality. Intuitively, a message
-	can be thought of as a remote procedure call.
+   * - 0x12
+     - System power management protocol
+     - 2.1
 
-	The SCMI specification defines ten standard protocols:
+   * - 0x14
+     - Clock management protocol
+     - 3.0
 
-	#. **Base** (0x10)
-	#. **Power domain management** (0x11)
-	#. **System power management** (0x12)
-	#. **Performance domain management** (0x13)
-	#. **Clock management** (0x14)
-	#. **Sensor management** (0x15)
-	#. **Reset domain management** (0x16)
-	#. **Voltage domain management** (0x17)
-	#. **Power capping and monitoring** (0x18)
-	#. **Pin Control** (0x19)
-
-	where each of these protocols is identified by an unique protocol ID
-	(listed between brackets).
-
-	Apart from the standard protocols, the SCMI specification reserves the
-	**0x80-0xFF** protocol ID range for vendor-specific protocols.
-
-#. Transport
-	This describes how messages are exchanged between agents and the platform.
-	The communication itself happens through channels.
+   * - 0x19
+     - Pin Control protocol
+     - 1.0
 
 .. note::
-	A system may have more than one agent.
 
-Channels
-========
+   The Zephyr implementation may only include a subset of the protocol commands.
 
-A **channel** is the medium through which agents and the platform exchange messages.
-The structure of a channel and the way it works is solely dependent on the transport.
+Supported transports
+********************
 
-Each agent has its own distinct set of channels, meaning some channel A cannot be used
-by two different agents for example.
+The set of supported transports is summarized below:
 
-Channels are **bidirectional** (exception: FastChannels), and, depending on which entity
-initiates the communication, can be one of **two** types:
+.. list-table::
+   :align: center
 
-#. A2P (agent to platform)
-	The agent is the initiator/requester. The messages passed through these
-	channels are known as **commands**.
+   * - Name
+     - Compatible
 
-#. P2A (platform to agent)
-	The platform is the initiator/requester.
+   * - Shared memory with MBOX-based doorbell
+     - :dtcompatible:`arm,scmi`
 
-Messages
-========
+   * - Shared memory with SMC-based doorbell
+     - :dtcompatible:`arm,scmi-smc`
 
-The SCMI specification defines **four** types of messages:
+Vendor extensions
+*****************
 
-#. Synchronous
-	These are commands that block until the platform has completed the
-	requested work and are sent over A2P channels.
+The SCMI specification allows vendors to introduce additional protocols and
+provides a degree of freedom with respect to how certain structure fields are
+used. In the context of this documentation, these are collectively known as
+**vendor extensions**. Below you may find a list of all vendor extensions
+currently supported in Zephyr.
 
-#. Asynchronous
-	For these commands, the platform schedules the requested work to
-	be performed at a later time. As such, they return almost immediately.
-	These commands are sent over A2P channels.
+NXP
+===
 
-#. Delayed response
-	These messages indicate the completion of the work associated
-	with an asynchronous command. These are sent over P2A channels.
+**Overview**
 
-#. Notification
-	These messages are used to notify agents of events that take place on
-	the platform. These are sent over P2A channels.
+NXP provides an SCMI-compliant platform firmware known as **System Manager (SM)**.
 
-The Zephyr support for SCMI is based on the documentation provided by ARM:
-`DEN0056E <https://developer.arm.com/documentation/den0056/latest/>`_. For more details
-on the specification, the readers are encouraged to have a look at it.
+**Specification**
 
-SCMI support in Zephyr
-**********************
+You may find the specification for the SM firmware `here <https://github.com/nxp-imx/imx-sm>`__.
 
-Shared memory and doorbell-based transport
-==========================================
+**Supported protocols**
 
-This form of transport uses shared memory for reading/writing messages
-and doorbells for signaling. The interaction with the shared
-memory area is performed using a driver (:file:`drivers/firmware/scmi/shmem.c`),
-which offers a set of functions for this exact purpose. Furthermore,
-signaling is performed using the Zephyr MBOX API (signaling mode only, no message passing).
+The set of supported NXP-specific protocols is summarized below:
 
-Interacting with the shared memory area and signaling are abstracted by the
-transport API, which is implemented by the shared memory and doorbell-based
-transport driver (:file:`drivers/firmware/scmi/mailbox.c`).
+.. list-table::
+   :align: center
 
-The steps below exemplify how the communication between the Zephyr agent
-and the platform may happen using this transport:
+   * - ID
+     - Name
+     - Supported version
 
-#. Write message to the shared memory area.
-#. Zephyr rings request doorbell. If in ``PRE_KERNEL_1`` or ``PRE_KERNEL_2`` phase start polling for reply, otherwise wait for reply doorbell ring.
-#. Platform reads message from shared memory area, processes it, writes the reply back to the same area and rings the reply doorbell.
-#. Zephyr reads reply from the shared memory area.
+   * - 0x82
+     - CPU
+     - 1.0
 
-In the context of this transport, a channel is comprised of a **single** shared
-memory area and one or more mailbox channels. This is because users may need/want
-to use different mailbox channels for the request/reply doorbells.
+**Quirks**
 
+All NXP-related quirks are controlled via :kconfig:option:`CONFIG_ARM_SCMI_NXP_VENDOR_EXTENSIONS`.
 
-Protocols
-=========
+#. Depending on the platform firmware configuration, the shared memory area may
+   also include a CRC of the message.
 
-Currently, Zephyr has support for the following standard protocols:
-
-#. **Power domain management**
-#. **System power management**
-#. **Clock management**
-#. **Pin Control**
-
-NXP-specific protocols:
-
-#. **CPU domain management**
-
-Power domain management
------------------------
-
-This protocol is intended for management of power states of power domains.
-This is done via a set of functions implementing various commands, for
-example, ``POWER_STATE_GET`` and ``POWER_STATE_SET``.
-
-.. note::
-	This driver is vendor-agnostic. As such, it may be used on any
-	system that uses SCMI for power domain management operations.
-
-.. doxygengroup:: scmi_power
-
-System power management
------------------------
-
-This protocol is intended for system power management. This is done via a set
-of functions implementing various commands, for example, ``SYSTEM_POWER_STATE_SET``.
-
-.. note::
-	This driver is vendor-agnostic. As such, it may be used on any
-	system that uses SCMI for system power management operations.
-
-.. doxygengroup:: scmi_system
-
-Clock management
-----------------
-
-This protocol is used to perform clock management operations. This is done
-via a driver (:file:`drivers/clock_control/clock_control_arm_scmi.c`), which
-implements the Zephyr clock control subsystem API. As such, from the user's
-perspective, using this driver is no different than using any other clock
-management driver.
-
-.. note::
-	This driver is vendor-agnostic. As such, it may be used on any
-	system that uses SCMI for clock management operations.
-
-Pin Control
------------
-
-This protocol is used to perform pin configuration operations. This is done
-via a set of functions implementing various commands. Currently, the only
-supported command is ``PINCTRL_SETTINGS_CONFIGURE``.
-
-.. note::
-	The support for this protocol **does not** include a definition for
-	the :code:`pinctrl_configure_pins` function. Each vendor should use
-	their own definition of :code:`pinctrl_configure_pins`, which should
-	call into the SCMI pin control protocol function implementing the
-	``PINCTRL_SETTINGS_CONFIGURE`` command.
-
-.. doxygengroup:: scmi_pinctrl
-
-NXP - CPU domain management
----------------------------
-
-This protocol is intended for management of cpu states.
-This is done via a set of functions implementing various commands, for
-example, ``CPU_SLEEP_MODE_SET``.
-
-.. note::
-	This driver is NXP-specific. As such, it may only be used on NXP
-	system that uses SCMI for cpu domain management operations.
-
-Enabling the SCMI support
-*************************
-
-To use the SCMI support, each vendor is required to add an ``scmi`` DT
-node (used for transport driver binding) and a ``protocol`` node under the ``scmi``
-node for each supported protocol.
-
-.. note::
-	Zephyr has no support for protocol discovery. As such, if users
-	add a DT node for a certain protocol it's assumed the platform
-	supports said protocol.
-
-The example below shows how a DT may be configured in order to use the
-SCMI support. It's assumed that the only protocol required is the clock
-management protocol.
-
-.. code-block:: devicetree
-
-	#include <mem.h>
-
-	#define MY_CLOCK_CONSUMER_CLK_ID 123
-
-	scmi_res0: memory@cafebabe {
-		/* mandatory to use shared memory driver */
-		compatible = "arm,scmi-shmem";
-		reg = <0xcafebabe DT_SIZE_K(1)>;
-	};
-
-	scmi {
-		/* compatible for shared memory and doorbell-based transport */
-		compatible = "arm,scmi";
-
-		/* one SCMI channel => A2P/transmit channel */
-		shmem = <&scmi_res0>;
-
-		/* two mailbox channels */
-		mboxes = <&my_mbox_ip 0>, <&my_mbox_ip 1>;
-		mbox-names = "tx", "tx_reply";
-
-		scmi_clk: protocol@14 {
-			compatible = "arm,scmi-clock";
-
-			/* matches the clock management protocol ID */
-			reg = <0x14>;
-
-			/* vendor-agnostic - always 1 */
-			#clock-cells = <1>;
-		};
-	};
-
-	my_mbox_ip: mailbox@deadbeef {
-		compatible = "vnd,mbox-ip";
-		reg = <0xdeadbeef DT_SIZE_K(1)>;
-		#mbox-cells = <1>;
-	};
-
-	my_clock_consumer_ip: serial@12345678 {
-		compatible = "vnd,consumer-ip";
-		reg = <0x12345678 DT_SIZE_K(1)>;
-		/* clock ID is vendor specific */
-		clocks = <&scmi_clk MY_CLOCK_CONSUMER_CLK_ID>;
-	};
-
-
-Finally, all that's left to do is enable :kconfig:option:`CONFIG_ARM_SCMI`.
+.. [#] Meaning protocols covered by the SCMI specification. Also known as generic
+       protocols.
