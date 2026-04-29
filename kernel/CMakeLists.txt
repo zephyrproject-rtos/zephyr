@@ -142,7 +142,7 @@ set_target_properties(
   )
 
 target_sources_ifdef(CONFIG_REQUIRES_STACK_CANARIES   kernel PRIVATE compiler_stack_protect.c)
-target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      kernel PRIVATE timeout.c timer.c)
+target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      kernel PRIVATE timeout_common.c timeout.c timer.c)
 if(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME OR CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
   target_sources(kernel PRIVATE sys_clock_hw_cycles.c)
 endif()
