@@ -15,15 +15,16 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
+#if defined(CONFIG_CLOCK_CONTROL_NRF) || defined(CONFIG_CLOCK_CONTROL_NRFX_COMMON)
 
 #include <hal/nrf_clock.h>
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 /** @brief Clocks handled by the CLOCK peripheral.
  *
  * Enum shall be used as a sys argument in clock_control API.
  */
-enum clock_control_nrf_type {
+enum __deprecated clock_control_nrf_type {
 	CLOCK_CONTROL_NRF_TYPE_HFCLK,
 	CLOCK_CONTROL_NRF_TYPE_LFCLK,
 #if NRF_CLOCK_HAS_HFCLK24M
@@ -42,15 +43,60 @@ enum clock_control_nrf_type {
  * increase code readability.
  */
 #define CLOCK_CONTROL_NRF_SUBSYS_HF \
-	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK)
+	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK) __DEPRECATED_MACRO
 #define CLOCK_CONTROL_NRF_SUBSYS_LF \
-	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_LFCLK)
+	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_LFCLK) __DEPRECATED_MACRO
 #define CLOCK_CONTROL_NRF_SUBSYS_HF24M \
-	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK24M)
+	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK24M) __DEPRECATED_MACRO
 #define CLOCK_CONTROL_NRF_SUBSYS_HF192M \
-	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK192M)
+	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK192M) __DEPRECATED_MACRO
 #define CLOCK_CONTROL_NRF_SUBSYS_HFAUDIO \
-	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLKAUDIO)
+	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLKAUDIO) __DEPRECATED_MACRO
+
+/* Define 32KHz clock source */
+#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC
+#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_RC __DEPRECATED_MACRO
+#endif
+#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_XTAL
+#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_XTAL __DEPRECATED_MACRO
+#endif
+#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_SYNTH
+#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_SYNTH __DEPRECATED_MACRO
+#endif
+#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_LOW_SWING
+#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_XTAL_LOW_SWING __DEPRECATED_MACRO
+#endif
+#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_FULL_SWING
+#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_XTAL_FULL_SWING __DEPRECATED_MACRO
+#endif
+
+/* Define 32KHz clock accuracy */
+#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_500PPM
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 0 __DEPRECATED_MACRO
+#endif
+#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_250PPM
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 1 __DEPRECATED_MACRO
+#endif
+#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_150PPM
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 2 __DEPRECATED_MACRO
+#endif
+#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_100PPM
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 3 __DEPRECATED_MACRO
+#endif
+#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_75PPM
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 4 __DEPRECATED_MACRO
+#endif
+#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_50PPM
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 5 __DEPRECATED_MACRO
+#endif
+#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_30PPM
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 6 __DEPRECATED_MACRO
+#endif
+#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_20PPM
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 7 __DEPRECATED_MACRO
+#endif
+
+#endif /* defined(CONFIG_CLOCK_CONTROL_NRF) */
 
 /** @brief LF clock start modes. */
 enum nrf_lfclk_start_mode {
@@ -59,55 +105,13 @@ enum nrf_lfclk_start_mode {
 	CLOCK_CONTROL_NRF_LF_START_STABLE,
 };
 
-/* Define 32KHz clock source */
-#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC
-#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_RC
-#endif
-#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_XTAL
-#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_XTAL
-#endif
-#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_SYNTH
-#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_SYNTH
-#endif
-#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_LOW_SWING
-#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_XTAL_LOW_SWING
-#endif
-#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_FULL_SWING
-#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_XTAL_FULL_SWING
-#endif
-
-/* Define 32KHz clock accuracy */
-#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_500PPM
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 0
-#endif
-#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_250PPM
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 1
-#endif
-#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_150PPM
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 2
-#endif
-#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_100PPM
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 3
-#endif
-#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_75PPM
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 4
-#endif
-#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_50PPM
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 5
-#endif
-#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_30PPM
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 6
-#endif
-#ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_20PPM
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 7
-#endif
-
 /** @brief Force LF clock calibration. */
 void z_nrf_clock_calibration_force_start(void);
 
 /** @brief Return number of calibrations performed.
  *
- * Valid when @kconfig{CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG} is set.
+ * Valid when @kconfig{CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG} or
+ * @kconfig{CONFIG_CLOCK_CONTROL_NRFX_CALIBRATION_DEBUG} is set.
  *
  * @return Number of calibrations or -1 if feature is disabled.
  */
@@ -115,7 +119,8 @@ int z_nrf_clock_calibration_count(void);
 
 /** @brief Return number of attempts when calibration was skipped.
  *
- * Valid when @kconfig{CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG} is set.
+ * Valid when @kconfig{CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG} or
+ * @kconfig{CONFIG_CLOCK_CONTROL_NRFX_CALIBRATION_DEBUG} is set.
  *
  * @return Number of calibrations or -1 if feature is disabled.
  */
@@ -128,13 +133,15 @@ int z_nrf_clock_calibration_skips_count(void);
  */
 bool z_nrf_clock_calibration_is_in_progress(void);
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 /** @brief Get onoff service for given clock subsystem.
  *
  * @param sys Subsystem.
  *
  * @return Service handler or NULL.
  */
-struct onoff_manager *z_nrf_clock_control_get_onoff(clock_control_subsys_t sys);
+struct onoff_manager __deprecated *z_nrf_clock_control_get_onoff(clock_control_subsys_t sys);
+#endif
 
 /** @brief Permanently enable low frequency clock.
  *
@@ -173,7 +180,7 @@ void z_nrf_clock_bt_ctlr_hf_release(void);
  */
 uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void);
 
-#endif /* defined(CONFIG_CLOCK_CONTROL_NRF) */
+#endif /* CONFIG_CLOCK_CONTROL_NRFX_COMMON */
 
 /* Specifies to use the maximum available frequency for a given clock. */
 #define NRF_CLOCK_CONTROL_FREQUENCY_MAX UINT32_MAX

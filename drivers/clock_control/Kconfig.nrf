@@ -16,11 +16,17 @@ config CLOCK_CONTROL_NRFX_COMMON
 
 menuconfig CLOCK_CONTROL_NRF
 	bool "NRF Clock controller support"
-	default y
+	default n
 	depends on DT_HAS_NORDIC_NRF_CLOCK_ENABLED
-	select CLOCK_CONTROL_NRFX_COMMON
-	select NRFX_CLOCK if !CLOCK_CONTROL_NRF_FORCE_ALT
 	select ONOFF
+	select NRFX_CLOCK if !CLOCK_CONTROL_NRF_FORCE_ALT
+	select NRFX_CLOCK_HFCLK if !CLOCK_CONTROL_NRF_FORCE_ALT
+	select NRFX_CLOCK_HFCLK192M if !CLOCK_CONTROL_NRF_FORCE_ALT
+	select NRFX_CLOCK_HFCLKAUDIO if !CLOCK_CONTROL_NRF_FORCE_ALT
+	select NRFX_CLOCK_LFCLK if !CLOCK_CONTROL_NRF_FORCE_ALT
+	select NRFX_CLOCK_XO if !CLOCK_CONTROL_NRF_FORCE_ALT
+	select NRFX_CLOCK_XO24M if !CLOCK_CONTROL_NRF_FORCE_ALT
+	select DEPRECATED
 	help
 	  Enable support for the Nordic Semiconductor nRFxx series SoC clock
 	  driver.
@@ -211,16 +217,160 @@ config CLOCK_CONTROL_NRF_ACCURACY
 
 endif # CLOCK_CONTROL_NRF
 
-config CLOCK_CONTROL_NRF_AUXPLL
-	bool "nRF Auxiliary PLL driver"
+if !CLOCK_CONTROL_NRF
+
+config CLOCK_CONTROL_NRFX_HFCLK
+	bool "NRF HFCLK driver support"
+	depends on DT_HAS_NORDIC_NRF_CLOCK_HFCLK_ENABLED
+	select CLOCK_CONTROL_NRFX_COMMON
+	select NRFX_CLOCK_HFCLK if !CLOCK_CONTROL_NRF_FORCE_ALT
 	default y
-	depends on DT_HAS_NORDIC_NRF_AUXPLL_ENABLED
-	select CLOCK_CONTROL_NRFX if ! NRF_PLATFORM_HALTIUM
+
+config CLOCK_CONTROL_NRFX_HFCLK192M
+	bool "NRF HFCLK192M driver support"
+	depends on DT_HAS_NORDIC_NRF_CLOCK_HFCLK192M_ENABLED
+	select CLOCK_CONTROL_NRFX_COMMON
+	select NRFX_CLOCK_HFCLK192M if !CLOCK_CONTROL_NRF_FORCE_ALT
+	default y
+
+config CLOCK_CONTROL_NRFX_HFCLKAUDIO
+	bool "NRF HFCLKAUDIO driver support"
+	depends on DT_HAS_NORDIC_NRF_CLOCK_HFCLKAUDIO_ENABLED
+	select CLOCK_CONTROL_NRFX_COMMON
+	select NRFX_CLOCK_HFCLKAUDIO if !CLOCK_CONTROL_NRF_FORCE_ALT
+	default y
+
+config CLOCK_CONTROL_NRFX_LFCLK
+	bool "NRF LFCLK driver support"
+	depends on DT_HAS_NORDIC_NRF_CLOCK_LFCLK_ENABLED
+	select CLOCK_CONTROL_NRFX_COMMON
+	select NRFX_CLOCK_LFCLK if !CLOCK_CONTROL_NRF_FORCE_ALT
+	default y
+
+if CLOCK_CONTROL_NRFX_LFCLK
+
+config CLOCK_CONTROL_NRFX_K32SRC_RC_CALIBRATION
+	bool "LF clock calibration"
+	depends on !SOC_SERIES_NRF91X && \
+	$(dt_node_str_prop_equals,$(dt_nodelabel_path,lfclk),k32src,rc)
+	default y if !SOC_NRF53_CPUNET_ENABLE
+	help
+	  If calibration is disabled when RC is used for low frequency clock then
+	  accuracy of the low frequency clock will degrade. Disable on your own
+	  risk.
+
+if CLOCK_CONTROL_NRFX_K32SRC_RC_CALIBRATION
+
+config CLOCK_CONTROL_NRFX_DRIVER_CALIBRATION
+	bool
+	depends on !CLOCK_CONTROL_NRF_FORCE_ALT
+	depends on MULTITHREADING
+	default y
+	help
+	  Enabling indicates that calibration is performed by the clock control driver.
+
+config CLOCK_CONTROL_NRFX_CALIBRATION_LF_ALWAYS_ON
+	bool "LF clock is always on"
+	default y if NRF_RTC_TIMER || NRF_GRTC_TIMER
+	help
+	  If RTC or GRTC is used as system timer then LF clock is always on and handling
+	  can be simplified.
+
+config CLOCK_CONTROL_NRFX_CALIBRATION_PERIOD
+	int "Calibration opportunity period in milliseconds"
+	default 4000
+	help
+	  Periodically, calibration action is performed. Action includes
+	  temperature measurement followed by clock calibration. Calibration may
+	  be skipped if temperature change (compared to measurement of previous
+	  calibration) did not exceeded CLOCK_CONTROL_NRFX_CALIBRATION_TEMP_DIFF
+	  and number of consecutive skips did not exceeded
+	  CLOCK_CONTROL_NRFX_CALIBRATION_MAX_SKIP.
+
+config CLOCK_CONTROL_NRFX_CALIBRATION_MAX_SKIP
+	int "Maximum number of calibration skips"
+	default 1
+	range 0 $(UINT8_MAX)
+	help
+	  Calibration is skipped when temperature change since last calibration
+	  was less than configured threshold. If number of consecutive skips
+	  reaches configured value then calibration is performed
+	  unconditionally. Set to 0 to perform calibration periodically
+	  regardless of temperature change.
+
+config CLOCK_CONTROL_NRFX_CALIBRATION_TEMP_DIFF
+	int "Temperature change triggering calibration (in 0.25 degree units)"
+	default 2
+	help
+	  Calibration is triggered if the temperature has changed by at least
+	  this amount since the last calibration.
+
+if CLOCK_CONTROL_NRFX_DRIVER_CALIBRATION
+
+config CLOCK_CONTROL_NRFX_CALIBRATION_DEBUG
+	bool "Calibration instrumentation"
+	help
+	  Enables retrieving debug information like number of performed or
+	  skipped calibrations.
+
+config CLOCK_CONTROL_NRFX_USES_TEMP_SENSOR
+	bool
+	depends on HAS_HW_NRF_TEMP
+	default y if CLOCK_CONTROL_NRFX_CALIBRATION_MAX_SKIP > 0 && \
+		CLOCK_CONTROL_NRFX_CALIBRATION_TEMP_DIFF > 0
+	select TEMP_NRF5
+	select SENSOR
+
+endif # CLOCK_CONTROL_NRFX_DRIVER_CALIBRATION
+endif # CLOCK_CONTROL_NRFX_K32SRC_RC_CALIBRATION
+
+config CLOCK_CONTROL_NRFX_HFINT_CALIBRATION
+	bool "HFINT clock calibration"
+	depends on DT_HAS_NORDIC_NRF54L_HFXO_ENABLED
+	depends on !TRUSTED_EXECUTION_NONSECURE
+	select EXPERIMENTAL
+	help
+	  Enables calibration of HFINT clock on every start of HFXO clock.
+
+if CLOCK_CONTROL_NRFX_HFINT_CALIBRATION
+
+config CLOCK_CONTROL_NRFX_HFINT_CALIBRATION_PERIOD
+	int "HFINT clock calibration period in milliseconds"
+	default 60000
+	help
+	  Periodically, HFINT clock calibration is performed.
+	  This includes requesting HFXO clock and starting actual calibration.
+	  Once the calibration is finished, the HFXO clock is released.
+	  Set to 0 to disable periodic calibration - in such case calibration
+	  will be done only when HFXO is started by the application itself.
+
+endif # CLOCK_CONTROL_NRFX_HFINT_CALIBRATION
+endif # CLOCK_CONTROL_NRFX_LFCLK
+
+config CLOCK_CONTROL_NRFX_XO
+	bool "NRF XO driver support"
+	depends on DT_HAS_NORDIC_NRF_CLOCK_XO_ENABLED
+	select CLOCK_CONTROL_NRFX_COMMON
+	select NRFX_CLOCK_XO if !CLOCK_CONTROL_NRF_FORCE_ALT
+	default y
+
+config CLOCK_CONTROL_NRFX_XO24M
+	bool "NRF XO242M driver support"
+	depends on DT_HAS_NORDIC_NRF_CLOCK_XO24M_ENABLED
+	select CLOCK_CONTROL_NRFX_COMMON
+	select NRFX_CLOCK_XO24M if !CLOCK_CONTROL_NRF_FORCE_ALT
+	default y
+endif # !CLOCK_CONTROL_NRF
 
 config CLOCK_CONTROL_NRF_COMMON
 	bool
 	depends on HAS_NORDIC_DRIVERS
 	select ONOFF
+
+config CLOCK_CONTROL_NRF_AUXPLL
+	bool "nRF Auxiliary PLL driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_AUXPLL_ENABLED
 
 config CLOCK_CONTROL_NRF_HSFLL_GLOBAL
 	bool "Clock control for global HSFLL"

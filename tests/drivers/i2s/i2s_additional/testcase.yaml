@@ -12,6 +12,8 @@ tests:
   drivers.i2s.additional.gpio_loopback:
     harness_config:
       fixture: gpio_loopback
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=n
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
@@ -30,6 +32,7 @@ tests:
     harness_config:
       fixture: i2s_loopback
     extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=n
       - CONFIG_I2S_TEST_EIGHT_CHANNELS_32B_48K_UNSUPPORTED=y
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
@@ -40,6 +43,8 @@ tests:
     harness_config:
       fixture: i2s_loopback
     extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_aclk.overlay"
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=n
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
@@ -49,6 +54,64 @@ tests:
     harness_config:
       fixture: gpio_loopback
     extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf5340dk_nrf5340_cpuapp_aclk.overlay"
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=n
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+
+  drivers.i2s.additional.gpio_loopback.legacy:
+    harness_config:
+      fixture: gpio_loopback
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_DEPRECATION_TEST=y
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
+
+  drivers.i2s.additional.gpio_loopback.54h.legacy:
+    harness_config:
+      fixture: i2s_loopback
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_DEPRECATION_TEST=y
+      - CONFIG_I2S_TEST_EIGHT_CHANNELS_32B_48K_UNSUPPORTED=y
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+
+  drivers.i2s.additional.gpio_loopback.54h.aclk.legacy:
+    harness_config:
+      fixture: i2s_loopback
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_aclk.overlay"
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_DEPRECATION_TEST=y
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+
+  drivers.i2s.additional.gpio_loopback.aclk.legacy:
+    harness_config:
+      fixture: gpio_loopback
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf5340dk_nrf5340_cpuapp_aclk.overlay"
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_DEPRECATION_TEST=y
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
     integration_platforms:

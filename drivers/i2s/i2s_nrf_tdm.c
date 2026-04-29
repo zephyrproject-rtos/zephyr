@@ -115,8 +115,9 @@ struct tdm_drv_cfg {
 };
 
 struct tdm_drv_data {
-#if CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL || DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
-	const struct device *audiopll;
+#if CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL || DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL) ||            \
+	((NRF_CLOCK_HAS_HFCLK24M || NRF_CLOCK_HAS_HFCLKAUDIO) && !CONFIG_CLOCK_CONTROL_NRF)
+	const struct device *audioclock;
 	struct nrf_clock_spec aclk_spec;
 #elif CONFIG_CLOCK_CONTROL_NRF
 	struct onoff_manager *clk_mgr;
@@ -145,7 +146,7 @@ static int audio_clock_request(struct tdm_drv_data *drv_data)
 	return onoff_request(drv_data->clk_mgr, &drv_data->clk_cli);
 #elif (DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL) || \
 	  DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
-	return nrf_clock_control_request(drv_data->audiopll, &drv_data->aclk_spec,
+	return nrf_clock_control_request(drv_data->audioclock, &drv_data->aclk_spec,
 					 &drv_data->clk_cli);
 #else
 	(void)drv_data;
@@ -160,7 +161,7 @@ static int audio_clock_release(struct tdm_drv_data *drv_data)
 	return onoff_release(drv_data->clk_mgr);
 #elif (DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL) || \
 	  DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
-	return nrf_clock_control_release(drv_data->audiopll, &drv_data->aclk_spec);
+	return nrf_clock_control_release(drv_data->audioclock, &drv_data->aclk_spec);
 #else
 	(void)drv_data;
 
@@ -1137,12 +1138,12 @@ static void clock_manager_init(const struct device *dev)
 #if DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL
 	struct tdm_drv_data *drv_data = dev->data;
 
-	drv_data->audiopll = DEVICE_DT_GET(NODE_ACLK);
+	drv_data->audioclock = DEVICE_DT_GET(NODE_ACLK);
 	drv_data->aclk_spec.frequency = ACLK_FREQUENCY;
 #elif DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
 	struct tdm_drv_data *drv_data = dev->data;
 
-	drv_data->audiopll = DEVICE_DT_GET(NODE_AUDIO_AUXPLL);
+	drv_data->audioclock = DEVICE_DT_GET(NODE_AUDIO_AUXPLL);
 	drv_data->aclk_spec.frequency = ACLK_FREQUENCY;
 #elif CONFIG_CLOCK_CONTROL_NRF && (NRF_CLOCK_HAS_HFCLKAUDIO || NRF_CLOCK_HAS_HFCLK24M)
 	clock_control_subsys_t subsys;
@@ -1152,6 +1153,21 @@ static void clock_manager_init(const struct device *dev)
 	IF_ENABLED(NRF_CLOCK_HAS_HFCLK24M, (subsys = CLOCK_CONTROL_NRF_SUBSYS_HF24M;))
 	drv_data->clk_mgr = z_nrf_clock_control_get_onoff(subsys);
 	__ASSERT_NO_MSG(drv_data->clk_mgr != NULL);
+#elif NRF_CLOCK_HAS_HFCLKAUDIO
+	struct tdm_drv_data *drv_data = dev->data;
+
+	IF_ENABLED(NRF_CLOCK_HAS_HFCLKAUDIO,
+		   (drv_data->audioclock = DEVICE_DT_GET_ONE(nordic_nrf_clock_hfclkaudio);))
+	drv_data->aclk_spec.frequency =
+		DT_PROP(DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_clock_hfclkaudio),
+			hfclkaudio_frequency);
+#elif NRF_CLOCK_HAS_HFCLK24M
+	struct tdm_drv_data *drv_data = dev->data;
+
+	IF_ENABLED(NRF_CLOCK_HAS_HFCLK24M,
+		   (drv_data->audioclock = DEVICE_DT_GET_ONE(nordic_nrf_clock_xo24m);))
+	drv_data->aclk_spec.frequency =
+		DT_PROP(DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_clock_xo24m), clock_frequency);
 #else
 	(void)dev;
 #endif /* CONFIG_CLOCK_CONTROL_NRF && (NRF_CLOCK_HAS_HFCLKAUDIO || NRF_CLOCK_HAS_HFCLK24M) */

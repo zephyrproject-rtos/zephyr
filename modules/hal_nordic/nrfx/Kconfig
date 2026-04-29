@@ -15,38 +15,84 @@ config NRFX_ADC
 
 config NRFX_CLOCK
 	bool "CLOCK driver"
-	depends on $(dt_nodelabel_exists,clock)
+	depends on $(dt_nodelabel_exists,clock) || \
+		   $(dt_nodelabel_exists,hfclk) || \
+		   $(dt_nodelabel_exists,hfclk192m) || \
+		   $(dt_nodelabel_exists,hfclkaudio) || \
+		   $(dt_nodelabel_exists,lfclk) || \
+		   $(dt_nodelabel_exists,xo) || \
+		   $(dt_nodelabel_exists,xo24m)
 
-if NRFX_CLOCK
+config NRFX_CLOCK_HFCLK
+	bool "HFCLK driver"
+	depends on $(dt_nodelabel_exists,hfclk) || CLOCK_CONTROL_NRF
+
+config NRFX_CLOCK_HFCLK192M
+	bool "HFCLK192M driver"
+	depends on $(dt_nodelabel_exists,hfclk192m) || CLOCK_CONTROL_NRF
+
+config NRFX_CLOCK_HFCLKAUDIO
+	bool "HFCLKAUDIO driver"
+	depends on $(dt_nodelabel_exists,hfclkaudio) || CLOCK_CONTROL_NRF
+
+config NRFX_CLOCK_LFCLK
+	bool "LFCLK driver"
+	depends on $(dt_nodelabel_exists,lfclk) || CLOCK_CONTROL_NRF
+
+if NRFX_CLOCK_LFCLK
+if CLOCK_CONTROL_NRF
 
 config NRFX_CLOCK_USE_LFRC_CALIBRATION
 	bool "Extend NRFX_CLOCK to use LFRC peripheral"
-
-config NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED
-	bool "Two stage start sequence of the low frequency clock"
+	select DEPRECATED
 
 config NRFX_CLOCK_LF_CAL_ENABLED
 	bool "LFRC Calibration enabled"
+	select DEPRECATED
 
 config NRFX_CLOCK_LF_SRC_RC
 	bool "RC Oscillator"
+	select DEPRECATED
 
 config NRFX_CLOCK_LF_SRC_XTAL
 	bool "Crystal Oscillator"
+	select DEPRECATED
 
 config NRFX_CLOCK_LF_SRC_SYNTH
-	depends on !SOC_SERIES_NRF91
+	depends on !SOC_SERIES_NRF91X
 	bool "Synthesized from HFCLK"
+	select DEPRECATED
 
 config NRFX_CLOCK_LF_SRC_LOW_SWING
-	depends on SOC_SERIES_NRF52
+	depends on SOC_SERIES_NRF52X
 	bool "External low swing"
+	select DEPRECATED
 
 config NRFX_CLOCK_LF_SRC_FULL_SWING
-	depends on SOC_SERIES_NRF52
+	depends on SOC_SERIES_NRF52X
 	bool "External full swing"
+	select DEPRECATED
 
-endif # NRFX_CLOCK
+config NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED
+	bool "Two stage start sequence of the low frequency clock"
+	select DEPRECATED
+
+endif # CLOCK_CONTROL_NRF
+
+if !CLOCK_CONTROL_NRF
+config NRFX_CLOCK_LFCLK_USE_LFRC_CALIBRATION
+	bool "Extend NRFX_CLOCK to use LFRC peripheral"
+
+endif # !CLOCK_CONTROL_NRF
+endif # NRFX_CLOCK_LFCLK
+
+config NRFX_CLOCK_XO
+	bool "XO driver"
+	depends on $(dt_nodelabel_exists,xo) || CLOCK_CONTROL_NRF
+
+config NRFX_CLOCK_XO24M
+	bool "XO24M driver"
+	depends on $(dt_nodelabel_exists,xo24m) || CLOCK_CONTROL_NRF
 
 config NRFX_COMP
 	bool "COMP driver"

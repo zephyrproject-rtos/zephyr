@@ -5,11 +5,14 @@ tests:
       - drivers
       - i2s
     filter: not CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=n
     platform_exclude:
       - nrf54h20dk/nrf54h20/cpuapp
       - mimxrt1060_evk/mimxrt1062/qspi
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
+
   drivers.i2s.speed.gpio_loopback:
     depends_on:
       - i2s
@@ -18,11 +21,14 @@ tests:
       - drivers
       - i2s
     filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=n
     platform_exclude:
       - nrf54h20dk/nrf54h20/cpuapp
     harness: ztest
     harness_config:
       fixture: gpio_loopback
+
   drivers.i2s.speed.gpio_loopback.aclk:
     depends_on:
       - i2s
@@ -31,11 +37,14 @@ tests:
       - drivers
       - i2s
     filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=n
     harness: ztest
     harness_config:
       fixture: gpio_loopback
     extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf5340dk_nrf5340_cpuapp_aclk.overlay"
     platform_allow: nrf5340dk/nrf5340/cpuapp
+
   drivers.i2s.speed.gpio_loopback.nrf54h:
     depends_on: i2s
     tags:
@@ -43,6 +52,72 @@ tests:
       - i2s
     harness_config:
       fixture: i2s_loopback
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=n
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+
+  drivers.i2s.speed.legacy:
+    depends_on: i2s
+    tags:
+      - drivers
+      - i2s
+    filter: not CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_DEPRECATION_TEST=y
+    platform_exclude:
+      - nrf54h20dk/nrf54h20/cpuapp
+      - mimxrt1060_evk/mimxrt1062/qspi
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
+
+  drivers.i2s.speed.gpio_loopback.legacy:
+    depends_on:
+      - i2s
+      - gpio
+    tags:
+      - drivers
+      - i2s
+    filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_DEPRECATION_TEST=y
+    platform_exclude:
+      - nrf54h20dk/nrf54h20/cpuapp
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+
+  drivers.i2s.speed.gpio_loopback.aclk.legacy:
+    depends_on:
+      - i2s
+      - gpio
+    tags:
+      - drivers
+      - i2s
+    filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_DEPRECATION_TEST=y
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf5340dk_nrf5340_cpuapp_aclk.overlay"
+    platform_allow: nrf5340dk/nrf5340/cpuapp
+
+  drivers.i2s.speed.gpio_loopback.nrf54h.legacy:
+    depends_on: i2s
+    tags:
+      - drivers
+      - i2s
+    harness_config:
+      fixture: i2s_loopback
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_DEPRECATION_TEST=y
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:

@@ -6,5 +6,19 @@ tests:
     tags: cmsis_rtos
     min_ram: 32
     min_flash: 34
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=n
+    integration_platforms:
+      - native_sim
+  portability.cmsis_rtos_v1.legacy:
+    platform_key:
+      - arch
+      - simulation
+    tags: cmsis_rtos
+    min_ram: 32
+    min_flash: 34
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_DEPRECATION_TEST=y
     integration_platforms:
       - native_sim

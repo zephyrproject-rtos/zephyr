@@ -146,7 +146,7 @@ typedef void (*vth)(void); /* Vector Table Handler */
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
 void nrfx_power_clock_irq_handler(void);
 #else
-void common_irq_handler(void);
+void clock_control_nrfx_common_irq_handler(void);
 #endif
 #if defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_SERIES_NRF52)
 #define POWER_CLOCK_IRQ_NUM POWER_CLOCK_IRQn
@@ -178,7 +178,7 @@ const vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
 	[POWER_CLOCK_IRQ_NUM] = nrfx_power_clock_irq_handler,
 #else
-	[POWER_CLOCK_IRQ_NUM] = common_irq_handler,
+	[POWER_CLOCK_IRQ_NUM] = clock_control_nrfx_common_irq_handler,
 #endif
 #endif
 	[TIMER_IRQ_NUM] = TIMER_IRQ_HANDLER,

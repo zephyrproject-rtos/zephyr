@@ -5,7 +5,7 @@
  */
 #include <zephyr/drivers/counter.h>
 #include <hal/nrf_rtc.h>
-#if defined(CONFIG_CLOCK_CONTROL_NRFX_COMMON)
+#if defined(CONFIG_CLOCK_CONTROL_NRF) || defined(CONFIG_CLOCK_CONTROL_NRFX_COMMON)
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #endif
