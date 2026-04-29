@@ -560,15 +560,16 @@ class DeviceHandler(Handler):
                 elif runner == "esp32":
                     command_extra_args.append("--esp-device")
                     command_extra_args.append(board_id)
-                elif (
-                    runner == "openocd"
-                    and product == "STM32 STLink"
-                    or runner == "openocd"
-                    and product == "STLINK-V3"
-                ):
+                elif runner == 'openocd' and product in [
+                    'STM32 STLink',
+                    'STLINK-V3',
+                ]:
                     command_extra_args.append("--cmd-pre-init")
                     command_extra_args.append(f"hla_serial {board_id}")
-                elif runner == "openocd" and product == "EDBG CMSIS-DAP":
+                elif runner == 'openocd' and product in [
+                    'EDBG CMSIS-DAP',
+                    'Raspberry Pi Debug Probe (CMSIS-DAP)',
+                ]:
                     command_extra_args.append("--cmd-pre-init")
                     command_extra_args.append(f"cmsis_dap_serial {board_id}")
                 elif runner == "openocd" and product == "LPC-LINK2 CMSIS-DAP":
@@ -586,10 +587,15 @@ class DeviceHandler(Handler):
                     command.append('--dev-id')
                     command.append(board_id)
 
+                # Receive parameters from base_params field.
+                if hardware.base_params:
+                    for param in hardware.base_params:
+                        command.append(param)
+
                 # Receive parameters from runner_params field.
                 if hardware.runner_params:
                     for param in hardware.runner_params:
-                        command.append(param)
+                        command_extra_args.append(param)
 
         if command_extra_args:
             command.append('--')

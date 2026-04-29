@@ -259,6 +259,7 @@ class HardwareMap:
                 raise ValueError(f"Invalid platform value: {platform}")
             id = dut.get('id')
             runner = dut.get('runner')
+            base_params = dut.get('base_params')
             runner_params = dut.get('runner_params')
             serial = dut.get('serial')
             serial_baud = dut.get('serial_baud', None) or dut.get('baud', None)
@@ -272,6 +273,7 @@ class HardwareMap:
                 new_dut = DUT(platform=plat,
                               product=product,
                               runner=runner,
+                              base_params=base_params,
                               runner_params=runner_params,
                               id=id,
                               serial_pty=serial_pty,
