@@ -32,6 +32,7 @@ zephyr_sources_ifdef(CONFIG_PM power.c)
 if(NOT CONFIG_TRUSTED_EXECUTION_NONSECURE)
   zephyr_sources_ifdef(CONFIG_REBOOT reboot.c)
 endif()
+zephyr_sources_ifdef(CONFIG_SOC_PSE84_LPM_TIMER lpm_timer.c)
 zephyr_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 
 zephyr_include_directories(.)

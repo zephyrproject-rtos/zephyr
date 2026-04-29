@@ -39,3 +39,12 @@ config SOC_PSE84_M55_ENABLE
 	  This option enables the m55 core on pse84, by m33 core.
 
 endif # SOC_SERIES_PSE84_M33
+
+config SOC_PSE84_LPM_TIMER
+	bool
+	default y if SYSTEM_TIMER_LPM_COMPANION_HOOKS
+	select USE_INFINEON_LPTIMER
+	help
+	  Enable MCWDT as a low-power companion timer for the SysTick.
+	  The MCWDT runs from PILO (32 kHz) and provides timekeeping
+	  during deepsleep when HF clocks (and thus SysTick) are stopped.
