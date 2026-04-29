@@ -33,10 +33,11 @@ Roles
 
 import json
 import sys
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from os import path
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlencode
 
 from anytree import ChildResolverError, Node, PreOrderIter, Resolver, search
 from docutils import nodes
@@ -92,6 +93,21 @@ BINDING_TYPE_TO_DOCUTILS_NODE = {
 }
 
 logger = logging.getLogger(__name__)
+
+
+def _board_catalog_xref(params: dict[str, str], *children: nodes.Node) -> addnodes.pending_xref:
+    """Cross-reference to the board catalog with URL hash filters (see board-catalog.js)."""
+    xref = addnodes.pending_xref(
+        "",
+        refdomain="zephyr",
+        reftype="board-catalog",
+        reftarget=f"#{urlencode(params)}",
+        refexplicit=True,
+        refwarn=False,
+    )
+    for child in children:
+        xref += child
+    return xref
 
 
 class CodeSampleNode(nodes.Element):
@@ -254,6 +270,15 @@ class ConvertBoardNode(SphinxTransform):
         for node in self.document.traverse(matcher):
             self.convert_node(node)
 
+    @staticmethod
+    def _comma_catalog_xrefs(param_key: str, values: Iterable[str]) -> list[nodes.Node]:
+        parts: list[nodes.Node] = []
+        for i, value in enumerate(values):
+            if i:
+                parts.append(nodes.Text(", "))
+            parts.append(_board_catalog_xref({param_key: value}, nodes.Text(value)))
+        return parts
+
     def convert_node(self, node):
         parent = node.parent
         siblings_to_move = []
@@ -293,12 +318,21 @@ class ConvertBoardNode(SphinxTransform):
                     explanation="No active maintainer on file, but contributions are welcome",
                 )
 
+            vendor_value = nodes.paragraph(
+                "",
+                "",
+                _board_catalog_xref({"vendor": node["vendor_id"]}, nodes.Text(node["vendor"])),
+            )
+
+            arch_para = nodes.paragraph("", "", *self._comma_catalog_xrefs("arch", node["archs"]))
+            soc_para = nodes.paragraph("", "", *self._comma_catalog_xrefs("soc", node["socs"]))
+
             details = [
                 ("Name", nodes.literal(text=node["id"])),
-                ("Vendor", node["vendor"]),
+                ("Vendor", vendor_value),
                 ("Status", status_para),
-                ("Architecture", ", ".join(node["archs"])),
-                ("SoC", ", ".join(node["socs"])),
+                ("Architecture", arch_para),
+                ("SoC", soc_para),
             ]
 
             for property_name, value in details:
@@ -730,6 +764,7 @@ class BoardDirective(SphinxDirective):
 
             board_node = BoardNode(id=board_name)
             board_node["full_name"] = board["full_name"]
+            board_node["vendor_id"] = board["vendor"]
             board_node["vendor"] = vendors.get(board["vendor"], board["vendor"])
             board_node["revision_default"] = board["revision_default"]
             board_node["supported_features"] = board["supported_features"]
