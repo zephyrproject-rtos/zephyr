@@ -326,6 +326,7 @@ int to_ppm(const char *filename, const uint32_t *buf, size_t w, size_t h)
 int main(int argc, char *argv[])
 {
 	to_ppm("diagonal3224.ppm", diagonal3224, 32, 24);
+	to_ppm("kerning_3_rightclip_1_2tofu1016.ppm", kerning_3_rightclip_1_2tofu1016, 22, 16);
 	to_ppm("outside_bottom_left.ppm", outside_bottom_left, 3, 14);
 	to_ppm("outside_bottom_right.ppm", outside_bottom_right, 3, 5);
 	to_ppm("outside_top_left.ppm", outside_top_left, 3, 4);
