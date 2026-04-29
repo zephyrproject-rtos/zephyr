@@ -662,7 +662,11 @@ static void test_gatt_client(void)
 	discover_and_subscribe_control_point();
 	WAIT_FOR_FLAG(flag_control_point_discovered);
 
-	bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err != 0) {
+		FAIL("Could not disconnect (err %d)\n", err);
+		return;
+	}
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 
 	notify_received_mask = 0;

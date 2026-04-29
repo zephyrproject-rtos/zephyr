@@ -304,7 +304,11 @@ static void init(void)
 
 	printk("Audio Client: Bluetooth initialized\n");
 
-	bt_csip_set_coordinator_register_cb(&cbs);
+	err = bt_csip_set_coordinator_register_cb(&cbs);
+	if (err != 0) {
+		FAIL("Failed to register CSIP callbacks (err %d)\n", err);
+		return;
+	}
 	k_work_init_delayable(&discover_members_timer,
 			      discover_members_timer_handler);
 	bt_le_scan_cb_register(&csip_set_coordinator_scan_callbacks);

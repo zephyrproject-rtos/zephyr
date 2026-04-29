@@ -269,7 +269,12 @@ static void test_main(void)
 
 		start_broadcast_adv(adv);
 
-		k_sem_take(&sem_started, SEM_TIMEOUT);
+		err = k_sem_take(&sem_started, SEM_TIMEOUT);
+		if (err != 0) {
+			printk("sem_started timed out: %d\n", err);
+			FAIL("Public Broadcast source failed\n");
+			return;
+		}
 
 		/* Wait for other devices to let us know when we can stop the source */
 		printk("Waiting for signal from receiver to stop\n");
@@ -282,7 +287,12 @@ static void test_main(void)
 			FAIL("Public Broadcast source failed\n");
 		}
 
-		k_sem_take(&sem_stopped, SEM_TIMEOUT);
+		err = k_sem_take(&sem_stopped, SEM_TIMEOUT);
+		if (err != 0) {
+			printk("sem_stopped timed out: %d\n", err);
+			FAIL("Public Broadcast source failed\n");
+			return;
+		}
 		err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
 		if (err != 0) {
 			printk("Failed to stop broadcast source: %d\n", err);

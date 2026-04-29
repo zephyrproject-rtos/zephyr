@@ -575,7 +575,8 @@ static void test_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_
 	/* Wait for all to be stopped */
 	printk("Waiting for broadcast_streams to be stopped\n");
 	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_stream_stopped, K_FOREVER);
+		err = k_sem_take(&sem_broadcast_stream_stopped, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	WAIT_FOR_UNSET_FLAG(flag_source_started);
@@ -649,7 +650,9 @@ static void test_main_cap_initiator_broadcast(void)
 	/* Wait for all to be started */
 	printk("Waiting for broadcast_streams to be started\n");
 	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+		__maybe_unused int err = k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	WAIT_FOR_FLAG(flag_source_started);
@@ -695,7 +698,9 @@ static void test_main_cap_initiator_broadcast_inval(void)
 	/* Wait for all to be started */
 	printk("Waiting for broadcast_streams to be started\n");
 	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+		__maybe_unused int err = k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	WAIT_FOR_FLAG(flag_source_started);
@@ -741,7 +746,9 @@ static void test_main_cap_initiator_broadcast_update(void)
 	/* Wait for all to be started */
 	printk("Waiting for broadcast_streams to be started\n");
 	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+		__maybe_unused int err = k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	WAIT_FOR_FLAG(flag_source_started);
@@ -835,7 +842,8 @@ static int test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 	/* Wait for all to be started */
 	printk("Waiting for broadcast_streams to be started\n");
 	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+		err = k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	WAIT_FOR_FLAG(flag_source_started);

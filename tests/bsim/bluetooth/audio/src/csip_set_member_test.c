@@ -207,7 +207,11 @@ static void test_force_release(void)
 
 	WAIT_FOR_COND(g_locked);
 	printk("Force releasing set\n");
-	bt_csip_set_member_lock(svc_inst, false, true);
+	err = bt_csip_set_member_lock(svc_inst, false, true);
+	if (err != 0) {
+		FAIL("Could not force release set (err %d)\n", err);
+		return;
+	}
 
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 

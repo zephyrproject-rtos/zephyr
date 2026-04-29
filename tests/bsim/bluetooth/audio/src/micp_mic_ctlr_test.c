@@ -381,7 +381,11 @@ static void test_main(void)
 
 	bt_le_scan_cb_register(&common_scan_cb);
 
-	bt_micp_mic_ctlr_cb_register(&micp_mic_ctlr_cbs);
+	err = bt_micp_mic_ctlr_cb_register(&micp_mic_ctlr_cbs);
+	if (err != 0) {
+		FAIL("Failed to register MICP callbacks (err %d)\n", err);
+		return;
+	}
 
 	WAIT_FOR_COND(g_bt_init);
 
