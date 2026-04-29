@@ -99,6 +99,7 @@ static inline bool z_shell_in_select_mode(const struct shell *sh)
 }
 
 int z_shell_find_alias(const char *cmd_str, const char **output);
+int z_shell_expand_alias(char *cmd_buf, size_t cmd_buf_size);
 
 #ifdef __cplusplus
 }
