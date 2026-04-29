@@ -1,0 +1,5 @@
+description: RealTek rtl87x2g flash controller
+
+compatible: "realtek,rtl87x2g-flash-controller"
+
+include: flash-controller.yaml

@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Realtek Bee NOR flash
+
+compatible: "realtek,bee-nor-flash"
+
+include: soc-nv-flash.yaml
+
+properties:
+  supports-2bit:
+    type: boolean
+    description: Set if flash supports 2-bit (Dual) mode
+
+  supports-4bit:
+    type: boolean
+    description: Set if flash supports 4-bit (Quad) mode
+
+  supports-dtr-4bit:
+    type: boolean
+    description: Set if flash supports 4-bit DTR (Quad) mode

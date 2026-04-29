@@ -1,0 +1,12 @@
+# Copyright(c) 2026, Realtek Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_RTL87X2G
+	bool "Realtek RTL87x2G flash driver"
+	default y
+	depends on DT_HAS_REALTEK_RTL87X2G_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	help
+	  Enable rtl87x2g flash driver.
