@@ -67,8 +67,13 @@ static int cmd_battery(const struct shell *sh, size_t argc, char **argv)
 	bool allowed;
 	int err;
 
+	if (!DEVICE_API_IS(sensor, dev)) {
+		shell_error(sh, "Device is not a sensor (%s)",  dev->name);
+		return -ENODEV;
+	}
+
 	if (!device_is_ready(dev)) {
-		shell_error(sh, "Device not ready (%s)", argv[1]);
+		shell_error(sh, "Device not ready (%s)", dev->name);
 		return -ENODEV;
 	}
 
