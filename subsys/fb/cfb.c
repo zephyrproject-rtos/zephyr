@@ -74,10 +74,10 @@ static inline const uint8_t *get_glyph_ptr(const struct cfb_font *fptr, uint8_t 
 	}
 
 	const size_t glyph_size = (fptr->caps & CFB_FONT_MONO_HPACKED)
-					  ? DIV_ROUND_UP(fptr->width, 8U) * fptr->height
-					  : fptr->width * fptr->height / 8U;
+					  ? fptr->height * DIV_ROUND_UP(fptr->width, 8U)
+					  : fptr->width * DIV_ROUND_UP(fptr->height, 8U);
 
-	return (uint8_t *)fptr->data + (c - fptr->first_char) * glyph_size;
+	return (const uint8_t *)fptr->data + (c - fptr->first_char) * glyph_size;
 }
 
 static inline bool is_tofu_border_pixel(const struct cfb_font *fptr, uint8_t px, uint8_t py)
@@ -154,16 +154,18 @@ static inline uint8_t get_glyph_byte(const uint8_t *glyph_ptr, const struct cfb_
 	}
 
 	if (fptr->caps & CFB_FONT_MONO_VPACKED) {
-		if (vtiled) {
-			return glyph_ptr[x * (fptr->height / 8U) + y];
-		} else {
-			return glyph_ptr[(x * fptr->height + y) / 8];
+		const uint8_t bytes_per_col = DIV_ROUND_UP(fptr->height, 8U);
+		const uint8_t byte_idx = vtiled ? y : (y / 8U);
+
+		if (byte_idx >= bytes_per_col) {
+			return 0;
 		}
+
+		return glyph_ptr[x * bytes_per_col + byte_idx];
 	} else if (fptr->caps & CFB_FONT_MONO_HPACKED) {
 		return glyph_ptr[y * DIV_ROUND_UP(fptr->width, 8U) + (x / 8U)];
 	}
 
-	LOG_WRN("Unknown font type");
 	return 0;
 }
 
@@ -453,19 +455,14 @@ static int draw_text(const struct device *dev, const char *const str, int16_t x,
 {
 	const struct char_framebuffer *fb = &char_fb;
 	const struct cfb_font *fptr;
+	size_t len;
 
 	if (!fb->fonts || !fb->buf) {
 		return -ENODEV;
 	}
 
 	fptr = &(fb->fonts[fb->font_idx]);
-
-	if (fptr->height % 8) {
-		LOG_ERR("Wrong font size");
-		return -EINVAL;
-	}
-
-	const size_t len = strlen(str);
+	len = strlen(str);
 
 	for (size_t i = 0; i < len; i++) {
 		if ((x + fptr->width > fb->x_res) && wrap) {
