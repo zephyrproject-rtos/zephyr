@@ -359,17 +359,27 @@ static void siwx91x_nwp_handle_tx(const struct device *dev, struct siwx91x_nwp_c
 	net_buf_unref(buf);
 }
 
-/* FIXME: Split this function */
+bool siwx91x_nwp_queue_is_busy(struct siwx91x_nwp_cmd_queue *cmd_queue, uint32_t nwp_status)
+{
+	if (cmd_queue->id == SLI_WLAN_MGMT_Q && cmd_queue->tx_in_progress) {
+		return true;
+	}
+	__ASSERT(!cmd_queue->tx_in_progress, "Sync commands are only expected on SLI_WLAN_MGMT_Q");
+	if (cmd_queue->id == SLI_WLAN_DATA_Q && (nwp_status & SIWX91X_NWP_WIFI_BUFFER_FULL)) {
+		return true;
+	}
+	if (cmd_queue->id == SLI_BT_Q && (nwp_status & SIWX91X_NWP_BLE_BUFFER_FULL)) {
+		return true;
+	}
+	return false;
+}
+
 void siwx91x_nwp_thread(void *arg1, void *arg2, void *arg3)
 {
 	const struct device *dev = arg1;
 	struct net_buf_pool *rx_buf_pool = arg2;
-	struct siwx91x_nwp_data *data = dev->data;
 	const struct siwx91x_nwp_config *cfg = dev->config;
-	uint32_t nwp_status;
-	struct net_buf *rx_buffer;
-	bool released_nwp = true;
-	int i, ret;
+	struct siwx91x_nwp_data *data = dev->data;
 	struct k_poll_event events[] = {
 		[0] = K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 						      K_POLL_MODE_NOTIFY_ONLY,
@@ -394,6 +404,10 @@ void siwx91x_nwp_thread(void *arg1, void *arg2, void *arg3)
 						      /* lifo and fifo are binary compatible */
 						      (struct k_fifo *)&rx_buf_pool->free, 0),
 	};
+	struct net_buf *rx_buffer;
+	bool released_nwp = true;
+	uint32_t nwp_status;
+	int i, ret;
 
 	k_thread_name_set(NULL, "nwp");
 
@@ -411,44 +425,9 @@ void siwx91x_nwp_thread(void *arg1, void *arg2, void *arg3)
 		}
 		nwp_status = cfg->ta_regs->status;
 		__ASSERT(!(nwp_status & SIWX91X_NWP_ASSERT_INTR), "NWP asserted");
-		/* Tx path */
-		for (i = 0; i < ARRAY_SIZE(data->cmd_queues); i++) {
-			if (events[i].state == K_POLL_STATE_FIFO_DATA_AVAILABLE) {
-				events[i].state = K_POLL_STATE_NOT_READY;
-				if (data->cmd_queues[i].id == SLI_BT_Q &&
-				    (nwp_status & SIWX91X_NWP_BLE_BUFFER_FULL)) {
-					LOG_DBG("event: Tx data delayed (queue %d)",
-						data->cmd_queues[i].id);
-					continue;
-				}
-				if (data->cmd_queues[i].id == SLI_WLAN_DATA_Q &&
-				    (nwp_status & SIWX91X_NWP_WIFI_BUFFER_FULL)) {
-					LOG_DBG("event: Tx data delayed (queue %d)",
-						data->cmd_queues[i].id);
-					continue;
-				}
-				siwx91x_nwp_handle_tx(dev, &data->cmd_queues[i]);
-				LOG_DBG("event: Tx data send (queue %d)",
-					data->cmd_queues[i].id);
-				break;
-			}
-		}
-		if (events[3].state == K_POLL_STATE_SEM_AVAILABLE) {
-			events[3].state = K_POLL_STATE_NOT_READY;
-			k_sem_take(&data->tx_data_complete, K_NO_WAIT);
-			net_buf_unref(data->tx_buf_in_progress);
-			data->tx_buf_in_progress = NULL;
-			LOG_DBG("event: Tx data complete");
-		}
-		if (events[5].state == K_POLL_STATE_SEM_AVAILABLE) {
-			events[5].state = K_POLL_STATE_NOT_READY;
-			k_sem_take(&data->refresh_queues_state, K_NO_WAIT);
-			LOG_DBG("event: Refresh queue state");
-		}
 
 		/* Rx path */
-		if (events[4].state == K_POLL_STATE_SEM_AVAILABLE) {
-			events[4].state = K_POLL_STATE_NOT_READY;
+		if (events[4].state) {
 			k_sem_take(&data->rx_data_complete, K_NO_WAIT);
 			ret = siwx91x_nwp_feed_rx_buffer(dev, &rx_buffer);
 			if (ret) {
@@ -459,8 +438,7 @@ void siwx91x_nwp_thread(void *arg1, void *arg2, void *arg3)
 			}
 			siwx91x_nwp_handle_rx(dev, rx_buffer);
 		}
-		if (events[6].state == K_POLL_TYPE_FIFO_DATA_AVAILABLE) {
-			events[6].state = K_POLL_STATE_NOT_READY;
+		if (events[6].state) {
 			ret = siwx91x_nwp_feed_rx_buffer(dev, &rx_buffer);
 			__ASSERT(rx_buffer == NULL, "Corrupted state");
 			if (ret) {
@@ -470,32 +448,47 @@ void siwx91x_nwp_thread(void *arg1, void *arg2, void *arg3)
 				events[6].type = K_POLL_TYPE_IGNORE;
 			}
 		}
-		for (i = 0; i < ARRAY_SIZE(data->cmd_queues); i++) {
-			if (data->tx_buf_in_progress) {
+
+		/* Tx path */
+		if (events[5].state) {
+			k_sem_take(&data->refresh_queues_state, K_NO_WAIT);
+			LOG_DBG("event: Refresh queue state");
+		}
+		if (events[3].state) {
+			k_sem_take(&data->tx_data_complete, K_NO_WAIT);
+			__ASSERT(data->tx_buf_in_progress, "Corrupted state");
+			net_buf_unref(data->tx_buf_in_progress);
+			data->tx_buf_in_progress = NULL;
+			LOG_DBG("event: Tx data complete");
+		}
+		for (i = 0; i < 3; i++) {
+			if (!events[i].state) {
+				continue;
+			}
+			if (data->tx_buf_in_progress ||
+			    siwx91x_nwp_queue_is_busy(&data->cmd_queues[i], nwp_status)) {
+				LOG_DBG("event: Tx data delayed (queue %d)",
+					data->cmd_queues[i].id);
+			} else {
+				siwx91x_nwp_handle_tx(dev, &data->cmd_queues[i]);
+				LOG_DBG("event: Tx data send (queue %d)", data->cmd_queues[i].id);
+			}
+		}
+		released_nwp = true;
+		for (i = 0; i < 3; i++) {
+			if (data->tx_buf_in_progress ||
+			    siwx91x_nwp_queue_is_busy(&data->cmd_queues[i], nwp_status)) {
 				events[i].type = K_POLL_TYPE_IGNORE;
-			} else if (data->cmd_queues[i].tx_in_progress) {
-				events[i].type = K_POLL_TYPE_IGNORE;
-			} else if (data->cmd_queues[i].id == SLI_BT_Q &&
-				   (nwp_status & SIWX91X_NWP_BLE_BUFFER_FULL)) {
-				events[i].type = K_POLL_TYPE_IGNORE;
-			} else if (data->cmd_queues[i].id == SLI_WLAN_DATA_Q &&
-				   (nwp_status & SIWX91X_NWP_WIFI_BUFFER_FULL)) {
-				events[i].type = K_POLL_TYPE_IGNORE;
+				released_nwp = false;
 			} else {
 				events[i].type = K_POLL_TYPE_FIFO_DATA_AVAILABLE;
 			}
 		}
-		released_nwp = true;
-		for (i = 0; i < ARRAY_SIZE(data->cmd_queues); i++) {
-			if (events[i].type != K_POLL_TYPE_FIFO_DATA_AVAILABLE) {
-				released_nwp = false;
-			}
-			if (!k_fifo_is_empty(&data->cmd_queues[i].tx_queue)) {
-				released_nwp = false;
-			}
-		}
 		if (released_nwp) {
 			siwx91x_nwp_release_nwp(dev);
+		}
+		for (i = 0; i < ARRAY_SIZE(events); i++) {
+			events[i].state = K_POLL_STATE_NOT_READY;
 		}
 	}
 }
