@@ -23,12 +23,12 @@ LOG_MODULE_DECLARE(fs, CONFIG_FS_LOG_LEVEL);
 #define FATFS_MAX_FILE_NAME 12 /* Uses 8.3 SFN */
 
 /* Memory pool for FatFs directory objects */
-K_MEM_SLAB_DEFINE(fatfs_dirp_pool, sizeof(DIR),
-			CONFIG_FS_FATFS_NUM_DIRS, 4);
+K_MEM_SLAB_DEFINE_TYPE(fatfs_dirp_pool, DIR,
+	CONFIG_FS_FATFS_NUM_DIRS);
 
 /* Memory pool for FatFs file objects */
-K_MEM_SLAB_DEFINE(fatfs_filep_pool, sizeof(FIL),
-			CONFIG_FS_FATFS_NUM_FILES, 4);
+K_MEM_SLAB_DEFINE_TYPE(fatfs_filep_pool, FIL,
+	CONFIG_FS_FATFS_NUM_FILES);
 
 static int translate_error(int error)
 {

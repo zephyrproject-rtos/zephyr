@@ -26,8 +26,8 @@ struct usbd_msg_pkt {
 	struct usbd_msg msg;
 };
 
-K_MEM_SLAB_DEFINE_STATIC(usbd_msg_slab, sizeof(struct usbd_msg_pkt),
-			 CONFIG_USBD_MSG_SLAB_COUNT, sizeof(void *));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(usbd_msg_slab, struct usbd_msg_pkt,
+			      CONFIG_USBD_MSG_SLAB_COUNT);
 
 static inline void usbd_msg_pub(struct usbd_context *const ctx,
 				const struct usbd_msg msg)

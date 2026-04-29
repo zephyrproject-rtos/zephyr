@@ -74,8 +74,8 @@ static const struct socket_op_vtable quic_stream_fd_op_vtable;
 static enum quic_stream_states quic_stream_get_state(struct quic_stream *stream);
 static const struct smf_state quic_stream_bidirectional_states[];
 
-K_MEM_SLAB_DEFINE_STATIC(endpoints_slab, sizeof(struct quic_endpoint),
-			 CONFIG_QUIC_MAX_ENDPOINTS, sizeof(intptr_t));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(endpoints_slab, struct quic_endpoint,
+			      CONFIG_QUIC_MAX_ENDPOINTS);
 static struct quic_endpoint *endpoints[CONFIG_QUIC_MAX_ENDPOINTS];
 static struct k_mutex endpoints_lock;
 
@@ -193,7 +193,7 @@ struct quic_pkt {
 };
 
 #define QUIC_SLAB_DEFINE(name, count) \
-	K_MEM_SLAB_DEFINE_STATIC(name, sizeof(struct quic_pkt), count, sizeof(intptr_t));
+	K_MEM_SLAB_DEFINE_STATIC_TYPE(name, struct quic_pkt, count);
 
 QUIC_SLAB_DEFINE(quic_pkts, CONFIG_QUIC_PKT_COUNT);
 

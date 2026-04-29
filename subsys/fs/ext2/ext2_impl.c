@@ -32,7 +32,7 @@ char __aligned(sizeof(void *)) __ext2_block_struct_buffer[BLOCK_STRUCT_BUFFER_SI
 
 /* Initialize heap memory allocator */
 K_HEAP_DEFINE(direntry_heap, MAX_DIRENTRY_SIZE);
-K_MEM_SLAB_DEFINE(inode_struct_slab, sizeof(struct ext2_inode), MAX_INODES, sizeof(void *));
+K_MEM_SLAB_DEFINE_TYPE(inode_struct_slab, struct ext2_inode, MAX_INODES);
 
 /* Helper functions --------------------------------------------------------- */
 

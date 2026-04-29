@@ -14,8 +14,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbh_dev, CONFIG_USBH_LOG_LEVEL);
 
-K_MEM_SLAB_DEFINE_STATIC(usb_device_slab, sizeof(struct usb_device),
-			 CONFIG_USBH_USB_DEVICE_MAX, sizeof(void *));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(usb_device_slab, struct usb_device,
+			      CONFIG_USBH_USB_DEVICE_MAX);
 
 K_HEAP_DEFINE(usb_device_heap, CONFIG_USBH_USB_DEVICE_HEAP);
 

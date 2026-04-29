@@ -8,8 +8,8 @@
 #include <zephyr/portability/cmsis_types.h>
 #include <string.h>
 
-K_MEM_SLAB_DEFINE(cmsis_rtos_event_cb_slab, sizeof(struct cmsis_rtos_event_cb),
-		  CONFIG_CMSIS_V2_EVT_FLAGS_MAX_COUNT, 4);
+K_MEM_SLAB_DEFINE_TYPE(cmsis_rtos_event_cb_slab, struct cmsis_rtos_event_cb,
+		       CONFIG_CMSIS_V2_EVT_FLAGS_MAX_COUNT);
 
 static const osEventFlagsAttr_t init_event_flags_attrs = {
 	.name = "ZephyrEvent",

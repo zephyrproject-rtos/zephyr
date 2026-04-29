@@ -59,8 +59,8 @@ K_WORK_DEFINE(openthread_border_router_work, openthread_border_router_process);
 /* FIFO used for queuing up messages sent for Border Router. */
 static K_FIFO_DEFINE(border_router_msg_rx_fifo);
 
-K_MEM_SLAB_DEFINE_STATIC(border_router_messages_slab, sizeof(struct otbr_msg_ctx),
-		  CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MSG_POOL_NUM, sizeof(void *));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(border_router_messages_slab, struct otbr_msg_ctx,
+			      CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_MSG_POOL_NUM);
 
 static const char *create_base_name(otInstance *ot_instance, char *base_name);
 static void openthread_border_router_add_or_rm_route_to_multicast_groups(bool add);

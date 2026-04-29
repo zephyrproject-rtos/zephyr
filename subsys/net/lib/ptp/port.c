@@ -38,10 +38,8 @@ static struct k_mem_slab foreign_tts_slab;
 BUILD_ASSERT(CONFIG_PTP_FOREIGN_TIME_TRANSMITTER_RECORD_SIZE >= 5 * CONFIG_PTP_NUM_PORTS,
 	     "PTP_FOREIGN_TIME_TRANSMITTER_RECORD_SIZE is smaller than expected!");
 
-K_MEM_SLAB_DEFINE_STATIC(foreign_tts_slab,
-			 sizeof(struct ptp_foreign_tt_clock),
-			 CONFIG_PTP_FOREIGN_TIME_TRANSMITTER_RECORD_SIZE,
-			 4);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(foreign_tts_slab, struct ptp_foreign_tt_clock,
+			      CONFIG_PTP_FOREIGN_TIME_TRANSMITTER_RECORD_SIZE);
 #endif
 
 char str_port_id[] = "FF:FF:FF:FF:FF:FF:FF:FF-FFFF";

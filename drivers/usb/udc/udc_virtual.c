@@ -47,8 +47,7 @@ struct udc_vrt_event {
 	struct uvb_packet *pkt;
 };
 
-K_MEM_SLAB_DEFINE(udc_vrt_slab, sizeof(struct udc_vrt_event),
-		  16, sizeof(void *));
+K_MEM_SLAB_DEFINE_TYPE(udc_vrt_slab, struct udc_vrt_event, 16);
 
 /* Reuse request packet for reply */
 static int vrt_request_reply(const struct device *dev,
