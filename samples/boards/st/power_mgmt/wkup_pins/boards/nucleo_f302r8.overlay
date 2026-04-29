@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2025 Enes Albay <albayenes@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		wkup-src = &wkup_button;
+	};
+
+	gpio_keys {
+		wkup_button: wkup {
+			label = "WKUP";
+			/*
+			 * PA0 is not connected to any button: you must connect it to VDD (+3.3V)
+			 * using a jumper wire. For example, wiring PA0 CN7[28] to VDD CN7[16]
+			 */
+			gpios = <&gpioa 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_POWER>;
+		};
+	};
+};
+
+&pwr {
+	status = "okay";
+};
