@@ -561,6 +561,12 @@ if(CONFIG_BUILD_WITH_TFM)
       set(TFM_SIGN_ARG_SUFFIX "S")
     endif()
 
+    if(TFM_SIGN_ARG_SUFFIX STREQUAL "S")
+      set(SIG_KEY_ID 2147451243)
+    else()
+      set(SIG_KEY_ID 2147451244)
+    endif()
+
     set(${OUT_ARG}
       # Add the MCUBoot script to the path so that if there is a version of imgtool in there then
       # it gets used over the system imgtool. Used so that imgtool from upstream
@@ -570,6 +576,7 @@ if(CONFIG_BUILD_WITH_TFM)
       --layout ${layout_file}
       -k ${CONFIG_TFM_KEY_FILE_${TFM_SIGN_ARG_SUFFIX}}
       --public-key-format ${TFM_PUBLIC_KEY_FORMAT}
+      --psa-key-ids ${SIG_KEY_ID}
       --align ${image_alignment}
       --max-sectors ${TFM_SIGN_ARG_MAX_SECTORS}
       -v ${CONFIG_TFM_IMAGE_VERSION_${TFM_SIGN_ARG_SUFFIX}}
