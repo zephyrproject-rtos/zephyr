@@ -7,23 +7,43 @@
 #include <nordic/nrf54l10.dtsi>
 #include <riscv/nordic/nrf54l_05_10_15_cpuflpr.dtsi>
 
+/* RAM: 128kB + 64kB (including 512B for hibernation) = 192KB */
+/* RRAM: (948kB + hiber) + (64kB - hiber) = 1012KB */
+
+/* 512 bytes are reserved for FLPR hibernation. If hibernation is not used then
+ * it can be set to 0 and used as code/data memory.
+ */
+#define HIBERNATION_SIZE 512
+/* When memory layout is changed, update these values and do not modify the nodes! */
+#define FLPR_SRAM_OFF (0x20000000 + DT_SIZE_K(128))
+#define FLPR_SRAM_SIZE (DT_SIZE_K(64) - HIBERNATION_SIZE)
+#define FLPR_RRAM_OFF (DT_SIZE_K(948) + HIBERNATION_SIZE)
+/* Unit address is interpreted as hex format so we cannot use preprocessor calculations. */
+#if HIBERNATION_SIZE > 0
+#define FLPR_RRAM_UNIT_ADDRESS ed200
+#else
+#define FLPR_RRAM_UNIT_ADDRESS ed000
+#endif
+#define FLPR_SRAM_UNIT_ADDRESS 20020000
+
 / {
 	soc {
-		cpuflpr_sram: memory@20020000 {
+		cpuflpr_sram: memory@FLPR_SRAM_UNIT_ADDRESS {
+			/* Last 512 bytes dedicated for FLPR context when hibernation is used. */
 			compatible = "mmio-sram";
-			reg = <0x20020000 DT_SIZE_K(64)>;
+			reg = <FLPR_SRAM_OFF FLPR_SRAM_SIZE>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x20020000 DT_SIZE_K(64)>;
+			ranges = <0x0 FLPR_SRAM_OFF FLPR_SRAM_SIZE>;
 		};
 	};
 };
 
 &rram_controller {
-	cpuflpr_rram: rram@ed000 {
+	cpuflpr_rram: rram@FLPR_RRAM_UNIT_ADDRESS {
 		compatible = "soc-nv-flash";
-		reg = <0xed000 DT_SIZE_K(64)>;
-		ranges = <0x0 0xed000 DT_SIZE_K(64)>;
+		reg = <FLPR_RRAM_OFF FLPR_SRAM_SIZE>;
+		ranges = <0x0 FLPR_RRAM_OFF FLPR_SRAM_SIZE>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		erase-block-size = <4096>;

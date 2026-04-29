@@ -3,12 +3,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* 512 bytes are reserved for FLPR hibernation. If hibernation is not used then
+ * it can be set to 0 and used as code/data memory.
+ */
+#define HIBERNATION_SIZE 512
+
+/* When memory layout is changed, update these values and do not modify the nodes! */
+#define APP_SRAM_SIZE DT_SIZE_K(64)
+#define APP_RRAM_SIZE (DT_SIZE_K(468) + HIBERNATION_SIZE)
+
+#define FLPR_SRAM_OFF (0x20000000 + APP_SRAM_SIZE)
+#define FLPR_SRAM_SIZE (DT_SIZE_K(32) - HIBERNATION_SIZE)
+#define FLPR_RRAM_OFF APP_RRAM_SIZE
+
+#if HIBERNATION_SIZE > 0
+#define FLPR_RRAM_UNIT_ADDRESS 75200
+#else
+#define FLPR_RRAM_UNIT_ADDRESS 75000
+#endif
+#define FLPR_SRAM_UNIT_ADDRESS 20010000
+
 / {
 	soc {
-		cpuflpr_sram_code_data: memory@20010000 {
+		cpuflpr_sram_code_data: memory@FLPR_SRAM_UNIT_ADDRESS {
 			compatible = "mmio-sram";
-			reg = <0x20010000 DT_SIZE_K(32)>;
-			ranges = <0x0 0x20010000 DT_SIZE_K(32)>;
+			reg = <FLPR_SRAM_OFF FLPR_SRAM_SIZE>;
+			ranges = <0x0 FLPR_SRAM_OFF FLPR_SRAM_SIZE>;
 			status = "reserved";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -21,22 +41,22 @@
 };
 
 &cpuapp_sram {
-	reg = <0x20000000 DT_SIZE_K(64)>;
-	ranges = <0x0 0x20000000 DT_SIZE_K(64)>;
+	reg = <0x20000000 APP_SRAM_SIZE>;
+	ranges = <0x0 0x20000000 APP_SRAM_SIZE>;
 };
 
 &cpuapp_rram {
-	reg = <0x0 DT_SIZE_K(468)>;
-	ranges = <0x0 0x0 DT_SIZE_K(468)>;
+	reg = <0x0 APP_RRAM_SIZE>;
+	ranges = <0x0 0x0 APP_RRAM_SIZE>;
 
 	/delete-node/ partitions;
 };
 
 &rram_controller {
-	cpuflpr_rram: rram@75000 {
+	cpuflpr_rram: rram@FLPR_RRAM_UNIT_ADDRESS {
 		compatible = "soc-nv-flash";
-		reg = <0x75000 DT_SIZE_K(32)>;
-		ranges = <0x0 0x75000 DT_SIZE_K(32)>;
+		reg = <FLPR_RRAM_OFF FLPR_SRAM_SIZE>;
+		ranges = <0x0 FLPR_RRAM_OFF FLPR_SRAM_SIZE>;
 		erase-block-size = <0x1000>;
 		write-block-size = <0x10>;
 		#address-cells = <1>;
