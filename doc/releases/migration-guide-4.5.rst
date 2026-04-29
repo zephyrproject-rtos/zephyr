@@ -32,6 +32,38 @@ Kernel
 Boards
 ******
 
+* The internal Nordic SoC platform Kconfig symbols ``NRF_PLATFORM_HALTIUM``
+  and ``NRF_PLATFORM_LUMOS`` are no longer used by in-tree code, which now
+  relies on explicit :kconfig:option:`CONFIG_SOC_SERIES_NRF54H`,
+  :kconfig:option:`CONFIG_SOC_SERIES_NRF92`,
+  :kconfig:option:`CONFIG_SOC_SERIES_NRF54L` and
+  :kconfig:option:`CONFIG_SOC_SERIES_NRF71` checks. Both symbols are kept
+  as deprecated stubs that default to ``y`` when the corresponding SoC
+  series is selected, so existing ``CONFIG_NRF_PLATFORM_*=y`` lines and
+  ``depends on NRF_PLATFORM_*`` clauses keep building with a Kconfig
+  deprecation warning. Out-of-tree Kconfig, CMake and code using these
+  symbols should be updated:
+
+  * ``CONFIG_NRF_PLATFORM_HALTIUM`` with
+    :kconfig:option:`CONFIG_SOC_SERIES_NRF54H` or
+    :kconfig:option:`CONFIG_SOC_SERIES_NRF92`.
+  * ``CONFIG_NRF_PLATFORM_LUMOS`` with
+    :kconfig:option:`CONFIG_SOC_SERIES_NRF54L` or
+    :kconfig:option:`CONFIG_SOC_SERIES_NRF71`.
+
+* The Nordic sysbuild Kconfig option ``SB_CONFIG_NRF_HALTIUM_GENERATE_UICR``
+  has been renamed to :kconfig:option:`SB_CONFIG_NRF_GENERATE_UICR`.
+  Update sysbuild configurations to use the new name.
+
+* The Nordic SoC headers ``<haltium_power.h>`` and ``<haltium_pm_s2ram.h>``
+  have been renamed to ``<soc_power.h>`` and ``<soc_pm_s2ram.h>`` respectively.
+  Forwarder headers under the old names remain available and emit a ``#warning``
+  pointing to the new include paths. Out-of-tree code that includes the old paths
+  should be updated:
+
+  * ``#include <haltium_power.h>`` with ``#include <soc_power.h>``.
+  * ``#include <haltium_pm_s2ram.h>`` with ``#include <soc_pm_s2ram.h>``.
+
 Device Drivers and Devicetree
 *****************************
 

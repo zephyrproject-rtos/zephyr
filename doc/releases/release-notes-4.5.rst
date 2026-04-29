@@ -63,6 +63,17 @@ Deprecated APIs and options
   * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`
     to be consistent with the existing sync/async naming convention.
 
+* Nordic
+
+  * The internal SoC platform Kconfig symbols ``NRF_PLATFORM_HALTIUM`` and
+    ``NRF_PLATFORM_LUMOS`` have been deprecated. Use specific SOC_SERIES_* Kconfig options instead.
+
+  * The sysbuild Kconfig option ``SB_CONFIG_NRF_HALTIUM_GENERATE_UICR`` has
+    been renamed to :kconfig:option:`SB_CONFIG_NRF_GENERATE_UICR`.
+
+  * The Nordic SoC headers ``<haltium_power.h>`` and ``<haltium_pm_s2ram.h>``
+    have been renamed to ``<soc_power.h>`` and ``<soc_pm_s2ram.h>`` respectively.
+
 New APIs and options
 ====================
 ..
