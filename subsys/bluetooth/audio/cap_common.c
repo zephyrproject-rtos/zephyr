@@ -274,7 +274,7 @@ void bt_cap_common_disconnected(struct bt_conn *conn, uint8_t reason)
 	(void)memset(client, 0, sizeof(*client));
 
 	if (bt_cap_common_conn_in_active_proc(conn)) {
-		bt_cap_common_abort_proc(conn, -ENOTCONN);
+		bt_cap_common_abort_proc(conn, -ECONNRESET);
 	}
 }
 
