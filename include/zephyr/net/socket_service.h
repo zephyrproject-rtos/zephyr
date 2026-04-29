@@ -90,6 +90,9 @@ struct net_socket_service_desc {
 #define __z_net_socket_svc_get_idx(_svc_id) __z_net_socket_service_idx_##_svc_id
 #define __z_net_socket_svc_get_owner __FILE__ ":" STRINGIFY(__LINE__)
 
+/* Request sockets to be closed in addition to unregistered */
+#define NET_SOCKET_SERVICE_CLOSE_SOCKETS (void *)1
+
 #if CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG
 #define NET_SOCKET_SERVICE_OWNER .owner = __z_net_socket_svc_get_owner,
 #else
@@ -176,6 +179,20 @@ __syscall int net_socket_service_register(const struct net_socket_service_desc *
 static inline int net_socket_service_unregister(const struct net_socket_service_desc *service)
 {
 	return net_socket_service_register(service, NULL, 0, NULL);
+}
+
+/**
+ * @brief Unregister pollable sockets and automatically close the socket.
+ *
+ * @param service Pointer to a service description.
+ *
+ * @retval 0 No error
+ * @retval -ENOENT Service is not found.
+ * @retval -EINVAL Invalid parameter.
+ */
+static inline int net_socket_service_close(const struct net_socket_service_desc *service)
+{
+	return net_socket_service_register(service, NULL, 0, NET_SOCKET_SERVICE_CLOSE_SOCKETS);
 }
 
 /**
