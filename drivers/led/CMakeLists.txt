@@ -29,4 +29,5 @@ zephyr_library_sources_ifdef(CONFIG_NCP5623 ncp5623.c)
 zephyr_library_sources_ifdef(CONFIG_PCA9533 pca9533.c)
 zephyr_library_sources_ifdef(CONFIG_PCA9633 pca9633.c)
 zephyr_library_sources_ifdef(CONFIG_TLC59108 tlc59108.c)
+zephyr_library_sources_ifdef(CONFIG_TLC59116 tlc59116.c)
 # zephyr-keep-sorted-stop

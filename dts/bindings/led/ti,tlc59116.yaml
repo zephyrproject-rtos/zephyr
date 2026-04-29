@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Tridonic GmbH & Co KG
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments TLC59116 LED controller
+
+compatible: "ti,tlc59116"
+
+include: i2c-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      GPIO to reset TLC59116

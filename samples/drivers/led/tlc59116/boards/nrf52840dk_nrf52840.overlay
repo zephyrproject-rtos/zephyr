@@ -1,0 +1,12 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	tlc59116@60 {
+		status = "okay";
+		compatible = "ti,tlc59116";
+		reg = <0x60>;
+	};
+};
