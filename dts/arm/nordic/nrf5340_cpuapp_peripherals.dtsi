@@ -15,19 +15,6 @@ dcnf: dcnf@0 {
 oscillators: clock-controller@4000 {
 	compatible = "nordic,nrf53-oscillators";
 	reg = <0x4000 0x1000>;
-
-	lfxo: lfxo {
-		compatible = "nordic,nrf53-lfxo";
-		#clock-cells = <0>;
-		clock-frequency = <32768>;
-	};
-
-	hfxo: hfxo {
-		compatible = "nordic,nrf53-hfxo";
-		#clock-cells = <0>;
-		clock-frequency = <DT_FREQ_M(32)>;
-		startup-time-us = <1400>;
-	};
 };
 
 regulators: regulator@4000 {

@@ -66,6 +66,13 @@
 
 
 static int init_reset(void);
+static uint32_t cig_offset_calc(struct ll_conn_iso_group *cig, struct ll_conn_iso_stream *cis,
+				uint32_t cis_offset, uint32_t ticks_at_expire,
+				uint32_t remainder_us);
+static uint32_t cig_instant_latency_calc(struct ll_conn_iso_group *cig,
+					 struct ll_conn_iso_stream *cis, uint32_t acl_latency_us,
+					 uint32_t iso_interval_us, uint32_t ticks_at_expire,
+					 uint32_t remainder_us);
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 static void cis_lazy_fill(struct ll_conn_iso_stream *cis);
 static void mfy_cis_lazy_fill(void *param);
@@ -808,35 +815,6 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	ull_conn_iso_transmit_test_cig_interval(cig->lll.handle, ticks_at_expire);
 }
 
-static uint32_t cig_offset_calc(struct ll_conn_iso_group *cig, struct ll_conn_iso_stream *cis,
-				uint32_t cis_offset, uint32_t *ticks_at_expire, uint32_t remainder)
-{
-	uint32_t acl_to_cig_ref_point;
-	uint32_t cis_offs_to_cig_ref;
-	uint32_t remainder_us;
-
-	remainder_us = remainder;
-	hal_ticker_remove_jitter(ticks_at_expire, &remainder_us);
-
-	cis_offs_to_cig_ref = cig->sync_delay - cis->sync_delay;
-
-	/* Establish the CIG reference point by adjusting ACL-to-CIS offset
-	 * (cis->offset) by the difference between CIG- and CIS sync delays.
-	 */
-	acl_to_cig_ref_point = cis_offset - cis_offs_to_cig_ref;
-
-	/* Calculate the CIG reference point of first CIG event. This
-	 * calculation is inaccurate. However it is the best estimate available
-	 * until the first anchor point for the leading CIS is available.
-	 */
-	cig->cig_ref_point = isoal_get_wrapped_time_us(HAL_TICKER_TICKS_TO_US(*ticks_at_expire),
-						       remainder_us +
-						       EVENT_OVERHEAD_START_US +
-						       acl_to_cig_ref_point);
-	/* Calculate initial ticker offset */
-	return remainder_us + acl_to_cig_ref_point;
-}
-
 void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 			uint32_t ticks_at_expire, uint32_t remainder,
 			uint16_t instant_latency)
@@ -900,14 +878,14 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 	}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-	/* Connection establishment timeout */
-	cis->event_expire = CONN_ESTAB_COUNTDOWN;
-
 	/* Check if another CIS was already started and CIG ticker is
 	 * running. If so, we just return with updated offset and
 	 * validated handle.
 	 */
 	if (cig->state == CIG_STATE_ACTIVE) {
+		/* Connection establishment timeout */
+		cis->event_expire = CONN_ESTAB_COUNTDOWN;
+
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 		/* Initialize CIS event lazy at CIS create */
 		cis->lll.lazy_active = 0U;
@@ -923,9 +901,13 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 		return;
 	}
 
-	ticker_id = TICKER_ID_CONN_ISO_BASE + ll_conn_iso_group_handle_get(cig);
+	uint32_t remainder_us = remainder;
 
-	cig_offset_us = cig_offset_calc(cig, cis, cis->offset, &ticks_at_expire, remainder);
+	hal_ticker_remove_jitter(&ticks_at_expire, &remainder_us);
+
+	cig_offset_us = cig_offset_calc(cig, cis, cis->offset, ticks_at_expire, remainder_us);
+
+	ticker_id = TICKER_ID_CONN_ISO_BASE + ll_conn_iso_group_handle_get(cig);
 
 	if (false) {
 
@@ -960,74 +942,37 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 		}
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START */
 
+		/* Connection establishment timeout */
+		cis->event_expire = CONN_ESTAB_COUNTDOWN;
+
 		if (instant_latency > 0U) {
 			/* Try to start the CIG late by finding the CIG event relative to current
 			 * ACL event, taking latency into consideration. Adjust ticker periodicity
 			 * with increased window widening.
 			 */
-			uint32_t lost_cig_events;
+			uint64_t acl_latency_us;
 			uint32_t iso_interval_us;
-			uint32_t acl_latency_us;
-			uint32_t lost_payloads;
-			uint32_t cis_offset;
 
-			acl_latency_us = instant_latency * conn->lll.interval * CONN_INT_UNIT_US;
-			iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
-
-			if (acl_latency_us > iso_interval_us) {
-				/* Latency is greater than the ISO interval - find the offset from
-				 * this ACL event to the next active ISO event, and adjust the event
-				 * counter accordingly.
-				 */
-				lost_cig_events = DIV_ROUND_UP(acl_latency_us - cis->offset,
-							       iso_interval_us);
-				cis_offset = cis->offset + (lost_cig_events * iso_interval_us) -
-					     acl_latency_us;
-			} else {
-				/* Latency is less than- or equal to one ISO interval - start at
-				 * next ISO event.
-				 */
-				lost_cig_events = 1U;
-				cis_offset = cis->offset + iso_interval_us - acl_latency_us;
-			}
-			/* Correct the cis_offset to next CIG event, if the ACL and CIG overlaps.
-			 * ACL radio event at the instant was skipped and a relative CIS offset at
-			 * the current ACL event has been calculated. But the current ACL event
-			 * is partially overlapping with the other of CISes (not yet established) in
-			 * the CIG event. Hence, lets establish the CIS at the next ISO interval so
-			 * as to have a positive CIG event offset.
+			/* FIXME: Connection interval of up to 4 seconds with larger values for
+			 *        latency can overflow 32-bit.
 			 */
-			if (cis_offset < (cig->sync_delay - cis->sync_delay)) {
-				cis_offset += iso_interval_us;
-				lost_cig_events++;
-			}
+			acl_latency_us = (uint64_t)instant_latency * conn->lll.interval *
+					 CONN_INT_UNIT_US;
+			LL_ASSERT_ERR(acl_latency_us <= UINT32_MAX);
 
-			cis->lll.event_count_prepare += lost_cig_events;
+			/* Avoid the requirement of explicit cast when assigning to 32-bit parameter
+			 */
+			acl_latency_us &= 0xFFFFFFFFULL;
 
-			if (lost_cig_events > (cis->lll.rx.ft - 1)) {
-				lost_payloads = (lost_cig_events - (cis->lll.rx.ft - 1)) *
-						cis->lll.rx.bn;
-			} else {
-				lost_payloads = 0U;
-			}
-			cis->lll.rx.payload_count += lost_payloads;
-
-			if (lost_cig_events > (cis->lll.tx.ft - 1)) {
-				lost_payloads = (lost_cig_events - (cis->lll.tx.ft - 1)) *
-						cis->lll.tx.bn;
-			} else {
-				lost_payloads = 0U;
-			}
-			cis->lll.tx.payload_count += lost_payloads;
+			iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
+			cig_offset_us = cig_instant_latency_calc(cig, cis, acl_latency_us,
+								 iso_interval_us, ticks_at_expire,
+								 remainder_us);
 
 			/* Adjust for extra window widening */
-			iso_interval_us_frac = EVENT_US_TO_US_FRAC(cig->iso_interval *
-								   ISO_INT_UNIT_US);
+			iso_interval_us_frac = EVENT_US_TO_US_FRAC(iso_interval_us);
 			iso_interval_us_frac -= cig->lll.window_widening_periodic_us_frac *
 						instant_latency;
-			/* Calculate new offset */
-			cig_offset_us = cig_offset_calc(cig, cis, cis_offset, &ticks_at_expire,
-							remainder);
 		}
 
 		ticks_periodic  = EVENT_US_FRAC_TO_TICKS(iso_interval_us_frac);
@@ -1035,16 +980,39 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 	} else if (IS_CENTRAL(cig)) {
+		uint32_t acl_interval_us;
 		uint32_t iso_interval_us;
 
+		acl_interval_us = conn->lll.interval * CONN_INT_UNIT_US;
 		iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
+
+		/* Connection establishment timeout */
+		cis->event_expire = (DIV_ROUND_UP((acl_interval_us - cis->offset),
+						  iso_interval_us) + 1U) * CONN_ESTAB_COUNTDOWN;
+
+		if (instant_latency > 0U) {
+			/* Try to start the CIG late by finding the CIG event relative to current
+			 * ACL event, taking latency into consideration.
+			 */
+			uint64_t acl_latency_us;
+
+			/* FIXME: Connection interval of up to 4 seconds with larger values for
+			 *        latency can overflow 32-bit.
+			 */
+			acl_latency_us = (uint64_t)instant_latency * acl_interval_us;
+			LL_ASSERT_ERR(acl_latency_us <= UINT32_MAX);
+
+			/* Avoid the requirement of explicit cast when assigning to 32-bit parameter
+			 */
+			acl_latency_us &= 0xFFFFFFFFULL;
+
+			cig_offset_us = cig_instant_latency_calc(cig, cis, acl_latency_us,
+								 iso_interval_us, ticks_at_expire,
+								 remainder_us);
+		}
+
 		ticks_periodic  = HAL_TICKER_US_TO_TICKS(iso_interval_us);
 		ticks_remainder = HAL_TICKER_REMAINDER(iso_interval_us);
-
-		/* FIXME: Handle latency due to skipped ACL events around the
-		 * instant to start CIG
-		 */
-		LL_ASSERT_ERR(instant_latency == 0U);
 	} else {
 		LL_ASSERT_DBG(0);
 
@@ -1146,6 +1114,102 @@ void ull_conn_iso_cis_terminate_done(struct node_rx_pdu *rx)
 		(void)mayfly_enqueue(TICKER_USER_ID_THREAD,
 				     TICKER_USER_ID_ULL_HIGH, 1, &mfys[cig->lll.handle]);
 	}
+}
+
+static uint32_t cig_offset_calc(struct ll_conn_iso_group *cig, struct ll_conn_iso_stream *cis,
+				uint32_t cis_offset, uint32_t ticks_at_expire,
+				uint32_t remainder_us)
+{
+	uint32_t acl_to_cig_ref_point;
+	uint32_t cis_offs_to_cig_ref;
+
+	cis_offs_to_cig_ref = cig->sync_delay - cis->sync_delay;
+
+	/* Establish the CIG reference point by adjusting ACL-to-CIS offset
+	 * (cis->offset) by the difference between CIG- and CIS sync delays.
+	 */
+	acl_to_cig_ref_point = cis_offset - cis_offs_to_cig_ref;
+
+	/* Calculate the CIG reference point of first CIG event. This
+	 * calculation is inaccurate. However it is the best estimate available
+	 * until the first anchor point for the leading CIS is available.
+	 */
+	cig->cig_ref_point = isoal_get_wrapped_time_us(HAL_TICKER_TICKS_TO_US(ticks_at_expire),
+						       remainder_us + EVENT_OVERHEAD_START_US +
+						       acl_to_cig_ref_point);
+	/* Calculate initial ticker offset */
+	return remainder_us + acl_to_cig_ref_point;
+}
+
+static uint32_t cig_instant_latency_calc(struct ll_conn_iso_group *cig,
+					 struct ll_conn_iso_stream *cis, uint32_t acl_latency_us,
+					 uint32_t iso_interval_us, uint32_t ticks_at_expire,
+					 uint32_t remainder_us)
+{
+	uint32_t lost_cig_events;
+	uint32_t lost_payloads;
+	uint32_t cis_offset_us;
+	uint32_t cig_offset_us;
+
+	if (acl_latency_us > iso_interval_us) {
+		/* Latency is greater than the ISO interval - find the offset from
+		 * this ACL event to the next active ISO event, and adjust the event
+		 * counter accordingly.
+		 */
+		lost_cig_events = DIV_ROUND_UP(acl_latency_us - cis->offset, iso_interval_us);
+		cis_offset_us = cis->offset + (lost_cig_events * iso_interval_us) - acl_latency_us;
+	} else {
+		/* Latency is less than- or equal to one ISO interval - start at
+		 * next ISO event.
+		 */
+		lost_cig_events = 1U;
+		cis_offset_us = cis->offset + iso_interval_us - acl_latency_us;
+	}
+
+	/* Correct the cis_offset to next CIG event, if the ACL and CIG overlaps. ACL radio event at
+	 * the instant was skipped and a relative CIS offset at the current ACL event has been
+	 * calculated. But the current ACL event is partially overlapping with the other of CISes
+	 * (not yet established) in the CIG event. Hence, let's establish the CIS at the next ISO
+	 * interval so as to have a positive CIG event offset.
+	 */
+	if (cis_offset_us < (cig->sync_delay - cis->sync_delay)) {
+		cis_offset_us += iso_interval_us;
+		lost_cig_events++;
+	}
+
+	/* Clamp lost_cig_events to an 8-bit value to keep the 16-bit cis->event_expire bounded,
+	 * regardless of its initial value (it may be CONN_ESTAB_COUNTDOWN or a computed multiple
+	 * of the ISO interval). This limits how far the establishment can be deferred and caps
+	 * the amount of event/loss accounting performed. If a very large number of CIG events
+	 * are effectively lost, let the anchor point sync fail and eventually lead to connection
+	 * failed to be established; this is an acceptable compromise. Keep a debug assertion to
+	 * catch such extreme conditions during development.
+	 */
+	LL_ASSERT_DBG(lost_cig_events <= UINT8_MAX);
+	if (lost_cig_events > UINT8_MAX) {
+		lost_cig_events = UINT8_MAX;
+	}
+
+	cis->lll.event_count_prepare += lost_cig_events;
+	cis->event_expire += lost_cig_events;
+
+	if (lost_cig_events > (cis->lll.rx.ft - 1U)) {
+		lost_payloads = (lost_cig_events - (cis->lll.rx.ft - 1U)) * cis->lll.rx.bn;
+	} else {
+		lost_payloads = 0U;
+	}
+	cis->lll.rx.payload_count += lost_payloads;
+
+	if (lost_cig_events > (cis->lll.tx.ft - 1U)) {
+		lost_payloads = (lost_cig_events - (cis->lll.tx.ft - 1U)) * cis->lll.tx.bn;
+	} else {
+		lost_payloads = 0U;
+	}
+	cis->lll.tx.payload_count += lost_payloads;
+
+	cig_offset_us = cig_offset_calc(cig, cis, cis_offset_us, ticks_at_expire, remainder_us);
+
+	return cig_offset_us;
 }
 
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
