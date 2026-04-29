@@ -23,6 +23,7 @@ tests:
       - rpi_pico2/rp2350a/m33/mcuboot
       - rpi_pico2/rp2350a/m33/w/mcuboot
       - raytac_an54lq_db_15/nrf54l15/cpuapp/ns
+      - raytac_an54lv_db_15/nrf54l15/cpuapp/ns
   drivers.adc.b_u585i_iot02a_adc4:
     extra_args:
       - platform:b_u585i_iot02a/stm32u585xx:DTC_OVERLAY_FILE="boards/b_u585i_iot02a_adc4.overlay"
