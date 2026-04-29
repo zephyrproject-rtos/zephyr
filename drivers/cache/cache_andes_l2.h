@@ -239,13 +239,13 @@ static ALWAYS_INLINE int nds_l2_cache_init(uint8_t line_size)
 	l2_cache_cfg.size = size * 128 * 1024;
 
 	if (sys_read32(L2C_CONFIG) & L2C_CONFIG_MAP) {
-		l2_cache_cfg.cmd_offset = 0x10;
-		l2_cache_cfg.status_offset = 0;
-		l2_cache_cfg.status_shift = 4;
-	} else {
 		l2_cache_cfg.cmd_offset = 0x1000;
 		l2_cache_cfg.status_offset = 0x1000;
 		l2_cache_cfg.status_shift = 0;
+	} else {
+		l2_cache_cfg.cmd_offset = 0x10;
+		l2_cache_cfg.status_offset = 0;
+		l2_cache_cfg.status_shift = 4;
 	}
 
 	l2_cache_cfg.version = (sys_read32(L2C_CONFIG) >> L2C_CONFIG_VERSION_SHIFT) & BIT_MASK(8);
