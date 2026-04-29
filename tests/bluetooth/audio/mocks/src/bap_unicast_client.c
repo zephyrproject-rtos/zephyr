@@ -9,22 +9,27 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/ztest_assert.h>
 #include <sys/errno.h>
 
 #include "audio/bap_endpoint.h"
 #include "audio/bap_iso.h"
 #include "conn.h"
+
+LOG_MODULE_REGISTER(bt_bap_unicast_client, CONFIG_BT_BAP_UNICAST_CLIENT_LOG_LEVEL);
 
 static sys_slist_t unicast_client_cbs = SYS_SLIST_STATIC_INIT(&unicast_client_cbs);
 static struct bt_bap_unicast_group bap_unicast_group;
@@ -77,10 +82,60 @@ struct bt_conn *bt_bap_unicast_client_ep_get_conn(const struct bt_bap_ep *ep)
 	return NULL;
 }
 
+static int unicast_client_ep_set_codec_cfg(struct bt_bap_ep *ep, uint8_t id, uint16_t cid,
+					   uint16_t vid, void *data, uint8_t len)
+{
+	if (ep == NULL) {
+		return -EINVAL;
+	}
+
+	LOG_DBG("ep %p codec id 0x%02x cid 0x%04x vid 0x%04x len %u", ep, id, cid, vid, len);
+
+	if (CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0) {
+		if (len > sizeof(ep->codec_cfg.data)) {
+			LOG_DBG("Cannot store %u octets of codec data", len);
+
+			return -ENOMEM;
+		}
+
+		ep->codec_cfg.data_len = len;
+		(void)memcpy(ep->codec_cfg.data, data, len);
+	}
+
+	ep->codec_cfg.id = id;
+	ep->codec_cfg.cid = cid;
+	ep->codec_cfg.vid = vid;
+
+	return 0;
+}
+
+static int unicast_client_ep_set_metadata(struct bt_bap_ep *ep, const uint8_t *data, uint8_t len)
+{
+	if (ep == NULL) {
+		return -EINVAL;
+	}
+
+	LOG_DBG("ep %p len %u", ep, len);
+
+	if (CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0) {
+		if (len > sizeof(ep->codec_cfg.meta)) {
+			LOG_DBG("Cannot store %u octets of metadata", len);
+
+			return -ENOMEM;
+		}
+
+		ep->codec_cfg.meta_len = len;
+		(void)memcpy(ep->codec_cfg.meta, data, len);
+	}
+
+	return 0;
+}
+
 int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 				 const struct bt_audio_codec_cfg *codec_cfg)
 {
 	struct bt_bap_unicast_client_cb *listener, *next;
+	int err;
 
 	if (stream == NULL || stream->ep == NULL || codec_cfg == NULL) {
 		return -EINVAL;
@@ -93,6 +148,14 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 	default:
 		return -EINVAL;
 	}
+
+	err = unicast_client_ep_set_codec_cfg(stream->ep, codec_cfg->id, codec_cfg->cid,
+					      codec_cfg->vid, (void *)codec_cfg->data,
+					      codec_cfg->data_len);
+	if (err != 0) {
+		return err;
+	}
+	stream->codec_cfg = &stream->ep->codec_cfg;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
 		if (listener->config != NULL) {
@@ -158,6 +221,7 @@ int bt_bap_unicast_client_enable(struct bt_bap_stream *stream, const uint8_t met
 				 size_t meta_len)
 {
 	struct bt_bap_unicast_client_cb *listener, *next;
+	int err;
 
 	if (stream == NULL) {
 		return -EINVAL;
@@ -168,6 +232,11 @@ int bt_bap_unicast_client_enable(struct bt_bap_stream *stream, const uint8_t met
 		break;
 	default:
 		return -EINVAL;
+	}
+
+	err = unicast_client_ep_set_metadata(stream->ep, meta, meta_len);
+	if (err != 0) {
+		return err;
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
@@ -347,7 +416,8 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 	printk("%s %p\n", __func__, stream);
 
 	/* As per the ASCS spec, only source streams can be stopped by the client */
-	if (stream == NULL || stream->ep == NULL || stream->ep->dir == BT_AUDIO_DIR_SINK) {
+	if (stream == NULL || stream->ep == NULL || stream->ep->iso == NULL ||
+	    stream->ep->dir == BT_AUDIO_DIR_SINK) {
 		return -EINVAL;
 	}
 
@@ -382,9 +452,19 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 	 */
 	if (bt_bap_stream_can_disconnect(stream)) {
 		struct bt_bap_ep *pair_ep = bt_bap_iso_get_paired_ep(stream->ep);
+		const uint8_t reason = BT_HCI_ERR_LOCALHOST_TERM_CONN;
+
+		stream->ep->iso->chan.state = BT_ISO_STATE_CONNECTED;
+		if (stream->ops != NULL && stream->ops->disconnected != NULL) {
+			stream->ops->disconnected(stream, reason);
+		}
 
 		if (pair_ep != NULL && pair_ep->stream != NULL) {
 			struct bt_bap_stream *pair_stream = pair_ep->stream;
+
+			if (pair_stream->ops != NULL && pair_stream->ops->disconnected != NULL) {
+				pair_stream->ops->disconnected(pair_stream, reason);
+			}
 
 			pair_stream->ep->state = BT_BAP_EP_STATE_QOS_CONFIGURED;
 
@@ -561,7 +641,7 @@ static void unicast_group_set_iso_stream_param(struct bt_bap_unicast_group *grou
 	/* Store the stream Codec QoS in the bap_iso */
 	unicast_client_qos_cfg_to_iso_qos(iso, qos, dir);
 
-	/* Store the group Codec QoS in the group - This assumes thats the parameters have been
+	/* Store the group Codec QoS in the group - This assumes that the parameters have been
 	 * verified first
 	 */
 	group->cig_param.framing = qos->framing;
@@ -644,7 +724,7 @@ int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
 	sys_slist_init(&bap_unicast_group.streams);
 	for (size_t i = 0U; i < param->params_count; i++) {
 		struct bt_bap_unicast_group_stream_pair_param *stream_param;
-		int err;
+		__maybe_unused int err;
 
 		stream_param = &param->params[i];
 
