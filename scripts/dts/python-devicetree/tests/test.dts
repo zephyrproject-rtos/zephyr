@@ -493,6 +493,19 @@
 	};
 
 	//
+	// For testing 'min:' and 'max:'
+	//
+
+	ranges-node {
+		compatible = "min-max";
+		int-with-min = <10>;
+		int-with-max = <50>;
+		int-with-range = <42>;
+		array-with-range = <0 25 50>;
+		no-range = <999>;
+	};
+
+	//
 	// For testing 'enum:'
 	//
 
