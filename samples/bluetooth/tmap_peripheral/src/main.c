@@ -43,7 +43,7 @@ static uint8_t unicast_server_addata[] = {
 	BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED, /* Target Announcement */
 	BT_BYTES_LIST_LE16(AVAILABLE_SINK_CONTEXT),
 	BT_BYTES_LIST_LE16(AVAILABLE_SOURCE_CONTEXT),
-	0x00, /* Metadata length */
+	0x00U, /* Metadata length */
 };
 
 static const uint8_t cap_addata[] = {

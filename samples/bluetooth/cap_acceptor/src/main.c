@@ -57,7 +57,7 @@ static const struct bt_data ad[] = {
 				  BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED,
 				  BT_BYTES_LIST_LE16(SINK_CONTEXT),
 				  BT_BYTES_LIST_LE16(SOURCE_CONTEXT),
-				  0x00, /* Metadata length */),
+				  0x00U, /* Metadata length */),
 	))
 	IF_ENABLED(CONFIG_BT_BAP_SCAN_DELEGATOR,
 		   (BT_DATA_BYTES(BT_DATA_SVC_DATA16,

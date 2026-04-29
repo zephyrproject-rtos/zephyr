@@ -54,7 +54,7 @@ static struct audio_source {
 static size_t configured_source_stream_count;
 
 static const struct bt_bap_qos_cfg_pref qos_pref =
-	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 20000, 40000, 20000, 40000);
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02U, 10U, 20000U, 40000U, 20000U, 40000U);
 
 static uint16_t get_and_incr_seq_num(const struct bt_bap_stream *stream)
 {

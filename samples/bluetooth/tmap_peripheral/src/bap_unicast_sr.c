@@ -40,7 +40,7 @@ static const struct bt_audio_codec_cap lc3_codec_cap =
 	BT_AUDIO_CODEC_CAP_LC3(BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_32KHZ |
 				       BT_AUDIO_CODEC_CAP_FREQ_48KHZ,
 			       BT_AUDIO_CODEC_CAP_DURATION_7_5 | BT_AUDIO_CODEC_CAP_DURATION_10,
-			       BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(2), 30, 155u, 1u,
+			       BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(2), 30U, 155u, 1u,
 			       (AVAILABLE_SINK_CONTEXT | AVAILABLE_SOURCE_CONTEXT));
 
 static struct bt_conn *default_conn;
@@ -53,7 +53,7 @@ static struct audio_source {
 static size_t configured_source_stream_count;
 
 static const struct bt_bap_qos_cfg_pref qos_pref =
-	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 20000, 40000, 20000, 40000);
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02U, 10U, 20000U, 40000U, 20000U, 40000U);
 
 static void print_hex(const uint8_t *ptr, size_t len)
 {
