@@ -36,27 +36,6 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,itcm = &itcm;
 	};
-
-	power-states {
-		sleep: sleep {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			min-residency-us = <1000000>;
-		};
-
-		deepsleep: deepsleep {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-ram";
-			min-residency-us = <2000000>;
-			exit-latency-us = <20>;
-		};
-	};
-
-	cpus {
-		cpu@1 {
-			cpu-power-states = <&sleep &deepsleep>;
-		};
-	};
 };
 
 &mcwdt1 {
