@@ -91,6 +91,12 @@ config MODBUS_NONCOMPLIANT_SERIAL_MODE
 	help
 	  Allow non-compliant stop and parity bit settings.
 
+config MODBUS_USER_CB_PREPARE
+	bool "User callback prepare_regs"
+	depends on MODBUS_SERVER
+	help
+	  Enable user callback prepare_regs.
+
 module = MODBUS
 module-str = Modbus Support
 module-help = Sets log level for Modbus support
