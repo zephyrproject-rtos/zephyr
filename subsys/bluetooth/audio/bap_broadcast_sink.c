@@ -753,9 +753,13 @@ static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
 			 struct bt_le_per_adv_sync_synced_info *info)
 {
 	struct bt_bap_broadcast_sink *sink = broadcast_sink_get_by_pa(sync);
+	int err;
 
 	if (sink != NULL) {
-		bt_bap_scan_delegator_set_pa_state(sink->bass_src_id, BT_BAP_PA_STATE_SYNCED);
+		err = bt_bap_scan_delegator_set_pa_state(sink->bass_src_id, BT_BAP_PA_STATE_SYNCED);
+		if (err != 0) {
+			LOG_WRN("Failed to set PA state: %d", err);
+		}
 	}
 }
 
@@ -763,9 +767,14 @@ static void pa_term_cb(struct bt_le_per_adv_sync *sync,
 		       const struct bt_le_per_adv_sync_term_info *info)
 {
 	struct bt_bap_broadcast_sink *sink = broadcast_sink_get_by_pa(sync);
+	int err;
 
 	if (sink != NULL) {
-		bt_bap_scan_delegator_set_pa_state(sink->bass_src_id, BT_BAP_PA_STATE_NOT_SYNCED);
+		err = bt_bap_scan_delegator_set_pa_state(sink->bass_src_id,
+							 BT_BAP_PA_STATE_NOT_SYNCED);
+		if (err != 0) {
+			LOG_WRN("Failed to set PA state: %d", err);
+		}
 		sink->pa_sync = NULL;
 		sink->base_size = 0U;
 	}

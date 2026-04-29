@@ -3789,11 +3789,13 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 #endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 
 #if defined(CONFIG_BT_PAC_SNK)
-	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
+	__ASSERT(err == 0, "Failed to register sink capabilities: %d", err);
 #endif /* CONFIG_BT_PAC_SNK */
 #if defined(CONFIG_BT_PAC_SRC)
-	bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
-#endif /* CONFIG_BT_PAC_SNK */
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
+	__ASSERT(err == 0, "Failed to register source capabilities: %d", err);
+#endif /* CONFIG_BT_PAC_SRC */
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
 		err = bt_pacs_set_location(BT_AUDIO_DIR_SINK, LOCATION);

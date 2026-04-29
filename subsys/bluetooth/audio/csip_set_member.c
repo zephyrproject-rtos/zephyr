@@ -1091,7 +1091,9 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 		for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
 			k_mutex_init(&svc_insts[i].mutex);
 		}
-		bt_conn_auth_info_cb_register(&auth_callbacks);
+		err = bt_conn_auth_info_cb_register(&auth_callbacks);
+		__ASSERT(err == 0, "Failed to register auth_info callbacks: %d", err);
+
 		first_register = true;
 	}
 

@@ -383,7 +383,9 @@ static uint8_t bt_cap_common_discover_included_cb(struct bt_conn *conn,
 			LOG_DBG("CAS CSIS not known, discovering");
 
 			if (!csis_cbs_registered) {
-				bt_csip_set_coordinator_register_cb(&csis_client_cb);
+				err = bt_csip_set_coordinator_register_cb(&csis_client_cb);
+				__ASSERT(err == 0, "Failed to register CSIP callbacks: %d", err);
+
 				csis_cbs_registered = true;
 			}
 

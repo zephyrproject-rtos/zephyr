@@ -128,7 +128,12 @@ static int cmd_cap_initiator_discover(const struct shell *sh, size_t argc, char 
 	}
 
 	if (!cbs_registered) {
-		bt_cap_initiator_register_cb(&cbs);
+		err = bt_cap_initiator_register_cb(&cbs);
+		if (err != 0) {
+			shell_error(sh, "Failed to register CAP initiator callbacks: %d", err);
+			return -ENOEXEC;
+		}
+
 		cbs_registered = true;
 	}
 
