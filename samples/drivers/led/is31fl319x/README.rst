@@ -2,7 +2,7 @@
    :name: IS31FL319x RGB LED
    :relevant-api: led_interface
 
-   Cycle colors on an RGB LED connected to the IS31FL3194 or IS31FL3197
+   Cycle colors on an RGB LED connected to the IS31FL3193, IS31FL3194 or IS31FL3197
    using the LED API.
 
 Overview
@@ -37,8 +37,9 @@ Building and Running
 This sample can be built and executed on an Arduino Nicla Sense ME, or
 Arduino Giga with an Arduino Giga Display shield, or on
 any board where the devicetree has an I2C device node with compatible
-:dtcompatible:`issi,is31fl3194` or :dtcompatible:`issi,is31fl3197`
-with the relevant bus controller node also being enabled.
+:dtcompatible:`issi,is31fl3193`, :dtcompatible:`issi,is31fl3194` or
+:dtcompatible:`issi,is31fl3197` with the relevant bus controller node
+also being enabled.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/led/is31fl319x

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) Arduino s.r.l. and/or its affiliated companies
+ * Copyright (c) Kickmaker
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +11,7 @@
  * @brief IS31FL319x LED driver
  *
  * It currently supports:
+ * The IS31FL3193 is a 3-channel LED driver that communicates over I2C.
  * The IS31FL3194 is a 3-channel LED driver that communicates over I2C.
  * The IS31FL3197 is a 4-channel LED driver that communicates over I2C.
  */
@@ -27,8 +29,10 @@ LOG_MODULE_REGISTER(is31fl319x, CONFIG_LED_LOG_LEVEL);
 /* define features that are specific subset of supported devices */
 #define REG_NOT_DEFINED 0xff
 
-#define FEATURE_ID_IS_ADDR	0x01	/* The id is the bus address */
-#define FEATURE_SET_CURRENT	0x02	/* the device supports setting current limits */
+#define FEATURE_ID_IS_ADDR		0x01	/* The id is the bus address */
+#define FEATURE_SET_CURRENT		0x02	/* the device supports per-channel current limits */
+/* the device supports a single global current limit */
+#define FEATURE_SET_CURRENT_GLOBAL	0x04
 
 struct is31f1319x_model {
 	const uint8_t features;
@@ -42,6 +46,8 @@ struct is31f1319x_model {
 	const uint8_t shutdown_reg_val;
 	const uint8_t conf_enable;
 	const uint8_t update_val;
+	const uint8_t led_ctrl_reg;
+	const uint8_t led_ctrl_val;
 
 	const uint8_t led_channels[];
 };
@@ -54,6 +60,47 @@ struct is31fl319x_config {
 	const uint8_t *current_limits;
 	const struct is31f1319x_model *model;
 };
+
+#ifdef CONFIG_DT_HAS_ISSI_IS31FL3193_ENABLED
+/* IS31FL3193 model registers and values */
+#define IS31FL3193_SHUTDOWN_REG		0x00
+#define IS31FL3193_LED_MODE_REG		0x02
+#define IS31FL3193_CURRENT_REG		0x03
+#define IS31FL3193_OUT1_REG		0x04
+#define IS31FL3193_OUT2_REG		0x05
+#define IS31FL3193_OUT3_REG		0x06
+#define IS31FL3193_UPDATE_REG		0x07
+#define IS31FL3193_LED_CTRL_REG		0x1d
+
+#define IS31FL3193_SHUTDOWN_EN_VAL	0x20 /* EN=1, SSD=0: normal operation */
+#define IS31FL3193_LED_MODE_PWM		0x00 /* PWM control mode */
+#define IS31FL3193_UPDATE_VAL		0x00
+#define IS31FL3193_LED_CTRL_VAL		0x07 /* enable OUT1~OUT3 */
+
+#define IS31FL3193_CHANNEL_COUNT	3
+
+static const struct is31f1319x_model is31f13193_model = {
+	.features = FEATURE_SET_CURRENT_GLOBAL,
+
+	/* register indexes */
+	.prod_id_reg = REG_NOT_DEFINED, /* no product ID register */
+	.shutdown_reg = IS31FL3193_SHUTDOWN_REG,
+	.conf_reg = IS31FL3193_LED_MODE_REG,
+	.current_reg = IS31FL3193_CURRENT_REG,
+	.update_reg = IS31FL3193_UPDATE_REG,
+
+	/* values for those registers */
+	.prod_id_val = 0,
+	.shutdown_reg_val = IS31FL3193_SHUTDOWN_EN_VAL,
+	.conf_enable = IS31FL3193_LED_MODE_PWM,
+	.update_val = IS31FL3193_UPDATE_VAL,
+	.led_ctrl_reg = IS31FL3193_LED_CTRL_REG,
+	.led_ctrl_val = IS31FL3193_LED_CTRL_VAL,
+
+	/* channel output registers */
+	.led_channels = {IS31FL3193_OUT1_REG, IS31FL3193_OUT2_REG, IS31FL3193_OUT3_REG}
+};
+#endif
 
 #ifdef CONFIG_DT_HAS_ISSI_IS31FL3194_ENABLED
 /* IS31FL3194 model registers and values */
@@ -86,6 +133,8 @@ static const struct is31f1319x_model is31f13194_model = {
 	.shutdown_reg_val = 0,
 	.conf_enable = IS31FL3194_CONF_ENABLE,
 	.update_val = IS31FL3194_UPDATE_VAL,
+	.led_ctrl_reg = REG_NOT_DEFINED,
+	.led_ctrl_val = 0,
 
 	/* channel output registers */
 	.led_channels = {IS31FL3194_OUT1_REG, IS31FL3194_OUT2_REG, IS31FL3194_OUT3_REG}
@@ -124,6 +173,8 @@ static const struct is31f1319x_model is31f13197_model = {
 	.shutdown_reg_val = IS31FL3197_SHUTDOWN_REG_VAL,
 	.conf_enable = IS31FL3197_OPER_CONFIG_REG_VAL,
 	.update_val = IS31FL3197_UPDATE_VAL,
+	.led_ctrl_reg = REG_NOT_DEFINED,
+	.led_ctrl_val = 0,
 
 	/* channel output registers */
 	.led_channels = {IS31FL3197_OUT1_REG, IS31FL3197_OUT2_REG, IS31FL3197_OUT3_REG,
@@ -282,6 +333,17 @@ static int is31fl319x_check_config(const struct device *dev)
 	return 0;
 }
 
+static uint8_t is31fl3193_current_to_reg(uint8_t ma)
+{
+	switch (ma) {
+	case 10: return 0x04; /* CS=001, D4:D2 */
+	case 5:  return 0x08; /* CS=010 */
+	case 30: return 0x0c; /* CS=011 */
+	case 17: return 0x10; /* CS=100, 17.5mA */
+	default: return 0x00; /* CS=000, 42mA */
+	}
+}
+
 static int is31fl319x_init(const struct device *dev)
 {
 	const struct is31fl319x_config *config = dev->config;
@@ -303,25 +365,26 @@ static int is31fl319x_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = i2c_reg_read_byte_dt(&config->bus, model->prod_id_reg, &prod_id);
-	if (ret != 0) {
-		LOG_ERR("%s: failed to read product ID", dev->name);
-		return ret;
-	}
-
-
-	if (model->features & FEATURE_ID_IS_ADDR) {
-		/* The product ID (8 bit) should be the I2C address(7 bit) */
-		if (prod_id != (config->bus.addr << 1)) {
-			LOG_ERR("%s: invalid product ID 0x%02x (expected 0x%02x)", dev->name,
-				prod_id, config->bus.addr << 1);
-			return -ENODEV;
+	if (model->prod_id_reg != REG_NOT_DEFINED) {
+		ret = i2c_reg_read_byte_dt(&config->bus, model->prod_id_reg, &prod_id);
+		if (ret != 0) {
+			LOG_ERR("%s: failed to read product ID", dev->name);
+			return ret;
 		}
-	} else {
-		if (prod_id != model->prod_id_val) {
-			LOG_ERR("%s: invalid product ID 0x%02x (expected 0x%02x)", dev->name,
-				prod_id, model->prod_id_val);
-			return -ENODEV;
+
+		if (model->features & FEATURE_ID_IS_ADDR) {
+			/* The product ID (8 bit) should be the I2C address(7 bit) */
+			if (prod_id != (config->bus.addr << 1)) {
+				LOG_ERR("%s: invalid product ID 0x%02x (expected 0x%02x)",
+					dev->name, prod_id, config->bus.addr << 1);
+				return -ENODEV;
+			}
+		} else {
+			if (prod_id != model->prod_id_val) {
+				LOG_ERR("%s: invalid product ID 0x%02x (expected 0x%02x)",
+					dev->name, prod_id, model->prod_id_val);
+				return -ENODEV;
+			}
 		}
 	}
 
@@ -344,6 +407,16 @@ static int is31fl319x_init(const struct device *dev)
 			return ret;
 		}
 	}
+
+	if (model->features & FEATURE_SET_CURRENT_GLOBAL) {
+		ret = i2c_reg_write_byte_dt(&config->bus, model->current_reg,
+					    is31fl3193_current_to_reg(config->current_limits[0]));
+		if (ret != 0) {
+			LOG_ERR("%s: failed to set current limit", dev->name);
+			return ret;
+		}
+	}
+
 	if (model->shutdown_reg != REG_NOT_DEFINED) {
 		ret = i2c_reg_write_byte_dt(&config->bus, model->shutdown_reg,
 					    model->shutdown_reg_val);
@@ -354,8 +427,20 @@ static int is31fl319x_init(const struct device *dev)
 	}
 
 	/* enable device */
-	return i2c_reg_write_byte_dt(&config->bus, model->conf_reg,
-				     model->conf_enable);
+	ret = i2c_reg_write_byte_dt(&config->bus, model->conf_reg, model->conf_enable);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (model->led_ctrl_reg != REG_NOT_DEFINED) {
+		ret = i2c_reg_write_byte_dt(&config->bus, model->led_ctrl_reg,
+					    model->led_ctrl_val);
+		if (ret != 0) {
+			LOG_ERR("%s: failed to set LED control", dev->name);
+		}
+	}
+
+	return ret;
 }
 
 static DEVICE_API(led, is31fl319x_led_api) = {
@@ -402,6 +487,11 @@ static DEVICE_API(led, is31fl319x_led_api) = {
 	DEVICE_DT_INST_DEFINE(n, &is31fl319x_init, NULL, NULL,			\
 			      &is31fl319##id##_config_##n, POST_KERNEL,		\
 			      CONFIG_LED_INIT_PRIORITY, &is31fl319x_led_api);
+
+#define DT_DRV_COMPAT issi_is31fl3193
+DT_INST_FOREACH_STATUS_OKAY_VARGS(IS31FL319X_DEVICE, 3, IS31FL3193_CHANNEL_COUNT,
+				  &is31f13193_model)
+#undef DT_DRV_COMPAT
 
 #define DT_DRV_COMPAT issi_is31fl3194
 DT_INST_FOREACH_STATUS_OKAY_VARGS(IS31FL319X_DEVICE, 4, IS31FL3194_CHANNEL_COUNT,

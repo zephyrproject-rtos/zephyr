@@ -27,6 +27,7 @@ static const char * const led_colors[] = {
 /*
  * A build error on these lines means your board is unsupported.
  */
+const struct device *led3_dev = DEVICE_DT_GET_ANY(issi_is31fl3193);
 const struct device *led4_dev = DEVICE_DT_GET_ANY(issi_is31fl3194);
 const struct device *led7_dev = DEVICE_DT_GET_ANY(issi_is31fl3197);
 
@@ -155,14 +156,18 @@ int main(void)
 	uint8_t color_id;
 	int rgb_led;
 	const struct led_info *info;
-	const struct device *led_dev = led4_dev;
+	const struct device *led_dev = led3_dev;
 
+	if (led_dev == NULL) {
+		led_dev = led4_dev;
+	}
 	if (led_dev == NULL) {
 		led_dev = led7_dev;
 	}
 
 	if (!led_dev) {
-		printk("No device with compatible issi,is31fl3194 or issi,is31fl3197 found\n");
+		printk("No device with compatible issi,is31fl3193, issi,is31fl3194 or "
+			"issi,is31fl3197 found\n");
 		return 0;
 	}
 
