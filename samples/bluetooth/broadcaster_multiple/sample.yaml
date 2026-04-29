@@ -21,6 +21,7 @@ tests:
       - nrf52840dk/nrf52840
       - lp_em_cc2340r5
       - lp_em_cc2340r53
+      - lp_em_cc2340r53_wcsp
       - lp_em_cc2745r10_q1/cc2745r10_q1
       - lp_em_cc2745r10_q1/cc2755r10
     integration_platforms:
