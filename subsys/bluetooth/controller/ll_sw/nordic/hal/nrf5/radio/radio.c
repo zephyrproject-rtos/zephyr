@@ -225,7 +225,20 @@ void radio_reset(void)
 
 #if defined(CONFIG_NRF_SYS_EVENT)
 	(void)nrf_sys_event_request_global_constlat();
+
 #else /* !CONFIG_NRF_SYS_EVENT */
+	/* Refer to nRF54L Product Specifications for below quirks.
+	 * FIXME: Use on off service design to share these request with application implementations.
+	 */
+	/* Put RRAMC in Standby mode.
+	 * Gives faster wake-ups, and is useful in combination with Constant Latency sub-power mode.
+	 * FIXME: Use on off service design to share this request with application implementations.
+	 */
+	NRF_RRAMC->POWER.LOWPOWERCONFIG = (RRAMC_POWER_LOWPOWERCONFIG_MODE_Standby <<
+					   RRAMC_POWER_LOWPOWERCONFIG_MODE_Pos) &
+					  RRAMC_POWER_LOWPOWERCONFIG_MODE_Msk;
+
+	/* Enable Constant Latency mode */
 	NRF_POWER->TASKS_CONSTLAT = 1U;
 #endif /* !CONFIG_NRF_SYS_EVENT */
 #endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
@@ -626,7 +639,13 @@ uint32_t radio_is_tx_done(void)
 
 uint32_t radio_has_disabled(void)
 {
-	return (NRF_RADIO->EVENTS_DISABLED != 0);
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	if (NRF_RADIO->EVENTS_END != 0U) {
+		return 1U;
+	}
+#endif /* CONFIG_BT_CTLR_TIFS_PLLEN */
+
+	return (NRF_RADIO->EVENTS_DISABLED != 0U);
 }
 
 uint32_t radio_is_idle(void)
@@ -752,10 +771,8 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 		 */
 		if (dir_curr == SW_SWITCH_TX) {
 			delay = HAL_RADIO_NS2US_ROUND(
-			    hal_radio_tx_ready_delay_ns_get(phy_next,
-							    flags_next) +
-			    hal_radio_tx_chain_delay_ns_get(phy_curr,
-							    flags_curr));
+			    hal_radio_tifs_tx_ready_delay_ns_get(phy_next, flags_next) +
+			    hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr));
 
 			hal_radio_b2b_txen_on_sw_switch(cc, ppi);
 		} else {
@@ -763,8 +780,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 			 * Assumption being, S8 has higher delay.
 			 */
 			delay = HAL_RADIO_NS2US_ROUND(
-			    hal_radio_tx_ready_delay_ns_get(phy_next,
-							    flags_next) +
+			    hal_radio_tifs_tx_ready_delay_ns_get(phy_next, flags_next) +
 			    hal_radio_rx_chain_delay_ns_get(phy_curr, 1));
 
 			hal_radio_txen_on_sw_switch(cc, ppi);
@@ -803,8 +819,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 
 			/* Calculate assuming reception on S2 coding scheme. */
 			delay_s2 = HAL_RADIO_NS2US_ROUND(
-				hal_radio_tx_ready_delay_ns_get(phy_next,
-								flags_next) +
+				hal_radio_tifs_tx_ready_delay_ns_get(phy_next, flags_next) +
 				hal_radio_rx_chain_delay_ns_get(phy_curr, 0));
 
 			new_cc_s2_value = SW_SWITCH_TIMER->CC[cc];
@@ -852,19 +867,15 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 		/* Calculate delay with respect to current and next PHY. */
 		if (dir_curr) {
 			delay = HAL_RADIO_NS2US_CEIL(
-				hal_radio_rx_ready_delay_ns_get(phy_next,
-								flags_next) +
-				hal_radio_tx_chain_delay_ns_get(phy_curr,
-								flags_curr)) +
+				hal_radio_tifs_rx_ready_delay_ns_get(phy_next, flags_next) +
+				hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr)) +
 				(EVENT_CLOCK_JITTER_US << 1);
 
 			hal_radio_rxen_on_sw_switch(cc, ppi);
 		} else {
 			delay = HAL_RADIO_NS2US_CEIL(
-				hal_radio_rx_ready_delay_ns_get(phy_next,
-								flags_next) +
-				hal_radio_rx_chain_delay_ns_get(phy_curr,
-								flags_curr)) +
+				hal_radio_tifs_rx_ready_delay_ns_get(phy_next, flags_next) +
+				hal_radio_rx_chain_delay_ns_get(phy_curr, flags_curr)) +
 				(EVENT_CLOCK_JITTER_US << 1);
 
 			hal_radio_b2b_rxen_on_sw_switch(cc, ppi);
@@ -931,7 +942,11 @@ void radio_switch_complete_and_rx(uint8_t phy_rx)
 			    NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_RXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 	/* NOTE: As Tx chain delays are negligible constant values (~1 us)
 	 *	 across nRF5x radios, sw_switch assumes the 1M chain delay for
@@ -950,7 +965,11 @@ void radio_switch_complete_and_tx(uint8_t phy_rx, uint8_t flags_rx,
 			    NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 	sw_switch(SW_SWITCH_RX, SW_SWITCH_TX, phy_rx, flags_rx, phy_tx, flags_tx,
 		  END_EVT_DELAY_DISABLED);
@@ -965,7 +984,11 @@ void radio_switch_complete_with_delay_compensation_and_tx(
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 	sw_switch(SW_SWITCH_RX, SW_SWITCH_TX, phy_rx, flags_rx, phy_tx, flags_tx, end_delay_en);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
@@ -979,7 +1002,11 @@ void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 			    NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next,
 		  END_EVT_DELAY_DISABLED);
@@ -994,7 +1021,11 @@ void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
 			    NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_RXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 	sw_switch(SW_SWITCH_RX, SW_SWITCH_RX, phy_curr, flags_curr, phy_next, flags_next,
 		  END_EVT_DELAY_DISABLED);
@@ -1006,7 +1037,8 @@ void radio_switch_complete_and_b2b_tx_disable(void)
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
 #else /* CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+
 	hal_radio_sw_switch_b2b_tx_disable(sw_tifs_toggle);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
@@ -1016,7 +1048,8 @@ void radio_switch_complete_and_b2b_rx_disable(void)
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
 #else /* CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+
 	hal_radio_sw_switch_b2b_rx_disable(sw_tifs_toggle);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
@@ -1026,7 +1059,8 @@ void radio_switch_complete_and_disable(void)
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
 #else /* CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+
 	hal_radio_sw_switch_disable();
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
@@ -1766,7 +1800,17 @@ void radio_tmr_stop(void)
 #if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 #if defined(CONFIG_NRF_SYS_EVENT)
 	(void)nrf_sys_event_release_global_constlat();
+
 #else /* !CONFIG_NRF_SYS_EVENT */
+	/* Refer to nRF54L Product Specifications for below quirks.
+	 * FIXME: Use on off service design to share these request with application implementations.
+	 */
+	/* Put back RRAMC in auto power down mode */
+	NRF_RRAMC->POWER.LOWPOWERCONFIG = (RRAMC_POWER_LOWPOWERCONFIG_MODE_PowerOff <<
+					   RRAMC_POWER_LOWPOWERCONFIG_MODE_Pos) &
+					  RRAMC_POWER_LOWPOWERCONFIG_MODE_Msk;
+
+	/* Enable Low-power mode (variable latency) */
 	NRF_POWER->TASKS_LOWPWR = 1U;
 #endif /* !CONFIG_NRF_SYS_EVENT */
 #endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
