@@ -622,13 +622,16 @@ int gnss_nmea0183_parse_gst(const char **argv, uint16_t argc, struct gnss_accura
 		return -EINVAL;
 	}
 
-	/* Orientation, in degrees true north → 1/100 degrees */
+	/* Orientation, in degrees true north → 1/100 degrees.
+	 * NMEA range is [0, 360); we accept up to 359.999° (359999 in
+	 * milli-degrees) and convert to centi-degrees with truncation.
+	 */
 	if (argv[5][0] == '\0') {
 		accuracy->err_ellipse_orientation_cdeg = 0;
 	} else if ((gnss_parse_dec_to_milli(argv[5], &tmp) < 0) ||
 		   (tmp < 0) ||
-		   (tmp > 35999999)) {
-			return -EINVAL;
+		   (tmp > 359999)) {
+		return -EINVAL;
 	} else {
 		/* milli-deg → centi-deg */
 		accuracy->err_ellipse_orientation_cdeg = (uint16_t)(tmp / 10);
