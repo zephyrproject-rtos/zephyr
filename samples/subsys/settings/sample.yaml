@@ -36,6 +36,7 @@ common:
 tests:
   sample.subsys.settings.nvs:
     filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+            or dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition")
     platform_exclude:
       - nucleo_f746zg
       - nucleo_h723zg

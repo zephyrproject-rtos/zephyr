@@ -169,14 +169,17 @@ TESTDATA_PART_3 = [
     (
         '(dt_compat_enabled("st,stm32-flash-controller") or' \
         ' dt_compat_enabled("st,stm32h7-flash-controller")) and' \
-        ' dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")',
+        ' (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions") or' \
+        '  dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition"))',
         ['dts']
     ),
     (
         '((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE) and' \
-        ' dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")) or' \
+        ' (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions") or' \
+        '  dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition"))) or' \
         ' (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE and' \
-        ' dt_label_with_parent_compat_enabled("slot1_ns_partition", "fixed-partitions"))',
+        '  (dt_label_with_parent_compat_enabled("slot1_ns_partition", "fixed-partitions") or' \
+        '   dt_label_compat_enabled("slot1_ns_partition", "zephyr,mapped-partition")))',
         ['dts', 'kconfig']
     ),
     (

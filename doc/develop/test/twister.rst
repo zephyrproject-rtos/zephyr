@@ -868,6 +868,17 @@ Expressions
    - ``label``: The node label to match.
    - ``compat``: The parent node’s compatible string to match.
 
+``dt_label_compat_enabled(label, compat)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if a DT node with the specified label exists, is enabled, and has the
+   specified compatible string.
+
+**Parameters:**
+   - ``label``: The node label to match.
+   - ``compat``: The node compatible string to match.
+
 ``dt_chosen_enabled(chosen)``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
