@@ -7,7 +7,9 @@ toolchain:
 supported:
   - gpio
   - i2c
+  - spi
   - uart
   - watchdog
   - entropy
+  - lora
 vendor: arduino
