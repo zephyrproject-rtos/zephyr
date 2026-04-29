@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Wind River Systems, Inc.
+ * Copyright (c) 2026 Aerlync Labs Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +31,9 @@
 #include <zephyr/kernel/stats.h>
 #include <zephyr/kernel/obj_core.h>
 #include <zephyr/sys/rb.h>
+#ifdef CONFIG_TIMEOUT_USE_MIN_HEAP
+#include <zephyr/sys/min_heap.h>
+#endif
 #endif
 
 #define K_NUM_THREAD_PRIO (CONFIG_NUM_PREEMPT_PRIORITIES + CONFIG_NUM_COOP_PRIORITIES + 1)
@@ -297,6 +301,23 @@ struct _timeout;
 typedef void (*_timeout_func_t)(struct _timeout *t);
 
 struct _timeout {
+#ifdef CONFIG_TIMEOUT_USE_MIN_HEAP
+	/*
+	 * abs_ticks: absolute expiry tick or a sentinel value:
+	 *	INT64_MIN     = ANNOUNCING (popped, handler pending)
+	 *	INT64_MIN + 1 = ABORTED (cancelled)
+	 *	>= 1	      = valid absolute tick
+	 *
+	 * heap_handle.idx == 0  : not in heap (idle/announcing/aborted)
+	 * heap_handle.idx 1..N  : active at storage slot (idx - 1)
+	 *
+	 * Total: 16 bytes (abs_ticks 8 + heap_handle 2 + _pad 2 + fn 4).
+	 */
+	int64_t abs_ticks;
+	struct min_heap_handle heap_handle;
+	uint16_t _pad;
+	_timeout_func_t fn;
+#else
 	sys_dnode_t node;
 	_timeout_func_t fn;
 #ifdef CONFIG_TIMEOUT_64BIT
@@ -305,6 +326,7 @@ struct _timeout {
 #else
 	int32_t dticks;
 #endif
+#endif /* CONFIG_TIMEOUT_USE_MIN_HEAP */
 };
 
 typedef void (*k_thread_timeslice_fn_t)(struct k_thread *thread, void *data);
