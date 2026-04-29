@@ -66,6 +66,9 @@ static void test_config_psk(int s_sock, int c_sock)
 	sec_tag_t sec_tag_list[] = {
 		PSK_TAG
 	};
+	const int cipher_list[] = {
+		MBEDTLS_TLS_PSK_WITH_AES_256_CBC_SHA384,
+	};
 
 	(void)tls_credential_delete(PSK_TAG, TLS_CREDENTIAL_PSK);
 	(void)tls_credential_delete(PSK_TAG, TLS_CREDENTIAL_PSK_ID);
@@ -81,12 +84,18 @@ static void test_config_psk(int s_sock, int c_sock)
 		zassert_equal(zsock_setsockopt(s_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
 					 sec_tag_list, sizeof(sec_tag_list)),
 			      0, "Failed to set PSK on server socket");
+		zassert_equal(zsock_setsockopt(s_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_CIPHERSUITE_LIST,
+					 cipher_list, sizeof(cipher_list)),
+			      0, "Failed to set ciphersuite list on server socket");
 	}
 
 	if (c_sock >= 0) {
 		zassert_equal(zsock_setsockopt(c_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
 					 sec_tag_list, sizeof(sec_tag_list)),
 			      0, "Failed to set PSK on client socket");
+		zassert_equal(zsock_setsockopt(c_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_CIPHERSUITE_LIST,
+					 cipher_list, sizeof(cipher_list)),
+			      0, "Failed to set ciphersuite list on client socket");
 	}
 }
 
