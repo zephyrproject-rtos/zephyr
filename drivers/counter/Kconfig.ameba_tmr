@@ -1,0 +1,12 @@
+# AMEBA Basic Timer configuration
+
+# Copyright (c) 2024 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_TMR_AMEBA
+	bool "AMEBA Counter Driver based on Basic-Timers"
+	default y
+	depends on DT_HAS_REALTEK_AMEBA_COUNTER_ENABLED
+	help
+	  Enables the Counter driver API based on realtek's Basic
+	  Timers for AMEBA series devices.

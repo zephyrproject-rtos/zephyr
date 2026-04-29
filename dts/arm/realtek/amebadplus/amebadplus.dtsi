@@ -110,6 +110,96 @@
 			interrupts = <29 0>;
 			status = "disabled";
 		};
+
+		timer0: counter@41017000 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x41017000 0x30>;
+			clocks = <&rcc AMEBA_LTIM0_CLK>;
+			interrupts = <10 0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer1: counter@41017200 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x41017200 0x30>;
+			clocks = <&rcc AMEBA_LTIM1_CLK>;
+			interrupts = <11 0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer2: counter@41017400 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x41017400 0x30>;
+			clocks = <&rcc AMEBA_LTIM2_CLK>;
+			interrupts = <12 0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer3: counter@41017600 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x41017600 0x30>;
+			clocks = <&rcc AMEBA_LTIM3_CLK>;
+			interrupts = <13 0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer4: counter@41017800 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x41017800 0x30>;
+			clocks = <&rcc AMEBA_LTIM4_CLK>;
+			interrupts = <14 0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer5: counter@41017a00 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x41017a00 0x30>;
+			clocks = <&rcc AMEBA_LTIM5_CLK>;
+			interrupts = <15 0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer6: counter@41017c00 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x41017c00 0x30>;
+			clocks = <&rcc AMEBA_LTIM6_CLK>;
+			interrupts = <16 0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer7: counter@41017e00 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x41017e00 0x30>;
+			clocks = <&rcc AMEBA_LTIM7_CLK>;
+			interrupts = <17 0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer10: counter@41100400 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x41100400 0x30>;
+			clocks = <&rcc AMEBA_HTIM0_CLK>;
+			interrupts = <20 0>;
+			clock-frequency = <DT_FREQ_M(1)>;
+			status = "disabled";
+		};
+
+		timer11: counter@41100600 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x41100600 0x30>;
+			clocks = <&rcc AMEBA_HTIM1_CLK>;
+			interrupts = <21 0>;
+			clock-frequency = <DT_FREQ_M(1)>;
+			status = "disabled";
+		};
 	};
 };
 

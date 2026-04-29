@@ -121,6 +121,42 @@
 			interrupts = <27 0>;
 			status = "disabled";
 		};
+
+		timer0: counter@40819000 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x40819000 0x30>;
+			clocks = <&rcc AMEBA_LTIM0_CLK>;
+			interrupts = <7 0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer1: counter@40819200 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x40819200 0x30>;
+			clocks = <&rcc AMEBA_LTIM1_CLK>;
+			interrupts = <8 0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer2: counter@40819400 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x40819400 0x30>;
+			clocks = <&rcc AMEBA_LTIM2_CLK>;
+			interrupts = <9 0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		timer3: counter@40819600 {
+			compatible = "realtek,ameba-counter";
+			reg = <0x40819600 0x30>;
+			clocks = <&rcc AMEBA_LTIM3_CLK>;
+			interrupts = <10 0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
 	};
 };
 

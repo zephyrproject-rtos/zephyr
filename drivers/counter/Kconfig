@@ -51,6 +51,7 @@ source "subsys/logging/Kconfig.template.log_config"
 # zephyr-keep-sorted-start
 source "drivers/counter/Kconfig.ace"
 source "drivers/counter/Kconfig.ambiq"
+source "drivers/counter/Kconfig.ameba_tmr"
 source "drivers/counter/Kconfig.andes_atcpit100"
 source "drivers/counter/Kconfig.bee_rtc"
 source "drivers/counter/Kconfig.bee_timer"
