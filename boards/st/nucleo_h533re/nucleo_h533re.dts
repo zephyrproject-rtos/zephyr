@@ -155,6 +155,10 @@
 	status = "okay";
 };
 
+&vddcore {
+	status = "okay";
+};
+
 &rng {
 	status = "okay";
 };

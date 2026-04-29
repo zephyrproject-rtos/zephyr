@@ -1,0 +1,26 @@
+# STM32 battery sensor configuration options
+
+# Copyright (c) 2022 STMicroelectronics
+# Copyright (c) 2026 CodeWrights GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config STM32_VDDCORE
+	bool "STM32 Vddcore Sensor"
+	default y
+	depends on DT_HAS_ST_STM32_VDDCORE_ENABLED
+	depends on DT_HAS_ST_STM32_ADC_ENABLED
+	depends on SOC_FAMILY_STM32
+	select ADC
+	help
+	  Enable driver for STM32 Vddcore sensor and then also ADC
+
+if STM32_VDDCORE
+
+config STM32_VDDCORE_INJECTED
+	bool "STM32 Vddcore Sensor through injected channel"
+	depends on ADC_STM32_INJECTED_CHANNELS
+	help
+	  Vddcore measurement is done using the injected channel feature.
+	  This will permanently enable the ADC Vddcore channel.
+
+endif

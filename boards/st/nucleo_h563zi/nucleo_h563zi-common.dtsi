@@ -235,6 +235,10 @@ zephyr_udc0: &usb {
 	status = "okay";
 };
 
+&vddcore {
+	status = "okay";
+};
+
 &clk_lsi {
 	status = "okay";
 };

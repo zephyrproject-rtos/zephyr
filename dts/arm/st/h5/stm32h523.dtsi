@@ -90,3 +90,7 @@
 &vbat {
 	io-channels = <&adc2 16>;
 };
+
+&vddcore {
+	io-channels = <&adc2 17>;
+};
