@@ -9,6 +9,7 @@ tests:
     platform_exclude: reel_board
     integration_platforms:
       - frdm_k22f
+      - stm32h573i_dk
     timeout: 20
     harness: console
     harness_config:
