@@ -38,7 +38,6 @@ include(CheckCXXCompilerFlag)
 # 7 Linkable loadable extensions (llext)
 # 7.1 llext_* configuration functions
 # 7.2 add_llext_* build control functions
-# 7.3 llext helper functions
 # 8. Script mode handling
 
 ########################################################
@@ -5962,11 +5961,24 @@ function(add_llext_target target_name)
   set(llext_pkg_output ${LLEXT_OUTPUT})
   set(source_files ${LLEXT_SOURCES})
 
+  # Convert the LLEXT_REMOVE_FLAGS list to a regular expression, and use it to
+  # filter out these flags from the Zephyr target settings
+  list(TRANSFORM LLEXT_REMOVE_FLAGS
+       REPLACE "(.+)" "^\\1$"
+       OUTPUT_VARIABLE llext_remove_flags_regexp
+  )
+  list(JOIN llext_remove_flags_regexp "|" llext_remove_flags_regexp)
+  if("${llext_remove_flags_regexp}" STREQUAL "")
+    # an empty regexp would match anything, we actually need the opposite
+    # so set it to match empty strings
+    set(llext_remove_flags_regexp "^$")
+  endif()
   set(zephyr_flags
       "$<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>"
   )
-  llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags}
-      zephyr_filtered_flags)
+  set(zephyr_filtered_flags
+      "$<FILTER:${zephyr_flags},EXCLUDE,${llext_remove_flags_regexp}>"
+  )
 
   # Compile the source file using current Zephyr settings but a different
   # set of flags to obtain the desired llext object type.
@@ -6199,38 +6211,6 @@ function(add_llext_command)
     ${LLEXT_UNPARSED_ARGUMENTS}
     COMMAND_EXPAND_LISTS
   )
-endfunction()
-
-# 7.3 llext helper functions
-
-# Usage:
-#   llext_filter_zephyr_flags(<filter> <flags> <outvar>)
-#
-# Filter out flags from a list of flags. The filter is a list of regular
-# expressions that will be used to exclude flags from the input list.
-#
-# The resulting generator expression will be stored in the variable <outvar>.
-#
-# Example:
-#   llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS zephyr_flags zephyr_filtered_flags)
-#
-function(llext_filter_zephyr_flags filter flags outvar)
-  list(TRANSFORM ${filter}
-       REPLACE "(.+)" "^\\1$"
-       OUTPUT_VARIABLE llext_remove_flags_regexp
-  )
-  list(JOIN llext_remove_flags_regexp "|" llext_remove_flags_regexp)
-  if("${llext_remove_flags_regexp}" STREQUAL "")
-    # an empty regexp would match anything, we actually need the opposite
-    # so set it to match empty strings
-    set(llext_remove_flags_regexp "^$")
-  endif()
-
-  set(zephyr_filtered_flags
-      "$<FILTER:${flags},EXCLUDE,${llext_remove_flags_regexp}>"
-  )
-
-  set(${outvar} ${zephyr_filtered_flags} PARENT_SCOPE)
 endfunction()
 
 ########################################################
