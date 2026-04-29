@@ -19,6 +19,7 @@
 #include <hal/nrf_lrcconf.h>
 #include <hal/nrf_spu.h>
 #include <hal/nrf_memconf.h>
+#include <hal/nrf_nfct.h>
 #include <lib/nrfx_coredep.h>
 #include <soc_lrcconf.h>
 #include "soc_power.h"
@@ -109,6 +110,13 @@ void soc_early_init_hook(void)
 
 	nrf_spu_periph_perm_dmasec_set(spu, nrf_address_slave_get(ccm030_addr), true);
 #endif
+
+	if (((IS_ENABLED(CONFIG_SOC_NRF9220_CPUAPP) &&
+	      DT_NODE_HAS_STATUS(DT_NODELABEL(nfct), disabled)) ||
+	     DT_NODE_HAS_STATUS(DT_NODELABEL(nfct), reserved)) &&
+	    DT_PROP_OR(DT_NODELABEL(nfct), nfct_pins_as_gpios, 0)) {
+		nrf_nfct_pad_config_enable_set(NRF_NFCT, false);
+	}
 }
 
 void arch_busy_wait(uint32_t time_us)
