@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Lennart Rittel <lrittel@posteo.de>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_G491RE
+	select SOC_STM32G491XX
