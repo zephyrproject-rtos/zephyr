@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: ti_am26x
+  series:
+  - name: am261x
+    socs:
+    - name: am2612
+      cpuclusters:
+      - name: r5f0_0
+      - name: r5f0_1

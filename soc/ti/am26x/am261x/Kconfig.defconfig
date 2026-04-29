@@ -1,0 +1,26 @@
+# Texas Instruments AM261x MCU series
+#
+# Copyright (c) 2026 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_AM261X
+
+config MAX_CPUS_NUM
+	int
+	default 2 if SOC_SERIES_AM261X
+
+config KERNEL_ENTRY
+	default "_vector_table" if SOC_SERIES_AM261X_R5F
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	# Input frequency to RTI is 250MHz, but prescaler halves frequency to 125MHz by default
+	default 125000000
+
+config NUM_IRQS
+	default 222
+
+config ARM_MPU
+	default y if SOC_SERIES_AM261X_R5F
+
+endif # SOC_SERIES_AM261X

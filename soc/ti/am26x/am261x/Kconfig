@@ -1,0 +1,21 @@
+# Texas Instruments AM261x MCU series
+#
+# Copyright (c) 2026 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_AM261X_R5F
+	select ARM
+	select ARM_CUSTOM_INTERRUPT_CONTROLLER
+	select CPU_CORTEX_R5
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select PINCTRL
+	select SOC_EARLY_INIT_HOOK
+	select SOC_PREP_HOOK
+	select TI_VIM
+
+config SOC_PART_NUMBER
+	default "AM2612" if SOC_AM261X_R5F0_0 || SOC_AM261X_R5F0_1
