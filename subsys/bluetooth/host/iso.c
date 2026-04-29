@@ -99,6 +99,7 @@ static struct bt_iso_big *lookup_big_by_handle(uint8_t big_handle);
 
 static void bt_iso_sent_cb(struct bt_conn *iso, void *user_data, int err)
 {
+
 #if defined(CONFIG_BT_ISO_TX)
 	struct bt_iso_chan *chan = iso->iso.chan;
 	struct bt_iso_chan_ops *ops;
@@ -107,8 +108,14 @@ static void bt_iso_sent_cb(struct bt_conn *iso, void *user_data, int err)
 
 	ops = chan->ops;
 
-	if (!err && ops != NULL && ops->sent != NULL) {
-		ops->sent(chan);
+	if (ops != NULL) {
+		if (err == 0 && ops->sent != NULL) {
+			ops->sent(chan);
+		} else if (err != 0 && ops->send_failed != NULL) {
+			ops->send_failed(chan, err);
+		} else {
+			/* no op */
+		}
 	}
 #endif /* CONFIG_BT_ISO_TX */
 }

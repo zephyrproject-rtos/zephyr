@@ -20,6 +20,7 @@
 #include "babblekit/testcase.h"
 
 #include "common.h"
+#include "iso_tx.h"
 
 LOG_MODULE_REGISTER(bis_receiver, LOG_LEVEL_INF);
 
@@ -89,22 +90,26 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 	if (info->flags & BT_ISO_FLAGS_VALID) {
 		static uint16_t last_buf_len;
 		static uint32_t last_ts;
+		static size_t pass_cnt;
 		static size_t rx_cnt;
 
-		LOG_DBG("Incoming data channel %p len %u", chan, buf->len);
+		rx_cnt++;
+		LOG_DBG("[%zu]: Incoming data channel %p len %u", rx_cnt, chan, buf->len);
 		iso_log_data(buf->data, buf->len);
 
 		if (memcmp(buf->data, mock_iso_data, buf->len) != 0) {
 			TEST_FAIL("Unexpected data received");
 		} else if (last_buf_len != 0U && buf->len != 1U && buf->len != last_buf_len + 1) {
 			TEST_FAIL("Unexpected data length (%u) received (expected 1 or %u)",
-				  buf->len, last_buf_len);
+				  buf->len, last_buf_len + 1);
 		} else if (last_ts != 0U && info->ts > last_ts + 2 * SDU_INTERVAL_US) {
 			TEST_FAIL("Unexpected timestamp (%u) received (expected %u)", info->ts,
 				  last_ts + SDU_INTERVAL_US);
-		} else if (rx_cnt++ > RX_CNT_TO_PASS) {
+		} else if (pass_cnt++ > RX_CNT_TO_PASS) {
 			LOG_INF("Data received");
 			SET_FLAG(flag_data_received);
+		} else {
+			/* no op */
 		}
 
 		last_buf_len = buf->len;
