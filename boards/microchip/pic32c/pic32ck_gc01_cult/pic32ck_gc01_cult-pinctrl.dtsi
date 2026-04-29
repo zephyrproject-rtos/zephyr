@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pic32c/pic32ck_sg_gc/pic32ck_gc01/pic32ck2051gc01144-pinctrl.h>
+
+&pinctrl {
+	sercom1_uart_default: sercom1_uart_default {
+		group1 {
+			pinmux = <PD13C_SERCOM1_PAD0>,
+				 <PD14C_SERCOM1_PAD1>;
+		};
+	};
+
+	sercom3_uart_default: sercom3_uart_default {
+		group1 {
+			pinmux = <PB21C_SERCOM3_PAD0>,
+				 <PB22C_SERCOM3_PAD1>;
+		};
+	};
+
+	sercom5_uart_default: sercom5_uart_default {
+		group1 {
+			pinmux = <PA25C_SERCOM5_PAD1>,
+				 <PA24C_SERCOM5_PAD0>;
+		};
+	};
+};
