@@ -1,0 +1,28 @@
+#
+# Copyright (c) 2025 Leica Geosystems AG
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: nucleo_u5a5zj_q/ns
+name: ST Nucleo U5A5ZJ Q
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - backup_sram
+  - can
+  - dac
+  - dma
+  - gpio
+  - i2c
+  - rtc
+  - spi
+  - trusted-firmware-m
+  - usart
+  - usb_device
+  - watchdog
+ram: 1664
+flash: 1280
