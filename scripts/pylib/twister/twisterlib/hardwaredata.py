@@ -28,6 +28,7 @@ class HardwareData:
     flash_timeout: int = 60
     flash_with_test: bool = False
     flash_before: bool = False
+    failure_script: str | None = None
     fixtures: list[str] = field(default_factory=list)
     probe_id: str | None = None
     notes: str | None = None
