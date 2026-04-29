@@ -40,7 +40,6 @@ static struct bt_mcc_cb cb;
 #ifdef CONFIG_BT_MCC_OTS
 struct object_ids_t {
 	uint64_t icon_obj_id;
-	uint64_t track_segments_obj_id;
 	uint64_t current_track_obj_id;
 	uint64_t next_track_obj_id;
 	uint64_t parent_group_obj_id;
@@ -210,8 +209,6 @@ static void mcc_read_segments_obj_id_cb(struct bt_conn *conn, int err,
 
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
 	bt_shell_print("Track Segments Object ID: %s", str);
-
-	obj_ids.track_segments_obj_id = id;
 }
 
 
