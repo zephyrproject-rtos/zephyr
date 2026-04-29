@@ -10,6 +10,22 @@ menuconfig COUNTER
 
 if COUNTER
 
+config COUNTER_CAPTURE
+	bool "Counter capture"
+	select EXPERIMENTAL
+	depends on COUNTER_SUPPORTS_CAPTURE
+	help
+	  Enable support for counter capture. This is a feature that allows
+	  hardware timestamping of external events as well as a software
+	  interrupt on the event. This feature is not supported by all
+	  counter drivers.
+
+config COUNTER_SUPPORTS_CAPTURE
+	bool
+	help
+	  Select this option if the counter driver supports the counter capture
+	  API. This is to be set the driver.
+
 config COUNTER_INIT_PRIORITY
 	int "Counter init priority"
 	default 60
