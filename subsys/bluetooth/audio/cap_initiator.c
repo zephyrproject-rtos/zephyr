@@ -230,13 +230,11 @@ static void cap_initiator_broadcast_to_bap_broadcast_param(
 				&bap_subgroup_param->params[j];
 
 			bap_stream_param->stream = &cap_stream_param->stream->bap_stream;
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 			bap_stream_param->data_len = cap_stream_param->data_len;
 			/* We do not need to copy the data, as that is the same type of struct, so
 			 * we can just point to the CAP parameter data
 			 */
 			bap_stream_param->data = cap_stream_param->data;
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 		}
 	}
 }

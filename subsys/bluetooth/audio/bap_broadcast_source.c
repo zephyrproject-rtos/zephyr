@@ -310,7 +310,6 @@ static bool merge_bis_and_subgroup_data_cb(struct bt_data *data, void *user_data
 static void update_codec_cfg_data(struct bt_audio_codec_cfg *codec_cfg, const uint8_t data[],
 				  size_t data_len)
 {
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 	if (data_len > 0) {
 		int err;
 
@@ -340,7 +339,6 @@ static void update_codec_cfg_data(struct bt_audio_codec_cfg *codec_cfg, const ui
 
 		__ASSERT(err == 0, "Failed codec merge not guarded by can_merge_codec_cfg_data");
 	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 }
 
 static int
@@ -376,9 +374,7 @@ broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *stream,
 	/* If there are any BIS specific codec configuration data, update the data to contain both
 	 * the subgroup and BIS specific data
 	 */
-	if (CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0) {
-		update_codec_cfg_data(&ep->codec_cfg, stream_param->data, stream_param->data_len);
-	}
+	update_codec_cfg_data(&ep->codec_cfg, stream_param->data, stream_param->data_len);
 
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	iso->chan.qos->num_subevents = qos->num_subevents;
@@ -417,14 +413,12 @@ static bool encode_base_subgroup(struct bt_bap_broadcast_subgroup *subgroup,
 	net_buf_simple_add_le16(buf, codec_cfg->vid);
 
 	net_buf_simple_add_u8(buf, codec_cfg->data_len);
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 	if ((buf->size - buf->len) < codec_cfg->data_len) {
 		LOG_DBG("No room for config data: %zu", codec_cfg->data_len);
 
 		return false;
 	}
 	net_buf_simple_add_mem(buf, codec_cfg->data, codec_cfg->data_len);
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
 	if ((buf->size - buf->len) < sizeof(len)) {
 		LOG_DBG("No room for metadata length");
@@ -464,7 +458,6 @@ static bool encode_base_subgroup(struct bt_bap_broadcast_subgroup *subgroup,
 		}
 
 		net_buf_simple_add_u8(buf, stream_data[i].data_len);
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 		if ((buf->size - buf->len) < stream_data[i].data_len) {
 			LOG_DBG("No room for BIS[%u] data: %zu", i, stream_data[i].data_len);
 
@@ -472,7 +465,6 @@ static bool encode_base_subgroup(struct bt_bap_broadcast_subgroup *subgroup,
 		}
 
 		net_buf_simple_add_mem(buf, stream_data[i].data, stream_data[i].data_len);
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
 		(*streams_encoded)++;
 	}
@@ -563,7 +555,6 @@ static bool
 can_merge_codec_cfg_data(const struct bt_audio_codec_cfg *subgroup_codec_cfg,
 			 const struct bt_bap_broadcast_source_stream_param *stream_param)
 {
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 	if (stream_param->data_len == 0) {
 		return true;
 	}
@@ -601,7 +592,6 @@ can_merge_codec_cfg_data(const struct bt_audio_codec_cfg *subgroup_codec_cfg,
 			return false;
 		}
 	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
 	return true;
 }
@@ -642,7 +632,6 @@ static bool valid_broadcast_source_subgroup_param(
 			return false;
 		}
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 		if (stream_param->data == NULL && stream_param->data_len != 0) {
 			LOG_DBG("subgroup_param->stream_params[%zu]->data is NULL with len %zu", i,
 				stream_param->data_len);
@@ -667,7 +656,6 @@ static bool valid_broadcast_source_subgroup_param(
 			return false;
 		}
 	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
 	return true;
 }
@@ -975,16 +963,14 @@ static void broadcast_source_reconfig_update_subgroup(
 	 * params
 	 */
 	SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
-		if (CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0) {
-			const struct bt_audio_broadcast_stream_data *stream_data =
-				&source->stream_data[stream->ep->id];
-			struct bt_audio_codec_cfg *codec_cfg = &stream->ep->codec_cfg;
+		const struct bt_audio_broadcast_stream_data *stream_data =
+			&source->stream_data[stream->ep->id];
+		struct bt_audio_codec_cfg *codec_cfg = &stream->ep->codec_cfg;
 
-			(void)memcpy(codec_cfg, subgroup_param->codec_cfg,
-				     sizeof(struct bt_audio_codec_cfg));
+		(void)memcpy(codec_cfg, subgroup_param->codec_cfg,
+			     sizeof(struct bt_audio_codec_cfg));
 
-			update_codec_cfg_data(codec_cfg, stream_data->data, stream_data->data_len);
-		}
+		update_codec_cfg_data(codec_cfg, stream_data->data, stream_data->data_len);
 	}
 }
 

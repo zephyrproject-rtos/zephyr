@@ -1174,8 +1174,6 @@ static bool sync_base_subgroup_bis_index_cb(const struct bt_bap_base_subgroup_bi
 		return true;
 	}
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
-
 	codec_cfg = &data->codec_cfgs[data->stream_count];
 
 	memcpy(codec_cfg, data->subgroup_codec_cfg, sizeof(struct bt_audio_codec_cfg));
@@ -1216,7 +1214,6 @@ static bool sync_base_subgroup_bis_index_cb(const struct bt_bap_base_subgroup_bi
 			codec_cfg->data_len += bis->data_len;
 		}
 	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
 	data->stream_count++;
 

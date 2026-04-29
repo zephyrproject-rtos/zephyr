@@ -32,10 +32,8 @@ struct bt_audio_codec_cfg vs_codec_cfg = {
 	.id = BT_HCI_CODING_FORMAT_VS,
 	.cid = VS_CODEC_CID,
 	.vid = VS_CODEC_VID,
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 	.data_len = 5,
 	.data = {1, 2, 3, 4, 5}, /* any value */
-#endif                           /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
 	.meta_len = 5,
 	.meta = {10, 20, 30, 40, 50}, /* any value */

@@ -256,7 +256,6 @@ bool bt_audio_valid_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 		}
 	}
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 	/* Verify that codec configuration length is 0 when using
 	 * BT_HCI_CODING_FORMAT_TRANSPARENT as per the core spec, 5.4, Vol 4, Part E, 7.8.109
 	 */
@@ -275,7 +274,6 @@ bool bt_audio_valid_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 		LOG_DBG("codec_cfg->data not valid LTV");
 		return false;
 	}
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
 	if (codec_cfg->meta_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE) {

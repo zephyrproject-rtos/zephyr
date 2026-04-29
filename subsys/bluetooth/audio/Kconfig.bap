@@ -16,6 +16,7 @@ config BT_BAP_UNICAST_SERVER
 	depends on BT_ISO_PERIPHERAL
 	depends on BT_ASCS
 	depends on BT_BONDABLE
+	depends on BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE >= 19 # Minimum requirement for LC3 per BAP
 	select BT_PAC_SNK if BT_ASCS_ASE_SNK
 	select BT_PAC_SRC if BT_ASCS_ASE_SRC
 	help
@@ -30,6 +31,7 @@ config BT_BAP_UNICAST_CLIENT
 	depends on BT_CENTRAL
 	depends on BT_ISO_CENTRAL
 	depends on BT_BONDABLE
+	depends on BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE >= 19 # Minimum requirement for LC3 per BAP
 	help
 	  This option enables support for Bluetooth Unicast Audio Client
 	  using Isochronous channels.
@@ -121,6 +123,7 @@ endif # BT_BAP_UNICAST_CLIENT
 config BT_BAP_BROADCAST_SOURCE
 	bool "Bluetooth Broadcast Source Audio Support"
 	depends on BT_ISO_BROADCASTER
+	depends on BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE >= 19 # Minimum requirement for LC3 per BAP
 	help
 	  This option enables support for Bluetooth Broadcast Source Audio using
 	  Isochronous channels.
@@ -162,6 +165,7 @@ config BT_BAP_BROADCAST_SINK
 	depends on BT_PAC_SNK
 	depends on BT_PERIPHERAL
 	depends on BT_BAP_SCAN_DELEGATOR
+	depends on BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE >= 19 # Minimum requirement for LC3 per BAP
 	help
 	  This option enables support for Bluetooth Broadcast Sink Audio using
 	  Isochronous channels.
@@ -205,6 +209,7 @@ config BT_BAP_SCAN_DELEGATOR
 	depends on BT_OBSERVER
 	depends on BT_GATT_DYNAMIC_DB
 	depends on BT_BONDABLE
+	depends on BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE >= 19 # Minimum requirement for LC3 per BAP
 	help
 	  This option enables support for the Scan Delegator role and the
 	  Broadcast Audio Scan Service (BASS).
@@ -241,6 +246,7 @@ config BT_BAP_BROADCAST_ASSISTANT
 	depends on BT_GATT_AUTO_UPDATE_MTU
 	depends on BT_OBSERVER
 	depends on BT_BONDABLE
+	depends on BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE >= 19 # Minimum requirement for LC3 per BAP
 	help
 	  This option enables support for the Broadcast Assistant role.
 

@@ -1447,16 +1447,14 @@ static int unicast_client_ep_set_codec_cfg(struct bt_bap_ep *ep, uint8_t id, uin
 
 	LOG_DBG("ep %p codec id 0x%02x cid 0x%04x vid 0x%04x len %u", ep, id, cid, vid, len);
 
-	if (CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0) {
-		if (len > sizeof(ep->codec_cfg.data)) {
-			LOG_DBG("Cannot store %u octets of codec data", len);
+	if (len > sizeof(ep->codec_cfg.data)) {
+		LOG_DBG("Cannot store %u octets of codec data", len);
 
-			return -ENOMEM;
-		}
-
-		ep->codec_cfg.data_len = len;
-		(void)memcpy(ep->codec_cfg.data, data, len);
+		return -ENOMEM;
 	}
+
+	ep->codec_cfg.data_len = len;
+	(void)memcpy(ep->codec_cfg.data, data, len);
 
 	ep->codec_cfg.id = id;
 	ep->codec_cfg.cid = cid;

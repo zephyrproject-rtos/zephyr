@@ -736,7 +736,6 @@ static inline void print_codec_cfg(size_t indent, const struct bt_audio_codec_cf
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 	bt_shell_print("%*sCodec specific configuration:", indent, "");
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
@@ -783,7 +782,6 @@ static inline void print_codec_cfg(size_t indent, const struct bt_audio_codec_cf
 
 	/* Reduce for metadata*/
 	indent -= SHELL_PRINT_INDENT_LEVEL_SIZE;
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
 	bt_shell_print("%*sCodec specific metadata:", indent, "");
