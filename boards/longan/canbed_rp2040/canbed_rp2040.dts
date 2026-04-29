@@ -60,12 +60,13 @@
 	ranges = <0x0 0x10000000 DT_SIZE_M(2)>;
 
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		/* Reserved memory for the second stage bootloader */
 		second_stage_bootloader: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "second_stage_bootloader";
 			reg = <0x00000000 0x100>;
 			read-only;
@@ -76,6 +77,7 @@
 		 * size is 2 MB minus the 0x100 bytes taken by the bootloader.
 		 */
 		code_partition: partition@100 {
+			compatible = "zephyr,mapped-partition";
 			label = "code-partition";
 			reg = <0x100 (DT_SIZE_M(2) - 0x100)>;
 			read-only;
