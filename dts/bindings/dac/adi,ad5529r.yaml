@@ -1,0 +1,84 @@
+# Copyright (c) 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices AD5529R 16-channel, 16-bit voltage output DAC.
+
+  The AD5529R is a high precision, low noise, 16-bit, 16-channel DAC with
+  integrated reference (4.096V). It supports multiple output voltage ranges
+  and communicates over SPI.
+
+  Example:
+    &spi1 {
+        status = "okay";
+
+        ad5529r: dac@0 {
+            compatible = "adi,ad5529r";
+            reg = <0>;
+            spi-max-frequency = <50000000>;
+            #io-channel-cells = <1>;
+            output-range = "range-0-10v";
+            reset-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+            ldac-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+        };
+    };
+
+compatible: "adi,ad5529r"
+
+include: [dac-controller.yaml, spi-device.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+  device-id:
+    type: int
+    default: 0
+    description: |
+      Device address ID (0-7) for multi-device SPI configurations.
+      Set by AD0/AD1 pins on the device. Defaults to 0.
+
+  output-range:
+    type: string
+    default: "range-0-10v"
+    enum:
+      - "range-0-5v"
+      - "range-0-10v"
+      - "range-0-20v"
+      - "range-0-40v"
+      - "range-pm-5v"
+      - "range-pm-10v"
+      - "range-pm-15v"
+      - "range-pm-20v"
+    description: |
+      Default output voltage range for all channels.
+      - range-0-5v: 0 to +5V
+      - range-0-10v: 0 to +10V (default)
+      - range-0-20v: 0 to +20V
+      - range-0-40v: 0 to +40V
+      - range-pm-5v: -5V to +5V
+      - range-pm-10v: -10V to +10V
+      - range-pm-15v: -15V to +15V
+      - range-pm-20v: -20V to +20V
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the RESET pin of the device (active low).
+      If not provided, software reset will be used during initialization.
+
+  ldac-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the LDAC pin of the device (active low).
+      The LDAC signal transfers data from input registers to output registers.
+      If not provided, updates occur immediately on register write.
+
+  clear-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the CLEAR pin of the device (active low).
+      The CLEAR signal resets all DAC outputs to their clear code value.
+
+io-channel-cells:
+  - output
