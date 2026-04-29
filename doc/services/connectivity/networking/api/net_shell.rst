@@ -47,6 +47,10 @@ The following net-shell commands are implemented:
    "net sockets", "Show network socket information and statistics. Only available if
    :kconfig:option:`CONFIG_NET_SOCKETS_OBJ_CORE` and :kconfig:option:`CONFIG_OBJ_CORE`
    are set."
+   "net ssh", "SSH client support. Only available if
+   :kconfig:option:`CONFIG_SSH_CLIENT` is set."
+   "net sshd", "SSH server support. Only available if
+   :kconfig:option:`CONFIG_SSH_SERVER` is set."
    "net stats", "Show network statistics."
    "net tcp", "Connect/send data/close TCP connection. Only available if
    :kconfig:option:`CONFIG_NET_TCP` is set."

@@ -1,0 +1,33 @@
+/*
+ * When running without MCUboot, the application starts at flash offset 0
+ * and the default storage_partition at 0x10000 overlaps with the code.
+ * Move storage to the last 256KB of flash.
+ */
+
+/* Remove code-partition chosen since we're not using MCUboot */
+/ {
+	chosen {
+		/delete-property/ zephyr,code-partition;
+	};
+};
+
+/delete-node/ &boot_partition;
+/delete-node/ &storage_partition;
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Storage using last two 256KB sectors (10-11) in single-bank mode.
+		 * ZMS requires at least 2 sectors.
+		 */
+		storage_partition: partition@180000 {
+			label = "storage";
+			reg = <0x00180000 DT_SIZE_K(512)>;
+		};
+	};
+};

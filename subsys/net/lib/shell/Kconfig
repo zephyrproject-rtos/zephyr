@@ -217,6 +217,11 @@ config NET_SHELL_QUIC_SUPPORTED
 	default y
 	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || QUIC_SHELL
 
+config NET_SHELL_SSH_SUPPORTED
+	bool "SSH server / client"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || SSH_SHELL
+
 config NET_SHELL_DYN_CMD_COMPLETION
 	bool "Network shell dynamic command completion"
 	default y
