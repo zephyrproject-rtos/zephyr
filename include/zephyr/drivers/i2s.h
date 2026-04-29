@@ -16,7 +16,7 @@
 /**
  * @defgroup i2s_interface I2S
  * @since 1.9
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup io_interfaces
  * @brief Interfaces for Inter-IC Sound (I2S) controllers.
  *
@@ -242,6 +242,8 @@ enum i2s_state {
 	I2S_STATE_STOPPING,
 	/** TX buffer underrun or RX buffer overrun has occurred. */
 	I2S_STATE_ERROR,
+	/** State cannot be determined. */
+	I2S_STATE_UNKNOWN,
 };
 
 /** Trigger command */
@@ -361,6 +363,11 @@ __subsystem struct i2s_driver_api {
 	 */
 	int (*trigger)(const struct device *dev, enum i2s_dir dir,
 		       enum i2s_trigger_cmd cmd);
+	/**
+	 * @driver_ops_optional @copybrief i2s_state_get
+	 * See i2s_state_get() for arguments description.
+	 */
+	enum i2s_state (*state_get)(const struct device *dev, enum i2s_dir dir);
 };
 
 /** @} */
@@ -553,6 +560,38 @@ static inline int z_impl_i2s_trigger(const struct device *dev,
 				     enum i2s_trigger_cmd cmd)
 {
 	return DEVICE_API_GET(i2s, dev)->trigger(dev, dir, cmd);
+}
+
+/**
+ * @brief Get current I2S interface state.
+ *
+ * Retrieves the current state of the I2S controller as reported by the driver.
+ * The state reflects the last successful operation (configure, trigger, or
+ * error condition) and is maintained internally by the driver implementation.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param dir Stream direction: RX, or TX as defined by I2S_DIR_*.
+ *            I2S_DIR_BOTH is not a valid option for this parameter,
+ *            since API returns a single stream state value.
+ *
+ * @return Current I2S interface state.
+ *
+ * @retval I2S_STATE_NOT_READY  Interface is not configured.
+ * @retval I2S_STATE_READY      Interface is ready to transmit/receive data.
+ * @retval I2S_STATE_RUNNING    Interface is actively transmitting/receiving.
+ * @retval I2S_STATE_STOPPING   Interface is draining the transmit queue.
+ * @retval I2S_STATE_ERROR      An underrun or overrun error occurred.
+ * @retval I2S_STATE_UNKNOWN    Driver does not support state reporting.
+ */
+__syscall enum i2s_state i2s_state_get(const struct device *dev, enum i2s_dir dir);
+
+static inline enum i2s_state z_impl_i2s_state_get(const struct device *dev, enum i2s_dir dir)
+{
+	if (DEVICE_API_GET(i2s, dev)->state_get == NULL) {
+		return I2S_STATE_UNKNOWN;
+	}
+
+	return DEVICE_API_GET(i2s, dev)->state_get(dev, dir);
 }
 
 /**
