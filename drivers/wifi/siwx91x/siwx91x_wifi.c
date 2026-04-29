@@ -6,6 +6,7 @@
 #define DT_DRV_COMPAT silabs_siwx91x_wifi
 
 #include <zephyr/version.h>
+#include <zephyr/logging/log.h>
 
 #include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
