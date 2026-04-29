@@ -21,6 +21,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "DW I2C in DT needs CONFIG_PCIE");
 #if defined(CONFIG_RESET)
 #include <zephyr/drivers/reset.h>
 #endif
+#include <zephyr/drivers/clock_control.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -113,6 +114,10 @@ struct i2c_dw_rom_config {
 #endif
 #if defined(CONFIG_RESET)
 	const struct reset_dt_spec reset;
+#endif
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+	const struct device *clk_dev;
+	const clock_control_subsys_t clk_id;
 #endif
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
