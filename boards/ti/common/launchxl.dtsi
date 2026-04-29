@@ -19,6 +19,7 @@
 		watchdog0 = &wdt0;
 		mcuboot-led0 = &led1;
 		mcuboot-button0 = &btn1;
+		volt-sensor0 = &vbat;
 	};
 
 	chosen {
@@ -115,5 +116,9 @@
 };
 
 &wdt0 {
+	status = "okay";
+};
+
+&vbat {
 	status = "okay";
 };
