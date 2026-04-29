@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# heltec_t114_v2_nrf52840_uf2_defconfig
+CONFIG_BUILD_OUTPUT_UF2=y
+CONFIG_USE_DT_CODE_PARTITION=y

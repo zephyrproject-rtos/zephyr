@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Board-specific Kconfig options (none for heltec_t114_v2).
+# Default target is bare flash layout; use /uf2 variant for UF2 partitions.
