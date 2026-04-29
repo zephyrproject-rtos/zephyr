@@ -238,21 +238,29 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
 
 	announce_remaining = ticks;
 
-	struct _timeout *t;
+	struct _timeout *t = first();
 
-	for (t = first();
-	     (t != NULL) && (t->dticks <= announce_remaining);
-	     t = first()) {
+	while ((t != NULL) && (t->dticks <= announce_remaining)) {
 		int dt = t->dticks;
 
 		curr_tick += dt;
-		t->dticks = 0;
-		remove_timeout(t);
-		t->dticks = TIMEOUT_DTICKS_ANNOUNCING;
 
-		k_spin_unlock(&timeout_lock, key);
-		t->fn(t);
-		key = k_spin_lock(&timeout_lock);
+		/* Drain all timeouts queued on this tick before
+		 * decrementing announce_remaining.
+		 */
+		do {
+			_timeout_func_t handler = t->fn;
+
+			sys_dlist_remove(&t->node);
+			t->dticks = TIMEOUT_DTICKS_ANNOUNCING;
+
+			k_spin_unlock(&timeout_lock, key);
+			handler(t);
+			key = k_spin_lock(&timeout_lock);
+
+			t = first();
+		} while ((t != NULL) && (t->dticks == 0));
+
 		announce_remaining -= dt;
 	}
 
