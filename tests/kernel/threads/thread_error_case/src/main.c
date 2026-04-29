@@ -14,8 +14,11 @@ static ZTEST_DMEM int case_type;
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static K_THREAD_STACK_DEFINE(test_stack, STACK_SIZE);
+static K_THREAD_STACK_DEFINE(reuse_stack1, STACK_SIZE);
+static K_THREAD_STACK_DEFINE(reuse_stack2, STACK_SIZE);
 static struct k_thread tdata;
 static struct k_thread test_tdata;
+static struct k_thread reuse_tdata;
 
 /* enumerate our negative case scenario */
 enum {
@@ -25,12 +28,19 @@ enum {
 	TIMEOUT_EXPIRES_TICKS,
 	THREAD_CREATE_NEWTHREAD_NULL,
 	THREAD_CREATE_STACK_NULL,
-	THREAD_CTEATE_STACK_SIZE_OVERFLOW
+	THREAD_CREATE_STACK_SIZE_OVERFLOW,
+	THREAD_REUSE_ACTIVE_THREAD_ID
 } neg_case;
 
 static void test_thread(void *p1, void *p2, void *p3)
 {
 	/* do nothing here */
+}
+
+static void long_running_thread(void *p1, void *p2, void *p3)
+{
+	/* Sleep for a long time to keep thread active */
+	k_sleep(K_SECONDS(10));
 }
 
 static void tThread_entry_negative(void *p1, void *p2, void *p3)
@@ -85,12 +95,30 @@ static void tThread_entry_negative(void *p1, void *p2, void *p3)
 			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
 			perm, K_NO_WAIT);
 		break;
-	case THREAD_CTEATE_STACK_SIZE_OVERFLOW:
+	case THREAD_CREATE_STACK_SIZE_OVERFLOW:
 		ztest_set_fault_valid(true);
 		if (k_is_user_context()) {
 			perm = perm | K_USER;
 		}
 		k_thread_create(&test_tdata, test_stack, -1,
+			test_thread, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
+			perm, K_NO_WAIT);
+		break;
+	case THREAD_REUSE_ACTIVE_THREAD_ID:
+		ztest_set_fault_valid(true);
+		if (k_is_user_context()) {
+			perm = perm | K_USER;
+		}
+		/* Create first thread that will run for a while */
+		k_thread_create(&reuse_tdata, reuse_stack1, STACK_SIZE,
+			long_running_thread, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY + 1),
+			perm, K_NO_WAIT);
+		/* Give the thread time to start */
+		k_sleep(K_MSEC(10));
+		/* Try to reuse the same thread structure while it's still active */
+		k_thread_create(&reuse_tdata, reuse_stack2, STACK_SIZE,
 			test_thread, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(THREAD_TEST_PRIORITY),
 			perm, K_NO_WAIT);
@@ -164,13 +192,20 @@ ZTEST_USER(thread_error_case, test_thread_create_stack_null)
 /* TESTPOINT: Pass a overflow stack into API */
 ZTEST_USER(thread_error_case, test_thread_create_stack_overflow)
 {
-	create_negative_test_thread(THREAD_CTEATE_STACK_SIZE_OVERFLOW);
+	create_negative_test_thread(THREAD_CREATE_STACK_SIZE_OVERFLOW);
+}
+
+/* TESTPOINT: Reuse thread ID while thread is still active */
+ZTEST_USER(thread_error_case, test_thread_reuse_active_thread_id)
+{
+	create_negative_test_thread(THREAD_REUSE_ACTIVE_THREAD_ID);
 }
 
 /*test case main entry*/
 void *thread_grant_setup(void)
 {
-	k_thread_access_grant(k_current_get(), &tdata, &tstack, &test_tdata, &test_stack);
+	k_thread_access_grant(k_current_get(), &tdata, &tstack, &test_tdata, &test_stack,
+			      &reuse_tdata, &reuse_stack1, &reuse_stack2);
 
 	return NULL;
 }
