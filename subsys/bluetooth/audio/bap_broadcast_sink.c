@@ -278,7 +278,6 @@ static void broadcast_sink_set_ep_state(struct bt_bap_ep *ep, enum bt_bap_ep_sta
 			stream->codec_cfg = NULL;
 			stream->group = NULL;
 			ep->stream = NULL;
-			ep->broadcast_sink = NULL;
 		}
 	}
 }
@@ -1040,7 +1039,6 @@ static void broadcast_sink_cleanup_streams(struct bt_bap_broadcast_sink *sink)
 			bt_bap_iso_unbind_ep(stream->ep->iso, stream->ep);
 			stream->iso = NULL;
 			stream->ep->stream = NULL;
-			stream->ep->broadcast_sink = NULL;
 			stream->ep = NULL;
 		}
 
@@ -1402,7 +1400,6 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 	for (size_t i = 0; i < stream_count; i++) {
 		struct bt_bap_ep *ep = streams[i]->ep;
 
-		ep->broadcast_sink = sink;
 		broadcast_sink_set_ep_state(ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
 	}
 
