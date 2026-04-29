@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for USB host controllers
+
+include: usb-controller.yaml
+
+bus: usbh
