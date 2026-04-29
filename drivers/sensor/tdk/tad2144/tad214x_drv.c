@@ -18,35 +18,37 @@
 
 LOG_MODULE_REGISTER(TAD214X, CONFIG_SENSOR_LOG_LEVEL);
 
-void memswap16( void* ptr1, unsigned int bytes )
+void memswap16(void* ptr1, unsigned int bytes)
 {
-  unsigned char* s1 = (unsigned char*)ptr1;
-  unsigned char tmp;
-  for( unsigned int i = 0; i < bytes; i=i+2 )
-  {
-    tmp = s1[i];
-    s1[i] = s1[i+1];
-    s1[i+1] = tmp;
-  }
+	unsigned char* s1 = (unsigned char *)ptr1;
+	unsigned char tmp;
+
+	for(unsigned int i = 0; i < bytes; i = i+2) {
+		tmp = s1[i];
+		s1[i] = s1[i+1];
+		s1[i+1] = tmp;
+	}
 }
 
 /* Polynomial for CRC-8-SAE J1850: x^8 + x^4 + x^3 + x^2 + 1 (0x1D) */
 #define POLYNOMIAL 0x1D
 #define INITIAL_VALUE 0xFF
 
-unsigned char crc8_sae_j1850(const unsigned char *data, unsigned int length) {
-    unsigned char crc = INITIAL_VALUE;
-    for (unsigned int i = 0; i < length; i++) {
-        crc ^= data[i];
-        for (unsigned char bit = 0; bit < 8; bit++) {
-            if (crc & 0x80) {
-                crc = (crc << 1) ^ POLYNOMIAL;
-            } else {
-                crc <<= 1;
-            }
-        }
-    }
-    return crc ^ 0xFF;
+unsigned char crc8_sae_j1850(const unsigned char *data, unsigned int length)
+{
+	unsigned char crc = INITIAL_VALUE;
+
+	for (unsigned int i = 0; i < length; i++) {
+		crc ^= data[i];
+		for (unsigned char bit = 0; bit < 8; bit++) {
+			if (crc & 0x80) {
+				crc = (crc << 1) ^ POLYNOMIAL;
+			} else {
+				crc <<= 1;
+			}
+		}
+	}
+	return crc ^ 0xFF;
 }
 
 void inv_tad214x_sleep_us(int us)
@@ -73,16 +75,16 @@ static int inv_io_hal_write_reg(void *ctx, uint8_t reg, const uint16_t *wbuffer,
 static int tad214x_sample_fetch(const struct device *dev, const enum sensor_channel chan)
 {
 	struct tad214x_data *data = (struct tad214x_data *)dev->data;
-    const struct tad214x_config *cfg = dev->config;
+	const struct tad214x_config *cfg = dev->config;
 
 	tad214x_mutex_lock(dev);
 
 	if (cfg->if_mode == IF_ENC) {
-        data->angle = data->encoder_position;
+		data->angle = data->encoder_position;
 
-    }else{
-        TAD214x_GetData(&data->tad214x_device, &data->angle, &data->temperature);
-    }
+	} else {
+		TAD214x_GetData(&data->tad214x_device, &data->angle, &data->temperature);
+	}
 	tad214x_mutex_unlock(dev);
 	return 0;
 }

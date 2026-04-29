@@ -8,12 +8,12 @@
  * Example configuration of a TAD2144 device on encoder interface.
  */
 / {
-    tad2144_encoder: tad2144_encoder {
-        compatible = "invensense,tad2144";
-        status = "okay";
+	tad2144_encoder: tad2144_encoder {
+		compatible = "invensense,tad2144";
+		status = "okay";
 
-        encb-gpios = <&gpio1 14 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
-        enca-gpios = <&gpio1 13 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
-        encz-gpios = <&gpio1 15 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
-    };
+		encb-gpios = <&gpio1 14 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
+		enca-gpios = <&gpio1 13 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
+		encz-gpios = <&gpio1 15 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
+	};
 };

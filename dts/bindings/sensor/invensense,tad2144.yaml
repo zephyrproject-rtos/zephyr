@@ -17,17 +17,14 @@ properties:
 
   encb-gpios:
     type: phandle-array
-    required: false
     description: GPIO for encoder B signal (miso)
 
   enca-gpios:
     type: phandle-array
-    required: false
     description: GPIO for encoder A signal (mosi)
 
   encz-gpios:
     type: phandle-array
-    required: false
     description: GPIO for encoder Z signal (sck)
 
   op-mode:
