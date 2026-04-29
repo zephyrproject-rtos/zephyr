@@ -143,7 +143,11 @@ typedef void (*vth)(void); /* Vector Table Handler */
  *
  * Note: qemu_cortex_m0 uses TIMER0 to implement system timer.
  */
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 void nrfx_power_clock_irq_handler(void);
+#else
+void common_irq_handler(void);
+#endif
 #if defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_SERIES_NRF52)
 #define POWER_CLOCK_IRQ_NUM POWER_CLOCK_IRQn
 #elif defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)
@@ -171,7 +175,11 @@ void rtc_nrf_isr(void);
 
 const vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
 #if (POWER_CLOCK_IRQ_NUM != -1)
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	[POWER_CLOCK_IRQ_NUM] = nrfx_power_clock_irq_handler,
+#else
+	[POWER_CLOCK_IRQ_NUM] = common_irq_handler,
+#endif
 #endif
 	[TIMER_IRQ_NUM] = TIMER_IRQ_HANDLER,
 	[_ISR_OFFSET] = isr0,
