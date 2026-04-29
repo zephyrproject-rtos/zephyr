@@ -1,0 +1,6 @@
+board:
+  name: adafruit_trrs_trinkey
+  full_name: TRRS Trinkey
+  vendor: adafruit
+  socs:
+    - name: samd21e18a
