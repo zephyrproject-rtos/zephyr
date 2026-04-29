@@ -45,8 +45,8 @@ struct spi_dw_config {
 	DEVICE_MMIO_ROM;
 	uint32_t clock_frequency;
 	spi_dw_config_t config_func;
+	uint16_t fifo_depth;
 	bool serial_target;
-	uint8_t fifo_depth;
 	uint8_t max_xfer_size;
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
