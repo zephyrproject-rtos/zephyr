@@ -121,18 +121,18 @@ extern "C" {
 /** @} */
 
 /**
- * @name Optional feature bits
+ * @name Optional opcodes bits
  *
- * Optional features that can be supported. See bt_tbs_client_read_optional_opcodes() on how to
+ * Optional opcodes that can be supported. See bt_tbs_client_read_optional_opcodes() on how to
  * read these from a remote device
  * @{
  */
 /** Local Hold and Local Retrieve Call Control Point Opcodes supported */
-#define BT_TBS_FEATURE_HOLD BIT(0)
+#define BT_TBS_OPTIONAL_OPCODE_HOLD BIT(0)
 /** Join Call Control Point Opcode supported */
-#define BT_TBS_FEATURE_JOIN BIT(1)
+#define BT_TBS_OPTIONAL_OPCODE_JOIN BIT(1)
 /** All Control Point Opcodes supported */
-#define BT_TBS_FEATURE_ALL  (BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN)
+#define BT_TBS_OPTIONAL_OPCODE_ALL  (BT_TBS_OPTIONAL_OPCODE_HOLD | BT_TBS_OPTIONAL_OPCODE_JOIN)
 /** @} */
 
 /**
@@ -518,11 +518,11 @@ struct bt_tbs_register_param {
 	uint8_t technology;
 
 	/**
-	 * @brief The optional supported features of the bearer
+	 * @brief The optional supported opcodes of the bearer
 	 *
-	 * See the BT_TBS_FEATURE_* values.
+	 * See the BT_TBS_OPTIONAL_OPCODE_* values.
 	 */
-	uint8_t supported_features;
+	uint16_t optional_opcodes;
 };
 
 /**

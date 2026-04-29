@@ -158,7 +158,7 @@ static int init_ccp_call_control_server(void)
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_TBS_TECHNOLOGY_3G,
-		.supported_features = BT_TBS_FEATURE_HOLD,
+		.optional_opcodes = BT_TBS_OPTIONAL_OPCODE_HOLD,
 	};
 	int err;
 
@@ -190,7 +190,7 @@ static int init_ccp_call_control_server(void)
 			.authorization_required = false,
 			/* Set different technologies per bearer */
 			.technology = (i % BT_TBS_TECHNOLOGY_WCDMA) + 1,
-			.supported_features = BT_TBS_FEATURE_HOLD,
+			.optional_opcodes = BT_TBS_OPTIONAL_OPCODE_HOLD,
 		};
 
 		snprintf(prov_name, sizeof(prov_name), "Telephone Bearer #%d", i);
