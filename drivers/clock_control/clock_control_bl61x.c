@@ -1206,8 +1206,6 @@ static void clock_control_bl61x_gate_all_peripherals(void)
 	sys_write32(tmp, GLB_BASE + GLB_CGEN_CFG0_OFFSET);
 
 	tmp = 0;
-	/* Enable GPIP clock routing */
-	tmp |= (1U << 1);
 	/* Enable SEC clock routing */
 	tmp |= (1U << 3);
 	tmp |= (1U << 4);
@@ -1236,7 +1234,9 @@ static void clock_control_bl61x_peripheral_clock_init(void)
 	sys_write32(regval, GLB_BASE + GLB_CGEN_CFG0_OFFSET);
 
 	regval = sys_read32(GLB_BASE + GLB_CGEN_CFG1_OFFSET);
-	/* enable ADC clock routing */
+	/* Enable WO clock routing */
+	regval |= (1U << 0);
+	/* enable ADC / GPIP clock routing */
 	regval |= (1U << 2);
 	/* enable SEC clock routing */
 	regval |= (1U << 3);

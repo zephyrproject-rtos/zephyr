@@ -1,0 +1,28 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+title: WS2812 and similar on BFLB GPIO FIFO / WO
+
+description: |
+  Use the Bouffalolab GPIO FIFO / Wire Out to drive addressable RGB leds by producing
+  specifications-accurate pulse widths bits.
+
+compatible: "worldsemi,ws2812-bl61x-wo"
+
+include: ["bflb,bl61x-wo-device.yaml", ws2812-gpio.yaml]
+
+properties:
+  time-t0h:
+    default: 400
+    description: |
+      WS2812B high timing from WS2812B datasheet for a 0 (0.4us +/- 150ns).
+
+  time-t1h:
+    default: 800
+    description: |
+      WS2812B high timing from WS2812B datasheet for a 1 (0.8us +/- 150ns).
+
+  time-total:
+    default: 1250
+    description: |
+      WS2812B total time from WS2812B datasheet for a bit (1.25us +/- 600ns).
