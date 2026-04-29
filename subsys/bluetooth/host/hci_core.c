@@ -305,20 +305,25 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 		return;
 	}
 
+	/* The buffer was already destroyed above so the local credit has been
+	 * returned to the pool. We must always report the completed packet to
+	 * the controller, even when the connection is missing or in an
+	 * unexpected state. Otherwise the controller's view of host buffer
+	 * credits drifts by one each time we hit this path, and after
+	 * BT_BUF_HCI_ACL_RX_COUNT such events the controller stops sending
+	 * any ACL data because it believes the host has zero free buffers.
+	 */
 	conn = bt_conn_lookup_index(index);
 	if (!conn) {
-		LOG_WRN("Unable to look up conn with index 0x%02x", index);
-		return;
-	}
-
-	if (conn->state != BT_CONN_CONNECTED &&
-	    conn->state != BT_CONN_DISCONNECTING) {
-		LOG_WRN("Not reporting packet for non-connected conn");
+		LOG_WRN("Reporting completed packet for unknown conn index 0x%02x", index);
+	} else {
+		if (conn->state != BT_CONN_CONNECTED &&
+		    conn->state != BT_CONN_DISCONNECTING) {
+			LOG_WRN("Reporting completed packet for non-connected conn (state %u)",
+				conn->state);
+		}
 		bt_conn_unref(conn);
-		return;
 	}
-
-	bt_conn_unref(conn);
 
 	LOG_DBG("Reporting completed packet for handle %u", handle);
 
