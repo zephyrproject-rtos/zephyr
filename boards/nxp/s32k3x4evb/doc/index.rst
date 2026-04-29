@@ -13,7 +13,6 @@ This development kit has the following Interfaces:
 
 * :abbr:`ADC (Analog to Digital Converter)`
 * :abbr:`GPIO (General Purpose Input Output)`
-* :abbr:`QSPI (Quad Serial Peripheral Interface)`
 * :abbr:`SPI (Serial Peripheral Interface)`
 * :abbr:`ETH (Ethernet MII/RMII 100 Ethernet Phy)`
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
@@ -22,8 +21,9 @@ This development kit has the following Interfaces:
 Board Revisions
 ===============
 
-This Board has the following Revisions:
+This board has the following hardware revisions:
 ``A``, ``B``, ``B1`` and ``B2`` (Rev B1 and B2 have same configuration).
+The current Zephyr board support targets the ``B2`` revision (RMII ethernet, TJA1443 CAN PHY).
 
 RevB provides the possibility to change the S32K344 for the S32K358, so some
 features of the K358 were added, including the footprint to populate a SD/MMC socket
@@ -173,7 +173,7 @@ Ethernet
 ========
 This board has a single instance of Ethernet Media Access Controller (EMAC)
 interfacing with a `NXP TJA1103`_ 100Base-T1 Ethernet PHY. The output from
-the PHY is connected to ``J428.1`` as TX and ``J428.2`` as RX connpinector.
+the PHY is connected to ``J428.1`` as TX and ``J428.2`` as RX connector.
 
 ================  ======  ================
 Devicetree node   Pin     Pin Function

@@ -5,7 +5,7 @@ board_runner_args(trace32
   "--startup-args"
     "elfFile=${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}"
 )
-if(${CONFIG_XIP})
+if(CONFIG_XIP)
   board_runner_args(trace32 "loadTo=flash")
 else()
   board_runner_args(trace32 "loadTo=sram")
