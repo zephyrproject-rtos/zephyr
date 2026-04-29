@@ -166,17 +166,19 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "uf2";
 			reg = <0x00000000 DT_SIZE_K(16)>;
 			read-only;
 		};
 
 		code_partition: partition@4000 {
+			compatible = "zephyr,mapped-partition";
 			label = "code";
 			reg = <0x4000 DT_SIZE_K(512-16)>;
 			read-only;
