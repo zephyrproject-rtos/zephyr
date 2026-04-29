@@ -26,10 +26,15 @@
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_INST(0, renesas_rcar_cmt));
 #endif
+
+#ifdef CONFIG_SOC_SERIES_RCAR_GEN5
+static clock_control_subsys_t mod_clk = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, name);
+#else
 static struct rcar_cpg_clk mod_clk = {
 	.module = DT_INST_CLOCKS_CELL(0, module),
 	.domain = DT_INST_CLOCKS_CELL(0, domain),
 };
+#endif
 
 BUILD_ASSERT(CYCLES_PER_TICK > 1,
 	     "CYCLES_PER_TICK must be greater than 1");
@@ -100,10 +105,14 @@ static int sys_clock_driver_init(void)
 		return -ENODEV;
 	}
 
+#ifdef CONFIG_SOC_SERIES_RCAR_GEN5
+	ret = clock_control_on(clk, mod_clk);
+#else
 	ret = clock_control_on(clk, (clock_control_subsys_t)&mod_clk);
 	if (ret < 0) {
 		return ret;
 	}
+#endif
 
 	/* Supply clock for both channels */
 	sys_write32(CLKEN0 | CLKEN1, TIMER_BASE_ADDR + CMCLKE);
