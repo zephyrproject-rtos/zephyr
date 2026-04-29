@@ -91,7 +91,7 @@ static void discover_cb(struct bt_conn *conn, int err, uint8_t tbs_count, bool g
 	}
 
 	if (err != 0) {
-		printk("%s (err %d)\n", __func__, err);
+		printk("Discovery failed: %d\n", err);
 		return;
 	}
 
@@ -110,7 +110,7 @@ static void ccid_cb(struct bt_conn *conn, int err, uint8_t inst_index, uint32_t 
 	}
 
 	if (err != 0) {
-		printk("%s (err %d)\n", __func__, err);
+		printk("CCID read failed: %d\n", err);
 		return;
 	}
 
@@ -129,7 +129,7 @@ static void status_flags_cb(struct bt_conn *conn, int err, uint8_t inst_index, u
 	}
 
 	if (err != 0) {
-		printk("%s (err %d)\n", __func__, err);
+		printk("Status flags read failed: %d\n", err);
 		return;
 	}
 
@@ -150,7 +150,7 @@ static void call_state_cb(struct bt_conn *conn, int err, uint8_t inst_index, uin
 	}
 
 	if (err != 0) {
-		printk("%s (err %d)\n", __func__, err);
+		printk("Call state read failed: %d\n", err);
 		return;
 	}
 
