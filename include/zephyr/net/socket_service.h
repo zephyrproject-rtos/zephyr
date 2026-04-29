@@ -159,7 +159,7 @@ struct net_socket_service_desc {
  *
  * @retval 0 No error
  * @retval -ENOENT Service is not found.
- * @retval -ENINVAL Invalid parameter.
+ * @retval -EINVAL Invalid parameter.
  */
 __syscall int net_socket_service_register(const struct net_socket_service_desc *service,
 					  struct zsock_pollfd *fds, int len, void *user_data);
@@ -171,7 +171,7 @@ __syscall int net_socket_service_register(const struct net_socket_service_desc *
  *
  * @retval 0 No error
  * @retval -ENOENT Service is not found.
- * @retval -ENINVAL Invalid parameter.
+ * @retval -EINVAL Invalid parameter.
  */
 static inline int net_socket_service_unregister(const struct net_socket_service_desc *service)
 {
