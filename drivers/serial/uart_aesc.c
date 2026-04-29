@@ -54,11 +54,12 @@ struct uart_aesc_regs {
 
 static void uart_aesc_poll_out(const struct device *dev, unsigned char c)
 {
-	struct uart_aesc_regs *uart = DEV_UART(dev);
+	volatile struct uart_aesc_regs *uart = DEV_UART(dev);
 
 	while ((uart->fifo_status & AESC_UART_FIFO_TX_COUNT_MASK) == 0) {
 		/* Wait until transmit fifo is empty */
 	}
+
 	uart->read_write = c;
 }
 
