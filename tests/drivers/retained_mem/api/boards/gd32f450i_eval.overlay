@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 Aleksandr Senin <al@meshium.net>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		retainedmemtestdevice = &backup_sram;
+	};
+};
+
+&backup_sram {
+	status = "okay";
+	vin-supply = <&bldo>;
+};
+
+&bldo {
+	status = "okay";
+	regulator-boot-on;
+};

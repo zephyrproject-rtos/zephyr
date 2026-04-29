@@ -6,6 +6,7 @@ zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_USERSPACE retained_mem_handlers.c)
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_RETAINED_MEM_GD32_BKPSRAM retained_mem_gd32_bkpsram.c)
 zephyr_library_sources_ifdef(CONFIG_RETAINED_MEM_NRF_GPREGRET retained_mem_nrf_gpregret.c)
 zephyr_library_sources_ifdef(CONFIG_RETAINED_MEM_NRF_RAM_CTRL retained_mem_nrf_ram_ctrl.c)
 zephyr_library_sources_ifdef(CONFIG_RETAINED_MEM_SILABS_BURAM retained_mem_silabs_buram.c)

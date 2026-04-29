@@ -11,4 +11,7 @@ config RESET
 config CLOCK_CONTROL
 	default y
 
+config GD32_BACKUP_PROTECTION
+	default y if SOC_SERIES_GD32F4XX
+
 endif # SOC_FAMILY_GD_GD32
