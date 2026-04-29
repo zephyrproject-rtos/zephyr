@@ -138,17 +138,19 @@ zephyr_i2c: &i2c1 {
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "bootloader";
 			reg = <0x0 0x40000>;
 			read-only;
 		};
 
 		slot0_partition: partition@40000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x40000 0x000c0000>;
 		};
