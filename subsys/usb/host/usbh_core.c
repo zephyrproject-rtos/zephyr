@@ -30,6 +30,14 @@ K_MSGQ_DEFINE(usbh_msgq, sizeof(struct uhc_event),
 K_MSGQ_DEFINE(usbh_bus_msgq, sizeof(struct uhc_event),
 	      CONFIG_USBH_MAX_UHC_MSG, sizeof(uint32_t));
 
+#if defined(CONFIG_USBH_DEFINE_CONTROLLER_FROM_DT)
+#define USBH_CONTROLLER_DT_DEFINE(node_id)                                                         \
+	USBH_CONTROLLER_DEFINE(CONCAT(DT_NODE_FULL_NAME_TOKEN(node_id), _ctx),                     \
+			       DEVICE_DT_GET(node_id));
+
+DT_FOREACH_STATUS_OKAY_BUS(usbh, USBH_CONTROLLER_DT_DEFINE)
+#endif /* CONFIG_USBH_DEFINE_CONTROLLER_FROM_DT */
+
 static int usbh_event_carrier(const struct device *dev,
 			      const struct uhc_event *const event)
 {

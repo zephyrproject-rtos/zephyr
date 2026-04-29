@@ -65,12 +65,12 @@ struct usbh_context {
 };
 
 #define USBH_CONTROLLER_DEFINE(device_name, uhc_dev)			\
-	SYS_BITARRAY_DEFINE_STATIC(ba_##device_name, 128);		\
+	SYS_BITARRAY_DEFINE_STATIC(CONCAT(ba_, device_name), 128);	\
 	static STRUCT_SECTION_ITERABLE(usbh_context, device_name) = {	\
 		.name = STRINGIFY(device_name),				\
 		.mutex = Z_MUTEX_INITIALIZER(device_name.mutex),	\
 		.dev = uhc_dev,						\
-		.addr_ba = &ba_##device_name,				\
+		.addr_ba = &CONCAT(ba_, device_name),			\
 	}
 
 struct usbh_class_data;

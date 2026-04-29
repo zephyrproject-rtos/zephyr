@@ -37,13 +37,13 @@ ZTEST(uvc_test, test_virtual_device_virtual_host)
 
 static struct usbd_context *test_usbd;
 
-USBH_CONTROLLER_DEFINE(test_uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
-
-struct usbh_context *const uhs_ctx = &test_uhs_ctx;
+static struct usbh_context *uhs_ctx;
 
 void *uvc_test_enable(void)
 {
 	int ret;
+
+	uhs_ctx = usbh_context_lookup_by_idx(0);
 
 	uvc_device_init(uvc_dev, video_dev);
 

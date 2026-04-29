@@ -21,6 +21,8 @@
 
 LOG_MODULE_REGISTER(usbh_test, LOG_LEVEL_INF);
 
+static struct usbh_context *uhs_ctx;
+
 static const struct usbh_class_filter filter_rules_vid_pid[] = {
 	{
 		.vid = FOO_TEST_VID,
@@ -297,13 +299,11 @@ ZTEST(usbh_test, test_get_next_function)
 
 static struct usbd_context *test_usbd;
 
-USBH_CONTROLLER_DEFINE(test_uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
-
-struct usbh_context *const uhs_ctx = &test_uhs_ctx;
-
 void *usbh_test_enable(void)
 {
 	int ret;
+
+	uhs_ctx = usbh_context_lookup_by_idx(0);
 
 	ret = usbh_init(uhs_ctx);
 	zassert_ok(ret, "Failed to initialize USB host");

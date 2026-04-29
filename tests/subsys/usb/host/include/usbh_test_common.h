@@ -12,7 +12,4 @@
 #define FOO_TEST_SUB	0x0
 #define FOO_TEST_PROTO	0x0
 
-/* USB host context for using it from the tests */
-extern struct usbh_context *const uhs_ctx;
-
 #endif /* USBH_TEST_COMMON_H */
