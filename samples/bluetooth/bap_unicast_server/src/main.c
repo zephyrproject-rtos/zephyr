@@ -65,7 +65,6 @@ static struct audio_sink {
 static struct audio_source {
 	struct bt_bap_stream stream;
 	uint16_t seq_num;
-	size_t send_cnt;
 } source_streams[CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
 static size_t configured_source_stream_count;
 
