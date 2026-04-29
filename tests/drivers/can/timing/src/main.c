@@ -59,22 +59,33 @@ static const struct can_timing_test can_timing_data_tests[] = {
 };
 /* clang-format on */
 
+/*
+ * Maximum acceptable bitrate error: 5000 ppm = 0.5 %.
+ * CiA 601 allows up to 1.58 %; 0.5 % gives comfortable margin while
+ * accommodating core clocks that are not integer multiples of the bitrate.
+ */
+#define CAN_TIMING_TEST_BITRATE_PPM_MAX 5000
+
 /**
- * @brief Assert that a CAN timing struct matches the specified bitrate
+ * @brief Assert that a CAN timing struct achieves the specified bitrate
  *
- * Assert that the values of a CAN timing struct matches the specified bitrate
- * for a given CAN controller device instance.
+ * Assert that the values of a CAN timing struct achieve the specified bitrate
+ * within @ref CAN_TIMING_TEST_BITRATE_PPM_MAX ppm for a given CAN controller
+ * device instance.
  *
  * @param dev pointer to the device structure for the driver instance
  * @param timing pointer to the CAN timing struct
  * @param bitrate the CAN bitrate in bit/s
  */
-static void assert_bitrate_correct(const struct device *dev, struct can_timing *timing,
+static void assert_bitrate_correct(const struct device *dev,
+				   struct can_timing *timing,
 				   uint32_t bitrate)
 {
-	const uint32_t ts = 1 + timing->prop_seg + timing->phase_seg1 + timing->phase_seg2;
+	const uint32_t ts = 1 + timing->prop_seg + timing->phase_seg1 +
+			    timing->phase_seg2;
 	uint32_t core_clock;
 	uint32_t bitrate_calc;
+	int32_t ppm;
 	int err;
 
 	zassert_not_equal(timing->prescaler, 0, "prescaler is zero");
@@ -83,7 +94,15 @@ static void assert_bitrate_correct(const struct device *dev, struct can_timing *
 	zassert_ok(err, "failed to get core CAN clock");
 
 	bitrate_calc = core_clock / timing->prescaler / ts;
-	zassert_equal(bitrate, bitrate_calc, "bitrate mismatch");
+	ppm = (int32_t)(((int64_t)bitrate_calc - (int64_t)bitrate) *
+			1000000LL / (int64_t)bitrate);
+	if (ppm < 0) {
+		ppm = -ppm;
+	}
+	zassert_true(ppm <= CAN_TIMING_TEST_BITRATE_PPM_MAX,
+		     "bitrate error %d ppm for %u bps (calc %u) exceeds %d",
+		     ppm, bitrate, bitrate_calc,
+		     CAN_TIMING_TEST_BITRATE_PPM_MAX);
 }
 
 /**
@@ -276,6 +295,94 @@ ZTEST_USER(can_timing, test_timing_data)
 	}
 
 	zassert_true(count > 0, "no data phase bitrates supported");
+}
+
+/**
+ * @brief Standard CiA 301 nominal bitrates for non-integer clock test.
+ */
+/* clang-format off */
+static const uint32_t can_timing_cia_bitrates[] = {
+	 125000,
+	 250000,
+	 500000,
+	1000000,
+};
+/* clang-format on */
+
+/**
+ * @brief Test CAN timing calculation for non-integer-multiple core clocks.
+ *
+ * Some SoCs (e.g. NXP Kinetis KV58 at 120 MHz CAN clock from a 180 MHz PLL)
+ * have a CAN peripheral clock that is not an integer multiple of the requested
+ * bitrate for every prescaler value.  The old algorithm required exact
+ * divisibility and returned -ENOTSUP for these configurations.
+ *
+ * This test verifies that can_calc_timing() succeeds for all CiA 301
+ * recommended nominal bitrates and that the resulting timing achieves the
+ * requested bitrate within @ref CAN_TIMING_TEST_BITRATE_PPM_MAX ppm,
+ * regardless of whether the core clock is an integer multiple of the bitrate.
+ */
+ZTEST_USER(can_timing, test_timing_non_integer_clock)
+{
+	const struct device *const dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
+	const struct can_timing *tmin = can_get_timing_min(dev);
+	const struct can_timing *tmax = can_get_timing_max(dev);
+	uint32_t core_clock;
+	uint32_t bitrate;
+	int err;
+	int i;
+
+	err = can_get_core_clock(dev, &core_clock);
+	zassert_ok(err, "failed to get core CAN clock");
+
+	for (i = 0; i < ARRAY_SIZE(can_timing_cia_bitrates); i++) {
+		struct can_timing timing = {0};
+		uint32_t ts;
+		uint32_t actual_bitrate;
+		int32_t ppm;
+		int sp_err;
+
+		bitrate = can_timing_cia_bitrates[i];
+
+		if (bitrate < can_get_bitrate_min(dev) ||
+		    bitrate > can_get_bitrate_max(dev)) {
+			printk("bitrate %u bps outside device limits,"
+			       " skipping\n", bitrate);
+			continue;
+		}
+
+		sp_err = can_calc_timing(dev, &timing, bitrate, 0);
+		zassert_true(sp_err >= 0,
+			     "can_calc_timing failed for %u bps"
+			     " (core clock %u Hz, err %d)",
+			     bitrate, core_clock, sp_err);
+
+		assert_timing_within_bounds(&timing, tmin, tmax);
+
+		ts = 1U + timing.prop_seg + timing.phase_seg1 +
+		     timing.phase_seg2;
+		actual_bitrate = core_clock / timing.prescaler / ts;
+		ppm = (int32_t)(((int64_t)actual_bitrate -
+				 (int64_t)bitrate) *
+				1000000LL / (int64_t)bitrate);
+		if (ppm < 0) {
+			ppm = -ppm;
+		}
+
+		printk("bitrate %u bps: prescaler=%u ts=%u"
+		       " actual=%u bps err=%d ppm"
+		       " sp_err=%d.%d%%\n",
+		       bitrate, timing.prescaler, ts,
+		       actual_bitrate, ppm,
+		       sp_err / 10, sp_err % 10);
+
+		zassert_true(ppm <= CAN_TIMING_TEST_BITRATE_PPM_MAX,
+			     "bitrate %u bps error %d ppm exceeds"
+			     " %d ppm (core clock %u Hz)",
+			     bitrate, ppm,
+			     CAN_TIMING_TEST_BITRATE_PPM_MAX,
+			     core_clock);
+	}
 }
 
 void *can_timing_setup(void)
