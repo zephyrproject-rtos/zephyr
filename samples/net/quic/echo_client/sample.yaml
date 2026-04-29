@@ -5,6 +5,7 @@ common:
   harness: net
   depends_on: netif
   filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
+  min_ram: 300
 tests:
   sample.net.quic.service.echo_client:
     tags:
