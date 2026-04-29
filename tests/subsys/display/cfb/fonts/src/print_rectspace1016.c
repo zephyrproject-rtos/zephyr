@@ -11,7 +11,7 @@
 #include <zephyr/display/cfb.h>
 
 #include "testdata.h"
-#include "utils.h"
+#include "../../common/utils.h"
 
 LOG_MODULE_REGISTER(print_rectspace1016, CONFIG_DISPLAY_LOG_LEVEL);
 
