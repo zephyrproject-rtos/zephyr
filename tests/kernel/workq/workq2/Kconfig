@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Måns Ansgariusson <mansgariusson@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config WORKQ_TEST_ITEM_WORK_TIME
+	int "Test item working time, msec."
+	default 50

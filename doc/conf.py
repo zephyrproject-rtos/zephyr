@@ -70,6 +70,7 @@ with open(ZEPHYR_BASE / "SDK_VERSION") as f:
 # -- General configuration ------------------------------------------------
 
 extensions = [
+    "sphinxcontrib.mermaid",
     "sphinx_rtd_theme",
     "sphinx.ext.todo",
     "sphinx.ext.extlinks",
