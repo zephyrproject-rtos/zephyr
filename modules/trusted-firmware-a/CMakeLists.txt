@@ -11,17 +11,6 @@ if(CONFIG_BUILD_WITH_TFA)
   set(tfa_image_info MAP "name: tfa, source-dir: ${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR}")
   build_info(images VALUE ${tfa_image_info})
 
-  ExternalProject_Add(
-    tfa
-    SOURCE_DIR ${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR}
-    BINARY_DIR ${TFA_BINARY_DIR}
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-    BUILD_ALWAYS True
-    USES_TERMINAL_BUILD True
-  )
-
   if(CONFIG_TFA_MAKE_BUILD_TYPE_DEBUG)
     set(TFA_BUILD_DEBUG "1")
   else()
@@ -40,14 +29,58 @@ if(CONFIG_BUILD_WITH_TFA)
     set(TFA_EXTRA_ARGS "")
   endif()
 
-  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND make -C ${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR}
-            DEBUG=${TFA_BUILD_DEBUG}
-            CROSS_COMPILE=${CROSS_COMPILE}
-            BUILD_BASE=${TFA_BINARY_DIR} PLAT=${TFA_PLAT}
-            BL33=${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
-            ${TFA_AARCH32_REGS}
-            ${TFA_EXTRA_ARGS}
-            all fip
+  if(NOT DEFINED TFA_PLAT)
+    set(TFA_PLAT "${CONFIG_TFA_PLATFORM}")
+  endif()
+
+  # Build base command
+  set(TFA_BUILD_CMD
+    make -C ${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR}
+      DEBUG=${TFA_BUILD_DEBUG}
+      CROSS_COMPILE=${CROSS_COMPILE}
+      BUILD_BASE=${TFA_BINARY_DIR}
+      PLAT=${TFA_PLAT}
+      ${TFA_AARCH32_REGS}
+      ${TFA_EXTRA_ARGS}
   )
+
+  if(CONFIG_TFA_BUILD_FIP)
+
+    if(CONFIG_TFA_BUILD_BL33)
+      set(TFA_BL33_ARG "BL33=${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}")
+    else()
+      set(TFA_BL33_ARG "")
+    endif()
+
+    ExternalProject_Add(
+      tfa
+      SOURCE_DIR ${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR}
+      BINARY_DIR ${TFA_BINARY_DIR}
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND ""
+      INSTALL_COMMAND ""
+      BUILD_ALWAYS True
+      USES_TERMINAL_BUILD True
+    )
+
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND ${TFA_BUILD_CMD}
+        ${TFA_BL33_ARG}
+        all fip
+    )
+  else()
+
+    ExternalProject_Add(
+      tfa
+      SOURCE_DIR ${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR}
+      BINARY_DIR ${TFA_BINARY_DIR}
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND ${TFA_BUILD_CMD} all
+      INSTALL_COMMAND ""
+      BUILD_ALWAYS True
+      USES_TERMINAL_BUILD True
+    )
+
+  endif()
+
 endif()
