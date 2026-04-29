@@ -6,9 +6,10 @@
 #ifndef ZEPHYR_XEN_MEMORY_H_
 #define ZEPHYR_XEN_MEMORY_H_
 
+#include <xen/public/xen.h>
+#include <xen/public/memory.h>
+
 #include <zephyr/kernel.h>
-#include <zephyr/xen/public/memory.h>
-#include <zephyr/xen/public/xen.h>
 
 /**
  * Add mapping for specified page frame in Xen domain physmap.
