@@ -32,23 +32,35 @@ instantiated anywhere in the code base.
     DEFINE_DATA(d2, 3, 4);
     DEFINE_DATA(d3, 5, 6);
 
-Then the linker has to be setup to place the structure in a
-contiguous segment using one of the linker macros such as
-:c:macro:`ITERABLE_SECTION_RAM` or :c:macro:`ITERABLE_SECTION_ROM`. Custom
-linker snippets are normally declared using one of the
-``zephyr_linker_sources()`` CMake functions, using the appropriate section
-identifier, ``DATA_SECTIONS`` for RAM structures and ``SECTIONS`` for ROM ones.
+Then the linker has to be told to place the structures into a contiguous output section. This is
+done from CMake using the ``zephyr_iterable_section()`` function, which is the toolchain-agnostic
+input to Zephyr's linker script generator and works across every linker backend Zephyr supports.
+
+The ``NAME`` argument must match the struct type name passed to
+:c:macro:`STRUCT_SECTION_ITERABLE`. For RAM-resident iterables, place the section in the data
+region:
 
 .. code-block:: cmake
 
    # CMakeLists.txt
-   zephyr_linker_sources(DATA_SECTIONS iterables.ld)
+   zephyr_iterable_section(NAME my_data GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
 
-.. code-block:: c
+For ROM-resident iterables, place the output section in the read-only region. Note that the
+instances themselves must also be declared ``const`` (e.g. ``const STRUCT_SECTION_ITERABLE(...)``)
+so the compiler emits them into a read-only input section, the C declaration and the CMake placement
+must agree.
 
-   # iterables.ld
-   #include <zephyr/linker/iterable_sections.h>
-   ITERABLE_SECTION_RAM(my_data, 4)
+.. code-block:: cmake
+
+   # CMakeLists.txt
+   zephyr_iterable_section(NAME my_data GROUP RODATA_REGION)
+
+.. note::
+   A number of in-tree subsystems also ship hand-written ``.ld`` snippets based on
+   :c:macro:`ITERABLE_SECTION_RAM` / :c:macro:`ITERABLE_SECTION_ROM` and register them with
+   ``zephyr_linker_sources()``. Those snippets exist for the legacy GNU-LD template-based linker
+   pipeline and are not required for new code: ``zephyr_iterable_section()`` alone is sufficient
+   and is the recommended approach.
 
 The data can then be accessed using :c:macro:`STRUCT_SECTION_FOREACH`.
 
