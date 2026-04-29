@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(net_eth_bridge, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
 #include <zephyr/net/ethernet_bridge_fdb.h>
 #endif
+#include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/random/random.h>
 
@@ -89,26 +90,52 @@ struct net_if *eth_bridge_get_by_index(int index)
 	return net_if_get_by_index(index);
 }
 
+static bool eth_bridge_iface_usable(struct net_if *iface, struct ethernet_context *eth_ctx,
+				    bool *needs_promisc)
+{
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		return false;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE_WIFI_AP) &&
+		eth_ctx->eth_if_type == L2_ETH_IF_TYPE_WIFI) {
+		struct wifi_iface_status wifi_stat = {0};
+
+		if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface,
+				&wifi_stat, sizeof(wifi_stat)) >= 0 &&
+			wifi_stat.iface_mode == WIFI_MODE_AP) {
+			*needs_promisc = false;
+			return true;
+		}
+		return false;
+	}
+
+#if defined(CONFIG_NET_DSA)
+	if (eth_ctx->dsa_port == DSA_USER_PORT) {
+		*needs_promisc = false;
+		return true;
+	}
+#endif
+	if ((net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE) > 0) {
+		return true;
+	}
+
+	return false;
+}
+
 int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 {
 	struct eth_bridge_iface_context *ctx = net_if_get_device(br)->data;
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
+	bool needs_promisc = true;
 	bool found = false;
 	int count = 0;
 	int ret;
 
-#if defined(CONFIG_NET_DSA)
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET) ||
-	    (eth_ctx->dsa_port != DSA_USER_PORT &&
-	     !(net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE))) {
+	if (!eth_bridge_iface_usable(iface, eth_ctx, &needs_promisc)) {
 		return -EINVAL;
 	}
-#else
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET) ||
-	    !(net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE)) {
-		return -EINVAL;
-	}
-#endif
+
 	if (net_if_l2(br) != &NET_L2_GET_NAME(VIRTUAL) ||
 	    !(net_virtual_get_iface_capabilities(br) & VIRTUAL_INTERFACE_BRIDGE)) {
 		return -EINVAL;
@@ -144,24 +171,14 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 		return -ENOMEM;
 	}
 
-#if defined(CONFIG_NET_DSA)
-	if (eth_ctx->dsa_port != DSA_USER_PORT) {
+	if (needs_promisc) {
 		ret = net_eth_promisc_mode(iface, true);
-		if (ret != 0 && ret != -EALREADY) {
-			NET_DBG("iface %d promiscuous mode failed: %d",
-				net_if_get_by_iface(iface), ret);
-			eth_bridge_iface_remove(br, iface);
-			return ret;
-		}
-	}
-#else
-	ret = net_eth_promisc_mode(iface, true);
-	if (ret != 0 && ret != -EALREADY) {
+
 		/* Ignore any errors when using native-sim driver,
 		 * we do not need host promiscuous working when testing
 		 * bridging using native-sim.
 		 */
-		if (!IS_ENABLED(CONFIG_ETH_NATIVE_TAP)) {
+		if (!IS_ENABLED(CONFIG_ETH_NATIVE_TAP) && ret != 0 && ret != -EALREADY) {
 			NET_DBG("iface %d promiscuous mode failed: %d",
 				net_if_get_by_iface(iface), ret);
 			eth_bridge_iface_remove(br, iface);
@@ -169,7 +186,6 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 		}
 	}
 
-#endif
 	NET_DBG("iface %d added to bridge %d", net_if_get_by_iface(iface),
 		net_if_get_by_iface(br));
 
