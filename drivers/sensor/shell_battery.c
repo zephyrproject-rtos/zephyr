@@ -67,14 +67,20 @@ static int cmd_battery(const struct shell *sh, size_t argc, char **argv)
 	bool allowed;
 	int err;
 
+	if (!DEVICE_API_IS(sensor, dev)) {
+		shell_error(sh, "Device is not a sensor (%s)",  dev->name);
+		return -ENODEV;
+	}
+
 	if (!device_is_ready(dev)) {
-		shell_error(sh, "Device not ready (%s)", argv[1]);
+		shell_error(sh, "Device not ready (%s)", dev->name);
 		return -ENODEV;
 	}
 
 	err = sensor_sample_fetch(dev);
 	if (err < 0) {
 		shell_error(sh, "Failed to read sensor: %d", err);
+		return err;
 	}
 
 	err = get_channels(dev,
@@ -94,6 +100,7 @@ static int cmd_battery(const struct shell *sh, size_t argc, char **argv)
 			   SENSOR_CHAN_GAUGE_TIME_TO_EMPTY, &empty,
 			   -1);
 	if (err < 0) {
+		shell_error(sh, "Failed to get a value: %d", err);
 		return err;
 	}
 
