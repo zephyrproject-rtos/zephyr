@@ -419,6 +419,35 @@ other-macro =/ %s"DT_CHOSEN_" dt-name
 ;
 ;   #define DT_COMPAT_vnd_dev_BUS_spi 1
 other-macro =/ %s"DT_COMPAT_" dt-name %s"_BUS_" dt-name
+; Declares that at least one node creates a given bus type.
+; Example:
+;
+;   #define DT_HAS_BUS_spi 1
+other-macro =/ %s"DT_HAS_BUS_" dt-name
+; Number of nodes that create a given bus type.
+; Example:
+;
+;   #define DT_N_BUS_spi_NUM 2
+other-macro =/ %s"DT_N_BUS_" dt-name %s"_NUM"
+; Declares that at least one status "okay" node creates a given bus type.
+; Example:
+;
+;   #define DT_HAS_OKAY_BUS_spi 1
+other-macro =/ %s"DT_HAS_OKAY_BUS_" dt-name
+; Number of status "okay" nodes that create a given bus type.
+; Example:
+;
+;   #define DT_N_OKAY_BUS_spi_NUM 2
+other-macro =/ %s"DT_N_OKAY_BUS_" dt-name %s"_NUM"
+; These are used internally by DT_FOREACH_BUS and
+; DT_FOREACH_BUS_VARGS, which iterate over nodes creating a bus type.
+other-macro =/ %s"DT_FOREACH_BUS_" dt-name
+other-macro =/ %s"DT_FOREACH_BUS_VARGS_" dt-name
+; These are used internally by DT_FOREACH_STATUS_OKAY_BUS and
+; DT_FOREACH_STATUS_OKAY_BUS_VARGS, which iterate over status "okay"
+; nodes creating a bus type.
+other-macro =/ %s"DT_FOREACH_OKAY_BUS_" dt-name
+other-macro =/ %s"DT_FOREACH_OKAY_BUS_VARGS_" dt-name
 ; Declares that a compatible has at least one status "okay" node.
 ; Example:
 ;

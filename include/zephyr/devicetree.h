@@ -4204,6 +4204,113 @@
 #define DT_ON_BUS(node_id, bus) IS_ENABLED(DT_CAT3(node_id, _BUS_, bus))
 
 /**
+ * @brief Does any node create a bus of a given type?
+ *
+ * This checks nodes whose bindings contain a @c bus key with the given type.
+ *
+ * @param bus lowercase-and-underscores bus type as a C token (i.e.
+ *            without quotes)
+ * @return 1 if any node creates that bus type, 0 otherwise
+ */
+#define DT_HAS_BUS(bus) IS_ENABLED(DT_CAT(DT_HAS_BUS_, bus))
+
+/**
+ * @brief Number of nodes that create a given bus type.
+ *
+ * This counts nodes whose bindings contain a @c bus key with the given type.
+ *
+ * @param bus lowercase-and-underscores bus type as a C token (i.e.
+ *            without quotes)
+ * @return number of matching nodes, or 0 if none are present
+ */
+#define DT_NUM_BUS(bus) \
+	COND_CODE_1(DT_HAS_BUS(bus), \
+			(DT_CAT3(DT_N_BUS_, bus, _NUM)), \
+			(0))
+
+/**
+ * @brief Does any status @c okay node create a bus of a given type?
+ *
+ * This checks status @c okay nodes whose bindings contain a @c bus key with
+ * the given type.
+ *
+ * @param bus lowercase-and-underscores bus type as a C token (i.e.
+ *            without quotes)
+ * @return 1 if any status @c okay node creates that bus type, 0 otherwise
+ */
+#define DT_HAS_BUS_STATUS_OKAY(bus) IS_ENABLED(DT_CAT(DT_HAS_OKAY_BUS_, bus))
+
+/**
+ * @brief Number of status @c okay nodes that create a given bus type.
+ *
+ * This counts status @c okay nodes whose bindings contain a @c bus key with
+ * the given type.
+ *
+ * @param bus lowercase-and-underscores bus type as a C token (i.e.
+ *            without quotes)
+ * @return number of matching status @c okay nodes, or 0 if none are present
+ */
+#define DT_NUM_BUS_STATUS_OKAY(bus) \
+	COND_CODE_1(DT_HAS_BUS_STATUS_OKAY(bus), \
+			(DT_CAT3(DT_N_OKAY_BUS_, bus, _NUM)), \
+			(0))
+
+/**
+ * @brief Call @p fn for each node that creates a bus of type @p bus.
+ *
+ * This iterates over all nodes whose bindings contain @c bus: @p bus.
+ *
+ * @param bus lowercase-and-underscores bus type as a C token (i.e.
+ *            without quotes)
+ * @param fn macro to call for each matching node identifier
+ */
+#define DT_FOREACH_BUS(bus, fn) \
+	COND_CODE_1(DT_HAS_BUS(bus), \
+			(DT_CAT(DT_FOREACH_BUS_, bus)(fn)), \
+			())
+
+/**
+ * @brief Like DT_FOREACH_BUS(), but allows passing extra arguments to @p fn.
+ *
+ * @param bus lowercase-and-underscores bus type as a C token (i.e.
+ *            without quotes)
+ * @param fn macro to call for each matching node identifier
+ * @param ... extra arguments passed to each invocation of @p fn
+ */
+#define DT_FOREACH_BUS_VARGS(bus, fn, ...) \
+	COND_CODE_1(DT_HAS_BUS(bus), \
+			(DT_CAT(DT_FOREACH_BUS_VARGS_, bus)(fn, __VA_ARGS__)), \
+			())
+
+/**
+ * @brief Call @p fn for each status @c okay node that creates a bus of type @p bus.
+ *
+ * This iterates over status @c okay nodes whose bindings contain
+ * @c bus: @p bus.
+ *
+ * @param bus lowercase-and-underscores bus type as a C token (i.e.
+ *            without quotes)
+ * @param fn macro to call for each matching node identifier
+ */
+#define DT_FOREACH_STATUS_OKAY_BUS(bus, fn) \
+	COND_CODE_1(DT_HAS_BUS_STATUS_OKAY(bus), \
+			(DT_CAT(DT_FOREACH_OKAY_BUS_, bus)(fn)), \
+			())
+
+/**
+ * @brief Like DT_FOREACH_STATUS_OKAY_BUS(), with additional arguments to @p fn.
+ *
+ * @param bus lowercase-and-underscores bus type as a C token (i.e.
+ *            without quotes)
+ * @param fn macro to call for each matching node identifier
+ * @param ... extra arguments passed to each invocation of @p fn
+ */
+#define DT_FOREACH_STATUS_OKAY_BUS_VARGS(bus, fn, ...) \
+	COND_CODE_1(DT_HAS_BUS_STATUS_OKAY(bus), \
+			(DT_CAT(DT_FOREACH_OKAY_BUS_VARGS_, bus)(fn, __VA_ARGS__)), \
+			())
+
+/**
  * @}
  */
 
