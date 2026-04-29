@@ -81,6 +81,20 @@ GPIO
 
 * On STM32F1 series, GPIO output pins now use 50 MHz max. speed instead of 10 MHz. (:github:`104690`)
 
+NXP
+===
+
+* :kconfig:option:`CONFIG_MCUX_LPTMR_TIMER` no longer defaults to ``y`` based on the
+  ``/chosen/zephyr,system-timer`` chosen node being compatible with
+  :dtcompatible:`nxp,lptmr`. Out-of-tree SoCs and boards that rely on the LPTMR
+  as the system timer must now explicitly default the symbol in their
+  ``Kconfig.defconfig`` (for example ``default y if PM``).
+
+* Kinetis KE1xF no longer requires a board overlay to designate the system
+  timer when :kconfig:option:`CONFIG_PM` is enabled. The SoC DTSI now sets the
+  ``zephyr,system-timer`` chosen property, so boards that added the overlay
+  described in the Zephyr 4.4 migration guide can remove it.
+
 STM32
 =====
 
@@ -138,9 +152,9 @@ Bluetooth Audio
   anything.
 * Optional CSIS characteristics have been made configurable via Kconfig and must be enabled explicitly:
 
-  * Coordinated Set Size → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT`
-  * Set Member Lock → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT`
-  * Set Member Rank → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT`
+  * Coordinated Set Size ? :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT`
+  * Set Member Lock ? :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT`
+  * Set Member Rank ? :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT`
 
 Bluetooth HCI
 =============
