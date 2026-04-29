@@ -277,3 +277,8 @@ zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
 };
+
+&lfclk {
+	k32src = "rc";
+	k32src-accuracy-ppm = <250>;
+};

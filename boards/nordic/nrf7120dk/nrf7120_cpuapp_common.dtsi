@@ -118,6 +118,18 @@
 	status = "okay";
 };
 
+&lfclk {
+	status = "okay";
+};
+
+&xo {
+	status = "okay";
+};
+
+&xo24m {
+	status = "okay";
+};
+
 &spi00 {
 	status = "okay";
 	cs-gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;

@@ -54,3 +54,8 @@
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
 };
+
+&lfclk {
+	k32src = "rc";
+	k32src-accuracy-ppm = <500>;
+};

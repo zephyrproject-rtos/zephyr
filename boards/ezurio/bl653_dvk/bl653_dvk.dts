@@ -209,3 +209,8 @@ zephyr_udc0: &usbd {
 &ieee802154 {
 	status = "okay";
 };
+
+&lfclk {
+	k32src = "rc";
+	k32src-accuracy-ppm = <500>;
+};

@@ -413,5 +413,10 @@
 	};
 };
 
+&lfclk {
+	k32src = "xtal";
+	k32src-accuracy-ppm = <250>;
+};
+
 /* Include partition configuration file */
 #include "bl5340_dvk_nrf5340_cpuapp_partition_conf.dtsi"

@@ -8,6 +8,10 @@
 	hfclkaudio-frequency = <12288000>;
 };
 
+&hfclkaudio {
+	hfclkaudio-frequency = <12288000>;
+};
+
 &pinctrl {
 	pdm0_default_alt: pdm0_default_alt {
 		group1 {
