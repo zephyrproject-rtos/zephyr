@@ -174,7 +174,11 @@ static void mcux_lptmr_timer_isr(const void *arg)
 
 		LPTMR_ClearStatusFlags(LPTMR_BASE, kLPTMR_TimerCompareFlag);
 		tick += (now - announced_cycles) / CYCLES_PER_TICK;
-		announced_cycles = now;
+		/*
+		 * Advance in whole ticks to avoid accumulating sub-tick
+		 * ISR latency, which would otherwise cause long-term drift.
+		 */
+		announced_cycles += tick * CYCLES_PER_TICK;
 	} else {
 		LPTMR_ClearStatusFlags(LPTMR_BASE, kLPTMR_TimerCompareFlag);
 		cycles += CYCLES_PER_TICK;
