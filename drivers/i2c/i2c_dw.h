@@ -13,6 +13,8 @@
 
 #define DT_DRV_COMPAT snps_designware_i2c
 
+#define I2C_DW_PINCTRL_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(pinctrl_0)
+
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "DW I2C in DT needs CONFIG_PCIE");
 #include <zephyr/drivers/pcie/pcie.h>
@@ -108,7 +110,7 @@ struct i2c_dw_rom_config {
 	uint8_t fs_spk_len;
 	uint8_t hs_spk_len;
 
-#if defined(CONFIG_PINCTRL)
+#if I2C_DW_PINCTRL_ENABLED
 	const struct pinctrl_dev_config *pcfg;
 #endif
 #if defined(CONFIG_RESET)
