@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2026 BeagleBoard.org
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		output-gpios = <&gpio0 0 0>;
+		input-gpios = <&gpio0 1 0>;
+	};
+};

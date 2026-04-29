@@ -93,6 +93,14 @@ config GPIO_ENABLE_DISABLE_INTERRUPT
 	  on/off the interrupt signal without changing other registers, such as
 	  pending register, etc. The driver must implement it to work.
 
+config GPIO_RAW_REGS
+	bool "Support for using GPIO registers for faster operations [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option provides APIs to do fast GPIO access using registers directly.
+	  Most GPIO controllers in MCUs support GPIO operations using a single CPU
+	  instruction. This just provides a way to use that capablility in Zephyr.
+
 # zephyr-keep-sorted-start
 source "drivers/gpio/Kconfig.ad559x"
 source "drivers/gpio/Kconfig.adp5585"

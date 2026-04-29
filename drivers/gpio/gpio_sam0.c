@@ -269,6 +269,22 @@ static uint32_t gpio_sam0_get_pending_int(const struct device *dev)
 
 #endif
 
+#ifdef CONFIG_GPIO_RAW_REGS
+static int gpio_sam0_port_get_raw_regs(const struct device *dev, struct gpio_raw_regs *regs)
+{
+	const struct gpio_sam0_config *config = dev->config;
+	PortGroup *dev_regs = config->regs;
+
+	regs->in = (mem_addr_t)&dev_regs->IN.reg;
+	regs->out = (mem_addr_t)&dev_regs->OUT.reg;
+	regs->set = (mem_addr_t)&dev_regs->OUTSET.reg;
+	regs->clear = (mem_addr_t)&dev_regs->OUTCLR.reg;
+	regs->toggle = (mem_addr_t)&dev_regs->OUTTGL.reg;
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_RAW_REGS */
+
 static DEVICE_API(gpio, gpio_sam0_api) = {
 	.pin_configure = gpio_sam0_config,
 	.port_get_raw = gpio_sam0_port_get_raw,
@@ -276,6 +292,9 @@ static DEVICE_API(gpio, gpio_sam0_api) = {
 	.port_set_bits_raw = gpio_sam0_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_sam0_port_clear_bits_raw,
 	.port_toggle_bits = gpio_sam0_port_toggle_bits,
+#ifdef CONFIG_GPIO_RAW_REGS
+	.port_get_raw_regs = gpio_sam0_port_get_raw_regs,
+#endif /* CONFIG_GPIO_RAW_REGS */
 #ifdef CONFIG_SAM0_EIC
 	.pin_interrupt_configure = gpio_sam0_pin_interrupt_configure,
 	.manage_callback = gpio_sam0_manage_callback,

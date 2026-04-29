@@ -135,6 +135,83 @@ If you need runtime control of a pin configured as a hog beyond the initial stat
 automatically set during system initialization, you may consider using the :ref:`regulator_api`
 instead, with a :dtcompatible:`regulator-fixed` Devicetree node.
 
+Raw GPIO Register Access
+************************
+
+When :kconfig:option:`CONFIG_GPIO_RAW_REGS` is enabled, the GPIO API provides
+direct access to GPIO port registers through the :c:struct:`gpio_raw_regs`
+structure.
+
+This feature allows applications and drivers to directly access GPIO port
+input and output registers for efficient bit-level operations, bypassing
+higher-level GPIO APIs. It is intended for performance-critical or low-level
+use cases such as fast GPIO toggling, protocol implementations, or direct
+hardware interaction.
+
+Raw registers are obtained using :c:func:`gpio_port_get_raw_regs`, which fills
+a :c:struct:`gpio_raw_regs` structure with pointers to memory-mapped GPIO
+registers.
+
+Example usage:
+
+.. code-block:: c
+
+   int ret;
+   struct gpio_raw_regs regs;
+
+   ret = gpio_port_get_raw_regs(dev, &regs);
+   if (ret < 0) {
+      /* raw register API is not supported by the GPIO controller */
+      return ret;
+   }
+
+   /* GPIO controller might not have input register. So check before use. */
+   if (regs.in != 0) {
+      if (sys_test_bit(regs.in, pin)) {
+          /* pin is high */
+      }
+   }
+
+   /* GPIO controller might not have output register. So check before use. */
+   if (regs.out != 0) {
+      sys_set_bit(regs.out, pin);
+   }
+
+Register Access
+===============
+
+The members of :c:struct:`gpio_raw_regs` point to memory-mapped GPIO registers
+and must be accessed using Zephyr system I/O primitives from
+:zephyr_file:`include/zephyr/sys/sys_io.h`, such as:
+
+- :c:func:`sys_set_bit`
+- :c:func:`sys_clear_bit`
+- :c:func:`sys_test_bit`
+- :c:func:`sys_read32`
+- :c:func:`sys_write32`
+
+Using these primitives ensures correct and portable access to hardware
+registers across different architectures.
+
+Write-only Registers
+====================
+
+Some GPIO registers (such as set or clear registers) may be write-only
+depending on the hardware implementation. Reading from such registers may
+return undefined values or cause faults.
+
+Applications must treat these registers as write-only and only perform write
+operations on them.
+
+Important Notes
+===============
+
+- Raw GPIO registers bypass standard GPIO safety checks and configuration validation.
+- Pins must be properly configured before accessing raw registers.
+- Accessing unimplemented pins results in undefined behavior.
+- Raw register access is hardware-dependent and should only be used when necessary.
+- Drivers may return ``-ENOTSUP`` if raw register access is not supported.
+
 Configuration Options
 *********************
 
@@ -146,6 +223,7 @@ Main configuration options:
 * :kconfig:option:`CONFIG_GPIO_GET_CONFIG`
 * :kconfig:option:`CONFIG_GPIO_HOGS`
 * :kconfig:option:`CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT`
+* :kconfig:option:`CONFIG_GPIO_RAW_REGS`
 
 API Reference
 *************
