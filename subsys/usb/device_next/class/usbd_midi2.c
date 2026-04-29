@@ -309,8 +309,7 @@ static int usbd_midi_class_cth(struct usbd_class_data *const class_data,
 	if (data->altsetting != MIDI2_ALTERNATE ||
 	    setup->bRequest != USB_SREQ_GET_DESCRIPTOR ||
 	    setup->wValue != ((CS_GR_TRM_BLOCK << 8) | MIDI2_ALTERNATE)) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	/* Group terminal block header */

@@ -69,8 +69,7 @@ static inline int usbd_class_control_to_host(struct usbd_class_data *const c_dat
 		return api->control_to_host(c_data, setup, buf);
 	}
 
-	errno = -ENOTSUP;
-	return 0;
+	return -ENOTSUP;
 }
 
 /**
@@ -102,8 +101,7 @@ static inline int usbd_class_control_to_dev(struct usbd_class_data *const c_data
 		return api->control_to_dev(c_data, setup, buf);
 	}
 
-	errno = -ENOTSUP;
-	return 0;
+	return -ENOTSUP;
 }
 
 /**

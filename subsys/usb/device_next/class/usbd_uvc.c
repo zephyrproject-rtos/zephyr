@@ -1029,6 +1029,7 @@ static int uvc_control_to_host(struct usbd_class_data *const c_data,
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uvc_control_map *map = NULL;
 	uint8_t request = setup->bRequest;
+	int err;
 
 	LOG_INF("Host sent a %s request, wValue 0x%04x, wIndex 0x%04x, wLength %u",
 		request == UVC_GET_CUR ? "GET_CUR" : request == UVC_GET_MIN ? "GET_MIN" :
@@ -1039,28 +1040,28 @@ static int uvc_control_to_host(struct usbd_class_data *const c_data,
 
 	switch (uvc_get_control_op(dev, setup, &map)) {
 	case UVC_OP_VS_PROBE:
-		errno = -uvc_get_vs_probe(dev, buf, setup);
+		err = -uvc_get_vs_probe(dev, buf, setup);
 		break;
 	case UVC_OP_VS_COMMIT:
-		errno = -uvc_get_vs_commit(dev, buf, setup);
+		err = -uvc_get_vs_commit(dev, buf, setup);
 		break;
 	case UVC_OP_VC_CTRL:
-		errno = -uvc_get_vc_ctrl(dev, buf, setup, map);
+		err = -uvc_get_vc_ctrl(dev, buf, setup, map);
 		break;
 	case UVC_OP_GET_ERRNO:
-		errno = -uvc_get_errno(dev, buf, setup);
+		err = -uvc_get_errno(dev, buf, setup);
 		break;
 	case UVC_OP_RETURN_ERROR:
-		errno = EINVAL;
+		err = EINVAL;
 		return 0;
 	default:
 		LOG_WRN("Unhandled operation, stalling control command");
-		errno = EINVAL;
+		err = EINVAL;
 	}
 
-	uvc_set_errno(dev, errno);
+	uvc_set_errno(dev, err);
 
-	return 0;
+	return -err;
 }
 
 static int uvc_control_to_dev(struct usbd_class_data *const c_data,
@@ -1069,10 +1070,11 @@ static int uvc_control_to_dev(struct usbd_class_data *const c_data,
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uvc_control_map *map = NULL;
+	int err;
 
 	if (setup->bRequest != UVC_SET_CUR) {
 		LOG_WRN("Host issued a control write message but the bRequest is not SET_CUR");
-		errno = ENOMEM;
+		err = ENOMEM;
 		goto end;
 	}
 
@@ -1081,25 +1083,25 @@ static int uvc_control_to_dev(struct usbd_class_data *const c_data,
 
 	switch (uvc_get_control_op(dev, setup, &map)) {
 	case UVC_OP_VS_PROBE:
-		errno = -uvc_set_vs_probe(dev, buf);
+		err = -uvc_set_vs_probe(dev, buf);
 		break;
 	case UVC_OP_VS_COMMIT:
-		errno = -uvc_set_vs_commit(dev, buf);
+		err = -uvc_set_vs_commit(dev, buf);
 		break;
 	case UVC_OP_VC_CTRL:
-		errno = -uvc_set_vc_ctrl(dev, buf, map);
+		err = -uvc_set_vc_ctrl(dev, buf, map);
 		break;
 	case UVC_OP_RETURN_ERROR:
-		errno = EINVAL;
+		err = EINVAL;
 		return 0;
 	default:
 		LOG_WRN("Unhandled operation, stalling control command");
-		errno = EINVAL;
+		err = EINVAL;
 	}
 end:
-	uvc_set_errno(dev, errno);
+	uvc_set_errno(dev, err);
 
-	return 0;
+	return -err;
 }
 
 /* UVC descriptor handling */

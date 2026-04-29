@@ -651,8 +651,7 @@ static int get_clock_source_request(struct usbd_class_data *const c_data,
 	if (CONTROL_CHANNEL_NUMBER(setup) != 0) {
 		LOG_DBG("Clock source control with channel %d",
 			CONTROL_CHANNEL_NUMBER(setup));
-		errno = -EINVAL;
-		return 0;
+		return -EINVAL;
 	}
 
 	count = clock_frequencies(c_data, clock_id, &frequencies);
@@ -683,8 +682,7 @@ static int get_clock_source_request(struct usbd_class_data *const c_data,
 			CONTROL_SELECTOR(setup));
 	}
 
-	errno = -ENOTSUP;
-	return 0;
+	return -ENOTSUP;
 }
 
 static int set_clock_source_request(struct usbd_class_data *const c_data,
@@ -701,8 +699,7 @@ static int set_clock_source_request(struct usbd_class_data *const c_data,
 	if (CONTROL_CHANNEL_NUMBER(setup) != 0) {
 		LOG_DBG("Clock source control with channel %d",
 			CONTROL_CHANNEL_NUMBER(setup));
-		errno = -EINVAL;
-		return 0;
+		return -EINVAL;
 	}
 
 	count = clock_frequencies(c_data, clock_id, &frequencies);
@@ -714,8 +711,7 @@ static int set_clock_source_request(struct usbd_class_data *const c_data,
 
 			err = layout3_cur_request(buf, &requested);
 			if (err) {
-				errno = err;
-				return 0;
+				return err;
 			}
 
 			hz = find_closest(requested, frequencies, count);
@@ -725,26 +721,22 @@ static int set_clock_source_request(struct usbd_class_data *const c_data,
 				 * if there is only one supported sample rate.
 				 */
 				if (count > 1) {
-					errno = -ENOTSUP;
+					return -ENOTSUP;
 				}
 				return 0;
 			}
 
 			err = ctx->ops->set_sample_rate(dev, clock_id, hz,
 							ctx->user_data);
-			if (err) {
-				errno = err;
-			}
 
-			return 0;
+			return err;
 		}
 	} else {
 		LOG_DBG("Unhandled clock control selector 0x%02x",
 			CONTROL_SELECTOR(setup));
 	}
 
-	errno = -ENOTSUP;
-	return 0;
+	return -ENOTSUP;
 }
 
 static int uac2_control_to_dev(struct usbd_class_data *const c_data,
@@ -754,8 +746,7 @@ static int uac2_control_to_dev(struct usbd_class_data *const c_data,
 	entity_type_t entity_type;
 
 	if (CONTROL_ATTRIBUTE(setup) != CUR) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (setup->bmRequestType == SET_CLASS_REQUEST_TYPE) {
@@ -765,8 +756,7 @@ static int uac2_control_to_dev(struct usbd_class_data *const c_data,
 		}
 	}
 
-	errno = -ENOTSUP;
-	return 0;
+	return -ENOTSUP;
 }
 
 static int uac2_control_to_host(struct usbd_class_data *const c_data,
@@ -777,8 +767,7 @@ static int uac2_control_to_host(struct usbd_class_data *const c_data,
 
 	if ((CONTROL_ATTRIBUTE(setup) != CUR) &&
 	    (CONTROL_ATTRIBUTE(setup) != RANGE)) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (setup->bmRequestType == GET_CLASS_REQUEST_TYPE) {
@@ -788,8 +777,7 @@ static int uac2_control_to_host(struct usbd_class_data *const c_data,
 		}
 	}
 
-	errno = -ENOTSUP;
-	return 0;
+	return -ENOTSUP;
 }
 
 static int uac2_request(struct usbd_class_data *const c_data, struct net_buf *buf,

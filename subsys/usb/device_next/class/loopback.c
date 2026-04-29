@@ -207,8 +207,7 @@ static int lb_control_to_host(struct usbd_class_data *c_data,
 			      struct net_buf *const buf)
 {
 	if (setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_DEVICE) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (setup->bRequest == LB_VENDOR_REQ_IN) {
@@ -222,9 +221,7 @@ static int lb_control_to_host(struct usbd_class_data *c_data,
 	}
 
 	LOG_ERR("Class request 0x%x not supported", setup->bRequest);
-	errno = -ENOTSUP;
-
-	return 0;
+	return -ENOTSUP;
 }
 
 static int lb_control_to_dev(struct usbd_class_data *c_data,
@@ -232,8 +229,7 @@ static int lb_control_to_dev(struct usbd_class_data *c_data,
 			     const struct net_buf *const buf)
 {
 	if (setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_DEVICE) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (setup->bRequest == LB_VENDOR_REQ_OUT) {
@@ -244,9 +240,7 @@ static int lb_control_to_dev(struct usbd_class_data *c_data,
 	}
 
 	LOG_ERR("Class request 0x%x not supported", setup->bRequest);
-	errno = -ENOTSUP;
-
-	return 0;
+	return -ENOTSUP;
 }
 
 static void *lb_get_desc(struct usbd_class_data *const c_data,
