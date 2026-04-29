@@ -50,7 +50,7 @@ foreach(file_name include/stddef.h)
     OUTPUT_VARIABLE _OUTPUT
     )
   get_filename_component(_OUTPUT "${_OUTPUT}" DIRECTORY)
-  string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
+  string(REPLACE "\n" "" _OUTPUT "${_OUTPUT}")
 
   list(APPEND NOSTDINC ${_OUTPUT})
 endforeach()

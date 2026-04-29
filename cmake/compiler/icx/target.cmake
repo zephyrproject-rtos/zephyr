@@ -30,7 +30,7 @@ foreach(file_name include/stddef.h)
     message(FATAL_ERROR "Failed to find required headers.")
   endif()
   get_filename_component(_OUTPUT "${_OUTPUT}" DIRECTORY)
-  string(REGEX REPLACE "\n" "" _OUTPUT "${_OUTPUT}")
+  string(REPLACE "\n" "" _OUTPUT "${_OUTPUT}")
 
   list(APPEND NOSTDINC ${_OUTPUT})
 endforeach()

@@ -62,7 +62,7 @@ function(zephyr_process_snippets)
   zephyr_get(SNIPPET_ROOT MERGE SYSBUILD GLOBAL)
   list(APPEND SNIPPET_ROOT ${ZEPHYR_BASE})
   unset(real_snippet_root)
-  foreach(snippet_dir ${SNIPPET_ROOT})
+  foreach(snippet_dir IN LISTS SNIPPET_ROOT)
     # The user might have put a symbolic link in here, for example.
     file(REAL_PATH ${snippet_dir} real_snippet_dir)
     list(APPEND real_snippet_root ${real_snippet_dir})
@@ -79,7 +79,7 @@ function(zephyr_process_snippets)
     list(APPEND snippet_root_args --snippet-root "${root}")
   endforeach()
   set(requested_snippet_args)
-  foreach(snippet_name ${SNIPPET_AS_LIST})
+  foreach(snippet_name IN LISTS SNIPPET_AS_LIST)
     list(APPEND requested_snippet_args --snippet "${snippet_name}")
   endforeach()
   execute_process(COMMAND ${PYTHON_EXECUTABLE}
@@ -118,12 +118,8 @@ function(zephyr_process_snippets)
 
   # If snippets were requested, print messages for each one.
   if(SNIPPET_AS_LIST)
-    # Print the requested snippets.
-    set(snippet_names "Snippet(s):")
-    foreach(snippet IN LISTS SNIPPET_AS_LIST)
-      string(APPEND snippet_names " ${snippet}")
-    endforeach()
-    message(STATUS "${snippet_names}")
+    list(JOIN SNIPPET_AS_LIST " " snippet_names)
+    message(STATUS "Snippet(s): ${snippet_names}")
   endif()
 
   # Re-run cmake if any files we depend on changed.
