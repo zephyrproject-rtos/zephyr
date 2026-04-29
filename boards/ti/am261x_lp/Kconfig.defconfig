@@ -1,0 +1,14 @@
+# TI AM261X LaunchPad board
+#
+# Copyright (c) 2026 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ROMSTART_RELOCATION_ROM
+	default y
+
+config ROMSTART_REGION_ADDRESS
+	default 0x00 # corresponds to ATCM of either R5F core
+
+config ROMSTART_REGION_SIZE
+	default 1 # denotes 1KB of data reserved for ROMSTART

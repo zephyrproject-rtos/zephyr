@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: am261x_lp/am2612/r5f0_0
+name: TI AM261X LaunchPad R5F0_0
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - timer
+  - uart
+  - dma
+  - mbox
+ram: 1536
+vendor: ti
