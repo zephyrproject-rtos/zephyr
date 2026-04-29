@@ -178,7 +178,17 @@ static void rram_write(off_t addr, const void *data, uint8_t fill_val, size_t le
 		}
 #ifdef CONFIG_SOC_FLASH_NRF_THROTTLING
 		addr += chunk_len;
-		data = (const uint8_t *)data + chunk_len;
+		/* Only advance the source pointer when we are actually
+		 * copying user data. The erase emulation path enters this
+		 * loop with data == NULL and relies on the if (data) test
+		 * above to keep dispatching to memset() for every chunk.
+		 * Unconditionally adding chunk_len would turn data into a
+		 * non-NULL bogus pointer for the next iteration and cause
+		 * memcpy() to read random bytes from low memory into RRAM.
+		 */
+		if (data != NULL) {
+			data = (const uint8_t *)data + chunk_len;
+		}
 		len -= chunk_len;
 		k_usleep(CONFIG_NRF_RRAM_THROTTLING_DELAY);
 	}
