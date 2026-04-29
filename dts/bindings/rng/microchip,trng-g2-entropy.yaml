@@ -1,0 +1,26 @@
+# Copyright (C) 2026 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Microchip G2 TRNG entropy driver
+
+description: |
+  Microchip SAM Random Number Generator (TRNG).
+
+  Group g2 TRNG driver supports following hardware peripherals:
+    - module name="TRNG" id="6334" version="305"
+
+compatible: "microchip,trng-g2-entropy"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true

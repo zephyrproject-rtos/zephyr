@@ -18,6 +18,7 @@
 	chosen {
 		zephyr,sram = &ddram;
 		zephyr,console = &uart6;
+		zephyr,entropy = &trng;
 		zephyr,shell-uart = &uart6;
 	};
 
@@ -97,5 +98,9 @@
 };
 
 &rtc {
+	status = "okay";
+};
+
+&trng {
 	status = "okay";
 };
