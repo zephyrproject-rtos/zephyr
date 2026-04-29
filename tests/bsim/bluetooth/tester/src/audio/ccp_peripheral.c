@@ -8,6 +8,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci_types.h>
@@ -33,10 +34,10 @@ static void test_ccp_peripheral(void)
 	bsim_btp_core_register(BTP_SERVICE_ID_GAP);
 	bsim_btp_core_register(BTP_SERVICE_ID_TBS);
 
-	bsim_btp_tbs_register_bearer(true, BT_TBS_TECHNOLOGY_3G, BT_TBS_FEATURE_ALL,
-				     "GTBS Provider", "un000", "tel");
-	bsim_btp_tbs_register_bearer(false, BT_TBS_TECHNOLOGY_3G, BT_TBS_FEATURE_ALL,
-				     "TBS Provider", "un000", "tel");
+	bsim_btp_tbs_register_bearer(true, BT_BEARER_TECH_3G, BT_TBS_FEATURE_ALL, "GTBS Provider",
+				     "un000", "tel");
+	bsim_btp_tbs_register_bearer(false, BT_BEARER_TECH_3G, BT_TBS_FEATURE_ALL, "TBS Provider",
+				     "un000", "tel");
 
 	bsim_btp_gap_set_discoverable(BTP_GAP_GENERAL_DISCOVERABLE);
 	bsim_btp_gap_start_advertising(0U, 0U, NULL, BT_HCI_OWN_ADDR_PUBLIC);
