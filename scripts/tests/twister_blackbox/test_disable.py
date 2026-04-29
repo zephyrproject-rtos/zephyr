@@ -13,12 +13,12 @@ import sys
 import re
 
 # pylint: disable=no-name-in-module
-from conftest import TEST_DATA, suite_filename_mock
+from conftest import TEST_DATA, test_filename_mock
 from twisterlib.testplan import TestPlan
 from twisterlib.twister_main import main as twister_main
 
 
-@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
 class TestDisable:
     TESTDATA_1 = [
         (

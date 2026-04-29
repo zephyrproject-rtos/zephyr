@@ -154,8 +154,11 @@ class TestPlan:
         os.path.join(ZEPHYR_BASE,
                      "scripts", "schemas", "twister", "quarantine-schema.yaml"))
 
-    SAMPLE_FILENAME = 'sample.yaml'
-    TESTSUITE_FILENAME = 'testcase.yaml'
+    TEST_DEFINITION_FILENAME = [
+            'testcase.yaml',
+            'tests.yaml',
+            'sample.yaml'
+            ]
 
     def __init__(self, env: TwisterEnv):
 
@@ -534,11 +537,10 @@ class TestPlan:
             logger.debug(f"Reading testsuite configuration files under {root}...")
 
             for dirpath, _, filenames in os.walk(root, topdown=True):
-                if self.SAMPLE_FILENAME in filenames:
-                    filename = self.SAMPLE_FILENAME
-                elif self.TESTSUITE_FILENAME in filenames:
-                    filename = self.TESTSUITE_FILENAME
-                else:
+                filename = next(
+                    (f for f in self.TEST_DEFINITION_FILENAME if f in filenames), None
+                )
+                if filename is None:
                     continue
 
                 logger.debug("Found possible testsuite in " + dirpath)

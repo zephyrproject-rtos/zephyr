@@ -14,7 +14,7 @@ import sys
 import json
 
 # pylint: disable=no-name-in-module
-from conftest import TEST_DATA, sample_filename_mock, suite_filename_mock
+from conftest import TEST_DATA, test_filename_mock
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
 from twisterlib.twister_main import main as twister_main
@@ -27,7 +27,7 @@ class TestTooling:
         ['1', '2'],
         ids=['single job', 'two jobs']
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_jobs(self, out_path, jobs):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic', 'group2')
@@ -46,7 +46,7 @@ class TestTooling:
 
         assert return_value == 0
 
-    @mock.patch.object(TestPlan, 'SAMPLE_FILENAME', sample_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_force_toolchain(self, out_path):
         # nsim_vpx5 is one of the rare platforms that do not support the zephyr toolchain
         test_platforms = ['nsim/nsim_vpx5']
@@ -90,7 +90,7 @@ class TestTooling:
         'flag',
         ['--ninja', '-N']
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_ninja(self, capfd, out_path, test_path, test_platforms, flag):
         args = ['--outdir', out_path, '-T', test_path, flag] + \
                [val for pair in zip(
