@@ -118,4 +118,20 @@ config FLASH_STM32_ACCEPT_UNALIGNED_WRITES
 	  addresses being written to are expected to be erased before writing to them. Contens of the flash
 	  after unaligned writes depend on the flash hardware details. The operation may fault.
 
+if SOC_SERIES_STM32WBAX
+
+config STM32WBA_FLASH_MNGR_THREAD_STACK_SIZE
+	int "Stack size of the Flash Manager thread for STM32WBAx"
+	default 1024
+	help
+	  Flash Manager thread stack size in bytes.
+
+config STM32WBA_FLASH_MNGR_THREAD_PRIO
+	int "Flash Manager thread priority"
+	default 14
+	help
+	  This option sets the cooperative priority of the Flash Manager thread.
+
+endif # SOC_SERIES_STM32WBAX
+
 endif # SOC_FLASH_STM32
