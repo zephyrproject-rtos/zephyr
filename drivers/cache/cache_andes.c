@@ -70,8 +70,8 @@ static struct k_spinlock lock;
 #else
 static ALWAYS_INLINE void nds_l2_cache_enable(void) { }
 static ALWAYS_INLINE void nds_l2_cache_disable(void) { }
-static ALWAYS_INLINE int nds_l2_cache_range(void *addr, size_t size, int op) { return 0; }
-static ALWAYS_INLINE int nds_l2_cache_all(int op) { return 0; }
+static ALWAYS_INLINE int nds_l2_cache_range(void *addr, size_t size, int op) { return -ENODEV; }
+static ALWAYS_INLINE int nds_l2_cache_all(int op) { return -ENODEV; }
 static ALWAYS_INLINE int nds_l2_cache_is_inclusive(void) { return 0; }
 static ALWAYS_INLINE int nds_l2_cache_init(uint8_t line_size) { return 0; }
 #endif /* DT_NODE_HAS_COMPAT_STATUS(DT_INST(0, andestech_l2c), andestech_l2c, okay) */
@@ -302,11 +302,11 @@ int cache_data_invd_all(void)
 				K_SPINLOCK_BREAK;
 			}
 			ret = nds_l2_cache_all(K_CACHE_WB);
-			if (ret < 0) {
+			if (ret < 0 && ret != -ENODEV) {
 				K_SPINLOCK_BREAK;
 			}
 			ret = nds_l2_cache_all(K_CACHE_INVD);
-			if (ret < 0) {
+			if (ret < 0 && ret != -ENODEV) {
 				K_SPINLOCK_BREAK;
 			}
 			ret = nds_l1d_cache_all(K_CACHE_INVD);
@@ -329,7 +329,7 @@ int cache_data_invd_range(void *addr, size_t size)
 			ret = nds_l2_cache_range(addr, size, K_CACHE_INVD);
 		} else {
 			ret = nds_l2_cache_range(addr, size, K_CACHE_INVD);
-			if (ret < 0) {
+			if (ret < 0 && ret != -ENODEV) {
 				K_SPINLOCK_BREAK;
 			}
 			ret = nds_l1d_cache_range(addr, size, K_CACHE_INVD);
@@ -415,6 +415,9 @@ int cache_data_flush_all(void)
 				K_SPINLOCK_BREAK;
 			}
 			ret = nds_l2_cache_all(K_CACHE_WB);
+			if (ret == -ENODEV) {
+				ret = 0;
+			}
 		}
 	}
 
@@ -438,6 +441,9 @@ int cache_data_flush_range(void *addr, size_t size)
 				K_SPINLOCK_BREAK;
 			}
 			ret = nds_l2_cache_range(addr, size, K_CACHE_WB);
+			if (ret == -ENODEV) {
+				ret = 0;
+			}
 		}
 	}
 
@@ -462,7 +468,7 @@ int cache_data_flush_and_invd_all(void)
 					K_SPINLOCK_BREAK;
 				}
 				ret = nds_l2_cache_all(K_CACHE_WB_INVD);
-				if (ret < 0) {
+				if (ret < 0 && ret != -ENODEV) {
 					K_SPINLOCK_BREAK;
 				}
 				ret = nds_l1d_cache_all(K_CACHE_INVD);
@@ -493,7 +499,7 @@ int cache_data_flush_and_invd_range(void *addr, size_t size)
 					K_SPINLOCK_BREAK;
 				}
 				ret = nds_l2_cache_range(addr, size, K_CACHE_WB_INVD);
-				if (ret < 0) {
+				if (ret < 0 && ret != -ENODEV) {
 					K_SPINLOCK_BREAK;
 				}
 				ret = nds_l1d_cache_range(addr, size, K_CACHE_INVD);

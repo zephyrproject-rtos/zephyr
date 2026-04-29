@@ -84,7 +84,7 @@ static ALWAYS_INLINE int nds_l2_cache_all(int op)
 	unsigned long status = csr_read(mstatus);
 
 	if (!l2_cache_cfg.size) {
-		return -ENOTSUP;
+		return -ENODEV;
 	} else if (l2_cache_cfg.size >= 128 * 1024) {
 		ways = 16;
 	} else {
@@ -149,7 +149,7 @@ static ALWAYS_INLINE int nds_l2_cache_range(void *addr, size_t size, int op)
 	uint8_t hart_id;
 
 	if (!l2_cache_cfg.size) {
-		return -ENOTSUP;
+		return -ENODEV;
 	}
 
 	switch (op) {
