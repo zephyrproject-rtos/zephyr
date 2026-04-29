@@ -68,6 +68,30 @@
 		};
 	};
 
+	ext_clk: ext24m {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
+	lpo_clk: lpo32k {
+		compatible = "fixed-clock";
+		clock-frequency = <32000>;
+		#clock-cells = <0>;
+	};
+
+	int_clk: int133m {
+		compatible = "fixed-clock";
+		clock-frequency = <133000000>;
+		#clock-cells = <0>;
+	};
+
+	ipg_clk: ipg133m {
+		compatible = "fixed-clock";
+		clock-frequency = <133000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		edma2: dma@42000000 {
 			compatible = "nxp,mcux-edma";
@@ -852,6 +876,17 @@
 			compatible = "nxp,mbox-imx-mu";
 			reg = <0x4d190000 DT_SIZE_K(64)>;
 			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		/* clk-source and clocks must aligned: 0-ipg_clk, 1-lpo_clk, 2-int_clk, 3-ext_clk */
+		wdog5: watchdog@424b0000 {
+			compatible = "nxp,wdog32";
+			reg = <0x424b0000 0x1000>;
+			interrupts = <92 0>;
+			clocks = <&lpo_clk>;
+			clk-source = <1>;
+			clk-divider = <1>;
 			status = "disabled";
 		};
 	};
