@@ -23,6 +23,23 @@ properties:
     description: |
       Activates auxiliary register access that is needed on some platforms.
 
+  xip-write-support:
+    type: boolean
+    description: |
+      Set when the DW SSI core is synthesized with SSIC_XIP_WRITE_REG_EN, i.e.
+      when the XIP-write register block at core offsets 0x140/0x144/0x148
+      (xip_write_incr_inst, xip_write_wrap_inst, xip_write_ctrl) is present.
+
+  concurrent-xip-support:
+    type: boolean
+    description: |
+      Set when the DW SSI core is synthesized with SSIC_CONCURRENT_XIP_EN,
+      i.e. when master (non-XIP) transfers can be issued while the XIP
+      aperture is enabled. This hardware feature currently isn't supported
+      in the driver, but Software concurrent XIP is supported in the driver
+      even when this is unset. This property will enable the XIPSER register
+      which is needed by devices with this configuration.
+
   fifo-depth:
     required: true
     type: int

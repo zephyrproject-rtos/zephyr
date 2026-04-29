@@ -449,6 +449,7 @@
 				clock-frequency = <DT_FREQ_M(400)>;
 				packet-data-limit = <65536>;
 				fifo-depth = <32>;
+				xip-write-support;
 				status = "disabled";
 			};
 
