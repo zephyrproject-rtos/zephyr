@@ -1009,6 +1009,7 @@ static void state_collect(const struct shell *sh)
 {
 	size_t count = 0;
 	char data;
+	int ret;
 
 	while (true) {
 		shell_bypass_cb_t bypass = sh->ctx->bypass;
@@ -1017,8 +1018,12 @@ static void state_collect(const struct shell *sh)
 		if (bypass) {
 			uint8_t buf[CONFIG_SHELL_BYPASS_READ_BUF_SIZE];
 
-			(void)sh->iface->api->read(sh->iface, buf,
-							sizeof(buf), &count);
+			ret = sh->iface->api->read(sh->iface, buf,
+						   sizeof(buf), &count);
+			if (ret < 0) {
+				return;
+			}
+
 			if (count) {
 				z_flag_cmd_ctx_set(sh, true);
 				/** Unlock the shell mutex before calling the bypass function,
@@ -1045,8 +1050,12 @@ static void state_collect(const struct shell *sh)
 			return;
 		}
 
-		(void)sh->iface->api->read(sh->iface, &data,
-					      sizeof(data), &count);
+		ret = sh->iface->api->read(sh->iface, &data,
+					   sizeof(data), &count);
+		if (ret < 0) {
+			return;
+		}
+
 		if (count == 0) {
 			return;
 		}
