@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2025, Bojan Sofronievski
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	i2c21_default: i2c21_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 9)>,
+				<NRF_PSEL(TWIM_SCL, 1, 8)>;
+		};
+	};
+
+	i2c21_sleep: i2c21_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 9)>,
+				<NRF_PSEL(TWIM_SCL, 1, 8)>;
+			low-power-enable;
+		};
+	};
+};
+
+&i2c21 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	pinctrl-0 = <&i2c21_default>;
+	pinctrl-1 = <&i2c21_sleep>;
+	pinctrl-names = "default", "sleep";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	zephyr,concat-buf-size = <256>;
+
+	bhi260ap@28 {
+		compatible = "bosch,bhi2xy";
+		status = "okay";
+		reg = <0x28>;
+		variant = "BHI260AP";
+		reset-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+	};
+};
