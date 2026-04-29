@@ -13,6 +13,8 @@ supported:
   - gpio
   - counter
   - i2c
+  - dma
+  - spi
 testing:
   ignore_tags:
     - pm
