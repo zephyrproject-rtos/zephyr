@@ -45,7 +45,8 @@ GEN_OFFSET_SYM(_callee_saved_t, s10);
 GEN_OFFSET_SYM(_callee_saved_t, s11);
 #endif /* !CONFIG_RISCV_ISA_RV32E */
 
-#if defined(CONFIG_FPU_SHARING)
+#ifdef CONFIG_FPU_SHARING
+#ifdef CONFIG_RISCV_ISA_EXT_F
 
 GEN_OFFSET_SYM(z_riscv_fp_context_t, fa0);
 GEN_OFFSET_SYM(z_riscv_fp_context_t, fa1);
@@ -84,8 +85,13 @@ GEN_OFFSET_SYM(z_riscv_fp_context_t, fs11);
 
 GEN_OFFSET_SYM(z_riscv_fp_context_t, fcsr);
 
+#endif /* CONFIG_RISCV_ISA_EXT_F */
+
 GEN_OFFSET_SYM(_thread_arch_t, exception_depth);
 
+#ifdef CONFIG_RISCV_ISA_EXT_ZFINX
+GEN_OFFSET_SYM(_thread_arch_t, zfinx_fcsr);
+#endif /* CONFIG_RISCV_ISA_EXT_ZFINX */
 #endif /* CONFIG_FPU_SHARING */
 
 /* esf member offsets */

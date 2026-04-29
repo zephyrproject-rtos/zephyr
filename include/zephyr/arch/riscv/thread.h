@@ -65,10 +65,18 @@ typedef struct z_riscv_fp_context z_riscv_fp_context_t;
 
 struct _thread_arch {
 #ifdef CONFIG_FPU_SHARING
+#ifdef CONFIG_RISCV_ISA_EXT_F
 	struct z_riscv_fp_context saved_fp_context;
 	bool fpu_recently_used;
+#endif /* CONFIG_RISCV_ISA_EXT_F */
 	uint8_t exception_depth;
-#endif
+#ifdef CONFIG_RISCV_ISA_EXT_ZFINX
+	/* For Zfinx, only the floating-point control/status register needs saving,
+	 * not the floating-point registers themselves (which are aliased to integer regs).
+	 */
+	uint32_t zfinx_fcsr;
+#endif /* CONFIG_RISCV_ISA_EXT_ZFINX */
+#endif /* CONFIG_FPU_SHARING */
 #ifdef CONFIG_USERSPACE
 	unsigned long priv_stack_start;
 	unsigned long u_mode_pmpaddr_regs[CONFIG_PMP_SLOTS];

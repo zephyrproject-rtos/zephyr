@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  arch.riscv.fpu:
+    arch_allow: riscv
+    tags:
+      - arch
+      - fpu
+    filter: CONFIG_RISCV_ISA_EXT_ZFINX and CONFIG_FPU
+    integration_platforms:
+      - qemu_riscv32/qemu_virt_riscv32/zfinx
