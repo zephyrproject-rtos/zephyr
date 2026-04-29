@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2026 Hubert Miś
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* This overlay simulates an LED matrix on the nRF52840DK, which does not include a native LED
+ * matrix but is equipped with 4 individual LEDs.
+ * LEDs 1 and 2 simulate the matrix row controllers, while LED 3 simulates the matrix
+ * column controller.
+ *
+ * In this simulation, when any LED is active, LEDs 1 and 2 are expected to blink at
+ * a frequency of 100 Hz (appearing steady to the naked eye). LED 3 is expected to activate
+ * in conjunction with LED 1, LED 2, or both, depending on which LEDs in the matrix are
+ * requested to be illuminated. The difference in LED 3's duty cycle, when activated for one or both
+ * rows, is perceptible to the human eye as a slight variation in brightness.
+ */
+
+/ {
+	gpio_leds: leds {};
+
+	pwm_leds: pwmleds {};
+
+	leds: led_matrix {
+		compatible = "led-matrix";
+
+		rows = <&gpio_leds>;
+		num-rows = <2>;
+		columns = <&pwm_leds>;
+		num-cols = <1>;
+
+		refresh-rate-ms = <5>;
+
+		led_0 {
+			row = <0>;
+			col = <0>;
+		};
+
+		led_1 {
+			row = <1>;
+			col = <0>;
+		};
+	};
+};
+
+&pwm0_default {
+	group1 {
+		psels = <NRF_PSEL(PWM_OUT0, 0, 15)>;
+	};
+};
+
+&pwm0_sleep {
+	group1 {
+		psels = <NRF_PSEL(PWM_OUT0, 0, 15)>;
+	};
+};

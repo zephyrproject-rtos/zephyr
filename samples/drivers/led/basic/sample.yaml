@@ -1,0 +1,21 @@
+sample:
+  description: Demonstration of an LED driver
+  name: Basic LED sample
+tests:
+  sample.drivers.led.basic:
+    tags: led
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    build_only: true
+
+  sample.drivers.led.basic.nrf52840dk_matrix:
+    tags: led
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    build_only: true
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_simulated_matrix.overlay
