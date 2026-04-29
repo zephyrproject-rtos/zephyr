@@ -28,13 +28,15 @@ static void ptp_thread(void *p1, void *p2, void *p3)
 		offsetof(struct ptp_port, timers.announce),
 		offsetof(struct ptp_port, timers.delay),
 		offsetof(struct ptp_port, timers.sync),
-		offsetof(struct ptp_port, timers.qualification)
+		offsetof(struct ptp_port, timers.qualification),
+		offsetof(struct ptp_port, timers.pdelay),
 	};
 	static const int timeout_bit[] = {
 		PTP_PORT_TIMER_ANNOUNCE_TO,
 		PTP_PORT_TIMER_DELAY_TO,
 		PTP_PORT_TIMER_SYNC_TO,
 		PTP_PORT_TIMER_QUALIFICATION_TO,
+		PTP_PORT_TIMER_PDELAY_TO,
 	};
 
 	struct k_timer *timer;

@@ -32,6 +32,7 @@ extern "C" {
 #define PTP_PORT_TIMER_DELAY_TO		(1)
 #define PTP_PORT_TIMER_SYNC_TO		(2)
 #define PTP_PORT_TIMER_QUALIFICATION_TO (3)
+#define PTP_PORT_TIMER_PDELAY_TO     (4)
 
 /**
  * @brief Structure describing PTP Port.
@@ -54,7 +55,8 @@ struct ptp_port {
 		struct k_timer	       announce;
 		struct k_timer	       delay;
 		struct k_timer	       sync;
-		struct k_timer	       qualification;
+		struct k_timer         qualification;
+		struct k_timer         pdelay;
 	} timers;
 	/** Bitmask of timeouts. */
 	atomic_t		       timeouts;
@@ -63,7 +65,8 @@ struct ptp_port {
 		uint16_t	       announce;
 		uint16_t	       delay;
 		uint16_t	       signaling;
-		uint16_t	       sync;
+		uint16_t           sync;
+		uint16_t           pdelay;
 	} seq_id;
 	/** Pointer to finite state machine. */
 	enum ptp_port_state	       (*state_machine)(enum ptp_port_state state,
@@ -77,12 +80,22 @@ struct ptp_port {
 	sys_slist_t		       foreign_list;
 	/** List of valid sent Delay_Req messages (in network byte order). */
 	sys_slist_t		       delay_req_list;
+    /** Pointer to the last valid sent PDelay_Req message. */
+	struct ptp_msg		       *last_pdelay_req_sent;
 	/** Pointer to the last received Sync or Follow_Up message. */
 	struct ptp_msg		       *last_sync_fup;
+    /** Pointer to the last received PDelay_Req message. */
+	struct ptp_msg		       *last_pdelay_req_received;
+    /** Pointer to the last received PDelay_Resp or PDelay_Resp_Follow_Up message. */
+	struct ptp_msg		       *last_pdelay_resp_fup;
 	/** Timestamping callback for sent Delay_Req messages. */
 	struct net_if_timestamp_cb     delay_req_ts_cb;
+	/** Timestamping callback for sent PDelay_Req messages. */
+	struct net_if_timestamp_cb     pdelay_req_ts_cb;
 	/** Timestamping callback for sent Sync messages. */
 	struct net_if_timestamp_cb     sync_ts_cb;
+    /** Timestamping callback for sent PDelay_Resp messages. */
+	struct net_if_timestamp_cb     pdelay_resp_ts_cb;
 	/** True if a Sync was sent and corresponding Follow_Up is still pending. */
 	bool sync_fup_pending;
 	/** Whether to attempt recvmsg for L2 RX timestamping on this port. */
