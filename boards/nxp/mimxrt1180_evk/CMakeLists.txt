@@ -9,12 +9,20 @@ zephyr_library_sources(board.c)
 
 if(CONFIG_SOC_MIMXRT1189_CM33)
 zephyr_linker_sources(DTCM_SECTION cm33/dtcm.ld)
+zephyr_linker_section_configure(
+  SECTION .dtcm_data
+  INPUT "NonCacheable"
+)
 endif()
 
 if(CONFIG_NXP_BOARD_SPECIFIC_MPU_SETTINGS)
   if(CONFIG_SOC_MIMXRT1189_CM7)
     zephyr_sources(cm7/mpu_regions.c)
     zephyr_linker_sources(DTCM_SECTION cm7/dtcm.ld)
+    zephyr_linker_section_configure(
+      SECTION .dtcm_data
+      INPUT "NonCacheable"
+    )
   endif()
 endif()
 
