@@ -1,0 +1,140 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * ESP32 DevKit-C overlay for qdec_esp32_multi self-loopback test.
+ * Pulses GPIO2/4/26/27 drive PCNT unit 0..3 CH0 signals, GPIO25 drives
+ * unit 0 CH1 (quadrature).
+ */
+
+&i2s0 {
+	status = "disabled";
+};
+
+/ {
+	aliases {
+		qdec0 = &pcnt;
+		pulse0 = &pulse0_alias;
+		pulse0b = &pulse0b_alias;
+		pulse1 = &pulse1_alias;
+		pulse2 = &pulse2_alias;
+		pulse3 = &pulse3_alias;
+	};
+
+	pulse_aliases {
+		compatible = "gpio-keys";
+
+		pulse0_alias: pulse0_alias {
+			gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+			label = "pulse0";
+		};
+
+		pulse0b_alias: pulse0b_alias {
+			gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+			label = "pulse0b";
+		};
+
+		pulse1_alias: pulse1_alias {
+			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+			label = "pulse1";
+		};
+
+		pulse2_alias: pulse2_alias {
+			gpios = <&gpio0 26 GPIO_ACTIVE_HIGH>;
+			label = "pulse2";
+		};
+
+		pulse3_alias: pulse3_alias {
+			gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+			label = "pulse3";
+		};
+	};
+};
+
+&pinctrl {
+	pcnt_default: pcnt_default {
+		group1 {
+			pinmux = <PCNT0_CH0SIG_GPIO2>,
+				 <PCNT0_CH1SIG_GPIO25>,
+				 <PCNT1_CH0SIG_GPIO4>,
+				 <PCNT2_CH0SIG_GPIO26>,
+				 <PCNT3_CH0SIG_GPIO27>;
+		};
+	};
+};
+
+&pcnt {
+	pinctrl-0 = <&pcnt_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	unit0@0 {
+		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		counts-per-revolution = <400>;
+
+		channelA@0 {
+			reg = <0>;
+			sig-pos-mode = <1>;
+			sig-neg-mode = <0>;
+			ctrl-h-mode = <0>;
+			ctrl-l-mode = <0>;
+		};
+
+		channelB@1 {
+			reg = <1>;
+			sig-pos-mode = <2>;
+			sig-neg-mode = <0>;
+			ctrl-h-mode = <0>;
+			ctrl-l-mode = <0>;
+		};
+	};
+
+	unit1@1 {
+		reg = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		channelA@0 {
+			reg = <0>;
+			sig-pos-mode = <1>;
+			sig-neg-mode = <0>;
+			ctrl-h-mode = <0>;
+			ctrl-l-mode = <0>;
+		};
+	};
+
+	unit2@2 {
+		reg = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		high-limit = <10>;
+
+		channelA@0 {
+			reg = <0>;
+			sig-pos-mode = <1>;
+			sig-neg-mode = <0>;
+			ctrl-h-mode = <0>;
+			ctrl-l-mode = <0>;
+		};
+	};
+
+	unit3@3 {
+		reg = <3>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		zero-cross-event;
+
+		channelA@0 {
+			reg = <0>;
+			sig-pos-mode = <1>;
+			sig-neg-mode = <0>;
+			ctrl-h-mode = <0>;
+			ctrl-l-mode = <0>;
+		};
+	};
+};
