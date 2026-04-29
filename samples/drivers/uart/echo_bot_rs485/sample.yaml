@@ -1,0 +1,18 @@
+sample:
+  name: UART RS485 Echo Bot
+  description: RS485 echo bot sample using UART with transceiver control
+tests:
+  sample.drivers.uart.rs485:
+    platform_allow:
+      - same54_xpro
+    integration_platforms:
+      - same54_xpro
+    tags:
+      - serial
+      - uart
+      - rs485
+    filter: CONFIG_SERIAL and
+            CONFIG_UART_INTERRUPT_DRIVEN and
+            CONFIG_GPIO and
+            dt_chosen_enabled("zephyr,shell-uart")
+    harness: keyboard
