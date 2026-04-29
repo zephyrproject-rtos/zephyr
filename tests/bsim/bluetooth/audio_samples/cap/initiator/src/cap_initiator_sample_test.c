@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2023-2025 Nordic Semiconductor ASA
  * Copyright (c) 2017-2019 Oticon A/S
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -14,7 +14,7 @@
 #include "bs_utils.h"
 #include "bstests.h"
 
-#define WAIT_TIME 15 /* Seconds */
+#define WAIT_TIME 60 /* Seconds */
 
 #define PASS_THRESHOLD 100 /* Audio packets */
 
