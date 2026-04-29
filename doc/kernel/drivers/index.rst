@@ -424,8 +424,51 @@ returned on failure.  See
 https://github.com/zephyrproject-rtos/zephyr/wiki/Naming-Conventions#return-codes
 for details about this.
 
+.. _device_mmio:
+
 Memory Mapping
 **************
+
+Why use the Device MMIO API
+===========================
+
+Drivers access peripheral registers through memory-mapped I/O (MMIO). On
+systems without an MMU, the physical address from the devicetree can be used
+directly. On systems with an MMU, the physical address must first be mapped
+into the kernel's virtual address space — accessing an unmapped physical
+address results in a CPU fault.
+
+The Device MMIO API handles this difference transparently. A driver written
+with the Device MMIO API works on both MMU and non-MMU systems without
+conditional compilation:
+
+- **On MMU systems**, ``DEVICE_MMIO_MAP()`` creates a page table entry for the
+  device's physical address and stores the resulting (virtual) address.
+  ``DEVICE_MMIO_GET()`` returns this mapped address for register access.
+- **On non-MMU systems**, the macros compile away to zero-cost direct
+  address access. ``DEVICE_MMIO_RAM`` expands to nothing,
+  ``DEVICE_MMIO_MAP()`` is a no-op, and ``DEVICE_MMIO_GET()`` reads the
+  physical address directly from the config struct in ROM.
+
+Many peripheral IPs are shared across different MCU families. A driver
+written for a Cortex-M target today may be reused on a Cortex-A target with
+MMU tomorrow. **All new drivers are required to use the Device MMIO API**
+for register access (see :ref:`coding_guideline_device_mmio`).
+
+.. note::
+
+   The anti-pattern to avoid is casting ``DT_REG_ADDR()`` or
+   ``DT_INST_REG_ADDR()`` to a pointer and storing it in the driver's config
+   struct::
+
+      /* Wrong */
+      .base = (MY_PERIPHERAL_Type *)DT_INST_REG_ADDR(n),
+
+   This works on non-MMU systems but faults on MMU systems because the
+   physical address has no page table entry.
+
+How it works
+============
 
 On some systems, the linear address of peripheral memory-mapped I/O (MMIO)
 regions cannot be known at build time:
