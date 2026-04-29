@@ -1,0 +1,6 @@
+# Copyright (c) 2025 Atmel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/atmel/m90e3x/m90e32as/Kconfig"
+# zephyr-keep-sorted-stop
