@@ -167,12 +167,12 @@ static int tad214x_getODR(const struct device *dev)
 
 static int tad214x_setMode(const struct device *dev, TAD214X_PowerMode_t mode)
 {
-    int rc = INV_ERROR_SUCCESS;
-    struct tad214x_data *data = dev->data;
+	int rc = INV_ERROR_SUCCESS;
+	struct tad214x_data *data = dev->data;
 
-    /* TAD214x Set Mode */
-    rc = TAD214x_SetMode(&data->tad214x_device, mode);
-    return rc;
+	/* TAD214x Set Mode */
+	rc = TAD214x_SetMode(&data->tad214x_device, mode);
+	return rc;
 }
 
 static int tad214x_getMode(const struct device *dev)
@@ -206,14 +206,14 @@ static int tad214x_sensor_init(const struct device *dev)
 		LOG_ERR("Init failed: %d", err);
 		return err;
 	}
-    inv_tad214x_sleep_us(30000);
-    TAD214x_SetMode(&data->tad214x_device, TAD214X_MODE_CONT);
-    inv_tad214x_sleep_us(30000);
-    TAD214x_Unlock(&data->tad214x_device);
-    TAD214x_ProgramModeEnable(&data->tad214x_device);
-    TAD214x_PredictionDisable(&data->tad214x_device);
-    TAD214x_ProgramModeDisable(&data->tad214x_device);
-    TAD214x_Lock(&data->tad214x_device);
+	inv_tad214x_sleep_us(30000);
+	TAD214x_SetMode(&data->tad214x_device, TAD214X_MODE_CONT);
+	inv_tad214x_sleep_us(30000);
+	TAD214x_Unlock(&data->tad214x_device);
+	TAD214x_ProgramModeEnable(&data->tad214x_device);
+	TAD214x_PredictionDisable(&data->tad214x_device);
+	TAD214x_ProgramModeDisable(&data->tad214x_device);
+	TAD214x_Lock(&data->tad214x_device);
 
 	return 0;
 }
@@ -289,6 +289,7 @@ static int tad214x_attr_set(const struct device *dev, enum sensor_channel chan,
 {
 	int rc = 0;
 	struct tad214x_config *config = (struct tad214x_config *)dev->config;
+
 	__ASSERT_NO_MSG(val != NULL);
 
 	if (config->if_mode == IF_ENC) {
@@ -318,6 +319,7 @@ static int tad214x_attr_get(const struct device *dev, enum sensor_channel chan,
 {
 	int rc = 0;
 	const struct tad214x_config *config = (const struct tad214x_config *)dev->config;
+
 	__ASSERT_NO_MSG(val != NULL);
 
 	if (config->if_mode == IF_ENC) {
@@ -339,9 +341,9 @@ static int tad214x_attr_get(const struct device *dev, enum sensor_channel chan,
 }
 
 static DEVICE_API(sensor, tad214x_api_funcs) = {.sample_fetch = tad214x_sample_fetch,
-							    .channel_get = tad214x_channel_get,
-							    .attr_set = tad214x_attr_set,
-                            	.attr_get = tad214x_attr_get,
+												.channel_get = tad214x_channel_get,
+												.attr_set = tad214x_attr_set,
+												.attr_get = tad214x_attr_get,
 #ifdef CONFIG_TAD2144_TRIGGER
 							    .trigger_set = tad214x_trigger_set
 #endif
@@ -385,22 +387,21 @@ static DEVICE_API(sensor, tad214x_api_funcs) = {.sample_fetch = tad214x_sample_f
 /*
  * Main instantiation macro, which selects the correct bus-specific
  * instantiation macros for the instance.
- */
+*/
 #define TAD214X_DEFINE(inst)                                            \
-        static struct tad214x_data tad214x_drv_##inst;                       \
-        static const struct tad214x_config tad214x_config_##inst =           \
-            COND_CODE_1(DT_INST_ON_BUS(inst, spi),                           \
-                (TAD214X_CONFIG_SPI(inst)),                                  \
-                (COND_CODE_1(DT_INST_ON_BUS(inst, i2c),                      \
-                    (TAD214X_CONFIG_I2C(inst)),                              \
-                    (TAD214X_CONFIG_GPIO(inst))                              \
-                ))                                                           \
-            );                                                               \
+		static struct tad214x_data tad214x_drv_##inst;                       \
+		static const struct tad214x_config tad214x_config_##inst =           \
+			COND_CODE_1(DT_INST_ON_BUS(inst, spi),                           \
+				(TAD214X_CONFIG_SPI(inst)),                                  \
+				(COND_CODE_1(DT_INST_ON_BUS(inst, i2c),                      \
+					(TAD214X_CONFIG_I2C(inst)),                              \
+					(TAD214X_CONFIG_GPIO(inst))                              \
+				))                                                           \
+			);                                                               \
                                                                              \
-        SENSOR_DEVICE_DT_INST_DEFINE(inst, tad214x_init, NULL,               \
-            &tad214x_drv_##inst, &tad214x_config_##inst, POST_KERNEL,       \
-            CONFIG_SENSOR_INIT_PRIORITY, &tad214x_api_funcs);
-
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, tad214x_init, NULL,               \
+		&tad214x_drv_##inst, &tad214x_config_##inst, POST_KERNEL,       \
+			CONFIG_SENSOR_INIT_PRIORITY, &tad214x_api_funcs);
 
 #define DT_DRV_COMPAT invensense_tad2144
 DT_INST_FOREACH_STATUS_OKAY(TAD214X_DEFINE)
