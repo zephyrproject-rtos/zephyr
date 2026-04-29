@@ -1,0 +1,32 @@
+# Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RTP
+	bool "Real-Time transport Protocol (RTP) [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on NET_UDP
+	help
+	  RFC 3550 compliant Real-time Transfer Protocol implementation
+
+if RTP
+
+module = RTP
+module-dep = NET_LOG
+module-str = Log level for RTP
+module-help = Enable logs for the RTP stack.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config RTP_LOCAL_PORT_BASE
+	int "RTP Local Port Base"
+	default 51000
+	help
+	  Base port from which the local rtp ports start, if no local port is defined by the user
+
+config RTP_MAX_CSRC_COUNT
+	int "RTP Max CSRC Count"
+	default 0
+	range 0 15
+	help
+	  Set the maximum number of CSRC identifiers in an RTP header
+
+endif # RTP
