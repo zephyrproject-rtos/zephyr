@@ -47,6 +47,16 @@ config UART_NRFX_UARTE_ENHANCED_RX
 	  and hardware assisted required TIMER peripheral instance and PPI channel
 	  for accurate byte counting.
 
+config UART_NRFX_UARTE_HFXO_ON_ACTIVE
+	bool "Request the HFXO oscillator while peripheral is active"
+	depends on UART_NRFX_UARTE
+	depends on DT_HAS_NORDIC_NRF54L_HFXO_ENABLED
+	help
+	  Request the HFXO oscillator to be enabled while the UART peripheral is
+	  active. This improves the accuracy of the bitrate versus the HFINT oscillator,
+	  at the cost of startup latency (~700 us) when enabling the peripheral if the
+	  HFXO is not already active.
+
 config UART_ASYNC_TX_CACHE_SIZE
 	int "TX cache buffer size"
 	depends on UART_ASYNC_API
