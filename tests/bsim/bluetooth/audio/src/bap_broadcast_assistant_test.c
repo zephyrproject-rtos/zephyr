@@ -437,7 +437,7 @@ static void test_bass_create_pa_sync(void)
 	printk("Creating Periodic Advertising Sync...\n");
 	bt_addr_le_copy(&sync_create_param.addr, &g_broadcaster_addr);
 	sync_create_param.sid = g_broadcaster_info.sid;
-	sync_create_param.timeout = 0xa;
+	sync_create_param.timeout = 0xaU;
 	err = bt_le_per_adv_sync_create(&sync_create_param, &g_pa_sync);
 	if (err != 0) {
 		FAIL("Could not create PA syncs (err %d)\n", err);

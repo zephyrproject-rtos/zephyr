@@ -22,9 +22,9 @@ LOG_MODULE_REGISTER(has_test, LOG_LEVEL_DBG);
 
 extern enum bst_result_t bst_result;
 
-const uint8_t test_preset_index_1 = 0x01;
-const uint8_t test_preset_index_3 = 0x03;
-const uint8_t test_preset_index_5 = 0x05;
+const uint8_t test_preset_index_1 = 0x01U;
+const uint8_t test_preset_index_3 = 0x03U;
+const uint8_t test_preset_index_5 = 0x05U;
 const char *test_preset_name_1 = "test_preset_name_1";
 const char *test_preset_name_3 = "test_preset_name_3";
 const char *test_preset_name_5 = "test_preset_name_5";

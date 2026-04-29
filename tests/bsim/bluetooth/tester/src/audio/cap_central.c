@@ -40,8 +40,8 @@ static void test_cap_central(void)
 	const uint32_t sdu_interval = 10000U;
 	const uint16_t max_latency = 10U;
 	const uint16_t max_sdu = 40U;
-	const uint16_t vid = 0x0000; /* shall be 0x0000 for LC3 */
-	const uint16_t cid = 0x0000; /* shall be 0x0000 for LC3 */
+	const uint16_t vid = 0x0000U; /* shall be 0x0000 for LC3 */
+	const uint16_t cid = 0x0000U; /* shall be 0x0000 for LC3 */
 	const uint8_t cig_id = 0U;
 	const uint8_t cis_id = 0U;
 	bt_addr_le_t remote_addr;
