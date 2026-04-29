@@ -18,6 +18,8 @@
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
+#include <zephyr/cache.h>
+
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -73,7 +75,7 @@ const struct gpio_dt_spec mosi_pin = GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), m
 #else /* CONFIG_NOCACHE_MEMORY */
 #define __NOCACHE
 #if CONFIG_DCACHE_LINE_SIZE != 0
-#define __BUF_ALIGN	__aligned(CONFIG_DCACHE_LINE_SIZE)
+#define __BUF_ALIGN __dcacheline_aligned
 #endif
 #endif /* CONFIG_NOCACHE_MEMORY */
 
