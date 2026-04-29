@@ -127,17 +127,31 @@ static void fill_disk_inode(struct ext2_disk_inode *dino, struct ext2_inode *ino
 
 struct ext2_direntry *ext2_fetch_direntry(struct ext2_disk_direntry *disk_de)
 {
+	uint16_t rec_len = sys_le16_to_cpu(disk_de->de_rec_len);
 
-	if (disk_de->de_name_len > EXT2_MAX_FILE_NAME) {
+	/*
+	 * Structural sanity on the on-disk record before copying any name
+	 * bytes.
+	 *
+	 *  - rec_len must hold at least the fixed header.
+	 *  - rec_len must be 4-byte aligned per the ext2 spec.
+	 *  - name_len must fit between the header and rec_len.
+	 *  - name_len must not exceed EXT2_MAX_FILE_NAME.
+	 */
+	if ((rec_len < sizeof(struct ext2_disk_direntry)) ||
+	    ((rec_len % 4U) != 0U) ||
+	    (disk_de->de_name_len > (rec_len - sizeof(struct ext2_disk_direntry))) ||
+	    (disk_de->de_name_len > EXT2_MAX_FILE_NAME)) {
 		return NULL;
 	}
+
 	uint32_t prog_rec_len = sizeof(struct ext2_direntry) + disk_de->de_name_len;
 	struct ext2_direntry *de = k_heap_alloc(&direntry_heap, prog_rec_len, K_FOREVER);
 
 	__ASSERT(de != NULL, "allocated direntry can't be NULL");
 
 	de->de_inode     = sys_le32_to_cpu(disk_de->de_inode);
-	de->de_rec_len   = sys_le16_to_cpu(disk_de->de_rec_len);
+	de->de_rec_len   = rec_len;
 	de->de_name_len  = disk_de->de_name_len;
 	de->de_file_type = disk_de->de_file_type;
 	memcpy(de->de_name, disk_de->de_name, de->de_name_len);

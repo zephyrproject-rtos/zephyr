@@ -577,11 +577,28 @@ static int64_t find_dir_entry(struct ext2_inode *inode, const char *name, size_t
 			return rc;
 		}
 
+		/* The fixed entry header must fit in the remaining block, or
+		 * even reading rec_len/name_len from the on-disk record would
+		 * read past the block buffer.
+		 */
+		if ((block_off + sizeof(struct ext2_disk_direntry)) > fs->block_size) {
+			return -EINVAL;
+		}
+
 		struct ext2_disk_direntry *disk_de =
 			EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(inode), block_off);
 
 		de = ext2_fetch_direntry(disk_de);
 		if (de == NULL) {
+			return -EINVAL;
+		}
+
+		/* The on-disk record must not cross the directory block
+		 * boundary; otherwise advancing by rec_len skips past the end
+		 * of the block buffer or wraps within the directory.
+		 */
+		if (de->de_rec_len > (fs->block_size - block_off)) {
+			k_heap_free(&direntry_heap, de);
 			return -EINVAL;
 		}
 
@@ -820,6 +837,14 @@ int ext2_get_direntry(struct ext2_file *dir, struct fs_dirent *ent)
 		return rc;
 	}
 
+	/* The fixed entry header must fit in the remaining block, or even
+	 * reading rec_len/name_len from the on-disk record would read past
+	 * the block buffer.
+	 */
+	if ((block_off + sizeof(struct ext2_disk_direntry)) > fs->block_size) {
+		return -EINVAL;
+	}
+
 	struct ext2_inode *inode = NULL;
 	struct ext2_disk_direntry *disk_de =
 		EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(dir->f_inode), block_off);
@@ -827,6 +852,12 @@ int ext2_get_direntry(struct ext2_file *dir, struct fs_dirent *ent)
 
 	if (de == NULL) {
 		LOG_ERR("Read directory entry name too long");
+		return -EINVAL;
+	}
+
+	/* The on-disk record must not cross the directory block boundary. */
+	if (de->de_rec_len > (fs->block_size - block_off)) {
+		k_heap_free(&direntry_heap, de);
 		return -EINVAL;
 	}
 
