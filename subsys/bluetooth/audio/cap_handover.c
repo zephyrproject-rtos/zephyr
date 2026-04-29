@@ -436,6 +436,7 @@ static bool valid_unicast_to_broadcast_stream_metadata_param(
 	 */
 
 	if (unicast_ret < 0 && unicast_ret != -ENODATA) {
+		LOG_DBG("Could not get unicast CCID list: %d", unicast_ret);
 		return false;
 	}
 
@@ -443,22 +444,26 @@ static bool valid_unicast_to_broadcast_stream_metadata_param(
 							      &broadcast_ccid_list);
 
 	if (unicast_ret != broadcast_ret) {
+		LOG_DBG("Could not get broadcast CCID list: %d != %d", unicast_ret, broadcast_ret);
 		return false;
 	}
 
 	/* we only need to compare if the list exists and is non-empty */
 	if (unicast_ret > 0 && !util_memeq(unicast_ccid_list, broadcast_ccid_list, unicast_ret)) {
+		LOG_DBG("Unicast and broadcast CCID lists are not the same");
 		return false;
 	}
 
 	/* Verify streaming contexts (mandatory to be in the metadata )*/
 	unicast_ret = bt_audio_codec_cfg_meta_get_stream_context(stream->bap_stream.codec_cfg);
 	if (unicast_ret <= 0) { /* mandatory to have a streaming context */
+		LOG_DBG("Could not get unicast stream context: %d", unicast_ret);
 		return false;
 	}
 
 	broadcast_ret = bt_audio_codec_cfg_meta_get_stream_context(subgroup_param->codec_cfg);
 	if (unicast_ret != broadcast_ret) {
+		LOG_DBG("Could not get broadcast stream context: %d", unicast_ret);
 		return false;
 	}
 
@@ -485,8 +490,7 @@ valid_unicast_to_broadcast_metadata(const struct bt_cap_handover_unicast_to_broa
 				&lookup_data->active_sink_streams[j]->bap_stream;
 			const struct bt_audio_codec_cfg *codec_cfg_j = bap_stream_j->codec_cfg;
 
-			if (codec_cfg_i == codec_cfg_j ||
-			    util_eq(codec_cfg_i->meta, codec_cfg_i->meta_len, codec_cfg_j->meta,
+			if (util_eq(codec_cfg_i->meta, codec_cfg_i->meta_len, codec_cfg_j->meta,
 				    codec_cfg_j->meta_len)) {
 				unique_metadata = false;
 				break;
@@ -496,21 +500,21 @@ valid_unicast_to_broadcast_metadata(const struct bt_cap_handover_unicast_to_broa
 		if (unique_metadata) {
 			unique_metadata_cnt++;
 		}
-	}
 
-	if (unique_metadata_cnt > CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT) {
-		LOG_DBG("Cannot create broadcast source with %zu subgroups (max %d)",
-			unique_metadata_cnt, CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT);
+		if (unique_metadata_cnt > CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT) {
+			LOG_DBG("Cannot create broadcast source with %zu subgroups (max %d)",
+				unique_metadata_cnt, CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT);
 
-		return false;
-	}
+			return false;
+		}
 
-	if (unique_metadata_cnt > param->broadcast_create_param->subgroup_count) {
-		LOG_DBG("Mismatch between unique metadata from unicast (%zu) and number of "
-			"subgroups (%zu)",
-			unique_metadata_cnt, param->broadcast_create_param->subgroup_count);
+		if (unique_metadata_cnt > param->broadcast_create_param->subgroup_count) {
+			LOG_DBG("Mismatch between unique metadata from unicast (%zu) and number of "
+				"subgroups (%zu)",
+				unique_metadata_cnt, param->broadcast_create_param->subgroup_count);
 
-		return false;
+			return false;
+		}
 	}
 
 	return true;
