@@ -436,6 +436,11 @@ New APIs and options
   * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_NODE`
   * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_INST`
 
+* I2S
+
+  * :c:enumerator:`I2S_STATE_UNKNOWN`
+  * :c:func:`i2s_get_state`
+
 * Kconfig
 
   * Add ``dt_partition_mtd`` preprocessor function (:github:`111599`)
