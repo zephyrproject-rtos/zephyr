@@ -43,10 +43,54 @@ NET_BUF_POOL_DEFINE(pkt_pool, CONFIG_MCUMGR_TRANSPORT_NETBUF_COUNT,
 		    CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE,
 		    CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE, NULL);
 
+#ifdef CONFIG_MCUMGR_TRANSPORT_NETBUF_OUTGOING_RESERVE
+static K_SEM_DEFINE(smp_buffer_sem, 1, 1);
+
+#if CONFIG_MCUMGR_TRANSPORT_NETBUF_OUTGOING_RESERVE_WAIT_TIME_MSEC == 0
+#define SMP_BUFFER_SEM_TAKE_TIME K_NO_WAIT
+#else
+#define SMP_BUFFER_SEM_TAKE_TIME K_MSEC( \
+		CONFIG_MCUMGR_TRANSPORT_NETBUF_OUTGOING_RESERVE_WAIT_TIME_MSEC)
+#endif
+#define SMP_BUFFER_INCOMING_MIN_FREE_BUFFERS 1
+
+struct net_buf *smp_packet_alloc(void)
+{
+	struct net_buf *buffer = NULL;
+
+	if (k_sem_take(&smp_buffer_sem, SMP_BUFFER_SEM_TAKE_TIME) != 0) {
+		return NULL;
+	}
+
+	if (net_buf_get_available(&pkt_pool) >= SMP_BUFFER_INCOMING_MIN_FREE_BUFFERS) {
+		buffer = net_buf_alloc(&pkt_pool, K_NO_WAIT);
+	}
+
+	k_sem_give(&smp_buffer_sem);
+
+	return buffer;
+}
+
+static struct net_buf *smp_packet_response_alloc(void)
+{
+	struct net_buf *buffer = NULL;
+
+	if (k_sem_take(&smp_buffer_sem, SMP_BUFFER_SEM_TAKE_TIME) != 0) {
+		return NULL;
+	}
+
+	buffer = net_buf_alloc(&pkt_pool, K_NO_WAIT);
+
+	k_sem_give(&smp_buffer_sem);
+
+	return buffer;
+}
+#else
 struct net_buf *smp_packet_alloc(void)
 {
 	return net_buf_alloc(&pkt_pool, K_NO_WAIT);
 }
+#endif
 
 void smp_packet_free(struct net_buf *nb)
 {
@@ -98,7 +142,11 @@ void *smp_alloc_rsp(const void *req, void *arg)
 
 	req_nb = req;
 
+#ifdef CONFIG_MCUMGR_TRANSPORT_NETBUF_OUTGOING_RESERVE
+	rsp_nb = smp_packet_response_alloc();
+#else
 	rsp_nb = smp_packet_alloc();
+#endif
 	if (rsp_nb == NULL) {
 		return NULL;
 	}
