@@ -9,6 +9,7 @@ simulation:
 toolchain:
   - zephyr
   - gnuarmemb
+preferred_toolchain: zephyr/llvm
 supported:
   - counter
   - netif:serial-net

@@ -154,6 +154,8 @@ class Platform:
         if self.supported_toolchains is None:
             self.supported_toolchains = []
 
+        self.preferred_toolchain = variant_data.get("preferred_toolchain", data.get("preferred_toolchain", None))
+
         support_toolchain_variants = {
           # we don't provide defaults for 'arc' intentionally: some targets can't be built with GNU
           # toolchain ("zephyr", "cross-compile" options) and for some targets we haven't provided

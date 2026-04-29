@@ -87,18 +87,6 @@ static const struct z_arm_mpu_partition static_regions[] = {
 		.attr = K_MEM_PARTITION_P_RW_U_NA_NOCACHE,
 	},
 #endif /* CONFIG_NOCACHE_MEMORY */
-#if defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
-	{
-		/* Special RAM area for program text */
-		.start = (uint32_t)&__ramfunc_start,
-		.size = (uint32_t)&__ramfunc_size,
-#if defined(CONFIG_ARM_MPU_PXN) && defined(CONFIG_USERSPACE)
-		.attr = K_MEM_PARTITION_P_R_U_RX,
-#else
-		.attr = K_MEM_PARTITION_P_RX_U_RX,
-#endif
-	},
-#endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
 #if defined(CONFIG_CODE_DATA_RELOCATION_SRAM)
 	{
 		/* RAM area for relocated text */
@@ -155,6 +143,32 @@ static const struct z_arm_mpu_partition static_regions[] = {
  */
 void z_arm_configure_static_mpu_regions(void)
 {
+	struct z_arm_mpu_partition regions[ARRAY_SIZE(static_regions) + 1U];
+	uint8_t regions_num = 0U;
+
+	for (size_t i = 0U; i < ARRAY_SIZE(static_regions); i++) {
+		if (static_regions[i].size == 0U) {
+			continue;
+		}
+
+		regions[regions_num] = static_regions[i];
+		regions_num++;
+	}
+
+#if defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
+	if ((uint32_t)&__ramfunc_start != (uint32_t)&__ramfunc_end) {
+		regions[regions_num].start = (uint32_t)&__ramfunc_start;
+		regions[regions_num].size =
+			(uint32_t)&__ramfunc_end - (uint32_t)&__ramfunc_start;
+#if defined(CONFIG_ARM_MPU_PXN) && defined(CONFIG_USERSPACE)
+		regions[regions_num].attr = K_MEM_PARTITION_P_R_U_RX;
+#else
+		regions[regions_num].attr = K_MEM_PARTITION_P_RX_U_RX;
+#endif
+		regions_num++;
+	}
+#endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
+
 	/* Configure the static MPU regions within firmware SRAM boundaries.
 	 * Start address of the image is given by _image_ram_start. The end
 	 * of the firmware SRAM area is marked by __kernel_ram_end, taking
@@ -163,10 +177,12 @@ void z_arm_configure_static_mpu_regions(void)
 #ifdef CONFIG_AARCH32_ARMV8_R
 	arm_core_mpu_disable();
 #endif
-	arm_core_mpu_configure_static_mpu_regions(static_regions,
-		ARRAY_SIZE(static_regions),
-		(uint32_t)&_image_ram_start,
-		(uint32_t)&__kernel_ram_end);
+	if (regions_num > 0U) {
+		arm_core_mpu_configure_static_mpu_regions(regions,
+			regions_num,
+			(uint32_t)&_image_ram_start,
+			(uint32_t)&__kernel_ram_end);
+	}
 #ifdef CONFIG_AARCH32_ARMV8_R
 	arm_core_mpu_enable();
 #endif

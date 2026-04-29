@@ -98,7 +98,7 @@ static int table_usage(uint64_t *table, int adjustment)
 	return new_count;
 }
 
-static inline void inc_table_ref(uint64_t *table)
+static inline __maybe_unused void inc_table_ref(uint64_t *table)
 {
 	table_usage(table, XLAT_REF_COUNT_UNIT);
 }
@@ -115,7 +115,7 @@ static inline bool is_table_unused(uint64_t *table)
 	return (table_usage(table, 0) & XLAT_PTE_COUNT_MASK) == 0;
 }
 
-static inline bool is_table_single_referenced(uint64_t *table)
+static inline __maybe_unused bool is_table_single_referenced(uint64_t *table)
 {
 	return table_usage(table, 0) < (2 * XLAT_REF_COUNT_UNIT);
 }
@@ -154,7 +154,7 @@ static inline bool is_free_desc(uint64_t desc)
 	return desc == 0;
 }
 
-static inline bool is_inval_desc(uint64_t desc)
+static inline __maybe_unused bool is_inval_desc(uint64_t desc)
 {
 	/* invalid descriptors aren't necessarily free */
 	return (desc & PTE_DESC_TYPE_MASK) == PTE_INVALID_DESC;
@@ -812,7 +812,7 @@ static void invalidate_tlb_all(void)
 #endif
 }
 
-static inline void invalidate_tlb_page(uintptr_t virt)
+static inline __maybe_unused void invalidate_tlb_page(uintptr_t virt)
 {
 #ifdef CONFIG_SMP
 	/* Use IS variant to broadcast to all CPUs in Inner Shareable domain */

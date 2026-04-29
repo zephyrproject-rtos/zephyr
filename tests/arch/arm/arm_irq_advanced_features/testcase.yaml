@@ -3,7 +3,8 @@ common:
   tags:
     - arm
     - interrupt
-  arch_allow: arm
+  arch_allow:
+    - arm
 tests:
   arch.arm.irq_advanced_features:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
