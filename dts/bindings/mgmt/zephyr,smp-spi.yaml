@@ -1,0 +1,35 @@
+# Copyright (c) 2026 Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: MCUmgr SMP transport over SPI
+
+description: |
+  The device operates as an SPI target (peripheral mode) and exchanges raw SMP
+  packets with the SPI initiator. A GPIO data-ready line is asserted when a
+  response is available for the initiator to clock out.
+
+compatible: "zephyr,smp-spi"
+
+properties:
+  spi-dev:
+    type: phandle
+    required: true
+    description: |
+      Reference to the SPI peripheral device node to use for SMP communication.
+      The SPI device must support peripheral (SPI_OP_MODE_SLAVE) operation.
+
+  data-ready-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO line used to signal the SPI initiator that a response is ready to be
+      clocked out. The initiator should monitor this line and start a transfer
+      when it is asserted.
+
+examples:
+  - |
+    smp_spi: smp-spi {
+        compatible = "zephyr,smp-spi";
+        spi-dev = <&spi1>;
+        data-ready-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+    };

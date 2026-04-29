@@ -1,0 +1,57 @@
+#
+# Copyright (c) 2026 Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# The Kconfig file is dedicated to the SPI transport of the MCUmgr
+# subsystem and provides Kconfig options to control aspects of
+# the transport.
+#
+# Options defined in this file should be prefixed with:
+#  MCUMGR_TRANSPORT_SPI_
+
+menuconfig MCUMGR_TRANSPORT_SPI
+	bool "SPI MCUmgr SMP transport"
+	depends on SPI_SLAVE
+	depends on GPIO
+	help
+	  Enables handling of SMP commands received over SPI. The device operates in
+	  SPI peripheral mode and uses a GPIO line to signal the SPI initiator that
+	  a response is available. A dedicated thread services SPI transceives.
+
+if MCUMGR_TRANSPORT_SPI
+
+config MCUMGR_TRANSPORT_SPI_MTU
+	int "SPI SMP MTU"
+	default 256
+	help
+	  Maximum size of SMP frames sent and received over SPI, in bytes.
+	  This value must satisfy the following relation:
+	  MCUMGR_TRANSPORT_SPI_MTU <= MCUMGR_TRANSPORT_NETBUF_SIZE
+
+config MCUMGR_TRANSPORT_SPI_RX_THREAD_STACK_SIZE
+	int "SPI SMP RX thread stack size"
+	default 2048
+	help
+	  Stack size of the SPI SMP transport receive thread.
+
+config MCUMGR_TRANSPORT_SPI_RX_THREAD_PRIO
+	int "SPI SMP RX thread priority"
+	default 3
+	help
+	  Scheduling priority of the SPI SMP transport receive thread.
+
+config MCUMGR_TRANSPORT_SPI_REASSEMBLY
+	bool "Reassemble SPI SMP messages"
+	select MCUMGR_TRANSPORT_REASSEMBLY
+	help
+	  Reassembles SMP frames split across multiple SPI transactions using the
+	  SMP header length field. If disabled, each transaction must contain a
+	  complete SMP packet.
+
+module = MCUMGR_TRANSPORT_SPI
+module-str = SPI MCUmgr SMP transport
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MCUMGR_TRANSPORT_SPI
