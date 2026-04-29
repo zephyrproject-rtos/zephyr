@@ -58,6 +58,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 extern uint32_t llhwc_cmn_is_dp_slp_enabled(void);
 
 static struct stm32wba_802154_data_t stm32wba_802154_data;
+static volatile bool stm32wba_tx_wait_pending;
+static volatile bool stm32wba_tx_abort_on_reset;
 
 /* driver-allocated attribute memory - constant across all driver instances */
 IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, 11, 26);
@@ -257,6 +259,14 @@ static int stm32wba_802154_configure_extended(enum ieee802154_stm32wba_config_ty
 
 	case IEEE802154_STM32WBA_CONFIG_RADIO_RESET:
 		LOG_DBG("Setting RADIO_RESET");
+		/* Unblock any waiter and mark current TX as aborted. */
+		stm32wba_tx_abort_on_reset = true;
+		stm32wba_tx_wait_pending = false;
+		stm32wba_802154_data.tx_result = STM32WBA_802154_RAL_TX_ERROR_ABORTED;
+		stm32wba_802154_data.tx_psdu_from_tx_done = false;
+		stm32wba_802154_data.ack_frame.psdu = NULL;
+		stm32wba_802154_data.ack_frame.length = 0;
+
 		ret = stm32wba_802154_ral_radio_reset();
 		if (ret != STM32WBA_802154_RAL_ERROR_NONE) {
 			return -EIO;
@@ -566,9 +576,14 @@ static int stm32wba_802154_tx(const struct device *dev,
 	}
 
 	memcpy(stm32wba_802154_data.tx_psdu, payload, payload_len);
+	stm32wba_802154_data.tx_psdu_len = payload_len;
+	stm32wba_802154_data.tx_psdu_from_tx_done = false;
+	stm32wba_tx_abort_on_reset = false;
 
 	/* Reset semaphore in case ACK was received after timeout */
 	k_sem_reset(&stm32wba_802154_data.tx_wait);
+
+	stm32wba_tx_wait_pending = true;
 
 	switch (mode) {
 	case IEEE802154_TX_MODE_DIRECT:
@@ -592,6 +607,7 @@ static int stm32wba_802154_tx(const struct device *dev,
 	}
 
 	if (err != STM32WBA_802154_RAL_ERROR_NONE) {
+		stm32wba_tx_wait_pending = false;
 		LOG_ERR("Cannot send frame");
 		return -EIO;
 	}
@@ -600,6 +616,14 @@ static int stm32wba_802154_tx(const struct device *dev,
 
 	/* Wait for the callback from the radio driver. */
 	k_sem_take(&stm32wba_802154_data.tx_wait, K_FOREVER);
+
+	stm32wba_tx_wait_pending = false;
+
+	/* Propagate tx_done frame updates whenever callback provides frame bytes. */
+	if (stm32wba_802154_data.tx_psdu_from_tx_done &&
+	    (stm32wba_802154_data.tx_psdu_len <= payload_len)) {
+		memcpy(payload, stm32wba_802154_data.tx_psdu, stm32wba_802154_data.tx_psdu_len);
+	}
 
 	LOG_DBG("Transmit done, result: %d", stm32wba_802154_data.tx_result);
 
@@ -1037,6 +1061,18 @@ static void stm32wba_802154_transmit_done(
 				const stm32wba_802154_ral_transmit_done_metadata_t *p_metadata)
 {
 	ARG_UNUSED(p_frame);
+
+	/* Ignore stale completion after reset, or completion with no active waiter. */
+	if (stm32wba_tx_abort_on_reset || !stm32wba_tx_wait_pending) {
+		return;
+	}
+
+	if (p_frame != NULL) {
+		memcpy(stm32wba_802154_data.tx_psdu, p_frame, stm32wba_802154_data.tx_psdu_len);
+		stm32wba_802154_data.tx_psdu_from_tx_done = true;
+	} else {
+		stm32wba_802154_data.tx_psdu_from_tx_done = false;
+	}
 
 	stm32wba_802154_data.tx_result = error;
 	stm32wba_802154_data.tx_frame_is_secured = p_metadata->is_secured;
