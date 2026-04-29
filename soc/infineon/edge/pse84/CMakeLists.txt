@@ -29,7 +29,10 @@ zephyr_sources(security_config/pse84_boot.c)
 zephyr_sources(mpu_regions.c)
 
 zephyr_sources_ifdef(CONFIG_PM power.c)
-zephyr_sources_ifdef(CONFIG_REBOOT reboot.c)
+if(NOT CONFIG_TRUSTED_EXECUTION_NONSECURE)
+  zephyr_sources_ifdef(CONFIG_REBOOT reboot.c)
+endif()
+zephyr_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 
 zephyr_include_directories(.)
 
