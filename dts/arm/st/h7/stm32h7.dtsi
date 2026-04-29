@@ -166,6 +166,7 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			/*
 			 * Device-unique information is stored

@@ -116,6 +116,7 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@8000000 {
 				compatible = "st,stm32f4-nv-flash", "st,stm32-nv-flash",
