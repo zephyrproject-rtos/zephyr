@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
@@ -18,6 +19,42 @@ static void gnss_data_callback(const struct device *dev, const struct gnss_data 
 GNSS_DATA_CALLBACK_DEFINE(DEVICE_DT_GET(DT_ALIAS(gnss)), gnss_data_callback);
 static K_SEM_DEFINE(gnss_data_published, 0, 1);
 static struct gnss_data gnss_published_data;
+
+#if IS_ENABLED(CONFIG_GNSS_ACCURACY)
+static K_SEM_DEFINE(gnss_accuracy_published, 0, 1);
+static struct gnss_accuracy gnss_published_accuracy;
+static uint32_t gnss_accuracy_publish_count;
+
+static void gnss_accuracy_callback(const struct device *dev,
+				   const struct gnss_accuracy *accuracy)
+{
+	ARG_UNUSED(dev);
+	gnss_published_accuracy = *accuracy;
+	gnss_accuracy_publish_count++;
+	k_sem_give(&gnss_accuracy_published);
+}
+
+GNSS_ACCURACY_CALLBACK_DEFINE(DEVICE_DT_GET(DT_ALIAS(gnss)), gnss_accuracy_callback);
+#endif /* CONFIG_GNSS_ACCURACY */
+
+#if IS_ENABLED(CONFIG_GNSS_RAW_NMEA)
+#define RAW_CAPTURE_MAX 128
+static K_SEM_DEFINE(gnss_raw_published, 0, 1);
+static uint8_t gnss_published_raw[RAW_CAPTURE_MAX];
+static size_t gnss_published_raw_len;
+static uint32_t gnss_raw_publish_count;
+
+static void gnss_raw_callback(const struct device *dev, const char *sentence, size_t len)
+{
+	ARG_UNUSED(dev);
+	gnss_published_raw_len = MIN(len, sizeof(gnss_published_raw));
+	memcpy(gnss_published_raw, sentence, gnss_published_raw_len);
+	gnss_raw_publish_count++;
+	k_sem_give(&gnss_raw_published);
+}
+
+GNSS_RAW_NMEA_CALLBACK_DEFINE(DEVICE_DT_GET(DT_ALIAS(gnss)), gnss_raw_callback);
+#endif /* CONFIG_GNSS_RAW_NMEA */
 
 static void expected_pm_state(const struct device *dev, enum pm_device_state expected)
 {
@@ -157,5 +194,92 @@ ZTEST(gnss_emul, test_callback_behaviour)
 	zassert_equal(0, pm_device_runtime_put(dev));
 	zassert_equal(-EAGAIN, k_sem_take(&gnss_data_published, K_SECONDS(5)));
 }
+
+#if IS_ENABLED(CONFIG_GNSS_ACCURACY)
+ZTEST(gnss_emul, test_accuracy_callback)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_ALIAS(gnss));
+	const struct gnss_accuracy injected = {
+		.utc_ms = 66101000,
+		.rms_total_mm = 15500,
+		.err_ellipse_major_mm = 15300,
+		.err_ellipse_minor_mm = 7200,
+		.err_ellipse_orientation_cdeg = 2180,
+		.lat_err_mm = 900,
+		.lon_err_mm = 500,
+		.alt_err_mm = 800,
+	};
+
+	expected_pm_state(dev, PM_DEVICE_STATE_SUSPENDED);
+
+	zassert_equal(0, pm_device_runtime_get(dev));
+	zassert_equal(0, gnss_set_fix_rate(dev, 1000));
+
+	/* No accuracy is published until the test calls set_accuracy. */
+	gnss_accuracy_publish_count = 0;
+	k_sem_reset(&gnss_accuracy_published);
+
+	/* Sanity: a fix epoch arrives but no accuracy event yet */
+	zassert_equal(0, k_sem_take(&gnss_data_published, K_MSEC(1500)));
+	zassert_equal(-EAGAIN, k_sem_take(&gnss_accuracy_published, K_MSEC(100)),
+		      "accuracy must NOT publish before set_accuracy is called");
+
+	/* Inject and verify the next epoch publishes the cached values */
+	gnss_emul_set_accuracy(dev, &injected);
+	zassert_equal(0, k_sem_take(&gnss_accuracy_published, K_MSEC(1500)));
+	zassert_mem_equal(&gnss_published_accuracy, &injected, sizeof(injected));
+
+	/* Sticky: a second epoch (no new set_accuracy) re-publishes the same
+	 * values — matches the "chip emits GST every fix" semantics. */
+	zassert_equal(0, k_sem_take(&gnss_accuracy_published, K_MSEC(1500)));
+	zassert_mem_equal(&gnss_published_accuracy, &injected, sizeof(injected));
+	zassert_true(gnss_accuracy_publish_count >= 2,
+		     "sticky cache should keep publishing on every tick");
+
+	/* clear_data() must reset has_accuracy so subsequent ticks stop
+	 * publishing accuracy until the next set_accuracy call. */
+	gnss_emul_clear_data(dev);
+	k_sem_reset(&gnss_accuracy_published);
+	gnss_accuracy_publish_count = 0;
+
+	/* Drain any stale fix sem so the next take is fresh */
+	k_sem_reset(&gnss_data_published);
+
+	zassert_equal(0, k_sem_take(&gnss_data_published, K_MSEC(1500)));
+	zassert_equal(-EAGAIN, k_sem_take(&gnss_accuracy_published, K_MSEC(100)),
+		      "accuracy must NOT publish after clear_data");
+	zassert_equal(0U, gnss_accuracy_publish_count);
+
+	zassert_equal(0, pm_device_runtime_put(dev));
+}
+#endif /* CONFIG_GNSS_ACCURACY */
+
+#if IS_ENABLED(CONFIG_GNSS_RAW_NMEA)
+ZTEST(gnss_emul, test_raw_sentence_injection)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_ALIAS(gnss));
+	const char first[] = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47";
+	const char second[] = "$GPGST,182141.000,15.5,15.3,7.2,21.8,0.9,0.5,0.8*54";
+
+	gnss_raw_publish_count = 0;
+	k_sem_reset(&gnss_raw_published);
+
+	/* Synchronous publish: callback fires before inject_raw_sentence
+	 * returns. No fix tick required. */
+	gnss_emul_inject_raw_sentence(dev, first, sizeof(first) - 1);
+
+	zassert_equal(1U, gnss_raw_publish_count, "raw callback must fire once per inject");
+	zassert_equal(0, k_sem_take(&gnss_raw_published, K_NO_WAIT),
+		      "synchronous publish leaves the sem signalled");
+	zassert_equal(sizeof(first) - 1, gnss_published_raw_len);
+	zassert_mem_equal(gnss_published_raw, first, sizeof(first) - 1,
+			  "byte-faithful capture of the injected sentence");
+
+	gnss_emul_inject_raw_sentence(dev, second, sizeof(second) - 1);
+	zassert_equal(2U, gnss_raw_publish_count);
+	zassert_equal(sizeof(second) - 1, gnss_published_raw_len);
+	zassert_mem_equal(gnss_published_raw, second, sizeof(second) - 1);
+}
+#endif /* CONFIG_GNSS_RAW_NMEA */
 
 ZTEST_SUITE(gnss_emul, NULL, NULL, NULL, NULL, NULL);

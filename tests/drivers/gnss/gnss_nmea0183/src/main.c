@@ -736,4 +736,137 @@ ZTEST(gnss_nmea0183, test_gsv_parse_satellites)
 	}
 }
 
+/* "$GPGST,182141.000,15.5,15.3,7.2,21.8,0.9,0.5,0.8*54"
+ *           UTC       RMS  major minor orient lat  lon  alt
+ */
+const char *gst_argv_full[10] = {
+	"$GPGST",
+	"182141.000",
+	"15.5",
+	"15.3",
+	"7.2",
+	"21.8",
+	"0.9",
+	"0.5",
+	"0.8",
+	"54",
+};
+
+ZTEST(gnss_nmea0183, test_parse_gst_full)
+{
+	struct gnss_accuracy accuracy;
+	int ret;
+
+	memset(&accuracy, 0xFF, sizeof(accuracy));
+
+	ret = gnss_nmea0183_parse_gst(gst_argv_full, ARRAY_SIZE(gst_argv_full), &accuracy);
+	zassert_ok(ret, "NMEA0183 GST message parse should succeed");
+
+	/* 18:21:41.000 → 18*3600000 + 21*60000 + 41000 = 66101000 ms-of-day */
+	zassert_equal(accuracy.utc_ms, 66101000U, "Incorrectly parsed UTC ms-of-day");
+	zassert_equal(accuracy.rms_total_mm, 15500U, "Incorrectly parsed RMS");
+	zassert_equal(accuracy.err_ellipse_major_mm, 15300U,
+		      "Incorrectly parsed ellipse major");
+	zassert_equal(accuracy.err_ellipse_minor_mm, 7200U,
+		      "Incorrectly parsed ellipse minor");
+	/* 21.8 deg → 21800 milli-deg → /10 = 2180 centi-deg */
+	zassert_equal(accuracy.err_ellipse_orientation_cdeg, 2180U,
+		      "Incorrectly parsed ellipse orientation");
+	zassert_equal(accuracy.lat_err_mm, 900U, "Incorrectly parsed lat err");
+	zassert_equal(accuracy.lon_err_mm, 500U, "Incorrectly parsed lon err");
+	zassert_equal(accuracy.alt_err_mm, 800U, "Incorrectly parsed alt err");
+}
+
+/* Optional middle fields empty — chip implementations occasionally omit
+ * the ellipse triplet when the solver hasn't computed one for the epoch.
+ * Per-axis stddev is the load-bearing data and must still parse.
+ */
+const char *gst_argv_no_ellipse[10] = {
+	"$GPGST", "182141.000",
+	"15.5", "", "", "",   /* RMS only; ellipse + orient empty */
+	"0.9", "0.5", "0.8",
+	"54",
+};
+
+ZTEST(gnss_nmea0183, test_parse_gst_optional_empty)
+{
+	struct gnss_accuracy accuracy;
+	int ret;
+
+	memset(&accuracy, 0xFF, sizeof(accuracy));
+
+	ret = gnss_nmea0183_parse_gst(gst_argv_no_ellipse, ARRAY_SIZE(gst_argv_no_ellipse),
+				      &accuracy);
+	zassert_ok(ret, "Empty optional fields should parse");
+
+	zassert_equal(accuracy.rms_total_mm, 15500U, "RMS should be parsed");
+	zassert_equal(accuracy.err_ellipse_major_mm, 0U, "Empty ellipse major must be 0");
+	zassert_equal(accuracy.err_ellipse_minor_mm, 0U, "Empty ellipse minor must be 0");
+	zassert_equal(accuracy.err_ellipse_orientation_cdeg, 0U,
+		      "Empty orientation must be 0");
+	zassert_equal(accuracy.lat_err_mm, 900U, "lat err should be parsed");
+	zassert_equal(accuracy.lon_err_mm, 500U, "lon err should be parsed");
+	zassert_equal(accuracy.alt_err_mm, 800U, "alt err should be parsed");
+}
+
+/* Boundary: 359.999° orientation fits; 360.000° must reject. */
+const char *gst_argv_orient_edge_ok[10] = {
+	"$GPGST", "182141.000",
+	"1.0", "1.0", "1.0", "359.999",
+	"1.0", "1.0", "1.0",
+	"54",
+};
+const char *gst_argv_orient_overflow[10] = {
+	"$GPGST", "182141.000",
+	"1.0", "1.0", "1.0", "360.0",
+	"1.0", "1.0", "1.0",
+	"54",
+};
+
+ZTEST(gnss_nmea0183, test_parse_gst_orientation_boundary)
+{
+	struct gnss_accuracy accuracy;
+
+	zassert_ok(gnss_nmea0183_parse_gst(gst_argv_orient_edge_ok,
+					   ARRAY_SIZE(gst_argv_orient_edge_ok), &accuracy),
+		   "359.999 should parse");
+	/* 359.999 deg → 359999 milli → /10 = 35999 cdeg */
+	zassert_equal(accuracy.err_ellipse_orientation_cdeg, 35999U,
+		      "Boundary orientation should map to 35999 cdeg");
+
+	zassert_equal(gnss_nmea0183_parse_gst(gst_argv_orient_overflow,
+					      ARRAY_SIZE(gst_argv_orient_overflow), &accuracy),
+		      -EINVAL,
+		      "360.0 must be rejected (NMEA range is [0, 360))");
+}
+
+ZTEST(gnss_nmea0183, test_parse_gst_invalid)
+{
+	struct gnss_accuracy accuracy;
+
+	/* Too few args */
+	zassert_equal(gnss_nmea0183_parse_gst(gst_argv_full, 9, &accuracy), -EINVAL,
+		      "argc < 10 must fail");
+
+	/* Bad UTC */
+	const char *bad_utc[10] = {
+		"$GPGST", "abcxyz",
+		"1.0", "1.0", "1.0", "1.0",
+		"1.0", "1.0", "1.0",
+		"54",
+	};
+	zassert_equal(gnss_nmea0183_parse_gst(bad_utc, ARRAY_SIZE(bad_utc), &accuracy),
+		      -EINVAL, "Bad UTC must fail");
+
+	/* Negative meters — accuracy fields are unsigned */
+	const char *neg_lat[10] = {
+		"$GPGST", "182141.000",
+		"1.0", "1.0", "1.0", "1.0",
+		"-0.9", "0.5", "0.8",
+		"54",
+	};
+	zassert_equal(gnss_nmea0183_parse_gst(neg_lat, ARRAY_SIZE(neg_lat), &accuracy),
+		      -EINVAL, "Negative lat err must fail");
+}
+
 ZTEST_SUITE(gnss_nmea0183, NULL, NULL, NULL, NULL, NULL);

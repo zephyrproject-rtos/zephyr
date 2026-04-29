@@ -784,7 +784,278 @@ ZTEST(modem_chat, test_runtime_script)
 }
 
 /*************************************************************************************************/
+/*                                  Line tap (raw line forwarding)                               */
+/*************************************************************************************************/
+
+/* Two extra chat instances dedicated to the line_tap tests. Both share the
+ * same delimiter / argv buffers as the main `cmd`, but are wired with
+ * independent receive buffers, mock pipes, and user_data so they can run
+ * without disturbing the script-driven tests above.
+ */
+
+#define TAP_BUF_SIZE       64
+#define TAP_CAPTURE_SLOTS  4
+#define TAP_CAPTURE_MAX    128
+
+struct tap_capture {
+	size_t len;
+	uint8_t bytes[TAP_CAPTURE_MAX];
+};
+
+static struct tap_state {
+	uint32_t invoke_count;
+	void *last_user_data;
+	struct tap_capture slots[TAP_CAPTURE_SLOTS];
+} tap_state;
+
+static uint32_t tap_user_data = 0xCAFEBABE;
+
+static void on_tap(struct modem_chat *chat, const char *line, size_t line_len, void *user_data)
+{
+	uint32_t slot;
+
+	ARG_UNUSED(chat);
+
+	tap_state.last_user_data = user_data;
+	slot = tap_state.invoke_count % TAP_CAPTURE_SLOTS;
+	tap_state.invoke_count++;
+	tap_state.slots[slot].len = MIN(line_len, sizeof(tap_state.slots[slot].bytes));
+	memcpy(tap_state.slots[slot].bytes, line, tap_state.slots[slot].len);
+}
+
+static void tap_state_reset(void)
+{
+	memset(&tap_state, 0, sizeof(tap_state));
+}
+
+/* Plain tap chat — no typed matchers, full tap_buf for byte-faithful capture. */
+static struct modem_chat tap_cmd;
+static uint8_t tap_cmd_receive_buf[128];
+static uint8_t *tap_cmd_argv[8];
+static uint8_t tap_cmd_buf[TAP_BUF_SIZE];
+
+static struct modem_backend_mock tap_mock;
+static uint8_t tap_mock_rx_buf[128];
+static uint8_t tap_mock_tx_buf[128];
+static struct modem_pipe *tap_mock_pipe;
+
+/* Typed-matcher tap chat — has an unsol matcher for "MARK," so we can verify
+ * tap_buf preserves separators while receive_buf gets mutated by argv parsing.
+ */
+static atomic_t tap_typed_match_called;
+
+#define TAP_TYPED_MATCH_BIT 0
+
+static void on_tap_typed_match(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
+{
+	ARG_UNUSED(chat);
+	ARG_UNUSED(argv);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(user_data);
+	atomic_set_bit(&tap_typed_match_called, TAP_TYPED_MATCH_BIT);
+}
+
+MODEM_CHAT_MATCH_DEFINE(tap_typed_match, "MARK,", ",*", on_tap_typed_match);
+MODEM_CHAT_MATCHES_DEFINE(tap_typed_unsol, tap_typed_match);
+
+static struct modem_chat tap_typed_cmd;
+static uint8_t tap_typed_receive_buf[128];
+static uint8_t *tap_typed_argv[8];
+static uint8_t tap_typed_buf[TAP_BUF_SIZE];
+
+static struct modem_backend_mock tap_typed_mock;
+static uint8_t tap_typed_mock_rx_buf[128];
+static uint8_t tap_typed_mock_tx_buf[128];
+static struct modem_pipe *tap_typed_mock_pipe;
+
+static void test_modem_chat_tap_setup(void)
+{
+	const struct modem_chat_config tap_config = {
+		.user_data = &tap_user_data,
+		.receive_buf = tap_cmd_receive_buf,
+		.receive_buf_size = ARRAY_SIZE(tap_cmd_receive_buf),
+		.delimiter = cmd_delimiter,
+		.delimiter_size = ARRAY_SIZE(cmd_delimiter),
+		.argv = tap_cmd_argv,
+		.argv_size = ARRAY_SIZE(tap_cmd_argv),
+		.unsol_matches = NULL,
+		.unsol_matches_size = 0,
+		.line_tap = on_tap,
+		.tap_buf = tap_cmd_buf,
+		.tap_buf_size = ARRAY_SIZE(tap_cmd_buf),
+	};
+
+	const struct modem_backend_mock_config tap_mock_cfg = {
+		.rx_buf = tap_mock_rx_buf,
+		.rx_buf_size = ARRAY_SIZE(tap_mock_rx_buf),
+		.tx_buf = tap_mock_tx_buf,
+		.tx_buf_size = ARRAY_SIZE(tap_mock_tx_buf),
+		.limit = 8,
+	};
+
+	zassert_ok(modem_chat_init(&tap_cmd, &tap_config), "tap_cmd init");
+	tap_mock_pipe = modem_backend_mock_init(&tap_mock, &tap_mock_cfg);
+	zassert_ok(modem_pipe_open(tap_mock_pipe, K_SECONDS(10)), "tap mock pipe open");
+	zassert_ok(modem_chat_attach(&tap_cmd, tap_mock_pipe), "tap_cmd attach");
+
+	const struct modem_chat_config tap_typed_config = {
+		.user_data = &tap_user_data,
+		.receive_buf = tap_typed_receive_buf,
+		.receive_buf_size = ARRAY_SIZE(tap_typed_receive_buf),
+		.delimiter = cmd_delimiter,
+		.delimiter_size = ARRAY_SIZE(cmd_delimiter),
+		.argv = tap_typed_argv,
+		.argv_size = ARRAY_SIZE(tap_typed_argv),
+		.unsol_matches = tap_typed_unsol,
+		.unsol_matches_size = ARRAY_SIZE(tap_typed_unsol),
+		.line_tap = on_tap,
+		.tap_buf = tap_typed_buf,
+		.tap_buf_size = ARRAY_SIZE(tap_typed_buf),
+	};
+
+	const struct modem_backend_mock_config tap_typed_mock_cfg = {
+		.rx_buf = tap_typed_mock_rx_buf,
+		.rx_buf_size = ARRAY_SIZE(tap_typed_mock_rx_buf),
+		.tx_buf = tap_typed_mock_tx_buf,
+		.tx_buf_size = ARRAY_SIZE(tap_typed_mock_tx_buf),
+		.limit = 8,
+	};
+
+	zassert_ok(modem_chat_init(&tap_typed_cmd, &tap_typed_config), "tap_typed_cmd init");
+	tap_typed_mock_pipe = modem_backend_mock_init(&tap_typed_mock, &tap_typed_mock_cfg);
+	zassert_ok(modem_pipe_open(tap_typed_mock_pipe, K_SECONDS(10)),
+		   "tap_typed mock pipe open");
+	zassert_ok(modem_chat_attach(&tap_typed_cmd, tap_typed_mock_pipe), "tap_typed_cmd attach");
+}
+
+ZTEST(modem_chat, test_line_tap_fires_per_line)
+{
+	const char line1[] = "HELLO\r\n";
+	const char line2[] = "WORLD\r\n";
+
+	tap_state_reset();
+
+	modem_backend_mock_put(&tap_mock, line1, sizeof(line1) - 1);
+	modem_backend_mock_put(&tap_mock, line2, sizeof(line2) - 1);
+	k_msleep(100);
+
+	zassert_equal(tap_state.invoke_count, 2U, "tap should fire once per line");
+	zassert_equal(tap_state.last_user_data, &tap_user_data,
+		      "tap should receive chat user_data");
+
+	zassert_equal(tap_state.slots[0].len, 5U, "first line length excludes delimiter");
+	zassert_mem_equal(tap_state.slots[0].bytes, "HELLO", 5, "first line content");
+	zassert_equal(tap_state.slots[1].len, 5U, "second line length excludes delimiter");
+	zassert_mem_equal(tap_state.slots[1].bytes, "WORLD", 5, "second line content");
+}
+
+ZTEST(modem_chat, test_line_tap_skips_empty_lines)
+{
+	const char only_delim[] = "\r\n";
+	const char real_line[] = "HI\r\n";
+
+	tap_state_reset();
+
+	modem_backend_mock_put(&tap_mock, only_delim, sizeof(only_delim) - 1);
+	modem_backend_mock_put(&tap_mock, real_line, sizeof(real_line) - 1);
+	k_msleep(100);
+
+	zassert_equal(tap_state.invoke_count, 1U,
+		      "tap must NOT fire for delimiter-only lines");
+	zassert_equal(tap_state.slots[0].len, 2U, "real line length");
+	zassert_mem_equal(tap_state.slots[0].bytes, "HI", 2, "real line content");
+}
+
+ZTEST(modem_chat, test_line_tap_truncates_oversize_line)
+{
+	/* tap_buf is TAP_BUF_SIZE (64). Send a line longer than that and
+	 * verify the tap reports len == tap_buf_size and the captured bytes
+	 * are exactly the leading TAP_BUF_SIZE bytes of the input. */
+	uint8_t line[TAP_BUF_SIZE + 32 + 2];
+
+	for (size_t i = 0; i < ARRAY_SIZE(line) - 2; i++) {
+		line[i] = (uint8_t)('A' + (i % 26));
+	}
+	line[ARRAY_SIZE(line) - 2] = '\r';
+	line[ARRAY_SIZE(line) - 1] = '\n';
+
+	tap_state_reset();
+
+	modem_backend_mock_put(&tap_mock, line, ARRAY_SIZE(line));
+	k_msleep(100);
+
+	zassert_equal(tap_state.invoke_count, 1U, "tap fires once");
+	zassert_equal(tap_state.slots[0].len, (size_t)TAP_BUF_SIZE,
+		      "truncated len equals tap_buf_size");
+	zassert_mem_equal(tap_state.slots[0].bytes, line, TAP_BUF_SIZE,
+			  "truncated content matches the leading bytes");
+}
+
+ZTEST(modem_chat, test_line_tap_resets_between_lines)
+{
+	/* A line that fills tap_buf (forces truncation) followed by a short
+	 * line. The short line must not bleed bytes from the previous line
+	 * — verifies parse_reset zeroes tap_buf_len.
+	 */
+	uint8_t big[TAP_BUF_SIZE + 32 + 2];
+	const char small[] = "OK\r\n";
+
+	for (size_t i = 0; i < ARRAY_SIZE(big) - 2; i++) {
+		big[i] = (uint8_t)('A' + (i % 26));
+	}
+	big[ARRAY_SIZE(big) - 2] = '\r';
+	big[ARRAY_SIZE(big) - 1] = '\n';
+
+	tap_state_reset();
+
+	modem_backend_mock_put(&tap_mock, big, ARRAY_SIZE(big));
+	modem_backend_mock_put(&tap_mock, small, sizeof(small) - 1);
+	k_msleep(100);
+
+	zassert_equal(tap_state.invoke_count, 2U, "two taps fire");
+	zassert_equal(tap_state.slots[1].len, 2U,
+		      "second tap reports a clean 2-byte length");
+	zassert_mem_equal(tap_state.slots[1].bytes, "OK", 2,
+			  "second tap content does not bleed from the first");
+}
+
+ZTEST(modem_chat, test_line_tap_byte_faithful_when_matcher_engages)
+{
+	/* A typed matcher engages on "MARK," and modem_chat replaces commas
+	 * in receive_buf with '\0' for argv parsing. The tap, sourced from
+	 * tap_buf, must still see the original commas.
+	 */
+	const char line[] = "MARK,1,2,3\r\n";
+
+	tap_state_reset();
+	atomic_set(&tap_typed_match_called, 0);
+
+	modem_backend_mock_put(&tap_typed_mock, line, sizeof(line) - 1);
+	k_msleep(100);
+
+	zassert_true(atomic_test_bit(&tap_typed_match_called, TAP_TYPED_MATCH_BIT),
+		     "typed matcher must dispatch alongside the tap");
+	zassert_equal(tap_state.invoke_count, 1U, "tap fires once");
+	zassert_equal(tap_state.slots[0].len, (sizeof(line) - 1) - 2,
+		      "len excludes the trailing CRLF");
+	/* If tap_buf were not in use, this assertion would catch the byte
+	 * mutation: receive_buf would have '\0' in place of the commas. */
+	zassert_mem_equal(tap_state.slots[0].bytes, "MARK,1,2,3",
+			  (sizeof(line) - 1) - 2,
+			  "tap_buf preserves commas the matcher path replaced");
+}
+
+/*************************************************************************************************/
 /*                                         Test suite                                            */
 /*************************************************************************************************/
-ZTEST_SUITE(modem_chat, NULL, test_modem_chat_setup, test_modem_chat_before, test_modem_chat_after,
-	    NULL);
+
+static void *test_modem_chat_full_setup(void)
+{
+	void *ret = test_modem_chat_setup();
+
+	test_modem_chat_tap_setup();
+	return ret;
+}
+
+ZTEST_SUITE(modem_chat, NULL, test_modem_chat_full_setup, test_modem_chat_before,
+	    test_modem_chat_after, NULL);
