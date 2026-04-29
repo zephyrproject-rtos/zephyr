@@ -8,6 +8,7 @@ description: |
 
   Group g1 SERCOM UART driver supports following hardware peripherals:
     - module name="SERCOM" id="U2201" version="3.1.1","5.0.0"
+    - module name="SERCOM" id="03715" version="6b0","6c0"
 
 compatible: "microchip,sercom-g1-uart"
 
