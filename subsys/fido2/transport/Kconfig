@@ -10,6 +10,35 @@ config FIDO2_TRANSPORT_USB_HID
 	help
 	  Enable FIDO2 communication over USB HID (CTAPHID).
 
+config FIDO2_CTAPHID_TIMEOUT_MS
+	int "CTAPHID message reassembly timeout in milliseconds"
+	default 500
+	range 100 2000
+	depends on FIDO2_TRANSPORT_USB_HID
+	help
+	  Maximum time to wait for continuation packets during CTAPHID
+	  message reassembly. If a complete message is not received within
+	  this timeout, the authenticator sends an error response and
+	  aborts the transaction.
+
+config FIDO2_CTAPHID_KEEPALIVE_INTERVAL_MS
+	int "CTAPHID keepalive interval in milliseconds"
+	default 100
+	range 20 100
+	depends on FIDO2_TRANSPORT_USB_HID
+	help
+	  Interval for CTAPHID keepalive packets. The specification requires
+	  this to be at most 100ms for USB HID to prevent host timeouts.
+
+config FIDO2_HID_RX_WORKQ_STACK_SIZE
+	int "USB HID RX workqueue stack size"
+	default 4096
+	range 1024 16384
+	depends on FIDO2_TRANSPORT_USB_HID
+	help
+	  Stack size for the dedicated USB HID RX workqueue used to
+	  process incoming CTAPHID reports.
+
 config FIDO2_TRANSPORT_BLE
 	bool "CTAP over BLE"
 	depends on BT
