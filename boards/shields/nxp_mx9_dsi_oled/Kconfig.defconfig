@@ -1,0 +1,15 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SHIELD_NXP_MX9_DSI_OLED
+
+config GPIO
+	default y
+
+config GPIO_ADP5585
+	default y
+
+endif # SHIELD_NXP_MX9_DSI_OLED

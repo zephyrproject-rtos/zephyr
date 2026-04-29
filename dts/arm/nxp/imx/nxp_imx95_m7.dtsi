@@ -837,6 +837,27 @@
 			};
 		};
 
+		dpu: dpu@4b400000 {
+			compatible = "socionext,dpu";
+			height = <0>;
+			width = <0>;
+			reg = <0x4b400000 0x1000>;
+			interrupts = <215 0>;
+			status = "disabled";
+		};
+
+		mipi_dsi: mipi-dsi@4acf0000 {
+			compatible = "nxp,mipi-dsi-dwc";
+			nxp,dc = <&dpu>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4acf0000 0x1000>;
+			interrupt-parent = <&disp_irqsteer_master0>;
+			interrupts = <48 0>;
+			clocks = <&scmi_clk 0>;
+			status = "disabled";
+		};
+
 		netc_blk_ctrl: netc-blk-ctrl@4cde0000 {
 			compatible = "nxp,imx-netc-blk-ctrl";
 			reg = <0x4cde0000 0x10000>,
