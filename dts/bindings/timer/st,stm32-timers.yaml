@@ -91,3 +91,49 @@ properties:
       * OC2REF - OC2REF signal is used as TRGO.
       * OC3REF - OC3REF signal is used as TRGO.
       * OC4REF - OC4REF signal is used as TRGO.
+
+  st,slavemode:
+    type: string
+    default: DISABLED
+    enum:
+      - DISABLED
+      - RESET
+      - GATED
+      - TRIGGER
+      - COMBINED_RESETTRIGGER
+    description: |
+      Selects the slave mode behavior of the timer instance.
+      Only available for timer instances with slave function - property is ignored otherwise.
+      Only compatible with CONFIG_PWM_CAPTURE in `four-channel-capture-support` mode.
+
+      For details, refer to your device's Reference Manual.
+
+      * DISABLED              - Slave mode disabled
+      * RESET                 - Rising edge of trigger input (TRGI see `st,trigger-selection`)
+                                reinitializes the counter and generates an update of the registers.
+      * GATED                 - The counter clock is enabled when TRGI is high. The counter stops
+                                (but is not reset) as soon as the trigger becomes low. Both start
+                                and stop of the counter are controlled.
+      * TRIGGER               - The counter starts at a rising edge of TRGI (but it is not reset).
+                                Only the start of the counter is controlled.
+      * COMBINED_RESETTRIGGER - Rising edge of (TRGI) reinitializes the counter, generates an
+                                update of the registers and starts the counter.
+
+  st,trigger-selection:
+    type: string
+    default: ITR0
+    enum:
+      - ITR0
+      - ITR1
+      - ITR2
+      - ITR3
+      - ITR7
+      - TI1F_ED
+      - TI1FP1
+      - TI1FP2
+      - ETRF
+    description: |
+      Selects the input trigger (TRGI) source for slave mode operation.
+      Only available for timer instances with slave function - property is ignored otherwise.
+
+      For details, refer to your device's Reference Manual.
