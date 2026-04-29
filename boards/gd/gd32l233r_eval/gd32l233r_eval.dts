@@ -14,7 +14,7 @@
 	compatible = "gd,gd32l233r-eval";
 
 	chosen {
-		zephyr,sram = &sram;
+		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
