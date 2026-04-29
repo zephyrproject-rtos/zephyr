@@ -544,10 +544,29 @@ uint8_t tester_init_pacs(void)
 
 	btp_bap_unicast_init();
 
-	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
-	bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
-	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &vendor_cap_sink);
-	bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &vendor_cap_source);
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
+	if (err != 0) {
+		LOG_DBG("Failed to register sink capabilities: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
+	if (err != 0) {
+		LOG_DBG("Failed to register source capabilities: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &vendor_cap_sink);
+	if (err != 0) {
+		LOG_DBG("Failed to register vendor sink capabilities: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &vendor_cap_source);
+	if (err != 0) {
+		LOG_DBG("Failed to register vendor source capabilities: %d", err);
+		return BTP_STATUS_FAILED;
+	}
 
 	err = set_location();
 	if (err != 0) {

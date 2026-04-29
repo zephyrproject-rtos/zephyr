@@ -592,13 +592,13 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 {
 	const bool iso_connected =
 		stream->iso == NULL ? false : stream->iso->state == BT_ISO_STATE_CONNECTED;
-	int err;
 
 	LOG_DBG("Enabled stream %p", stream);
 
 	if (iso_connected) {
 		struct bt_bap_ep_info ep_info;
 		struct bt_conn_info conn_info;
+		int err;
 
 		err = bt_bap_ep_get_info(stream->ep, &ep_info);
 		__ASSERT(err == 0, "Failed to get ISO chan info: %d", err);
@@ -735,7 +735,8 @@ static void stream_connected_cb(struct bt_bap_stream *stream)
 		return;
 	}
 
-	(void)bt_conn_get_info(stream->conn, &conn_info);
+	err = bt_conn_get_info(stream->conn, &conn_info);
+	__ASSERT_NO_MSG(err == 0);
 
 	if (conn_info.role == BT_CONN_ROLE_CENTRAL) {
 		if (ep_info.dir == BT_AUDIO_DIR_SOURCE) {
@@ -1159,7 +1160,9 @@ uint8_t btp_bap_discover(const void *cmd, uint16_t cmd_len,
 	}
 
 	u_conn = &connections[bt_conn_index(conn)];
-	(void)bt_conn_get_info(conn, &conn_info);
+
+	err = bt_conn_get_info(conn, &conn_info);
+	__ASSERT_NO_MSG(err == 0);
 
 	if (u_conn->end_points_count > 0 || conn_info.role != BT_CONN_ROLE_CENTRAL) {
 		bt_conn_unref(conn);
@@ -1484,7 +1487,8 @@ uint8_t btp_ascs_configure_codec(const void *cmd, uint16_t cmd_len, void *rsp, u
 
 	u_conn = &connections[bt_conn_index(conn)];
 
-	(void)bt_conn_get_info(conn, &conn_info);
+	err = bt_conn_get_info(conn, &conn_info);
+	__ASSERT_NO_MSG(err == 0);
 
 	memset(&codec_cfg, 0, sizeof(codec_cfg));
 
@@ -1591,7 +1595,9 @@ uint8_t btp_ascs_configure_qos(const void *cmd, uint16_t cmd_len, void *rsp, uin
 		return BTP_STATUS_FAILED;
 	}
 
-	(void)bt_conn_get_info(conn, &conn_info);
+	err = bt_conn_get_info(conn, &conn_info);
+	__ASSERT_NO_MSG(err == 0);
+
 	if (conn_info.role == BT_CONN_ROLE_PERIPHERAL) {
 		bt_conn_unref(conn);
 
@@ -1984,7 +1990,9 @@ uint8_t btp_ascs_add_ase_to_cis(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	(void)bt_conn_get_info(conn, &conn_info);
+	err = bt_conn_get_info(conn, &conn_info);
+	__ASSERT_NO_MSG(err == 0);
+
 	if (conn_info.role == BT_CONN_ROLE_PERIPHERAL) {
 		bt_conn_unref(conn);
 

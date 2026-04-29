@@ -22,6 +22,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/services/ias.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -160,8 +161,10 @@ static void ias_client_discover_cb(struct bt_conn *conn, int err)
 {
 	struct btp_hap_iac_discovery_complete_ev ev;
 	struct bt_conn_info info;
+	__maybe_unused int conn_info_err;
 
-	bt_conn_get_info(conn, &info);
+	conn_info_err = bt_conn_get_info(conn, &info);
+	__ASSERT_NO_MSG(conn_info_err == 0);
 
 	bt_addr_le_copy(&ev.address, info.le.dst);
 	if (err < 0) {

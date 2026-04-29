@@ -379,7 +379,13 @@ static const struct btp_handler csip_handlers[] = {
 
 uint8_t tester_init_csip(void)
 {
-	bt_csip_set_coordinator_register_cb(&set_coordinator_cbs);
+	int err;
+
+	err = bt_csip_set_coordinator_register_cb(&set_coordinator_cbs);
+	if (err != 0) {
+		LOG_DBG("Failed to register CSIP callbacks: %d", err);
+		return BTP_STATUS_FAILED;
+	}
 
 	tester_register_command_handlers(BTP_SERVICE_ID_CSIP, csip_handlers,
 					 ARRAY_SIZE(csip_handlers));

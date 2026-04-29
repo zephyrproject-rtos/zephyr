@@ -1024,6 +1024,7 @@ static void pa_timer_handler(struct k_work *work)
 		enum bt_bap_pa_state pa_state;
 		const struct bt_bap_scan_delegator_recv_state *recv_state =
 			broadcast_source_to_sync->sink_recv_state;
+		int err;
 
 		if (recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
 			pa_state = BT_BAP_PA_STATE_NO_PAST;
@@ -1031,7 +1032,10 @@ static void pa_timer_handler(struct k_work *work)
 			pa_state = BT_BAP_PA_STATE_FAILED;
 		}
 
-		bt_bap_scan_delegator_set_pa_state(recv_state->src_id, pa_state);
+		err = bt_bap_scan_delegator_set_pa_state(recv_state->src_id, pa_state);
+		if (err != 0) {
+			LOG_ERR("Failed to set PA state: %d", err);
+		}
 	}
 
 	LOG_DBG("PA timeout");
