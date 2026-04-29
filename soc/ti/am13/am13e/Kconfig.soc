@@ -1,0 +1,21 @@
+# Texas Instruments AM13E MCU Series
+#
+# Copyright (c) 2026 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_AM13E
+	bool
+	select SOC_FAMILY_TI_AM13
+	help
+		Enable support for TI AM13E series SoCs
+
+config SOC_AM13E230X
+	bool
+	select SOC_SERIES_AM13E
+
+config SOC_SERIES
+	default "am13e" if SOC_SERIES_AM13E
+
+config SOC
+	default "am13e230x" if SOC_AM13E230X
