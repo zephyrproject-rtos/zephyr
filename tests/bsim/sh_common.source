@@ -46,7 +46,19 @@ function Execute() {
   EXECUTE_TIMEOUT="${EXECUTE_TIMEOUT:-30}"
 
   check_program_exists $1
-  run_in_background timeout --kill-after=5 -v ${EXECUTE_TIMEOUT} "$@"
+
+  # Append BOARD_TS to the -s= (simulation_id) argument so that parallel runs
+  # on different boards use distinct lock file paths and do not interfere.
+  local args=()
+  for arg in "$@"; do
+    if [[ "${arg}" == -s=* ]]; then
+      args+=("${arg}_${BOARD_TS}")
+    else
+      args+=("${arg}")
+    fi
+  done
+
+  run_in_background timeout --kill-after=5 -v ${EXECUTE_TIMEOUT} "${args[@]}"
 }
 
 function _guess_test_relpath(){
