@@ -1,0 +1,7 @@
+# Copyright (c) 2025 Lothar Felten <lothar.felten@gmail.com>
+
+config NET_SAMPLE_SNTP_CLIENT_SERVER_ADDRESS
+	string "server address for the SNTP client"
+	default "pool.ntp.org"
+
+source "Kconfig.zephyr"

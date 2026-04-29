@@ -5,9 +5,16 @@ menuconfig SNTP
 	bool "SNTP (Simple Network Time Protocol)"
 	depends on NET_SOCKETS
 	help
-	  Enable SNTP client library
+	  Enable SNTP support library
 
 if SNTP
+
+config SNTP_CLIENT
+	bool "SNTP client support"
+	help
+	  This option enables SNTP client support
+
+if SNTP_CLIENT
 
 config SNTP_UNCERTAINTY
 	bool "Calculate SNTP uncertainty and set uptime timestamp"
@@ -19,10 +26,31 @@ config SNTP_UNCERTAINTY
 	  Enabling this option uses more resources (memory) and is not normally
 	  needed.
 
+endif # SNTP client
+
+config SNTP_SERVER
+	bool "SNTP server support"
+	help
+	  This option enables SNTP server support
+
+if SNTP_SERVER
+
+config SNTP_SERVER_STACK_SIZE
+	int "Stack size of the SNTP server thread"
+	default 1024
+
+config SNTP_SERVER_THREAD_PRIORITY
+	int "SNTP server thread priority"
+	default NUM_PREEMPT_PRIORITIES
+	help
+	  Priority of SNTP server thread.
+
+endif # SNTP server
+
 module = SNTP
 module-dep = NET_LOG
 module-str = Log level for SNTP
-module-help = Enable debug message of SNTP client library.
+module-help = Enable debug message of SNTP library.
 source "subsys/net/Kconfig.template.log_config.net"
 
 endif # SNTP
