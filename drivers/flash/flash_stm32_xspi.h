@@ -8,9 +8,8 @@
 #define ZEPHYR_DRIVERS_FLASH_XSPI_STM32_H_
 
 /* Macro to check if any xspi device has a domain clock or more */
-#define STM32_XSPI_DOMAIN_CLOCK_INST_SUPPORT(inst) \
-	DT_CLOCKS_HAS_IDX(DT_INST_PARENT(inst), 1) ||
-#define STM32_XSPI_INST_DEV_DOMAIN_CLOCK_SUPPORT				\
+#define STM32_XSPI_DOMAIN_CLOCK_INST_SUPPORT(inst) DT_CLOCKS_HAS_IDX(DT_INST_PARENT(inst), 1) ||
+#define STM32_XSPI_INST_DEV_DOMAIN_CLOCK_SUPPORT                                                   \
 	(DT_INST_FOREACH_STATUS_OKAY(STM32_XSPI_DOMAIN_CLOCK_INST_SUPPORT) 0)
 
 /* This symbol takes the value 1 if device instance has a domain clock in its dts */
@@ -20,7 +19,7 @@
 #define STM32_XSPI_DOMAIN_CLOCK_SUPPORT 0
 #endif
 
-#define STM32_XSPI_FIFO_THRESHOLD       4U
+#define STM32_XSPI_FIFO_THRESHOLD 4U
 
 #if defined(XSPI1)
 #define STM32_XSPI1 XSPI1
@@ -35,16 +34,24 @@
 #endif /* XSPI2 */
 
 /* Valid range is [0, 255] */
-#define STM32_XSPI_CLOCK_PRESCALER_MIN  0U
-#define STM32_XSPI_CLOCK_PRESCALER_MAX  255U
+#define STM32_XSPI_CLOCK_PRESCALER_MIN                0U
+#define STM32_XSPI_CLOCK_PRESCALER_MAX                255U
 #define STM32_XSPI_CLOCK_COMPUTE(bus_freq, prescaler) ((bus_freq) / ((prescaler) + 1U))
 
+/*
+ * Max SPI-mode clock frequency (Hz) used during flash init (reset, status
+ * polling, JEDEC ID read).  Both ST BSPs for the STM32N6570-DK and
+ * NUCLEO-N657X0-Q use prescaler 3 (≈50 MHz) for these operations, then
+ * switch to full speed after the flash is configured for OPI-DTR.
+ */
+#define STM32_XSPI_SPI_INIT_MAX_FREQ MHZ(50)
+
 /* Max Time value during reset or erase operation */
-#define STM32_XSPI_RESET_MAX_TIME               100U
-#define STM32_XSPI_BULK_ERASE_MAX_TIME          460000U
-#define STM32_XSPI_SECTOR_ERASE_MAX_TIME        1000U
-#define STM32_XSPI_SUBSECTOR_4K_ERASE_MAX_TIME  400U
-#define STM32_XSPI_WRITE_REG_MAX_TIME           40U
+#define STM32_XSPI_RESET_MAX_TIME              100U
+#define STM32_XSPI_BULK_ERASE_MAX_TIME         460000U
+#define STM32_XSPI_SECTOR_ERASE_MAX_TIME       1000U
+#define STM32_XSPI_SUBSECTOR_4K_ERASE_MAX_TIME 400U
+#define STM32_XSPI_WRITE_REG_MAX_TIME          40U
 
 /* used as default value for DTS writeoc */
 #define SPI_NOR_WRITEOC_NONE 0xFF
