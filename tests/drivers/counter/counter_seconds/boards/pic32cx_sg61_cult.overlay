@@ -6,17 +6,13 @@
 
 / {
 	aliases {
-		counter = &tc0;
+		rtc-0 = &rtc;
 	};
 };
 
-&tc0 {
-	status = "okay";
-};
-
-/* rtc can also be configured as counter for this sample. To use this update the alias with &rtc */
 &rtc {
 	compatible = "microchip,rtc-g1-counter";
 	max-bit-width = <32>;
+	prescaler = <1024>;
 	status = "okay";
 };

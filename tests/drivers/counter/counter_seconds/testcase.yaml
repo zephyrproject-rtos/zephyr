@@ -13,3 +13,10 @@ tests:
       - drivers
       - counter
     platform_allow: mimxrt1064_evk
+
+  drivers.counter.mchp.rtc:
+    tags:
+      - drivers
+      - counter
+    platform_allow:
+      - pic32cx_sg61_cult
