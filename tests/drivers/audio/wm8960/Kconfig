@@ -1,0 +1,33 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config AUDIO_CODEC_WM8960_EMUL
+	bool "Wolfson WM8960 Audio Codec Emulator"
+	default y
+	depends on EMUL
+	depends on AUDIO_CODEC_WM8960
+	help
+		Enable Wolfson WM8960 audio codec emulator.
+
+		This emulator provides a virtual WM8960 audio codec for testing
+		purposes on native_posix and other emulation platforms.
+
+if AUDIO_CODEC_WM8960_EMUL
+
+config WM8960_EMUL_LOG_LEVEL
+	int "WM8960 emulator log level"
+	default 2
+	range 0 4
+	help
+		Set log level for WM8960 emulator.
+
+		Levels are:
+		- 0 OFF
+		- 1 ERROR
+		- 2 WARNING
+		- 3 INFO
+		- 4 DEBUG
+
+endif # AUDIO_CODEC_WM8960_EMUL

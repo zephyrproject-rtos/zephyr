@@ -1,0 +1,21 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+nxp_mipi_i2c: &lpi2c5 {
+	audio_codec: wm8960@1a {
+		compatible = "wolfson,wm8960";
+		reg = <0x1a>;
+		clock-source = "MCLK";
+		clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
+		clock-names = "mclk";
+		status = "okay";
+		hp-jd = "WM8960_JD3";
+		clk-out;
+		gpio1-sel = "WM8960_SYSCLK_OUT";
+		left-input = "WM8960_IN_MIC_DE_13";
+		right-input = "WM8960_IN_MIC_DE_12";
+	};
+};

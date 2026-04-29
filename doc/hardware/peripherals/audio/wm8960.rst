@@ -1,0 +1,123 @@
+WM8960 Audio Codec Driver
+============================
+
+This driver provides support for the Wolfson WM8960 stereo audio codec in Zephyr RTOS.
+
+Features
+--------
+
+- I2C interface support
+- Headphone and line outputs
+- Microphone inputs
+- Volume control (digital and analog)
+- Mute control
+- Multiple audio protocols (I2S, Left/Right Justified, PCM A/B)
+- Sample rates from 8kHz to 48kHz
+- Clock source selection (MCLK or FLL)
+
+Configuration
+-------------
+
+Device Tree
+^^^^^^^^^^^
+
+Example device tree configuration:
+
+.. code-block:: dts
+
+	&i2c0 {
+		wm8960: wm8960@1a {
+			compatible = "wolfson,wm8960";
+			reg = <0x1a>;
+			clock-source = "MCLK";
+			clocks = <&audio_clock>;
+			clock-names = "mclk";
+		};
+	};
+
+Usage
+-----
+
+Basic Initialization
+^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: c
+
+	#include <zephyr/audio/codec.h>
+
+	const struct device *codec = DEVICE_DT_GET(DT_ALIAS(WM8960));
+
+	if (!device_is_ready(codec)) {
+		// Handle error
+	}
+
+Volume Control
+^^^^^^^^^^^^^^
+
+.. code-block:: c
+
+	// Set volume to 50% on all channels
+	audio_codec_volume_config(codec, AUDIO_CHANNEL_ALL, 50);
+
+	// Mute all channels
+	audio_codec_mute_config(codec, AUDIO_CHANNEL_ALL, true);
+
+Audio Format Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: c
+
+	audio_dai_cfg_t dai_cfg = {
+		.type = AUDIO_DAI_TYPE_I2S,
+		.i2s = {
+			.frame_clk_freq = 44100,
+			.word_size = 16,
+			.channels = 2,
+		},
+	};
+
+	audio_codec_dai_config(codec, &dai_cfg);
+
+Testing
+-------
+
+The driver includes test cases located in ``tests/drivers/audio/wm8960/``.
+
+To run tests:
+
+.. code-block:: bash
+
+	west build -b native_sim tests/drivers/audio/wm8960/
+	west build -t run
+
+Register Map
+------------
+
+The driver supports the following WM8960 registers:
+
+- Power management registers
+- Clock control registers
+- Audio interface registers
+- Analog input/output control
+- Digital volume control
+- FLL control registers
+- GPIO control registers
+
+Limitations
+-----------
+
+- Currently supports I2C interface only
+- FLL functionality not fully implemented
+- Advanced features like ALC/limiter not implemented
+
+References
+----------
+
+- WM8960 datasheet
+- Zephyr Audio Codec API documentation
+- Wolfson WM8904/WM8962 drivers for reference implementation
+
+License
+-------
+
+SPDX-License-Identifier: Apache-2.0
