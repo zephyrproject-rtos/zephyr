@@ -91,6 +91,26 @@ or:
 
 After the application has run for a while, check the trace output file.
 
+Dynamic Tracing State
+*********************
+
+The sample demonstrates :c:macro:`sys_trace_set_state`, which allows an application
+to enable or disable tracing at runtime. In ``main.c``, tracing is disabled after the
+counter reaches 5 and re-enabled at 10. This is useful when a fixed-size or circular
+trace buffer is used and you only want to capture events around a specific point of
+interest.
+
+The expected console output includes::
+
+   Disabling tracing
+   Re-enabling tracing
+
+When using the User-defined tracing backend, the state change is also visible via the
+``sys_trace_set_state_user`` callback::
+
+   set current tracing state to 0
+   set current tracing state to 1
+
 Usage for USER Tracing Backend
 *******************************
 

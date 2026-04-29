@@ -45,6 +45,43 @@ Users can generate a custom trace event by calling
 arbitrary 4 byte arguments. Tracing backends may truncate the provided event
 name if it is too long for the serialization format they support.
 
+Dynamic Tracing State
+*********************
+
+The tracing state can be changed at runtime by calling :c:macro:`sys_trace_set_state`.
+This is useful when tracing backends use a fixed-size or circular buffer, where
+continuously tracing all events may cause important data to be overwritten before it
+can be retrieved.
+
+For example, an application can disable tracing during uninteresting activity and
+re-enable it just before the section of interest:
+
+.. code-block:: c
+
+   #include <zephyr/tracing/tracing.h>
+
+   /* Disable tracing to avoid filling the buffer with uninteresting events */
+   sys_trace_set_state(false);
+
+   /* ... uninteresting work ... */
+
+   /* Re-enable tracing before the critical section to be diagnosed */
+   sys_trace_set_state(true);
+
+   /* ... critical section being diagnosed ... */
+
+This is particularly useful with:
+
+* The CTF format, where the ring buffer may overflow and overwrite earlier events
+* The User-Defined format, which receives state changes via
+  :c:func:`sys_trace_set_state_user`
+
+.. note::
+
+   :kconfig:option:`CONFIG_TRACING_HANDLE_HOST_CMD` allows a host to control tracing
+   state over UART. :c:macro:`sys_trace_set_state` provides an in-application
+   alternative that works with all backends and without a host connection.
+
 Serialization Formats
 **********************
 

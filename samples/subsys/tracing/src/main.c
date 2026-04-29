@@ -44,6 +44,19 @@ void helloLoop(const char *my_name,
 		/* take my semaphore */
 		k_sem_take(my_sem, K_FOREVER);
 
+		/*
+		 * Demonstrate dynamic tracing state: disable tracing after 5 iterations so
+		 * uninteresting events do not fill the buffer, then re-enable it at 10 to
+		 * capture the next critical section.
+		 */
+		if (counter == 5U) {
+			printk("Disabling tracing\n");
+			sys_trace_set_state(false);
+		} else if (counter == 10U) {
+			sys_trace_set_state(true);
+			printk("Re-enabling tracing\n");
+		}
+
 		/* Provide a named trace, with the counter value */
 		sys_trace_named_event("counter_value", counter, 0);
 		counter++;
