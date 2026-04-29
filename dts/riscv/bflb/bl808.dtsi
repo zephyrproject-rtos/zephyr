@@ -417,6 +417,15 @@
 			size = <512>;
 		};
 
+		sdhc0: sdhc@20060000 {
+			compatible = "bflb,sdhc";
+			reg = <0x20060000 0x200>;
+			status = "disabled";
+
+			interrupts = <33 1>;
+			interrupt-parent = <&clic>;
+		};
+
 		itcm: memory@62020000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x62020000 DT_SIZE_K(16)>;

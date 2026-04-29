@@ -1268,6 +1268,8 @@ static void clock_control_bl61x_peripheral_clock_init(void)
 	regval = sys_read32(GLB_BASE + GLB_CGEN_CFG2_OFFSET);
 	/* enable PSRAM clock routing */
 	regval |= (1U << 18);
+	/* enable SDH clock routing */
+	regval |= (1 << 22);
 	sys_write32(regval, GLB_BASE + GLB_CGEN_CFG2_OFFSET);
 
 	clock_control_bl61x_uart_set_clock(true, 0, 2);
