@@ -27,3 +27,4 @@ tests:
       - frdm_k32l2b3/k32l2b31a
       - stm32n6570_dk/stm32n657xx/sb
       - crd40l50/stm32f401xd
+      - arduino_nicla_vision/stm32h747xx/m7

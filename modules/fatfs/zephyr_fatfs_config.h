@@ -107,6 +107,8 @@
  */
 
 #define _FF_DISK_NAME(node) DT_PROP(node, disk_name),
+#define _FF_DISK_NAME_IF_PRESENT(node)                                                             \
+	COND_CODE_1(DT_NODE_HAS_PROP(node, disk_name), (DT_PROP(node, disk_name),), ())
 
 #undef FF_VOLUME_STRS
 #define FF_VOLUME_STRS                                                                             \
@@ -114,7 +116,7 @@
 	DT_FOREACH_STATUS_OKAY(zephyr_ram_disk, _FF_DISK_NAME)                                     \
 	DT_FOREACH_STATUS_OKAY(zephyr_sdmmc_disk, _FF_DISK_NAME)                                   \
 	DT_FOREACH_STATUS_OKAY(zephyr_mmc_disk, _FF_DISK_NAME)                                     \
-	DT_FOREACH_STATUS_OKAY(st_stm32_sdmmc, _FF_DISK_NAME)                                      \
+	DT_FOREACH_STATUS_OKAY(st_stm32_sdmmc, _FF_DISK_NAME_IF_PRESENT)                           \
 	DT_FOREACH_STATUS_OKAY(zephyr_ftl_dhara, _FF_DISK_NAME)
 
 #undef FF_VOLUMES
