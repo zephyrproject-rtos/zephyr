@@ -11,6 +11,7 @@
 &arduino_spi {
 	status = "okay";
 	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+
 	tad2144: tad2144@0 {
 		compatible = "invensense,tad2144";
 		reg = <0>;

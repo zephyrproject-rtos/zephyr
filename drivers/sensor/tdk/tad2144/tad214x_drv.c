@@ -18,12 +18,12 @@
 
 LOG_MODULE_REGISTER(TAD214X, CONFIG_SENSOR_LOG_LEVEL);
 
-void memswap16(void* ptr1, unsigned int bytes)
+void memswap16(void *ptr1, unsigned int bytes)
 {
-	unsigned char* s1 = (unsigned char *)ptr1;
+	unsigned char *s1 = (unsigned char *)ptr1;
 	unsigned char tmp;
 
-	for(unsigned int i = 0; i < bytes; i = i+2) {
+	for (unsigned int i = 0; i < bytes; i = i+2) {
 		tmp = s1[i];
 		s1[i] = s1[i+1];
 		s1[i+1] = tmp;
@@ -69,7 +69,7 @@ static int inv_io_hal_write_reg(void *ctx, uint8_t reg, const uint16_t *wbuffer,
 	struct device *dev = (struct device *)ctx;
 	const struct tad214x_config *cfg = (const struct tad214x_config *)dev->config;
 
-    return cfg->bus_io->write(&cfg->bus, reg, (uint16_t *)wbuffer, wlen);
+	return cfg->bus_io->write(&cfg->bus, reg, wbuffer, wlen);
 }
 
 static int tad214x_sample_fetch(const struct device *dev, const enum sensor_channel chan)
@@ -146,22 +146,23 @@ static inline int tad214x_bus_check(const struct device *dev)
 
 static int tad214x_setODR(const struct device *dev, TAD214X_ODR_t odr)
 {
-    int rc = INV_ERROR_SUCCESS;
-    struct tad214x_data *data = dev->data;
-    /* TAD214x Set Odr at 100Hz and LPM Mode */
-    rc = TAD214x_SetODR(&data->tad214x_device, odr);
-    return rc;
+	int rc = INV_ERROR_SUCCESS;
+	struct tad214x_data *data = dev->data;
+
+	/* TAD214x Set Odr at 100Hz and LPM Mode */
+	rc = TAD214x_SetODR(&data->tad214x_device, odr);
+	return rc;
 }
 
 static int tad214x_getODR(const struct device *dev)
 {
-    int rc = INV_ERROR_SUCCESS;
-    TAD214X_ODR_t odr = TAD214X_ODR_10;
-    struct tad214x_data *data = dev->data;
+	int rc = INV_ERROR_SUCCESS;
+	TAD214X_ODR_t odr = TAD214X_ODR_10;
+	struct tad214x_data *data = dev->data;
 
-    /* TAD214x Set Odr at 100Hz and LPM Mode */
-    rc = TAD214x_GetODR(&data->tad214x_device, &odr);
-    return (int)odr;
+	/* TAD214x Set Odr at 100Hz and LPM Mode */
+	rc = TAD214x_GetODR(&data->tad214x_device, &odr);
+	return (int)odr;
 }
 
 static int tad214x_setMode(const struct device *dev, TAD214X_PowerMode_t mode)
@@ -176,13 +177,13 @@ static int tad214x_setMode(const struct device *dev, TAD214X_PowerMode_t mode)
 
 static int tad214x_getMode(const struct device *dev)
 {
-    int rc = INV_ERROR_SUCCESS;
-    TAD214X_PowerMode_t mode =TAD214X_MODE_SBY;
-     struct tad214x_data *data = dev->data;
+	int rc = INV_ERROR_SUCCESS;
+	TAD214X_PowerMode_t mode = TAD214X_MODE_SBY;
+	struct tad214x_data *data = dev->data;
 
-    /* TAD214x Set Odr at 100Hz and LPM Mode */
-    rc = TAD214x_GetMode(&data->tad214x_device, &mode);
-    return (int)mode;
+	/* TAD214x Set Odr at 100Hz and LPM Mode */
+	rc = TAD214x_GetMode(&data->tad214x_device, &mode);
+	return (int)mode;
 }
 
 static int tad214x_sensor_init(const struct device *dev)
@@ -195,7 +196,7 @@ static int tad214x_sensor_init(const struct device *dev)
 	memset(&(data->tad214x_device), 0, sizeof(data->tad214x_device));
 
 	/* Initialize serial interface and device */
-	serif.context = (struct device *)dev;
+	serif.context = dev;
 	serif.read_reg = inv_io_hal_read_reg;
 	serif.write_reg = inv_io_hal_write_reg;
 	serif.max_read = 8;
@@ -220,10 +221,10 @@ static int tad214x_sensor_init(const struct device *dev)
 
 static int tad214x_init(const struct device *dev)
 {
-	struct tad214x_config *config = (struct tad214x_config *)dev->config;
+	const struct tad214x_config *config = (const struct tad214x_config *)dev->config;
 	int rc = 0;
 
-	if(config->if_mode != IF_ENC) {
+	if (config->if_mode != IF_ENC) {
 		if (tad214x_bus_check(dev) < 0) {
 			LOG_ERR("bus check failed");
 			return -ENODEV;
@@ -286,17 +287,17 @@ void tad214x_mutex_unlock(const struct device *dev)
 static int tad214x_attr_set(const struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr, const struct sensor_value *val)
 {
-   int rc = 0;
-   struct tad214x_config *config = (struct tad214x_config *)dev->config;
+	int rc = 0;
+	struct tad214x_config *config = (struct tad214x_config *)dev->config;
 	__ASSERT_NO_MSG(val != NULL);
 
-    if(config->if_mode == IF_ENC) {
-        return -ENOMSG;
-    }
+	if (config->if_mode == IF_ENC) {
+		return -ENOMSG;
+	}
 
-    if (chan != SENSOR_CHAN_ROTATION) {
-        return -ENOTSUP;
-    }
+	if (chan != SENSOR_CHAN_ROTATION) {
+		return -ENOTSUP;
+	}
 
 	tad214x_mutex_lock(dev);
 	if (attr == SENSOR_ATTR_CONFIGURATION) {
@@ -315,27 +316,27 @@ static int tad214x_attr_set(const struct device *dev, enum sensor_channel chan,
 static int tad214x_attr_get(const struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr, struct sensor_value *val)
 {
-    int rc = 0;
-	struct tad214x_config *config = (struct tad214x_config *)dev->config;
-     __ASSERT_NO_MSG(val != NULL);
+	int rc = 0;
+	const struct tad214x_config *config = (const struct tad214x_config *)dev->config;
+	__ASSERT_NO_MSG(val != NULL);
 
-     if(config->if_mode == IF_ENC)
-         return -ENOMSG;
+	if (config->if_mode == IF_ENC) {
+		return -ENOMSG;
+	}
 
-     tad214x_mutex_lock(dev);
-     if (attr == SENSOR_ATTR_CONFIGURATION) {
-         val->val1 = tad214x_getMode(dev);
-     } else if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
-         val->val1 = tad214x_getODR(dev);
-     } else {
-         LOG_ERR("Unsupported attribute");
-         rc = -EINVAL;
-     }
-     tad214x_mutex_unlock(dev);
+	tad214x_mutex_lock(dev);
+	if (attr == SENSOR_ATTR_CONFIGURATION) {
+		val->val1 = tad214x_getMode(dev);
+	} else if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
+		val->val1 = tad214x_getODR(dev);
+	} else {
+		LOG_ERR("Unsupported attribute");
+		rc = -EINVAL;
+	}
+	tad214x_mutex_unlock(dev);
 
-     return rc;
+	return rc;
 }
-
 
 static DEVICE_API(sensor, tad214x_api_funcs) = {.sample_fetch = tad214x_sample_fetch,
 							    .channel_get = tad214x_channel_get,
@@ -365,7 +366,7 @@ static DEVICE_API(sensor, tad214x_api_funcs) = {.sample_fetch = tad214x_sample_f
 	{                                                              \
 		.if_mode = IF_SPI,                         \
 		.bus.spi = SPI_DT_SPEC_INST_GET(inst,                      \
-			/*SPI_OP_MODE_MASTER | */SPI_WORD_SET(8) |    \
+			SPI_WORD_SET(8) |    \
 			SPI_TRANSFER_MSB, 0), \
 		.bus_io = &tad214x_bus_io_spi,                            \
 		TAD214X_CONFIG(inst)                                          \
