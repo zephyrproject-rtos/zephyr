@@ -9,6 +9,7 @@
 #include <espressif/esp32c6/esp32c6_common.dtsi>
 #include "arduino_nesso_n1-pinctrl.dtsi"
 #include <espressif/partitions_0x0_default.dtsi>
+#include <zephyr/dt-bindings/lora/sx126x.h>
 
 / {
 	model = "Arduino Nesso N1";
@@ -27,6 +28,7 @@
 	aliases {
 		watchdog0 = &wdt0;
 		accel0 = &bmi270;
+		lora0 = &lora;
 	};
 };
 
@@ -61,6 +63,36 @@
 		compatible = "bosch,bmi270";
 		reg = <0x68>;
 		status = "okay";
+	};
+
+	expander_e0: pi4ioe5v6408@43 {
+		compatible = "diodes,pi4ioe5v6408";
+		reg = <0x43>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+	};
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+
+	lora: lora@0 {
+		compatible = "semtech,sx1262";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		reset-gpios = <&expander_e0 7 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		dio1-gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+		tx-enable-gpios = <&expander_e0 6 GPIO_ACTIVE_HIGH>;
+		antenna-enable-gpios = <&expander_e0 5 GPIO_ACTIVE_HIGH>;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
+		tcxo-power-startup-delay-ms = <5>;
 	};
 };
 
