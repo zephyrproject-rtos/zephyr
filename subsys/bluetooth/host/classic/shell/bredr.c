@@ -1735,7 +1735,7 @@ done:
 	return err;
 }
 
-void role_changed(struct bt_conn *conn, uint8_t status)
+void br_role_changed(struct bt_conn *conn, uint8_t status)
 {
 	struct bt_conn_info info;
 	int err;
