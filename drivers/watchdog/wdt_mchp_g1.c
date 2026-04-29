@@ -63,6 +63,9 @@ struct wdt_mchp_dev_cfg {
 	wdt_registers_t *regs;
 	void (*irq_config_func)(const struct device *dev);
 	struct wdt_mchp_clock wdt_clock;
+#if defined(CONFIG_WDT_MCHP_G1_RUN_IN_STANDBY)
+	bool run_in_standby;
+#endif /* CONFIG_WDT_MCHP_G1_RUN_IN_STANDBY */
 };
 
 static inline bool wdt_is_enabled(const wdt_registers_t *regs)
@@ -111,6 +114,22 @@ static int wdt_enable(wdt_registers_t *regs, bool enable)
 
 	return ret;
 }
+
+#if defined(CONFIG_WDT_MCHP_G1_RUN_IN_STANDBY)
+static inline void wdt_runstandby_enable(wdt_registers_t *regs)
+{
+	uint32_t retry_count = 0;
+
+	regs->WDT_CTRLA |= WDT_CTRLA_RUNSTDBY_Msk;
+	while ((regs->WDT_SYNCBUSY & WDT_SYNCBUSY_RUNSTDBY_Msk) != 0) {
+		retry_count++;
+		if (retry_count > UINT16_MAX) {
+			LOG_ERR("Timeout waiting for WDT RUNSTDBY SYNCBUSY to clear");
+			break;
+		}
+	}
+}
+#endif /* CONFIG_WDT_MCHP_G1_RUN_IN_STANDBY */
 
 /*
  * Function to get the period index for a given timeout value.
@@ -528,6 +547,12 @@ static int wdt_mchp_init(const struct device *wdt_dev)
 	mchp_wdt_data->installed_timeout_cnt = 0;
 	mchp_wdt_cfg->irq_config_func(wdt_dev);
 
+#if defined(CONFIG_WDT_MCHP_G1_RUN_IN_STANDBY)
+	if (mchp_wdt_cfg->run_in_standby) {
+		wdt_runstandby_enable(mchp_wdt_cfg->regs);
+	}
+#endif /* CONFIG_WDT_MCHP_G1_RUN_IN_STANDBY */
+
 	return 0;
 }
 
@@ -559,7 +584,9 @@ static DEVICE_API(wdt, wdt_mchp_api) = {
 		.regs = (wdt_registers_t *)DT_INST_REG_ADDR(n),                                    \
 		.irq_config_func = wdt_mchp_irq_config_##n,                                        \
 		.wdt_clock.clock_dev = DEVICE_DT_GET(DT_NODELABEL(clock)),                         \
-		.wdt_clock.mclk_sys = (void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, subsystem))}
+		.wdt_clock.mclk_sys = (void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, subsystem)),   \
+		IF_ENABLED(CONFIG_WDT_MCHP_G1_RUN_IN_STANDBY,                                      \
+			(.run_in_standby = DT_INST_PROP(n, run_in_standby)))}
 
 #define WDT_MCHP_DEVICE_INIT(n)                                                                    \
 	WDT_MCHP_IRQ_HANDLER_DECL(n);                                                              \

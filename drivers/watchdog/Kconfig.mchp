@@ -8,3 +8,14 @@ config WDT_MCHP_G1
 	select HAS_WDT_DISABLE_AT_BOOT
 	help
 	  Enable WDT driver for Microchip G1 IPs.
+
+if WDT_MCHP_G1
+
+config WDT_MCHP_G1_RUN_IN_STANDBY
+	bool
+	default y
+	depends on SOC_FAMILY_MICROCHIP_PIC32CZ_CA
+	help
+	  Enable watchdog run in standby mode support
+
+endif # WDT_MCHP_G1
