@@ -1,0 +1,114 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <vendor/nordic/nrf54l15_cpuflpr.dtsi>
+#include "nrf93m1dk_nrf54l15-pinctrl.dtsi"
+
+/ {
+	model = "Nordic nRF93M1 DK nRF54L15 FLPR MCU";
+	compatible = "nordic,nrf93m1dk_nrf54l15-cpuflpr";
+
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+
+		led0: led_0 {
+			gpios = <&gpio2 9 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
+		};
+
+		led1: led_1 {
+			gpios = <&gpio2 8 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+
+		led2: led_2 {
+			gpios = <&gpio2 10 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		status = "okay";
+
+		button0: button_0 {
+			gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpio1 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	chosen {
+		zephyr,console = &uart20;
+		zephyr,shell-uart = &uart20;
+		zephyr,code-partition = &cpuflpr_code_partition;
+		zephyr,flash = &cpuflpr_rram;
+		zephyr,sram = &cpuflpr_sram;
+	};
+};
+
+&cpuflpr_rram {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		cpuflpr_code_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x0 DT_SIZE_K(96)>;
+		};
+	};
+};
+
+&grtc {
+	owned-channels = <3 4>;
+	status = "okay";
+};
+
+&uart20 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart20_default>;
+	pinctrl-1 = <&uart20_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpiote20 {
+	status = "okay";
+};
+
+&gpiote30 {
+	status = "okay";
+};
