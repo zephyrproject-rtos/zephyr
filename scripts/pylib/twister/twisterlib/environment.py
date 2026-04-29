@@ -873,6 +873,10 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
              "given $test_root/tests/foo/testcase.yaml, Twister will use "
              "$alt_config_root/tests/foo/testcase.yaml if it exists")
 
+    parser.add_argument(
+        "--spdx-bom", action="store_true", help="Create spdx/ and generate SPDX BOM for each build."
+    )
+
     return parser
 
 
