@@ -36,6 +36,35 @@ config CPU_FREQ_PER_CPU_SCALING
 	  P-state will apply to the whole system instead of just the current CPU.
 	  This should be done at the SoC level.
 
+config CPU_FREQ_THERMAL_CAP
+	bool "Thermal cap for CPU frequency scaling"
+	depends on SENSOR
+	depends on DT_HAS_ZEPHYR_CPU_FREQ_THERMAL_CAP_ENABLED
+	help
+	  Enable a thermal constraint layer for CPU frequency scaling. The active
+	  CPU frequency policy still selects the requested P-state, but the thermal
+	  cap can limit the highest-performance P-state allowed when configured
+	  temperature trip points are active.
+
+if CPU_FREQ_THERMAL_CAP
+
+config CPU_FREQ_THERMAL_CAP_SENSOR_FAILURE_LIMIT
+	int "Thermal sensor failure limit"
+	default 3
+	range 1 255
+	help
+	  Number of consecutive thermal sensor sample failures before the thermal
+	  cap applies its fail-safe P-state.
+
+config CPU_FREQ_THERMAL_CAP_FAIL_SAFE
+	bool "Apply fail-safe P-state after thermal sensor failures"
+	default y
+	help
+	  Apply the configured fail-safe P-state after consecutive thermal sensor
+	  sample failures. If disabled, the last computed thermal cap is retained.
+
+endif # CPU_FREQ_THERMAL_CAP
+
 choice CPU_FREQ_POLICY
 	prompt "CPU Frequency Scaling Policy"
 	default CPU_FREQ_POLICY_NONE
