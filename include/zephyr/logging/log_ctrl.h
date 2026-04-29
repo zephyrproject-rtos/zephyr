@@ -162,6 +162,8 @@ int log_source_id_get(const char *name);
 /**
  * @brief Get source filter for the provided backend.
  *
+ * If NULL is provided as backend, the first available one is checked.
+ *
  * @param backend	Backend instance.
  * @param domain_id	ID of the domain.
  * @param source_id	Source (module or instance) ID.
