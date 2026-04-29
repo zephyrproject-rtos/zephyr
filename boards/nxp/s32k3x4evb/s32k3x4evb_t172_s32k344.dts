@@ -25,18 +25,23 @@
 
 &flash0 {
 	status = "okay";
+	ranges = <0x0 0x0 DT_SIZE_K(4048)>;
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		ivt_header: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "ivt-header";
 			reg = <0x00000000 0x100>;
 		};
 
 		code_partition: partition@100 {
+			compatible = "zephyr,mapped-partition";
 			label = "code-partition";
 			reg = <0x00000100 (DT_SIZE_K(4048) - 0x100)>;
 		};

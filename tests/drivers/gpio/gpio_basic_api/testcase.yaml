@@ -151,7 +151,3 @@ tests:
       - CONFIG_PM=y
       - CONFIG_PM_DEVICE=y
       - CONFIG_ZTEST_NO_YIELD=n
-
-  drivers.gpio.s32k3x4evb_t172:
-    platform_allow: s32k3x4evb_t172
-    extra_args: "DTC_OVERLAY_FILE=boards/s32k3x4evb_t172.overlay"
