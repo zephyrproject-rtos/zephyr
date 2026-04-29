@@ -88,6 +88,12 @@ STM32
   Applications must now explicitly configure interrupt priorities using Devicetree
   if they previously relied on the values found in SoC DTSI files. (:github:`106188`)
 
+USB
+===
+
+* Indicating protocol error via ``errno`` in control transfer handlers is deprecated.
+  Handlers should return error code directly. (:github:`108118`)
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
