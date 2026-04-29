@@ -1,0 +1,100 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "am261x.dtsi"
+/ {
+
+	cpus {
+		/delete-node/ cpu1;
+	};
+
+	atcm: memory@0 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region";
+		reg = <0x0 DT_SIZE_K(128)>;
+		zephyr,memory-region = "ATCM";
+	};
+
+	btcm: memory@80000 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region";
+		reg = <0x80000 DT_SIZE_K(128)>;
+		zephyr,memory-region = "BTCM";
+	};
+
+	soc {
+		/delete-node/ gpio1;
+
+		ipc0: ipc {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&rpmsg_shm>;
+			mboxes = <&mailbox0 1>, <&mailbox0 2>;
+			mbox-names = "tx", "rx";
+			status = "disabled";
+		};
+	};
+};
+
+&edma0 {
+	interrupts = <0 90 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-names = "comp_intr";
+	interrupt-parent = <&vim>;
+};
+
+&uart0 {
+	dmas = <&edma0 1>, <&edma0 2>;
+	dma-names = "tx", "rx";
+};
+
+&uart1 {
+	dmas = <&edma0 3>, <&edma0 4>;
+	dma-names = "tx", "rx";
+};
+
+&uart2 {
+	dmas = <&edma0 5>, <&edma0 6>;
+	dma-names = "tx", "rx";
+};
+
+&uart3 {
+	dmas = <&edma0 7>, <&edma0 8>;
+	dma-names = "tx", "rx";
+};
+
+&uart4 {
+	dmas = <&edma0 9>, <&edma0 10>;
+	dma-names = "tx", "rx";
+};
+
+&uart5 {
+	dmas = <&edma0 11>, <&edma0 12>;
+	dma-names = "tx", "rx";
+};
+
+&mailbox0 {
+	core-id = <0>;
+};
+
+/* NOTE: Only Channel 0 of McSPI currently supports DMA */
+&mcspi0 {
+	dmas = <&edma0 13>, <&edma0 14>;
+	dma-names = "tx", "rx";
+};
+
+&mcspi1 {
+	dmas = <&edma0 15>, <&edma0 16>;
+	dma-names = "tx", "rx";
+};
+
+&mcspi2 {
+	dmas = <&edma0 17>, <&edma0 18>;
+	dma-names = "tx", "rx";
+};
+
+&mcspi3 {
+	dmas = <&edma0 19>, <&edma0 20>;
+	dma-names = "tx", "rx";
+};
