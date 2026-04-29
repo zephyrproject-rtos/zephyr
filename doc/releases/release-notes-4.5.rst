@@ -236,6 +236,11 @@ New APIs and options
   * :c:func:`haptics_set_level`
   * :c:func:`haptics_stream_samples`
 
+* I2S
+
+  * :c:enumerator:`I2S_STATE_UNKNOWN`
+  * :c:func:`i2s_get_state`
+
 * Kconfig
 
   * Add ``dt_partition_mtd`` preprocessor function (:github:`111599`)
