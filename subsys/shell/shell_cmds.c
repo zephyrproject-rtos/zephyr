@@ -94,8 +94,14 @@ static int cursor_position_get(const struct shell *sh, uint16_t *x, uint16_t *y)
 	/* timeout for terminal response = ~1s */
 	for (uint16_t i = 0; i < 1000; i++) {
 		do {
-			(void)sh->iface->api->read(sh->iface, &c,
-						      sizeof(c), &cnt);
+			int ret;
+
+			ret = sh->iface->api->read(sh->iface, &c,
+						   sizeof(c), &cnt);
+			if (ret < 0) {
+				return ret;
+			}
+
 			if (cnt == 0) {
 				k_busy_wait(1000);
 				break;
