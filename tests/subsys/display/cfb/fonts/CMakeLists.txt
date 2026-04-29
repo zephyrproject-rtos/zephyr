@@ -7,7 +7,9 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(cfb_fonts)
 
-if(CONFIG_TEST_MSB_FIRST_FONT)
+if(NOT CONFIG_TEST_VPACKED_FONT)
+  set(FONT_SRC src/cfb_font_rectspace1016_hpacked.c)
+elseif(CONFIG_TEST_MSB_FIRST_FONT)
   set(FONT_SRC src/cfb_font_rectspace1016_msb.c)
 else()
   set(FONT_SRC src/cfb_font_rectspace1016.c)
