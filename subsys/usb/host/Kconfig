@@ -15,6 +15,13 @@ module = USBH
 module-str = usbh
 source "subsys/logging/Kconfig.template.log_config"
 
+config USBH_DEFINE_CONTROLLER_FROM_DT
+	bool "Create a USB host context for each controller"
+	default y
+	help
+	  Create a USB host context for each controller in the
+	  devicetree
+
 config USBH_USB_DEVICE_MAX
 	int "Maximum number of USB devices supported."
 	default 4

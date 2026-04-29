@@ -35,7 +35,7 @@ USBD_DEVICE_DEFINE(test_usbd,
 		   DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
 		   0x2fe3, 0xffff);
 
-USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
+static struct usbh_context *uhs_ctx;
 
 static int test_cmp_string_desc(struct net_buf *const buf, const int idx)
 {
@@ -83,7 +83,7 @@ ZTEST(device_next, test_get_desc_string)
 	struct net_buf *buf;
 	int err;
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get_any(uhs_ctx);
 	zassert_not_null(udev, "No USB device available");
 
 	buf = usbh_xfer_buf_alloc(udev, UINT8_MAX);
@@ -128,7 +128,7 @@ ZTEST(device_next, test_vendor_control_in)
 		return;
 	}
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get_any(uhs_ctx);
 	zassert_not_null(udev, "No USB device available");
 
 	buf = usbh_xfer_buf_alloc(udev, wLength);
@@ -186,7 +186,7 @@ ZTEST(device_next, test_vendor_control_out)
 		return;
 	}
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get_any(uhs_ctx);
 	zassert_not_null(udev, "No USB device available");
 
 	buf = usbh_xfer_buf_alloc(udev, wLength);
@@ -255,7 +255,7 @@ ZTEST(device_next, test_control_nodata)
 		return;
 	}
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get_any(uhs_ctx);
 	zassert_not_null(udev, "No USB device available");
 
 	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
@@ -298,7 +298,7 @@ ZTEST(device_next, test_get_configuration)
 	uint8_t cfg = 0;
 	int err;
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get_any(uhs_ctx);
 	zassert_not_null(udev, "No USB device available");
 
 	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
@@ -333,7 +333,7 @@ ZTEST(device_next, test_set_interface)
 	struct usb_device *udev;
 	int err;
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get_any(uhs_ctx);
 	zassert_not_null(udev, "No USB device available");
 
 	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
@@ -361,19 +361,21 @@ static void *usb_test_enable(void)
 {
 	int err;
 
-	err = usbh_init(&uhs_ctx);
+	uhs_ctx = usbh_context_lookup_by_idx(0);
+
+	err = usbh_init(uhs_ctx);
 	zassert_equal(err, 0, "Failed to initialize USB host");
 
-	err = usbh_enable(&uhs_ctx);
+	err = usbh_enable(uhs_ctx);
 	zassert_equal(err, 0, "Failed to enable USB host");
 
-	err = uhc_bus_reset(uhs_ctx.dev);
+	err = uhc_bus_reset(uhs_ctx->dev);
 	zassert_equal(err, 0, "Failed to signal bus reset");
 
-	err = uhc_bus_resume(uhs_ctx.dev);
+	err = uhc_bus_resume(uhs_ctx->dev);
 	zassert_equal(err, 0, "Failed to signal bus resume");
 
-	err = uhc_sof_enable(uhs_ctx.dev);
+	err = uhc_sof_enable(uhs_ctx->dev);
 	zassert_equal(err, 0, "Failed to enable SoF generator");
 
 	LOG_INF("Host controller enabled");
@@ -446,7 +448,7 @@ static void usb_test_shutdown(void *f)
 
 	LOG_INF("Device support disabled");
 
-	err = usbh_disable(&uhs_ctx);
+	err = usbh_disable(uhs_ctx);
 	zassert_equal(err, 0, "Failed to disable USB host");
 
 	LOG_INF("Host controller disabled");

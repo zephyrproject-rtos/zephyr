@@ -20,9 +20,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbip, CONFIG_USBIP_LOG_LEVEL);
 
-/* For now, we will use the Zephyr default controller. */
-USBH_CONTROLLER_DEFINE(usbip_uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
-
 NET_BUF_POOL_VAR_DEFINE(usbip_pool,
 			CONFIG_USBIP_BUF_COUNT, CONFIG_USBIP_BUF_POOL_SIZE,
 			0, NULL);
@@ -713,28 +710,29 @@ static void usbip_thread_handler(void *const a, void *const b, void *const c)
 static int usbip_init(void)
 {
 	struct usbip_bus_ctx *const bus_ctx = &default_bus_ctx;
+	struct usbh_context *usbip_uhs_ctx = usbh_context_lookup_by_idx(0);
 	int err;
 
-	err = usbh_init(&usbip_uhs_ctx);
+	err = usbh_init(usbip_uhs_ctx);
 	if (err) {
 		LOG_ERR("Failed to initialize host support");
 		return err;
 	}
 
-	err = usbh_enable(&usbip_uhs_ctx);
+	err = usbh_enable(usbip_uhs_ctx);
 	if (err) {
 		LOG_ERR("Failed to enable host support");
 		return err;
 	}
 
-	err = uhc_sof_enable(usbip_uhs_ctx.dev);
+	err = uhc_sof_enable(usbip_uhs_ctx->dev);
 	if (err) {
 		LOG_ERR("Failed to start SoF");
 		return err;
 	}
 
 	LOG_INF("Host controller enabled");
-	bus_ctx->uhs_ctx = &usbip_uhs_ctx;
+	bus_ctx->uhs_ctx = usbip_uhs_ctx;
 	bus_ctx->busnum = 1;
 
 	for (int i = 0; i < CONFIG_USBIP_DEVICES_COUNT; i++) {
