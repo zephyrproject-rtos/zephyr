@@ -22,16 +22,18 @@
 				| SPI_MODE_CPOL)
 #endif
 
-#define SPIM_OP	 (SPI_OP_MODE_MASTER | SPI_MODE)
-#define SPIS_OP	 (SPI_OP_MODE_SLAVE | SPI_MODE)
+#define SPIM_OP	 (SPI_OP_MODE_MASTER | SPI_MODE | DT_PROP_OR(DT_NODELABEL(dut_spi_dt), duplex, 0))
+#define SPIS_OP	 (SPI_OP_MODE_SLAVE | SPI_MODE | DT_PROP_OR(DT_NODELABEL(dut_spis_dt), duplex, 0))
 
 static struct spi_dt_spec spim = SPI_DT_SPEC_GET(DT_NODELABEL(dut_spi_dt), SPIM_OP);
 static const struct device *spis_dev = DEVICE_DT_GET(DT_NODELABEL(dut_spis));
 static const struct spi_config spis_config = {
 	.operation = SPIS_OP,
 	.slave = DT_PROP_OR(DT_PATH(zephyr_user), peripheral_cs, 0),
+	.frequency = DT_PROP_OR(DT_NODELABEL(dut_spis_dt), spi_max_frequency, 0),
 };
 
+#ifdef CONFIG_SPI_ASYNC
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
 	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &async_sig);
@@ -39,6 +41,7 @@ static struct k_poll_event async_evt =
 static struct k_poll_signal async_sig_spim = K_POLL_SIGNAL_INITIALIZER(async_sig_spim);
 static struct k_poll_event async_evt_spim =
 	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &async_sig_spim);
+#endif /* CONFIG_SPI_ASYNC */
 
 #define MEMORY_SECTION(node)                                                                       \
 	COND_CODE_1(IS_ENABLED(CONFIG_PREALLOC_BUFFERS),                                           \
@@ -100,6 +103,7 @@ static void work_handler(struct k_work *work)
 			k_sem_give(&td->sem);
 		}
 	} else {
+#ifdef CONFIG_SPI_ASYNC
 		rv = spi_transceive_signal(spim.bus, &spim.config, td->mtx_set, td->mrx_set,
 				&async_sig_spim);
 		zassert_equal(rv, 0);
@@ -115,6 +119,7 @@ static void work_handler(struct k_work *work)
 		async_evt_spim.state = K_POLL_STATE_NOT_READY;
 
 		k_sem_give(&td->sem);
+#endif
 	}
 }
 
@@ -212,12 +217,13 @@ static void run_test(bool m_same_size, bool s_same_size, bool async)
 	rv = k_work_schedule(&tdata.test_work, K_MSEC(10));
 	zassert_equal(rv, 1);
 
-	if (!async) {
+	if (!IS_ENABLED(CONFIG_SPI_ASYNC) || !async) {
 		periph_rv = spi_transceive(spis_dev, &spis_config, tdata.stx_set, tdata.srx_set);
 		if (periph_rv == -ENOTSUP) {
 			ztest_test_skip();
 		}
 	} else {
+#ifdef CONFIG_SPI_ASYNC
 		rv = spi_transceive_signal(spis_dev, &spis_config, tdata.stx_set, tdata.srx_set,
 					   &async_sig);
 		if (rv == -ENOTSUP) {
@@ -237,6 +243,7 @@ static void run_test(bool m_same_size, bool s_same_size, bool async)
 		/* Reinitializing for next call */
 		async_evt.signal->signaled = 0U;
 		async_evt.state = K_POLL_STATE_NOT_READY;
+#endif /* CONFIG_SPI_ASYNC */
 	}
 
 	rv = k_sem_take(&tdata.sem, K_MSEC(100));
@@ -280,10 +287,12 @@ ZTEST(spi_controller_peripheral, test_basic)
 	test_basic(false);
 }
 
+#ifdef CONFIG_SPI_ASYNC
 ZTEST(spi_controller_peripheral, test_basic_async)
 {
 	test_basic(true);
 }
+#endif /* CONFIG_SPI_ASYNC */
 
 /** Basic test with zero length buffers.
  */
@@ -331,10 +340,12 @@ ZTEST(spi_controller_peripheral, test_basic_zero_len)
 	test_basic_zero_len(false);
 }
 
+#ifdef CONFIG_SPI_ASYNC
 ZTEST(spi_controller_peripheral, test_basic_zero_len_async)
 {
 	test_basic_zero_len(true);
 }
+#endif /* CONFIG_SPI_ASYNC */
 
 /** Setup a transfer where RX buffer on SPI controller and SPI peripheral are
  *  shorter than TX buffers. RX buffers shall contain beginning of TX data
@@ -343,6 +354,11 @@ ZTEST(spi_controller_peripheral, test_basic_zero_len_async)
 static void test_short_rx(bool async)
 {
 	size_t len = 16;
+
+	if ((SPIM_OP & SPI_HALF_DUPLEX) == SPI_HALF_DUPLEX) {
+		TC_PRINT("Not tested in half duplex mode\n");
+		ztest_test_skip();
+	}
 
 	tdata.bufs[0].buf = buf_alloc(len, true);
 	tdata.bufs[0].len = len;
@@ -371,10 +387,12 @@ ZTEST(spi_controller_peripheral, test_short_rx)
 	test_short_rx(false);
 }
 
+#ifdef CONFIG_SPI_ASYNC
 ZTEST(spi_controller_peripheral, test_short_rx_async)
 {
 	test_short_rx(true);
 }
+#endif /* CONFIG_SPI_ASYNC */
 
 /** Test where only master transmits. */
 static void test_only_tx(bool async)
@@ -405,10 +423,12 @@ ZTEST(spi_controller_peripheral, test_only_tx)
 	test_only_tx(false);
 }
 
+#ifdef CONFIG_SPI_ASYNC
 ZTEST(spi_controller_peripheral, test_only_tx_async)
 {
 	test_only_tx(true);
 }
+#endif /* CONFIG_SPI_ASYNC */
 
 /** Test where only SPI controller transmits and SPI peripheral receives in chunks. */
 static void test_only_tx_in_chunks(bool async)
@@ -442,10 +462,12 @@ ZTEST(spi_controller_peripheral, test_only_tx_in_chunks)
 	test_only_tx_in_chunks(false);
 }
 
+#ifdef CONFIG_SPI_ASYNC
 ZTEST(spi_controller_peripheral, test_only_tx_in_chunks_async)
 {
 	test_only_tx_in_chunks(true);
 }
+#endif /* CONFIG_SPI_ASYNC */
 
 /** Test where only SPI peripheral transmits. */
 static void test_only_rx(bool async)
@@ -476,10 +498,12 @@ ZTEST(spi_controller_peripheral, test_only_rx)
 	test_only_rx(false);
 }
 
+#ifdef CONFIG_SPI_ASYNC
 ZTEST(spi_controller_peripheral, test_only_rx_async)
 {
 	test_only_rx(true);
 }
+#endif /* CONFIG_SPI_ASYNC */
 
 /** Test where only SPI peripheral transmits in chunks. */
 static void test_only_rx_in_chunks(bool async)
@@ -513,10 +537,12 @@ ZTEST(spi_controller_peripheral, test_only_rx_in_chunks)
 	test_only_rx_in_chunks(false);
 }
 
+#ifdef CONFIG_SPI_ASYNC
 ZTEST(spi_controller_peripheral, test_only_rx_in_chunks_async)
 {
 	test_only_rx_in_chunks(true);
 }
+#endif /* CONFIG_SPI_ASYNC */
 
 static void before(void *not_used)
 {

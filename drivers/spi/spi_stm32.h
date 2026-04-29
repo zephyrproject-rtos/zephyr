@@ -25,6 +25,7 @@ struct spi_stm32_config {
 	const struct stm32_pclken *pclken;
 	size_t pclk_len;
 	int datawidth;
+	int fifo_threshold; /* Threshold value (in bytes) */
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	irq_config_func_t irq_config;
 #ifdef CONFIG_SOC_SERIES_STM32H7X
@@ -37,7 +38,6 @@ struct spi_stm32_config {
 	uint32_t fifo_max_transfer_size;
 	uint8_t fifo_size;
 #endif
-	bool fifo_enabled: 1;
 	bool ioswp: 1;
 	bool soft_nss: 1;
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
@@ -75,14 +75,12 @@ struct spi_stm32_data {
 	struct spi_context ctx;
 	uint32_t tx_len;
 	uint32_t rx_len;
-	uint8_t fifo_threshold;
+	uint8_t fifo_threshold; /* Threshold value (in data frames) */
 #ifdef CONFIG_SPI_STM32_DMA
 	struct k_sem status_sem;
 	volatile uint32_t status_flags;
 	struct stream dma_rx;
 	struct stream dma_tx;
-	bool tx_dma_done;
-	bool rx_dma_done;
 #endif /* CONFIG_SPI_STM32_DMA */
 	bool pm_policy_state_on;
 };
