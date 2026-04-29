@@ -1,0 +1,218 @@
+<div class="admonition note device-lifetime-calculator zms-calc">
+  <p class="admonition-title">Device Lifetime Calculator</p>
+  <p>Calculate the expected lifetime of your ZMS storage device based on your configuration.</p>
+
+  <div class="zms-grid">
+    <div
+      class="zms-field"
+      title="Size of each sector in bytes. Must be a multiple of write-block-size."
+    >
+      <label class="zms-label" for="lifetime-sector-size">Sector Size (bytes):</label>
+      <input
+        type="number"
+        class="zms-input"
+        id="lifetime-sector-size"
+        value="1024"
+        min="256"
+        step="256"
+      />
+    </div>
+
+    <div
+      class="zms-field"
+      title="Total sectors in the partition. One sector is always reserved for garbage collection."
+    >
+      <label class="zms-label" for="lifetime-sector-count">Number of Sectors:</label>
+      <input
+        type="number"
+        class="zms-input"
+        id="lifetime-sector-count"
+        value="4"
+        min="2"
+        max="100"
+      />
+    </div>
+
+    <div
+      class="zms-field"
+      title="Minimum write unit in bytes. ATE and data sizes are aligned to this. Default 1 for byte-addressable devices."
+    >
+      <label class="zms-label" for="lifetime-write-block-size">Write block size (bytes):</label>
+      <input
+        type="number"
+        class="zms-input"
+        id="lifetime-write-block-size"
+        value="1"
+        min="1"
+        max="32"
+      />
+    </div>
+
+    <div
+      class="zms-field"
+      title="Size in bytes of each value. ≤8 for small data stored in ATE. For large data, value is stored at top of sector."
+    >
+      <label class="zms-label" for="lifetime-data-size">Average Data Size (bytes):</label>
+      <input
+        type="number"
+        class="zms-input"
+        id="lifetime-data-size"
+        value="8"
+        min="1"
+        max="65536"
+      />
+    </div>
+
+    <div class="zms-field" title="Number of distinct key-value pairs in your workload.">
+      <label class="zms-label" for="lifetime-data-count">Number of Data Items:</label>
+      <input
+        type="number"
+        class="zms-input"
+        id="lifetime-data-count"
+        value="1"
+        min="1"
+        max="1000"
+      />
+    </div>
+
+    <div
+      class="zms-field"
+      title="How often the full set of data is written per minute (WR_MIN in formula)."
+    >
+      <label class="zms-label" for="lifetime-writes-per-minute">Writes per Minute:</label>
+      <input
+        type="number"
+        class="zms-input"
+        id="lifetime-writes-per-minute"
+        value="1"
+        min="0.01"
+        step="0.01"
+      />
+    </div>
+
+    <div
+      class="zms-field"
+      title="Maximum writes per memory cell before wear-out (device endurance from datasheet)."
+    >
+      <label class="zms-label" for="lifetime-max-writes"
+        >Max writes per cell before wear-out:</label
+      >
+      <input
+        type="number"
+        class="zms-input"
+        id="lifetime-max-writes"
+        value="20000"
+        min="1000"
+        step="1000"
+      />
+    </div>
+  </div>
+
+  <div class="zms-results" id="lifetime-results">
+    <div class="zms-results-content" id="lifetime-results-content"></div>
+  </div>
+</div>
+
+<script>
+  function roundUpLifetime(len, wbs) {
+    if (wbs <= 1) return len;
+    return (len + (wbs - 1)) & ~(wbs - 1);
+  }
+  function formatLargestUnit(minutes) {
+    const years = minutes / (60 * 24 * 365.25);
+    if (years >= 1) return years.toLocaleString(undefined, { maximumFractionDigits: 2 }) + " years";
+    const days = minutes / (60 * 24);
+    if (days >= 1) return days.toLocaleString(undefined, { maximumFractionDigits: 2 }) + " days";
+    const hours = minutes / 60;
+    if (hours >= 1) return hours.toLocaleString(undefined, { maximumFractionDigits: 1 }) + " hours";
+    return minutes.toLocaleString(undefined, { maximumFractionDigits: 0 }) + " minutes";
+  }
+  function calculateLifetime() {
+    const sectorSize = parseInt(document.getElementById("lifetime-sector-size").value);
+    const sectorCount = parseInt(document.getElementById("lifetime-sector-count").value);
+    const writeBlockSize =
+      parseInt(document.getElementById("lifetime-write-block-size").value) || 1;
+    const dataSize = parseInt(document.getElementById("lifetime-data-size").value);
+    const dataCount = parseInt(document.getElementById("lifetime-data-count").value);
+    const writesPerMinute = parseFloat(document.getElementById("lifetime-writes-per-minute").value);
+    const maxWrites = parseInt(document.getElementById("lifetime-max-writes").value);
+
+    const resultsDiv = document.getElementById("lifetime-results");
+    const resultsContent = document.getElementById("lifetime-results-content");
+
+    if (sectorSize % writeBlockSize !== 0) {
+      resultsContent.innerHTML = `<div class="zms-error">Sector size must be a multiple of write block size (${writeBlockSize}).</div>`;
+      resultsDiv.style.display = "block";
+      return;
+    }
+    if (writesPerMinute <= 0) {
+      resultsContent.innerHTML = `<div class="zms-error">Writes per minute must be positive.</div>`;
+      resultsDiv.style.display = "block";
+      return;
+    }
+
+    const ATE_SIZE = roundUpLifetime(16, writeBlockSize);
+    const HEADER_SIZE = 5 * ATE_SIZE;
+    const sectorEffectiveSize = sectorSize - HEADER_SIZE;
+    const effectiveDataSize =
+      dataSize <= 8 ? ATE_SIZE : roundUpLifetime(ATE_SIZE + dataSize, writeBlockSize);
+    const totalEffectiveSize = effectiveDataSize * dataCount;
+
+    const totalLifetimeMinutes =
+      (sectorEffectiveSize * sectorCount * maxWrites) / (totalEffectiveSize * writesPerMinute);
+
+    if (window.MathJax && window.MathJax.typesetClear) {
+      MathJax.typesetClear([resultsContent]);
+    }
+
+    const lifetimeMinutesRounded = Math.round(totalLifetimeMinutes);
+    const bestUnit = formatLargestUnit(totalLifetimeMinutes);
+    const minutesFormatted = lifetimeMinutesRounded.toLocaleString().replace(/,/g, "{,}");
+    const formulaLaTeX = `
+    \\[\\begin{aligned}
+    \\text{Expected lifetime}
+      &= \\frac{(${sectorSize} - ${HEADER_SIZE}) \\times ${sectorCount} \\times ${maxWrites}}{${totalEffectiveSize} \\times ${writesPerMinute}} \\\\
+      &= ${minutesFormatted}\\ \\text{minutes} \\\\
+      &\\approx \\text{${bestUnit}}
+    \\end{aligned}\\]`;
+    const formulaPlain = `Expected lifetime = (${sectorSize}-${HEADER_SIZE})×${sectorCount}×${maxWrites}/(${totalEffectiveSize}×${writesPerMinute}) = ${lifetimeMinutesRounded} minutes ≡ ${bestUnit}`;
+    const formulaHtml = window.MathJax
+      ? `<span class="math notranslate nohighlight">${formulaLaTeX}</span>`
+      : formulaPlain;
+
+    let html = `<div class="zms-result-primary zms-result-formula">${formulaHtml}</div>`;
+
+    resultsContent.innerHTML = html;
+    resultsDiv.style.display = "block";
+    if (typeof typesetMath === "function") {
+      typesetMath(resultsContent);
+    } else if (window.MathJax && window.MathJax.typesetPromise) {
+      MathJax.typesetPromise([resultsContent]).catch(() => {});
+    }
+  }
+
+  let lifetimeDebounceTimer;
+  function debouncedLifetimeCalc() {
+    clearTimeout(lifetimeDebounceTimer);
+    lifetimeDebounceTimer = setTimeout(calculateLifetime, 150);
+  }
+  document.addEventListener("DOMContentLoaded", function () {
+    const lifetimeIds = [
+      "lifetime-sector-size",
+      "lifetime-sector-count",
+      "lifetime-write-block-size",
+      "lifetime-data-size",
+      "lifetime-data-count",
+      "lifetime-writes-per-minute",
+      "lifetime-max-writes",
+    ];
+    lifetimeIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener("input", debouncedLifetimeCalc);
+        el.addEventListener("change", calculateLifetime);
+      }
+    });
+    calculateLifetime();
+  });
+</script>
