@@ -20,11 +20,44 @@
 		};
 	};
 
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1_TX_GPIO18>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART1_RX_GPIO8>;
+			bias-pull-up;
+		};
+	};
+
+	uart2_default: uart2_default {
+		group1 {
+			pinmux = <UART2_TX_GPIO5>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART2_RX_GPIO6>;
+			bias-pull-up;
+		};
+	};
+
 	i2c0_default: i2c0_default {
 		group1 {
 			pinmux = <I2C0_SCL_GPIO45>,
 				 <I2C0_SDA_GPIO48>;
 			drive-open-drain;
+		};
+	};
+
+	i2s0_default: i2s0_default {
+		group1 {
+			pinmux = <I2S0_O_BCK_GPIO21>,
+				 <I2S0_O_SD_GPIO14>,
+				 <I2S0_O_WS_GPIO13>,
+				 <I2S0_I_SD_GPIO47>;
 		};
 	};
 
@@ -52,6 +85,16 @@
 			pinmux = <LCD_CAM_CAM_PCLK_GPIO41>;  /* LCD_RD */
 			output-enable;
 			bias-pull-up;
+		};
+	};
+
+	sdhc0_default: sdhc0_default {
+		group1 {
+			pinmux = <SDHC0_CLKOUT_GPIO7>,
+				 <SDHC0_CMD_GPIO16>,
+				 <SDHC0_DATA0_GPIO15>;
+			bias-pull-up;
+			output-high;
 		};
 	};
 };

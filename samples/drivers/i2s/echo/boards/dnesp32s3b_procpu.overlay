@@ -1,0 +1,6 @@
+/*
+ * Copyright (c) 2025 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+i2s_rxtx: &i2s0 {};
