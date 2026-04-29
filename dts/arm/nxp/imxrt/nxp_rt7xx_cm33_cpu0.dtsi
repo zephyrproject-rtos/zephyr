@@ -1122,8 +1122,28 @@
 		status = "disabled";
 	};
 
+	ocotp: ocotp@18000 {
+		compatible = "nxp,rt7xx-ocotp";
+		reg = <0x18000 0x7a0>;
+		status = "okay";
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			tsens_cal: tsens-cal@134 {
+				reg = <0x134 0x4>;
+				#nvmem-cell-cells = <0>;
+				read-only;
+			};
+		};
+	};
+
 	pmc_tmpsns: pmc-tmpsns {
 		compatible = "nxp,pmc-tmpsns";
+		nvmem-cells = <&tsens_cal>;
+		nvmem-cell-names = "tsens-cal";
 		status = "disabled";
 	};
 

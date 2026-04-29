@@ -1,15 +1,15 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "fsl_romapi_otp.h"
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/nvmem.h>
 #include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(nxp_pmc_tmpsns, CONFIG_SENSOR_LOG_LEVEL);
@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(nxp_pmc_tmpsns, CONFIG_SENSOR_LOG_LEVEL);
 
 struct nxp_pmc_tmpsns_config {
 	const struct device *adc;
+	struct nvmem_cell calibration_cell;
 	struct adc_sequence adc_seq;
 	struct adc_channel_cfg ch_cfg;
 };
@@ -185,11 +186,11 @@ static int nxp_pmc_tmpsns_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = otp_fuse_read(CONFIG_NXP_PMC_TMPSNS_CALIBRATION_OTP_FUSE_INDEX,
-			&data->pmc_tmpsns_calibration);
-	if (ret) {
-		LOG_ERR("Failed to get calibration value form FUSE.");
-		return -ENOTSUP;
+	ret = nvmem_cell_read(&config->calibration_cell, &data->pmc_tmpsns_calibration, 0,
+			      sizeof(data->pmc_tmpsns_calibration));
+	if (ret < 0) {
+		LOG_ERR("Failed to read calibration value: %d", ret);
+		return ret;
 	}
 
 	return 0;
@@ -205,6 +206,7 @@ static DEVICE_API(sensor, nxp_pmc_tmpsns_api) = {
 												\
 	static const struct nxp_pmc_tmpsns_config _CONCAT(nxp_pmc_tmpsns_config, inst) = {	\
 		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),				\
+		.calibration_cell = NVMEM_CELL_INST_GET_BY_NAME(inst, tsens_cal),		\
 		.adc_seq = {									\
 			.channels = BIT(DT_INST_IO_CHANNELS_INPUT(inst)),			\
 			.buffer = &_CONCAT(nxp_pmc_tmpsns_data, inst).buffer,			\

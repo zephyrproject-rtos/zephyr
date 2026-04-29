@@ -1,0 +1,24 @@
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+title: NXP RT7xx OCOTP
+
+description: |
+  NXP RT7xx On-Chip OTP (One-Time Programmable) controller.
+
+  This binding represents the OCOTP peripheral found on NXP i.MX RT7xx
+  series SoCs. The OCOTP module provides access to on-chip fuse memory
+  via memory-mapped shadow registers.
+
+  The OTP driver API uses byte addressing, while the OCOTP peripheral
+  has 32-bit wide shadow registers. The reg property size determines
+  the accessible OTP memory range. The driver handles the conversion
+  between byte addresses and register indices internally.
+
+compatible: "nxp,rt7xx-ocotp"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
