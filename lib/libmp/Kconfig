@@ -1,0 +1,27 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig MP
+    bool "Media Pipe library"
+    help
+        Enable Media Pipe library.
+
+if MP
+
+module = LIBMP
+module-str = libmp
+source "subsys/logging/Kconfig.template.log_config"
+
+config MP_RPC
+    bool "RPC support"
+
+# Load core configurations
+source "lib/libmp/src/core/Kconfig"
+
+# Load all plugin configurations
+source "lib/libmp/src/plugins/Kconfig"
+
+endif # MP

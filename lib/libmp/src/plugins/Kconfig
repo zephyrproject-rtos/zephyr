@@ -1,0 +1,11 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "Media Pipe plugins"
+
+osource "lib/libmp/src/plugins/*/Kconfig"
+
+endmenu

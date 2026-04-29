@@ -1,0 +1,27 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MP_PLUGIN_ZAUD
+	bool "Zaud plugin support"
+
+if MP_PLUGIN_ZAUD
+
+config ZAUD_BUFFER_POOL_SZ_MAX
+	int "Size of the largest buffer in the buffer pool"
+	default 98304
+
+config ZAUD_BUFFER_POOL_NUM_MAX
+	int "Number of maximum sized buffers in the buffer pool"
+	default 10
+
+config ZAUD_I2S_CODEC_SINK_CODEC_MASTER
+	bool "Configure the selected codec device as a master device."
+	default y
+
+config ZAUD_I2S_CODEC_SINK_I2S_MASTER
+	bool "Configure the selected I2S peripheral as a master device."
+
+endif # MP_PLUGIN_ZAUD
