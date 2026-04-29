@@ -49,13 +49,15 @@ struct gpio_aesc_regs {
 
 struct gpio_aesc_data {
 	DEVICE_MMIO_RAM;
+	uintptr_t reg_base;
 	sys_slist_t cb;
 	struct k_spinlock lock;
 };
 
 #define DEV_CFG(dev) ((struct gpio_aesc_config *)(dev)->config)
 #define DEV_DATA(dev) ((struct gpio_aesc_data *)(dev)->data)
-#define DEV_GPIO(dev) ((struct gpio_aesc_regs *)DEVICE_MMIO_GET(dev))
+#define DEV_GPIO(dev)							      \
+	((volatile struct gpio_aesc_regs *)DEV_DATA(dev)->reg_base)
 
 static int gpio_aesc_config(const struct device *dev, gpio_pin_t pin,
 			    gpio_flags_t flags)
@@ -216,19 +218,21 @@ static void gpio_aesc_isr(const struct device *dev)
 
 static int gpio_aesc_init(const struct device *dev)
 {
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 	const struct gpio_aesc_config *cfg = DEV_CFG(dev);
-	volatile uintptr_t *base_addr = (volatile uintptr_t *)DEV_GPIO(dev);
+	volatile uintptr_t *base_addr =
+		(volatile uintptr_t *)DEVICE_MMIO_GET(dev);
+	struct gpio_aesc_data *data = DEV_DATA(dev);
 	volatile struct gpio_aesc_regs *gpio;
 	int ret;
 
-	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 	LOG_DBG("IP core version: %i.%i.%i.",
 		ip_id_get_major_version(base_addr),
 		ip_id_get_minor_version(base_addr),
 		ip_id_get_patchlevel(base_addr)
 	);
-	DEVICE_MMIO_GET(dev) = ip_id_relocate_driver(base_addr);
-	LOG_DBG("Relocate driver to address 0x%lx.", DEVICE_MMIO_GET(dev));
+	data->reg_base = ip_id_relocate_driver(base_addr);
+	LOG_DBG("Relocate driver to address 0x%lx.", data->reg_base);
 	gpio = DEV_GPIO(dev);
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
