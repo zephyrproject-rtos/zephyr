@@ -6,6 +6,7 @@
 Tests for hardwaremap.py classes' methods
 """
 
+import subprocess
 import sys
 from pathlib import Path
 from unittest import mock
@@ -50,17 +51,9 @@ TESTDATA_1 = [
             'serial_pty': 'dummy serial pty',
             'connected': True,
             'runner_params': ['dummy', 'runner', 'params'],
-            'pre_script': 'dummy pre script',
-            'post_script': 'dummy post script',
-            'post_flash_script': 'dummy post flash script',
             'runner': 'dummy runner',
             'flash_timeout': 30,
             'flash_with_test': True,
-            'script_param': {
-                'pre_script_timeout' : 30,
-                'post_flash_timeout' : 30,
-                'post_script_timeout' : 30,
-                }
         },
         {
             'id': 'dummy id',
@@ -71,17 +64,9 @@ TESTDATA_1 = [
             'serial_pty': 'dummy serial pty',
             'connected': True,
             'runner_params': ['dummy', 'runner', 'params'],
-            'pre_script': 'dummy pre script',
-            'post_script': 'dummy post script',
-            'post_flash_script': 'dummy post flash script',
             'runner': 'dummy runner',
             'flash_timeout': 30,
             'flash_with_test': True,
-            'script_param': {
-                'pre_script_timeout' : 30,
-                'post_flash_timeout' : 30,
-                'post_script_timeout' : 30,
-                }
         },
         '<dummy platform (dummy product) on dummy serial>'
     ),
@@ -998,3 +983,158 @@ def test_hardwaremap_release_dut():
 
     assert len([None for d in hm.duts if d.available == 1]) == 2
     assert hm.duts[2].available == 0
+
+# ── run_hook tests ──────────────────────────────────────────────────────────
+
+@pytest.fixture
+def dut_with_hooks():
+    """Return a DUT with a set of hooks for testing."""
+    hooks = [
+        {
+            'type': 'pre',
+            'script': '/usr/bin/pre_script.sh',
+            'args': ['--verbose'],
+            'timeout': 10,
+        },
+        {'type': 'post', 'script': '/usr/bin/post_script.sh'},
+        {
+            'type': 'pre_flash',
+            'script': '/usr/bin/flash.sh',
+            'args': ['-b', '115200'],
+            'timeout': 30,
+        },
+        {
+            'type': 'post_flash',
+            'script': '/usr/bin/post_flash.sh',
+            'args': [],
+            'timeout': 5,
+        },
+    ]
+    return DUT(platform='test_platform', id='test_id', serial='s0',
+               product='test_product', runner='test_runner',
+               connected=True, hooks=hooks)
+
+
+def test_run_hook_no_matching_hook():
+    """run_hook should return immediately when no hook matches."""
+    dut = DUT(platform='p', id='1', serial='s', product='pr',
+              runner='r', connected=True, hooks=[])
+
+    with mock.patch('subprocess.Popen') as popen_mock:
+        dut.run_hook('pre')
+        popen_mock.assert_not_called()
+
+
+def test_run_hook_no_matching_type(dut_with_hooks):
+    """run_hook should return immediately when hook_type is not in hooks list."""
+    with mock.patch('subprocess.Popen') as popen_mock:
+        dut_with_hooks.run_hook('nonexistent')
+        popen_mock.assert_not_called()
+
+
+def test_run_hook_success(dut_with_hooks):
+    """run_hook should execute the script and pass args for a matching hook."""
+    proc_mock = mock.Mock()
+    proc_mock.communicate.return_value = (b'output\n', b'')
+    proc_mock.returncode = 0
+    proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
+    proc_mock.__exit__ = mock.Mock(return_value=False)
+
+    with mock.patch('subprocess.Popen', return_value=proc_mock) as popen_mock:
+        dut_with_hooks.run_hook('pre')
+
+    popen_mock.assert_called_once_with(
+        ['/usr/bin/pre_script.sh', '--verbose'],
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        env=mock.ANY,
+    )
+    proc_mock.communicate.assert_called_once_with(timeout=10)
+
+
+def test_run_hook_default_args_and_timeout(dut_with_hooks):
+    """Hook without 'args' or 'timeout' should use defaults ([] and 60)."""
+    proc_mock = mock.Mock()
+    proc_mock.communicate.return_value = (b'', b'')
+    proc_mock.returncode = 0
+    proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
+    proc_mock.__exit__ = mock.Mock(return_value=False)
+
+    with mock.patch('subprocess.Popen', return_value=proc_mock) as popen_mock:
+        # 'post' hook has no args/timeout defined
+        dut_with_hooks.run_hook('post')
+
+    popen_mock.assert_called_once_with(
+        ['/usr/bin/post_script.sh'],
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        env=mock.ANY,
+    )
+    proc_mock.communicate.assert_called_once_with(timeout=60)
+
+
+def test_run_hook_nonzero_returncode(caplog, dut_with_hooks):
+    """run_hook should log an error when the script exits with non-zero code."""
+    proc_mock = mock.Mock()
+    proc_mock.communicate.return_value = (b'', b'something went wrong')
+    proc_mock.returncode = 1
+    proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
+    proc_mock.__exit__ = mock.Mock(return_value=False)
+
+    with mock.patch('subprocess.Popen', return_value=proc_mock):
+        dut_with_hooks.run_hook('pre')
+
+    assert 'Custom script failure: something went wrong' in caplog.text
+
+
+def test_run_hook_timeout(caplog, dut_with_hooks):
+    """run_hook should kill the process and log an error on timeout."""
+    proc_mock = mock.Mock()
+    proc_mock.communicate.side_effect = [
+        subprocess.TimeoutExpired(cmd='cmd', timeout=10),
+        (b'', b''),  # second call after kill
+    ]
+    proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
+    proc_mock.__exit__ = mock.Mock(return_value=False)
+
+    with mock.patch('subprocess.Popen', return_value=proc_mock):
+        dut_with_hooks.run_hook('pre')
+
+    proc_mock.kill.assert_called_once()
+    assert '/usr/bin/pre_script.sh timed out' in caplog.text
+
+
+def test_run_hook_uses_os_environ(dut_with_hooks):
+    """run_hook should use os.environ as the subprocess environment."""
+    proc_mock = mock.Mock()
+    proc_mock.communicate.return_value = (b'', b'')
+    proc_mock.returncode = 0
+    proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
+    proc_mock.__exit__ = mock.Mock(return_value=False)
+
+    with mock.patch('subprocess.Popen', return_value=proc_mock) as popen_mock, \
+         mock.patch.dict('os.environ', {'HOST_VAR': 'host_val'}, clear=True):
+        dut_with_hooks.run_hook('pre')
+
+    call_env = popen_mock.call_args.kwargs['env']
+    assert call_env['HOST_VAR'] == 'host_val'
+
+
+def test_run_hook_pre_flash_with_args(dut_with_hooks):
+    """Verify pre_flash hook passes the correct args and timeout."""
+    proc_mock = mock.Mock()
+    proc_mock.communicate.return_value = (b'flashed\n', b'')
+    proc_mock.returncode = 0
+    proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
+    proc_mock.__exit__ = mock.Mock(return_value=False)
+
+    with mock.patch('subprocess.Popen', return_value=proc_mock) as popen_mock:
+        dut_with_hooks.run_hook('pre_flash')
+
+    popen_mock.assert_called_once_with(
+        ['/usr/bin/flash.sh', '-b', '115200'],
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        env=mock.ANY,
+    )
+    proc_mock.communicate.assert_called_once_with(timeout=30)

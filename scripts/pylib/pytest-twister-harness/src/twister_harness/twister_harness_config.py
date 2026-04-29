@@ -9,6 +9,7 @@ import logging
 import pytest
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 from twister_harness.exceptions import TwisterHarnessException
 from twister_harness.helpers.domains_helper import get_default_domain_name
 from twisterlib.hardwaredata import HardwareData, CompoundHardwareData
@@ -40,9 +41,7 @@ class DeviceConfig:
     west_flash_extra_args: list[str] = field(default_factory=list, repr=False)
     flash_command: str = ''
     name: str = ''
-    pre_script: Path | None = None
-    post_script: Path | None = None
-    post_flash_script: Path | None = None
+    hooks: list[dict[str, Any]] = field(default_factory=list)
     fixtures: list[str] = None
     app_build_dir: Path | None = None
     extra_test_args: str = ''
@@ -54,6 +53,13 @@ class DeviceConfig:
             self.app_build_dir = self.build_dir / get_default_domain_name(domains)
         else:
             self.app_build_dir = self.build_dir
+
+    def get_hook_for_type(self, hook_type: str) -> dict[str, Any] | None:
+        """Return the first hook matching the given type, or None."""
+        for hook in self.hooks:
+            if hook.get('type') == hook_type:
+                return hook
+        return None
 
 
 @dataclass
@@ -128,6 +134,16 @@ class TwisterHarnessConfig:
                     )
                 )
 
+            # Prefer hooks from DUT (set by Twister); fall back to legacy CLI options
+            # for users invoking pytest-twister-harness directly.
+            hooks = list(dut.hooks)
+            if not hooks:
+                hooks = _build_hooks_from_legacy(
+                    pre_script=get_path(config.option.pre_script),
+                    post_script=get_path(config.option.post_script),
+                    post_flash_script=get_path(config.option.post_flash_script),
+                )
+
             device = DeviceConfig(
                 type=device_type,
                 build_dir=build_dir,
@@ -143,9 +159,7 @@ class TwisterHarnessConfig:
                 west_flash_extra_args=west_flash_extra_args,
                 west_flash_cmd=config.option.west_flash_cmd or test_params.west_flash_cmd or dut.west_flash_cmd,
                 flash_command=flash_command,
-                pre_script=get_path(config.option.pre_script) or get_path(dut.pre_script),
-                post_script=get_path(config.option.post_script) or get_path(dut.post_script),
-                post_flash_script=get_path(config.option.post_flash_script) or get_path(dut.post_flash_script),
+                hooks=hooks,
                 fixtures=config.option.fixtures or test_params.twister_fixtures or dut.fixtures,
                 extra_test_args=config.option.extra_test_args,
             )
@@ -168,3 +182,19 @@ def get_path(path: str | None) -> Path | None:
     if not path:
         return None
     return Path(path)
+
+
+def _build_hooks_from_legacy(
+    pre_script: Path | None = None,
+    post_script: Path | None = None,
+    post_flash_script: Path | None = None,
+) -> list[dict[str, Any]]:
+    """Convert legacy script CLI options to hooks format."""
+    hooks: list[dict[str, Any]] = []
+    if pre_script:
+        hooks.append({'type': 'pre', 'script': str(pre_script), 'args': [], 'timeout': 60})
+    if post_flash_script:
+        hooks.append({'type': 'post_flash', 'script': str(post_flash_script), 'args': [], 'timeout': 60})
+    if post_script:
+        hooks.append({'type': 'post', 'script': str(post_script), 'args': [], 'timeout': 60})
+    return hooks
