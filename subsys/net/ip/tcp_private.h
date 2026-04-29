@@ -6,7 +6,7 @@
  */
 
 #include "tp.h"
-#include <zephyr/toolchain/gcc.h>
+#include <zephyr/toolchain.h>
 
 #define is(_a, _b) (strcmp((_a), (_b)) == 0)
 
