@@ -117,6 +117,8 @@ struct pwm_stm32_config {
 	uint32_t countermode;
 	uint32_t deadtime;
 	uint32_t mastermode;
+	uint32_t slavemode;
+	uint32_t slave_trigger;
 	const struct stm32_pclken *pclken;
 	size_t pclk_len;
 	const struct pinctrl_dev_config *pcfg;
@@ -782,6 +784,16 @@ static int pwm_stm32_init(const struct device *dev)
 		}
 	}
 
+	if (IS_TIM_SLAVE_INSTANCE(timer)) {
+		LL_TIM_SetSlaveMode(timer, cfg->slavemode);
+		LL_TIM_SetTriggerInput(timer, cfg->slave_trigger);
+	} else {
+		if (cfg->slavemode != LL_TIM_SLAVEMODE_DISABLED || cfg->slave_trigger != 0) {
+			LOG_ERR("%s: Timer does not support slave mode", dev->name);
+			return -ENOTSUP;
+		}
+	}
+
 #ifdef IS_TIM_BREAK_INSTANCE
 	/* Use the macro IS_TIM_BREAK_INSTANCE to check for supporting the
 	 * break instance timers since some socs like L0/L1 will not
@@ -872,6 +884,12 @@ static int pwm_stm32_init(const struct device *dev)
 						  DT_STRING_TOKEN(PWM(index),	\
 						  st_mastermode))),		\
 					  (0)),					\
+		.slavemode = CONCAT(LL_TIM_SLAVEMODE_,				\
+					DT_STRING_UPPER_TOKEN(PWM(index),	\
+						st_slavemode)),			\
+		.slave_trigger = CONCAT(LL_TIM_TS_,				\
+					DT_STRING_TOKEN(PWM(index),		\
+						st_trigger_selection)),		\
 		.pclken = pclken_##index,					\
 		.pclk_len = DT_NUM_CLOCKS(PWM(index)),				\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),			\
