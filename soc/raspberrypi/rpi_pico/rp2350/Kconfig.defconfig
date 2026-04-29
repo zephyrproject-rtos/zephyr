@@ -22,4 +22,22 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	default y if ARM_MPU
 
+if SOC_RP2350A_M33_CPU1
+
+# If a code partition is defined for the CPU1 core,
+# make sure we relocate the code to be stored in that partition
+# Use cpu1_slot0_partition alias to make init code copy this to the RAM
+# Running CPU1 from flash is not recommended due to
+# access conflicts with CPU0 writes
+DT_CHOSEN_CODE_PARTITION = zephyr,code-partition
+DT_CHOSEN_SRAM = zephyr,sram
+
+config BUILD_OUTPUT_ADJUST_LMA
+	default "$(dt_chosen_partition_addr_hex,$(DT_CHOSEN_CODE_PARTITION)) - \
+		 $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_SRAM))" if SOC_RP2350A_M33_CPU1 && \
+			$(dt_chosen_enabled,$(DT_CHOSEN_CODE_PARTITION)) && \
+			$(dt_chosen_enabled,$(DT_CHOSEN_SRAM))
+
+endif # SOC_RP2350A_M33_CPU1
+
 endif # SOC_SERIES_RP2350

@@ -205,6 +205,8 @@
 				compatible = "soc-nv-flash";
 				write-block-size = <1>;
 				erase-block-size = <DT_SIZE_K(4)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 

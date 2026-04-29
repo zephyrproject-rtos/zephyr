@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mbox {
+	status = "okay";
+};
+
+/ {
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-icmsg";
+			tx-region = <&sram8>;
+			rx-region = <&sram9>;
+			dcache-alignment = <32>;
+			mboxes = <&mbox>, <&mbox>;
+			mbox-names = "tx", "rx";
+			status = "okay";
+		};
+	};
+};
