@@ -569,11 +569,48 @@ ZTEST(devicetree_api, test_has_status_okay)
 ZTEST(devicetree_api, test_bus)
 {
 	int pin, flags;
+	int has_test_spi_ctrl;
+	int has_test_spi_no_cs_ctrl;
+	int n_spi_controllers;
+	int n_spi_controllers_vargs;
+	int n_nonexistent_controllers;
+
+#define TEST_BUS_IS_NODE(node_id, expected_node_id) + DT_SAME_NODE(node_id, expected_node_id)
+#define TEST_BUS_INC(node_id) + 1
+#define TEST_BUS_INC_VARGS(node_id, val) + val
 
 	zassert_true(DT_SAME_NODE(TEST_I3C_BUS, TEST_I3C), "");
 	zassert_true(DT_SAME_NODE(TEST_I2C_BUS, TEST_I2C), "");
 	zassert_true(DT_SAME_NODE(TEST_SPI_BUS_0, TEST_SPI), "");
 	zassert_true(DT_SAME_NODE(TEST_SPI_BUS_1, TEST_SPI), "");
+
+	zassert_equal(DT_HAS_BUS(spi), 1, "");
+	zassert_equal(DT_HAS_BUS_STATUS_OKAY(spi), 1, "");
+	zassert_equal(DT_HAS_BUS(nonexistent_test_bus_type), 0, "");
+	zassert_equal(DT_HAS_BUS_STATUS_OKAY(nonexistent_test_bus_type), 0, "");
+	zassert_equal(DT_NUM_BUS(nonexistent_test_bus_type), 0, "");
+	zassert_equal(DT_NUM_BUS_STATUS_OKAY(nonexistent_test_bus_type), 0, "");
+
+	has_test_spi_ctrl = 0
+		DT_FOREACH_STATUS_OKAY_BUS_VARGS(spi, TEST_BUS_IS_NODE, TEST_SPI);
+	has_test_spi_no_cs_ctrl = 0
+		DT_FOREACH_STATUS_OKAY_BUS_VARGS(spi, TEST_BUS_IS_NODE, TEST_SPI_NO_CS);
+	n_spi_controllers = 0 DT_FOREACH_STATUS_OKAY_BUS(spi, TEST_BUS_INC);
+	n_spi_controllers_vargs = 0
+		DT_FOREACH_STATUS_OKAY_BUS_VARGS(spi, TEST_BUS_INC_VARGS, 1);
+	n_nonexistent_controllers = 0
+		DT_FOREACH_STATUS_OKAY_BUS(nonexistent_test_bus_type, TEST_BUS_INC);
+
+	zassert_true(has_test_spi_ctrl, "");
+	zassert_true(has_test_spi_no_cs_ctrl, "");
+	zassert_equal(DT_NUM_BUS(spi), n_spi_controllers, "");
+	zassert_equal(DT_NUM_BUS_STATUS_OKAY(spi), n_spi_controllers, "");
+	zassert_equal(n_spi_controllers, n_spi_controllers_vargs, "");
+	zassert_equal(n_nonexistent_controllers, 0, "");
+
+#undef TEST_BUS_INC_VARGS
+#undef TEST_BUS_INC
+#undef TEST_BUS_IS_NODE
 
 	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_0), 1, "");
 	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_NO_CS), 0, "");
