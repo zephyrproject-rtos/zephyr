@@ -210,7 +210,7 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_callback_unregister)
 	bt_gatt_notify_cb_reset();
 
 	/* Unregister the callbacks - which will clean up the ASCS */
-	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
+	zassert_ok(bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb));
 
 	test_drain_syswq(); /* Ensure that state transitions are completed */
 

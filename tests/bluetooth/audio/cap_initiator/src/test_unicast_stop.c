@@ -173,15 +173,19 @@ static void cap_initiator_test_unicast_stop_before(void *f)
 static void cap_initiator_test_unicast_stop_after(void *f)
 {
 	struct cap_initiator_test_unicast_stop_fixture *fixture = f;
+	int err;
 
-	bt_cap_initiator_unregister_cb(&mock_cap_initiator_cb);
+	err = bt_cap_initiator_unregister_cb(&mock_cap_initiator_cb);
+	zassert_true(err == 0 || err == -EINVAL, "Unexpected error: %d", err);
 
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
 		mock_bt_conn_disconnected(&fixture->conns[i], BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	}
 
 	/* In the case of a test failing, we cancel the procedure so that subsequent won't fail */
-	bt_cap_initiator_unicast_audio_cancel();
+	err = bt_cap_initiator_unicast_audio_cancel();
+	/* May fail if no CAP procedure is in progress */
+	zassert_true(err == 0 || err == -EALREADY, "Unexpected error: %d", err);
 
 	if (fixture->unicast_group != NULL) {
 		const struct bt_cap_unicast_audio_stop_param param = {
@@ -191,8 +195,15 @@ static void cap_initiator_test_unicast_stop_after(void *f)
 			.release = true,
 		};
 
-		(void)bt_cap_initiator_unicast_audio_stop(&param);
-		(void)bt_cap_unicast_group_delete(fixture->unicast_group);
+		err = bt_cap_initiator_unicast_audio_stop(&param);
+		if (err != 0) {
+			printk("Failed to stop unicast audio (err %d)\n", err);
+		}
+
+		err = bt_cap_unicast_group_delete(fixture->unicast_group);
+		if (err != 0) {
+			printk("Failed to delete unicast group (err %d)\n", err);
+		}
 	}
 }
 

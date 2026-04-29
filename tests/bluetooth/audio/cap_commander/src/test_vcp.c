@@ -58,8 +58,10 @@ static void cap_commander_test_vcp_before(void *f)
 static void cap_commander_test_vcp_after(void *f)
 {
 	struct cap_commander_test_vcp_fixture *fixture = f;
+	int err;
 
-	bt_cap_commander_unregister_cb(&mock_cap_commander_cb);
+	err = bt_cap_commander_unregister_cb(&mock_cap_commander_cb);
+	zassert_true(err == 0 || err == -EINVAL, "Unexpected error: %d", err);
 
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
 		mock_bt_conn_disconnected(&fixture->conns[i], BT_HCI_ERR_REMOTE_USER_TERM_CONN);

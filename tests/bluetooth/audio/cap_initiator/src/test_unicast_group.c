@@ -97,10 +97,14 @@ static void cap_initiator_test_unicast_group_after(void *f)
 {
 	struct cap_initiator_test_unicast_group_fixture *fixture = f;
 	struct bt_cap_unicast_group_param *group_param;
+	int err;
 
 	/* In the case of a test failing, we delete the group so that subsequent tests won't fail */
 	if (fixture->unicast_group != NULL) {
-		bt_cap_unicast_group_delete(fixture->unicast_group);
+		err = bt_cap_unicast_group_delete(fixture->unicast_group);
+		if (err != 0) {
+			printk("Failed to delete unicast group (err %d)\n", err);
+		}
 	}
 
 	group_param = fixture->group_param;
