@@ -120,6 +120,7 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdt;
+		lin0 = &lin0;
 	};
 
 	transceiver0: can-phy0 {
@@ -264,6 +265,8 @@
 		current-speed = <115200>;
 		status = "okay";
 	};
+
+	lin0: lin {};
 };
 
 &sci1 {
@@ -313,6 +316,8 @@
 mikrobus_serial: &uart3 {};
 
 mikrobus_spi: &spi1 {};
+
+mikrobus_lin: &lin0 {};
 
 &iic1 {
 	#address-cells = <1>;

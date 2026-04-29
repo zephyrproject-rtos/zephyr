@@ -1,0 +1,6 @@
+shield:
+  name: mikroe_lin_click
+  full_name: LIN Click
+  vendor: mikroe
+  supported_features:
+    - lin

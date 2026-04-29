@@ -1,0 +1,69 @@
+# Common fields for LIN controllers
+
+include: base.yaml
+
+properties:
+  bitrate:
+    type: int
+    description: |
+      Initial bitrate in bit/s. If this is unset, the initial bitrate is set to
+      CONFIG_LIN_DEFAULT_BITRATE.
+
+  commander:
+    type: boolean
+    description: |
+      Set to true if the LIN controller is commander mode. If this is unset, the LIN
+      controller will be a responder.
+
+  conflict-detection:
+    type: boolean
+    description: |
+      Set to true to enable LIN bus conflict detection. If this is unset,
+      conflict detection is disabled.
+
+  auto-sync:
+    type: boolean
+    description: |
+      Set to true to enable automatic synchronization of the LIN controller.
+
+  break-len:
+    type: int
+    default: 13
+    description: |
+      Length of the break field in bits.
+
+  break-delimiter:
+    type: int
+    enum: [1, 2]
+    default: 1
+    description: |
+      Length of the break delimiter in bits.
+
+  phys:
+    type: phandle
+    description: |
+      Actively controlled LIN transceiver.
+
+child-binding:
+  description: |
+    Passive LIN transceiver. The child node must be named "lin-transceiver".
+
+    Example:
+      &lin0 {
+        status = "okay";
+
+        lin-transceiver {
+          max-bitrate = <200000>;
+        };
+      };
+
+  properties:
+    min-bitrate:
+      type: int
+      description: |
+        Minimum bitrate in bit/s supported by the transceiver.
+
+    max-bitrate:
+      type: int
+      description: |
+        Maximum bitrate in bit/s supported by the transceiver.

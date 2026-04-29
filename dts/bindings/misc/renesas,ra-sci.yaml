@@ -13,3 +13,25 @@ properties:
 
   clocks:
     required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    enum: ["rxi", "txi", "tei", "eri", "aed", "bfd"]
+    description: |
+      The interrupt names for the SCI controller. The order of the names must
+      match the order of the interrupts in the "interrupts" property.
+      - "rxi": Receive interrupt
+      - "txi": Transmit interrupt
+      - "tei": Transmit end interrupt
+      - "eri": Error interrupt
+      - "aed": Address match error interrupt (SCI LIN responder mode only)
+      - "bfd": Break detection interrupt (SCI LIN responder mode only)
+
+  channel:
+    type: int
+    description: |
+      The channel number of the SCI controller. This is used to identify the
+      specific instance of the controller in the system.
