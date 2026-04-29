@@ -71,7 +71,6 @@ enum bap_broadcast_assistant_flag {
 
 struct bap_broadcast_assistant_instance {
 	struct bt_conn *conn;
-	bool scanning;
 	uint8_t pa_sync;
 	uint8_t recv_state_cnt;
 
@@ -917,7 +916,6 @@ static bool broadcast_src_is_duplicate(struct bap_broadcast_assistant_instance *
 
 static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *inst)
 {
-	inst->scanning = false;
 	inst->pa_sync = 0U;
 	inst->recv_state_cnt = 0U;
 	inst->cp_handle = 0U;
