@@ -18,10 +18,10 @@ Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s="${simulation_id}" \
 
 Execute "${test_exe}" \
     -v=${verbosity_level} -s="${simulation_id}" -d=1 \
-    -testid=peer -argstest log_level ${zephyr_log_level}
+    -testid=peer -argstest log_level=${zephyr_log_level}
 
 Execute "${test_exe}" \
     -v=${verbosity_level} -s="${simulation_id}" -d=0 \
-    -testid=dut -argstest log_level ${zephyr_log_level}
+    -testid=dut -argstest log_level=${zephyr_log_level}
 
 wait_for_background_jobs

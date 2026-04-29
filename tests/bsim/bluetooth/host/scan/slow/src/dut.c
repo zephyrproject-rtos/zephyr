@@ -4,6 +4,7 @@
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/testing.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
@@ -16,6 +17,25 @@
 LOG_MODULE_REGISTER(dut, LOG_LEVEL_DBG);
 
 extern unsigned long runtime_log_level;
+extern bool use_chain_adv;
+
+static atomic_t reassembly_timeout_count;
+static atomic_t reassembly_complete_count;
+static atomic_t reassembly_complete_after_timeout_count;
+
+void bt_testing_trace_ext_adv_reassembly_timeout(void)
+{
+	atomic_inc(&reassembly_timeout_count);
+}
+
+void bt_testing_trace_ext_adv_reassembly_complete(void)
+{
+	atomic_inc(&reassembly_complete_count);
+
+	if (atomic_get(&reassembly_timeout_count) > 0) {
+		atomic_inc(&reassembly_complete_after_timeout_count);
+	}
+}
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
@@ -36,23 +56,30 @@ void entrypoint_dut(void)
 	 *
 	 * Verifies that the host can handle running out of HCI RX buffers.
 	 *
-	 * To test this, we use a scanner with privacy enabled and sleep a bit
-	 * when we get every advertising report. This sleep period simulates a
-	 * slow "memcpy" operation on actual hardware. In effect, this uses up
-	 * the event buffer pools.
+	 * A scanner with privacy enabled sleeps in every advertising report
+	 * callback, simulating slow processing on real hardware. This
+	 * exhausts the event buffer pools.
 	 *
 	 * A short RPA timeout is used to prompt the host into periodically
 	 * sending a bunch of commands to the controller. Those commands should
 	 * not fail.
 	 *
-	 * Note: This test only fails by the stack crashing.
+	 * There are two variants (selected via the "chain" argstest flag):
+	 *   base  - peer sends default extended advertising data.
+	 *   chain - peer sends ~1000 B across ~6 AUX_CHAIN_IND PDUs so
+	 *           fragmented HCI ext adv reports (PARTIAL -> COMPLETE) are
+	 *           produced. When buffers are exhausted the chain-aware
+	 *           discard logic must drop entire chains and the host
+	 *           reassembly timer must recover the slot.
 	 *
-	 * It is a regression test for
+	 * Note: The base test variant only fails by the stack crashing.
+	 *
+	 * The base variant is a regression test for
 	 * https://github.com/zephyrproject-rtos/zephyr/issues/78223
 	 *
 	 * Two devices:
 	 * - `dut`: active-scans with privacy ON
-	 * - `peer`: bog-standard advertiser
+	 * - `peer`: extended advertiser
 	 *
 	 * [verdict]
 	 * - dut is able to run for a long enough time without triggering asserts
@@ -75,6 +102,21 @@ void entrypoint_dut(void)
 
 	/* 40 seconds ought to be enough for anyone */
 	k_sleep(K_SECONDS(40));
+
+	if (use_chain_adv) {
+		atomic_val_t timeout_cnt = atomic_get(&reassembly_timeout_count);
+		atomic_val_t complete_after_timeout_cnt =
+			atomic_get(&reassembly_complete_after_timeout_count);
+		atomic_val_t complete_cnt = atomic_get(&reassembly_complete_count);
+
+		LOG_INF("Reassembly stats: timeout=%ld complete=%ld complete_after_timeout=%ld",
+			timeout_cnt, complete_cnt, complete_after_timeout_cnt);
+
+		TEST_ASSERT(timeout_cnt > 0,
+			    "Expected at least one ext adv reassembly timeout");
+		TEST_ASSERT(complete_after_timeout_cnt > 0,
+			    "Expected fragmented reports to recover after timeout");
+	}
 
 	TEST_PASS_AND_EXIT("DUT passed");
 }
