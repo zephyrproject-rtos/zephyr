@@ -599,6 +599,8 @@ USB
   from :samp:`usbotg_hs{N}` to :samp:`usbphyc{N}` nodes at SoC DTSI level. Boards which
   use an STM32N6 SoC with custom clock mux configuration must now set the ``clocks``
   property on :samp:`usbphyc{N}` instead of :samp:`usbotg_hs{N}`. (:github:`107813`)
+* Indicating protocol error via ``errno`` in control transfer handlers is deprecated.
+  Handlers should return error code directly. (:github:`108118`)
 * When host issues control transfer with data stage from host to device, the USB control transfer
   callbacks ``control_to_dev`` in :c:struct:`usbd_class_api` and ``to_dev`` in
   :c:struct:`usbd_vreq_node` are now called with NULL ``buf`` before data stage is received.
