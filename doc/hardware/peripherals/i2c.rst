@@ -49,6 +49,38 @@ API is considered experimental, as it is not compatible with the
 capabilities of all I2C peripherals supported in controller mode.
 
 
+Per-Controller Transfer Timeout
+*******************************
+
+Each I2C controller driver uses an internal timeout to bound how long a
+transfer may block the calling thread.  By default drivers rely on a
+compile-time constant (e.g. :kconfig:option:`CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC`
+for STM32 controllers, 100 ms for ITE controllers).
+
+Board designers can override this on a per-controller basis by adding the
+``transfer-timeout-ms`` property to the controller's DTS node:
+
+.. code-block:: devicetree
+
+   &i2c1 {
+       transfer-timeout-ms = <50>;
+   };
+
+When the property is absent the driver's existing default is used unchanged,
+so boards that do not set it see no behavioural difference.
+
+This property is defined in the base ``i2c-controller.yaml`` binding and
+is therefore available on all I2C controller nodes regardless of SoC vendor.
+
+.. note::
+
+   Setting a very short timeout on a bus that carries slow devices (e.g.
+   EEPROMs performing internal write cycles) will cause spurious
+   ``-ETIMEDOUT`` errors.  Conversely, setting a very long timeout delays
+   error detection on a hung bus.  Choose a value that is comfortably
+   longer than the slowest expected transfer on the bus but short enough
+   to bound worst-case thread blocking time.
+
 Configuration Options
 *********************
 

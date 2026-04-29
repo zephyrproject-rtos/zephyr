@@ -536,6 +536,8 @@ void i2c_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 		.pclk_len = DT_INST_NUM_CLOCKS(index),						\
 		I2C_STM32_IRQ_HANDLER_FUNCTION(index)						\
 		.bitrate = DT_INST_PROP(index, clock_frequency),				\
+		.transfer_timeout_ms = DT_INST_PROP_OR(index, transfer_timeout_ms,		\
+						       CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC), \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),					\
 		IF_ENABLED(CONFIG_I2C_STM32_BUS_RECOVERY,					\
 			   (.scl = GPIO_DT_SPEC_INST_GET_OR(index, scl_gpios, {0}),		\

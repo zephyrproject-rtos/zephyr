@@ -98,10 +98,11 @@ properties:
       ECPM_BASE and the mask within that register into one value.
 
   transfer-timeout-ms:
-    type: int
     default: 100
     description: |
       Maximum time allowed for an I2C transfer.
+      ITE controllers default to 100 ms; see i2c-controller.yaml for
+      the base property definition.
 
   pinctrl-0:
     required: true

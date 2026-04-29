@@ -62,6 +62,7 @@ struct i2c_stm32_config {
 	size_t pclk_len;
 	I2C_TypeDef *i2c;
 	uint32_t bitrate;
+	uint32_t transfer_timeout_ms;
 	const struct pinctrl_dev_config *pcfg;
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
 	const struct i2c_config_timing *timings;
