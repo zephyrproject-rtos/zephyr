@@ -1,0 +1,90 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+
+config TEST_WDT_DISABLE_SUPPORTED
+	bool "Watchdog can be disabled after it was started"
+	default y
+	help
+	  This Kconfig is partially used to select test cases valid on a given platform.
+	  However, at some point, test suite requires WDT to be disabled after test.
+	  Therefore, this test suite currently can only be run on targets that
+	  support watchdog disable.
+
+config TEST_WDT_FLAG_RESET_NONE_SUPPORTED
+	bool "Watchdog flag WDT_FLAG_RESET_NONE is supported"
+	default y if SOC_FAMILY_SILABS_S2
+	help
+	  Set this Kconfig to 'y' if wdt_install_timeout() can be called with
+	  cfg.flags=WDT_FLAG_RESET_NONE.
+
+config TEST_WDT_FLAG_RESET_CPU_CORE_SUPPORTED
+	bool "Watchdog flag WDT_FLAG_RESET_CPU_CORE is supported"
+	default y if SOC_FAMILY_MICROCHIP_SAM_D5X_E5X || SOC_FAMILY_MICROCHIP_PIC32CX_SG
+	help
+	  Set this Kconfig to 'y' if wdt_install_timeout() can be called with
+	  cfg.flags=WDT_FLAG_RESET_CPU_CORE.
+
+config TEST_WDT_FLAG_RESET_SOC_SUPPORTED
+	bool "Watchdog flag WDT_FLAG_RESET_SOC is supported"
+	default y
+	help
+	  Set this Kconfig to 'y' if wdt_install_timeout() can be called with
+	  cfg.flags=WDT_FLAG_RESET_SOC.
+
+config TEST_MAX_INSTALLABLE_TIMEOUTS
+	int "Maximal number of timeouts that can be set for single Watchdog instance"
+	default 8 if NRFX_WDT
+	default 1
+	help
+	  Maximal number of timeouts that can be set with wdt_install_timeout()
+	  for the given Watchdog device.
+
+config TEST_WDT_FLAG_ONLY_ONE_TIMEOUT_VALUE_SUPPORTED
+	bool "Watchdog supports only one timeout value for all timeouts"
+	default y
+	help
+	  Set this Kconfig to 'y' if all wdt_install_timeout() calls must set identical
+	  cfg.window value.
+
+config TEST_WDT_WINDOW_MIN_SUPPORTED
+	bool "Watchdog supports lower limit of watchdog feed timeout"
+	default y if SOC_FAMILY_SILABS_S2
+	help
+	  Set this Kconfig to 'y' if wdt_install_timeout() can be called with
+	  cfg.window.min value higher than 0.
+
+config TEST_WDT_WINDOW_MAX_ALLOWED
+	hex "Maximal value of Watchdog timeout"
+	default 0x07CFFFFF if NRFX_WDT
+	default 0x40001 if SOC_FAMILY_SILABS_S2
+	default 0x4000 if SOC_FAMILY_MICROCHIP_SAM_D5X_E5X || SOC_FAMILY_MICROCHIP_PIC32CX_SG
+	default 0xFFFFFFFF if SOC_IT51XXX
+	default 0xFFFFFFF
+	help
+	  Maximal value of the Watchdog timeout passed in the
+	  wdt_install_timeout(dev, cfg.window.max) call.
+
+config TEST_WDT_OPT_PAUSE_IN_SLEEP_SUPPORTED
+	bool "Watchdog supports option that pause timer when core enters sleep"
+	default y if NRFX_WDT || SOC_FAMILY_SILABS_S2
+	help
+	  Set this Kconfig to 'y' if wdt_setup() can be called with
+	  options=WDT_OPT_PAUSE_IN_SLEEP.
+
+config TEST_WDT_OPT_PAUSE_HALTED_BY_DBG_SUPPORTED
+	bool "Watchdog supports option that pause timer when core is halted by the debugger"
+	default y
+	help
+	  Set this Kconfig to 'y' if wdt_setup() can be called with
+	  options=WDT_OPT_PAUSE_HALTED_BY_DBG.
+
+config TEST_WDT_FEED_CAN_STALL
+	bool "Watchdog may report that wdt_feed() can stall the caller"
+	help
+	  Set this Kconfig to 'y' if wdt_feed() may return -EAGAIN when completing
+	  the feed operation would stall the caller, for example due to an in-progress
+	  watchdog operation such as a previous wdt_feed() call.
+
+source "Kconfig.zephyr"
