@@ -33,8 +33,9 @@ recommended starting point is either the **latest stable release** or the
 
 .. note::
    | The next planned release is **Zephyr 4.5**, targeted for **October 2026**.
-   | The working drafts of the associated :doc:`Release Notes <release-notes-4.5>`
-     and :doc:`Migration Guide <migration-guide-4.5>` are already available.
+   | The working drafts of the associated :doc:`Release Notes
+   <release-notes-draft>`
+     and :doc:`Migration Guide <migration-guide-draft>` are already available.
 
 .. list-table::
     :header-rows: 1
