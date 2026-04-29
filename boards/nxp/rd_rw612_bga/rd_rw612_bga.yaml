@@ -28,7 +28,8 @@ supported:
   - pwm
   - spi
   - usb_device
-  - usb_host
+  - usbd
+  - usbh
   - watchdog
   - netif:eth
   - netif:openthread

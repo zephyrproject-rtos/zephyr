@@ -30,6 +30,7 @@ supported:
   - spi
   - usb_device
   - usbd
+  - usbh
   - watchdog
   - rtc
 vendor: nxp

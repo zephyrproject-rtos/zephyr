@@ -34,4 +34,6 @@ set(QEMU_FLAGS_${ARCH}
   -cpu ${qemu_riscv_cpu}
   )
 
+set(QEMU_PCI_OHCI_FLAGS addr=2.0)
+
 include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

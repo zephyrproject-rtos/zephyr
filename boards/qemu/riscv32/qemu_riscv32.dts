@@ -15,3 +15,17 @@
 &uart0 {
 	status = "okay";
 };
+
+&pcie {
+	zephyr_uhc0: pcie@2,0 {
+		compatible = "generic-ohci";
+		reg = <0x1000 0 0 0 0>;
+		vendor-id = <0x106b>;
+		device-id = <0x003f>;
+		interrupts = <1>;
+		interrupt-parent = <&pcie>;
+		maximum-speed = "full-speed";
+		dma-coherent;
+		status = "okay";
+	};
+};
