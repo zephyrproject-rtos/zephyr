@@ -8,36 +8,25 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 
-/* OpenTitan power management regs. */
-#define PWRMGR_BASE (DT_REG_ADDR(DT_NODELABEL(pwrmgr)))
-#define PWRMGR_CFG_CDC_SYNC_REG_OFFSET  0x018
-#define PWRMGR_RESET_EN_REG_OFFSET      0x02c
-#define PWRMGR_RESET_EN_WDOG_SRC_MASK   0x002
-
-/* Ibex timer registers. */
-#define RV_TIMER_BASE (DT_REG_ADDR(DT_NODELABEL(mtimer)))
+/*
+ * RV_TIMER peripheral base address.
+ *
+ * The `riscv,machine-timer` DT node (mtimer) uses `reg` to expose the mtime
+ * and mtimecmp register addresses (0x40100110 and 0x40100118) as required by
+ * the standard timer driver. DT_REG_ADDR(DT_NODELABEL(mtimer)) therefore
+ * returns 0x40100110, not the peripheral base 0x40100000. Using the DT macro
+ * here would place CTRL (offset 0x004) and INTR_ENABLE (offset 0x100) at
+ * wrong addresses, causing a store access fault in soc_early_init_hook.
+ * The peripheral base is taken directly from the OpenTitan Earl Grey address
+ * map (hw/top_earlgrey/sw/autogen/top_earlgrey.h: TOP_EARLGREY_RV_TIMER_BASE_ADDR).
+ */
+#define RV_TIMER_BASE                   0x40100000u
 #define RV_TIMER_CTRL_REG_OFFSET        0x004
 #define RV_TIMER_INTR_ENABLE_REG_OFFSET 0x100
-#define RV_TIMER_CFG0_REG_OFFSET        0x10c
-#define RV_TIMER_CFG0_PRESCALE_MASK     0xfff
-#define RV_TIMER_CFG0_PRESCALE_OFFSET   0
-#define RV_TIMER_CFG0_STEP_MASK         0xff
-#define RV_TIMER_CFG0_STEP_OFFSET       16
-#define RV_TIMER_LOWER0_OFFSET          0x110
-#define RV_TIMER_COMPARE_LOWER0_OFFSET  0x118
 
 void soc_early_init_hook(void)
 {
-	/* Enable the watchdog reset (bit 1). */
-	sys_write32(2u, PWRMGR_BASE + PWRMGR_RESET_EN_REG_OFFSET);
-	/* Write CFG_CDC_SYNC to commit change. */
-	sys_write32(1u, PWRMGR_BASE + PWRMGR_CFG_CDC_SYNC_REG_OFFSET);
-	/* Poll CFG_CDC_SYNC register until it reads 0. */
-	while (sys_read32(PWRMGR_BASE + PWRMGR_CFG_CDC_SYNC_REG_OFFSET)) {
-	}
-
-	/* Initialize the Machine Timer, so it behaves as a regular one. */
+	/* Enable the rv_timer hart and timer interrupt. */
 	sys_write32(1u, RV_TIMER_BASE + RV_TIMER_CTRL_REG_OFFSET);
-	/* Enable timer interrupts. */
 	sys_write32(1u, RV_TIMER_BASE + RV_TIMER_INTR_ENABLE_REG_OFFSET);
 }
