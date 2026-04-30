@@ -299,7 +299,7 @@ static int cmd_vendor_in(const struct shell *sh,
 	wLength = MIN(sizeof(vreq_test_buf), strtol(argv[2], NULL, 10));
 	buf = usbh_xfer_buf_alloc(udev, wLength);
 	if (!buf) {
-		shell_print(sh, "host: Failed to allocate buffer");
+		shell_error(sh, "host: Failed to allocate buffer");
 		return -ENOMEM;
 	}
 
@@ -336,7 +336,7 @@ static int cmd_vendor_out(const struct shell *sh,
 	wLength = MIN(sizeof(vreq_test_buf), strtol(argv[2], NULL, 10));
 	buf = usbh_xfer_buf_alloc(udev, wLength);
 	if (!buf) {
-		shell_print(sh, "host: Failed to allocate buffer");
+		shell_error(sh, "host: Failed to allocate buffer");
 		return -ENOMEM;
 	}
 
@@ -364,7 +364,7 @@ static int cmd_desc_device(const struct shell *sh,
 
 	err = usbh_req_desc_dev(udev, sizeof(desc), &desc);
 	if (err) {
-		shell_print(sh, "host: Failed to request device descriptor");
+		shell_error(sh, "host: Failed to request device descriptor");
 	} else {
 		print_dev_desc_indent(sh, 0, &desc);
 	}
@@ -392,7 +392,7 @@ static int cmd_desc_config(const struct shell *sh,
 
 	err = usbh_req_desc_cfg(udev, cfg, sizeof(desc), &desc);
 	if (err) {
-		shell_print(sh, "host: Failed to request configuration descriptor");
+		shell_error(sh, "host: Failed to request configuration descriptor");
 	} else {
 		print_cfg_desc_indent(sh, 0, &desc);
 	}
@@ -428,7 +428,7 @@ static int cmd_desc_string(const struct shell *sh,
 
 	err = usbh_req_desc(udev, type, idx, id, 128, buf);
 	if (err) {
-		shell_print(sh, "host: Failed to request string descriptor");
+		shell_error(sh, "host: Failed to request string descriptor");
 	} else {
 		shell_hexdump(sh, buf->data, buf->len);
 	}
