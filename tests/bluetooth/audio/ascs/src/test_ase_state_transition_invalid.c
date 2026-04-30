@@ -109,11 +109,11 @@ static void test_client_config_codec_expect_transition_error(struct bt_conn *con
 							     const struct bt_gatt_attr *ase_cp)
 {
 	const uint8_t expected_error[] = {
-		0x01,           /* Opcode = Config Codec */
-		0x01,           /* Number_of_ASEs */
+		0x01U,          /* Opcode = Config Codec */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x04,           /* Response_Code[0] = Invalid ASE State Machine Transition */
-		0x00,           /* Reason[0] */
+		0x04U,          /* Response_Code[0] = Invalid ASE State Machine Transition */
+		0x00U,          /* Reason[0] */
 	};
 
 	test_ase_control_client_config_codec(conn, ase_id, NULL);
@@ -126,11 +126,11 @@ static void test_client_config_qos_expect_transition_error(struct bt_conn *conn,
 							   const struct bt_gatt_attr *ase_cp)
 {
 	const uint8_t expected_error[] = {
-		0x02,           /* Opcode = Config QoS */
-		0x01,           /* Number_of_ASEs */
+		0x02U,          /* Opcode = Config QoS */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x04,           /* Response_Code[0] = Invalid ASE State Machine Transition */
-		0x00,           /* Reason[0] */
+		0x04U,          /* Response_Code[0] = Invalid ASE State Machine Transition */
+		0x00U,          /* Reason[0] */
 	};
 
 	test_ase_control_client_config_qos(conn, ase_id);
@@ -143,11 +143,11 @@ static void test_client_enable_expect_transition_error(struct bt_conn *conn, uin
 						       const struct bt_gatt_attr *ase_cp)
 {
 	const uint8_t expected_error[] = {
-		0x03,           /* Opcode = Enable */
-		0x01,           /* Number_of_ASEs */
+		0x03U,          /* Opcode = Enable */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x04,           /* Response_Code[0] = Invalid ASE State Machine Transition */
-		0x00,           /* Reason[0] */
+		0x04U,          /* Response_Code[0] = Invalid ASE State Machine Transition */
+		0x00U,          /* Reason[0] */
 	};
 
 	test_ase_control_client_enable(conn, ase_id);
@@ -160,11 +160,11 @@ static void test_client_receiver_start_ready_expect_transition_error(
 	struct bt_conn *conn, uint8_t ase_id, const struct bt_gatt_attr *ase_cp)
 {
 	const uint8_t expected_error[] = {
-		0x04,           /* Opcode = Receiver Start Ready */
-		0x01,           /* Number_of_ASEs */
+		0x04U,          /* Opcode = Receiver Start Ready */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x04,           /* Response_Code[0] = Invalid ASE State Machine Transition */
-		0x00,           /* Reason[0] */
+		0x04U,          /* Response_Code[0] = Invalid ASE State Machine Transition */
+		0x00U,          /* Reason[0] */
 	};
 
 	test_ase_control_client_receiver_start_ready(conn, ase_id);
@@ -177,11 +177,11 @@ static void test_client_receiver_start_ready_expect_ase_direction_error(
 	struct bt_conn *conn, uint8_t ase_id, const struct bt_gatt_attr *ase_cp)
 {
 	const uint8_t expected_error[] = {
-		0x04,           /* Opcode = Receiver Start Ready */
-		0x01,           /* Number_of_ASEs */
+		0x04U,          /* Opcode = Receiver Start Ready */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x05,           /* Response_Code[0] = Invalid ASE direction */
-		0x00,           /* Reason[0] */
+		0x05U,          /* Response_Code[0] = Invalid ASE direction */
+		0x00U,          /* Reason[0] */
 	};
 
 	test_ase_control_client_receiver_start_ready(conn, ase_id);
@@ -194,11 +194,11 @@ static void test_client_disable_expect_transition_error(struct bt_conn *conn, ui
 							const struct bt_gatt_attr *ase_cp)
 {
 	const uint8_t expected_error[] = {
-		0x05,           /* Opcode = Disable */
-		0x01,           /* Number_of_ASEs */
+		0x05U,          /* Opcode = Disable */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x04,           /* Response_Code[0] = Invalid ASE State Machine Transition */
-		0x00,           /* Reason[0] */
+		0x04U,          /* Response_Code[0] = Invalid ASE State Machine Transition */
+		0x00U,          /* Reason[0] */
 	};
 
 	test_ase_control_client_disable(conn, ase_id);
@@ -211,11 +211,11 @@ static void test_client_receiver_stop_ready_expect_transition_error(
 	struct bt_conn *conn, uint8_t ase_id, const struct bt_gatt_attr *ase_cp)
 {
 	const uint8_t expected_error[] = {
-		0x06,           /* Opcode = Receiver Stop Ready */
-		0x01,           /* Number_of_ASEs */
+		0x06U,          /* Opcode = Receiver Stop Ready */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x04,           /* Response_Code[0] = Invalid ASE State Machine Transition */
-		0x00,           /* Reason[0] */
+		0x04U,          /* Response_Code[0] = Invalid ASE State Machine Transition */
+		0x00U,          /* Reason[0] */
 	};
 
 	test_ase_control_client_receiver_stop_ready(conn, ase_id);
@@ -228,11 +228,11 @@ static void test_client_receiver_stop_ready_expect_ase_direction_error(
 	struct bt_conn *conn, uint8_t ase_id, const struct bt_gatt_attr *ase_cp)
 {
 	const uint8_t expected_error[] = {
-		0x06,           /* Opcode = Receiver Stop Ready */
-		0x01,           /* Number_of_ASEs */
+		0x06U,          /* Opcode = Receiver Stop Ready */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x05,           /* Response_Code[0] = Invalid ASE State Machine Transition */
-		0x00,           /* Reason[0] */
+		0x05U,          /* Response_Code[0] = Invalid ASE State Machine Transition */
+		0x00U,          /* Reason[0] */
 	};
 
 	test_ase_control_client_receiver_stop_ready(conn, ase_id);
@@ -245,11 +245,11 @@ static void test_client_update_metadata_expect_transition_error(
 	struct bt_conn *conn, uint8_t ase_id, const struct bt_gatt_attr *ase_cp)
 {
 	const uint8_t expected_error[] = {
-		0x07,           /* Opcode = Update Metadata */
-		0x01,           /* Number_of_ASEs */
+		0x07U,          /* Opcode = Update Metadata */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x04,           /* Response_Code[0] = Invalid ASE State Machine Transition */
-		0x00,           /* Reason[0] */
+		0x04U,          /* Response_Code[0] = Invalid ASE State Machine Transition */
+		0x00U,          /* Reason[0] */
 	};
 
 	test_ase_control_client_update_metadata(conn, ase_id);
@@ -262,11 +262,11 @@ static void test_client_release_expect_transition_error(struct bt_conn *conn, ui
 							const struct bt_gatt_attr *ase_cp)
 {
 	const uint8_t expected_error[] = {
-		0x08,           /* Opcode = Release */
-		0x01,           /* Number_of_ASEs */
+		0x08U,          /* Opcode = Release */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x04,           /* Response_Code[0] = Invalid ASE State Machine Transition */
-		0x00,           /* Reason[0] */
+		0x04U,          /* Response_Code[0] = Invalid ASE State Machine Transition */
+		0x00U,          /* Reason[0] */
 	};
 
 	test_ase_control_client_release(conn, ase_id);

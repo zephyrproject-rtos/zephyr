@@ -24,7 +24,7 @@ int bt_tbs_client_register_cb(struct bt_tbs_client_cb *cbs)
 int bt_tbs_client_discover(struct bt_conn *conn)
 {
 	if (tbs_cbs != NULL && tbs_cbs->discover != NULL) {
-		uint8_t tbs_cnt = 0;
+		uint8_t tbs_cnt = 0U;
 
 		IF_ENABLED(CONFIG_BT_TBS_CLIENT_TBS,
 			   (tbs_cnt += CONFIG_BT_TBS_CLIENT_MAX_TBS_INSTANCES));

@@ -345,7 +345,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 	char inval_bearer_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 2];
 	int err;
 
-	for (size_t i = 0; i < ARRAY_SIZE(inval_bearer_name); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(inval_bearer_name); i++) {
 		inval_bearer_name[i] = 'a';
 	}
 	inval_bearer_name[sizeof(inval_bearer_name) - 1U] = '\0';
