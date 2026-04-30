@@ -1,0 +1,30 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - flash
+tests:
+  boards.nrf.rram.throttling:
+    harness: ztest
+    harness_config:
+      fixture: external_flash
+    extra_configs:
+      - CONFIG_SOC_FLASH_NRF_THROTTLING=y
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l10/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+  boards.nrf.rram.skip_if_filled:
+    harness: ztest
+    harness_config:
+      fixture: external_flash
+    extra_configs:
+      - CONFIG_NRF_RRAM_FILL_SKIP_IF_FILLED=y
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l10/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
