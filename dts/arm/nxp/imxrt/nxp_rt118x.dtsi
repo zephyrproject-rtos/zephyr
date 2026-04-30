@@ -1660,6 +1660,7 @@
 		reg = <0x0 DT_SIZE_K(512)>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		ocram1_available: memory@4000 {
 			/* OCRAM1 first 16K access is blocked by TRDC */
