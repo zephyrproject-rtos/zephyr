@@ -49,7 +49,8 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	volatile struct adc_regs *regs = cfg->regs;
 
 	data->repeat_buffer = data->buffer;
-
+	/* Renable the ADC to support repeated sampling*/
+	regs->ctrl |= ADC_CTRL_EN;
 	regs->ctrl |= ADC_CTRL_SGLDNINTEN;
 	regs->ctrl |= ADC_CTRL_START;
 }
@@ -222,7 +223,8 @@ static void adc_rts5912_single_isr(const struct device *dev)
 		LOG_DBG("single done interrupt triggered.");
 
 		regs->ctrl &= ~(ADC_CTRL_SGLDNINTEN);
-		regs->sts &= regs->sts;
+		/* Clear the interrupt status bit by writing 1 to it. */
+		regs->sts = ADC_STS_SGLDN;
 
 		rts5912_adc_get_sample(dev);
 
