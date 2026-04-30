@@ -14,8 +14,8 @@
 
 static K_SEM_DEFINE(g_mbox_data_rx_sem, 0, 1);
 
-static uint32_t g_mbox_received_data;
-static uint32_t g_mbox_expected_data;
+static uint64_t g_mbox_received_data;
+static uint64_t g_mbox_expected_data;
 static uint32_t g_mbox_received_channel;
 static uint32_t g_mbox_expected_channel;
 
@@ -64,7 +64,7 @@ static void mbox_data_tests_before(void *f)
 
 	g_max_transfer_size_bytes = mbox_mtu_get_dt(tx_channel);
 	/* Test currently supports only transfer size up to 4 bytes */
-	if ((g_max_transfer_size_bytes < 0) || (g_max_transfer_size_bytes > 4)) {
+	if ((g_max_transfer_size_bytes < 0) || (g_max_transfer_size_bytes > 8)) {
 		printk("mbox_mtu_get() error\n");
 		zassert_false(1, "mbox invalid maximum transfer unit: %d",
 			      g_max_transfer_size_bytes);
@@ -93,10 +93,10 @@ static void mbox_data_tests_after(void *f)
 	current_channel_index++;
 }
 
-static void mbox_test(const uint32_t data)
+static void mbox_test(const uint64_t data)
 {
 	struct mbox_msg msg = {0};
-	uint32_t test_data = data;
+	uint64_t test_data = data;
 	int test_count = 0;
 	int ret_val = 0;
 
@@ -114,11 +114,12 @@ static void mbox_test(const uint32_t data)
 
 		/*
 		 * Determine expected received data based on the configured Maximum
-		 * Transfer Unit (MTU). Supported MTU sizes are 1, 2, 3, and 4 bytes.
+		 * Transfer Unit (MTU). Supported MTU sizes are 1-8 bytes.
 		 * If CONFIG_TEST_SINGLE_CPU is enabled, the received data should match
 		 * the sent data. Otherwise, it is expected to be incremented by one.
 		 */
-		g_mbox_expected_data = test_data & ~(0xFFFFFFFF << (g_max_transfer_size_bytes * 8));
+		g_mbox_expected_data = test_data & GENMASK((g_max_transfer_size_bytes * 8) - 1,
+							   0); /* Mask data to MTU size */
 #ifndef CONFIG_TEST_SINGLE_CPU
 		g_mbox_expected_data++;
 #endif
@@ -126,7 +127,7 @@ static void mbox_test(const uint32_t data)
 		k_sem_take(&g_mbox_data_rx_sem, K_FOREVER);
 
 		if (g_received_size_error) {
-			zassert_false(1, "mbox received invalid size in callback: %d",
+			zassert_false(1, "mbox received invalid size in callback: %zd",
 				      g_received_size);
 		}
 
@@ -134,7 +135,7 @@ static void mbox_test(const uint32_t data)
 
 		/* Main core check received data */
 		zassert_equal(g_mbox_expected_data, test_data,
-			      "Received test_data does not match!: Expected: %08X, Got: %08X",
+			      "Received test_data does not match!: Expected: %08llX, Got: %08llX",
 			      g_mbox_expected_data, test_data);
 
 		/* Expect reception of data on current RX channel */
