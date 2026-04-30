@@ -84,20 +84,6 @@ if(CONFIG_MBEDTLS)
     )
     zephyr_library_link_libraries(mbedTLS)
 
-  elseif(CONFIG_MBEDTLS_LIBRARY)
-    # NB: CONFIG_MBEDTLS_LIBRARY is not regression tested and is
-    # therefore susceptible to bit rot
-    target_include_directories(mbedTLS INTERFACE
-      ${CONFIG_MBEDTLS_INSTALL_PATH}
-    )
-    zephyr_link_libraries(
-      mbedtls_external
-      -L${CONFIG_MBEDTLS_INSTALL_PATH}
-      gcc
-      )
-    # Lib mbedtls_external depends on libgcc (I assume?) so to allow
-    # mbedtls_external to link with gcc we need to ensure it is placed
-    # after mbedtls_external on the linkers command line.
   endif()
 
   if(CONFIG_MBEDTLS_TLS_VERSION_1_2 OR CONFIG_MBEDTLS_TLS_VERSION_1_3)

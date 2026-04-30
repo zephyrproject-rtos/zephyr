@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
-zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedTLS)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_ATAES132A crypto_ataes132a.c)
