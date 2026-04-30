@@ -12,6 +12,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -27,6 +28,7 @@ struct uart_aesc_config {
 	DEVICE_MMIO_NAMED_ROM(regs);
 	uint64_t sys_clk_freq;
 	uint32_t current_speed;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct uart_aesc_regs {
@@ -81,6 +83,7 @@ static int uart_aesc_init(const struct device *dev)
 	const struct uart_aesc_config *cfg = DEV_CFG(dev);
 	volatile uintptr_t *base_addr = (volatile uintptr_t *)DEV_UART(dev);
 	volatile struct uart_aesc_regs *uart;
+	int ret;
 
 	DEVICE_MMIO_NAMED_MAP(dev, regs, K_MEM_CACHE_NONE);
 	LOG_DBG("IP core version: %i.%i.%i.",
@@ -91,6 +94,12 @@ static int uart_aesc_init(const struct device *dev)
 	DEVICE_MMIO_NAMED_GET(dev, regs) = ip_id_relocate_driver(base_addr);
 	LOG_DBG("Relocate driver to address 0x%lx.", DEVICE_MMIO_NAMED_GET(dev, regs));
 	uart = DEV_UART(dev);
+
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("failed to apply pinctrl");
+		return ret;
+	}
 
 	uart->clock_div = cfg->sys_clk_freq / cfg->current_speed / 8;
 	uart->frame_cfg = 7;
@@ -105,6 +114,7 @@ static DEVICE_API(uart, uart_aesc_driver_api) = {
 };
 
 #define AESC_UART_INIT(no)						     \
+	PINCTRL_DT_INST_DEFINE(no);					     \
 	static struct uart_aesc_data uart_aesc_dev_data_##no;		     \
 	static struct uart_aesc_config uart_aesc_dev_cfg_##no = {	     \
 		DEVICE_MMIO_NAMED_ROM_INIT(regs,			     \
@@ -113,6 +123,7 @@ static DEVICE_API(uart, uart_aesc_driver_api) = {
 			DT_PROP(DT_INST(no, aesc_uart), clock_frequency),    \
 		.current_speed =					     \
 			DT_PROP(DT_INST(no, aesc_uart), current_speed),	     \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(no),		     \
 	};								     \
 	DEVICE_DT_INST_DEFINE(no,					     \
 			      uart_aesc_init,				     \

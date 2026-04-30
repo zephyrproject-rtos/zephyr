@@ -15,6 +15,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/sys_io.h>
@@ -26,6 +27,7 @@ LOG_MODULE_REGISTER(aesc_gpio, CONFIG_GPIO_LOG_LEVEL);
 
 struct gpio_aesc_config {
 	DEVICE_MMIO_ROM;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct gpio_aesc_regs {
@@ -141,8 +143,10 @@ static int gpio_aesc_port_toggle_bits(const struct device *dev,
 
 static int gpio_aesc_init(const struct device *dev)
 {
+	const struct gpio_aesc_config *cfg = DEV_CFG(dev);
 	volatile uintptr_t *base_addr = (volatile uintptr_t *)DEV_GPIO(dev);
 	volatile struct gpio_aesc_regs *gpio;
+	int ret;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 	LOG_DBG("IP core version: %i.%i.%i.",
@@ -153,6 +157,12 @@ static int gpio_aesc_init(const struct device *dev)
 	DEVICE_MMIO_GET(dev) = ip_id_relocate_driver(base_addr);
 	LOG_DBG("Relocate driver to address 0x%lx.", DEVICE_MMIO_GET(dev));
 	gpio = DEV_GPIO(dev);
+
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("failed to apply pinctrl");
+		return ret;
+	}
 
 	gpio->high_ie = 0;
 	gpio->low_ie = 0;
@@ -172,9 +182,11 @@ static DEVICE_API(gpio, gpio_aesc_driver_api) = {
 };
 
 #define AESC_GPIO_INIT(no)						      \
+	PINCTRL_DT_INST_DEFINE(no);					      \
 	static struct gpio_aesc_data gpio_aesc_dev_data_##no;		      \
 	static struct gpio_aesc_config gpio_aesc_dev_cfg_##no = {	      \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(no)),			      \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(no),		      \
 	};								      \
 	DEVICE_DT_INST_DEFINE(no,					      \
 			      gpio_aesc_init,				      \

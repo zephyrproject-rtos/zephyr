@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Aesc Silicon
+ * SPDX-FileCopyrightText: 2025 Aesc Silicon
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <aesc/elemrv-n.dtsi>
+#include "elemrv_elemrv_n-pinctrl.dtsi"
 
 / {
 	model = "ElemRV-N";
@@ -58,10 +59,21 @@
 
 &gpio0 {
 	status = "okay";
+	pinctrl-0 = <&gpio0_pin0_default>;
+	pinctrl-names = "default";
+};
+
+&pinctrl {
+	status = "okay";
 };
 
 &uart0 {
 	clock-frequency = <DT_FREQ_M(20)>;
 	current-speed = <115200>;
+	pinctrl-0 = <&uart0_tx_default
+		     &uart0_rx_default
+		     &uart0_cts_default
+		     &uart0_rts_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
