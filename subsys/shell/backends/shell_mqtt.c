@@ -573,8 +573,8 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 
 		while (payload_left > 0) {
 			/* Attempt to claim `payload_left` bytes of buffer in rb */
-			size = (size_t)ring_buf_put_claim(&sh->rx_rb, &sh->rx_rb_ptr,
-							  payload_left);
+			size = (size_t) ring_buf_put_ptr(&sh->rx_rb,
+							 &sh->rx_rb_ptr);
 			/* Read `size` bytes of payload from mqtt */
 			rc = mqtt_read_publish_payload_blocking(client, sh->rx_rb_ptr, size);
 
@@ -586,7 +586,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 
 			size = (size_t)rc;
 			/* Indicate that `size` bytes of payload has been written into rb */
-			(void)ring_buf_put_finish(&sh->rx_rb, size);
+			ring_buf_commit(&sh->rx_rb, size);
 			/* Update `payload_left` */
 			payload_left -= size;
 			/* Tells the shell that we have new data for it */

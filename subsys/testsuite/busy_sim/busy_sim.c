@@ -58,15 +58,14 @@ static void rng_pool_work_handler(struct k_work *work)
 	uint32_t len;
 	const struct busy_sim_config *config = busy_sim_dev->config;
 
-	len = ring_buf_put_claim(&rnd_rbuf, &buf, BUFFER_SIZE - 1);
+	len = ring_buf_put_ptr(&rnd_rbuf, &buf);
 	if (len) {
 		int err = entropy_get_entropy(config->entropy, buf, len);
 
 		if (err == 0) {
-			ring_buf_put_finish(&rnd_rbuf, len);
+			ring_buf_commit(&rnd_rbuf, len);
 			return;
 		}
-		ring_buf_put_finish(&rnd_rbuf, 0);
 	}
 
 	k_work_submit(work);

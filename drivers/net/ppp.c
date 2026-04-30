@@ -931,8 +931,7 @@ static int ppp_consume_ringbuf(struct ppp_driver_context *ppp)
 	size_t len, tmp;
 	int ret;
 
-	len = ring_buf_get_claim(&ppp->rx_ringbuf, &data,
-				 CONFIG_NET_PPP_RINGBUF_SIZE);
+	len = ring_buf_get_ptr(&ppp->rx_ringbuf, &data);
 	if (len == 0) {
 		LOG_DBG("Ringbuf %p is empty!", &ppp->rx_ringbuf);
 		return 0;
@@ -954,7 +953,7 @@ static int ppp_consume_ringbuf(struct ppp_driver_context *ppp)
 		}
 	} while (--tmp);
 
-	ret = ring_buf_get_finish(&ppp->rx_ringbuf, len);
+	ring_buf_consume(&ppp->rx_ringbuf, len);
 	if (ret < 0) {
 		LOG_DBG("Cannot flush ring buffer (%d)", ret);
 	}

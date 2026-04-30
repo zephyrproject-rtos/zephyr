@@ -10,14 +10,14 @@
 static struct ring_buf instr_ring_buf;
 static uint8_t instr_buffer[CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_TRACE_BUFFER_SIZE + 1];
 
-uint32_t instr_buffer_put_claim(uint8_t **data, uint32_t size)
+uint32_t instr_buffer_put_claim(uint8_t **data)
 {
-	return ring_buf_put_claim(&instr_ring_buf, data, size);
+	return ring_buf_put_ptr(&instr_ring_buf, data);
 }
 
-int instr_buffer_put_finish(uint32_t size)
+void instr_buffer_put_finish(uint32_t size)
 {
-	return ring_buf_put_finish(&instr_ring_buf, size);
+	ring_buf_commit(&instr_ring_buf, size);
 }
 
 uint32_t instr_buffer_put(uint8_t *data, uint32_t size)
@@ -25,14 +25,14 @@ uint32_t instr_buffer_put(uint8_t *data, uint32_t size)
 	return ring_buf_put(&instr_ring_buf, data, size);
 }
 
-uint32_t instr_buffer_get_claim(uint8_t **data, uint32_t size)
+uint32_t instr_buffer_get_claim(uint8_t **data)
 {
-	return ring_buf_get_claim(&instr_ring_buf, data, size);
+	return ring_buf_get_ptr(&instr_ring_buf, data);
 }
 
-int instr_buffer_get_finish(uint32_t size)
+void instr_buffer_get_finish(uint32_t size)
 {
-	return ring_buf_get_finish(&instr_ring_buf, size);
+	ring_buf_consume(&instr_ring_buf, size);
 }
 
 uint32_t instr_buffer_get(uint8_t *data, uint32_t size)
