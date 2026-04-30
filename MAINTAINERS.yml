@@ -2168,7 +2168,6 @@ Documentation Infrastructure:
 "Drivers: Mbox":
   status: odd fixes
   collaborators:
-    - wearyzen
     - ithinuel
   files:
     - include/zephyr/drivers/mbox.h
@@ -6560,7 +6559,6 @@ West:
     - valeriosetti
     - tomi-font
   collaborators:
-    - wearyzen
     - ithinuel
   files:
     - modules/mbedtls/
@@ -6715,7 +6713,6 @@ West:
     - tomi-font
   collaborators:
     - Vge0rge
-    - wearyzen
     - ithinuel
     - valeriosetti
     - JordanYates
@@ -6739,7 +6736,6 @@ West:
     - tomi-font
   collaborators:
     - Vge0rge
-    - wearyzen
     - ithinuel
     - valeriosetti
     - JordanYates
@@ -6787,7 +6783,6 @@ West:
     - tomi-font
   collaborators:
     - Vge0rge
-    - wearyzen
     - ithinuel
     - valeriosetti
     - JordanYates
