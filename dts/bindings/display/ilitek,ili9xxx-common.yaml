@@ -36,3 +36,27 @@ properties:
     type: boolean
     description: |
       Panel controller expects RGB color channel order (not byte-order) instead of BGR.
+
+  h-mirror:
+    type: boolean
+    description: |
+      Enable horizontal mirroring correction.
+      Used when display appears left-right flipped despite correct rotation value.
+
+  v-mirror:
+    type: boolean
+    description: |
+      Enable vertical mirroring correction.
+      Used when display appears upside-down despite correct rotation value.
+
+  bottom-top-refresh:
+    type: boolean
+    description: |
+      Controls whether panel vertical scanning goes bottom->top, instead of default top->bottom.
+      Only for special refresh scenarios (rarely needed).
+
+  right-left-refresh:
+    type: boolean
+    description: |
+      Controls whether panel horizontal scanning goes right->left, instead of default left->right.
+      Only for special refresh scenarios (rarely needed).

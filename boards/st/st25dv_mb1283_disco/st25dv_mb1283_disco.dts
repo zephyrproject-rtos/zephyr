@@ -93,6 +93,7 @@
 			width = <240>;
 			height = <320>;
 			duplex = <0x800>;
+			v-mirror;
 		};
 	};
 };
