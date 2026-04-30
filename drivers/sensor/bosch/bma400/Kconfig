@@ -1,0 +1,34 @@
+# BMA400 3-axis accelerometer config options
+#
+# Copyright (c) 2025 Luca Gessi
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMA400
+	bool "BMA400 3-axis acceleration sensor"
+	default y
+	depends on DT_HAS_BOSCH_BMA400_ENABLED
+	depends on SENSOR_ASYNC_API
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMA400),spi)
+	select SPI_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMA400),spi)
+	select RTIO_WORKQ
+	help
+	  Driver for Bosch BMA400
+
+if BMA400
+
+config BMA400_STREAM
+	bool "Stream requests"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_BOSCH_BMA400),int1-gpios)
+	help
+	  Use this config option to enable streaming sensor data via RTIO subsystem.
+
+config BMA400_WAKEUP
+	bool "Auto wakeup and lowpower based on activity detection"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_BOSCH_BMA400),int1-gpios)
+	help
+	  Auto wakeup and auto lowpower based on activity detection.
+
+endif # BMA400

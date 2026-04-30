@@ -1,0 +1,154 @@
+# Copyright (c) 2025 Luca Gessi
+# SPDX-License-Identifier: Apache-2.0
+
+include: [sensor-device.yaml]
+
+properties:
+
+  int1-gpios:
+    type: phandle-array
+    description: |
+      Identifies pin for the INT1 signal on the sensor.
+
+  int2-gpios:
+    type: phandle-array
+    description: |
+      Identifies pin for the INT2 signal on the sensor.
+
+  motion-detect-pin-sel:
+    type: int
+    default: 2
+    description: |
+      Selects the interrupt pin for motion detection events.
+      1: INT1 pin
+      2: INT2 pin (default)
+      The driver supports mapping multiple events to the same pin, but using
+      separate pins for motion and FIFO events is recommended.
+    enum: [1, 2]
+
+  fifo-pin-sel:
+    type: int
+    default: 1
+    description: |
+      Selects the interrupt pin for FIFO events.
+      1: INT1 pin (default)
+      2: INT2 pin
+      The driver supports mapping multiple events to the same pin, but using
+      separate pins for motion and FIFO events is recommended.
+    enum: [1, 2]
+
+  auto-wakeup-num-of-samples:
+    type: int
+    default: 0
+    description: |
+      Specify the number of samples for auto wakeup mode in ticks.
+      The default corresponds to the reset value of the register field.
+      Valid range: 0 - 7
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+
+  auto-lowpower-en:
+    type: boolean
+    description: |
+      Auto low power functionality
+
+  auto-wakeup-en:
+    type: boolean
+    description: |
+      Auto wakeup functionality
+
+  auto-wakeup-threshold:
+    type: int
+    default: 0
+    description: |
+      Specify the threshold for auto wakeup mode.
+      The default corresponds to the reset value of the register field.
+      Valid range: 0 - 255
+
+  auto-lowpower-threshold:
+    type: int
+    default: 0
+    description: |
+      Specify the threshold for inactivity detection for auto low power mode.
+      The default corresponds to the reset value of the register field.
+      Valid range: 0 - 255
+
+  auto-lowpower-duration:
+    type: int
+    default: 0
+    description: |
+      Specify the default duration for inactivity detection for auto low power mode in ticks.
+      The default corresponds to the reset value of the register field.
+      Valid range: 0 - 65535
+
+  fullscale-range:
+    type: int
+    default: 1
+    description: |
+      Selects the full scale range for the bma400.
+      The default corresponds to the reset value of the register field.
+      0: +- 2g
+      1: +- 4g (default)
+      2: +- 8g
+      3: +- 16g
+    enum: [0, 1, 2, 3]
+
+  odr:
+    type: int
+    default: 4
+    description: |
+      Selects the output data rate for the bma400.
+      The default corresponds to the reset value of the register field.
+      0: 12.5Hz
+      1: 25Hz
+      2: 50Hz
+      3: 100Hz
+      4: 200Hz (default)
+      5: 400Hz
+      6: 800Hz
+    enum: [0, 1, 2, 3, 4, 5, 6]
+
+  filt1-bw:
+    type: int
+    default: 0
+    description: |
+      Selects the bandwidth for the first filter stage.
+      The default corresponds to the reset value of the register field.
+      0: 0.4xODR
+      1: 0.2xODR
+    enum: [0, 1]
+
+  osr-lp:
+    type: int
+    default: 0
+    description: |
+      Select the oversampling ratio for low power mode.
+      The default corresponds to the reset value of the register field.
+      0: lowest power, lowest oversampling rate, lowest accuracy
+      3: highest accuracy, highest oversampling rate, highest power settings 0, 1, 2 and 3 allow
+        linearly trading power versus accuracy(noise
+    enum: [0, 1, 2, 3]
+
+  motion-threshold:
+    type: int
+    default: 0
+    description: |
+      Motion detection threshold in 8 mg/LSB.
+      The default corresponds to the reset value of the register field.
+      Valid range: 0 - 255
+
+  motion-duration:
+    type: int
+    default: 0
+    description: |
+      Motion duration in ticks.
+      The timebase for the ticks is determined by the output data rate (ODR) of the sensor.
+      The default corresponds to the reset value of the register field.
+      Valid range: 0 - 65535
+
+  fifo-watermark:
+    type: int
+    default: 0
+    description: |
+      FIFO watermark level in bytes.
+      The default corresponds to the reset value of the register field.
+      Valid range: 0 - 2047

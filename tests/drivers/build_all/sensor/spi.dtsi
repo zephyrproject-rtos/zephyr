@@ -515,3 +515,20 @@ test_spi_adxl355: adxl355@3e {
 	spi-max-frequency = <0>;
 	int1-gpios = <&test_gpio 0 0>;
 };
+
+test_spi_bma400: bma400@3f {
+	compatible = "bosch,bma400";
+	reg = <0x3f>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	wakeup-source;
+	auto-wakeup-en;
+	auto-lowpower-en;
+	auto-lowpower-duration = <200>;
+	auto-lowpower-threshold = <20>;
+	auto-wakeup-threshold = <2>;
+	auto-wakeup-num-of-samples = <0>;
+	motion-detect-pin-sel = <2>;
+	fifo-pin-sel = <1>;
+};
