@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Bosch Sensortec GmbH
  * Copyright (c) 2022, Leonard Pollak
+ * Copyright (c) 2025 Alif Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,9 @@
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#ifdef CONFIG_SENSOR_ASYNC_API
+#include <zephyr/drivers/sensor.h>
+#endif
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/i2c.h>
 
@@ -216,5 +220,55 @@ struct bme680_data {
 	uint8_t mem_page;
 #endif
 };
+
+/* Raw compensated reading values (not sensor_value) */
+struct bme680_reading {
+	int32_t comp_temp;
+	uint32_t comp_press;
+	uint32_t comp_humidity;
+	uint32_t comp_gas;
+};
+
+#ifdef CONFIG_SENSOR_ASYNC_API
+
+/* RTIO encoded data structures - following BME280 pattern */
+struct bme680_decoder_header {
+	uint64_t timestamp;
+} __attribute__((__packed__));
+
+struct bme680_encoded_data {
+	struct bme680_decoder_header header;
+	struct {
+		uint8_t has_temp : 1;
+		uint8_t has_press : 1;
+		uint8_t has_humidity : 1;
+		uint8_t has_gas : 1;
+	} __attribute__((__packed__));
+	struct bme680_reading reading;
+};
+
+/* Q31 conversion constants (similar to BME280) */
+#define BME680_TEMP_SHIFT     10  /* Q21.10 for temperature */
+#define BME680_PRESS_SHIFT    8   /* Q24.8 for pressure */
+#define BME680_HUM_SHIFT      10  /* Q22.10 for humidity */
+#define BME680_GAS_SHIFT      0   /* Integer for gas resistance */
+
+/* Q31 multiplier macros: 2^(31-shift) */
+#define BME680_TEMP_Q31_MULT  (1LL << (31 - BME680_TEMP_SHIFT))
+#define BME680_PRESS_Q31_MULT (1LL << (31 - BME680_PRESS_SHIFT))
+#define BME680_HUM_Q31_MULT   (1LL << (31 - BME680_HUM_SHIFT))
+
+/* Unified Q31 conversion macro: val * 2^(31-shift) / div */
+#define BME680_Q31_CONV(val, mult, div) ((int32_t)((int64_t)(val) * (mult) / (div)))
+
+/* Function declarations */
+int bme680_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
+
+void bme680_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+
+int bme680_sample_fetch_helper(const struct device *dev, enum sensor_channel chan,
+			       struct bme680_reading *reading);
+
+#endif /* CONFIG_SENSOR_ASYNC_API */
 
 #endif /* __ZEPHYR_DRIVERS_SENSOR_BME680_H__ */
