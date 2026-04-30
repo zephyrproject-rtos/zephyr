@@ -22,6 +22,7 @@
 #include "image_info.h"
 #include "image_check.h"
 #include "rom_uuid.h"
+#include "aon_reg.h"
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -128,7 +129,6 @@ static void rtl87x2g_isr_register(void)
 
 	irq_unlock(key);
 }
-
 void soc_early_init_hook(void)
 {
 	/* [Phase 1] Vector Table Relocation:
@@ -165,8 +165,21 @@ void soc_early_init_hook(void)
 	/* Apply PMU voltage tuning (LDO/PWM/PFM). */
 	pmu_apply_voltage_tune();
 
-	/* Restart power sequence to latch new settings. */
-	pmu_power_on_sequence_restart();
+	/* RTK PM: use km4_aon_boot_done to distinguish between Power Down mode
+	 * wakeup and HW reset/first boot.
+	 */
+	bool aon_boot_done = AON_REG_READ_BITFIELD(AON_NS_REG0X_FW_GENERAL_NS, km4_aon_boot_done);
+
+	if (!aon_boot_done) {
+		/* Restart power sequence to latch new settings. */
+		pmu_power_on_sequence_restart();
+	} else {
+		/* TODO: implement Power Down mode resume flow
+		 * - si_flow_after_exit_low_power_mode();
+		 * - pmu_pm_exit();
+		 */
+	}
+	AON_REG_WRITE_BITFIELD(AON_NS_REG0X_FW_GENERAL_NS, km4_aon_boot_done, 1);
 
 	/* Initialize HAL hardware (RXI300) and CPU features (DWT, FPU). */
 	hal_setup_hardware();
@@ -219,6 +232,9 @@ void soc_late_init_hook(void)
 	 * Register ROM-installed ISRs to Zephyr and restore _isr_wrapper.
 	 */
 	rtl87x2g_isr_register();
+
+	/* RTK PM: mark boot done. Used to distinguish HW reset from DLPS wakeup. */
+	AON_REG_WRITE_BITFIELD(AON_NS_REG0X_FW_GENERAL_NS, km4_pon_boot_done, 1);
 }
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
