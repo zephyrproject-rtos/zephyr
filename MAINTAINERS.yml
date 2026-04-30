@@ -1800,7 +1800,7 @@ Documentation Infrastructure:
     - tests/drivers/firmware/
     - include/zephyr/drivers/firmware/
     - dts/bindings/firmware/
-    - doc/hardware/arch/arm-scmi.rst
+    - doc/hardware/firmware/
     - samples/drivers/firmware/
   labels:
     - "area: Firmware"
