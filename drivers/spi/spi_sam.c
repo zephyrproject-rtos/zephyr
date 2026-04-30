@@ -139,10 +139,15 @@ static int spi_sam_configure(const struct device *dev,
 		spi_csr |= SPI_CSR_NCPHA;
 	}
 
-	if (SPI_WORD_SIZE_GET(config->operation) != 8) {
-		return -ENOTSUP;
-	} else {
-		spi_csr |= SPI_CSR_BITS(SPI_CSR_BITS_8_BIT);
+	{
+		uint8_t word_size = SPI_WORD_SIZE_GET(config->operation);
+
+		if (word_size < 8 || word_size > 16) {
+			LOG_ERR("Unsupported word size %u (must be 8-16)",
+				word_size);
+			return -ENOTSUP;
+		}
+		spi_csr |= SPI_CSR_BITS(word_size - 8);
 	}
 
 	/* Use the requested or next highest possible frequency */
@@ -168,6 +173,63 @@ static void spi_sam_finish(Spi *regs)
 
 	while (regs->SPI_SR & SPI_SR_RDRF) {
 		(void)regs->SPI_RDR;
+	}
+}
+
+/* Helper: check if current SPI config uses wide (>8 bit) words */
+static inline bool spi_sam_is_wide(const struct device *dev)
+{
+	struct spi_sam_data *data = dev->data;
+
+	return SPI_WORD_SIZE_GET(data->ctx.config->operation) > 8;
+}
+
+/* 16-bit-wide fast path for 9-16 bit word sizes.
+ * Each word is stored as a uint16_t in the buffer.
+ */
+static void spi_sam_fast_tx_16(Spi *regs, const uint8_t *tx_buf,
+			       const uint32_t tx_buf_len)
+{
+	const uint16_t *p = (const uint16_t *)tx_buf;
+	size_t words = tx_buf_len / 2;
+
+	for (size_t i = 0; i < words; i++) {
+		while ((regs->SPI_SR & SPI_SR_TDRE) == 0) {
+		}
+		regs->SPI_TDR = SPI_TDR_TD(p[i]);
+	}
+}
+
+static void spi_sam_fast_rx_16(Spi *regs, uint8_t *rx_buf,
+			       const uint32_t rx_buf_len)
+{
+	uint16_t *rx = (uint16_t *)rx_buf;
+	size_t words = rx_buf_len / 2;
+
+	for (size_t i = 0; i < words; i++) {
+		while ((regs->SPI_SR & SPI_SR_TDRE) == 0) {
+		}
+		regs->SPI_TDR = SPI_TDR_TD(0);
+		while ((regs->SPI_SR & SPI_SR_RDRF) == 0) {
+		}
+		rx[i] = (uint16_t)regs->SPI_RDR;
+	}
+}
+
+static void spi_sam_fast_txrx_16(Spi *regs, const uint8_t *tx_buf,
+				 const uint8_t *rx_buf, const uint32_t len)
+{
+	const uint16_t *tx = (const uint16_t *)tx_buf;
+	uint16_t *rx = (uint16_t *)rx_buf;
+	size_t words = len / 2;
+
+	for (size_t i = 0; i < words; i++) {
+		while ((regs->SPI_SR & SPI_SR_TDRE) == 0) {
+		}
+		regs->SPI_TDR = SPI_TDR_TD(tx[i]);
+		while ((regs->SPI_SR & SPI_SR_RDRF) == 0) {
+		}
+		rx[i] = (uint16_t)regs->SPI_RDR;
 	}
 }
 
@@ -448,14 +510,22 @@ static inline int spi_sam_rx(const struct device *dev,
 	if ((rx_buf_len < SAM_SPI_DMA_THRESHOLD || cfg->dma_dev == NULL) &&
 	    !IS_ENABLED(CONFIG_SPI_RTIO)) {
 		key = spi_spin_lock(dev);
-		spi_sam_fast_rx(regs, rx_buf, rx_buf_len);
+		if (spi_sam_is_wide(dev)) {
+			spi_sam_fast_rx_16(regs, rx_buf, rx_buf_len);
+		} else {
+			spi_sam_fast_rx(regs, rx_buf, rx_buf_len);
+		}
 	} else {
 		/* RTIO Transfers should always fall here */
 		return spi_sam_dma_txrx(dev, regs, NULL, rx_buf, rx_buf_len);
 	}
 #else
 	key = spi_spin_lock(dev);
-	spi_sam_fast_rx(regs, rx_buf, rx_buf_len);
+	if (spi_sam_is_wide(dev)) {
+		spi_sam_fast_rx_16(regs, rx_buf, rx_buf_len);
+	} else {
+		spi_sam_fast_rx(regs, rx_buf, rx_buf_len);
+	}
 #endif
 	spi_sam_finish(regs);
 
@@ -476,14 +546,22 @@ static inline int spi_sam_tx(const struct device *dev,
 	if ((tx_buf_len < SAM_SPI_DMA_THRESHOLD || cfg->dma_dev == NULL) &&
 	    !IS_ENABLED(CONFIG_SPI_RTIO)) {
 		key = spi_spin_lock(dev);
-		spi_sam_fast_tx(regs, tx_buf, tx_buf_len);
+		if (spi_sam_is_wide(dev)) {
+			spi_sam_fast_tx_16(regs, tx_buf, tx_buf_len);
+		} else {
+			spi_sam_fast_tx(regs, tx_buf, tx_buf_len);
+		}
 	} else {
 		/* RTIO Transfers should always fall here */
 		return spi_sam_dma_txrx(dev, regs, tx_buf, NULL, tx_buf_len);
 	}
 #else
 	key = spi_spin_lock(dev);
-	spi_sam_fast_tx(regs, tx_buf, tx_buf_len);
+	if (spi_sam_is_wide(dev)) {
+		spi_sam_fast_tx_16(regs, tx_buf, tx_buf_len);
+	} else {
+		spi_sam_fast_tx(regs, tx_buf, tx_buf_len);
+	}
 #endif
 	spi_sam_finish(regs);
 	spi_spin_unlock(dev, key);
@@ -505,14 +583,22 @@ static inline int spi_sam_txrx(const struct device *dev,
 	if ((buf_len < SAM_SPI_DMA_THRESHOLD || cfg->dma_dev == NULL) &&
 	    !IS_ENABLED(CONFIG_SPI_RTIO)) {
 		key = spi_spin_lock(dev);
-		spi_sam_fast_txrx(regs, tx_buf, rx_buf, buf_len);
+		if (spi_sam_is_wide(dev)) {
+			spi_sam_fast_txrx_16(regs, tx_buf, rx_buf, buf_len);
+		} else {
+			spi_sam_fast_txrx(regs, tx_buf, rx_buf, buf_len);
+		}
 	} else {
 		/* RTIO Transfers should always fall here */
 		return spi_sam_dma_txrx(dev, regs, tx_buf, rx_buf, buf_len);
 	}
 #else
 	key = spi_spin_lock(dev);
-	spi_sam_fast_txrx(regs, tx_buf, rx_buf, buf_len);
+	if (spi_sam_is_wide(dev)) {
+		spi_sam_fast_txrx_16(regs, tx_buf, rx_buf, buf_len);
+	} else {
+		spi_sam_fast_txrx(regs, tx_buf, rx_buf, buf_len);
+	}
 #endif
 	spi_sam_finish(regs);
 	spi_spin_unlock(dev, key);
