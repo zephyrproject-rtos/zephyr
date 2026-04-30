@@ -384,8 +384,13 @@ static void cb_handler_rx(struct modbus_context *ctx)
 
 	} else {
 		int n;
+		size_t space;
 
-		if (cfg->uart_buf_ctr == CONFIG_MODBUS_BUFFER_SIZE) {
+		/* Use >= (not ==) so a previous iteration that overshot the
+		 * buffer by even one byte cannot be missed here -- once ==
+		 * misses, uart_buf_ptr walks unbounded into adjacent .data.
+		 */
+		if (cfg->uart_buf_ctr >= CONFIG_MODBUS_BUFFER_SIZE) {
 			/* Buffer full. Disable interrupt until timeout. */
 			modbus_serial_rx_disable(ctx);
 			return;
@@ -395,9 +400,18 @@ static void cb_handler_rx(struct modbus_context *ctx)
 		k_timer_start(&cfg->rtu_timer,
 			      K_USEC(cfg->rtu_timeout), K_NO_WAIT);
 
-		n = uart_fifo_read(cfg->dev, cfg->uart_buf_ptr,
-				   (CONFIG_MODBUS_BUFFER_SIZE -
-				    cfg->uart_buf_ctr));
+		space = CONFIG_MODBUS_BUFFER_SIZE - cfg->uart_buf_ctr;
+		n = uart_fifo_read(cfg->dev, cfg->uart_buf_ptr, space);
+		if (n < 0) {
+			return;
+		}
+		/* Defensive clamp: some UART drivers return the number of
+		 * bytes in the FIFO rather than respecting the requested
+		 * size. Never advance past the end of uart_buf[].
+		 */
+		if ((size_t)n > space) {
+			n = (int)space;
+		}
 
 		cfg->uart_buf_ptr += n;
 		cfg->uart_buf_ctr += n;
