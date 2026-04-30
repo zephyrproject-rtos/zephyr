@@ -6,3 +6,14 @@ project(shell)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
+
+if(CONFIG_SHELL_ALIASES_HAS_FILE)
+  set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
+  set(aliases_src ${CONFIG_SHELL_ALIASES_FILE})
+
+  generate_shell_aliases_inc_file_for_target(
+    app
+    ${aliases_src}
+    ${gen_dir}/generated-shell-aliases.inc
+  )
+endif()
