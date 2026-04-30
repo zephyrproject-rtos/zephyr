@@ -663,9 +663,16 @@ static inline void __arch_mem_map(void *vaddr, uintptr_t paddr, uint32_t attrs, 
 	if (ret) {
 		sys_snode_t *node;
 		struct arch_mem_domain *domain;
-		k_spinlock_key_t key;
 
-		key = k_spin_lock(&z_mem_domain_lock);
+		/*
+		 * arch_mem_map() already holds xtensa_mmu_lock when calling into this
+		 * helper. Re-locking z_mem_domain_lock here inverts the ordering used
+		 * by k_mem_domain_deinit() -> arch_mem_domain_deinit(), which takes
+		 * z_mem_domain_lock before xtensa_mmu_lock.
+		 *
+		 * xtensa_domain_list and the per-domain page tables are already
+		 * serialized by xtensa_mmu_lock, so do not nest z_mem_domain_lock here.
+		 */
 		SYS_SLIST_FOR_EACH_NODE(&xtensa_domain_list, node) {
 			domain = CONTAINER_OF(node, struct arch_mem_domain, node);
 
@@ -679,7 +686,6 @@ static inline void __arch_mem_map(void *vaddr, uintptr_t paddr, uint32_t attrs, 
 			 */
 			xtensa_mmu_compute_domain_regs(domain);
 		}
-		k_spin_unlock(&z_mem_domain_lock, key);
 	}
 #endif /* CONFIG_USERSPACE */
 }
@@ -837,15 +843,18 @@ static inline void __arch_mem_unmap(void *vaddr)
 #ifdef CONFIG_USERSPACE
 	sys_snode_t *node;
 	struct arch_mem_domain *domain;
-	k_spinlock_key_t key;
 
-	key = k_spin_lock(&z_mem_domain_lock);
+	/*
+	 * arch_mem_unmap() already holds xtensa_mmu_lock, which is the lock
+	 * serializing xtensa_domain_list walks and page table updates in this file.
+	 * Avoid taking z_mem_domain_lock here to keep a consistent global order
+	 * with k_mem_domain_deinit() -> arch_mem_domain_deinit().
+	 */
 	SYS_SLIST_FOR_EACH_NODE(&xtensa_domain_list, node) {
 		domain = CONTAINER_OF(node, struct arch_mem_domain, node);
 
 		(void)l2_page_table_unmap(domain->ptables, vaddr);
 	}
-	k_spin_unlock(&z_mem_domain_lock, key);
 #endif /* CONFIG_USERSPACE */
 }
 
