@@ -29,6 +29,7 @@ struct i2c_cc13xx_cc26xx_data {
 	struct k_sem lock;
 	struct k_sem complete;
 	volatile uint32_t error;
+	struct i2c_target_config *target_cfg;
 #ifdef CONFIG_PM
 	Power_NotifyObj postNotify;
 	uint32_t dev_config;
@@ -210,6 +211,9 @@ static void i2c_cc13xx_cc26xx_isr(const struct device *dev)
 	const struct i2c_cc13xx_cc26xx_config *config = dev->config;
 	struct i2c_cc13xx_cc26xx_data *data = dev->data;
 	const uint32_t base = config->base;
+	uint32_t slave_int, slave_status;
+	uint8_t val;
+	int ret;
 
 	if (I2CMasterIntStatus(base, true)) {
 		I2CMasterIntClear(base);
@@ -217,6 +221,65 @@ static void i2c_cc13xx_cc26xx_isr(const struct device *dev)
 		data->error = I2CMasterErr(base);
 
 		k_sem_give(&data->complete);
+	}
+
+	if (!data->target_cfg) {
+		return;
+	}
+
+	slave_int = I2CSlaveIntStatus(base, true);
+	if (!slave_int) {
+		return;
+	}
+
+	slave_status = I2CSlaveStatus(base);
+	I2CSlaveIntClear(base, slave_int);
+
+	/* Target R/W requsts
+	 *  - TREQ     → Controller is requesting data (target transmit / read request)
+	 *  - RREQ_FBR → Controller is sending data (target receive / write request)
+	 */
+	if (slave_int & I2C_SLAVE_INT_DATA) {
+		/* READ REQUEST (Target → Controller) */
+		if (slave_status & I2C_SLAVE_ACT_TREQ) {
+			/* Select callback based on transaction phase:
+			 *  - START flag set  → first byte of read transaction
+			 *  - otherwise       → subsequent bytes
+			 */
+			if (slave_int & I2C_SLAVE_INT_START) {
+				/* Start of target read request. */
+				ret = data->target_cfg->callbacks->read_requested(data->target_cfg,
+										  &val);
+			} else {
+				/* Continuation of target read request. */
+				ret = data->target_cfg->callbacks->read_processed(data->target_cfg,
+										  &val);
+			}
+
+			if (ret == 0) {
+				I2CSlaveDataPut(base, val);
+			}
+		}
+
+		/* WRITE REQUEST (Controller → Target) */
+		if (slave_status & I2C_SLAVE_ACT_RREQ_FBR) {
+			/* On START condition, notify target that a write transaction begins.
+			 * Unlike read_requested(), write_requested() does not return a byte,
+			 * it only signals the start of reception.
+			 */
+			if (slave_int & I2C_SLAVE_INT_START) {
+				ret = data->target_cfg->callbacks->write_requested(
+					data->target_cfg);
+			}
+
+			val = I2CSlaveDataGet(base);
+			data->target_cfg->callbacks->write_received(data->target_cfg, val);
+		}
+	}
+
+	/* STOP condition. The current transaction has ended. */
+	if (slave_int & I2C_SLAVE_INT_STOP) {
+		data->target_cfg->callbacks->stop(data->target_cfg);
 	}
 }
 
@@ -355,9 +418,46 @@ static int i2c_cc13xx_cc26xx_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_I2C_TARGET
+static int i2c_cc13xx_cc26xx_target_register(const struct device *dev,
+					     struct i2c_target_config *cfg)
+{
+	const struct i2c_cc13xx_cc26xx_config *config = dev->config;
+	struct i2c_cc13xx_cc26xx_data *data = dev->data;
+
+	data->target_cfg = cfg;
+	I2CSlaveInit(config->base, cfg->address);
+	I2CSlaveIntEnable(config->base,
+			  I2C_SLAVE_INT_START | I2C_SLAVE_INT_DATA | I2C_SLAVE_INT_STOP);
+
+	return 0;
+}
+
+static int i2c_cc13xx_cc26xx_target_unregister(const struct device *dev,
+					       struct i2c_target_config *cfg)
+{
+	const struct i2c_cc13xx_cc26xx_config *config = dev->config;
+	struct i2c_cc13xx_cc26xx_data *data = dev->data;
+
+	I2CSlaveDisable(config->base);
+	I2CSlaveIntDisable(config->base,
+			   I2C_SLAVE_INT_START | I2C_SLAVE_INT_DATA | I2C_SLAVE_INT_STOP);
+	I2CSlaveIntClear(config->base,
+			 I2C_SLAVE_INT_START | I2C_SLAVE_INT_DATA | I2C_SLAVE_INT_STOP);
+
+	data->target_cfg = NULL;
+
+	return 0;
+}
+#endif /* I2C_TARGET */
+
 static DEVICE_API(i2c, i2c_cc13xx_cc26xx_driver_api) = {
 	.configure = i2c_cc13xx_cc26xx_configure,
 	.transfer = i2c_cc13xx_cc26xx_transfer,
+#ifdef CONFIG_I2C_TARGET
+	.target_register = i2c_cc13xx_cc26xx_target_register,
+	.target_unregister = i2c_cc13xx_cc26xx_target_unregister,
+#endif /* I2C_TARGET */
 #ifdef CONFIG_I2C_RTIO
 	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
