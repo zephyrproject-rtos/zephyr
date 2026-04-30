@@ -1,0 +1,16 @@
+identifier: nano_ch32v317/ch32v317/ram_128k
+name: MuseLab nanoCH32V317
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 128
+flash: 480
+supported:
+  - gpio
+  - i2c
+  - netif:eth
+  - uart
+  - spi
+vendor: wch

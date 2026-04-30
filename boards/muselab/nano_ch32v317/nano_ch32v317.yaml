@@ -1,0 +1,16 @@
+identifier: nano_ch32v317
+name: MuseLab nanoCH32V317
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 32
+flash: 256
+supported:
+  - gpio
+  - i2c
+  - netif:eth
+  - uart
+  - spi
+vendor: muselab

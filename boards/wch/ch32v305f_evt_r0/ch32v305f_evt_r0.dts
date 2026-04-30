@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2026 James Bennion-Pedley
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "ch32v305f_evt_r0_common.dtsi"

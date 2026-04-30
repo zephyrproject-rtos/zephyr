@@ -1,0 +1,98 @@
+/*
+ * Copyright (c) 2026 James Bennion-Pedley
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch32v317/ch32v317wc.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "nano_ch32v317-pinctrl.dtsi"
+
+/ {
+	model = "muselab_nano_ch32v317";
+	compatible = "muselab,nano-ch32v317";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+
+		led_1: led1 {
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &led_1;
+	};
+};
+
+&clk_hse {
+	status = "okay";
+};
+
+&pll {
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+// TODO this should eventually be USB-CDC
+&usart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+};
+
+&rng {
+	status = "okay";
+};
+
+&mac {
+	status = "okay";
+	pinctrl-0 = <&mac_default>;
+	pinctrl-names = "default";
+	phy-connection-type = "internal";
+	phy-handle = <&eth_phy>;
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+	};
+};

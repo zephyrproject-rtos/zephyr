@@ -1,0 +1,15 @@
+identifier: ch32v305f_evt_r0/ch32v305/ram_96k
+name: WCH CH32V305F-EVT-R0 Evaluation Board
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 96
+flash: 480
+supported:
+  - gpio
+  - i2c
+  - uart
+  - spi
+vendor: wch
