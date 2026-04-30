@@ -189,6 +189,15 @@ class Binding:
       If nodes with this binding's 'compatible' appear on a bus, a string
       describing the bus type (like "i2c"). None otherwise.
 
+    cpu_mapped:
+      Indicates that the node's register addresses must be mapped to the CPU's
+      root address space. This is satisfied if the node is a direct child of
+      the root node ("/") or a child of a node that defines a "ranges;" property.
+      If "ranges" are non-empty (e.g., "ranges = <0x0 0x1000 0x100>;"), the
+      node's 'reg' must fall within one of the defined ranges to ensure valid
+      address translation. This mapping requirement applies recursively up the
+      device tree hierarchy until the root node is reached.
+
     child_binding:
       If this binding describes the properties of child nodes, then
       this is a Binding object for those children; it is None otherwise.
@@ -320,6 +329,11 @@ class Binding:
         "See the class docstring"
         return self.raw.get('on-bus')
 
+    @property
+    def cpu_mapped(self) -> bool:
+        "See the class docstring"
+        return bool(self.raw.get('cpu-mapped'))
+
     def _merge_includes(self, raw: dict, binding_path: Optional[str]) -> dict:
         # Constructor helper. Merges included files in
         # 'raw["include"]' into 'raw' using 'self._include_paths' as a
@@ -437,7 +451,7 @@ class Binding:
         # Allowed top-level keys. The 'include' key should have been
         # removed by _load_raw() already.
         ok_top = {"title", "description", "compatible", "bus",
-                  "on-bus", "properties", "child-binding", "examples"}
+                  "on-bus", "properties", "child-binding", "examples", "cpu-mapped"}
 
         # Descriptive errors for legacy bindings.
         legacy_errors = {
@@ -476,12 +490,17 @@ class Binding:
             _err(f"malformed 'on-bus:' value in {self.path}, "
                  "expected string")
 
+        if ("cpu-mapped" in raw
+            and not isinstance(raw["cpu-mapped"], bool)):
+            _err(f"malformed 'cpu-mapped:' value in {self.path}, "
+                 "expected true/false")
+
         self._check_properties()
 
         for key, val in raw.items():
-            if (key.endswith("-cells")
-                and not isinstance(val, list)
-                or not all(isinstance(elem, str) for elem in val)):
+            if (key.endswith("-cells") and
+                (not isinstance(val, list)
+                 or not all(isinstance(elem, str) for elem in val))):
                 _err(f"malformed '{key}:' in {self.path}, "
                      "expected a list of strings")
 
@@ -809,6 +828,10 @@ class Register:
       The starting address of the register, in the parent address space, or None
       if #address-cells is zero. Any 'ranges' properties are taken into account.
 
+    addr_unmapped:
+      The starting address of the register, or None if parent #address-cells is
+      zero. Parent 'ranges' property is NOT taken into account.
+
     size:
       The length of the register in bytes
     """
@@ -816,6 +839,7 @@ class Register:
     node: 'Node'
     name: Optional[str]
     addr: Optional[int]
+    addr_unmapped: Optional[int]
     size: Optional[int]
 
 
@@ -1964,8 +1988,10 @@ class Node:
                               f"<#size-cells> (= {size_cells}))"):
             if address_cells == 0:
                 addr = None
+                addr_unmapped = None
             else:
-                addr = _translate(to_num(raw_reg[:4*address_cells]), node)
+                addr_unmapped = to_num(raw_reg[:4*address_cells])
+                addr = _translate(addr_unmapped, node)
             if size_cells == 0:
                 size = None
             else:
@@ -1977,7 +2003,7 @@ class Node:
                      "instead)")
 
             # We'll fix up the name when we're done.
-            self.regs.append(Register(self, None, addr, size))
+            self.regs.append(Register(self, None, addr, addr_unmapped, size))
 
         _add_names(node, "reg", self.regs)
 
@@ -2688,6 +2714,11 @@ class EDT:
                         'in lowercase: ' +
                         ', '.join(repr(x) for x in spec.enum))
 
+        # Validate cpu address mappings as required by the bindings.
+        for node in self.nodes:
+            if node._binding and node._binding.cpu_mapped:
+                _cpu_mapped_check(node)
+
         # Validate the contents of compatible properties.
         for node in self.nodes:
             if 'compatible' not in node.props:
@@ -3053,14 +3084,50 @@ def _check_prop_by_type(prop_name: str,
              f"which has type {prop_type}")
 
 
-def _translate(addr: int, node: dtlib_Node) -> int:
-    # Recursively translates 'addr' on 'node' to the address space(s) of its
-    # parent(s), by looking at 'ranges' properties. Returns the translated
-    # address.
+def _cpu_mapped_check(node: Node) -> None:
+    # Checks that 'node' has CPU-mapped addresses as required by its binding.
+    # If node should have CPU-mapped addresses but doesn't, raises an error.
+    if ((len(node.regs) == 0 or node.unit_addr is None) and
+        not _cpu_mapped_address(None, node)):
+        _err("Node "
+                f"{node.path}" "is not CPU-mapped")
+
+    for reg in node.regs:
+        if not _cpu_mapped_address(reg.addr_unmapped, node):
+            _err("unit address 'reg' "
+                        f"(0x{reg.addr_unmapped:x}) is not CPU-mapped for "
+                        f"{node.path}")
+
+def _cpu_mapped_address(addr: int | None, node: Node) -> bool:
+    # Recursively translates check is address maps all the way to root
+    # Hence making the address CPU addressable. returns True if the address
+    # is CPU-mapped, False if not.
+
+    if node.parent and node.parent.path == '/':
+        return True
+
+    if not node.parent or "ranges" not in node.parent.props:
+        return False
+
+    if addr is None:
+        return True
+
+    mapped_addr, is_address_mapped = _translate_once(addr, node._node)
+
+    if not is_address_mapped:
+        return False
+
+    return _cpu_mapped_address(mapped_addr, node.parent)
+
+def _translate_once(addr: int, node: dtlib_Node) -> tuple[int, bool]:
+    # Translates 'addr' on 'node' to the address space(s) of its
+    # parent(s), by looking at 'ranges' properties. Returns a tuple with
+    # the translated address and true when transation is possible
+    # if not, the original address and false.
 
     if not node.parent or "ranges" not in node.parent.props:
         # No translation
-        return addr
+        return addr, False
 
     if not node.parent.props["ranges"].value:
         # DT spec.: "If the property is defined with an <empty> value, it
@@ -3069,7 +3136,7 @@ def _translate(addr: int, node: dtlib_Node) -> int:
         #
         # Treat this the same as a 'range' that explicitly does a one-to-one
         # mapping, as opposed to there not being any translation.
-        return _translate(addr, node.parent)
+        return addr, True
 
     # Gives the size of each component in a translation 3-tuple in 'ranges'
     child_address_cells = _address_cells(node)
@@ -3095,11 +3162,21 @@ def _translate(addr: int, node: dtlib_Node) -> int:
         if child_addr <= addr < child_addr + child_len:
             # 'addr' is within range of a translation in 'ranges'. Recursively
             # translate it and return the result.
-            return _translate(parent_addr + addr - child_addr, node.parent)
+            return parent_addr + addr - child_addr , True
 
     # 'addr' is not within range of any translation in 'ranges'
-    return addr
+    return addr, False
 
+def _translate(addr: int, node: dtlib_Node) -> int:
+    # Recursively translates 'addr' on 'node' to the address space(s) of its
+    # parent(s), by looking at 'ranges' properties. Returns the translated
+    # address.
+
+    mapped_address, mapped = _translate_once(addr, node)
+    if mapped and node.parent:
+        return _translate(mapped_address, node.parent)
+
+    return mapped_address
 
 def _add_names(node: dtlib_Node, names_ident: str, objs: Any) -> None:
     # Helper for registering names from <foo>-names properties.
