@@ -356,9 +356,18 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 			link_addr = llext_find_sym(NULL,
 				SYM_NAME_OR_SLID(name, sym.st_value));
 
+			/* Next try internal tables */
 			if (!link_addr) {
-				/* Next try internal tables */
-				link_addr = llext_find_sym(&ext->sym_tab, name);
+				/* Try finding symbol via R_SYM lookup table first */
+				if (ext->sym_tab_lookup_hint && ext->sym_tab_lookup_hint[j] >= 0) {
+					const int sym_idx = ext->sym_tab_lookup_hint[j];
+
+					if (strcmp(name, ext->sym_tab.syms[sym_idx].name) == 0) {
+						link_addr = ext->sym_tab.syms[sym_idx].addr;
+					}
+				} else {
+					link_addr = llext_find_sym(&ext->sym_tab, name);
+				}
 			}
 
 			if (!link_addr) {

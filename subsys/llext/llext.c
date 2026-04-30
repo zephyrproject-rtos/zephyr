@@ -243,6 +243,7 @@ int llext_unload(struct llext **ext)
 
 	llext_free_regions(tmp);
 	llext_free_metadata(tmp->sym_tab.syms);
+	llext_free_metadata(tmp->sym_tab_lookup_hint);
 	llext_free_metadata(tmp->exp_tab.syms);
 	llext_free_metadata(tmp);
 
