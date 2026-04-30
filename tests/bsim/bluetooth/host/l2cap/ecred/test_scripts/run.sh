@@ -8,7 +8,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 test_name="$(guess_test_long_name)"
 
-simulation_id=${test_name}
+simulation_id="${BOARD_TS}_${test_name}"
 verbosity_level=2
 
 SIM_LEN_US=$((1 * 1000 * 1000))

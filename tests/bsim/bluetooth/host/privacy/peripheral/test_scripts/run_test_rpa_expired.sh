@@ -6,7 +6,7 @@ set -eu
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 verbosity_level=2
-simulation_id="rpa_expired"
+simulation_id="${BOARD_TS}_rpa_expired"
 EXECUTE_TIMEOUT=240
 
 central_exe_rpa_expired="\

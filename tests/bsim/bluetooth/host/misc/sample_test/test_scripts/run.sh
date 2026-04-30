@@ -14,7 +14,7 @@ test_name="$(guess_test_long_name)"
 # Use a unique simulation id per test script. It is a necessity as the CI runner
 # will run all the test scripts in parallel. If multiple simulations share the
 # same ID, they will step on each other's toes in unpredictable ways.
-simulation_id=${test_name}
+simulation_id="${BOARD_TS}_${test_name}"
 
 # This controls the verbosity of the simulator. It goes up to 9 (not 11, sorry)
 # and is useful for figuring out what is happening on the PHYsical layer (e.g.

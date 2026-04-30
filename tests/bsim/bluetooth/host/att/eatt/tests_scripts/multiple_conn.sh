@@ -4,7 +4,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="multiple_conn"
+simulation_id="${BOARD_TS}_multiple_conn"
 verbosity_level=2
 EXECUTE_TIMEOUT=120
 

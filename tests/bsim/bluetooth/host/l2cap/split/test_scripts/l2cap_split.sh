@@ -7,7 +7,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 dut_exe="bs_${BOARD_TS}_$(guess_test_long_name)_dut_prj_conf"
 tester_exe="bs_${BOARD_TS}_$(guess_test_long_name)_tester_prj_conf"
 
-simulation_id="l2cap_split"
+simulation_id="${BOARD_TS}_l2cap_split"
 verbosity_level=2
 sim_length_us=30e6
 

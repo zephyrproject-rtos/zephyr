@@ -5,7 +5,7 @@ set -eu
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="settings"
+simulation_id="${BOARD_TS}_settings"
 verbosity_level=2
 EXECUTE_TIMEOUT=120
 test_exe="./bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf"

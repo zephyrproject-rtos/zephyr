@@ -4,7 +4,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="gatt_authorization"
+simulation_id="${BOARD_TS}_gatt_authorization"
 verbosity_level=2
 EXECUTE_TIMEOUT=120
 

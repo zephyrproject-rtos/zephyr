@@ -6,7 +6,7 @@ set -eu
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="long_read"
+simulation_id="${BOARD_TS}_long_read"
 dev_exe=bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf
 args_all=(-s=${simulation_id} -D=2)
 args_dev=(-v=2 -RealEncryption=1 -testid=the_test)

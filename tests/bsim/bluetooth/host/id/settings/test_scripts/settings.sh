@@ -5,7 +5,7 @@
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 test_exe="bs_${BOARD_TS}_tests_bsim_bluetooth_host_id_settings_prj_conf"
-simulation_id="id_settings"
+simulation_id="${BOARD_TS}_id_settings"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

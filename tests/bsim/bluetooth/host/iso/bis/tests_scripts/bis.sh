@@ -4,7 +4,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="iso_bis"
+simulation_id="${BOARD_TS}_iso_bis"
 verbosity_level=2
 EXECUTE_TIMEOUT=120
 

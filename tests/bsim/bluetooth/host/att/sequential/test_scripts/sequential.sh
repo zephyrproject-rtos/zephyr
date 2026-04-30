@@ -4,7 +4,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="att_sequential"
+simulation_id="${BOARD_TS}_att_sequential"
 verbosity_level=2
 
 dut_exe="bs_${BOARD_TS}_$(guess_test_long_name)_dut_prj_conf"

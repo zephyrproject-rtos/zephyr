@@ -6,7 +6,7 @@ set -eu
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 verbosity_level=2
-simulation_id="id_addr_update"
+simulation_id="${BOARD_TS}_id_addr_update"
 
 test_path="$(guess_test_long_name)"
 central_exe="${BSIM_OUT_PATH}/bin/bs_${BOARD_TS}_${test_path}_central_prj_conf"

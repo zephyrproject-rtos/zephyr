@@ -7,7 +7,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 test_name="$(guess_test_long_name)"
 test_exe="${BSIM_OUT_PATH}/bin/bs_${BOARD_TS}_${test_name}_prj_conf"
 
-simulation_id=${test_name}
+simulation_id="${BOARD_TS}_${test_name}"
 verbosity_level=2
 zephyr_log_level=3
 

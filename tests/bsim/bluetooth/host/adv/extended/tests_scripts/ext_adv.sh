@@ -9,7 +9,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="ext_adv"
+simulation_id="${BOARD_TS}_ext_adv"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin
