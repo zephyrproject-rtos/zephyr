@@ -1,0 +1,42 @@
+# Copyright (c) 2026 Carl Zeiss AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Hamamatsu S9706 Digital Color Sensor. See datasheet at
+  https://www.hamamatsu.com/content/dam/hamamatsu-photonics/sites/documents/99_SALES_LIBRARY/ssd/s9706_kpic1060e.pdf
+
+compatible: "hamamatsu,s9706"
+
+include: [sensor-device.yaml]
+
+properties:
+  range-gpios:
+    type: phandle-array
+    description: GPIO connected to range control pin.
+
+  gate-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO connected to gate pin.
+
+  data-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO connected to DOUT pin.
+
+  clk-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO connected to clock pin.
+
+  max-frequency:
+    type: int
+    required: true
+    description: |
+      Max serial clock frequency. According to the datasheet, this should be at
+      or below 2MHz.
+
+  integration-time:
+    type: int
+    required: true
+    description: Integration time of the sensor in microseconds.
