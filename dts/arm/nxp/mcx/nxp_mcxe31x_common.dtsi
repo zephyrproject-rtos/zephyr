@@ -88,36 +88,54 @@
 	cmu_0: cmu-fc@2bc000 {
 		compatible = "nxp,cmu-fc";
 		reg = <0x2bc000 0x34>;
+		interrupts = <84 0>;
+		clocks = <&mc_cgm MCUX_FIRC_CLK>, <&mc_cgm MCUX_FXOSC_CLK>;
+		clock-names = "reference", "monitored";
 		status = "disabled";
 	};
 
 	cmu_1: cmu-fm@2bc020 {
 		compatible = "nxp,cmu-fm";
 		reg = <0x2bc020 0x2c>;
+		interrupts = <85 0>;
+		clocks = <&mc_cgm MCUX_FXOSC_CLK>, <&mc_cgm MCUX_FIRC_CLK>;
+		clock-names = "reference", "monitored";
 		status = "disabled";
 	};
 
 	cmu_2: cmu-fm@2bc040 {
 		compatible = "nxp,cmu-fm";
 		reg = <0x2bc040 0x2c>;
+		interrupts = <86 0>;
+		clocks = <&mc_cgm MCUX_FXOSC_CLK>, <&mc_cgm MCUX_SIRC_CLK>;
+		clock-names = "reference", "monitored";
 		status = "disabled";
 	};
 
 	cmu_3: cmu-fc@2bc060 {
 		compatible = "nxp,cmu-fc";
 		reg = <0x2bc060 0x34>;
+		clocks = <&mc_cgm MCUX_FXOSC_CLK>, <&mc_cgm MCUX_CORESYS_CLK>;
+		clock-names = "reference", "monitored";
+		nxp,fault-reaction = "reset";
 		status = "disabled";
 	};
 
 	cmu_4: cmu-fc@2bc080 {
 		compatible = "nxp,cmu-fc";
 		reg = <0x2bc080 0x34>;
+		clocks = <&mc_cgm MCUX_FIRC_CLK>, <&mc_cgm MCUX_AIPSPLAT_CLK>;
+		clock-names = "reference", "monitored";
+		nxp,fault-reaction = "reset";
 		status = "disabled";
 	};
 
 	cmu_5: cmu-fc@2bc0a0 {
 		compatible = "nxp,cmu-fc";
 		reg = <0x2bc0a0 0x34>;
+		clocks = <&mc_cgm MCUX_FIRC_CLK>, <&mc_cgm MCUX_HSE_CLK>;
+		clock-names = "reference", "monitored";
+		nxp,fault-reaction = "reset";
 		status = "disabled";
 	};
 

@@ -1,0 +1,15 @@
+# Private config options for the clock_monitor measure_freq sample
+#
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Clock Monitor - Frequency Meter sample"
+
+config SAMPLE_WINDOW_NS
+	int "Measurement window duration (ns)"
+	default 1000000
+	help
+	  CMU_FM measurement window in nanoseconds. Longer windows give
+	  finer resolution; 1 ms default.
+
+source "Kconfig.zephyr"

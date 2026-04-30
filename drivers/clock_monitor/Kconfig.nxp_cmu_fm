@@ -1,0 +1,11 @@
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_MONITOR_NXP_CMU_FM
+	bool "NXP CMU_FM frequency meter driver"
+	default y
+	depends on DT_HAS_NXP_CMU_FM_ENABLED
+	select HAS_MCUX
+	help
+	  Zephyr clock_monitor back-end wrapping the MCUX SDK fsl_cmu_fm HAL.
+	  Provides METER mode for clock frequency measurement.

@@ -1,0 +1,24 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		/* Every clock_monitor instance to exercise. Two distinct
+		 * devices on MCXE31: cmu_0 (FC, WINDOW) and cmu_1 (FM,
+		 * METER). Each case uses runtime caps to pick the ones
+		 * it applies to.
+		 */
+		clock-monitors = <&cmu_0>, <&cmu_1>;
+	};
+};
+
+&cmu_0 {
+	status = "okay";
+};
+
+&cmu_1 {
+	status = "okay";
+};

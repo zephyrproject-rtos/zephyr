@@ -1,0 +1,19 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		clock-monitor = &cmu_0;
+	};
+};
+
+&cmu_0 {
+	status = "okay";
+	/* Keep the default nxp,fault-reaction = "interrupt" so that
+	 * threshold-crossing events are delivered through the driver
+	 * callback rather than routed to FCCU destructive reset.
+	 */
+};

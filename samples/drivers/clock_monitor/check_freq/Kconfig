@@ -1,0 +1,32 @@
+# Private config options for the clock_monitor check_freq sample
+#
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Clock Monitor - Frequency Check sample"
+
+config SAMPLE_EXPECTED_HZ
+	int "Expected monitored-clock frequency (Hz), 0 = auto"
+	default 0
+	help
+	  Nominal expected frequency of the monitored clock, in Hz.
+	  Passed to clock_monitor_configure() as window.expected_hz.
+	  Set to 0 to let the driver auto-derive it from the monitored
+	  clock via clock_control_get_rate().
+
+config SAMPLE_TOLERANCE_PPM
+	int "Window tolerance (parts-per-million)"
+	default 50000
+	help
+	  Acceptable +/- deviation from the expected frequency, in ppm.
+	  Default 50000 = +/- 5 %, which is loose enough to ride out
+	  crystal warm-up on a typical EVK.
+
+config SAMPLE_WINDOW_NS
+	int "Measurement window duration (ns)"
+	default 1000000
+	help
+	  CMU_FC measurement window in nanoseconds. Longer windows give
+	  finer ppm resolution but slower fault response. 1 ms default.
+
+source "Kconfig.zephyr"

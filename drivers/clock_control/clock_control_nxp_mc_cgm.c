@@ -262,6 +262,21 @@ static int mc_cgm_get_subsys_rate(const struct device *dev, clock_control_subsys
 	case MCUX_SIRC_CLK:
 		*rate = CLOCK_SIRC_CLK_FREQ;
 		break;
+	case MCUX_FIRC_CLK:
+		*rate = CLOCK_GetFircClkFreq();
+		break;
+	case MCUX_FXOSC_CLK:
+		*rate = CLOCK_GetFxoscFreq();
+		break;
+	case MCUX_CORESYS_CLK:
+		*rate = CLOCK_GetCoreClkFreq();
+		break;
+	case MCUX_AIPSPLAT_CLK:
+		*rate = CLOCK_GetAipsPlatClkFreq();
+		break;
+	case MCUX_HSE_CLK:
+		*rate = CLOCK_GetHseClkFreq();
+		break;
 #if defined(CONFIG_UART_MCUX_LPUART)
 	case MCUX_LPUART0_CLK:
 #if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 8U)
