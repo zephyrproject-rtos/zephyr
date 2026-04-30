@@ -10,7 +10,11 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/reset.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/cache.h>
+
+/* check if reset property is defined */
+#define DMA_DW_AXI_RESET_SUPPORTED DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
 
 LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 
@@ -41,19 +45,41 @@ LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 #define DMA_DW_AXI_RESETREG                      0x58
 #define DMA_DW_AXI_LOWPOWER_CFGREG               0x60
 
+/* AXI AxCACHE[3:0]
+ * AxCACHE[0]:
+ *	1: bufferable 0: non-bufferable
+ * AxCACHE[1]:
+ *	1: cacheable 0: non-cacheable
+ * AxCACHE[2]:
+ *	1: Read allocate
+ * AxCACHE[3]:
+ *	1: write allocate
+ */
+#define DMA_DW_AXI_AXCACHE                       BIT(0) | BIT(1) | BIT(2) | BIT(3)
+
+/* AXI AxPROT[2:0]
+ * AxProt[0]:
+ *	1: Privileged access 0: unprivileged access
+ * AxProt[1]:
+ *	1: non-secure transaction 0: secure transaction
+ * AxProt[2]
+ *	1: instruction access 0: data access
+ */
+#define DMA_DW_AXI_AXPROT                        BIT(1)
+
 /* Channel enable by setting ch_en and ch_en_we */
-#define CH_EN(chan)    (BIT64(8 + chan) | BIT64(chan))
+#define CH_EN(chan)    (BIT64(8 + (chan - 1)) | BIT64(chan - 1))
 /* Channel enable by setting ch_susp and ch_susp_we */
-#define CH_SUSP(chan)  (BIT64(24 + chan) | BIT64(16 + chan))
+#define CH_SUSP(chan)  (BIT64(24 + (chan - 1)) | BIT64(16 + (chan - 1)))
 /* Channel enable by setting ch_abort and ch_abort_we */
-#define CH_ABORT(chan) (BIT64(40 + chan) | BIT64(32 + chan))
+#define CH_ABORT(chan) (BIT64(40 + (chan - 1)) | BIT64(32 + (chan - 1)))
 
 /* channel susp/resume write enable pos */
-#define CH_RESUME_WE(chan) (BIT64(24 + chan))
+#define CH_RESUME_WE(chan) BIT64(24 + (chan - 1))
 /* channel resume bit pos */
-#define CH_RESUME(chan)    (BIT64(16 + chan))
+#define CH_RESUME(chan)    BIT64(16 + (chan - 1))
 
-#define DMA_DW_AXI_CHAN_OFFSET(chan)             (0x100 * chan)
+#define DMA_DW_AXI_CHAN_OFFSET(chan)             (0x100 * (chan - 1))
 
 /* source address register for a channel */
 #define DMA_DW_AXI_CH_SAR(chan)                  (0x100 + DMA_DW_AXI_CHAN_OFFSET(chan))
@@ -122,6 +148,15 @@ LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 #define DMA_DW_AXI_CTL_AWLEN_EN                  BIT64(47)
 /* destination burst length(considered when corresponding enable bit is set) */
 #define DMA_DW_AXI_CTL_AWLEN(x)                  FIELD_PREP(GENMASK64(55, 48), x)
+
+/* axi write transaction prot signal */
+#define DMA_DW_AXI_CTL_AW_PROT_WIDTH(x)          FIELD_PREP(GENMASK64(37, 35), x)
+/* axi read transaction prot signal */
+#define DMA_DW_AXI_CTL_AR_PROT_WIDTH(x)          FIELD_PREP(GENMASK64(34, 32), x)
+/* axi write transaction cache signal */
+#define DMA_DW_AXI_CTL_AW_CACHE_WIDTH(x)         FIELD_PREP(GENMASK64(29, 26), x)
+/* axi read transaction cache signal */
+#define DMA_DW_AXI_CTL_AR_CACHE_WIDTH(x)         FIELD_PREP(GENMASK64(25, 22), x)
 
 /* source burst transaction length */
 #define DMA_DW_AXI_CTL_SRC_MSIZE(x)              FIELD_PREP(GENMASK64(17, 14), x)
@@ -206,7 +241,7 @@ struct dma_dw_axi_ch_data {
 	/* lli current descriptor */
 	struct dma_lli *lli_desc_current;
 	/* dma channel state */
-	enum dma_dw_axi_ch_state ch_state;
+	atomic_t ch_state;
 	/* direction of transfer */
 	uint32_t direction;
 	/* number of descriptors */
@@ -223,7 +258,23 @@ struct dma_dw_axi_ch_data {
 	dma_callback_t dma_blk_xfer_callback;
 	/* user data for dma callback for dma block transfer completion */
 	void *priv_data_blk_tfr;
+	/* mutex for chan data */
+	struct k_mutex ch_mutex_lock;
 };
+
+#if defined(CONFIG_DMA_BOTTOM_HALF_WORK_QUEUE)
+/* work queue information */
+struct dma_work {
+	/* dma controller driver device instance */
+	const struct device *dev;
+	/* work queue object to submit work */
+	struct k_work work;
+	/* dma channel */
+	uint32_t channel;
+	/* dma transfer status */
+	int status;
+};
+#endif
 
 /* dma controller driver data structure */
 struct dma_dw_axi_dev_data {
@@ -232,6 +283,9 @@ struct dma_dw_axi_dev_data {
 
 	/* mmio address mapping info for dma controller */
 	DEVICE_MMIO_NAMED_RAM(dma_mmio);
+#if defined(CONFIG_DMA_BOTTOM_HALF_WORK_QUEUE)
+	struct dma_work *work;
+#endif
 	/* pointer to store channel specific info */
 	struct dma_dw_axi_ch_data *chan;
 	/* pointer to hold descriptor base address */
@@ -243,12 +297,14 @@ struct dma_dw_axi_dev_cfg {
 	/* dma address space to map */
 	DEVICE_MMIO_NAMED_ROM(dma_mmio);
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
+#if DMA_DW_AXI_RESET_SUPPORTED
 	/* Reset controller device configurations */
 	const struct reset_dt_spec reset;
 #endif
 	/* dma controller interrupt configuration function pointer */
 	void (*irq_config)(void);
+	/* max number of channel supported by dma controller */
+	uint32_t max_channel;
 };
 
 /**
@@ -259,7 +315,7 @@ struct dma_dw_axi_dev_cfg {
  *
  * @retval status of the channel
  */
-static enum dma_dw_axi_ch_state dma_dw_axi_get_ch_status(const struct device *dev, uint32_t ch)
+static uint32_t dma_dw_axi_get_ch_status(const struct device *dev, uint32_t channel)
 {
 	uint32_t bit_status;
 	uint64_t ch_status;
@@ -268,13 +324,13 @@ static enum dma_dw_axi_ch_state dma_dw_axi_get_ch_status(const struct device *de
 	ch_status = sys_read64(reg_base + DMA_DW_AXI_CHENREG);
 
 	/* channel is active/busy in the dma transfer */
-	bit_status = ((ch_status >> ch) & 1);
+	bit_status = ((ch_status >> (channel - 1)) & 1);
 	if (bit_status) {
 		return DMA_DW_AXI_CH_ACTIVE;
 	}
 
 	/* channel is currently suspended */
-	bit_status = ((ch_status >> (16 + ch)) & 1);
+	bit_status = ((ch_status >> (16 + channel - 1)) & 1);
 	if (bit_status) {
 		return DMA_DW_AXI_CH_SUSPENDED;
 	}
@@ -283,30 +339,64 @@ static enum dma_dw_axi_ch_state dma_dw_axi_get_ch_status(const struct device *de
 	return DMA_DW_AXI_CH_IDLE;
 }
 
+/**
+ * @brief perform the work scheduled for dma bottom half in process context
+ *
+ * @param item pointer to work submitted
+ */
+#if defined(CONFIG_DMA_BOTTOM_HALF_WORK_QUEUE)
+static void dma_schedule_irq_work(struct k_work *item)
+{
+	uint32_t channel;
+	int status;
+	struct dma_dw_axi_ch_data *chan_data;
+	struct dma_work *dma_work = CONTAINER_OF(item, struct dma_work, work);
+	const struct device *dev = dma_work->dev;
+	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
+
+	channel = dma_work->channel;
+	chan_data = &dw_dev_data->chan[channel - 1];
+	status = dma_work->status;
+
+	/* invoke user callback */
+	if (chan_data->dma_blk_xfer_callback) {
+		chan_data->dma_blk_xfer_callback(dev,
+				chan_data->priv_data_blk_tfr, channel, status);
+	} else {
+		chan_data->dma_xfer_callback(dev, chan_data->priv_data_xfer,
+						channel, status);
+
+		atomic_set(&chan_data->ch_state, dma_dw_axi_get_ch_status(dev, channel));
+	}
+
+}
+#endif
+
 static void dma_dw_axi_isr(const struct device *dev)
 {
-	unsigned int channel;
+	uint32_t channel;
 	uint64_t status, ch_status;
 	int ret_status = 0;
 	struct dma_dw_axi_ch_data *chan_data;
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, dma_mmio);
 	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
+	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
 
 	/* read interrupt status register to find interrupt is for which channel */
 	status = sys_read64(reg_base + DMA_DW_AXI_INTSTATUSREG);
-	channel = find_lsb_set(status) - 1;
-	if (channel < 0) {
+	channel = find_lsb_set(status);
+	if (!channel) {
 		LOG_ERR("Spurious interrupt received channel:%u\n", channel);
 		return;
 	}
 
-	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
+	if (channel > dw_dma_config->max_channel) {
 		LOG_ERR("Interrupt received on invalid channel:%d\n", channel);
 		return;
 	}
 
 	/* retrieve channel specific data pointer for a channel */
-	chan_data = &dw_dev_data->chan[channel];
+	chan_data = &dw_dev_data->chan[channel - 1];
 
 	/* get dma transfer status */
 	ch_status = sys_read64(reg_base + DMA_DW_AXI_CH_INTSTATUS(channel));
@@ -330,8 +420,13 @@ static void dma_dw_axi_isr(const struct device *dev)
 				reg_base + DMA_DW_AXI_CH_INTCLEARREG(channel));
 
 		if (chan_data->dma_blk_xfer_callback) {
+#if defined(CONFIG_DMA_BOTTOM_HALF_WORK_QUEUE)
+			dw_dev_data->work[channel - 1].status = ret_status;
+			k_work_submit(&dw_dev_data->work[channel - 1].work);
+#else
 			chan_data->dma_blk_xfer_callback(dev,
 				chan_data->priv_data_blk_tfr, channel, ret_status);
+#endif
 		}
 	}
 
@@ -339,11 +434,15 @@ static void dma_dw_axi_isr(const struct device *dev)
 	if (ch_status & DMA_DW_AXI_IRQ_DMA_TFR) {
 		sys_write64(DMA_DW_AXI_IRQ_ALL_ERR | DMA_DW_AXI_IRQ_DMA_TFR,
 				reg_base + DMA_DW_AXI_CH_INTCLEARREG(channel));
-
 		if (chan_data->dma_xfer_callback) {
+#if defined(CONFIG_DMA_BOTTOM_HALF_WORK_QUEUE)
+			dw_dev_data->work[channel - 1].status = ret_status;
+			k_work_submit(&dw_dev_data->work[channel - 1].work);
+#else
 			chan_data->dma_xfer_callback(dev, chan_data->priv_data_xfer,
 						channel, ret_status);
-			chan_data->ch_state = dma_dw_axi_get_ch_status(dev, channel);
+			atomic_set(&chan_data->ch_state, dma_dw_axi_get_ch_status(dev, channel));
+#endif
 		}
 	}
 }
@@ -446,6 +545,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	struct dma_block_config *blk_cfg;
 	struct dma_lli *lli_desc;
 	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
+	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
 
 	/* check for invalid parameters before dereferencing them. */
 	if (cfg == NULL) {
@@ -454,7 +554,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	}
 
 	/* check if the channel is valid */
-	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
+	if (channel > dw_dma_config->max_channel || channel == 0) {
 		LOG_ERR("invalid dma channel %d", channel);
 		return -EINVAL;
 	}
@@ -487,10 +587,13 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	}
 
 	/* get channel specific data pointer */
-	chan_data = &dw_dev_data->chan[channel];
+	chan_data = &dw_dev_data->chan[channel - 1];
+
+	k_mutex_lock(&chan_data->ch_mutex_lock, K_FOREVER);
 
 	/* check if the channel is currently idle */
-	if (chan_data->ch_state != DMA_DW_AXI_CH_IDLE) {
+	if (atomic_get(&chan_data->ch_state) != DMA_DW_AXI_CH_IDLE) {
+		k_mutex_unlock(&chan_data->ch_mutex_lock);
 		LOG_ERR("DMA channel:%d is busy", channel);
 		return -EBUSY;
 	}
@@ -505,7 +608,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	chan_data->direction = cfg->channel_direction;
 
 	chan_data->lli_desc_base =
-			&dw_dev_data->dma_desc_pool[channel * CONFIG_DMA_DW_AXI_MAX_DESC];
+			&dw_dev_data->dma_desc_pool[(channel - 1) * CONFIG_DMA_DW_AXI_MAX_DESC];
 	chan_data->lli_desc_count = cfg->block_count;
 	memset(chan_data->lli_desc_base, 0,
 			sizeof(struct dma_lli) * chan_data->lli_desc_count);
@@ -514,7 +617,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	blk_cfg = cfg->head_block;
 
 	/* max channel priority can be MAX_CHANNEL - 1 */
-	if (cfg->channel_priority < dw_dev_data->dma_ctx.dma_channels) {
+	if (cfg->channel_priority < dw_dma_config->max_channel) {
 		chan_data->cfg |= DMA_DW_AXI_CFG_PRIORITY(cfg->channel_priority);
 	}
 
@@ -524,6 +627,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 		ret = dma_dw_axi_set_data_width(lli_desc, cfg->source_data_size,
 				cfg->dest_data_size);
 		if (ret) {
+			k_mutex_unlock(&chan_data->ch_mutex_lock);
 			return ret;
 		}
 
@@ -536,6 +640,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 		/* set block transfer size*/
 		lli_desc->block_ts_lo = (blk_cfg->block_size / cfg->source_data_size) - 1;
 		if (lli_desc->block_ts_lo > CONFIG_DMA_DW_AXI_MAX_BLOCK_TS) {
+			k_mutex_unlock(&chan_data->ch_mutex_lock);
 			LOG_ERR("block transfer size more than %u not supported",
 				CONFIG_DMA_DW_AXI_MAX_BLOCK_TS);
 			return -ENOTSUP;
@@ -568,11 +673,23 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 			chan_data->cfg |= DMA_DW_AXI_CFG_SRC_PER(cfg->dma_slot);
 
 		} else {
+			k_mutex_unlock(&chan_data->ch_mutex_lock);
 			LOG_ERR("%s: dma %s channel %d invalid direction %d",
 				__func__, dev->name, channel, cfg->channel_direction);
 
 			return -EINVAL;
 		}
+
+		/*
+		 * Axprot is set to Unprivileged access, Non-secure access and data access
+		 */
+
+		lli_desc->ctl |= DMA_DW_AXI_CTL_AR_PROT_WIDTH(DMA_DW_AXI_AXPROT);
+		lli_desc->ctl |= DMA_DW_AXI_CTL_AW_PROT_WIDTH(DMA_DW_AXI_AXPROT);
+
+		/* bufferable, cacheable, Read-allocate and write-allocate */
+		lli_desc->ctl |= DMA_DW_AXI_CTL_AR_CACHE_WIDTH(DMA_DW_AXI_AXCACHE);
+		lli_desc->ctl |= DMA_DW_AXI_CTL_AW_CACHE_WIDTH(DMA_DW_AXI_AXCACHE);
 
 		/* set pointer to the next descriptor */
 		lli_desc->llp = ((uint64_t)(lli_desc + 1));
@@ -599,8 +716,11 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 		blk_cfg = blk_cfg->next_block;
 	}
 
-	arch_dcache_flush_range((void *)chan_data->lli_desc_base,
+#if !defined(CONFIG_NOCACHE_MEMORY) && !defined(CONFIG_CCU_SUPPORT)
+	sys_cache_data_flush_range((void *)chan_data->lli_desc_base,
 				sizeof(struct dma_lli) * cfg->block_count);
+#endif
+
 
 	chan_data->lli_desc_current = chan_data->lli_desc_base;
 
@@ -629,7 +749,8 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	}
 
 	/* dma descriptors are configured, ready to start dma transfer */
-	chan_data->ch_state = DMA_DW_AXI_CH_PREPARED;
+	atomic_set(&chan_data->ch_state, DMA_DW_AXI_CH_PREPARED);
+	k_mutex_unlock(&chan_data->ch_mutex_lock);
 
 	return 0;
 }
@@ -640,10 +761,11 @@ static int dma_dw_axi_start(const struct device *dev, uint32_t channel)
 	struct dma_dw_axi_ch_data *chan_data;
 	struct dma_lli *lli_desc;
 	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
+	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, dma_mmio);
 
 	/* validate channel number */
-	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
+	if (channel > dw_dma_config->max_channel || channel == 0) {
 		LOG_ERR("invalid dma channel %d", channel);
 		return -EINVAL;
 	}
@@ -656,9 +778,12 @@ static int dma_dw_axi_start(const struct device *dev, uint32_t channel)
 	}
 
 	/* get channel specific data pointer */
-	chan_data = &dw_dev_data->chan[channel];
+	chan_data = &dw_dev_data->chan[channel - 1];
 
-	if (chan_data->ch_state != DMA_DW_AXI_CH_PREPARED) {
+	k_mutex_lock(&chan_data->ch_mutex_lock, K_FOREVER);
+
+	if (atomic_get(&chan_data->ch_state) != DMA_DW_AXI_CH_PREPARED) {
+		k_mutex_unlock(&chan_data->ch_mutex_lock);
 		LOG_ERR("DMA descriptors not configured");
 		return -EINVAL;
 	}
@@ -691,8 +816,8 @@ static int dma_dw_axi_start(const struct device *dev, uint32_t channel)
 
 	/* Enable the channel which will initiate DMA transfer */
 	sys_write64(CH_EN(channel), reg_base + DMA_DW_AXI_CHENREG);
-
-	chan_data->ch_state = dma_dw_axi_get_ch_status(dev, channel);
+	atomic_set(&chan_data->ch_state, dma_dw_axi_get_ch_status(dev, channel));
+	k_mutex_unlock(&chan_data->ch_mutex_lock);
 
 	return 0;
 }
@@ -701,11 +826,11 @@ static int dma_dw_axi_stop(const struct device *dev, uint32_t channel)
 {
 	bool is_channel_busy;
 	uint32_t ch_state;
-	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
+	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, dma_mmio);
 
 	/* channel should be valid */
-	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
+	if (channel > dw_dma_config->max_channel || channel == 0) {
 		LOG_ERR("invalid dma channel %d", channel);
 		return -EINVAL;
 	}
@@ -728,16 +853,15 @@ static int dma_dw_axi_stop(const struct device *dev, uint32_t channel)
 	sys_write64(CH_SUSP(channel), reg_base + DMA_DW_AXI_CHENREG);
 
 	/* Try to disable the channel */
-	sys_clear_bit(reg_base + DMA_DW_AXI_CHENREG, channel);
-
-	is_channel_busy = WAIT_FOR((sys_read64(reg_base + DMA_DW_AXI_CHENREG)) & (BIT(channel)),
+	sys_clear_bit(reg_base + DMA_DW_AXI_CHENREG, (channel - 1));
+	is_channel_busy = WAIT_FOR((sys_read64(reg_base + DMA_DW_AXI_CHENREG)) & (BIT(channel-1)),
 						CONFIG_DMA_CHANNEL_STATUS_TIMEOUT, k_busy_wait(10));
 	if (is_channel_busy) {
 		LOG_WRN("No response from handshaking interface... Aborting a channel...");
 		sys_write64(CH_ABORT(channel), reg_base + DMA_DW_AXI_CHENREG);
 
 		is_channel_busy = WAIT_FOR((sys_read64(reg_base + DMA_DW_AXI_CHENREG)) &
-				(BIT(channel)), CONFIG_DMA_CHANNEL_STATUS_TIMEOUT,
+				(BIT(channel-1)), CONFIG_DMA_CHANNEL_STATUS_TIMEOUT,
 				k_busy_wait(10));
 		if (is_channel_busy) {
 			LOG_ERR("Channel abort failed");
@@ -752,11 +876,11 @@ static int dma_dw_axi_resume(const struct device *dev, uint32_t channel)
 {
 	uint32_t reg;
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, dma_mmio);
-	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
+	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
 	uint32_t ch_state;
 
 	/* channel should be valid */
-	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
+	if (channel > dw_dma_config->max_channel  || channel == 0) {
 		LOG_ERR("invalid dma channel %d", channel);
 		return -EINVAL;
 	}
@@ -783,11 +907,11 @@ static int dma_dw_axi_suspend(const struct device *dev, uint32_t channel)
 {
 	int ret;
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, dma_mmio);
-	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
+	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
 	uint32_t ch_state;
 
 	/* channel should be valid */
-	if (channel > (dw_dev_data->dma_ctx.dma_channels - 1)) {
+	if (channel > dw_dma_config->max_channel  || channel == 0) {
 		LOG_ERR("invalid dma channel %u", channel);
 		return -EINVAL;
 	}
@@ -820,7 +944,7 @@ static int dma_dw_axi_init(const struct device *dev)
 	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
 	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
+#if DMA_DW_AXI_RESET_SUPPORTED
 
 	if (dw_dma_config->reset.dev != NULL) {
 	/* check if reset manager is in ready state */
@@ -838,11 +962,27 @@ static int dma_dw_axi_init(const struct device *dev)
 	}
 #endif
 
-	/* initialize channel state variable */
-	for (i = 0; i < dw_dev_data->dma_ctx.dma_channels; i++) {
+	/* initialize mutex and channel state variable */
+	for (i = 0; i < dw_dma_config->max_channel; i++) {
 		chan_data = &dw_dev_data->chan[i];
-		/* initialize channel state */
-		chan_data->ch_state = DMA_DW_AXI_CH_IDLE;
+
+		/* initialize mutex object */
+		ret = k_mutex_init(&chan_data->ch_mutex_lock);
+		if (ret != 0) {
+			LOG_ERR("unable to initialize mutex");
+			return ret;
+		}
+
+		/* initialize atomic variable */
+		atomic_set(&chan_data->ch_state, DMA_DW_AXI_CH_IDLE);
+
+#if defined(CONFIG_DMA_BOTTOM_HALF_WORK_QUEUE)
+		/* setting up work queue for all the channels */
+		dw_dev_data->work[i].dev = dev;
+		/* initialize a work structure */
+		k_work_init(&dw_dev_data->work[i].work, dma_schedule_irq_work);
+		dw_dev_data->work[i].channel = i + 1;
+#endif
 	}
 
 	/* configure and enable interrupt lines */
@@ -873,10 +1013,12 @@ static DEVICE_API(dma, dma_dw_axi_driver_api) = {
 	.reset = RESET_DT_SPEC_INST_GET(inst), \
 
 #define DW_AXI_DMAC_INIT(inst)								\
+IF_ENABLED(CONFIG_DMA_BOTTOM_HALF_WORK_QUEUE, \
+		(static struct dma_work work_##inst[DT_INST_PROP(inst, dma_channels)];)) \
 	static struct dma_dw_axi_ch_data chan_##inst[DT_INST_PROP(inst, dma_channels)];	\
 	static struct dma_lli								\
 		dma_desc_pool_##inst[DT_INST_PROP(inst, dma_channels) *			\
-			CONFIG_DMA_DW_AXI_MAX_DESC];					\
+			CONFIG_DMA_DW_AXI_MAX_DESC] __nocache;					\
 	ATOMIC_DEFINE(dma_dw_axi_atomic##inst,						\
 		      DT_INST_PROP(inst, dma_channels));				\
 	static struct dma_dw_axi_dev_data dma_dw_axi_data_##inst = {			\
@@ -886,6 +1028,8 @@ static DEVICE_API(dma, dma_dw_axi_driver_api) = {
 			.dma_channels = DT_INST_PROP(inst, dma_channels),		\
 		},									\
 		.chan = chan_##inst,							\
+		IF_ENABLED(CONFIG_DMA_BOTTOM_HALF_WORK_QUEUE, \
+        	(.work = work_##inst,)) \
 		.dma_desc_pool = dma_desc_pool_##inst,					\
 		};									\
 	static void dw_dma_irq_config_##inst(void);					\
@@ -894,6 +1038,7 @@ static DEVICE_API(dma, dma_dw_axi_driver_api) = {
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, resets),				\
 			(DW_AXI_DMA_RESET_SPEC_INIT(inst)))				\
 		.irq_config = dw_dma_irq_config_##inst,					\
+		.max_channel = DT_INST_PROP(inst, dma_channels), \
 	};										\
 											\
 	DEVICE_DT_INST_DEFINE(inst,							\

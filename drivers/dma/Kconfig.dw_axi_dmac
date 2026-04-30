@@ -26,6 +26,13 @@ config DMA_DW_AXI_LLI_SUPPORT
 	help
 	  This flag can be enabled if hardware support Linked List multi-block transfer
 
+config DMA_BOTTOM_HALF_WORK_QUEUE
+	bool "Work queue to enable bottom half interrupt processing"
+	default y
+	help
+	  Disable this flag to process DMA callback in irq context. Enable this
+	  to process in user context
+
 config DMA_CHANNEL_STATUS_TIMEOUT
 	int "Channel status timeout"
 	default 1000
@@ -49,5 +56,14 @@ config DMA_DW_AXI_MAX_BLOCK_TS
 	default 32767
 	help
 	  update this config to set maximum value of block size
+
+config CCU_SUPPORT
+	bool "support for Cache Coherence Unit"
+	help
+	  This flag should be enabled if hardware has cache coherence support.
+	  Because of this hardware support, there is no need of software cache
+	  maintenance operations needed.
+	  e.g. If Cache Coherency Unit interconnect is configured to get same
+	  data view as processor from DMA.
 
 endif # DMA_DW_AXI
