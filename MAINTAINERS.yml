@@ -4829,6 +4829,8 @@ Realtek Ameba Platforms:
   maintainers:
     - zjian-zhang
     - Derek-RTK
+  collaborators:
+    - minyuan-xue
   files:
     - boards/realtek/rtl872*/
     - drivers/*/*ameba*
@@ -6304,6 +6306,7 @@ West:
   collaborators:
     - Derek-RTK
     - YuzhuoLiuRTK
+    - minyuan-xue
   files: []
   labels:
     - "platform: Realtek"
