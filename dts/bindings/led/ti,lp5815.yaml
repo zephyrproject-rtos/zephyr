@@ -1,0 +1,50 @@
+# Copyright (c) 2026 Kristina Kisiuk, Aliensense
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments LP5815 3-channel I2C RGB LED controller with autonomous
+  animation engine and instant blinking support. Each channel supports 8-bit
+  PWM dimming and individual 8-bit dot current control. Maximum output current
+  per channel is selectable between 25.5mA and 51mA.
+
+compatible: "ti,lp5815"
+
+include: ["i2c-device.yaml", "led-controller.yaml"]
+
+properties:
+  max-current-51mA:
+    type: boolean
+    description: |
+      Set the MAX_CURRENT bit in DEV_CONFIG0 to select 51mA maximum output
+      current per channel. If not set, the default 25.5mA is used.
+
+  out0-dot-current:
+    type: int
+    default: 0
+    description: |
+      Dot current setting for output channel 0 (0-255).
+      Controls the analog output current as a ratio of the maximum current.
+      0 means no current output (default), 255 means 100% of max current.
+
+  out1-dot-current:
+    type: int
+    default: 0
+    description: |
+      Dot current setting for output channel 1 (0-255).
+      Controls the analog output current as a ratio of the maximum current.
+      0 means no current output (default), 255 means 100% of max current.
+
+  out2-dot-current:
+    type: int
+    default: 0
+    description: |
+      Dot current setting for output channel 2 (0-255).
+      Controls the analog output current as a ratio of the maximum current.
+      0 means no current output (default), 255 means 100% of max current.
+
+child-binding:
+  properties:
+    index:
+      required: true
+    color-mapping:
+      required: true

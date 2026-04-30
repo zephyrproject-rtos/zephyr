@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  description: Demonstration of the LP5815 RGB LED driver
+  name: LP5815 sample
+tests:
+  sample.drivers.led.lp5815:
+    build_only: true
+    tags: LED
