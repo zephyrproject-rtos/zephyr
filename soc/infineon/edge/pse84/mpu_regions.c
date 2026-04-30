@@ -21,10 +21,10 @@ static const struct arm_mpu_region mpu_regions[] = {
 
 	MPU_REGION_ENTRY(
 		"SRAM",
-		CONFIG_SRAM_BASE_ADDRESS,
+		 DT_CHOSEN_SRAM_ADDR,
 		REGION_RAM_ATTR(
-			CONFIG_SRAM_BASE_ADDRESS,
-			CONFIG_SRAM_SIZE * 1024)),
+			DT_CHOSEN_SRAM_ADDR,
+			DT_CHOSEN_SRAM_SIZE)),
 
 #if DT_NODE_EXISTS(DT_NODELABEL(m33_allocatable_shared))
 	MPU_REGION_ENTRY(
