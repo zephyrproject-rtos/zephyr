@@ -79,8 +79,10 @@ static K_SEM_DEFINE(sem_stream_connected, 0, 1);
 
 static void print_hex(const uint8_t *ptr, size_t len)
 {
-	while (len-- != 0) {
-		printk("%02x", *ptr++);
+	while (len != 0U) {
+		printk("%02x", *ptr);
+		ptr++;
+		len--;
 	}
 }
 
