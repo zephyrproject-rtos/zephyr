@@ -12,6 +12,9 @@ include:
       - st,prescaler
       - st,countermode
       - st,mastermode
+      - st,slavemode
+      - st,slavemode
+      - st,trigger-selection
 
 properties:
   st,prescaler:
