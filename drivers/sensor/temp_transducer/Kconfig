@@ -1,0 +1,14 @@
+# Copyright (C) 2026 HawkEye 360
+# Copyright (C) 2026 Liam Beguin <liambeguin@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config TEMP_TRANSDUCER
+	bool "Temperature transducer driver"
+	default y
+	depends on DT_HAS_TEMPERATURE_TRANSDUCER_ENABLED
+	select ADC
+	help
+	  Enable temperature transducer driver for converting
+	  voltage/current from temperature sensors to temperature values.
+	  This driver supports transducers like LTC2997 and AD590 that
+	  convert thermal quantities into voltage or current.
