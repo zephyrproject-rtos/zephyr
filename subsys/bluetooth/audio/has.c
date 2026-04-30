@@ -843,7 +843,7 @@ static int bt_has_cp_read_preset_rsp(struct has_client *client, const struct has
 	hdr = net_buf_simple_add(&buf, sizeof(*hdr));
 	hdr->opcode = BT_HAS_OP_READ_PRESET_RSP;
 	rsp = net_buf_simple_add(&buf, sizeof(*rsp));
-	rsp->is_last = is_last ? 0x01 : 0x00;
+	rsp->is_last = is_last ? 0x01U : 0x00U;
 	rsp->index = preset->index;
 	rsp->properties = preset->properties;
 	net_buf_simple_add_mem(&buf, preset->name, strlen(preset->name));
@@ -934,7 +934,7 @@ static int settings_set_cb(const char *name, size_t len_rd, settings_read_cb rea
 
 		context->last_preset_index_known = store.last_preset_index_known;
 	} else {
-		context->last_preset_index_known = 0x00;
+		context->last_preset_index_known = 0x00U;
 	}
 
 	/* Notify all the characteristics values after reboot */

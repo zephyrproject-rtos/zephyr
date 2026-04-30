@@ -192,10 +192,10 @@ static int sirk_encrypt(struct bt_conn *conn, const struct bt_csip_sirk *sirk,
 		/* test_k is from the sample data from A.2 in the CSIS spec */
 		static const uint8_t test_k[] = {
 			/* Sample data is in big-endian, we need it in little-endian. */
-			REVERSE_ARGS(0x67, 0x6e, 0x1b, 0x9b,
-				     0xd4, 0x48, 0x69, 0x6f,
-				     0x06, 0x1e, 0xc6, 0x22,
-				     0x3c, 0xe5, 0xce, 0xd9) };
+			REVERSE_ARGS(0x67U, 0x6eU, 0x1bU, 0x9bU,
+				     0xd4U, 0x48U, 0x69U, 0x6fU,
+				     0x06U, 0x1eU, 0xc6U, 0x22U,
+				     0x3cU, 0xe5U, 0xceU, 0xd9U) };
 		LOG_DBG("Encrypting test SIRK");
 		k = test_k;
 	} else {
@@ -233,12 +233,12 @@ static int generate_prand(uint8_t dest[BT_CSIP_CRYPTO_PRAND_SIZE])
 
 		/* Validate Prand: Must contain both a 1 and a 0 */
 		prand = sys_get_le24(dest);
-		if (prand != 0 && prand != 0x3FFFFF) {
+		if (prand != 0 && prand != 0x3FFFFFU) {
 			valid = true;
 		}
 	} while (!valid);
 
-	dest[BT_CSIP_CRYPTO_PRAND_SIZE - 1] &= 0x3F;
+	dest[BT_CSIP_CRYPTO_PRAND_SIZE - 1] &= 0x3FU;
 	dest[BT_CSIP_CRYPTO_PRAND_SIZE - 1] |= BIT(6);
 
 	return 0;
@@ -253,7 +253,7 @@ int bt_csip_set_member_generate_rsi(const struct bt_csip_set_member_svc_inst *sv
 
 	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_TEST_SAMPLE_DATA)) {
 		/* prand is from the sample data from A.2 in the CSIS spec */
-		sys_put_le24(0x69f563, prand);
+		sys_put_le24(0x69f563U, prand);
 	} else {
 		res = generate_prand(prand);
 
@@ -1145,8 +1145,8 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 #endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_TEST_SAMPLE_DATA)) {
 		uint8_t test_sirk[] = {
-			0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
-			0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45,
+			0xcdU, 0xccU, 0x72U, 0xddU, 0x86U, 0x8cU, 0xcdU, 0xceU,
+			0x22U, 0xfdU, 0xa1U, 0x21U, 0x09U, 0x7dU, 0x7dU, 0x45U,
 		};
 
 		(void)memcpy(inst->sirk.value, test_sirk, sizeof(test_sirk));

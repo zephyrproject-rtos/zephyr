@@ -3274,7 +3274,7 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 	}
 
 	op = net_buf_simple_add(buf, sizeof(*op));
-	op->num_ases = 0x01;
+	op->num_ases = 0x01U;
 
 	err = unicast_client_ep_config(ep, buf, codec_cfg);
 	if (err != 0) {
@@ -3485,7 +3485,7 @@ int bt_bap_unicast_client_enable(struct bt_bap_stream *stream, const uint8_t met
 	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->num_ases = 0x01;
+	req->num_ases = 0x01U;
 
 	err = unicast_client_ep_enable(ep, buf, meta, meta_len);
 	if (err != 0) {
@@ -3518,7 +3518,7 @@ int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, const uint8_t m
 	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->num_ases = 0x01;
+	req->num_ases = 0x01U;
 
 	err = unicast_client_ep_metadata(ep, buf, meta, meta_len);
 	if (err != 0) {
@@ -3634,7 +3634,7 @@ int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->num_ases = 0x01;
+	req->num_ases = 0x01U;
 
 	err = unicast_client_ep_disable(ep, buf);
 	if (err != 0) {
@@ -3666,7 +3666,7 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->num_ases = 0x00;
+	req->num_ases = 0x00U;
 
 	/* When initiated by the client, valid only if Direction field
 	 * parameter value = 0x02 (Server is Audio Source)
@@ -3718,7 +3718,7 @@ int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->num_ases = 0x01;
+	req->num_ases = 0x01U;
 	len = buf->len;
 
 	/* Only attempt to release if not IDLE already */

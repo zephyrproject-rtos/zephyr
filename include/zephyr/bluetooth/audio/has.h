@@ -44,11 +44,11 @@ extern "C" {
  * @{
  */
 /** No index */
-#define BT_HAS_PRESET_INDEX_NONE 0x00
+#define BT_HAS_PRESET_INDEX_NONE 0x00U
 /** First preset index */
-#define BT_HAS_PRESET_INDEX_FIRST 0x01
+#define BT_HAS_PRESET_INDEX_FIRST 0x01U
 /** Last preset index */
-#define BT_HAS_PRESET_INDEX_LAST 0xFF
+#define BT_HAS_PRESET_INDEX_LAST 0xFFU
 /** @} */
 
 /** Preset name minimum length */
@@ -68,17 +68,17 @@ enum bt_has_hearing_aid_type {
 	 * Two hearing aids that form a Coordinated Set, one for the right ear and one for the left
 	 * ear of the user. Typically used by a user with bilateral hearing loss.
 	 */
-	BT_HAS_HEARING_AID_TYPE_BINAURAL = 0x00,
+	BT_HAS_HEARING_AID_TYPE_BINAURAL = 0x00U,
 	/**
 	 * A single hearing aid for the left or the right ear. Typically used by a user with
 	 * unilateral hearing loss.
 	 */
-	BT_HAS_HEARING_AID_TYPE_MONAURAL = 0x01,
+	BT_HAS_HEARING_AID_TYPE_MONAURAL = 0x01U,
 	/**
 	 * Two hearing aids with a connection to one another that expose a single Bluetooth radio
 	 * interface.
 	 */
-	BT_HAS_HEARING_AID_TYPE_BANDED = 0x02,
+	BT_HAS_HEARING_AID_TYPE_BANDED = 0x02U,
 };
 
 /** Preset Properties values */

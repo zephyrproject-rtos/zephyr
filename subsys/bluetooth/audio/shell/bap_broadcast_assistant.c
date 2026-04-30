@@ -712,7 +712,7 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 		shell_error(sh, "failed to parse broadcast_id: %d", err);
 
 		return -ENOEXEC;
-	} else if (broadcast_id > 0xFFFFFF /* 24 bits */) {
+	} else if (broadcast_id > 0xFFFFFFU /* 24 bits */) {
 		shell_error(sh, "Broadcast ID maximum 24 bits (was %lu)", broadcast_id);
 
 		return -ENOEXEC;

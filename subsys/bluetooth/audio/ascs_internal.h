@@ -18,7 +18,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/conn.h>
 
-#define BT_ASCS_ASE_ID_NONE              0x00
+#define BT_ASCS_ASE_ID_NONE              0x00U
 
 /* The number of ASEs in the notification when the opcode is unsupported or the length of the
  * control point write request is incorrect
@@ -26,12 +26,12 @@
 #define BT_ASCS_UNSUPP_OR_LENGTH_ERR_NUM_ASE 0xFFU
 
 /* Transport QoS Packing */
-#define BT_ASCS_QOS_PACKING_SEQ          0x00
-#define BT_ASCS_QOS_PACKING_INT          0x01
+#define BT_ASCS_QOS_PACKING_SEQ          0x00U
+#define BT_ASCS_QOS_PACKING_INT          0x01U
 
 /* Transport QoS Framing */
-#define BT_ASCS_QOS_FRAMING_UNFRAMED     0x00
-#define BT_ASCS_QOS_FRAMING_FRAMED       0x01
+#define BT_ASCS_QOS_FRAMING_UNFRAMED     0x00U
+#define BT_ASCS_QOS_FRAMING_FRAMED       0x01U
 
 /* Format of the ASE characteristic, defined in Table 4.2 */
 struct bt_ascs_ase_status {
@@ -52,7 +52,7 @@ struct bt_ascs_codec {
 	uint16_t vid;
 } __packed;
 
-#define BT_ASCS_PD_NO_PREF 0x00000000
+#define BT_ASCS_PD_NO_PREF 0x00000000U
 
 /* ASE_State = 0x01 (Codec Configured), defined in Table 4.3. */
 struct bt_ascs_ase_status_config {
@@ -118,15 +118,15 @@ struct bt_ascs_ase_cp {
 } __packed;
 
 /* Opcodes */
-#define BT_ASCS_CONFIG_OP                0x01
+#define BT_ASCS_CONFIG_OP                0x01U
 
-#define BT_ASCS_CONFIG_LATENCY_LOW       0x01
-#define BT_ASCS_CONFIG_LATENCY_MEDIUM    0x02
-#define BT_ASCS_CONFIG_LATENCY_HIGH      0x03
+#define BT_ASCS_CONFIG_LATENCY_LOW       0x01U
+#define BT_ASCS_CONFIG_LATENCY_MEDIUM    0x02U
+#define BT_ASCS_CONFIG_LATENCY_HIGH      0x03U
 
-#define BT_ASCS_CONFIG_PHY_LE_1M         0x01
-#define BT_ASCS_CONFIG_PHY_LE_2M         0x02
-#define BT_ASCS_CONFIG_PHY_LE_CODED      0x03
+#define BT_ASCS_CONFIG_PHY_LE_1M         0x01U
+#define BT_ASCS_CONFIG_PHY_LE_2M         0x02U
+#define BT_ASCS_CONFIG_PHY_LE_CODED      0x03U
 
 struct bt_ascs_config {
 	/* ASE ID */
@@ -150,7 +150,7 @@ struct bt_ascs_config_op {
 	struct bt_ascs_config cfg[];
 } __packed;
 
-#define BT_ASCS_QOS_OP                   0x02
+#define BT_ASCS_QOS_OP                   0x02U
 struct bt_ascs_qos {
 	/* ASE ID */
 	uint8_t  ase;
@@ -181,7 +181,7 @@ struct bt_ascs_qos_op {
 	struct bt_ascs_qos qos[];
 } __packed;
 
-#define BT_ASCS_ENABLE_OP                0x03
+#define BT_ASCS_ENABLE_OP                0x03U
 struct bt_ascs_metadata {
 	/* ASE ID */
 	uint8_t  ase;
@@ -198,7 +198,7 @@ struct bt_ascs_enable_op {
 	struct bt_ascs_metadata metadata[];
 } __packed;
 
-#define BT_ASCS_START_OP                 0x04
+#define BT_ASCS_START_OP                 0x04U
 struct bt_ascs_start_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
@@ -206,7 +206,7 @@ struct bt_ascs_start_op {
 	uint8_t  ase[];
 } __packed;
 
-#define BT_ASCS_DISABLE_OP               0x05
+#define BT_ASCS_DISABLE_OP               0x05U
 struct bt_ascs_disable_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
@@ -214,7 +214,7 @@ struct bt_ascs_disable_op {
 	uint8_t  ase[];
 } __packed;
 
-#define BT_ASCS_STOP_OP                  0x06
+#define BT_ASCS_STOP_OP                  0x06U
 struct bt_ascs_stop_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
@@ -222,7 +222,7 @@ struct bt_ascs_stop_op {
 	uint8_t  ase[];
 } __packed;
 
-#define BT_ASCS_METADATA_OP              0x07
+#define BT_ASCS_METADATA_OP              0x07U
 struct bt_ascs_metadata_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
@@ -230,7 +230,7 @@ struct bt_ascs_metadata_op {
 	struct bt_ascs_metadata metadata[];
 } __packed;
 
-#define BT_ASCS_RELEASE_OP              0x08
+#define BT_ASCS_RELEASE_OP              0x08U
 struct bt_ascs_release_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;

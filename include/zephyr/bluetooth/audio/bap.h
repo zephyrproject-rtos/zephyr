@@ -191,9 +191,9 @@ extern "C" {
 /** @brief QoS Framing */
 enum bt_bap_qos_cfg_framing {
 	/** Packets may be framed or unframed */
-	BT_BAP_QOS_CFG_FRAMING_UNFRAMED = 0x00,
+	BT_BAP_QOS_CFG_FRAMING_UNFRAMED = 0x00U,
 	/** Packets are always framed */
-	BT_BAP_QOS_CFG_FRAMING_FRAMED = 0x01,
+	BT_BAP_QOS_CFG_FRAMING_FRAMED = 0x01U,
 };
 
 /** @brief QoS Preferred PHY */
@@ -421,47 +421,47 @@ struct bt_bap_qos_cfg_pref {
 /** Periodic advertising state reported by the Scan Delegator */
 enum bt_bap_pa_state {
 	/** The periodic advertising has not been synchronized */
-	BT_BAP_PA_STATE_NOT_SYNCED = 0x00,
+	BT_BAP_PA_STATE_NOT_SYNCED = 0x00U,
 
 	/** Waiting for SyncInfo from Broadcast Assistant */
-	BT_BAP_PA_STATE_INFO_REQ = 0x01,
+	BT_BAP_PA_STATE_INFO_REQ = 0x01U,
 
 	/** Synchronized to periodic advertising */
-	BT_BAP_PA_STATE_SYNCED = 0x02,
+	BT_BAP_PA_STATE_SYNCED = 0x02U,
 
 	/** Failed to synchronized to periodic advertising */
-	BT_BAP_PA_STATE_FAILED = 0x03,
+	BT_BAP_PA_STATE_FAILED = 0x03U,
 
 	/** No periodic advertising sync transfer receiver from Broadcast Assistant */
-	BT_BAP_PA_STATE_NO_PAST = 0x04,
+	BT_BAP_PA_STATE_NO_PAST = 0x04U,
 };
 
 /** Broadcast Isochronous Group encryption state reported by the Scan Delegator */
 enum bt_bap_big_enc_state {
 	/** The Broadcast Isochronous Group not encrypted */
-	BT_BAP_BIG_ENC_STATE_NO_ENC = 0x00,
+	BT_BAP_BIG_ENC_STATE_NO_ENC = 0x00U,
 
 	/** The Broadcast Isochronous Group broadcast code requested */
-	BT_BAP_BIG_ENC_STATE_BCODE_REQ = 0x01,
+	BT_BAP_BIG_ENC_STATE_BCODE_REQ = 0x01U,
 
 	/** The Broadcast Isochronous Group decrypted */
-	BT_BAP_BIG_ENC_STATE_DEC = 0x02,
+	BT_BAP_BIG_ENC_STATE_DEC = 0x02U,
 
 	/** The Broadcast Isochronous Group bad broadcast code */
-	BT_BAP_BIG_ENC_STATE_BAD_CODE = 0x03,
+	BT_BAP_BIG_ENC_STATE_BAD_CODE = 0x03U,
 };
 
 /** Broadcast Audio Scan Service (BASS) specific ATT error codes */
 enum bt_bap_bass_att_err {
 	/** Opcode not supported */
-	BT_BAP_BASS_ERR_OPCODE_NOT_SUPPORTED = 0x80,
+	BT_BAP_BASS_ERR_OPCODE_NOT_SUPPORTED = 0x80U,
 
 	/** Invalid source ID supplied */
-	BT_BAP_BASS_ERR_INVALID_SRC_ID = 0x81,
+	BT_BAP_BASS_ERR_INVALID_SRC_ID = 0x81U,
 };
 
 /** Value indicating that the periodic advertising interval is unknown */
-#define BT_BAP_PA_INTERVAL_UNKNOWN             0xFFFF
+#define BT_BAP_PA_INTERVAL_UNKNOWN             0xFFFFU
 
 /**
  * @brief Broadcast Assistant no BIS sync preference
@@ -469,32 +469,32 @@ enum bt_bap_bass_att_err {
  * Value indicating that the Broadcast Assistant has no preference to which BIS
  * the Scan Delegator syncs to
  */
-#define BT_BAP_BIS_SYNC_NO_PREF 0xFFFFFFFF
+#define BT_BAP_BIS_SYNC_NO_PREF 0xFFFFFFFFU
 /** BIS sync value indicating that the BIG sync has failed for any reason */
-#define BT_BAP_BIS_SYNC_FAILED  0xFFFFFFFF
+#define BT_BAP_BIS_SYNC_FAILED  0xFFFFFFFFU
 
 /** Endpoint states */
 enum bt_bap_ep_state {
 	/** Audio Stream Endpoint Idle state */
-	BT_BAP_EP_STATE_IDLE = 0x00,
+	BT_BAP_EP_STATE_IDLE = 0x00U,
 
 	/** Audio Stream Endpoint Codec Configured state */
-	BT_BAP_EP_STATE_CODEC_CONFIGURED = 0x01,
+	BT_BAP_EP_STATE_CODEC_CONFIGURED = 0x01U,
 
 	/** Audio Stream Endpoint QoS Configured state */
-	BT_BAP_EP_STATE_QOS_CONFIGURED = 0x02,
+	BT_BAP_EP_STATE_QOS_CONFIGURED = 0x02U,
 
 	/** Audio Stream Endpoint Enabling state */
-	BT_BAP_EP_STATE_ENABLING = 0x03,
+	BT_BAP_EP_STATE_ENABLING = 0x03U,
 
 	/** Audio Stream Endpoint Streaming state */
-	BT_BAP_EP_STATE_STREAMING = 0x04,
+	BT_BAP_EP_STATE_STREAMING = 0x04U,
 
 	/** Audio Stream Endpoint Disabling state */
-	BT_BAP_EP_STATE_DISABLING = 0x05,
+	BT_BAP_EP_STATE_DISABLING = 0x05U,
 
 	/** Audio Stream Endpoint Streaming state */
-	BT_BAP_EP_STATE_RELEASING = 0x06,
+	BT_BAP_EP_STATE_RELEASING = 0x06U,
 };
 
 /**
@@ -505,35 +505,35 @@ enum bt_bap_ep_state {
  */
 enum bt_bap_ascs_rsp_code {
 	/** Server completed operation successfully */
-	BT_BAP_ASCS_RSP_CODE_SUCCESS = 0x00,
+	BT_BAP_ASCS_RSP_CODE_SUCCESS = 0x00U,
 	/** Server did not support operation by client */
-	BT_BAP_ASCS_RSP_CODE_NOT_SUPPORTED = 0x01,
+	BT_BAP_ASCS_RSP_CODE_NOT_SUPPORTED = 0x01U,
 	/** Server rejected due to invalid operation length */
-	BT_BAP_ASCS_RSP_CODE_INVALID_LENGTH = 0x02,
+	BT_BAP_ASCS_RSP_CODE_INVALID_LENGTH = 0x02U,
 	/** Invalid ASE ID */
-	BT_BAP_ASCS_RSP_CODE_INVALID_ASE = 0x03,
+	BT_BAP_ASCS_RSP_CODE_INVALID_ASE = 0x03U,
 	/** Invalid ASE state */
-	BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE = 0x04,
+	BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE = 0x04U,
 	/** Invalid operation for direction */
-	BT_BAP_ASCS_RSP_CODE_INVALID_DIR = 0x05,
+	BT_BAP_ASCS_RSP_CODE_INVALID_DIR = 0x05U,
 	/** Capabilities not supported by server */
-	BT_BAP_ASCS_RSP_CODE_CAP_UNSUPPORTED = 0x06,
+	BT_BAP_ASCS_RSP_CODE_CAP_UNSUPPORTED = 0x06U,
 	/** Configuration parameters not supported by server */
-	BT_BAP_ASCS_RSP_CODE_CONF_UNSUPPORTED = 0x07,
+	BT_BAP_ASCS_RSP_CODE_CONF_UNSUPPORTED = 0x07U,
 	/** Configuration parameters rejected by server */
-	BT_BAP_ASCS_RSP_CODE_CONF_REJECTED = 0x08,
+	BT_BAP_ASCS_RSP_CODE_CONF_REJECTED = 0x08U,
 	/** Invalid Configuration parameters */
-	BT_BAP_ASCS_RSP_CODE_CONF_INVALID = 0x09,
+	BT_BAP_ASCS_RSP_CODE_CONF_INVALID = 0x09U,
 	/** Unsupported metadata */
-	BT_BAP_ASCS_RSP_CODE_METADATA_UNSUPPORTED = 0x0a,
+	BT_BAP_ASCS_RSP_CODE_METADATA_UNSUPPORTED = 0x0aU,
 	/** Metadata rejected by server */
-	BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED = 0x0b,
+	BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED = 0x0bU,
 	/** Invalid metadata */
-	BT_BAP_ASCS_RSP_CODE_METADATA_INVALID = 0x0c,
+	BT_BAP_ASCS_RSP_CODE_METADATA_INVALID = 0x0cU,
 	/** Server has insufficient resources */
-	BT_BAP_ASCS_RSP_CODE_NO_MEM = 0x0d,
+	BT_BAP_ASCS_RSP_CODE_NO_MEM = 0x0dU,
 	/** Unspecified error */
-	BT_BAP_ASCS_RSP_CODE_UNSPECIFIED = 0x0e,
+	BT_BAP_ASCS_RSP_CODE_UNSPECIFIED = 0x0eU,
 };
 
 /**
@@ -545,27 +545,27 @@ enum bt_bap_ascs_rsp_code {
  */
 enum bt_bap_ascs_reason {
 	/** No reason */
-	BT_BAP_ASCS_REASON_NONE = 0x00,
+	BT_BAP_ASCS_REASON_NONE = 0x00U,
 	/** Codec ID */
-	BT_BAP_ASCS_REASON_CODEC = 0x01,
+	BT_BAP_ASCS_REASON_CODEC = 0x01U,
 	/** Codec configuration */
-	BT_BAP_ASCS_REASON_CODEC_DATA = 0x02,
+	BT_BAP_ASCS_REASON_CODEC_DATA = 0x02U,
 	/** SDU interval */
-	BT_BAP_ASCS_REASON_INTERVAL = 0x03,
+	BT_BAP_ASCS_REASON_INTERVAL = 0x03U,
 	/** Framing */
-	BT_BAP_ASCS_REASON_FRAMING = 0x04,
+	BT_BAP_ASCS_REASON_FRAMING = 0x04U,
 	/** PHY */
-	BT_BAP_ASCS_REASON_PHY = 0x05,
+	BT_BAP_ASCS_REASON_PHY = 0x05U,
 	/** Maximum SDU size*/
-	BT_BAP_ASCS_REASON_SDU = 0x06,
+	BT_BAP_ASCS_REASON_SDU = 0x06U,
 	/** RTN */
-	BT_BAP_ASCS_REASON_RTN = 0x07,
+	BT_BAP_ASCS_REASON_RTN = 0x07U,
 	/** Max transport latency */
-	BT_BAP_ASCS_REASON_LATENCY = 0x08,
+	BT_BAP_ASCS_REASON_LATENCY = 0x08U,
 	/** Presendation delay */
-	BT_BAP_ASCS_REASON_PD = 0x09,
+	BT_BAP_ASCS_REASON_PD = 0x09U,
 	/** Invalid CIS mapping */
-	BT_BAP_ASCS_REASON_CIS = 0x0a,
+	BT_BAP_ASCS_REASON_CIS = 0x0aU,
 };
 
 /** @brief Structure storing values of fields of ASE Control Point notification. */

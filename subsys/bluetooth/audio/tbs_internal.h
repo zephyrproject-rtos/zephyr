@@ -25,22 +25,22 @@
 #define BT_TBS_FREE_CALL_INDEX                     0
 
 /* Call Control Point Opcodes */
-#define BT_TBS_CALL_OPCODE_ACCEPT                  0x00
-#define BT_TBS_CALL_OPCODE_TERMINATE               0x01
-#define BT_TBS_CALL_OPCODE_HOLD                    0x02
-#define BT_TBS_CALL_OPCODE_RETRIEVE                0x03
-#define BT_TBS_CALL_OPCODE_ORIGINATE               0x04
-#define BT_TBS_CALL_OPCODE_JOIN                    0x05
+#define BT_TBS_CALL_OPCODE_ACCEPT                  0x00U
+#define BT_TBS_CALL_OPCODE_TERMINATE               0x01U
+#define BT_TBS_CALL_OPCODE_HOLD                    0x02U
+#define BT_TBS_CALL_OPCODE_RETRIEVE                0x03U
+#define BT_TBS_CALL_OPCODE_ORIGINATE               0x04U
+#define BT_TBS_CALL_OPCODE_JOIN                    0x05U
 
 /* Local Control Points - Used to do local control operations but still being
  * able to determine if it is a local or remote operation
  */
-#define BT_TBS_LOCAL_OPCODE_ANSWER                 0x80
-#define BT_TBS_LOCAL_OPCODE_HOLD                   0x81
-#define BT_TBS_LOCAL_OPCODE_RETRIEVE               0x82
-#define BT_TBS_LOCAL_OPCODE_TERMINATE              0x83
-#define BT_TBS_LOCAL_OPCODE_INCOMING               0x84
-#define BT_TBS_LOCAL_OPCODE_SERVER_TERMINATE       0x85
+#define BT_TBS_LOCAL_OPCODE_ANSWER                 0x80U
+#define BT_TBS_LOCAL_OPCODE_HOLD                   0x81U
+#define BT_TBS_LOCAL_OPCODE_RETRIEVE               0x82U
+#define BT_TBS_LOCAL_OPCODE_TERMINATE              0x83U
+#define BT_TBS_LOCAL_OPCODE_INCOMING               0x84U
+#define BT_TBS_LOCAL_OPCODE_SERVER_TERMINATE       0x85U
 
 #define FIRST_PRINTABLE_ASCII_CHAR ' ' /* space */
 

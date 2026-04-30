@@ -1401,7 +1401,7 @@ static void ase_init(struct bt_ascs_ase *ase, struct bt_conn *conn, uint8_t id)
 	ase->conn = bt_conn_ref(conn);
 
 	/* Lookup ASE characteristic */
-	bt_gatt_foreach_attr_type(0x0001, 0xffff, ASE_UUID(id), NULL, 0, ase_attr_cb, ase);
+	bt_gatt_foreach_attr_type(0x0001U, 0xffffU, ASE_UUID(id), NULL, 0, ase_attr_cb, ase);
 
 	__ASSERT(ase->attr, "ASE characteristic not found\n");
 

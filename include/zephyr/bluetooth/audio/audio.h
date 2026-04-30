@@ -90,9 +90,9 @@ struct bt_audio_codec_octets_per_codec_frame {
  * @{
  */
 /** Unicast Server is connectable and is requesting a connection. */
-#define BT_AUDIO_UNICAST_ANNOUNCEMENT_GENERAL    0x00
+#define BT_AUDIO_UNICAST_ANNOUNCEMENT_GENERAL    0x00U
 /** Unicast Server is connectable but is not requesting a connection. */
-#define BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED   0x01
+#define BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED   0x01U
 /** @} */
 
 /**
@@ -198,13 +198,13 @@ struct bt_audio_codec_cap {
  */
 enum bt_audio_codec_cfg_target_latency {
 	/** Target low latency */
-	BT_AUDIO_CODEC_CFG_TARGET_LATENCY_LOW = 0x01,
+	BT_AUDIO_CODEC_CFG_TARGET_LATENCY_LOW = 0x01U,
 
 	/** Target balanced latency */
-	BT_AUDIO_CODEC_CFG_TARGET_LATENCY_BALANCED = 0x02,
+	BT_AUDIO_CODEC_CFG_TARGET_LATENCY_BALANCED = 0x02U,
 
 	/** Target high latency */
-	BT_AUDIO_CODEC_CFG_TARGET_LATENCY_HIGH = 0x03,
+	BT_AUDIO_CODEC_CFG_TARGET_LATENCY_HIGH = 0x03U,
 };
 
 /**
@@ -214,13 +214,13 @@ enum bt_audio_codec_cfg_target_latency {
  */
 enum bt_audio_codec_cfg_target_phy {
 	/** LE 1M PHY */
-	BT_AUDIO_CODEC_CFG_TARGET_PHY_1M = 0x01,
+	BT_AUDIO_CODEC_CFG_TARGET_PHY_1M = 0x01U,
 
 	/** LE 2M PHY */
-	BT_AUDIO_CODEC_CFG_TARGET_PHY_2M = 0x02,
+	BT_AUDIO_CODEC_CFG_TARGET_PHY_2M = 0x02U,
 
 	/** LE Coded PHY */
-	BT_AUDIO_CODEC_CFG_TARGET_PHY_CODED = 0x03,
+	BT_AUDIO_CODEC_CFG_TARGET_PHY_CODED = 0x03U,
 };
 
 /** @brief Codec specific configuration structure. */
@@ -321,14 +321,14 @@ enum bt_audio_dir {
 	 * For a BAP Unicast Client or Broadcast Source this is considered outgoing audio (TX).
 	 * For a BAP Unicast Server or Broadcast Sink this is considered incoming audio (RX).
 	 */
-	BT_AUDIO_DIR_SINK = 0x01,
+	BT_AUDIO_DIR_SINK = 0x01U,
 	/**
 	 * @brief Audio direction source
 	 *
 	 * For a BAP Unicast Client or Broadcast Source this is considered incoming audio (RX).
 	 * For a BAP Unicast Server or Broadcast Sink this is considered outgoing audio (TX).
 	 */
-	BT_AUDIO_DIR_SOURCE = 0x02,
+	BT_AUDIO_DIR_SOURCE = 0x02U,
 };
 
 /**

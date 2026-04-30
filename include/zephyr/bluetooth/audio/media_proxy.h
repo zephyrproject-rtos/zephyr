@@ -137,25 +137,25 @@ struct mpl_search {
  * @{
  */
 /** A single track is played once; there is no next track. */
-#define MEDIA_PROXY_PLAYING_ORDER_SINGLE_ONCE    0x01
+#define MEDIA_PROXY_PLAYING_ORDER_SINGLE_ONCE    0x01U
 /** A single track is played repeatedly; the next track is the current track. */
-#define MEDIA_PROXY_PLAYING_ORDER_SINGLE_REPEAT  0x02
+#define MEDIA_PROXY_PLAYING_ORDER_SINGLE_REPEAT  0x02U
 /** The tracks within a group are played once in track order. */
-#define MEDIA_PROXY_PLAYING_ORDER_INORDER_ONCE   0x03
+#define MEDIA_PROXY_PLAYING_ORDER_INORDER_ONCE   0x03U
 /** The tracks within a group are played in track order repeatedly. */
-#define MEDIA_PROXY_PLAYING_ORDER_INORDER_REPEAT 0x04
+#define MEDIA_PROXY_PLAYING_ORDER_INORDER_REPEAT 0x04U
 /** The tracks within a group are played once only from the oldest first. */
-#define MEDIA_PROXY_PLAYING_ORDER_OLDEST_ONCE    0x05
+#define MEDIA_PROXY_PLAYING_ORDER_OLDEST_ONCE    0x05U
 /** The tracks within a group are played from the oldest first repeatedly. */
-#define MEDIA_PROXY_PLAYING_ORDER_OLDEST_REPEAT  0x06
+#define MEDIA_PROXY_PLAYING_ORDER_OLDEST_REPEAT  0x06U
 /** The tracks within a group are played once only from the newest first. */
-#define MEDIA_PROXY_PLAYING_ORDER_NEWEST_ONCE    0x07
+#define MEDIA_PROXY_PLAYING_ORDER_NEWEST_ONCE    0x07U
 /** The tracks within a group are played from the newest first repeatedly. */
-#define MEDIA_PROXY_PLAYING_ORDER_NEWEST_REPEAT  0x08
+#define MEDIA_PROXY_PLAYING_ORDER_NEWEST_REPEAT  0x08U
 /** The tracks within a group are played in random order once. */
-#define MEDIA_PROXY_PLAYING_ORDER_SHUFFLE_ONCE   0x09
+#define MEDIA_PROXY_PLAYING_ORDER_SHUFFLE_ONCE   0x09U
 /** The tracks within a group are played in random order repeatedly. */
-#define MEDIA_PROXY_PLAYING_ORDER_SHUFFLE_REPEAT 0x0a
+#define MEDIA_PROXY_PLAYING_ORDER_SHUFFLE_REPEAT 0x0aU
 /** @} */
 
 /**
@@ -192,15 +192,15 @@ struct mpl_search {
  * @{
  */
 /** The current track is invalid, and no track has been selected. */
-#define MEDIA_PROXY_STATE_INACTIVE 0x00
+#define MEDIA_PROXY_STATE_INACTIVE 0x00U
 /** The media player is playing the current track. */
-#define MEDIA_PROXY_STATE_PLAYING  0x01
+#define MEDIA_PROXY_STATE_PLAYING  0x01U
 /** The current track is paused. The media player has a current track, but it is not being played */
-#define MEDIA_PROXY_STATE_PAUSED   0x02
+#define MEDIA_PROXY_STATE_PAUSED   0x02U
 /** The current track is fast forwarding or fast rewinding. */
-#define MEDIA_PROXY_STATE_SEEKING  0x03
+#define MEDIA_PROXY_STATE_SEEKING  0x03U
 /** Used internally as the last state value */
-#define MEDIA_PROXY_STATE_LAST     0x04
+#define MEDIA_PROXY_STATE_LAST     0x04U
 /** @} */
 
 /**
@@ -208,69 +208,69 @@ struct mpl_search {
  * @{
  */
 /** Start playing the current track. */
-#define MEDIA_PROXY_OP_PLAY         0x01
+#define MEDIA_PROXY_OP_PLAY         0x01U
 /** Pause playing the current track. */
-#define MEDIA_PROXY_OP_PAUSE        0x02
+#define MEDIA_PROXY_OP_PAUSE        0x02U
 /** Fast rewind the current track. */
-#define MEDIA_PROXY_OP_FAST_REWIND  0x03
+#define MEDIA_PROXY_OP_FAST_REWIND  0x03U
 /** Fast forward the current track. */
-#define MEDIA_PROXY_OP_FAST_FORWARD 0x04
+#define MEDIA_PROXY_OP_FAST_FORWARD 0x04U
 /**
  * Stop current activity and return to the paused state and set the current track position to the
  * start of the current track.
  */
-#define MEDIA_PROXY_OP_STOP         0x05
+#define MEDIA_PROXY_OP_STOP         0x05U
 
 /** Set a new current track position relative to the current track position. */
-#define MEDIA_PROXY_OP_MOVE_RELATIVE 0x10
+#define MEDIA_PROXY_OP_MOVE_RELATIVE 0x10U
 
 /**
  * Set the current track position to the starting position of the previous segment of the current
  * track.
  */
-#define MEDIA_PROXY_OP_PREV_SEGMENT  0x20
+#define MEDIA_PROXY_OP_PREV_SEGMENT  0x20U
 /**
  * Set the current track position to the starting position of
  * the next segment of the current track.
  */
-#define MEDIA_PROXY_OP_NEXT_SEGMENT  0x21
+#define MEDIA_PROXY_OP_NEXT_SEGMENT  0x21U
 /**
  * Set the current track position to the starting position of
  * the first segment of the current track.
  */
-#define MEDIA_PROXY_OP_FIRST_SEGMENT 0x22
+#define MEDIA_PROXY_OP_FIRST_SEGMENT 0x22U
 /**
  * Set the current track position to the starting position of
  * the last segment of the current track.
  */
-#define MEDIA_PROXY_OP_LAST_SEGMENT  0x23
+#define MEDIA_PROXY_OP_LAST_SEGMENT  0x23U
 /**
  * Set the current track position to the starting position of
  * the nth segment of the current track.
  */
-#define MEDIA_PROXY_OP_GOTO_SEGMENT  0x24
+#define MEDIA_PROXY_OP_GOTO_SEGMENT  0x24U
 
 /** Set the current track to the previous track based on the playing order. */
-#define MEDIA_PROXY_OP_PREV_TRACK  0x30
+#define MEDIA_PROXY_OP_PREV_TRACK  0x30U
 /** Set the current track to the next track based on the playing order. */
-#define MEDIA_PROXY_OP_NEXT_TRACK  0x31
+#define MEDIA_PROXY_OP_NEXT_TRACK  0x31U
 /** Set the current track to the first track based on the playing order. */
-#define MEDIA_PROXY_OP_FIRST_TRACK 0x32
+#define MEDIA_PROXY_OP_FIRST_TRACK 0x32U
 /** Set the current track to the last track based on the playing order. */
-#define MEDIA_PROXY_OP_LAST_TRACK  0x33
+#define MEDIA_PROXY_OP_LAST_TRACK  0x33U
 /** Set the current track to the nth track based on the playing order. */
-#define MEDIA_PROXY_OP_GOTO_TRACK  0x34
+#define MEDIA_PROXY_OP_GOTO_TRACK  0x34U
 
 /** Set the current group to the previous group in the sequence of groups. */
-#define MEDIA_PROXY_OP_PREV_GROUP  0x40
+#define MEDIA_PROXY_OP_PREV_GROUP  0x40U
 /** Set the current group to the next group in the sequence of groups. */
-#define MEDIA_PROXY_OP_NEXT_GROUP  0x41
+#define MEDIA_PROXY_OP_NEXT_GROUP  0x41U
 /** Set the current group to the first group in the sequence of groups. */
-#define MEDIA_PROXY_OP_FIRST_GROUP 0x42
+#define MEDIA_PROXY_OP_FIRST_GROUP 0x42U
 /** Set the current group to the last group in the sequence of groups. */
-#define MEDIA_PROXY_OP_LAST_GROUP  0x43
+#define MEDIA_PROXY_OP_LAST_GROUP  0x43U
 /** Set the current group to the nth group in the sequence of groups. */
-#define MEDIA_PROXY_OP_GOTO_GROUP  0x44
+#define MEDIA_PROXY_OP_GOTO_GROUP  0x44U
 /** @} */
 
 /**
@@ -335,20 +335,20 @@ struct mpl_search {
  * @{
  */
 /** Action requested by the opcode write was completed successfully. */
-#define MEDIA_PROXY_CMD_SUCCESS             0x01
+#define MEDIA_PROXY_CMD_SUCCESS             0x01U
 /** An invalid or unsupported opcode was used for the Media Control Point write. */
-#define MEDIA_PROXY_CMD_NOT_SUPPORTED       0x02
+#define MEDIA_PROXY_CMD_NOT_SUPPORTED       0x02U
 /**
  * The Media Player State characteristic value is Inactive when the opcode is received or the
  * result of the requested action of the opcode results in the Media Player State characteristic
  * being set to Inactive.
  */
-#define MEDIA_PROXY_CMD_PLAYER_INACTIVE     0x03
+#define MEDIA_PROXY_CMD_PLAYER_INACTIVE     0x03U
 /**
  * The requested action of any Media Control Point write cannot be completed successfully because of
  * a condition within the player.
  */
-#define MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED 0x04
+#define MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED 0x04U
 /** @} */
 
 /**
@@ -356,23 +356,23 @@ struct mpl_search {
  * @{
  */
 /** Search for Track Name */
-#define MEDIA_PROXY_SEARCH_TYPE_TRACK_NAME    0x01
+#define MEDIA_PROXY_SEARCH_TYPE_TRACK_NAME    0x01U
 /** Search for Artist Name */
-#define MEDIA_PROXY_SEARCH_TYPE_ARTIST_NAME   0x02
+#define MEDIA_PROXY_SEARCH_TYPE_ARTIST_NAME   0x02U
 /** Search for Album Name */
-#define MEDIA_PROXY_SEARCH_TYPE_ALBUM_NAME    0x03
+#define MEDIA_PROXY_SEARCH_TYPE_ALBUM_NAME    0x03U
 /** Search for Group Name */
-#define MEDIA_PROXY_SEARCH_TYPE_GROUP_NAME    0x04
+#define MEDIA_PROXY_SEARCH_TYPE_GROUP_NAME    0x04U
 /** Search for Earliest Year */
-#define MEDIA_PROXY_SEARCH_TYPE_EARLIEST_YEAR 0x05
+#define MEDIA_PROXY_SEARCH_TYPE_EARLIEST_YEAR 0x05U
 /** Search for Latest Year */
-#define MEDIA_PROXY_SEARCH_TYPE_LATEST_YEAR   0x06
+#define MEDIA_PROXY_SEARCH_TYPE_LATEST_YEAR   0x06U
 /** Search for Genre */
-#define MEDIA_PROXY_SEARCH_TYPE_GENRE         0x07
+#define MEDIA_PROXY_SEARCH_TYPE_GENRE         0x07U
 /** Search for Tracks only */
-#define MEDIA_PROXY_SEARCH_TYPE_ONLY_TRACKS   0x08
+#define MEDIA_PROXY_SEARCH_TYPE_ONLY_TRACKS   0x08U
 /** Search for Groups only */
-#define MEDIA_PROXY_SEARCH_TYPE_ONLY_GROUPS   0x09
+#define MEDIA_PROXY_SEARCH_TYPE_ONLY_GROUPS   0x09U
 /** @} */
 
 /**
@@ -381,9 +381,9 @@ struct mpl_search {
  * @{
  */
 /** Search request was accepted; search has started. */
-#define MEDIA_PROXY_SEARCH_SUCCESS 0x01
+#define MEDIA_PROXY_SEARCH_SUCCESS 0x01U
 /** Search request was invalid; no search started. */
-#define MEDIA_PROXY_SEARCH_FAILURE 0x02
+#define MEDIA_PROXY_SEARCH_FAILURE 0x02U
 /** @} */
 
 /**
@@ -392,9 +392,9 @@ struct mpl_search {
  * @{
  */
 /** Group object type is track */
-#define MEDIA_PROXY_GROUP_OBJECT_TRACK_TYPE 0x00
+#define MEDIA_PROXY_GROUP_OBJECT_TRACK_TYPE 0x00U
 /** Group object type is group */
-#define MEDIA_PROXY_GROUP_OBJECT_GROUP_TYPE 0x01
+#define MEDIA_PROXY_GROUP_OBJECT_GROUP_TYPE 0x01U
 /** @} */
 
 /**

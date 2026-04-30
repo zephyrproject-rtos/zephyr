@@ -37,7 +37,7 @@ extern "C" {
  * A characteristic value has changed while a Read Long Value Characteristic sub-procedure is in
  * progress.
  */
-#define BT_MCS_ERR_LONG_VAL_CHANGED     0x80
+#define BT_MCS_ERR_LONG_VAL_CHANGED     0x80U
 
 /**
  * @name Playback speeds
@@ -81,25 +81,25 @@ extern "C" {
  * @{
  */
 /** A single track is played once; there is no next track. */
-#define BT_MCS_PLAYING_ORDER_SINGLE_ONCE    0X01
+#define BT_MCS_PLAYING_ORDER_SINGLE_ONCE    0X01U
 /** A single track is played repeatedly; the next track is the current track. */
-#define BT_MCS_PLAYING_ORDER_SINGLE_REPEAT  0x02
+#define BT_MCS_PLAYING_ORDER_SINGLE_REPEAT  0x02U
 /** The tracks within a group are played once in track order. */
-#define BT_MCS_PLAYING_ORDER_INORDER_ONCE   0x03
+#define BT_MCS_PLAYING_ORDER_INORDER_ONCE   0x03U
 /** The tracks within a group are played in track order repeatedly. */
-#define BT_MCS_PLAYING_ORDER_INORDER_REPEAT 0x04
+#define BT_MCS_PLAYING_ORDER_INORDER_REPEAT 0x04U
 /** The tracks within a group are played once only from the oldest first. */
-#define BT_MCS_PLAYING_ORDER_OLDEST_ONCE    0x05
+#define BT_MCS_PLAYING_ORDER_OLDEST_ONCE    0x05U
 /** The tracks within a group are played from the oldest first repeatedly. */
-#define BT_MCS_PLAYING_ORDER_OLDEST_REPEAT  0x06
+#define BT_MCS_PLAYING_ORDER_OLDEST_REPEAT  0x06U
 /** The tracks within a group are played once only from the newest first. */
-#define BT_MCS_PLAYING_ORDER_NEWEST_ONCE    0x07
+#define BT_MCS_PLAYING_ORDER_NEWEST_ONCE    0x07U
 /** The tracks within a group are played from the newest first repeatedly. */
-#define BT_MCS_PLAYING_ORDER_NEWEST_REPEAT  0x08
+#define BT_MCS_PLAYING_ORDER_NEWEST_REPEAT  0x08U
 /** The tracks within a group are played in random order once. */
-#define BT_MCS_PLAYING_ORDER_SHUFFLE_ONCE   0x09
+#define BT_MCS_PLAYING_ORDER_SHUFFLE_ONCE   0x09U
 /** The tracks within a group are played in random order repeatedly. */
-#define BT_MCS_PLAYING_ORDER_SHUFFLE_REPEAT 0x0a
+#define BT_MCS_PLAYING_ORDER_SHUFFLE_REPEAT 0x0aU
 /** @} */
 
 /** @name Playing orders supported
@@ -135,13 +135,13 @@ extern "C" {
  * @{
  */
 /** The current track is invalid, and no track has been selected. */
-#define BT_MCS_MEDIA_STATE_INACTIVE 0x00
+#define BT_MCS_MEDIA_STATE_INACTIVE 0x00U
 /** The media player is playing the current track. */
-#define BT_MCS_MEDIA_STATE_PLAYING  0x01
+#define BT_MCS_MEDIA_STATE_PLAYING  0x01U
 /** The current track is paused. The media player has a current track, but it is not being played */
-#define BT_MCS_MEDIA_STATE_PAUSED   0x02
+#define BT_MCS_MEDIA_STATE_PAUSED   0x02U
 /** The current track is fast forwarding or fast rewinding. */
-#define BT_MCS_MEDIA_STATE_SEEKING  0x03
+#define BT_MCS_MEDIA_STATE_SEEKING  0x03U
 /** @} */
 
 /**
@@ -149,69 +149,69 @@ extern "C" {
  * @{
  */
 /** Start playing the current track. */
-#define BT_MCS_OPC_PLAY          0x01
+#define BT_MCS_OPC_PLAY          0x01U
 /** Pause playing the current track. */
-#define BT_MCS_OPC_PAUSE         0x02
+#define BT_MCS_OPC_PAUSE         0x02U
 /** Fast rewind the current track. */
-#define BT_MCS_OPC_FAST_REWIND   0x03
+#define BT_MCS_OPC_FAST_REWIND   0x03U
 /** Fast forward the current track. */
-#define BT_MCS_OPC_FAST_FORWARD  0x04
+#define BT_MCS_OPC_FAST_FORWARD  0x04U
 /**
  * Stop current activity and return to the paused state and set the current track position to the
  * start of the current track.
  */
-#define BT_MCS_OPC_STOP          0x05
+#define BT_MCS_OPC_STOP          0x05U
 
 /** Set a new current track position relative to the current track position. */
-#define BT_MCS_OPC_MOVE_RELATIVE 0x10
+#define BT_MCS_OPC_MOVE_RELATIVE 0x10U
 
 /**
  * Set the current track position to the starting position of the previous segment of the current
  * track.
  */
-#define BT_MCS_OPC_PREV_SEGMENT  0x20
+#define BT_MCS_OPC_PREV_SEGMENT  0x20U
 /**
  * Set the current track position to the starting position of
  * the next segment of the current track.
  */
-#define BT_MCS_OPC_NEXT_SEGMENT  0x21
+#define BT_MCS_OPC_NEXT_SEGMENT  0x21U
 /**
  * Set the current track position to the starting position of
  * the first segment of the current track.
  */
-#define BT_MCS_OPC_FIRST_SEGMENT 0x22
+#define BT_MCS_OPC_FIRST_SEGMENT 0x22U
 /**
  * Set the current track position to the starting position of
  * the last segment of the current track.
  */
-#define BT_MCS_OPC_LAST_SEGMENT  0x23
+#define BT_MCS_OPC_LAST_SEGMENT  0x23U
 /**
  * Set the current track position to the starting position of
  * the nth segment of the current track.
  */
-#define BT_MCS_OPC_GOTO_SEGMENT  0x24
+#define BT_MCS_OPC_GOTO_SEGMENT  0x24U
 
 /** Set the current track to the previous track based on the playing order. */
-#define BT_MCS_OPC_PREV_TRACK    0x30
+#define BT_MCS_OPC_PREV_TRACK    0x30U
 /** Set the current track to the next track based on the playing order. */
-#define BT_MCS_OPC_NEXT_TRACK    0x31
+#define BT_MCS_OPC_NEXT_TRACK    0x31U
 /** Set the current track to the first track based on the playing order. */
-#define BT_MCS_OPC_FIRST_TRACK   0x32
+#define BT_MCS_OPC_FIRST_TRACK   0x32U
 /** Set the current track to the last track based on the playing order. */
-#define BT_MCS_OPC_LAST_TRACK    0x33
+#define BT_MCS_OPC_LAST_TRACK    0x33U
 /** Set the current track to the nth track based on the playing order. */
-#define BT_MCS_OPC_GOTO_TRACK    0x34
+#define BT_MCS_OPC_GOTO_TRACK    0x34U
 
 /** Set the current group to the previous group in the sequence of groups. */
-#define BT_MCS_OPC_PREV_GROUP    0x40
+#define BT_MCS_OPC_PREV_GROUP    0x40U
 /** Set the current group to the next group in the sequence of groups. */
-#define BT_MCS_OPC_NEXT_GROUP    0x41
+#define BT_MCS_OPC_NEXT_GROUP    0x41U
 /** Set the current group to the first group in the sequence of groups. */
-#define BT_MCS_OPC_FIRST_GROUP   0x42
+#define BT_MCS_OPC_FIRST_GROUP   0x42U
 /** Set the current group to the last group in the sequence of groups. */
-#define BT_MCS_OPC_LAST_GROUP    0x43
+#define BT_MCS_OPC_LAST_GROUP    0x43U
 /** Set the current group to the nth group in the sequence of groups. */
-#define BT_MCS_OPC_GOTO_GROUP    0x44
+#define BT_MCS_OPC_GOTO_GROUP    0x44U
 /** @} */
 
 /** Media control point supported opcodes length */
@@ -274,20 +274,20 @@ extern "C" {
  * @{
  */
 /** Action requested by the opcode write was completed successfully. */
-#define BT_MCS_OPC_NTF_SUCCESS             0x01
+#define BT_MCS_OPC_NTF_SUCCESS             0x01U
 /** An invalid or unsupported opcode was used for the Media Control Point write. */
-#define BT_MCS_OPC_NTF_NOT_SUPPORTED       0x02
+#define BT_MCS_OPC_NTF_NOT_SUPPORTED       0x02U
 /**
  * The Media Player State characteristic value is Inactive when the opcode is received or the
  * result of the requested action of the opcode results in the Media Player State characteristic
  * being set to Inactive.
  */
-#define BT_MCS_OPC_NTF_PLAYER_INACTIVE     0x03
+#define BT_MCS_OPC_NTF_PLAYER_INACTIVE     0x03U
 /**
  * The requested action of any Media Control Point write cannot be completed successfully because of
  * a condition within the player.
  */
-#define BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED 0x04
+#define BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED 0x04U
 /** @} */
 
 /**
@@ -297,23 +297,23 @@ extern "C" {
  * @{
  */
 /** Search for Track Name */
-#define BT_MCS_SEARCH_TYPE_TRACK_NAME    0x01
+#define BT_MCS_SEARCH_TYPE_TRACK_NAME    0x01U
 /** Search for Artist Name */
-#define BT_MCS_SEARCH_TYPE_ARTIST_NAME   0x02
+#define BT_MCS_SEARCH_TYPE_ARTIST_NAME   0x02U
 /** Search for Album Name */
-#define BT_MCS_SEARCH_TYPE_ALBUM_NAME    0x03
+#define BT_MCS_SEARCH_TYPE_ALBUM_NAME    0x03U
 /** Search for Group Name */
-#define BT_MCS_SEARCH_TYPE_GROUP_NAME    0x04
+#define BT_MCS_SEARCH_TYPE_GROUP_NAME    0x04U
 /** Search for Earliest Year */
-#define BT_MCS_SEARCH_TYPE_EARLIEST_YEAR 0x05
+#define BT_MCS_SEARCH_TYPE_EARLIEST_YEAR 0x05U
 /** Search for Latest Year */
-#define BT_MCS_SEARCH_TYPE_LATEST_YEAR   0x06
+#define BT_MCS_SEARCH_TYPE_LATEST_YEAR   0x06U
 /** Search for Genre */
-#define BT_MCS_SEARCH_TYPE_GENRE         0x07
+#define BT_MCS_SEARCH_TYPE_GENRE         0x07U
 /** Search for Tracks only */
-#define BT_MCS_SEARCH_TYPE_ONLY_TRACKS   0x08
+#define BT_MCS_SEARCH_TYPE_ONLY_TRACKS   0x08U
 /** Search for Groups only */
-#define BT_MCS_SEARCH_TYPE_ONLY_GROUPS   0x09
+#define BT_MCS_SEARCH_TYPE_ONLY_GROUPS   0x09U
 /** @} */
 
 /**
@@ -348,9 +348,9 @@ extern "C" {
  * @{
  */
 /** Search request was accepted; search has started. */
-#define BT_MCS_SCP_NTF_SUCCESS  0x01
+#define BT_MCS_SCP_NTF_SUCCESS  0x01U
 /** Search request was invalid; no search started. */
-#define BT_MCS_SCP_NTF_FAILURE  0x02
+#define BT_MCS_SCP_NTF_FAILURE  0x02U
 /** @} */
 
 /**
@@ -360,9 +360,9 @@ extern "C" {
  * @{
  */
 /** Group object type is track */
-#define BT_MCS_GROUP_OBJECT_TRACK_TYPE 0x00
+#define BT_MCS_GROUP_OBJECT_TRACK_TYPE 0x00U
 /** Group object type is group */
-#define BT_MCS_GROUP_OBJECT_GROUP_TYPE 0x01
+#define BT_MCS_GROUP_OBJECT_GROUP_TYPE 0x01U
 /** @} */
 
 #ifdef __cplusplus

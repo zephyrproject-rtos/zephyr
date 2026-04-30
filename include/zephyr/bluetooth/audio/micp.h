@@ -49,7 +49,7 @@ extern "C" {
  * @{
  */
 /** Mute/unmute commands are disabled. */
-#define BT_MICP_ERR_MUTE_DISABLED                  0x80
+#define BT_MICP_ERR_MUTE_DISABLED                  0x80U
 /** @} */
 
 /**
@@ -57,11 +57,11 @@ extern "C" {
  * @{
  */
 /** The microphone state is unmuted */
-#define BT_MICP_MUTE_UNMUTED                       0x00
+#define BT_MICP_MUTE_UNMUTED                       0x00U
 /** The microphone state is muted */
-#define BT_MICP_MUTE_MUTED                         0x01
+#define BT_MICP_MUTE_MUTED                         0x01U
 /** The microphone state is disabled and cannot be muted or unmuted */
-#define BT_MICP_MUTE_DISABLED                      0x02
+#define BT_MICP_MUTE_DISABLED                      0x02U
 /** @} */
 
 /**
