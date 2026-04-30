@@ -1,0 +1,52 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: AMEBA PWM
+
+compatible: "realtek,ameba-pwm"
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  prescale:
+    type: int
+    required: true
+    description: 16 bit timer prescale for the global clock.
+
+  clock-frequency:
+    type: int
+    default: 40000000
+    description: clock-frequency of PWM timer clk source
+
+  index:
+    type: int
+    required: true
+    description: pwm index
+
+  channel-count:
+    type: int
+    required: true
+    description: pwm channel count
+
+  "#pwm-cells":
+    const: 3
+    description: |
+      Number of items to expect in a PWM
+      - channel of the timer used for PWM
+      - period to set in ns
+      - flags : combination of standard flags like PWM_POLARITY_NORMAL
+        or specific flags like AMEBA_PWM_COMPLEMENTARY. As an example,
+        the following complementary PWMs(CH2&CH2N) are shown below.
+          <&pwm1 2 100 (PWM_POLARITY_NORMAL)>;
+          <&pwm1 2 100 (PWM_POLARITY_NORMAL | AMEBA_PWM_COMPLEMENTARY)>;
+
+pwm-cells:
+  - channel
+  - period
+  - flags

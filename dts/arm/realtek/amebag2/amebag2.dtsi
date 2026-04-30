@@ -9,6 +9,7 @@
 #include <arm/armv8.1-m.dtsi>
 #include <zephyr/dt-bindings/clock/amebag2_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	cpus {
@@ -119,6 +120,58 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			interrupts = <27 0>;
+			status = "disabled";
+		};
+
+		/* The PWM Timer (TIM4) support Input Capture Mode or PWM Mode */
+		pwm0: pwm@41000000 {
+			compatible = "realtek,ameba-pwm";
+			reg = <0x41000000 0x88>;
+			interrupts = <11 0>;
+			clocks = <&rcc AMEBA_PWM0_CLK>;
+			prescale = <39>;
+			index = <0>;
+			#pwm-cells = <3>;
+			channel-count = <4>;
+			status = "disabled";
+		};
+
+		/* The PWM Timer (TIM5) support Input Capture Mode or PWM Mode */
+		pwm1: pwm@41000200 {
+			compatible = "realtek,ameba-pwm";
+			reg = <0x41000200 0x88>;
+			interrupts = <12 0>;
+			clocks = <&rcc AMEBA_PWM1_CLK>;
+			prescale = <39>;
+			index = <1>;
+			#pwm-cells = <3>;
+			channel-count = <4>;
+			status = "disabled";
+		};
+
+		/* The PWM Timer (TIM6) support Input Capture Mode or PWM Mode */
+		pwm2: pwm@41000400 {
+			compatible = "realtek,ameba-pwm";
+			reg = <0x41000400 0x88>;
+			interrupts = <13 0>;
+			clocks = <&rcc AMEBA_PWM2_CLK>;
+			prescale = <39>;
+			index = <2>;
+			channel-count = <4>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		/* The PWM Timer (TIM7) support Input Capture Mode or PWM Mode */
+		pwm3: pwm@41000600 {
+			compatible = "realtek,ameba-pwm";
+			reg = <0x41000600 0x88>;
+			interrupts = <14 0>;
+			clocks = <&rcc AMEBA_PWM3_CLK>;
+			prescale = <39>;
+			index = <3>;
+			channel-count = <4>;
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 	};

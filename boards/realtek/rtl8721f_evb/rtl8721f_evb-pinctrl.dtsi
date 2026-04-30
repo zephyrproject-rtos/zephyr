@@ -17,4 +17,18 @@
 			bias-pull-up;
 		};
 	};
+
+	pwm0_default: pwm0_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('A', 6, AMEBA_TIM4_PWM0)>; /* Channel 0 Output Pin */
+			bias-pull-up;
+		};
+	};
+
+	pwm1_default: pwm1_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('A', 8, AMEBA_PWM_TIM5_TRIG)>; /* TRGI */
+			bias-pull-up;
+		};
+	};
 };

@@ -8,6 +8,7 @@
 #include <freq.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/amebad_clock.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	cpus {
@@ -51,6 +52,19 @@
 		sram0: memory@10003020 {
 			compatible = "mmio-sram";
 			reg = <0x10003020 0x00074000>;
+		};
+
+		/* The PWM Timer (TIM5) support Input Capture Mode and PWM Mode */
+		pwm0: pwm@40002280 {
+			compatible = "realtek,ameba-pwm";
+			reg = <0x40002280 0x68>;
+			interrupts = <22 0>;
+			channel-count = <18>;
+			index = <0>;
+			clocks = <&rcc AMEBA_PWM0_CLK>;
+			prescale = <39>;
+			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pinctrl: pinctrl@48000400 {
