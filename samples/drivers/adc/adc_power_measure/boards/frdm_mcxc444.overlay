@@ -1,0 +1,68 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright 2024-2025 NXP
+ */
+
+/ {
+	aliases {
+		adc0 = &adc0;
+	};
+};
+
+&pinctrl {
+	pinmux_adc0: pinmux_adc0 {
+		group0 {
+			pinmux = <ADC0_SE0_PTE20>, <ADC0_SE4a_PTE21>,
+				 <ADC0_SE3_PTE22>, <ADC0_SE7a_PTE23>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/*
+	 * To use this sample:
+	 * - Connect ADC0 SE0 signal to voltage between 0~3.3V (J4 pin 1)
+	 */
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@3 {
+		reg = <0x3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@4 {
+		reg = <0x4>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@7 {
+		reg = <0x7>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
