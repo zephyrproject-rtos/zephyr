@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,8 +24,20 @@
  * @{
  */
 
+/**
+ * @brief Channel status busy bit flag
+ */
 #define SCMI_SHMEM_CHAN_STATUS_BUSY_BIT BIT(0)
+
+/**
+ * @brief Channel flag for IRQ signaling
+ */
 #define SCMI_SHMEM_CHAN_FLAG_IRQ_BIT BIT(0)
+
+/**
+ * @brief Offset of message header in shared memory channel
+ */
+#define SCMI_SHMEM_CHAN_MSG_HDR_OFFSET 0x18
 
 struct scmi_shmem_layout {
 	volatile uint32_t res0;
@@ -51,6 +63,17 @@ struct scmi_message;
 int scmi_shmem_write_message(const struct device *shmem,
 			     struct scmi_message *msg,
 			     bool use_polling);
+
+/**
+ * @brief Read a message header from a SHMEM area
+ *
+ * @param shmem pointer to shmem device
+ * @param msg message to write the data into
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_shmem_read_hdr(const struct device *shmem, struct scmi_message *msg);
 
 /**
  * @brief Read a message from a SHMEM area
@@ -102,6 +125,13 @@ int scmi_shmem_vendor_write_message(struct scmi_shmem_layout *layout);
  * @retval negative errno if failure
  */
 int scmi_shmem_vendor_read_message(const struct scmi_shmem_layout *layout);
+
+/**
+ * @brief Clear a SHMEM area channel status
+ *
+ * @param dev pointer to shmem device
+ */
+void scmi_shmem_clear_channel_status(const struct device *dev);
 
 /**
  * @}

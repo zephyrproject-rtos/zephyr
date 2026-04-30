@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 
 DT_SCMI_PROTOCOL_DEFINE_NODEV(DT_INST(0, arm_scmi_pinctrl), NULL,
-		SCMI_PIN_CONTROL_PROTOCOL_SUPPORTED_VERSION);
+		SCMI_PIN_CONTROL_PROTOCOL_SUPPORTED_VERSION, NULL);
 
 int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings)
 {
