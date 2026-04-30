@@ -628,6 +628,12 @@ struct wifi_connect_req_params {
 	const uint8_t *psk;
 	/** Pre-shared key length */
 	uint8_t psk_length; /* Min 8 - Max 64 */
+	/**
+	 * Pre-shared key is the pre-computed PBKDF2 output.
+	 * `psk_length` MUST be 32 bytes.
+	 * Not applicable for WPA3 security.
+	 */
+	bool psk_is_pbkdf2;
 	/** SAE password (same as PSK but with no length restrictions), optional */
 	const uint8_t *sae_password;
 	/** SAE password length */
