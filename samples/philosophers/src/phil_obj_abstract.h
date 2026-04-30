@@ -148,11 +148,28 @@
 
 static fork_t forks[NUM_PHIL] = {
 #if STATIC_OBJS
-	&fork0, &fork1, &fork2,
-	&fork3, &fork4, &fork5,
+	&fork0, &fork1,
+	#if NUM_PHIL == 3
+		&fork2,
+	#elif NUM_PHIL == 4
+		&fork2, &fork3,
+	#elif NUM_PHIL == 5
+		&fork2, &fork3, &fork4,
+	#elif NUM_PHIL == 6
+		&fork2, &fork3, &fork4, &fork5,
+	#endif
 #else
-	(fork_t)&fork_objs[0], (fork_t)&fork_objs[1], (fork_t)&fork_objs[2],
-	(fork_t)&fork_objs[3], (fork_t)&fork_objs[4], (fork_t)&fork_objs[5],
+	(fork_t)&fork_objs[0], (fork_t)&fork_objs[1],
+	#if NUM_PHIL == 3
+		(fork_t)&fork_objs[2],
+	#elif NUM_PHIL == 4
+		(fork_t)&fork_objs[2], (fork_t)&fork_objs[3],
+	#elif NUM_PHIL == 5
+		(fork_t)&fork_objs[2], (fork_t)&fork_objs[3], (fork_t)&fork_objs[4],
+	#elif NUM_PHIL == 6
+		(fork_t)&fork_objs[2], (fork_t)&fork_objs[3], (fork_t)&fork_objs[4],
+		(fork_t)&fork_objs[5],
+	#endif
 #endif
 };
 

@@ -1,0 +1,26 @@
+description: |
+  Microchip dsPIC33 pin controller
+
+compatible: "microchip,dspic33-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1
+
+child-binding:
+  description: Pin configuration node
+  properties:
+    pinmux:
+      description: |
+        Pin multiplexing configuration for this group.
+        Multiple pins (like TX/RX) can be grouped inside one node.
+      required: true
+      type: int

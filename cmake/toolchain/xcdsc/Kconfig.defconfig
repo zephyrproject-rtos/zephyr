@@ -1,0 +1,11 @@
+# Copyright (c) 2025, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config MINIMAL_LIBC_SUPPORTED
+	default n
+
+config NEWLIB_LIBC_SUPPORTED
+	default n
+
+config PICOLIBC_SUPPORTED
+	default n

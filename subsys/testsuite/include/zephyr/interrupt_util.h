@@ -7,7 +7,7 @@
 #ifndef INTERRUPT_UTIL_H_
 #define INTERRUPT_UTIL_H_
 
-#define k_str_out_count(s) k_str_out((s), sizeof(s) - 1);
+#define k_str_out_count(s) k_str_out((s), sizeof(s) - 1)
 
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <cmsis_core.h>
@@ -239,6 +239,14 @@ extern void z_openrisc_enter_irq(int);
 static inline void trigger_irq(int irq)
 {
 	z_openrisc_enter_irq(irq);
+}
+
+#elif defined(CONFIG_DSPIC)
+extern void z_dspic_enter_irq(int);
+
+static inline void trigger_irq(int irq)
+{
+	z_dspic_enter_irq(irq);
 }
 
 #elif defined(CONFIG_CPU_CORTEX_R5) && defined(CONFIG_TI_VIM)

@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_MCHP_DSPIC33
+	bool "Pin controller driver for Microchip dsPIC33 MCUs"
+	default y
+	depends on DT_HAS_MICROCHIP_DSPIC33_PINCTRL_ENABLED
+	help
+	  Enable the pin controller driver for Microchip dsPIC33 MCUs.

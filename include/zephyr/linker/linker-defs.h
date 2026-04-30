@@ -50,7 +50,7 @@
  * by default. As a workaroud for symbols defined in linker scripts to be
  * available in C code, an alias with a leading underscore has to be provided.
  */
-#if defined(CONFIG_RX)
+#if defined(CONFIG_RX) || defined(CONFIG_DSPIC)
 #define PLACE_SYMBOL_HERE(symbol)                                                                  \
 	symbol = .;                                                                                \
 	PROVIDE(_CONCAT(_, symbol) = symbol)

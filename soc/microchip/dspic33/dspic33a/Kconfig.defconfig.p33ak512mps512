@@ -1,0 +1,35 @@
+# Copyright (c) 2025, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_P33AK512MPS512
+
+config SRAM_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
+
+config SRAM_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
+
+config FLASH_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 10000
+
+config MAIN_STACK_SIZE
+	default 2048 if NO_OPTIMIZATIONS
+	default 1024
+
+config IDLE_STACK_SIZE
+	default 1024 if NO_OPTIMIZATIONS
+	default 512
+
+config NUM_IRQS
+	default 355
+
+endif # SOC_P33AK512MPS512

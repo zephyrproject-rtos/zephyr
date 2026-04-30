@@ -139,6 +139,14 @@ ZTEST_USER(stackprot, test_stackprot)
  */
 ZTEST(stackprot, test_create_alt_thread)
 {
+	/**
+	 * Since for the DSPIC the stack is growing upwards this test is not supported
+	 * Skip this test to avoid failures.
+	 */
+#ifdef CONFIG_DSPIC
+	ztest_test_skip();
+#endif
+
 	/* Start thread */
 	k_thread_create(&alt_thread_data, alt_thread_stack_area, STACKSIZE,
 			alternate_thread, NULL, NULL, NULL,

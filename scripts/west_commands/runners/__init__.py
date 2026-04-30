@@ -41,6 +41,7 @@ _names = [
     'iar',
     'intel_adsp',
     'intel_cyclonev',
+    'ipecmd',
     'jlink',
     'linkserver',
     'lldbac',

@@ -32,6 +32,7 @@ def test_runner_imports():
         'iar',
         'intel_adsp',
         'intel_cyclonev',
+        'ipecmd',
         'jlink',
         'linkserver',
         'lldbac',

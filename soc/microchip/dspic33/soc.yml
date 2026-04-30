@@ -1,0 +1,7 @@
+family:
+- name: microchip_dspic33
+  series:
+  - name: dspic33a
+    socs:
+    - name: p33ak512mps512
+    - name: p33ak128mc106

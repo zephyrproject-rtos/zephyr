@@ -14,3 +14,4 @@ Architecture-related Guides
    x86.rst
    xtensa.rst
    arm-scmi.rst
+   dspic33a.rst
