@@ -38,6 +38,18 @@ static const struct bt_mesh_test_cfg other_cfg = {
 	.dev_key = { 0x02 },
 };
 static struct bt_mesh_test_cfg lpn_cfg;
+static uint32_t lpn_retry_polls;
+
+static void lpn_polled_cb(uint16_t net_idx, uint16_t friend_addr, bool retry)
+{
+	if (retry) {
+		lpn_retry_polls++;
+	}
+}
+
+BT_MESH_LPN_CB_DEFINE(lpn_rx_window_filter) = {
+	.polled = lpn_polled_cb,
+};
 
 static uint8_t test_va_col_uuid[][16] = {
 	{ 0xe3, 0x94, 0xe7, 0xc1, 0xc5, 0x14, 0x72, 0x11,
@@ -428,6 +440,24 @@ static void test_friend_va_collision(void)
 	PASS();
 }
 
+/** Friend side observer for receive-window filtering scenarios. */
+static void test_friend_rx_window_guard(void)
+{
+	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
+	bt_mesh_friend_set(BT_MESH_FEATURE_ENABLED);
+
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_FRIEND_ESTABLISHED,
+						       K_SECONDS(20)),
+		      "Friendship not established");
+
+	k_sleep(K_SECONDS(5));
+	if (bt_mesh_test_friendship_state_check(BT_MESH_TEST_FRIEND_TERMINATED)) {
+		FAIL("Friendship terminated unexpectedly");
+	}
+
+	PASS();
+}
 
 /* LPN test functions */
 
@@ -1020,6 +1050,68 @@ static void test_other_group(void)
 	PASS();
 }
 
+/** Without engaging in friendship, keep sending unicast traffic to the LPN to
+ *  overlap with receive windows during friendship establishment.
+ */
+static void test_other_rx_window_filter(void)
+{
+	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
+
+	k_sleep(K_SECONDS(1));
+	for (int i = 0; i < 80; i++) {
+		ASSERT_OK_MSG(bt_mesh_test_send(LPN_ADDR_START, NULL, 5, 0, K_MSEC(200)),
+			      "Traffic send failed");
+		k_sleep(K_MSEC(30));
+	}
+
+	PASS();
+}
+
+/** Without engaging in friendship, keep sending unicast traffic to the LPN
+ *  after friendship establishment.
+ */
+static void test_other_rx_window_filter_post_est(void)
+{
+	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
+
+	k_sleep(K_SECONDS(6));
+	for (int i = 0; i < 120; i++) {
+		ASSERT_OK_MSG(bt_mesh_test_send(LPN_ADDR_START, NULL, 5, 0, K_MSEC(200)),
+			      "Traffic send failed");
+		k_sleep(K_MSEC(20));
+	}
+
+	PASS();
+}
+
+/** Other node side for deterministic replay-collision scenario.
+ */
+static void test_other_rx_window_replay_collision(void)
+{
+	uint8_t status;
+	int err;
+
+	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
+
+	/* Stretch identical network retransmissions of one packet in time. */
+	err = bt_mesh_cfg_cli_net_transmit_set(0, cfg->addr, BT_MESH_TRANSMIT(7, 50), &status);
+	if (err || status != BT_MESH_TRANSMIT(7, 50)) {
+		FAIL("Net transmit set failed (err %d, status %u)", err, status);
+		return;
+	}
+
+	/* Wait for trigger from LPN, then send exactly one message burst. */
+	ASSERT_OK_MSG(bt_mesh_test_recv(5, cfg->addr, NULL, K_SECONDS(20)),
+		      "No trigger from LPN");
+	ASSERT_OK_MSG(bt_mesh_test_send(GROUP_ADDR, NULL, 5, 0, K_SECONDS(1)),
+		      "Send to group failed");
+
+	PASS();
+}
+
 /** LPN disable test.
  *
  * Check that toggling lpn_set() results in correct disabled state
@@ -1181,6 +1273,141 @@ static void test_lpn_va_collision(void)
 	PASS();
 }
 
+/** As an LPN, establish friendship while random traffic is sent directly to
+ *  the LPN in receive windows.
+ */
+static void test_lpn_rx_window_filter(void)
+{
+	bool established = false;
+
+	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
+
+	bt_mesh_lpn_set(true);
+	lpn_retry_polls = 0;
+
+	/* MshPRT v1.1.1 (3.6.6.2/3.6.6.4.1): during establish, Friend response
+	 * handling shall not be starved by unrelated ADV traffic.
+	 */
+	for (int i = 0; i < 200; i++) {
+		int err;
+
+		err = bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED,
+						       K_MSEC(100));
+		if (!err) {
+			established = true;
+			break;
+		}
+	}
+
+	if (!established) {
+		FAIL("LPN did not establish friendship");
+		return;
+	}
+
+	if (lpn_retry_polls > 0) {
+		FAIL("Detected retry polls (%u) during establishment", lpn_retry_polls);
+		return;
+	}
+
+	k_sleep(K_SECONDS(5));
+	if (bt_mesh_test_friendship_state_check(BT_MESH_TEST_LPN_TERMINATED)) {
+		FAIL("LPN terminated friendship unexpectedly");
+	}
+
+	PASS();
+}
+
+/** As an LPN, verify that post-establishment receive windows ignore direct
+ *  traffic from a third node.
+ */
+static void test_lpn_rx_window_filter_post_est(void)
+{
+	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
+
+	bt_mesh_lpn_set(true);
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED,
+						       K_SECONDS(20)),
+		      "LPN did not establish friendship");
+
+	lpn_retry_polls = 0;
+
+	for (int i = 0; i < 25; i++) {
+		ASSERT_OK_MSG(bt_mesh_lpn_poll(), "Poll failed");
+		k_sleep(K_MSEC(320));
+	}
+
+	if (lpn_retry_polls > 0) {
+		FAIL("Detected retry polls (%u) after establishment", lpn_retry_polls);
+		return;
+	}
+
+	if (bt_mesh_test_friendship_state_check(BT_MESH_TEST_LPN_TERMINATED)) {
+		FAIL("LPN terminated friendship unexpectedly");
+	}
+
+	PASS();
+}
+
+/** As an LPN, deterministically trigger replay-collision conditions:
+ *  one third-node message is retransmitted over ADV while LPN polls Friend.
+ *  LPN shall not enter retry polling due to missing Friend response.
+ */
+static void test_lpn_rx_window_replay_collision(void)
+{
+	struct bt_mesh_test_msg msg;
+	uint8_t status = 0;
+	int err;
+
+	bt_mesh_test_setup();
+	bt_mesh_test_friendship_init(CONFIG_BT_MESH_FRIEND_LPN_COUNT);
+
+	err = bt_mesh_cfg_cli_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
+				      TEST_MOD_ID, &status);
+	if (err || status) {
+		FAIL("Group addr add failed with err %d status 0x%x", err, status);
+		return;
+	}
+
+	bt_mesh_lpn_set(true);
+	ASSERT_OK_MSG(bt_mesh_test_friendship_evt_wait(BT_MESH_TEST_LPN_ESTABLISHED,
+						       K_SECONDS(20)),
+		      "LPN did not establish friendship");
+
+	(void)bt_mesh_test_recv_clear();
+	lpn_retry_polls = 0;
+
+	/* Trigger other node, then immediately poll to open the receive window. */
+	ASSERT_OK_MSG(bt_mesh_test_send(other_cfg.addr, NULL, 5, 0, K_SECONDS(1)),
+		      "Failed to trigger other node");
+	ASSERT_OK_MSG(bt_mesh_lpn_poll(), "Poll failed");
+
+	ASSERT_OK_MSG(bt_mesh_test_recv_msg(&msg, K_SECONDS(5)),
+		      "Expected one group message");
+	if (msg.ctx.addr != other_cfg.addr || msg.ctx.recv_dst != GROUP_ADDR) {
+		FAIL("Unexpected message: 0x%04x -> 0x%04x", msg.ctx.addr, msg.ctx.recv_dst);
+		return;
+	}
+
+	/* A replay-collision would typically force retry polls due to dropped
+	 * friend response path.
+	 */
+	k_sleep(K_SECONDS(3));
+	if (lpn_retry_polls > 0) {
+		FAIL("Detected retry polls (%u), replay-collision likely occurred",
+		     lpn_retry_polls);
+		return;
+	}
+
+	if (bt_mesh_test_friendship_state_check(BT_MESH_TEST_LPN_TERMINATED)) {
+		FAIL("LPN terminated friendship unexpectedly");
+		return;
+	}
+
+	PASS();
+}
+
 #define TEST_CASE(role, name, description)                  \
 	{                                                   \
 		.test_id = "friendship_" #role "_" #name,   \
@@ -1198,6 +1425,7 @@ static const struct bst_test_instance test_connect[] = {
 	TEST_CASE(friend, group,            "Friend: send to group addrs"),
 	TEST_CASE(friend, no_est,           "Friend: do not establish friendship"),
 	TEST_CASE(friend, va_collision,     "Friend: send to virtual addrs with collision"),
+	TEST_CASE(friend, rx_window_guard,  "Friend: receive-window guard observer"),
 
 	TEST_CASE(lpn,    est,              "LPN: establish friendship"),
 	TEST_CASE(lpn,    msg_frnd,         "LPN: message exchange with friend"),
@@ -1210,9 +1438,19 @@ static const struct bst_test_instance test_connect[] = {
 	TEST_CASE(lpn,    disable,          "LPN: disable LPN"),
 	TEST_CASE(lpn,    term_cb_check,    "LPN: no terminate cb trigger"),
 	TEST_CASE(lpn,    va_collision,     "LPN: receive on virtual addrs with collision"),
+	TEST_CASE(lpn,    rx_window_filter, "LPN: filter non-friend receive-window RX"),
+	TEST_CASE(lpn,    rx_window_filter_post_est,
+		  "LPN: filter post-establishment receive-window RX"),
+	TEST_CASE(lpn,    rx_window_replay_collision,
+		  "LPN: deterministic receive-window replay collision"),
 
 	TEST_CASE(other,  msg,              "Other mesh device: message exchange"),
 	TEST_CASE(other,  group,            "Other mesh device: send to group addrs"),
+	TEST_CASE(other,  rx_window_filter, "Other mesh device: stress receive-window RX"),
+	TEST_CASE(other,  rx_window_filter_post_est,
+		  "Other mesh device: stress post-establishment receive-window RX"),
+	TEST_CASE(other,  rx_window_replay_collision,
+		  "Other mesh device: deterministic replay-collision sender"),
 	BSTEST_END_MARKER
 };
 
