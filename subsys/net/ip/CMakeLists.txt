@@ -13,7 +13,6 @@ zephyr_library_compile_definitions_ifdef(
 
 zephyr_library_sources(
   net_core.c
-  net_if.c
   net_timeout.c
   utils.c
   )
@@ -72,4 +71,30 @@ zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/lib)
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
   ${ARCH_DIR}/${ARCH}/include
+  )
+
+# Generate file for storing network interface count that can be used
+# at compile time.
+include(gen_count)
+gen_section_count(
+    TARGET          net_if
+    SECTION         net_if_area
+    ITEM_TYPE       "struct net_if"
+    PRODUCER_TARGET ${ZEPHYR_CURRENT_LIBRARY}
+    CONSUMERS       ${CMAKE_CURRENT_SOURCE_DIR}/net_if.c
+  )
+
+gen_section_count(
+    TARGET          net_if_dev
+    SECTION         net_if_dev_area
+    ITEM_TYPE       "struct net_if_dev"
+    PRODUCER_TARGET ${ZEPHYR_CURRENT_LIBRARY}
+  )
+
+# net_if.c uses NET_IF_DEV_COUNT too so register the dependency without
+# recompiling it under a second target
+gen_section_count_add_consumer(
+    TARGET  net_if_consumers   # the OBJECT library that already owns net_if.c
+    HEADER  net_if_dev
+    FILES   ${CMAKE_CURRENT_SOURCE_DIR}/net_if.c
   )

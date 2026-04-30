@@ -65,6 +65,12 @@ static struct net_if *iface3;
 static struct net_if *iface4;
 static struct net_if *eth_iface;
 
+/* Generated network interface count header */
+#include "net_if_count.h"
+#include "net_if_dev_count.h"
+
+static struct net_if *interfaces[NET_IF_COUNT];
+
 static bool test_failed;
 static bool test_started;
 static struct k_sem wait_data;
@@ -292,12 +298,18 @@ static const char *iface2str(struct net_if *iface)
 }
 #endif
 
+static int all_iface_count;
+static int all_iface_dev_count;
+
 static void iface_cb(struct net_if *iface, void *user_data)
 {
 	static int if_count;
 
 	DBG("Interface %p (%s) [%d]\n", iface, iface2str(iface),
 	    net_if_get_by_iface(iface));
+
+	interfaces[all_iface_count++] = iface;
+	all_iface_dev_count++;
 
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 		const struct ethernet_api *api =
@@ -487,6 +499,13 @@ static void *iface_setup(void)
 	zassert_true(later_time >= oper_state_change_time,
 		      "Invalid oper state change time %" PRId64 " vs %" PRId64,
 		      later_time, oper_state_change_time);
+
+	zassert_equal(all_iface_count, NET_IF_COUNT, "Invalid interface count %d vs %d",
+		      all_iface_count, NET_IF_COUNT);
+
+	zassert_equal(all_iface_dev_count, NET_IF_DEV_COUNT,
+		      "Invalid interface dev count %d vs %d",
+		      all_iface_dev_count, NET_IF_DEV_COUNT);
 
 	/* The interface might receive data which might fail the checks
 	 * in the iface sending function, so we need to reset the failure
