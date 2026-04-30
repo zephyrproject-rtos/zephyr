@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/display.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/byteorder.h>
 
 #ifdef CONFIG_ARCH_POSIX
@@ -272,6 +273,12 @@ int sample_display_draw(void)
 		ret = -ENODEV;
 		goto end;
 	}
+
+	/* Hold a runtime PM reference so the display stays active for the
+	 * duration of the sample. No-op when runtime PM is not enabled on
+	 * the device.
+	 */
+	(void)pm_device_runtime_get(display_dev);
 
 	LOG_INF("Display sample for %s", display_dev->name);
 	display_get_capabilities(display_dev, &capabilities);
