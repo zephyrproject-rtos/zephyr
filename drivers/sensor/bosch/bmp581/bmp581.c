@@ -418,15 +418,17 @@ static int bmp581_sample_fetch(const struct device *dev, enum sensor_channel cha
 			((int64_t)(raw_temp_signed % 65536) * 1000000) / 65536;
 
 		if (drv->osr_odr_press_config.press_en == BMP5_ENABLE) {
-			/* convert raw sensor data to sensor_value. Shift the decimal part by
-			 * 4 decimal places to compensate for the conversion in
-			 * sensor_value_to_double()
+			/* Raw 24-bit register is in 1/64 Pa units.
+			 * Preserve sub-Pa resolution in the kPa sensor_value.
 			 */
-			uint32_t raw_pressure = (uint32_t)((uint32_t)(data[5] << 16) |
-							   (uint16_t)(data[4] << 8) | data[3]) >>
-						6;
-			drv->last_sample.pressure.val1 = raw_pressure / 1000;
-			drv->last_sample.pressure.val2 = (raw_pressure % 1000) * 1000;
+			uint32_t raw = (uint32_t)((uint32_t)(data[5] << 16) |
+						  (uint16_t)(data[4] << 8) | data[3]);
+			uint32_t pa = raw / 64;
+			uint32_t frac_upa = (raw % 64) * 15625; /* micro-Pa */
+
+			drv->last_sample.pressure.val1 = pa / 1000;
+			drv->last_sample.pressure.val2 =
+				(pa % 1000) * 1000 + frac_upa / 1000;
 		} else {
 			drv->last_sample.pressure.val1 = 0;
 			drv->last_sample.pressure.val2 = 0;
