@@ -85,6 +85,7 @@ static uint32_t __noinit aci_adv_nwk_buffer[CFG_BLE_ADV_NWK_BUFFER_SIZE >> 2];
 #endif /* CONFIG_BT_EXT_ADV */
 
 struct hci_data {
+	struct bt_hci_driver_data common;
 	bt_hci_recv_t recv;
 };
 
@@ -579,8 +580,11 @@ static DEVICE_API(bt_hci, drv) = {
 	PM_DEVICE_DT_INST_DEFINE(inst, ble_pm_action); \
 	static struct hci_data hci_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, PM_DEVICE_DT_INST_GET(inst), &hci_data_##inst, NULL, \
-				POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+	static const struct bt_hci_driver_config hci_config_##inst =                               \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
+	DEVICE_DT_INST_DEFINE(inst, NULL, PM_DEVICE_DT_INST_GET(inst), &hci_data_##inst,           \
+			      &hci_config_##inst, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			      &drv)
 
 /* Only one instance supported */
 HCI_DEVICE_INIT(0)

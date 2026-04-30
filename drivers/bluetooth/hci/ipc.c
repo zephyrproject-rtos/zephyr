@@ -36,6 +36,7 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_BT_CONN) || IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CO
 	((USEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC) > CONFIG_BT_HCI_IPC_SEND_RETRY_DELAY_US))
 
 struct ipc_data {
+	struct bt_hci_driver_data common;
 	bt_hci_recv_t recv;
 	struct ipc_ept hci_ept;
 	struct ipc_ept_cfg hci_ept_cfg;
@@ -400,7 +401,9 @@ static DEVICE_API(bt_hci, drv) = {
 		}, \
 		.ipc = DEVICE_DT_GET(DT_INST_PARENT(inst)), \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &ipc_data_##inst, NULL, \
+	static const struct bt_hci_driver_config ipc_config_##inst = \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &ipc_data_##inst, &ipc_config_##inst, \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 DT_INST_FOREACH_STATUS_OKAY(IPC_DEVICE_INIT)

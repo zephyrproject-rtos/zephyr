@@ -67,6 +67,7 @@ LOG_MODULE_REGISTER(bt_driver);
 #endif /* CONFIG_BT_L2CAP_TX_MTU > MAX_MTU */
 
 struct bt_spi_data {
+	struct bt_hci_driver_data common;
 	bt_hci_recv_t recv;
 };
 
@@ -440,7 +441,9 @@ static int bt_spi_init(const struct device *dev)
 #define HCI_DEVICE_INIT(inst) \
 	static struct bt_spi_data hci_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, bt_spi_init, NULL, &hci_data_##inst, NULL, \
+	static const struct bt_hci_driver_config hci_config_##inst = \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \
+	DEVICE_DT_INST_DEFINE(inst, bt_spi_init, NULL, &hci_data_##inst, &hci_config_##inst, \
 			      POST_KERNEL, CONFIG_BT_SPI_INIT_PRIORITY, &drv)
 
 /* Only one instance supported right now */

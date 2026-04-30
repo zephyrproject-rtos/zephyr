@@ -22,6 +22,7 @@
 #include "shci_tl.h"
 
 struct hci_data {
+	struct bt_hci_driver_data common;
 	bt_hci_recv_t recv;
 };
 
@@ -719,7 +720,9 @@ static int _bt_ipm_init(const struct device *dev)
 #define HCI_DEVICE_INIT(inst) \
 	static struct hci_data hci_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, _bt_ipm_init, NULL, &hci_data_##inst, NULL, \
+	static const struct bt_hci_driver_config hci_config_##inst = \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \
+	DEVICE_DT_INST_DEFINE(inst, _bt_ipm_init, NULL, &hci_data_##inst, &hci_config_##inst, \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported right now */

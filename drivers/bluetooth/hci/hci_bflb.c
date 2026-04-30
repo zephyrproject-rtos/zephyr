@@ -55,6 +55,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "Exactly one bflb bt-hci instance required");
 
 struct bt_bflb_data {
+	struct bt_hci_driver_data common;
 	bt_hci_recv_t recv;
 };
 
@@ -344,6 +345,7 @@ static DEVICE_API(bt_hci, bt_bflb_drv) = {
 };
 
 static struct bt_bflb_data bt_bflb_data_0 = {0};
+static const struct bt_hci_driver_config bt_bflb_config_0 = BT_DT_HCI_DRIVER_CONFIG_INST_GET(0);
 
-DEVICE_DT_INST_DEFINE(0, bt_bflb_init, NULL, &bt_bflb_data_0, NULL, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, bt_bflb_init, NULL, &bt_bflb_data_0, &bt_bflb_config_0, POST_KERNEL,
 		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &bt_bflb_drv);
