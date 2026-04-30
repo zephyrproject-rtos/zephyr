@@ -444,6 +444,13 @@ LLEXT_LOAD_UNLOAD(riscv_edge_case_non_paired_hi20_lo12)
 
 #endif /* !CONFIG_LLEXT_TYPE_ELF_OBJECT */
 
+#ifdef CONFIG_LLEXT_VENEERS
+static LLEXT_CONST uint8_t veneer_ext[] ELF_ALIGN = {
+	#include "veneer.inc"
+};
+LLEXT_LOAD_UNLOAD(veneer)
+#endif /* CONFIG_LLEXT_VENEERS */
+
 #ifndef CONFIG_USERSPACE
 static LLEXT_CONST uint8_t export_dependent_ext[] LLEXT_SECT ELF_ALIGN = {
 	#include "export_dependent.inc"

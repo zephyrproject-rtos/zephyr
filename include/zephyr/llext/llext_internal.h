@@ -77,6 +77,19 @@ int llext_read_symbol(struct llext_loader *ldr, struct llext *ext, const elf_rel
 /** @endcond */
 
 /**
+ * @brief Architecture specific function for initializing the veneer table
+ *
+ * Called once before regions are allocated to allow the architecture to
+ * populate ldr->sects[LLEXT_MEM_VENEER] with the required size for
+ * trampoline stubs needed to extend the reach of out-of-range branches.
+ *
+ * @param[in] ldr  Extension loader data and context
+ * @param[in] ext  Extension being linked
+ * @returns 0 on success or a negative error code
+ */
+int arch_elf_veneer_init(struct llext_loader *ldr, struct llext *ext);
+
+/**
  * @brief Architecture specific function for local binding relocations
  *
  * @param[in] loader Extension loader data and context

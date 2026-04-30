@@ -8,6 +8,7 @@
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/llext.h>
 #include <zephyr/llext/llext_internal.h>
+#include <zephyr/llext/loader.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
@@ -101,6 +102,25 @@ LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
 #define SHIFT_THM_MOV_IMM3 4
 #define SHIFT_THM_MOV_IMM4 12
 
+#ifdef CONFIG_LLEXT_VENEERS
+/*
+ * Thumb-2 veneer stub (8 bytes, 4-byte aligned):
+ * LDR.W PC, [PC, #0]   ; loads PC from following word
+ * <target>             ; 32-bit absolute address
+ *
+ * See ARM Architecture Reference Manual ARMv7-A/R,
+ * Section A8.8.63 "LDR (immediate, Thumb)" - T3 encoding.
+ */
+#define THM_LDR_PC_PC_HI 0xF8DF  /* LDR.W PC, [PC, #imm12] */
+#define THM_LDR_PC_PC_LO 0xF000  /* imm12 = 0 */
+
+struct arm_veneer_entry {
+	uint16_t ldr_hi;
+	uint16_t ldr_lo;
+	uint32_t target;
+};
+#endif /* CONFIG_LLEXT_VENEERS */
+
 static inline int prel31_decode(elf_word reloc_type, uint32_t loc,
 				uint32_t sym_base_addr, const char *sym_name, int32_t *offset)
 {
@@ -111,7 +131,7 @@ static inline int prel31_decode(elf_word reloc_type, uint32_t loc,
 	*offset = sign_extend(*(int32_t *)loc, SHIFT_PREL31_SIGN);
 	*offset += sym_base_addr - loc;
 	if (*offset >= PREL31_UPPER_BOUNDARY || *offset < PREL31_LOWER_BOUNDARY) {
-		LOG_ERR("sym '%s': relocation out of range (%#x -> %#x)\n",
+		LOG_ERR("sym '%s': relocation out of range (%#x -> %#x)",
 			sym_name, loc, sym_base_addr);
 		ret = -ENOEXEC;
 	} else {
@@ -153,7 +173,7 @@ static inline int jumps_decode(elf_word reloc_type, uint32_t loc,
 	*offset = sign_extend(*offset, SHIFT_JUMPS_SIGN);
 	*offset += sym_base_addr - loc;
 	if (*offset >= JUMP_LOWER_BOUNDARY || *offset <= JUMP_UPPER_BOUNDARY) {
-		LOG_ERR("sym '%s': relocation out of range (%#x -> %#x)\n",
+		LOG_ERR("sym '%s': relocation out of range (%#x -> %#x)",
 			sym_name, loc, sym_base_addr);
 		ret = -ENOEXEC;
 	} else {
@@ -235,8 +255,6 @@ static inline int thm_jumps_decode(elf_word reloc_type, uint32_t loc,
 	*offset += sym_base_addr - loc;
 
 	if (*offset >= THM_JUMP_LOWER_BOUNDARY || *offset <= THM_JUMP_UPPER_BOUNDARY) {
-		LOG_ERR("sym '%s': relocation out of range (%#x -> %#x)\n",
-			sym_name, loc, sym_base_addr);
 		ret = -ENOEXEC;
 	} else {
 		ret = 0;
@@ -263,15 +281,45 @@ static inline void thm_jumps_reloc(uint32_t loc, int32_t *offset,
 	*(uint16_t *)(loc + 2) = OPCODE2THM16MEM(*lower);
 }
 
-static int thm_jumps_handler(elf_word reloc_type, uint32_t loc,
-			uint32_t sym_base_addr, const char *sym_name)
+static int thm_jumps_handler(struct llext *ext, elf_word reloc_type,
+			uint32_t loc, uint32_t sym_base_addr, const char *sym_name)
 {
 	int ret;
 	int32_t offset;
 	uint32_t upper, lower;
 
 	ret = thm_jumps_decode(reloc_type, loc, sym_base_addr, sym_name, &offset, &upper, &lower);
-	if (!ret) {
+
+#ifdef CONFIG_LLEXT_VENEERS
+	if (ret == -ENOEXEC) {
+		struct arm_veneer_entry *entry = NULL;
+		struct arm_veneer_entry *stubs = ext->mem[LLEXT_MEM_VENEER];
+		size_t count = ext->mem_size[LLEXT_MEM_VENEER] / sizeof(struct arm_veneer_entry);
+
+		for (size_t k = 0; k < count; k++) {
+			if (stubs[k].target == sym_base_addr) {
+				entry = &stubs[k];
+				break;
+			}
+			if (stubs[k].target == 0) {
+				entry = &stubs[k];
+				entry->ldr_hi = THM_LDR_PC_PC_HI;
+				entry->ldr_lo = THM_LDR_PC_PC_LO;
+				entry->target = sym_base_addr;
+				break;
+			}
+		}
+
+		if (entry) {
+			ret = thm_jumps_decode(reloc_type, loc,
+				((uintptr_t)entry) | 1, sym_name, &offset, &upper, &lower);
+			LOG_DBG("sym '%s' %#x -> veneer %#x -> %#x",
+				sym_name, loc, (uint32_t)(uintptr_t)entry, sym_base_addr);
+		}
+	}
+#endif
+
+	if (ret == 0) {
 		thm_jumps_reloc(loc, &offset, &upper, &lower);
 	}
 
@@ -310,6 +358,68 @@ static void thm_movs_handler(elf_word reloc_type, uint32_t loc,
 	*(uint16_t *)loc = OPCODE2THM16MEM(upper);
 	*(uint16_t *)(loc + 2) = OPCODE2THM16MEM(lower);
 }
+
+#ifdef CONFIG_LLEXT_VENEERS
+/**
+ * @brief ARM Thumb-2 veneer table initialization
+ *
+ * Scans all REL sections for R_ARM_THM_CALL and R_ARM_THM_JUMP24 relocations
+ * targeting SHN_UNDEF symbols (external kernel/flash functions) and allocates
+ * a veneer table with one LDR.W PC stub per such relocation. External symbols
+ * are always beyond the ±16 MB Thumb-2 branch range when the extension is
+ * loaded into SRAM, so every such relocation will need a stub.
+ */
+int arch_elf_veneer_init(struct llext_loader *ldr, struct llext *ext)
+{
+	size_t n = 0;
+
+	for (int i = 0; i < ext->sect_cnt; i++) {
+		elf_shdr_t *shdr = &ext->sect_hdrs[i];
+
+		if (shdr->sh_type != SHT_REL) {
+			continue;
+		}
+		if (!(ext->sect_hdrs[shdr->sh_info].sh_flags & SHF_ALLOC)) {
+			continue;
+		}
+
+		for (int j = 0; j < (shdr->sh_size / shdr->sh_entsize); j++) {
+			elf_rel_t rel;
+			elf_sym_t sym;
+
+			if (llext_seek(ldr, shdr->sh_offset + j * shdr->sh_entsize) ||
+			    llext_read(ldr, &rel, sizeof(rel))) {
+				continue;
+			}
+
+			if (ELF32_R_TYPE(rel.r_info) != R_ARM_THM_CALL &&
+			    ELF32_R_TYPE(rel.r_info) != R_ARM_THM_JUMP24) {
+				continue;
+			}
+
+			if (llext_read_symbol(ldr, ext, (elf_rela_t *)&rel, &sym)) {
+				continue;
+			}
+
+			if (sym.st_shndx == SHN_UNDEF) {
+				n++;
+			}
+		}
+	}
+
+	if (n == 0) {
+		return 0;
+	}
+
+	ldr->sects[LLEXT_MEM_VENEER].sh_size = n * sizeof(struct arm_veneer_entry);
+	ldr->sects[LLEXT_MEM_VENEER].sh_addralign = 4;
+	ldr->sects[LLEXT_MEM_VENEER].sh_type = SHT_NOBITS;
+	ldr->sects[LLEXT_MEM_VENEER].sh_flags = SHF_ALLOC | SHF_EXECINSTR;
+
+	LOG_DBG("Veneer table: %zu slot(s)", n);
+	return 0;
+}
+#endif /* CONFIG_LLEXT_VENEERS */
 
 /**
  * @brief Architecture specific function for relocating partially linked (static) elf
@@ -394,7 +504,11 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 
 	case R_ARM_THM_CALL:
 	case R_ARM_THM_JUMP24:
-		ret = thm_jumps_handler(reloc_type, loc, sym_base_addr, sym_name);
+		ret = thm_jumps_handler(ext, reloc_type, loc, sym_base_addr, sym_name);
+		if (ret != 0) {
+			LOG_ERR("sym '%s': relocation out of range (%#x -> %#x)",
+				sym_name, (uint32_t)loc, (uint32_t)sym_base_addr);
+		}
 		break;
 
 	case R_ARM_THM_MOVW_ABS_NC:

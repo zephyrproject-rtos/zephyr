@@ -562,7 +562,11 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 	for (i = 0; i < LLEXT_MEM_COUNT; ++i) {
 		if (ext->mem[i]) {
 			sys_cache_data_flush_range(ext->mem[i], ext->mem_size[i]);
-			if (i == LLEXT_MEM_TEXT && !ldr_parm->pre_located) {
+			if ((i == LLEXT_MEM_TEXT && !ldr_parm->pre_located)
+#ifdef CONFIG_LLEXT_VENEERS
+			    || i == LLEXT_MEM_VENEER
+#endif
+			    ) {
 				sys_cache_instr_invd_range(ext->mem[i], ext->mem_size[i]);
 			}
 		}
