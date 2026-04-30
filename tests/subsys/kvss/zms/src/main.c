@@ -606,6 +606,14 @@ ZTEST_F(zms, test_zms_gc_corrupt_close_ate)
 	ate.crc8 = crc8_ccitt(0xff, (uint8_t *)&ate + SIZEOF_FIELD(struct zms_ate, crc8),
 			      sizeof(struct zms_ate) - SIZEOF_FIELD(struct zms_ate, crc8));
 
+	/* Ensure sectors are erased before injecting handcrafted ATEs.
+	 * Flash simulator writes are one-way bit transitions and cannot set bits back to 1.
+	 */
+	fixture->fs.sector_count = 3;
+	err = flash_erase(fixture->fs.flash_device, fixture->fs.offset,
+			  fixture->fs.sector_count * fixture->fs.sector_size);
+	zassert_true(err == 0, "flash_erase sector 1 failed: %d", err);
+
 	/* Add empty ATE */
 	err = flash_write(fixture->fs.flash_device,
 			  fixture->fs.offset + fixture->fs.sector_size - sizeof(struct zms_ate),
@@ -630,8 +638,6 @@ ZTEST_F(zms, test_zms_gc_corrupt_close_ate)
 				  2 * sizeof(struct zms_ate),
 			  &close_ate, sizeof(close_ate));
 	zassert_true(err == 0, "flash_write failed: %d", err);
-
-	fixture->fs.sector_count = 3;
 
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
