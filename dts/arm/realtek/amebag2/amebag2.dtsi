@@ -71,6 +71,31 @@
 			};
 		};
 
+		spi0: spi@40121000 {
+			compatible = "realtek,ameba-spi";
+			reg = <0x40121000 0x100>;
+			interrupts = <38 0>;
+			clocks = <&rcc AMEBA_SPI0_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			/* GDMA_HANDSHAKE_INTERFACE_SPI0_RX */
+			dmas = <&dma 2 7 0>, <&dma 3 6 0>;
+			dma-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		spi1: spi@40122000 {
+			compatible = "realtek,ameba-spi";
+			reg = <0x40122000 0x100>;
+			interrupts = <39 0>;
+			clocks = <&rcc AMEBA_SPI1_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			dmas = <&dma 2 9 0>, <&dma 3 8 0>;
+			dma-names = "rx", "tx";
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@4080a800 {
 			compatible = "realtek,ameba-pinctrl";
 			reg = <0x4080a800 0x200>;

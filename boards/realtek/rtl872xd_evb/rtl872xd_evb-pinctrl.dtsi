@@ -17,4 +17,18 @@
 			bias-pull-up;
 		};
 	};
+
+	/* amebad spi1 only be master */
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('B', 6, AMEBA_SPIM)>,/* AMEBA_SPI1_CLK */
+				 <AMEBA_PINMUX('B', 4, AMEBA_SPIM)>,/* AMEBA_SPI1_MOSI */
+				 <AMEBA_PINMUX('B', 5, AMEBA_SPIM)>;/* AMEBA_SPI1_MISO */
+			bias-pull-up;
+		};
+		group2 {
+			pinmux = <AMEBA_PINMUX('B', 7, AMEBA_SPIM)>;/* AMEBA_SPI1_CS */
+			bias-pull-up;
+		};
+	};
 };

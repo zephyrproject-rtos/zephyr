@@ -17,4 +17,18 @@
 			bias-pull-up;
 		};
 	};
+
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('B', 18, AMEBA_SPI1_CLK)>,
+				 <AMEBA_PINMUX('B', 19, AMEBA_SPI1_MOSI)>,
+				 <AMEBA_PINMUX('B', 20, AMEBA_SPI1_MISO)>;
+			bias-pull-up;
+		};
+		group2 {
+			pinmux = <AMEBA_PINMUX('B', 21, AMEBA_SPI1_CS)>;
+			bias-pull-up;
+		};
+	};
+
 };
