@@ -347,7 +347,7 @@ static void scan_delegator_security_changed(struct bt_conn *conn,
 	}
 
 	/* Notify all receive states after a bonded device reconnects */
-	for (size_t i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
 		const struct bass_recv_state_internal *internal_state =
 			&scan_delegator.recv_states[i];
 
@@ -371,7 +371,7 @@ static uint8_t next_src_id(void)
 	while (!unique) {
 		next_src_id = scan_delegator.next_src_id++;
 		unique = true;
-		for (size_t i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
+		for (size_t i = 0U; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
 			if (scan_delegator.recv_states[i].active &&
 			    scan_delegator.recv_states[i].state.src_id == next_src_id) {
 				unique = false;
@@ -385,7 +385,7 @@ static uint8_t next_src_id(void)
 
 static struct bass_recv_state_internal *bass_lookup_src_id(uint8_t src_id)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
 		if (scan_delegator.recv_states[i].active &&
 		    scan_delegator.recv_states[i].state.src_id == src_id) {
 			return &scan_delegator.recv_states[i];
@@ -530,7 +530,7 @@ static int scan_delegator_add_src(struct bt_conn *conn,
 	bt_addr_le_t *addr;
 	uint8_t pa_sync;
 	uint16_t pa_interval;
-	uint32_t aggregated_bis_syncs = 0;
+	uint32_t aggregated_bis_syncs = 0U;
 	uint32_t broadcast_id;
 	bool bis_sync_requested;
 	uint16_t total_len;
@@ -768,7 +768,7 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 	struct bt_bap_bass_subgroup
 		subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS] = { 0 };
 	uint8_t pa_sync;
-	uint32_t aggregated_bis_syncs = 0;
+	uint32_t aggregated_bis_syncs = 0U;
 	bool bis_sync_change_requested;
 	uint16_t total_len;
 	struct bt_bap_bass_cp_mod_src *mod_src;
@@ -1410,17 +1410,17 @@ int bt_bap_scan_delegator_register(struct bt_bap_scan_delegator_cb *cb)
 
 	/* Store the pointer to the first characteristic in each receive state */
 	scan_delegator.recv_states[0].attr = &bass_svc.attrs[3];
-	scan_delegator.recv_states[0].index = 0;
+	scan_delegator.recv_states[0].index = 0U;
 #if CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT > 1
 	scan_delegator.recv_states[1].attr = &bass_svc.attrs[6];
-	scan_delegator.recv_states[1].index = 1;
+	scan_delegator.recv_states[1].index = 1U;
 #if CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT > 2
 	scan_delegator.recv_states[2].attr = &bass_svc.attrs[9];
-	scan_delegator.recv_states[2].index = 2;
+	scan_delegator.recv_states[2].index = 2U;
 #endif /* CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT > 2 */
 #endif /* CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT > 1 */
 
-	for (size_t i = 0; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
 		struct bass_recv_state_internal *internal_state = &scan_delegator.recv_states[i];
 
 		err = k_mutex_init(&internal_state->mutex);

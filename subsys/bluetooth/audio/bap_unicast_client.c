@@ -570,7 +570,7 @@ static struct bt_bap_ep *unicast_client_ep_new(struct bt_conn *conn, enum bt_aud
 		return NULL;
 	}
 
-	for (i = 0; i < size; i++) {
+	for (i = 0U; i < size; i++) {
 		struct bt_bap_unicast_client_ep *client_ep = &cache[i];
 
 		if (!client_ep->handle) {
@@ -3226,7 +3226,7 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 	}
 
 	op = net_buf_simple_add(buf, sizeof(*op));
-	op->num_ases = 0x01;
+	op->num_ases = 0x01U;
 
 	err = unicast_client_ep_config(ep, buf, codec_cfg);
 	if (err != 0) {
@@ -3425,7 +3425,7 @@ int bt_bap_unicast_client_enable(struct bt_bap_stream *stream, const uint8_t met
 	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->num_ases = 0x01;
+	req->num_ases = 0x01U;
 
 	err = unicast_client_ep_enable(ep, buf, meta, meta_len);
 	if (err != 0) {
@@ -3458,7 +3458,7 @@ int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, const uint8_t m
 	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->num_ases = 0x01;
+	req->num_ases = 0x01U;
 
 	err = unicast_client_ep_metadata(ep, buf, meta, meta_len);
 	if (err != 0) {
@@ -3574,7 +3574,7 @@ int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->num_ases = 0x01;
+	req->num_ases = 0x01U;
 
 	err = unicast_client_ep_disable(ep, buf);
 	if (err != 0) {
@@ -3606,7 +3606,7 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->num_ases = 0x00;
+	req->num_ases = 0x00U;
 
 	/* When initiated by the client, valid only if Direction field
 	 * parameter value = 0x02 (Server is Audio Source)
@@ -3658,7 +3658,7 @@ int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->num_ases = 0x01;
+	req->num_ases = 0x01U;
 	len = buf->len;
 
 	/* Only attempt to release if not IDLE already */
@@ -4022,7 +4022,7 @@ static uint8_t unicast_client_pacs_avail_ctx_discover_cb(struct bt_conn *conn,
 
 		sub_params = &uni_cli_insts[index].avail_ctx_subscribe;
 
-		if (sub_params->value_handle == 0) {
+		if (sub_params->value_handle == 0U) {
 			LOG_DBG("Subscribing to handle %u", value_handle);
 			sub_params->value_handle = value_handle;
 			sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
@@ -4217,7 +4217,7 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 			sub_params = &uni_cli_insts[index].src_loc_subscribe;
 		}
 
-		if (sub_params->value_handle == 0) {
+		if (sub_params->value_handle == 0U) {
 			sub_params->value_handle = value_handle;
 			sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 			sub_params->end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
@@ -4397,7 +4397,7 @@ unicast_client_pacs_supp_context_discover_cb(struct bt_conn *conn, const struct 
 
 		sub_params = &uni_cli_insts[conn_index].supp_ctx_subscribe;
 
-		if (sub_params->value_handle == 0) {
+		if (sub_params->value_handle == 0U) {
 			LOG_DBG("Subscribing to handle %u", value_handle);
 			sub_params->value_handle = value_handle;
 			sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;

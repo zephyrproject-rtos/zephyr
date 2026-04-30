@@ -130,7 +130,7 @@ static void usb_data_request(const struct device *dev)
 		memset(((uint8_t *)pcm_buf) + size, 0, USB_STEREO_FRAME_SIZE - size);
 	}
 
-	if (size != 0) {
+	if (size != 0U) {
 		static size_t cnt;
 
 		if ((++cnt % bap_get_stats_interval()) == 0U) {
@@ -259,7 +259,7 @@ int bap_usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16
 	const bool is_left = (chan_allocation & BT_AUDIO_LOCATION_FRONT_LEFT) != 0;
 	const bool is_right = (chan_allocation & BT_AUDIO_LOCATION_FRONT_RIGHT) != 0;
 	const bool is_mono = chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO;
-	const uint8_t ts_jitter_us = 100; /* timestamps may have jitter */
+	const uint8_t ts_jitter_us = 100U; /* timestamps may have jitter */
 
 	static size_t cnt;
 
@@ -279,7 +279,7 @@ int bap_usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16
 		return -EINVAL;
 	}
 
-	if (((is_left || is_right) && decoded_sdu.mono_frames_cnt != 0) ||
+	if (((is_left || is_right) && decoded_sdu.mono_frames_cnt != 0U) ||
 	    (is_mono &&
 	     (decoded_sdu.left_frames_cnt != 0U || decoded_sdu.right_frames_cnt != 0U))) {
 		LOG_DBG("Cannot mix and match mono with left or right");

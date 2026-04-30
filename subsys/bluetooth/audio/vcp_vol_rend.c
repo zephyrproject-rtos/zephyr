@@ -279,7 +279,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 	}
 
 	if (volume_change && !vol_rend.flags) {
-		vol_rend.flags = 1;
+		vol_rend.flags = 1U;
 
 		if (IS_ENABLED(CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE)) {
 			value_changed(&vol_rend, NOTIFY_FLAGS);
@@ -519,7 +519,7 @@ int bt_vcp_vol_rend_included_get(struct bt_vcp_included *included)
 
 int bt_vcp_vol_rend_set_step(uint8_t volume_step)
 {
-	if (volume_step > 0) {
+	if (volume_step > 0U) {
 		vol_rend.volume_step = volume_step;
 		return 0;
 	} else {

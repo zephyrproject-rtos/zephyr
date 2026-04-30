@@ -201,11 +201,11 @@ enum bt_bap_qos_cfg_framing {
 /** @brief QoS Preferred PHY */
 enum {
 	/** LE 1M PHY */
-	BT_BAP_QOS_CFG_1M = BIT(0),
+	BT_BAP_QOS_CFG_1M = BIT(0U),
 	/** LE 2M PHY */
-	BT_BAP_QOS_CFG_2M = BIT(1),
+	BT_BAP_QOS_CFG_2M = BIT(1U),
 	/** LE Coded PHY */
-	BT_BAP_QOS_CFG_CODED = BIT(2),
+	BT_BAP_QOS_CFG_CODED = BIT(2U),
 };
 
 /**
@@ -375,7 +375,7 @@ enum bt_bap_bass_att_err {
 };
 
 /** Value indicating that the periodic advertising interval is unknown */
-#define BT_BAP_PA_INTERVAL_UNKNOWN             0xFFFF
+#define BT_BAP_PA_INTERVAL_UNKNOWN             0xFFFFU
 
 /**
  * @brief Broadcast Assistant no BIS sync preference
@@ -383,9 +383,9 @@ enum bt_bap_bass_att_err {
  * Value indicating that the Broadcast Assistant has no preference to which BIS
  * the Scan Delegator syncs to
  */
-#define BT_BAP_BIS_SYNC_NO_PREF 0xFFFFFFFF
+#define BT_BAP_BIS_SYNC_NO_PREF 0xFFFFFFFFU
 /** BIS sync value indicating that the BIG sync has failed for any reason */
-#define BT_BAP_BIS_SYNC_FAILED  0xFFFFFFFF
+#define BT_BAP_BIS_SYNC_FAILED  0xFFFFFFFFU
 
 /** Endpoint states */
 enum bt_bap_ep_state {
@@ -2434,7 +2434,7 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
  *
  * @param sink               Pointer to the sink object from the base_recv callback.
  * @param indexes_bitfield   Bitfield of the BIS index to sync to. To sync to e.g. BIS index 1 and
- *                           2, this should have the value of BIT(1) | BIT(2).
+ *                           2, this should have the value of BIT(1U) | BIT(2U).
  * @param streams            Stream object pointers to be used for the receiver. If multiple BIS
  *                           indexes shall be synchronized, multiple streams shall be provided.
  * @param broadcast_code     The 16-octet broadcast code. Shall be supplied if the broadcast is
