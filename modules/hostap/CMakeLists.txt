@@ -366,7 +366,6 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
   ${HOSTAP_SRC_BASE}/ap/p2p_hostapd.c
   ${HOSTAP_SRC_BASE}/common/gas.c
   ${WIFI_NM_WPA_SUPPLICANT_BASE}/gas_query.c
-  ${WIFI_NM_WPA_SUPPLICANT_BASE}/offchannel.c
 )
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPS
   ${WIFI_NM_WPA_SUPPLICANT_BASE}/wps_supplicant.c
@@ -593,7 +592,6 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_NW_SEL_RE
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
   ${WIFI_NM_WPA_SUPPLICANT_BASE}/dpp_supplicant.c
-  ${WIFI_NM_WPA_SUPPLICANT_BASE}/offchannel.c
   ${WIFI_NM_WPA_SUPPLICANT_BASE}/gas_query.c
 
   ${HOSTAP_SRC_BASE}/ap/dpp_hostapd.c
@@ -617,6 +615,16 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 
   ${HOSTAP_SRC_BASE}/tls/asn1.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+  ${WIFI_NM_WPA_SUPPLICANT_BASE}/nan_usd.c
+  ${HOSTAP_SRC_BASE}/ap/nan_usd_ap.c
+  ${HOSTAP_SRC_BASE}/common/nan_de.c
+)
+
+if(CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P OR CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP OR CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN)
+  zephyr_library_sources(${WIFI_NM_WPA_SUPPLICANT_BASE}/offchannel.c)
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
   ${HOSTAP_SRC_BASE}/eap_server/eap_server_tls_common.c

@@ -86,3 +86,6 @@ tests:
       - CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES=y
     extra_args:
       - SNIPPET="wifi-enterprise"
+  wifi.build.nan:
+    extra_configs:
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN=y
