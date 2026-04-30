@@ -128,6 +128,30 @@ static int sx126x_validate_config(const struct lora_modem_config *config)
 	return 0;
 }
 
+/*
+ * SX126x datasheet 13.1.7: the RxDutyCycle hardware can only detect a
+ * preamble whose duration exceeds (2 * rx_period + sleep_period).
+ */
+static int sx126x_validate_rx_duty_cycle(const struct lora_modem_config *config,
+					 k_timeout_t rx_period,
+					 k_timeout_t sleep_period)
+{
+	uint32_t sym_us = ((uint32_t)1U << config->datarate) * 1000U /
+			  config->bandwidth;
+	uint32_t preamble_us = (uint32_t)config->preamble_len * sym_us;
+	uint32_t rx_us = k_ticks_to_us_ceil32(rx_period.ticks);
+	uint32_t sleep_us = k_ticks_to_us_ceil32(sleep_period.ticks);
+
+	if (preamble_us <= 2U * rx_us + sleep_us) {
+		LOG_ERR("preamble too short for RxDutyCycle: "
+			"preamble=%u us, 2*rx+sleep=%u us (datasheet 13.1.7)",
+			preamble_us, 2U * rx_us + sleep_us);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int sx126x_set_standby(const struct device *dev, uint8_t mode)
 {
 	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_STANDBY, &mode, 1);
@@ -1267,6 +1291,12 @@ static int sx126x_lora_recv_duty_cycle_async(const struct device *dev,
 		LOG_ERR("Not configured");
 		k_mutex_unlock(&data->lock);
 		return -EINVAL;
+	}
+
+	ret = sx126x_validate_rx_duty_cycle(&data->config, rx_period, sleep_period);
+	if (ret < 0) {
+		k_mutex_unlock(&data->lock);
+		return ret;
 	}
 
 	if (!atomic_cas(&data->state, SX126X_REST_STATE,
