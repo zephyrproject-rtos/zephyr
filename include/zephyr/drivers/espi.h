@@ -26,7 +26,7 @@ extern "C" {
 
 /**
  * @brief Interfaces for Enhanced Serial Peripheral Interface (eSPI)
- *        controllers.
+ *        target hardware.
  * @defgroup espi_interface ESPI
  * @ingroup io_interfaces
  * @{
@@ -97,7 +97,7 @@ enum espi_io_mode {
 /**
  * @brief eSPI channel.
  *
- * Identifies each eSPI logical channel supported by eSPI controller
+ * Identifies each eSPI logical channel supported by eSPI target hardware.
  * Each channel allows independent traffic, but the assignment of channel
  * type to channel number is fixed.
  *
@@ -126,22 +126,22 @@ enum espi_bus_event {
 	 */
 	ESPI_BUS_RESET                      = BIT(0),
 
-	/** Indicates the eSPI HW has received channel enable notification from eSPI host,
-	 * once the eSPI channel is signaled as ready to the eSPI host,
+	/** Indicates the eSPI HW has received channel enable notification from eSPI controller,
+	 * once the eSPI channel is signaled as ready to the eSPI controller,
 	 * eSPI drivers should convey the eSPI channel ready to eSPI driver client via this event.
 	 */
 	ESPI_BUS_EVENT_CHANNEL_READY        = BIT(1),
 
-	/** Indicates the eSPI HW has received a virtual wire message from eSPI host.
+	/** Indicates the eSPI HW has received a virtual wire message from eSPI controller.
 	 * eSPI drivers should convey the eSPI virtual wire latest status.
 	 */
 	ESPI_BUS_EVENT_VWIRE_RECEIVED       = BIT(2),
 
-	/** Indicates the eSPI HW has received a Out-of-band packet from eSPI host.
+	/** Indicates the eSPI HW has received a Out-of-band packet from eSPI controller.
 	 */
 	ESPI_BUS_EVENT_OOB_RECEIVED         = BIT(3),
 
-	/** Indicates the eSPI HW has received a peripheral eSPI host event.
+	/** Indicates the eSPI HW has received a peripheral eSPI host controller.
 	 * eSPI drivers should convey the peripheral type.
 	 */
 	ESPI_BUS_PERIPHERAL_NOTIFICATION    = BIT(4),
@@ -168,6 +168,10 @@ enum espi_pc_event {
 #define ESPI_PERIPHERAL_INDEX_0  0ul
 #define ESPI_PERIPHERAL_INDEX_1  1ul
 #define ESPI_PERIPHERAL_INDEX_2  2ul
+
+/* eSPI specification defines eSPI target and eSPI controller terms
+ * note that sometimes eSPI controller is also referred as eSPI host
+ */
 
 #define ESPI_TARGET_TO_CONTROLLER   0ul
 #define ESPI_CONTROLLER_TO_TARGET   1ul
@@ -200,7 +204,7 @@ enum espi_pc_event {
 enum espi_virtual_peripheral {
 	/** UART peripheral */
 	ESPI_PERIPHERAL_UART,
-	/** 8042 Keyboard Controller peripheral */
+	/** 8042 Keyboard peripheral */
 	ESPI_PERIPHERAL_8042_KBC,
 	/** Host I/O peripheral */
 	ESPI_PERIPHERAL_HOST_IO,
@@ -387,7 +391,7 @@ enum lpc_peripheral_opcode {
 /**
  * @brief Event data format for KBC events.
  *
- * Event data (@ref espi_event.evt_data) for Keyboard Controller (8042)
+ * Event data (@ref espi_event.evt_data) for Keyboard (8042)
  * events, allowing to manipulate the raw event data as a bit field.
  */
 struct espi_evt_data_kbc {
@@ -631,9 +635,9 @@ __subsystem struct espi_driver_api {
  */
 
 /**
- * @brief Configure operation of a eSPI controller.
+ * @brief Configure operation of a eSPI hardware.
  *
- * This routine provides a generic interface to override eSPI controller
+ * This routine provides a generic interface to override eSPI hardware
  * capabilities.
  *
  * If this eSPI controller is acting as target, the values set here
@@ -645,10 +649,10 @@ __subsystem struct espi_driver_api {
  * eSPI target then send via SET_CONFIGURATION command.
  *
  * @code
- * +---------+   +---------+     +------+          +---------+   +---------+
- * |  eSPI   |   |  eSPI   |     | eSPI |          |  eSPI   |   |  eSPI   |
- * |  target |   | driver  |     |  bus |          |  driver |   |  host   |
- * +--------+   +---------+     +------+          +---------+   +---------+
+ * +---------+   +---------+     +------+          +---------+   +-------------+
+ * |  eSPI   |   |  eSPI   |     | eSPI |          |  eSPI   |   |  eSPI       |
+ * |  target |   | driver  |     |  bus |          |  driver |   |  controller |
+ * +---------+   +---------+     +------+          +---------+   +-------------+
  *     |              |            |                   |             |
  *     | espi_config  | Set eSPI   |       Set eSPI    | espi_config |
  *     +--------------+ ctrl regs  |       cap ctrl reg| +-----------+
@@ -1019,60 +1023,62 @@ static inline int z_impl_espi_flash_erase(const struct device *dev,
  * Callback model
  *
  * @code
- *+-------+                  +-------------+   +------+     +---------+
- *|  App  |                  | eSPI driver |   |  HW  |     |eSPI Host|
- *+---+---+                  +-------+-----+   +---+--+     +----+----+
- *    |                              |             |             |
- *    |   espi_init_callback         |             |             |
- *    +----------------------------> |             |             |
- *    |   espi_add_callback          |             |
- *    +----------------------------->+             |
- *    |                              |             |  eSPI reset |  eSPI host
- *    |                              |    IRQ      +<------------+  resets the
- *    |                              | <-----------+             |  bus
- *    |<-----------------------------|             |             |
- *    | Report eSPI bus reset        | Processed   |             |
- *    |                              | within the  |             |
- *    |                              | driver      |             |
- *    |                              |             |             |
- *    |                              |             |  VW CH ready|  eSPI host
- *    |                              |    IRQ      +<------------+  enables VW
- *    |                              | <-----------+             |  channel
- *    |                              |             |             |
- *    |                              | Processed   |             |
- *    |                              | within the  |             |
- *    |                              | driver      |             |
- *    |                              |             |             |
- *    |                              |             | Memory I/O  |  Peripheral
- *    |                              |             <-------------+  event
- *    |                              +<------------+             |
- *    +<-----------------------------+ callback    |             |
- *    | Report peripheral event      |             |             |
- *    | and data for the event       |             |             |
- *    |                              |             |             |
- *    |                              |             | SLP_S5      |  eSPI host
- *    |                              |             <-------------+  send VWire
- *    |                              +<------------+             |
- *    +<-----------------------------+ callback    |             |
- *    | App enables/configures       |             |             |
- *    | discrete regulator           |             |             |
- *    |                              |             |             |
- *    |   espi_send_vwire_signal     |             |             |
- *    +------------------------------>------------>|------------>|
- *    |                              |             |             |
- *    |                              |             | HOST_RST    |  eSPI host
- *    |                              |             <-------------+  send VWire
- *    |                              +<------------+             |
- *    +<-----------------------------+ callback    |             |
- *    | App reset host-related       |             |             |
- *    | data structures              |             |             |
- *    |                              |             |             |
- *    |                              |             |   C10       |  eSPI host
- *    |                              |             +<------------+  send VWire
- *    |                              <-------------+             |
- *    <------------------------------+             |             |
- *    | App executes                 |             |             |
- *    + power mgmt policy            |             |             |
+ *+-------------+            +-------------+   +--------+     +------------+
+ *|  Zephyr App |            | eSPI driver |   |  eSPI  |     |   eSPI     |
+ *|       on    |            |             |   | target |     | controller |
+ *| eSPI target |            |             |   |   HW   |     |            |
+ *+---+---------+            +-------+-----+   +---+----+     +----+-------+
+ *    |                              |             |               |
+ *    |   espi_init_callback         |             |               |
+ *    +----------------------------> |             |               |
+ *    |   espi_add_callback          |             |               |
+ *    +----------------------------->+             |               |
+ *    |                              |             |  eSPI reset   |  eSPI controller
+ *    |                              |    IRQ      +<--------------+  resets the
+ *    |                              | <-----------+               |  bus
+ *    |<-----------------------------|             |               |
+ *    | Report eSPI bus reset        | Processed   |               |
+ *    |                              | within the  |               |
+ *    |                              | driver      |               |
+ *    |                              |             |               |
+ *    |                              |             |  VW CH ready  |  eSPI controller
+ *    |                              |    IRQ      +<--------------+  enables VW
+ *    |                              | <-----------+               |  channel
+ *    |                              |             |               |
+ *    |                              | Processed   |               |
+ *    |                              | within the  |               |
+ *    |                              | driver      |               |
+ *    |                              |             |               |
+ *    |                              |             | Memory I/O    |  Peripheral
+ *    |                              |             <---------------+  event
+ *    |                              +<------------+               |
+ *    +<-----------------------------+ callback    |               |
+ *    | Report peripheral event      |             |               |
+ *    | and data for the event       |             |               |
+ *    |                              |             |               |
+ *    |                              |             | SLP_S5        |  eSPI controller
+ *    |                              |             <---------------+  send VWire
+ *    |                              +<------------+               |
+ *    +<-----------------------------+ callback    |               |
+ *    | App enables/configures       |             |               |
+ *    | discrete regulator           |             |               |
+ *    |                              |             |               |
+ *    |   espi_send_vwire_signal     |             |               |
+ *    +------------------------------>------------>|-------------->|
+ *    |                              |             |               |
+ *    |                              |             | HOST_RST      |  eSPI controller
+ *    |                              |             <---------------+  send VWire
+ *    |                              +<------------+               |
+ *    +<-----------------------------+ callback    |               |
+ *    | App reset host-related       |             |               |
+ *    | data structures              |             |               |
+ *    |                              |             |               |
+ *    |                              |             |   C10         |  eSPI controller
+ *    |                              |             +<--------------+  send VWire
+ *    |                              <-------------+               |
+ *    <------------------------------+             |               |
+ *    | App executes                 |             |               |
+ *    + power mgmt policy            |             |               |
  * @endcode
  */
 
