@@ -9,3 +9,6 @@ family:
           - name: rk3588s
           - name: rk3568
           - name: rk3588
+      - name: rv1106
+        socs:
+          - name: rv1106
