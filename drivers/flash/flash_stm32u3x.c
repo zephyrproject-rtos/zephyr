@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/barrier.h>
 
 #include "flash_stm32.h"
 
@@ -304,4 +305,57 @@ void flash_stm32_page_layout(const struct device *dev,
 
 	*layout = stm32_flash_layout;
 	*layout_size = 1;
+}
+
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+
+uint8_t flash_stm32_get_rdp_level(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	return (regs->OPTR & FLASH_OPTR_RDP_Msk) >> FLASH_OPTR_RDP_Pos;
+}
+
+void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
+{
+	flash_stm32_option_bytes_write(dev, FLASH_OPTR_RDP_Msk,
+				       (uint32_t)level << FLASH_OPTR_RDP_Pos);
+}
+#endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
+
+int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask, uint32_t value)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	int rc;
+
+	if (regs->CR & FLASH_CR_OPTLOCK) {
+		return -EIO;
+	}
+
+	if ((regs->OPTR & mask) == value) {
+		return 0;
+	}
+
+	/* Update the target value in the Option Register */
+	regs->OPTR = (regs->OPTR & ~mask) | value;
+	regs->CR |= FLASH_CR_OPTSTRT;
+
+	/* make sure previous write is completed. */
+	barrier_dsync_fence_full();
+
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	/* Force the option byte loading (triggers system reset) */
+	regs->CR |= FLASH_CR_OBL_LAUNCH;
+
+	return 0;
+}
+
+uint32_t flash_stm32_option_bytes_read(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	return regs->OPTR;
 }
