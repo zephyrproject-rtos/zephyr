@@ -46,7 +46,7 @@ LOG_MODULE_REGISTER(codec, CONFIG_LOG_DEFAULT_LEVEL);
  * 15 was selected as a conservative, comfortable default for this sample
  * application. Adjust as needed to match the desired default output level.
  */
-#define SPEAKER_VOL 15
+#define SPEAKER_VOL 15U
 
 /*
  * Total size of the ring buffer used to queue audio data for the codec.

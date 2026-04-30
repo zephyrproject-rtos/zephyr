@@ -40,10 +40,10 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
-static K_SEM_DEFINE(sem_cas_discovery, 0, 1);
-static K_SEM_DEFINE(sem_discover_sink, 0, 1);
-static K_SEM_DEFINE(sem_discover_source, 0, 1);
-static K_SEM_DEFINE(sem_audio_start, 0, 1);
+static K_SEM_DEFINE(sem_cas_discovery, 0U, 1U);
+static K_SEM_DEFINE(sem_discover_sink, 0U, 1U);
+static K_SEM_DEFINE(sem_discover_source, 0U, 1U);
+static K_SEM_DEFINE(sem_audio_start, 0U, 1U);
 
 static void unicast_stream_configured(struct bt_bap_stream *stream,
 				      const struct bt_bap_qos_cfg_pref *pref)
@@ -389,7 +389,7 @@ static void audio_timer_timeout(struct k_work *work)
 
 	if (!data_initialized) {
 		/* TODO: Actually encode some audio data */
-		for (size_t i = 0; i < ARRAY_SIZE(buf_data); i++) {
+		for (size_t i = 0U; i < ARRAY_SIZE(buf_data); i++) {
 			buf_data[i] = (uint8_t)i;
 		}
 

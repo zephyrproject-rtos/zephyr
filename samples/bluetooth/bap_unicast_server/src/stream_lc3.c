@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(lc3, LOG_LEVEL_INF);
 #define LC3_MAX_NUM_SAMPLES       ((LC3_MAX_FRAME_DURATION_US * LC3_MAX_SAMPLE_RATE) / USEC_PER_SEC)
 /* codec does clipping above INT16_MAX - 3000 */
 #define AUDIO_VOLUME              (INT16_MAX - 3000)
-#define AUDIO_TONE_FREQUENCY_HZ   400
+#define AUDIO_TONE_FREQUENCY_HZ   400U
 
 static int16_t audio_buf[LC3_MAX_NUM_SAMPLES];
 /**
@@ -47,7 +47,7 @@ static void fill_audio_buf_sin(struct tx_stream *stream)
 	const int sine_period_samples = stream->lc3_tx.freq_hz / AUDIO_TONE_FREQUENCY_HZ;
 	const float step = 2 * 3.1415f / sine_period_samples;
 
-	for (unsigned int i = 0; i < num_samples; i++) {
+	for (unsigned int i = 0U; i < num_samples; i++) {
 		const float sample = sinf(i * step);
 
 		audio_buf[i] = (int16_t)(AUDIO_VOLUME * sample);

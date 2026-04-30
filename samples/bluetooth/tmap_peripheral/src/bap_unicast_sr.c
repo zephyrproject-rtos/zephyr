@@ -53,7 +53,7 @@ static struct audio_source {
 static size_t configured_source_stream_count;
 
 static const struct bt_bap_qos_cfg_pref qos_pref =
-	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 20000, 40000, 20000, 40000);
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02U, 10U, 20000U, 40000U, 20000U, 40000U);
 
 static void print_hex(const uint8_t *ptr, size_t len)
 {
@@ -123,7 +123,7 @@ static void print_qos(const struct bt_bap_qos_cfg *qos)
 
 static struct bt_bap_stream *stream_alloc(void)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 		struct bt_bap_stream *stream = &streams[i];
 
 		if (!stream->conn) {
@@ -220,7 +220,7 @@ static bool data_func_cb(struct bt_data *data, void *user_data)
 	}
 
 	if (data->type == BT_AUDIO_METADATA_TYPE_CCID_LIST) {
-		for (uint8_t j = 0; j < data->data_len; j++) {
+		for (uint8_t j = 0U; j < data->data_len; j++) {
 			const uint8_t ccid = data->data[j];
 
 			if (!(IS_ENABLED(CONFIG_BT_TBS_CLIENT_CCID) &&
@@ -421,7 +421,7 @@ int bap_unicast_sr_init(void)
 					       AVAILABLE_SOURCE_CONTEXT);
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 		bt_bap_stream_cb_register(&streams[i], &stream_ops);
 	}
 

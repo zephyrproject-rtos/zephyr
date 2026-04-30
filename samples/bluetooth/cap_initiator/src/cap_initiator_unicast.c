@@ -38,7 +38,7 @@
 
 LOG_MODULE_REGISTER(cap_initiator_unicast, LOG_LEVEL_INF);
 
-#define SEM_TIMEOUT K_SECONDS(5)
+#define SEM_TIMEOUT K_SECONDS(5U)
 
 /* We use the same config for both sink and source streams
  * For simplicity we use the mandatory configuration 16_2_1
@@ -72,10 +72,10 @@ struct peer_config {
 /* TODO: Expand to multiple ACL connections */
 static struct peer_config peer;
 
-static K_SEM_DEFINE(sem_proc, 0, 1);
-static K_SEM_DEFINE(sem_state_change, 0, 1);
-static K_SEM_DEFINE(sem_mtu_exchanged, 0, 1);
-static K_SEM_DEFINE(sem_security_changed, 0, 1);
+static K_SEM_DEFINE(sem_proc, 0U, 1U);
+static K_SEM_DEFINE(sem_state_change, 0U, 1U);
+static K_SEM_DEFINE(sem_mtu_exchanged, 0U, 1U);
+static K_SEM_DEFINE(sem_security_changed, 0U, 1U);
 
 static bool is_tx_stream(struct bt_bap_stream *stream)
 {
