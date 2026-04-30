@@ -40,7 +40,8 @@ enum wifi_mfp_options get_mfp(enum mfp_options supp_mfp_option);
  *
  * @return: 0 for OK; <0 for ERROR
  */
-int supplicant_get_version(const struct device *dev, struct wifi_version *params);
+int supplicant_get_version(const struct device *dev, struct net_if *iface,
+			   struct wifi_version *params);
 
 /**
  * @brief Request a connection
@@ -50,7 +51,8 @@ int supplicant_get_version(const struct device *dev, struct wifi_version *params
  *
  * @return: 0 for OK; -1 for ERROR
  */
-int supplicant_connect(const struct device *dev, struct wifi_connect_req_params *params);
+int supplicant_connect(const struct device *dev, struct net_if *iface,
+		       struct wifi_connect_req_params *params);
 
 /**
  * @brief Forces station to disconnect and stops any subsequent scan
@@ -60,28 +62,31 @@ int supplicant_connect(const struct device *dev, struct wifi_connect_req_params 
  *
  * @return: 0 for OK; -1 for ERROR
  */
-int supplicant_disconnect(const struct device *dev);
+int supplicant_disconnect(const struct device *dev, struct net_if *iface);
 
 /**
  * @brief
  *
  * @param dev: Wi-Fi interface name to use
+ * @param iface Network interface to use
  * @param status: Status structure to fill
  *
  * @return: 0 for OK; -1 for ERROR
  */
-int supplicant_status(const struct device *dev, struct wifi_iface_status *status);
+int supplicant_status(const struct device *dev, struct net_if *iface,
+		      struct wifi_iface_status *status);
 
 /**
  * @brief Request a scan
  *
  * @param dev Wi-Fi interface name to use
+ * @param iface Network interface to use
  * @param params Scan parameters
  * @param cb Callback to be called for each scan result
  *
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_scan(const struct device *dev, struct wifi_scan_params *params,
+int supplicant_scan(const struct device *dev, struct net_if *iface, struct wifi_scan_params *params,
 		    scan_result_cb_t cb);
 
 #if defined(CONFIG_NET_STATISTICS_WIFI) || defined(__DOXYGEN__)
@@ -89,122 +94,144 @@ int supplicant_scan(const struct device *dev, struct wifi_scan_params *params,
  * @brief Get Wi-Fi statistics
  *
  * @param dev Wi-Fi interface name to use
+ * @param iface Network interface to use
  * @param stats Pointer to stats structure to fill
  *
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_get_stats(const struct device *dev, struct net_stats_wifi *stats);
+int supplicant_get_stats(const struct device *dev, struct net_if *iface,
+			 struct net_stats_wifi *stats);
 /**
  * @brief Reset Wi-Fi statistics
  *
  * @param dev Wi-Fi interface name to use
+ * @param iface Network interface to use
  *
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_reset_stats(const struct device *dev);
+int supplicant_reset_stats(const struct device *dev, struct net_if *iface);
 #endif /* CONFIG_NET_STATISTICS_WIFI || __DOXYGEN__ */
 
 /** Flush PMKSA cache entries
  *
  * @param dev Pointer to the device structure for the driver instance.
+ * @param iface Network interface to use
  *
  * @return 0 if ok, < 0 if error
  */
-int supplicant_pmksa_flush(const struct device *dev);
+int supplicant_pmksa_flush(const struct device *dev, struct net_if *iface);
 
 /** Set or get 11K status
  *
  * @param dev Pointer to the device structure for the driver instance.
+ * @param iface Network interface to use
  * @param params 11k parameters
  *
  * @return 0 if ok, < 0 if error
  */
-int supplicant_11k_cfg(const struct device *dev, struct wifi_11k_params *params);
+int supplicant_11k_cfg(const struct device *dev, struct net_if *iface,
+		       struct wifi_11k_params *params);
 
 /** Send 11k neighbor request
  *
  * @param dev Pointer to the device structure for the driver instance.
+ * @param iface Network interface to use
  * @param params 11k parameters
  *
  * @return 0 if ok, < 0 if error
  */
-int supplicant_11k_neighbor_request(const struct device *dev, struct wifi_11k_params *params);
+int supplicant_11k_neighbor_request(const struct device *dev, struct net_if *iface,
+				    struct wifi_11k_params *params);
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
 /** Send candidate scan request
  *
  * @param dev Pointer to the device structure for the driver instance.
+ * @param iface Network interface to use
  * @param params Scan parameters
  *
  * @return 0 if ok, < 0 if error
  */
-int supplicant_candidate_scan(const struct device *dev, struct wifi_scan_params *params);
+int supplicant_candidate_scan(const struct device *dev, struct net_if *iface,
+			      struct wifi_scan_params *params);
 
 /** Send 11r roaming request
  *
  * @param dev Pointer to the device structure for the driver instance.
+ * @param iface Network interface to use
  *
  * @return 0 if ok, < 0 if error
  */
-int supplicant_11r_roaming(const struct device *dev);
+int supplicant_11r_roaming(const struct device *dev, struct net_if *iface);
 #endif
 
 /**
  * @brief Set Wi-Fi power save configuration
  *
  * @param dev Wi-Fi interface name to use
+ * @param iface Network interface to use
  * @param params Power save parameters to set
  *
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_set_power_save(const struct device *dev, struct wifi_ps_params *params);
+int supplicant_set_power_save(const struct device *dev, struct net_if *iface,
+			      struct wifi_ps_params *params);
 
 /**
  * @brief Set Wi-Fi TWT parameters
  *
  * @param dev Wi-Fi interface name to use
+ * @param iface Network interface to use
  * @param params TWT parameters to set
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_set_twt(const struct device *dev, struct wifi_twt_params *params);
+int supplicant_set_twt(const struct device *dev, struct net_if *iface,
+		       struct wifi_twt_params *params);
 
 /**
  * @brief Set Wi-Fi BTWT parameters
  *
  * @param dev Wi-Fi interface name to use
+ * @param iface Network interface to use
  * @param params BTWT parameters to set
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_set_btwt(const struct device *dev, struct wifi_twt_params *params);
+int supplicant_set_btwt(const struct device *dev, struct net_if *iface,
+			struct wifi_twt_params *params);
 
 /**
  * @brief Get Wi-Fi power save configuration
  *
  * @param dev Wi-Fi interface name to use
+ * @param iface Network interface to use
  * @param config Address of power save configuration to fill
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_get_power_save_config(const struct device *dev, struct wifi_ps_config *config);
+int supplicant_get_power_save_config(const struct device *dev, struct net_if *iface,
+				     struct wifi_ps_config *config);
 
 /**
  * @brief Set Wi-Fi Regulatory domain
  *
  * @param dev Wi-Fi interface name to use
+ * @param iface Network interface to use
  * @param reg_domain Regulatory domain to set
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_domain);
+int supplicant_reg_domain(const struct device *dev, struct net_if *iface,
+			  struct wifi_reg_domain *reg_domain);
 
 /**
  * @brief Set Wi-Fi mode of operation
  *
  * @param dev Wi-Fi interface name to use
+ * @param iface Network interface to use
  * @param mode Mode setting to set
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_mode(const struct device *dev, struct wifi_mode_info *mode);
+int supplicant_mode(const struct device *dev, struct net_if *iface, struct wifi_mode_info *mode);
 
-#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
+#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE ||                                     \
 	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 int is_eap_valid_security(int security);
 
@@ -214,151 +241,174 @@ int process_cipher_config(struct wifi_connect_req_params *params,
 /** Set Wi-Fi enterprise mode CA/client Cert and key
  *
  * @param dev Pointer to the device structure for the driver instance
+ * @param iface Network interface to use
  * @param file Pointer to the CA/client Cert and key.
  *
  * @return 0 if ok, < 0 if error
  */
-int supplicant_add_enterprise_creds(const struct device *dev,
-		struct wifi_enterprise_creds_params *creds);
+int supplicant_add_enterprise_creds(const struct device *dev, struct net_if *iface,
+				    struct wifi_enterprise_creds_params *creds);
 #endif
 
 /**
  * @brief Set Wi-Fi packet filter for sniffing operation
  *
  * @param dev Wi-Fi interface name to use
+ * @param iface Network interface to use
  * @param filter Filter settings to set
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_filter(const struct device *dev, struct wifi_filter_info *filter);
+int supplicant_filter(const struct device *dev, struct net_if *iface,
+		      struct wifi_filter_info *filter);
 
 /**
  * @brief Set Wi-Fi channel for monitor or TX injection mode
  *
  * @param dev Wi-Fi interface name to use
+ * @param iface Network interface to use
  * @param channel Channel settings to set
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_channel(const struct device *dev, struct wifi_channel_info *channel);
+int supplicant_channel(const struct device *dev, struct net_if *iface,
+		       struct wifi_channel_info *channel);
 
 /**
  * @brief Set Wi-Fi RTS threshold
  *
  * @param dev Wi-Fi interface handle to use
+ * @param iface Network interface to use
  * @param rts_threshold RTS threshold to set
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_set_rts_threshold(const struct device *dev, unsigned int rts_threshold);
+int supplicant_set_rts_threshold(const struct device *dev, struct net_if *iface,
+				 unsigned int rts_threshold);
 
 /**
  * @brief Get Wi-Fi RTS threshold
  *
  * @param dev Wi-Fi interface handle to use
+ * @param iface Network interface to use
  * @param rts_threshold Pointer to the RTS threshold value.
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_get_rts_threshold(const struct device *dev, unsigned int *rts_threshold);
+int supplicant_get_rts_threshold(const struct device *dev, struct net_if *iface,
+				 unsigned int *rts_threshold);
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 /** Send bss transition query
  *
  * @param dev Pointer to the device structure for the driver instance.
+ * @param iface Network interface to use
  * @param reason query reason
  *
  * @return 0 if ok, < 0 if error
  */
-int supplicant_btm_query(const struct device *dev, uint8_t reason);
+int supplicant_btm_query(const struct device *dev, struct net_if *iface, uint8_t reason);
 #endif
 
 /** Send legacy roam
  *
  * @param dev Pointer to the device structure for the driver instance.
+ * @param iface Network interface to use
  *
  * @return 0 if ok, < 0 if error
  */
-int supplicant_legacy_roam(const struct device *dev);
+int supplicant_legacy_roam(const struct device *dev, struct net_if *iface);
 
 /** Check if ap supports Neighbor report or not.
  *
  * @param dev Pointer to the device structure for the driver instance.
+ * @param iface Network interface to use
  *
  * @return true if support, false if not support
  */
-bool supplicant_bss_support_neighbor_rep(const struct device *dev);
+bool supplicant_bss_support_neighbor_rep(const struct device *dev, struct net_if *iface);
 
 /** Judge ap whether support the capability
  *
  * @param dev Pointer to the device structure for the driver instance.
+ * @param iface Network interface to use
  * @param capab is the capability to judge
  *
  * @return 1 if support, 0 if not support
  */
-int supplicant_bss_ext_capab(const struct device *dev, int capab);
+int supplicant_bss_ext_capab(const struct device *dev, struct net_if *iface, int capab);
 
 /** Get Wi-Fi connection parameters recently used
  *
  * @param dev Pointer to the device structure for the driver instance
+ * @param iface Network interface to use
  * @param params the Wi-Fi connection parameters recently used
  *
  * @return 0 if ok, < 0 if error
  */
-int supplicant_get_wifi_conn_params(const struct device *dev,
-			 struct wifi_connect_req_params *params);
+int supplicant_get_wifi_conn_params(const struct device *dev, struct net_if *iface,
+				    struct wifi_connect_req_params *params);
 
 /** Start a WPS PBC/PIN connection
  *
  * @param dev Pointer to the device structure for the driver instance
+ * @param iface Network interface to use
  * @param params wps operarion parameters
  *
  * @return 0 if ok, < 0 if error
  */
-int supplicant_wps_config(const struct device *dev, struct wifi_wps_config_params *params);
+int supplicant_wps_config(const struct device *dev, struct net_if *iface,
+			  struct wifi_wps_config_params *params);
 
 /** @ Set Wi-Fi max idle period
  *
  * @param dev Wi-Fi interface handle to use
+ * @param iface Network interface to use
  * @param bss_max_idle_period Maximum idle period to set
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_set_bss_max_idle_period(const struct device *dev,
+int supplicant_set_bss_max_idle_period(const struct device *dev, struct net_if *iface,
 				       unsigned short bss_max_idle_period);
 
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN) || defined(__DOXYGEN__)
 /** @ Set Wi-Fi background scanning parameters
  *
  * @param dev Wi-Fi interface handle to use
+ * @param iface Network interface to use
  * @param params bgscan parameters
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_set_bgscan(const struct device *dev, struct wifi_bgscan_params *params);
+int supplicant_set_bgscan(const struct device *dev, struct net_if *iface,
+			  struct wifi_bgscan_params *params);
 #endif
 
 #ifdef CONFIG_AP
-int set_ap_bandwidth(const struct device *dev, enum wifi_frequency_bandwidths bandwidth);
+int set_ap_bandwidth(const struct device *dev, struct net_if *iface,
+		     enum wifi_frequency_bandwidths bandwidth);
 
 /**
  * @brief Set Wi-Fi AP configuration
  *
  * @param dev Wi-Fi interface name to use
+ * @param iface Network interface to use
  * @param params AP configuration parameters to set
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_ap_enable(const struct device *dev,
+int supplicant_ap_enable(const struct device *dev, struct net_if *iface,
 			 struct wifi_connect_req_params *params);
 
 /**
  * @brief Disable Wi-Fi AP
  * @param dev Wi-Fi interface name to use
+ * @param iface Network interface to use
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_ap_disable(const struct device *dev);
+int supplicant_ap_disable(const struct device *dev, struct net_if *iface);
 
 /**
  * @brief Set Wi-Fi AP STA disconnect
  * @param dev Wi-Fi interface name to use
+ * @param iface Network interface to use
  * @param mac_addr MAC address of the station to disconnect
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_ap_sta_disconnect(const struct device *dev,
+int supplicant_ap_sta_disconnect(const struct device *dev, struct net_if *iface,
 				 const uint8_t *mac_addr);
 
 #endif /* CONFIG_AP */
@@ -372,30 +422,36 @@ int dpp_params_to_cmd(struct wifi_dpp_params *params, char *cmd, size_t max_len)
  * @brief Dispatch DPP operations for STA
  *
  * @param dev Wi-Fi interface name to use
+ * @param iface Network interface to use
  * @param dpp_params DPP action enum and params in string
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params);
+int supplicant_dpp_dispatch(const struct device *dev, struct net_if *iface,
+			    struct wifi_dpp_params *params);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
 /**
  * @brief Wi-Fi STA configuration parameter.
  *
  * @param dev Wi-Fi interface handle to use
+ * @param iface Network interface to use
  * @param params STA parameters
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_config_params(const struct device *dev, struct wifi_config_params *params);
+int supplicant_config_params(const struct device *dev, struct net_if *iface,
+			     struct wifi_config_params *params);
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
 /**
  * @brief P2P operation
  *
  * @param dev Wi-Fi interface handle to use
+ * @param iface Network interface to use
  * @param params P2P parameters
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_p2p_oper(const struct device *dev, struct wifi_p2p_params *params);
+int supplicant_p2p_oper(const struct device *dev, struct net_if *iface,
+			struct wifi_p2p_params *params);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
 #endif /* ZEPHYR_SUPP_MGMT_H */

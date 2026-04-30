@@ -63,7 +63,7 @@ struct nsos_socket {
 static sys_dlist_t nsos_polls = SYS_DLIST_STATIC_INIT(&nsos_polls);
 
 /* Forward declaration of the interface */
-NET_IF_DECLARE(nsos_socket, 0);
+NET_IF_DECLARE(DT_INVALID_NODE, nsos_socket, 0);
 
 static int socket_family_to_nsos_mid(int family, int *family_mid)
 {

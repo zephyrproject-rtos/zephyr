@@ -141,9 +141,10 @@ void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *s
 int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt);
 struct net_pkt *eth_stm32_rx(const struct device *dev);
 int eth_stm32_hal_init(const struct device *dev);
-int eth_stm32_hal_start(const struct device *dev);
-int eth_stm32_hal_stop(const struct device *dev);
+int eth_stm32_hal_start(const struct device *dev, struct net_if *iface);
+int eth_stm32_hal_stop(const struct device *dev, struct net_if *iface);
 int eth_stm32_hal_set_config(const struct device *dev,
+			     struct net_if *iface,
 			     enum ethernet_config_type type,
 			     const struct ethernet_config *config);
 struct net_if *eth_stm32_get_iface(struct eth_stm32_hal_dev_data *ctx);
@@ -154,7 +155,7 @@ void eth_stm32_mcast_filter(const struct device *dev,
 #endif /* CONFIG_ETH_STM32_MULTICAST_FILTER */
 
 #ifdef CONFIG_PTP_CLOCK_STM32_HAL
-const struct device *eth_stm32_get_ptp_clock(const struct device *dev);
+const struct device *eth_stm32_get_ptp_clock(const struct device *dev, struct net_if *iface);
 bool eth_stm32_is_ptp_pkt(struct net_if *iface, struct net_pkt *pkt);
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 

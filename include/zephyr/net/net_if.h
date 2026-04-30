@@ -567,11 +567,6 @@ struct net_if_ipv4_autoconf {
 };
 #endif /* CONFIG_NET_IPV4_AUTO */
 
-/** @cond INTERNAL_HIDDEN */
-/* We always need to have at least one IP config */
-#define NET_IF_MAX_CONFIGS 1
-/** @endcond */
-
 /**
  * @brief Network interface IP address configuration.
  */
@@ -1454,6 +1449,18 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr);
  * @return a valid struct net_if pointer on success, NULL otherwise
  */
 struct net_if *net_if_lookup_by_dev(const struct device *dev);
+
+/**
+ * @brief Find an interface from it's related device
+ *
+ * @param dev A valid struct device pointer to relate with an interface
+ * @param index One device can have multiple interfaces, this index can be used to find the correct
+ * one among them. The index is zero-based, so the first interface has index 0, the second interface
+ * has index 1, and so on.
+ *
+ * @return a valid struct net_if pointer on success, NULL otherwise
+ */
+struct net_if *net_if_lookup_by_dev_index(const struct device *dev, unsigned int index);
 
 /**
  * @brief Get network interface IP config
@@ -3493,13 +3500,16 @@ struct net_if_api {
 #define NET_IF_GET(dev_id, sfx)						\
 	((struct net_if *)&NET_IF_GET_NAME(dev_id, sfx))
 
+#define NET_IF_GET_SORT_NAME(node_id, dev_id, sfx)                                                 \
+	CONCAT(Z_DEVICE_INIT_SUB_PRIO(node_id), _##dev_id##_, UTIL_ZFILL4(sfx))
+
 #if defined(CONFIG_NET_STATISTICS_VIA_PROMETHEUS)
 extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 				       struct prometheus_metric *metric,
 				       void *user_data);
 #endif /* CONFIG_NET_STATISTICS_VIA_PROMETHEUS */
 
-#define NET_IF_INIT(dev_id, sfx, _l2, _mtu, _num_configs)		\
+#define NET_IF_INIT(node_id, dev_id, sfx, _l2, _mtu)			\
 	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
 				NET_IF_DEV_GET_NAME(dev_id, sfx)) = {	\
 		.dev = &(DEVICE_NAME_GET(dev_id)),			\
@@ -3508,14 +3518,12 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 		.mtu = _mtu,						\
 		.flags = {BIT(NET_IF_LOWER_UP)},			\
 	};								\
-	static Z_DECL_ALIGN(struct net_if)				\
-		       NET_IF_GET_NAME(dev_id, sfx)[_num_configs]	\
-		       __used __noasan __in_section(_net_if, static,	\
-					   dev_id) = {			\
-		[0 ... (_num_configs - 1)] = {				\
-			.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),	\
-			NET_IF_CONFIG_INIT				\
-		}							\
+	IF_DISABLED(DT_NODE_EXISTS(node_id), (static))                  \
+	STRUCT_SECTION_ITERABLE_NAMED(net_if,				\
+			NET_IF_GET_SORT_NAME(node_id, dev_id, sfx),	\
+			NET_IF_GET_NAME(dev_id, sfx)) = {		\
+		.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),		\
+		NET_IF_CONFIG_INIT					\
 	};								\
 	IF_ENABLED(CONFIG_NET_STATISTICS_VIA_PROMETHEUS,		\
 		   (static PROMETHEUS_COLLECTOR_DEFINE(			\
@@ -3526,7 +3534,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 		    NET_STATS_PROMETHEUS(NET_IF_GET(dev_id, sfx),	\
 					 dev_id, sfx);))
 
-#define NET_IF_OFFLOAD_INIT(dev_id, sfx, _mtu)				\
+#define NET_IF_OFFLOAD_INIT(node_id, dev_id, sfx, _mtu)			\
 	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
 				NET_IF_DEV_GET_NAME(dev_id, sfx)) = {	\
 		.dev = &(DEVICE_NAME_GET(dev_id)),			\
@@ -3534,14 +3542,11 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 		.l2 = &(NET_L2_GET_NAME(OFFLOADED_NETDEV)),		\
 		.flags = {BIT(NET_IF_LOWER_UP)},			\
 	};								\
-	static Z_DECL_ALIGN(struct net_if)				\
-		NET_IF_GET_NAME(dev_id, sfx)[NET_IF_MAX_CONFIGS]	\
-		       __used __noasan __in_section(_net_if, static,	\
-					   dev_id) = {			\
-		[0 ... (NET_IF_MAX_CONFIGS - 1)] = {			\
-			.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),	\
-			NET_IF_CONFIG_INIT				\
-		}							\
+	IF_DISABLED(DT_NODE_EXISTS(node_id), (static))                  \
+	STRUCT_SECTION_ITERABLE(net_if,					\
+				NET_IF_GET_NAME(dev_id, sfx)) = {	\
+		.if_dev = &(NET_IF_DEV_GET_NAME(dev_id, sfx)),		\
+		NET_IF_CONFIG_INIT					\
 	};								\
 	IF_ENABLED(CONFIG_NET_STATISTICS_VIA_PROMETHEUS,		\
 		   (static PROMETHEUS_COLLECTOR_DEFINE(			\
@@ -3564,8 +3569,14 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
  *
  * @param dev_id Device ID provided to `NET_IF_INIT` or `NET_IF_OFFLOAD_INIT`
  */
-#define NET_IF_DECLARE(dev_id, inst) \
-	static struct net_if NET_IF_GET_NAME(dev_id, inst)[NET_IF_MAX_CONFIGS]
+#define NET_IF_DECLARE(node_id, dev_id, inst) \
+	IF_DISABLED(DT_NODE_EXISTS(node_id), (static))                  \
+	struct net_if NET_IF_GET_NAME(dev_id, inst)
+
+#define Z_NET_DEVICE_IF_INIT_INSTANCE(node_id, dev_id, instance, l2,	\
+				      l2_ctx_type, mtu)			\
+	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
+	NET_IF_INIT(node_id, dev_id, instance, l2, mtu)
 
 #define Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, instance,	\
 				   init_fn, pm, data, config, prio,	\
@@ -3575,14 +3586,51 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 			Z_DEVICE_DT_FLAGS(node_id), pm, data,		\
 			config, POST_KERNEL, prio, api,			\
 			&Z_DEVICE_STATE_NAME(dev_id));			\
-	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
-	NET_IF_INIT(dev_id, instance, l2, mtu, NET_IF_MAX_CONFIGS)
+	Z_NET_DEVICE_IF_INIT_INSTANCE(node_id, dev_id, instance, l2,	\
+				      l2_ctx_type, mtu)
 
 #define Z_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
 			  config, prio, api, l2, l2_ctx_type, mtu)	\
 	Z_NET_DEVICE_INIT_INSTANCE(node_id, dev_id, name, 0, init_fn,	\
 				   pm, data, config, prio, api, l2,	\
 				   l2_ctx_type, mtu)
+
+/**
+ * @brief Forward declaration of a network interface
+ *
+ * @param node_id Device node identifier
+ * @param instance Instance identifier
+ */
+#define NET_IF_DT_DECLARE(node_id, instance) \
+	NET_IF_DECLARE(node_id, Z_DEVICE_DT_DEV_ID(node_id), instance)
+
+/**
+ * @brief Forward declaration of a network interface
+ *
+ * @param inst instance number.  This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to NET_DEVICE_DT_ADD_IFACE.
+ * @param ... other parameters as expected by NET_DEVICE_DT_ADD_IFACE.
+ */
+#define NET_IF_DT_INST_DECLARE(inst, ...) NET_IF_DT_DECLARE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Get a network interface that was created with NET_DEVICE_DT_DEFINE or
+ * NET_DEVICE_DT_ADD_IFACE.
+ *
+ * @param node_id Device node identifier
+ * @param instance Instance identifier
+ */
+#define NET_IF_DT_GET(node_id, instance) NET_IF_GET(Z_DEVICE_DT_DEV_ID(node_id), instance)
+
+/**
+ * @brief Get a network interface that was created with NET_DEVICE_DT_DEFINE or
+ * NET_DEVICE_DT_ADD_IFACE.
+ *
+ * @param inst instance number.  This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to NET_IF_DT_GET.
+ * @param ... other parameters as expected by NET_DEVICE_DT_ADD_IFACE.
+ */
+#define NET_IF_DT_INST_GET(inst, ...) NET_IF_DT_GET(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
  * @brief Create a network interface and bind it to network device.
@@ -3607,6 +3655,32 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 			api, l2, l2_ctx_type, mtu)			\
 	Z_NET_DEVICE_INIT(DT_INVALID_NODE, dev_id, name, init_fn, pm,	\
 			  data, config, prio, api, l2, l2_ctx_type, mtu)
+
+/**
+ * @brief Adds a second (or more) network interface(s) to a network device created with
+ * NET_DEVICE_DT_DEFINE.
+ *
+ * @param node_id The devicetree node identifier.
+ * @param l2 Network L2 layer for this network interface.
+ * @param l2_ctx_type Type of L2 context data.
+ * @param mtu Maximum transfer unit in bytes for this network interface.
+ * @param instance Instance identifier (0 is reserved for the first interface, created with
+ * NET_DEVICE_DT_DEFINE, start from 1 for additional interfaces).
+ */
+#define NET_DEVICE_DT_ADD_IFACE(node_id, l2, l2_ctx_type, mtu, instance)                           \
+	Z_NET_DEVICE_IF_INIT_INSTANCE(node_id, Z_DEVICE_DT_DEV_ID(node_id), instance, l2,          \
+				      l2_ctx_type, mtu)
+
+/**
+ * @brief Like NET_DEVICE_DT_ADD_IFACE for an instance of a DT_DRV_COMPAT compatible
+ *
+ * @param inst instance number.  This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to NET_DEVICE_DT_ADD_IFACE.
+ *
+ * @param ... other parameters as expected by NET_DEVICE_DT_ADD_IFACE.
+ */
+#define NET_DEVICE_DT_INST_ADD_IFACE(inst, ...) \
+	NET_DEVICE_DT_ADD_IFACE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
  * @brief Like NET_DEVICE_INIT but taking metadata from a devicetree node.
@@ -3723,7 +3797,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 			Z_DEVICE_DT_FLAGS(node_id), pm, data,		\
 			config, POST_KERNEL, prio, api,			\
 			&Z_DEVICE_STATE_NAME(dev_id));			\
-	NET_IF_OFFLOAD_INIT(dev_id, 0, mtu)
+	NET_IF_OFFLOAD_INIT(node_id, dev_id, 0, mtu)
 
 /**
  * @brief Create a offloaded network interface and bind it to network device.
