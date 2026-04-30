@@ -43,7 +43,6 @@ To build the sample application using sysbuild use the command:
 .. zephyr-app-commands::
    :tool: west
    :zephyr-app: samples/hello_world
-   :board: <board>
    :goals: build
    :west-args: --sysbuild
    :compact:
@@ -92,7 +91,6 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: <board>
    :goals: build
 
 The usual ``flash`` target will work with the board configuration.
@@ -101,7 +99,6 @@ application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: <board>
    :goals: flash
 
 Open the serial monitor using the following command:

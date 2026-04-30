@@ -39,7 +39,6 @@ To apply a board variant, use the ``-S`` flag with west build:
 .. zephyr-app-commands::
    :tool: west
    :zephyr-app: samples/hello_world
-   :board: <board>
    :goals: build
    :snippets: espressif-flash-32M,espressif-psram-4M
    :compact:

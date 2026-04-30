@@ -7,4 +7,4 @@ Ai-Thinker Co.
    :maxdepth: 1
    :glob:
 
-   **/*
+   */**/index

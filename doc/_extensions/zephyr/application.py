@@ -8,6 +8,9 @@ from pathlib import Path
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
+from sphinx.util.nodes import NodeMatcher
+
+from zephyr.domain import BoardNode
 
 ZEPHYR_BASE = Path(__file__).parents[3]
 
@@ -57,6 +60,11 @@ class ZephyrAppCommandsDirective(Directive):
     IN_TREE_STR = '# From the root of the zephyr repository'
 
     def run(self):
+        # Infer board name from the current document as a fallback
+        matcher = NodeMatcher(BoardNode)
+        board_nodes = list(self.state.document.traverse(matcher))
+        board_default = board_nodes[0]["id"] if board_nodes else None
+
         # Re-run on the current document if this directive's source changes.
         self.state.document.settings.env.note_dependency(__file__)
 
@@ -68,7 +76,7 @@ class ZephyrAppCommandsDirective(Directive):
         cd_into = 'cd-into' in self.options
         generator = self.options.get('generator', 'ninja').lower()
         host_os = self.options.get('host-os', 'all').lower()
-        board = self.options.get('board', None)
+        board = self.options.get('board', board_default)
         shield = self.options.get('shield', None)
         conf = self.options.get('conf', None)
         gen_args = self.options.get('gen-args', None)
