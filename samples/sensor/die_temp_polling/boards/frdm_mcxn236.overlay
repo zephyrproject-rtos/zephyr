@@ -16,7 +16,9 @@
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_EXTERNAL0";
 		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 131)>;
+		zephyr,differential;
 		zephyr,input-positive = <MCUX_LPADC_CH26A>;
+		zephyr,input-negative = <MCUX_LPADC_CH26B>;
 	};
 };
 
