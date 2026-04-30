@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Vossloh AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 Secure-HSI (48 MHz) Clock
+
+compatible: "st,stm32-shsi-clock"
+
+include: [fixed-clock.yaml]
