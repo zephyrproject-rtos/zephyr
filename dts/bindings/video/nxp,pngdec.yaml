@@ -1,0 +1,15 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: The NXP PNG decoder can decode PNG compressed frames.
+
+compatible: "nxp,pngdec"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
