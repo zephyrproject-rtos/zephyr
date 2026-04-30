@@ -58,9 +58,9 @@ static bool stream_is_streaming(const struct bt_bap_stream *bap_stream)
 static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 {
 	NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-				  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+				  BT_ISO_SDU_BUF_SIZE(STREAM_TX_MAX_SDU_SIZE),
 				  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
-	static uint8_t mock_data[CONFIG_BT_ISO_TX_MTU];
+	static uint8_t mock_data[STREAM_TX_MAX_SDU_SIZE];
 
 	for (size_t i = 0U; i < ARRAY_SIZE(mock_data); i++) {
 		mock_data[i] = (uint8_t)i;
@@ -131,6 +131,14 @@ int stream_tx_register(struct bt_bap_stream *bap_stream)
 
 	for (size_t i = 0U; i < ARRAY_SIZE(tx_streams); i++) {
 		if (tx_streams[i].bap_stream == NULL) {
+			if (bap_stream->qos->sdu > STREAM_TX_MAX_SDU_SIZE) {
+				LOG_WRN("Stream configured for SDUs larger (%u) than "
+					"STREAM_TX_MAX_SDU_SIZE (%u)",
+					bap_stream->qos->sdu, STREAM_TX_MAX_SDU_SIZE);
+
+				return -EINVAL;
+			}
+
 			tx_streams[i].bap_stream = bap_stream;
 			tx_streams[i].seq_num = 0U;
 
@@ -146,11 +154,6 @@ int stream_tx_register(struct bt_bap_stream *bap_stream)
 			}
 
 			LOG_INF("Registered %p for TX", bap_stream);
-			if (bap_stream->qos->sdu > CONFIG_BT_ISO_TX_MTU) {
-				LOG_WRN("Stream configured for SDUs larger (%u) than "
-					"CONFIG_BT_ISO_TX_MTU (%d)",
-					bap_stream->qos->sdu, CONFIG_BT_ISO_TX_MTU);
-			}
 
 			return 0;
 		}

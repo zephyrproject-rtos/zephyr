@@ -54,6 +54,7 @@
 		     0xFF, 0xFF, 0xFF})
 
 #define BAP_RETRY_WAIT K_MSEC(100)
+#define MAX_SDU_SIZE   310U /* enough for stereo in a single stream with BAP 48_6_1 */
 
 struct unicast_stream {
 	struct audio_test_stream stream;

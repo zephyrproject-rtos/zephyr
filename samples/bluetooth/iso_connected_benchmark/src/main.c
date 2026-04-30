@@ -44,7 +44,7 @@ enum sdu_dir {
 #define DEFAULT_CIS_INTERVAL_US 7500
 #define DEFAULT_CIS_LATENCY_MS  40
 #define DEFAULT_CIS_PHY         BT_GAP_LE_PHY_2M
-#define DEFAULT_CIS_SDU_SIZE    CONFIG_BT_ISO_TX_MTU
+#define DEFAULT_CIS_SDU_SIZE    247U
 #define DEFAULT_CIS_PACKING     0
 #define DEFAULT_CIS_FRAMING     0
 #define DEFAULT_CIS_COUNT       1U
@@ -52,7 +52,7 @@ enum sdu_dir {
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 #define DEFAULT_CIS_NSE          BT_ISO_NSE_MIN
 #define DEFAULT_CIS_BN           BT_ISO_BN_MIN
-#define DEFAULT_CIS_PDU_SIZE     CONFIG_BT_ISO_TX_MTU
+#define DEFAULT_CIS_PDU_SIZE     DEFAULT_CIS_SDU_SIZE
 #define DEFAULT_CIS_FT           BT_ISO_FT_MIN
 #define DEFAULT_CIS_ISO_INTERVAL DEFAULT_CIS_INTERVAL_US / 1250U /* N * 1.25 ms */
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
@@ -87,9 +87,9 @@ static size_t total_iso_conn_count;
 static uint32_t iso_send_count;
 static struct bt_iso_cig *cig;
 
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(DEFAULT_CIS_SDU_SIZE),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
-static uint8_t iso_data[CONFIG_BT_ISO_TX_MTU];
+static uint8_t iso_data[DEFAULT_CIS_SDU_SIZE];
 
 static K_SEM_DEFINE(sem_adv, 0, 1);
 static K_SEM_DEFINE(sem_iso_accept, 0, 1);

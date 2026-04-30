@@ -18,8 +18,8 @@ LOG_MODULE_REGISTER(broadcaster, LOG_LEVEL_INF);
 static struct bt_iso_chan iso_chans[CONFIG_BT_ISO_MAX_CHAN];
 static struct bt_iso_chan *default_chan = &iso_chans[0];
 
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+#define SDU_SIZE 5U
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT, BT_ISO_SDU_BUF_SIZE(SDU_SIZE),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 DEFINE_FLAG_STATIC(iso_connected);
@@ -162,7 +162,7 @@ static void init(void)
 		.sent = sdu_sent_cb,
 	};
 	static struct bt_iso_chan_io_qos iso_tx = {
-		.sdu = CONFIG_BT_ISO_TX_MTU,
+		.sdu = SDU_SIZE,
 		.phy = BT_GAP_LE_PHY_2M,
 		.rtn = 1,
 	};

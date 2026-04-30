@@ -14,6 +14,8 @@
 
 #define SINK_CONTEXT        BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED
 #define SOURCE_CONTEXT      BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED
+#define CAP_ACCEPTOR_MIN_SDU 30U
+#define CAP_ACCEPTOR_MAX_SDU 310U /* 46_6_1 (155) for stereo */
 
 /** Struct to contain information for a specific peer (CAP) device */
 struct peer_config {

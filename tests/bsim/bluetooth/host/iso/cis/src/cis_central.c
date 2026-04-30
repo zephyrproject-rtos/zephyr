@@ -27,6 +27,7 @@
 #include "common.h"
 
 #define ENQUEUE_COUNT 2
+#define SDU_SIZE      200U
 
 extern enum bst_result_t bst_result;
 static struct bt_iso_chan iso_chans[CONFIG_BT_ISO_MAX_CHAN];
@@ -36,7 +37,7 @@ static uint16_t seq_num;
 static volatile size_t enqueue_cnt;
 static uint32_t latency_ms = 10U; /* 10ms */
 static uint32_t interval_us = 10U * USEC_PER_MSEC; /* 10 ms */
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, ENQUEUE_COUNT, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, ENQUEUE_COUNT, BT_ISO_SDU_BUF_SIZE(SDU_SIZE),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 BUILD_ASSERT(CONFIG_BT_ISO_MAX_CHAN > 1, "CONFIG_BT_ISO_MAX_CHAN shall be at least 2");
@@ -45,7 +46,7 @@ DEFINE_FLAG_STATIC(flag_iso_connected);
 
 static void send_data_cb(struct k_work *work)
 {
-	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
+	static uint8_t buf_data[SDU_SIZE];
 	static size_t len_to_send = 1;
 	static bool data_initialized;
 	struct net_buf *buf;
@@ -186,7 +187,7 @@ static void init(void)
 		.sent = sdu_sent_cb,
 	};
 	static struct bt_iso_chan_io_qos iso_tx = {
-		.sdu = CONFIG_BT_ISO_TX_MTU,
+		.sdu = SDU_SIZE,
 		.phy = BT_GAP_LE_PHY_2M,
 		.rtn = 1,
 	};

@@ -535,6 +535,13 @@ static int init(void)
 	bt_gatt_cb_register(&gatt_callbacks);
 
 	if (IS_ENABLED(CONFIG_BT_AUDIO_TX)) {
+		if (codec_configuration.qos.sdu > STREAM_TX_MAX_SDU_SIZE) {
+			printk("Unsupported SDU size %u (> %u)\n", codec_configuration.qos.sdu,
+			       STREAM_TX_MAX_SDU_SIZE);
+
+			return -EINVAL;
+		}
+
 		stream_tx_init();
 	}
 

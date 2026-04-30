@@ -2885,7 +2885,7 @@ static uint8_t create_big(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t
 	bis_iso_qos.tx = &iso_broadcaster_qos;
 	bis_iso_qos.tx->phy = cp->phy;
 	bis_iso_qos.tx->rtn = cp->rtn;
-	bis_iso_qos.tx->sdu = CONFIG_BT_ISO_TX_MTU;
+	bis_iso_qos.tx->sdu = ISO_MAX_SDU_SIZE;
 
 	bis_iso_chan.ops = &iso_broadcaster_ops;
 
@@ -2914,8 +2914,7 @@ static uint8_t create_big(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t
 	return BTP_STATUS_SUCCESS;
 }
 
-NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT, BT_ISO_SDU_BUF_SIZE(ISO_MAX_SDU_SIZE),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static uint32_t get_next_sn(uint32_t last_sn, int64_t *last_ticks,

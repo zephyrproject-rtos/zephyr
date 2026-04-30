@@ -36,9 +36,10 @@ static struct bt_cap_stream unicast_streams[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK
 static struct bt_bap_ep *unicast_sink_eps[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 static struct bt_bap_ep *unicast_source_eps[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
 
+#define MAX_SDU 100U /* Shall match the SDU size of unicast_preset_48_2_1 */
+
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+			  BT_ISO_SDU_BUF_SIZE(MAX_SDU), CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static K_SEM_DEFINE(sem_cas_discovery, 0, 1);
 static K_SEM_DEFINE(sem_discover_sink, 0, 1);
@@ -377,7 +378,7 @@ static int unicast_audio_start(struct bt_conn *conn)
  */
 static void audio_timer_timeout(struct k_work *work)
 {
-	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
+	static uint8_t buf_data[MAX_SDU];
 	static bool data_initialized;
 	struct net_buf *buf;
 	struct net_buf *buf_to_send;

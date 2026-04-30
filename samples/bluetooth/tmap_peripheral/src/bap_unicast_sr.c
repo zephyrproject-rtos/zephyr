@@ -36,11 +36,14 @@
 
 #include "tmap_peripheral.h"
 
+#define MIN_SDU 30U
+#define MAX_SDU 310U /* 46_6_1 (155) for stereo */
+
 static const struct bt_audio_codec_cap lc3_codec_cap =
 	BT_AUDIO_CODEC_CAP_LC3(BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_32KHZ |
 				       BT_AUDIO_CODEC_CAP_FREQ_48KHZ,
 			       BT_AUDIO_CODEC_CAP_DURATION_7_5 | BT_AUDIO_CODEC_CAP_DURATION_10,
-			       BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(2), 30, 155u, 1u,
+			       BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(2), MIN_SDU, MAX_SDU, 1u,
 			       (AVAILABLE_SINK_CONTEXT | AVAILABLE_SOURCE_CONTEXT));
 
 static struct bt_conn *default_conn;

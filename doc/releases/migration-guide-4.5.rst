@@ -163,6 +163,20 @@ Bluetooth HCI
   on-chip BLE controllers (BL60x/BL70x/BL70XL). Out-of-tree boards and shields
   must update their devicetree nodes accordingly.
 
+Bluetooth Host
+==============
+
+* ``CONFIG_BT_ISO_TX_MTU`` has been removed. Applications should define their own SDU buffer sizes.
+  The ISO HCI data buffer size can be configured for the Controller with
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE`, and the SDU size with
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX`.
+  In most cases :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE` should be set to 4
+  (if timestamps are not used) or 8 (if timestamps are used) above
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX`. For larger values of
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX` it may be better to increase
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFERS` instead of
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE`.
+
 Networking
 **********
 

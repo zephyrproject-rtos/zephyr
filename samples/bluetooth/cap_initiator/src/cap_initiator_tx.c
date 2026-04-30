@@ -34,9 +34,9 @@ struct tx_stream
 static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 {
 	NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-				  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+				  BT_ISO_SDU_BUF_SIZE(CAP_INITIATOR_MAX_SDU),
 				  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
-	static uint8_t data[CONFIG_BT_ISO_TX_MTU];
+	static uint8_t data[CAP_INITIATOR_MAX_SDU];
 
 	for (size_t i = 0U; i < ARRAY_SIZE(data); i++) {
 		data[i] = (uint8_t)i;
@@ -99,6 +99,14 @@ int cap_initiator_tx_register_stream(struct bt_cap_stream *cap_stream)
 
 	for (size_t i = 0U; i < ARRAY_SIZE(tx_streams); i++) {
 		if (tx_streams[i].stream == NULL) {
+			if (cap_stream->bap_stream.qos->sdu > CAP_INITIATOR_MAX_SDU) {
+				LOG_WRN("Stream configured for SDUs larger (%u) than "
+					"CAP_INITIATOR_MAX_SDU (%u)",
+					cap_stream->bap_stream.qos->sdu, CAP_INITIATOR_MAX_SDU);
+
+				return -EINVAL;
+			}
+
 			tx_streams[i].stream = cap_stream;
 			tx_streams[i].seq_num = 0U;
 
