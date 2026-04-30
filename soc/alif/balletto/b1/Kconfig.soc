@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_B1
+	bool
+	select SOC_FAMILY_BALLETTO
+
+config SOC_SERIES
+	default "b1" if SOC_SERIES_B1
+
+config SOC_AB1C1F4M51820PH0
+	bool
+	select SOC_SERIES_B1
+	help
+	  Alif Balletto B1 (AB1C1F4M51820PH0). Single Cortex-M55 core in the
+	  High Efficiency Real Time Subsystem (RTSS-HE), optimized for power
+	  efficiency with a maximum frequency of 160 MHz.
+
+config SOC
+	default "ab1c1f4m51820ph0" if SOC_AB1C1F4M51820PH0
