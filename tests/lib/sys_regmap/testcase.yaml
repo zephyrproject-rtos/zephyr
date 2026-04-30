@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  libraries.sys_regmap:
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
