@@ -102,7 +102,7 @@ jobs:
           pip install -r scripts/requirements-actions.txt --require-hashes
 
       - name: Check common triggering files
-        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323 # v47.0.5
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: check-common-files
         with:
           files: |
@@ -121,7 +121,7 @@ jobs:
             modules/hal_nordic/**
 
       - name: Check if Bluethooth files changed
-        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323 # v47.0.5
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: check-bluetooth-files
         with:
           files: |
@@ -131,7 +131,7 @@ jobs:
             tests/bsim/bluetooth/
 
       - name: Check if Networking files changed
-        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323 # v47.0.5
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: check-networking-files
         with:
           files: |
@@ -144,7 +144,7 @@ jobs:
             include/zephyr/net/ieee802154*
 
       - name: Check if UART files changed
-        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323 # v47.0.5
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         id: check-uart-files
         with:
           files: |
