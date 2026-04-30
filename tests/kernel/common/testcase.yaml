@@ -96,6 +96,16 @@ tests:
     integration_platforms:
       - qemu_x86
       - mps2/an385
+  kernel.common.min_heap:
+    platform_key:
+      - arch
+    platform_exclude:
+      - native_sim
+    extra_conf_files:
+      - prj_heap.conf
+    integration_platforms:
+      - cy8cproto_041tp
+      - esp32c3_devkitm
   kernel.common.lto.singlethreaded:
     platform_key:
       - arch

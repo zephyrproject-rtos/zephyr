@@ -144,3 +144,8 @@ ZTEST(common_1cpu, test_nested_irq_offload)
  */
 extern void *common_setup(void);
 ZTEST_SUITE(irq_offload, NULL, common_setup, NULL, NULL, NULL);
+
+#ifdef CONFIG_TIMEOUT_USE_MIN_HEAP
+ZTEST_SUITE(common_1cpu, NULL, common_setup,
+	    ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
+#endif

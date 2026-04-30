@@ -1,8 +1,13 @@
 /*
  * Copyright (c) 2017 Wind River Systems, Inc.
+ * Copyright (c) 2026 Aerlync Labs Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#ifdef CONFIG_TIMEOUT_USE_MIN_HEAP
+#error "CONFIG_TIMEOUT_USE_MIN_HEAP is enabled and it does not guarantee same-tickfiring"
+#endif
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>

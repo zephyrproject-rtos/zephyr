@@ -16,11 +16,18 @@ target_sources(app PRIVATE
   src/byteorder.c
   src/clock.c
   src/main.c
-  src/timeout_order.c
   src/multilib.c
   src/errno.c
   src/boot_delay.c
   src/pow2.c
+)
+
+# Min-heap backend gives no same-tick firing order guarantee, so the
+# ordering test cannot pass with it enabled.
+target_sources_ifndef(
+  CONFIG_TIMEOUT_USE_MIN_HEAP
+  app PRIVATE
+  src/timeout_order.c
 )
 
 target_sources_ifdef(
