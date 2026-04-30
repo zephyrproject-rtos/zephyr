@@ -71,20 +71,70 @@ struct http_service_runtime_data {
 
 struct http_service_desc;
 
-/** Custom socket creation function type */
+/** @endcond */
+
+/**
+ * @typedef http_socket_create_fn
+ * @brief Custom socket creation function type
+ *
+ * @details Allow HTTP service to be customized according to user needs.
+ * For example, this can be used to create a socket with custom options or
+ * to create a socket of a different type for a specific service.
+ *
+ * @param svc HTTP service description for which the socket is being created.
+ * @param af Address family (e.g., AF_INET or AF_INET6) for the socket to be created.
+ * @param proto Protocol (e.g., IPPROTO_TCP) for the socket to be created.
+ * @return Valid socket file descriptor on success, or a negative error code on failure.
+ */
 typedef int (*http_socket_create_fn)(const struct http_service_desc *svc, int af, int proto);
+
+/** Supported HTTP version for this service. If not set, then any configured
+ * version is supported. User can also specify a specific version to only support
+ * that version for the service. The values can be ORed together to support multiple
+ * specific versions.
+ */
+enum http_version {
+	HTTP_VERSION_ANY = 0,  /**< Support any HTTP version configured in the system. */
+	HTTP_VERSION_1 = 0x01, /**< Support HTTP/1.0 and HTTP/1.1 */
+	HTTP_VERSION_2 = 0x02, /**< Support HTTP/2 */
+	HTTP_VERSION_3 = 0x04, /**< Support HTTP/3 */
+};
+
+/** HTTP/3 Alt-Svc advertisement policy for this service. */
+enum http_h3_alt_svc_policy {
+	/** Use the global default policy configured in Kconfig. */
+	HTTP_H3_ALT_SVC_DEFAULT = 0,
+	/** Never advertise HTTP/3 via Alt-Svc for this service. */
+	HTTP_H3_ALT_SVC_DISABLE,
+	/** Always advertise HTTP/3 via Alt-Svc for this service when available. */
+	HTTP_H3_ALT_SVC_ENABLE,
+};
 
 /** HTTP service configuration */
 struct http_service_config {
 	/** Custom socket creation for the service if needed */
 	http_socket_create_fn socket_create;
+	/** What HTTP version to use for the service. */
+	enum http_version http_ver;
+	/** HTTP/3 Alt-Svc advertisement policy for the service. */
+	enum http_h3_alt_svc_policy h3_alt_svc_policy;
+
 	/* If any more service-specific configuration is needed, it can be added here. */
 };
+
+/** @cond INTERNAL_HIDDEN */
 
 struct http_service_desc {
 	const char *host;
 	uint16_t *port;
 	int *fd;
+	/* QUIC listening connection socket for HTTP/3. It is used to accept
+	 * new connections for this service.
+	 * Set to NULL if HTTP/3 is not supported, and set to -1 if HTTP/3 is
+	 * not yet initialized or enabled for this service. If HTTP/3 is supported then
+	 * this pointer cannot be null.
+	 */
+	int *fd_h3;
 	void *detail;
 	size_t concurrent;
 	size_t backlog;
@@ -105,11 +155,13 @@ struct http_service_desc {
 		     "can't accept more then MAX_CLIENTS");                                        \
 	BUILD_ASSERT(_backlog > 0, "backlog can't be 0");                                          \
 	static int _name##_fd = -1;                                                                \
+	IF_ENABLED(CONFIG_HTTP_SERVER_VERSION_3, (static int _name##_fd_h3 = -1;))                 \
 	static struct http_service_runtime_data _name##_data = {0};                                \
 	const STRUCT_SECTION_ITERABLE(http_service_desc, _name) = {                                \
 		.host = _host,                                                                     \
 		.port = (uint16_t *)(_port),                                                       \
 		.fd = &_name##_fd,                                                                 \
+		IF_ENABLED(CONFIG_HTTP_SERVER_VERSION_3, (.fd_h3 = &_name##_fd_h3,))               \
 		.detail = (void *)(_detail),                                                       \
 		.concurrent = (_concurrent),                                                       \
 		.backlog = (_backlog),                                                             \
