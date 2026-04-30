@@ -128,8 +128,10 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	uint16_t window_size_us;
 	uint32_t aux_offset_us;
 	uint32_t overhead_us;
+	uint32_t aa_delay_us;
 	uint8_t *pri_dptr;
 	uint32_t pdu_us;
+	uint32_t aa_us;
 	uint8_t phy;
 
 	LL_ASSERT_DBG(pdu->type == PDU_ADV_TYPE_EXT_IND);
@@ -233,14 +235,16 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT_DBG(node_rx);
 
+	aa_us = radio_tmr_aa_get();
+	aa_delay_us = radio_rx_chain_delay_get(pdu_phy, pdu_phy_flags_rx);
+	aa_delay_us += addr_us_get(pdu_phy);
+	LL_ASSERT_MSG(aa_us >= aa_delay_us, "aa_us %u < aa_delay_us %u", aa_us, aa_delay_us);
+
 	/* Store the lll context, aux_ptr and start of PDU in footer */
 	ftr = &(node_rx->rx_ftr);
 	ftr->param = param;
 	ftr->aux_ptr = aux_ptr;
-	ftr->radio_end_us = radio_tmr_end_get() -
-			    radio_rx_chain_delay_get(pdu_phy,
-						     pdu_phy_flags_rx) -
-			    pdu_us;
+	ftr->radio_end_us = aa_us - aa_delay_us;
 
 	radio_isr_set(setup_cb, node_rx);
 	radio_disable();
@@ -378,9 +382,10 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	hcto += addr_us_get(phy_aux);
 	radio_tmr_hcto_configure_abs(hcto);
 
-	/* capture end of Rx-ed PDU, extended scan to schedule auxiliary
-	 * channel chaining, create connection or to create periodic sync.
-	 */
+	/* capture aa to have aux_offset calculated */
+	radio_tmr_aa_capture();
+
+	/* capture end of Rx-ed PDU, for initiator to calculate first central event */
 	radio_tmr_end_capture();
 
 	/* scanner always measures RSSI */
@@ -570,9 +575,10 @@ sync_aux_prepare_done:
 	hcto += radio_rx_chain_delay_get(lll_aux->phy, PHY_FLAGS_S8);
 	radio_tmr_hcto_configure(hcto);
 
-	/* capture end of Rx-ed PDU, extended scan to schedule auxiliary
-	 * channel chaining, create connection or to create periodic sync.
-	 */
+	/* capture aa to have aux_offset calculated */
+	radio_tmr_aa_capture();
+
+	/* capture end of Rx-ed PDU, for initiator to calculate first central event */
 	radio_tmr_end_capture();
 
 	/* scanner always measures RSSI */
@@ -1270,10 +1276,9 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 				      node_rx);
 			lll->lll_aux->state = 1U;
 		}
+
 		ftr->ticks_anchor = radio_tmr_start_get();
-		ftr->radio_end_us = radio_tmr_end_get() -
-				    radio_rx_chain_delay_get(phy_aux,
-							     phy_aux_flags_rx);
+		ftr->radio_end_us = 0U;
 		ftr->rssi = (rssi_ready) ? radio_rssi_get() :
 			    BT_HCI_LE_RSSI_NOT_AVAILABLE;
 		ftr->scan_req = 1U;
@@ -1363,9 +1368,17 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		(void)ull_pdu_rx_alloc();
 
 		ftr->ticks_anchor = radio_tmr_start_get();
-		ftr->radio_end_us = radio_tmr_end_get() -
-				    radio_rx_chain_delay_get(phy_aux,
-							     phy_aux_flags_rx);
+
+		uint32_t aa_delay_us;
+		uint32_t aa_us;
+
+		aa_us = radio_tmr_aa_get();
+		aa_delay_us = radio_rx_chain_delay_get(phy_aux, phy_aux_flags_rx);
+		aa_delay_us += addr_us_get(phy_aux);
+		LL_ASSERT_MSG(aa_us >= aa_delay_us, "aa_us %u < aa_delay_us %u", aa_us,
+			      aa_delay_us);
+
+		ftr->radio_end_us = aa_us - aa_delay_us;
 		ftr->phy_flags = phy_aux_flags_rx;
 		ftr->rssi = (rssi_ready) ? radio_rssi_get() :
 			    BT_HCI_LE_RSSI_NOT_AVAILABLE;
@@ -1466,9 +1479,10 @@ static void isr_tx(struct lll_scan_aux *lll_aux, void (*isr)(void *), void *para
 	hcto -= radio_tx_chain_delay_get(lll_aux->phy, PHY_FLAGS_S8);
 	radio_tmr_hcto_configure(hcto);
 
-	/* capture end of Rx-ed PDU, extended scan to schedule auxiliary
-	 * channel chaining.
-	 */
+	/* capture aa to have aux_offset calculated */
+	radio_tmr_aa_capture();
+
+	/* capture end of Rx-ed PDU, for initiator to calculate first central event */
 	radio_tmr_end_capture();
 
 	/* scanner always measures RSSI */
