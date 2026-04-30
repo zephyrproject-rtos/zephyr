@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <ti/am26x/am261x_r5f0_1.dtsi>
+#include "am261x_lp_am2612_common.dtsi"
+
+/ {
+	model = "TI AM261X LP Development Board R5F0_1";
+	compatible = "ti,am261x-lp";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &ospi_flash;
+		zephyr,code-partition = &ospi_flash;
+	};
+
+	aliases {
+		led0 = &led0;
+		sw0 = &user_button;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			/* gpio 84 is in bank 5, so 20th pin in the bank4-5 set */
+			gpios = <&gpio1_bank_4_5 20 1>;
+			label = "GPIO LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		user_button: button_0 {
+			/* Replace with the correct GPIO pin for your button */
+			gpios = <&gpio1_bank_6_7 28 1>;
+			label = "User Button";
+		};
+	};
+
+	ospi_flash: memory@60400000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x60400000 DT_SIZE_M(64)>;
+		zephyr,memory-region = "OSPI_FLASH";
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&gpio1_bank_4_5 {
+	status = "okay";
+};
+
+&gpio1_bank_6_7 {
+	status = "okay";
+};
