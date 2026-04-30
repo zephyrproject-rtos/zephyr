@@ -18,6 +18,31 @@
 		zephyr,shell-uart = &uart0;
 	};
 
+	aliases {
+		led0 = &led0;
+	};
+
+	s6leds: led@1c010008 {
+		compatible = "arm,fvp-leds";
+		reg = <0x1c010008 0x0001>;
+
+		led0: led0 {};
+
+		led1: led1 {};
+		
+		led2: led2 {};
+		
+		led3: led3 {};
+		
+		led4: led4 {};
+		
+		led5: led5 {};
+		
+		led6: led6 {};
+		
+		led7: led7 {};
+	};
+
 	psci {
 		compatible = "arm,psci-0.2";
 		method = "smc";

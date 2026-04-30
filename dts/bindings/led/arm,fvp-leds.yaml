@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Arm Limited (or its affiliates)
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Driver for controlling Arm FVP LEDs using the LED driver API.
+
+  Arm Fixed Virtual Platforms include visual outputs (labeled S6LEDs) in the FVP GUI.
+  These "LEDs" are memory-mapped to an address location in the address map.
+
+compatible: "arm,fvp-leds"
+
+child-binding:
+  description: FVP LED child node
+
+  include:
+    - name: led-node.yaml
+      property-allowlist:
+        - label
