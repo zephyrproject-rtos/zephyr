@@ -250,6 +250,7 @@ ezurio	Ezurio
 facebook	Facebook (deprecated, use meta)
 fairphone	Fairphone B.V.
 fanke	FANKE Technology Co., Ltd.
+fanstel	Fanstel Corporation
 faraday	Faraday Technology Corporation
 fastrax	Fastrax Oy
 fcs	Fairchild Semiconductor
