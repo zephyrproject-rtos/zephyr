@@ -226,6 +226,10 @@ config 64BIT
 
 config SRAM_DEPRECATED_KCONFIG_SET
 	bool
+	default y if SRAM_SIZE != $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
+	default y if SRAM_BASE_ADDRESS != $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
+	default n
+	select DEPRECATED
 	help
 	  Indicates that either `CONFIG_SRAM_SIZE` or `CONFIG_SRAM_BASE_ADDRESS` have been
 	  manually set, these Kconfigs are now deprecated and should be replaced by referencing
@@ -235,7 +239,7 @@ config SRAM_DEPRECATED_KCONFIG_SET
 DT_CHOSEN_Z_SRAM := zephyr,sram
 
 config SRAM_SIZE
-	int "SRAM Size in kB"
+	int "SRAM Size in kB [DEPRECATED]"
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
 	help
 	  The SRAM size in kB. The default value comes from /chosen/zephyr,sram in
@@ -244,7 +248,7 @@ config SRAM_SIZE
 	  the devicetree `zephyr,sram` chosen node instead.
 
 config SRAM_BASE_ADDRESS
-	hex "SRAM Base Address"
+	hex "SRAM Base Address [DEPRECATED]"
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
 	help
 	  The SRAM base address. The default value comes from
