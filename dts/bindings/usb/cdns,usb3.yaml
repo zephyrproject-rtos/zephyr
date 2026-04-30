@@ -1,0 +1,24 @@
+# Copyright 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cadence CDNS3 USB Device Controller
+
+compatible: "cdns,usb3"
+
+include: [usb-ep.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  num-in-endpoints:
+    required: true
+
+  num-out-endpoints:
+    required: true
+
+  maximum-speed:
+    required: true
