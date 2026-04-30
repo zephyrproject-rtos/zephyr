@@ -10,3 +10,7 @@ target_sources(app PRIVATE ${app_sources})
 target_sources_ifdef(CONFIG_MULTI_LEVEL_INTERRUPTS app PRIVATE
   src/multilevel_irq.c
 )
+
+if(CONFIG_RISCV_CORE_NORDIC_VPR)
+  zephyr_compile_options(-msmall-data-limit=0)
+endif()

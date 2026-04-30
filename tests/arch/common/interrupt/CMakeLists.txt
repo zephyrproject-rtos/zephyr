@@ -20,6 +20,10 @@ if(CONFIG_ARM64)
   add_compile_options(-mgeneral-regs-only)
 endif()
 
+if(CONFIG_RISCV_CORE_NORDIC_VPR)
+  zephyr_compile_options(-msmall-data-limit=0)
+endif()
+
 target_sources_ifdef(CONFIG_DYNAMIC_INTERRUPTS app PRIVATE src/dynamic_isr.c)
 target_sources_ifdef(CONFIG_X86 app PRIVATE src/regular_isr.c)
 target_sources_ifdef(CONFIG_SHARED_INTERRUPTS app PRIVATE src/static_shared_irq.c)
