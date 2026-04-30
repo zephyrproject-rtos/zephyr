@@ -14,8 +14,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mctp_endpoint);
 
-#include <zephyr/drivers/uart.h>
-
 static struct mctp *mctp_ctx;
 
 #define LOCAL_HELLO_EID 10
@@ -24,6 +22,16 @@ static struct mctp *mctp_ctx;
 
 K_SEM_DEFINE(mctp_rx, 0, 1);
 
+static void rx_message_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	mctp_message_tx(mctp_ctx, REMOTE_HELLO_EID, false, 0, "world", sizeof("world"));
+
+	k_sem_give(&mctp_rx);
+}
+K_WORK_DEFINE(rx_message_work, rx_message_handler);
+
 static void rx_message(uint8_t eid, bool tag_owner, uint8_t msg_tag, void *data, void *msg,
 		       size_t len)
 {
@@ -31,19 +39,15 @@ static void rx_message(uint8_t eid, bool tag_owner, uint8_t msg_tag, void *data,
 	case REMOTE_HELLO_EID:
 		LOG_INF("got mctp message \"%s\" from eid %d, replying with \"world\"", (char *)msg,
 			eid);
-		mctp_message_tx(mctp_ctx, REMOTE_HELLO_EID, false, 0, "world", sizeof("world"));
+		k_work_submit(&rx_message_work);
 		break;
 	default:
 		LOG_INF("Unknown endpoint %d", eid);
 		break;
 	}
-
-	k_sem_give(&mctp_rx);
 }
 
 MCTP_UART_DT_DEFINE(mctp_endpoint, DEVICE_DT_GET(DT_NODELABEL(arduino_serial)));
-
-#define RX_BUF_SZ 128
 
 int main(void)
 {
