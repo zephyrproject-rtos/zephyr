@@ -739,6 +739,31 @@
 		interrupts = <93 0>;
 		interrupt-names = "t1s";
 	};
+
+	eim0: eim@400c7000 {
+		compatible = "nxp,eim";
+		status = "disabled";
+		reg = <0x400c7000 0x1000>;
+		resets = <&reset NXP_SYSCON_RESET(0, 15)>;
+
+		eim0_channel0: channel0 {
+			channel-id = <0>;
+			erm-channel-id = <0>;
+			size = <DT_SIZE_K(64)>;
+			start-address = <0x20000000>;
+			ecc-enable = <0x1>;
+			status = "disabled";
+		};
+	};
+
+	erm0: erm@400c8000 {
+		compatible = "nxp,erm";
+		status = "disabled";
+		reg = <0x400c8000 0x1000>;
+		resets = <&reset NXP_SYSCON_RESET(0, 16)>;
+		interrupts = <10 0>, <11 0>;
+		channels = <0 1>;
+	};
 };
 
 &systick {

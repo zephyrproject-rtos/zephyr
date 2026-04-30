@@ -29,6 +29,7 @@
 		zephyr,shell-uart = &lpuart2;
 		zephyr,system-timer-companion = &lptmr0;
 		zephyr,canbus = &flexcan0;
+		zephyr,edac = &erm0;
 	};
 
 	leds {
@@ -238,4 +239,16 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan0>;
 	pinctrl-names = "default";
+};
+
+&eim0 {
+	status = "okay";
+};
+
+&eim0_channel0 {
+	status = "okay";
+};
+
+&erm0 {
+	status = "okay";
 };
