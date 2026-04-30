@@ -360,7 +360,7 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_inval_pack
 	struct bt_bap_broadcast_source_param *create_param = fixture->param;
 	int err;
 
-	create_param->packing = 0x02;
+	create_param->packing = 0x02U;
 	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
 	zassert_not_equal(0, err, "Did not fail with packing %u", create_param->packing);
 }
@@ -453,7 +453,7 @@ ZTEST_F(bap_broadcast_source_test_suite,
 	int err;
 
 	codec_cfg->id = BT_HCI_CODING_FORMAT_LC3;
-	codec_cfg->cid = 0x01; /* Shall be 0 if id == 0x06 (LC3)*/
+	codec_cfg->cid = 0x01U; /* Shall be 0 if id == 0x06 (LC3)*/
 	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
 	zassert_not_equal(0, err, "Did not fail with codec_cfg->cid %u", codec_cfg->cid);
 }
@@ -466,7 +466,7 @@ ZTEST_F(bap_broadcast_source_test_suite,
 	int err;
 
 	codec_cfg->id = BT_HCI_CODING_FORMAT_LC3;
-	codec_cfg->vid = 0x01; /* Shall be 0 if id == 0x06 (LC3)*/
+	codec_cfg->vid = 0x01U; /* Shall be 0 if id == 0x06 (LC3)*/
 	err = bt_bap_broadcast_source_create(create_param, &fixture->source);
 	zassert_not_equal(0, err, "Did not fail with codec_cfg->vid %u", codec_cfg->vid);
 }
@@ -808,7 +808,7 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_reconfigure_inval
 	err = bt_bap_broadcast_source_create(param, &fixture->source);
 	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
 
-	param->packing = 0x02;
+	param->packing = 0x02U;
 	err = bt_bap_broadcast_source_reconfig(fixture->source, param);
 	zassert_not_equal(0, err, "Did not fail with packing %u", param->packing);
 
@@ -970,8 +970,8 @@ ZTEST_F(bap_broadcast_source_test_suite,
 	err = bt_bap_broadcast_source_create(param, &fixture->source);
 	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
 
-	codec_cfg->id = 0x06;
-	codec_cfg->cid = 0x01; /* Shall be 0 if id == 0x06 (LC3)*/
+	codec_cfg->id = 0x06U;
+	codec_cfg->cid = 0x01U; /* Shall be 0 if id == 0x06 (LC3)*/
 	err = bt_bap_broadcast_source_reconfig(fixture->source, param);
 	zassert_not_equal(0, err, "Did not fail with codec_cfg->cid %u", codec_cfg->cid);
 
@@ -993,8 +993,8 @@ ZTEST_F(bap_broadcast_source_test_suite,
 	err = bt_bap_broadcast_source_create(param, &fixture->source);
 	zassert_equal(0, err, "Unable to create broadcast source: err %d", err);
 
-	codec_cfg->id = 0x06;
-	codec_cfg->vid = 0x01; /* Shall be 0 if id == 0x06 (LC3)*/
+	codec_cfg->id = 0x06U;
+	codec_cfg->vid = 0x01U; /* Shall be 0 if id == 0x06 (LC3)*/
 	err = bt_bap_broadcast_source_reconfig(fixture->source, param);
 	zassert_not_equal(0, err, "Did not fail with codec_cfg->vid %u", codec_cfg->vid);
 
@@ -1183,19 +1183,19 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_base_single_b
 	int err;
 
 	const uint8_t expected_base[] = {
-		0x51, 0x18,                   /* uuid */
-		0x40, 0x9C, 0x00,             /* pd */
-		0x01,                         /* subgroup count */
-		0x01,                         /* bis count */
-		0x06, 0x00, 0x00, 0x00, 0x00, /* LC3 codec_id*/
-		0x10,                         /* cc length */
-		0x02, 0x01, 0x03, 0x02, 0x02, 0x01, 0x05, 0x03,
-		0x01, 0x00, 0x00, 0x00, 0x03, 0x04, 0x28, 0x00, /* cc */
-		0x04,                                           /* meta length */
-		0x03, 0x02, 0x01, 0x00,                         /* meta */
-		0x01,                                           /* bis index */
-		0x06,                                           /* bis cc length */
-		0x05, 0x03, 0x03, 0x00, 0x00, 0x00              /* bis cc length */
+		0x51U, 0x18U,                   /* uuid */
+		0x40U, 0x9CU, 0x00U,             /* pd */
+		0x01U,                         /* subgroup count */
+		0x01U,                         /* bis count */
+		0x06U, 0x00U, 0x00U, 0x00U, 0x00U, /* LC3 codec_id*/
+		0x10U,                         /* cc length */
+		0x02U, 0x01U, 0x03U, 0x02U, 0x02U, 0x01U, 0x05U, 0x03U,
+		0x01U, 0x00U, 0x00U, 0x00U, 0x03U, 0x04U, 0x28U, 0x00U, /* cc */
+		0x04U,                                           /* meta length */
+		0x03U, 0x02U, 0x01U, 0x00U,                         /* meta */
+		0x01U,                                           /* bis index */
+		0x06U,                                           /* bis cc length */
+		0x05U, 0x03U, 0x03U, 0x00U, 0x00U, 0x00U              /* bis cc length */
 	};
 
 	NET_BUF_SIMPLE_DEFINE(base_buf, 64);
@@ -1240,29 +1240,29 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_get_base)
 	int err;
 
 	const uint8_t expected_base[] = {
-		0x51, 0x18,                   /* uuid */
-		0x40, 0x9C, 0x00,             /* pd */
-		0x02,                         /* subgroup count */
-		0x01,                         /* Subgroup 1: bis count */
-		0x06, 0x00, 0x00, 0x00, 0x00, /* LC3 codec_id*/
-		0x10,                         /* cc length */
-		0x02, 0x01, 0x03, 0x02, 0x02, 0x01, 0x05, 0x03,
-		0x01, 0x00, 0x00, 0x00, 0x03, 0x04, 0x28, 0x00, /* cc */
-		0x04,                                           /* meta length */
-		0x03, 0x02, 0x01, 0x00,                         /* meta */
-		0x01,                                           /* bis index */
-		0x06,                                           /* bis cc length */
-		0x05, 0x03, 0x03, 0x00, 0x00, 0x00,             /* bis cc length */
-		0x01,                                           /* Subgroup 1: bis count */
-		0x06, 0x00, 0x00, 0x00, 0x00,                   /* LC3 codec_id*/
-		0x10,                                           /* cc length */
-		0x02, 0x01, 0x03, 0x02, 0x02, 0x01, 0x05, 0x03,
-		0x01, 0x00, 0x00, 0x00, 0x03, 0x04, 0x28, 0x00, /* cc */
-		0x04,                                           /* meta length */
-		0x03, 0x02, 0x01, 0x00,                         /* meta */
-		0x02,                                           /* bis index */
-		0x06,                                           /* bis cc length */
-		0x05, 0x03, 0x03, 0x00, 0x00, 0x00              /* bis cc length */
+		0x51U, 0x18U,                   /* uuid */
+		0x40U, 0x9CU, 0x00U,             /* pd */
+		0x02U,                         /* subgroup count */
+		0x01U,                         /* Subgroup 1: bis count */
+		0x06U, 0x00U, 0x00U, 0x00U, 0x00U, /* LC3 codec_id*/
+		0x10U,                         /* cc length */
+		0x02U, 0x01U, 0x03U, 0x02U, 0x02U, 0x01U, 0x05U, 0x03U,
+		0x01U, 0x00U, 0x00U, 0x00U, 0x03U, 0x04U, 0x28U, 0x00U, /* cc */
+		0x04U,                                           /* meta length */
+		0x03U, 0x02U, 0x01U, 0x00U,                         /* meta */
+		0x01U,                                           /* bis index */
+		0x06U,                                           /* bis cc length */
+		0x05U, 0x03U, 0x03U, 0x00U, 0x00U, 0x00U,             /* bis cc length */
+		0x01U,                                           /* Subgroup 1: bis count */
+		0x06U, 0x00U, 0x00U, 0x00U, 0x00U,                   /* LC3 codec_id*/
+		0x10U,                                           /* cc length */
+		0x02U, 0x01U, 0x03U, 0x02U, 0x02U, 0x01U, 0x05U, 0x03U,
+		0x01U, 0x00U, 0x00U, 0x00U, 0x03U, 0x04U, 0x28U, 0x00U, /* cc */
+		0x04U,                                           /* meta length */
+		0x03U, 0x02U, 0x01U, 0x00U,                         /* meta */
+		0x02U,                                           /* bis index */
+		0x06U,                                           /* bis cc length */
+		0x05U, 0x03U, 0x03U, 0x00U, 0x00U, 0x00U              /* bis cc length */
 	};
 
 	NET_BUF_SIMPLE_DEFINE(base_buf, 128);

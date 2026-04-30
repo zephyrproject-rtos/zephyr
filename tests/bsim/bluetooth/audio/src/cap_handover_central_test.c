@@ -891,8 +891,8 @@ static void test_main_cap_handover_central_common(const size_t acceptor_cnt, uin
 static void test_main_cap_handover_central(void)
 {
 	const size_t acceptor_cnt = get_dev_cnt() - 1; /* Assume all other devices are acceptors */
-	uint32_t broadcast_id = 0x123456;
-	uint8_t adv_sid = 0x00;
+	uint32_t broadcast_id = 0x123456U;
+	uint8_t adv_sid = 0x00U;
 
 	test_main_cap_handover_central_common(acceptor_cnt, broadcast_id);
 
@@ -915,8 +915,8 @@ static void test_main_cap_handover_central_reception_stop(void)
 	struct bt_cap_commander_broadcast_reception_stop_member_param
 		member_param[CONFIG_BT_MAX_CONN] = {0};
 	const size_t acceptor_cnt = get_dev_cnt() - 1; /* Assume all other devices are acceptors */
-	uint32_t broadcast_id = 0x123456;
-	uint8_t adv_sid = 0x00;
+	uint32_t broadcast_id = 0x123456U;
+	uint8_t adv_sid = 0x00U;
 
 	test_main_cap_handover_central_common(acceptor_cnt, broadcast_id);
 

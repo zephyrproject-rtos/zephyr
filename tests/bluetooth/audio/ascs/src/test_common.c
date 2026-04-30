@@ -137,7 +137,7 @@ uint8_t test_ase_id_get(const struct bt_gatt_attr *ase)
 
 static struct bt_bap_stream *stream_allocated;
 static const struct bt_bap_qos_cfg_pref qos_pref =
-	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02U, 10, 40000, 40000, 40000, 40000);
 
 static int unicast_server_cb_config_custom_fake(struct bt_conn *conn, const struct bt_bap_ep *ep,
 						enum bt_audio_dir dir,
@@ -160,15 +160,15 @@ void test_ase_control_client_config_codec(struct bt_conn *conn, uint8_t ase_id,
 {
 	const struct bt_gatt_attr *attr = test_ase_control_point_get();
 	const uint8_t buf[] = {
-		0x01,           /* Opcode = Config Codec */
-		0x01,           /* Number_of_ASEs */
+		0x01U,           /* Opcode = Config Codec */
+		0x01U,           /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x01,           /* Target_Latency[0] = Target low latency */
-		0x02,           /* Target_PHY[0] = LE 2M PHY */
-		0x06,           /* Codec_ID[0].Coding_Format = LC3 */
-		0x00, 0x00,     /* Codec_ID[0].Company_ID */
-		0x00, 0x00,     /* Codec_ID[0].Vendor_Specific_Codec_ID */
-		0x00,           /* Codec_Specific_Configuration_Length[0] */
+		0x01U,           /* Target_Latency[0] = Target low latency */
+		0x02U,           /* Target_PHY[0] = LE 2M PHY */
+		0x06U,           /* Codec_ID[0].Coding_Format = LC3 */
+		0x00U, 0x00U,     /* Codec_ID[0].Company_ID */
+		0x00U, 0x00U,     /* Codec_ID[0].Vendor_Specific_Codec_ID */
+		0x00U,           /* Codec_Specific_Configuration_Length[0] */
 	};
 
 	ssize_t ret;
@@ -189,18 +189,18 @@ void test_ase_control_client_config_qos(struct bt_conn *conn, uint8_t ase_id)
 {
 	const struct bt_gatt_attr *attr = test_ase_control_point_get();
 	const uint8_t buf[] = {
-		0x02,                   /* Opcode = Config QoS */
-		0x01,                   /* Number_of_ASEs */
+		0x02U,                   /* Opcode = Config QoS */
+		0x01U,                   /* Number_of_ASEs */
 		ase_id,                 /* ASE_ID[0] */
-		0x01,                   /* CIG_ID[0] */
-		0x01,                   /* CIS_ID[0] */
-		0xFF, 0x00, 0x00,       /* SDU_Interval[0] */
-		0x00,                   /* Framing[0] */
-		0x02,                   /* PHY[0] */
-		0x64, 0x00,             /* Max_SDU[0] */
-		0x02,                   /* Retransmission_Number[0] */
-		0x0A, 0x00,             /* Max_Transport_Latency[0] */
-		0x40, 0x9C, 0x00,       /* Presentation_Delay[0] */
+		0x01U,                   /* CIG_ID[0] */
+		0x01U,                   /* CIS_ID[0] */
+		0xFFU, 0x00U, 0x00U,       /* SDU_Interval[0] */
+		0x00U,                   /* Framing[0] */
+		0x02U,                   /* PHY[0] */
+		0x64U, 0x00U,             /* Max_SDU[0] */
+		0x02U,                   /* Retransmission_Number[0] */
+		0x0AU, 0x00U,             /* Max_Transport_Latency[0] */
+		0x40U, 0x9CU, 0x00U,       /* Presentation_Delay[0] */
 	};
 	ssize_t ret;
 
@@ -215,10 +215,10 @@ void test_ase_control_client_enable(struct bt_conn *conn, uint8_t ase_id)
 {
 	const struct bt_gatt_attr *attr = test_ase_control_point_get();
 	const uint8_t buf[] = {
-		0x03,                   /* Opcode = Enable */
-		0x01,                   /* Number_of_ASEs */
+		0x03U,                   /* Opcode = Enable */
+		0x01U,                   /* Number_of_ASEs */
 		ase_id,                 /* ASE_ID[0] */
-		0x00,                   /* Metadata_Length[0] */
+		0x00U,                   /* Metadata_Length[0] */
 	};
 	ssize_t ret;
 
@@ -233,8 +233,8 @@ void test_ase_control_client_disable(struct bt_conn *conn, uint8_t ase_id)
 {
 	const struct bt_gatt_attr *attr = test_ase_control_point_get();
 	const uint8_t buf[] = {
-		0x05,                   /* Opcode = Disable */
-		0x01,                   /* Number_of_ASEs */
+		0x05U,                   /* Opcode = Disable */
+		0x01U,                   /* Number_of_ASEs */
 		ase_id,                 /* ASE_ID[0] */
 	};
 	ssize_t ret;
@@ -250,8 +250,8 @@ void test_ase_control_client_release(struct bt_conn *conn, uint8_t ase_id)
 {
 	const struct bt_gatt_attr *attr = test_ase_control_point_get();
 	const uint8_t buf[] = {
-		0x08,                   /* Opcode = Release */
-		0x01,                   /* Number_of_ASEs */
+		0x08U,                   /* Opcode = Release */
+		0x01U,                   /* Number_of_ASEs */
 		ase_id,                 /* ASE_ID[0] */
 	};
 	ssize_t ret;
@@ -267,11 +267,11 @@ void test_ase_control_client_update_metadata(struct bt_conn *conn, uint8_t ase_i
 {
 	const struct bt_gatt_attr *attr = test_ase_control_point_get();
 	const uint8_t buf[] = {
-		0x07,                   /* Opcode = Update Metadata */
-		0x01,                   /* Number_of_ASEs */
+		0x07U,                   /* Opcode = Update Metadata */
+		0x01U,                   /* Number_of_ASEs */
 		ase_id,                 /* ASE_ID[0] */
-		0x04,                   /* Metadata_Length[0] */
-		0x03, 0x02, 0x04, 0x00, /* Metadata[0] = Streaming Context (Media) */
+		0x04U,                   /* Metadata_Length[0] */
+		0x03U, 0x02U, 0x04U, 0x00U, /* Metadata[0] = Streaming Context (Media) */
 	};
 	ssize_t ret;
 
@@ -286,8 +286,8 @@ void test_ase_control_client_receiver_start_ready(struct bt_conn *conn, uint8_t 
 {
 	const struct bt_gatt_attr *attr = test_ase_control_point_get();
 	const uint8_t buf[] = {
-		0x04,                   /* Opcode = Receiver Start Ready */
-		0x01,                   /* Number_of_ASEs */
+		0x04U,                   /* Opcode = Receiver Start Ready */
+		0x01U,                   /* Number_of_ASEs */
 		ase_id,                 /* ASE_ID[0] */
 	};
 	ssize_t ret;
@@ -303,8 +303,8 @@ void test_ase_control_client_receiver_stop_ready(struct bt_conn *conn, uint8_t a
 {
 	const struct bt_gatt_attr *attr = test_ase_control_point_get();
 	const uint8_t buf[] = {
-		0x06,                   /* Opcode = Receiver Stop Ready */
-		0x01,                   /* Number_of_ASEs */
+		0x06U,                   /* Opcode = Receiver Stop Ready */
+		0x01U,                   /* Number_of_ASEs */
 		ase_id,                 /* ASE_ID[0] */
 	};
 	ssize_t ret;
@@ -350,7 +350,7 @@ void test_preamble_state_streaming(struct bt_conn *conn, uint8_t ase_id,
 	test_ase_control_client_config_qos(conn, ase_id);
 	test_ase_control_client_enable(conn, ase_id);
 
-	err = mock_bt_iso_accept(conn, 0x01, 0x01, chan);
+	err = mock_bt_iso_accept(conn, 0x01U, 0x01U, chan);
 	zassert_equal(0, err, "Failed to connect iso: err %d", err);
 
 	if (source) {
@@ -374,7 +374,7 @@ void test_preamble_state_disabling(struct bt_conn *conn, uint8_t ase_id,
 	test_ase_control_client_config_qos(conn, ase_id);
 	test_ase_control_client_enable(conn, ase_id);
 
-	err = mock_bt_iso_accept(conn, 0x01, 0x01, chan);
+	err = mock_bt_iso_accept(conn, 0x01U, 0x01U, chan);
 	zassert_equal(0, err, "Failed to connect iso: err %d", err);
 
 	test_ase_control_client_receiver_start_ready(conn, ase_id);

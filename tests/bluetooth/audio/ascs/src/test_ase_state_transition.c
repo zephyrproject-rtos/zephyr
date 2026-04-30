@@ -42,7 +42,7 @@
 #define test_source_ase_state_transition_fixture test_ase_state_transition_fixture
 
 static const struct bt_bap_qos_cfg_pref qos_pref =
-	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02U, 10, 40000, 40000, 40000, 40000);
 
 struct test_ase_state_transition_fixture {
 	struct bt_conn conn;
@@ -601,7 +601,7 @@ ZTEST_F(test_sink_ase_state_transition, test_server_enabling_to_streaming)
 
 	test_preamble_state_enabling(conn, ase_id, stream);
 
-	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
+	err = mock_bt_iso_accept(conn, 0x01U, 0x01U, &chan);
 	zassert_equal(0, err, "Failed to connect iso: err %d", err);
 
 	err = bt_bap_stream_start(stream);
@@ -820,7 +820,7 @@ ZTEST_F(test_source_ase_state_transition, test_client_enabling_to_streaming)
 
 	test_preamble_state_enabling(conn, ase_id, stream);
 
-	err = mock_bt_iso_accept(conn, 0x01, 0x01, &chan);
+	err = mock_bt_iso_accept(conn, 0x01U, 0x01U, &chan);
 	zassert_equal(0, err, "Failed to connect iso: err %d", err);
 
 	test_ase_control_client_receiver_start_ready(conn, ase_id);

@@ -521,7 +521,7 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 	printk("Creating Periodic Advertising Sync\n");
 	bt_addr_le_copy(&sync_create_param.addr, info->addr);
 	sync_create_param.sid = info->sid;
-	sync_create_param.timeout = 0xa;
+	sync_create_param.timeout = 0xaU;
 
 	err = bt_le_per_adv_sync_create(&sync_create_param,
 					&state->pa_sync);

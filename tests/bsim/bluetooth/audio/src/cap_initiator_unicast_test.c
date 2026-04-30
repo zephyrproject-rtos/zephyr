@@ -1056,7 +1056,7 @@ static void test_cap_initiator_unicast_timeout(void)
 
 static void set_invalid_metadata_type(uint8_t type)
 {
-	const uint8_t val = 0xFF;
+	const uint8_t val = 0xFFU;
 	int err;
 
 	err = bt_audio_codec_cfg_meta_set_val(&unicast_preset_16_2_1.codec_cfg, type, &val,
@@ -1081,7 +1081,7 @@ static void unset_invalid_metadata_type(uint8_t type)
 static void test_cap_initiator_unicast_ase_error(void)
 {
 	struct bt_cap_unicast_group *unicast_group;
-	const uint8_t inval_type = 0xFD;
+	const uint8_t inval_type = 0xFDU;
 
 	init();
 

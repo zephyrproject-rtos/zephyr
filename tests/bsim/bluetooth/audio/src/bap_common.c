@@ -22,8 +22,8 @@
 #include "bap_common.h"
 #include "common.h"
 
-#define VS_CODEC_CID 0x05F1 /* Linux foundation*/
-#define VS_CODEC_VID 0x1234 /* any value*/
+#define VS_CODEC_CID 0x05F1U /* Linux foundation*/
+#define VS_CODEC_VID 0x1234U /* any value*/
 
 /* Vendor specific codec configuration with some random values */
 struct bt_audio_codec_cfg vs_codec_cfg = {

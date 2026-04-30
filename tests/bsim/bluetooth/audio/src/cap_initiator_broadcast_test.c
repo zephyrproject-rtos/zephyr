@@ -502,7 +502,7 @@ static void test_broadcast_audio_update(struct bt_cap_broadcast_source *broadcas
 	/* TODO: We do not have a way to get the CCID value of GTBS, but for now set to 0x00 as we
 	 * know that it is the first content control service initialized
 	 */
-	const uint16_t gtbs_ccid = 0x00;
+	const uint16_t gtbs_ccid = 0x00U;
 #endif /* CONFIG_BT_TBS */
 	const uint8_t new_metadata[] = {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,

@@ -35,7 +35,7 @@ static void test_bap_broadcast_source(void)
 	const uint8_t coding_format = BT_HCI_CODING_FORMAT_LC3;
 	const uint8_t framing = BT_ISO_FRAMING_UNFRAMED;
 	const uint32_t presentation_delay = 40000U;
-	const uint32_t broadcast_id = 0x123456;
+	const uint32_t broadcast_id = 0x123456U;
 	const uint8_t streams_per_subgroup = 1U;
 	const uint32_t sdu_interval = 10000U;
 	const uint16_t max_latency = 10U;

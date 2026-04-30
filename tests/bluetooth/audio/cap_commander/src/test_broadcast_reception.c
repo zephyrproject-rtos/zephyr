@@ -36,9 +36,9 @@ LOG_MODULE_REGISTER(bt_broadcast_reception_test, CONFIG_BT_CAP_COMMANDER_LOG_LEV
 
 #define FFF_GLOBALS
 
-#define SID          0x0E
+#define SID          0x0EU
 #define ADV_INTERVAL 10
-#define BROADCAST_ID 0x55AA55
+#define BROADCAST_ID 0x55AA55U
 
 struct cap_commander_test_broadcast_reception_fixture {
 	struct bt_conn conns[CONFIG_BT_MAX_CONN];
