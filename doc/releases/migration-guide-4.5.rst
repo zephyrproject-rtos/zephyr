@@ -53,6 +53,13 @@ Clock Control
   RT11xx overlays should be updated using the mapping
   ``loop-div = clock-mult * 2`` and ``post-div = clock-div``.
 
+Crypto
+======
+
+* Added :c:enum:`CRYPTO_CIPHER_MODE_CFB` and :c:enum:`CRYPTO_CIPHER_MODE_OFB` cipher mode
+  identifiers to the crypto API (``include/zephyr/crypto/cipher.h``). This change is additive
+  and does not affect existing applications.
+
 Digital Microphone
 ==================
 
