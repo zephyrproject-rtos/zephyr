@@ -2148,12 +2148,19 @@ static int obex_client_req_check(struct bt_obex_client *client, bool first)
 
 	LOG_DBG("SRM is enabled");
 
-	if (atomic_test_bit(&client->_flags, BT_OBEX_RSP_SRMP)) {
+	if (atomic_test_bit(&client->_flags, BT_OBEX_RSP_SRMP) ||
+	    atomic_test_bit(&client->_flags, BT_OBEX_REQ_SRMP)) {
 		if (atomic_test_bit(&client->_flags, BT_OBEX_RSP_RECV)) {
 			return 0;
 		}
 
-		LOG_ERR("SRM is enabled but waiting, response is not received");
+		LOG_ERR("SRM is enabled but in wait state, response is not received");
+		return -EPROTO;
+	}
+
+	if (!atomic_test_bit(&client->_flags, BT_OBEX_REQ_SRMP) &&
+	    atomic_test_bit(&client->_flags, BT_OBEX_REQ_F_BIT)) {
+		LOG_ERR("SRM is enabled, no requests can be sent anymore");
 		return -EPROTO;
 	}
 
@@ -2246,6 +2253,10 @@ int bt_obex_put(struct bt_obex_client *client, bool final, struct net_buf *buf)
 	hdr->len = sys_cpu_to_be16(buf->len);
 
 	atomic_clear_bit(&client->_flags, BT_OBEX_RSP_RECV);
+
+	if (final) {
+		atomic_set_bit(&client->_flags, BT_OBEX_REQ_F_BIT);
+	}
 
 	err = obex_send(client->obex, client->tx.mopl, buf);
 	if (err == 0) {
@@ -2437,6 +2448,10 @@ int bt_obex_get(struct bt_obex_client *client, bool final, struct net_buf *buf)
 	hdr->len = sys_cpu_to_be16(buf->len);
 
 	atomic_clear_bit(&client->_flags, BT_OBEX_RSP_RECV);
+
+	if (final) {
+		atomic_set_bit(&client->_flags, BT_OBEX_REQ_F_BIT);
+	}
 
 	err = obex_send(client->obex, client->tx.mopl, buf);
 	if (err == 0) {
