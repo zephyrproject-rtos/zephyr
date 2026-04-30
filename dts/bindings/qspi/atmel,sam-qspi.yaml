@@ -1,0 +1,48 @@
+# Copyright (c) 2026 Eve Redero
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Atmel SAM QSPI Controller
+
+  The Atmel SAM QSPI peripheral can work in two modes, the first is a QSPI flash driver
+  mode able to work in several parallel configuration such as mono, dual or quad SPI.
+  The second mode is a generic SPI driver.
+  The current driver handles the QSPI flash mode only.
+
+  This is the peripheral controller node. The flash behaviour is described in the
+  atmel,sam-flash-qspi child node.
+
+compatible: "atmel,sam-qspi"
+
+include:
+  - name: "base.yaml"
+  - name: "pinctrl-device.yaml"
+
+bus: qspi
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+examples:
+  - |
+    qspi: qspi@4007c000 {
+        compatible = "atmel,sam-qspi";
+        #address-cells = <1>;
+        #size-cells = <0>;
+        reg = <0x4007c000 0x4000>;
+        interrupts = <43 0>;
+        clocks = <&pmc PMC_TYPE_PERIPHERAL 43>;
+        pinctrl-0 = <&qspi_default>;
+        pinctrl-names = "default";
+        status = "okay";
+    };
