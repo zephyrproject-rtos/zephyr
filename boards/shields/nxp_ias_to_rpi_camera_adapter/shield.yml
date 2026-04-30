@@ -1,0 +1,6 @@
+shield:
+  name: nxp_ias_to_rpi_camera_adapter
+  full_name: NXP IAS to RPi Camera Adapter
+  vendor: nxp
+  supported_features:
+    - video
