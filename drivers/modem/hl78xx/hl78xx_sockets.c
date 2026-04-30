@@ -371,7 +371,7 @@ static int hl78xx_ensure_modem_awake(struct hl78xx_socket_data *socket_data)
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 	struct hl78xx_data *mdata = socket_data->mdata_global;
 #if defined(CONFIG_MODEM_HL78XX_PSM) || defined(CONFIG_MODEM_HL78XX_EDRX)
-	const struct hl78xx_config *config = (const struct hl78xx_config *)mdata->dev->config;
+	const struct hl78xx_config *config = mdata->dev->config;
 #endif /* CONFIG_MODEM_HL78XX_PSM || CONFIG_MODEM_HL78XX_EDRX */
 	bool in_lpm = false;
 
