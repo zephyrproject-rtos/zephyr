@@ -29,16 +29,16 @@
 
 LOG_MODULE_REGISTER(ccp_call_control_client, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define SEM_TIMEOUT K_SECONDS(10)
+#define SEM_TIMEOUT K_SECONDS(10U)
 
 static struct bt_conn *peer_conn;
 /* call_control_client is not static as it is used for testing purposes */
 struct bt_ccp_call_control_client *call_control_client;
 static struct bt_ccp_call_control_client_bearers client_bearers;
 
-static K_SEM_DEFINE(sem_conn_state_change, 0, 1);
-static K_SEM_DEFINE(sem_security_updated, 0, 1);
-static K_SEM_DEFINE(sem_ccp_action_completed, 0, 1);
+static K_SEM_DEFINE(sem_conn_state_change, 0U, 1U);
+static K_SEM_DEFINE(sem_security_updated, 0U, 1U);
+static K_SEM_DEFINE(sem_ccp_action_completed, 0U, 1U);
 
 static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
@@ -346,7 +346,7 @@ static int read_bearer_values(void)
 #endif /* CONFIG_BT_TBS_CLIENT_GTBS */
 
 #if defined(CONFIG_BT_TBS_CLIENT_TBS)
-	for (size_t i = 0; i < client_bearers.tbs_count; i++) {
+	for (size_t i = 0U; i < client_bearers.tbs_count; i++) {
 		if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)) {
 			err = read_bearer_name(client_bearers.tbs_bearers[i]);
 			if (err != 0) {

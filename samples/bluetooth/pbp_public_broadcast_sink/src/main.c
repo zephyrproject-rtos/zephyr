@@ -35,9 +35,9 @@
 				 BT_AUDIO_CONTEXT_TYPE_GAME | \
 				 BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL)
 
-#define SEM_TIMEOUT K_SECONDS(10)
-#define PA_SYNC_SKIP         5
-#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
+#define SEM_TIMEOUT                       K_SECONDS(10U)
+#define PA_SYNC_SKIP                      5U
+#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20U /* Set the timeout relative to interval */
 
 static bool pbs_found;
 

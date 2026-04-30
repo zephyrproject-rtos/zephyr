@@ -38,9 +38,9 @@
 
 LOG_MODULE_REGISTER(cap_acceptor_broadcast, LOG_LEVEL_INF);
 
-#define NAME_LEN                          sizeof(CONFIG_SAMPLE_TARGET_BROADCAST_NAME) + 1
-#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
-#define PA_SYNC_SKIP                      5
+#define NAME_LEN                          sizeof(CONFIG_SAMPLE_TARGET_BROADCAST_NAME) + 1U
+#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20U /* Set the timeout relative to interval */
+#define PA_SYNC_SKIP                      5U
 
 enum broadcast_flag {
 	FLAG_BROADCAST_SYNC_REQUESTED,
@@ -262,7 +262,7 @@ static void sink_started_cb(struct bt_bap_broadcast_sink *sink)
 	LOG_INF("Broadcast sink started");
 
 	/* Clear requested BIS sync */
-	broadcast_sink.requested_bis_sync = 0;
+	broadcast_sink.requested_bis_sync = 0U;
 	atomic_clear_bit(flags, FLAG_BROADCAST_SYNC_REQUESTED);
 }
 
@@ -664,7 +664,7 @@ static bool is_substring(const char *substr, const char *str)
 		return false;
 	}
 
-	for (size_t pos = 0; pos < str_len; pos++) {
+	for (size_t pos = 0U; pos < str_len; pos++) {
 		if (pos + sub_str_len > str_len) {
 			return false;
 		}

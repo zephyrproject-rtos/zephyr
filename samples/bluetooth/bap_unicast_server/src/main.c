@@ -69,16 +69,16 @@ static struct audio_source {
 static size_t configured_source_stream_count;
 
 static const struct bt_bap_qos_cfg_pref qos_pref =
-	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02U, 10U, 40000U, 40000U, 40000U, 40000U);
 
-static K_SEM_DEFINE(sem_disconnected, 0, 1);
+static K_SEM_DEFINE(sem_disconnected, 0U, 1U);
 
 static uint8_t unicast_server_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL), /* ASCS UUID */
 	BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED, /* Target Announcement */
 	BT_BYTES_LIST_LE16(AVAILABLE_SINK_CONTEXT),
 	BT_BYTES_LIST_LE16(AVAILABLE_SOURCE_CONTEXT),
-	0x00, /* Metadata length */
+	0x00U, /* Metadata length */
 };
 
 /* TODO: Expand with BAP data */
@@ -93,8 +93,8 @@ static const struct bt_data ad[] = {
 
 #include "lc3.h"
 
-#define MAX_SAMPLE_RATE         48000
-#define MAX_FRAME_DURATION_US   10000
+#define MAX_SAMPLE_RATE         48000U
+#define MAX_FRAME_DURATION_US   10000U
 #define MAX_NUM_SAMPLES         ((MAX_FRAME_DURATION_US * MAX_SAMPLE_RATE) / USEC_PER_SEC)
 
 static lc3_decoder_t lc3_decoder;
@@ -190,7 +190,7 @@ static enum bt_audio_dir stream_dir(const struct bt_bap_stream *stream)
 static struct bt_bap_stream *stream_alloc(enum bt_audio_dir dir)
 {
 	if (dir == BT_AUDIO_DIR_SOURCE) {
-		for (size_t i = 0; i < ARRAY_SIZE(source_streams); i++) {
+		for (size_t i = 0U; i < ARRAY_SIZE(source_streams); i++) {
 			struct bt_bap_stream *stream = &source_streams[i].stream;
 
 			if (!stream->conn) {
@@ -198,7 +198,7 @@ static struct bt_bap_stream *stream_alloc(enum bt_audio_dir dir)
 			}
 		}
 	} else {
-		for (size_t i = 0; i < ARRAY_SIZE(sink_streams); i++) {
+		for (size_t i = 0U; i < ARRAY_SIZE(sink_streams); i++) {
 			struct bt_bap_stream *stream = &sink_streams[i].stream;
 
 			if (!stream->conn) {
@@ -684,11 +684,11 @@ int main(void)
 	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
 	bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
 
-	for (size_t i = 0; i < ARRAY_SIZE(sink_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(sink_streams); i++) {
 		bt_bap_stream_cb_register(&sink_streams[i].stream, &stream_ops);
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(source_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(source_streams); i++) {
 		bt_bap_stream_cb_register(&source_streams[i].stream,
 					    &stream_ops);
 	}
