@@ -227,6 +227,7 @@ ZTEST(cmsis_event_flags, test_event_flags_static_allocation)
 static K_THREAD_STACK_DEFINE(test_wait_stack1, STACKSZ);
 static osThreadAttr_t thread_wait_attr1 = {
 	.name = "ThrWait1",
+	.attr_bits = osThreadJoinable,
 	.stack_mem = &test_wait_stack1,
 	.stack_size = STACKSZ,
 	.priority = osPriorityHigh,
@@ -235,6 +236,7 @@ static osThreadAttr_t thread_wait_attr1 = {
 static K_THREAD_STACK_DEFINE(test_wait_stack2, STACKSZ);
 static osThreadAttr_t thread_wait_attr2 = {
 	.name = "ThrWait2",
+	.attr_bits = osThreadJoinable,
 	.stack_mem = &test_wait_stack2,
 	.stack_size = STACKSZ,
 	.priority = osPriorityHigh,
