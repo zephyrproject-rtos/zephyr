@@ -12,5 +12,7 @@ SECTION_PROLOGUE(ztest,,)
 
 	Z_LINK_ITERABLE(ztest_unit_test);
 
+	Z_LINK_ITERABLE(ztest_param_inst);
+
 	Z_LINK_ITERABLE(ztest_test_rule);
 } GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)

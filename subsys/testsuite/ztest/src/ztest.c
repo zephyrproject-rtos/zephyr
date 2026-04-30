@@ -70,6 +70,20 @@ static ZTEST_BMEM enum ztest_status test_status = ZTEST_STATUS_OK;
 
 extern ZTEST_DMEM const struct ztest_arch_api ztest_api;
 
+/*
+ * Per-invocation state for value-parameterized tests (ZTEST_P).
+ * Set by z_ztest_run_test_dispatch() before each per-value call; cleared
+ * immediately after.  Never affects the fixture pointer passed via data.
+ */
+struct z_ztest_param_ctx {
+	const void *value;
+	size_t index;
+	size_t elem_size;
+	bool active;
+};
+
+static ZTEST_BMEM struct z_ztest_param_ctx z_ztest_param_state;
+
 static void __ztest_show_suite_summary(void);
 
 static void end_report(void)
@@ -773,6 +787,82 @@ struct ztest_unit_test *z_ztest_get_next_test(const char *suite, struct ztest_un
 	return NULL;
 }
 
+/*
+ * Return the first registered ztest_param_inst that matches (suite_name, test_name),
+ * or NULL if the test has no parameterized instantiation.
+ */
+static const struct ztest_param_inst *z_ztest_find_param_inst(const char *suite_name,
+							      const char *test_name)
+{
+	STRUCT_SECTION_FOREACH(ztest_param_inst, inst) {
+		if (strcmp(inst->test_suite_name, suite_name) == 0 &&
+		    strcmp(inst->test_name, test_name) == 0) {
+			return inst;
+		}
+	}
+	return NULL;
+}
+
+/*
+ * Run a single unit test, dispatching once per parameter value when the test
+ * has a registered ztest_param_inst, or once without param context otherwise.
+ *
+ * Returns the number of failures accumulated across all invocations.
+ */
+static int z_ztest_run_test_dispatch(struct ztest_suite_node *suite,
+				     struct ztest_unit_test *test, void *data)
+{
+	const struct ztest_param_inst *inst =
+		z_ztest_find_param_inst(suite->name, test->name);
+	const uint8_t *base;
+	int tc_result;
+	int fail = 0;
+
+	if (inst == NULL) {
+		/* Non-parameterized: clear context and run once. */
+		z_ztest_param_state.active = false;
+		z_ztest_param_state.value = NULL;
+		z_ztest_param_state.index = 0U;
+		z_ztest_param_state.elem_size = 0U;
+		test->stats->run_count++;
+		tc_result = run_test(suite, test, data);
+		if (tc_result == TC_PASS) {
+			test->stats->pass_count++;
+		} else if (tc_result == TC_SKIP) {
+			test->stats->skip_count++;
+		} else if (tc_result == TC_FAIL) {
+			test->stats->fail_count++;
+			fail++;
+		}
+		return fail;
+	}
+
+	/* Parameterized: run once per registered value. */
+	base = (const uint8_t *)inst->values->values;
+	for (size_t i = 0U; i < inst->values->count; i++) {
+		z_ztest_param_state.value = base + i * inst->values->elem_size;
+		z_ztest_param_state.index = i;
+		z_ztest_param_state.elem_size = inst->values->elem_size;
+		z_ztest_param_state.active = true;
+		test->stats->run_count++;
+		tc_result = run_test(suite, test, data);
+		if (tc_result == TC_PASS) {
+			test->stats->pass_count++;
+		} else if (tc_result == TC_SKIP) {
+			test->stats->skip_count++;
+		} else if (tc_result == TC_FAIL) {
+			test->stats->fail_count++;
+			fail++;
+		}
+		if ((fail && FAIL_FAST) || test_status == ZTEST_STATUS_CRITICAL_ERROR) {
+			break;
+		}
+	}
+	z_ztest_param_state.active = false;
+	z_ztest_param_state.value = NULL;
+	return fail;
+}
+
 #if CONFIG_ZTEST_SHUFFLE
 static void z_ztest_shuffle(bool shuffle, void *dest[], intptr_t start, size_t num_items,
 			    size_t element_size)
@@ -804,7 +894,13 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite, bool shuff
 	struct ztest_unit_test *test = NULL;
 	void *data = NULL;
 	int fail = 0;
-	int tc_result = TC_PASS;
+
+	/*
+	 * 'param' formerly let callers overwrite the fixture pointer from
+	 * setup().  That behaviour was incorrect: fixture and parameter are
+	 * independent channels.  The argument is kept for ABI compatibility.
+	 */
+	ARG_UNUSED(param);
 
 	if (FAIL_FAST && test_status != ZTEST_STATUS_OK) {
 		return test_status;
@@ -838,9 +934,6 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite, bool shuff
 	if (test_result != ZTEST_RESULT_SUITE_FAIL && suite->setup != NULL) {
 		data = suite->setup();
 	}
-	if (param != NULL) {
-		data = param;
-	}
 
 	for (int i = 0; i < case_iter; i++) {
 #ifdef CONFIG_ZTEST_SHUFFLE
@@ -857,18 +950,7 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite, bool shuff
 				continue;
 			}
 			if (ztest_api.should_test_run(suite->name, test->name)) {
-				test->stats->run_count++;
-				tc_result = run_test(suite, test, data);
-				if (tc_result == TC_PASS) {
-					test->stats->pass_count++;
-				} else if (tc_result == TC_SKIP) {
-					test->stats->skip_count++;
-				} else if (tc_result == TC_FAIL) {
-					test->stats->fail_count++;
-				}
-				if (tc_result == TC_FAIL) {
-					fail++;
-				}
+				fail += z_ztest_run_test_dispatch(suite, test, data);
 			}
 
 			if ((fail && FAIL_FAST) || test_status == ZTEST_STATUS_CRITICAL_ERROR) {
@@ -878,19 +960,7 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite, bool shuff
 #else
 		while (((test = z_ztest_get_next_test(suite->name, test)) != NULL)) {
 			if (ztest_api.should_test_run(suite->name, test->name)) {
-				test->stats->run_count++;
-				tc_result = run_test(suite, test, data);
-				if (tc_result == TC_PASS) {
-					test->stats->pass_count++;
-				} else if (tc_result == TC_SKIP) {
-					test->stats->skip_count++;
-				} else if (tc_result == TC_FAIL) {
-					test->stats->fail_count++;
-				}
-
-				if (tc_result == TC_FAIL) {
-					fail++;
-				}
+				fail += z_ztest_run_test_dispatch(suite, test, data);
 			}
 
 			if ((fail && FAIL_FAST) || test_status == ZTEST_STATUS_CRITICAL_ERROR) {
@@ -1116,6 +1186,26 @@ void z_impl___ztest_set_test_result(enum ztest_result new_result)
 void z_impl___ztest_set_test_phase(enum ztest_phase new_phase)
 {
 	cur_phase = new_phase;
+}
+
+const void *ztest_get_current_param(void)
+{
+	return z_ztest_param_state.value;
+}
+
+size_t ztest_get_current_param_index(void)
+{
+	return z_ztest_param_state.index;
+}
+
+size_t ztest_get_current_param_size(void)
+{
+	return z_ztest_param_state.elem_size;
+}
+
+bool ztest_has_current_param(void)
+{
+	return z_ztest_param_state.active;
 }
 
 #ifdef CONFIG_USERSPACE
