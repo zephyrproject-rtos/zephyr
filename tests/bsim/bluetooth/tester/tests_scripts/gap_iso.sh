@@ -2,13 +2,13 @@
 # Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
 # Smoketest for GAP ISO BTP commands with the BT tester
 
-simulation_id="tester_gap_iso"
+simulation_id="${BOARD_TS}_tester_gap_iso"
 verbosity_level=2
 EXECUTE_TIMEOUT=300
-
-source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 
