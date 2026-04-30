@@ -23,3 +23,13 @@ properties:
     enum:
       - "MCLK"
       - "FLL"
+  fs-ratio:
+    type: int
+    default: 256
+    enum: [64, 128, 192, 256, 384, 512, 768, 1024, 1408, 1536]
+    description: |
+      This property is intended for platforms where the MCLK frequency is
+      not directly available to the driver.
+      On such platforms, the driver assumes the MCLK frequency to be equal
+      to (fs-ratio * <sample rate>), where the sample rate comes from the
+      audio codec configuration provided at runtime.
