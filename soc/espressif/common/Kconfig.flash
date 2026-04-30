@@ -82,6 +82,23 @@ config SPI_FLASH_ROM_DRIVER_PATCH
 	  to flash on ESP32-D2WD; (2) main SPI flash is connected to non-default pins; (3) main
 	  SPI flash chip is manufactured by ISSI.
 
+config SPI_FLASH_VERIFY_WRITE
+	bool "Verify SPI flash writes"
+	help
+	  If this option is enabled, whenever SPI flash is written the data will be read
+	  back and verified. This can catch hardware problems with SPI flash, or flash which
+	  was not erased before verification.
+
+
+
+config SPI_FLASH_LOG_FAILED_WRITE
+	bool "Log errors if SPI flash write verification fails"
+	depends on SPI_FLASH_VERIFY_WRITE
+	help
+	  If SPI flash write verification fails, log an error with the address, expected,
+	  and actual values. Useful when debugging hardware SPI flash problems.
+
+
 config BOOTLOADER_FLASH_XMC_SUPPORT
 	bool "Support flash chips of XMC (READ HELP FIRST)"
 	default y
