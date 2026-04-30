@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/s32/S32K344-172MQFP-pinctrl.h>
+#include <nxp/s32/S32K344_K324_K314_172HDQFP-pinctrl.h>
 
 &pinctrl {
 	eirq0_default: eirq0 {
