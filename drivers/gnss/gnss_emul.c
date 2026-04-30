@@ -460,17 +460,23 @@ static void gnss_emul_work_handler(struct k_work *work)
 	}
 #endif /* CONFIG_GNSS_EMUL_MANUAL_UPDATE */
 
+	/* Accuracy is published BEFORE data so that consumers caching the
+	 * accuracy and stamping it onto the fix during the data callback
+	 * observe the current epoch's value rather than a one-epoch-lagged
+	 * copy. Mirrors the typical real-chip ordering where GST arrives
+	 * interleaved with GGA/RMC.
+	 */
+#ifdef CONFIG_GNSS_ACCURACY
+	if (data->has_accuracy) {
+		gnss_publish_accuracy(dev, &data->accuracy);
+	}
+#endif
+
 	gnss_publish_data(dev, &data->data);
 
 #ifdef CONFIG_GNSS_SATELLITES
 	gnss_emul_set_satellites(dev);
 	gnss_publish_satellites(dev, data->satellites, data->satellites_len);
-#endif
-
-#ifdef CONFIG_GNSS_ACCURACY
-	if (data->has_accuracy) {
-		gnss_publish_accuracy(dev, &data->accuracy);
-	}
 #endif
 
 	gnss_emul_update_fix_timestamp(dev, false);
