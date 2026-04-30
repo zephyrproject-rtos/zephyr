@@ -207,7 +207,7 @@ instance (``n``) and is used as an argument to the :c:func:`usbd_register_class`
 +===================================+=========================+=========================+
 | USB Audio 2 class                 | :ref:`uac2_device`      | :samp:`uac2_{n}`        |
 +-----------------------------------+-------------------------+-------------------------+
-| USB CDC ACM class                 | :ref:`uart_api`         | :samp:`cdc_acm_{n}`     |
+| USB CDC ACM class                 | :ref:`uart_api`         | UART device name        |
 +-----------------------------------+-------------------------+-------------------------+
 | USB CDC ECM class                 | Ethernet device         | :samp:`cdc_ecm_{n}`     |
 +-----------------------------------+-------------------------+-------------------------+
