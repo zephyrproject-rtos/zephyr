@@ -21,6 +21,8 @@
 
 	aliases {
 		led0 = &led_green;
+		eeprom-0 = &eeprom0;
+		eeprom-1 = &eeprom1;
 		pwm-led0 = &pwm_led_green;
 		rtc = &rtc;
 		sw0 = &button_user;
