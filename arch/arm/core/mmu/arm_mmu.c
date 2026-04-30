@@ -31,6 +31,7 @@
 
 #include <cmsis_core.h>
 
+#include <mmu.h>
 #include <zephyr/arch/arm/mmu/arm_mmu.h>
 #include "arm_mmu_priv.h"
 
@@ -1102,4 +1103,32 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
 		*phys = (uintptr_t)pa_resolved;
 	}
 	return rc;
+}
+
+__weak void arch_reserved_pages_update(void)
+{
+	/*
+	 * For non-XIP builds where the rom_start section is not relocated to a
+	 * separate memory region, the Cortex-A/R linker script places rom_start
+	 * (containing the vector table) at the base of SRAM, before the text
+	 * section where z_mapped_start is assigned. The generic page-frame init
+	 * only marks pages from z_mapped_start to z_mapped_end as mapped and pinned,
+	 * leaving the pages below z_mapped_start in the "available" state.
+	 * Reserve them here so they are never placed on the free list and cannot
+	 * be allocated by k_mem_map().
+	 *
+	 * k_mem_is_page_frame() guards against configurations where
+	 * z_mapped_start resolves to an address outside the managed SRAM
+	 * window (e.g. CONFIG_ROMSTART_RELOCATION_ROM).
+	 */
+	for (uintptr_t page = CONFIG_SRAM_BASE_ADDRESS;
+	     page < (uintptr_t)z_mapped_start;
+	     page += CONFIG_MMU_PAGE_SIZE) {
+		if (!k_mem_is_page_frame(page)) {
+			continue;
+		}
+		struct k_mem_page_frame *pf = k_mem_phys_to_page_frame(page);
+
+		k_mem_page_frame_set(pf, K_MEM_PAGE_FRAME_RESERVED);
+	}
 }
