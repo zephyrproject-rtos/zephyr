@@ -1,0 +1,106 @@
+/*
+ * Copyright (c) 2026 BayLibre SAS
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Device tree for Arm Corstone-1000-A320 FVP
+ */
+
+#include <mem.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
+	chosen {
+		zephyr,sram = &dram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			reg = <0>;
+		};
+
+		cpu1: cpu@100 {
+			device_type = "cpu";
+			reg = <0x100>;
+		};
+
+		cpu2: cpu@200 {
+			device_type = "cpu";
+			reg = <0x200>;
+		};
+
+		cpu3: cpu@300 {
+			device_type = "cpu";
+			reg = <0x300>;
+		};
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+	};
+
+	uartclk: apb-pclk {
+		compatible = "fixed-clock";
+		clock-frequency = <14745600>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		interrupt-parent = <&gic>;
+
+		gic: interrupt-controller@1c000000 {
+			compatible = "arm,gic-v3", "arm,gic";
+			reg = <0x1c000000 0x10000>, /* GICD */
+			      <0x1c040000 0x200000>; /* GICR */
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		uart0: uart@1a510000 {
+			compatible = "arm,pl011";
+			reg = <0x1a510000 0x1000>;
+			status = "disabled";
+			interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_32";
+			clocks = <&uartclk>;
+		};
+
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+
+		dram0: memory@80000000 {
+			compatible = "mmio-dram";
+			reg = <0x80000000 DT_SIZE_M(128)>;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
