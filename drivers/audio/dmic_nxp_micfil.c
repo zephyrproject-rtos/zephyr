@@ -57,6 +57,7 @@ static int nxp_micfil_configure(const struct device *dev, struct dmic_cfg *cfg_i
 	uint8_t act = 0U;
 	uint8_t micfil_idx;
 	enum pdm_lr lr;
+	unsigned long used_hw = 0UL;
 
 	if (data->state == DMIC_STATE_ACTIVE) {
 		return -EBUSY;
@@ -98,7 +99,7 @@ static int nxp_micfil_configure(const struct device *dev, struct dmic_cfg *cfg_i
 		 * - The lr value selects which side (Left/Right) that DMIC channel represents
 		 *   within its stereo pair; adjacency/consecutiveness is validated later.
 		 */
-		uint8_t hw_chan = micfil_idx;
+		uint8_t hw_chan = (micfil_idx << 1) | lr;
 
 		if (hw_chan >= ARRAY_SIZE(data->hw_chan)) {
 			LOG_ERR("Requested hw channel index %u exceeds supported %u",
@@ -112,11 +113,9 @@ static int nxp_micfil_configure(const struct device *dev, struct dmic_cfg *cfg_i
 		}
 
 		/* Avoid duplicates */
-		for (uint8_t i = 0U; i < act; i++) {
-			if (data->hw_chan[i] == hw_chan) {
-				LOG_ERR("Duplicate channel request for hw channel %u", hw_chan);
-				return -EINVAL;
-			}
+		if (sys_bitfield_test_and_set_bit((mem_addr_t)&used_hw, hw_chan)) {
+			LOG_ERR("HW channel %u already assigned", hw_chan);
+			return -EINVAL;
 		}
 
 		data->hw_chan[act++] = hw_chan;
@@ -137,15 +136,16 @@ static int nxp_micfil_configure(const struct device *dev, struct dmic_cfg *cfg_i
 		}
 	}
 
-	/* Validate adjacency for each stereo pair (L/R in any order)
-	 * New model requires paired dmics to use consecutive DMIC channel numbers
-	 * (e.g., 0/1, 2/3, ...), not the same micfil number. This preserves the API
-	 * constraint that L and R are adjacent while allowing explicit control
-	 * over which channel number is Left/Right.
+	/* Validate adjacency for each stereo pair (L/R in any order).
+	 * With hw_chan = (micfil_idx << 1) | lr, the actual hardware channel number
+	 * is derived from both micfil_idx and lr. Therefore adjacency is checked
+	 * on the computed hw channel values, not on micfil_idx alone.
 	 */
 	for (uint8_t index = 0U; index + 1U < chan->req_num_chan; index += 2U) {
 		uint8_t micfil0, micfil1;
 		enum pdm_lr lr0, lr1;
+		uint8_t hw0, hw1;
+		uint8_t minp, maxp;
 
 		dmic_parse_channel_map(chan->req_chan_map_lo, chan->req_chan_map_hi,
 					index, &micfil0, &lr0);
@@ -156,12 +156,16 @@ static int nxp_micfil_configure(const struct device *dev, struct dmic_cfg *cfg_i
 			LOG_ERR("Pair %u/%u has same L/R selection", index, index + 1U);
 			return -EINVAL;
 		}
-		/* Require consecutive DMIC channel numbers within a pair (e.g., 0/1, 2/3).
-		 * Enforce that the smaller of the two is even to avoid crossing pairs (e.g., 1/2).
-		 */
-		uint8_t minp = MIN(micfil0, micfil1);
-		uint8_t maxp = MAX(micfil0, micfil1);
 
+		hw0 = (uint8_t)((micfil0 << 1) | lr0);
+		hw1 = (uint8_t)((micfil1 << 1) | lr1);
+		minp = MIN(hw0, hw1);
+		maxp = MAX(hw0, hw1);
+
+		/* Require consecutive hardware DMIC channel numbers within a pair
+		 * (e.g., 0/1, 2/3). Enforce that the smaller one is even so the pair
+		 * does not cross a stereo boundary (e.g., 1/2).
+		 */
 		if (!((maxp == (uint8_t)(minp + 1U)) && ((minp & 0x1U) == 0U))) {
 			LOG_ERR("Pair %u/%u must map to consecutive DMIC channels.",
 				index, index + 1U);
@@ -545,6 +549,7 @@ static int nxp_micfil_init(const struct device *dev)
 	data->fifo_wm = cfg->fifo_watermark;
 
 	/* MICFIL channels initialization. */
+#if (defined(FSL_FEATURE_PDM_HAS_DC_OUT_CTRL) && (FSL_FEATURE_PDM_HAS_DC_OUT_CTRL))
 	/* Configure DC remover cutoff per hardware channel. */
 	for (uint8_t ch = 0U; ch < ARRAY_SIZE(cfg->chan_dc_cutoff); ch++) {
 		uint32_t mask = PDM_DC_CTRL_DCCONFIG0_MASK << (ch * 2U);
@@ -552,6 +557,7 @@ static int nxp_micfil_init(const struct device *dev)
 
 		data->base->DC_OUT_CTRL = ((data->base->DC_OUT_CTRL & ~mask) | val);
 	}
+#endif
 
 	/* Configure decimation-filter-gain per hardware channel. */
 	for (uint8_t ch = 0U; ch < ARRAY_SIZE(cfg->chan_gain); ch++) {

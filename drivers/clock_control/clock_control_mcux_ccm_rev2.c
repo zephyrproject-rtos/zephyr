@@ -23,6 +23,18 @@ static int mcux_ccm_on(const struct device *dev,
 	uint32_t clock_name = (uintptr_t)sub_system;
 	uint32_t peripheral, instance;
 
+/*
+ * RT11xx MICFIL clocking:
+ * - Peripheral gate is kCLOCK_Pdm (LPCG)
+ * - Root clock is kCLOCK_Root_Mic (PDM_CLK_ROOT)
+ */
+#if defined(CONFIG_SOC_SERIES_IMXRT11XX)
+	if (clock_name == IMX_CCM_PDM_CLK) {
+		CLOCK_EnableClock(kCLOCK_Pdm);
+		return 0;
+	}
+#endif
+
 	peripheral = (clock_name & IMX_CCM_PERIPHERAL_MASK);
 	instance = (clock_name & IMX_CCM_INSTANCE_MASK);
 	switch (peripheral) {
@@ -75,6 +87,17 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 {
 	uint32_t clock_name = (size_t) sub_system;
 	uint32_t clock_root, peripheral, instance;
+
+/*
+ * RT11xx MICFIL clock query:
+ * IMX_CCM_PDM_CLK should report the MIC root clock (PDM_CLK_ROOT).
+ */
+#if defined(CONFIG_SOC_SERIES_IMXRT11XX)
+	if (clock_name == IMX_CCM_PDM_CLK) {
+		*rate = CLOCK_GetRootClockFreq(kCLOCK_Root_Mic);
+		return 0;
+	}
+#endif
 
 	peripheral = (clock_name & IMX_CCM_PERIPHERAL_MASK);
 	instance = (clock_name & IMX_CCM_INSTANCE_MASK);
