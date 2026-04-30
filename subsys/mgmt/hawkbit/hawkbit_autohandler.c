@@ -85,7 +85,7 @@ static void autohandler(struct k_work *work)
 
 enum hawkbit_response hawkbit_autohandler_wait(uint32_t events, k_timeout_t timeout)
 {
-	uint32_t ret = k_event_wait(&hawkbit_autohandler_event, events, false, timeout);
+	uint32_t ret = k_event_wait(&hawkbit_autohandler_event, events, true, timeout);
 
 	for (int i = 1; i < HAWKBIT_PROBE_IN_PROGRESS; i++) {
 		if (ret & BIT(i)) {

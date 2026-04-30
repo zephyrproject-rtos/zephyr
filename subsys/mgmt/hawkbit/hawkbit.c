@@ -452,8 +452,9 @@ static bool start_http_client(int *hb_sock)
 	int ret = -1;
 	struct zsock_addrinfo *addr;
 	struct zsock_addrinfo hints = {0};
-	int resolve_attempts = 10;
 	int protocol = IS_ENABLED(CONFIG_HAWKBIT_USE_TLS) ? NET_IPPROTO_TLS_1_2 : NET_IPPROTO_TCP;
+
+	*hb_sock = -1;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		hints.ai_family = NET_AF_INET6;
@@ -463,15 +464,7 @@ static bool start_http_client(int *hb_sock)
 		hints.ai_socktype = NET_SOCK_STREAM;
 	}
 
-	while (resolve_attempts--) {
-		ret = zsock_getaddrinfo(HAWKBIT_SERVER_ADDR, HAWKBIT_PORT, &hints, &addr);
-		if (ret == 0) {
-			break;
-		}
-
-		k_sleep(K_MSEC(1));
-	}
-
+	ret = zsock_getaddrinfo(HAWKBIT_SERVER_ADDR, HAWKBIT_PORT, &hints, &addr);
 	if (ret != 0) {
 		LOG_ERR("Failed to resolve dns: %d", ret);
 		return false;
@@ -509,6 +502,7 @@ static bool start_http_client(int *hb_sock)
 	return true;
 
 err_sock:
+	*hb_sock = -1;
 	zsock_close(*hb_sock);
 err:
 	zsock_freeaddrinfo(addr);
@@ -517,9 +511,15 @@ err:
 
 static void cleanup_connection(int *hb_sock)
 {
+	if (*hb_sock < 0) {
+		return;
+	}
+
 	if (zsock_close(*hb_sock) < 0) {
 		LOG_ERR("Failed to close the socket");
 	}
+
+	*hb_sock = -1;
 }
 
 static int hawkbit_time2sec(const char *s)
@@ -1281,6 +1281,7 @@ static void s_http_start(void *o)
 	if (!start_http_client(&s->hb_context.sock)) {
 		s->hb_context.code_status = HAWKBIT_NETWORKING_ERROR;
 		smf_set_state(SMF_CTX(s), &hawkbit_states[S_HAWKBIT_TERMINATE]);
+		return;
 	}
 
 	s->hb_context.response_data_size = RESPONSE_BUFFER_SIZE;
