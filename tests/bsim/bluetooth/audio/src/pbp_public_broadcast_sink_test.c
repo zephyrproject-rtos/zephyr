@@ -238,6 +238,12 @@ static int init(void)
 		bt_bap_stream_cb_register(streams_p[i], &stream_ops);
 	}
 
+	err = bt_bap_scan_delegator_register(NULL);
+	if (err != 0) {
+		FAIL("Scan delegator register failed (err %d)\n", err);
+		return err;
+	}
+
 	return 0;
 }
 
