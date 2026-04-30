@@ -14,8 +14,10 @@
 #define BMI323_DEVICE_SPI_BUS(inst)                                                                \
 	extern const struct bosch_bmi323_bus_api bosch_bmi323_spi_bus_api;                         \
                                                                                                    \
+	COND_CODE_1(CONFIG_SPI_RTIO, (BMI323_SPI_IODEV_DEFINE(inst)), ());                         \
+                                                                                                   \
 	static const struct spi_dt_spec spi_spec##inst =                                           \
-		SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8));                                       \
+		SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8));                                    \
                                                                                                    \
 	static const struct bosch_bmi323_bus bosch_bmi323_bus_api##inst = {                        \
 		.context = &spi_spec##inst, .api = &bosch_bmi323_spi_bus_api}
