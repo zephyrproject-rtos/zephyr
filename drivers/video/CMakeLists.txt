@@ -6,7 +6,17 @@ zephyr_library_sources(video_common.c)
 zephyr_library_sources(video_ctrls.c)
 zephyr_library_sources(video_device.c)
 
+
+if(CONFIG_VIDEO_AP1302_UPLOAD_FIRMWARE)
+  generate_inc_file_for_target(
+    ${ZEPHYR_CURRENT_LIBRARY}
+    ${CONFIG_VIDEO_AP1302_FIRMWARE_FILE}
+    ${ZEPHYR_BINARY_DIR}/include/generated/ap1302_firmware_file.inc
+  )
+endif()
+
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_VIDEO_AP1302 ap1302.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_ARDUCAM_MEGA video_arducam_mega.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_EMUL_IMAGER video_emul_imager.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_EMUL_RX video_emul_rx.c)
