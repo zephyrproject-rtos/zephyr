@@ -14,13 +14,21 @@
 LOG_MODULE_REGISTER(main);
 
 #define LED_DELAY_MS    500
-#define ON_OFF_DELAY_MS 1000
+#define ON_OFF_DELAY_MS 125
 
 #define NUM_LEDS 16
 
 int main(void)
 {
 	static const struct device *dev = DEVICE_DT_GET_ANY(sct_sct2024);
+	const uint8_t channels_on[NUM_LEDS] = {255, 255, 255, 255,
+		255, 255, 255, 255,
+		255, 255, 255, 255,
+		255, 255, 255, 255};
+	const uint8_t channels_off[NUM_LEDS] = {0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 0, 0};
 
 	if (!dev) {
 		LOG_ERR("No SCT2024 LED controller found");
@@ -40,6 +48,14 @@ int main(void)
 			k_msleep(LED_DELAY_MS);
 		}
 
+		led_write_channels(dev, 0, NUM_LEDS, channels_off);
+		k_msleep(ON_OFF_DELAY_MS);
+		led_write_channels(dev, 0, NUM_LEDS, channels_on);
+		k_msleep(ON_OFF_DELAY_MS);
+		led_write_channels(dev, 0, NUM_LEDS, channels_off);
+		k_msleep(ON_OFF_DELAY_MS);
+		led_write_channels(dev, 0, NUM_LEDS, channels_on);
+
 		k_msleep(ON_OFF_DELAY_MS);
 
 		for (int i = 0; i < NUM_LEDS; i++) {
@@ -48,6 +64,14 @@ int main(void)
 			}
 			k_msleep(LED_DELAY_MS);
 		}
+
+		led_write_channels(dev, 0, NUM_LEDS, channels_on);
+		k_msleep(ON_OFF_DELAY_MS);
+		led_write_channels(dev, 0, NUM_LEDS, channels_off);
+		k_msleep(ON_OFF_DELAY_MS);
+		led_write_channels(dev, 0, NUM_LEDS, channels_on);
+		k_msleep(ON_OFF_DELAY_MS);
+		led_write_channels(dev, 0, NUM_LEDS, channels_off);
 
 		k_msleep(ON_OFF_DELAY_MS);
 	} while (true);

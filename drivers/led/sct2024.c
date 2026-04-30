@@ -15,6 +15,7 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/math_extras.h>
 
 LOG_MODULE_REGISTER(sct2024, CONFIG_LED_LOG_LEVEL);
 
@@ -146,6 +147,10 @@ static int sct2024_set_brightness(const struct device *dev, uint32_t led, uint8_
 		return led_index;
 	}
 
+	/* Max led_index being within the bitmap size is checked in
+	 * BUILD_ASSERT in SCT2024_ASSERT_LED_INFO_INDEX_IN_RANGE.
+	 */
+
 	if (value > 0) {
 		data->led_bitmap[led_index / 16] |= BIT(led_index % 16);
 	} else {
@@ -155,9 +160,57 @@ static int sct2024_set_brightness(const struct device *dev, uint32_t led, uint8_
 	return sct2024_write(dev);
 }
 
+static int sct2024_led_write_channels(const struct device *dev, uint32_t start_channel,
+				      uint32_t num_channels, const uint8_t *brightness_values)
+{
+	struct sct2024_data *data = dev->data;
+	uint16_t led_bitmap[SCT2024_MAX_CHAIN_LENGTH];
+	const size_t led_bitmap_size = MIN(sizeof(led_bitmap), sizeof(data->led_bitmap));
+	int ret = 0;
+
+	/* start_channel + num_channels overflow would be detected by invalid channel number passed
+	 * to sct2024_get_led_index() below. There is no need to make an additional check.
+	 */
+
+	memcpy(led_bitmap, data->led_bitmap, led_bitmap_size);
+
+	for (uint32_t i = 0; i < num_channels; i++) {
+		int led_index = sct2024_get_led_index(dev, start_channel + i);
+		uint32_t mask_index;
+		uint8_t bit_index;
+
+		if (led_index < 0) {
+			LOG_ERR("Invalid LED index for channel %u", start_channel + i);
+			ret = led_index;
+			continue;
+		}
+
+		/* Max led_index being within the bitmap size is checked in
+		 * BUILD_ASSERT in SCT2024_ASSERT_LED_INFO_INDEX_IN_RANGE.
+		 */
+
+		mask_index = led_index / 16;
+		bit_index = led_index % 16;
+
+		if (brightness_values[i] > 0) {
+			led_bitmap[mask_index] |= BIT(bit_index);
+		} else {
+			led_bitmap[mask_index] &= ~BIT(bit_index);
+		}
+	}
+
+	if (ret == 0) {
+		memcpy(data->led_bitmap, led_bitmap, led_bitmap_size);
+		ret = sct2024_write(dev);
+	}
+
+	return ret;
+}
+
 static DEVICE_API(led, sct2024_led_api) = {
 	.get_info = sct2024_get_info,
 	.set_brightness = sct2024_set_brightness,
+	.write_channels = sct2024_led_write_channels,
 };
 
 static int sct2024_init(const struct device *dev)
@@ -207,11 +260,16 @@ static bool sct2024_is_oe_pin_defined(const struct device *dev)
 		.label = DT_PROP_OR(child, label, NULL), \
 	},
 
+#define SCT2024_ASSERT_LED_INFO_INDEX_IN_RANGE(child) \
+	BUILD_ASSERT(DT_PROP(child, index) < SCT2024_MAX_CHAIN_LENGTH * SCT2024_LED_COUNT, \
+		     "LED index out of range");
+
 #define SCT2024_INIT(inst) \
 	static struct sct2024_data sct2024_data_##inst; \
 	static const struct led_info sct2024_leds_##inst[] = { \
 		DT_INST_FOREACH_CHILD(inst, SCT2024_LED_INFO_INIT) \
 	}; \
+	DT_INST_FOREACH_CHILD(inst, SCT2024_ASSERT_LED_INFO_INDEX_IN_RANGE); \
 	static const struct sct2024_cfg sct2024_cfg_##inst = { \
 		.spi = SPI_DT_SPEC_INST_GET(inst, \
 			SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB), \
