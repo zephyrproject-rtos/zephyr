@@ -166,7 +166,7 @@ void lll_conn_prepare_reset(void)
 /* NOTE: Coded PHY S8 coding of 251 byte PDU at 7.5 ms connection interval need up to 4 events
  *       to be skipped due to large connection event length.
  */
-#define CENTRAL_TRX_BUSY_ITERATION_MAX MIN(4U, (EVENT_DEFER_MAX))
+#define CENTRAL_TRX_BUSY_ITERATION_MAX 4U
 
 int lll_conn_central_is_abort_cb(void *next, void *curr,
 				 lll_prepare_cb_t *resume_cb)
@@ -200,7 +200,7 @@ int lll_conn_central_is_abort_cb(void *next, void *curr,
 /* NOTE: Coded PHY S8 coding of 251 byte PDU at 7.5 ms connection interval need up to 4 events
  *       to be skipped due to large connection event length.
  */
-#define PERIPHERAL_TRX_BUSY_ITERATION_MAX MIN(4U, (EVENT_DEFER_MAX))
+#define PERIPHERAL_TRX_BUSY_ITERATION_MAX 4U
 
 int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
 				    lll_prepare_cb_t *resume_cb)
