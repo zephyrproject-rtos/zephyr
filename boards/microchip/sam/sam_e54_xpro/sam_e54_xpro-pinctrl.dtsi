@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -83,6 +83,26 @@
 	dac_default: dac_default {
 		group1 {
 			pinmux = <PA2B_DAC_VOUT0>;
+		};
+	};
+
+	mdio_default: mdio_default {
+		group1 {
+			pinmux = <PC11L_GMAC_GMDC>,
+				 <PC12L_GMAC_GMDIO>;
+		};
+	};
+
+	gmac_rmii: gmac_rmii {
+		group1 {
+			pinmux = <PA14L_GMAC_GTXCK>,
+				 <PA17L_GMAC_GTXEN>,
+				 <PA18L_GMAC_GTX0>,
+				 <PA19L_GMAC_GTX1>,
+				 <PC20L_GMAC_GRXDV>,
+				 <PA13L_GMAC_GRX0>,
+				 <PA12L_GMAC_GRX1>,
+				 <PA15L_GMAC_GRXER>;
 		};
 	};
 };
