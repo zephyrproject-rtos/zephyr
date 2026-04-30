@@ -129,7 +129,8 @@ static void populate_bearers(struct bt_ccp_call_control_client *client,
 
 #if defined(CONFIG_BT_TBS_CLIENT_GTBS)
 	if (client->bearers[i].discovered) {
-		bearers->gtbs_bearer = &client->bearers[i++];
+		bearers->gtbs_bearer = &client->bearers[i];
+		i++;
 	}
 #endif /* CONFIG_BT_TBS_CLIENT_GTBS */
 
@@ -139,7 +140,8 @@ static void populate_bearers(struct bt_ccp_call_control_client *client,
 			break;
 		}
 
-		bearers->tbs_bearers[bearers->tbs_count++] = &client->bearers[i];
+		bearers->tbs_bearers[bearers->tbs_count] = &client->bearers[i];
+		bearers->tbs_count++;
 	}
 #endif /* CONFIG_BT_TBS_CLIENT_TBS */
 }

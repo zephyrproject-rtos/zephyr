@@ -79,7 +79,8 @@ static bool unicast_group_foreach_stream_cb(struct bt_cap_stream *cap_stream, vo
 		/* Only consider sink streams for handover to broadcast */
 		if (ep_info.state == BT_BAP_EP_STATE_STREAMING &&
 		    ep_info.dir == BT_AUDIO_DIR_SINK) {
-			data->active_sink_streams[data->active_sink_streams_cnt++] = cap_stream;
+			data->active_sink_streams[data->active_sink_streams_cnt] = cap_stream;
+			data->active_sink_streams_cnt++;
 		}
 	}
 

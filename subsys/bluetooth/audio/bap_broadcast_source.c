@@ -1131,7 +1131,8 @@ int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source, struct
 			struct bt_bap_ep *ep = stream->ep;
 			struct bt_iso_chan_io_qos *iso_qos = ep->iso->chan.qos->tx;
 
-			bis[bis_count++] = bt_bap_stream_iso_chan_get(stream);
+			bis[bis_count] = bt_bap_stream_iso_chan_get(stream);
+			bis_count++;
 
 			bt_bap_qos_cfg_to_iso_qos(iso_qos, &ep->qos);
 

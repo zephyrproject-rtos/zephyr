@@ -134,9 +134,11 @@ static int ltv_set_val(struct net_buf_simple *buf, uint8_t type, const uint8_t *
 	size_t new_buf_len;
 
 	for (uint16_t i = 0U; i < buf->len;) {
-		uint8_t *len = &buf->data[i++];
-		const uint8_t data_type = buf->data[i++];
+		uint8_t *len = &buf->data[i];
+		const uint8_t data_type = buf->data[i + 1U];
 		const uint8_t value_len = *len - sizeof(data_type);
+
+		i += 2U;
 
 		if (data_type == type) {
 			uint8_t *value = &buf->data[i];
@@ -218,9 +220,11 @@ static int ltv_unset_val(struct net_buf_simple *buf, uint8_t type)
 {
 	for (uint16_t i = 0U; i < buf->len;) {
 		uint8_t *ltv_start = &buf->data[i];
-		const uint8_t len = buf->data[i++];
-		const uint8_t data_type = buf->data[i++];
+		const uint8_t len = buf->data[i];
+		const uint8_t data_type = buf->data[i + 1U];
 		const uint8_t value_len = len - sizeof(data_type);
+
+		i += 2U;
 
 		if (data_type == type) {
 			const uint8_t ltv_size = value_len + sizeof(data_type) + sizeof(len);
