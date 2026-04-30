@@ -65,13 +65,6 @@ buffer data from which the user can read without making a verbatim
 copy, and :c:func:`ring_buf_consume` signals the buffer with how many
 bytes have been consumed and allows for a new transfer to begin.
 
-The legacy :c:func:`ring_buf_put_claim` / :c:func:`ring_buf_put_finish` and
-:c:func:`ring_buf_get_claim` / :c:func:`ring_buf_get_finish` APIs provide
-similar functionality but reserve the claimed region until finished, which
-incurs additional code size and runtime cost. These APIs are deprecated
-and will be removed in a future release; new code should use the
-``_ptr`` / ``_commit`` / ``_consume`` variants described above.
-
 The user can manage the capacity of a ring buffer without modifying it
 using either :c:func:`ring_buf_space_get` which returns the number of free bytes,
 or by testing the :c:func:`ring_buf_is_empty` predicate.
@@ -138,12 +131,18 @@ set of "head" and "tail" indices representing where the next read and write
 operations may occur.
 
 This boundary is invisible to the user using the normal put/get APIs,
-but becomes a barrier to the "claim" API, because obviously no
-contiguous region can be returned that crosses the end of the buffer.
-This can be surprising to application code, and produce performance
-artifacts when transfers need to happen close to the end of the
-buffer, as the number of calls to claim/finish needs to double for such
-transfers.
+but becomes visible to the zero-copy ``_ptr`` API, because no contiguous
+region can be returned that crosses the end of the buffer. The size
+returned by :c:func:`ring_buf_put_ptr` and :c:func:`ring_buf_get_ptr` may
+therefore be smaller than the total free space or available data; in that
+case a second call after the matching :c:func:`ring_buf_commit` /
+:c:func:`ring_buf_consume` will return the remainder from the start of
+the buffer.
+
+The ring buffer is implemented as a header-only library. Index wrap-around
+is handled with explicit comparisons (no ``%`` operator), and an internal
+``full`` flag disambiguates the empty and full states without sacrificing
+buffer capacity. This avoids hardware-divide latency on all targets.
 
 
 Implementation
@@ -246,7 +245,9 @@ Configuration Options
 
 Related configuration options:
 
-* :kconfig:option:`CONFIG_RING_BUFFER`: Enable ring buffer.
+* :kconfig:option:`CONFIG_RING_BUFFER_LARGE`: Increase the maximum buffer
+  size from 64 KiB to 4 GiB. When enabled the per-instance ring buffer
+  indices grow from 16 to 32 bits.
 
 API Reference
 *************
