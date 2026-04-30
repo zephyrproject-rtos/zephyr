@@ -585,6 +585,8 @@ static int airoc_mgmt_connect(const struct device *dev, struct wifi_connect_req_
 	whd_scan_result_t usr_result = {0};
 	/* Try to scan ssid to define security */
 	whd_scan_result_t tmp_result = {0};
+	const uint8_t *security_key;
+	uint8_t key_length;
 
 	if (k_sem_take(&data->sema_common, K_MSEC(AIROC_WIFI_WAIT_SEMA_MS)) != 0) {
 		return -EAGAIN;
@@ -635,9 +637,17 @@ static int airoc_mgmt_connect(const struct device *dev, struct wifi_connect_req_
 		goto error;
 	}
 
+	if (usr_result.security == WHD_SECURITY_WPA3_SAE) {
+		security_key = params->sae_password;
+		key_length = params->sae_password_length;
+	} else {
+		security_key = params->psk;
+		key_length = params->psk_length;
+	}
+
 	/* Connect to the network */
-	if (whd_wifi_join(airoc_sta_if, &usr_result.SSID, usr_result.security, params->psk,
-			  params->psk_length) != WHD_SUCCESS) {
+	if (whd_wifi_join(airoc_sta_if, &usr_result.SSID, usr_result.security,
+			  security_key, key_length) != WHD_SUCCESS) {
 		LOG_ERR("Failed to connect with network");
 
 		ret = -EAGAIN;
