@@ -4,3 +4,5 @@ board:
   vendor: raspberrypi
   socs:
   - name: bcm2712
+    variants:
+    - name: 'swd'

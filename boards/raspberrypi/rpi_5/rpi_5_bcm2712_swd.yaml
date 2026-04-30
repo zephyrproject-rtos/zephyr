@@ -1,0 +1,7 @@
+identifier: rpi_5/bcm2712/swd
+name: Raspberry Pi 5 SWD-enabled
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
