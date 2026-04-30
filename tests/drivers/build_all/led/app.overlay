@@ -200,6 +200,16 @@
 				compatible = "nxp,pca9533";
 				reg = <0x15>;
 			};
+
+			lp5860@18 {
+				compatible = "ti,lp5860";
+				reg = <0x18>;
+			};
+
+			lp5866@1c {
+				compatible = "ti,lp5866";
+				reg = <0x1c>;
+			};
 		};
 
 		test_pwm: pwm@12341234 {

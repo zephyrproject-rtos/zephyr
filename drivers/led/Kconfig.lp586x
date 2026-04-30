@@ -1,0 +1,11 @@
+# Copyright (c) 2026 ChargePoint, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config LP586X
+	bool "LP586x family LED matrix driver"
+	default y
+	depends on DT_HAS_TI_LP5860_ENABLED || DT_HAS_TI_LP5866_ENABLED
+	select I2C
+	help
+	  Enable LED driver for the Texas Instruments LP586x family LED matrix
+	  controllers. It supports: LP5860 and LP5866 in I2C mode only.
