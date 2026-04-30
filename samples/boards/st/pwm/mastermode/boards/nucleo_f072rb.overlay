@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Matthias Plöger <matze.ploeger@gmx.de>
+ * Copyright (c) 2026 Matthias Plöger <matze.ploeger@gmx.de>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,7 @@
 
 / {
 	zephyr,user {
-		pwms = <&pwm3 1 PWM_USEC(400) PWM_POLARITY_NORMAL>;
+		pwms = <&pwm3 3 PWM_USEC(400) PWM_POLARITY_NORMAL>;
 	};
 };
 
@@ -30,12 +30,19 @@
 };
 
 &timers3 {
+	status = "okay";
 	/**
 	 * Configure TIM3 to be reset every time TIM1 overflows.
-	 * Select TIM1 TRGO signal as input (= ITR0). Refer to RM0091 Rev.10
-	 * table 73 "TIM3 internal trigger connection" for details.
+	 * Select TIM1 TRGO signal as input (= ITR0). Refer to RM0454 Rev.5
+	 * table 66 "TIM2 and TIM3 internal trigger connection" for details.
 	 */
 	st,countermode = <STM32_TIM_COUNTERMODE_UP>;
 	st,slavemode = "reset";
 	st,trigger-selection = "ITR0";
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch3_pc8>;
+		pinctrl-names = "default";
+	};
 };
