@@ -367,6 +367,17 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
+#ifdef CONFIG_COUNTER_MCUX_SYSCTR
+#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_SYSCTR_BASE_CLK:
+		*rate = MHZ(24);
+		return 0;
+	case IMX_CCM_SYSCTR_SLOW_CLK:
+		*rate = 32768U;
+		return 0;
+#endif
+#endif
+
 	default:
 		return -EINVAL;
 	}

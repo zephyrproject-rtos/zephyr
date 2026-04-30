@@ -83,3 +83,11 @@
 	compatible = "nxp,tpm-timer";
 	status = "okay";
 };
+
+&gpt2 {
+	run-mode = "free-run";
+};
+
+&sys_ctr {
+	status = "okay";
+};

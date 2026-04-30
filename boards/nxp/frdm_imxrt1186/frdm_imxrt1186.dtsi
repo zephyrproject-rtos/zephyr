@@ -283,3 +283,7 @@
 	pinctrl-0 = <&pinmux_flexpwm3>;
 	pinctrl-names = "default";
 };
+
+&sys_ctr {
+	status = "okay";
+};
