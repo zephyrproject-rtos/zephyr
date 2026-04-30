@@ -241,7 +241,7 @@ static inline bool is_center_aligned(const uint32_t ll_countermode)
 
 static void ll_tim_set_trigger_output(TIM_TypeDef *timer, uint32_t mode)
 {
-#if HAS_MASTERMODE_SUPPORT
+#if HAS_MASTERMODE_SUPPORT == 1
 	LL_TIM_SetTriggerOutput(timer, mode);
 #else
 	ARG_UNUSED(timer);
@@ -345,7 +345,6 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 		LL_TIM_OC_SetIdleState(timer, current_ll_channel, STM32_TIM_OCIDLESTATE_RESET);
 #endif
 		LL_TIM_CC_EnableChannel(timer, current_ll_channel);
-		LL_TIM_EnableARRPreload(timer);
 		/* in LL_TIM_OC_EnablePreload, the channel is always the non-complementary */
 		LL_TIM_OC_EnablePreload(timer, ll_channel);
 		LL_TIM_GenerateEvent_UPDATE(timer);
@@ -452,7 +451,6 @@ static int pwm_stm32_configure_capture(const struct device *dev,
 		LL_TIM_SetSlaveMode(timer, LL_TIM_SLAVEMODE_RESET);
 	}
 
-	LL_TIM_EnableARRPreload(timer);
 	if (!IS_TIM_32B_COUNTER_INSTANCE(timer)) {
 		LL_TIM_SetAutoReload(timer, 0xffffu);
 	} else {
@@ -529,7 +527,12 @@ static int pwm_stm32_disable_capture(const struct device *dev, uint32_t channel)
 		}
 	}
 
-	LL_TIM_SetUpdateSource(timer, LL_TIM_UPDATESOURCE_REGULAR);
+	/* Preventing desynchronization between master and slave instances
+	 * triggered by software update events (LL_TIM_GenerateEvent_UPDATE) during reconfiguration
+	 */
+	if (cfg->mastermode != LL_TIM_TRGO_UPDATE || !is_center_aligned(cfg->countermode)) {
+		LL_TIM_SetUpdateSource(timer, LL_TIM_UPDATESOURCE_REGULAR);
+	}
 
 	disable_capture_interrupt[channel - 1](timer);
 
@@ -716,6 +719,7 @@ static int pwm_stm32_init(const struct device *dev)
 	/* initialize timer */
 	LL_TIM_SetPrescaler(timer, cfg->prescaler);
 	LL_TIM_SetAutoReload(timer, 0U);
+	LL_TIM_EnableARRPreload(timer);
 
 	if (IS_TIM_COUNTER_MODE_SELECT_INSTANCE(timer)) {
 		LL_TIM_SetCounterMode(timer, cfg->countermode);
@@ -732,6 +736,13 @@ static int pwm_stm32_init(const struct device *dev)
 #endif
 
 	if (IS_TIM_MASTER_INSTANCE(timer)) {
+		/* Preventing desynchronization between master and slave instances
+		 * triggered by software update events (LL_TIM_GenerateEvent_UPDATE) during
+		 * reconfiguration
+		 */
+		if (cfg->mastermode == LL_TIM_TRGO_UPDATE && is_center_aligned(cfg->countermode)) {
+			LL_TIM_SetUpdateSource(timer, LL_TIM_UPDATESOURCE_COUNTER);
+		}
 		ll_tim_set_trigger_output(timer, cfg->mastermode);
 	} else {
 		if (cfg->mastermode != 0) {
