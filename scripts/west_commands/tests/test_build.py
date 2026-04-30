@@ -177,6 +177,56 @@ def test_cmake_args(monkeypatch, test_case):
     b._run_cmake(board='any', origin=None)
 
 
+def test_test_item_updates_source_dir(tmp_path, monkeypatch):
+    """Test: _resolve_test_item sets source_dir from test path, not CWD."""
+    sample_dir = tmp_path / 'samples' / 'app'
+    sample_dir.mkdir(parents=True)
+
+    sample_yaml = sample_dir / 'sample.yaml'
+    sample_yaml.write_text(
+        'sample:\n'
+        '  name: test\n'
+        'tests:\n'
+        '  sample.test:\n'
+        '    sysbuild: true\n'
+        '    build_only: true\n'
+        '    platform_allow: native_sim\n'
+    )
+
+    b = Build()
+
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    subparser = parser.add_subparsers()
+    command_parser = b.do_add_parser(subparser)
+
+    test_item = str(sample_dir / 'sample.test')
+    b.args, remainder = command_parser.parse_known_args(
+        ['-b', 'native_sim', '-T', test_item]
+    )
+    b._parse_remainder(remainder)
+
+    b.source_dir = os.getcwd()
+    b.args.cmake_opts = getattr(b.args, 'cmake_opts', [])
+
+    b._resolve_test_item('native_sim')
+
+    assert Path(b.source_dir) == sample_dir
+    assert b.args.sysbuild is True
+
+    captured_env = {}
+
+    def run_cmake_mock(final_cmake_args, dry_run, env):
+        captured_env.update(env or {})
+
+    monkeypatch.setattr('build.run_cmake', run_cmake_mock)
+    monkeypatch.setattr(b, '_banner', lambda _: True)
+    b.run_cmake = True
+    b.build_dir = str(tmp_path / 'build')
+
+    b._run_cmake(board='native_sim', origin=None)
+    assert captured_env.get('APP_DIR') == str(sample_dir)
+
+
 cwd = Path(os.getcwd())
 
 DEFAULT_ARGS = Namespace(

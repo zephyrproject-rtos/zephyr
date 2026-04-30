@@ -8,9 +8,6 @@ import subprocess
 import sys
 import time
 
-import usb.core
-import usb.util
-
 from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 RTS_STANDARD_REQUEST = 0x0
@@ -25,6 +22,8 @@ RTS_VREQ_XMEM_READ = 0x41
 
 class RtsUsb:
     def __init__(self, device=None):
+        import usb.core
+
         if not device:
             idvendor = 0x0BDA
             idproduct = 0x5817
@@ -39,6 +38,8 @@ class RtsUsb:
         self.get_mode()
 
     def __del__(self):
+        import usb.util
+
         usb.util.dispose_resources(self.dev)
 
     def enable_download(self):
