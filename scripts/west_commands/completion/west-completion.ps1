@@ -12,6 +12,13 @@ $s = {
         }
     }
 
+    function Get-MatchingSnippets {
+        param($wordToComplete)
+        west snippets --format='{name}' | Out-String | ForEach-Object {
+             $_ -split '\r?\n' | Where-Object { $_ -CMatch "^$wordToComplete.*" } | Sort-Object
+        }
+    }
+
     $commandDecider = (($commandAst -split ' ') | Select-Object -First 2 -ExpandProperty $_) -join ' '
     if ($commandDecider -eq 'west build') {
 
@@ -20,6 +27,9 @@ $s = {
         if ($argDecider -contains '-b' -or $argDecider -contains '--board') {
             $boardsFound = Get-MatchingBoards -wordToComplete $wordToComplete
             $output = $boardsFound
+        } elseif ($argDecider -contains '-S' -or $argDecider -contains '--snippet') {
+            $snippetsFound = Get-MatchingSnippets -wordToComplete $wordToComplete
+            $output = $snippetsFound
         } else {
             # Fallback to default behavior of suggesting files in the current directory
             $output = (Get-NexusRepository).Name

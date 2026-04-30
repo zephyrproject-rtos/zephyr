@@ -1,4 +1,7 @@
 name: nordic-flpr-xip
+description: |
+  Boots Nordic FLPR (Fast Lightweight Peripheral Processor) from application
+  core, executing in place from RRAM.
 append:
   EXTRA_DTC_OVERLAY_FILE: nordic-flpr-xip.overlay
 
