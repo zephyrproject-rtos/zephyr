@@ -57,6 +57,63 @@ struct lpspi_data {
 	uint32_t clock_freq;
 };
 
+/* Common helper function to enable or disable the LPSPI module while
+ * taking into account ERR051472
+ */
+static inline void lpspi_enable(LPSPI_Type *base, bool enable)
+{
+	if (enable) {
+		base->CR |= LPSPI_CR_MEN_MASK;
+	} else {
+		base->CR &= ~LPSPI_CR_MEN_MASK;
+		while ((base->CR & LPSPI_CR_MEN_MASK) != 0) {
+			/* According to datasheet, should wait for this MEN bit
+			 * to clear once idle.
+			 */
+		}
+	}
+#if defined(FSL_FEATURE_LPSPI_HAS_ERRATA_051472) && FSL_FEATURE_LPSPI_HAS_ERRATA_051472
+	/*
+	 * ERR051472: The SR[REF] would assert if software disables the LPSPI module
+	 * after receiving some data and then enabled the LPSPI again without performing
+	 * a software reset.
+	 * Workaround: Clear SR[REF] flag after LPSPI module enabled
+	 */
+	if ((base->SR & LPSPI_SR_REF_MASK) != 0U) {
+		base->SR = LPSPI_SR_REF_MASK;
+	}
+#endif /* FSL_FEATURE_LPSPI_HAS_ERRATA_051472 */
+}
+
+/*
+ * Avoid register reading problems: Reading the Transmit Command Register will return
+ * the current state of the command register. Reading the Transmit Command Register at the
+ * same time that the Transmit Command Register is loaded from the transmit FIFO, can
+ * return an incorrect Transmit Command Register value. It is recommended:
+ * - to either read the Transmit Command Register when the transmit FIFO is empty,
+ * - or to read the Transmit Command Register more than once and then compare the
+ *   returned values.
+ */
+static inline uint32_t lpspi_read_tcr(LPSPI_Type *base)
+{
+	uint32_t tcr_values[2];
+	uint32_t i = 0u;
+
+	tcr_values[0] = base->TCR;
+	do {
+		i = (i + 1u) % 2u;
+		/* ERR050606 LPSPI: TCR value does not get resampled when polling the
+		 * register.
+		 * Workaround: After reading the Transmit Command Register must always
+		 * access a different register in between subsequent reads from TCR.
+		 */
+		(void)base->SR;
+		tcr_values[i] = base->TCR;
+	} while (tcr_values[0] != tcr_values[1]);
+
+	return tcr_values[0];
+}
+
 /* Common helper functions used to interact with LPSPI FIFOs (TX and RX) when dealing
  * with cpu-based implementation.
  */

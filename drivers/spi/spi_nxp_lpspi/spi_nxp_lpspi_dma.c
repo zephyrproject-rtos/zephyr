@@ -80,7 +80,7 @@ static void spi_mcux_issue_TCR(const struct device *dev)
 	 * On a newer LPSPI version, only issue TCR when hold on CS feature is disabled.
 	 */
 	if (major_ver < 2 || !(spi_cfg->operation & SPI_HOLD_ON_CS)) {
-		base->TCR &= ~LPSPI_TCR_CONTC_MASK;
+		base->TCR = lpspi_read_tcr(base) & ~LPSPI_TCR_CONTC_MASK;
 	}
 }
 
@@ -320,7 +320,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 	}
 
 	/* Always use continuous mode to satisfy SPI API requirements. */
-	base->TCR |= LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK;
+	base->TCR = lpspi_read_tcr(base) | LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK;
 
 	/* Please set both watermarks as 0 because there are some synchronize requirements
 	 * between RX and TX on RT platform. TX and RX DMA callback must be called in interleaved

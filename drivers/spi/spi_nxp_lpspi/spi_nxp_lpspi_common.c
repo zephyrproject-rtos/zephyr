@@ -322,12 +322,10 @@ int lpspi_configure(const struct device *dev, const struct spi_config *spi_cfg)
 	/* this is workaround for ERR050456 */
 	base->CR |= LPSPI_CR_RST_MASK;
 	base->CR |= LPSPI_CR_RRF_MASK | LPSPI_CR_RTF_MASK;
+	base->CR = 0;
 
 	/* Setting the baud rate requires module to be disabled. */
-	base->CR = 0;
-	while ((base->CR & LPSPI_CR_MEN_MASK) != 0) {
-		/* According to datasheet, should wait for this MEN bit to clear once idle */
-	}
+	lpspi_enable(base, false);
 
 	data->ctx.config = spi_cfg;
 
@@ -336,10 +334,17 @@ int lpspi_configure(const struct device *dev, const struct spi_config *spi_cfg)
 	clock_freq = data->clock_freq;
 
 	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_MASTER) {
+		uint32_t desired_sck_freq =
+			MIN(spi_cfg->frequency, CONFIG_SPI_NXP_LPSPI_MAX_SCK_FREQUENCY);
 		uint32_t ccr = 0;
 
+		if (spi_cfg->frequency > CONFIG_SPI_NXP_LPSPI_MAX_SCK_FREQUENCY) {
+			LOG_WRN("Requested frequency %d is higher than maximum %d, capping to max",
+				spi_cfg->frequency, CONFIG_SPI_NXP_LPSPI_MAX_SCK_FREQUENCY);
+		}
+
 		/* sckdiv algorithm must run *before* delays are set in order to know prescaler */
-		ccr |= lpspi_set_sckdiv(spi_cfg->frequency, clock_freq, &prescaler);
+		ccr |= lpspi_set_sckdiv(desired_sck_freq, clock_freq, &prescaler);
 		ccr |= lpspi_set_delays(dev, spi_cfg, clock_freq / TWO_EXP(prescaler));
 
 		/* note that not all bits of the register are readable on some platform,
@@ -348,7 +353,7 @@ int lpspi_configure(const struct device *dev, const struct spi_config *spi_cfg)
 		base->CCR = ccr;
 	}
 
-	base->CR |= LPSPI_CR_MEN_MASK;
+	lpspi_enable(base, true);
 
 	base->TCR = LPSPI_TCR_CPOL(!!(spi_cfg->operation & SPI_MODE_CPOL)) |
 		    LPSPI_TCR_CPHA(!!(spi_cfg->operation & SPI_MODE_CPHA)) |

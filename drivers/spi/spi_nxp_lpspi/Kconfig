@@ -12,6 +12,17 @@ config SPI_NXP_LPSPI
 
 if SPI_NXP_LPSPI
 
+config SPI_NXP_LPSPI_MAX_SCK_FREQUENCY
+	int "Maximum SPI SCK frequency in Hz"
+	default 60000000 if SOC_SERIES_IMXRT118X
+	default 30000000
+	help
+	  This option specifies the maximum SPI SCK clock frequency that
+	  the hardware supports. The default value of 30MHz is a common
+	  maximum frequency for many LPSPI peripherals, but the actual
+	  maximum frequency may vary depending on the specific LPSPI
+	  instance and the SoC.
+
 config SPI_NXP_LPSPI_DMA
 	bool "NXP LPSPI DMA-based Driver"
 	default y
