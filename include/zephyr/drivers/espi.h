@@ -219,6 +219,12 @@ enum espi_virtual_peripheral {
 	 */
 	ESPI_PERIPHERAL_EC_HOST_CMD,
 #endif /* CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD */
+#if defined(CONFIG_ESPI_PERIPHERAL_MAILBOX)
+	/** Host to EC mailbox peripheral */
+	ESPI_PERIPHERAL_MAILBOX,
+#endif
+	/** Maximum value of this enum */
+	ESPI_PERIPHERAL_MAX,
 };
 
 /**
@@ -376,6 +382,18 @@ enum lpc_peripheral_opcode {
 	 * @kconfig_dep{CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE}
 	 */
 	ECUSTOM_HOST_CMD_SEND_RESULT,
+
+	/**
+	 * Get all mailbox data written by the Host
+	 * @kconfig_dep{CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE}
+	 */
+	ECUSTOM_HOST_CMD_GET_MAILBOX_DATA,
+
+	/**
+	 * Set all mailbox data for Host to read
+	 * @kconfig_dep{CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE}
+	 */
+	ECUSTOM_HOST_CMD_SET_MAILBOX_DATA,
 #endif /* CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE */
 };
 
@@ -416,6 +434,13 @@ struct espi_evt_data_acpi {
 	uint32_t reserved: 16;
 };
 
+/** ACPI event: Input Buffer Full. Host wrote a data register */
+#define ESPI_EVENT_DATA_ACPI_TYPE_HOST_TO_EC_DATA    0
+/** ACPI event: Input Buffer Full. Host wrote command register */
+#define ESPI_EVENT_DATA_ACPI_TYPE_HOST_TO_EC_CMD     1U
+/** ACPI event: Output Buffer Empty: Host read data EC put in EC-to-Host register */
+#define ESPI_EVENT_DATA_ACPI_TYPE_HOST_RD_EC_TO_HOST 2U
+
 /**
  * @brief Event data format for Private Channel (PVT) events.
  *
@@ -430,6 +455,13 @@ struct espi_evt_data_pvt {
 	/** Reserved field for future use */
 	uint32_t reserved: 16;
 };
+
+/** Private event: Input Buffer Full. Host wrote a data register */
+#define ESPI_EVENT_DATA_PVT_TYPE_HOST_TO_EC_DATA    0
+/** Private event: Input Buffer Full. Host wrote command register */
+#define ESPI_EVENT_DATA_PVT_TYPE_HOST_TO_EC_CMD     1U
+/** Private event: Output Buffer Empty: Host read data EC put in EC-to-Host register */
+#define ESPI_EVENT_DATA_PVT_TYPE_HOST_RD_EC_TO_HOST 2U
 
 /**
  * @brief eSPI event
