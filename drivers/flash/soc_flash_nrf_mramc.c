@@ -8,7 +8,14 @@
 
 #include <zephyr/drivers/flash.h>
 #include <zephyr/logging/log.h>
+
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#include "tfm_ioctl_core_api.h"
+#include "tfm_platform_api.h"
+#else
 #include <nrfx_mramc.h>
+#endif
+
 #if defined(CONFIG_SOC_FLASH_NRF_MRAMC_FLUSH_CACHE)
 #include <zephyr/cache.h>
 #endif
@@ -17,49 +24,61 @@ LOG_MODULE_REGISTER(flash_nrf_mramc, CONFIG_FLASH_LOG_LEVEL);
 
 #define DT_DRV_COMPAT nordic_nrf_mramc
 
-#define _ADD_SIZE(node_id) + DT_REG_SIZE(node_id)
-#define _WBS(node_id)	   DT_PROP(node_id, write_block_size),
-#define _EBS(node_id)	   DT_PROP(node_id, erase_block_size),
+#define MRAM_NODE		  DT_CHILD(DT_DRV_INST(0), mram_0)
+#define MRAM_SIZE		  DT_REG_SIZE(MRAM_NODE)
+#define WRITE_BLOCK_SIZE  DT_PROP(MRAM_NODE, write_block_size)
+#define ERASE_BLOCK_SIZE  DT_PROP(MRAM_NODE, erase_block_size)
 
-#define MRAM_SIZE   (0 DT_INST_FOREACH_CHILD_STATUS_OKAY(0, _ADD_SIZE))
-#define ERASE_VALUE (uint8_t)NRFY_MRAMC_WORD_AFTER_ERASED
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#define ERASE_VALUE				   0xFFFFFFFF
+#define MRAMC_MIN_BYTES_DATA_WIDTH sizeof(uint32_t)
+#define MRAMC_CONFIG_WEN_DIRECT    2
+#define MRAMC_CONFIG_WEN_DISABLE   0
+#else
+#define ERASE_VALUE				   NRFY_MRAMC_WORD_AFTER_ERASED
+#define MRAMC_MIN_BYTES_DATA_WIDTH NRFY_MRAMC_BYTES_IN_WORD
+#endif
 
-/* Use DT_FOREACH_CHILD_STATUS_OKAY of mramc with _FIRST() helper
- * macro to get the write block size and erase block size from
- * the first child node.
- */
-#define WBS_LIST  DT_INST_FOREACH_CHILD_STATUS_OKAY(0, _WBS)
-#define EBS_LIST  DT_INST_FOREACH_CHILD_STATUS_OKAY(0, _EBS)
-
-#define _FIRST_HELPER(first, ...)  first
-#define _FIRST(...)  _FIRST_HELPER(__VA_ARGS__)
-
-#define WRITE_BLOCK_SIZE  _FIRST(WBS_LIST)
-#define ERASE_BLOCK_SIZE  _FIRST(EBS_LIST)
+#define MRAM_BASE DT_REG_ADDR(MRAM_NODE)
+#define MAP_TO_ADDR(offset) (MRAM_BASE + offset)
 
 BUILD_ASSERT((ERASE_BLOCK_SIZE % WRITE_BLOCK_SIZE) == 0,
 		 "erase-block-size expected to be a multiple of write-block-size");
 
 /**
- * @param[in] addr       Address of mram memory.
- * @param[in] len        Number of bytes for the intended operation.
+ * @param[in] addr		 Address of mram memory.
+ * @param[in] len		 Number of bytes for the intended operation.
  * @param[in] must_align Require MRAM word alignment, if applicable.
  *
  * @return true if the address and length are valid, false otherwise.
  */
 static bool validate_action(uint32_t addr, size_t len, bool must_align)
 {
-	if (!nrfx_mramc_valid_address_check(addr, true)) {
+	bool valid = true;
+
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	valid = (addr >= MRAM_BASE && addr < (MRAM_BASE + MRAM_SIZE));
+#else
+	valid = nrfx_mramc_valid_address_check(addr, true);
+#endif
+	if (!valid) {
 		LOG_ERR("Invalid address: %x", addr);
 		return false;
 	}
 
-	if (!nrfx_mramc_fits_memory_check(addr, true, len)) {
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	valid = (((addr - (uint32_t)MRAM_BASE) < MRAM_SIZE) &&
+		(len <= ((uint32_t)MRAM_BASE + MRAM_SIZE - addr)));
+#else
+	valid = nrfx_mramc_fits_memory_check(addr, true, len);
+#endif
+	if (!valid) {
 		LOG_ERR("Address %x with length %zu exceeds MRAM size", addr, len);
 		return false;
 	}
 
-	if (must_align && !(nrfx_is_word_aligned((void const *)addr))) {
+	if (must_align && (((addr % MRAMC_MIN_BYTES_DATA_WIDTH) != 0) ||
+		 ((len % MRAMC_MIN_BYTES_DATA_WIDTH) != 0))) {
 		LOG_ERR("Address %x is not word aligned", addr);
 		return false;
 	}
@@ -67,10 +86,45 @@ static bool validate_action(uint32_t addr, size_t len, bool must_align)
 	return true;
 }
 
+/**
+ * @brief Verifies the data written to MRAM.
+ *
+ * @param[in] addr	 Address of mram memory.
+ * @param[in] len	  Number of bytes for the intended operation.
+ * @param[in] is_erase Whether is verifying erase operation.
+ *
+ * @return true if the address and length are valid, false otherwise.
+ */
+static int nrf_mramc_verify_data(off_t offset, const void *data, size_t size, bool is_erase)
+{
+	uint32_t addr = MAP_TO_ADDR(offset);
+	uint32_t num_words = size / MRAMC_MIN_BYTES_DATA_WIDTH;
+
+	const uint32_t *mram = (const uint32_t *)addr;
+	const uint32_t *buf  = (const uint32_t *)data;
+
+	/* Compare and verify written data */
+	for (size_t i = 0; i < num_words; i++) {
+		uint32_t w = mram[i];
+
+		if (is_erase) {
+			if (w != ERASE_VALUE) {
+				return -EIO;
+			}
+		} else {
+			if (w != buf[i]) {
+				return -EIO;
+			}
+		}
+	}
+
+	return 0;
+}
+
 static int nrf_mramc_read(const struct device *dev, off_t offset, void *data, size_t len)
 {
 	ARG_UNUSED(dev);
-	uint32_t addr = NRFX_MRAMC_MAP_TO_ADDR(offset);
+	uint32_t addr = MAP_TO_ADDR(offset);
 
 	if (data == NULL) {
 		LOG_ERR("Data pointer is NULL");
@@ -84,17 +138,22 @@ static int nrf_mramc_read(const struct device *dev, off_t offset, void *data, si
 
 	LOG_DBG("read: %x:%zu", addr, len);
 
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	memcpy(data, (void *)addr, len);
+#else
 	/* Buffer read number of bytes and store in data pointer.
 	 */
 	nrfx_mramc_buffer_read(data, addr, len);
+#endif
 	return 0;
 }
 
 static int nrf_mramc_write(const struct device *dev, off_t offset,
-			 const void *data, size_t len)
+			 const void *data, size_t size)
 {
 	ARG_UNUSED(dev);
-	uint32_t addr = NRFX_MRAMC_MAP_TO_ADDR(offset);
+	uint32_t addr = MAP_TO_ADDR(offset);
+	uint8_t  retries = CONFIG_NRF_MRAMC_MAX_RETRIES;
 
 	if (data == NULL) {
 		LOG_ERR("Data pointer is NULL");
@@ -102,24 +161,46 @@ static int nrf_mramc_write(const struct device *dev, off_t offset,
 	}
 
 	/* Validate addr and length in the range */
-	if (!validate_action(addr, len, true)) {
+	if (!validate_action(addr, size, true)) {
 		return -EINVAL;
 	}
 
-	LOG_DBG("write: %x:%zu", addr, len);
+	LOG_DBG("write: %x:%zu", addr, size);
 
-	/* Words write function takes second argument as number of write blocks
-	 * and not number of bytes
-	 */
-	nrfx_mramc_words_write(addr, data, len / WRITE_BLOCK_SIZE);
+	while(retries--)
+	{
+		/* Words write function takes second argument as number of write blocks
+		 * and not number of bytes
+		 */
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+		tfm_platform_mramc_set_wen(MRAMC_CONFIG_WEN_DIRECT);
 
-	return 0;
+		for (size_t i = 0; i < size / MRAMC_MIN_BYTES_DATA_WIDTH; i ++) {
+			*(volatile uint32_t *)(addr + (i * MRAMC_MIN_BYTES_DATA_WIDTH)) = ((const uint32_t *)data)[i];
+		}
+
+		tfm_platform_mramc_set_wen(MRAMC_CONFIG_WEN_DISABLE);
+#else
+		nrfx_mramc_words_write(addr, data, size / MRAMC_MIN_BYTES_DATA_WIDTH);
+#endif
+
+		if (!nrf_mramc_verify_data(offset, data, size, false))
+		{
+			return 0;
+		}
+		LOG_ERR("MRAM write verification failed at address 0x%x, retrying... (%u retries "
+			"left)",
+			addr, retries);
+	}
+
+	return -EIO;
 }
 
 static int nrf_mramc_erase(const struct device *dev, off_t offset, size_t size)
 {
 	ARG_UNUSED(dev);
-	uint32_t addr = NRFX_MRAMC_MAP_TO_ADDR(offset);
+	uint32_t addr = MAP_TO_ADDR(offset);
+	uint8_t  retries = CONFIG_NRF_MRAMC_MAX_RETRIES;
 
 	/* Validate addr and length in the range */
 	if (size == 0) {
@@ -133,20 +214,45 @@ static int nrf_mramc_erase(const struct device *dev, off_t offset, size_t size)
 
 	LOG_DBG("erase: %p:%zu", (void *)addr, size);
 
-	/* Erase function takes second argument as number of write blocks
-	 * and not number of bytes
-	 */
-	nrfx_mramc_area_erase(addr, size / WRITE_BLOCK_SIZE);
-#if defined(CONFIG_SOC_FLASH_NRF_MRAMC_FLUSH_CACHE)
-	sys_cache_instr_invd_all();
+	while(retries--)
+	{
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+		/* Enabling direct write mode in MRAM through secure function */
+		tfm_platform_mramc_set_wen(MRAMC_CONFIG_WEN_DIRECT);
+		for (size_t i = 0; i < size / MRAMC_MIN_BYTES_DATA_WIDTH; i ++) {
+			*(uint32_t*) (addr + (i * MRAMC_MIN_BYTES_DATA_WIDTH)) = ERASE_VALUE;
+		}
+		tfm_platform_mramc_set_wen(MRAMC_CONFIG_WEN_DISABLE);
+#else
+		/* Erase function takes second argument as number of 32-bit words
+		 * and not number of bytes
+		 */
+		nrfx_mramc_erase(addr, size / MRAMC_MIN_BYTES_DATA_WIDTH);
 #endif
-	return 0;
+
+#if defined(CONFIG_SOC_FLASH_NRF_MRAMC_FLUSH_CACHE)
+		sys_cache_instr_invd_all();
+#endif
+		if (!nrf_mramc_verify_data(offset, NULL, size, true))
+		{
+			return 0;
+		}
+		LOG_ERR("MRAM Erase verification failed at address 0x%x, retrying... (%u retries "
+			"left)",
+			addr, retries);
+	}
+
+	return -EIO;
 }
 
 static int nrf_mramc_get_size(const struct device *dev, uint64_t *size)
 {
 	ARG_UNUSED(dev);
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	*size = MRAM_SIZE;
+#else
 	*size = nrfx_mramc_memory_size_get();
+#endif
 	return 0;
 }
 
@@ -156,7 +262,7 @@ static const struct flash_parameters *nrf_mramc_get_parameters(const struct devi
 
 	static const struct flash_parameters parameters = {
 		.write_block_size = WRITE_BLOCK_SIZE,
-		.erase_value = ERASE_VALUE,
+		.erase_value = (uint8_t) ERASE_VALUE,
 		.caps = {
 			.no_explicit_erase = true,
 		},
@@ -185,8 +291,20 @@ static int mramc_sys_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+	int ret = 0;
+
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	/* Initialization of MRAMC driver via secure processing environment */
+	enum tfm_platform_err_t status = tfm_platform_mramc_init();
+
+	if (status != TFM_PLATFORM_ERR_SUCCESS) {
+		LOG_ERR("Failed to initialize MRAMC via TF-M service: %d", status);
+		ret = -EIO;
+	}
+#else
 	nrfx_mramc_config_t config = NRFX_MRAMC_DEFAULT_CONFIG();
-	int ret = nrfx_mramc_init(&config, NULL);
+	ret = nrfx_mramc_init(&config, NULL);
+#endif
 
 	if (ret != 0) {
 		LOG_ERR("Failed to initialize MRAMC: %d", ret);
