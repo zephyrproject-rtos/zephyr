@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_CDNS3
+	bool "Cadence CDNS3 USB Device Controller driver"
+	default y
+	depends on DT_HAS_CDNS_USB3_ENABLED
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
+	help
+	  Enable the Cadence CDNS3 USB Device Controller driver.
+
+if UDC_CDNS3
+
+config UDC_CDNS3_NUM_TRBS
+	int "Number of TRBs per endpoint"
+	default 16
+	range 4 256
+	help
+	  Number of Transfer Request Blocks (TRBs) allocated per endpoint.
+	  Each TRB represents one transfer operation and is 12 bytes in size.
+
+	  Total memory per EP = num_trbs * 16 bytes + buffer pointers
+
+config UDC_CDNS3_POOL_SIZE
+	int "CDNS3 DMA pool size in bytes"
+	default 8192
+	help
+	  Size of the DMA-coherent memory pool used for TRB (Transfer Request
+	  Block) allocation. This pool is shared among all endpoints for
+	  storing transfer descriptors.
+
+	  The pool should be large enough to accommodate all active endpoints.
+
+endif # UDC_CDNS3
