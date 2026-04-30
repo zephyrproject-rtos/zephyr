@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(lorawan_native, CONFIG_LORAWAN_LOG_LEVEL);
 
 #define LWAN_MAX_APP_PAYLOAD		242
 #define LWAN_DEFAULT_MAX_PAYLOAD	51
+#define LWAN_MAX_CONF_TRIES		15
 
 static K_MUTEX_DEFINE(api_mutex);
 
@@ -330,7 +331,7 @@ void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
 
 int lorawan_set_conf_msg_tries(uint8_t tries)
 {
-	if (tries == 0) {
+	if (tries == 0 || tries > LWAN_MAX_CONF_TRIES) {
 		return -EINVAL;
 	}
 
