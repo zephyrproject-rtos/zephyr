@@ -17,4 +17,40 @@
 			bias-pull-up;
 		};
 	};
+
+	/* NOTE: PB4~PB7 CANNOT be selected by ADC and CTC simultaneously!!! */
+	/omit-if-no-ref/ adc_in0_pb4: adc_in0_pb4 {
+		pinmux = <AMEBA_PINMUX('B', 4, AMEBA_GPIO)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in1_pb5: adc_in1_pb5 {
+		pinmux = <AMEBA_PINMUX('B', 5, AMEBA_GPIO)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in2_pb6: adc_in2_pb6 {
+		pinmux = <AMEBA_PINMUX('B', 6, AMEBA_GPIO)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in3_pb7: adc_in3_pb7 {
+		pinmux = <AMEBA_PINMUX('B', 7, AMEBA_GPIO)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in4_pb1: adc_in4_pb1 {
+		pinmux = <AMEBA_PINMUX('B', 1, AMEBA_GPIO)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in5_pb2: adc_in5_pb2 {
+		pinmux = <AMEBA_PINMUX('B', 2, AMEBA_GPIO)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in6_pb3: adc_in6_pb3 {
+		pinmux = <AMEBA_PINMUX('B', 3, AMEBA_GPIO)>;
+		digital-input-disable;
+	};
 };

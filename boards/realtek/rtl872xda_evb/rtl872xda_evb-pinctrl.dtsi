@@ -17,4 +17,40 @@
 			bias-pull-up;
 		};
 	};
+
+	/* NOTE: PB16~PB19 CANNOT be selected by ADC and CTC simultaneously!!! */
+	/omit-if-no-ref/ adc_in0_pb19: adc_in0_pb19 {
+		pinmux = <AMEBA_PINMUX('B', 19, AMEBA_ADC)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in1_pb18: adc_in1_pb18 {
+		pinmux = <AMEBA_PINMUX('B', 18, AMEBA_ADC)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in2_pb17: adc_in2_pb17 {
+		pinmux = <AMEBA_PINMUX('B', 17, AMEBA_ADC)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in3_pb16: adc_in3_pb16 {
+		pinmux = <AMEBA_PINMUX('B', 16, AMEBA_ADC)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in4_pb15: adc_in4_pb15 {
+		pinmux = <AMEBA_PINMUX('B', 15, AMEBA_ADC)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in5_pb14: adc_in5_pb14 {
+		pinmux = <AMEBA_PINMUX('B', 14, AMEBA_ADC)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in6_pb13: adc_in6_pb13 {
+		pinmux = <AMEBA_PINMUX('B', 13, AMEBA_ADC)>;
+		digital-input-disable;
+	};
 };

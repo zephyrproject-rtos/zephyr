@@ -8,6 +8,7 @@
 #include <freq.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/amebad_clock.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	cpus {
@@ -91,6 +92,16 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			interrupts = <8 0>;
+			status = "disabled";
+		};
+
+		adc: adc@4801c800 {
+			compatible = "realtek,ameba-adc";
+			reg = <0x4801c800 0xb8>;
+			clocks = <&rcc AMEBA_ADC_CLK>;
+			interrupts = <15 0>;
+			channel-count = <7>;
+			#io-channel-cells = <1>;
 			status = "disabled";
 		};
 
