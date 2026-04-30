@@ -1,0 +1,75 @@
+# Copyright (c) 2025 Texas Instruments
+# SPDX - License - Identifier : Apache - 2.0
+
+description: |
+  TI AM26x pinctrl node.
+
+  Pins can be configured using following macro:
+    TI_AM26X_PINMUX(gpio_num, value)
+
+  - Pass gpio_num using macro: PIN_GPIO(gpio_num).
+    Example: if you want to configure GPIO0,
+      use macro as PIN_GPIO(0)
+
+  - value is a 32-bit number that will be written to IOMUX register
+    in TI_AM26X_PINMUX macro, pass value as an ORed list of following macros:
+
+      > Choose pin's MUX mode by using following macro: PIN_MODE(num)
+        The exact MUX mode can be determined by reading TRM
+
+      > To override default PINMUX configuration and forcibly
+        enable/disable input/output , use following macros:
+          PIN_FORCE_INPUT_ENABLE  to forcibly enable input
+          PIN_FORCE_INPUT_DISABLE to forcibly disable input
+          PIN_FORCE_OUTPUT_ENABLE to forcibly enable output
+          PIN_FORCE_OUTPUT_DISABLE to forcibly disable output
+
+      > Enable/disable pull selection by following macros:
+        PIN_PULL_ENABLE or PIN_PULL_DISABLE
+        Set pull to up / down by using:
+        PIN_PULL_UP or PIN_PULL_DOWN
+
+      > Set slew rate to high / low by using :
+        PIN_SLEW_RATE_HIGH or PIN_SLEW_RATE_LOW
+
+      > Set GPIO - CPU ownership by using following macros:
+        PIN_GPIO_R5SS0_0 to allow cluster0, CPU0 to get control
+        PIN_GPIO_R5SS0_1 to allow cluster0, CPU1 to get control
+
+      > Choose input qualifier type by following macros:
+        PIN_QUAL_SYNC for sync input
+        PIN_QUAL_3SAMPLE for a qual of 3 samples
+        PIN_QUAL_6SAMPLE for a qual of 6 samples
+        PIN_QUAL_ASYNC for async input
+
+      > To choose whether input to pad must be inverted or not:
+        PIN_INVERT to invert input
+        PIN_NON_INVERT to NOT invert input (default)
+
+  Example: To configure UART Tx pin, macro is used as follows:
+    TI_AM26X_PINMUX(PIN_GPIO(28),
+      (PIN_MODE(0) | PIN_PULL_DISABLE | PIN_SLEW_RATE_LOW))
+    Above macro means GPIO 28 is configured as follows:
+      - MUX Mode 0
+      - PULL selection is disabled
+      - Slew rate is low
+
+compatible: "ti,am26x-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    This binding gives a base representation of the TI AM26x
+    pin configuration.
+
+  properties:
+    pinmux:
+      required: true
+      type: array
+      description: |
+        TI AM26x pin configuration.
