@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-SIMULATION_ID="bass_server_sync_server_rem"
+SIMULATION_ID="${BOARD_TS}_bass_server_sync_server_rem"
 VERBOSITY_LEVEL=2
 
 cd ${BSIM_OUT_PATH}/bin
