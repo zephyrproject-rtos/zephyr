@@ -839,8 +839,10 @@ int modem_chat_init(struct modem_chat *chat, const struct modem_chat_config *con
 
 int modem_chat_attach(struct modem_chat *chat, struct modem_pipe *pipe)
 {
-	chat->pipe = pipe;
-	modem_chat_parse_reset(chat);
+	if (chat->pipe != pipe) {
+		chat->pipe = pipe;
+		modem_chat_parse_reset(chat);
+	}
 	modem_pipe_attach(chat->pipe, modem_chat_pipe_callback, chat);
 	return 0;
 }
@@ -859,7 +861,7 @@ int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat
 	}
 
 	/* Validate script */
-	if (script->script_chats == NULL ||
+	if (script == NULL || script->script_chats == NULL ||
 	   (script->script_chats_size == 0
 	    && script->script_chats != modem_chat_empty_script_chats) ||
 	   (script->abort_matches_size == 0
