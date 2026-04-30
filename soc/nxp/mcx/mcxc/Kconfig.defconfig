@@ -1,16 +1,39 @@
-# Copyright 2024 NXP
+# Copyright 2024-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
 
 if SOC_FAMILY_MCXC
 
 config CORTEX_M_SYSTICK
 	default n if MCUX_LPTMR_TIMER
 
+if PM && CORTEX_M_SYSTICK
+configdefault CORTEX_M_SYSTICK_RESET_BY_LPM
+	default y if TICKLESS_KERNEL
+endif # PM && CORTEX_M_SYSTICK
+
+configdefault WUC
+	default y if PM && MCUX_LPTMR_TIMER && DT_HAS_NXP_LLWU_ENABLED
+
+if PM && MCUX_LPTMR_TIMER
+
+choice PM_PREWAKEUP_CONV_MODE
+	default PM_PREWAKEUP_CONV_MODE_CEIL
+endchoice # PM_PREWAKEUP_CONV_MODE
+
+endif # PM && MCUX_LPTMR_TIMER
+
 config NUM_IRQS
 	default 32
 
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1024 if MCUX_LPTMR_TIMER
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 48000000
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),clock-frequency) if MCUX_LPTMR_TIMER
 
 config WDT_DISABLE_AT_BOOT
 	default y
