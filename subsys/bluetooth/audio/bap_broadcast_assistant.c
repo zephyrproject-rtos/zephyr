@@ -20,6 +20,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/att.h>
@@ -38,6 +39,7 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include <zephyr/logging/log.h>
@@ -51,13 +53,23 @@ LOG_MODULE_REGISTER(bt_bap_broadcast_assistant, CONFIG_BT_BAP_BROADCAST_ASSISTAN
 #include "bap_internal.h"
 
 #define MINIMUM_RECV_STATE_LEN          15
+/* We use a high non-K_FOREVER value to help catch any deadlocks more easily using asserts */
+#define MUTEX_TIMEOUT                   K_MSEC(1000U)
 
 struct bap_broadcast_assistant_recv_state_info {
+	/** Source ID of the BASS receive state */
 	uint8_t src_id;
-	/** Cached PAST available */
-	bool past_avail;
+
+	/** The advertising SID of the BASS receive state */
 	uint8_t adv_sid;
+
+	/** Cached PAST available that denotes whether we can do PAST to the server */
+	bool past_avail;
+
+	/** The broadcast_id of the BASS receive state */
 	uint32_t broadcast_id;
+
+	/** The broadcaster address of the BASS receive state */
 	bt_addr_le_t addr;
 };
 
@@ -69,19 +81,53 @@ enum bap_broadcast_assistant_flag {
 	BAP_BA_FLAG_NUM_FLAGS, /* keep as last */
 };
 
-struct bap_broadcast_assistant_instance {
-	struct bt_conn *conn;
-	bool scanning;
-	uint8_t pa_sync;
-	uint8_t recv_state_cnt;
+/**
+ * Struct containing information about a remote scan delegator.
+ * This data persists through connection for bonded devices
+ */
+struct scan_delegator_data {
+	/** Our local ID we used when connected */
+	uint8_t id;
 
+	/** Address of the scan delegator */
+	bt_addr_le_t addr;
+
+	/** Handle of the BASS control point. Shall be invalidated on a service change indication */
 	uint16_t cp_handle;
-	uint16_t recv_state_handles[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
 
-	struct bt_gatt_subscribe_params recv_state_sub_params
-		[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
-	struct bt_gatt_discover_params
-		recv_state_disc_params[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
+	/**
+	 * Number of receive states found on the server clamped to
+	 * CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT
+	 */
+	uint8_t recv_state_cnt;
+	struct {
+		/** Subscription parameters for each receive state */
+
+		struct bt_gatt_subscribe_params sub_params;
+
+		/** Discovery parameters used to discover the CCCD for each receive state
+		 * TODO: We should be able to use a single disc_params
+		 * (bap_broadcast_assistant_instance.disc_params) for this instead of one per
+		 * receive state, but that requires refactoring discovery to just do one thing at a
+		 * time
+		 */
+		struct bt_gatt_discover_params disc_params;
+
+		/* The info struct contains information about the remote active receive state, and
+		 * will be cleared when the receive state is removed
+		 */
+		struct bap_broadcast_assistant_recv_state_info info;
+	} recv_states[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
+};
+
+static struct bap_broadcast_assistant_instance {
+	struct bt_conn *conn;
+
+	/**
+	 * Reference to data that needs to be persistent between connections to bonded devices.
+	 * Remaining fields below should be cleared on disconnect
+	 */
+	struct scan_delegator_data sd_data;
 
 	/* We ever only allow a single outstanding operation per instance, so we can reuse the
 	 * memory for the GATT params
@@ -94,50 +140,71 @@ struct bap_broadcast_assistant_instance {
 
 	struct k_work_delayable bap_read_work;
 	uint16_t long_read_handle;
-
-	struct bap_broadcast_assistant_recv_state_info
-		recv_states[CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT];
+	/* The inst->net_buf needs to use the maximum ATT attribute size as a single receive state
+	 * may use the full size
+	 */
+	uint8_t att_buf[BT_ATT_MAX_ATTRIBUTE_LEN];
+	struct net_buf_simple net_buf;
 
 	ATOMIC_DEFINE(flags, BAP_BA_FLAG_NUM_FLAGS);
-};
+} broadcast_assistants[CONFIG_BT_MAX_PAIRED];
 
 static sys_slist_t broadcast_assistant_cbs = SYS_SLIST_STATIC_INIT(&broadcast_assistant_cbs);
 
-static struct bap_broadcast_assistant_instance broadcast_assistants[CONFIG_BT_MAX_CONN];
-
 static const struct bt_uuid *bass_uuid = BT_UUID_BASS;
-#define ATT_BUF_SIZE BT_ATT_MAX_ATTRIBUTE_LEN
-NET_BUF_SIMPLE_DEFINE_STATIC(att_buf, ATT_BUF_SIZE);
+/* Mutex used whenever broadcast_assistants` or `broadcast_assistant_cbs` is accessed */
+static K_MUTEX_DEFINE(broadcast_assistant_mutex);
 
 static int read_recv_state(struct bap_broadcast_assistant_instance *inst, uint8_t idx);
 
-static int16_t lookup_index_by_handle(struct bap_broadcast_assistant_instance *inst,
+static void clear_recv_state_info(struct bap_broadcast_assistant_recv_state_info *info)
+{
+	/* This should not clear sub_params */
+	(void)memset(info, 0, sizeof(*info));
+	info->broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+	info->adv_sid = BT_HCI_LE_EXT_ADV_SID_INVALID;
+}
+
+static int16_t lookup_index_by_handle(const struct bap_broadcast_assistant_instance *inst,
 				      uint16_t handle)
 {
-	for (size_t i = 0U; i < ARRAY_SIZE(inst->recv_state_handles); i++) {
-		if (inst->recv_state_handles[i] == handle) {
+	const struct scan_delegator_data *sd_data = &inst->sd_data;
+
+	__ASSERT(k_current_get() == broadcast_assistant_mutex.owner,
+		 "%s was called without a mutex lock", __func__);
+
+	for (size_t i = 0U; i < sd_data->recv_state_cnt; i++) {
+		if (sd_data->recv_states[i].sub_params.value_handle == handle) {
 			return i;
 		}
 	}
 
-	LOG_ERR("Unknown handle 0x%04x", handle);
+	LOG_DBG("Unknown handle 0x%04x for %p", handle, inst);
 
 	return -1;
 }
 
 static struct bap_broadcast_assistant_instance *inst_by_conn(struct bt_conn *conn)
 {
-	struct bap_broadcast_assistant_instance *inst;
+	struct bt_conn_info conn_info;
+	__maybe_unused int err;
 
 	if (conn == NULL) {
 		LOG_DBG("NULL conn");
 		return NULL;
 	}
 
-	inst = &broadcast_assistants[bt_conn_index(conn)];
+	err = bt_conn_get_info(conn, &conn_info);
+	__ASSERT_NO_MSG(err == 0);
 
-	if (inst->conn == conn) {
-		return inst;
+	__ASSERT(k_current_get() == broadcast_assistant_mutex.owner,
+		 "%s was called without a mutex lock", __func__);
+
+	ARRAY_FOR_EACH_PTR(broadcast_assistants, inst) {
+		if (inst->sd_data.id == conn_info.id &&
+		    bt_addr_le_eq(&inst->sd_data.addr, conn_info.le.dst)) {
+			return inst;
+		}
 	}
 
 	return NULL;
@@ -146,14 +213,10 @@ static struct bap_broadcast_assistant_instance *inst_by_conn(struct bt_conn *con
 static void bap_broadcast_assistant_discover_complete(struct bt_conn *conn, int err,
 						      uint8_t recv_state_count)
 {
-	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
 	struct bt_bap_broadcast_assistant_cb *listener, *next;
 
-	net_buf_simple_reset(&att_buf);
-	if (inst != NULL) {
-		atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
-		atomic_clear_bit(inst->flags, BAP_BA_FLAG_DISCOVER_IN_PROGRESS);
-	}
+	__ASSERT(k_current_get() != broadcast_assistant_mutex.owner,
+		 "%s was called with a mutex lock", __func__);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&broadcast_assistant_cbs,
 					  listener, next, _node) {
@@ -168,6 +231,9 @@ static void bap_broadcast_assistant_recv_state_changed(
 {
 	struct bt_bap_broadcast_assistant_cb *listener, *next;
 
+	__ASSERT(k_current_get() != broadcast_assistant_mutex.owner,
+		 "%s was called with a mutex lock", __func__);
+
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&broadcast_assistant_cbs,
 					  listener, next, _node) {
 		if (listener->recv_state) {
@@ -179,6 +245,9 @@ static void bap_broadcast_assistant_recv_state_changed(
 static void bap_broadcast_assistant_recv_state_removed(struct bt_conn *conn, uint8_t src_id)
 {
 	struct bt_bap_broadcast_assistant_cb *listener, *next;
+
+	__ASSERT(k_current_get() != broadcast_assistant_mutex.owner,
+		 "%s was called with a mutex lock", __func__);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&broadcast_assistant_cbs,
 					  listener, next, _node) {
@@ -192,6 +261,9 @@ static void bap_broadcast_assistant_scan_results(const struct bt_le_scan_recv_in
 						 uint32_t broadcast_id)
 {
 	struct bt_bap_broadcast_assistant_cb *listener, *next;
+
+	__ASSERT(k_current_get() != broadcast_assistant_mutex.owner,
+		 "%s was called with a mutex lock", __func__);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&broadcast_assistant_cbs, listener, next, _node) {
 		if (listener->scan) {
@@ -339,44 +411,51 @@ static int parse_recv_state(const void *data, uint16_t length,
 
 static void bap_long_read_reset(struct bap_broadcast_assistant_instance *inst)
 {
+	__ASSERT(k_current_get() == broadcast_assistant_mutex.owner,
+		 "%s was called without a mutex lock", __func__);
+
 	inst->long_read_handle = 0;
-	net_buf_simple_reset(&att_buf);
+	net_buf_simple_reset(&inst->net_buf);
 	atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
 }
 
-static uint8_t parse_and_send_recv_state(struct bt_conn *conn, uint16_t handle,
-					 const void *data, uint16_t length,
-					 struct bt_bap_scan_delegator_recv_state *recv_state)
+static void parse_and_store_recv_state(struct bt_conn *conn, uint16_t handle, const void *data,
+				       uint16_t length,
+				       struct bt_bap_scan_delegator_recv_state *recv_state)
 {
-	int err;
+	struct bap_broadcast_assistant_instance *inst;
+	struct scan_delegator_data *sd_data;
 	int16_t index;
-	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+	int err;
 
+	__ASSERT(k_current_get() == broadcast_assistant_mutex.owner,
+		 "%s was called without a mutex lock", __func__);
+
+	inst = inst_by_conn(conn);
 	if (inst == NULL) {
-		return BT_GATT_ITER_STOP;
+		LOG_DBG("Could not lookup instance by conn %p", conn);
+
+		return;
 	}
 
 	err = parse_recv_state(data, length, recv_state);
 	if (err != 0) {
 		LOG_WRN("Invalid receive state received");
 
-		return BT_GATT_ITER_STOP;
+		return;
 	}
 
 	index = lookup_index_by_handle(inst, handle);
 	if (index < 0) {
 		LOG_DBG("Invalid index");
 
-		return BT_GATT_ITER_STOP;
+		return;
 	}
 
-	inst->recv_states[index].src_id = recv_state->src_id;
-	inst->recv_states[index].past_avail = past_available(conn, &recv_state->addr,
-							     recv_state->adv_sid);
-
-	bap_broadcast_assistant_recv_state_changed(conn, 0, recv_state);
-
-	return BT_GATT_ITER_CONTINUE;
+	sd_data = &inst->sd_data;
+	sd_data->recv_states[index].info.src_id = recv_state->src_id;
+	sd_data->recv_states[index].info.past_avail =
+		past_available(conn, &recv_state->addr, recv_state->adv_sid);
 }
 
 static uint8_t broadcast_assistant_bap_ntf_read_func(struct bt_conn *conn, uint8_t err,
@@ -384,12 +463,23 @@ static uint8_t broadcast_assistant_bap_ntf_read_func(struct bt_conn *conn, uint8
 						     const void *data, uint16_t length)
 {
 	struct bt_bap_scan_delegator_recv_state recv_state;
+	struct bap_broadcast_assistant_instance *inst;
 	uint16_t handle = read->single.handle;
+	bool recv_state_changed = false;
+	__maybe_unused int mutex_err;
 	uint16_t data_length;
-	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+	uint8_t ret;
 
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
+	inst = inst_by_conn(conn);
 	if (inst == NULL) {
-		return BT_GATT_ITER_STOP;
+		LOG_DBG("Could not lookup instance by conn %p", conn);
+
+		ret = BT_GATT_ITER_STOP;
+
+		goto exit_label;
 	}
 
 	LOG_DBG("conn %p err 0x%02x len %u", (void *)conn, err, length);
@@ -399,44 +489,67 @@ static uint8_t broadcast_assistant_bap_ntf_read_func(struct bt_conn *conn, uint8
 		memset(read, 0, sizeof(*read));
 		bap_long_read_reset(inst);
 
-		return BT_GATT_ITER_STOP;
+		ret = BT_GATT_ITER_STOP;
+
+		goto exit_label;
 	}
 
 	LOG_DBG("handle 0x%04x", handle);
 
 	if (data != NULL) {
-		if (net_buf_simple_tailroom(&att_buf) < length) {
+		if (net_buf_simple_tailroom(&inst->net_buf) < length) {
 			LOG_DBG("Buffer full, invalid server response of size %u",
-				length + att_buf.len);
+				length + inst->net_buf.len);
 			memset(read, 0, sizeof(*read));
 			bap_long_read_reset(inst);
 
-			return BT_GATT_ITER_STOP;
+			ret = BT_GATT_ITER_STOP;
+
+			goto exit_label;
 		}
 
 		/* store data*/
-		net_buf_simple_add_mem(&att_buf, data, length);
+		net_buf_simple_add_mem(&inst->net_buf, data, length);
 
-		return BT_GATT_ITER_CONTINUE;
+		ret = BT_GATT_ITER_CONTINUE;
+
+		goto exit_label;
 	}
 
 	/* we reset the buffer so that it is ready for new data */
 	memset(read, 0, sizeof(*read));
-	data_length = att_buf.len;
+	data_length = inst->net_buf.len;
 	bap_long_read_reset(inst);
 
 	/* do the parse and callback to send  notify to application*/
-	parse_and_send_recv_state(conn, handle, att_buf.data, data_length, &recv_state);
+	parse_and_store_recv_state(conn, handle, inst->net_buf.data, data_length, &recv_state);
+	recv_state_changed = true;
 
-	return BT_GATT_ITER_STOP;
+	ret = BT_GATT_ITER_STOP;
+
+exit_label:
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
+	if (recv_state_changed) {
+		bap_broadcast_assistant_recv_state_changed(conn, 0, &recv_state);
+	}
+
+	return ret;
 }
 
 static void long_bap_read(struct bt_conn *conn, uint16_t handle)
 {
+	struct bap_broadcast_assistant_instance *inst;
 	int err;
-	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
 
+	__ASSERT(k_current_get() == broadcast_assistant_mutex.owner,
+		 "%s was called without a mutex lock", __func__);
+
+	inst = inst_by_conn(conn);
 	if (inst == NULL) {
+		LOG_DBG("Could not lookup instance by conn %p", conn);
+
 		return;
 	}
 
@@ -467,7 +580,7 @@ static void long_bap_read(struct bt_conn *conn, uint16_t handle)
 	inst->read_params.func = broadcast_assistant_bap_ntf_read_func;
 	inst->read_params.handle_count = 1U;
 	inst->read_params.single.handle = handle;
-	inst->read_params.single.offset = att_buf.len;
+	inst->read_params.single.offset = inst->net_buf.len;
 
 	err = bt_gatt_read(conn, &inst->read_params);
 	if (err != 0) {
@@ -479,10 +592,18 @@ static void long_bap_read(struct bt_conn *conn, uint16_t handle)
 
 static void delayed_bap_read_handler(struct k_work *work)
 {
+	__maybe_unused int mutex_err;
+
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
 	struct bap_broadcast_assistant_instance *inst =
 		CONTAINER_OF((struct k_work_delayable *)work,
 			     struct bap_broadcast_assistant_instance, bap_read_work);
 	long_bap_read(inst->conn, inst->long_read_handle);
+
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
 }
 
 /** @brief Handles notifications and indications from the server */
@@ -494,28 +615,35 @@ static uint8_t notify_handler(struct bt_conn *conn,
 	struct bt_bap_scan_delegator_recv_state recv_state;
 	int16_t index;
 	struct bap_broadcast_assistant_instance *inst;
+	bool recv_state_changed = false;
+	__maybe_unused int mutex_err;
 
 	if (conn == NULL) {
 		/* Indicates that the CCC has been removed - no-op */
 		return BT_GATT_ITER_CONTINUE;
 	}
 
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
 	inst = inst_by_conn(conn);
 
 	if (inst == NULL) {
-		return BT_GATT_ITER_STOP;
+		LOG_DBG("Could not lookup instance by conn %p", conn);
+
+		goto exit_label;
 	}
 
 	if (atomic_test_bit(inst->flags, BAP_BA_FLAG_DISCOVER_IN_PROGRESS)) {
 		/* If we are discovering then we ignore notifications as the handles may change */
-		return BT_GATT_ITER_CONTINUE;
+		goto exit_label;
 	}
 
 	if (data == NULL) {
 		LOG_DBG("[UNSUBSCRIBED] %u", handle);
 		params->value_handle = 0U;
 
-		return BT_GATT_ITER_STOP;
+		goto exit_label;
 	}
 
 	LOG_HEXDUMP_DBG(data, length, "Receive state notification:");
@@ -524,7 +652,7 @@ static uint8_t notify_handler(struct bt_conn *conn,
 	if (index < 0) {
 		LOG_DBG("Invalid index");
 
-		return BT_GATT_ITER_STOP;
+		goto exit_label;
 	}
 
 	if (length != 0) {
@@ -542,16 +670,37 @@ static uint8_t notify_handler(struct bt_conn *conn,
 			inst->long_read_handle = handle;
 
 			if (!atomic_test_bit(inst->flags, BAP_BA_FLAG_BUSY)) {
-				net_buf_simple_add_mem(&att_buf, data, length);
+				net_buf_simple_add_mem(&inst->net_buf, data, length);
 			}
 
 			long_bap_read(conn, handle);
 		} else {
-			return parse_and_send_recv_state(conn, handle, data, length, &recv_state);
+			parse_and_store_recv_state(conn, handle, data, length, &recv_state);
+
+			/* Trigger application callback after mutex is unlocked */
+			recv_state_changed = true;
 		}
 	} else {
-		inst->recv_states[index].past_avail = false;
-		bap_broadcast_assistant_recv_state_removed(conn, inst->recv_states[index].src_id);
+		struct scan_delegator_data *sd_data = &inst->sd_data;
+
+		/* Store the src_id from our cache as the notification does not contain it */
+		recv_state.src_id = sd_data->recv_states[index].info.src_id;
+
+		clear_recv_state_info(&sd_data->recv_states[index].info);
+
+		recv_state_changed = true;
+	}
+
+exit_label:
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
+	if (recv_state_changed) {
+		if (length != 0) {
+			bap_broadcast_assistant_recv_state_changed(conn, 0, &recv_state);
+		} else {
+			bap_broadcast_assistant_recv_state_removed(conn, recv_state.src_id);
+		}
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -561,13 +710,23 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 				  struct bt_gatt_read_params *params,
 				  const void *data, uint16_t length)
 {
-	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+	struct bap_broadcast_assistant_instance *inst;
 	bool active_recv_state = data != NULL && length != 0;
 	struct bt_bap_scan_delegator_recv_state recv_state;
 	uint16_t handle = params->single.handle;
+	__maybe_unused int mutex_err;
 	int cb_err = err;
 
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
+	inst = inst_by_conn(conn);
 	if (inst == NULL) {
+		LOG_DBG("Could not lookup instance by conn %p", conn);
+
+		mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+		__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -587,26 +746,28 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 			if (cb_err != 0) {
 				LOG_DBG("Invalid receive state");
 			} else {
+				struct scan_delegator_data *sd_data = &inst->sd_data;
 				struct bap_broadcast_assistant_recv_state_info *stored_state =
-					&inst->recv_states[index];
+					&sd_data->recv_states[index].info;
 
 				stored_state->src_id = recv_state.src_id;
 				stored_state->adv_sid = recv_state.adv_sid;
 				stored_state->broadcast_id = recv_state.broadcast_id;
 				bt_addr_le_copy(&stored_state->addr, &recv_state.addr);
-				inst->recv_states[index].past_avail =
-					past_available(conn, &recv_state.addr,
-						       recv_state.adv_sid);
+				stored_state->past_avail =
+					past_available(conn, &recv_state.addr, recv_state.adv_sid);
 			}
 		}
 	}
 
+	atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
 	if (cb_err != 0) {
 		LOG_DBG("err %d", cb_err);
-		atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
 		bap_broadcast_assistant_recv_state_changed(conn, cb_err, NULL);
 	} else {
-		atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
 		bap_broadcast_assistant_recv_state_changed(conn, cb_err,
 							   active_recv_state ? &recv_state : NULL);
 	}
@@ -616,9 +777,23 @@ static uint8_t read_recv_state_cb(struct bt_conn *conn, uint8_t err,
 
 static void discover_init(struct bap_broadcast_assistant_instance *inst)
 {
+	__ASSERT(k_current_get() == broadcast_assistant_mutex.owner,
+		 "%s was called without a mutex lock", __func__);
+
 	k_work_init_delayable(&inst->bap_read_work, delayed_bap_read_handler);
-	net_buf_simple_reset(&att_buf);
+	net_buf_simple_init_with_data(&inst->net_buf, inst->att_buf, sizeof(inst->att_buf));
+	net_buf_simple_reset(&inst->net_buf);
 	atomic_set_bit(inst->flags, BAP_BA_FLAG_DISCOVER_IN_PROGRESS);
+}
+
+static void discover_clear(struct bap_broadcast_assistant_instance *inst)
+{
+	__ASSERT(k_current_get() == broadcast_assistant_mutex.owner,
+		 "%s was called without a mutex lock", __func__);
+
+	net_buf_simple_reset(&inst->net_buf);
+	atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
+	atomic_clear_bit(inst->flags, BAP_BA_FLAG_DISCOVER_IN_PROGRESS);
 }
 
 /**
@@ -631,20 +806,37 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 				  struct bt_gatt_discover_params *params)
 {
 	struct bt_gatt_subscribe_params *sub_params = NULL;
+	struct bap_broadcast_assistant_instance *inst;
+	struct scan_delegator_data *sd_data;
+	uint8_t ret = BT_GATT_ITER_CONTINUE;
+	__maybe_unused int mutex_err;
+	uint8_t recv_state_cnt = 0U;
 	int err;
-	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
 
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
+	inst = inst_by_conn(conn);
 	if (inst == NULL) {
-		return BT_GATT_ITER_STOP;
+		LOG_DBG("Could not lookup instance by conn %p", conn);
+
+		err = -ENODEV;
+		ret = BT_GATT_ITER_STOP;
+
+		goto exit_label;
 	}
 
+	sd_data = &inst->sd_data;
 	if (attr == NULL) {
-		LOG_DBG("Found %u BASS receive states", inst->recv_state_cnt);
+		LOG_DBG("Found %u BASS receive states", sd_data->recv_state_cnt);
 		(void)memset(params, 0, sizeof(*params));
 
-		bap_broadcast_assistant_discover_complete(conn, 0, inst->recv_state_cnt);
+		recv_state_cnt = sd_data->recv_state_cnt;
+		discover_clear(inst);
+		err = 0;
+		ret = BT_GATT_ITER_STOP;
 
-		return BT_GATT_ITER_STOP;
+		goto exit_label;
 	}
 
 	LOG_DBG("[ATTRIBUTE] handle 0x%04X", attr->handle);
@@ -655,70 +847,88 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 
 		if (bt_uuid_cmp(chrc->uuid, BT_UUID_BASS_CONTROL_POINT) == 0) {
 			LOG_DBG("Control Point");
-			inst->cp_handle = attr->handle + 1;
+			sd_data->cp_handle = attr->handle + 1U;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_BASS_RECV_STATE) == 0) {
-			if (inst->recv_state_cnt <
-				CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT) {
-				const uint8_t idx = inst->recv_state_cnt;
 
-				LOG_DBG("Receive State %u", inst->recv_state_cnt);
-				inst->recv_state_handles[idx] =
-					attr->handle + 1;
-				sub_params = &inst->recv_state_sub_params[idx];
-				sub_params->disc_params = &inst->recv_state_disc_params[idx];
-				inst->recv_state_cnt++;
+			if (sd_data->recv_state_cnt <
+			    CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT) {
+				const uint8_t idx = sd_data->recv_state_cnt;
+
+				LOG_DBG("Receive State %u", sd_data->recv_state_cnt);
+				sub_params = &sd_data->recv_states[idx].sub_params;
+				sub_params->disc_params = &sd_data->recv_states[idx].disc_params;
+				sd_data->recv_state_cnt++;
 			}
 		} else {
 			LOG_DBG("Invalid UUID %s", bt_uuid_str(chrc->uuid));
-			bap_broadcast_assistant_discover_complete(conn, -EBADMSG, 0);
+			discover_clear(inst);
+			err = -EBADMSG;
+			ret = BT_GATT_ITER_STOP;
 
-			return BT_GATT_ITER_STOP;
+			goto exit_label;
 		}
 
 		if (sub_params != NULL) {
 			sub_params->end_handle = params->end_handle;
 			sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 			sub_params->value = BT_GATT_CCC_NOTIFY;
-			sub_params->value_handle = attr->handle + 1;
+			sub_params->value_handle = attr->handle + 1U;
 			sub_params->notify = notify_handler;
-			atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
 			err = bt_gatt_subscribe(conn, sub_params);
 			if (err != 0) {
 				LOG_DBG("Could not subscribe to handle 0x%04x: %d",
 					sub_params->value_handle, err);
 
-				bap_broadcast_assistant_discover_complete(conn, err, 0);
+				discover_clear(inst);
+				ret = BT_GATT_ITER_STOP;
 
-				return BT_GATT_ITER_STOP;
+				goto exit_label;
 			}
 		}
 	}
 
-	return BT_GATT_ITER_CONTINUE;
+exit_label:
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
+	if (ret == BT_GATT_ITER_STOP) {
+		__ASSERT_NO_MSG(err == 0 || (err != 0 && recv_state_cnt == 0U));
+		bap_broadcast_assistant_discover_complete(conn, err, recv_state_cnt);
+	}
+
+	return ret;
 }
 
 static uint8_t service_discover_func(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
 				     struct bt_gatt_discover_params *params)
 {
-	int err;
+	struct bap_broadcast_assistant_instance *inst;
 	struct bt_gatt_service_val *prim_service;
-	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+	__maybe_unused int mutex_err;
+	int err = 0;
 
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
+	inst = inst_by_conn(conn);
 	if (inst == NULL) {
-		return BT_GATT_ITER_STOP;
+		LOG_DBG("Could not lookup instance by conn %p", conn);
+
+		err = BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+
+		goto exit_label;
 	}
 
 	if (attr == NULL) {
 		LOG_DBG("Could not discover BASS");
 		(void)memset(params, 0, sizeof(*params));
 
+		discover_clear(inst);
 		err = BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
 
-		bap_broadcast_assistant_discover_complete(conn, err, 0);
-
-		return BT_GATT_ITER_STOP;
+		goto exit_label;
 	}
 
 	LOG_DBG("[ATTRIBUTE] handle 0x%04X", attr->handle);
@@ -735,8 +945,16 @@ static uint8_t service_discover_func(struct bt_conn *conn,
 		err = bt_gatt_discover(conn, &inst->disc_params);
 		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)", err);
-			bap_broadcast_assistant_discover_complete(conn, err, 0);
+			discover_clear(inst);
 		}
+	}
+
+exit_label:
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
+	if (err != 0) {
+		bap_broadcast_assistant_discover_complete(conn, err, 0);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -746,17 +964,31 @@ static void bap_broadcast_assistant_write_cp_cb(struct bt_conn *conn, uint8_t er
 						struct bt_gatt_write_params *params)
 {
 	struct bt_bap_broadcast_assistant_cb *listener, *next;
-	uint8_t opcode = net_buf_simple_pull_u8(&att_buf);
-	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+	struct bap_broadcast_assistant_instance *inst;
+	__maybe_unused int mutex_err;
 
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
+	inst = inst_by_conn(conn);
 	if (inst == NULL) {
+		LOG_DBG("Could not lookup instance by conn %p", conn);
+
+		mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+		__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
 		return;
 	}
 
+	uint8_t opcode = net_buf_simple_pull_u8(&inst->net_buf);
+
 	/* we reset the buffer, so that we are ready for new notifications and writes */
-	net_buf_simple_reset(&att_buf);
+	net_buf_simple_reset(&inst->net_buf);
 
 	atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
+
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&broadcast_assistant_cbs, listener, next, _node) {
 		switch (opcode) {
@@ -798,10 +1030,14 @@ static void bap_broadcast_assistant_write_cp_cb(struct bt_conn *conn, uint8_t er
 }
 
 static int bt_bap_broadcast_assistant_common_cp(struct bt_conn *conn,
-				    const struct net_buf_simple *buf)
+						const struct net_buf_simple *buf)
 {
 	int err;
 	struct bap_broadcast_assistant_instance *inst;
+	const struct scan_delegator_data *sd_data;
+
+	__ASSERT(k_current_get() == broadcast_assistant_mutex.owner,
+		 "%s was called without a mutex lock", __func__);
 
 	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
@@ -812,10 +1048,13 @@ static int bt_bap_broadcast_assistant_common_cp(struct bt_conn *conn,
 	inst = inst_by_conn(conn);
 
 	if (inst == NULL) {
+		LOG_DBG("Could not lookup instance by conn %p", conn);
+
 		return -EINVAL;
 	}
+	sd_data = &inst->sd_data;
 
-	if (inst->cp_handle == 0) {
+	if (sd_data->cp_handle == 0) {
 		LOG_DBG("Handle not set");
 		return -EINVAL;
 	}
@@ -823,7 +1062,7 @@ static int bt_bap_broadcast_assistant_common_cp(struct bt_conn *conn,
 	inst->write_params.offset = 0;
 	inst->write_params.data = buf->data;
 	inst->write_params.length = buf->len;
-	inst->write_params.handle = inst->cp_handle;
+	inst->write_params.handle = sd_data->cp_handle;
 	inst->write_params.func = bap_broadcast_assistant_write_cp_cb;
 
 	err = bt_gatt_write(conn, &inst->write_params);
@@ -831,16 +1070,13 @@ static int bt_bap_broadcast_assistant_common_cp(struct bt_conn *conn,
 		atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
 
 		/* Report expected possible errors */
-		if (err == -ENOTCONN || err == -ENOMEM) {
-			return err;
+		if (err != -ENOTCONN && err != -ENOMEM) {
+			err = -ENOEXEC;
 		}
-
-		return -ENOEXEC;
 	}
 
-	return 0;
+	return err;
 }
-
 
 static bool broadcast_source_found(struct bt_data *data, void *user_data)
 {
@@ -895,12 +1131,17 @@ static struct bt_le_scan_cb scan_cb = {
  * Source_Adv_SID, and Broadcast_ID fields of any Broadcast Receive State characteristic exposed
  * by the Scan Delegator.
  */
-static bool broadcast_src_is_duplicate(struct bap_broadcast_assistant_instance *inst,
+static bool broadcast_src_is_duplicate(const struct bap_broadcast_assistant_instance *inst,
 				       uint32_t broadcast_id, uint8_t adv_sid, uint8_t addr_type)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(inst->recv_states); i++) {
+	const struct scan_delegator_data *sd_data = &inst->sd_data;
+
+	__ASSERT(k_current_get() == broadcast_assistant_mutex.owner,
+		 "%s was called without a mutex lock", __func__);
+
+	for (size_t i = 0; i < ARRAY_SIZE(sd_data->recv_states); i++) {
 		const struct bap_broadcast_assistant_recv_state_info *state =
-							&inst->recv_states[i];
+			&sd_data->recv_states[i].info;
 
 		if (state != NULL && state->broadcast_id == broadcast_id &&
 			state->adv_sid == adv_sid && state->addr.type == addr_type) {
@@ -913,24 +1154,68 @@ static bool broadcast_src_is_duplicate(struct bap_broadcast_assistant_instance *
 	return false;
 }
 
-/****************************** PUBLIC API ******************************/
-
-static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *inst)
+static void clear_sd_data(struct scan_delegator_data *sd_data)
 {
-	inst->scanning = false;
-	inst->pa_sync = 0U;
-	inst->recv_state_cnt = 0U;
-	inst->cp_handle = 0U;
+	__ASSERT(k_current_get() == broadcast_assistant_mutex.owner,
+		 "%s was called without a mutex lock", __func__);
+
+	sd_data->recv_state_cnt = 0U;
+	sd_data->cp_handle = 0U;
+
+	ARRAY_FOR_EACH_PTR(sd_data->recv_states, recv_state) {
+		clear_recv_state_info(&recv_state->info);
+	}
+}
+
+static struct bap_broadcast_assistant_instance *
+allocate_broadcast_assistant(const struct bt_conn *conn)
+{
+	struct bap_broadcast_assistant_instance *new_inst = NULL;
+
+	__ASSERT(k_current_get() == broadcast_assistant_mutex.owner,
+		 "%s was called without a mutex lock", __func__);
+
+	ARRAY_FOR_EACH_PTR(broadcast_assistants, inst) {
+		if (bt_addr_le_eq(&inst->sd_data.addr, BT_ADDR_LE_NONE)) {
+			struct bt_conn_info conn_info;
+			__maybe_unused int err;
+
+			err = bt_conn_get_info(conn, &conn_info);
+			__ASSERT_NO_MSG(err == 0);
+
+			clear_sd_data(&inst->sd_data);
+
+			inst->sd_data.id = conn_info.id;
+			bt_addr_le_copy(&inst->sd_data.addr, conn_info.le.dst);
+
+			new_inst = inst;
+			break;
+		}
+	}
+
+	__ASSERT(new_inst != NULL,
+		 "Could not allocate any more instances; missing handling of deleted bonds?");
+
+	return new_inst;
+}
+
+static void deallocate_broadcast_assistant(struct bap_broadcast_assistant_instance *inst)
+{
+	__ASSERT(k_current_get() == broadcast_assistant_mutex.owner,
+		 "%s was called without a mutex lock", __func__);
+
+	bt_addr_le_copy(&inst->sd_data.addr, BT_ADDR_LE_NONE);
+	inst->sd_data.id = 0U;
+}
+
+static void broadcast_assistant_reset(struct bap_broadcast_assistant_instance *inst,
+				      bool clear_bonded_data)
+{
+	__ASSERT(k_current_get() == broadcast_assistant_mutex.owner,
+		 "%s was called without a mutex lock", __func__);
+
 	inst->long_read_handle = 0;
 	(void)k_work_cancel_delayable(&inst->bap_read_work);
-
-	for (int i = 0U; i < CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT; i++) {
-		memset(&inst->recv_states[i], 0, sizeof(inst->recv_states[i]));
-		inst->recv_states[i].broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
-		inst->recv_states[i].adv_sid = BT_HCI_LE_EXT_ADV_SID_INVALID;
-		inst->recv_states[i].past_avail = false;
-		inst->recv_state_handles[i] = 0U;
-	}
 
 	if (inst->conn != NULL) {
 		struct bt_conn *conn = inst->conn;
@@ -938,20 +1223,27 @@ static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *in
 		int err;
 
 		err = bt_conn_get_info(conn, &info);
-		if (err != 0) {
-			return err;
-		}
+		__ASSERT_NO_MSG(err == 0);
 
-		if (info.state == BT_CONN_STATE_CONNECTED) {
-			for (size_t i = 0U; i < ARRAY_SIZE(inst->recv_state_sub_params); i++) {
-				/* It's okay if this fail with -EINVAL as that means that they are
-				 * not currently subscribed
-				 */
-				err = bt_gatt_unsubscribe(conn, &inst->recv_state_sub_params[i]);
-				if (err != 0 && err != -EINVAL) {
-					LOG_DBG("Failed to unsubscribe to state: %d", err);
+		/* TBD: Do we actually need to unsubscribe? If the handles haven't changed,
+		 * then we don't need to un- and resubscribe. If the handles have changed on
+		 * the server, then we are already unsubscribed, however that data isn't
+		 * cleared in the GATT layer. See
+		 * https://github.com/zephyrproject-rtos/zephyr/issues/104458
+		 */
+		if (info.state == BT_CONN_STATE_CONNECTED && clear_bonded_data) {
+			ARRAY_FOR_EACH_PTR(inst->sd_data.recv_states, recv_state) {
+				if (recv_state->sub_params.value_handle != 0U) {
+					err = bt_gatt_unsubscribe(conn, &recv_state->sub_params);
+					if (err != 0) {
+						LOG_WRN("Failed to unsubscribe to state: %d", err);
+						/* In case of failure, we have no way to
+						 * restore any previous data. Continue and
+						 * hope for the best
+						 */
+					}
 
-					return err;
+					recv_state->sub_params.value_handle = 0U;
 				}
 			}
 		}
@@ -960,32 +1252,125 @@ static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *in
 		inst->conn = NULL;
 	}
 
-	/* The subscribe parameters must remain instact so they can get cleaned up by GATT */
+	if (clear_bonded_data) {
+		clear_sd_data(&inst->sd_data);
+	}
+
+	/* The subscribe parameters must remain intact so they can get cleaned up by GATT */
 	memset(&inst->disc_params, 0, sizeof(inst->disc_params));
-	memset(&inst->recv_state_disc_params, 0, sizeof(inst->recv_state_disc_params));
 	memset(&inst->read_params, 0, sizeof(inst->read_params));
 	memset(&inst->write_params, 0, sizeof(inst->write_params));
-
-	return 0;
 }
 
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
-	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+	struct bap_broadcast_assistant_instance *inst;
+	struct bt_conn_info conn_info;
+	__maybe_unused int mutex_err;
+	__maybe_unused int err;
+	bool bonded;
+
+	err = bt_conn_get_info(conn, &conn_info);
+	__ASSERT_NO_MSG(err == 0);
+
+	if (conn_info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
+	bonded = bt_le_bond_exists(conn_info.id, conn_info.le.dst);
+
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
+	inst = inst_by_conn(conn);
 
 	if (inst) {
-		(void)broadcast_assistant_reset(inst);
+		broadcast_assistant_reset(inst, !bonded);
+		atomic_clear(inst->flags);
+
+		if (!bonded) {
+			deallocate_broadcast_assistant(inst);
+		}
 	}
+
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+}
+
+static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
+				enum bt_security_err security_err)
+{
+	struct bap_broadcast_assistant_instance *inst;
+	struct bt_conn_info conn_info;
+	__maybe_unused int mutex_err;
+	__maybe_unused int err;
+	bool bonded;
+
+	err = bt_conn_get_info(conn, &conn_info);
+	__ASSERT_NO_MSG(err == 0);
+
+	if (conn_info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
+	bonded = bt_le_bond_exists(conn_info.id, conn_info.le.dst);
+
+	LOG_DBG("%s security changed err %d level %d (%sbonded)", bt_addr_le_str(conn_info.le.dst),
+		security_err, level, bonded ? "" : "not ");
+
+	if (security_err != BT_SECURITY_ERR_SUCCESS || level < BT_SECURITY_L2 || !bonded) {
+		return;
+	}
+
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
+	/* If a bonded device reconnects, populate the `inst->conn` for the bonded instance */
+	inst = inst_by_conn(conn);
+	if (inst != NULL) {
+		__ASSERT(inst->conn == NULL || inst->conn == conn,
+			 "Found inst %p with different conn (%p) than %p", inst, inst->conn, conn);
+
+		if (inst->conn == NULL) {
+			inst->conn = bt_conn_ref(conn);
+		}
+	}
+
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected_cb,
+	.security_changed = security_changed_cb,
 };
+
+static void bond_deleted_cb(uint8_t id, const bt_addr_le_t *addr)
+{
+	__maybe_unused int mutex_err;
+
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
+	ARRAY_FOR_EACH_PTR(broadcast_assistants, inst) {
+		if (inst->sd_data.id == id && bt_addr_le_eq(&inst->sd_data.addr, addr)) {
+			broadcast_assistant_reset(inst, true);
+			deallocate_broadcast_assistant(inst);
+			atomic_clear(inst->flags);
+			break;
+		}
+	}
+
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+}
 
 int bt_bap_broadcast_assistant_discover(struct bt_conn *conn)
 {
 	int err;
 	struct bap_broadcast_assistant_instance *inst;
+	bool inst_allocated = false;
+	__maybe_unused int mutex_err;
 
 	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
@@ -999,21 +1384,31 @@ int bt_bap_broadcast_assistant_discover(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	inst = &broadcast_assistants[bt_conn_index(conn)];
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
 
-	/* Do not allow new discoveries while we are reading or writing */
-	if (atomic_test_and_set_bit(inst->flags, BAP_BA_FLAG_BUSY)) {
-		LOG_DBG("Instance is busy");
-		return -EBUSY;
-	}
+	inst = inst_by_conn(conn);
+	if (inst == NULL) {
+		inst = allocate_broadcast_assistant(conn);
+		inst_allocated = true;
 
-	err = broadcast_assistant_reset(inst);
-	if (err != 0) {
-		atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
+		/* Do not allow new discoveries while we are reading or writing */
+		if (atomic_test_and_set_bit(inst->flags, BAP_BA_FLAG_BUSY)) {
+			LOG_DBG("Instance is busy");
+			err = -EBUSY;
 
-		LOG_DBG("Failed to reset broadcast assistant: %d", err);
+			goto exit_label;
+		}
+	} else {
+		/* Do not allow new discoveries while we are reading or writing */
+		if (atomic_test_and_set_bit(inst->flags, BAP_BA_FLAG_BUSY)) {
+			LOG_DBG("Instance is busy");
+			err = -EBUSY;
 
-		return -ENOEXEC;
+			goto exit_label;
+		}
+
+		broadcast_assistant_reset(inst, true);
 	}
 
 	inst->conn = bt_conn_ref(conn);
@@ -1032,26 +1427,38 @@ int bt_bap_broadcast_assistant_discover(struct bt_conn *conn)
 		atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
 
 		/* Report expected possible errors */
-		if (err == -ENOTCONN || err == -ENOMEM) {
-			return err;
+		if (err != -ENOTCONN && err != -ENOMEM) {
+			LOG_DBG("Unexpected err %d from bt_gatt_discover", err);
+
+			err = -ENOEXEC;
 		}
-
-		LOG_DBG("Unexpected err %d from bt_gatt_discover", err);
-
-		return -ENOEXEC;
 	}
 
-	return 0;
+exit_label:
+	if (err != 0 && inst_allocated) {
+		/* If we have allocated a inst and failed, deallocate it for future use */
+		broadcast_assistant_reset(inst, true);
+		deallocate_broadcast_assistant(inst);
+	}
+
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
+	return err;
 }
 
 /* TODO: naming is different from e.g. bt_vcp_vol_ctrl_cb_register */
 int bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb *cb)
 {
 	struct bt_bap_broadcast_assistant_cb *tmp;
+	__maybe_unused int mutex_err;
 
 	if (cb == NULL) {
 		return -EINVAL;
 	}
+
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&broadcast_assistant_cbs, tmp, _node) {
 		if (tmp == cb) {
@@ -1062,20 +1469,30 @@ int bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb 
 
 	sys_slist_append(&broadcast_assistant_cbs, &cb->_node);
 
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
 	return 0;
 }
 
 int bt_bap_broadcast_assistant_unregister_cb(struct bt_bap_broadcast_assistant_cb *cb)
 {
+	__maybe_unused int mutex_err;
+	bool removed;
+
 	if (cb == NULL) {
 		return -EINVAL;
 	}
 
-	if (!sys_slist_find_and_remove(&broadcast_assistant_cbs, &cb->_node)) {
-		return -EALREADY;
-	}
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
 
-	return 0;
+	removed = sys_slist_find_and_remove(&broadcast_assistant_cbs, &cb->_node);
+
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
+	return removed ? 0 : -EALREADY;
 }
 
 int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn, bool start_scan)
@@ -1083,6 +1500,8 @@ int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn, bool start_scan)
 	struct bt_bap_bass_cp_scan_start *cp;
 	int err;
 	struct bap_broadcast_assistant_instance *inst;
+	const struct scan_delegator_data *sd_data;
+	__maybe_unused int mutex_err;
 
 	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
@@ -1090,21 +1509,33 @@ int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn, bool start_scan)
 		return -EINVAL;
 	}
 
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
 	inst = inst_by_conn(conn);
 	if (inst == NULL) {
-		return -EINVAL;
+		LOG_DBG("Could not lookup instance by conn %p", conn);
+
+		err = -EINVAL;
+
+		goto exit_label;
 	}
 
-	if (inst->cp_handle == 0) {
+	sd_data = &inst->sd_data;
+	if (sd_data->cp_handle == 0) {
 		LOG_DBG("handle not set");
 
-		return -EINVAL;
+		err = -EINVAL;
+
+		goto exit_label;
 	} else if (atomic_test_and_set_bit(inst->flags, BAP_BA_FLAG_BUSY)) {
 		/* Do not allow writes while we are discovering as the handles may change */
 
 		LOG_DBG("instance busy");
 
-		return -EBUSY;
+		err = -EBUSY;
+
+		goto exit_label;
 	}
 
 	/* TODO: Remove the start_scan parameter and support from the assistant */
@@ -1116,7 +1547,9 @@ int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn, bool start_scan)
 
 			atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
 
-			return -EALREADY;
+			err = -EALREADY;
+
+			goto exit_label;
 		}
 
 		if (!cb_registered) {
@@ -1132,34 +1565,40 @@ int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn, bool start_scan)
 			atomic_clear_bit(inst->flags, BAP_BA_FLAG_SCANNING);
 
 			/* Report expected possible errors */
-			if (err == -EAGAIN) {
-				return err;
+			if (err != -EAGAIN) {
+				LOG_DBG("Unexpected err %d from bt_le_scan_start", err);
+
+				err = -ENOEXEC;
 			}
 
-			LOG_DBG("Unexpected err %d from bt_le_scan_start", err);
-
-			return -ENOEXEC;
+			goto exit_label;
 		}
 	}
 
 	/* Reset buffer before using */
-	net_buf_simple_reset(&att_buf);
-	cp = net_buf_simple_add(&att_buf, sizeof(*cp));
+	net_buf_simple_reset(&inst->net_buf);
+	cp = net_buf_simple_add(&inst->net_buf, sizeof(*cp));
 
 	cp->opcode = BT_BAP_BASS_OP_SCAN_START;
 
-	err = bt_bap_broadcast_assistant_common_cp(conn, &att_buf);
+	/* bt_bap_broadcast_assistant_common_cp clears the busy flag on error */
+	err = bt_bap_broadcast_assistant_common_cp(conn, &inst->net_buf);
 	if (err != 0 && start_scan) {
-		/* bt_bap_broadcast_assistant_common_cp clears the busy flag on error */
 		err = bt_le_scan_stop();
 		if (err != 0) {
 			LOG_DBG("Could not stop scan (%d)", err);
 
-			return -ENOEXEC;
+			err = -ENOEXEC;
+
+			goto exit_label;
 		}
 
 		atomic_clear_bit(inst->flags, BAP_BA_FLAG_SCANNING);
 	}
+
+exit_label:
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
 
 	return err;
 }
@@ -1169,6 +1608,8 @@ int bt_bap_broadcast_assistant_scan_stop(struct bt_conn *conn)
 	struct bt_bap_bass_cp_scan_stop *cp;
 	int err;
 	struct bap_broadcast_assistant_instance *inst;
+	const struct scan_delegator_data *sd_data;
+	__maybe_unused int mutex_err;
 
 	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
@@ -1176,19 +1617,31 @@ int bt_bap_broadcast_assistant_scan_stop(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
 	inst = inst_by_conn(conn);
 	if (inst == NULL) {
-		return -EINVAL;
+		LOG_DBG("Could not lookup instance by conn %p", conn);
+
+		err = -EINVAL;
+
+		goto exit_label;
 	}
 
-	if (inst->cp_handle == 0) {
+	sd_data = &inst->sd_data;
+	if (sd_data->cp_handle == 0) {
 		LOG_DBG("handle not set");
 
-		return -EINVAL;
+		err = -EINVAL;
+
+		goto exit_label;
 	} else if (atomic_test_and_set_bit(inst->flags, BAP_BA_FLAG_BUSY)) {
 		LOG_DBG("instance busy");
 
-		return -EBUSY;
+		err = -EBUSY;
+
+		goto exit_label;
 	}
 
 	if (atomic_test_bit(inst->flags, BAP_BA_FLAG_SCANNING)) {
@@ -1198,19 +1651,26 @@ int bt_bap_broadcast_assistant_scan_stop(struct bt_conn *conn)
 
 			atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
 
-			return err;
+			goto exit_label;
 		}
 
 		atomic_clear_bit(inst->flags, BAP_BA_FLAG_SCANNING);
 	}
 
 	/* Reset buffer before using */
-	net_buf_simple_reset(&att_buf);
-	cp = net_buf_simple_add(&att_buf, sizeof(*cp));
+	net_buf_simple_reset(&inst->net_buf);
+	cp = net_buf_simple_add(&inst->net_buf, sizeof(*cp));
 
 	cp->opcode = BT_BAP_BASS_OP_SCAN_STOP;
 
-	return bt_bap_broadcast_assistant_common_cp(conn, &att_buf);
+	/* bt_bap_broadcast_assistant_common_cp clears the busy flag on error */
+	err = bt_bap_broadcast_assistant_common_cp(conn, &inst->net_buf);
+
+exit_label:
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
+	return err;
 }
 
 static bool bis_syncs_unique_or_no_pref(uint32_t requested_bis_syncs, uint32_t aggregated_bis_syncs)
@@ -1345,6 +1805,9 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 {
 	struct bt_bap_bass_cp_add_src *cp;
 	struct bap_broadcast_assistant_instance *inst;
+	const struct scan_delegator_data *sd_data;
+	__maybe_unused int mutex_err;
+	int err;
 
 	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
@@ -1352,10 +1815,21 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
+	if (!valid_add_src_param(param)) {
+		return -EINVAL;
+	}
+
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
 	inst = inst_by_conn(conn);
 
 	if (inst == NULL) {
-		return -EINVAL;
+		LOG_DBG("Could not lookup instance by conn %p", conn);
+
+		err = -EINVAL;
+
+		goto exit_label;
 	}
 
 	/* Check if this operation would result in a duplicate before proceeding */
@@ -1365,25 +1839,28 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 			"type 0x%02X",
 			param->broadcast_id, param->adv_sid, param->addr.type);
 
-		return -EINVAL;
+		err = -EINVAL;
+
+		goto exit_label;
 	}
 
-	if (!valid_add_src_param(param)) {
-		return -EINVAL;
-	}
-
-	if (inst->cp_handle == 0) {
+	sd_data = &inst->sd_data;
+	if (sd_data->cp_handle == 0) {
 		LOG_DBG("handle not set");
 
-		return -EINVAL;
+		err = -EINVAL;
+
+		goto exit_label;
 	} else if (atomic_test_and_set_bit(inst->flags, BAP_BA_FLAG_BUSY)) {
 		LOG_DBG("instance busy");
 
-		return -EBUSY;
+		err = -EBUSY;
+
+		goto exit_label;
 	}
 	/* Reset buffer before using */
-	net_buf_simple_reset(&att_buf);
-	cp = net_buf_simple_add(&att_buf, sizeof(*cp));
+	net_buf_simple_reset(&inst->net_buf);
+	cp = net_buf_simple_add(&inst->net_buf, sizeof(*cp));
 
 	cp->opcode = BT_BAP_BASS_OP_ADD_SRC;
 	cp->adv_sid = param->adv_sid;
@@ -1409,17 +1886,20 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 					     sizeof(subgroup->metadata_len) +
 					     param->subgroups[i].metadata_len;
 
-		if (att_buf.len + subgroup_size > att_buf.size) {
-			LOG_DBG("MTU is too small to send %zu octets", att_buf.len + subgroup_size);
+		if (inst->net_buf.len + subgroup_size > inst->net_buf.size) {
+			LOG_DBG("MTU is too small to send %zu octets",
+				inst->net_buf.len + subgroup_size);
 
 			/* TODO: Validate parameters before setting the busy flag to reduce cleanup
 			 */
 			atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
 
-			return -EINVAL;
+			err = -EINVAL;
+
+			goto exit_label;
 		}
 
-		subgroup = net_buf_simple_add(&att_buf, subgroup_size);
+		subgroup = net_buf_simple_add(&inst->net_buf, subgroup_size);
 
 		subgroup->bis_sync = param->subgroups[i].bis_sync;
 
@@ -1436,7 +1916,14 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE */
 	}
 
-	return bt_bap_broadcast_assistant_common_cp(conn, &att_buf);
+	/* bt_bap_broadcast_assistant_common_cp clears the busy flag on error */
+	err = bt_bap_broadcast_assistant_common_cp(conn, &inst->net_buf);
+
+exit_label:
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
+	return err;
 }
 
 static bool valid_add_mod_param(const struct bt_bap_broadcast_assistant_mod_src_param *param)
@@ -1482,6 +1969,9 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 	bool known_recv_state;
 	bool past_avail;
 	struct bap_broadcast_assistant_instance *inst;
+	const struct scan_delegator_data *sd_data;
+	__maybe_unused int mutex_err;
+	int err;
 
 	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
@@ -1493,24 +1983,35 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
 	inst = inst_by_conn(conn);
 	if (inst == NULL) {
-		return -EINVAL;
+		LOG_DBG("Could not lookup instance by conn %p", conn);
+
+		err = -EINVAL;
+
+		goto exit_label;
 	}
 
-	if (inst->cp_handle == 0) {
+	sd_data = &inst->sd_data;
+	if (sd_data->cp_handle == 0) {
 		LOG_DBG("handle not set");
 
-		return -EINVAL;
+		err = -EINVAL;
+
+		goto exit_label;
 	} else if (atomic_test_and_set_bit(inst->flags, BAP_BA_FLAG_BUSY)) {
 		LOG_DBG("instance busy");
 
-		return -EBUSY;
+		err = -EBUSY;
+
+		goto exit_label;
 	}
 
 	/* Reset buffer before using */
-	net_buf_simple_reset(&att_buf);
-	cp = net_buf_simple_add(&att_buf, sizeof(*cp));
+	net_buf_simple_reset(&inst->net_buf);
+	cp = net_buf_simple_add(&inst->net_buf, sizeof(*cp));
 
 	cp->opcode = BT_BAP_BASS_OP_MOD_SRC;
 	cp->src_id = param->src_id;
@@ -1520,10 +2021,10 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 	 */
 	known_recv_state = false;
 	past_avail = false;
-	for (size_t i = 0; i < ARRAY_SIZE(inst->recv_states); i++) {
-		if (inst->recv_states[i].src_id == param->src_id) {
+	for (size_t i = 0; i < ARRAY_SIZE(sd_data->recv_states); i++) {
+		if (sd_data->recv_states[i].info.src_id == param->src_id) {
 			known_recv_state = true;
-			past_avail = inst->recv_states[i].past_avail;
+			past_avail = sd_data->recv_states[i].info.past_avail;
 			break;
 		}
 	}
@@ -1552,16 +2053,19 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 					     sizeof(subgroup->metadata_len) +
 					     param->subgroups[i].metadata_len;
 
-		if (att_buf.len + subgroup_size > att_buf.size) {
-			LOG_DBG("MTU is too small to send %zu octets", att_buf.len + subgroup_size);
+		if (inst->net_buf.len + subgroup_size > inst->net_buf.size) {
+			LOG_DBG("MTU is too small to send %zu octets",
+				inst->net_buf.len + subgroup_size);
 
 			/* TODO: Validate parameters before setting the busy flag to reduce cleanup
 			 */
 			atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
 
-			return -EINVAL;
+			err = -EINVAL;
+
+			goto exit_label;
 		}
-		subgroup = net_buf_simple_add(&att_buf, subgroup_size);
+		subgroup = net_buf_simple_add(&inst->net_buf, subgroup_size);
 
 		subgroup->bis_sync = param->subgroups[i].bis_sync;
 
@@ -1579,7 +2083,14 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE */
 	}
 
-	return bt_bap_broadcast_assistant_common_cp(conn, &att_buf);
+	/* bt_bap_broadcast_assistant_common_cp clears the busy flag on error */
+	err = bt_bap_broadcast_assistant_common_cp(conn, &inst->net_buf);
+
+exit_label:
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
+	return err;
 }
 
 int bt_bap_broadcast_assistant_set_broadcast_code(
@@ -1588,6 +2099,9 @@ int bt_bap_broadcast_assistant_set_broadcast_code(
 {
 	struct bt_bap_bass_cp_broadcase_code *cp;
 	struct bap_broadcast_assistant_instance *inst;
+	const struct scan_delegator_data *sd_data;
+	__maybe_unused int mutex_err;
+	int err;
 
 	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
@@ -1595,24 +2109,36 @@ int bt_bap_broadcast_assistant_set_broadcast_code(
 		return -EINVAL;
 	}
 
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
 	inst = inst_by_conn(conn);
 	if (inst == NULL) {
-		return -EINVAL;
+		LOG_DBG("Could not lookup instance by conn %p", conn);
+
+		err = -EINVAL;
+
+		goto exit_label;
 	}
 
-	if (inst->cp_handle == 0) {
+	sd_data = &inst->sd_data;
+	if (sd_data->cp_handle == 0) {
 		LOG_DBG("handle not set");
 
-		return -EINVAL;
+		err = -EINVAL;
+
+		goto exit_label;
 	} else if (atomic_test_and_set_bit(inst->flags, BAP_BA_FLAG_BUSY)) {
 		LOG_DBG("instance busy");
 
-		return -EBUSY;
+		err = -EBUSY;
+
+		goto exit_label;
 	}
 
 	/* Reset buffer before using */
-	net_buf_simple_reset(&att_buf);
-	cp = net_buf_simple_add(&att_buf, sizeof(*cp));
+	net_buf_simple_reset(&inst->net_buf);
+	cp = net_buf_simple_add(&inst->net_buf, sizeof(*cp));
 
 	cp->opcode = BT_BAP_BASS_OP_BROADCAST_CODE;
 	cp->src_id = src_id;
@@ -1621,13 +2147,23 @@ int bt_bap_broadcast_assistant_set_broadcast_code(
 
 	LOG_HEXDUMP_DBG(cp->broadcast_code, BT_ISO_BROADCAST_CODE_SIZE, "broadcast code:");
 
-	return bt_bap_broadcast_assistant_common_cp(conn, &att_buf);
+	/* bt_bap_broadcast_assistant_common_cp clears the busy flag on error */
+	err = bt_bap_broadcast_assistant_common_cp(conn, &inst->net_buf);
+
+exit_label:
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
+	return err;
 }
 
 int bt_bap_broadcast_assistant_rem_src(struct bt_conn *conn, uint8_t src_id)
 {
 	struct bt_bap_bass_cp_rem_src *cp;
 	struct bap_broadcast_assistant_instance *inst;
+	const struct scan_delegator_data *sd_data;
+	__maybe_unused int mutex_err;
+	int err;
 
 	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
@@ -1635,38 +2171,62 @@ int bt_bap_broadcast_assistant_rem_src(struct bt_conn *conn, uint8_t src_id)
 		return -EINVAL;
 	}
 
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
 	inst = inst_by_conn(conn);
 	if (inst == NULL) {
-		return -EINVAL;
+		LOG_DBG("Could not lookup instance by conn %p", conn);
+
+		err = -EINVAL;
+
+		goto exit_label;
 	}
 
-	if (inst->cp_handle == 0) {
+	sd_data = &inst->sd_data;
+	if (sd_data->cp_handle == 0) {
 		LOG_DBG("handle not set");
 
-		return -EINVAL;
+		err = -EINVAL;
+
+		goto exit_label;
 	} else if (atomic_test_and_set_bit(inst->flags, BAP_BA_FLAG_BUSY)) {
 		LOG_DBG("instance busy");
 
-		return -EBUSY;
+		err = -EBUSY;
+
+		goto exit_label;
 	}
 
 	/* Reset buffer before using */
-	net_buf_simple_reset(&att_buf);
-	cp = net_buf_simple_add(&att_buf, sizeof(*cp));
+	net_buf_simple_reset(&inst->net_buf);
+	cp = net_buf_simple_add(&inst->net_buf, sizeof(*cp));
 
 	cp->opcode = BT_BAP_BASS_OP_REM_SRC;
 	cp->src_id = src_id;
 
-	return bt_bap_broadcast_assistant_common_cp(conn, &att_buf);
+	/* bt_bap_broadcast_assistant_common_cp clears the busy flag on error */
+	err = bt_bap_broadcast_assistant_common_cp(conn, &inst->net_buf);
+
+exit_label:
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
+	return err;
 }
 
 static int read_recv_state(struct bap_broadcast_assistant_instance *inst, uint8_t idx)
 {
+	const struct scan_delegator_data *sd_data;
 	int err;
 
+	__ASSERT(k_current_get() == broadcast_assistant_mutex.owner,
+		 "%s was called without a mutex lock", __func__);
+
+	sd_data = &inst->sd_data;
 	inst->read_params.func = read_recv_state_cb;
 	inst->read_params.handle_count = 1;
-	inst->read_params.single.handle = inst->recv_state_handles[idx];
+	inst->read_params.single.handle = sd_data->recv_states[idx].sub_params.value_handle;
 
 	err = bt_gatt_read(inst->conn, &inst->read_params);
 	if (err != 0) {
@@ -1681,6 +2241,8 @@ int bt_bap_broadcast_assistant_read_recv_state(struct bt_conn *conn,
 {
 	int err;
 	struct bap_broadcast_assistant_instance *inst;
+	const struct scan_delegator_data *sd_data;
+	__maybe_unused int mutex_err;
 
 	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
@@ -1688,25 +2250,39 @@ int bt_bap_broadcast_assistant_read_recv_state(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
 	inst = inst_by_conn(conn);
 	if (inst == NULL) {
-		return -EINVAL;
+		LOG_DBG("Could not lookup instance by conn %p", conn);
+
+		err = -EINVAL;
+
+		goto exit_label;
 	}
 
-	if (idx >= ARRAY_SIZE(inst->recv_state_handles)) {
+	sd_data = &inst->sd_data;
+	if (idx >= ARRAY_SIZE(sd_data->recv_states)) {
 		LOG_DBG("Invalid idx: %u", idx);
 
-		return -EINVAL;
+		err = -EINVAL;
+
+		goto exit_label;
 	}
 
-	if (inst->recv_state_handles[idx] == 0) {
+	if (sd_data->recv_states[idx].sub_params.value_handle == 0U) {
 		LOG_DBG("handle not set");
 
-		return -EINVAL;
+		err = -EINVAL;
+
+		goto exit_label;
 	} else if (atomic_test_and_set_bit(inst->flags, BAP_BA_FLAG_BUSY)) {
 		LOG_DBG("instance busy");
 
-		return -EBUSY;
+		err = -EBUSY;
+
+		goto exit_label;
 	}
 
 	err = read_recv_state(inst, idx);
@@ -1716,5 +2292,38 @@ int bt_bap_broadcast_assistant_read_recv_state(struct bt_conn *conn,
 		atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
 	}
 
+exit_label:
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
 	return err;
 }
+
+static int broadcast_assistant_init(void)
+{
+	static struct bt_conn_auth_info_cb auth_callbacks = {
+		.bond_deleted = bond_deleted_cb,
+	};
+	__maybe_unused int mutex_err;
+	__maybe_unused int err;
+
+	/* Take mutex lock to pass the mutex check in deallocate_broadcast_assistant */
+	mutex_err = k_mutex_lock(&broadcast_assistant_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
+	/* Use the deallocate_broadcast_assistant and clear_sd_data to set initial values */
+	ARRAY_FOR_EACH_PTR(broadcast_assistants, inst) {
+		deallocate_broadcast_assistant(inst);
+		clear_sd_data(&inst->sd_data);
+	}
+
+	mutex_err = k_mutex_unlock(&broadcast_assistant_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
+	err = bt_conn_auth_info_cb_register(&auth_callbacks);
+	__ASSERT(err == 0, "Failed to register auth_callbacks: %d", err);
+
+	return 0;
+}
+
+SYS_INIT(broadcast_assistant_init, APPLICATION, 0);
