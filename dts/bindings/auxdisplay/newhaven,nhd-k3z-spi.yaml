@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Newhaven NHD K3Z family serial character LCD character displays on SPI bus
+
+compatible: "newhaven,nhd-k3z"
+
+include: [spi-device.yaml, "newhaven,nhd-k3z-common.yaml"]

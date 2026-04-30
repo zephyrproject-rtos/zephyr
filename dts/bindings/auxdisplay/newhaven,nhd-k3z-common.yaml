@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: |
+  Newhaven NHD K3Z family serial character LCD character displays.
+
+description: |
+  This binding models the transport-facing module interface used by K3Z variants,
+  where geometry is configurable through generic `rows` and `columns` properties.
+
+include: auxdisplay-device.yaml
+
+examples:
+  - |
+    &i2c1 {
+      auxdisplay_0: nhd-k3z@72 {
+        compatible = "newhaven,nhd-k3z";
+        reg = <0x72>;
+        rows = <2>;
+        columns = <16>;
+      };
+    };
