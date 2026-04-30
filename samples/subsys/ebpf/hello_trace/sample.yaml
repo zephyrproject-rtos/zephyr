@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: eBPF Hello Trace
+  description: >
+    Demonstrates attaching an eBPF program to the THREAD_SWITCHED_IN
+    tracepoint to count context switches.
+
+common:
+  platform_allow:
+    - native_sim
+    - qemu_cortex_m3
+    - qemu_x86
+  tags: ebpf
+
+tests:
+  sample.ebpf.hello_trace:
+    integration_platforms:
+      - frdm_mcxn236
+    platform_allow:
+      - frdm_mcxn236
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "eBPF program detached\\. Sample complete\\."
+    tags: ebpf

@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config EBPF_TRACEPOINT_PROGS
+	bool "Tracepoint programs"
+	default y
+	depends on EBPF
+	help
+	  Enable support for TRACEPOINT-class eBPF programs that attach
+	  to kernel trace macros.
+
+config EBPF_SCHED_PROGS
+	bool "Scheduler programs"
+	default y
+	depends on EBPF
+	help
+	  Enable support for scheduler-oriented eBPF programs used for
+	  context switch and scheduler events.
+
+config EBPF_SYSCALL_PROGS
+	bool "Syscall programs"
+	default y
+	depends on EBPF && TRACING_SYSCALL
+	help
+	  Enable support for syscall-oriented eBPF programs used for
+	  syscall entry and exit tracing.
+
+config EBPF_ISR_PROGS
+	bool "ISR programs"
+	default y
+	depends on EBPF && TRACING_ISR
+	help
+	  Enable support for ISR-oriented eBPF programs used for
+	  interrupt entry and exit tracing.
