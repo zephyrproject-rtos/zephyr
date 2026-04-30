@@ -399,7 +399,7 @@ static void hl78xx_hl7800_carrier_on_dns_complete(struct hl78xx_data *data)
  */
 static void hl78xx_hl7800_carrier_on_deregistered_psm(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	const struct hl78xx_config *config = data->dev->config;
 
 	/* HL7800: Must pull WAKE LOW to allow modem to enter PSM sleep.
 	 * Without this, the modem stays awake and GPIO6 never transitions.

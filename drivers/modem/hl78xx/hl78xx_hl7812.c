@@ -55,7 +55,7 @@ static void hl78xx_hl7812_on_rrc_status_urc(struct hl78xx_data *data, bool is_id
 static void hl78xx_hl7812_on_psmev_urc(struct hl78xx_data *data, int psmev_value)
 {
 #if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE) && defined(CONFIG_MODEM_HL78XX_PSM)
-	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	const struct hl78xx_config *config = data->dev->config;
 	struct hl78xx_evt event = {.type = HL78XX_LTE_PSMEV_UPDATE};
 
 	data->status.psmev.previous = data->status.psmev.current;
