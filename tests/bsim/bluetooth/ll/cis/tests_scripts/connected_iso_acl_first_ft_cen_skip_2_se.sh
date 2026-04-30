@@ -6,7 +6,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 # Basic Connected ISO test: a Central connects to 1 Peripheral and tests RTN=2,
 # FT=2, skips 2 subevents in the central
-simulation_id="connected_iso_acl_first_ft_cen_skip_2_se"
+simulation_id="${BOARD_TS}_connected_iso_acl_first_ft_cen_skip_2_se"
 verbosity_level=2
 EXECUTE_TIMEOUT=60
 
