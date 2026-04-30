@@ -136,7 +136,7 @@ REDIRECTS = (
     ('connectivity/bluetooth/shell/classic/goep', 'services/connectivity/bluetooth/shell/classic/goep'),
     ('connectivity/bluetooth/shell/classic/hfp', 'services/connectivity/bluetooth/shell/classic/hfp'),
     ('connectivity/bluetooth/shell/classic/l2cap', 'services/connectivity/bluetooth/shell/classic/l2cap'),
-    ('connectivity/bluetooth/shell/classic/rfcomm', 'services/connectivity/bluetooth/shell/classic/rfcomm'),
+    ('connectivity/bluetooth/shell/classic/rfcomm', 'services/connectivity/bluetooth/shell/classic/spp'),
     ('connectivity/bluetooth/shell/host/gap', 'services/connectivity/bluetooth/shell/host/gap'),
     ('connectivity/bluetooth/shell/host/gatt', 'services/connectivity/bluetooth/shell/host/gatt'),
     ('connectivity/bluetooth/shell/host/iso', 'services/connectivity/bluetooth/shell/host/iso'),
