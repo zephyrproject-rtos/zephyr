@@ -3,6 +3,7 @@
 
 config TEST_DIRECT_IRQ_MAX
 	int "Max offset of direct IRQ used for the test"
-	default NUM_IRQS
+	default NUM_IRQS if !MULTI_LEVEL_INTERRUPTS
+	default 2ND_LVL_ISR_TBL_OFFSET
 
 source "Kconfig.zephyr"
