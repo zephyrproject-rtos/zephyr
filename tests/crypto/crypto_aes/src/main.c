@@ -8,6 +8,7 @@
 #include <zephyr/crypto/crypto.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
 
 #ifdef CONFIG_CRYPTO_MBEDTLS_SHIM
@@ -26,12 +27,25 @@
 #define CRYPTO_DEV_COMPAT bflb_sec_eng_aes
 #elif CONFIG_CRYPTO_INFINEON_MXCRYPTOLITE
 #define CRYPTO_DEV_COMPAT infineon_mxcryptolite_crypto
+#elif CONFIG_CRYPTO_INFINEON_MXCRYPTO
+#define CRYPTO_DEV_COMPAT infineon_mxcrypto_crypto
 #else
 #error "You need to enable one crypto device"
 #endif
 
-/* Some crypto drivers require IO buffers to be aligned */
-#define IO_ALIGNMENT_BYTES 4
+/*
+ * Some crypto drivers require IO buffers to be aligned to a hardware /
+ * cache-line granularity.  Buffers handed to the driver must start on a
+ * cache-line boundary AND occupy whole cache lines (the underlying
+ * allocation must be padded up to a multiple of the cache-line size)
+ * so that the driver's cache-maintenance operations do not corrupt
+ * unrelated data sharing a partial line.  The required alignment is
+ * configured per-board via CONFIG_TEST_CRYPTO_IO_ALIGNMENT_BYTES.
+ */
+#define IO_ALIGNMENT_BYTES CONFIG_TEST_CRYPTO_IO_ALIGNMENT_BYTES
+
+/* Round size up to a multiple of IO_ALIGNMENT_BYTES. */
+#define BUFFER_PAD(n) ROUND_UP((n), IO_ALIGNMENT_BYTES)
 
 /* Test vectors from FIPS-197 and NIST SP 800-38A */
 
@@ -148,7 +162,12 @@ static void crypto_aes_before(void *fixture)
 /* ECB Mode Tests */
 ZTEST(crypto_aes, test_ecb_encrypt)
 {
-	uint8_t encrypted[16] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t encrypted[BUFFER_PAD(16)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t plaintext_buf[BUFFER_PAD(sizeof(ecb_plaintext))]
+		__aligned(IO_ALIGNMENT_BYTES) = {0};
+
+	memcpy(plaintext_buf, ecb_plaintext, sizeof(ecb_plaintext));
+
 	struct cipher_ctx ctx = {
 		.keylen = sizeof(ecb_key),
 		.key.bit_stream = ecb_key,
@@ -156,7 +175,7 @@ ZTEST(crypto_aes, test_ecb_encrypt)
 	};
 
 	struct cipher_pkt pkt = {
-		.in_buf = (uint8_t *)ecb_plaintext,
+		.in_buf = plaintext_buf,
 		.in_len = sizeof(ecb_plaintext),
 		.out_buf_max = sizeof(encrypted),
 		.out_buf = encrypted,
@@ -184,7 +203,12 @@ ZTEST(crypto_aes, test_ecb_encrypt)
 
 ZTEST(crypto_aes, test_ecb_decrypt)
 {
-	uint8_t decrypted[16] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t decrypted[BUFFER_PAD(16)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t ciphertext_buf[BUFFER_PAD(sizeof(ecb_ciphertext))]
+		__aligned(IO_ALIGNMENT_BYTES) = {0};
+
+	memcpy(ciphertext_buf, ecb_ciphertext, sizeof(ecb_ciphertext));
+
 	struct cipher_ctx ctx = {
 		.keylen = sizeof(ecb_key),
 		.key.bit_stream = ecb_key,
@@ -192,7 +216,7 @@ ZTEST(crypto_aes, test_ecb_decrypt)
 	};
 
 	struct cipher_pkt pkt = {
-		.in_buf = (uint8_t *)ecb_ciphertext,
+		.in_buf = ciphertext_buf,
 		.in_len = sizeof(ecb_ciphertext),
 		.out_buf_max = sizeof(decrypted),
 		.out_buf = decrypted,
@@ -221,10 +245,13 @@ ZTEST(crypto_aes, test_ecb_decrypt)
 /* CBC Mode Tests */
 ZTEST(crypto_aes, test_cbc_encrypt)
 {
-	uint8_t encrypted[32] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t encrypted[BUFFER_PAD(32)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t plaintext_buf[BUFFER_PAD(sizeof(cbc_plaintext))]
+		__aligned(IO_ALIGNMENT_BYTES) = {0};
 	uint8_t iv_copy[16];
 
 	memcpy(iv_copy, cbc_iv, sizeof(cbc_iv));
+	memcpy(plaintext_buf, cbc_plaintext, sizeof(cbc_plaintext));
 
 	struct cipher_ctx ctx = {
 		.keylen = sizeof(cbc_key),
@@ -233,7 +260,7 @@ ZTEST(crypto_aes, test_cbc_encrypt)
 	};
 
 	struct cipher_pkt pkt = {
-		.in_buf = (uint8_t *)cbc_plaintext,
+		.in_buf = plaintext_buf,
 		.in_len = sizeof(cbc_plaintext),
 		.out_buf_max = sizeof(encrypted),
 		.out_buf = encrypted,
@@ -263,8 +290,8 @@ ZTEST(crypto_aes, test_cbc_encrypt)
 ZTEST(crypto_aes, test_cbc_decrypt)
 {
 	/* For decrypt, need to prepend IV to ciphertext input */
-	uint8_t input[32] __aligned(IO_ALIGNMENT_BYTES);
-	uint8_t decrypted[16] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t input[BUFFER_PAD(32)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t decrypted[BUFFER_PAD(16)] __aligned(IO_ALIGNMENT_BYTES) = {0};
 
 	/* Prepend IV to ciphertext */
 	memcpy(input, cbc_iv, sizeof(cbc_iv));
@@ -277,7 +304,7 @@ ZTEST(crypto_aes, test_cbc_decrypt)
 	};
 	struct cipher_pkt pkt = {
 		.in_buf = (uint8_t *)input,
-		.in_len = sizeof(input),
+		.in_len = sizeof(cbc_iv) + sizeof(cbc_ciphertext),
 		.out_buf_max = sizeof(decrypted),
 		.out_buf = decrypted,
 	};
@@ -305,10 +332,13 @@ ZTEST(crypto_aes, test_cbc_decrypt)
 /* CTR Mode Tests */
 ZTEST(crypto_aes, test_ctr_encrypt)
 {
-	uint8_t encrypted[64] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t encrypted[BUFFER_PAD(64)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t plaintext_buf[BUFFER_PAD(sizeof(ctr_plaintext))]
+		__aligned(IO_ALIGNMENT_BYTES) = {0};
 	uint8_t iv_copy[12];
 
 	memcpy(iv_copy, ctr_iv, sizeof(ctr_iv));
+	memcpy(plaintext_buf, ctr_plaintext, sizeof(ctr_plaintext));
 
 	struct cipher_ctx ctx = {
 		.keylen = sizeof(ctr_key),
@@ -318,7 +348,7 @@ ZTEST(crypto_aes, test_ctr_encrypt)
 	};
 
 	struct cipher_pkt pkt = {
-		.in_buf = (uint8_t *)ctr_plaintext,
+		.in_buf = plaintext_buf,
 		.in_len = sizeof(ctr_plaintext),
 		.out_buf_max = sizeof(encrypted),
 		.out_buf = encrypted,
@@ -346,10 +376,13 @@ ZTEST(crypto_aes, test_ctr_encrypt)
 
 ZTEST(crypto_aes, test_ctr_decrypt)
 {
-	uint8_t decrypted[64] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t decrypted[BUFFER_PAD(64)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t ciphertext_buf[BUFFER_PAD(sizeof(ctr_ciphertext))]
+		__aligned(IO_ALIGNMENT_BYTES) = {0};
 	uint8_t iv_copy[12];
 
 	memcpy(iv_copy, ctr_iv, sizeof(ctr_iv));
+	memcpy(ciphertext_buf, ctr_ciphertext, sizeof(ctr_ciphertext));
 
 	struct cipher_ctx ctx = {
 		.keylen = sizeof(ctr_key),
@@ -359,7 +392,7 @@ ZTEST(crypto_aes, test_ctr_decrypt)
 	};
 
 	struct cipher_pkt pkt = {
-		.in_buf = (uint8_t *)ctr_ciphertext,
+		.in_buf = ciphertext_buf,
 		.in_len = sizeof(ctr_ciphertext),
 		.out_buf_max = sizeof(decrypted),
 		.out_buf = decrypted,
@@ -388,10 +421,15 @@ ZTEST(crypto_aes, test_ctr_decrypt)
 /* CCM Mode Tests */
 ZTEST(crypto_aes, test_ccm_encrypt)
 {
-	uint8_t encrypted[50] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t encrypted[BUFFER_PAD(50)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t plaintext_buf[BUFFER_PAD(sizeof(ccm_plaintext))]
+		__aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t hdr_buf[BUFFER_PAD(sizeof(ccm_hdr))] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	uint8_t nonce_copy[13];
 
 	memcpy(nonce_copy, ccm_nonce, sizeof(ccm_nonce));
+	memcpy(plaintext_buf, ccm_plaintext, sizeof(ccm_plaintext));
+	memcpy(hdr_buf, ccm_hdr, sizeof(ccm_hdr));
 
 	struct cipher_ctx ctx = {
 		.keylen = sizeof(ccm_key),
@@ -404,14 +442,14 @@ ZTEST(crypto_aes, test_ccm_encrypt)
 	};
 
 	struct cipher_pkt pkt = {
-		.in_buf = (uint8_t *)ccm_plaintext,
+		.in_buf = plaintext_buf,
 		.in_len = sizeof(ccm_plaintext),
 		.out_buf_max = sizeof(encrypted),
 		.out_buf = encrypted,
 	};
 
 	struct cipher_aead_pkt aead_pkt = {
-		.ad = (uint8_t *)ccm_hdr,
+		.ad = hdr_buf,
 		.ad_len = sizeof(ccm_hdr),
 		.pkt = &pkt,
 		.tag = encrypted + sizeof(ccm_plaintext),
@@ -439,12 +477,14 @@ ZTEST(crypto_aes, test_ccm_encrypt)
 
 ZTEST(crypto_aes, test_ccm_decrypt)
 {
-	uint8_t decrypted[32] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t decrypted[BUFFER_PAD(32)] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	uint8_t nonce_copy[13];
-	uint8_t ciphertext_copy[31];
+	uint8_t ciphertext_copy[BUFFER_PAD(31)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t hdr_buf[BUFFER_PAD(sizeof(ccm_hdr))] __aligned(IO_ALIGNMENT_BYTES) = {0};
 
 	memcpy(nonce_copy, ccm_nonce, sizeof(ccm_nonce));
 	memcpy(ciphertext_copy, ccm_ciphertext, sizeof(ccm_ciphertext));
+	memcpy(hdr_buf, ccm_hdr, sizeof(ccm_hdr));
 
 	struct cipher_ctx ctx = {
 		.keylen = sizeof(ccm_key),
@@ -464,7 +504,7 @@ ZTEST(crypto_aes, test_ccm_decrypt)
 	};
 
 	struct cipher_aead_pkt aead_pkt = {
-		.ad = (uint8_t *)ccm_hdr,
+		.ad = hdr_buf,
 		.ad_len = sizeof(ccm_hdr),
 		.pkt = &pkt,
 		.tag = ciphertext_copy + sizeof(ccm_plaintext),
@@ -493,10 +533,15 @@ ZTEST(crypto_aes, test_ccm_decrypt)
 /* GCM Mode Tests */
 ZTEST(crypto_aes, test_gcm_encrypt)
 {
-	uint8_t encrypted[60] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t encrypted[BUFFER_PAD(60)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t plaintext_buf[BUFFER_PAD(sizeof(gcm_plaintext))]
+		__aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t hdr_buf[BUFFER_PAD(sizeof(gcm_hdr))] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	uint8_t nonce_copy[12];
 
 	memcpy(nonce_copy, gcm_nonce, sizeof(gcm_nonce));
+	memcpy(plaintext_buf, gcm_plaintext, sizeof(gcm_plaintext));
+	memcpy(hdr_buf, gcm_hdr, sizeof(gcm_hdr));
 
 	struct cipher_ctx ctx = {
 		.keylen = sizeof(gcm_key),
@@ -509,14 +554,14 @@ ZTEST(crypto_aes, test_gcm_encrypt)
 	};
 
 	struct cipher_pkt pkt = {
-		.in_buf = (uint8_t *)gcm_plaintext,
+		.in_buf = plaintext_buf,
 		.in_len = sizeof(gcm_plaintext),
 		.out_buf_max = sizeof(encrypted),
 		.out_buf = encrypted,
 	};
 
 	struct cipher_aead_pkt aead_pkt = {
-		.ad = (uint8_t *)gcm_hdr,
+		.ad = hdr_buf,
 		.ad_len = sizeof(gcm_hdr),
 		.pkt = &pkt,
 		.tag = encrypted + sizeof(gcm_plaintext),
@@ -544,12 +589,14 @@ ZTEST(crypto_aes, test_gcm_encrypt)
 
 ZTEST(crypto_aes, test_gcm_decrypt)
 {
-	uint8_t decrypted[44] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t decrypted[BUFFER_PAD(44)] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	uint8_t nonce_copy[12];
-	uint8_t ciphertext_copy[58];
+	uint8_t ciphertext_copy[BUFFER_PAD(58)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t hdr_buf[BUFFER_PAD(sizeof(gcm_hdr))] __aligned(IO_ALIGNMENT_BYTES) = {0};
 
 	memcpy(nonce_copy, gcm_nonce, sizeof(gcm_nonce));
 	memcpy(ciphertext_copy, gcm_ciphertext, sizeof(gcm_ciphertext));
+	memcpy(hdr_buf, gcm_hdr, sizeof(gcm_hdr));
 
 	struct cipher_ctx ctx = {
 		.keylen = sizeof(gcm_key),
@@ -568,7 +615,7 @@ ZTEST(crypto_aes, test_gcm_decrypt)
 		.out_buf = decrypted,
 	};
 	struct cipher_aead_pkt aead_pkt = {
-		.ad = (uint8_t *)gcm_hdr,
+		.ad = hdr_buf,
 		.ad_len = sizeof(gcm_hdr),
 		.pkt = &pkt,
 		.tag = ciphertext_copy + sizeof(gcm_plaintext),
