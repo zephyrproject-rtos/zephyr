@@ -345,7 +345,7 @@ static uint8_t btp_cap_unicast_audio_start(const void *cmd, uint16_t cmd_len,
 					   void *rsp, uint16_t *rsp_len)
 {
 	int err;
-	size_t stream_count = 0;
+	size_t stream_count = 0U;
 	const struct btp_cap_unicast_audio_start_cmd *cp = cmd;
 	struct bt_cap_unicast_audio_start_param start_param;
 	struct bt_cap_unicast_audio_start_stream_param stream_params[
@@ -364,15 +364,15 @@ static uint8_t btp_cap_unicast_audio_start(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	for (size_t conn_index = 0; conn_index < ARRAY_SIZE(btp_csip_set_members); conn_index++) {
+	for (size_t conn_index = 0U; conn_index < ARRAY_SIZE(btp_csip_set_members); conn_index++) {
 		struct btp_bap_unicast_connection *u_conn = btp_bap_unicast_conn_get(conn_index);
 
-		if (u_conn->end_points_count == 0) {
+		if (u_conn->end_points_count == 0U) {
 			/* Connection not initialized */
 			continue;
 		}
 
-		for (size_t i = 0; i < ARRAY_SIZE(u_conn->streams); i++) {
+		for (size_t i = 0U; i < ARRAY_SIZE(u_conn->streams); i++) {
 			struct bt_cap_unicast_audio_start_stream_param *stream_param;
 			struct btp_bap_unicast_stream *u_stream = &u_conn->streams[i];
 
@@ -419,12 +419,12 @@ static uint8_t btp_cap_unicast_audio_update(const void *cmd, uint16_t cmd_len,
 
 	LOG_DBG("");
 
-	if (cp->stream_count == 0) {
+	if (cp->stream_count == 0U) {
 		return BTP_STATUS_FAILED;
 	}
 
 	data_ptr = cp->update_data;
-	for (size_t i = 0; i < cp->stream_count; i++) {
+	for (size_t i = 0U; i < cp->stream_count; i++) {
 		struct btp_bap_unicast_connection *u_conn;
 		struct btp_bap_unicast_stream *u_stream;
 		struct bt_conn *conn;
@@ -441,7 +441,7 @@ static uint8_t btp_cap_unicast_audio_update(const void *cmd, uint16_t cmd_len,
 
 		u_conn = btp_bap_unicast_conn_get(bt_conn_index(conn));
 		bt_conn_unref(conn);
-		if (u_conn->end_points_count == 0) {
+		if (u_conn->end_points_count == 0U) {
 			/* Connection not initialized */
 
 			return BTP_STATUS_FAILED;
@@ -491,15 +491,15 @@ static uint8_t btp_cap_unicast_audio_stop(const void *cmd, uint16_t cmd_len,
 	LOG_DBG("");
 
 	/* Get generate the same stream list as used by btp_cap_unicast_audio_start */
-	for (size_t conn_index = 0; conn_index < ARRAY_SIZE(btp_csip_set_members); conn_index++) {
+	for (size_t conn_index = 0U; conn_index < ARRAY_SIZE(btp_csip_set_members); conn_index++) {
 		struct btp_bap_unicast_connection *u_conn = btp_bap_unicast_conn_get(conn_index);
 
-		if (u_conn->end_points_count == 0) {
+		if (u_conn->end_points_count == 0U) {
 			/* Connection not initialized */
 			continue;
 		}
 
-		for (size_t i = 0; i < ARRAY_SIZE(u_conn->streams); i++) {
+		for (size_t i = 0U; i < ARRAY_SIZE(u_conn->streams); i++) {
 			struct btp_bap_unicast_stream *u_stream = &u_conn->streams[i];
 
 			if (!u_stream->in_use || u_stream->cig_id != cp->cig_id) {
@@ -513,7 +513,7 @@ static uint8_t btp_cap_unicast_audio_stop(const void *cmd, uint16_t cmd_len,
 	param.streams = streams;
 	param.count = stream_cnt;
 	param.type = BT_CAP_SET_TYPE_AD_HOC;
-	param.release = (cp->flags & BTP_CAP_UNICAST_AUDIO_STOP_FLAG_RELEASE) != 0;
+	param.release = (cp->flags & BTP_CAP_UNICAST_AUDIO_STOP_FLAG_RELEASE) != 0U;
 
 	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
@@ -747,7 +747,7 @@ static uint8_t btp_cap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	 */
 	source->broadcast_id = sys_get_le24(cp->broadcast_id);
 
-	for (size_t i = 0; i < ARRAY_SIZE(source->streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(source->streams); i++) {
 		struct btp_bap_broadcast_stream *stream = &source->streams[i];
 		struct bt_cap_initiator_broadcast_stream_param *stream_param;
 		uint8_t bis_id;
@@ -771,8 +771,8 @@ static uint8_t btp_cap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 		}
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(cap_params->cap_subgroup_params); i++) {
-		if (cap_params->cap_subgroup_params[i].stream_count == 0) {
+	for (size_t i = 0U; i < ARRAY_SIZE(cap_params->cap_subgroup_params); i++) {
+		if (cap_params->cap_subgroup_params[i].stream_count == 0U) {
 			/* No gaps allowed */
 			break;
 		}

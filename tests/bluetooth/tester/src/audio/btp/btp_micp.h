@@ -12,28 +12,28 @@
 #include <zephyr/sys/util.h>
 
 /* MICP commands */
-#define BTP_MICP_READ_SUPPORTED_COMMANDS	0x01
+#define BTP_MICP_READ_SUPPORTED_COMMANDS	0x01U
 struct btp_micp_read_supported_commands_rp {
 	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
-#define BTP_MICP_CTLR_DISCOVER			0x02
+#define BTP_MICP_CTLR_DISCOVER			0x02U
 struct btp_micp_discover_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MICP_CTLR_MUTE_READ			0x03
+#define BTP_MICP_CTLR_MUTE_READ			0x03U
 struct btp_micp_mute_read_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MICP_CTLR_MUTE			0x04
+#define BTP_MICP_CTLR_MUTE			0x04U
 struct btp_micp_mute_cmd {
 	bt_addr_le_t address;
 } __packed;
 
 /* MICP events */
-#define BTP_MICP_DISCOVERED_EV			0x80
+#define BTP_MICP_DISCOVERED_EV			0x80U
 struct btp_micp_discovered_ev {
 	bt_addr_le_t address;
 	uint8_t att_status;
@@ -46,7 +46,7 @@ struct btp_micp_discovered_ev {
 	uint16_t desc_handle;
 } __packed;
 
-#define BTP_MICP_MUTE_STATE_EV			0x81
+#define BTP_MICP_MUTE_STATE_EV			0x81U
 struct btp_micp_mute_state_ev {
 	bt_addr_le_t address;
 	uint8_t att_status;

@@ -14,128 +14,128 @@
 #include <zephyr/sys/util.h>
 
 /* MCP commands */
-#define BTP_MCP_READ_SUPPORTED_COMMANDS		0x01
+#define BTP_MCP_READ_SUPPORTED_COMMANDS		0x01U
 struct btp_mcp_read_supported_commands_rp {
 	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
-#define BTP_MCP_DISCOVER			0x02
+#define BTP_MCP_DISCOVER			0x02U
 struct btp_mcp_discover_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MCP_TRACK_DURATION_READ		0x03
+#define BTP_MCP_TRACK_DURATION_READ		0x03U
 struct btp_mcp_track_duration_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MCP_TRACK_POSITION_READ		0x04
+#define BTP_MCP_TRACK_POSITION_READ		0x04U
 struct btp_mcp_track_position_read_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MCP_TRACK_POSITION_SET		0x05
+#define BTP_MCP_TRACK_POSITION_SET		0x05U
 struct btp_mcp_track_position_set_cmd {
 	bt_addr_le_t address;
 	int32_t pos;
 } __packed;
 
-#define BTP_MCP_PLAYBACK_SPEED_READ		0x06
+#define BTP_MCP_PLAYBACK_SPEED_READ		0x06U
 struct btp_mcp_playback_speed_read_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MCP_PLAYBACK_SPEED_SET		0x07
+#define BTP_MCP_PLAYBACK_SPEED_SET		0x07U
 struct btp_mcp_playback_speed_set {
 	bt_addr_le_t address;
 	int8_t speed;
 } __packed;
 
-#define BTP_MCP_SEEKING_SPEED_READ		0x08
+#define BTP_MCP_SEEKING_SPEED_READ		0x08U
 struct btp_mcp_seeking_speed_read_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MCP_ICON_OBJ_ID_READ		0x09
+#define BTP_MCP_ICON_OBJ_ID_READ		0x09U
 struct btp_mcp_icon_obj_id_read_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MCP_NEXT_TRACK_OBJ_ID_READ		0x0a
+#define BTP_MCP_NEXT_TRACK_OBJ_ID_READ		0x0AU
 struct btp_mcp_next_track_obj_id_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MCP_NEXT_TRACK_OBJ_ID_SET		0x0b
+#define BTP_MCP_NEXT_TRACK_OBJ_ID_SET		0x0BU
 struct btp_mcp_set_next_track_obj_id_cmd {
 	bt_addr_le_t address;
 	uint8_t id[BT_OTS_OBJ_ID_SIZE];
 } __packed;
 
-#define BTP_MCP_PARENT_GROUP_OBJ_ID_READ	0x0c
+#define BTP_MCP_PARENT_GROUP_OBJ_ID_READ	0x0CU
 struct btp_mcp_parent_group_obj_id_read_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MCP_CURRENT_GROUP_OBJ_ID_READ	0x0d
+#define BTP_MCP_CURRENT_GROUP_OBJ_ID_READ	0x0DU
 struct btp_mcp_current_group_obj_id_read_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MCP_CURRENT_GROUP_OBJ_ID_SET	0x0e
+#define BTP_MCP_CURRENT_GROUP_OBJ_ID_SET	0x0EU
 struct btp_mcp_current_group_obj_id_set_cmd {
 	bt_addr_le_t address;
 	uint8_t id[BT_OTS_OBJ_ID_SIZE];
 } __packed;
 
-#define BTP_MCP_PLAYING_ORDER_READ		0x0f
+#define BTP_MCP_PLAYING_ORDER_READ		0x0FU
 struct btp_mcp_playing_order_read_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MCP_PLAYING_ORDER_SET		0x10
+#define BTP_MCP_PLAYING_ORDER_SET		0x10U
 struct btp_mcp_playing_order_set_cmd {
 	bt_addr_le_t address;
 	uint8_t order;
 } __packed;
 
-#define BTP_MCP_PLAYING_ORDERS_SUPPORTED_READ	0x11
+#define BTP_MCP_PLAYING_ORDERS_SUPPORTED_READ	0x11U
 struct btp_mcp_playing_orders_supported_read_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MCP_MEDIA_STATE_READ		0x12
+#define BTP_MCP_MEDIA_STATE_READ		0x12U
 struct btp_mcp_media_state_read_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MCP_OPCODES_SUPPORTED_READ		0x13
+#define BTP_MCP_OPCODES_SUPPORTED_READ		0x13U
 struct btp_mcp_opcodes_supported_read_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MCP_CONTENT_CONTROL_ID_READ		0x14
+#define BTP_MCP_CONTENT_CONTROL_ID_READ		0x14U
 struct btp_mcp_content_control_id_read_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MCP_SEGMENTS_OBJ_ID_READ		0x15
+#define BTP_MCP_SEGMENTS_OBJ_ID_READ		0x15U
 struct btp_mcp_segments_obj_id_read_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MCP_CURRENT_TRACK_OBJ_ID_READ	0x16
+#define BTP_MCP_CURRENT_TRACK_OBJ_ID_READ	0x16U
 struct btp_mcp_current_track_obj_id_read_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_MCP_CURRENT_TRACK_OBJ_ID_SET	0x17
+#define BTP_MCP_CURRENT_TRACK_OBJ_ID_SET	0x17U
 struct btp_mcp_current_track_obj_id_set_cmd {
 	bt_addr_le_t address;
 	uint8_t id[BT_OTS_OBJ_ID_SIZE];
 } __packed;
 
-#define BTP_MCP_CMD_SEND			0x18
+#define BTP_MCP_CMD_SEND			0x18U
 struct btp_mcp_send_cmd {
 	bt_addr_le_t address;
 	uint8_t  opcode;
@@ -143,7 +143,7 @@ struct btp_mcp_send_cmd {
 	int32_t param;
 } __packed;
 
-#define BTP_MCP_CMD_SEARCH			0x19
+#define BTP_MCP_CMD_SEARCH			0x19U
 struct btp_mcp_search_cmd {
 	bt_addr_le_t address;
 	uint8_t type;
@@ -152,7 +152,7 @@ struct btp_mcp_search_cmd {
 } __packed;
 
 /* MCP events */
-#define BTP_MCP_DISCOVERED_EV			0x80
+#define BTP_MCP_DISCOVERED_EV			0x80U
 struct btp_mcp_discovered_ev {
 	bt_addr_le_t address;
 	uint8_t status;
@@ -195,112 +195,112 @@ struct btp_mcp_discovered_ev {
 	} ots_handles;
 } __packed;
 
-#define BTP_MCP_TRACK_DURATION_EV		0x81
+#define BTP_MCP_TRACK_DURATION_EV		0x81U
 struct btp_mcp_track_duration_ev {
 	bt_addr_le_t address;
 	uint8_t status;
 	int32_t dur;
 } __packed;
 
-#define BTP_MCP_TRACK_POSITION_EV		0x82
+#define BTP_MCP_TRACK_POSITION_EV		0x82U
 struct btp_mcp_track_position_ev {
 	bt_addr_le_t address;
 	uint8_t status;
 	int32_t pos;
 } __packed;
 
-#define BTP_MCP_PLAYBACK_SPEED_EV		0x83
+#define BTP_MCP_PLAYBACK_SPEED_EV		0x83U
 struct btp_mcp_playback_speed_ev {
 	bt_addr_le_t address;
 	uint8_t status;
 	int8_t speed;
 } __packed;
 
-#define BTP_MCP_SEEKING_SPEED_EV		0x84
+#define BTP_MCP_SEEKING_SPEED_EV		0x84U
 struct btp_mcp_seeking_speed_ev {
 	bt_addr_le_t address;
 	uint8_t status;
 	int8_t speed;
 } __packed;
 
-#define BTP_MCP_ICON_OBJ_ID_EV			0x85
+#define BTP_MCP_ICON_OBJ_ID_EV			0x85U
 struct btp_mcp_icon_obj_id_ev {
 	bt_addr_le_t address;
 	uint8_t status;
 	uint8_t id[BT_OTS_OBJ_ID_SIZE];
 } __packed;
 
-#define BTP_MCP_NEXT_TRACK_OBJ_ID_EV		0x86
+#define BTP_MCP_NEXT_TRACK_OBJ_ID_EV		0x86U
 struct btp_mcp_next_track_obj_id_ev {
 	bt_addr_le_t address;
 	uint8_t status;
 	uint8_t id[BT_OTS_OBJ_ID_SIZE];
 } __packed;
 
-#define BTP_MCP_PARENT_GROUP_OBJ_ID_EV		0x87
+#define BTP_MCP_PARENT_GROUP_OBJ_ID_EV		0x87U
 struct btp_mcp_parent_group_obj_id_ev {
 	bt_addr_le_t address;
 	uint8_t status;
 	uint8_t id[BT_OTS_OBJ_ID_SIZE];
 } __packed;
 
-#define BTP_MCP_CURRENT_GROUP_OBJ_ID_EV		0x88
+#define BTP_MCP_CURRENT_GROUP_OBJ_ID_EV		0x88U
 struct btp_mcp_current_group_obj_id_ev {
 	bt_addr_le_t address;
 	uint8_t status;
 	uint8_t id[BT_OTS_OBJ_ID_SIZE];
 } __packed;
 
-#define BTP_MCP_PLAYING_ORDER_EV		0x89
+#define BTP_MCP_PLAYING_ORDER_EV		0x89U
 struct btp_mcp_playing_order_ev {
 	bt_addr_le_t address;
 	uint8_t status;
 	uint8_t order;
 } __packed;
 
-#define BTP_MCP_PLAYING_ORDERS_SUPPORTED_EV	0x8a
+#define BTP_MCP_PLAYING_ORDERS_SUPPORTED_EV	0x8AU
 struct btp_mcp_playing_orders_supported_ev {
 	bt_addr_le_t address;
 	uint8_t status;
 	uint16_t orders;
 } __packed;
 
-#define BTP_MCP_MEDIA_STATE_EV			0x8b
+#define BTP_MCP_MEDIA_STATE_EV			0x8BU
 struct btp_mcp_media_state_ev {
 	bt_addr_le_t address;
 	uint8_t status;
 	uint8_t state;
 } __packed;
 
-#define BTP_MCP_OPCODES_SUPPORTED_EV		0x8c
+#define BTP_MCP_OPCODES_SUPPORTED_EV		0x8CU
 struct btp_mcp_opcodes_supported_ev {
 	bt_addr_le_t address;
 	uint8_t status;
 	uint32_t opcodes;
 } __packed;
 
-#define BTP_MCP_CONTENT_CONTROL_ID_EV		0x8d
+#define BTP_MCP_CONTENT_CONTROL_ID_EV		0x8DU
 struct btp_mcp_content_control_id_ev {
 	bt_addr_le_t address;
 	uint8_t status;
 	uint8_t ccid;
 } __packed;
 
-#define BTP_MCP_SEGMENTS_OBJ_ID_EV		0x8e
+#define BTP_MCP_SEGMENTS_OBJ_ID_EV		0x8EU
 struct btp_mcp_segments_obj_id_ev {
 	bt_addr_le_t address;
 	uint8_t status;
 	uint8_t id[BT_OTS_OBJ_ID_SIZE];
 } __packed;
 
-#define BTP_MCP_CURRENT_TRACK_OBJ_ID_EV		0x8f
+#define BTP_MCP_CURRENT_TRACK_OBJ_ID_EV		0x8FU
 struct btp_mcp_current_track_obj_id_ev {
 	bt_addr_le_t address;
 	uint8_t status;
 	uint8_t id[BT_OTS_OBJ_ID_SIZE];
 } __packed;
 
-#define BTP_MCP_MEDIA_CP_EV			0x90
+#define BTP_MCP_MEDIA_CP_EV			0x90U
 struct btp_mcp_media_cp_ev {
 	bt_addr_le_t address;
 	uint8_t status;
@@ -309,7 +309,7 @@ struct btp_mcp_media_cp_ev {
 	int32_t param;
 } __packed;
 
-#define BTP_MCP_SEARCH_CP_EV			0x91
+#define BTP_MCP_SEARCH_CP_EV			0x91U
 struct btp_mcp_search_cp_ev {
 	bt_addr_le_t address;
 	uint8_t status;
@@ -318,7 +318,7 @@ struct btp_mcp_search_cp_ev {
 	uint8_t param[];
 } __packed;
 
-#define BTP_MCP_NTF_EV				0x92
+#define BTP_MCP_NTF_EV				0x92U
 struct btp_mcp_cmd_ntf_ev {
 	bt_addr_le_t address;
 	uint8_t status;
@@ -326,7 +326,7 @@ struct btp_mcp_cmd_ntf_ev {
 	uint8_t result_code;
 } __packed;
 
-#define BTP_SCP_NTF_EV				0x93
+#define BTP_SCP_NTF_EV				0x93U
 struct btp_scp_cmd_ntf_ev {
 	bt_addr_le_t address;
 	uint8_t status;

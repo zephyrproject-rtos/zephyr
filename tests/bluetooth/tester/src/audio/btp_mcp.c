@@ -83,8 +83,6 @@ struct service_handles {
 
 struct service_handles svc_chrc_handles;
 
-#define SEARCH_LEN_MAX 64
-
 static struct net_buf_simple *rx_ev_buf = NET_BUF_SIMPLE(SEARCH_LEN_MAX +
 							 sizeof(struct btp_mcp_search_cp_ev));
 
@@ -354,7 +352,7 @@ static void btp_send_search_cp_ev(struct bt_conn *conn, uint8_t status,
 	struct btp_mcp_search_cp_ev *ev;
 	uint8_t param[SEARCH_LEN_MAX];
 
-	net_buf_simple_init(rx_ev_buf, 0);
+	net_buf_simple_init(rx_ev_buf, 0U);
 
 	ev = net_buf_simple_add(rx_ev_buf, sizeof(*ev));
 

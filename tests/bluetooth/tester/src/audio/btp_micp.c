@@ -491,15 +491,14 @@ uint8_t tester_init_mics(void)
 #if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
 	char input_desc[CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT][16];
 
-	for (size_t i = 0; i < ARRAY_SIZE(mic_dev_register_param.aics_param); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(mic_dev_register_param.aics_param); i++) {
 		mic_dev_register_param.aics_param[i].desc_writable = true;
-		snprintf(input_desc[i], sizeof(input_desc[i]),
-			 "Input %zu", i + 1);
+		snprintf(input_desc[i], sizeof(input_desc[i]), "Input %zu", i + 1U);
 		mic_dev_register_param.aics_param[i].description = input_desc[i];
 		mic_dev_register_param.aics_param[i].type = BT_AICS_INPUT_TYPE_DIGITAL;
-		mic_dev_register_param.aics_param[i].status = 1;
+		mic_dev_register_param.aics_param[i].status = true;
 		mic_dev_register_param.aics_param[i].gain_mode = BT_AICS_MODE_MANUAL;
-		mic_dev_register_param.aics_param[i].units = 1;
+		mic_dev_register_param.aics_param[i].units = 1U;
 		mic_dev_register_param.aics_param[i].min_gain = 0;
 		mic_dev_register_param.aics_param[i].max_gain = 100;
 		mic_dev_register_param.aics_param[i].cb = &aics_mic_dev_cb;

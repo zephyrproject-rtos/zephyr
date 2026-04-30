@@ -15,17 +15,17 @@
 #include <zephyr/sys/util_macro.h>
 
 /* CAP commands */
-#define BTP_CAP_READ_SUPPORTED_COMMANDS		0x01
+#define BTP_CAP_READ_SUPPORTED_COMMANDS		0x01U
 struct btp_cap_read_supported_commands_rp {
 	FLEXIBLE_ARRAY_DECLARE(uint8_t, data);
 } __packed;
 
-#define BTP_CAP_DISCOVER			0x02
+#define BTP_CAP_DISCOVER			0x02U
 struct btp_cap_discover_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_CAP_UNICAST_SETUP_ASE		0x03
+#define BTP_CAP_UNICAST_SETUP_ASE		0x03U
 struct btp_cap_unicast_setup_ase_cmd {
 	bt_addr_le_t address;
 	uint8_t ase_id;
@@ -45,15 +45,15 @@ struct btp_cap_unicast_setup_ase_cmd {
 	uint8_t ltvs[];
 } __packed;
 
-#define BTP_CAP_UNICAST_AUDIO_START		0x04
+#define BTP_CAP_UNICAST_AUDIO_START		0x04U
 struct btp_cap_unicast_audio_start_cmd {
 	uint8_t cig_id;
 	uint8_t set_type;
 } __packed;
-#define BTP_CAP_UNICAST_AUDIO_START_SET_TYPE_AD_HOC	0x00
-#define BTP_CAP_UNICAST_AUDIO_START_SET_TYPE_CSIP	0x01
+#define BTP_CAP_UNICAST_AUDIO_START_SET_TYPE_AD_HOC	0x00U
+#define BTP_CAP_UNICAST_AUDIO_START_SET_TYPE_CSIP	0x01U
 
-#define BTP_CAP_UNICAST_AUDIO_UPDATE		0x05
+#define BTP_CAP_UNICAST_AUDIO_UPDATE		0x05U
 struct btp_cap_unicast_audio_update_cmd {
 	uint8_t stream_count;
 	uint8_t update_data[];
@@ -65,14 +65,14 @@ struct btp_cap_unicast_audio_update_data {
 	uint8_t metadata_ltvs[];
 } __packed;
 
-#define BTP_CAP_UNICAST_AUDIO_STOP		0x06
+#define BTP_CAP_UNICAST_AUDIO_STOP		0x06U
 struct btp_cap_unicast_audio_stop_cmd {
 	uint8_t cig_id;
 	uint8_t flags;
 } __packed;
-#define BTP_CAP_UNICAST_AUDIO_STOP_FLAG_RELEASE BIT(0)
+#define BTP_CAP_UNICAST_AUDIO_STOP_FLAG_RELEASE BIT(0U)
 
-#define BTP_CAP_BROADCAST_SOURCE_SETUP_STREAM	0x07
+#define BTP_CAP_BROADCAST_SOURCE_SETUP_STREAM	0x07U
 struct btp_cap_broadcast_source_setup_stream_cmd {
 	uint8_t source_id;
 	uint8_t subgroup_id;
@@ -84,7 +84,7 @@ struct btp_cap_broadcast_source_setup_stream_cmd {
 	uint8_t ltvs[];
 } __packed;
 
-#define BTP_CAP_BROADCAST_SOURCE_SETUP_SUBGROUP	0x08
+#define BTP_CAP_BROADCAST_SOURCE_SETUP_SUBGROUP	0x08U
 struct btp_cap_broadcast_source_setup_subgroup_cmd {
 	uint8_t source_id;
 	uint8_t subgroup_id;
@@ -96,7 +96,7 @@ struct btp_cap_broadcast_source_setup_subgroup_cmd {
 	uint8_t ltvs[];
 } __packed;
 
-#define BTP_CAP_BROADCAST_SOURCE_SETUP		0x09
+#define BTP_CAP_BROADCAST_SOURCE_SETUP		0x09U
 struct btp_cap_broadcast_source_setup_cmd {
 	uint8_t source_id;
 	uint8_t broadcast_id[3];
@@ -114,35 +114,35 @@ struct btp_cap_broadcast_source_setup_rp {
 	uint32_t gap_settings;
 	uint8_t broadcast_id[BT_AUDIO_BROADCAST_ID_SIZE];
 } __packed;
-#define BTP_CAP_BROADCAST_SOURCE_SETUP_FLAG_ENCRYPTION		BIT(0)
-#define BTP_CAP_BROADCAST_SOURCE_SETUP_FLAG_SUBGROUP_CODEC	BIT(1)
+#define BTP_CAP_BROADCAST_SOURCE_SETUP_FLAG_ENCRYPTION     BIT(0U)
+#define BTP_CAP_BROADCAST_SOURCE_SETUP_FLAG_SUBGROUP_CODEC BIT(1U)
 
-#define BTP_CAP_BROADCAST_SOURCE_RELEASE	0x0a
+#define BTP_CAP_BROADCAST_SOURCE_RELEASE	0x0AU
 struct btp_cap_broadcast_source_release_cmd {
 	uint8_t source_id;
 } __packed;
 
-#define BTP_CAP_BROADCAST_ADV_START		0x0b
+#define BTP_CAP_BROADCAST_ADV_START		0x0BU
 struct btp_cap_broadcast_adv_start_cmd {
 	uint8_t source_id;
 } __packed;
 
-#define BTP_CAP_BROADCAST_ADV_STOP		0x0c
+#define BTP_CAP_BROADCAST_ADV_STOP		0x0CU
 struct btp_cap_broadcast_adv_stop_cmd {
 	uint8_t source_id;
 } __packed;
 
-#define BTP_CAP_BROADCAST_SOURCE_START		0x0d
+#define BTP_CAP_BROADCAST_SOURCE_START		0x0DU
 struct btp_cap_broadcast_source_start_cmd {
 	uint8_t source_id;
 } __packed;
 
-#define BTP_CAP_BROADCAST_SOURCE_STOP		0x0e
+#define BTP_CAP_BROADCAST_SOURCE_STOP		0x0EU
 struct btp_cap_broadcast_source_stop_cmd {
 	uint8_t source_id;
 } __packed;
 
-#define BTP_CAP_BROADCAST_SOURCE_UPDATE		0x0f
+#define BTP_CAP_BROADCAST_SOURCE_UPDATE		0x0FU
 struct btp_cap_broadcast_source_update_cmd {
 	uint8_t source_id;
 	uint8_t metadata_ltvs_len;
@@ -150,26 +150,26 @@ struct btp_cap_broadcast_source_update_cmd {
 } __packed;
 
 /* CAP events */
-#define BTP_CAP_EV_DISCOVERY_COMPLETED		0x80
+#define BTP_CAP_EV_DISCOVERY_COMPLETED		0x80U
 struct btp_cap_discovery_completed_ev {
 	bt_addr_le_t address;
 	uint8_t status;
 } __packed;
-#define BTP_CAP_DISCOVERY_STATUS_SUCCESS	0x00
-#define BTP_CAP_DISCOVERY_STATUS_FAILED		0x01
+#define BTP_CAP_DISCOVERY_STATUS_SUCCESS	0x00U
+#define BTP_CAP_DISCOVERY_STATUS_FAILED		0x01U
 
-#define BTP_CAP_EV_UNICAST_START_COMPLETED	0x81
+#define BTP_CAP_EV_UNICAST_START_COMPLETED	0x81U
 struct btp_cap_unicast_start_completed_ev {
 	uint8_t cig_id;
 	uint8_t status;
 } __packed;
-#define BTP_CAP_UNICAST_START_STATUS_SUCCESS	0x00
-#define BTP_CAP_UNICAST_START_STATUS_FAILED	0x01
+#define BTP_CAP_UNICAST_START_STATUS_SUCCESS	0x00U
+#define BTP_CAP_UNICAST_START_STATUS_FAILED	0x01U
 
-#define BTP_CAP_EV_UNICAST_STOP_COMPLETED	0x82
+#define BTP_CAP_EV_UNICAST_STOP_COMPLETED	0x82U
 struct btp_cap_unicast_stop_completed_ev {
 	uint8_t cig_id;
 	uint8_t status;
 } __packed;
-#define BTP_CAP_UNICAST_STOP_STATUS_SUCCESS	0x00
-#define BTP_CAP_UNICAST_STOP_STATUS_FAILED	0x01
+#define BTP_CAP_UNICAST_STOP_STATUS_SUCCESS	0x00U
+#define BTP_CAP_UNICAST_STOP_STATUS_FAILED	0x01U

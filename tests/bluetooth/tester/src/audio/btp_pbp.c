@@ -33,7 +33,7 @@
 #define LOG_MODULE_NAME bttester_pbp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
-#define PBP_EXT_ADV_METADATA_LEN_MAX 128
+#define PBP_EXT_ADV_METADATA_LEN_MAX 128U
 
 static uint8_t pbp_features_cached;
 static uint8_t pbp_metadata_cached[PBP_EXT_ADV_METADATA_LEN_MAX];
@@ -93,11 +93,11 @@ static bool scan_get_data(struct bt_data *data, void *user_data)
 static void pbp_scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
 {
 	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) ||
-	    !(info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) || info->interval == 0) {
+	    !(info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) || info->interval == 0U) {
 		return;
 	}
 
-	uint8_t broadcast_name_len = 0;
+	uint8_t broadcast_name_len = 0U;
 	struct net_buf_simple ad_copy;
 
 	/* Initial parse to determine broadcast_name_len before allocating memory */
@@ -119,7 +119,7 @@ static void pbp_scan_recv(const struct bt_le_scan_recv_info *info, struct net_bu
 	bt_data_parse(ad, scan_get_data, ev_ptr);
 
 	if (sys_get_le24(ev_ptr->broadcast_id) != BT_BAP_INVALID_BROADCAST_ID &&
-	    ev_ptr->pba_features != 0U && ev_ptr->broadcast_name_len > 0) {
+	    ev_ptr->pba_features != 0U && ev_ptr->broadcast_name_len > 0U) {
 		tester_event(BTP_SERVICE_ID_PBP, BTP_PBP_EV_PUBLIC_BROADCAST_ANNOUNCEMENT_FOUND,
 			     ev_ptr, sizeof(*ev_ptr) + broadcast_name_len);
 	}

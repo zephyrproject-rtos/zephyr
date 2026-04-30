@@ -180,7 +180,7 @@ static bool csip_set_coordinator_oap_cb(const struct bt_csip_set_coordinator_set
 {
 	ARG_UNUSED(set_info);
 
-	for (size_t i = 0; i < count; i++) {
+	for (size_t i = 0U; i < count; i++) {
 		LOG_DBG("Ordered access for members[%zu]: %p", i, members[i]);
 	}
 
@@ -213,14 +213,14 @@ static uint8_t btp_csip_discover(const void *cmd, uint16_t cmd_len,
 
 static int get_available_members(const struct bt_csip_set_coordinator_set_member **members)
 {
-	members_count = 0;
+	members_count = 0U;
 
 	if (cur_csis_inst == NULL) {
 		LOG_ERR("No CSIP instance available");
 		return BTP_STATUS_FAILED;
 	}
 
-	for (size_t i = 0; i < (size_t)ARRAY_SIZE(btp_csip_set_members); i++) {
+	for (size_t i = 0U; i < (size_t)ARRAY_SIZE(btp_csip_set_members); i++) {
 		if (btp_csip_set_members[i] == NULL) {
 			continue;
 		}
@@ -228,7 +228,7 @@ static int get_available_members(const struct bt_csip_set_coordinator_set_member
 		members[members_count++] = btp_csip_set_members[i];
 	}
 
-	if (members_count == 0) {
+	if (members_count == 0U) {
 		LOG_ERR("No set members available");
 		return BTP_STATUS_FAILED;
 	}
@@ -326,7 +326,7 @@ static uint8_t btp_csip_start_ordered_access(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	for (size_t i = 0; i < (size_t)ARRAY_SIZE(btp_csip_set_members); i++) {
+	for (size_t i = 0U; i < (size_t)ARRAY_SIZE(btp_csip_set_members); i++) {
 		if (btp_csip_set_members[i] == NULL) {
 			continue;
 		}
