@@ -8,6 +8,10 @@
 #ifndef ZEPHYR_DRIVERS_GPIO_GPIO_MAX14916_H_
 #define ZEPHYR_DRIVERS_GPIO_GPIO_MAX14916_H_
 
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
+
 #define MAX14906_ENABLE  1
 #define MAX14906_DISABLE 0
 
@@ -204,6 +208,7 @@ union max14916_sht_vdd_en {
 };
 
 struct max149x6_config {
+	struct gpio_driver_config common;
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec fault_gpio;
 	struct gpio_dt_spec ready_gpio;
@@ -220,6 +225,7 @@ struct max149x6_config {
 
 struct max14916_data {
 	struct gpio_driver_data common;
+	struct k_mutex lock;
 	struct {
 		uint8_t ovr_ld;
 		uint8_t curr_lim;
