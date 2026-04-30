@@ -131,8 +131,11 @@ void radio_bc_configure(uint32_t n);
 void radio_bc_status_reset(void);
 uint32_t radio_bc_has_match(void);
 
+typedef void (*radio_tmr_isr_cb_t) (void *param, uint8_t chain);
+
 void isr_radio_tmr(void);
-uint32_t radio_tmr_isr_set(uint32_t start_us, radio_isr_cb_t cb, void *param);
+uint32_t radio_tmr_isr_set(uint32_t start_us, radio_tmr_isr_cb_t cb, void *param);
+uint32_t radio_tmr_isr_clear(void **param);
 
 void radio_tmr_status_reset(void);
 void radio_tmr_tx_status_reset(void);
