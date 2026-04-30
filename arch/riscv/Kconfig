@@ -67,10 +67,13 @@ config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	  and most people should say n here to minimize context switching
 	  overhead.
 
+DT_CHOSEN_Z_SRAM = zephyr,sram
+
 choice RISCV_CMODEL
 	prompt "RISC-V Code Model"
-	default RISCV_CMODEL_LARGE if (SRAM_BASE_ADDRESS > 0xffffffff) || \
-				      (KERNEL_VM_BASE > 0xffffffff)
+	default RISCV_CMODEL_LARGE if (SRAM_DEPRECATED_KCONFIG_SET && SRAM_BASE_ADDRESS > 0xffffffff) || \
+		(!SRAM_DEPRECATED_KCONFIG_SET && $(dt_chosen_reg_addr_int,$(DT_CHOSEN_Z_SRAM),0) > 0xffffffff) || \
+		(KERNEL_VM_BASE > 0xffffffff)
 	default RISCV_CMODEL_MEDANY if 64BIT
 	default RISCV_CMODEL_MEDLOW
 

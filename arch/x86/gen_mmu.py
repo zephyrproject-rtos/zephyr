@@ -69,15 +69,20 @@ import argparse
 import array
 import ctypes
 import os
+import pickle
 import re
 import struct
 import sys
 import textwrap
+from pathlib import Path
 
 import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from packaging import version
+
+sys.path.append(str(Path(__file__).parents[2] / "scripts" / "dts" / "python-devicetree" / "src"))
+from devicetree import edtlib  # noqa: F401
 
 if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
@@ -784,8 +789,17 @@ def main():
     vm_size = syms["CONFIG_KERNEL_VM_SIZE"]
     vm_offset = syms["CONFIG_KERNEL_VM_OFFSET"]
 
-    sram_base = syms["CONFIG_SRAM_BASE_ADDRESS"]
-    sram_size = syms["CONFIG_SRAM_SIZE"] * 1024
+    if isdef("CONFIG_SRAM_DEPRECATED_KCONFIG_SET"):
+        sram_base = syms["CONFIG_SRAM_BASE_ADDRESS"]
+        sram_size = syms["CONFIG_SRAM_SIZE"] * 1024
+    else:
+        edt_pickle_path = str(Path(args.kernel).parents[1] / "zephyr" / 'edt.pickle')
+        with open(edt_pickle_path, "rb") as f:
+            edt = pickle.load(f)
+        chosen_sram = edt.chosen_node("zephyr,sram")
+
+        sram_base = chosen_sram.regs[0].addr
+        sram_size = chosen_sram.regs[0].size
 
     mapped_kernel_base = syms["z_mapped_start"]
     mapped_kernel_size = syms["z_mapped_size"]
