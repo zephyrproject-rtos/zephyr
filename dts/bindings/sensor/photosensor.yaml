@@ -1,0 +1,159 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog photosensor circuit converting illuminance driven current into a voltage
+  across a load resistor, measured using an ADC channel and converted to lux.
+
+  Example components follow:
+
+    - Osram SFH 5701 A01
+    - Vishay TEMT6000
+
+  A typical circuit using a photodiode follows:
+
+    enable-gpio -------+
+                       |
+                      ---
+           light  -->  ^   photodiode
+                  --> / \
+                      ---
+                       |
+      io-channel ------+
+                       |
+                      ---
+                      | |  load resistor
+                      | |
+                      ---
+                       |
+                      GND
+
+  A typical circuit using a phototransistor follows:
+
+    enable-gpio -------+
+                       |
+                       /
+          light  --> |/    phototransistor
+                 --> |
+                     |\
+                       \
+                       |
+      io-channel ------+
+                       |
+                      ---
+                      | |  load resistor
+                      | |
+                      ---
+                       |
+                      GND
+
+  A typical variation of a circuit using a phototransistor follows:
+
+                      VDD
+                       |
+                       /
+          light  --> |/    phototransistor
+                 --> |
+                     |\
+                       \
+                       |
+      io-channel ------+
+                       |
+                      ---
+                      | |  load resistor
+                      | |
+                      ---
+                       |
+                   ||--+   mosfet
+     enable-gpio --||
+                   ||--+
+                       |
+                      GND
+
+  With this above variation, the on resistance of the mosfet must be added to the
+  load resistor resistance.
+
+  The enable-gpio pin may be excluded if the circuit is always enabled.
+
+compatible: "photosensor"
+
+include: sensor-device.yaml
+
+properties:
+  enable-gpios:
+    type: phandle-array
+    description: Optional GPIO used to enable the circuit.
+
+  no-disconnect:
+    type: boolean
+    description: Do not disconnect the enable GPIO when disabling the circuit.
+
+  io-channels:
+    required: true
+    description: ADC IO channel measuring the voltage across the load resistor.
+
+  settle-time-ns:
+    type: int
+    description: Settling time of the output after enabling the circuit in nanoseconds.
+
+  photocurrent-na:
+    type: int
+    required: true
+    description: The photocurrent at 100 lux in nanoamps.
+
+  load-resistance-ohm:
+    type: int
+    required: true
+    description: |
+      The resistance of the load in ohms. This includes every component between the ADC IO
+      channel node and GND.
+
+examples:
+  - |
+    / {
+              photosensor {
+                      compatible = "photosensor";
+                      enable-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+                      io-channels = <&adc 0>;
+                      /* Osram SFH 5701 A01 */
+                      settle-time-ns = <14000000>;
+                      photocurrent-na = <135000>;
+                      load-resistance-ohm = <10000>;
+              };
+    };
+
+    &adc0 {
+            status = "okay";
+
+            channel@0 {
+                    reg = <0>;
+                    zephyr,gain = "ADC_GAIN_1_4";
+                    zephyr,resolution = <12>;
+                    zephyr,reference = "ADC_REF_INTERNAL";
+                    zephyr,oversampling = <2>;
+                    zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+                    zephyr,input-positive = <0>;
+            };
+    };
+  - |
+    / {
+              photosensor {
+                      compatible = "photosensor";
+                      power-domains = <&pd0>;
+                      io-channels = <&adc 0>;
+                      /* Vishay TEMPT6000 */
+                      settle-time-ns = <14000000>;
+                      photocurrent-na = <50000>;
+                      load-resistance-ohm = <30000>;
+              };
+    };
+  - |
+    / {
+              photosensor {
+                      compatible = "photosensor";
+                      io-channels = <&adc 0>;
+                      /* Vishay TEMP6000 */
+                      photocurrent-na = <50000>;
+                      load-resistance-ohm = <30000>;
+              };
+    };

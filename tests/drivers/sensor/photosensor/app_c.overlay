@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "common.overlay"
+
+/ {
+	zephyr,user {
+		adc-read-values = <0 100 500 800 1023>;
+		lux-values = <0 26 130 208 266>;
+	};
+};
+
+&test_photosensor {
+	settle-time-ns = <14000000>;
+	photocurrent-na = <135000>;
+	load-resistance-ohm = <10000>;
+};
+
+&test_adc {
+	channel@0 {
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,resolution = <10>;
+	};
+};
