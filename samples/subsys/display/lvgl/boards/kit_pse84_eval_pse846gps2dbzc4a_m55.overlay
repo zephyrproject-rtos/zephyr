@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5406>;
+	};
+
+	lvgl_vglite {
+		compatible = "zephyr,lvgl-gpu-vglite";
+		gpu = <&gcnano>;
+		variant = "gcnanoultrav";
+		revision = "0x1003";
+	};
+};

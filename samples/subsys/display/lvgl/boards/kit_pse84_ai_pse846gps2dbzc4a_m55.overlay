@@ -1,0 +1,104 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/display/panel.h>
+
+/ {
+	chosen {
+		zephyr,touch = &ft5406;
+		zephyr,display = &display_controller;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft5406>;
+	};
+
+	lvgl_vglite {
+		compatible = "zephyr,lvgl-gpu-vglite";
+		gpu = <&gcnano>;
+		variant = "gcnanoultrav";
+		revision = "0x1003";
+	};
+};
+
+&display_controller {
+	status = "okay";
+
+	height = <480>;
+	width = <832>;
+
+	pixel-clock-khz = <33768>;
+	hsync-width = <10>;
+	hfp = <210>;
+	hbp = <20>;
+	vsync-width = <5>;
+	vfp = <20>;
+	vbp = <20>;
+
+	data-lanes = <1>;
+	per-lane-mbps = <810>;
+
+	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	panel = <&display_panel>;
+};
+
+&gcnano {
+	status = "okay";
+};
+
+i2c5: &scb5 {
+	compatible = "infineon,i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	clocks = <&peri0_group1_16bit_1>;
+
+	pinctrl-0 = <&p17_0_scb5_i2c_scl &p17_1_scb5_i2c_sda>;
+	pinctrl-names = "default";
+
+	ft5406: ft5406@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		swapped-x-y;
+		inverted-x;
+		inverted-y;
+		screen-width = <480>;
+		screen-height = <800>;
+	};
+
+	display_panel: waveshare_panel@45 {
+		compatible = "waveshare,4p3";
+		reg = <0x45>;
+		pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+		status = "okay";
+		height = <480>;
+		width = <832>;
+	};
+};
+
+&peri0_group1_16bit_1 {
+	status = "okay";
+	clock-div = <62>;
+};
+
+&p17_0_scb5_i2c_scl {
+	drive-open-drain;
+	input-enable;
+};
+
+&p17_1_scb5_i2c_sda {
+	drive-open-drain;
+	input-enable;
+};
+
+&clk_hf12 {
+	status = "okay";
+	clock-div = <IFX_CLK_HF_DIVIDE_BY_2>;
+	source-path = <IFX_CLK_HF_IN_CLKPATH3>;
+};
