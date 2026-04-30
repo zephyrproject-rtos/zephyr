@@ -19,6 +19,7 @@ tests:
       - usb
     harness: console
     harness_config:
+      fixture: usb_connected
       type: multi_line
       ordered: true
       regex:
@@ -43,6 +44,7 @@ tests:
       - usb
     harness: console
     harness_config:
+      fixture: usb_connected
       type: multi_line
       ordered: true
       regex:

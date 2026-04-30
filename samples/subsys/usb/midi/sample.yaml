@@ -6,6 +6,7 @@ tests:
     tags: usb
     harness: console
     harness_config:
+      fixture: usb_connected
       type: one_line
       regex:
         - "USB device support enabled"
