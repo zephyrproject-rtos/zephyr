@@ -356,7 +356,7 @@ static ZTEST_F(cap_initiator_test_unicast_group, test_initiator_unicast_group_fo
 						  unicast_group_foreach_stream_cb, &cnt);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 
-	for (size_t i = 0; i < fixture->group_param->params_count; i++) {
+	for (size_t i = 0U; i < fixture->group_param->params_count; i++) {
 		if (fixture->group_param->params[i].rx_param != NULL) {
 			expect_cnt++;
 		}

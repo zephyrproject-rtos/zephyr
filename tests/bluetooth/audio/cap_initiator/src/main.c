@@ -49,7 +49,7 @@ struct cap_initiator_test_suite_fixture {
 
 static void cap_initiator_test_suite_fixture_init(struct cap_initiator_test_suite_fixture *fixture)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		test_conn_init(&fixture->conns[i], i);
 	}
 }
@@ -76,7 +76,7 @@ static void cap_initiator_test_suite_after(void *f)
 
 	bt_cap_initiator_unregister_cb(&mock_cap_initiator_cb);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		mock_bt_conn_disconnected(&fixture->conns[i], BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	}
 }
@@ -157,7 +157,7 @@ ZTEST_F(cap_initiator_test_suite, test_initiator_discover)
 	err = bt_cap_initiator_register_cb(&mock_cap_initiator_cb);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		err = bt_cap_initiator_unicast_discover(&fixture->conns[i]);
 		zassert_equal(0, err, "Unexpected return value %d", err);
 	}

@@ -37,9 +37,9 @@ LOG_MODULE_REGISTER(bt_broadcast_reception_test, CONFIG_BT_CAP_COMMANDER_LOG_LEV
 
 #define FFF_GLOBALS
 
-#define SID          0x0E
-#define ADV_INTERVAL 10
-#define BROADCAST_ID 0x55AA55
+#define SID          0x0EU
+#define ADV_INTERVAL 10U
+#define BROADCAST_ID 0x55AA55U
 
 struct cap_commander_test_broadcast_reception_fixture {
 	struct bt_conn conns[CONFIG_BT_MAX_CONN];
@@ -76,7 +76,7 @@ static void cap_commander_test_broadcast_reception_fixture_init(
 {
 	int err;
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		test_conn_init(&fixture->conns[i]);
 		fixture->conns[i].index = i;
 	}
@@ -107,7 +107,7 @@ static void cap_commander_test_broadcast_reception_before(void *f)
 	memset(f, 0, sizeof(struct cap_commander_test_broadcast_reception_fixture));
 	cap_commander_test_broadcast_reception_fixture_init(fixture);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		err = bt_cap_commander_discover(&fixture->conns[i]);
 		zassert_equal(0, err, "Unexpected return value %d", err);
 	}
@@ -123,7 +123,7 @@ static void cap_commander_test_broadcast_reception_after(void *f)
 	/* We need to cleanup since the CAP commander remembers state */
 	(void)bt_cap_commander_cancel();
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		mock_bt_conn_disconnected(&fixture->conns[i], BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	}
 }
@@ -143,7 +143,7 @@ static void test_start_param_init(void *f)
 
 	fixture->start_param.count = ARRAY_SIZE(fixture->start_member_params);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->subgroups); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->subgroups); i++) {
 		fixture->subgroups[i].bis_sync = BIT(i);
 		fixture->subgroups[i].metadata_len = 0;
 	}
@@ -159,7 +159,7 @@ static void test_start_param_init(void *f)
 		fixture->start_member_params[i].num_subgroups = CONFIG_BT_BAP_BASS_MAX_SUBGROUPS;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		err = bt_cap_commander_discover(&fixture->conns[i]);
 		zassert_equal(0, err, "Unexpected return value %d", err);
 	}
@@ -175,7 +175,7 @@ static void test_stop_param_init(void *f)
 
 	for (size_t i = 0U; i < ARRAY_SIZE(fixture->stop_member_params); i++) {
 		fixture->stop_member_params[i].member.member = &fixture->conns[i];
-		fixture->stop_member_params[i].src_id = 0;
+		fixture->stop_member_params[i].src_id = 0U;
 		fixture->stop_member_params[i].num_subgroups = CONFIG_BT_BAP_BASS_MAX_SUBGROUPS;
 	}
 }
@@ -235,7 +235,7 @@ ZTEST_F(cap_commander_test_broadcast_reception, test_commander_reception_start_o
 
 	/* We test with one subgroup, instead of CONFIG_BT_BAP_BASS_MAX_SUBGROUPS subgroups */
 	for (size_t i = 0U; i < CONFIG_BT_MAX_CONN; i++) {
-		fixture->start_param.param[i].num_subgroups = 1;
+		fixture->start_param.param[i].num_subgroups = 1U;
 	}
 
 	test_broadcast_reception_start(&fixture->start_param);
@@ -491,7 +491,7 @@ ZTEST_F(cap_commander_test_broadcast_reception, test_commander_reception_stop_on
 
 	/* We test with one subgroup, instead of CONFIG_BT_BAP_BASS_MAX_SUBGROUPS subgroups */
 	for (size_t i = 0U; i < CONFIG_BT_MAX_CONN; i++) {
-		fixture->stop_param.param[i].num_subgroups = 1;
+		fixture->stop_param.param[i].num_subgroups = 1U;
 		fixture->stop_param.param[i].src_id = src_id[i];
 	}
 

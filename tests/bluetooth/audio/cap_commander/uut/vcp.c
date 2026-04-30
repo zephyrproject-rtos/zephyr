@@ -30,7 +30,7 @@ static struct bt_vcp_vol_ctlr {
 
 struct bt_vcp_vol_ctlr *bt_vcp_vol_ctlr_get_by_conn(const struct bt_conn *conn)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(vol_ctlrs); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(vol_ctlrs); i++) {
 		if (vol_ctlrs[i].conn == conn) {
 			return &vol_ctlrs[i];
 		}
@@ -77,7 +77,7 @@ int bt_vcp_vol_ctlr_unmute(struct bt_vcp_vol_ctlr *vol_ctlr)
 
 int bt_vcp_vol_ctlr_discover(struct bt_conn *conn, struct bt_vcp_vol_ctlr **vol_ctlr)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(vol_ctlrs); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(vol_ctlrs); i++) {
 		if (vol_ctlrs[i].conn == NULL) {
 			for (size_t j = 0U; j < ARRAY_SIZE(vol_ctlrs[i].vocs); j++) {
 				const int err = bt_vocs_discover(conn, vol_ctlrs[i].vocs[j], NULL);
