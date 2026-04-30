@@ -7,7 +7,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # Basic PAST Test: Broadcaster connects to peripheral, after connection is established
 # and it is Periodic Advertising (PA), the broadcaster send a Periodic Sync Transfer (PAST)
 # to the peripheral, which then synchronizes to the PA.
-simulation_id="past_send_from_broadcaster"
+simulation_id="${BOARD_TS}_past_send_from_broadcaster"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin
