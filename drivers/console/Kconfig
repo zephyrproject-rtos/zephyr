@@ -65,6 +65,15 @@ config UART_CONSOLE_MCUMGR
 	  process MCUmgr frames, but it hands them up to a higher level module
 	  (e.g., the shell).  If unset, incoming MCUmgr frames are dropped.
 
+config UART_CONSOLE_MCUMGR_ASYNC_RX_TIMEOUT_US
+	int "Timeout for flushing RX buffers"
+	depends on UART_CONSOLE_MCUMGR
+	default 1599
+	help
+	  Decreasing this value can help increase data throughput when high baudrates are used.
+	  1599us is 23 bytes at 115200 baud. Decreasing this value too much can result in spurious
+	  interrupts. Leaving it too high can reduce data throughput.
+
 config UART_CONSOLE_INPUT_EXPIRED
 	bool "Support for UART console input expired mechanism"
 	default y
