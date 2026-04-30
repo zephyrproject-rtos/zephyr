@@ -96,6 +96,7 @@ static const char *const sensor_channel_name[SENSOR_CHAN_COMMON_COUNT] = {
 	[SENSOR_CHAN_VSHUNT] = "vshunt",
 	[SENSOR_CHAN_CURRENT] = "current",
 	[SENSOR_CHAN_POWER] = "power",
+	[SENSOR_CHAN_POWER_DBM] = "power_dbm",
 	[SENSOR_CHAN_RESISTANCE] = "resistance",
 	[SENSOR_CHAN_ROTATION] = "rotation",
 	[SENSOR_CHAN_POS_DX] = "pos_dx",
