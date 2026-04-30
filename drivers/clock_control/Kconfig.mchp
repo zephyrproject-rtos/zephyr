@@ -38,6 +38,13 @@ config CLOCK_CONTROL_MCHP_PIC32CZ_CA
 	help
 	  Enable clock controller driver for Microchip PIC32CZ_CA family.
 
+config CLOCK_CONTROL_MCHP_SMARTFUSION2
+	bool
+	default y
+	depends on DT_HAS_MICROCHIP_SMARTFUSION2_CLOCK_ENABLED
+	help
+	  Enable the read-only clock controller driver for Microchip SmartFusion2.
+
 if CLOCK_CONTROL_MCHP_COMMON
 
 config CLOCK_CONTROL_MCHP_CONFIG_BOOTUP

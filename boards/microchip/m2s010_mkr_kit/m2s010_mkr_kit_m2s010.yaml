@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright Bavariamatic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: m2s010_mkr_kit/m2s010
+name: Microchip M2S010 MKR Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 64
+flash: 256
+supported:
+  - gpio
+  - serial
+vendor: microchip
+testing:
+  ignore_tags:
+    - bluetooth
+    - net

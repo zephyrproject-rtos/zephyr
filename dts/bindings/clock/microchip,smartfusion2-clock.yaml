@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Bavariamatic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: SmartFusion2 read-only clock controller
+
+compatible: "microchip,smartfusion2-clock"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clock-frequencies:
+    type: array
+    required: true
+    description: |
+      Output clock frequencies in Hz indexed by the SmartFusion2 clock ID.
+      The current driver exposes the CPU clock at index 0 and the shared MSS
+      peripheral clock at index 1.
+
+  "#clock-cells":
+    const: 1
+
+  clock-output-names:
+    type: string-array
+    description: Optional names for the exported clock outputs.
+
+clock-cells:
+  - clkid

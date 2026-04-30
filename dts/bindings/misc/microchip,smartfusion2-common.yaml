@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright Bavariamatic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: false
+
+  interrupt-parent:
+    required: false
+
+  clocks:
+    required: false
+
+  clock-frequency:
+    type: int
+    required: false
