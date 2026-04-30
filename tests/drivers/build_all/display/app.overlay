@@ -433,6 +433,17 @@
 				height = <480>;
 				busy-gpios = <&test_gpio 0 0>;
 			};
+
+			test_mipi_dbi_hx8353e: hx8353e@26 {
+				compatible = "himax,hx8353e";
+				reg = <0x26>;
+				mipi-max-frequency = <15000000>;
+				mipi-mode = "MIPI_DBI_MODE_8080_BUS_8_BIT";
+				width = <160>;
+				height = <128>;
+				rotation = <90>;
+				backlight-gpios = <&test_gpio 0 0>;
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {

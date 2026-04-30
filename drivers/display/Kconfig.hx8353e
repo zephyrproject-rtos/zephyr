@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Andrew Yong <me@ndoo.sg>
+# SPDX-License-Identifier: Apache-2.0
+
+config HX8353E
+	bool "Himax HX8353E display driver"
+	default y
+	depends on DT_HAS_HIMAX_HX8353E_ENABLED
+	select MIPI_DBI
+	help
+	  Enable driver for the Himax HX8353E 132RGB×162 dot TFT LCD controller.
+	  The controller is driven via a MIPI DBI Type B (Intel 8080) parallel
+	  bus. Supports optional GPIO backlight on/off and optional PWM brightness
+	  control via the backlight-gpios and pwms devicetree properties.
