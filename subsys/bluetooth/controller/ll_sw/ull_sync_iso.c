@@ -422,7 +422,6 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	uint32_t ticks_expire;
 	uint32_t interval_us;
 	uint32_t ticks_diff;
-	struct pdu_adv *pdu;
 	uint32_t slot_us;
 	uint8_t num_bis;
 	uint8_t bi_size;
@@ -577,7 +576,6 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	}
 
 	ftr = &node_rx->rx_ftr;
-	pdu = (void *)((struct node_rx_pdu *)node_rx)->pdu;
 
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 
@@ -597,13 +595,13 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 		sync_iso_offset_us += (stream->bis_index - 1U) *
 				      lll->bis_spacing;
 	}
-	sync_iso_offset_us -= PDU_AC_US(pdu->len, sync_iso->sync->lll.phy,
-					ftr->phy_flags);
+
 	sync_iso_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	sync_iso_offset_us -= EVENT_JITTER_US;
 	sync_iso_offset_us -= ready_delay_us;
 
-	interval_us -= lll->window_widening_periodic_us;
+	lll->window_widening_prepare_us = lll->window_widening_periodic_us;
+	interval_us -= lll->window_widening_prepare_us;
 
 	/* Calculate ISO Receiver BIG event timings */
 
@@ -657,7 +655,6 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	slot_us += ready_delay_us;
 	slot_us += lll->window_widening_periodic_us << 1U;
 	slot_us += EVENT_JITTER_US << 1U;
-	slot_us += EVENT_TICKER_RES_MARGIN_US << 2U;
 
 	/* Add implementation defined radio event overheads */
 	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
@@ -685,7 +682,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	if (ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) {
 		sync_iso_offset_us += interval_us -
 			lll->window_widening_periodic_us;
-		lll->window_widening_event_us +=
+		lll->window_widening_prepare_us +=
 			lll->window_widening_periodic_us;
 		lll->payload_count += lll->bn;
 	}

@@ -225,7 +225,20 @@ void radio_reset(void)
 
 #if defined(CONFIG_NRF_SYS_EVENT)
 	(void)nrf_sys_event_request_global_constlat();
+
 #else /* !CONFIG_NRF_SYS_EVENT */
+	/* Refer to nRF54L Product Specifications for below quirks.
+	 * FIXME: Use on off service design to share these request with application implementations.
+	 */
+	/* Put RRAMC in Standby mode.
+	 * Gives faster wake-ups, and is useful in combination with Constant Latency sub-power mode.
+	 * FIXME: Use on off service design to share this request with application implementations.
+	 */
+	NRF_RRAMC->POWER.LOWPOWERCONFIG = (RRAMC_POWER_LOWPOWERCONFIG_MODE_Standby <<
+					   RRAMC_POWER_LOWPOWERCONFIG_MODE_Pos) &
+					  RRAMC_POWER_LOWPOWERCONFIG_MODE_Msk;
+
+	/* Enable Constant Latency mode */
 	NRF_POWER->TASKS_CONSTLAT = 1U;
 #endif /* !CONFIG_NRF_SYS_EVENT */
 #endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
@@ -586,12 +599,14 @@ uint32_t radio_is_address(void)
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 static uint32_t last_pdu_end_latency_us;
+static uint32_t prev_pdu_end_us;
 static uint32_t last_pdu_end_us;
 
 static void last_pdu_end_us_init(uint32_t latency_us)
 {
 	last_pdu_end_latency_us = latency_us;
 	last_pdu_end_us = 0U;
+	prev_pdu_end_us = 0U;
 }
 
 uint32_t radio_is_done(void)
@@ -601,6 +616,7 @@ uint32_t radio_is_done(void)
 		 * Note: this depends on the function being called exactly once
 		 * in the ISR function.
 		 */
+		prev_pdu_end_us = last_pdu_end_us;
 		last_pdu_end_us += EVENT_TIMER->CC[HAL_EVENT_TIMER_TRX_END_CC_OFFSET];
 		return 1;
 	} else {
@@ -1767,6 +1783,15 @@ void radio_tmr_stop(void)
 #if defined(CONFIG_NRF_SYS_EVENT)
 	(void)nrf_sys_event_release_global_constlat();
 #else /* !CONFIG_NRF_SYS_EVENT */
+	/* Refer to nRF54L Product Specifications for below quirks.
+	 * FIXME: Use on off service design to share these request with application implementations.
+	 */
+	/* Put back RRAMC in auto power down mode */
+	NRF_RRAMC->POWER.LOWPOWERCONFIG = (RRAMC_POWER_LOWPOWERCONFIG_MODE_PowerOff <<
+					   RRAMC_POWER_LOWPOWERCONFIG_MODE_Pos) &
+					  RRAMC_POWER_LOWPOWERCONFIG_MODE_Msk;
+
+	/* Enable Low-power mode (variable latency) */
 	NRF_POWER->TASKS_LOWPWR = 1U;
 #endif /* !CONFIG_NRF_SYS_EVENT */
 #endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
@@ -1806,7 +1831,15 @@ void radio_tmr_aa_capture(void)
 
 uint32_t radio_tmr_aa_get(void)
 {
-	return EVENT_TIMER->CC[HAL_EVENT_TIMER_HCTO_CC_OFFSET];
+	uint32_t aa_us;
+
+	aa_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_HCTO_CC_OFFSET];
+
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	aa_us += prev_pdu_end_us;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+	return aa_us;
 }
 
 static uint32_t radio_tmr_aa;

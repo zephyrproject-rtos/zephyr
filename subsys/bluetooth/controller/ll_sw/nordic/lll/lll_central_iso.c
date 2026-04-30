@@ -607,6 +607,9 @@ static void isr_tx(void *param)
 		subevent_us += cis_lll->offset - cis_offset_first +
 			       (cis_lll->sub_interval * se_curr);
 
+		/* +1 us radio_tmr_start_us compensation */
+		subevent_us -= 1U;
+
 		start_us = radio_tmr_start_us(1U, subevent_us);
 		LL_ASSERT_ERR(start_us == (subevent_us + 1U));
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
@@ -650,6 +653,9 @@ static void isr_tx(void *param)
 
 		subevent_us = radio_tmr_ready_restore();
 		subevent_us += next_cis_lll->offset - cis_offset_first;
+
+		/* +1 us radio_tmr_start_us compensation */
+		subevent_us -= 1U;
 
 		start_us = radio_tmr_start_us(1U, subevent_us);
 		LL_ASSERT_ERR(start_us == (subevent_us + 1U));
@@ -911,6 +917,9 @@ isr_rx_next_subevent:
 			subevent_us = radio_tmr_ready_restore();
 			subevent_us += next_cis_lll->offset - cis_offset_first;
 
+			/* +1 us radio_tmr_start_us compensation */
+			subevent_us -= 1U;
+
 			start_us = radio_tmr_start_us(1U, subevent_us);
 			LL_ASSERT_ERR(start_us == (subevent_us + 1U));
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
@@ -1133,12 +1142,14 @@ static void isr_prepare_subevent(void *param)
 		       (cis_lll->sub_interval * se_curr);
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	/* +1 us radio_tmr_start_us compensation */
+	subevent_us -= 1U;
+
 	start_us = radio_tmr_start_us(1U, subevent_us);
 	LL_ASSERT_ERR(start_us == (subevent_us + 1U));
 
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-	/* Compensate for the 1 us added by radio_tmr_start_us() */
-	start_us = subevent_us + 1U;
+	start_us = subevent_us;
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN ||
