@@ -31,6 +31,9 @@ if(CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_WARNINGS_ARE_ERRORS:BOOL=ON)
   endif()
 
+  # Tells TF-M to include PICOLIBC.
+  list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_INCLUDE_STDLIBC:BOOL=ON)
+
   if(CONFIG_TFM_SFN)
     list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="SFN")
   else() # CONFIG_TFM_IPC
@@ -310,7 +313,7 @@ if(CONFIG_BUILD_WITH_TFM)
       -DPython3_EXECUTABLE=${Python3_EXECUTABLE}
       ${TFM_CMAKE_ARGS}
       $<GENEX_EVAL:$<TARGET_PROPERTY:zephyr_property_target,TFM_CMAKE_OPTIONS>>
-      -DMBEDCRYPTO_PATH=$<IF:$<BOOL:$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>>,$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>,${ZEPHYR_MBEDTLS_3_6_MODULE_DIR}>
+      -DMBEDCRYPTO_PATH=$<IF:$<BOOL:$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>>,$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>,${ZEPHYR_MBEDTLS_MODULE_DIR}>
       -DCMSIS_PATH=${ZEPHYR_CMSIS_6_MODULE_DIR}
       ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}
     WORKING_DIRECTORY ${TFM_BINARY_DIR}
@@ -427,6 +430,11 @@ if(CONFIG_BUILD_WITH_TFM)
     # Add interface include directory (exported by TF-M) to zephyr_interface
     zephyr_include_directories(
       ${TFM_INTERFACE_INCLUDE_DIR}
+    )
+
+    # Pass down the MbedTLS configuration file to use.
+    target_compile_definitions(tfm_api PUBLIC
+      MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CONFIG_FILE}"
     )
 
     zephyr_library_link_libraries(
