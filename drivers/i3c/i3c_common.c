@@ -1337,7 +1337,7 @@ int i3c_bus_deftgts(const struct device *dev)
 	/*
 	 * Retrieve the active controller information
 	 */
-	ret = i3c_config_get(dev, I3C_CONFIG_TARGET, &config_target);
+	ret = i3c_config_get_target(dev, &config_target);
 	if (ret != 0) {
 		LOG_ERR("Failed to retrieve active controller info");
 		return ret;
