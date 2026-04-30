@@ -34,6 +34,36 @@ SECTION_FUNC(reset, __reset)
 
 /* use ABI name of registers for the sake of simplicity */
 
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+/*
+ * Allocate a TLS area on the current stack, initialize it via
+ * arch_riscv_early_tls_stack_update(), set tp to point to it.
+ */
+.macro riscv_tls_init_early
+	/* Save s0/s1, else they get clobbered */
+	addi sp, sp, -16
+	sr s0, 0(sp)
+	sr s1, 8(sp)
+	mv s0, sp
+
+	call z_tls_data_size_asm
+	beqz a0, tls_skip\@
+	mv s1, a0
+	sub sp, sp, a0
+
+	mv a0, s0	/* arg0: stack_top */
+	mv a1, s1	/* arg1: tls_size  */
+	call arch_riscv_early_tls_stack_update
+tls_skip\@:
+	/* Restore s0/s1. sp intentionally stays below the TLS area so the
+	 * runtime stack grows away from it. The 16-byte save frame above
+	 * sp is abandoned.
+	 */
+	lr s1, 8(s0)
+	lr s0, 0(s0)
+.endm
+#endif /* CONFIG_THREAD_LOCAL_STORAGE */
+
 /*
  * Remainder of asm-land initialization code before we can jump into
  * the C domain
@@ -83,6 +113,17 @@ aa_loop:
 	li t0, __z_interrupt_stack_SIZEOF
 	add sp, sp, t0
 
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	/*
+	 * Initialize TLS before the first C function call. The compiler inserts
+	 * stack canary checks into C functions, and the canary value is read from
+	 * a TLS variable via tp. Without this early init, tp is not set up and
+	 * any C function called during early boot (e.g. z_prep_c) would read the
+	 * canary from an arbitrary memory location.
+	 */
+	riscv_tls_init_early
+#endif
+
 #ifdef CONFIG_RISCV_SMRNMI_ENABLE_NMI_DELIVERY
 	csrs CSR_MNSTATUS, MNSTATUS_NMIE
 #endif
@@ -113,6 +154,13 @@ wait_secondary_wake_flag:
 	/* Set up stack */
 	la t0, riscv_cpu_sp
 	lr sp, 0(t0)
+
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	/* Initialize tp early so TLS-based stack canaries work on secondary CPUs */
+	mv s2, a0		/* save hartid across TLS init calls */
+	riscv_tls_init_early
+	mv a0, s2		/* restore hartid */
+#endif
 
 	la t0, riscv_cpu_boot_flag
 	li t1, 1
