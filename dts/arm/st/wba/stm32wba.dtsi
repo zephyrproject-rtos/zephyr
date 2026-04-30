@@ -566,6 +566,26 @@
 			resets = <&rctl STM32_RESET(AHB1, 12)>;
 			status = "disabled";
 		};
+
+		radio: radio@48020000 {
+			compatible = "st,stm32wba-radio";
+			reg = <0x48020000 DT_SIZE_K(4)>;
+
+			interrupt-names = "radio";
+
+			#address-cells = <0>;
+			#size-cells = <0>;
+
+			bt_hci_wba: bluetooth {
+				compatible = "st,hci-stm32wba";
+				status = "disabled";
+			};
+
+			ieee802154: ieee802154 {
+				compatible = "st,stm32wba-ieee802154";
+				status = "disabled";
+			};
+		};
 	};
 
 	die_temp: dietemp {
@@ -576,20 +596,6 @@
 		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3000>;
 		io-channels = <&adc4 13>;
-		status = "disabled";
-	};
-
-	bt_hci_wba: bt_hci_wba {
-		compatible = "st,hci-stm32wba";
-		interrupt-parent = <&nvic>;
-		interrupt-names = "radio";
-		status = "okay";
-	};
-
-	ieee802154: ieee802154 {
-		compatible = "st,stm32wba-ieee802154";
-		interrupt-parent = <&nvic>;
-		interrupt-names = "radio";
 		status = "disabled";
 	};
 
