@@ -59,7 +59,6 @@ LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 
 static struct updatehub_context {
 	struct coap_block_context block;
-	struct k_sem semaphore;
 	struct updatehub_storage_context storage_ctx;
 	psa_hash_operation_t crypto_ctx;
 	enum updatehub_response code_status;
@@ -71,6 +70,8 @@ static struct updatehub_context {
 	int sock;
 	int nfds;
 } ctx;
+
+static K_MUTEX_DEFINE(ctx_lock);
 
 static struct update_info {
 	char package_uid[SHA256_HEX_DIGEST_SIZE];
@@ -104,11 +105,18 @@ static void wait_fds(void)
 	}
 }
 
-static void prepare_fds(void)
+static int prepare_fds(void)
 {
+	if (ctx.nfds >= ARRAY_SIZE(ctx.fds)) {
+		LOG_ERR("No more pollfd slots available");
+		return -ENOMEM;
+	}
+
 	ctx.fds[ctx.nfds].fd = ctx.sock;
 	ctx.fds[ctx.nfds].events = ZSOCK_POLLIN;
 	ctx.nfds++;
+
+	return 0;
 }
 
 static int metadata_hash_get(char *metadata)
@@ -233,7 +241,10 @@ static bool start_coap_client(void)
 		goto error;
 	}
 
-	prepare_fds();
+	if (prepare_fds() < 0) {
+		ret = 1;
+		goto error;
+	}
 
 	ret = 0;
 error:
@@ -773,8 +784,10 @@ enum updatehub_response z_impl_updatehub_probe(void)
 	    metadata == NULL || metadata_copy == NULL) {
 		LOG_ERR("Could not alloc probe memory");
 		ctx.code_status = UPDATEHUB_METADATA_ERROR;
-		goto error;
+		goto error_alloc;
 	}
+
+	k_mutex_lock(&ctx_lock, K_FOREVER);
 
 	if (!updatehub_storage_is_partition_good(&ctx.storage_ctx)) {
 		LOG_ERR("The current image is not confirmed");
@@ -936,6 +949,9 @@ cleanup:
 	cleanup_connection();
 
 error:
+	k_mutex_unlock(&ctx_lock);
+
+error_alloc:
 	k_free(metadata);
 	k_free(metadata_copy);
 	k_free(firmware_version);
@@ -946,6 +962,8 @@ error:
 
 enum updatehub_response z_impl_updatehub_update(void)
 {
+	k_mutex_lock(&ctx_lock, K_FOREVER);
+
 	if (report(UPDATEHUB_STATE_DOWNLOADING) < 0) {
 		LOG_ERR("Could not reporting downloading state");
 		goto error;
@@ -984,7 +1002,7 @@ enum updatehub_response z_impl_updatehub_update(void)
 
 	LOG_INF("Image flashed successfully, you can reboot now");
 
-	return ctx.code_status;
+	goto out;
 
 error:
 	if (ctx.code_status != UPDATEHUB_NETWORKING_ERROR) {
@@ -992,6 +1010,9 @@ error:
 			LOG_ERR("Could not reporting error state");
 		}
 	}
+
+out:
+	k_mutex_unlock(&ctx_lock);
 
 	return ctx.code_status;
 }
@@ -1048,10 +1069,15 @@ void z_impl_updatehub_autohandler(void)
 
 int z_impl_updatehub_report_error(void)
 {
+	k_mutex_lock(&ctx_lock, K_FOREVER);
+
 	int ret = report(UPDATEHUB_STATE_ERROR);
 
 	if (ret < 0) {
 		LOG_ERR("Failed to report rollback error to server");
 	}
+
+	k_mutex_unlock(&ctx_lock);
+
 	return ret;
 }
