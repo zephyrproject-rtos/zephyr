@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Cirrus Logic, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+test_spi_cs40l50@0 {
+	compatible = "cirrus,cs40l50";
+	reg = <0x0>;
+	spi-max-frequency = <5000000>;
+	status = "okay";
+};
+
+test_spi_cs40l51@1 {
+	compatible = "cirrus,cs40l51";
+	reg = <0x1>;
+	spi-max-frequency = <5000000>;
+	status = "okay";
+};
+
+test_spi_cs40l52@2 {
+	compatible = "cirrus,cs40l52";
+	reg = <0x2>;
+	spi-max-frequency = <5000000>;
+	status = "okay";
+};
+
+test_spi_cs40l53@3 {
+	compatible = "cirrus,cs40l53";
+	reg = <0x3>;
+	spi-max-frequency = <5000000>;
+	status = "okay";
+};
