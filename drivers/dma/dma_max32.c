@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -239,49 +239,30 @@ static int max32_dma_get_status(const struct device *dev, uint32_t channel, stru
 	return ret;
 }
 
-static void max32_dma_isr(const struct device *dev)
+static void max32_dma_isr(const struct device *dev, uint32_t channel)
 {
 	const struct max32_dma_config *cfg = dev->config;
 	struct max32_dma_data *data = dev->data;
-	mxc_dma_regs_t *regs = cfg->regs;
-	int ch, c;
-	int flags;
 	int status = 0;
+	int flags;
 
-	uint8_t channel_base = Wrap_MXC_DMA_GetChannelIndex(cfg->regs, 0);
+	uint8_t ch = Wrap_MXC_DMA_GetChannelIndex(cfg->regs, channel);
 
-	for (ch = channel_base, c = 0; c < cfg->channels; ch++, c++) {
-		flags = MXC_DMA_ChannelGetFlags(ch);
+	flags = MXC_DMA_ChannelGetFlags(ch);
 
-		/* Check if channel is in use, if not, move to next channel */
-		if (flags <= 0) {
-			continue;
+	/* Check for error interrupts */
+	if (flags & (ADI_MAX32_DMA_STATUS_BUS_ERR | ADI_MAX32_DMA_STATUS_TO_IF)) {
+		status = -EIO;
+	}
+
+	MXC_DMA_ChannelClearFlags(ch, flags);
+
+	if (data[channel].callback) {
+		/* Only call error callback if enabled during DMA config */
+		if (status < 0 && (data[channel].err_cb_dis)) {
+			return;
 		}
-
-		/* check if only enabled bit is set (interrupt is not there) and skip it */
-		if (flags == ADI_MAX32_DMA_STATUS_ST) {
-			continue;
-		}
-
-		/* Check for error interrupts */
-		if (flags & (ADI_MAX32_DMA_STATUS_BUS_ERR | ADI_MAX32_DMA_STATUS_TO_IF)) {
-			status = -EIO;
-		}
-
-		MXC_DMA_ChannelClearFlags(ch, flags);
-
-		if (data[c].callback) {
-			/* Only call error callback if enabled during DMA config */
-			if (status < 0 && (data[c].err_cb_dis)) {
-				break;
-			}
-			data[c].callback(dev, data[c].cb_data, c, status);
-		}
-
-		/* No need to check rest of the channels if no interrupt flags set */
-		if (MXC_DMA_GetIntFlags(regs) == 0) {
-			break;
-		}
+		data[channel].callback(dev, data[channel].cb_data, channel, status);
 	}
 }
 
@@ -326,14 +307,21 @@ static DEVICE_API(dma, max32_dma_driver_api) = {
 	.get_status = max32_dma_get_status,
 };
 
+#define MAX32_DMA_ISR_DEFINE(n, inst)                                    \
+	static void max32_dma##inst##_ch_##n##_isr(const struct device *dev) \
+	{                                                                    \
+		max32_dma_isr(dev, n);                                           \
+	}
+#define DEFINE_ALL_ISRS(inst, n) LISTIFY(n, MAX32_DMA_ISR_DEFINE, (), inst)
+
 #define MAX32_DMA_IRQ_CONNECT(n, inst)                                                             \
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, n, irq), DT_INST_IRQ_BY_IDX(inst, n, priority),       \
-		    max32_dma_isr, DEVICE_DT_INST_GET(inst), 0);                                   \
+		    max32_dma##inst##_ch_##n##_isr, DEVICE_DT_INST_GET(inst), 0);                \
 	irq_enable(DT_INST_IRQ_BY_IDX(inst, n, irq));
-
 #define CONFIGURE_ALL_IRQS(inst, n) LISTIFY(n, MAX32_DMA_IRQ_CONNECT, (), inst)
 
 #define MAX32_DMA_INIT(inst)                                                                       \
+	DEFINE_ALL_ISRS(inst, DT_NUM_IRQS(DT_DRV_INST(inst)))                                      \
 	static struct max32_dma_data dma##inst##_data[DT_INST_PROP(inst, dma_channels)];           \
 	static void max32_dma##inst##_irq_configure(void)                                          \
 	{                                                                                          \
