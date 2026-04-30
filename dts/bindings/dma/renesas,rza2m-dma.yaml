@@ -1,0 +1,45 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  RZA2M DMA controller
+
+  channel: Select channel for data transmitting
+
+  slot: Select peripheral to connect DMA. Slots defined in dma_renesas_rza2m.h header.
+
+  config: A 32bit mask specifying the DMA channel configuration
+
+  Example of devicetree configuration
+
+    &spi0 {
+      status = "okay";
+
+      dmas = <&dma0 1 RZA2M_DMA_RS_SPTI0 0>, <&dma0 0 RZA2M_DMA_RS_SPRI0 0>;
+      dma-names = "tx", "rx";
+    }
+
+compatible: "renesas,rza2m-dma"
+
+include: [dma-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  dma-channels:
+    required: true
+
+  "#dma-cells":
+    const: 3
+
+  dma-buf-addr-alignment:
+    required: true
+
+dma-cells:
+  - channel
+  - slot
+  - config

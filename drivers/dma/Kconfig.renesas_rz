@@ -16,3 +16,27 @@ config DMA_RENESAS_RZ_DMAC_B
 	select USE_RZ_FSP_DMAC_B
 	help
 	  Enable Renesas RZ DMAC_B Driver.
+
+config DMA_RENESAS_RZA2M_DMA
+	bool "Renesas RZA2M DMA"
+	default y
+	depends on DT_HAS_RENESAS_RZA2M_DMA_ENABLED
+	help
+	  Enable Renesas RZA2M DMA Driver.
+
+if DMA_RENESAS_RZA2M_DMA
+
+config DMA_RZA2M_DESCRS_CHUNKS
+	int "Dma RZA2M maximum descriptor pool chunks"
+	default 16
+	help
+	  This configuration specifies the maximum number of chunks.
+
+config DMA_RZA2M_MAX_DESCRS
+	int "Dma RZA2M maximum descriptors per channel"
+	default 4
+	help
+	  This configuration describes the number of descriptors per allocated chunk
+	  that can be assigned to each channel.
+
+endif # DMA_RENESAS_RZA2M_DMA
