@@ -69,6 +69,7 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			lock-regions = <16>;
 
@@ -76,6 +77,9 @@
 				compatible = "soc-nv-flash";
 
 				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				/* reg and ranges are specified in samx2xx1x dtsi */
 			};
 		};
 
