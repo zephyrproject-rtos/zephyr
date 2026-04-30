@@ -19,10 +19,10 @@
 #include <zephyr/net/net_offload.h>
 #include <zephyr/net/socket_offload.h>
 
-#include "modem_context.h"
-#include "modem_socket.h"
-#include "modem_cmd_handler.h"
-#include "modem_iface_uart.h"
+#include "../modem_context.h"
+#include "../modem_socket.h"
+#include "../modem_cmd_handler.h"
+#include "../modem_iface_uart.h"
 
 #define MDM_UART_NODE			  DT_INST_BUS(0)
 #define MDM_UART_DEV			  DEVICE_DT_GET(MDM_UART_NODE)

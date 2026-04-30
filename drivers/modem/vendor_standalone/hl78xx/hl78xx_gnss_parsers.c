@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include "hl78xx_gnss_parsers.h"
 #include "hl78xx_gnss.h"
-#include "../../gnss/gnss_parse.h"
+#include "../../../gnss/gnss_parse.h"
 
 LOG_MODULE_DECLARE(hl78xx_gnss);
 
