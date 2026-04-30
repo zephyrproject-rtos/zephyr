@@ -7,3 +7,13 @@ tests:
     tags:
       - net
       - http
+  sample.net.dhcpv4_client.lan78xx:
+    platform_allow:
+      - nucleo_u5a5zj_q
+    integration_platforms:
+      - nucleo_u5a5zj_q
+    build_only: true
+    tags:
+      - net
+      - usb
+      - ethernet
