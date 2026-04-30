@@ -184,7 +184,7 @@ static bool csip_set_coordinator_oap_cb(const struct bt_csip_set_coordinator_set
 {
 	ARG_UNUSED(set_info);
 
-	for (size_t i = 0; i < count; i++) {
+	for (size_t i = 0U; i < count; i++) {
 		printk("Ordered access for members[%zu]: %p\n", i, members[i]);
 	}
 
@@ -217,7 +217,7 @@ static bool csip_found(struct bt_data *data, void *user_data)
 
 		bt_addr_le_copy(&addr_found[members_found++], addr);
 
-		if (primary_inst == NULL || primary_inst->info.set_size == 0) {
+		if (primary_inst == NULL || primary_inst->info.set_size == 0U) {
 			printk("Found member %u\n", members_found);
 		} else {
 			printk("Found member (%u / %u)\n", members_found,
@@ -249,7 +249,7 @@ static void discover_members_timer_handler(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
-	if (primary_inst->info.set_size > 0) {
+	if (primary_inst->info.set_size > 0U) {
 		FAIL("Could not find all members (%u / %u)\n", members_found,
 		     primary_inst->info.set_size);
 	} else {
@@ -389,7 +389,7 @@ static void connect_set(void)
 		return;
 	}
 
-	for (uint8_t i = 1; i < members_found; i++) {
+	for (uint8_t i = 1U; i < members_found; i++) {
 		UNSET_FLAG(flag_connected);
 		printk("Connecting to member[%d] (%s)", i, bt_addr_le_str(&addr_found[i]));
 		err = bt_conn_le_create(&addr_found[i], BT_CONN_LE_CREATE_CONN,
@@ -411,7 +411,7 @@ static void connect_set(void)
 
 static void disconnect_set(void)
 {
-	for (uint8_t i = 0; i < connected_member_count; i++) {
+	for (uint8_t i = 0U; i < connected_member_count; i++) {
 		int err;
 
 		printk("Disconnecting member[%u] (%s)", i, bt_addr_le_str(&addr_found[i]));
@@ -432,7 +432,7 @@ static void test_main(void)
 	init();
 	connect_set();
 
-	for (size_t i = 0; i < ARRAY_SIZE(locked_members); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(locked_members); i++) {
 		locked_members[i] = set_members[i];
 	}
 
@@ -456,7 +456,7 @@ static void test_main(void)
 		ordered_access(locked_members, connected_member_count, primary_inst->info.lockable);
 	}
 
-	k_sleep(K_MSEC(1000)); /* Simulate doing stuff */
+	k_sleep(K_MSEC(1000U)); /* Simulate doing stuff */
 
 	if (primary_inst->info.lockable) {
 		printk("Releasing set\n");
@@ -490,7 +490,7 @@ static void test_main(void)
 		WAIT_FOR_COND(set_locked);
 	}
 
-	k_sleep(K_MSEC(1000)); /* Simulate doing stuff */
+	k_sleep(K_MSEC(1000U)); /* Simulate doing stuff */
 
 	if (primary_inst->info.lockable) {
 		printk("Releasing set\n");

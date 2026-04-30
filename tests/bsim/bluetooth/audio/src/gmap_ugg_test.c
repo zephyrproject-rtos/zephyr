@@ -50,7 +50,7 @@
 #define CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_GAME)
 #define LOCATION (BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT)
 
-#define GMAP_BROADCAST_AC_MAX_STREAM 2
+#define GMAP_BROADCAST_AC_MAX_STREAM 2U
 #define GMAP_UNICAST_AC_MAX_CONN     2U
 #define GMAP_UNICAST_AC_MAX_SNK      (2U * GMAP_UNICAST_AC_MAX_CONN)
 #define GMAP_UNICAST_AC_MAX_SRC      (2U * GMAP_UNICAST_AC_MAX_CONN)
@@ -519,12 +519,12 @@ static void init(void)
 		return;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 		bt_cap_stream_ops_register(
 			cap_stream_from_audio_test_stream(&unicast_streams[i].stream), &stream_ops);
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(broadcast_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_streams); i++) {
 		bt_cap_stream_ops_register(cap_stream_from_audio_test_stream(&broadcast_streams[i]),
 					   &stream_ops);
 	}
@@ -678,7 +678,7 @@ static int gmap_unicast_ac_create_unicast_group(const struct gmap_unicast_ac_par
 	}
 
 	for (size_t i = 0U; i < param->conn_cnt; i++) {
-		for (size_t j = 0; j < MAX(param->snk_cnt[i], param->src_cnt[i]); j++) {
+		for (size_t j = 0U; j < MAX(param->snk_cnt[i], param->src_cnt[i]); j++) {
 			if (param->snk_cnt[i] > j) {
 				pair_params[pair_cnt].tx_param =
 					&snk_group_stream_params[snk_stream_cnt++];
@@ -858,8 +858,8 @@ static int gmap_ac_unicast(const struct gmap_unicast_ac_param *param,
 	/* Allocate params large enough for any params, but only use what is required */
 	struct unicast_stream *snk_uni_streams[GMAP_UNICAST_AC_MAX_SNK];
 	struct unicast_stream *src_uni_streams[GMAP_UNICAST_AC_MAX_SRC];
-	size_t snk_cnt = 0;
-	size_t src_cnt = 0;
+	size_t snk_cnt = 0U;
+	size_t src_cnt = 0U;
 	int err;
 
 	if (param->conn_cnt > GMAP_UNICAST_AC_MAX_CONN) {
@@ -868,7 +868,7 @@ static int gmap_ac_unicast(const struct gmap_unicast_ac_param *param,
 		return -EINVAL;
 	}
 
-	for (size_t i = 0; i < param->conn_cnt; i++) {
+	for (size_t i = 0U; i < param->conn_cnt; i++) {
 		/* Verify conn values */
 		if (param->snk_cnt[i] > GMAP_UNICAST_AC_MAX_SNK) {
 			FAIL("Invalid conn_snk_cnt[%zu]: %zu\n", i, param->snk_cnt[i]);
@@ -1508,7 +1508,7 @@ static void test_gmap_ac_14(void)
 
 static void test_args(int argc, char *argv[])
 {
-	for (size_t argn = 0; argn < argc; argn++) {
+	for (size_t argn = 0U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "sink_preset") == 0) {

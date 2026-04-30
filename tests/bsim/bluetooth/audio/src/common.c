@@ -307,7 +307,7 @@ void test_tick(bs_time_t HW_device_time)
 	ARG_UNUSED(HW_device_time);
 
 	if (bst_result != Passed) {
-		FAIL("test failed (not passed after %i seconds)\n", WAIT_SECONDS);
+		FAIL("test failed (not passed after %u seconds)\n", WAIT_SECONDS);
 	}
 }
 
@@ -317,7 +317,7 @@ void test_init(void)
 	bst_result = In_progress;
 }
 
-#define SYNC_MSG_SIZE 1
+#define SYNC_MSG_SIZE 1U
 static int32_t dev_cnt;
 static uint backchannel_nums[255];
 static uint chan_cnt;
@@ -469,7 +469,7 @@ void backchannel_sync_wait(uint dev)
 			break;
 		}
 
-		k_sleep(K_MSEC(1));
+		k_sleep(K_MSEC(1U));
 	}
 }
 
@@ -505,7 +505,7 @@ void backchannel_sync_wait_any(void)
 			}
 		}
 
-		k_sleep(K_MSEC(100));
+		k_sleep(K_MSEC(100U));
 	}
 }
 

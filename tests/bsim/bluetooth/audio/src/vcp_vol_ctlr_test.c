@@ -21,8 +21,8 @@
 #include "common.h"
 
 #ifdef CONFIG_BT_VCP_VOL_CTLR
-#define VOCS_DESC_SIZE 64
-#define AICS_DESC_SIZE 64
+#define VOCS_DESC_SIZE 64U
+#define AICS_DESC_SIZE 64U
 
 extern enum bst_result_t bst_result;
 
@@ -1031,7 +1031,7 @@ static void test_vol_down(void)
 		return;
 	}
 
-	WAIT_FOR_COND(previous_volume == 0 ||
+	WAIT_FOR_COND(previous_volume == 0U ||
 		      (g_volume < previous_volume && g_cb && g_write_complete));
 	printk("VCP volume downed\n");
 }
@@ -1112,7 +1112,7 @@ static void test_unmute_vol_down(void)
 		return;
 	}
 
-	WAIT_FOR_COND((previous_volume == 0 || g_volume < previous_volume) &&
+	WAIT_FOR_COND((previous_volume == 0U || g_volume < previous_volume) &&
 		      expected_mute == g_mute &&
 		      g_cb &&
 		      g_write_complete);

@@ -85,8 +85,8 @@ static void bt_ready(int err)
 
 static void test_sirk(void)
 {
-	const uint8_t new_sirk[] = {0xff, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
-				    0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45};
+	const uint8_t new_sirk[] = {0xFFU, 0xCCU, 0x72U, 0xDDU, 0x86U, 0x8CU, 0xCDU, 0xCEU,
+				    0x22U, 0xFDU, 0xA1U, 0x21U, 0x09U, 0x7DU, 0x7DU, 0x45U};
 	struct bt_csip_set_member_set_info info;
 	int err;
 
@@ -341,7 +341,7 @@ static void test_register(void)
 
 static void test_args(int argc, char *argv[])
 {
-	for (size_t argn = 0; argn < argc; argn++) {
+	for (size_t argn = 0U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "size") == 0) {
@@ -357,7 +357,7 @@ static void test_args(int argc, char *argv[])
 
 			len = hex2bin(argv[argn], strlen(argv[argn]), param.sirk,
 				      sizeof(param.sirk));
-			if (len == 0) {
+			if (len == 0U) {
 				FAIL("Could not parse SIRK");
 				return;
 			}
