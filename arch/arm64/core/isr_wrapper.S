@@ -32,6 +32,8 @@ GDATA(_sw_isr_table)
 GTEXT(_isr_wrapper)
 SECTION_FUNC(TEXT, _isr_wrapper)
 
+	.cfi_sections .debug_frame
+	.cfi_startproc
 	/* ++_current_cpu->nested to be checked by arch_is_in_isr() */
 	get_cpu	x0
 	ldr	w1, [x0, #___cpu_t_nested_OFFSET]
@@ -49,6 +51,21 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	str	x1, [x0, #_cpu_offset_to_current_stack_limit]
 #endif
 1:
+	/*
+	 * CFI after IRQ stack switch: CFA and saved regs are described by
+	 * DWARF expressions since the frame (arch_esf) lives at *sp (saved task
+	 * SP on IRQ stack), not at sp. CFA = *(sp) + ___esf_t_SIZEOF;
+	 * LR at *(sp) + (spsr_elr_OFFSET + 8). Valid for the non-nested path.
+	 */
+	.cfi_escape 0x0f, 6, 0x8f, 0, 0x06, 0x23, ((___esf_t_SIZEOF) & 0x7F) | 0x80,\
+	((___esf_t_SIZEOF) >> 7) & 0x7f
+	.cfi_escape 0x10, 0x1e, 6, 0x8f, 0, 0x06, 0x23,\
+	((___esf_t_spsr_elr_OFFSET + 8) & 0x7F) | 0x80,\
+	(((___esf_t_spsr_elr_OFFSET + 8) >> 7) & 0x7f)
+#ifdef CONFIG_FRAME_POINTER
+	.cfi_escape 0x10, 0x1d, 6, 0x8f, 0, 0x06, 0x23, ((___esf_t_fp_OFFSET) & 0x7F) | 0x80,\
+	((___esf_t_fp_OFFSET) >> 7) & 0x7f
+#endif
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	bl	z_sched_usage_stop
 #endif
@@ -163,5 +180,6 @@ exit:
 #ifdef CONFIG_STACK_SENTINEL
 	bl	z_check_stack_sentinel
 #endif
+	.cfi_endproc
 	b	z_arm64_exit_exc
 
