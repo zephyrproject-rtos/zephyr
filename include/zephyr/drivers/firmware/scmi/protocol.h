@@ -75,16 +75,6 @@ enum scmi_status_code {
 };
 
 /**
- * @brief SCMI common command
- */
-enum scmi_common_cmd {
-	SCMI_MSG_PROTOCOL_VERSION = 0x0,
-	SCMI_MSG_PROTOCOL_ATTRIBUTES = 0x1,
-	SCMI_MSG_MESSAGE_ATTRIBUTES = 0x2,
-	SCMI_MSG_NEGOTIATE_PROTOCOL_VERSION = 0x10,
-};
-
-/**
  * @struct scmi_protocol
  *
  * @brief SCMI protocol structure
