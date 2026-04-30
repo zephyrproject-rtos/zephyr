@@ -78,6 +78,13 @@
 			status = "disabled";
 		};
 
+		wdog0: wdog@40088000 {
+			compatible = "silabs,gecko-wdog";
+			reg = <0x40088000 0x400>;
+			peripheral-id = <0>;
+			status = "disabled";
+		};
+
 		gpio@40006100 {
 			compatible = "silabs,gecko-gpio";
 			reg = <0x40006100 0xf00>;
