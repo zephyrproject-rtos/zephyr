@@ -337,6 +337,7 @@ __subsystem struct i2s_driver_api {
 	int (*write)(const struct device *dev, void *mem_block, size_t size);
 	int (*trigger)(const struct device *dev, enum i2s_dir dir,
 		       enum i2s_trigger_cmd cmd);
+	enum i2s_state (*get_state)(const struct device *dev, enum i2s_dir dir);
 };
 /**
  * @endcond
@@ -529,6 +530,37 @@ static inline int z_impl_i2s_trigger(const struct device *dev,
 				     enum i2s_trigger_cmd cmd)
 {
 	return DEVICE_API_GET(i2s, dev)->trigger(dev, dir, cmd);
+}
+
+/**
+ * @brief Get current I2S interface state.
+ *
+ * Returns the current state of the I2S controller as tracked by the driver.
+ * The state reflects the last successful operation (configure, trigger, or
+ * error condition) and is maintained by the driver implementation.
+ *
+ * @note This is a lightweight query function and does not interact with
+ *       hardware in most implementations; it typically returns cached state.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param dir Stream direction: RX, TX, or both, as defined by I2S_DIR_*.
+ *            The I2S_DIR_BOTH value may not be supported by some drivers.
+ *            For those, triggering need to be done separately for the RX
+ *            and TX streams.
+ *
+ * @return Current I2S interface state, as defined by @ref i2s_state.
+ *
+ * @retval I2S_STATE_NOT_READY The interface is not configured.
+ * @retval I2S_STATE_READY     The interface is ready to receive / transmit data.
+ * @retval I2S_STATE_RUNNING   The interface is receiving / transmitting data.
+ * @retval I2S_STATE_STOPPING  The interface is draining its transmit queue.
+ * @retval I2S_STATE_ERROR     An underrun or overrun error occurred.
+ */
+__syscall enum i2s_state i2s_get_state(const struct device *dev, enum i2s_dir dir);
+
+static inline enum i2s_state z_impl_i2s_get_state(const struct device *dev, enum i2s_dir dir)
+{
+	return DEVICE_API_GET(i2s, dev)->get_state(dev, dir);
 }
 
 /**
