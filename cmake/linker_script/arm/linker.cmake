@@ -265,9 +265,9 @@ if(DEFINED chosen_dtcm)
   if(${status_result})
     zephyr_linker_group(NAME DTCM_REGION VMA DTCM LMA ROM_REGION)
 
-    zephyr_linker_section(NAME .dtcm_bss GROUP DTCM_REGION SUBALIGN 4 TYPE BSS)
-    zephyr_linker_section(NAME .dtcm_noinit GROUP DTCM_REGION SUBALIGN 4 TYPE NOLOAD NOINIT)
-    zephyr_linker_section(NAME .dtcm_data GROUP DTCM_REGION SUBALIGN 4)
+    zephyr_linker_section(NAME .dtcm_bss GROUP DTCM_REGION ALIGN 4 TYPE BSS)
+    zephyr_linker_section(NAME .dtcm_noinit GROUP DTCM_REGION ALIGN 4 TYPE NOLOAD NOINIT)
+    zephyr_linker_section(NAME .dtcm_data GROUP DTCM_REGION ALIGN 4)
   endif()
 endif()
 
