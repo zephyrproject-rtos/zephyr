@@ -1,0 +1,91 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Xilinx TTC (Triple Timer Counter) individual counter device.
+
+  Each device node represents a single TTC counter, exposed as an
+  independent Zephyr counter device with its own register window
+  within the TTC IP block.
+
+compatible: "xlnx,ttc-counter"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Register base address and size for the TTC counter instance.
+      Each counter uses a distinct register window within the TTC
+      hardware block.
+
+  interrupts:
+    required: true
+    description: |
+      Interrupt configuration for the TTC counter. Depending on the
+      platform, counters may have individual interrupt lines or may
+      share a common interrupt.
+
+  prescaler:
+    type: int
+    description: |
+      Clock prescaler value (0-15). The effective counter frequency is:
+      freq = clock-frequency / (2 ^ (prescaler + 1))
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Input clock frequency in Hz.
+
+  timer-width:
+    type: int
+    required: true
+    enum:
+      - 16
+      - 32
+    description: |
+      Number of bits in the timer counter.
+
+examples:
+  - |
+    soc {
+      #address-cells = <1>;
+      #size-cells = <1>;
+
+      /* TTC0 */
+      ttc0_cnt0: counter@ff110000 {
+        compatible = "xlnx,ttc-counter";
+        reg = <0xff110000 0x1000>;
+        interrupts = <36 IRQ_TYPE_LEVEL_HIGH>;
+        clock-frequency = <100000000>;
+        timer-width = <32>;
+      };
+
+      ttc0_cnt1: counter@ff110004 {
+        compatible = "xlnx,ttc-counter";
+        reg = <0xff110004 0x1000>;
+        interrupts = <37 IRQ_TYPE_LEVEL_HIGH>;
+        clock-frequency = <100000000>;
+        timer-width = <32>;
+      };
+
+      ttc0_cnt2: counter@ff110008 {
+        compatible = "xlnx,ttc-counter";
+        reg = <0xff110008 0x1000>;
+        interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
+        clock-frequency = <100000000>;
+        timer-width = <32>;
+      };
+
+      /* TTC1 */
+      ttc1_cnt0: counter@ff120000 {
+        compatible = "xlnx,ttc-counter";
+        reg = <0xff120000 0x1000>;
+        interrupts = <39 IRQ_TYPE_LEVEL_HIGH>;
+        clock-frequency = <100000000>;
+        timer-width = <32>;
+      };
+    };

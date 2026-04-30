@@ -48,3 +48,20 @@
 	current-speed = <115200>;
 	clock-frequency = <100000000>;
 };
+
+&ttc0_timer0 {
+	status = "okay";
+	clock-frequency = <147915192>;
+};
+
+&ttc0_timer1 {
+	status = "okay";
+	clock-frequency = <147915192>;
+	prescaler = <0>;
+};
+
+&ttc0_timer2 {
+	status = "okay";
+	clock-frequency = <147915192>;
+	prescaler = <0>;
+};

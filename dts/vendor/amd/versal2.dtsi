@@ -204,5 +204,29 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 		};
+
+		ttc0_timer0: counter0@f1e60000 {
+			compatible = "xlnx,ttc-counter";
+			status = "disabled";
+			reg = <0xf1e60000 0x1000>;
+			interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			timer-width = <32>;
+		};
+
+		ttc0_timer1: counter1@f1e60004 {
+			compatible = "xlnx,ttc-counter";
+			status = "disabled";
+			reg = <0xf1e60004 0x1000>;
+			interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			timer-width = <32>;
+		};
+
+		ttc0_timer2: counter2@f1e60008 {
+			compatible = "xlnx,ttc-counter";
+			status = "disabled";
+			reg = <0xf1e60008 0x1000>;
+			interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			timer-width = <32>;
+		};
 	};
 };
