@@ -4,7 +4,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="conn_stress"
+simulation_id="${BOARD_TS}_conn_stress"
 
 test_path="tests_bsim_bluetooth_host_misc_conn_stress"
 bsim_central_exe_name="bs_${BOARD_TS}_${test_path}_central_prj_conf"

@@ -7,7 +7,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="per_adv_not_scanning"
+simulation_id="${BOARD_TS}_per_adv_not_scanning"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

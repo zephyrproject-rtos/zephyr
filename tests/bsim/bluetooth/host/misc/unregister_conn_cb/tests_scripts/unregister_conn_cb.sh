@@ -10,7 +10,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 #will be printed and the flag_is_connected will be changed by the callback function.
 #After unregister the connection callbacks, reconnect to peer device, then no printing
 #neither flag change can be found, callback function was unregistered as expected
-simulation_id="unregister_conn_cb"
+simulation_id="${BOARD_TS}_unregister_conn_cb"
 verbosity_level=2
 
 bsim_exe=./bs_${BOARD_TS}_tests_bsim_bluetooth_host_misc_unregister_conn_cb_prj_conf
