@@ -54,6 +54,8 @@ const char *wifi_security_txt(enum wifi_security_type security)
 	switch (security) {
 	case WIFI_SECURITY_TYPE_NONE:
 		return "OPEN";
+	case WIFI_SECURITY_TYPE_OWE:
+		return "OWE";
 	case WIFI_SECURITY_TYPE_PSK:
 		return "WPA2-PSK";
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
@@ -476,6 +478,12 @@ static int wifi_connect(uint64_t mgmt_request, struct net_if *iface,
 	case WIFI_SECURITY_TYPE_SAE_AUTO:
 		if ((!params->psk_length || !params->psk) &&
 		    (!params->sae_password_length || !params->sae_password)) {
+			return -EINVAL;
+		}
+		break;
+	case WIFI_SECURITY_TYPE_OWE:
+		/* OWE uses ECDH; no credentials are expected. */
+		if (params->psk_length || params->sae_password_length) {
 			return -EINVAL;
 		}
 		break;
@@ -1724,6 +1732,8 @@ static inline const char *wpa_supp_security_txt(enum wifi_security_type security
 	switch (security) {
 	case WIFI_SECURITY_TYPE_NONE:
 		return "NONE";
+	case WIFI_SECURITY_TYPE_OWE:
+		return "OWE";
 	case WIFI_SECURITY_TYPE_PSK:
 		return "WPA-PSK";
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
@@ -1828,6 +1838,10 @@ static int add_static_network_config(struct net_if *iface)
 
 #if defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OPEN)
 	creds.header.type = WIFI_SECURITY_TYPE_NONE;
+	creds.password_len = 0;
+#elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OWE)
+	creds.header.type = WIFI_SECURITY_TYPE_OWE;
+	creds.password_len = 0;
 #elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_PSK)
 	creds.header.type = WIFI_SECURITY_TYPE_PSK;
 #elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_PSK_SHA256)
@@ -1842,8 +1856,10 @@ static int add_static_network_config(struct net_if *iface)
 
 	memcpy(creds.header.ssid, CONFIG_WIFI_CREDENTIALS_STATIC_SSID,
 	       strlen(CONFIG_WIFI_CREDENTIALS_STATIC_SSID));
+#if !defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OPEN) && !defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OWE)
 	memcpy(creds.password, CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD,
 	       strlen(CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD));
+#endif
 
 	LOG_DBG("Adding statically configured WiFi network [%s] to internal list.",
 		CONFIG_WIFI_CREDENTIALS_STATIC_SSID);

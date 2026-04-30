@@ -117,6 +117,8 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_WEP_OPEN,
 	/** WEP security with Shared Key authentication. */
 	WIFI_SECURITY_TYPE_WEP_SHARED,
+	/** Opportunistic Wireless Encryption (OWE) security. */
+	WIFI_SECURITY_TYPE_OWE,
 
 	/** @cond INTERNAL_HIDDEN */
 	__WIFI_SECURITY_TYPE_AFTER_LAST,

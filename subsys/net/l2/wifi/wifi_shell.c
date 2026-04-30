@@ -713,12 +713,13 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			if (params->security) {
 				secure_connection = true;
 			}
-			/* WPA3 security types (SAE) require MFP (802.11w) as required,
+			/* WPA3 security types (SAE and OWE) require MFP (802.11w) as required,
 			 * if not otherwise set.
 			 */
 			if (params->security == WIFI_SECURITY_TYPE_SAE_HNP ||
 			    params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
-			    params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
+			    params->security == WIFI_SECURITY_TYPE_SAE_AUTO ||
+				params->security == WIFI_SECURITY_TYPE_OWE) {
 				params->mfp = WIFI_MFP_REQUIRED;
 			}
 			break;
@@ -969,6 +970,11 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 
 	if (params->psk && !secure_connection) {
 		PR_WARNING("Passphrase provided without security configuration\n");
+	}
+	if (params->psk && params->security == WIFI_SECURITY_TYPE_OWE) {
+		PR_WARNING("OWE (Enhanced open) does not use passphrase; ignoring -p\n");
+		params->psk = NULL;
+		params->psk_length = 0;
 	}
 
 	if (!params->ssid) {
