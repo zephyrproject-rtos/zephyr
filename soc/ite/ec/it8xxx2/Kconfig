@@ -271,8 +271,11 @@ config SOC_IT8XXX2_FLASH_SIZE_BYTES
 	help
 	  Total size of writable flash.
 
+DT_CHOSEN_Z_SRAM = zephyr,sram
+
 config ILM_MAX_SIZE
 	int "ILM Size in kB"
-	default SRAM_SIZE
+	default SRAM_SIZE if SRAM_DEPRECATED_KCONFIG_SET
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
 
 endif # SOC_SERIES_IT8XXX2
