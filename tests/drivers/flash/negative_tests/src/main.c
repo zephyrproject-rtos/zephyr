@@ -44,6 +44,9 @@
  */
 #define TEST_FLASH_START 0
 #define TEST_FLASH_SIZE  DT_PROP(DT_CHOSEN(zephyr_flash_controller), size)
+#elif defined(CONFIG_SOC_FAMILY_TI_MSPM0)
+#define TEST_FLASH_START (DT_REG_ADDR(DT_MEM_FROM_PARTITION(DT_NODELABEL(TEST_AREA))))
+#define TEST_FLASH_SIZE  (DT_REG_SIZE(DT_MEM_FROM_PARTITION(DT_NODELABEL(TEST_AREA))))
 #else
 #error "Missing definition of TEST_FLASH_START and TEST_FLASH_SIZE for this target"
 #endif
