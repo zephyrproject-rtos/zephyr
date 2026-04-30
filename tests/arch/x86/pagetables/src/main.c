@@ -242,9 +242,15 @@ void z_vrfy_dump_my_ptables(void)
 #include <zephyr/syscalls/dump_my_ptables_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_SIZE CONFIG_SRAM_SIZE
+#else
+#define RAM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) / 1024)
+#endif
+
 void dump_pagetables(void)
 {
-#if CONFIG_SRAM_SIZE > (32 << 10)
+#if RAM_SIZE > (32 << 10)
 	/*
 	 * Takes too long to dump page table, so skip dumping
 	 * if memory size is larger than 32MB.

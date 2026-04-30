@@ -33,6 +33,12 @@
 
 LOG_MODULE_REGISTER(usb_dc_smartbond, CONFIG_USB_DRIVER_LOG_LEVEL);
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#endif
+
 /* USB device controller access from devicetree */
 #define DT_DRV_COMPAT renesas_smartbond_usbd
 
@@ -505,7 +511,7 @@ static void start_tx_packet(struct smartbond_ep_state *ep_state)
 
 	if (ep_state->ep_addr != EP0_IN &&
 	    remaining > DMA_MIN_TRANSFER_SIZE &&
-	    (uint32_t)(ep_state->buffer) >= CONFIG_SRAM_BASE_ADDRESS &&
+	    (uint32_t)(ep_state->buffer) >= RAM_BASE &&
 	    try_allocate_dma(ep_state, USB_EP_DIR_IN)) {
 		/*
 		 * Whole packet will be put in FIFO by DMA.

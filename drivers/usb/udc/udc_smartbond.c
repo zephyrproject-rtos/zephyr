@@ -31,6 +31,12 @@ LOG_MODULE_REGISTER(udc_smartbond, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define EP0_FIFO_SIZE 8
 #define EP_FIFO_SIZE  64
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#endif
+
 /*
  * DA146xx register fields and bit mask are very long. Filed masks repeat register names.
  * Those convenience macros are a way to reduce complexity of register modification lines.
@@ -431,7 +437,7 @@ static void start_tx_packet(struct usb_smartbond_data *data, struct smartbond_ep
 	}
 
 	if (ep != USB_CONTROL_EP_IN && size > config->dma_min_transfer_size &&
-	    (uint32_t)(buf->data) >= CONFIG_SRAM_BASE_ADDRESS && try_allocate_dma(data, ep_state)) {
+	    (uint32_t)(buf->data) >= RAM_BASE && try_allocate_dma(data, ep_state)) {
 		start_tx_dma(&config->dma_cfg, (uintptr_t)buf->data, (uintptr_t)&regs->txd, size);
 	} else {
 		fill_tx_fifo(ep_state);

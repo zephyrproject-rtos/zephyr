@@ -16,8 +16,15 @@ typedef void (*et171_cfg_func_t)(void);
 #ifdef CONFIG_CACHE_MANAGEMENT
 #include <zephyr/cache.h>
 #define IS_ALIGN(x)          (((uintptr_t)(x) & (sys_cache_data_line_size_get() - 1)) == 0)
-#define DRAM_START	     CONFIG_SRAM_BASE_ADDRESS
-#define DRAM_SIZE	     KB(CONFIG_SRAM_SIZE)
+
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define DRAM_START CONFIG_SRAM_BASE_ADDRESS
+#define DRAM_SIZE KB(CONFIG_SRAM_SIZE)
+#else
+#define DRAM_START DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define DRAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#endif
+
 #define DRAM_END	     (DRAM_START + DRAM_SIZE - 1)
 #define IS_ADDR_IN_RAM(addr) (((addr) >= DRAM_START) && ((addr) <= DRAM_END))
 #endif

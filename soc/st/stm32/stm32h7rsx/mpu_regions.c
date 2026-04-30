@@ -17,6 +17,12 @@ BUILD_ASSERT(!DT_SAME_NODE(sram_eth_node, DT_CHOSEN(zephyr_sram)),
 	     "Ethernet buffer memory-region cannot be located in Zephyr system RAM.");
 #endif /* mac node enabled */
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#endif
+
 static const struct arm_mpu_region mpu_regions[] = {
 	/* Use first region to prevent speculative access in entire memory space */
 	/* Region 0 */
@@ -32,7 +38,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 #endif
 
 	/* Region 3 */
-	MPU_REGION_ENTRY("SRAM_0", CONFIG_SRAM_BASE_ADDRESS, REGION_RAM_ATTR(REGION_SRAM_SIZE)),
+	MPU_REGION_ENTRY("SRAM_0", RAM_BASE, REGION_RAM_ATTR(REGION_SRAM_SIZE)),
 
 	/* Region 4 - OTP area */
 	MPU_REGION_ENTRY("OTP", 0x08FFF000, REGION_IO_ATTR(REGION_1K)),

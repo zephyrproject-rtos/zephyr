@@ -43,7 +43,12 @@ extern uint8_t __ilm_ram_end[];
 BUILD_ASSERT((ILM_BLOCK_SIZE & (ILM_BLOCK_SIZE - 1)) == 0, "ILM_BLOCK_SIZE must be a power of two");
 
 #define FLASH_BASE CONFIG_FLASH_BASE_ADDRESS
-#define RAM_BASE   CONFIG_SRAM_BASE_ADDRESS
+
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#endif
 
 #define ILM_NODE DT_NODELABEL(ilm)
 

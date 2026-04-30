@@ -14,10 +14,16 @@ BUILD_ASSERT(!DT_SAME_NODE(sram_eth_node, DT_CHOSEN(zephyr_sram)),
 	     "Ethernet buffer memory-region cannot be located in Zephyr system RAM.");
 #endif /* mac node enabled */
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#endif
+
 static const struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("FLASH", CONFIG_FLASH_BASE_ADDRESS,
 					 REGION_FLASH_ATTR(REGION_FLASH_SIZE)),
-	MPU_REGION_ENTRY("SRAM", CONFIG_SRAM_BASE_ADDRESS,
+	MPU_REGION_ENTRY("SRAM", RAM_BASE,
 					 REGION_RAM_ATTR(REGION_SRAM_SIZE)),
 	/*
 	 * System memory attributes inhibit the speculative fetch,

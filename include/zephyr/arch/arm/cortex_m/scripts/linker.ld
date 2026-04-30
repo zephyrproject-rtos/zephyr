@@ -57,8 +57,13 @@
 #endif
 #endif /* defined(CONFIG_FLASH_USES_MAPPED_PARTITION) */
 
+#if !defined(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+#define RAM_ADDR (DT_REG_ADDR(DT_CHOSEN(zephyr_sram)))
+#define RAM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)))
+#else
 #define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
 #define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
+#endif /* !defined(CONFIG_SRAM_DEPRECATED_KCONFIG_SET) */
 
 #if defined(CONFIG_CUSTOM_SECTION_ALIGN)
 _region_min_align = CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE;

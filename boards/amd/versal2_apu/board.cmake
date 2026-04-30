@@ -5,9 +5,16 @@
 #
 
 if(CONFIG_BUILD_WITH_TFA)
+  if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+    set(RAM_ADDR ${CONFIG_SRAM_BASE_ADDRESS})
+  else()
+    dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+    dt_reg_addr(RAM_ADDR PATH "${chosen_sram_path}")
+  endif()
+
   set(TFA_PLAT "versal2")
   # Add Versal Gen 2 specific TF-A build parameters
-  set(TFA_EXTRA_ARGS "RESET_TO_BL31=1;PRELOADED_BL33_BASE=${CONFIG_SRAM_BASE_ADDRESS};TFA_NO_PM=1;")
+  set(TFA_EXTRA_ARGS "RESET_TO_BL31=1;PRELOADED_BL33_BASE=${RAM_ADDR};TFA_NO_PM=1;")
   if(CONFIG_TFA_MAKE_BUILD_TYPE_DEBUG)
     set(BUILD_FOLDER "debug")
   else()

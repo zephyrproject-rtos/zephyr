@@ -3,9 +3,16 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_BUILD_WITH_TFA)
+  if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+    set(RAM_ADDR ${CONFIG_SRAM_BASE_ADDRESS})
+  else()
+    dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+    dt_reg_addr(RAM_ADDR PATH "${chosen_sram_path}")
+  endif()
+
   set(TFA_PLAT "versal")
   # Add Versal specific TF-A build parameters
-  set(TFA_EXTRA_ARGS "TFA_NO_PM=1;PRELOADED_BL33_BASE=${CONFIG_SRAM_BASE_ADDRESS}")
+  set(TFA_EXTRA_ARGS "TFA_NO_PM=1;PRELOADED_BL33_BASE=${RAM_ADDR}")
   if(CONFIG_TFA_MAKE_BUILD_TYPE_DEBUG)
     set(BUILD_FOLDER "debug")
   else()

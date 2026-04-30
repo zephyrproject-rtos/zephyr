@@ -59,6 +59,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#endif
+
 /* The steps that npcx ec enters sleep/deep mode and leaves it. */
 #define NPCX_ENTER_SYSTEM_SLEEP() ({                                           \
 	__asm__ volatile (                                                     \
@@ -67,7 +73,7 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 	"ldm %0, {r0-r5}\n"  /* Add a delay before instructions fetching */    \
 	"pop {r0-r5}\n"      /* Restore the registers used for delay */        \
 	"isb\n"              /* Flush the cpu pipelines */                     \
-	:: "r" (CONFIG_SRAM_BASE_ADDRESS)); /* A valid addr used for delay */  \
+	:: "r" (RAM_BASE)); /* A valid addr used for delay */  \
 	})
 
 /* Variables for tracing */

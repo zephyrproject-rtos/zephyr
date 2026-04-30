@@ -8,6 +8,14 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#define RAM_SIZE (CONFIG_SRAM_SIZE * 1024UL)
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#endif
+
 /* We are expected to give *CONFIG_SIZE* in KB, but REGION_ATTR
  * expects bytes, so we multiply by 1024 to convert.
  */
@@ -21,10 +29,10 @@ static const struct arm_mpu_region mpu_regions[] = {
 
 	MPU_REGION_ENTRY(
 		"SRAM",
-		CONFIG_SRAM_BASE_ADDRESS,
+		 RAM_BASE,
 		REGION_RAM_ATTR(
-			CONFIG_SRAM_BASE_ADDRESS,
-			CONFIG_SRAM_SIZE * 1024)),
+			RAM_BASE,
+			RAM_SIZE)),
 
 #if DT_NODE_EXISTS(DT_NODELABEL(m33_allocatable_shared))
 	MPU_REGION_ENTRY(

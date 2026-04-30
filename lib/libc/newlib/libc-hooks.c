@@ -36,6 +36,14 @@ int _lseek(int file, int ptr, int dir);
 int _kill(int pid, int sig);
 int _getpid(void);
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
+#define RAM_SIZE KB(CONFIG_SRAM_SIZE)
+#else
+#define RAM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#endif
+
 #ifndef CONFIG_NEWLIB_LIBC_CUSTOM_SBRK
 
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)
@@ -111,8 +119,8 @@ int _getpid(void);
 		#define MAX_HEAP_SIZE	(POINTER_TO_UINT(&_heap_sentry) - \
 					 HEAP_BASE)
 	#else
-		#define MAX_HEAP_SIZE	(KB(CONFIG_SRAM_SIZE) - (HEAP_BASE - \
-					 CONFIG_SRAM_BASE_ADDRESS))
+		#define MAX_HEAP_SIZE	(RAM_SIZE - (HEAP_BASE - \
+					 RAM_ADDR))
 	#endif /* CONFIG_XTENSA */
 #endif
 

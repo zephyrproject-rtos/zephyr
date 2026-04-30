@@ -9,6 +9,7 @@
 
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/devicetree.h>
 
 /**
  * @defgroup kernel_mm_internal_apis Kernel Memory Management Internal APIs
@@ -37,24 +38,30 @@
  * TODO: This will likely need to move to an arch API or need additional
  * constraints defined.
  */
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define MM_SRAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#define MM_SRAM_SIZE (CONFIG_SRAM_SIZE * 1024UL)
+#else
+#define MM_SRAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define MM_SRAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#endif
+
 #ifdef CONFIG_MMU
 #define K_MEM_VIRT_OFFSET	((CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET) - \
-				 (CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_OFFSET))
+				 (MM_SRAM_BASE + CONFIG_SRAM_OFFSET))
 #else
 #define K_MEM_VIRT_OFFSET	0
 #endif /* CONFIG_MMU */
 
-#if CONFIG_SRAM_BASE_ADDRESS != 0
-#define IS_SRAM_ADDRESS_LOWER(ADDR)  ((ADDR) >= CONFIG_SRAM_BASE_ADDRESS)
+#if MM_SRAM_BASE != 0
+#define IS_SRAM_ADDRESS_LOWER(ADDR)  ((ADDR) >= MM_SRAM_BASE)
 #else
 #define IS_SRAM_ADDRESS_LOWER(ADDR)  true
-#endif /* CONFIG_SRAM_BASE_ADDRESS != 0 */
+#endif /* MM_SRAM_BASE != 0 */
 
-
-#if (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL)) != 0
+#if (MM_SRAM_BASE + MM_SRAM_SIZE) != 0
 #define IS_SRAM_ADDRESS_UPPER(ADDR)              \
-	((ADDR) < (CONFIG_SRAM_BASE_ADDRESS +    \
-		  (CONFIG_SRAM_SIZE * 1024UL)))
+	((ADDR) < (MM_SRAM_BASE + MM_SRAM_SIZE))
 #else
 #define IS_SRAM_ADDRESS_UPPER(ADDR)  false
 #endif

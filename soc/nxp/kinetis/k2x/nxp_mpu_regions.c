@@ -6,6 +6,14 @@
 #include <soc.h>
 #include <zephyr/arch/arm/mpu/nxp_mpu.h>
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#define RAM_SIZE KB(CONFIG_SRAM_SIZE)
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#endif
+
 static const struct nxp_mpu_region mpu_regions[] = {
 	/* Region 0 */
 	/* Debugger access can't be disabled; ENET and USB devices will not be able
@@ -30,12 +38,11 @@ static const struct nxp_mpu_region mpu_regions[] = {
 	/* Region 1 */
 	MPU_REGION_ENTRY("BACKGROUND_0",
 			 0,
-			 CONFIG_SRAM_BASE_ADDRESS-1,
+			 RAM_BASE-1,
 			 REGION_BACKGROUND_ATTR),
 	/* Region 2 */
 	MPU_REGION_ENTRY("BACKGROUND_1",
-			 CONFIG_SRAM_BASE_ADDRESS +
-				 (CONFIG_SRAM_SIZE * 1024),
+			 RAM_BASE + RAM_SIZE,
 			 0xFFFFFFFF,
 			 REGION_BACKGROUND_ATTR),
 	/* Region 3 */
@@ -46,9 +53,8 @@ static const struct nxp_mpu_region mpu_regions[] = {
 			 REGION_FLASH_ATTR),
 	/* Region 4 */
 	MPU_REGION_ENTRY("RAM_U_0",
-			 CONFIG_SRAM_BASE_ADDRESS,
-			 (CONFIG_SRAM_BASE_ADDRESS +
-				 (CONFIG_SRAM_SIZE * 1024) - 1),
+			 RAM_BASE,
+			 (RAM_BASE + RAM_SIZE - 1),
 			 REGION_RAM_ATTR),
 };
 

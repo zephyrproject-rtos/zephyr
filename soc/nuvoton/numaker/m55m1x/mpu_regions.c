@@ -7,14 +7,22 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#define RAM_SIZE KB(CONFIG_SRAM_SIZE)
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#endif
+
 static const struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("FLASH",
 			 CONFIG_FLASH_BASE_ADDRESS,
 			 REGION_FLASH_ATTR(CONFIG_FLASH_BASE_ADDRESS, CONFIG_FLASH_SIZE * 1024)),
 
 	MPU_REGION_ENTRY("SRAM",
-			 CONFIG_SRAM_BASE_ADDRESS,
-			 REGION_RAM_ATTR(CONFIG_SRAM_BASE_ADDRESS, CONFIG_SRAM_SIZE * 1024)),
+			 RAM_BASE,
+			 REGION_RAM_ATTR(RAM_BASE, RAM_SIZE)),
 
 #if DT_NODE_EXISTS(DT_NODELABEL(itcm))
 	MPU_REGION_ENTRY("ITCM",

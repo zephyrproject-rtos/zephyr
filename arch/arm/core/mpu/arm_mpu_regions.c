@@ -15,6 +15,14 @@
 #define ARM_MPU_SRAM_REGION_ATTR  REGION_RAM_ATTR
 #endif
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#define RAM_SIZE KB(CONFIG_SRAM_SIZE)
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#endif
+
 static const struct arm_mpu_region mpu_regions[] = {
 #ifdef CONFIG_XIP
 	/* Region 0 */
@@ -30,10 +38,10 @@ static const struct arm_mpu_region mpu_regions[] = {
 
 	/* Region 1 */
 	MPU_REGION_ENTRY("SRAM_0",
-			 CONFIG_SRAM_BASE_ADDRESS,
+			 RAM_BASE,
 #if defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)
-			 ARM_MPU_SRAM_REGION_ATTR(CONFIG_SRAM_BASE_ADDRESS,
-				 CONFIG_SRAM_SIZE * 1024)),
+			 ARM_MPU_SRAM_REGION_ATTR(RAM_BASE,
+				 RAM_SIZE)),
 #else
 			 ARM_MPU_SRAM_REGION_ATTR(REGION_SRAM_SIZE)),
 #endif

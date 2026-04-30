@@ -9,10 +9,16 @@
 
 #ifdef CONFIG_TIMESLICING
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_SIZE CONFIG_SRAM_SIZE
+#else
+#define RAM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) / 1024)
+#endif
+
 /* nrf 51 has lower ram, so creating less number of threads */
-#if CONFIG_SRAM_SIZE <= 24
+#if RAM_SIZE <= 24
 	#define NUM_THREAD 2
-#elif (CONFIG_SRAM_SIZE <= 32) \
+#elif (RAM_SIZE <= 32) \
 	|| defined(CONFIG_SOC_EMSK_EM7D)
 	#define NUM_THREAD 3
 #else

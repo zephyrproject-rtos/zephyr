@@ -10,16 +10,24 @@
 #include <zephyr/kernel/mm.h>
 #include <zephyr/cache.h>
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#define RAM_SIZE (CONFIG_SRAM_SIZE * 1024UL)
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#endif
+
 bool sys_mm_is_phys_addr_in_range(uintptr_t phys)
 {
 	bool valid;
 	uintptr_t cached = (uintptr_t)sys_cache_cached_ptr_get((void *)phys);
 
-	valid = ((phys >= CONFIG_SRAM_BASE_ADDRESS) &&
-		 (phys < (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL))));
+	valid = ((phys >= RAM_BASE) &&
+		 (phys < (RAM_BASE + RAM_SIZE)));
 
-	valid |= ((cached >= CONFIG_SRAM_BASE_ADDRESS) &&
-		  (cached < (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL))));
+	valid |= ((cached >= RAM_BASE) &&
+		  (cached < (RAM_BASE + RAM_SIZE)));
 
 	return valid;
 }

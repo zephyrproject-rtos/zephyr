@@ -8,6 +8,14 @@
 #include <zephyr/arch/arc/v2/mpu/arc_mpu.h>
 #include <zephyr/linker/linker-defs.h>
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#define RAM_SIZE (CONFIG_SRAM_SIZE * 1024)
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#endif
+
 static struct arc_mpu_region mpu_regions[] = {
 	/* Region ICCM */
 	MPU_REGION_ENTRY("ICCM",
@@ -35,8 +43,8 @@ static struct arc_mpu_region mpu_regions[] = {
 #endif
 	/* Region DDR RAM */
 	MPU_REGION_ENTRY("SRAM",
-			CONFIG_SRAM_BASE_ADDRESS,
-			CONFIG_SRAM_SIZE * 1024,
+			RAM_BASE,
+			RAM_SIZE,
 			REGION_KERNEL_RAM_ATTR |
 			AUX_MPU_ATTR_KE | AUX_MPU_ATTR_UE),
 	MPU_REGION_ENTRY("FLASH_0",

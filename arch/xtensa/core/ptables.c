@@ -176,6 +176,12 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 BUILD_ASSERT(CONFIG_MMU_PAGE_SIZE == 0x1000,
 	     "MMU_PAGE_SIZE value is invalid, only 4 kB pages are supported\n");
 
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#else
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#endif
+
 /**
  * @brief Array of level 1 page tables.
  *
@@ -570,7 +576,7 @@ __weak void arch_reserved_pages_update(void)
 	uintptr_t page;
 	int idx;
 
-	for (page = CONFIG_SRAM_BASE_ADDRESS, idx = 0;
+	for (page = RAM_BASE, idx = 0;
 	     page < (uintptr_t)z_mapped_start;
 	     page += CONFIG_MMU_PAGE_SIZE, idx++) {
 		k_mem_page_frame_set(&k_mem_page_frames[idx], K_MEM_PAGE_FRAME_RESERVED);

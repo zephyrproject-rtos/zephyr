@@ -178,8 +178,13 @@ static inline int intel_adsp_hda_set_buffer(uint32_t base,
 #  define _INTEL_ADSP_BASE  CONFIG_KERNEL_VM_BASE
 #  define _INTEL_ADSP_SIZE  CONFIG_KERNEL_VM_SIZE
 #else
+#ifdef CONFIG_SRAM_DEPRECATED_KCONFIG_SET
 #  define _INTEL_ADSP_BASE  CONFIG_SRAM_BASE_ADDRESS
 #  define _INTEL_ADSP_SIZE  KB(CONFIG_SRAM_SIZE)
+#else
+#define _INTEL_ADSP_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define _INTEL_ADSP_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+#endif
 #endif
 
 	__ASSERT(aligned_addr >= _INTEL_ADSP_BASE
