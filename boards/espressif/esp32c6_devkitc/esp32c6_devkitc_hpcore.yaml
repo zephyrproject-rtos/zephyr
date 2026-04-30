@@ -21,3 +21,7 @@ supported:
   - netif:wifi
   - crypto
   - retained_mem
+  - rmt
+testing:
+  ignore_tags:
+    - bluetooth

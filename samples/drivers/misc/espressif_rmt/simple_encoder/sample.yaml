@@ -1,0 +1,14 @@
+sample:
+  name: espressif_rmt
+tests:
+  sample.drivers.misc.espressif_rmt.simple_encoder:
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32c3_devkitc/esp32c3
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm/esp32h2
+      - esp32s2_devkitc/esp32s2
+      - esp32s3_devkitc/esp32s3/procpu
+    tags:
+      - drivers

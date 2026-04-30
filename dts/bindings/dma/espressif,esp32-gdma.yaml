@@ -35,7 +35,7 @@ description: |
   * AES (Not Supported yet)
   * SHA (Not Supported yet)
   * ADC
-  * RMT (Not Supported yet)
+  * RMT
 
 compatible: "espressif,esp32-gdma"
 
