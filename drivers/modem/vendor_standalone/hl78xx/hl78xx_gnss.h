@@ -12,9 +12,9 @@
 #include <zephyr/drivers/gnss.h>
 #include <zephyr/drivers/gnss/gnss_publish.h>
 
-#include "../../gnss/gnss_nmea0183.h"
-#include "../../gnss/gnss_nmea0183_match.h"
-#include "../../gnss/gnss_parse.h"
+#include "../../../gnss/gnss_nmea0183.h"
+#include "../../../gnss/gnss_nmea0183_match.h"
+#include "../../../gnss/gnss_parse.h"
 
 #include "hl78xx_gnss_parsers.h"
 #include "hl78xx.h"
