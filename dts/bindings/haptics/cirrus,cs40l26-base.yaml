@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: CS40L26/27 Haptic Driver
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: Host GPIO pin mapped to CS40L26/27 reset pin.
+
+  int-gpios:
+    type: phandle-array
+    description: Host GPIO pin mapped to CS40L26/27 interrupt pin.
+
+  flash-storage:
+    type: phandle
+    description: Flash storage for CS40L26 data. Must be a phandle to
+      a flash device or fixed partition.
+
+  flash-offset:
+    type: int
+    description: Register offset to store and load CS40L26 data.

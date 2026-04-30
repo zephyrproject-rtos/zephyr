@@ -23,3 +23,15 @@ cs40l5x@1 {
 
 	reset-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_cs40l26@2 {
+	compatible = "cirrus,cs40l26";
+	reg = <0x2>;
+	status = "okay";
+};
+
+test_cs40l27@3 {
+	compatible = "cirrus,cs40l27";
+	reg = <0x3>;
+	status = "okay";
+};
