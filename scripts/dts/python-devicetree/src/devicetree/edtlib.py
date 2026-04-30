@@ -2404,30 +2404,32 @@ class EDT:
         """
         # A Node depends on any Nodes present in 'phandle',
         # 'phandles', or 'phandle-array' property values.
+        #
+        # When a phandle target is a descendant of root_node, skip adding
+        # the dependency edge: the tree already has a child-parent edge
+        # for every child, so adding parent-child would create a cycle.
+        # The dependency is implicit because the parent already contains it.
+
+        def is_child_node(child_node):
+            while child_node is not None:
+                if root_node is child_node:
+                    return True
+                child_node = child_node.parent
+
+            return False
+
         for prop in props_node.props.values():
             if prop.type == 'phandle':
-                # According to the DT spec, a property named 'phy-handle' is required when
-                # the Ethernet device is connected a physical layer device (PHY).
-                # But the 'phy-handle' property can point to a child node of the Ethernet device,
-                # so we need to check for that and not add a dependency in that case, otherwise
-                # we'll get a cycle in the graph.
-                if prop.name == "phy-handle":
-                    def _is_child(parent_node: Node, child_node: Optional[Node]) -> bool:
-                        if child_node is None:
-                            return False
-                        if parent_node is child_node:
-                            return True
-                        return _is_child(parent_node, child_node.parent)
-                    if TYPE_CHECKING:
-                        assert isinstance(prop.val, Node)
-                    if _is_child(props_node, prop.val):
-                        continue
-                self._graph.add_edge(root_node, prop.val)
+                if TYPE_CHECKING:
+                    assert isinstance(prop.val, Node)
+                if not is_child_node(prop.val):
+                    self._graph.add_edge(root_node, prop.val)
             elif prop.type == 'phandles':
                 if TYPE_CHECKING:
                     assert isinstance(prop.val, list)
                 for phandle_node in prop.val:
-                    self._graph.add_edge(root_node, phandle_node)
+                    if not is_child_node(phandle_node):
+                        self._graph.add_edge(root_node, phandle_node)
             elif prop.type == 'phandle-array':
                 if TYPE_CHECKING:
                     assert isinstance(prop.val, list)
@@ -2436,7 +2438,8 @@ class EDT:
                         continue
                     if TYPE_CHECKING:
                         assert isinstance(cd, ControllerAndData)
-                    self._graph.add_edge(root_node, cd.controller)
+                    if not is_child_node(cd.controller):
+                        self._graph.add_edge(root_node, cd.controller)
 
         # A Node depends on whatever supports the interrupts it
         # generates.
