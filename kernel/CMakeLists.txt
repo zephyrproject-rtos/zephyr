@@ -26,11 +26,6 @@ if(NOT CONFIG_ERRNO_IN_TLS AND NOT CONFIG_LIBC_ERRNO)
 endif()
 
 zephyr_syscall_header_ifdef(
-  CONFIG_ATOMIC_OPERATIONS_C
-  ${ZEPHYR_BASE}/include/zephyr/sys/atomic_c.h
-)
-
-zephyr_syscall_header_ifdef(
   CONFIG_MMU
   ${ZEPHYR_BASE}/include/zephyr/kernel/mm.h
   ${ZEPHYR_BASE}/include/zephyr/sys/mem_manage.h
@@ -144,7 +139,6 @@ target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      kernel PRIVATE timeout.c timer
 if(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME OR CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
   target_sources(kernel PRIVATE sys_clock_hw_cycles.c)
 endif()
-target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   kernel PRIVATE atomic_c.c)
 target_sources_ifdef(CONFIG_MMU                   kernel PRIVATE mmu.c)
 target_sources_ifdef(CONFIG_POLL                  kernel PRIVATE poll.c)
 target_sources_ifdef(CONFIG_EVENTS                kernel PRIVATE events.c)

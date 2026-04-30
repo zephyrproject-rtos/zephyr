@@ -205,6 +205,7 @@ config BOOTARGS_ARGS_BUFFER_SIZE
 
 endif # BOOTARGS
 
+rsource "Kconfig.atomics"
 rsource "Kconfig.cbprintf"
 rsource "zvfs/Kconfig"
 rsource "cpu_load/Kconfig"
