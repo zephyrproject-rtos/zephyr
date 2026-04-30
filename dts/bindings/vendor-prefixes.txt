@@ -640,6 +640,7 @@ sgd	Solomon Goldentek Display Corporation
 sgmicro	SG Micro Corp
 sgx	SGX Sensortech
 sharp	Sharp Corporation
+shenghe	SHENGHE Microelectronics
 shimafuji	Shimafuji Electric, Inc.
 shiratech	Shiratech Solutions
 si-en	Si-En Technology Ltd.

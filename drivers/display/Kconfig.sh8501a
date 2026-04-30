@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SH8501A
+	bool "SH8501A display driver"
+	default y
+	depends on DT_HAS_SHENGHE_SH8501A_ENABLED
+	select MSPI
+	help
+	  Enable the MSPI display SH8501A driver.
+
+if SH8501A
+
+	config SH8501A_USE_TE
+	bool "Tearing-effect interrupt"
+	default n
+	help
+	  Enables the tearing-effect GPIO interrupt
+
+endif

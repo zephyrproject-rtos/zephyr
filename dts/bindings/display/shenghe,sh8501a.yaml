@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Tom Waldron <tom@baremetal.dev>
+# SPDX-License-Identifier: Apache-2.0
+
+description: SH8501A 240x320 display controller
+
+compatible: "shenghe,sh8501a"
+
+include: [mspi-device.yaml, display-controller.yaml]
+
+properties:
+  te-gpios:
+    type: phandle-array
+    description: |
+      Tearing Effect GPIO pin. Set to high when the display is blanking
+      (i.e., not actively reading pixels from its RAM).
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset GPIO pin. Set high to reset the display
+
+  mspi-cpp-mode:
+    default: "MSPI_CPP_MODE_0"
+
+  te-mode:
+    type: string
+    default: "MIPI_DBI_TE_RISING_EDGE"
+    description: |
+      Tearing enable signal mode, mirroring mipi-dbi setup. Defaults to rising-edge.
+    enum:
+      - "MIPI_DBI_TE_NO_EDGE"
+      - "MIPI_DBI_TE_RISING_EDGE"
+      - "MIPI_DBI_TE_FALLING_EDGE"
+
+  te-scanline:
+    type: int
+    default: 10
+    description: |
+      Sets the display's tear-scan-line setting, which affects the signal timing.
