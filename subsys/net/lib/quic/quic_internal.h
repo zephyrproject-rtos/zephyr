@@ -352,8 +352,6 @@ struct quic_tls_context {
 	const uint8_t *my_cert;      /* DER-encoded certificate */
 	size_t my_cert_len;
 
-	const uint8_t *my_key;       /* DER-encoded private key */
-	size_t my_key_len;
 	psa_key_id_t signing_key_id;  /* Imported signing key */
 
 	/* Intermediate certificate chain (sec_tags resolved at handshake time) */

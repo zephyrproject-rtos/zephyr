@@ -109,77 +109,6 @@ error:
 }
 #endif /* MBEDTLS_PK_PARSE_C */
 
-/*
- * Set own certificate and private key for TLS authentication
- *
- * @param ctx TLS context
- * @param cert DER or PEM encoded certificate
- * @param cert_len Length of certificate data
- * @param key DER or PEM encoded private key
- * @param key_len Length of key data
- *
- * @return 0 on success, negative on error
- */
-static int quic_tls_set_own_cert(struct quic_tls_context *ctx,
-				 const uint8_t *cert, size_t cert_len,
-				 const uint8_t *key, size_t key_len)
-{
-	int ret;
-
-	if (ctx == NULL || cert == NULL || cert_len == 0) {
-		return -EINVAL;
-	}
-
-	/* Parse and validate certificate using mbedtls */
-
-	/* Import private key if provided */
-	if (key != NULL && key_len > 0) {
-#if defined(MBEDTLS_PK_PARSE_C)
-		mbedtls_pk_context pk;
-		psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
-		psa_status_t status;
-
-		mbedtls_pk_init(&pk);
-
-		ret = mbedtls_pk_parse_key(&pk, key, key_len, NULL, 0);
-		if (ret != 0) {
-			NET_DBG("Failed to parse private key: -0x%04x", -ret);
-			mbedtls_pk_free(&pk);
-			return -EINVAL;
-		}
-
-		if (!check_key_type(&pk)) {
-			NET_DBG("Private key must be ECDSA for TLS 1.3");
-			mbedtls_pk_free(&pk);
-			return -EINVAL;
-		}
-
-		/* Set up PSA attributes for the import */
-		psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_SIGN_MESSAGE |
-					       PSA_KEY_USAGE_SIGN_HASH);
-		psa_set_key_algorithm(&attr, PSA_ALG_ECDSA(PSA_ALG_ANY_HASH));
-		psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
-		psa_set_key_bits(&attr, 256);
-
-		/* Directly import pk context into PSA, no raw key buffer needed */
-		status = mbedtls_pk_import_into_psa(&pk, &attr, &ctx->signing_key_id);
-
-		psa_reset_key_attributes(&attr);
-		mbedtls_pk_free(&pk);
-
-		if (status != PSA_SUCCESS) {
-			NET_DBG("Failed to import signing key: %d", status);
-			return -EIO;
-		}
-
-		NET_DBG("Signing key imported successfully, key_id=%u",
-			ctx->signing_key_id);
-#endif /* MBEDTLS_PK_PARSE_C */
-	}
-
-	return 0;
-}
-
 static int quic_tls_effective_verify_level(const struct quic_tls_context *ctx)
 {
 	if (ctx->options.verify_level != -1) {
@@ -4717,31 +4646,61 @@ static int tls_add_own_cert(struct quic_tls_context *tls,
 	return -ENOTSUP;
 }
 
-static int tls_set_own_cert(struct quic_tls_context *tls)
-{
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
-	/* TODO: Handle any own cert options here if needed */
-	return 0;
-#else
-	return -ENOTSUP;
-#endif /* MBEDTLS_X509_CRT_PARSE_C */
-}
-
 static int tls_set_private_key(struct quic_tls_context *tls,
 			       struct tls_credential *priv_key)
 {
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	int err;
+#if defined(MBEDTLS_PK_PARSE_C)
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_status_t status;
+#endif
+
+	if (tls->signing_key_id != 0) {
+		psa_destroy_key(tls->signing_key_id);
+		tls->signing_key_id = 0;
+	}
+
+	mbedtls_pk_free(&tls->priv_key);
+	mbedtls_pk_init(&tls->priv_key);
 
 	err = mbedtls_pk_parse_key(&tls->priv_key, priv_key->buf,
 				   priv_key->len, NULL, 0);
 	if (err != 0) {
+		mbedtls_pk_free(&tls->priv_key);
+		mbedtls_pk_init(&tls->priv_key);
 		return -EINVAL;
 	}
 
-	/* Store key for later use in quic_tls_set_own_cert */
-	tls->my_key = priv_key->buf;
-	tls->my_key_len = priv_key->len;
+#if defined(MBEDTLS_PK_PARSE_C)
+	if (!check_key_type(&tls->priv_key)) {
+		NET_DBG("Private key must be ECDSA for TLS 1.3");
+		mbedtls_pk_free(&tls->priv_key);
+		mbedtls_pk_init(&tls->priv_key);
+		return -EINVAL;
+	}
+
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_SIGN_MESSAGE |
+				       PSA_KEY_USAGE_SIGN_HASH);
+	psa_set_key_algorithm(&attr, PSA_ALG_ECDSA(PSA_ALG_ANY_HASH));
+	psa_set_key_type(&attr, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+	psa_set_key_bits(&attr, 256);
+
+	status = mbedtls_pk_import_into_psa(&tls->priv_key, &attr,
+						    &tls->signing_key_id);
+
+	psa_reset_key_attributes(&attr);
+
+	if (status != PSA_SUCCESS) {
+		NET_DBG("Failed to import signing key: %d", status);
+		mbedtls_pk_free(&tls->priv_key);
+		mbedtls_pk_init(&tls->priv_key);
+		return -EIO;
+	}
+
+	NET_DBG("Signing key imported successfully, key_id=%u",
+		tls->signing_key_id);
+#endif /* MBEDTLS_PK_PARSE_C */
 
 	return 0;
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
@@ -4802,7 +4761,7 @@ static int quic_tls_mbedtls_set_credentials(struct quic_tls_context *tls)
 	struct tls_credential *cred;
 	sec_tag_t tag;
 	int i, err = 0;
-	bool tag_found, ca_cert_present = false, own_cert_present = false;
+	bool tag_found, ca_cert_present = false;
 
 	credentials_lock();
 
@@ -4823,8 +4782,6 @@ static int quic_tls_mbedtls_set_credentials(struct quic_tls_context *tls)
 
 			if (cred->type == TLS_CREDENTIAL_CA_CERTIFICATE) {
 				ca_cert_present = true;
-			} else if (cred->type == TLS_CREDENTIAL_PUBLIC_CERTIFICATE) {
-				own_cert_present = true;
 			}
 		}
 
@@ -4841,9 +4798,6 @@ exit:
 	if (err == 0) {
 		if (ca_cert_present) {
 			tls_set_ca_chain(tls);
-		}
-		if (own_cert_present) {
-			err = tls_set_own_cert(tls);
 		}
 	}
 
@@ -5056,8 +5010,6 @@ static int tls_opt_sec_tag_list_set(struct quic_tls_context *context,
 		context->ca_cert = false;
 		context->my_cert = NULL;
 		context->my_cert_len = 0;
-		context->my_key = NULL;
-		context->my_key_len = 0;
 
 		mbedtls_x509_crt_free(&context->ca_chain);
 		mbedtls_x509_crt_free(&context->own_cert);
@@ -5072,14 +5024,6 @@ static int tls_opt_sec_tag_list_set(struct quic_tls_context *context,
 		if (ret != 0) {
 			NET_DBG("Cannot refresh credentials (%d)", ret);
 			return ret;
-		}
-
-		ret = quic_tls_set_own_cert(context, context->my_cert,
-					    context->my_cert_len,
-					    context->my_key,
-					    context->my_key_len);
-		if (ret != 0) {
-			NET_DBG("Cannot refresh own certificate, will retry later");
 		}
 	}
 
@@ -5308,21 +5252,6 @@ static int quic_tls_init(struct quic_tls_context *tls, bool is_server)
 	if (ret != 0) {
 		NET_DBG("Cannot set credentials (%d)", ret);
 		goto out;
-	}
-
-	ret = quic_tls_set_own_cert(tls, tls->my_cert, tls->my_cert_len,
-				    tls->my_key, tls->my_key_len);
-	if (ret != 0) {
-		/* It is possible that certificate or key is not available at this
-		 * point, for example if credentials are being loaded asynchronously.
-		 * In that case, we will try to set them later when they become available.
-		 * Do not log a warning in order not to confuse the user.
-		 */
-		NET_DBG("Cannot find own certificate. "
-			"Will try to set it later when it becomes available");
-		ret = 0;  /* Certificate is optional at this point,
-			   * don't fail initialization
-			   */
 	}
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
