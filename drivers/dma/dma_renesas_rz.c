@@ -297,7 +297,7 @@ static inline int dma_channel_config_save_parameters(const struct device *dev, u
 #ifdef CONFIG_CPU_CORTEX_M
 	p_extend->continuous_setting = DMAC_B_CONTINUOUS_SETTING_TRANSFER_ONCE;
 
-	p_extend->external_detection_mode = DMAC_B_EXTERNAL_DETECTION_NO_DETECTION;
+	p_extend->external_detection_mode = 0;
 	p_extend->internal_detection_mode = DMAC_B_INTERNAL_DETECTION_NO_DETECTION;
 
 	p_extend->activation_source = activation_with_software_trigger
@@ -509,7 +509,7 @@ static int dma_renesas_rz_start(const struct device *dev, uint32_t channel)
 
 #if defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_CPU_CORTEX_A)
 	if (DMAC_TRIGGER_EVENT_SOFTWARE_TRIGGER == p_extend->activation_source) {
-#else  /* CONFIG_CPU_AARCH32_CORTEX_R */
+#else /* CONFIG_CPU_AARCH32_CORTEX_R */
 	if (ELC_EVENT_NONE == p_extend->activation_source) {
 #endif /* defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_CPU_CORTEX_A) */
 		ret = config->fsp_api->softwareStart(data->channels[channel].fsp_ctrl,
@@ -685,6 +685,30 @@ static DEVICE_API(dma, dma_api) = {
 	.chan_release = dma_renesas_rz_channel_release,
 };
 
+#if defined(CONFIG_SOC_SERIES_RZV2H) || defined(CONFIG_SOC_SERIES_RZV2N)
+#define RZ_INTC_BASE DT_REG_ADDR(DT_NODELABEL(intc))
+
+#define RZ_INTM33SEL_ADDR_OFFSET 0x200
+#define RZ_INTC_INTSEL_BASE      RZ_INTC_BASE + RZ_INTM33SEL_ADDR_OFFSET
+
+#define OFFSET(y)                   ((y) - 353 - COND_CODE_1(CONFIG_GIC, (GIC_SPI_INT_BASE), (0)))
+#define REG_INTSEL_READ(y)          sys_read32(RZ_INTC_INTSEL_BASE + (OFFSET(y) / 3) * 4)
+#define REG_INTSEL_WRITE(y, v)      sys_write32((v), RZ_INTC_INTSEL_BASE + (OFFSET(y) / 3) * 4)
+#define REG_INTSEL_SPIk_SEL_MASK(y) (BIT_MASK(10) << ((OFFSET(y) % 3) * 10))
+
+/**
+ * @brief Connect an @p irq number with an @p event
+ */
+static void intc_connect_irq_event(IRQn_Type irq, IRQSELn_Type event)
+{
+	uint32_t reg_val = REG_INTSEL_READ(irq);
+
+	reg_val &= ~REG_INTSEL_SPIk_SEL_MASK(irq);
+	reg_val |= FIELD_PREP(REG_INTSEL_SPIk_SEL_MASK(irq), event);
+	REG_INTSEL_WRITE(irq, reg_val);
+}
+#endif /* CONFIG_SOC_SERIES_RZV2H || CONFIG_SOC_SERIES_RZV2N */
+
 static int renesas_rz_dma_init(const struct device *dev)
 {
 	const struct dma_renesas_rz_config *config = dev->config;
@@ -744,9 +768,19 @@ static void rz_dma_err_isr(const struct device *dev)
 	.err_irq = DT_INST_IRQ_BY_NAME(inst, err_name, irq),
 #else /* CONFIG_CPU_AARCH32_CORTEX_R */
 #define RZ_DMA_DATA_STRUCT_GET_ERR_IRQ(inst, err_name)
-#endif /* defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_CPU_CORTEX_A) */
+#endif
+
+#if defined(CONFIG_SOC_SERIES_RZV2H) || defined(CONFIG_SOC_SERIES_RZV2N)
+#define DMA_RZ_CONNECT_IRQ_SELECT(inst, name)                                                      \
+	intc_connect_irq_event(DT_INST_IRQ_BY_NAME(inst, name, irq),                               \
+			       CONCAT(DMAC_B, DT_INST_PROP(inst, dma_unit), _DMAERR_IRQSELn));
+
+#else
+#define DMA_RZ_CONNECT_IRQ_SELECT(inst, name)
+#endif /* CONFIG_SOC_SERIES_RZV2H || CONFIG_SOC_SERIES_RZV2N */
 
 #define RZ_DMA_IRQ_ERR_CONFIGURE(inst, name)                                                       \
+	DMA_RZ_CONNECT_IRQ_SELECT(inst, name)                                                      \
 	IRQ_CONNECT(                                                                               \
 		DT_INST_IRQ_BY_NAME(inst, name, irq), DT_INST_IRQ_BY_NAME(inst, name, priority),   \
 		rz_dma_err_isr, DEVICE_DT_INST_GET(inst),                                          \
