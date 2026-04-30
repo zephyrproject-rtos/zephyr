@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Realtek Fingerprint Regulator driver
+
+compatible: "realtek,rts5817-regulator"
+
+include: [base.yaml, reset-device.yaml]
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-init-microvolt
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - startup-delay-us
+  properties:
+    ocp-enable:
+      type: boolean
+      description: svio&sva ldo over current protect.

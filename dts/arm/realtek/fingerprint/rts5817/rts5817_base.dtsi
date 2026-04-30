@@ -93,6 +93,35 @@
 			resets = <&reset SYS_FORCE_RST_UART1>;
 			status = "disabled";
 		};
+
+		regulator: regulator@401e1000 {
+			compatible = "realtek,rts5817-regulator";
+			reg = <0x401e1000 0x30>, <0x401b0000 0x300>;
+			reg-names = "ctrl", "puf_otp";
+			clocks = <&clks RTS_FP_CLK_PUF>;
+			resets = <&reset SYS_FORCE_RST_PUF>;
+			status = "disabled";
+
+			dvdds {
+				regulator-min-microvolt = <1000000>;
+				regulator-max-microvolt = <1200000>;
+				regulator-always-on;
+			};
+
+			svio {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-init-microvolt = <1800000>;
+				ocp-enable;
+			};
+
+			sva {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-init-microvolt = <3000000>;
+				ocp-enable;
+			};
+		};
 	};
 };
 
