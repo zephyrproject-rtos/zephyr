@@ -12,12 +12,18 @@ description: |
   conversion capabilities for the PSOC Edge family of microcontrollers.
 
   The ADC provides 12-bit resolution with a sampling rate of up to 5Msps when configured in
-  high performance mode.  The inputs can be configured to sample directly from analog inputs or
-  through an internal mux to select from signals from other AutAnalog peripherals.
+  high performance mode.  The inputs can be configured to sample directly from GPIO analog
+  inputs (up to 8 channels) or through an internal mux to select from signals from other
+  AutAnalog peripherals (up to 16 MUX channels).
 
-  The AutAnalog SAR ADC is part of the AutAnalog subsystem, which must be set up before initializing
-  the ADC.  Additionally, the AutAnalog subsystem uses a shared interrupt which handles events from
-  all AutAnalog peripherals.
+  MUX channels allow sampling from CTB opamp outputs, DAC outputs, temperature sensor,
+  and other internal analog signals.  MUX channels are selected using
+  IFX_AUTANALOG_SAR_PIN_MUX_* constants from
+  <dt-bindings/adc/infineon-autanalog-sar.h>.
+
+  The AutAnalog SAR ADC is part of the AutAnalog subsystem, which must be set up before
+  initializing the ADC.  Additionally, the AutAnalog subsystem uses a shared interrupt
+  which handles events from all AutAnalog peripherals.
 
 compatible: "infineon,autanalog-sar-adc"
 
@@ -51,19 +57,83 @@ properties:
       the factory calibration for linearity will be used.
 
   vref-source:
-    type: string
-    default: "vdda"
+    type: int
+    default: 0
     enum:
-      - "vdda"
-      - "external"
-      - "vbgr"
-      - "vdda_by_2"
-      - "prb_out1"
-      - "prb_out2"
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
     description: |
       Selects which voltage reference to use for the ADC.
-      The default value of vdda matches the hardware default value and provides ADC
-      functionality without requiring additional hardware.
+      Use IFX_AUTANALOG_SAR_VREF_* constants from
+      <dt-bindings/adc/infineon-autanalog-sar.h>.
+        IFX_AUTANALOG_SAR_VREF_VDDA      (0) - Vdda supply (default)
+        IFX_AUTANALOG_SAR_VREF_EXT       (1) - External reference
+        IFX_AUTANALOG_SAR_VREF_VBGR      (2) - Band-gap reference
+        IFX_AUTANALOG_SAR_VREF_VDDA_BY_2 (3) - Vdda / 2
+        IFX_AUTANALOG_SAR_VREF_PRB_OUT0  (4) - PRB Vref0
+        IFX_AUTANALOG_SAR_VREF_PRB_OUT1  (5) - PRB Vref1
+
+  pos-buf-pwr:
+    type: int
+    default: 0
+    description: |
+      Power mode for the positive MUX input buffer.
+      Use IFX_AUTANALOG_SAR_BUF_PWR_* constants from
+      <dt-bindings/adc/infineon-autanalog-sar.h>.
+        IFX_AUTANALOG_SAR_BUF_PWR_OFF             (0)  - Off (default)
+        IFX_AUTANALOG_SAR_BUF_PWR_ULTRA_LOW       (1)  - Ultra low, charge pump off
+        IFX_AUTANALOG_SAR_BUF_PWR_ULTRA_LOW_RAIL  (2)  - Ultra low, charge pump on
+        IFX_AUTANALOG_SAR_BUF_PWR_LOW_RAIL        (4)  - Low, charge pump on
+        IFX_AUTANALOG_SAR_BUF_PWR_MEDIUM_RAIL     (6)  - Medium, charge pump on (recommended)
+        IFX_AUTANALOG_SAR_BUF_PWR_HIGH_RAIL       (8)  - High, charge pump on
+        IFX_AUTANALOG_SAR_BUF_PWR_ULTRA_HIGH_RAIL (10) - Ultra high, charge pump on
+    enum: [0, 1, 2, 4, 6, 8, 10]
+
+  neg-buf-pwr:
+    type: int
+    default: 0
+    description: |
+      Power mode for the negative MUX input buffer.
+      Use IFX_AUTANALOG_SAR_BUF_PWR_* constants from
+      <dt-bindings/adc/infineon-autanalog-sar.h>.
+      See pos-buf-pwr for valid values.
+    enum: [0, 1, 2, 4, 6, 8, 10]
+
+  acc-mode:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+    description: |
+      Accumulator / averaging mode for the ADC.
+      Use IFX_AUTANALOG_SAR_ACC_* constants from
+      <dt-bindings/adc/infineon-autanalog-sar.h>.
+        IFX_AUTANALOG_SAR_ACC_DISABLED  (0) - Averaging disabled (default)
+        IFX_AUTANALOG_SAR_ACC_ACCUNDUMP (1) - Accumulate and dump
+
+  shift-mode:
+    type: boolean
+    description: |
+      Set the resolution of the averaging result when averaging is performed in HW.
+      If false (default), the result is shifted back to 12 bits.
+      If true, the result is shifted to 16 bits.
+
+  fifo-chan-id:
+    type: boolean
+    description: |
+      Enable channel number identifier for data stored in FIFO.
+
+child-binding:
+  properties:
+    mux-buf-bypass:
+      type: boolean
+      description: |
+        Bypass the Hi-Z buffers for MUX channels.
 
 io-channel-cells:
   - input
