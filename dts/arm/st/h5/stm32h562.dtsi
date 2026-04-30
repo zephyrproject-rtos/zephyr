@@ -524,15 +524,6 @@
 			};
 		};
 
-		aes: aes@420c0000 {
-			compatible = "st,stm32-aes";
-			reg = <0x420c0000 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 16)>;
-			resets = <&rctl STM32_RESET(AHB2, 16)>;
-			interrupts = <116 0>;
-			status = "disabled";
-		};
-
 		rng: rng@420c0800 {
 			nist-config = <0xf00e00>;
 			health-test-config = <0x6a91>;
