@@ -34,6 +34,15 @@ config DT_HAS_{COMPAT}_ENABLED
 TO_UNDERSCORES = str.maketrans("-,.@/+", "______")
 
 
+def write_kconfig_dts(compats: set[str], kconfig_out: str) -> None:
+    with open(kconfig_out, "w", encoding="utf-8") as kconfig_file:
+        print(HEADER, file=kconfig_file)
+
+        for c in sorted(compats):
+            out = KCONFIG_TEMPLATE.format(compat=c, COMPAT=c.upper().translate(TO_UNDERSCORES))
+            print(out, file=kconfig_file)
+
+
 def binding_paths(bindings_dirs):
     # Yields paths to all bindings (.yaml files) in 'bindings_dirs'
 
@@ -62,7 +71,7 @@ def parse_args():
 def main():
     args = parse_args()
 
-    compats = set()
+    compats: set[str] = set()
 
     for binding_path in binding_paths(args.bindings_dirs):
         with open(binding_path, encoding="utf-8") as f:
@@ -84,12 +93,7 @@ def main():
                 compats.add(node.value)
                 break
 
-    with open(args.kconfig_out, "w", encoding="utf-8") as kconfig_file:
-        print(HEADER, file=kconfig_file)
-
-        for c in sorted(compats):
-            out = KCONFIG_TEMPLATE.format(compat=c, COMPAT=c.upper().translate(TO_UNDERSCORES))
-            print(out, file=kconfig_file)
+    write_kconfig_dts(compats, args.kconfig_out)
 
 
 if __name__ == "__main__":
