@@ -1,0 +1,6 @@
+board:
+  name: canBridge_Oleksii_g473
+  full_name: USB CANFD TRIO
+  vendor: can-module.com
+  socs:
+    - name: stm32g473xx
