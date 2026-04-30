@@ -15,6 +15,11 @@ menuconfig USBIP
 
 if USBIP
 
+config USBIP_SERVICE_PORT
+	int "Port number for USBIP service"
+	range 1 $(UINT16_MAX)
+	default 3240
+
 config USBIP_THREAD_STACK_SIZE
 	int "USBIP thread stack size"
 	default 2048
