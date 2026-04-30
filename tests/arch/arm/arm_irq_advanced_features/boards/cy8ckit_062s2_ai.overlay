@@ -5,6 +5,18 @@
  */
 
 /* Changed default interrupts priority for GPIO to 4 */
+&gpio_prt2 {
+	interrupts = <2 4>;
+};
+
+&gpio_prt3 {
+	interrupts = <3 4>;
+};
+
+&gpio_prt4 {
+	interrupts = <4 4>;
+};
+
 &gpio_prt5 {
 	interrupts = <5 4>;
 };
