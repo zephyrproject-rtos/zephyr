@@ -307,6 +307,27 @@ struct display_capabilities {
 	enum display_pixel_format current_pixel_format;
 	/** Current display orientation */
 	enum display_orientation current_orientation;
+#if defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__)
+	/**
+	 * @brief Color palette for indexed color formats
+	 *
+	 * Each entry is an ARGB8888 color matching the layout of the
+	 * @ref ARGB8888 macro: blue in the least significant byte,
+	 * alpha in the most significant byte.
+	 *
+	 * Array size is defined by CONFIG_DISPLAY_COLOR_PALETTE_SIZE.
+	 */
+	struct {
+		/** Blue component (0-255) */
+		uint8_t b;
+		/** Green component (0-255) */
+		uint8_t g;
+		/** Red component (0-255) */
+		uint8_t r;
+		/** Alpha component (0-255) */
+		uint8_t a;
+	} color_palette[CONFIG_DISPLAY_COLOR_PALETTE_SIZE];
+#endif /* defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__) */
 };
 
 /** @brief Structure to describe display data buffer layout */
