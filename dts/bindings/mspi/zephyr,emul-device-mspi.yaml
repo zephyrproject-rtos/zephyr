@@ -3,7 +3,7 @@
 
 description: Zephyr MSPI Emulation Device
 
-compatible: "zephyr,mspi-emul-device"
+compatible: "zephyr,emul-device"
 
 include: mspi-device.yaml
 

@@ -13,7 +13,8 @@ config FLASH_MSPI
 config FLASH_MSPI_EMUL_DEVICE
 	bool "MSPI flash device emulator"
 	default y
-	depends on DT_HAS_ZEPHYR_MSPI_EMUL_FLASH_ENABLED
+	depends on DT_HAS_ZEPHYR_EMUL_FLASH_ENABLED
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_ZEPHYR_EMUL_FLASH),mspi)
 	select FLASH_MSPI
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_EXPLICIT_ERASE
@@ -21,7 +22,8 @@ config FLASH_MSPI_EMUL_DEVICE
 config FLASH_MSPI_ATXP032
 	bool "MSPI ATXP032 driver"
 	default y
-	depends on DT_HAS_MSPI_ATXP032_ENABLED
+	depends on DT_HAS_ATXP032_ENABLED
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_ATXP032),mspi)
 	select FLASH_MSPI
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_EXPLICIT_ERASE
@@ -31,7 +33,8 @@ config FLASH_MSPI_ATXP032
 config FLASH_MSPI_IS25XX0XX
 	bool "MSPI IS25L/WX064/032 driver"
 	default y
-	depends on DT_HAS_MSPI_IS25XX0XX_ENABLED
+	depends on DT_HAS_IS25XX0XX_ENABLED
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_IS25XX0XX),mspi)
 	select FLASH_MSPI
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_EXPLICIT_ERASE
@@ -41,19 +44,20 @@ config FLASH_MSPI_IS25XX0XX
 menuconfig FLASH_MSPI_NOR
 	bool "Generic MSPI NOR Flash"
 	default y
-	depends on DT_HAS_JEDEC_MSPI_NOR_ENABLED
+	depends on DT_HAS_JEDEC_NOR_ENABLED
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_JEDEC_NOR),mspi)
 	select FLASH_MSPI
 	select FLASH_HAS_EXPLICIT_ERASE
 	select FLASH_JESD216
 	select FLASH_HAS_PAGE_LAYOUT
-	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_MSPI_NOR),reset-gpios) \
-		    || $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_MSPI_NOR),supply-gpios)
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_NOR),reset-gpios) \
+		    || $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_NOR),supply-gpios)
 
 if FLASH_MSPI_NOR
 
 config FLASH_MSPI_NOR_USE_SFDP
 	bool "Use Serial Flash Discoverable Parameters (SFDP)"
-	default $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_MSPI_NOR),sfdp-bfp)
+	default $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_NOR),sfdp-bfp)
 	help
 	  Use information from SFDP for setting up flash command transfers
 	  and for configuring the flash chip.

@@ -259,7 +259,7 @@ slot1_partition: &cpuapp_slot1_partition {
 	status = "okay";
 
 	mx25uw63: mx25uw6345g@0 {
-		compatible = "mxicy,mx25u", "jedec,mspi-nor";
+		compatible = "mxicy,mx25u", "jedec,nor-mspi";
 		status = "disabled";
 		reg = <0>;
 		jedec-id = [c2 84 37];

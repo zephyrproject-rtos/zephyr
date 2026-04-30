@@ -12,7 +12,7 @@
 &mspi0 {
 	mspi_device: mspi_device@0 {
 		status = "okay";
-		compatible = "zephyr,mspi-emul-device";
+		compatible = "zephyr,emul-device";
 		reg = <0x0>;
 		mspi-max-frequency = <48000000>;
 	};
