@@ -83,7 +83,7 @@ The current minimum required version for the main dependencies are:
 
             sudo apt install --no-install-recommends git cmake ninja-build gperf \
               ccache dfu-util device-tree-compiler wget python3-dev python3-venv python3-tk \
-              xz-utils file make gcc gcc-multilib g++-multilib libsdl2-dev libmagic1
+              xz-utils file make gcc gcc-multilib g++ g++-multilib libsdl2-dev libmagic1 libusb-1.0-0-dev
 
          .. note::
 
