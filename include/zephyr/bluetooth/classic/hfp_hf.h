@@ -509,6 +509,30 @@ struct bt_hfp_hf_cb {
 	 *  @param call Current call information.
 	 */
 	void (*query_call)(struct bt_hfp_hf *hf, struct bt_hfp_hf_current_call *call);
+
+	/** @brief Vendor specific command callback
+	 *
+	 * If this callback is provided it will be called whenever the
+	 * vendor specific result is received from AG.
+	 * For completion notification, use @ref bt_hfp_hf_cb::vendor_complete.
+	 * If @ref bt_hfp_hf_cb::vendor_complete is not provided, this callback
+	 * is called with NULL @p cmd and @p value when the request finishes.
+	 *
+	 * @param hf HFP HF object.
+	 * @param cmd Vendor specific command name (without leading '+').
+	 * @param value Vendor specific response value.
+	 */
+	void (*vendor_specific)(struct bt_hfp_hf *hf, const char *cmd, const char *value);
+
+	/** @brief Vendor specific command complete callback
+	 *
+	 * If this callback is provided it will be called whenever the
+	 * vendor specific command transaction is finished.
+	 *
+	 * @param hf HFP HF object.
+	 * @param err Result of the command transaction. Zero means success.
+	 */
+	void (*vendor_complete)(struct bt_hfp_hf *hf, int err);
 };
 
 /** @brief Register HFP HF profile
@@ -1055,6 +1079,20 @@ int bt_hfp_hf_battery(struct bt_hfp_hf *hf, uint8_t level);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_hf_query_list_of_current_calls(struct bt_hfp_hf *hf);
+
+/** @brief Handsfree HF send vendor specific command
+ * 
+ * It allows HF to send vendor specific command to AG.
+ * The command shall include the leading `AT`/`AT+` prefix and shall not
+ * include the terminating carriage return (`\r`). Trailing `\r`/`\n`
+ * characters are ignored.
+ * 
+ * @param hf HFP HF object.
+ * @param cmd Vendor specific AT command string.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_send_vendor(struct bt_hfp_hf *hf, const char *cmd);
 
 #ifdef __cplusplus
 }

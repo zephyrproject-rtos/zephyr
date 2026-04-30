@@ -165,6 +165,7 @@ enum {
 	BT_HFP_HF_FLAG_RECORD_FOUND,  /* SDP AG Record found */
 	BT_HFP_HF_FLAG_DLC_CONNECTED, /* HFP HF DLC is connected */
 	BT_HFP_HF_FLAG_FEAT_UPDATED,  /* Remote feature has been updated */
+	BT_HFP_HF_FLAG_VENDOR_PENDING,/* Vendor specific command is pending */
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_HF_NUM_FLAGS,
 };

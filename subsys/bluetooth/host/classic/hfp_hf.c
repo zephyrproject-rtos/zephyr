@@ -183,6 +183,7 @@ static void hfp_hf_send_failed(struct bt_hfp_hf *hf)
 }
 
 static void hfp_hf_send_data(struct bt_hfp_hf *hf);
+static int bt_hfp_ag_get_cme_err(enum at_cme cme_err);
 
 static int hfp_hf_common_finish(struct at_client *at, enum at_result result,
 			  enum at_cme cme_err)
@@ -285,6 +286,131 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 	hfp_hf_send_data(hf);
 
 	return 0;
+}
+
+static int vendor_resp(struct at_client *hf_at, struct net_buf *buf)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	char *cmd = NULL;
+	char *data = (char *)buf->data;
+	int val_len = 0;
+	int err = 0;
+
+	LOG_DBG("Vendor specific response received");
+
+	/* Find the value part until \r */
+	while (val_len < buf->len && data[val_len] != '\r') {
+		val_len++;
+	}
+
+	if (val_len == buf->len) {
+		return -ENODATA;
+	}
+
+	data[val_len] = '\0';
+
+	if (hf_at->rsp_buf.len > 0U) {
+		cmd = (char *)hf_at->rsp_buf.data;
+		cmd[hf_at->rsp_buf.len] = '\0';
+	}
+
+	if (bt_hf && bt_hf->vendor_specific) {
+		bt_hf->vendor_specific(hf, cmd, data);
+	}
+
+	/* Consume value, \0 and \n from buf */
+	net_buf_pull(buf, val_len);
+
+	err = at_check_byte(buf, '\0');
+	if (err < 0) {
+		LOG_ERR("vendor_resp: expected NUL byte not found");
+		return err;
+	}
+
+	err = at_check_byte(buf, '\n');
+	if (err < 0) {
+		LOG_ERR("vendor_resp: expected LF byte not found");
+		return err;
+	}
+
+	/* Reset AT state for result parsing */
+	hf_at->state = AT_STATE_START;
+
+	return 0;
+}
+
+static int vendor_finish(struct at_client *hf_at, enum at_result result,
+			 enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	int err;
+
+	LOG_DBG("Vendor specific response finished");
+
+	if (result == AT_RESULT_CME_ERROR) {
+		err = bt_hfp_ag_get_cme_err(cme_err);
+	} else if (result == AT_RESULT_ERROR) {
+		err = -ENOTSUP;
+	} else {
+		err = 0;
+	}
+
+	if (bt_hf && bt_hf->vendor_complete) {
+		bt_hf->vendor_complete(hf, err);
+	} else if (bt_hf && bt_hf->vendor_specific) {
+		bt_hf->vendor_specific(hf, NULL, NULL);
+	}
+
+	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_VENDOR_PENDING);
+
+	return 0;
+}
+
+int bt_hfp_hf_send_vendor(struct bt_hfp_hf *hf, const char *cmd)
+{
+	int err;
+	size_t cmd_len;
+	size_t i;
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!cmd) {
+		return -EINVAL;
+	}
+
+	cmd_len = strlen(cmd);
+	while ((cmd_len > 0U) &&
+	       ((cmd[cmd_len - 1U] == '\r') || (cmd[cmd_len - 1U] == '\n'))) {
+		cmd_len--;
+	}
+
+	if (cmd_len < 2U) {
+		return -EINVAL;
+	}
+
+	if (cmd[0] != 'A' || cmd[1] != 'T') {
+		return -EINVAL;
+	}
+
+	for (i = 0U; i < cmd_len; i++) {
+		if ((cmd[i] == '\r') || (cmd[i] == '\n')) {
+			return -EINVAL;
+		}
+	}
+
+	if (atomic_test_and_set_bit(hf->flags, BT_HFP_HF_FLAG_VENDOR_PENDING)) {
+		return -EBUSY;
+	}
+
+	err = hfp_hf_send_cmd(hf, vendor_resp, vendor_finish, "%.*s", (int)cmd_len, cmd);
+	if (err < 0) {
+		atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_VENDOR_PENDING);
+	}
+
+	return err;
 }
 
 int brsf_handle(struct at_client *hf_at)
