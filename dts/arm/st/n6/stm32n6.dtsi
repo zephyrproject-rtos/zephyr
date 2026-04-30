@@ -1464,52 +1464,54 @@
 				status = "disabled";
 			};
 
-			sai1_a: sai1@2005804 {
+			sai1: sai1@2005800 {
 				compatible = "st,stm32-sai";
 				#address-cells = <1>;
 				#size-cells = <0>;
-				reg = <0x2005804 0x20>;
+				reg = <0x2005800 0x400>;
 				clocks = <&rcc STM32_CLOCK(APB2, 21)>;
-				dmas = <&gpdma1 1 91 (STM32_DMA_MODE_NORMAL |
-						      STM32_DMA_PRIORITY_HIGH |
-						      STM32_DMA_16BITS)>;
 				status = "disabled";
+
+				sai1_a: sai1a@2005804 {
+					compatible = "st,stm32-sai-sub";
+					reg = <0x2005804 0x20>;
+					dmas = <&gpdma1 1 91
+						(STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+					status = "disabled";
+				};
+
+				sai1_b: sai1b@2005824 {
+					compatible = "st,stm32-sai-sub";
+					reg = <0x2005824 0x20>;
+					dmas = <&gpdma1 0 92
+						(STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+					status = "disabled";
+				};
 			};
 
-			sai1_b: sai1@2005824 {
+			sai2: sai2@2005c00 {
 				compatible = "st,stm32-sai";
 				#address-cells = <1>;
 				#size-cells = <0>;
-				reg = <0x2005824 0x20>;
-				clocks = <&rcc STM32_CLOCK(APB2, 21)>;
-				dmas = <&gpdma1 0 92 (STM32_DMA_MODE_NORMAL |
-						      STM32_DMA_PRIORITY_HIGH |
-						      STM32_DMA_16BITS)>;
-				status = "disabled";
-			};
-
-			sai2_a: sai2@2005c04 {
-				compatible = "st,stm32-sai";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				reg = <0x2005c04 0x20>;
+				reg = <0x2005c00 0x400>;
 				clocks = <&rcc STM32_CLOCK(APB2, 22)>;
-				dmas = <&gpdma1 3 93 (STM32_DMA_MODE_NORMAL |
-						      STM32_DMA_PRIORITY_HIGH |
-						      STM32_DMA_16BITS)>;
 				status = "disabled";
-			};
 
-			sai2_b: sai2@2005c24 {
-				compatible = "st,stm32-sai";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				reg = <0x2005c24 0x20>;
-				clocks = <&rcc STM32_CLOCK(APB2, 22)>;
-				dmas = <&gpdma1 2 94 (STM32_DMA_MODE_NORMAL |
-						      STM32_DMA_PRIORITY_HIGH |
-						      STM32_DMA_16BITS)>;
-				status = "disabled";
+				sai2_a: sai2a@2005c04 {
+					compatible = "st,stm32-sai-sub";
+					reg = <0x2005c04 0x20>;
+					dmas = <&gpdma1 3 93
+						(STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+					status = "disabled";
+				};
+
+				sai2_b: sai2b@2005c24 {
+					compatible = "st,stm32-sai-sub";
+					reg = <0x2005c24 0x20>;
+					dmas = <&gpdma1 2 94
+						(STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+					status = "disabled";
+				};
 			};
 
 			npu: npu@80e0000 {

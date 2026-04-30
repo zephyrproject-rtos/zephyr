@@ -1,11 +1,11 @@
 /*
  * Copyright (c) 2020 Linaro Limited
- * Copyright (c) 2025 Mario Paja
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <st/f4/stm32f407.dtsi>
+#include <st/f4/stm32f4_sai.dtsi>
 #include <zephyr/dt-bindings/clock/stm32f427_clock.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-sdram.h>
 
@@ -114,28 +114,6 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
-		};
-
-		sai1_a: sai1@40015804 {
-			compatible = "st,stm32-sai";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40015804 0x20>;
-			clocks = <&rcc STM32_CLOCK(APB2, 22)>;
-			dmas = <&dma2 1 0 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-					   STM32_DMA_16BITS) 0>;
-			status = "disabled";
-		};
-
-		sai1_b: sai1@40015824 {
-			compatible = "st,stm32-sai";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40015824 0x20>;
-			clocks = <&rcc STM32_CLOCK(APB2, 22)>;
-			dmas = <&dma2 5 0 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-					   STM32_DMA_16BITS) 0>;
-			status = "disabled";
 		};
 	};
 

@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		sai1: sai1@40015800 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015800 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB2, 22)>;
+			status = "disabled";
+
+			sai1_a: sai1a@40015804 {
+				compatible = "st,stm32-sai-sub";
+				reg = <0x40015804 0x20>;
+				dmas = <&dma2 1 0 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
+				status = "disabled";
+			};
+
+			sai1_b: sai1b@40015824 {
+				compatible = "st,stm32-sai-sub";
+				reg = <0x40015824 0x20>;
+				dmas = <&dma2 5 0 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
+				status = "disabled";
+			};
+		};
+	};
+};
