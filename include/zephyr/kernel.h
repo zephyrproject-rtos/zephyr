@@ -737,6 +737,9 @@ __syscall int32_t k_usleep(int32_t us);
  * @note In case when @kconfig{CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE} and
  * @kconfig{CONFIG_PM} options are enabled, this function may not work.
  * The timer/clock used for delay processing may be disabled/inactive.
+ *
+ * @note When executing from flash (XIP) while the flash is busy, enable
+ * @kconfig{CONFIG_K_BUSY_WAIT_IN_SRAM} so this routine is linked into SRAM.
  */
 __syscall void k_busy_wait(uint32_t usec_to_wait);
 
