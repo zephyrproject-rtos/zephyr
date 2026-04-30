@@ -14,6 +14,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE spi_handlers.c)
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_ESP32_SPIM spi_esp32_spim.c)
 zephyr_library_sources_ifdef(CONFIG_NXP_S32_SPI spi_nxp_s32.c)
+zephyr_library_sources_ifdef(CONFIG_QSPI_SAM qspi_sam.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_AMBIQ_BLEIF spi_ambiq_bleif.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_AMBIQ_SPIC spi_ambiq_spic.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_AMBIQ_SPID spi_ambiq_spid.c)

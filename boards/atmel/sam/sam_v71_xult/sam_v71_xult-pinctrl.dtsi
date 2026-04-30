@@ -66,6 +66,17 @@
 		};
 	};
 
+	qspi_default: qspi_default {
+		group1 {
+			pinmux = <PA13A_QSPI_QIO0>,
+				 <PA12A_QSPI_QIO1>,
+				 <PA17A_QSPI_QIO2>,
+				 <PD31A_QSPI_QIO3>,
+				 <PA14A_QSPI_QSCK>,
+				 <PA11A_QSPI_QCS>;
+		};
+	};
+
 	ssc_default: ssc_default {
 		group1 {
 			pinmux = <PD24B_SSC_RF>,

@@ -1,0 +1,14 @@
+# Atmel SAM SPI
+
+# Copyright (c) 2019 Gerson Fernando Budke
+# Copyright (c) 2018 qianfan Zhao
+# SPDX-License-Identifier: Apache-2.0
+
+config QSPI_SAM
+	bool "Atmel SAM series QSPI driver"
+	default y
+	#depends on DT_HAS_ATMEL_SAM_QSPI_ENABLED
+	select PINCTRL
+	select GPIO
+	help
+	  Enable support for the SAM SPI driver.
