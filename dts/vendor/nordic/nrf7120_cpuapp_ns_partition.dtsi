@@ -92,5 +92,21 @@
 			label = "storage";
 			reg = <0x00015d000 DT_SIZE_K(32)>;
 		};
+
+		/*
+		 * Reserved for Wi-Fi LMAC ROM patch.
+		 * Temporary FPGA/bring-up placement.
+		 */
+		wifi_lmac_patch_partition: partition@2e0000 {
+			reg = <0x002e0000 DT_SIZE_K(4)>;
+		};
+
+		/*
+		 * Reserved for Wi-Fi UMAC ROM patch.
+		 * Temporary FPGA/bring-up placement.
+		 */
+		wifi_umac_patch_partition: partition@2f0000 {
+			reg = <0x002f0000 DT_SIZE_K(4)>;
+		};
 	};
 };

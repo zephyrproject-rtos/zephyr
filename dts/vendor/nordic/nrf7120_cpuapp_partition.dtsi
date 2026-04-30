@@ -22,19 +22,35 @@
 		slot0_partition: partition@10000 {
 			compatible = "zephyr,mapped-partition";
 			label = "image-0";
-			reg = <0x00010000 DT_SIZE_K(1988)>;
+			reg = <0x00010000 DT_SIZE_K(1440)>;
 		};
 
-		slot1_partition: partition@201000 {
+		slot1_partition: partition@178000 {
 			compatible = "zephyr,mapped-partition";
 			label = "image-1";
-			reg = <0x00201000 DT_SIZE_K(1988)>;
+			reg = <0x00178000 DT_SIZE_K(1440)>;
 		};
 
-		storage_partition: partition@3f2000 {
+		/*
+		 * Reserved for Wi-Fi LMAC ROM patch.
+		 * Temporary FPGA/bring-up placement.
+		 */
+		wifi_lmac_patch_partition: partition@2e0000 {
+			reg = <0x002e0000 DT_SIZE_K(4)>;
+		};
+
+		/*
+		 * Reserved for Wi-Fi UMAC ROM patch.
+		 * Temporary FPGA/bring-up placement.
+		 */
+		wifi_umac_patch_partition: partition@2f0000 {
+			reg = <0x002f0000 DT_SIZE_K(4)>;
+		};
+
+		storage_partition: partition@300000 {
 			compatible = "zephyr,mapped-partition";
 			label = "storage";
-			reg = <0x003f2000 DT_SIZE_K(36)>;
+			reg = <0x00300000 DT_SIZE_K(36)>;
 		};
 	};
 };
