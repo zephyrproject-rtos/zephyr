@@ -23,8 +23,25 @@ if(NOT CONFIG_PICOLIBC_USE_MODULE)
   # Use picolibc provided with the toolchain. This requires a new enough
   # toolchain so that the version of picolibc supports auto-detecting a
   # Zephyr build (via the __ZEPHYR__ macro) to expose the Zephyr C API
-  zephyr_compile_options(PROPERTY specs picolibc.specs)
-  zephyr_link_libraries(PROPERTY specs picolibc.specs)
+
+  # Resolve the absolute path to picolibc.specs so that ccache can find
+  # and hash the file (relative spec names cause ccache lstat failures).
+  execute_process(
+    COMMAND ${CMAKE_C_COMPILER} -print-file-name=picolibc.specs
+    OUTPUT_VARIABLE PICOLIBC_SPECS
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE PICOLIBC_SPECS_RESULT
+  )
+  if(PICOLIBC_SPECS_RESULT EQUAL 0 AND NOT PICOLIBC_SPECS STREQUAL "picolibc.specs")
+    # gcc resolved it — use the absolute path
+    cmake_path(NORMAL_PATH PICOLIBC_SPECS)
+    zephyr_compile_options(PROPERTY specs ${PICOLIBC_SPECS})
+    zephyr_link_libraries(PROPERTY specs ${PICOLIBC_SPECS})
+  else()
+    # Fallback to relative name (e.g. toolchain without picolibc)
+    zephyr_compile_options(PROPERTY specs picolibc.specs)
+    zephyr_link_libraries(PROPERTY specs picolibc.specs)
+  endif()
   if(CONFIG_PICOLIBC_IO_FLOAT)
     zephyr_compile_definitions(PICOLIBC_DOUBLE_PRINTF_SCANF)
     zephyr_link_libraries(-DPICOLIBC_DOUBLE_PRINTF_SCANF)
