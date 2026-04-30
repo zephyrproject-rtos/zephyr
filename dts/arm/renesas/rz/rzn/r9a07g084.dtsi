@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/clock/renesas_rztn_clock.h>
 #include <zephyr/dt-bindings/gpio/renesas-rztn-gpio.h>
+#include <zephyr/dt-bindings/dma/renesas_rz_dma.h>
 
 / {
 	#address-cells = <1>;

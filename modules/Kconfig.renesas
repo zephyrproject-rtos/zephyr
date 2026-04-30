@@ -434,6 +434,11 @@ config USE_RZ_FSP_SPI
 	help
 	  Enable RZ FSP SPI driver
 
+config USE_RZ_FSP_SPI_B
+	bool
+	help
+	  Enable RZ FSP SPI B driver
+
 config USE_RZ_FSP_WDT
 	bool
 	help

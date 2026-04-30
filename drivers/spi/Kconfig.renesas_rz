@@ -34,7 +34,24 @@ config SPI_RENESAS_RZ
 	help
 	  Enable Renesas RZ SPI Driver.
 
-if SPI_RENESAS_RZ
+config SPI_RENESAS_RZ_SPI_B
+	bool "Renesas RZ SPI B"
+	default y
+	depends on DT_HAS_RENESAS_RZ_SPI_B_ENABLED
+	select USE_RZ_FSP_SPI_B
+	select PINCTRL
+	help
+	  Enable Renesas RZ SPI B Driver.
+
+if SPI_RENESAS_RZ || SPI_RENESAS_RZ_SPI_B
+
+config SPI_RENESAS_RZ_USE_INTERRUPT_SELECT
+	bool "RZ SPI support interrupt select"
+	default y
+	depends on SOC_SERIES_RZV2N \
+		|| SOC_SERIES_RZV2H
+	help
+	  Support interrupt select for the SPI.
 
 config SPI_RENESAS_RZ_INTERRUPT
 	bool "RZ SPI Interrupt Support"
@@ -46,6 +63,19 @@ config SPI_USE_HW_SS
 	default y
 	help
 	  Use Hardware Peripheral Select instead of Software Peripheral Select.
+
+config SPI_RENESAS_RZ_DMA
+	bool "RZ SPI DMA Support"
+	default n
+	select SPI_RENESAS_RZ_INTERRUPT
+	select USE_RZ_FSP_DMAC if SOC_SERIES_RZT2L \
+			       || SOC_SERIES_RZT2M \
+			       || SOC_SERIES_RZN2L
+
+	select USE_RZ_FSP_DMAC_B if SOC_SERIES_RZV2N \
+			         || SOC_SERIES_RZV2H
+	help
+	  Enable the SPI DMA mode for SPI instances
 
 endif # SPI_RENESAS_RZ
 

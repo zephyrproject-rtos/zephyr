@@ -5,8 +5,8 @@
  */
 
 &spi2 {
-	dmas = <&dma0 1 RZ_DMA_PERIPH_TO_MEM>,
-	       <&dma0 0 RZ_DMA_MEM_TO_PERIPH>;
+	dmas = <&dma0 6 RZ_DMA_PERIPH_TO_MEM>,
+	       <&dma0 5 RZ_DMA_MEM_TO_PERIPH>;
 	dma-names = "rx", "tx";
 
 	slow@2 {
