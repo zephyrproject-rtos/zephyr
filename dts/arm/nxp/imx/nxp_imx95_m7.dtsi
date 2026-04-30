@@ -689,6 +689,81 @@
 			status = "disabled";
 		};
 
+		isi: isi@4ad50000 {
+			compatible = "nxp,imx-isi";
+			reg = <0x4ad50000 0x10000>;
+			power-domains = <&camera_mix>;
+			status = "disabled";
+
+			channels {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				isi_ch0: channel@0 {
+					compatible = "nxp,imx-isi-channel";
+					reg = <0>;
+					interrupts = <221 0>;
+					status = "disabled";
+				};
+
+				isi_ch1: channel@1 {
+					compatible = "nxp,imx-isi-channel";
+					reg = <1>;
+					interrupt-parent = <&irqsteer_master7>;
+					interrupts = <8 0>;
+					status = "disabled";
+				};
+
+				isi_ch2: channel@2 {
+					compatible = "nxp,imx-isi-channel";
+					reg = <2>;
+					interrupt-parent = <&irqsteer_master7>;
+					interrupts = <8 0>;
+					status = "disabled";
+				};
+
+				isi_ch3: channel@3 {
+					compatible = "nxp,imx-isi-channel";
+					reg = <3>;
+					interrupt-parent = <&irqsteer_master7>;
+					interrupts = <9 0>;
+					status = "disabled";
+				};
+
+				isi_ch4: channel@4 {
+					compatible = "nxp,imx-isi-channel";
+					reg = <4>;
+					interrupt-parent = <&irqsteer_master7>;
+					interrupts = <10 0>;
+					status = "disabled";
+				};
+
+				isi_ch5: channel@5 {
+					compatible = "nxp,imx-isi-channel";
+					reg = <5>;
+					interrupt-parent = <&irqsteer_master7>;
+					interrupts = <11 0>;
+					status = "disabled";
+				};
+
+				isi_ch6: channel@6 {
+					compatible = "nxp,imx-isi-channel";
+					reg = <6>;
+					interrupt-parent = <&irqsteer_master7>;
+					interrupts = <12 0>;
+					status = "disabled";
+				};
+
+				isi_ch7: channel@7 {
+					compatible = "nxp,imx-isi-channel";
+					reg = <7>;
+					interrupt-parent = <&irqsteer_master7>;
+					interrupts = <13 0>;
+					status = "disabled";
+				};
+			};
+		};
+
 		irqsteer: interrupt-controller@44680000 {
 			compatible = "nxp,irqsteer-intc";
 			reg = <0x44680000 DT_SIZE_K(64)>;
