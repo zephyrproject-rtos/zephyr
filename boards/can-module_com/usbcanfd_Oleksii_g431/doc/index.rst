@@ -6,7 +6,7 @@ USBCANFD SOLO
 Adapter USBCANFD 1ch. up to 8 Mbps
 can-module.com
 
-.. figure:: img/G473.png
+.. figure:: img/G431.png
    :align: center
    :alt: USBCANFD SOLO
 
