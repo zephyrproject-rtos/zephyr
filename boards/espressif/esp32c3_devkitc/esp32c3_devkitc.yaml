@@ -19,4 +19,5 @@ supported:
   - crypto
   - retained_mem
   - netif:wifi
+  - rmt
 vendor: espressif

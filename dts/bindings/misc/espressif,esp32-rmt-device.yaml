@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for Espressif RMT devices
+
+include: [base.yaml]
+
+on-bus: "espressif,esp32-rmt"
+
+properties:
+  reg:
+    required: true
