@@ -875,6 +875,37 @@
 		status = "disabled";
 	};
 
+	micfil: micfil@20e000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		compatible = "nxp,micfil";
+		reg = <0x20e000 0x1000>;
+
+		interrupts = <48 0>;
+		clocks = <&clkctl0 MCUX_AUDIO_MCLK>;
+		quality-mode = <1>;
+		cic-decimation-rate = <0>;
+		fifo-watermark = <15>;
+		sample-rate = <16000>;
+
+		status = "disabled";
+
+		channel0: micfil-channel@0 {
+			reg = <0>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
+
+		channel1: micfil-channel@1 {
+			reg = <1>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
+	};
+
 	/* LPFlexcomm14/16 only support LPSPI function  */
 	lpspi14: spi@484000 {
 		compatible = "nxp,lpspi";
