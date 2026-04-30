@@ -489,19 +489,40 @@ static int rtc_counter_set_time(const struct device *dev, const struct rtc_time 
 	/* Stop counter */
 	ret = counter_stop(config->counter_dev);
 
-	if (ret < 0) {
+	if (ret < 0 && ret != -ENOTSUP) {
 		return ret;
 	}
 
-	ret = counter_get_value(config->counter_dev, &now_ticks);
-	if (ret < 0) {
-		return ret;
+	/*
+	 * Try writing time directly to hardware. Fall back to a software
+	 * offset when the counter does not support set_value or the value
+	 * exceeds 32 bits.
+	 */
+	if (desired_ticks <= UINT32_MAX) {
+		ret = counter_set_value(config->counter_dev, (uint32_t)desired_ticks);
+	} else {
+		ret = -ENOSYS;
 	}
 
-	/* Update the software offset (in ticks): offset = desired_ticks - now_ticks */
-	K_SPINLOCK(&data->lock) {
-		data->epoch_offset = (int64_t)desired_ticks - (int64_t)now_ticks;
-		data->epoch_valid = true;
+	if (ret == 0) {
+		K_SPINLOCK(&data->lock) {
+			data->epoch_offset = 0;
+			data->epoch_valid = true;
+		}
+	} else {
+		if (ret != -ENOSYS) {
+			return ret;
+		}
+
+		ret = counter_get_value(config->counter_dev, &now_ticks);
+		if (ret < 0) {
+			return ret;
+		}
+
+		K_SPINLOCK(&data->lock) {
+			data->epoch_offset = (int64_t)desired_ticks - (int64_t)now_ticks;
+			data->epoch_valid = true;
+		}
 	}
 
 #ifdef CONFIG_RTC_ALARM
@@ -510,7 +531,7 @@ static int rtc_counter_set_time(const struct device *dev, const struct rtc_time 
 
 	/* Restart counter */
 	ret = counter_start(config->counter_dev);
-	if (ret < 0) {
+	if (ret < 0 && ret != -ENOTSUP) {
 		return ret;
 	}
 
@@ -592,16 +613,28 @@ static int rtc_counter_update_set_callback(const struct device *dev, rtc_update_
 
 static int rtc_counter_set_calibration(const struct device *dev, int32_t calibration)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(calibration);
-	return -ENOTSUP;
+	const struct rtc_counter_config *config = dev->config;
+	int ret;
+
+	ret = counter_set_calibration(config->counter_dev, calibration);
+	if (ret == -ENOSYS) {
+		return -ENOTSUP;
+	}
+
+	return ret;
 }
 
 static int rtc_counter_get_calibration(const struct device *dev, int32_t *calibration)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(calibration);
-	return -ENOTSUP;
+	const struct rtc_counter_config *config = dev->config;
+	int ret;
+
+	ret = counter_get_calibration(config->counter_dev, calibration);
+	if (ret == -ENOSYS) {
+		return -ENOTSUP;
+	}
+
+	return ret;
 }
 
 #endif /* CONFIG_RTC_CALIBRATION */
