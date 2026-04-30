@@ -1,0 +1,14 @@
+# Microchip MEC5 I3C configuration options
+
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config I3C_MCHP_XEC
+	bool "Microchip MEC5 family I3C driver"
+	depends on DT_HAS_MICROCHIP_XEC_I3C_ENABLED
+	select PINCTRL
+	select I3C_IBI_WORKQUEUE if I3C_USE_IBI
+	default y
+	help
+	  Enable the Microchip XEC family I3C driver for those SoCs
+	  including this I3C hardware.
