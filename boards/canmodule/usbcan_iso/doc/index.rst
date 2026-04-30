@@ -3,20 +3,15 @@
 Overview
 ********
 
-The USBCAN isolated  is an open-source USB to CAN 2.0B adapter board. 
-********
+The USBCAN isolated is an open-source USB to CAN 2.0B adapter board from can-module.com.
 
+.. figure:: standart072.jpg
+   :align: center
+   :alt: USBCAN 2.0
 
+   USBCAN 2.0
 
-.. figure:: standart072.png
-     :align: center
-     :alt:  USBCAN 2.0
-
-       USBCAN 2.0
-
-
-
-The USBCAN board is equipped with a STM32F072CB microcontroller 
+The USBCAN board is equipped with a STM32F072CB microcontroller.
 
 Supported Features
 ==================
@@ -37,7 +32,7 @@ Programming and Debugging
 Build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-If flashing via USB DFU, short pins ``Boot0``  to the USBCAN board in
+If flashing via USB DFU, short pins ``Boot0`` to the USBCAN board in
 order to enter the built-in DFU mode.
 
 Here is an example for the :zephyr:code-sample:`blinky` application.
@@ -47,4 +42,4 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
    :board: usbcan
    :goals: flash
 
-.. _USBCAN iso website: can-module.com
+.. _USBCAN iso website: https://can-module.com
