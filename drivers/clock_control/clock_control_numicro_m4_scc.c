@@ -80,6 +80,55 @@ static int numicro_scc_off(const struct device *dev, clock_control_subsys_t subs
 	return 0;
 }
 
+static int numicro_scc_get_rate(const struct device *dev, clock_control_subsys_t subsys,
+				uint32_t *rate)
+{
+	struct numicro_scc_subsys *scc_subsys = (struct numicro_scc_subsys *)subsys;
+	const struct numicro_scc_config *config = dev->config;
+	const struct numicro_scc_data *data = dev->data;
+
+	if (scc_subsys->subsys_id != NUMICRO_SCC_SUBSYS_ID_PCC) {
+		return -ENOTSUP;
+	}
+
+	switch (scc_subsys->pcc.clk_mod) {
+	case NUMICRO_CAN0_MODULE:
+	case NUMICRO_ECAP0_MODULE:
+	case NUMICRO_I2C0_MODULE:
+	case NUMICRO_I2C2_MODULE:
+	case NUMICRO_OPA_MODULE:
+	case NUMICRO_QEI0_MODULE:
+	case NUMICRO_USBD_MODULE:
+	case NUMICRO_USCI0_MODULE:
+		*rate = data->hclk_freq / config->pclk0_div;
+		return 0;
+	case NUMICRO_CAN1_MODULE:
+	case NUMICRO_DAC_MODULE:
+	case NUMICRO_ECAP1_MODULE:
+	case NUMICRO_I2C1_MODULE:
+	case NUMICRO_QEI1_MODULE:
+	case NUMICRO_USCI1_MODULE:
+		*rate = data->hclk_freq / config->pclk1_div;
+		return 0;
+	case NUMICRO_WDT_MODULE:
+		if (scc_subsys->pcc.clk_src == NUMICRO_CLK_CLKSEL1_WDTSEL_LIRC) {
+			*rate = DT_PROP(DT_NODELABEL(clk_lirc), clock_frequency) /
+				(scc_subsys->pcc.clk_div + 1);
+		} else if (scc_subsys->pcc.clk_src == NUMICRO_CLK_CLKSEL1_WDTSEL_LXT) {
+			*rate = DT_PROP(DT_NODELABEL(clk_lxt), clock_frequency) /
+				(scc_subsys->pcc.clk_div + 1);
+		} else if (scc_subsys->pcc.clk_src == NUMICRO_CLK_CLKSEL1_WDTSEL_HCLK_DIV2048) {
+			*rate = data->hclk_freq / 2048 / (scc_subsys->pcc.clk_div + 1);
+		} else {
+			LOG_ERR("Unsupported WDT clock source 0x%x", scc_subsys->pcc.clk_src);
+			return -ENOTSUP;
+		}
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
 /* similar to BSP CLK_SetModuleClock but with regs from dev */
 static void numicro_pcc_configure(const struct device *dev,
 				  const struct numicro_scc_subsys_pcc *subsys)
@@ -152,6 +201,7 @@ static int numicro_scc_configure(const struct device *dev, clock_control_subsys_
 static DEVICE_API(clock_control, numicro_scc_api) = {
 	.on = numicro_scc_on,
 	.off = numicro_scc_off,
+	.get_rate = numicro_scc_get_rate,
 	.configure = numicro_scc_configure,
 };
 
