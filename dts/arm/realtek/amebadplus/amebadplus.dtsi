@@ -84,6 +84,14 @@
 			status = "disabled";
 		};
 
+		wdg: watchdog@41008d80 {
+			compatible = "realtek,ameba-watchdog";
+			reg = <0x41008d80 0x20>;
+			interrupts = <65 0>;
+			early-int-cnt = <500>;
+			status = "disabled";
+		};
+
 		loguart: serial@4100f000 {
 			compatible = "realtek,ameba-loguart";
 			reg = <0x4100f000 0x100>;

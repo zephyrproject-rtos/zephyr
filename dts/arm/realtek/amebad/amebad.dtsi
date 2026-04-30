@@ -53,6 +53,14 @@
 			reg = <0x10003020 0x00074000>;
 		};
 
+		wdg: watchdog@40002800 {
+			compatible = "realtek,ameba-watchdog";
+			reg = <0x40002800 0x4>;
+			interrupts = <1 0>;
+			early-int-cnt = <500>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@48000400 {
 			compatible = "realtek,ameba-pinctrl";
 			reg = <0x48000400 0x200>;
