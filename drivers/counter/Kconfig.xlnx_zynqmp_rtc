@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_XLNX_ZYNQMP_RTC
+	bool "Xilinx ZynqMP RTC driver"
+	default y
+	depends on DT_HAS_XLNX_ZYNQMP_RTC_ENABLED
+	help
+	  Enable the driver for the Xilinx Zynq Ultrascale+ MPSoC
+	  Real Time Clock.

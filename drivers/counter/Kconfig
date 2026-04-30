@@ -44,6 +44,13 @@ config COUNTER_64BITS_TICKS
 	  64-bit typedef. It is up to the driver to implement the necessary
 	  functions to supports.
 
+config COUNTER_CALIBRATION
+	bool "Counter driver calibration support"
+	help
+	  Enable support for counter clock calibration. Calibration
+	  is specified in parts per billion (ppb). A positive value
+	  speeds up the counter, a negative value slows it down.
+
 module = COUNTER
 module-str = counter
 source "subsys/logging/Kconfig.template.log_config"
@@ -110,6 +117,7 @@ source "drivers/counter/Kconfig.stm32_timer"
 source "drivers/counter/Kconfig.tmr_cmsdk_apb"
 source "drivers/counter/Kconfig.xec"
 source "drivers/counter/Kconfig.xlnx"
+source "drivers/counter/Kconfig.xlnx_zynqmp_rtc"
 # zephyr-keep-sorted-stop
 
 source "drivers/counter/Kconfig.rv3032_counter"
