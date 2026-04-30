@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/dac/infineon-autanalog-ctdac.h>
+
+/ {
+	zephyr,user {
+		dac = <&dac0>;
+		dac-channel-id = <15>;
+		dac-resolution = <12>;
+	};
+};
+
+&dac0 {
+	status = "okay";
+	clocks = <&peri0_group2_8bit_0>;
+	vref-source = <IFX_AUTANALOG_CTDAC_VREF_VDDA>;
+	topology = <IFX_AUTANALOG_CTDAC_TOPO_BUFFERED_EXTERNAL>;
+	out-buf-pwr = <IFX_AUTANALOG_CTDAC_OUT_BUF_PWR_ULTRA_LOW>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* FW channel. Output to P14.6 */
+	channel@f {
+		reg = <15>;
+		zephyr,resolution = <12>;
+	};
+};
+
+/* Peripheral clock divider for DAC0 (PERI0, group 2, CLK_HF9) */
+&peri0_group2_8bit_0 {
+	status = "okay";
+	clock-div = <1>;
+};

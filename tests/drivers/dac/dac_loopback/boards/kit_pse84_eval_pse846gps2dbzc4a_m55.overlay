@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/dac/infineon-autanalog-ctdac.h>
+
+/ {
+	zephyr,user {
+		/* DAC output P14.6, ADC channel P15.7 */
+		io-channels = <&dac0 15 &adc0 7>;
+		io-channel-names = "dac1", "adc1";
+	};
+};
+
+&dac0 {
+	status = "okay";
+	clocks = <&peri0_group2_8bit_0>;
+	vref-source = <IFX_AUTANALOG_CTDAC_VREF_VDDA>;
+	topology = <IFX_AUTANALOG_CTDAC_TOPO_BUFFERED_EXTERNAL>;
+	out-buf-pwr = <IFX_AUTANALOG_CTDAC_OUT_BUF_PWR_ULTRA_LOW>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* FW channel. Output to P14.6 */
+	channel@f {
+		reg = <15>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@7 {
+		reg = <7>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <7>;   /* P15.7 */
+	};
+};
+
+/* Peripheral clock divider for DAC0 (PERI0, group 2, CLK_HF9) */
+&peri0_group2_8bit_0 {
+	status = "okay";
+	clock-div = <1>;
+};

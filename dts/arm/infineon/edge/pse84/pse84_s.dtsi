@@ -313,6 +313,20 @@
 			#size-cells = <1>;
 			ranges;
 
+			dac0: dac0@60000 {
+				compatible = "infineon,autanalog-ctdac";
+				reg = <0x60000 0x1000>;
+				status = "disabled";
+				#io-channel-cells = <1>;
+			};
+
+			dac1: dac1@70000 {
+				compatible = "infineon,autanalog-ctdac";
+				reg = <0x70000 0x1000>;
+				status = "disabled";
+				#io-channel-cells = <1>;
+			};
+
 			adc0: adc0@80000 {
 				compatible = "infineon,autanalog-sar-adc";
 				/* Offset within AutAnalog subsystem */

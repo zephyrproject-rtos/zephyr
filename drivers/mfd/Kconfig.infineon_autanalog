@@ -24,3 +24,12 @@ config MFD_INFINEON_AUTANALOG_INIT_PRIORITY
 	  lower (earlier) than the init priority of child drivers such as
 	  CONFIG_ADC_INIT_PRIORITY to ensure the MFD parent is ready before
 	  children attempt to use it.
+
+config MFD_INFINEON_AUTANALOG_AC_START_PRIORITY
+	int "Infineon AutAnalog AC start priority"
+	default 44
+	depends on MFD_INFINEON_AUTANALOG
+	help
+	  Priority for starting the Autonomous Controller (AC) via SYS_INIT.
+	  Must be higher (later) than all child driver init priorities to
+	  ensure sub-peripheral configs are loaded before the AC starts.

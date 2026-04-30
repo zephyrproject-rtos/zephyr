@@ -1,0 +1,322 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: PSOC Edge AutAnalog CT DAC
+
+description: |
+  Infineon PSOC Edge AutAnalog CT DAC (Continuous Time Digital-to-Analog Converter)
+
+  The CT DAC is a 12-bit continuous-time segmented DAC within the AutAnalog subsystem.
+  It supports multiple output topologies (direct, buffered internal, buffered external),
+  configurable voltage reference sources, and optional sample-and-hold operation.
+
+  The driver exposes:
+    - FW channel (#15): Direct value writes via the standard Zephyr DAC API.
+      This is the default channel for simple DAC output (channel 15).
+    - Waveform channels (#0-#14): Autonomous waveform output via the AC state
+      machine. Channel IDs 0-14 map directly to DAC hardware channels 0-14.
+      These use look-up table (LUT) ranges configured via child nodes and
+      waveform data loaded at runtime.
+
+  The AutAnalog CT DAC is part of the AutAnalog subsystem, which must be set up
+  before initializing the CTDAC.
+
+compatible: "infineon,autanalog-ctdac"
+
+include: dac-controller.yaml
+
+properties:
+  reg:
+    required: true
+    description: Base address offset of the CTDAC within the AutAnalog subsystem.
+
+  "#io-channel-cells":
+    const: 1
+    description: Number of cells in an io-channel specifier.
+
+  clocks:
+    required: true
+    description: |
+      Phandle to the peripheral clock divider node (infineon,peri-div) that
+      provides the CTDAC peripheral clock. The divider is in PERI0 group 2
+      (CLK_HF9). Each CTDAC instance needs its own divider channel:
+        DAC0 -> PCLK_PASS_CLOCK_DAC0 (peri0, group 2, index 0)
+        DAC1 -> PCLK_PASS_CLOCK_DAC1 (peri0, group 2, index 1)
+
+  vref-source:
+    type: int
+    default: 0x100
+    enum:
+      - 0x100
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 6
+      - 7
+    description: |
+      Selects the reference voltage source for the DAC.
+      Use IFX_AUTANALOG_CTDAC_VREF_* constants from
+      <dt-bindings/dac/infineon-autanalog-ctdac.h>.
+        IFX_AUTANALOG_CTDAC_VREF_VDDA     (0x100) - Vdda supply (1.8V typical)
+        IFX_AUTANALOG_CTDAC_VREF_VBGR     (0)     - Band-gap reference (0.9V typical)
+        IFX_AUTANALOG_CTDAC_VREF_CTB0_OA0 (1)     - CTB0 opamp 0 output
+        IFX_AUTANALOG_CTDAC_VREF_CTB0_OA1 (2)     - CTB0 opamp 1 output
+        IFX_AUTANALOG_CTDAC_VREF_CTB1_OA0 (3)     - CTB1 opamp 0 output
+        IFX_AUTANALOG_CTDAC_VREF_CTB1_OA1 (4)     - CTB1 opamp 1 output
+        IFX_AUTANALOG_CTDAC_VREF_PRB_OUT0 (6)     - PRB Vref0
+        IFX_AUTANALOG_CTDAC_VREF_PRB_OUT1 (7)     - PRB Vref1
+
+  topology:
+    type: int
+    default: 4
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+    description: |
+      Selects the DAC output topology.
+      Use IFX_AUTANALOG_CTDAC_TOPO_* constants from
+      <dt-bindings/dac/infineon-autanalog-ctdac.h>.
+        IFX_AUTANALOG_CTDAC_TOPO_DIRECT            (0) - Direct output
+        IFX_AUTANALOG_CTDAC_TOPO_DIRECT_TRACK_CAP  (1) - Direct with track capacitor
+        IFX_AUTANALOG_CTDAC_TOPO_DIRECT_TRACK_HOLD (2) - Direct with track and hold capacitors
+        IFX_AUTANALOG_CTDAC_TOPO_BUFFERED_INTERNAL (3) - Buffered, internal connections only
+        IFX_AUTANALOG_CTDAC_TOPO_BUFFERED_EXTERNAL (4) - Buffered, internal and external
+
+  ref-buf-pwr:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 4
+      - 6
+      - 7
+      - 8
+      - 10
+    description: |
+      Power mode for the reference voltage buffer.
+      Use IFX_AUTANALOG_CTDAC_REF_BUF_PWR_* constants from
+      <dt-bindings/dac/infineon-autanalog-ctdac.h>.
+        IFX_AUTANALOG_CTDAC_REF_BUF_PWR_OFF             (0)  - Buffer OFF
+        IFX_AUTANALOG_CTDAC_REF_BUF_PWR_ULTRA_LOW       (1)  - 15uA, 30kHz GBW
+        IFX_AUTANALOG_CTDAC_REF_BUF_PWR_ULTRA_LOW_RAIL  (2)  - Charge pump ON, 35uA, 30kHz GBW
+        IFX_AUTANALOG_CTDAC_REF_BUF_PWR_LOW_RAIL        (4)  - Charge pump ON, 150uA, 350kHz GBW
+        IFX_AUTANALOG_CTDAC_REF_BUF_PWR_MEDIUM_RAIL     (6)  - Charge pump ON, 200uA, 700kHz GBW
+        IFX_AUTANALOG_CTDAC_REF_BUF_PWR_HIGH            (7)  - 400uA, 1.75MHz GBW (Vref <= 0.9V)
+        IFX_AUTANALOG_CTDAC_REF_BUF_PWR_HIGH_RAIL       (8)  - Charge pump ON, 600uA, 1.75MHz GBW
+        IFX_AUTANALOG_CTDAC_REF_BUF_PWR_ULTRA_HIGH_RAIL (10) - Charge pump ON, 800uA, 2.8MHz GBW
+      Set to OFF (0) when vref-source is "vdda", since the Vdda path does not
+      use the reference buffer.
+
+  out-buf-pwr:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 4
+      - 6
+      - 8
+      - 10
+    description: |
+      Power mode for the output voltage buffer.
+      Use IFX_AUTANALOG_CTDAC_OUT_BUF_PWR_* constants from
+      <dt-bindings/dac/infineon-autanalog-ctdac.h>.
+        IFX_AUTANALOG_CTDAC_OUT_BUF_PWR_OFF             (0)  - Buffer OFF
+        IFX_AUTANALOG_CTDAC_OUT_BUF_PWR_ULTRA_LOW       (1)  - 15uA, drive 10uA
+        IFX_AUTANALOG_CTDAC_OUT_BUF_PWR_ULTRA_LOW_RAIL  (2)  - Charge pump ON, 35uA, drive 10uA
+        IFX_AUTANALOG_CTDAC_OUT_BUF_PWR_LOW_RAIL        (4)  - Charge pump ON, 150uA, drive 100uA
+        IFX_AUTANALOG_CTDAC_OUT_BUF_PWR_MEDIUM_RAIL     (6)  - Charge pump ON, 200uA, drive 1mA
+        IFX_AUTANALOG_CTDAC_OUT_BUF_PWR_HIGH_RAIL       (8)  - Charge pump ON, 600uA, drive 1mA
+        IFX_AUTANALOG_CTDAC_OUT_BUF_PWR_ULTRA_HIGH_RAIL (10) - Charge pump ON, 800uA, drive 10mA
+      Must be non-OFF when topology is "buffered-internal" or "buffered-external".
+
+  lp-mode:
+    type: boolean
+    description: |
+      Request Low Power (LP) operation for the AutAnalog subsystem.
+      When set, the parent AutAnalog MFD basic-mode STT enters LP operation
+      for the AC states. LP mode is also activated if any other AutAnalog
+      child peripheral (SAR ADC, CTB, PTCOMP, PRB) sets lp-mode.
+      In advanced mode (ac-states), use the per-state ac-lp-mode property
+      instead.
+
+  lp-div-dac:
+    type: int
+    default: 0
+    description: |
+      Low-power clock divider for the DAC. The actual divisor applied by
+      the hardware is (lp-div-dac + 1). Valid range: 0..1023.
+
+  bottom-sel:
+    type: boolean
+    description: |
+      R-2R ladder bottom connection selector. When set, the bottom end
+      of the R-2R resistor ladder is connected to Vref instead of Vssa.
+
+  disabled-mode:
+    type: boolean
+    description: |
+      DAC output behavior when disabled. When set, the output drives
+      Vssa or Vref (depending on bottom-sel) when the output is disabled.
+      Otherwise the output is tri-stated.
+
+  deglitch:
+    type: boolean
+    description: |
+      Enable the de-glitch functionality. When enabled, a switch on the output
+      path blanks glitches during code transitions.
+
+  deglitch-time:
+    type: int
+    default: 0
+    description: |
+      De-glitch time in DAC clock cycles (actual value = deglitch-time + 1).
+      Only used when deglitch is enabled. Range 0..255.
+
+  sign:
+    type: boolean
+    description: |
+      When set, the DAC input data is interpreted as a signed 12-bit value
+      (two's complement). Otherwise unsigned.
+
+  sample-time:
+    type: int
+    default: 0
+    description: |
+      Sample time in DAC clock cycles. Range 0..255.
+      The actual sample time used by the hardware is (sample-time + 1).
+
+  step-val:
+    type: array
+    default: [0, 0, 0]
+    description: |
+      Step values for waveform address increment. Array of exactly 3
+      values (step-val[0], step-val[1], step-val[2]). Each waveform
+      channel selects one via its step-sel property.
+
+  limit-cfg-0:
+    type: array
+    description: |
+      Range detection configuration for limit slot 0.
+      Three-cell array: <condition low-threshold high-threshold>.
+      Use IFX_AUTANALOG_CTDAC_LIMIT_* constants from
+      <dt-bindings/dac/infineon-autanalog-ctdac.h> for the condition:
+        IFX_AUTANALOG_CTDAC_LIMIT_BELOW   (0) - Value < low
+        IFX_AUTANALOG_CTDAC_LIMIT_INSIDE  (1) - low <= Value < high
+        IFX_AUTANALOG_CTDAC_LIMIT_ABOVE   (2) - Value > high
+        IFX_AUTANALOG_CTDAC_LIMIT_OUTSIDE (3) - Value < low OR Value >= high
+      Waveform channels reference this slot via stat-sel = <1>.
+
+  limit-cfg-1:
+    type: array
+    description: |
+      Range detection configuration for limit slot 1.
+      Same format as limit-cfg-0. Referenced via stat-sel = <2>.
+
+  limit-cfg-2:
+    type: array
+    description: |
+      Range detection configuration for limit slot 2.
+      Same format as limit-cfg-0. Referenced via stat-sel = <3>.
+
+io-channel-cells:
+  - output
+
+child-binding:
+  description: |
+    CTDAC channel configuration.
+
+    Channels 0-14 (reg = <0> .. <14>) are hardware waveform channels.
+    These channels output waveform data from the look-up table (LUT);
+    the AC state machine triggers playback. Waveform channels require
+    the start-addr, end-addr and op-mode properties to be set.
+
+    Channel 15 (reg = <15>) is the firmware (FW) channel. It supports
+    direct value writes via the standard Zephyr DAC API and is the
+    default channel for simple DAC output.
+
+  properties:
+    start-addr:
+      type: int
+      description: |
+        Start address in the DAC look-up table (0..511).
+        Required for waveform channels (reg 0-14).
+
+    end-addr:
+      type: int
+      description: |
+        End address in the DAC look-up table (0..511).
+        Must be >= start-addr. Required for waveform channels (reg 0-14).
+
+    op-mode:
+      type: int
+      default: 3
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+      description: |
+        Waveform operating mode for this channel.
+        Use IFX_AUTANALOG_CTDAC_OP_* constants from
+        <dt-bindings/dac/infineon-autanalog-ctdac.h>.
+          IFX_AUTANALOG_CTDAC_OP_OS_ONE_QUAD    (0) - One-shot, one quadrant
+          IFX_AUTANALOG_CTDAC_OP_OS_TWO_QUAD    (1) - One-shot, two quadrant
+          IFX_AUTANALOG_CTDAC_OP_OS_FOUR_QUAD   (2) - One-shot, four quadrant
+          IFX_AUTANALOG_CTDAC_OP_CONT_ONE_QUAD  (3) - Continuous, one quadrant
+          IFX_AUTANALOG_CTDAC_OP_CONT_TWO_QUAD  (4) - Continuous, two quadrant
+          IFX_AUTANALOG_CTDAC_OP_CONT_FOUR_QUAD (5) - Continuous, four quadrant
+          IFX_AUTANALOG_CTDAC_OP_ADDR           (6) - External address mode
+          IFX_AUTANALOG_CTDAC_OP_DATA           (7) - External data mode
+
+    sample-and-hold:
+      type: boolean
+      description: Enable sample-and-hold for this channel.
+
+    step-sel:
+      type: int
+      default: 0
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+      description: |
+        Step value selector for address increment.
+        Use IFX_AUTANALOG_CTDAC_STEP_SEL_* constants from
+        <dt-bindings/dac/infineon-autanalog-ctdac.h>.
+          IFX_AUTANALOG_CTDAC_STEP_SEL_DISABLED (0) - Step value is 1 (default)
+          IFX_AUTANALOG_CTDAC_STEP_SEL_0        (1) - Use stepVal[0]
+          IFX_AUTANALOG_CTDAC_STEP_SEL_1        (2) - Use stepVal[1]
+          IFX_AUTANALOG_CTDAC_STEP_SEL_2        (3) - Use stepVal[2]
+
+    stat-sel:
+      type: int
+      default: 0
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+      description: |
+        Range detection / status selector.
+        Use IFX_AUTANALOG_CTDAC_STAT_SEL_* constants from
+        <dt-bindings/dac/infineon-autanalog-ctdac.h>.
+          IFX_AUTANALOG_CTDAC_STAT_SEL_DISABLED (0) - No range validation
+          IFX_AUTANALOG_CTDAC_STAT_SEL_0        (1) - Use chLimitCfg[0]
+          IFX_AUTANALOG_CTDAC_STAT_SEL_1        (2) - Use chLimitCfg[1]
+          IFX_AUTANALOG_CTDAC_STAT_SEL_2        (3) - Use chLimitCfg[2]
