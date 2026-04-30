@@ -568,18 +568,22 @@ static int uhc_vrt_dequeue(const struct device *dev,
 	struct uhc_data *data = dev->data;
 	struct uhc_transfer *tmp;
 	unsigned int key;
+	int ret = -EALREADY;
 
 	key = irq_lock();
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
 		if (xfer == tmp) {
 			tmp->err = -ECONNRESET;
+			ret = 0;
+			goto exit;
 		}
 	}
 
+exit:
 	irq_unlock(key);
 
-	return 0;
+	return ret;
 }
 
 static int uhc_vrt_init(const struct device *dev)

@@ -27,8 +27,6 @@ NET_BUF_POOL_VAR_DEFINE(usbip_pool,
 			CONFIG_USBIP_BUF_COUNT, CONFIG_USBIP_BUF_POOL_SIZE,
 			0, NULL);
 
-#define USBIP_SUBMIT_REQ_RETRY_COUNT	10
-
 K_THREAD_STACK_DEFINE(usbip_thread_stack, CONFIG_USBIP_THREAD_STACK_SIZE);
 K_THREAD_STACK_ARRAY_DEFINE(dev_thread_stacks, CONFIG_USBIP_DEVICES_COUNT,
 			    CONFIG_USBIP_THREAD_STACK_SIZE);
@@ -44,6 +42,8 @@ struct usbip_dev_ctx {
 	struct usb_device *udev;
 	struct k_thread thread;
 	struct k_event event;
+	struct k_mutex send_mutex;
+	struct k_spinlock lock;
 	sys_dlist_t dlist;
 	int connfd;
 	uint32_t devid;
@@ -64,6 +64,7 @@ struct usbip_cmd_node {
 	struct usbip_command cmd;
 	struct usbip_dev_ctx *ctx;
 	struct uhc_transfer *xfer;
+	bool unlinked;
 };
 
 K_MEM_SLAB_DEFINE(usbip_slab, sizeof(struct usbip_cmd_node),
@@ -132,11 +133,27 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 	struct usbip_command *const cmd = &cmd_nd->cmd;
 	struct net_buf *buf = xfer->buf;
 	struct usbip_return ret;
-	unsigned int key;
+	struct iovec iov[2];
+	struct msghdr msg;
+	k_spinlock_key_t key;
 	int err;
 
 	LOG_INF("SUBMIT seqnum %u finished err %d ep 0x%02x",
 		cmd->hdr.seqnum, xfer->err, xfer->ep);
+
+	key = k_spin_lock(&dev_ctx->lock);
+	sys_dlist_remove(&cmd_nd->node);
+	k_spin_unlock(&dev_ctx->lock, key);
+
+	if (xfer->err == -ECONNRESET || cmd_nd->unlinked) {
+		LOG_INF("URB seqnum %u unlinked (ECONNRESET)", cmd->hdr.seqnum);
+		goto usbip_req_cb_error;
+	}
+
+	if (!k_event_wait(&dev_ctx->event, USBIP_EXPORTED, false, K_NO_WAIT)) {
+		LOG_WRN("Connection closed, drop completed seqnum %u", cmd->hdr.seqnum);
+		goto usbip_req_cb_error;
+	}
 
 	ret.hdr.command = net_htonl(USBIP_RET_SUBMIT);
 	ret.hdr.seqnum = net_htonl(cmd->hdr.seqnum);
@@ -148,16 +165,6 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 	ret.submit.status = net_htonl(xfer->err);
 	ret.submit.start_frame = net_htonl(cmd->submit.start_frame);
 	ret.submit.numof_iso_pkts = net_htonl(0xFFFFFFFFUL);
-
-	if (xfer->err == -ECONNRESET) {
-		LOG_INF("URB seqnum %u unlinked (ECONNRESET)", cmd->hdr.seqnum);
-		goto usbip_req_cb_error;
-	}
-
-	if (!k_event_wait(&dev_ctx->event, USBIP_EXPORTED, false, K_NO_WAIT)) {
-		LOG_WRN("Connection closed, drop completed seqnum %u", cmd->hdr.seqnum);
-		goto usbip_req_cb_error;
-	}
 
 	if (xfer->err == -EPIPE) {
 		LOG_INF("RET_SUBMIT status is EPIPE");
@@ -176,27 +183,27 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 		check_ctrl_request(dev_ctx->udev, xfer->ep, xfer->setup_pkt);
 	}
 
-	err = usbip_send(dev_ctx->connfd, &ret, sizeof(ret));
-	if (err != 0) {
-		LOG_ERR("Send RET_SUBMIT failed err %d errno %d", err, errno);
-		goto usbip_req_cb_error;
-	}
+	iov[0].iov_base = &ret;
+	iov[0].iov_len = sizeof(ret);
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = iov;
+	msg.msg_iovlen = 1;
 
 	if (USB_EP_DIR_IS_IN(xfer->ep) && ret.submit.actual_length != 0) {
 		LOG_INF("Send RET_SUBMIT transfer_buffer len %u", buf->len);
-		err = usbip_send(dev_ctx->connfd, buf->data, buf->len);
-		if (err != 0) {
-			LOG_ERR("Send transfer_buffer failed err %d errno %d",
-				err, errno);
-			goto usbip_req_cb_error;
-		}
+		iov[1].iov_base = buf->data;
+		iov[1].iov_len = buf->len;
+		msg.msg_iovlen += 1;
+	}
+
+	k_mutex_lock(&dev_ctx->send_mutex, K_FOREVER);
+	err = zsock_sendmsg_all(dev_ctx->connfd, &msg, 0, K_FOREVER, NULL);
+	k_mutex_unlock(&dev_ctx->send_mutex);
+	if (err != 0) {
+		LOG_ERR("Send transfer_buffer failed err %d", err);
 	}
 
 usbip_req_cb_error:
-	key = irq_lock();
-	sys_dlist_remove(&cmd_nd->node);
-	irq_unlock(key);
-
 	k_mem_slab_free(&usbip_slab, (void *)cmd_nd);
 	if (xfer->buf) {
 		net_buf_unref(buf);
@@ -214,22 +221,13 @@ static int usbip_submit_req(struct usbip_cmd_node *const cmd_nd, const uint8_t e
 	struct usbip_dev_ctx *const dev_ctx = cmd_nd->ctx;
 	struct usbip_command *const cmd = &cmd_nd->cmd;
 	struct usb_device *const udev = dev_ctx->udev;
-	uint32_t retry = USBIP_SUBMIT_REQ_RETRY_COUNT;
 	struct uhc_transfer *xfer;
 	int ret;
 
-	/*
-	 * Depending on the server, functions, and client application, we may
-	 * get out of transfers very quickly. To throttle here may allow
-	 * submitted transfers to be finished. Perhaps usbh_xfer_alloc() should
-	 * be reworked to take a timeout argument.
-	 */
-	do {
-		xfer = usbh_xfer_alloc(udev, ep, usbip_req_cb, cmd_nd);
-		if (xfer == NULL) {
-			k_msleep(1);
-		}
-	} while (xfer == NULL && retry--);
+	xfer = usbh_xfer_alloc(udev, ep, usbip_req_cb, cmd_nd, K_MSEC(1000));
+	if (xfer == NULL) {
+		return -ENOMEM;
+	}
 
 	if (setup != NULL) {
 		memcpy(xfer->setup_pkt, setup, sizeof(struct usb_setup_packet));
@@ -325,6 +323,7 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 	/* Make a copy of the command and add it to the backlog */
 	memcpy(&cmd_nd->cmd, cmd, sizeof(struct usbip_command));
 	cmd_nd->ctx = dev_ctx;
+	cmd_nd->unlinked = false;
 	sys_dlist_append(&dev_ctx->dlist, &cmd_nd->node);
 
 	ret = usbip_submit_req(cmd_nd, ep, &setup, buf);
@@ -341,13 +340,27 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 	return 0;
 }
 
+static struct usbip_cmd_node *find_seqnum(struct usbip_dev_ctx *const dev_ctx,
+					  const uint32_t seqnum)
+{
+	struct usbip_cmd_node *cmd_nd;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&dev_ctx->dlist, cmd_nd, node) {
+		if (cmd_nd->cmd.hdr.seqnum == seqnum) {
+			return cmd_nd;
+		}
+	}
+
+	return NULL;
+}
+
 static int usbip_handle_unlink(struct usbip_dev_ctx *const dev_ctx,
 			       struct usbip_command *const cmd)
 {
 	struct usbip_cmd_unlink *unlink = &cmd->unlink;
 	struct usbip_return rsp;
 	struct usbip_cmd_node *cmd_nd;
-	unsigned int key;
+	k_spinlock_key_t key;
 	int ret;
 
 	ret = zsock_recv(dev_ctx->connfd, unlink, sizeof(*unlink), ZSOCK_MSG_WAITALL);
@@ -365,17 +378,27 @@ static int usbip_handle_unlink(struct usbip_dev_ctx *const dev_ctx,
 
 	memset(&rsp.unlink, 0, sizeof(rsp.unlink));
 
-	key = irq_lock();
-	SYS_DLIST_FOR_EACH_CONTAINER(&dev_ctx->dlist, cmd_nd, node) {
-		if (cmd_nd->cmd.hdr.seqnum == cmd->unlink.seqnum) {
-			rsp.unlink.status = net_htonl(-ECONNRESET);
-			usbh_xfer_dequeue(dev_ctx->udev, cmd_nd->xfer);
-			break;
+	key = k_spin_lock(&dev_ctx->lock);
+	cmd_nd = find_seqnum(dev_ctx, cmd->unlink.seqnum);
+	if (cmd_nd != NULL) {
+		rsp.unlink.status = net_htonl(-ECONNRESET);
+		ret = usbh_xfer_dequeue(dev_ctx->udev, cmd_nd->xfer);
+		if (ret != 0) {
+			/*
+			 * Transfer is dequeued but still in the list. Mark it
+			 * as unlinked and drop it in the completion handler.
+			 */
+			LOG_DBG("unlink floating %u", cmd->unlink.seqnum);
+			cmd_nd->unlinked = true;
 		}
 	}
-	irq_unlock(key);
+	k_spin_unlock(&dev_ctx->lock, key);
 
-	return usbip_send(dev_ctx->connfd, &rsp, sizeof(rsp));
+	k_mutex_lock(&dev_ctx->send_mutex, K_FOREVER);
+	ret = usbip_send(dev_ctx->connfd, &rsp, sizeof(rsp));
+	k_mutex_unlock(&dev_ctx->send_mutex);
+
+	return ret;
 }
 
 static int usbip_handle_cmd(struct usbip_dev_ctx *const dev_ctx)
@@ -742,6 +765,7 @@ static int usbip_init(void)
 
 		/* busnum << 16 | devnum */
 		ctx->devid = (1U << 16) | i;
+		k_mutex_init(&ctx->send_mutex);
 		sys_dlist_init(&ctx->dlist);
 		k_event_init(&ctx->event);
 		k_thread_create(&ctx->thread, dev_thread_stacks[i],
