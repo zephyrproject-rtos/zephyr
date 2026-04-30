@@ -132,7 +132,7 @@ static int uart_cmsdk_apb_init(const struct device *dev)
 	/* some pins are not available externally so,
 	 * ignore if there is no entry for them
 	 */
-	if (ret != -ENOENT) {
+	if ((ret < 0) && (ret != -ENOENT)) {
 		return ret;
 	}
 
