@@ -50,6 +50,21 @@ ZTEST(uuid, test_uuid_v5)
 }
 #endif
 
+ZTEST(uuid, test_uuid_cmp)
+{
+	struct uuid a, b;
+
+	uuid_from_string("44b35f73-cfbd-43b4-8fef-ca7baea1375f", &a);
+	uuid_from_string("44b35f73-cfbd-43b4-8fef-ca7baea1375f", &b);
+	zassert_equal(0, uuid_cmp(&a, &b), "identical UUIDs should compare equal");
+
+	uuid_from_string("6f2fd4cb-94a0-41c7-8d27-864c6b13b8c0", &b);
+	zassert_not_equal(0, uuid_cmp(&a, &b), "different UUIDs should not compare equal");
+
+	uuid_copy(&a, &b);
+	zassert_equal(0, uuid_cmp(&a, &b), "copied UUID should compare equal to original");
+}
+
 ZTEST(uuid, test_uuid_copy)
 {
 	int result;
