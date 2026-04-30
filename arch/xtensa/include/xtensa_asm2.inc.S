@@ -17,6 +17,27 @@
  * only by the assembler.
  */
 
+/* Macros to abstract away ABI differences */
+#if __XTENSA_CALL0_ABI__
+#define CALL	call0
+#define CALLX	callx0
+#define ARG1	a2	/* 1st outgoing call argument */
+#define ARG2	a3	/* 2nd outgoing call argument */
+#define ARG3	a4	/* 3rd outgoing call argument */
+#define ARG4	a5	/* 4th outgoing call argument */
+#define ARG5	a6	/* 5th outgoing call argument */
+#define ARG6	a7	/* 6th outgoing call argument */
+#else
+#define CALL	call4
+#define CALLX	callx4
+#define ARG1	a6	/* 1st outgoing call argument */
+#define ARG2	a7	/* 2nd outgoing call argument */
+#define ARG3	a8	/* 3rd outgoing call argument */
+#define ARG4	a9	/* 4th outgoing call argument */
+#define ARG5	a10	/* 5th outgoing call argument */
+#define ARG6	a11	/* 6th outgoing call argument */
+#endif
+
 #if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
 .extern _xtensa_hifi_save
 #endif
@@ -73,6 +94,7 @@
  * anyway).
  */
 .macro SPILL_ALL_WINDOWS
+#if !__XTENSA_CALL0_ABI__
 #if XCHAL_NUM_AREGS == 64
 	and a12, a12, a12
 	rotw 3
@@ -94,6 +116,7 @@
 #else
 #error Unrecognized XCHAL_NUM_AREGS
 #endif
+#endif /* __XTENSA_CALL0_ABI__ */
 .endm
 
 #if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
@@ -332,6 +355,16 @@ _swap_page_table_\@:
  * the context save handle in A1 as it's first argument.
  */
 .macro CROSS_STACK_CALL
+#if __XTENSA_CALL0_ABI__
+	mov a7, a2
+	mov a2, a3
+	mov a3, a1
+	mov a6, a3
+	/* Recover the interrupted SP from the BSA */
+	l32i a1, a1, 0
+	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
+	addi a1, a1, ___xtensa_irq_bsa_t_SIZEOF
+#else
 	/* Since accessing A4-A11 may trigger window overflows so
 	 * we need to setup A0 and A1 correctly before putting
 	 * the function arguments for the next two callx4 into
@@ -347,35 +380,63 @@ _swap_page_table_\@:
 	addi a1, a1, ___xtensa_irq_bsa_t_SIZEOF
 
 	mov a6, a3		/* place "new sp" in the next frame's A2 */
-
 	rsr.ZSR_EPC a3		/* restore saved "context handle" in A3 */
 	mov a10, a3             /* pass "context handle" in 2nd frame's A2 */
 	mov a11, a2		/* handler in 2nd frame's A3, next frame's A7 */
+#endif
+	CALL _xstack_call0_\@
 
-	call4 _xstack_call0_\@
 	mov a1, a3		/* restore original SP */
+#if !__XTENSA_CALL0_ABI__
 	mov a2, a6		/* copy return value */
+#endif
 	j _xstack_returned_\@
 .align 4
 _xstack_call0_\@:
+#if __XTENSA_CALL0_ABI__
+	mov a4, a1
+	mov a1, a2
+	addi a1, a1, -16
+	s32i a4, a1, 0
+	s32i a0, a1, 12
+	s32i a3, a1, 8
+#ifdef CONFIG_USERSPACE
+	s32i a12, a1, 4
+#endif
+#else
 	/* We want an ENTRY to set a bit in windowstart and do the
 	 * rotation, but we want our own SP.  After that, we are
 	 * running in a valid frame, so re-enable interrupts.
 	 */
 	entry a1, 16
 	mov a1, a2
+#endif
 	rsr.ZSR_EPS a2
 	wsr.ps a2
 
 #ifdef CONFIG_USERSPACE
+#if __XTENSA_CALL0_ABI__
+	mov a12, a6
+#else
 	/* Save "context handle" in A3 as we need it to determine
 	 * if we need to swap page table later.
 	 */
 	mov a3, a6
 #endif
+#endif
 
-	callx4 a7		/* call handler */
+#if __XTENSA_CALL0_ABI__
+	mov a2, a6
+#endif
+	CALLX a7		/* call handler */
+#if !__XTENSA_CALL0_ABI__
 	mov a2, a6		/* copy return value */
+#endif
+#ifdef CONFIG_USERSPACE
+#if __XTENSA_CALL0_ABI__
+	mov a3, a12
+#endif
+#endif
 
 #ifdef CONFIG_USERSPACE
 	rsil a6, XCHAL_NUM_INTLEVELS
@@ -387,29 +448,46 @@ _xstack_call0_\@:
 	 */
 	beq a2, a3, _xstack_skip_table_swap_\@
 
+#if __XTENSA_CALL0_ABI__
+	mov a12, a2	/* Preserve handler return value */
+#endif
+
 	/* Need to switch page tables because the "next" handle
 	 * returned above is not the same handle as we started
 	 * with. This means we are being restored to another
 	 * thread.
 	 */
-	rsr a6, ZSR_CPU
-	l32i a6, a6, ___cpu_t_current_OFFSET
+	rsr ARG1, ZSR_CPU
+	l32i ARG1, ARG1, ___cpu_t_current_OFFSET
 
 #ifdef CONFIG_XTENSA_MMU
 #ifdef CONFIG_XTENSA_MMU_FLUSH_AUTOREFILL_DTLBS_ON_SWAP
-	call4 xtensa_swap_update_page_tables
+	CALL xtensa_swap_update_page_tables
 #else
-	SWAP_PAGE_TABLE a6, a3, a7
+	SWAP_PAGE_TABLE ARG1, a3, a7
 #endif
+#elif defined(CONFIG_XTENSA_MPU)
+	CALL xtensa_mpu_map_write
 #endif
-#ifdef CONFIG_XTENSA_MPU
-	call4 xtensa_mpu_map_write
+
+#if __XTENSA_CALL0_ABI__
+	mov a2, a12	/* Restore handler return value */
 #endif
 
 _xstack_skip_table_swap_\@:
 #endif /* CONFIG_USERSPACE */
 
+#if __XTENSA_CALL0_ABI__
+#ifdef CONFIG_USERSPACE
+	l32i a12, a1, 4
+#endif
+	l32i a3, a1, 8
+	l32i a0, a1, 12
+	l32i a1, a1, 0
+	ret
+#else
 	retw
+#endif
 _xstack_returned_\@:
 .endm
 
@@ -578,14 +656,14 @@ _do_call_\@:
 	s32i a0, a3, \NEST_OFF
 
 	/* Last trick: the called function returned the "next" handle
-	 * to restore to in A6 (the call4'd function's A2).  If this
-	 * is not the same handle as we started with, we need to do a
-	 * register spill before restoring, for obvious reasons.
+	 * to restore to in A2. If this is not the same handle as we
+	 * started with, we need to do a register spill before restoring,
+	 * for obvious reasons.
 	 * Remember to restore the A1 stack pointer as it existed at
 	 * interrupt time so the caller of the interrupted function
 	 * spills to the right place.
 	 */
-	beq a6, a1, _restore_\@
+	beq a2, a1, _restore_\@
 
 #if !defined(CONFIG_KERNEL_COHERENCE) || \
     (defined(CONFIG_KERNEL_COHERENCE) && defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY))
@@ -609,9 +687,9 @@ _do_call_\@:
 	 * flush the cached data in stack.
 	 */
 
-	movi a2, 0
-	xsr.ZSR_FLUSH a2
-	beqz a2, _excint_noflush_\@
+	movi a4, 0
+	xsr.ZSR_FLUSH a4
+	beqz a4, _excint_noflush_\@
 
 	rsr.ZSR_CPU a3
 	l32i a3, a3, \NEST_OFF
@@ -622,16 +700,16 @@ _do_call_\@:
 _excint_flushloop_\@:
 	dhwb a3, 0
 	addi a3, a3, XCHAL_DCACHE_LINESIZE
-	blt a3, a2, _excint_flushloop_\@
+	blt a3, a4, _excint_flushloop_\@
 
 _excint_noflush_\@:
 #endif /* CONFIG_KERNEL_COHERENCE && CONFIG_USERSPACE && !CONFIG_SCHED_CPU_MASK_PIN_ONLY */
 
 	/* Restore A1 stack pointer from "next" handle. */
-	mov a1, a6
+	mov a1, a2
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
-	call4 z_thread_mark_switched_in
+	CALL z_thread_mark_switched_in
 #endif
 
 _restore_\@:

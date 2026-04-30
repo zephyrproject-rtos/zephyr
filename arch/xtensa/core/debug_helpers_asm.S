@@ -17,12 +17,15 @@
 	.global     xtensa_backtrace_get_start
 	.type       xtensa_backtrace_get_start, @function
 xtensa_backtrace_get_start:
+#if __XTENSA_CALL0_ABI__
+	addi	a1, a1, -32
+#else
 	entry   a1, 32
 	/* Spill registers onto stack (excluding this function) */
 	call8   xthal_window_spill
 	/* a2, a3, a4 should be out arguments for i PC, i SP, i-1 PC respectively.
 	* Use a6 and a7 as scratch */
-
+#endif
 	/* Load address for interrupted stack */
 	l32i    a6, a5, 0
 	/* Load i PC in a7 */
@@ -37,4 +40,9 @@ xtensa_backtrace_get_start:
 	addi    a6, a6, ___xtensa_irq_bsa_t_SIZEOF
 	/* Store i SP in a3 */
 	s32i    a6, a3, 0
+#if __XTENSA_CALL0_ABI__
+	addi	a1, a1, 32
+	ret
+#else
 	retw
+#endif

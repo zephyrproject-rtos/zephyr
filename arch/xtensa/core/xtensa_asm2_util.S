@@ -38,6 +38,9 @@ xtensa_spill_reg_windows:
 .global xtensa_save_high_regs
 .align 4
 xtensa_save_high_regs:
+#if __XTENSA_CALL0_ABI__
+	movi a2, 0
+#else
 	/* Generate a rotated (modulo NREGS/4 bits!) WINDOWSTART in A2
 	 * by duplicating the bits twice and shifting down by WINDOWBASE
 	 * bits.  Now the LSB is the register quad at WINDOWBASE.
@@ -48,6 +51,7 @@ xtensa_save_high_regs:
 	rsr a3, WINDOWBASE
 	ssr a3
 	srl a2, a2
+#endif /* __XTENSA_CALL0_ABI__ */
 
 	mov a3, a1 /* Stash our original stack pointer */
 
@@ -212,10 +216,19 @@ _restore_ps_after:
 .global xtensa_arch_except_epc
 .align 4
 xtensa_arch_except:
+#if __XTENSA_CALL0_ABI__
+	addi a1, a1, -16
+#else
 	entry a1, 16
+#endif
 xtensa_arch_except_epc:
 	ill
+#if __XTENSA_CALL0_ABI__
+	addi a1, a1, 16
+	ret
+#else
 	retw
+#endif
 
 /*
  * void xtensa_arch_kernel_oops(int reason_p, void *ssf);
@@ -226,10 +239,19 @@ xtensa_arch_except_epc:
 .global xtensa_arch_kernel_oops_epc
 .align 4
 xtensa_arch_kernel_oops:
+#if __XTENSA_CALL0_ABI__
+	addi a1, a1, -16
+#else
 	entry a1, 16
+#endif
 xtensa_arch_kernel_oops_epc:
 	ill
+#if __XTENSA_CALL0_ABI__
+	addi a1, a1, 16
+	ret
+#else
 	retw
+#endif
 
 /*
  * void xtensa_switch(void *new, void **old_return);
@@ -241,32 +263,51 @@ xtensa_arch_kernel_oops_epc:
 .align 4
 xtensa_switch:
 #ifdef CONFIG_USERSPACE
+#if __XTENSA_CALL0_ABI__
+	addi	a1, a1, -32
+	s32i	a0, a1, 28
+#else
 	entry a1, 32
+#endif
+#else
+#if __XTENSA_CALL0_ABI__
+	addi	a1, a1, -16
+	s32i	a0, a1, 12
+#else
+	entry a1, 16
+#endif
+#endif
 
+#ifdef CONFIG_USERSPACE
 	s32i a4, a1, 0
 	s32i a5, a1, 4
 	s32i a6, a1, 8
 	s32i a7, a1, 12
+#if __XTENSA_CALL0_ABI__
+	s32i a2, a1, 16
+	s32i a3, a1, 20
+#endif
 
-	rsr a6, ZSR_CPU
-	l32i a6, a6, ___cpu_t_current_OFFSET
+	rsr ARG1, ZSR_CPU
+	l32i ARG1, ARG1, ___cpu_t_current_OFFSET
 #ifdef CONFIG_XTENSA_MMU
 #ifdef CONFIG_XTENSA_MMU_FLUSH_AUTOREFILL_DTLBS_ON_SWAP
-	call4 xtensa_swap_update_page_tables
+	CALL xtensa_swap_update_page_tables
 #else
-	SWAP_PAGE_TABLE a6, a4, a7
+	SWAP_PAGE_TABLE ARG1, a4, a7
 #endif
-#endif
-#ifdef CONFIG_XTENSA_MPU
-	call4 xtensa_mpu_map_write
+#elif defined(CONFIG_XTENSA_MPU)
+	CALL xtensa_mpu_map_write
 #endif
 
 	l32i a7, a1, 12
 	l32i a6, a1, 8
 	l32i a5, a1, 4
 	l32i a4, a1, 0
-#else
-	entry a1, 16
+#if __XTENSA_CALL0_ABI__
+	l32i a2, a1, 16
+	l32i a3, a1, 20
+#endif
 #endif
 
 	SPILL_ALL_WINDOWS
@@ -349,11 +390,22 @@ noflush:
 	 l32i a1, a2, ___xtensa_irq_bsa_t_a2_OFFSET
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
-	call4 z_thread_mark_switched_in
+	CALL z_thread_mark_switched_in
 #endif
 	j _restore_context
 _switch_restore_pc:
+#if __XTENSA_CALL0_ABI__
+#ifdef CONFIG_USERSPACE
+	l32i	a0, a1, 28
+	addi	a1, a1, 32
+#else
+	l32i	a0, a1, 12
+	addi	a1, a1, 16
+#endif
+	ret
+#else
 	retw
+#endif
 
 /* Define our entry handler to load the struct kernel_t from the
  * MISC0 special register, and to find the nest and irq_stack values
@@ -452,10 +504,12 @@ _Level1RealVector:
 	beqz a0, _handle_tlb_miss_user
 	rsr.exccause a0
 #endif /* CONFIG_XTENSA_MMU */
+#if !__XTENSA_CALL0_ABI__
 	bnei a0, EXCCAUSE_ALLOCA, _not_alloca
 
 	j _xt_alloca_exc
 _not_alloca:
+#endif
 	rsr a0, ZSR_A0SAVE
 	j _Level1Vector
 #ifdef CONFIG_XTENSA_MMU
