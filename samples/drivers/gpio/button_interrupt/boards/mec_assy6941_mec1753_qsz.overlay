@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Close JP19 (1-2) to mux GPIO106 to JP71.3
+ * Close JP149 (1-2) so GPIO156 is connected to LED7
+ */
+
+/ {
+	aliases {
+		led0 = &led0;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <MCHP_GPIO_DECODE_156 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <MCHP_GPIO_DECODE_106 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "USER SW";
+		};
+	};
+};
