@@ -15,8 +15,8 @@ Thread pressure is calculated by the following formula:
 
 where
 
-- :math:`R` is the set of runnable (queued) threads
-- :math:`T` is the set of all threads considered for pressure
+- :math:`R` is the set of runnable (queued) **preemptible** threads (cooperative threads are excluded
+- :math:`T` is the set of all **preemptible** threads considered for pressure
 - :math:`w_t = P_{min} - \text{prio}_t + 1` is the weight of thread :math:`t`
 - :math:`P_{min}` is the configured minimum priority to consider (the highest value numerically)
 
