@@ -7,6 +7,9 @@ config HAS_NRFX
 menu "nrfx drivers"
 	depends on HAS_NRFX
 
+config NRF_DONT_USE_STABLE_BSP
+	bool
+
 rsource "Kconfig.logging"
 
 config NRFX_ADC
