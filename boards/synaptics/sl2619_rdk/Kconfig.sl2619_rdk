@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Synaptics Incorporated
+# SPDX-License-Identifier: Apache-2.0
+config BOARD_SL2619_RDK
+	select SOC_SL2619_A55 if BOARD_SL2619_RDK_SL2619_A55
+	select SOC_SL2619_M52 if BOARD_SL2619_RDK_SL2619_M52

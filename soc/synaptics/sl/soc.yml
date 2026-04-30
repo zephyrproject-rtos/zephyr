@@ -1,0 +1,8 @@
+family:
+- name: synaptics_sl
+  series:
+  - name: sl261x
+    socs:
+    - name: sl2619
+      cpuclusters:
+      - name: a55

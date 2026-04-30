@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Synaptics Incorporated
+# Author: Jisheng Zhang <jszhang@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_SYNA_SL
+	bool
+
+config SOC_FAMILY
+	default "syna_sl" if SOC_FAMILY_SYNA_SL
+
+rsource "*/Kconfig.soc"
