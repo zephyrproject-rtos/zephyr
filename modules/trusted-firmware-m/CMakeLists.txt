@@ -50,14 +50,11 @@ if(CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_VERSION_NS=${CONFIG_TFM_IMAGE_VERSION_NS})
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_SIGNATURE_TYPE=${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE})
 
-    # TF-M's config/check_config.cmake requires MCUBOOT_BUILTIN_KEY=OFF for RSA
-    # and MCUBOOT_USE_PSA_CRYPTO for EC-P. The others are dependencies needed
-    # for either the build or the boot to succeed.
+    # Use MCUBOOT_HW_KEY for RSA keys and MCUBOOT_BUILTIN_KEY for EC ones.
     if(${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE} MATCHES "^RSA")
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_BUILTIN_KEY=OFF)
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_HW_KEY=ON)
     elseif(${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE} MATCHES "^EC-P")
-      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_USE_PSA_CRYPTO=ON)
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_BUILTIN_KEY=ON)
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_HW_KEY=OFF)
     endif()
@@ -111,31 +108,31 @@ if(CONFIG_BUILD_WITH_TFM)
 
   if(CONFIG_TFM_BL2)
     if(CONFIG_TFM_BL2_LOG_LEVEL_DEBUG)
-      set(TFM_BL2_LOG_LEVEL "DEBUG")
+      set(TFM_BL2_LOG_LEVEL "LOG_LEVEL_VERBOSE")
     elseif(CONFIG_TFM_BL2_LOG_LEVEL_INFO)
-      set(TFM_BL2_LOG_LEVEL "INFO")
+      set(TFM_BL2_LOG_LEVEL "LOG_LEVEL_INFO")
     elseif(CONFIG_TFM_BL2_LOG_LEVEL_WARNING)
-      set(TFM_BL2_LOG_LEVEL "WARNING")
+      set(TFM_BL2_LOG_LEVEL "LOG_LEVEL_WARNING")
     elseif(CONFIG_TFM_BL2_LOG_LEVEL_ERROR)
-      set(TFM_BL2_LOG_LEVEL "ERROR")
+      set(TFM_BL2_LOG_LEVEL "LOG_LEVEL_ERROR")
     elseif(CONFIG_TFM_BL2_LOG_LEVEL_OFF OR CONFIG_TFM_LOG_LEVEL_SILENCE)
-      set(TFM_BL2_LOG_LEVEL "OFF")
+      set(TFM_BL2_LOG_LEVEL "LOG_LEVEL_SILENCE")
     endif()
 
     if(DEFINED TFM_BL2_LOG_LEVEL)
       # BL2 uses MCUBOOT_LOG_LEVEL configuration
-      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_LOG_LEVEL=${TFM_BL2_LOG_LEVEL})
+      list(APPEND TFM_CMAKE_ARGS -DTFM_BL2_LOG_LEVEL=${TFM_BL2_LOG_LEVEL})
     endif()
   endif()
 
   if(CONFIG_TFM_PARTITION_LOG_LEVEL_DEBUG)
-    set(TFM_PARTITION_LOG_LEVEL "TFM_PARTITION_LOG_LEVEL_DEBUG")
+    set(TFM_PARTITION_LOG_LEVEL "LOG_LEVEL_VERBOSE")
   elseif(CONFIG_TFM_PARTITION_LOG_LEVEL_INFO)
-    set(TFM_PARTITION_LOG_LEVEL "TFM_PARTITION_LOG_LEVEL_INFO")
+    set(TFM_PARTITION_LOG_LEVEL "LOG_LEVEL_INFO")
   elseif(CONFIG_TFM_PARTITION_LOG_LEVEL_ERROR)
-    set(TFM_PARTITION_LOG_LEVEL "TFM_PARTITION_LOG_LEVEL_ERROR")
+    set(TFM_PARTITION_LOG_LEVEL "LOG_LEVEL_ERROR")
   elseif(CONFIG_TFM_PARTITION_LOG_LEVEL_SILENCE OR CONFIG_TFM_LOG_LEVEL_SILENCE)
-    set(TFM_PARTITION_LOG_LEVEL "TFM_PARTITION_LOG_LEVEL_SILENCE")
+    set(TFM_PARTITION_LOG_LEVEL "LOG_LEVEL_SILENCE")
   endif()
 
   if(DEFINED TFM_PARTITION_LOG_LEVEL)
@@ -143,13 +140,13 @@ if(CONFIG_BUILD_WITH_TFM)
   endif()
 
   if(CONFIG_TFM_SPM_LOG_LEVEL_DEBUG)
-    set(TFM_SPM_LOG_LEVEL "TFM_SPM_LOG_LEVEL_DEBUG")
+    set(TFM_SPM_LOG_LEVEL "LOG_LEVEL_VERBOSE")
   elseif(CONFIG_TFM_SPM_LOG_LEVEL_INFO)
-    set(TFM_SPM_LOG_LEVEL "TFM_SPM_LOG_LEVEL_INFO")
+    set(TFM_SPM_LOG_LEVEL "LOG_LEVEL_INFO")
   elseif(CONFIG_TFM_SPM_LOG_LEVEL_ERROR)
-    set(TFM_SPM_LOG_LEVEL "TFM_SPM_LOG_LEVEL_ERROR")
+    set(TFM_SPM_LOG_LEVEL "LOG_LEVEL_ERROR")
   elseif(CONFIG_TFM_SPM_LOG_LEVEL_SILENCE OR CONFIG_TFM_LOG_LEVEL_SILENCE)
-    set(TFM_SPM_LOG_LEVEL "TFM_SPM_LOG_LEVEL_SILENCE")
+    set(TFM_SPM_LOG_LEVEL "LOG_LEVEL_SILENCE")
   endif()
 
   if(DEFINED TFM_SPM_LOG_LEVEL)
@@ -293,6 +290,16 @@ if(CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DIFX_EPC=epc2)
   endif()
 
+  # Prevent TF-M's CMake build system from signing images. This is not bad per-se
+  # but it requires installing extra Python packages and since we're also signing
+  # below in this file, we can entirely skip that part.
+  list(APPEND TFM_CMAKE_ARGS -DPLATFORM_DEFAULT_IMAGE_SIGNING=OFF)
+  list(APPEND TFM_CMAKE_ARGS -DTFM_MERGE_HEX_FILES=OFF)
+  # This is Zephyr's custom addition to TF-M build system. We need TF-M to
+  # keep generating a couple of object files which are requried to sign
+  # images.
+  list(APPEND TFM_CMAKE_ARGS -DTFM_CREATE_SIGNING_LAYOUT_OBJECTS=ON)
+
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
   add_custom_target(tfm_cmake
     DEPENDS ${TFM_BINARY_DIR}/CMakeCache.txt
@@ -310,7 +317,7 @@ if(CONFIG_BUILD_WITH_TFM)
       -DPython3_EXECUTABLE=${Python3_EXECUTABLE}
       ${TFM_CMAKE_ARGS}
       $<GENEX_EVAL:$<TARGET_PROPERTY:zephyr_property_target,TFM_CMAKE_OPTIONS>>
-      -DMBEDCRYPTO_PATH=$<IF:$<BOOL:$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>>,$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>,${ZEPHYR_MBEDTLS_3_6_MODULE_DIR}>
+      -DTF_PSA_CRYPTO_PATH=${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}
       -DCMSIS_PATH=${ZEPHYR_CMSIS_6_MODULE_DIR}
       ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}
     WORKING_DIRECTORY ${TFM_BINARY_DIR}
@@ -554,15 +561,22 @@ if(CONFIG_BUILD_WITH_TFM)
       set(TFM_SIGN_ARG_SUFFIX "S")
     endif()
 
+    if(TFM_SIGN_ARG_SUFFIX STREQUAL "S")
+      set(SIG_KEY_ID 2147451243)
+    else()
+      set(SIG_KEY_ID 2147451244)
+    endif()
+
     set(${OUT_ARG}
       # Add the MCUBoot script to the path so that if there is a version of imgtool in there then
       # it gets used over the system imgtool. Used so that imgtool from upstream
       # mcuboot is preferred over system imgtool
       ${CMAKE_COMMAND} -E env PYTHONPATH=${ZEPHYR_MCUBOOT_MODULE_DIR}/scripts
-      ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/wrapper/wrapper.py
+      ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/wrapper.py
       --layout ${layout_file}
       -k ${CONFIG_TFM_KEY_FILE_${TFM_SIGN_ARG_SUFFIX}}
       --public-key-format ${TFM_PUBLIC_KEY_FORMAT}
+      --psa-key-ids ${SIG_KEY_ID}
       --align ${image_alignment}
       --max-sectors ${TFM_SIGN_ARG_MAX_SECTORS}
       -v ${CONFIG_TFM_IMAGE_VERSION_${TFM_SIGN_ARG_SUFFIX}}
