@@ -287,13 +287,13 @@ static void usbd_midi_class_resumed(struct usbd_class_data *const class_data)
 	k_work_submit(&data->rx_work);
 }
 
-static int usbd_midi_class_cth(struct usbd_class_data *const class_data,
-			       const struct usb_setup_packet *const setup,
-			       struct net_buf *const buf)
+static struct net_buf *usbd_midi_class_cth(struct usbd_class_data *const class_data,
+					   const struct usb_setup_packet *const setup)
 {
 	const struct device *dev = usbd_class_get_private(class_data);
 	const struct usbd_midi_config *config = dev->config;
 	struct usbd_midi_data *data = dev->data;
+	struct net_buf *buf;
 
 	size_t head_len = config->desc->grptrm_header.bLength;
 	size_t total_len = sys_le16_to_cpu(config->desc->grptrm_header.wTotalLength);
@@ -310,7 +310,14 @@ static int usbd_midi_class_cth(struct usbd_class_data *const class_data,
 	    setup->bRequest != USB_SREQ_GET_DESCRIPTOR ||
 	    setup->wValue != ((CS_GR_TRM_BLOCK << 8) | MIDI2_ALTERNATE)) {
 		errno = -ENOTSUP;
-		return 0;
+		return NULL;
+	}
+
+	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(class_data),
+					 MIN(total_len, setup->wLength));
+	if (buf == NULL) {
+		errno = -ENOMEM;
+		return NULL;
 	}
 
 	/* Group terminal block header */
@@ -324,7 +331,7 @@ static int usbd_midi_class_cth(struct usbd_class_data *const class_data,
 	}
 	LOG_HEXDUMP_DBG(buf->data, buf->len, "Control to host");
 
-	return 0;
+	return buf;
 }
 
 static int usbd_midi_class_init(struct usbd_class_data *const class_data)
