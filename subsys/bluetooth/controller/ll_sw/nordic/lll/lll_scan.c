@@ -811,6 +811,11 @@ static void isr_tx(void *param)
 	struct node_rx_pdu *node_rx;
 	uint32_t hcto;
 
+	/* Call to ensure packet/event timer accumulates the elapsed time
+	 * under single timer use.
+	 */
+	(void)radio_is_tx_done();
+
 	/* Clear radio status and events */
 	lll_isr_tx_status_reset();
 
