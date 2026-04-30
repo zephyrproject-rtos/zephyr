@@ -3227,6 +3227,8 @@ int bt_ascs_init(const struct bt_bap_unicast_server_cb *cb)
 
 void bt_ascs_cleanup(void)
 {
+	int err;
+
 	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 
@@ -3235,7 +3237,10 @@ void bt_ascs_cleanup(void)
 		}
 	}
 	if (unicast_server_cb != NULL) {
-		bt_iso_server_unregister(&iso_server);
+		err = bt_iso_server_unregister(&iso_server);
+		if (err != 0) {
+			LOG_ERR("Failed to unregister ISO server: %d", err);
+		}
 		unicast_server_cb = NULL;
 	}
 }

@@ -63,7 +63,6 @@ static bool subscribe_all;
 
 #ifdef CONFIG_BT_MCC_OTS
 NET_BUF_SIMPLE_DEFINE_STATIC(otc_obj_buf, CONFIG_BT_MCC_OTC_OBJ_BUF_SIZE);
-static struct bt_ots_client_cb otc_cb;
 #endif /* CONFIG_BT_MCC_OTS */
 
 
@@ -1458,8 +1457,6 @@ static uint8_t discover_otc_char_func(struct bt_conn *conn,
 	}
 
 	/* No more attributes found */
-	mcs_inst->otc.cb = &otc_cb;
-	bt_ots_client_register(&mcs_inst->otc);
 
 	LOG_DBG("Setup complete for included OTS");
 	(void)memset(params, 0, sizeof(*params));
@@ -2061,17 +2058,34 @@ int bt_mcc_init(struct bt_mcc_cb *cb)
 	mcc_cb = cb;
 
 #ifdef CONFIG_BT_MCC_OTS
-	/* Set up the callbacks from OTC */
-	/* TODO: Have one single content callback. */
-	/* For now: Use the icon callback for content - it is the first, */
-	/* and this will anyway be reset later. */
-	otc_cb.obj_data_read     = on_icon_content;
-	otc_cb.obj_selected      = on_obj_selected;
-	otc_cb.obj_metadata_read = on_object_metadata;
+	static bool ots_client_registered;
 
-	LOG_DBG("Object selected callback: %p", otc_cb.obj_selected);
-	LOG_DBG("Object content callback: %p", otc_cb.obj_data_read);
-	LOG_DBG("Object metadata callback: %p", otc_cb.obj_metadata_read);
+	if (!ots_client_registered) {
+		static struct bt_ots_client_cb otc_cb;
+		int err;
+
+		/* Set up the callbacks from OTC */
+		/* TODO: Have one single content callback. */
+		/* For now: Use the icon callback for content - it is the first, */
+		/* and this will anyway be reset later. */
+		otc_cb.obj_data_read = on_icon_content;
+		otc_cb.obj_selected = on_obj_selected;
+		otc_cb.obj_metadata_read = on_object_metadata;
+
+		LOG_DBG("Object selected callback: %p", otc_cb.obj_selected);
+		LOG_DBG("Object content callback: %p", otc_cb.obj_data_read);
+		LOG_DBG("Object metadata callback: %p", otc_cb.obj_metadata_read);
+
+		mcs_instance.otc.cb = &otc_cb;
+		err = bt_ots_client_register(&mcs_instance.otc);
+		if (err != 0) {
+			LOG_DBG("Failed to register OTS client: %d", err);
+
+			return err;
+		}
+
+		ots_client_registered = true;
+	}
 #endif /* CONFIG_BT_MCC_OTS */
 
 	return 0;

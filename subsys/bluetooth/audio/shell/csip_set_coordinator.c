@@ -271,7 +271,12 @@ static int cmd_csip_set_coordinator_discover(const struct shell *sh,
 	if (!initialized) {
 		k_work_init_delayable(&discover_members_timer,
 				      discover_members_timer_handler);
-		bt_csip_set_coordinator_register_cb(&cbs);
+		err = bt_csip_set_coordinator_register_cb(&cbs);
+		if (err != 0) {
+			shell_error(sh, "Failed to register CSIP callbacks: %d", err);
+			return -ENOEXEC;
+		}
+
 		initialized = true;
 	}
 

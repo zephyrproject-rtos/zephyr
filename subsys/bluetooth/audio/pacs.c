@@ -1421,7 +1421,10 @@ int bt_pacs_cap_register(enum bt_audio_dir dir, struct bt_pacs_cap *cap)
 	sys_slist_append(pac, &cap->_node);
 
 	if (!first_register) {
-		bt_conn_auth_info_cb_register(&auth_callbacks);
+		__maybe_unused int err;
+
+		err = bt_conn_auth_info_cb_register(&auth_callbacks);
+		__ASSERT(err == 0, "Failed to register auth_info callbacks: %d", err);
 
 		/* Restore bonding list */
 		bt_foreach_bond(BT_ID_DEFAULT, add_bonded_addr_to_client_list, NULL);
