@@ -41,3 +41,7 @@
 &uart1 {
 	status = "disabled";
 };
+
+zephyr_udc0: &usb {
+	status = "okay";
+};

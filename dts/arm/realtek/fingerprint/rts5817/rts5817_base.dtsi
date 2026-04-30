@@ -93,6 +93,23 @@
 			resets = <&reset SYS_FORCE_RST_UART1>;
 			status = "disabled";
 		};
+
+		usb: usb@40014000 {
+			compatible = "realtek,rts5817-usbd";
+			maximum-speed = "high-speed";
+			reg = <0x40014000 0x100>,
+			      <0x40014100 0x800>,
+			      <0x40015000 0x3000>,
+			      <0x401e1800 0x44>;
+			reg-names = "u2sie_sys", "u2sie_ep", "mc_ep", "u2_ana";
+			interrupt-parent = <&nvic>;
+			interrupts = <IRQ_NUM_SIE 0>, <IRQ_NUM_MC 0>;
+			num-bidir-endpoints = <1>;
+			num-in-endpoints = <5>;
+			num-out-endpoints = <4>;
+			num-endpoints = <9>;
+			status = "disabled";
+		};
 	};
 };
 
