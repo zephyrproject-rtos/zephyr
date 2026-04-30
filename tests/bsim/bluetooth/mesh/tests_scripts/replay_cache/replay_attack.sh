@@ -7,9 +7,11 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 overlay=overlay_pst_conf
 RunTest mesh_replay_attack \
     rpc_tx_immediate_replay_attack \
-    rpc_rx_immediate_replay_attack -flash=../results/mesh_replay_attack/flash.bin -flash_erase
+    rpc_rx_immediate_replay_attack \
+    -flash=../results/${BOARD_TS}_mesh_replay_attack/flash.bin -flash_erase
 
 overlay=overlay_pst_conf
 RunTest mesh_replay_attack \
     rpc_tx_power_replay_attack \
-    rpc_rx_power_replay_attack -flash=../results/mesh_replay_attack/flash.bin -flash_rm
+    rpc_rx_power_replay_attack \
+    -flash=../results/${BOARD_TS}_mesh_replay_attack/flash.bin -flash_rm

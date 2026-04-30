@@ -24,22 +24,22 @@ overlay="overlay_pst_conf_overlay_gatt_conf"
 RunTest mesh_srpl_replay_attack \
 	proxy_sol_tester_immediate_replay_attack \
 	proxy_sol_iut_immediate_replay_attack \
-	-flash=../results/mesh_srpl_replay_attack/flash.bin -flash_erase
+	-flash=../results/${BOARD_TS}_mesh_srpl_replay_attack/flash.bin -flash_erase
 
 overlay="overlay_pst_conf_overlay_gatt_conf"
 RunTest mesh_srpl_replay_attack \
 	proxy_sol_tester_power_replay_attack \
 	proxy_sol_iut_power_replay_attack \
-	-flash=../results/mesh_srpl_replay_attack/flash.bin -flash_rm
+	-flash=../results/${BOARD_TS}_mesh_srpl_replay_attack/flash.bin -flash_rm
 
 overlay="overlay_pst_conf_overlay_gatt_conf_overlay_workq_sys_conf"
 RunTest mesh_srpl_replay_attack_workq \
 	proxy_sol_tester_immediate_replay_attack \
 	proxy_sol_iut_immediate_replay_attack \
-	-flash=../results/mesh_srpl_replay_attack/flash.bin -flash_erase
+	-flash=../results/${BOARD_TS}_mesh_srpl_replay_attack/flash.bin -flash_erase
 
 overlay="overlay_pst_conf_overlay_gatt_conf_overlay_workq_sys_conf"
 RunTest mesh_srpl_replay_attack_workq \
 	proxy_sol_tester_power_replay_attack \
 	proxy_sol_iut_power_replay_attack \
-	-flash=../results/mesh_srpl_replay_attack/flash.bin -flash_rm
+	-flash=../results/${BOARD_TS}_mesh_srpl_replay_attack/flash.bin -flash_rm
