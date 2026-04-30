@@ -1,0 +1,127 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+
+/ {
+	chosen {
+		/* Use ISI channel1 as capture device for this sample */
+		zephyr,camera = &isi_ch1;
+	};
+
+	/* Camera power regulators (controlled via ADP5585 GPIO expander) */
+	reg_cam_dvdd: regulator-cam-dvdd {
+		compatible = "regulator-fixed";
+		regulator-name = "CAM_DVDD_1V2";
+		enable-gpios = <&adp5585_gpio 9 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	reg_cam_vddio: regulator-cam-vddio {
+		compatible = "regulator-fixed";
+		regulator-name = "CAM_VDDIO_1V8";
+		enable-gpios = <&adp5585_gpio 8 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	reg_cam_avdd: regulator-cam-avdd {
+		compatible = "regulator-fixed";
+		regulator-name = "CAM_AVDD_2V8";
+		enable-gpios = <&adp5585_gpio 10 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	reg_cam_vddio_hmisc: regulator-cam-vddio-hmisc {
+		compatible = "regulator-fixed";
+		regulator-name = "CAM_VDDIO_HMISC_1V8";
+		enable-gpios = <&adp5585_gpio 12 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};
+
+/*
+ * Camera HW on i.MX95 EVK lives on LPI2C3.
+ * The AP1302 device node itself is provided by the camera shield.
+ */
+&lpi2c3 {
+	status = "okay";
+	pinctrl-0 = <&lpi2c3_default>;
+	pinctrl-names = "default";
+
+	mfd_adp5585: adp5585@34 {
+		status = "okay";
+
+		adp5585_gpio: adp5585_gpio {
+			status = "okay";
+		};
+	};
+
+	pcal6408: gpio@20 {
+		status = "okay";
+	};
+};
+
+/* Apply board-specific wiring and resources to the shield-provided AP1302 */
+&ap1302 {
+	power-supplies = <&reg_cam_dvdd>,
+			 <&reg_cam_vddio>,
+			 <&reg_cam_avdd>,
+			 <&reg_cam_vddio_hmisc>;
+	clock-names = "mclk";
+	clocks = <&scmi_clk IMX95_CLK_CCMCKO1>;
+	pinctrl-0 = <&cmmclk1_default>;
+	pinctrl-names = "default";
+};
+
+&mipi_dphy {
+	status = "okay";
+};
+
+&mipi_csi {
+	data-lanes = <4>;
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			csi_ep_in: endpoint {
+				remote-endpoint-label = "ap1302_ep_out";
+				bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+				data-lanes = <1 2 3 4>;
+			};
+		};
+
+		port@1 {
+			reg = <1>;
+			csi2rx_ep_out: endpoint {
+				remote-endpoint-label = "isi_1_ep_in";
+			};
+		};
+	};
+};
+
+&isi {
+	status = "okay";
+};
+
+&isi_ch1 {
+	status = "okay";
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			isi_1_ep_in: endpoint {
+				remote-endpoint-label = "csi2rx_ep_out";
+			};
+		};
+	};
+};

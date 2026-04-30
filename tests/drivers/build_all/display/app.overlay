@@ -599,10 +599,10 @@
 				pixel-format = <0>;
 			};
 
-			test_rm67199: rm67199@8 {
+			test_rm692c9: rm692c9@8 {
 				status = "okay";
-				compatible = "raydium,rm67199";
-				reg = <0x8>;
+				compatible = "raydium,rm692c9";
+				reg = <8>;
 				bl-gpios = <&test_gpio 0 0>;
 				reset-gpios = <&test_gpio 0 0>;
 				data-lanes = <4>;

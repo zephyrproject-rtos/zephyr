@@ -1,0 +1,19 @@
+echo "##############################################"
+echo "checkpatch:"
+
+./scripts/checkpatch.pl -g ${1}..${2}
+
+
+echo "##############################################"
+echo "check_compliance:"
+echo "dts can be fixed: npx dts-linter --formatFixAll --file <files>"
+
+./scripts/ci/check_compliance.py -c ${1}..${2}
+
+echo "##############################################"
+echo "guideline_check: result saved to guideline_err.txt"
+
+export ZEPHYR_BASE=${PWD}
+source zephyr-env.sh
+
+./scripts/ci/guideline_check.py -o guideline_err.txt -c ${1}..${2}

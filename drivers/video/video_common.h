@@ -68,10 +68,17 @@ struct video_reg16 {
  */
 
 /** @cond INTERNAL_HIDDEN */
-#define VIDEO_REG_ENDIANNESS_MASK		(uint32_t)(GENMASK(24, 24))
-#define VIDEO_REG_ADDR_SIZE_MASK		(uint32_t)(GENMASK(23, 20))
-#define VIDEO_REG_DATA_SIZE_MASK		(uint32_t)(GENMASK(19, 16))
-#define VIDEO_REG_ADDR_MASK			(uint32_t)(GENMASK(15, 0))
+#define VIDEO_REG_ENDIANNESS_MASK (uint32_t)(GENMASK(24, 24))
+#define VIDEO_REG_ADDR_SIZE_MASK  (uint32_t)(GENMASK(23, 20))
+#define VIDEO_REG_DATA_SIZE_MASK  (uint32_t)(GENMASK(19, 16))
+#define VIDEO_REG_ADDR_MASK       (uint32_t)(GENMASK(15, 0))
+
+/*
+ * Some devices require multi-byte register values to be read/written using a
+ * single I2C transaction starting at the register address, instead of splitting
+ * the access into multiple 1-byte transactions at addr+i.
+ */
+#define VIDEO_REG_SINGLE_XFER BIT(25)
 
 #define VIDEO_REG(addr_size, data_size, endianness)                                                \
 	(FIELD_PREP(VIDEO_REG_ADDR_SIZE_MASK, (addr_size)) |                                       \
@@ -121,33 +128,33 @@ struct video_reg16 {
  * @{
  */
 /** Flag a register as 8-bit address size, 8-bit data size */
-#define VIDEO_REG_ADDR8_DATA8		VIDEO_REG(1, 1, false)
+#define VIDEO_REG_ADDR8_DATA8      VIDEO_REG(1, 1, false)
 /** Flag a register as 8-bit address size, 16-bit data size, little-endian */
-#define VIDEO_REG_ADDR8_DATA16_LE	VIDEO_REG(1, 2, false)
+#define VIDEO_REG_ADDR8_DATA16_LE  VIDEO_REG(1, 2, false)
 /** Flag a register as 8-bit address size, 16-bit data size, big-endian */
-#define VIDEO_REG_ADDR8_DATA16_BE	VIDEO_REG(1, 2, true)
+#define VIDEO_REG_ADDR8_DATA16_BE  VIDEO_REG(1, 2, true)
 /** Flag a register as 8-bit address size, 24-bit data size, little-endian */
-#define VIDEO_REG_ADDR8_DATA24_LE	VIDEO_REG(1, 3, false)
+#define VIDEO_REG_ADDR8_DATA24_LE  VIDEO_REG(1, 3, false)
 /** Flag a register as 8-bit address size, 24-bit data size, big-endian */
-#define VIDEO_REG_ADDR8_DATA24_BE	VIDEO_REG(1, 3, true)
+#define VIDEO_REG_ADDR8_DATA24_BE  VIDEO_REG(1, 3, true)
 /** Flag a register as 8-bit address size, 32-bit data size, little-endian */
-#define VIDEO_REG_ADDR8_DATA32_LE	VIDEO_REG(1, 4, false)
+#define VIDEO_REG_ADDR8_DATA32_LE  VIDEO_REG(1, 4, false)
 /** Flag a register as 8-bit address size, 32-bit data size, big-endian */
-#define VIDEO_REG_ADDR8_DATA32_BE	VIDEO_REG(1, 4, true)
+#define VIDEO_REG_ADDR8_DATA32_BE  VIDEO_REG(1, 4, true)
 /** Flag a register as 16-bit address size, 8-bit data size */
-#define VIDEO_REG_ADDR16_DATA8		VIDEO_REG(2, 1, false)
+#define VIDEO_REG_ADDR16_DATA8     VIDEO_REG(2, 1, false)
 /** Flag a register as 16-bit address size, 16-bit data size, little-endian */
-#define VIDEO_REG_ADDR16_DATA16_LE	VIDEO_REG(2, 2, false)
+#define VIDEO_REG_ADDR16_DATA16_LE VIDEO_REG(2, 2, false)
 /** Flag a register as 16-bit address size, 16-bit data size, big-endian */
-#define VIDEO_REG_ADDR16_DATA16_BE	VIDEO_REG(2, 2, true)
+#define VIDEO_REG_ADDR16_DATA16_BE VIDEO_REG(2, 2, true)
 /** Flag a register as 16-bit address size, 24-bit data size, little-endian */
-#define VIDEO_REG_ADDR16_DATA24_LE	VIDEO_REG(2, 3, false)
+#define VIDEO_REG_ADDR16_DATA24_LE VIDEO_REG(2, 3, false)
 /** Flag a register as 16-bit address size, 24-bit data size, big-endian */
-#define VIDEO_REG_ADDR16_DATA24_BE	VIDEO_REG(2, 3, true)
+#define VIDEO_REG_ADDR16_DATA24_BE VIDEO_REG(2, 3, true)
 /** Flag a register as 16-bit address size, 32-bit data size, little-endian */
-#define VIDEO_REG_ADDR16_DATA32_LE	VIDEO_REG(2, 4, false)
+#define VIDEO_REG_ADDR16_DATA32_LE VIDEO_REG(2, 4, false)
 /** Flag a register as 16-bit address size, 32-bit data size, big-endian */
-#define VIDEO_REG_ADDR16_DATA32_BE	VIDEO_REG(2, 4, true)
+#define VIDEO_REG_ADDR16_DATA32_BE VIDEO_REG(2, 4, true)
 /** @} */
 
 /**
@@ -161,7 +168,6 @@ struct video_reg16 {
  * @brief reg_data Value to write at this address, the size to write is encoded in the address.
  */
 int video_write_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32_t reg_data);
-
 
 /**
  * @brief Perform a read-modify-write operation on a register given an address, mask and value.

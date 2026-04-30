@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,10 +8,22 @@
 
 #include <nxp/imx/nxp_imx95_m7.dtsi>
 #include "imx95_evk-pinctrl.dtsi"
+#include <dt-bindings/mipi_dsi/mipi_dsi.h>
+#include <zephyr/dt-bindings/gpio/nxp-ias-camera-to-rpi-camera-adapter.h>
 
 / {
 	model = "NXP i.MX95 EVK board";
 	compatible = "nxp,imx95_evk";
+
+	/* Camera connector abstraction (for camera shields) */
+	nxp_cam_connector: cam_connector {
+		compatible = "nxp,ias-camera-to-rpi-camera-adapter";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <NXP_IAS_CAM_RESET 0 &pcal6408 2 0>,
+			<NXP_IAS_CAM_ISP_EN 0 &adp5585_gpio 2 0>;
+	};
 
 	chosen {
 		/* TCM */
@@ -21,6 +33,7 @@
 		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,console = &lpuart3;
 		zephyr,shell-uart = &lpuart3;
+		zephyr,display = &dpu;
 	};
 };
 
@@ -108,6 +121,45 @@
 	};
 };
 
+/* LPI2C3 for camera IO expanders (used by camera shields) */
+&lpi2c3 {
+	status = "disabled";
+	pinctrl-0 = <&lpi2c3_default>;
+	pinctrl-names = "default";
+
+	/* ADP5585 MFD device for camera power control */
+	mfd_adp5585: adp5585@34 {
+		compatible = "adi,adp5585";
+		reg = <0x34>;
+		status = "disabled";
+
+		/* GPIO child node */
+		adp5585_gpio: adp5585_gpio {
+			compatible = "adi,adp5585-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <13>;
+			gpio-reserved-ranges = <5 3>;
+			status = "disabled";
+		};
+	};
+
+	pcal6408: gpio@20 {
+		compatible = "nxp,pcal6408a";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		status = "disabled";
+	};
+};
+
+&lpi2c2 {
+	pinctrl-0 = <&lpi2c2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &lpi2c5 {
 	pinctrl-0 = <&lpi2c5_default>;
 	pinctrl-names = "default";
@@ -158,3 +210,25 @@
 &edma2 {
 	status = "okay";
 };
+
+&mipi_csi {
+	data-lanes = <4>;
+	status = "disabled";
+};
+
+&mipi_dphy {
+	status = "disabled";
+};
+
+&isi {
+	status = "disabled";
+};
+
+/* Board-provided label for camera shields */
+nxp_cam_i2c: &lpi2c3 {};
+
+zephyr_dpu: &dpu {};
+
+zephyr_mipi_dsi: &mipi_dsi {};
+
+display_i2c: &lpi2c2 {};

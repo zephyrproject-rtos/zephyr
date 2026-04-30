@@ -1,0 +1,5 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Currently the top-level Kconfig option is drivers/video/Kconfig.mcux_isi
+# (CONFIG_VIDEO_MCUX_ISI). This file is kept for future per-driver options.

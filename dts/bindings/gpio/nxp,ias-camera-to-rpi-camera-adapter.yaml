@@ -1,0 +1,25 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+title: NXP IAS Camera to RPi Camera Adapter GPIO nexus
+
+description: |
+  This binding is used to abstract board-specific GPIO wiring for the
+  "IAS Camera to RPi Camera Adapter".
+
+  The adapter (and connected camera module) typically needs a few control GPIOs
+  such as RESET and ISP enable. Boards should provide a gpio-nexus node (usually
+  labelled `nxp_cam_connector`) that maps these logical pins to the real GPIO
+  controllers/pins available on that board (including GPIO expanders).
+
+  Use constants from:
+
+    <zephyr/dt-bindings/gpio/nxp-ias-camera-to-rpi-camera-adapter.h>
+
+  Nexus mapping:
+    0  NXP_IAS_CAM_RESET   Camera module reset
+    1  NXP_IAS_CAM_ISP_EN  Camera module ISP enable
+
+compatible: "nxp,ias-camera-to-rpi-camera-adapter"
+
+include: [gpio-nexus.yaml, base.yaml]

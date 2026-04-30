@@ -101,6 +101,7 @@ set_variable_ifdef(CONFIG_COUNTER_MCUX_GPT      CONFIG_MCUX_COMPONENT_driver.gpt
 set_variable_ifdef(CONFIG_MCUX_GPT_TIMER        CONFIG_MCUX_COMPONENT_driver.gpt)
 set_variable_ifdef(CONFIG_COUNTER_MCUX_LPIT      CONFIG_MCUX_COMPONENT_driver.lpit)
 set_variable_ifdef(CONFIG_DISPLAY_MCUX_ELCDIF   CONFIG_MCUX_COMPONENT_driver.elcdif)
+set_variable_ifdef(CONFIG_DISPLAY_SOCIONEXT_DPU CONFIG_MCUX_COMPONENT_driver.dpu_1)
 set_variable_ifdef(CONFIG_MCUX_PXP              CONFIG_MCUX_COMPONENT_driver.pxp)
 set_variable_ifdef(CONFIG_LV_USE_GPU_NXP_PXP    CONFIG_MCUX_COMPONENT_driver.pxp)
 set_variable_ifdef(CONFIG_GPIO_MCUX_RGPIO       CONFIG_MCUX_COMPONENT_driver.rgpio)
@@ -171,6 +172,7 @@ set_variable_ifdef(CONFIG_CRC_DRIVER_NXP        CONFIG_MCUX_COMPONENT_driver.crc
 set_variable_ifdef(CONFIG_CRC_DRIVER_NXP_LPC    CONFIG_MCUX_COMPONENT_driver.lpc_crc)
 set_variable_ifdef(CONFIG_WUC_MCUX_LLWU         CONFIG_MCUX_COMPONENT_driver.llwu)
 set_variable_ifdef(CONFIG_PHY_NXP_T1S           CONFIG_MCUX_COMPONENT_driver.tenbaset_phy)
+set_variable_ifdef(CONFIG_VIDEO_MCUX_ISI	CONFIG_MCUX_COMPONENT_driver.isi)
 
 if(NOT CONFIG_SOC_MIMX9596)
   set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC          CONFIG_MCUX_COMPONENT_driver.netc_switch)

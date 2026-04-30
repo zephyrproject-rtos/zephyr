@@ -1,0 +1,5 @@
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_NXP_IAS_CAMERA_TO_RPI_CAMERA_ADAPTER
+	def_bool $(shields_list_contains,nxp_ias_camera_to_rpi_camera_adapter)

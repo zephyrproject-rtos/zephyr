@@ -128,6 +128,12 @@
 			reg = <0x12>;
 			#power-domain-cells = <0>;
 		};
+
+		camera_mix: power-domain@3 {
+			compatible = "arm,scmi-power-domain";
+			reg = <3>;
+			#power-domain-cells = <0>;
+		};
 	};
 
 	soc {
@@ -683,6 +689,31 @@
 			status = "disabled";
 		};
 
+		isi: isi@4ad50000 {
+			compatible = "nxp,imx-isi";
+			reg = <0x4ad50000 0x10000>;
+			power-domains = <&camera_mix>;
+			input-port = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			isi_ch0: channel@0 {
+				compatible = "nxp,imx-isi-channel";
+				reg = <0>;
+				interrupts = <221 0>;
+				status = "disabled";
+			};
+
+			isi_ch1: channel@1 {
+				compatible = "nxp,imx-isi-channel";
+				reg = <1>;
+				interrupt-parent = <&irqsteer_master7>;
+				interrupts = <8 0>;
+				status = "disabled";
+			};
+		};
+
 		irqsteer: interrupt-controller@44680000 {
 			compatible = "nxp,irqsteer-intc";
 			reg = <0x44680000 DT_SIZE_K(64)>;
@@ -835,6 +866,46 @@
 				interrupts-extended = <&nvic 219 0>;
 				status = "disabled";
 			};
+		};
+
+		mipi_csi: csi@4ad30000 {
+			compatible = "nxp,imx-mipi-csi";
+			reg = <0x4ad30000 0x10000>;
+			phys = <&mipi_dphy>;
+			clocks = <&scmi_clk IMX95_CLK_CAMAPB>;
+			clock-names = "pixel";
+			power-domains = <&camera_mix>;
+			status = "disabled";
+		};
+
+		mipi_dphy: dphy@4ad20000 {
+			compatible = "nxp,imx95-dphy-rx";
+			reg = <0x4ad20000 0x10000>;
+			clocks = <&scmi_clk IMX95_CLK_MIPIPHYCFG>;
+			clock-names = "phy_cfg";
+			power-domains = <&camera_mix>;
+			#phy-cells = <0>;
+		};
+
+		dpu: dpu@4b400000 {
+			compatible = "socionext,dpu";
+			height = <0>;
+			width = <0>;
+			reg = <0x4b400000 0x1000>;
+			interrupts = <215 0>;
+			status = "disabled";
+		};
+
+		mipi_dsi: mipi-dsi@4acf0000 {
+			compatible = "nxp,mipi-dsi-dwc";
+			nxp,dc = <&dpu>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4acf0000 0x1000>;
+			interrupt-parent = <&disp_irqsteer_master0>;
+			interrupts = <48 0>;
+			clocks = <&scmi_clk 0>;
+			status = "disabled";
 		};
 
 		netc_blk_ctrl: netc-blk-ctrl@4cde0000 {

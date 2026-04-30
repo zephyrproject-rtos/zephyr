@@ -19,7 +19,8 @@ config 1ST_LEVEL_INTERRUPT_BITS
 	default 8
 
 config MAX_IRQ_PER_AGGREGATOR
-	default 16
+	# i.MX IRQSTEER masters aggregate up to 64 interrupts.
+	default 64
 
 config 2ND_LEVEL_INTERRUPTS
 	default y
@@ -28,7 +29,8 @@ config 2ND_LVL_ISR_TBL_OFFSET
 	default 234
 
 config NUM_2ND_LEVEL_AGGREGATORS
-	default 1
+	# Enable IRQSTEER master outputs 0..7 (NVIC 224..231) for camera-related IRQs.
+	default 8
 
 config 2ND_LEVEL_INTERRUPT_BITS
 	default 8
@@ -36,11 +38,32 @@ config 2ND_LEVEL_INTERRUPT_BITS
 config 2ND_LVL_INTR_00_OFFSET
 	default 224
 
+config 2ND_LVL_INTR_01_OFFSET
+	default 225
+
+config 2ND_LVL_INTR_02_OFFSET
+	default 226
+
+config 2ND_LVL_INTR_03_OFFSET
+	default 227
+
+config 2ND_LVL_INTR_04_OFFSET
+	default 228
+
+config 2ND_LVL_INTR_05_OFFSET
+	default 229
+
+config 2ND_LVL_INTR_06_OFFSET
+	default 230
+
+config 2ND_LVL_INTR_07_OFFSET
+	default 231
+
 config 3RD_LEVEL_INTERRUPTS
 	default n
 
 config NUM_IRQS
-	default 250 # 2ND_LVL_ISR_TBL_OFFSET + MAX_IRQ_PER_AGGREGATOR * NUM_2ND_LEVEL_AGGREGATORS
+	default 746 # 2ND_LVL_ISR_TBL_OFFSET + MAX_IRQ_PER_AGGREGATOR * NUM_2ND_LEVEL_AGGREGATORS
 
 DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
 DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))

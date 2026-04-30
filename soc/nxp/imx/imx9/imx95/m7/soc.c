@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,8 +39,7 @@ int set_flexcan_clock(uint32_t clk_id)
 	return ret;
 }
 
-#define FLEXCAN_CLOCK_SETUP(node_id) \
-	set_flexcan_clock(DT_CLOCKS_CELL_BY_IDX(node_id, 0, name));
+#define FLEXCAN_CLOCK_SETUP(node_id) set_flexcan_clock(DT_CLOCKS_CELL_BY_IDX(node_id, 0, name));
 
 void soc_early_init_hook(void)
 {
@@ -98,7 +97,147 @@ static int soc_init(void)
 	}
 #endif
 
-DT_FOREACH_STATUS_OKAY(nxp_flexcan, FLEXCAN_CLOCK_SETUP)
+#if defined(CONFIG_MIPI_DSI_NXP_DWC)
+	const struct device *clk_dev = DEVICE_DT_GET(DT_NODELABEL(scmi_clk));
+	struct scmi_protocol *proto = clk_dev->data;
+	struct scmi_clock_rate_config clk_cfg = {0};
+	struct scmi_clock_config cfg = {0};
+	struct scmi_power_state_config pwr_cfg = {0};
+	uint32_t power_state = SCMI_POWER_STATE_GENERIC_OFF;
+	uint64_t video1pll_vco_clk = 4008000000;
+	uint64_t video1pll_clk = 446333333;
+	uint64_t disp1pix_clk = 148444444;
+	uint64_t mipiphypllbypass_clk = 446333333;
+	uint64_t mipitestbyte_clk = 446333333;
+
+	/* Power up DISPLAYMIX */
+	pwr_cfg.domain_id = IMX95_PD_DISPLAY;
+	pwr_cfg.power_state = SCMI_POWER_STATE_GENERIC_ON;
+
+	ret = scmi_power_state_set(&pwr_cfg);
+	if (ret) {
+		return ret;
+	}
+
+	while (power_state != SCMI_POWER_STATE_GENERIC_ON) {
+		ret = scmi_power_state_get(IMX95_PD_DISPLAY, &power_state);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	/* Power up CAMERAMIX */
+	pwr_cfg.domain_id = IMX95_PD_CAMERA;
+	pwr_cfg.power_state = SCMI_POWER_STATE_GENERIC_ON;
+
+	ret = scmi_power_state_set(&pwr_cfg);
+	if (ret) {
+		return ret;
+	}
+
+	while (power_state != SCMI_POWER_STATE_GENERIC_ON) {
+		ret = scmi_power_state_get(IMX95_PD_CAMERA, &power_state);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	DPU_IRQSTEER->CHN_MASK[13] = 0x10249U;
+
+	CAMERA__DSI_MASTER_CSR->DSI_PIXEL_LINK_CONTROL =
+		CAMERA_DSI_MASTER_CSR_DSI_PIXEL_LINK_CONTROL_Pixel_link_sel(0x0);
+	DISPLAY__BLK_CTRL_DISPLAYMIX->PIXEL_LINK_CTRL =
+		(DISPLAY_BLK_CTRL_DISPLAYMIX_PIXEL_LINK_CTRL_PL0_enable(0x1) |
+		 DISPLAY_BLK_CTRL_DISPLAYMIX_PIXEL_LINK_CTRL_PL0_valid(0x1));
+
+	/* VIDEOPLL1_VCO clock init */
+	clk_cfg.flags = SCMI_CLK_RATE_SET_FLAGS_ROUNDS_AUTO;
+	clk_cfg.clk_id = IMX95_CLK_VIDEOPLL1_VCO;
+	clk_cfg.rate[0] = video1pll_vco_clk & 0xFFFFFFFFU;
+	clk_cfg.rate[1] = (video1pll_vco_clk >> 32) & 0xFFFFFFFFU;
+
+	ret = scmi_clock_rate_set(proto, &clk_cfg);
+	if (ret) {
+		return ret;
+	}
+
+	cfg.attributes = 1;
+	cfg.clk_id = IMX95_CLK_VIDEOPLL1_VCO;
+
+	ret = scmi_clock_config_set(proto, &cfg);
+	if (ret) {
+		return ret;
+	}
+
+	/* VIDEOPLL1 clock init */
+	clk_cfg.flags = SCMI_CLK_RATE_SET_FLAGS_ROUNDS_AUTO;
+	clk_cfg.clk_id = IMX95_CLK_VIDEOPLL1;
+	clk_cfg.rate[0] = video1pll_clk & 0xFFFFFFFFU;
+	clk_cfg.rate[1] = (video1pll_clk >> 32) & 0xFFFFFFFFU;
+
+	ret = scmi_clock_rate_set(proto, &clk_cfg);
+	if (ret) {
+		return ret;
+	}
+
+	cfg.attributes = 1;
+	cfg.clk_id = IMX95_CLK_VIDEOPLL1;
+
+	ret = scmi_clock_config_set(proto, &cfg);
+	if (ret) {
+		return ret;
+	}
+
+	/* DISP1PIX clock init */
+	ret = scmi_clock_parent_set(proto, IMX95_CLK_DISP1PIX, IMX95_CLK_VIDEOPLL1);
+	if (ret) {
+		return ret;
+	}
+
+	clk_cfg.flags = SCMI_CLK_RATE_SET_FLAGS_ROUNDS_AUTO;
+	clk_cfg.clk_id = IMX95_CLK_DISP1PIX;
+	clk_cfg.rate[0] = disp1pix_clk & 0xFFFFFFFFU;
+	clk_cfg.rate[1] = (disp1pix_clk >> 32) & 0xFFFFFFFFU;
+
+	ret = scmi_clock_rate_set(proto, &clk_cfg);
+	if (ret) {
+		return ret;
+	}
+
+	/* MIPIPHYPLLBYPASS clock init */
+	ret = scmi_clock_parent_set(proto, IMX95_CLK_MIPIPHYPLLBYPASS, IMX95_CLK_VIDEOPLL1);
+	if (ret) {
+		return ret;
+	}
+
+	clk_cfg.flags = SCMI_CLK_RATE_SET_FLAGS_ROUNDS_AUTO;
+	clk_cfg.clk_id = IMX95_CLK_MIPIPHYPLLBYPASS;
+	clk_cfg.rate[0] = mipiphypllbypass_clk & 0xFFFFFFFFU;
+	clk_cfg.rate[1] = (mipiphypllbypass_clk >> 32) & 0xFFFFFFFFU;
+
+	ret = scmi_clock_rate_set(proto, &clk_cfg);
+	if (ret) {
+		return ret;
+	}
+
+	/* MIPITESTBYTE clock init */
+	ret = scmi_clock_parent_set(proto, IMX95_CLK_MIPITESTBYTE, IMX95_CLK_VIDEOPLL1);
+	if (ret) {
+		return ret;
+	}
+
+	clk_cfg.flags = SCMI_CLK_RATE_SET_FLAGS_ROUNDS_AUTO;
+	clk_cfg.clk_id = IMX95_CLK_MIPITESTBYTE;
+	clk_cfg.rate[0] = mipitestbyte_clk & 0xFFFFFFFFU;
+	clk_cfg.rate[1] = (mipitestbyte_clk >> 32) & 0xFFFFFFFFU;
+
+	ret = scmi_clock_rate_set(proto, &clk_cfg);
+	if (ret) {
+		return ret;
+	}
+#endif
+
+	DT_FOREACH_STATUS_OKAY(nxp_flexcan, FLEXCAN_CLOCK_SETUP)
 
 #if defined(CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS)
 	cpu_cfg.cpu_id = CPU_IDX_M7P;
@@ -109,6 +248,10 @@ DT_FOREACH_STATUS_OKAY(nxp_flexcan, FLEXCAN_CLOCK_SETUP)
 		return ret;
 	}
 #endif /* CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS */
+
+#if defined(CONFIG_DT_HAS_NXP_IMX_MIPI_CSI_ENABLED)
+	BLK_CTRL_CAMERAMIX->CSI0_PIXEL_DATA_TYPE_VC[0] = 0xffffff;
+#endif /* CONFIG_DT_HAS_IMX_MIPI_CSI_ENABLED */
 
 	return ret;
 }
@@ -143,8 +286,7 @@ void pm_state_before(void)
 
 	/* Set wakeup mask */
 	uint32_t wake_mask[GPC_CMC_IRQ_WAKEUP_MASK_COUNT] = {
-		[0 ... GPC_CMC_IRQ_WAKEUP_MASK_COUNT - 1]  = 0xFFFFFFFFU
-	};
+		[0 ... GPC_CMC_IRQ_WAKEUP_MASK_COUNT - 1] = 0xFFFFFFFFU};
 
 	/* IRQs enabled at NVIC level become GPC wake sources */
 	for (uint32_t idx = 0; idx < 8; idx++) {
@@ -216,8 +358,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 	/* Restore scmi cpu wake mask */
 	uint32_t wake_mask[GPC_CMC_IRQ_WAKEUP_MASK_COUNT] = {
-		[0 ... GPC_CMC_IRQ_WAKEUP_MASK_COUNT - 1] = 0x0U
-	};
+		[0 ... GPC_CMC_IRQ_WAKEUP_MASK_COUNT - 1] = 0x0U};
 
 	cpu_irq_mask_cfg.cpu_id = CPU_IDX_M7P;
 	cpu_irq_mask_cfg.mask_idx = 0;

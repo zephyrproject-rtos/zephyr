@@ -1,0 +1,45 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/nxp-ias-camera-to-rpi-camera-adapter.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+
+/*
+ * This shield describes the camera adapter + sensor module (AP1302)
+ * in a board-agnostic way.
+ *
+ * Boards that want to use this shield must provide:
+ *  - nxp_cam_i2c: an alias/label to the I2C bus connected to the camera
+ *  - nxp_cam_connector: a gpio-nexus mapping for camera control pins
+ */
+
+&nxp_cam_i2c {
+	status = "okay";
+
+	ap1302: camera@3c {
+		compatible = "onnn,ap1302";
+		reg = <0x3c>;
+
+		/*
+		 * gpio-nexus numbering is board-defined.
+		 * For i.MX95 EVK we map:
+		 *   0 -> AP1302 reset
+		 *   1 -> AP1302 isp-en
+		 */
+		reset-gpios = <&nxp_cam_connector NXP_IAS_CAM_RESET GPIO_ACTIVE_HIGH>;
+		isp-en-gpios = <&nxp_cam_connector NXP_IAS_CAM_ISP_EN GPIO_ACTIVE_HIGH>;
+
+		status = "okay";
+
+		port {
+			ap1302_ep_out: endpoint {
+				remote-endpoint-label = "csi_ep_in";
+				bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+				data-lanes = <1 2 3 4>;
+			};
+		};
+	};
+};

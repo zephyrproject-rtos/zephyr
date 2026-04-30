@@ -77,6 +77,7 @@ config VIDEO_ENCODER_JPEG
 	bool "JPEG video encoder support"
 
 # zephyr-keep-sorted-start
+source "drivers/video/Kconfig.ap1302"
 source "drivers/video/Kconfig.arducam_mega"
 source "drivers/video/Kconfig.emul_imager"
 source "drivers/video/Kconfig.emul_rx"
@@ -86,7 +87,9 @@ source "drivers/video/Kconfig.hm01b0"
 source "drivers/video/Kconfig.hm0360"
 source "drivers/video/Kconfig.imx219"
 source "drivers/video/Kconfig.imx335"
+source "drivers/video/Kconfig.imx_mipi_csi"
 source "drivers/video/Kconfig.mcux_csi"
+source "drivers/video/Kconfig.mcux_isi"
 source "drivers/video/Kconfig.mcux_mipi_csi2rx"
 source "drivers/video/Kconfig.mcux_sdma"
 source "drivers/video/Kconfig.mt9m114"

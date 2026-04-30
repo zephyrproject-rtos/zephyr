@@ -1,0 +1,21 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_IMX_MIPI_CSI
+	bool "NXP i.MX95 MIPI CSI-2 RX (with integrated DPHY control)"
+	default y
+	depends on DT_HAS_NXP_IMX_MIPI_CSI_ENABLED
+	help
+	  Enable driver for i.MX95 CSI-2 receiver.
+	  The CSI-2 receiver controls the associated DPHY as an implementation detail
+	  (DPHY is still represented as a separate devicetree node for clarity).
+
+if VIDEO_IMX_MIPI_CSI
+
+config VIDEO_IMX_MIPI_CSI_INIT_PRIORITY
+	int "i.MX MIPI CSI initialization priority"
+	default 80
+	help
+	  Initialization priority for IMX MIPI CSI driver.
+
+endif # VIDEO_IMX_MIPI_CSI
