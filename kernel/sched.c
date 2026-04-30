@@ -207,7 +207,7 @@ static inline void ready_thread(struct k_thread *thread)
 	}
 }
 
-void z_ready_thread(struct k_thread *thread)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_ready_thread(struct k_thread *thread)
 {
 	K_SPINLOCK(&_sched_spinlock) {
 		if (thread_active_elsewhere(thread) == NULL) {
@@ -232,7 +232,7 @@ static void unready_thread(struct k_thread *thread)
 /* This routine exists for benchmarking purposes. It is not used in
  * general production code.
  */
-void z_unready_thread(struct k_thread *thread)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_unready_thread(struct k_thread *thread)
 {
 	K_SPINLOCK(&_sched_spinlock) {
 		unready_thread(thread);
@@ -246,7 +246,7 @@ void z_sched_unready_locked(struct k_thread *thread)
 }
 
 /* This routine only used for testing purposes */
-void z_yield_testing_only(void)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_yield_testing_only(void)
 {
 	K_SPINLOCK(&_sched_spinlock) {
 		move_current_to_end_of_prio_q();
@@ -259,7 +259,8 @@ void z_yield_testing_only(void)
  * deadlocks (but not complex ones involving cycles of 3+ threads!).
  * Acts to release the provided lock before returning.
  */
-static void thread_halt_spin(struct k_thread *thread, k_spinlock_key_t key)
+Z_NO_THREAD_SAFETY_ANALYSIS static void thread_halt_spin(struct k_thread *thread,
+							 k_spinlock_key_t key)
 {
 	if (z_is_thread_halting(_current)) {
 		halt_thread(_current,
@@ -280,8 +281,8 @@ static void thread_halt_spin(struct k_thread *thread, k_spinlock_key_t key)
  * (aborting _current will not return, obviously), which may be after
  * a context switch.
  */
-void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
-					bool terminate)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
+					       bool terminate)
 {
 	_wait_q_t *wq = &thread->join_queue;
 #ifdef CONFIG_SMP
@@ -362,7 +363,7 @@ static inline bool need_swap(void)
 #endif /* CONFIG_SMP */
 }
 
-static void reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
+Z_NO_THREAD_SAFETY_ANALYSIS static void reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 {
 	if (resched(key.key) && need_swap()) {
 		z_swap(lock, key);
@@ -372,13 +373,13 @@ static void reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 	}
 }
 
-void z_sched_lock_reschedule(k_spinlock_key_t key)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_sched_lock_reschedule(k_spinlock_key_t key)
 {
 	update_cache(0);
 	reschedule(&_sched_spinlock, key);
 }
 
-void z_sched_yield(void)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_sched_yield(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 
@@ -423,8 +424,8 @@ static void pend_locked(struct k_thread *thread, _wait_q_t *wait_q,
 	add_thread_timeout(thread, timeout);
 }
 
-void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
-		   k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
+					       k_timeout_t timeout)
 {
 	__ASSERT_NO_MSG(thread == _current || is_thread_dummy(thread));
 	K_SPINLOCK(&_sched_spinlock) {
@@ -432,7 +433,7 @@ void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 	}
 }
 
-void z_unpend_thread_no_timeout(struct k_thread *thread)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_unpend_thread_no_timeout(struct k_thread *thread)
 {
 	K_SPINLOCK(&_sched_spinlock) {
 		if (thread->base.pended_on != NULL) {
@@ -459,7 +460,7 @@ void z_sched_wake_thread_locked(struct k_thread *thread)
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 /* Timeout handler for *_thread_timeout() APIs */
-void z_thread_timeout(struct _timeout *timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_thread_timeout(struct _timeout *timeout)
 {
 	struct k_thread *thread = CONTAINER_OF(timeout,
 					       struct k_thread, base.timeout);
@@ -470,8 +471,8 @@ void z_thread_timeout(struct _timeout *timeout)
 }
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
 
-int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
-	       _wait_q_t *wait_q, k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
+					    _wait_q_t *wait_q, k_timeout_t timeout)
 {
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
@@ -492,7 +493,7 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	return z_swap(&_sched_spinlock, key);
 }
 
-struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
+Z_NO_THREAD_SAFETY_ANALYSIS struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
 {
 	struct k_thread *thread = NULL;
 
@@ -516,7 +517,7 @@ void z_unpend_thread(struct k_thread *thread)
 /* Priority set utility that does no rescheduling, it just changes the
  * run queue state, returning true if a reschedule is needed later.
  */
-bool z_thread_prio_set(struct k_thread *thread, int prio)
+Z_NO_THREAD_SAFETY_ANALYSIS bool z_thread_prio_set(struct k_thread *thread, int prio)
 {
 	bool need_sched = false;
 	int old_prio = thread->base.prio;
@@ -572,7 +573,7 @@ bool z_thread_prio_set(struct k_thread *thread, int prio)
 	return need_sched;
 }
 
-void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 {
 	reschedule(lock, key);
 }
@@ -650,7 +651,7 @@ static inline void set_current(struct k_thread *new_thread)
  * @return Handle for the next thread to execute, or @p interrupted when
  *         no new thread is to be scheduled.
  */
-void *z_get_next_switch_handle(void *interrupted)
+Z_NO_THREAD_SAFETY_ANALYSIS void *z_get_next_switch_handle(void *interrupted)
 {
 	z_check_stack_sentinel();
 
@@ -746,7 +747,7 @@ int z_unpend_all_locked(_wait_q_t *wait_q)
 	return need_sched;
 }
 
-int z_unpend_all(_wait_q_t *wait_q)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_unpend_all(_wait_q_t *wait_q)
 {
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 	int need_sched = z_unpend_all_locked(wait_q);
@@ -872,7 +873,7 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 	}
 }
 
-void z_thread_suspend_current(struct k_thread *thread)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_thread_suspend_current(struct k_thread *thread)
 {
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 

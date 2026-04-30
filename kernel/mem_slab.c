@@ -232,7 +232,8 @@ static bool slab_ptr_is_good(struct k_mem_slab *slab, const void *ptr)
 	       ((offset % slab->info.block_size) == 0);
 }
 
-int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
+						 k_timeout_t timeout)
 {
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 	int result;
@@ -281,7 +282,7 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 	return result;
 }
 
-void k_mem_slab_free(struct k_mem_slab *slab, void *mem)
+Z_NO_THREAD_SAFETY_ANALYSIS void k_mem_slab_free(struct k_mem_slab *slab, void *mem)
 {
 	if (!slab_ptr_is_good(slab, mem)) {
 		__ASSERT(false, "Invalid memory pointer provided");

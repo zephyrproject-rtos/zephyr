@@ -672,7 +672,7 @@ static void work_timeout_stop_locked(struct k_work_q *queue)
  *
  * @param workq_ptr pointer to the work queue structure
  */
-static void work_queue_main(void *workq_ptr, void *p2, void *p3)
+Z_NO_THREAD_SAFETY_ANALYSIS static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -897,8 +897,7 @@ void k_work_queue_start(struct k_work_q *queue,
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work_queue, start, queue);
 }
 
-int k_work_queue_drain(struct k_work_q *queue,
-		       bool plug)
+Z_NO_THREAD_SAFETY_ANALYSIS int k_work_queue_drain(struct k_work_q *queue, bool plug)
 {
 	__ASSERT_NO_MSG(queue);
 	__ASSERT_NO_MSG(!k_is_in_isr());

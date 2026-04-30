@@ -147,8 +147,8 @@ int z_msgq_cleanup_sched_locked(struct k_msgq *msgq)
 	return ret;
 }
 
-static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
-			k_timeout_t timeout, bool put_at_back)
+Z_NO_THREAD_SAFETY_ANALYSIS static inline int
+put_msg_in_queue(struct k_msgq *msgq, const void *data, k_timeout_t timeout, bool put_at_back)
 {
 	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
 
@@ -297,7 +297,8 @@ static inline void z_vrfy_k_msgq_get_attrs(struct k_msgq *msgq,
 #include <zephyr/syscalls/k_msgq_get_attrs_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_impl_k_msgq_get(struct k_msgq *msgq, void *data,
+						  k_timeout_t timeout)
 {
 	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
 
@@ -460,7 +461,7 @@ static inline int z_vrfy_k_msgq_peek_at(struct k_msgq *msgq, void *data, uint32_
 #include <zephyr/syscalls/k_msgq_peek_at_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-void z_impl_k_msgq_purge(struct k_msgq *msgq)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_impl_k_msgq_purge(struct k_msgq *msgq)
 {
 	k_spinlock_key_t key;
 	struct k_thread *pending_thread;

@@ -975,8 +975,8 @@ void z_riscv_pmp_usermode_prepare(struct k_thread *thread)
 /**
  * @brief Convert partition information into PMP entries
  */
-static void resync_pmp_domain(struct k_thread *thread,
-			      struct k_mem_domain *domain)
+Z_NO_THREAD_SAFETY_ANALYSIS static void resync_pmp_domain(struct k_thread *thread,
+							  struct k_mem_domain *domain)
 {
 	unsigned int index = thread->arch.u_mode_pmp_domain_offset;
 	int p_idx, remaining_partitions;
@@ -1173,7 +1173,7 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 	((inner_start) >= (outer_start) && (inner_size) <= (outer_size) && \
 	 ((inner_start) - (outer_start)) <= ((outer_size) - (inner_size)))
 
-int arch_buffer_validate(const void *addr, size_t size, int write)
+Z_NO_THREAD_SAFETY_ANALYSIS int arch_buffer_validate(const void *addr, size_t size, int write)
 {
 	uintptr_t start = (uintptr_t)addr;
 	int ret = -1;

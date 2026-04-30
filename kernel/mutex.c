@@ -104,7 +104,7 @@ static bool adjust_owner_prio(struct k_mutex *mutex, int32_t new_prio)
 }
 #endif
 
-int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 {
 	k_spinlock_key_t key;
 #if (CONFIG_PRIORITY_CEILING < K_LOWEST_THREAD_PRIO)
@@ -227,7 +227,7 @@ static inline int z_vrfy_k_mutex_lock(struct k_mutex *mutex,
 #include <zephyr/syscalls/k_mutex_lock_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_k_mutex_unlock(struct k_mutex *mutex)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 {
 	struct k_thread *new_owner;
 

@@ -441,6 +441,7 @@ static int neorv32_uart_pm_action(const struct device *dev,
 		ctrl |= NEORV32_UART_CTRL_EN;
 		break;
 	default:
+		k_spin_unlock(&data->lock, key);
 		return -ENOTSUP;
 	}
 

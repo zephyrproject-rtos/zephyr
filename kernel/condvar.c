@@ -41,7 +41,7 @@ int z_vrfy_k_condvar_init(struct k_condvar *condvar)
 #include <zephyr/syscalls/k_condvar_init_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_k_condvar_signal(struct k_condvar *condvar)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_impl_k_condvar_signal(struct k_condvar *condvar)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
@@ -73,7 +73,7 @@ int z_vrfy_k_condvar_signal(struct k_condvar *condvar)
 #include <zephyr/syscalls/k_condvar_signal_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_k_condvar_broadcast(struct k_condvar *condvar)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_impl_k_condvar_broadcast(struct k_condvar *condvar)
 {
 	struct k_thread *pending_thread;
 	k_spinlock_key_t key;
@@ -111,8 +111,8 @@ int z_vrfy_k_condvar_broadcast(struct k_condvar *condvar)
 #include <zephyr/syscalls/k_condvar_broadcast_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
-			  k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_impl_k_condvar_wait(struct k_condvar *condvar,
+						      struct k_mutex *mutex, k_timeout_t timeout)
 {
 	k_spinlock_key_t key;
 	int ret = -EAGAIN;

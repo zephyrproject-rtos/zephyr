@@ -255,6 +255,8 @@ static int rzt2m_module_start(const struct device *dev)
 		dummy = *MSTPCRA;
 	} else {
 		LOG_ERR("SCI modules in the secure domain on RZT2M are not supported.");
+		k_spin_unlock(&data->lock, key);
+		irq_unlock(irqkey);
 		return -ENOTSUP;
 	}
 

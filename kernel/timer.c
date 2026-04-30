@@ -241,7 +241,7 @@ static inline void z_vrfy_k_timer_start(struct k_timer *timer,
 #include <zephyr/syscalls/k_timer_start_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-void z_impl_k_timer_stop(struct k_timer *timer)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_impl_k_timer_stop(struct k_timer *timer)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, stop, timer);
 
@@ -312,7 +312,7 @@ static inline uint32_t z_vrfy_k_timer_status_get(struct k_timer *timer)
 #include <zephyr/syscalls/k_timer_status_get_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
+Z_NO_THREAD_SAFETY_ANALYSIS uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 {
 	__ASSERT(!arch_is_in_isr(), "");
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, status_sync, timer);

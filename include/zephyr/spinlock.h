@@ -19,6 +19,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/time_units.h>
+#include <zephyr/sys/thread_safety.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,7 +43,7 @@ struct z_spinlock_key {
  * k_spin_lock().  Any number of spinlocks may be defined in
  * application code.
  */
-struct k_spinlock {
+struct Z_CAPABILITY("spinlock") k_spinlock {
 /**
  * @cond INTERNAL_HIDDEN
  */
@@ -178,7 +179,8 @@ static ALWAYS_INLINE void z_spinlock_validate_post(struct k_spinlock *l)
  * @return A key value that must be passed to k_spin_unlock() when the
  *         lock is released.
  */
-static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
+Z_NO_THREAD_SAFETY_ANALYSIS static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
+	Z_ACQUIRES(l)
 {
 	ARG_UNUSED(l);
 	k_spinlock_key_t k;
@@ -228,7 +230,9 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
  * @see k_spin_lock
  * @see k_spin_unlock
  */
-static ALWAYS_INLINE int k_spin_trylock(struct k_spinlock *l, k_spinlock_key_t *k)
+Z_NO_THREAD_SAFETY_ANALYSIS static ALWAYS_INLINE int k_spin_trylock(struct k_spinlock *l,
+								    k_spinlock_key_t *k)
+	Z_TRY_ACQUIRES(0, l)
 {
 	int key = arch_irq_lock();
 
@@ -298,8 +302,9 @@ busy:
  * @param key The value returned from k_spin_lock() when this lock was
  *        acquired
  */
-static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
-					k_spinlock_key_t key)
+Z_NO_THREAD_SAFETY_ANALYSIS static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
+								    k_spinlock_key_t key)
+	Z_RELEASES(l)
 {
 	ARG_UNUSED(l);
 #ifdef CONFIG_SPIN_VALIDATE
@@ -358,7 +363,8 @@ static ALWAYS_INLINE bool z_spin_is_locked(struct k_spinlock *l)
 #endif /* defined(CONFIG_SMP) && (defined(CONFIG_TEST) || defined(CONFIG_ASSERT)) */
 
 /* Internal function: releases the lock, but leaves local interrupts disabled */
-static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
+Z_NO_THREAD_SAFETY_ANALYSIS static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
+	Z_RELEASES(l)
 {
 	ARG_UNUSED(l);
 #ifdef CONFIG_SPIN_VALIDATE
@@ -395,6 +401,31 @@ static ALWAYS_INLINE void z_spin_onexit(__maybe_unused k_spinlock_key_t *k)
  * See @ref K_SPINLOCK for details.
  */
 #define K_SPINLOCK_BREAK continue
+
+/*
+ * TSA-unaware wrappers for K_SPINLOCK.
+ *
+ * K_SPINLOCK's for-loop RAII pattern cannot be expressed in Clang
+ * Thread Safety Analysis (the analyzer cannot prove the loop body
+ * executes exactly once).  By routing the acquire/release through
+ * helpers that carry no TSA annotations, the analyzer never sees a
+ * lock-state change inside the for-header and therefore emits no
+ * false positives for K_SPINLOCK users.
+ *
+ * Code that needs full TSA checking should use k_spin_lock /
+ * k_spin_unlock directly.
+ */
+Z_NO_THREAD_SAFETY_ANALYSIS static ALWAYS_INLINE k_spinlock_key_t
+z_spinlock_lock_notsa(struct k_spinlock *l)
+{
+	return k_spin_lock(l);
+}
+
+Z_NO_THREAD_SAFETY_ANALYSIS static ALWAYS_INLINE void z_spinlock_unlock_notsa(struct k_spinlock *l,
+									      k_spinlock_key_t key)
+{
+	k_spin_unlock(l, key);
+}
 
 /**
  * @brief Guards a code block with the given spinlock, automatically acquiring
@@ -437,9 +468,11 @@ static ALWAYS_INLINE void z_spin_onexit(__maybe_unused k_spinlock_key_t *k)
  *
  * @param lck Spinlock used to guard the enclosed code block.
  */
-#define K_SPINLOCK(lck)                                                                            \
-	for (k_spinlock_key_t __i K_SPINLOCK_ONEXIT = {}, __key = k_spin_lock(lck); !__i.key;      \
-	     k_spin_unlock((lck), __key), __i.key = 1)
+/* clang-format off */
+#define K_SPINLOCK(lck) for (k_spinlock_key_t __i K_SPINLOCK_ONEXIT = {},                          \
+			     __key = z_spinlock_lock_notsa(lck); !__i.key;                         \
+			     z_spinlock_unlock_notsa((lck), __key), __i.key = 1)
+/* clang-format on */
 
 /** @} */
 

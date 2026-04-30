@@ -1409,7 +1409,7 @@ static inline void z_vrfy_k_thread_priority_set(k_tid_t thread, int prio)
 #include <zephyr/syscalls/k_thread_priority_set_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-void z_impl_k_thread_suspend(k_tid_t thread)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_impl_k_thread_suspend(k_tid_t thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, suspend, thread);
 
@@ -1445,7 +1445,7 @@ static inline void z_vrfy_k_thread_suspend(k_tid_t thread)
 #include <zephyr/syscalls/k_thread_suspend_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-void z_impl_k_thread_resume(k_tid_t thread)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_impl_k_thread_resume(k_tid_t thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, resume, thread);
 
@@ -1474,7 +1474,7 @@ static inline void z_vrfy_k_thread_resume(k_tid_t thread)
 #include <zephyr/syscalls/k_thread_resume_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-void z_impl_k_wakeup(k_tid_t thread)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_impl_k_wakeup(k_tid_t thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, wakeup, thread);
 
@@ -1499,7 +1499,7 @@ static inline void z_vrfy_k_wakeup(k_tid_t thread)
 #include <zephyr/syscalls/k_wakeup_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-void z_thread_abort(struct k_thread *thread)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_thread_abort(struct k_thread *thread)
 {
 	bool essential = z_is_thread_essential(thread);
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
@@ -1530,7 +1530,7 @@ void z_impl_k_thread_abort(k_tid_t thread)
 }
 #endif /* !CONFIG_ARCH_HAS_THREAD_ABORT */
 
-int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 {
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 	int ret;

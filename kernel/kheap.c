@@ -76,9 +76,9 @@ SYS_INIT_NAMED(statics_init_post, statics_init, POST_KERNEL, 0);
 
 typedef void * (sys_heap_allocator_t)(struct sys_heap *heap, size_t align, size_t bytes);
 
-static void *z_heap_alloc_helper(struct k_heap *heap, size_t align, size_t bytes,
-				 k_timeout_t timeout,
-				 sys_heap_allocator_t *sys_heap_allocator)
+Z_NO_THREAD_SAFETY_ANALYSIS static void *
+z_heap_alloc_helper(struct k_heap *heap, size_t align, size_t bytes, k_timeout_t timeout,
+		    sys_heap_allocator_t *sys_heap_allocator)
 {
 	k_timepoint_t end = sys_timepoint_calc(timeout);
 	void *ret = NULL;
@@ -173,7 +173,8 @@ void *k_heap_calloc(struct k_heap *heap, size_t num, size_t size, k_timeout_t ti
 	return ret;
 }
 
-void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes, k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes,
+						 k_timeout_t timeout)
 {
 	k_timepoint_t end = sys_timepoint_calc(timeout);
 	void *ret = NULL;
@@ -204,7 +205,7 @@ void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes, k_timeout_t t
 	return ret;
 }
 
-void k_heap_free(struct k_heap *heap, void *mem)
+Z_NO_THREAD_SAFETY_ANALYSIS void k_heap_free(struct k_heap *heap, void *mem)
 {
 	k_spinlock_key_t key = k_spin_lock(&heap->lock);
 

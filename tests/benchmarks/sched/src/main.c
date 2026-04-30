@@ -81,7 +81,7 @@ static inline int _stamp(int state)
 /* #define stamp(s) printk("%s @ %d\n", #s, _stamp(s)) */
 #define stamp(s) _stamp(s)
 
-static void partner_fn(void *arg1, void *arg2, void *arg3)
+Z_NO_THREAD_SAFETY_ANALYSIS static void partner_fn(void *arg1, void *arg2, void *arg3)
 {
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
