@@ -1,0 +1,28 @@
+tests:
+  drivers.misc.espressif_rmt.loopback:
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32c3_devkitc/esp32c3
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm/esp32h2
+      - esp32s2_devkitc/esp32s2
+      - esp32s3_devkitc/esp32s3/procpu
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Enable RMT RX channel"
+        - "Enable RMT TX channel"
+        - "RMT TX value 0x00"
+        - "RMT RX value 0x00"
+        - "RMT TX value 0x01"
+        - "RMT RX value 0x01"
+        - "RMT TX value 0x02"
+        - "RMT RX value 0x02"
+        - "RMT TX value 0x03"
+        - "RMT RX value 0x03"
+        - "RMT TX value 0x04"
+        - "RMT RX value 0x04"
+    tags:
+      - drivers
