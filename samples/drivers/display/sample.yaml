@@ -97,6 +97,7 @@ tests:
       - platform:mimxrt1170_evk/mimxrt1176/cm7:SHIELD=rk055hdmipi4ma0
       - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:SHIELD=rk055hdmipi4ma0
       - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:SHIELD=zc143ac72mipi
+      - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:SHIELD=lcd_par_s035_8080
       - platform:da1469x_dk_pro/da14699:DTC_OVERLAY_FILE=da1469x_dk_pro_mipi_dbi.overlay
       - platform:nrf52840dk/nrf52840:SHIELD=max7219_8x8
       - platform:stm32h747i_disco/stm32h747xx/m7:SHIELD=st_b_lcd40_dsi1_mb1166
