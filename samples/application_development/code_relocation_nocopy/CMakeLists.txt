@@ -9,10 +9,10 @@ FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
 
 # Run ext_code from the external flash (XIP). No need to copy.
-zephyr_code_relocate(FILES src/ext_code.c LOCATION EXTFLASH_TEXT NOCOPY)
+zephyr_code_relocate(FILES src/ext_code.c LOCATION EXTFLASH_TEXT NOCOPY TARGET app)
 
 # But still relocate (copy) the data to RAM
-zephyr_code_relocate(FILES src/ext_code.c LOCATION RAM_DATA)
+zephyr_code_relocate(FILES src/ext_code.c LOCATION RAM_DATA TARGET app)
 
 # sram_code instead runs entirely from SRAM after being copied there.
-zephyr_code_relocate(FILES src/sram_code.c LOCATION RAM)
+zephyr_code_relocate(FILES src/sram_code.c LOCATION RAM TARGET app)
