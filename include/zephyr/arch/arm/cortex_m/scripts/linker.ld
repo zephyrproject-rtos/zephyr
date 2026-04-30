@@ -122,6 +122,8 @@ SECTIONS
 	*(.iplt)
 	}
 
+#include <snippets-sections-preamble.ld>
+
     GROUP_START(ROMABLE_REGION)
 
 	__rom_region_start = ROM_ADDR;

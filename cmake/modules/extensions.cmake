@@ -1281,6 +1281,11 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #                  Similar to RAM_SECTIONS but pinned in memory.
 #    PINNED_DATA_SECTIONS
 #                  Similar to DATA_SECTIONS but pinned in memory.
+#    SECTIONS_PREAMBLE
+#                  At the very beginning of SECTIONS {}, before ROMABLE_REGION.
+#                  Use this to place code into specific memory before wildcard
+#                  specifications claim it (e.g. vectors, reset handlers to TCM).
+#                  Files must define their own output sections, same as SECTIONS.
 # <sort_key> is an optional key to sort by inside of each location. The key must
 #    be alphanumeric, and the keys are sorted alphabetically. If no key is
 #    given, the key 'default' is used. Keys are case-sensitive.
@@ -1316,6 +1321,7 @@ function(zephyr_linker_sources location)
   # Set up the paths to the destination files. These files are #included inside
   # the global linker.ld.
   set(snippet_base       "${__build_dir}/include/generated")
+  set(sections_preamble_path "${snippet_base}/snippets-sections-preamble.ld")
   set(sections_path      "${snippet_base}/snippets-sections.ld")
   set(rom_sections_path  "${snippet_base}/snippets-rom-sections.ld")
   set(ram_sections_path  "${snippet_base}/snippets-ram-sections.ld")
@@ -1337,6 +1343,7 @@ function(zephyr_linker_sources location)
   # Clear destination files if this is the first time the function is called.
   get_property(cleared GLOBAL PROPERTY snippet_files_cleared)
   if(NOT DEFINED cleared)
+    file(WRITE ${sections_preamble_path} "")
     file(WRITE ${sections_path} "")
     file(WRITE ${rom_sections_path} "")
     file(WRITE ${ram_sections_path} "")
@@ -1357,7 +1364,9 @@ function(zephyr_linker_sources location)
   endif()
 
   # Choose destination file, based on the <location> argument.
-  if("${location}" STREQUAL "SECTIONS")
+  if("${location}" STREQUAL "SECTIONS_PREAMBLE")
+    set(snippet_path "${sections_preamble_path}")
+  elseif("${location}" STREQUAL "SECTIONS")
     set(snippet_path "${sections_path}")
   elseif("${location}" STREQUAL "ROM_SECTIONS")
     set(snippet_path "${rom_sections_path}")

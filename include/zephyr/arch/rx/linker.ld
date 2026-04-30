@@ -67,6 +67,7 @@ SECTIONS
 
 #include <zephyr/linker/rel-sections.ld>
 #include <zephyr/linker/llext-sections.ld>
+#include <snippets-sections-preamble.ld>
 
 	GROUP_START(ROMABLE_REGION)
 	. = ROM_START;   /* for kernel logging */
