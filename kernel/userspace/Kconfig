@@ -14,18 +14,6 @@ config USERSPACE_THREAD_MAY_RAISE_PRIORITY
 	help
 	  Thread can raise its own priority in userspace mode.
 
-config EXECUTE_XOR_WRITE
-	bool "W^X for memory partitions"
-	depends on ARCH_HAS_EXECUTABLE_PAGE_BIT
-	default y
-	help
-	  When enabled, will enforce that a writable page isn't executable
-	  and vice versa.  This might not be acceptable in all scenarios,
-	  so this option is given for those unafraid of shooting themselves
-	  in the foot.
-
-	  If unsure, say Y.
-
 config BOUNDS_CHECK_BYPASS_MITIGATION
 	bool "Bounds check bypass mitigations for speculative execution"
 	help

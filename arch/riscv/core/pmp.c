@@ -60,6 +60,20 @@ LOG_MODULE_REGISTER(mpu);
 
 #define PMP_PERM_MASK (PMP_R | PMP_W | PMP_X)
 
+#ifdef CONFIG_PMP_DATA_EXECUTION_PREVENTION
+/*
+ * To prevent data execution for kernel threads, we need to reserve the last
+ * PMP slot. In case of userspace, we need the second to last as well.
+ */
+#ifdef CONFIG_USERSPACE
+#define PMP_USABLE_SLOTS (CONFIG_PMP_SLOTS - 2)
+#else /* CONFIG_USERSPACE */
+#define PMP_USABLE_SLOTS (CONFIG_PMP_SLOTS - 1)
+#endif /* CONFIG_USERSPACE */
+#else
+#define PMP_USABLE_SLOTS CONFIG_PMP_SLOTS
+#endif /* CONFIG_PMP_DATA_EXECUTION_PREVENTION */
+
 /**
  * @brief Decodes PMP configuration and address registers into a memory region's
  * start/end addresses.
@@ -326,7 +340,7 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 	return ok;
 }
 
-#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL
 static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
 					 unsigned long *pmp_addr, unsigned long *pmp_cfg,
 					 unsigned int index_limit)
@@ -354,7 +368,7 @@ static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
 
 	return ok;
 }
-#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL */
 
 /**
  * @brief Write a range of PMP entries to corresponding PMP registers
@@ -518,6 +532,7 @@ void z_riscv_pmp_clear_all(void)
 	z_riscv_clear_all_pmp_entries();
 }
 
+/* clang-format off */
 /**
  * @brief Abstract the last 3 arguments to set_pmp_entry() and
  *        write_pmp_entries( for m-mode.
@@ -525,7 +540,7 @@ void z_riscv_pmp_clear_all(void)
 #define PMP_M_MODE(thread) \
 	thread->arch.m_mode_pmpaddr_regs, \
 	thread->arch.m_mode_pmpcfg_regs, \
-	ARRAY_SIZE(thread->arch.m_mode_pmpaddr_regs)
+	PMP_USABLE_SLOTS
 
 /**
  * @brief Abstract the last 3 arguments to set_pmp_entry() and
@@ -534,7 +549,8 @@ void z_riscv_pmp_clear_all(void)
 #define PMP_U_MODE(thread) \
 	thread->arch.u_mode_pmpaddr_regs, \
 	thread->arch.u_mode_pmpcfg_regs, \
-	ARRAY_SIZE(thread->arch.u_mode_pmpaddr_regs)
+	PMP_USABLE_SLOTS
+/* clang-format on */
 
 /*
  * Stores the initial values of the pmpcfg CSRs, covering all global
@@ -653,12 +669,26 @@ int z_riscv_pmp_change_permissions(size_t region_idx, uint8_t perm)
  */
 void z_riscv_pmp_init(void)
 {
-	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
+	unsigned long pmp_addr[CONFIG_PMP_SLOTS] = {0};
 	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE] = {0};
+	uint8_t *pmp_n_cfg = (uint8_t *)pmp_cfg;
 	unsigned int index = 0;
 	unsigned int attr_cnt = 0;
 
 	ARG_UNUSED(attr_cnt);
+	ARG_UNUSED(pmp_n_cfg);
+
+#ifdef CONFIG_PMP_DATA_EXECUTION_PREVENTION
+	/*
+	 * Remove execute permission from whole address space. This is placed
+	 * in the last register so that it has the least priority and can be
+	 * overridden by previous ones.
+	 * This needs to be a locked region so that it applies to kernel threads
+	 * which run in M mode.
+	 */
+	pmp_addr[CONFIG_PMP_SLOTS - 1] = PMP_ADDR_NAPOT(0, 0);
+	pmp_n_cfg[CONFIG_PMP_SLOTS - 1] = PMP_R | PMP_W | PMP_L | PMP_NAPOT;
+#endif /* CONFIG_PMP_DATA_EXECUTION_PREVENTION */
 
 #ifdef CONFIG_NULL_POINTER_EXCEPTION_DETECTION_PMP
 	/*
@@ -689,12 +719,13 @@ void z_riscv_pmp_init(void)
 			set_pmp_entry(&index, region->perm | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL,
 								 (0x0), (PMP_L)), start,
 									  size, pmp_addr, pmp_cfg,
-									  ARRAY_SIZE(pmp_addr));
+									  PMP_USABLE_SLOTS);
 		}
 	}
 
 #ifdef CONFIG_PMP_STACK_GUARD
 #ifdef CONFIG_MULTITHREADING
+	/* clang-format off */
 	/*
 	 * Set the stack guard for this CPU's IRQ stack by making the bottom
 	 * addresses inaccessible. This will never change so we do it here.
@@ -702,18 +733,19 @@ void z_riscv_pmp_init(void)
 	set_pmp_entry(&index, PMP_NONE | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL, (0x0), (PMP_L)),
 		      (uintptr_t)z_interrupt_stacks[_current_cpu->id],
 		      Z_RISCV_STACK_GUARD_SIZE,
-		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+		      pmp_addr, pmp_cfg, PMP_USABLE_SLOTS);
 #else
 	/* Without multithreading setup stack guards for IRQ and main stacks */
 	set_pmp_entry(&index, PMP_NONE | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL, (0x0), (PMP_L)),
 		      (uintptr_t)z_interrupt_stacks,
 		      Z_RISCV_STACK_GUARD_SIZE,
-		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+		      pmp_addr, pmp_cfg, PMP_USABLE_SLOTS);
 
 	set_pmp_entry(&index, PMP_NONE | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL, (0x0), (PMP_L)),
 		      (uintptr_t)z_main_stack,
 		      Z_RISCV_STACK_GUARD_SIZE,
-		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+		      pmp_addr, pmp_cfg, PMP_USABLE_SLOTS);
+	/* clang-format on */
 
 #endif /* CONFIG_MULTITHREADING */
 #ifdef CONFIG_SMP
@@ -727,10 +759,10 @@ void z_riscv_pmp_init(void)
 	 * kernel initialization. This provides essential protection before
 	 * the kernel mode memory attribute permission is fully operational.
 	 */
-	attr_cnt = set_pmp_mem_attr(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+	attr_cnt = set_pmp_mem_attr(&index, pmp_addr, pmp_cfg, PMP_USABLE_SLOTS);
 #endif /* CONFIG_MEM_ATTR */
 
-#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL
 	/*
 	 * This early, we want to protect unlock PMP entries as soon as
 	 * possible. But we need a temporary default "catch all" PMP entry for
@@ -739,18 +771,21 @@ void z_riscv_pmp_init(void)
 	 */
 	set_pmp_mprv_catchall(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
-	/* Write those entries to PMP regs. */
-	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+	/* And forget about that last entry as we won't need it later */
+	index--;
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL */
 
+	/*
+	 * Write entries to PMP regs.
+	 * Because CONFIG_PMP_DATA_EXECUTION_PREVENTION uses the last one, we always write
+	 * all entries during one-time initialization.
+	 */
+	write_pmp_entries(0, CONFIG_PMP_SLOTS, false, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 	/* Activate our non-locked PMP entries for m-mode */
 	csr_clear(mstatus, MSTATUS_MPP);
 	csr_set(mstatus, MSTATUS_MPRV);
-
-	/* And forget about that last entry as we won't need it later */
-	index--;
-#else
-	/* Write those entries to PMP regs. */
-	write_pmp_entries(0, index, true, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #endif
 
 #ifdef CONFIG_SMP
@@ -836,6 +871,136 @@ static inline unsigned int z_riscv_pmp_thread_init(enum pmp_mode mode,
 }
 #endif
 
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_PMP_DATA_EXECUTION_PREVENTION)
+/*
+ * Same as z_riscv_pmp_read_config but only reads the pmpcfg for the specified PMP
+ * slot index.
+ *
+ * This is inlined and optimized into a single csrr instruction in
+ * set_userspace_blocker because it always reads a constant index.
+ */
+static inline void pmp_read_config_index(unsigned long *pmp_cfg, size_t pmp_cfg_size,
+					 unsigned int index)
+{
+	const unsigned int csr_index = index / PMPCFG_STRIDE;
+	unsigned long csr_value = 0;
+
+	__ASSERT(index < CONFIG_PMP_SLOTS, "Invalid PMP config index");
+
+	switch (csr_index) {
+#ifdef CONFIG_64BIT
+	case 0:
+		csr_value = csr_read(pmpcfg0);
+		break;
+	case 1:
+		csr_value = csr_read(pmpcfg2);
+		break;
+	case 2:
+		csr_value = csr_read(pmpcfg4);
+		break;
+	case 3:
+		csr_value = csr_read(pmpcfg6);
+		break;
+	case 4:
+		csr_value = csr_read(pmpcfg8);
+		break;
+	case 5:
+		csr_value = csr_read(pmpcfg10);
+		break;
+	case 6:
+		csr_value = csr_read(pmpcfg12);
+		break;
+	case 7:
+		csr_value = csr_read(pmpcfg14);
+		break;
+#else
+	case 0:
+		csr_value = csr_read(pmpcfg0);
+		break;
+	case 1:
+		csr_value = csr_read(pmpcfg1);
+		break;
+	case 2:
+		csr_value = csr_read(pmpcfg2);
+		break;
+	case 3:
+		csr_value = csr_read(pmpcfg3);
+		break;
+	case 4:
+		csr_value = csr_read(pmpcfg4);
+		break;
+	case 5:
+		csr_value = csr_read(pmpcfg5);
+		break;
+	case 6:
+		csr_value = csr_read(pmpcfg6);
+		break;
+	case 7:
+		csr_value = csr_read(pmpcfg7);
+		break;
+	case 8:
+		csr_value = csr_read(pmpcfg8);
+		break;
+	case 9:
+		csr_value = csr_read(pmpcfg9);
+		break;
+	case 10:
+		csr_value = csr_read(pmpcfg10);
+		break;
+	case 11:
+		csr_value = csr_read(pmpcfg11);
+		break;
+	case 12:
+		csr_value = csr_read(pmpcfg12);
+		break;
+	case 13:
+		csr_value = csr_read(pmpcfg13);
+		break;
+	case 14:
+		csr_value = csr_read(pmpcfg14);
+		break;
+	case 15:
+		csr_value = csr_read(pmpcfg15);
+		break;
+#endif
+	}
+
+	pmp_cfg[csr_index] = csr_value;
+}
+
+/*
+ * Because the last register needs to be locked to apply to kernel
+ * threads, we cannot remove it before changing to userspace. To prevent
+ * user threads from having access to all data, put a region above it
+ * without any permission before switching to user mode.
+ *
+ * This needs to be cleared when returning from userspace, because PMP
+ * will stop evaluating when hitting the first configured region that
+ * matches the address, even if it does not apply because it is not
+ * locked and it is running in M mode.
+ */
+static void set_userspace_blocker(bool set)
+{
+	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
+	const size_t pmp_cfg_size = CONFIG_PMP_SLOTS / PMPCFG_STRIDE;
+	unsigned long pmp_cfg[pmp_cfg_size];
+	uint8_t *pmp_n_cfg = (uint8_t *)pmp_cfg;
+	const unsigned int index = CONFIG_PMP_SLOTS - 2;
+
+	pmp_read_config_index(pmp_cfg, pmp_cfg_size, index);
+
+	if (set) {
+		pmp_addr[index] = PMP_ADDR_NAPOT(0, 0);
+		pmp_n_cfg[index] = PMP_NONE | PMP_NAPOT;
+	} else {
+		pmp_addr[index] = 0;
+		pmp_n_cfg[index] = 0;
+	}
+
+	write_pmp_entries(index, index + 1, false, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
+}
+#endif /* CONFIG_USERSPACE && CONFIG_PMP_DATA_EXECUTION_PREVENTION */
+
 #ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 /**
  * @brief Prepare the PMP kernelmode content for given thread.
@@ -863,7 +1028,9 @@ void z_riscv_pmp_kernelmode_prepare(struct k_thread *thread)
 		      PMP_M_MODE(thread));
 #endif /* CONFIG_PMP_STACK_GUARD */
 
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL
 	set_pmp_mprv_catchall(&index, PMP_M_MODE(thread));
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL */
 
 	/* remember how many entries we use */
 	thread->arch.m_mode_pmp_end_index = index;
@@ -876,6 +1043,8 @@ void z_riscv_pmp_kernelmode_prepare(struct k_thread *thread)
  */
 void z_riscv_pmp_kernelmode_enable(struct k_thread *thread)
 {
+	unsigned int global_end_index;
+
 	LOG_DBG("pmp_kernelmode_enable for thread %p", thread);
 
 	/*
@@ -885,18 +1054,21 @@ void z_riscv_pmp_kernelmode_enable(struct k_thread *thread)
 	 */
 	csr_clear(mstatus, MSTATUS_MPRV | MSTATUS_MPP);
 
-	/* Write our m-mode MPP entries */
 #ifdef CONFIG_USERSPACE
-	write_pmp_entries(global_pmp_end_index[U_MODE],
-			  thread->arch.m_mode_pmp_end_index,
-			  false /* no need to clear to the end */,
-			  PMP_M_MODE(thread));
+	global_end_index = global_pmp_end_index[U_MODE];
 #else
-	write_pmp_entries(global_pmp_end_index[M_MODE],
-			  thread->arch.m_mode_pmp_end_index,
-			  false /* no need to clear to the end */,
-			  PMP_M_MODE(thread));
+	global_end_index = global_pmp_end_index[M_MODE];
 #endif /* CONFIG_USERSPACE */
+
+	/* Write our m-mode MPP entries */
+	if (thread->arch.m_mode_pmp_end_index > global_end_index) {
+		write_pmp_entries(global_end_index, thread->arch.m_mode_pmp_end_index,
+				  false /* no need to clear to the end */, PMP_M_MODE(thread));
+	}
+
+#if defined(CONFIG_PMP_DATA_EXECUTION_PREVENTION) && defined(CONFIG_USERSPACE)
+	set_userspace_blocker(false);
+#endif /* CONFIG_PMP_DATA_EXECUTION_PREVENTION && CONFIG_USERSPACE */
 
 	if (PMP_DEBUG_DUMP) {
 		dump_pmp_regs("m-mode register dump");
@@ -911,17 +1083,19 @@ void z_riscv_pmp_kernelmode_enable(struct k_thread *thread)
  */
 void z_riscv_pmp_kernelmode_disable(void)
 {
-
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL
 	unsigned long pmp_addr[CONFIG_PMP_SLOTS];
 	unsigned long pmp_cfg[CONFIG_PMP_SLOTS / PMPCFG_STRIDE];
 	unsigned int index = global_pmp_end_index[M_MODE];
 
 	/* Retrieve the pmpaddr value matching the last global PMP slot. */
 	pmp_addr[index - 1] = global_pmp_last_addr[M_MODE];
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL */
 
 	/* Disable (non-locked) PMP entries for m-mode while we update them. */
 	csr_clear(mstatus, MSTATUS_MPRV);
 
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL
 	/*
 	 * Set a temporary default "catch all" PMP entry for MPRV to work,
 	 * except for the global locked entries.
@@ -935,6 +1109,7 @@ void z_riscv_pmp_kernelmode_disable(void)
 	if (PMP_DEBUG_DUMP) {
 		dump_pmp_regs("catch all register dump");
 	}
+#endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC_CATCHALL */
 }
 #endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 
@@ -1088,11 +1263,17 @@ void z_riscv_pmp_usermode_enable(struct k_thread *thread)
 	csr_clear(mstatus, MSTATUS_MPRV);
 #endif
 
+	/* clang-format off */
 	/* Write our u-mode MPP entries */
 	write_pmp_entries(global_pmp_end_index[U_MODE],
 			  thread->arch.u_mode_pmp_end_index,
 			  true /* must clear to the end */,
 			  PMP_U_MODE(thread));
+	/* clang-format on */
+
+#ifdef CONFIG_PMP_DATA_EXECUTION_PREVENTION
+	set_userspace_blocker(true);
+#endif /* CONFIG_PMP_DATA_EXECUTION_PREVENTION */
 
 	if (PMP_DEBUG_DUMP) {
 		dump_pmp_regs("u-mode register dump");
@@ -1101,7 +1282,7 @@ void z_riscv_pmp_usermode_enable(struct k_thread *thread)
 
 int arch_mem_domain_max_partitions_get(void)
 {
-	int available_pmp_slots = CONFIG_PMP_SLOTS;
+	int available_pmp_slots = PMP_USABLE_SLOTS;
 
 	/* remove those slots dedicated to global entries */
 	available_pmp_slots -= global_pmp_end_index[U_MODE];
