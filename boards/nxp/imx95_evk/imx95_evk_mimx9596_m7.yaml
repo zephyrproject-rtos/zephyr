@@ -21,6 +21,7 @@ supported:
   - netif:eth
   - counter
   - dma
+  - watchdog
 testing:
   binaries:
     - flash.bin

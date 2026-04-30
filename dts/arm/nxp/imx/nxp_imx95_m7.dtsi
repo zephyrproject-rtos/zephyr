@@ -70,6 +70,34 @@
 		};
 	};
 
+
+	ext_clk: ext24m {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
+	lpo_clk: lpo32k {
+		/* WDOG LPO clock: 32KHz */
+		compatible = "fixed-clock";
+		clock-frequency = <32000>;
+		#clock-cells = <0>;
+	};
+
+	int_clk: int133m {
+		/* WDOG int clock: 133MHz */
+		compatible = "fixed-clock";
+		clock-frequency = <133000000>;
+		#clock-cells = <0>;
+	};
+
+	ipg_clk: ipg133m {
+		/* WDOG ipg clock: 133MHz */
+		compatible = "fixed-clock";
+		clock-frequency = <133000000>;
+		#clock-cells = <0>;
+	};
+
 	firmware {
 		scmi {
 			compatible = "arm,scmi";
@@ -909,6 +937,17 @@
 					status = "disabled";
 				};
 			};
+		};
+
+		/* clk-source and clocks must aligned: 0-ipg_clk, 1-lpo_clk, 2-int_clk, 3-ext_clk */
+		wdog5: watchdog@424b0000 {
+			compatible = "nxp,wdog32";
+			reg = <0x424b0000 0x1000>;
+			interrupts = <79 0>;
+			clocks = <&lpo_clk>;
+			clk-source = <1>;
+			clk-divider = <1>;
+			status = "disabled";
 		};
 	};
 };
