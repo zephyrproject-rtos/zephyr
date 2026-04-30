@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: pic32ck_gc01_cult
+  full_name: PIC32CK GC01 Curiosity Ultra
+  vendor: microchip
+  socs:
+    - name: pic32ck2051gc01144
