@@ -32,3 +32,6 @@ config USE_MSPM0_DL_VREF
 
 config USE_MSPM0_DL_ADC
 	bool
+
+config USE_MSPM0_DL_DMA
+	bool
