@@ -31,8 +31,8 @@
 #define LOG_MODULE_NAME bttester_vcp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
-#define BT_AICS_MAX_INPUT_DESCRIPTION_SIZE 16
-#define BT_AICS_MAX_OUTPUT_DESCRIPTION_SIZE 16
+#define BT_AICS_MAX_INPUT_DESCRIPTION_SIZE 16U
+#define BT_AICS_MAX_OUTPUT_DESCRIPTION_SIZE 16U
 
 static struct bt_vcp_vol_rend_register_param vcp_register_param;
 static struct bt_vcp_vol_ctlr *vol_ctlrs[CONFIG_BT_MAX_CONN];
@@ -456,7 +456,7 @@ static uint8_t vocs_audio_loc(const void *cmd, uint16_t cmd_len, void *rsp, uint
 	ARG_UNUSED(rsp);
 	ARG_UNUSED(rsp_len);
 
-	for (uint8_t i = 0; i < included.vocs_cnt; i++) {
+	for (uint8_t i = 0U; i < included.vocs_cnt; i++) {
 		if (bt_vocs_location_set(included.vocs[i], loc) != 0) {
 			return BTP_STATUS_FAILED;
 		}
@@ -626,24 +626,22 @@ static void set_register_params(uint8_t gain_mode, uint8_t step,
 
 	memset(&vcp_register_param, 0, sizeof(vcp_register_param));
 
-	for (size_t i = 0; i < ARRAY_SIZE(vcp_register_param.vocs_param); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(vcp_register_param.vocs_param); i++) {
 		vcp_register_param.vocs_param[i].location_writable = true;
 		vcp_register_param.vocs_param[i].desc_writable = true;
-		snprintf(output_desc[i], sizeof(output_desc[i]),
-			 "Output %zu", i + 1);
+		snprintf(output_desc[i], sizeof(output_desc[i]), "Output %zu", i + 1U);
 		vcp_register_param.vocs_param[i].output_desc = output_desc[i];
 		vcp_register_param.vocs_param[i].cb = &vocs_cb;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(vcp_register_param.aics_param); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(vcp_register_param.aics_param); i++) {
 		vcp_register_param.aics_param[i].desc_writable = true;
-		snprintf(input_desc[i], sizeof(input_desc[i]),
-			 "Input %zu", i + 1);
+		snprintf(input_desc[i], sizeof(input_desc[i]), "Input %zu", i + 1U);
 		vcp_register_param.aics_param[i].description = input_desc[i];
 		vcp_register_param.aics_param[i].type = BT_AICS_INPUT_TYPE_DIGITAL;
-		vcp_register_param.aics_param[i].status = 1;
+		vcp_register_param.aics_param[i].status = true;
 		vcp_register_param.aics_param[i].gain_mode = gain_mode;
-		vcp_register_param.aics_param[i].units = 1;
+		vcp_register_param.aics_param[i].units = 1U;
 		vcp_register_param.aics_param[i].min_gain = 0;
 		vcp_register_param.aics_param[i].max_gain = 100;
 		vcp_register_param.aics_param[i].cb = &aics_server_cb;

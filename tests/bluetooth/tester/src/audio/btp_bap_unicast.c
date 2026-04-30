@@ -46,7 +46,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #include "btp_bap_unicast.h"
 
 static struct bt_bap_qos_cfg_pref qos_pref =
-	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 10000, 40000, 10000, 40000);
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02U, 10U, 10000U, 40000U, 10000U, 40000U);
 
 static struct btp_bap_unicast_connection connections[CONFIG_BT_MAX_CONN];
 static struct btp_bap_unicast_group cigs[CONFIG_BT_ISO_MAX_CIG];
@@ -135,7 +135,7 @@ void btp_bap_unicast_stream_free(struct btp_bap_unicast_stream *stream)
 struct btp_bap_unicast_stream *btp_bap_unicast_stream_find(
 	struct btp_bap_unicast_connection *conn, uint8_t ase_id)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(conn->streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(conn->streams); i++) {
 		struct bt_bap_stream *stream = stream_unicast_to_bap(&conn->streams[i]);
 		struct bt_bap_ep_info info;
 
@@ -155,7 +155,7 @@ struct btp_bap_unicast_stream *btp_bap_unicast_stream_find(
 struct bt_bap_ep *btp_bap_unicast_end_point_find(struct btp_bap_unicast_connection *conn,
 						 uint8_t ase_id)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(conn->end_points); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(conn->end_points); i++) {
 		struct bt_bap_ep_info info;
 		struct bt_bap_ep *ep = conn->end_points[i];
 
@@ -866,7 +866,7 @@ static struct bt_bap_stream_ops stream_ops = {
 struct btp_bap_unicast_stream *btp_bap_unicast_stream_alloc(
 	struct btp_bap_unicast_connection *conn)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(conn->streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(conn->streams); i++) {
 		struct btp_bap_unicast_stream *stream = &conn->streams[i];
 
 		if (stream->in_use == false) {
@@ -1233,7 +1233,7 @@ static int client_unicast_group_param_set(struct btp_bap_unicast_connection *u_c
 {
 	struct bt_bap_unicast_group_stream_param *stream_params = *stream_param_ptr;
 
-	for (size_t i = 0; i < ARRAY_SIZE(u_conn->streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(u_conn->streams); i++) {
 		struct bt_bap_ep_info info;
 		struct bt_bap_ep *ep;
 		struct btp_bap_unicast_stream *u_stream = &u_conn->streams[i];
@@ -1283,7 +1283,7 @@ int btp_bap_unicast_group_create(uint8_t cig_id,
 	struct bt_bap_unicast_group_stream_param stream_params[BTP_BAP_UNICAST_MAX_STREAMS_COUNT];
 	struct bt_bap_unicast_group_stream_param *stream_param_ptr;
 	struct bt_bap_unicast_group_param param;
-	size_t cis_cnt = 0;
+	size_t cis_cnt = 0U;
 
 	(void)memset(pair_params, 0, sizeof(pair_params));
 	(void)memset(stream_params, 0, sizeof(stream_params));
@@ -1296,7 +1296,7 @@ int btp_bap_unicast_group_create(uint8_t cig_id,
 	/* API does not allow to assign a CIG ID freely, so ensure we create groups
 	 * in the right order.
 	 */
-	for (uint8_t i = 0; i < cig_id; i++) {
+	for (uint8_t i = 0U; i < cig_id; i++) {
 		if (cigs[i].in_use == false) {
 			return -EINVAL;
 		}
@@ -1316,10 +1316,10 @@ int btp_bap_unicast_group_create(uint8_t cig_id,
 	}
 
 	stream_param_ptr = stream_params;
-	for (size_t i = 0; i < CONFIG_BT_MAX_CONN; i++) {
+	for (size_t i = 0U; i < CONFIG_BT_MAX_CONN; i++) {
 		struct btp_bap_unicast_connection *unicast_conn = &connections[i];
 
-		if (unicast_conn->end_points_count == 0) {
+		if (unicast_conn->end_points_count == 0U) {
 			continue;
 		}
 
@@ -1332,8 +1332,8 @@ int btp_bap_unicast_group_create(uint8_t cig_id,
 	}
 
 	/* Count CISes to be established */
-	for (size_t count = ARRAY_SIZE(pair_params); count > 0; --count) {
-		size_t i = count - 1;
+	for (size_t count = ARRAY_SIZE(pair_params); count > 0U; --count) {
+		size_t i = count - 1U;
 
 		if (pair_params[i].tx_param != NULL || pair_params[i].rx_param != NULL) {
 			cis_cnt++;
@@ -1341,7 +1341,7 @@ int btp_bap_unicast_group_create(uint8_t cig_id,
 			continue;
 		}
 
-		if (cis_cnt > 0) {
+		if (cis_cnt > 0U) {
 			/* No gaps allowed */
 			return -EINVAL;
 		}
@@ -1391,7 +1391,7 @@ static int client_configure_codec(struct btp_bap_unicast_connection *u_conn, str
 			return -ENOMEM;
 		}
 
-		if (u_conn->end_points_count == 0) {
+		if (u_conn->end_points_count == 0U) {
 			return -EINVAL;
 		}
 
@@ -1432,7 +1432,7 @@ static int server_configure_codec(struct btp_bap_unicast_connection *u_conn, str
 		 * we have to initialize all ASEs with a smaller ID first.
 		 * Fortunately, the PTS has nothing against such behavior.
 		 */
-		for (uint8_t i = 1; i <= ase_id; i++) {
+		for (uint8_t i = 1U; i <= ase_id; i++) {
 			stream = btp_bap_unicast_stream_find(u_conn, i);
 			if (stream != NULL) {
 				continue;

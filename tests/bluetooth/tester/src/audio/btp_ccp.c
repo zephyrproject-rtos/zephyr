@@ -181,10 +181,10 @@ static void tbs_client_call_states_ev(int err,
 		sys_cpu_to_le32(err), inst_index, call_count
 	};
 
-	net_buf_simple_init(buf, 0);
+	net_buf_simple_init(buf, 0U);
 	net_buf_simple_add_mem(buf, &ev, sizeof(ev));
 
-	for (uint8_t n = 0; n < call_count; n++, call_states++) {
+	for (uint8_t n = 0U; n < call_count; n++, call_states++) {
 		net_buf_simple_add_mem(buf, call_states, sizeof(bt_tbs_client_call_state_t));
 	}
 

@@ -91,12 +91,12 @@ static uint8_t has_remove_preset(const void *cmd, uint16_t cmd_len,
 			if (err != 0) {
 				break;
 			}
-			has_presets &= ~(1 << (index - 1));
+			has_presets &= ~(1U << (index - 1U));
 		}
 	} else {
 		err = bt_has_preset_unregister(cp->index);
 		if (err == 0) {
-			has_presets &= ~(1 << (cp->index - 1));
+			has_presets &= ~(1U << (cp->index - 1U));
 		}
 	}
 	return BTP_STATUS_VAL(err);
@@ -134,7 +134,7 @@ static uint8_t has_add_preset(const void *cmd, uint16_t cmd_len,
 		};
 		err = bt_has_preset_register(&preset_params);
 		if (err == 0) {
-			has_presets |= 1 << (cp->index - 1);
+			has_presets |= 1U << (cp->index - 1U);
 		}
 	}
 	return BTP_STATUS_VAL(err);
