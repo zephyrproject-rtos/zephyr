@@ -299,3 +299,5 @@ zephyr_udc0: &usb1 {
 &tsi0 {
 	status = "okay";
 };
+
+m2_hci_bt_uart: &flexcomm2_lpuart2 {};

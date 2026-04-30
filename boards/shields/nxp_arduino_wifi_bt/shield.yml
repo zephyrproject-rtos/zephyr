@@ -1,0 +1,7 @@
+shields:
+  - name: nxp_arduino_aw510_wifi_bt
+    full_name: NXP Arduino WiFi/BT Shield (AW510)
+    vendor: nxp
+    supported_features:
+      - bluetooth
+      - wifi
