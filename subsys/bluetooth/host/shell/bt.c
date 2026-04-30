@@ -1247,6 +1247,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 #endif
 #if defined(CONFIG_BT_CLASSIC)
 	.br.role_changed = br_role_changed,
+	.br.packet_type_changed = br_packet_type_changed,
 #endif
 };
 #endif /* CONFIG_BT_CONN */

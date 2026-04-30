@@ -1884,17 +1884,16 @@ void bt_conn_br_role_changed(struct bt_conn *conn, uint8_t status)
 	}
 }
 
-void bt_conn_br_packet_type_changed(struct bt_conn *conn, uint8_t status,
-				 uint16_t packet_type)
+void bt_conn_br_packet_type_changed(struct bt_conn *conn, uint8_t status, uint16_t packet_type)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
-		if (callback->br.packet_type_changed) {
+		if (callback->br.packet_type_changed != NULL) {
 			callback->br.packet_type_changed(conn, status, packet_type);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
-		if (cb->br.packet_type_changed) {
+		if (cb->br.packet_type_changed != NULL) {
 			cb->br.packet_type_changed(conn, status, packet_type);
 		}
 	}

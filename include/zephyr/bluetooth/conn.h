@@ -2147,8 +2147,7 @@ struct bt_conn_br_cb {
 	 *  @param status HCI status of the event.
 	 *  @param packet_type New packet type bitmask.
 	 */
-	void (*packet_type_changed)(struct bt_conn *conn, uint8_t status,
-				    uint16_t packet_type);
+	void (*packet_type_changed)(struct bt_conn *conn, uint8_t status, uint16_t packet_type);
 };
 
 /** @brief Connection callback structure.
