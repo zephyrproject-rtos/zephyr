@@ -6,6 +6,7 @@
  * ZMS: Zephyr Memory Storage
  */
 
+#include <stdint.h>
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -21,7 +22,8 @@ LOG_MODULE_REGISTER(fs_zms, CONFIG_ZMS_LOG_LEVEL);
 
 static int zms_prev_ate(struct zms_fs *fs, uint64_t *addr, struct zms_ate *ate);
 static int zms_ate_valid(struct zms_fs *fs, const struct zms_ate *entry);
-static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr);
+static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr, uint32_t prev_cycle_cnt);
+static int zms_get_full_sector_cycle(struct zms_fs *fs, uint64_t addr, uint32_t *cycle_cnt);
 static int zms_get_sector_cycle(struct zms_fs *fs, uint64_t addr, uint8_t *cycle_cnt);
 static int zms_get_sector_header(struct zms_fs *fs, uint64_t addr, struct zms_ate *empty_ate,
 				 struct zms_ate *close_ate);
@@ -604,14 +606,20 @@ static int zms_wipe_partition(struct zms_fs *fs)
 {
 	int rc;
 	uint64_t addr;
+	uint32_t prev_cycle_cnt;
 
 	for (uint32_t i = 0; i < fs->sector_count; i++) {
 		addr = (uint64_t)i << ADDR_SECT_SHIFT;
+		prev_cycle_cnt = 0;
+		rc = zms_get_full_sector_cycle(fs, addr, &prev_cycle_cnt);
+		if ((rc < 0) && (rc != -ENOENT)) {
+			return rc;
+		}
 		rc = zms_flash_erase_sector(fs, addr);
 		if (rc) {
 			return rc;
 		}
-		rc = zms_add_empty_ate(fs, addr);
+		rc = zms_add_empty_ate(fs, addr, prev_cycle_cnt);
 		if (rc) {
 			return rc;
 		}
@@ -833,7 +841,7 @@ static inline int zms_verify_and_increment_cycle_cnt(struct zms_fs *fs, uint64_t
 	return 0;
 }
 
-static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr)
+static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr, uint32_t prev_cycle_cnt)
 {
 	struct zms_ate empty_ate;
 	uint8_t cycle_cnt;
@@ -852,21 +860,30 @@ static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr)
 			     FIELD_PREP(ZMS_MAGIC_NUMBER_MASK, ZMS_MAGIC_NUMBER) |
 			     FIELD_PREP(ZMS_ATE_FORMAT_MASK, ZMS_DEFAULT_ATE_FORMAT);
 
+	/* Get cycle_cnt independently for data validity purposes */
 	rc = zms_get_sector_cycle(fs, addr, &cycle_cnt);
 	if (rc == -ENOENT) {
-		/* sector never used */
+		/* sector erased or never used */
+#if !defined(CONFIG_ZMS_ID_64BIT)
 		cycle_cnt = 0;
+#else
+		cycle_cnt = (uint8_t)prev_cycle_cnt;
+#endif
 	} else if (rc) {
 		/* bad flash read */
 		return rc;
 	}
 
-	/* Increase cycle counter */
+	/* Increase cycle counter for data validity */
 	rc = zms_verify_and_increment_cycle_cnt(fs, addr, &cycle_cnt);
 	if (rc < 0) {
 		return rc;
 	}
+#if !defined(CONFIG_ZMS_ID_64BIT)
+	empty_ate.full_cycle_cnt = prev_cycle_cnt + 1;
+#endif
 	empty_ate.cycle_cnt = cycle_cnt;
+
 	zms_ate_crc8_update(&empty_ate);
 
 	/* Adding empty ate to this sector changes fs->ate_wra value
@@ -900,6 +917,38 @@ static int zms_get_sector_cycle(struct zms_fs *fs, uint64_t addr, uint8_t *cycle
 
 	if (zms_empty_ate_valid(fs, &empty_ate)) {
 		*cycle_cnt = empty_ate.cycle_cnt;
+		return 0;
+	}
+
+	/* there is no empty ATE in this sector */
+	return -ENOENT;
+}
+
+static int zms_get_full_sector_cycle(struct zms_fs *fs, uint64_t addr, uint32_t *cycle_cnt)
+{
+	int rc;
+	struct zms_ate empty_ate;
+	uint64_t empty_addr;
+
+	empty_addr = zms_empty_ate_addr(fs, addr);
+
+	/* read the cycle counter of the current sector */
+	rc = zms_flash_ate_rd(fs, empty_addr, &empty_ate);
+	if (rc < 0) {
+		/* flash error */
+		return rc;
+	}
+
+	if (zms_empty_ate_valid(fs, &empty_ate)) {
+#if !defined(CONFIG_ZMS_ID_64BIT)
+		if (empty_ate.full_cycle_cnt == 0 && empty_ate.cycle_cnt > 0) {
+			*cycle_cnt = empty_ate.cycle_cnt;
+		} else {
+			*cycle_cnt = empty_ate.full_cycle_cnt;
+		}
+#else
+		*cycle_cnt = empty_ate.cycle_cnt;
+#endif
 		return 0;
 	}
 
@@ -1001,6 +1050,7 @@ static int zms_gc(struct zms_fs *fs)
 	uint64_t gc_addr;
 	uint64_t gc_prev_addr;
 	uint64_t wlk_addr;
+	uint32_t saved_full_cycle_cnt = 0;
 	uint64_t wlk_prev_addr;
 	uint64_t data_addr;
 	uint64_t stop_addr;
@@ -1014,7 +1064,7 @@ static int zms_gc(struct zms_fs *fs)
 			return rc;
 		}
 		/* sector never used */
-		rc = zms_add_empty_ate(fs, fs->ate_wra);
+		rc = zms_add_empty_ate(fs, fs->ate_wra, 0);
 		if (rc) {
 			return rc;
 		}
@@ -1132,6 +1182,12 @@ gc_done:
 		return rc;
 	}
 
+	/* Read full_cycle_cnt BEFORE erasing so it can be preserved */
+	rc = zms_get_full_sector_cycle(fs, sec_addr, &saved_full_cycle_cnt);
+	if (rc && rc != -ENOENT) {
+		return rc;
+	}
+
 	/* Erase the GC'ed sector when needed */
 	rc = zms_flash_erase_sector(fs, sec_addr);
 	if (rc) {
@@ -1141,7 +1197,7 @@ gc_done:
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
 	zms_lookup_cache_invalidate(fs, sec_addr >> ADDR_SECT_SHIFT);
 #endif
-	rc = zms_add_empty_ate(fs, sec_addr);
+	rc = zms_add_empty_ate(fs, sec_addr, saved_full_cycle_cnt);
 
 	return rc;
 }
@@ -1293,7 +1349,7 @@ static int zms_init(struct zms_fs *fs)
 			if (rc) {
 				goto end;
 			}
-			rc = zms_add_empty_ate(fs, addr);
+			rc = zms_add_empty_ate(fs, addr, 0);
 			if (rc) {
 				goto end;
 			}
@@ -1396,6 +1452,7 @@ static int zms_init(struct zms_fs *fs)
 		 */
 		bool gc_done_marker = false;
 		struct zms_ate gc_done_ate;
+		uint32_t saved_full_cycle_cnt = 0;
 
 		fs->sector_cycle = empty_ate.cycle_cnt;
 		addr = fs->ate_wra + fs->ate_size;
@@ -1417,19 +1474,27 @@ static int zms_init(struct zms_fs *fs)
 			LOG_INF("GC Done marker found");
 			addr = fs->ate_wra & ADDR_SECT_MASK;
 			zms_sector_advance(fs, &addr);
+			rc = zms_get_full_sector_cycle(fs, addr, &saved_full_cycle_cnt);
+			if (rc && rc != -ENOENT) {
+				goto end;
+			}
 			rc = zms_flash_erase_sector(fs, addr);
 			if (rc < 0) {
 				goto end;
 			}
-			rc = zms_add_empty_ate(fs, addr);
+			rc = zms_add_empty_ate(fs, addr, saved_full_cycle_cnt);
 			goto end;
 		}
 		LOG_INF("No GC Done marker found: restarting gc");
+		rc = zms_get_full_sector_cycle(fs, fs->ate_wra, &saved_full_cycle_cnt);
+		if (rc && rc != -ENOENT) {
+			goto end;
+		}
 		rc = zms_flash_erase_sector(fs, fs->ate_wra);
 		if (rc) {
 			goto end;
 		}
-		rc = zms_add_empty_ate(fs, fs->ate_wra);
+		rc = zms_add_empty_ate(fs, fs->ate_wra, saved_full_cycle_cnt);
 		if (rc) {
 			goto end;
 		}
@@ -2023,4 +2088,56 @@ int zms_sector_use_next(struct zms_fs *fs)
 end:
 	k_mutex_unlock(&fs->zms_lock);
 	return ret;
+}
+
+uint32_t zms_get_num_cycles(struct zms_fs *fs)
+{
+	uint32_t max_cycle_cnt = 0;
+	uint32_t cycle_cnt;
+	int rc;
+
+	if (!fs || !fs->ready) {
+		return 0;
+	}
+
+	k_mutex_lock(&fs->zms_lock, K_FOREVER);
+
+	for (uint32_t i = 0; i < fs->sector_count; i++) {
+		rc = zms_get_full_sector_cycle(fs, (uint64_t)i << ADDR_SECT_SHIFT, &cycle_cnt);
+
+		if (rc) {
+			continue;
+		}
+
+		max_cycle_cnt = MAX(max_cycle_cnt, cycle_cnt);
+	}
+
+	k_mutex_unlock(&fs->zms_lock);
+
+	return max_cycle_cnt;
+}
+
+int zms_get_sector_num_cycles(struct zms_fs *fs, uint32_t sector, uint32_t *cycles)
+{
+	int rc;
+
+	if (!fs || !cycles) {
+		return -EINVAL;
+	}
+
+	if (!fs->ready) {
+		return -EACCES;
+	}
+
+	if (sector >= fs->sector_count) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&fs->zms_lock, K_FOREVER);
+
+	rc = zms_get_full_sector_cycle(fs, (uint64_t)sector << ADDR_SECT_SHIFT, cycles);
+
+	k_mutex_unlock(&fs->zms_lock);
+
+	return rc;
 }
