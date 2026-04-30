@@ -29,13 +29,13 @@ extern enum bst_result_t bst_result;
 #if defined(CONFIG_BT_VOCS)
 #define VOCS_DESC_SIZE CONFIG_BT_VOCS_MAX_OUTPUT_DESCRIPTION_SIZE
 #else
-#define VOCS_DESC_SIZE 0
+#define VOCS_DESC_SIZE 0U
 #endif /* CONFIG_BT_VOCS */
 
 #if defined(CONFIG_BT_AICS)
 #define AICS_DESC_SIZE CONFIG_BT_AICS_MAX_INPUT_DESCRIPTION_SIZE
 #else
-#define AICS_DESC_SIZE 0
+#define AICS_DESC_SIZE 0U
 #endif /* CONFIG_BT_AICS */
 
 static struct bt_vcp_included vcp_included;
@@ -1010,7 +1010,7 @@ static void test_set_vol(void)
 
 static void test_standalone(void)
 {
-	const uint8_t volume_step = 5;
+	const uint8_t volume_step = 5U;
 	int err;
 
 	err = bt_enable(NULL);

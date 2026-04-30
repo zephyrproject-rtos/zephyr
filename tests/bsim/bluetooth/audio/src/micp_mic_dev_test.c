@@ -26,7 +26,7 @@ extern enum bst_result_t bst_result;
 #if defined(CONFIG_BT_AICS)
 #define AICS_DESC_SIZE CONFIG_BT_AICS_MAX_INPUT_DESCRIPTION_SIZE
 #else
-#define AICS_DESC_SIZE 0
+#define AICS_DESC_SIZE 0U
 #endif /* CONFIG_BT_AICS */
 
 static struct bt_micp_included micp_included;

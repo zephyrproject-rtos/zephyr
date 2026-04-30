@@ -38,7 +38,7 @@
 #if defined(CONFIG_BT_CAP_INITIATOR) && defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 CREATE_FLAG(flag_source_started);
 
-#define CAP_AC_MAX_STREAM       2
+#define CAP_AC_MAX_STREAM       2U
 #define LOCATION                (BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT)
 #define CONTEXT                 (BT_AUDIO_CONTEXT_TYPE_MEDIA)
 #define BROADCAST_STREAM_CNT    MIN(CAP_AC_MAX_STREAM, CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT)
@@ -169,7 +169,7 @@ static void init(void)
 
 	(void)memset(broadcast_source_streams, 0, sizeof(broadcast_source_streams));
 
-	for (size_t i = 0; i < ARRAY_SIZE(broadcast_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_streams); i++) {
 		broadcast_streams[i] =
 			cap_stream_from_audio_test_stream(&broadcast_source_streams[i]);
 		bt_cap_stream_ops_register(broadcast_streams[i], &broadcast_stream_ops);
@@ -376,7 +376,7 @@ static void test_broadcast_audio_create(struct bt_cap_broadcast_source **broadca
 	struct bt_cap_initiator_broadcast_create_param create_param;
 	int err;
 
-	for (size_t i = 0; i < ARRAY_SIZE(broadcast_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_streams); i++) {
 		stream_params[i].stream =
 			cap_stream_from_audio_test_stream(&broadcast_source_streams[i]);
 		stream_params[i].data_len = ARRAY_SIZE(bis_codec_data);
@@ -503,7 +503,7 @@ static void test_broadcast_audio_update(struct bt_cap_broadcast_source *broadcas
 	/* TODO: We do not have a way to get the CCID value of GTBS, but for now set to 0x00 as we
 	 * know that it is the first content control service initialized
 	 */
-	const uint16_t gtbs_ccid = 0x00;
+	const uint16_t gtbs_ccid = 0x00U;
 #endif /* CONFIG_BT_TBS */
 	const uint8_t new_metadata[] = {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
@@ -908,7 +908,7 @@ static const struct named_lc3_preset *cap_get_named_preset(const char *preset_ar
 
 static void test_args(int argc, char *argv[])
 {
-	for (size_t argn = 0; argn < argc; argn++) {
+	for (size_t argn = 0U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "preset") == 0) {

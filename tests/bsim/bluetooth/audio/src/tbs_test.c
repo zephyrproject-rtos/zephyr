@@ -91,7 +91,7 @@ static void tbs_join_calls_cb(struct bt_conn *conn,
 {
 	ARG_UNUSED(conn);
 
-	for (size_t i = 0; i < call_index_count; i++) {
+	for (size_t i = 0U; i < call_index_count; i++) {
 		printk("Call index: %u joined\n", call_indexes[i]);
 	}
 	SET_FLAG(call_joined);
