@@ -2110,6 +2110,11 @@ static int obex_client_req_check(struct bt_obex_client *client, bool first)
 		return -EPROTO;
 	}
 
+	if (atomic_test_bit(&client->_flags, BT_OBEX_REQ_F_BIT)) {
+		LOG_ERR("SRM enabled, no reuqests can be sent anymore.");
+		return -EPROTO;
+	}
+
 	return 0;
 }
 
@@ -2199,6 +2204,10 @@ int bt_obex_put(struct bt_obex_client *client, bool final, struct net_buf *buf)
 	hdr->len = sys_cpu_to_be16(buf->len);
 
 	atomic_clear_bit(&client->_flags, BT_OBEX_RSP_RECV);
+
+	if (final) {
+		atomic_set_bit(&client->_flags, BT_OBEX_REQ_F_BIT);
+	}
 
 	err = obex_send(client->obex, client->tx.mopl, buf);
 	if (err == 0) {
@@ -2390,6 +2399,10 @@ int bt_obex_get(struct bt_obex_client *client, bool final, struct net_buf *buf)
 	hdr->len = sys_cpu_to_be16(buf->len);
 
 	atomic_clear_bit(&client->_flags, BT_OBEX_RSP_RECV);
+
+	if (final) {
+		atomic_set_bit(&client->_flags, BT_OBEX_REQ_F_BIT);
+	}
 
 	err = obex_send(client->obex, client->tx.mopl, buf);
 	if (err == 0) {
