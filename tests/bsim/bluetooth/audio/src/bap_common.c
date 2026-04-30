@@ -61,8 +61,10 @@ struct bt_audio_codec_cap vs_codec_cap = {
 
 void print_hex(const uint8_t *ptr, size_t len)
 {
-	while (len-- != 0) {
-		printk("%02x", *ptr++);
+	while (len != 0U) {
+		printk("%02x", *ptr);
+		ptr++;
+		len--;
 	}
 }
 

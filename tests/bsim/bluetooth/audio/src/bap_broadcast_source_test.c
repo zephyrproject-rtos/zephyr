@@ -737,7 +737,8 @@ static void test_args(int argc, char *argv[])
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "subgroup_cnt") == 0) {
-			arg = argv[++argn];
+			argn++;
+			arg = argv[argn];
 			subgroup_cnt_arg = strtoul(arg, NULL, 10);
 
 			if (!IN_RANGE(subgroup_cnt_arg, 1,
@@ -745,7 +746,8 @@ static void test_args(int argc, char *argv[])
 				FAIL("Invalid number of subgroups: %lu\n", subgroup_cnt_arg);
 			}
 		} else if (strcmp(arg, "streams_per_subgroup_cnt") == 0) {
-			arg = argv[++argn];
+			argn++;
+			arg = argv[argn];
 			streams_per_subgroup_cnt_arg = strtoul(arg, NULL, 10);
 
 			if (!IN_RANGE(streams_per_subgroup_cnt_arg, 1,
