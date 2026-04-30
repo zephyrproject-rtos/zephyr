@@ -237,6 +237,8 @@ struct peci_msg {
 	struct peci_buf tx_buffer;
 	/** Pointer to buffer of read data */
 	struct peci_buf rx_buffer;
+	/** eSPI OOB client address */
+	uint8_t oob_addr;
 	/** PECI msg flags */
 	uint8_t flags;
 };
