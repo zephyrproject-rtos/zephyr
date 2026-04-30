@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_INFINEON_AUTANALOG_PRB
+	bool "Infineon AutAnalog PRB voltage reference regulator"
+	default y
+	depends on DT_HAS_INFINEON_AUTANALOG_PRB_VREF_ENABLED
+	select MFD
+	help
+	  Enable the Infineon AutAnalog PRB voltage reference regulator driver.
+	  Each instance provides a programmable voltage reference output (Vref0
+	  or Vref1) with 16 discrete voltage levels derived from either VBGR
+	  (0.9V) or VDDA (1.8V).
+
+config REGULATOR_INFINEON_AUTANALOG_PRB_INIT_PRIORITY
+	int "Infineon AutAnalog PRB regulator init priority"
+	default 43
+	depends on REGULATOR_INFINEON_AUTANALOG_PRB
+	help
+	  Init priority for the PRB regulator driver.  Must be higher (later)
+	  than the PRB MFD init priority (default 42).
