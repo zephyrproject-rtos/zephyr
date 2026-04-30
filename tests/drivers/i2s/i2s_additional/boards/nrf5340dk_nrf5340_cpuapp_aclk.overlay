@@ -1,6 +1,16 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /* Drive i2s peripheral from ACLK. */
 
 &clock {
+	hfclkaudio-frequency = <11289600>;
+};
+
+&hfclkaudio {
 	hfclkaudio-frequency = <11289600>;
 };
 

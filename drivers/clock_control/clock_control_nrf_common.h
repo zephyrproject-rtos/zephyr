@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_CLOCK_CONTROL_NRF2_COMMON_H_
-#define ZEPHYR_DRIVERS_CLOCK_CONTROL_NRF2_COMMON_H_
+#ifndef ZEPHYR_DRIVERS_CLOCK_CONTROL_NRFS_H_
+#define ZEPHYR_DRIVERS_CLOCK_CONTROL_NRFS_H_
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
@@ -89,4 +89,4 @@ void clock_config_update_end(void *clk_cfg, int status);
 
 int api_nosys_on_off(const struct device *dev, clock_control_subsys_t sys);
 
-#endif /* ZEPHYR_DRIVERS_CLOCK_CONTROL_NRF2_COMMON_H_ */
+#endif /* ZEPHYR_DRIVERS_CLOCK_CONTROL_NRFS_H_ */

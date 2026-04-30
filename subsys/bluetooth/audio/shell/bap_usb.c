@@ -36,7 +36,11 @@
 #include <zephyr/usb/usbd.h>
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 #include <nrfx_clock.h>
+#else
+#include <nrfx_clock_hfclk.h>
+#endif
 #include <drivers/nrfx_errors.h>
 #include <hal/nrf_clock.h>
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */
@@ -736,11 +740,15 @@ int bap_usb_init(void)
 		 * This may not be required, but reduces the risk of not decoding fast enough
 		 * to keep up with USB
 		 */
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 		err = nrfx_clock_divider_set(NRF_CLOCK_DOMAIN_HFCLK, NRF_CLOCK_HFCLK_DIV_1);
 
 		if (err != 0) {
 			LOG_WRN("Failed to set 128 MHz: %d", err);
 		}
+#else
+		nrfx_clock_hfclk_divider_set(NRF_CLOCK_HFCLK_DIV_1);
+#endif
 	}
 
 	LOG_INF("USB audio enabled");

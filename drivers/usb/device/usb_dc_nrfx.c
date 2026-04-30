@@ -226,7 +226,13 @@ static uint8_t ep_isoout_bufs[CFG_EP_ISOOUT_CNT][ISO_EP_BUF_MAX_SZ]
  * @param status_cb	Status callback for USB DC notifications
  * @param setup		Setup packet for Control requests
  * @param hfxo_cli	Onoff client used to control HFXO
+ * #ifdef CONFIG_CLOCK_CONTROL_NRF
  * @param hfxo_mgr	Pointer to onoff manager associated with HFXO.
+ * #elif defined(CONFIG_CLOCK_CONTROL_NRFX_HFCLK192M) || \
+ *       defined(CONFIG_CLOCK_CONTROL_NRFX_HFCLK) || \
+ *       defined(CONFIG_CLOCK_CONTROL_NRFX_XO)
+ * @param hfxo_dev	Pointer to HFXO device.
+ * #endif
  * @param clk_requested	Flag used to protect against double stop.
  * @param attached	USBD Attached flag
  * @param ready		USBD Ready flag set after pullup
@@ -239,7 +245,11 @@ struct nrf_usbd_ctx {
 	usb_dc_status_callback status_cb;
 	struct usb_setup_packet setup;
 	struct onoff_client hfxo_cli;
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	struct onoff_manager *hfxo_mgr;
+#else
+	const struct device *hfxo_dev;
+#endif
 	atomic_t clk_requested;
 
 	bool attached;
@@ -534,7 +544,11 @@ static void usb_dc_power_event_handler(nrfx_power_usb_evt_t event)
 static int hfxo_stop(struct nrf_usbd_ctx *ctx)
 {
 	if (atomic_cas(&ctx->clk_requested, 1, 0)) {
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 		return onoff_cancel_or_release(ctx->hfxo_mgr, &ctx->hfxo_cli);
+#else
+		return nrf_clock_control_cancel_or_release(ctx->hfxo_dev, NULL, &ctx->hfxo_cli);
+#endif
 	}
 
 	return 0;
@@ -545,7 +559,11 @@ static int hfxo_start(struct nrf_usbd_ctx *ctx)
 	if (atomic_cas(&ctx->clk_requested, 0, 1)) {
 		sys_notify_init_spinwait(&ctx->hfxo_cli.notify);
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 		return onoff_request(ctx->hfxo_mgr, &ctx->hfxo_cli);
+#else
+		return nrf_clock_control_request(ctx->hfxo_dev, NULL, &ctx->hfxo_cli);
+#endif
 	}
 
 	return 0;
@@ -1276,11 +1294,19 @@ int usb_dc_attach(void)
 	}
 
 	k_mutex_init(&ctx->drv_lock);
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	ctx->hfxo_mgr =
 		z_nrf_clock_control_get_onoff(
 			COND_CODE_1(NRF_CLOCK_HAS_HFCLK192M,
 				    (CLOCK_CONTROL_NRF_SUBSYS_HF192M),
 				    (CLOCK_CONTROL_NRF_SUBSYS_HF)));
+#else
+	ctx->hfxo_dev = DEVICE_DT_GET_ONE(COND_CODE_1(NRF_CLOCK_HAS_HFCLK192M,
+						      (nordic_nrf_clock_hfclk192m),
+						      (COND_CODE_1(NRF_CLOCK_HAS_HFCLK,
+								   (nordic_nrf_clock_hfclk),
+								   (nordic_nrf_clock_xo)))));
+#endif
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    nrfx_isr, nrf_usbd_common_irq_handler, 0);
@@ -1889,9 +1915,15 @@ static int usb_init(void)
 	/* Use CLOCK/POWER priority for compatibility with other series where
 	 * USB events are handled by CLOCK interrupt handler.
 	 */
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	IRQ_CONNECT(USBREGULATOR_IRQn,
 		    DT_IRQ(DT_INST(0, nordic_nrf_clock), priority),
 		    nrfx_isr, nrfx_usbreg_irq_handler, 0);
+#else
+	IRQ_CONNECT(USBREGULATOR_IRQn,
+		    DT_IRQ(DT_INST(0, nordic_nrf_clock), priority),
+		    nrfx_isr, nrfx_usbreg_irq_handler, 0);
+#endif
 #endif
 
 	static const nrfx_power_config_t power_config = {

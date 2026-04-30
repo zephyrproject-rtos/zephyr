@@ -19,8 +19,14 @@
 /* High frequency clock used for k_busy_wait may have up to 8% tolerance.
  * Additionally, if RC is used for low frequency clock then it has 5% tolerance.
  */
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 #define TOLERANCE_PPC \
 	(1 + 8 + (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC) ? 5 : 0))
+#else
+#define TOLERANCE_PPC \
+	(1 + 8 + (DT_ENUM_HAS_VALUE(DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_clock_lfclk),        \
+	 k32src, rc) ? 5 : 0))
+#endif
 #else
 #define TOLERANCE_PPC 1
 #endif

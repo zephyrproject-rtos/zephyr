@@ -142,3 +142,15 @@
 &clock {
 	status = "okay";
 };
+
+&xo {
+	status = "okay";
+};
+
+&lfclk {
+	status = "okay";
+};
+
+&xo24m {
+	status = "okay";
+};
