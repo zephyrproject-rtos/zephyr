@@ -88,10 +88,11 @@ IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS
 LIBGCC_RTLIB
 LLEXT_EXPORT_SYMBOL_GROUP_  # Used in regexp by
 # scripts/build/llext_inspect_discarded_groups.py
-LLVM_USE_LD  # Both LLVM_USE_* are in cmake/toolchain/llvm/Kconfig
+LLVM_USE_ELD  # All LLVM_USE_* are in cmake/toolchain/llvm/Kconfig
 # which are only included if LLVM is selected but
 # not other toolchains. Compliance check would complain,
 # for example, if you are using GCC.
+LLVM_USE_LD
 LLVM_USE_LLD
 LOG_BACKEND_MOCK_OUTPUT_DEFAULT  # Referenced in tests/subsys/logging/log_syst
 LOG_BACKEND_MOCK_OUTPUT_SYST  # Referenced in testcase.yaml of log_syst test
