@@ -330,6 +330,10 @@ int lorawan_set_channels_mask(uint16_t *channels_mask,
 {
 	size_t total_bits;
 
+	if (!atomic_test_bit(lwan_ctx.flags, LWAN_FLAG_STARTED)) {
+		return -EPERM;
+	}
+
 	if (channels_mask == NULL || channels_mask_size == 0) {
 		return -EINVAL;
 	}
