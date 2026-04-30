@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_INFINEON_AUTANALOG_PTCOMP
+	bool "Infineon AutAnalog PTComp comparator driver"
+	default y
+	depends on DT_HAS_INFINEON_AUTANALOG_PTCOMP_COMP_ENABLED
+	select MFD
+	help
+	  Enable the Infineon AutAnalog PTComp comparator driver.  Each
+	  instance provides a single comparator output (Comp0 or Comp1)
+	  with configurable input mux routing, power mode, and hysteresis.
+
+config COMPARATOR_INFINEON_AUTANALOG_PTCOMP_INIT_PRIORITY
+	int "Infineon AutAnalog PTComp comparator init priority"
+	default 43
+	depends on COMPARATOR_INFINEON_AUTANALOG_PTCOMP
+	help
+	  Init priority for the PTComp comparator driver.  Must be higher
+	  (later) than the PTComp MFD init priority (default 42).

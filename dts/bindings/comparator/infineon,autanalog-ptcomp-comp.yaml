@@ -1,0 +1,254 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon AutAnalog PTComp comparator.
+
+  Each node represents one of the two comparators (Comp0 or Comp1) within
+  a PTComp block. The comparator compares the voltage on the non-inverting
+  input to the voltage on the inverting input and produces a digital output.
+
+  Input routing is configured via positive-mux and negative-mux properties
+  using the cy_en_autanalog_ptcomp_comp_mux_t values:
+    0  = CTB0 Pin 1            8  = CTB0 OA0 output
+    1  = CTB0 Pin 4            9  = CTB0 OA1 output
+    2  = CTB0 Pin 6           10  = CTB1 OA0 output
+    3  = CTB0 Pin 7           11  = CTB1 OA1 output
+    4  = CTB1 Pin 1           12  = DAC0 (VREF0)
+    5  = CTB1 Pin 4           13  = DAC1 (VREF1)
+    6  = CTB1 Pin 6           14  = PRB OUT0 (VREF2)
+    7  = CTB1 Pin 7           15  = PRB OUT1 (VREF3)
+    16-23 = SAR/PTC GPIO Pin 0-7
+
+  The parent node must have compatible "infineon,autanalog-ptcomp".
+
+compatible: "infineon,autanalog-ptcomp-comp"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Comparator index within the PTComp block (0 or 1).
+
+  power-mode:
+    type: int
+    required: true
+    description: |
+      Comparator power mode.
+      Use IFX_AUTANALOG_PTCOMP_PWR_* constants from
+      <dt-bindings/comparator/infineon-autanalog-ptcomp.h>.
+        IFX_AUTANALOG_PTCOMP_PWR_OFF    (0) - Off
+        IFX_AUTANALOG_PTCOMP_PWR_ULP    (1) - Ultra-low power (< 300nA, 7us)
+        IFX_AUTANALOG_PTCOMP_PWR_LP     (2) - Low power (< 10uA, 1us)
+        IFX_AUTANALOG_PTCOMP_PWR_NORMAL (3) - Normal (< 150uA, 0.1us)
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  hysteresis:
+    type: boolean
+    description: |
+      Enable 30mV input hysteresis for the comparator.
+
+  interrupt-mode:
+    type: int
+    default: 0
+    description: |
+      Edge detection mode for comparator interrupts.
+      Use IFX_AUTANALOG_PTCOMP_INT_* constants from
+      <dt-bindings/comparator/infineon-autanalog-ptcomp.h>.
+        IFX_AUTANALOG_PTCOMP_INT_DISABLED     (0) - Disabled
+        IFX_AUTANALOG_PTCOMP_INT_EDGE_RISING  (1) - Rising edge
+        IFX_AUTANALOG_PTCOMP_INT_EDGE_FALLING (2) - Falling edge
+        IFX_AUTANALOG_PTCOMP_INT_EDGE_BOTH    (3) - Both edges
+
+  positive-mux:
+    type: int
+    required: true
+    description: |
+      Non-inverting (positive) input mux selector.
+      Use IFX_AUTANALOG_PTCOMP_MUX_* constants from
+      <dt-bindings/comparator/infineon-autanalog-ptcomp.h>, values 0-23.
+
+  negative-mux:
+    type: int
+    required: true
+    description: |
+      Inverting (negative) input mux selector.
+      Use IFX_AUTANALOG_PTCOMP_MUX_* constants from
+      <dt-bindings/comparator/infineon-autanalog-ptcomp.h>, values 0-23.
+
+  pp-input-source:
+    type: int
+    default: 0
+    description: |
+      Post-processing input source.
+      Use IFX_AUTANALOG_PTCOMP_PP_SRC_* constants from
+      <dt-bindings/comparator/infineon-autanalog-ptcomp.h>.
+        IFX_AUTANALOG_PTCOMP_PP_SRC_DISABLED (0)
+        IFX_AUTANALOG_PTCOMP_PP_SRC_COMP0    (1)
+        IFX_AUTANALOG_PTCOMP_PP_SRC_COMP1    (2)
+    enum: [0, 1, 2]
+
+  pp-input-type:
+    type: int
+    default: 0
+    description: |
+      Post-processing edge/level sensing type.
+      Use IFX_AUTANALOG_PTCOMP_PP_TYPE_* constants from
+      <dt-bindings/comparator/infineon-autanalog-ptcomp.h>.
+        IFX_AUTANALOG_PTCOMP_PP_TYPE_LEVEL        (0)
+        IFX_AUTANALOG_PTCOMP_PP_TYPE_EDGE_RISING  (1)
+        IFX_AUTANALOG_PTCOMP_PP_TYPE_EDGE_FALLING (2)
+        IFX_AUTANALOG_PTCOMP_PP_TYPE_EDGE_BOTH    (3)
+    enum: [0, 1, 2, 3]
+
+  pp-count-mode:
+    type: int
+    default: 0
+    description: |
+      Post-processing counter mode.
+      Use IFX_AUTANALOG_PTCOMP_PP_MODE_* constants from
+      <dt-bindings/comparator/infineon-autanalog-ptcomp.h>.
+        IFX_AUTANALOG_PTCOMP_PP_MODE_DIRECT (0) - Count events, reset on condition
+        IFX_AUTANALOG_PTCOMP_PP_MODE_FRAME  (1) - Count events within a frame period
+        IFX_AUTANALOG_PTCOMP_PP_MODE_WINDOW (2) - Sliding window counter
+    enum: [0, 1, 2]
+
+  pp-data-function:
+    type: int
+    default: 0
+    description: |
+      Post-processing LUT boolean function combining both comp outputs.
+      Use IFX_AUTANALOG_PTCOMP_PP_FUNC_* constants from
+      <dt-bindings/comparator/infineon-autanalog-ptcomp.h>, values 0-13.
+
+  pp-window-size:
+    type: int
+    default: 0
+    description: |
+      Post-processing window size for WINDOW mode.
+      Use IFX_AUTANALOG_PTCOMP_PP_WIN_* constants from
+      <dt-bindings/comparator/infineon-autanalog-ptcomp.h>.
+        IFX_AUTANALOG_PTCOMP_PP_WIN_2   (0)
+        IFX_AUTANALOG_PTCOMP_PP_WIN_4   (1)
+        IFX_AUTANALOG_PTCOMP_PP_WIN_8   (2)
+        IFX_AUTANALOG_PTCOMP_PP_WIN_16  (3)
+        IFX_AUTANALOG_PTCOMP_PP_WIN_32  (4)
+        IFX_AUTANALOG_PTCOMP_PP_WIN_64  (5)
+        IFX_AUTANALOG_PTCOMP_PP_WIN_128 (6)
+    enum: [0, 1, 2, 3, 4, 5, 6]
+
+  pp-period:
+    type: int
+    default: 0
+    description: |
+      Post-processing frame period in clock cycles (FRAME mode).
+
+  pp-limit-condition:
+    type: int
+    default: 0
+    description: |
+      Post-processing counter limit condition.
+      Use IFX_AUTANALOG_PTCOMP_PP_COND_* constants from
+      <dt-bindings/comparator/infineon-autanalog-ptcomp.h>.
+        IFX_AUTANALOG_PTCOMP_PP_COND_BELOW   (0) - Below threshold-low
+        IFX_AUTANALOG_PTCOMP_PP_COND_INSIDE  (1) - Between low and high
+        IFX_AUTANALOG_PTCOMP_PP_COND_ABOVE   (2) - Above threshold-high
+        IFX_AUTANALOG_PTCOMP_PP_COND_OUTSIDE (3) - Below low or above high
+    enum: [0, 1, 2, 3]
+
+  pp-threshold-low:
+    type: int
+    default: 0
+    description: |
+      Post-processing low threshold for counter range detection.
+
+  pp-threshold-high:
+    type: int
+    default: 0
+    description: |
+      Post-processing high threshold for counter range detection.
+
+child-binding:
+  description: |
+    Dynamic mux-routing configuration slot.
+
+    Each child node defines one slot in the dynamic configuration pool.
+    In advanced mode, the STT selects which slot to use per AC state via
+    ptcomp0-dyn-cfg-idx-comp0/comp1.  Slots are numbered in devicetree
+    order, with comp@0 slots first, then comp@1 slots.
+
+    When no child nodes are present (basic mode), a single slot is
+    auto-generated from the comparator's own positive-mux / negative-mux
+    properties.
+
+  properties:
+    positive-mux:
+      type: int
+      default: 0
+      description: |
+        Non-inverting (positive) input mux selector.
+        Use IFX_AUTANALOG_PTCOMP_MUX_* constants from
+        <dt-bindings/comparator/infineon-autanalog-ptcomp.h>.
+
+    negative-mux:
+      type: int
+      default: 0
+      description: |
+        Inverting (negative) input mux selector.
+        Use IFX_AUTANALOG_PTCOMP_MUX_* constants from
+        <dt-bindings/comparator/infineon-autanalog-ptcomp.h>.
+
+examples:
+  - |
+    /*
+     * Use constants from <dt-bindings/comparator/infineon-autanalog-ptcomp.h>.
+     */
+    ptcomp0: ptcomp@0 {
+        compatible = "infineon,autanalog-ptcomp";
+        status = "okay";
+
+        comp0: comp@0 {
+            compatible = "infineon,autanalog-ptcomp-comp";
+            reg = <0>;
+            power-mode = <IFX_AUTANALOG_PTCOMP_PWR_NORMAL>;
+            interrupt-mode = <IFX_AUTANALOG_PTCOMP_INT_EDGE_RISING>;
+            positive-mux = <IFX_AUTANALOG_PTCOMP_MUX_GPIO2>;
+            negative-mux = <IFX_AUTANALOG_PTCOMP_MUX_PRB_OUT0>;
+        };
+    };
+  - |
+    /*
+     * Advanced mode: 2 dynamic mux config slots on comp@0.
+     * Each child node is one slot with named properties.
+     */
+    ptcomp0: ptcomp@0 {
+        compatible = "infineon,autanalog-ptcomp";
+        status = "okay";
+
+        comp0: comp@0 {
+            compatible = "infineon,autanalog-ptcomp-comp";
+            reg = <0>;
+            power-mode = <IFX_AUTANALOG_PTCOMP_PWR_NORMAL>;
+            interrupt-mode = <IFX_AUTANALOG_PTCOMP_INT_EDGE_RISING>;
+            positive-mux = <IFX_AUTANALOG_PTCOMP_MUX_GPIO2>;
+            negative-mux = <IFX_AUTANALOG_PTCOMP_MUX_PRB_OUT0>;
+
+            dyn-cfg-0 {
+                positive-mux = <IFX_AUTANALOG_PTCOMP_MUX_GPIO2>;
+                negative-mux = <IFX_AUTANALOG_PTCOMP_MUX_PRB_OUT0>;
+            };
+
+            dyn-cfg-1 {
+                positive-mux = <IFX_AUTANALOG_PTCOMP_MUX_GPIO2>;
+                negative-mux = <IFX_AUTANALOG_PTCOMP_MUX_DAC0>;
+            };
+        };
+    };

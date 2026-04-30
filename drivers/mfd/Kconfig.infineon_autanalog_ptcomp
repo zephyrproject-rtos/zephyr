@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_INFINEON_AUTANALOG_PTCOMP
+	bool "Infineon AutAnalog PTComp multi-function device driver"
+	default y
+	depends on DT_HAS_INFINEON_AUTANALOG_PTCOMP_ENABLED
+	depends on MFD_INFINEON_AUTANALOG
+	help
+	  Enable the Infineon AutAnalog PTComp (Programmable Threshold
+	  Comparator) MFD driver.  The PTComp contains two comparators
+	  (Comp0, Comp1) that share a combined configuration.  This driver
+	  aggregates both comparators and manages the shared PDL config
+	  structure.
+
+config MFD_INFINEON_AUTANALOG_PTCOMP_INIT_PRIORITY
+	int "Infineon AutAnalog PTComp MFD init priority"
+	default 42
+	depends on MFD_INFINEON_AUTANALOG_PTCOMP
+	help
+	  Init priority for the PTComp MFD.  Must be higher (later) than the
+	  AutAnalog MFD init priority (default 41).

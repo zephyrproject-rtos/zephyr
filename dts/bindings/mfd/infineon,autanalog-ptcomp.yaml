@@ -1,0 +1,113 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon AutAnalog Programmable Threshold Comparator (PTComp) MFD.
+
+  The PTComp provides a pair of comparators (Comp0, Comp1) that compare the
+  voltage on one input to the reference on another input.  Each comparator output
+  is represented as a child node with compatible "infineon,autanalog-ptcomp-comp".
+
+  The PTComp sits within the AutAnalog subsystem and is coordinated by the
+  Autonomous Controller (AC) State Transition Table (STT).  This MFD driver
+  aggregates both comparator children into the single cy_stc_autanalog_ptcomp_t
+  PDL config structure and manages the shared PTComp unlock in the STT.
+
+compatible: "infineon,autanalog-ptcomp"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+  lp-mode:
+    type: boolean
+    description: |
+      Request Low Power (LP) operation for the AutAnalog subsystem.
+      When set, the parent AutAnalog MFD basic-mode STT enters LP operation
+      for the AC states. LP mode is also activated if any other AutAnalog
+      child peripheral (SAR ADC, DAC, CTB, PRB) sets lp-mode.
+      In advanced mode (ac-states), use the per-state ac-lp-mode property
+      instead.
+
+examples:
+  - |
+    /*
+     * Use constants from <dt-bindings/comparator/infineon-autanalog-ptcomp.h>.
+     */
+    ptcomp0: ptcomp@0 {
+        compatible = "infineon,autanalog-ptcomp";
+        status = "okay";
+
+        comp0: comp@0 {
+            compatible = "infineon,autanalog-ptcomp-comp";
+            reg = <0>;
+            power-mode = <IFX_AUTANALOG_PTCOMP_PWR_NORMAL>;
+            interrupt-mode = <IFX_AUTANALOG_PTCOMP_INT_EDGE_RISING>;
+            positive-mux = <IFX_AUTANALOG_PTCOMP_MUX_GPIO2>;
+            negative-mux = <IFX_AUTANALOG_PTCOMP_MUX_PRB_OUT0>;
+        };
+
+        comp1: comp@1 {
+            compatible = "infineon,autanalog-ptcomp-comp";
+            reg = <1>;
+            power-mode = <IFX_AUTANALOG_PTCOMP_PWR_NORMAL>;
+            positive-mux = <IFX_AUTANALOG_PTCOMP_MUX_GPIO4>;
+            negative-mux = <IFX_AUTANALOG_PTCOMP_MUX_PRB_OUT0>;
+        };
+    };
+  - |
+    /*
+     * Advanced mode: 2 dynamic mux config slots per comparator.
+     * Each child node is one slot with named properties.
+     */
+    ptcomp0: ptcomp@0 {
+        compatible = "infineon,autanalog-ptcomp";
+        status = "okay";
+
+        comp0: comp@0 {
+            compatible = "infineon,autanalog-ptcomp-comp";
+            reg = <0>;
+            power-mode = <IFX_AUTANALOG_PTCOMP_PWR_NORMAL>;
+            interrupt-mode = <IFX_AUTANALOG_PTCOMP_INT_EDGE_RISING>;
+            positive-mux = <IFX_AUTANALOG_PTCOMP_MUX_GPIO2>;
+            negative-mux = <IFX_AUTANALOG_PTCOMP_MUX_PRB_OUT0>;
+
+            dyn-cfg-0 {
+                positive-mux = <IFX_AUTANALOG_PTCOMP_MUX_GPIO2>;
+                negative-mux = <IFX_AUTANALOG_PTCOMP_MUX_PRB_OUT0>;
+            };
+
+            dyn-cfg-1 {
+                positive-mux = <IFX_AUTANALOG_PTCOMP_MUX_GPIO2>;
+                negative-mux = <IFX_AUTANALOG_PTCOMP_MUX_DAC0>;
+            };
+        };
+
+        comp1: comp@1 {
+            compatible = "infineon,autanalog-ptcomp-comp";
+            reg = <1>;
+            power-mode = <IFX_AUTANALOG_PTCOMP_PWR_NORMAL>;
+            positive-mux = <IFX_AUTANALOG_PTCOMP_MUX_GPIO4>;
+            negative-mux = <IFX_AUTANALOG_PTCOMP_MUX_PRB_OUT0>;
+
+            dyn-cfg-0 {
+                positive-mux = <IFX_AUTANALOG_PTCOMP_MUX_GPIO4>;
+                negative-mux = <IFX_AUTANALOG_PTCOMP_MUX_PRB_OUT0>;
+            };
+
+            dyn-cfg-1 {
+                positive-mux = <IFX_AUTANALOG_PTCOMP_MUX_GPIO4>;
+                negative-mux = <IFX_AUTANALOG_PTCOMP_MUX_DAC0>;
+            };
+        };
+    };
