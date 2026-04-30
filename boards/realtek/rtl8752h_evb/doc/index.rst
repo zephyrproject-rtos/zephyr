@@ -118,6 +118,16 @@ the ``--runner`` (or ``-r``) option. Follow the instructions in the `J-Link Setu
    :flash-args: -r jlink
    :compact:
 
+Using PyOCD
+============
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: rtl8752h_evb/rtl8752hkf
+   :goals: flash
+   :flash-args: -r pyocd
+   :compact:
+
 Visualizing the message
 ***********************
 
