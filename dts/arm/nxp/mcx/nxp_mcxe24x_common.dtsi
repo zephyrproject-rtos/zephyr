@@ -28,6 +28,40 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			cpu-power-states = <&idle &pstop2 &pstop1 &stop>;
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <10>;
+				exit-latency-us = <100>;
+			};
+
+			stop: stop {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <0>;
+				min-residency-us = <2>;
+				exit-latency-us = <500>;
+			};
+
+			pstop1: pstop1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <2>;
+				exit-latency-us = <300>;
+			};
+
+			pstop2: pstop2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <2>;
+				min-residency-us = <2>;
+				exit-latency-us = <200>;
+			};
 		};
 	};
 
@@ -560,9 +594,9 @@
 			compatible = "nxp,lptmr";
 			reg = <0x40040000 0x1000>;
 			interrupts = <58 0>;
-			clock-frequency = <1000>;
+			clock-frequency = <32000>;
 			prescale-glitch-filter-bypass;
-			clk-source = <1>;
+			clk-source = <2>;
 			resolution = <16>;
 			status = "disabled";
 		};
