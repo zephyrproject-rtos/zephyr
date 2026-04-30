@@ -601,6 +601,29 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 	}
 
 /**
+ * @brief Create a string descriptor in RAM
+ *
+ * This is similar to USB_DESC_STRING(), but it places ASCII7 array in the RAM
+ * area. It also allows the user application to change the default context at
+ * runtime.
+ *
+ * @param d_name   Internal string descriptor node identifier name
+ * @param d_string ASCII7 encoded string literal
+ * @param d_utype  String descriptor usage type
+ */
+#define USBD_DESC_STRING_RAM_DEFINE(d_name, d_string, d_utype)			\
+	static uint8_t ascii_##d_name[sizeof(d_string)] = d_string;		\
+	static struct usbd_desc_node d_name = {					\
+		.str = {							\
+			.utype = d_utype,					\
+			.ascii7 = true,						\
+		},								\
+		.ptr = &ascii_##d_name,						\
+		.bLength = USB_STRING_DESCRIPTOR_LENGTH(d_string),		\
+		.bDescriptorType = USB_DESC_STRING,				\
+	}
+
+/**
  * @brief Create a string descriptor node and manufacturer string descriptor
  *
  * This macro defines a descriptor node and a string descriptor that,
