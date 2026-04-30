@@ -263,8 +263,6 @@ size_t boot_get_image_start_offset(uint8_t area_id)
 		 * slot image header
 		 */
 		const struct flash_area *fa;
-		uint32_t num_sectors = SWAP_USING_OFFSET_SECTOR_UPDATE_BEGIN;
-		struct flash_sector sector_data;
 		int rc;
 
 		rc = flash_area_open(area_id, &fa);
@@ -274,6 +272,10 @@ size_t boot_get_image_start_offset(uint8_t area_id)
 		}
 
 		if (mcuboot_swap_type_multi(image) != BOOT_SWAP_TYPE_REVERT) {
+#if CONFIG_IMG_CUSTOM_SECTOR_SIZE == 0
+			uint32_t num_sectors = SWAP_USING_OFFSET_SECTOR_UPDATE_BEGIN;
+			struct flash_sector sector_data;
+
 			/* For swap using offset mode, the image starts in the second sector of
 			 * the upgrade slot, so apply the offset when this is needed, do this by
 			 * getting information on first sector only, this is expected to return an
@@ -285,7 +287,11 @@ size_t boot_get_image_start_offset(uint8_t area_id)
 				LOG_ERR("Failed to get sector details: %d", rc);
 			} else {
 				off = sector_data.fs_size;
+
 			}
+#else
+			off = CONFIG_IMG_CUSTOM_SECTOR_SIZE;
+#endif
 		}
 
 		flash_area_close(fa);
