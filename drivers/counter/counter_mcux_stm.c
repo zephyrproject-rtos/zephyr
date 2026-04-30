@@ -1,19 +1,38 @@
 /*
- * Copyright (c) 2023-2025 NXP.
+ * Copyright (c) 2023-2026 NXP.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT nxp_stm
 
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 #include <fsl_stm.h>
 
 LOG_MODULE_REGISTER(mcux_stm, CONFIG_COUNTER_LOG_LEVEL);
+
+/*
+ * Skip the instance reserved as the system timer via zephyr,system-timer.
+ * When both drivers are enabled, they must operate on separate hardware.
+ */
+#define COUNTER_MCUX_STM_IS_SYSTEM_TIMER(n)				\
+	COND_CODE_1(DT_HAS_CHOSEN(zephyr_system_timer),			\
+		(DT_SAME_NODE(DT_INST(n, nxp_stm),			\
+			      DT_CHOSEN(zephyr_system_timer))),		\
+		(0))
+
+#define COUNTER_MCUX_STM_COUNT_USABLE(n) + (!COUNTER_MCUX_STM_IS_SYSTEM_TIMER(n))
+
+#define COUNTER_MCUX_STM_DEVICE_COUNT \
+	(0 DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_STM_COUNT_USABLE))
+
+#if COUNTER_MCUX_STM_DEVICE_COUNT > 0
 
 struct mcux_stm_channel_data {
 	counter_alarm_callback_t alarm_callback;
@@ -261,4 +280,10 @@ static DEVICE_API(counter, mcux_stm_driver_api) = {
 		irq_enable(DT_INST_IRQN(n));		\
 	}
 
-DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_STM_DEVICE_INIT)
+#define COUNTER_MCUX_STM_DEVICE_INIT_COND(n)				\
+	COND_CODE_0(COUNTER_MCUX_STM_IS_SYSTEM_TIMER(n),		\
+		(COUNTER_MCUX_STM_DEVICE_INIT(n)), ())
+
+DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_STM_DEVICE_INIT_COND)
+
+#endif /* COUNTER_MCUX_STM_DEVICE_COUNT > 0 */
