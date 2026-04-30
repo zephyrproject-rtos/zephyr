@@ -15,7 +15,7 @@
 #define SPI_NOR_WIP_BIT         BIT(0)  /* Write in progress */
 #define SPI_NOR_WEL_BIT         BIT(1)  /* Write enable latch */
 
-/* Flag status register bits */
+/* Flag status register bits (Micron specific) */
 #define SPI_NOR_FLSR_READY           BIT(7) /* Ready (program/erase not in progress) */
 #define SPI_NOR_FLSR_ERASE_SUSPEND   BIT(6) /* Erase suspend active */
 #define SPI_NOR_FLSR_ERASE_FAIL      BIT(5) /* Last erase failed */
@@ -75,8 +75,9 @@
 #define SPI_NOR_CMD_PP_1_1_8_4B  0x84  /* Octal Page program (1-1-8) 4 Byte Address */
 #define SPI_NOR_CMD_PP_1_8_8_4B  0x8E  /* Extended Octal Page program (1-8-8) 4 Byte Address */
 #define SPI_NOR_CMD_RDFLSR       0x70  /* Read Flag Status Register */
-#define SPI_NOR_CMD_CLRFLSR      0x50  /* Clear Flag Status Register */
-#define SPI_NOR_CMD_WR_VCFGREG   0x81  /* Octal Write volatile configuration Register */
+#define SPI_NOR_CMD_CLRFLSR       0x50  /* Clear Flag Status Register (Micron specific) */
+#define SPI_NOR_CMD_WR_VCFGREG    0x50  /* Write Enable for Volatile Status Register (JEDEC) */
+#define SPI_NOR_CMD_WR_VCFGREG_MT 0x81  /* Write Volatile Register (Micron specific) */
 #define SPI_NOR_OCMD_READ        0xFD  /* Octal IO read command */
 
 /* Flash octal opcodes */
