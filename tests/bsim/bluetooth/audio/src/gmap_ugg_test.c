@@ -30,6 +30,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
@@ -1162,7 +1163,8 @@ static void broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_sourc
 	/* Wait for all to be stopped */
 	printk("Waiting for broadcast_streams to be stopped\n");
 	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_stream_stopped, K_FOREVER);
+		err = k_sem_take(&sem_stream_stopped, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	printk("Broadcast source stopped\n");
@@ -1250,7 +1252,8 @@ static int test_gmap_ugg_broadcast_ac(const struct gmap_broadcast_ac_param *para
 	/* Wait for all to be started */
 	printk("Waiting for broadcast_streams to be started\n");
 	for (size_t i = 0U; i < param->stream_cnt; i++) {
-		k_sem_take(&sem_stream_started, K_FOREVER);
+		err = k_sem_take(&sem_stream_started, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	/* Wait for other devices to have received what they wanted */

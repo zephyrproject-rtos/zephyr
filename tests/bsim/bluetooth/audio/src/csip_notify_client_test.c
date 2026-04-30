@@ -59,7 +59,11 @@ static void test_main(void)
 	}
 
 	bt_le_scan_cb_register(&common_scan_cb);
-	bt_csip_set_coordinator_register_cb(&cbs);
+	err = bt_csip_set_coordinator_register_cb(&cbs);
+	if (err != 0) {
+		FAIL("Failed to register CSIP callbacks (err %d)\n", err);
+		return;
+	}
 
 	printk("Starting scan\n");
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
@@ -75,7 +79,11 @@ static void test_main(void)
 	update_security(default_conn);
 
 	printk("Starting Discovery\n");
-	bt_csip_set_coordinator_discover(default_conn);
+	err = bt_csip_set_coordinator_discover(default_conn);
+	if (err != 0) {
+		FAIL("Could not start discovery (err %d)\n", err);
+		return;
+	}
 	WAIT_FOR_FLAG(flag_csip_set_lock_discovered);
 
 	printk("Waiting for all notifications to be received\n");
@@ -83,7 +91,11 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_all_notifications_received);
 
 	/* Disconnect and wait for server to advertise again (after notifications are triggered) */
-	bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err != 0) {
+		FAIL("Could not disconnect (err %d)\n", err);
+		return;
+	}
 	UNSET_FLAG(flag_all_notifications_received);
 	UNSET_FLAG(flag_csip_set_lock_discovered);
 
@@ -104,13 +116,21 @@ static void test_main(void)
 	update_security(default_conn);
 
 	printk("Starting Discovery\n");
-	bt_csip_set_coordinator_discover(default_conn);
+	err = bt_csip_set_coordinator_discover(default_conn);
+	if (err != 0) {
+		FAIL("Could not start discovery (err %d)\n", err);
+		return;
+	}
 	WAIT_FOR_FLAG(flag_csip_set_lock_discovered);
 
 	printk("Waiting for all notifications to be received\n");
 	WAIT_FOR_FLAG(flag_all_notifications_received);
 
-	bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err != 0) {
+		FAIL("Could not disconnect (err %d)\n", err);
+		return;
+	}
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 
 	PASS("CSIP Notify client Passed\n");
