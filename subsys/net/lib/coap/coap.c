@@ -424,7 +424,7 @@ unsigned int coap_option_value_to_int(const struct coap_option *option)
 			(option->value[0] << 16);
 	case 4:
 		return (option->value[3] << 0) | (option->value[2] << 8) |
-			(option->value[1] << 16) | (option->value[0] << 24);
+			(option->value[1] << 16) | ((uint32_t)option->value[0] << 24);
 	default:
 		return 0;
 	}
