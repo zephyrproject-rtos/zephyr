@@ -356,6 +356,10 @@ struct k_thread {
 	/** resource pool */
 	struct k_heap *resource_pool;
 
+#ifdef CONFIG_COMMON_LIBC_MALLOC_TLS
+	struct sys_sync_heap *malloc_heap;
+#endif /* CONFIG_COMMON_LIBC_MALLOC_TLS */
+
 #if defined(CONFIG_THREAD_LOCAL_STORAGE)
 	/* Pointer to arch-specific TLS area */
 	uintptr_t tls;

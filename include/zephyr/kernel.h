@@ -24,6 +24,10 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/ring_buffer.h>
 
+#ifdef CONFIG_COMMON_LIBC_MALLOC_TLS
+#include <zephyr/sys/sync_heap.h>
+#endif /* CONFIG_COMMON_LIBC_MALLOC_TLS */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -508,6 +512,46 @@ static inline void k_thread_heap_assign(struct k_thread *thread,
 {
 	thread->resource_pool = heap;
 }
+
+#ifdef CONFIG_COMMON_LIBC_MALLOC_TLS
+/**
+ * @brief Assign a malloc malloc heap to a thread
+ *
+ * The heap must be assigned before the thread is started. In general, calls to
+ * this function will have no effect after start.
+ *
+ * The only exception to the above is when a thread calls
+ * @ref k_thread_user_mode_enter. While in kernel mode, the thread may use this
+ * function to set a heap which will be used after entering user mode. In this
+ * case the thread is not allowed to free allocations in user mode that were
+ * created during kernel mode, since they would be on a different heap.
+ *
+ * This function does not grant a user thread access to the underlying memory
+ * of the assigned heap. It is the responsibility of the kernel to add this to
+ * the user thread's memory domain.
+ *
+ * @param thread Target thread.
+ * @param heap Heap object to be used for malloc by target thread.
+ * @return 0 in case of success.
+ */
+static inline int k_thread_malloc_heap_assign(struct k_thread *thread, struct sys_sync_heap *heap)
+{
+	thread->malloc_heap = heap;
+	k_object_access_grant(heap->lock, thread);
+	return 0;
+}
+
+/**
+ * @brief Get the malloc heap for the thread
+ *
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
+ *
+ * @param thread Thread object.
+ * @return Pointer to malloc heap
+ */
+__syscall struct sys_sync_heap *k_thread_malloc_heap_get(struct k_thread *thread);
+#endif /* CONFIG_COMMON_LIBC_MALLOC_TLS */
 
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
 /**
