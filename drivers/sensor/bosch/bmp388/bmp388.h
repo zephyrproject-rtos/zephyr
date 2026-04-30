@@ -150,6 +150,7 @@ extern const struct bmp388_bus_io bmp388_bus_io_i2c;
 #define BMP388_PWR_CTRL_OFF 0
 
 #define BMP388_SAMPLE_BUFFER_SIZE (6)
+#define BMP388_STARTUP_TIME_US    (2000)
 
 struct bmp388_cal_data {
 	uint16_t t1;
