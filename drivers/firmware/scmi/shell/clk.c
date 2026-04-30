@@ -74,7 +74,7 @@ static int get_clk_id(char *str, uint32_t *clk_id)
 		return -EINVAL;
 	}
 
-	ret = scmi_clock_protocol_attributes(_proto, &attributes);
+	ret = scmi_protocol_attributes_get(_proto, &attributes);
 	if (ret) {
 		return ret;
 	}
@@ -108,7 +108,7 @@ static int cmd_clk_summary(const struct shell *sh, size_t argc, char **argv)
 	struct clk_info info;
 	int ret, i;
 
-	ret = scmi_clock_protocol_attributes(_proto, &attributes);
+	ret = scmi_protocol_attributes_get(_proto, &attributes);
 	if (ret) {
 		shell_error(sh, "Failed to query protocol attributes: %d", ret);
 		return ret;
