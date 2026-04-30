@@ -29,6 +29,10 @@
 
 #include "radio_internal.h"
 
+/* The EVENT_TIMER is configured to 1 MHz across all nRF SOCs */
+#define HAL_EVENT_TIMER_US_TO_TICKS(x) ((uint32_t)(x))
+#define HAL_EVENT_TIMER_TICKS_TO_US(x) ((uint32_t)(x))
+
 /* Converts the GPIO controller in a FEM property's GPIO specification
  * to its nRF register map pointer.
  *
@@ -774,10 +778,12 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 		if (dir_curr == SW_SWITCH_RX && end_evt_delay_en == END_EVT_DELAY_ENABLED &&
 		    !(phy_curr & PHY_CODED)) {
 			nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc,
-					 SW_SWITCH_TIMER->CC[cc] - RADIO_EVENTS_PHYEND_DELAY_US);
-			if (delay < SW_SWITCH_TIMER->CC[cc]) {
+					 SW_SWITCH_TIMER->CC[cc] -
+					 HAL_EVENT_TIMER_US_TO_TICKS(RADIO_EVENTS_PHYEND_DELAY_US));
+			if (HAL_EVENT_TIMER_US_TO_TICKS(delay) < SW_SWITCH_TIMER->CC[cc]) {
 				nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc,
-						 (SW_SWITCH_TIMER->CC[phyend_delay_cc] - delay));
+						 (SW_SWITCH_TIMER->CC[phyend_delay_cc] -
+						  HAL_EVENT_TIMER_US_TO_TICKS(delay)));
 			} else {
 				nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc, 1);
 			}
@@ -891,10 +897,11 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}
 
-	if (delay < SW_SWITCH_TIMER->CC[cc]) {
+	if (HAL_EVENT_TIMER_US_TO_TICKS(delay) < SW_SWITCH_TIMER->CC[cc]) {
 		nrf_timer_cc_set(SW_SWITCH_TIMER,
 				 cc,
-				 (SW_SWITCH_TIMER->CC[cc] - delay));
+				 (SW_SWITCH_TIMER->CC[cc] -
+				  HAL_EVENT_TIMER_US_TO_TICKS(delay)));
 	} else {
 		nrf_timer_cc_set(SW_SWITCH_TIMER, cc, 1);
 	}
@@ -1173,7 +1180,7 @@ uint32_t radio_tmr_isr_set(uint32_t start_us, radio_isr_cb_t cb, void *param)
 		/* Setup compare event with min. 1 us offset */
 		nrf_timer_event_clear(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
 		nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET,
-				 start_us + 1U);
+				 HAL_EVENT_TIMER_US_TO_TICKS(start_us + 1U));
 
 		/* Capture the current time */
 		nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
@@ -1405,7 +1412,8 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 	EVENT_TIMER->PRESCALER = HAL_EVENT_TIMER_PRESCALER_VALUE;
 	EVENT_TIMER->BITMODE = 2;	/* 24 - bit */
 
-	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_CC_OFFSET, remainder_us);
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_CC_OFFSET,
+			 HAL_EVENT_TIMER_US_TO_TICKS(remainder_us));
 
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
 	uint32_t cntr_l, cntr_h, cntr_h_overflow, stale;
@@ -1529,7 +1537,8 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_STOP);
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
 
-	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_CC_OFFSET, remainder_us);
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_CC_OFFSET,
+			 HAL_EVENT_TIMER_US_TO_TICKS(remainder_us));
 
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
 	uint32_t cntr_l, cntr_h, cntr_h_overflow, stale;
@@ -1671,7 +1680,8 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 		nrf_timer_event_clear(EVENT_TIMER, HAL_EVENT_TIMER_TRX_EVENT);
-		nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_CC_OFFSET, actual_us);
+		nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_CC_OFFSET,
+				 HAL_EVENT_TIMER_US_TO_TICKS(actual_us));
 
 		/* Capture the current time */
 		nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
@@ -1774,7 +1784,8 @@ void radio_tmr_stop(void)
 
 void radio_tmr_hcto_configure(uint32_t hcto_us)
 {
-	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_HCTO_CC_OFFSET, hcto_us);
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_HCTO_CC_OFFSET,
+			 HAL_EVENT_TIMER_US_TO_TICKS(hcto_us));
 
 	hal_radio_recv_timeout_cancel_ppi_config();
 	hal_radio_disable_on_hcto_ppi_config();
