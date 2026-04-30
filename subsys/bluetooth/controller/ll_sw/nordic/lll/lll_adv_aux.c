@@ -439,6 +439,11 @@ static void isr_tx_chain(void *param)
 		lll_prof_latency_capture();
 	}
 
+	/* Call to ensure packet/event timer accumulates the elapsed time
+	 * under single timer use.
+	 */
+	(void)radio_is_tx_done();
+
 	/* Clear radio tx status and events */
 	lll_isr_tx_status_reset();
 
