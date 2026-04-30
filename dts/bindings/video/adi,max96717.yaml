@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2026 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: ADI MAX96717 GMSL2 Serializer
+
+compatible: "adi,max96717"
+
+include: i2c-device.yaml
+
+child-binding:
+  child-binding:
+    child-binding:
+      include: video-interfaces.yaml
