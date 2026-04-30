@@ -607,6 +607,16 @@ config RISCV_NO_MTVAL_ON_FP_TRAP
 	  to contain the faulting FP instruction, requiring alternative methods
 	  to handle FP exceptions.
 
+config RISCV_FPU_INSN_VALIDATE
+	bool
+	default y if ASSERT
+	depends on FPU_SHARING
+	help
+	  When enabled, the FPU trap handler will explicitly decode the
+	  trapping instruction to ensure it is a valid floating-point
+	  instruction. This catches edge cases where non-FPU instructions
+	  (like Vector instructions) might accidentally trigger an FP trap.
+
 rsource "Kconfig.isa"
 
 rsource "custom/Kconfig"
