@@ -405,11 +405,11 @@
 
 &enet2 {
 	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
 };
 
 &enet2_mac {
-	pinctrl-0 = <&pinmux_enet>;
-	pinctrl-names = "default";
 	zephyr,random-mac-address;
 	phy-connection-type = "rmii";
 	phy-handle = <&phy>;
