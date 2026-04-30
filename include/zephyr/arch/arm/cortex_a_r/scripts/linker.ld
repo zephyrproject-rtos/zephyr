@@ -57,8 +57,8 @@
 #endif
 #endif /* defined(CONFIG_FLASH_USES_MAPPED_PARTITION) */
 
-#define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
-#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
+#define RAM_ADDR DT_CHOSEN_SRAM_ADDR
+#define RAM_SIZE DT_CHOSEN_SRAM_SIZE
 
 /* Set alignment to CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
  * to make linker section alignment comply with MPU granularity.
