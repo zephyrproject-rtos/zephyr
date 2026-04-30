@@ -194,6 +194,12 @@ properties:
       FIFO1 supports I2C port 0. FIFO2 only supports one port among
       1~8. The default is I2C port 1.
 
+  fifo-ctrl-offset:
+    type: int
+    description: |
+      The offset of FIFO control register. If this property is present,
+      all I2C channels support FIFO mode in hardware.
+
   push-pull-recovery:
     type: boolean
     description: |
