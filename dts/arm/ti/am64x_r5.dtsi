@@ -237,3 +237,8 @@
 	interrupts = <0 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
+
+&main_usb0 {
+	interrupts = <0 226 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};

@@ -208,3 +208,11 @@
 	usr-id = <0>;
 	status = "okay";
 };
+
+zephyr_udc0: &main_usb0 {
+	pinctrl-0 = <&usb0_drvvbus>;
+	pinctrl-names = "default";
+	ti,usb2-only;
+	ti,vbus-divider;
+	status = "okay";
+};

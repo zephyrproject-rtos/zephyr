@@ -528,4 +528,17 @@
 		#mbox-cells = <1>;
 		status = "disabled";
 	};
+
+	main_usb0: usb@f900000 {
+		compatible = "ti,am64-usb", "cdns,usb3";
+		reg = <0xf900000 0x100>, <0xf400000 0x10000>, <0xf420000 0x10000>;
+		reg-names = "usbss", "otg", "device";
+		num-in-endpoints = <15>;
+		num-out-endpoints = <15>;
+		num-bidir-endpoints = <1>;
+		power-domains = <&usb0_pd>;
+		clocks = <&k3_clks 161 9>;
+		maximum-speed = "high-speed";
+		status = "disabled";
+	};
 };
