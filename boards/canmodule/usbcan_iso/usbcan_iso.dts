@@ -1,7 +1,8 @@
 /*
  * Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright (c) 2026 Oleksii Mamontov <mamontov1@gmail.com>
  *
- *  SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
@@ -10,8 +11,8 @@
 #include <st/f0/stm32f072c(8-b)tx-pinctrl.dtsi>
 
 / {
-	model = "USBCAN board";
-	compatible = "usbcan,usbcan_iso";
+	model = "USBCAN isolated";
+	compatible = "canmodule,usbcan-iso";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -38,7 +39,6 @@
 			label = "LED TX";
 		};
 	};
-/**/
 };
 
 &clk_hse {
