@@ -32,3 +32,6 @@ archs:
   - name: rx
     path: rx
     full_name: Renesas RX
+  - name: hexagon
+    path: hexagon
+    full_name: Qualcomm Hexagon

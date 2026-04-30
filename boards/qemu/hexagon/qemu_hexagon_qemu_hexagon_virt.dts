@@ -1,0 +1,166 @@
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+
+/ {
+	model = "hexagon-virt,qemu";
+	compatible = "qemu,hexagon-virt";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	aliases {
+		serial0 = &uart0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "qcom,hexagon-v67";
+			reg = <0>;
+			clock-frequency = <1000000>;
+		};
+	};
+
+	uartclk: apb-pclk {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		stdout-path = &uart0;
+	};
+
+	/* PL011 UART provided by QEMU virt machine */
+	uart0: uart@10000000 {
+		compatible = "arm,pl011", "arm,primecell";
+		reg = <0x10000000 0x200>;
+		interrupts = <0x2f 0x00>;
+		interrupt-parent = <&intc>;
+		clocks = <&uartclk &uartclk>;
+		clock-names = "uartclk", "apb_pclk";
+		status = "okay";
+		current-speed = <115200>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+		interrupt-parent = <&intc>;
+
+		intc: interrupt-controller {
+			compatible = "qcom,hvm-pic";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			#address-cells = <1>;
+		};
+
+		gpt@ab000000 {
+			compatible = "qcom,hvm-timer";
+			reg = <0xab000000 0x1000>;
+			interrupts = <0x0c 0x00>;
+		};
+
+		pll@26300000 {
+			compatible = "qcom,cdsp-fabia-pll";
+			reg = <0x26300000 0x1000>;
+			base-freq = <0x124f800>;
+			default-l-val = <0x3e>;
+		};
+
+		hvx {
+			compatible = "qcom,hexagon-hvx";
+			qcom,hvx-vlength = <7>;
+			qcom,hvx-max-ctxts = <4>;
+		};
+
+		vtcm@d8400000 {
+			compatible = "qcom,hexagon-vtcm";
+			reg = <0xd8400000 DT_SIZE_M(4)>;
+		};
+	};
+
+	/* VirtIO MMIO transports provided by QEMU virt machine */
+	virtio_mmio@11000000 {
+		compatible = "virtio,mmio";
+		reg = <0x11000000 DT_SIZE_M(16)>;
+		interrupts = <0x12 0x00>;
+		interrupt-parent = <&intc>;
+	};
+
+	virtio_mmio@12000000 {
+		compatible = "virtio,mmio";
+		reg = <0x12000000 DT_SIZE_M(16)>;
+		interrupts = <0x13 0x00>;
+		interrupt-parent = <&intc>;
+	};
+
+	virtio_mmio@13000000 {
+		compatible = "virtio,mmio";
+		reg = <0x13000000 DT_SIZE_M(16)>;
+		interrupts = <0x14 0x00>;
+		interrupt-parent = <&intc>;
+	};
+
+	virtio_mmio@14000000 {
+		compatible = "virtio,mmio";
+		reg = <0x14000000 DT_SIZE_M(16)>;
+		interrupts = <0x15 0x00>;
+		interrupt-parent = <&intc>;
+	};
+
+	virtio_mmio@15000000 {
+		compatible = "virtio,mmio";
+		reg = <0x15000000 DT_SIZE_M(16)>;
+		interrupts = <0x16 0x00>;
+		interrupt-parent = <&intc>;
+	};
+
+	virtio_mmio@16000000 {
+		compatible = "virtio,mmio";
+		reg = <0x16000000 DT_SIZE_M(16)>;
+		interrupts = <0x17 0x00>;
+		interrupt-parent = <&intc>;
+	};
+
+	virtio_mmio@17000000 {
+		compatible = "virtio,mmio";
+		reg = <0x17000000 DT_SIZE_M(16)>;
+		interrupts = <0x18 0x00>;
+		interrupt-parent = <&intc>;
+	};
+
+	virtio_mmio@18000000 {
+		compatible = "virtio,mmio";
+		reg = <0x18000000 DT_SIZE_M(16)>;
+		interrupts = <0x19 0x00>;
+		interrupt-parent = <&intc>;
+	};
+
+	/* Main system memory */
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_M(32)>;
+	};
+
+	/* SRAM for code and data */
+	sram0: memory@a0000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xa0000000 DT_SIZE_M(16)>;
+	};
+};

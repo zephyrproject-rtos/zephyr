@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+config SOC_QEMU_HEXAGON_VIRT
+	bool
+
+config SOC
+	default "qemu_hexagon_virt" if SOC_QEMU_HEXAGON_VIRT
