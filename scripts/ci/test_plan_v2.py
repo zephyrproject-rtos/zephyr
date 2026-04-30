@@ -3323,6 +3323,153 @@ class IgnoreStrategy(SelectionStrategy):
 
 
 # ---------------------------------------------------------------------------
+# Strategy 4b – Boilerplate-only filter
+# ---------------------------------------------------------------------------
+
+
+class BoilerplateFilter(SelectionStrategy):
+    """Consume changed files whose diff contains only boilerplate modifications.
+
+    "Boilerplate" is defined as any combination of:
+
+    * Blank-line additions or removals.
+    * Whitespace-only changes (trailing spaces, indentation, CRLF → LF).
+    * SPDX licence identifier or copyright header lines.
+    * Lines made up entirely of comment delimiter characters
+      (``/*``, ``*/``, ``//``, ``#``, ``*``).
+
+    A file is considered boilerplate-only when **every** added or removed
+    line in its diff falls into one of those categories.  Such files cannot
+    affect runtime behaviour, so consuming them prevents downstream strategies
+    from emitting spurious test runs.
+
+    The strategy is a no-op when no git repository or commit range is
+    available (e.g. when ``--modified-files`` is used without ``--commits``).
+    In that case the files pass through unchanged to downstream strategies.
+    """
+
+    consumes: bool = True
+
+    # Regex matching a changed line whose content is purely boilerplate.
+    # Applied to the line content after stripping the leading ``+`` / ``-``.
+    _BOILERPLATE_LINE_RE = re.compile(
+        r"^\s*(?:"
+        r"SPDX-License-Identifier:"
+        r"|SPDX-FileCopyrightText:"
+        r"|Copyright\b"
+        r"|[/*#]+\s*"  # comment delimiters only (e.g. bare ``*`` or ``//``)
+        r")\s*",
+        re.IGNORECASE,
+    )
+
+    @property
+    def name(self):
+        return "BoilerplateFilter"
+
+    def __init__(self, repo=None, commits=None):
+        """
+        Parameters
+        ----------
+        repo:
+            A :class:`git.Repo` instance.  When ``None`` the strategy is a
+            no-op and all files pass through.
+        commits:
+            Commit range string (e.g. ``"main..HEAD"``).  When ``None`` the
+            strategy is a no-op.
+        """
+        self._repo = repo
+        self._commits = commits
+
+    # ------------------------------------------------------------------
+    # SelectionStrategy interface
+    # ------------------------------------------------------------------
+
+    def analyze(self, changed_files):
+        if self._repo is None or not self._commits:
+            return [], set()
+
+        boilerplate: set = set()
+        for f in changed_files:
+            if self._is_boilerplate_only(f):
+                log.info(
+                    "[%s] '%s' has only boilerplate changes – skipping.",
+                    self.name,
+                    f,
+                )
+                boilerplate.add(f)
+
+        if boilerplate:
+            log.info(
+                "[%s] %d file(s) suppressed (boilerplate-only changes).",
+                self.name,
+                len(boilerplate),
+            )
+
+        return [], boilerplate
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+
+    def _is_boilerplate_only(self, filepath):
+        """Return ``True`` if every diff hunk in *filepath* is boilerplate.
+
+        Two-phase check:
+
+        1. ``git diff -w --ignore-blank-lines`` — if this produces no output,
+           the entire diff is whitespace / blank-line changes only.
+        2. If phase 1 finds non-whitespace changes, parse the full diff and
+           verify that every ``+``/``-`` content line matches the boilerplate
+           pattern (SPDX, Copyright, comment delimiters).
+        """
+        try:
+            diff_no_ws = self._repo.git.diff(
+                self._commits,
+                "-w",
+                "--ignore-blank-lines",
+                "--",
+                filepath,
+            )
+        except Exception:  # noqa: BLE001
+            return False
+
+        if not diff_no_ws.strip():
+            # All changes are whitespace / blank-line only.
+            return True
+
+        # Non-whitespace changes exist; check if they are all header boilerplate.
+        try:
+            diff_text = self._repo.git.diff(
+                self._commits,
+                "--unified=0",
+                "--",
+                filepath,
+            )
+        except Exception:  # noqa: BLE001
+            return False
+
+        return self._all_changes_boilerplate(diff_text)
+
+    def _all_changes_boilerplate(self, diff_text):
+        """Return ``True`` when every added/removed line in *diff_text* is
+        either blank, whitespace-only, or matches :attr:`_BOILERPLATE_LINE_RE`.
+        """
+        for raw_line in diff_text.splitlines():
+            # Skip diff headers (@@, ---, +++, \ No newline …)
+            if not raw_line or raw_line[0] not in ("+", "-"):
+                continue
+            if raw_line.startswith(("---", "+++")):
+                continue
+            content = raw_line[1:]  # strip leading + or -
+            if not content.strip():
+                continue  # blank / whitespace-only line
+            if self._BOILERPLATE_LINE_RE.search(content):
+                continue  # boilerplate content
+            return False  # substantive change found
+        return True
+
+
+# ---------------------------------------------------------------------------
 # Strategy 5 – Direct test/sample changes
 # ---------------------------------------------------------------------------
 
@@ -3499,6 +3646,13 @@ def build_strategies(
         #    CI workflows …) so they don't reach downstream strategies.
         IgnoreStrategy(
             ignore_file=base / "scripts" / "ci" / "twister_ignore.txt",
+        ),
+        # 1b. Boilerplate filter: consume files whose diff is purely whitespace,
+        #     blank-line, SPDX, or copyright-header changes.  They cannot affect
+        #     runtime behaviour so no tests need to run for them.
+        BoilerplateFilter(
+            repo=repo,
+            commits=commits,
         ),
         # 2. Test/sample changes: run exactly those tests, nothing more.
         DirectTestStrategy(
