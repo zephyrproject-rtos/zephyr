@@ -876,6 +876,7 @@ static void usbd_cdc_ncm_suspended(struct usbd_class_data *const c_data)
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ncm_eth_data *data = dev->data;
 
+	atomic_clear_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED);
 	atomic_set_bit(&data->state, CDC_NCM_CLASS_SUSPENDED);
 }
 
