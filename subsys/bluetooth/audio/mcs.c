@@ -49,7 +49,7 @@ LOG_MODULE_REGISTER(bt_mcs, CONFIG_BT_MCS_LOG_LEVEL);
  */
 #define MUTEX_TIMEOUT K_MSEC(1000U)
 
-static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len);
+static int notify(struct bt_conn *conn, const struct bt_uuid *uuid, const void *data, uint16_t len);
 
 static struct media_proxy_sctrl_cbs cbs;
 
@@ -651,50 +651,64 @@ static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_at
 	LOG_DBG("Opcode: %d", command.opcode);
 	command.use_param = false;
 
-	if (!BT_MCS_VALID_OP(command.opcode)) {
-		/* MCS does not specify what to return in case of an error - Only what to notify*/
-
-		const struct mpl_cmd_ntf cmd_ntf = {
-			.requested_opcode = command.opcode,
-			.result_code = BT_MCS_OPC_NTF_NOT_SUPPORTED,
-		};
-
-		LOG_DBG("Opcode 0x%02X is invalid", command.opcode);
-
-		notify(BT_UUID_MCS_MEDIA_CONTROL_POINT, &cmd_ntf, sizeof(cmd_ntf));
-
-		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
-	}
-
 	if (conn != NULL) {
+		struct client_state *client;
 		struct mcs_flags *flags;
 		__maybe_unused int err;
 
 		err = k_mutex_lock(&mcs_inst.mutex, MUTEX_TIMEOUT);
 		__ASSERT(err == 0, "Failed to lock mutex: %d", err);
 
-		flags = &mcs_inst.clients[bt_conn_index(conn)].flags;
+		client = &mcs_inst.clients[bt_conn_index(conn)];
+		flags = &client->flags;
 
-		if (flags->media_control_point_busy) {
-			const struct mpl_cmd_ntf cmd_ntf = {
-				.requested_opcode = command.opcode,
-				.result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED,
-			};
+		/* If we are already handling a control point operation, we cannot handle it.
+		 * Similarly we do not send a notification, as we do not want to risk sending the
+		 * notification for this 2nd request before we've sent the notification for the 1st
+		 * request to avoid confusing the client. Unfortunately there is no flow control
+		 * defined for control point operations.
+		 */
+		if (flags->media_control_point_busy || flags->media_control_point_result) {
+			const bool media_control_point_busy = flags->media_control_point_busy;
+			const bool media_control_point_result = flags->media_control_point_result;
 
 			err = k_mutex_unlock(&mcs_inst.mutex);
 			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
-			LOG_DBG("Busy with other operation");
-
-			notify(BT_UUID_MCS_MEDIA_CONTROL_POINT, &cmd_ntf, sizeof(cmd_ntf));
+			LOG_DBG("Rejecting CP write as one is already pending (%d %d)",
+				media_control_point_busy, media_control_point_result);
 
 			return BT_GATT_ERR(BT_ATT_ERR_PROCEDURE_IN_PROGRESS);
+		}
+
+		if (!BT_MCS_VALID_OP(command.opcode)) {
+			/* MCS does not specify what to return in case of an error - Only what to
+			 * notify
+			 */
+
+			client->cmd_ntf.requested_opcode = command.opcode;
+			client->cmd_ntf.result_code = BT_MCS_OPC_NTF_NOT_SUPPORTED;
+
+			flags->media_control_point_result = true;
+
+			err = k_mutex_unlock(&mcs_inst.mutex);
+			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+			LOG_DBG("Opcode 0x%02X is invalid", command.opcode);
+
+			err = k_work_schedule(&mcs_inst.notify_work, K_NO_WAIT);
+			__ASSERT(err >= 0, "Failed to schedule work: %d", err);
+
+			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		}
 
 		flags->media_control_point_busy = true;
 
 		err = k_mutex_unlock(&mcs_inst.mutex);
 		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	} else {
+		if (!BT_MCS_VALID_OP(command.opcode)) {
+			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
 	}
 
 	if (len == sizeof(command.opcode) + sizeof(command.param)) {
@@ -755,15 +769,21 @@ static ssize_t write_search_control_point(struct bt_conn *conn, const struct bt_
 
 		flags = &mcs_inst.clients[bt_conn_index(conn)].flags;
 
-		if (flags->search_control_point_busy) {
-			const uint8_t result_code = BT_MCS_SCP_NTF_FAILURE;
+		/* If we are already handling a search control point operation, we cannot handle it.
+		 * Similarly we do not send a notification, as we do not want to risk sending the
+		 * notification for this 2nd request before we've sent the notification for the 1st
+		 * request to avoid confusing the client. Unfortunately there is no flow control
+		 * defined for control point operations.
+		 */
+		if (flags->search_control_point_busy || flags->search_control_point_result) {
+			const bool search_control_point_busy = flags->search_control_point_busy;
+			const bool search_control_point_result = flags->search_control_point_result;
 
 			err = k_mutex_unlock(&mcs_inst.mutex);
 			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
-			LOG_DBG("Busy with other operation");
-
-			notify(BT_UUID_MCS_SEARCH_CONTROL_POINT, &result_code, sizeof(result_code));
+			LOG_DBG("Rejecting CP write as one is already pending (%d %d)",
+				search_control_point_busy, search_control_point_result);
 
 			return BT_GATT_ERR(BT_ATT_ERR_PROCEDURE_IN_PROGRESS);
 		}
@@ -987,32 +1007,26 @@ struct bt_ots *bt_mcs_get_ots(void)
 
 /* Callback functions from the media player, notifying attributes */
 /* Placed here, after the service definition, because they reference it. */
-
-/* Helper function to notify non-string values */
-static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len)
-{
-	int err = bt_gatt_notify_uuid(NULL, uuid, mcs.attrs, data, len);
-
-	if (err != 0) {
-		if (err == -ENOTCONN) {
-			LOG_DBG("Notification error: ENOTCONN (%d)", err);
-		} else {
-			LOG_ERR("Notification error: %d", err);
-		}
-	}
-}
-
-static void notify_string(struct bt_conn *conn, const struct bt_uuid *uuid, const char *str)
+static int notify(struct bt_conn *conn, const struct bt_uuid *uuid, const void *data, uint16_t len)
 {
 	const uint16_t max_ntf_size = bt_audio_get_max_ntf_size(conn);
 	int err;
 
-	/* Send notification potentially truncated to the MTU */
-	err = bt_gatt_notify_uuid(conn, uuid, mcs.attrs, (void *)str,
-				  MIN(strlen(str), max_ntf_size));
-	if (err != 0) {
-		LOG_ERR("Notification error: %d", err);
+	if (max_ntf_size < len) {
+		LOG_DBG("Truncating notification to %u (was %u) for %p", max_ntf_size, len, conn);
+		len = max_ntf_size;
 	}
+
+	err = bt_gatt_notify_uuid(conn, uuid, mcs.attrs, data, len);
+	if (err == -ENOMEM || err == -EAGAIN) {
+		/* Only return error if it makes sense to retry, else just treat as completed (e.g.
+		 * in case of security issues or unsubscribe it does not make sense to try)
+		 */
+		return err;
+	}
+	__ASSERT(err != -EINVAL, "bt_gatt_notify_uuid returned -EINVAL");
+
+	return 0;
 }
 
 struct mcs_notify_cb_info {
@@ -1061,7 +1075,7 @@ static void set_value_changed(void (*value_cb)(struct mcs_flags *flags), const s
 	err = k_mutex_lock(&mcs_inst.mutex, MUTEX_TIMEOUT);
 	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
 
-	__ASSERT(cb_info.attr != NULL, "Failed to look attribute for %s", bt_uuid_str(uuid));
+	__ASSERT(cb_info.attr != NULL, "Failed to find attribute for %s", bt_uuid_str(uuid));
 	bt_conn_foreach(BT_CONN_TYPE_LE, set_value_changed_cb, &cb_info);
 
 	err = k_mutex_unlock(&mcs_inst.mutex);
@@ -1070,6 +1084,7 @@ static void set_value_changed(void (*value_cb)(struct mcs_flags *flags), const s
 
 static void notify_cb(struct bt_conn *conn, void *data)
 {
+
 	struct client_state *client;
 	struct mcs_flags *flags;
 	struct bt_conn_info info;
@@ -1089,7 +1104,7 @@ static void notify_cb(struct bt_conn *conn, void *data)
 	err = k_mutex_lock(&mcs_inst.mutex, K_NO_WAIT);
 	if (err != 0) {
 		LOG_DBG("Failed to take mutex: %d", err);
-		err = k_work_reschedule(&mcs_inst.notify_work, K_USEC(info.le.interval_us));
+		err = k_work_schedule(&mcs_inst.notify_work, K_USEC(info.le.interval_us));
 		__ASSERT(err >= 0, "Failed to reschedule work: %d", err);
 		return;
 	}
@@ -1101,18 +1116,24 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		const char *name = media_proxy_sctrl_get_player_name();
 
 		LOG_DBG("Notifying player name: %s", name);
-		notify_string(conn, BT_UUID_MCS_PLAYER_NAME, name);
-
-		flags->player_name_changed = false;
+		err = notify(conn, BT_UUID_MCS_PLAYER_NAME, name, strlen(name));
+		if (err == 0) {
+			flags->player_name_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
 	if (flags->track_title_changed) {
 		const char *title = media_proxy_sctrl_get_track_title();
 
 		LOG_DBG("Notifying track title: %s", title);
-		notify_string(conn, BT_UUID_MCS_TRACK_TITLE, title);
-
-		flags->track_title_changed = false;
+		err = notify(conn, BT_UUID_MCS_TRACK_TITLE, title, strlen(title));
+		if (err == 0) {
+			flags->track_title_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
 	if (flags->track_duration_changed) {
@@ -1120,9 +1141,12 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		int32_t duration_le = sys_cpu_to_le32(duration);
 
 		LOG_DBG("Notifying track duration: %d", duration);
-		notify(BT_UUID_MCS_TRACK_DURATION, &duration_le, sizeof(duration_le));
-
-		flags->track_duration_changed = false;
+		err = notify(conn, BT_UUID_MCS_TRACK_DURATION, &duration_le, sizeof(duration_le));
+		if (err == 0) {
+			flags->track_duration_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
 	if (flags->track_position_changed) {
@@ -1130,27 +1154,36 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		int32_t position_le = sys_cpu_to_le32(position);
 
 		LOG_DBG("Notifying track position: %d", position);
-		notify(BT_UUID_MCS_TRACK_POSITION, &position_le, sizeof(position_le));
-
-		flags->track_position_changed = false;
+		err = notify(conn, BT_UUID_MCS_TRACK_POSITION, &position_le, sizeof(position_le));
+		if (err == 0) {
+			flags->track_position_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
 	if (flags->playback_speed_changed) {
 		int8_t speed = media_proxy_sctrl_get_playback_speed();
 
 		LOG_DBG("Notifying playback speed: %d", speed);
-		notify(BT_UUID_MCS_PLAYBACK_SPEED, &speed, sizeof(speed));
-
-		flags->playback_speed_changed = false;
+		err = notify(conn, BT_UUID_MCS_PLAYBACK_SPEED, &speed, sizeof(speed));
+		if (err == 0) {
+			flags->playback_speed_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
 	if (flags->seeking_speed_changed) {
 		int8_t speed = media_proxy_sctrl_get_seeking_speed();
 
 		LOG_DBG("Notifying seeking speed: %d", speed);
-		notify(BT_UUID_MCS_SEEKING_SPEED, &speed, sizeof(speed));
-
-		flags->seeking_speed_changed = false;
+		err = notify(conn, BT_UUID_MCS_SEEKING_SPEED, &speed, sizeof(speed));
+		if (err == 0) {
+			flags->seeking_speed_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
 #if defined(CONFIG_BT_OTS)
@@ -1161,9 +1194,13 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		sys_put_le48(track_id, track_id_le);
 
 		LOG_DBG_OBJ_ID("Notifying current track ID: ", track_id);
-		notify(BT_UUID_MCS_CURRENT_TRACK_OBJ_ID, track_id_le, sizeof(track_id_le));
-
-		flags->current_track_obj_id_changed = false;
+		err = notify(conn, BT_UUID_MCS_CURRENT_TRACK_OBJ_ID, track_id_le,
+			     sizeof(track_id_le));
+		if (err == 0) {
+			flags->current_track_obj_id_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
 	if (flags->next_track_obj_id_changed) {
@@ -1174,17 +1211,22 @@ static void notify_cb(struct bt_conn *conn, void *data)
 			 * characteristic shall be zero."
 			 */
 			LOG_DBG_OBJ_ID("Notifying EMPTY next track ID: ", track_id);
-			notify(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, NULL, 0);
+			err = notify(conn, BT_UUID_MCS_NEXT_TRACK_OBJ_ID, NULL, 0);
 		} else {
 			uint8_t track_id_le[BT_OTS_OBJ_ID_SIZE];
 
 			sys_put_le48(track_id, track_id_le);
 
 			LOG_DBG_OBJ_ID("Notifying next track ID: ", track_id);
-			notify(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, track_id_le, sizeof(track_id_le));
+			err = notify(conn, BT_UUID_MCS_NEXT_TRACK_OBJ_ID, track_id_le,
+				     sizeof(track_id_le));
 		}
 
-		flags->next_track_obj_id_changed = false;
+		if (err == 0) {
+			flags->next_track_obj_id_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
 	if (flags->parent_group_obj_id_changed) {
@@ -1194,9 +1236,13 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		sys_put_le48(group_id, group_id_le);
 
 		LOG_DBG_OBJ_ID("Notifying parent group ID: ", group_id);
-		notify(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, &group_id_le, sizeof(group_id_le));
-
-		flags->parent_group_obj_id_changed = false;
+		err = notify(conn, BT_UUID_MCS_PARENT_GROUP_OBJ_ID, &group_id_le,
+			     sizeof(group_id_le));
+		if (err == 0) {
+			flags->parent_group_obj_id_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
 	if (flags->current_group_obj_id_changed) {
@@ -1206,35 +1252,48 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		sys_put_le48(group_id, group_id_le);
 
 		LOG_DBG_OBJ_ID("Notifying current group ID: ", group_id);
-		notify(BT_UUID_MCS_CURRENT_GROUP_OBJ_ID, &group_id_le, sizeof(group_id_le));
-
-		flags->current_group_obj_id_changed = false;
+		err = notify(conn, BT_UUID_MCS_CURRENT_GROUP_OBJ_ID, &group_id_le,
+			     sizeof(group_id_le));
+		if (err == 0) {
+			flags->current_group_obj_id_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 #endif /* CONFIG_BT_OTS */
 
 	if (flags->track_changed_changed) {
 		LOG_DBG("Notifying track change");
-		notify(BT_UUID_MCS_TRACK_CHANGED, NULL, 0);
-
-		flags->track_changed_changed = false;
+		err = notify(conn, BT_UUID_MCS_TRACK_CHANGED, NULL, 0);
+		if (err == 0) {
+			flags->track_changed_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
 	if (flags->playing_order_changed) {
 		uint8_t order = media_proxy_sctrl_get_playing_order();
 
 		LOG_DBG("Notifying playing order: %d", order);
-		notify(BT_UUID_MCS_PLAYING_ORDER, &order, sizeof(order));
-
-		flags->playing_order_changed = false;
+		err = notify(conn, BT_UUID_MCS_PLAYING_ORDER, &order, sizeof(order));
+		if (err == 0) {
+			flags->playing_order_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
 	if (flags->media_state_changed) {
 		uint8_t state = media_proxy_sctrl_get_media_state();
 
 		LOG_DBG("Notifying media state: %d", state);
-		notify(BT_UUID_MCS_MEDIA_STATE, &state, sizeof(state));
-
-		flags->media_state_changed = false;
+		err = notify(conn, BT_UUID_MCS_MEDIA_STATE, &state, sizeof(state));
+		if (err == 0) {
+			flags->media_state_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
 	if (flags->media_control_opcodes_changed) {
@@ -1242,9 +1301,13 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		uint32_t opcodes_le = sys_cpu_to_le32(opcodes);
 
 		LOG_DBG("Notifying command opcodes supported: %d (0x%08x)", opcodes, opcodes);
-		notify(BT_UUID_MCS_MEDIA_CONTROL_OPCODES, &opcodes_le, sizeof(opcodes_le));
-
-		flags->media_control_opcodes_changed = false;
+		err = notify(conn, BT_UUID_MCS_MEDIA_CONTROL_OPCODES, &opcodes_le,
+			     sizeof(opcodes_le));
+		if (err == 0) {
+			flags->media_control_opcodes_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
 #if defined(CONFIG_BT_OTS)
@@ -1255,27 +1318,46 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		sys_put_le48(search_id, search_id_le);
 
 		LOG_DBG_OBJ_ID("Notifying search results ID: ", search_id);
-		notify(BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, &search_id_le, sizeof(search_id_le));
-
-		flags->search_results_obj_id_changed = false;
+		err = notify(conn, BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, &search_id_le,
+			     sizeof(search_id_le));
+		if (err == 0) {
+			flags->search_results_obj_id_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
 	if (flags->search_control_point_result) {
 		uint8_t result_code = client->search_control_point_result;
 
 		LOG_DBG("Notifying search control point - result: %d", result_code);
-		notify(BT_UUID_MCS_SEARCH_CONTROL_POINT, &result_code, sizeof(result_code));
-
-		flags->search_control_point_result = false;
+		err = notify(conn, BT_UUID_MCS_SEARCH_CONTROL_POINT, &result_code,
+			     sizeof(result_code));
+		if (err == 0) {
+			flags->search_control_point_result = false;
+		} else {
+			goto fail;
+		}
 	}
 #endif /* CONFIG_BT_OTS */
 
 	if (flags->media_control_point_result) {
 		LOG_DBG("Notifying control point command - opcode: %d, result: %d",
 			client->cmd_ntf.requested_opcode, client->cmd_ntf.result_code);
-		notify(BT_UUID_MCS_MEDIA_CONTROL_POINT, &client->cmd_ntf, sizeof(client->cmd_ntf));
+		err = notify(conn, BT_UUID_MCS_MEDIA_CONTROL_POINT, &client->cmd_ntf,
+			     sizeof(client->cmd_ntf));
+		if (err == 0) {
+			flags->media_control_point_result = false;
+		} else {
+			goto fail;
+		}
+	}
 
-		flags->media_control_point_result = false;
+fail:
+	if (err != 0) {
+		LOG_DBG("Notify failed (%d), retrying next connection interval", err);
+		err = k_work_schedule(&mcs_inst.notify_work, K_USEC(info.le.interval_us));
+		__ASSERT(err >= 0, "Failed to reschedule work: %d", err);
 	}
 
 	err = k_mutex_unlock(&mcs_inst.mutex);
