@@ -19,8 +19,7 @@ LOG_MODULE_REGISTER(lorawan_native, CONFIG_LORAWAN_LOG_LEVEL);
 #define LWAN_MAX_APP_PAYLOAD		242
 #define LWAN_DEFAULT_MAX_PAYLOAD	51
 
-static K_MUTEX_DEFINE(join_mutex);
-static K_MUTEX_DEFINE(send_mutex);
+static K_MUTEX_DEFINE(api_mutex);
 
 static struct {
 	enum lorawan_datarate default_dr;
@@ -148,7 +147,7 @@ int lorawan_join(const struct lorawan_join_config *config)
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&join_mutex, K_FOREVER);
+	k_mutex_lock(&api_mutex, K_FOREVER);
 
 	join_req = (struct lwan_join_req){
 		.dev_eui = config->dev_eui,
@@ -167,13 +166,13 @@ int lorawan_join(const struct lorawan_join_config *config)
 	ret = engine_post_req(&msg);
 	if (ret != 0) {
 		LOG_ERR("Failed to post join request: %d", ret);
-		k_mutex_unlock(&join_mutex);
+		k_mutex_unlock(&api_mutex);
 		return ret;
 	}
 
 	ret = engine_wait_join_result();
 
-	k_mutex_unlock(&join_mutex);
+	k_mutex_unlock(&api_mutex);
 
 	if (ret == 0) {
 		LOG_INF("Successfully joined network");
@@ -211,7 +210,7 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len,
 		return -EMSGSIZE;
 	}
 
-	k_mutex_lock(&send_mutex, K_FOREVER);
+	k_mutex_lock(&api_mutex, K_FOREVER);
 
 	send_req = (struct lwan_send_req){
 		.data = data,
@@ -228,13 +227,13 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len,
 	ret = engine_post_req(&msg);
 	if (ret != 0) {
 		LOG_ERR("Failed to post send request: %d", ret);
-		k_mutex_unlock(&send_mutex);
+		k_mutex_unlock(&api_mutex);
 		return ret;
 	}
 
 	ret = engine_wait_send_result();
 
-	k_mutex_unlock(&send_mutex);
+	k_mutex_unlock(&api_mutex);
 
 	return ret;
 }
@@ -242,6 +241,10 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len,
 int lorawan_set_region(enum lorawan_region region)
 {
 	const struct lwan_region_ops *ops;
+
+	if (atomic_test_bit(lwan_ctx.flags, LWAN_FLAG_STARTED)) {
+		return -EALREADY;
+	}
 
 	ops = lwan_region_get(region);
 	if (ops == NULL) {
@@ -263,26 +266,36 @@ int lorawan_set_class(enum lorawan_class dev_class)
 
 void lorawan_enable_adr(bool enable)
 {
+	k_mutex_lock(&api_mutex, K_FOREVER);
 	lwan_ctx.mac.adr_enabled = enable;
+	k_mutex_unlock(&api_mutex);
 }
 
 int lorawan_set_datarate(enum lorawan_datarate dr)
 {
 	struct lwan_dr_params p;
 	int8_t power;
+	int ret;
 
+	k_mutex_lock(&api_mutex, K_FOREVER);
 	if (lwan_ctx.region == NULL) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	if (lwan_ctx.region->get_tx_params((uint8_t)dr, lwan_ctx.mac.tx_power_idx,
 					   &p, &power) != 0) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	api_state.default_dr = dr;
 	lwan_ctx.current_dr = dr;
-	return 0;
+	ret = 0;
+
+out:
+	k_mutex_unlock(&api_mutex);
+	return ret;
 }
 
 enum lorawan_datarate lorawan_get_min_datarate(void)
@@ -321,7 +334,9 @@ int lorawan_set_conf_msg_tries(uint8_t tries)
 		return -EINVAL;
 	}
 
+	k_mutex_lock(&api_mutex, K_FOREVER);
 	lwan_ctx.conf_tries = tries;
+	k_mutex_unlock(&api_mutex);
 	return 0;
 }
 
@@ -329,6 +344,7 @@ int lorawan_set_channels_mask(uint16_t *channels_mask,
 			      size_t channels_mask_size)
 {
 	size_t total_bits;
+	int ret = 0;
 
 	if (!atomic_test_bit(lwan_ctx.flags, LWAN_FLAG_STARTED)) {
 		return -EPERM;
@@ -338,9 +354,12 @@ int lorawan_set_channels_mask(uint16_t *channels_mask,
 		return -EINVAL;
 	}
 
+	k_mutex_lock(&api_mutex, K_FOREVER);
+
 	total_bits = channels_mask_size * 16;
 	if (total_bits < lwan_ctx.channel_count) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	for (size_t i = 0; i < lwan_ctx.channel_count; i++) {
@@ -350,7 +369,10 @@ int lorawan_set_channels_mask(uint16_t *channels_mask,
 		lwan_ctx.channels[i].enabled = enabled;
 	}
 
-	return 0;
+out:
+	k_mutex_unlock(&api_mutex);
+
+	return ret;
 }
 
 void lorawan_register_battery_level_callback(lorawan_battery_level_cb_t cb)
