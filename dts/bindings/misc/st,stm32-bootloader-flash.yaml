@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Alex Fabre
+
+description: |
+  Flash adapter exposing a region of an STM32 target mcu as a Zephyr
+  flash device. 
+  Must be a child node of an 'st,stm32-bootloader' node, as the
+  adapter delegates every flash_read/write/erase call to the parent's
+  read_memory/write_memory/erase_pages. 
+  The reg addresses are absolute on the target's memory map
+  (e.g. 0x08000000 for main flash).
+
+  Multiple adapter children can coexist under a single bootloader node,
+  allowing flash areas per addressable regions (main flash, option bytes,
+  system memory, SRAM, ...).
+
+compatible: "st,stm32-bootloader-flash"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      <base-address size-in-bytes> of the target memory region exposed as
+      a flash device.
+
+  erase-block-size:
+    type: int
+    required: true
+    description: |
+      Page/sector size used for flash_erase operations. Non-uniform
+      layouts are not supported by this adapter — if you need them, expose
+      the adapter as read-only or split the region across multiple child
+      nodes.
+
+  write-block-size:
+    type: int
+    default: 4
+    description: Write alignment (AN3155 requires 4-byte aligned writes).
+
+  read-only:
+    type: boolean
+    description: |
+      When set, flash_write / flash_erase on this adapter return -EACCES.
+      Useful for exposing read-only regions (system memory, factory OTP).

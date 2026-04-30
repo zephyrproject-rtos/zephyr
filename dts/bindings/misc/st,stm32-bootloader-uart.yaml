@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Alex Fabre
+
+description: |
+  STM32 system bootloader over UART (AN3155).
+
+  Transport-specific bindings of a st,stm32-bootloader device.
+
+  The host sees its usart peripheral reconfigured to match the
+  AN3155-required framing (8-bit, even parity by default, 115200 baud,
+  no flow control). Configuration is restored the original dts settings
+  on exit.
+
+compatible: "st,stm32-bootloader"
+
+include: [uart-device.yaml, "st,stm32-bootloader.yaml"]
+
+properties:
+  timeout-ms:
+    type: int
+    default: 100
+    description: Per-command response timeout in milliseconds.
+
+  baudrate:
+    type: int
+    default: 115200
+    description: |
+      UART baudrate used during bootloader sessions. The STM32 bootloader
+      auto-detects between 1200 and 115200.
+
+  parity-none:
+    type: boolean
+    description: |
+      Set when the target requires no parity (STM32WB0 series, STM32WL3x
+      line). Most STM32 bootloaders require even parity (the default).

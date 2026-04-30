@@ -1,0 +1,27 @@
+# STM32 system bootloader over USART (AN3155)
+#
+# Copyright (c) 2026 Alex Fabre
+# SPDX-License-Identifier: Apache-2.0
+
+config STM32_BOOTLOADER_UART
+	bool "USART transport (AN3155)"
+	default y
+	depends on STM32_BOOTLOADER
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_ST_STM32_BOOTLOADER),uart)
+	depends on SERIAL
+	help
+	  Program a target STM32 over UART using the AN3155 protocol.
+
+if STM32_BOOTLOADER_UART
+
+config STM32_BOOTLOADER_UART_INIT_PRIORITY
+	int "USART transport init priority"
+	default 90
+	help
+	  Must be after GPIO and UART.
+
+module = STM32_BOOTLOADER_UART
+module-str = stm32_bootloader_uart
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # STM32_BOOTLOADER_UART
