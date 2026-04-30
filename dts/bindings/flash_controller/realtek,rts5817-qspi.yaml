@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Realtek RTS5817 flash controller
+
+compatible: "realtek,rts5817-qspi"
+
+include: flash-controller.yaml
+
+properties:
+  bus-width:
+    type: int
+    required: true
+    description: |
+     The width of QSPI bus to which flash memory is connected.
+
+     Possible values are :
+      - <1> = Single read mode (1 - 1 - 1)
+      - <2> = Dual read mode (1 - 1 - 2)
+      - <4> = Quad read mode (1 - 1 - 4)
+    enum:
+      - 1
+      - 2
+      - 4
+    default: 4

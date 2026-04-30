@@ -1,0 +1,35 @@
+# Copyright (c) 2026 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_RTS5817_QSPI
+	bool "RTS5817 flash driver"
+	depends on DT_HAS_REALTEK_RTS5817_QSPI_ENABLED
+	default y
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_HAS_EX_OP
+	help
+	  Enable RTS5817 Flash driver.
+
+if FLASH_RTS5817_QSPI
+
+config FLASH_RTS5817_WRITE_PROTECTION_AUTO
+	bool "Flash write protection auto control"
+	depends on !FLASH_EX_OP_ENABLED
+	default y
+	help
+	  Configure whether to control flash write protection automatically.
+	  Default is y, so write protection is disabled automatically before
+	  writing or erasing, and enabled after operation. If n is selected,
+	  write protection is manipulated by extra operation, which means
+	  FLASH_EX_OP_ENABLED needs to set y.
+
+config FLASH_RTS5817_WP_CTRL
+	bool "Flash WP# pin control"
+	depends on $(dt_node_int_prop_int,/soc/quadspi@40000000,bus-width) < 4
+	depends on FLASH_EX_OP_ENABLED
+	help
+	  Configure whether to control the WP# pin of the SPI NOR flash. It depends
+	  on FLASH_EX_OP_ENABLED.
+
+endif
