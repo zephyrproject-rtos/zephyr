@@ -24,6 +24,8 @@ supported:
   - i2c
   - spi
   - usb_device
+  - usbd
+  - usbh
   - watchdog
   - gint
 vendor: nxp
