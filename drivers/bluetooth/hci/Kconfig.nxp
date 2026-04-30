@@ -25,6 +25,12 @@ config BT_NXP_CTRL_WAKE_ON_BT_LED_BLINK
 	  Enable LED blinking to indicate Bluetooth activity when wake-on-BT
 	  is triggered. Requires led0 alias to be defined in device tree.
 
+config HCI_NXP_CONFIG_IR_COEX
+	bool "Bluetooth Controller Independent Reset config for COEX without PDN toggle"
+	depends on HCI_NXP_CONFIG_IR
+	help
+	  This is experimental feature config for COEX IR trigger
+
 config HCI_NXP_SET_CAL_DATA
 	bool "Bluetooth Controller calibration data"
 	default y if BT_NXP_NW612 || BT_NXP_IW416
