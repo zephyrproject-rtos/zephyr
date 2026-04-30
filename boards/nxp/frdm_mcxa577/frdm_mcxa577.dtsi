@@ -19,6 +19,7 @@
 		sw1 = &user_button_3;
 		watchdog0 = &wwdt0;
 		flash-controller = &fmu;
+		die-temp0 = &temp0;
 	};
 
 	leds {
