@@ -1113,6 +1113,13 @@ enum ieee802154_config_type {
 	 */
 	IEEE802154_CONFIG_RX_ON_WHEN_IDLE,
 
+	/** The maximum number of backoffs the CSMA-CA algorithm will attempt before declaring a
+	 * channel access failure.
+	 *
+	 * @note requires IEEE802154_HW_CSMA capability.
+	 */
+	IEEE802154_CONFIG_CSMA_CA_BACKOFFS,
+
 	/** Number of types defined in ieee802154_config_type. */
 	IEEE802154_CONFIG_COMMON_COUNT,
 
@@ -1164,6 +1171,9 @@ struct ieee802154_config {
 
 		/** see @ref IEEE802154_CONFIG_EVENT_HANDLER */
 		ieee802154_event_cb_t event_handler;
+
+		/** see @ref IEEE802154_CONFIG_CSMA_CA_BACKOFFS */
+		uint8_t csma_ca_backoffs;
 
 		/**
 		 * @brief see @ref IEEE802154_CONFIG_MAC_KEYS
