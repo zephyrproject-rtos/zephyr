@@ -1,16 +1,17 @@
-identifier: usbcanfd_Oleksii_g431
-name: USB CANFD SOLO
-type: mcu
-arch: arm
-toolchain:
-  - zephyr
-  - gnuarmemb
-ram: 32
-flash: 64
-supported:
-  - can
-  - counter
-  - gpio
-  - usb_device
-  - usbd
-vendor: can-module.com
+board:
+  name: usbcanfd_oleksii_g431
+  vendor: canmodule
+  full_name: USB CANFD SOLO (can-module.com)
+  type: mcu
+  arch: arm
+  toolchain:
+    - zephyr
+    - gnuarmemb
+  ram: 32
+  flash: 128
+  supported:
+    - can
+    - counter
+    - gpio
+    - usb_device
+    - usbd
