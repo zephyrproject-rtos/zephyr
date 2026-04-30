@@ -9,7 +9,7 @@
 
 #include "test_fat.h"
 void test_fs_open_flags(void);
-const char *test_fs_open_flags_file_path =  FATFS_MNTP"/the_file.txt";
+const char *test_fs_open_flags_file_path = FATFS_MNTP "/the_file.txt";
 
 /* Time integration for filesystem */
 DWORD get_fattime(void)
