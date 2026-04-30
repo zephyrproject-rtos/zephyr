@@ -3,3 +3,12 @@ tests:
     tags:
       - kernel
       - timer
+  kernel.timer.timeout.min_heap:
+    tags:
+      - kernel
+      - timer
+    extra_conf_files:
+      - prj_heap.conf
+    integration_platforms:
+      - cy8cproto_041tp
+      - esp32c3_devkitm
