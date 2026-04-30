@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024,2026 NXP
+ * Copyright 2023-2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,6 @@
 #include <fsl_common.h>
 #include <fsl_clock.h>
 #include <fsl_cmc.h>
-#include <fsl_spc.h>
 
 #define MCXW7_CMC_ADDR (CMC_Type *)DT_REG_ADDR(DT_INST(0, nxp_cmc))
 
@@ -75,230 +74,6 @@ __imx_boot_ivt_section void (*const image_vector_table[])(void) = {
 };
 #endif /* CONFIG_NXP_MCXW7XX_BOOT_HEADER */
 
-__weak void clock_init(void)
-{
-#if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
-	/* Unlock Reference Clock Status Registers to allow writes */
-	CLOCK_UnlockFircControlStatusReg();
-	CLOCK_UnlockSircControlStatusReg();
-	CLOCK_UnlockRoscControlStatusReg();
-	CLOCK_UnlockSysOscControlStatusReg();
-
-	/*
-	 * Configuration for the 32 kHz Oscillator module
-	 * Internal capatitor bank is required in order to use the more stable OSC32K source
-	 */
-	ccm32k_osc_config_t ccm32k_osc_config = {
-		.coarseAdjustment = kCCM32K_OscCoarseAdjustmentRange0, /* ESR_Range0 */
-		.enableInternalCapBank = true,      /* Internal capacitance bank is enabled */
-		.xtalCap = kCCM32K_OscXtal8pFCap,   /* 8 pF */
-		.extalCap = kCCM32K_OscExtal8pFCap, /* 8 pF */
-	};
-	/* Enable OSC32K */
-	CCM32K_Set32kOscConfig(CCM32K, kCCM32K_Enable32kHzCrystalOsc, &ccm32k_osc_config);
-
-	/* Disable ROSC Monitor, because switching the source would generate an expected error */
-	CLOCK_SetRoscMonitorMode(kSCG_RoscMonitorDisable);
-
-	/* Select the Real Time Clock (RTC) source as OSC32K */
-	while ((CCM32K_GetStatusFlag(CCM32K) & CCM32K_STATUS_OSC32K_RDY_MASK) == 0UL) {
-	}
-	CCM32K_SelectClockSource(CCM32K, kCCM32K_ClockSourceSelectOsc32k);
-
-	/* Wait for RTC Oscillator to be Valid */
-	while (!CLOCK_IsRoscValid()) {
-	}
-
-	/* Re-enable monitor */
-	CLOCK_SetRoscMonitorMode(kSCG_RoscMonitorInt);
-	/* Disable the FRO32K to save power */
-	CCM32K_Enable32kFro(CCM32K, false);
-
-	CLOCK_SetXtal32Freq(32768U);
-
-	const scg_firc_trim_config_t scg_firc_trim_config = {
-		.trimMode = kSCG_FircTrimUpdate,   /* FIRC trim is enabled and */
-						   /* trim value update is enabled */
-		.trimSrc = kSCG_FircTrimSrcSysOsc, /* Trim source is System OSC */
-		.trimDiv = 31U,                    /* Divided by 32 */
-		.trimCoar = 0U, /* Trim value, see Reference Manual for more information */
-		.trimFine = 0U, /* Trim value, see Reference Manual for more information */
-	};
-
-	/* Configuration to set FIRC to maximum frequency */
-	scg_firc_config_t scg_firc_config = {
-		.enableMode = kSCG_FircEnable, /* Fast IRC is enabled */
-		.range = kSCG_FircRange96M,    /* 96 Mhz FIRC clock selected */
-		.trimConfig = &scg_firc_trim_config,
-	};
-
-	scg_sys_clk_config_t sys_clk_safe_config_source = {
-		.divSlow = (uint32_t)kSCG_SysClkDivBy4,
-		.divCore = (uint32_t)kSCG_SysClkDivBy1,
-		.src = (uint32_t)kSCG_SysClkSrcSirc,
-	};
-
-	CLOCK_SetRunModeSysClkConfig(&sys_clk_safe_config_source);
-
-	scg_sys_clk_config_t cur_config;
-
-	do {
-		CLOCK_GetCurSysClkConfig(&cur_config);
-	} while (cur_config.src != sys_clk_safe_config_source.src);
-
-	(void)CLOCK_InitFirc(&scg_firc_config);
-
-	scg_sys_clk_config_t sys_clk_config = {
-		.divSlow = (uint32_t)kSCG_SysClkDivBy4, /* Slow Clock Divider: divided by 4 */
-		.divBus = (uint32_t)kSCG_SysClkDivBy1,  /* Bus Clock Divider: divided by 1 */
-		.divCore = (uint32_t)kSCG_SysClkDivBy1, /* Core Clock Divider: divided by 1 */
-		.src = (uint32_t)kSCG_SysClkSrcFirc,    /* Select Fast IRC as System Clock */
-	};
-	CLOCK_SetRunModeSysClkConfig(&sys_clk_config);
-
-	/* Wait for clock source switch to finish */
-	do {
-		CLOCK_GetCurSysClkConfig(&cur_config);
-	} while (cur_config.src != sys_clk_config.src);
-
-	SystemCoreClock = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency);
-
-	/* OSC-RF / System Oscillator Configuration */
-	scg_sosc_config_t sosc_config = {
-		.freq = 32000000U,
-		.monitorMode = kSCG_SysOscMonitorDisable,
-		.enableMode = kSCG_SoscEnable,
-	};
-
-	/* Init OSC-RF / SOSC */
-	(void)CLOCK_InitSysOsc(&sosc_config);
-	CLOCK_SetXtal0Freq(sosc_config.freq);
-
-	/* Slow internal reference clock (SIRC) configuration */
-	scg_sirc_config_t sirc_config = {
-		.enableMode = kSCG_SircDisableInSleep,
-	};
-
-	/* Init SIRC */
-	(void)CLOCK_InitSirc(&sirc_config);
-
-	/* Raise the core voltage to allow the system to run at 96MHz */
-	spc_active_mode_core_ldo_option_t ldoOption;
-	/* Configure Flash to support different voltage level and frequency */
-	FMU0->FCTRL = (FMU0->FCTRL & ~((uint32_t)FMU_FCTRL_RWSC_MASK)) | (FMU_FCTRL_RWSC(0x2U));
-	/* Specifies the operating voltage for the SRAM's read/write timing margin */
-	SPC_SetSRAMOperateVoltage(SPC0, kSPC_SRAM_OperatVoltage1P1V);
-	/* Set the LDO_CORE VDD regulator level */
-	ldoOption.CoreLDOVoltage = kSPC_CoreLDO_NormalVoltage;
-	ldoOption.CoreLDODriveStrength = kSPC_CoreLDO_NormalDriveStrength;
-	(void)SPC_SetActiveModeCoreLDORegulatorConfig(SPC0, &ldoOption);
-#endif
-
-	/* Attach Clocks */
-	CLOCK_SetIpSrc(kCLOCK_Lpuart0, kCLOCK_IpSrcFro192M);
-	CLOCK_SetIpSrc(kCLOCK_Lpuart1, kCLOCK_IpSrcFro192M);
-	CLOCK_SetIpSrc(kCLOCK_Lpspi0, kCLOCK_IpSrcFro192M);
-	CLOCK_SetIpSrc(kCLOCK_Lpspi1, kCLOCK_IpSrcFro192M);
-	CLOCK_SetIpSrc(kCLOCK_Can0, kCLOCK_IpSrcFro192M);
-	CLOCK_SetIpSrc(kCLOCK_Lpit0, kCLOCK_IpSrcFro192M);
-	CLOCK_SetIpSrc(kCLOCK_Tpm0, kCLOCK_IpSrcFro192M);
-	CLOCK_SetIpSrc(kCLOCK_Tpm1, kCLOCK_IpSrcFro192M);
-	CLOCK_SetIpSrc(kCLOCK_Lpi2c0, kCLOCK_IpSrcFro192M);
-	CLOCK_SetIpSrcDiv(kCLOCK_Lpi2c0, kSCG_SysClkDivBy16);
-	CLOCK_SetIpSrc(kCLOCK_Lpi2c1, kCLOCK_IpSrcFro192M);
-	CLOCK_SetIpSrcDiv(kCLOCK_Lpi2c1, kSCG_SysClkDivBy16);
-	CLOCK_SetIpSrc(kCLOCK_Lpspi0, kCLOCK_IpSrcFro192M);
-	CLOCK_SetIpSrc(kCLOCK_Lpspi1, kCLOCK_IpSrcFro192M);
-	CLOCK_SetIpSrc(kCLOCK_Lpadc0, kCLOCK_IpSrcFro192M);
-	CLOCK_SetIpSrcDiv(kCLOCK_Lpadc0, kSCG_SysClkDivBy10);
-#ifndef CONFIG_SOC_MCXW70AC
-	CLOCK_SetIpSrc(kCLOCK_Flexio0, kCLOCK_IpSrcFro192M);
-	CLOCK_SetIpSrcDiv(kCLOCK_Flexio0, kSCG_SysClkDivBy6);
-#endif
-#ifdef CONFIG_SOC_MCXW70AC
-	CLOCK_EnableClock(kCLOCK_Tstmr0);
-#endif
-
-	/* Ungate clocks if the peripheral is enabled in devicetree */
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpioa), nxp_kinetis_gpio, okay)) {
-		CLOCK_EnableClock(kCLOCK_PortA);
-		CLOCK_EnableClock(kCLOCK_GpioA);
-	}
-
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpiob), nxp_kinetis_gpio, okay)) {
-		CLOCK_EnableClock(kCLOCK_PortB);
-		CLOCK_EnableClock(kCLOCK_GpioB);
-	}
-
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpioc), nxp_kinetis_gpio, okay)) {
-		CLOCK_EnableClock(kCLOCK_PortC);
-		CLOCK_EnableClock(kCLOCK_GpioC);
-	}
-
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart0), nxp_lpuart, okay)) {
-		CLOCK_EnableClock(kCLOCK_Lpuart0);
-	}
-
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart1), nxp_lpuart, okay)) {
-		CLOCK_EnableClock(kCLOCK_Lpuart1);
-	}
-
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(tpm0), nxp_lpit, okay)) {
-		CLOCK_EnableClock(kCLOCK_Lpit0);
-	}
-
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(tpm0), nxp_kinetis_tpm, okay)) {
-		CLOCK_EnableClock(kCLOCK_Tpm0);
-	}
-
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(tpm1), nxp_kinetis_tpm, okay)) {
-		CLOCK_EnableClock(kCLOCK_Tpm1);
-	}
-
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpi2c0), nxp_lpi2c, okay)) {
-		CLOCK_EnableClock(kCLOCK_Lpi2c0);
-	}
-
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpi2c1), nxp_lpi2c, okay)) {
-		CLOCK_EnableClock(kCLOCK_Lpi2c1);
-	}
-
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpspi0), nxp_lpspi, okay)) {
-		CLOCK_EnableClock(kCLOCK_Lpspi0);
-	}
-
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpspi1), nxp_lpspi, okay)) {
-		CLOCK_EnableClock(kCLOCK_Lpspi1);
-	}
-
-	if (IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN)) {
-		CLOCK_EnableClock(kCLOCK_Can0);
-	}
-
-#ifndef CONFIG_SOC_MCXW70AC
-	/* MCX W70 does not support VREF and FLEXIO */
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(vref), nxp_vref, okay)) {
-		CLOCK_EnableClock(kCLOCK_Vref0);
-	}
-
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexio), nxp_flexio, okay)) {
-		CLOCK_EnableClock(kCLOCK_Flexio0);
-	}
-#endif
-
-	if (DT_NODE_HAS_COMPAT_STATUS(adc0, nxp_lpadc, okay)) {
-		CLOCK_EnableClock(kCLOCK_Lpadc0);
-	}
-
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(edma), nxp_mcux_edma, okay)) {
-		CLOCK_EnableClock(kCLOCK_Dma0);
-	}
-
-	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ewm0), nxp_ewm, okay)) {
-		CLOCK_EnableClock(kCLOCK_Ewm0);
-	}
-}
-
 #ifndef CONFIG_SOC_MCXW70AC
 static void vbat_init(void)
 {
@@ -322,9 +97,6 @@ void soc_early_init_hook(void)
 
 	/* disable interrupts */
 	oldLevel = irq_lock();
-
-	/* Initialize system clock to 96 MHz */
-	clock_init();
 
 #ifndef CONFIG_SOC_MCXW70AC
 	/* Smart power switch initialization */
