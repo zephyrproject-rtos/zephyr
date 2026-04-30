@@ -6,6 +6,7 @@ config RTC_COUNTER
 	default y
 	depends on DT_HAS_ZEPHYR_RTC_COUNTER_ENABLED
 	select COUNTER
+	select COUNTER_CALIBRATION if RTC_CALIBRATION
 	help
 	  RTC driver applied for RTC device without broken-down time registers.
 	  Wraps the counter API to provide RTC functionality.

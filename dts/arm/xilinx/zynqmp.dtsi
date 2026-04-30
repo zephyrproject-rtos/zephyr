@@ -322,5 +322,17 @@
 			rx-fifo-depth = <128>;
 			tx-fifo-depth = <128>;
 		};
+
+		rtc: rtc@ffa60000 {
+			compatible = "xlnx,zynqmp-rtc";
+			reg = <0xffa60000 0x100>;
+			status = "disabled";
+			interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 27 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "alarm", "sec";
+			clock-frequency = <32768>;
+		};
 	};
 };

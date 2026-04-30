@@ -277,3 +277,20 @@ static inline int z_vrfy_counter_set_guard_period_64(const struct device *dev, u
 }
 #include <zephyr/syscalls/counter_set_guard_period_64_mrsh.c>
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
+
+#ifdef CONFIG_COUNTER_CALIBRATION
+static inline int z_vrfy_counter_set_calibration(const struct device *dev, int32_t calibration)
+{
+	K_OOPS(K_SYSCALL_DRIVER_COUNTER(dev, set_calibration));
+	return z_impl_counter_set_calibration((const struct device *)dev, calibration);
+}
+#include <zephyr/syscalls/counter_set_calibration_mrsh.c>
+
+static inline int z_vrfy_counter_get_calibration(const struct device *dev, int32_t *calibration)
+{
+	K_OOPS(K_SYSCALL_DRIVER_COUNTER(dev, get_calibration));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(calibration, sizeof(int32_t)));
+	return z_impl_counter_get_calibration((const struct device *)dev, calibration);
+}
+#include <zephyr/syscalls/counter_get_calibration_mrsh.c>
+#endif /* CONFIG_COUNTER_CALIBRATION */
