@@ -5,6 +5,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <fsl_clock.h>
 #include <fsl_pmu.h>
@@ -14,6 +15,19 @@
 #define BOARD_XTAL_CLK_HZ     32000U
 /* Core clock frequency: 96MHz */
 #define CLOCK_INIT_CORE_CLOCK 96000000U
+#define BOARD_XTAL_CLK_HZ                         32000U
+
+#if DT_NODE_EXISTS(DT_PATH(cpus, cpu_0))
+#define CPU_NODE DT_PATH(cpus, cpu_0)
+#elif DT_NODE_EXISTS(DT_PATH(cpus, cpu_1))
+#define CPU_NODE DT_PATH(cpus, cpu_1)
+#else
+#error "No CPU node found in devicetree"
+#endif
+
+/* Core clock frequency */
+#define CPU_CLOCK_FREQ DT_PROP(CPU_NODE, clock_frequency)
+
 /* System clock frequency. */
 extern uint32_t SystemCoreClock;
 
@@ -21,6 +35,7 @@ void board_early_init_hook(void)
 {
 	/* Enable APB clock gate for access to AON. */
 	CLOCK_EnableClock(kCLOCK_GateAonAPB);
+#if DT_NODE_EXISTS(DT_PATH(cpus, cpu_0))
 	/* Switch MAIN_CLK to SIRC to allow FIRC reconfiguration. */
 	CLOCK_AttachClk(kSIRC_to_MAIN_CLK);
 	/* Set flash wait states for SIRC frequency */
@@ -33,8 +48,8 @@ void board_early_init_hook(void)
 	/* Set VDD_CORE_MAIN to 1.1V (typical value)*/
 	PMU_UpdateVDDCore1P1InActiveMode(AON__PMU, 0x8FU);
 
-	/* Set FROHF to 96MHz */
-	CLOCK_SetupFROHFClocking(96000000U, 0U);
+	/* Set FROHF to CPU0 clock_frequency defined in device tree */
+	CLOCK_SetupFROHFClocking(CPU_CLOCK_FREQ, 0U);
 	/* FIRC is disabled in Deep Sleep mode */
 	SCG0->FIRCCSR &= ~SCG_FIRCCSR_FIRCSTEN_MASK;
 	/* Lock FIRCCSR register */
@@ -48,8 +63,9 @@ void board_early_init_hook(void)
 	CLOCK_SetClockDiv(kCLOCK_DivAHBAIPSCLK, 4U);
 
 	/* Switch MAIN_CLK to FIRC */
-	CLOCK_SetFlashWaitStateBasedOnFreq(96000000U);
+	CLOCK_SetFlashWaitStateBasedOnFreq(CPU_CLOCK_FREQ);
 	CLOCK_AttachClk(kFIRC_to_MAIN_CLK);
+#endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	RESET_ReleasePeripheralReset(kGPIO1_RST_SHIFT_RSTn);
@@ -125,5 +141,5 @@ void board_early_init_hook(void)
 #endif
 
 	/* Set SystemCoreClock variable. */
-	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
+	SystemCoreClock = CPU_CLOCK_FREQ;
 }
