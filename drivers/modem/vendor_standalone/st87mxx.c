@@ -16,7 +16,7 @@
 #include <zephyr/net/offloaded_netdev.h>
 #include <zephyr/net/socket_offload.h>
 #include <zephyr/drivers/gpio.h>
-#include "modem_receiver.h"
+#include "../modem_receiver.h"
 
 LOG_MODULE_REGISTER(modem_st87mxx, CONFIG_MODEM_LOG_LEVEL);
 

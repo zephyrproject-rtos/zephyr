@@ -25,10 +25,10 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
 #include <stdio.h>
 #endif
 
-#include "modem_context.h"
-#include "modem_socket.h"
-#include "modem_cmd_handler.h"
-#include "modem_iface_uart.h"
+#include "../modem_context.h"
+#include "../modem_socket.h"
+#include "../modem_cmd_handler.h"
+#include "../modem_iface_uart.h"
 
 #if !defined(CONFIG_MODEM_UBLOX_SARA_R4_MANUAL_MCCMNO)
 #define CONFIG_MODEM_UBLOX_SARA_R4_MANUAL_MCCMNO ""

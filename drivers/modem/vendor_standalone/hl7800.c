@@ -45,7 +45,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_MODEM_LOG_LEVEL);
 #include <zephyr/fs/fs.h>
 #endif
 
-#include "modem_receiver.h"
+#include "../modem_receiver.h"
 #include <zephyr/drivers/modem/hl7800.h>
 
 #define PREFIXED_SWITCH_CASE_RETURN_STRING(prefix, val)                        \

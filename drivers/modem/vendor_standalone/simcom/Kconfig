@@ -2,5 +2,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # zephyr-keep-sorted-start
-source "drivers/modem/simcom/sim7080/Kconfig"
+source "drivers/modem/vendor_standalone/simcom/sim7080/Kconfig"
 # zephyr-keep-sorted-stop

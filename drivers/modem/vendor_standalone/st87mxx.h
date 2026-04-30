@@ -14,10 +14,10 @@
 #include <zephyr/net/net_context.h>
 #include <zephyr/drivers/modem/st87mxx_app_services.h>
 
-#include "modem_context.h"
-#include "modem_socket.h"
-#include "modem_cmd_handler.h"
-#include "modem_iface_uart.h"
+#include "../modem_context.h"
+#include "../modem_socket.h"
+#include "../modem_cmd_handler.h"
+#include "../modem_iface_uart.h"
 
 #define MDM_CMD_TIMEOUT				K_SECONDS(10)
 #define MDM_DNS_TIMEOUT				K_SECONDS(210)

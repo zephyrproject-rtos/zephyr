@@ -22,8 +22,8 @@
 #include <zephyr/net/socket_offload.h>
 #include <zephyr/drivers/modem/hl78xx_apis.h>
 
-#include "../modem_context.h"
-#include "../modem_socket.h"
+#include "../../modem_context.h"
+#include "../../modem_socket.h"
 #include <stdint.h>
 /* clang-format off */
 #define MDM_CMD_TIMEOUT                      (40)  /*K_SECONDS*/
