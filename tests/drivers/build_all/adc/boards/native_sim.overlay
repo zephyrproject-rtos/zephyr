@@ -170,6 +170,7 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_mcp3204: mcp3204@0 {
@@ -516,6 +517,15 @@
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
 				int-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
+			};
+
+			test_spi_ads131m08: ads131m08@31 {
+				compatible = "ti,ads131m08";
+				reg = <0x31>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				drdy-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
 			};
 		};
 	};
