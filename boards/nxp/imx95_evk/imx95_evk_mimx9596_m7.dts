@@ -9,10 +9,21 @@
 #include <nxp/imx/nxp_imx95_m7.dtsi>
 #include "imx95_evk-pinctrl.dtsi"
 #include <dt-bindings/mipi_dsi/mipi_dsi.h>
+#include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
 
 / {
 	model = "NXP i.MX95 EVK board";
 	compatible = "nxp,imx95_evk";
+
+	/* Camera connector abstraction (for camera shields) */
+	nxp_cam_connector: cam_connector {
+		compatible = "raspberrypi,csi-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <CSI_IO0 0 &pcal6408 2 0>,
+			   <CSI_IO1 0 &adp5585_gpio 2 0>;
+	};
 
 	chosen {
 		/* TCM */
@@ -115,6 +126,39 @@
 	status = "okay";
 };
 
+/* LPI2C3 for camera IO expanders (used by camera shields) */
+&lpi2c3 {
+	status = "disabled";
+	pinctrl-0 = <&lpi2c3_default>;
+	pinctrl-names = "default";
+
+	/* ADP5585 MFD device for camera power control */
+	mfd_adp5585: adp5585@34 {
+		compatible = "adi,adp5585";
+		reg = <0x34>;
+		status = "disabled";
+
+		/* GPIO child node */
+		adp5585_gpio: adp5585_gpio {
+			compatible = "adi,adp5585-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <13>;
+			gpio-reserved-ranges = <5 3>;
+			status = "disabled";
+		};
+	};
+
+	pcal6408: gpio@20 {
+		compatible = "nxp,pcal6408a";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		status = "disabled";
+	};
+};
+
 &lpi2c5 {
 	pinctrl-0 = <&lpi2c5_default>;
 	pinctrl-names = "default";
@@ -191,3 +235,6 @@ zephyr_dpu: &dpu {};
 zephyr_mipi_dsi: &mipi_dsi {};
 
 display_i2c: &lpi2c2 {};
+
+/* Board-provided label for camera shields */
+nxp_cam_i2c: &lpi2c3 {};
