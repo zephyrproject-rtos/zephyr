@@ -154,12 +154,6 @@ static void commit_changes(off_t addr, size_t len)
 
 static void rram_write(off_t addr, const void *data, uint8_t fill_val, size_t len)
 {
-#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-	nrf_rramc_config_t config = {.mode_write = true, .write_buff_size = WRITE_BUFFER_SIZE};
-
-	nrf_rramc_config_set(NRF_RRAMC, &config);
-#endif
-
 	size_t chunk_len = len;
 #if WRITE_BUFFER_ENABLE
 	/* Preserve the original write start address and length for commit_changes(). */
@@ -199,11 +193,6 @@ static void rram_write(off_t addr, const void *data, uint8_t fill_val, size_t le
 #if WRITE_BUFFER_ENABLE
 	commit_changes(commit_addr, commit_len);
 #endif
-
-#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-	config.mode_write = false;
-	nrf_rramc_config_set(NRF_RRAMC, &config);
-#endif
 }
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
@@ -225,6 +214,15 @@ static int write_op(void *context)
 	size_t len;
 
 	uint32_t i = 0U;
+
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	/* Defensive re-program of RRAMC write mode at the start of every radio time slot.
+	 * Setting it again here makes write_op() self-contained.
+	 */
+	nrf_rramc_config_t config = {.mode_write = true, .write_buff_size = WRITE_BUFFER_SIZE};
+
+	nrf_rramc_config_set(NRF_RRAMC, &config);
+#endif
 
 	if (w_ctx->enable_time_limit) {
 		nrf_flash_sync_get_timestamp_begin();
@@ -288,6 +286,18 @@ static int nrf_write(off_t addr, const void *data, uint8_t fill_val, size_t len)
 
 	SYNC_LOCK();
 
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	/* Enable RRAMC write mode once for the whole API call.
+	 * The SYNC_LOCK above guarantees no concurrent driver call
+	 * touches RRAMC config in between. write_op() additionally
+	 * re-programs write mode at the start of every radio slot for
+	 * defence in depth.
+	 */
+	nrf_rramc_config_t config = {.mode_write = true, .write_buff_size = WRITE_BUFFER_SIZE};
+
+	nrf_rramc_config_set(NRF_RRAMC, &config);
+#endif
+
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
 	if (nrf_flash_sync_is_required()) {
 		ret = write_synchronously(addr, data, fill_val, len);
@@ -296,6 +306,11 @@ static int nrf_write(off_t addr, const void *data, uint8_t fill_val, size_t len)
 	{
 		rram_write(addr, data, fill_val, len);
 	}
+
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	config.mode_write = false;
+	nrf_rramc_config_set(NRF_RRAMC, &config);
+#endif
 
 	SYNC_UNLOCK();
 
