@@ -53,6 +53,12 @@ struct sdhc_stm32_data {
 	struct k_sem device_sync_sem;  /* Sync between device communication messages */
 	void *sdio_dma_buf;            /* DMA buffer for SDIO data transfer */
 	uint32_t total_transfer_bytes; /* number of bytes transferred */
+#ifdef CONFIG_SDHC_STM32_SDIO_INTERRUPT
+	sdhc_interrupt_cb_t callback;
+	void *callback_user_data;
+	bool sdio_d1_irq_enabled;
+	bool sdio_d1_irq_pending;
+#endif /* CONFIG_SDHC_STM32_SDIO_INTERRUPT */
 };
 
 /*
@@ -625,6 +631,42 @@ static int sdhc_stm32_reset(const struct device *dev)
 	return res == HAL_OK ? 0 : -EIO;
 }
 
+#ifdef CONFIG_SDHC_STM32_SDIO_INTERRUPT
+static int sdhc_stm32_enable_interrupt(const struct device *dev,
+				    sdhc_interrupt_cb_t callback,
+				    int sources, void *user_data)
+{
+	const struct sdhc_stm32_config *config = dev->config;
+	struct sdhc_stm32_data *data = dev->data;
+
+	if (sources & SDHC_INT_SDIO) {
+		data->callback = callback;
+		data->callback_user_data = user_data;
+		data->sdio_d1_irq_enabled = true;
+		data->sdio_d1_irq_pending = false;
+		config->hsd->Instance->DCTRL |= SDMMC_DCTRL_SDIOEN;
+		config->hsd->Instance->MASK  |= SDMMC_MASK_SDIOITIE;
+	}
+
+	return 0;
+}
+
+static int sdhc_stm32_disable_interrupt(const struct device *dev, int sources)
+{
+	const struct sdhc_stm32_config *config = dev->config;
+	struct sdhc_stm32_data *data = dev->data;
+
+	if (sources & SDHC_INT_SDIO) {
+		config->hsd->Instance->DCTRL &= ~SDMMC_DCTRL_SDIOEN;
+		config->hsd->Instance->MASK  &= ~SDMMC_MASK_SDIOITIE;
+		data->sdio_d1_irq_enabled = false;
+		data->sdio_d1_irq_pending = false;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_SDHC_STM32_SDIO_INTERRUPT */
+
 static DEVICE_API(sdhc, sdhc_stm32_api) = {
 	.request = sdhc_stm32_request,
 	.set_io = sdhc_stm32_set_io,
@@ -632,6 +674,10 @@ static DEVICE_API(sdhc, sdhc_stm32_api) = {
 	.get_card_present = sdhc_stm32_get_card_present,
 	.card_busy = sdhc_stm32_card_busy,
 	.reset = sdhc_stm32_reset,
+	.enable_interrupt = COND_CODE_1(CONFIG_SDHC_STM32_SDIO_INTERRUPT,
+					(sdhc_stm32_enable_interrupt), (NULL)),
+	.disable_interrupt = COND_CODE_1(CONFIG_SDHC_STM32_SDIO_INTERRUPT,
+					 (sdhc_stm32_disable_interrupt), (NULL)),
 };
 
 void sdhc_stm32_event_isr(const struct device *dev)
@@ -639,6 +685,10 @@ void sdhc_stm32_event_isr(const struct device *dev)
 	uint32_t icr_clear_flag = 0;
 	struct sdhc_stm32_data *data = dev->data;
 	const struct sdhc_stm32_config *config = dev->config;
+
+#ifdef CONFIG_SDHC_STM32_SDIO_INTERRUPT
+	bool sdioit = (config->hsd->Instance->STA & SDMMC_STA_SDIOIT) != 0U;
+#endif /* CONFIG_SDHC_STM32_SDIO_INTERRUPT */
 
 	if (__HAL_SDIO_GET_FLAG(config->hsd,
 				SDMMC_FLAG_DATAEND | SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
@@ -664,6 +714,27 @@ void sdhc_stm32_event_isr(const struct device *dev)
 	}
 
 	HAL_SDIO_IRQHandler(config->hsd);
+
+#ifdef CONFIG_SDHC_STM32_SDIO_INTERRUPT
+	if (sdioit) {
+		/*
+		 * Clear the SDIOIT flag and mask SDIOITIE, but keep SDIOEN active.
+		 * With SDIOEN set, a new D1 assertion by the card will set SDIOIT
+		 * in STA even while SDIOITIE is masked. This ensures no interrupt
+		 * is lost: if the card asserts D1 again before enable_interrupt()
+		 * re-arms SDIOITIE, the ISR will see SDIOIT on the next invocation
+		 * (e.g. triggered by DATAEND). The sdio_d1_irq_pending flag then
+		 * prevents a spurious double callback in that scenario.
+		 */
+		config->hsd->Instance->ICR = SDMMC_ICR_SDIOITC;
+		config->hsd->Instance->MASK &= ~SDMMC_MASK_SDIOITIE;
+
+		if (data->sdio_d1_irq_enabled && data->callback && !data->sdio_d1_irq_pending) {
+			data->sdio_d1_irq_pending = true;
+			data->callback(dev, SDHC_INT_SDIO, data->callback_user_data);
+		}
+	}
+#endif /* CONFIG_SDHC_STM32_SDIO_INTERRUPT */
 }
 
 static int sdhc_stm32_init(const struct device *dev)
@@ -713,6 +784,11 @@ static int sdhc_stm32_init(const struct device *dev)
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 	k_mutex_init(&data->bus_mutex);
 
+#ifdef CONFIG_SDHC_STM32_SDIO_INTERRUPT
+	config->hsd->Instance->ICR = SDMMC_ICR_SDIOITC;
+	config->hsd->Instance->MASK &= ~SDMMC_MASK_SDIOITIE;
+#endif /* CONFIG_SDHC_STM32_SDIO_INTERRUPT */
+
 	return ret;
 }
 
@@ -722,6 +798,12 @@ static int sdhc_stm32_suspend(const struct device *dev)
 	int ret;
 	const struct sdhc_stm32_config *cfg = (struct sdhc_stm32_config *)dev->config;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+
+#ifdef CONFIG_SDHC_STM32_SDIO_INTERRUPT
+	/* Disable SDIO interrupt before gating the clock to avoid spurious IRQs */
+	cfg->hsd->Instance->MASK  &= ~SDMMC_MASK_SDIOITIE;
+	cfg->hsd->Instance->DCTRL &= ~SDMMC_DCTRL_SDIOEN;
+#endif /* CONFIG_SDHC_STM32_SDIO_INTERRUPT */
 
 	/* Disable device clock. */
 	ret = clock_control_off(clk, (clock_control_subsys_t)(uintptr_t)&cfg->pclken[0]);
@@ -743,9 +825,29 @@ static int sdhc_stm32_suspend(const struct device *dev)
 
 static int sdhc_stm32_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	int ret;
+
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		return sdhc_stm32_activate(dev);
+		ret = sdhc_stm32_activate(dev);
+#ifdef CONFIG_SDHC_STM32_SDIO_INTERRUPT
+		if (ret == 0) {
+			const struct sdhc_stm32_config *config = dev->config;
+			struct sdhc_stm32_data *data = dev->data;
+
+			/*
+			 * Restore SDIO interrupt registers that were explicitly
+			 * disabled in sdhc_stm32_suspend() prior to clock gating.
+			 */
+			if (data->sdio_d1_irq_enabled) {
+				data->sdio_d1_irq_pending = false;
+				config->hsd->Instance->ICR   = SDMMC_ICR_SDIOITC;
+				config->hsd->Instance->DCTRL |= SDMMC_DCTRL_SDIOEN;
+				config->hsd->Instance->MASK  |= SDMMC_MASK_SDIOITIE;
+			}
+		}
+#endif /* CONFIG_SDHC_STM32_SDIO_INTERRUPT */
+		return ret;
 	case PM_DEVICE_ACTION_SUSPEND:
 		return sdhc_stm32_suspend(dev);
 	default:
