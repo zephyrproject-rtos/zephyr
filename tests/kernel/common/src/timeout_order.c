@@ -22,7 +22,7 @@ static void thread(void *p1, void *p2, void *p3)
 
 	uintptr_t id = (uintptr_t)p1;
 
-	k_timer_status_sync(&timer[id]);
+	(void)k_timer_status_sync(&timer[id]);
 
 	/* no need to protect cur, all threads have the same prio */
 	results[cur++] = id;
@@ -78,15 +78,22 @@ ZTEST(common_1cpu, test_timeout_order)
 		k_timer_start(&timer[ii], K_MSEC(100), K_NO_WAIT);
 	}
 
-	/* Wait for all timers to fire */
-	k_msleep(125);
+	/*
+	 * Wait for each thread to actually record its result.
+	 * The semaphore is given only after the thread has written
+	 * to results[], so this provides the required happens-before
+	 * guarantee without relying on a fixed timeout.
+	 */
+	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
+		k_sem_take(&sem[ii], K_FOREVER);
+	}
 
 	/* Check results */
 	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
 		zassert_equal(results[ii], ii, "");
 	}
 
-	/* Clean up */
+	/* Clean up: stop any leftover timers and join threads */
 	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
 		k_timer_stop(&timer[ii]);
 		k_thread_join(&threads[ii], K_FOREVER);
