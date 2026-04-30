@@ -1,0 +1,13 @@
+identifier: arduino_nesso_n1/esp32c6/hpcore
+name: Arduino Nesso N1 HP Core
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - uart
+  - watchdog
+  - entropy
+vendor: arduino
