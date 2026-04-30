@@ -99,6 +99,27 @@
 		reg = <0x80100000 DT_SIZE_M(8)>;
 	};
 
+	/* This qspi setting included
+	 * The QSPI controller register and
+	 * The QSPI data register
+	 * QSPI REG  <0x108d2000 0x100>
+	 * Reserved  <0x108d2100 0xf00>
+	 * QSPI DATA <0x10900000 0x100000>
+	 */
+	qspi: qspi@108d2000 {
+		#address-cells = <0x1>;
+		#size-cells = <0x0>;
+		compatible = "cdns,qspi-nor";
+		reg = <0x108d2000 0x1000>,
+		      <0x10900000 0x100000>;
+		reg-names = "qspi_reg", "qspi_data";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		clock-frequency = <400000000>;
+		status = "disabled";
+	};
+
 	fpga0: bridges {
 		compatible = "altr,socfpga-agilex-bridge";
 	};
