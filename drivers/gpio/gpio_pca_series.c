@@ -16,6 +16,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_pca_series.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/dt-bindings/gpio/pca-series-gpio.h>
 #include <zephyr/drivers/i2c.h>
@@ -181,6 +182,7 @@ struct gpio_pca_series_config {
 	struct i2c_dt_spec i2c;           /* i2c bus dt spec */
 	const struct gpio_pca_series_part_config *part_cfg; /* config of part unmber */
 	struct gpio_dt_spec gpio_rst;                       /* device reset gpio */
+	bool automatic_reset;
 #ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
 	struct gpio_dt_spec gpio_int; /** device interrupt gpio */
 #endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
@@ -758,14 +760,7 @@ static inline int gpio_pca_series_reset_write_reg(const struct device *dev)
 	return ret;
 }
 
-/**
- * @brief Reset function of pca_series
- *
- * This function pulls reset pin to reset a pca_series
- * device if reset_pin is present. Otherwise it write
- * reset value to device registers.
- */
-static inline int gpio_pca_series_reset(const struct device *dev)
+int gpio_pca_series_reset(const struct device *dev)
 {
 	const struct gpio_pca_series_config *cfg = dev->config;
 	int ret = 0;
@@ -1859,24 +1854,28 @@ static int gpio_pca_series_init(const struct device *dev)
 	}
 
 	/** device reset */
-	ret = gpio_pca_series_reset(dev);
-	if (ret) {
-		LOG_ERR("device reset error %d", ret);
-		goto out_bus;
-	} else {
-		LOG_DBG("device reset done");
+	if (cfg->automatic_reset) {
+		ret = gpio_pca_series_reset(dev);
+		if (ret) {
+			LOG_ERR("device reset error %d", ret);
+			goto out_bus;
+		} else {
+			LOG_DBG("device reset done");
+		}
 	}
 
 #ifdef GPIO_NXP_PCA_SERIES_DEBUG
 # ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 	gpio_pca_series_cache_test(dev);
-	/** Device needs to be reset again after test */
-	ret = gpio_pca_series_reset(dev);
-	if (ret) {
-		LOG_ERR("device reset error %d", ret);
-		goto out_bus;
-	} else {
-		LOG_DBG("device reset done");
+	if (cfg->automatic_reset) {
+		/** Device needs to be reset again after test */
+		ret = gpio_pca_series_reset(dev);
+		if (ret) {
+			LOG_ERR("device reset error %d", ret);
+			goto out_bus;
+		} else {
+			LOG_DBG("device reset done");
+		}
 	}
 # endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 #endif /* GPIO_NXP_PCA_SERIES_DEBUG */
@@ -2138,6 +2137,7 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca9538 = {
 	.port_no = GPIO_PCA_PORT_NO_PCA_PART_NO_PCA9538,
 	.flags = GPIO_PCA_FLAG_PCA_PART_NO_PCA9538,
 	.regs = gpio_pca_series_reg_pca9538,
+
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 # ifdef GPIO_NXP_PCA_SERIES_DEBUG
 	.cache_size = GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(PCA_PART_NO_PCA9538),
@@ -2597,6 +2597,7 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal6534 = {
 		.i2c = I2C_DT_SPEC_INST_GET(inst), \
 		.part_cfg = GPIO_PCA_GET_PART_CFG_BY_PART_NO(part_no), \
 		.gpio_rst = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}), \
+		.automatic_reset = (!(DT_INST_PROP(inst, no_auto_reset))), \
 		IF_ENABLED(CONFIG_GPIO_PCA_SERIES_INTERRUPT, \
 			(.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {}),)) \
 	}; \
