@@ -1139,6 +1139,73 @@ static void run_after_lock(void *unused)
 	spi_slow.config.operation &= ~SPI_HOLD_ON_CS;
 }
 
+/*
+ * Validate half-duplex behavior using single-line configuration.
+ *
+ * In half-duplex mode, TX and RX should not occur simultaneously.
+ * This test verifies that separate TX and RX phases correctly
+ * transfer data in loopback configuration.
+ */
+ZTEST(spi_loopback, test_spi_half_duplex_basic)
+{
+    struct spi_dt_spec *spec = loopback_specs[spec_idx];
+    struct spi_dt_spec *spec_copy = &spec_copies[4];
+
+    *spec_copy = *spec;
+
+    /* Enable HALF-DUPLEX mode */
+    spec_copy->config.operation &= ~SPI_LINES_MASK;
+    spec_copy->config.operation |= SPI_HALF_DUPLEX;
+
+    const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
+                                                          buffer_tx, BUF_SIZE);
+
+    const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+                                                          buffer_rx, BUF_SIZE);
+
+    memset(buffer_rx, 0, BUF_SIZE);
+
+	/* Phase 1: TX only */
+	spi_loopback_transceive(spec_copy, &tx, NULL, 1);
+
+	/* Phase 2: RX only */
+	spi_loopback_transceive(spec_copy, NULL, &rx, 1);
+
+    spi_loopback_compare_bufs(buffer_tx, buffer_rx, BUF_SIZE,
+                              buffer_print_tx, buffer_print_rx);
+}
+
+/*
+ * Validate handling of invalid full-duplex usage in single-line mode.
+ *
+ * Some drivers may reject simultaneous TX/RX in half-duplex configuration.
+ * This test ensures such cases are either handled gracefully or rejected.
+ */
+ZTEST(spi_loopback, test_spi_half_duplex_reject_full_duplex)
+{
+    struct spi_dt_spec *spec = loopback_specs[spec_idx];
+    struct spi_dt_spec *spec_copy = &spec_copies[3];
+
+    *spec_copy = *spec;
+
+    /* Configure single line */
+    spec_copy->config.operation &= ~SPI_LINES_MASK;
+    spec_copy->config.operation |= SPI_HALF_DUPLEX;
+
+    const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
+                                                          buffer_tx, BUF_SIZE);
+
+    const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+                                                          buffer_rx, BUF_SIZE);
+
+    /* Try TX + RX together (invalid for half-duplex in many drivers) */
+    int ret = spi_transceive_dt(spec_copy, &tx, &rx);
+
+    /* Either it fails OR behaves correctly */
+    zassert_true((ret == 0) || (ret == -ENOTSUP) || (ret == -EINVAL),
+                 "Unexpected return value: %d", ret);
+}
+
 ZTEST_SUITE(spi_loopback, NULL, spi_loopback_setup, NULL, NULL, run_after_suite);
 ZTEST_SUITE(spi_extra_api_features, NULL, spi_loopback_common_setup, NULL, NULL, run_after_lock);
 
