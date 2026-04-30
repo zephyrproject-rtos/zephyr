@@ -31,6 +31,12 @@ void sys_trace_isr_exit_user(void);
 void sys_trace_idle_user(void);
 void sys_trace_sys_init_enter_user(const struct init_entry *entry, int level);
 void sys_trace_sys_init_exit_user(const struct init_entry *entry, int level, int result);
+void sys_trace_k_thread_sleep_enter_user(k_timeout_t timeout);
+void sys_trace_k_thread_sleep_exit_user(k_timeout_t timeout, int32_t ret);
+void sys_trace_k_thread_msleep_enter_user(int32_t ms);
+void sys_trace_k_thread_msleep_exit_user(int32_t ms, int32_t ret);
+void sys_trace_k_thread_usleep_enter_user(int32_t us);
+void sys_trace_k_thread_usleep_exit_user(int32_t us, int32_t ret);
 
 void sys_trace_thread_create(struct k_thread *thread);
 void sys_trace_thread_abort(struct k_thread *thread);
@@ -49,6 +55,12 @@ void sys_trace_idle(void);
 void sys_trace_idle_exit(void);
 void sys_trace_sys_init_enter(const struct init_entry *entry, int level);
 void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int result);
+void sys_trace_k_thread_sleep_enter(k_timeout_t timeout);
+void sys_trace_k_thread_sleep_exit(k_timeout_t timeout, int32_t ret);
+void sys_trace_k_thread_msleep_enter(int32_t ms);
+void sys_trace_k_thread_msleep_exit(int32_t ms, int32_t ret);
+void sys_trace_k_thread_usleep_enter(int32_t us);
+void sys_trace_k_thread_usleep_exit(int32_t us, int32_t ret);
 void sys_trace_timer_init(struct k_timer *timer);
 void sys_trace_timer_start(struct k_timer *timer, k_timeout_t duration, k_timeout_t period);
 void sys_trace_timer_stop(struct k_timer *timer);
@@ -139,12 +151,12 @@ void sys_trace_rtio_chain_next_exit(const struct rtio *r, const struct rtio_iode
 #define sys_port_trace_k_thread_join_enter(thread, timeout)
 #define sys_port_trace_k_thread_join_blocking(thread, timeout)
 #define sys_port_trace_k_thread_join_exit(thread, timeout, ret)
-#define sys_port_trace_k_thread_sleep_enter(timeout)
-#define sys_port_trace_k_thread_sleep_exit(timeout, ret)
-#define sys_port_trace_k_thread_msleep_enter(ms)
-#define sys_port_trace_k_thread_msleep_exit(ms, ret)
-#define sys_port_trace_k_thread_usleep_enter(us)
-#define sys_port_trace_k_thread_usleep_exit(us, ret)
+#define sys_port_trace_k_thread_sleep_enter(timeout) sys_trace_k_thread_sleep_enter(timeout)
+#define sys_port_trace_k_thread_sleep_exit(timeout, ret) sys_trace_k_thread_sleep_exit(timeout, ret)
+#define sys_port_trace_k_thread_msleep_enter(ms) sys_trace_k_thread_msleep_enter(ms)
+#define sys_port_trace_k_thread_msleep_exit(ms, ret) sys_trace_k_thread_msleep_exit(ms, ret)
+#define sys_port_trace_k_thread_usleep_enter(us) sys_trace_k_thread_usleep_enter(us)
+#define sys_port_trace_k_thread_usleep_exit(us, ret) sys_trace_k_thread_usleep_exit(us, ret)
 #define sys_port_trace_k_thread_busy_wait_enter(usec_to_wait)
 #define sys_port_trace_k_thread_busy_wait_exit(usec_to_wait)
 #define sys_port_trace_k_thread_yield()
