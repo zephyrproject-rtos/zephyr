@@ -354,3 +354,35 @@ int bt_conn_br_set_supervision_timeout(struct bt_conn *conn, uint16_t timeout)
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LINK_SUPERVISION_TIMEOUT, buf, NULL);
 }
+
+int bt_conn_br_change_packet_type(const struct bt_conn *conn, uint16_t packet_type)
+{
+	struct bt_hci_cp_change_conn_packet_type *cp;
+	struct net_buf *buf;
+
+	if (conn == NULL) {
+		LOG_DBG("conn is NULL");
+		return -EINVAL;
+	}
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+		LOG_DBG("Invalid connection type: %u for %p", conn->type, conn);
+		return -EINVAL;
+	}
+
+	if ((packet_type & BT_HCI_ACL_PKT_TYPE_BR_MASK) == 0) {
+		LOG_DBG("No BR packet type set in 0x%04x", packet_type);
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->packet_type = sys_cpu_to_le16(packet_type);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_CHANGE_CONN_PACKET_TYPE, buf, NULL);
+}

@@ -2137,6 +2137,18 @@ struct bt_conn_br_cb {
 	 *  @param status HCI status of role change event.
 	 */
 	void (*role_changed)(struct bt_conn *conn, uint8_t status);
+
+	/** @brief The packet type of the BR/EDR connection has changed.
+	 *
+	 *  This callback notifies the application that the connection packet
+	 *  type change procedure has completed.
+	 *
+	 *  @param conn Connection object.
+	 *  @param status HCI status of the event.
+	 *  @param packet_type New packet type bitmask.
+	 */
+	void (*packet_type_changed)(struct bt_conn *conn, uint8_t status,
+				    uint16_t packet_type);
 };
 
 /** @brief Connection callback structure.
@@ -3358,6 +3370,25 @@ int bt_conn_br_get_supervision_timeout(struct bt_conn *conn, uint16_t *timeout);
  *  @return  Zero for success, non-zero otherwise.
  */
 int bt_conn_br_set_supervision_timeout(struct bt_conn *conn, uint16_t timeout);
+
+/** @brief Change BR/EDR connection packet type.
+ *
+ *  Change which packet types can be used for an established BR/EDR
+ *  ACL connection. This allows dynamically modifying the connection to
+ *  support different types of user data for throughput optimization.
+ *
+ *  @param conn         Connection object.
+ *  @param packet_type  Raw HCI BR/EDR ACL Packet_Type field composed of
+ *                      BT_HCI_ACL_PKT_TYPE_* values. For basic rate packet
+ *                      type bits, a set bit allows use of that packet type.
+ *                      For BT_HCI_ACL_PKT_TYPE_NO_* bits, a set bit means
+ *                      the corresponding EDR packet type shall not be used,
+ *                      as defined by the Bluetooth specification.
+ *
+ *  @retval 0 On success.
+ *  @retval -errno On failure.
+ */
+int bt_conn_br_change_packet_type(const struct bt_conn *conn, uint16_t packet_type);
 
 #ifdef __cplusplus
 }
