@@ -290,6 +290,37 @@ function(zephyr_mcuboot_tasks)
     endif()
   endif()
   set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${byproducts})
+
+  # Post-build signed image size check.
+  #
+  # Verifies that the signed .bin fits within (slot_size - trailer).
+  #
+  # CONFIG_ROM_END_OFFSET (= mcuboot_image_footer_size) includes both the
+  # trailer AND a TLV estimate, so using it here would double-count the TLV
+  # that is already inside the signed binary.  CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE
+  # (= mcuboot_image_upgrade_footer_size) is the trailer-only overhead and is
+  # the same value MCUmgr uses for its runtime upload size check.
+  #
+  # For sysbuild builds both values are set automatically by MCUboot's
+  # sysbuild module.  For non-sysbuild builds only CONFIG_ROM_END_OFFSET is
+  # available, so we fall back to it (conservative but safe).
+  if(CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE GREATER 0)
+    set(check_footer_size ${CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE})
+  elseif(CONFIG_ROM_END_OFFSET GREATER 0)
+    set(check_footer_size ${CONFIG_ROM_END_OFFSET})
+  else()
+    set(check_footer_size 0)
+  endif()
+
+  if(check_footer_size GREATER 0 AND CONFIG_BUILD_OUTPUT_BIN)
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+      ${CMAKE_COMMAND}
+        -DSIGNED_BIN=${output}.signed.bin
+        -DSLOT_SIZE=${slot_size}
+        -DFOOTER_SIZE=${check_footer_size}
+        -P ${CMAKE_CURRENT_LIST_DIR}/mcuboot_check_image_size.cmake
+    )
+  endif()
 endfunction()
 
 zephyr_mcuboot_tasks()

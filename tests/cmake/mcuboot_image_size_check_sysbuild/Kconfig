@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_BLOAT_SIZE
+	int "Padding array size in bytes to inflate the binary"
+	default 0
+	help
+	  Size of a const padding array linked into .rodata.
+	  Used to push the signed image close to or beyond the
+	  slot size limit for testing the MCUboot image size check.
+
+source "Kconfig.zephyr"
