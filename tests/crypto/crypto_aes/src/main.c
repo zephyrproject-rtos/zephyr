@@ -281,7 +281,15 @@ ZTEST(crypto_aes, test_cbc_encrypt)
 		return;
 	}
 
-	/* CBC prepends IV to output, so ciphertext starts at offset 16 */
+	/* CBC prepends the IV to the output, so verify it is written back */
+	rc = memcmp(encrypted, cbc_iv, sizeof(cbc_iv));
+	if (rc != 0) {
+		cipher_free_session(crypto_dev, &ctx);
+		zassert_equal(rc, 0, "CBC encrypt IV prefix mismatch");
+		return;
+	}
+
+	/* Ciphertext follows the IV prefix, starting at offset 16 */
 	rc = memcmp(encrypted + 16, cbc_ciphertext, sizeof(cbc_ciphertext));
 	cipher_free_session(crypto_dev, &ctx);
 	zassert_equal(rc, 0, "CBC encrypt output mismatch");
