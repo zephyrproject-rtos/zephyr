@@ -1,0 +1,9 @@
+config USBD_TMC_CLASS
+	bool "USB Test and Measurement Class (USBTMC)"
+	depends on USB_DEVICE_STACK_NEXT
+	default n
+	help
+	  Enables USB Test and Measurement Class (USBTMC) device support.
+
+	  This class allows communication with test and measurement
+	  equipment using message-based protocols such as SCPI.
