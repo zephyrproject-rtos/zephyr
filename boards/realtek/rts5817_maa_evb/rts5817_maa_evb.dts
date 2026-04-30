@@ -41,3 +41,15 @@
 &uart1 {
 	status = "disabled";
 };
+
+&spi0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&sensor_spi_default>;
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&ssi_master_default>;
+};
