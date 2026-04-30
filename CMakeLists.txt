@@ -1865,7 +1865,7 @@ if(CONFIG_BUILD_OUTPUT_BIN)
   endif()
 endif()
 
-if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
+if(CONFIG_BUILD_OUTPUT_UF2)
   if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_BASE)
     set(code_address "${CONFIG_FLASH_BASE_ADDRESS}")
   else()
@@ -1894,15 +1894,36 @@ if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
     endif()
   endif()
 
-  list(APPEND
-    post_build_commands
-    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/uf2conv.py
-            -c
-            -f ${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}
-            -b ${code_address}
-            -o ${KERNEL_UF2_NAME}
-            ${KERNEL_BIN_NAME}
-  )
+  if(CONFIG_BUILD_OUTPUT_BIN AND NOT "${code_address}" STREQUAL "")
+    # BIN format requires an explicit base address via -b.
+    list(APPEND
+      post_build_commands
+      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/uf2conv.py
+              -c
+              -f ${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}
+              -b ${code_address}
+              -o ${KERNEL_UF2_NAME}
+              ${KERNEL_BIN_NAME}
+    )
+  elseif(CONFIG_BUILD_OUTPUT_HEX)
+    # HEX format embeds addresses, so no -b flag is needed.
+    # This is the preferred path when code_address is unavailable,
+    # e.g. when using mapped-partition without CONFIG_FLASH_LOAD_OFFSET.
+    list(APPEND
+      post_build_commands
+      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/uf2conv.py
+              -c
+              -f ${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}
+              -o ${KERNEL_UF2_NAME}
+              ${KERNEL_HEX_NAME}
+    )
+  else()
+    message(FATAL_ERROR
+      "UF2 output requires either CONFIG_BUILD_OUTPUT_BIN with a known "
+      "code address, or CONFIG_BUILD_OUTPUT_HEX. Enable CONFIG_BUILD_OUTPUT_HEX "
+      "in your board configuration.")
+  endif()
+
   list(APPEND
     post_build_byproducts
     ${KERNEL_UF2_NAME}

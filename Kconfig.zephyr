@@ -884,7 +884,7 @@ config BUILD_OUTPUT_VERILOG_DATA_WIDTH
 
 config BUILD_OUTPUT_UF2
 	bool "Build a binary in UF2 format"
-	depends on BUILD_OUTPUT_BIN
+	depends on BUILD_OUTPUT_BIN || BUILD_OUTPUT_HEX
 	help
 	  Build a UF2 binary zephyr/zephyr.uf2 in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
