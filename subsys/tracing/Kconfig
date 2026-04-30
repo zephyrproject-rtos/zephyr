@@ -79,6 +79,7 @@ config TRACING_CTF_TIMESTAMP
 	bool "CTF internal timestamp"
 	default y
 	depends on TRACING_CTF
+	select TIMING_FUNCTIONS
 	help
 	  Timestamp prefix will be added to the beginning of CTF
 	  event internally.

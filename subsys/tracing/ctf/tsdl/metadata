@@ -8,7 +8,7 @@ typealias integer { size = 64; align = 8; signed = false; } := uint64_t;
 typealias integer { size = 8; align = 8; signed = false; encoding = ASCII; } := ctf_bounded_string_t;
 
 struct event_header {
-	uint32_t timestamp;
+	uint64_t timestamp;
 	uint16_t id;
 };
 

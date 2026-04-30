@@ -17,6 +17,9 @@
 #include <tracing_core.h>
 #include <tracing_buffer.h>
 #include <tracing_backend.h>
+#ifdef CONFIG_TRACING_CTF_TIMESTAMP
+#include <zephyr/timing/timing.h>
+#endif
 
 #define TRACING_CMD_ENABLE  "enable"
 #define TRACING_CMD_DISABLE "disable"
@@ -84,6 +87,11 @@ static int tracing_init(void)
 	tracing_backend_init(working_backend);
 
 	atomic_set(&tracing_packet_drop_num, 0);
+
+#ifdef CONFIG_TRACING_CTF_TIMESTAMP
+	timing_init();
+	timing_start();
+#endif
 
 	if (IS_ENABLED(CONFIG_TRACING_HANDLE_HOST_CMD)) {
 		tracing_set_state(TRACING_DISABLE);
