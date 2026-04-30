@@ -73,6 +73,7 @@ set_variable_ifdef(CONFIG_EDAC_NXP_EIM          CONFIG_MCUX_COMPONENT_driver.eim
 set_variable_ifdef(CONFIG_EDAC_NXP_ERM          CONFIG_MCUX_COMPONENT_driver.erm)
 set_variable_ifdef(CONFIG_ENTROPY_MCUX_RNGA     CONFIG_MCUX_COMPONENT_driver.rnga)
 set_variable_ifdef(CONFIG_ENTROPY_MCUX_TRNG     CONFIG_MCUX_COMPONENT_driver.trng)
+set_variable_ifdef(CONFIG_UART_LPC84X 		CONFIG_MCUX_COMPONENT_driver.lpc_miniusart)
 set_variable_ifdef(CONFIG_ENTROPY_MCUX_CAAM     CONFIG_MCUX_COMPONENT_driver.caam)
 set_variable_ifdef(CONFIG_ETH_NXP_ENET          CONFIG_MCUX_COMPONENT_driver.enet)
 set_variable_ifdef(CONFIG_SOC_SERIES_K2X        CONFIG_MCUX_COMPONENT_driver.smc)
@@ -305,6 +306,14 @@ endif()
 
 if(CONFIG_SOC_SERIES_LPC51U68 OR CONFIG_SOC_SERIES_LPC54XXX OR CONFIG_SOC_SERIES_LPC55XXX)
   set(CONFIG_MCUX_COMPONENT_driver.lpc_iocon ON)
+endif()
+
+if(CONFIG_SOC_SERIES_LPC84X)
+  set(CONFIG_MCUX_COMPONENT_driver.swm ON)
+endif()
+
+if(CONFIG_SOC_SERIES_LPC84X)
+  set(CONFIG_MCUX_COMPONENT_driver.lpc_iocon_lite ON)
 endif()
 
 if(CONFIG_SOC_LPC55S36)

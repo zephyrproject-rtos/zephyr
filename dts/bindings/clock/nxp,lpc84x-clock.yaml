@@ -1,0 +1,80 @@
+# Copyright (c) 2026, Aerlync Labs Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC84x clock
+
+compatible: "nxp,lpc84x-clock"
+
+clock-cells:
+  - name
+
+properties:
+  reg:
+    type: array
+    required: true
+    description: SYSCON register base address and size.
+
+  enable-fro:
+    type: boolean
+    description: Power up the FRO oscillator.
+
+  enable-froout:
+    type: boolean
+    description: Power up the FRO output.
+
+  fro-freq:
+    type: string
+    enum: ["18M", "24M", "30M"]
+    default: "24M"
+    description: FRO oscillator output frequency.
+
+  enable-sysosc:
+    type: boolean
+    description: Power up the system crystal oscillator (SYSOSC).
+
+  extclk-src:
+    type: string
+    enum: ["sysosc", "clkin"]
+    default: "sysosc"
+    description: External clock source
+
+  fro-low-power-boot:
+    type: boolean
+    description: Enable low power boot for FRO.
+
+  sysosc-freq:
+    type: int
+    description: System oscillator frequency in Hz. Required if enable-sysosc is true.
+
+  extclk-freq:
+    type: int
+    description: External clock frequency in Hz. Required for extclk-clkin.
+
+  ahb-clk-divider:
+    type: int
+    default: 1
+    description: AHB clock divider.
+
+  mainclk-src:
+    type: string
+    enum: ["fro", "extclk", "wdosc", "frodiv"]
+    default: "fro"
+    description: Main clock source.
+
+  frg0-clk-src:
+    type: string
+    enum: ["fro", "mainclk"]
+    description: FRG0 clock source.
+
+  frg0-mult:
+    type: int
+    description: FRG0 multiplier (0-255).
+
+  frg1-clk-src:
+    type: string
+    enum: ["fro", "mainclk"]
+    description: FRG1 clock source.
+
+  frg1-mult:
+    type: int
+    description: FRG1 multiplier (0-255).

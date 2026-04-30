@@ -1,0 +1,44 @@
+# Copyright (c) 2026 Aerlync Labs Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC84x Switch Matrix (SWM) pinctrl.
+
+compatible: "nxp,lpc84x-swm"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+child-binding:
+  description: LPC84x pinctrl child node
+  child-binding:
+    description: LPC84x pinctrl group
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-up
+          - bias-pull-down
+          - drive-open-drain
+          - drive-push-pull
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: Array of pinmux values.
+
+      nxp,invert:
+        type: boolean
+        description: Invert input.
+
+      nxp,hysteresis:
+        type: boolean
+        description: Enable input hysteresis.

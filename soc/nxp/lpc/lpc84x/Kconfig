@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Aerlync Labs Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_LPC84X
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CLOCK_CONTROL
+	select HAS_MCUX
+	select PINCTRL
