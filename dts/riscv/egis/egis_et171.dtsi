@@ -5,6 +5,7 @@
  */
 
 /dts-v1/;
+#include <common/freq.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <mem.h>
 
@@ -149,6 +150,73 @@
 			interrupts = <20 1>;
 			interrupt-parent = <&plic0>;
 			status = "disabled";
+		};
+
+		spi0: spi@f0b00000 {
+			compatible = "egis,et171-spi";
+			reg = <0xf0b00000 0x1000
+			       0x80000000 DT_SIZE_M(16)>;
+			reg-names = "control", "mem";
+			interrupts = <17 1>;
+			interrupt-parent = <&plic0>;
+			dmas = <&dma0 0 0 0x009>,
+			       <&dma0 1 1 0x00a>;
+			dma-names = "tx", "rx";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <DT_FREQ_M(66)>;
+			status = "disabled";
+		};
+
+		spi1: spi@f0f00000 {
+			compatible = "egis,et171-spi";
+			reg = <0xf0f00000 0x1000>;
+			reg-names = "control";
+			interrupts = <18 1>;
+			interrupt-parent = <&plic0>;
+			dmas = <&dma0 2 2 0x009>,
+			       <&dma0 3 3 0x00a>;
+			dma-names = "tx", "rx";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <DT_FREQ_M(66)>;
+			status = "disabled";
+		};
+
+		spi2: spi@f0d00000 {
+			compatible = "egis,et171-spi";
+			reg = <0xf0d00000 0x1000
+			       0x81000000 DT_SIZE_M(16)>;
+			reg-names = "control", "mem";
+			interrupts = <25 1>;
+			interrupt-parent = <&plic0>;
+			dmas = <&dma0 4 4 0x009>,
+			       <&dma0 5 5 0x00a>;
+			dma-names = "tx", "rx";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <DT_FREQ_M(66)>;
+			status = "disabled";
+		};
+
+		otp: otp@f1000000 {
+			compatible = "egis,et171-otp";
+			reg = <0xf1000000 0x1000
+			       0xf1001000 0x200>;
+			reg-names = "control", "mem";
+			status = "disabled";
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				uid_otp: uid@00 {
+					reg = <0x00 0x0c>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+			};
 		};
 	};
 };
