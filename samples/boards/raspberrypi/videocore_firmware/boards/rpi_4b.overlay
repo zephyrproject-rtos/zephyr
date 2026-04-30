@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Muhammad Waleed Badar
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <zephyr/dt-bindings/mbox/brcm-bcm2711-mbox.h>
+
+/ {
+	videocore_firmware {
+		compatible = "raspberrypi,bcm2711-videocore";
+		mboxes = <&mbox0 BCM2711_MBOX0_CH_ARM_TO_VC>;
+		mbox-names = "vc";
+	};
+};
+
+&mbox0 {
+	status = "okay";
+};

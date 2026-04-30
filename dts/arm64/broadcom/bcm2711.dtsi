@@ -20,6 +20,9 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a72";
 			reg = <0>;
+			clock-frequency = <DT_FREQ_M(1500)>;
+			i-cache-line-size = <64>;
+			d-cache-line-size = <64>;
 		};
 	};
 
@@ -49,7 +52,7 @@
 		sram0: memory@200000 {
 			device_type = "memory";
 			compatible = "mmio-sram";
-			reg = <0x200000 0x80000>;
+			reg = <0x200000 DT_SIZE_M(128)>;
 		};
 
 		gic: interrupt-controller@ff841000 {
@@ -65,6 +68,16 @@
 			compatible = "brcm,iproc-rng200";
 			reg = <0xfe104000 0x28>;
 			status = "okay";
+		};
+
+		mbox0: mbox@fe00b880 {
+			compatible = "brcm,bcm2711-mbox";
+			reg = <0xfe00b880 0x40>;
+			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&gic>;
+			#mbox-cells = <1>;
+			status = "disabled";
 		};
 
 		pinctrl: pin-controller@fe200000 {
