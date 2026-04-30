@@ -407,6 +407,7 @@ config MAX_XLAT_TABLES
 	default 28 if USERSPACE && TEST
 	default 20 if USERSPACE && (ARM64_VA_BITS >= 40)
 	default 16 if USERSPACE
+	default 16 if SMP && (ARM64_VA_BITS >= 36)
 	default 12 if (ARM64_VA_BITS >= 40)
 	default 8
 	help
