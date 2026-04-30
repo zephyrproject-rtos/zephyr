@@ -32,8 +32,12 @@
 #define ROM_END_OFFSET 0
 #endif
 
-#if defined(CONFIG_FLASH_USES_MAPPED_PARTITION) && defined(CONFIG_XIP)
+#if defined(CONFIG_FLASH_USES_MAPPED_PARTITION)
+#if defined(CONFIG_XIP)
 #define ROM_ADDR (DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition)))
+#else
+#define ROM_ADDR RAM_ADDR
+#endif
 #define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition)) - ROM_END_OFFSET)
 #else
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
