@@ -72,6 +72,15 @@ void i2c_dw_register_recover_bus_cb(const struct device *dev, i2c_api_recover_bu
 	dw->recover_bus_dev = (struct device *)wrapper_dev;
 }
 
+void i2c_dw_register_check_bus_cb(const struct device *dev, i2c_api_check_bus_t check_bus_cb,
+				  const struct device *wrapper_dev)
+{
+	struct i2c_dw_dev_config *const dw = dev->data;
+
+	dw->check_bus_cb = check_bus_cb;
+	dw->check_bus_dev = wrapper_dev;
+}
+
 /* it might call from i2c_transfer api and have already
  * lock the bus, no need to lock bus again here
  */
@@ -88,6 +97,28 @@ static int i2c_recovery_bus(const struct device *dev)
 			dw->state = I2C_DW_STATE_READY;
 		}
 	}
+	return ret;
+}
+
+static int i2c_check_bus(const struct device *dev)
+{
+	int ret = 0;
+	struct i2c_dw_dev_config *const dw = dev->data;
+
+#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
+	if (dw->need_setup) {
+#endif
+		if (dw->check_bus_cb) {
+			/* callback customize check function */
+			ret = dw->check_bus_cb(dw->check_bus_dev);
+			if (ret == 0) {
+				/* check success */
+				dw->state = I2C_DW_STATE_READY;
+			}
+		}
+#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
+	}
+#endif
 	return ret;
 }
 
@@ -137,6 +168,11 @@ static int i2c_dw_error_chk(const struct device *dev)
 		if (ic_txabrt_src.bits.USRABRT) {
 			dw->state |= I2C_DW_USER_ABRT;
 			LOG_ERR("User Abort on %s", dev->name);
+		}
+		/* check if user abort the transmit */
+		if (ic_txabrt_src.bits.ARBLOST) {
+			dw->state |= I2C_DW_USER_ABRT;
+			LOG_ERR("ARB lost on %s", dev->name);
 		}
 		/* TX abrt because STOP */
 		if (intr_stat.bits.stop_det) {
@@ -831,6 +867,11 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 		dw->state = I2C_DW_STATE_READY;
 	}
 
+	if (i2c_check_bus(dev)) {
+		ret = -ETIME;
+		goto error;
+	}
+
 	/* First step, check if there is current activity
 	 * Skip if last read did not stop
 	 */
@@ -958,6 +999,16 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 error:
 	/* keep error mask for bus recovery */
 	dw->state &= I2C_DW_STUCK_ERR_MASK;
+	if (dw->i2c_stat_not_ready == I2C_DW_MAGIC_KEY) {
+		dw->not_ready_cnt++;
+		if (dw->not_ready_cnt >= 3) {
+			dw->i2c_stat_not_ready = 0;
+			dw->not_ready_cnt = 0;
+		}
+	} else {
+		dw->i2c_stat_not_ready = 0;
+		dw->not_ready_cnt = 0;
+	}
 	k_sem_give(&dw->bus_sem);
 
 	return ret;
