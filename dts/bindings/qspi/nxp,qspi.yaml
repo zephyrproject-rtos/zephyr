@@ -1,0 +1,46 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP QSPI controller
+
+compatible: "nxp,qspi"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Register base address and size for QSPI controller and AHB memory region.
+      First region is the QSPI controller registers.
+      Second region is the AHB memory mapped region for flash access.
+
+  clocks:
+    required: true
+
+  tx-watermark:
+    type: int
+    default: 8
+    description: QSPI transmit watermark value (1-16)
+
+  rx-watermark:
+    type: int
+    default: 8
+    description: QSPI receive watermark value (1-16)
+
+  dqs-config:
+    type: array
+    description: |
+      DQS configuration array with following elements:
+      [0] - portADelayTapNum: Delay chain tap number for port A (0-127)
+      [1] - shift: DQS phase shift (0-3)
+            0: No phase shift
+            1: 45 degree phase shift
+            2: 90 degree phase shift
+            3: 135 degree phase shift
+      [2] - rxSampleClock: Read sample clock selection (0-2)
+            0: Internal loopback
+            1: Loopback from DQS pad
+            2: External input from DQS pad
+      [3] - enableDQSClkInverse: Enable DQS clock inverse (0 or 1)
+      Only applicable if FSL_FEATURE_QSPI_HAS_NO_SOCCR_REG is not defined.

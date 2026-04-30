@@ -120,3 +120,14 @@ config MEMC_MCUX_XSPI
 	select PINCTRL
 
 endif # DT_HAS_NXP_XSPI_PSRAM_ENABLED
+
+if DT_HAS_NXP_QSPI_ENABLED
+
+config MEMC_MCUX_QSPI
+	bool "NXP MCUX QSPI driver"
+	default y
+	select PINCTRL
+	help
+	  Enable support for NXP MCUX QSPI memory controller driver.
+
+endif # DT_HAS_NXP_QSPI_ENABLED

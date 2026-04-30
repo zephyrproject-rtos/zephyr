@@ -139,6 +139,10 @@
 	status = "okay";
 };
 
+&splldiv1_clk {
+	clock-div = <1>;
+};
+
 &core_clk {
 	clocks = <&spll_clk>;
 	clock-div = <2>;
@@ -274,4 +278,40 @@
 
 &wdog {
 	status = "okay";
+};
+
+&qspi {
+	status = "okay";
+	pinctrl-0 = <&pinmux_qspi>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	qspi_flash: flash-controller@0 {
+		compatible = "nxp,qspi-nor";
+		size = <DT_SIZE_M(8)>;
+		reg = <0>;
+		status = "okay";
+		device-name = "w25q64";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ext_flash: flash@68000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x68000000 DT_SIZE_M(8)>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			write-block-size = <1>;
+		};
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x0 DT_SIZE_M(8)>;
+			};
+		};
+	};
 };

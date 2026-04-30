@@ -1,0 +1,19 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP QSPI NOR Flash
+
+compatible: "nxp,qspi-nor"
+
+include: ["base.yaml", "jedec,jesd216.yaml"]
+
+properties:
+  device-name:
+    type: string
+    required: true
+    description: Memory device name used to select the device configuration.
+
+  size:
+    type: int
+    required: true
+    description: Total memory size in bytes.
