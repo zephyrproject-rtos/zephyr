@@ -167,6 +167,13 @@
 			};
 		};
 
+		core_wdt: watchdog@40006000 {
+			compatible = "realtek,bee-core-wdt";
+			reg = <0x40006000 0x10>;
+			interrupts = <1 0>;
+			status = "disabled";
+		};
+
 		cctl: clock-controller@40002300 {
 			compatible = "realtek,bee-cctl";
 			reg = <0x40002300 0x400>;

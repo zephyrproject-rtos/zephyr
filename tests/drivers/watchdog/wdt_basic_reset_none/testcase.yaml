@@ -63,3 +63,16 @@ tests:
     extra_configs:
       - CONFIG_TEST_WDT_MAX_WINDOW_TIME=254
       - CONFIG_TEST_WDT_SLEEP_TIME=68
+  drivers.watchdog.reset_none.realtek_bee_core_wdt:
+    platform_allow:
+      - rtl87x2g_evb_a/rtl8762gkh
+      - rtl87x2g_evb_a/rtl8762gku
+      - rtl87x2g_evb_a/rtl8762grh
+      - rtl87x2g_evb_a/rtl8762gru
+      - rtl8752h_evb/rtl8752hjf
+      - rtl8752h_evb/rtl8752hjl
+      - rtl8752h_evb/rtl8752hkf
+      - rtl8752h_evb/rtl8752hmf
+    extra_args: DTC_OVERLAY_FILE="boards/realtek_bee_core_wdt.overlay"
+    extra_configs:
+      - CONFIG_TEST_WDT_SETUP_FLAGS=0

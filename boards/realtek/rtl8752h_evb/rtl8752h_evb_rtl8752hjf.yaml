@@ -12,6 +12,7 @@ supported:
   - uart
   - gpio
   - counter
+  - watchdog
   - i2c
 testing:
   ignore_tags:
