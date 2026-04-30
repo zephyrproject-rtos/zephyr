@@ -50,9 +50,11 @@ There are 5 macros used to add a test to a suite, they are:
 
 * :c:macro:`ZTEST` ``(suite_name, test_name)`` - Which can be used to add a test by ``test_name`` to a
   given suite by ``suite_name``.
-* :c:macro:`ZTEST_P` ``(suite_name, test_name)`` - Add a parameterized test to a given suite by specifying
-  the ``suite_name`` and ``test_name``. You can then access the passed parameter within
-  the body of the test using the ``data`` pointer.
+* :c:macro:`ZTEST_P` ``(suite_name, test_name)`` - Add a value-parameterized test to a given suite.
+  The test body is executed once per registered parameter value. Inside the body, call
+  :c:func:`ztest_get_current_param` or use the :c:macro:`ZTEST_GET_PARAM` typed helper to
+  retrieve the current value. The suite fixture (``data`` argument) is independent from the
+  parameter and is never overwritten. See `Value-parameterized tests`_ for the full API.
 * :c:macro:`ZTEST_USER` ``(suite_name, test_name)`` - Which behaves the same as :c:macro:`ZTEST`, only
   that when :kconfig:option:`CONFIG_USERSPACE` is enabled, then the test will be run in a userspace
   thread.
@@ -119,6 +121,126 @@ user/kernel space shared memory.
 Advanced features
 *****************
 
+.. _value-parameterized-tests:
+
+Value-parameterized tests
+=========================
+
+Value-parameterized tests allow a single test body to be executed once for each
+value in a supplied list, similar to GoogleTest's ``TEST_P`` / ``INSTANTIATE_TEST_SUITE_P``
+pattern.  The fixture and the parameter are completely independent: the suite's
+``setup()`` return value is always passed as ``data`` and is never overwritten by
+a parameter value.
+
+Declaring a parameterized test body
+------------------------------------
+
+Use :c:macro:`ZTEST_P` in the same way as :c:macro:`ZTEST`.  Inside the body, the ``data``
+pointer carries the suite fixture (identical to :c:macro:`ZTEST_F`).  The current
+parameter value is retrieved through the run-time accessors:
+
+.. code-block:: C
+
+   #include <zephyr/ztest.h>
+
+   struct my_suite_fixture {
+        int initial_value;
+   };
+
+   static void *my_suite_setup(void) {
+        static struct my_suite_fixture f = { .initial_value = 42 };
+        return &f;
+   }
+
+   ZTEST_SUITE(my_suite, NULL, my_suite_setup, NULL, NULL, NULL);
+
+   ZTEST_P(my_suite, test_multiply)
+   {
+        struct my_suite_fixture *f = (struct my_suite_fixture *)data;
+        int factor = ZTEST_GET_PARAM(int);
+
+        /* fixture is always intact, regardless of parameter */
+        zassert_equal(f->initial_value, 42, "fixture corrupted");
+        zassert_true(f->initial_value * factor > 0, "product must be positive");
+   }
+
+Declaring parameter values
+---------------------------
+
+Use :c:macro:`ZTEST_DEFINE_PARAM_VALUES` to create a static value set from
+literal values:
+
+.. code-block:: C
+
+   ZTEST_DEFINE_PARAM_VALUES(small_factors, int, 1, 2, 3);
+
+For values already stored in an array use :c:macro:`ZTEST_DEFINE_PARAM_VALUES_ARRAY`:
+
+.. code-block:: C
+
+   static const int big_factors[] = { 10, 100, 1000 };
+   ZTEST_DEFINE_PARAM_VALUES_ARRAY(big_factor_vals, big_factors);
+
+Struct-typed parameters work the same way:
+
+.. code-block:: C
+
+   struct point { int x; int y; };
+
+   static const struct point corners[] = { {0,0}, {1,0}, {0,1}, {1,1} };
+   ZTEST_DEFINE_PARAM_VALUES_ARRAY(corner_vals, corners);
+
+   ZTEST_P(my_suite, test_in_unit_square)
+   {
+	const struct point *p = ZTEST_GET_PARAM_PTR(struct point);
+        zassert_true(p->x >= 0 && p->x <= 1 && p->y >= 0 && p->y <= 1,
+		"point (%d, %d) outside unit square", p->x, p->y);
+   }
+
+Instantiating a parameterized test
+------------------------------------
+
+:c:macro:`ZTEST_INSTANTIATE_TEST_SUITE_P` binds a value set to a test body.  Each
+call creates a separate named instantiation; the same test body may be
+instantiated multiple times with different value sets:
+
+.. code-block:: C
+
+   ZTEST_INSTANTIATE_TEST_SUITE_P(small, my_suite, test_multiply, small_factors);
+   ZTEST_INSTANTIATE_TEST_SUITE_P(big,   my_suite, test_multiply, big_factor_vals);
+
+The first argument (``small`` / ``big``) is an arbitrary unique identifier within
+the compilation unit; it is recorded in the test metadata but does not affect test
+naming as reported by Twister.
+
+Retrieving the current parameter
+----------------------------------
+
+Inside a :c:macro:`ZTEST_P` body the following helpers are available:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Helper
+     - Description
+   * - ``ztest_has_current_param()``
+     - Returns ``true`` when called inside a parameterized invocation.
+   * - ``ztest_get_current_param()``
+     - Returns a ``const void *`` pointer to the current value.
+   * - ``ZTEST_GET_PARAM_PTR(type)``
+     - Returns a ``const type *`` pointer to the current value.
+   * - ``ZTEST_GET_PARAM(type)``
+     - Dereferences and returns the current value as ``type``.
+   * - ``ztest_get_current_param_index()``
+     - Returns the zero-based index of the current value within its set.
+   * - ``ztest_get_current_param_size()``
+     - Returns the size in bytes of one parameter element.
+
+Non-parameterized tests (:c:macro:`ZTEST`, :c:macro:`ZTEST_F`) always see
+``ztest_has_current_param()`` return ``false`` and ``ztest_get_current_param()``
+return ``NULL``.
+
 Test result expectations
 ========================
 
@@ -169,10 +291,10 @@ etc.:
 
    static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
    {
-   	ARG_UNUSED(test);
-   	ARG_UNUSED(fixture);
+        ARG_UNUSED(test);
+        ARG_UNUSED(fixture);
 
-   	RESET_FAKE(my_weak_func);
+        RESET_FAKE(my_weak_func);
    }
 
    ZTEST_RULE(fff_reset_rule, fff_reset_rule_before, NULL);
@@ -332,19 +454,19 @@ it needs to report either a pass or fail.  For example:
    #ifdef CONFIG_TEST1
    ZTEST(common, test_test1)
    {
-   	zassert_true(1, "true");
+        zassert_true(1, "true");
    }
    #else
    ZTEST(common, test_test1)
    {
-   	ztest_test_skip();
+        ztest_test_skip();
    }
    #endif
 
    ZTEST(common, test_test2)
    {
-   	Z_TEST_SKIP_IFDEF(CONFIG_BUGxxxxx);
-   	zassert_equal(1, 0, NULL);
+        Z_TEST_SKIP_IFDEF(CONFIG_BUGxxxxx);
+        zassert_equal(1, 0, NULL);
    }
 
    ZTEST_SUITE(common, NULL, NULL, NULL, NULL, NULL);
