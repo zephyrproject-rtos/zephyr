@@ -341,4 +341,6 @@
 
 &systick {
 	external-clock-source;
+	/* min-delay in cycles: 32 cycles @ 32kHz = 1ms (1 tick) */
+	min-delay = <32>;
 };
