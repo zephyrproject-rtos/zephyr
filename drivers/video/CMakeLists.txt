@@ -6,7 +6,6 @@ zephyr_library_sources(video_common.c)
 zephyr_library_sources(video_ctrls.c)
 zephyr_library_sources(video_device.c)
 
-
 if(CONFIG_VIDEO_AP1302_UPLOAD_FIRMWARE)
   generate_inc_file_for_target(
     ${ZEPHYR_CURRENT_LIBRARY}
@@ -14,6 +13,8 @@ if(CONFIG_VIDEO_AP1302_UPLOAD_FIRMWARE)
     ${ZEPHYR_BINARY_DIR}/include/generated/ap1302_firmware_file.inc
   )
 endif()
+
+add_subdirectory_ifdef(CONFIG_VIDEO_MCUX_ISI nxp_mcux_isi)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_VIDEO_AP1302 ap1302.c)
