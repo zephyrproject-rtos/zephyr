@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/opamp/infineon-autanalog-ctb.h>
+#include <zephyr/dt-bindings/mfd/infineon-autanalog.h>
+
+/ {
+	zephyr,user {
+		opamp = <&opamp1>;
+		adc-read-delay-ms = <1>;
+		io-channels = <&adc0 3>; /* Use a wire to connect P15.3 to P13.3 */
+	};
+};
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@3 {
+		reg = <3>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <1800>;
+		zephyr,input-positive = <3>;   /* P15.3 */
+	};
+};
+
+&ctb1 {
+	opamp1: opamp@1 {
+		compatible = "infineon,autanalog-ctb-opamp";
+		reg = <1>;
+		power-mode = <IFX_AUTANALOG_CTB_OA_PWR_HIGH_RAIL>;
+		topology = <IFX_AUTANALOG_CTB_OA_TOPO_PGA>;
+		/* P13.5 signal input */
+		ninv-inp-pin = <IFX_AUTANALOG_CTB_OA_NINV_PIN_OA0_P0_OA1_P5>;
+		res-inp-ref = <IFX_AUTANALOG_CTB_OA_RES_REF_VSSA>;
+		gain = <IFX_AUTANALOG_CTB_OA_GAIN_1_00>;
+		out-to-pin; /* P13.3 output - wire to ADC input */
+		functional-mode = "non_inverting";
+	};
+};

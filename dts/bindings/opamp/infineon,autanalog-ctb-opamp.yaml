@@ -1,0 +1,311 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon AutAnalog CTB opamp.
+
+  Each node represents one of the two opamps (OA0 or OA1) within a CTB block.
+  The opamp can be configured in various topologies via the topology property.
+  When configured as PGA, TIA, or DiffAmp, the gain is set at build time via
+  the gain property.  Runtime gain changes are not supported because the
+  Autonomous Controller restart required to reload the State Transition Table
+  disrupts the shared SAR ADC sequencer.
+
+  Input and output routing is configured via the switch-matrix properties.
+  See the cy_autanalog_ctb.h PDL header for detailed pin/reference mapping.
+
+  The parent node must have compatible "infineon,autanalog-ctb".
+
+compatible: "infineon,autanalog-ctb-opamp"
+
+include:
+  - name: opamp-controller.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Opamp index within the CTB block (0 or 1).
+
+  power-mode:
+    type: int
+    required: true
+    description: |
+      Opamp power mode.
+      Use IFX_AUTANALOG_CTB_OA_PWR_* constants from
+      <dt-bindings/opamp/infineon-autanalog-ctb.h>.
+        IFX_AUTANALOG_CTB_OA_PWR_OFF             (0)  - Off
+        IFX_AUTANALOG_CTB_OA_PWR_ULTRA_LOW       (1)  - Ultra low
+        IFX_AUTANALOG_CTB_OA_PWR_ULTRA_LOW_RAIL  (2)  - Ultra low, rail-to-rail
+        IFX_AUTANALOG_CTB_OA_PWR_LOW_RAIL        (4)  - Low, rail-to-rail
+        IFX_AUTANALOG_CTB_OA_PWR_MEDIUM_RAIL     (6)  - Medium, rail-to-rail
+        IFX_AUTANALOG_CTB_OA_PWR_HIGH_RAIL       (8)  - High, rail-to-rail
+        IFX_AUTANALOG_CTB_OA_PWR_ULTRA_HIGH_RAIL (10) - Ultra high, rail-to-rail
+    enum: [0, 1, 2, 4, 6, 8, 10]
+
+  topology:
+    type: int
+    required: true
+    description: |
+      Opamp topology.
+      Use IFX_AUTANALOG_CTB_OA_TOPO_* constants from
+      <dt-bindings/opamp/infineon-autanalog-ctb.h>.
+        IFX_AUTANALOG_CTB_OA_TOPO_COMPARATOR      (0) - Comparator
+        IFX_AUTANALOG_CTB_OA_TOPO_PGA             (1) - PGA
+        IFX_AUTANALOG_CTB_OA_TOPO_TIA             (2) - TIA
+        IFX_AUTANALOG_CTB_OA_TOPO_OPEN_LOOP_OPAMP (3) - Open-loop opamp
+        IFX_AUTANALOG_CTB_OA_TOPO_DIFF_AMPLIFIER  (4) - Differential amplifier
+        IFX_AUTANALOG_CTB_OA_TOPO_HYST_COMPARATOR (5) - Comparator with hysteresis
+        IFX_AUTANALOG_CTB_OA_TOPO_BUFFER          (6) - Buffer (voltage follower)
+    enum: [0, 1, 2, 3, 4, 5, 6]
+
+  interrupt-mode:
+    type: int
+    default: 0
+    description: |
+      Edge detection mode for comparator interrupts.
+      Only applies to comparator topologies.
+      Use IFX_AUTANALOG_CTB_COMP_INT_* constants from
+      <dt-bindings/opamp/infineon-autanalog-ctb.h>.
+        IFX_AUTANALOG_CTB_COMP_INT_DISABLED     (0) - Disabled
+        IFX_AUTANALOG_CTB_COMP_INT_EDGE_RISING  (1) - Rising edge
+        IFX_AUTANALOG_CTB_COMP_INT_EDGE_FALLING (2) - Falling edge
+        IFX_AUTANALOG_CTB_COMP_INT_EDGE_BOTH    (3) - Both edges
+    enum: [0, 1, 2, 3]
+
+  fb-cap:
+    type: int
+    default: 0
+    description: |
+      Feedback capacitor value, 0-15.
+      Use IFX_AUTANALOG_CTB_OA_FB_CAP_* constants from
+      <dt-bindings/opamp/infineon-autanalog-ctb.h>.
+
+  cc-cap:
+    type: int
+    default: 8
+    description: |
+      Compensation capacitor value, 0-8.
+      Use IFX_AUTANALOG_CTB_OA_CC_CAP_* constants from
+      <dt-bindings/opamp/infineon-autanalog-ctb.h>.
+      Default 8 = disabled.
+
+  ninv-inp-pin:
+    type: int
+    default: 0
+    description: |
+      Non-inverting input direct pin connection.
+      Use IFX_AUTANALOG_CTB_OA_NINV_PIN_* constants from
+      <dt-bindings/opamp/infineon-autanalog-ctb.h>.
+        IFX_AUTANALOG_CTB_OA_NINV_PIN_DISCONNECT    (0)
+        IFX_AUTANALOG_CTB_OA_NINV_PIN_OA0_P0_OA1_P5 (1)
+        IFX_AUTANALOG_CTB_OA_NINV_PIN_OA0_P1_OA1_P4 (2)
+    enum: [0, 1, 2]
+
+  ninv-inp-ref:
+    type: int
+    default: 0
+    description: |
+      Non-inverting input reference connection.
+      Use IFX_AUTANALOG_CTB_OA_NINV_REF_* constants from
+      <dt-bindings/opamp/infineon-autanalog-ctb.h>, values 0-7.
+
+  inv-inp-pin:
+    type: int
+    default: 0
+    description: |
+      Inverting input direct pin connection.
+      Use IFX_AUTANALOG_CTB_OA_INV_PIN_* constants from
+      <dt-bindings/opamp/infineon-autanalog-ctb.h>.
+        IFX_AUTANALOG_CTB_OA_INV_PIN_DISCONNECT    (0)
+        IFX_AUTANALOG_CTB_OA_INV_PIN_OA0_P0_OA1_P5 (1)
+        IFX_AUTANALOG_CTB_OA_INV_PIN_OA0_P1_OA1_P4 (2)
+    enum: [0, 1, 2]
+
+  res-inp-pin:
+    type: int
+    default: 0
+    description: |
+      Resistor ladder bottom pin connection.
+      Use IFX_AUTANALOG_CTB_OA_RES_PIN_* constants from
+      <dt-bindings/opamp/infineon-autanalog-ctb.h>.
+        IFX_AUTANALOG_CTB_OA_RES_PIN_DISCONNECT    (0)
+        IFX_AUTANALOG_CTB_OA_RES_PIN_OA0_P0_OA1_P5 (1)
+        IFX_AUTANALOG_CTB_OA_RES_PIN_OA0_P1_OA1_P4 (2)
+    enum: [0, 1, 2]
+
+  res-inp-ref:
+    type: int
+    default: 0
+    description: |
+      Resistor ladder bottom reference connection.
+      Use IFX_AUTANALOG_CTB_OA_RES_REF_* constants from
+      <dt-bindings/opamp/infineon-autanalog-ctb.h>, values 0-5.
+
+  shared-mux-in:
+    type: int
+    default: 0
+    description: |
+      Input multiplexer connection to internal analog bus.
+      Use IFX_AUTANALOG_CTB_OA_MUX_IN_* constants from
+      <dt-bindings/opamp/infineon-autanalog-ctb.h>, values 0-8.
+
+  shared-mux-out:
+    type: int
+    default: 0
+    description: |
+      Output multiplexer connection from internal analog bus.
+      Use IFX_AUTANALOG_CTB_OA_MUX_OUT_* constants from
+      <dt-bindings/opamp/infineon-autanalog-ctb.h>.
+        IFX_AUTANALOG_CTB_OA_MUX_OUT_DISCONNECT (0)
+        IFX_AUTANALOG_CTB_OA_MUX_OUT_NINV       (1)
+        IFX_AUTANALOG_CTB_OA_MUX_OUT_INV        (2)
+        IFX_AUTANALOG_CTB_OA_MUX_OUT_RES        (3)
+    enum: [0, 1, 2, 3]
+
+  gain:
+    type: int
+    default: 0
+    description: |
+      Opamp gain for PGA, TIA, or DiffAmp topologies.
+      Set at build time; runtime changes are not supported.
+      Use IFX_AUTANALOG_CTB_OA_GAIN_* constants from
+      <dt-bindings/mfd/infineon-autanalog.h>.
+        IFX_AUTANALOG_CTB_OA_GAIN_1_00  (0)  - Gain 1.00 (default)
+        IFX_AUTANALOG_CTB_OA_GAIN_1_42  (1)  - Gain 1.42
+        IFX_AUTANALOG_CTB_OA_GAIN_2_00  (2)  - Gain 2.00
+        IFX_AUTANALOG_CTB_OA_GAIN_2_78  (3)  - Gain 2.78
+        IFX_AUTANALOG_CTB_OA_GAIN_4_00  (4)  - Gain 4.00
+        IFX_AUTANALOG_CTB_OA_GAIN_5_82  (5)  - Gain 5.82
+        IFX_AUTANALOG_CTB_OA_GAIN_8_00  (6)  - Gain 8.00
+        IFX_AUTANALOG_CTB_OA_GAIN_10_67 (7)  - Gain 10.67
+        IFX_AUTANALOG_CTB_OA_GAIN_16_00 (8)  - Gain 16.00
+        IFX_AUTANALOG_CTB_OA_GAIN_21_33 (9)  - Gain 21.33
+        IFX_AUTANALOG_CTB_OA_GAIN_32_00 (10) - Gain 32.00
+      Only meaningful for topologies with a resistor ladder.
+
+  out-to-pin:
+    type: boolean
+    description: |
+      Connect opamp output directly to pin.
+
+child-binding:
+  description: |
+    Dynamic switch-matrix configuration slot.
+
+    Each child node defines one slot in the dynamic configuration pool.
+    In advanced mode, the STT selects which slot to use per AC state via
+    ctbN-cfg-opamp0/opamp1.  Slots are numbered in devicetree order,
+    with opamp@0 slots first, then opamp@1 slots.
+
+    When no child nodes are present (basic mode), a single slot is
+    auto-generated from the opamp's own switch-matrix properties.
+
+  properties:
+    ninv-inp-pin:
+      type: int
+      default: 0
+      description: |
+        Non-inverting input direct pin connection.
+        Use IFX_AUTANALOG_CTB_OA_NINV_PIN_* constants from
+        <dt-bindings/opamp/infineon-autanalog-ctb.h>.
+
+    ninv-inp-ref:
+      type: int
+      default: 0
+      description: |
+        Non-inverting input reference connection.
+        Use IFX_AUTANALOG_CTB_OA_NINV_REF_* constants from
+        <dt-bindings/opamp/infineon-autanalog-ctb.h>.
+
+    inv-inp-pin:
+      type: int
+      default: 0
+      description: |
+        Inverting input direct pin connection.
+        Use IFX_AUTANALOG_CTB_OA_INV_PIN_* constants from
+        <dt-bindings/opamp/infineon-autanalog-ctb.h>.
+
+    res-inp-pin:
+      type: int
+      default: 0
+      description: |
+        Resistor ladder bottom pin connection.
+        Use IFX_AUTANALOG_CTB_OA_RES_PIN_* constants from
+        <dt-bindings/opamp/infineon-autanalog-ctb.h>.
+
+    res-inp-ref:
+      type: int
+      default: 0
+      description: |
+        Resistor ladder bottom reference connection.
+        Use IFX_AUTANALOG_CTB_OA_RES_REF_* constants from
+        <dt-bindings/opamp/infineon-autanalog-ctb.h>.
+
+    shared-mux-in:
+      type: int
+      default: 0
+      description: |
+        Input multiplexer connection to internal analog bus.
+        Use IFX_AUTANALOG_CTB_OA_MUX_IN_* constants from
+        <dt-bindings/opamp/infineon-autanalog-ctb.h>.
+
+    shared-mux-out:
+      type: int
+      default: 0
+      description: |
+        Output multiplexer connection from internal analog bus.
+        Use IFX_AUTANALOG_CTB_OA_MUX_OUT_* constants from
+        <dt-bindings/opamp/infineon-autanalog-ctb.h>.
+
+    out-to-pin:
+      type: boolean
+      description: |
+        Connect opamp output directly to pin.
+
+examples:
+  - |
+    /*
+     * Use constants from <dt-bindings/opamp/infineon-autanalog-ctb.h>
+     */
+    ctb1: {
+        compatible = "infineon,autanalog-ctb";
+        opamp0: opamp@0 {
+            compatible = "infineon,autanalog-ctb-opamp";
+            reg = <0>;
+            power-mode = <IFX_AUTANALOG_CTB_OA_PWR_ULTRA_LOW>;
+            topology = <IFX_AUTANALOG_CTB_OA_TOPO_PGA>;
+            ninv-inp-pin = <IFX_AUTANALOG_CTB_OA_NINV_PIN_OA0_P0_OA1_P5>;
+            functional-mode = "non_inverting";
+            out-to-pin;
+        };
+    };
+  - |
+    /*
+     * Advanced mode: 2 dynamic config slots on opamp@1.
+     * Each child node is one slot with named properties.
+     */
+    ctb1: {
+        compatible = "infineon,autanalog-ctb";
+        opamp1: opamp@1 {
+            compatible = "infineon,autanalog-ctb-opamp";
+            reg = <1>;
+            power-mode = <IFX_AUTANALOG_CTB_OA_PWR_ULTRA_LOW>;
+            topology = <IFX_AUTANALOG_CTB_OA_TOPO_PGA>;
+            functional-mode = "non_inverting";
+
+            dyn-cfg-0 {
+                ninv-inp-pin = <IFX_AUTANALOG_CTB_OA_NINV_PIN_OA0_P0_OA1_P5>;
+                res-inp-ref = <IFX_AUTANALOG_CTB_OA_RES_REF_VSSA>;
+                out-to-pin;
+            };
+
+            dyn-cfg-1 {
+                ninv-inp-pin = <IFX_AUTANALOG_CTB_OA_NINV_PIN_OA0_P1_OA1_P4>;
+                res-inp-ref = <IFX_AUTANALOG_CTB_OA_RES_REF_VSSA>;
+                out-to-pin;
+            };
+        };
+    };

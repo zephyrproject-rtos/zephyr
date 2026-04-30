@@ -1,0 +1,95 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon AutAnalog Continuous Time Block (CTB) MFD.
+
+  The CTB provides a pair of opamps (OA0, OA1) that can be configured in
+  various topologies: comparator, PGA, TIA, buffer, differential amplifier,
+  or open-loop opamp.  Each opamp is represented as a child node with
+  compatible "infineon,autanalog-ctb-opamp".
+
+  The CTB sits within the AutAnalog subsystem and is coordinated by the
+  Autonomous Controller (AC) State Transition Table (STT).  This MFD driver
+  aggregates both opamp children into the single cy_stc_autanalog_ctb_t
+  PDL config structure.
+
+compatible: "infineon,autanalog-ctb"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+  lp-mode:
+    type: boolean
+    description: |
+      Request Low Power (LP) operation for the AutAnalog subsystem.
+      When set, the parent AutAnalog MFD basic-mode STT enters LP operation
+      for the AC states. LP mode is also activated if any other AutAnalog
+      child peripheral (SAR ADC, DAC, PTCOMP, PRB) sets lp-mode.
+      In advanced mode (ac-states), use the per-state ac-lp-mode property
+      instead.
+
+examples:
+  - |
+    /*
+     * Use constants from <dt-bindings/opamp/infineon-autanalog-ctb.h>
+     */
+    ctb0: {
+        compatible = "infineon,autanalog-ctb";
+        opamp0: opamp@0 {
+            compatible = "infineon,autanalog-ctb-opamp";
+            reg = <0>;
+            power-mode = <IFX_AUTANALOG_CTB_OA_PWR_ULTRA_LOW>;
+            topology = <IFX_AUTANALOG_CTB_OA_TOPO_PGA>;
+            ninv-inp-pin = <IFX_AUTANALOG_CTB_OA_NINV_PIN_OA0_P0_OA1_P5>;
+            functional-mode = "non_inverting";
+            out-to-pin;
+        };
+
+        opamp1: opamp@1 {
+            compatible = "infineon,autanalog-ctb-opamp";
+            reg = <1>;
+            power-mode = <IFX_AUTANALOG_CTB_OA_PWR_ULTRA_LOW>;
+            topology = <IFX_AUTANALOG_CTB_OA_TOPO_BUFFER>;
+            out-to-pin;
+            functional-mode = "non_inverting";
+        };
+    };
+  - |
+    /*
+     * Advanced mode: 2 dynamic config slots on opamp@1.
+     * Each child node is one slot with named properties.
+     */
+    ctb0: {
+        compatible = "infineon,autanalog-ctb";
+        opamp1: opamp@1 {
+            compatible = "infineon,autanalog-ctb-opamp";
+            reg = <1>;
+            power-mode = <IFX_AUTANALOG_CTB_OA_PWR_ULTRA_LOW>;
+            topology = <IFX_AUTANALOG_CTB_OA_TOPO_PGA>;
+            functional-mode = "non_inverting";
+
+            dyn-cfg-0 {
+                ninv-inp-pin = <IFX_AUTANALOG_CTB_OA_NINV_PIN_OA0_P0_OA1_P5>;
+                res-inp-ref = <IFX_AUTANALOG_CTB_OA_RES_REF_VSSA>;
+                out-to-pin;
+            };
+
+            dyn-cfg-1 {
+                ninv-inp-pin = <IFX_AUTANALOG_CTB_OA_NINV_PIN_OA0_P1_OA1_P4>;
+                res-inp-ref = <IFX_AUTANALOG_CTB_OA_RES_REF_VSSA>;
+                out-to-pin;
+            };
+        };
+    };
