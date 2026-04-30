@@ -389,6 +389,186 @@ class TestMaintainerAreaStrategy:
 
 
 # ---------------------------------------------------------------------------
+# BoilerplateFilter
+# ---------------------------------------------------------------------------
+
+
+class TestBoilerplateFilter:
+    """Unit tests for BoilerplateFilter."""
+
+    def _strategy(self, diff_map):
+        """Return a BoilerplateFilter whose _repo.git.diff is mocked.
+
+        *diff_map* maps ``filepath`` to a tuple ``(ws_only_diff, full_diff)``.
+        ``ws_only_diff`` simulates ``git diff -w --ignore-blank-lines``.
+        ``full_diff`` simulates ``git diff --unified=0``.
+        """
+        repo = mock.MagicMock()
+
+        def _fake_diff(*args, **kwargs):
+            # Detect which call this is by inspecting the flag list.
+            flags = list(args)
+            filepath = flags[-1]
+            ws_only, full = diff_map.get(filepath, ("", ""))
+            if "-w" in flags:
+                return ws_only
+            return full
+
+        repo.git.diff.side_effect = _fake_diff
+        return tp.BoilerplateFilter(repo=repo, commits="main..HEAD")
+
+    # ------------------------------------------------------------------
+    # _all_changes_boilerplate
+    # ------------------------------------------------------------------
+
+    def test_pure_spdx_change(self):
+        diff = textwrap.dedent("""\
+            --- a/drivers/foo/foo.c
+            +++ b/drivers/foo/foo.c
+            @@ -1,2 +1,2 @@
+            -// SPDX-License-Identifier: BSD-3-Clause
+            +// SPDX-License-Identifier: Apache-2.0
+        """)
+        s = tp.BoilerplateFilter()
+        assert s._all_changes_boilerplate(diff) is True
+
+    def test_pure_copyright_change(self):
+        diff = textwrap.dedent("""\
+            --- a/drivers/foo/foo.c
+            +++ b/drivers/foo/foo.c
+            @@ -1 +1 @@
+            -/* Copyright (c) 2023 Acme Corp */
+            +/* Copyright (c) 2024 Acme Corp */
+        """)
+        s = tp.BoilerplateFilter()
+        assert s._all_changes_boilerplate(diff) is True
+
+    def test_blank_line_addition(self):
+        diff = textwrap.dedent("""\
+            --- a/drivers/foo/foo.c
+            +++ b/drivers/foo/foo.c
+            @@ -10,0 +11 @@
+            +
+        """)
+        s = tp.BoilerplateFilter()
+        assert s._all_changes_boilerplate(diff) is True
+
+    def test_comment_delimiter_only(self):
+        diff = textwrap.dedent("""\
+            --- a/drivers/foo/foo.c
+            +++ b/drivers/foo/foo.c
+            @@ -2,2 +2,3 @@
+            -/*
+            - */
+            +/*
+            + *
+            + */
+        """)
+        s = tp.BoilerplateFilter()
+        assert s._all_changes_boilerplate(diff) is True
+
+    def test_substantive_change_detected(self):
+        diff = textwrap.dedent("""\
+            --- a/drivers/foo/foo.c
+            +++ b/drivers/foo/foo.c
+            @@ -20 +20 @@
+            -\treturn 0;
+            +\treturn -EIO;
+        """)
+        s = tp.BoilerplateFilter()
+        assert s._all_changes_boilerplate(diff) is False
+
+    def test_mixed_boilerplate_and_code_not_boilerplate(self):
+        diff = textwrap.dedent("""\
+            --- a/drivers/foo/foo.c
+            +++ b/drivers/foo/foo.c
+            @@ -1,2 +1,3 @@
+            -// SPDX-License-Identifier: Apache-2.0
+            +// SPDX-License-Identifier: Apache-2.0
+            +// Copyright (c) 2024
+            @@ -30 +31 @@
+            -\treturn 0;
+            +\treturn -EIO;
+        """)
+        s = tp.BoilerplateFilter()
+        assert s._all_changes_boilerplate(diff) is False
+
+    # ------------------------------------------------------------------
+    # analyze
+    # ------------------------------------------------------------------
+
+    def test_no_repo_is_noop(self):
+        s = tp.BoilerplateFilter(repo=None, commits="main..HEAD")
+        calls, handled = s.analyze(["drivers/foo/foo.c"])
+        assert calls == []
+        assert handled == set()
+
+    def test_no_commits_is_noop(self):
+        s = tp.BoilerplateFilter(repo=mock.MagicMock(), commits=None)
+        calls, handled = s.analyze(["drivers/foo/foo.c"])
+        assert calls == []
+        assert handled == set()
+
+    def test_whitespace_only_file_consumed(self):
+        # ws_only diff is empty → pure whitespace change
+        s = self._strategy({"drivers/foo/foo.c": ("", "")})
+        _, handled = s.analyze(["drivers/foo/foo.c"])
+        assert "drivers/foo/foo.c" in handled
+
+    def test_boilerplate_file_consumed(self):
+        spdx_diff = textwrap.dedent("""\
+            --- a/drivers/foo/foo.c
+            +++ b/drivers/foo/foo.c
+            @@ -1 +1 @@
+            -// SPDX-License-Identifier: BSD-3-Clause
+            +// SPDX-License-Identifier: Apache-2.0
+        """)
+        # ws_only diff is non-empty (SPDX is not whitespace), full diff has only boilerplate
+        s = self._strategy({"drivers/foo/foo.c": (spdx_diff, spdx_diff)})
+        _, handled = s.analyze(["drivers/foo/foo.c"])
+        assert "drivers/foo/foo.c" in handled
+
+    def test_substantive_file_not_consumed(self):
+        code_diff = textwrap.dedent("""\
+            --- a/drivers/foo/foo.c
+            +++ b/drivers/foo/foo.c
+            @@ -20 +20 @@
+            -\treturn 0;
+            +\treturn -EIO;
+        """)
+        s = self._strategy({"drivers/foo/foo.c": (code_diff, code_diff)})
+        _, handled = s.analyze(["drivers/foo/foo.c"])
+        assert "drivers/foo/foo.c" not in handled
+
+    def test_only_boilerplate_files_consumed_mixed_input(self):
+        ws_diff = ""  # whitespace-only
+        code_diff = textwrap.dedent("""\
+            --- a/kernel/sched.c
+            +++ b/kernel/sched.c
+            @@ -50 +50 @@
+            -\treturn 0;
+            +\treturn -EINVAL;
+        """)
+        s = self._strategy(
+            {
+                "drivers/foo/foo.c": (ws_diff, ws_diff),
+                "kernel/sched.c": (code_diff, code_diff),
+            }
+        )
+        _, handled = s.analyze(["drivers/foo/foo.c", "kernel/sched.c"])
+        assert "drivers/foo/foo.c" in handled
+        assert "kernel/sched.c" not in handled
+
+    def test_consumes_is_true(self):
+        assert tp.BoilerplateFilter.consumes is True
+
+    def test_returns_no_twister_calls(self):
+        s = self._strategy({"drivers/foo/foo.c": ("", "")})
+        calls, _ = s.analyze(["drivers/foo/foo.c"])
+        assert calls == []
+
+
+# ---------------------------------------------------------------------------
 # IgnoreStrategy
 # ---------------------------------------------------------------------------
 

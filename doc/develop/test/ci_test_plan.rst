@@ -71,6 +71,14 @@ The current order is:
      - Silently drops files that can never affect tests (documentation, CI
        workflows, tooling).  Runs early so later strategies never waste effort
        on ignored paths.
+   * - 1b
+     - :class:`BoilerplateFilter`
+     - Yes
+     - Consumes files whose entire diff consists of whitespace adjustments,
+       blank-line changes, SPDX licence identifiers, copyright notices, or
+       bare comment delimiters.  Such changes cannot affect runtime behaviour,
+       so removing them early keeps the pool clean for substantive strategies.
+       Requires a git commit range; no-op otherwise.
    * - 2
      - :class:`DirectTestStrategy`
      - Yes
@@ -132,6 +140,35 @@ The current order is:
      - Catch-all: matches any remaining file against ``MAINTAINERS.yml`` area
        patterns and emits ``--test-pattern`` calls for each matching area that
        has a non-empty ``tests:`` list.
+
+Boilerplate filter
+******************
+
+:class:`BoilerplateFilter` runs immediately after :class:`IgnoreStrategy` and
+before any test-selection strategy.  It inspects the actual diff of each
+changed file (via ``git diff``) and consumes those whose entire content change
+is non-substantive:
+
+* **Whitespace and blank-line changes** — detected by ``git diff -w
+  --ignore-blank-lines``: if that command produces no output for a file,
+  every changed line is whitespace or blank.
+
+* **SPDX and copyright header edits** — lines that begin with
+  ``SPDX-License-Identifier:``, ``SPDX-FileCopyrightText:``, or the word
+  ``Copyright``.
+
+* **Comment-delimiter-only lines** — lines whose non-whitespace content
+  consists entirely of ``/*``, ``*/``, ``//``, ``#``, or ``*`` characters
+  (e.g. reformatted block-comment borders).
+
+A file is consumed only when **every** added or removed line in its diff falls
+into one of those categories.  A single substantive line (a changed statement,
+macro, or declaration) causes the file to pass through to downstream
+strategies unchanged.
+
+The filter is a no-op when ``--commits`` is not supplied (e.g. when using
+``--modified-files``), because the diff cannot be computed without a commit
+range.  In that case all files remain in the pool.
 
 Consume vs. additive behaviour
 *******************************
