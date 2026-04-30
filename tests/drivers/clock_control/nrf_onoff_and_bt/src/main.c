@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(test);
 
 static bool test_end;
 
-static const struct device *const entropy = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
+static const struct device *entropy;
 static const struct device *const clock_dev = DEVICE_DT_GET_ONE(nordic_nrf_clock);
 static struct onoff_manager *hf_mgr;
 static struct onoff_client cli;
@@ -30,6 +30,8 @@ static uint32_t iteration;
 
 static void *setup(void)
 {
+	entropy = entropy_get_default_device();
+
 	zassert_true(device_is_ready(entropy));
 	zassert_true(device_is_ready(clock_dev));
 
