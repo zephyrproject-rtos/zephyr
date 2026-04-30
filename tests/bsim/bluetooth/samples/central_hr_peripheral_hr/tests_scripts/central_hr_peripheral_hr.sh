@@ -2,11 +2,11 @@
 # Copyright 2023-2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-simulation_id="central_hr_peripheral_hr_test"
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
+simulation_id="${BOARD_TS}_central_hr_peripheral_hr_test"
 verbosity_level=2
 EXECUTE_TIMEOUT=60
-
-source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 
