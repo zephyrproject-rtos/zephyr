@@ -224,6 +224,13 @@ config 64BIT
 	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally
 	  avoid modifying it.
 
+config SRAM_DEPRECATED_KCONFIG_SET
+	bool
+	help
+	  Indicates that either `CONFIG_SRAM_SIZE` or `CONFIG_SRAM_BASE_ADDRESS` have been
+	  manually set, these Kconfigs are now deprecated and should be replaced by referencing
+	  the devicetree `zephyr,sram` chosen node instead.
+
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_SRAM := zephyr,sram
 
@@ -233,7 +240,8 @@ config SRAM_SIZE
 	help
 	  The SRAM size in kB. The default value comes from /chosen/zephyr,sram in
 	  devicetree. The user should generally avoid changing it via menuconfig or
-	  in configuration files.
+	  in configuration files. This option is now deprecated and must be replaced by referencing
+	  the devicetree `zephyr,sram` chosen node instead.
 
 config SRAM_BASE_ADDRESS
 	hex "SRAM Base Address"
@@ -241,7 +249,8 @@ config SRAM_BASE_ADDRESS
 	help
 	  The SRAM base address. The default value comes from
 	  /chosen/zephyr,sram in devicetree. The user should generally avoid
-	  changing it via menuconfig or in configuration files.
+	  changing it via menuconfig or in configuration files. This option is now deprecated and
+	  must be replaced by referencing the devicetree `zephyr,sram` chosen node instead.
 
 config XIP
 	bool "Execute in place"
