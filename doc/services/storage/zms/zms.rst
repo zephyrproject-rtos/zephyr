@@ -402,6 +402,8 @@ Version 1
 - Supports multiple ATE formats to satisfy the requirements of different applications
 - Supports forced mount recovery via :c:func:`zms_mount_force` (automatic partition wipe
   and reinitialization on mount failure)
+- Supports a lookup cache to speed up repeated ID lookups with optional per-instance cache
+  configuration to customize the cache size on a per-partition basis
 
 Future features
 ===============
@@ -483,6 +485,27 @@ Cache size
 - If you use ZMS through :ref:`Settings <settings_api>`, you have to take into account that each Settings entry is
   divided into two ZMS entries. The recommendation for the cache size is to make it at least
   twice the number of Settings entries.
+
+Manual per-instance cache
+=========================
+
+When :kconfig:option:`CONFIG_ZMS_LOOKUP_CACHE_MANUAL` is enabled, each :c:struct:`zms_fs`
+instance can provide its own lookup cache buffer instead of using the global
+:kconfig:option:`CONFIG_ZMS_LOOKUP_CACHE_SIZE` setting.
+
+Call :c:func:`zms_set_lookup_cache` before :c:func:`zms_mount` to assign the cache buffer for
+that instance. If no buffer is assigned, the lookup cache remains disabled for that
+:c:struct:`zms_fs` instance.
+
+.. code-block:: c
+
+	static struct zms_fs zms_a;
+	static struct zms_fs zms_b;
+	static uint64_t zms_a_cache[512];
+	static uint64_t zms_b_cache[32];
+
+	zms_set_lookup_cache(&zms_a, zms_a_cache, ARRAY_SIZE(zms_a_cache));
+	zms_set_lookup_cache(&zms_b, zms_b_cache, ARRAY_SIZE(zms_b_cache));
 
 ID size
 =======
