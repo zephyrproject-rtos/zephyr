@@ -105,19 +105,6 @@ enum scmi_clock_message {
 };
 
 /**
- * @brief Send the PROTOCOL_ATTRIBUTES command and get its reply
- *
- * @param proto pointer to SCMI clock protocol data
- * @param attributes pointer to attributes to be set via
- * this command
- *
- * @retval 0 if successful
- * @retval negative errno if failure
- */
-int scmi_clock_protocol_attributes(struct scmi_protocol *proto,
-				   uint32_t *attributes);
-
-/**
  * @brief Send the CLOCK_CONFIG_SET command and get its reply
  *
  * @param proto pointer to SCMI clock protocol data

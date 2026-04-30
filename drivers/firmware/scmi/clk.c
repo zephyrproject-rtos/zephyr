@@ -224,45 +224,6 @@ int scmi_clock_config_set(struct scmi_protocol *proto,
 	return scmi_status_to_errno(status);
 }
 
-int scmi_clock_protocol_attributes(struct scmi_protocol *proto, uint32_t *attributes)
-{
-	struct scmi_message msg, reply;
-	struct scmi_clock_attributes_reply reply_buffer;
-	int ret;
-
-	/* input validation */
-	if (!proto || !attributes) {
-		return -EINVAL;
-	}
-
-	if (proto->id != SCMI_PROTOCOL_CLOCK) {
-		return -EINVAL;
-	}
-
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_PROTOCOL_ATTRIBUTES,
-					SCMI_COMMAND, proto->id, 0x0);
-	/* command has no parameters */
-	msg.len = 0x0;
-	msg.content = NULL;
-
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(reply_buffer);
-	reply.content = &reply_buffer;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (reply_buffer.status != 0) {
-		return scmi_status_to_errno(reply_buffer.status);
-	}
-
-	*attributes = reply_buffer.attributes;
-
-	return 0;
-}
-
 int scmi_clock_attributes(struct scmi_protocol *proto, uint32_t clk_id,
 			  struct scmi_clock_attributes *attributes)
 {
