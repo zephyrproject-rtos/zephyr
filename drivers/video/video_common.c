@@ -534,9 +534,12 @@ int video_estimate_fmt_size(struct video_format *fmt)
 	case VIDEO_PIX_FMT_JPEG:
 	case VIDEO_PIX_FMT_PNG:
 	case VIDEO_PIX_FMT_H264:
-		/* Rough estimate for the worst case (quality = 100) */
 		fmt->pitch = 0;
-		fmt->size = fmt->width * fmt->height * 2;
+		/*
+		 * The default estimate is equivalent to the size of a two-byte-per-pixel
+		 * uncompressed format, e.g. RGB565
+		 */
+		fmt->size = fmt->width * fmt->height * 2 * CONFIG_VIDEO_COMPRESSED_SIZE_RATIO / 100;
 		break;
 	case VIDEO_PIX_FMT_NV12:
 	case VIDEO_PIX_FMT_NV21:
