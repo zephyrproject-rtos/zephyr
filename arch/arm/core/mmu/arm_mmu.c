@@ -29,7 +29,13 @@
 #include <zephyr/kernel/mm.h>
 #include <zephyr/sys/barrier.h>
 
+#ifdef CONFIG_ARM_AARCH32_MMU_VMSA_V5
+#include <arm9/cp15.h>
+#define __get_SCTLR(x) __get_control_register(x)
+#define __set_SCTLR(x) __set_control_register(x)
+#else
 #include <cmsis_core.h>
+#endif
 
 #include <zephyr/arch/arm/mmu/arm_mmu.h>
 #include "arm_mmu_priv.h"
@@ -564,6 +570,24 @@ static void arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 			    ARM_MMU_PTE_L2_INDEX_MASK;
 
 	/*
+	 * As the MMU for ARMv5 is not compatible with the one for ARMv7, make
+	 * workwround here for running simple applications without fatal errors.
+	 * NEED TO BE FIXED specifically when adding the support for ARMv5 MMU.
+	 */
+	if (IS_ENABLED(CONFIG_ARM_AARCH32_MMU_VMSA_V5)) {
+		l1_page_table.entries[l1_index].l1_section_1m.id =
+			(ARM_MMU_PTE_ID_SECTION & perms_attrs.id_mask);
+		l1_page_table.entries[l1_index].l1_section_1m.acc_perms10 =
+			((perms_attrs.acc_perms & 0x1) << 1) | 0x1;
+		l1_page_table.entries[l1_index].l1_section_1m.acc_perms2 =
+			(perms_attrs.acc_perms >> 1) & 0x1;
+		l1_page_table.entries[l1_index].l1_section_1m.base_address =
+			(pa >> ARM_MMU_PTE_L1_INDEX_PA_SHIFT);
+
+		return;
+	}
+
+	/*
 	 * Use the calculated L1 index in order to determine if a L2 page
 	 * table is required in order to complete the current mapping.
 	 * -> See below for an explanation of the possible scenarios.
@@ -804,12 +828,16 @@ int z_arm_mmu_init(void)
 		}
 	}
 
+#ifdef CONFIG_ARM_AARCH32_MMU_VMSA_V5
+	/* do not has TTBR1 and TTBCR, only TTRB exits */
+#else
 	/* Clear TTBR1 */
 	__asm__ volatile("mcr p15, 0, %0, c2, c0, 1" : : "r"(reg_val));
 
 	/* Write TTBCR: EAE, security not yet relevant, N[2:0] = 0 */
 	__asm__ volatile("mcr p15, 0, %0, c2, c0, 2"
 			     : : "r"(reg_val));
+#endif
 
 	/* Write TTBR0 */
 	reg_val = ((uint32_t)&l1_page_table.entries[0] & ~0x3FFF);
@@ -842,7 +870,11 @@ int z_arm_mmu_init(void)
 		reg_val |= ARM_MMU_TTBR_IRGN1_BIT_MP_EXT_ONLY;
 	}
 
+#ifdef CONFIG_ARM_AARCH32_MMU_VMSA_V5
+	__set_TTBR(reg_val);
+#else
 	__set_TTBR0(reg_val);
+#endif
 
 	/* Write DACR -> all domains to client = 01b. */
 	reg_val = ARM_MMU_DACR_ALL_DOMAINS_CLIENT;

@@ -35,6 +35,8 @@ struct clk_range {
 	unsigned long max;
 };
 
+#define CLK_RANGE(_min, _max) { .min = _min, .max = _max }
+
 struct clk_master_layout {
 	uint32_t offset;
 	uint32_t mask;
@@ -134,6 +136,12 @@ int clk_register_main_osc(pmc_registers_t *const pmc, const char *name, uint32_t
 
 int clk_register_main(pmc_registers_t *const pmc, const char *name,
 		      const struct device **parents, int num_parents, struct device **clk);
+
+int clk_register_master_pres(pmc_registers_t *const pmc, const char *name,
+			     const struct device **parent, int num_parents,
+			     const struct clk_master_layout *layout,
+			     const struct clk_master_characteristics *characteristics,
+			     struct k_spinlock *lock, struct device **clk);
 
 int clk_register_master_div(pmc_registers_t *const pmc, const char *name,
 			    const struct device *parent, const struct clk_master_layout *layout,

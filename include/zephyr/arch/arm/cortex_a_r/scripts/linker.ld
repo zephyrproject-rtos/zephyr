@@ -369,6 +369,11 @@ GROUP_END(OCM)
     /* Sections generated from 'zephyr,memory-region' nodes */
     LINKER_DT_SECTIONS()
 
+    SECTION_PROLOGUE(.tbss,,)
+    {
+      *(".tbss.*")
+    }
+
     /* Must be last in romable region */
     SECTION_PROLOGUE(.last_section,,)
     {

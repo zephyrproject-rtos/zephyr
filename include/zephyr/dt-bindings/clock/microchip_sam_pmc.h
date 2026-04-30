@@ -38,4 +38,8 @@
 #define PMC_MCK3		(PMC_MAIN + 20)
 #define PMC_MCK5		(PMC_MAIN + 21)
 
+/* SAM9X7 */
+#define PMC_PLLACK		(PMC_MAIN + 1)
+#define PMC_PLLADIV2		(PMC_MAIN + 2)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MICROCHIP_SAM_PMC_H_ */
