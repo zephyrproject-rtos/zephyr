@@ -1,0 +1,6 @@
+manifest:                                                                                                                                               
+    projects:                                                                                                                                             
+      - name: heatshrink                                                                                                                                  
+        url: https://github.com/kickmaker/heatshrink                                                                                                      
+        revision: c47356093c4ea079749214de2864186a578668a0                                                                                                
+        path: modules/lib/heatshrink   
