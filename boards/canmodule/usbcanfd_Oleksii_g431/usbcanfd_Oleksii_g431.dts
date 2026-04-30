@@ -1,11 +1,15 @@
+/*
+ * Copyright (c) 2026 Oleksii Mamontov <mamontov1@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /dts-v1/;
 #include <st/g4/stm32g431X8.dtsi>
 #include <st/g4/stm32g431c(6-8-b)tx-pinctrl.dtsi>
 
 / {
-	model = "USB CANFD SOLO";
-	compatible = "usbcanfd_Oleksii,usbcanfd_Oleksii_g431";
+	model = "USB CANFD SOLO (can-module.com)";
+	compatible = "canmodule,usbcanfd-oleksii-g431";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -32,31 +36,23 @@
 		};
 	};
 };
-/*
-&clk_hsi {          // Internal 16 MHz clock used to drive PLL 
-	status = "okay";
-};
-*/
 
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(8)>; /* HSE 8 Mhz */
 	status = "okay";
 };
 
-
 &clk_hsi48 {
-	/* Internal 48 MHz clock used to drive USB */
 	status = "okay";
 };
 
-/* Adjust the pll for a SYSTEM Clock of 160 MHz  */
 &pll {
 	div-m = <2>;
 	mul-n = <80>;
 	div-p = <2>;
 	div-q = <4>;
 	div-r = <2>;
-	clocks = <&clk_hse>;//<&clk_hsi>
+	clocks = <&clk_hse>;
 	status = "okay";
 };
 
