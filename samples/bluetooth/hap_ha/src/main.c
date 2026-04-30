@@ -32,7 +32,7 @@ static uint8_t unicast_server_addata[] = {
 	BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED, /* Target Announcement */
 	BT_BYTES_LIST_LE16(HAP_CONTEXT),
 	BT_BYTES_LIST_LE16(HAP_CONTEXT),
-	0x00, /* Metadata length */
+	0x00U, /* Metadata length */
 };
 
 static uint8_t csis_rsi_addata[BT_CSIP_RSI_SIZE];
