@@ -53,6 +53,10 @@ void soc_early_init_hook(void)
 static int soc_init(void)
 {
 	int ret = 0;
+#if defined(CONFIG_DT_HAS_NXP_IMX_MIPI_CSI_ENABLED)
+	BLK_CTRL_CAMERAMIX->CSI0_PIXEL_DATA_TYPE_VC[0] = 0xffffff;
+#endif /* CONFIG_DT_HAS_IMX_MIPI_CSI_ENABLED */
+
 #if defined(CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS)
 	struct scmi_nxp_cpu_sleep_mode_config cpu_cfg = {0};
 #endif /* CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS */
