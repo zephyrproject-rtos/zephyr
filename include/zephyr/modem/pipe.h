@@ -132,9 +132,8 @@ void modem_pipe_attach(struct modem_pipe *pipe, modem_pipe_api_callback callback
  * @param buf Data to transmit
  * @param size Number of bytes to transmit
  *
- * @return Number of bytes placed in pipe
- * @retval -EPERM if pipe is closed
- * @retval -errno code on error
+ * @return Number of bytes placed in pipe, negative error code on failure.
+ * @retval -EPERM Pipe is closed
  *
  * @warning This call must be non-blocking
  */
