@@ -18,11 +18,13 @@
 #include <zephyr/bluetooth/audio/tmap.h>
 #include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/crypto.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
@@ -337,7 +339,8 @@ void cap_initiator_setup(void)
 			printk("Unable to start extended advertiser: %d\n", err);
 			return;
 		}
-		k_sem_take(&sem_broadcast_started, K_FOREVER);
+		err = k_sem_take(&sem_broadcast_started, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 
 		/* Initialize sending */
 		for (unsigned int j = 0U; j < BROADCAST_ENQUEUE_COUNT; j++) {
@@ -363,7 +366,8 @@ void cap_initiator_setup(void)
 			printk("Failed to stop broadcast source: %d\n", err);
 			return;
 		}
-		k_sem_take(&sem_broadcast_stopped, K_FOREVER);
+		err = k_sem_take(&sem_broadcast_stopped, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 
 		err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
 		if (err != 0) {

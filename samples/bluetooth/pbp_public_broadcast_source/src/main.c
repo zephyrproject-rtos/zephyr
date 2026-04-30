@@ -25,6 +25,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
@@ -401,7 +402,8 @@ void cap_initiator_setup(void)
 
 			return;
 		}
-		k_sem_take(&sem_broadcast_started, K_FOREVER);
+		err = k_sem_take(&sem_broadcast_started, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 
 		/* Initialize sending */
 		for (unsigned int j = 0U; j < BROADCAST_ENQUEUE_COUNT; j++) {
@@ -418,7 +420,9 @@ void cap_initiator_setup(void)
 			return;
 		}
 
-		k_sem_take(&sem_broadcast_stopped, K_FOREVER);
+		err = k_sem_take(&sem_broadcast_stopped, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
+
 		err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
 		if (err != 0) {
 			printk("Failed to stop broadcast source: %d\n", err);

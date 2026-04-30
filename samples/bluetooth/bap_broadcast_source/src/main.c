@@ -315,7 +315,9 @@ static void init_lc3_thread(void *arg1, void *arg2, void *arg3)
 
 	while (true) {
 		for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-			k_sem_take(&lc3_encoder_sem, K_FOREVER);
+			__maybe_unused int err = k_sem_take(&lc3_encoder_sem, K_FOREVER);
+
+			__ASSERT_NO_MSG(err == 0);
 		}
 		for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 			send_data(&streams[i]);
@@ -696,7 +698,9 @@ int main(void)
 		}
 
 		/* Wait for broadcast source to be started */
-		k_sem_take(&sem_started, K_FOREVER);
+		err = k_sem_take(&sem_started, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
+
 		printk("Broadcast source started\n");
 
 		/* Initialize sending */
@@ -721,7 +725,9 @@ int main(void)
 		}
 
 		/* Wait for broadcast source to be stopped */
-		k_sem_take(&sem_stopped, K_FOREVER);
+		err = k_sem_take(&sem_stopped, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
+
 		printk("Broadcast source stopped\n");
 
 		printk("Deleting broadcast source\n");

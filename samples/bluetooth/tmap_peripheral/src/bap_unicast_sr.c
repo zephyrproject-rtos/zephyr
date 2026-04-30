@@ -386,39 +386,86 @@ int bap_unicast_sr_init(void)
 		return err;
 	}
 
-	bt_bap_unicast_server_register(&param);
-	bt_bap_unicast_server_register_cb(&unicast_server_cb);
+	err = bt_bap_unicast_server_register(&param);
+	if (err != 0) {
+		printk("Could not register unicast server (err %d)\n", err);
+		return err;
+	}
+
+	err = bt_bap_unicast_server_register_cb(&unicast_server_cb);
+	if (err != 0) {
+		printk("Could not register unicast server callbacks (err %d)\n", err);
+		return err;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
 		/* Register CT required capabilities */
-		bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
-
-		if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_LEFT)) {
-			bt_pacs_set_location(BT_AUDIO_DIR_SINK, BT_AUDIO_LOCATION_FRONT_LEFT);
-		} else {
-			bt_pacs_set_location(BT_AUDIO_DIR_SINK, BT_AUDIO_LOCATION_FRONT_RIGHT);
+		err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
+		if (err != 0) {
+			printk("Could not register sink capability (err %d)\n", err);
+			return err;
 		}
 
-		bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK,
-					       AVAILABLE_SINK_CONTEXT);
-		bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
-					       AVAILABLE_SINK_CONTEXT);
+		if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_LEFT)) {
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+						       BT_AUDIO_LOCATION_FRONT_LEFT);
+		} else {
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+						       BT_AUDIO_LOCATION_FRONT_RIGHT);
+		}
+		if (err != 0) {
+			printk("Could not set sink location (err %d)\n", err);
+			return err;
+		}
+
+		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK,
+						     AVAILABLE_SINK_CONTEXT);
+		if (err != 0) {
+			printk("Could not set sink supported contexts (err %d)\n", err);
+			return err;
+		}
+
+		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
+						     AVAILABLE_SINK_CONTEXT);
+		if (err != 0) {
+			printk("Could not set sink available contexts (err %d)\n", err);
+			return err;
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
 		/* Register CT required capabilities */
-		bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap);
-
-		if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_LEFT)) {
-			bt_pacs_set_location(BT_AUDIO_DIR_SOURCE, BT_AUDIO_LOCATION_FRONT_LEFT);
-		} else {
-			bt_pacs_set_location(BT_AUDIO_DIR_SOURCE, BT_AUDIO_LOCATION_FRONT_RIGHT);
+		err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap);
+		if (err != 0) {
+			printk("Could not register source capability (err %d)\n", err);
+			return err;
 		}
 
-		bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE,
-					       AVAILABLE_SOURCE_CONTEXT);
-		bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE,
-					       AVAILABLE_SOURCE_CONTEXT);
+		if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_LEFT)) {
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
+						       BT_AUDIO_LOCATION_FRONT_LEFT);
+		} else {
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
+						       BT_AUDIO_LOCATION_FRONT_RIGHT);
+		}
+		if (err != 0) {
+			printk("Could not set source location (err %d)\n", err);
+			return err;
+		}
+
+		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE,
+						     AVAILABLE_SOURCE_CONTEXT);
+		if (err != 0) {
+			printk("Could not set source supported contexts (err %d)\n", err);
+			return err;
+		}
+
+		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE,
+						     AVAILABLE_SOURCE_CONTEXT);
+		if (err != 0) {
+			printk("Could not set source available contexts (err %d)\n", err);
+			return err;
+		}
 	}
 
 	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
