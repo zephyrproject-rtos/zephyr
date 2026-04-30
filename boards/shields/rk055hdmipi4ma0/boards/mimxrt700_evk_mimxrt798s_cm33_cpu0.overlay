@@ -23,3 +23,7 @@
 	 */
 	phy-clock = <396000000>;
 };
+
+&sram1 {
+	zephyr,memory-region = "LVGL_BUF";
+};
