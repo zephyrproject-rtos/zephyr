@@ -1885,12 +1885,27 @@ if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
   # are typically loaded to RAM
   if(NOT CONFIG_XIP)
     if(CONFIG_BUILD_OUTPUT_ADJUST_LMA)
-      math(EXPR code_address
+      if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+        math(EXPR code_address
           "${CONFIG_SRAM_BASE_ADDRESS} + ${CONFIG_BUILD_OUTPUT_ADJUST_LMA} + 0"
           OUTPUT_FORMAT HEXADECIMAL
-      )
+        )
+      else()
+        dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+        dt_reg_addr(ram_addr PATH "${chosen_sram_path}")
+
+        math(EXPR code_address
+          "${ram_addr} + ${CONFIG_BUILD_OUTPUT_ADJUST_LMA} + 0"
+          OUTPUT_FORMAT HEXADECIMAL
+        )
+      endif()
     else()
-      set(code_address "${CONFIG_SRAM_BASE_ADDRESS}")
+      if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+        set(code_address ${CONFIG_SRAM_BASE_ADDRESS})
+      else()
+        dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+        dt_reg_addr(code_address PATH "${chosen_sram_path}")
+      endif()
     endif()
   endif()
 
