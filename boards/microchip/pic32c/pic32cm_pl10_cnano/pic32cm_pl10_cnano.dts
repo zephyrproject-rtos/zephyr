@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <microchip/pic32c/pic32cm_pl/pic32cm_pl10/pic32cm6408pl10048.dtsi>
 #include "pic32cm_pl10_cnano-pinctrl.dtsi"
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -99,7 +100,21 @@
 	};
 };
 
+&porta {
+	status = "okay";
+};
+
 &portb {
+	status = "okay";
+};
+
+&sercom0 {
+	compatible = "microchip,sercom-g1-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&sercom0_i2c_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
