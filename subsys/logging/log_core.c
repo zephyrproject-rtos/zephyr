@@ -26,6 +26,8 @@
 #include <zephyr/linker/utils.h>
 #include <zephyr/arch/arch_interface.h>
 
+#include "log_core_internal.h"
+
 #if CONFIG_USERSPACE && CONFIG_LOG_ALWAYS_RUNTIME
 #include <zephyr/app_memory/app_memdomain.h>
 K_APPMEM_PARTITION_DEFINE(k_log_partition);
@@ -677,6 +679,34 @@ static struct log_msg *msg_alloc(struct mpsc_pbuf_buffer *buffer, uint32_t wlen)
 			: K_MSEC(CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS));
 }
 
+static bool process_lock_acquire_if_needed(k_spinlock_key_t *key)
+{
+#ifdef CONFIG_SMP
+	int curr_cpu = arch_curr_cpu()->id;
+#else
+	int curr_cpu = 0;
+#endif
+	int owner_cpu = atomic_get(&process_lock_owner_cpu);
+
+	if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT) ||
+	    !z_log_process_lock_required_for_clean_output(owner_cpu, curr_cpu)) {
+		return false;
+	}
+
+	*key = k_spin_lock(&process_lock);
+	atomic_set(&process_lock_owner_cpu, curr_cpu);
+
+	return true;
+}
+
+static void process_lock_release_if_needed(bool lock_acquired, k_spinlock_key_t key)
+{
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT) && lock_acquired) {
+		atomic_set(&process_lock_owner_cpu, LOG_NO_CPU_OWNER);
+		k_spin_unlock(&process_lock, key);
+	}
+}
+
 struct log_msg *z_log_msg_alloc(uint32_t wlen)
 {
 	return msg_alloc(&log_buffer, wlen);
@@ -685,28 +715,15 @@ struct log_msg *z_log_msg_alloc(uint32_t wlen)
 static void msg_commit(struct mpsc_pbuf_buffer *buffer, struct log_msg *msg)
 {
 	union log_msg_generic *m = (union log_msg_generic *)msg;
-	bool lock_acquired = false;
+	bool lock_acquired;
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		k_spinlock_key_t key;
-#ifdef CONFIG_SMP
-		int curr_cpu = arch_curr_cpu()->id;
-#else
-		int curr_cpu = 0;
-#endif
-
-		if (IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT) &&
-		    atomic_cas(&process_lock_owner_cpu, LOG_NO_CPU_OWNER, curr_cpu)) {
-			key = k_spin_lock(&process_lock);
-			lock_acquired = true;
-		}
+		lock_acquired = process_lock_acquire_if_needed(&key);
 
 		msg_process(m);
 
-		if (IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT) && lock_acquired) {
-			atomic_set(&process_lock_owner_cpu, LOG_NO_CPU_OWNER);
-			k_spin_unlock(&process_lock, key);
-		}
+		process_lock_release_if_needed(lock_acquired, key);
 
 		return;
 	}

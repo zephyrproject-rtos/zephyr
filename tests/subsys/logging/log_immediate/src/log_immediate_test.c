@@ -19,6 +19,8 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>
 
+#include "../../../../../subsys/logging/log_core_internal.h"
+
 #define LOG_MODULE_NAME test
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
@@ -72,6 +74,28 @@ ZTEST(log_immediate, test_log_immediate_preemption)
 		k_thread_abort(tids[i]);
 	}
 	zassert_true(true, "");
+}
+
+ZTEST(log_immediate, test_same_cpu_owner_skips_lock)
+{
+	if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
+		ztest_test_skip();
+	}
+
+	zassert_false(z_log_process_lock_required_for_clean_output(0, 0),
+		      "same CPU recursion should not require the process lock");
+}
+
+ZTEST(log_immediate, test_other_cpu_owner_requires_lock)
+{
+	if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
+		ztest_test_skip();
+	}
+
+	zassert_true(z_log_process_lock_required_for_clean_output(1, 0),
+		     "other CPU ownership must not bypass the process lock");
+	zassert_true(z_log_process_lock_required_for_clean_output(-1, 0),
+		     "unowned lock state should acquire the process lock");
 }
 
 ZTEST_SUITE(log_immediate, NULL, NULL, NULL, NULL, NULL);
