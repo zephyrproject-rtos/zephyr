@@ -1,0 +1,18 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+title: Solomon SSD1305 display controller on SPI bus
+
+description: |
+    The Solomon SSD1305 is a monochrome OLED controller
+    with a maximum 132x64 resolution.
+
+compatible: "solomon,ssd1305"
+
+include: ["solomon,ssd1306-common.yaml", "spi-device.yaml"]
+
+properties:
+  data-cmd-gpios:
+    type: phandle-array
+    required: true
+    description: D/C# pin.
