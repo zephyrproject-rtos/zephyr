@@ -1,0 +1,106 @@
+# Copyright (c) 2026 Moritz Gericke
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  is31fl3238 LED driver for Lumissil Microsystems (a division of ISSI) for up to 18 LEDs
+
+compatible: "issi,is31fl3238"
+
+include: ["i2c-device.yaml", "led-controller.yaml"]
+
+properties:
+  sdb-gpios:
+    type: phandle-array
+    description: |
+      Hardware shutdown pin. If routed on the board, this property must be
+      present. Set to a logical 1 at boot to exit the device from hardware
+      shutdown.
+
+  current-limit:
+    type: int
+    required: true
+    description: |
+      Global current limit. Sets the global current control register of LED
+      driver (see table 8). Limits global current based on the following
+      formula: I_OUT(MAX) * (current-limit/256) * (SLA + SLB)/(256*2).
+      (see also table 6 regarding SLA and SLB)
+      Valid range: 0 - 255
+
+  pwm-frequency-hz:
+    type: int
+    default: 62000
+    description: |
+      The PWM frequency. Sets the PWM frequency of the LED driver
+      indirectly via the oscillator clock frequency selection part of the
+      control register (see table 4). Adjust to avoid audible hum.
+      Defaults to POR value of 62 kHz.
+    enum:
+      - 62000
+      - 32000
+      - 4000
+      - 2000
+      - 1000
+      - 500
+      - 244
+      - 122
+
+  spread-spectrum-enable:
+    type: boolean
+    description: |
+      Enable spread spectrum function to optimize EMI performance in
+      combination with cycle time and range (see table 13).
+
+  spread-spectrum-cycle-time-us:
+    type: int
+    default: 1980
+    description: |
+      The spread spectrum cycle time in uS (also see table 13).
+      Defaults to POR value of 1980 uS.
+    enum:
+      - 1980
+      - 1200
+      - 820
+      - 660
+
+  spread-spectrum-range-percent:
+    type: int
+    default: 5
+    description: |
+      The spread spectrum range in +-x% (also see table 13).
+    enum:
+      - 5
+      - 15
+      - 24
+      - 34
+
+child-binding:
+  properties:
+    label:
+      type: string
+      required: true
+      description: |
+        The child LED's label.
+
+    color-mapping:
+      type: array
+      required: true
+      description: |
+        The child LED's color mapping.
+
+    current-limit-mapping:
+      type: array
+      required: true
+      description: |
+        The current limit mapping for the LED (see table 7). Limits
+        individual current based on the following formula:
+        I_OUT(MAX) * (current-limit/256) * (SLA + SLB)/(256*2).
+        Note: SLA + SLB are set together via single 9-bit value.
+        Must be of same cardinality as color mapping!
+        Valid range: 0 - 511
+
+    start-channel:
+      type: int
+      required: true
+      description: |
+        The child LED's start channel.
+        Valid range: 0 - 17

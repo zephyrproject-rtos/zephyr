@@ -200,6 +200,19 @@
 				compatible = "nxp,pca9533";
 				reg = <0x15>;
 			};
+
+			is31fl3238@16 {
+				compatible = "issi,is31fl3238";
+				reg = <0x16>;
+				current-limit = <0xff>;
+
+				is31fl3238_led0 {
+					label = "IS31FL3238 LED 0";
+					color-mapping = <1 2 3>;
+					current-limit-mapping = <0x1ff 0x1ff 0x1ff>;
+					start-channel = <0>;
+				};
+			};
 		};
 
 		test_pwm: pwm@12341234 {

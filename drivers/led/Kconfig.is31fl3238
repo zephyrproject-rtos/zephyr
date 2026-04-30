@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Moritz Gericke
+# SPDX-License-Identifier: Apache-2.0
+
+config IS31FL3238
+	bool "IS31FL3238 LED driver"
+	default y
+	depends on DT_HAS_ISSI_IS31FL3238_ENABLED
+	select I2C
+	help
+	  Enable LED driver for Lumissil Microsystems (a division of ISSI)
+	  IS31FL3238. This chip supports up to 18 PWM controlled LEDs.
