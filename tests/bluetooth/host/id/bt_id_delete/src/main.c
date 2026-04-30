@@ -172,3 +172,74 @@ static ZTEST(bt_id_delete, test_id_create_after_delete)
 		zassert_ok(err, "Unexpected error code '%d' was returned", err);
 	}
 }
+
+/*
+ * Test deleting non-last IDs after creation
+ *
+ * After creating the initial default (that cannot be deleted), the test will attempt to create and
+ * delete more IDs than CONFIG_BT_ID_MAX to ensure that we clean properly up after a delete
+ */
+static ZTEST(bt_id_delete, test_id_create_after_delete_non_last)
+{
+	uint8_t ids[CONFIG_BT_ID_MAX];
+
+	atomic_set_bit(bt_dev.flags, BT_DEV_ENABLE);
+
+	if (CONFIG_BT_ID_MAX < 3) {
+		ztest_test_skip();
+	}
+
+	ids[BT_ID_DEFAULT] = bt_id_create(BT_STATIC_RANDOM_LE_ADDR_1, NULL);
+	zassert_true(ids[BT_ID_DEFAULT] >= 0, "Unexpected error code '%d' was returned",
+		     ids[BT_ID_DEFAULT]);
+
+	/* Fill up the IDs */
+	for (int i = 1; i < CONFIG_BT_ID_MAX; i++) {
+		bt_addr_le_t addr = *BT_STATIC_RANDOM_LE_ADDR_2;
+		int id;
+
+		/* Make addresses unique */
+		addr.a.val[3] = i;
+
+		id = bt_id_create(&addr, NULL);
+		zassert_true(id >= 0 && id < CONFIG_BT_ID_MAX,
+			     "[%d]: Unexpected error code '%d' was returned (not 0 <= id < "
+			     "CONFIG_BT_ID_MAX (%d))",
+			     i, id, CONFIG_BT_ID_MAX);
+		zassert_true(
+			bt_dev.id_count <= CONFIG_BT_ID_MAX,
+			"[%d]: Incorrect ID count %d was set (expected <= CONFIG_BT_ID_MAX (%d))",
+			i, bt_dev.id_count, CONFIG_BT_ID_MAX);
+
+		ids[i] = (uint8_t)id;
+	}
+
+	/* Delete all IDs but the first (default) and last */
+	for (int i = 1; i < CONFIG_BT_ID_MAX - 1; i++) {
+		int err;
+
+		err = bt_id_delete(ids[i]);
+		zassert_ok(err, "Unexpected error code '%d' was returned", err);
+	}
+
+	/* Recreate the IDs that were deleted */
+	for (int i = 1; i < CONFIG_BT_ID_MAX - 1; i++) {
+		bt_addr_le_t addr = *BT_STATIC_RANDOM_LE_ADDR_2;
+		int id;
+
+		/* Make addresses unique */
+		addr.a.val[3] = i;
+
+		id = bt_id_create(&addr, NULL);
+		zassert_true(id >= 0 && id < CONFIG_BT_ID_MAX,
+			     "[%d]: Unexpected error code '%d' was returned (not 0 <= id < "
+			     "CONFIG_BT_ID_MAX (%d))",
+			     i, id, CONFIG_BT_ID_MAX);
+		zassert_true(
+			bt_dev.id_count <= CONFIG_BT_ID_MAX,
+			"[%d]: Incorrect ID count %d was set (expected <= CONFIG_BT_ID_MAX (%d))",
+			i, bt_dev.id_count, CONFIG_BT_ID_MAX);
+
+		ids[i] = (uint8_t)id;
+	}
+}
