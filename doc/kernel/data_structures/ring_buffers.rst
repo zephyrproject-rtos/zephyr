@@ -34,10 +34,10 @@ A ring buffer must be initialized before it can be used. This sets its
 data buffer to empty.
 
 A ``struct ring_buf`` may be placed anywhere in user-accessible
-memory, and must be initialized with :c:func:`ring_buf_init` before use. This must be provided a region
-of user-controlled memory for use as the buffer itself.  Note carefully that the units of the size of the
-buffer passed change (either bytes or words) depending on how the ring
-buffer will be used later.  Macros for combining these steps in a
+memory, and must be initialized with :c:func:`ring_buf_init` before use.
+This must be provided a region of user-controlled memory for use as the buffer itself.
+Note carefully that the units of the size of the buffer passed change (either bytes or words)
+depending on how the ring buffer will be used later. Macros for combining these steps in a
 single static declaration exist for convenience.
 :c:macro:`RING_BUF_DECLARE` will declare and statically initialize a ring
 buffer with a specified byte count, where
@@ -45,26 +45,32 @@ buffer with a specified byte count, where
 "Bytes" data may be copied into the ring buffer using
 :c:func:`ring_buf_put`, passing a data pointer and byte count.  These
 bytes will be copied into the buffer in order, as many as will fit in
-the allocated buffer.  The total number of bytes copied (which may be
+the allocated buffer. The total number of bytes copied (which may be
 fewer than provided) will be returned.  Likewise :c:func:`ring_buf_get`
 will copy bytes out of the ring buffer in the order that they were
 written, into a user-provided buffer, returning the number of bytes
 that were transferred.
 
-To avoid multiply-copied-data situations, a "claim" API exists.
-:c:func:`ring_buf_put_claim` takes a byte size value from the
-user and returns a pointer to memory internal to the ring buffer that
-can be used to receive those bytes, along with a size of the
-contiguous internal region (which may be smaller than requested).  The
-user can then copy data into that region at a later time without
-assembling all the bytes in a single region first.  When complete,
-:c:func:`ring_buf_put_finish` can be used to signal the buffer that the
-transfer is complete, passing the number of bytes actually
-transferred.  At this point a new transfer can be initiated.
-Similarly, :c:func:`ring_buf_get_claim` returns a pointer to internal ring
+To avoid multiply-copied-data situations, a zero-copy "pointer" API exists.
+:c:func:`ring_buf_put_ptr` returns a pointer to memory internal to the ring
+buffer that can be used to receive bytes, along with the size of the
+contiguous internal region available for writing (which may be smaller than
+the total free space if the region wraps). The user can then write data
+directly into that region (e.g. via DMA) without assembling all the bytes
+in a single region first.  When complete, :c:func:`ring_buf_commit` is used
+to signal the buffer that the transfer is complete, passing the number of
+bytes actually transferred. At this point a new transfer can be initiated.
+Similarly, :c:func:`ring_buf_get_ptr` returns a pointer to internal ring
 buffer data from which the user can read without making a verbatim
-copy, and :c:func:`ring_buf_get_finish` signals the buffer with how many
+copy, and :c:func:`ring_buf_consume` signals the buffer with how many
 bytes have been consumed and allows for a new transfer to begin.
+
+The legacy :c:func:`ring_buf_put_claim` / :c:func:`ring_buf_put_finish` and
+:c:func:`ring_buf_get_claim` / :c:func:`ring_buf_get_finish` APIs provide
+similar functionality but reserve the claimed region until finished, which
+incurs additional code size and runtime cost. These APIs are deprecated
+and will be removed in a future release; new code should use the
+``_ptr`` / ``_commit`` / ``_consume`` variants described above.
 
 The user can manage the capacity of a ring buffer without modifying it
 using either :c:func:`ring_buf_space_get` which returns the number of free bytes,
@@ -72,7 +78,7 @@ or by testing the :c:func:`ring_buf_is_empty` predicate.
 
 Finally, a :c:func:`ring_buf_reset` call exists to immediately empty a
 ring buffer, discarding the tracking of any bytes already
-written to the buffer.  It does not modify the memory contents of the
+written to the buffer. It does not modify the memory contents of the
 buffer itself, however.
 
 
@@ -81,10 +87,8 @@ Instantiation and Usage
 
 A ring buffer instance is declared using
 :c:macro:`RING_BUF_DECLARE()` and accessed using:
-:c:func:`ring_buf_put_claim`, :c:func:`ring_buf_put_finish`,
-:c:func:`ring_buf_get_claim`, :c:func:`ring_buf_get_finish`,
 :c:func:`ring_buf_put_ptr`, :c:func:`ring_buf_commit`,
-:c:func:`ring_buf_get_ptr`, :c:func:`ring_buf_consume`, and
+:c:func:`ring_buf_get_ptr`, :c:func:`ring_buf_consume`,
 :c:func:`ring_buf_put` and :c:func:`ring_buf_get`.
 
 Data can be copied into the ring buffer (see
