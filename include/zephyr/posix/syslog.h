@@ -39,7 +39,18 @@
 #define LOG_EMERG   0
 #define LOG_ALERT   1
 #define LOG_CRIT    2
+#ifndef LOG_ERR
 #define LOG_ERR     3
+#else
+#ifndef DONT_WARN_ME_ABOUT_SYSLOG
+#warning \
+"syslog.h and log.h are not compatibly. "\
+"When including both syslog.h and log.h, by default log.h prevails and it is not possible to use "\
+"syslog(LOG_ERR,..). If you want to use syslog(LOG_ERR,..) avoid including log.h, "\
+"OR #undef LOG_ERR before including syslog.h. "\
+"To simply suppress this warning define DONT_WARN_ME_ABOUT_SYSLOG"
+#endif
+#endif /* ifndef LOG_ERR */
 #define LOG_WARNING 4
 #define LOG_NOTICE  5
 #define LOG_INFO    6
