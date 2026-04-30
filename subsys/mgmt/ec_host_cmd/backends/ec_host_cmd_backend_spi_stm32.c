@@ -96,6 +96,10 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_host_cmd_spi_backend),
 #define EC_HOST_CMD_ST_STM32H7
 #endif /* st_stm32h7_spi */
 
+#if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_host_cmd_spi_backend), st_stm32u5_spi)
+#define EC_HOST_CMD_ST_STM32U5
+#endif /* st_stm32u5_spi */
+
 #if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_host_cmd_spi_backend), st_stm32_spi_fifo)
 #define EC_HOST_CMD_ST_STM32_FIFO
 #endif /* st_stm32_spi_fifo */
@@ -237,20 +241,20 @@ STM32_SPI_INIT(DT_CHOSEN(zephyr_host_cmd_spi_backend));
 
 static inline uint32_t dma_source_addr(SPI_TypeDef *spi)
 {
-#ifdef EC_HOST_CMD_ST_STM32H7
+#if defined(EC_HOST_CMD_ST_STM32H7) || defined(EC_HOST_CMD_ST_STM32U5)
 	return (uint32_t)(&spi->RXDR);
 #else
 	return (uint32_t)LL_SPI_DMA_GetRegAddr(spi);
-#endif /* EC_HOST_CMD_ST_STM32H7 */
+#endif /* EC_HOST_CMD_ST_STM32H7 || EC_HOST_CMD_ST_STM32U5 */
 }
 
 static inline uint32_t dma_dest_addr(SPI_TypeDef *spi)
 {
-#ifdef EC_HOST_CMD_ST_STM32H7
+#if defined(EC_HOST_CMD_ST_STM32H7) || defined(EC_HOST_CMD_ST_STM32U5)
 	return (uint32_t)(&spi->TXDR);
 #else
 	return (uint32_t)LL_SPI_DMA_GetRegAddr(spi);
-#endif /* EC_HOST_CMD_ST_STM32H7 */
+#endif /* EC_HOST_CMD_ST_STM32H7 || EC_HOST_CMD_ST_STM32U5 */
 }
 
 /* Set TX register to send status, while SPI module is enabled */
@@ -260,9 +264,9 @@ static inline void tx_status(SPI_TypeDef *spi, uint8_t status)
 	 * families than need to bypass the DMA threshold.
 	 */
 	LL_SPI_TransmitData8(spi, status);
-#ifdef EC_HOST_CMD_ST_STM32H7
+#if defined(EC_HOST_CMD_ST_STM32H7) || defined(EC_HOST_CMD_ST_STM32U5)
 	LL_SPI_SetUDRPattern(spi, status);
-#endif /* EC_HOST_CMD_ST_STM32H7 */
+#endif /* EC_HOST_CMD_ST_STM32H7 || EC_HOST_CMD_ST_STM32U5 */
 }
 
 static int expected_size(const struct ec_host_cmd_request_header *header)
@@ -401,17 +405,21 @@ static int spi_configure(const struct ec_host_cmd_spi_ctx *hc_spi)
 	LL_SPI_SetNSSMode(spi, LL_SPI_NSS_HARD_INPUT);
 	LL_SPI_SetMode(spi, LL_SPI_MODE_SLAVE);
 
-#ifdef EC_HOST_CMD_ST_STM32H7
+#if defined(EC_HOST_CMD_ST_STM32H7) || defined(EC_HOST_CMD_ST_STM32U5)
 	LL_SPI_SetUDRConfiguration(spi, LL_SPI_UDR_CONFIG_REGISTER_PATTERN);
+#if !defined(EC_HOST_CMD_ST_STM32U5)
 	LL_SPI_SetUDRDetection(spi, LL_SPI_UDR_DETECT_END_DATA_FRAME);
-#endif /* EC_HOST_CMD_ST_STM32H7 */
+#endif /* !EC_HOST_CMD_ST_STM32U5 */
+#endif /* EC_HOST_CMD_ST_STM32H7 || EC_HOST_CMD_ST_STM32U5 */
 
 #ifdef EC_HOST_CMD_ST_STM32_FIFO
-#ifdef EC_HOST_CMD_ST_STM32H7
+#if defined(EC_HOST_CMD_ST_STM32U5)
+	LL_SPI_SetFIFOThreshold(spi, LL_SPI_FIFO_TH_04DATA);
+#elif defined(EC_HOST_CMD_ST_STM32H7)
 	LL_SPI_SetFIFOThreshold(spi, LL_SPI_FIFO_TH_01DATA);
 #else
 	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_QUARTER);
-#endif /* EC_HOST_CMD_ST_STM32H7 */
+#endif
 #endif /* EC_HOST_CMD_ST_STM32_FIFO */
 
 	return 0;
@@ -435,9 +443,9 @@ static int reload_dma_tx(struct ec_host_cmd_spi_ctx *hc_spi, size_t len)
 	if (ret != 0) {
 		return ret;
 	}
-#ifdef EC_HOST_CMD_ST_STM32H7
+#if defined(EC_HOST_CMD_ST_STM32H7) || defined(EC_HOST_CMD_ST_STM32U5)
 	LL_SPI_ClearFlag_UDR(spi);
-#endif
+#endif /* EC_HOST_CMD_ST_STM32H7 || EC_HOST_CMD_ST_STM32U5 */
 
 	return 0;
 }
@@ -540,7 +548,7 @@ static int prepare_rx(struct ec_host_cmd_spi_ctx *hc_spi)
 
 	hc_spi->prepare_rx_later = 0;
 
-#ifdef EC_HOST_CMD_ST_STM32H7
+#if defined(EC_HOST_CMD_ST_STM32H7) || defined(EC_HOST_CMD_ST_STM32U5)
 	/* As described in RM0433 "To restart the internal state machine
 	 * properly, SPI is strongly suggested to be disabled and re-enabled
 	 * before next transaction starts despite its setting is not changed.",
@@ -552,7 +560,7 @@ static int prepare_rx(struct ec_host_cmd_spi_ctx *hc_spi)
 	 */
 	LL_SPI_Disable(spi);
 	LL_SPI_Enable(spi);
-#else  /* EC_HOST_CMD_ST_STM32H7 */
+#else  /* EC_HOST_CMD_ST_STM32H7 || EC_HOST_CMD_ST_STM32U5 */
 	/* Flush RX buffer. It clears the RXNE(RX not empty) flag not to trigger
 	 * the DMA transfer at the beginning of a new SPI transfer. The flag is
 	 * set while sending response to host. The number of bytes to read can
@@ -578,15 +586,15 @@ static int spi_setup_dma(struct ec_host_cmd_spi_ctx *hc_spi)
 	/* retrieve active RX DMA channel (used in callback) */
 	int ret;
 
-#ifdef EC_HOST_CMD_ST_STM32H7
+#if defined(EC_HOST_CMD_ST_STM32H7) || defined(EC_HOST_CMD_ST_STM32U5)
 	/* Set request before enabling (else SPI CFG1 reg is write protected) */
 	LL_SPI_EnableDMAReq_RX(spi);
 	LL_SPI_EnableDMAReq_TX(spi);
 
 	LL_SPI_Enable(spi);
-#else  /* EC_HOST_CMD_ST_STM32H7 */
+#else  /* EC_HOST_CMD_ST_STM32H7 || EC_HOST_CMD_ST_STM32U5 */
 	LL_SPI_Enable(spi);
-#endif /* !EC_HOST_CMD_ST_STM32H7 */
+#endif /* EC_HOST_CMD_ST_STM32H7 || EC_HOST_CMD_ST_STM32U5 */
 
 	ret = spi_config_dma_tx(hc_spi);
 	if (ret != 0) {
