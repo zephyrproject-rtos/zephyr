@@ -36,7 +36,11 @@
 	};
 
 	flash0: flash@2000b400 {
+		compatible = "soc-nv-flash";
 		reg = <0x2000b400 0x40000>;
+		ranges = <0 0x2000b400 0x40000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 	};
 
 	sram0: memory@20050000 {
