@@ -50,6 +50,11 @@ config PICOSDK_USE_TIMER
 	help
 	  Use the TIMER driver from pico-sdk
 
+config PICOSDK_USE_POWMAN
+	bool
+	help
+	  Use the POWMAN driver from pico-sdk
+
 config PICOSDK_USE_RTC
 	bool
 	help
