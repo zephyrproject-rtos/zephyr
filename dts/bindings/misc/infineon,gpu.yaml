@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon GPU graphics accelerator
+
+compatible: "infineon,gpu"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

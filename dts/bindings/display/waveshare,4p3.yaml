@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Waveshare 4.3" Display Driver
+
+description: |
+    Waveshare display shields consist of a DPI panel and a controller board.
+    The controller board consists of ICN6211 DSI-to-RGB bridge and an MCU, to
+    convert DSI to DPI and control the backlight.
+    This binding treats the controller board as a whole unit.
+
+compatible: "waveshare,4p3"
+
+include: [base.yaml, display-controller.yaml]
+
+on-bus: i2c
+
+properties:
+  reg:
+    required: true
+
+  pixel-format:
+    type: int
+    required: true
+    description:
+      Pixel format. Available formats in include/zephyr/dt-bindings/display/panel.h

@@ -1344,5 +1344,23 @@
 			mmio-peri-hf-src = <1>;
 			mmio-peri-div = <3>;
 		};
+
+		display_controller: display_controller@44801000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "infineon,display-controller";
+			reg = <0x44801000 0x1000>;
+			interrupts = <163 4>;
+			status = "disabled";
+		};
+
+		gcnano: gcnano@44800800 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "infineon,gpu";
+			reg = <0x44800800 0x800>;
+			interrupts = <162 3>;
+			status = "disabled";
+		};
 	};
 };

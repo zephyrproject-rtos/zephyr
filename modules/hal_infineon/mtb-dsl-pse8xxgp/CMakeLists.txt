@@ -8,6 +8,7 @@ set(hal_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-dsl-pse8xxgp/hal)
 
 set(pdl_drv_dir ${pdl_dir}/drivers)
 set(pdl_dev_edge_dir ${pdl_dir}/devices)
+set(gfxss_dir ${pdl_drv_dir}/third_party/COMPONENT_GFXSS)
 
 if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
   set(sram_code M33SCODE)
@@ -93,6 +94,33 @@ zephyr_library_sources(${pdl_drv_dir}/source/cy_autanalog_ac.c)
 zephyr_library_sources(${pdl_drv_dir}/source/cy_autanalog_ctb.c)
 zephyr_library_sources(${pdl_drv_dir}/source/cy_autanalog_ptc.c)
 zephyr_library_sources(${pdl_drv_dir}/source/cy_autanalog_dac.c)
+
+if(CONFIG_INFINEON_DISPLAY_CONTROLLER)
+zephyr_include_directories(${gfxss_dir})
+
+zephyr_include_directories(${gfxss_dir}/vsi/dcnano8000/DCKernel)
+zephyr_include_directories(${gfxss_dir}/vsi/dcnano8000/DCKernel/hardware/8000Nano)
+zephyr_include_directories(${gfxss_dir}/vsi/dcnano8000/DCKernel/rtos)
+zephyr_include_directories(${gfxss_dir}/vsi/dcnano8000/DCUser)
+zephyr_include_directories(${gfxss_dir}/vsi/dcnano8000/DCUser/rtos)
+zephyr_include_directories(${gfxss_dir}/vsi/dcnano8000/include)
+
+zephyr_library_sources(${gfxss_dir}/cy_graphics.c)
+zephyr_library_sources(${gfxss_dir}/vsi/dcnano8000/DCKernel/hardware/8000Nano/viv_dc_hardware.c)
+zephyr_library_sources(${gfxss_dir}/vsi/dcnano8000/DCKernel/rtos/viv_dc_platform.c)
+zephyr_library_sources(${gfxss_dir}/vsi/dcnano8000/DCKernel/dc_layer_feature.c)
+zephyr_library_sources(${gfxss_dir}/vsi/dcnano8000/DCKernel/viv_dc_core.c)
+zephyr_library_sources(${gfxss_dir}/vsi/dcnano8000/DCKernel/viv_dc_database.c)
+zephyr_library_sources(${gfxss_dir}/vsi/dcnano8000/DCKernel/viv_dc_lcd.c)
+zephyr_library_sources(${gfxss_dir}/vsi/dcnano8000/DCKernel/viv_dc_shell.c)
+zephyr_library_sources(${gfxss_dir}/vsi/dcnano8000/DCUser/rtos/viv_dc_interface.c)
+zephyr_library_sources(${gfxss_dir}/vsi/dcnano8000/DCUser/rtos/viv_dc_os.c)
+zephyr_library_sources(${gfxss_dir}/vsi/dcnano8000/DCUser/viv_dc_setting.c)
+zephyr_library_sources(${gfxss_dir}/vsi/dcnano8000/DCUser/viv_dc_tools.c)
+zephyr_library_sources(${gfxss_dir}/vsi/dcnano8000/DCUser/viv_dc_util.c)
+
+zephyr_library_sources(${pdl_drv_dir}/source/cy_mipidsi.c)
+endif()
 
 # Common part
 zephyr_library_sources(${pdl_drv_dir}/source/cy_gpio.c)

@@ -434,3 +434,11 @@
 	interrupts = <151 4>, /* usbhs_ctrl_irqn */
 		     <152 4>; /* usbhss_irqn */
 };
+
+&display_controller {
+	interrupts = <140 4>;
+};
+
+&gcnano {
+	interrupts = <139 4>;
+};

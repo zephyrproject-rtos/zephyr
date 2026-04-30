@@ -1,0 +1,101 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon Display Controller Driver
+
+description: |
+    The Infineon Display Controller consumes a frame buffer and drives a DSI display in video mode.
+
+compatible: "infineon,display-controller"
+
+include: [base.yaml, display-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    type: array
+    required: true
+
+  panel:
+    type: phandle
+    required: true
+    description:
+      Panel driven by the controller.
+
+  input-pixel-format:
+    type: int
+    required: true
+    description:
+      Pixel format. Available formats in include/zephyr/dt-bindings/display/panel.h
+
+  data-lanes:
+    type: int
+    required: true
+    description:
+      Number of data lanes.
+
+  pixel-clock-khz:
+    type: int
+    required: true
+    description:
+      Pixel clock frequency in KHz.
+      Pixel clock = ((hsync_width + hfp + hbp + display_width) *
+      (vsync_width + vfp + vbp + display_height) * fps / 1000)
+
+  hsync-width:
+    type: int
+    required: true
+    description:
+      Horizontal sync width in pixel clock cycles.
+
+  hfp:
+    type: int
+    required: true
+    description:
+      Horizontal front porch in pixel clock cycles.
+
+  hbp:
+    type: int
+    required: true
+    description:
+      Horizontal back porch in pixel clock cycles.
+
+  vsync-width:
+    type: int
+    required: true
+    description:
+      Vertical sync width in lines.
+
+  vfp:
+    type: int
+    required: true
+    description:
+      Vertical front porch in lines.
+
+  vbp:
+    type: int
+    required: true
+    description:
+      Vertical back porch in lines.
+
+  polarity-flags:
+    type: int
+    default: 0
+    description:
+      Display sync signal polarity flags.
+
+  virtual-channel:
+    type: int
+    default: 0
+    description:
+      DSI virtual channel number.
+
+  per-lane-mbps:
+    type: int
+    required: true
+    description:
+      DSI per-lane data rate in Mbps.

@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config INFINEON_DISPLAY_CONTROLLER
+	bool "Infineon display controller driver"
+	default y
+	depends on DT_HAS_INFINEON_DISPLAY_CONTROLLER_ENABLED
+	help
+	  Infineon display controller driver
