@@ -10,6 +10,7 @@
 #include "sam_v71_xult-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <freq.h>
 
 / {
 	aliases {
@@ -236,6 +237,25 @@
 
 	dmas = <&xdmac 1 DMA_PERID_SPI0_TX>, <&xdmac 2 DMA_PERID_SPI0_RX>;
 	dma-names = "tx", "rx";
+};
+
+&qspi {
+	status = "okay";
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-names = "default";
+
+	s25fl116k: qspi-nor-flash@0 {
+		compatible = "atmel,sam-flash-qspi";
+		reg = <0x0>;
+		size = <DT_SIZE_M(16)>;
+		qspi-max-frequency = <DT_FREQ_M(1)>;
+		status = "okay";
+		writeoc = "1_1_1";
+		readoc = "1_4_4";
+		jedec-id = [01 40 15];
+		nb-dummy = <8>;
+		compat-cypress;
+	};
 };
 
 &usart1 {
