@@ -1655,13 +1655,17 @@ static int adc_stm32_channel_setup(const struct device *dev,
 				   const struct adc_channel_cfg *channel_cfg)
 {
 	const struct adc_stm32_cfg *config = (const struct adc_stm32_cfg *)dev->config;
+	struct adc_stm32_data *data = dev->data;
 	__maybe_unused ADC_TypeDef *adc = config->base;
-	__maybe_unused int err;
+	int err = 0;
+
+	adc_context_lock(&data->ctx, false, NULL);
 
 	if (!config->has_differential_support) {
 		if (channel_cfg->differential) {
 			LOG_ERR("Differential channels not supported on this ADC");
-			return -EINVAL;
+			err = -EINVAL;
+			goto release;
 		}
 	}
 #if ANY_ADC_HAS_DIFFERENTIAL_SUPPORT
@@ -1670,38 +1674,42 @@ static int adc_stm32_channel_setup(const struct device *dev,
 		 * to cause a differential calibration to be performed during init.
 		 */
 		LOG_ERR("Differential calibration not done, cannot use differential mode");
-		return -EINVAL;
+		err = -EINVAL;
+		goto release;
 	}
 
 	err = set_channel_differential_mode(adc, channel_cfg->channel_id,
 					    channel_cfg->differential);
 	if (err != 0) {
 		LOG_ERR("Error setting differential channel");
-		return err;
+		goto release;
 	}
 #endif
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
 		LOG_ERR("Invalid channel gain");
-		return -EINVAL;
+		err = -EINVAL;
+		goto release;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
 		LOG_ERR("Invalid channel reference");
-		return -EINVAL;
+		err = -EINVAL;
+		goto release;
 	}
 
 	if (adc_stm32_sampling_time_setup(dev, channel_cfg->channel_id,
 					  channel_cfg->acquisition_time) != 0) {
 		LOG_ERR("Invalid sampling time");
-		return -EINVAL;
+		err = -EINVAL;
+		goto release;
 	}
 
 #if ANY_ADC_HAS_CHANNEL_PRESELECTION && defined(CONFIG_ADC_STM32_INJECTED_CHANNELS)
 	err = adc_stm32_preselection_setup(dev, channel_cfg->channel_id);
 	if (err < 0) {
 		LOG_ERR("Error setting preselection register");
-		return err;
+		goto release;
 	}
 #endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION && CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
@@ -1714,7 +1722,10 @@ static int adc_stm32_channel_setup(const struct device *dev,
 
 	LOG_DBG("Channel setup succeeded!");
 
-	return 0;
+release:
+	adc_context_release(&data->ctx, err);
+
+	return err;
 }
 
 #if defined(CONFIG_SOC_SERIES_STM32C0X) ||                                                     \
