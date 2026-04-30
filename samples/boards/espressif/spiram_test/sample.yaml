@@ -9,13 +9,13 @@ common:
       - "SPIRAM mem test pass"
       - "Internal mem test pass"
 tests:
-  sample.board.esp32.spiram:
+  sample.boards.esp32.spiram:
     platform_allow: esp32_devkitc/esp32/procpu
     tags: esp32
-  sample.board.esp32s3.spiram:
+  sample.boards.esp32s3.spiram:
     platform_allow: esp32s3_devkitc/esp32s3/procpu
     tags: esp32s3
-  sample.board.esp32s3.spiram.octal_80m:
+  sample.boards.esp32s3.spiram.octal_80m:
     platform_allow: esp32s3_devkitc/esp32s3/procpu
     tags: esp32s3
     extra_configs:

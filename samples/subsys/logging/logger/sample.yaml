@@ -2,7 +2,7 @@ sample:
   description: A simple application that demonstrate use of logging feature.
   name: logger sample
 tests:
-  sample.logger.basic:
+  sample.logging.basic:
     integration_platforms:
       - native_sim
     tags: logging
@@ -17,7 +17,7 @@ tests:
         - Logging performance showcase
         - Logs from external logging system showcase
 
-  sample.logger.rtt:
+  sample.logging.rtt:
     integration_platforms:
       - frdm_k64f
     tags: logging
@@ -29,7 +29,7 @@ tests:
       - CONFIG_LOG_BACKEND_RTT=y
       - CONFIG_USE_SEGGER_RTT=y
 
-  sample.logger.bt:
+  sample.logging.bt:
     platform_allow:
       - nrf52840dk/nrf52840
     integration_platforms:
@@ -45,7 +45,7 @@ tests:
       - EXTRA_CONF_FILE="overlay-bt.conf"
       - DTC_OVERLAY_FILE="bt.overlay"
 
-  sample.logger.usermode:
+  sample.logging.usermode:
     integration_platforms:
       - mps2/an385
     platform_exclude:
@@ -66,7 +66,7 @@ tests:
     extra_configs:
       - CONFIG_USERSPACE=y
 
-  sample.logger.swo:
+  sample.logging.swo:
     arch_allow: arm
     platform_allow:
       - apollo3_evb

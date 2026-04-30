@@ -17,7 +17,7 @@ common:
       - "The PSA Crypto service minor version is"
       - "Generating 256 bytes of random data"
 tests:
-  sample.tfm_ipc.no_bl2:
+  sample.tfm.tfm_ipc.no_bl2:
     tags:
       - trusted-firmware-m
     platform_allow:
@@ -29,19 +29,19 @@ tests:
       - nrf7120dk/nrf7120/cpuapp/ns
     extra_configs:
       - CONFIG_TFM_BL2=n
-  sample.tfm_ipc.bl2.rsa2048:
+  sample.tfm.tfm_ipc.bl2.rsa2048:
     platform_allow:
       - mps2/an521/cpu0/ns
     extra_configs:
       - CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE="RSA-2048"
-  sample.tfm_ipc.bl2.rsa3072:
+  sample.tfm.tfm_ipc.bl2.rsa3072:
     platform_allow:
       - mps2/an521/cpu0/ns
       - b_u585i_iot02a/stm32u585xx/ns
       - stm32h573i_dk/stm32h573xx/ns
     extra_configs:
       - CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE="RSA-3072"
-  sample.tfm_ipc.bl2.ecp256:
+  sample.tfm.tfm_ipc.bl2.ecp256:
     platform_allow:
       - mps2/an521/cpu0/ns
       - nrf5340dk/nrf5340/cpuapp/ns
@@ -54,7 +54,7 @@ tests:
       - frdm_mcxa577/mcxa577/ns
     extra_configs:
       - CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE="EC-P256"
-  sample.tfm_ipc.bl2.ecp384:
+  sample.tfm.tfm_ipc.bl2.ecp384:
     platform_allow:
       - mps2/an521/cpu0/ns
     extra_configs:

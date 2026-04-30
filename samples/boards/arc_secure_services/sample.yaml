@@ -3,7 +3,7 @@ sample:
     SecureShiled.
   name: Designware ARC Secure monitor
 tests:
-  sample.board.arc_secure_services:
+  sample.boards.arc_secure_services:
     # Requires multiple kernels in an AMP config. See README.rst
     build_only: true
     platform_allow:
