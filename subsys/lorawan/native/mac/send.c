@@ -110,6 +110,11 @@ struct dl_work_ctx {
 	uint8_t data[MAX_RX_BUF_SIZE];
 };
 
+struct send_tx_ctx {
+	const struct lwan_send_req *req;
+	bool tx_done;
+};
+
 static K_SEM_DEFINE(dl_work_sem, 1, 1);
 
 static void dl_work_handler(struct k_work *work)
@@ -453,7 +458,8 @@ static enum mac_rx_result send_rx_handler(struct lwan_ctx *ctx,
 					   int16_t rssi, int8_t snr,
 					   void *user_data)
 {
-	const struct lwan_send_req *req = user_data;
+	const struct send_tx_ctx *tx_ctx = user_data;
+	const struct lwan_send_req *req = tx_ctx->req;
 	bool ack_received;
 	int ret;
 
@@ -490,9 +496,11 @@ static int select_data_channel_wait(struct lwan_ctx *ctx, uint8_t dr,
 	return ret;
 }
 
-static void send_post_tx(struct lwan_ctx *ctx)
+static void send_post_tx(struct lwan_ctx *ctx, void *user_data)
 {
-	ctx->session.fcnt_up++;
+	struct send_tx_ctx *tx_ctx = user_data;
+
+	tx_ctx->tx_done = true;
 	ctx->pending &= ~LWAN_PENDING_ACK;
 }
 
@@ -502,9 +510,13 @@ void mac_do_send(struct lwan_ctx *ctx, const struct lwan_send_req *req)
 	struct lwan_session *sess = &ctx->session;
 	struct mac_tx_params tx_params;
 	struct lwan_dr_params dr_params;
+	struct send_tx_ctx tx_ctx = {
+		.req = req,
+	};
 	uint8_t tx_frame[MAX_FRAME_SIZE];
 	size_t tx_frame_len = sizeof(tx_frame);
 	uint32_t rx1_delay_ms;
+	uint32_t frame_fcnt;
 	uint32_t tx_freq;
 	uint8_t tx_dr_idx;
 	uint8_t tries;
@@ -512,6 +524,7 @@ void mac_do_send(struct lwan_ctx *ctx, const struct lwan_send_req *req)
 	int ret;
 
 	tx_dr_idx = (uint8_t)ctx->current_dr;
+	frame_fcnt = sess->fcnt_up;
 
 	ret = region->get_tx_params(tx_dr_idx, ctx->mac.tx_power_idx,
 				    &dr_params, &tx_power);
@@ -531,15 +544,14 @@ void mac_do_send(struct lwan_ctx *ctx, const struct lwan_send_req *req)
 
 	tries = (req->type == LORAWAN_MSG_CONFIRMED) ? ctx->conf_tries : 1;
 
-	for (uint8_t attempt = 0; attempt < tries; attempt++) {
-		tx_frame_len = sizeof(tx_frame);
-		ret = mac_build_data_frame(ctx, req, tx_frame, &tx_frame_len);
-		if (ret != 0) {
-			goto done;
-		}
+	ret = mac_build_data_frame(ctx, req, tx_frame, &tx_frame_len);
+	if (ret != 0) {
+		goto done;
+	}
 
+	for (uint8_t attempt = 0; attempt < tries; attempt++) {
 		LOG_INF("Send: port=%u len=%u fcnt=%u attempt=%u/%u",
-			req->port, req->len, sess->fcnt_up, attempt + 1, tries);
+			req->port, req->len, frame_fcnt, attempt + 1, tries);
 
 		ret = select_data_channel_wait(ctx, tx_dr_idx, &tx_freq);
 		if (ret != 0) {
@@ -556,7 +568,7 @@ void mac_do_send(struct lwan_ctx *ctx, const struct lwan_send_req *req)
 			.rx1_delay_ms = rx1_delay_ms,
 			.post_tx = send_post_tx,
 			.rx_handler = send_rx_handler,
-			.user_data = (void *)req,
+			.user_data = &tx_ctx,
 		};
 
 		ret = mac_do_tx_rx(ctx, &tx_params);
@@ -589,5 +601,9 @@ void mac_do_send(struct lwan_ctx *ctx, const struct lwan_send_req *req)
 	ret = -ETIMEDOUT;
 
 done:
+	if (tx_ctx.tx_done) {
+		sess->fcnt_up++;
+	}
+
 	engine_signal_send_result(ret);
 }
