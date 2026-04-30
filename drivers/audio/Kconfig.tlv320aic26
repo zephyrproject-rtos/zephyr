@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_TLV320AIC26
+	bool "TLV320AIC26 Audio Codec"
+	default y
+	depends on DT_HAS_TI_TLV320AIC26_ENABLED
+	select SPI
+	help
+	  Enable the TI TLV320AIC26 low power stereo audio codec driver.
+	  Uses SPI for register control and I2S for audio data.
