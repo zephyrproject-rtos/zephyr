@@ -9,7 +9,7 @@ sample:
   description: EDK sample application
   name: EDK sample application
 tests:
-  sample.edk.app:
+  sample.llext.edk.app:
     build_only: true
     tags:
       - edk

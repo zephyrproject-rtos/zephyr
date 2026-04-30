@@ -7,7 +7,7 @@ common:
     - filesystem
   harness: keyboard
 tests:
-  sample.filesystem.shell:
+  sample.shell.filesystem:
     platform_allow:
       - reel_board
       - mimxrt1060_evk/mimxrt1062/qspi
@@ -21,14 +21,14 @@ tests:
       - s32k5xxcvb/s32k566/r52
     integration_platforms:
       - native_sim
-  sample.filesystem.shell.fuse:
+  sample.shell.filesystem.fuse:
     platform_allow:
       - native_sim
     extra_configs:
       - CONFIG_FUSE_FS_ACCESS=y
     # This test cannot be run in CI as we lack the fuse library
     skip: true
-  sample.filesystem.shell.flash_load:
+  sample.shell.filesystem.flash_load:
     tags:
       - flash_load
     platform_allow: nrf52dk/nrf52832

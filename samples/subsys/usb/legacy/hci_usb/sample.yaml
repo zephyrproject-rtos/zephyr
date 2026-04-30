@@ -1,7 +1,7 @@
 sample:
   name: Bluetooth over USB sample
 tests:
-  sample.bluetooth.hci_usb.legacy:
+  sample.usb.bluetooth.hci_usb.legacy:
     depends_on:
       - usb_device
       - ble

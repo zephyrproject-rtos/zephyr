@@ -7,7 +7,7 @@ common:
     - drivers
     - flash
 tests:
-  flash.erase_blocks.build_only:
+  drivers.flash.erase_blocks.build_only:
     harness: ztest
     build_only: true
     platform_allow:

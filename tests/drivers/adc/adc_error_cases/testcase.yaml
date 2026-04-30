@@ -6,7 +6,7 @@ common:
   filter: dt_alias_exists("adc")
 
 tests:
-  drivers.adc_error_cases:
+  drivers.adc.error_cases:
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp

@@ -3,7 +3,7 @@ sample:
     IPM and transmits it back unchanged
   name: i.MX IPM sample
 tests:
-  sample.ipm.ipm_imx:
+  sample.drivers.ipm.ipm_imx:
     build_only: true
     filter: CONFIG_SOC_FAMILY_NXP_IMX
     platform_allow:

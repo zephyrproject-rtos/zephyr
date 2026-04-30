@@ -1,7 +1,7 @@
 sample:
   name: Video capture to LVGL
 tests:
-  sample.video.capture_to_lvgl.shield.weact_ov2640_cam_module:
+  sample.drivers.video.capture_to_lvgl.shield.weact_ov2640_cam_module:
     tags:
       - video
       - shield

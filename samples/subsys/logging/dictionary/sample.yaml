@@ -2,7 +2,7 @@ sample:
   description: Dictionary-based Logging Sample Application
   name: logging_dictionary
 tests:
-  sample.logger.basic.dictionary:
+  sample.logging.basic.dictionary:
     build_only: true
     tags: logging
     platform_exclude:
@@ -13,7 +13,7 @@ tests:
     integration_platforms:
       - qemu_x86
       - qemu_x86_64
-  sample.logger.basic.dictionary.fpu:
+  sample.logging.basic.dictionary.fpu:
     build_only: true
     tags: logging
     filter: CONFIG_CPU_HAS_FPU
@@ -27,7 +27,7 @@ tests:
     integration_platforms:
       - qemu_x86
       - qemu_x86_64
-  sample.logger.basic.dictionary.fpu.long_double:
+  sample.logging.basic.dictionary.fpu.long_double:
     build_only: true
     tags: logging
     filter: CONFIG_CPU_HAS_FPU
@@ -42,7 +42,7 @@ tests:
     integration_platforms:
       - qemu_x86
       - qemu_x86_64
-  sample.logger.basic.dictionary.uart_async_frontend:
+  sample.logging.basic.dictionary.uart_async_frontend:
     build_only: true
     tags: logging
     platform_allow: nrf52840dk/nrf52840
@@ -56,7 +56,7 @@ tests:
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_FRONTEND_ONLY=y
       - CONFIG_LOG_FRONTEND_DICT_UART=y
-  sample.logger.basic.dictionary.uart_frontend_rt:
+  sample.logging.basic.dictionary.uart_frontend_rt:
     build_only: true
     tags: logging
     platform_allow: nrf5340dk/nrf5340/cpuapp
@@ -72,7 +72,7 @@ tests:
       - CONFIG_UART_INTERRUPT_DRIVEN=n
       - CONFIG_LOG_FRONTEND=y
       - CONFIG_LOG_FRONTEND_DICT_UART=y
-  sample.logger.basic.dictionary.uart_int_frontend:
+  sample.logging.basic.dictionary.uart_int_frontend:
     build_only: true
     tags: logging
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT and CONFIG_UART_CONSOLE

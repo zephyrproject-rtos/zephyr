@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 tests:
-  gpio.gpio_ite_it8xxx2_v2:
+  drivers.gpio.gpio_ite_it8xxx2_v2:
     tags:
       - drivers
       - gpio

@@ -8,18 +8,18 @@ common:
     - opamp
   build_only: true
 tests:
-  drivers.build_all.opamp.nxp_opamp:
+  drivers.opamp.build.nxp_opamp:
     platform_allow:
       - frdm_mcxa156
       - frdm_mcxn947/mcxn947/cpu0
       - lpcxpresso55s36
-  drivers.build_all.opamp.nxp_opamp_fast:
+  drivers.opamp.build.nxp_opamp_fast:
     platform_allow:
       - frdm_mcxa366
       - frdm_mcxa346
-  drivers.build_all.opamp.stm32_opamp:
+  drivers.opamp.build.stm32_opamp:
     platform_allow:
       - nucleo_g474re
-  drivers.build_all.opamp.infineon_ctb:
+  drivers.opamp.build.infineon_ctb:
     platform_allow:
       - kit_pse84_eval/pse846gps2dbzc4a/m55

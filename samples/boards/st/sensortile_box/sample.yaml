@@ -2,7 +2,7 @@ sample:
   description: SensorTile.box board testing
   name: SensorTile.box test
 tests:
-  sample.board.sensortile_box.sensors:
+  sample.boards.sensortile_box.sensors:
     harness: sensor
     platform_allow: sensortile_box
     tags: sensors

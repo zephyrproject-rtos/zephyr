@@ -1,7 +1,7 @@
 sample:
   name: Pong game using BBC Micro:bit
 tests:
-  sample.board.bbc_microbit.pong:
+  sample.boards.bbc_microbit.pong:
     platform_allow: bbc_microbit
     tags:
       - microbit

@@ -1,7 +1,7 @@
 sample:
   name: STM32 microcontroller clock output (MCO) example
 tests:
-  sample.board.stm32.mco:
+  sample.boards.stm32.mco:
     build_only: true
     platform_allow:
       - nucleo_c5a3zg

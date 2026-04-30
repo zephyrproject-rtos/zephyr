@@ -21,7 +21,7 @@ common:
       - "Modem pipe initialized and opened"
       - "Console <-> Modem communication established"
 tests:
-  sample.modem.at_client:
+  sample.drivers.modem.at_client:
     tags:
       - modem
       - uart

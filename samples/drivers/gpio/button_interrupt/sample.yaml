@@ -1,7 +1,7 @@
 sample:
   name: Button interrupt sample
 tests:
-  sample.gpio.button_interrupt:
+  sample.drivers.gpio.button_interrupt:
     tags:
       - button
       - gpio

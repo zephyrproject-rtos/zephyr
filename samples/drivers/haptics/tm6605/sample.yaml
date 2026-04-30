@@ -1,14 +1,14 @@
 sample:
   name: TM6605 Haptic Driver sample
 tests:
-  sample.haptics.tm6605:
+  sample.drivers.haptics.tm6605:
     build_only: true
     tags: haptics
     platform_allow:
       - nucleo_f401re
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="boards/nucleo_f401re.overlay"
-  sample.haptics.tm6605.shield:
+  sample.drivers.haptics.tm6605.shield:
     build_only: true
     tags: haptics
     platform_allow:
