@@ -143,7 +143,7 @@ static void deferred_nfy_work_handler(struct k_work *work);
 static K_WORK_DEFINE(deferred_nfy_work, deferred_nfy_work_handler);
 
 struct pac_records_build_data {
-	struct bt_pacs_read_rsp *rsp;
+	struct bt_pac_value *rsp;
 	struct net_buf_simple *buf;
 };
 
@@ -1111,6 +1111,7 @@ static int pacs_gatt_notify(struct bt_conn *conn,
 {
 	int err;
 	struct bt_gatt_notify_params params;
+	uint16_t max_ntf_size;
 
 	memset(&params, 0, sizeof(params));
 	params.uuid = uuid;
@@ -1126,6 +1127,12 @@ static int pacs_gatt_notify(struct bt_conn *conn,
 	}
 
 	atomic_set_bit(pacs.flags, PACS_FLAG_NOTIFY_RDY);
+	max_ntf_size = bt_audio_get_max_ntf_size(conn);
+
+	params.len = MIN(max_ntf_size, len);
+	if (params.len < len) {
+		LOG_DBG("Sending truncated notification (%u / %u)", params.len, len);
+	}
 
 	err = bt_gatt_notify_cb(conn, &params);
 	if (err != 0) {
