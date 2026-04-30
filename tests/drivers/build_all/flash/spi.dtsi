@@ -61,3 +61,13 @@ spi-nand@4 {
 	page-read-duration-max = <200>;
 	reset-duration-max = <500>;
 };
+
+le25s20xa@5 {
+	compatible = "onnn,le25s20xa";
+	reg = <0x5>;
+	status = "okay";
+	spi-max-frequency = <5000000>;
+	jedec-id = [00 11 22];
+	size = <262144>;
+	page-size = <1>;
+};
