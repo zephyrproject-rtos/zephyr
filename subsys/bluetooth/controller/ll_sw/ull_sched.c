@@ -731,11 +731,15 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 				*ticks_slot = conn->ull.ticks_slot;
 			}
 
-			if ((conn->lll.role == BT_HCI_ROLE_CENTRAL) &&
-			    (*ticks_slot <
-			     HAL_TICKER_US_TO_TICKS(CONFIG_BT_CTLR_CENTRAL_SPACING))) {
-				*ticks_slot =
-					HAL_TICKER_US_TO_TICKS(CONFIG_BT_CTLR_CENTRAL_SPACING);
+			if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
+			    (CONFIG_BT_CTLR_CENTRAL_SPACING != 0))
+			{
+				if ((conn->lll.role == BT_HCI_ROLE_CENTRAL) &&
+				    (*ticks_slot <
+				     HAL_TICKER_US_TO_TICKS(CONFIG_BT_CTLR_CENTRAL_SPACING))) {
+					*ticks_slot =
+					  HAL_TICKER_US_TO_TICKS(CONFIG_BT_CTLR_CENTRAL_SPACING);
+				}
 			}
 
 			return &conn->ull;

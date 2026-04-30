@@ -813,7 +813,7 @@ config BT_CTLR_ASSERT_VENDOR
 
 config BT_CTLR_CENTRAL_SPACING
 	int "Central Connection Spacing"
-	depends on BT_CTLR_SCHED_ADVANCED
+	depends on BT_CTLR_SCHED_ADVANCED && BT_CENTRAL
 	default 0
 	range 0 $(UINT16_MAX)
 	help
