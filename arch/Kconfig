@@ -862,6 +862,14 @@ config ARCH_HAS_CODE_DATA_RELOCATION
 	  When selected, the architecture/SoC implements support for
 	  CODE_DATA_RELOCATION in its linker scripts.
 
+config ARCH_HAS_PMU
+	bool
+	help
+	  When set, the CPU or SoC is expected to provide hardware performance
+	  counters usable by the Zephyr PMU API (<zephyr/pmu.h>). For AArch64,
+	  Cortex-A profiles select this option; enable CONFIG_ARM64_PMUV3 to build
+	  the ARMv8-A PMUv3 driver backend.
+
 #
 # Hidden CPU family configs
 #
