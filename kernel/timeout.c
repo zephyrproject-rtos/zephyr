@@ -110,7 +110,23 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 		if (Z_IS_TIMEOUT_RELATIVE(timeout)) {
 			ticks_elapsed = elapsed();
 			has_elapsed = true;
-			to->dticks = timeout.ticks + 1 + ticks_elapsed;
+			/*
+			 * In the general case, "now" may be anywhere within
+			 * the current tick. Rounding up by one tick guarantees
+			 * "at least N ticks" semantics -- otherwise a request
+			 * made partway through a tick would fire on the next
+			 * tick edge, yielding less than N full ticks.
+			 *
+			 * The one moment we know we are at (or very close to)
+			 * a tick edge is while processing timeouts inside
+			 * sys_clock_announce_locked(), flagged by
+			 * announce_remaining != 0. Periodic timers rely on
+			 * this when rescheduling themselves from the timer
+			 * ISR: the round-up would otherwise accumulate and
+			 * make every period one tick late.
+			 */
+			to->dticks = timeout.ticks + ticks_elapsed +
+				     ((announce_remaining == 0) ? 1 : 0);
 			ticks = curr_tick + to->dticks;
 		} else {
 			k_ticks_t dticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
@@ -239,12 +255,14 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
 	announce_remaining = ticks;
 
 	struct _timeout *t;
+	int batch = 0;
 
 	for (t = first();
-	     (t != NULL) && (t->dticks <= announce_remaining);
+	     (t != NULL) && (t->dticks <= announce_remaining - batch);
 	     t = first()) {
 		int dt = t->dticks;
 
+		batch += dt;
 		curr_tick += dt;
 		t->dticks = 0;
 		remove_timeout(t);
@@ -253,7 +271,21 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
 		k_spin_unlock(&timeout_lock, key);
 		t->fn(t);
 		key = k_spin_lock(&timeout_lock);
-		announce_remaining -= dt;
+
+		/*
+		 * Hold announce_remaining steady across all timeouts that
+		 * share the current tick (queued with dticks == 0 relative
+		 * to the previous one). This makes announce_remaining an
+		 * honest "in-announce" indicator for the entire same-tick
+		 * group: the SMP early-return at the top of this function
+		 * and the elapsed() helper above both rely on it being
+		 * non-zero for as long as we hold (and intermittently
+		 * release) the lock inside the loop.
+		 */
+		if (first() == NULL || first()->dticks != 0) {
+			announce_remaining -= batch;
+			batch = 0;
+		}
 	}
 
 	if (t != NULL) {

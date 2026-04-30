@@ -731,9 +731,11 @@ ZTEST(work_1cpu, test_1cpu_running_cancel)
 	zassert_equal(coophi_counter(), 0);
 
 	/* Busy wait until timer expires. Thread context is blocked so cancelling
-	 * of work won't be completed.
+	 * of work won't be completed. Add one tick of slack on top of the
+	 * nominal timeout for the +1 round-up inside z_add_timeout() plus
+	 * 1 ms for general measurement jitter.
 	 */
-	k_busy_wait(1000 * (ms_timeout + 1));
+	k_busy_wait(1000 * ms_timeout + k_ticks_to_us_ceil32(1) + 1000);
 
 	zassert_equal(k_timer_status_get(&ctx->timer), 1);
 
@@ -793,9 +795,11 @@ ZTEST(work_1cpu, test_1cpu_running_cancel_sync)
 	zassert_equal(coophi_counter(), 1);
 
 	/* Busy wait until timer expires. Thread context is blocked so cancelling
-	 * of work won't be completed.
+	 * of work won't be completed. Add one tick of slack on top of the
+	 * nominal timeout for the +1 round-up inside z_add_timeout() plus
+	 * 1 ms for general measurement jitter.
 	 */
-	k_busy_wait(1000 * (ms_timeout + 1));
+	k_busy_wait(1000 * ms_timeout + k_ticks_to_us_ceil32(1) + 1000);
 
 	zassert_equal(k_timer_status_get(&ctx->timer), 1);
 
