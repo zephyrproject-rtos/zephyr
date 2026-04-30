@@ -5,6 +5,7 @@
  */
 #include <soc.h>
 #include <zephyr/arch/arm/mpu/nxp_mpu.h>
+#include <zephyr/devicetree.h>
 
 static const struct nxp_mpu_region mpu_regions[] = {
 	/* Region 0 */
@@ -32,12 +33,11 @@ static const struct nxp_mpu_region mpu_regions[] = {
 	/* Region 1 */
 	MPU_REGION_ENTRY("BACKGROUND_0",
 			 0,
-			 CONFIG_SRAM_BASE_ADDRESS-1,
+			 DT_CHOSEN_SRAM_ADDR-1,
 			 REGION_BACKGROUND_ATTR),
 	/* Region 2 */
 	MPU_REGION_ENTRY("BACKGROUND_1",
-			 CONFIG_SRAM_BASE_ADDRESS +
-				 (CONFIG_SRAM_SIZE * 1024),
+			 DT_CHOSEN_SRAM_ADDR + DT_CHOSEN_SRAM_SIZE,
 			 0xFFFFFFFF,
 			 REGION_BACKGROUND_ATTR),
 #else
@@ -58,9 +58,8 @@ static const struct nxp_mpu_region mpu_regions[] = {
 			 REGION_FLASH_ATTR),
 	/* Region 4 (stack guard on) / Region 3 (stack guard off) */
 	MPU_REGION_ENTRY("RAM_U_0",
-			 CONFIG_SRAM_BASE_ADDRESS,
-			 (CONFIG_SRAM_BASE_ADDRESS +
-				(CONFIG_SRAM_SIZE * 1024) - 1),
+			 DT_CHOSEN_SRAM_ADDR,
+			 (DT_CHOSEN_SRAM_ADDR + DT_CHOSEN_SRAM_SIZE - 1),
 			 REGION_RAM_ATTR),
 };
 
