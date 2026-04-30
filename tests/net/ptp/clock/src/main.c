@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/ztest.h>
 
 #include <zephyr/drivers/ptp_clock.h>
+#include <zephyr/net/phy.h>
 #include <zephyr/net/ptp_time.h>
 
 #include <zephyr/net/ethernet.h>
@@ -182,6 +183,7 @@ static uint64_t timestamp_to_nsec(struct net_ptp_time *ts)
 
 struct ptp_context {
 	struct eth_context *eth_context;
+	struct phy_latency latency;
 };
 
 static int my_ptp_clock_set(const struct device *dev, struct net_ptp_time *tm)
@@ -223,6 +225,19 @@ static int my_ptp_clock_rate_adjust(const struct device *dev, double ratio)
 	return 0;
 }
 
+static int my_ptp_clock_set_latency(const struct device *dev, const struct phy_latency *latency)
+{
+	struct ptp_context *ptp_ctx = dev->data;
+
+	if (latency == NULL) {
+		return -EINVAL;
+	}
+
+	ptp_ctx->latency = *latency;
+
+	return 0;
+}
+
 static struct ptp_context ptp_test_1_context;
 static struct ptp_context ptp_test_2_context;
 
@@ -231,6 +246,7 @@ static DEVICE_API(ptp_clock, api) = {
 	.get = my_ptp_clock_get,
 	.adjust = my_ptp_clock_adjust,
 	.rate_adjust = my_ptp_clock_rate_adjust,
+	.set_latency = my_ptp_clock_set_latency,
 };
 
 static int ptp_test_1_init(const struct device *port)
@@ -481,6 +497,29 @@ static void test_ptp_clock_iface_2(void)
 	test_ptp_clock_iface(ptp_interface[1]);
 }
 
+static void test_ptp_clock_latency(void)
+{
+	const struct device *clk;
+	struct ptp_context *ptp_ctx;
+	struct phy_latency latency = {
+		.ingress_ns = 123,
+		.egress_ns = 456,
+	};
+	int idx;
+	int ret;
+
+	idx = ptp_interface[0];
+	clk = net_eth_get_ptp_clock(eth_interfaces[idx]);
+	zassert_not_null(clk, "Clock not found for interface %p\n", eth_interfaces[idx]);
+
+	ret = ptp_clock_set_latency(clk, &latency);
+	zassert_ok(ret, "ptp_clock_set_latency() failed");
+
+	ptp_ctx = clk->data;
+	zassert_equal(ptp_ctx->latency.ingress_ns, latency.ingress_ns, "Invalid ingress latency");
+	zassert_equal(ptp_ctx->latency.egress_ns, latency.egress_ns, "Invalid egress latency");
+}
+
 static ZTEST_BMEM const struct device *clk0;
 static ZTEST_BMEM const struct device *clk1;
 
@@ -581,6 +620,7 @@ ZTEST(ptp_clock_test_suite, test_ptp_clock)
 	test_ptp_clock_interfaces();
 	test_ptp_clock_iface_1();
 	test_ptp_clock_iface_2();
+	test_ptp_clock_latency();
 	test_ptp_clock_get_by_index();
 	test_ptp_clock_get_by_index_user();
 	test_ptp_clock_get_kernel();
