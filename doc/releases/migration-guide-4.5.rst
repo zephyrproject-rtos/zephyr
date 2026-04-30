@@ -172,6 +172,26 @@ Ethernet
 * :kconfig:option:`CONFIG_NET_DEFAULT_IF_ETHERNET` now allows to get the first ethernet interface,
   instead of the first between ethernet and wifi.
 
+Wi-Fi
+=====
+
+* The ``CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4`` option has been removed from
+  the ESP32 Wi-Fi driver. DHCPv4 now starts automatically on Wi-Fi
+  association whenever :kconfig:option:`CONFIG_NET_DHCPV4` is enabled.
+  Applications that do not want DHCPv4 on the Wi-Fi interface should
+  disable :kconfig:option:`CONFIG_NET_DHCPV4`.
+* The ESP32 Wi-Fi driver now raises ``NET_EVENT_WIFI_CONNECT_RESULT``
+  as soon as Wi-Fi association completes, before DHCPv4 has a chance
+  to bind. This matches the semantics of other Zephyr Wi-Fi drivers.
+  Applications that used to treat ``NET_EVENT_WIFI_CONNECT_RESULT`` as
+  a signal that the network is ready for sockets must now also listen
+  for ``NET_EVENT_IPV4_DHCP_BOUND`` (or ``NET_EVENT_IPV4_ADDR_ADD`` for
+  static addresses, or ``NET_EVENT_L4_CONNECTED`` when using the
+  connection manager) before opening any socket or resolving DNS.
+* The ESP32 Wi-Fi driver now registers a Wi-Fi network manager instance
+  for the STA interface in all modes, so ``WIFI_NM``-aware APIs work on
+  pure STA builds.
+
 Other subsystems
 ****************
 
