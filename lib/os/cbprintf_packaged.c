@@ -222,6 +222,18 @@ static size_t get_package_len(void *packaged)
 
 static int append_string(cbprintf_convert_cb cb, void *ctx, const char *str, uint16_t strl)
 {
+	/* Guard against NULL string pointers. Passing NULL to %s is a
+	 * caller bug, but deferred log packages (see cbvprintf_package())
+	 * can capture a NULL argument now and dereference it much later,
+	 * disconnecting the fault from the offending call site and making
+	 * triage difficult. Substitute "(null)", matching glibc's printf
+	 * family, so the bad caller shows up in the log instead of the
+	 * log infrastructure crashing.
+	 */
+	if (str == NULL) {
+		str = "(null)";
+	}
+
 	if (cb == NULL) {
 		return 1 + strlen(str);
 	}
