@@ -387,11 +387,6 @@ static int ads1x1x_channel_setup(const struct device *dev,
 	uint16_t config = 0;
 	int dr = 0;
 
-	if (channel_cfg->channel_id != 0) {
-		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
-		return -ENOTSUP;
-	}
-
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
 		LOG_ERR("unsupported channel reference type '%d'", channel_cfg->reference);
 		return -ENOTSUP;
@@ -418,6 +413,13 @@ static int ads1x1x_channel_setup(const struct device *dev,
 				return -ENOTSUP;
 			}
 		} else {
+			if (channel_cfg->channel_id != channel_cfg->input_positive) {
+				LOG_ERR("invalid channel id config '%d' != '%d'",
+					channel_cfg->channel_id,
+					channel_cfg->input_positive);
+				return -ENOTSUP;
+			}
+
 			if (channel_cfg->input_positive == 0) {
 				config |= ADS1X1X_CONFIG_MUX(ADS1X15_CONFIG_MUX_SINGLE_0);
 			} else if (channel_cfg->input_positive == 1) {
@@ -513,11 +515,6 @@ static int ads1x1x_validate_sequence(const struct device *dev, const struct adc_
 
 	if (sequence->resolution != resolution) {
 		LOG_ERR("unsupported resolution %d", sequence->resolution);
-		return -ENOTSUP;
-	}
-
-	if (sequence->channels != BIT(0)) {
-		LOG_ERR("only channel 0 supported");
 		return -ENOTSUP;
 	}
 
