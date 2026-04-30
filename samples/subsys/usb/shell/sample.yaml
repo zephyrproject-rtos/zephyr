@@ -47,3 +47,15 @@ tests:
     platform_allow:
       - native_sim/native/64
     build_only: true
+  sample.usbh.shell.stm32_otghs:
+    depends_on:
+      - usbh
+    tags:
+      - usb
+    extra_args:
+      - FILE_SUFFIX=host
+    platform_allow:
+      - nucleo_u5a5zj_q
+    integration_platforms:
+      - nucleo_u5a5zj_q
+    build_only: true

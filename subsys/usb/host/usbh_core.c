@@ -5,6 +5,7 @@
 
 #include <errno.h>
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
@@ -48,6 +49,14 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 				  const struct uhc_event *const event)
 {
 	struct usb_device *udev;
+	struct usb_device *root;
+	int err;
+
+	root = usbh_device_get_root(ctx);
+	if (root != NULL) {
+		LOG_WRN("Replacing already connected root device");
+		usbh_device_disconnect(ctx, root);
+	}
 
 	udev = usbh_device_alloc(ctx);
 
@@ -62,11 +71,11 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 		udev->speed = USB_SPEED_SPEED_FS;
 	}
 
-	if (ctx->root == NULL) {
-		ctx->root = udev;
+	ctx->root = udev;
+	err = usbh_device_connect(ctx, udev);
+	if (err != 0) {
+		LOG_ERR("Failed to connect new USB device (%d)", err);
 	}
-
-	usbh_device_connect(ctx, udev);
 }
 
 static void dev_removed_handler(struct usbh_context *const ctx)
