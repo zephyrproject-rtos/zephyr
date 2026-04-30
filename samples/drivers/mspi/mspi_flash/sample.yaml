@@ -10,6 +10,7 @@ tests:
     platform_exclude:
       - hifive_unmatched/fu740/s7
       - hifive_unmatched/fu740/u74
+      - hifive_unmatched/fu740/u74/smp
     platform_allow:
       - apollo3p_evb
       - apollo510_evb

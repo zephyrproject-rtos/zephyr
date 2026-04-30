@@ -4,3 +4,6 @@ board:
   vendor: sifive
   socs:
     - name: fu540
+      variants:
+        - name: smp
+          cpucluster: u54

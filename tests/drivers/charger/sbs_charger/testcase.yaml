@@ -20,6 +20,7 @@ tests:
       - xenvm/xenvm/gicv3
       - hifive_unmatched/fu740/s7
       - hifive_unmatched/fu740/u74
+      - hifive_unmatched/fu740/u74/smp
       - rcar_h3ulcb/r8a77951/a57
       - rcar_salvator_xs
       - numaker_pfm_m467
