@@ -7,7 +7,16 @@
 #ifndef ZEPHYR_DRIVERS_USB_UDC_CDNS3_VENDOR_QUIRKS_H_
 #define ZEPHYR_DRIVERS_USB_UDC_CDNS3_VENDOR_QUIRKS_H_
 
-#define UDC_CDNS3_QUIRKS(n) (NULL)
+#include <zephyr/devicetree.h>
+
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_am64_usb)
+#include "udc_cdns3_vendor_ti_am64.h"
+#endif
+
+#define UDC_CDNS3_QUIRKS(n)                                                                        \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_DRV_INST(n), ti_am64_usb),				   \
+		(&udc_cdns3_ti_quirks_##n),							   \
+		(/* Add more vendors here with nested COND_CODE_1 */ NULL))
 
 #define UDC_CDNS3_FUNC_DEFINE(fn)                                                                  \
 	static inline int udc_cdns3_quirks_##fn(const struct device *const dev)                    \
