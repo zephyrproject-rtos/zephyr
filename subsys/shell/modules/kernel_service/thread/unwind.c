@@ -38,12 +38,17 @@ static int cmd_kernel_thread_unwind(const struct shell *sh, size_t argc, char **
 			return err;
 		}
 
-		if (!z_thread_is_valid(thread)) {
+		/*
+		 * The API contract of arch_stack_walk spec allows NULL thread.
+		 * Hence, we allow NULL thread to demo it.
+		 */
+		if ((thread != NULL) && !z_thread_is_valid(thread)) {
 			shell_error(sh, "Invalid thread id %p", (void *)thread);
 			return -EINVAL;
 		}
 	}
-	shell_print(sh, "Unwinding %p %s", (void *)thread, thread->name);
+	shell_print(sh, "Unwinding %p %s", (void *)thread,
+			(thread != NULL) ? thread->name : "<current>");
 
 	arch_stack_walk(print_trace_address, (void *)sh, thread, NULL);
 
