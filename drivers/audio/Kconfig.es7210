@@ -1,0 +1,24 @@
+# Copyright (c) 2026 NotioNext Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config ES7210
+	bool "ES7210 Audio ADC"
+	default y
+	depends on DT_HAS_EVEREST_ES7210_ENABLED
+	depends on I2C
+	depends on GPIO
+	help
+	  Enable driver for ES7210 Audio ADC.
+	  
+	  The ES7210 is a 4-channel ADC designed for microphone arrays.
+	  It supports I2S/PCM audio interface and I2C control interface.
+
+if ES7210
+
+config ES7210_INIT_PRIORITY
+	int "ES7210 driver init priority"
+	default 70
+	help
+	  ES7210 driver initialization priority.
+
+endif # ES7210

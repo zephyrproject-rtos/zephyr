@@ -1,0 +1,12 @@
+# Copyright (c) 2026 NotioNext Ltd.
+
+identifier: esp32s3_box3/esp32s3/appcpu
+name: ESP32-S3 BOX-3 APPCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - entropy
+  - ipm
+vendor: espressif

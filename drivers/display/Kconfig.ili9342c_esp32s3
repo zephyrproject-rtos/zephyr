@@ -1,0 +1,12 @@
+# Copyright (c) 2026 NotioNext LTD.
+# SPDX-License-Identifier: Apache-2.0
+
+config ILI9342C_ESP32S3
+	bool "ESP32 LCD display driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_LCD_ENABLED
+	depends on SOC_SERIES_ESP32S3
+	select GPIO
+	help
+	  Enable driver for ESP32-S3 LCD displays using ESP-IDF's esp_lcd component.
+	  This driver supports SPI-based LCD panels like ILI9341, ILI9342C, etc.
