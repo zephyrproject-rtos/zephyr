@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026 Loic Domaigne
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "arduino_nano_33_ble-common_rev2.dtsi"
+
+&i2c1 {
+	hs3003: hts3003@44 {
+		compatible = "renesas,hs300x";
+		reg = <0x44>;
+	};
+};

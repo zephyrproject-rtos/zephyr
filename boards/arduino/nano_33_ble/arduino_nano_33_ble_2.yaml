@@ -1,5 +1,5 @@
-identifier: arduino_nano_33_ble
-name: Arduino Nano 33 BLE
+identifier: arduino_nano_33_ble@2
+name: Arduino Nano 33 BLE Rev2
 type: mcu
 arch: arm
 toolchain:
