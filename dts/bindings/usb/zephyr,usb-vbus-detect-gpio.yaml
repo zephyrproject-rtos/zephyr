@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO-based USB VBUS detection
+
+compatible: "zephyr,usb-vbus-detect-gpio"
+
+include: base.yaml
+
+properties:
+  vbus-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO pin for VBUS sensing
+
+  udc:
+    type: phandles
+    required: true
+    description: |
+      List of USB device controllers to receive VBUS events.
+      All devices in this list will be notified when VBUS state changes.
+
+  debounce-ms:
+    type: int
+    default: 20
+    description: Debounce interval in milliseconds

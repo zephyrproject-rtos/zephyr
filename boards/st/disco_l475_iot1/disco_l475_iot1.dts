@@ -69,6 +69,13 @@
 		};
 	};
 
+	vbus_detect: vbus-detect {
+		compatible = "zephyr,usb-vbus-detect-gpio";
+		vbus-gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
+		udc = <&zephyr_udc0>;
+		debounce-ms = <20>;
+	};
+
 	aliases {
 		led0 = &green_led_2;
 		led1 = &green_led_1;

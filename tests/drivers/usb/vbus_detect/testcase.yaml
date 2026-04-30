@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.usb.vbus_detect:
+    tags:
+      - drivers
+      - usb
+      - vbus
+    platform_allow: native_sim

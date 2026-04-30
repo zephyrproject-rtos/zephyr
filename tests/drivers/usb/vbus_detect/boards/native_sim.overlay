@@ -1,0 +1,24 @@
+/* Copyright (c) 2026 Leica Geosystems AG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &zephyr_udc0;
+
+/ {
+	zephyr_uhc0: uhc_vrt0 {
+		compatible = "zephyr,uhc-virtual";
+
+		zephyr_udc0: udc_vrt0 {
+			compatible = "zephyr,udc-virtual";
+			num-bidir-endpoints = <8>;
+			maximum-speed = "high-speed";
+		};
+	};
+
+	vbus_detect: vbus-detect {
+		compatible = "zephyr,usb-vbus-detect-gpio";
+		vbus-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		udc = <&zephyr_udc0>;
+		debounce-ms = <5>;
+	};
+};
