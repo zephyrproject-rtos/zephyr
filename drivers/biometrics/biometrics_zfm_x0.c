@@ -395,12 +395,12 @@ static int zfm_x0_get_capabilities(const struct device *dev, struct biometric_ca
 {
 	struct zfm_x0_data *data = dev->data;
 
-	caps->type = BIOMETRIC_TYPE_FINGERPRINT;
+	caps->supported_modalities = BIOMETRIC_MODALITY_FINGERPRINT;
 	caps->max_templates = data->max_templates;
 	caps->template_size = ZFM_X0_TEMPLATE_SIZE;
 	caps->storage_modes = BIOMETRIC_STORAGE_DEVICE;
 	caps->enrollment_samples_required = 2;
-
+	caps->serial_number[0] = '\0';
 	return 0;
 }
 
@@ -778,6 +778,7 @@ static int zfm_x0_match(const struct device *dev, enum biometric_match_mode mode
 						      ? data->last_match_id
 						      : template_id;
 			result->image_quality = (uint8_t)CLAMP(data->image_quality, 0, 100);
+			result->modality = BIOMETRIC_MODALITY_FINGERPRINT;
 		}
 		LOG_INF("Match completed (mode=%d, score=%d)", mode, confidence);
 		ret = 0;

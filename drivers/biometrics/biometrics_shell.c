@@ -66,12 +66,25 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
-static const char *const sensor_type_names[] = {
-	[BIOMETRIC_TYPE_FINGERPRINT] = "fingerprint",
-	[BIOMETRIC_TYPE_IRIS] = "iris",
-	[BIOMETRIC_TYPE_FACE] = "face",
-	[BIOMETRIC_TYPE_VOICE] = "voice",
-};
+static void print_modalities(const struct shell *sh, uint32_t modalities)
+{
+	if (modalities & BIOMETRIC_MODALITY_FINGERPRINT) {
+		shell_fprintf(sh, SHELL_NORMAL, "fingerprint ");
+	}
+	if (modalities & BIOMETRIC_MODALITY_IRIS) {
+		shell_fprintf(sh, SHELL_NORMAL, "iris ");
+	}
+	if (modalities & BIOMETRIC_MODALITY_FACE) {
+		shell_fprintf(sh, SHELL_NORMAL, "face ");
+	}
+	if (modalities & BIOMETRIC_MODALITY_VOICE) {
+		shell_fprintf(sh, SHELL_NORMAL, "voice ");
+	}
+	if (modalities & BIOMETRIC_MODALITY_PALM) {
+		shell_fprintf(sh, SHELL_NORMAL, "palm ");
+	}
+	shell_fprintf(sh, SHELL_NORMAL, "\n");
+}
 
 static const char *const match_mode_names[] = {
 	[BIOMETRIC_MATCH_VERIFY] = "verify",
@@ -92,6 +105,7 @@ static const char *const attr_names[] = {
 	[BIOMETRIC_ATTR_TIMEOUT_MS] = "timeout_ms",
 	[BIOMETRIC_ATTR_ANTI_SPOOF_LEVEL] = "anti_spoof_level",
 	[BIOMETRIC_ATTR_IMAGE_QUALITY] = "image_quality",
+	[BIOMETRIC_ATTR_DUPLICATE_POLICY] = "duplicate_policy",
 };
 
 static int parse_long(long *out, const struct shell *sh, const char *arg)
@@ -196,15 +210,17 @@ static int cmd_biometric_info(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	shell_print(sh, "Device: %s", dev->name);
-	shell_print(sh, "  Type: %s",
-		    caps.type < ARRAY_SIZE(sensor_type_names) ? sensor_type_names[caps.type]
-							      : "unknown");
+	shell_fprintf(sh, SHELL_NORMAL, "  Modalities: ");
+	print_modalities(sh, caps.supported_modalities);
 	shell_print(sh, "  Max templates: %u", caps.max_templates);
 	shell_print(sh, "  Template size: %u bytes", caps.template_size);
 	shell_print(sh, "  Storage modes: %s%s",
 		    (caps.storage_modes & BIOMETRIC_STORAGE_DEVICE) ? "device " : "",
 		    (caps.storage_modes & BIOMETRIC_STORAGE_HOST) ? "host" : "");
 	shell_print(sh, "  Enrollment samples: %u", caps.enrollment_samples_required);
+	if (caps.serial_number[0] != '\0') {
+		shell_print(sh, "  Serial number: %s", caps.serial_number);
+	}
 
 	return 0;
 }
