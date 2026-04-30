@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Mathias Eriksen <maee@foss.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PCF85263A RTC
+
+compatible: "nxp,pcf85263a"
+
+include:
+  - name: rtc-device.yaml
+  - name: i2c-device.yaml
+
+properties:
+  int1-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the PCF85263A INTA interrupt output. This signal is open-drain, active low.

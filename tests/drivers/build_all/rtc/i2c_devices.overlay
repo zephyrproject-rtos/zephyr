@@ -127,6 +127,12 @@
 				reg = <0xd>;
 				interrupt-gpios = <&test_gpio 0 0>;
 			};
+
+			test_pcf85263a: pcf85263a@e {
+				compatible = "nxp,pcf85263a";
+				reg = <0xe>;
+				int1-gpios = <&test_gpio 0 0>;
+			};
 		};
 	};
 };
