@@ -105,6 +105,7 @@ azoteq	Azoteq (Pty) Ltd
 azw	Shenzhen AZW Technology Co., Ltd.
 baikal	BAIKAL ELECTRONICS, JSC
 bananapi	BIPAI KEJI LIMITED
+barth	Barth Elektronik GmbH
 bbc	BBC
 bcdevices	Blue Clover Devices
 beacon	Compass Electronics Group, LLC

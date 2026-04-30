@@ -1,0 +1,211 @@
+/*
+ * Copyright (c) 2017 Bobby Noelte
+ * Copyright (c) 2026 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f0/stm32f091Xc.dtsi>
+#include <st/f0/stm32f091c(b-c)ux-pinctrl.dtsi>
+
+/ {
+	model = "Barth Elektronik STG-800 lococube mini-PLC";
+	compatible = "barth,stg_800";
+
+	zephyr,user {
+		io-channels = <&adc1 0>, <&adc1 1>, <&adc1 2>;
+	};
+
+	chosen {
+		zephyr,canbus = &can1;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &usart1;
+		zephyr,flash = &flash0;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		green_led: green_led {
+			gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+	};
+
+	aliases {
+		led0 = &green_led;
+		watchdog0 = &iwdg;
+		eeprom-0 = &eeprom0;
+	};
+
+	input1: input1 {
+		compatible = "voltage-divider";
+		io-channels = <&adc1 0>;
+		output-ohms = <1178>;
+		full-ohms = <11000>;
+	};
+
+	input2: input2 {
+		compatible = "voltage-divider";
+		io-channels = <&adc1 1>;
+		output-ohms = <1178>;
+		full-ohms = <11000>;
+	};
+
+	input3: input3 {
+		compatible = "voltage-divider";
+		io-channels = <&adc1 2>;
+		output-ohms = <1178>;
+		full-ohms = <11000>;
+	};
+
+	transceiver0: can-phy0 {
+		compatible = "can-transceiver-gpio";
+		enable-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <1000000>;
+		#phy-cells = <0>;
+		status = "okay";
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(16)>; /* Crystal, in PF0, out PF1 */
+	status = "okay";
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&pll {
+	prediv = <1>;
+	mul = <3>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(48)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb13 &i2c2_sda_pb14>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+
+	eeprom0: eeprom@50 {
+		compatible = "atmel,at24";
+		status = "okay";
+		reg = <0x50>;
+		size = <DT_SIZE_K(8)>;
+		address-width = <16>;
+		timeout = <10>;
+		pagesize = <32>;
+	};
+};
+
+&can1 {
+	pinctrl-0 = <&can_rx_pb8 &can_tx_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc_in0_pa0 &adc_in1_pa1 &adc_in2_pa2>;
+	pinctrl-names = "default";
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0x0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+
+	channel@1 {
+		reg = <0x1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+
+	channel@2 {
+		reg = <0x2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&flash0 {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	ranges = <0x0 0x90000000 DT_SIZE_K(256)>;
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+		};
+
+		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x0000c000 DT_SIZE_K(100)>;
+		};
+
+		slot1_partition: partition@25000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x00025000 DT_SIZE_K(102)>;
+		};
+
+		storage_partition: partition@3e800 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x0003e800 DT_SIZE_K(6)>;
+		};
+	};
+};
