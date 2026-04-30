@@ -13,9 +13,10 @@
  *        and reset can be triggered when timeout
  * @details
  * There are three tests. Each test provide watchdog installation, setup and
- * wait for reset. Three variables are placed in noinit section to prevent
+ * wait for reset. Four variables are placed in noinit section to prevent
  * clearing them during board reset.These variables save number of the current
- * test case, current test state and value to check if test passed or not.
+ * test case, current test state, callback value, and a magic number to detect
+ * uninitialized noinit section on first boot.
  *
  * - Test Steps - test_wdt_no_callback
  *   -# Get device.
@@ -135,6 +136,9 @@
 #define WDT_TEST_CB0_TEST_VALUE 0x0CB0
 #define WDT_TEST_CB1_TEST_VALUE 0x0CB1
 
+/* Magic number to detect first boot vs reset */
+#define WDT_TEST_MAGIC_NUMBER 0xDEADBEEF
+
 #ifndef WDT_TEST_MAX_WINDOW
 #define WDT_TEST_MAX_WINDOW 2000U
 #endif
@@ -191,6 +195,9 @@ volatile DATATYPE m_testcase_index __attribute__((section(NOINIT_SECTION)));
  * first or second interrupt was fired.
  */
 volatile DATATYPE m_testvalue __attribute__((section(NOINIT_SECTION)));
+
+/* m_magic is used to detect first boot (random value) vs reset (magic retained) */
+volatile DATATYPE m_magic __attribute__((section(NOINIT_SECTION)));
 
 #if TEST_WDT_CALLBACK_1
 static void wdt_int_cb0(const struct device *wdt_dev, int channel_id)
@@ -487,7 +494,14 @@ static int test_wdt_enable_wait_mode(void)
 
 ZTEST(wdt_basic_test_suite, test_wdt)
 {
-	if ((m_testcase_index != 1U) && (m_testcase_index != 2U) && (m_testcase_index != 3U)) {
+	/* Initialize noinit variables on first boot (cold reset) */
+	if (m_magic != WDT_TEST_MAGIC_NUMBER) {
+		m_state = WDT_TEST_STATE_IDLE;
+		m_testcase_index = 0;
+		m_testvalue = 0;
+		m_magic = WDT_TEST_MAGIC_NUMBER;
+	}
+	if (m_testcase_index == 0U) {
 		zassert_true(test_wdt_no_callback() == TC_PASS);
 	}
 	if (m_testcase_index == 1U) {
@@ -519,6 +533,9 @@ ZTEST(wdt_basic_test_suite, test_wdt)
 	}
 	if (m_testcase_index > 4) {
 		m_state = WDT_TEST_STATE_IDLE;
+		m_magic = 0;
+		m_testcase_index = 0;
+		m_testvalue = 0;
 #if WDT_TEST_FINAL_DISABLE
 		const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
 
