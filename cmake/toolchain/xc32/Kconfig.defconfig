@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+choice PICOLIBC_SOURCE
+	default PICOLIBC_USE_MODULE
+endchoice
+
+choice LIBCPP_IMPLEMENTATION
+	default EXTERNAL_LIBCPP
+endchoice
+
+choice LINKER_ORPHAN_CONFIGURATION
+	default LINKER_ORPHAN_SECTION_PLACE
+endchoice
