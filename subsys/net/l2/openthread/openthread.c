@@ -190,6 +190,7 @@ static void ot_receive_handler(otMessage *message, void *context)
 			"Packet not compliant with forwarding rules!");
 		goto out;
 	}
+	openthread_border_router_remove_checksums_for_eth_offloading_ipv6(pkt);
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
 	NET_DBG("Injecting IPv6 packet to Zephyr net stack");
