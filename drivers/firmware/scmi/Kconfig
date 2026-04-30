@@ -104,6 +104,11 @@ config ARM_SCMI_POLLING_ONLY
 	  flow. As polling is not the preferred mode, this option should
 	  be enabled only in that case.
 
+config ARM_SCMI_BASE_HELPERS
+	bool "Helper functions for SCMI base protocol"
+	help
+	  Enable support for SCMI base protocol helper functions.
+
 source "drivers/firmware/scmi/nxp/Kconfig"
 source "drivers/firmware/scmi/shell/Kconfig"
 
