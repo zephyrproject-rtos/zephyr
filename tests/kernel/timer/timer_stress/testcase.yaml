@@ -1,0 +1,8 @@
+tests:
+  kernel.timer.stress:
+    tags:
+      - kernel
+      - timer
+    integration_platforms:
+      - qemu_cortex_m3
+      - native_sim

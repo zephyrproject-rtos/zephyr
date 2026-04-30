@@ -129,9 +129,12 @@ int z_impl_k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
 	k_mutex_unlock(mutex);
 
 	ret = z_pend_curr(&lock, key, &condvar->wait_q, timeout);
-	if (ret == 0) {
-		k_mutex_lock(mutex, K_FOREVER);
-	}
+
+	/* Always re-acquire the mutex before returning, even on timeout.
+	 * This matches POSIX semantics: the mutex must be locked by the
+	 * calling thread when pthread_cond_wait() returns, regardless of
+	 * whether it was signaled or timed out. */
+	k_mutex_lock(mutex, K_FOREVER);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_condvar, wait, condvar, timeout, ret);
 
