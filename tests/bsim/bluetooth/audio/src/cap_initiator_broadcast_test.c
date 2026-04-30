@@ -912,7 +912,8 @@ static void test_args(int argc, char *argv[])
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "preset") == 0) {
-			const char *preset_arg = argv[++argn];
+			argn++;
+			const char *preset_arg = argv[argn];
 
 			named_preset = cap_get_named_preset(preset_arg);
 			if (named_preset == NULL) {

@@ -345,9 +345,11 @@ static void test_args(int argc, char *argv[])
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "size") == 0) {
-			param.set_size = strtol(argv[++argn], NULL, 10);
+			argn++;
+			param.set_size = strtol(argv[argn], NULL, 10);
 		} else if (strcmp(arg, "rank") == 0) {
-			param.rank = strtol(argv[++argn], NULL, 10);
+			argn++;
+			param.rank = strtol(argv[argn], NULL, 10);
 		} else if (strcmp(arg, "not-lockable") == 0) {
 			param.lockable = false;
 		} else if (strcmp(arg, "sirk") == 0) {

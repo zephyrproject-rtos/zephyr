@@ -1195,14 +1195,16 @@ static int cap_initiator_ac_create_unicast_group(const struct cap_initiator_ac_p
 		for (size_t j = 0; j < MAX(param->snk_cnt[i], param->src_cnt[i]); j++) {
 			if (param->snk_cnt[i] > j) {
 				pair_params[pair_cnt].tx_param =
-					&snk_group_stream_params[snk_stream_cnt++];
+					&snk_group_stream_params[snk_stream_cnt];
+				snk_stream_cnt++;
 			} else {
 				pair_params[pair_cnt].tx_param = NULL;
 			}
 
 			if (param->src_cnt[i] > j) {
 				pair_params[pair_cnt].rx_param =
-					&src_group_stream_params[src_stream_cnt++];
+					&src_group_stream_params[src_stream_cnt];
+				src_stream_cnt++;
 			} else {
 				pair_params[pair_cnt].rx_param = NULL;
 			}
@@ -1813,14 +1815,16 @@ static void test_args(int argc, char *argv[])
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "sink_preset") == 0) {
-			const char *preset_arg = argv[++argn];
+			argn++;
+			const char *preset_arg = argv[argn];
 
 			snk_named_preset = cap_get_named_preset(preset_arg);
 			if (snk_named_preset == NULL) {
 				FAIL("Failed to get sink preset from %s\n", preset_arg);
 			}
 		} else if (strcmp(arg, "source_preset") == 0) {
-			const char *preset_arg = argv[++argn];
+			argn++;
+			const char *preset_arg = argv[argn];
 
 			src_named_preset = cap_get_named_preset(preset_arg);
 			if (src_named_preset == NULL) {

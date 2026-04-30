@@ -559,7 +559,8 @@ static void test_args(int argc, char *argv[])
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "rank") == 0) {
-			csis_rank = strtoul(argv[++argn], NULL, 10);
+			argn++;
+			csis_rank = strtoul(argv[argn], NULL, 10);
 		} else {
 			FAIL("Invalid arg: %s\n", arg);
 		}

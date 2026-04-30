@@ -215,7 +215,8 @@ static bool csip_found(struct bt_data *data, void *user_data)
 			return false;
 		}
 
-		bt_addr_le_copy(&addr_found[members_found++], addr);
+		bt_addr_le_copy(&addr_found[members_found], addr);
+		members_found++;
 
 		if (primary_inst == NULL || primary_inst->info.set_size == 0) {
 			printk("Found member %u\n", members_found);

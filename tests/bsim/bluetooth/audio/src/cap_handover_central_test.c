@@ -721,8 +721,9 @@ static void unicast_audio_stop(void)
 
 	for (size_t i = 0U; i < connected_conn_cnt; i++) {
 		/* Sink param */
-		streams_to_stop[param.count++] =
+		streams_to_stop[param.count] =
 			cap_stream_from_audio_test_stream(&cap_acceptors[i].sink_stream);
+		param.count++;
 	}
 
 	param.type = BT_CAP_SET_TYPE_AD_HOC;
@@ -841,8 +842,9 @@ static void handover_broadcast_to_unicast(
 		 * they cannot be handed over from broadcast
 		 */
 		if (stream_param->stream->bap_stream.group != NULL) {
-			(void)memcpy(&stream_params[stream_param_cnt++], stream_param,
+			(void)memcpy(&stream_params[stream_param_cnt], stream_param,
 				     sizeof(*stream_param));
+			stream_param_cnt++;
 		}
 	}
 

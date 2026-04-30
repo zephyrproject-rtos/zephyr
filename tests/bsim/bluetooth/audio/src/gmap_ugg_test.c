@@ -681,14 +681,16 @@ static int gmap_unicast_ac_create_unicast_group(const struct gmap_unicast_ac_par
 		for (size_t j = 0; j < MAX(param->snk_cnt[i], param->src_cnt[i]); j++) {
 			if (param->snk_cnt[i] > j) {
 				pair_params[pair_cnt].tx_param =
-					&snk_group_stream_params[snk_stream_cnt++];
+					&snk_group_stream_params[snk_stream_cnt];
+				snk_stream_cnt++;
 			} else {
 				pair_params[pair_cnt].tx_param = NULL;
 			}
 
 			if (param->src_cnt[i] > j) {
 				pair_params[pair_cnt].rx_param =
-					&src_group_stream_params[src_stream_cnt++];
+					&src_group_stream_params[src_stream_cnt];
+				src_stream_cnt++;
 			} else {
 				pair_params[pair_cnt].rx_param = NULL;
 			}
@@ -1512,7 +1514,8 @@ static void test_args(int argc, char *argv[])
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "sink_preset") == 0) {
-			const char *preset_arg = argv[++argn];
+			argn++;
+			const char *preset_arg = argv[argn];
 
 			snk_named_preset =
 				gmap_get_named_preset(true, BT_AUDIO_DIR_SINK, preset_arg);
@@ -1520,7 +1523,8 @@ static void test_args(int argc, char *argv[])
 				FAIL("Failed to get sink preset from %s\n", preset_arg);
 			}
 		} else if (strcmp(arg, "source_preset") == 0) {
-			const char *preset_arg = argv[++argn];
+			argn++;
+			const char *preset_arg = argv[argn];
 
 			src_named_preset =
 				gmap_get_named_preset(true, BT_AUDIO_DIR_SOURCE, preset_arg);
@@ -1528,7 +1532,8 @@ static void test_args(int argc, char *argv[])
 				FAIL("Failed to get source preset from %s\n", preset_arg);
 			}
 		} else if (strcmp(arg, "broadcast_preset") == 0) {
-			const char *preset_arg = argv[++argn];
+			argn++;
+			const char *preset_arg = argv[argn];
 
 			broadcast_named_preset = gmap_get_named_preset(
 				false, BT_AUDIO_DIR_SINK /* unused */, preset_arg);

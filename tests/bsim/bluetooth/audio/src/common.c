@@ -415,7 +415,8 @@ static void setup_backchannels(void)
 
 	for (int32_t i = 0; i < dev_cnt; i++) {
 		backchannel_nums[chan_cnt] = get_chan_num((uint16_t)i);
-		device_numbers[chan_cnt++] = i;
+		device_numbers[chan_cnt] = i;
+		chan_cnt++;
 	}
 
 	channels = bs_open_back_channel(self, device_numbers, backchannel_nums, chan_cnt);
