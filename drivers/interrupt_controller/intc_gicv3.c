@@ -354,10 +354,14 @@ void arm_gic_eoi(unsigned int intid)
 	write_sysreg(intid, ICC_EOIR1_EL1);
 }
 
-void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff, uint16_t target_list)
+void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff, unsigned int cpu)
 {
 	uint32_t aff3, aff2, aff1;
 	uint64_t sgi_val;
+	uint8_t aff0 = MPIDR_AFFLVL(target_aff, 0);
+	uint16_t target_list = 1 << aff0;
+
+	ARG_UNUSED(cpu);
 
 	__ASSERT_NO_MSG(GIC_IS_SGI(sgi_id));
 
@@ -765,8 +769,10 @@ DEVICE_DT_INST_DEFINE(0, arm_gic_init, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_IN
 		      NULL);
 
 #ifdef CONFIG_SMP
-void arm_gic_secondary_init(void)
+void arm_gic_secondary_init(int cpu_num)
 {
+	ARG_UNUSED(cpu_num);
+
 	__arm_gic_init();
 
 #ifdef CONFIG_GIC_V3_ITS

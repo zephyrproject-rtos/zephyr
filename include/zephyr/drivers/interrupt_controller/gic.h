@@ -400,7 +400,7 @@ void arm_gic_eoi(unsigned int irq);
 /**
  * @brief Initialize GIC of secondary cores
  */
-void arm_gic_secondary_init(void);
+void arm_gic_secondary_init(int cpu_num);
 #endif
 
 /**
@@ -409,9 +409,9 @@ void arm_gic_secondary_init(void);
  * @param sgi_id      SGI ID 0 to 15
  * @param target_aff  target affinity in mpidr form.
  *                    Aff level 1 2 3 will be extracted by api.
- * @param target_list bitmask of target cores
+ * @param cpu         target cpu
  */
-void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff, uint16_t target_list);
+void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff, unsigned int cpu);
 
 #endif /* !_ASMLANGUAGE */
 

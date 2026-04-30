@@ -89,9 +89,8 @@ static inline void trigger_irq(int irq)
 	sys_write32(GICD_SGIR_TGTFILT_REQONLY | GICD_SGIR_SGIINTID(irq), GICD_SGIR);
 #else
 	uint64_t mpidr = GET_MPIDR();
-	uint8_t aff0 = MPIDR_AFFLVL(mpidr, 0);
 
-	gic_raise_sgi(irq, mpidr, BIT(aff0));
+	gic_raise_sgi(irq, mpidr, 0);
 #endif
 }
 
