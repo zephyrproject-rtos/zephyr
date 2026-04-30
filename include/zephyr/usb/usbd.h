@@ -746,28 +746,51 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
  * Macro defines class (function) data, as well as corresponding node
  * structures used internally by the stack.
  *
+ * The @param class_name can be used to provide a string literal that can be
+ * used as a reference. For example, to have a reference between device name
+ * that a class instance is implementing and class name, which is used to
+ * register a class. The device name can be passed using the DEVICE_DT_NAME()
+ * macro.
+ *
+ * @param class_id     Class identifier
  * @param class_name   Class name
  * @param class_api    Pointer to struct usbd_class_api
  * @param class_priv   Class private data
  * @param class_v_reqs Pointer to struct usbd_cctx_vendor_req
  */
-#define USBD_DEFINE_CLASS(class_name, class_api, class_priv, class_v_reqs)	\
-	static struct usbd_class_data class_name = {				\
-		.name = STRINGIFY(class_name),					\
+#define USBD_DEFINE_CLASS_WITH_NAME(class_id, class_name,			\
+				    class_api, class_priv, class_v_reqs)	\
+	static struct usbd_class_data class_id = {				\
+		.name = class_name,						\
 		.api = class_api,						\
 		.v_reqs = class_v_reqs,						\
 		.priv = class_priv,						\
 	};									\
 	static STRUCT_SECTION_ITERABLE_ALTERNATE(				\
-		usbd_class_fs, usbd_class_node, class_name##_fs) = {		\
-		.c_data = &class_name,						\
+		usbd_class_fs, usbd_class_node, class_id##_fs) = {		\
+		.c_data = &class_id,						\
 	};									\
 	IF_ENABLED(USBD_SUPPORTS_HIGH_SPEED, (					\
 	static STRUCT_SECTION_ITERABLE_ALTERNATE(				\
-		usbd_class_hs, usbd_class_node, class_name##_hs) = {		\
-		.c_data = &class_name,						\
+		usbd_class_hs, usbd_class_node, class_id##_hs) = {		\
+		.c_data = &class_id,						\
 	}									\
 	))
+
+/**
+ * @brief Define USB device support class data
+ *
+ * This macro is similar to USBD_DEFINE_CLASS_WITH_NAME(), except it does not
+ * provide an argument for the class name.
+ *
+ * @param class_id     Class identifier
+ * @param class_api    Pointer to struct usbd_class_api
+ * @param class_priv   Class private data
+ * @param class_v_reqs Pointer to struct usbd_cctx_vendor_req
+ */
+#define USBD_DEFINE_CLASS(class_id, class_api, class_priv, class_v_reqs)	\
+	USBD_DEFINE_CLASS_WITH_NAME(class_id, STRINGIFY(class_id),		\
+				    class_api, class_priv, class_v_reqs)
 
 /** @brief Helper to declare request table of usbd_cctx_vendor_req
  *
