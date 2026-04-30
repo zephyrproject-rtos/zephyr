@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: ZMS Provisioning Sample
+
+common:
+  tags:
+    - zms
+    - kvss
+  platform_allow:
+    - nrf54h20dk/nrf54h20/cpuapp
+  integration_platforms:
+    - nrf54h20dk/nrf54h20/cpuapp
+
+tests:
+  sample.zms.provisioning:
+    build_only: true
+
+  sample.zms.provisioning.merge:
+    build_only: true
+    extra_configs:
+      - CONFIG_SAMPLE_ZMS_PROVISIONING_MERGE_WITH_APP_HEX=y

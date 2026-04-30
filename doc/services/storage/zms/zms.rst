@@ -492,6 +492,79 @@ ID size
   This is expected to have a slight impact on code size and performance, even on 64-bit systems,
   because the byte position of IDs in storage is not aligned to an 8-byte boundary.
 
+ZMS provisioning data generation
+********************************
+
+For products that need pre-loaded key-value data at manufacturing or first boot,
+ZMS provides a build-time provisioning generator script:
+``scripts/build/gen_zms_provision_data.py``.
+
+Purpose
+=======
+
+The script generates ZMS-formatted provisioning data and exports it as an Intel HEX image.
+This allows an application to start with pre-populated ZMS entries, without writing them
+at runtime.
+
+Typical use cases include:
+
+- Device identity records
+- Per-device calibration values
+- Production configuration values
+
+How it is used
+==============
+
+The script takes ZMS layout parameters (storage base, size, sector geometry, and flash
+characteristics) and one or more data sources:
+
+- ``-i`` for a text file containing ID/data pairs
+- ``-d`` for inline ID/data pairs
+
+It can also merge the generated provisioning data directly into an application HEX file with
+``-x``.
+
+If no input data is provided using ``-i`` or ``-d`` then only the sector headers will be generated.
+
+Example workflow
+================
+
+1. Generate a raw provisioning image:
+
+.. code-block:: shell
+
+   python3 ${ZEPHYR_BASE}/scripts/build/gen_zms_provision_data.py \
+     -f <storage_base_hex> \
+     -s <storage_size_hex> \
+     -n <nvm_base_hex> \
+     -z <nvm_size_hex> \
+     -w <write_block_size> \
+     -c <sector_size_hex> \
+     -i <input_data_file> \
+     -o provisioned_raw.hex
+
+2. Optionally generate a merged application image:
+
+.. code-block:: shell
+
+   python3 ${ZEPHYR_BASE}/scripts/build/gen_zms_provision_data.py \
+     -f <storage_base_hex> \
+     -s <storage_size_hex> \
+     -n <nvm_base_hex> \
+     -z <nvm_size_hex> \
+     -w <write_block_size> \
+     -c <sector_size_hex> \
+     -i <input_data_file> \
+     -x zephyr.hex \
+     -o zephyr_with_provision.hex
+
+Sample
+======
+
+See :zephyr:code-sample:`zms-provisioning` for a complete sample that integrates
+``gen_zms_provision_data.py`` into the build, supports merged and non-merged modes,
+and configures ``west flash`` to program the provisioned image.
+
 API Reference
 *************
 
