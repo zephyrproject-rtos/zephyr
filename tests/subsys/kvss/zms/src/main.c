@@ -89,6 +89,7 @@ static void after(void *data)
 	}
 
 	fixture->fs.sector_count = TEST_SECTOR_COUNT;
+	fixture->fs.mount_flags = 0;
 }
 
 ZTEST_SUITE(zms, NULL, setup, before, after, NULL);
@@ -122,6 +123,42 @@ static void execute_long_pattern_write(uint32_t id, struct zms_fs *fs)
 	len = zms_read(fs, id, rd_buf, sizeof(rd_buf));
 	zassert_true(len == sizeof(rd_buf), "zms_read unexpected failure: %d", len);
 	zassert_mem_equal(wr_buf, rd_buf, sizeof(rd_buf), "RD buff should be equal to the WR buff");
+}
+
+static void erase_test_partition(void)
+{
+	const struct flash_area *fa;
+	int err;
+
+	err = flash_area_open(TEST_ZMS_AREA_ID, &fa);
+	zassert_true(err == 0, "flash_area_open() fail: %d", err);
+
+	err = flash_area_erase(fa, 0, fa->fa_size);
+	zassert_true(err == 0, "flash_area_erase() fail: %d", err);
+
+	flash_area_close(fa);
+}
+
+ZTEST_F(zms, test_zms_mount_no_format_on_erased_flash)
+{
+	int err;
+
+	erase_test_partition();
+
+	fixture->fs.mount_flags = ZMS_MOUNT_FLAG_NO_FORMAT;
+	err = zms_mount(&fixture->fs);
+	zassert_equal(err, -ENOTSUP, "zms_mount should fail without formatting: %d", err);
+}
+
+ZTEST_F(zms, test_zms_mount_auto_format_on_erased_flash)
+{
+	int err;
+
+	erase_test_partition();
+
+	fixture->fs.mount_flags = 0U;
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
 }
 
 ZTEST_F(zms, test_zms_write)
