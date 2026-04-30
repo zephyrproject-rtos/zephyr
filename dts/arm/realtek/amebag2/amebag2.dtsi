@@ -54,6 +54,16 @@
 			reg = <0x20006040 0x49fc0>;
 		};
 
+		sdhc0: sdhc@40114000 {
+			compatible = "realtek,ameba-sdhost";
+			reg = <0x40114000 0xd00>;
+			clocks = <&rcc AMEBA_SDH_CLK>;
+			interrupts = <58 0>;
+			max-bus-freq = <52000000>;
+			min-bus-freq = <400000>;
+			status = "disabled";
+		};
+
 		spic: flash-controller@4011d000 {
 			compatible = "realtek,ameba-flash-controller";
 			reg = <0x4011d000 0x400>;
