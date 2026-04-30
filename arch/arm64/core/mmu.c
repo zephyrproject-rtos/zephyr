@@ -35,6 +35,11 @@ static uint64_t xlat_tables[CONFIG_MAX_XLAT_TABLES * Ln_XLAT_NUM_ENTRIES]
 static int xlat_use_count[CONFIG_MAX_XLAT_TABLES];
 static struct k_spinlock xlat_lock;
 
+static unsigned int xlat_used_count;
+static unsigned int xlat_peak_count;
+
+#define XLAT_LOW_WATER_THRESHOLD	((CONFIG_MAX_XLAT_TABLES * 7) / 8)
+
 /* Usage count value range */
 #define XLAT_PTE_COUNT_MASK	GENMASK(15, 0)
 #define XLAT_REF_COUNT_UNIT	BIT(16)
@@ -50,6 +55,18 @@ static uint64_t *new_table(void)
 		if (xlat_use_count[i] == 0) {
 			table = &xlat_tables[i * Ln_XLAT_NUM_ENTRIES];
 			xlat_use_count[i] = XLAT_REF_COUNT_UNIT;
+			xlat_used_count++;
+			if (xlat_used_count > xlat_peak_count) {
+				xlat_peak_count = xlat_used_count;
+#ifdef CONFIG_ARM64_MMU_REPORT_XLAT_TABLES_USAGE
+				LOG_INF("xlat tables: peak %u of %d allocated",
+					xlat_used_count, CONFIG_MAX_XLAT_TABLES);
+#endif
+				if (xlat_used_count == XLAT_LOW_WATER_THRESHOLD) {
+					LOG_WRN("xlat tables low: %u of %d in use",
+						xlat_used_count, CONFIG_MAX_XLAT_TABLES);
+				}
+			}
 			MMU_DEBUG("allocating table [%d]%p\n", i, table);
 			return table;
 		}
@@ -95,6 +112,9 @@ static int table_usage(uint64_t *table, int adjustment)
 		 "table PTE count overflow");
 
 	xlat_use_count[i] = new_count;
+	if (prev_count != 0 && new_count == 0) {
+		xlat_used_count--;
+	}
 	return new_count;
 }
 
