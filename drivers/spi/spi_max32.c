@@ -134,25 +134,35 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 		return -ENOTSUP;
 	}
 
-#if defined(CONFIG_SPI_EXTENDED_MODES)
-	switch (config->operation & SPI_LINES_MASK) {
-	case SPI_LINES_QUAD:
-		ret = MXC_SPI_SetWidth(regs, SPI_WIDTH_QUAD);
-		break;
-	case SPI_LINES_DUAL:
-		ret = MXC_SPI_SetWidth(regs, SPI_WIDTH_DUAL);
-		break;
-	case SPI_LINES_OCTAL:
-		ret = -ENOTSUP;
-		break;
-	case SPI_LINES_SINGLE:
-	default:
-		ret = MXC_SPI_SetWidth(regs, SPI_WIDTH_STANDARD);
-		break;
+	if (config->operation & SPI_HALF_DUPLEX) {
+		ret = MXC_SPI_SetWidth(regs, SPI_WIDTH_3WIRE);
+		if (ret) {
+			LOG_ERR("Failed to set half duplex mode (%d)", ret);
+			return -EINVAL;
+		}
 	}
+#if defined(CONFIG_SPI_EXTENDED_MODES)
+	else {
+		switch (config->operation & SPI_LINES_MASK) {
+		case SPI_LINES_QUAD:
+			ret = MXC_SPI_SetWidth(regs, SPI_WIDTH_QUAD);
+			break;
+		case SPI_LINES_DUAL:
+			ret = MXC_SPI_SetWidth(regs, SPI_WIDTH_DUAL);
+			break;
+		case SPI_LINES_OCTAL:
+			ret = -ENOTSUP;
+			break;
+		case SPI_LINES_SINGLE:
+		default:
+			ret = MXC_SPI_SetWidth(regs, SPI_WIDTH_STANDARD);
+			break;
+		}
 
-	if (ret) {
-		return -EINVAL;
+		if (ret) {
+			LOG_ERR("Failed to set data width (%d)", ret);
+			return -EINVAL;
+		}
 	}
 #endif
 
@@ -461,20 +471,25 @@ dma_rtio_exit:
 #endif
 
 #if defined(CONFIG_SPI_MAX32_INTERRUPT)
-	MXC_SPI_SetTXThreshold(cfg->regs, 1 << dfs_shift);
+	MXC_SPI_ClearTXFIFO(cfg->regs);
+	MXC_SPI_ClearRXFIFO(cfg->regs);
+
 	if (data->req.rxLen) {
 		MXC_SPI_SetRXThreshold(cfg->regs, 2 << dfs_shift);
 		MXC_SPI_EnableInt(cfg->regs, ADI_MAX32_SPI_INT_EN_RX_THD);
 	}
-	MXC_SPI_EnableInt(cfg->regs, ADI_MAX32_SPI_INT_EN_TX_THD | ADI_MAX32_SPI_INT_EN_MST_DONE);
 
-	MXC_SPI_ClearTXFIFO(cfg->regs);
-	MXC_SPI_ClearRXFIFO(cfg->regs);
-	if (!data->req.txData) {
-		data->req.txCnt =
-			MXC_SPI_WriteTXFIFO(cfg->regs, data->dummy, MIN(len, sizeof(data->dummy)));
-	} else {
-		data->req.txCnt = MXC_SPI_WriteTXFIFO(cfg->regs, data->req.txData, len);
+	MXC_SPI_EnableInt(cfg->regs, ADI_MAX32_SPI_INT_EN_MST_DONE);
+
+	if (data->req.txLen) {
+		MXC_SPI_SetTXThreshold(cfg->regs, 1 << dfs_shift);
+		MXC_SPI_EnableInt(cfg->regs, ADI_MAX32_SPI_INT_EN_TX_THD);
+		if (!data->req.txData) {
+			data->req.txCnt = MXC_SPI_WriteTXFIFO(cfg->regs, data->dummy,
+							      MIN(len, sizeof(data->dummy)));
+		} else {
+			data->req.txCnt = MXC_SPI_WriteTXFIFO(cfg->regs, data->req.txData, len);
+		}
 	}
 
 	MXC_SPI_StartTransmission(cfg->regs);
