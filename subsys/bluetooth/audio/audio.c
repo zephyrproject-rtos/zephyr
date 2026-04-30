@@ -47,7 +47,7 @@ int bt_audio_data_parse(const uint8_t ltv[], size_t size,
 		return -EINVAL;
 	}
 
-	for (size_t i = 0; i < size;) {
+	for (size_t i = 0U; i < size;) {
 		const uint8_t len = ltv[i];
 		struct bt_data data;
 
@@ -63,7 +63,7 @@ int bt_audio_data_parse(const uint8_t ltv[], size_t size,
 		i++;
 		data.data_len = len - sizeof(data.type);
 
-		if (data.data_len > 0) {
+		if (data.data_len > 0U) {
 			data.data = &ltv[i];
 		} else {
 			data.data = NULL;
@@ -277,8 +277,8 @@ ssize_t bt_audio_ccc_cfg_write(struct bt_conn *conn, const struct bt_gatt_attr *
 
 uint16_t bt_audio_get_max_ntf_size(struct bt_conn *conn)
 {
-	const uint8_t att_ntf_header_size = 3; /* opcode (1) + handle (2) */
-	const uint16_t mtu = conn == NULL ? 0 : bt_gatt_get_mtu(conn);
+	const uint8_t att_ntf_header_size = 3U; /* opcode (1) + handle (2) */
+	const uint16_t mtu = conn == NULL ? 0U : bt_gatt_get_mtu(conn);
 
 	if (mtu > att_ntf_header_size) {
 		return mtu - att_ntf_header_size;

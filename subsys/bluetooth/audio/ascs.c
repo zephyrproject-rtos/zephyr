@@ -757,7 +757,7 @@ static int ascs_iso_accept(const struct bt_iso_accept_info *info, struct bt_iso_
 {
 	LOG_DBG("conn %p", (void *)info->acl);
 
-	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 		enum bt_bap_ep_state state;
 		struct bt_iso_chan *chan;
@@ -1058,7 +1058,7 @@ static void ascs_cp_rsp_init(uint8_t op)
 
 	rsp = net_buf_simple_add(&cp_rsp_buf, sizeof(*rsp));
 	rsp->op = op;
-	rsp->num_ase = 0;
+	rsp->num_ase = 0U;
 }
 
 /* Add response to an opcode/ASE ID */
@@ -1225,7 +1225,7 @@ int bt_ascs_disable_ase(struct bt_bap_ep *ep)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 
 		if (ase->conn != conn) {
@@ -1338,7 +1338,8 @@ static void ase_init(struct bt_ascs_ase *ase, struct bt_conn *conn, uint8_t id)
 	ase->conn = bt_conn_ref(conn);
 
 	/* Lookup ASE characteristic */
-	bt_gatt_foreach_attr_type(0x0001, 0xffff, ASE_UUID(id), NULL, 0, ase_attr_cb, ase);
+	bt_gatt_foreach_attr_type(BT_ATT_FIRST_ATTRIBUTE_HANDLE, BT_ATT_LAST_ATTRIBUTE_HANDLE,
+				  ASE_UUID(id), NULL, 0U, ase_attr_cb, ase);
 
 	__ASSERT(ase->attr, "ASE characteristic not found\n");
 
@@ -1350,9 +1351,9 @@ static struct bt_ascs_ase *ase_new(struct bt_conn *conn, uint8_t id)
 {
 	struct bt_ascs_ase *ase = NULL;
 
-	__ASSERT(id > 0 && id <= ASE_COUNT, "invalid ASE_ID 0x%02x", id);
+	__ASSERT(id > 0U && id <= ASE_COUNT, "invalid ASE_ID 0x%02x", id);
 
-	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		if (ascs.ase_pool[i].conn == NULL) {
 			ase = &ascs.ase_pool[i];
 			break;
@@ -1372,7 +1373,7 @@ static struct bt_ascs_ase *ase_new(struct bt_conn *conn, uint8_t id)
 
 static struct bt_ascs_ase *ase_find(struct bt_conn *conn, uint8_t id)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 
 		if (ase->conn == conn && ASE_ID(ase) == id) {
@@ -1628,7 +1629,7 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 
 static struct bt_bap_ep *ep_lookup_stream(struct bt_conn *conn, struct bt_bap_stream *stream)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 
 		if (ase->conn == conn && ase->ep.stream == stream) {
@@ -1932,7 +1933,7 @@ static ssize_t ascs_config(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	LOG_DBG("num_ases %u", req->num_ases);
 
-	for (uint8_t i = 0; i < req->num_ases; i++) {
+	for (uint8_t i = 0U; i < req->num_ases; i++) {
 		struct bt_ascs_ase *ase;
 		int err;
 
@@ -1983,7 +1984,7 @@ int bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_d
 		return -EINVAL;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 
 		if (ase->conn == conn) {
@@ -2150,7 +2151,7 @@ static ssize_t ascs_qos(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	LOG_DBG("num_ases %u", req->num_ases);
 
-	for (uint8_t i = 0; i < req->num_ases; i++) {
+	for (uint8_t i = 0U; i < req->num_ases; i++) {
 		struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 							     BT_BAP_ASCS_REASON_NONE);
 		struct bt_bap_qos_cfg cqos;
@@ -2270,7 +2271,7 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 		break;
 	}
 	case BT_AUDIO_METADATA_TYPE_PARENTAL_RATING:
-		if (data_len != 1) {
+		if (data_len != 1U) {
 			*result->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_INVALID,
 						       data_type);
 			result->err = -EBADMSG;
@@ -2292,7 +2293,7 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 	}
 	/* TODO: Consider rejecting BT_AUDIO_METADATA_TYPE_BROADCAST_IMMEDIATE type */
 	case BT_AUDIO_METADATA_TYPE_BROADCAST_IMMEDIATE:
-		if (data_len != 0) {
+		if (data_len != 0U) {
 			*result->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_INVALID,
 						       data_type);
 			result->err = -EBADMSG;
@@ -2729,7 +2730,7 @@ static ssize_t ascs_disable(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	LOG_DBG("num_ases %u", req->num_ases);
 
-	for (uint8_t i = 0; i < req->num_ases; i++) {
+	for (uint8_t i = 0U; i < req->num_ases; i++) {
 		struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 							     BT_BAP_ASCS_REASON_NONE);
 		struct bt_ascs_ase *ase;
@@ -3213,7 +3214,7 @@ static void configure_ase_char(uint8_t snk_cnt, uint8_t src_cnt)
 		size_t new_src_start_idx = src_start_idx - (snk_ases_to_rem *
 							    ASCS_ASE_CHAR_ATTR_COUNT);
 
-		for (size_t i = 0; i < src_cnt * ASCS_ASE_CHAR_ATTR_COUNT; i++) {
+		for (size_t i = 0U; i < src_cnt * ASCS_ASE_CHAR_ATTR_COUNT; i++) {
 			ascs_svc.attrs[new_src_start_idx + i] = ascs_svc.attrs[src_start_idx + i];
 		}
 

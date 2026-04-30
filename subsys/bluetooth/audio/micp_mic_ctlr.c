@@ -130,7 +130,7 @@ static uint8_t micp_mic_ctlr_read_mute_cb(struct bt_conn *conn, uint8_t err,
 {
 	struct bt_micp_mic_ctlr *mic_ctlr = mic_ctlr_get_by_conn(conn);
 	uint8_t cb_err = err;
-	uint8_t mute_val = 0;
+	uint8_t mute_val = 0U;
 
 	ARG_UNUSED(params);
 
@@ -497,11 +497,11 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 
 static void micp_mic_ctlr_reset(struct bt_micp_mic_ctlr *mic_ctlr)
 {
-	mic_ctlr->start_handle = 0;
-	mic_ctlr->end_handle = 0;
-	mic_ctlr->mute_handle = 0;
+	mic_ctlr->start_handle = 0U;
+	mic_ctlr->end_handle = 0U;
+	mic_ctlr->mute_handle = 0U;
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
-	mic_ctlr->aics_inst_cnt = 0;
+	mic_ctlr->aics_inst_cnt = 0U;
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 
 	bt_conn_drop(&mic_ctlr->conn);
@@ -699,7 +699,7 @@ int bt_micp_mic_ctlr_mute_get(struct bt_micp_mic_ctlr *mic_ctlr)
 	}
 
 	mic_ctlr->read_params.func = micp_mic_ctlr_read_mute_cb;
-	mic_ctlr->read_params.handle_count = 1;
+	mic_ctlr->read_params.handle_count = 1U;
 	mic_ctlr->read_params.single.handle = mic_ctlr->mute_handle;
 	mic_ctlr->read_params.single.offset = 0U;
 

@@ -41,7 +41,7 @@
 #include "common/bt_shell_private.h"
 #include "host/shell/bt.h"
 
-#define SHELL_PRINT_INDENT_LEVEL_SIZE 2
+#define SHELL_PRINT_INDENT_LEVEL_SIZE 2U
 #define MAX_CODEC_FRAMES_PER_SDU      4U
 
 extern struct bt_csip_set_member_svc_inst *svc_inst;
@@ -364,7 +364,7 @@ static inline void print_codec_meta_pref_context(size_t indent, enum bt_audio_co
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
 	/* There can be up to 16 bits set in the field */
-	for (size_t i = 0U; i < 16; i++) {
+	for (size_t i = 0U; i < 16U; i++) {
 		const uint16_t bit_val = BIT(i);
 
 		if (context & bit_val) {
@@ -381,7 +381,7 @@ static inline void print_codec_meta_stream_context(size_t indent, enum bt_audio_
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
 	/* There can be up to 16 bits set in the field */
-	for (size_t i = 0U; i < 16; i++) {
+	for (size_t i = 0U; i < 16U; i++) {
 		const uint16_t bit_val = BIT(i);
 
 		if (context & bit_val) {
@@ -500,7 +500,7 @@ static inline void print_codec_cap_freq(size_t indent, enum bt_audio_codec_cap_f
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 	/* There can be up to 16 bits set in the field */
-	for (size_t i = 0; i < 16; i++) {
+	for (size_t i = 0U; i < 16U; i++) {
 		const uint16_t bit_val = BIT(i);
 
 		if (freq & bit_val) {
@@ -517,7 +517,7 @@ static inline void print_codec_cap_frame_dur(size_t indent,
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 	/* There can be up to 8 bits set in the field */
-	for (size_t i = 0; i < 8; i++) {
+	for (size_t i = 0U; i < 8U; i++) {
 		const uint8_t bit_val = BIT(i);
 
 		if (frame_dur & bit_val) {
@@ -534,7 +534,7 @@ static inline void print_codec_cap_chan_count(size_t indent,
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 	/* There can be up to 8 bits set in the field */
-	for (size_t i = 0; i < 8; i++) {
+	for (size_t i = 0U; i < 8U; i++) {
 		const uint8_t bit_val = BIT(i);
 
 		if (chan_count & bit_val) {
@@ -707,7 +707,7 @@ static inline void print_codec_cfg_chan_allocation(size_t indent,
 		bt_shell_print("%*s Mono", indent, "");
 	} else {
 		/* There can be up to 32 bits set in the field */
-		for (size_t i = 0; i < 32; i++) {
+		for (size_t i = 0U; i < 32U; i++) {
 			const uint8_t bit_val = BIT(i);
 
 			if (chan_allocation & bit_val) {
@@ -883,7 +883,7 @@ extern struct bt_cap_initiator_broadcast_create_param cap_initiator_broadcast_cr
 static inline bool print_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis,
 					      void *user_data)
 {
-	size_t indent = 2 * SHELL_PRINT_INDENT_LEVEL_SIZE;
+	size_t indent = 2U * SHELL_PRINT_INDENT_LEVEL_SIZE;
 	struct bt_bap_base_codec_id *codec_id = user_data;
 
 	bt_shell_print("%*sBIS index: 0x%02X", indent, "", bis->index);
@@ -925,7 +925,7 @@ static inline bool print_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_
 static inline bool print_base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup,
 					  void *user_data)
 {
-	size_t indent = 1 * SHELL_PRINT_INDENT_LEVEL_SIZE;
+	size_t indent = 1U * SHELL_PRINT_INDENT_LEVEL_SIZE;
 	struct bt_bap_base_codec_id codec_id;
 	struct bt_audio_codec_cfg codec_cfg;
 	uint8_t *data;

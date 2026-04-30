@@ -129,7 +129,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 static void populate_bearers(struct bt_ccp_call_control_client *client,
 			     struct bt_ccp_call_control_client_bearers *bearers)
 {
-	size_t i = 0;
+	size_t i = 0U;
 
 #if defined(CONFIG_BT_TBS_CLIENT_GTBS)
 	if (client->bearers[i].discovered) {

@@ -101,7 +101,7 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 	};
 	int err = 0;
 
-	for (size_t argn = 1; argn < argc; argn++) {
+	for (size_t argn = 1U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "size") == 0) {
@@ -166,7 +166,7 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 
 			len = hex2bin(argv[argn], strlen(argv[argn]), param.sirk,
 				      sizeof(param.sirk));
-			if (len == 0) {
+			if (len == 0U) {
 				shell_error(sh, "Could not parse SIRK");
 
 				return -ENOEXEC;
@@ -359,7 +359,7 @@ SHELL_CMD_ARG_REGISTER(cap_acceptor, &cap_acceptor_cmds, "Bluetooth CAP acceptor
 
 size_t cap_acceptor_ad_data_add(struct bt_data data[], size_t data_size, bool discoverable)
 {
-	size_t ad_len = 0;
+	size_t ad_len = 0U;
 
 	if (!discoverable) {
 		return ad_len;

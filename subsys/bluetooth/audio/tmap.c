@@ -171,7 +171,7 @@ static struct bt_gatt_service tmas;
 
 static bool valid_tmap_role(enum bt_tmap_role role)
 {
-	if (role == 0 || (role & TMAP_ALL_ROLES) != role) {
+	if (role == 0U || (role & TMAP_ALL_ROLES) != role) {
 		LOG_DBG("Invalid role %d", role);
 	}
 

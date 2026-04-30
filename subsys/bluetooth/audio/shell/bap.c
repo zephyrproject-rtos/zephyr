@@ -300,7 +300,7 @@ NET_BUF_POOL_FIXED_DEFINE(sine_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT, SINE_TX_POOL
 #include "math.h"
 
 #define AUDIO_VOLUME            (INT16_MAX - 3000) /* codec does clipping above INT16_MAX - 3000 */
-#define AUDIO_TONE_FREQUENCY_HZ   400
+#define AUDIO_TONE_FREQUENCY_HZ   400U
 
 static int16_t lc3_tx_buf[LC3_MAX_NUM_SAMPLES_MONO];
 
@@ -371,7 +371,7 @@ static void fill_lc3_tx_buf_sin(int16_t *buf, int length_us, int frequency_hz, i
 	const size_t num_samples = (length_us * sample_rate_hz) / USEC_PER_SEC;
 	const float step = 2 * 3.1415 / sine_period_samples;
 
-	for (size_t i = 0; i < num_samples; i++) {
+	for (size_t i = 0U; i < num_samples; i++) {
 		const float sample = sinf(i * step);
 
 		buf[i] = (int16_t)(AUDIO_VOLUME * sample);
@@ -551,7 +551,7 @@ static void lc3_encoder_thread_func(void *arg1, void *arg2, void *arg3)
 	 */
 	while (true) {
 		bap_foreach_stream(encode_and_send_cb, NULL);
-		k_sleep(K_MSEC(1));
+		k_sleep(K_MSEC(1U));
 	}
 }
 #endif /* CONFIG_LIBLC3 && CONFIG_BT_AUDIO_TX */
@@ -645,7 +645,7 @@ static const struct bt_bap_qos_cfg_pref qos_pref =
 
 static struct bt_bap_stream *stream_alloc(void)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 		struct bt_bap_stream *stream = bap_stream_from_shell_stream(&unicast_streams[i]);
 
 		if (!stream->conn) {
@@ -853,7 +853,7 @@ static uint8_t stream_dir(const struct bt_bap_stream *stream)
 		uint8_t conn_index = bt_conn_index(stream->conn);
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-		for (size_t i = 0; i < ARRAY_SIZE(snks[conn_index]); i++) {
+		for (size_t i = 0U; i < ARRAY_SIZE(snks[conn_index]); i++) {
 			const struct bt_bap_ep *snk_ep = snks[conn_index][i];
 
 			if (snk_ep != NULL && stream->ep == snk_ep) {
@@ -863,7 +863,7 @@ static uint8_t stream_dir(const struct bt_bap_stream *stream)
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
 
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-		for (size_t i = 0; i < ARRAY_SIZE(srcs[conn_index]); i++) {
+		for (size_t i = 0U; i < ARRAY_SIZE(srcs[conn_index]); i++) {
 			const struct bt_bap_ep *src_ep = srcs[conn_index][i];
 
 			if (src_ep != NULL && stream->ep == src_ep) {
@@ -1317,9 +1317,9 @@ static int set_group_param(
 	struct bt_bap_unicast_group_stream_pair_param pair_param[ARRAY_SIZE(unicast_streams)],
 	struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(unicast_streams)])
 {
-	size_t source_cnt = 0;
-	size_t sink_cnt = 0;
-	size_t cnt = 0;
+	size_t source_cnt = 0U;
+	size_t sink_cnt = 0U;
+	size_t cnt = 0U;
 
 	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 		struct bt_bap_stream *stream = bap_stream_from_shell_stream(&unicast_streams[i]);
@@ -2003,7 +2003,7 @@ static ssize_t parse_config_meta_args(const struct shell *sh, size_t argn, size_
 			arg = argv[argn];
 
 			ccid_list_len = hex2bin(arg, strlen(arg), ccid_list, sizeof(ccid_list));
-			if (ccid_list_len == 0) {
+			if (ccid_list_len == 0U) {
 				shell_error(sh, "Failed to parse ccid list from %s", arg);
 
 				return -1;
@@ -2118,7 +2118,7 @@ static ssize_t parse_config_meta_args(const struct shell *sh, size_t argn, size_
 			arg = argv[argn];
 
 			extended_len = hex2bin(arg, strlen(arg), extended, sizeof(extended));
-			if (extended_len == 0) {
+			if (extended_len == 0U) {
 				shell_error(sh, "Failed to parse extended meta from %s", arg);
 
 				return -1;
@@ -2145,7 +2145,7 @@ static ssize_t parse_config_meta_args(const struct shell *sh, size_t argn, size_
 			arg = argv[argn];
 
 			vendor_len = hex2bin(arg, strlen(arg), vendor, sizeof(vendor));
-			if (vendor_len == 0) {
+			if (vendor_len == 0U) {
 				shell_error(sh, "Failed to parse vendor meta from %s", arg);
 
 				return -1;
@@ -2222,7 +2222,7 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 
 			memcpy(&codec_cfg_backup, codec_cfg, sizeof(codec_cfg_backup));
 
-			for (size_t argn = 3; argn < argc; argn++) {
+			for (size_t argn = 3U; argn < argc; argn++) {
 				const char *arg = argv[argn];
 
 				if (strcmp(arg, "config") == 0) {
@@ -2290,7 +2290,7 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
-#define PA_SYNC_SKIP         5
+#define PA_SYNC_SKIP         5U
 
 struct bt_broadcast_info {
 	uint32_t broadcast_id;
@@ -2712,11 +2712,11 @@ static void do_lc3_decode(struct lc3_data *data)
 		const uint8_t frame_blocks_per_sdu = sh_stream->lc3_frame_blocks_per_sdu;
 		size_t frame_cnt;
 
-		frame_cnt = 0;
+		frame_cnt = 0U;
 		for (uint8_t i = 0U; i < frame_blocks_per_sdu; i++) {
 			const size_t decoded_frames = decode_frame_block(data, frame_cnt);
 
-			if (decoded_frames == 0) {
+			if (decoded_frames == 0U) {
 				break;
 			}
 
@@ -3095,11 +3095,11 @@ static void clear_stream_data(struct shell_stream *sh_stream)
 {
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 	if (IS_ARRAY_ELEMENT(broadcast_sink_streams, sh_stream)) {
-		if (default_broadcast_sink.stream_cnt != 0) {
+		if (default_broadcast_sink.stream_cnt != 0U) {
 			default_broadcast_sink.stream_cnt--;
 		}
 
-		if (default_broadcast_sink.stream_cnt == 0) {
+		if (default_broadcast_sink.stream_cnt == 0U) {
 			/* All streams in the broadcast sink has been terminated */
 			memset(&default_broadcast_sink.received_base, 0,
 			       sizeof(default_broadcast_sink.received_base));
@@ -3323,7 +3323,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	copy_broadcast_source_preset(&default_source, named_preset);
 
 	(void)memset(stream_params, 0, sizeof(stream_params));
-	for (size_t i = 0; i < ARRAY_SIZE(stream_params); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(stream_params); i++) {
 		stream_params[i].stream =
 			bap_stream_from_shell_stream(&broadcast_source_streams[i]);
 	}
@@ -3525,7 +3525,7 @@ static int cmd_create_broadcast_sink(const struct shell *sh, size_t argc, char *
 			.options = BT_LE_SCAN_OPT_NONE,
 			.interval = BT_GAP_SCAN_FAST_INTERVAL,
 			.window = BT_GAP_SCAN_FAST_WINDOW,
-			.timeout = 1000, /* 10ms units -> 10 second timeout */
+			.timeout = 1000U, /* 10ms units -> 10 second timeout */
 		};
 
 		shell_print(sh, "No PA sync available, starting scanning for broadcast_id");
@@ -3553,7 +3553,7 @@ static int cmd_create_sink_by_name(const struct shell *sh, size_t argc, char *ar
 		.options = BT_LE_SCAN_OPT_NONE,
 		.interval = BT_GAP_SCAN_FAST_INTERVAL,
 		.window = BT_GAP_SCAN_FAST_WINDOW,
-		.timeout = 1000, /* 10ms units -> 10 second timeout */
+		.timeout = 1000U, /* 10ms units -> 10 second timeout */
 	};
 	char *broadcast_name;
 	int err = 0;
@@ -3596,7 +3596,7 @@ static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 	size_t stream_cnt;
 	int err = 0;
 
-	bis_bitfield = 0;
+	bis_bitfield = 0U;
 	stream_cnt = 0U;
 	for (size_t argn = 1U; argn < argc; argn++) {
 		const char *arg = argv[argn];
@@ -3664,7 +3664,7 @@ static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	(void)memset(streams, 0, sizeof(streams));
-	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 		streams[i] = bap_stream_from_shell_stream(&broadcast_sink_streams[i]);
 	}
 
@@ -4331,7 +4331,7 @@ static size_t connectable_ad_data_add(struct bt_data *data_array, size_t data_ar
 		IF_ENABLED(CONFIG_BT_VCP_VOL_REND, (BT_UUID_16_ENCODE(BT_UUID_VCS_VAL),))
 		IF_ENABLED(CONFIG_BT_HAS, (BT_UUID_16_ENCODE(BT_UUID_HAS_VAL),)) /* Shall be last */
 	};
-	size_t ad_len = 0;
+	size_t ad_len = 0U;
 
 	if (IS_ENABLED(CONFIG_BT_ASCS)) {
 		static uint8_t ad_bap_announcement[8] = {
@@ -4407,7 +4407,7 @@ static size_t nonconnectable_ad_data_add(struct bt_data *data_array, const size_
 		IF_ENABLED(CONFIG_BT_PACS, (BT_UUID_16_ENCODE(BT_UUID_PACS_VAL),))
 		IF_ENABLED(CONFIG_BT_CAP_ACCEPTOR, (BT_UUID_16_ENCODE(BT_UUID_CAS_VAL),))
 	};
-	size_t ad_len = 0;
+	size_t ad_len = 0U;
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	if (default_source.bap_source != NULL) {
@@ -4446,7 +4446,7 @@ static size_t nonconnectable_ad_data_add(struct bt_data *data_array, const size_
 size_t audio_ad_data_add(struct bt_data *data_array, const size_t data_array_size,
 			 const bool discoverable, const bool connectable)
 {
-	size_t ad_len = 0;
+	size_t ad_len = 0U;
 
 	if (!discoverable) {
 		return 0;

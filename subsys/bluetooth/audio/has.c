@@ -225,7 +225,7 @@ static struct client_context *context_find(const bt_addr_le_t *addr)
 {
 	__ASSERT_NO_MSG(addr != NULL);
 
-	for (size_t i = 0; i < ARRAY_SIZE(contexts); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(contexts); i++) {
 		if (bt_addr_le_eq(&contexts[i].addr, addr)) {
 			return &contexts[i];
 		}
@@ -285,7 +285,7 @@ static struct has_client *client_alloc(struct bt_conn *conn)
 	struct has_client *client = NULL;
 	int err;
 
-	for (size_t i = 0; i < ARRAY_SIZE(has_client_list); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(has_client_list); i++) {
 		if (conn == has_client_list[i].conn) {
 			return &has_client_list[i];
 		}
@@ -333,7 +333,7 @@ static struct has_client *client_alloc(struct bt_conn *conn)
 
 static struct has_client *client_find_by_conn(struct bt_conn *conn)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(has_client_list); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(has_client_list); i++) {
 		if (conn == has_client_list[i].conn) {
 			return &has_client_list[i];
 		}
@@ -944,7 +944,7 @@ static int settings_set_cb(const char *name, size_t len_rd, settings_read_cb rea
 
 		context->last_preset_index_known = store.last_preset_index_known;
 	} else {
-		context->last_preset_index_known = 0x00;
+		context->last_preset_index_known = 0x00U;
 	}
 
 	/* Notify all the characteristics values after reboot */
@@ -983,7 +983,7 @@ static void update_last_preset_index_known(struct has_client *client, uint8_t in
 		return;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(has_client_list); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(has_client_list); i++) {
 		client = &has_client_list[i];
 
 		/* For each connected client */
@@ -1148,7 +1148,7 @@ static int preset_list_changed(struct has_client *client)
 	}
 
 	if (is_last) {
-		client->preset_changed_index_next = 0;
+		client->preset_changed_index_next = 0U;
 
 		/* It's the last preset notified, so update the highest index known to the client */
 		update_last_preset_index_known(client, preset->index);
@@ -1834,7 +1834,7 @@ int bt_has_register(const struct bt_has_features_param *features)
 	}
 
 #if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
-	for (size_t i = 0; i < ARRAY_SIZE(preset_pool); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(preset_pool); i++) {
 		struct has_preset *preset = &preset_pool[i];
 
 		sys_slist_append(&preset_free_list, &preset->node);
