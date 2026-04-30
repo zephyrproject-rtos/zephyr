@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: MCUmgr SMP transport over SPI
+
+description: |
+  The device operates as an SPI peripheral (slave) and receives raw SMP
+  packets from a controller (master).
+
+compatible: "zephyr,smp-spi"
+
+properties:
+  spi-dev:
+    type: phandle
+    required: true
+    description: |
+      Reference to the SPI peripheral device node to use for SMP
+      communication. The SPI device must support slave (peripheral) mode.
+
+examples:
+  - |
+    smp_spi: smp-spi {
+        compatible = "zephyr,smp-spi";
+        spi-dev = <&spi1>;
+    };
