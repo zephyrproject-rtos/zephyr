@@ -7,7 +7,9 @@ import contextlib
 import os
 import pathlib
 import shlex
+import struct
 import sys
+import sysconfig
 
 import yaml
 from west.commands import Verbosity
@@ -60,6 +62,27 @@ def config_get(option, fallback):
 
 def config_getboolean(option, fallback):
     return config.getboolean('build', option, fallback=fallback)
+
+def python_properties():
+    python_properties = {}
+    if sys.implementation.name == "cpython" and "CONDA_PREFIX" not in os.environ:
+        python_properties["id"] = "Python"
+    else:
+        return None
+
+    python_properties["major"] = str(sys.version_info.major)
+    python_properties["minor"] = str(sys.version_info.minor)
+    python_properties["patch"] = str(sys.version_info.micro)
+    python_properties["arch"] = str(struct.calcsize("P") * 8)
+    python_properties["abiflags"] = getattr(sys, "abiflags", "")
+    python_properties["soabi"] = sysconfig.get_config_var("EXT_SUFFIX").lstrip(".")
+    python_properties["sosabi"] = "" if sys.platform == "win32" else f"abi{sys.version_info.major}"
+    python_properties["stdlib"] = sysconfig.get_path('stdlib')
+    python_properties["stdarch"] = sysconfig.get_path('platstdlib')
+    python_properties["sitelib"] = sysconfig.get_path('purelib')
+    python_properties["sitearch"] = sysconfig.get_path('platlib')
+
+    return python_properties
 
 class AlwaysIfMissing(argparse.Action):
 
@@ -679,8 +702,15 @@ class Build(Forceable):
         #
         # west build -- -DOVERLAY_CONFIG=relative-path.conf
         final_cmake_args = [f'-DWEST_PYTHON={pathlib.Path(sys.executable).as_posix()}',
+                            f'-DWEST_TOPDIR={west_topdir(self.source_dir)}',
+                            f'-DWEST_VERSION={str(__version__)}',
                             f'-B{self.build_dir}',
                             f'-G{config_get("generator", DEFAULT_CMAKE_GENERATOR)}']
+
+        properties = python_properties()
+        if properties:
+            cmake_list = ';'.join(properties.values())
+            final_cmake_args.extend([f'-DWEST_PYTHON_PROPERTIES="{cmake_list}"'])
         if cmake_opts:
             final_cmake_args.extend(cmake_opts)
         run_cmake(final_cmake_args, dry_run=self.args.dry_run, env=cmake_env)
