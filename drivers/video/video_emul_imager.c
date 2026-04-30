@@ -40,7 +40,7 @@ LOG_MODULE_REGISTER(video_emul_imager, CONFIG_VIDEO_LOG_LEVEL);
 #define EMUL_IMAGER_CID_CUSTOM (VIDEO_CID_PRIVATE_BASE + 0x01)
 
 /* Emulated register bank */
-uint8_t emul_imager_fake_regs[10];
+uint8_t emul_imager_fake_regs[20];
 
 enum emul_imager_fmt_id {
 	RGB565_320x240,
