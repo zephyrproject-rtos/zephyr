@@ -38,7 +38,7 @@ BUILD_ASSERT(DT_PROP(DT_INST_BUS(0), hw_flow_control) == 1,
 #define BT_POWER_CBUCK_DISCHARGE_TIME_MS  (300u)
 
 /* Stabilization delay after FW loading */
-#define BT_STABILIZATION_DELAY_MS         (250u)
+#define BT_STABILIZATION_DELAY_MS         (270u)
 
 /* HCI Command packet from Host to Controller */
 #define HCI_COMMAND_PACKET                (0x01)
