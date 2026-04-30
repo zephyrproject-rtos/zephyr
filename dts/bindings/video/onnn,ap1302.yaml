@@ -1,0 +1,106 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ONNN AP1302 Camera ISP.
+
+  This device is an upstream video subdevice (similar to a V4L2 subdevice in
+  Linux). It does not provide a capture queue itself; instead it is controlled
+  by the application and streams video to a downstream MIPI CSI-2 receiver.
+  The connection is described via port/endpoint nodes using
+  remote-endpoint-label.
+
+  Note: This device requires a firmware binary blob provided by ON Semiconductor.
+  The firmware is NOT distributed as part of Zephyr. Users must download it
+  separately from https://github.com/ONSemiconductor/ap1302_binaries and ensure
+  they comply with the "AP1302 Software License Agreement".
+
+compatible: "onnn,ap1302"
+
+include: [i2c-device.yaml, pinctrl-device.yaml]
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
+
+    properties:
+      bus-type:
+        required: true
+
+      data-lanes:
+        required: true
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/gpio/gpio.h>
+
+    reserved-memory {
+        #address-cells = <1>;
+        #size-cells = <1>;
+        ranges;
+
+        ap1302_fw_part: ap1302-fw@87000000 {
+                reg = <0x87000000 0x00040000>;
+                status = "okay";
+        };
+    };
+
+    ap1302: ap1302@3c {
+        compatible = "onnn,ap1302";
+        reg = <0x3c>;
+        reset-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+        isp-en-gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+        standby-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+        power-supplies = <&vddio &vdda>;
+        firmware-partition = <&ap1302_fw_part>;
+
+        port {
+            ap1302_ep_out: endpoint {
+                remote-endpoint-label = "csi2rx_ep_in";
+                bus-type = <4>; /* MIPI CSI-2 D-PHY */
+                data-lanes = <1 2>;
+            };
+        };
+    };
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO connected to reset pin
+
+  isp-en-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO isp enable pin
+
+  standby-gpios:
+    type: phandle-array
+    required: false
+    description: GPIO connected to standby pin
+
+  power-supplies:
+    type: phandles
+    required: false
+    description: Power supply regulators in sequence
+
+  firmware-partition:
+    type: phandle
+    required: true
+    description: |
+      Phandle to a devicetree node that describes where the AP1302 firmware blob
+      is stored, via its `reg` property.
+
+      This can point to a `fixed-partitions` partition node (flash storage) or a
+      `reserved-memory` region (e.g. firmware preloaded in DDR).
+
+
+  clocks:
+    type: phandle-array
+    required: false
+    description: Clock phandle for MCLK
+
+  clock-names:
+    type: string-array
+    required: false
+    description: Clock names
