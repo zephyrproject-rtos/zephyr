@@ -3008,7 +3008,8 @@ int bt_bap_unicast_group_add_streams(struct bt_bap_unicast_group *unicast_group,
 
 fail:
 	/* Restore group by removing the newly added streams */
-	while (num_added--) {
+	while (num_added > 0U) {
+		num_added--;
 		unicast_group_del_stream_pair(unicast_group, &params[num_added]);
 	}
 

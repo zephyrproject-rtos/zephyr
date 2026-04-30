@@ -919,7 +919,8 @@ static void cap_to_bap_unicast_group_pair_param(
 		struct bt_bap_unicast_group_stream_param *bap_stream_param;
 
 		if (pair_param->rx_param != NULL) {
-			bap_stream_param = &bap_params->stream_params[stream_param_idx++];
+			bap_stream_param = &bap_params->stream_params[stream_param_idx];
+			stream_param_idx++;
 
 			bap_stream_param->stream = &pair_param->rx_param->stream->bap_stream;
 			bap_stream_param->qos = pair_param->rx_param->qos_cfg;
@@ -930,7 +931,8 @@ static void cap_to_bap_unicast_group_pair_param(
 		}
 
 		if (pair_param->tx_param != NULL) {
-			bap_stream_param = &bap_params->stream_params[stream_param_idx++];
+			bap_stream_param = &bap_params->stream_params[stream_param_idx];
+			stream_param_idx++;
 
 			bap_stream_param->stream = &pair_param->tx_param->stream->bap_stream;
 			bap_stream_param->qos = pair_param->tx_param->qos_cfg;

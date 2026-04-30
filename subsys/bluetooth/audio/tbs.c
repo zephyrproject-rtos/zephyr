@@ -1671,10 +1671,12 @@ static void hold_other_calls(struct tbs_inst *inst, uint8_t call_index_cnt,
 		call_state = inst->calls[i].state;
 		if (call_state == BT_TBS_CALL_STATE_ACTIVE) {
 			inst->calls[i].state = BT_TBS_CALL_STATE_LOCALLY_HELD;
-			held_calls[held_calls_cnt++] = &inst->calls[i];
+			held_calls[held_calls_cnt] = &inst->calls[i];
+			held_calls_cnt++;
 		} else if (call_state == BT_TBS_CALL_STATE_REMOTELY_HELD) {
 			inst->calls[i].state = BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD;
-			held_calls[held_calls_cnt++] = &inst->calls[i];
+			held_calls[held_calls_cnt] = &inst->calls[i];
+			held_calls_cnt++;
 		}
 	}
 }

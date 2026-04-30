@@ -524,7 +524,8 @@ static bool base_subgroup_meta_cb(const struct bt_bap_base_subgroup *subgroup, v
 		return false;
 	}
 
-	subgroup_param = &mod_src_param.subgroups[mod_src_param.num_subgroups++];
+	subgroup_param = &mod_src_param.subgroups[mod_src_param.num_subgroups];
+	mod_src_param.num_subgroups++;
 	subgroup_param->metadata_len = (uint8_t)ret;
 	memcpy(subgroup_param->metadata, meta, subgroup_param->metadata_len);
 

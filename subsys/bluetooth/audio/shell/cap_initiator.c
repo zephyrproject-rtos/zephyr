@@ -841,14 +841,16 @@ static int cap_ac_create_unicast_group(const struct cap_unicast_ac_param *param,
 
 			if (param->snk_cnt[i] > j) {
 				stream_pair_param->tx_param =
-					&snk_group_stream_params[snk_stream_cnt++];
+					&snk_group_stream_params[snk_stream_cnt];
+				snk_stream_cnt++;
 			} else {
 				stream_pair_param->tx_param = NULL;
 			}
 
 			if (param->src_cnt[i] > j) {
 				stream_pair_param->rx_param =
-					&src_group_stream_params[src_stream_cnt++];
+					&src_group_stream_params[src_stream_cnt];
+				src_stream_cnt++;
 			} else {
 				stream_pair_param->rx_param = NULL;
 			}

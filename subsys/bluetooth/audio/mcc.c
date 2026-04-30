@@ -3583,7 +3583,8 @@ static void decode_group(struct net_buf_simple *buff,
 
 	while ((tmp_buf.len) && (ids->cnt < CONFIG_BT_MCC_GROUP_RECORDS_MAX)) {
 		ids->ids[ids->cnt].type = net_buf_simple_pull_u8(&tmp_buf);
-		ids->ids[ids->cnt++].id = net_buf_simple_pull_le48(&tmp_buf);
+		ids->ids[ids->cnt].id = net_buf_simple_pull_le48(&tmp_buf);
+		ids->cnt++;
 	}
 }
 #endif /* CONFIG_BT_MCC_LOG_LEVEL_DBG */
