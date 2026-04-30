@@ -13,3 +13,10 @@ properties:
     description: |
       This should point to an ADC channel (e.g., <&adc0 0>)
       to read from the PMC internal temperature sensor.
+
+  nxp,power-rails:
+    type: phandle-array
+    specifier-space: power-rail
+    description: |
+      Power-rail specifiers for rails that must be powered up before the controller
+      can be accessed.

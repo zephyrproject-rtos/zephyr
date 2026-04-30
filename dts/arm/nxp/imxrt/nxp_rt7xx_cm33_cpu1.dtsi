@@ -5,6 +5,7 @@
  */
 
 #include "nxp_rt7xx_common.dtsi"
+#include <zephyr/dt-bindings/power/nxp_rt7xx_pmc_power.h>
 
 / {
 	cpus {
@@ -378,6 +379,12 @@
 		num-locks = <64>;
 		status = "disabled";
 	};
+
+	pmc1: pmc@210000 {
+		compatible = "nxp,pmc-power-rail-controller";
+		reg = <0x210000 0x1000>;
+		#power-rail-cells = <1>;
+	};
 };
 
 &xspi2 {
@@ -387,4 +394,6 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clocks = <&clkctl4 MCUX_XSPI2_CLK>;
+	nxp,power-rails = <&pmc1 NXP_RT7XX_PMC_APD_XSPI2>,
+			  <&pmc1 NXP_RT7XX_PMC_PPD_XSPI2>;
 };

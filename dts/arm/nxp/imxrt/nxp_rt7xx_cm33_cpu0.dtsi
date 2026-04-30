@@ -7,6 +7,7 @@
 #include "nxp_rt7xx_common.dtsi"
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 #include <zephyr/dt-bindings/misc/nxp_rtxxx_dsp_ctrl.h>
+#include <zephyr/dt-bindings/power/nxp_rt7xx_pmc_power.h>
 
 / {
 	aliases {
@@ -920,6 +921,8 @@
 		clocks = <&usbclk>;
 		num-bidir-endpoints = <8>;
 		status = "disabled";
+		nxp,power-rails = <&pmc0 NXP_RT7XX_PMC_APD_USB0_SRAM>,
+				  <&pmc0 NXP_RT7XX_PMC_PPD_USB0_SRAM>;
 	};
 
 	usb1: usb@419000 {
@@ -948,6 +951,8 @@
 		max-current-180 = <1020>;
 		max-bus-freq = <DT_FREQ_M(208)>;
 		min-bus-freq = <DT_FREQ_K(400)>;
+		nxp,power-rails = <&pmc0 NXP_RT7XX_PMC_APD_SDHC0_SRAM>,
+				  <&pmc0 NXP_RT7XX_PMC_PPD_SDHC0_SRAM>;
 	};
 
 	usdhc1: memory-controller@413000 {
@@ -1099,6 +1104,8 @@
 		status = "disabled";
 		#address-cells = <1>;
 		#size-cells = <0>;
+		nxp,power-rails = <&pmc0 NXP_RT7XX_PMC_APD_LCDIF>,
+				  <&pmc0 NXP_RT7XX_PMC_PPD_LCDIF>;
 	};
 
 	mipi_dsi: dsi@417000 {
@@ -1124,7 +1131,14 @@
 
 	pmc_tmpsns: pmc-tmpsns {
 		compatible = "nxp,pmc-tmpsns";
+		nxp,power-rails = <&pmc0 NXP_RT7XX_PMC_PD_PMC_TEMPSNS>;
 		status = "disabled";
+	};
+
+	pmc0: pmc@20f000 {
+		compatible = "nxp,pmc-power-rail-controller";
+		reg = <0x20f000 0x1000>;
+		#power-rail-cells = <1>;
 	};
 
 	uuid: uuid@2bc0 {
@@ -1149,6 +1163,8 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clocks = <&clkctl0 MCUX_XSPI0_CLK>;
+	nxp,power-rails = <&pmc0 NXP_RT7XX_PMC_APD_XSPI0>,
+			  <&pmc0 NXP_RT7XX_PMC_PPD_XSPI0>;
 };
 
 &xspi1 {
@@ -1158,6 +1174,8 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clocks = <&clkctl0 MCUX_XSPI1_CLK>;
+	nxp,power-rails = <&pmc0 NXP_RT7XX_PMC_APD_XSPI1>,
+			  <&pmc0 NXP_RT7XX_PMC_PPD_XSPI1>;
 };
 
 &xspi2 {
@@ -1167,4 +1185,6 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clocks = <&clkctl4 MCUX_XSPI2_CLK>;
+	nxp,power-rails = <&pmc0 NXP_RT7XX_PMC_APD_XSPI2>,
+			  <&pmc0 NXP_RT7XX_PMC_PPD_XSPI2>;
 };
