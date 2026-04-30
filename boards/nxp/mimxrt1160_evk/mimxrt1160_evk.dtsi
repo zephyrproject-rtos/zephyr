@@ -72,6 +72,9 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c5>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpio12 5 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpio12 4 GPIO_ACTIVE_HIGH>;
+	recover-bus-on-init;
 
 	fxos8700: fxos8700@1f {
 		compatible = "nxp,fxos8700";

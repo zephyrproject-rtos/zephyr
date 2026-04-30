@@ -141,6 +141,9 @@
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_flexcomm1_i2c>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+	recover-bus-on-init;
 
 	fxls8974: fxls8974@19 {
 		compatible = "nxp,fxls8974";

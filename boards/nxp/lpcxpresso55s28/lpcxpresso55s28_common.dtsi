@@ -117,6 +117,9 @@ arduino_i2c: &flexcomm4 {
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpio1 20 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpio1 21 GPIO_ACTIVE_HIGH>;
+	recover-bus-on-init;
 
 	mma8652fc: mma8652fc@1d {
 		compatible = "nxp,fxos8700", "nxp,mma8652fc";

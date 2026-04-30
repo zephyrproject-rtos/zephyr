@@ -53,6 +53,7 @@ struct mcux_lpi2c_config {
 #ifdef CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
 	struct gpio_dt_spec scl;
 	struct gpio_dt_spec sda;
+	bool recover_bus_on_init;
 #endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
 };
 
@@ -566,6 +567,15 @@ static int mcux_lpi2c_init(const struct device *dev)
 		return error;
 	}
 
+#ifdef CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
+	if (config->recover_bus_on_init) {
+		error = mcux_lpi2c_recover_bus(dev);
+		if (error != 0) {
+			return error;
+		}
+	}
+#endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
+
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;
@@ -605,9 +615,19 @@ static DEVICE_API(i2c, mcux_lpi2c_driver_api) = {
 #if CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
 #define I2C_MCUX_LPI2C_SCL_INIT(n) .scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),
 #define I2C_MCUX_LPI2C_SDA_INIT(n) .sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),
+#define I2C_MCUX_LPI2C_RECOVER_BUS_ON_INIT(n) \
+	.recover_bus_on_init = DT_INST_PROP(n, recover_bus_on_init),
+#define I2C_MCUX_LPI2C_RECOVER_CHECK(n)					\
+	BUILD_ASSERT(!DT_INST_PROP(n, recover_bus_on_init) ||		\
+		     (DT_INST_NODE_HAS_PROP(n, scl_gpios) &&		\
+		      DT_INST_NODE_HAS_PROP(n, sda_gpios)),		\
+		     "I2C node " DT_NODE_FULL_NAME(DT_DRV_INST(n))	\
+		     " has recover-bus-on-init but is missing scl-gpios or sda-gpios");
 #else
 #define I2C_MCUX_LPI2C_SCL_INIT(n)
 #define I2C_MCUX_LPI2C_SDA_INIT(n)
+#define I2C_MCUX_LPI2C_RECOVER_BUS_ON_INIT(n)
+#define I2C_MCUX_LPI2C_RECOVER_CHECK(n)
 #endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
 
 #define I2C_MCUX_LPI2C_CONFIGURE_IRQ(idx, inst)	\
@@ -637,6 +657,7 @@ static DEVICE_API(i2c, mcux_lpi2c_driver_api) = {
 
 #define I2C_MCUX_LPI2C_INIT(n)						\
 	PINCTRL_DT_INST_DEFINE(n);					\
+	I2C_MCUX_LPI2C_RECOVER_CHECK(n)					\
 									\
 	static void mcux_lpi2c_config_func_##n(const struct device *dev)\
 	{								\
@@ -654,6 +675,7 @@ static DEVICE_API(i2c, mcux_lpi2c_driver_api) = {
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		I2C_MCUX_LPI2C_SCL_INIT(n)				\
 		I2C_MCUX_LPI2C_SDA_INIT(n)				\
+		I2C_MCUX_LPI2C_RECOVER_BUS_ON_INIT(n)			\
 		.bus_idle_timeout_ns =					\
 			UTIL_AND(DT_INST_NODE_HAS_PROP(n, bus_idle_timeout),\
 				 DT_INST_PROP(n, bus_idle_timeout)),	\

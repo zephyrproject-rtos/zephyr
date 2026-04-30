@@ -177,6 +177,9 @@ arduino_i2c: &flexcomm4 {
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+	recover-bus-on-init;
 
 	fxos8700: fxos8700@1e {
 		compatible = "nxp,fxos8700";
