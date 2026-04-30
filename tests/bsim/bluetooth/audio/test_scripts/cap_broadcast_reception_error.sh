@@ -4,12 +4,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-SIMULATION_ID="cap_broadcast_reception_error"
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
+SIMULATION_ID="${BOARD_TS}_cap_broadcast_reception_error"
 VERBOSITY_LEVEL=2
 NR_OF_DEVICES=4
 EXECUTE_TIMEOUT=180
-
-source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 

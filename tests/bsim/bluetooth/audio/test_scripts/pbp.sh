@@ -13,7 +13,7 @@ cd ${BSIM_OUT_PATH}/bin
 
 printf "\n\n======== Public Broadcaster test =========\n\n"
 
-SIMULATION_ID="pbp_broadcaster"
+SIMULATION_ID="${BOARD_TS}_pbp_broadcaster"
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=public_broadcast_source \

@@ -2,11 +2,11 @@
 # Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-SIMULATION_ID="cap_broadcast_inval"
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
+SIMULATION_ID="${BOARD_TS}_cap_broadcast_inval"
 VERBOSITY_LEVEL=2
 EXECUTE_TIMEOUT=120
-
-source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 

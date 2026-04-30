@@ -6,7 +6,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-SIMULATION_ID="ias"
+SIMULATION_ID="${BOARD_TS}_ias"
 VERBOSITY_LEVEL=2
 
 cd ${BSIM_OUT_PATH}/bin

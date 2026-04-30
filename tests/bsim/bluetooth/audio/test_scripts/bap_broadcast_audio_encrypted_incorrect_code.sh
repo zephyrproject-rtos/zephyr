@@ -13,7 +13,7 @@ cd ${BSIM_OUT_PATH}/bin
 
 printf "\n\n======== Broadcaster encrypted incorrect code test =========\n\n"
 
-SIMULATION_ID="broadcaster_encrypted_incorrect_code"
+SIMULATION_ID="${BOARD_TS}_broadcaster_encrypted_incorrect_code"
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=broadcast_source_encrypted \
