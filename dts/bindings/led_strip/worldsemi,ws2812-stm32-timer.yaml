@@ -1,0 +1,58 @@
+# Copyright (c) 2026 Peter Johanson
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Worldsemi WS2812 LED strip, STM32 timer/PWM via DMA
+
+  Driver bindings for controlling a WS2812 or compatible LED
+  strip with an STM32 timer in PWM mode with DMA to load compare
+  values for sending the correct data
+
+compatible: "worldsemi,ws2812-stm32-timer"
+
+include: [ws2812.yaml, base.yaml]
+
+properties:
+  pwms:
+    type: phandle-array
+    description: |
+      Required PWM specifier. The period cell for the entry must be supplied
+      with the value to use for the period for each bit to send to the WS2812
+      chain.
+
+      For example
+         pwms = <&pwm1 1 PWM_NSEC(1250) PWM_POLARITY_NORMAL>;
+
+  dmas:
+    required: true
+    description: |
+      Required TX dma specifiers for loading the compare sequence. The flags are required to include
+      at least 'STM32_DMA_PERIPH_TX | STM32_DMA_MEM_16BITS | STM32_DMA_PERIPH_16BITS', but may
+      include additions like setting the DMA priority.
+
+      For example
+        dmas = <&dmamux1 2 35 (STM32_DMA_PERIPH_TX | STM32_DMA_MEM_16BITS |
+                               STM32_DMA_PERIPH_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+
+  dma-names:
+    required: true
+    description: |
+      This should be "tx" to match the dmas property.
+
+      For example
+         dma-names = "tx";
+
+  reset-codes:
+    type: int
+    required: true
+    description: Duration of a reset, as a multiple of the PWM period ns.
+
+  zero-high-ns:
+    type: int
+    required: true
+    description: Length of a 0 code high time in nanoseconds.
+
+  one-high-ns:
+    type: int
+    required: true
+    description: Length of a 1 code high time in nanoseconds.

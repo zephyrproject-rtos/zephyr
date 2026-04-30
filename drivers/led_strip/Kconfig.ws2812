@@ -112,7 +112,6 @@ config DELAY_T0L
 
 endif
 
-
 config WS2812_STRIP_RPI_PICO_PIO
 	bool "WS2812 LED strip Raspberry Pi Pico PIO driver"
 	default y
@@ -121,3 +120,23 @@ config WS2812_STRIP_RPI_PICO_PIO
 	help
 	  Enable driver for WS2812 (and compatible) LED strips using
 	  the Raspberry Pi Pico's PIO.
+
+config WS2812_STRIP_STM32_TIMER
+	bool "WS2812 LED strip STM32 TIMER driver"
+	default y
+	depends on DT_HAS_WORLDSEMI_WS2812_STM32_TIMER_ENABLED
+	select PWM
+	select PWM_WITH_DMA
+	select DMA
+	help
+	  Enable driver for WS2812 (and compatible) LED strip using
+	  the STM32 TIMER with DMA
+
+config WS2812_STRIP_STM32_TIMER_FORCE_NOCACHE
+	bool "Place WS2812 LED strip STM32 TIMER data in NOCACHE section"
+	depends on WS2812_STRIP_STM32_TIMER
+	default y if DCACHE
+	select NOCACHE_MEMORY if CPU_HAS_DCACHE
+	help
+	  Place the DMA data for the PWM peripheral in a nocache section to
+	  ensure compatibility.
