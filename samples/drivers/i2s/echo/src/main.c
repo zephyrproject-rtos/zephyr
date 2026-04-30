@@ -21,8 +21,10 @@
 #define I2S_TX_NODE  DT_NODELABEL(i2s_tx)
 #endif
 
+#define RAM_SIZE (DT_CHOSEN_SRAM_ADDR / 1024)
+
 /* Reduce echo delay when running on low ram devices */
-#if CONFIG_SRAM_SIZE <= 48
+#if SRAM_SIZE <= 48
 #define ECHO_DELAY 30
 #else
 #define ECHO_DELAY 10
