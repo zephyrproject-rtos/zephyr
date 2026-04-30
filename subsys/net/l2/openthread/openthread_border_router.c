@@ -673,6 +673,82 @@ static void openthread_border_router_add_or_rm_route_to_multicast_groups(bool ad
 	}
 }
 
+void openthread_border_router_remove_checksums_for_eth_offloading_ipv6(struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_DEFINE(ipv6_access, struct net_ipv6_hdr);
+	struct ethernet_config config;
+	struct net_ipv6_hdr *ipv6_hdr;
+
+	if ((net_eth_get_hw_capabilities(ail_iface_ptr) & ETHERNET_HW_TX_CHKSUM_OFFLOAD) == 0) {
+		return; /* No checksum offload capabilities*/
+	}
+
+	if (net_eth_get_hw_config(ail_iface_ptr, ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT,
+				  &config) != 0) {
+		return; /* No TX checksum capabilities*/
+	}
+
+	ipv6_hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
+	if (ipv6_hdr == NULL) {
+		return;
+	}
+
+	net_pkt_set_overwrite(pkt, true);
+
+	if (net_pkt_skip(pkt, sizeof(struct net_ipv6_hdr)) != 0) {
+		goto exit;
+	}
+
+	switch (ipv6_hdr->nexthdr) {
+	case NET_IPPROTO_ICMPV6:
+		if ((config.chksum_support & NET_IF_CHECKSUM_IPV6_ICMP) != 0) {
+			NET_PKT_DATA_ACCESS_DEFINE(icmp_access, struct net_icmp_hdr);
+			struct net_icmp_hdr *icmp_hdr =
+				(struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmp_access);
+
+			if (icmp_hdr != NULL) {
+				icmp_hdr->chksum = 0;
+				if (net_pkt_set_data(pkt, &icmp_access) != 0) {
+					goto exit;
+				}
+			}
+		}
+		break;
+	case NET_IPPROTO_UDP:
+		if ((config.chksum_support & NET_IF_CHECKSUM_IPV6_UDP) != 0) {
+			NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
+			struct net_udp_hdr *udp_hdr = (struct net_udp_hdr *)
+				net_pkt_get_data(pkt, &udp_access);
+
+			if (udp_hdr != NULL) {
+				udp_hdr->chksum = 0;
+				if (net_pkt_set_data(pkt, &udp_access) != 0) {
+					goto exit;
+				}
+			}
+		}
+		break;
+	case NET_IPPROTO_TCP:
+		if ((config.chksum_support & NET_IF_CHECKSUM_IPV6_TCP) != 0) {
+			NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
+			struct net_tcp_hdr *tcp_hdr =
+				(struct net_tcp_hdr *)net_pkt_get_data(pkt, &tcp_access);
+
+			if (tcp_hdr != NULL) {
+				tcp_hdr->chksum = 0;
+				if (net_pkt_set_data(pkt, &tcp_access) != 0) {
+					goto exit;
+				}
+			}
+		}
+		break;
+	default:
+		break;
+	}
+exit:
+	net_pkt_set_overwrite(pkt, false);
+}
+
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR)
 void openthread_border_router_set_nat64_translator_enabled(bool enable)
 {
