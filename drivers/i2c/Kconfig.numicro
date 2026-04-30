@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Nuvoton I2C configuration
+#
+# Copyright (c) 2026 Fiona Behrens (me@kloenk.dev)
+
+config I2C_NUMICRO
+	bool "Nuvoton Numicro I2C driver"
+	default y
+	select PINCTRL
+	depends on DT_HAS_NUVOTON_NUMICRO_I2C_ENABLED
+	help
+	  This option enables I2C driver for Nuvoton Numicro family of
+	  processors.
+	  Say y if you wish to enable Numicro I2C.
