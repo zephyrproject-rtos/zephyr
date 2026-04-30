@@ -420,6 +420,10 @@ static int mac_parse_downlink(struct lwan_ctx *ctx, const uint8_t *rx_buf,
 	fcnt16 = sys_get_le16(hdr->fcnt);
 	fcnt_down = mac_reconstruct_fcnt_down(fcnt16, sess->fcnt_down);
 	fopts_len = FIELD_GET(FCTRL_FOPTS_LEN_MASK, hdr->fctrl);
+	if (rx_len < sizeof(*hdr) + fopts_len + LWAN_MIC_SIZE) {
+		LOG_DBG("Invalid FOptsLen: %u for len %zu", fopts_len, rx_len);
+		return -EINVAL;
+	}
 
 	ret = mac_verify_data_mic(sess->fnwk_s_int_cmac, dev_addr,
 				  fcnt_down, rx_buf, rx_len);
