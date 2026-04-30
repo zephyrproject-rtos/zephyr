@@ -529,6 +529,40 @@ ZTEST(flash_sim_api, test_flash_fill)
 	}
 }
 
+#if !defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
+/* Forwarding flash API instance with erase intentionally set to NULL, used by
+ * test_flash_flatten to verify the flash_flatten() fallback to flash_fill()
+ * when the driver's erase callback is unimplemented. The instance must live
+ * in the flash driver API iterable section (declared via DEVICE_API) so that
+ * DEVICE_API_GET passes its class assertion at runtime.
+ */
+static int no_erase_api_read(const struct device *dev, off_t offset, void *data, size_t len)
+{
+	ARG_UNUSED(dev);
+	return flash_read(flash_dev, offset, data, len);
+}
+
+static int no_erase_api_write(const struct device *dev, off_t offset, const void *data,
+			      size_t len)
+{
+	ARG_UNUSED(dev);
+	return flash_write(flash_dev, offset, data, len);
+}
+
+static const struct flash_parameters *no_erase_api_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return flash_get_parameters(flash_dev);
+}
+
+static DEVICE_API(flash, no_erase_api) = {
+	.read = no_erase_api_read,
+	.write = no_erase_api_write,
+	.erase = NULL,
+	.get_parameters = no_erase_api_get_parameters,
+};
+#endif
+
 ZTEST(flash_sim_api, test_flash_flatten)
 {
 	int rc;
@@ -559,12 +593,9 @@ ZTEST(flash_sim_api, test_flash_flatten)
 	 * with erase_value.
 	 */
 	struct device other;
-	struct flash_driver_api api;
 
 	memcpy(&other, flash_dev, sizeof(other));
-	other.api = &api;
-	memcpy(&api, flash_dev->api, sizeof(api));
-	api.erase = NULL;
+	other.api = &no_erase_api;
 
 	/* Now fill the device with anything */
 	rc = flash_fill(flash_dev, 0xaa,
