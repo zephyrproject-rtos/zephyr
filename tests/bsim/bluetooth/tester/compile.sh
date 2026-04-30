@@ -14,8 +14,8 @@ source ${ZEPHYR_BASE}/tests/bsim/compile.source
 # We only want to build the tests/bsim/bluetooth/tester/ application for the nrf52_bsim/native board
 # as we do not gain anything from running this application for the nrf5340bsim_nrf5340_cpuapp and
 # it is not worth the added complexity to run it with anything but nrf52_bsim/native
-west twister -T ${ZEPHYR_BASE}/tests/bsim/bluetooth/tester/
+west twister -T ${ZEPHYR_BASE}/tests/bsim/bluetooth/tester/ --build-only
 
-west twister -p ${BOARD} -T ${ZEPHYR_BASE}/tests/bluetooth/tester/
+west twister -p ${BOARD} -T ${ZEPHYR_BASE}/tests/bluetooth/tester/ --build-only
 
 wait_for_background_jobs
