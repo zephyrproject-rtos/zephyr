@@ -33,7 +33,13 @@
 #define VGLITE_COMMAND_BUF_SIZE (256 * 1024)
 #define VGLITE_CONTIGUOUS_AREA_ALIGN 64
 
-static char __nocache vg_lite_heap_mem[CONFIG_LV_Z_VGLITE_HEAP_SIZE] __aligned(32);
+#if defined(CONFIG_LV_Z_VDB_ZEPHYR_REGION)
+#define LV_BUF_SECTION	Z_GENERIC_SECTION(CONFIG_LV_Z_VDB_ZEPHYR_REGION_NAME)
+#else
+#define LV_BUF_SECTION
+#endif
+
+static char __nocache vg_lite_heap_mem[CONFIG_LV_Z_VGLITE_HEAP_SIZE] LV_BUF_SECTION __aligned(32);
 static struct sys_heap vg_lite_heap;
 static struct k_spinlock vg_lite_heap_lock;
 
@@ -187,11 +193,20 @@ void vg_lite_set_gpu_execute_state(vg_lite_gpu_execute_state_t state)
 	dev_data->vglite_dev->gpu_execute_state = state;
 }
 
+/* Optional user hook invoked from the VG-Lite GPU ISR */
+__weak void z_vg_lite_isr_hook(const struct device *dev, uint32_t flags)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(flags);
+}
+
 static void z_vg_lite_isr(const void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct z_vglite_data *dev_data = dev->data;
 	uint32_t flags = vg_lite_hal_peek(VG_LITE_INTR_STATUS);
+
+	z_vg_lite_isr_hook(dev, flags);
 
 	if (flags != 0U) {
 		dev_data->vglite_dev->int_flags |= flags;
