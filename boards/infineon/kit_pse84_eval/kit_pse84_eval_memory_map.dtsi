@@ -64,8 +64,14 @@
 			reg = <0x240ff000 DT_SIZE_K(4)>;
 		};
 
-		m55_data: memory@26100000 {
-			reg = <0x26100000 DT_SIZE_K(256)>;
+		m55_data: memory@26000000 {
+			reg = <0x26000000 DT_SIZE_K(256)>;
+		};
+
+		gfx_mem: memory@26100000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "GFX_MEMORY";
+			reg = <0x26100000 DT_SIZE_M(4)>;
 		};
 	};
 

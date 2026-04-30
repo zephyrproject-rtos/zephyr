@@ -53,6 +53,15 @@ static const struct arm_mpu_region mpu_regions[] = {
 			DT_REG_SIZE(DT_NODELABEL(m33_code)))),
 #endif
 
+#if DT_NODE_EXISTS(DT_NODELABEL(gfx_mem))
+	MPU_REGION_ENTRY(
+		"GFX_MEMORY",
+		DT_REG_ADDR(DT_NODELABEL(gfx_mem)),
+		REGION_RAM_NOCACHE_ATTR(
+			DT_REG_ADDR(DT_NODELABEL(gfx_mem)),
+			DT_REG_SIZE(DT_NODELABEL(gfx_mem)))),
+#endif
+
 #if DT_NODE_EXISTS(DT_NODELABEL(itcm))
 	MPU_REGION_ENTRY(
 		"ITCM",

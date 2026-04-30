@@ -55,3 +55,5 @@ zephyr_linker_sources_ifdef(CONFIG_CPU_CORTEX_M55 RWDATA rwdata.ld)
 
 zephyr_linker_sources_ifdef(CONFIG_CPU_CORTEX_M55 ITCM_SECTION itcm_mem.ld)
 zephyr_linker_sources_ifdef(CONFIG_CPU_CORTEX_M33 RAMFUNC_SECTION ramfunc_mem.ld)
+
+zephyr_linker_sources(SECTIONS gfx_mem.ld)
