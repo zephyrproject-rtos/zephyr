@@ -96,6 +96,11 @@ typedef void (*i2c_isr_cb_t)(const struct device *port);
 
 #define SDA_HOLD_INVALID UINT32_MAX
 
+/* convert sda hold time in nanoseconds to DW I2C clock ticks at build time */
+#define HOLD_TIME_TO_TICKS(i2c_sda_hold_time_ns)                                                \
+	   ((uint32_t)DIV_ROUND_UP((uint64_t)(CONFIG_I2C_DW_CLOCK_SPEED) * (i2c_sda_hold_time_ns), \
+							   1000000000ULL))
+
 struct i2c_dw_rom_config {
 	DEVICE_MMIO_ROM;
 	i2c_isr_cb_t config_func;
