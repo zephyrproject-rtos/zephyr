@@ -31,3 +31,12 @@ properties:
     description: |
       Supports USB controller can be disabled temporarily when USB cable is unplugged
       and then enabled back when the cable is re-plugged.
+
+  disable-vbus-detect:
+    type: boolean
+    description: |
+      All USB controllers support VBUS detect function, except some targets may
+      integrate USB-C circuitry and need extra USB-C control for the function
+      to get enabled. For these targets, USB-C control is not added by default
+      and so the function won't work. Set the flag so that UDC driver can reflect
+      the real condition for user application to be aware of such limitation.

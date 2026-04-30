@@ -84,4 +84,5 @@ zephyr_udc0: &usbd {
 	pinctrl-0 = <&usbd_default>;
 	pinctrl-names = "default";
 	status = "okay";
+	disable-vbus-detect;
 };

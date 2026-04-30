@@ -170,6 +170,7 @@ struct udc_numaker_config {
 	uint32_t dmabuf_size;
 	bool disallow_iso_inout_same;
 	bool allow_disable_usb_on_unplug;
+	bool disable_vbus_detect;
 	int speed_idx;
 	void (*make_thread)(const struct device *dev);
 	bool is_hsusbd;
@@ -219,6 +220,7 @@ struct udc_numaker_data {
 static inline void numaker_usbd_sw_connect(const struct device *dev)
 {
 	const struct udc_numaker_config *config = dev->config;
+	struct udc_data *data = dev->data;
 
 	if (config->is_hsusbd) {
 		HSUSBD_T *base = config->base;
@@ -229,13 +231,15 @@ static inline void numaker_usbd_sw_connect(const struct device *dev)
 
 		/* Enable relevant interrupts */
 		base->GINTEN = HSUSBD_GINTEN_CEPIEN_Msk | HSUSBD_GINTEN_USBIEN_Msk;
-		base->BUSINTEN = HSUSBD_BUSINTEN_VBUSDETIEN_Msk |
-				 IF_ENABLED(CONFIG_UDC_NUMAKER_DMA,
+		base->BUSINTEN = IF_ENABLED(CONFIG_UDC_NUMAKER_DMA,
 					    (HSUSBD_BUSINTEN_DMADONEIEN_Msk |)) /* DMA */
 				 HSUSBD_BUSINTEN_SUSPENDIEN_Msk |
 				 HSUSBD_BUSINTEN_RESUMEIEN_Msk | HSUSBD_BUSINTEN_RSTIEN_Msk |
 				 COND_CODE_1(CONFIG_UDC_ENABLE_SOF, (HSUSBD_BUSINTEN_SOFIEN_Msk),
 					     (0)); /* CPU load concern */
+		if (data->caps.can_detect_vbus) {
+			base->BUSINTEN |= HSUSBD_BUSINTEN_VBUSDETIEN_Msk;
+		}
 		base->CEPINTEN = HSUSBD_CEPINTEN_STSDONEIEN_Msk | HSUSBD_CEPINTEN_ERRIEN_Msk |
 				 HSUSBD_CEPINTEN_STALLIEN_Msk | HSUSBD_CEPINTEN_TXPKIEN_Msk |
 				 HSUSBD_CEPINTEN_SETUPPKIEN_Msk;
@@ -259,10 +263,13 @@ static inline void numaker_usbd_sw_connect(const struct device *dev)
 		base->INTSTS = base->INTSTS;
 
 		/* Enable relevant interrupts */
-		base->INTEN = USBD_INT_BUS | USBD_INT_USB | USBD_INT_FLDET |
+		base->INTEN = USBD_INT_BUS | USBD_INT_USB |
 			      IF_ENABLED(CONFIG_UDC_ENABLE_SOF,
 					 (USBD_INT_SOF |)) /* CPU load concern */
 			      USBD_INT_WAKEUP;
+		if (data->caps.can_detect_vbus) {
+			base->INTEN |= USBD_INT_FLDET;
+		}
 
 		/* Clear SE0 for connect */
 		base->ATTR |= USBD_ATTR_DPPUEN_Msk;
@@ -2947,7 +2954,7 @@ static int udc_numaker_driver_preinit(const struct device *dev)
 	}
 	data->caps.rwup = true;
 	data->caps.addr_before_status = false;
-	data->caps.can_detect_vbus = true;
+	data->caps.can_detect_vbus = !config->disable_vbus_detect;
 	data->caps.mps0 = UDC_MPS0_64;
 
 	/* Some soc series don't allow ISO IN/OUT to be assigned the same EP number.
@@ -3106,6 +3113,7 @@ static const struct udc_api udc_numaker_api = {
 							   0),                                     \
 		.allow_disable_usb_on_unplug = DT_INST_PROP_OR(inst, allow_disable_usb_on_unplug,  \
 							       0),                                 \
+		.disable_vbus_detect = DT_INST_PROP_OR(inst, disable_vbus_detect, 0),              \
 		.speed_idx = DT_ENUM_IDX_OR(DT_DRV_INST(inst), maximum_speed,                      \
 					    UDC_NUMAKER_SPEED_IDX_DEFAULT),                        \
 		.is_hsusbd = IS_ENABLED(UDC_NUMAKER_DEVICE_HSUSBD),                                \
