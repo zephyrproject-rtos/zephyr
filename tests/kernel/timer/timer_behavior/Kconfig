@@ -40,6 +40,10 @@ config TIMER_TEST_PERIOD_MAX_DRIFT_PERCENT
 	# of elapsed ticks when scheduling a new timeout but before the timer
 	# driver sets up that timeout).
 	default 13 if NRF_RTC_TIMER && TICKLESS_KERNEL
+	# Use 13% on Infineon platforms using the MCWDT timer because it takes
+	# a variable amount of time to reprogram the timer compare for a delay
+	# which may result in slightly higher maximum delay times.
+	default 13 if INFINEON_LP_TIMER_PDL
 	default 10
 	help
 	  A value of 10 means 10%.
