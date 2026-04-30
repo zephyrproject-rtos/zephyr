@@ -15,6 +15,10 @@
 
 #include "memc_mcux_flexspi.h"
 
+#ifdef CONFIG_MEMC_MCUX_FLEXSPI_IPED
+#include <zephyr/cache.h>
+#endif
+
 
 /*
  * NOTE: If CONFIG_FLASH_MCUX_FLEXSPI_XIP is selected, Any external functions
@@ -50,6 +54,10 @@ struct port_lut {
 struct memc_flexspi_config {
 	DEVICE_MMIO_NAMED_ROM(reg_base);
 	DEVICE_MMIO_NAMED_ROM(ahb);
+#ifdef CONFIG_MEMC_MCUX_FLEXSPI_IPED
+	const uint32_t *iped_regions; /* pairs of (ahb_start, size) from DT */
+	size_t iped_region_count;
+#endif
 };
 
 /* flexspi device data should be stored in RAM to avoid read-while-write hazards */
@@ -392,6 +400,71 @@ int memc_flexspi_update_lut(const struct device *dev, flexspi_port_t port, uint3
 	return 0;
 }
 
+#ifdef CONFIG_MEMC_MCUX_FLEXSPI_IPED
+int memc_flexspi_is_iped_region(const struct device *dev,
+		flexspi_port_t port, off_t offset, size_t len)
+{
+	const struct memc_flexspi_config *cfg = DEV_CFG(dev);
+	uintptr_t addr = (uintptr_t)memc_flexspi_get_ahb_address(dev, port, offset);
+	uintptr_t end = addr + len;
+
+	for (size_t i = 0; i < cfg->iped_region_count; i++) {
+		uintptr_t start = cfg->iped_regions[i * 2];
+		uintptr_t region_end = start + (uintptr_t)cfg->iped_regions[i * 2 + 1];
+
+		if (addr >= start && end <= region_end) {
+			/* Fully contained within this IPED region */
+			return 1;
+		}
+		if (addr < region_end && end > start) {
+			/* Partially overlaps this IPED region boundary */
+			return -EINVAL;
+		}
+	}
+	return 0;
+}
+
+int memc_flexspi_read_iped(const struct device *dev,
+		flexspi_port_t port, off_t offset, void *dst, size_t len)
+{
+	struct memc_flexspi_data *data = dev->data;
+	FLEXSPI_Type *base = get_base(dev);
+	const void *src = memc_flexspi_get_ahb_address(dev, port, offset);
+
+	if (!src) {
+		return -EINVAL;
+	}
+
+	/*
+	 * IPED decrypts transparently on the AHB bus path only. Disable AHB
+	 * prefetch/cache and flush the AHB RX buffer to prevent stale
+	 * ciphertext from being returned instead of freshly decrypted data.
+	 * See NXP SDK iped.c and romapi_iap.c examples.
+	 */
+	base->AHBCR &= ~(FLEXSPI_AHBCR_CACHABLEEN_MASK |
+			 FLEXSPI_AHBCR_BUFFERABLEEN_MASK |
+			 FLEXSPI_AHBCR_PREFETCHEN_MASK);
+	base->AHBCR |= FLEXSPI_AHBCR_CLRAHBRXBUF_MASK;
+
+	sys_cache_data_disable();
+	memcpy(dst, src, len);
+	sys_cache_data_enable();
+
+	/* Restore AHB settings to their configured values */
+	if (data->ahb_cacheable) {
+		base->AHBCR |= FLEXSPI_AHBCR_CACHABLEEN_MASK;
+	}
+	if (data->ahb_bufferable) {
+		base->AHBCR |= FLEXSPI_AHBCR_BUFFERABLEEN_MASK;
+	}
+	if (data->ahb_prefetch) {
+		base->AHBCR |= FLEXSPI_AHBCR_PREFETCHEN_MASK;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_MEMC_MCUX_FLEXSPI_IPED */
+
 static int memc_flexspi_init(const struct device *dev)
 {
 	struct memc_flexspi_data *data = dev->data;
@@ -537,14 +610,33 @@ static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_actio
 #define MEMC_FLEXSPI_CFG_XIP(node_id) false
 #endif
 
+#ifdef CONFIG_MEMC_MCUX_FLEXSPI_IPED
+#define MEMC_FLEXSPI_IPED_REGIONS(n)					\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, iped_regions),		\
+		(static const uint32_t iped_regions_##n[] =		\
+			DT_INST_PROP(n, iped_regions);), ())
+#define MEMC_FLEXSPI_IPED_CFG(n)					\
+	.iped_regions = COND_CODE_1(					\
+		DT_INST_NODE_HAS_PROP(n, iped_regions),			\
+		(iped_regions_##n), (NULL)),				\
+	.iped_region_count = COND_CODE_1(				\
+		DT_INST_NODE_HAS_PROP(n, iped_regions),			\
+		(ARRAY_SIZE(iped_regions_##n) / 2U), (0U)),
+#else
+#define MEMC_FLEXSPI_IPED_REGIONS(n)
+#define MEMC_FLEXSPI_IPED_CFG(n)
+#endif /* CONFIG_MEMC_MCUX_FLEXSPI_IPED */
+
 #define MEMC_FLEXSPI(n)							\
 	PINCTRL_DT_INST_DEFINE(n);					\
 	static uint16_t  buf_cfg_##n[] =				\
 		DT_INST_PROP_OR(n, rx_buffer_config, {0});		\
+	MEMC_FLEXSPI_IPED_REGIONS(n)					\
 									\
 	static const struct memc_flexspi_config memc_flexspi_config_##n = {	\
 		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(reg_base, DT_DRV_INST(n)),	\
 		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(ahb, DT_DRV_INST(n)),	\
+		MEMC_FLEXSPI_IPED_CFG(n)				\
 	};								\
 									\
 	static struct memc_flexspi_data					\

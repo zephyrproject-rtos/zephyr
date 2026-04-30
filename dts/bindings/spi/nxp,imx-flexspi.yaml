@@ -105,6 +105,18 @@ properties:
       the FLEXSPI IP. When set, all memory accesses that cross an address
       boundary of the specified size will be divided into smaller sub accesses.
 
+  iped-regions:
+    type: array
+    description: |
+      List of IPED-encrypted regions as pairs of <ahb-start-address size>.
+      Each pair specifies the absolute AHB address and size in bytes of one
+      encrypted region. At runtime, flash reads to these regions will use
+      the AHB bus path so the IPED hardware can transparently decrypt.
+      The regions must match the IPED configuration applied by the secure
+      boot ROM or SEC tool before Zephyr starts. Example for two regions:
+        iped-regions = <0x08000000 0x00100000
+                        0x08200000 0x00080000>;
+
 child-binding:
   description: NXP FlexSPI port
 
