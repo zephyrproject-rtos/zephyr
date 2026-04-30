@@ -9,11 +9,19 @@
 
 / {
 	flash0: flash@10058000 {
+		compatible = "soc-nv-flash";
 		reg = <0x10058000 DT_SIZE_K(416)>;
+		ranges = <0 0x10058000 DT_SIZE_K(416)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 	};
 
 	flash1: flash@60000000 {
+		compatible = "soc-nv-flash";
 		reg = <0x60000000 DT_SIZE_K(512)>;
+		ranges = <0 0x60000000 DT_SIZE_K(512)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 	};
 
 	sram0: memory@200c0000 {
