@@ -141,6 +141,26 @@ config FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
 	  This prevents faults when the data to write would be located on the
 	  flash itself.
 
+config FLASH_MCUX_FLEXSPI_NOR_SUSPEND
+	bool "MCUX FlexSPI NOR erase suspend support"
+	depends on FLASH_MCUX_FLEXSPI_NOR
+	depends on FLASH_MCUX_FLEXSPI_XIP
+	help
+	  Enable erase/program suspend and resume support for FlexSPI
+	  NOR flash. When enabled, long erase operations will periodically
+	  suspend the flash operation and yield the CPU, allowing
+	  interrupts and other threads to run. This significantly reduces
+	  CPU loading during flash operations such as OTA firmware
+	  updates. Requires flash device with suspend/resume support.
+
+config FLASH_MCUX_FLEXSPI_NOR_SUSPEND_POLL_INTERVAL
+	int "Status reads between suspend cycles"
+	depends on FLASH_MCUX_FLEXSPI_NOR_SUSPEND
+	default 100
+	help
+	  Number of status register reads between each suspend/resume
+	  cycle. Controls how long the erase runs before yielding.
+
 # Avoid RWW hazards by defaulting logging to disabled
 choice FLASH_LOG_LEVEL_CHOICE
 	default FLASH_LOG_LEVEL_OFF if FLASH_MCUX_FLEXSPI_XIP

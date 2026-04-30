@@ -61,6 +61,11 @@ enum {
 	WRITE_REG,
 	ERASE_CHIP,
 	READ_JESD216,
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_SUSPEND
+	FLASH_SUSPEND,
+	FLASH_RESUME,
+	READ_STATUS_REG2,
+#endif
 	/* Entries after this should be for scratch commands */
 	FLEXSPI_INSTR_PROG_END,
 	/* Used for temporary commands during initialization */
@@ -89,6 +94,9 @@ struct flash_flexspi_nor_data {
 	flexspi_device_config_t config;
 	flexspi_port_t port;
 	bool legacy_poll;
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_SUSPEND
+	bool flash_suspend;
+#endif
 	uint64_t size;
 	/* Expected jedec-id property from devicetree */
 	uint8_t jedec_id[JESD216_READ_ID_LEN];
@@ -159,6 +167,26 @@ static const uint32_t flash_flexspi_nor_base_lut[][MEMC_FLEXSPI_CMD_PER_SEQ] = {
 		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
 				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01),
 	},
+
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_SUSPEND
+	/* Flash suspend/resume commands.*/
+	[FLASH_SUSPEND] = {
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
+				SPI_NOR_CMD_PE_SUSPEND, kFLEXSPI_Command_STOP,
+				kFLEXSPI_1PAD, 0),
+	},
+	[FLASH_RESUME] = {
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
+				SPI_NOR_CMD_PE_RESUME, kFLEXSPI_Command_STOP,
+				kFLEXSPI_1PAD, 0),
+	},
+	/* Read SR2 for SUS (suspend status) bit. */
+	[READ_STATUS_REG2] = {
+		FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
+				SPI_NOR_CMD_RDSR2, kFLEXSPI_Command_READ_SDR,
+				kFLEXSPI_1PAD, 0x01),
+	},
+#endif
 };
 
 static ALWAYS_INLINE bool area_is_subregion(const struct device *dev, off_t offset, size_t size)
@@ -340,6 +368,127 @@ static int flash_flexspi_nor_wait_bus_busy(struct flash_flexspi_nor_data *data)
 	return 0;
 }
 
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_SUSPEND
+static int flash_flexspi_nor_suspend(struct flash_flexspi_nor_data *data)
+{
+	flexspi_transfer_t transfer = {
+		.deviceAddress = 0,
+		.port = data->port,
+		.cmdType = kFLEXSPI_Command,
+		.SeqNumber = 1,
+		.seqIndex = FLASH_SUSPEND,
+	};
+
+	return memc_flexspi_transfer(&data->controller, &transfer);
+}
+
+static int flash_flexspi_nor_resume(struct flash_flexspi_nor_data *data)
+{
+	flexspi_transfer_t transfer = {
+		.deviceAddress = 0,
+		.port = data->port,
+		.cmdType = kFLEXSPI_Command,
+		.SeqNumber = 1,
+		.seqIndex = FLASH_RESUME,
+	};
+
+	return memc_flexspi_transfer(&data->controller, &transfer);
+}
+
+static int flash_flexspi_nor_read_status2(struct flash_flexspi_nor_data *data,
+					  uint32_t *status)
+{
+	flexspi_transfer_t transfer = {
+		.deviceAddress = 0,
+		.port = data->port,
+		.cmdType = kFLEXSPI_Read,
+		.SeqNumber = 1,
+		.seqIndex = READ_STATUS_REG2,
+		.data = status,
+		.dataSize = 1,
+	};
+
+	return memc_flexspi_transfer(&data->controller, &transfer);
+}
+
+static int flash_flexspi_nor_wait_bus_busy_yield(struct flash_flexspi_nor_data *data,
+						 unsigned int *key)
+{
+	uint32_t status = 0;
+	int ret;
+
+	while (1) {
+		/* Guarantee ~200-500us of uninterrupted erase per cycle;
+		 * Status reads as XIP-safe delay (other delay functions may
+		 * stall on AHB while flash is busy).
+		 */
+		for (int i = 0; i < CONFIG_FLASH_MCUX_FLEXSPI_NOR_SUSPEND_POLL_INTERVAL; i++) {
+			ret = flash_flexspi_nor_read_status(data, &status);
+			if (ret) {
+				return ret;
+			}
+			if (data->legacy_poll) {
+				if ((status & BIT(0)) == 0) {
+					goto done;
+				}
+			} else {
+				if (status & BIT(7)) {
+					goto done;
+				}
+			}
+		}
+
+		/* Operation still in progress — suspend it */
+		ret = flash_flexspi_nor_suspend(data);
+		if (ret) {
+			return ret;
+		}
+
+		/* Wait tSUS before polling, per vendor guidance. Status
+		 * reads as XIP-safe delay (~20-50us ≥ tSUS 20us).
+		 */
+		for (int d = 0; d < 10; d++) {
+			flash_flexspi_nor_read_status(data, &status);
+		}
+
+		/* Poll BUSY until cleared */
+		flash_flexspi_nor_wait_bus_busy(data);
+
+		/* Check SUS to distinguish:
+		 * SUS=1 → erase suspended, safe to yield
+		 * SUS=0 → erase completed naturally, done
+		 */
+		ret = flash_flexspi_nor_read_status2(data, &status);
+		if (ret) {
+			return ret;
+		}
+		if (!(status & BIT(7))) {
+			break; /* SUS=0: operation already finished */
+		}
+
+		/* Flash is now suspended — AHB reads are safe */
+		memc_flexspi_reset(&data->controller);
+
+		/* Release irq_lock so XIP and interrupts can work. */
+		irq_unlock(*key);
+		k_yield();
+		*key = irq_lock();
+
+		/* Re-sync with FlexSPI controller */
+		memc_flexspi_wait_bus_idle(&data->controller);
+
+		/* Resume the suspended operation */
+		ret = flash_flexspi_nor_resume(data);
+		if (ret) {
+			return ret;
+		}
+	}
+
+done:
+	return 0;
+}
+#endif /* CONFIG_FLASH_MCUX_FLEXSPI_NOR_SUSPEND */
+
 static int flash_flexspi_nor_read(const struct device *dev, off_t offset, void *buffer, size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
@@ -489,6 +638,7 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 		size_t size)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
+	int ret = 0;
 
 	if (!area_is_subregion(dev, offset, size)) {
 		return -EINVAL;
@@ -535,37 +685,41 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 		 */
 		size_t remaining_size = size;
 		off_t current_offset = offset;
-		/* Step 1: Handle unaligned start - erase sectors until block aligned */
-		while (remaining_size > 0 && (current_offset % SPI_NOR_BLOCK_SIZE) != 0) {
-			flash_flexspi_nor_write_enable(data);
-			flash_flexspi_nor_erase_sector(data, current_offset);
-			flash_flexspi_nor_wait_bus_busy(data);
-			memc_flexspi_reset(&data->controller);
-			current_offset += SPI_NOR_SECTOR_SIZE;
-			remaining_size -= SPI_NOR_SECTOR_SIZE;
-		}
 
-		/* Step 2: Erase whole blocks */
-		while (remaining_size >= SPI_NOR_BLOCK_SIZE) {
-			flash_flexspi_nor_write_enable(data);
-			flash_flexspi_nor_erase_block(data, current_offset);
-			flash_flexspi_nor_wait_bus_busy(data);
-			memc_flexspi_reset(&data->controller);
-			current_offset += SPI_NOR_BLOCK_SIZE;
-			remaining_size -= SPI_NOR_BLOCK_SIZE;
-		}
-
-		/* Step 3: Erase remaining sectors */
 		while (remaining_size > 0) {
+			bool use_block = (remaining_size >= SPI_NOR_BLOCK_SIZE) &&
+					 ((current_offset % SPI_NOR_BLOCK_SIZE) == 0);
+			size_t erase_size = use_block ? SPI_NOR_BLOCK_SIZE
+						      : SPI_NOR_SECTOR_SIZE;
+
 			flash_flexspi_nor_write_enable(data);
-			flash_flexspi_nor_erase_sector(data, current_offset);
+			if (use_block) {
+				flash_flexspi_nor_erase_block(data, current_offset);
+			} else {
+				flash_flexspi_nor_erase_sector(data, current_offset);
+			}
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_SUSPEND
+			if (data->flash_suspend &&
+			    memc_flexspi_is_running_xip(&data->controller)) {
+				ret = flash_flexspi_nor_wait_bus_busy_yield(data, &key);
+				if (ret) {
+					goto _erase_exit;
+				}
+			} else {
+				flash_flexspi_nor_wait_bus_busy(data);
+			}
+#else
 			flash_flexspi_nor_wait_bus_busy(data);
+#endif
 			memc_flexspi_reset(&data->controller);
-			current_offset += SPI_NOR_SECTOR_SIZE;
-			remaining_size -= SPI_NOR_SECTOR_SIZE;
+			current_offset += erase_size;
+			remaining_size -= erase_size;
 		}
 	}
 
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_SUSPEND
+_erase_exit:
+#endif
 	if (memc_flexspi_is_running_xip(&data->controller)) {
 		/* ==== EXIT CRITICAL SECTION ==== */
 		irq_unlock(key);
@@ -575,7 +729,7 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 	DCACHE_InvalidateByRange((uintptr_t)dst, size);
 #endif
 
-	return 0;
+	return ret;
 }
 
 static const struct flash_parameters *flash_flexspi_nor_get_parameters(
@@ -1392,6 +1546,9 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 		flexspi_lut[READ_STATUS_REG][0] = FLEXSPI_LUT_SEQ(
 				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
 				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_SUSPEND
+		data->flash_suspend = true;
+#endif
 		/* Device uses bit 1 of status reg 2 for QE */
 		return flash_flexspi_nor_quad_enable(data, flexspi_lut,
 						     JESD216_DW15_QER_VAL_S2B1v5);
