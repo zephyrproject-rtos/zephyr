@@ -12,6 +12,7 @@
 
 /* Commands/registers. */
 #define ILI9341_GAMSET 0x26
+#define ILI9341_MADCTL 0x36
 #define ILI9341_IFMODE 0xB0
 #define ILI9341_FRMCTR1 0xB1
 #define ILI9341_DISCTRL 0xB6
@@ -33,6 +34,7 @@
 
 /* Commands/registers length. */
 #define ILI9341_GAMSET_LEN 1U
+#define ILI9341_MADCTL_LEN 1U
 #define ILI9341_IFMODE_LEN 1U
 #define ILI9341_FRMCTR1_LEN 2U
 #define ILI9341_DISCTRL_LEN 4U
@@ -60,6 +62,7 @@
 /** ILI9341 registers to be initialized. */
 struct ili9341_regs {
 	uint8_t gamset[ILI9341_GAMSET_LEN];
+	uint8_t madctl[ILI9341_MADCTL_LEN];
 	uint8_t ifmode[ILI9341_IFMODE_LEN];
 	uint8_t frmctr1[ILI9341_FRMCTR1_LEN];
 	uint8_t disctrl[ILI9341_DISCTRL_LEN];
@@ -84,6 +87,8 @@ struct ili9341_regs {
 #define ILI9341_REGS_INIT(n)                                                                       \
 	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), gamset) == ILI9341_GAMSET_LEN,        \
 		     "ili9341: Error length gamma set (GAMSET) register");                         \
+	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), madctl) == ILI9341_MADCTL_LEN,        \
+		     "ili9341: Error length memory access control (MADCTL) register");                         \
 	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), ifmode) == ILI9341_IFMODE_LEN,        \
 		     "ili9341: Error length frame rate control (IFMODE) register");                \
 	BUILD_ASSERT(DT_PROP_LEN(DT_INST(n, ilitek_ili9341), frmctr1) == ILI9341_FRMCTR1_LEN,      \
@@ -123,6 +128,7 @@ struct ili9341_regs {
 		     "ili9341: Error length entry Mode Set (ETMOD) register");                     \
 	static const struct ili9341_regs ili9341_regs_##n = {                                      \
 		.gamset = DT_PROP(DT_INST(n, ilitek_ili9341), gamset),                             \
+		.madctl = DT_PROP(DT_INST(n, ilitek_ili9341), madctl),                             \
 		.ifmode = DT_PROP(DT_INST(n, ilitek_ili9341), ifmode),                             \
 		.frmctr1 = DT_PROP(DT_INST(n, ilitek_ili9341), frmctr1),                           \
 		.disctrl = DT_PROP(DT_INST(n, ilitek_ili9341), disctrl),                           \

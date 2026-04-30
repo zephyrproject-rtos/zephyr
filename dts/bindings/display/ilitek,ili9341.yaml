@@ -81,6 +81,12 @@ properties:
     description:
       Gamma set (GAMSET) register value.
 
+  madctl:
+    type: uint8-array
+    default: [0x48]
+    description:
+      memory access control (MADCTL) register value.
+
   frmctr1:
     type: uint8-array
     default: [0x00, 0x1b]
