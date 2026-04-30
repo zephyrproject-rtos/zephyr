@@ -1,0 +1,50 @@
+/* Copyright (c) 2026 Alexios Lyrakis */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include <qemu/virt-riscv64.dtsi>
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &ram0;
+	};
+};
+
+&{/cpus/cpu@0} {
+	riscv,privilege-modes = "m", "s", "u";
+};
+
+&{/cpus/cpu@1} {
+	riscv,privilege-modes = "m", "s", "u";
+};
+
+&{/cpus/cpu@2} {
+	riscv,privilege-modes = "m", "s", "u";
+};
+
+&{/cpus/cpu@3} {
+	riscv,privilege-modes = "m", "s", "u";
+};
+
+&{/cpus/cpu@4} {
+	riscv,privilege-modes = "m", "s", "u";
+};
+
+&{/cpus/cpu@5} {
+	riscv,privilege-modes = "m", "s", "u";
+};
+
+&{/cpus/cpu@6} {
+	riscv,privilege-modes = "m", "s", "u";
+};
+
+&{/cpus/cpu@7} {
+	riscv,privilege-modes = "m", "s", "u";
+};
+
+&uart0 {
+	status = "okay";
+};

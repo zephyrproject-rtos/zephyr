@@ -40,7 +40,7 @@ uintptr_t z_riscv_get_sp_before_exc(const struct arch_esf *esf)
 	uintptr_t sp = (uintptr_t)esf + sizeof(struct arch_esf);
 
 #ifdef CONFIG_USERSPACE
-	if ((esf->mstatus & MSTATUS_MPP) == PRV_U) {
+	if ((esf->mstatus & RV_STATUS_PP) == RV_STATUS_PP_U) {
 		/*
 		 * Exception happened in user space:
 		 * consider the saved user stack instead.
@@ -83,7 +83,11 @@ void z_riscv_fatal_error(unsigned int reason,
 	__maybe_unused _callee_saved_t *csf = NULL;
 	unsigned long mcause;
 
+#ifdef CONFIG_RISCV_S_MODE
+	__asm__ volatile("csrr %0, scause" : "=r" (mcause));
+#else
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
+#endif
 
 	mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
 	EXCEPTION_DUMP("");
@@ -92,7 +96,11 @@ void z_riscv_fatal_error(unsigned int reason,
 #ifndef CONFIG_SOC_OPENISA_RV32M1
 	unsigned long mtval;
 
+#ifdef CONFIG_RISCV_S_MODE
+	__asm__ volatile("csrr %0, stval" : "=r" (mtval));
+#else
 	__asm__ volatile("csrr %0, mtval" : "=r" (mtval));
+#endif
 	EXCEPTION_DUMP("  mtval: %lx", mtval);
 #endif /* CONFIG_SOC_OPENISA_RV32M1 */
 
@@ -192,7 +200,11 @@ static bool bad_stack_pointer(struct arch_esf *esf)
 #endif /* CONFIG_CUSTOM_STACK_GUARD */
 
 #ifdef CONFIG_USERSPACE
-	if ((esf->mstatus & MSTATUS_MPP) == 0 &&
+	/*
+	 * Check whether the user-mode stack pointer is within bounds.
+	 * Only do this when the exception was actually taken from U-mode.
+	 */
+	if ((esf->mstatus & RV_STATUS_PP) == RV_STATUS_PP_U &&
 	    (esf->sp < _current->stack_info.start ||
 	     esf->sp > _current->stack_info.start +
 		       _current->stack_info.size -

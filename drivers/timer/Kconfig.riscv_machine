@@ -6,6 +6,7 @@
 config RISCV_MACHINE_TIMER
 	bool "RISCV Machine Timer"
 	default y
+	depends on RISCV_M_MODE
 	depends on DT_HAS_RISCV_MACHINE_TIMER_ENABLED || \
 		   DT_HAS_NUCLEI_SYSTIMER_ENABLED
 	select TICKLESS_CAPABLE
