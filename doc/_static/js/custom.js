@@ -8,16 +8,16 @@
 (() => {
   let theme;
   try {
-    theme = localStorage.getItem('dark-mode-toggle');
-  } catch (_) { }
-  if (theme !== 'light' && theme !== 'dark') {
-    theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    theme = localStorage.getItem("dark-mode-toggle");
+  } catch (_) {}
+  if (theme !== "light" && theme !== "dark") {
+    theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
-  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.setAttribute("data-theme", theme);
 })();
 
-document.addEventListener('colorschemechange', (e) => {
-  document.documentElement.setAttribute('data-theme', e.detail.colorScheme);
+document.addEventListener("colorschemechange", (e) => {
+  document.documentElement.setAttribute("data-theme", e.detail.colorScheme);
 });
 
 // Handle page scroll and adjust sidebar accordingly.
@@ -27,117 +27,215 @@ document.addEventListener('colorschemechange', (e) => {
 // We want the logo to gradually disappear as the main content is scrolled, giving
 // more room to the navigation on the left. This means adjusting the height
 // available to the navigation on the fly.
-const registerOnScrollEvent = (function(){
-        // Configuration.
+const registerOnScrollEvent = (function () {
+  // Configuration.
 
-        // The number of pixels the user must scroll by before the logo is completely hidden.
-        const scrollTopPixels = 137;
-        // The target margin to be applied to the navigation bar when the logo is hidden.
-        const menuTopMargin = 54;
-        // The max-height offset when the logo is completely visible.
-        const menuHeightOffset_default = 210;
-        // The max-height offset when the logo is completely hidden.
-        const menuHeightOffset_fixed = 63;
-        // The distance between the two max-height offset values above; used for intermediate values.
-        const menuHeightOffset_diff = (menuHeightOffset_default - menuHeightOffset_fixed);
+  // The number of pixels the user must scroll by before the logo is completely hidden.
+  const scrollTopPixels = 137;
+  // The target margin to be applied to the navigation bar when the logo is hidden.
+  const menuTopMargin = 54;
+  // The max-height offset when the logo is completely visible.
+  const menuHeightOffset_default = 210;
+  // The max-height offset when the logo is completely hidden.
+  const menuHeightOffset_fixed = 63;
+  // The distance between the two max-height offset values above; used for intermediate values.
+  const menuHeightOffset_diff = menuHeightOffset_default - menuHeightOffset_fixed;
 
-        // Media query handler.
-        return function(mediaQuery) {
-          // We only apply this logic to the "desktop" resolution (defined by a media query at the bottom).
-          // This handler is executed when the result of the query evaluation changes, which means that
-          // the page has moved between "desktop" and "mobile" states.
+  // Media query handler.
+  return function (mediaQuery) {
+    // We only apply this logic to the "desktop" resolution (defined by a media query at the bottom).
+    // This handler is executed when the result of the query evaluation changes, which means that
+    // the page has moved between "desktop" and "mobile" states.
 
-          // When entering the "desktop" state, we register scroll events and adjust elements on the page.
-          // When entering the "mobile" state, we clean up any registered events and restore elements on the page
-          // to their initial state.
+    // When entering the "desktop" state, we register scroll events and adjust elements on the page.
+    // When entering the "mobile" state, we clean up any registered events and restore elements on the page
+    // to their initial state.
 
-          const $window = $(window);
-          const $sidebar = $('.wy-side-scroll');
-          const $search = $sidebar.children('.wy-side-nav-search');
-          const $menu = $sidebar.children('.wy-menu-vertical');
+    const $window = $(window);
+    const $sidebar = $(".wy-side-scroll");
+    const $search = $sidebar.children(".wy-side-nav-search");
+    const $menu = $sidebar.children(".wy-menu-vertical");
 
-          if (mediaQuery.matches) {
-            // Entering the "desktop" state.
+    if (mediaQuery.matches) {
+      // Entering the "desktop" state.
 
-            // The main scroll event handler.
-            // Executed as the page is scrolled and once immediately as the page enters this state.
-            const handleMainScroll = (currentScroll) => {
-              if (currentScroll >= scrollTopPixels) {
-                // After the page is scrolled below the threshold, we fix everything in place.
-                $search.css('margin-top', `-${scrollTopPixels}px`);
-                $menu.css('margin-top', `${menuTopMargin}px`);
-                $menu.css('max-height', `calc(100% - ${menuHeightOffset_fixed}px)`);
-              }
-              else {
-                // Between the top of the page and the threshold we calculate intermediate values
-                // to guarantee a smooth transition.
-                $search.css('margin-top', `-${currentScroll}px`);
-                $menu.css('margin-top', `${menuTopMargin + (scrollTopPixels - currentScroll)}px`);
+      // The main scroll event handler.
+      // Executed as the page is scrolled and once immediately as the page enters this state.
+      const handleMainScroll = (currentScroll) => {
+        if (currentScroll >= scrollTopPixels) {
+          // After the page is scrolled below the threshold, we fix everything in place.
+          $search.css("margin-top", `-${scrollTopPixels}px`);
+          $menu.css("margin-top", `${menuTopMargin}px`);
+          $menu.css("max-height", `calc(100% - ${menuHeightOffset_fixed}px)`);
+        } else {
+          // Between the top of the page and the threshold we calculate intermediate values
+          // to guarantee a smooth transition.
+          $search.css("margin-top", `-${currentScroll}px`);
+          $menu.css("margin-top", `${menuTopMargin + (scrollTopPixels - currentScroll)}px`);
 
-                if (currentScroll > 0) {
-                  const scrolledPercent = (scrollTopPixels - currentScroll) / scrollTopPixels;
-                  const offsetValue = menuHeightOffset_fixed + menuHeightOffset_diff * scrolledPercent;
-                  $menu.css('max-height', `calc(100% - ${offsetValue}px)`);
-                } else {
-                  $menu.css('max-height', `calc(100% - ${menuHeightOffset_default}px)`);
-                }
-              }
-            };
-
-            // The sidebar scroll event handler.
-            // Executed as the sidebar is scrolled as well as after the main scroll. This is needed
-            // because the main scroll can affect the scrollable area of the sidebar.
-            const handleSidebarScroll = () => {
-              const menuElement = $menu.get(0);
-              const menuScrollTop = $menu.scrollTop();
-              const menuScrollBottom = menuElement.scrollHeight - (menuScrollTop + menuElement.offsetHeight);
-
-              // As the navigation is scrolled we add a shadow to the top bar hanging over it.
-              if (menuScrollTop > 0) {
-                $search.addClass('fixed-and-scrolled');
-              } else {
-                $search.removeClass('fixed-and-scrolled');
-              }
-            };
-
-            $search.addClass('fixed');
-
-            $window.scroll(function() {
-              handleMainScroll(window.scrollY);
-              handleSidebarScroll();
-            });
-
-            $menu.scroll(function() {
-              handleSidebarScroll();
-            });
-
-            handleMainScroll(window.scrollY);
-            handleSidebarScroll();
+          if (currentScroll > 0) {
+            const scrolledPercent = (scrollTopPixels - currentScroll) / scrollTopPixels;
+            const offsetValue = menuHeightOffset_fixed + menuHeightOffset_diff * scrolledPercent;
+            $menu.css("max-height", `calc(100% - ${offsetValue}px)`);
           } else {
-            // Entering the "mobile" state.
-
-            $window.unbind('scroll');
-            $menu.unbind('scroll');
-
-            $search.removeClass('fixed');
-
-            $search.css('margin-top', `0px`);
-            $menu.css('margin-top', `0px`);
-            $menu.css('max-height', 'initial');
+            $menu.css("max-height", `calc(100% - ${menuHeightOffset_default}px)`);
           }
-        };
-      })();
-
-      $(document).ready(() => {
-        // Initialize handlers for page scrolling and our custom sidebar.
-        const mediaQuery = window.matchMedia('only screen and (min-width: 769px)');
-
-        registerOnScrollEvent(mediaQuery);
-        mediaQuery.addListener(registerOnScrollEvent);
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const mode = urlParams.get('mode');
-        if (mode) {
-          document.querySelector('dark-mode-toggle').setAttribute('mode', mode);
         }
+      };
+
+      // The sidebar scroll event handler.
+      // Executed as the sidebar is scrolled as well as after the main scroll. This is needed
+      // because the main scroll can affect the scrollable area of the sidebar.
+      const handleSidebarScroll = () => {
+        const menuElement = $menu.get(0);
+        const menuScrollTop = $menu.scrollTop();
+        const menuScrollBottom =
+          menuElement.scrollHeight - (menuScrollTop + menuElement.offsetHeight);
+
+        // As the navigation is scrolled we add a shadow to the top bar hanging over it.
+        if (menuScrollTop > 0) {
+          $search.addClass("fixed-and-scrolled");
+        } else {
+          $search.removeClass("fixed-and-scrolled");
+        }
+      };
+
+      $search.addClass("fixed");
+
+      $window.scroll(function () {
+        handleMainScroll(window.scrollY);
+        handleSidebarScroll();
       });
+
+      $menu.scroll(function () {
+        handleSidebarScroll();
+      });
+
+      handleMainScroll(window.scrollY);
+      handleSidebarScroll();
+    } else {
+      // Entering the "mobile" state.
+
+      $window.unbind("scroll");
+      $menu.unbind("scroll");
+
+      $search.removeClass("fixed");
+
+      $search.css("margin-top", `0px`);
+      $menu.css("margin-top", `0px`);
+      $menu.css("max-height", "initial");
+    }
+  };
+})();
+
+/**
+ * Expand sidebar navigation by fetching child page navigation.
+ * Pages opt-in by adding: ".. meta:: :expand-sidebar: true" to their preamble.
+ */
+const expandSidebarNavigation = async () => {
+  const FETCH_CONCURRENCY = 10;
+
+  if (!document.querySelector('meta[name="expand-sidebar"][content="true"]')) return;
+  const navItem = document.querySelector(".wy-menu-vertical li.current.toctree-l1");
+  if (!navItem) return;
+
+  const rewriteNavLinks = (ul, pageHref) => {
+    const pageUrl = new URL(pageHref, location.href);
+    ul.querySelectorAll("a[href]").forEach((a) => {
+      try {
+        a.href = new URL(a.getAttribute("href"), pageUrl).href;
+      } catch { }
+    });
+  };
+
+  const fetchNavSubtree = async (href) => {
+    const url = new URL(href, location.href).href;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const doc = new DOMParser().parseFromString(await res.text(), "text/html");
+      const ul = doc.querySelector(".wy-menu-vertical li.current.toctree-l2 > ul");
+      if (!(ul instanceof HTMLUListElement)) return null;
+      const clone = ul.cloneNode(true);
+      rewriteNavLinks(clone, href);
+      return clone;
+    } catch (e) {
+      console.debug("Could not fetch navigation for:", url, e);
+      return null;
+    }
+  };
+
+  const attachExpandControl = (link, li) => {
+    if (link.querySelector(".toctree-expand")) return;
+    const btn = Object.assign(document.createElement("button"), {
+      className: "toctree-expand",
+      title: "Open/close menu",
+    });
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const expanded = li.classList.toggle("current");
+      link.classList.toggle("current", expanded);
+      [li, link].forEach((el) => el.setAttribute("aria-expanded", String(expanded)));
+    });
+    link.prepend(btn);
+  };
+
+  const runPool = async (items, concurrency, fn) => {
+    const it = items[Symbol.iterator]();
+    const worker = async () => {
+      for (const x of it) await fn(x);
+    };
+    await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  };
+
+  const targets = [
+    ...navItem.querySelectorAll(":scope > ul > li.toctree-l2 > a.reference.internal"),
+  ]
+    .map((link) => {
+      const li = link.parentElement;
+      const href = link.getAttribute("href");
+      if (!(li instanceof HTMLLIElement) || li.querySelector("ul") || !href || href.startsWith("#"))
+        return null;
+      try {
+        return { li, link, href, url: new URL(href, location.href).href };
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+
+  // Dedup by URL; targets sharing a URL share a single fetch promise.
+  const fetches = new Map();
+  for (const t of targets) {
+    if (!fetches.has(t.url)) fetches.set(t.url, { href: t.href, template: null });
+  }
+
+  await runPool([...fetches.values()], FETCH_CONCURRENCY, async (entry) => {
+    entry.template = await fetchNavSubtree(entry.href);
+  });
+
+  for (const { li, link, url } of targets) {
+    const tpl = fetches.get(url)?.template;
+    if (!tpl) continue;
+    attachExpandControl(link, li);
+    li.appendChild(tpl.cloneNode(true));
+    [li, link].forEach((el) => el.setAttribute("aria-expanded", "false"));
+  }
+};
+
+$(document).ready(() => {
+  // Initialize handlers for page scrolling and our custom sidebar.
+  const mediaQuery = window.matchMedia("only screen and (min-width: 769px)");
+
+  registerOnScrollEvent(mediaQuery);
+  mediaQuery.addListener(registerOnScrollEvent);
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const mode = urlParams.get("mode");
+  if (mode) {
+    document.querySelector("dark-mode-toggle").setAttribute("mode", mode);
+  }
+  // Expand sidebar navigation for index pages
+  expandSidebarNavigation();
+});
