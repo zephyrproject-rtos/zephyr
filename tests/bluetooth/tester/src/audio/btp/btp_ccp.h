@@ -161,6 +161,7 @@ struct btp_ccp_join_calls_cmd {
 /* CCP events */
 #define BTP_CCP_EV_DISCOVERED		0x80
 struct btp_ccp_discovered_ev {
+	bt_addr_le_t address;
 	int     status;
 	uint8_t tbs_count;
 	bool	gtbs_found;
@@ -176,6 +177,7 @@ struct btp_ccp_call_states_ev {
 
 #define BTP_CCP_EV_CHRC_HANDLES		0x82
 struct btp_ccp_chrc_handles_ev {
+	bt_addr_le_t address;
 	uint16_t provider_name;
 	uint16_t bearer_uci;
 	uint16_t bearer_technology;
@@ -192,7 +194,7 @@ struct btp_ccp_chrc_handles_ev {
 	uint16_t termination_reason;
 	uint16_t incoming_call;
 	uint16_t friendly_name;
-};
+} __packed;
 
 #define BTP_CCP_EV_CHRC_VAL		0x83
 struct btp_ccp_chrc_val_ev {
