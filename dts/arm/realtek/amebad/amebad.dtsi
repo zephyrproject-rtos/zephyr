@@ -8,6 +8,7 @@
 #include <freq.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/amebad_clock.h>
+#include <zephyr/dt-bindings/dma/ameba_dma.h>
 
 / {
 	cpus {
@@ -51,6 +52,19 @@
 		sram0: memory@10003020 {
 			compatible = "mmio-sram";
 			reg = <0x10003020 0x00074000>;
+		};
+
+		dma: dma@4002a000 {
+			compatible = "realtek,ameba-gdma";
+			reg = <0x4002a000 0x3c0>;
+			clocks = <&rcc AMEBA_GDMA0_CLK>;
+			interrupts = <41 0>, <42 0>, <43 0>, <44 0>, <45 0>, <46 0>;
+			interrupt-names = "CH0", "CH1", "CH2", "CH3", "CH4", "CH5";
+			#dma-cells = <3>;
+			dma-channels = <6>;
+			dma-buf-addr-alignment = <32>;
+			dma-buf-size-alignment = <32>;
+			status = "disabled";
 		};
 
 		pinctrl: pinctrl@48000400 {
