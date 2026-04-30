@@ -43,6 +43,15 @@
 		};
 	};
 
+	main_mmr_cfg0: syscon@43000000 {
+		compatible = "ti,control-module", "syscon";
+		reg = <0x43000000 DT_SIZE_K(32)>;
+		ti,unlock-offsets = <0x9008>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		#clksel-cells = <2>;
+	};
+
 	main_timer0: timer@2400000 {
 		compatible = "ti,am654-timer";
 		reg = <0x2400000 DT_SIZE_K(1)>;
