@@ -631,13 +631,22 @@ static void isr_rx(void *param)
 		lll_prof_latency_capture();
 	}
 
+	/* Read radio status and events */
+	trx_done = radio_is_done();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR) && !trx_done) {
+		/* ISR latency is measured from the on-air packet END
+		 * timestamp, no END captured when the ISR is due to Rx timeout
+		 * or explicit radio disable, hence do not measure latency.
+		 */
+		lll_prof_latency_invalidate();
+	}
+
 	/* initialize LLL context reference */
 	lll = param;
 
 	const bool is_sequential_packing = (lll->bis_spacing >= (lll->sub_interval * lll->nse));
 
-	/* Read radio status and events */
-	trx_done = radio_is_done();
 	if (!trx_done) {
 		/* Clear radio rx status and events */
 		lll_isr_rx_status_reset();

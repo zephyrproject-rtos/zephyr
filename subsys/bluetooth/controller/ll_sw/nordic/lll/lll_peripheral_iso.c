@@ -321,6 +321,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_tmr_hcto_configure(hcto);
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		/* capture end of Rx-ed PDU, used for ISR latency profiling */
+		radio_tmr_end_capture();
+	}
+
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
 
@@ -503,6 +508,15 @@ static void isr_rx(void *param)
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR) && !trx_done) {
+		/* ISR latency is measured from the on-air packet END
+		 * timestamp, no END captured when the ISR is due to Rx timeout
+		 * or explicit radio disable, hence do not measure latency.
+		 */
+		lll_prof_latency_invalidate();
+	}
+
 	if (trx_done) {
 		crc_ok = radio_crc_is_valid();
 	} else {
@@ -569,6 +583,13 @@ static void isr_rx(void *param)
 	} else {
 		radio_switch_complete_and_disable();
 	}
+
+#if defined(CONFIG_BT_CTLR_PROFILE_ISR) || defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
+	/* Capture end of Tx-ed PDU, Rx status reset above has disabled the
+	 * end capture, used to measure the ISR latency in isr_tx().
+	 */
+	radio_tmr_end_capture();
+#endif /* CONFIG_BT_CTLR_PROFILE_ISR || HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 	/* FIXME: Do not call this for every event/subevent */
 	ull_conn_iso_lll_cis_established(param);
@@ -1280,6 +1301,11 @@ static void isr_prepare_subevent_common(void *param)
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	radio_tmr_hcto_configure_abs(hcto);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		/* capture end of Rx-ed PDU, used for ISR latency profiling */
+		radio_tmr_end_capture();
+	}
 
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
