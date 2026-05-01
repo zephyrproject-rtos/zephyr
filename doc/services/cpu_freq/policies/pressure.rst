@@ -23,6 +23,12 @@ where
 This produces a normalized system pressure between 0 and 100 which is then used to select an
 appropriate P-state as defined by the SoC or overlay file.
 
+When :kconfig:option:`CONFIG_CPU_FREQ_POLICY_PRESSURE_RUNTIME_HISTORY` is enabled, the policy
+blends this instantaneous runnable-thread pressure with the non-idle CPU runtime measured over the
+previous CPU frequency evaluation window. This keeps short-lived queue bursts from being treated as
+sustained CPU pressure when the recent execution history shows little actual CPU demand. The blend
+is controlled by :kconfig:option:`CONFIG_CPU_FREQ_POLICY_PRESSURE_RUNTIME_WEIGHT`.
+
 Once the normalized system pressure is calculated, it is treated as the system 'load' and the
 policy will then iterate through the available P-states of the SoC and select the first P-state
 for which the normalized pressure is greater than or equal to the defined threshold.

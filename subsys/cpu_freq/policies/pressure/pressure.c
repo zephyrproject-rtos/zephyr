@@ -11,6 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/cpu_freq/policy.h>
 #include <zephyr/cpu_freq/cpu_freq.h>
+#include <zephyr/sys/util.h>
 
 #define CPU_FREQ_POLICY_PRESSURE_THRESHOLD                                                         \
 	((CONFIG_CPU_FREQ_POLICY_PRESSURE_LOWEST_PRIO <= K_LOWEST_THREAD_PRIO)                     \
@@ -44,6 +45,20 @@ struct pressure_stats {
 	int pressure_acum;
 	int max_pressure;
 };
+
+#ifdef CONFIG_CPU_FREQ_POLICY_PRESSURE_RUNTIME_HISTORY
+struct runtime_pressure_stats {
+	uint64_t last_execution_cycles;
+	uint64_t last_total_cycles;
+	bool has_last_sample;
+};
+
+#ifdef CONFIG_CPU_FREQ_PER_CPU_SCALING
+static struct runtime_pressure_stats runtime_pressure_stats[CONFIG_MP_MAX_NUM_CPUS];
+#else
+static struct runtime_pressure_stats runtime_pressure_stats;
+#endif /* CONFIG_CPU_FREQ_PER_CPU_SCALING */
+#endif /* CONFIG_CPU_FREQ_POLICY_PRESSURE_RUNTIME_HISTORY */
 
 static bool is_runnable(const struct k_thread *thread)
 {
@@ -87,10 +102,14 @@ static int get_normalized_sys_pressure(void)
 	struct pressure_stats sys_pressure = {.max_pressure = 0, .pressure_acum = 0};
 
 #ifdef CONFIG_CPU_FREQ_PER_CPU_SCALING
-	k_thread_foreach_filter_by_cpu(_kernel.cpus[cpu].current, thread_eval_cb, &sys_pressure);
+	k_thread_foreach_filter_by_cpu(arch_curr_cpu()->id, thread_eval_cb, &sys_pressure);
 #else
 	k_thread_foreach(thread_eval_cb, &sys_pressure);
 #endif /* CONFIG_CPU_FREQ_PER_CPU_SCALING */
+
+	if (sys_pressure.max_pressure == 0) {
+		return 0;
+	}
 
 	int normalized_pressure = (sys_pressure.pressure_acum * 100) / sys_pressure.max_pressure;
 
@@ -99,6 +118,70 @@ static int get_normalized_sys_pressure(void)
 
 	return normalized_pressure;
 }
+
+#ifdef CONFIG_CPU_FREQ_POLICY_PRESSURE_RUNTIME_HISTORY
+static struct runtime_pressure_stats *get_runtime_pressure_stats(void)
+{
+#ifdef CONFIG_CPU_FREQ_PER_CPU_SCALING
+	return &runtime_pressure_stats[arch_curr_cpu()->id];
+#else
+	return &runtime_pressure_stats;
+#endif /* CONFIG_CPU_FREQ_PER_CPU_SCALING */
+}
+
+static int get_normalized_runtime_pressure(void)
+{
+	struct runtime_pressure_stats *history = get_runtime_pressure_stats();
+	k_thread_runtime_stats_t stats;
+	uint64_t execution_delta;
+	uint64_t total_delta;
+	int ret;
+
+#ifdef CONFIG_CPU_FREQ_PER_CPU_SCALING
+	ret = k_thread_runtime_stats_cpu_get(arch_curr_cpu()->id, &stats);
+#else
+	ret = k_thread_runtime_stats_all_get(&stats);
+#endif /* CONFIG_CPU_FREQ_PER_CPU_SCALING */
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (!history->has_last_sample) {
+		history->last_execution_cycles = stats.execution_cycles;
+		history->last_total_cycles = stats.total_cycles;
+		history->has_last_sample = true;
+		return -EAGAIN;
+	}
+
+	execution_delta = stats.execution_cycles - history->last_execution_cycles;
+	total_delta = stats.total_cycles - history->last_total_cycles;
+	history->last_execution_cycles = stats.execution_cycles;
+	history->last_total_cycles = stats.total_cycles;
+
+	if (execution_delta == 0U) {
+		return -EAGAIN;
+	}
+
+	return (int)CLAMP((total_delta * 100U) / execution_delta, 0U, 100U);
+}
+
+static int get_effective_pressure(int runnable_pressure)
+{
+	int runtime_pressure = get_normalized_runtime_pressure();
+
+	if (runtime_pressure < 0) {
+		return runnable_pressure;
+	}
+
+	return ((runnable_pressure * (100 - CONFIG_CPU_FREQ_POLICY_PRESSURE_RUNTIME_WEIGHT)) +
+		(runtime_pressure * CONFIG_CPU_FREQ_POLICY_PRESSURE_RUNTIME_WEIGHT)) / 100;
+}
+#else
+static int get_effective_pressure(int runnable_pressure)
+{
+	return runnable_pressure;
+}
+#endif /* CONFIG_CPU_FREQ_POLICY_PRESSURE_RUNTIME_HISTORY */
 
 /*
  * The pressure policy iterates through the threads currently sitting in the ready queue at the time
@@ -124,7 +207,7 @@ int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 	cpu_id = arch_curr_cpu()->id;
 #endif
 
-	sys_pressure = get_normalized_sys_pressure();
+	sys_pressure = get_effective_pressure(get_normalized_sys_pressure());
 
 	if (sys_pressure < 0) {
 		LOG_ERR("Unable to retrieve system pressure");

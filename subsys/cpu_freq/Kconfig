@@ -53,6 +53,7 @@ config CPU_FREQ_POLICY_ON_DEMAND
 
 config CPU_FREQ_POLICY_PRESSURE
 	bool "Pressure based Policy"
+	select THREAD_RUNTIME_STATS if CPU_FREQ_POLICY_PRESSURE_RUNTIME_HISTORY
 	select TRACING
 	help
 	  Pressure based policy
@@ -65,6 +66,28 @@ config CPU_FREQ_POLICY_PRESSURE_LOWEST_PRIO
 	help
 	  The lowest priority level (highest numerically) to accumulate. This should be your lowest priority thread.
 	  This priority must not be lower than the idle thread's priority.
+
+config CPU_FREQ_POLICY_PRESSURE_RUNTIME_HISTORY
+	bool "Weight pressure by recent runtime history"
+	default y
+	help
+	  Blend the instantaneous runnable-thread pressure with the non-idle CPU
+	  runtime observed during the previous CPU frequency evaluation window.
+
+	  This prevents a short-lived runnable queue burst from being treated as
+	  sustained pressure when the recent execution history shows little actual
+	  CPU demand.
+
+config CPU_FREQ_POLICY_PRESSURE_RUNTIME_WEIGHT
+	int "Runtime history weight"
+	default 50
+	range 0 100
+	depends on CPU_FREQ_POLICY_PRESSURE_RUNTIME_HISTORY
+	help
+	  Percentage of the pressure score that comes from recent runtime history.
+	  The remaining percentage comes from the instantaneous runnable-thread
+	  pressure. A value of 0 preserves the snapshot-only behavior; a value of
+	  100 bases the pressure score entirely on recent non-idle CPU runtime.
 
 endif
 
