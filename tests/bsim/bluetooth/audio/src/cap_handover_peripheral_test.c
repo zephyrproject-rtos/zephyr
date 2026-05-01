@@ -35,6 +35,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "bap_stream_rx.h"
 #include "bstests.h"
@@ -106,6 +107,8 @@ static bool valid_subgroup_metadata_cb(const struct bt_bap_base_subgroup *subgro
 	uint8_t *meta;
 	int ret;
 
+	ARG_UNUSED(user_data);
+
 	ret = bt_bap_base_get_subgroup_codec_meta(subgroup, &meta);
 	if (ret < 0) {
 		FAIL("Could not get subgroup meta: %d\n", ret);
@@ -174,17 +177,24 @@ static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_
 
 static void broadcast_sink_started_cb(struct bt_bap_broadcast_sink *sink)
 {
+	ARG_UNUSED(sink);
+
 	SET_FLAG(flag_broadcast_started);
 }
 
 static void broadcast_sink_stopped_cb(struct bt_bap_broadcast_sink *sink, uint8_t reason)
 {
+	ARG_UNUSED(sink);
+	ARG_UNUSED(reason);
+
 	SET_FLAG(flag_broadcast_stopped);
 }
 
 static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 				  struct bt_le_per_adv_sync_synced_info *info)
 {
+	ARG_UNUSED(info);
+
 	if (sync == pa_sync) {
 		LOG_DBG("PA sync %p synced for broadcast sink with broadcast ID 0x%06X", sync,
 			cached_recv_state->broadcast_id);
@@ -256,6 +266,9 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 			  const struct bt_bap_scan_delegator_recv_state *recv_state,
 			  bool past_avail, uint16_t pa_interval)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(past_avail);
+
 	if (recv_state->pa_sync_state == BT_BAP_PA_STATE_SYNCED ||
 	    recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
 		/* Already syncing */
@@ -276,6 +289,8 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 static int pa_sync_term_req_cb(struct bt_conn *conn,
 			       const struct bt_bap_scan_delegator_recv_state *recv_state)
 {
+	ARG_UNUSED(conn);
+
 	if (pa_sync == NULL || recv_state->pa_sync_state == BT_BAP_PA_STATE_NOT_SYNCED) {
 		return -EALREADY;
 	}
@@ -306,6 +321,8 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 			   const struct bt_bap_scan_delegator_recv_state *recv_state,
 			   const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
 {
+	ARG_UNUSED(conn);
+
 	cached_bis_sync_req = 0U;
 
 	for (uint8_t i = 0U; i < recv_state->num_subgroups; i++) {
@@ -333,6 +350,8 @@ static void broadcast_code_cb(struct bt_conn *conn,
 			      const struct bt_bap_scan_delegator_recv_state *recv_state,
 			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
+	ARG_UNUSED(conn);
+
 	LOG_DBG("Broadcast code received for %p", recv_state);
 
 	if (memcmp(broadcast_code, BROADCAST_CODE, sizeof(BROADCAST_CODE)) != 0) {
@@ -388,6 +407,8 @@ static int unicast_server_reconfig(struct bt_bap_stream *stream, enum bt_audio_d
 				   struct bt_bap_qos_cfg_pref *const pref,
 				   struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(dir);
+
 	LOG_DBG("ASE Codec Reconfig: stream %p", stream);
 
 	print_codec_cfg(codec_cfg);
@@ -403,6 +424,8 @@ static int unicast_server_reconfig(struct bt_bap_stream *stream, enum bt_audio_d
 static int unicast_server_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qos,
 			      struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_DBG("QoS: stream %p qos %p", stream, qos);
 
 	print_qos(qos);
@@ -433,6 +456,8 @@ static int unicast_server_enable(struct bt_bap_stream *stream, const uint8_t met
 
 static int unicast_server_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_DBG("Start: stream %p", stream);
 
 	return 0;
@@ -448,6 +473,8 @@ static int unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t m
 
 static int unicast_server_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_DBG("Disable: stream %p", stream);
 
 	return 0;
@@ -455,6 +482,8 @@ static int unicast_server_disable(struct bt_bap_stream *stream, struct bt_bap_as
 
 static int unicast_server_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_DBG("Stop: stream %p", stream);
 
 	return 0;
@@ -462,6 +491,8 @@ static int unicast_server_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_
 
 static int unicast_server_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_DBG("Release: stream %p", stream);
 
 	return 0;

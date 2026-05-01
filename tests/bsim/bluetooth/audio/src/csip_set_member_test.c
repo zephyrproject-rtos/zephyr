@@ -15,6 +15,7 @@
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include "bs_tracing.h"
 #include "bstests.h"
@@ -34,6 +35,8 @@ static void csip_lock_changed_cb(struct bt_conn *conn,
 				 struct bt_csip_set_member_svc_inst *svc_inst,
 				 bool locked)
 {
+	ARG_UNUSED(svc_inst);
+
 	printk("Client %p %s the lock\n", conn, locked ? "locked" : "released");
 	g_locked = locked;
 }
@@ -41,6 +44,9 @@ static void csip_lock_changed_cb(struct bt_conn *conn,
 static uint8_t sirk_read_req_cb(struct bt_conn *conn,
 				struct bt_csip_set_member_svc_inst *svc_inst)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(svc_inst);
+
 	return sirk_read_req_rsp;
 }
 

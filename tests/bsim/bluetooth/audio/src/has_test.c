@@ -14,6 +14,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
@@ -32,6 +33,9 @@ const enum bt_has_properties test_preset_properties = BT_HAS_PROP_AVAILABLE;
 
 static int preset_select(uint8_t index, bool sync)
 {
+	ARG_UNUSED(index);
+	ARG_UNUSED(sync);
+
 	return 0;
 }
 

@@ -26,6 +26,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
@@ -232,6 +233,8 @@ static void recv_state_updated_cb(struct bt_conn *conn,
 {
 	struct sync_state *state;
 
+	ARG_UNUSED(conn);
+
 	printk("Receive state with ID %u updated\n", recv_state->src_id);
 
 	state = sync_state_get_by_src_id(recv_state->src_id);
@@ -309,6 +312,8 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 {
 	struct sync_state *state;
 
+	ARG_UNUSED(conn);
+
 	printk("PA Sync term request for %p\n", recv_state);
 
 	state = sync_state_get(recv_state);
@@ -325,6 +330,8 @@ static void broadcast_code_cb(struct bt_conn *conn,
 			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	struct sync_state *state;
+
+	ARG_UNUSED(conn);
 
 	printk("Broadcast code received for %p\n", recv_state);
 
@@ -345,6 +352,8 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 {
 	struct sync_state *state;
 	bool sync_bis;
+
+	ARG_UNUSED(conn);
 
 	printk("BIS sync request received for %p\n", recv_state);
 	for (int i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
@@ -376,6 +385,8 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 static int add_source_cb(struct bt_conn *conn,
 	const struct bt_bap_scan_delegator_recv_state *recv_state)
 {
+	ARG_UNUSED(conn);
+
 	printk("Add Source callback: src_id=%u\n", recv_state->src_id);
 	SET_FLAG(flag_broadcast_source_added);
 	return 0;
@@ -384,6 +395,8 @@ static int add_source_cb(struct bt_conn *conn,
 static int modify_source_cb(struct bt_conn *conn,
 	   const struct bt_bap_scan_delegator_recv_state *recv_state)
 {
+	ARG_UNUSED(conn);
+
 	printk("Modify Source callback: src_id=%u\n", recv_state->src_id);
 	SET_FLAG(flag_broadcast_source_modified);
 	return 0;
@@ -391,6 +404,8 @@ static int modify_source_cb(struct bt_conn *conn,
 
 static int remove_source_cb(struct bt_conn *conn, uint8_t src_id)
 {
+	ARG_UNUSED(conn);
+
 	printk("Remove Source callback: src_id=%u\n", src_id);
 
 	if (reject_control_op) {
@@ -453,6 +468,8 @@ static void pa_term_cb(struct bt_le_per_adv_sync *sync,
 		       const struct bt_le_per_adv_sync_term_info *info)
 {
 	struct sync_state *state;
+
+	ARG_UNUSED(info);
 
 	printk("PA %p sync terminated\n", sync);
 

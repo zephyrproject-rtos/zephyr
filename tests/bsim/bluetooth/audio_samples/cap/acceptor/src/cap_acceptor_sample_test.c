@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
@@ -41,6 +42,8 @@ static void test_cap_acceptor_sample_init(void)
 
 static void test_cap_acceptor_sample_tick(bs_time_t HW_device_time)
 {
+	ARG_UNUSED(HW_device_time);
+
 	/*
 	 * If in WAIT_TIME seconds we did not get enough packets through
 	 * we consider the test failed

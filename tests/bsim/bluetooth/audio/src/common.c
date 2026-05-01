@@ -28,6 +28,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "bs_cmd_line.h"
 #include "bs_dynargs.h"
@@ -81,6 +82,8 @@ static const struct bt_data connectable_ad[] = {
 static void device_found(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad_buf)
 {
 	int err;
+
+	ARG_UNUSED(ad_buf);
 
 	if (default_conn) {
 		return;
@@ -301,6 +304,8 @@ void start_broadcast_adv(struct bt_le_ext_adv *adv)
 
 void test_tick(bs_time_t HW_device_time)
 {
+	ARG_UNUSED(HW_device_time);
+
 	if (bst_result != Passed) {
 		FAIL("test failed (not passed after %i seconds)\n", WAIT_SECONDS);
 	}

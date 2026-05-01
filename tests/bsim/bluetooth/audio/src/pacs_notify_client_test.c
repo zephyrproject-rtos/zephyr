@@ -11,17 +11,18 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
-
-#include "bstests.h"
-#include "common.h"
-#include "common/bt_str.h"
-
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
+
+#include "bstests.h"
+#include "common.h"
+#include "common/bt_str.h"
+
 LOG_MODULE_REGISTER(pacs_notify_client_test, LOG_LEVEL_DBG);
 
 struct pacs_instance_t {
@@ -59,6 +60,14 @@ static uint8_t pacs_notify_handler(struct bt_conn *conn,
 				  struct bt_gatt_subscribe_params *params,
 				  const void *data, uint16_t length)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(length);
+
+	if (data == NULL) {
+		LOG_DBG("%p subscription removed", params);
+		return BT_GATT_ITER_CONTINUE;
+	}
+
 	LOG_DBG("%p", params);
 
 	if (params == &pacs_instance.sink_pacs_sub) {

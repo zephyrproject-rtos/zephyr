@@ -21,6 +21,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
@@ -143,6 +144,8 @@ static void csip_sirk_changed_cb(struct bt_csip_set_coordinator_csis_inst *inst)
 static void csip_size_changed_cb(struct bt_conn *conn,
 				 const struct bt_csip_set_coordinator_csis_inst *inst)
 {
+	ARG_UNUSED(conn);
+
 	printk("Inst %p size changed: %u\n", inst, inst->info.set_size);
 
 	SET_FLAG(flag_size_changed);
@@ -152,6 +155,8 @@ static void csip_set_coordinator_ordered_access_cb(
 	const struct bt_csip_set_coordinator_set_info *set_info, int err,
 	bool locked,  struct bt_csip_set_coordinator_set_member *member)
 {
+	ARG_UNUSED(set_info);
+
 	if (err != 0) {
 		FAIL("Ordered access failed with err %d\n", err);
 	} else if (locked) {
@@ -177,6 +182,8 @@ static bool csip_set_coordinator_oap_cb(const struct bt_csip_set_coordinator_set
 					struct bt_csip_set_coordinator_set_member *members[],
 					size_t count)
 {
+	ARG_UNUSED(set_info);
+
 	for (size_t i = 0; i < count; i++) {
 		printk("Ordered access for members[%zu]: %p\n", i, members[i]);
 	}
@@ -240,6 +247,8 @@ static struct bt_le_scan_cb csip_set_coordinator_scan_callbacks = {
 
 static void discover_members_timer_handler(struct k_work *work)
 {
+	ARG_UNUSED(work);
+
 	if (primary_inst->info.set_size > 0) {
 		FAIL("Could not find all members (%u / %u)\n", members_found,
 		     primary_inst->info.set_size);

@@ -33,6 +33,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
@@ -87,6 +88,8 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 				      const struct bt_csip_set_coordinator_set_member *member,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
+	ARG_UNUSED(member);
+
 	if (err != 0) {
 		FAIL("Discover failed on %p: %d\n", (void *)conn, err);
 
@@ -308,6 +311,10 @@ static struct bt_micp_mic_ctlr_cb micp_cb = {
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(tx);
+	ARG_UNUSED(rx);
+
 	printk("MTU exchanged\n");
 	SET_FLAG(flag_mtu_exchanged);
 }
@@ -318,6 +325,8 @@ static struct bt_gatt_cb gatt_callbacks = {
 
 static void cap_disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
+	ARG_UNUSED(reason);
+
 	valid_src_id[bt_conn_index(conn)] = false;
 	k_sem_give(&sem_disconnected);
 }
@@ -396,6 +405,8 @@ static struct bt_le_scan_cb bap_scan_cb = {
 static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 				  struct bt_le_per_adv_sync_synced_info *info)
 {
+	ARG_UNUSED(info);
+
 	if (sync == g_pa_sync) {
 		printk("PA sync %p synced for broadcast sink with broadcast ID 0x%06X\n", sync,
 		       broadcaster_broadcast_id);
@@ -419,6 +430,8 @@ static bool base_store(struct bt_data *data, void *user_data)
 	const struct bt_bap_base *base = bt_bap_base_get_base_from_ad(data);
 	uint8_t base_size;
 	int base_subgroup_count;
+
+	ARG_UNUSED(user_data);
 
 	/* Base is NULL if the data does not contain a valid BASE */
 	if (base == NULL) {
@@ -447,6 +460,9 @@ static bool base_store(struct bt_data *data, void *user_data)
 static void pa_recv(struct bt_le_per_adv_sync *sync,
 		    const struct bt_le_per_adv_sync_recv_info *info, struct net_buf_simple *buf)
 {
+	ARG_UNUSED(sync);
+	ARG_UNUSED(info);
+
 	if (TEST_FLAG(flag_base_received)) {
 		return;
 	}
@@ -485,6 +501,8 @@ static void bap_broadcast_assistant_add_src_cb(struct bt_conn *conn, int err)
 static bool metadata_entry(struct bt_data *data, void *user_data)
 {
 	char metadata[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE];
+
+	ARG_UNUSED(user_data);
 
 	(void)bin2hex(data->data, data->data_len, metadata, sizeof(metadata));
 

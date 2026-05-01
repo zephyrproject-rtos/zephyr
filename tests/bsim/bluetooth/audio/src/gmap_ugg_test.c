@@ -162,6 +162,8 @@ const struct named_lc3_preset *gmap_get_named_preset(bool is_unicast, enum bt_au
 static void stream_configured_cb(struct bt_bap_stream *stream,
 				 const struct bt_bap_qos_cfg_pref *pref)
 {
+	ARG_UNUSED(pref);
+
 	printk("Configured stream %p\n", stream);
 
 	/* TODO: The preference should be used/taken into account when
@@ -254,6 +256,9 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 				      const struct bt_csip_set_coordinator_set_member *member,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(member);
+
 	if (err != 0) {
 		FAIL("Failed to discover CAS: %d\n", err);
 
@@ -356,6 +361,8 @@ static void bap_endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct 
 
 static void bap_discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("Discovery failed for dir %u: %d\n", dir, err);
 		return;
@@ -378,6 +385,10 @@ static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(tx);
+	ARG_UNUSED(rx);
+
 	printk("MTU exchanged\n");
 	SET_FLAG(flag_mtu_exchanged);
 }
@@ -429,6 +440,8 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf
 {
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(buf);
 
 	/* Check for connectable, extended advertising */
 	if (((info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) == 0) ||
@@ -712,6 +725,8 @@ static int gmap_ac_cap_unicast_start(const struct gmap_unicast_ac_param *param,
 	size_t src_ep_cnt = 0U;
 	int err;
 
+	ARG_UNUSED(unicast_group);
+
 	for (size_t i = 0U; i < param->conn_cnt; i++) {
 #if UNICAST_SINK_SUPPORTED
 		for (size_t j = 0U; j < param->snk_cnt[i]; j++) {
@@ -929,6 +944,8 @@ static void cap_initiator_unicast_audio_stop(struct bt_cap_unicast_group *unicas
 {
 	struct bt_cap_unicast_audio_stop_param param;
 	int err;
+
+	ARG_UNUSED(unicast_group);
 
 	UNSET_FLAG(flag_stopped);
 

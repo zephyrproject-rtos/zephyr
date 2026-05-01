@@ -11,6 +11,7 @@
 #include <zephyr/bluetooth/services/ias.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
@@ -23,6 +24,8 @@ CREATE_FLAG(g_service_discovered);
 
 static void discover_cb(struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("Failed to discover IAS (err %d)\n", err);
 		return;

@@ -13,6 +13,7 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
@@ -33,6 +34,9 @@ static void ccp_call_control_client_discover_cb(struct bt_ccp_call_control_clien
 						struct bt_ccp_call_control_client_bearers *bearers,
 						void *user_data)
 {
+	ARG_UNUSED(client);
+	ARG_UNUSED(user_data);
+
 	if (err != 0) {
 		FAIL("Failed to discover TBS: %d\n", err);
 		return;
@@ -56,6 +60,8 @@ static void ccp_call_control_client_read_bearer_provider_name_cb(
 	struct bt_ccp_call_control_client_bearer *bearer, int err, const char *name,
 	void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	if (err != 0) {
 		FAIL("Failed to read bearer %p provider name: %d\n", (void *)bearer, err);
 		return;

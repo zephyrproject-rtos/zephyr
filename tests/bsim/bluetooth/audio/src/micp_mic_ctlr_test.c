@@ -13,6 +13,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/micp.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
@@ -44,6 +45,8 @@ static volatile bool g_cb;
 static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 			  uint8_t mute, uint8_t mode)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS state cb err (%d)", err);
 		return;
@@ -59,6 +62,8 @@ static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
 				 int8_t minimum, int8_t maximum)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS gain setting cb err (%d)", err);
 		return;
@@ -74,6 +79,8 @@ static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
 static void aics_input_type_cb(struct bt_aics *inst, int err,
 			       uint8_t input_type)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS input type cb err (%d)", err);
 		return;
@@ -86,6 +93,8 @@ static void aics_input_type_cb(struct bt_aics *inst, int err,
 
 static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS status cb err (%d)", err);
 		return;
@@ -99,6 +108,8 @@ static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 static void aics_description_cb(struct bt_aics *inst, int err,
 				char *description)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS description cb err (%d)", err);
 		return;
@@ -117,6 +128,8 @@ static void aics_description_cb(struct bt_aics *inst, int err,
 
 static void aics_write_cb(struct bt_aics *inst, int err)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS write failed (%d)\n", err);
 		return;
@@ -129,6 +142,8 @@ static void micp_mic_ctlr_discover_cb(struct bt_micp_mic_ctlr *mic_ctlr,
 				      int err,
 				      uint8_t aics_count)
 {
+	ARG_UNUSED(mic_ctlr);
+
 	if (err != 0) {
 		FAIL("MICS could not be discovered (%d)\n", err);
 		return;
@@ -141,6 +156,8 @@ static void micp_mic_ctlr_discover_cb(struct bt_micp_mic_ctlr *mic_ctlr,
 static void micp_mic_ctlr_mute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr,
 					  int err)
 {
+	ARG_UNUSED(mic_ctlr);
+
 	if (err != 0) {
 		FAIL("mic_ctlr mute write failed (%d)\n", err);
 		return;
@@ -152,6 +169,8 @@ static void micp_mic_ctlr_mute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr,
 static void micp_mic_ctlr_unmute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr,
 					    int err)
 {
+	ARG_UNUSED(mic_ctlr);
+
 	if (err != 0) {
 		FAIL("mic_ctlr unmute write failed (%d)\n", err);
 		return;
@@ -163,6 +182,8 @@ static void micp_mic_ctlr_unmute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr,
 static void micp_mic_ctlr_mute_cb(struct bt_micp_mic_ctlr *mic_ctlr, int err,
 				  uint8_t mute)
 {
+	ARG_UNUSED(mic_ctlr);
+
 	if (err != 0) {
 		FAIL("mic_ctlr mute read failed (%d)\n", err);
 		return;

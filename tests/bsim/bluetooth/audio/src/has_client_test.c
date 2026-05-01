@@ -19,6 +19,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "../../subsys/bluetooth/audio/has_internal.h"
 
@@ -48,6 +49,8 @@ static uint8_t g_active_index;
 static void discover_cb(struct bt_conn *conn, int err, struct bt_has *has,
 			enum bt_has_hearing_aid_type type, enum bt_has_capabilities caps)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("Failed to discover HAS (err %d)\n", err);
 		return;
@@ -61,6 +64,8 @@ static void discover_cb(struct bt_conn *conn, int err, struct bt_has *has,
 
 static void preset_switch_cb(struct bt_has *has, int err, uint8_t index)
 {
+	ARG_UNUSED(has);
+
 	if (err != 0) {
 		return;
 	}
@@ -84,6 +89,9 @@ static void check_preset_record(const struct bt_has_preset_record *record,
 static void preset_read_rsp_cb(struct bt_has *has, int err,
 			       const struct bt_has_preset_record *record, bool is_last)
 {
+	ARG_UNUSED(has);
+	ARG_UNUSED(is_last);
+
 	if (err != 0) {
 		FAIL("%s: err %d\n", __func__, err);
 		return;
@@ -105,6 +113,10 @@ static void preset_read_rsp_cb(struct bt_has *has, int err,
 static void preset_update_cb(struct bt_has *has, uint8_t index_prev,
 			     const struct bt_has_preset_record *record, bool is_last)
 {
+	ARG_UNUSED(has);
+	ARG_UNUSED(index_prev);
+	ARG_UNUSED(is_last);
+
 	if (record->index == test_preset_index_1) {
 		SET_FLAG(g_preset_1_found);
 	} else if (record->index == test_preset_index_3) {
@@ -407,6 +419,8 @@ static uint8_t notify_handler(struct bt_conn *conn, struct bt_gatt_subscribe_par
 
 static void subscribe_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_subscribe_params *params)
 {
+	ARG_UNUSED(conn);
+
 	if (err != BT_ATT_ERR_SUCCESS) {
 		return;
 	}

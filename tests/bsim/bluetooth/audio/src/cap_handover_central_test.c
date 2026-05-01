@@ -34,6 +34,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
 #include "bap_common.h"
 #include "bap_stream_tx.h"
@@ -92,6 +93,9 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 				      const struct bt_csip_set_coordinator_set_member *member,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(member);
+
 	if (err != 0) {
 		FAIL("Failed to discover CAS: %d", err);
 
@@ -140,6 +144,8 @@ bap_broadcast_assistant_recv_state_cb(struct bt_conn *conn, int err,
 static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 						uint8_t recv_state_count)
 {
+	ARG_UNUSED(conn);
+
 	if (err == 0) {
 		LOG_DBG("BASS discover done with %u recv states", recv_state_count);
 	} else {
@@ -202,6 +208,8 @@ static void unicast_to_broadcast_complete_cb(int err, struct bt_conn *conn,
 					     struct bt_cap_unicast_group *group,
 					     struct bt_cap_broadcast_source *source)
 {
+	ARG_UNUSED(group);
+
 	if (err != 0) {
 		FAIL("Failed to handover unicast to broadcast (failing conn %p): %d", conn, err);
 
@@ -217,6 +225,8 @@ static void broadcast_to_unicast_complete_cb(int err, struct bt_conn *conn,
 					     struct bt_cap_broadcast_source *source,
 					     struct bt_cap_unicast_group *group)
 {
+	ARG_UNUSED(source);
+
 	if (err != 0) {
 		FAIL("Failed to handover broadcast to unicast (failing conn %p): %d", conn, err);
 
@@ -263,12 +273,16 @@ static void print_remote_codec(const struct bt_audio_codec_cap *codec_cap, enum 
 static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir,
 			  const struct bt_audio_codec_cap *codec_cap)
 {
+	ARG_UNUSED(conn);
+
 	print_remote_codec(codec_cap, dir);
 	SET_FLAG(flag_codec_found);
 }
 
 static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("Discovery failed: %d\n", err);
 		return;
@@ -302,6 +316,10 @@ static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_b
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(tx);
+	ARG_UNUSED(rx);
+
 	LOG_DBG("MTU exchanged");
 	SET_FLAG(flag_mtu_exchanged);
 }
@@ -404,11 +422,16 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 
 static void broadcast_source_started_cb(struct bt_bap_broadcast_source *source)
 {
+	ARG_UNUSED(source);
+
 	SET_FLAG(flag_broadcast_started);
 }
 
 static void broadcast_source_stopped_cb(struct bt_bap_broadcast_source *source, uint8_t reason)
 {
+	ARG_UNUSED(source);
+	ARG_UNUSED(reason);
+
 	SET_FLAG(flag_broadcast_stopped);
 }
 
