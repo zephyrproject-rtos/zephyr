@@ -203,6 +203,9 @@ static int usb_add_frame(const struct stream_rx *stream, int chn, uint32_t ts)
 
 static int codec_add_frame(const struct stream_rx *stream, int chn, uint32_t ts)
 {
+	ARG_UNUSED(stream);
+	ARG_UNUSED(ts);
+
 	/* Codec output is mono: only the primary (channel 0) is forwarded.
 	 * Any additional channels are intentionally ignored.
 	 */
@@ -282,6 +285,10 @@ static void do_lc3_decode(struct lc3_data *data)
 
 static void lc3_decoder_thread_func(void *arg1, void *arg2, void *arg3)
 {
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
 	while (true) {
 		struct lc3_data *data = k_fifo_get(&lc3_in_fifo, K_FOREVER);
 		struct stream_rx *stream = data->stream;

@@ -20,11 +20,14 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 static struct bt_vcp_included vcp_included;
 
 static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t mute)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		printk("VCS state get failed (%d)\n", err);
 	} else {
@@ -34,6 +37,8 @@ static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t 
 
 static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		printk("VCS flags get failed (%d)\n", err);
 	} else {

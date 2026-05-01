@@ -122,6 +122,10 @@ static void broadcast_stream_stopped_cb(struct bt_bap_stream *bap_stream, uint8_
 static void broadcast_stream_recv_cb(struct bt_bap_stream *bap_stream,
 				     const struct bt_iso_recv_info *info, struct net_buf *buf)
 {
+	ARG_UNUSED(bap_stream);
+	ARG_UNUSED(info);
+	ARG_UNUSED(buf);
+
 	/* Triggered every time we receive an HCI data packet from the controller.
 	 * A call to this does not indicate valid data
 	 * (see the `info->flags` for which flags to check),
@@ -233,6 +237,8 @@ static void check_sync_broadcast(void)
 static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base,
 			 size_t base_size)
 {
+	ARG_UNUSED(sink);
+
 	memcpy(broadcast_sink.received_base, base, base_size);
 
 	if (!atomic_test_and_set_bit(flags, FLAG_BASE_RECEIVED)) {
@@ -244,6 +250,8 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 
 static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo)
 {
+	ARG_UNUSED(sink);
+
 	if (!biginfo->encryption) {
 		atomic_clear_bit(flags, FLAG_BROADCAST_CODE_REQUIRED);
 	} else {
@@ -259,6 +267,8 @@ static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_
 
 static void sink_started_cb(struct bt_bap_broadcast_sink *sink)
 {
+	ARG_UNUSED(sink);
+
 	LOG_INF("Broadcast sink started");
 
 	/* Clear requested BIS sync */
@@ -282,6 +292,8 @@ static void sink_stopped_cb(struct bt_bap_broadcast_sink *sink, uint8_t reason)
 
 static void pa_timer_handler(struct k_work *work)
 {
+	ARG_UNUSED(work);
+
 	atomic_clear_bit(flags, FLAG_PA_SYNCING);
 
 	if (broadcast_sink.pa_sync != NULL) {
@@ -435,6 +447,8 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 {
 	int err;
 
+	ARG_UNUSED(conn);
+
 	broadcast_sink.req_recv_state = recv_state;
 
 	err = bt_le_per_adv_sync_delete(broadcast_sink.pa_sync);
@@ -454,6 +468,8 @@ static void broadcast_code_cb(struct bt_conn *conn,
 			      const struct bt_bap_scan_delegator_recv_state *recv_state,
 			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
+	ARG_UNUSED(conn);
+
 	LOG_INF("Broadcast code received for %p", recv_state);
 
 	broadcast_sink.req_recv_state = recv_state;
@@ -480,6 +496,8 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 			   const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
 {
 	const uint32_t new_bis_sync_req = get_req_bis_sync(bis_sync_req);
+
+	ARG_UNUSED(conn);
 
 	LOG_INF("BIS sync request received for %p: 0x%08x", recv_state, bis_sync_req[0]);
 

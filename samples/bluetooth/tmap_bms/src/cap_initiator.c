@@ -25,6 +25,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #define BROADCAST_ENQUEUE_COUNT 2U
@@ -122,6 +123,8 @@ static void broadcast_sent_cb(struct bt_bap_stream *stream)
 
 static void audio_timer_timeout(struct k_work *work)
 {
+	ARG_UNUSED(work);
+
 	broadcast_sent_cb(&broadcast_stream->bap_stream);
 }
 

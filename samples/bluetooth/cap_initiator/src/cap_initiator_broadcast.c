@@ -22,6 +22,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "cap_initiator.h"
@@ -60,6 +61,8 @@ static void broadcast_stream_stopped_cb(struct bt_bap_stream *stream, uint8_t re
 
 static void broadcast_stream_sent_cb(struct bt_bap_stream *stream)
 {
+	ARG_UNUSED(stream);
+
 	/* Triggered every time we have sent an HCI data packet to the controller */
 
 	if ((total_broadcast_tx_iso_packet_count % 100U) == 0U) {

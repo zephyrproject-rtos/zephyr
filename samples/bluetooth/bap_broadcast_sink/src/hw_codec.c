@@ -21,6 +21,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/audio/codec.h>
 #include <zephyr/sys/ring_buffer.h>
+#include <zephyr/toolchain.h>
 
 LOG_MODULE_REGISTER(codec, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -71,6 +72,8 @@ static void tx_done(const struct device *dev, void *user_data)
 	uint32_t avail;
 	uint32_t read;
 	int written;
+
+	ARG_UNUSED(user_data);
 
 	avail = ring_buf_size_get(&rb);
 	if (avail < CODEC_BLOCK_SIZE) {

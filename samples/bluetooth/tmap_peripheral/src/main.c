@@ -30,6 +30,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "tmap_peripheral.h"
@@ -134,6 +135,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 static void security_changed(struct bt_conn *conn, bt_security_t level,
 			     enum bt_security_err err)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(level);
+
 	if (err == 0) {
 		printk("Security changed: %u\n", err);
 		k_sem_give(&sem_security_updated);
@@ -186,6 +190,8 @@ static void audio_timer_timeout(struct k_work *work)
 {
 	int err = ccp_terminate_call();
 
+	ARG_UNUSED(work);
+
 	if (err != 0) {
 		printk("Error sending call terminate command!\n");
 	}
@@ -194,6 +200,8 @@ static void audio_timer_timeout(struct k_work *work)
 static void media_play_timeout(struct k_work *work)
 {
 	int err = mcp_send_cmd(BT_MCS_OPC_PAUSE);
+
+	ARG_UNUSED(work);
 
 	if (err != 0) {
 		printk("Error sending pause command!\n");
