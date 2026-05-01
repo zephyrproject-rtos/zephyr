@@ -22,6 +22,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "../../subsys/bluetooth/audio/tbs_internal.h"
 #include "btp/btp.h"
@@ -36,6 +37,9 @@ static uint8_t ccp_supported_commands(const void *cmd, uint16_t cmd_len,
 				      void *rsp, uint16_t *rsp_len)
 {
 	struct btp_ccp_read_supported_commands_rp *rp = rsp;
+
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
 
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_CCP, rp->data);
 	*rsp_len += sizeof(*rp);
@@ -193,6 +197,8 @@ static void tbs_client_call_states_cb(struct bt_conn *conn,
 				      uint8_t call_count,
 				      const bt_tbs_client_call_state_t *call_states)
 {
+	ARG_UNUSED(conn);
+
 	LOG_DBG("Call states - err (%u) Call Count (%u)", err, call_count);
 
 	tbs_client_call_states_ev(err, inst_index, call_count, call_states);
@@ -204,6 +210,9 @@ static void tbs_client_termination_reason_cb(struct bt_conn *conn,
 					     uint8_t call_index,
 					     uint8_t reason)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(inst_index);
+
 	LOG_DBG("Termination reason - err (%u) Call Index (%u) Reason (%u)",
 		err, call_index, reason);
 }
@@ -238,6 +247,10 @@ static void tbs_client_technology_cb(struct bt_conn *conn, int err, uint8_t inst
 static void tbs_client_current_calls_cb(struct bt_conn *conn, int err, uint8_t inst_index,
 					uint8_t call_count, const struct bt_tbs_client_call *calls)
 {
+	ARG_UNUSED(inst_index);
+	ARG_UNUSED(call_count);
+	ARG_UNUSED(calls);
+
 	LOG_DBG("");
 
 	tbs_client_current_calls_ev(conn, err);
@@ -245,6 +258,9 @@ static void tbs_client_current_calls_cb(struct bt_conn *conn, int err, uint8_t i
 
 static void tbs_client_cp_cb(struct bt_conn *conn, int err, uint8_t inst_index, uint8_t call_index)
 {
+	ARG_UNUSED(inst_index);
+	ARG_UNUSED(call_index);
+
 	LOG_DBG("");
 
 	tbs_client_cp_ev(conn, err);
@@ -282,6 +298,10 @@ static uint8_t ccp_discover_tbs(const void *cmd, uint16_t cmd_len,
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	err = (conn) ? bt_tbs_client_discover(conn) : -ENOTCONN;
 	if (conn) {
@@ -298,6 +318,10 @@ static uint8_t ccp_accept_call(const void *cmd, uint16_t cmd_len,
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	err = (conn) ? bt_tbs_client_accept_call(conn, cp->inst_index, cp->call_id) : -ENOTCONN;
 	if (conn) {
@@ -313,6 +337,10 @@ static uint8_t ccp_terminate_call(const void *cmd, uint16_t cmd_len,
 	const struct btp_ccp_terminate_call_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	err = (conn) ? bt_tbs_client_terminate_call(conn, cp->inst_index, cp->call_id) :
@@ -331,6 +359,10 @@ static uint8_t ccp_originate_call(const void *cmd, uint16_t cmd_len,
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	err = (conn) ? bt_tbs_client_originate_call(conn, cp->inst_index, cp->uri) : -ENOTCONN;
 	if (conn) {
@@ -347,6 +379,10 @@ static uint8_t ccp_read_call_state(const void *cmd, uint16_t cmd_len,
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	err = (conn) ? bt_tbs_client_read_call_state(conn, cp->inst_index) : -ENOTCONN;
 	if (conn) {
@@ -362,6 +398,10 @@ static uint8_t ccp_read_bearer_name(const void *cmd, uint16_t cmd_len, void *rsp
 	const struct btp_ccp_read_bearer_name_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
@@ -384,6 +424,10 @@ static uint8_t ccp_read_bearer_uci(const void *cmd, uint16_t cmd_len, void *rsp,
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
@@ -405,6 +449,10 @@ static uint8_t ccp_read_bearer_tech(const void *cmd, uint16_t cmd_len, void *rsp
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
@@ -424,6 +472,10 @@ static uint8_t ccp_read_uri_list(const void *cmd, uint16_t cmd_len, void *rsp, u
 	const struct btp_ccp_read_uri_list_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
@@ -446,6 +498,10 @@ static uint8_t ccp_read_signal_strength(const void *cmd, uint16_t cmd_len, void 
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
@@ -466,6 +522,10 @@ static uint8_t ccp_read_signal_interval(const void *cmd, uint16_t cmd_len, void 
 	const struct btp_ccp_read_signal_interval_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
@@ -488,6 +548,10 @@ static uint8_t ccp_read_current_calls(const void *cmd, uint16_t cmd_len, void *r
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
@@ -508,6 +572,10 @@ static uint8_t ccp_read_ccid(const void *cmd, uint16_t cmd_len, void *rsp,
 	const struct btp_ccp_read_ccid_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
@@ -530,6 +598,10 @@ static uint8_t ccp_read_call_uri(const void *cmd, uint16_t cmd_len, void *rsp,
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
@@ -550,6 +622,10 @@ static uint8_t ccp_read_status_flags(const void *cmd, uint16_t cmd_len, void *rs
 	const struct btp_ccp_read_status_flags_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
@@ -572,6 +648,10 @@ static uint8_t ccp_read_optional_opcodes(const void *cmd, uint16_t cmd_len, void
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
@@ -592,6 +672,10 @@ static uint8_t ccp_read_friendly_name(const void *cmd, uint16_t cmd_len, void *r
 	const struct btp_ccp_read_friendly_name_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
@@ -614,6 +698,10 @@ static uint8_t ccp_read_remote_uri(const void *cmd, uint16_t cmd_len, void *rsp,
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
@@ -635,6 +723,10 @@ static uint8_t ccp_set_signal_interval(const void *cmd, uint16_t cmd_len, void *
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
@@ -654,6 +746,10 @@ static uint8_t ccp_hold_call(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	const struct btp_ccp_hold_call_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
@@ -675,6 +771,10 @@ static uint8_t ccp_retrieve_call(const void *cmd, uint16_t cmd_len, void *rsp, u
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
@@ -695,6 +795,10 @@ static uint8_t ccp_join_calls(const void *cmd, uint16_t cmd_len, void *rsp, uint
 	const uint8_t *call_index;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
@@ -857,6 +961,9 @@ static uint8_t tbs_supported_commands(const void *cmd, uint16_t cmd_len, void *r
 {
 	struct btp_tbs_read_supported_commands_rp *rp = rsp;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_TBS, rp->data);
 	*rsp_len += sizeof(*rp);
 
@@ -870,6 +977,10 @@ static uint8_t tbs_remote_incoming(const void *cmd, uint16_t cmd_len, void *rsp,
 	char caller_uri[CONFIG_BT_TBS_MAX_URI_LENGTH];
 	char recv_uri[CONFIG_BT_TBS_MAX_URI_LENGTH];
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("");
 
@@ -900,6 +1011,10 @@ static uint8_t tbs_originate(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	char uri[CONFIG_BT_TBS_MAX_URI_LENGTH];
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("TBS Originate Call");
 
 	if (cp->uri_len >= sizeof(uri)) {
@@ -923,6 +1038,10 @@ static uint8_t tbs_hold(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *
 	const struct btp_tbs_hold_cmd *cp = cmd;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("TBS Hold Call");
 
 	err = bt_tbs_hold(cp->index);
@@ -937,6 +1056,10 @@ static uint8_t tbs_remote_hold(const void *cmd, uint16_t cmd_len, void *rsp, uin
 {
 	const struct btp_tbs_remote_hold_cmd *cp = cmd;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("TBS Remote Hold Call");
 
@@ -953,6 +1076,10 @@ static uint8_t tbs_set_bearer_name(const void *cmd, uint16_t cmd_len, void *rsp,
 	const struct btp_tbs_set_bearer_name_cmd *cp = cmd;
 	char bearer_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH];
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("TBS Set Bearer Provider Name");
 
@@ -977,6 +1104,10 @@ static uint8_t tbs_set_bearer_technology(const void *cmd, uint16_t cmd_len, void
 	const struct btp_tbs_set_technology_cmd *cp = cmd;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("TBS Set bearer technology");
 
 	err = bt_tbs_set_bearer_technology(cp->index, (enum bt_bearer_tech)cp->tech);
@@ -993,6 +1124,10 @@ static uint8_t tbs_set_uri_scheme_list(const void *cmd, uint16_t cmd_len, void *
 	const struct btp_tbs_set_uri_schemes_list_cmd *cp = cmd;
 	char uri_list[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH];
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("TBS Set Uri Scheme list");
 
@@ -1023,6 +1158,10 @@ static uint8_t tbs_set_status_flags(const void *cmd, uint16_t cmd_len, void *rsp
 	uint16_t flags = sys_le16_to_cpu(cp->flags);
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("TBS Set Status Flags");
 
 	err = bt_tbs_set_status_flags(cp->index, flags);
@@ -1038,6 +1177,10 @@ static uint8_t tbs_set_signal_strength(const void *cmd, uint16_t cmd_len, void *
 {
 	const struct btp_tbs_set_signal_strength_cmd *cp = cmd;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("TBS Set Signal Strength");
 
@@ -1055,6 +1198,10 @@ static uint8_t tbs_terminate_call(const void *cmd, uint16_t cmd_len, void *rsp,
 	const struct btp_tbs_terminate_call_cmd *cp = cmd;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("index=%u", cp->index);
 
 	err = bt_tbs_terminate(cp->index);
@@ -1067,6 +1214,10 @@ static uint8_t tbs_terminate_call(const void *cmd, uint16_t cmd_len, void *rsp,
 
 static bool btp_tbs_originate_call_cb(struct bt_conn *conn, uint8_t call_index, const char *uri)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(call_index);
+	ARG_UNUSED(uri);
+
 	LOG_DBG("TBS Originate Call cb");
 
 	return true;
@@ -1074,6 +1225,9 @@ static bool btp_tbs_originate_call_cb(struct bt_conn *conn, uint8_t call_index, 
 
 static void btp_tbs_call_change_cb(struct bt_conn *conn, uint8_t call_index)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(call_index);
+
 	LOG_DBG("TBS Call Status Changed cb");
 }
 

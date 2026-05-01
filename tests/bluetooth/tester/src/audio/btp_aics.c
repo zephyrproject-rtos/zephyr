@@ -24,6 +24,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include "bap_endpoint.h"
 #include "btp/btp.h"
@@ -44,6 +45,9 @@ static uint8_t aics_supported_commands(const void *cmd, uint16_t cmd_len, void *
 				       uint16_t *rsp_len)
 {
 	struct btp_aics_read_supported_commands_rp *rp = rsp;
+
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
 
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_AICS, rp->data);
 	*rsp_len += sizeof(*rp);
@@ -139,6 +143,10 @@ static uint8_t aics_set_gain(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 {
 	const struct btp_aics_set_gain_cmd *cp = cmd;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS set gain %d", cp->gain);
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
@@ -159,6 +167,10 @@ static uint8_t aics_set_gain(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 static uint8_t aics_unmute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_aics_unmute_cmd *cp = cmd;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("AICS Unmute");
 
@@ -181,6 +193,10 @@ static uint8_t aics_mute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 {
 	const struct btp_aics_mute_cmd *cp = cmd;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS Mute");
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
@@ -201,6 +217,10 @@ static uint8_t aics_mute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 static uint8_t aics_state_get(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_aics_state_cmd *cp = cmd;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("AICS State");
 
@@ -223,6 +243,10 @@ static uint8_t aics_type_get(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 {
 	const struct btp_aics_type_cmd *cp = cmd;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS Type");
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
@@ -243,6 +267,10 @@ static uint8_t aics_type_get(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 static uint8_t aics_status_get(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_aics_status_cmd *cp = cmd;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("AICS Status");
 
@@ -266,6 +294,10 @@ static uint8_t aics_gain_setting_prop_get(const void *cmd, uint16_t cmd_len, voi
 {
 	const struct btp_aics_gain_setting_prop_cmd *cp = cmd;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS Gain settings properties");
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
@@ -286,6 +318,10 @@ static uint8_t aics_gain_setting_prop_get(const void *cmd, uint16_t cmd_len, voi
 static uint8_t aics_man_gain_set(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_aics_manual_gain_cmd *cp = cmd;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("AICS set manual gain mode");
 
@@ -308,6 +344,10 @@ static uint8_t aics_auto_gain_set(const void *cmd, uint16_t cmd_len, void *rsp, 
 {
 	const struct btp_aics_auto_gain_cmd *cp = cmd;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS set automatic gain mode");
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
@@ -328,6 +368,11 @@ static uint8_t aics_auto_gain_set(const void *cmd, uint16_t cmd_len, void *rsp, 
 static uint8_t aics_set_man_gain_only(const void *cmd, uint16_t cmd_len, void *rsp,
 				      uint16_t *rsp_len)
 {
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS manual gain only set");
 
 	for (uint8_t i = 0; i < aics_server_instance.aics_cnt; i++) {
@@ -342,6 +387,11 @@ static uint8_t aics_set_man_gain_only(const void *cmd, uint16_t cmd_len, void *r
 static uint8_t aics_set_auto_gain_only(const void *cmd, uint16_t cmd_len, void *rsp,
 				       uint16_t *rsp_len)
 {
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS auto gain only set");
 
 	for (uint8_t i = 0; i < aics_server_instance.aics_cnt; i++) {
@@ -355,6 +405,11 @@ static uint8_t aics_set_auto_gain_only(const void *cmd, uint16_t cmd_len, void *
 
 static uint8_t aics_mute_disable(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS disable mute");
 
 	for (uint8_t i = 0; i < aics_server_instance.aics_cnt; i++) {
@@ -370,6 +425,9 @@ static uint8_t aics_desc_set(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 {
 	const struct btp_aics_audio_desc_cmd *cp = cmd;
 	char description[BT_AICS_MAX_INPUT_DESCRIPTION_SIZE];
+
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("AICS set description");
 
@@ -400,6 +458,10 @@ static uint8_t aics_desc_set(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 static uint8_t aics_desc_get(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_aics_desc_cmd *cp = cmd;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("AICS Description");
 

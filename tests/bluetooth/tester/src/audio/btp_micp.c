@@ -23,6 +23,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include "../../subsys/bluetooth/audio/micp_internal.h"
 #include "../../subsys/bluetooth/audio/aics_internal.h"
@@ -164,6 +165,9 @@ static uint8_t micp_supported_commands(const void *cmd, uint16_t cmd_len, void *
 {
 	struct btp_micp_read_supported_commands_rp *rp = rsp;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_MICP, rp->data);
 	*rsp_len += sizeof(*rp);
 
@@ -175,6 +179,10 @@ static uint8_t micp_discover(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	const struct btp_micp_discover_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
@@ -195,6 +203,11 @@ static uint8_t micp_mute_read(const void *cmd, uint16_t cmd_len, void *rsp, uint
 {
 	int err;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("Read mute");
 
 	err = bt_micp_mic_ctlr_mute_get(mic_ctlr);
@@ -208,6 +221,11 @@ static uint8_t micp_mute_read(const void *cmd, uint16_t cmd_len, void *rsp, uint
 static uint8_t micp_mute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	int err;
+
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("MICP Mute");
 
@@ -272,6 +290,9 @@ static uint8_t mics_supported_commands(const void *cmd, uint16_t cmd_len, void *
 {
 	struct btp_mics_read_supported_commands_rp *rp = rsp;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_MICS, rp->data);
 	*rsp_len += sizeof(*rp);
 
@@ -281,6 +302,11 @@ static uint8_t mics_supported_commands(const void *cmd, uint16_t cmd_len, void *
 static uint8_t mics_mute_disable(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	int err;
+
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("MICP Mute disable");
 
@@ -296,6 +322,11 @@ static uint8_t mics_mute_read(const void *cmd, uint16_t cmd_len, void *rsp, uint
 {
 	int err;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MICS Mute state read");
 
 	err = bt_micp_mic_dev_mute_get();
@@ -310,6 +341,11 @@ static uint8_t mics_mute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 {
 	int err;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MICS Mute");
 
 	err = bt_micp_mic_dev_mute();
@@ -323,6 +359,11 @@ static uint8_t mics_mute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 static uint8_t mics_unmute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	int err;
+
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("MICS Mute");
 
@@ -358,29 +399,48 @@ static struct bt_micp_mic_dev_cb mic_dev_cb = {
 static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 			  uint8_t mute, uint8_t mode)
 {
+	ARG_UNUSED(inst);
+	ARG_UNUSED(gain);
+	ARG_UNUSED(mute);
+	ARG_UNUSED(mode);
+
 	LOG_DBG("AICS state callback (%d)", err);
 }
 
 static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
 				 int8_t minimum, int8_t maximum)
 {
+	ARG_UNUSED(inst);
+	ARG_UNUSED(units);
+	ARG_UNUSED(minimum);
+	ARG_UNUSED(maximum);
+
 	LOG_DBG("AICS gain setting callback (%d)", err);
 }
 
 static void aics_input_type_cb(struct bt_aics *inst, int err,
 			       uint8_t input_type)
 {
+	ARG_UNUSED(inst);
+	ARG_UNUSED(input_type);
+
 	LOG_DBG("AICS input type callback (%d)", err);
 }
 
 static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 {
+	ARG_UNUSED(inst);
+	ARG_UNUSED(active);
+
 	LOG_DBG("AICS status callback (%d)", err);
 }
 
 static void aics_description_cb(struct bt_aics *inst, int err,
 				char *description)
 {
+	ARG_UNUSED(inst);
+	ARG_UNUSED(description);
+
 	LOG_DBG("AICS description callback (%d)", err);
 }
 
