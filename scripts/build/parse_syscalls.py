@@ -73,6 +73,9 @@ def tagged_struct_update(target_list, tag, contents):
 
 
 def api_extends_update(extends_map, contents):
+    if "DEVICE_API_EXTENDS" not in contents:
+        return
+
     for mo in api_extends_regex.finditer(contents):
         child, parent = mo.groups()
         extends_map[child + "_driver_api"] = parent + "_driver_api"
