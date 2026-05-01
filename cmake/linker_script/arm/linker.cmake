@@ -102,6 +102,17 @@ if(CONFIG_ROMSTART_RELOCATION_ROM)
   set(ROMSTART_ADDRESS ${CONFIG_ROMSTART_REGION_ADDRESS})
 endif()
 
+set(vector_table_min_size_arg)
+if(CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION)
+  math(EXPR _vector_start_address "${ROMSTART_ADDRESS} + ${CONFIG_ROM_START_OFFSET} + 0")
+  math(EXPR _null_pointer_page_size "${CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE} + 0")
+  math(EXPR VECTOR_TABLE_MIN_SIZE "${_null_pointer_page_size} - ${_vector_start_address}")
+
+  if(VECTOR_TABLE_MIN_SIZE GREATER 0)
+    set(vector_table_min_size_arg MIN_SIZE ${VECTOR_TABLE_MIN_SIZE})
+  endif()
+endif()
+
 zephyr_linker_group(NAME RAM_REGION VMA RAM LMA ROM_REGION)
 if(CONFIG_ROMSTART_RELOCATION_ROM)
   zephyr_linker_group(NAME ROMSTART_REGION VMA ROMSTART LMA ROMSTART)
@@ -247,6 +258,7 @@ zephyr_linker_section_configure(
   SYMBOLS _vector_start _vector_end
   ALIGN ${VECTOR_ALIGN}
   PRIO 50
+  ${vector_table_min_size_arg}
 )
 
 dt_chosen(chosen_itcm PROPERTY "zephyr,itcm")
