@@ -19,7 +19,7 @@
 #include <zephyr/sys/ring_buffer.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(test);
+LOG_MODULE_REGISTER(test, LOG_LEVEL_DBG);
 
 /**
  * @defgroup lib_ringbuffer_tests Ringbuffer
@@ -144,6 +144,11 @@ ZTEST(ringbuffer_api, test_capacity)
 	capacity = ring_buf_capacity_get(&ringbuf_raw);
 	zassert_equal(RINGBUFFER_SIZE, capacity,
 			"Unexpected capacity");
+}
+
+ZTEST(ringbuffer_api, test_ringbuffer_size)
+{
+	LOG_DBG("target:%s, sizeof(struct ring_buf) = %zu", CONFIG_BOARD, sizeof(struct ring_buf));
 }
 
 ZTEST(ringbuffer_api, test_size)
