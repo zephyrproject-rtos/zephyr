@@ -87,57 +87,39 @@ static int numicro_scc_get_rate_uart(const struct device *dev,
 	const struct numicro_scc_config *config = dev->config;
 	const struct numicro_scc_data *data = dev->data;
 
-	switch (subsys->clk_mod) {
-	case NUMICRO_UART0_MODULE:
-		src = subsys->clk_src >> NUMICRO_CLK_CLKSEL1_UART0SEL_Pos;
-		clk_div = subsys->clk_div >> NUMICRO_CLK_CLKDIV0_UART0DIV_Pos;
-		break;
-	case NUMICRO_UART1_MODULE:
-		src = subsys->clk_src >> NUMICRO_CLK_CLKSEL1_UART1SEL_Pos;
-		clk_div = subsys->clk_div >> NUMICRO_CLK_CLKDIV0_UART1DIV_Pos;
-		break;
-	case NUMICRO_UART2_MODULE:
-		src = subsys->clk_src >> NUMICRO_CLK_CLKSEL3_UART2SEL_Pos;
-		clk_div = subsys->clk_div >> NUMICRO_CLK_CLKDIV4_UART2DIV_Pos;
-		break;
-	case NUMICRO_UART4_MODULE:
-		src = subsys->clk_src >> NUMICRO_CLK_CLKSEL3_UART4SEL_Pos;
-		clk_div = subsys->clk_div >> NUMICRO_CLK_CLKDIV4_UART4DIV_Pos;
-		break;
-	case NUMICRO_UART5_MODULE:
-		src = subsys->clk_src >> NUMICRO_CLK_CLKSEL3_UART5SEL_Pos;
-		clk_div = subsys->clk_div >> NUMICRO_CLK_CLKDIV4_UART5DIV_Pos;
-		break;
-	case NUMICRO_UART6_MODULE:
-		src = subsys->clk_src >> NUMICRO_CLK_CLKSEL3_UART6SEL_Pos;
-		clk_div = subsys->clk_div >> NUMICRO_CLK_CLKDIV4_UART6DIV_Pos;
-		break;
-	case NUMICRO_UART7_MODULE:
-		src = subsys->clk_src >> NUMICRO_CLK_CLKSEL3_UART7SEL_Pos;
-		clk_div = subsys->clk_div >> NUMICRO_CLK_CLKDIV4_UART7DIV_Pos;
-		break;
-	default:
-		return -ENOTSUP;
-	}
+	src = subsys->clk_src >> MODULE_CLKSEL_Pos(subsys->clk_mod);
+	clk_div = subsys->clk_div >> MODULE_CLKDIV_Pos(subsys->clk_mod);
 
-	switch (src) {
+	switch (src & 0b11) {
 	case 0:
+		if (!IS_BIT_SET(config->regs->STATUS, CLK_STATUS_HXTSTB_Pos)) {
+			return -EAGAIN;
+		}
 		src_rate = DT_PROP_OR(DT_NODELABEL(clk_hxt), clock_frequency, 0);
 		break;
 	case 1:
+		if (!IS_BIT_SET(config->regs->STATUS, CLK_STATUS_PLLSTB_Pos)) {
+			return -EAGAIN;
+		}
 		src_rate = data->pll_freq;
 		break;
 	case 3:
+		if (!IS_BIT_SET(config->regs->STATUS, CLK_STATUS_HIRCSTB_Pos)) {
+			return -EAGAIN;
+		}
 		src_rate = DT_PROP_OR(DT_NODELABEL(clk_hirc), clock_frequency, 0);
 		break;
 	case 2:
-		src_rate = data->hclk_freq / config->pclk0_div;
+		if (!IS_BIT_SET(config->regs->STATUS, CLK_STATUS_LXTSTB_Pos)) {
+			return -EAGAIN;
+		}
+		src_rate = DT_PROP_OR(DT_NODELABEL(clk_lxt), clock_frequency, 0);
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	*rate = src_rate / (clk_div + 1);
+	*rate = src_rate / ((clk_div & 0x0F) + 1);
 	return 0;
 }
 
@@ -230,7 +212,7 @@ static void numicro_pcc_configure(const struct device *dev,
 				clk_reg = &config->regs->CLKDIV4;
 			} else {
 				clk_reg = &config->regs->CLKDIV0 +
-					  (NUMICRO_MODULE_CLKDIV(subsys->clk_mod)) * 4;
+					  NUMICRO_MODULE_CLKDIV(subsys->clk_mod);
 			}
 		}
 
@@ -241,7 +223,7 @@ static void numicro_pcc_configure(const struct device *dev,
 	}
 
 	if (NUMICRO_MODULE_CLKSEL_Msk(subsys->clk_mod) != NUMICRO_MODULE_NoMsk) {
-		clk_reg = &config->regs->CLKSEL0 + ((NUMICRO_MODULE_CLKSEL(subsys->clk_mod)) * 4);
+		clk_reg = &config->regs->CLKSEL0 + NUMICRO_MODULE_CLKSEL(subsys->clk_mod);
 		*clk_reg = (*clk_reg & (~(NUMICRO_MODULE_CLKSEL_Msk(subsys->clk_mod)
 					  << NUMICRO_MODULE_CLKSEL_Pos(subsys->clk_mod)))) |
 			   subsys->clk_src;
