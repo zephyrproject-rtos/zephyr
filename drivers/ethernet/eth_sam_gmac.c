@@ -348,45 +348,6 @@ static inline void eth_sam_gmac_init_qav(Gmac *gmac)
 
 #endif
 
-#if GMAC_MULTIPLE_TX_PACKETS == 1
-/*
- * Reset ring buffer
- */
-static void ring_buffer_reset(struct ring_buffer *rb)
-{
-	rb->head = 0U;
-	rb->tail = 0U;
-}
-
-/*
- * Get one 32 bit item from the ring buffer
- */
-static uint32_t ring_buffer_get(struct ring_buffer *rb)
-{
-	uint32_t val;
-
-	__ASSERT(rb->tail != rb->head,
-		 "retrieving data from empty ring buffer");
-
-	val = rb->buf[rb->tail];
-	MODULO_INC(rb->tail, rb->len);
-
-	return val;
-}
-
-/*
- * Put one 32 bit item into the ring buffer
- */
-static void ring_buffer_put(struct ring_buffer *rb, uint32_t val)
-{
-	rb->buf[rb->head] = val;
-	MODULO_INC(rb->head, rb->len);
-
-	__ASSERT(rb->tail != rb->head,
-		 "ring buffer overflow");
-}
-#endif
-
 /*
  * Free pre-reserved RX buffers
  */
@@ -477,9 +438,9 @@ static void tx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 	/* Reset TX frame list */
-	ring_buffer_reset(&queue->tx_frag_list);
+	sys_ringq_reset(&queue->tx_frag_list);
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-	ring_buffer_reset(&queue->tx_frames);
+	sys_ringq_reset(&queue->tx_frames);
 #endif
 #endif
 }
@@ -670,14 +631,18 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 		k_sem_give(&queue->tx_desc_sem);
 
 		/* Release net buffer to the buffer pool */
-		frag = UINT_TO_POINTER(ring_buffer_get(&queue->tx_frag_list));
+		if (sys_ringq_get(&queue->tx_frag_list, &frag)) {
+			__ASSERT(false, "Failed to get frag from tx_frag_list ringq");
+		}
 		net_pkt_frag_unref(frag);
 		LOG_DBG("Dropping frag %p", frag);
 
 		if (tx_desc->w1 & GMAC_TXW1_LASTBUFFER) {
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 			/* Release net packet to the packet pool */
-			pkt = UINT_TO_POINTER(ring_buffer_get(&queue->tx_frames));
+			if (sys_ringq_get(&queue->tx_frames, &pkt)) {
+				__ASSERT(false, "Failed to get pkt from tx_frames ringq");
+			}
 
 #if defined(CONFIG_NET_GPTP)
 			hdr = check_gptp_msg(get_iface(dev_data),
@@ -705,10 +670,10 @@ static void tx_error_handler(Gmac *gmac, struct gmac_queue *queue)
 {
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 	struct net_buf *frag;
-	struct ring_buffer *tx_frag_list = &queue->tx_frag_list;
+	struct sys_ringq *tx_frag_list = &queue->tx_frag_list;
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	struct net_pkt *pkt;
-	struct ring_buffer *tx_frames = &queue->tx_frames;
+	struct sys_ringq *tx_frames = &queue->tx_frames;
 #endif
 #endif
 
@@ -719,22 +684,20 @@ static void tx_error_handler(Gmac *gmac, struct gmac_queue *queue)
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 	/* Free all frag resources in the TX path */
-	while (tx_frag_list->tail != tx_frag_list->head) {
+	while (!sys_ringq_empty(tx_frag_list)) {
 		/* Release net buffer to the buffer pool */
-		frag = UINT_TO_POINTER(tx_frag_list->buf[tx_frag_list->tail]);
+		sys_ringq_get(tx_frag_list, &frag);
 		net_pkt_frag_unref(frag);
 		LOG_DBG("Dropping frag %p", frag);
-		MODULO_INC(tx_frag_list->tail, tx_frag_list->len);
 	}
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	/* Free all pkt resources in the TX path */
-	while (tx_frames->tail != tx_frames->head) {
+	while (!sys_ringq_empty(tx_frames)) {
 		/* Release net packet to the packet pool */
-		pkt = UINT_TO_POINTER(tx_frames->buf[tx_frames->tail]);
+		sys_ringq_get(tx_frames, &pkt);
 		net_pkt_unref(pkt);
 		LOG_DBG("Dropping pkt %p", pkt);
-		MODULO_INC(tx_frames->tail, tx_frames->len);
 	}
 #endif
 
@@ -1457,7 +1420,9 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 			 "tx_desc_list overflow");
 
 		/* Account for a sent frag */
-		ring_buffer_put(&queue->tx_frag_list, POINTER_TO_UINT(frag));
+		if (sys_ringq_put(&queue->tx_frag_list, &frag)) {
+			__ASSERT(false, "tx_frag_list ringq full");
+		}
 
 		/* frag is internally queued, so it requires to hold a reference */
 		net_pkt_frag_ref(frag);
@@ -1495,7 +1460,9 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	/* Account for a sent frame */
-	ring_buffer_put(&queue->tx_frames, POINTER_TO_UINT(pkt));
+	if (sys_ringq_put(&queue->tx_frames, &pkt)) {
+		__ASSERT(false, "tx_frames ringq full");
+	}
 
 	/* pkt is internally queued, so it requires to hold a reference */
 	net_pkt_ref(pkt);
@@ -2138,20 +2105,18 @@ static const struct ethernet_api eth_api = {
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 #define BUF_TX_FRAG_LIST_QUE(n, x)							\
-		(uint32_t *)&tx_frag_list##n##_que[PRIORITY_QUEUE##x##_TX_DESC_IDX]
+		(uint8_t *)&tx_frag_list##n##_que[PRIORITY_QUEUE##x##_TX_DESC_IDX]
 #define DEFN_TX_FLAG_LIST(n, x)								\
-		.tx_frag_list = {							\
-			.buf = BUF_TX_FRAG_LIST_QUE(n, x),				\
-			.len = MAIN_QUEUE_TX_DESC_COUNT,				\
-		},
+		.tx_frag_list = SYS_RINGQ_INIT(BUF_TX_FRAG_LIST_QUE(n, x),		\
+					       sizeof(struct net_buf *),		\
+					       MAIN_QUEUE_TX_DESC_COUNT),
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-#define BUF_TX_FRAME_LIST_QUE(n, x) (uint32_t *)&tx_frame_list##n##_que[x * NET_PKT_PER_QUE]
+#define BUF_TX_FRAME_LIST_QUE(n, x) (uint8_t *)&tx_frame_list##n##_que[x * NET_PKT_PER_QUE]
 #define DEFN_TX_FRAME_LIST(n, x)							\
-		.tx_frames = {								\
-			.buf = BUF_TX_FRAME_LIST_QUE(n, x),				\
-			.len = NET_PKT_PER_QUE,						\
-		},
+		.tx_frames = SYS_RINGQ_INIT(BUF_TX_FRAME_LIST_QUE(n, x),		\
+					    sizeof(struct net_pkt *),			\
+					    NET_PKT_PER_QUE),
 #else /* CONFIG_PTP_CLOCK_SAM_GMAC */
 #define DEFN_TX_FRAME_LIST(n, x)
 #endif /* CONFIG_PTP_CLOCK_SAM_GMAC */
