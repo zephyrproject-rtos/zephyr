@@ -16,7 +16,7 @@
 /**
  * @defgroup dai_interface DAI
  * @since 3.1
- * @version 0.8.0
+ * @version 0.9.0
  * @ingroup io_interfaces
  * @brief Interfaces for Digital Audio Interfaces.
  *
@@ -119,6 +119,7 @@ enum dai_type {
 	DAI_IMX_MICFIL,      /**< i.MX PDM MICFIL */
 	DAI_INTEL_UAOL,      /**< Intel UAOL */
 	DAI_AMD_SDW,         /**< AMD SoundWire */
+	DAI_AMD_TDM,         /**< AMD TDM */
 };
 
 /**
