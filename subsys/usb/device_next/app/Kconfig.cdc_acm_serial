@@ -23,19 +23,6 @@ config CDC_ACM_SERIAL_ENABLE_AT_BOOT
 	  When disabled, the application is responsible for enabling/disabling
 	  the USB device.
 
-config CDC_ACM_SERIAL_MULTIPLE_INSTANCES
-	bool "Register and initialize multiple CDC ACM instances"
-	help
-	  Register multiple CDC ACM instances whose UARTs are referenced by
-	  appropriate Zephyr-specific chosen node properties. The order in which
-	  the instances will be registered and appear in the configuration
-	  descriptor is guaranteed. The following are currently supported, in
-	  this order: "zephyr,console", "zephyr,shell-uart", "zephyr,uart-mcumgr".
-	  A supported property may be missing, and properties may reference the
-	  same device.
-	  Each instance occupies two IN endpoints and one OUT endpoint. USB device
-	  controller must have enough resources to support multiple instances.
-
 config CDC_ACM_SERIAL_MANUFACTURER_STRING
 	string "USB device manufacturer string descriptor"
 	default "Zephyr Project"

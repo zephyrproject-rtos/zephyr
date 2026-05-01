@@ -16,6 +16,3 @@ common:
     - mimxrt1060_evk/mimxrt1062/qspi
 tests:
   sample.usbd.console: {}
-  sample.usbd.console.multiple-instances:
-    extra_configs:
-      - CONFIG_CDC_ACM_SERIAL_MULTIPLE_INSTANCES=y

@@ -54,17 +54,18 @@ USBD_CONFIGURATION_DEFINE(cdc_acm_serial_hs_config,
  * host side. Add new entries at the end.
  */
 const static struct device *uart_devs[] = {
-#if CONFIG_CDC_ACM_SERIAL_MULTIPLE_INSTANCES
 	GET_CHOSEN_OR_NULL(zephyr_console),
 	GET_CHOSEN_OR_NULL(zephyr_shell_uart),
 	GET_CHOSEN_OR_NULL(zephyr_uart_mcumgr),
 	GET_CHOSEN_OR_NULL(zephyr_bt_c2h_uart),
 	GET_CHOSEN_OR_NULL(zephyr_ot_uart),
 	GET_CHOSEN_OR_NULL(zephyr_bt_mon_uart),
-#else
-	DEVICE_DT_GET_ANY(zephyr_cdc_acm_uart),
-#endif
 };
+
+/* This allows to keep old behavior when there is only one compatible node,
+ * regardless of chosen property.
+ */
+const struct device *uart_dev = DEVICE_DT_GET_ANY(zephyr_cdc_acm_uart);
 
 static int register_cdc_acm(struct usbd_context *const uds_ctx,
 			    const enum usbd_speed speed)
@@ -84,17 +85,27 @@ static int register_cdc_acm(struct usbd_context *const uds_ctx,
 		return err;
 	}
 
-	for (int n = 0; n < ARRAY_SIZE(uart_devs); n++) {
-		if (uart_devs[n] == NULL) {
-			continue;
-		}
+	if (DT_NUM_INST_STATUS_OKAY(zephyr_cdc_acm_uart) > 1) {
+		for (int n = 0; n < ARRAY_SIZE(uart_devs); n++) {
+			if (uart_devs[n] == NULL) {
+				continue;
+			}
 
-		err = usbd_register_class(&cdc_acm_serial, uart_devs[n]->name, speed, 1);
-		if (err != 0 && err != -EALREADY) {
-			LOG_ERR("Failed to register %s", uart_devs[n]->name);
+			err = usbd_register_class(&cdc_acm_serial,
+						  uart_devs[n]->name, speed, 1);
+			if (err != 0 && err != -EALREADY) {
+				LOG_ERR("Failed to register %s", uart_devs[n]->name);
+				return err;
+			}
+		}
+	} else {
+		err = usbd_register_class(&cdc_acm_serial,
+					  uart_dev->name, speed, 1);
+		if (err != 0) {
 			return err;
 		}
 	}
+
 
 	return usbd_device_set_code_triple(uds_ctx, speed,
 					   USB_BCC_MISCELLANEOUS, 0x02, 0x01);
