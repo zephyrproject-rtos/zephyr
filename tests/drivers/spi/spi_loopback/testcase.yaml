@@ -332,13 +332,11 @@ tests:
     extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_16mhz.overlay"
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
   drivers.spi.nrf54l_32mhz:
     extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_32mhz.overlay"
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
   drivers.spi.nrf54lm20_16mhz_32mhz:
     harness: ztest
