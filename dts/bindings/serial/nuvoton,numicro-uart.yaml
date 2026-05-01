@@ -11,5 +11,14 @@ properties:
   resets:
     required: true
 
+  clocks:
+    required: true
+
+  stop-bits:
+    default: "1"
+
+  data-bits:
+    default: 8
+
   pinctrl-0:
     required: true

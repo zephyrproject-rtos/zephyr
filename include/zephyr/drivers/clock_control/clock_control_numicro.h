@@ -44,4 +44,19 @@ struct numicro_scc_subsys {
 	};
 };
 
+/** @brief Create Numicro peripheral clock subsystem configuration from device tree */
+#define DT_NUMICRO_CLOCK_PCC_SUBSYSTEM(dev)                                                        \
+	{                                                                                          \
+		.subsys_id = NUMICRO_SCC_SUBSYS_ID_PCC,                                            \
+		.pcc =                                                                             \
+			{                                                                          \
+				.clk_mod = DT_CLOCKS_CELL(dev, clock_module_index),                \
+				.clk_src = DT_CLOCKS_CELL(dev, clock_source),                      \
+				.clk_div = DT_CLOCKS_CELL(dev, clock_divider),                     \
+			},                                                                         \
+	}
+
+/** @brief Create Numicro peripheral clock subsystem configuration from device tree */
+#define DT_NUMICRO_CLOCK_PCC_SUBSYSTEM_INST(inst) DT_NUMICRO_CLOCK_PCC_SUBSYSTEM(DT_DRV_INST(inst))
+
 #endif /* ZEPHYR_INCLUDE_DRIVER_CLOCK_CONTROL_NUMICRO_H_ */
