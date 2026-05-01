@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon mbox configuration options
+
+config MBOX_INFINEON
+	bool "Infineon MBOX driver"
+	default y
+	depends on DT_HAS_INFINEON_MBOX_PIPE_ENABLED
+	help
+	  This option enables the MBOX driver for supported Infineon platforms.
+
+config MBOX_INFINEON_CHANNEL_NUM
+	int "Number of MBOX Channel"
+	default 4
+	depends on MBOX_INFINEON
+	help
+	  This option configures number of channel for MBOX driver for
+	  supported Infineon platforms. Allowed range 1..256.
+
+config MBOX_INFINEON_IPC_MAX_ENDPOINTS
+	int "Number of endpoints configured for mbox pipe"
+	default 8
+	depends on MBOX_INFINEON
+	help
+	  This option configures the maximum number of pipe endpoints
+	  that can be initialized for a supported Infineon platform.

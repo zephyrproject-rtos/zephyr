@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon IPC
+
+compatible: "infineon,ipc"
+include: base.yaml
+
+properties:
+  "#ipc-config-cells":
+    type: int
+    const: 3
+    description: |
+        IPC config specifier. Include information about number
+        of IPC channel, interrupt and priority of interrupt.
+
+ipc-config-cells:
+  - channel
+  - interrupt
+  - interrupt_prior

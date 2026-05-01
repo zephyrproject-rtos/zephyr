@@ -1,0 +1,79 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon MBOX (based on PDL IPC PIPE)
+
+  Infineon MBOX driver implementation based on PDL IPC PIPE layer.
+  A pipe is a communication channel between two endpoints.
+
+  On edge family devices, there are two IPC instances (IPC0 and IPC1).
+  Each instance supports 16 IPC channels and 8 IPC interrupts.
+  PDL driver handles instances by having one channel pool - from 0 to 31,
+  where first 16 belong to IPC0 and second 16 channels belong to IPC1.
+  Following IPC resources are for application:
+    IPC0 CH  - 3 to 7 and 11 to 15
+    IPC0 INT - 3 to 5
+    IPC1 CH  - 17 to 31
+    IPC1 INT - 9 to 15
+
+  The device tree snippet below shows how to enable mbox:
+    &ipc0 {
+      #ipc-channel-cells = <3>;
+      status = "okay";
+
+      mbox0: mbox0 {
+         #mbox-cells = <1>;
+         compatible = "infineon,mbox-pipe";
+
+         ipc-pipe-ep0-addr = <2>;
+         ipc-pipe-ep1-addr = <3>;
+
+         ipc-configs = <&ipc0 8 8 4>, // IPC config for EP0
+                       <&ipc0 9 9 4>; // IPC config for EP1
+         status = "okay";
+      };
+    };
+
+  ipc-pipe-epX-addr - address of endpoints (EP0 and EP1). By default system allocates
+  8 endpoints (refer to CONFIG_MBOX_INFINEON_IPC_MAX_ENDPOINTS).
+
+  ipc-configs - specifier for IPC configuration, it consists from <&xxx y z j>, where
+   &xxx - phandle of IPC instance,
+      y - IPC channel number,
+      z - IPC interrupt number,
+      j - interrupt priority.
+
+  Note: The following resources are reserved by system.
+   - endpoints address 0 and 1,
+   - IPC channels 0..7,
+   - IPC interrupts 0..7.
+
+
+compatible: "infineon,mbox-pipe"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+
+  ipc-configs:
+    type: phandle-array
+    description: |
+      specifier for IPC configuration for Endpoints (EP0 and EP1).
+      It includes phandle of IPC instance,  IPC channel number,
+      IPC interrupt number and interrupt priority.
+
+  ipc-pipe-ep0-addr:
+    type: int
+    description: |
+      Address of Endpoint 0 (EP0).
+
+  ipc-pipe-ep1-addr:
+    type: int
+    description: |
+      Address of Endpoint 1 (EP1).
+
+mbox-cells:
+  - channel
