@@ -1,6 +1,0 @@
-board:
-  name: usbcanfd_oleksii_g431
-  vendor: canmodule
-  full_name: USB CANFD SOLO (can-module.com)
-  socs:
-    - name: stm32g431xx

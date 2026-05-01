@@ -1,6 +1,0 @@
-bboard:
-  name: usbcanfd_oleksii_g473
-  vendor: canmodule
-  full_name: USB CANFD DUAL (can-module.com)
-  socs:
-    - name: stm32g473xx
