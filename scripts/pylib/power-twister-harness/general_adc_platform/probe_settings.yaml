@@ -1,0 +1,22 @@
+# Example probe_settings.yaml
+device_id: "adc_power_monitor_01"
+routes:
+  - id: 0
+    name: "VDD_CORE"
+    shunt_resistor: 0.1  # ohms
+    gain: 1.0
+    type: "single"
+    channels:
+      channels_p: 4
+      channels_n: 0
+  - id: 1
+    name: "VDD_IO"
+    shunt_resistor: 0.1  # ohms
+    gain: 1.0
+    type: "single"
+    channels:
+      channels_p: 7
+      channels_n: 3
+calibration:
+  offset: 0.0
+  scale: 1.0

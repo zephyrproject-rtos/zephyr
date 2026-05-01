@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+pyyaml>=6.0
+jsonschema>=4.0.0
