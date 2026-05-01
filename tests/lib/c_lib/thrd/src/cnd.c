@@ -70,6 +70,8 @@ static int test_cnd_thread_fn(void *arg)
 	struct timespec time_point;
 	struct libc_cnd_fixture *const fixture = arg;
 
+	zassert_equal(thrd_success, mtx_lock(&fixture->mutex));
+
 	if (fixture->do_timedwait) {
 		zassume_ok(sys_clock_gettime(SYS_CLOCK_REALTIME, &time_point));
 		timespec_add_ms(&time_point, WAIT_TIME_MS);
@@ -83,7 +85,7 @@ static int test_cnd_thread_fn(void *arg)
 		zassert_equal(thrd_success, cnd_signal(&fixture->cond));
 	}
 
-	(void)mtx_unlock(&fixture->mutex);
+	zassert_equal(thrd_success, mtx_unlock(&fixture->mutex));
 
 	return res;
 }
@@ -91,8 +93,6 @@ static int test_cnd_thread_fn(void *arg)
 static void tst_cnd_common(struct libc_cnd_fixture *fixture, size_t wait_ms, bool th2, int exp1,
 			   int exp2)
 {
-	zassert_equal(thrd_success, mtx_lock(&fixture->mutex));
-
 	zassert_equal(thrd_success, thrd_create(&fixture->thrd1, test_cnd_thread_fn, fixture));
 	if (th2) {
 		zassert_equal(thrd_success,
@@ -106,8 +106,6 @@ static void tst_cnd_common(struct libc_cnd_fixture *fixture, size_t wait_ms, boo
 	} else {
 		zassert_equal(thrd_success, cnd_signal(&fixture->cond));
 	}
-
-	zassert_equal(thrd_success, mtx_unlock(&fixture->mutex));
 
 	zassert_equal(thrd_success, thrd_join(fixture->thrd1, &fixture->res1));
 	if (th2) {
