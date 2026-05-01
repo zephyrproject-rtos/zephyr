@@ -2106,6 +2106,13 @@ static int flash_stm32_xspi_init(const struct device *dev)
 				     == CLOCK_CONTROL_STATUS_ON) {
 		if (stm32_xspi_is_memorymap(dev)) {
 			LOG_DBG("NOR init'd in MemMapped mode");
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+			ret = setup_pages_layout(dev);
+			if (ret != 0) {
+				LOG_ERR("layout setup failed: %d", ret);
+				return -ENODEV;
+			}
+#endif
 			/* Force HAL instance in correct state */
 			dev_data->hxspi.State = HAL_XSPI_STATE_BUSY_MEM_MAPPED;
 			return 0;

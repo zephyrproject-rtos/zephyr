@@ -27,6 +27,7 @@ REFERENCE_OUTPUT_INITLEVELS = [
         "__init_sys_clock_driver_init: sys_clock_driver_init(NULL)",
         "POST_KERNEL",
         "APPLICATION",
+        "__init_boot_banner: boot_banner(NULL)",
         "SMP",
 ]
 

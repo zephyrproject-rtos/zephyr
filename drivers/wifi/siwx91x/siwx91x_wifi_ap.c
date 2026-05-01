@@ -3,6 +3,7 @@
  * Copyright (c) 2024-2025 Silicon Laboratories Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/logging/log.h>
 #include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
 

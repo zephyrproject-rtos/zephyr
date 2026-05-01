@@ -182,6 +182,12 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 };
 
+&bt_hci_wba {
+	/* Use HASH IRQ to allocate Radio SW Low Process (Warning HASH is not used) */
+	interrupts = <60 0>, <55 14>;
+	interrupt-names = "radio", "radio-sw-low";
+};
+
 &flash0 {
 	partitions {
 		#address-cells = <1>;

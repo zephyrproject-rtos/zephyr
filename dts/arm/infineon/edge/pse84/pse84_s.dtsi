@@ -1290,5 +1290,23 @@
 				status = "disabled";
 			};
 		};
+
+		usbhs: usbhs@54900000 {
+			compatible = "infineon,usbhs", "snps,dwc2";
+			reg = <0x54900000 0x40100>;
+			interrupts = <174 4>, /* usbhs_ctrl_irqn */
+				     <175 4>; /* usbhss_irqn */
+			num-in-eps = <9>;
+			num-out-eps = <9>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x228fe052>;
+			ghwcfg4 = <0xe2103a20>;
+			status = "disabled";
+			mmio-peri-inst = <1>;
+			mmio-peri-group = <3>;
+			mmio-reg-bit-pos = <5>;
+			mmio-peri-hf-src = <1>;
+			mmio-peri-div = <3>;
+		};
 	};
 };

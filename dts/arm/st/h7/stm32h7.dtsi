@@ -166,6 +166,7 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			/*
 			 * Device-unique information is stored
@@ -1185,7 +1186,7 @@
 			status = "disabled";
 
 			mdio: mdio {
-				compatible = "st,stm32-mdio";
+				compatible = "st,stm32-mdio", "snps,dwmac-mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";

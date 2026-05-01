@@ -185,6 +185,56 @@ The driver would then pass ``my_driver_api_funcs`` as the ``api`` argument to
         most cases requires that the optional feature be controlled by a
         Kconfig option.
 
+API Class Inheritance
+*********************
+
+A subsystem API can extend another subsystem API, forming a parent-child
+relationship. This allows a device implementing the child API to also be
+recognized as implementing the parent API. For example, an I3C controller
+extends the I2C API, so it can be used wherever an I2C device is expected.
+
+To define a child API, embed the parent API struct as the **first member** of
+the child struct and declare the relationship with :c:macro:`DEVICE_API_EXTENDS`:
+
+.. code-block:: C
+
+  __subsystem struct child_driver_api {
+        struct subsystem_driver_api parent_api;
+        child_do_extra_t do_extra;
+  };
+
+  DEVICE_API_EXTENDS(child, subsystem, parent_api);
+
+A driver implementing the child API populates both the parent and child
+methods:
+
+.. code-block:: C
+
+  static DEVICE_API(child, my_child_api) = {
+        .parent_api = {
+                .do_this = my_child_do_this,
+                .do_that = my_child_do_that,
+        },
+        .do_extra = my_child_do_extra,
+  };
+
+With this in place, :c:macro:`DEVICE_API_IS` returns true for both the child
+and parent classes, and :c:macro:`DEVICE_API_GET` can retrieve the API as
+either type:
+
+.. code-block:: C
+
+  /* Both return true for a child device */
+  DEVICE_API_IS(subsystem, dev);
+  DEVICE_API_IS(child, dev);
+
+  /* Access through parent API */
+  DEVICE_API_GET(subsystem, dev)->do_this(dev, foo, bar);
+
+Multi-level inheritance is supported (e.g. grandchild extends child extends
+parent). Sibling relationships also work correctly: two different child APIs
+extending the same parent are distinguished by :c:macro:`DEVICE_API_IS`.
+
 Device-Specific API Extensions
 ******************************
 

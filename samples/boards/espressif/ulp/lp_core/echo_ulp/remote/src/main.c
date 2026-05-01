@@ -7,6 +7,9 @@
 #include <stdio.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(app);
 
 #define UART_DEVICE_NODE DT_NODELABEL(lp_uart)
 
@@ -15,6 +18,11 @@ int main(void)
 	const struct device *uart_dev = DEVICE_DT_GET(UART_DEVICE_NODE);
 	char c;
 	int ret = 0;
+
+	if (!device_is_ready(uart_dev)) {
+		LOG_ERR_DEVICE_NOT_READY(uart_dev);
+		return -ENODEV;
+	}
 
 	printf("UART echo example started. Type something...\n");
 

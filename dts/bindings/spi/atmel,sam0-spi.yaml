@@ -53,3 +53,79 @@ properties:
 
       For example
          dma-names = "tx", "rx";
+
+examples:
+  - |
+    #Example devicetree configuration with DMA (recommended for best performance):
+
+    &sercom4 {
+            compatible = "atmel,sam0-spi";
+            status = "okay";
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            dipo = <0>;
+            dopo = <2>;
+
+            pinctrl-0 = <&sercom4_spi_default>;
+            pinctrl-names = "default";
+
+            /* DMA channels: TX on channel 0, RX on channel 1 */
+            dmas = <&dmac 0 TRIGSRC_SERCOM4_TX>,
+                   <&dmac 1 TRIGSRC_SERCOM4_RX>;
+            dma-names = "tx", "rx";
+    };
+
+  - |
+    #Example devicetree configuration without DMA (polling mode):
+
+    &sercom6 {
+            compatible = "atmel,sam0-spi";
+            status = "okay";
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            dipo = <0>;
+            dopo = <2>;
+
+            pinctrl-0 = <&sercom6_spi_default>;
+            pinctrl-names = "default";
+
+            /* No 'dmas' property -> driver uses polling transfer path */
+    };
+
+  - |
+    #Mixed configuration: one SPI instance uses DMA, another uses polling.
+    #Both instances coexist on the same SoC without conflict.
+
+    &sercom4 {
+            compatible = "atmel,sam0-spi";
+            status = "okay";
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            dipo = <0>;
+            dopo = <2>;
+
+            pinctrl-0 = <&sercom4_spi_default>;
+            pinctrl-names = "default";
+
+            dmas = <&dmac 0 TRIGSRC_SERCOM4_TX>,
+                   <&dmac 1 TRIGSRC_SERCOM4_RX>;
+            dma-names = "tx", "rx";
+    };
+
+    &sercom6 {
+            compatible = "atmel,sam0-spi";
+            status = "okay";
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            dipo = <0>;
+            dopo = <2>;
+
+            pinctrl-0 = <&sercom6_spi_default>;
+            pinctrl-names = "default";
+
+            /* Polling mode — no dmas property */
+    };

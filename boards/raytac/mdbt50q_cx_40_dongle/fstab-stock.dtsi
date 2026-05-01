@@ -35,7 +35,7 @@
 
 		storage_partition: partition@dc000 {
 			label = "storage";
-			reg = <0x000f0000 0x00004000>;
+			reg = <0x000dc000 0x00004000>;
 		};
 
 		/* Nordic nRF5 bootloader <0xf4000 0xa000>

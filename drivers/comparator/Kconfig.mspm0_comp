@@ -1,0 +1,21 @@
+# TI MSPM0 Family
+
+# Copyright (c) 2026, Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_MSPM0
+	bool "TI MSPM0 Comparator driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_COMPARATOR_ENABLED
+	select PINCTRL
+	select SHARED_INTERRUPTS
+	help
+	  Enable driver for the Texas Instruments MSPM0 series comparators.
+	  Supports reference voltage configuration and internal DAC control.
+
+config COMPARATOR_MSPM0_WINDOW_MODE
+	bool
+	default y if SOC_SERIES_MSPM0G
+	depends on COMPARATOR_MSPM0
+	help
+	  Window comparator mode (auto-enabled for MSPM0G series).

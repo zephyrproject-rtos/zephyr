@@ -1,7 +1,5 @@
 sample:
   name: Shell Sample
-common:
-  filter: not CONFIG_SOC_SERIES_BSIM_NRFXX
 tests:
   sample.shell.shell_module:
     platform_exclude: qemu_rx
@@ -76,3 +74,26 @@ tests:
     harness: robot
     harness_config:
       robot_testsuite: shell_module.robot
+  sample.shell.shell_module.remote:
+    sysbuild: true
+    tags:
+      - shell
+      - ipc
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+    harness: shell
+    harness_config:
+      shell_commands_file: test_remote_shell.yml
+    integration_platforms:
+      - nrf5340bsim/nrf5340/cpuapp
+    extra_configs:
+      - CONFIG_IPC_SERVICE=y
+      - CONFIG_MBOX=y
+      - CONFIG_SHELL_REMOTE=y
+      - CONFIG_PBUF_RX_READ_BUF_SIZE=256
+      - CONFIG_HEAP_MEM_POOL_SIZE=1024
+    extra_args:
+      - FILE_SUFFIX=remote_shell

@@ -40,6 +40,12 @@ struct shell_dummy {
 
 	/** input buffer for simulating user input */
 	char input_buf[CONFIG_SHELL_BACKEND_DUMMY_BUF_SIZE];
+
+	/** Event handler */
+	shell_transport_handler_t handler;
+
+	/** Event handler context. */
+	void *context;
 };
 
 #define SHELL_DUMMY_DEFINE(_name)					\

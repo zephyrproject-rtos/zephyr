@@ -14,9 +14,6 @@
 #include <ipi.h>
 
 
-#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
-TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
-#endif
 static ALWAYS_INLINE void *thread_runq(struct k_thread *thread)
 {
 #ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
@@ -107,8 +104,5 @@ static ALWAYS_INLINE void dequeue_thread(struct k_thread *thread)
 		runq_remove(thread);
 	}
 }
-#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
-TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
-#endif
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_RUN_Q_H_ */

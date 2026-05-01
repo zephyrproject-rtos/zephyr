@@ -63,6 +63,12 @@ Deprecated APIs and options
   * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`
     to be consistent with the existing sync/async naming convention.
 
+* Ring buffer
+
+  * The ring buffer item API (:c:func:`ring_buf_item_init`, :c:func:`ring_buf_item_put`,
+    :c:func:`ring_buf_item_get`, :c:func:`ring_buf_item_space_get`) has been deprecated in favor of
+    :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`).
+
 New APIs and options
 ====================
 ..
@@ -73,7 +79,12 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* Audio
+
+  * :c:member:`pcm_stream_cfg.gain_db`
+
 * :c:func:`lora_recv_duty_cycle_async`
+* :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
 
 .. zephyr-keep-sorted-stop
 
@@ -106,6 +117,9 @@ New Samples
 ..
   Same as above, this will also be recomputed at the time of the release.
  Just link the sample, further details go in the sample documentation itself.
+
+* :zephyr:code-sample:`mctp_i2c_bus_host` (renamed from ``mctp_i2c_bus_owner``)
+* :zephyr:code-sample:`mctp_i3c_bus_host` (renamed from ``mctp_i3c_bus_owner``)
 
 Libraries / Subsystems
 **********************

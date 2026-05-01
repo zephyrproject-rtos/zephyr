@@ -985,7 +985,8 @@ def write_kobj_size_output(fp):
 def parse_subsystems_list_file(path):
     with open(path) as fp:
         subsys_list = json.load(fp)
-    subsystems.extend(subsys_list["__subsystem"])
+    for entry in subsys_list["__subsystem"]:
+        subsystems.append(entry if isinstance(entry, str) else entry["name"])
     net_sockets.extend(subsys_list["__net_socket"])
 
 

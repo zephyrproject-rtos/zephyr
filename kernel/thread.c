@@ -1618,11 +1618,7 @@ static inline void z_vrfy_k_thread_abort(k_tid_t thread)
 
 bool k_can_yield(void)
 {
-	unsigned int k = arch_irq_lock();
-	bool irq_locked = !arch_irq_unlocked(k);
-
-	arch_irq_unlock(k);
-	return !(k_is_pre_kernel() || k_is_in_isr() || irq_locked ||
+	return !(k_is_pre_kernel() || k_is_in_isr() || !arch_cpu_irqs_are_enabled() ||
 		 z_is_idle_thread_object(_current));
 }
 

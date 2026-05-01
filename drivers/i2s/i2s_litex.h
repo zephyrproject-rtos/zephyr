@@ -11,6 +11,7 @@
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/ringq.h>
 
 /* i2s configuration mask*/
 #define I2S_CONF_FORMAT_OFFSET 0
@@ -69,20 +70,11 @@ struct queue_item {
 	size_t size;
 };
 
-/* Minimal ring buffer implementation */
-struct ring_buffer {
-	struct queue_item *buf;
-	uint16_t len;
-	uint16_t head;
-	uint16_t tail;
-};
-
 struct stream {
 	int32_t state;
 	struct k_sem sem;
 	struct i2s_config cfg;
-	struct ring_buffer mem_block_queue;
-	void *mem_block;
+	struct sys_ringq mem_block_queue;
 };
 
 /* Device run time data */

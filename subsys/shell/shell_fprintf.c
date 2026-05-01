@@ -40,6 +40,14 @@ void z_shell_fprintf_fmt(const struct shell_fprintf *sh_fprintf,
 	}
 }
 
+void z_shell_cbpprintf_fmt(const struct shell_fprintf *sh_fprintf, void *package)
+{
+	(void)cbpprintf(out_func, (void *)sh_fprintf, package);
+
+	if (sh_fprintf->ctrl_blk->autoflush) {
+		z_shell_fprintf_buffer_flush(sh_fprintf);
+	}
+}
 
 void z_shell_fprintf_buffer_flush(const struct shell_fprintf *sh_fprintf)
 {

@@ -103,6 +103,28 @@ config DMM_STATS
 
 endif # HAS_NORDIC_DMM
 
+if SHELL_REMOTE
+
+config SHELL_REMOTE_PPR
+	bool "Remote Shell for PPR"
+	depends on $(dt_nodelabel_enabled,cpuppr_vpr)
+
+config SHELL_REMOTE_FLPR
+	bool "Remote Shell for FLPR"
+	depends on $(dt_nodelabel_enabled,cpuflpr_vpr)
+
+config SHELL_REMOTE_RADIO
+	bool "Remote Shell for Radio core"
+	depends on SOC_NRF54H20_CPUAPP
+
+config SHELL_REMOTE_MULTI_CLI
+	# If more than one remote shell is enabled, enable multiple remote clients.
+	default y if SHELL_REMOTE_PPR && SHELL_REMOTE_FLPR
+	default y if SHELL_REMOTE_PPR && SHELL_REMOTE_RADIO
+	default y if SHELL_REMOTE_FLPR && SHELL_REMOTE_RADIO
+
+endif # SHELL_REMOTE
+
 rsource "vpr/Kconfig"
 rsource "uicr/Kconfig"
 rsource "Kconfig.tfm"

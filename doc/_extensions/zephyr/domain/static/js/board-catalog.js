@@ -81,6 +81,20 @@ function populateFormFromURL() {
   filterBoards();
 }
 
+/**
+ * True when the URL hash encodes catalog filters or the #catalog fragment, so the page
+ * should start at the board grid rather than the introductory content.
+ */
+function hashIndicatesFilteredCatalogView() {
+  const fields = new Set(["name", "arch", "vendor", "soc", "features", "compatibles"]);
+  for (const [key, value] of new URLSearchParams(window.location.hash.slice(1))) {
+    if (key === "catalog") return true;
+    if (fields.has(key) && value !== "") return true;
+    if ((key === "show-boards" || key === "show-shields") && value === "false") return true;
+  }
+  return false;
+}
+
 function updateURL() {
   const params = ["name", "arch", "vendor", "soc"];
   const hashParams = new URLSearchParams(window.location.hash.slice(1));
@@ -357,6 +371,11 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   filterBoards();
+
+  setTimeout(() => {
+    if (!hashIndicatesFilteredCatalogView()) return;
+    document.getElementById("nb-matches")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 0);
 });
 
 function resetForm() {

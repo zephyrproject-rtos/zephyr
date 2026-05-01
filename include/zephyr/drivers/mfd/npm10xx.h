@@ -223,7 +223,6 @@ typedef uint16_t npm10xx_rstreas_t;
 struct mfd_npm10xx_event_callback;
 
 /**
- * @typedef npm10xx_callback_handler_t
  * @brief Define the application callback handler function signature
  *
  * @param mfd_npm10xx_dev nPM10xx MFD device

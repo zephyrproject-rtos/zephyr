@@ -255,7 +255,6 @@ struct tee_shm {
 };
 
 /**
- * @typedef tee_get_version_t
  *
  * @brief Callback API to get current tee version
  *
@@ -264,7 +263,6 @@ struct tee_shm {
 typedef int (*tee_get_version_t)(const struct device *dev, struct tee_version_info *info);
 
 /**
- * @typedef tee_open_session_t
  *
  * @brief Callback API to open session to Trusted Application
  *
@@ -274,7 +272,6 @@ typedef int (*tee_open_session_t)(const struct device *dev, struct tee_open_sess
 				  unsigned int num_param, struct tee_param *param,
 				  uint32_t *session_id);
 /**
- * @typedef tee_close_session_t
  *
  * @brief Callback API to close session to TA
  *
@@ -283,7 +280,6 @@ typedef int (*tee_open_session_t)(const struct device *dev, struct tee_open_sess
 typedef int (*tee_close_session_t)(const struct device *dev, uint32_t session_id);
 
 /**
- * @typedef tee_cancel_t
  *
  * @brief Callback API to cancel open session of invoke function to TA
  *
@@ -292,7 +288,6 @@ typedef int (*tee_close_session_t)(const struct device *dev, uint32_t session_id
 typedef int (*tee_cancel_t)(const struct device *dev, uint32_t session_id, uint32_t cancel_id);
 
 /**
- * @typedef tee_invoke_func_t
  *
  * @brief Callback API to invoke function to TA
  *
@@ -301,7 +296,6 @@ typedef int (*tee_cancel_t)(const struct device *dev, uint32_t session_id, uint3
 typedef int (*tee_invoke_func_t)(const struct device *dev, struct tee_invoke_func_arg *arg,
 				 unsigned int num_param, struct tee_param *param);
 /**
- * @typedef tee_shm_register_t
  *
  * @brief Callback API to register shared memory
  *
@@ -310,7 +304,6 @@ typedef int (*tee_invoke_func_t)(const struct device *dev, struct tee_invoke_fun
 typedef int (*tee_shm_register_t)(const struct device *dev, struct tee_shm *shm);
 
 /**
- * @typedef tee_shm_unregister_t
  *
  * @brief Callback API to unregister shared memory
  *
@@ -319,7 +312,6 @@ typedef int (*tee_shm_register_t)(const struct device *dev, struct tee_shm *shm)
 typedef int (*tee_shm_unregister_t)(const struct device *dev, struct tee_shm *shm);
 
 /**
- * @typedef tee_suppl_recv_t
  *
  * @brief Callback API to receive a request for TEE supplicant
  *
@@ -329,7 +321,6 @@ typedef int (*tee_suppl_recv_t)(const struct device *dev, uint32_t *func, unsign
 				struct tee_param *param);
 
 /**
- * @typedef tee_suppl_send_t
  *
  * @brief Callback API to send a request for TEE supplicant
  *

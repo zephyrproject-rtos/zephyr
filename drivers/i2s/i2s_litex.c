@@ -17,11 +17,6 @@
 
 LOG_MODULE_REGISTER(i2s_litex);
 
-#define MODULO_INC(val, max)                                                   \
-	{					                               \
-		val = (val == max - 1) ? 0 : val + 1;                          \
-	}
-
 /**
  * @brief Enable i2s device
  *
@@ -260,50 +255,38 @@ static void i2s_copy_to_fifo(uint8_t *src, size_t size, int sample_width,
 /*
  * Get data from the queue
  */
-static int queue_get(struct ring_buffer *rb, void **mem_block, size_t *size)
+static int queue_get(struct sys_ringq *f, void **mem_block, size_t *size)
 {
+	int rc;
 	unsigned int key;
+	struct queue_item item;
 
 	key = irq_lock();
+	rc = sys_ringq_get(f, &item);
 
-	if (rb->tail == rb->head) {
-		/* Ring buffer is empty */
-		irq_unlock(key);
-		return -ENOMEM;
-	}
-	*mem_block = rb->buf[rb->tail].mem_block;
-	*size = rb->buf[rb->tail].size;
-	MODULO_INC(rb->tail, rb->len);
-
+	*mem_block = item.mem_block;
+	*size = item.size;
 	irq_unlock(key);
-	return 0;
+	return rc;
 }
 
 /*
  * Put data in the queue
  */
-static int queue_put(struct ring_buffer *rb, void *mem_block, size_t size)
+static int queue_put(struct sys_ringq *f, void *mem_block, size_t size)
 {
-	uint16_t head_next;
+	int rc;
 	unsigned int key;
+	struct queue_item item = {
+		.mem_block = mem_block,
+		.size = size,
+	};
 
 	key = irq_lock();
-
-	head_next = rb->head;
-	MODULO_INC(head_next, rb->len);
-
-	if (head_next == rb->tail) {
-		/* Ring buffer is full */
-		irq_unlock(key);
-		return -ENOMEM;
-	}
-
-	rb->buf[rb->head].mem_block = mem_block;
-	rb->buf[rb->head].size = size;
-	rb->head = head_next;
+	rc = sys_ringq_put(f, &item);
 
 	irq_unlock(key);
-	return 0;
+	return rc;
 }
 
 static int i2s_litex_initialize(const struct device *dev)
@@ -502,7 +485,6 @@ static int i2s_litex_trigger(const struct device *dev, enum i2s_dir dir,
 				stream->state);
 			return -EIO;
 		}
-		__ASSERT_NO_MSG(stream->mem_block == NULL);
 		i2s_reset_fifo(cfg->base);
 		i2s_enable(cfg->base);
 		i2s_irq_enable(cfg->base, I2S_EV_READY);
@@ -541,21 +523,20 @@ static void i2s_litex_isr_rx(void *arg)
 	const struct i2s_litex_cfg *cfg = dev->config;
 	struct i2s_litex_data *data = dev->data;
 	struct stream *stream = &data->rx;
+	void *mem_block;
 	int ret;
 
 	/* Prepare to receive the next data block */
-	ret = k_mem_slab_alloc(stream->cfg.mem_slab, &stream->mem_block,
-			       K_NO_WAIT);
+	ret = k_mem_slab_alloc(stream->cfg.mem_slab, &mem_block, K_NO_WAIT);
 	if (ret < 0) {
 		clear_rx_fifo(cfg);
 		return;
 	}
-	i2s_copy_from_fifo((uint8_t *)stream->mem_block, stream->cfg.block_size,
+	i2s_copy_from_fifo((uint8_t *)mem_block, stream->cfg.block_size,
 			   stream->cfg.word_size, stream->cfg.channels);
 	i2s_clear_pending_irq(cfg->base);
 
-	ret = queue_put(&stream->mem_block_queue, stream->mem_block,
-			stream->cfg.block_size);
+	ret = queue_put(&stream->mem_block_queue, mem_block, stream->cfg.block_size);
 	if (ret < 0) {
 		LOG_WRN("Couldn't copy data "
 				"from RX fifo to the ring "
@@ -574,21 +555,21 @@ static void i2s_litex_isr_tx(void *arg)
 	struct i2s_litex_data *data = dev->data;
 	size_t mem_block_size;
 	struct stream *stream = &data->tx;
+	void *mem_block;
 	int ret;
 
-	ret = queue_get(&stream->mem_block_queue, &stream->mem_block,
-			&mem_block_size);
+	ret = queue_get(&stream->mem_block_queue, &mem_block, &mem_block_size);
 	if (ret < 0) {
 		i2s_irq_disable(cfg->base, I2S_EV_READY);
 		stream->state = I2S_STATE_READY;
 		return;
 	}
 	k_sem_give(&stream->sem);
-	i2s_copy_to_fifo((uint8_t *)stream->mem_block, mem_block_size,
+	i2s_copy_to_fifo((uint8_t *)mem_block, mem_block_size,
 			 stream->cfg.word_size, stream->cfg.channels);
 	i2s_clear_pending_irq(cfg->base);
 
-	k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
+	k_mem_slab_free(stream->cfg.mem_slab, mem_block);
 }
 
 static DEVICE_API(i2s, i2s_litex_driver_api) = {
@@ -598,21 +579,17 @@ static DEVICE_API(i2s, i2s_litex_driver_api) = {
 	.trigger = i2s_litex_trigger,
 };
 
-#define I2S_INIT(dir)                                                          \
-									       \
-	static struct queue_item rx_ring_buf[CONFIG_I2S_LITEX_RX_BLOCK_COUNT]; \
-	static struct queue_item tx_ring_buf[CONFIG_I2S_LITEX_TX_BLOCK_COUNT]; \
-									       \
-	static struct i2s_litex_data i2s_litex_data_##dir = {                  \
-		.dir.mem_block_queue.buf = dir##_ring_buf,                     \
-		.dir.mem_block_queue.len =                                     \
-			sizeof(dir##_ring_buf) / sizeof(struct queue_item),    \
-	};                                                                     \
+#define I2S_INIT(dir, items)							\
+	static uint8_t dir##_buffer[items * sizeof(struct queue_item)];		\
+	static struct i2s_litex_data i2s_litex_data_##dir = {			\
+		.dir.mem_block_queue = SYS_RINGQ_INIT(dir##_buffer,		\
+				sizeof(struct queue_item), items),		\
+	};									\
 									       \
 	static void i2s_litex_irq_config_func_##dir(const struct device *dev); \
 									       \
 	static struct i2s_litex_cfg i2s_litex_cfg_##dir = {                    \
-		.base = DT_REG_ADDR(DT_NODELABEL(i2s_##dir)), \
+		.base = DT_REG_ADDR(DT_NODELABEL(i2s_##dir)),			\
 		.fifo_base =                                                   \
 			DT_REG_ADDR_BY_NAME(DT_NODELABEL(i2s_##dir), fifo),    \
 		.fifo_depth = DT_PROP(DT_NODELABEL(i2s_##dir), fifo_depth),    \
@@ -635,8 +612,8 @@ static DEVICE_API(i2s, i2s_litex_driver_api) = {
 	}
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2s_rx))
-I2S_INIT(rx);
+I2S_INIT(rx, CONFIG_I2S_LITEX_RX_BLOCK_COUNT);
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2s_tx))
-I2S_INIT(tx);
+I2S_INIT(tx, CONFIG_I2S_LITEX_TX_BLOCK_COUNT);
 #endif

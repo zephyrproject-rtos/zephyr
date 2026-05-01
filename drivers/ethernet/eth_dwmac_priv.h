@@ -14,6 +14,9 @@
 #ifndef ZEPHYR_DRIVERS_ETHERNET_ETH_DWMAC_PRIV_H_
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_DWMAC_PRIV_H_
 
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/sys/device_mmio.h>
+
 /*
  * Global driver parameters
  */
@@ -38,11 +41,16 @@ struct dwmac_dma_desc {
 };
 
 /* our private instance structure */
-struct dwmac_priv {
-	mem_addr_t base_addr;
-	struct net_if *iface;
-	const struct device *clock;
+struct dwmac_config {
+	DEVICE_MMIO_ROM;
 	const struct device *phy_dev;
+	const struct device *clock;
+	const clock_control_subsys_t mac_clk;
+};
+
+struct dwmac_priv {
+	DEVICE_MMIO_RAM;
+	struct net_if *iface;
 
 	uint8_t mac_addr[6];
 
@@ -74,16 +82,16 @@ struct dwmac_priv {
  * Handy register accessors
  */
 
-#define REG_READ(r) sys_read32(p->base_addr + (r))
-#define REG_WRITE(r, v) sys_write32((v), p->base_addr + (r))
+#define REG_READ(r) sys_read32(DEVICE_MMIO_GET(dev) + (r))
+#define REG_WRITE(r, v) sys_write32((v), DEVICE_MMIO_GET(dev) + (r))
 
 /*
  * Shared declarations between core and platform glue code
  */
 
 int dwmac_probe(const struct device *dev);
-int dwmac_bus_init(struct dwmac_priv *p);
-int dwmac_platform_init(struct dwmac_priv *p);
+int dwmac_bus_init(const struct device *dev);
+int dwmac_platform_init(const struct device *dev);
 void dwmac_isr(const struct device *ddev);
 extern const struct ethernet_api dwmac_api;
 
@@ -583,7 +591,7 @@ extern const struct ethernet_api dwmac_api;
 #define MAC_MDIO_ADDRESS_PA			GENMASK(25, 21)
 #define MAC_MDIO_ADDRESS_RDA			GENMASK(20, 16)
 #define MAC_MDIO_ADDRESS_NTC			GENMASK(14, 12)
-#define MAC_MDIO_ADDRESS_CR			BIT(11, 8)
+#define MAC_MDIO_ADDRESS_CR			GENMASK(11, 8)
 #define MAC_MDIO_ADDRESS_SKAP			BIT(4)
 #define MAC_MDIO_ADDRESS_GOC_1			BIT(3)
 #define MAC_MDIO_ADDRESS_GOC_0			BIT(2)

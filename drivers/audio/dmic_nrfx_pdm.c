@@ -215,6 +215,7 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 	struct pcm_stream_cfg *stream = &config->streams[0];
 	uint32_t def_map, alt_map;
 	nrfx_pdm_config_t nrfx_cfg;
+	int8_t gain_limit;
 	int err;
 
 	if (drv_data->active) {
@@ -284,6 +285,13 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 		nrfx_cfg.edge = NRF_PDM_EDGE_LEFTRISING;
 		channel->act_chan_map_lo = alt_map;
 	}
+
+	/* Limit requested gain to +- 20dB */
+	gain_limit = CLAMP(stream->gain_db, -20, 20);
+	/* Registers are 0.5dB steps */
+	nrfx_cfg.gain_l = NRF_PDM_GAIN_DEFAULT + (2 * gain_limit);
+	nrfx_cfg.gain_r = NRF_PDM_GAIN_DEFAULT + (2 * gain_limit);
+
 #if NRF_PDM_HAS_SELECTABLE_CLOCK
 	nrfx_cfg.mclksrc = drv_cfg->clk_src == ACLK
 			 ? NRF_PDM_MCLKSRC_ACLK

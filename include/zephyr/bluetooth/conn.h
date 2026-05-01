@@ -2114,6 +2114,31 @@ struct bt_conn_le_cs_procedure_enable_complete {
 	uint16_t max_procedure_len;
 };
 
+/** @brief BR/EDR specific connection callbacks. */
+struct bt_conn_br_cb {
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+	/** @brief A BR/EDR connection mode has changed.
+	 *
+	 *  This callback notifies the application that the sniff mode has changed.
+	 *
+	 *  @param conn Connection object.
+	 *  @param mode Active/Sniff mode.
+	 *  @param interval Sniff interval.
+	 */
+	void (*mode_changed)(struct bt_conn *conn, uint8_t mode, uint16_t interval);
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
+
+	/** @brief A BR/EDR connection role has changed.
+	 *
+	 *  This callback notifies the application that the BR/EDR role switch
+	 *  procedure has completed.
+	 *
+	 *  @param conn Connection object.
+	 *  @param status HCI status of role change event.
+	 */
+	void (*role_changed)(struct bt_conn *conn, uint8_t status);
+};
+
 /** @brief Connection callback structure.
  *
  *  This structure is used for tracking the state of a connection.
@@ -2273,17 +2298,10 @@ struct bt_conn_cb {
 				      struct bt_conn_remote_info *remote_info);
 #endif /* defined(CONFIG_BT_REMOTE_INFO) */
 
-#if defined(CONFIG_BT_POWER_MODE_CONTROL)
-	/** @brief The connection mode change
-	 *
-	 *  This callback notifies the application that the sniff mode has changed
-	 *
-	 *  @param conn Connection object.
-	 *  @param mode Active/Sniff mode.
-	 *  @param interval Sniff interval.
-	 */
-	void (*br_mode_changed)(struct bt_conn *conn, uint8_t mode, uint16_t interval);
-#endif /* CONFIG_BT_POWER_MODE_CONTROL */
+#if defined(CONFIG_BT_CLASSIC)
+	/** @brief BR/EDR specific callbacks. */
+	struct bt_conn_br_cb br;
+#endif /* CONFIG_BT_CLASSIC */
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	/** @brief The PHY of the connection has changed.
@@ -2527,17 +2545,6 @@ struct bt_conn_cb {
 		struct bt_conn *conn, uint8_t status,
 		struct bt_conn_le_cs_procedure_enable_complete *params);
 
-#endif
-
-#if defined(CONFIG_BT_CLASSIC)
-	/** @brief The role of the connection has changed.
-	 *
-	 *  This callback notifies the application that the role switch procedure has completed.
-	 *
-	 *  @param conn Connection object.
-	 *  @param status HCI status of role change event.
-	 */
-	void (*role_changed)(struct bt_conn *conn, uint8_t status);
 #endif
 
 #if defined(CONFIG_BT_CONN_DYNAMIC_CALLBACKS)
@@ -3324,6 +3331,29 @@ int bt_conn_br_enter_sniff_mode(struct bt_conn *conn, uint16_t min_interval,
  *  @return  Zero for success, non-zero otherwise.
  */
 int bt_conn_br_exit_sniff_mode(struct bt_conn *conn);
+
+/** @brief Set BR/EDR sniff subrating parameters.
+ *
+ *  Configure sniff subrating parameters for a BR/EDR connection.
+ *  Sniff subrating allows further power savings by reducing the
+ *  number of sniff anchor points the device needs to listen on.
+ *
+ *  @param conn               Connection object.
+ *  @param max_latency        Maximum allowed sniff subrate latency
+ *                            (in baseband slots of 0.625 ms).
+ *                            Range: 0x0002 to 0xFFFE.
+ *  @param min_remote_timeout Minimum sniff mode timeout for remote device
+ *                            (in baseband slots of 0.625 ms).
+ *                            Range: 0x0000 to 0xFFFE.
+ *  @param min_local_timeout  Minimum sniff mode timeout for local device
+ *                            (in baseband slots of 0.625 ms).
+ *                            Range: 0x0000 to 0xFFFE.
+ *
+ *  @return  Zero for success, non-zero otherwise.
+ */
+int bt_conn_br_set_sniff_subrating(struct bt_conn *conn, uint16_t max_latency,
+				   uint16_t min_remote_timeout,
+				   uint16_t min_local_timeout);
 #endif /* CONFIG_BT_POWER_MODE_CONTROL */
 
 /** @brief Read BR/EDR supervision timeout.

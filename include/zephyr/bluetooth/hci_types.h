@@ -678,6 +678,28 @@ struct bt_hci_cp_exit_sniff_mode {
 	uint16_t handle;
 } __packed;
 
+/** HCI Sniff Subrating command opcode */
+#define BT_HCI_OP_SNIFF_SUBRATING              BT_OP(BT_OGF_LINK_POLICY, 0x0011) /* 0x0811 */
+/** HCI Sniff Subrating command parameters */
+struct bt_hci_cp_sniff_subrating {
+	/** ACL connection handle */
+	uint16_t handle;
+	/** Maximum latency */
+	uint16_t max_latency;
+	/** Minimum remote timeout */
+	uint16_t min_remote_timeout;
+	/** Minimum local timeout */
+	uint16_t min_local_timeout;
+} __packed;
+
+/** HCI Sniff Subrating return parameters */
+struct bt_hci_rp_sniff_subrating {
+	/** Status */
+	uint8_t  status;
+	/** ACL connection handle */
+	uint16_t handle;
+} __packed;
+
 #define BT_HCI_OP_SET_EVENT_MASK                BT_OP(BT_OGF_BASEBAND, 0x0001) /* 0x0c01 */
 struct bt_hci_cp_set_event_mask {
 	uint8_t  events[8];
@@ -1228,6 +1250,8 @@ struct bt_hci_cp_le_set_random_address {
 
 #define BT_LE_ADV_INTERVAL_MIN                  0x0020
 #define BT_LE_ADV_INTERVAL_MAX                  0x4000
+/** Maximum LE Extended Advertising interval (0xFFFFFF, 0.625ms units). */
+#define BT_LE_EXT_ADV_INTERVAL_MAX              0xFFFFFFU
 #define BT_LE_ADV_INTERVAL_DEFAULT              0x0800
 
 #define BT_LE_ADV_CHAN_MAP_CHAN_37              0x01

@@ -65,22 +65,6 @@ enum {
 	BT_HCI_QUIRK_NO_AUTO_DLE = BIT(1),
 };
 
-/** Possible values for the 'bus' member of the bt_hci_driver struct */
-enum __deprecated bt_hci_bus { /* Use macro BT_DT_HCI_BUS_GET() instead */
-	BT_HCI_BUS_VIRTUAL       = 0,
-	BT_HCI_BUS_USB           = 1,
-	BT_HCI_BUS_PCCARD        = 2,
-	BT_HCI_BUS_UART          = 3,
-	BT_HCI_BUS_RS232         = 4,
-	BT_HCI_BUS_PCI           = 5,
-	BT_HCI_BUS_SDIO          = 6,
-	BT_HCI_BUS_SPI           = 7,
-	BT_HCI_BUS_I2C           = 8,
-	BT_HCI_BUS_SMD           = 9,
-	BT_HCI_BUS_VIRTIO        = 10,
-	BT_HCI_BUS_IPC           = 11,
-};
-
 #define BT_DT_HCI_QUIRK_OR(node_id, prop, idx) \
 	UTIL_CAT(BT_HCI_QUIRK_, DT_STRING_UPPER_TOKEN_BY_IDX(node_id, prop, idx))
 #define BT_DT_HCI_QUIRKS_GET(node_id) COND_CODE_1(DT_NODE_HAS_PROP(node_id, bt_hci_quirks), \

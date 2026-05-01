@@ -1288,7 +1288,7 @@ static int zms_init(struct zms_fs *fs)
 					goto end;
 				}
 			}
-		} else {
+		} else if (!(fs->mount_flags & ZMS_MOUNT_FLAG_NO_FORMAT)) {
 			rc = zms_flash_erase_sector(fs, addr);
 			if (rc) {
 				goto end;
@@ -1297,6 +1297,11 @@ static int zms_init(struct zms_fs *fs)
 			if (rc) {
 				goto end;
 			}
+		} else {
+			/* No valid empty ATE in the last sector */
+			LOG_ERR("No valid empty ATE found in the last sector");
+			rc = -ENOTSUP;
+			goto end;
 		}
 		rc = zms_get_sector_cycle(fs, addr, &fs->sector_cycle);
 		if (rc == -ENOENT) {

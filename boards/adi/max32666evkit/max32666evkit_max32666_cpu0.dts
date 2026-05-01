@@ -86,6 +86,10 @@
 	status = "okay";
 };
 
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
 /* Ensure we don't attempt to access flash instance used by CPU1 */
 &flash1 {
 	status = "disabled";

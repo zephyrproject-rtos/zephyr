@@ -216,6 +216,12 @@
 			status = "disabled";
 		};
 
+		tsen: tsen {
+			compatible = "bflb,tsen";
+			io-channels = <&adc0 0>;
+			status = "disabled";
+		};
+
 		sec_eng_trng: trng@20004000 {
 			compatible = "bflb,sec-eng-trng";
 			reg = <0x20004000 0x100>;

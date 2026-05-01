@@ -964,6 +964,11 @@ div.graphviz > object {
     font-size: 0.9em;
 }
 
+/* Icon for the hover text that appears next to headings */
+.headerlink::after {
+    content: "\f0c1"; /* font-awesome "link" icon */
+}
+
 /* Home page grid display */
 .grid {
     list-style-type: none !important;

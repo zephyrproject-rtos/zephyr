@@ -29,6 +29,12 @@
 		};
 	};
 
+	sai3_mclk1: clock-sai3-mclk1 {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <12288000>;
+	};
+
 	soc {
 		itcm: itcm@0 {
 			compatible = "nxp,imx-itcm";
@@ -294,6 +300,27 @@
 			#size-cells = <0>;
 			interrupts = <33 3>;
 			clocks = <&ccm IMX_CCM_ECSPI3_CLK 0 0>;
+			status = "disabled";
+		};
+
+		sdma3: dma@30e00000 {
+			compatible = "nxp,sdma";
+			reg = <0x30e00000 DT_SIZE_K(64)>;
+			interrupts = <34 3>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
+		sai3: dai@30c30000 {
+			compatible = "nxp,dai-sai";
+			reg = <0x30c30000 DT_SIZE_K(64)>;
+			clocks = <&sai3_mclk1>;
+			clock-names = "mclk1";
+			interrupts = <50 3>;
+			dmas = <&sdma3 5 5>, <&sdma3 4 5>;
+			dma-names = "tx", "rx";
+			dai-index = <3>;
+			mclk-is-output;
 			status = "disabled";
 		};
 	};

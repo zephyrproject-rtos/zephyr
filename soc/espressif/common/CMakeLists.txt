@@ -88,14 +88,15 @@ endif()
 
 set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
 
-set(image_off ${CONFIG_FLASH_LOAD_OFFSET})
+if(CONFIG_ESP_SIMPLE_BOOT AND NOT (CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE))
+  dt_nodelabel(image_part_path NODELABEL "boot_partition")
+else()
+  dt_chosen(image_part_path PROPERTY "zephyr,code-partition")
+endif()
+dt_reg_addr(image_off PATH ${image_part_path})
 
-# If CONFIG_BUILD_OUTPUT_ADJUST_LMA is defined, adjust the image offset
-# to account for the additional load memory address offset.
-# This is useful for cases where the image needs to be loaded at a specific
-# address in flash, such as when using MCUBoot and flashing secondary images.
 if(DEFINED CONFIG_BUILD_OUTPUT_ADJUST_LMA)
-  math(EXPR image_off "${CONFIG_FLASH_LOAD_OFFSET} + ${CONFIG_BUILD_OUTPUT_ADJUST_LMA}")
+  math(EXPR image_off "${image_off} + ${CONFIG_BUILD_OUTPUT_ADJUST_LMA}" OUTPUT_FORMAT HEXADECIMAL)
 endif()
 
 board_runner_args(esp32 "--esp-app-address=${image_off}")

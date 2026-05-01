@@ -12,6 +12,8 @@ choice
 	default REMOTE_BOARD_NRF54LM20A_CPUFLPR if BOARD = "nrf54lm20dk"
 	default REMOTE_BOARD_NRF54L15_CPUFLPR if BOARD = "nrf54l15dk"
 	default REMOTE_BOARD_NRF5340_CPUNET if BOARD = "nrf5340dk"
+	default REMOTE_BOARD_ESP32_DEVKITC_ESP32_APPCPU if BOARD = "esp32_devkitc"
+	default REMOTE_BOARD_ESP32S3_DEVKITC_ESP32S3_APPCPU if BOARD = "esp32s3_devkitc"
 
 config REMOTE_BOARD_NRF54H20_CPURAD
 	bool "nrf54h20dk/nrf54h20/cpurad"
@@ -25,6 +27,12 @@ config REMOTE_BOARD_NRF54L15_CPUFLPR
 config REMOTE_BOARD_NRF5340_CPUNET
 	bool "nrf5340dk/nrf5340/cpunet"
 
+config REMOTE_BOARD_ESP32_DEVKITC_ESP32_APPCPU
+	bool "esp32_devkitc/esp32/appcpu"
+
+config REMOTE_BOARD_ESP32S3_DEVKITC_ESP32S3_APPCPU
+	bool "esp32s3_devkitc/esp32s3/appcpu"
+
 endchoice
 
 config REMOTE_BOARD
@@ -33,3 +41,5 @@ config REMOTE_BOARD
 	default "nrf54l15dk/nrf54l15/cpuflpr" if REMOTE_BOARD_NRF54L15_CPUFLPR
 	default "nrf54lm20dk/nrf54lm20a/cpuflpr" if REMOTE_BOARD_NRF54LM20A_CPUFLPR
 	default "nrf5340dk/nrf5340/cpunet" if REMOTE_BOARD_NRF5340_CPUNET
+	default "esp32_devkitc/esp32/appcpu" if REMOTE_BOARD_ESP32_DEVKITC_ESP32_APPCPU
+	default "esp32s3_devkitc/esp32s3/appcpu" if REMOTE_BOARD_ESP32S3_DEVKITC_ESP32S3_APPCPU

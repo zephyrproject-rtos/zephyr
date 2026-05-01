@@ -25,3 +25,9 @@ tests:
     sysbuild: true
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
+
+  sample.zbus.proxy_agent_ipc.espressif:
+    sysbuild: true
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s3_devkitc/esp32s3/procpu

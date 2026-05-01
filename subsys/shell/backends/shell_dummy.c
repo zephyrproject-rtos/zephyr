@@ -24,6 +24,8 @@ static int init(const struct shell_transport *transport,
 		return -EINVAL;
 	}
 
+	sh_dummy->handler = evt_handler;
+	sh_dummy->context = context;
 	sh_dummy->initialized = true;
 
 	return 0;
@@ -159,6 +161,9 @@ int shell_backend_dummy_push_input(const struct shell *sh, const char *data, siz
 
 	memcpy(sh_dummy->input_buf + sh_dummy->input_len, data, len);
 	sh_dummy->input_len += len;
+	if (sh_dummy->handler) {
+		sh_dummy->handler(SHELL_TRANSPORT_EVT_RX_RDY, sh_dummy->context);
+	}
 
 	return 0;
 }

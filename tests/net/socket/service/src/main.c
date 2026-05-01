@@ -149,8 +149,8 @@ void run_test_service(const struct net_socket_service_desc *udp_service,
 	ret = net_socket_service_unregister(tcp_service);
 	zassert_equal(ret, 0, "Cannot unregister tcp service (%d)", ret);
 
-	ret = net_socket_service_unregister(udp_service);
-	zassert_equal(ret, 0, "Cannot unregister tcp service (%d)", ret);
+	ret = net_socket_service_close(udp_service);
+	zassert_equal(ret, 0, "Cannot unregister udp service (%d)", ret);
 
 	ret = net_socket_service_unregister(tcp_service_small);
 	zassert_equal(ret, 0, "Cannot unregister tcp service (%d)", ret);
@@ -167,8 +167,11 @@ void run_test_service(const struct net_socket_service_desc *udp_service,
 	ret = close(c_sock_udp);
 	zassert_equal(ret, 0, "close failed");
 
+	/* Small sleep to allow socket service to action the close itself` */
+	k_sleep(K_MSEC(10));
+
 	ret = close(s_sock_udp);
-	zassert_equal(ret, 0, "close failed");
+	zassert_not_equal(ret, 0, "socket not automatically closed");
 
 	/* Let the stack close the TCP sockets properly */
 	k_msleep(100);

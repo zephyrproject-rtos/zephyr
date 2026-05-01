@@ -3,6 +3,7 @@
 
 # zephyr-keep-sorted-start
 source "drivers/sensor/ti/bq274xx/Kconfig"
+source "drivers/sensor/ti/fdc1004/Kconfig"
 source "drivers/sensor/ti/fdc2x1x/Kconfig"
 source "drivers/sensor/ti/ina219/Kconfig"
 source "drivers/sensor/ti/ina2xx/Kconfig"

@@ -162,7 +162,8 @@ config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 
 	  Maximum Fragment Length (MFL) value is automatically chosen based on
 	  MBEDTLS_SSL_OUT_CONTENT_LEN and MBEDTLS_SSL_IN_CONTENT_LEN mbed TLS
-	  macros (which are configured by CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN in
+	  macros (which are configured by CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN and
+	  CONFIG_MBEDTLS_SSL_OUT_CONTENT_LEN in
 	  case of default mbed TLS config). With DTLS, MFL value may be further
 	  limited with NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH.
 

@@ -55,8 +55,11 @@ Targets available
 ==================
 
 The default configuration enables the first core only.
-CPU0 is the only target that can run standalone.
-CPU1 is not supported.
+CPU0 is the only target that can run standalone without a
+debugger. CPU0 is responsible for initialization of
+CPU1.
+CPU1 standalone build is also supported, but it can be
+run standalone only by a debugger which boots the core.
 
 Connections and IOs
 ===================
@@ -80,7 +83,8 @@ System Clock
 ============
 
 The MCX-L255 SoC is configured to use FRO 96M (FIRC) running at 96MHz as
-a source for the system clock.
+a source for the system clock for CPU0. CPU1 is configured to use FRO10M
+(LPIRC).
 
 Serial Port
 ===========

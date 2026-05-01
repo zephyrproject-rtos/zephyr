@@ -15,6 +15,7 @@ import threading
 import time
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
+from dataclasses import asdict
 from enum import Enum
 from string import Template
 
@@ -29,6 +30,7 @@ from twisterlib.harnessconfig import TWISTER_PYTEST_CONFIG_FILE, HarnessPytestCo
 from twisterlib.reports import ReportStatus
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
+from twisterlib.testsuitedata import HarnessConfig
 
 logger = logging.getLogger('twister')
 
@@ -394,7 +396,7 @@ class Pytest(Harness):
             self._update_test_status()
 
     def generate_command(self):
-        config = self.instance.testsuite.harness_config
+        config: HarnessConfig = self.instance.testsuite.harness_config
         handler: Handler = self.instance.handler
         command = [
             'pytest', '-s', '-v',
@@ -404,13 +406,17 @@ class Pytest(Harness):
             f'--twister-config={self.pytest_config_file}'
         ]
 
-        pytest_dut_scope = config.get('pytest_dut_scope', None) if config else None
-        if pytest_dut_scope:
-            command.append(f'--dut-scope={pytest_dut_scope}')
+        if config.pytest_dut_scope:
+            command.append(f'--dut-scope={config.pytest_dut_scope}')
 
-        pytest_root = config.get('pytest_root', ['pytest']) if config else ['pytest']
-        command.extend([os.path.normpath(os.path.join(
-            self.source_dir, os.path.expanduser(os.path.expandvars(src)))) for src in pytest_root])
+        command.extend(
+            [
+                os.path.normpath(
+                    os.path.join(self.source_dir, os.path.expanduser(os.path.expandvars(src)))
+                )
+                for src in config.pytest_root
+            ]
+        )
 
         self.pytest_params.device_type = self._get_pytest_device_type(handler.type_str)
 
@@ -420,19 +426,18 @@ class Pytest(Harness):
 
         if handler.type_str == 'device':
             self._generate_parameters_for_hardware(handler)
-            self.pytest_params.duts = self.instance.reserved_duts
         else:
             for fixture in handler.options.fixture:
                 self.pytest_params.twister_fixtures.append(fixture)
 
+        self.pytest_params.duts = self.instance.reserved_duts
         self.pytest_params.required_builds = self.instance.required_build_dirs
 
         if handler.options.extra_test_args and handler.type_str == 'native':
             self.pytest_params.extra_test_args = shlex.join(handler.options.extra_test_args)
 
         # Add any additional pytest args from YAML or CLI
-        pytest_args_yaml = config.get('pytest_args', []) if config else []
-        command.extend(pytest_args_yaml)
+        command.extend(config.pytest_args)
         if handler.options.pytest_args:
             command.extend(handler.options.pytest_args)
 
@@ -639,7 +644,7 @@ class Shell(Pytest):
         if shell_commands := harness_config.get('shell_commands'):
             test_shell_file = os.path.join(self.running_dir, 'test_shell.yml')
             with open(test_shell_file, 'w') as f:
-                yaml.dump(shell_commands, f)
+                yaml.dump([asdict(cmd) for cmd in shell_commands], f)
             return test_shell_file
 
         test_shell_file = harness_config.get('shell_commands_file', 'test_shell.yml')

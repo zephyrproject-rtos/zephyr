@@ -1246,7 +1246,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.le_cs_config_removed = le_cs_config_removed,
 #endif
 #if defined(CONFIG_BT_CLASSIC)
-	.role_changed = role_changed,
+	.br.role_changed = br_role_changed,
 #endif
 };
 #endif /* CONFIG_BT_CONN */

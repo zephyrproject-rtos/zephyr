@@ -20,6 +20,15 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/net_buf.h>
 
+/* The struct net_buf::ref_word layout assumes atomic_t is `long` -- the
+ * conditional padding in the byte-struct view (see net_buf.h) keys off
+ * __SIZEOF_LONG__ to keep `ref` at the LSB of ref_word on big-endian
+ * 64-bit. If atomic_t is ever redefined to a different integer type,
+ * the layout has to be revisited.
+ */
+BUILD_ASSERT(sizeof(atomic_t) == sizeof(long),
+	     "struct net_buf::ref_word layout assumes atomic_t == long");
+
 #if defined(CONFIG_NET_BUF_LOG)
 #define NET_BUF_DBG(fmt, ...) LOG_DBG("(%p) " fmt, k_current_get(), \
 				      ##__VA_ARGS__)
@@ -95,10 +104,10 @@ void net_buf_reset(struct net_buf *buf)
 static uint8_t *generic_data_ref(struct net_buf *buf, uint8_t *data)
 {
 	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
-	uint8_t *ref_count;
+	atomic_t *ref_count;
 
-	ref_count = data - GET_ALIGN(buf_pool);
-	(*ref_count)++;
+	ref_count = (atomic_t *)(data - GET_ALIGN(buf_pool));
+	atomic_inc(ref_count);
 
 	return data;
 }
@@ -108,7 +117,7 @@ static uint8_t *mem_pool_data_alloc(struct net_buf *buf, size_t *size,
 {
 	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
 	struct k_heap *pool = buf_pool->alloc->alloc_data;
-	uint8_t *ref_count;
+	atomic_t *ref_count;
 	void *b;
 
 	if (buf_pool->alloc->alignment == 0) {
@@ -134,25 +143,25 @@ static uint8_t *mem_pool_data_alloc(struct net_buf *buf, size_t *size,
 		return NULL;
 	}
 
-	ref_count = (uint8_t *)b;
-	*ref_count = 1U;
+	ref_count = (atomic_t *)b;
+	atomic_set(ref_count, 1);
 
 	/* Return pointer to the byte following the ref count */
-	return ref_count + GET_ALIGN(buf_pool);
+	return (uint8_t *)b + GET_ALIGN(buf_pool);
 }
 
 static void mem_pool_data_unref(struct net_buf *buf, uint8_t *data)
 {
 	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
 	struct k_heap *pool = buf_pool->alloc->alloc_data;
-	uint8_t *ref_count;
+	atomic_t *ref_count;
 
-	ref_count = data - GET_ALIGN(buf_pool);
-	if (--(*ref_count)) {
+	ref_count = (atomic_t *)(data - GET_ALIGN(buf_pool));
+	if (atomic_dec(ref_count) != 1) {
 		return;
 	}
 
-	/* Need to copy to local variable due to alignment */
+	/* Last reference: free the underlying allocation */
 	k_heap_free(pool, ref_count);
 }
 
@@ -189,25 +198,25 @@ static uint8_t *heap_data_alloc(struct net_buf *buf, size_t *size,
 			     k_timeout_t timeout)
 {
 	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
-	uint8_t *ref_count;
+	atomic_t *ref_count;
 
 	ref_count = k_malloc(GET_ALIGN(buf_pool) + *size);
 	if (!ref_count) {
 		return NULL;
 	}
 
-	*ref_count = 1U;
+	atomic_set(ref_count, 1);
 
-	return ref_count + GET_ALIGN(buf_pool);
+	return (uint8_t *)ref_count + GET_ALIGN(buf_pool);
 }
 
 static void heap_data_unref(struct net_buf *buf, uint8_t *data)
 {
 	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
-	uint8_t *ref_count;
+	atomic_t *ref_count;
 
-	ref_count = data - GET_ALIGN(buf_pool);
-	if (--(*ref_count)) {
+	ref_count = (atomic_t *)(data - GET_ALIGN(buf_pool));
+	if (atomic_dec(ref_count) != 1) {
 		return;
 	}
 
@@ -443,21 +452,32 @@ void net_buf_unref(struct net_buf *buf)
 	__ASSERT_NO_MSG(buf);
 
 	while (buf) {
+		/* Capture fields that may be needed for logging *before* the
+		 * decrement: once our reference is dropped, another CPU may
+		 * free the buffer and we must not read it again. The
+		 * decrement is performed on `ref_word` (the atomic_t view of
+		 * the slot shared with flags/pool_id/user_data_size) and the
+		 * uint8_t narrowing extracts just the ref byte from the
+		 * returned prior word value.
+		 */
 		struct net_buf *frags = buf->frags;
+		__maybe_unused uint8_t pool_id = buf->pool_id;
 		struct net_buf_pool *pool;
+		uint8_t old_ref = atomic_dec(&buf->ref_word);
 
-		__ASSERT(buf->ref, "buf %p double free", buf);
-		if (!buf->ref) {
+		NET_BUF_DBG("buf %p ref %u pool_id %u frags %p", buf, old_ref,
+			    pool_id, frags);
+
+		__ASSERT(old_ref != 0, "buf %p double free", buf);
+		if (old_ref == 0) {
 #if defined(CONFIG_NET_BUF_LOG)
 			NET_BUF_ERR("%s():%d: buf %p double free", func, line,
 				    buf);
 #endif
 			return;
 		}
-		NET_BUF_DBG("buf %p ref %u pool_id %u frags %p", buf, buf->ref,
-			    buf->pool_id, buf->frags);
 
-		if (--buf->ref > 0) {
+		if (old_ref != 1) {
 			return;
 		}
 
@@ -467,8 +487,10 @@ void net_buf_unref(struct net_buf *buf)
 		pool = net_buf_pool_get(buf->pool_id);
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
-		atomic_inc(&pool->avail_count);
-		__ASSERT_NO_MSG(atomic_get(&pool->avail_count) <= pool->buf_count);
+		__maybe_unused atomic_val_t old_avail =
+			atomic_inc(&pool->avail_count);
+
+		__ASSERT_NO_MSG(old_avail + 1 <= pool->buf_count);
 #endif
 
 		if (pool->destroy) {
@@ -485,9 +507,11 @@ struct net_buf *net_buf_ref(struct net_buf *buf)
 {
 	__ASSERT_NO_MSG(buf);
 
+	__maybe_unused uint8_t old_ref = atomic_inc(&buf->ref_word);
+
+	__ASSERT(old_ref != 0xff, "buf %p ref count overflow", buf);
 	NET_BUF_DBG("buf %p (old) ref %u pool_id %u",
-		    buf, buf->ref, buf->pool_id);
-	buf->ref++;
+		    buf, old_ref, buf->pool_id);
 	return buf;
 }
 

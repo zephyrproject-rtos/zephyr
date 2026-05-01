@@ -21,6 +21,7 @@ tests:
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+      - numaker_pfm_m487
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf7120dk/nrf7120/cpuapp

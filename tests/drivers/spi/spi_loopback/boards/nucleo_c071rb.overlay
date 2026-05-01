@@ -5,6 +5,7 @@
  */
 
 &spi1 {
+	pinctrl-0 = <&spi1_nss_pb0 &spi1_sck_pb3 &spi1_miso_pb4 &spi1_mosi_pb5>;
 	dmas = <&dmamux1 2 17 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
 	       <&dmamux1 1 16 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 	dma-names = "tx", "rx";

@@ -236,6 +236,9 @@ html_context = {
     # engine with Google's Programmable Search Engine.
     # See https://programmablesearchengine.google.com/ for details.
     "google_searchengine_id": "746031aa0d56d4912",
+    # Set kapa_website_id to your Kapa.ai website ID to enable the AI search widget.
+    # See https://docs.kapa.ai/integrations/website-widget/installation/general
+    "kapa_website_id": "231c2d18-d9cd-4296-bbcd-971a391dfe34",
 }
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -416,7 +419,14 @@ linkcheck_anchors = False
 api_overview_doxygen_out_dir = str(doxyrunner_projects["zephyr"]["outdir"])
 api_overview_base_url = "https://github.com/zephyrproject-rtos/zephyr"
 
+
+def _set_html_permalinks_icon(_, config):
+    config.html_permalinks_icon = ""
+
+
 def setup(app):
     # theme customizations
     app.add_css_file("css/custom.css")
     app.add_js_file("js/custom.js")
+    # RTD theme hard codes a Font Awesome link icon in its setup() code, but we want no icon
+    app.connect("config-inited", _set_html_permalinks_icon, priority=900)

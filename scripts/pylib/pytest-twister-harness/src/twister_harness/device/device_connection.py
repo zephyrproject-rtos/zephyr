@@ -453,13 +453,14 @@ def create_device_connections(device_config: DeviceConfig) -> list[DeviceConnect
     """Factory method to create device connections based on device configuration."""
     connections: list[DeviceConnection] = []
 
-    log_path: Path = device_config.build_dir / 'handler.log'
+    log_basename = "handler" + (f"{device_config.dut_number}" if device_config.dut_number else "")
+    log_path: Path = device_config.build_dir / f'{log_basename}.log'
     timeout = device_config.base_timeout
 
     if device_config.type == "hardware":
         for core, serial_config in enumerate(device_config.serial_configs):
             if core > 0:
-                log_path = device_config.build_dir / f'handler_{core}.log'
+                log_path = device_config.build_dir / f'{log_basename}_{core}.log'
             connection = SerialConnection(log_path, timeout, serial_config)
             connections.append(connection)
     elif device_config.type == "qemu":
@@ -470,7 +471,13 @@ def create_device_connections(device_config: DeviceConfig) -> list[DeviceConnect
         connection = ProcessConnection(log_path, timeout)
         connections.append(connection)
 
-    # Update log prefixes only for extra connections (not for the first one)
+    # Set log prefixes for multi-DUT and multi-core (or more serial connections) configurations:
+    # - DUT 0, core 0: no prefix (main device, main connection) to keep backwards compatibility
+    # - DUT 0, core 1: "[0-1]" (main device, extra connection)
+    # - DUT 1, core 0: "[1]" (additional device, main connection)
+    # - DUT 1, core 1: "[1-1]" (additional device, extra connection)
+    if device_config.dut_number:
+        connections[0].log_prefix = f"[{device_config.dut_number}]"
     for index, _ in enumerate(connections[1:], start=1):
-        connections[index].log_prefix = f"[{index}]"
+        connections[index].log_prefix = f"[{device_config.dut_number}-{index}]"
     return connections

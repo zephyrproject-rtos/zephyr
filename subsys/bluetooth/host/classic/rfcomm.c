@@ -285,7 +285,23 @@ static void rfcomm_session_disconnected(struct bt_rfcomm_session *session)
 	}
 
 	sys_slist_init(&session->dlcs);
-	session->state = BT_RFCOMM_STATE_DISCONNECTED;
+	/*
+	 * If the function is called, it means the session disconnection process has been requested
+	 * by peer device. Or the L2CAP connection has been closed (it is not counted in the case).
+	 * While, if the session is in disconnecting state, it means the disconnection process has
+	 * been started by the local device.
+	 * In this case, only set the session to disconnected state if the local session is not in
+	 * disconnecting state.
+	 * It is used to avoid the race condition where the disconnection process is triggered by
+	 * both the local and peer devices at the same time.
+	 * Without performing the check, the race condition might cause the session state to be
+	 * set to disconnected on both sides, and the disconnection process will not complete. And
+	 * the l2cap connection of session will not be released.
+	 * As a result, the rfcomm channel connection request will not work properly.
+	 */
+	if (session->state != BT_RFCOMM_STATE_DISCONNECTING) {
+		session->state = BT_RFCOMM_STATE_DISCONNECTED;
+	}
 }
 
 struct net_buf *bt_rfcomm_create_pdu(struct net_buf_pool *pool)

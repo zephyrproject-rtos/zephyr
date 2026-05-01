@@ -98,6 +98,12 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 	return key != 0;
 }
 
+/** Implementation of @ref arch_cpu_irqs_are_enabled. */
+static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
+{
+	return (read_c0_status() & ST0_IE) != 0;
+}
+
 static ALWAYS_INLINE void arch_nop(void)
 {
 	__asm__ volatile ("nop");

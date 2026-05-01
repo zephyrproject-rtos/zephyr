@@ -359,7 +359,6 @@ enum display_event_result {
 };
 
 /**
- * @typedef display_event_cb_t.
  *
  * @brief Called either in ISR context (if arg in_isr=true at register time,
  * see @ref display_register_event_cb ) or in thread context (if in_isr=false,

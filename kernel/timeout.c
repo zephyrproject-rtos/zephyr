@@ -284,6 +284,13 @@ void sys_clock_unlock(k_spinlock_key_t key)
 }
 #endif
 
+#if defined(CONFIG_TEST) || defined(CONFIG_ASSERT)
+bool sys_clock_is_locked(void)
+{
+	return z_spin_is_locked(&timeout_lock);
+}
+#endif
+
 int64_t sys_clock_tick_get(void)
 {
 	uint64_t t = 0U;

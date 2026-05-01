@@ -742,7 +742,7 @@ void bt_hci_role_change(struct net_buf *buf)
 		}
 	}
 
-	bt_conn_role_changed(conn, evt->status);
+	bt_conn_br_role_changed(conn, evt->status);
 
 	bt_conn_unref(conn);
 }

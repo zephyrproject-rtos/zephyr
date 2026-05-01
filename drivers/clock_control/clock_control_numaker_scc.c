@@ -114,6 +114,11 @@ static inline int numaker_pcc_get_max_divider(NUMAKER_PCC_MODIDX_REAL_TYPE clk_m
 	case SDH0_MODULE:
 		*max_divider = (CLK_CLKDIV0_SDH0DIV_Msk >> CLK_CLKDIV0_SDH0DIV_Pos) + 1;
 		break;
+#elif defined(CONFIG_SOC_SERIES_M335X)
+	case CANFD0_MODULE:
+	case CANFD1_MODULE:
+		*max_divider = (CLK_CLKDIV1_CANFD0DIV_Msk >> CLK_CLKDIV1_CANFD0DIV_Pos) + 1;
+		break;
 #endif
 	default:
 		LOG_ERR("Unsupported clock module index: 0x%" PRIx64, (uint64_t)clk_modidx_real);
@@ -279,6 +284,28 @@ static inline int numaker_pcc_get_source_rate(NUMAKER_PCC_MODIDX_REAL_TYPE clk_m
 			*source_rate = CLK_GetHCLKFreq();
 			break;
 		case (CLK_CLKSEL0_SDH0SEL_HIRC >> CLK_CLKSEL0_SDH0SEL_Pos):
+			*source_rate = __HIRC;
+			break;
+		default:
+			LOG_ERR("Unsupported clock module/source index: 0x%" PRIx64 "/%d",
+				(uint64_t)clk_modidx_real, clksrc_idx);
+			return -ENOTSUP;
+		}
+		break;
+#elif defined(CONFIG_SOC_SERIES_M335X)
+	case CANFD0_MODULE:
+	case CANFD1_MODULE:
+		switch (clksrc_idx) {
+		case (CLK_CLKSEL0_CANFD0SEL_HXT >> CLK_CLKSEL0_CANFD0SEL_Pos):
+			*source_rate = __HXT;
+			break;
+		case (CLK_CLKSEL0_CANFD0SEL_PLL >> CLK_CLKSEL0_CANFD0SEL_Pos):
+			*source_rate = CLK_GetPLLClockFreq();
+			break;
+		case (CLK_CLKSEL0_CANFD0SEL_HCLK >> CLK_CLKSEL0_CANFD0SEL_Pos):
+			*source_rate = CLK_GetHCLKFreq();
+			break;
+		case (CLK_CLKSEL0_CANFD0SEL_HIRC >> CLK_CLKSEL0_CANFD0SEL_Pos):
 			*source_rate = __HIRC;
 			break;
 		default:

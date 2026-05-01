@@ -70,4 +70,12 @@
 			interrupts = <43 0>;
 		};
 	};
+
+	bt_hci_wba: bt_hci_wba {
+		interrupts = <60 0>;
+	};
+
+	ieee802154: ieee802154 {
+		interrupts = <60 0>;
+	};
 };

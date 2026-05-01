@@ -32,7 +32,6 @@ extern "C" {
 #endif
 
 /**
- * @typedef pcie_bdf_t
  * @brief A unique PCI(e) endpoint (bus, device, function).
  *
  * A PCI(e) endpoint is uniquely identified topologically using a
@@ -43,7 +42,6 @@ extern "C" {
 typedef uint32_t pcie_bdf_t;
 
 /**
- * @typedef pcie_id_t
  * @brief A unique PCI(e) identifier (vendor ID, device ID).
  *
  * The PCIE_CONF_ID register for each endpoint is a (vendor ID, device ID)

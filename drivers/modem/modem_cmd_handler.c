@@ -168,9 +168,9 @@ static int parse_params(struct modem_cmd_handler_data *data,  size_t match_len,
 		 * can be parsed later because match_len is computed to be
 		 * the minimum of the distance to the first CRLF and the size
 		 * of the buffer.
-		 * Therefore, waiting more data on the interface won't change
-		 * match_len value, which mean there is no point in waiting
-		 * for more arguments, this will just end in a infinite loop
+		 * Therefore, waiting for more data on the interface won't change
+		 * match_len value, which means there is no point in waiting
+		 * for more arguments. This will just result in an infinite loop
 		 * parsing data and finding that some arguments are missing.
 		 */
 		return -EINVAL;

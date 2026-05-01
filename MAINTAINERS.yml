@@ -155,9 +155,9 @@
 ACPI:
   status: odd fixes
   files:
-    - lib/acpi/
+    - arch/common/acpi/
     - include/zephyr/acpi/
-    - tests/lib/acpi/
+    - tests/arch/common/acpi/
     - dts/bindings/acpi/
     - include/zephyr/dt-bindings/acpi/
   labels:
@@ -800,6 +800,7 @@ Bouffalolab Platforms:
     - boards/sipeed/m1s_dock/
     - boards/sipeed/maix_m0s_dock/
     - drivers/*/*bflb*
+    - drivers/sensor/bflb/
     - dts/riscv/bflb/
     - dts/bindings/*/bflb,*
     - soc/bflb/
@@ -5677,9 +5678,7 @@ Twister:
   collaborators:
     - PerMac
     - hakehuang
-    - golowanow
     - gchwier
-    - LukaszMrugala
     - KamilxPaszkiet
     - fundakol
   files:
@@ -5705,6 +5704,7 @@ USB:
     - tmon-nordic
   collaborators:
     - josuah
+    - MarkWangChinese
   files:
     - drivers/usb/
     - dts/bindings/usb/

@@ -49,12 +49,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mbedtls_heap_cmds,
 );
 #endif
 
-SHELL_STATIC_SUBCMD_SET_CREATE(mbedtls_cmds,
 #if defined(MBEDTLS_MEMORY_DEBUG)
-	SHELL_CMD_ARG(heap, &mbedtls_heap_cmds, "Show heap status",
-		      cmd_mbedtls_heap, 1, 0),
-#endif
-	SHELL_SUBCMD_SET_END /* Array terminated. */
+SHELL_STATIC_SUBCMD_SET_CREATE(mbedtls_cmds,
+			       SHELL_CMD_ARG(heap, &mbedtls_heap_cmds, "Show heap status",
+					     cmd_mbedtls_heap, 1, 0),
+			       SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
 SHELL_CMD_REGISTER(mbedtls, &mbedtls_cmds, "mbed TLS commands", NULL);
+#endif

@@ -343,13 +343,8 @@ int sntp_read_async(struct net_socket_service_event *event, struct sntp_time *ts
 
 void sntp_close_async(const struct net_socket_service_desc *service)
 {
-	struct sntp_ctx *ctx = service->pev->user_data;
-	/* Detach socket from socket service */
-	net_socket_service_unregister(service);
-	/* CLose the socket */
-	if (ctx) {
-		(void)zsock_close(ctx->sock.fd);
-	}
+	/* Detach socket from socket service with automatic close */
+	net_socket_service_close(service);
 }
 
 #endif /* CONFIG_NET_SOCKETS_SERVICE */

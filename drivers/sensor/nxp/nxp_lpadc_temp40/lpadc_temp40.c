@@ -108,7 +108,7 @@ static int lpadc_temp40_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(config->adc)) {
-		LOG_ERR_DEVICE_NOT_READY(config->adc.dev);
+		LOG_ERR_DEVICE_NOT_READY(config->adc);
 		return -ENODEV;
 	}
 

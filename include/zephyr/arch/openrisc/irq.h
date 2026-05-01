@@ -85,6 +85,12 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 	return key != 0;
 }
 
+/** Implementation of @ref arch_cpu_irqs_are_enabled. */
+static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
+{
+	return (openrisc_read_spr(SPR_SR) & SPR_SR_IRQ_MASK) != 0;
+}
+
 /**
  * @brief Enable interrupt on OpenRISC core.
  *

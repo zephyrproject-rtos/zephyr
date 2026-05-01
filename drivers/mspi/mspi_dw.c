@@ -553,9 +553,9 @@ static void fifo_work_handler(struct k_work *work)
 
 static void mspi_dw_isr(const struct device *dev)
 {
-#if defined(CONFIG_MSPI_DMA)
-	struct mspi_dw_data *dev_data = dev->data;
+	struct mspi_dw_data __maybe_unused *dev_data = dev->data;
 
+#if defined(CONFIG_MSPI_DMA)
 	if (dev_data->xfer.xfer_mode == MSPI_DMA) {
 		if (vendor_specific_read_dma_irq(dev)) {
 			set_imr(dev, 0);
@@ -567,7 +567,6 @@ static void mspi_dw_isr(const struct device *dev)
 #endif
 
 #if defined(CONFIG_MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE)
-	struct mspi_dw_data *dev_data = dev->data;
 	int rc;
 
 	dev_data->imr = read_imr(dev);

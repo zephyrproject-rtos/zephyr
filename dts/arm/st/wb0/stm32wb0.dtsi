@@ -131,6 +131,7 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			st_nvm_user_otp: flash@10001800 {
 				compatible = "st,stm32-nvm-otp";

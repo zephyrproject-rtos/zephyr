@@ -21,7 +21,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * @typedef cdc_dte_rate_callback_t
  * @brief A function that is called when the USB host changes the baud
  * rate.
  *

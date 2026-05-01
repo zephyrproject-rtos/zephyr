@@ -49,6 +49,14 @@ LOG_MODULE_REGISTER(udc_numaker, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #if !defined(SYS_USBPHY_USBROLE_STD_USBD)
 #define SYS_USBPHY_USBROLE_STD_USBD (0x0 << SYS_USBPHY_USBROLE_Pos)
 #endif
+#elif defined(CONFIG_SOC_SERIES_M335X)
+#if !defined(USBD_ATTR_PWRDN_Msk)
+#define USBD_ATTR_PWRDN_Msk BIT(9)
+#endif
+#undef USBD_BUFSEG_BUFSEG_Msk
+#define USBD_BUFSEG_BUFSEG_Msk (0xfful << USBD_BUFSEG_BUFSEG_Pos)
+#undef USBD_MXPLD_MXPLD_Msk
+#define USBD_MXPLD_MXPLD_Msk (0x7fful << USBD_MXPLD_MXPLD_Pos)
 #endif
 
 /* Per HSUSBD H/W spec, after setting HSUSBEN to enable HSUSB/PHY, user
@@ -478,6 +486,8 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 			       SYS_USBPHY_SBO_Msk);
 		k_sleep(K_USEC(NUMAKER_HSUSBD_PHY_RESET_US));
 		SYS->USBPHY |= SYS_USBPHY_HSUSBACT_Msk;
+#elif defined(CONFIG_SOC_SERIES_M335X)
+		CODE_UNREACHABLE;
 #endif
 	} else {
 #if defined(CONFIG_SOC_SERIES_M46X)
@@ -493,6 +503,9 @@ static int numaker_usbd_hw_setup(const struct device *dev)
 			      (SYS_USBPHY_USBROLE_STD_USBD | SYS_USBPHY_OTGPHYEN_Msk);
 #elif defined(CONFIG_SOC_SERIES_M333X)
 		CODE_UNREACHABLE;
+#elif defined(CONFIG_SOC_SERIES_M335X)
+		SYS->USBPHY = (SYS->USBPHY & ~SYS_USBPHY_USBROLE_Msk) |
+			      (SYS_USBPHY_USBROLE_STD_USBD | SYS_USBPHY_USBEN_Msk);
 #endif
 	}
 

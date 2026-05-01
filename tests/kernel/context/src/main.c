@@ -515,6 +515,37 @@ ZTEST(context, test_interrupts)
 }
 
 /**
+ * @brief Test that arch_cpu_irqs_are_enabled() reports the current CPU
+ *	  interrupt-enable state without modifying it.
+ *
+ * @ingroup kernel_context_tests
+ *
+ * @see arch_cpu_irqs_are_enabled()
+ */
+ZTEST(context, test_arch_cpu_irqs_are_enabled)
+{
+	unsigned int key;
+
+	/* In thread context IRQs are enabled. Call twice to confirm the
+	 * probe does not flip the state it observes.
+	 */
+	zassert_true(arch_cpu_irqs_are_enabled(),
+		     "IRQs reported disabled in thread context");
+	zassert_true(arch_cpu_irqs_are_enabled(),
+		     "probe altered the IRQ state (enabled -> disabled)");
+
+	key = arch_irq_lock();
+	zassert_false(arch_cpu_irqs_are_enabled(),
+		      "IRQs reported enabled after arch_irq_lock()");
+	zassert_false(arch_cpu_irqs_are_enabled(),
+		      "probe altered the IRQ state (disabled -> enabled)");
+	arch_irq_unlock(key);
+
+	zassert_true(arch_cpu_irqs_are_enabled(),
+		     "IRQs reported disabled after arch_irq_unlock()");
+}
+
+/**
  * @brief Test routines for disabling and enabling interrupts (disable timer)
  *
  * @ingroup kernel_context_tests

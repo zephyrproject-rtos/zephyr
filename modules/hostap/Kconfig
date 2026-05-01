@@ -480,7 +480,9 @@ config WPA_CLI
 	  Enable WPA CLI support for wpa_supplicant.
 
 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-	config MBEDTLS_SSL_MAX_CONTENT_LEN
+	config MBEDTLS_SSL_IN_CONTENT_LEN
+		default 16384
+	config MBEDTLS_SSL_OUT_CONTENT_LEN
 		default 16384
 endif
 

@@ -19,7 +19,6 @@ config ETH_DWMAC
 	  and MMU based platform is also provided.
 
 	  Not yet implemented:
-	  - MDIO (currently relying on default PHY config)
 	  - PTP support
 	  - VLAN support
 	  - various hardware offloads (when available)

@@ -184,6 +184,70 @@ device.
       unlaunched_dut.launch()
       unlaunched_dut.readlines_until(regex='Hello world')
 
+Fixtures for Multi-DUT scenarios
+********************************
+
+Multi-DUT fixtures mirror the single-DUT fixtures (``unlaunched_dut``,
+``dut``, ``shell``) but operate on lists of devices. They work for both
+hardware and ``native_sim`` targets; QEMU is not
+supported. They require ``duts`` entries to be present in
+``twister_pytest_config.yaml``. Twister generates this file
+automatically — for simulation targets it creates placeholder DUT
+entries so no hardware map is needed — and then calls pytest.
+When re-running pytest manually without Twister (see FAQ), that same
+config file is reused. See :ref:`twister_multi_duts_testing` section in the Twister
+documentation for configuration details.
+
+unlaunched_duts
+===============
+
+Analogous to ``unlaunched_dut``, but returns a list of
+`DeviceAdapter`_ objects - one per reserved DUT -
+with log files initialized but devices not yet launched.
+
+.. code-block:: python
+
+   from twister_harness import DeviceAdapter
+
+   def test_sample(unlaunched_duts: list[DeviceAdapter]):
+      for dut in unlaunched_duts:
+         dut.launch()
+      unlaunched_duts[0].readlines_until(regex='Hello world')
+
+duts
+====
+
+Analogous to ``dut``, but returns a list of launched
+`DeviceAdapter`_ objects. All devices are flashed
+concurrently to reduce setup time. If sequential flashing is required,
+override this fixture in your ``conftest.py``.
+
+.. code-block:: python
+
+   from twister_harness import DeviceAdapter
+
+   def test_sample(duts: list[DeviceAdapter]):
+      assert len(duts) > 1
+      duts[0].readlines_until(regex='Hello world')
+      duts[1].readlines_until(regex='Hello world')
+
+shells
+======
+
+Analogous to ``shell``, but returns a list of
+`Shell <shell_class_>`_ objects - one per reserved DUT - each
+already waiting for the shell prompt.
+
+.. code-block:: python
+
+   from twister_harness import Shell
+
+   def test_sample(shells: list[Shell]):
+      assert len(shells) > 1
+      shells[0].exec_command('help')
+      shells[1].exec_command('help')
+
+
 Classes
 *******
 

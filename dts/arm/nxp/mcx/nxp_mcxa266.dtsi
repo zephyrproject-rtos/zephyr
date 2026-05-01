@@ -9,3 +9,6 @@
 /delete-node/ &opamp1;
 /delete-node/ &opamp2;
 /delete-node/ &opamp3;
+/delete-node/ &lpcmp2;
+/delete-node/ &lpadc2;
+/delete-node/ &lpadc3;

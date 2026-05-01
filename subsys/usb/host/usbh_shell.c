@@ -362,7 +362,6 @@ static int cmd_desc_device(const struct shell *sh,
 		return -ENOMEM;
 	}
 
-	shell_error(sh, "host: USB device with address %u", addr);
 	err = usbh_req_desc_dev(udev, sizeof(desc), &desc);
 	if (err) {
 		shell_print(sh, "host: Failed to request device descriptor");
@@ -429,7 +428,7 @@ static int cmd_desc_string(const struct shell *sh,
 
 	err = usbh_req_desc(udev, type, idx, id, 128, buf);
 	if (err) {
-		shell_print(sh, "host: Failed to request configuration descriptor");
+		shell_print(sh, "host: Failed to request string descriptor");
 	} else {
 		shell_hexdump(sh, buf->data, buf->len);
 	}
@@ -721,7 +720,7 @@ static int cmd_device_list(const struct shell *sh,
 	return 0;
 }
 
-static int cmd_device_list_dd(const struct shell *sh,
+static int cmd_device_info(const struct shell *sh,
 			      size_t argc, char **argv)
 {
 	struct usb_device *udev;
@@ -958,13 +957,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(device_cmds,
 			""
 		),
 		cmd_device_list, 1, 0),
-	SHELL_CMD_ARG(list_dd, NULL,
+	SHELL_CMD_ARG(info, NULL,
 		SHELL_HELP(
-			"List descriptors data",
+			"Print device information",
 			"<addr>\n"
 			"addr: Device bus address [dec]\n"
 		),
-		cmd_device_list_dd, 2, 0),
+		cmd_device_info, 2, 0),
 	SHELL_CMD_ARG(address, NULL,
 		SHELL_HELP(
 			"Set device address",

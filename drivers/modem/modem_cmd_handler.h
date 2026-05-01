@@ -181,6 +181,8 @@ int modem_cmd_handler_await(struct modem_cmd_handler_data *data,
  * @param  iface: interface to use
  * @param  buf: send buffer (not NULL terminated)
  * @param  len: length of send buffer.
+ *
+ * @retval 0 if ok, < 0 if error.
  */
 int modem_cmd_send_data_nolock(struct modem_iface *iface,
 			       const uint8_t *buf, size_t len);
@@ -299,7 +301,6 @@ int modem_cmd_handler_setup_cmds_nolock(struct modem_iface *iface,
  * command handler data context. The struct is initialized and then passed
  * to modem_cmd_handler_init().
  *
- * @retval 0 if ok, < 0 if error.
  * @param match_buf Buffer used for matching commands
  * @param match_buf_len Length of buffer used for matching commands
  * @param buf_pool Initialized buffer pool used to store incoming data
