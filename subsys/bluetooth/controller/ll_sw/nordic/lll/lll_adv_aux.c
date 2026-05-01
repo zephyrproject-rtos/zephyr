@@ -680,6 +680,15 @@ static void isr_rx(void *param)
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR) && !trx_done) {
+		/* ISR latency is measured from the on-air packet END
+		 * timestamp, no END captured when the ISR is due to Rx timeout
+		 * or explicit radio disable, hence do not measure latency.
+		 */
+		lll_prof_latency_invalidate();
+	}
+
 	if (trx_done) {
 		crc_ok = radio_crc_is_valid();
 		phy_flags_rx = radio_phy_flags_rx_get();
@@ -795,10 +804,11 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux, uint8_t phy_flags_rx,
 							 lll->phy_flags,
 							 lll->phy_s,
 							 lll->phy_flags);
-#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
-			radio_tmr_end_capture();
-#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
+			if (IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN) ||
+			    IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+				radio_tmr_end_capture();
+			}
 #endif /* CONFIG_BT_CTLR_ADV_AUX_PDU_BACK2BACK */
 
 		} else {
