@@ -38,6 +38,7 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include <zephyr/logging/log.h>
@@ -748,6 +749,8 @@ static void bap_broadcast_assistant_write_cp_cb(struct bt_conn *conn, uint8_t er
 	uint8_t opcode = net_buf_simple_pull_u8(&att_buf);
 	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
 
+	ARG_UNUSED(params);
+
 	if (inst == NULL) {
 		return;
 	}
@@ -970,6 +973,8 @@ static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *in
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
 	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+
+	ARG_UNUSED(reason);
 
 	if (inst) {
 		(void)broadcast_assistant_reset(inst);

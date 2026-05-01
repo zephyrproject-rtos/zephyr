@@ -28,6 +28,7 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/util_utf8.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
 #include "aics_internal.h"
 #include "audio_internal.h"
@@ -117,6 +118,8 @@ BT_GATT_SERVICE_INSTANCE_DEFINE(aics_service_list, aics_insts,
 static void aics_state_cfg_changed(const struct bt_gatt_attr *attr,
 				   uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -161,6 +164,8 @@ static ssize_t read_type(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 static void aics_input_status_cfg_changed(const struct bt_gatt_attr *attr,
 					  uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -197,7 +202,7 @@ static void notify_work_reschedule(struct bt_aics *inst, enum bt_aics_notify not
 
 	atomic_set_bit(inst->srv.notify, notify);
 
-	err = k_work_reschedule(&inst->srv.notify_work, K_NO_WAIT);
+	err = k_work_reschedule(&inst->srv.notify_work, delay);
 	if (err < 0) {
 		LOG_ERR("Failed to reschedule %s notification err %d",
 			aics_notify_str(notify), err);
@@ -370,6 +375,9 @@ static ssize_t write_aics_control(struct bt_conn *conn, const struct bt_gatt_att
 	bool state_change = false;
 	int ret;
 
+	ARG_UNUSED(conn);
+	ARG_UNUSED(flags);
+
 	ret = valid_control_point_write(len, offset, cp, inst->srv.state.change_counter);
 	if (ret != BT_ATT_ERR_SUCCESS) {
 		return BT_GATT_ERR(ret);
@@ -424,6 +432,8 @@ static ssize_t write_aics_control(struct bt_conn *conn, const struct bt_gatt_att
 static void aics_description_cfg_changed(const struct bt_gatt_attr *attr,
 					 uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 #endif /* CONFIG_BT_AICS */
@@ -434,6 +444,13 @@ static ssize_t write_description(struct bt_conn *conn,
 				 uint8_t flags)
 {
 	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+
+	ARG_UNUSED(conn);
+	ARG_UNUSED(flags);
+
+	if (offset != 0U) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
 
 	if (len >= sizeof(inst->srv.description)) {
 		LOG_DBG("Output desc was clipped from length %u to %zu", len,

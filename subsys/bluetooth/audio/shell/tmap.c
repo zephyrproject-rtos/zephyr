@@ -19,6 +19,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
@@ -33,6 +34,9 @@ static int cmd_tmap_init(const struct shell *sh, size_t argc, char **argv)
 		(IS_ENABLED(CONFIG_BT_TMAP_BMS_SUPPORTED) ? BT_TMAP_ROLE_BMS : 0U) |
 		(IS_ENABLED(CONFIG_BT_TMAP_BMR_SUPPORTED) ? BT_TMAP_ROLE_BMR : 0U);
 	int err;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	shell_info(sh, "Registering TMAS with role: 0x%04X", role);
 
@@ -63,6 +67,9 @@ static const struct bt_tmap_cb tmap_cb = {
 static int cmd_tmap_discover(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	if (default_conn == NULL) {
 		shell_error(sh, "Not connected");
