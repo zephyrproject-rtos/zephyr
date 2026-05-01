@@ -29,7 +29,11 @@
 #include <ifx_cycfg_init.h>
 #endif
 
-#define CY_IPC_MAX_ENDPOINTS (8UL)
+#ifdef CONFIG_MBOX_INFINEON
+CY_SECTION_SHAREDMEM static cy_stc_ipc_pipe_ep_t
+	systemIpcPipeEpArray[CONFIG_MBOX_INFINEON_IPC_MAX_ENDPOINTS];
+#endif
+
 #define PSE84_CPU_FREQ_HZ    DT_PROP(DT_PATH(cpus, cpu_1), clock_frequency)
 #define CM55_STARTUP_WAIT_MS 50U
 
@@ -156,8 +160,6 @@ static void pse84_srf_ipc_init(void)
 
 void soc_early_init_hook(void)
 {
-	static cy_stc_ipc_pipe_ep_t system_ipc_pipe_ep_array[CY_IPC_MAX_ENDPOINTS];
-
 	/* Enable Loop and branch info cache */
 	__DMB();
 	__ISB();
@@ -184,7 +186,9 @@ void soc_early_init_hook(void)
 	/* Initialize SystemCoreClock variable. */
 	SystemCoreClockSetup(PSE84_CPU_FREQ_HZ, PSE84_CPU_FREQ_HZ);
 
-	Cy_IPC_Pipe_Config(system_ipc_pipe_ep_array);
+#ifdef CONFIG_MBOX_INFINEON
+	Cy_IPC_Pipe_Config(systemIpcPipeEpArray);
+#endif
 
 #if !defined(CONFIG_PSOC_EDGE_M55_SRF_SUPPORT)
 	/*
