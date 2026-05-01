@@ -20,6 +20,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/toolchain.h>
 
 #include "../mpl_internal.h"
 
@@ -31,6 +32,8 @@ LOG_MODULE_REGISTER(bt_mpl_shell, CONFIG_BT_MPL_LOG_LEVEL);
 int cmd_mpl_test_set_media_state(const struct shell *sh, size_t argc,
 				 char *argv[])
 {
+	ARG_UNUSED(argc);
+
 	unsigned long state;
 	int err = 0;
 
@@ -56,6 +59,10 @@ int cmd_mpl_test_set_media_state(const struct shell *sh, size_t argc,
 int cmd_mpl_test_unset_parent_group(const struct shell *sh, size_t argc,
 				    char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_test_unset_parent_group();
 
 	return 0;
@@ -67,6 +74,10 @@ int cmd_mpl_test_unset_parent_group(const struct shell *sh, size_t argc,
 int cmd_mpl_debug_dump_state(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_debug_dump_state();
 
 	return 0;
@@ -76,6 +87,9 @@ int cmd_mpl_debug_dump_state(const struct shell *sh, size_t argc,
 int cmd_media_proxy_pl_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = media_proxy_pl_init();
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	if (err != 0) {
 		shell_error(sh, "Could not init mpl");
@@ -88,6 +102,10 @@ int cmd_media_proxy_pl_init(const struct shell *sh, size_t argc, char *argv[])
 int cmd_mpl_test_player_name_cb(const struct shell *sh, size_t argc,
 				char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_test_player_name_changed_cb();
 
 	return 0;
@@ -96,6 +114,10 @@ int cmd_mpl_test_player_name_cb(const struct shell *sh, size_t argc,
 int cmd_mpl_test_player_icon_url_cb(const struct shell *sh, size_t argc,
 				    char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_test_player_icon_url_changed_cb();
 
 	return 0;
@@ -104,6 +126,10 @@ int cmd_mpl_test_player_icon_url_cb(const struct shell *sh, size_t argc,
 int cmd_mpl_test_track_changed_cb(const struct shell *sh, size_t argc,
 				  char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_test_track_changed_cb();
 	return 0;
 }
@@ -111,6 +137,10 @@ int cmd_mpl_test_track_changed_cb(const struct shell *sh, size_t argc,
 int cmd_mpl_test_title_changed_cb(const struct shell *sh, size_t argc,
 				  char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_test_title_changed_cb();
 	return 0;
 }
@@ -118,6 +148,10 @@ int cmd_mpl_test_title_changed_cb(const struct shell *sh, size_t argc,
 int cmd_mpl_test_duration_changed_cb(const struct shell *sh, size_t argc,
 				     char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_test_duration_changed_cb();
 	return 0;
 }
@@ -125,6 +159,10 @@ int cmd_mpl_test_duration_changed_cb(const struct shell *sh, size_t argc,
 int cmd_mpl_test_position_changed_cb(const struct shell *sh, size_t argc,
 				     char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_test_position_changed_cb();
 	return 0;
 }
@@ -132,6 +170,10 @@ int cmd_mpl_test_position_changed_cb(const struct shell *sh, size_t argc,
 int cmd_mpl_test_playback_speed_changed_cb(const struct shell *sh, size_t argc,
 					   char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_test_playback_speed_changed_cb();
 	return 0;
 }
@@ -139,6 +181,10 @@ int cmd_mpl_test_playback_speed_changed_cb(const struct shell *sh, size_t argc,
 int cmd_mpl_test_seeking_speed_changed_cb(const struct shell *sh, size_t argc,
 					  char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_test_seeking_speed_changed_cb();
 	return 0;
 }
@@ -147,6 +193,10 @@ int cmd_mpl_test_seeking_speed_changed_cb(const struct shell *sh, size_t argc,
 int cmd_mpl_test_current_track_id_changed_cb(const struct shell *sh, size_t argc,
 					     char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_test_current_track_id_changed_cb();
 	return 0;
 }
@@ -154,6 +204,10 @@ int cmd_mpl_test_current_track_id_changed_cb(const struct shell *sh, size_t argc
 int cmd_mpl_test_next_track_id_changed_cb(const struct shell *sh, size_t argc,
 					  char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_test_next_track_id_changed_cb();
 	return 0;
 }
@@ -161,6 +215,10 @@ int cmd_mpl_test_next_track_id_changed_cb(const struct shell *sh, size_t argc,
 int cmd_mpl_test_current_group_id_changed_cb(const struct shell *sh, size_t argc,
 					     char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_test_current_group_id_changed_cb();
 	return 0;
 }
@@ -168,6 +226,10 @@ int cmd_mpl_test_current_group_id_changed_cb(const struct shell *sh, size_t argc
 int cmd_mpl_test_parent_group_id_changed_cb(const struct shell *sh, size_t argc,
 					    char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_test_parent_group_id_changed_cb();
 	return 0;
 }
@@ -176,6 +238,10 @@ int cmd_mpl_test_parent_group_id_changed_cb(const struct shell *sh, size_t argc,
 int cmd_mpl_test_playing_order_changed_cb(const struct shell *sh, size_t argc,
 					  char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_test_playing_order_changed_cb();
 	return 0;
 }
@@ -183,6 +249,10 @@ int cmd_mpl_test_playing_order_changed_cb(const struct shell *sh, size_t argc,
 int cmd_mpl_test_state_changed_cb(const struct shell *sh, size_t argc,
 				  char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_test_media_state_changed_cb();
 	return 0;
 }
@@ -190,6 +260,10 @@ int cmd_mpl_test_state_changed_cb(const struct shell *sh, size_t argc,
 int cmd_mpl_test_media_opcodes_supported_changed_cb(const struct shell *sh, size_t argc,
 						    char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_test_opcodes_supported_changed_cb();
 	return 0;
 }
@@ -198,6 +272,10 @@ int cmd_mpl_test_media_opcodes_supported_changed_cb(const struct shell *sh, size
 int cmd_mpl_test_search_results_changed_cb(const struct shell *sh, size_t argc,
 					   char *argv[])
 {
+	ARG_UNUSED(sh);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	mpl_test_search_results_changed_cb();
 	return 0;
 }
@@ -206,6 +284,8 @@ int cmd_mpl_test_search_results_changed_cb(const struct shell *sh, size_t argc,
 
 static int cmd_mpl(const struct shell *sh, size_t argc, char **argv)
 {
+	ARG_UNUSED(argc);
+
 	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;

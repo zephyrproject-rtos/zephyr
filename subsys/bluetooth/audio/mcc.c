@@ -33,6 +33,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "../services/ots/ots_client_internal.h"
@@ -1352,6 +1353,8 @@ static int reset_mcs_inst(struct mcs_instance_t *mcs_inst)
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
 	struct mcs_instance_t *mcs_inst;
+
+	ARG_UNUSED(reason);
 
 	mcs_inst = lookup_inst_by_conn(conn);
 	if (mcs_inst != NULL) {
@@ -3296,6 +3299,8 @@ void on_obj_selected(struct bt_ots_client *otc_inst,
 {
 	struct mcs_instance_t *mcs_inst = lookup_inst_by_conn(conn);
 
+	ARG_UNUSED(otc_inst);
+
 	LOG_DBG("Current object selected");
 
 	if (mcs_inst != NULL) {
@@ -3322,6 +3327,8 @@ int on_icon_content(struct bt_ots_client *otc_inst, struct bt_conn *conn,
 		    bool is_complete)
 {
 	int cb_err = 0;
+
+	ARG_UNUSED(otc_inst);
 
 	LOG_DBG("Received Media Player Icon content, %i bytes at offset %i",
 		len, offset);
@@ -3414,6 +3421,8 @@ int on_track_segments_content(struct bt_ots_client *otc_inst,
 {
 	int cb_err = 0;
 
+	ARG_UNUSED(otc_inst);
+
 	LOG_DBG("Received Track Segments content, %i bytes at offset %i",
 		len, offset);
 
@@ -3464,6 +3473,8 @@ int on_current_track_content(struct bt_ots_client *otc_inst,
 {
 	int cb_err = 0;
 
+	ARG_UNUSED(otc_inst);
+
 	LOG_DBG("Received Current Track content, %i bytes at offset %i",
 	       len, offset);
 
@@ -3501,6 +3512,8 @@ int on_next_track_content(struct bt_ots_client *otc_inst,
 			  uint8_t *data_p, bool is_complete)
 {
 	int cb_err = 0;
+
+	ARG_UNUSED(otc_inst);
 
 	LOG_DBG("Received Next Track content, %i bytes at offset %i",
 	       len, offset);
@@ -3567,6 +3580,8 @@ int on_parent_group_content(struct bt_ots_client *otc_inst,
 {
 	int cb_err = 0;
 
+	ARG_UNUSED(otc_inst);
+
 	LOG_DBG("Received Parent Group content, %i bytes at offset %i",
 		len, offset);
 
@@ -3619,6 +3634,8 @@ int on_current_group_content(struct bt_ots_client *otc_inst,
 {
 	int cb_err = 0;
 
+	ARG_UNUSED(otc_inst);
+
 	LOG_DBG("Received Current Group content, %i bytes at offset %i",
 		len, offset);
 
@@ -3670,6 +3687,8 @@ void on_object_metadata(struct bt_ots_client *otc_inst,
 			uint8_t metadata_read)
 {
 	struct mcs_instance_t *mcs_inst = lookup_inst_by_conn(conn);
+
+	ARG_UNUSED(metadata_read);
 
 	LOG_INF("Object's meta data:");
 	LOG_INF("\tCurrent size\t:%u", otc_inst->cur_object.size.cur);

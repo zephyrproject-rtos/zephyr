@@ -97,6 +97,8 @@ static struct mcs_inst {
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	ARG_UNUSED(reason);
+
 	__maybe_unused int err;
 
 	err = k_mutex_lock(&mcs_inst.mutex, MUTEX_TIMEOUT);
@@ -154,6 +156,8 @@ static ssize_t read_player_name(struct bt_conn *conn,
 static void player_name_cfg_changed(const struct bt_gatt_attr *attr,
 				    uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -211,6 +215,8 @@ static ssize_t read_icon_url(struct bt_conn *conn,
 
 static void track_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -252,6 +258,8 @@ static ssize_t read_track_title(struct bt_conn *conn,
 static void track_title_cfg_changed(const struct bt_gatt_attr *attr,
 				    uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -269,6 +277,8 @@ static ssize_t read_track_duration(struct bt_conn *conn,
 
 static void track_duration_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -291,6 +301,10 @@ static ssize_t write_track_position(struct bt_conn *conn,
 {
 	int32_t position;
 
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(flags);
+
 	if (offset != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
@@ -311,6 +325,8 @@ static ssize_t write_track_position(struct bt_conn *conn,
 static void track_position_cfg_changed(const struct bt_gatt_attr *attr,
 				       uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -330,6 +346,10 @@ static ssize_t write_playback_speed(struct bt_conn *conn, const struct bt_gatt_a
 {
 	int8_t speed;
 
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(flags);
+
 	if (offset != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
@@ -348,6 +368,8 @@ static ssize_t write_playback_speed(struct bt_conn *conn, const struct bt_gatt_a
 
 static void playback_speed_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -365,6 +387,8 @@ static ssize_t read_seeking_speed(struct bt_conn *conn, const struct bt_gatt_att
 static void seeking_speed_cfg_changed(const struct bt_gatt_attr *attr,
 				      uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -406,6 +430,10 @@ static ssize_t write_current_track_id(struct bt_conn *conn,
 {
 	uint64_t id;
 
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(flags);
+
 	if (offset != 0) {
 		LOG_DBG("Invalid offset");
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -432,6 +460,8 @@ static ssize_t write_current_track_id(struct bt_conn *conn,
 static void current_track_id_cfg_changed(const struct bt_gatt_attr *attr,
 					 uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -463,6 +493,10 @@ static ssize_t write_next_track_id(struct bt_conn *conn,
 {
 	uint64_t id;
 
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(flags);
+
 	if (offset != 0) {
 		LOG_DBG("Invalid offset");
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -489,6 +523,8 @@ static ssize_t write_next_track_id(struct bt_conn *conn,
 static void next_track_id_cfg_changed(const struct bt_gatt_attr *attr,
 				      uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -510,6 +546,8 @@ static ssize_t read_parent_group_id(struct bt_conn *conn,
 static void parent_group_id_cfg_changed(const struct bt_gatt_attr *attr,
 					uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -534,6 +572,10 @@ static ssize_t write_current_group_id(struct bt_conn *conn,
 				      uint8_t flags)
 {
 	uint64_t id;
+
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(flags);
 
 	if (offset != 0) {
 		LOG_DBG("Invalid offset");
@@ -561,6 +603,8 @@ static ssize_t write_current_group_id(struct bt_conn *conn,
 
 static void current_group_id_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 #endif /* CONFIG_BT_OTS */
@@ -579,6 +623,10 @@ static ssize_t read_playing_order(struct bt_conn *conn,
 static ssize_t write_playing_order(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				   const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(flags);
+
 	LOG_DBG("Playing order write");
 
 	int8_t order;
@@ -601,6 +649,8 @@ static ssize_t write_playing_order(struct bt_conn *conn, const struct bt_gatt_at
 
 static void playing_order_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -629,6 +679,8 @@ static ssize_t read_media_state(struct bt_conn *conn, const struct bt_gatt_attr 
 static void media_state_cfg_changed(const struct bt_gatt_attr *attr,
 				    uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -637,6 +689,9 @@ static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_at
 				   uint8_t write_flags)
 {
 	struct mpl_cmd command;
+
+	ARG_UNUSED(attr);
+	ARG_UNUSED(write_flags);
 
 	if (offset != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -711,6 +766,8 @@ static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_at
 static void control_point_cfg_changed(const struct bt_gatt_attr *attr,
 				      uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -728,6 +785,8 @@ static ssize_t read_opcodes_supported(struct bt_conn *conn,
 
 static void opcodes_supported_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -737,6 +796,9 @@ static ssize_t write_search_control_point(struct bt_conn *conn, const struct bt_
 					  uint8_t write_flags)
 {
 	struct mpl_search search = {0};
+
+	ARG_UNUSED(attr);
+	ARG_UNUSED(write_flags);
 
 	if (offset != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -787,6 +849,8 @@ static ssize_t write_search_control_point(struct bt_conn *conn, const struct bt_
 static void search_control_point_cfg_changed(const struct bt_gatt_attr *attr,
 					     uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -823,6 +887,8 @@ static ssize_t read_search_results_id(struct bt_conn *conn,
 static void search_results_id_cfg_changed(const struct bt_gatt_attr *attr,
 					  uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 #endif /* CONFIG_BT_OTS */
@@ -1075,6 +1141,8 @@ static void notify_cb(struct bt_conn *conn, void *data)
 	struct bt_conn_info info;
 	int err;
 
+	ARG_UNUSED(data);
+
 	err = bt_conn_get_info(conn, &info);
 	if (err != 0) {
 		LOG_ERR("Failed to get conn info: %d", err);
@@ -1284,6 +1352,8 @@ static void notify_cb(struct bt_conn *conn, void *data)
 
 static void deferred_nfy_work_handler(struct k_work *work)
 {
+	ARG_UNUSED(work);
+
 	bt_conn_foreach(BT_CONN_TYPE_LE, notify_cb, NULL);
 }
 
@@ -1295,6 +1365,8 @@ static void set_player_name_changed_cb(struct mcs_flags *flags)
 
 static void media_proxy_sctrl_player_name_cb(const char *name)
 {
+	ARG_UNUSED(name);
+
 	set_value_changed(set_player_name_changed_cb, BT_UUID_MCS_PLAYER_NAME);
 }
 
@@ -1305,6 +1377,8 @@ static void set_icon_url_changed_cb(struct mcs_flags *flags)
 
 void media_proxy_sctrl_icon_url_cb(const char *name)
 {
+	ARG_UNUSED(name);
+
 	set_value_changed(set_icon_url_changed_cb, BT_UUID_MCS_ICON_URL);
 }
 
@@ -1326,6 +1400,8 @@ static void set_track_title_changed_cb(struct mcs_flags *flags)
 
 void media_proxy_sctrl_track_title_cb(const char *title)
 {
+	ARG_UNUSED(title);
+
 	set_value_changed(set_track_title_changed_cb, BT_UUID_MCS_TRACK_TITLE);
 }
 
@@ -1336,6 +1412,8 @@ static void set_track_position_changed_cb(struct mcs_flags *flags)
 
 void media_proxy_sctrl_track_position_cb(int32_t position)
 {
+	ARG_UNUSED(position);
+
 	set_value_changed(set_track_position_changed_cb, BT_UUID_MCS_TRACK_POSITION);
 }
 
@@ -1346,6 +1424,8 @@ static void set_track_duration_changed_cb(struct mcs_flags *flags)
 
 void media_proxy_sctrl_track_duration_cb(int32_t duration)
 {
+	ARG_UNUSED(duration);
+
 	set_value_changed(set_track_duration_changed_cb, BT_UUID_MCS_TRACK_DURATION);
 }
 
@@ -1356,6 +1436,8 @@ static void set_playback_speed_changed_cb(struct mcs_flags *flags)
 
 void media_proxy_sctrl_playback_speed_cb(int8_t speed)
 {
+	ARG_UNUSED(speed);
+
 	set_value_changed(set_playback_speed_changed_cb, BT_UUID_MCS_PLAYBACK_SPEED);
 }
 
@@ -1366,6 +1448,8 @@ static void set_seeking_speed_changed_cb(struct mcs_flags *flags)
 
 void media_proxy_sctrl_seeking_speed_cb(int8_t speed)
 {
+	ARG_UNUSED(speed);
+
 	set_value_changed(set_seeking_speed_changed_cb, BT_UUID_MCS_SEEKING_SPEED);
 }
 
@@ -1377,6 +1461,8 @@ static void set_current_track_obj_id_changed_cb(struct mcs_flags *flags)
 
 void media_proxy_sctrl_current_track_id_cb(uint64_t id)
 {
+	ARG_UNUSED(id);
+
 	set_value_changed(set_current_track_obj_id_changed_cb, BT_UUID_MCS_CURRENT_TRACK_OBJ_ID);
 }
 
@@ -1387,6 +1473,8 @@ static void set_next_track_obj_id_changed_cb(struct mcs_flags *flags)
 
 void media_proxy_sctrl_next_track_id_cb(uint64_t id)
 {
+	ARG_UNUSED(id);
+
 	set_value_changed(set_next_track_obj_id_changed_cb, BT_UUID_MCS_NEXT_TRACK_OBJ_ID);
 }
 
@@ -1397,6 +1485,8 @@ static void set_parent_group_obj_id_changed_cb(struct mcs_flags *flags)
 
 void media_proxy_sctrl_parent_group_id_cb(uint64_t id)
 {
+	ARG_UNUSED(id);
+
 	set_value_changed(set_parent_group_obj_id_changed_cb, BT_UUID_MCS_PARENT_GROUP_OBJ_ID);
 }
 
@@ -1407,6 +1497,8 @@ static void set_current_group_obj_id_changed_cb(struct mcs_flags *flags)
 
 void media_proxy_sctrl_current_group_id_cb(uint64_t id)
 {
+	ARG_UNUSED(id);
+
 	set_value_changed(set_current_group_obj_id_changed_cb, BT_UUID_MCS_CURRENT_GROUP_OBJ_ID);
 }
 #endif /* CONFIG_BT_OTS */
@@ -1418,6 +1510,8 @@ static void set_playing_order_changed_cb(struct mcs_flags *flags)
 
 void media_proxy_sctrl_playing_order_cb(uint8_t order)
 {
+	ARG_UNUSED(order);
+
 	set_value_changed(set_playing_order_changed_cb, BT_UUID_MCS_PLAYING_ORDER);
 }
 
@@ -1428,6 +1522,8 @@ static void set_media_state_changed_cb(struct mcs_flags *flags)
 
 void media_proxy_sctrl_media_state_cb(uint8_t state)
 {
+	ARG_UNUSED(state);
+
 	set_value_changed(set_media_state_changed_cb, BT_UUID_MCS_MEDIA_STATE);
 }
 
@@ -1482,6 +1578,8 @@ static void set_media_control_opcodes_changed_cb(struct mcs_flags *flags)
 
 void media_proxy_sctrl_commands_supported_cb(uint32_t opcodes)
 {
+	ARG_UNUSED(opcodes);
+
 	set_value_changed(set_media_control_opcodes_changed_cb, BT_UUID_MCS_MEDIA_CONTROL_OPCODES);
 }
 
@@ -1537,6 +1635,8 @@ static void set_search_results_obj_id_changed_cb(struct mcs_flags *flags)
 
 void media_proxy_sctrl_search_results_id_cb(uint64_t id)
 {
+	ARG_UNUSED(id);
+
 	set_value_changed(set_search_results_obj_id_changed_cb, BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID);
 }
 #endif /* CONFIG_BT_OTS */

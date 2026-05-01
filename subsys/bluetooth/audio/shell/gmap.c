@@ -29,6 +29,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "common/bt_shell_private.h"
 #include "host/shell/bt.h"
@@ -56,7 +57,7 @@ size_t gmap_ad_data_add(struct bt_data data[], size_t data_size)
 
 	ad_gmap[2] = (uint8_t)gmap_role;
 
-	__ASSERT(data > 0, "No space for ad_gmap");
+	__ASSERT(data_size > 0, "No space for ad_gmap");
 	data[0].type = BT_DATA_SVC_DATA16;
 	data[0].data_len = ARRAY_SIZE(ad_gmap);
 	data[0].data = &ad_gmap[0];
@@ -128,6 +129,9 @@ static int cmd_gmap_init(const struct shell *sh, size_t argc, char **argv)
 	struct bt_gmap_feat features;
 	int err;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	gmap_role = (IS_ENABLED(CONFIG_BT_GMAP_UGG_SUPPORTED) ? BT_GMAP_ROLE_UGG : 0U) |
 		    (IS_ENABLED(CONFIG_BT_GMAP_UGT_SUPPORTED) ? BT_GMAP_ROLE_UGT : 0U) |
 		    (IS_ENABLED(CONFIG_BT_GMAP_BGS_SUPPORTED) ? BT_GMAP_ROLE_BGS : 0U) |
@@ -194,6 +198,9 @@ static int cmd_gmap_set_role(const struct shell *sh, size_t argc, char **argv)
 static int cmd_gmap_discover(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	if (default_conn == NULL) {
 		shell_error(sh, "Not connected");
@@ -274,6 +281,9 @@ static int cmd_gmap_ac_1(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 0U,
 	};
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	return cap_ac_unicast(sh, &param);
 }
 #endif /* UNICAST_SINK_SUPPORTED */
@@ -289,6 +299,9 @@ static int cmd_gmap_ac_2(const struct shell *sh, size_t argc, char **argv)
 		.snk_chan_cnt = 0U,
 		.src_chan_cnt = 1U,
 	};
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	return cap_ac_unicast(sh, &param);
 }
@@ -306,6 +319,9 @@ static int cmd_gmap_ac_3(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 1U,
 	};
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	return cap_ac_unicast(sh, &param);
 }
 #endif /* UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED */
@@ -322,6 +338,9 @@ static int cmd_gmap_ac_4(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 0U,
 	};
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	return cap_ac_unicast(sh, &param);
 }
 #endif /* UNICAST_SINK_SUPPORTED */
@@ -337,6 +356,9 @@ static int cmd_gmap_ac_5(const struct shell *sh, size_t argc, char **argv)
 		.snk_chan_cnt = 2U,
 		.src_chan_cnt = 1U,
 	};
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	return cap_ac_unicast(sh, &param);
 }
@@ -355,6 +377,9 @@ static int cmd_gmap_ac_6_i(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 0U,
 	};
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	return cap_ac_unicast(sh, &param);
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 1 */
@@ -370,6 +395,9 @@ static int cmd_gmap_ac_6_ii(const struct shell *sh, size_t argc, char **argv)
 		.snk_chan_cnt = 1U,
 		.src_chan_cnt = 0U,
 	};
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	return cap_ac_unicast(sh, &param);
 }
@@ -389,6 +417,9 @@ static int cmd_gmap_ac_7_ii(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 1U,
 	};
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	return cap_ac_unicast(sh, &param);
 }
 #endif /* CONFIG_BT_MAX_CONN >= 2 */
@@ -404,6 +435,9 @@ static int cmd_gmap_ac_8_i(const struct shell *sh, size_t argc, char **argv)
 		.snk_chan_cnt = 1U,
 		.src_chan_cnt = 1U,
 	};
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	return cap_ac_unicast(sh, &param);
 }
@@ -421,6 +455,9 @@ static int cmd_gmap_ac_8_ii(const struct shell *sh, size_t argc, char **argv)
 		.src_chan_cnt = 1U,
 	};
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	return cap_ac_unicast(sh, &param);
 }
 #endif /* CONFIG_BT_MAX_CONN >= 2 */
@@ -436,6 +473,9 @@ static int cmd_gmap_ac_11_i(const struct shell *sh, size_t argc, char **argv)
 		.snk_chan_cnt = 1U,
 		.src_chan_cnt = 1U,
 	};
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	return cap_ac_unicast(sh, &param);
 }
@@ -454,6 +494,9 @@ static int cmd_gmap_ac_11_ii(const struct shell *sh, size_t argc, char **argv)
 		.snk_chan_cnt = 1U,
 		.src_chan_cnt = 1U,
 	};
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	return cap_ac_unicast(sh, &param);
 }

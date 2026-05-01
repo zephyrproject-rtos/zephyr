@@ -57,6 +57,8 @@ uint8_t tmap_char_read(struct bt_conn *conn, uint8_t err,
 {
 	uint16_t peer_role;
 
+	ARG_UNUSED(params);
+
 	/* Check read request result */
 	if (err != BT_ATT_ERR_SUCCESS) {
 		if (cb->discovery_complete) {

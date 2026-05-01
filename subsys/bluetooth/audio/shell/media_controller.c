@@ -25,6 +25,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include "../media_proxy_internal.h" /* For MPL_NO_TRACK_ID - TODO: Fix */
 
@@ -387,6 +388,9 @@ static int cmd_media_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	err = media_proxy_pl_init();  /* TODO: Fix direct call to player */
 	if (err != 0) {
 		shell_error(sh, "Could not init mpl");
@@ -439,6 +443,8 @@ static int cmd_media_init(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_media_set_player(const struct shell *sh, size_t argc, char *argv[])
 {
+	ARG_UNUSED(argc);
+
 	if (!strcmp(argv[1], "local")) {
 		if (local_player) {
 			current_player = local_player;
@@ -469,6 +475,9 @@ static int cmd_media_set_player(const struct shell *sh, size_t argc, char *argv[
 
 static int cmd_media_show_players(const struct shell *sh, size_t argc, char *argv[])
 {
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	shell_print(sh, "Local player: %p", local_player);
 	shell_print(sh, "Remote player: %p", remote_player);
 
@@ -490,6 +499,9 @@ static int cmd_media_discover_player(const struct shell *sh, size_t argc, char *
 {
 	int err = media_proxy_ctrl_discover_player(default_conn);
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (err != 0) {
 		shell_error(sh, "Discover player failed (%d)", err);
 	}
@@ -501,6 +513,9 @@ static int cmd_media_discover_player(const struct shell *sh, size_t argc, char *
 static int cmd_media_read_player_name(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = media_proxy_ctrl_get_player_name(current_player);
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	if (err != 0) {
 		shell_error(sh, "Player name get failed (%d)", err);
@@ -514,6 +529,9 @@ static int cmd_media_read_icon_obj_id(const struct shell *sh, size_t argc, char 
 {
 	int err = media_proxy_ctrl_get_icon_id(current_player);
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (err != 0) {
 		shell_error(sh, "Icon ID get failed (%d)", err);
 	}
@@ -526,6 +544,9 @@ static int cmd_media_read_icon_url(const struct shell *sh, size_t argc, char *ar
 {
 	int err = media_proxy_ctrl_get_icon_url(current_player);
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (err != 0) {
 		shell_error(sh, "Icon URL get failed (%d)", err);
 	}
@@ -536,6 +557,9 @@ static int cmd_media_read_icon_url(const struct shell *sh, size_t argc, char *ar
 static int cmd_media_read_track_title(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = media_proxy_ctrl_get_track_title(current_player);
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	if (err != 0) {
 		shell_error(sh, "Track title get failed (%d)", err);
@@ -548,6 +572,9 @@ static int cmd_media_read_track_duration(const struct shell *sh, size_t argc, ch
 {
 	int err = media_proxy_ctrl_get_track_duration(current_player);
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (err != 0) {
 		shell_error(sh, "Track duration get failed (%d)", err);
 	}
@@ -559,6 +586,9 @@ static int cmd_media_read_track_position(const struct shell *sh, size_t argc, ch
 {
 	int err = media_proxy_ctrl_get_track_position(current_player);
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (err != 0) {
 		shell_error(sh, "Track position get failed (%d)", err);
 	}
@@ -569,6 +599,8 @@ static int cmd_media_read_track_position(const struct shell *sh, size_t argc, ch
 static int cmd_media_set_track_position(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
+	ARG_UNUSED(argc);
+
 	long position;
 	int err = 0;
 
@@ -597,6 +629,9 @@ static int cmd_media_read_playback_speed(const struct shell *sh, size_t argc, ch
 {
 	int err = media_proxy_ctrl_get_playback_speed(current_player);
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (err != 0) {
 		shell_error(sh, "Playback speed get failed (%d)", err);
 	}
@@ -607,6 +642,8 @@ static int cmd_media_read_playback_speed(const struct shell *sh, size_t argc, ch
 
 static int cmd_media_set_playback_speed(const struct shell *sh, size_t argc, char *argv[])
 {
+	ARG_UNUSED(argc);
+
 	long speed;
 	int err = 0;
 
@@ -635,6 +672,9 @@ static int cmd_media_read_seeking_speed(const struct shell *sh, size_t argc, cha
 {
 	int err = media_proxy_ctrl_get_seeking_speed(current_player);
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (err != 0) {
 		shell_error(sh, "Seeking speed get failed (%d)", err);
 	}
@@ -647,6 +687,9 @@ static int cmd_media_read_track_segments_obj_id(const struct shell *sh, size_t a
 {
 	int err = media_proxy_ctrl_get_track_segments_id(current_player);
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (err != 0) {
 		shell_error(sh, "Track segments ID get failed (%d)", err);
 	}
@@ -657,6 +700,9 @@ static int cmd_media_read_track_segments_obj_id(const struct shell *sh, size_t a
 static int cmd_media_read_current_track_obj_id(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = media_proxy_ctrl_get_current_track_id(current_player);
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	if (err != 0) {
 		shell_error(sh, "Current track ID get failed (%d)", err);
@@ -671,6 +717,9 @@ static int cmd_media_read_next_track_obj_id(const struct shell *sh, size_t argc,
 {
 	int err = media_proxy_ctrl_get_next_track_id(current_player);
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (err != 0) {
 		shell_error(sh, "Next track ID get failed (%d)", err);
 	}
@@ -682,9 +731,11 @@ static int cmd_media_read_current_group_obj_id(const struct shell *sh, size_t ar
 {
 	int err = media_proxy_ctrl_get_current_group_id(current_player);
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (err != 0) {
 		shell_error(sh, "Current group ID get failed (%d)", err);
-
 	}
 
 	return err;
@@ -693,6 +744,9 @@ static int cmd_media_read_current_group_obj_id(const struct shell *sh, size_t ar
 static int cmd_media_read_parent_group_obj_id(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = media_proxy_ctrl_get_parent_group_id(current_player);
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	if (err != 0) {
 		shell_error(sh, "Parent group ID get failed (%d)", err);
@@ -706,6 +760,9 @@ static int cmd_media_read_playing_order(const struct shell *sh, size_t argc, cha
 {
 	int err = media_proxy_ctrl_get_playing_order(current_player);
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (err != 0) {
 		shell_error(sh, "Playing order get failed (%d)", err);
 	}
@@ -715,6 +772,8 @@ static int cmd_media_read_playing_order(const struct shell *sh, size_t argc, cha
 
 static int cmd_media_set_playing_order(const struct shell *sh, size_t argc, char *argv[])
 {
+	ARG_UNUSED(argc);
+
 	unsigned long order;
 	int err = 0;
 
@@ -744,6 +803,9 @@ static int cmd_media_read_playing_orders_supported(const struct shell *sh, size_
 {
 	int err = media_proxy_ctrl_get_playing_orders_supported(current_player);
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (err != 0) {
 		shell_error(sh, "Icon URL get failed (%d)", err);
 	}
@@ -754,6 +816,9 @@ static int cmd_media_read_playing_orders_supported(const struct shell *sh, size_
 static int cmd_media_read_media_state(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = media_proxy_ctrl_get_media_state(current_player);
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	if (err != 0) {
 		shell_error(sh, "Icon URL get failed (%d)", err);
@@ -771,6 +836,9 @@ static int cmd_media_play(const struct shell *sh, size_t argc, char *argv[])
 	};
 	int err;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	err = media_proxy_ctrl_send_command(current_player, &cmd);
 	if (err != 0) {
 		shell_error(sh, "Media Controller play failed: %d", err);
@@ -787,6 +855,9 @@ static int cmd_media_pause(const struct shell *sh, size_t argc, char *argv[])
 		.param = 0,
 	};
 	int err;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	err = media_proxy_ctrl_send_command(current_player, &cmd);
 	if (err != 0) {
@@ -806,6 +877,9 @@ static int cmd_media_fast_rewind(const struct shell *sh, size_t argc,
 	};
 	int err;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	err = media_proxy_ctrl_send_command(current_player, &cmd);
 	if (err != 0) {
 		shell_error(sh, "Media Controller fast rewind failed: %d", err);
@@ -823,6 +897,9 @@ static int cmd_media_fast_forward(const struct shell *sh, size_t argc,
 		.param = 0,
 	};
 	int err;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	err = media_proxy_ctrl_send_command(current_player, &cmd);
 	if (err != 0) {
@@ -842,6 +919,9 @@ static int cmd_media_stop(const struct shell *sh, size_t argc, char *argv[])
 	};
 	int err;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	err = media_proxy_ctrl_send_command(current_player, &cmd);
 	if (err != 0) {
 		shell_error(sh, "Media Controller stop failed: %d", err);
@@ -859,6 +939,8 @@ static int cmd_media_move_relative(const struct shell *sh, size_t argc,
 	};
 	long offset;
 	int err;
+
+	ARG_UNUSED(argc);
 
 	err = 0;
 	offset = shell_strtol(argv[1], 10, &err);
@@ -895,6 +977,9 @@ static int cmd_media_prev_segment(const struct shell *sh, size_t argc,
 	};
 	int err;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	err = media_proxy_ctrl_send_command(current_player, &cmd);
 	if (err != 0) {
 		shell_error(sh, "Media Controller previous segment failed: %d",
@@ -913,6 +998,9 @@ static int cmd_media_next_segment(const struct shell *sh, size_t argc,
 		.param = 0,
 	};
 	int err;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	err = media_proxy_ctrl_send_command(current_player, &cmd);
 	if (err != 0) {
@@ -933,6 +1021,9 @@ static int cmd_media_first_segment(const struct shell *sh, size_t argc,
 	};
 	int err;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	err = media_proxy_ctrl_send_command(current_player, &cmd);
 	if (err != 0) {
 		shell_error(sh, "Media Controller first segment failed: %d",
@@ -952,6 +1043,9 @@ static int cmd_media_last_segment(const struct shell *sh, size_t argc,
 	};
 	int err;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	err = media_proxy_ctrl_send_command(current_player, &cmd);
 	if (err != 0) {
 		shell_error(sh, "Media Controller last segment failed: %d",
@@ -970,6 +1064,8 @@ static int cmd_media_goto_segment(const struct shell *sh, size_t argc,
 	};
 	long segment;
 	int err;
+
+	ARG_UNUSED(argc);
 
 	err = 0;
 	segment = shell_strtol(argv[1], 10, &err);
@@ -1006,6 +1102,9 @@ static int cmd_media_prev_track(const struct shell *sh, size_t argc,
 	};
 	int err;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	err = media_proxy_ctrl_send_command(current_player, &cmd);
 	if (err != 0) {
 		shell_error(sh, "Media Controller previous track failed: %d",
@@ -1024,6 +1123,9 @@ static int cmd_media_next_track(const struct shell *sh, size_t argc,
 		.param = 0,
 	};
 	int err;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	err = media_proxy_ctrl_send_command(current_player, &cmd);
 	if (err != 0) {
@@ -1044,6 +1146,9 @@ static int cmd_media_first_track(const struct shell *sh, size_t argc,
 	};
 	int err;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	err = media_proxy_ctrl_send_command(current_player, &cmd);
 	if (err != 0) {
 		shell_error(sh, "Media Controller first track failed: %d",
@@ -1063,6 +1168,9 @@ static int cmd_media_last_track(const struct shell *sh, size_t argc,
 	};
 	int err;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	err = media_proxy_ctrl_send_command(current_player, &cmd);
 	if (err != 0) {
 		shell_error(sh, "Media Controller last track failed: %d", err);
@@ -1080,6 +1188,8 @@ static int cmd_media_goto_track(const struct shell *sh, size_t argc,
 	};
 	long track;
 	int err;
+
+	ARG_UNUSED(argc);
 
 	err = 0;
 	track = shell_strtol(argv[1], 10, &err);
@@ -1116,6 +1226,9 @@ static int cmd_media_prev_group(const struct shell *sh, size_t argc,
 	};
 	int err;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	err = media_proxy_ctrl_send_command(current_player, &cmd);
 	if (err != 0) {
 		shell_error(sh, "Media Controller previous group failed: %d",
@@ -1135,6 +1248,9 @@ static int cmd_media_next_group(const struct shell *sh, size_t argc,
 	};
 	int err;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	err = media_proxy_ctrl_send_command(current_player, &cmd);
 	if (err != 0) {
 		shell_error(sh, "Media Controller next group failed: %d", err);
@@ -1152,6 +1268,9 @@ static int cmd_media_first_group(const struct shell *sh, size_t argc,
 		.param = 0,
 	};
 	int err;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	err = media_proxy_ctrl_send_command(current_player, &cmd);
 	if (err != 0) {
@@ -1171,6 +1290,9 @@ static int cmd_media_last_group(const struct shell *sh, size_t argc,
 	};
 	int err;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	err = media_proxy_ctrl_send_command(current_player, &cmd);
 	if (err != 0) {
 		shell_error(sh, "Media Controller last group failed: %d", err);
@@ -1188,6 +1310,8 @@ static int cmd_media_goto_group(const struct shell *sh, size_t argc,
 	};
 	long group;
 	int err;
+
+	ARG_UNUSED(argc);
 
 	err = 0;
 	group = shell_strtol(argv[1], 10, &err);
@@ -1218,6 +1342,9 @@ static int cmd_media_read_commands_supported(const struct shell *sh, size_t argc
 {
 	int err = media_proxy_ctrl_get_commands_supported(current_player);
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (err != 0) {
 		shell_error(sh, "Commands supported read failed (%d)", err);
 	}
@@ -1228,6 +1355,8 @@ static int cmd_media_read_commands_supported(const struct shell *sh, size_t argc
 #ifdef CONFIG_BT_OTS
 static int cmd_media_set_search(const struct shell *sh, size_t argc, char *argv[])
 {
+	ARG_UNUSED(argc);
+
 	/* TODO: Currently takes the raw search as input - add parameters
 	 * and build the search item here
 	 */
@@ -1259,6 +1388,9 @@ static int cmd_media_read_search_results_obj_id(const struct shell *sh, size_t a
 {
 	int err = media_proxy_ctrl_get_search_results_id(current_player);
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (err != 0) {
 		shell_error(sh, "Search results ID get failed (%d)", err);
 	}
@@ -1272,6 +1404,9 @@ static int cmd_media_read_content_control_id(const struct shell *sh, size_t argc
 {
 	int err = media_proxy_ctrl_get_content_ctrl_id(current_player);
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (err != 0) {
 		shell_error(sh, "Content control ID get failed (%d)", err);
 	}
@@ -1281,6 +1416,8 @@ static int cmd_media_read_content_control_id(const struct shell *sh, size_t argc
 
 static int cmd_media(const struct shell *sh, size_t argc, char **argv)
 {
+	ARG_UNUSED(argc);
+
 	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;

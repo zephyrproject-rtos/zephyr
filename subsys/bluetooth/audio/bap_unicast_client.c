@@ -1206,6 +1206,8 @@ static void unicast_client_ep_releasing_state(struct bt_bap_ep *ep, struct net_b
 {
 	struct bt_bap_stream *stream;
 
+	ARG_UNUSED(buf);
+
 	ep->receiver_ready = false;
 
 	stream = ep->stream;
@@ -1434,6 +1436,9 @@ static void unicast_client_ep_set_status(struct bt_bap_ep *ep, struct net_buf_si
 
 static bool valid_ltv_cb(struct bt_data *data, void *user_data)
 {
+	ARG_UNUSED(data);
+	ARG_UNUSED(user_data);
+
 	/* just return true to continue parsing as bt_data_parse will validate for us */
 	return true;
 }
@@ -1874,6 +1879,7 @@ static int unicast_client_ep_subscribe(struct bt_conn *conn, struct bt_bap_ep *e
 static void unicast_client_cp_sub_cb(struct bt_conn *conn, uint8_t err,
 				     struct bt_gatt_subscribe_params *sub_params)
 {
+	ARG_UNUSED(sub_params);
 
 	LOG_DBG("conn %p err %u", conn, err);
 

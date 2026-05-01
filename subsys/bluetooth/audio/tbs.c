@@ -34,6 +34,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/util_utf8.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "audio_internal.h"
@@ -370,6 +371,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	const uint8_t conn_index = bt_conn_index(conn);
 	int err;
+
+	ARG_UNUSED(reason);
 
 	err = k_mutex_lock(&tbs_mutex, MUTEX_TIMEOUT);
 	if (err != 0) {
@@ -1399,6 +1402,8 @@ static ssize_t write_signal_strength_interval(struct bt_conn *conn, const struct
 	struct net_buf_simple net_buf;
 	uint8_t signal_strength_interval;
 
+	ARG_UNUSED(flags);
+
 	if (!is_authorized(inst, conn)) {
 		return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
 	}
@@ -1863,6 +1868,8 @@ static uint8_t join_calls(struct tbs_inst *inst, const struct bt_tbs_call_cp_joi
 static void notify_app(struct bt_conn *conn, struct tbs_inst *inst, uint16_t len,
 		       const union bt_tbs_call_cp_t *ccp, uint8_t status, uint8_t call_index)
 {
+	ARG_UNUSED(status);
+
 	if (tbs_cbs == NULL) {
 		return;
 	}
@@ -1973,6 +1980,8 @@ static ssize_t write_call_cp(struct bt_conn *conn, const struct bt_gatt_attr *at
 	const bool is_gtbs = inst_is_gtbs(inst);
 	bool calls_changed = false;
 	int err;
+
+	ARG_UNUSED(flags);
 
 	if (!is_authorized(inst, conn)) {
 		return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);

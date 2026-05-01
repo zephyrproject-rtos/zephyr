@@ -19,6 +19,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/toolchain.h>
 
 #include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
@@ -52,6 +53,8 @@ static void has_client_preset_switch_cb(struct bt_has *has, int err, uint8_t ind
 static void has_client_preset_read_rsp_cb(struct bt_has *has, int err,
 					  const struct bt_has_preset_record *record, bool is_last)
 {
+	ARG_UNUSED(has);
+
 	if (err != 0) {
 		bt_shell_error("Preset Read operation failed (err %d)", err);
 		return;
@@ -75,6 +78,9 @@ static int cmd_has_client_init(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	err = bt_has_client_cb_register(&has_client_cb);
 	if (err != 0) {
 		shell_error(sh, "bt_has_client_cb_register (err %d)", err);
@@ -86,6 +92,9 @@ static int cmd_has_client_init(const struct shell *sh, size_t argc, char **argv)
 static int cmd_has_client_discover(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	if (default_conn == NULL) {
 		shell_error(sh, "Not connected");
@@ -105,6 +114,8 @@ static int cmd_has_client_read_presets(const struct shell *sh, size_t argc, char
 	int err;
 	const uint8_t index = shell_strtoul(argv[1], 16, &err);
 	const uint8_t count = shell_strtoul(argv[2], 10, &err);
+
+	ARG_UNUSED(argc);
 
 	if (err < 0) {
 		shell_error(sh, "Invalid command parameter (err %d)", err);

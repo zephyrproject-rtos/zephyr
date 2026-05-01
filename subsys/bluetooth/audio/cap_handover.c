@@ -420,6 +420,8 @@ static bool valid_unicast_to_broadcast_stream_metadata_param(
 	int broadcast_ret;
 	int unicast_ret;
 
+	ARG_UNUSED(lookup_data);
+
 	/* Compare existing unicast metadata with the subgroup param meteadata. It
 	 * is mandatory that the CCID list and the context type remain the same
 	 */

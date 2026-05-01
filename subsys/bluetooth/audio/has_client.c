@@ -23,6 +23,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/util_utf8.h>
+#include <zephyr/toolchain.h>
 
 #include "has_internal.h"
 
@@ -990,6 +991,8 @@ int bt_has_client_preset_prev(struct bt_has *has, bool sync)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct bt_has_client *inst = inst_by_conn(conn);
+
+	ARG_UNUSED(reason);
 
 	if (!inst) {
 		return;
