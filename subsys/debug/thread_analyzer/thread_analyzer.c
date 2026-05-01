@@ -115,6 +115,10 @@ static void thread_print_cb(struct thread_analyzer_info *info)
 	}
 
 #endif
+
+#ifdef CONFIG_THREAD_ANALYZER_PRINT_THREAD_PRIORITY
+	THREAD_ANALYZER_PRINT(THREAD_ANALYZER_FMT(" %-20s: PRIORITY: %d"), " ", info->prio);
+#endif
 }
 
 struct ta_cb_user_data {
@@ -223,6 +227,10 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 		info.utilization = (info.usage.execution_cycles * 100U) /
 			rt_stats_all.execution_cycles;
 	}
+#endif
+
+#ifdef CONFIG_THREAD_ANALYZER_PRINT_THREAD_PRIORITY
+	info.prio = thread->base.prio;
 #endif
 
 	ARG_UNUSED(ret);
