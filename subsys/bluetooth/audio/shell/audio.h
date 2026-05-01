@@ -23,6 +23,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/hci_types.h>
