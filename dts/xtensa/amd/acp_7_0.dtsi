@@ -119,6 +119,13 @@
 			dai-index = <69>;
 		};
 
+		acp_tdm_dma: acp-tdm-dma {
+			compatible = "amd,acp-tdm-dma";
+			dma-channels = <6>;
+			#dma-cells = <3>;
+			status = "okay";
+		};
+
 		tdm_dai0: tdm-dai0 {
 			compatible = "amd,tdm-dai";
 			status = "okay";
