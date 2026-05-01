@@ -1,0 +1,16 @@
+board:
+  name: usbcan_iso
+  vendor: canmodule
+  full_name: USBCAN (can-module.com)
+  type: mcu
+  arch: arm
+  toolchain:
+    - zephyr
+    - gnuarmemb
+  ram: 16
+  flash: 128
+  supported:
+    - can
+    - gpio
+    - usb_device
+    - usbd
