@@ -21,6 +21,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include <zephyr/logging/log.h>
@@ -664,6 +665,9 @@ static uint8_t mcp_supported_commands(const void *cmd, uint16_t cmd_len, void *r
 {
 	struct btp_mcp_read_supported_commands_rp *rp = rsp;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_MCP, rp->data);
 	*rsp_len += sizeof(*rp);
 
@@ -675,6 +679,10 @@ static uint8_t mcp_discover(const void *cmd, uint16_t cmd_len, void *rsp, uint16
 	const struct btp_mcp_discover_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
@@ -698,6 +706,10 @@ static uint8_t mcp_track_duration_read(const void *cmd, uint16_t cmd_len, void *
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MCC Read track duration");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -720,6 +732,10 @@ static uint8_t mcp_track_position_read(const void *cmd, uint16_t cmd_len, void *
 	const struct btp_mcp_track_position_read_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("MCC Read track position");
 
@@ -745,6 +761,10 @@ static uint8_t mcp_track_position_set(const void *cmd, uint16_t cmd_len, void *r
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MCC Set track position");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -767,6 +787,10 @@ static uint8_t mcp_playback_speed_read(const void *cmd, uint16_t cmd_len, void *
 	const struct btp_mcp_playback_speed_read_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("MCC Read playback speed");
 
@@ -791,6 +815,10 @@ static uint8_t mcp_playback_speed_set(const void *cmd, uint16_t cmd_len, void *r
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MCC Set playback speed");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -813,6 +841,10 @@ static uint8_t mcp_seeking_speed_read(const void *cmd, uint16_t cmd_len, void *r
 	const struct btp_mcp_seeking_speed_read_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("MCC Read seeking speed");
 
@@ -837,6 +869,10 @@ static uint8_t mcp_read_icon_obj_id(const void *cmd, uint16_t cmd_len, void *rsp
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MCC Read Icon Object ID");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -859,6 +895,10 @@ static uint8_t mcp_read_next_track_obj_id(const void *cmd, uint16_t cmd_len, voi
 	const struct btp_mcp_next_track_obj_id_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("MCC Read Next Track Object ID");
 
@@ -884,6 +924,10 @@ static uint8_t mcp_set_next_track_obj_id(const void *cmd, uint16_t cmd_len, void
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MCC Set Next Track Object ID");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -907,6 +951,10 @@ static uint8_t mcp_parent_group_obj_id_read(const void *cmd, uint16_t cmd_len, v
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MCC Read Parent Group Object ID");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -929,6 +977,10 @@ static uint8_t mcp_current_group_obj_id_read(const void *cmd, uint16_t cmd_len, 
 	const struct btp_mcp_current_group_obj_id_read_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("MCC Read Current Group Object ID");
 
@@ -954,6 +1006,10 @@ static uint8_t mcp_set_current_group_obj_id(const void *cmd, uint16_t cmd_len, v
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MCC Set Next Track Object ID");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -976,6 +1032,10 @@ static uint8_t mcp_playing_order_read(const void *cmd, uint16_t cmd_len, void *r
 	const struct btp_mcp_playing_order_read_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("MCC Read Playing Order");
 
@@ -1000,6 +1060,10 @@ static uint8_t mcp_playing_order_set(const void *cmd, uint16_t cmd_len, void *rs
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MCC Set Playing Order");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -1022,6 +1086,10 @@ static uint8_t mcp_playing_orders_supported_read(const void *cmd, uint16_t cmd_l
 	const struct btp_mcp_playing_orders_supported_read_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("MCC Playing orders supported read");
 
@@ -1046,6 +1114,10 @@ static uint8_t mcp_media_state_read(const void *cmd, uint16_t cmd_len, void *rsp
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MCC Media State read");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -1068,6 +1140,10 @@ static uint8_t mcp_opcodes_supported_read(const void *cmd, uint16_t cmd_len, voi
 	const struct btp_mcp_opcodes_supported_read_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("MCC Supported opcodes read");
 
@@ -1092,6 +1168,10 @@ static uint8_t mcp_content_control_id_read(const void *cmd, uint16_t cmd_len, vo
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MCC Content Control ID read");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -1115,6 +1195,10 @@ static uint8_t mcp_segments_obj_id_read(const void *cmd, uint16_t cmd_len, void 
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MCC Track Segments Object ID read");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -1137,6 +1221,10 @@ static uint8_t mcp_current_track_obj_id_read(const void *cmd, uint16_t cmd_len, 
 	const struct btp_mcp_current_track_obj_id_read_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("MCC Current Track Object ID read");
 
@@ -1162,6 +1250,10 @@ static uint8_t mcp_current_track_obj_id_set(const void *cmd, uint16_t cmd_len, v
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MCC Set Current Track Object ID");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -1184,6 +1276,10 @@ static uint8_t mcp_cmd_send(const void *cmd, uint16_t cmd_len, void *rsp, uint16
 	struct mpl_cmd mcp_cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("MCC Send Command");
 
@@ -1212,6 +1308,9 @@ static uint8_t mcp_cmd_search(const void *cmd, uint16_t cmd_len, void *rsp, uint
 	struct mpl_sci scp_cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("MCC Send Search Control Point Command");
 
@@ -1432,6 +1531,9 @@ static uint8_t mcs_supported_commands(const void *cmd, uint16_t cmd_len, void *r
 {
 	struct btp_mcs_read_supported_commands_rp *rp = rsp;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_GMCS, rp->data);
 	*rsp_len += sizeof(*rp);
 
@@ -1443,6 +1545,10 @@ static uint8_t mcs_cmd_send(const void *cmd, uint16_t cmd_len, void *rsp, uint16
 	const struct btp_mcs_send_cmd *cp = cmd;
 	struct mpl_cmd mcp_cmd;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("MCS Send Command");
 
@@ -1464,6 +1570,9 @@ static uint8_t mcs_next_track_obj_id_get(const void *cmd, uint16_t cmd_len, void
 	struct btp_mcs_next_track_obj_id_rp *rp = rsp;
 	int err;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+
 	LOG_DBG("MCS Read Next Track Obj Id");
 
 	err = media_proxy_ctrl_get_next_track_id(mcs_media_player);
@@ -1484,6 +1593,9 @@ static uint8_t mcs_current_track_obj_id_get(const void *cmd, uint16_t cmd_len, v
 	struct btp_mcs_current_track_obj_id_rp *rp = rsp;
 	int err;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+
 	LOG_DBG("MCS Read Current Track Obj Id");
 
 	err = media_proxy_ctrl_get_current_track_id(mcs_media_player);
@@ -1502,6 +1614,11 @@ static uint8_t mcs_parent_group_set(const void *cmd, uint16_t cmd_len, void *rsp
 				    uint16_t *rsp_len)
 {
 	int err;
+
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("MCS Set Current Group to be it's own parent");
 
@@ -1530,6 +1647,9 @@ static uint8_t mcs_inactive_state_set(const void *cmd, uint16_t cmd_len, void *r
 {
 	struct btp_mcs_state_set_rp *rp = rsp;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+
 	LOG_DBG("MCS Set Media Player to inactive state");
 
 	mpl_test_media_state_set(MEDIA_PROXY_STATE_INACTIVE);
@@ -1543,6 +1663,8 @@ static uint8_t mcs_inactive_state_set(const void *cmd, uint16_t cmd_len, void *r
 
 static void mcs_player_instance_cb(struct media_player *plr, int err)
 {
+	ARG_UNUSED(err);
+
 	mcs_media_player = plr;
 
 	LOG_DBG("Media PLayer Instance cb");
@@ -1550,11 +1672,18 @@ static void mcs_player_instance_cb(struct media_player *plr, int err)
 
 static void mcs_command_send_cb(struct media_player *player, int err, const struct mpl_cmd *cmd)
 {
+	ARG_UNUSED(player);
+	ARG_UNUSED(err);
+	ARG_UNUSED(cmd);
+
 	LOG_DBG("Media PLayer Send Command cb");
 }
 
 static void mcs_current_track_obj_id_cb(struct media_player *player, int err, uint64_t id)
 {
+	ARG_UNUSED(player);
+	ARG_UNUSED(err);
+
 	LOG_DBG("Media Player Current Track Object Id cb");
 
 	current_track_obj_id = id;
@@ -1562,6 +1691,9 @@ static void mcs_current_track_obj_id_cb(struct media_player *player, int err, ui
 
 static void mcs_next_track_obj_id_cb(struct media_player *player, int err, uint64_t id)
 {
+	ARG_UNUSED(player);
+	ARG_UNUSED(err);
+
 	LOG_DBG("Media PLayer Next Track Object ID cb");
 
 	next_track_obj_id = id;
@@ -1569,6 +1701,9 @@ static void mcs_next_track_obj_id_cb(struct media_player *player, int err, uint6
 
 static void mcs_media_state_cb(struct media_player *player, int err, uint8_t state)
 {
+	ARG_UNUSED(player);
+	ARG_UNUSED(err);
+
 	LOG_DBG("Media Player State cb");
 
 	media_player_state = state;
@@ -1576,6 +1711,9 @@ static void mcs_media_state_cb(struct media_player *player, int err, uint8_t sta
 
 static void mcs_current_group_id_cb(struct media_player *player, int err, uint64_t id)
 {
+	ARG_UNUSED(player);
+	ARG_UNUSED(err);
+
 	LOG_DBG("Media Player Current Group ID cb");
 
 	current_id = id;
@@ -1583,6 +1721,9 @@ static void mcs_current_group_id_cb(struct media_player *player, int err, uint64
 
 static void mcs_parent_group_id_cb(struct media_player *player, int err, uint64_t id)
 {
+	ARG_UNUSED(player);
+	ARG_UNUSED(err);
+
 	LOG_DBG("Media Player Parent Group ID cb");
 
 	parent_id = id;

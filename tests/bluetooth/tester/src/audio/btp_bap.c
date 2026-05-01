@@ -20,6 +20,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -70,6 +71,9 @@ static uint8_t btp_ascs_supported_commands(const void *cmd, uint16_t cmd_len,
 				       void *rsp, uint16_t *rsp_len)
 {
 	struct btp_ascs_read_supported_commands_rp *rp = rsp;
+
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
 
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_ASCS, rp->data);
 	*rsp_len += sizeof(*rp);
@@ -200,6 +204,9 @@ static uint8_t pacs_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_pacs_read_supported_commands_rp *rp = rsp;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_PACS, rp->data);
 	*rsp_len += sizeof(*rp);
 
@@ -211,6 +218,10 @@ static uint8_t pacs_update_characteristic(const void *cmd, uint16_t cmd_len,
 {
 	const struct btp_pacs_update_characteristic_cmd *cp = cmd;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	switch (cp->characteristic) {
 	case BTP_PACS_CHARACTERISTIC_SINK_PAC:
@@ -254,6 +265,10 @@ static uint8_t pacs_set_location(const void *cmd, uint16_t cmd_len,
 	const struct btp_pacs_set_location_cmd *cp = cmd;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	err = bt_pacs_set_location((enum bt_audio_dir)cp->dir,
 				   (enum bt_audio_location)cp->location);
 
@@ -265,6 +280,10 @@ static uint8_t pacs_set_available_contexts(const void *cmd, uint16_t cmd_len,
 {
 	const struct btp_pacs_set_available_contexts_cmd *cp = cmd;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
 					     (enum bt_audio_context)cp->sink_contexts);
@@ -282,6 +301,10 @@ static uint8_t pacs_set_supported_contexts(const void *cmd, uint16_t cmd_len,
 {
 	const struct btp_pacs_set_supported_contexts_cmd *cp = cmd;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK,
 					     (enum bt_audio_context)cp->sink_contexts);
@@ -328,6 +351,9 @@ static uint8_t btp_bap_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_bap_read_supported_commands_rp *rp = rsp;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_BAP, rp->data);
 	*rsp_len += sizeof(*rp);
 
@@ -338,6 +364,8 @@ uint8_t btp_bap_audio_stream_send(const void *cmd, uint16_t cmd_len, void *rsp, 
 {
 	struct btp_bap_send_rp *rp = rsp;
 	const struct btp_bap_send_cmd *cp = cmd;
+
+	ARG_UNUSED(cmd_len);
 
 	/* Always send dummy success for now until the command has be deprecated
 	 * https://github.com/auto-pts/auto-pts/issues/1317

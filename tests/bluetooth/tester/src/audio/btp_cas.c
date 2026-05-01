@@ -15,6 +15,7 @@
 #include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include "btp/btp.h"
 
@@ -28,6 +29,9 @@ static uint8_t cas_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_cas_read_supported_commands_rp *rp = rsp;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_CAS, rp->data);
 	*rsp_len += sizeof(*rp);
 
@@ -39,6 +43,10 @@ static uint8_t cas_set_member_lock(const void *cmd, uint16_t cmd_len,
 {
 	const struct btp_cas_set_member_lock_cmd *cp = cmd;
 	int err = -EINVAL;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	if (csis_svc_inst) {
 		err = bt_csip_set_member_lock(csis_svc_inst, cp->lock, cp->force);
@@ -52,6 +60,9 @@ static uint8_t cas_get_member_rsi(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_cas_get_member_rsi_rp *rp = rsp;
 	int err = -EINVAL;
+
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
 
 	if (csis_svc_inst) {
 		err = bt_csip_set_member_generate_rsi(csis_svc_inst, rp->rsi);

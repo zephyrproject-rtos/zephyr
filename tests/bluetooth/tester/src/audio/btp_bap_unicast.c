@@ -28,6 +28,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/ring_buffer.h>
@@ -419,6 +420,10 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 			const struct bt_audio_codec_cfg *codec_cfg,
 			struct bt_bap_qos_cfg_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(dir);
+	ARG_UNUSED(pref);
+	ARG_UNUSED(rsp);
+
 	LOG_DBG("ASE Codec Reconfig: stream %p", stream);
 
 	print_codec_cfg(codec_cfg);
@@ -429,6 +434,8 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 static int lc3_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qos,
 		   struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_DBG("QoS: stream %p qos %p", stream, qos);
 
 	print_qos(qos);
@@ -438,6 +445,8 @@ static int lc3_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qo
 
 static bool valid_metadata_type(uint8_t type, uint8_t len, const uint8_t *data)
 {
+	ARG_UNUSED(len);
+
 	/* PTS checks if we are able to reject unsupported metadata type or RFU vale.
 	 * The only RFU value PTS seems to check for now is the streaming context.
 	 */
@@ -479,6 +488,8 @@ static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t
 
 static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_DBG("Start: stream %p", stream);
 
 	return 0;
@@ -494,6 +505,8 @@ static int lc3_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size
 
 static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_DBG("Disable: stream %p", stream);
 
 	return 0;
@@ -501,6 +514,8 @@ static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 
 static int lc3_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_DBG("Stop: stream %p", stream);
 
 	return 0;
@@ -508,6 +523,8 @@ static int lc3_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 
 static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_DBG("Release: stream %p", stream);
 
 	return 0;
@@ -551,6 +568,8 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 	struct bt_bap_ep_info info;
 	struct btp_bap_unicast_connection *u_conn;
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
+
+	ARG_UNUSED(pref);
 
 	(void)bt_bap_ep_get_info(stream->ep, &info);
 	LOG_DBG("Configured stream %p, ep %u, dir %u", stream, info.id, info.dir);
@@ -864,6 +883,8 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 				       enum bt_audio_dir dir,
 				       enum bt_audio_location loc)
 {
+	ARG_UNUSED(conn);
+
 	LOG_DBG("dir %u loc %X", dir, loc);
 }
 
@@ -871,6 +892,8 @@ static void unicast_client_supported_contexts_cb(struct bt_conn *conn,
 						 enum bt_audio_context snk_ctx,
 						 enum bt_audio_context src_ctx)
 {
+	ARG_UNUSED(conn);
+
 	LOG_DBG("Supported snk ctx %u src ctx %u", snk_ctx, src_ctx);
 }
 
@@ -878,6 +901,8 @@ static void unicast_client_available_contexts_cb(struct bt_conn *conn,
 						 enum bt_audio_context snk_ctx,
 						 enum bt_audio_context src_ctx)
 {
+	ARG_UNUSED(conn);
+
 	LOG_DBG("Available snk ctx %u src ctx %u", snk_ctx, src_ctx);
 }
 
@@ -1122,6 +1147,10 @@ uint8_t btp_bap_discover(const void *cmd, uint16_t cmd_len,
 	struct btp_bap_unicast_connection *u_conn;
 	struct bt_conn_info conn_info;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
@@ -1441,6 +1470,10 @@ uint8_t btp_ascs_configure_codec(const void *cmd, uint16_t cmd_len, void *rsp, u
 	struct btp_bap_unicast_connection *u_conn;
 	struct bt_audio_codec_cfg codec_cfg;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -1492,6 +1525,10 @@ uint8_t btp_ascs_preconfigure_qos(const void *cmd, uint16_t cmd_len,
 	const uint16_t max_sdu = sys_le16_to_cpu(cp->max_sdu);
 	struct bt_bap_qos_cfg *qos;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("");
 
 	if (cp->framing != BT_ISO_FRAMING_UNFRAMED && cp->framing != BT_ISO_FRAMING_FRAMED) {
@@ -1541,6 +1578,10 @@ uint8_t btp_ascs_configure_qos(const void *cmd, uint16_t cmd_len, void *rsp, uin
 	struct bt_conn *conn;
 	struct btp_bap_unicast_group *out_unicast_group;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -1588,6 +1629,10 @@ uint8_t btp_ascs_enable(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *
 	struct btp_bap_unicast_stream *stream;
 	struct bt_conn *conn;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -1621,6 +1666,10 @@ uint8_t btp_ascs_disable(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 	struct btp_bap_unicast_connection *u_conn;
 	struct btp_bap_unicast_stream *stream;
 	struct bt_conn *conn;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("");
 
@@ -1677,6 +1726,10 @@ uint8_t btp_ascs_receiver_start_ready(const void *cmd, uint16_t cmd_len,
 	struct bt_conn_info conn_info;
 	struct bt_bap_ep_info info;
 	struct bt_conn *conn;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("");
 
@@ -1748,6 +1801,10 @@ uint8_t btp_ascs_receiver_stop_ready(const void *cmd, uint16_t cmd_len,
 	struct btp_bap_unicast_stream *stream;
 	struct bt_conn *conn;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -1797,6 +1854,10 @@ uint8_t btp_ascs_release(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 	struct btp_bap_unicast_connection *u_conn;
 	struct btp_bap_unicast_stream *stream;
 	struct bt_conn *conn;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("");
 
@@ -1854,6 +1915,10 @@ uint8_t btp_ascs_update_metadata(const void *cmd, uint16_t cmd_len,
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -1905,6 +1970,10 @@ uint8_t btp_ascs_add_ase_to_cis(const void *cmd, uint16_t cmd_len,
 	struct btp_bap_unicast_connection *u_conn;
 	struct bt_conn_info conn_info;
 	const struct btp_ascs_add_ase_to_cis *cp = cmd;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("");
 
