@@ -363,12 +363,6 @@ Labels applicable to both pull requests and issues
    * - :guilabel:`platform: {platform-name}`
      - An issue or PR which affects only a particular platform.
 
-   * - :guilabel:`dev-review`
-     - The issue is to be discussed in the following `dev-review`_ if time
-       permits.
-
-       .. _`dev-review`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Groups#zephyr-dev-meeting
-
    * - :guilabel:`TSC`
      - TSC stands for Technical Steering Committee. The issue is to be discussed in the
        following `TSC meeting`_ if time permits.
