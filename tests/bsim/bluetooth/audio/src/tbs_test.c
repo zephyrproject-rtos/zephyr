@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
@@ -35,6 +36,8 @@ CREATE_FLAG(call_joined);
 
 static void tbs_hold_call_cb(struct bt_conn *conn, uint8_t call_index)
 {
+	ARG_UNUSED(conn);
+
 	if (call_index == g_call_index) {
 		SET_FLAG(call_held);
 	}
@@ -43,6 +46,8 @@ static void tbs_hold_call_cb(struct bt_conn *conn, uint8_t call_index)
 static bool tbs_originate_call_cb(struct bt_conn *conn, uint8_t call_index,
 				  const char *caller_id)
 {
+	ARG_UNUSED(conn);
+
 	printk("Placing call to remote with id %u to %s\n", call_index, caller_id);
 	g_call_index = call_index;
 	SET_FLAG(call_placed);
@@ -57,6 +62,8 @@ static bool tbs_authorize_cb(struct bt_conn *conn)
 static void tbs_terminate_call_cb(struct bt_conn *conn, uint8_t call_index,
 				  uint8_t reason)
 {
+	ARG_UNUSED(conn);
+
 	printk("Terminating call with id %u reason: %u", call_index, reason);
 	SET_FLAG(call_terminated);
 	UNSET_FLAG(call_placed);
@@ -64,12 +71,16 @@ static void tbs_terminate_call_cb(struct bt_conn *conn, uint8_t call_index,
 
 static void tbs_accept_call_cb(struct bt_conn *conn, uint8_t call_index)
 {
+	ARG_UNUSED(conn);
+
 	printk("Accepting call with index %u\n", call_index);
 	SET_FLAG(call_accepted);
 }
 
 static void tbs_retrieve_call_cb(struct bt_conn *conn, uint8_t call_index)
 {
+	ARG_UNUSED(conn);
+
 	printk("Retrieve call with index %u\n", call_index);
 	SET_FLAG(call_retrieved);
 }
@@ -78,7 +89,9 @@ static void tbs_join_calls_cb(struct bt_conn *conn,
 			      uint8_t call_index_count,
 			      const uint8_t *call_indexes)
 {
-	for (size_t i = 0; i < sizeof(call_indexes); i++) {
+	ARG_UNUSED(conn);
+
+	for (size_t i = 0; i < call_index_count; i++) {
 		printk("Call index: %u joined\n", call_indexes[i]);
 	}
 	SET_FLAG(call_joined);
