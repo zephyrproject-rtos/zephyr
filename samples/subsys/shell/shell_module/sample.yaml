@@ -1,5 +1,7 @@
 sample:
   name: Shell Sample
+common:
+  sysbuild: false
 tests:
   sample.shell.shell_module:
     platform_exclude: qemu_rx
