@@ -84,9 +84,12 @@ configure the shell to use the CDC ACM UART as the serial backend. See sample
 Since the use case as a serial backend is very common and no configuration is
 necessary at runtime for the CDC ACM UART, the stack offers a helper that
 performs the steps described in :ref:`usb_device_next_howto_configure`. The
-helper is enabled by the :kconfig:option:`CONFIG_CDC_ACM_SERIAL_INITIALIZE_AT_BOOT`
-and initializes the USB device stack with a single CDC ACM instance. Sample
-:zephyr:code-sample:`usb-cdc-acm-console` demonstrates how to use it.
+helper is enabled by the :kconfig:option:`CONFIG_CDC_ACM_SERIAL_INITIALIZE_AT_BOOT`.
+It initializes the USB device stack and registers CDC ACM instances. If only one
+instance is available, it registers this single CDC ACM instance. If more than
+one instance is available, the stack identifies and registers UART devices in a
+specific order using the chosen node properties.
+Sample :zephyr:code-sample:`usb-cdc-acm-console` demonstrates how to use it.
 
 :kconfig:option:`CONFIG_CDC_ACM_SERIAL_INITIALIZE_AT_BOOT` should also be used
 by the boards like :zephyr:board:`nrf52840dongle`, which do not have a debug
@@ -96,15 +99,6 @@ As the configuration would be identical for any board, there are common
 :zephyr_file:`devicetree file <boards/common/usb/cdc_acm_serial.dtsi>` and
 :zephyr_file:`Kconfig file <boards/common/usb/Kconfig.cdc_acm_serial.defconfig>`
 that must be included in the board's devicetree and Kconfig.defconfig files.
-
-Application can use :kconfig:option:`CONFIG_CDC_ACM_SERIAL_MULTIPLE_INSTANCES`
-if different CDC ACM serial backends are required for common use cases such as
-logging, the shell, and specific protocols. This option also guarantees the
-order in which the instances will be registered and appear in the configuration
-descriptor. The option uses the chosen node properties to identify UART devices.
-The following are currently supported, in this order:
-"zephyr,console", "zephyr,shell-uart", "zephyr,uart-mcumgr".
-A supported property may be missing, and properties may reference the same device.
 
 Using CDC ACM UART in the application
 =====================================
