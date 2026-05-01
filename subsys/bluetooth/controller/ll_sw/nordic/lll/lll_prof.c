@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <errno.h>
 
@@ -80,6 +81,7 @@ static uint16_t cputime_min = UINT16_MAX;
 static uint16_t cputime_max;
 static uint16_t cputime_prev;
 static uint32_t timestamp_latency;
+static bool latency_valid;
 
 static uint32_t timestamp_ticks_radio;
 static uint32_t timestamp_ticks_lll;
@@ -173,6 +175,19 @@ void lll_prof_latency_capture(void)
 	 * set, we can set it.
 	 */
 	timestamp_latency = UINT16_MAX;
+
+	/* Latency is valid unless invalidated, i.e. on-air packet END
+	 * timestamp has been captured.
+	 */
+	latency_valid = true;
+}
+
+void lll_prof_latency_invalidate(void)
+{
+	/* No on-air packet END timestamp captured, the ISR entry sample is
+	 * used only to measure the ISR CPU time.
+	 */
+	latency_valid = false;
 }
 
 uint16_t lll_prof_latency_get(void)
@@ -269,26 +284,31 @@ static int send(struct node_rx_pdu *rx)
 	struct profile *p;
 	uint8_t chg = 0U;
 
-	/* Get the elapsed time in us since on-air radio packet end to ISR
-	 * entry.
-	 */
-	latency = latency_get();
+	if (latency_valid) {
+		/* Get the elapsed time in us since on-air radio packet end to
+		 * ISR entry.
+		 */
+		latency = latency_get();
 
-	/* check changes in min, avg and max of latency */
-	if (latency > latency_max) {
-		latency_max = latency;
-		chg = 1U;
-	}
-	if (latency < latency_min) {
-		latency_min = latency;
-		chg = 1U;
-	}
+		/* check changes in min, avg and max of latency */
+		if (latency > latency_max) {
+			latency_max = latency;
+			chg = 1U;
+		}
+		if (latency < latency_min) {
+			latency_min = latency;
+			chg = 1U;
+		}
 
-	/* check for +/- 1us change */
-	prev = ((uint16_t)latency_prev + latency) >> 1;
-	if (prev != latency_prev) {
-		latency_prev = latency;
-		chg = 1U;
+		/* check for +/- 1us change */
+		prev = ((uint16_t)latency_prev + latency) >> 1;
+		if (prev != latency_prev) {
+			latency_prev = latency;
+			chg = 1U;
+		}
+	} else {
+		/* Latency not measured, no on-air packet END timestamp */
+		latency = 0U;
 	}
 
 	/* calculate the elapsed time in us since ISR entry */

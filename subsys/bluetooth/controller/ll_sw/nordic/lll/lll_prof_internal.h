@@ -18,6 +18,7 @@ void lll_prof_exit_ull_low(void);
 uint16_t lll_prof_ull_low_get(void);
 
 void lll_prof_latency_capture(void);
+void lll_prof_latency_invalidate(void);
 uint16_t lll_prof_latency_get(void);
 void lll_prof_radio_end_backup(void);
 void lll_prof_cputime_capture(void);

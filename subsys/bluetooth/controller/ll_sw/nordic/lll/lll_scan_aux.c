@@ -907,6 +907,15 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR) && !trx_done) {
+		/* ISR latency is measured from the on-air packet END
+		 * timestamp, no END captured when the ISR is due to Rx timeout
+		 * or explicit radio disable, hence do not measure latency.
+		 */
+		lll_prof_latency_invalidate();
+	}
+
 	if (trx_done) {
 		crc_ok = radio_crc_is_valid();
 		devmatch_ok = radio_filter_has_match();
