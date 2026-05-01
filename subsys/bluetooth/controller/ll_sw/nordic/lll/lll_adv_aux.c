@@ -791,10 +791,11 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux, uint8_t phy_flags_rx,
 							 lll->phy_flags,
 							 lll->phy_s,
 							 lll->phy_flags);
-#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
-			radio_tmr_end_capture();
-#endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
+			if (IS_ENABLED(HAL_RADIO_GPIO_HAVE_PA_PIN) ||
+			    IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+				radio_tmr_end_capture();
+			}
 #endif /* CONFIG_BT_CTLR_ADV_AUX_PDU_BACK2BACK */
 
 		} else {
