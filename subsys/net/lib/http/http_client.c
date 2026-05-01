@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(net_http_client, CONFIG_NET_HTTP_LOG_LEVEL);
 #include "net_private.h"
 
 #define HTTP_CONTENT_LEN_SIZE 11
-#define MAX_SEND_BUF_LEN 192
+#define MAX_SEND_BUF_LEN CONFIG_HTTP_CLIENT_SEND_BUF_SIZE
 
 static int sendall(int sock, const void *buf, size_t len,
 			const k_timepoint_t req_end_timepoint)
