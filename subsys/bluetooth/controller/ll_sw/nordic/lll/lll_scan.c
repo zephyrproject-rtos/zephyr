@@ -711,6 +711,15 @@ static void isr_rx(void *param)
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR) && !trx_done) {
+		/* ISR latency is measured from the on-air packet END
+		 * timestamp, no END captured when the ISR is due to Rx timeout
+		 * or explicit radio disable, hence do not measure latency.
+		 */
+		lll_prof_latency_invalidate();
+	}
+
 	if (trx_done) {
 		crc_ok = radio_crc_is_valid();
 		devmatch_ok = radio_filter_has_match();
@@ -864,6 +873,10 @@ static void isr_tx(void *param)
 	radio_tmr_hcto_configure(hcto);
 
 	radio_rssi_measure();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		radio_tmr_end_capture();
+	}
 
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
@@ -1294,6 +1307,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			 */
 			lll_prof_radio_end_backup();
 		}
+
 		radio_gpio_pa_setup();
 		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
 					 EVENT_IFS_US -
@@ -1423,7 +1437,6 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 			lll_prof_cputime_capture();
-
 		}
 
 		/* capture end of Tx-ed PDU, used to calculate HCTO. */

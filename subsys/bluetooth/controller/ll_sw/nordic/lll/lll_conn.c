@@ -331,6 +331,15 @@ void lll_conn_isr_rx(void *param)
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR) && !trx_done) {
+		/* ISR latency is measured from the on-air packet END
+		 * timestamp, no END captured when the ISR is due to Rx timeout
+		 * or explicit radio disable, hence do not measure latency.
+		 */
+		lll_prof_latency_invalidate();
+	}
+
 	if (trx_done) {
 		crc_ok = radio_crc_is_valid();
 		rssi_ready = radio_rssi_is_ready();
