@@ -14,6 +14,8 @@
 
 #if defined(CONFIG_TEST_FORCE_STORAGE_PARTITION)
 #define TEST_AREA	storage_partition
+#elif defined(CONFIG_FLASH_INFINEON_RRAM)
+#define TEST_AREA storage_partition_rram
 #elif defined(CONFIG_NORDIC_QSPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, nordic_qspi_nor)
 #elif defined(SOC_SERIES_STM32N6X)
