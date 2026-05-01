@@ -1,5 +1,8 @@
 # SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
+#
+# Devicetree enables Ethernet; omit netif:eth from supported so Twister skips
+# net/ethernet builds until the NXP GMAC RTD GCC macro vs logging pragma issue is fixed upstream.
 
 identifier: s32k3x4evb_t172
 name: NXP S32K3X4EVB-T172
@@ -16,4 +19,3 @@ supported:
   - dma
   - gpio
   - uart
-  - netif:eth

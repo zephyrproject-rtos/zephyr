@@ -13,7 +13,6 @@ This development kit has the following Interfaces:
 
 * :abbr:`ADC (Analog to Digital Converter)`
 * :abbr:`GPIO (General Purpose Input Output)`
-* :abbr:`SPI (Serial Peripheral Interface)`
 * :abbr:`ETH (Ethernet MII/RMII 100 Ethernet Phy)`
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`CAN (Controller Area Network)`
@@ -196,7 +195,7 @@ Programming and Debugging
 
 .. zephyr:board-supported-runners::
 
-Applications for the ``s32k3x4evb-t172`` board can be built in the usual way as
+Applications for the ``s32k3x4evb_t172`` board can be built in the usual way as
 documented in :ref:`build_an_application`.
 
 This board configuration supports `Lauterbach TRACE32`_, `SEGGER J-Link`_, and `pyOCD`_

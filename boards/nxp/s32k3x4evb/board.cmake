@@ -1,4 +1,4 @@
-# Copyright 2023 NXP
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 board_runner_args(trace32
