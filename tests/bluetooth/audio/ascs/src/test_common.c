@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/fff.h>
 #include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
@@ -61,6 +62,8 @@ void test_mocks_reset(void)
 static uint8_t attr_found(const struct bt_gatt_attr *attr, uint16_t handle, void *user_data)
 {
 	const struct bt_gatt_attr **result = user_data;
+
+	ARG_UNUSED(handle);
 
 	*result = attr;
 
@@ -146,6 +149,11 @@ static int unicast_server_cb_config_custom_fake(struct bt_conn *conn, const stru
 						struct bt_bap_qos_cfg_pref *const pref,
 						struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(ep);
+	ARG_UNUSED(dir);
+	ARG_UNUSED(codec_cfg);
+
 	*stream = stream_allocated;
 	*pref = qos_pref;
 	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);

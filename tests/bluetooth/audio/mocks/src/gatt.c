@@ -22,6 +22,7 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/ztest_test.h>
 #include <zephyr/ztest_assert.h>
@@ -50,6 +51,12 @@ static sys_slist_t db;
 ssize_t bt_gatt_attr_read_service(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+	ARG_UNUSED(offset);
+
 	zassert_unreachable("Unexpected call to '%s()' occurred", __func__);
 	return 0;
 }
@@ -57,6 +64,12 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn, const struct bt_gatt_att
 ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 			       uint16_t len, uint16_t offset)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+	ARG_UNUSED(offset);
+
 	zassert_unreachable("Unexpected call to '%s()' occurred", __func__);
 	return 0;
 }
@@ -64,6 +77,12 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn, const struct bt_gatt_attr *
 ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 			      uint16_t len, uint16_t offset)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+	ARG_UNUSED(offset);
+
 	zassert_unreachable("Unexpected call to '%s()' occurred", __func__);
 	return 0;
 }
@@ -71,6 +90,13 @@ ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn, const struct bt_gatt_attr *a
 ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			       const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+	ARG_UNUSED(offset);
+	ARG_UNUSED(flags);
+
 	zassert_unreachable("Unexpected call to '%s()' occurred", __func__);
 	return 0;
 }
@@ -332,6 +358,8 @@ static uint8_t found_attr(const struct bt_gatt_attr *attr, uint16_t handle, void
 {
 	const struct bt_gatt_attr **found = user_data;
 
+	ARG_UNUSED(handle);
+
 	*found = attr;
 
 	return BT_GATT_ITER_STOP;
@@ -469,6 +497,8 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 {
 	uint16_t len;
 
+	ARG_UNUSED(conn);
+
 	if (offset > value_len) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
@@ -541,6 +571,8 @@ int bt_gatt_discover(struct bt_conn *conn, struct bt_gatt_discover_params *param
 
 uint16_t bt_gatt_get_mtu(struct bt_conn *conn)
 {
+	ARG_UNUSED(conn);
+
 	return 64;
 }
 
@@ -583,6 +615,8 @@ uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr)
 static uint8_t find_next(const struct bt_gatt_attr *attr, uint16_t handle, void *user_data)
 {
 	struct bt_gatt_attr **next = user_data;
+
+	ARG_UNUSED(handle);
 
 	*next = (struct bt_gatt_attr *)attr;
 

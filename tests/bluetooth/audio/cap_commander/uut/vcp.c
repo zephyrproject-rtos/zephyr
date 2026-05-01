@@ -18,6 +18,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 static struct bt_vcp_vol_ctlr_cb *vcp_cb;
 
@@ -47,6 +48,8 @@ int bt_vcp_vol_ctlr_conn_get(const struct bt_vcp_vol_ctlr *vol_ctlr, struct bt_c
 
 int bt_vcp_vol_ctlr_set_vol(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t volume)
 {
+	ARG_UNUSED(volume);
+
 	if (vcp_cb != NULL && vcp_cb->vol_set != NULL) {
 		vcp_cb->vol_set(vol_ctlr, 0);
 	}

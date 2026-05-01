@@ -13,6 +13,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/ztest_assert.h>
 
 #include "bap_stream.h"
@@ -201,6 +202,9 @@ expect_bt_bap_stream_ops_recv_called(
 	struct net_buf *buf)
 {
 	const char *func_name = "bt_bap_stream_ops.recv";
+
+	ARG_UNUSED(info);
+	ARG_UNUSED(buf);
 
 	zexpect_call_count(func_name, expected_count, mock_bap_stream_recv_cb_fake.call_count);
 

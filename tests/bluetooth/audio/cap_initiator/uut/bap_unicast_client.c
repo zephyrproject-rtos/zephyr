@@ -19,6 +19,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/ztest_assert.h>
 #include <sys/errno.h>
 
@@ -159,6 +160,9 @@ int bt_bap_unicast_client_enable(struct bt_bap_stream *stream, const uint8_t met
 {
 	struct bt_bap_unicast_client_cb *listener, *next;
 
+	ARG_UNUSED(meta);
+	ARG_UNUSED(meta_len);
+
 	if (stream == NULL) {
 		return -EINVAL;
 	}
@@ -190,6 +194,9 @@ int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, const uint8_t m
 				   size_t meta_len)
 {
 	struct bt_bap_unicast_client_cb *listener, *next;
+
+	ARG_UNUSED(meta);
+	ARG_UNUSED(meta_len);
 
 	if (stream == NULL) {
 		return -EINVAL;

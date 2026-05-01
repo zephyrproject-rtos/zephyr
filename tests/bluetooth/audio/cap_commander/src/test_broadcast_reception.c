@@ -23,6 +23,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 
@@ -63,6 +64,8 @@ static void cap_commander_broadcast_assistant_recv_state_cb(
 	struct bt_conn *conn, int err, const struct bt_bap_scan_delegator_recv_state *state)
 {
 	uint8_t index;
+
+	ARG_UNUSED(err);
 
 	index = bt_conn_index(conn);
 	src_id[index] = state->src_id;

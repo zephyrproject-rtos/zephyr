@@ -19,6 +19,7 @@
 #include <zephyr/fff.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 
@@ -26,6 +27,8 @@ DEFINE_FFF_GLOBALS;
 
 static void pacs_test_suite_after(void *f)
 {
+	ARG_UNUSED(f);
+
 	/* attempt to clean up after any failures */
 	(void)bt_pacs_unregister();
 }
