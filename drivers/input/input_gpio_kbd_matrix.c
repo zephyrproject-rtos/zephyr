@@ -30,6 +30,9 @@ struct gpio_kbd_matrix_config {
 	k_work_handler_t idle_poll_handler;
 
 	bool col_drive_inactive;
+
+	bool col_decode_en;
+	int col_decode[2];
 };
 
 struct gpio_kbd_matrix_data {
@@ -57,7 +60,7 @@ static void gpio_kbd_matrix_drive_column(const struct device *dev, int col)
 		state = BIT(col);
 	}
 
-	if (data->direct_write) {
+	if (data->direct_write && cfg->col_decode_en) {
 		const struct gpio_dt_spec *gpio0 = &cfg->col_gpio[0];
 		gpio_port_pins_t gpio_mask;
 		gpio_port_value_t gpio_val;
@@ -71,19 +74,31 @@ static void gpio_kbd_matrix_drive_column(const struct device *dev, int col)
 	}
 
 	for (int i = 0; i < common->col_size; i++) {
-		const struct gpio_dt_spec *gpio = &cfg->col_gpio[i];
 
-		if ((data->last_col_state ^ state) & BIT(i)) {
-			if (cfg->col_drive_inactive) {
-				gpio_pin_set_dt(gpio, state & BIT(i));
-			} else if (state & BIT(i)) {
-				gpio_pin_configure_dt(gpio, GPIO_OUTPUT_ACTIVE);
-			} else {
-				gpio_pin_configure_dt(gpio, GPIO_INPUT);
+		if (cfg->col_decode_en) {
+			if ((data->last_col_state ^ state) & BIT(i)) {
+				for (int j = 0; j < cfg->col_decode[0]; j++) {
+					const struct gpio_dt_spec *gpio = &cfg->col_gpio[j];
+
+					gpio_pin_set_dt(gpio, (i >> j) & 1);
+				}
+			}
+		}
+
+		else {
+			const struct gpio_dt_spec *gpio = &cfg->col_gpio[i];
+
+			if ((data->last_col_state ^ state) & BIT(i)) {
+				if (cfg->col_drive_inactive) {
+					gpio_pin_set_dt(gpio, state & BIT(i));
+				} else if (state & BIT(i)) {
+					gpio_pin_configure_dt(gpio, GPIO_OUTPUT_ACTIVE);
+				} else {
+					gpio_pin_configure_dt(gpio, GPIO_INPUT);
+				}
 			}
 		}
 	}
-
 	data->last_col_state = state;
 }
 
@@ -192,8 +207,13 @@ static int gpio_kbd_matrix_init(const struct device *dev)
 	struct gpio_kbd_matrix_data *data = dev->data;
 	int ret;
 	int i;
+	int col_gpios = common->col_size;
 
-	for (i = 0; i < common->col_size; i++) {
+	if (cfg->col_decode_en) {
+		col_gpios = cfg->col_decode[0];
+	}
+
+	for (i = 0; i < col_gpios; i++) {
 		const struct gpio_dt_spec *gpio = &cfg->col_gpio[i];
 
 		if (!gpio_is_ready_dt(gpio)) {
@@ -252,7 +272,7 @@ static int gpio_kbd_matrix_init(const struct device *dev)
 
 	if (cfg->col_drive_inactive) {
 		data->direct_write = gpio_kbd_matrix_is_gpio_coherent(
-				cfg->col_gpio, common->col_size);
+				cfg->col_gpio, col_gpios);
 	}
 
 	LOG_DBG("direct_read: %d direct_write: %d",
@@ -279,8 +299,13 @@ static const struct input_kbd_matrix_api gpio_kbd_matrix_api = {
 #define INPUT_GPIO_KBD_MATRIX_INIT(n)								\
 	BUILD_ASSERT(DT_INST_PROP_LEN(n, col_gpios) <= 32, "invalid col-size");			\
 												\
-	INPUT_KBD_MATRIX_DT_INST_DEFINE_ROW_COL(						\
-		n, DT_INST_PROP_LEN(n, row_gpios), DT_INST_PROP_LEN(n, col_gpios));		\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, col_decode),					\
+		(INPUT_KBD_MATRIX_DT_INST_DEFINE_ROW_COL(					\
+			n, DT_INST_PROP_LEN(n, row_gpios),					\
+			DT_INST_PROP_BY_IDX(n, col_decode, 1));),				\
+		(INPUT_KBD_MATRIX_DT_INST_DEFINE_ROW_COL(					\
+			n, DT_INST_PROP_LEN(n, row_gpios), DT_INST_PROP_LEN(n, col_gpios));)	\
+	)											\
 												\
 	static const struct gpio_dt_spec gpio_kbd_matrix_row_gpio_##n[DT_INST_PROP_LEN(		\
 			n, row_gpios)] = {							\
@@ -312,9 +337,14 @@ static const struct input_kbd_matrix_api gpio_kbd_matrix_api = {
 	))											\
 												\
 	static const struct gpio_kbd_matrix_config gpio_kbd_matrix_cfg_##n = {			\
-		.common = INPUT_KBD_MATRIX_DT_INST_COMMON_CONFIG_INIT_ROW_COL(			\
-			n, &gpio_kbd_matrix_api,						\
-			DT_INST_PROP_LEN(n, row_gpios), DT_INST_PROP_LEN(n, col_gpios)),	\
+		.common = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, col_decode),			\
+		(INPUT_KBD_MATRIX_DT_INST_COMMON_CONFIG_INIT_ROW_COL(				\
+			n, &gpio_kbd_matrix_api, DT_INST_PROP_LEN(n, row_gpios),		\
+			DT_INST_PROP_BY_IDX(n, col_decode, 1))),				\
+		(INPUT_KBD_MATRIX_DT_INST_COMMON_CONFIG_INIT_ROW_COL(				\
+			n, &gpio_kbd_matrix_api, DT_INST_PROP_LEN(n, row_gpios),		\
+			DT_INST_PROP_LEN(n, col_gpios)))					\
+		),										\
 		.row_gpio = gpio_kbd_matrix_row_gpio_##n,					\
 		.col_gpio = gpio_kbd_matrix_col_gpio_##n,					\
 		IF_ENABLED(DT_INST_ENUM_HAS_VALUE(n, idle_mode, interrupt), (			\
@@ -326,6 +356,10 @@ static const struct input_kbd_matrix_api gpio_kbd_matrix_api = {
 		.idle_poll_handler = gpio_kbd_matrix_idle_poll_handler_##n,			\
 		))										\
 		.col_drive_inactive = DT_INST_PROP(n, col_drive_inactive),			\
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, col_decode), (				\
+		.col_decode = DT_INST_PROP(n, col_decode),					\
+		.col_decode_en = 1,								\
+		))										\
 	};											\
 												\
 	static struct gpio_kbd_matrix_data gpio_kbd_matrix_data_##n;				\

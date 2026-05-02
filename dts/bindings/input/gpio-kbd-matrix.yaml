@@ -38,6 +38,14 @@ properties:
       If enabled, unselected column GPIOs will be driven to inactive state.
       Default to configure unselected column GPIOs to high impedance.
 
+  col-decode:
+    type: array
+    description: |
+      Enable to drive coloumns via a demultiplexer/decoder IC such as the 74xx138.
+      This takes two elemets, first being the Address Input count, the second being
+      the demultiplexed output count. For a 3-to-8 demultiplexer like the 74xx138 the
+      input array will contain 3 and 8;
+
   idle-mode:
     type: string
     default: "interrupt"
