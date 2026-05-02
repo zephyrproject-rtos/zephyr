@@ -5,6 +5,8 @@
  */
 
 #include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/input/keymap.h>
 
 / {
 	zephyr,user {
@@ -17,6 +19,87 @@
 
 	chosen {
 		zephyr,display = &st7789v;
+	};
+
+	kbd: kbd-matrix {
+		compatible = "gpio-kbd-matrix";
+		row-gpios = <&gpio0 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>,
+			    <&gpio0 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>,
+			    <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>,
+			    <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>,
+			    <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>,
+			    <&gpio0 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>,
+			    <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		col-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 9 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		col-drive-inactive;
+		settle-time-us = <100>;
+		no-ghostkey-check;
+		idle-mode = "poll";
+		col-decode = <3 8>;
+
+		keymap {
+			compatible = "input-keymap";
+			row-size = <7>;
+			col-size = <8>;
+			keymap = <MATRIX_KEY(0, 0, INPUT_KEY_SPACE)
+				  MATRIX_KEY(0, 1, INPUT_KEY_ENTER)
+				  MATRIX_KEY(0, 2, INPUT_KEY_SLASH)
+				  MATRIX_KEY(0, 3, INPUT_KEY_BACKSPACE)
+				  MATRIX_KEY(0, 4, INPUT_KEY_BACKSLASH)
+				  MATRIX_KEY(0, 5, INPUT_KEY_APOSTROPHE)
+				  MATRIX_KEY(0, 6, INPUT_KEY_RIGHTBRACE)
+				  MATRIX_KEY(0, 7, INPUT_KEY_EQUAL)
+				  MATRIX_KEY(1, 0, INPUT_KEY_DOT)
+				  MATRIX_KEY(1, 1, INPUT_KEY_SEMICOLON)
+				  MATRIX_KEY(1, 2, INPUT_KEY_LEFTBRACE)
+				  MATRIX_KEY(1, 3, INPUT_KEY_MINUS)
+				  MATRIX_KEY(1, 4, INPUT_KEY_COMMA)
+				  MATRIX_KEY(1, 5, INPUT_KEY_L)
+				  MATRIX_KEY(1, 6, INPUT_KEY_P)
+				  MATRIX_KEY(1, 7, INPUT_KEY_0)
+				  MATRIX_KEY(2, 0, INPUT_KEY_M)
+				  MATRIX_KEY(2, 1, INPUT_KEY_K)
+				  MATRIX_KEY(2, 2, INPUT_KEY_O)
+				  MATRIX_KEY(2, 3, INPUT_KEY_9)
+				  MATRIX_KEY(2, 4, INPUT_KEY_N)
+				  MATRIX_KEY(2, 5, INPUT_KEY_J)
+				  MATRIX_KEY(2, 6, INPUT_KEY_I)
+				  MATRIX_KEY(2, 7, INPUT_KEY_8)
+				  MATRIX_KEY(3, 0, INPUT_KEY_B)
+				  MATRIX_KEY(3, 1, INPUT_KEY_H)
+				  MATRIX_KEY(3, 2, INPUT_KEY_U)
+				  MATRIX_KEY(3, 3, INPUT_KEY_7)
+				  MATRIX_KEY(3, 4, INPUT_KEY_V)
+				  MATRIX_KEY(3, 5, INPUT_KEY_G)
+				  MATRIX_KEY(3, 6, INPUT_KEY_Y)
+				  MATRIX_KEY(3, 7, INPUT_KEY_6)
+				  MATRIX_KEY(4, 0, INPUT_KEY_C)
+				  MATRIX_KEY(4, 1, INPUT_KEY_F)
+				  MATRIX_KEY(4, 2, INPUT_KEY_T)
+				  MATRIX_KEY(4, 3, INPUT_KEY_5)
+				  MATRIX_KEY(4, 4, INPUT_KEY_X)
+				  MATRIX_KEY(4, 5, INPUT_KEY_D)
+				  MATRIX_KEY(4, 6, INPUT_KEY_R)
+				  MATRIX_KEY(4, 7, INPUT_KEY_4)
+				  MATRIX_KEY(5, 0, INPUT_KEY_Z)
+				  MATRIX_KEY(5, 1, INPUT_KEY_S)
+				  MATRIX_KEY(5, 2, INPUT_KEY_E)
+				  MATRIX_KEY(5, 3, INPUT_KEY_3)
+				  MATRIX_KEY(5, 4, INPUT_KEY_LEFTALT)
+				  MATRIX_KEY(5, 5, INPUT_KEY_A)
+				  MATRIX_KEY(5, 6, INPUT_KEY_W)
+				  MATRIX_KEY(5, 7, INPUT_KEY_2)
+				  MATRIX_KEY(6, 0, INPUT_KEY_LEFTMETA)
+				  MATRIX_KEY(6, 1, INPUT_KEY_CAPSLOCK)
+				  MATRIX_KEY(6, 2, INPUT_KEY_Q)
+				  MATRIX_KEY(6, 3, INPUT_KEY_1)
+				  MATRIX_KEY(6, 4, INPUT_KEY_LEFTCTRL)
+				  MATRIX_KEY(6, 5, INPUT_KEY_COMPOSE)
+				  MATRIX_KEY(6, 6, INPUT_KEY_TAB)
+				  MATRIX_KEY(6, 7, INPUT_KEY_GRAVE)>;
+		};
 	};
 
 	mipi_dbi {
