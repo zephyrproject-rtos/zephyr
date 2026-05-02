@@ -36,6 +36,8 @@ extern "C" {
 #define PSTATE_DT_DEFINE(_node, _config)                                                           \
 	const struct pstate PSTATE_DT_SYM(_node) = {                                               \
 		.load_threshold = DT_PROP(_node, load_threshold),                                  \
+		.frequency_hz = DT_PROP_OR(_node, frequency_hz, 0),                                \
+		.transition_latency_us = DT_PROP_OR(_node, transition_latency_us, 0),              \
 		.config = _config,                                                                 \
 	};
 
@@ -57,6 +59,8 @@ extern "C" {
  */
 struct pstate {
 	uint8_t load_threshold; /**< CPU load threshold at which P-state should be triggered */
+	uint32_t frequency_hz;  /**< CPU frequency in Hz, or 0 if unspecified */
+	uint32_t transition_latency_us; /**< Worst-case transition latency in us, or 0 if unspecified */
 	const void *config;     /**< Vendor specific devicetree properties */
 };
 
