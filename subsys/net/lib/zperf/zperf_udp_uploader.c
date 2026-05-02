@@ -392,6 +392,7 @@ static int udp_upload(int sock, int port,
 	if (ret < 0) {
 		return ret;
 	}
+	nb_packets++; /* Account for the FIN packet */
 
 	/* Add result coming from the client */
 	results->nb_packets_sent = nb_packets;
