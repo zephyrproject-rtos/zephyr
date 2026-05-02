@@ -79,7 +79,7 @@ static inline int zperf_upload_fin(int sock,
 		datagram = (struct zperf_udp_datagram *)sample_packet;
 
 		/* Fill the packet header */
-		datagram->id = net_htonl(-nb_packets);
+		datagram->id = net_htonl(-(nb_packets + 1));
 		datagram->tv_sec = net_htonl(secs);
 		datagram->tv_usec = net_htonl(usecs);
 
@@ -321,7 +321,7 @@ static int udp_upload(int sock, int port,
 		/* Fill the packet header */
 		datagram = (struct zperf_udp_datagram *)sample_packet;
 
-		datagram->id = net_htonl(nb_packets);
+		datagram->id = net_htonl(nb_packets + 1);
 		datagram->tv_sec = net_htonl(secs);
 		datagram->tv_usec = net_htonl(usecs);
 
