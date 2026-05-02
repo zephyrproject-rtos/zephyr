@@ -260,6 +260,21 @@ typedef struct k_thread_runtime_cycles_profile {
 #endif
 } k_thread_runtime_cycles_profile_t;
 
+typedef struct k_thread_workload_arrival_profile {
+#ifdef CONFIG_CPU_WORKLOAD_ARRIVAL_PROFILE
+	uint64_t expected_arrival_cycles;
+	uint32_t source_mask;
+	uint16_t arrival_count;
+	uint16_t profiled_arrivals;
+	uint8_t confidence;
+#endif /* CONFIG_CPU_WORKLOAD_ARRIVAL_PROFILE */
+
+#if defined(__cplusplus) && !defined(CONFIG_CPU_WORKLOAD_ARRIVAL_PROFILE)
+	/** Avoid a zero-sized struct in C++ when the feature is disabled. */
+	uint8_t dummy;
+#endif
+} k_thread_workload_arrival_profile_t;
+
 struct z_poller {
 	bool is_polling;
 	uint8_t mode;

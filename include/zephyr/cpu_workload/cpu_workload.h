@@ -30,6 +30,18 @@ extern "C" {
 /** CPU workload signal used per-thread burst profiles. */
 #define CPU_WORKLOAD_SOURCE_THREAD_BURST_PROFILE BIT(1)
 
+/** CPU workload signal came from wakeup/arrival attribution. */
+#define CPU_WORKLOAD_SOURCE_ARRIVAL BIT(2)
+
+/** Arrival was caused by a timeout expiry. */
+#define CPU_WORKLOAD_SOURCE_ARRIVAL_TIMEOUT BIT(3)
+
+/** Arrival was caused by a synchronization object becoming ready. */
+#define CPU_WORKLOAD_SOURCE_ARRIVAL_SYNC BIT(4)
+
+/** Arrival was caused by an explicit thread wakeup. */
+#define CPU_WORKLOAD_SOURCE_ARRIVAL_EXPLICIT BIT(5)
+
 /**
  * @brief Ready backlog workload sample for one CPU.
  *
@@ -56,6 +68,30 @@ struct cpu_workload_ready_backlog_sample {
 };
 
 /**
+ * @brief Future arrival workload sample for one CPU.
+ *
+ * The sample reports expected cycles from threads that were woken since the
+ * previous query. Each attributed arrival contributes the target thread's
+ * per-thread burst profile when one is available.
+ */
+struct cpu_workload_arrival_sample {
+	/** Estimated cycles expected from recently attributed arrivals. */
+	uint64_t expected_arrival_cycles;
+
+	/** Bitmask describing which sources contributed to the sample. */
+	uint32_t source_mask;
+
+	/** Number of arrivals observed since the previous query. */
+	uint16_t arrivals;
+
+	/** Number of arrivals with usable burst profiles. */
+	uint16_t profiled_arrivals;
+
+	/** Confidence in the sample, from 0 to 100. */
+	uint8_t confidence;
+};
+
+/**
  * @brief Get a CPU ready-backlog workload sample.
  *
  * @param cpu_id The ID of the CPU for which to get the backlog sample.
@@ -67,6 +103,18 @@ struct cpu_workload_ready_backlog_sample {
  */
 int cpu_workload_ready_backlog_get(int cpu_id,
 					   struct cpu_workload_ready_backlog_sample *sample);
+
+/**
+ * @brief Get a CPU wakeup-arrival workload sample.
+ *
+ * @param cpu_id The ID of the CPU for which to get the arrival sample.
+ * @param sample Pointer to the output sample.
+ *
+ * @retval 0 If a sample was written.
+ * @retval -EINVAL If @p cpu_id or @p sample is invalid.
+ * @retval -ENOTSUP If arrival attribution is not enabled.
+ */
+int cpu_workload_arrival_get(int cpu_id, struct cpu_workload_arrival_sample *sample);
 
 /**
  * @}

@@ -7022,6 +7022,21 @@ int k_thread_runtime_stats_cpu_get(int cpu, k_thread_runtime_stats_t *stats);
  * @retval -ENOTSUP If per-thread workload profiling is not enabled.
  */
 int k_thread_runtime_cycles_profile_get(k_tid_t thread, k_thread_runtime_cycles_profile_t *profile);
+
+/**
+ * @brief Get and optionally reset the CPU workload arrival profile of a thread.
+ *
+ * @param thread ID of thread.
+ * @param profile Pointer to struct to copy profile into.
+ * @param reset Reset the thread arrival window after copying the profile.
+ *
+ * @retval 0 On success.
+ * @retval -EINVAL If @p thread or @p profile is NULL.
+ * @retval -ENOTSUP If arrival profiling is not enabled.
+ */
+int k_thread_workload_arrival_profile_get(k_tid_t thread,
+					  k_thread_workload_arrival_profile_t *profile,
+					  bool reset);
 #endif /* CONFIG_SCHED_THREAD_USAGE */
 
 /**

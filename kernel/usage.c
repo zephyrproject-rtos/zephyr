@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 
+#include <zephyr/cpu_workload/cpu_workload.h>
 #include <zephyr/timing/timing.h>
 #include <ksched.h>
 #include <zephyr/spinlock.h>
@@ -79,6 +80,59 @@ static inline void sched_thread_update_burst_profile(struct k_thread *thread, ui
 	ARG_UNUSED(completed_burst);
 }
 #endif /* CONFIG_CPU_WORKLOAD_THREAD_PROFILE */
+
+#ifdef CONFIG_CPU_WORKLOAD_ARRIVAL_PROFILE
+static void sched_thread_reset_arrival_profile(struct k_cycle_stats *usage)
+{
+	usage->arrival_cycles = 0U;
+	usage->arrival_source_mask = 0U;
+	usage->arrival_count = 0U;
+	usage->arrival_profiled = 0U;
+	usage->arrival_confidence = 0U;
+}
+
+void z_sched_thread_workload_arrival(struct k_thread *thread, uint32_t source)
+{
+	struct k_cycle_stats *usage = &thread->base.usage;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&usage_lock);
+
+	if (!usage->track_usage) {
+		k_spin_unlock(&usage_lock, key);
+		return;
+	}
+
+	if (usage->arrival_count < UINT16_MAX) {
+		usage->arrival_count++;
+	}
+
+	usage->arrival_source_mask |= CPU_WORKLOAD_SOURCE_ARRIVAL | source;
+
+	if (usage->burst_samples > 0U) {
+		usage->arrival_cycles += usage->burst_avg;
+
+		if (usage->arrival_profiled < UINT16_MAX) {
+			usage->arrival_profiled++;
+		}
+
+		if (usage->arrival_confidence == 0U) {
+			usage->arrival_confidence = usage->burst_confidence;
+		} else {
+			usage->arrival_confidence = MIN(usage->arrival_confidence,
+						       usage->burst_confidence);
+		}
+	}
+
+	k_spin_unlock(&usage_lock, key);
+}
+#else
+void z_sched_thread_workload_arrival(struct k_thread *thread, uint32_t source)
+{
+	ARG_UNUSED(thread);
+	ARG_UNUSED(source);
+}
+#endif /* CONFIG_CPU_WORKLOAD_ARRIVAL_PROFILE */
 
 static uint32_t usage_now(void)
 {
@@ -303,6 +357,9 @@ int k_thread_runtime_stats_enable(k_tid_t  thread)
 #ifdef CONFIG_CPU_WORKLOAD_THREAD_PROFILE
 		thread->base.usage.burst_current = 0U;
 #endif /* CONFIG_CPU_WORKLOAD_THREAD_PROFILE */
+#ifdef CONFIG_CPU_WORKLOAD_ARRIVAL_PROFILE
+		sched_thread_reset_arrival_profile(&thread->base.usage);
+#endif /* CONFIG_CPU_WORKLOAD_ARRIVAL_PROFILE */
 		thread->base.usage.num_windows++;
 		thread->base.usage.current = 0;
 	}
@@ -360,6 +417,38 @@ int k_thread_runtime_cycles_profile_get(k_tid_t thread,
 #else
 	return -ENOTSUP;
 #endif /* CONFIG_CPU_WORKLOAD_THREAD_PROFILE */
+}
+
+int k_thread_workload_arrival_profile_get(k_tid_t thread,
+					  k_thread_workload_arrival_profile_t *profile,
+					  bool reset)
+{
+	CHECKIF((thread == NULL) || (profile == NULL)) {
+		return -EINVAL;
+	}
+
+#ifdef CONFIG_CPU_WORKLOAD_ARRIVAL_PROFILE
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&usage_lock);
+	profile->expected_arrival_cycles = thread->base.usage.arrival_cycles;
+	profile->source_mask = thread->base.usage.arrival_source_mask;
+	profile->arrival_count = thread->base.usage.arrival_count;
+	profile->profiled_arrivals = thread->base.usage.arrival_profiled;
+	profile->confidence = thread->base.usage.arrival_confidence;
+
+	if (reset) {
+		sched_thread_reset_arrival_profile(&thread->base.usage);
+	}
+
+	k_spin_unlock(&usage_lock, key);
+
+	return 0;
+#else
+	ARG_UNUSED(reset);
+
+	return -ENOTSUP;
+#endif /* CONFIG_CPU_WORKLOAD_ARRIVAL_PROFILE */
 }
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL

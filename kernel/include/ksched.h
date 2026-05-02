@@ -8,6 +8,7 @@
 #define ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
 
 #include <zephyr/kernel_structs.h>
+#include <zephyr/cpu_workload/cpu_workload.h>
 #include <kernel_internal.h>
 #include <timeout_q.h>
 #include <kthread.h>
@@ -88,6 +89,7 @@ static ALWAYS_INLINE void *z_sched_next_handle(struct k_thread *curr)
 
 void z_sched_start(struct k_thread *thread);
 void z_ready_thread(struct k_thread *thread);
+void z_sched_thread_workload_arrival(struct k_thread *thread, uint32_t source);
 struct k_thread *z_swap_next_thread(void);
 void move_current_to_end_of_prio_q(void);
 
@@ -119,6 +121,16 @@ void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key, bool terminate
  * @param thread Thread to make ready.
  */
 void z_sched_ready_locked(struct k_thread *thread);
+
+/**
+ * @brief Wake a thread while attributing the arrival source.
+ *
+ * Caller must hold _sched_spinlock.
+ *
+ * @param thread Thread to wake.
+ * @param source CPU workload arrival source bitmask.
+ */
+void z_sched_wake_thread_locked_source(struct k_thread *thread, uint32_t source);
 
 /**
  * @brief Add a thread to a wait queue while the scheduler spinlock is held.
@@ -248,6 +260,7 @@ static ALWAYS_INLINE struct k_thread *z_unpend_first_thread(_wait_q_t *wait_q)
 		if (unlikely(thread != NULL)) {
 			unpend_thread_no_timeout(thread);
 			z_abort_thread_timeout(thread);
+			z_sched_thread_workload_arrival(thread, CPU_WORKLOAD_SOURCE_ARRIVAL_SYNC);
 		}
 	}
 

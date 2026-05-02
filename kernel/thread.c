@@ -12,6 +12,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/cpu_workload/cpu_workload.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys_clock.h>
@@ -1483,6 +1484,7 @@ void z_impl_k_wakeup(k_tid_t thread)
 	if (z_is_thread_sleeping(thread)) {
 		z_abort_thread_timeout(thread);
 		z_mark_thread_as_not_sleeping(thread);
+		z_sched_thread_workload_arrival(thread, CPU_WORKLOAD_SOURCE_ARRIVAL_EXPLICIT);
 		z_sched_ready_locked(thread);
 		z_reschedule(&_sched_spinlock, key);
 	} else {

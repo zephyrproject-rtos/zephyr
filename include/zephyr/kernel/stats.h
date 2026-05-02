@@ -23,6 +23,13 @@ struct k_cycle_stats {
 	uint16_t  burst_samples;	/**< number of completed burst samples */
 	uint8_t   burst_confidence;	/**< burst profile confidence, 0 to 100 */
 #endif /* CONFIG_CPU_WORKLOAD_THREAD_PROFILE */
+#if defined(CONFIG_CPU_WORKLOAD_ARRIVAL_PROFILE) || defined(__DOXYGEN__)
+	uint64_t  arrival_cycles;	/**< expected cycles from attributed arrivals */
+	uint32_t  arrival_source_mask;	/**< attributed arrival source bits */
+	uint16_t  arrival_count;	/**< number of attributed arrivals */
+	uint16_t  arrival_profiled;	/**< arrivals backed by burst profiles */
+	uint8_t   arrival_confidence;	/**< arrival profile confidence, 0 to 100 */
+#endif /* CONFIG_CPU_WORKLOAD_ARRIVAL_PROFILE */
 #if defined(CONFIG_SCHED_THREAD_USAGE_ANALYSIS) || defined(__DOXYGEN__)
 	/**
 	 * @name Fields available when CONFIG_SCHED_THREAD_USAGE_ANALYSIS is selected.

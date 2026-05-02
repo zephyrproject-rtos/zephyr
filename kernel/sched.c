@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
+#include <zephyr/cpu_workload/cpu_workload.h>
 #include <ksched.h>
 #include <zephyr/spinlock.h>
 #include <wait_q.h>
@@ -443,6 +444,11 @@ void z_unpend_thread_no_timeout(struct k_thread *thread)
 
 void z_sched_wake_thread_locked(struct k_thread *thread)
 {
+	z_sched_wake_thread_locked_source(thread, CPU_WORKLOAD_SOURCE_ARRIVAL_SYNC);
+}
+
+void z_sched_wake_thread_locked_source(struct k_thread *thread, uint32_t source)
+{
 	/* No K_SPINLOCK: caller must hold _sched_spinlock when calling */
 	bool killed = (thread->base.thread_state &
 			(_THREAD_DEAD | _THREAD_ABORTING));
@@ -453,6 +459,7 @@ void z_sched_wake_thread_locked(struct k_thread *thread)
 			unpend_thread_no_timeout(thread);
 		}
 		z_mark_thread_as_not_sleeping(thread);
+		z_sched_thread_workload_arrival(thread, source);
 		ready_thread(thread);
 	}
 }
@@ -465,7 +472,7 @@ void z_thread_timeout(struct _timeout *timeout)
 					       struct k_thread, base.timeout);
 
 	K_SPINLOCK(&_sched_spinlock) {
-		z_sched_wake_thread_locked(thread);
+		z_sched_wake_thread_locked_source(thread, CPU_WORKLOAD_SOURCE_ARRIVAL_TIMEOUT);
 	}
 }
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
