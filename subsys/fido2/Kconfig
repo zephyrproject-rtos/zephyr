@@ -45,11 +45,56 @@ config FIDO2_UP_TIMEOUT_MS
 	  Time to wait for user presence confirmation before timing out.
 	  Default 30 seconds, as per FIDO2 specification.
 
+config FIDO2_EXT_CRED_PROTECT
+	bool "credProtect extension"
+	help
+	  Enable the CTAP2 credProtect extension.
+
+config FIDO2_EXT_HMAC_SECRET
+	bool "hmac-secret extension"
+	select PSA_WANT_ALG_HMAC
+	help
+	  Enable the CTAP2 hmac-secret extension.
+
+config FIDO2_EXT_LARGE_BLOB_KEY
+	bool "largeBlobKey extension"
+	help
+	  Enable the CTAP2 largeBlobKey extension for per-credential
+	  large blob storage. Not yet implemented.
+
+config FIDO2_EXT_CRED_BLOB
+	bool "credBlob extension"
+	depends on FIDO2_EXT_CRED_PROTECT
+	help
+	  Enable the CTAP2 credBlob extension. Requires credProtect support.
+	  Authenticators supporting credBlob MUST also support credProtect.
+
+config FIDO2_EXT_THIRD_PARTY_PAYMENT
+	bool "thirdPartyPayment extension"
+	help
+	  Enable the CTAP2 thirdPartyPayment extension.
+
+config FIDO2_CREDENTIAL_MANAGEMENT
+	bool "Credential management command"
+	help
+	  Enable the CTAP 2.1 authenticatorCredentialManagement (0x0A)
+	  command. Requires PIN protocol support since all credMgmt
+	  subcommands require a pinUvAuthToken with CM permission.
+
 config FIDO2_AAGUID
 	string "Authenticator AAGUID (32 hex chars)"
 	help
 	  Authenticator AAGUID encoded as 32 hexadecimal characters with no
 	  separators (16 bytes).
+
+config FIDO2_ALWAYS_UV
+	bool "Always require user verification"
+	help
+	  When enabled, this forces user verification for every MakeCredential
+	  and GetAssertion operation regardless of what the Relying Party requests,
+	  including when userVerification is set to "discouraged".
+
+	  This overrides makeCredUvNotRqd
 
 rsource "transport/Kconfig"
 rsource "storage/Kconfig"
