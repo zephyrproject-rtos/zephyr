@@ -17,6 +17,12 @@
 
 struct k_cycle_stats {
 	uint64_t  total;        /**< total usage in cycles */
+#if defined(CONFIG_CPU_WORKLOAD_THREAD_PROFILE) || defined(__DOXYGEN__)
+	uint64_t  burst_current;	/**< cycles accumulated in the current burst */
+	uint32_t  burst_avg;		/**< EWMA of completed thread bursts in cycles */
+	uint16_t  burst_samples;	/**< number of completed burst samples */
+	uint8_t   burst_confidence;	/**< burst profile confidence, 0 to 100 */
+#endif /* CONFIG_CPU_WORKLOAD_THREAD_PROFILE */
 #if defined(CONFIG_SCHED_THREAD_USAGE_ANALYSIS) || defined(__DOXYGEN__)
 	/**
 	 * @name Fields available when CONFIG_SCHED_THREAD_USAGE_ANALYSIS is selected.

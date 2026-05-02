@@ -247,6 +247,19 @@ typedef struct k_thread_runtime_stats {
 #endif
 }  k_thread_runtime_stats_t;
 
+typedef struct k_thread_runtime_cycles_profile {
+#ifdef CONFIG_CPU_WORKLOAD_THREAD_PROFILE
+	uint32_t burst_avg_cycles;
+	uint16_t sample_count;
+	uint8_t confidence;
+#endif /* CONFIG_CPU_WORKLOAD_THREAD_PROFILE */
+
+#if defined(__cplusplus) && !defined(CONFIG_CPU_WORKLOAD_THREAD_PROFILE)
+	/** Avoid a zero-sized struct in C++ when the feature is disabled. */
+	uint8_t dummy;
+#endif
+} k_thread_runtime_cycles_profile_t;
+
 struct z_poller {
 	bool is_polling;
 	uint8_t mode;

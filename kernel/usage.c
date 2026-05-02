@@ -18,6 +18,68 @@
 
 static struct k_spinlock usage_lock;
 
+#ifdef CONFIG_CPU_WORKLOAD_THREAD_PROFILE
+#define THREAD_PROFILE_CONFIDENCE_BASE 20U
+#define THREAD_PROFILE_CONFIDENCE_STEP 10U
+#define THREAD_PROFILE_CONFIDENCE_MAX 80U
+
+static uint8_t thread_profile_confidence(uint16_t sample_count)
+{
+	uint32_t confidence = THREAD_PROFILE_CONFIDENCE_BASE +
+		(sample_count * THREAD_PROFILE_CONFIDENCE_STEP);
+
+	return (uint8_t)MIN(confidence, THREAD_PROFILE_CONFIDENCE_MAX);
+}
+
+static void sched_thread_update_burst_profile(struct k_thread *thread, uint32_t cycles,
+					     bool completed_burst)
+{
+	struct k_cycle_stats *usage = &thread->base.usage;
+	uint32_t burst;
+	uint32_t avg;
+
+	if (cycles != 0U) {
+		usage->burst_current += cycles;
+	}
+
+	if (!completed_burst) {
+		return;
+	}
+
+	if (usage->burst_current == 0U) {
+		return;
+	}
+
+	burst = (uint32_t)MIN(usage->burst_current, (uint64_t)UINT32_MAX);
+	usage->burst_current = 0U;
+	avg = usage->burst_avg;
+
+	if (usage->burst_samples == 0U) {
+		usage->burst_avg = burst;
+	} else if (burst >= avg) {
+		usage->burst_avg = avg +
+			((burst - avg) >> CONFIG_CPU_WORKLOAD_THREAD_PROFILE_EWMA_SHIFT);
+	} else {
+		usage->burst_avg = avg -
+			((avg - burst) >> CONFIG_CPU_WORKLOAD_THREAD_PROFILE_EWMA_SHIFT);
+	}
+
+	if (usage->burst_samples < UINT16_MAX) {
+		usage->burst_samples++;
+	}
+
+	usage->burst_confidence = thread_profile_confidence(usage->burst_samples);
+}
+#else
+static inline void sched_thread_update_burst_profile(struct k_thread *thread, uint32_t cycles,
+					     bool completed_burst)
+{
+	ARG_UNUSED(thread);
+	ARG_UNUSED(cycles);
+	ARG_UNUSED(completed_burst);
+}
+#endif /* CONFIG_CPU_WORKLOAD_THREAD_PROFILE */
+
 static uint32_t usage_now(void)
 {
 	uint32_t now;
@@ -58,9 +120,11 @@ static void sched_cpu_update_usage(struct _cpu *cpu, uint32_t cycles)
 #define sched_cpu_update_usage(cpu, cycles)   do { } while (0)
 #endif /* CONFIG_SCHED_THREAD_USAGE_ALL */
 
-static void sched_thread_update_usage(struct k_thread *thread, uint32_t cycles)
+static void sched_thread_update_usage(struct k_thread *thread, uint32_t cycles, bool completed_burst)
 {
 	thread->base.usage.total += cycles;
+
+	sched_thread_update_burst_profile(thread, cycles, completed_burst);
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
 	thread->base.usage.current += cycles;
@@ -108,7 +172,7 @@ void z_sched_usage_stop(void)
 		uint32_t cycles = usage_now() - u0;
 
 		if (cpu->current->base.usage.track_usage) {
-			sched_thread_update_usage(cpu->current, cycles);
+			sched_thread_update_usage(cpu->current, cycles, true);
 		}
 
 		sched_cpu_update_usage(cpu, cycles);
@@ -139,7 +203,7 @@ void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 		 */
 
 		if (cpu->current->base.usage.track_usage) {
-			sched_thread_update_usage(cpu->current, cycles);
+			sched_thread_update_usage(cpu->current, cycles, false);
 		}
 
 		sched_cpu_update_usage(cpu, cycles);
@@ -191,7 +255,7 @@ void z_sched_thread_usage(struct k_thread *thread,
 		 */
 
 		if (thread->base.usage.track_usage) {
-			sched_thread_update_usage(thread, cycles);
+			sched_thread_update_usage(thread, cycles, false);
 		}
 
 		sched_cpu_update_usage(cpu, cycles);
@@ -236,6 +300,9 @@ int k_thread_runtime_stats_enable(k_tid_t  thread)
 
 	if (!thread->base.usage.track_usage) {
 		thread->base.usage.track_usage = true;
+#ifdef CONFIG_CPU_WORKLOAD_THREAD_PROFILE
+		thread->base.usage.burst_current = 0U;
+#endif /* CONFIG_CPU_WORKLOAD_THREAD_PROFILE */
 		thread->base.usage.num_windows++;
 		thread->base.usage.current = 0;
 	}
@@ -262,7 +329,7 @@ int k_thread_runtime_stats_disable(k_tid_t  thread)
 		if (thread == cpu->current) {
 			uint32_t cycles = usage_now() - cpu->usage0;
 
-			sched_thread_update_usage(thread, cycles);
+			sched_thread_update_usage(thread, cycles, true);
 			sched_cpu_update_usage(cpu, cycles);
 		}
 	}
@@ -272,6 +339,28 @@ int k_thread_runtime_stats_disable(k_tid_t  thread)
 	return 0;
 }
 #endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
+
+int k_thread_runtime_cycles_profile_get(k_tid_t thread,
+						k_thread_runtime_cycles_profile_t *profile)
+{
+	CHECKIF((thread == NULL) || (profile == NULL)) {
+		return -EINVAL;
+	}
+
+#ifdef CONFIG_CPU_WORKLOAD_THREAD_PROFILE
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&usage_lock);
+	profile->burst_avg_cycles = thread->base.usage.burst_avg;
+	profile->sample_count = thread->base.usage.burst_samples;
+	profile->confidence = thread->base.usage.burst_confidence;
+	k_spin_unlock(&usage_lock, key);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_CPU_WORKLOAD_THREAD_PROFILE */
+}
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 void k_sys_runtime_stats_enable(void)
@@ -376,6 +465,12 @@ int z_thread_stats_reset(struct k_obj_core *obj_core)
 	stats = obj_core->stats;
 
 	stats->total = 0ULL;
+#ifdef CONFIG_CPU_WORKLOAD_THREAD_PROFILE
+	stats->burst_current = 0U;
+	stats->burst_avg = 0U;
+	stats->burst_samples = 0U;
+	stats->burst_confidence = 0U;
+#endif /* CONFIG_CPU_WORKLOAD_THREAD_PROFILE */
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
 	stats->current = 0ULL;
 	stats->longest = 0ULL;

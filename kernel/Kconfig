@@ -460,6 +460,26 @@ config SCHED_THREAD_USAGE_AUTO_ENABLE
 	  When set, this option automatically enables the gathering of both
 	  the thread and CPU usage statistics.
 
+config CPU_WORKLOAD_THREAD_PROFILE
+	bool "Track per-thread CPU workload burst profiles"
+	depends on SCHED_THREAD_USAGE
+	help
+	  Track a lightweight per-thread burst profile from scheduler runtime
+	  usage windows. The profile maintains an EWMA of completed thread
+	  execution bursts in CPU cycles, plus a warm-up sample count and
+	  confidence value. This provides the per-thread workload signal used
+	  by CPU frequency and power policies to estimate ready backlog cycles.
+
+config CPU_WORKLOAD_THREAD_PROFILE_EWMA_SHIFT
+	int "Per-thread workload EWMA shift"
+	default 3
+	range 1 8
+	depends on CPU_WORKLOAD_THREAD_PROFILE
+	help
+	  Shift used by the per-thread burst EWMA. A value of 3 gives alpha =
+	  1/8, using avg = ((7 * avg) + burst) / 8. Smaller values react faster;
+	  larger values smooth more aggressively.
+
 endif # THREAD_RUNTIME_STATS
 
 menuconfig THREAD_RUNTIME_STACK_SAFETY

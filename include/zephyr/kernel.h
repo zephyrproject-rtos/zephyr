@@ -7010,6 +7010,20 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
  */
 int k_thread_runtime_stats_cpu_get(int cpu, k_thread_runtime_stats_t *stats);
 
+#ifdef CONFIG_SCHED_THREAD_USAGE
+/**
+ * @brief Get the CPU workload burst profile of a thread.
+ *
+ * @param thread ID of thread.
+ * @param profile Pointer to struct to copy profile into.
+ *
+ * @retval 0 On success.
+ * @retval -EINVAL If @p thread or @p profile is NULL.
+ * @retval -ENOTSUP If per-thread workload profiling is not enabled.
+ */
+int k_thread_runtime_cycles_profile_get(k_tid_t thread, k_thread_runtime_cycles_profile_t *profile);
+#endif /* CONFIG_SCHED_THREAD_USAGE */
+
 /**
  * @brief Enable gathering of runtime statistics for specified thread
  *
