@@ -11,6 +11,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/cpu_freq/policy.h>
 #include <zephyr/cpu_freq/cpu_freq.h>
+#include <zephyr/sys/cpu_load.h>
+#include <zephyr/sys/util.h>
 
 #define CPU_FREQ_POLICY_PRESSURE_THRESHOLD                                                         \
 	((CONFIG_CPU_FREQ_POLICY_PRESSURE_LOWEST_PRIO <= K_LOWEST_THREAD_PRIO)                     \
@@ -44,6 +46,15 @@ struct pressure_stats {
 	int pressure_acum;
 	int max_pressure;
 };
+
+static int current_cpu_id(void)
+{
+#ifdef CONFIG_SMP
+	return arch_curr_cpu()->id;
+#else
+	return 0;
+#endif /* CONFIG_SMP */
+}
 
 static bool is_runnable(const struct k_thread *thread)
 {
@@ -87,10 +98,14 @@ static int get_normalized_sys_pressure(void)
 	struct pressure_stats sys_pressure = {.max_pressure = 0, .pressure_acum = 0};
 
 #ifdef CONFIG_CPU_FREQ_PER_CPU_SCALING
-	k_thread_foreach_filter_by_cpu(_kernel.cpus[cpu].current, thread_eval_cb, &sys_pressure);
+	k_thread_foreach_filter_by_cpu(current_cpu_id(), thread_eval_cb, &sys_pressure);
 #else
 	k_thread_foreach(thread_eval_cb, &sys_pressure);
 #endif /* CONFIG_CPU_FREQ_PER_CPU_SCALING */
+
+	if (sys_pressure.max_pressure == 0) {
+		return 0;
+	}
 
 	int normalized_pressure = (sys_pressure.pressure_acum * 100) / sys_pressure.max_pressure;
 
@@ -99,6 +114,39 @@ static int get_normalized_sys_pressure(void)
 
 	return normalized_pressure;
 }
+
+#ifdef CONFIG_CPU_FREQ_POLICY_PRESSURE_WORKLOAD_DAMPING
+static int damp_short_burst_pressure(int pressure)
+{
+	struct cpu_load_sample sample;
+	int ret;
+
+	ret = cpu_load_sample_get(current_cpu_id(), &sample);
+	if (ret != 0) {
+		return pressure;
+	}
+
+	if ((sample.confidence < CONFIG_CPU_FREQ_POLICY_PRESSURE_WORKLOAD_MIN_CONFIDENCE) ||
+	    (sample.load > CONFIG_CPU_FREQ_POLICY_PRESSURE_WORKLOAD_LOW_UTILIZATION) ||
+	    (pressure <= sample.load)) {
+		return pressure;
+	}
+
+	int damped = (pressure * (100 - CONFIG_CPU_FREQ_POLICY_PRESSURE_WORKLOAD_DAMPING_PERCENT)) /
+		100;
+
+	damped = MAX(damped, (int)sample.load);
+	LOG_DBG("Damp pressure burst: pressure=%d%% util=%u%% confidence=%u -> %d%%",
+		pressure, sample.load, sample.confidence, damped);
+
+	return damped;
+}
+#else
+static int damp_short_burst_pressure(int pressure)
+{
+	return pressure;
+}
+#endif /* CONFIG_CPU_FREQ_POLICY_PRESSURE_WORKLOAD_DAMPING */
 
 /*
  * The pressure policy iterates through the threads currently sitting in the ready queue at the time
@@ -121,10 +169,10 @@ int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 
 #if defined(CONFIG_SMP)
 	/* The caller has already ensured that the CPU is fixed */
-	cpu_id = arch_curr_cpu()->id;
+	cpu_id = current_cpu_id();
 #endif
 
-	sys_pressure = get_normalized_sys_pressure();
+	sys_pressure = damp_short_burst_pressure(get_normalized_sys_pressure());
 
 	if (sys_pressure < 0) {
 		LOG_ERR("Unable to retrieve system pressure");

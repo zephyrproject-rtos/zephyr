@@ -66,6 +66,42 @@ config CPU_FREQ_POLICY_PRESSURE_LOWEST_PRIO
 	  The lowest priority level (highest numerically) to accumulate. This should be your lowest priority thread.
 	  This priority must not be lower than the idle thread's priority.
 
+config CPU_FREQ_POLICY_PRESSURE_WORKLOAD_DAMPING
+	bool "Dampen short pressure bursts using workload history"
+	default y
+	select CPU_LOAD_METRIC
+	help
+	  Use CPU load samples to dampen instantaneous runnable-thread pressure
+	  when recent runtime history shows little actual non-idle work. This keeps
+	  short ready-queue bursts from being treated as sustained CPU demand.
+
+config CPU_FREQ_POLICY_PRESSURE_WORKLOAD_MIN_CONFIDENCE
+	int "Minimum workload confidence for pressure damping"
+	default 40
+	range 0 100
+	depends on CPU_FREQ_POLICY_PRESSURE_WORKLOAD_DAMPING
+	help
+	  Minimum CPU load sample confidence required before it can dampen pressure.
+	  Lower values react sooner after boot; higher values wait for more
+	  runtime-history samples.
+
+config CPU_FREQ_POLICY_PRESSURE_WORKLOAD_LOW_UTILIZATION
+	int "Low utilization threshold for pressure damping"
+	default 10
+	range 0 100
+	depends on CPU_FREQ_POLICY_PRESSURE_WORKLOAD_DAMPING
+	help
+	  Runtime utilization at or below this percentage is considered low enough
+	  to treat high instantaneous pressure as a possible short burst.
+
+config CPU_FREQ_POLICY_PRESSURE_WORKLOAD_DAMPING_PERCENT
+	int "Pressure damping percentage"
+	default 50
+	range 0 100
+	depends on CPU_FREQ_POLICY_PRESSURE_WORKLOAD_DAMPING
+	help
+	  Percentage by which pressure is reduced when a short burst is detected.
+
 endif
 
 endchoice # CPU_FREQ_POLICY
