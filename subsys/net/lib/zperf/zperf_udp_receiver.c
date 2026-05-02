@@ -153,6 +153,41 @@ static void udp_received(int sock, const struct net_sockaddr *addr, uint8_t *dat
 		/* This is already the first packet of the new session */
 		__fallthrough;
 	case STATE_ONGOING:
+		/* Update counter */
+		session->counter++;
+		session->length += datalen;
+
+		/* Compute jitter */
+		transit_time = time_delta(
+			k_ticks_to_us_ceil32(time),
+			net_ntohl(hdr->tv_sec) * USEC_PER_SEC +
+			net_ntohl(hdr->tv_usec));
+		if (session->last_transit_time != 0) {
+			int32_t delta_transit = transit_time -
+				session->last_transit_time;
+
+			delta_transit =
+				(delta_transit < 0) ?
+				-delta_transit : delta_transit;
+
+			session->jitter +=
+				(delta_transit - session->jitter) / 16;
+		}
+
+		session->last_transit_time = transit_time;
+
+		/* Check header id */
+		if (abs(id) != session->next_id) {
+			if (id < session->next_id) {
+				session->outorder++;
+			} else {
+				session->error += id - session->next_id;
+				session->next_id = id + 1;
+			}
+		} else {
+			session->next_id++;
+		}
+
 		if (id < 0) { /* Negative id means session end. */
 			struct zperf_results results = { 0 };
 			uint64_t duration;
@@ -192,41 +227,6 @@ static void udp_received(int sock, const struct net_sockaddr *addr, uint8_t *dat
 			if (udp_session_cb != NULL) {
 				udp_session_cb(ZPERF_SESSION_FINISHED, &results,
 					       udp_user_data);
-			}
-		} else {
-			/* Update counter */
-			session->counter++;
-			session->length += datalen;
-
-			/* Compute jitter */
-			transit_time = time_delta(
-				k_ticks_to_us_ceil32(time),
-				net_ntohl(hdr->tv_sec) * USEC_PER_SEC +
-				net_ntohl(hdr->tv_usec));
-			if (session->last_transit_time != 0) {
-				int32_t delta_transit = transit_time -
-					session->last_transit_time;
-
-				delta_transit =
-					(delta_transit < 0) ?
-					-delta_transit : delta_transit;
-
-				session->jitter +=
-					(delta_transit - session->jitter) / 16;
-			}
-
-			session->last_transit_time = transit_time;
-
-			/* Check header id */
-			if (id != session->next_id) {
-				if (id < session->next_id) {
-					session->outorder++;
-				} else {
-					session->error += id - session->next_id;
-					session->next_id = id + 1;
-				}
-			} else {
-				session->next_id++;
 			}
 		}
 		break;
