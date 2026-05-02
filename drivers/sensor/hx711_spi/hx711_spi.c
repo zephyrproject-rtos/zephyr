@@ -79,7 +79,7 @@ static int hx711_spi_read_sample(const struct device *dev, int32_t *sample)
 		uint8_t b = rx_buffer[i];
 
 		*sample <<= 4;
-		*sample |= (b & 0x1) | (((b >> 3) & 0x1) << 1) | (((b >> 5) & 0x1) << 2) |
+		*sample |= ((b >> 1) & 0x1) | (((b >> 3) & 0x1) << 1) | (((b >> 5) & 0x1) << 2) |
 			   (((b >> 7) & 0x1) << 3);
 	}
 
