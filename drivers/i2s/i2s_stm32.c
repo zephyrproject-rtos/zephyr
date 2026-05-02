@@ -241,11 +241,11 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 	 * 16-bit data extended on 32-bit channel length excluded
 	 */
 	if (i2s_cfg->word_size == 16U) {
-		LL_I2S_SetDataFormat(cfg->i2s, LL_I2S_DATAFORMAT_16B);
+		LL_I2S_SetDataFormat(cfg->i2s, STM32_I2S_DATA_FORMAT_16_BIT);
 	} else if (i2s_cfg->word_size == 24U) {
-		LL_I2S_SetDataFormat(cfg->i2s, LL_I2S_DATAFORMAT_24B);
+		LL_I2S_SetDataFormat(cfg->i2s, STM32_I2S_DATA_FORMAT_24_BIT);
 	} else if (i2s_cfg->word_size == 32U) {
-		LL_I2S_SetDataFormat(cfg->i2s, LL_I2S_DATAFORMAT_32B);
+		LL_I2S_SetDataFormat(cfg->i2s, STM32_I2S_DATA_FORMAT_32_BIT);
 	} else {
 		LOG_ERR("invalid word size");
 		return -EINVAL;
@@ -280,9 +280,9 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 
 	/* set I2S clock polarity */
 	if ((i2s_cfg->format & I2S_FMT_CLK_FORMAT_MASK) == I2S_FMT_BIT_CLK_INV) {
-		LL_I2S_SetClockPolarity(cfg->i2s, LL_I2S_POLARITY_HIGH);
+		LL_I2S_SetClockPolarity(cfg->i2s, STM32_I2S_CLOCK_POLARITY_HIGH);
 	} else {
-		LL_I2S_SetClockPolarity(cfg->i2s, LL_I2S_POLARITY_LOW);
+		LL_I2S_SetClockPolarity(cfg->i2s, STM32_I2S_CLOCK_POLARITY_LOW);
 	}
 
 	stream->state = I2S_STATE_READY;
@@ -746,9 +746,13 @@ static int i2s_stm32_initialize(const struct device *dev)
 		return -EIO;
 	}
 
-#if defined(SPI_CFG2_IOSWP)
+#ifdef CONFIG_STM32_HAL2
+	LL_I2S_EnableI2SMode(cfg->i2s);
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
 	if (cfg->ioswp) {
-		LL_SPI_EnableIOSwap(cfg->i2s);
+		LL_I2S_EnableIOSwap(cfg->i2s);
 	}
 #endif
 
