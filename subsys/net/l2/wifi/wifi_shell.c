@@ -1027,7 +1027,7 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+#ifdef CONFIG_WIFI_CERTIFICATE_LIB
 	/* Load the enterprise credentials if needed */
 	if (cnx_params.security == WIFI_SECURITY_TYPE_EAP_TLS ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
