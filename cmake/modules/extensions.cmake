@@ -4824,6 +4824,7 @@ function(zephyr_dt_import)
     )
 
     zephyr_file_copy(${gen_dts_cmake_temp} ${gen_dts_cmake_output} ONLY_IF_DIFFERENT)
+    file(REMOVE ${gen_dts_cmake_temp})
   endif()
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${gen_dts_cmake_script})
 
