@@ -1994,7 +1994,7 @@ struct wifi_mgmt_ops {
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+#ifdef CONFIG_WIFI_CERTIFICATE_LIB
 	int (*enterprise_creds)(const struct device *dev,
 				struct net_if *iface,
 				struct wifi_enterprise_creds_params *creds);

@@ -1482,7 +1482,7 @@ static int wifi_get_rts_threshold(uint64_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD_CONFIG, wifi_get_rts_threshold);
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+#ifdef CONFIG_WIFI_CERTIFICATE_LIB
 static int wifi_set_enterprise_creds(uint64_t mgmt_request, struct net_if *iface,
 					   void *data, size_t len)
 {
