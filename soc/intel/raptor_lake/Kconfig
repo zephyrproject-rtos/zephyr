@@ -1,0 +1,11 @@
+# Copyright (c) 2022-2024 Intel Corporation Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_RAPTOR_LAKE
+	select X86
+	select X86_64
+	select CPU_ATOM
+	select PCIE
+	select PCIE_MSI
+	select DYNAMIC_INTERRUPTS
+	select X86_MMU

@@ -1,0 +1,6 @@
+board:
+  name: lp_mspm0g3519
+  full_name: MSPM0G3519 Launchpad
+  vendor: ti
+  socs:
+    - name: mspm0g3519

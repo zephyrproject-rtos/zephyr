@@ -1,0 +1,80 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Dipak Shetty
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/****************************************
+ * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
+ **************************************
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+adi_tmc51xx_uart: adi-tmc51xx {
+	compatible = "adi,tmc51xx";
+	status = "okay";
+
+	label = "tmc5160_uart_1";
+
+	en-pwm-mode;
+	test-mode; /* ADI TMC Global configuration flags */
+	clock-frequency = <16000000>; /* Internal/External Clock frequency */
+
+	tmc51xx_stepper_driver: stepper-driver {
+		compatible = "adi,tmc51xx-stepper-driver";
+		micro-step-res = <256>;
+		/* ADI TMC stallguard settings specific to TMC51XX */
+		stallguard2-threshold = <9>;
+	};
+
+	/* common stepper controller settings */
+	tmc51xx_motion_controller: motion-controller {
+		compatible = "adi,tmc51xx-stepper-ctrl";
+
+		/* ADI TMC stallguard settings specific to TMC5160 */
+		activate-stallguard2;
+		stallguard-velocity-check-interval-ms = <100>;
+		stallguard-threshold-velocity = <50000>;
+
+		/* ADI TMC ramp generator as well as current settings */
+		vstart = <10>;
+		a1 = <20>;
+		v1 = <30>;
+		d1 = <40>;
+		vmax = <50>;
+		amax = <60>;
+		dmax = <70>;
+		tzerowait = <80>;
+		thigh = <90>;
+		tcoolthrs = <100>;
+		tpwmthrs = <110>;
+		tpowerdown = <120>;
+		ihold = <1>;
+		irun = <2>;
+		iholddelay = <3>;
+	};
+};
+
+adi_tmcm3216 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	adi_tmcm3216_uart: adi-tmcm3216@1 {
+		compatible = "adi,tmcm3216";
+		status = "okay";
+		reg = <0x1>;
+		de-gpios = <&test_gpio 0x01 GPIO_ACTIVE_HIGH>;
+
+		stepper_driver_0: stepper-driver {
+			compatible = "adi,tmcm3216-stepper-driver";
+			status = "okay";
+			idx = <0>;
+			micro-step-res = <16>;
+		};
+
+		stepper_ctrl_0: stepper-ctrl {
+			compatible = "adi,tmcm3216-stepper-ctrl";
+			status = "okay";
+			idx = <0>;
+		};
+	};
+};

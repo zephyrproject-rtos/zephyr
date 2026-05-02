@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2020 Phytec Messtechnik GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_serial {
+	status = "okay";
+
+	modbus0 {
+		compatible = "zephyr,modbus-serial";
+		status = "okay";
+		de-gpios = <&gpiob 22 GPIO_ACTIVE_LOW>;	/* red LED */
+		re-gpios = <&gpioe 26 GPIO_ACTIVE_LOW>;	/* green LED */
+	};
+};
+
+&uart2 {
+	status = "okay";
+	current-speed = <115200>;
+
+	modbus1 {
+		compatible = "zephyr,modbus-serial";
+		status = "okay";
+	};
+};

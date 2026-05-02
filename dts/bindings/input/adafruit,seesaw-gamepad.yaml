@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Adafruit Mini I2C Gamepad with seesaw (product 5743).
+
+  A 2-axis thumbstick + 6-button gamepad communicating over I2C.
+
+  Default I2C address is 0x50. Address can be changed via A0/A1 solder
+  jumpers to 0x51, 0x52 or 0x53.
+
+compatible: "adafruit,seesaw-gamepad"
+
+include: i2c-device.yaml
+
+properties:
+  polling-interval-ms:
+    type: int
+    default: 16
+    description: |
+      Interval between consecutive polls in milliseconds.
+      Defaults to 16 ms (~60 Hz).

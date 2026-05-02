@@ -1,0 +1,38 @@
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim/native/64
+  tags:
+    - net
+    - traffic_class
+tests:
+  net.traffic_class.1:
+    extra_configs:
+      - CONFIG_NET_TC_TX_COUNT=1
+      - CONFIG_NET_TC_RX_COUNT=1
+  net.traffic_class.8:
+    extra_configs:
+      - CONFIG_NET_TC_TX_COUNT=8
+      - CONFIG_NET_TC_RX_COUNT=8
+  # TX multi queue, RX one queue
+  net.traffic_class.2_no_rx:
+    extra_configs:
+      - CONFIG_NET_TC_TX_COUNT=2
+      - CONFIG_NET_TC_RX_COUNT=1
+  # TX one queue, RX multi queue
+  net.traffic_class.2_no_tx:
+    extra_configs:
+      - CONFIG_NET_TC_RX_COUNT=2
+      - CONFIG_NET_TC_TX_COUNT=1
+  net.traffic_class.2_sr_ab:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_A_AND_B=y
+      - CONFIG_NET_TC_TX_COUNT=2
+      - CONFIG_NET_TC_RX_COUNT=2
+  net.traffic_class.2_sr_b:
+    extra_configs:
+      - CONFIG_NET_TC_MAPPING_SR_CLASS_B_ONLY=y
+      - CONFIG_NET_TC_TX_COUNT=2
+      - CONFIG_NET_TC_RX_COUNT=2

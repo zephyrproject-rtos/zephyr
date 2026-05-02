@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Increase the secure flash partition to 192KB for the CAN API test,
+ * which overflows the default 128KB slot0_partition.
+ */
+
+&slot0_partition {
+	reg = <0x12000000 DT_SIZE_K(192)>;
+};
+
+&slot0_ns_partition {
+	reg = <0x02030000 DT_SIZE_K(64)>;
+};

@@ -1,0 +1,17 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config GNSS_U_BLOX_M8
+	bool "U-BLOX M8 GNSS Module"
+	default y
+	depends on GNSS
+	depends on DT_HAS_U_BLOX_M8_ENABLED
+	depends on GNSS_REFERENCE_FRAME_WGS84
+	select MODEM_MODULES
+	select MODEM_BACKEND_UART
+	select GNSS_PARSE
+	select GNSS_U_BLOX
+	select GNSS_U_BLOX_PROTOCOL
+	select UART_USE_RUNTIME_CONFIGURE
+	help
+	  Enable U-BLOX M8 GNSS modem driver.

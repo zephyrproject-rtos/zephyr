@@ -1,0 +1,53 @@
+/*
+ * Copyright 2022-2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&stm0 {
+	prescaler = <1>;
+	status = "okay";
+};
+
+&stm1 {
+	prescaler = <8>;
+	status = "okay";
+};
+
+&stm2 {
+	prescaler = <16>;
+	status = "okay";
+};
+
+&stm3 {
+	prescaler = <32>;
+	status = "okay";
+};
+
+&pit0 {
+	status = "okay";
+};
+
+&pit0_channel0 {
+	status = "okay";
+};
+
+&pit0_channel1 {
+	status = "okay";
+};
+
+&pit0_channel2 {
+	status = "okay";
+};
+
+&pit0_channel3 {
+	status = "okay";
+};
+
+&pit0_channel4 {
+	status = "okay";
+};
+
+&pit0_channel5 {
+	status = "okay";
+};

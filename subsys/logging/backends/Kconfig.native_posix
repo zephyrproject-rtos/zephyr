@@ -1,0 +1,26 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_NATIVE_POSIX
+	bool "Native backend"
+	depends on ARCH_POSIX
+	default y
+	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
+	help
+	  Enable backend in native_posix
+
+if LOG_BACKEND_NATIVE_POSIX
+
+config LOG_BACKEND_NATIVE_POSIX_STDOUT_BUF_SIZE
+	int "Standard output buffer size"
+	default 256
+	help
+	  Size of the buffer used to buffer log messages before flushing
+	  to the host terminal. Messages are flushed on newline or when the
+	  buffer is full.
+
+backend = NATIVE_POSIX
+backend-str = native_posix
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_NATIVE_POSIX

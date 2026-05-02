@@ -1,0 +1,33 @@
+sample:
+  name: Secure MQTT Sensor/Actuator Sample
+tests:
+  sample.net.secure_mqtt_sensor_actuator:
+    harness: net
+    tags:
+      - net
+      - mqtt
+      - sensors
+    filter: dt_alias_exists("ambient-temp0") and CONFIG_NET_DRIVERS
+    integration_platforms:
+      - adi_eval_adin1110ebz
+  sample.net.secure_mqtt_sensor_actuator.staticip:
+    harness: net
+    extra_args: EXTRA_CONF_FILE="overlay-static.conf"
+    tags:
+      - net
+      - mqtt
+      - sensors
+    filter: dt_alias_exists("ambient-temp0") and CONFIG_NET_DRIVERS
+    integration_platforms:
+      - native_sim
+  sample.net.secure_mqtt_sensor_actuator.staticip_insecure:
+    harness: net
+    extra_args: EXTRA_CONF_FILE="overlay-static-insecure.conf"
+    tags:
+      - net
+      - mqtt
+      - sensors
+    filter: dt_alias_exists("ambient-temp0") and CONFIG_NET_DRIVERS
+    integration_platforms:
+      - adi_eval_adin1110ebz
+      - native_sim

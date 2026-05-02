@@ -1,0 +1,9 @@
+# M5StickC PLUS board configuration
+
+# Copyright (c) 2022 AVSystem Sławomir Wolf Sp.j. (AVSystem)
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_M5STICKC_PLUS
+	select SOC_ESP32_PICO_D4
+	select SOC_ESP32_PROCPU if BOARD_M5STICKC_PLUS_ESP32_PROCPU
+	select SOC_ESP32_APPCPU if BOARD_M5STICKC_PLUS_ESP32_APPCPU

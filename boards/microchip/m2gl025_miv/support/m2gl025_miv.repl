@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: Apache-2.0
+
+using "platforms/cpus/miv.repl"
+
+uart:
+    clockFrequency: 4000000
+
+clint:
+    frequency: 4000000
+
+timer0:
+    clockFrequency: 4000000
+
+timer1:
+    clockFrequency: 4000000

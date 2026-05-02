@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&cpuapp_rram {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			/* MCUBoot partition is set to 62k to allow FPROTECT
+			 * to be enabled by default.
+			 */
+			reg = <0x0 DT_SIZE_K(62)>;
+		};
+
+#ifdef WITH_FLPR_PARTITIONS
+		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x10000 DT_SIZE_K(184)>;
+		};
+
+		slot1_partition: partition@3e000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x3e000 DT_SIZE_K(184)>;
+		};
+
+		storage_partition: partition@6c000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x6c000 DT_SIZE_K(36)>;
+		};
+#else
+		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x10000 DT_SIZE_K(200)>;
+		};
+
+		slot1_partition: partition@42000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x42000 DT_SIZE_K(200)>;
+		};
+
+		storage_partition: partition@74000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x74000 DT_SIZE_K(36)>;
+		};
+#endif
+	};
+};
+
+&uicr {
+	bl_storage: uicr@500 {
+		reg = <0x500 0x460>;
+	};
+};

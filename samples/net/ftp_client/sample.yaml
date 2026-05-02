@@ -1,0 +1,9 @@
+common:
+  harness: net
+  depends_on: netif
+  tags:
+    - net
+sample:
+  name: FTP client
+tests:
+  sample.net.ftp_client: {}

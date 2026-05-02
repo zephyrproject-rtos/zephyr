@@ -1,0 +1,85 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+title: Microchip TC g1 peripheral.
+
+description: |
+  Microchip TC g1 peripheral.
+
+  It is used for creating the PWM output on different channels
+  as well as used as a timer/counter.
+  This yaml supports the following peripherals
+    - tc-u2249 (3.0.0)
+
+compatible: "microchip,tc-g1"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    description: |
+      Specifies the base address and size of the register set for the timer counter peripheral.
+    required: true
+
+  interrupts:
+    description: |
+      Defines the interrupt lines used by the timer counter peripheral.
+
+      This property specifies the interrupt number and priority.
+    required: true
+
+  clocks:
+    description: |
+      Specifies the clock sources and their configurations for the timer counter peripheral.
+
+      This property ensures the peripheral is provided with the necessary clock signals.
+      The following are the clock names applicable to this property.
+       - mclk
+       - gclk
+       - client_mclk : This is the clock subsystem of the client with
+         which the instance can be paired. This is an optional clock name.
+         It is only applicable to those peripherals which can be paired with another
+         instance for achieving a higher max bit width. In this particular case,
+         32-bit max-bit-width is attained by pairing two such instances. The ability for
+         an instance to pair with another instance attain higher max-bit-width will be
+         specified in their respective datasheets.It is not available for all the instances.
+    required: true
+
+  prescaler:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 64
+      - 256
+      - 1024
+    description: |
+      Timer prescaler values.
+
+      The prescaler divides the input clock frequency to
+      achieve the desired timer frequency.
+
+  channels:
+    type: int
+    required: true
+    description: |
+      This property indicates the maximum available channels in a peripheral instance
+
+  max-bit-width:
+    type: int
+    required: true
+    enum:
+      - 8
+      - 16
+      - 32
+    description: |
+      Maximum bit width supported by the PWM counter.
+
+      This property specifies the resolution of the counter. The value provided
+      in the device tree should reflect the maximum supported by the hardware
+      instance. It should only be overridden after consulting the relevant family
+      datasheet to ensure compatibility.

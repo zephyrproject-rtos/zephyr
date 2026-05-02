@@ -1,0 +1,11 @@
+name: nordic-ppr-xip
+append:
+  EXTRA_DTC_OVERLAY_FILE: nordic-ppr-xip.overlay
+
+boards:
+  /.*/nrf54h20/cpuapp/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/nrf54h20_cpuapp.overlay
+  /.*/nrf9280/cpuapp/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: soc/nrf9280_cpuapp.overlay

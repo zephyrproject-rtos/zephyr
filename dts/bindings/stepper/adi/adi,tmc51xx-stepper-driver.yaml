@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "adi,tmc51xx-stepper-driver"
+
+include:
+  - name: stepper-driver.yaml
+  - name: adi,trinamic-stallguard.yaml
+    property-allowlist:
+      - stallguard2-threshold

@@ -1,0 +1,12 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments BQ40Z50 fuel gauge. For more info visit
+  https://www.ti.com/product/BQ40Z50.
+
+
+compatible: "ti,bq40z50"
+
+include: [i2c-device.yaml, fuel-gauge.yaml]

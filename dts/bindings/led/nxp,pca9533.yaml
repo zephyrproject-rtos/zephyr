@@ -1,0 +1,5 @@
+description: NXP PCA9533 4-bit LED dimmer
+
+compatible: "nxp,pca9533"
+
+include: ["i2c-device.yaml", "led-controller.yaml"]

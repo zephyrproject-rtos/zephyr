@@ -1,0 +1,10 @@
+# Copyright (c) 2025 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: ganymed_sk
+  full_name: Ganymed Starter Kit (SK)
+  vendor: sensry
+  socs:
+    - name: sy120_gbm
+    - name: sy120_gen1

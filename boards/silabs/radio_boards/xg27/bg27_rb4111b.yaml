@@ -1,0 +1,22 @@
+identifier: bg27_rb4111b
+name: EFR32BG27 2.4 GHz 4 dBm DCDC Boost CSP Radio Board (BG27-RB4111B, BRD4111B)
+type: mcu
+arch: arm
+ram: 64
+flash: 768
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - comparator
+  - counter
+  - dma
+  - entropy
+  - gpio
+  - flash
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: silabs

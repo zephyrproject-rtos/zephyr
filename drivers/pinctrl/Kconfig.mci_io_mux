@@ -1,0 +1,9 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_MCI_IO_MUX
+	bool "NXP MCI IO MUX Pinctrl Driver"
+	default y
+	depends on DT_HAS_NXP_MCI_IO_MUX_ENABLED
+	help
+	  Enable pin controller driver for NXP MCI_IO_MUX

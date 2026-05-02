@@ -1,0 +1,4 @@
+series:
+- name: xenvm
+  socs:
+  - name: xenvm

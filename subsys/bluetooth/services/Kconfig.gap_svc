@@ -1,0 +1,106 @@
+# GATT Generic Access Service - default implementation
+#
+# Copyright (c) 2019-2025 Intel Corporation
+# Copyright (c) 2025 Koppel Electronic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_GAP_SVC
+	bool "GATT Generic Access Service"
+	default y
+	help
+	  Enable the default GATT Generic Access Service.
+	  Enabled by default provides basic GAP functionality.
+	  If disabled, it is the application responsibility to provide its own
+	  implementation of GAP service, otherwise the system is not Bluetooth
+	  qualification compliant.
+
+if BT_GAP_SVC
+
+config BT_DEVICE_NAME_GATT_WRITABLE
+	bool "Allow to write device name by remote GATT clients"
+	depends on BT_DEVICE_NAME_DYNAMIC
+	default y
+	help
+	  Enabling this option allows remote GATT clients to write to device
+	  name GAP characteristic.
+
+if BT_DEVICE_NAME_GATT_WRITABLE
+choice BT_DEVICE_NAME_GATT_WRITABLE_SECURITY
+	prompt "Security requirements"
+	default BT_DEVICE_NAME_GATT_WRITABLE_NONE if DEVICE_NAME_GATT_WRITABLE_NONE
+	default BT_DEVICE_NAME_GATT_WRITABLE_AUTHEN if DEVICE_NAME_GATT_WRITABLE_AUTHEN
+	default BT_DEVICE_NAME_GATT_WRITABLE_ENCRYPT if DEVICE_NAME_GATT_WRITABLE_ENCRYPT
+	default BT_DEVICE_NAME_GATT_WRITABLE_ENCRYPT
+	help
+	  Select security requirements for writing device name by remote GATT
+	  clients.
+
+config BT_DEVICE_NAME_GATT_WRITABLE_NONE
+	bool "No requirements"
+
+config BT_DEVICE_NAME_GATT_WRITABLE_ENCRYPT
+	bool "Encryption required"
+
+config BT_DEVICE_NAME_GATT_WRITABLE_AUTHEN
+	bool "Encryption and authentication required"
+
+endchoice  #BT_DEVICE_NAME_GATT_WRITABLE_SECURITY
+
+config DEVICE_NAME_GATT_WRITABLE_NONE
+	select DEPRECATED
+	bool "No requirements [DEPRECATED]"
+	help
+	  This option is deprecated. Select BT_DEVICE_NAME_GATT_WRITABLE_NONE instead.
+
+config DEVICE_NAME_GATT_WRITABLE_ENCRYPT
+	select DEPRECATED
+	bool "Encryption required [DEPRECATED]"
+	help
+	  This option is deprecated. Select BT_DEVICE_NAME_GATT_WRITABLE_ENCRYPT instead.
+
+config DEVICE_NAME_GATT_WRITABLE_AUTHEN
+	select DEPRECATED
+	bool "Encryption and authentication required [DEPRECATED]"
+	help
+	  This option is deprecated. Select BT_DEVICE_NAME_GATT_WRITABLE_AUTHEN instead.
+
+endif #BT_DEVICE_NAME_GATT_WRITABLE
+
+config BT_DEVICE_APPEARANCE_GATT_WRITABLE
+	bool "Allow to write GAP Appearance by remote GATT clients"
+	depends on BT_DEVICE_APPEARANCE_DYNAMIC
+	default y
+	help
+	  Enabling this option allows remote GATT clients to write to device
+	  appearance GAP characteristic.
+
+if BT_DEVICE_APPEARANCE_GATT_WRITABLE
+choice BT_DEVICE_APPEARANCE_GATT_WRITABLE_SECURITY
+	prompt "Security requirements"
+	default BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN if DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
+	default BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
+	help
+	  Select security requirements for writing device appearance by remote
+	  GATT clients.
+
+config BT_DEVICE_APPEARANCE_GATT_WRITABLE_NONE
+	bool "No requirements"
+
+config BT_DEVICE_APPEARANCE_GATT_WRITABLE_ENCRYPT
+	bool "Encryption required"
+
+config BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
+	bool "Encryption and authentication required"
+
+endchoice  #BT_DEVICE_APPEARANCE_GATT_WRITABLE_SECURITY
+
+config DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
+	select DEPRECATED
+	bool "Encryption and authentication required [DEPRECATED]"
+	help
+	  This option is deprecated. Select BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN instead.
+
+endif #BT_DEVICE_APPEARANCE_GATT_WRITABLE
+
+endif #BT_GAP_SVC

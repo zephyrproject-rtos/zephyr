@@ -1,0 +1,46 @@
+sample:
+  name: BME280 Sensor sample
+common:
+  filter: dt_compat_enabled("bosch,bme280")
+  tags:
+    - sensors
+    - bme280
+tests:
+  sample.sensor.bme280:
+    harness: console
+    platform_allow:
+      - adafruit_feather_m0_basic_proto
+      - rpi_pico
+      - adafruit_qt_py_rp2040/rp2040
+    integration_platforms:
+      - adafruit_feather_m0_basic_proto
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="sparkfun_environmental_combo"
+    harness_config:
+      type: one_line
+      regex:
+        - "temp: (.*); press: (.*); humidity: (.*)"
+      fixture: fixture_i2c_bme280
+  sample.sensor.bme280.spi:
+    harness: console
+    platform_allow:
+      - lpcxpresso55s16
+    depends_on:
+      - spi
+    extra_args: "SHIELD=mikroe_weather_click_spi"
+    harness_config:
+      type: one_line
+      regex:
+        - "temp: (.*); press: (.*); humidity: (.*)"
+      fixture: fixture_spi_bme280
+  sample.sensor.bme280.rpi_pico.pio:
+    harness: console
+    platform_allow: rpi_pico
+    integration_platforms:
+      - rpi_pico
+    extra_args: "DTC_OVERLAY_FILE=rpi_pico_spi_pio.overlay"
+    harness_config:
+      type: one_line
+      regex:
+        - "temp: (.*); press: (.*); humidity: (.*)"
+      fixture: fixture_rpi_pico_pio_spi_bme280

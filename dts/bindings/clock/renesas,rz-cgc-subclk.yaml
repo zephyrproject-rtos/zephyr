@@ -1,0 +1,54 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ Clock Control Peripheral Sub-Clock
+
+compatible: "renesas,rz-cgc-subclk"
+
+include: [base.yaml]
+
+properties:
+  clock-frequency:
+    type: int
+    default: 96000000
+    enum:
+    - 75000000
+    - 96000000
+    description: |
+      Select clock frequency (Hz) when asynchronous serial clock is selected in SPI and SCI
+
+  xspi-clk-frequency:
+    type: int
+    default: 12500000
+    enum:
+    - 133333333
+    - 100000000
+    - 50000000
+    - 25000000
+    - 12500000
+    - 75000000
+    - 37500000
+    description: Select clock frequency (Hz) supplied to xSPI
+
+  canfd-source:
+    type: int
+    default: 1
+    enum:
+    - 0
+    - 1
+    - 2
+    description: |
+      Select clock source supplied to CANFD
+      - 0: PCLKCAN 80MHz
+      - 1: PCLKCAN 40MHz
+      - 2: PCLKM 100MHz
+
+  eth-phy-source:
+    type: string
+    default: main
+    enum:
+    - "pll1"
+    - "main"
+    description: |
+      25 MHz reference clock to the external Ethernet PHY.
+      Clock source is selectable from main clock or frequency-dividing clock for PLL1.

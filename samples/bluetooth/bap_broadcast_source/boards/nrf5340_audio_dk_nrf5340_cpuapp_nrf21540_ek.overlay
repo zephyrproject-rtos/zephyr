@@ -1,0 +1,25 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "../app.overlay"
+
+/ {
+	gpio_fwd: nrf-gpio-forwarder {
+		compatible = "nordic,nrf-gpio-forwarder";
+		status = "okay";
+
+		nrf21540-gpio-if {
+			gpios = <&arduino_header 11 0>, /* tx-en-gpios */
+				<&arduino_header 9 0>, /* rx-en-gpios */
+				<&arduino_header 15 0>,	/* pdn-gpios */
+				<&arduino_header 10 0>, /* ant-sel-gpios */
+				<&arduino_header 8 0>; /* mode-gpios */
+		};
+
+		nrf21540-spi-if {
+			gpios = <&arduino_header 16 0>, /* cs-gpios */
+				<&gpio0 8 0>, /* SPIM_SCK */
+				<&gpio0 10 0>, /* SPIM_MISO */
+				<&gpio0 9 0>; /* SPIM_MOSI */
+		};
+	};
+};

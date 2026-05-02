@@ -1,0 +1,56 @@
+/*
+ * Device Tree Source for AM62L SoC Family Wakeup Domain peripherals
+ *
+ * Copyright (C) 2025 Texas Instruments Incorporated - https://www.ti.com/
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	wkup_pinctrl: pinctrl@4084000 {
+		compatible = "ti,k3-pinctrl";
+		reg = <0x04084000 0x24c>;
+		status = "disabled";
+	};
+
+	wkup_gpio0: gpio@4201010 {
+		compatible = "ti,davinci-gpio";
+		reg = <0x04201010 0x28>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <7>;
+		power-domains = <&scmi_pds 36>;
+		clocks = <&scmi_clk 146>;
+		clock-names = "gpio";
+		status = "disabled";
+	};
+
+	wkup_timer0: timer@2b100000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2b100000 DT_SIZE_K(1)>;
+		clocks = <&scmi_clk 93>;
+		clock-names = "fck";
+		power-domains = <&scmi_pds 19>;
+		status = "disabled";
+	};
+
+	wkup_timer1: timer@2b110000 {
+		compatible = "ti,am654-timer";
+		reg = <0x2b110000 DT_SIZE_K(1)>;
+		clocks = <&scmi_clk 98>;
+		clock-names = "fck";
+		power-domains = <&scmi_pds 20>;
+		status = "disabled";
+	};
+
+	wkup_i2c0: i2c@2b200000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x2b200000 0x100>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		power-domains = <&scmi_pds 57>;
+		clocks = <&scmi_clk 262>;
+		clock-names = "fck";
+		status = "disabled";
+	};
+};

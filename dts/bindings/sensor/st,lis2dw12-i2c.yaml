@@ -1,0 +1,8 @@
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMicroelectronics LIS2DW12 3-axis accelerometer
+
+compatible: "st,lis2dw12"
+
+include: ["i2c-device.yaml", "st,lis2dw12-common.yaml"]

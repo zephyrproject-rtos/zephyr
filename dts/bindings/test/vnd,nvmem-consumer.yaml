@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test NVMEM consumer node
+
+compatible: "vnd,nvmem-consumer"
+
+include: [nvmem-consumer.yaml]

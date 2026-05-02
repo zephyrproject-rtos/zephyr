@@ -1,0 +1,7 @@
+/ {
+	sram3: memory@be1e0000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xbe1e0000 DT_SIZE_K(64)>;
+	};
+};

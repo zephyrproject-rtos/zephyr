@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2020, Linaro Ltd.
+ * Copyright (c) 2022, Esco Medical ApS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing driver builds
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+#include <freq.h>
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_uart: uart@55556666 {
+			compatible = "vnd,serial";
+			reg = <0x55556666 0x100>;
+			status = "okay";
+			current-speed = <2500000>;
+			data-bits = <7>;
+			tx-invert;
+
+			test_ws2812_uart: ws2812-strip {
+				compatible = "worldsemi,ws2812-uart";
+				status = "okay";
+
+				one-symbol = <6>;   /* 0b110 */
+				zero-symbol = <4>;  /* 0b100 */
+				bits-per-symbol = <3>;
+
+				chain-length = <8>;
+				reset-delay = <50>;
+				color-mapping = <LED_COLOR_ID_GREEN
+						 LED_COLOR_ID_RED
+						 LED_COLOR_ID_BLUE>;
+			};
+		};
+	};
+};

@@ -1,0 +1,22 @@
+# Copyright (c) 2021 KT-Elektronik Klaucke und Partner GmbH
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas ICU Interrupt controller
+compatible: "renesas,rx-icu"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority

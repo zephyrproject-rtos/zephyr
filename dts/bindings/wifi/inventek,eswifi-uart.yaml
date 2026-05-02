@@ -1,0 +1,17 @@
+# Copyright (c) 2018, Linaro Limited
+# Copyright (c) 2020, ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: es-WiFi module (uart firmware interface)
+
+compatible: "inventek,eswifi-uart"
+
+include: uart-device.yaml
+
+properties:
+  resetn-gpios:
+    type: phandle-array
+    required: true
+
+  wakeup-gpios:
+    type: phandle-array

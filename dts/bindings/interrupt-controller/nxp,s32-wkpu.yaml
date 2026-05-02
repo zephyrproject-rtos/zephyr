@@ -1,0 +1,28 @@
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 Wake-up Unit
+
+compatible: "nxp,s32-wkpu"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    NXP S32 WKPU external interrupt configuration. Specific requirements for each
+    interrupt line can be specified by adding children nodes to this controller,
+    labeled `irq_<irq_number>`. For example:
+
+      irq_0: irq_0 {
+          filter-enable;
+      };
+
+  properties:
+    filter-enable:
+      type: boolean
+      description: |
+        Enable analog glitch filter on the external interrupt pad input.

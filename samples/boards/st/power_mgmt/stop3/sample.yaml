@@ -1,0 +1,14 @@
+sample:
+  name: STM32 STOP3 Power Management
+tests:
+  sample.boards.stm32.power_mgmt.stop3:
+    tags:
+      - LED
+      - power
+    harness: console
+    platform_allow: nucleo_u575zi_q
+    harness_config:
+      type: one_line
+      regex:
+        - "Device ready"
+    extra_args: "CONFIG_DEBUG=y"

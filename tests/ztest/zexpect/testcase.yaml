@@ -1,0 +1,17 @@
+# Copyright (c) 2022 Google Inc
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  integration_platforms:
+    - native_sim
+  tags:
+    - test_framework
+tests:
+  testing.ztest.expect:
+    integration_platforms:
+      - native_sim
+  testing.ztest.expect_cpp:
+    extra_configs:
+      - CONFIG_CPP=y
+  testing.ztest.expect.unit:
+    type: unit

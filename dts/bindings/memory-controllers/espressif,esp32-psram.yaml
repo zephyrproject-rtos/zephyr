@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ESP32 pseudo-static RAM controller
+
+compatible: "espressif,esp32-psram"
+
+include: base.yaml
+
+properties:
+  size:
+    type: int
+    required: true

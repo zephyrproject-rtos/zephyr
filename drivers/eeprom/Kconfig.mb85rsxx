@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_MB85RSXX
+	bool "FUJITSU MB85RSXX SPI FRAM"
+	default y
+	depends on DT_HAS_FUJITSU_MB85RSXX_ENABLED
+	select SPI
+	help
+	  Enable FUJITSU mb85rsxx SPI FRAM

@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/pwm_ifx_tcpwm.h>
+
+/ {
+	aliases {
+		pwm-test = &pwm1_9;
+	};
+};
+
+&tcpwm1_9 {
+	status = "okay";
+
+	pwm1_9: pwm1_9 {
+		status = "okay";
+		clocks = <&peri0_group1_16bit_1>;
+		pinctrl-0 = <&p20_6_pwm1_9>;
+		pinctrl-names = "default";
+	};
+};
+
+&peri0_group1_16bit_1 {
+	status = "okay";
+	clock-div = <9600>;
+};
+
+&pinctrl {
+	p20_6_pwm1_9: p20_6_pwm1_9 {
+		drive-push-pull;
+	};
+};

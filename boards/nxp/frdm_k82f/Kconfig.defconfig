@@ -1,0 +1,24 @@
+# FRDM-K82F board
+
+# Copyright (c) 2019 SEAL AG
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FRDM_K82F
+
+config OSC_XTAL0_FREQ
+	default 12000000
+
+config MCG_PRDIV0
+	default 0x0
+
+config MCG_VDIV0
+	default 0x4
+
+config MCG_FCRDIV
+	default 1
+
+config FXOS8700_DRDY_INT1
+	default y
+	depends on FXOS8700_TRIGGER
+
+endif # BOARD_FRDM_K82F

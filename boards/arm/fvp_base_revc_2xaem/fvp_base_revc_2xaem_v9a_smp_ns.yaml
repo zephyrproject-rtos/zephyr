@@ -1,0 +1,16 @@
+# Copyright (c) 2025 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: fvp_base_revc_2xaem/v9a/smp/ns
+name: FVP Emulation FVP_Base_RevC-2xAEMv9A (SMP) (Non-Secure)
+arch: arm64
+type: sim
+simulation:
+  - name: armfvp
+    exec: FVP_Base_RevC-2xAEMvA
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 2048
+flash: 64
+vendor: arm

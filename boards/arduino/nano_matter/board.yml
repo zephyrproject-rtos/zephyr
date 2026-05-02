@@ -1,0 +1,6 @@
+board:
+  name: arduino_nano_matter
+  full_name: Arduino Nano Matter
+  vendor: arduino
+  socs:
+    - name: mgm240sd22vna

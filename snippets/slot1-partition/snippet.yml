@@ -1,0 +1,3 @@
+name: slot1-partition
+append:
+  EXTRA_DTC_OVERLAY_FILE: slot1-partition.overlay

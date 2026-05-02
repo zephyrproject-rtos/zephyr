@@ -1,0 +1,7 @@
+# Copyright (c) 2018, Diego Sueiro
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_WARP7
+	select SOC_PART_NUMBER_MCIMX7S3DVK08SA
+	select SOC_MCIMX7D_M4 if BOARD_WARP7_MCIMX7D_M4

@@ -1,0 +1,54 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,display = &sh1106_sh1106_128x64;
+	};
+
+	aliases {
+		sw0 = &buttonA;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		buttonA: button_A {
+			gpios = <&feather_header 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; /* D9 */
+			label = "Button A";
+			zephyr,code = <INPUT_KEY_A>;
+		};
+
+		buttonB: button_B {
+			/* Button B has a pull up resistor on board. */
+			gpios = <&feather_header 15 GPIO_ACTIVE_LOW>; /* D6 */
+			label = "Button B";
+			zephyr,code = <INPUT_KEY_B>;
+		};
+
+		buttonC: button_C {
+			gpios = <&feather_header 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;	/* D5 */
+			label = "Button C";
+			zephyr,code = <INPUT_KEY_C>;
+		};
+	};
+};
+
+&feather_i2c {
+	status = "okay";
+
+	sh1106_sh1106_128x64: sh1106@3c {
+		compatible = "sinowealth,sh1106";
+		reg = <0x3c>;
+		width = <64>;
+		height = <128>;
+		segment-offset = <0>;
+		page-offset = <0>;
+		display-offset = <0x60>;
+		multiplex-ratio = <0x3f>;
+		prechargep = <0x22>;
+	};
+};

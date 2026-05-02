@@ -1,0 +1,10 @@
+tests:
+  drivers.dma.loop_transfer:
+    depends_on: dma
+    tags:
+      - drivers
+      - dma
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+    filter: dt_nodelabel_enabled("tst_dma0")

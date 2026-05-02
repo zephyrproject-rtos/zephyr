@@ -1,0 +1,10 @@
+sample:
+  name: Grove LCD Sample
+tests:
+  sample.drivers.misc.grove_display:
+    tags:
+      - drivers
+      - display
+    harness: grove
+    depends_on: i2c
+    filter: dt_compat_enabled("seeed,grove-lcd-rgb")

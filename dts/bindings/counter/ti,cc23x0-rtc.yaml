@@ -1,0 +1,15 @@
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        CC23x0 RTC counter driver
+        Any reset/sleep mode, except for the power-up reset, will not
+        stop or reset the RTC Timer. This behavior may be handy when
+        supporting applications that need to keep a timing baseline on
+        such situations.
+        There is also no need to enable the RTC Timer node, it starts
+        running from power-up.
+
+compatible: "ti,cc23x0-rtc"
+
+include: base.yaml

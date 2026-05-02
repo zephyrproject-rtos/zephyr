@@ -1,0 +1,34 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	chosen {
+		zephyr,shell-uart = &uart1;
+	};
+};
+
+&i2c0_0 {
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		address-width = <16>;
+		size = <1024>;
+	};
+};
+
+&i2c2_0 {
+	status = "okay";
+	pinctrl-0 = <&i2c2_0_sda_scl_gp91_92>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		address-width = <16>;
+		size = <1024>;
+	};
+};
+
+&i2c_ctrl2 {
+	status = "okay";
+};

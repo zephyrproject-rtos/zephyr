@@ -1,0 +1,11 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    HopeRF Electronic HP206C precision barometer and altimeter.
+    See more info at:
+    https://www.hoperf.com/sensor/pressure_sensor/HP206C.html
+
+compatible: "hoperf,hp206c"
+
+include: [sensor-device.yaml, i2c-device.yaml]

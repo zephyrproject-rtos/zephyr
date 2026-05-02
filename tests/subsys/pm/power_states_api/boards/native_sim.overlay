@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2020, Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	cpus {
+		cpu@0 {
+			cpu-power-states = <&state0 &state1 &state2 &state3>;
+		};
+
+		power-states {
+			state0: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <10000>;
+				exit-latency-us = <100>;
+			};
+
+			state1: state1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <20000>;
+				exit-latency-us = <200>;
+			};
+
+			state2: state2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				min-residency-us = <50000>;
+				exit-latency-us = <500>;
+			};
+
+			state3: state3 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-disk";
+				status = "disabled";
+			};
+		};
+	};
+
+	test_dev: test_dev {
+		compatible = "test-device-pm";
+		status = "okay";
+		zephyr,disabling-power-states = <&state1 &state2>;
+	};
+};

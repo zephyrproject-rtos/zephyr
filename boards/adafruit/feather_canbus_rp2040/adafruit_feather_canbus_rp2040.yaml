@@ -1,0 +1,23 @@
+identifier: adafruit_feather_canbus_rp2040
+name: Adafruit Feather RP2040 Adalogger
+type: mcu
+arch: arm
+flash: 8192
+ram: 264
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - can
+  - clock
+  - counter
+  - dma
+  - flash
+  - gpio
+  - hwinfo
+  - i2c
+  - pwm
+  - spi
+  - uart
+  - watchdog

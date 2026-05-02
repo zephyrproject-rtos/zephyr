@@ -1,0 +1,17 @@
+# Copyright (c) 2025, Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Motorola MC146818 compatible Real Timer Clock Battery Backed RAM
+
+compatible: "motorola,mc146818-bbram"
+
+include: base.yaml
+
+on-bus: mc146818-mfd
+
+properties:
+  size:
+    type: int
+    required: true
+    description: Memory capacity in bytes.

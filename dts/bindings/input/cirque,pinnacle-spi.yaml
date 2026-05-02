@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Ilia Kharin
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cirque Pinnacle 1CA027 ASIC trackpad connected through SPI
+
+compatible: "cirque,pinnacle"
+
+include: ["spi-device.yaml", "cirque,pinnacle-common.yaml"]

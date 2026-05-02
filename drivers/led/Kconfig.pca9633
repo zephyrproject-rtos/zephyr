@@ -1,0 +1,13 @@
+# Copyright (c) 2018 Savoir-Faire Linux
+# SPDX-License-Identifier: Apache-2.0
+
+config PCA9633
+	bool "PCA9633 LED driver"
+	default y
+	depends on DT_HAS_NXP_PCA9633_ENABLED
+	select I2C
+	help
+	  Enable LED driver for PCA9633.
+
+	  PCA9633 LED driver has 4 channels each with multi-programmable
+	  states. Each channel can drive up to 25 mA per LED.

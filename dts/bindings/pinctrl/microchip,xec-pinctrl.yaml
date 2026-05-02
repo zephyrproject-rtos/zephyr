@@ -1,0 +1,118 @@
+# Copyright (c) 2020 Linaro Limited
+# Copyright (c) 2021 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Microchip XEC Pin Controller
+
+    Based on pincfg-node.yaml binding.
+    The MCHP XEC pin controller is a singleton node responsible for controlling
+    pin function selection and pin properties. For example, you can use this
+    node to select peripheral pin functions.
+
+    The node has the 'pinctrl' node label set in your SoC's devicetree,
+    so you can modify it like this:
+
+      &pinctrl {
+              /* your modifications go here */
+      };
+
+    All device pin configurations should be placed in child nodes of the
+    'pinctrl' node, as in the spi0 example shown at the end:
+
+    A group can also specify shared pin properties common to all the specified
+    pins, such as the 'bias-pull-up' property in group 2. Here is a list of
+    supported standard pin properties:
+
+    - bias-disable: Disable pull-up/down (default behavior, not required).
+    - bias-pull-down: Enable pull-down resistor.
+    - bias-pull-up: Enable pull-up resistor.
+    - drive-push-pull: Output driver is push-pull (default, not required).
+    - drive-open-drain: Output driver is open-drain.
+    - output-high: Set output state high when pin configured.
+    - output-low: Set output state low when pin configured.
+
+    Custom pin properties for drive strength and slew rate are available:
+    - drive-strength
+    - slew-rate
+
+    Driver strength and slew rate hardware defaults vary by SoC and pin.
+
+    An example for MEC172x family, include the chip level pinctrl
+    DTSI file in the board level DTS:
+
+      #include <microchip/mec172x/mec172xnsz-pinctrl.dtsi>
+
+    We want to use the shared SPI port of the MEC172x QMSPI controller
+    and want the chip select 0 to be open-drain.
+
+    To change a pin's pinctrl default properties add a reference to the
+    pin in the board's DTS file and set the properties.
+
+      &spi0 {
+        pinctrl-0 = < &shd_cs0_n_gpio055
+                      &shd_clk_gpio056
+                      &shd_io0_gpio223
+                      &shd_io1_gpio224
+                      &shd_io3_gpio016 >;
+        pinctrl-names = "default";
+      }
+
+      &shd_cs0_n_gpio055 {
+        drive-open-drain;
+      };
+
+compatible: "microchip,xec-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    This binding gives a base representation of the Microchip XEC pins
+    configuration
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-down
+        - bias-pull-up
+        - drive-push-pull
+        - drive-open-drain
+        - low-power-enable
+        - output-disable
+        - output-enable
+        - output-high
+        - output-low
+
+  properties:
+    pinmux:
+      type: int
+      required: true
+      description: Pinmux selection
+
+    drive-strength:
+      type: int
+      description: |
+        GPIO pin output driver strength. Value range is 0 to 4.
+        Refer to the part data sheet if the pin is PIO-12 or PIO-24.
+        Value 0 is no change.
+        PIO-12: 1(2 mA), 2(4 mA), 3(8 mA), or 4(12 mA).
+        PIO-24: 1(4 mA), 2(8 mA), 3(16 mA), or 4(24 mA).
+
+    slew-rate:
+      type: int
+      description: |
+        GPIO pin slew rate. Value range is 0 to 2.
+        Value 0 is no change.
+        1 = fast slew rate(default), 2 = slow (half-speed) slew rate.
+
+    microchip,output-func-invert:
+      type: boolean
+      description:
+        Invert polarity of an output alternate function. Input functions
+        are not affected.

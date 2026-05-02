@@ -1,0 +1,95 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * NOR flash board variant.
+ *
+ * This board variant requires hardware rework that disconnects two LPCOMP1
+ * inputs from J5 and connects the pins to the SCB5 instance connected to an
+ * external S25FL128P SPI NOR flash. Refer to "Kit Rework for NOR Flash" in the
+ * board documentation or the kit userguide for the required resistor changes.
+ */
+
+/dts-v1/;
+#include <freq.h>
+#include <mem.h>
+#include <arm/infineon/cat1b/mpns/psc3m5fds2afq1_s.dtsi>
+#include <arm/infineon/cat1b/psc3/system_clocks.dtsi>
+#include <arm/infineon/cat1b/psc3/psc3_partition.dtsi>
+#include "kit_psc3m5_evk-common.dtsi"
+#include "kit_psc3m5_evk-pinctrl.dtsi"
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &slot0_partition;
+		zephyr,console = &uart3;
+		zephyr,shell-uart = &uart3;
+		zephyr,canbus = &can1;
+	};
+};
+
+/* NOR flash variant additions */
+
+spi5: &scb5 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "infineon,spi";
+	status = "okay";
+
+	pinctrl-0 = <&p8_1_scb5_spi_m_mosi &p8_2_scb5_spi_m_miso &p8_3_scb5_spi_m_clk>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio_prt8 0 GPIO_ACTIVE_LOW>;
+
+	clocks = <&peri0_group6_16_5bit_0>;
+
+	s25fl128p: s25fl128p@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+		jedec-id = [01 60 18];
+		size = <0x8000000>;	/* 128 Mbit */
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x0 DT_SIZE_M(16)>;
+			};
+		};
+	};
+};
+
+&p8_1_scb5_spi_m_mosi {
+	drive-strength = "full";
+	drive-push-pull;
+};
+
+&p8_2_scb5_spi_m_miso {
+	input-enable;
+};
+
+&p8_3_scb5_spi_m_clk {
+	drive-strength = "full";
+	drive-push-pull;
+};
+
+&peri0_group6_16_5bit_0 {
+	status = "okay";
+};
+
+/*
+ * High-frequency clock clk_hf4 to feed the peri0_group6_16_5_bit0
+ * peripheral clock.
+ */
+&clk_hf4 {
+	source-path = <IFX_CLK_HF_IN_CLKPATH0>;
+	status = "okay";
+};

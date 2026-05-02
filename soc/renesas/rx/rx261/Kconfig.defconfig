@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RX261
+
+DT_CMT_PATH := $(dt_nodelabel_path,cmt)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(DT_CMT_PATH),clock-frequency)
+
+# SYS_CLOCK_TICKS_PER_SEC is set to 100 if PCLKB is 48MHz or less.
+# (PCLKB = SYS_CLOCK_HW_CYCLES_PER_SEC * 8)
+config SYS_CLOCK_TICKS_PER_SEC
+	default 100 if SYS_CLOCK_HW_CYCLES_PER_SEC <= 6000000
+	default 1000
+
+config INITIALIZATION_STACK_SIZE
+	default 512
+
+config BUILD_OUTPUT_HEX
+	default y
+
+endif # SOC_SERIES_RX261

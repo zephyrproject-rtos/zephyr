@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) Qingsong Gou <gouqs@hotmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	usart2_default: usart2_default {
+		group1 {
+			pinmux = <PA27_USART2_TXD>;
+			input-enable;
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <PA20_USART2_RXD>;
+			input-enable;
+			bias-pull-up;
+		};
+	};
+};
+
+dut: &usart2 {
+	current-speed = <1000000>;
+	pinctrl-0 = <&usart2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	dmas = <&dmac 4 SF32LB52X_DMA_REQ_USART2_TX SF32LB_DMA_PL_LOW>,
+	       <&dmac 5 SF32LB52X_DMA_REQ_USART2_RX SF32LB_DMA_PL_MEDIUM>;
+	dma-names = "tx", "rx";
+};
+
+&usart1 {
+	dmas = <&dmac 1 SF32LB52X_DMA_REQ_USART1_TX SF32LB_DMA_PL_LOW>,
+	       <&dmac 2 SF32LB52X_DMA_REQ_USART1_RX SF32LB_DMA_PL_MEDIUM>;
+	dma-names = "tx", "rx";
+};

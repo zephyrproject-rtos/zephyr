@@ -1,0 +1,59 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Video test pattern testing"
+
+menu "Video capture configuration"
+
+config TEST_PIXEL_FORMAT
+	string "Pixel format of the video frame"
+	help
+	  Pixel format of the video frame. If not set, the default pixel format is used.
+
+config TEST_FRAME_HEIGHT
+	int "Height of the video frame"
+	default 0
+	help
+	  Height of the video frame. If set to 0, the default height is used.
+
+config TEST_FRAME_WIDTH
+	int "Width of the video frame"
+	default 0
+	help
+	  Width of the video frame. If set to 0, the default width is used.
+
+config TEST_FRAMES_TOTAL
+	int "Number of frames to test in total"
+	default 1000
+	help
+	  Video hardware do not always produce valid frames immediately, at high FPS, there can
+	  be a lot of frames completely black or otherwise invalid before the test pattern
+	  to show-up, which would still be the expected behavior of the hardware.
+
+config TEST_PATTERN_CTRL
+	int "Value used for the test pattern menu control"
+	default 1
+	help
+	  Some drivers support different types of test patterns and/or in a different order.
+	  Control the menu CID value to select the correct "vertical color bar" pattern.
+
+config TEST_FRAMES_VALID
+	int "Number of valid frames to expect"
+	default 10
+	help
+	  Number of frames after which consider the test successful.
+	  A valid frame is a frame featuring the test pattern with colors close enough according
+	  to CONFIG_TEST_LAB_THRESHOLD.
+
+config TEST_LAB_THRESHOLD
+	int "CIE LAB acceptance threshold"
+	default 10
+	help
+	  Margin value to consider the color similarity to be close enough.
+	  The default is 10 to allow slight difference to be ignored, and complete swaps to
+	  always be detected. This can be raised in case the colors are all slightly off but
+	  correctly ordered.
+
+endmenu
+
+source "Kconfig.zephyr"

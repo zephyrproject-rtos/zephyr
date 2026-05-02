@@ -1,0 +1,7 @@
+# MAX78000FTHR boards configuration
+
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MAX78000FTHR
+	select SOC_MAX78000_M4 if BOARD_MAX78000FTHR_MAX78000_M4

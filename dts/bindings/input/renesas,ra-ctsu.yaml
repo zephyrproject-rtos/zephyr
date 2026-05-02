@@ -1,0 +1,199 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA Capacitive Sensing Unit
+
+compatible: "renesas,ra-ctsu"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+    description: IRQ number and priority to use for CTSU.
+
+  interrupt-names:
+    required: true
+    description: |
+      Interrupts must be given corresponding names so that the shim driver can recognize them.
+      - "ctsuwr": write interrupt
+      - "ctsurd": read interrupt
+      - "ctsufn": end interrupt
+
+  variant:
+    required: true
+    type: string
+    enum: ["ctsua", "ctsu2"]
+    description: Determine which ctsu device is in use
+
+  clock-div:
+    type: int
+    enum: [1, 2, 4, 8]
+    default: 1
+    description: Select divider value for operating input clock. Default as div by 1.
+
+  pwr-supply-sel:
+    type: string
+    enum: ["vcc", "internal-power"]
+    default: "internal-power"
+    description: CTSU Transmission Power Supply Select (for both CTSUa and CTSU2).
+
+  pwr-supply-sel2:
+    type: string
+    enum: ["pwr-supply-sel", "vcc-private"]
+    default: "pwr-supply-sel"
+    description: CTSU Transmission Power Supply Select 2 (CTSU2 Only)
+
+  atune1:
+    type: string
+    enum: ["normal", "high"]
+    default: "normal"
+    description: |
+      CTSU Power Supply Capacity Adjustment (CTSUa Only):
+      - "normal": 40uA
+      - "high": 80uA
+
+  atune12:
+    type: int
+    enum: [80, 40, 20, 160]
+    default: 40
+    description: |
+      CTSU Power Supply Capacity Adjustment in uA (CTSU2 Only)
+
+  measure-mode:
+    type: string
+    enum:
+      - "self-multi-scan"
+      - "mutual-full-scan"
+      - "mutual-cfc-scan"
+      - "current-scan"
+      - "correction-scan"
+      - "diagnosis-scan"
+    default: "self-multi-scan"
+    description: CTSU Measurement Mode Select
+
+  po-sel:
+    type: string
+    enum:
+      - "low-gpio"
+      - "hi-z"
+      - "low"
+      - "same-pulse"
+    default: "same-pulse"
+    description: CTSU Non-Measured Channel Output Select (CTSU2 Only)
+
+  tscap-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      CTSU TSCAP Pin. This pin is used to discharge the capacitior by
+      control to output low, before switching to CTSU function.
+
+child-binding:
+  description: Renesas RA CTSU touch configuration
+  properties:
+    ctsuchac:
+      type: array
+      default: [0, 0, 0, 0, 0]
+      description: |
+        TSCAP pin enable mask. Expected fields, in order, are:
+        - ctsuchac0: TS00-TS07 enable mask
+        - ctsuchac1: TS08-TS15 enable mask
+        - ctsuchac2: TS16-TS23 enable mask
+        - ctsuchac3: TS24-TS31 enable mask
+        - ctsuchac4: TS32-TS39 enable mask
+
+    ctsuchtrc:
+      type: array
+      default: [0, 0, 0, 0, 0]
+      description: |
+        TSCAP pin mutual-tx mask. Expected fields, in order, are:
+        - ctsuchtrc0: TS00-TS07 mutual-tx mask
+        - ctsuchtrc1: TS08-TS15 mutual-tx mask
+        - ctsuchtrc2: TS16-TS23 mutual-tx mask
+        - ctsuchtrc3: TS24-TS31 mutual-tx mask
+        - ctsuchtrc4: TS32-TS39 mutual-tx mask
+
+    rx-count:
+      type: int
+      default: 0
+      description: |
+        The number of RX channels to be used. This should be set to the number of
+        channels that are enabled in the ctsuchac0-4 properties.
+
+    tx-count:
+      type: int
+      default: 0
+      description: |
+        The number of TX channels to be used. This should be set to the number of
+        channels that are enabled in the ctsuchtrc0-4 properties.
+
+    ssdiv:
+      type: string-array
+      default: ["4.00"]
+      enum:
+        - "4.00"
+        - "2.00"
+        - "1.33"
+        - "1.00"
+        - "0.80"
+        - "0.67"
+        - "0.57"
+        - "0.50"
+        - "0.44"
+        - "0.40"
+        - "0.36"
+        - "0.33"
+        - "0.31"
+        - "0.29"
+        - "0.27"
+        - "0.00"
+      description: CTSU Spectrum Diffusion Frequency Division Setting (CTSUa Only)
+
+    so:
+      type: array
+      default: [0]
+      description: CTSU Sensor Offset Adjustment
+
+    snum:
+      type: array
+      default: [0]
+      description: CTSU Measurement Count Setting
+
+    sdpa:
+      type: array
+      default: [0]
+      description: CTSU Base Clock Setting
+
+    on-freq:
+      type: int
+      default: 0
+      description: The cumulative number of determinations of ON.
+
+    off-freq:
+      type: int
+      default: 0
+      description: The cumulative number of determinations of OFF.
+
+    drift-freq:
+      type: int
+      default: 0
+      description: Base value drift frequency (0 mean no use).
+
+    cancel-freq:
+      type: int
+      default: 0
+      description: Maximum continuous ON (0 mean no use).
+
+    num-moving-avg:
+      type: int
+      default: 0
+      description: |
+        The number of samples to use for moving average. If set to 0, no moving average is applied.
+        This is useful for smoothing the sensor readings.

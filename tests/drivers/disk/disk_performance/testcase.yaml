@@ -1,0 +1,31 @@
+common:
+  harness: ztest
+  tags: disk
+tests:
+  drivers.disk.disk_performance.sdhc:
+    depends_on: sdhc
+    harness: ztest
+    harness_config:
+      fixture: fixture_sdhc
+    tags: sdhc
+    integration_platforms:
+      - mimxrt1064_evk
+      - mimxrt595_evk/mimxrt595s/cm33
+    extra_args:
+      - platform:ek_ra8m1/r7fa8m1ahecbd:SHIELD=pmod_sd
+      - platform:ek_ra8p1/r7ka8p1kflcac/cm85:SHIELD=pmod_sd
+  drivers.disk.disk_performance.disk.nvme:
+    extra_configs:
+      - CONFIG_NVME=y
+    platform_allow: qemu_x86_64
+  drivers.disk.disk_performance.ftl.spi_nand.mikroe_flash_5_click:
+    harness_config:
+      fixture: mikroe_flash_5_click
+    extra_configs:
+      - CONFIG_ZTEST_STACK_SIZE=4096
+      - CONFIG_DISK_DRIVER_SDMMC=n
+    extra_args:
+      - SHIELD=mikroe_flash_5_click
+      - DTC_OVERLAY_FILE="./boards/mikroe_flash_5_click.overlay"
+    platform_allow:
+      - frdm_mcxn947/mcxn947/cpu0

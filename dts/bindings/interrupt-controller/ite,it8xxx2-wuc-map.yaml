@@ -1,0 +1,13 @@
+# Copyright 2022 ITE Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE Wake-Up Controller (WUC) mapping child node
+
+compatible: "ite,it8xxx2-wuc-map"
+
+child-binding:
+  description: Child node to present the mapping between input of WUC and its source device
+  properties:
+    wucs:
+      type: phandle-array
+      required: true

@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2025 Intel Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+
+#define DT_DRAM_SIZE            DT_SIZE_M(2048)
+
+#include <intel/wildcat_lake.dtsi>
+
+/ {
+	model = "intel_wcl_crb";
+	compatible = "intel,wildcat-lake-crb";
+
+	chosen {
+		zephyr,sram = &dram0;
+		zephyr,console = &uart_legacy;
+		zephyr,shell-uart = &uart_legacy;
+	};
+
+	aliases {
+		watchdog0 = &tco_wdt;
+		rtc = &rtc;
+		i2c-0 = &i2c0;
+		pwm-test = &pwm0;
+	};
+};
+
+&uart_legacy {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&smbus0 {
+	status = "okay";
+};
+
+&tco_wdt {
+	status = "okay";
+};
+
+&pwm0 {
+	status = "okay";
+};
+
+&hpet {
+	status = "okay";
+};
+
+&tgpio {
+	status = "okay";
+};

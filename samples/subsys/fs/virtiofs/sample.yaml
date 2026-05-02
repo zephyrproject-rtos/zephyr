@@ -1,0 +1,10 @@
+sample:
+  name: virtio filesystem sample
+common:
+  tags:
+    - filesystem
+    - virtio
+tests:
+  sample.filesystem.virtiofs:
+    build_only: true
+    filter: CONFIG_DT_HAS_VIRTIO_PCI_ENABLED

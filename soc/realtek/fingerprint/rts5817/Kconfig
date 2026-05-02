@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_RTS5817
+	select ARM
+	select CPU_CORTEX_M33
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select CACHE_MANAGEMENT
+	select ARMV8_M_DSP
+	select INIT_ARCH_HW_AT_BOOT
+	select XIP
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
+	select SOC_EARLY_INIT_HOOK

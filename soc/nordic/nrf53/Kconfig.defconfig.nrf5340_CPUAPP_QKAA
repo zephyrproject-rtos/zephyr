@@ -1,0 +1,25 @@
+# Nordic Semiconductor nRF5340 Application MCU
+
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF5340_CPUAPP_QKAA
+
+config NUM_IRQS
+	default 69
+
+config IEEE802154_NRF5
+	default IEEE802154
+
+config HEAP_MEM_POOL_ADD_SIZE_SOC
+	def_int 4096
+	depends on NRF_802154_SER_HOST
+
+if IPC_SERVICE_BACKEND_RPMSG
+
+config IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET
+	default y
+
+endif # IPC_SERVICE_BACKEND_RPMSG
+
+endif # SOC_NRF5340_CPUAPP_QKAA

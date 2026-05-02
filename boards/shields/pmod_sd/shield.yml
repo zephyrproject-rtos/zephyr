@@ -1,0 +1,6 @@
+shield:
+  name: pmod_sd
+  full_name: Pmod SD Card Shield
+  vendor: digilent
+  supported_features:
+    - sd

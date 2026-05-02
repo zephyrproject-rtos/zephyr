@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_XLNX_ZYNQMP
+	bool "Xilinx ZynqMP pin controller driver"
+	default y
+	depends on DT_HAS_XLNX_PINCTRL_ZYNQMP_ENABLED
+	help
+	  Enable the Xilinx ZynqMP processor system MIO pin controller driver.

@@ -1,0 +1,11 @@
+# Synopsys GPIO via CREG (Control REGisters) driver
+
+# Copyright (c) 2021 Synopsys
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_SNPS_CREG
+	bool "SNPS CREG GPIO"
+	default y
+	depends on DT_HAS_SNPS_CREG_GPIO_ENABLED
+	help
+	  Enable driver for SNPS CREG GPIO.

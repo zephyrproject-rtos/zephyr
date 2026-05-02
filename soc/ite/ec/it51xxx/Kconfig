@@ -1,0 +1,74 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_IT51XXX
+	select HAS_PM
+	select ARCH_HAS_CUSTOM_CPU_IDLE
+	select ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
+	select SOC_PREP_HOOK
+
+if SOC_SERIES_IT51XXX
+
+config SOC_IT51XXX
+	select RISCV
+	select FLASH
+	imply XIP
+
+config SOC_IT51XXX_CPU_IDLE_GATING
+	bool
+	help
+	  This option determines whether the entering CPU idle mode can be
+	  gated by individual drivers. When this option is disabled, CPU idle
+	  mode is always permitted.
+
+config SOC_IT51XXX_USE_ILM
+	bool
+	default y
+	help
+	  If enabled, Instruction Local Memory (ILM) will be configured to execute
+	  code placed in the .__ram_code section out of RAM. This consumes RAM in
+	  blocks of 4 kilobytes, but performance of code in ILM is much more
+	  predictable than executing from Flash directly, and some code (such as code
+	  that writes to the internal Flash) must execute out of RAM.
+
+config SOC_IT51XXX_SHA256_HW_ACCELERATE
+	bool "HW SHA256 calculation"
+	help
+	  IT51XXX HW support sha256 calculation, and its calculation is faster than FW.
+
+config SOC_IT515XX_SHA256_DLM_OFFSET
+	hex
+	default 0x03E000
+	depends on SOC_IT51XXX_SHA256_HW_ACCELERATE
+	help
+	  Due to the hardware requirements of the IT515XX, the SHA-256 data must be
+	  placed within the specific address range (0x83E000 to 0x83EFFF by default).
+
+config ILM_MAX_SIZE
+	int "ILM Size in kB"
+	default 4
+
+config SOC_IT51XXX_SIGNATURE_FLAG
+	hex "Hardware mirror signature flag"
+	range 0x0 0xFF
+	default 0xB4
+	help
+	  Hardware mirror signature flag.
+
+config SOC_IT51XXX_CMP_RANGE_ADDR
+	hex "Comparison range address"
+	range 0x0 0xFF
+	default 0xAA
+	help
+	  Specifies the comparison range address [17:10] between e-flash and SPI
+	  flash. When bit[5] of SOC_IT51XXX_SIGNATURE_FLAG is set (1'b1), this
+	  option must be 0xAA.
+
+config SOC_IT51XXX_SIGNATURE_DATA_EXTENSION
+	bool "Custom signature extension"
+	help
+	  Enable project-specific signature extension data appended to the vector
+	  table. When enabled, signature_custom.S is included into the SoC vector
+	  layout. The custom signature extension starts at offset 0x50.
+
+endif # SOC_SERIES_IT51XXX

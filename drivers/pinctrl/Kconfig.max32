@@ -1,0 +1,9 @@
+# Copyright (c) 2023-2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_MAX32
+	bool "Analog Devices MAX32 MCUs pin controller driver"
+	default y
+	depends on DT_HAS_ADI_MAX32_PINCTRL_ENABLED
+	help
+	  Pin controller driver support for max32 SoC series

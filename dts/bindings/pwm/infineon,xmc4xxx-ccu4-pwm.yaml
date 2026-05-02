@@ -1,0 +1,84 @@
+# Copyright (c) 2023 SLB
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon XMC4XXX PWM Capture Compare Unit 4 (CCU4) module
+
+  The are four CCU4 modules with dts node labels:
+  pwm_ccu40, pwm_ccu41, pwm_ccu42, pwm_ccu43.
+  Each module has four slices and each slice has one channel.
+  A channel is connected to a particular gpio pin, which are defined
+  using pinctrl in:
+  dts/arm/infineon/xmc4xxx_xxx-pinctrl.dtsi
+
+  The CCU4 modules uses the CCU clock source. Each slice applies a separate
+  prescalar which divides the clock.
+
+  Device tree example:
+  A node can define a 'pwm' field, usually referenced in a 'pwms'
+  property, where the entries include the PWM module phandle,
+  channel number, pulse period (in nanoseconds or set using
+  PWM_XX() macros), and a channela
+  flag (PWM_POLARITY_NORMAL/PWM_POLARITY_INVERTED).
+
+  The pwm ccu4 node must define the slice-prescaler values and the pinctrl nodes:
+  &pwm_ccu40 {
+      slice-prescaler = <15 15 15 15>;
+      pinctrl-0 = <&pwm_out_p1_1_ccu40_ch2>;
+      pinctrl-names = "default";
+  };
+
+  Another node can reference the PWM as follows:
+  &test_node {
+     ...
+     pwms = <&pwm_ccu40 0 PWM_SEC(1) PWM_POLARITY_NORMAL>;
+     ...
+  };
+
+  The user must also explicitly set pinctrl properties.
+  The pin should be configured with drive-push-pull bool option and hwctrl should be set
+  to disabled. The drive-strength field can be set to any of the supported values:
+  &pwm_out_p1_1_ccu40_ch2 {
+      drive-strength = "strong-medium-edge";
+      drive-push-pull;
+      hwctrl = "disabled";
+  };
+
+  The CCU4 pinctrl nodes have a node labels in the format
+  pwm_out_p{PORT}_{PIN}_ccu4{MODULE_IDX}_ch{CHANNEL_IDX}, where MODULE_IDX and
+  CHANNEL_IDX refers to specific pwm_ccu4x module and channel, respectively.
+  PORT/PIN pair defines what gpio the channel connects to.
+
+compatible: "infineon,xmc4xxx-ccu4-pwm"
+
+include:
+  - name: base.yaml
+  - name: pwm-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  slice-prescaler:
+    type: array
+    required: true
+    description: |
+      Defines the clock divider for each channel.
+      The entry in the array will divide CCU clock by (2 << value).
+      The range for the prescaler values is [0, 15].
+      Reducing prescaler value will improve resolution but decrease the maximum period.
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

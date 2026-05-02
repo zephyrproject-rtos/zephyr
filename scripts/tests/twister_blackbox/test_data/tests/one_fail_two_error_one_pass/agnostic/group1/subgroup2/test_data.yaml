@@ -1,0 +1,11 @@
+tests:
+  one_fail_two_error_one_pass.agnostic.group1.subgroup2:
+    platform_allow:
+      - native_sim
+      - qemu_x86
+      - qemu_x86_64
+    integration_platforms:
+      - native_sim
+    tags:
+      - agnostic
+      - subgrouped

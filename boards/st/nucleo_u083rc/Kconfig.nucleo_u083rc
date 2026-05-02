@@ -1,0 +1,5 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_U083RC
+	select SOC_STM32U083XX

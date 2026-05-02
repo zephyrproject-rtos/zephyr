@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright (c) 2025 Ezurio LLC
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: bl54l15u_dvk/nrf54l15/cpuflpr
+name: BL54L15u-DVK-nRF54L15-Fast-Lightweight-Peripheral-Processor
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+sysbuild: true
+ram: 96
+flash: 96
+supported:
+  - counter
+  - gpio
+  - i2c
+  - spi
+  - watchdog

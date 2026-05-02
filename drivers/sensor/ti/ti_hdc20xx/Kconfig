@@ -1,0 +1,14 @@
+# TI_HDC20XX temperature and humidity sensor configuration options
+
+# Copyright (c) 2021 Aurelien Jarno
+# SPDX-License-Identifier: Apache-2.0
+
+config TI_HDC20XX
+	bool "Texas Instruments HDC20XX Temperature and Humidity Sensor"
+	default y
+	depends on DT_HAS_TI_HDC2010_ENABLED || DT_HAS_TI_HDC2021_ENABLED || \
+		   DT_HAS_TI_HDC2022_ENABLED || DT_HAS_TI_HDC2080_ENABLED
+	select I2C
+	help
+	  Enable driver for TI HDC20XX temperature and humidity sensors
+	  (e.g. HDC2010, HDC2021, HDC2022, HDC2080).

@@ -1,0 +1,18 @@
+# Copyright 2025 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_BRIDGE
+	bool "UART bridge"
+	default y
+	depends on DT_HAS_ZEPHYR_UART_BRIDGE_ENABLED
+	select UART_INTERRUPT_DRIVEN
+	select RING_BUFFER
+	help
+	  Enable the UART bridge driver.
+
+config UART_BRIDGE_BUF_SIZE
+	int "UART bridge buffer size"
+	default 256
+	depends on UART_BRIDGE
+	help
+	  Size of the bridge ring buffers in bytes.

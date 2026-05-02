@@ -1,0 +1,20 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP SCU-managed power domain
+
+compatible: "nxp,scu-pd"
+
+include: power-domain.yaml
+
+properties:
+  nxp,resource-id:
+    type: int
+    required: true
+    description:
+      Number used by the firmware running on the SCU to identify
+      the resource on which the PD-related operations are to be
+      performed.
+
+  "#power-domain-cells":
+    const: 0

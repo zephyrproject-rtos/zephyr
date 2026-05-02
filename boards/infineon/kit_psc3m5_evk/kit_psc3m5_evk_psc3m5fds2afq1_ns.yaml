@@ -1,0 +1,17 @@
+#
+# Copyright (c) 2025 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: kit_psc3m5_evk
+name: The Infineon PSOC™ Control C3M5 Evaluation Kit (KIT_PSC3M5_EVK)
+type: mcu
+arch: arm
+ram: 64
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+vendor: infineon

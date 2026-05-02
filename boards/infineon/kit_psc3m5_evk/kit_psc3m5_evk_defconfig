@@ -1,0 +1,7 @@
+#
+# Copyright (c) 2025 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+CONFIG_TRUSTED_EXECUTION_SECURE=y
+CONFIG_ARM_TRUSTZONE_M=y

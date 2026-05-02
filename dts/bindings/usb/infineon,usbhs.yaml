@@ -1,0 +1,72 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon USBHS.  This binding describes additional information required to
+  use the Synopsys DesignWare OTG USB 2.0 controller IP on Infineon boards.  In
+  the case of this IP, the Peri MMIO group information is required.
+
+compatible: "infineon,usbhs"
+
+include: ["snps,dwc2.yaml"]
+
+properties:
+  mmio-peri-inst:
+    type: int
+    required: true
+    description: |
+      Peri MMIO instance number that clocks the USB
+
+  mmio-peri-group:
+    type: int
+    required: true
+    description: |
+      Peri MMIO group number that clocks the USB
+
+  mmio-reg-bit-pos:
+    type: int
+    required: true
+    description: |
+      The USB's bit position in the Peri group register
+
+  mmio-peri-hf-src:
+    type: int
+    required: true
+    description: |
+      The Peri MMIO group's root CLK_HF
+
+  mmio-peri-div:
+    type: int
+    required: true
+    description: |
+      The Peri MMIO clock divider value
+
+examples:
+  - |
+    /* The below example shows using Peri 1 MMIO 3, sourced from CLK_HF1 and using
+     * a divider of 3.  Peri MMIO dividers also require a specific target interconnect
+     * bit mask, a bit whose position is stored in mmio-peri-bit-pos.  This bit value
+     * must come from some Infineon documentation, e.g. a TRM or through working with
+     * the Infineon Device Configurator tool.
+     * The only mmio-peri value that can be configured is mmio-peri-div.  The other
+     * four values are hardwired on the device.
+     */
+
+    zephyr_udc0: usbhs@cccccccc {
+      compatible = "infineon,usbhs", "snps,dwc2";
+      reg = <0xcccccccc 0x40100>;
+      interrupts = <174 4>, <175 4>;
+      num-in-eps = <9>;
+      num-out-eps = <9>;
+      ghwcfg1 = <0x00000000>;
+      ghwcfg2 = <0x228fe052>;
+      ghwcfg4 = <0xe2103a20>;
+      mmio-peri-inst = <1>;
+      mmio-peri-group = <3>;
+      mmio-reg-bit-pos = <5>;
+      mmio-peri-hf-src = <1>;
+      mmio-peri-div = <3>;
+      status = "okay";
+    };

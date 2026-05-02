@@ -1,0 +1,22 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Device tree overlay to add 2 more CPUs to QEMU Cortex-A53 SMP
+ * for testing 4-CPU configurations
+ */
+
+/ {
+	cpus {
+		cpu@2 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <2>;
+		};
+
+		cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <3>;
+		};
+	};
+};

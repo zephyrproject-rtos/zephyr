@@ -1,0 +1,8 @@
+# PAN1783 EVB board configuration
+
+# Copyright (c) 2023 Panasonic Industrial Devices Europe GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PAN1783A_EVB
+	select SOC_NRF5340_CPUAPP_QKAA if BOARD_PAN1783A_EVB_NRF5340_CPUAPP
+	select SOC_NRF5340_CPUNET_QKAA if BOARD_PAN1783A_EVB_NRF5340_CPUNET

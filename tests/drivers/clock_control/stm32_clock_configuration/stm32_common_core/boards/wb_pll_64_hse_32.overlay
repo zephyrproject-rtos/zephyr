@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay performs configuration from clean sheet.
+ * It is assumed that it is applied after clear_clocks.overlay file.
+ * It applies to the stm32wb
+ */
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(32)>; /* X1 32MHz oscillator */
+	status = "okay";
+};
+
+&pll {
+	div-m = <2>;
+	mul-n = <8>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(64)>;
+};

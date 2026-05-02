@@ -1,0 +1,59 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32 Boot and security control (BSEC)
+
+description: |
+  The boot and security control (BSEC) peripheral manages the accesses to an
+  embedded one time programmable (OTP) array of fuses. Those fuses are used to
+  store on-chip, non-volatile data like boot and security parameters.
+  Embedded non-volatile secrets are stored in BSEC upper area that is only
+  accessible while BSEC is operating in its BSEC-closed state. When the BSEC
+  state is BSEC-open, those non-volatile secrets are permanently hidden.
+
+  Configuration example at SoC level:
+
+  bsec: efuse@56009000 {
+    compatible = "st,stm32-bsec";
+    reg = <0x56009000 0x1000>;
+    st,upper-fuse-limit = <256>;
+
+    nvmem-layout {
+      compatible = "fixed-layout";
+      #address-cells = <1>;
+      #size-cells = <1>;
+
+      bootrom_cfg1: bootrom-cfg1@20 {
+        reg = <0x20 0x4>;
+        #nvmem-cell-cells = <0>;
+      };
+
+      mac_address0: mac-address@2a4 {
+        reg = <0x2a4 0x6>;
+        #nvmem-cell-cells = <0>;
+      };
+    };
+  };
+
+  Configuration example at board level:
+
+  &bsec {
+    nvmem-layout {
+      mac_address2: mac-address@2fc {
+        reg = <0x2fc 0x6>;
+        #nvmem-cell-cells = <0>;
+      };
+    };
+  };
+
+compatible: "st,stm32-bsec"
+
+include: base.yaml
+
+properties:
+  st,upper-fuse-limit:
+    type: int
+    required: true
+    description: |
+      Start fuse (32bit OTP word) index of the upper fuse region of the BSEC.
+      This region requires a particular SoC state to be accessed.

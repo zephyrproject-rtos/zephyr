@@ -1,0 +1,16 @@
+common:
+  tags:
+    - arm64
+    - pacbti
+    - security
+  timeout: 30
+  filter: CONFIG_ARMV9_A
+tests:
+  arch.arm64.pacbti:
+    integration_platforms:
+      - fvp_base_revc_2xaem/v9a
+  arch.arm64.pacbti.user:
+    integration_platforms:
+      - fvp_base_revc_2xaem/v9a
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y

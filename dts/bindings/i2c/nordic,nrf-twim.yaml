@@ -1,0 +1,61 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic nRF family TWIM (TWI master with EasyDMA).
+
+  This binding can be used for nodes which can represent TWIM
+  peripherals. A single SoC peripheral ID is often associated with
+  multiple I2C peripherals, like a TWIM and a TWIS. You can choose
+  TWIM by setting the node's "compatible" to "nordic,nrf-twim"
+  and "status" to "okay", e.g. using an overlay file like this one:
+
+      /* This is for TWIM0 -- change to "i2c1" for TWIM1, etc. */
+      &i2c0 {
+              compatible = "nordic,nrf-twim";
+              status = "okay";
+              /* other property settings can go here */
+      };
+
+  This works on any supported SoC, for all TWIM instances.
+
+  Note: on nRF51 SoCs, use the "nordic,nrf-twi" binding instead.
+
+compatible: "nordic,nrf-twim"
+
+include: ["nordic,nrf-twi-common.yaml", "memory-region.yaml"]
+
+properties:
+  zephyr,concat-buf-size:
+    type: int
+    default: 16
+    description: |
+        Size of a concatenation buffer that the driver is to use for merging
+        multiple same direction I2C messages that have no RESTART or STOP
+        flag between them (see e.g. the i2c_burst_write() function) into one
+        transfer on the bus.
+
+        This property must be provided when interacting with devices like
+        the SSD1306 display that cannot tolerate a repeated start and
+        address appearing on the bus between message fragments. For many
+        devices a concatenation buffer is not necessary.
+
+  zephyr,flash-buf-max-size:
+    type: int
+    default: 16
+    description: |
+        TWIM peripherals cannot perform write transactions from buffers
+        located in flash. If such buffers are expected to be used with
+        a given instance of the TWIM peripheral, this property must be
+        set to the maximum possible size of those buffers, so that the
+        driver can reserve enough space in RAM to copy there the contents
+        of particular buffers before requesting the actual transfers.
+
+        If this property is not set to a value adequate for a given
+        application, write transactions may fail for buffers that are
+        located in flash, what in turn may cause certain components,
+        like the DPS310 sensor driver, to not work.
+
+        It is recommended to use the same value for this property and for
+        the zephyr,concat-buf-size one, as both these buffering mechanisms
+        can utilize the same space in RAM.

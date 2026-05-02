@@ -1,0 +1,7 @@
+# nRF52 ADAFRUIT FEATHER board configuration
+
+# Copyright (c) 2018 LEDCity AG.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF52_ADAFRUIT_FEATHER
+	select SOC_NRF52832_QFAA

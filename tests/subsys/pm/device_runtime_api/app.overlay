@@ -1,0 +1,7 @@
+/ {
+	test_dev: test_dev {
+		compatible = "test-device-pm";
+		status = "okay";
+		zephyr,pm-device-runtime-auto;
+	};
+};

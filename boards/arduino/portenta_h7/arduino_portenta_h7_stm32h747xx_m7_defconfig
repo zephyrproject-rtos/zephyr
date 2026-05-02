@@ -1,0 +1,20 @@
+# Copyright (c) 2022 Benjamin Björnsson <benjamin.bjornsson@gmail.com>.
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Use zephyr,code-partition as flash offset
+CONFIG_USE_DT_CODE_PARTITION=y
+
+# On M7, USB CDC ACM is used as the UART console backend by default
+
+# Enable regulator
+CONFIG_REGULATOR=y
+CONFIG_REGULATOR_FIXED=y

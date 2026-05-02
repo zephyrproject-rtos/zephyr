@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pwmleds {
+	status = "okay";
+};
+
+&timers2 {
+	status = "okay";
+};
+
+&pwm2 {
+	status = "okay";
+};

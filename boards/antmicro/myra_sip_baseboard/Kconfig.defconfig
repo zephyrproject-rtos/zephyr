@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MYRA_SIP_BASEBOARD
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_MYRA_SIP_BASEBOARD

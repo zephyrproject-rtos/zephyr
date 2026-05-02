@@ -1,0 +1,94 @@
+# Copyright 2017-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_NXP_IMXRT
+
+# Source series Kconfig files first, so SOCs
+# can override the defaults given here
+rsource "*/Kconfig.defconfig"
+
+if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
+
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+	default 0x2000 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 7500000
+	depends on LOG_BACKEND_SWO
+
+# set the tick per sec as a divider of the GPT clock source
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4096 if MCUX_GPT_TIMER
+
+DT_SYSCLK_PATH := $(dt_nodelabel_path,sysclk)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(DT_SYSCLK_PATH),clock-frequency) if SOC_SERIES_IMXRT10XX && CORTEX_M_SYSTICK
+	default 32768 if MCUX_GPT_TIMER
+
+# Disable systick if using MCUX_GPT_TIMER, as they will conflict
+config CORTEX_M_SYSTICK
+	default n if MCUX_GPT_TIMER
+
+config PM_MCUX_GPC
+	default y
+	depends on SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
+
+if SOC_SERIES_IMXRT10XX && PM
+
+config CODE_DATA_RELOCATION
+	default y
+
+config PM_MCUX_DCDC
+	default y if SOC_SERIES_IMXRT10XX
+
+config PM_MCUX_PMU
+	default y if SOC_SERIES_IMXRT10XX
+
+endif # SOC_SERIES_IMXRT10XX && PM
+
+if ETH_NXP_ENET || ETH_NXP_IMX_NETC
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 1560
+
+endif # ETH_NXP_ENET
+
+DT_CHOSEN_Z_DTCM := zephyr,dtcm
+
+choice SEGGER_RTT_SECTION
+	default SEGGER_RTT_SECTION_DTCM if $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
+	depends on USE_SEGGER_RTT
+endchoice
+
+choice SEGGER_SYSVIEW_SECTION
+	default SEGGER_SYSVIEW_SECTION_DTCM if $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
+	depends on SEGGER_SYSTEMVIEW
+endchoice
+
+if MBEDTLS
+#
+# MBEDTLS CTR_DRBG code path needs extra stack space for initialization than
+# what the ztest_thread_stack defaults to.
+#
+config TEST_EXTRA_STACK_SIZE
+	default 1024
+endif # MBEDTLS
+
+if CPU_CORTEX_M7
+# defaults specific for the M7 core
+
+# Enable cache management features when using M7 core, since these parts
+# have L1 instruction and data caches that should be enabled at boot
+config CACHE_MANAGEMENT
+	default y
+
+config FLASH_MCUX_FLEXSPI_XIP_MEM
+	default "ITCM"
+
+endif # CPU_CORTEX_M7
+
+endif # SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
+
+endif # SOC_FAMILY_NXP_IMXRT

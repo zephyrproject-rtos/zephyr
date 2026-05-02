@@ -1,0 +1,6 @@
+board:
+  name: frdm_ke16z
+  full_name: FRDM-KE16Z
+  vendor: nxp
+  socs:
+    - name: mke16z4

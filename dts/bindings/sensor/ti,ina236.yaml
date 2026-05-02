@@ -1,0 +1,21 @@
+#
+# Copyright 2024 Tomas Jurena
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    TI INA236 Bidirectional Current and Power Monitor.
+    The <zephyr/dt-bindings/sensor/ina230.h> file should be included in the
+    DeviceTree and it provides macro that can be used for initializing the
+    configuration register.
+
+compatible: "ti,ina236"
+
+include: ti,ina230.yaml
+
+properties:
+  high-precision:
+    type: boolean
+    description: |
+      Enable high precision mode (4x the resolution).

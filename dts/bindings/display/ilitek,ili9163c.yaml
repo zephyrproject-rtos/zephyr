@@ -1,0 +1,163 @@
+# Copyright (c) 2025 CATIE
+# SPDX-License-Identifier: Apache-2.0
+
+title: Ilitek ILI9163C display controller
+
+description: |
+  The Ilitek ILI9163C is a 262K colors TFT-LCD controller
+  with a maximum 240RGBx320 resolution.
+
+compatible: "ilitek,ili9163c"
+
+include: ilitek,ili9xxx-common.yaml
+
+properties:
+  gamset:
+    type: uint8-array
+    default: [0x01]
+    description: |
+      Select the desired Gamma curve for the current display.
+      A maximum of 4 fixed gamma curves can be selected.
+      - 0x01: Gamma curve 1 (default)
+      - 0x02: Gamma curve 2
+      - 0x04: Gamma curve 3
+      - 0x08: Gamma curve 4
+
+  frmctr1:
+    type: uint8-array
+    default: [0x0E, 0x14]
+    description: |
+      Frame rate control (in normal mode / full colors) (FRMCTR1) register value.
+      The driver default pair provides a balanced refresh configuration
+      that avoids visible flicker.
+
+  gamarsel:
+    type: uint8-array
+    default: [0x00]
+    description: |
+      Gamma adjustment register value.
+      - 0x00: No gamma adjustment (default)
+      - 0x01: Apply positive and negative gamma adjustments (pgamctrl and ngamctrl).
+
+  pgamctrl:
+    type: uint8-array
+    default: [
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00
+    ]
+    description: |
+      Positive gamma correction (PGAMCTRL) register values.
+      The driver default values are set to zero to provide a neutral starting
+      point for the positive gamma curve.
+
+  ngamctrl:
+    type: uint8-array
+    default: [
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00,
+      0x00
+    ]
+    description: |
+      Negative gamma correction (NGAMCTRL) register values.
+      The driver default values are set to zero to provide a neutral starting
+      point for the negative gamma curve.
+
+  pwctrl1:
+    type: uint8-array
+    default: [0x0A, 0x05]
+    description: |
+      Power control 1 - GVDD and voltage.
+      Default values: 0x0A sets GVDD to 4.8V, and 0x05 sets the voltage to 2.5V.
+
+  pwctrl2:
+    type: uint8-array
+    default: [0x05]
+    description: |
+      Power control 2 - AVDD, VCL, VGH and VGL supply power level.
+      Default value: 0x05 sets VGH to 3×AVDD and VGL to -3×AVDD.
+
+  pwctrl3:
+    type: string
+    default: "Least"
+    description: |
+      Power control 3 - amount of current in Operation amplifier.
+      The driver default `Least` is set to reduce power
+      consumption while remaining sufficient for typical operation.
+    enum:
+      - "Least"
+      - "Small"
+      - "Medium Low"
+      - "Medium"
+      - "Medium High"
+      - "Large"
+
+  pwctrl4:
+    type: string
+    default: "Least"
+    description: |
+      Power control 4 - amount of current in Operational amplifier in Idle.
+      The driver default `Least` is set to reduce power
+      consumption while remaining sufficient for typical operation.
+    enum:
+      - "Least"
+      - "Small"
+      - "Medium Low"
+      - "Medium"
+      - "Medium High"
+      - "Large"
+
+  pwctrl5:
+    type: string
+    default: "Small"
+    description: |
+      Power control 5 - amount of current in Operational amplifier in Partial mode.
+      The driver default `Small` keeps partial-mode consumption low while still
+      supporting normal partial refresh behavior.
+    enum:
+      - "Least"
+      - "Small"
+      - "Medium Low"
+      - "Medium"
+      - "Medium High"
+      - "Large"
+
+  vmctrl1:
+    type: uint8-array
+    default: [0x43, 0x4D]
+    description: |
+      VCOM control 1 - Set VCOMH Voltage.
+      The driver default values are set to provide a VCOMH voltage that is
+      compatible with a wide range of panels.
+
+  vmctrl2:
+    type: uint8-array
+    default: [0x40]
+    description: |
+      VCOM control 2 - Set VCOMH Voltage.
+      The driver default values are set to keep VCOM tuning centered around
+      a stable, broadly compatible setting.

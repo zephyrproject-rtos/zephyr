@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config CHARGER_SY6974B
+	bool "Silergy SY6974B battery charger"
+	default y
+	depends on DT_HAS_SILERGY_SY6974B_ENABLED
+	select I2C
+	help
+	  Enable the I2C driver for the Silergy SY6974B 3A single-cell
+	  Li-Ion switching battery charger.

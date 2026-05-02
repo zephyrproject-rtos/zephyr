@@ -1,0 +1,49 @@
+# OpenThread driver configuration options
+
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_L2_OPENTHREAD
+	bool "OpenThread L2"
+	depends on NETWORKING
+	select OPENTHREAD
+
+	select NET_L2_PHY_IEEE802154
+	imply NET_UDP
+	imply NET_IPV6
+	imply NET_CONFIG_NEED_IPV6
+	help
+	  Use Zephyr's implementation of the OpenThread L2.
+
+if NET_L2_OPENTHREAD
+
+menu "Logging"
+
+menuconfig OPENTHREAD_L2_DEBUG
+	bool "OpenThread L2 log support"
+	help
+	  This option enables log support for OpenThread.
+
+if OPENTHREAD_L2_DEBUG
+
+config OPENTHREAD_L2_DEBUG_DUMP_15_4
+	bool "Dump 802.15.4 packets"
+	help
+	  This option enables dumping of 802.15.4 packets.
+
+config OPENTHREAD_L2_DEBUG_DUMP_IPV6
+	bool "Dump IPv6 packets"
+	help
+	  This option enables dumping of IPv6 packets.
+
+endif # OPENTHREAD_L2_DEBUG
+
+module = OPENTHREAD_L2
+module-dep = NET_LOG
+module-str = Log level for OpenThread driver
+module-help = Enables OpenThread driver to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endmenu # "Logging"
+
+endif # NET_L2_OPENTHREAD

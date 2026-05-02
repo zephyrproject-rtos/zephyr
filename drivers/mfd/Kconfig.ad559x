@@ -1,0 +1,25 @@
+# Copyright (c) 2023 Grinn
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MFD_AD559X
+	bool "Analog AD559x I2C/SPI configurable ADC/DAC/GPIO chip"
+	default y
+	depends on DT_HAS_ADI_AD559X_ENABLED
+	help
+	  Enable driver for Analog AD5592 or Analog AD5593.
+
+if MFD_AD559X
+
+config MFD_AD559X_BUS_I2C
+	bool "Analog AD559x I2C bus support"
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_ADI_AD559X),i2c)
+	depends on I2C
+
+config MFD_AD559X_BUS_SPI
+	bool "Analog AD559x SPI bus support"
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_ADI_AD559X),spi)
+	depends on SPI
+
+endif # MFD_AD559X

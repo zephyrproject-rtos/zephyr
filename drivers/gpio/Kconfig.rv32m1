@@ -1,0 +1,11 @@
+# RV32M1 GPIO configuration options
+
+# Copyright (c) 2018 Foundries.io
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_RV32M1
+	bool "RV32M1 GPIO driver"
+	default y
+	depends on DT_HAS_OPENISA_RV32M1_GPIO_ENABLED
+	help
+	  Enable the RV32M1 GPIO driver.

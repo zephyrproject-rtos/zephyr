@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2025 PHYTEC America LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &zephyr_udc0;
+
+zephyr_udc0: &usb2 {};

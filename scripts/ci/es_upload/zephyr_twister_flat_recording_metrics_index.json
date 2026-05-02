@@ -1,0 +1,150 @@
+{
+    "properties": {
+        "environment": {
+            "properties": {
+                "commit_date": {
+                    "type": "date"
+                },
+                "os": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                },
+                "run_branch": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                },
+                "run_workflow": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                },
+                "run_id": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                },
+                "run_attempt": {
+                    "type": "integer"
+                },
+                "run_date": {
+                    "type": "date"
+                },
+                "toolchain": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                },
+                "zephyr_version": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                },
+                "options": {
+                    "type": "object",
+                    "enabled": true,
+                    "dynamic": true,
+                    "subobjects": true
+                }
+            }
+        },
+        "name": {
+            "type": "keyword",
+            "ignore_above": 256
+        },
+        "component": {
+            "type": "keyword",
+            "ignore_above": 256
+        },
+        "sub_component": {
+            "type": "keyword",
+            "ignore_above": 256
+        },
+        "arch": {
+            "type": "keyword",
+            "ignore_above": 256
+        },
+        "platform": {
+            "type": "keyword",
+            "ignore_above": 256
+        },
+        "path": {
+            "type": "keyword",
+            "ignore_above": 256
+        },
+        "run_id": {
+            "type": "keyword",
+            "ignore_above": 256
+        },
+        "runnable": {
+            "type": "boolean"
+        },
+        "used_ram": {
+            "type": "unsigned_long"
+        },
+        "used_rom": {
+            "type": "unsigned_long"
+        },
+        "available_ram": {
+            "type": "unsigned_long"
+        },
+        "available_rom": {
+            "type": "unsigned_long"
+        },
+        "retries": {
+            "type": "integer"
+        },
+        "dut": {
+            "type": "keyword",
+            "ignore_above": 256
+        },
+        "status": {
+            "type": "keyword",
+            "ignore_above": 256
+        },
+        "execution_time": {
+            "type": "float"
+        },
+        "build_time": {
+            "type": "float"
+        },
+        "reason": {
+            "type": "text",
+            "fields": {
+                "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                }
+           }
+        },
+        "log": {
+            "type": "text"
+        },
+        "testcases": {
+            "type": "nested",
+            "properties": {
+                "execution_time": {
+                    "type": "float"
+                },
+                "identifier": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                },
+                "reason": {
+                    "type": "text",
+                    "fields": {
+                        "keyword": {
+                            "type": "keyword",
+                            "ignore_above": 256
+                        }
+                    }
+                },
+                "status": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                }
+            }
+        },
+        "recording_metrics": {
+            "type": "object",
+            "enabled": true,
+            "dynamic": true,
+            "subobjects": true
+        }
+    }
+}

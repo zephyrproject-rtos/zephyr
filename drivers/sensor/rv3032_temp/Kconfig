@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Baylibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config RV3032_TEMP
+	bool "RV3032 Temperature Sensor"
+	default y
+	depends on DT_HAS_MICROCRYSTAL_RV3032_TEMP_ENABLED
+	select MFD_RV3032
+	help
+	  Enable driver for temperature sensor on rv-3032-c7 RTC.
+
+config RV3032_TEMP_TRIGGER
+	bool "Trigger support"
+	depends on RV3032_TEMP
+	default y
+	help
+	  Enable trigger support for the RV3032 TEMP.
+
+config TEMP_MICROCRYSTAL_RV3032_INIT_PRIORITY
+	int "Init priority of rc3032c7 Temperature Sensor"
+	depends on RV3032_TEMP
+	default 50
+	help
+	  Initialization priority for the Microcrystal rv3032c7 Sensor driver.

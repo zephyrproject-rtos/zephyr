@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+
+/ {
+	chosen {
+		zephyr,camera = &arducam_ffc_40pin_dvp_interface;
+	};
+};
+
+&arducam_ffc_40pin_i2c {
+	status = "okay";
+
+	ov5640: ov5640@3c {
+		compatible = "ovti,ov5640";
+		reg = <0x3c>;
+		reset-gpios = <&arducam_ffc_40pin_connector
+			       ARDUCAM_FFC_40PIN_RESET
+			       GPIO_ACTIVE_LOW>;
+		status = "okay";
+
+		port {
+			ov5640_ep_out: endpoint {
+				remote-endpoint-label = "arducam_ffc_40pin_ep_in";
+				bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
+			};
+		};
+	};
+};
+
+&arducam_ffc_40pin_dvp_interface {
+	status = "okay";
+
+	port {
+		arducam_ffc_40pin_ep_in: endpoint {
+			remote-endpoint-label = "ov5640_ep_out";
+			bus-width = <8>;
+			hsync-active = <1>;
+			vsync-active = <1>;
+			pclk-sample = <1>;
+		};
+	};
+};

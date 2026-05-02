@@ -1,0 +1,6 @@
+shields:
+  - name: max7219_8x8
+    full_name: MAX7219 8x8 Display shield
+    vendor: others
+    supported_features:
+      - display

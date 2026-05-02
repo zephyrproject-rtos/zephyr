@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2025, Jamie McCrae
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+tests:
+  os.mgmt.mpstat:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - nrf52840dk/nrf52840
+    tags:
+      - os_mgmt
+      - mcumgr
+  os.mgmt.mpstat.all_fields:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - nrf52840dk/nrf52840
+    extra_configs:
+      - CONFIG_MCUMGR_GRP_OS_MPSTAT_ONLY_SUPPORTED_STATS=n
+    tags:
+      - os_mgmt
+      - mcumgr

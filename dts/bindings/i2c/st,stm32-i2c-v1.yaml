@@ -1,0 +1,33 @@
+# Copyright (c) 2017 I-SENSE group of ICCS
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 I2C V1 controller
+
+compatible: "st,stm32-i2c-v1"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  scl-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the I2C SCL signal is routed. This is only needed for
+      I2C bus recovery support.
+
+  sda-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the I2C SDA signal is routed. This is only needed for
+      I2C bus recovery support.

@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022 Meta
+
+mainmenu "Strerror test parameters"
+
+source "Kconfig.zephyr"
+
+config MINIMAL_LIBC_DISABLE_STRING_ERROR_TABLE
+	depends on MINIMAL_LIBC
+	bool
+	default y if !MINIMAL_LIBC_STRING_ERROR_TABLE
+	default n if MINIMAL_LIBC_STRING_ERROR_TABLE
+	help
+	  This option is only here to simplify conditional expressions
+	  in test_strerror.c rather than inverting logic for the
+	  global MINIMAL_LIBC_STRING_ERROR_TABLE option.

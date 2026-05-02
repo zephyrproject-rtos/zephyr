@@ -1,0 +1,38 @@
+# Copyright (c) 2025 FoBE Studio
+# SPDX-License-Identifier: Apache-2.0
+
+title: GPIO pins exposed on the FoBE Quill connector
+
+description: |
+    The Quill layout provides two headers, one each along
+    opposite edges of the board.
+    Pin mapping overview:
+     * Left 14-pin header: 11 pins are mapped in this binding.
+     * Right 14-pin header: 12 pins are mapped in this binding.
+
+    This binding provides a nexus mapping for 20 pins where parent pins 14
+    through 19 correspond to A0 through A5, and parent pins 0 through 13
+    correspond as depicted below:
+
+                                  VBUS   -
+                                  3V3    -
+                                  GND    -
+                                  3V3_EN -
+        -  BAT                    REF    -
+        -  RESET                  D2     2
+        -  GND                    D1     1
+        13 D13                    D0     0
+        12 D12                    A5     19
+        11 D11                    A4     18
+        10 D10                    A3     17
+        9  D9                     A2     16
+        8  D8                     A1     15
+        7  D7                     A0     14
+        6  D6
+        5  D5
+        4  D4
+        3  D3
+
+compatible: "fobe,quill-header"
+
+include: [gpio-nexus.yaml, base.yaml]

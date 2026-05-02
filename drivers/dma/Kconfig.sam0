@@ -1,0 +1,11 @@
+# Atmel SAM DMAC configuration options
+
+# Copyright (c) 2018 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_SAM0
+	bool "Atmel SAM0 series DMAC driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM0_DMAC_ENABLED
+	help
+	  DMA driver for Atmel SAM0 series MCUs.

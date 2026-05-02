@@ -1,0 +1,332 @@
+/*
+ * Copyright (c) 2026 Hong Nguyen
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg26/efr32mg26b510f3200im68.dtsi>
+#include <silabs/xg26/clock-hfrcodpll.dtsi>
+#include <silabs/xg26/clock-lfxo.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
+#include "xg26_dk2608a-pinctrl.dtsi"
+
+/ {
+	model = "Silicon Labs EFR32xG26 Dev Kit (xG26-DK2608A)";
+	compatible = "silabs,xg26_dk2608a", "silabs,efr32mg26";
+
+	chosen {
+		zephyr,bt-hci = &bt_hci_silabs;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &usart0;
+		zephyr,flash = &flash0;
+		zephyr,shell-uart = &usart0;
+		zephyr,sram = &sram0;
+		zephyr,uart-pipe = &usart0;
+	};
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdog0;
+		dht0 = &si7021;
+		light-sensor = &veml6035;
+		magn0 = &si7210;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led: led_0 {
+			gpios = <&gpiod 7 GPIO_ACTIVE_LOW>;
+		};
+
+		green_led: led_1 {
+			gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+		};
+
+		blue_led: led_2 {
+			gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: pwm_led_0 {
+			pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "red";
+		};
+
+		green_pwm_led: pwm_led_1 {
+			pwms = <&timer0_pwm 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "green";
+		};
+
+		blue_pwm_led: pwm_led_2 {
+			pwms = <&timer0_pwm 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "blue";
+		};
+	};
+
+	qwiic_connector: stemma-qt-connector {
+		compatible = "stemma-qt-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <0 0 &gpioc 4 0>, /* SCL */
+			   <1 0 &gpioc 5 0>; /* SDA */
+	};
+
+	sensor_enable: gpio_switch_0 {
+		compatible = "regulator-fixed";
+		regulator-boot-on;
+		regulator-name = "sensor_enable";
+		enable-gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+	};
+
+	amic_enable: gpio_switch_1 {
+		compatible = "regulator-fixed";
+		regulator-name = "amic_enable";
+		enable-gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
+	};
+
+	dmic_enable: gpio_switch_2 {
+		compatible = "regulator-fixed";
+		regulator-name = "dmic_enable";
+		enable-gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>;
+	};
+
+	imu_enable: gpio_switch_3 {
+		compatible = "regulator-fixed";
+		regulator-name = "imu_enable";
+		enable-gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+	};
+
+	adc_vref_enable: gpio_switch_4 {
+		compatible = "regulator-fixed";
+		regulator-name = "adc_vref_enable";
+		enable-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+	};
+
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map = <3 0 &gpiob 7 0>,
+			   <4 0 &gpioc 13 0>,
+			   <5 0 &gpiob 8 0>,
+			   <6 0 &gpioc 12 0>,
+			   <8 0 &gpioc 11 0>,
+			   <10 0 &gpioc 10 0>,
+			   <11 0 &gpiod 8 0>,
+			   <12 0 &gpiob 5 0>,
+			   <13 0 &gpiod 9 0>,
+			   <14 0 &gpiob 6 0>,
+			   <15 0 &gpioc 4 0>,
+			   <16 0 &gpioc 5 0>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+	};
+};
+
+&timer0 {
+	status = "okay";
+
+	timer0_pwm: pwm {
+		pinctrl-0 = <&timer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&itm {
+	pinctrl-0 = <&itm_default>;
+	pinctrl-names = "default";
+};
+
+&dcdc {
+	regulator-boot-on;
+	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
+	silabs,pfmx-peak-current-milliamp = <120>;
+	status = "okay";
+};
+
+&hfxo {
+	ctune = <140>;
+	precision = <50>;
+	status = "okay";
+};
+
+&lfxo {
+	ctune = <63>;
+	precision = <50>;
+	status = "okay";
+};
+
+&usart0 {
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&eusart1 {
+	compatible = "silabs,eusart-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	cs-gpios = <&gpioa 7 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&eusart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	mx25r64: mx25r6435f@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		dpd-wakeup-sequence = <30000 20 35000>;
+		has-dpd;
+		jedec-id = [c2 28 17];
+		size = <0x4000000>;
+		spi-max-frequency = <80000000>;
+	};
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	si7021: si7021@40 {
+		compatible = "silabs,si7006";
+		reg = <0x40>;
+		vin-supply = <&sensor_enable>;
+	};
+
+	si7210: si7210@30 {
+		compatible = "silabs,si7210";
+		reg = <0x30>;
+		vin-supply = <&sensor_enable>;
+	};
+
+	veml6035: veml6035@29 {
+		compatible = "vishay,veml7700";
+		reg = <0x29>;
+		vin-supply = <&sensor_enable>;
+	};
+};
+
+&wdog0 {
+	status = "okay";
+};
+
+&gpio {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&sysrtc0 {
+	status = "okay";
+};
+
+&vdac0 {
+	status = "okay";
+};
+
+&vdac1 {
+	status = "okay";
+};
+
+&se {
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+};
+
+&bt_hci_silabs {
+	status = "okay";
+};
+
+&radio {
+	pa-voltage-mv = <1800>;
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserve 48 KiB for the bootloader */
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
+			read-only;
+		};
+
+		/* Reserve 1560 KiB for the application in slot 0 */
+		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0000c000 DT_SIZE_K(1560)>;
+			label = "image-0";
+		};
+
+		/* Reserve 1560 KiB for the application in slot 1 */
+		slot1_partition: partition@192000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00192000 DT_SIZE_K(1560)>;
+			label = "image-1";
+		};
+
+		/* Set 32 KiB of storage at the end of the 3200 KiB of flash */
+		storage_partition: partition@318000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00318000 DT_SIZE_K(32)>;
+			label = "storage";
+		};
+	};
+};

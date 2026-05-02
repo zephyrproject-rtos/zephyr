@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Renesas RA Event Link Controller Option
+
+config RENESAS_RA_ELC
+	bool "Renesas RA Event Link Controller Driver"
+	depends on DT_HAS_RENESAS_RA_ELC_ENABLED
+	select USE_RA_FSP_ELC
+	default y
+	help
+	  Enable config options for Renesas RA Event Link Controller

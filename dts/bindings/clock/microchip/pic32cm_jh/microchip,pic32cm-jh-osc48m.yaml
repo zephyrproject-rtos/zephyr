@@ -1,0 +1,72 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CM_JH Internal Oscillator (OSC48M)
+
+description: |
+  48MHz Internal Oscillator (OSC48M).
+
+include: [base.yaml]
+
+compatible: "microchip,pic32cm-jh-osc48m"
+
+properties:
+  osc48m-on-demand-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      0: The oscillator is always on
+      1: The oscillator is running when a peripheral is requesting the oscillator to be used as a
+      clock source. The oscillator is not running if no peripheral is requesting the clock source.
+      Important: Initializing it with 1, along with clock enabled, can lead to indefinite wait for
+      the clock to be on, if there is no peripheral request for the clock in the sequence of clock
+      Initialization. If required, better to turn on the clock using API, instead of enabling both
+      during startup.
+
+  osc48m-run-in-standby-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      0: The OSC48M is not running in standby sleep mode if no peripheral requests the clock.
+      1: The OSC48M is running in standby sleep mode.
+      If ONDEMAND is one, the OSC48M will be running when a peripheral is requesting the clock. If
+      ONDEMAND is false, the clock source will always be running in standby sleep mode.
+
+  osc48m-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 1
+    description: |
+      Oscillator Enable
+      0: to disable, 1: to enable
+
+  osc48m-post-divider-freq:
+    type: string
+    enum:
+      - "48-mhz"
+      - "24-mhz"
+      - "16-mhz"
+      - "12-mhz"
+      - "9.6-mhz"
+      - "8-mhz"
+      - "6.86-mhz"
+      - "6-mhz"
+      - "5.33-mhz"
+      - "4.8-mhz"
+      - "4.36-mhz"
+      - "4-mhz"
+      - "3.69-mhz"
+      - "3.43-mhz"
+      - "3.2-mhz"
+      - "3-mhz"
+    default: "4-mhz"
+    description: |
+      Control the oscillator frequency range by adjusting the division ratio.

@@ -1,0 +1,10 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_AW9523B
+	bool "Awinic AW9523B GPIO/LED controller device driver"
+	default y
+	depends on DT_HAS_AWINIC_AW9523B_ENABLED
+	select I2C
+	help
+	  Enable the Awinic AW9523B GPIO/LED controller device driver

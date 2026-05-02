@@ -1,0 +1,12 @@
+identifier: 32f967_dv
+name: ELAN EM32F967 dv Board
+vendor: elan
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+testing:
+  default: false
+supported: []
+ram: 272
+flash: 536

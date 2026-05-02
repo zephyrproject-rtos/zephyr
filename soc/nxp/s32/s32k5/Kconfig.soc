@@ -1,0 +1,30 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_S32K5
+	bool
+	select SOC_FAMILY_NXP_S32
+
+config SOC_SERIES
+	default "s32k5" if SOC_SERIES_S32K5
+
+config SOC_S32K566
+	bool
+	select SOC_SERIES_S32K5
+
+config SOC_S32K566_M7
+	bool
+	select SOC_S32K566
+
+config SOC_S32K566_R52
+	bool
+	select SOC_S32K566
+
+config SOC
+	default "s32k566" if SOC_S32K566
+
+config SOC_PART_NUMBER_S32K566JAMJGS
+	bool
+
+config SOC_PART_NUMBER
+	default "S32K566JAMJGS" if SOC_PART_NUMBER_S32K566JAMJGS

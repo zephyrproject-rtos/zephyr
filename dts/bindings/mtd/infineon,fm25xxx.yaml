@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Luna Pes <zephyr@orangemurker.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon FM25XXX SPI FRAM
+
+compatible: "infineon,fm25xxx"
+
+include: ["eeprom-base.yaml", spi-device.yaml]
+
+properties:
+  size:
+    required: true
+    description: Total FRAM size in bytes.

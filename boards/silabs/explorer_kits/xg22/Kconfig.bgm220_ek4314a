@@ -1,0 +1,5 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BGM220_EK4314A
+	select SOC_BGM220PC22HNA

@@ -1,0 +1,28 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_IMX8MN_EVK
+
+if BOARD_IMX8MN_EVK_MIMX8MN6_A53 || BOARD_IMX8MN_EVK_MIMX8MN6_A53_SMP
+
+configdefault NET_L2_ETHERNET
+	default y
+
+configdefault NET_TX_STACK_SIZE
+	default 8192
+
+configdefault NET_RX_STACK_SIZE
+	default 8192
+
+configdefault NET_TCP_WORKQ_STACK_SIZE
+	default 8192
+
+configdefault NET_MGMT_EVENT_STACK_SIZE
+	default 8192
+
+configdefault NET_SOCKETS_SERVICE_STACK_SIZE
+	default 8192
+
+endif # BOARD_IMX8MN_EVK_MIMX8MN6_A53 || BOARD_IMX8MN_EVK_MIMX8MN6_A53_SMP
+
+endif # BOARD_IMX8MN_EVK

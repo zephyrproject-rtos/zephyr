@@ -1,0 +1,19 @@
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensry SY1XX I2C Driver node
+
+compatible: "sensry,sy1xx-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  instance:
+    type: int
+    required: true

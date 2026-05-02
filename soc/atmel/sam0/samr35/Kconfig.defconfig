@@ -1,0 +1,12 @@
+# Atmel SAMR35 MCU series configuration options
+
+# Copyright (c) 2021 Argentum Systems Ltd.
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SAMR35
+
+config NUM_IRQS
+	default 23
+
+endif # SOC_SERIES_SAMR35

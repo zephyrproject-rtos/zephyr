@@ -1,0 +1,20 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - display
+
+tests:
+  drivers.display.build.default:
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+    depends_on: display
+
+  drivers.display.build.bflb_dbi:
+    platform_allow:
+      - ai_m62_12f_kit
+
+  drivers.display.build.sf32lb_dbi:
+    platform_allow:
+      - sf32lb52_devkit_lcd

@@ -1,0 +1,22 @@
+identifier: adafruit_feather_scorpio_rp2040
+name: Adafruit RP2040 Scorpio Feather
+type: mcu
+arch: arm
+flash: 8192
+ram: 264
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - clock
+  - counter
+  - dma
+  - flash
+  - gpio
+  - hwinfo
+  - i2c
+  - pwm
+  - spi
+  - uart
+  - watchdog

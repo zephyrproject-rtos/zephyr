@@ -1,0 +1,11 @@
+# Copyright (c) 2022 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MIKROE_WIFI_BT_CLICK
+	def_bool $(shields_list_contains,mikroe_wifi_bt_click)
+
+config SHIELD_MIKROE_WIFI_BT_CLICK_MIKROBUS
+	def_bool $(shields_list_contains,mikroe_wifi_bt_click_mikrobus)
+
+config SHIELD_MIKROE_WIFI_BT_CLICK_ARDUINO
+	def_bool $(shields_list_contains,mikroe_wifi_bt_click_arduino)

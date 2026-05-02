@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Alexis Czezar C Torreno
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "TMCM-3216 sample application"
+
+config STEPS_PER_REV
+	int "Steps per revolution"
+	default 200
+
+config PING_PONG_N_REV
+	int "Change direction every N revolutions"
+	default 1
+
+config MAX_VELOCITY
+	int "Maximum velocity in usteps/s"
+	default 50000
+
+config MAX_ACCELERATION
+	int "Maximum acceleration in usteps/s^2"
+	default 1000
+
+config MAX_DECELERATION
+	int "Maximum deceleration in usteps/s^2"
+	default 1000
+
+source "Kconfig.zephyr"

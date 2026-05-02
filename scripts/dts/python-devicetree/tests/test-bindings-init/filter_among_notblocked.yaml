@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# This binding file blocks all properties not blocked
+# in simple_filter.yaml: we should end up with no property at all.
+
+include:
+  - name: simple_blocklist.yaml
+    property-blocklist: [prop-2, prop-3]
+    child-binding:
+      property-blocklist: [child-prop-2, child-prop-3]
+      child-binding:
+        property-blocklist: [grandchild-prop-2, grandchild-prop-3]

@@ -1,0 +1,21 @@
+# Copyright (c) 2018, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel WINC1500 WiFi module
+
+compatible: "atmel,winc1500"
+
+include: spi-device.yaml
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    required: true
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+
+  enable-gpios:
+    type: phandle-array
+    required: true

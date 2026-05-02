@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/input/esp32-touch-sensor-input.h>
+
+&touch {
+	status = "okay";
+
+	touch_sensor_set: touch_sensor_0 {
+		channel-num = <9>;
+		channel-sens = <20>;
+		zephyr,code = <INPUT_KEY_0>;
+	};
+
+	touch_sensor_play: touch_sensor_1 {
+		channel-num = <8>;
+		channel-sens = <20>;
+		zephyr,code = <INPUT_KEY_1>;
+	};
+
+	touch_sensor_vol_inc: touch_sensor_2 {
+		channel-num = <6>;
+		channel-sens = <20>;
+		zephyr,code = <INPUT_KEY_2>;
+	};
+
+	touch_sensor_vol_dec: touch_sensor_3 {
+		channel-num = <4>;
+		channel-sens = <20>;
+		zephyr,code = <INPUT_KEY_3>;
+	};
+};

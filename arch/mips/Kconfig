@@ -1,0 +1,59 @@
+#
+# Copyright (c) 2020 Antony Pavlov <antonynpavlov@gmail.com>
+#
+# based on arch/riscv/Kconfig
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "MIPS Options"
+	depends on MIPS
+
+config ARCH
+	string
+	default "mips"
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config GEN_SW_ISR_TABLE
+	default y
+
+config NUM_IRQS
+	int
+
+# Bump the kernel default stack size values.
+config MAIN_STACK_SIZE
+	default 4096 if COVERAGE_GCOV
+	default 2048
+
+config IDLE_STACK_SIZE
+	default 1024
+
+config ISR_STACK_SIZE
+	default 4096
+
+config TEST_EXTRA_STACK_SIZE
+	default 4096 if COVERAGE_GCOV
+	default 2048
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 4096
+
+config CMSIS_THREAD_MAX_STACK_SIZE
+	default 2048
+
+config CMSIS_V2_THREAD_MAX_STACK_SIZE
+	default 2048
+
+config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
+	default 2048
+
+config IPM_CONSOLE_STACK_SIZE
+	default 4096 if COVERAGE_GCOV
+	default 1024
+
+endmenu

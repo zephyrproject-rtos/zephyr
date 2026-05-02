@@ -1,0 +1,20 @@
+identifier: max32658evkit/max32658/ns
+name: max32658evkit-max32658-Non-Secure
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - serial
+  - gpio
+  - watchdog
+  - dma
+  - counter
+  - pwm
+  - rtc_counter
+  - spi
+  - i3c
+ram: 192
+flash: 576

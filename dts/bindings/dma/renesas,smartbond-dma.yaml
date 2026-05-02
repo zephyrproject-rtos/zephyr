@@ -1,0 +1,32 @@
+# Copyright (c) 2023 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+include: dma-controller.yaml
+
+description: Renesas Smartbond(tm) DMA
+
+compatible: "renesas,smartbond-dma"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  block-count:
+    required: true
+    type: int
+    const: 1
+    description: Number of block counts supported
+
+  "#dma-cells":
+    const: 2
+
+# - #dma-cells : Must be <2>.
+# channel: dma channel to be reserved
+# config: peripheral's dma request line. Valid values are defined in dt-bindings/dma/dma_smartbond.h
+
+dma-cells:
+  - channel
+  - config

@@ -1,0 +1,10 @@
+# Copyright 2026 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config AC057TC1
+	bool "AC057TC1 display controller"
+	default y
+	depends on DT_HAS_EINK_AC057TC1_ENABLED
+	select MIPI_DBI
+	help
+	  Enable driver for AC057TC1 display controller.

@@ -1,0 +1,55 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/s32/S32K56X-437BGA-pinctrl.h>
+
+&pinctrl {
+	eirq1_default: eirq1_default {
+		group1 {
+			pinmux = <PF3_SIUL1_EIRQ3>, <PF9_SIUL1_EIRQ9>;
+			input-enable;
+		};
+	};
+
+	flexcan0_default: flexcan0_default {
+		group1 {
+			pinmux = <PF1_CAN0_TX>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PF5_CAN0_RX>;
+			input-enable;
+		};
+	};
+
+	xspi0_default: xspi0_default {
+		group1 {
+			pinmux = <(PB1_XSPI_DQSFA_I | PB1_XSPI_DQSFA_O)>,
+				 <PA10_XSPI_INTA>,
+				 <(PC9_XSPI_IOFA0_I | PC9_XSPI_IOFA0_O)>,
+				 <(PB8_XSPI_IOFA1_I | PB8_XSPI_IOFA1_O)>,
+				 <(PB15_XSPI_IOFA2_I | PB15_XSPI_IOFA2_O)>,
+				 <(PC8_XSPI_IOFA3_I | PC8_XSPI_IOFA3_O)>,
+				 <(PC0_XSPI_IOFA4_I | PC0_XSPI_IOFA4_O)>,
+				 <(PB9_XSPI_IOFA5_I | PB9_XSPI_IOFA5_O)>,
+				 <(PC10_XSPI_IOFA6_I | PC10_XSPI_IOFA6_O)>,
+				 <(PA11_XSPI_IOFA7_I | PA11_XSPI_IOFA7_O)>;
+			output-enable;
+			input-enable;
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <PA9_XSPI_SCKFA>,
+				 <PA15_XSPI_SCKFA>,
+				 <PB0_XSPI_PCSFA1>,
+				 <PC1_XSPI_PCSFA2>;
+			output-enable;
+			bias-pull-up;
+		};
+	};
+};

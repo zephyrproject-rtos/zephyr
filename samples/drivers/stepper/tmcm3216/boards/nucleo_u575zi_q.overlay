@@ -1,0 +1,34 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Alexis Czezar C Torreno
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Using USART2 on Arduino D0/D1 pins (PD9/PD8) for RS485 communication */
+&usart2 {
+	status = "okay";
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
+	pinctrl-names = "default";
+	current-speed = <9600>;
+
+	tmcm3216_bus: adi_tmcm3216 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		tmcm3216: tmcm3216@1 {
+			compatible = "adi,tmcm3216";
+			reg = <0x1>;
+			de-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+
+			stepper_driver_0: stepper-driver {
+				compatible = "adi,tmcm3216-stepper-driver";
+				idx = <0>;
+				micro-step-res = <16>;
+			};
+
+			stepper_ctrl_0: stepper-ctrl {
+				compatible = "adi,tmcm3216-stepper-ctrl";
+				idx = <0>;
+			};
+		};
+	};
+};

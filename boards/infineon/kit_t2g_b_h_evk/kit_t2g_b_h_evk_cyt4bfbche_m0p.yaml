@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: kit_t2g_b_h_evk/cyt4bfbche/m0p
+name: T2G Body High Evaluation Kit (M0P)
+type: mcu
+arch: arm
+ram: 1024
+flash: 8192
+toolchain:
+  - zephyr
+  - gnuarmemb
+vendor: infineon

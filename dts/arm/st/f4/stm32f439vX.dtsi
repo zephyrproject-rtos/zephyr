@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 Mathieu Anquetin <mathieu.anquetin@groupe-cahors.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f4/stm32f439.dtsi>
+
+/*
+ * spi5 and spi6 are present on all STM32F439XX SoCs except
+ * STM32F439vX SoCs, so they are defined in stm32f439.dtsi and deleted
+ * here.
+ */
+
+/delete-node/ &spi5;
+
+/delete-node/ &spi6;

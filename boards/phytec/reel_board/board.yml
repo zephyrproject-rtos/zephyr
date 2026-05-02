@@ -1,0 +1,12 @@
+board:
+  name: reel_board
+  full_name: reel board
+  vendor: phytec
+  socs:
+  - name: nrf52840
+  revision:
+    format: number
+    default: "1"
+    revisions:
+    - name: "1"
+    - name: "2"

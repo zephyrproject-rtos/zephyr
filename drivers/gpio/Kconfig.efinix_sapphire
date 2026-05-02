@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Efinix Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_EFINIX_SAPPHIRE
+	bool "Efinx sapphire GPIO driver"
+	default y
+	depends on DT_HAS_EFINIX_SAPPHIRE_GPIO_ENABLED
+	help
+	  Enable Efinix sapphire GPIO driver.

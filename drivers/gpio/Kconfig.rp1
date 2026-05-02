@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Junho Lee <junho@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_RP1
+	bool "RP1 peripheral controller GPIO Driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_RP1_GPIO_ENABLED
+	help
+	  Enable Driver for GPIO banks on RP1 peripheral controller.

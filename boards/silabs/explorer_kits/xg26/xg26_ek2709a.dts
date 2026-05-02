@@ -1,0 +1,32 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg26/efr32mg26b510f3200im48.dtsi>
+#include "xg26_explorer_kit.dtsi"
+
+/ {
+	model = "Silicon Labs EFR32xG26 Explorer Kit";
+	compatible = "silabs,xg26_ek2709a", "silabs,efr32mg26";
+
+	chosen {
+		zephyr,bt-hci = &bt_hci_silabs;
+	};
+};
+
+&bt_hci_silabs {
+	status = "okay";
+};
+
+&hfxo {
+	ctune = <140>;
+	precision = <50>;
+	status = "okay";
+};
+
+&radio {
+	pa-voltage-mv = <1800>;
+};

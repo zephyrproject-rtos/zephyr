@@ -1,0 +1,10 @@
+# M5Stack StampS3 board configuration
+# Copyright (c) 2023 Martin Kiepfer <mrmarteng@teleschirm.org>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_M5STACK_STAMPS3_ESP32S3_PROCPU
+
+config KERNEL_MEM_POOL
+	default y
+
+endif # BOARD_M5STACK_STAMPS3_ESP32S3_PROCPU

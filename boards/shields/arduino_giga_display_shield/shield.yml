@@ -1,0 +1,6 @@
+shield:
+  name: arduino_giga_display_shield
+  full_name: Arduino GIGA Display Shield
+  vendor: arduino
+  supported_features:
+    - display

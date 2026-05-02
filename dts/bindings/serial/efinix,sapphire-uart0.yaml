@@ -1,0 +1,9 @@
+description: Efinix Sapphire UART
+
+compatible: "efinix,sapphire-uart0"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true

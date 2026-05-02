@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+# SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MIKROE_CAN_SPI_CLICK
+	def_bool $(shields_list_contains,mikroe_can_spi_click)
+
+config SHIELD_MIKROE_MCP25625_CLICK
+	def_bool $(shields_list_contains,mikroe_mcp25625_click)

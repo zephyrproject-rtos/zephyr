@@ -1,0 +1,8 @@
+/*
+ * Copyright 2021 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include "qemu_cortex_a53.dts"

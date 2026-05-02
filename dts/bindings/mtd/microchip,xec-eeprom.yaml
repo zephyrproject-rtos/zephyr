@@ -1,0 +1,20 @@
+# Copyright (c) 2022 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip on-chip EEPROM
+
+compatible: "microchip,xec-eeprom"
+
+include:
+  - name: eeprom-base.yaml
+  - name: pinctrl-device.yaml
+  - name: microchip,dmec-ecia-girq.yaml
+
+properties:
+  reg:
+    required: true
+
+  pcr-scr:
+    type: int
+    required: true
+    description: EEPROM PCR register index and bit position

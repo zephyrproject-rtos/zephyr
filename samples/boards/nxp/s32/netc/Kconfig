@@ -1,0 +1,24 @@
+# Private config options for NXP S32 NETC sample app
+
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "NXP S32 NETC sample application"
+
+config NET_SAMPLE_IFACE2_MY_IPV6_ADDR
+	string "My IPv6 address for second interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE2_MY_IPV4_ADDR
+	string "My IPv4 address for second interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE2_MY_IPV4_NETMASK
+	string "My IPv4 netmask for second interface"
+	default "255.255.255.0"
+	help
+	  Static netmask to use.
+
+source "Kconfig.zephyr"

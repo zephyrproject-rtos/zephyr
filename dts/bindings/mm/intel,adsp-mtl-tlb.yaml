@@ -1,0 +1,26 @@
+# Copyright (c) 2022 Kumar Gala <galak@kernel.org>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: INTEL Audio DSP TLB Meteor Lake Memory Mapper
+
+compatible: "intel,adsp-mtl-tlb"
+
+include: mm_drv.yaml
+
+properties:
+  reg:
+    required: true
+
+  paddr-size:
+    type: int
+    description: Number of significant bits in the page index.
+    required: true
+
+  exec-bit-idx:
+    type: int
+    description: Index of the execute permission bit.
+
+  write-bit-idx:
+    type: int
+    description: Index of the write permission bit.

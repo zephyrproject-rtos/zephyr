@@ -1,0 +1,16 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Copyright 2025 Jonas Berg */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	servo: servo {
+		compatible = "pwm-servo";
+		pwms = <&pwm 12 PWM_MSEC(20) PWM_POLARITY_NORMAL>; /* GP12 */
+		/* <&pwm 13 PWM_MSEC(20) PWM_POLARITY_NORMAL> */ /* GP13 */
+		/* <&pwm 14 PWM_MSEC(20) PWM_POLARITY_NORMAL> */ /* GP14 */
+		/* <&pwm 15 PWM_MSEC(20) PWM_POLARITY_NORMAL> */ /* GP15 */
+		min-pulse = <PWM_USEC(700)>;
+		max-pulse = <PWM_USEC(2500)>;
+	};
+};

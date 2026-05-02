@@ -1,0 +1,33 @@
+# ST Microelectronics STM32H7RS MCU line
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32H7RSX
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32h7rsx" if SOC_SERIES_STM32H7RSX
+
+config SOC_STM32H7R3XX
+	bool
+	select SOC_SERIES_STM32H7RSX
+
+config SOC_STM32H7R7XX
+	bool
+	select SOC_SERIES_STM32H7RSX
+
+config SOC_STM32H7S3XX
+	bool
+	select SOC_SERIES_STM32H7RSX
+
+config SOC_STM32H7S7XX
+	bool
+	select SOC_SERIES_STM32H7RSX
+
+config SOC
+	default "stm32h7r3xx" if SOC_STM32H7R3XX
+	default "stm32h7r7xx" if SOC_STM32H7R7XX
+	default "stm32h7s3xx" if SOC_STM32H7S3XX
+	default "stm32h7s7xx" if SOC_STM32H7S7XX

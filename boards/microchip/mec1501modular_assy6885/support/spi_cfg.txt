@@ -1,0 +1,38 @@
+[SPI]
+SPISizeMegabits = 4
+Flashmap = true
+FlshmapAddr = 0
+
+[IMAGE "0"]
+ImageLocation = 0x100
+SpiFreqMHz = 24
+SpiReadCommand = Dual
+SpiDriveStrength = 1
+SpiSlewFast = false
+SpiSignalControl = 0x00
+FwBinFile = zephyr.bin
+FwOffset = 0
+FwLoadAddress = 0xE0000
+FwEntryAddress = 0
+UseECDSA = false
+ECDSAPrivKeyFile = ecprivkey001.pem
+ECDSAPrivKeyPassword = ECPRIVKEY001
+FwEncrypt = false
+AesGenECPubKeyFile = ecpubkey002_crt.pem
+
+[IMAGE "1"]
+ImageLocation = 0x40000
+SpiFreqMHz = 24
+SpiReadCommand = Dual
+SpiDriveStrength = 1
+SpiSlewFast = false
+SpiSignalControl = 0x00
+FwBinFile = zephyr.bin
+FwOffset = 0
+FwLoadAddress = 0xE0000
+FwEntryAddress = 0
+UseECDSA = false
+ECDSAPrivKeyFile = ecprivkey001.pem
+ECDSAPrivKeyPassword = ECPRIVKEY001
+FwEncrypt = false
+AesGenECPubKeyFile = ecpubkey002_crt.pem

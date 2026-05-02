@@ -1,0 +1,2231 @@
+/* CTF 1.8 */
+typealias integer { size = 8; align = 8; signed = true; } := int8_t;
+typealias integer { size = 8; align = 8; signed = false; } := uint8_t;
+typealias integer { size = 16; align = 8; signed = false; } := uint16_t;
+typealias integer { size = 32; align = 8; signed = false; } := uint32_t;
+typealias integer { size = 32; align = 8; signed = true; } := int32_t;
+typealias integer { size = 64; align = 8; signed = false; } := uint64_t;
+typealias integer { size = 8; align = 8; signed = false; encoding = ASCII; } := ctf_bounded_string_t;
+
+struct event_header {
+	uint32_t timestamp;
+	uint16_t id;
+};
+
+trace {
+	major = 1;
+	minor = 8;
+	byte_order = le;
+};
+
+stream {
+	event.header := struct event_header;
+};
+
+event {
+	name = thread_switched_out;
+	id = 0x10;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_switched_in;
+	id = 0x11;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = k_sleep_enter;
+	id = 0x7F;
+	fields := struct {
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = k_sleep_exit;
+	id = 0x80;
+	fields := struct {
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = thread_priority_set;
+	id = 0x12;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+		int8_t prio;
+	};
+
+};
+
+event {
+	name = thread_create;
+	id = 0x13;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_abort;
+	id = 0x14;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_suspend;
+	id = 0x15;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_resume;
+	id = 0x16;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+event {
+        name = thread_ready;
+        id = 0x17;
+        fields := struct {
+                uint32_t thread_id;
+				ctf_bounded_string_t name[20];
+        };
+};
+
+event {
+	name = thread_pending;
+	id = 0x18;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_info;
+	id = 0x19;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+		uint32_t stack_base;
+		uint32_t stack_size;
+	};
+};
+
+event {
+	name = thread_name_set;
+	id = 0x1a;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = isr_enter;
+	id = 0x1B;
+};
+
+event {
+	name = isr_exit;
+	id = 0x1C;
+};
+
+event {
+	name = isr_exit_to_scheduler;
+	id = 0x1D;
+};
+
+event {
+	name = idle;
+	id = 0x1E;
+};
+
+event {
+	name = semaphore_init;
+	id = 0x21;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = semaphore_give_enter;
+	id = 0x22;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = semaphore_give_exit;
+	id = 0x23;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = semaphore_take_enter;
+	id = 0x24;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = semaphore_take_exit;
+	id = 0x26;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+
+event {
+	name = semaphore_take_blocking;
+	id = 0x25;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+
+event {
+	name = semaphore_reset;
+	id = 0x27;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = mutex_init;
+	id = 0x28;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = mutex_lock_enter;
+	id = 0x29;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mutex_lock_blocking;
+	id = 0x2A;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mutex_lock_exit;
+	id = 0x2B;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = mutex_unlock_enter;
+	id = 0x2C;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = mutex_unlock_exit;
+	id = 0x2D;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = timer_init;
+	id = 0x2E;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_start;
+	id = 0x2F;
+	fields := struct {
+		uint32_t id;
+		uint32_t duration;
+		uint32_t period;
+	};
+};
+
+event {
+	name = timer_stop;
+	id = 0x30;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_status_sync_enter;
+	id = 0x31;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_status_sync_blocking;
+	id = 0x32;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = timer_status_sync_exit;
+	id = 0x33;
+	fields := struct {
+		uint32_t id;
+		uint32_t result;
+	};
+};
+
+event {
+	name = user_mode_enter;
+	id = 0x34;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_wakeup;
+	id = 0x35;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = socket_init;
+	id = 0x36;
+	fields := struct {
+		uint32_t id;
+		uint32_t family;
+		uint32_t type;
+		uint32_t proto;
+	};
+};
+
+event {
+	name = socket_close_enter;
+	id = 0x37;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = socket_close_exit;
+	id = 0x38;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_shutdown_enter;
+	id = 0x39;
+	fields := struct {
+		uint32_t id;
+		uint32_t how;
+	};
+};
+
+event {
+	name = socket_shutdown_exit;
+	id = 0x3A;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_bind_enter;
+	id = 0x3B;
+	fields := struct {
+		uint32_t id;
+		ctf_bounded_string_t address[46];
+		uint32_t address_length;
+		uint16_t port;
+	};
+};
+
+event {
+	name = socket_bind_exit;
+	id = 0x3C;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_connect_enter;
+	id = 0x3D;
+	fields := struct {
+		uint32_t id;
+		ctf_bounded_string_t address[46];
+		uint32_t address_length;
+	};
+};
+
+event {
+	name = socket_connect_exit;
+	id = 0x3E;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_listen_enter;
+	id = 0x3F;
+	fields := struct {
+		uint32_t id;
+		uint32_t backlog;
+	};
+};
+
+event {
+	name = socket_listen_exit;
+	id = 0x40;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_accept_enter;
+	id = 0x41;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = socket_accept_exit;
+	id = 0x42;
+	fields := struct {
+		uint32_t id;
+		ctf_bounded_string_t address[46];
+		uint32_t address_length;
+		uint16_t port;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_sendto_enter;
+	id = 0x43;
+	fields := struct {
+		uint32_t id;
+		uint32_t data_length;
+		uint32_t flags;
+		ctf_bounded_string_t address[46];
+		uint32_t address_length;
+	};
+};
+
+event {
+	name = socket_sendto_exit;
+	id = 0x44;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_sendmsg_enter;
+	id = 0x45;
+	fields := struct {
+		uint32_t id;
+		uint32_t flags;
+		uint32_t msghdr;
+		ctf_bounded_string_t address[46];
+		uint32_t data_length;
+	};
+};
+
+event {
+	name = socket_sendmsg_exit;
+	id = 0x46;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_recvfrom_enter;
+	id = 0x47;
+	fields := struct {
+		uint32_t id;
+		uint32_t max_length;
+		uint32_t flags;
+		uint32_t address;
+		uint32_t address_length;
+	};
+};
+
+event {
+	name = socket_recvfrom_exit;
+	id = 0x48;
+	fields := struct {
+		uint32_t id;
+		ctf_bounded_string_t address[46];
+		uint32_t address_length;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_recvmsg_enter;
+	id = 0x49;
+	fields := struct {
+		uint32_t id;
+		uint32_t msg;
+		uint32_t max_msg_length;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_recvmsg_exit;
+	id = 0x4A;
+	fields := struct {
+		uint32_t id;
+		uint32_t msg_length;
+		ctf_bounded_string_t address[46];
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_fcntl_enter;
+	id = 0x4B;
+	fields := struct {
+		uint32_t id;
+		uint32_t cmd;
+		uint32_t flags;
+	};
+};
+
+event {
+	name = socket_fcntl_exit;
+	id = 0x4C;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_ioctl_enter;
+	id = 0x4D;
+	fields := struct {
+		uint32_t id;
+		uint32_t request;
+	};
+};
+
+event {
+	name = socket_ioctl_exit;
+	id = 0x4E;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_poll_enter;
+	id = 0x4F;
+	fields := struct {
+		uint32_t fds;
+		uint32_t num_fds;
+		int32_t timeout;
+	};
+};
+
+event {
+	name = socket_poll_value;
+	id = 0x50;
+	fields := struct {
+		int32_t fd;
+		uint16_t events;
+	};
+};
+
+event {
+	name = socket_poll_exit;
+	id = 0x51;
+	fields := struct {
+		uint32_t fds;
+		uint32_t num_fds;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_getsockopt_enter;
+	id = 0x52;
+	fields := struct {
+		uint32_t id;
+		uint32_t level;
+		uint32_t optname;
+	};
+};
+
+event {
+	name = socket_getsockopt_exit;
+	id = 0x53;
+	fields := struct {
+		uint32_t id;
+		uint32_t level;
+		uint32_t optname;
+		uint32_t optval;
+		uint32_t optlen;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_setsockopt_enter;
+	id = 0x54;
+	fields := struct {
+		uint32_t id;
+		uint32_t level;
+		uint32_t optname;
+		uint32_t optval;
+		uint32_t optlen;
+	};
+};
+
+event {
+	name = socket_setsockopt_exit;
+	id = 0x55;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_getpeername_enter;
+	id = 0x56;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = socket_getpeername_exit;
+	id = 0x57;
+	fields := struct {
+		uint32_t id;
+		ctf_bounded_string_t address[46];
+		uint32_t address_length;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_getsockname_enter;
+	id = 0x58;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = socket_getsockname_exit;
+	id = 0x59;
+	fields := struct {
+		uint32_t id;
+		ctf_bounded_string_t address[46];
+		uint32_t address_length;
+		int32_t result;
+	};
+};
+
+event {
+	name = socket_socketpair_enter;
+	id = 0x5A;
+	fields := struct {
+		uint32_t family;
+		uint32_t type;
+		uint32_t proto;
+		uint32_t sv;
+	};
+};
+
+event {
+	name = socket_socketpair_exit;
+	id = 0x5B;
+	fields := struct {
+		int32_t socket0;
+		int32_t socket1;
+		int32_t result;
+	};
+};
+
+event {
+	name = net_recv_data_enter;
+	id = 0x5C;
+	fields := struct {
+		int32_t if_index;
+		uint32_t iface;
+		uint32_t pkt;
+		uint32_t pkt_len;
+	};
+};
+
+event {
+	name = net_recv_data_exit;
+	id = 0x5D;
+	fields := struct {
+		int32_t if_index;
+		uint32_t iface;
+		uint32_t pkt;
+		int32_t result;
+	};
+};
+
+event {
+	name = net_send_data_enter;
+	id = 0x5E;
+	fields := struct {
+		int32_t if_index;
+		uint32_t iface;
+		uint32_t pkt;
+		uint32_t pkt_len;
+	};
+};
+
+event {
+	name = net_send_data_exit;
+	id = 0x5F;
+	fields := struct {
+		int32_t if_index;
+		uint32_t iface;
+		uint32_t pkt;
+		int32_t result;
+	};
+};
+
+event {
+	name = net_rx_time;
+	id = 0x60;
+	fields := struct {
+		int32_t if_index;
+		uint32_t iface;
+		uint32_t pkt;
+		uint32_t priority;
+		uint32_t traffic_class;
+		uint32_t duration_us;
+	};
+};
+
+event {
+	name = net_tx_time;
+	id = 0x61;
+	fields := struct {
+		int32_t if_index;
+		uint32_t iface;
+		uint32_t pkt;
+		uint32_t priority;
+		uint32_t traffic_class;
+		uint32_t duration_us;
+	};
+};
+
+event {
+	name = named_event;
+	id = 0x62;
+	fields := struct {
+		ctf_bounded_string_t name[20];
+		uint32_t arg0;
+		uint32_t arg1;
+	};
+};
+
+event {
+	name = gpio_pin_configure_interrupt_enter;
+	id = 0x63;
+	fields := struct {
+		uint32_t port;
+		uint32_t pin;
+		uint32_t flags;
+	};
+};
+
+event {
+	name = gpio_pin_configure_interrupt_exit;
+	id = 0x64;
+	fields := struct {
+		uint32_t port;
+		uint32_t pin;
+		uint32_t ret;
+	};
+};
+
+event {
+	name = gpio_pin_configure_enter;
+	id = 0x65;
+	fields := struct {
+		uint32_t port;
+		uint32_t pin;
+		uint32_t flags;
+	};
+};
+
+event {
+	name = gpio_pin_configure_exit;
+	id = 0x66;
+	fields := struct {
+		uint32_t port;
+		uint32_t pin;
+		uint32_t ret;
+	};
+};
+
+event {
+	name = gpio_port_get_direction_enter;
+	id = 0x67;
+	fields := struct {
+		uint32_t port;
+		uint32_t map;
+		uint32_t inputs;
+		uint32_t outputs;
+	};
+};
+
+event {
+	name = gpio_port_get_direction_exit;
+	id = 0x68;
+	fields := struct {
+		uint32_t port;
+		uint32_t ret;
+	};
+};
+
+event {
+	name = gpio_pin_get_config_enter;
+	id = 0x69;
+	fields := struct {
+		uint32_t port;
+		uint32_t pin;
+	};
+};
+
+event {
+	name =  gpio_pin_get_config_exit;
+	id = 0x6A;
+	fields := struct {
+		uint32_t port;
+		uint32_t pin;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_port_get_raw_enter;
+	id = 0x6B;
+	fields := struct {
+		uint32_t port;
+		uint32_t value;
+	};
+};
+
+event {
+	name =  gpio_port_get_raw_exit;
+	id = 0x6C;
+	fields := struct {
+		uint32_t port;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_port_set_masked_raw_enter;
+	id = 0x6D;
+	fields := struct {
+		uint32_t port;
+		uint32_t mask;
+		uint32_t value;
+	};
+};
+
+event {
+	name =  gpio_port_set_masked_raw_exit;
+	id = 0x6E;
+	fields := struct {
+		uint32_t port;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_port_set_bits_raw_enter;
+	id = 0x6F;
+	fields := struct {
+		uint32_t port;
+		uint32_t pins;
+	};
+};
+
+event {
+	name =  gpio_port_set_bits_raw_exit;
+	id = 0x70;
+	fields := struct {
+		uint32_t port;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_port_clear_bits_raw_enter;
+	id = 0x71;
+	fields := struct {
+		uint32_t port;
+		uint32_t pins;
+	};
+};
+
+event {
+	name =  gpio_port_clear_bits_raw_exit;
+	id = 0x72;
+	fields := struct {
+		uint32_t port;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_port_toggle_bits_enter;
+	id = 0x73;
+	fields := struct {
+		uint32_t port;
+		uint32_t pins;
+	};
+};
+
+event {
+	name =  gpio_port_toggle_bits_exit;
+	id = 0x74;
+	fields := struct {
+		uint32_t port;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_init_callback_enter;
+	id = 0x75;
+	fields := struct {
+		uint32_t callback;
+		uint32_t handler;
+		uint32_t pin_mask;
+	};
+};
+
+event {
+	name =  gpio_init_callback_exit;
+	id = 0x76;
+	fields := struct {
+		uint32_t callback;
+	};
+};
+
+event {
+	name =  gpio_add_callback_enter;
+	id = 0x77;
+	fields := struct {
+		uint32_t port;
+		uint32_t callback;
+	};
+};
+
+event {
+	name =  gpio_add_callback_exit;
+	id = 0x78;
+	fields := struct {
+		uint32_t port;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_remove_callback_enter;
+	id = 0x79;
+	fields := struct {
+		uint32_t port;
+		uint32_t callback;
+	};
+};
+
+event {
+	name =  gpio_remove_callback_exit;
+	id = 0x7A;
+	fields := struct {
+		uint32_t port;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_get_pending_int_enter;
+	id = 0x7B;
+	fields := struct {
+		uint32_t dev;
+	};
+};
+
+event {
+	name =  gpio_get_pending_int_exit;
+	id = 0x7C;
+	fields := struct {
+		uint32_t dev;
+		uint32_t ret;
+	};
+};
+
+event {
+	name =  gpio_fire_callbacks_enter;
+	id = 0x7D;
+	fields := struct {
+		uint32_t list;
+		uint32_t port;
+		uint32_t pins;
+	};
+};
+
+event {
+	name =  gpio_fire_callback;
+	id = 0x7E;
+	fields := struct {
+		uint32_t port;
+		uint32_t cb;
+	};
+};
+
+
+
+/* Memory Slabs */
+event {
+	name = mem_slab_init;
+	id = 0x81;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = mem_slab_alloc_enter;
+	id = 0x82;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mem_slab_alloc_blocking;
+	id = 0x83;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mem_slab_alloc_exit;
+	id = 0x84;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = mem_slab_free_enter;
+	id = 0x85;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = mem_slab_free_exit;
+	id = 0x86;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+/* Message Queues */
+
+event {
+	name = msgq_init;
+	id = 0x87;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = msgq_alloc_init_enter;
+	id = 0x88;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = msgq_alloc_init_exit;
+	id = 0x89;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = msgq_put_enter;
+	id = 0x8A;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = msgq_put_blocking;
+	id = 0x8B;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = msgq_put_exit;
+	id = 0x8C;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = msgq_get_enter;
+	id = 0x8D;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = msgq_get_blocking;
+	id = 0x8E;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = msgq_get_exit;
+	id = 0x8F;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = msgq_peek;
+	id = 0x90;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = msgq_purge;
+	id = 0x91;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = msgq_put_front_enter;
+	id = 0x92;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = msgq_put_front_blocking;
+	id = 0x94;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = msgq_put_front_exit;
+	id = 0x93;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = msgq_cleanup_enter;
+	id = 0x95;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = msgq_cleanup_exit;
+	id = 0x96;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+/* Condition Variables */
+event {
+	name = condvar_init;
+	id = 0x97;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = condvar_signal_enter;
+	id = 0x98;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = condvar_signal_blocking;
+	id = 0x99;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = condvar_signal_exit;
+	id = 0x9A;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = condvar_broadcast_enter;
+	id = 0x9B;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = condvar_broadcast_exit;
+	id = 0x9C;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = condvar_wait_enter;
+	id = 0x9D;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = condvar_wait_exit;
+	id = 0x9E;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+/* Work Queue Events */
+event {
+	name = work_init;
+	id = 0x9F;
+	fields := struct {
+		uint32_t work_id;
+	};
+};
+
+event {
+	name = work_submit_to_queue_enter;
+	id = 0xA0;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t work_id;
+	};
+};
+
+event {
+	name = work_submit_to_queue_exit;
+	id = 0xA1;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t work_id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_submit_enter;
+	id = 0xA2;
+	fields := struct {
+		uint32_t work_id;
+	};
+};
+
+event {
+	name = work_submit_exit;
+	id = 0xA3;
+	fields := struct {
+		uint32_t work_id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_flush_enter;
+	id = 0xA4;
+	fields := struct {
+		uint32_t work_id;
+	};
+};
+
+event {
+	name = work_flush_blocking;
+	id = 0xA5;
+	fields := struct {
+		uint32_t work_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = work_flush_exit;
+	id = 0xA6;
+	fields := struct {
+		uint32_t work_id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_cancel_enter;
+	id = 0xA7;
+	fields := struct {
+		uint32_t work_id;
+	};
+};
+
+event {
+	name = work_cancel_exit;
+	id = 0xA8;
+	fields := struct {
+		uint32_t work_id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_cancel_sync_enter;
+	id = 0xA9;
+	fields := struct {
+		uint32_t work_id;
+		uint32_t sync_id;
+	};
+};
+
+event {
+	name = work_cancel_sync_blocking;
+	id = 0xAA;
+	fields := struct {
+		uint32_t work_id;
+		uint32_t sync_id;
+	};
+};
+
+event {
+	name = work_cancel_sync_exit;
+	id = 0xAB;
+	fields := struct {
+		uint32_t work_id;
+		uint32_t sync_id;
+		int32_t ret;
+	};
+};
+
+/* Work Queue Management */
+event {
+	name = work_queue_init;
+	id = 0xAC;
+	fields := struct {
+		uint32_t queue_id;
+	};
+};
+
+event {
+	name = work_queue_start_enter;
+	id = 0xAD;
+	fields := struct {
+		uint32_t queue_id;
+	};
+};
+
+event {
+	name = work_queue_start_exit;
+	id = 0xAE;
+	fields := struct {
+		uint32_t queue_id;
+	};
+};
+
+event {
+	name = work_queue_stop_enter;
+	id = 0xAF;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = work_queue_stop_blocking;
+	id = 0xB0;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = work_queue_stop_exit;
+	id = 0xB1;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_queue_drain_enter;
+	id = 0xB2;
+	fields := struct {
+		uint32_t queue_id;
+	};
+};
+
+event {
+	name = work_queue_drain_exit;
+	id = 0xB3;
+	fields := struct {
+		uint32_t queue_id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_queue_unplug_enter;
+	id = 0xB4;
+	fields := struct {
+		uint32_t queue_id;
+	};
+};
+
+event {
+	name = work_queue_unplug_exit;
+	id = 0xB5;
+	fields := struct {
+		uint32_t queue_id;
+		int32_t ret;
+	};
+};
+
+/* Delayable Work */
+event {
+	name = work_delayable_init;
+	id = 0xB6;
+	fields := struct {
+		uint32_t dwork_id;
+	};
+};
+
+event {
+	name = work_schedule_for_queue_enter;
+	id = 0xB7;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t dwork_id;
+		uint32_t delay;
+	};
+};
+
+event {
+	name = work_schedule_for_queue_exit;
+	id = 0xB8;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t dwork_id;
+		uint32_t delay;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_schedule_enter;
+	id = 0xB9;
+	fields := struct {
+		uint32_t dwork_id;
+		uint32_t delay;
+	};
+};
+
+event {
+	name = work_schedule_exit;
+	id = 0xBA;
+	fields := struct {
+		uint32_t dwork_id;
+		uint32_t delay;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_reschedule_for_queue_enter;
+	id = 0xBB;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t dwork_id;
+		uint32_t delay;
+	};
+};
+
+event {
+	name = work_reschedule_for_queue_exit;
+	id = 0xBC;
+	fields := struct {
+		uint32_t queue_id;
+		uint32_t dwork_id;
+		uint32_t delay;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_reschedule_enter;
+	id = 0xBD;
+	fields := struct {
+		uint32_t dwork_id;
+		uint32_t delay;
+	};
+};
+
+event {
+	name = work_reschedule_exit;
+	id = 0xBE;
+	fields := struct {
+		uint32_t dwork_id;
+		uint32_t delay;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_flush_delayable_enter;
+	id = 0xBF;
+	fields := struct {
+		uint32_t dwork_id;
+		uint32_t sync_id;
+	};
+};
+
+event {
+	name = work_flush_delayable_exit;
+	id = 0xC0;
+	fields := struct {
+		uint32_t dwork_id;
+		uint32_t sync_id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_cancel_delayable_enter;
+	id = 0xC1;
+	fields := struct {
+		uint32_t dwork_id;
+	};
+};
+
+event {
+	name = work_cancel_delayable_exit;
+	id = 0xC2;
+	fields := struct {
+		uint32_t dwork_id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_cancel_delayable_sync_enter;
+	id = 0xC3;
+	fields := struct {
+		uint32_t dwork_id;
+		uint32_t sync_id;
+	};
+};
+
+event {
+	name = work_cancel_delayable_sync_exit;
+	id = 0xC4;
+	fields := struct {
+		uint32_t dwork_id;
+		uint32_t sync_id;
+		int32_t ret;
+	};
+};
+
+/* Poll Work */
+event {
+	name = work_poll_init_enter;
+	id = 0xC5;
+	fields := struct {
+		uint32_t work_id;
+	};
+};
+
+event {
+	name = work_poll_init_exit;
+	id = 0xC6;
+	fields := struct {
+		uint32_t work_id;
+	};
+};
+
+event {
+	name = work_poll_submit_to_queue_enter;
+	id = 0xC7;
+	fields := struct {
+		uint32_t work_q_id;
+		uint32_t work_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = work_poll_submit_to_queue_blocking;
+	id = 0xC8;
+	fields := struct {
+		uint32_t work_q_id;
+		uint32_t work_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = work_poll_submit_to_queue_exit;
+	id = 0xC9;
+	fields := struct {
+		uint32_t work_q_id;
+		uint32_t work_id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_poll_submit_enter;
+	id = 0xCA;
+	fields := struct {
+		uint32_t work_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = work_poll_submit_exit;
+	id = 0xCB;
+	fields := struct {
+		uint32_t work_id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = work_poll_cancel_enter;
+	id = 0xCC;
+	fields := struct {
+		uint32_t work_id;
+	};
+};
+
+event {
+	name = work_poll_cancel_exit;
+	id = 0xCD;
+	fields := struct {
+		uint32_t work_id;
+		int32_t ret;
+	};
+};
+
+/* Poll API */
+event {
+	name = poll_event_init;
+	id = 0xCE;
+	fields := struct {
+		uint32_t event_id;
+	};
+};
+
+event {
+	name = poll_enter;
+	id = 0xCF;
+	fields := struct {
+		uint32_t events_id;
+	};
+};
+
+event {
+	name = poll_exit;
+	id = 0xD0;
+	fields := struct {
+		uint32_t events_id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = poll_signal_init;
+	id = 0xD1;
+	fields := struct {
+		uint32_t signal_id;
+	};
+};
+
+event {
+	name = poll_signal_reset;
+	id = 0xD2;
+	fields := struct {
+		uint32_t signal_id;
+	};
+};
+
+event {
+	name = poll_signal_check;
+	id = 0xD3;
+	fields := struct {
+		uint32_t signal_id;
+	};
+};
+
+event {
+	name = poll_signal_raise;
+	id = 0xD4;
+	fields := struct {
+		uint32_t signal_id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = thread_foreach_enter;
+	id = 0xD5;
+	fields := struct {};
+};
+
+event {
+	name = thread_foreach_exit;
+	id = 0xD6;
+	fields := struct {};
+};
+
+event {
+	name = thread_foreach_unlocked_enter;
+	id = 0xD7;
+	fields := struct {};
+};
+
+event {
+	name = thread_foreach_unlocked_exit;
+	id = 0xD8;
+	fields := struct {};
+};
+
+event {
+	name = thread_heap_assign;
+	id = 0xD9;
+	fields := struct {
+		uint32_t thread_id;
+		uint32_t heap_id;
+	};
+};
+
+event {
+	name = thread_join_enter;
+	id = 0xDA;
+	fields := struct {
+		uint32_t thread_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = thread_join_blocking;
+	id = 0xDB;
+	fields := struct {
+		uint32_t thread_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = thread_join_exit;
+	id = 0xDC;
+	fields := struct {
+		uint32_t thread_id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = thread_msleep_enter;
+	id = 0xDD;
+	fields := struct {
+		int32_t ms;
+	};
+};
+
+event {
+	name = thread_msleep_exit;
+	id = 0xDE;
+	fields := struct {
+		int32_t ms;
+		int32_t ret;
+	};
+};
+
+event {
+	name = thread_usleep_enter;
+	id = 0xDF;
+	fields := struct {
+		int32_t us;
+	};
+};
+
+event {
+	name = thread_usleep_exit;
+	id = 0xE0;
+	fields := struct {
+		int32_t us;
+		int32_t ret;
+	};
+};
+
+event {
+	name = thread_busy_wait_enter;
+	id = 0xE1;
+	fields := struct {
+		uint32_t usec_to_wait;
+	};
+};
+
+event {
+	name = thread_busy_wait_exit;
+	id = 0xE2;
+	fields := struct {
+		uint32_t usec_to_wait;
+	};
+};
+
+event {
+	name = thread_yield;
+	id = 0xE3;
+};
+
+event {
+	name = thread_suspend_exit;
+	id = 0xE4;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_sched_lock;
+	id = 0xE5;
+};
+
+event {
+	name = thread_sched_unlock;
+	id = 0xE6;
+};
+
+event {
+	name = thread_sched_wakeup;
+	id = 0xE7;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_sched_abort;
+	id = 0xE8;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_sched_priority_set;
+	id = 0xE9;
+	fields := struct {
+		uint32_t thread_id;
+		int8_t prio;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_sched_ready;
+	id = 0xEA;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_sched_pend;
+	id = 0xEB;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_sched_resume;
+	id = 0xEC;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = thread_sched_suspend;
+	id = 0xED;
+	fields := struct {
+		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = mbox_init;
+	id = 0xEE;
+	fields := struct {
+		uint32_t mbox_id;
+	};
+};
+
+event {
+	name = mbox_message_put_enter;
+	id = 0xEF;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mbox_message_put_blocking;
+	id = 0xF0;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mbox_message_put_exit;
+	id = 0xF1;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = mbox_put_enter;
+	id = 0xF2;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mbox_put_exit;
+	id = 0xF3;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = mbox_async_put_enter;
+	id = 0xF4;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t sem_id;
+	};
+};
+
+event {
+	name = mbox_async_put_exit;
+	id = 0xF5;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t sem_id;
+	};
+};
+
+event {
+	name = mbox_get_enter;
+	id = 0xF6;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mbox_get_blocking;
+	id = 0xF7;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = mbox_get_exit;
+	id = 0xF8;
+	fields := struct {
+		uint32_t mbox_id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = mbox_data_get;
+	id = 0xF9;
+	fields := struct {
+		uint32_t msg_id;
+	};
+};
+
+event {
+	name = event_init;
+	id = 0xFA;
+	fields := struct {
+		uint32_t event_id;
+	};
+};
+
+event {
+	name = event_post_enter;
+	id = 0xFB;
+	fields := struct {
+		uint32_t event_id;
+		uint32_t events;
+		uint32_t events_mask;
+	};
+};
+
+event {
+	name = event_post_exit;
+	id = 0xFC;
+	fields := struct {
+		uint32_t event_id;
+		uint32_t events;
+		uint32_t events_mask;
+	};
+};
+
+event {
+	name = event_wait_enter;
+	id = 0xFD;
+	fields := struct {
+		uint32_t event_id;
+		uint32_t events;
+		uint32_t options;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = event_wait_blocking;
+	id = 0xFE;
+	fields := struct {
+		uint32_t event_id;
+		uint32_t events;
+		uint32_t options;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = event_wait_exit;
+	id = 0xFF;
+	fields := struct {
+		uint32_t event_id;
+		uint32_t events;
+		int32_t ret;
+	};
+};
+
+event {
+	name = timer_expiry_enter;
+	id = 0x100;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_expiry_exit;
+	id = 0x101;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_stop_fn_expiry_enter;
+	id = 0x102;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = timer_stop_fn_expiry_exit;
+	id = 0x103;
+	fields := struct {
+		uint32_t id;
+	};
+};

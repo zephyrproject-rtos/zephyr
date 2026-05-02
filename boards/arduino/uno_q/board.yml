@@ -1,0 +1,6 @@
+board:
+  name: arduino_uno_q
+  full_name: Arduino UNO Q
+  vendor: arduino
+  socs:
+    - name: stm32u585xx

@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&nrf_interface_pins_3_5_routing {
+	status = "okay";
+};
+
+&reset_input {
+	status = "okay";
+	gpios = <&interface_to_nrf9160 5 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+};

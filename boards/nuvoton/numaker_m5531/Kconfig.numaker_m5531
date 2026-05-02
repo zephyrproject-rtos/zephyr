@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Nuvoton NuMaker M5531 board configuration
+#
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+
+config BOARD_NUMAKER_M5531
+	select SOC_M55M1XXX

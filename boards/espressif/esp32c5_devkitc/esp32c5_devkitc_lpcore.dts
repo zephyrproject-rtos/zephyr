@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32c5/esp32c5_lpcore_wroom_n8.dtsi>
+#include <espressif/partitions_0x2000_default_8M.dtsi>
+
+/ {
+	model = "Espressif ESP32C5-DevKitC-1 LP Core";
+	compatible = "espressif,esp32c5";
+
+	chosen {
+		zephyr,sram = &sramlp;
+		zephyr,code-partition = &slot0_lpcore_partition;
+		zephyr,console = &lp_uart;
+		zephyr,shell-uart = &lp_uart;
+	};
+};
+
+&lp_uart {
+	status = "okay";
+	current-speed = <115200>;
+};

@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config S3KM1110
+	bool "Iclegend S3KM1110 24GHz mmWave sensor"
+	default y
+	depends on DT_HAS_ICLEGEND_S3KM1110_ENABLED
+	depends on UART_INTERRUPT_DRIVEN
+	select UART
+	help
+	  Enable driver for the Iclegend S3KM1110 UART radar.
+
+config S3KM1110_UART_TIMEOUT_MS
+	int "UART frame timeout in milliseconds"
+	default 100
+	depends on S3KM1110
+	help
+	  Timeout used while waiting for each report frame.

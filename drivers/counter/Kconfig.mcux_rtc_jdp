@@ -1,0 +1,9 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_MCUX_RTC_JDP
+	bool "MCUX RTC JDP driver"
+	default y
+	depends on DT_HAS_NXP_RTC_JDP_ENABLED
+	help
+	  Enable support for MCU RTC JDP driver.

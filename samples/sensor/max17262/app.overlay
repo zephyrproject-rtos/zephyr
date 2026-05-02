@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2021 Matija Tudan
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_i2c {
+	status = "okay";
+
+	max17262@36 {
+		compatible = "maxim,max17262";
+		reg = <0x36>;
+		design-voltage = <3600>;
+		desired-voltage = <3600>;
+		desired-charging-current = <2000>;
+		design-cap = <17000>;
+		empty-voltage = <3300>;
+		recovery-voltage = <3880>;
+		charge-voltage = <3600>;
+		status = "okay";
+	};
+};

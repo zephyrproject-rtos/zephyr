@@ -1,0 +1,5 @@
+# Copyright (c) 2021 Blue Clover Devices
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_H753ZI
+	select SOC_STM32H753XX

@@ -1,0 +1,28 @@
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2025 PHYTEC America LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX DAC12
+
+compatible: "nxp,dac12"
+
+include: dac-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  voltage-reference:
+    type: int
+    required: true
+    description: DAC voltage reference select
+
+  buffered:
+    type: boolean
+    description: Enable output buffer
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - output

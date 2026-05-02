@@ -1,0 +1,21 @@
+boards:
+  - name: lyra_24_dvk_p10
+    vendor: ezurio
+    full_name: Lyra 24 P10 DVK
+    socs:
+      - name: bgm240pb22vna
+  - name: lyra_24_dvk_p20
+    vendor: ezurio
+    full_name: Lyra 24 P20 DVK
+    socs:
+      - name: bgm240pb32vna
+  - name: lyra_24_dvk_p20rf
+    vendor: ezurio
+    full_name: Lyra 24 P20RF DVK
+    socs:
+      - name: bgm240pb32vnn
+  - name: lyra_24_dvk_s10
+    vendor: ezurio
+    full_name: Lyra 24 S10 DVK
+    socs:
+      - name: bgm240sb22vna

@@ -1,0 +1,28 @@
+/**
+
+@brief Tests
+@defgroup all_tests Tests
+@{
+@}
+
+@defgroup kernel_fatal_tests Fatal Handling
+@ingroup all_tests
+@{
+@}
+
+@defgroup kernel_arch_sched_tests Architecture Context Switching / Swap
+@ingroup all_tests
+@{
+@}
+
+@defgroup kernel_arch_interrupt_tests Architecture Interrupt Handling
+@ingroup all_tests
+@{
+@}
+
+@defgroup kernel_memprotect_tests Memory Protection
+@ingroup all_tests
+@{
+@}
+
+*/

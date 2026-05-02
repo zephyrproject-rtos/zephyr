@@ -1,0 +1,5 @@
+# Copyright (c) 2022 Martin Jäger <martin@libre.solar>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_OLIMEX_LORA_STM32WL_DEVKIT
+	select SOC_STM32WLE5XX

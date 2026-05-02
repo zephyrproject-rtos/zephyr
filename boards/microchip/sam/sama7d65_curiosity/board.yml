@@ -1,0 +1,6 @@
+board:
+  name: sama7d65_curiosity
+  full_name: SAMA7D65 Curiosity Kit
+  vendor: microchip
+  socs:
+    - name: sama7d65

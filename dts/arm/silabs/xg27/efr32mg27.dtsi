@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <silabs/xg27/efr32xg27.dtsi>

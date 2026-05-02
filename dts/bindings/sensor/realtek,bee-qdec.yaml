@@ -1,0 +1,42 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common properties for Realtek Bee QDEC.
+
+compatible: "realtek,bee-qdec"
+
+include: [sensor-device.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  x-enable:
+    type: boolean
+    description: Enable X axis.
+
+  x-counts-per-revolution:
+    type: int
+    default: 4
+    description: |
+      Counts per revolution for the X axis.
+      This specifies the hardware decoding mode, determining whether the
+      internal counter increments after 2 or 4 external waveform edge
+      transitions. The default represents the X4 decoding mode, which
+      provides the highest resolution. It could be changed to 2 if a
+      lower resolution is desired by the application.
+    enum:
+      - 2
+      - 4
+
+  x-debounce-time-ms:
+    type: int
+    description: |
+      Debounce time of the X axis in milliseconds.

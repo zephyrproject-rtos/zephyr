@@ -1,0 +1,19 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+common:
+  tags:
+    - drivers
+    - flash
+    - memc
+tests:
+  flash.interface_test.build_only:
+    harness: ztest
+    build_only: true
+    filter: CONFIG_FLASH_HAS_DRIVER_ENABLED and
+      dt_label_with_parent_compat_enabled("slot1_partition", "fixed-partitions")
+    integration_platforms:
+      - imx95_evk/mimx9596/m7

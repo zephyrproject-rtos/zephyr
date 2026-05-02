@@ -1,0 +1,31 @@
+# Copyright (c) 2023 Andreas Kilian
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Vishay VEML7700 High Accuracy Ambient Light Sensor With I2C Interface.
+    See: https://www.vishay.com/doc?84286
+
+compatible: "vishay,veml7700"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  psm-mode:
+    type: int
+    default: 0x00
+    description: |
+      Power saving mode as described in the datasheet on page 8.
+      The initial power on register value for the PSM register is 0
+      (power saving mode is disabled) which is the default value.
+      Possible values are:
+        0x00 = Disable power saving mode
+        0x01 = Mode 1 (0001b)
+        0x03 = Mode 2 (0011b)
+        0x05 = Mode 3 (0101b)
+        0x07 = Mode 4 (0111b)
+    enum:
+      - 0x00
+      - 0x01
+      - 0x03
+      - 0x05
+      - 0x07

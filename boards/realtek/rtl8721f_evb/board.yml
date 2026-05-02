@@ -1,0 +1,6 @@
+board:
+  name: rtl8721f_evb
+  full_name: RTL8721F Evaluation Board
+  vendor: realtek
+  socs:
+    - name: rtl8721f

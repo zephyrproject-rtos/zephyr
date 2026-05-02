@@ -1,0 +1,53 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX QDC
+
+compatible: "nxp,mcux-qdc"
+
+include: [pinctrl-device.yaml, sensor-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  counts-per-revolution:
+    type: int
+    required: true
+    description: |
+      Number of counts for one full revolution used for converting counter
+      positions to rotation degrees.
+
+  single-phase-mode:
+    type: boolean
+    description: |
+      Bypass quadrature decode and count PHASEA transitions only, using PHASEB
+      to indicate direction.
+
+  filter-count:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Number of consecutive samples required before an input transition is
+      accepted by the input filter.
+
+  filter-sample-period:
+    type: int
+    description: |
+      Sampling period, in IPBus clock cycles, of the decoder input signals.
+      Valid range: 0-255. If value is 0, then the input filter is bypassed.
+
+  input-channels:
+    type: array
+    description: |
+      INPUTMUX destination channel numbers used when attaching QDC signals.
+      Each entry pairs with the corresponding element in inputmux-connections.
+
+  inputmux-connections:
+    type: array
+    description: |
+      INPUTMUX connection values for QDC inputs. Values map to
+      inputmux_connection_t enums in fsl_inputmux_connections.h.
+      For MCXN947 QDC0, examples include:
+      - kINPUTMUX_TrigIn3ToQdc0Phasea
+      - kINPUTMUX_TrigIn5ToQdc0Phaseb

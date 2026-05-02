@@ -1,0 +1,6 @@
+board:
+  name: eurovibes_stm32g431_sertest-ng
+  full_name: STM32G431 based Sertest-NG board
+  vendor: eurovibes
+  socs:
+    - name: stm32g431xx

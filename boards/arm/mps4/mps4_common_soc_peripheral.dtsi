@@ -1,0 +1,218 @@
+/*
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+sysclk: system-clock {
+	compatible = "fixed-clock";
+	clock-frequency = <25000000>;
+	#clock-cells = <0>;
+};
+
+gpio0: gpio@100000 {
+	compatible = "arm,cmsdk-gpio";
+	reg = <0x100000 0x1000>;
+	interrupts = <69 3>;
+	gpio-controller;
+	#gpio-cells = <2>;
+};
+
+gpio1: gpio@101000 {
+	compatible = "arm,cmsdk-gpio";
+	reg = <0x101000 0x1000>;
+	interrupts = <70 3>;
+	gpio-controller;
+	#gpio-cells = <2>;
+};
+
+gpio2: gpio@102000 {
+	compatible = "arm,cmsdk-gpio";
+	reg = <0x102000 0x1000>;
+	interrupts = <71 3>;
+	gpio-controller;
+	#gpio-cells = <2>;
+};
+
+gpio3: gpio@103000 {
+	compatible = "arm,cmsdk-gpio";
+	reg = <0x103000 0x1000>;
+	interrupts = <72 3>;
+	gpio-controller;
+	#gpio-cells = <2>;
+};
+
+eth0: eth@400000 {
+	/* Linux has "smsc,lan9115" */
+	compatible = "smsc,lan9220";
+	/* Actual reg range is ~0x200 */
+	reg = <0x400000 0x100000>;
+	interrupts = <49 3>;
+};
+
+i2c_touch: i2c@8100000 {
+	compatible = "arm,versatile-i2c";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x8100000 0x1000>;
+};
+
+i2c_audio_conf: i2c@8101000 {
+	compatible = "arm,versatile-i2c";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x8101000 0x1000>;
+};
+
+spi_adc: spi@8102000 {
+	compatible = "arm,pl022";
+	reg = <0x8102000 DT_SIZE_K(4)>;
+	interrupts = <53 3>;
+	interrupt-names = "shield_adc";
+	clocks = <&sysclk>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+spi_shield0: spi@8103000 {
+	compatible = "arm,pl022";
+	reg = <0x8103000 DT_SIZE_K(4)>;
+	interrupts = <54 3>;
+	interrupt-names = "shield0_spi";
+	clocks = <&sysclk>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-names = "default";
+};
+
+spi_shield1: spi@8104000 {
+	compatible = "arm,pl022";
+	reg = <0x8104000 DT_SIZE_K(4)>;
+	interrupts = <55 3>;
+	interrupt-names = "shield1_spi";
+	clocks = <&sysclk>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spi4_default>;
+	pinctrl-names = "default";
+};
+
+i2c_shield0: i2c@8105000 {
+	compatible = "arm,versatile-i2c";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x8105000 0x1000>;
+	pinctrl-0 = <&sbcon2_default>;
+	pinctrl-names = "default";
+};
+
+i2c_shield1: i2c@8106000 {
+	compatible = "arm,versatile-i2c";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x8106000 0x1000>;
+	pinctrl-0 = <&sbcon3_default>;
+	pinctrl-names = "default";
+};
+
+i2c_ddr4_eeprom: i2c@8108000 {
+	compatible = "arm,versatile-i2c";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x8108000 0x1000>;
+};
+
+gpio_led0: mps4_fpgaio@8202000 {
+	compatible = "arm,mmio32-gpio";
+	reg = <0x8202000 0x4>;
+	gpio-controller;
+	#gpio-cells = <1>;
+	ngpios = <8>;
+};
+
+gpio_button: mps4_fpgaio@8202008 {
+	compatible = "arm,mmio32-gpio";
+	reg = <0x8202008 0x4>;
+	gpio-controller;
+	#gpio-cells = <1>;
+	ngpios = <2>;
+	direction-input;
+};
+
+gpio_misc: mps4_fpgaio@820204c {
+	compatible = "arm,mmio32-gpio";
+	reg = <0x820204c 0x4>;
+	gpio-controller;
+	#gpio-cells = <1>;
+	ngpios = <3>;
+};
+
+uart0: uart@8203000 {
+	compatible = "arm,cmsdk-uart";
+	reg = <0x8203000 0x1000>;
+	interrupts = <34 3 33 3>;
+	interrupt-names = "tx", "rx";
+	clocks = <&sysclk>;
+	current-speed = <115200>;
+};
+
+uart1: uart@8204000 {
+	compatible = "arm,cmsdk-uart";
+	reg = <0x8204000 0x1000>;
+	interrupts = <36 3 35 3>;
+	interrupt-names = "tx", "rx";
+	clocks = <&sysclk>;
+	current-speed = <115200>;
+};
+
+uart2: uart@8205000 {
+	compatible = "arm,cmsdk-uart";
+	reg = <0x8205000 0x1000>;
+	interrupts = <38 3 37 3>;
+	interrupt-names = "tx", "rx";
+	clocks = <&sysclk>;
+	current-speed = <115200>;
+};
+
+uart3: uart@8206000 {
+	compatible = "arm,cmsdk-uart";
+	reg = <0x8206000 0x1000>;
+	interrupts = <40 3 39 3>;
+	interrupt-names = "tx", "rx";
+	clocks = <&sysclk>;
+	current-speed = <115200>;
+	pinctrl-0 = <&uart3_default>;
+	pinctrl-names = "default";
+};
+
+uart4: uart@8207000 {
+	compatible = "arm,cmsdk-uart";
+	reg = <0x8207000 0x1000>;
+	interrupts = <42 3 41 3>;
+	interrupt-names = "tx", "rx";
+	clocks = <&sysclk>;
+	current-speed = <115200>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+};
+
+uart5: uart@8208000 {
+	compatible = "arm,cmsdk-uart";
+	status = "disabled";
+	reg = <0x8208000 0x1000>;
+	interrupt-names = "tx", "rx";
+	interrupts = <126 3 125 3>;
+	clocks = <&sysclk>;
+	current-speed = <115200>;
+};
+
+pinctrl: pinctrl {
+	compatible = "arm,mps4-pinctrl";
+	status = "okay";
+};

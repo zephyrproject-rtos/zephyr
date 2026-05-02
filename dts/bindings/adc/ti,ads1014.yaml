@@ -1,0 +1,5 @@
+description: Texas Instruments ADS1014 I2C ADC
+
+compatible: "ti,ads1014"
+
+include: ti,ads1x1x-base.yaml

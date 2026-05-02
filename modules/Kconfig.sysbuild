@@ -1,0 +1,28 @@
+# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2022 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+
+comment "Available modules."
+
+source "$(KCONFIG_BINARY_DIR)/Kconfig.sysbuild.modules"
+
+comment "Unavailable modules, please install those via the project manifest."
+
+# List of comments to display when Zephyr modules are not available, please
+# use the following syntax:
+# ---------------------------------------------------
+# comment "<module_name> module not available."
+#	depends on !SYSBUILD_<MODULE_NAME_UPPER>_MODULE
+#
+# Remember to add the following code inside the `<module>/Kconfig file:
+# ---------------------------------------------------
+# config SYSBUILD_<MODULE_NAME_UPPER>_MODULE
+# 	bool
+
+# This ensures that symbols are available in Kconfig for dependency checking
+# and referencing, while keeping the settings themselves unavailable when the
+# modules are not present in the workspace
+if 0
+osource "modules/*/Kconfig.sysbuild"
+endif

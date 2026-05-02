@@ -1,0 +1,20 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STEMMA QT is a 4-pin JST-SH connector for I2C devices.
+    The pin assignments are as follows.
+
+        0  SCL
+        1  SDA
+        -  VCC (3-5V)
+        -  GND
+
+    STEMMA, Grove, Qwiic, and Gravity connectors are similar to this,
+    but the connector form and VCC voltage are different.
+    Please see
+    https://learn.adafruit.com/introducing-adafruit-stemma-qt/stemma-qt-comparison#quick-comparison-3035247
+
+compatible: "stemma-qt-connector"
+
+include: [gpio-nexus.yaml, base.yaml]

@@ -1,0 +1,51 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bouffalolab Root Clock
+  Represents both FCLK and HCLK depending on their presence, which should be kept the same.
+  Source -> / divider -> This Clock
+  Please refer to the SoC datasheet's clock diagram for more details
+
+examples:
+  - |
+    &clk_root {
+      clocks = <&clk_pll BL60X_PLL_ID_DIV5_3>;
+      divider = <1>;
+    };
+
+  - |
+    &clk_root {
+      clocks = <&clk_wifipll BL61X_WIFIPLL_ID_DIV1>;
+      divider = <1>;
+    };
+
+  - |
+    &clk_root {
+      clocks = <&clk_crystal>;
+      divider = <1>;
+    };
+
+  - |
+    &clk_root {
+      clocks = <&clk_rc32m>;
+      divider = <1>;
+    };
+
+compatible: "bflb,root-clk"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clocks:
+    type: phandle-array
+    required: true
+    description: source
+
+  divider:
+    type: int
+    required: true
+    description: Divide source clock by this 8-bits value. Typically 1.
+
+  "#clock-cells":
+    const: 0

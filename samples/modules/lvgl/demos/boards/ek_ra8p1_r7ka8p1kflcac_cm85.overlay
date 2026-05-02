@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &code_mram_cm85;
+/delete-node/ &code_mram_cm33;
+
+/ {
+	chosen {
+		/delete-property/ zephyr,code-partition;
+	};
+};
+
+&mram_ctrl {
+	code_mram_cm85: mram@2000000 {
+		compatible = "renesas,ra-nv-mram";
+		reg = <0x2000000 DT_SIZE_M(1)>;
+		write-block-size = <1>;
+		erase-block-size = <32>;
+	};
+};

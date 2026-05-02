@@ -1,0 +1,48 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <GPIO22_UART0_RX>,
+				 <GPIO21_UART0_TX>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+	};
+
+	uart0_sleep: uart0_sleep {
+		group1 {
+			pinmux = <GPIO22_UART0_RX>,
+				 <GPIO21_UART0_TX>;
+			bias-high-impedance;
+		};
+	};
+
+	sdh_default: sdh_default {
+		group_data {
+			pinmux = <GPIO11_SDH_DAT0>,
+				 <GPIO10_SDH_DAT1>,
+				 <GPIO15_SDH_DAT2>,
+				 <GPIO14_SDH_DAT3>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+
+		group_cmd {
+			pinmux = <GPIO13_SDH_CMD>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+
+		group_clk {
+			pinmux = <GPIO12_SDH_CLK>;
+			bias-pull-up;
+			input-schmitt-enable;
+			drive-strength = <1>;
+		};
+	};
+};

@@ -1,0 +1,34 @@
+# ARM64 architecture configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "ARM64 Options"
+	depends on ARM64
+
+config ARCH
+	default "arm64"
+
+config CPU_CORTEX
+	bool
+	help
+	  This option signifies the use of a CPU of the Cortex family.
+
+config ARM_CUSTOM_INTERRUPT_CONTROLLER
+	bool
+	help
+	  This option indicates that the ARM CPU is connected to a custom (i.e.
+	  non-GIC) interrupt controller.
+
+	  A number of Cortex-A and Cortex-R cores (Cortex-A5, Cortex-R4/5, ...)
+	  allow interfacing to a custom external interrupt controller and this
+	  option must be selected when such cores are connected to an interrupt
+	  controller that is not the ARM Generic Interrupt Controller (GIC).
+
+	  When this option is selected, the architecture interrupt control
+	  functions are mapped to the SoC interrupt control interface, which is
+	  implemented at the SoC level.
+
+rsource "core/Kconfig"
+
+endmenu

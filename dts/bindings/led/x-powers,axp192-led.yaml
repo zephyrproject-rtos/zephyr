@@ -1,0 +1,23 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  AXP192 LED controller
+
+  The AXP192 has one LED can automatically display error or charging status,
+  or be controlled by software.
+
+compatible: "x-powers,axp192-led"
+
+on-bus: axp192
+
+properties:
+  x-powers,mode:
+    type: string
+    enum:
+      - "by-reg"
+      - "by-charge"
+    description:
+      Select the LED control method.
+      If you select "by-reg", you can control it from software.
+      Please refer to the datasheet for details on "by-charge".

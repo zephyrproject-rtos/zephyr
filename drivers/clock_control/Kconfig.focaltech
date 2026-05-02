@@ -1,0 +1,14 @@
+# Copyright (c) 2025, FocalTech Systems CO.,Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_FOCALTECH_FT9001
+	bool "FocalTech FT9001 Clock Power Module (CPM) driver"
+	default y
+	depends on DT_HAS_FOCALTECH_FT9001_CPM_ENABLED
+	help
+	  Enable clock control driver for FocalTech FT9001 SoC.
+	  This driver provides support for controlling peripheral
+	  clocks through the Clock Power Module (CPM) which manages
+	  clock gating for various on-chip peripherals including
+	  UART, SPI, I2C, CAN, USB, crypto engines, and memory
+	  controllers.

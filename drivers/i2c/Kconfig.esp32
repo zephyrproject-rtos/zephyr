@@ -1,0 +1,13 @@
+# ESP32 I2C configuration options
+
+# Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_ESP32
+	bool "ESP32 I2C driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_I2C_ENABLED
+	select GPIO_ESP32
+	help
+	  Enables the ESP32 I2C driver

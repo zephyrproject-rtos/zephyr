@@ -1,0 +1,11 @@
+# Copyright 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs PROTIMER counter
+
+description: |
+  Silicon Labs Series 2 PROTIMER Counter
+
+compatible: "silabs,protimer"
+
+include: base.yaml

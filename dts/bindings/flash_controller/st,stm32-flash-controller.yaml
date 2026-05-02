@@ -1,0 +1,17 @@
+description: STM32 Family flash controller
+
+compatible: "st,stm32-flash-controller"
+
+include: flash-controller.yaml
+
+properties:
+  st,rdp1-enable-byte:
+    type: int
+    default: 0x55
+    description: |
+      This property provides a byte which should used to enable non-permanent
+      readout protection (RDP1). Actually, any byte except 0xAA and 0xCC
+      (which are used by RDP0 and RDP2 respectively) can be used to enable
+      RDP1 but in multi-image environment, some other image could check if
+      RDP1 is enabled by comparing it to some hardcoded value. The byte has to
+      be different than 0xAA and 0xCC.

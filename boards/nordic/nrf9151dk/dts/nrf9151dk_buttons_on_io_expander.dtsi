@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pcal6408a {
+	status = "okay";
+};
+
+&button0 {
+	gpios = <&pcal6408a 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+};
+
+&button1 {
+	gpios = <&pcal6408a 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+};
+
+&button2 {
+	gpios = <&pcal6408a 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+};
+
+&button3 {
+	gpios = <&pcal6408a 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+};

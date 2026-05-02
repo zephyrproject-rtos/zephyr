@@ -1,0 +1,33 @@
+# Copyright (c) 2021 IP-Logix Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for MDIO controllers
+
+include: base.yaml
+
+bus: mdio
+
+properties:
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
+
+  suppress-preamble:
+    type: boolean
+    description: |
+      When present, the SMA suppresses the 32-bit preamble and transmits
+      MDIO frames with only 1 preamble bit. By default, the MDIO frame
+      always has 32 bits of preamble as defined in the IEEE 802.3 specs.
+
+  clock-frequency:
+    type: int
+    default: 2500000
+    description: |
+      Some MDIO controllers have the ability to configure the MDC frequency.
+      If present, this property may be used to specify the MDC frequency based
+      on what the PHYs connected to the mdio bus can support. Default of 2.5MHz
+      is the standard and should supported by all PHYs.

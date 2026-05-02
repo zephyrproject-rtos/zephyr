@@ -1,0 +1,24 @@
+# NXP S32K3XX MCU series
+
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_S32K3
+	bool
+	select SOC_FAMILY_NXP_S32
+
+config SOC_SERIES
+	default "s32k3" if SOC_SERIES_S32K3
+
+config SOC_S32K344
+	bool
+	select SOC_SERIES_S32K3
+
+config SOC
+	default "s32k344" if SOC_S32K344
+
+config SOC_PART_NUMBER_PS32K344EHVPBS
+	bool
+
+config SOC_PART_NUMBER
+	default "PS32K344EHVPBS" if SOC_PART_NUMBER_PS32K344EHVPBS

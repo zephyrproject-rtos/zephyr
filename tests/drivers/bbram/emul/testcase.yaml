@@ -1,0 +1,12 @@
+# Copyright 2021 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.bbram.emul:
+    tags:
+      - drivers
+      - bbram
+    harness: ztest
+    platform_allow: native_sim
+    integration_platforms:
+      - native_sim

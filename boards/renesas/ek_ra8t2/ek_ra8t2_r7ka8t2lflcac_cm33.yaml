@@ -1,0 +1,16 @@
+identifier: ek_ra8t2/r7ka8t2lflcac/cm33
+name: Renesas EK-RA8T2
+type: mcu
+arch: arm
+ram: 640
+flash: 256
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - spi
+  - pwm
+  - i2c
+  - counter
+vendor: renesas

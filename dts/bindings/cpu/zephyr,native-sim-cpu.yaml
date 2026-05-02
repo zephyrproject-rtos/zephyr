@@ -1,0 +1,8 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: native_sim CPU
+
+compatible: "zephyr,native-sim-cpu"
+
+include: cpu.yaml

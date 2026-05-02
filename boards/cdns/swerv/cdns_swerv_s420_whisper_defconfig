@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_CONSOLE=y
+CONFIG_SERIAL=y
+CONFIG_WHISPER_CONSOLE=y
+CONFIG_XIP=n
+
+# MRAC - Region Access Control CSR
+CONFIG_SOC_CDNS_SWERV_BOOT_MRAC=0x55555555

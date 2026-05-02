@@ -1,0 +1,9 @@
+# Copyright 2025  NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_NXP_CMP
+	bool "NXP comparator driver"
+	default y
+	depends on DT_HAS_NXP_CMP_ENABLED
+	select PINCTRL
+	select CLOCK_CONTROL

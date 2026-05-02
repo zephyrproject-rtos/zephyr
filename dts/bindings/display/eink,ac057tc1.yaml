@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+title: E-Ink AC057TC1 Display Controller
+
+description: |
+  Controller of E-Ink AC057TC1 (or (AB1024-EGA) 5.7-inch seven-color electrophoretic display.
+
+compatible: "eink,ac057tc1"
+
+include:
+  - display-controller.yaml
+  - name: mipi-dbi-spi-device.yaml
+    property-blocklist:
+      - te-delay
+
+properties:
+  busy-gpios:
+    type: phandle-array
+    description: Busy/status GPIO

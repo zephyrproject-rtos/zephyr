@@ -1,0 +1,42 @@
+# Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Würth Elektronik WSEN-TIDS-2521020222501 temperature sensor
+
+compatible: "we,wsen-tids-2521020222501"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  interrupt-gpios:
+    type: phandle-array
+    description: Threshold interrupt pin.
+      Interrupt is active low by default.
+
+  odr:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 25
+      - 50
+      - 100
+      - 200
+    description: |
+      Sensor output data rate expressed in samples per second.
+      Data rates supported by the chip are 0 (power down), 25, 50, 100 and 200.
+
+  temp-high-threshold:
+    type: int
+    default: -40320
+    description: |
+      Threshold for temperature high limit interrupt event in millidegree Celsius.
+      Defaults to -40320, which is the configuration at power-up.
+
+  temp-low-threshold:
+    type: int
+    default: -40320
+    description: |
+      Threshold for temperature low limit interrupt event in millidegree Celsius.
+      Defaults to -40320, which is the configuration at power-up.

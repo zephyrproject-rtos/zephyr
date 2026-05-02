@@ -1,0 +1,11 @@
+{
+  "version": 7,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 27,
+    "patch": 0
+  },
+  "include": [
+    "$penv{APP_DIR}/CMakePresets.json"
+  ]
+}

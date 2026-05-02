@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024 AMD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <xtensa/xtensa.dtsi>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <0>;
+		};
+	};
+};

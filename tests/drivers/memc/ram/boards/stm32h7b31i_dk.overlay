@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Test the full SDRAM accesses. Discable LTDC to prevent conflicts */
+
+ram0: &sdram2 {};
+
+&ltdc {
+	status = "disabled";
+};

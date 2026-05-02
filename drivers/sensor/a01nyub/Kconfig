@@ -1,0 +1,11 @@
+# Copyright (c) 2023 SteadConnect
+# SPDX-License-Identifier: Apache-2.0
+
+config A01NYUB
+	bool "DFRobot A01NYUB distance sensor"
+	default y
+	depends on DT_HAS_DFROBOT_A01NYUB_ENABLED
+	depends on UART_INTERRUPT_DRIVEN
+	select UART_USE_RUNTIME_CONFIGURE
+	help
+	  Enable driver for the DFRobot A01NYUB distance sensor.

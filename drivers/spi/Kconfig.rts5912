@@ -1,0 +1,10 @@
+# Copyright (c) 2025, Realtek, SIBG-SD7
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_REALTEK_RTS5912
+	bool "REALTEK RTS5912 SPI Driver"
+	default y
+	depends on DT_HAS_REALTEK_RTS5912_SPI_ENABLED
+	select PINCTRL
+	help
+	  Enable support for the Realtek RTS5912 SPI controller driver.

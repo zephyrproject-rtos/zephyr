@@ -1,0 +1,11 @@
+# Copyright (c) 2024, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml]
+
+description: |
+    When this file is missing _or_ the include above is missing, then
+    test coverage is _quietly_ reduced! Code that should fail turns
+    green. Nasty.
+
+compatible: "fake-cpp-driver"

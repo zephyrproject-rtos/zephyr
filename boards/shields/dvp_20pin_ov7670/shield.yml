@@ -1,0 +1,6 @@
+shield:
+  name: dvp_20pin_ov7670
+  full_name: DVP 20-pin OV7670 Camera Shield
+  vendor: ovti
+  supported_features:
+    - video

@@ -1,0 +1,15 @@
+title: Silicon Labs Series 2 GPIO (General Purpose Input/Output) Peripheral
+
+description: |
+  GPIO peripheral for Silicon Labs EFR32 Series 2.
+
+compatible: "silabs,gpio"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

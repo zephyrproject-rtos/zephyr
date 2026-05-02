@@ -1,0 +1,46 @@
+# Copyright (c) 2025 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Fixed layout for Non-Volatile memory.
+
+compatible: "fixed-layout"
+
+properties:
+  "#address-cells":
+    type: int
+    const: 1
+    description: |
+      Number of cells required to represent a child node's
+      reg property address.
+
+  "#size-cells":
+    type: int
+    const: 1
+    description: |
+      Number of cells required to represent a child node's size.
+
+child-binding:
+  description: |
+    Each child node of the NVMEM provider node represents
+    an individual NVMEM cell. These should usually
+    look like this:
+
+      cell_nodelabel: cell@START_OFFSET {
+              reg = <0xSTART_OFFSET 0xSIZE>;
+              #nvmem-cell-cells = <0>;
+      };
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: |
+        This should be in the format <OFFSET SIZE>, where OFFSET
+        is the offset of the NVMEM cell relative to the base
+        address of the parent memory, and SIZE is the size of
+        the cell in bytes.
+
+    read-only:
+      type: boolean
+      description: Set this property if the cell is read-only.

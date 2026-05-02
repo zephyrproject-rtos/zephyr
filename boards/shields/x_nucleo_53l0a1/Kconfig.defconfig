@@ -1,0 +1,9 @@
+# Copyright (c) 2021 Titouan Christophe
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_X_NUCLEO_53L0A1
+
+config VL53L0X_RECONFIGURE_ADDRESS
+	default y if SENSOR
+
+endif # SHIELD_X_NUCLEO_53L0A1

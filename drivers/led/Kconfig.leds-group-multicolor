@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Seagate Technology LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config LEDS_GROUP_MULTICOLOR
+	bool "LEDs group multi-color driver"
+	default y
+	depends on DT_HAS_LEDS_GROUP_MULTICOLOR_ENABLED
+	help
+	  Enable this driver to supports multi-color LEDs built with several
+	  monochromatic LEDs.
+
+	  See the leds-group-multicolor DT binding for details.

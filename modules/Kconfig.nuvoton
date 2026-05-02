@@ -1,0 +1,86 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2020 Linumiz
+# Author: Saravanan Sekar <saravanan@linumiz.com>
+
+config HAS_NUMICRO_HAL
+	bool
+	select HAS_CMSIS_CORE
+	depends on SOC_FAMILY_NUMICRO
+
+menu "Nuvoton drivers"
+	depends on HAS_NUMICRO_HAL
+
+config HAS_NUMICRO_UART
+	bool "NuMicro UART"
+	help
+	  Enable Nuvoton Universal asynchronous receiver transmitter HAL
+	  module driver
+
+endmenu
+
+config HAS_NUMAKER_HAL
+	bool
+	select HAS_CMSIS_CORE
+	depends on SOC_FAMILY_NUMAKER
+
+menu "Nuvoton NuMaker drivers"
+	depends on HAS_NUMAKER_HAL
+	config HAS_NUMAKER_UART
+		bool "NuMaker UART"
+		help
+		  Enable Nuvoton Universal asynchronous receiver transmitter HAL
+		  module driver
+	config HAS_NUMAKER_GPIO
+		bool "NuMaker GPIO"
+		help
+		  Enable Nuvoton gpio HAL module driver
+	config HAS_NUMAKER_FMC
+		bool "NuMaker FMC"
+		help
+		  Enable Nuvoton FMC HAL module driver
+	config HAS_NUMAKER_I2C
+		bool "NuMaker I2C"
+		help
+		  Enable Nuvoton I2C HAL module driver
+	config HAS_NUMAKER_SPI
+		bool "NuMaker SPI"
+		help
+		  Enable Nuvoton SPI HAL module driver
+	config HAS_NUMAKER_PWM
+		bool "NuMaker PWM"
+		help
+		  Enable Nuvoton PWM HAL module driver
+	config HAS_NUMAKER_USBD
+		bool "NuMaker USB 1.1 device controller"
+		help
+		  Enable Nuvoton USB 1.1 device controller HAL module driver
+	config HAS_NUMAKER_HSUSBD
+		bool "NuMaker high-speed USB 2.0 device controller"
+		help
+		  Enable Nuvoton high-speed USB 2.0 device controller HAL module driver
+	config HAS_NUMAKER_ETH
+		bool "NuMaker ETH"
+		help
+		  Enable Nuvoton ETH EMAC HAL module driver
+	config HAS_NUMAKER_CANFD
+		bool "NuMaker CAN FD"
+		help
+		  Enable Nuvoton CAN FD HAL module driver
+	config HAS_NUMAKER_ADC
+		bool "NuMaker ADC"
+		help
+		  Enable Nuvoton ADC HAL module driver
+	config HAS_NUMAKER_RMC
+		bool "NuMaker RMC"
+		help
+		  Enable Nuvoton RMC HAL module driver
+	config HAS_NUMAKER_RTC
+		bool "NuMaker RTC"
+		help
+		  Enable Nuvoton RTC HAL module driver
+	config HAS_NUMAKER_TMR
+		bool "NuMaker Timer"
+		help
+		  Enable Nuvoton Timer HAL module driver
+endmenu

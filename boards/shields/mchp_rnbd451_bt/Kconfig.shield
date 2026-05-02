@@ -1,0 +1,11 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MCHP_RNBD451_BT
+	def_bool $(shields_list_contains,mchp_rnbd451_bt)
+
+config SHIELD_MCHP_RNBD451_BT_MIKROBUS
+	def_bool $(shields_list_contains,mchp_rnbd451_bt_mikrobus)
+
+config SHIELD_MCHP_RNBD451_BT_XPLAINED_PRO
+	def_bool $(shields_list_contains,mchp_rnbd451_bt_xplained_pro)

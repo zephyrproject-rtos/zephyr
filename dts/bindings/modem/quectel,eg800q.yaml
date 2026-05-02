@@ -1,0 +1,13 @@
+description: Quectel EG800Q modem
+
+compatible: "quectel,eg800q"
+
+include: zephyr,cellular-modem-device.yaml
+
+properties:
+  mdm-power-gpios:
+    type: phandle-array
+    required: true
+
+  zephyr,mdm-reset-behavior:
+    default: ["toggle_on_recovery"]

@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX-LCT node
+
+compatible: "nuvoton,npcx-lct-base"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pwr-by-vsby:
+    type: boolean
+    description: |
+      Select the LCT power supply source to VSBY.

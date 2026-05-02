@@ -1,0 +1,15 @@
+# Kconfig options for the test
+#
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Test configuration"
+
+module = APP
+module-str = app
+
+source "subsys/logging/Kconfig.template.log_config"
+
+endmenu
+
+source "Kconfig.zephyr"

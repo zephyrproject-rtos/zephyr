@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022 Meta
+
+config TEST_MUTEX_API_THREAD_CREATE_TICKS
+	int "Wait time (in ticks) after thread creation"
+	default 42
+
+source "Kconfig"

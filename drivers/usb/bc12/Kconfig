@@ -1,0 +1,17 @@
+# Copyright (c) 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USB_BC12
+	bool "USB BC1.2 Drivers"
+	help
+	  Enable USB BC1.2 (battery charging detection) drivers.
+
+if USB_BC12
+
+module = USB_BC12
+module-str = usb_bc12
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/usb/bc12/Kconfig.pi3usb9201"
+
+endif # USB_BC12

@@ -1,0 +1,12 @@
+sample:
+  description: STWIN.box board testing
+  name: STWIN.box board test
+tests:
+  sample.board.steval_stwinbx1.sensors:
+    harness: sensor
+    platform_allow: steval_stwinbx1
+    tags: sensors
+    depends_on:
+      - i2c
+      - spi
+      - gpio

@@ -1,0 +1,9 @@
+# Copyright (c) 2025, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_SF32LB
+	bool "ADC driver for SF32LB family of MCUs"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_GPADC_ENABLED
+	help
+	  Enable ADC driver for SF32LB series of MCUs

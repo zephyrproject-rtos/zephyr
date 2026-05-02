@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Examples of Kconfig symbols for SoCs
+
+# start-after-here
+
+# This assumes the following soc.yml file:
+# family:
+#   - name: alpha
+#     series:
+#       - name: foxtrot
+#         socs:
+#           - name: charlie
+
+config SOC_FAMILY_ALPHA_JTAG_LOCK
+	bool "Lock JTAG access"
+
+config SOC_SERIES_FOXTROT_EMULATE_POWER_OFF
+	bool "Emulate power off mode"
+
+config SOC_CHARLIE_IMAGE_HEADER
+	bool "Include image header"

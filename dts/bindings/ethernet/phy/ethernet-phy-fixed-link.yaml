@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for MIIPHY devices
+
+description: Generic MII PHY with fixed link and no PHY configuration
+
+compatible: "ethernet-phy-fixed-link"
+
+include:
+  - name: phy.yaml
+  - name: ethernet-phy-default-speeds.yaml
+  - name: ethernet-phy-reset-gpios.yaml
+
+properties:
+  default-speeds:
+    required: true

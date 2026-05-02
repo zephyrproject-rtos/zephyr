@@ -1,0 +1,10 @@
+# Copyright 2025 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_OMAP_MCSPI
+	bool "MCSPI driver for OMAP and K3 devices"
+	default y
+	depends on DT_HAS_TI_OMAP_MCSPI_ENABLED
+	select PINCTRL
+	help
+	  Enable support for TI OMAP MCSPI driver.

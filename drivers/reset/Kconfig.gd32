@@ -1,0 +1,7 @@
+# Copyright (c) 2022 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config RESET_GD32
+	bool "GD32 Reset Controller Driver"
+	default y
+	depends on DT_HAS_GD_GD32_RCTL_ENABLED

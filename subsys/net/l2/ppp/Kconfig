@@ -1,0 +1,110 @@
+# Copyright (c) 2019 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_L2_PPP
+	bool "Point-to-point (PPP) support"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	help
+	  Add support for PPP.
+
+if NET_L2_PPP
+
+config NET_L2_PPP_TIMEOUT
+	int "Maximum timeout in ms for Configure-Req"
+	default 3000
+	range 1 $(UINT32_MAX)
+	help
+	  How long to wait Configure-Req.
+
+config NET_L2_PPP_MAX_CONFIGURE_REQ_RETRANSMITS
+	int "Maximum number of Configure-Req retransmits"
+	default 10
+	range 0 $(UINT32_MAX)
+	help
+	  How many times to resend Configure-Req messages before deciding the
+	  link is not working properly.
+
+config NET_L2_PPP_MAX_TERMINATE_REQ_RETRANSMITS
+	int "Maximum number of Terminate-Req retransmits"
+	default 2
+	range 0 $(UINT32_MAX)
+	help
+	  How many times to resend Terminate-Req messages before terminating
+	  the link.
+
+config NET_L2_PPP_MAX_NACK_LOOPS
+	int "Maximum number of NACK loops accepted"
+	default 5
+	range 0 $(UINT32_MAX)
+	help
+	  How many times to accept NACK loops.
+
+config NET_L2_PPP_OPTION_DNS_USE
+	bool "Use negotiated DNS servers"
+	depends on DNS_RESOLVER
+	help
+	  Use the DNS servers negotiated in the IPCP configuration.
+
+config NET_L2_PPP_AUTH_SUPPORT
+	bool
+
+config NET_L2_PPP_PAP
+	bool "PAP authentication protocol"
+	select NET_L2_PPP_AUTH_SUPPORT
+	help
+	  Enable support for PAP authentication protocol.
+
+config NET_L2_PPP_OPTION_MRU
+	bool "LCP MRU option support"
+	help
+	  Enable support for LCP MRU option.
+
+config NET_L2_PPP_OPTION_SERVE_IP
+	bool "Serve IP address to peer"
+	help
+	  Enable support for serving IP address to PPP peer.
+
+config NET_L2_PPP_OPTION_SERVE_DNS
+	bool "Serve DNS addresses to peer"
+	help
+	  Enable support for serving DNS addresses to PPP peer.
+
+module = NET_L2_PPP
+module-dep = NET_LOG
+module-str = Log level for ppp L2 layer
+module-help = Enables ppp L2 to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_L2_PPP_MGMT
+	bool "Ppp network management interface"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	help
+	  Enable support net_mgmt ppp interface which can be used to
+	  configure at run-time ppp drivers and L2 settings.
+
+config NET_L2_PPP_TX_STACK_SIZE
+	int "Stack size for TX handler"
+	default 2048 if COVERAGE_GCOV
+	default 1024
+	help
+	  Set the TX handler stack size.
+
+config NET_L2_PPP_THREAD_PRIO
+	int "Priority of the PPP TX thread"
+	default 1
+	help
+	  Set the priority of the PPP TX thread, that handles all
+	  transmission of PPP packets.
+	  Value 0 = highest priortity.
+	  When CONFIG_NET_TC_THREAD_COOPERATIVE = y, lowest priority is
+	  CONFIG_NUM_COOP_PRIORITIES-1 else lowest priority is
+	  CONFIG_NUM_PREEMPT_PRIORITIES-1.
+	  When using PPP in combination with TCP, make sure the priority
+	  is higher (or equal) than the TCP work queue, otherwise the
+	  TCP stack will consume all net_bufs before transferring
+	  execution to the lower layer network stack, with a high risk of
+	  running out of net_bufs.
+
+endif # NET_L2_PPP

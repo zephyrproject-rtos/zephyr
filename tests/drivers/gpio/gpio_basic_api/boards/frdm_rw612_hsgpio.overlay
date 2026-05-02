@@ -1,0 +1,21 @@
+/*
+ * Copyright NXP 2025
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&hsgpio0 18 GPIO_ACTIVE_HIGH>; /* gpio18 J7-2 */
+		in-gpios = <&hsgpio1 12 GPIO_ACTIVE_HIGH>; /* gpio44  J7-4 */
+	};
+};
+
+&hsgpio0 {
+	status = "okay";
+};
+
+&hsgpio1 {
+	status = "okay";
+};

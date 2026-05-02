@@ -1,0 +1,15 @@
+sample:
+  name: Bluetooth Peripheral ANS
+  description: Demonstrates the Alert Notification Service (ANS)
+tests:
+  sample.bluetooth.peripheral_ans:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf52840dk/nrf52840
+    tags: bluetooth

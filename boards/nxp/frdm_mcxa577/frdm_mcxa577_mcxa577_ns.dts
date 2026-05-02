@@ -1,0 +1,109 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/mcx/nxp_mcxa5x_ns.dtsi>
+#include "frdm_mcxa577.dtsi"
+
+/ {
+	model = "NXP FRDM_MCXA577 board";
+	compatible = "nxp,mcxa577", "nxp,mcx";
+
+	chosen {
+		zephyr,sram = &non_secure_ram;
+		zephyr,flash = &flash;
+		zephyr,code-partition = &slot0_ns_partition;
+		zephyr,flash-controller = &fmu;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* RAM split used by TFM */
+		secure_ram: partition@20004000 {
+			label = "secure-memory";
+			reg = <0x20004000 DT_SIZE_K(112)>;
+		};
+
+		non_secure_ram: partition@20020000 {
+			label = "non-secure-memory";
+			reg = <0x20020000 DT_SIZE_K(128)>;
+		};
+	};
+};
+
+&flash {
+	/delete-node/ partitions;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/*
+		 * All partition sizes must be aligned to the flash memory sector size (8 KB).
+		 *
+		 * This flash layout must exactly match the upstream TF-M layout defined in
+		 * the platform-specific `flash_layout.h`. Any modification to the layout
+		 * must be applied consistently in both `flash_layout.h` and this file.
+		 *
+		 * BL2 / MCUBoot
+		 */
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;  /* 64 KB: 0x0000_0000 - 0x0000_FFFF */
+		};
+
+		/* Secure image - primary */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(192)>; /* 192 KB: 0x0001_0000 - 0x0003_FFFF */
+		};
+
+		/* Non-secure image - primary */
+		slot0_ns_partition: partition@40000 {
+			label = "image-0-nonsecure";
+			reg = <0x00040000 DT_SIZE_K(192)>; /* 192 KB: 0x0004_0000 - 0x0006_FFFF */
+		};
+
+		/* Secure image - secondary */
+		slot1_partition: partition@70000 {
+			label = "image-1-secondary";
+			reg = <0x00070000 DT_SIZE_K(192)>; /* 192 KB: 0x0007_0000 - 0x0009_FFFF */
+		};
+
+		/* Non-secure image - secondary */
+		slot1_ns_partition: partition@a0000 {
+			label = "image-1-non-secure";
+			reg = <0x000a0000 DT_SIZE_K(192)>; /* 192 KB: 0x000A_0000 - 0x000C_FFFF */
+		};
+
+		/* Protected Storage (PS) */
+		tfm_ps_partition: partition@d0000 {
+			label = "tfm-ps";
+			reg = <0x000d0000 DT_SIZE_K(16)>;   /* 16 KB: 0x000D_0000 - 0x000D_3FFF */
+		};
+
+		/* Internal Trusted Storage (ITS) */
+		tfm_its_partition: partition@d4000 {
+			label = "tfm-its";
+			reg = <0x000d4000 DT_SIZE_K(16)>;   /* 16 KB: 0x000D_4000 - 0x000D_7FFF */
+		};
+
+		/* OTP / NV counters */
+		tfm_otp_partition: partition@d8000 {
+			label = "tfm-otp";
+			reg = <0x000d8000 DT_SIZE_K(16)>;   /* 16 KB: 0x000D_8000 - 0x000D_BFFF */
+		};
+	};
+};

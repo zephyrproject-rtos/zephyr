@@ -1,0 +1,23 @@
+# Copyright (c) 2021 KT-Elektronik, Klaucke und Partner GmbH
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX timer node
+
+compatible: "renesas,rx-timer-cmt-start-control"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Clock frequency information for Timer operation
+      This value need to be set at PCLKB/8

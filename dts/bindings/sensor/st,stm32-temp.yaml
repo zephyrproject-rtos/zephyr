@@ -1,0 +1,16 @@
+# Copyright (c) 2021, Eug Krashtan
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 Internal Temperature Sensor.
+
+compatible: "st,stm32-temp"
+
+include: [base.yaml, "st,stm32-temp-common.yaml"]
+
+properties:
+  v25:
+    type: int
+    required: true
+    description: |
+      Voltage of temperature sensor at 25°C (in mV), found in MCU datasheet
+      chapters "Electrical characteristics" or "Operating conditions"

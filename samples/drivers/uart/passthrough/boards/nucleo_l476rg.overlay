@@ -1,0 +1,12 @@
+/ {
+	chosen {
+		uart,passthrough = &uart4;
+	};
+};
+
+&uart4 {
+	pinctrl-0 = <&uart4_tx_pa0 &uart4_rx_pa1>;
+	pinctrl-names = "default";
+	current-speed = <9600>;
+	status = "okay";
+};

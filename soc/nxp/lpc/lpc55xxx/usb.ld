@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2021 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+GROUP_START(USB_BDT)
+
+	SECTION_PROLOGUE(_USB_BDT_SECTION_NAME,(NOLOAD),)
+	{
+		. = ALIGN(512);
+		*(m_usb_bdt)
+	} GROUP_LINK_IN(USB_SRAM)
+
+GROUP_END(USB_BDT)
+
+GROUP_START(USB_GLOBAL)
+
+	SECTION_PROLOGUE(_USB_GLOBAL_SECTION_NAME,(NOLOAD),)
+	{
+		*(m_usb_global)
+	} GROUP_LINK_IN(USB_SRAM)
+
+GROUP_END(USB_GLOBAL)

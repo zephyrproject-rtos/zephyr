@@ -1,0 +1,60 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_KBD_MATRIX
+	bool
+	depends on MULTITHREADING
+	help
+	  Enable library used for keyboard matrix drivers.
+
+if INPUT_KBD_MATRIX
+
+config INPUT_KBD_MATRIX_THREAD_STACK_SIZE
+	int "Stack size for the keyboard matrix thread"
+	default 1024
+	help
+	  Size of the stack used for the keyboard matrix thread.
+
+
+config INPUT_KBD_MATRIX_THREAD_PRIORITY
+	int "Priority for the keyboard matrix thread"
+	default 0
+	help
+	  Priority level of the keyboard matrix thread.
+
+config INPUT_KBD_MATRIX_16_BIT_ROW
+	bool "16 bit row size support"
+	help
+	  Use a 16 bit type for the internal structure, allow using a matrix
+	  with up to 16 rows if the driver supports it.
+
+config INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC
+	bool "Allow runtime changes to the actual key mask"
+	help
+	  If enabled, the actual-key-mask devicetree property data is stored in
+	  RAM, and a input_kbd_matrix_actual_key_mask_set() function is
+	  available to change the content at runtime.
+
+config INPUT_SHELL_KBD_MATRIX_STATE
+	bool "Input kbd_matrix_state shell command"
+	depends on INPUT_SHELL
+	help
+	  Enable an input kbd_matrix_state shell command to log the state of a
+	  keyboard matrix device.
+
+config INPUT_SHELL_KBD_MATRIX_STATE_MAX_COLS
+	int "Maximum column count for the kbd_matrix_state command"
+	default 32
+	depends on INPUT_SHELL_KBD_MATRIX_STATE
+	help
+	  Maximum column count for a device processed by the input
+	  kbd_matrix_state shell command.
+
+config INPUT_KBD_DRIVE_COLUMN_HOOK
+	bool
+	help
+	  Call an application specific hook after the driver specific
+	  drive_column implementation. The application must implement the
+	  input_kbd_matrix_drive_column_hook function.
+
+endif # INPUT_KBD_MATRIX

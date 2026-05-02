@@ -1,0 +1,17 @@
+# Copyright (c) 2022-2023, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Synopsys Designware timer driver
+
+compatible: "snps,dw-timers"
+
+include: [base.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    description: clock frequency information for Timer

@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Alexis Czezar C Torreno
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADI TMCM-3216 stepper motor controller
+
+compatible: "adi,tmcm3216-stepper-ctrl"
+
+properties:
+  idx:
+    type: int
+    required: true
+    description: Motor index (0, 1, or 2)

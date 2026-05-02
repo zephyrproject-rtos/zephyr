@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2025 Andrei-Edward Popa <andrei.popa105@yahoo.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <wch/ch32v0/ch32v003f4p.dtsi>
+#include "ch32v003f4p6_dev_board-pinctrl.dtsi"
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	model = "ch32v003f4p6_dev_board";
+	compatible = "wch,ch32v003";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led: led0 {
+			gpios = <&gpiod 1 GPIO_ACTIVE_LOW>;
+			label = "LED";
+		};
+	};
+
+	aliases {
+		led0 = &red_led;
+	};
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+&usart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+};

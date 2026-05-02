@@ -1,0 +1,6 @@
+board:
+  name: rp2040_keyboard_3
+  full_name: RP2040-Keyboard-3
+  vendor: waveshare
+  socs:
+  - name: rp2040

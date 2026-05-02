@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025, Jonas Berg
+
+shield:
+  name: adafruit_dps310
+  full_name: Adafruit DPS310 Precision Barometric Pressure and Altitude Sensor Shield
+  vendor: adafruit
+  supported_features:
+    - sensor

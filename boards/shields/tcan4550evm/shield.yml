@@ -1,0 +1,6 @@
+shield:
+  name: tcan4550evm
+  full_name: Texas Instruments TCAN4550EVM
+  vendor: ti
+  supported_features:
+    - can

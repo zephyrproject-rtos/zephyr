@@ -1,0 +1,4 @@
+name: xiao-serial-console
+append:
+  EXTRA_CONF_FILE: xiao-serial-console.conf
+  EXTRA_DTC_OVERLAY_FILE: xiao-serial-console.overlay

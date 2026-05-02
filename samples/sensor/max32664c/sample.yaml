@@ -1,0 +1,15 @@
+sample:
+  name: MAX32664C heart rate monitor sample
+tests:
+  sample.sensor.max32664c:
+    harness: sensor
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+    tags:
+      - sensors
+      - heart rate
+    filter: dt_compat_enabled("maxim,max32664c")
+    depends_on:
+      - i2c

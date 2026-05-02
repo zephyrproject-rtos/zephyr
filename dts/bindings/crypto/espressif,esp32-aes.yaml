@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Espressif ESP32 family AES Hardware Accelerator
+
+  The AES peripheral provides hardware acceleration for AES encryption
+  and decryption operations. It supports:
+  - ECB, CBC, CTR modes (SoC dependent)
+  - 128, 192, 256-bit key lengths
+  - XTS mode on selected SoCs (S2, S3, C3, C6, H2)
+
+compatible: "espressif,esp32-aes"
+
+include: base.yaml

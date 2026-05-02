@@ -1,0 +1,63 @@
+description: Mediatek Audio Front End
+
+compatible: "mediatek,afe"
+
+include: base.yaml
+
+properties:
+  dai-id:
+    type: int
+    required: true
+    description: Host-defined SOF DAI index.  Must match the Linux kernel driver.
+  afe-name:
+    type: string
+    required: true
+  downlink:
+    type: boolean
+    description: True/present for downlink (capture) channels
+
+  # These three are two-register arrays defining the DSP registers
+  # that store the hi and low words of a 64 bit bus/host address.
+  #
+  base:
+    type: array
+  end:
+    type: array
+  cur:
+    type: array
+
+  # The remaining registers below are three-cell arrays describing a
+  # bit field as <addr lshift width>.  Most of them are defaultable by
+  # the driver and can be eliminated from DTS for hardware that does
+  # not support the feature.  See the driver source for details.
+  #
+  enable:
+    type: array
+    description: Channel enable flag
+  agent-disable:
+    type: array
+    description: Channel disable flag
+  fs:
+    type: array
+    description: Sample rate register
+  hd:
+    type: array
+    description: Sample format register
+  ch-num:
+    type: array
+    description: Channel count register
+  mono:
+    type: array
+    description: Mono flag register
+  mono-invert:
+    type: boolean
+    description: Sense/meaning of mono flag
+  quad-ch:
+    type: array
+    description: Quad channel flag register
+  int-odd:
+    type: array
+  msb:
+    type: array
+  msb2:
+    type: array

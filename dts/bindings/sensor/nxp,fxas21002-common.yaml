@@ -1,0 +1,31 @@
+# Copyright (c) 2018, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: FXAS21002 3-axis gyroscope sensor
+
+include: sensor-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      RST pin
+      This pin defaults to active low when consumed by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  int1-gpios:
+    type: phandle-array
+    description: |
+      INT1 pin
+      This pin defaults to active low when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  int2-gpios:
+    type: phandle-array
+    description: |
+      INT2 pin
+      This pin defaults to active low when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.

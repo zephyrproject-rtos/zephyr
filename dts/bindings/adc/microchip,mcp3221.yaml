@@ -1,0 +1,12 @@
+description: Microchip MCP3221 Low-Power 12-Bit A/D Converter with I2C Interface
+
+compatible: "microchip,mcp3221"
+
+include: [adc-controller.yaml, i2c-device.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

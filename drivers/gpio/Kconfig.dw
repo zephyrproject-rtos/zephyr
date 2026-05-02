@@ -1,0 +1,11 @@
+# DesignWare GPIO configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_DW
+	bool "Designware GPIO"
+	default y
+	depends on DT_HAS_SNPS_DESIGNWARE_GPIO_ENABLED
+	help
+	  Enable driver for Designware GPIO

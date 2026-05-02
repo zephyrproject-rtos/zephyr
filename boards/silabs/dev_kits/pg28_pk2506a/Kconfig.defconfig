@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Christoph Jans
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PG28_PK2506A
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	default 875000
+	depends on LOG_BACKEND_SWO
+
+endif

@@ -1,0 +1,10 @@
+# Copyright (c) 2020 Seagate Technology LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config LED_PWM
+	bool "PWM LED driver"
+	default y
+	depends on DT_HAS_PWM_LEDS_ENABLED
+	select PWM
+	help
+	  Enable driver for PWM LEDs.

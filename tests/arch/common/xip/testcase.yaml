@@ -1,0 +1,19 @@
+tests:
+  arch.common.xip:
+    filter: CONFIG_XIP
+    tags:
+      - kernel
+      - xip
+    integration_platforms:
+      - qemu_arc/qemu_arc_em
+      - qemu_x86/atom/xip
+  arch.common.xip.minimallibc:
+    filter: CONFIG_XIP and CONFIG_MINIMAL_LIBC_SUPPORTED
+    tags:
+      - kernel
+      - xip
+    integration_platforms:
+      - qemu_arc/qemu_arc_em
+      - qemu_x86/atom/xip
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y

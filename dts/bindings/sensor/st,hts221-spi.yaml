@@ -1,0 +1,9 @@
+# Copyright (c) 2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics HTS221 humidity and temperature sensor on SPI bus
+
+compatible: "st,hts221"
+
+include: ["spi-device.yaml", "st,hts221-common.yaml"]

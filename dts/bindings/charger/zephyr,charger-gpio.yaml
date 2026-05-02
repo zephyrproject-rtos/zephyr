@@ -1,0 +1,12 @@
+# Copyright 2026 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO controlled charging state.
+
+compatible: "zephyr,charger-gpio"
+
+properties:
+  ctrl-gpios:
+    type: phandle-array
+    description: |
+      Pin that controls the charging state. Charging is enabled when active.

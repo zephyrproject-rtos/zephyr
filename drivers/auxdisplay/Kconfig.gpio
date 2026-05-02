@@ -1,0 +1,8 @@
+# Copyright (c) 2024-2025 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config AUXDISPLAY_GPIO_7SEG
+	bool "Common GPIO-driven 7-Segment Display"
+	default y
+	depends on DT_HAS_GPIO_7_SEGMENT_ENABLED
+	select GPIO

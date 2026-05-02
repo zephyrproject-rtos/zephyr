@@ -1,0 +1,32 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE, it51xxx Pulse Width Modulator (PWM) node
+
+compatible: "ite,it51xxx-pwm"
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  prescaler-cx:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 3
+    description: 1 = PWM_PRESCALER_C4, 2 = PWM_PRESCALER_C6, 3 = PWM_PRESCALER_C7
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+pwm-cells:
+  - channel
+  - period
+  - flags

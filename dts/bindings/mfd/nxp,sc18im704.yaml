@@ -1,0 +1,73 @@
+# Copyright (c), 2023 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP SC18IM704 UART to I2C/GPIO bridge.
+
+  The SC18IM704 supports both an external I2C and GPIO controller. These
+  controllers have to be added to the Device Tree as children. While the
+  device itself has to be a child of a UART controller.
+
+  An example configuration:
+
+  &uart0 {
+    status = "okay";
+    pinctrl-0 = <&uart0_default>;
+    pinctrl-names = "default";
+
+    sc18im704: sc18im704 {
+      compatible = "nxp,sc18im704";
+      status = "okay";
+      target-speed = <115200>;
+      reset-gpios = <&gpio1 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+      i2c_ext: sc18im704_i2c {
+        compatible = "nxp,sc18im704-i2c";
+        status = "okay";
+        #address-cells = <1>;
+        #size-cells = <0>;
+      };
+
+      gpio_ext: sc18im704_gpio {
+        compatible = "nxp,sc18im704-gpio";
+        status = "okay";
+        gpio-controller;
+        #gpio-cells = <2>;
+        ngpios = <8>;
+      };
+    };
+  };
+
+compatible: "nxp,sc18im704"
+
+include: uart-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description:
+      Driver reset pin of the bridge.
+      If connected directly to the MCU, this pin should be configured
+      as active low.
+
+  target-speed:
+    type: int
+    description:
+      UART baudrate which will be requested and to which
+      UART interface will be reconfigured during initialization phase.
+    enum:
+      - 1200
+      - 2400
+      - 4800
+      - 9600
+      - 14400
+      - 19200
+      - 28800
+      - 38400
+      - 57600
+      - 76800
+      - 115200
+      - 230400
+      - 460800
+
+bus: nxp,sc18im704

@@ -1,0 +1,11 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ */
+
+#include "nrf54h20dk_nrf54h20_common.dtsi"
+
+&adc {
+	status = "okay";
+};

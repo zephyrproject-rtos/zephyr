@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF54H Series low-frequency crystal oscillator
+
+compatible: "nordic,nrf54h-lfxo"
+
+include: fixed-clock.yaml
+
+properties:
+  clock-frequency:
+    const: 32768

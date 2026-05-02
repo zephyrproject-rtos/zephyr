@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_SF32
+
+config BUILD_OUTPUT_HEX
+	default y
+
+configdefault BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+rsource "*/Kconfig.defconfig"
+
+endif # SOC_FAMILY_SF32

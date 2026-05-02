@@ -1,0 +1,27 @@
+common:
+  depends_on:
+    - smbus
+  tags: smbus
+tests:
+  drivers.smbus.api.access.io:
+    extra_configs:
+      - CONFIG_SMBUS_INTEL_PCH_ACCESS_IO=y
+  drivers.smbus.api.access.mmio:
+    platform_exclude: qemu_x86_64
+    extra_configs:
+      - CONFIG_SMBUS_INTEL_PCH_ACCESS_MMIO=y
+  drivers.smbus.api_user:
+    extra_configs:
+      - CONFIG_USERSPACE=y
+  drivers.smbus.api_stats:
+    extra_configs:
+      - CONFIG_STATS=y
+  drivers.smbus.api.no_smbalert:
+    extra_configs:
+      - CONFIG_SMBUS_INTEL_PCH_SMBALERT=n
+  drivers.smbus.api.no_host_notify:
+    extra_configs:
+      - CONFIG_SMBUS_INTEL_PCH_HOST_NOTIFY=n
+  drivers.smbus.api.debug:
+    extra_configs:
+      - CONFIG_SMBUS_LOG_LEVEL_DBG=y

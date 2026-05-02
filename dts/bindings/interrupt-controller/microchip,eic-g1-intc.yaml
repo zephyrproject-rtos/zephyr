@@ -1,0 +1,126 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip External Interrupt Controller for g1 peripherals
+
+  Group g1 EIC supports following hardware peripherals:
+    - module name="EIC" id="U2254" version="3.0.0"
+
+compatible: "microchip,eic-g1-intc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Specifies the base address and size of the register
+      block of external interrupt controller.
+
+  interrupts:
+    required: true
+    description: |
+      Specifies the interrupt line in the NVIC
+
+  low-power-mode:
+    type: boolean
+    description: |
+      Enables low power mode for eic peripheral
+
+  porta-unsupported-pins:
+    type: int
+    default: 0
+    description: |
+      Each bit in the property denotes a pin number. This shows the pins which
+      do not support interrupt for port a.
+
+  portb-unsupported-pins:
+    type: int
+    default: 0
+    description: |
+      Each bit in the property denotes a pin number. This shows the pins which
+      do not support interrupt for portb.
+
+  portc-unsupported-pins:
+    type: int
+    default: 0
+    description: |
+      Each bit in the property denotes a pin number. This shows the pins which
+      do not support interrupt for portc.
+
+  portd-supported-pins:
+    type: int
+    default: 0
+    description: |
+      Each bit in the property denotes a pin number. This shows the pins which
+      support interrupt in portd
+
+  portb-special-pins-1:
+    type: array
+    default: [0, 0]
+    description: |
+      Each bit in this number denotes a pin number. These pins are derived from datasheet
+      by listing down the eic line and port-pin mapping.
+      The eic line mapping to the pin number requires a manipulation with an offset.
+
+  "#portb-special-pins-1-cells":
+    type: int
+    default: 2
+    description: |
+      Number of cells in portb-special-pins-1 property
+
+  portc-special-pins-1:
+    type: array
+    default: [0, 0]
+    description: |
+      Each bit in this number denotes a pin number. These pins are derived from datasheet
+      The eic line mapping to the pin number requires a manipulation with an offset.
+
+  "#portc-special-pins-1-cells":
+    type: int
+    default: 2
+    description: |
+      Number of cells in portc-special-pins-1 property
+
+  portd-special-pins-1:
+    type: array
+    default: [0, 0]
+    description: |
+      Each bit in this number denotes a pin number. These pins are derived from datasheet
+      The eic line mapping to the pin number requires a manipulation with an offset.
+
+  "#portd-special-pins-1-cells":
+    type: int
+    default: 2
+    description: |
+      Number of cells in portd-special-pins-1 property
+
+  portd-special-pins-2:
+    type: array
+    default: [0, 0]
+    description: |
+      Each bit in this number denotes a pin number. These pins are derived from datasheet
+      The eic line mapping to the pin number requires a manipulation with an offset.
+
+  "#portd-special-pins-2-cells":
+    type: int
+    default: 2
+    description: |
+      Number of cells in portd-special-pins-2 property
+
+portb-special-pins-1-cells:
+  - pins_val
+  - offset
+
+portc-special-pins-1-cells:
+  - pins_val
+  - offset
+
+portd-special-pins-1-cells:
+  - pins_val
+  - offset
+
+portd-special-pins-2-cells:
+  - pins_val
+  - offset

@@ -1,0 +1,48 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_PIC32CZ_CA91
+	bool
+	select SOC_FAMILY_MICROCHIP_PIC32CZ_CA
+	help
+	  Enable support for Microchip PIC32CZ CA91 Cortex-M7 microcontrollers.
+
+config SOC_SERIES
+	default "pic32cz_ca91" if SOC_SERIES_PIC32CZ_CA91
+
+config SOC_PIC32CZ2051CA91100
+	bool
+	select SOC_SERIES_PIC32CZ_CA91
+
+config SOC_PIC32CZ2051CA91144
+	bool
+	select SOC_SERIES_PIC32CZ_CA91
+
+config SOC_PIC32CZ2051CA91176
+	bool
+	select SOC_SERIES_PIC32CZ_CA91
+
+config SOC_PIC32CZ4010CA91100
+	bool
+	select SOC_SERIES_PIC32CZ_CA91
+
+config SOC_PIC32CZ4010CA91144
+	bool
+	select SOC_SERIES_PIC32CZ_CA91
+
+config SOC_PIC32CZ4010CA91176
+	bool
+	select SOC_SERIES_PIC32CZ_CA91
+
+config SOC_PIC32CZ4010CA91208
+	bool
+	select SOC_SERIES_PIC32CZ_CA91
+
+config SOC
+	default "pic32cz2051ca91100" if SOC_PIC32CZ2051CA91100
+	default "pic32cz2051ca91144" if SOC_PIC32CZ2051CA91144
+	default "pic32cz2051ca91176" if SOC_PIC32CZ2051CA91176
+	default "pic32cz4010ca91100" if SOC_PIC32CZ4010CA91100
+	default "pic32cz4010ca91144" if SOC_PIC32CZ4010CA91144
+	default "pic32cz4010ca91176" if SOC_PIC32CZ4010CA91176
+	default "pic32cz4010ca91208" if SOC_PIC32CZ4010CA91208

@@ -1,0 +1,15 @@
+# BL654 USB board configuration
+
+# Copyright (c) 2018-2023 Nordic Semiconductor ASA
+# Copyright (c) 2025 Ezurio LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BL654_USB
+	select BOARD_EARLY_INIT_HOOK
+
+config BOARD_HAS_NRF5_BOOTLOADER
+	bool
+	default y if !BOARD_BL654_USB_NRF52840_BARE
+	help
+	  If selected, applications are linked so that they can be loaded by Nordic
+	  nRF5 bootloader.

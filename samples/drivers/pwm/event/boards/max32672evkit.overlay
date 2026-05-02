@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timer0 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+	prescaler = <1>;
+	status = "okay";
+
+	timer0_pwm: pwm {
+		pinctrl-0 = <&tmr0c_oa_p0_17>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+/ {
+	aliases {
+		pwm-0 = &timer0_pwm;
+	};
+};

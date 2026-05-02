@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Linumiz
+# Author: Sri Surya <srisurya@linumiz.com>
+
+description: AMBIQ AM1805 RTC
+
+compatible: "ambiq,am1805"
+
+include:
+  - name: rtc-device.yaml
+  - name: i2c-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  am1805-gpios:
+    type: phandle-array
+    description: |
+         GPIO connected to the AM1805 INT1 interrupt output. This signal is open-drain, active low.

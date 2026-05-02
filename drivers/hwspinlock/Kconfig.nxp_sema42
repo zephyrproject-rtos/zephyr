@@ -1,0 +1,9 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config HWSPINLOCK_NXP_SEMA42
+	bool "NXP SEMA42 HW spinlock driver"
+	default y
+	depends on DT_HAS_NXP_SEMA42_ENABLED
+	help
+	  This option enables the SEMA42 driver.

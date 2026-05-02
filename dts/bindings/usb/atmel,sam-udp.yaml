@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Atmel SAM USB Device Port (UDP) Controller
+
+  The UDP is a full-speed USB 2.0 device controller with the following features:
+  - 8 hardware endpoints (EP0-EP7)
+  - On-chip transceiver with 1.5kΩ pull-up on DDP
+  - 2668 bytes total FIFO memory
+  - Dual-bank support for EP1,2,4,5,6,7
+  - Full-speed operation (12 Mbps)
+
+  Endpoint allocation (odd=IN, even=OUT):
+  - EP0: Control endpoint
+  - EP1, EP3, EP5, EP7: IN endpoints
+  - EP2, EP4, EP6: OUT endpoints
+
+  This binding is compatible with SAM4S, SAM4E, SAM3S devices.
+
+examples:
+  - |
+    Example devicetree configuration:
+
+      &pinctrl {
+        udp_default: udp_default {
+          group1 {
+            pinmux = <PB10S_UDP_DDM>,
+                     <PB11S_UDP_DDP>;
+          };
+        };
+      };
+
+      zephyr_udc0: &udp {
+          status = "okay";
+
+          pinctrl-0 = <&udp_default>;
+          pinctrl-names = "default";
+      };
+
+compatible: "atmel,sam-udp"
+
+include:
+  - name: usb-ep.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true

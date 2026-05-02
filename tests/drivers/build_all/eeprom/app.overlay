@@ -1,0 +1,111 @@
+/*
+ * Copyright (c) 2020, Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing driver builds
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+#include <freq.h>
+#include <mem.h>
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			test_i2c_at24: at24@0 {
+				compatible = "atmel,at24";
+				reg = <0x0>;
+				size = <32768>;
+				pagesize = <64>;
+				address-width = <16>;
+				timeout = <5>;
+				wp-gpios = <&test_gpio 0 0>;
+				/* read-only; */
+			};
+
+			test_i2c_mb85rcxx: mb85rcxx@1 {
+				compatible = "fujitsu,mb85rcxx";
+				reg = <0x1>;
+				size = <131072>;
+				pagesize = <131072>;
+				address-width = <16>;
+				wp-gpios = <&test_gpio 0 0>;
+				/* read-only; */
+			};
+
+			test_i2c_tmp11x: tmp11x@2 {
+				status = "okay";
+				compatible = "ti,tmp11x";
+				reg = <0x2>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				test_tmp11x_eeprom: ti_tmp11x_eeprom@0 {
+					compatible = "ti,tmp11x-eeprom";
+					reg = <0x0>;
+					read-only;
+				};
+			};
+		};
+
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			/* one entry for every devices at spi.dtsi */
+			cs-gpios = <&test_gpio 0 0>;
+
+			test_spi_at25: at25@0 {
+				compatible = "atmel,at25";
+				reg = <0x0>;
+				spi-max-frequency = <0>;
+				size = <32768>;
+				pagesize = <64>;
+				address-width = <16>;
+				timeout = <5>;
+				wp-gpios = <&test_gpio 0 0>;
+				/* read-only; */
+			};
+
+			test_spi_mb85rsxx: mb85rsxx@1 {
+				compatible = "fujitsu,mb85rsxx";
+				reg = <0x1>;
+				spi-max-frequency = <DT_FREQ_M(25)>;
+				size = <DT_SIZE_K(128)>;
+			};
+
+			test_spi_fm25xxx: fm25xxx@2 {
+				compatible = "infineon,fm25xxx";
+				reg = <0x2>;
+				spi-max-frequency = <DT_FREQ_M(20)>;
+				size = <8000>;
+			};
+		};
+	};
+};

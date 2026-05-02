@@ -1,0 +1,69 @@
+# STMicroelectronics STM32WBAxx 802.15.4 configuration options
+
+# Copyright (c) 2025 STMicroelectronics
+
+menuconfig IEEE802154_STM32WBA
+	bool "STM32WBA series IEEE 802.15.4 Driver"
+	default y
+	depends on DT_HAS_ST_STM32WBA_IEEE802154_ENABLED
+
+if IEEE802154_STM32WBA
+
+config IEEE802154_STM32WBA_RX_BUFFERS
+	int "STM32WBA 802.15.4 receive buffers"
+	default 16
+	range 16 128
+	help
+	  Number of buffers in 802.15.4 driver serialization host's receive queue.
+	  Increase this number if you are expected to be in a noisy environment, handling many
+	  end-devices and you have sufficient RAM to allocate memory to buffers.
+	  If this value is increased, IEEE802154_STM32WBA_RX_STACK_SIZE value might require
+	  to be updated as well.
+
+config IEEE802154_STM32WBA_RX_STACK_SIZE
+	int "Driver RX thread stack size"
+	default 800
+	help
+	  This option sets the driver's stack size for its internal RX thread.
+	  The default value should be sufficient, but in case it proves to be
+	  too low, adjust as needed.
+
+config IEEE802154_STM32WBA_CSMA_CA_ENABLED
+	bool "CSMA-CA configuration"
+	default y
+	help
+	  This option enables the CSMA-CA feature.
+
+config IEEE802154_STM32WBA_INIT_PRIO
+	int "STM32WBA IEEE 802.15.4 initialization priority"
+	default 80
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing.
+
+config IEEE802154_STM32WBA_DELAY_TRX_ACC
+	int "Clock accuracy for delayed operations"
+	default 20
+	range 0 255
+	help
+	  Accuracy of the clock used for scheduling radio delayed operations (delayed transmission
+	  or delayed reception), in ppm.
+
+config IEEE802154_STM32WBA_LOG_RX_FAILURES
+	bool "Frame reception failures logging"
+	help
+	  There are few cases where the frame reception failure can happen because of
+	  internal causes. These cases are reported forward by general code error.
+
+	  This option enables logging the reason of frame reception failure.
+	  It can be helpful for the network traffic analysis but it generates also
+	  a lot of log records in a stressed environment.
+
+config NET_L2_CUSTOM_IEEE802154_STM32WBA
+	bool "Use ST MAC as L2"
+	default y
+	depends on NET_L2_CUSTOM_IEEE802154
+	help
+	  Custom STM32WBA series IEEE 802.15.4 L2 Implementation.
+
+endif # IEEE802154_STM32WBA

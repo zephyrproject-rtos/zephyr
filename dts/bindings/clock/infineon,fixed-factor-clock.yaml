@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic fixed-rate clock provider
+
+compatible: "infineon,fixed-factor-clock"
+
+include: fixed-factor-clock.yaml
+
+properties:
+  system-clock:
+    type: int
+    required: true
+    description: |
+      The type of clock (refer to include/.../dt-bindings/clock/ifx_clock_source_common.h):
+      path_mux5 : system-clock = <IFX_PATHMUX>
+      clk_hf0   : system-clock = <IFX_HF>
+
+  instance:
+    type: int
+    required: true
+    description: |
+      Instance of a given clock type.
+      path_mux5 : instance = <5>
+      clk_hf0   : instance = <0>
+
+  source-path:
+    type: int
+    description: Path that indicates source clock.

@@ -1,0 +1,20 @@
+identifier: adafruit_feather_esp32s2@C
+name: Adafruit Feather ESP32-S2 Rev C
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - counter
+  - watchdog
+  - entropy
+  - pwm
+  - dma
+vendor: adafruit
+testing:
+  ignore_tags:
+    - bluetooth

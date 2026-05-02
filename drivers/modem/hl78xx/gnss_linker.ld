@@ -1,0 +1,1 @@
+ITERABLE_SECTION_ROM(hl78xx_gnss_aux_data_callback, Z_LINK_ITERABLE_SUBALIGN)

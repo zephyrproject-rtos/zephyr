@@ -1,0 +1,5 @@
+description: CHSC6X touchscreen sensor
+
+compatible: "chipsemi,chsc6x"
+
+include: chipsemi,chsc6x-common.yaml

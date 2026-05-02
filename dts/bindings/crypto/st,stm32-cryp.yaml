@@ -1,0 +1,8 @@
+# Copyright (c) 2020, Markus Fuchs <markus.fuchs@de.sauter-bc.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 Cryptographic Accelerator
+
+compatible: "st,stm32-cryp"
+
+include: st,stm32-crypto-common.yaml

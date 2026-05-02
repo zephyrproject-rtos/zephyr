@@ -1,0 +1,8 @@
+common:
+  tags:
+    - bluetooth
+    - bt_invalid
+    - bt_ull_llcp
+tests:
+  bluetooth.controller.ctrl_invalid.test:
+    type: unit

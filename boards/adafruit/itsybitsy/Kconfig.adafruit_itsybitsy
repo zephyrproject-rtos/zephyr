@@ -1,0 +1,7 @@
+# Adafruit ItsyBitsy nRF52840 Express board configuration
+
+# Copyright (c) 2022 Embla Flatlandsmo <embla.flatlandsmo@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ADAFRUIT_ITSYBITSY
+	select SOC_NRF52840_QIAA

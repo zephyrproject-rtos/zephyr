@@ -1,0 +1,8 @@
+# Copyright (c) 2019 Stephanos Ioannidis <root@stephanos.io>
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARM Cortex-R5F CPU
+
+compatible: "arm,cortex-r5f"
+
+include: cpu.yaml

@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Luna Pes <zephyr@orangemurker.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_FM25XXX
+	bool "Infineon FM25XXX SPI FRAM"
+	default y
+	depends on DT_HAS_INFINEON_FM25XXX_ENABLED
+	select SPI
+	help
+	  Enable Infineon FM25XXX SPI FRAM

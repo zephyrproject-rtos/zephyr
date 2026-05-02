@@ -1,0 +1,49 @@
+/*
+ * Copyright 2023 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&gpio0 {
+	ngpios = <12>;
+};
+
+/ {
+	kbd_matrix_interrupt: kbd-matrix-interrupt {
+		compatible = "gpio-kbd-matrix";
+		row-gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>,
+			    <&gpio0 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		col-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>,
+			    <&gpio0 3 GPIO_ACTIVE_LOW>;
+		debounce-down-ms = <80>;
+		debounce-up-ms = <40>;
+		poll-timeout-ms = <500>;
+	};
+
+	kbd_matrix_poll: kbd-matrix-poll {
+		compatible = "gpio-kbd-matrix";
+		row-gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>,
+			    <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		col-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>,
+			    <&gpio0 7 GPIO_ACTIVE_LOW>;
+		debounce-down-ms = <40>;
+		debounce-up-ms = <80>;
+		poll-timeout-ms = <500>;
+		idle-mode = "poll";
+		col-drive-inactive;
+	};
+
+	kbd_matrix_scan: kbd-matrix-scan {
+		compatible = "gpio-kbd-matrix";
+		/* pins out of sequence to test non direct read */
+		row-gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>,
+			    <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		col-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>,
+			    <&gpio0 10 GPIO_ACTIVE_LOW>;
+		debounce-down-ms = <80>;
+		debounce-up-ms = <40>;
+		poll-timeout-ms = <0>;
+		col-drive-inactive;
+		idle-mode = "scan";
+	};
+};

@@ -1,0 +1,14 @@
+identifier: ttgo_toiplus
+name: TTGO T-OI-PLUS
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - uart
+  - watchdog
+  - can
+vendor: lilygo

@@ -1,0 +1,34 @@
+# Copyright (c) 2025, Realtek, SIBG-SD7
+# SPDX-License-Identifier: Apache-2.0
+
+config ESPI_RTS5912
+	bool "Realtek RTS5912 eSPI Driver"
+	default y
+	depends on DT_HAS_REALTEK_RTS5912_ESPI_ENABLED
+	help
+	  Enable the Realtek RTS5912 eSPI driver.
+
+if ESPI_RTS5912
+
+config ESPI_PERIPHERAL_8042_KBC
+	default y
+
+config ESPI_PERIPHERAL_ACPI_SHM_REGION
+	default y
+
+config ESPI_PERIPHERAL_HOST_IO
+	default y
+
+config ESPI_PERIPHERAL_EC_HOST_CMD
+	default y
+
+config ESPI_PERIPHERAL_DEBUG_PORT_80
+	default y
+
+config ESPI_OOB_CHANNEL
+	default y
+
+config ESPI_FLASH_CHANNEL
+	default y
+
+endif

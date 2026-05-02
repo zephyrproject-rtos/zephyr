@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rza-common.h>
+
+&pinctrl {
+	/omit-if-no-ref/ scif0_pins: scif0 {
+		scif0-pinmux {
+			pinmux = <RZA_PINMUX(PORT_06, 3, 6)>, /* RXD */
+				 <RZA_PINMUX(PORT_06, 4, 6)>; /* TXD */
+			drive-strength = <1>;
+			slew-rate = "fast";
+		};
+	};
+
+	/omit-if-no-ref/ mtu1_pins: mtu1 {
+		mtu1-pinmux {
+			pinmux = <RZA_PINMUX(PORT_01, 0, 4)>; /* MTIOCA */
+		};
+	};
+
+	/omit-if-no-ref/ mtu3_pins: mtu3 {
+		mtu3-pinmux {
+			pinmux = <RZA_PINMUX(PORT_04, 2, 4)>; /* MTIOCA */
+		};
+	};
+
+	/omit-if-no-ref/ i2c1_pins: i2c1 {
+		i2c1-spins {
+			pins = <BSP_IO_RIIC1_SDA>, <BSP_IO_RIIC1_SCL>;
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ spi0_pins: spi0 {
+		spi0-pinmux {
+			pinmux = <RZA_PINMUX(PORT_01, 0, 2)>, /* CK */
+				 <RZA_PINMUX(PORT_02, 2, 6)>, /* MOSI */
+				 <RZA_PINMUX(PORT_02, 3, 6)>, /* MISO */
+				 <RZA_PINMUX(PORT_01, 3, 2)>; /* SSL */
+		};
+	};
+};

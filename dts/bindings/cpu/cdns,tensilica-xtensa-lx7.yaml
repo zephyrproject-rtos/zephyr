@@ -1,0 +1,13 @@
+# Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cadence Tensilica Xtensa LX7 CPU
+
+compatible: "cdns,tensilica-xtensa-lx7"
+
+include: cpu.yaml
+
+properties:
+  clock-source:
+    type: int
+    description: cpu clock source

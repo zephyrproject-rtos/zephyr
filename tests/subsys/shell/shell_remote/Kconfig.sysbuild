@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config REMOTE_BOARD
+	string
+	default "$(BOARD)/nrf5340/cpunet" if BOARD_NRF5340DK_NRF5340_CPUAPP
+	default "$(BOARD)/nrf5340/cpunet" if BOARD_NRF5340DK_NRF5340_CPUAPP_NS
+	default "$(BOARD)/nrf5340/cpunet" if BOARD_NRF5340BSIM_NRF5340_CPUAPP
+	default "$(BOARD)/nrf54l15/cpuflpr" if SOC_NRF54L15_CPUAPP
+
+source "share/sysbuild/Kconfig"

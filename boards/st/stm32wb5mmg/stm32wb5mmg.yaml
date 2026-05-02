@@ -1,0 +1,15 @@
+identifier: stm32wb5mmg
+name: ST STM32WB5MMG Ultra-low-power Module
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 192
+flash: 808
+supported:
+  - gpio
+  - dma
+  - uart
+  - usb_device
+vendor: st

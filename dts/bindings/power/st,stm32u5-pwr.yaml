@@ -1,0 +1,60 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32U5 power controller
+
+description: |
+  Power controller of STM32U5 series
+
+  Controls two voltage regulators which can output one voltage
+  among four different voltage scales, depending on use case.
+
+compatible: "st,stm32u5-pwr"
+
+include: "st,stm32-dualreg-pwr.yaml"
+
+properties:
+  voltage-scale:
+    type: int
+    description: |
+      Voltage regulator scale selection
+
+      If present, this property can be used to indicate the desired
+      voltage regulator scale to use. This choice affects several
+      aspects of the system:
+        * power consumption
+        * memory and flash wait states
+        * maximal system clock frequency
+        * availability of certain peripherals
+        * ...
+
+      The following values can be selected:
+      +---------+----------------+---------------------------------+
+      | Scale # | Max. frequency | Notes                           |
+      +---------+----------------+---------------------------------+
+      |    1    |     160 MHz    | Highest power consumption       |
+      +---------+----------------+---------------------------------+
+      |    2    |     110 MHz    |                                 |
+      +---------+----------------+---------------------------------+
+      |    3    |     55  MHz    | [1]                             |
+      +---------+----------------+---------------------------------+
+      |    4    |     25  MHz    | Lowest power consumption [1][2] |
+      +---------+----------------+---------------------------------+
+
+      [1] OTG_HS cannot be used when this voltage scale is selected.
+      [2] OTG_FS / USB cannot be used when this voltage scale is selected.
+
+      When this property is not present, the lowest voltage scale compatible
+      with the system's clock configuration is selected automatically: for
+      example, voltage scale 3 would be used if the system was configured
+      to operate with a system clock frequency of 40 MHz.
+
+      Note that the same behavior is observed if the property is provided but
+      the selected voltage scale is not compatible with the system's clock
+      configuration; in this case, clock configuration takes precedence and
+      the value of this property is ignored.
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4

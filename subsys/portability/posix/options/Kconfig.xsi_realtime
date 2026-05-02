@@ -1,0 +1,28 @@
+# Copyright (c) 2024 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config XSI_REALTIME
+	bool "X/Open realtime"
+	select POSIX_FSYNC
+	select POSIX_MEMLOCK
+	select POSIX_MEMLOCK_RANGE
+	select POSIX_MESSAGE_PASSING
+	# Not yet implemented, but optional
+	# imply POSIX_PRIORITIZED_IO
+	select POSIX_PRIORITY_SCHEDULING
+	select POSIX_SHARED_MEMORY_OBJECTS
+	select POSIX_SYNCHRONIZED_IO
+	help
+	  Select 'y' here and the following functions will be provided:
+
+	  fsync(), mlockall(), munlockall(), mlock(), munlock(), mq_close(), mq_getattr(), mq_notify(),
+	  mq_open(), mq_receive(), mq_send(), mq_setattr(), mq_unlink(), sched_get_priority_max(),
+	  sched_get_priority_min(), sched_getparam(), sched_getscheduler(), sched_rr_get_interval(),
+	  sched_setparam(), sched_setscheduler(), sched_yield(), mmap(), munmap(), shm_open(),
+	  shm_unlink()
+
+	  The functions fsync(), fdatasync(), and open() will provide synchronized I/O capability.
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap02.html

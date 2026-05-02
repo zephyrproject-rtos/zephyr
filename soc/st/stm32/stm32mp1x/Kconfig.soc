@@ -1,0 +1,18 @@
+# STMicroelectronics STM32MP1 MPU line
+
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32MP1X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32mp1x" if SOC_SERIES_STM32MP1X
+
+config SOC_STM32MP15_M4
+	bool
+	select SOC_SERIES_STM32MP1X
+
+config SOC
+	default "stm32mp157cxx" if SOC_STM32MP15_M4

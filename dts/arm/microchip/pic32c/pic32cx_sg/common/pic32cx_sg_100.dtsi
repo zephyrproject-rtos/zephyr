@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Device-tree nodes specific to 100-pin package variants */
+
+#include <microchip/pic32c/pic32cx_sg/common/pic32cx_sg.dtsi>
+
+/ {
+	soc {
+		sercom6: sercom@43000800 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x43000800 0x29>;
+			interrupts = <70 0>, <71 0>, <72 0>, <73 0>;
+			interrupt-names = "source-0", "source-1", "source-2", "source-3-7";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBD_SERCOM6>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM6_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		sercom7: sercom@43000c00 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x43000c00 0x29>;
+			interrupts = <74 0>, <75 0>, <76 0>, <77 0>;
+			interrupt-names = "source-0", "source-1", "source-2", "source-3-7";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBD_SERCOM7>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM7_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		tc6: tc@43001400 {
+			compatible = "microchip,tc-g1";
+			reg = <0x43001400 0x400>;
+			interrupts = <113 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBD_TC6>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC6>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <16>;
+			channels = <2>;
+			status = "disabled";
+		};
+
+		tc7: tc@43001800 {
+			compatible = "microchip,tc-g1";
+			reg = <0x43001800 0x400>;
+			interrupts = <114 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBD_TC7>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC7>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <16>;
+			channels = <2>;
+			status = "disabled";
+		};
+	};
+};
+
+&pinctrl {
+	portc: gpio@41008100 {
+		compatible = "microchip,port-g1-gpio";
+		reg = <0x41008100 0x80>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		#microchip,pin-cells = <2>;
+		status = "disabled";
+	};
+};

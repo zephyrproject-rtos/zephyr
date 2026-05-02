@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Embeint Pty Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config ZVFS_OPEN_ADD_SIZE_TEST
+	int
+	default 1
+
+source "Kconfig.zephyr"

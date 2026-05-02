@@ -1,0 +1,6 @@
+# Copyright Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: semihost-tracing
+append:
+  EXTRA_CONF_FILE: semihost-tracing.conf

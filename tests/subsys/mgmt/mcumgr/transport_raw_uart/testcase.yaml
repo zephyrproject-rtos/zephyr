@@ -1,0 +1,9 @@
+tests:
+  mgmt.mcumgr.transport.raw.uart:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - nrf52840dk/nrf52840
+    tags:
+      - os_mgmt
+      - mcumgr

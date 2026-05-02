@@ -1,0 +1,16 @@
+identifier: qemu_arc/qemu_arc_hs5x
+name: QEMU Emulation for ARC HS5x
+type: qemu
+simulation:
+  - name: qemu
+arch: arc
+toolchain:
+  - zephyr
+  - cross-compile
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
+ram: 4096
+vendor: snps

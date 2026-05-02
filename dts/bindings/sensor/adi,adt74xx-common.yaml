@@ -1,0 +1,50 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADT74XX 16-Bit digital I2C temperature sensor
+
+include: sensor-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT signal defaults to active low open drain, so requires a
+      pull-up on the board or in the flags cell of this entry.
+
+  ct-gpios:
+    type: phandle-array
+    description: |
+      The CT signal defaults to active low open drain, so requires a
+      pull-up on the board or in the flags cell of this entry.
+
+  int-polarity-active-high:
+    type: boolean
+    description: |
+      Configures the INT pin on the device to output active-low or active-high.
+
+  ct-polarity-active-high:
+    type: boolean
+    description: |
+      Configures the CT pin on the device to output active-low or active-high.
+
+  op-mode:
+    type: string
+    description: Determines the Initial operating mode of the device.
+    enum: ["continuous", "one-shot", "1sps", "shutdown"]
+    default: "continuous"
+
+  set-resolution:
+    type: int
+    enum: [13, 16]
+    default: 13
+    description: |
+      Temperature bit resolution. Set if 13-bit is desired. Else 13-bit is
+      used by default.
+
+  set-comparator-mode:
+    type: boolean
+    description: |
+      Configures the device to run on comparator mode, triggering an interrupt
+      if the temperature measured drops below T_HIGH - T_HYST
+      or rises above T_LOW + T_HYST limits.

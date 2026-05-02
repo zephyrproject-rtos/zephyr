@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2023 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nuvoton/npcx/npcx4/npcx4-pinctrl.dtsi>
+
+&i2c0_0_sda_scl_gpb4_b5 {
+	bias-pull-up; /* Enable internal pull-up for i2c0_0 */
+	pinmux-locked; /* Lock pinmuxing */
+};
+
+&pwm6_gpc0 {
+	drive-open-drain;
+};

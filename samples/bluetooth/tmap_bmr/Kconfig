@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2022 Codecoup
+# Copyright 2023 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Bluetooth: Earbuds"
+
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu

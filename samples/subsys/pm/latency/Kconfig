@@ -1,0 +1,16 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
+
+module = APP
+module-str = Application
+source "subsys/logging/Kconfig.template.log_config"
+
+
+config APP_PROVIDE_PM_HOOKS
+	bool "Application provides PM hooks"
+	default y
+	select HAS_PM

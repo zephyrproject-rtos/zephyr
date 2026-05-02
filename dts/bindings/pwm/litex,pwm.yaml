@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2019 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: LiteX PWM controller
+
+include: [pwm-controller.yaml, base.yaml]
+
+compatible: "litex,pwm"
+
+properties:
+  reg:
+    required: true
+
+  "#pwm-cells":
+    const: 2
+
+pwm-cells:
+  - channel
+  - period

@@ -1,0 +1,10 @@
+# Copyright (c) 2025, Ayush Singh BeagleBoard.org Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_TI_RTI
+	bool "Watchdog Driver for TI K3"
+	default y
+	depends on DT_HAS_TI_J7_RTI_WDT_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	help
+	  Enable support for K3 Watchdog timer (RTI module) available in the K3 generation of processors.

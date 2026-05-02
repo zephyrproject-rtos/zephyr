@@ -1,0 +1,31 @@
+# Copyright (c) 2023, Prevas A/S
+
+description: Watchdog driver for external IC (TPS382x)
+
+compatible: "ti,tps382x"
+
+include: base.yaml
+
+properties:
+  wdi-gpios:
+    type: phandle-array
+    required: true
+    description:
+      WDI gpio. If WDI remains high or low longer than the timeout period,
+      then reset is triggered. The reset has a typical delay time of 200 ms for
+      TPS3823/4/8, TPS3823A. The timer clears when reset is asserted or
+      when WDI sees a rising edge or a falling edge. If unused, the WDI
+      connection must be high impedance to prevent it from causing a reset
+      event.
+
+  timeout-period:
+    type: int
+    default: 1600
+    description:
+      Time-out period in milliseconds. Typical for TPS3823/4/8 and TPS3823A is
+      1.6 seconds but minimum is 0.9. To avoid false positive watchdog reset
+      the watchdog should be kicked within the minimum timeout period. The kick
+      interval also needs to compensate for MCU clock tolerances which means it
+      should be kicked with an interval less than 0.9 seconds. If this device
+      is used as fallback for the task watchdog this can be achieved by setting
+      e.g. TASK_WDT_MIN_TIMEOUT to 850 and TASK_WDT_HW_FALLBACK_DELAY to 750.

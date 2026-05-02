@@ -1,0 +1,9 @@
+# Copyright (c) 2018 Analog Devices Inc.
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADXL372 3-axis high-g accelerometer, accessed through SPI bus
+
+compatible: "adi,adxl372"
+
+include: ["spi-device.yaml", "adi,adxl372-common.yaml"]

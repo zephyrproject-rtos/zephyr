@@ -1,0 +1,137 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CM_JH FDPLL clock
+
+description: |
+  Digital Phase Locked Loop (FDPLL), 48 MHz to 96 MHz output frequency from a 32 kHz to 2 MHz
+  reference clock.
+
+include: [base.yaml]
+
+compatible: "microchip,pic32cm-jh-fdpll"
+
+properties:
+  fdpll-on-demand-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      0: The oscillator is always on
+      1: The oscillator is running when a peripheral is requesting the oscillator to be used as a
+      clock source. The oscillator is not running if no peripheral is requesting the clock source.
+      Important: Initializing it with 1, along with clock enabled, can lead to indefinite wait
+      for the clock to be on, if there is no peripheral request for the clock in the sequence of
+      clock Initialization. If required, better to turn on the clock using API, instead of
+      enabling both during startup.
+
+  fdpll-run-in-standby-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 1
+    description: |
+      0: The DPLLn is not running in standby sleep mode if no peripheral requests the clock.
+      1: The DPLLn is running in standby sleep mode.
+      If ONDEMAND is one, the DPLLn will be running when a peripheral is requesting the clock. If
+      ONDEMAND is false, the clock source will always be running in standby sleep mode.
+
+  fdpll-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Oscillator Enable
+      0: to disable, 1: to enable
+
+  fdpll-divider-ratio-frac:
+    type: int
+    default: 0
+    description: |
+      Set the fractional part of the frequency multiplier. (0 - 31)
+
+  fdpll-divider-ratio-int:
+    type: int
+    default: 0
+    description: |
+      Set the integer part of the frequency multiplier. (0 - 4095)
+
+  fdpll-xosc-clock-divider:
+    type: int
+    default: 0
+    description: |
+      Set the XOSC clock division factor (0 - 2047)
+
+  fdpll-lock-bypass-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Lock Bypass
+      0: to disable, 1: to enable
+
+  fdpll-src:
+    type: string
+    enum:
+      - "gclk0"
+      - "gclk1"
+      - "gclk2"
+      - "gclk3"
+      - "gclk4"
+      - "gclk5"
+      - "gclk6"
+      - "gclk7"
+      - "gclk8"
+      - "xosc32k"
+      - "xosc"
+    default: "xosc32k"
+    description: |
+      Reference source clock selection
+
+  fdpll-wakeup-fast-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Wake Up Fast
+      0: to disable, 1: to enable
+
+  fdpll-low-power-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      When enabled, Time to Digital Converter is disabled (increase the output jitter).
+      0: to disable, 1: to enable
+
+  fdpll-pi-filter-type:
+    type: string
+    enum:
+      - "default"
+      - "low-bandwidth"
+      - "high-bandwidth"
+      - "high-damping"
+    default: "default"
+    description: |
+      Proportional Integral Filter Selection
+
+  fdpll-output-prescalar:
+    type: string
+    enum:
+      - "div1"
+      - "div2"
+      - "div4"
+    default: "div1"
+    description: |
+      Output prescalar divider.

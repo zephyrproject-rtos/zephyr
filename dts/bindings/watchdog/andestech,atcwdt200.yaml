@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2023, Andes Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Andes Watchdog driver
+
+compatible: "andestech,atcwdt200"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

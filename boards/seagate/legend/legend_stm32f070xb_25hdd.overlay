@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2021 Seagate Technology LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	model = "Seagate Legend 2.5 HDD board";
+	compatible = "legend25_hdd", "seagate,legend25_hdd";
+
+	aliases {
+		pwm-led0 = &pwm_led0;
+	};
+
+	led_pwm: pwmleds {
+		compatible = "pwm-leds";
+		label = "LED PWM";
+
+		pwm_led0: pwm_led_0 {
+			label = "Activity LED";
+			pwms = <&pwm3 3 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	clocks = <&clk_hsi>;
+	prediv = <1>;
+	mul = <6>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(48)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+&led_strip_spi {
+	chain-length = <6>;
+	status = "okay";
+};
+
+&timers3 {
+	status = "okay";
+};
+
+&pwm3 {
+	status = "okay";
+};

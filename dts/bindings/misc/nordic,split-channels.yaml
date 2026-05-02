@@ -1,0 +1,44 @@
+#
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Nordic Split Channels
+
+  Some of Nordic's peripherals support split ownership feature that allows to
+  be used by independent owners. As an example the configuration of the
+  Global Real Time Counter (GRTC) is shown below:
+    owned-channels = <0 1 2 3 4 5 6 7 8 9 10 11>;
+    child-owned-channels = <7 8 9 10 11>;
+
+  Which means that channels 0-11 will be assigned to the particular CPU.
+  Other CPUs cannot use those and another set must be defined for them.
+  In addition, `child-owned-channels` property allows to use channels
+  7-11 only by child subprocessor. If the CPU you're configuring has no
+  subprocessor(s) assigned, the `child-owned-channels` property
+  should not be defined.
+
+properties:
+  owned-channels:
+    type: array
+    description: |
+      List of channels in a split-ownership peripheral that are to be owned
+      for use by the compiled CPU.
+
+  nonsecure-channels:
+    type: array
+    description: |
+      List of channels in a split-ownership, split-security peripheral that
+      are to be configured as nonsecure. In Trustzone systems, this property
+      is only evaluated for secure peripherals, as nonsecure channels are
+      implicitly specified through the owned-channels property. This property
+      is ignored in non-Trustzone systems.
+
+  child-owned-channels:
+    type: array
+    description: |
+      List of channels in a split-ownership peripheral that are officially
+      owned by the compiled CPU but intended to be used by its child
+      subprocessor(s).

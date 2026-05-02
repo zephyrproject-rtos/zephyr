@@ -1,0 +1,11 @@
+tests:
+  libraries.devicetree.devices:
+    tags: devicetree
+    # We only need this to run on one platform so use native_sim as it
+    # will mostly likely be the fastest.
+    integration_platforms:
+      - native_sim
+    # The test instantiate few vnd,i2c devices so it fails with boards with
+    # devices that select I2C.
+    platform_allow:
+      - native_sim

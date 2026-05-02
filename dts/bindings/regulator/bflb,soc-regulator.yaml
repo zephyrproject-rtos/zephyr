@@ -1,0 +1,12 @@
+# Copyright (c), 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bouffalolab HBN SoC (CPU, Memory, etc) voltage regulator
+  It is a LDO with a canonical voltage of 1.10v
+  It has two modes, but they are only switched between when going into sleep mode and do not share
+  settings areas.
+
+compatible: "bflb,soc-regulator"
+
+include: "bflb,regulators-common.yaml"

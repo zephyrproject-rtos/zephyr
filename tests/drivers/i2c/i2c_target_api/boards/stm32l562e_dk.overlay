@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* I2C bus pins are exposed in the Arduino Uno header and Pmod.
+ *
+ *  Bus        SDA               SCL
+ *          Pin   Hdr         Pin   Hdr
+ *  i2c1    PB7   CN11:9      PB6   CN11:10
+ *  i2c2    PB11  CN12:2      PB13  CN4:1
+ *
+ * Short Pin PB7 to PB11, and PB6 to PB13, for the test to pass.
+ */
+
+&i2c1 {
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb13 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};

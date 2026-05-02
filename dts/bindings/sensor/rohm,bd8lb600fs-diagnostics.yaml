@@ -1,0 +1,17 @@
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Open load detection, over current protection and thermal shutdown
+  sensor of the low side switch BD8LB600FS
+
+compatible: "rohm,bd8lb600fs-diagnostics"
+
+include: sensor-device.yaml
+
+on-bus: bd8lb600fs
+
+properties:
+  "#sensor-cells":
+    type: int
+    const: 0

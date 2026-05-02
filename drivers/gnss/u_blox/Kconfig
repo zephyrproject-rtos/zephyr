@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Trackunit Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+rsource "Kconfig.u_blox_common"
+rsource "Kconfig.u_blox_f9p"
+rsource "Kconfig.u_blox_m8"
+# zephyr-keep-sorted-stop

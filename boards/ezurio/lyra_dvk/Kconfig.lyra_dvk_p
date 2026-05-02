@@ -1,0 +1,6 @@
+# Copyright The Zephyr Project Contributors
+# Copyright (c) 2026 Ezurio LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LYRA_DVK_P
+	select SOC_BGM220PC22HNA

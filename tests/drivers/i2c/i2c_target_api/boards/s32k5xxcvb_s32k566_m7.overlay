@@ -1,0 +1,55 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/* Connect J217(K7) <-> J110(G10) and J108(E10) <-> J184(L8), each with a 10k Ohm pull-up to 3.3V */
+
+&pinctrl {
+	lpi2c1_default: lpi2c1_default {
+		group1 {
+			pinmux = <(PP2_LPI2C1_SDA_O | PP2_LPI2C1_SDA_I)>,
+				 <(PQ2_LPI2C1_SCL_O | PQ2_LPI2C1_SCL_I)>;
+			input-enable;
+			output-enable;
+		};
+	};
+
+	lpi2c2_default: lpi2c2_default {
+		group1 {
+			pinmux = <(PN8_LPI2C2_SDA_O | PN8_LPI2C2_SDA_I)>,
+				 <(PN11_LPI2C2_SCL_O | PN11_LPI2C2_SCL_I)>;
+			input-enable;
+			output-enable;
+		};
+	};
+};
+
+&lpi2c1 {
+	status = "okay";
+	pinctrl-0 = <&lpi2c1_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&lpi2c2 {
+	pinctrl-0 = <&lpi2c2_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};

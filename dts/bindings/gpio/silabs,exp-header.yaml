@@ -1,0 +1,30 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs Kit Expansion Header
+
+description: |
+  GPIO pins exposed on the Expansion Header of Silicon Labs Pro Kits, Wireless Pro Kits,
+  Starter Kits and Wireless Starter Kits. Dev Kits also use the Expansion Header pinout
+  for their breakout pads.
+
+  The Expansion Header contains several I/O pins as well as VMCU, 3.3V and 5V power rails.
+
+    20 -o 3V3            BOARD_ID_SDA o- 19
+    18 -o 5V             BOARD_ID_SCL o- 17
+    16 -o I2C SDA             I2C SCL o- 15
+    14 -o UART RX                GPIO o- 13
+    12 -o UART TX                GPIO o- 11
+    10 -o SPI CS                 GPIO o- 9
+     8 -o SPI CLK                GPIO o- 7
+     6 -o SPI CIPO               GPIO o- 5
+     4 -o SPI COPI               GPIO o- 3
+     2 -o VMCU                    GND o- 1
+
+  Note: The BOARD_ID I2C lines are connected to the debugger, not to the SoC, so the usable
+  GPIOs range from pin 3 to pin 16. Not all pins are routed on all boards, depending on the
+  SoC used and board design.
+
+compatible: "silabs,exp-header"
+
+include: [gpio-nexus.yaml, base.yaml]

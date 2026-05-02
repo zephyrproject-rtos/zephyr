@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel Raptor Lake CPU
+
+compatible: "intel,raptor-lake"
+
+include: cpu.yaml

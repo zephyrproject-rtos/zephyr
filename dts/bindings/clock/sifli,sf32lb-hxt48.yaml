@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: SiFli SF32LB HXT48 clock
+
+compatible: "sifli,sf32lb-hxt48"
+
+include: [base.yaml, clock-controller.yaml, sifli-sf32lb-aon.yaml]
+
+properties:
+  clock-frequency:
+    type: int
+    const: 48000000
+    description: Clock frequency in Hz
+
+  "#clock-cells":
+    const: 0
+
+  sifli,aon:
+    required: true

@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32/esp32_appcpu.dtsi>
+#include <espressif/partitions_0x1000_amp.dtsi>
+
+/ {
+	model = "Adafruit Feather ESP32 APPCPU";
+	compatible = "espressif,esp32";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,ipc_shm = &shm0;
+		zephyr,ipc = &ipm0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_appcpu_partition;
+	};
+};
+
+&ipm0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};

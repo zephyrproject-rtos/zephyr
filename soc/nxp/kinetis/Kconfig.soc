@@ -1,0 +1,10 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_KINETIS
+	bool
+
+config SOC_FAMILY
+	default "nxp_kinetis" if SOC_FAMILY_KINETIS
+
+rsource "*/Kconfig.soc"

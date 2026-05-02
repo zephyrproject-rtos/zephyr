@@ -1,0 +1,7 @@
+# TI CC1312R1 LaunchXL board
+
+# Copyright (c) 2026 Jean-Pierre De Jesus DIAZ
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "boards/ti/common/Kconfig"

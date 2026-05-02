@@ -1,0 +1,33 @@
+# Copyright (c) 2018, Yannis Damigos
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 USB HS PHY controller
+
+compatible: "st,stm32-usbphyc"
+
+include: phy-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+    description: |
+      Clock configuration of USBPHYC
+
+      The first cell is mandatory and corresponds
+      to the clock gate of the USBPHYC. The second
+      cell is optional and corresponds to the mux
+      configuration.
+
+  "#phy-cells":
+    const: 0
+
+examples:
+  - |
+    /* In DTS for STM32N6-based board */
+    &usbphyc1 {
+      clocks = <&rcc STM32_CLOCK(AHB5, 27)>,
+               <&rcc STM32_SRC_HSE OTGPHY1CKREF_SEL(1)>;
+    };

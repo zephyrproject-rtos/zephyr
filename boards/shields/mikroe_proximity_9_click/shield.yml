@@ -1,0 +1,6 @@
+shield:
+  name: mikroe_proximity_9_click
+  full_name: Proximity 9 Click
+  vendor: mikroe
+  supported_features:
+    - sensor

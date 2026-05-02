@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Analog Devices Inc.
+# Copyright (c) 2024 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_MAX22017
+	bool "Analog Devices MAX22017 DAC"
+	default y
+	depends on DT_HAS_ADI_MAX22017_DAC_ENABLED
+	select MFD
+	help
+	  Enable the driver for the Analog Devices MAX22017 DAC
+
+if DAC_MAX22017
+
+config DAC_MAX22017_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  Analog Devices MAX22017 DAC device driver initialization priority.
+
+endif # DAC_MAX22017

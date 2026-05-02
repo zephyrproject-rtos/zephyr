@@ -1,0 +1,19 @@
+identifier: sensortile_box
+name: ST SensorTile.box
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - pwm
+  - spi
+  - ble
+  - i2c
+  - gpio
+  - usbd
+  - nvs
+  - counter
+ram: 192
+flash: 2048
+vendor: st

@@ -1,0 +1,67 @@
+MQTT Library Test
+-----------------
+
+This MQTT application tests the low-level API for packet handling.
+No network activity is involved in this test, so ** theoretically **
+it can be run on almost any board already supported by Zephyr and
+with enough RAM/ROM.
+
+Build and Run
+-------------
+
+* QEMU x86
+
+  Build & run:
+  mkdir build; cd build
+  cmake -DBOARD=qemu_x86 ..
+  make run
+
+* NXP Freedom-K64F (frdm-k64f)
+
+  Build:
+  mkdir build; cd build
+  cmake -DBOARD=frdm_k64f ..
+  make run
+
+  Firmware version:
+  Version: 0226
+  Build:   Aug 24 2015 17:06:30
+  Git Commit SHA: 27a236b9fe39c674a703c5c89655fbd26b8e27e1
+  Git Local mods: Yes
+
+  For more information about this board, see:
+  https://developer.mbed.org/platforms/frdm-k64f/
+
+Sample Output
+-------------
+
+To exit from QEMU enter: 'CTRL+a, x'
+[QEMU] CPU: qemu32
+tc_start() - MQTT Library test
+[PASS] 1 - CONNECT, new session, zeros
+[PASS] 2 - CONNECT, new session, will
+[PASS] 3 - CONNECT, new session, will retain
+[PASS] 4 - CONNECT, new session, will qos = 1
+[PASS] 5 - CONNECT, new session, will qos = 1, will retain
+[PASS] 6 - CONNECT, new session, username and password
+[PASS] 7 - DISCONNECT
+[PASS] 8 - PUBLISH, qos = 0
+[PASS] 9 - PUBLISH, retain = 1
+[PASS] 10 - PUBLISH, retain = 1, qos = 1
+[PASS] 11 - PUBLISH, qos = 2
+[PASS] 12 - SUBSCRIBE, one topic, qos = 0
+[PASS] 13 - SUBSCRIBE, one topic, qos = 1
+[PASS] 14 - SUBSCRIBE, one topic, qos = 2
+[PASS] 15 - SUBACK, one topic, qos = 0
+[PASS] 16 - SUBACK, one topic, qos = 1
+[PASS] 17 - SUBACK, one topic, qos = 2
+[PASS] 18 - PINGREQ
+[PASS] 19 - PUBACK
+[PASS] 20 - PUBREC
+[PASS] 21 - PUBREL
+[PASS] 22 - PUBCOMP
+[PASS] 23 - UNSUBACK
+===================================================================
+PASS - main.
+===================================================================
+PROJECT EXECUTION SUCCESSFUL

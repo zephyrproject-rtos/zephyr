@@ -1,0 +1,20 @@
+# Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ATMEL_RF2XX
+	def_bool $(shields_list_contains,atmel_rf2xx)
+
+config SHIELD_ATMEL_RF2XX_ARDUINO
+	def_bool $(shields_list_contains,atmel_rf2xx_arduino)
+
+config SHIELD_ATMEL_RF2XX_MIKROBUS
+	def_bool $(shields_list_contains,atmel_rf2xx_mikrobus)
+
+config SHIELD_ATMEL_RF2XX_XPRO
+	def_bool $(shields_list_contains,atmel_rf2xx_xpro)
+
+config SHIELD_ATMEL_RF2XX_LEGACY
+	def_bool $(shields_list_contains,atmel_rf2xx_legacy)
+
+config SHIELD_ATMEL_RF2XX_XPLAINED
+	def_bool $(shields_list_contains,atmel_rf2xx_xplained)

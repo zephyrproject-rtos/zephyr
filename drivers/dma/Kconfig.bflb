@@ -1,0 +1,9 @@
+# Copyright (c) 2025 MASSDRIVER EI <massdriver.space>
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_BFLB
+	bool "Bouffalo Lab DMA driver"
+	default y
+	depends on DT_HAS_BFLB_DMA_ENABLED
+	help
+	  DMA driver for Bouffalo Lab SoCs

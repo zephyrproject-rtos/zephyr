@@ -1,0 +1,40 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&emdio {
+	status = "okay";
+
+	phy2: phy@5 {
+		status = "okay";
+	};
+
+	phy3: phy@6 {
+		status = "okay";
+	};
+
+	phy4: phy@7 {
+		status = "okay";
+	};
+};
+
+&enetc_psi0 {
+	ptp-clock = <&netc_ptp_clock0>;
+	status = "okay";
+};
+
+&enetc_psi1 {
+	ptp-clock = <&netc_ptp_clock0>;
+	status = "okay";
+};
+
+&enetc_psi2 {
+	ptp-clock = <&netc_ptp_clock0>;
+	status = "okay";
+};
+
+&netc_ptp_clock0 {
+	status = "okay";
+};

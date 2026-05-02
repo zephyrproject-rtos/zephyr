@@ -1,0 +1,31 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if IPC_SERVICE_BACKEND_RPMSG
+
+config IPC_SERVICE_BACKEND_RPMSG_WQ_STACK_SIZE
+	int "Size of RX work queue stack"
+	default 1024
+	help
+	  Size of stack used by work queue RX thread. This work queue is
+	  created in the multi-instance / multi-core RPMsg backend module to
+	  prevent notifying service users about received data from the system
+	  work queue. Size is the same for all instances.
+
+config IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET
+	bool "Reset shared memory state"
+	help
+	  Some platforms retain the memory content upon reset. This is
+	  problematic because the backend expects a zero-ed memory to be
+	  able to correctly setup instances and endpoints at init time.
+	  When this parameter is set to 'y' the status region of the shared
+	  memory is reset on kernel initialization.
+
+config IPC_SERVICE_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE
+	int "Max number of registered endpoints per instance"
+	default 2
+	help
+	  Maximal number of endpoints that can be registered for one instance
+	  for RPMSG backend.
+
+endif # IPC_SERVICE_BACKEND_RPMSG

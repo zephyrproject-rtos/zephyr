@@ -1,0 +1,223 @@
+/*
+ * Copyright (c) 2026 Fabian Blatz <fabianblatz@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32/esp32_wrover_e_n4r8.dtsi>
+#include "inkplate_6color-pinctrl.dtsi"
+#include <espressif/partitions_0x1000_amp.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Inkplate 6Color PROCPU";
+	compatible = "solderedelectronics,inkplate-6color";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,display = &ac057tc1;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+		i2c-0 = &i2c0;
+		sw0 = &wakeup_button;
+		rtc = &pcf85063a;
+		display0 = &ac057tc1;
+	};
+
+	easyc_connector: easyc-connector {
+		compatible = "solderedelectronics,easyc-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 22 0>,	/* SCL */
+			   <1 0 &gpio0 21 0>;	/* SDA */
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		wakeup_button: button_1 {
+			label = "Wake-up button";
+			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_WAKEUP>;
+		};
+	};
+
+	vbatt: vbatt0 {
+		status = "okay";
+		compatible = "voltage-divider";
+		io-channels = <&adc1 7>;
+		output-ohms = <100000>;
+		full-ohms = <(100000 + 100000)>;
+		power-gpios = <&pcal6416a 9 GPIO_ACTIVE_HIGH>;
+		skip-calibration;
+	};
+};
+
+&adc1 {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@7 {
+		reg = <7>;
+		zephyr,gain = "ADC_GAIN_1_2";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,vref-mv = <1100>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	sda-gpios = <&gpio0 21 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpio0 22 GPIO_OPEN_DRAIN>;
+
+	pcal6416a: pcal6416a@20 {
+		compatible = "nxp,pcal6416a";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+
+		vbatt-measure-off {
+			gpio-hog;
+			gpios = <9 GPIO_ACTIVE_HIGH>;
+			output-low;
+		};
+
+		sdcard-power-off {
+			gpio-hog;
+			gpios = <10 GPIO_ACTIVE_LOW>;
+			output-low;
+		};
+	};
+
+	pcf85063a: pcf85063a@51 {
+		compatible = "nxp,pcf85063a";
+		reg = <0x51>;
+		int1-gpios = <&gpio1 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	};
+};
+
+&i2c1 {
+	status = "disabled";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	sda-gpios = <&gpio0 26 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpio0 25 GPIO_OPEN_DRAIN>;
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&timer3 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+
+	sdhc_spi: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		spi-max-frequency = <4000000>;
+		pwr-gpios = <&pcal6416a 10 GPIO_ACTIVE_LOW>;
+		power-delay-ms = <50>;
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spim3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;  /* EPAPER_CS_PIN */
+
+	mipi_dbi: mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		spi-dev = <&spi3>;
+		dc-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;  /* GPIO33 */
+		reset-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
+		write-only;
+
+		ac057tc1: ac057tc1@0 {
+			compatible = "eink,ac057tc1";
+			reg = <0>;
+			mipi-max-frequency = <2000000>;
+			width = <600>;
+			height = <448>;
+			busy-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;  /* GPIO32 */
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};

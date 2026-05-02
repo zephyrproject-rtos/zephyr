@@ -1,0 +1,20 @@
+identifier: nrf52840dongle/nrf52840/bare
+name: nRF52840-Dongle-NRF52840-bare
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - usbd
+  - ble
+  - pwm
+  - spi
+  - watchdog
+  - counter
+  - netif:openthread
+  - gpio
+vendor: nordic

@@ -1,0 +1,12 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP NETC PTP (Precision Time Protocol) Clock
+
+compatible: "nxp,netc-ptp-clock"
+
+include: ["base.yaml"]
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,86 @@
+# Copyright 2024 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+include: [battery.yaml, i2c-device.yaml]
+
+properties:
+  constant-charge-current-max-microamp:
+    type: int
+    default: 0
+    description: |
+      Charge current set at init time in uA, available range is 5 mA to 800 mA.
+      The value specified will be rounded down to the closest implemented
+      value. If set to 0 (default) skip setting the charge current value at
+      driver initialization.
+
+  constant-charge-voltage-max-microvolt:
+    type: int
+    default: 4200000
+    description: |
+      The maximum voltage that the battery will be charged at, defaults to
+      4.2V, matching the device default reset configuration.
+
+  re-charge-threshold-millivolt:
+    type: int
+    enum:
+      - 100
+      - 200
+    default: 100
+    description: |
+      The voltage below the maximum charge voltage at which the battery will
+      resume charging after falling from the max. Defaults to 100 mV, matching
+      the device default reset configuration.
+
+  precharge-voltage-threshold-microvolt:
+    type: int
+    enum:
+      - 2800000
+      - 3000000
+    default: 3000000
+    description: |
+      Threshold at which voltage to switch to constant current charge.
+
+  vsys-target-regulation:
+    type: string
+    enum:
+      - "Battery Tracking"
+      - "4V4"
+      - "4V5"
+      - "4V6"
+      - "4V7"
+      - "4V8"
+      - "4V9"
+      - "Vin Passthrough"
+    default: "4V5"
+    description: |
+      Target voltage for the SYS regulation loop. Defaults to 4.5V, matching
+      the device default reset configuration.
+
+  battery-discharge-current-limit-milliamp:
+    type: int
+    enum:
+      - 500
+      - 1000
+      - 1500
+      - 3000
+    default: 3000
+    description:
+      Battery discharge current limit. If the current through the battery FET
+      exceeds this value, the discharge FET is turned off. Default matches the
+      register reset value.
+
+  battery-undervoltage-lockout-millivolt:
+    type: int
+    enum:
+      - 3000
+      - 2800
+      - 2600
+      - 2400
+      - 2200
+      - 2000
+    default: 3000
+    description:
+      Battery undervoltage lockout threshold (falling). If the voltage on the
+      BAT pin falls below this value, the BAT to SYS path will be disengaged.
+      There is a 150 mV hysterisis before the path will be re-enabled. Default
+      matches the register reset value.

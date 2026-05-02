@@ -1,0 +1,7 @@
+# Copyright (c) 2024 Lothar Felten <lothar.felten@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BOARD_TTGO_T8S3_ESP32S3_PROCPU
+	default 256 if BOARD_TTGO_T8S3_ESP32S3_APPCPU

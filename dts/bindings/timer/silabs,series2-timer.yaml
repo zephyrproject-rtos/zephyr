@@ -1,0 +1,53 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs TIMER
+
+description: |
+  TIMER peripheral on Silicon Labs Series 2 SoCs.
+
+compatible: "silabs,series2-timer"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  run-in-debug:
+    type: boolean
+    description: |
+      Enable to keep timer running in debug mode.
+
+  clock-div:
+    type: int
+    default: 1
+    description: Clock divider for timer
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1024
+
+  channels:
+    type: int
+    required: true
+    description: Number of compare/capture channels available
+
+  counter-size:
+    type: int
+    required: true
+    description: Width of the counter in bits
+    enum:
+      - 16
+      - 32

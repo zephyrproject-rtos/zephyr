@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2024 Ian Morris
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mikrobus_spi {
+	status = "okay";
+	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+
+	bme280_mikroe_weather_click: bme280@0 {
+		status = "okay";
+		compatible = "bosch,bme280";
+		spi-max-frequency = <1000000>;
+		reg = <0>;
+	};
+};

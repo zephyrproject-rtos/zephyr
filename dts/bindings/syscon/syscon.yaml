@@ -1,0 +1,15 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: System Controller Registers R/W
+
+compatible: "syscon"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+  reg-io-width:
+    type: int
+    description: The width of the registers in the syscon region in bytes. Default is 4 bytes.

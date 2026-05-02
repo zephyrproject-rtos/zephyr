@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma0 {
+	status = "okay";
+};
+
+&usart1 {
+	dmas = <&dma0 DMA_REQSEL_USART1TXBL>,
+	       <&dma0 DMA_REQSEL_USART1RXDATAV>;
+	dma-names = "tx", "rx";
+};

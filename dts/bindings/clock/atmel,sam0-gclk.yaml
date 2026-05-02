@@ -1,0 +1,66 @@
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAMD0 Generic Clock Controller (GCLK)
+
+compatible: "atmel,sam0-gclk"
+
+include:
+  - base.yaml
+  - clock-controller.yaml
+  - atmel,assigned-clocks.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 1
+    description: |
+      - The ID cell is the peripheral identification.
+
+      These information are used on GCLK->CLKCTRL register to select the
+      clock for an specific peripheral.
+
+      Example 1: Connect the XOSC32K to RTC on SAMD2x
+        Assuming that generator 2 have the following configuration:
+          GLKC->GENCTRL:
+            SRC: 5 (XOSC32K)
+            ID:  2 (Generator 2)
+
+        Then to enable the clock to the peripheral
+        Generator:     2
+        Identificator: 4 (GCLK_RTC)
+
+          &rtc {
+            /* The peripheral is fixed and it is defined at soc devictree
+             * clocks property
+             */
+            clocks = <&gclk 4>, <&pm 0x18 5>;
+            clock-names = "GCLK", "PM";
+
+            /* The generator is user selectable and because of that it is
+             * defined at board
+             */
+            atmel,assigned-clocks = <&gclk 2>;
+            atmel,assigned-clock-names = "GCLK";
+          };
+
+      Example 2: Connect the XOSC32K to RTC on SAMD5x
+        In the SAMD5x the RTC is direct connected on the OSC32KCTRL and no
+        generator is used. See atmel,sam0-osc32kctrl.yaml for reference.
+
+  "#atmel,assigned-clock-cells":
+    required: true
+    type: int
+    const: 1
+    description: |
+      - The GEN cell is an integer number that represents the index of
+      the generic clock generator. It is usually a number between 0~8
+      but could be more depending of the SoC.
+
+clock-cells:
+  - id
+
+atmel,assigned-clock-cells:
+  - gen

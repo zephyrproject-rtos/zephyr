@@ -1,0 +1,30 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-test = &qtmr4;
+	};
+};
+
+&pinctrl {
+	qtmr4_timer0_default: qtmr4 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_00_qtimer4_timer0>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+};
+
+&qtmr4 {
+	compatible = "nxp,qtmr-pwm";
+	pinctrl-0 = <&qtmr4_timer0_default>;
+	pinctrl-names = "default";
+	#pwm-cells = <3>;
+	prescaler = <32>;
+	status = "okay";
+};

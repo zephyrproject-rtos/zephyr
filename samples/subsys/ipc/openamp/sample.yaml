@@ -1,0 +1,20 @@
+sample:
+  description: This app provides an example of how to integrate OpenAMP with Zephyr.
+  name: OpenAMP example integration
+tests:
+  sample.ipc.openamp:
+    filter: dt_chosen_enabled("zephyr,ipc") and dt_chosen_enabled("zephyr,ipc_shm")
+      and not (CONFIG_SOC_ESP32_APPCPU or CONFIG_SOC_ESP32S3_APPCPU)
+    integration_platforms:
+      - mps2/an521/cpu0
+    tags:
+      - ipm
+      - openamp
+    harness: console
+    sysbuild: true
+    harness_config:
+      type: multi_line
+      regex:
+        - "Master core received a message: 1"
+        - "Master core received a message: 99"
+        - "OpenAMP demo ended."

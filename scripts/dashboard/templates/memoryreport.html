@@ -1,0 +1,182 @@
+<!--
+Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
+{% extends "base.html" %}
+
+{% block head %}
+
+{% if include_plotly_js %}
+<script src="static/js/plotly.js"></script>
+{% endif %}
+<link href="static/css/treetable.css" rel="stylesheet">
+<script src="static/js/treetable.js"></script>
+<script src="static/js/memoryreport.js"></script>
+
+<script>
+  // Create Javascript variables with all the report data in it.
+  let ramReport = {% if ram_report %}{{ram_report|safe}}{% else %}null{% endif %};
+  let romReport = {% if rom_report %}{{rom_report|safe}}{% else %}null{% endif %};
+  let allReport = {% if all_report %}{{all_report|safe}}{% else %}null{% endif %};
+</script>
+
+{% endblock %}
+
+{% block content %}
+
+<div class="card callout mb-4">
+  <div class="card-body" style="font-size:smaller">
+    The memory report is split into three sections: Total, RAM, and ROM.
+    The <b>RAM report</b> includes all writeable data: variables, stacks,
+    and heaps. It does not include code.
+    The <b>ROM report</b> includes all symbols that can be part of a ROM
+    image: code and statically initialized data.
+    The <b>total memory</b> report shows the total memory used, helpful
+    for optimizing the total RAM requirement when ROM is not used.
+    Note that the sum of the RAM and ROM reports may not equal the size
+    in the total report since statically initialized variables can
+    appear in both RAM and ROM reports (but only count once for the total).
+    The <b>(hidden)</b> size is memory allocated in an elf section but not
+    associated with any symbol.
+  </div>
+</div>
+
+<ul class="nav nav-underline mb-3" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="combined-tab" data-bs-toggle="tab"
+        data-bs-target="#combinedReport" type="button" role="tab"
+        aria-controls="combined" aria-selected="true">
+      <h5>Total Memory</h5>
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="ram-tab" data-bs-toggle="tab"
+        data-bs-target="#ramReport" type="button" role="tab"
+        aria-controls="ramReport" aria-selected="false">
+      <h5>RAM Report</h5>
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="rom-tab" data-bs-toggle="tab"
+        data-bs-target="#romReport" type="button" role="tab"
+        aria-controls="romReport" aria-selected="false">
+      <h5>ROM Report</h5>
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content mb-5">
+
+  <div class="tab-pane fade show active" id="combinedReport" role="tabpanel">
+    <table id="allTree" class="table table-sm table-hover table-bordered table-light mb-5">
+      <colgroup>
+        <col width="*"/>
+        <col width="100px"/>
+        <col width="100px"/>
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Path</th>
+          <th>Size</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td></td> <td class="text-end"></td> <td class="text-end"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h5>Top Ten Symbols by Size</h5>
+
+    <table class="table table-sm table-hover table-bordered table-light mb-5">
+      <thead>
+        <tr>
+          <th>Symbol</th>
+          <th>Size</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for symbol in top_ten %}
+        <tr>
+          <td>{{symbol.identifier}}
+            <span class="fancytree-title memory-type">
+              {% for loc in symbol.loc %}
+              {{loc|upper}}{% if not loop.last %},{%endif%}
+              {% endfor %}
+            </span>
+          </td>
+          <td class="text-end">{{symbol.size|display_size}}</td>
+          <td class="text-end">{{"%.2f" % (symbol.size * 100 / all_report_size)}}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if all_plot %}
+    <div class="table-light memory-plot">
+      {{all_plot|safe}}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="tab-pane fade" id="ramReport" role="tabpanel" aria-labelledby="ram-tab">
+    <table id="ramTree" class="table table-sm table-hover table-bordered table-light mb-5">
+      <colgroup>
+        <col width="*"/>
+        <col width="100px"/>
+        <col width="100px"/>
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Path</th>
+          <th>Size</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+
+    {% if ram_plot %}
+    <div class="table-light memory-plot">
+      {{ram_plot|safe}}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="tab-pane fade" id="romReport" role="tabpanel" aria-labelledby="rom-tab">
+    <table id="romTree" class="table table-sm table-hover table-bordered table-light mb-5">
+      <colgroup>
+        <col width="*"/>
+        <col width="100px"/>
+        <col width="100px"/>
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Path</th>
+          <th>Size</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td></td> <td class="text-end"></td> <td class="text-end"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    {% if rom_plot %}
+    <div class="table-light memory-plot">
+      {{rom_plot|safe}}
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}

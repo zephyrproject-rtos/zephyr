@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2023 Basalte bv
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+syntax = "proto3";
+
+import "sub/nested.proto";
+
+message ComplexMessage {
+    NestedMessage nested = 1;
+};

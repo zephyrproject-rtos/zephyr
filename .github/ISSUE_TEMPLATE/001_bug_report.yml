@@ -1,0 +1,85 @@
+name: Bug Report
+description: File a bug report.
+labels: ["bug"]
+type: "Bug"
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Describe the bug
+      description: |
+        A clear and concise description of what the bug is.
+
+      placeholder: |
+        Please also mention any information which could help others to understand
+        the problem you're facing:
+          - What target platform are you using?
+          - What have you tried to diagnose or workaround this issue?
+          - Is this a regression? If yes, have you been able to "git bisect" it to a
+            specific commit?
+    validations:
+      required: true
+  - type: checkboxes
+    id: regression
+    attributes:
+      label: Regression
+      description: |
+        Check this box if this is a regression and provide a SHA if you were able to "git bisect" to a specific commit.
+      options:
+        - label: This is a regression.
+          required: false
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: |
+        Steps to reproduce the behavior.
+
+      placeholder: |
+        Steps to reproduce the behavior:
+          1. mkdir build; cd build
+          2. cmake -DBOARD=board\_xyz
+          3. make
+          4. See error
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      render: shell
+  - type: dropdown
+    attributes:
+      label: Impact
+      description: Impact of this bug
+      multiple: false
+      options:
+        - Showstopper – Prevents release or major functionality; system unusable.
+        - Major – Severely degrades functionality; workaround is difficult or unavailable.
+        - Functional Limitation – Some features not working as expected, but system usable.
+        - Annoyance – Minor irritation; no significant impact on usability or functionality.
+        - Intermittent – Occurs occasionally; hard to reproduce.
+        - Not sure
+      default: 3
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: please complete the following information
+      placeholder: |
+       - OS: (e.g. Linux, MacOS, Windows)
+       - Toolchain (e.g Zephyr SDK, ...)
+       - Commit SHA or Version used
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Provide other context that could be relevant to the bug, such as pin setting, target configuration,etc.

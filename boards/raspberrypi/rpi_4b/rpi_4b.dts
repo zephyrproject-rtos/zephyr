@@ -1,0 +1,50 @@
+/*
+ * Copyright 2023 honglin leng <a909204013@gmail.com>
+ * Copyright (c) 2025 Muhammad Waleed Badar
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <broadcom/bcm2711.dtsi>
+#include <broadcom/bcm2711-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "Raspberry Pi 4 Model B";
+	compatible = "raspberrypi,4-model-b", "brcm,bcm2711";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	aliases {
+		led0 = &led_act;
+	};
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram0;
+		zephyr,entropy = &rng;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_act: led-act {
+			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>; /* GPIO 42 */
+			label = "ACT";
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart1_gpio14>;
+	current-speed = <115200>;
+	status = "okay";
+};

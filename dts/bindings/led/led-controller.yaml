@@ -1,0 +1,19 @@
+# Copyright (c) 2020 Seagate Technology LLC
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for LED controllers and child LEDs
+
+child-binding:
+  description: LED child node
+
+  include: led-node.yaml
+
+  properties:
+    index:
+      type: int
+      description: |
+        Index of the LED on a controller. It can be used by drivers or
+        applications to map a logical LED to its real position on the
+        controller. For example, this allows to handle boards where the
+        LEDs in an array/strip are not wired following the LED order of
+        the controller.

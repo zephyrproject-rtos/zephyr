@@ -1,0 +1,24 @@
+# Copyright (c) 2025-2026 MASSDRIVER EI (massdriver.space)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: qcc744m_evk
+name: QCC744M Evaluation Kit
+type: mcu
+arch: riscv
+ram: 320
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - gpio
+  - pinctrl
+  - uart
+  - dma
+  - i2c
+  - spi
+  - flash
+vendor: qcom

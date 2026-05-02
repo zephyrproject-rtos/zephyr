@@ -1,0 +1,274 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ * @ingroup stepper_hw_driver
+ * @brief Main header file for stepper hardware driver API.
+ */
+
+#ifndef ZEPHYR_INCLUDE_DRIVERS_STEPPER_H_
+#define ZEPHYR_INCLUDE_DRIVERS_STEPPER_H_
+
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <errno.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Interfaces for stepper motion controllers and hardware drivers.
+ * @defgroup stepper_interface Stepper
+ * @ingroup io_interfaces
+ *
+ * @defgroup stepper_hw_driver Stepper Hardware Driver
+ * @brief Interfaces for stepper hardware drivers
+ * @ingroup stepper_interface
+ * @since 4.0
+ * @version 0.9.0
+ * @{
+ */
+
+/**
+ * @brief Stepper Motor micro-step resolution options
+ */
+enum stepper_micro_step_resolution {
+	/** Full step resolution */
+	STEPPER_MICRO_STEP_1 = 1,
+	/** 2 micro-steps per full step */
+	STEPPER_MICRO_STEP_2 = 2,
+	/** 4 micro-steps per full step */
+	STEPPER_MICRO_STEP_4 = 4,
+	/** 8 micro-steps per full step */
+	STEPPER_MICRO_STEP_8 = 8,
+	/** 16 micro-steps per full step */
+	STEPPER_MICRO_STEP_16 = 16,
+	/** 32 micro-steps per full step */
+	STEPPER_MICRO_STEP_32 = 32,
+	/** 64 micro-steps per full step */
+	STEPPER_MICRO_STEP_64 = 64,
+	/** 128 micro-steps per full step */
+	STEPPER_MICRO_STEP_128 = 128,
+	/** 256 micro-steps per full step */
+	STEPPER_MICRO_STEP_256 = 256,
+};
+
+/**
+ * @brief Macro to calculate the index of the microstep resolution
+ * @param res Microstep resolution
+ */
+#define MICRO_STEP_RES_INDEX(res) LOG2(res)
+
+#define VALID_MICRO_STEP_RES(res)                                                                  \
+	((res) == STEPPER_MICRO_STEP_1 || (res) == STEPPER_MICRO_STEP_2 ||                 \
+	 (res) == STEPPER_MICRO_STEP_4 || (res) == STEPPER_MICRO_STEP_8 ||                 \
+	 (res) == STEPPER_MICRO_STEP_16 || (res) == STEPPER_MICRO_STEP_32 ||               \
+	 (res) == STEPPER_MICRO_STEP_64 || (res) == STEPPER_MICRO_STEP_128 ||              \
+	 (res) == STEPPER_MICRO_STEP_256)
+
+/**
+ * @brief Stepper Hardware Driver Events
+ */
+enum stepper_event {
+	/** Stepper driver stall detected */
+	STEPPER_EVENT_STALL_DETECTED = 0,
+	/** Stepper driver fault detected */
+	STEPPER_EVENT_FAULT_DETECTED = 1,
+};
+
+/**
+ * @brief Callback function for stepper driver events
+ */
+typedef void (*stepper_event_cb_t)(const struct device *dev, const enum stepper_event event,
+				   void *user_data);
+
+/**
+ * @def_driverbackendgroup{Stepper Hardware Driver,stepper_hw_driver}
+ * @{
+ */
+
+/**
+ * @brief Callback API to enable the stepper hardware driver.
+ * See stepper_enable() for argument description.
+ */
+typedef int (*stepper_enable_t)(const struct device *dev);
+
+/**
+ * @brief Callback API to disable the stepper hardware driver.
+ * See stepper_disable() for argument description.
+ */
+typedef int (*stepper_disable_t)(const struct device *dev);
+
+/**
+ * @brief Callback API to set the stepper micro-step resolution.
+ * See stepper_set_micro_step_res() for argument description.
+ */
+typedef int (*stepper_set_micro_step_res_t)(const struct device *dev,
+					    const enum stepper_micro_step_resolution resolution);
+
+/**
+ * @brief Callback API to get the stepper micro-step resolution.
+ * See stepper_get_micro_step_res() for argument description.
+ */
+typedef int (*stepper_get_micro_step_res_t)(const struct device *dev,
+					    enum stepper_micro_step_resolution *resolution);
+
+/**
+ * @brief Callback API to set the event callback function.
+ * See stepper_set_event_cb() for argument description.
+ */
+typedef int (*stepper_set_event_cb_t)(const struct device *dev, stepper_event_cb_t callback,
+				      void *user_data);
+
+/**
+ * @driver_ops{Stepper Hardware Driver}
+ */
+__subsystem struct stepper_driver_api {
+	/**
+	 * @driver_ops_mandatory @copybrief stepper_enable
+	 */
+	stepper_enable_t enable;
+	/**
+	 * @driver_ops_mandatory @copybrief stepper_disable
+	 */
+	stepper_disable_t disable;
+	/**
+	 * @driver_ops_mandatory @copybrief stepper_set_micro_step_res
+	 */
+	stepper_set_micro_step_res_t set_micro_step_res;
+	/**
+	 * @driver_ops_mandatory @copybrief stepper_get_micro_step_res
+	 */
+	stepper_get_micro_step_res_t get_micro_step_res;
+	/**
+	 * @driver_ops_optional @copybrief stepper_set_event_cb
+	 */
+	stepper_set_event_cb_t set_event_cb;
+};
+
+/**
+ * @}
+ */
+
+/**
+ * @brief Enable stepper hardware driver
+ *
+ * @details Enabling the driver shall switch on the power stage and energize the coils.
+ *
+ * @param dev pointer to the device structure for the driver instance.
+ *
+ * @retval -EIO Error during Enabling
+ * @retval 0 Success
+ */
+__syscall int stepper_enable(const struct device *dev);
+
+static inline int z_impl_stepper_enable(const struct device *dev)
+{
+	__ASSERT_NO_MSG(dev != NULL);
+	return DEVICE_API_GET(stepper, dev)->enable(dev);
+}
+
+/**
+ * @brief Disable stepper hardware driver
+ *
+ * @details Disabling the hw driver shall switch off the power stage and de-energize the coils.
+ *
+ * @param dev pointer to the device structure for the driver instance.
+ *
+ * @retval -ENOTSUP Disabling of hw driver is not supported.
+ * @retval -EIO Error during Disabling
+ * @retval 0 Success
+ */
+__syscall int stepper_disable(const struct device *dev);
+
+static inline int z_impl_stepper_disable(const struct device *dev)
+{
+	__ASSERT_NO_MSG(dev != NULL);
+	return DEVICE_API_GET(stepper, dev)->disable(dev);
+}
+
+/**
+ * @brief Set the micro-step resolution in stepper hardware driver
+ *
+ * @param dev pointer to the device structure for the driver instance.
+ * @param res micro-step resolution
+ *
+ * @retval -EIO General input / output error
+ * @retval -EINVAL If the requested resolution is invalid
+ * @retval -ENOTSUP If the requested resolution is not supported
+ * @retval 0 Success
+ */
+__syscall int stepper_set_micro_step_res(const struct device *dev,
+					     enum stepper_micro_step_resolution res);
+
+static inline int z_impl_stepper_set_micro_step_res(const struct device *dev,
+							enum stepper_micro_step_resolution res)
+{
+	__ASSERT_NO_MSG(dev != NULL);
+	if (!VALID_MICRO_STEP_RES(res)) {
+		return -EINVAL;
+	}
+	return DEVICE_API_GET(stepper, dev)->set_micro_step_res(dev, res);
+}
+
+/**
+ * @brief Get the micro-step resolution in stepper hardware driver
+ *
+ * @param dev pointer to the device structure for the driver instance.
+ * @param res micro-step resolution
+ *
+ * @retval -EIO General input / output error
+ * @retval 0 Success
+ */
+__syscall int stepper_get_micro_step_res(const struct device *dev,
+					     enum stepper_micro_step_resolution *res);
+
+static inline int z_impl_stepper_get_micro_step_res(const struct device *dev,
+							enum stepper_micro_step_resolution *res)
+{
+	__ASSERT_NO_MSG(dev != NULL);
+	__ASSERT_NO_MSG(res != NULL);
+	return DEVICE_API_GET(stepper, dev)->get_micro_step_res(dev, res);
+}
+
+/**
+ * @brief Set the callback function to be called when a stepper_event occurs
+ *
+ * @param dev pointer to the device structure for the driver instance.
+ * @param callback Callback function to be called when a stepper_event occurs
+ * passing NULL will disable the callback
+ * @param user_data User data to be passed to the callback function
+ *
+ * @retval -ENOSYS If not implemented by device driver
+ * @retval 0 Success
+ */
+__syscall int stepper_set_event_cb(const struct device *dev, stepper_event_cb_t callback,
+				       void *user_data);
+
+static inline int z_impl_stepper_set_event_cb(const struct device *dev,
+						  stepper_event_cb_t cb, void *user_data)
+{
+	__ASSERT_NO_MSG(dev != NULL);
+	if (DEVICE_API_GET(stepper, dev)->set_event_cb == NULL) {
+		return -ENOSYS;
+	}
+
+	return DEVICE_API_GET(stepper, dev)->set_event_cb(dev, cb, user_data);
+}
+
+/**
+ * @}
+ */
+
+#ifdef __cplusplus
+}
+#endif
+
+#include <zephyr/syscalls/stepper.h>
+
+#endif /* ZEPHYR_INCLUDE_DRIVERS_STEPPER_H_ */

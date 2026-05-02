@@ -1,0 +1,6 @@
+# Copyright (c) 2022, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "bosch,bmi270"
+
+include: ["spi-device.yaml", "bosch,bmi270.yaml"]

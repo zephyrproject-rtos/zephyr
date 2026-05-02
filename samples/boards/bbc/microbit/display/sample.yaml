@@ -1,0 +1,6 @@
+sample:
+  name: BB micro:bit Display
+tests:
+  sample.board.bbc_microbit.display:
+    platform_allow: bbc_microbit
+    tags: display

@@ -1,0 +1,14 @@
+# Copyright 2023 The ChromiumOS Authors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  gpio.gpio_ite_it8xxx2_v2:
+    tags:
+      - drivers
+      - gpio
+    depends_on: gpio
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim

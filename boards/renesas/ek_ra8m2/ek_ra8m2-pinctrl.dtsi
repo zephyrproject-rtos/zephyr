@@ -1,0 +1,125 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sci8_default: sci8_default {
+		group1 {
+			/* TX8 RX8 */
+			psels = <RA_PSEL(RA_PSEL_SCI_8, 13, 2)>,
+				<RA_PSEL(RA_PSEL_SCI_8, 13, 3)>;
+			drive-strength = "high";
+		};
+	};
+
+	sci9_default: sci9_default {
+		group1 {
+			/* tx */
+			psels = <RA_PSEL(RA_PSEL_SCI_9, 2, 9)>;
+			drive-strength = "medium";
+		};
+
+		group2 {
+			/* rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_9, 2, 8)>;
+		};
+	};
+
+	sci7_default: sci7_default {
+		group1 {
+			/* TX7 RX7 */
+			psels = <RA_PSEL(RA_PSEL_SCI_7, 12, 3)>,
+				<RA_PSEL(RA_PSEL_SCI_7, 12, 4)>;
+			drive-strength = "high";
+		};
+	};
+
+	spi1_default: spi1_default {
+		group1 {
+			/* MISOB MOSIB SSLB0 */
+			psels = <RA_PSEL(RA_PSEL_SPI, 7, 9)>,
+				<RA_PSEL(RA_PSEL_SPI, 7, 8)>,
+				<RA_PSEL(RA_PSEL_SPI, 4, 14)>;
+			drive-strength = "high";
+		};
+
+		group2 {
+			/* RSPCKB */
+			psels = <RA_PSEL(RA_PSEL_SPI, 4, 15)>;
+			drive-strength = "highspeed-high";
+		};
+	};
+
+	pwm1_default: pwm1_default {
+		group1 {
+			/* GTIOC1A */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 5, 9)>;
+		};
+
+		group2 {
+			/* GTIOC1B */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 5, 10)>;
+		};
+	};
+
+	iic1_default: iic1_default {
+		group1 {
+			/* SCL1 SDA1*/
+			psels = <RA_PSEL(RA_PSEL_I2C, 5, 12)>,
+				<RA_PSEL(RA_PSEL_I2C, 5, 11)>;
+			drive-strength = "medium";
+		};
+	};
+
+	canfd1_default: canfd1_default {
+		group1 {
+			/* CRX1 CTX1 */
+			psels = <RA_PSEL(RA_PSEL_CANFD, 9, 8)>,
+				<RA_PSEL(RA_PSEL_CANFD, 9, 9)>;
+			drive-strength = "low";
+		};
+	};
+
+	usbhs_default: usbhs_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_USBHS, 4, 8)>; /* VBUS */
+			drive-strength = "high";
+		};
+	};
+
+	usbfs_default: usbfs_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_USBFS, 8, 15)>, /* USB_DM */
+				<RA_PSEL(RA_PSEL_USBFS, 8, 14)>, /* USB_DP */
+				<RA_PSEL(RA_PSEL_USBFS, 4, 7)>;	 /* VBUS */
+			drive-strength = "high";
+		};
+	};
+
+	mdio0_default: mdio0_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_ETH_MII, 12, 11)>, /* MDC */
+				<RA_PSEL(RA_PSEL_ETH_MII, 12, 12)>; /* MDIO */
+			drive-strength = "medium";
+		};
+	};
+
+	eth0_default: eth0_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_ETH_RGMII, 11, 0)>, /* RGMII_TXD0 */
+				<RA_PSEL(RA_PSEL_ETH_RGMII, 11, 2)>, /* RGMII_TXD1 */
+				<RA_PSEL(RA_PSEL_ETH_RGMII, 11, 3)>, /* RGMII_TXD2 */
+				<RA_PSEL(RA_PSEL_ETH_RGMII, 11, 4)>, /* RGMII_TXD3 */
+				<RA_PSEL(RA_PSEL_ETH_RGMII, 7, 5)>, /* RGMII_TX_CTL */
+				<RA_PSEL(RA_PSEL_ETH_RGMII, 7, 6)>, /* RGMII_TX_CLK */
+				<RA_PSEL(RA_PSEL_ETH_RGMII, 7, 2)>, /* RGMII_RXD0 */
+				<RA_PSEL(RA_PSEL_ETH_RGMII, 7, 1)>, /* RGMII_RXD1 */
+				<RA_PSEL(RA_PSEL_ETH_RGMII, 7, 0)>, /* RGMII_RXD2 */
+				<RA_PSEL(RA_PSEL_ETH_RGMII, 4, 6)>, /* RGMII_RXD3 */
+				<RA_PSEL(RA_PSEL_ETH_RGMII, 4, 5)>, /* RGMII_RX_CTL */
+				<RA_PSEL(RA_PSEL_ETH_RGMII, 7, 3)>; /* RGMII_RX_CLK */
+			drive-strength = "high";
+		};
+	};
+};

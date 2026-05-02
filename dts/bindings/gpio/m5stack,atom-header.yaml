@@ -1,0 +1,17 @@
+# Copyright (c) 2023 Martin Kiepfer <mrmarteng@teleschirm.org>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Pin-header exposed on M5Stack Atom devices.
+
+    This binding provides a nexus mapping for 9 pins as depicted below.
+
+        x  3.3V
+        0  GPIO                 1  SCL
+        2  GPIO/MOSI            3  GPIO/DAC0/SDA
+        4  GPIO/CLK             5  5V
+        6  GPIO/ADC0/MISO       7  GND
+
+compatible: "m5stack,atom-header"
+
+include: [gpio-nexus.yaml, base.yaml]

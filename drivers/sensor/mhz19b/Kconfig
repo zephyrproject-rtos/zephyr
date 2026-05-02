@@ -1,0 +1,10 @@
+# Copyright (c) 2021 G-Technologies Sdn. Bhd.
+# SPDX-License-Identifier: Apache-2.0
+
+config MHZ19B
+	bool "Winsen CO2 sensor"
+	default y
+	depends on DT_HAS_WINSEN_MHZ19B_ENABLED
+	depends on UART_INTERRUPT_DRIVEN
+	help
+	  Enable driver for the MHZ19B CO2 Sensor.

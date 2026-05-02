@@ -1,0 +1,211 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Specific fields for USB audio headset.
+
+description: USB Audio headset specific fields.
+
+compatible: "usb-audio-hs"
+
+include: [usb-audio.yaml, usb-audio-feature-volume.yaml]
+
+properties:
+  mic-resolution:
+    type: int
+    default: 16
+    enum:
+      - 8
+      - 16
+      - 24
+      - 32
+  mic-sync-type:
+    default: "Synchronous"
+    type: string
+    description: |
+      Type of endpoint synchronization for IN devices.
+      Default value is Synchronous.
+      Adaptive is not supported.
+    enum:
+      - "No Synchronization"
+      - "Asynchronous"
+      - "Adaptive"
+      - "Synchronous"
+  mic-sample-rate-hz:
+    type: int
+    default: 48000
+  mic-polling-interval:
+    type: int
+    default: 1
+  hp-resolution:
+    type: int
+    default: 16
+    enum:
+      - 8
+      - 16
+      - 24
+      - 32
+  hp-sample-rate-hz:
+    type: int
+    default: 48000
+  hp-polling-interval:
+    type: int
+    default: 1
+  # microphone channel configuration options
+  mic-channel-l:
+    type: boolean
+    description: Enable (l) channel.
+  mic-channel-r:
+    type: boolean
+    description: Enable (r) channel.
+  mic-channel-c:
+    type: boolean
+    description: Enable (c) channel.
+  mic-channel-lfe:
+    type: boolean
+    description: Enable (lfe) channel.
+  mic-channel-ls:
+    type: boolean
+    description: Enable (ls) channel.
+  mic-channel-rs:
+    type: boolean
+    description: Enable (rs) channel.
+  mic-channel-lc:
+    type: boolean
+    description: Enable (lc) channel.
+  mic-channel-rc:
+    type: boolean
+    description: Enable (rc) channel.
+  mic-channel-s:
+    type: boolean
+    description: Enable (s) channel.
+  mic-channel-sl:
+    type: boolean
+    description: Enable (sl) channel.
+  mic-channel-sr:
+    type: boolean
+    description: Enable (sr) channel.
+  mic-channel-t:
+    type: boolean
+    description: Enable (t) channel.
+  mic-channel-cfg:
+    type: boolean
+    description: Enable (cfg) channel.
+  # microphone feature unit configuration options
+  mic-feature-mute:
+    type: boolean
+    required: true
+    description: Enable Mute feature.
+  mic-feature-volume:
+    type: boolean
+    description: |
+      Enable Volume feature.
+      Currently not supported.
+  mic-feature-tone-control:
+    type: boolean
+    description: |
+      Enable Tone Control (Bass, Mid, Treble) feature.
+      Currently not supported.
+  mic-feature-graphic-equalizer:
+    type: boolean
+    description: |
+      Enable  Graphic Equalizer feature.
+      Currently not supported.
+  mic-feature-automatic-gain-control:
+    type: boolean
+    description: |
+      Enable Autoamtic Gain Control feature.
+      Currently not supported.
+  mic-feature-delay:
+    type: boolean
+    description: |
+      Enable Delay feature.
+      Currently not supported.
+  mic-feature-bass-boost:
+    type: boolean
+    description: |
+      Enable Bass Boost feature.
+      Currently not supported.
+  mic-feature-loudness:
+    type: boolean
+    description: |
+      Enable Loudness feature.
+      Currently not supported.
+# headphones channel configuration options
+  hp-channel-l:
+    type: boolean
+    description: Enable (l) channel.
+  hp-channel-r:
+    type: boolean
+    description: Enable (r) channel.
+  hp-channel-c:
+    type: boolean
+    description: Enable (c) channel.
+  hp-channel-lfe:
+    type: boolean
+    description: Enable (lfe) channel.
+  hp-channel-ls:
+    type: boolean
+    description: Enable (ls) channel.
+  hp-channel-rs:
+    type: boolean
+    description: Enable (rs) channel.
+  hp-channel-lc:
+    type: boolean
+    description: Enable (lc) channel.
+  hp-channel-rc:
+    type: boolean
+    description: Enable (rc) channel.
+  hp-channel-s:
+    type: boolean
+    description: Enable (s) channel.
+  hp-channel-sl:
+    type: boolean
+    description: Enable (sl) channel.
+  hp-channel-sr:
+    type: boolean
+    description: Enable (sr) channel.
+  hp-channel-t:
+    type: boolean
+    description: Enable (t) channel.
+  hp-channel-cfg:
+    type: boolean
+    description: Enable (cfg) channel.
+  # headphones feature unit configuration options
+  hp-feature-mute:
+    type: boolean
+    required: true
+    description: Enable Mute feature.
+  hp-feature-volume:
+    type: boolean
+    description: |
+      Enable Volume feature.
+  hp-feature-tone-control:
+    type: boolean
+    description: |
+      Enable Tone Control (Bass, Mid, Treble) feature.
+      Currently not supported.
+  hp-feature-graphic-equalizer:
+    type: boolean
+    description: |
+      Enable  Graphic Equalizer feature.
+      Currently not supported.
+  hp-feature-automatic-gain-control:
+    type: boolean
+    description: |
+      Enable Autoamtic Gain Control feature.
+      Currently not supported.
+  hp-feature-delay:
+    type: boolean
+    description: |
+      Enable Delay feature.
+      Currently not supported.
+  hp-feature-bass-boost:
+    type: boolean
+    description: |
+      Enable Bass Boost feature.
+      Currently not supported.
+  hp-feature-loudness:
+    type: boolean
+    description: |
+      Enable Loudness feature.
+      Currently not supported.

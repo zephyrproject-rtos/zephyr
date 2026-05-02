@@ -1,0 +1,25 @@
+sample:
+  name: MBOX Data IPC sample
+common:
+  sysbuild: true
+  tags: mbox
+tests:
+  sample.drivers.mbox_data.real_hw:
+    filter: dt_compat_enabled("vnd,mbox-consumer")
+    integration_platforms:
+      - mimxrt1160_evk/mimxrt1166/cm7
+      - lpcxpresso55s69/lpc55s69/cpu0
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Client received .+ value: 1"
+        - "Client send .+ value: 2"
+        - "Client received .+ value: 3"
+        - "Client send .+ value: 4"
+        - "Client received .+ value: 41"
+        - "Client send .+ value: 42"
+        - "Client received .+ value: 97"
+        - "Client send .+ value: 98"
+        - "Client received .+ value: 99"

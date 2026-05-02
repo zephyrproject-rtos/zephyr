@@ -1,0 +1,5 @@
+# Copyright (c) 2022 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BLACKPILL_F401CC
+	select SOC_STM32F401XC

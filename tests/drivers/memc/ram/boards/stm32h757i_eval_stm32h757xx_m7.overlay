@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Test the full SDRAM accesses. Disable ethernet nodes to prevent conflicts */
+
+ram0: &sdram2 {};
+
+&mac {
+	status = "disabled";
+};
+
+&mdio {
+	status = "disabled";
+};

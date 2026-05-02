@@ -1,0 +1,12 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config WAVESHARE_DSI2DPI
+	bool "Waveshare DSI-to-DPI bridge driver"
+	default y
+	select MIPI_DSI
+	select I2C
+	depends on DT_HAS_WAVESHARE_DSI2DPI_ENABLED
+	help
+	  Enable driver for Waveshare DSI-to-DPI display bridge.

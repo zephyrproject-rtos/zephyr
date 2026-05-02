@@ -1,0 +1,33 @@
+# Copyright (c) 2020 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INPUT_CST8XX
+	bool "CST8XX capacitive touch panel driver"
+	default y
+	depends on DT_HAS_HYNITRON_CST8XX_ENABLED
+	select I2C
+	help
+	  Enable driver for hynitron cst8xx touch panel.
+
+if INPUT_CST8XX
+
+config INPUT_CST8XX_PERIOD
+	int "Sample period"
+	depends on !INPUT_CST8XX_INTERRUPT
+	default 20
+	help
+	  Sample period in milliseconds when in polling mode.
+
+config INPUT_CST8XX_INTERRUPT
+	bool "Interrupt support"
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_HYNITRON_CST8XX),irq-gpios)
+	depends on GPIO
+	help
+	  Enable interrupt support (requires GPIO).
+
+config INPUT_CST8XX_EV_DEVICE
+	bool "Device specific event support"
+	help
+	  Enable device specific event support.
+
+endif # INPUT_CST8XX

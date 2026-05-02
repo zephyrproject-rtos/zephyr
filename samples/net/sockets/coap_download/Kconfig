@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Witekio
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "CoAP Download Sample Application"
+
+config NET_SAMPLE_COAP_SERVER_PORT
+	int "CoAP server port"
+	default 5683
+	help
+	  CoAP server port that the application should send requests to.
+
+config NET_SAMPLE_COAP_RESOURCE_PATH
+	string "The CoAP resource path to download"
+	default "test.txt"
+	help
+	  The path (relative to server's root directory) of the CoAP resource
+	  the application should download.
+
+source "Kconfig.zephyr"

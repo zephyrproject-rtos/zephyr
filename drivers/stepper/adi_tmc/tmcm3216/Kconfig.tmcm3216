@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Alexis Czezar C Torreno
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_ADI_TMCM3216
+	bool "Activate trinamic tmcm3216"
+	depends on DT_HAS_ADI_TMCM3216_ENABLED
+	select STEPPER_ADI_TMCM_RS485
+	select GPIO
+	default y
+
+if STEPPER_ADI_TMCM3216
+
+config STEPPER_ADI_TMCM3216_STEPPER_CTRL
+	bool "Activate trinamic tmcm3216 motion controller"
+	depends on DT_HAS_ADI_TMCM3216_STEPPER_CTRL_ENABLED
+	depends on DT_HAS_ADI_TMCM3216_STEPPER_DRIVER_ENABLED
+	default y
+
+config STEPPER_ADI_TMCM3216_STEPPER_DRIVER
+	bool "Activate trinamic tmcm3216 stepper driver"
+	depends on DT_HAS_ADI_TMCM3216_STEPPER_DRIVER_ENABLED
+	default y
+
+endif # STEPPER_ADI_TMCM3216

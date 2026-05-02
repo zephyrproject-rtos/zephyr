@@ -1,0 +1,296 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon AutAnalog Autonomous Controller (AC) State Transition Table entry.
+
+  Each node with this compatible represents one state in the AC State Transition
+  Table (STT).  The node is referenced by phandle from the parent autanalog
+  device's ac-states property, which determines the state's index in the table.
+
+  This binding covers all sub-peripheral STT fields: AC, SAR, CTB (×2),
+  PTCOMP, and DAC (×2).  All properties default to 0, so only the fields
+  relevant to a particular state need to be specified.
+
+  Use constants from <dt-bindings/mfd/infineon-autanalog.h> for condition,
+  action, GPIO output, CTB gain, and DAC direction values.
+
+compatible: "infineon,autanalog-ac-state"
+
+properties:
+  # --- AC fields ---
+
+  ac-unlock:
+    type: int
+    default: 0
+    description: |
+      AC unlock flag (0 or 1).
+      When set to 1, the AC is unlocked (allowed to modify config) in this state.
+
+  ac-lp-mode:
+    type: int
+    default: 0
+    description: |
+      Low-power mode flag (0 or 1).
+      When set to 1, the sub-system enters low-power mode in this state.
+
+  ac-condition:
+    type: int
+    default: 0
+    description: |
+      AC condition code. Use IFX_AUTANALOG_AC_COND_* constants
+      from <dt-bindings/mfd/infineon-autanalog.h>.
+      Default: FALSE (0).
+
+  ac-action:
+    type: int
+    default: 0
+    description: |
+      AC action code. Use IFX_AUTANALOG_AC_ACTION_* constants
+      from <dt-bindings/mfd/infineon-autanalog.h>.
+      Default: STOP (0).
+
+  branch-state:
+    type: int
+    default: 0
+    description: |
+      Branch target state index (0-63) within the ac-states list.
+      Used when the action is a BRANCH_* or WAIT_FOR type.
+
+  ac-trig-int:
+    type: int
+    default: 0
+    description: |
+      Trigger-interrupt flag (0 or 1).
+      When set to 1, the AC generates an interrupt on entering this state.
+
+  ac-count:
+    type: int
+    default: 0
+    description: |
+      Repetition count (0-4095).
+      The actual repetition count is value + 1.
+
+  ac-unlock-gpio-out:
+    type: int
+    default: 0
+    description: |
+      GPIO output unlock flag (0 or 1).
+
+  ac-gpio-out:
+    type: int
+    default: 0
+    description: |
+      GPIO output mask. Use IFX_AUTANALOG_AC_GPIO_OUT_* constants
+      from <dt-bindings/mfd/infineon-autanalog.h>.
+      Can be OR'd for multiple outputs (e.g., OUT0 | OUT1 = 0x3).
+
+  # --- SAR fields ---
+
+  sar-unlock:
+    type: int
+    default: 0
+    description: |
+      SAR unlock flag (0 or 1).
+      When set to 1, the SAR configuration is unlocked in this state.
+
+  sar-enable:
+    type: int
+    default: 0
+    description: |
+      SAR enable flag (0 or 1).
+      When set to 1, the SAR is enabled in this state.
+
+  sar-trigger:
+    type: int
+    default: 0
+    description: |
+      SAR trigger flag (0 or 1).
+      When set to 1, the SAR conversion is triggered in this state.
+
+  sar-entry-state:
+    type: int
+    default: 0
+    description: |
+      SAR entry state index (0-31).
+      Selects the SAR sequencer entry point for this AC state.
+
+  # --- CTB0 fields (op-amp / comparator block 0) ---
+
+  ctb0-unlock:
+    type: int
+    default: 0
+    description: |
+      CTB0 unlock flag (0 or 1).
+      When 1, CTB0 opamp fields below take effect in this state.
+
+  ctb0-enable-opamp0:
+    type: int
+    default: 0
+    description: CTB0 Opamp0 enable flag (0 or 1).
+
+  ctb0-cfg-opamp0:
+    type: int
+    default: 0
+    description: |
+      CTB0 Opamp0 dynamic configuration selector (0-7).
+      Selects from the CTB dynamic configuration table.
+
+  ctb0-gain-opamp0:
+    type: int
+    default: 0
+    description: |
+      CTB0 Opamp0 gain. Use IFX_AUTANALOG_CTB_OA_GAIN_* constants.
+
+  ctb0-enable-opamp1:
+    type: int
+    default: 0
+    description: CTB0 Opamp1 enable flag (0 or 1).
+
+  ctb0-cfg-opamp1:
+    type: int
+    default: 0
+    description: |
+      CTB0 Opamp1 dynamic configuration selector (0-7).
+
+  ctb0-gain-opamp1:
+    type: int
+    default: 0
+    description: |
+      CTB0 Opamp1 gain. Use IFX_AUTANALOG_CTB_OA_GAIN_* constants.
+
+  # --- CTB1 fields (op-amp / comparator block 1) ---
+
+  ctb1-unlock:
+    type: int
+    default: 0
+    description: |
+      CTB1 unlock flag (0 or 1).
+      When 1, CTB1 opamp fields below take effect in this state.
+
+  ctb1-enable-opamp0:
+    type: int
+    default: 0
+    description: CTB1 Opamp0 enable flag (0 or 1).
+
+  ctb1-cfg-opamp0:
+    type: int
+    default: 0
+    description: |
+      CTB1 Opamp0 dynamic configuration selector (0-7).
+
+  ctb1-gain-opamp0:
+    type: int
+    default: 0
+    description: |
+      CTB1 Opamp0 gain. Use IFX_AUTANALOG_CTB_OA_GAIN_* constants.
+
+  ctb1-enable-opamp1:
+    type: int
+    default: 0
+    description: CTB1 Opamp1 enable flag (0 or 1).
+
+  ctb1-cfg-opamp1:
+    type: int
+    default: 0
+    description: |
+      CTB1 Opamp1 dynamic configuration selector (0-7).
+
+  ctb1-gain-opamp1:
+    type: int
+    default: 0
+    description: |
+      CTB1 Opamp1 gain. Use IFX_AUTANALOG_CTB_OA_GAIN_* constants.
+
+  # --- PTCOMP0 fields (programmable threshold comparator) ---
+
+  ptcomp0-unlock:
+    type: int
+    default: 0
+    description: |
+      PTCOMP0 unlock flag (0 or 1).
+      When 1, PTCOMP0 comparator fields below take effect in this state.
+
+  ptcomp0-enable-comp0:
+    type: int
+    default: 0
+    description: PTCOMP0 Comp0 enable flag (0 or 1).
+
+  ptcomp0-dyn-cfg-idx-comp0:
+    type: int
+    default: 0
+    description: |
+      PTCOMP0 Comp0 dynamic configuration selector (0-7).
+
+  ptcomp0-enable-comp1:
+    type: int
+    default: 0
+    description: PTCOMP0 Comp1 enable flag (0 or 1).
+
+  ptcomp0-dyn-cfg-idx-comp1:
+    type: int
+    default: 0
+    description: |
+      PTCOMP0 Comp1 dynamic configuration selector (0-7).
+
+  # --- DAC0 fields ---
+
+  dac0-unlock:
+    type: int
+    default: 0
+    description: |
+      DAC0 unlock flag (0 or 1).
+      When 1, DAC0 fields below take effect in this state.
+
+  dac0-enable:
+    type: int
+    default: 0
+    description: DAC0 enable flag (0 or 1).
+
+  dac0-trigger:
+    type: int
+    default: 0
+    description: DAC0 trigger flag (0 or 1).
+
+  dac0-channel:
+    type: int
+    default: 0
+    description: DAC0 channel selector.
+
+  dac0-direction:
+    type: int
+    default: 0
+    description: |
+      DAC0 direction. Use IFX_AUTANALOG_DAC_DIR_* constants.
+
+  # --- DAC1 fields ---
+
+  dac1-unlock:
+    type: int
+    default: 0
+    description: |
+      DAC1 unlock flag (0 or 1).
+      When 1, DAC1 fields below take effect in this state.
+
+  dac1-enable:
+    type: int
+    default: 0
+    description: DAC1 enable flag (0 or 1).
+
+  dac1-trigger:
+    type: int
+    default: 0
+    description: DAC1 trigger flag (0 or 1).
+
+  dac1-channel:
+    type: int
+    default: 0
+    description: DAC1 channel selector.
+
+  dac1-direction:
+    type: int
+    default: 0
+    description: |
+      DAC1 direction. Use IFX_AUTANALOG_DAC_DIR_* constants.

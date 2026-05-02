@@ -1,0 +1,8 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: ISSI IS66WVS8M8 pSRAM on NXP FlexSPI bus
+
+compatible: "nxp,imx-flexspi-is66wvs8m8"
+
+include: nxp,imx-flexspi-device.yaml

@@ -1,0 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "kit_pse84_common.overlay"

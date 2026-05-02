@@ -1,0 +1,251 @@
+/*
+ * Copyright (c) 2019 Brett Witherspoon
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	chosen {
+		zephyr,entropy = &trng;
+		zephyr,flash-controller = &flash_controller;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4";
+			reg = <0>;
+			cpu-power-states = <&idle &standby>;
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <1000>;
+			};
+
+			standby: standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <5000>;
+				exit-latency-us = <240>;
+			};
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	/* VIMS RAM configurable in CCFG as GPRAM or cache for FLASH (default) */
+	sram1: memory@11000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x11000000 0x2000>;
+		zephyr,memory-region = "SRAM1";
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <48000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		pinctrl: pinctrl@40081000 {
+			compatible = "ti,cc13xx-cc26xx-pinctrl";
+			reg = <0x40081000 0x1000>;
+		};
+
+		gpio0: gpio@40022000 {
+			compatible = "ti,cc13xx-cc26xx-gpio";
+			reg = <0x40022000 0x400>;
+			interrupts = <0 0>;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		trng: random@40028000 {
+			compatible = "ti,cc13xx-cc26xx-trng";
+			reg = <0x40028000 0x2000>;
+			interrupts = <33 0>;
+			status = "disabled";
+		};
+
+		flash_controller: flash-controller@40030000 {
+			compatible = "ti,cc13xx-cc26xx-flash-controller";
+			reg = <0x40030000 0x4000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <DT_SIZE_K(8)>;
+				write-block-size = <1>;
+			};
+		};
+
+		gpt0: timer@40010000 {
+			compatible = "ti,cc13xx-cc26xx-timer";
+			reg = <0x40010000 0x1000>;
+			interrupts = <15 0 16 0>;
+			interrupt-names = "gpt0a", "gpt0b";
+			status = "disabled";
+
+			pwm0: pwm {
+				compatible = "ti,cc13xx-cc26xx-timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt1: timer@40011000 {
+			compatible = "ti,cc13xx-cc26xx-timer";
+			reg = <0x40011000 0x1000>;
+			interrupts = <17 0 18 0>;
+			interrupt-names = "gpt1a", "gpt1b";
+			status = "disabled";
+
+			pwm1: pwm {
+				compatible = "ti,cc13xx-cc26xx-timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt2: timer@40012000 {
+			compatible = "ti,cc13xx-cc26xx-timer";
+			reg = <0x40012000 0x1000>;
+			interrupts = <19 0 20 0>;
+			interrupt-names = "gpt2a", "gpt2b";
+			status = "disabled";
+
+			pwm2: pwm {
+				compatible = "ti,cc13xx-cc26xx-timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		gpt3: timer@40013000 {
+			compatible = "ti,cc13xx-cc26xx-timer";
+			reg = <0x40013000 0x1000>;
+			interrupts = <21 0 22 0>;
+			interrupt-names = "gpt3a", "gpt3b";
+			status = "disabled";
+
+			pwm3: pwm {
+				compatible = "ti,cc13xx-cc26xx-timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		uart0: uart@40001000 {
+			compatible = "ti,cc13xx-cc26xx-uart";
+			reg = <0x40001000 0x1000>;
+			interrupts = <5 0>;
+			clocks = <&sysclk>;
+			status = "disabled";
+		};
+
+		uart1: uart@4000b000 {
+			compatible = "ti,cc13xx-cc26xx-uart";
+			reg = <0x4000b000 0x1000>;
+			interrupts = <36 0>;
+			clocks = <&sysclk>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@40002000 {
+			compatible = "ti,cc13xx-cc26xx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40002000 0x1000>;
+			interrupts = <1 0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			status = "disabled";
+		};
+
+		spi0: spi@40000000 {
+			compatible = "ti,cc13xx-cc26xx-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40000000 0x1000>;
+			interrupts = <7 0>;
+			status = "disabled";
+		};
+
+		spi1: spi@40008000 {
+			compatible = "ti,cc13xx-cc26xx-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40008000 0x1000>;
+			interrupts = <8 0>;
+			status = "disabled";
+		};
+
+		/* The RTC peripheral backs the kernel system clock and tick timer. */
+		rtc: rtc@40092000 {
+			compatible = "ti,cc13xx-cc26xx-rtc-timer";
+			reg = <0x40092000 0x1000>;
+			interrupts = <4 0>;  /* interrupt #20 = 4 + 16 */
+			status = "okay"; /* the system clock timer is mandatory */
+		};
+
+		radio: radio@40040000 {
+			compatible = "ti,cc13xx-cc26xx-radio";
+			status = "disabled";
+
+			reg = <0x40040000 0x1000
+			       0x40041000 0x2000
+			       0x40043000 0x1000
+			       0x40044000 0x1000>;
+			reg-names = "RFC_PWR", "RFC_DBELL", "RFC_RAT", "RFC_FSCA";
+
+			ieee802154: ieee802154 {
+				compatible = "ti,cc13xx-cc26xx-ieee802154";
+				status = "disabled";
+			};
+
+			ieee802154g: ieee802154g {
+				compatible = "ti,cc13xx-cc26xx-ieee802154-subghz";
+				status = "disabled";
+			};
+		};
+
+		wdt0: watchdog@40080000 {
+			compatible = "ti,cc13xx-cc26xx-watchdog";
+			reg = <0x40080000 0x1000>;
+			interrupts = <14 0>;  /* interrupt #30 = 14 + 16 */
+			status = "disabled";
+		};
+
+		adc0: adc@400cb008 {
+			compatible = "ti,cc13xx-cc26xx-adc";
+			reg = <0x400cb008 0x1>;
+			interrupts = <32 0>;  /* interrupt #48 = 32 + 16 */
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+&systick {
+	status = "disabled";
+};

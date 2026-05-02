@@ -1,0 +1,15 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2025 Siratul Islam
+ */
+
+/ {
+	aliases {
+		fingerprint = &biometrics_emul;
+	};
+
+	biometrics_emul: biometrics-emul {
+		compatible = "zephyr,biometrics-emul";
+		status = "okay";
+	};
+};

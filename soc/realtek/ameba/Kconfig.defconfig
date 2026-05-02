@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_REALTEK_AMEBA
+
+rsource "*/Kconfig.defconfig"
+
+endif # SOC_FAMILY_REALTEK_AMEBA

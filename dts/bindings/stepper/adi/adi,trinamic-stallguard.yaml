@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: Stallguard bindings for Trinamic stepper controller.
+
+properties:
+  activate-stallguard2:
+    type: boolean
+    description: |
+      Enable StallGuard2 feature, if the driver supports it.
+
+  stallguard2-threshold:
+    type: int
+    default: 0
+    description: |
+      This signed value controls StallGuard2 level for stall  output and sets the
+      optimum measurement range for readout. A lower value gives a higher sensitivity.
+      Zero is the starting value working with most motors.
+
+      -64 to +63: A higher value makes StallGuard2 less sensitive and requires more torque
+      to indicate a stall.
+
+  stallguard-threshold-velocity:
+    type: int
+    default: 1
+    description: |
+      Threshold velocity for StallGuard2 to detect a stall event.
+      This value should be greater than zero.
+
+  stallguard-velocity-check-interval-ms:
+    type: int
+    default: 100
+    description: |
+      Stallguard should not be enabled during motor spin-up.
+      This delay is used to check if the actual stepper velocity is greater than
+      stallguard-threshold-velocity before enabling stallguard.

@@ -1,0 +1,36 @@
+description: Microchip XEC UART
+
+compatible: "microchip,xec-uart"
+
+include:
+  - name: uart-controller.yaml
+  - name: pinctrl-device.yaml
+  - name: microchip,dmec-ecia-girq.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  ldn:
+    type: int
+    required: true
+    description: logical device number
+
+  pcr-scr:
+    type: int
+    required: true
+    description: |
+      UART Power Clock Reset(PCR) peripheral index and bit position
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  wakerx-gpios:
+    type: phandle-array
+    description: GPIO configured as UART RX wake source

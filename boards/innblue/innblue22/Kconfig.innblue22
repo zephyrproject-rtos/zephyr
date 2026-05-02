@@ -1,0 +1,7 @@
+# nRF9160 innblue V2.2 board configuration
+
+# Copyright (c) 2020 InnBlue
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_INNBLUE22
+	select SOC_NRF9160_SICA

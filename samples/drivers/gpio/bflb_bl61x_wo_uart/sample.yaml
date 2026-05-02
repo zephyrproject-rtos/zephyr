@@ -1,0 +1,8 @@
+sample:
+  name: bflb_bl61x_wo_uart
+tests:
+  sample.drivers.gpio.bflb_bl61x_wo_uart:
+    tags:
+      - drivers
+      - gpio
+    platform_allow: ai_m62_12f_kit

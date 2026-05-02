@@ -1,0 +1,34 @@
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP GDMA (General DMA) controller
+
+compatible: "nxp,gdma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  dma-channels:
+    required: true
+    description: Number of DMA channels supported by the controller
+
+  "#dma-cells":
+    type: int
+    required: true
+    description: |
+      Number of items to expect in a DMA specifier.
+
+      A phandle to the GDMA controller plus the following integer cell:
+        1. channel: the dma channel number (0 to dma-channels - 1)
+
+# - #dma-cells : Must be <1>.
+# channel: the dma channel, each channel supports one DMA request line
+
+dma-cells:
+  - channel

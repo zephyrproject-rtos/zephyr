@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+tests:
+  zdsp.print_format:
+    filter: CONFIG_FULL_LIBC_SUPPORTED or CONFIG_ARCH_POSIX
+    tags: zdsp
+    min_flash: 128
+    min_ram: 64

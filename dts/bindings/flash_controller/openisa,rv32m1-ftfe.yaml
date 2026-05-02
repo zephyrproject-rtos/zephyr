@@ -1,0 +1,5 @@
+description: OpenISA Flash Memory Module E (FTFE)
+
+compatible: "openisa,rv32m1-ftfe"
+
+include: flash-controller.yaml

@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2018-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Ezurio LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "bl654_usb_common.dtsi"
+
+/* Flash partition table without support for the onboard USB bootloader */
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* The size of this partition ensures that MCUBoot can be built
+		 * with an RTT console, CDC ACM support, and w/o optimizations.
+		 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00012000>;
+		};
+
+		slot0_partition: partition@12000 {
+			label = "image-0";
+			reg = <0x00012000 0x00075000>;
+		};
+
+		slot1_partition: partition@87000 {
+			label = "image-1";
+			reg = <0x00087000 0x00075000>;
+		};
+
+		storage_partition: partition@fc000 {
+			label = "storage";
+			reg = <0x000fc000 0x00004000>;
+		};
+	};
+};

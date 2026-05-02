@@ -1,0 +1,77 @@
+# Copyright (c) 2023 Fabian Blatz <fabianblatz@gmail.com>
+# Copyright (c) 2025 Abderrahmane JARMOUNI
+# SPDX-License-Identifier: Apache-2.0
+
+choice LV_Z_DEMO_FIRST_DISP
+	prompt "LVGL demo to build for 1st display"
+	default LV_Z_DEMO_MUSIC_FIRST_DISP
+	help
+	  Demo application to build for 1st display.
+
+config LV_Z_DEMO_MUSIC_FIRST_DISP
+	bool "LVGL music demo"
+	select LV_USE_DEMO_MUSIC
+	help
+	  Build music player demo application.
+
+config LV_Z_DEMO_BENCHMARK_FIRST_DISP
+	bool "LVGL benchmark demo"
+	select LV_USE_DEMO_BENCHMARK
+	select LV_USE_SYSMON
+	select LV_USE_PERF_MONITOR
+	help
+	  Build benchmarking demo application.
+
+config LV_Z_DEMO_STRESS_FIRST_DISP
+	bool "LVGL stress demo"
+	select LV_USE_DEMO_STRESS
+	select LV_USE_SYSMON
+	select LV_USE_PERF_MONITOR
+	help
+	  Build stress testing demo application.
+
+config LV_Z_DEMO_WIDGETS_FIRST_DISP
+	bool "LVGL widgets demo"
+	select LV_USE_DEMO_WIDGETS
+	help
+	  Build widgets demo application.
+
+endchoice
+
+choice LV_Z_DEMO_OTHER_DISPS
+	prompt "LVGL demo to build for other displays"
+	default LV_Z_DEMO_WIDGETS_OTHER_DISPS
+	help
+	  Demo application to build for other displays.
+
+config LV_Z_DEMO_MUSIC_OTHER_DISPS
+	bool "LVGL music demo"
+	select LV_USE_DEMO_MUSIC
+	help
+	  Build music player demo application.
+
+config LV_Z_DEMO_BENCHMARK_OTHER_DISPS
+	bool "LVGL benchmark demo"
+	select LV_USE_DEMO_BENCHMARK
+	select LV_USE_SYSMON
+	select LV_USE_PERF_MONITOR
+	help
+	  Build benchmarking demo application.
+
+config LV_Z_DEMO_STRESS_OTHER_DISPS
+	bool "LVGL stress demo"
+	select LV_USE_DEMO_STRESS
+	select LV_USE_SYSMON
+	select LV_USE_PERF_MONITOR
+	help
+	  Build stress testing demo application.
+
+config LV_Z_DEMO_WIDGETS_OTHER_DISPS
+	bool "LVGL widgets demo"
+	select LV_USE_DEMO_WIDGETS
+	help
+	  Build widgets demo application.
+
+endchoice
+
+source "Kconfig.zephyr"

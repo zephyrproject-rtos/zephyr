@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+&pinctrl {
+	pwm1_default: pwm1_default {
+		group0 {
+			/* EVB's D3, D4 --> PC5, PC3 */
+			pinmux = <PC5MFP_PWM1_CH0>,
+				 <PC3MFP_PWM1_CH2>;
+		};
+	};
+};
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&pwm1 0 0 PWM_POLARITY_NORMAL>,
+		       <&pwm1 2 0 PWM_POLARITY_NORMAL>;
+	};
+};
+
+&pwm1 {
+	status = "okay";
+	prescaler = <19>;
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+};

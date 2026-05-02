@@ -1,0 +1,28 @@
+# Copyright (c) 2023 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_SC18IM704
+	bool "NXP SC18IM704 I2C controller driver"
+	default y
+	depends on DT_HAS_NXP_SC18IM704_I2C_ENABLED
+	select UART_USE_RUNTIME_CONFIGURE
+	help
+	  Enables NXP SC18IM704 I2C controller driver
+
+if I2C_SC18IM704
+
+config I2C_SC18IM704_INIT_PRIORITY
+	int "SC18IM704 I2C init priority"
+	default 51
+	help
+	  SC18IM704 I2C controller initialization priority.
+
+	  Note: Has to be greater than the UART bus initialization priority.
+
+config I2C_SC18IM704_VERIFY
+	bool "Verify SC18IM704 I2C transfers"
+	default y
+	help
+	  Verify the I2C state register after I2C transfers to detect errors.
+
+endif

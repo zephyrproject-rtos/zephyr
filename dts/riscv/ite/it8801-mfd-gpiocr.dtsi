@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2024 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	it8801-mfd {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		it8801_gpio0: gpiocr@0a {
+			compatible = "ite,it8801-altctrl";
+			reg = <0x0a 8>;
+			#altctrl-cells = <2>;
+		};
+
+		it8801_gpio1: gpiocr@12 {
+			compatible = "ite,it8801-altctrl";
+			reg = <0x12 6>;
+			#altctrl-cells = <2>;
+		};
+
+		it8801_gpio2: gpiocr@1a {
+			compatible = "ite,it8801-altctrl";
+			reg = <0x1a 4>;
+			#altctrl-cells = <2>;
+		};
+	};
+};

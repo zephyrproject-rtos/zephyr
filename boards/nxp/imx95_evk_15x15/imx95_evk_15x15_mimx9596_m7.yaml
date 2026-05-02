@@ -1,0 +1,26 @@
+#
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: imx95_evk_15x15/mimx9596/m7
+name: NXP i.MX95 15x15 EVK (M7)
+type: mcu
+arch: arm
+ram: 256
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - i2c
+  - pwm
+  - spi
+  - netif:eth
+  - counter
+  - dma
+testing:
+  binaries:
+    - flash.bin
+vendor: nxp

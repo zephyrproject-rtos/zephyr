@@ -1,0 +1,50 @@
+# Kconfig template file for setting networking log level for
+# various network related components. This template variant
+# allows user to specify the default log level.
+
+# Copyright (c) 2018 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "$(module-str)"
+	default $(module)_$(module-def)
+	depends on $(module-dep)
+# If we ever get help text macro expansion, then just uncomment
+# the following lines.
+#	help
+#	  $(module-help)
+
+config $(module)_LOG_LEVEL_OFF
+	bool "Off"
+	help
+	  Do not write to log.
+
+config $(module)_LOG_LEVEL_ERR
+	bool "Error"
+	help
+	  Only write to log when NET_ERR or LOG_ERR is used.
+
+config $(module)_LOG_LEVEL_WRN
+	bool "Warning"
+	help
+	  Write to log with NET_WARN or LOG_WRN in addition to previous level.
+
+config $(module)_LOG_LEVEL_INF
+	bool "Info"
+	help
+	  Write to log with NET_INFO or LOG_INF in addition to previous levels.
+
+config $(module)_LOG_LEVEL_DBG
+	bool "Debug"
+	help
+	  Write to log with NET_DBG or LOG_DBG in addition to previous levels.
+
+endchoice
+
+config $(module)_LOG_LEVEL
+	int
+	default 0 if $(module)_LOG_LEVEL_OFF || !$(module-dep)
+	default 1 if $(module)_LOG_LEVEL_ERR
+	default 2 if $(module)_LOG_LEVEL_WRN
+	default 3 if $(module)_LOG_LEVEL_INF
+	default 4 if $(module)_LOG_LEVEL_DBG

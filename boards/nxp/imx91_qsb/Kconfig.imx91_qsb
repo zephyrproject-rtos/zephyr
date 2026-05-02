@@ -1,0 +1,6 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_IMX91_QSB
+	select SOC_MIMX9111
+	select SOC_PART_NUMBER_MIMX9111CVXXJ

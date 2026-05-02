@@ -1,0 +1,10 @@
+# STMicroelectronics STM32MP1 MCU/MPU line
+
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32MP1X
+
+rsource "Kconfig.defconfig.stm32mp15_m4"
+
+endif # SOC_SERIES_STM32MP1X

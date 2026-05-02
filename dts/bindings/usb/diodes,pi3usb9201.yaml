@@ -1,0 +1,15 @@
+# Copyright (c) 2022 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Diodes PI3USB9201, Dual-Role USB Charging-Type Detector
+
+compatible: "diodes,pi3usb9201"
+
+include: [i2c-device.yaml, usb-bc12.yaml]
+
+properties:
+  intb-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO input connected to the active low interrupt INTB pin on the PI3USB9201.

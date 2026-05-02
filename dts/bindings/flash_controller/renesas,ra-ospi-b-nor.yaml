@@ -1,0 +1,65 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA OSPI FLASH
+
+compatible: "renesas,ra-ospi-b-nor"
+
+include: [flash-controller.yaml]
+
+on-bus: ospi
+
+properties:
+  reg:
+    required: true
+    description: Flash Memory base address and size in bytes
+
+  protocol-mode:
+    type: int
+    required: true
+    description: |
+     The width and rate of XSPI bus to which flash memory is connected.
+
+     Possible values are :
+      - XSPI_SPI_MODE  <1> = SPI mode on 1 data line
+      - XSPI_DUAL_MODE <2> = Dual mode on 2 data lines
+      - XSPI_QUAD_MODE <4> = Quad mode on 4 data lines
+      - XSPI_OCTO_MODE <8> = Octo mode on 8 data lines
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+
+  data-rate:
+    type: int
+    required: true
+    description: |
+     The SPI data Rate is STR or DTR
+
+     Possible values are :
+      - XSPI_STR_TRANSFER <1> = Single Rate Transfer
+      - XSPI_DTR_TRANSFER <2> = Dual Rate Transfer (only with XSPI_OCTO_MODE)
+
+  ospi-max-frequency:
+    type: int
+    required: true
+    description: Max frequency input on OSPI
+
+  write-block-size:
+    type: int
+    description: Address alignment required by flash write operations
+
+child-binding:
+  description: OSPI Flash page layout description
+  child-binding:
+    description: Individual flash page layout entry
+    properties:
+      pages-count:
+        description: Number of consecutive pages with size pages-size bytes
+        type: int
+        required: true
+
+      pages-size:
+        type: int
+        required: true
