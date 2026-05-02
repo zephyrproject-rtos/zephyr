@@ -11,6 +11,8 @@
 
 #include <zephyr/sys/util.h>
 
+struct k_work;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -41,6 +43,9 @@ extern "C" {
 
 /** Arrival was caused by an explicit thread wakeup. */
 #define CPU_WORKLOAD_SOURCE_ARRIVAL_EXPLICIT BIT(5)
+
+/** CPU workload signal came from a k_work handler profile. */
+#define CPU_WORKLOAD_SOURCE_WORK_PROFILE BIT(6)
 
 /**
  * @brief Ready backlog workload sample for one CPU.
@@ -92,6 +97,25 @@ struct cpu_workload_arrival_sample {
 };
 
 /**
+ * @brief Work item handler workload sample.
+ *
+ * The sample reports the EWMA of one work item's handler execution cost.
+ */
+struct cpu_workload_work_sample {
+	/** Estimated cycles for the work item's handler. */
+	uint32_t handler_cycles;
+
+	/** Bitmask describing which sources contributed to the sample. */
+	uint32_t source_mask;
+
+	/** Number of profiled handler executions. */
+	uint16_t sample_count;
+
+	/** Confidence in the sample, from 0 to 100. */
+	uint8_t confidence;
+};
+
+/**
  * @brief Get a CPU ready-backlog workload sample.
  *
  * @param cpu_id The ID of the CPU for which to get the backlog sample.
@@ -115,6 +139,18 @@ int cpu_workload_ready_backlog_get(int cpu_id,
  * @retval -ENOTSUP If arrival attribution is not enabled.
  */
 int cpu_workload_arrival_get(int cpu_id, struct cpu_workload_arrival_sample *sample);
+
+/**
+ * @brief Get a work item handler workload sample.
+ *
+ * @param work Work item.
+ * @param sample Pointer to the output sample.
+ *
+ * @retval 0 If a sample was written.
+ * @retval -EINVAL If @p work or @p sample is invalid.
+ * @retval -ENOTSUP If work handler profiling is not enabled.
+ */
+int cpu_workload_work_get(struct k_work *work, struct cpu_workload_work_sample *sample);
 
 /**
  * @}

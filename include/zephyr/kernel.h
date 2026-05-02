@@ -3942,6 +3942,32 @@ typedef void (*k_work_handler_t)(struct k_work *work);
 void k_work_init(struct k_work *work,
 		  k_work_handler_t handler);
 
+typedef struct k_work_runtime_cycles_profile {
+#ifdef CONFIG_CPU_WORKLOAD_WORK_PROFILE
+	uint32_t handler_avg_cycles;
+	uint16_t sample_count;
+	uint8_t confidence;
+#endif /* CONFIG_CPU_WORKLOAD_WORK_PROFILE */
+
+#if defined(__cplusplus) && !defined(CONFIG_CPU_WORKLOAD_WORK_PROFILE)
+	/** Avoid a zero-sized struct in C++ when the feature is disabled. */
+	uint8_t dummy;
+#endif
+} k_work_runtime_cycles_profile_t;
+
+/**
+ * @brief Get the CPU workload runtime profile of a work item handler.
+ *
+ * @param work Work item.
+ * @param profile Pointer to struct to copy profile into.
+ *
+ * @retval 0 On success.
+ * @retval -EINVAL If @p work or @p profile is NULL.
+ * @retval -ENOTSUP If work handler profiling is not enabled.
+ */
+int k_work_runtime_cycles_profile_get(struct k_work *work,
+				      k_work_runtime_cycles_profile_t *profile);
+
 /** @brief Busy state flags from the work item.
  *
  * A zero return value indicates the work item appears to be idle.
@@ -4580,6 +4606,17 @@ struct k_work {
 	 * It can be RUNNING and CANCELING simultaneously.
 	 */
 	uint32_t flags;
+
+#ifdef CONFIG_CPU_WORKLOAD_WORK_PROFILE
+	/* EWMA of handler execution costs in cycles. */
+	uint32_t workload_avg_cycles;
+
+	/* Number of handler executions profiled. */
+	uint16_t workload_samples;
+
+	/* Confidence in the handler profile, 0 to 100. */
+	uint8_t workload_confidence;
+#endif /* CONFIG_CPU_WORKLOAD_WORK_PROFILE */
 /**
  * INTERNAL_HIDDEN @endcond
  */

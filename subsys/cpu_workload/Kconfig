@@ -60,4 +60,23 @@ config CPU_WORKLOAD_ARRIVAL_PROFILE
 	  cycles from those arrivals using per-thread burst profiles. This provides
 	  a forward-looking signal for work that arrived since the previous query.
 
+config CPU_WORKLOAD_WORK_PROFILE
+	bool "CPU k_work handler workload profile"
+	help
+	  Track a lightweight per-work-item handler profile from workqueue dispatch.
+	  The profile maintains an EWMA of handler execution time in CPU cycles,
+	  plus a warm-up sample count and confidence value. This distinguishes work
+	  items processed by the same workqueue thread so policies can use the real
+	  cost of the next queued handler.
+
+config CPU_WORKLOAD_WORK_PROFILE_EWMA_SHIFT
+	int "k_work handler workload EWMA shift"
+	default 3
+	range 1 8
+	depends on CPU_WORKLOAD_WORK_PROFILE
+	help
+	  Shift used by the k_work handler EWMA. A value of 3 gives alpha = 1/8,
+	  using avg = ((7 * avg) + handler_cycles) / 8. Smaller values react faster;
+	  larger values smooth more aggressively.
+
 endif # CPU_WORKLOAD

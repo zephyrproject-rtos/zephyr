@@ -66,6 +66,46 @@ static inline uint32_t flags_get(const uint32_t *flagp)
  */
 static struct k_spinlock lock;
 
+#ifdef CONFIG_CPU_WORKLOAD_WORK_PROFILE
+#define WORK_PROFILE_CONFIDENCE_BASE 20U
+#define WORK_PROFILE_CONFIDENCE_STEP 10U
+#define WORK_PROFILE_CONFIDENCE_MAX 80U
+
+static uint8_t work_profile_confidence(uint16_t sample_count)
+{
+	uint32_t confidence = WORK_PROFILE_CONFIDENCE_BASE +
+		(sample_count * WORK_PROFILE_CONFIDENCE_STEP);
+
+	return (uint8_t)MIN(confidence, WORK_PROFILE_CONFIDENCE_MAX);
+}
+
+static void work_profile_update_locked(struct k_work *work, uint32_t cycles)
+{
+	uint32_t avg;
+
+	if (cycles == 0U) {
+		return;
+	}
+
+	avg = work->workload_avg_cycles;
+	if (work->workload_samples == 0U) {
+		work->workload_avg_cycles = cycles;
+	} else if (cycles >= avg) {
+		work->workload_avg_cycles = avg +
+			((cycles - avg) >> CONFIG_CPU_WORKLOAD_WORK_PROFILE_EWMA_SHIFT);
+	} else {
+		work->workload_avg_cycles = avg -
+			((avg - cycles) >> CONFIG_CPU_WORKLOAD_WORK_PROFILE_EWMA_SHIFT);
+	}
+
+	if (work->workload_samples < UINT16_MAX) {
+		work->workload_samples++;
+	}
+
+	work->workload_confidence = work_profile_confidence(work->workload_samples);
+}
+#endif /* CONFIG_CPU_WORKLOAD_WORK_PROFILE */
+
 /* Invoked by work thread */
 static void handle_flush(struct k_work *work) { }
 
@@ -175,6 +215,31 @@ int k_work_busy_get(const struct k_work *work)
 	k_spin_unlock(&lock, key);
 
 	return ret;
+}
+
+int k_work_runtime_cycles_profile_get(struct k_work *work,
+				      k_work_runtime_cycles_profile_t *profile)
+{
+	if ((work == NULL) || (profile == NULL)) {
+		return -EINVAL;
+	}
+
+#ifdef CONFIG_CPU_WORKLOAD_WORK_PROFILE
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	profile->handler_avg_cycles = work->workload_avg_cycles;
+	profile->sample_count = work->workload_samples;
+	profile->confidence = work->workload_confidence;
+
+	k_spin_unlock(&lock, key);
+
+	return 0;
+#else
+	ARG_UNUSED(work);
+	ARG_UNUSED(profile);
+
+	return -ENOTSUP;
+#endif /* CONFIG_CPU_WORKLOAD_WORK_PROFILE */
 }
 
 /* Add a flusher work item to the queue.
@@ -685,6 +750,10 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		k_work_handler_t handler = NULL;
 		k_spinlock_key_t key = k_spin_lock(&lock);
 		bool yield;
+#ifdef CONFIG_CPU_WORKLOAD_WORK_PROFILE
+		uint32_t profile_start_cycles;
+		uint32_t profile_cycles;
+#endif /* CONFIG_CPU_WORKLOAD_WORK_PROFILE */
 
 		/* Check for and prepare any new work. */
 		node = sys_slist_get(&queue->pending);
@@ -754,7 +823,13 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		k_spin_unlock(&lock, key);
 
 		__ASSERT_NO_MSG(handler != NULL);
+#ifdef CONFIG_CPU_WORKLOAD_WORK_PROFILE
+		profile_start_cycles = k_cycle_get_32();
 		handler(work);
+		profile_cycles = k_cycle_get_32() - profile_start_cycles;
+#else
+		handler(work);
+#endif /* CONFIG_CPU_WORKLOAD_WORK_PROFILE */
 
 		/* Mark the work item as no longer running and deal
 		 * with any cancellation and flushing issued while it
@@ -762,6 +837,10 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		 * yield to prevent starving other threads.
 		 */
 		key = k_spin_lock(&lock);
+
+#ifdef CONFIG_CPU_WORKLOAD_WORK_PROFILE
+		work_profile_update_locked(work, profile_cycles);
+#endif /* CONFIG_CPU_WORKLOAD_WORK_PROFILE */
 
 #if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
 		if (queue->finished) {
