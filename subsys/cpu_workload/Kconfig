@@ -17,6 +17,17 @@ module = CPU_WORKLOAD
 module-str = CPU Workload Estimator
 source "subsys/logging/Kconfig.template.log_config"
 
+config CPU_WORKLOAD_ESTIMATE
+	bool "Unified CPU workload estimate"
+	select CPU_LOAD_METRIC
+	select CPU_WORKLOAD_READY_BACKLOG
+	select CPU_WORKLOAD_ARRIVAL_PROFILE
+	help
+	  Combine runtime history, ready backlog, and arrival attribution into a
+	  single estimated cycle count for CPU frequency and power policies. The
+	  estimate uses recent runtime history as a conservative floor and adds the
+	  forward-looking ready backlog and arrival signals.
+
 config CPU_WORKLOAD_READY_BACKLOG
 	bool "CPU ready backlog workload signal"
 	select THREAD_MONITOR

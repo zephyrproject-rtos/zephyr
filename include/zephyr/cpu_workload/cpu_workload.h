@@ -47,6 +47,9 @@ extern "C" {
 /** CPU workload signal came from a k_work handler profile. */
 #define CPU_WORKLOAD_SOURCE_WORK_PROFILE BIT(6)
 
+/** CPU workload signal came from recent runtime history. */
+#define CPU_WORKLOAD_SOURCE_RUNTIME_HISTORY BIT(7)
+
 /**
  * @brief Ready backlog workload sample for one CPU.
  *
@@ -116,6 +119,40 @@ struct cpu_workload_work_sample {
 };
 
 /**
+ * @brief Unified CPU workload estimate for one CPU.
+ *
+ * The estimate combines recent runtime history with forward-looking workload
+ * signals. Runtime history is used as a conservative floor for recurring work,
+ * while ready backlog and arrival signals describe work that is already queued
+ * or recently arrived.
+ */
+struct cpu_workload_estimate {
+	/** Estimated cycles expected for the next decision window. */
+	uint64_t estimated_cycles;
+
+	/** Estimated cycles from currently runnable work. */
+	uint64_t ready_backlog_cycles;
+
+	/** Estimated cycles from recently attributed arrivals. */
+	uint64_t expected_arrival_cycles;
+
+	/** Recent non-idle runtime-history cycles. */
+	uint64_t history_cycles;
+
+	/** Runtime-history sample window duration in microseconds. */
+	uint32_t history_window_us;
+
+	/** Bitmask describing which sources contributed to the estimate. */
+	uint32_t source_mask;
+
+	/** Recent runtime-history load percentage. */
+	uint8_t history_load;
+
+	/** Confidence in the estimate, from 0 to 100. */
+	uint8_t confidence;
+};
+
+/**
  * @brief Get a CPU ready-backlog workload sample.
  *
  * @param cpu_id The ID of the CPU for which to get the backlog sample.
@@ -151,6 +188,18 @@ int cpu_workload_arrival_get(int cpu_id, struct cpu_workload_arrival_sample *sam
  * @retval -ENOTSUP If work handler profiling is not enabled.
  */
 int cpu_workload_work_get(struct k_work *work, struct cpu_workload_work_sample *sample);
+
+/**
+ * @brief Get a unified CPU workload estimate.
+ *
+ * @param cpu_id The ID of the CPU for which to get the estimate.
+ * @param estimate Pointer to the output estimate.
+ *
+ * @retval 0 If an estimate was written.
+ * @retval -EINVAL If @p cpu_id or @p estimate is invalid.
+ * @retval -ENOTSUP If unified workload estimation is not enabled.
+ */
+int cpu_workload_estimate_get(int cpu_id, struct cpu_workload_estimate *estimate);
 
 /**
  * @}
