@@ -137,18 +137,21 @@ static void udp_received(int sock, const struct net_sockaddr *addr, uint8_t *dat
 						     &session->stat) < 0) {
 				NET_ERR("Failed to send the packet");
 			}
-		} else {
-			zperf_reset_session_stats(session);
-			session->state = STATE_ONGOING;
-			session->start_time = time;
-
-			/* Start a new session! */
-			if (udp_session_cb != NULL) {
-				udp_session_cb(ZPERF_SESSION_STARTED, NULL,
-					       udp_user_data);
-			}
+			break;
 		}
-		break;
+
+		/* Start a new session */
+		zperf_reset_session_stats(session);
+		session->state = STATE_ONGOING;
+		session->start_time = time;
+
+		if (udp_session_cb != NULL) {
+			udp_session_cb(ZPERF_SESSION_STARTED, NULL,
+				       udp_user_data);
+		}
+
+		/* This is already the first packet of the new session */
+		__fallthrough;
 	case STATE_ONGOING:
 		if (id < 0) { /* Negative id means session end. */
 			struct zperf_results results = { 0 };
