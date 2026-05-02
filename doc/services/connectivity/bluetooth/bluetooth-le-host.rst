@@ -142,6 +142,65 @@ there are four possible security levels that can be reached:
   provisioning. It follows a similar procedure as pairing, but is done
   using separate mesh-specific APIs.
 
+Bond storage and stale bonds
+----------------------------
+
+When pairing produces a bond (i.e. ``bonded`` is ``true`` in the
+:c:struct:`bt_conn_auth_info_cb` ``pairing_complete`` callback), the host
+stores the long-term keys persistently using the settings subsystem (see
+:ref:`bluetooth-persistent-storage`). Subsequent reconnections to the same
+peer skip pairing and restore encryption directly from the stored keys.
+
+A bond is a relationship between two devices, and either side can delete
+its half of it without notifying the other. A common scenario on a
+peripheral is:
+
+#. The peripheral pairs and bonds with a central (e.g. a phone or PC).
+#. The user removes the device from the central's Bluetooth settings.
+   The central deletes its keys; the peripheral is not informed.
+#. On the next reconnection, the central pairs as if the peripheral were
+   new, while the peripheral still believes a bond exists. The peripheral's
+   stored long-term key does not match anything the central holds, so
+   encryption cannot be established.
+
+In this case the host invokes the application's
+:c:member:`bt_conn_cb.security_changed` callback with
+:c:enumerator:`BT_SECURITY_ERR_PIN_OR_KEY_MISSING`. The bond on the
+peripheral is now stale and must be removed before pairing can be
+re-attempted. The application is responsible for this policy decision; the
+host does not auto-unpair, since some applications may prefer to prompt the
+user, log the event, or restrict re-pairing to a specific window (e.g.
+after a button press).
+
+The recommended recovery pattern is to call :c:func:`bt_unpair` from the
+``security_changed`` callback when this error is reported, and disconnect
+so the central can re-pair on the next connection:
+
+.. code-block:: c
+
+   static void security_changed(struct bt_conn *conn, bt_security_t level,
+                                enum bt_security_err err)
+   {
+           if (err == BT_SECURITY_ERR_PIN_OR_KEY_MISSING) {
+                   const bt_addr_le_t *peer = bt_conn_get_dst(conn);
+                   int ret = bt_unpair(BT_ID_DEFAULT, peer);
+
+                   if (ret) {
+                           printk("Failed to unpair stale bond (err %d)\n", ret);
+                   }
+                   bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+                   return;
+           }
+
+           if (!err) {
+                   printk("Security level %u\n", level);
+           }
+   }
+
+After :c:func:`bt_unpair` returns, the peripheral's bond record for that
+peer is gone, and the next connection from the same central will proceed
+through fresh pairing.
+
 L2CAP
 =====
 
