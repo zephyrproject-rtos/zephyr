@@ -32,21 +32,31 @@
 	};
 
 	performance-states {
+		/*
+		 * Transition latencies are initial conservative estimates. Real products
+		 * should tune them with board-level clock, regulator, flash and SRAM timing.
+		 */
 		pstate_0: pstate-0 {
 			compatible = "nxp,mcxn-pstate";
 			load-threshold = <60>;
+			frequency-hz = <150000000>;
+			transition-latency-us = <100>;
 			cpu-frequency-level = "high";
 		};
 
 		pstate_1: pstate-1 {
 			compatible = "nxp,mcxn-pstate";
 			load-threshold = <30>;
+			frequency-hz = <48000000>;
+			transition-latency-us = <50>;
 			cpu-frequency-level = "medium";
 		};
 
 		pstate_2: pstate-2 {
 			compatible = "nxp,mcxn-pstate";
 			load-threshold = <0>;
+			frequency-hz = <12000000>;
+			transition-latency-us = <10>;
 			cpu-frequency-level = "low";
 		};
 	};

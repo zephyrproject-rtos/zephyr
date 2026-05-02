@@ -13,3 +13,18 @@ properties:
         CPU load threshold, in percent, for entering this performance state. Once
         the CPU load exceeds this threshold, it becomes a valid performance state
         for the P-state driver to switch to.
+
+  frequency-hz:
+    type: int
+    required: true
+    description: |
+        CPU frequency, in hertz, associated with this performance state. CPU
+        frequency policies can use this value to estimate how long a known
+        number of CPU cycles will take in this state.
+
+  transition-latency-us:
+    type: int
+    required: true
+    description: |
+        Worst-case latency, in microseconds, required to switch to this
+        performance state from another valid performance state.

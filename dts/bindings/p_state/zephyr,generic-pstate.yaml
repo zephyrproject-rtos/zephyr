@@ -13,16 +13,22 @@ description: |
           pstate_0: pstate_0 {
                   compatible = "zephyr,generic-pstate";
                   load-threshold = <50>;
+                  frequency-hz = <100000000>;
+                  transition-latency-us = <0>;
                   pstate-id = <0>;
           };
           pstate_1: pstate_1 {
                   compatible = "zephyr,generic-pstate";
                   load-threshold = <20>;
+                  frequency-hz = <50000000>;
+                  transition-latency-us = <0>;
                   pstate-id = <1>;
           };
           pstate_2: pstate_2 {
                   compatible = "zephyr,generic-pstate";
                   load-threshold = <0>;
+                  frequency-hz = <10000000>;
+                  transition-latency-us = <0>;
                   pstate-id = <2>;
           };
   };
