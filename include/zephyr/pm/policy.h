@@ -205,6 +205,22 @@ bool pm_policy_state_is_available(enum pm_state state, uint8_t substate_id);
 bool pm_policy_state_any_active(void);
 
 /**
+ * @brief Predict the PM state for a given idle residency.
+ *
+ * This helper is intended for policies that need to estimate the PM state
+ * selected for a hypothetical idle window. PM policy still owns the final
+ * idle-state decision.
+ *
+ * @param cpu CPU index.
+ * @param idle_time_us Idle residency to evaluate, in microseconds.
+ *
+ * @return The predicted power state for @p cpu, or NULL if the system should
+ * remain in PM_STATE_ACTIVE.
+ */
+const struct pm_state_info *pm_policy_state_for_residency(uint8_t cpu,
+							  uint64_t idle_time_us);
+
+/**
  * @brief Register an event.
  *
  * Events in the power-management policy context are defined as any source that
@@ -339,6 +355,15 @@ static inline void pm_policy_event_unregister(struct pm_policy_event *evt)
 static inline int64_t pm_policy_next_event_ticks(void)
 {
 	return -1;
+}
+
+static inline const struct pm_state_info *pm_policy_state_for_residency(uint8_t cpu,
+									uint64_t idle_time_us)
+{
+	ARG_UNUSED(cpu);
+	ARG_UNUSED(idle_time_us);
+
+	return NULL;
 }
 #ifdef CONFIG_PM_CUSTOM_TICKS_HOOK
 
