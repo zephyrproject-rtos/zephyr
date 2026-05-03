@@ -11,6 +11,12 @@ properties:
   reg:
     required: true
 
+  ngpios:
+    type: int
+    required: true
+    description: |
+        Number of GPIO pins controlled by the pin controller.
+
 child-binding:
   description: |
     Pin configuration state nodes.
