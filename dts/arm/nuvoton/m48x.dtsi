@@ -8,7 +8,6 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
-#include <zephyr/dt-bindings/clock/numicro_m48x_clock.h>
 #include <zephyr/dt-bindings/reset/numicro_m48x_reset.h>
 #include <zephyr/dt-bindings/clock/numicro_m48x_clock.h>
 #include <freq.h>
@@ -283,6 +282,21 @@
 			interrupts = <8 0>;
 			clocks = <&pcc NUMICRO_WDT_MODULE NUMICRO_CLK_CLKSEL1_WDTSEL_LIRC 0>;
 			status = "disabled";
+		};
+
+		ethernet: ethernet@4000B000 {
+			compatible = "nuvoton,numicro-ethernet-controller";
+			reg = <0x4000B000 0x130>;
+			resets = <&rst NUMICRO_EMAC_RST>;
+
+			mdio: mdio {
+				compatible = "nuvoton,numicro-mdio";
+				clocks = <&pcc NUMICRO_EMAC_MODULE 0 NUMICRO_CLK_CLKDIV3_EMAC(1)>;
+				speed = <DT_FREQ_K(1500)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 	};
 };

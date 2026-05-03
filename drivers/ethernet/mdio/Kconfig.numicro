@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Fiona Behrens <me@kloenk.dev>
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_NUMICRO
+	bool "Nuvoton MCU mdio driver"
+	default y
+	depends on DT_HAS_NUVOTON_NUMICRO_MDIO_ENABLED
+	select PINCTRL
+	help
+	  This option enables MDIO driver for Nuvoton Numicro family of
+	  processors.
+	  Say y if you wish to enable Numicro MDIO.

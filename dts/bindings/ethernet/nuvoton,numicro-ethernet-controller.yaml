@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Fiona Behrens <me@kloenk.dev>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Contains the Ethernet MAC and the MDIO as child nodes.
+
+compatible: "nuvoton,numicro-ethernet-controller"
+
+include: [base.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true

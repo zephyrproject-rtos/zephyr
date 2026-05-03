@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Fiona Behrens <me@kloenk.dev>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton Numicro MDIO Controller
+
+compatible: "nuvoton,numicro-mdio"
+
+include: [mdio-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clocks:
+    required: true
+
+  speed:
+    type: int
+    description: Speed of the MDIO bus. Set to 0 to not calculate the clock divier on the fly.
