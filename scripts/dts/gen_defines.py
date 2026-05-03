@@ -30,9 +30,6 @@ from devicetree import edtlib
 
 
 def main():
-    global header_file
-    global flash_area_num
-
     args = parse_args()
 
     edtlib_logger.setup_edtlib_logging()
@@ -40,10 +37,19 @@ def main():
     with open(args.edt_pickle, 'rb') as f:
         edt = pickle.load(f)
 
+    write_header(edt, args.header_out)
+
+
+def write_header(edt: edtlib.EDT, out_file: str) -> None:
+    # Writes the generated devicetree header to out_file.
+
+    global header_file
+    global flash_area_num
+
     flash_area_num = 0
 
     # Create the generated header.
-    with open(args.header_out, "w", encoding="utf-8") as header_file:
+    with open(out_file, "w", encoding="utf-8") as header_file:
         write_top_comment(edt)
 
         write_utils()

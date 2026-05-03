@@ -4861,32 +4861,51 @@ function(zephyr_dt_preprocess)
 endfunction()
 
 # Usage:
-#   zephyr_dt_import(EDT_PICKLE_FILE <file> TARGET <target>)
+#   zephyr_dt_import(EDT_PICKLE_FILE <file> [CMAKE_FILE <file>] TARGET <target>)
 #
 # Parse devicetree information and make it available to CMake, so that
 # it can be accessed by the dt_* CMake extensions from section 4.1.
 #
-# This requires running a Python script, which can take the output of
-# edtlib and generate a CMake source file from it. If that script fails,
-# a fatal error occurs.
+# This uses a generated CMake source file. If one is not supplied, a Python
+# script can take the output of edtlib and generate a CMake source file from it.
+# If that script fails, a fatal error occurs.
 #
 # EDT_PICKLE_FILE <file> : Input edtlib.EDT object in pickle format
+# CMAKE_FILE <file>     : Optional pre-generated CMake devicetree properties
 # TARGET <target>        : Target to populate with devicetree properties
 #
 function(zephyr_dt_import)
   set(req_single_args "EDT_PICKLE_FILE;TARGET")
-  cmake_parse_arguments(arg "" "${req_single_args}" "" ${ARGN})
+  set(single_args "${req_single_args};CMAKE_FILE")
+  cmake_parse_arguments(arg "" "${single_args}" "" ${ARGN})
   zephyr_check_arguments_required_all(${CMAKE_CURRENT_FUNCTION} arg ${req_single_args})
 
+  set(gen_edt_script ${ZEPHYR_BASE}/scripts/dts/gen_edt.py)
   set(gen_dts_cmake_script ${ZEPHYR_BASE}/scripts/dts/gen_dts_cmake.py)
-  set(gen_dts_cmake_temp ${arg_EDT_PICKLE_FILE}.cmake.new)
-  set(gen_dts_cmake_output ${arg_EDT_PICKLE_FILE}.cmake)
 
-  if((${arg_EDT_PICKLE_FILE} IS_NEWER_THAN ${gen_dts_cmake_output}) OR
-     (${gen_dts_cmake_script} IS_NEWER_THAN ${gen_dts_cmake_output})
+  if(DEFINED arg_CMAKE_FILE)
+    set(gen_dts_cmake_output ${arg_CMAKE_FILE})
+  else()
+    set(gen_dts_cmake_output ${arg_EDT_PICKLE_FILE}.cmake)
+  endif()
+  set(gen_dts_cmake_temp ${gen_dts_cmake_output}.new)
+
+  set(generate_dts_cmake TRUE)
+  if(DEFINED arg_CMAKE_FILE AND EXISTS ${gen_dts_cmake_output})
+    set(generate_dts_cmake FALSE)
+  elseif((NOT EXISTS ${gen_dts_cmake_output}) OR
+         (${arg_EDT_PICKLE_FILE} IS_NEWER_THAN ${gen_dts_cmake_output}) OR
+         (${gen_edt_script} IS_NEWER_THAN ${gen_dts_cmake_output}) OR
+         (${gen_dts_cmake_script} IS_NEWER_THAN ${gen_dts_cmake_output})
   )
+    set(generate_dts_cmake TRUE)
+  else()
+    set(generate_dts_cmake FALSE)
+  endif()
+
+  if(generate_dts_cmake)
     execute_process(
-      COMMAND ${PYTHON_EXECUTABLE} ${gen_dts_cmake_script}
+      COMMAND ${PYTHON_EXECUTABLE} ${gen_edt_script}
       --edt-pickle ${arg_EDT_PICKLE_FILE}
       --cmake-out ${gen_dts_cmake_temp}
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
@@ -4897,7 +4916,11 @@ function(zephyr_dt_import)
     zephyr_file_copy(${gen_dts_cmake_temp} ${gen_dts_cmake_output} ONLY_IF_DIFFERENT)
     file(REMOVE ${gen_dts_cmake_temp})
   endif()
-  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${gen_dts_cmake_script})
+  set_property(DIRECTORY APPEND PROPERTY
+    CMAKE_CONFIGURE_DEPENDS
+    ${gen_edt_script}
+    ${gen_dts_cmake_script}
+  )
 
   set(DEVICETREE_TARGET ${arg_TARGET})
   include(${gen_dts_cmake_output})

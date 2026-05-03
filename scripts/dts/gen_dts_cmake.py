@@ -85,6 +85,12 @@ def main():
     with open(args.edt_pickle, 'rb') as f:
         edt = pickle.load(f)
 
+    write_cmake(edt, args.cmake_out)
+
+
+def write_cmake(edt, out_file):
+    # Writes devicetree data as CMake target properties to out_file.
+
     # In what looks like an undocumented implementation detail, CMake
     # target properties are stored in a C++ standard library map whose
     # keys and values are each arbitrary strings, so we can use
@@ -185,7 +191,7 @@ def main():
         cmake_comp = f'DT_COMP|{comp}'
         cmake_props.append(f'"{cmake_comp}" "{cmake_path}"')
 
-    with open(args.cmake_out, "w", encoding="utf-8") as cmake_file:
+    with open(out_file, "w", encoding="utf-8") as cmake_file:
         print("set_target_properties(${DEVICETREE_TARGET}", file=cmake_file)
         print("  PROPERTIES", file=cmake_file)
         print("\n".join(f"    {prop}" for prop in cmake_props), file=cmake_file)

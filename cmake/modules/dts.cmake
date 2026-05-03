@@ -56,6 +56,7 @@ find_package(Dtc 1.4.6)
 #      bindings were found
 #    - ${PROJECT_BINARY_DIR}/zephyr.dts exists
 #    - ${PROJECT_BINARY_DIR}/edt.pickle exists
+#    - ${PROJECT_BINARY_DIR}/edt.pickle.cmake exists
 #    - ${KCONFIG_BINARY_DIR}/Kconfig.dts exists
 #    - DTS_INCLUDE_FILES is set to a ;-list of all devicetree files
 #      used in this build, including transitive includes (the build
@@ -104,11 +105,16 @@ set(DT_SCRIPTS                  ${ZEPHYR_BASE}/scripts/dts)
 
 # This parses and collects the DT information
 set(GEN_EDT_SCRIPT              ${DT_SCRIPTS}/gen_edt.py)
-# This generates DT information needed by the C macro APIs,
-# along with a few other things.
+# This contains helpers used by gen_edt.py to generate DT information needed by
+# the C macro APIs.
 set(GEN_DEFINES_SCRIPT          ${DT_SCRIPTS}/gen_defines.py)
+# This contains helpers used by gen_edt.py to generate DT information needed by
+# the CMake devicetree APIs.
+set(GEN_DTS_CMAKE_SCRIPT        ${DT_SCRIPTS}/gen_dts_cmake.py)
 # The edtlib.EDT object in pickle format.
 set(EDT_PICKLE                  ${PROJECT_BINARY_DIR}/edt.pickle)
+# The edtlib.EDT object converted into CMake target properties.
+set(EDT_CMAKE                   ${EDT_PICKLE}.cmake)
 # The generated file containing the final DTS, for debugging.
 set(ZEPHYR_DTS                  ${PROJECT_BINARY_DIR}/zephyr.dts)
 # The generated C header needed by <zephyr/devicetree.h>
@@ -294,6 +300,7 @@ function(dts_edt_pickle)
     ${DTS_INCLUDE_FILES}
     ${GEN_EDT_SCRIPT}
     ${GEN_DEFINES_SCRIPT}
+    ${GEN_DTS_CMAKE_SCRIPT}
     ${GEN_DRIVER_KCONFIG_SCRIPT}
   )
 
@@ -319,6 +326,8 @@ function(dts_edt_pickle)
     --dts-out ${ZEPHYR_DTS}.new # for debugging and dtc
     --edt-pickle-out ${EDT_PICKLE}.new
     --kconfig-out ${DTS_KCONFIG}.new
+    --cmake-out ${EDT_CMAKE}.new
+    --header-out ${DEVICETREE_GENERATED_H}.new
     ${EXTRA_GEN_EDT_ARGS}
   )
 
@@ -330,30 +339,19 @@ function(dts_edt_pickle)
   zephyr_file_copy(${ZEPHYR_DTS}.new ${ZEPHYR_DTS} ONLY_IF_DIFFERENT)
   zephyr_file_copy(${EDT_PICKLE}.new ${EDT_PICKLE} ONLY_IF_DIFFERENT)
   zephyr_file_copy(${DTS_KCONFIG}.new ${DTS_KCONFIG} ONLY_IF_DIFFERENT)
-  file(REMOVE ${ZEPHYR_DTS}.new ${EDT_PICKLE}.new ${DTS_KCONFIG}.new)
+  zephyr_file_copy(${EDT_CMAKE}.new ${EDT_CMAKE} ONLY_IF_DIFFERENT)
+  zephyr_file_copy(${DEVICETREE_GENERATED_H}.new ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
+  file(REMOVE
+    ${ZEPHYR_DTS}.new
+    ${EDT_PICKLE}.new
+    ${DTS_KCONFIG}.new
+    ${EDT_CMAKE}.new
+    ${DEVICETREE_GENERATED_H}.new
+  )
   message(STATUS "Generated zephyr.dts: ${ZEPHYR_DTS}")
   message(STATUS "Generated pickled edt: ${EDT_PICKLE}")
   message(STATUS "Generated Kconfig.dts: ${DTS_KCONFIG}")
-endfunction()
-
-function(dts_gen_defines)
-  #
-  # Run GEN_DEFINES_SCRIPT.
-  #
-
-  set(cmd_gen_defines ${PYTHON_EXECUTABLE} ${GEN_DEFINES_SCRIPT}
-    --header-out ${DEVICETREE_GENERATED_H}.new
-    --edt-pickle ${EDT_PICKLE}
-    ${EXTRA_GEN_DEFINES_ARGS}
-  )
-
-  execute_process(
-    COMMAND ${cmd_gen_defines}
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMAND_ERROR_IS_FATAL ANY
-  )
-  zephyr_file_copy(${DEVICETREE_GENERATED_H}.new ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
-  file(REMOVE ${DEVICETREE_GENERATED_H}.new)
+  message(STATUS "Generated devicetree CMake: ${EDT_CMAKE}")
   message(STATUS "Generated devicetree_generated.h: ${DEVICETREE_GENERATED_H}")
 endfunction()
 
@@ -364,7 +362,11 @@ function(dts_import)
   #
 
   add_custom_target(devicetree_target)
-  zephyr_dt_import(EDT_PICKLE_FILE ${EDT_PICKLE} TARGET devicetree_target)
+  zephyr_dt_import(
+    EDT_PICKLE_FILE ${EDT_PICKLE}
+    CMAKE_FILE ${EDT_CMAKE}
+    TARGET devicetree_target
+  )
 endfunction()
 
 function(dts_dtc)
@@ -422,7 +424,6 @@ endfunction()
 macro(dts_init)
   dts_configuration_files()
   dts_edt_pickle()
-  dts_gen_defines()
   dts_import()
   dts_dtc()
   dts_build_info_output()

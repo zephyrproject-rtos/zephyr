@@ -6,9 +6,12 @@
 # Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-# This script uses edtlib to generate a pickled edt from a devicetree
-# (.dts) file. Information from binding files in YAML format is used
-# as well.
+# This script uses edtlib to parse a devicetree (.dts) file with information
+# from binding files in YAML format. It then generates build outputs derived
+# from the resulting edtlib.EDT object: a pickled EDT, merged DTS source,
+# Kconfig settings which query devicetree data through the pickle, and
+# optionally CMake target-property data and the C header used by Zephyr's
+# devicetree macro API.
 #
 # Bindings are files that describe devicetree nodes. Devicetree nodes are
 # usually mapped to bindings via their 'compatible = "..."' property.
@@ -31,7 +34,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree',
 
 import edtlib_logger
 from devicetree import edtlib
+from gen_defines import write_header
 from gen_driver_kconfig_dts import write_kconfig_dts
+from gen_dts_cmake import write_cmake
 
 
 def main():
@@ -44,51 +49,78 @@ def main():
         vendor_prefixes.update(edtlib.load_vendor_prefixes_txt(prefixes_file))
 
     try:
-        edt = edtlib.EDT(args.dts, args.bindings_dirs,
-                         workspace_dir=args.workspace_dir,
-                         # Suppress this warning if it's suppressed in dtc
-                         warn_reg_unit_address_mismatch=
-                             "-Wno-simple_bus_reg" not in args.dtc_flags,
-                         default_prop_types=True,
-                         infer_binding_for_paths=["/zephyr,user", "/cpus"],
-                         werror=args.edtlib_Werror,
-                         vendor_prefixes=vendor_prefixes,
-                         warn_bus_mismatch=args.warn_bus_mismatch)
+        if args.edt_pickle:
+            with open(args.edt_pickle, 'rb') as f:
+                edt = pickle.load(f)
+        else:
+            edt = edtlib.EDT(
+                args.dts,
+                args.bindings_dirs,
+                workspace_dir=args.workspace_dir,
+                # Suppress this warning if it's suppressed in dtc
+                warn_reg_unit_address_mismatch="-Wno-simple_bus_reg" not in args.dtc_flags,
+                default_prop_types=True,
+                infer_binding_for_paths=["/zephyr,user", "/cpus"],
+                werror=args.edtlib_Werror,
+                vendor_prefixes=vendor_prefixes,
+                warn_bus_mismatch=args.warn_bus_mismatch,
+            )
     except edtlib.EDTError as e:
         sys.exit(f"devicetree error: {e}")
 
     # Save merged DTS source, as a debugging aid
-    with open(args.dts_out, "w", encoding="utf-8") as f:
-        print(edt.dts_source, file=f)
+    if args.dts_out:
+        with open(args.dts_out, "w", encoding="utf-8") as f:
+            print(edt.dts_source, file=f)
 
-    write_kconfig_dts(set(edt.compat2nodes.keys()), args.kconfig_out)
+    if args.kconfig_out:
+        write_kconfig_dts(set(edt.compat2nodes.keys()), args.kconfig_out)
 
-    write_pickled_edt(edt, args.edt_pickle_out)
+    if args.edt_pickle_out:
+        write_pickled_edt(edt, args.edt_pickle_out)
+
+    if args.cmake_out:
+        write_cmake(edt, args.cmake_out)
+
+    if args.header_out:
+        write_header(edt, args.header_out)
+
+
+def _any_output_requested(args: argparse.Namespace) -> bool:
+    return bool(
+        args.dts_out or args.edt_pickle_out or args.kconfig_out or args.cmake_out or args.header_out
+    )
 
 
 def parse_args() -> argparse.Namespace:
     # Returns parsed command-line arguments
 
     parser = argparse.ArgumentParser(allow_abbrev=False)
-    parser.add_argument("--dts", required=True, help="DTS file")
+    input_group = parser.add_mutually_exclusive_group(required=True)
+    input_group.add_argument("--dts", help="DTS file")
+    input_group.add_argument("--edt-pickle",
+                             help="path to read pickled edtlib.EDT object from")
     parser.add_argument("--dtc-flags",
                         help="'dtc' devicetree compiler flags, some of which "
-                             "might be respected here")
-    parser.add_argument("--bindings-dirs", nargs='+', required=True,
+                             "might be respected here",
+                        default="")
+    parser.add_argument("--bindings-dirs", nargs='+',
                         help="directory with bindings in YAML format, "
                         "we allow multiple")
     parser.add_argument("--workspace-dir", default=os.getcwd(),
                         help="directory to be used as reference for generated "
                         "relative paths (e.g. WEST_TOPDIR)")
-    parser.add_argument("--dts-out", required=True,
+    parser.add_argument("--dts-out",
                         help="path to write merged DTS source code to (e.g. "
                              "as a debugging aid)")
     parser.add_argument("--edt-pickle-out",
-                        help="path to write pickled edtlib.EDT object to", required=True)
-    parser.add_argument("--kconfig-out", required=True, help="path to write Kconfig.dts to")
+                        help="path to write pickled edtlib.EDT object to")
+    parser.add_argument("--kconfig-out", help="path to write Kconfig.dts to")
+    parser.add_argument("--cmake-out", help="path to write CMake devicetree properties to")
+    parser.add_argument("--header-out", help="path to write devicetree generated header to")
     parser.add_argument("--vendor-prefixes", action='append', default=[],
                         help="vendor-prefixes.txt path; used for validation; "
-                             "may be given multiple times")
+                        "may be given multiple times")
     parser.add_argument("--edtlib-Werror", action="store_true",
                         help="if set, edtlib-specific warnings become errors. "
                              "(this does not apply to warnings shared "
@@ -97,7 +129,22 @@ def parse_args() -> argparse.Namespace:
                         help="warn when devicetree nodes are on buses that "
                              "don't match available binding expectations")
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if args.dts:
+        required = (
+            "bindings_dirs",
+            "dts_out",
+            "edt_pickle_out",
+            "kconfig_out",
+        )
+        missing = [f"--{arg.replace('_', '-')}" for arg in required if getattr(args, arg) is None]
+        if missing:
+            parser.error(f"--dts requires {', '.join(missing)}")
+    elif not _any_output_requested(args):
+        parser.error("--edt-pickle requires at least one output argument")
+
+    return args
 
 
 def write_pickled_edt(edt: edtlib.EDT, out_file: str) -> None:
