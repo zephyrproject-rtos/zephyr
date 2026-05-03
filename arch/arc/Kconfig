@@ -370,6 +370,12 @@ endmenu
 configdefault DCACHE_LINE_SIZE
 	default 32 if !$(dt_node_has_prop,/cpus/cpu@0,d-cache-line-size)
 
+configdefault DCACHE_LINE_SIZE_DETECT
+	default y
+
+configdefault ICACHE_LINE_SIZE_DETECT
+	default y
+
 config ARC_DCACHE_REGION_OPERATIONS
 	bool "DCACHE region operations"
 	depends on CACHE_MANAGEMENT && DCACHE

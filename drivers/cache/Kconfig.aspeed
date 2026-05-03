@@ -7,5 +7,7 @@ bool "ASPEED external cache driver"
 	depends on SOC_SERIES_AST10X0
 	depends on SYSCON
 	select CACHE_HAS_DRIVER
+	imply DCACHE_LINE_SIZE_DETECT
+	imply ICACHE_LINE_SIZE_DETECT
 	help
 	  This option enables the CACHE driver for ASPEED AST10X0 series SOC.
