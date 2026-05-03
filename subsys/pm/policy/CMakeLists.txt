@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_PM)
-  zephyr_library_sources(policy_events.c policy_latency.c policy_state_lock.c)
+  zephyr_library_sources(policy_events.c policy_latency.c policy_state_lock.c policy_residency.c)
 
   if(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
     zephyr_library_sources(policy_device_lock.c)
