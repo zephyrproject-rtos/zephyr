@@ -99,233 +99,192 @@ static inline bool gpio_pin_is_output_capable(uint32_t pin)
 }
 
 static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
-			     gpio_pin_t pin,
-			     gpio_flags_t flags)
+                       gpio_pin_t pin,
+                       gpio_flags_t flags)
 {
-	const struct gpio_esp32_config *const cfg = dev->config;
-	uint32_t io_pin = (uint32_t) pin + ((cfg->gpio_port == 1 && pin < 32) ? 32 : 0);
-	uint32_t key;
-	bool gpio_pull;
-	bool rtcio_pull;
-	bool rtcio_wakeup;
-#if CONFIG_PM
-	bool wakeup_disable = false;
-#endif
-	int ret = 0;
+    const struct gpio_esp32_config *const cfg = dev->config;
+    uint32_t io_pin = (uint32_t)pin + ((cfg->gpio_port == 1 && pin < 32) ? 32 : 0);
+    uint32_t key;
+    bool rtc_valid = false;
+    int ret = 0;
 
-	if (!gpio_pin_is_valid(io_pin)) {
-		LOG_ERR("Selected IO pin is not valid.");
-		return -EINVAL;
-	}
+    if (!gpio_pin_is_valid(io_pin)) {
+        LOG_ERR("Selected IO pin is not valid.");
+        return -EINVAL;
+    }
 
-	key = irq_lock();
+    key = irq_lock();
 
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-	if (rtc_gpio_is_valid_gpio(io_pin)) {
-		rtcio_hal_function_select(rtc_io_num_map[io_pin], RTCIO_LL_FUNC_DIGITAL);
-	}
+    rtc_valid = rtc_gpio_is_valid_gpio(io_pin);
+    if (rtc_valid) {
+        rtcio_hal_function_select(rtc_io_num_map[io_pin], RTCIO_FUNC_DIGITAL);
+    }
 #endif
 
-	if (io_pin >= GPIO_NUM_MAX) {
-		LOG_ERR("Invalid pin.");
-		ret = -EINVAL;
-		goto end;
-	}
+    if (io_pin >= GPIO_NUM_MAX) {
+        LOG_ERR("Invalid pin.");
+        ret = -EINVAL;
+        goto end;
+    }
 
-	/* Set pin function as GPIO */
-	gpio_ll_func_sel(&GPIO, io_pin, PIN_FUNC_GPIO);
+    /* Set pin function as GPIO */
+    gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[io_pin], PIN_FUNC_GPIO);
 
-	/* On SoCs with independent GPIO/RTCIO control, pull-up/down
-	 * configuration is handled via the GPIO registers. On ESP32,
-	 * pads with RTC functionality instead require pull configuration
-	 * via RTCIO registers.
-	 */
-	gpio_pull = !rtc_gpio_is_valid_gpio(io_pin) || GPIO_RTCIO_ARE_INDEPENDENT;
-	rtcio_pull = !gpio_pull;
-	rtcio_wakeup = rtc_gpio_is_valid_gpio(io_pin) && (flags & GPIO_INT_WAKEUP);
-
-	if (flags & GPIO_PULL_UP) {
-		if (gpio_pull) {
-			gpio_ll_pullup_en(&GPIO, io_pin);
-		}
+    /* --- Pull-up handling --- */
+    if (flags & GPIO_PULL_UP) {
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-		if (rtcio_pull || rtcio_wakeup) {
-			rtc_gpio_pullup_en(io_pin);
-		}
+        /* Always apply pulls via RTCIO for RTC-capable pads */
+        if (rtc_valid) {
+            int rtcio_num = rtc_io_num_map[io_pin];
+
+            if (rtc_io_desc[rtcio_num].pullup) {
+                rtcio_hal_pullup_enable(rtcio_num);
+            } else {
+                ret = -ENOTSUP;
+                goto end;
+            }
+        }
 #endif
-	} else {
-		if (gpio_pull) {
-			gpio_ll_pullup_dis(&GPIO, io_pin);
-		}
+        /* Also configure digital pull if SoC supports RTC-independent pulls,
+         * or if pad is not RTC-capable.
+         */
+        if (!rtc_valid || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
+            gpio_ll_pullup_en(&GPIO, io_pin);
+        }
+    } else {
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-		if (rtcio_pull || rtcio_wakeup) {
-			rtc_gpio_pullup_dis(io_pin);
-		}
+        if (rtc_valid) {
+            int rtcio_num = rtc_io_num_map[io_pin];
+
+            if (rtc_io_desc[rtcio_num].pullup) {
+                rtcio_hal_pullup_disable(rtcio_num);
+            }
+        }
+#else
+        /* no RTCIO support */
 #endif
-	}
+        if (!rtc_valid || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
+            gpio_ll_pullup_dis(&GPIO, io_pin);
+        }
+    }
 
-	if (flags & GPIO_SINGLE_ENDED) {
-		if (flags & GPIO_LINE_OPEN_DRAIN) {
-			gpio_ll_od_enable(cfg->gpio_base, io_pin);
-		} else {
-			LOG_ERR("GPIO configuration not supported");
-			ret = -ENOTSUP;
-			goto end;
-		}
-	} else {
-		gpio_ll_od_disable(cfg->gpio_base, io_pin);
-	}
+    if (flags & GPIO_SINGLE_ENDED) {
+        if (flags & GPIO_LINE_OPEN_DRAIN) {
+            gpio_ll_od_enable(cfg->gpio_base, io_pin);
+        } else {
+            LOG_ERR("GPIO configuration not supported");
+            ret = -ENOTSUP;
+            goto end;
+        }
+    } else {
+        gpio_ll_od_disable(cfg->gpio_base, io_pin);
+    }
 
-	if (flags & GPIO_PULL_DOWN) {
-		if (gpio_pull) {
-			gpio_ll_pulldown_en(&GPIO, io_pin);
-		}
+    /* --- Pull-down handling --- */
+    if (flags & GPIO_PULL_DOWN) {
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-		if (rtcio_pull || rtcio_wakeup) {
-			rtc_gpio_pulldown_en(io_pin);
-		}
+        /* Always apply pulls via RTCIO for RTC-capable pads */
+        if (rtc_valid) {
+            int rtcio_num = rtc_io_num_map[io_pin];
+
+            if (rtc_io_desc[rtcio_num].pulldown) {
+                rtcio_hal_pulldown_enable(rtcio_num);
+            } else {
+                ret = -ENOTSUP;
+                goto end;
+            }
+        }
 #endif
-	} else {
-		if (gpio_pull) {
-			gpio_ll_pulldown_dis(&GPIO, io_pin);
-		}
+        /* Also configure digital pull if SoC supports RTC-independent pulls,
+         * or if pad is not RTC-capable.
+         */
+        if (!rtc_valid || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
+            gpio_ll_pulldown_en(&GPIO, io_pin);
+        }
+    } else {
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-		if (rtcio_pull || rtcio_wakeup) {
-			rtc_gpio_pulldown_dis(io_pin);
-		}
+        if (rtc_valid) {
+            int rtcio_num = rtc_io_num_map[io_pin];
+
+            if (rtc_io_desc[rtcio_num].pulldown) {
+                rtcio_hal_pulldown_disable(rtcio_num);
+            }
+        }
+#else
+        /* no RTCIO support */
 #endif
-	}
+        if (!rtc_valid || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
+            gpio_ll_pulldown_dis(&GPIO, io_pin);
+        }
+    }
 
-	if (flags & GPIO_OUTPUT) {
+    if (flags & GPIO_OUTPUT) {
+        if (!gpio_pin_is_output_capable(pin)) {
+            LOG_ERR("GPIO can only be used as input");
+            ret = -EINVAL;
+            goto end;
+        }
 
-		if (!gpio_pin_is_output_capable(pin)) {
-			LOG_ERR("GPIO can only be used as input");
-			ret = -EINVAL;
-			goto end;
-		}
-
-		/*
-		 * By default, drive strength is set to its maximum value when the pin is set
-		 * to either low or high states. Alternative drive strength is weak-only,
-		 * while any other intermediary combination is considered invalid.
-		 */
-		switch (flags & ESP32_GPIO_DS_MASK) {
-		case ESP32_GPIO_DS_DFLT:
-			if (gpio_pull) {
-				gpio_ll_set_drive_capability(cfg->gpio_base,
-						io_pin,
-						GPIO_DRIVE_CAP_3);
-			} else {
+        /*
+         * By default, drive strength is set to its maximum value when the pin is set
+         * to either low or high states. Alternative drive strength is weak-only,
+         * while any other intermediary combination is considered invalid.
+         */
+        switch (flags & ESP32_GPIO_DS_MASK) {
+        case ESP32_GPIO_DS_DFLT:
+            if (!rtc_valid || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
+                gpio_ll_set_drive_capability(cfg->gpio_base, io_pin,
+                                 GPIO_DRIVE_CAP_3);
+            } else {
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-				rtcio_hal_set_drive_capability(rtc_io_num_map[io_pin],
-						GPIO_DRIVE_CAP_3);
+                rtcio_hal_set_drive_capability(rtc_io_num_map[io_pin],
+                                   GPIO_DRIVE_CAP_3);
 #endif
-			}
-			break;
-		case ESP32_GPIO_DS_ALT:
-			if (gpio_pull) {
-				gpio_ll_set_drive_capability(cfg->gpio_base,
-						io_pin,
-						GPIO_DRIVE_CAP_0);
-			} else {
+            }
+            break;
+        case ESP32_GPIO_DS_ALT:
+            if (!rtc_valid || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
+                gpio_ll_set_drive_capability(cfg->gpio_base, io_pin,
+                                 GPIO_DRIVE_CAP_0);
+            } else {
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-				rtcio_hal_set_drive_capability(rtc_io_num_map[io_pin],
-						GPIO_DRIVE_CAP_0);
+                rtcio_hal_set_drive_capability(rtc_io_num_map[io_pin],
+                                   GPIO_DRIVE_CAP_0);
 #endif
-			}
-			break;
-		default:
-			ret = -EINVAL;
-			goto end;
-		}
+            }
+            break;
+        default:
+            ret = -EINVAL;
+            goto end;
+        }
 
-		gpio_ll_output_enable(&GPIO, io_pin);
-		esp_rom_gpio_matrix_out(io_pin, SIG_GPIO_OUT_IDX, false, false);
+        gpio_ll_output_enable(&GPIO, io_pin);
+        esp_rom_gpio_matrix_out(io_pin, SIG_GPIO_OUT_IDX, false, false);
 
-		/* Set output pin initial value */
-		if (flags & GPIO_OUTPUT_INIT_HIGH) {
-			gpio_ll_set_level(cfg->gpio_base, io_pin, 1);
-		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
-			gpio_ll_set_level(cfg->gpio_base, io_pin, 0);
-		}
-	} else {
-		if (!(flags & ESP32_GPIO_PIN_OUT_EN)) {
-			gpio_ll_output_disable(&GPIO, io_pin);
-		}
-	}
+        /* Set output pin initial value */
+        if (flags & GPIO_OUTPUT_INIT_HIGH) {
+            gpio_ll_set_level(cfg->gpio_base, io_pin, 1);
+        } else if (flags & GPIO_OUTPUT_INIT_LOW) {
+            gpio_ll_set_level(cfg->gpio_base, io_pin, 0);
+        }
+    } else {
+        if (!(flags & ESP32_GPIO_PIN_OUT_EN)) {
+            gpio_ll_output_disable(&GPIO, io_pin);
+        }
+    }
 
-	if (flags & GPIO_INPUT) {
-		gpio_ll_input_enable(&GPIO, io_pin);
-#if CONFIG_PM
-		if (pm_device_wakeup_is_capable(dev)) {
-			if (flags & GPIO_INT_WAKEUP) {
-				if (esp_sleep_is_valid_wakeup_gpio(io_pin)) {
-					int polarity = (flags & GPIO_ACTIVE_LOW) ? 0 : 1;
-					int err;
-#if SOC_PM_SUPPORT_EXT1_WAKEUP
-					err = esp_sleep_enable_ext1_wakeup_io(
-						BIT64(io_pin), polarity);
-
-					if (err == ESP_ERR_NOT_ALLOWED) {
-						LOG_WRN("Pin %d wakeup polarity conflicts "
-							"with other EXT1 pins",
-							io_pin);
-					} else if (err != 0) {
-						LOG_WRN("Pin %d: EXT1 wakeup config "
-							"failed (%d)",
-							io_pin, err);
-					}
-#elif SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
-					err = esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown(
-						BIT64(io_pin), polarity);
-
-					if (err != 0) {
-						LOG_WRN("Pin %d: GPIO wakeup config "
-							"failed (%d)",
-							io_pin, err);
-					}
-#endif
-				} else {
-					LOG_WRN("Pin %d is not wakeup capable", io_pin);
-				}
-			} else {
-				wakeup_disable = true;
-			}
-		}
-#endif
-	} else {
-		if (!(flags & ESP32_GPIO_PIN_IN_EN)) {
-			gpio_ll_input_disable(&GPIO, io_pin);
-#if CONFIG_PM
-			if (pm_device_wakeup_is_capable(dev)) {
-				wakeup_disable = true;
-			}
-#endif
-		}
-	}
-
-#if CONFIG_PM
-	bool hold_en = (flags & ESP32_GPIO_SLEEP_HOLD_EN);
-
-	/* Enable pin pad state hold while in low power mode */
-	esp32_sleep_gpio_hold_config(io_pin, hold_en);
-
-	if (wakeup_disable) {
-		/* Account for pin reconfig with GPIO_INT_WAKEUP
-		 * disabled, or pin direction change.
-		 */
-#if SOC_PM_SUPPORT_EXT1_WAKEUP
-		esp_sleep_disable_ext1_wakeup_io(BIT64(io_pin));
-#elif SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
-		/* No API to disable for now */
-#endif
-	}
-#endif
+    if (flags & GPIO_INPUT) {
+        gpio_ll_input_enable(&GPIO, io_pin);
+    } else {
+        if (!(flags & ESP32_GPIO_PIN_IN_EN)) {
+            gpio_ll_input_disable(&GPIO, io_pin);
+        }
+    }
 
 end:
-	irq_unlock(key);
-
-	return ret;
+    irq_unlock(key);
+    return ret;
 }
 
 static int gpio_esp32_port_get_raw(const struct device *port, uint32_t *value)
