@@ -992,6 +992,8 @@ Cache:
   status: maintained
   maintainers:
     - nashif
+  collaborators:
+    - JarmouniA
   files:
     - include/zephyr/drivers/cache.h
     - include/zephyr/cache.h
