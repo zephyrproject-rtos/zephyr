@@ -70,6 +70,7 @@
 		pinctrl: pin-controller@fe200000 {
 			compatible = "brcm,bcm2711-pinctrl";
 			reg = <0xfe200000 0xf4>;
+			ngpios = <58>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 
