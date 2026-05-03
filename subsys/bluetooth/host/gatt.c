@@ -2804,6 +2804,26 @@ struct bt_gatt_attr *bt_gatt_find_by_uuid(const struct bt_gatt_attr *attr,
 	return found;
 }
 
+/**
+ * This function is meant to resolve attr to the characteristic value attribute.
+ * If attr is a characteristic declaration, returns the next attribute (the value).
+ * Otherwise returns attr unchanged.
+ */
+static const struct bt_gatt_attr *
+bt_gatt_attr_resolve_value(const struct bt_gatt_attr *attr)
+{
+	/* Due to the following requirement in the Core Spec Version 6.3 | Vol 3, Part G,
+	 * Section 3.3 we can always assume that the next attribute is the Characteristic Value:
+	 * The Characteristic Value declaration shall exist immediately following the
+	 * characteristic declaration.
+	 */
+	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC) == 0) {
+		return bt_gatt_attr_next(attr);
+	}
+
+	return attr;
+}
+
 int bt_gatt_notify_cb(struct bt_conn *conn,
 		      struct bt_gatt_notify_params *params)
 {
@@ -2845,6 +2865,14 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
 		}
 
 		data.handle = bt_gatt_attr_value_handle(data.attr);
+	}
+
+	/* If attribute is a characteristic declaration, resolve to the value
+	 * attribute to ensure the correct permissions are checked
+	 */
+	params->attr = bt_gatt_attr_resolve_value(data.attr);
+	if (params->attr == NULL) {
+		return -EINVAL;
 	}
 
 	if (conn) {
@@ -2916,14 +2944,22 @@ static int gatt_notify_multiple_verify_params(struct bt_conn *conn,
 					     struct bt_gatt_notify_params params[],
 					     uint16_t num_params, size_t *total_len)
 {
+	const struct bt_gatt_attr *attr = NULL;
+
 	for (uint16_t i = 0; i < num_params; i++) {
 		/* Compute the total data length. */
 		*total_len += params[i].len;
 
+		/* If attribute is a characteristic declaration, resolve to the value
+		 * attribute to ensure the correct permissions are checked
+		 */
+		attr = bt_gatt_attr_resolve_value(params[i].attr);
+		if (attr == NULL) {
+			return -EINVAL;
+		}
+
 		/* Confirm that the connection has the correct level of security. */
-		if (bt_gatt_check_perm(conn, params[i].attr,
-				       BT_GATT_PERM_READ_ENCRYPT |
-				       BT_GATT_PERM_READ_AUTHEN)) {
+		if (bt_gatt_check_perm(conn, attr, BT_GATT_PERM_READ_ENCRYPT_MASK)) {
 			LOG_DBG("Link %p is not encrypted", (void *)conn);
 			return -EPERM;
 		}
@@ -3070,6 +3106,14 @@ int bt_gatt_indicate(struct bt_conn *conn,
 		}
 
 		data.handle = bt_gatt_attr_value_handle(data.attr);
+	}
+
+	/* If attribute is a characteristic declaration, resolve to the value
+	 * attribute to ensure the correct permissions are checked
+	 */
+	params->attr = bt_gatt_attr_resolve_value(data.attr);
+	if (params->attr == NULL) {
+		return -EINVAL;
 	}
 
 	if (conn) {
