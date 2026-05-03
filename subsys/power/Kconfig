@@ -1,0 +1,15 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Power"
+
+config POWER_ENERGY_MODEL
+	bool "Power energy model helper"
+	depends on CPU_FREQ
+	help
+	  Enable common energy-score helpers for power and CPU frequency policies.
+	  The helper computes comparable active, transition and idle scores from
+	  already collected workload, P-state and PM idle-state facts. It does not
+	  choose P-states or idle states.
+
+endmenu
