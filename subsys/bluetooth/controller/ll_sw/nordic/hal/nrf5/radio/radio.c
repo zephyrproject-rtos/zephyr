@@ -1445,17 +1445,22 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 	/* NOTE: HERE, we have cntr_h and cntr_l in sync. */
 
 	/* Handle rollover between current and expected value */
-	if (ticks_start < cntr_l) {
+	if (HAL_TICKER_TICKS_TO_US(ticks_start) < cntr_l) {
 		cntr_h++;
 	}
 
 	/* Clear compare event, if any */
 	nrf_grtc_event_clear(NRF_GRTC, HAL_CNTR_GRTC_EVENT_COMPARE_RADIO);
 
+	/* Convert ticker ticks to GRTC 1MHz ticks (microseconds) */
+	uint32_t ticks_start_us;
+
+	ticks_start_us = HAL_TICKER_TICKS_TO_US(ticks_start);
+
 	/* Set compare register values */
 	nrf_grtc_sys_counter_cc_set(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO,
 				    ((((uint64_t)cntr_h & GRTC_CC_CCH_CCH_Msk) << 32) |
-				     ticks_start));
+				     ticks_start_us));
 
 	/* Enable compare */
 	nrf_grtc_sys_counter_compare_event_enable(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO);
