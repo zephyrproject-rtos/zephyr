@@ -1,0 +1,22 @@
+common:
+  tags: cpu_freq
+
+tests:
+  subsys.cpu_freq.soc.policies.energy_aware:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - frdm_mcxn236
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+
+  subsys.cpu_freq.stub.policies.energy_aware:
+    extra_dtc_overlay_files:
+      - pstate-stub.overlay
+    platform_allow:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    extra_configs:
+      - CONFIG_CPU_FREQ_PSTATE_SET_STUB=y

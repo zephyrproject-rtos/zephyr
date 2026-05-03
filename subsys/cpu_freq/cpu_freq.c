@@ -12,10 +12,7 @@
 
 LOG_MODULE_REGISTER(cpu_freq, CONFIG_CPU_FREQ_LOG_LEVEL);
 
-#ifndef CONFIG_SMP
-/* Track the last pstate that was applied to avoid unnecessary pstate transitions */
-static const struct pstate *pstate_last;
-#endif /* CONFIG_SMP */
+static const struct pstate *pstate_current[CONFIG_MP_MAX_NUM_CPUS];
 
 /* Build-time validation: require performance_states node with at least one child */
 #define PSTATE_ROOT                         DT_PATH(performance_states)
@@ -38,8 +35,35 @@ static struct k_ipi_work cpu_freq_work;
 static void cpu_freq_timer_handler(struct k_timer *timer);
 K_TIMER_DEFINE(cpu_freq_timer, cpu_freq_timer_handler, NULL);
 
+static int current_cpu_id(void)
+{
+#ifdef CONFIG_SMP
+	return arch_curr_cpu()->id;
+#else
+	return 0;
+#endif /* CONFIG_SMP */
+}
+
+const struct pstate *cpu_freq_pstate_current_get(void)
+{
+	return pstate_current[current_cpu_id()];
+}
+
+static void cpu_freq_pstate_current_update(const struct pstate *state)
+{
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1) && \
+	!defined(CONFIG_CPU_FREQ_PER_CPU_SCALING)
+	for (uint32_t i = 0U; i < arch_num_cpus(); i++) {
+		pstate_current[i] = state;
+	}
+#else
+	pstate_current[current_cpu_id()] = state;
+#endif /* CONFIG_SMP && CONFIG_MP_MAX_NUM_CPUS > 1 && !CONFIG_CPU_FREQ_PER_CPU_SCALING */
+}
+
 static void cpu_freq_next_pstate(void)
 {
+	const struct pstate *pstate_applied;
 	int ret;
 
 	/* Get next performance state */
@@ -52,20 +76,17 @@ static void cpu_freq_next_pstate(void)
 	}
 
 #ifndef CONFIG_SMP
-	if (pstate_next == pstate_last) {
-		LOG_DBG("pstate_next: %p == pstate_last: %p - pstate does not need to be updated",
-			pstate_next, pstate_last);
+	if (pstate_next == cpu_freq_pstate_current_get()) {
+		LOG_DBG("pstate_next: %p is already applied", pstate_next);
 		return;
 	}
 #endif /* CONFIG_SMP */
 
-	cpu_freq_policy_pstate_set(pstate_next);
+	pstate_applied = cpu_freq_policy_pstate_set(pstate_next);
 
-#ifndef CONFIG_SMP
-	if (pstate_next != NULL) {
-		pstate_last = pstate_next;
+	if (pstate_applied != NULL) {
+		cpu_freq_pstate_current_update(pstate_applied);
 	}
-#endif /* CONFIG_SMP */
 
 }
 
