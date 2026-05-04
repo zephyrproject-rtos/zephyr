@@ -1,22 +1,36 @@
 # Copyright (c) 2026 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config GEN_UICR_SNAPSHOT_REGION_$(index)
-	bool "UICR.SNAPSHOT region"
+menuconfig GEN_UICR_SNAPSHOT_REGION_$(index)
+	bool "UICR.SNAPSHOT region $(index)"
 	depends on GEN_UICR_SNAPSHOT_REGIONS
+	default y if $(dt_nodelabel_enabled,snapshot_region_$(index)_partition)
 	help
 	  When enabled, configures a UICR.SNAPSHOT region.
+	  If a device tree node with label 'snapshot_region_<i>_partition' exists, where <i>
+	  is the index of this region (for example 'snapshot_region_0_partition'), the region
+	  is automatically enabled and configured based on the address and size of that node.
 
 config GEN_UICR_SNAPSHOT_REGION_$(index)_ADDRESS
-	hex "UICR.SNAPSHOT region start address"
+	hex "Start address"
+	default $(dt_nodelabel_reg_addr_hex,snapshot_region_$(index)_partition) \
+		if $(dt_nodelabel_enabled,snapshot_region_$(index)_partition)
 	range 0x0e030000 0x0e1ff000
 	depends on GEN_UICR_SNAPSHOT_REGION_$(index)
 	help
 	  UICR.SNAPSHOT region start address. Must be aligned to a 1 KB boundary.
+	  The address is taken from the device tree node with label 'snapshot_region_<i>_partition',
+	  where <i> is the index of this region (for example 'snapshot_region_0_partition'),
+	  if defined.
 
 config GEN_UICR_SNAPSHOT_REGION_$(index)_SIZE_BYTES
-	int "UICR.SNAPSHOT region size in bytes"
+	int "Size in bytes"
+	default $(dt_nodelabel_reg_size_int,snapshot_region_$(index)_partition) \
+		if $(dt_nodelabel_enabled,snapshot_region_$(index)_partition)
 	range 1024 1048576
 	depends on GEN_UICR_SNAPSHOT_REGION_$(index)
 	help
 	  Size of the snapshot region in bytes. Must be a multiple of 1024.
+	  The size is taken from the device tree node with label 'snapshot_region_<i>_partition',
+	  where <i> is the index of this region (for example 'snapshot_region_0_partition'),
+	  if defined.
