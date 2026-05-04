@@ -621,25 +621,12 @@ def find_kobjects(elf, syms):
                 debug_die(die, f"kernel object '{name}' unexpected exprloc opcode {hex(opcode)}")
             continue
 
+        endian_code = "<" if elf.little_endian else ">"
         if "CONFIG_64BIT" in syms:
-            addr = (
-                (loc.value[1] << 0)
-                | (loc.value[2] << 8)
-                | (loc.value[3] << 16)
-                | (loc.value[4] << 24)
-                | (loc.value[5] << 32)
-                | (loc.value[6] << 40)
-                | (loc.value[7] << 48)
-                | (loc.value[8] << 56)
-            )
+            addr = struct.unpack(endian_code + "Q", bytes(loc.value[1:9]))[0]
             uconst_idx = 9
         else:
-            addr = (
-                (loc.value[1] << 0)
-                | (loc.value[2] << 8)
-                | (loc.value[3] << 16)
-                | (loc.value[4] << 24)
-            )
+            addr = struct.unpack(endian_code + "I", bytes(loc.value[1:5]))[0]
             uconst_idx = 5
 
         # Handle a DW_FORM_exprloc that contains a DW_OP_addr, followed immediately by
