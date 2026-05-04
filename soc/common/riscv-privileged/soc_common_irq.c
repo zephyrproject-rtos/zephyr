@@ -50,7 +50,7 @@ void z_riscv_irq_vector_set(unsigned int irq)
 
 void arch_irq_enable(unsigned int irq)
 {
-	uint32_t ie;
+	uint32_t mie;
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
 	unsigned int level = irq_get_level(irq);
@@ -62,19 +62,15 @@ void arch_irq_enable(unsigned int irq)
 #endif
 
 	/*
-	 * CSR mie/sie register is updated using atomic instruction csrrs
+	 * CSR mie register is updated using atomic instruction csrrs
 	 * (atomic read and set bits in CSR register)
 	 */
-#ifdef CONFIG_RISCV_S_MODE
-	ie = csr_read_set(sie, 1 << irq);
-#else
-	ie = csr_read_set(mie, 1 << irq);
-#endif
+	mie = csr_read_set(mie, 1 << irq);
 }
 
 void arch_irq_disable(unsigned int irq)
 {
-	uint32_t ie;
+	uint32_t mie;
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
 	unsigned int level = irq_get_level(irq);
@@ -86,19 +82,15 @@ void arch_irq_disable(unsigned int irq)
 #endif
 
 	/*
-	 * Use atomic instruction csrrc to disable device interrupt in mie/sie CSR.
+	 * Use atomic instruction csrrc to disable device interrupt in mie CSR.
 	 * (atomic read and clear bits in CSR register)
 	 */
-#ifdef CONFIG_RISCV_S_MODE
-	ie = csr_read_clear(sie, 1 << irq);
-#else
-	ie = csr_read_clear(mie, 1 << irq);
-#endif
+	mie = csr_read_clear(mie, 1 << irq);
 }
 
 int arch_irq_is_enabled(unsigned int irq)
 {
-	uint32_t ie;
+	uint32_t mie;
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
 	unsigned int level = irq_get_level(irq);
@@ -108,13 +100,9 @@ int arch_irq_is_enabled(unsigned int irq)
 	}
 #endif
 
-#ifdef CONFIG_RISCV_S_MODE
-	ie = csr_read(sie);
-#else
-	ie = csr_read(mie);
-#endif
+	mie = csr_read(mie);
 
-	return !!(ie & (1 << irq));
+	return !!(mie & (1 << irq));
 }
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
@@ -135,12 +123,7 @@ __weak void soc_interrupt_init(void)
 	/* ensure that all interrupts are disabled */
 	(void)arch_irq_lock();
 
-#ifdef CONFIG_RISCV_S_MODE
-	csr_write(sie, 0);
-	/* sip.STIP is read-only from S-mode; clearing sie is sufficient */
-#else
 	csr_write(mie, 0);
 	csr_write(mip, 0);
-#endif
 }
 #endif
