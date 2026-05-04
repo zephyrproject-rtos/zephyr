@@ -62,6 +62,7 @@ config CPU_FREQ_POLICY_ENERGY_AWARE
 	select CPU_WORKLOAD
 	select CPU_WORKLOAD_ESTIMATE
 	select POWER_ENERGY_MODEL
+	select POWER_QOS
 	help
 	  Select a P-state by estimating the time needed to finish the next
 	  workload window at each available CPU frequency, rejecting P-states

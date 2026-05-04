@@ -15,6 +15,7 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/state.h>
 #include <zephyr/power/energy_model.h>
+#include <zephyr/power/qos.h>
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys_clock.h>
@@ -45,12 +46,20 @@ static int current_cpu_id(void)
 #endif /* CONFIG_SMP */
 }
 
-static uint32_t lowest_pstate_frequency_hz(void)
+static bool pstate_has_more_capacity(const struct pstate *left, const struct pstate *right);
+static bool pstate_has_lower_capacity(const struct pstate *left, const struct pstate *right);
+
+static uint32_t lowest_pstate_frequency_hz(
+	const struct power_qos_pstate_constraints *constraints)
 {
 	uint32_t lowest_hz = UINT32_MAX;
 
 	for (size_t i = 0U; i < soc_pstates_count; i++) {
 		const struct pstate *state = soc_pstates[i];
+
+		if (!power_qos_pstate_is_allowed(state, constraints)) {
+			continue;
+		}
 
 		if (state->frequency_hz == 0U) {
 			continue;
@@ -60,6 +69,26 @@ static uint32_t lowest_pstate_frequency_hz(void)
 	}
 
 	return lowest_hz;
+}
+
+static const struct pstate *highest_allowed_pstate(
+		const struct power_qos_pstate_constraints *constraints)
+{
+	const struct pstate *best_state = NULL;
+
+	for (size_t i = 0U; i < soc_pstates_count; i++) {
+		const struct pstate *state = soc_pstates[i];
+
+		if (!power_qos_pstate_is_allowed(state, constraints)) {
+			continue;
+		}
+
+		if ((best_state == NULL) || pstate_has_more_capacity(state, best_state)) {
+			best_state = state;
+		}
+	}
+
+	return best_state;
 }
 
 static uint64_t cycles_to_us_ceil(uint64_t cycles, uint32_t frequency_hz)
@@ -171,6 +200,7 @@ static bool pstate_has_lower_capacity(const struct pstate *left, const struct ps
 int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 {
 	struct cpu_workload_estimate estimate;
+	struct power_qos_pstate_constraints constraints;
 	const struct pstate *best_state = NULL;
 	const struct pstate *current_state;
 	const struct pstate *fastest_state = NULL;
@@ -193,11 +223,21 @@ int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 	}
 
 	deadline_us = policy_deadline_us();
-	lowest_hz = lowest_pstate_frequency_hz();
+	power_qos_pstate_constraints_get(&constraints);
+	if (constraints.conflict) {
+		LOG_ERR("CPU%d conflicting P-state constraints: min=%p max=%p",
+			cpu_id, constraints.min_pstate, constraints.max_pstate);
+		return -ERANGE;
+	}
+
+	lowest_hz = lowest_pstate_frequency_hz(&constraints);
 	current_state = cpu_freq_pstate_current_get();
 
 	if ((deadline_us == 0U) || (lowest_hz == UINT32_MAX)) {
-		*pstate_out = soc_pstates[0];
+		*pstate_out = highest_allowed_pstate(&constraints);
+		if (*pstate_out == NULL) {
+			return -ENOENT;
+		}
 		return 0;
 	}
 
@@ -207,6 +247,11 @@ int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 		uint64_t transition_us = pstate_transition_time_us(current_state, state);
 		uint64_t finish_us = pstate_finish_time_us(exec_us, transition_us);
 		uint64_t score;
+
+		if (!power_qos_pstate_is_allowed(state, &constraints)) {
+			LOG_DBG("CPU%d reject P-state %zu: constrained", cpu_id, i);
+			continue;
+		}
 
 		if ((finish_us < fastest_finish_us) ||
 		    ((finish_us == fastest_finish_us) &&
@@ -243,6 +288,9 @@ int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 
 	if (best_state == NULL) {
 		best_state = fastest_state;
+		if (best_state == NULL) {
+			return -ENOENT;
+		}
 		LOG_DBG("CPU%d no legal P-state for deadline=%llu us; selecting fastest finish=%llu us",
 			cpu_id, (unsigned long long)deadline_us, (unsigned long long)fastest_finish_us);
 	}
