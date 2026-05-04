@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Analog Devices Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+/ {
+	adg1712_eval_adg1712ardz: adg1712 {
+		compatible = "adi,adg1712";
+		in1-gpios = <&arduino_header ARDUINO_HEADER_R3_D4 GPIO_ACTIVE_HIGH>;
+		in2-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
+		in3-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>;
+		in4-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_HIGH>;
+	};
+};

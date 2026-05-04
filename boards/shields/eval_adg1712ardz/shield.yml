@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: eval_adg1712ardz
+  full_name: Analog Devices EVAL-ADG1712ARDZ Quad SPST Analog Switch Shield
+  vendor: adi
+  supported_features:
+    - gpio
