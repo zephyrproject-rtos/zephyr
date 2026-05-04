@@ -1,0 +1,45 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <infineon/edge/mpns/pse846gps2dbzc4a.dtsi>
+#include <infineon/edge/pse84/pse84.cm33.dtsi>
+#include <infineon/edge/pse84/system_clocks.dtsi>
+
+#include "kit_pse84_ai_common.dtsi"
+#include "kit_pse84_ai_memory_map.dtsi"
+
+/ {
+	model = "kit_pse84_ai";
+	compatible = "kit_pse84_ai";
+
+	aliases {
+		led0 = &led_0;
+		led1 = &led_1;
+		led2 = &led_red;
+	};
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &m33_xip;
+		zephyr,sram = &m33_data;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+};
+
+&clk_iho {
+	status = "disabled";
+};
+
+&clk_pilo {
+	status = "disabled";
+};
+
+&mcwdt0 {
+	status = "okay";
+};
