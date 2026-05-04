@@ -126,12 +126,6 @@ void z_sched_thread_workload_arrival(struct k_thread *thread, uint32_t source)
 
 	k_spin_unlock(&usage_lock, key);
 }
-#else
-void z_sched_thread_workload_arrival(struct k_thread *thread, uint32_t source)
-{
-	ARG_UNUSED(thread);
-	ARG_UNUSED(source);
-}
 #endif /* CONFIG_CPU_WORKLOAD_ARRIVAL_PROFILE */
 
 static uint32_t usage_now(void)

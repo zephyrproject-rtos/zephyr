@@ -89,7 +89,15 @@ static ALWAYS_INLINE void *z_sched_next_handle(struct k_thread *curr)
 
 void z_sched_start(struct k_thread *thread);
 void z_ready_thread(struct k_thread *thread);
+#ifdef CONFIG_CPU_WORKLOAD_ARRIVAL_PROFILE
 void z_sched_thread_workload_arrival(struct k_thread *thread, uint32_t source);
+#else
+static inline void z_sched_thread_workload_arrival(struct k_thread *thread, uint32_t source)
+{
+	ARG_UNUSED(thread);
+	ARG_UNUSED(source);
+}
+#endif /* CONFIG_CPU_WORKLOAD_ARRIVAL_PROFILE */
 struct k_thread *z_swap_next_thread(void);
 void move_current_to_end_of_prio_q(void);
 
