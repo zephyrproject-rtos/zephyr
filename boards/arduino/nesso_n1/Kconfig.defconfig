@@ -8,4 +8,8 @@ if BOARD_ARDUINO_NESSO_N1_ESP32C6_HPCORE
 configdefault LV_COLOR_16_SWAP
 	default y if LVGL
 
+# The FT6336 IRQ delivery is unreliable on this board; use polling.
+configdefault INPUT_FT5336_INTERRUPT
+	default n
+
 endif # BOARD_ARDUINO_NESSO_N1_ESP32C6_HPCORE

@@ -26,6 +26,7 @@
 		zephyr,bt-hci = &esp32_bt_hci;
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,display = &st7789v;
+		zephyr,touch = &ft6336;
 	};
 
 	aliases {
@@ -109,6 +110,15 @@
 		compatible = "bosch,bmi270";
 		reg = <0x68>;
 		status = "okay";
+	};
+
+	ft6336: ft6336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&gpio0 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		screen-width = <240>;
+		screen-height = <135>;
+		inverted-x;
 	};
 
 	expander_e0: pi4ioe5v6408@43 {

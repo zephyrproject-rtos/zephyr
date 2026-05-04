@@ -13,4 +13,5 @@ supported:
   - entropy
   - lora
   - display
+  - touch
 vendor: arduino
