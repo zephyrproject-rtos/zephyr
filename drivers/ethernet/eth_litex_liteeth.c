@@ -194,11 +194,11 @@ static int eth_start(const struct device *dev, struct net_if *iface __unused)
 		k_sem_give(&context->sem_tx_ready);
 	}
 
-	litex_write8(1, config->tx_ev_enable_addr);
-	litex_write8(1, config->rx_ev_enable_addr);
-
 	litex_write8(BIT(0), config->tx_ev_pending_addr);
 	litex_write8(BIT(0), config->rx_ev_pending_addr);
+
+	litex_write8(1, config->tx_ev_enable_addr);
+	litex_write8(1, config->rx_ev_enable_addr);
 
 	return 0;
 }
