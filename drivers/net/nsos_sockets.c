@@ -1717,16 +1717,8 @@ static void nsos_iface_api_init(struct net_if *iface)
 	socket_offload_dns_register(&nsos_dns_ops);
 }
 
-static int nsos_iface_enable(const struct net_if *iface, bool enabled)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(enabled);
-	return 0;
-}
-
 static struct offloaded_if_api nsos_iface_offload_api = {
 	.iface_api.init = nsos_iface_api_init,
-	.enable = nsos_iface_enable,
 };
 
 NET_DEVICE_OFFLOAD_INIT(nsos_socket, "nsos_socket",
