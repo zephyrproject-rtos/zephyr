@@ -236,6 +236,15 @@ struct dma_xilinx_axi_dma_data {
 		descriptors_rx[CONFIG_DMA_XILINX_AXI_DMA_SG_DESCRIPTOR_NUM_RX];
 };
 
+/*
+ * Bits used in the lock key returned by dma_xilinx_axi_dma_lock_irq() when
+ * CONFIG_DMA_XILINX_AXI_DMA_LOCK_DMA_IRQS is selected. Each bit records
+ * whether the corresponding channel's IRQ was enabled before locking, so
+ * dma_xilinx_axi_dma_unlock_irq() can restore the prior state.
+ */
+#define XILINX_AXI_DMA_LOCK_KEY_TX_ENABLED BIT(XILINX_AXI_DMA_TX_CHANNEL_NUM)
+#define XILINX_AXI_DMA_LOCK_KEY_RX_ENABLED BIT(XILINX_AXI_DMA_RX_CHANNEL_NUM)
+
 static inline int dma_xilinx_axi_dma_lock_irq(const struct device *dev, const uint32_t channel_num)
 {
 	const struct dma_xilinx_axi_dma_data *data = dev->data;
@@ -244,17 +253,20 @@ static inline int dma_xilinx_axi_dma_lock_irq(const struct device *dev, const ui
 	if (IS_ENABLED(CONFIG_DMA_XILINX_AXI_DMA_LOCK_ALL_IRQS)) {
 		ret = irq_lock();
 	} else if (IS_ENABLED(CONFIG_DMA_XILINX_AXI_DMA_LOCK_DMA_IRQS)) {
-		/* TX is 0, RX is 1 */
-		ret = irq_is_enabled(data->channels[0].irq) ? 1 : 0;
-		ret |= (irq_is_enabled(data->channels[1].irq) ? 1 : 0) << 1;
+		const struct dma_xilinx_axi_dma_channel *tx_chan =
+			&data->channels[XILINX_AXI_DMA_TX_CHANNEL_NUM];
+		const struct dma_xilinx_axi_dma_channel *rx_chan =
+			&data->channels[XILINX_AXI_DMA_RX_CHANNEL_NUM];
+
+		ret = irq_is_enabled(tx_chan->irq) ? XILINX_AXI_DMA_LOCK_KEY_TX_ENABLED : 0;
+		ret |= irq_is_enabled(rx_chan->irq) ? XILINX_AXI_DMA_LOCK_KEY_RX_ENABLED : 0;
 
 		LOG_DBG("DMA IRQ state: %x TX IRQN: %" PRIu32 " RX IRQN: %" PRIu32, ret,
-			data->channels[0].irq, data->channels[1].irq);
+			tx_chan->irq, rx_chan->irq);
 
-		irq_disable(data->channels[0].irq);
-		irq_disable(data->channels[1].irq);
+		irq_disable(tx_chan->irq);
+		irq_disable(rx_chan->irq);
 	} else {
-		/* CONFIG_DMA_XILINX_AXI_DMA_LOCK_CHANNEL_IRQ */
 		ret = irq_is_enabled(data->channels[channel_num].irq);
 
 		LOG_DBG("DMA IRQ state: %x ", ret);
@@ -273,18 +285,14 @@ static inline void dma_xilinx_axi_dma_unlock_irq(const struct device *dev,
 	if (IS_ENABLED(CONFIG_DMA_XILINX_AXI_DMA_LOCK_ALL_IRQS)) {
 		irq_unlock(key);
 	} else if (IS_ENABLED(CONFIG_DMA_XILINX_AXI_DMA_LOCK_DMA_IRQS)) {
-		if (key & 0x1) {
-			/* TX was enabled */
-			irq_enable(data->channels[0].irq);
+		if (key & XILINX_AXI_DMA_LOCK_KEY_TX_ENABLED) {
+			irq_enable(data->channels[XILINX_AXI_DMA_TX_CHANNEL_NUM].irq);
 		}
-		if (key & 0x2) {
-			/* RX was enabled */
-			irq_enable(data->channels[1].irq);
+		if (key & XILINX_AXI_DMA_LOCK_KEY_RX_ENABLED) {
+			irq_enable(data->channels[XILINX_AXI_DMA_RX_CHANNEL_NUM].irq);
 		}
 	} else {
-		/* CONFIG_DMA_XILINX_AXI_DMA_LOCK_CHANNEL_IRQ */
 		if (key) {
-			/* was enabled */
 			irq_enable(data->channels[channel_num].irq);
 		}
 	}
@@ -662,8 +670,10 @@ static inline int dma_xilinx_axi_dma_transfer_block(const struct device *dev, ui
 		dma_xilinx_axi_dma_flush_dcache((void *)buffer_addr, block_size);
 	} else {
 #ifdef CONFIG_DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
-		if (((uintptr_t)buffer_addr & (sys_cache_data_line_size_get() - 1)) ||
-		    (block_size & (sys_cache_data_line_size_get() - 1))) {
+		const size_t cache_line_mask = sys_cache_data_line_size_get() - 1;
+
+		if (((uintptr_t)buffer_addr & cache_line_mask) ||
+		    (block_size & cache_line_mask)) {
 			LOG_ERR("RX buffer address and block size must be cache line size aligned");
 			dma_xilinx_axi_dma_unlock_irq(dev, channel, irq_key);
 			return -EINVAL;
