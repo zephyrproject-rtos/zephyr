@@ -419,6 +419,13 @@
 			status = "disabled";
 		};
 	};
+
+	smem: smem@b8000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xb8000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "smem";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+	};
 };
 
 &nvic {
