@@ -51,7 +51,7 @@ static DEVICE_API(dma, intel_adsp_hda_dma_host_out_api) = {
 		IRQ_CONNECT(DT_INST_IRQN(inst),			\
 			    DT_INST_IRQ(inst, priority), intel_adsp_hda_dma_isr,	\
 			    DEVICE_DT_INST_GET(inst),			\
-			    DT_INST_IRQ(inst, sense));			\
+			    DT_INST_IRQ(inst, flags));			\
 		irq_enable(DT_INST_IRQN(inst));			\
 		IF_ENABLED(CONFIG_SOC_SERIES_INTEL_ADSP_ACE,	\
 			    (ACE_DINT[0].ie[ACE_INTL_HDAHODMA] = 1;))	\

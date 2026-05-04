@@ -1936,8 +1936,8 @@ static DEVICE_API(uart, uart_ns16550_driver_api) = {
 };
 
 #define UART_NS16550_IRQ_FLAGS(n) \
-	COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, sense),                           \
-		    (DT_INST_IRQ(n, sense)),                                  \
+	COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, flags),                           \
+		    (DT_INST_IRQ(n, flags)),                                  \
 		    (0))
 
 /* IO-port or MMIO based UART */

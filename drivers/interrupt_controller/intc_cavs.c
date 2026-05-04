@@ -151,7 +151,7 @@ static const struct irq_next_level_api cavs_apis = {
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
 			    cavs_ictl_isr, DEVICE_DT_INST_GET(n),	\
-			    DT_INST_IRQ(n, sense));			\
+			    DT_INST_IRQ(n, flags));			\
 	}								\
 	IRQ_PARENT_ENTRY_DEFINE(					\
 		intc_cavs_##n, DEVICE_DT_INST_GET(n), DT_INST_IRQN(n),	\

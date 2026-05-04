@@ -282,7 +282,7 @@ static DEVICE_API(ipm, ipm_funcs) = {
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority), sedi_ipc_isr,	\
 			    DT_INST_PROP(n, peripheral_id),		\
-			    DT_INST_IRQ(n, sense));			\
+			    DT_INST_IRQ(n, flags));			\
 	}								\
 	PM_DEVICE_DT_INST_DEFINE(n, ipm_power_ctrl);			\
 	DEVICE_DT_INST_DEFINE(n,					\

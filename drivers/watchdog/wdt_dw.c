@@ -228,7 +228,7 @@ static void dw_wdt_isr(const struct device *dev)
 
 /* Bindings to the platform */
 #define DW_WDT_IRQ_FLAGS(inst) \
-	COND_CODE_1(DT_INST_IRQ_HAS_CELL(inst, sense), (DT_INST_IRQ(inst, sense)), (0))
+	COND_CODE_1(DT_INST_IRQ_HAS_CELL(inst, flags), (DT_INST_IRQ(inst, flags)), (0))
 
 #define DW_WDT_RESET_SPEC_INIT(inst) \
 	.reset_spec = RESET_DT_SPEC_INST_GET(inst),

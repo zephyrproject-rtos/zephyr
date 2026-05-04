@@ -670,7 +670,7 @@ static int gpio_intel_dts_init(const struct device *dev)
 		IRQ_CONNECT(DT_INST_IRQN(0),
 			    DT_INST_IRQ(0, priority),
 			    gpio_intel_isr, dev,
-			    DT_INST_IRQ(0, sense));
+			    DT_INST_IRQ(0, flags));
 
 		irq_enable(DT_INST_IRQN(0));
 
