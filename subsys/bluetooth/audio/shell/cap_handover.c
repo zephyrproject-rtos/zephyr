@@ -165,57 +165,57 @@ static int validate_and_parse_cmd_cap_handover_unicast_to_broadcast_args(
 	const struct named_lc3_preset **named_preset,
 	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE], bool *encrypted)
 {
+	size_t i;
 
-	for (size_t i = 1U; i < argc; i++) {
+	i = 1U;
+	while (i < argc) {
 		char *arg = argv[i];
 
 		if (strcmp(arg, "enc") == 0) {
+			size_t bcode_len;
+
 			i++;
-
-			if (argc > i) {
-				size_t bcode_len;
-
-				arg = argv[i];
-
-				bcode_len = hex2bin(arg, strlen(arg), broadcast_code,
-						    BT_ISO_BROADCAST_CODE_SIZE);
-
-				if (bcode_len != BT_ISO_BROADCAST_CODE_SIZE) {
-					shell_error(sh, "Invalid Broadcast Code Length: %zu",
-						    bcode_len);
-
-					return -ENOEXEC;
-				}
-
-				*encrypted = true;
-			} else {
+			if (i == argc) {
 				shell_help(sh);
 
 				return SHELL_CMD_HELP_PRINTED;
 			}
+
+			arg = argv[i];
+
+			bcode_len = hex2bin(arg, strlen(arg), broadcast_code,
+					    BT_ISO_BROADCAST_CODE_SIZE);
+
+			if (bcode_len != BT_ISO_BROADCAST_CODE_SIZE) {
+				shell_error(sh, "Invalid Broadcast Code Length: %zu", bcode_len);
+
+				return -ENOEXEC;
+			}
+
+			*encrypted = true;
 		} else if (strcmp(arg, "preset") == 0) {
 			i++;
-
-			if (argc > i) {
-
-				arg = argv[i];
-
-				*named_preset = bap_get_named_preset(false, BT_AUDIO_DIR_SINK, arg);
-				if (*named_preset == NULL) {
-					shell_error(sh, "Unable to parse named_preset %s", arg);
-
-					return -ENOEXEC;
-				}
-			} else {
+			if (i == argc) {
 				shell_help(sh);
 
 				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			arg = argv[i];
+
+			*named_preset = bap_get_named_preset(false, BT_AUDIO_DIR_SINK, arg);
+			if (*named_preset == NULL) {
+				shell_error(sh, "Unable to parse named_preset %s", arg);
+
+				return -ENOEXEC;
 			}
 		} else {
 			shell_help(sh);
 
 			return SHELL_CMD_HELP_PRINTED;
 		}
+
+		i++;
 	}
 
 	return 0;
@@ -424,7 +424,10 @@ static int validate_and_parse_cmd_cap_handover_broadcast_to_unicast(
 	const struct shell *sh, size_t argc, char *argv[],
 	const struct named_lc3_preset **named_preset, bool *all_conn, size_t *conn_cnt)
 {
-	for (size_t i = 1U; i < argc; i++) {
+	size_t i;
+
+	i = 1U;
+	while (i < argc) {
 		const char *arg = argv[i];
 		int err;
 
@@ -481,6 +484,8 @@ static int validate_and_parse_cmd_cap_handover_broadcast_to_unicast(
 
 			return SHELL_CMD_HELP_PRINTED;
 		}
+
+		i++;
 	}
 
 	return 0;
