@@ -1,0 +1,129 @@
+# Copyright (c) 2026 Open Device Partnership and Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments TMP451 remote and local temperature sensor.
+  See https://www.ti.com/product/TMP451
+
+compatible: "ti,tmp451"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  conversion-rate-microhz:
+    description: |
+      Conversion rate in micro-Hz. Controls how often the sensor
+      performs temperature conversions in continuous mode.
+        62500    = 0.0625 Hz (16s)
+        125000   = 0.125 Hz (8s)
+        250000   = 0.25 Hz (4s)
+        500000   = 0.5 Hz (2s)
+        1000000  = 1 Hz (1s)
+        2000000  = 2 Hz (500ms)
+        4000000  = 4 Hz (250ms)
+        8000000  = 8 Hz (125ms)
+        16000000 = 16 Hz (63ms)
+        32000000 = 32 Hz (32ms)
+      Defaults to 16000000 (16 Hz), which matches POR value.
+    type: int
+    enum:
+      - 62500
+      - 125000
+      - 250000
+      - 500000
+      - 1000000
+      - 2000000
+      - 4000000
+      - 8000000
+      - 16000000
+      - 32000000
+    default: 16000000
+  therm-hysteresis:
+    description: |
+      THERM hysteresis value in deg C. Defines how far below the
+      THERM limit the temperature must drop before the THERM output is
+      de-asserted.
+      Valid range: 0 to 255.
+      Defaults to 10, which matches POR value.
+    type: int
+    default: 10
+  ideality-factor:
+    description: |
+      Ideality factor (eta-factor) correction register value for the remote diode.
+      See Table 27 in the TMP451 datasheet for the mapping between
+      register value and effective ideality factor.
+      Valid range: -128 to 127.
+      Defaults to 0 (eta = 1.008), which matches POR value.
+    type: int
+    default: 0
+  digital-filter:
+    description: |
+      Digital filter control register value. Enables the on-chip digital
+      filter on the remote temperature channel.
+        0 = filter disabled
+        1 = filter level 1 enabled (averages last 4 samples)
+        2 = filter level 2 enabled (averages last 8 samples)
+      Defaults to 0 (disabled), which matches POR value.
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+    default: 0
+  remote-offset-millicelsius:
+    description: |
+      Remote temperature offset in milli-deg C. This value is
+      added to the remote ADC result to compensate for system-level
+      calibration errors. The TMP451 offset register has 0.0625 deg C
+      resolution.
+      Valid range: -128000 to 127937.
+      Defaults to 0, which matches POR value.
+    type: int
+    default: 0
+  local-therm-limit:
+    description: |
+      Local temperature THERM limit in deg C.
+      When the local temperature exceeds this value, the THERM output (pin 4) is asserted.
+      Valid range: -64 to 191.
+      Defaults to 85, which matches POR value (but raw value adjusted for extended range).
+    type: int
+    default: 85
+  remote-therm-limit:
+    description: |
+      Remote temperature THERM limit in deg C.
+      When the remote temperature exceeds this value, the THERM output (pin 4) is asserted.
+      Valid range: -64 to 191.
+      Defaults to 108, which matches POR value (but raw value adjusted for extended range).
+    type: int
+    default: 108
+  pin6-mode:
+    description: |
+      Configures the function of pin 6 (ALERT/THERM2).
+      Note: Software triggers only support the ALERT configuration; the driver assumes
+      if this pin is configured for THERM2 it will not be used as an interrupt.
+        "alert" = latching; triggers on any limit violation or remote diode open
+        "therm2" = non-latching; triggers on high limit exceeded only, self-clears with hysteresis
+      Defaults to "alert", which matches POR value.
+    type: string
+    enum:
+      - "alert"
+      - "therm2"
+    default: "alert"
+  consecutive-alerts:
+    description: |
+      Number of consecutive out-of-limit measurements required before the ALERT pin is asserted.
+      Note: Only applies when pin6-mode is configured as ALERT.
+      Defaults to 1, which matches POR value.
+    type: int
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+    default: 1
+  alert-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the ALERT pin (pin 6).
+      Active-low, open-drain output.
+      Note: The driver only supports this if pin6-mode is configured as ALERT.

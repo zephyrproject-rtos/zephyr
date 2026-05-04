@@ -1,0 +1,21 @@
+# TMP451 temperature sensor driver config options
+
+# Copyright (c) 2026 Open Device Partnership and Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig TMP451
+	bool "TMP451 temperature sensor driver"
+	default y
+	depends on DT_HAS_TI_TMP451_ENABLED
+	select I2C
+	help
+	  Enable the driver for the TMP451 temperature sensor.
+
+if TMP451
+
+module = TMP451
+thread_priority = 10
+thread_stack_size = 1024
+source "drivers/sensor/Kconfig.trigger_template"
+
+endif # TMP451

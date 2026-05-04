@@ -1635,3 +1635,9 @@ test_i2c_max30102: max30102@d4 {
 	reg = <0xd4>;
 	acq-mode = "multi-led";
 };
+
+test_i2c_tmp451: tmp451@d5 {
+	compatible = "ti,tmp451";
+	reg = <0xd5>;
+	alert-gpios = <&test_gpio 0 0>;
+};
