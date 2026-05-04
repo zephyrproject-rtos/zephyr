@@ -1140,6 +1140,7 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 	unsigned long index;
 	uint8_t conn_index;
 	int err = 0;
+	size_t i;
 
 	if (!default_conn) {
 		shell_error(sh, "Not connected");
@@ -1193,7 +1194,8 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	for (size_t i = 3U; i < argc; i++) {
+	i = 3U;
+	while (i < argc) {
 		const char *arg = argv[i];
 
 		/* argc needs to be larger than `i` to parse the argument value */
@@ -1204,52 +1206,53 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		if (strcmp(arg, "loc") == 0) {
+			unsigned long loc_bits;
+
 			i++;
-
-			if (argc > i) {
-				unsigned long loc_bits;
-
-				arg = argv[i];
-				loc_bits = shell_strtoul(arg, 0, &err);
-				if (err != 0) {
-					shell_error(sh, "Could not parse loc_bits: %d", err);
-
-					return -ENOEXEC;
-				}
-
-				if (loc_bits > BT_AUDIO_LOCATION_ANY) {
-					shell_error(sh, "Invalid loc_bits: %lu", loc_bits);
-
-					return -ENOEXEC;
-				}
-
-				location = (enum bt_audio_location)loc_bits;
-			} else {
+			if (i == argc) {
 				shell_help(sh);
 
 				return SHELL_CMD_HELP_PRINTED;
 			}
+
+			arg = argv[i];
+			loc_bits = shell_strtoul(arg, 0, &err);
+			if (err != 0) {
+				shell_error(sh, "Could not parse loc_bits: %d", err);
+
+				return -ENOEXEC;
+			}
+
+			if (loc_bits > BT_AUDIO_LOCATION_ANY) {
+				shell_error(sh, "Invalid loc_bits: %lu", loc_bits);
+
+				return -ENOEXEC;
+			}
+
+			location = (enum bt_audio_location)loc_bits;
 		} else if (strcmp(arg, "preset") == 0) {
+
 			i++;
-
-			if (argc > i) {
-				arg = argv[i];
-
-				named_preset = bap_get_named_preset(true, dir, arg);
-				if (named_preset == NULL) {
-					shell_error(sh, "Unable to parse named_preset %s", arg);
-					return -ENOEXEC;
-				}
-			} else {
+			if (i == argc) {
 				shell_help(sh);
 
 				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			arg = argv[i];
+
+			named_preset = bap_get_named_preset(true, dir, arg);
+			if (named_preset == NULL) {
+				shell_error(sh, "Unable to parse named_preset %s", arg);
+				return -ENOEXEC;
 			}
 		} else {
 			shell_help(sh);
 
 			return SHELL_CMD_HELP_PRINTED;
 		}
+
+		i++;
 	}
 
 	uni_stream = shell_stream_from_bap_stream(bap_stream);
@@ -1258,7 +1261,8 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 	/* If location has been modified, we update the location in the codec configuration */
 	struct bt_audio_codec_cfg *codec_cfg = &uni_stream->codec_cfg;
 
-	for (size_t i = 0U; i < codec_cfg->data_len;) {
+	i = 0U;
+	while (i < codec_cfg->data_len) {
 		const uint8_t len = codec_cfg->data[i];
 		uint8_t *value;
 		uint8_t data_len;
@@ -1266,9 +1270,10 @@ static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 
 		i++;
 
-		if (len == 0 || len > codec_cfg->data_len - i) {
-			/* Invalid len field */
-			return false;
+		if (i + len > codec_cfg->data_len || len < sizeof(type)) {
+			shell_error(sh, "Invalid len %u at i = %zu", len, i);
+
+			return -ENOEXEC;
 		}
 
 		type = codec_cfg->data[i];
@@ -3247,6 +3252,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	struct bt_bap_broadcast_source_param create_param = {0};
 	const struct named_lc3_preset *named_preset;
 	uint32_t broadcast_id = 0U;
+	size_t i;
 	int err;
 
 	if (default_source.bap_source != NULL) {
@@ -3262,53 +3268,52 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 
 	named_preset = &default_broadcast_source_preset;
 
-	for (size_t i = 1U; i < argc; i++) {
+	i = 1U;
+	while (i < argc) {
 		char *arg = argv[i];
 
 		if (strcmp(arg, "enc") == 0) {
-			if (argc > i) {
-				size_t bcode_len;
+			size_t bcode_len;
 
-				i++;
-				arg = argv[i];
-
-				bcode_len = hex2bin(arg, strlen(arg),
-						    create_param.broadcast_code,
-						    sizeof(create_param.broadcast_code));
-
-				if (bcode_len != sizeof(create_param.broadcast_code)) {
-					shell_error(sh, "Invalid Broadcast Code Length: %zu",
-						    bcode_len);
-
-					return -ENOEXEC;
-				}
-
-				create_param.encryption = true;
-			} else {
+			i++;
+			if (i == argc) {
 				shell_help(sh);
 
 				return SHELL_CMD_HELP_PRINTED;
 			}
+
+			arg = argv[i];
+
+			bcode_len = hex2bin(arg, strlen(arg), create_param.broadcast_code,
+					    sizeof(create_param.broadcast_code));
+
+			if (bcode_len != sizeof(create_param.broadcast_code)) {
+				shell_error(sh, "Invalid Broadcast Code Length: %zu", bcode_len);
+
+				return -ENOEXEC;
+			}
+
+			create_param.encryption = true;
 		} else if (strcmp(arg, "preset") == 0) {
-			if (argc > i) {
 
-				i++;
-				arg = argv[i];
-
-				named_preset = bap_get_named_preset(false, BT_AUDIO_DIR_SOURCE,
-								    arg);
-				if (named_preset == NULL) {
-					shell_error(sh, "Unable to parse named_preset %s",
-						    arg);
-
-					return -ENOEXEC;
-				}
-			} else {
+			i++;
+			if (i == argc) {
 				shell_help(sh);
 
 				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			arg = argv[i];
+
+			named_preset = bap_get_named_preset(false, BT_AUDIO_DIR_SOURCE, arg);
+			if (named_preset == NULL) {
+				shell_error(sh, "Unable to parse named_preset %s", arg);
+
+				return -ENOEXEC;
 			}
 		}
+
+		i++;
 	}
 
 	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
@@ -3323,7 +3328,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 	copy_broadcast_source_preset(&default_source, named_preset);
 
 	(void)memset(stream_params, 0, sizeof(stream_params));
-	for (size_t i = 0U; i < ARRAY_SIZE(stream_params); i++) {
+	for (i = 0U; i < ARRAY_SIZE(stream_params); i++) {
 		stream_params[i].stream =
 			bap_stream_from_shell_stream(&broadcast_source_streams[i]);
 	}
