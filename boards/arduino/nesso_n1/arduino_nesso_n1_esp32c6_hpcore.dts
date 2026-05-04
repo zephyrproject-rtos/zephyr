@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/lora/sx126x.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 #include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "Arduino Nesso N1";
@@ -35,6 +36,8 @@
 		lora0 = &lora;
 		buzzer = &buzzer;
 		ir = &ir_tx;
+		sw0 = &key1;
+		sw1 = &key2;
 	};
 
 	leds {
@@ -48,6 +51,22 @@
 		ir_tx: ir_tx {
 			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
 			label = "IR transmitter";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		key1: key1 {
+			gpios = <&expander_e0 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Key 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		key2: key2 {
+			gpios = <&expander_e0 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Key 2";
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 
