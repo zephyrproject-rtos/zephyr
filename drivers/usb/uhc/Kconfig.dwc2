@@ -19,6 +19,12 @@ config UHC_DWC2_MAX_CHANNELS
 	  Reduce this value to save memory.
 	  Increase to support more concurrent transfers.
 
+config UHC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED
+	bool "UHC DWC2 High speed"
+	default y if SOC_SERIES_NRF54LX
+	help
+	  Enables HS support code if the SoC/board can support it.
+
 config UHC_DWC2_STACK_SIZE
 	int "UHC DWC2 driver thread stack size"
 	default 512

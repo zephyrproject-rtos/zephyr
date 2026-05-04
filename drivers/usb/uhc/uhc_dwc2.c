@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(uhc_dwc2, CONFIG_UHC_DRIVER_LOG_LEVEL);
 #define RESET_HOLD_MS		CONFIG_UHC_DWC2_RESET_HOLD_MS
 #define RESET_RECOVERY_MS	CONFIG_UHC_DWC2_RESET_RECOVERY_MS
 #define SET_ADDR_DELAY_MS	CONFIG_UHC_DWC2_SET_ADDR_DELAY_MS
+#define HIGH_SPEED		CONFIG_UHC_DRIVER_HIGH_SPEED_SUPPORT_ENABLED
 #define MAX_CHANNELS		CONFIG_UHC_DWC2_MAX_CHANNELS
 
 enum uhc_dwc2_event {
@@ -111,6 +112,8 @@ struct uhc_dwc2_data {
 	struct k_sem sem_port_enabled;
 	/* Port channels */
 	struct uhc_dwc2_channel channels[MAX_CHANNELS];
+	/* PHY Clock in MHz */
+	uint32_t phy_clock_mhz;
 	/* Root Port flags */
 	uint8_t debouncing: 1;
 	uint8_t has_device: 1;
@@ -196,77 +199,78 @@ static int dwc2_hal_flush_tx_fifo(struct usb_dwc2_reg *const dwc2, const uint8_t
 	return 0;
 }
 
-static void dwc2_hal_config_hcfg_fsls(struct usb_dwc2_reg *const dwc2)
+static inline void dwc2_hal_init_hcfg(struct usb_dwc2_reg *const dwc2)
 {
 	uint32_t hcfg = sys_read32((mem_addr_t)&dwc2->hcfg);
 
-	/* We can select Buffer DMA of Scatter-Gather DMA mode here: Buffer DMA for now */
+	/* Only Buffer DMA for now */
 	hcfg &= ~USB_DWC2_HCFG_DESCDMA;
-	/* Disable periodic scheduling, will enable later */
+
+	/* Work on maximum supported speed */
+	hcfg &= ~USB_DWC2_HCFG_FSLSSUPP;
+
+	/* Disable periodic scheduling, will enable after port is enabled */
 	hcfg &= ~USB_DWC2_HCFG_PERSCHEDENA;
-	/* Indicate to the OTG core what speed the PHY clock is at
-	 * Note: FSLS PHY has an implicit 8 divider applied when in LS mode,
-	 * so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
-	 */
-	hcfg &= ~USB_DWC2_HCFG_FSLSPCLKSEL_MASK;
-	if (dwc2_hal_get_speed(dwc2) == USB_DWC2_HPRT_PRTSPD_FULL) {
-		hcfg |= (USB_DWC2_HCFG_FSLSPCLKSEL_CLK48 << USB_DWC2_HCFG_FSLSPCLKSEL_POS);
-	} else {
-		hcfg |= (USB_DWC2_HCFG_FSLSPCLKSEL_CLK6 << USB_DWC2_HCFG_FSLSPCLKSEL_POS);
-	}
+
 	sys_write32(hcfg, (mem_addr_t)&dwc2->hcfg);
 }
 
-static void dwc2_hal_config_hcfg_hs(struct usb_dwc2_reg *const dwc2)
+static inline void dwc2_hal_config_hcfg(struct usb_dwc2_reg *const dwc2)
 {
-	LOG_WRN("HCFG config for High speed is not implemented yet");
+	uint32_t hcfg = sys_read32((mem_addr_t)&dwc2->hcfg);
+	uint32_t hprt = sys_read32((mem_addr_t)&dwc2->hprt);
+
+	hcfg &= ~USB_DWC2_HCFG_FSLSPCLKSEL_MASK;
+
+	/* Configure the PHY clock speed depending on max supported DWC2 speed */
+	if (IS_ENABLED(HIGH_SPEED)) {
+		hcfg |= USB_DWC2_HCFG_FSLSPCLKSEL_CLK3060
+			<< USB_DWC2_HCFG_FSLSPCLKSEL_POS;
+	} else {
+		if (usb_dwc2_get_hprt_prtspd(hprt) == USB_DWC2_HPRT_PRTSPD_LOW) {
+			hcfg |= USB_DWC2_HCFG_FSLSPCLKSEL_CLK6
+				<< USB_DWC2_HCFG_FSLSPCLKSEL_POS;
+		} else {
+			hcfg |= USB_DWC2_HCFG_FSLSPCLKSEL_CLK48
+				<< USB_DWC2_HCFG_FSLSPCLKSEL_POS;
+		}
+	}
+
+	sys_write32(hcfg, (mem_addr_t)&dwc2->hcfg);
 }
 
-static void dwc2_hal_config_hfir_fsls(struct usb_dwc2_reg *const dwc2)
+static void dwc2_hal_init_hfir(struct usb_dwc2_reg *const dwc2)
 {
+	uint32_t gsnpsid = sys_read32((mem_addr_t)&dwc2->gsnpsid);
 	uint32_t hfir = sys_read32((mem_addr_t)&dwc2->hfir);
 
-	/* Disable dynamic loading */
-	hfir &= ~USB_DWC2_HFIR_HFIRRLDCTRL;
-	/* Set frame interval to be equal to 1ms
-	 * Note: FSLS PHY has an implicit 8 divider applied when in LS mode,
-	 * so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
-	 */
+	/* Enable dynamic loading if needed */
+	if (usb_dwc2_get_gsnpsid_rev(gsnpsid) >
+	    usb_dwc2_get_gsnpsid_rev(USB_DWC2_GSNPSID_REV_2_92A)) {
+		hfir |= USB_DWC2_HFIR_HFIRRLDCTRL;
+	} else {
+		hfir &= ~USB_DWC2_HFIR_HFIRRLDCTRL;
+	}
+	sys_write32(hfir, (mem_addr_t)&dwc2->hfir);
+}
+
+static void dwc2_hal_config_hfir(struct usb_dwc2_reg *const dwc2, uint32_t phy_clock_mhz)
+{
+	uint32_t hfir = sys_read32((mem_addr_t)&dwc2->hfir);
+	uint32_t hprt = sys_read32((mem_addr_t)&dwc2->hprt);
+
+	/* Set frame interval to be equal to 1ms for FS and 125us for HS */
 	hfir &= ~USB_DWC2_HFIR_FRINT_MASK;
-	if (dwc2_hal_get_speed(dwc2) == USB_DWC2_HPRT_PRTSPD_FULL) {
-		hfir |= usb_dwc2_set_hfir_frint(48000);
+	if (usb_dwc2_get_hprt_prtspd(hprt) == USB_DWC2_HPRT_PRTSPD_HIGH) {
+		hfir |= usb_dwc2_set_hfir_frint(125U * phy_clock_mhz - 1U);
 	} else {
-		hfir |= usb_dwc2_set_hfir_frint(6000);
+		hfir |= usb_dwc2_set_hfir_frint(1000U * phy_clock_mhz - 1U);
 	}
-	sys_write32(hfir, (mem_addr_t)&dwc2->hfir);
-}
-
-static void dwc2_hal_config_hfir_hs(struct usb_dwc2_reg *const dwc2)
-{
-	uint32_t hfir = sys_read32((mem_addr_t)&dwc2->hfir);
-
-	/* Disable dynamic loading */
-	hfir &= ~USB_DWC2_HFIR_HFIRRLDCTRL;
-	/* TODO: Program the FrInt based on the UTMI+/ULPI clock */
-	/* Leave empty for now to calculate the value based on HCFG */
 
 	sys_write32(hfir, (mem_addr_t)&dwc2->hfir);
 }
 
-static inline void dwc2_hal_enable_port(struct usb_dwc2_reg *const dwc2)
-{
-	uint32_t ghwcfg2 = sys_read32((mem_addr_t)&dwc2->ghwcfg2);
-
-	if (usb_dwc2_get_ghwcfg2_hsphytype(ghwcfg2) == 0) {
-		dwc2_hal_config_hcfg_fsls(dwc2);
-		dwc2_hal_config_hfir_fsls(dwc2);
-	} else {
-		dwc2_hal_config_hcfg_hs(dwc2);
-		dwc2_hal_config_hfir_hs(dwc2);
-	}
-}
-
-static inline int dwc2_hal_init_gusbcfg(struct usb_dwc2_reg *const dwc2)
+static inline int dwc2_hal_init_gusbcfg(struct usb_dwc2_reg *const dwc2, uint32_t *phy_clock_mhz)
 {
 	uint32_t gusbcfg = sys_read32((mem_addr_t)&dwc2->gusbcfg);
 	uint32_t ghwcfg2 = sys_read32((mem_addr_t)&dwc2->ghwcfg2);
@@ -303,6 +307,8 @@ static inline int dwc2_hal_init_gusbcfg(struct usb_dwc2_reg *const dwc2)
 			gusbcfg &= ~(USB_DWC2_GUSBCFG_ULPIEVBUSD | USB_DWC2_GUSBCFG_ULPIEVBUSI);
 			/* Disable FS/LS ULPI and Suspend mode */
 			gusbcfg &= ~(USB_DWC2_GUSBCFG_ULPIFSLS | USB_DWC2_GUSBCFG_ULPICLK_SUSM);
+			/* Assigh the PHY clock for ULPI */
+			*phy_clock_mhz = 60;
 		} else {
 			LOG_DBG("Highspeed UTMI+ PHY init");
 			/* Select UTMI+ PHY (internal) */
@@ -310,14 +316,19 @@ static inline int dwc2_hal_init_gusbcfg(struct usb_dwc2_reg *const dwc2)
 			/* Set 16-bit interface if supported */
 			if (usb_dwc2_get_ghwcfg4_phydatawidth(ghwcfg4)) {
 				gusbcfg |= USB_DWC2_GUSBCFG_PHYIF_16_BIT;
+				/* Assigh the PHY clock for UTMI+ 16 bit */
+				*phy_clock_mhz = 30;
 			} else {
 				gusbcfg &= ~USB_DWC2_GUSBCFG_PHYIF_16_BIT;
+				/* Assigh the PHY clock for UTMI+ 8 bit */
+				*phy_clock_mhz = 60;
 			}
 		}
 		sys_write32(gusbcfg, (mem_addr_t)&dwc2->gusbcfg);
 	} else {
 		LOG_DBG("Fullspeed PHY init");
 		sys_set_bits((mem_addr_t)&dwc2->gusbcfg, USB_DWC2_GUSBCFG_PHYSEL_USB11);
+		*phy_clock_mhz = 48;
 	}
 
 	return 0;
@@ -450,37 +461,6 @@ static int dwc2_core_soft_reset(const struct device *dev)
 	LOG_DBG("DWC2 core reset done");
 
 	return 0;
-}
-
-static int dwc2_hal_init_host(struct usb_dwc2_reg *const dwc2)
-{
-	uint32_t gintsts;
-	int ret;
-
-	/* Init GUSBCFG */
-	ret = dwc2_hal_init_gusbcfg(dwc2);
-	if (ret != 0) {
-		LOG_ERR("Unable to configure USB global register");
-		return ret;
-	}
-
-	/* Init GAHBCFG */
-	ret = dwc2_hal_init_gahbcfg(dwc2);
-	if (ret != 0) {
-		/* TODO: Implement Slave Mode */
-		LOG_WRN("DMA isn't supported, but Slave Mode isn't implemented yet");
-		return ret;
-	}
-
-	/* Clear interrupts */
-	sys_clear_bits((mem_addr_t)&dwc2->gintmsk, 0xFFFFFFFFUL);
-	sys_set_bits((mem_addr_t)&dwc2->gintmsk, USB_DWC2_GINTSTS_DISCONNINT);
-
-	/* Clear status */
-	gintsts = sys_read32((mem_addr_t)&dwc2->gintsts);
-	sys_write32(gintsts, (mem_addr_t)&dwc2->gintsts);
-
-	return ret;
 }
 
 static int dwc2_hal_set_fifo_sizes(struct usb_dwc2_reg *const dwc2)
@@ -1271,9 +1251,11 @@ static void uhc_dwc2_isr_handler(const struct device *dev)
 		/* Handle port change */
 		if (hprt & USB_DWC2_HPRT_PRTENCHNG) {
 			if (hprt & USB_DWC2_HPRT_PRTENA) {
-				/* Enable the rest registers of the port */
-				dwc2_hal_enable_port(dwc2);
-				/* Give port enable semaphore to unlock reset requense */
+				/* Configure HCFG */
+				dwc2_hal_config_hcfg(dwc2);
+				/* Configure HFIR */
+				dwc2_hal_config_hfir(dwc2, priv->phy_clock_mhz);
+				/* Give port enable semaphore to unlock bus reset sequence */
 				k_sem_give(&priv->sem_port_enabled);
 			} else {
 				/* Host port has been disabled */
@@ -1378,6 +1360,7 @@ static int uhc_dwc2_bus_reset(const struct device *const dev)
 		LOG_ERR("Unable to configure FIFO");
 		return ret;
 	}
+
 	/* TODO: set frame list for the ISOC/INTR xfer */
 	/* TODO: enable periodic transfer */
 
@@ -1449,8 +1432,10 @@ static int uhc_dwc2_preinit(const struct device *const dev)
 static int uhc_dwc2_init(const struct device *const dev)
 {
 	const struct uhc_dwc2_config *const config = dev->config;
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 	struct usb_dwc2_reg *const dwc2 = config->base;
 	uint32_t gsnpsid;
+	uint32_t gintsts;
 	int ret;
 
 	ret = uhc_dwc2_quirk_pre_init(dev);
@@ -1465,7 +1450,7 @@ static int uhc_dwc2_init(const struct device *const dev)
 		return -ENOTSUP;
 	}
 
-	LOG_DBG("DWC2 Core %04x", usb_dwc2_get_gsnpsid_rev(gsnpsid));
+	LOG_DBG("DWC2 Core rev. %04x", usb_dwc2_get_gsnpsid_rev(gsnpsid));
 
 	ret = dwc2_core_soft_reset(dev);
 	if (ret != 0) {
@@ -1473,7 +1458,28 @@ static int uhc_dwc2_init(const struct device *const dev)
 		return ret;
 	}
 
-	return dwc2_hal_init_host(dwc2);
+	ret = dwc2_hal_init_gusbcfg(dwc2, &priv->phy_clock_mhz);
+	if (ret != 0) {
+		LOG_ERR("Unable to configure USB global register");
+		return ret;
+	}
+
+	ret = dwc2_hal_init_gahbcfg(dwc2);
+	if (ret != 0) {
+		/* TODO: Implement Slave Mode */
+		LOG_WRN("DMA isn't supported, but Slave Mode isn't implemented yet");
+		return ret;
+	}
+
+	dwc2_hal_init_hcfg(dwc2);
+
+	dwc2_hal_init_hfir(dwc2);
+
+	/* Clear status */
+	gintsts = sys_read32((mem_addr_t)&dwc2->gintsts);
+	sys_write32(gintsts, (mem_addr_t)&dwc2->gintsts);
+
+	return ret;
 }
 
 static int uhc_dwc2_enable(const struct device *const dev)
