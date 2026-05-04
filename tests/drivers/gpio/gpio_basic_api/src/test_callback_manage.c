@@ -92,7 +92,7 @@ static int test_callback_add_remove(void)
 	/* SetUp: initialize environment */
 	int rc = init_callback(dev_in, dev_out, callback_1, callback_2);
 
-	if (rc == -ENOTSUP) {
+	if (rc == -ENOTSUP || rc == -ENOSYS) {
 		TC_PRINT("%s not supported\n", __func__);
 		return TC_PASS;
 	}
@@ -142,7 +142,7 @@ static int test_callback_self_remove(void)
 	/* SetUp: initialize environment */
 	int rc = init_callback(dev_in, dev_out, callback_1, callback_remove_self);
 
-	if (rc == -ENOTSUP) {
+	if (rc == -ENOTSUP || rc == -ENOSYS) {
 		TC_PRINT("%s not supported\n", __func__);
 		return TC_PASS;
 	}
@@ -195,7 +195,7 @@ static int test_callback_enable_disable(void)
 	/* SetUp: initialize environment */
 	int rc = init_callback(dev_in, dev_out, callback_1, callback_2);
 
-	if (rc == -ENOTSUP) {
+	if (rc == -ENOTSUP || rc == -ENOSYS) {
 		TC_PRINT("%s not supported\n", __func__);
 		return TC_PASS;
 	}

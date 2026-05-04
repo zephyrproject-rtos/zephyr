@@ -42,11 +42,15 @@ ZTEST(after_flash_gpio_config_trigger, test_gpio_config_twice_trigger)
 
 	gpio_init_callback(&drv_data->gpio_cb, callback, BIT(PIN_IN));
 	ret = gpio_add_callback(dev_in, &drv_data->gpio_cb);
+	if (ret == -ENOTSUP || ret == -ENOSYS) {
+		ztest_test_skip();
+		return;
+	}
 	zassert_ok(ret, "add callback failed");
 
 	/* 2. Enable PIN callback as both edges */
 	ret = gpio_pin_interrupt_configure(dev_in, PIN_IN, GPIO_INT_EDGE_BOTH);
-	if (ret == -ENOTSUP) {
+	if (ret == -ENOTSUP || ret == -ENOSYS) {
 		TC_PRINT("Both edge GPIO interrupt not supported.\n");
 		gpio_remove_callback(dev_in, &drv_data->gpio_cb);
 	} else {
@@ -74,7 +78,7 @@ ZTEST(after_flash_gpio_config_trigger, test_gpio_config_twice_trigger)
 	zassert_between_inclusive(cb_cnt, 0, 1, "Got %d interrupts", cb_cnt);
 
 	ret = gpio_pin_interrupt_configure(dev_in, PIN_IN, GPIO_INT_DISABLE);
-	if (ret == -ENOTSUP) {
+	if (ret == -ENOTSUP || ret == -ENOSYS) {
 		TC_PRINT("GPIO_INT_DISABLE not supported.\n");
 	} else {
 		zassert_ok(ret, "interrupt disabling failed");
@@ -105,11 +109,15 @@ ZTEST(after_flash_gpio_config_trigger, test_gpio_config_trigger)
 
 	gpio_init_callback(&drv_data->gpio_cb, callback, BIT(PIN_IN));
 	ret = gpio_add_callback(dev_in, &drv_data->gpio_cb);
+	if (ret == -ENOTSUP || ret == -ENOSYS) {
+		ztest_test_skip();
+		return;
+	}
 	zassert_ok(ret, "add callback failed");
 
 	/* 2. Enable PIN callback as both edges */
 	ret = gpio_pin_interrupt_configure(dev_in, PIN_IN, GPIO_INT_EDGE_BOTH);
-	if (ret == -ENOTSUP) {
+	if (ret == -ENOTSUP || ret == -ENOSYS) {
 		TC_PRINT("Both edge GPIO interrupt not supported.\n");
 		gpio_remove_callback(dev_in, &drv_data->gpio_cb);
 	} else {
@@ -133,7 +141,7 @@ ZTEST(after_flash_gpio_config_trigger, test_gpio_config_trigger)
 	zassert_between_inclusive(cb_cnt, 0, 1, "Got %d interrupts", cb_cnt);
 
 	ret = gpio_pin_interrupt_configure(dev_in, PIN_IN, GPIO_INT_DISABLE);
-	if (ret == -ENOTSUP) {
+	if (ret == -ENOTSUP || ret == -ENOSYS) {
 		TC_PRINT("GPIO_INT_DISABLE not supported.\n");
 	} else {
 		zassert_ok(ret, "interrupt disabling failed");
