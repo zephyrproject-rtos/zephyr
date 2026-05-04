@@ -384,8 +384,13 @@ static void cb_handler_rx(struct modbus_context *ctx)
 
 	} else {
 		int n;
+		int space;
 
-		if (cfg->uart_buf_ctr == CONFIG_MODBUS_BUFFER_SIZE) {
+		/* Use >= (not ==) so a previous iteration that overshot the
+		 * buffer cannot be missed here -- once == misses,
+		 * uart_buf_ptr walks unbounded into adjacent .data.
+		 */
+		if (cfg->uart_buf_ctr >= CONFIG_MODBUS_BUFFER_SIZE) {
 			/* Buffer full. Disable interrupt until timeout. */
 			modbus_serial_rx_disable(ctx);
 			return;
@@ -395,12 +400,28 @@ static void cb_handler_rx(struct modbus_context *ctx)
 		k_timer_start(&cfg->rtu_timer,
 			      K_USEC(cfg->rtu_timeout), K_NO_WAIT);
 
-		n = uart_fifo_read(cfg->dev, cfg->uart_buf_ptr,
-				   (CONFIG_MODBUS_BUFFER_SIZE -
-				    cfg->uart_buf_ctr));
+		/* Per the Zephyr UART API, once uart_irq_rx_ready() is
+		 * asserted, uart_fifo_read() must be called until it
+		 * returns fewer bytes than requested so the FIFO is
+		 * drained and the RX-ready condition is acknowledged on
+		 * edge-triggered drivers.
+		 */
+		while (cfg->uart_buf_ctr < CONFIG_MODBUS_BUFFER_SIZE) {
+			space = CONFIG_MODBUS_BUFFER_SIZE - cfg->uart_buf_ctr;
+			n = uart_fifo_read(cfg->dev, cfg->uart_buf_ptr, space);
+			if (n <= 0) {
+				return;
+			}
+			cfg->uart_buf_ptr += n;
+			cfg->uart_buf_ctr += n;
+			if (n < space) {
+				break;
+			}
+		}
 
-		cfg->uart_buf_ptr += n;
-		cfg->uart_buf_ctr += n;
+		if (cfg->uart_buf_ctr >= CONFIG_MODBUS_BUFFER_SIZE) {
+			modbus_serial_rx_disable(ctx);
+		}
 	}
 }
 
