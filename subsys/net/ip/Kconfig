@@ -145,12 +145,14 @@ config NET_QEMU_PPP
 
 config NET_QEMU_ETHERNET
 	bool "Ethernet"
+	imply NET_L2_ETHERNET
 	help
 	  Connect to host system via Qemu ethernet driver support. One such
 	  driver that Zephyr supports is Intel e1000 ethernet driver.
 
 config NET_QEMU_USER
 	bool "SLIRP"
+	imply NET_L2_ETHERNET
 	help
 	  Connect to host system via Qemu's built-in User Networking support. This
 	  is implemented using "slirp", which provides a full TCP/IP stack within
