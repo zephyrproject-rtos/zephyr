@@ -127,13 +127,13 @@ LOG_MODULE_REGISTER(dma_xilinx_axi_dma, CONFIG_DMA_LOG_LEVEL);
 
 static inline void dma_xilinx_axi_dma_flush_dcache(void *addr, size_t len)
 {
-#ifdef CONFIG_DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
+#ifdef CONFIG_DMA_XILINX_AXI_DMA_MANUAL_CACHE_COHERENCY
 	sys_cache_data_flush_range(addr, len);
 #endif
 }
 static inline void dma_xilinx_axi_dma_invd_dcache(void *addr, size_t len)
 {
-#ifdef CONFIG_DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
+#ifdef CONFIG_DMA_XILINX_AXI_DMA_MANUAL_CACHE_COHERENCY
 	sys_cache_data_invd_range(addr, len);
 #endif
 }
@@ -670,7 +670,7 @@ static inline int dma_xilinx_axi_dma_transfer_block(const struct device *dev, ui
 		/* Ensure DMA can see contents of TX buffer */
 		dma_xilinx_axi_dma_flush_dcache((void *)buffer_addr, block_size);
 	} else {
-#ifdef CONFIG_DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
+#ifdef CONFIG_DMA_XILINX_AXI_DMA_MANUAL_CACHE_COHERENCY
 		const size_t cache_line_mask = sys_cache_data_line_size_get() - 1;
 
 		if (((uintptr_t)buffer_addr & cache_line_mask) ||
