@@ -127,6 +127,13 @@ NXP
   ``zephyr,system-timer`` chosen property, so boards that added the overlay
   described in the Zephyr 4.4 migration guide can remove it.
 
+PWM
+===
+
+* The ``pcrs`` property (array type) of :dtcompatible:`microchip,xec-pwm` has been replaced
+  by ``pcr-scr`` (int type) to use encoded PCR register index and bit position macros
+  (:github:`104570`).
+
 SD Host Controller
 ==================
 
