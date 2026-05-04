@@ -68,7 +68,9 @@ struct pstate {
 #define Z_DECLARE_PSTATE_EXTERN(_node) \
 	extern const struct pstate PSTATE_DT_SYM(_node);
 
+#if DT_NODE_EXISTS(DT_PATH(performance_states))
 DT_FOREACH_CHILD_STATUS_OKAY(DT_PATH(performance_states), Z_DECLARE_PSTATE_EXTERN)
+#endif /* DT_NODE_EXISTS(DT_PATH(performance_states)) */
 
 /**
  * @}
