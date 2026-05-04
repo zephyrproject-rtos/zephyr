@@ -26,4 +26,5 @@ supported:
   - usb_device
   - usbd
   - watchdog
+  - mspi
 vendor: st
