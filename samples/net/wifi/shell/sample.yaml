@@ -122,3 +122,11 @@ tests:
       - CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE=y
     platform_allow:
       - esp32c6_devkitc/esp32c6/hpcore
+  sample.net.wifi.sta_owe.nxp:
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+      - CONFIG_WIFI_CREDENTIALS_STATIC=y
+      - CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OWE=y
+      - CONFIG_NXP_WIFI_OWE=y
+    platform_allow:
+      - frdm_rw612
