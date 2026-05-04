@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices ADG2712 quad SPST analog switch, GPIO control mode.
+  Pin-compatible variant of the ADG1712.
+
+  Each of the 4 SPST switches is controlled by a dedicated GPIO pin
+  (IN1 through IN4).
+
+compatible: "adi,adg2712"
+
+include: adi,adg17xx-base.yaml
+
+examples:
+  - |
+    adg2712 {
+      compatible = "adi,adg2712";
+      in1-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+      in2-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+      in3-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+      in4-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+    };
