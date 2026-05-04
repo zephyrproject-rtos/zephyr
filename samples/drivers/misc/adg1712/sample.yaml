@@ -1,0 +1,19 @@
+sample:
+  name: ADG1712 Quad SPST Analog Switch
+  description: Demonstrates the ADG1712/ADG2712 quad SPST analog switch driver API
+common:
+  tags:
+    - drivers
+    - misc
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "ADG1712 sample completed"
+tests:
+  sample.drivers.misc.adg1712:
+    filter: dt_compat_enabled("adi,adg1712") or dt_compat_enabled("adi,adg2712")
+  sample.drivers.misc.adg1712.eval_adg1712ardz:
+    extra_args: SHIELD=eval_adg1712ardz
+    platform_allow:
+      - nucleo_f413zh
