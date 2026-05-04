@@ -937,6 +937,7 @@ endif # BT_OBSERVER
 
 config BT_SCAN_WITH_IDENTITY
 	bool "Perform active scanning using local identity address"
+	default y if !BT_PRIVACY
 	depends on !BT_PRIVACY && (BT_CENTRAL || BT_OBSERVER)
 	help
 	  Enable this if you want to perform active scanning using the local
