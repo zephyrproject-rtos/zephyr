@@ -493,3 +493,18 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
       - CONF_FILE="prj.conf" # to exclude "boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}.overlay"
+  drivers.spi.max32_pm_runtime:
+    depends_on:
+      - counter
+      - spi
+    filter: CONFIG_SOC_FAMILY_MAX32
+    platform_allow:
+      - max32657evkit/max32657
+      - max32658evkit/max32658
+    extra_configs:
+      - CONFIG_COUNTER=y
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+      - CONFIG_PM_POLICY_DEVICE_CONSTRAINTS=y
+      - CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE=300
