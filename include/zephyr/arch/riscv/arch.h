@@ -364,10 +364,9 @@ static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
 	z_soc_irq_unlock(key);
 	return enabled;
 #else
-	unsigned int mstatus;
+	unsigned int status = z_riscv_status_read();
 
-	__asm__ volatile ("csrr %0, mstatus" : "=r" (mstatus));
-	return (mstatus & MSTATUS_IEN) != 0;
+	return (status & RV_STATUS_IE) != 0;
 #endif
 }
 
