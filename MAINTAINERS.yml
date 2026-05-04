@@ -3888,7 +3888,7 @@ NXP Platforms (MCU):
     - tests/boards/vmu_rt1170/
   files-exclude:
     - dts/arm/nxp/imx/nxp_imx*
-    - boards/nxp/frdm_imx*/
+    - boards/nxp/frdm_imx[0-9]*/
   files-regex-exclude:
     - .*s32.*
   file-groups:
