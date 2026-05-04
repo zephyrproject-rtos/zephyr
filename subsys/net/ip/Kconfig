@@ -118,6 +118,9 @@ config NET_RAW_MODE
 	  net_pkt part. It is currently used only by IEEE 802.15.4 drivers,
 	  though any type of net drivers could use it.
 
+DT_CHOSEN_ZEPHYR_UART_PIPE := zephyr,uart-pipe
+DT_CHOSEN_ZEPHYR_PPP_UART := zephyr,ppp-uart
+
 choice NET_QEMU_NETWORKING
 	prompt "Qemu networking"
 	default NET_QEMU_PPP if NET_PPP
@@ -130,11 +133,13 @@ choice NET_QEMU_NETWORKING
 
 config NET_QEMU_SLIP
 	bool "SLIP"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_UART_PIPE))
 	help
 	  Connect to host or to another Qemu via SLIP.
 
 config NET_QEMU_PPP
 	bool "PPP"
+	depends on NET_TEST || $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_PPP_UART))
 	help
 	  Connect to host via PPP.
 
