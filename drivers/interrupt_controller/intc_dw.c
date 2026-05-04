@@ -144,7 +144,7 @@ static const struct irq_next_level_api dw_ictl_apis = {
 	static void dw_ictl_config_irq_##inst(void)                                                \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), dw_ictl_isr,          \
-			    DEVICE_DT_INST_GET(inst), DT_INST_IRQ(inst, sense));                   \
+			    DEVICE_DT_INST_GET(inst), DT_INST_IRQ(inst, flags));                   \
 		irq_enable(DT_INST_IRQN(inst));                                                    \
 	}                                                                                          \
 	IRQ_PARENT_ENTRY_DEFINE(intc_dw##inst, DEVICE_DT_INST_GET(inst), DT_INST_IRQN(inst),       \

@@ -33,7 +33,7 @@ static void uart_sedi_cb(struct device *port);
 		IRQ_CONNECT(DT_INST_IRQN(n),			       \
 			    DT_INST_IRQ(n, priority), uart_sedi_isr,   \
 			    DEVICE_DT_GET(DT_NODELABEL(uart##n)),      \
-			    DT_INST_IRQ(n, sense));		       \
+			    DT_INST_IRQ(n, flags));		       \
 		irq_enable(DT_INST_IRQN(n));			       \
 	}
 #else /*CONFIG_UART_INTERRUPT_DRIVEN */
