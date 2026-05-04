@@ -19,3 +19,4 @@ tests:
       - rtl8752h_evb/rtl8752hmf
       - sam_e54_xpro
       - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      - pic32cz_ca80_cult
