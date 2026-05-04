@@ -829,7 +829,9 @@ static void spi_transfer_thread(void *p1, void *p2, void *p3)
 
 	k_sem_take(&sync_sem, K_FOREVER);
 
+	(void)pm_device_runtime_get(spec->bus);
 	ret = spi_transceive_dt(spec, &tx_bufs, &rx_bufs);
+	(void)pm_device_runtime_put(spec->bus);
 	if (ret) {
 		TC_PRINT("SPI concurrent transfer failed, spec %p\n", spec);
 		atomic_inc(&thread_test_fails);
@@ -984,18 +986,21 @@ ZTEST(spi_loopback, test_spi_async_call)
 	memset(buffer2_rx, 0, sizeof(buffer2_rx));
 	memset(large_buffer_rx, 0, sizeof(large_buffer_rx));
 
+	zassert_ok(pm_device_runtime_get(spec->bus));
 	k_sem_give(&start_async);
 
 	int ret = spi_transceive_signal(spec->bus, &spec->config, &tx, &rx, &async_sig);
 
 	if (ret == -ENOTSUP) {
 		TC_PRINT("Skipping ASYNC test");
+		pm_device_runtime_put(spec->bus);
 		return;
 	}
 
 	zassert_false(ret, "SPI transceive failed, code %d", ret);
 
 	k_sem_take(&caller, K_FOREVER);
+	pm_device_runtime_put(spec->bus);
 
 	zassert_false(result, "SPI async transceive failed, result %d", result);
 
@@ -1026,10 +1031,12 @@ ZTEST(spi_loopback, test_spi_transceive_cb)
 
 	memset(buffer_rx, 0, BUF_SIZE);
 
+	zassert_ok(pm_device_runtime_get(spec->bus));
 	int ret = spi_transceive_cb(spec->bus, &spec->config, &tx, &rx, spi_async_cb, &cb_sem);
 
 	if (ret == -ENOTSUP) {
 		TC_PRINT("spi_transceive_cb not supported, skipping\n");
+		zassert_ok(pm_device_runtime_put(spec->bus));
 		ztest_test_skip();
 		return;
 	}
@@ -1038,6 +1045,8 @@ ZTEST(spi_loopback, test_spi_transceive_cb)
 
 	/* Wait for callback */
 	zassert_ok(k_sem_take(&cb_sem, K_MSEC(2000)), "SPI transceive_cb timeout");
+
+	zassert_ok(pm_device_runtime_put(spec->bus));
 
 	/* Verify loopback data */
 	spi_loopback_compare_bufs(buffer_tx, buffer_rx, BUF_SIZE, buffer_print_tx, buffer_print_rx);
@@ -1082,6 +1091,7 @@ ZTEST(spi_extra_api_features, test_spi_hold_on_cs)
 
 	hold_spec->config.operation |= SPI_HOLD_ON_CS;
 
+	zassert_ok(pm_device_runtime_get(hold_spec->bus));
 	spi_loopback_gpio_cs_loopback_prepare();
 	ret = spi_transceive_dt(hold_spec, &tx, &rx);
 	if (ret == -ENOTSUP || ret == -EINVAL) {
@@ -1122,12 +1132,14 @@ ZTEST(spi_extra_api_features, test_spi_hold_on_cs)
 	}
 
 	/* now just do a normal transfer to make sure there was no leftover effects */
+	pm_device_runtime_put(hold_spec->bus);
 	spi_loopback_transceive(hold_spec, &tx, &rx, 2);
 
 	return;
 
 early_exit:
 	hold_spec->config.operation &= ~SPI_HOLD_ON_CS;
+	pm_device_runtime_put(hold_spec->bus);
 	zassert_false(ret, "SPI transceive failed, code %d", ret);
 	/* if there was no error then it was meant to be a skip at this point */
 	ztest_test_skip();
