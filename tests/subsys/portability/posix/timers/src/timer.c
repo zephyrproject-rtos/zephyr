@@ -186,6 +186,42 @@ ZTEST(posix_timers, test_TIMER_ABSTIME_reference_clock)
 	zassert_equal(exp_count, 1, "TIMER_ABSTIME fired %d times, expected 1", exp_count);
 }
 
+ZTEST(posix_timers, test_TIMER_ABSTIME_no_uint32_truncation)
+{
+	struct sigevent sig = {0};
+	struct itimerspec value;
+	struct timespec ref, orig;
+
+	exp_count = 0;
+	sig.sigev_notify = SIGEV_SIGNAL;
+	sig.sigev_notify_function = handler;
+	sig.sigev_value.sival_int = TEST_SIGNAL_VAL;
+
+	zassert_ok(timer_create(CLOCK_REALTIME, &sig, &timerid));
+
+	/*Set CLOCK_REALTIME to a large value to trigger uint32_t overflow in ts_to_ms()*/
+	zassert_ok(clock_gettime(CLOCK_REALTIME, &orig));
+	ref.tv_sec = 1700000000;
+	ref.tv_nsec = 0;
+	zassert_ok(clock_settime(CLOCK_REALTIME, &ref));
+
+	/*Set TIMER_ABSTIME to ref + 200 ms*/
+	value.it_interval.tv_sec = 0;
+	value.it_interval.tv_nsec = 0;
+	value.it_value.tv_sec = ref.tv_sec;
+	value.it_value.tv_nsec = 200 * NSEC_PER_MSEC;
+	zassert_ok(timer_settime(timerid, TIMER_ABSTIME, &value, NULL));
+	zassert_ok(clock_settime(CLOCK_REALTIME, &orig));
+
+	/*Verify the timer has not fired before the absolute expiry*/
+	k_sleep(K_MSEC(100));
+	zassert_equal(exp_count, 0, "TIMER_ABSTIME fired too early");
+
+	/*Verify the timer fired after the absolute expiry*/
+	k_sleep(K_MSEC(300));
+	zassert_equal(exp_count, 1, "TIMER_ABSTIME fired %d times, expected 1", exp_count);
+}
+
 static void after(void *arg)
 {
 	ARG_UNUSED(arg);
