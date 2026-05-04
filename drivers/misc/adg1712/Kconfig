@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADG1712
+	bool "Analog Devices ADG1712/ADG2712 quad SPST analog switch driver"
+	default y
+	depends on DT_HAS_ADI_ADG1712_ENABLED || \
+		   DT_HAS_ADI_ADG2712_ENABLED
+	depends on GPIO
+	help
+	  Enable driver for Analog Devices ADG1712/ADG2712 quad SPST
+	  analog switch. Uses GPIO control for each of the 4 switches.
+
+if ADG1712
+
+config ADG1712_INIT_PRIORITY
+	int "Init priority"
+	default 90
+	help
+	  Analog Devices ADG1712/ADG2712 quad SPST analog switch driver
+	  initialization priority.
+
+module = ADG1712
+module-str = adg1712
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # ADG1712
