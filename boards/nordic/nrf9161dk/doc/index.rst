@@ -88,6 +88,17 @@ Building a Secure only application
 Build the Zephyr app in the usual way (see :ref:`build_an_application`
 and :ref:`application_run`), using ``-DBOARD=nrf9161dk/nrf9161``.
 
+Building a Trusted Firmware-M (TF-M) application
+=================================================
+
+`Trusted Firmware M`_ is supported on this board, providing a secure
+processing environment for applications that require it. To build a
+TF-M application, use the ``-DBOARD=nrf9161dk/nrf9161/ns`` board target,
+which automatically enables TF-M as the secure firmware.
+
+See :ref:`tfm` for more details on building and running TF-M applications
+with Zephyr.
+
 Flashing
 ========
 
