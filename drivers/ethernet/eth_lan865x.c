@@ -376,13 +376,6 @@ static int lan865x_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/* Check SPI communication after reset */
-	ret = lan865x_check_spi(dev);
-	if (ret < 0) {
-		LOG_ERR("SPI communication not working, %d", ret);
-		return ret;
-	}
-
 	/*
 	 * Configure interrupt service routine for LAN865x IRQ
 	 */
@@ -410,7 +403,6 @@ static int lan865x_init(const struct device *dev)
 		K_PRIO_COOP(CONFIG_ETH_LAN865X_IRQ_THREAD_PRIO), 0, K_NO_WAIT);
 	k_thread_name_set(ctx->tid_int, "lan865x_interrupt");
 
-	/* Perform HW reset - 'rst-gpios' required property set in DT */
 	if (!gpio_is_ready_dt(&cfg->reset)) {
 		LOG_ERR("Reset GPIO device %s is not ready", cfg->reset.port->name);
 		return -ENODEV;
@@ -430,6 +422,17 @@ static int lan865x_init(const struct device *dev)
 		return ret;
 	}
 
+	/* Allow the device to stabilize after power-on before SPI communication. */
+	k_msleep(5);
+
+	/* Check SPI communication after reset */
+	ret = lan865x_check_spi(dev);
+	if (ret < 0) {
+		LOG_ERR("SPI communication not working, %d", ret);
+		return ret;
+	}
+
+	/* Perform HW reset - 'rst-gpios' required property set in DT */
 	return lan865x_gpio_reset(dev);
 }
 
