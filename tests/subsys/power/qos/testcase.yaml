@@ -1,0 +1,9 @@
+common:
+  tags: power
+
+tests:
+  subsys.power.qos:
+    platform_allow:
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
