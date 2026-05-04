@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * A maximum-length frame is around 300 characters on the wire, which takes
+ * 26 ms at 115200 baud - slower than a saturated 802.15.4 channel delivers
+ * frames. The host tool has to open the port at the same rate.
+ */
+&uart0 {
+	current-speed = <921600>;
+};
