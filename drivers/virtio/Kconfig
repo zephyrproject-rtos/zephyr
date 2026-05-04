@@ -16,6 +16,7 @@ config VIRTIO_PCI
 	bool "support for VIRTIO over PCI"
 	default y
 	depends on DT_HAS_VIRTIO_PCI_ENABLED
+	select PCIE
 	help
 	  Enable options for VIRTIO over PCI
 
