@@ -52,7 +52,15 @@ extern struct k_spinlock _sched_spinlock;
 
 extern struct k_thread _thread_dummy;
 
+/**
+ * @brief Unpend thread, do not abort its timeout (if it exists).
+ */
 void z_unpend_thread_no_timeout(struct k_thread *thread);
+
+/**
+ * @brief Unpend thread and abort its timeout (if it exists).
+ */
+void z_unpend_thread(struct k_thread *thread);
 struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q);
 int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	       _wait_q_t *wait_q, k_timeout_t timeout);
@@ -60,7 +68,6 @@ void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 		   k_timeout_t timeout);
 void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key);
 void z_reschedule_irqlock(uint32_t key);
-void z_unpend_thread(struct k_thread *thread);
 int z_unpend_all(_wait_q_t *wait_q);
 bool z_thread_prio_set(struct k_thread *thread, int prio);
 void *z_get_next_switch_handle(void *interrupted);
