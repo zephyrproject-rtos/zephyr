@@ -2,17 +2,25 @@
  * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
  */
 
 / {
-	resources {
-		compatible = "test-gpio-basic-api";
-		out-gpios = <&gpio0 6 0>;
-		in-gpios = <&gpio0 7 0>;
+	aliases {
+		led0 = &led0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio9 0 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 0";
+		};
 	};
 };
 
-&gpio0 {
+&gpio9 {
 	status = "okay";
 };
 
