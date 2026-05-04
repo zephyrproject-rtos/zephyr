@@ -13,7 +13,7 @@ if(CONFIG_BUILD_WITH_TFM)
 endif()
 
 # keep first
-if(CONFIG_STM32_MEMMAP)
+if(CONFIG_STM32_MEMMAP OR CONFIG_MSPI_XIP OR (CONFIG_XIP AND CONFIG_BOOTLOADER_MCUBOOT))
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
 board_runner_args(stm32cubeprogrammer "--extload=MX25LM51245G_STM32U585I-IOT02A.stldr")
 else()
