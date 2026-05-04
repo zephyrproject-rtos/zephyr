@@ -14,6 +14,14 @@
 #define crypt_config_t CRYP_ConfigTypeDef
 #endif
 
+/*
+ * CRYP_BYTE_SWAP is the new name of CRYP_DATATYPE_8B.
+ * Define it ourselves for old HALs which don't do it.
+ */
+#if !defined(CRYP_BYTE_SWAP)
+#define CRYP_BYTE_SWAP CRYP_DATATYPE_8B
+#endif /* !defined(CRYP_BYTE_SWAP) */
+
 /* Maximum supported key length is 256 bits */
 #define CRYPTO_STM32_AES_MAX_KEY_LEN (256 / 8)
 

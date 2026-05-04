@@ -460,7 +460,7 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	}
 
 	session->config.pKey = CAST_VEC(session->key);
-	session->config.DataType = CRYP_DATATYPE_8B;
+	session->config.DataType = CRYP_BYTE_SWAP;
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
 	session->config.DataWidthUnit = CRYP_DATAWIDTHUNIT_BYTE;
