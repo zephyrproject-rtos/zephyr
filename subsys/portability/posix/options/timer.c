@@ -275,7 +275,7 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 	if ((flags & TIMER_ABSTIME) != 0) {
 		duration = timespec_to_timeoutms(timer->clock_id, &value->it_value);
 	} else {
-		duration = ts_to_ms(&value->it_value);
+		duration = (uint32_t)ts_to_ms(&value->it_value);
 	}
 
 	if (timer->status == ACTIVE) {
