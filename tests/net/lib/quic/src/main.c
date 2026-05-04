@@ -491,6 +491,7 @@ static void assert_stream_type_and_id(int sock, int expected_type)
 ZTEST(net_socket_quic, test_010_open_connection_and_close)
 {
 	struct quic_context *ctx;
+	struct quic_endpoint *ep;
 	int ret;
 
 	ret = quic_connection_open((struct net_sockaddr *)&remote_addr_ipv4,
@@ -499,9 +500,15 @@ ZTEST(net_socket_quic, test_010_open_connection_and_close)
 
 	ctx = quic_get_context(ret);
 	zassert_not_null(ctx, "Failed to get QUIC context for socket %d", ret);
+	ep = SYS_SLIST_PEEK_HEAD_CONTAINER(&ctx->endpoints, ep, node);
+	zassert_not_null(ep, "Failed to get QUIC endpoint for socket %d", ret);
 
 	zassert_equal(1, atomic_get(&ctx->refcount),
 		      "Invalid refcount %d", (int)atomic_get(&ctx->refcount));
+	zassert_equal(ep->crypto.tls.ks.key_exchange_group,
+		      MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1,
+		      "Unexpected default key exchange group 0x%04x",
+		      ep->crypto.tls.ks.key_exchange_group);
 
 	ret = quic_connection_close(ret);
 	zassert_equal(0, ret, "Failed to close QUIC connection (%d)", ret);

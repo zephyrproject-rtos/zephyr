@@ -5212,6 +5212,7 @@ static int tls_opt_cert_verify_callback_set(struct quic_tls_context *context,
 static void quic_tls_context_init(struct quic_tls_context *tls)
 {
 	tls->options.verify_level = -1;
+	tls->ks.key_exchange_group = MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1;
 
 	k_sem_init(&tls->tls_established, 0, 1);
 
