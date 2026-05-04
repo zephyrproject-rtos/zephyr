@@ -236,7 +236,7 @@ void z_log_vprintk(const char *fmt, va_list ap)
 static log_timestamp_t default_get_timestamp(void)
 {
 	return IS_ENABLED(CONFIG_LOG_TIMESTAMP_64BIT) ?
-		sys_clock_tick_get() : k_cycle_get_32();
+		k_cycle_get() : k_cycle_get_32();
 }
 
 static log_timestamp_t default_lf_get_timestamp(void)
