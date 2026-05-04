@@ -7,6 +7,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_shell);
 
+#include <zephyr/kernel.h>
+#include <zephyr/net/net_if.h>
+
 #include "net_shell_private.h"
 
 #if defined(CONFIG_QUIC_SHELL)
@@ -289,26 +292,162 @@ static int cmd_net_quic(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_NET_STATISTICS_QUIC) && defined(CONFIG_NET_STATISTICS_USER_API)
 #include "quic_stats.h"
 
-static void print_quic_stats(struct quic_context *ctx, const struct shell *sh)
+static uint64_t quic_shell_uptime_ms(void)
 {
-	PR("Statistics for Quic context %d (sock %d)\n", ctx->id, ctx->sock);
+	int64_t uptime_ms = k_uptime_get();
 
-	PR("Handshake init RX   : %u\n", ctx->stats.handshake_init_rx);
-	PR("Handshake init TX   : %u\n", ctx->stats.handshake_init_tx);
-	PR("Handshake resp RX   : %u\n", ctx->stats.handshake_resp_rx);
-	PR("Handshake resp TX   : %u\n", ctx->stats.handshake_resp_tx);
-	PR("Peer not found      : %u\n", ctx->stats.peer_not_found);
-	PR("Invalid packet      : %u\n", ctx->stats.invalid_packet);
-	PR("Invalid key         : %u\n", ctx->stats.invalid_key);
-	PR("Invalid packet len  : %u\n", ctx->stats.invalid_packet_len);
-	PR("Invalid handshake   : %u\n", ctx->stats.invalid_handshake);
-	PR("Decrypt failed      : %u\n", ctx->stats.decrypt_failed);
-	PR("Dropped RX          : %u\n", ctx->stats.drop_rx);
-	PR("Dropped TX          : %u\n", ctx->stats.drop_tx);
-	PR("Allocation failed   : %u\n", ctx->stats.alloc_failed);
-	PR("RX data packets     : %u\n", ctx->stats.valid_rx);
-	PR("TX data packets     : %u\n", ctx->stats.valid_tx);
+	return uptime_ms > 0 ? (uint64_t)uptime_ms : 0U;
+}
+
+static bool quic_addr_is_unspecified(const struct net_sockaddr_storage *addr)
+{
+	if (addr == NULL) {
+		return true;
+	}
+
+	if (addr->ss_family == NET_AF_INET) {
+		return net_ipv4_is_addr_unspecified(&net_sin(net_sad(addr))->sin_addr);
+	}
+
+	if (addr->ss_family == NET_AF_INET6) {
+		return net_ipv6_is_addr_unspecified(&net_sin6(net_sad(addr))->sin6_addr);
+	}
+
+	return true;
+}
+
+static void quic_resolve_local_addr(const struct net_sockaddr_storage *local,
+				    const struct net_sockaddr_storage *remote,
+				    struct net_sockaddr_storage *resolved)
+{
+	if (resolved == NULL) {
+		return;
+	}
+
+	memset(resolved, 0, sizeof(*resolved));
+
+	if (local == NULL) {
+		return;
+	}
+
+	memcpy(resolved, local, sizeof(*resolved));
+
+	if (!quic_addr_is_unspecified(local) || remote == NULL) {
+		return;
+	}
+
+	if (local->ss_family == NET_AF_INET && remote->ss_family == NET_AF_INET) {
+		const struct net_in_addr *src = NULL;
+
+		(void)net_if_ipv4_select_src_iface_addr(&net_sin(net_sad(remote))->sin_addr, &src);
+		if (src != NULL) {
+			net_ipaddr_copy(&net_sin(net_sad(resolved))->sin_addr, src);
+		}
+
+		return;
+	}
+
+	if (local->ss_family == NET_AF_INET6 && remote->ss_family == NET_AF_INET6) {
+		const struct net_in6_addr *src6 = NULL;
+
+		if (net_ipv6_addr_is_v4_mapped(&net_sin6(net_sad(remote))->sin6_addr)) {
+			struct net_in_addr dst4;
+			const struct net_in_addr *src4 = NULL;
+			struct net_in6_addr mapped;
+
+			net_ipv6_addr_get_v4_mapped(&net_sin6(net_sad(remote))->sin6_addr, &dst4);
+			(void)net_if_ipv4_select_src_iface_addr(&dst4, &src4);
+			if (src4 != NULL) {
+				net_ipv6_addr_create_v4_mapped(src4, &mapped);
+				net_ipaddr_copy(&net_sin6(net_sad(resolved))->sin6_addr, &mapped);
+			}
+
+			return;
+		}
+
+		(void)net_if_ipv6_select_src_iface_addr(&net_sin6(net_sad(remote))->sin6_addr,
+							&src6);
+		if (src6 != NULL) {
+			net_ipaddr_copy(&net_sin6(net_sad(resolved))->sin6_addr, src6);
+		}
+	}
+}
+
+static void quic_format_addr(const struct net_sockaddr_storage *addr, char *buf, size_t len)
+{
+	if (addr == NULL || buf == NULL || len == 0U || addr->ss_family == 0) {
+		if (buf != NULL && len > 0U) {
+			snprintk(buf, len, "-");
+		}
+
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->ss_family == NET_AF_INET6) {
+		snprintk(buf, len, "[%s]:%u",
+			 net_sprint_ipv6_addr(&net_sin6(net_sad(addr))->sin6_addr),
+			 net_ntohs(net_sin6(net_sad(addr))->sin6_port));
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->ss_family == NET_AF_INET) {
+		snprintk(buf, len, "%s:%u",
+			 net_sprint_ipv4_addr(&net_sin(net_sad(addr))->sin_addr),
+			 net_ntohs(net_sin(net_sad(addr))->sin_port));
+		return;
+	}
+
+	snprintk(buf, len, "-");
+}
+
+static void print_quic_stats_values(const struct net_stats_quic *stats, const struct shell *sh)
+{
+	PR("Handshake init RX   : %u\n", stats->handshake_init_rx);
+	PR("Handshake init TX   : %u\n", stats->handshake_init_tx);
+	PR("Handshake resp RX   : %u\n", stats->handshake_resp_rx);
+	PR("Handshake resp TX   : %u\n", stats->handshake_resp_tx);
+	PR("Peer not found      : %u\n", stats->peer_not_found);
+	PR("Invalid packet      : %u\n", stats->invalid_packet);
+	PR("Invalid key         : %u\n", stats->invalid_key);
+	PR("Invalid packet len  : %u\n", stats->invalid_packet_len);
+	PR("Invalid handshake   : %u\n", stats->invalid_handshake);
+	PR("Decrypt failed      : %u\n", stats->decrypt_failed);
+	PR("Dropped RX          : %u\n", stats->drop_rx);
+	PR("Dropped TX          : %u\n", stats->drop_tx);
+	PR("Allocation failed   : %u\n", stats->alloc_failed);
+	PR("RX data packets     : %u\n", stats->valid_rx);
+	PR("TX data packets     : %u\n", stats->valid_tx);
 	PR("\n");
+}
+
+static void print_active_quic_stats(struct quic_context *ctx, const struct shell *sh)
+{
+	char addr_local[ADDR_LEN + 7];
+	char addr_remote[ADDR_LEN + 7];
+	struct net_sockaddr_storage local_addr;
+	uint64_t age_ms = quic_shell_uptime_ms();
+
+	quic_resolve_local_addr(ctx->stats_metadata_valid ? &ctx->stats_local_addr : NULL,
+				ctx->stats_metadata_valid ? &ctx->stats_remote_addr : NULL,
+				&local_addr);
+	quic_format_addr(ctx->stats_metadata_valid ? &local_addr : NULL,
+			 addr_local, sizeof(addr_local));
+	quic_format_addr(ctx->stats_metadata_valid ? &ctx->stats_remote_addr : NULL,
+			 addr_remote, sizeof(addr_remote));
+
+	if (age_ms > ctx->stats_started_at_ms) {
+		age_ms -= ctx->stats_started_at_ms;
+	} else {
+		age_ms = 0U;
+	}
+
+	PR("Statistics for Quic context %d (sock %d)\n", ctx->id, ctx->sock);
+	PR("Role                : %s\n", ctx->stats_is_server ? "server" : "client");
+	PR("Age                 : %llu ms\n", age_ms);
+	PR("Local               : %s\n", addr_local);
+	PR("Remote              : %s\n", addr_remote);
+	PR("Error code          : %d\n", ctx->error_code);
+	print_quic_stats_values(&ctx->stats, sh);
 }
 
 static void context_stats_cb(struct quic_context *context, void *user_data)
@@ -317,22 +456,60 @@ static void context_stats_cb(struct quic_context *context, void *user_data)
 	const struct shell *sh = data->sh;
 	int *count = data->user_data;
 
-	print_quic_stats(context, sh);
+	if (context->is_listening) {
+		return;
+	}
+
+	print_active_quic_stats(context, sh);
 	(*count)++;
 }
+
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+static void print_closed_quic_stats(const struct quic_closed_context_stats *stats,
+				    const struct shell *sh)
+{
+	char addr_local[ADDR_LEN + 7];
+	char addr_remote[ADDR_LEN + 7];
+	struct net_sockaddr_storage local_addr;
+
+	quic_resolve_local_addr(&stats->local_addr, &stats->remote_addr, &local_addr);
+	quic_format_addr(&local_addr, addr_local, sizeof(addr_local));
+	quic_format_addr(&stats->remote_addr, addr_remote, sizeof(addr_remote));
+
+	PR("Statistics for closed Quic context %d\n", stats->id);
+	PR("Role                : %s\n", stats->is_server ? "server" : "client");
+	PR("Lifetime            : %llu ms\n", stats->duration_ms);
+	PR("Local               : %s\n", addr_local);
+	PR("Remote              : %s\n", addr_remote);
+	PR("Error code          : %d\n", stats->error_code);
+	print_quic_stats_values(&stats->stats, sh);
+}
+
+static void closed_context_stats_cb(const struct quic_closed_context_stats *stats, void *user_data)
+{
+	struct net_shell_user_data *data = user_data;
+	const struct shell *sh = data->sh;
+	int *count = data->user_data;
+
+	print_closed_quic_stats(stats, sh);
+	(*count)++;
+}
+#endif /* CONFIG_QUIC_STATS_HISTORY */
 #endif /* CONFIG_NET_STATISTICS_QUIC && CONFIG_NET_STATISTICS_USER_API */
 
 static int cmd_net_quic_stats(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_NET_STATISTICS_QUIC) && defined(CONFIG_NET_STATISTICS_USER_API)
 	struct net_shell_user_data user_data;
-	int count = 0;
+	int active_count = 0;
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+	int closed_count = 0;
+#endif
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
 	user_data.sh = sh;
-	user_data.user_data = &count;
 
 	PR("Global Quic statistics\n");
 
@@ -347,11 +524,25 @@ static int cmd_net_quic_stats(const struct shell *sh, size_t argc, char *argv[])
 	PR("Stream close failed : %u\n", quic_stats->stream_close_failed);
 	PR("\n");
 
+	PR("Active Quic connection statistics\n");
+
+	user_data.user_data = &active_count;
 	quic_context_foreach(context_stats_cb, &user_data);
 
-	if (count == 0) {
-		PR("No connections\n");
+	if (active_count == 0) {
+		PR("No active connections\n");
 	}
+
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+	PR("\nClosed Quic connection statistics\n");
+
+	user_data.user_data = &closed_count;
+	quic_closed_context_stats_foreach(closed_context_stats_cb, &user_data);
+
+	if (closed_count == 0) {
+		PR("No closed connections\n");
+	}
+#endif
 #else
 	PR_INFO("Set %s to enable %s support.\n",
 		"CONFIG_NET_STATISTICS_QUIC, CONFIG_NET_STATISTICS_USER_API and CONFIG_QUIC",
