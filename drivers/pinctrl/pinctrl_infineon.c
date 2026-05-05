@@ -73,6 +73,13 @@ static uint32_t soc_gpio_get_drv_mode(uint32_t flags)
 
 	flags_masked = ((flags & SOC_GPIO_FLAGS_MASK) >> SOC_GPIO_FLAGS_POS);
 
+#if defined(CY_IP_MXS22IOSS)
+	/* CFGOUT3: peripheral-controlled OE with Hi-Z pull-up; takes priority over bias flags. */
+	if (flags_masked & SOC_GPIO_CFGOUT3) {
+		return CY_GPIO_DM_CFGOUT3_STRONG_PULLUP_HIGHZ;
+	}
+#endif /* CY_IP_MXS22IOSS */
+
 	if (flags_masked & SOC_GPIO_OPENDRAIN) {
 		/* drive_open_drain */
 		drv_mode = (flags_masked & SOC_GPIO_INPUTENABLE) ? CY_GPIO_DM_OD_DRIVESLOW
@@ -112,7 +119,7 @@ static uint32_t soc_gpio_get_drv_mode(uint32_t flags)
 	return drv_mode;
 }
 
-#if defined(CONFIG_SOC_SERIES_PSE84)
+#if defined(CY_IP_MXS22IOSS)
 static uint32_t soc_gpio_get_drv_strength(uint32_t flags)
 {
 	uint32_t drv_strength_idx = 0;
@@ -162,6 +169,14 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		Cy_GPIO_Pin_FastInit(gpio_ports[port_num], pin_num, drv_mode, 1, hsiom);
 #endif /* defined(CY_PDL_TZ_ENABLED) */
 
+#if defined(CY_IP_MXS22IOSS)
+		if (drv_mode == CY_GPIO_DM_CFGOUT3_STRONG_PULLUP_HIGHZ) {
+			uint32_t pin_loc = pin_num << CY_GPIO_DRIVE_MODE_OFFSET;
+
+			GPIO_PRT_CFG(gpio_ports[port_num]) |= (GPIO_PRT_CFG_IN_EN0_Msk << pin_loc);
+		}
+#endif /* CY_IP_MXS22IOSS */
+
 		/* Force output to enable pulls */
 		switch (drv_mode) {
 		case CY_GPIO_DM_PULLUP:
@@ -175,9 +190,22 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			break;
 		}
 
-#if defined(CONFIG_SOC_SERIES_PSE84)
+#if defined(CY_IP_MXS22IOSS)
 		Cy_GPIO_SetDriveSel(gpio_ports[port_num], pin_num,
 				    soc_gpio_get_drv_strength(pins[i].pincfg));
+
+		/* CFGOUT3 internal pull-up: value from DT, 0 = disabled. */
+		if (drv_mode == CY_GPIO_DM_CFGOUT3_STRONG_PULLUP_HIGHZ) {
+			uint32_t flags_masked =
+				((pins[i].pincfg & SOC_GPIO_FLAGS_MASK) >> SOC_GPIO_FLAGS_POS);
+			uint32_t pullup_val = (flags_masked & SOC_GPIO_CFGOUT3_PULLUP_MASK) >>
+					      SOC_GPIO_CFGOUT3_PULLUP_POS;
+
+			if (pullup_val != 0U) {
+				Cy_GPIO_SetPullupResistance(gpio_ports[port_num], pin_num,
+							    pullup_val);
+			}
+		}
 #endif
 	}
 
