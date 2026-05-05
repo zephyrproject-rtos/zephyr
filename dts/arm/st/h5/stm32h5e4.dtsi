@@ -136,6 +136,10 @@
 	io-channels = <&adc3 14>;
 };
 
+&vddcore {
+	io-channels = <&adc3 15>;
+};
+
 &xspi1 {
 	/* OCTOSPI instance has a XSPI IO manager */
 	clock-names = "xspix", "xspi-ker", "xspi-mgr";
