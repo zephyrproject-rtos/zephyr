@@ -10,6 +10,8 @@
 #include <zephyr/drivers/clock_control/adi_max32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 #include <wrap_max32_tmr.h>
 
@@ -20,6 +22,7 @@ struct max32_tmr_data {
 	counter_top_callback_t top_callback;
 	void *top_user_data;
 	uint32_t guard_period;
+	bool pm_policy_state_lock;
 };
 
 struct max32_tmr_ch_data {
@@ -40,9 +43,35 @@ struct max32_tmr_config {
 	bool wakeup_source;
 };
 
+static void counter_max32_pm_policy_state_lock_get(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)) {
+		struct max32_tmr_data *data = dev->data;
+
+		if (!data->pm_policy_state_lock) {
+			data->pm_policy_state_lock = true;
+			pm_policy_device_power_lock_get(dev);
+		}
+	}
+}
+
+static void counter_max32_pm_policy_state_lock_put(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)) {
+		struct max32_tmr_data *data = dev->data;
+
+		if (data->pm_policy_state_lock) {
+			data->pm_policy_state_lock = false;
+			pm_policy_device_power_lock_put(dev);
+		}
+	}
+}
+
 static int api_start(const struct device *dev)
 {
 	const struct max32_tmr_config *cfg = dev->config;
+
+	counter_max32_pm_policy_state_lock_get(dev);
 
 	Wrap_MXC_TMR_EnableInt(cfg->regs);
 	MXC_TMR_Start(cfg->regs);
@@ -56,6 +85,8 @@ static int api_stop(const struct device *dev)
 
 	Wrap_MXC_TMR_DisableInt(cfg->regs);
 	MXC_TMR_Stop(cfg->regs);
+
+	counter_max32_pm_policy_state_lock_put(dev);
 
 	return 0;
 }
@@ -258,6 +289,84 @@ static void counter_max32_isr(const struct device *dev)
 	}
 }
 
+static int counter_max32_pm_resume(const struct device *dev)
+{
+	const struct max32_tmr_config *const cfg = dev->config;
+	wrap_mxc_tmr_cfg_t tmr_cfg;
+	int ret;
+
+	ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (MXC_TMR_GetCompare(cfg->regs) == 0) {
+		tmr_cfg.pres = LOG2(cfg->prescaler) * TMR_PRES_2;
+		tmr_cfg.mode = TMR_MODE_COMPARE;
+		tmr_cfg.cmp_cnt = cfg->info.max_top_value;
+		tmr_cfg.bitMode = 0; /* Timer Mode 32 bit */
+		tmr_cfg.pol = 0;
+		tmr_cfg.clock = Wrap_MXC_TMR_GetClockIndex(cfg->clock_source);
+
+		ret = Wrap_MXC_TMR_Init(cfg->regs, &tmr_cfg);
+		if (ret != E_NO_ERROR) {
+			return ret;
+		}
+
+		/* Set preload and actually pre-load the counter */
+		MXC_TMR_SetCompare(cfg->regs, cfg->info.max_top_value);
+
+		if (cfg->wakeup_source) {
+			/* Clear Wakeup status */
+			MXC_LP_ClearWakeStatus();
+			/* Enable Timer wake-up source */
+			Wrap_MXC_TMR_EnableWakeup(cfg->regs, &tmr_cfg);
+		}
+	}
+
+	return 0;
+}
+
+static int counter_max32_pm_suspend(const struct max32_tmr_config *const cfg)
+{
+	int ret;
+
+	/* Disable clock */
+	ret = clock_control_off(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
+	if (ret) {
+		return ret;
+	}
+
+	return 0;
+}
+
+static int counter_max32_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret;
+	const struct max32_tmr_config *const cfg = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = counter_max32_pm_resume(dev);
+		if (ret) {
+			return ret;
+		}
+
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = counter_max32_pm_suspend(cfg);
+		if (ret) {
+			return ret;
+		}
+
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int max32_counter_init(const struct device *dev)
 {
 	int ret = 0;
@@ -308,7 +417,7 @@ static int max32_counter_init(const struct device *dev)
 		Wrap_MXC_TMR_EnableWakeup(regs, &tmr_cfg);
 	}
 
-	return 0;
+	return pm_device_driver_init(dev, counter_max32_pm_action);
 }
 
 static DEVICE_API(counter, counter_max32_driver_api) = {
@@ -378,8 +487,9 @@ static DEVICE_API(counter, counter_max32_driver_api) = {
 		.wakeup_source = DT_PROP(TIMER(_num), wakeup_source),                              \
 	};                                                                                         \
 	static struct max32_tmr_data max32_tmr_data##_num;                                         \
-	DEVICE_DT_INST_DEFINE(_num, &max32_counter_init, NULL, &max32_tmr_data##_num,              \
-			      &max32_tmr_config_##_num, PRE_KERNEL_1,                              \
+	PM_DEVICE_DT_INST_DEFINE(_num, counter_max32_pm_action);                                   \
+	DEVICE_DT_INST_DEFINE(_num, &max32_counter_init, PM_DEVICE_DT_INST_GET(_num),              \
+			      &max32_tmr_data##_num, &max32_tmr_config_##_num, PRE_KERNEL_1,       \
 			      CONFIG_COUNTER_INIT_PRIORITY, &counter_max32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_MAX32_DEFINE)
