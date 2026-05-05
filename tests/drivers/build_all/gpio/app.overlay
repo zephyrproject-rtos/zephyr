@@ -460,6 +460,17 @@
 					ngpios = <5>;
 				};
 			};
+
+			test_i2c_npm1012: pmic@1f {
+				reg = <0x1f>;
+
+				npm1012_gpio: gpio-controller {
+					compatible = "nordic,npm10xx-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <3>;
+				};
+			};
 		};
 
 		nct3807_alert_1 {
