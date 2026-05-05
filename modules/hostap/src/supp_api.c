@@ -414,6 +414,11 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 		}
 #endif
 		return WIFI_SECURITY_TYPE_NONE;
+	case WPA_KEY_MGMT_OWE:
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_OWE)
+		return WIFI_SECURITY_TYPE_OWE;
+#endif
+		return WIFI_SECURITY_TYPE_UNKNOWN;
 	case WPA_KEY_MGMT_PSK:
 		if (proto == WPA_PROTO_RSN) {
 			return WIFI_SECURITY_TYPE_PSK;
@@ -717,6 +722,13 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		}
 	}
 
+	if (params->security == WIFI_SECURITY_TYPE_OWE &&
+	    !IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_OWE)) {
+		wpa_printf(MSG_ERROR,
+			   "OWE requested but CONFIG_WIFI_NM_WPA_SUPPLICANT_OWE is not enabled");
+		return -ENOTSUP;
+	}
+
 	if (params->security != WIFI_SECURITY_TYPE_NONE) {
 		if (params->psk &&
 		    params->security != WIFI_SECURITY_TYPE_WEP &&
@@ -808,7 +820,31 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			if (!wpa_cli_cmd_v("set_network %d pairwise CCMP", resp.network_id)) {
 				goto out;
 			}
-		} else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
+		}
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_OWE)
+		else if (params->security == WIFI_SECURITY_TYPE_OWE) {
+			if (!wpa_cli_cmd_v("set_network %d key_mgmt OWE", resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d ieee80211w 2", resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d proto RSN", resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d pairwise CCMP", resp.network_id)) {
+				goto out;
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d group CCMP", resp.network_id)) {
+				goto out;
+			}
+		}
+#endif
+		else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
 			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"",
 					   resp.network_id, psk_null_terminated)) {
 				goto out;

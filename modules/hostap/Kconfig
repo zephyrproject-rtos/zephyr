@@ -353,6 +353,13 @@ config WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON
 	  WPA3/SAE is available (either internal or external implementation).
 	  Use this in code to gate WPA3 functionality regardless of backend.
 
+config WIFI_NM_WPA_SUPPLICANT_OWE
+	bool "OWE support in wpa_supplicant wrapper"
+	depends on WIFI_NM_WPA_SUPPLICANT_WPA3
+	depends on WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON
+	help
+	  OWE support via the wpa_supplicant network manager.
+
 config WIFI_NM_WPA_SUPPLICANT_AP
 	bool "SoftAP mode support based on WPA supplicant"
 	default y if WIFI_USAGE_MODE_AP || WIFI_USAGE_MODE_STA_AP
@@ -651,6 +658,9 @@ config CRYPTO_INTERNAL
 	bool
 
 config ECC
+	bool
+
+config OWE
 	bool
 
 config MBO
