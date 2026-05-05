@@ -147,3 +147,20 @@ tests:
       - xg24_rb4187c/efr32mg24b220f1536im48
     extra_args:
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
+  drivers.counter.basic_api.pm_device_runtime:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow:
+      - max32657evkit/max32657
+      - max32657evkit/max32657/ns
+      - max32658evkit/max32658
+      - max32658evkit/max32658/ns
+    min_ram: 16
+    timeout: 600
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+      - CONFIG_PM_POLICY_DEVICE_CONSTRAINTS=y
