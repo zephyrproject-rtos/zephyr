@@ -191,6 +191,10 @@ Sensor
 STM32
 =====
 
+* :dtcompatible:`gpio-keys` devices will fail to suspend unless property ``zephyr,suspend-action``
+  is present in Devicetree with value ``"none"`` or ``"full-disconnect"``. Refer to the migration
+  guide entry related to this binding for more details. (:github:`104690` / :github:`108294`)
+
 * SoC DTSI files now consistently use interrupt priority zero for all peripherals.
   Applications must now explicitly configure interrupt priorities using Devicetree
   if they previously relied on the values found in SoC DTSI files. (:github:`106188`)
