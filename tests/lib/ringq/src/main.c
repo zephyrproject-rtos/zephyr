@@ -50,7 +50,7 @@ ZTEST(sys_ringq_api, test_init)
 		     "sys_ringq size should be zero after init");
 	zassert_true(f.rb.buffer == (uint8_t *)buffer,
 		     "sys_ringq buffer should be equal to the provided buffer after init");
-	zassert_true(f.rb.size == sizeof(buffer[0]) * ARRAY_SIZE(buffer),
+	zassert_true(f.rb.capacity == sizeof(buffer[0]) * ARRAY_SIZE(buffer) - 1U,
 		     "sys_ringq buffer size should be equal to the provided buffer size after init");
 	zassert_true(f.item_size == sizeof(buffer[0]),
 		     "sys_ringq item size should be equal to the provided item size after init");
