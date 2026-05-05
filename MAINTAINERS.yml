@@ -5434,6 +5434,20 @@ TDK Sensors:
   tests:
     - drivers.sensors
 
+TI AM26 Platforms:
+  status: maintained
+  maintainers:
+    - glneo
+  collaborators:
+    - MihiraMadhava
+    - Shreyas-Shankar155
+  files:
+    - boards/ti/*am26*/
+    - dts/arm/ti/am26*/
+    - soc/ti/am26*/
+  labels:
+    - "platform: TI AM26"
+
 TI K3 Platforms:
   status: maintained
   maintainers:
