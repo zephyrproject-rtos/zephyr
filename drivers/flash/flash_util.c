@@ -23,17 +23,10 @@ LOG_MODULE_REGISTER(flash, CONFIG_FLASH_LOG_LEVEL);
 int z_impl_flash_fill(const struct device *dev, uint8_t val, off_t offset,
 		      size_t size)
 {
-	uint8_t filler[CONFIG_FLASH_FILL_BUFFER_SIZE];
 	const struct flash_driver_api *api =
 		(const struct flash_driver_api *)dev->api;
 	const struct flash_parameters *fparams = api->get_parameters(dev);
-	int rc = 0;
-	size_t stored = 0;
 
-	if (sizeof(filler) < fparams->write_block_size) {
-		LOG_ERR("Size of CONFIG_FLASH_FILL_BUFFER_SIZE");
-		return -EINVAL;
-	}
 	/* The flash_write will, probably, check write alignment but this
 	 * is too late, as we write datain chunks; data alignment may be
 	 * broken by the size of the last chunk, that is why the check
@@ -52,6 +45,28 @@ int z_impl_flash_fill(const struct device *dev, uint8_t val, off_t offset,
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_FLASH_HAS_DRIVER_FILL)
+	/* Prefer the driver-provided fill: drivers backing a memory that
+	 * supports a single bulk fill (RRAM/MRAM/FRAM, optimized NOR cmd)
+	 * can do this in one operation, whereas the generic fallback below
+	 * issues one api->write() per CONFIG_FLASH_FILL_BUFFER_SIZE chunk
+	 * which is much slower and wears RAM-like memories needlessly.
+	 */
+	if (api->fill != NULL) {
+		return api->fill(dev, val, offset, size);
+	}
+#endif /* CONFIG_FLASH_HAS_DRIVER_FILL */
+
+#if defined(CONFIG_FLASH_FILL_GENERIC_IMPLEMENTATION)
+	uint8_t filler[CONFIG_FLASH_FILL_BUFFER_SIZE];
+	int rc = 0;
+	size_t stored = 0;
+
+	if (sizeof(filler) < fparams->write_block_size) {
+		LOG_ERR("Size of CONFIG_FLASH_FILL_BUFFER_SIZE");
+		return -EINVAL;
+	}
+
 	memset(filler, val, sizeof(filler));
 
 	while (stored < size) {
@@ -66,6 +81,9 @@ int z_impl_flash_fill(const struct device *dev, uint8_t val, off_t offset,
 		stored += chunk;
 	}
 	return rc;
+#else
+	return -ENOTSUP;
+#endif
 }
 
 int z_impl_flash_flatten(const struct device *dev, off_t offset, size_t size)
