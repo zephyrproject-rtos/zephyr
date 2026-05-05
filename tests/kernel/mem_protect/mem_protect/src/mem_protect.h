@@ -63,6 +63,8 @@ static inline void set_fault_valid(bool valid)
 #elif defined(CONFIG_RISCV)
 #if defined(CONFIG_RISCV_PMP)
 #define MEM_REGION_ALLOC (CONFIG_PMP_GRANULARITY)
+#elif defined(CONFIG_RISCV_MMU)
+#define MEM_REGION_ALLOC (CONFIG_MMU_PAGE_SIZE)
 #else
 #define MEM_REGION_ALLOC (4)
 #endif
