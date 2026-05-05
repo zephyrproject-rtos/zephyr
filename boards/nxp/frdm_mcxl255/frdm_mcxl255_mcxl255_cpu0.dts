@@ -24,3 +24,7 @@
 	pinctrl-0 = <&pinmux_aon_lpadc0>;
 	pinctrl-names = "default";
 };
+
+&ctimer0 {
+	status = "okay";
+};
