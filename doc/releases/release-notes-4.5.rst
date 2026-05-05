@@ -114,6 +114,10 @@ New Boards
   that this list will be recomputed at the time of the release, so you don't *have* to update it.
   In any case, just link the board, further details go in the board description.
 
+* Arduino
+
+  * :zephyr:board:`Arduino Nesso N1 <arduino_nesso_n1>` (``arduino_nesso_n1``)
+
 New Shields
 ***********
 
@@ -127,6 +131,11 @@ New Drivers
 ..
   Same as above, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
+
+* GPIO
+
+  * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander
+    (:dtcompatible:`diodes,pi4ioe5v6408`).
 
 New Samples
 ***********
