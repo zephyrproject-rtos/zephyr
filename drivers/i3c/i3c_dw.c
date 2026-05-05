@@ -16,6 +16,8 @@
 #include <zephyr/drivers/pinctrl.h>
 #endif
 
+#include "i3c_dw.h"
+
 #define NANO_SEC        1000000000ULL
 #define BYTES_PER_DWORD 4
 
@@ -379,7 +381,17 @@ struct dw_i3c_config {
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pcfg;
 #endif
+
+	/* Optional vendor/SoC integration hooks.  NULL on plain
+	 * "snps,designware-i3c" instances - populated by per-vendor binding
+	 */
+	const struct dw_i3c_platform_ops *ops;
 };
+
+uint32_t dw_i3c_get_regs(const struct device *dev)
+{
+	return ((const struct dw_i3c_config *)dev->config)->regs;
+}
 
 struct dw_i3c_data {
 	struct i3c_driver_data common;
@@ -424,6 +436,86 @@ static inline bool dw_i3c_is_current_controller(const struct device *dev)
 	const struct dw_i3c_config *config = dev->config;
 
 	return !!(sys_read32(config->regs + PRESENT_STATE) & PRESENT_STATE_CURRENT_MASTER);
+}
+
+/*
+ * Vendor-hook helpers.  Each helper is the single point of dispatch for an
+ * optional dw_i3c_platform_ops entry.  When ops or the specific hook is NULL
+ * the helper falls back to the generic Zephyr-subsystem behaviour, so the
+ * driver works out of the box on a plain "snps,designware-i3c" instance with
+ * no vendor port code present.
+ */
+static inline int dw_i3c_pre_init(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	if (config->ops && config->ops->pre_init) {
+		return config->ops->pre_init(dev);
+	}
+	return 0;
+}
+
+static inline int dw_i3c_post_reset(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	if (config->ops && config->ops->post_reset) {
+		return config->ops->post_reset(dev);
+	}
+	return 0;
+}
+
+static inline void dw_i3c_pre_resume_ctrl(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	if (config->ops && config->ops->pre_resume_ctrl) {
+		config->ops->pre_resume_ctrl(dev);
+	}
+}
+
+static inline int dw_i3c_pm_resume(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	if (config->ops && config->ops->pm_resume) {
+		return config->ops->pm_resume(dev);
+	}
+	return 0;
+}
+
+static inline bool dw_i3c_is_secondary_controller(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	if (config->ops && config->ops->is_secondary_controller) {
+		return config->ops->is_secondary_controller(dev);
+	}
+
+	uint32_t device_ctrl_ext = sys_read32(config->regs + DEVICE_CTRL_EXTENDED);
+
+	return (DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE(device_ctrl_ext) &
+		DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE_SLAVE) != 0;
+}
+
+static inline int dw_i3c_get_clock_rate(const struct device *dev, uint32_t *rate)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	if (config->ops && config->ops->get_clock_rate) {
+		return config->ops->get_clock_rate(dev, rate);
+	}
+	return clock_control_get_rate(config->clock, config->clock_subsys, rate);
+}
+
+static inline int dw_i3c_clock_on(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	if (config->ops && config->ops->clock_on) {
+		return config->ops->clock_on(dev);
+	}
+	return clock_control_on(config->clock, config->clock_subsys);
 }
 
 #ifdef CONFIG_I3C_CONTROLLER
@@ -682,8 +774,12 @@ static void dw_i3c_end_xfer(const struct device *dev)
 		sys_write32(RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO | RESET_CTRL_RESP_QUEUE |
 			    RESET_CTRL_CMD_QUEUE,
 			    config->regs + RESET_CTRL);
+		dw_i3c_pre_resume_ctrl(dev);
 		sys_write32(sys_read32(config->regs + DEVICE_CTRL) | DEV_CTRL_RESUME,
 			    config->regs + DEVICE_CTRL);
+
+		/* Clear TRANSFER_ERR status bit so the next transfer starts clean */
+		sys_write32(INTR_TRANSFER_ERR_STAT, config->regs + INTR_STATUS);
 	}
 	k_sem_give(&data->sem_xfer);
 }
@@ -1650,7 +1746,7 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 	uint32_t fm_rate, tlow_min_ns;
 #endif /* CONFIG_I3C_CONTROLLER */
 
-	if (clock_control_get_rate(config->clock, config->clock_subsys, &core_rate) != 0) {
+	if (dw_i3c_get_clock_rate(dev, &core_rate) != 0) {
 		LOG_ERR("%s: get clock rate failed", dev->name);
 		return -EINVAL;
 	}
@@ -2648,13 +2744,12 @@ static int dw_i3c_init(const struct device *dev)
 	int ret;
 	uint32_t hw_capabilities;
 	uint32_t queue_capability;
-	uint32_t device_ctrl_ext;
 
 	if (!device_is_ready(config->clock)) {
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(config->clock, config->clock_subsys);
+	ret = dw_i3c_clock_on(dev);
 	if (ret < 0) {
 		return ret;
 	}
@@ -2670,12 +2765,32 @@ static int dw_i3c_init(const struct device *dev)
 	k_work_init(&data->deftgts_work, dw_i3c_deftgts_work_fn);
 #endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_TARGET */
 
-	dw_i3c_pinctrl_enable(dev, true);
 #ifdef CONFIG_I3C_CONTROLLER
 	data->mode = i3c_bus_mode(&config->common.dev_list);
 #endif /* CONFIG_I3C_CONTROLLER */
+
+	ret = dw_i3c_pre_init(dev);
+	if (ret != 0) {
+		LOG_ERR("%s: Platform pre-init failed (%d)", dev->name, ret);
+		return ret;
+	}
+
 	/* reset all */
 	sys_write32(RESET_CTRL_ALL, config->regs + RESET_CTRL);
+
+	/* Allow the DW core AHB slave to come out of reset before touching any
+	 * core registers.  1 us covers any core clock >= 16 MHz, well below
+	 * the minimum operating frequency
+	 */
+	k_busy_wait(1);
+
+	ret = dw_i3c_post_reset(dev);
+	if (ret != 0) {
+		LOG_ERR("%s: Platform post-reset failed (%d)", dev->name, ret);
+		return ret;
+	}
+
+	dw_i3c_pinctrl_enable(dev, true);
 
 	/* get DAT, DCT pointer */
 	data->datstartaddr =
@@ -2707,13 +2822,7 @@ static int dw_i3c_init(const struct device *dev)
 	}
 
 	/* if the boot condition starts as a target, then it's a secondary controller */
-	device_ctrl_ext = sys_read32(config->regs + DEVICE_CTRL_EXTENDED);
-	if (DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE(device_ctrl_ext) &
-	    DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE_SLAVE) {
-		ctrl_config->is_secondary = true;
-	} else {
-		ctrl_config->is_secondary = false;
-	}
+	ctrl_config->is_secondary = dw_i3c_is_secondary_controller(dev);
 	/*
 	 * Ensure that is_secondary is only set when CONFIG_I3C_TARGET is enabled,
 	 * or ensure that it is false when CONFIG_I3C_CONTROLLER is enabled.
@@ -2857,6 +2966,10 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 #define I3C_DW_PINCTRL_INIT(n)
 #endif
 
+#define DW_I3C_PLATFORM_OPS_INIT(n)
+
+/* Clang format and checkpatch can't agree on a format for this block */
+/* clang-format off */
 #define DEFINE_DEVICE_FN(n)                                                                        \
 	I3C_DW_IRQ_HANDLER(n)                                                                      \
 	I3C_DW_PINCTRL_DEFINE(n);                                                                  \
@@ -2887,11 +3000,13 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 			.common.primary_controller_da =                                            \
 				DT_INST_PROP_OR(n, primary_controller_da, 0x00),                   \
 			.common.flags = I3C_CONTROLLER_CONFIG_FLAGS_DT_INST(n),))                  \
-		I3C_DW_PINCTRL_INIT(n)};                                                           \
+		I3C_DW_PINCTRL_INIT(n)                                                             \
+		DW_I3C_PLATFORM_OPS_INIT(n)};                                                      \
 	PM_DEVICE_DT_INST_DEFINE(n, dw_i3c_pm_action);                                             \
 	DEVICE_DT_INST_DEFINE(n, dw_i3c_init, PM_DEVICE_DT_INST_GET(n), &dw_i3c_data_##n,          \
 			      &dw_i3c_cfg_##n, POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY,   \
 			      &dw_i3c_api);
+/* clang-format on */
 
 #define DT_DRV_COMPAT snps_designware_i3c
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_DEVICE_FN);
