@@ -609,6 +609,15 @@
 			status = "disabled";
 		};
 
+		xspim: xspim@5200b400 {
+			compatible = "st,stm32-xspim";
+			reg = <0x5200b400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 13)>;
+			io-port-1 = <&xspi1>;
+			io-port-2 = <&xspi2>;
+			status = "disabled";
+		};
+
 		xspi1: spi@52005000 {
 			compatible = "st,stm32-xspi";
 			reg = <0x52005000 0x1000>, <0x90000000 DT_SIZE_M(256)>;
