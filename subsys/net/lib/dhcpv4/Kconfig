@@ -228,4 +228,27 @@ config NET_DHCPV4_SERVER_OPTION_ROUTER
 	  disabled so that the client does not try to forward traffic to our
 	  device.
 
+config NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL
+	bool "DHCP option 114 (RFC 8910 captive portal URI)"
+	help
+	  If enabled, the DHCPv4 server includes option 114 in Offer and
+	  Acknowledgment messages when the client lists option 114 in the
+	  Parameter Request List (option 55). Clients may use this URI for
+	  captive-portal detection on isolated networks (e.g. SoftAP provisioning).
+
+	  The URI is taken from NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL_URI when
+	  that string is non-empty. When the override string is empty, the DHCPv4
+	  server builds http:// plus its own IPv4 on the DHCP interface and path
+	  /generate_204 (RFC 8910 discourages IP literals; use the override when
+	  DNS is available).
+
+config NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL_URI
+	string "Captive portal URI override"
+	depends on NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL
+	default ""
+	help
+	  If non-empty, this exact string is sent as DHCP option 114.
+	  If empty, the DHCPv4 server builds http:// plus its own IPv4 on the
+	  DHCP server interface and path /generate_204.
+
 endif # NET_DHCPV4_SERVER
