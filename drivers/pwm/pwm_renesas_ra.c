@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Renesas Electronics Corporation
+ * Copyright (c) 2024-2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/drivers/clock_control/renesas_ra_cgc.h>
 #include <zephyr/drivers/pwm.h>
+#include <zephyr/drivers/pwm/pwm_utils.h>
 #include <zephyr/drivers/pinctrl.h>
 #include "r_gpt.h"
 #include "r_gpt_cfg.h"
@@ -55,6 +56,10 @@ struct pwm_renesas_ra_data {
 #ifdef CONFIG_PWM_CAPTURE
 	struct pwm_renesas_ra_capture_data capture;
 #endif /* CONFIG_PWM_CAPTURE */
+
+#ifdef CONFIG_PWM_EVENT
+	sys_slist_t event_callbacks;
+#endif /* CONFIG_PWM_EVENT */
 };
 
 struct pwm_renesas_ra_config {
@@ -229,17 +234,16 @@ static int pwm_renesas_ra_get_cycles_per_sec(const struct device *dev, uint32_t 
 	return 0;
 };
 
-#ifdef CONFIG_PWM_CAPTURE
 extern void gpt_capture_compare_a_isr(void);
 extern void gpt_counter_overflow_isr(void);
 
-static void enable_irq(IRQn_Type const irq, uint32_t priority, void *p_context)
+static __maybe_unused void enable_irq(IRQn_Type const irq, uint32_t priority, void *p_context)
 {
 	if (irq >= 0) {
 		R_BSP_IrqCfgEnable(irq, priority, p_context);
 	}
 }
-static void disable_irq(IRQn_Type irq)
+static __maybe_unused void disable_irq(IRQn_Type irq)
 {
 	/* Disable interrupts. */
 	if (irq >= 0) {
@@ -248,6 +252,7 @@ static void disable_irq(IRQn_Type irq)
 	}
 }
 
+#ifdef CONFIG_PWM_CAPTURE
 static int pwm_renesas_ra_configure_capture(const struct device *dev, uint32_t pin,
 					    pwm_flags_t flags, pwm_capture_callback_handler_t cb,
 					    void *user_data)
@@ -405,11 +410,14 @@ static int pwm_renesas_ra_disable_capture(const struct device *dev, uint32_t pin
 
 	return 0;
 }
+#endif /* CONFIG_PWM_CAPTURE */
 
+#if defined(CONFIG_PWM_CAPTURE) || defined(CONFIG_PWM_EVENT)
 static void fsp_callback(timer_callback_args_t *p_args)
 {
 	const struct device *dev = p_args->p_context;
 	struct pwm_renesas_ra_data *data = dev->data;
+#ifdef CONFIG_PWM_CAPTURE
 	timer_info_t info;
 
 	(void)R_GPT_InfoGet(&data->fsp_ctrl, &info);
@@ -454,9 +462,31 @@ static void fsp_callback(timer_callback_args_t *p_args)
 		data->capture.callback(dev, GPT_IO_PIN_GTIOCA, 0, 0, -ECANCELED,
 				       data->capture.user_data);
 	}
-}
-
 #endif /* CONFIG_PWM_CAPTURE */
+#ifdef CONFIG_PWM_EVENT
+	if (p_args->event == TIMER_EVENT_CYCLE_END) {
+		pwm_fire_event_callbacks(&data->event_callbacks, dev, data->fsp_cfg.channel,
+					 PWM_EVENT_TYPE_PERIOD);
+	}
+#endif /* CONFIG_PWM_EVENT */
+}
+#endif /* CONFIG_PWM_CAPTURE || CONFIG_PWM_EVENT */
+
+#ifdef CONFIG_PWM_EVENT
+static int pwm_renesas_ra_manage_event_callback(const struct device *dev,
+						struct pwm_event_callback *callback, bool set)
+{
+	struct pwm_renesas_ra_data *data = dev->data;
+	int ret;
+
+	ret = pwm_manage_event_callback(&data->event_callbacks, callback, set);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PWM_EVENT */
 
 static DEVICE_API(pwm, pwm_renesas_ra_driver_api) = {
 	.get_cycles_per_sec = pwm_renesas_ra_get_cycles_per_sec,
@@ -466,6 +496,9 @@ static DEVICE_API(pwm, pwm_renesas_ra_driver_api) = {
 	.enable_capture = pwm_renesas_ra_enable_capture,
 	.disable_capture = pwm_renesas_ra_disable_capture,
 #endif /* CONFIG_PWM_CAPTURE */
+#ifdef CONFIG_PWM_EVENT
+	.manage_event_callback = pwm_renesas_ra_manage_event_callback,
+#endif /* CONFIG_PWM_EVENT */
 };
 
 static int pwm_renesas_ra_init(const struct device *dev)
@@ -491,10 +524,10 @@ static int pwm_renesas_ra_init(const struct device *dev)
 		return err;
 	}
 
-#if defined(CONFIG_PWM_CAPTURE)
+#if defined(CONFIG_PWM_CAPTURE) || defined(CONFIG_PWM_EVENT)
 	data->fsp_cfg.p_callback = fsp_callback;
 	data->fsp_cfg.p_context = (void *)dev;
-#endif /* defined(CONFIG_PWM_CAPTURE) */
+#endif /* CONFIG_PWM_CAPTURE || CONFIG_PWM_EVENT */
 
 #ifdef CONFIG_RENESAS_RA_ELC
 	if (device_is_ready(data->start_renesas_elc.dev) && data->start_renesas_elc.event != 0) {
@@ -523,6 +556,13 @@ static int pwm_renesas_ra_init(const struct device *dev)
 	err = R_GPT_Open(&data->fsp_ctrl, &data->fsp_cfg);
 	if (err != FSP_SUCCESS) {
 		return -EIO;
+	}
+
+	/* Enable overflow interrupt for PWM event feature */
+	if (IS_ENABLED(CONFIG_PWM_EVENT)) {
+		enable_irq(data->fsp_cfg.cycle_end_irq, data->fsp_cfg.cycle_end_ipl,
+			   &data->fsp_ctrl);
+		R_ICU->IELSR[data->fsp_cfg.cycle_end_irq] = (elc_event_t)data->overflow_event;
 	}
 
 	return 0;
@@ -562,6 +602,17 @@ static int pwm_renesas_ra_init(const struct device *dev)
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, gtioca, irq),                               \
 			    DT_INST_IRQ_BY_NAME(index, gtioca, priority),                          \
 			    gpt_capture_compare_a_isr, NULL, 0);                                   \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, overflow, irq),                             \
+			    DT_INST_IRQ_BY_NAME(index, overflow, priority),                        \
+			    gpt_counter_overflow_isr, NULL, 0);                                    \
+	} while (0)
+
+#elif CONFIG_PWM_EVENT
+#define PWM_RA_IRQ_CONFIG_INIT(index)                                                              \
+	do {                                                                                       \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(                                                  \
+			EVENT_GPT_COUNTER_OVERFLOW(DT_INST_PROP(index, channel)));                 \
+                                                                                                   \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, overflow, irq),                             \
 			    DT_INST_IRQ_BY_NAME(index, overflow, priority),                        \
 			    gpt_counter_overflow_isr, NULL, 0);                                    \
