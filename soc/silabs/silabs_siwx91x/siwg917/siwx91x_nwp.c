@@ -325,8 +325,13 @@ static int siwx91x_check_nwp_version(void)
 	if (siwx91x_nwp_fw_expected_version.security_version != version.security_version) {
 		return -EINVAL;
 	}
-	if (siwx91x_nwp_fw_expected_version.patch_num != version.patch_num) {
-		return -EINVAL;
+	if (siwx91x_nwp_fw_expected_version.patch_num > version.patch_num) {
+		LOG_WRN("patch_num diverge: expected %d, actual %d",
+			siwx91x_nwp_fw_expected_version.patch_num, version.patch_num);
+	}
+	if (siwx91x_nwp_fw_expected_version.patch_num < version.patch_num) {
+		LOG_DBG("patch_num diverge: expected %d, actual %d",
+			siwx91x_nwp_fw_expected_version.patch_num, version.patch_num);
 	}
 	if (siwx91x_nwp_fw_expected_version.customer_id != version.customer_id) {
 		LOG_DBG("customer_id diverge: expected %d, actual %d",
