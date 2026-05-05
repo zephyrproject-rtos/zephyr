@@ -230,6 +230,31 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_GateAonLPTMR);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER0, 1u);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_CTIMERg0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer1)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer2))
+	/*
+	 * CTIMER1 and CTIMER2 share clock group 1: a single selector
+	 * (kCLOCK_SelCTIMERg1) and a single divider (kCLOCK_DivCTIMER1) feed
+	 * both instances, so there is no separate CTIMER2 selector or divider.
+	 */
+	CLOCK_SetClockDiv(kCLOCK_DivCTIMER1, 1u);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_CTIMERg1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer2))
+	/*
+	 * CTIMER2 registers are only accessible while the CTIMER1 gate is
+	 * enabled and CTIMER1 is held out of reset.
+	 */
+	CLOCK_EnableClock(kCLOCK_GateCTIMER1);
+	RESET_ReleasePeripheralReset(kCTIMER1_RST_SHIFT_RSTn);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CPU_CLOCK_FREQ;
 }
