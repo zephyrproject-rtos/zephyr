@@ -75,9 +75,9 @@
 			   <CSI_IO1 0 &mcp23017 3 0>;
 	};
 
-	eth_ram: sram@2fffc000 {
+	eth_ram: sram@2fff8000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x2fffc000 DT_SIZE_K(16)>;
+		reg = <0x2fff8000 DT_SIZE_K(32)>;
 		#memory-region-cells = <0>;
 		zephyr,memory-region = "ETH_SRAM";
 	};
