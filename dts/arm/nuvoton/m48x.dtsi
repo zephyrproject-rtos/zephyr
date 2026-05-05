@@ -297,6 +297,13 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+
+			eth: eth {
+				compatible = "nuvoton,numicro-ethernet";
+				interrupts = <66 0>, <67 0>;
+				interrupt-names = "EMAC_TX", "EMAC_RX";
+				status = "disabled";
+			};
 		};
 	};
 };

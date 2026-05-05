@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Fiona Behrens <me@kloenk.dev>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_NUMICRO
+	bool "Nuvoton numicro MCU ethernet driver"
+	default y
+	select PINCTRL
+	depends on DT_HAS_NUVOTON_NUMICRO_ETHERNET_ENABLED
+	help
+	  This option enables the Ethernet driver for Nuvoton Numicro family of
+	  processors.
+	  Say y if you wish to enable Numicro ETH.
+
+if ETH_NUMICRO
+
+config ETH_NUMICRO_RX_THREAD_STACK_SIZE
+	int "RX thread stack size"
+	default 1500
+	help
+	  RX thread stack size
+
+config ETH_NUMICRO_RX_THREAD_PRIO
+	int "RX thread priority"
+	default 2
+
+config ETH_NUMICRO_RXBUF_COUNT
+	int "RX dma buffer count"
+	default 4
+
+config ETH_NUMICRO_TXBUF_COUNT
+	int "TX dma buffer count"
+	default 4
+
+endif
