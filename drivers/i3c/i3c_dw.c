@@ -2966,7 +2966,13 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 #define I3C_DW_PINCTRL_INIT(n)
 #endif
 
+/* Per-vendor platform-ops selection. */
+#ifdef CONFIG_I3C_DW_INFINEON
+extern const struct dw_i3c_platform_ops dw_i3c_infineon_ops;
+#define DW_I3C_PLATFORM_OPS_INIT(n) .ops = &dw_i3c_infineon_ops,
+#else
 #define DW_I3C_PLATFORM_OPS_INIT(n)
+#endif
 
 /* Clang format and checkpatch can't agree on a format for this block */
 /* clang-format off */

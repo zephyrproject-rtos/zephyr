@@ -21,4 +21,12 @@ config I3C_DW_RW_TIMEOUT_MS
 	int "Set the Read/Write timeout in milliseconds"
 	default 100
 
+config I3C_DW_INFINEON
+	bool "Infineon PSE84 I3C wrapper pre-initialization"
+	depends on I3C_DW
+	default y if DT_HAS_INFINEON_I3C_ENABLED
+	help
+	  Enables the Infineon pre-initialization sequence for
+	  the Synopsys DW I3C controller driver.
+
 endif # I3C_DW
