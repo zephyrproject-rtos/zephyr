@@ -823,9 +823,9 @@ static struct usbd_cdc_ecm_desc cdc_ecm_desc_##n = {				\
 				DT_INST_PROP(n, remote_mac_address),		\
 				USBD_DUT_STRING_INTERFACE);			\
 										\
-	USBD_DEFINE_CLASS(cdc_ecm_##n,						\
-			  &usbd_cdc_ecm_api,					\
-			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);		\
+	USBD_DEFINE_CLASS_DT(DT_DRV_INST(n), cdc_ecm_##n,			\
+			     &usbd_cdc_ecm_api,					\
+			     (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);	\
 										\
 	static struct cdc_ecm_eth_data eth_data_##n = {				\
 		.c_data = &cdc_ecm_##n,						\

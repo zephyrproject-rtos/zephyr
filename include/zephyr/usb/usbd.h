@@ -769,6 +769,49 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 	}									\
 	))
 
+/**
+ * @brief Obtain class name to use with usbd_register_class()
+ *
+ * Use this macro if application must manually associate class instantiated via
+ * devicetree node to a certain USB device support context. Example use include
+ * binding selected CDC ACM instance to different device controllers.
+ *
+ * @param node Devicetree node that is used to instantiate class
+ */
+#define USBD_CLASS_GET_DT(node) _CONCAT(__usbd_class_, DT_DEP_ORD(node))
+
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Declare a USB class name for each status "okay" devicetree node.
+ *
+ * This is "maybe" because most nodes are not USB classes. Generating internal
+ * symbol for all nodes makes it possible to have working USBD_CLASS_GET_DT()
+ * macro without requiring a list of all supported compatibles here.
+ */
+#define Z_MAYBE_USB_CLASS_INST_DECLARE_INTERNAL(node)	\
+	extern const char *USBD_CLASS_GET_DT(node);
+
+DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_USB_CLASS_INST_DECLARE_INTERNAL)
+
+/** @endcond */
+
+/**
+ * @brief Define USB device support class data
+ *
+ * Same as USBD_DEFINE_CLASS(), but in addition defines symbols necessary for
+ * USBD_CLASS_GET_DT().
+ *
+ * @param node         Devicetree node corresponding to class instance
+ * @param class_name   Class name
+ * @param class_api    Pointer to struct usbd_class_api
+ * @param class_priv   Class private data
+ * @param class_v_reqs Pointer to struct usbd_cctx_vendor_req
+ */
+#define USBD_DEFINE_CLASS_DT(node, class_name, class_api, class_priv, class_v_reqs)	\
+	const char *USBD_CLASS_GET_DT(node) = STRINGIFY(class_name);			\
+	USBD_DEFINE_CLASS(class_name, class_api, class_priv, class_v_reqs)
+
 /** @brief Helper to declare request table of usbd_cctx_vendor_req
  *
  *  @param _reqs Pointer to the vendor request field

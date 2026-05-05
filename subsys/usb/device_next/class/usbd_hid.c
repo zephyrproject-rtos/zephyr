@@ -846,9 +846,9 @@ static const struct hid_device_driver_api hid_device_api = {
 				USBD_DUT_STRING_INTERFACE);			\
 	))									\
 										\
-	USBD_DEFINE_CLASS(hid_##n,						\
-			  &usbd_hid_api,					\
-			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);		\
+	USBD_DEFINE_CLASS_DT(DT_DRV_INST(n), hid_##n,				\
+			     &usbd_hid_api,					\
+			     (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);	\
 										\
 	static const struct hid_device_config hid_config_##n = {		\
 		.desc = &hid_desc_##n,						\

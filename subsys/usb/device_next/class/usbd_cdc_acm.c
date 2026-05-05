@@ -1345,9 +1345,9 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 		    (CDC_ACM_DEFINE_HS_DESC_HEADER(n)),				\
 		    ())								\
 										\
-	USBD_DEFINE_CLASS(cdc_acm_##n,						\
-			  &usbd_cdc_acm_api,					\
-			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);		\
+	USBD_DEFINE_CLASS_DT(DT_DRV_INST(n), cdc_acm_##n,			\
+			     &usbd_cdc_acm_api,					\
+			     (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);	\
 										\
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, label), (				\
 	USBD_DESC_STRING_DEFINE(cdc_acm_if_desc_data_##n,			\

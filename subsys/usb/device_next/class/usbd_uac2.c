@@ -1026,8 +1026,8 @@ struct usbd_class_api uac2_api = {
 		static const struct usb_desc_header *uac2_hs_desc_##inst[] =	\
 			UAC2_HS_DESCRIPTOR_PTRS_ARRAY(DT_DRV_INST(inst));	\
 	))									\
-	USBD_DEFINE_CLASS(uac2_##inst, &uac2_api,				\
-			  (void *)DEVICE_DT_GET(DT_DRV_INST(inst)), NULL);	\
+	USBD_DEFINE_CLASS_DT(DT_DRV_INST(inst), uac2_##inst, &uac2_api,		\
+			     (void *)DEVICE_DT_GET(DT_DRV_INST(inst)), NULL);	\
 	DEFINE_LOOKUP_TABLES(inst)						\
 	static const struct uac2_cfg uac2_cfg_##inst = {			\
 		.c_data = &uac2_##inst,						\

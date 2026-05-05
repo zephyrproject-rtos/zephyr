@@ -2282,8 +2282,8 @@ struct usb_desc_header *uvc_hs_desc_##n[UVC_MAX_HS_DESC] = {			\
 #define USBD_VIDEO_DT_DEVICE_DEFINE(n)						\
 	UVC_DEFINE_DESCRIPTOR(n)						\
 										\
-	USBD_DEFINE_CLASS(uvc_c_data_##n, &uvc_class_api,			\
-			  (void *)DEVICE_DT_INST_GET(n), NULL);			\
+	USBD_DEFINE_CLASS_DT(DT_DRV_INST(n), uvc_c_data_##n, &uvc_class_api,	\
+			     (void *)DEVICE_DT_INST_GET(n), NULL);		\
 										\
 	const struct uvc_config uvc_cfg_##n = {					\
 		.c_data = &uvc_c_data_##n,					\

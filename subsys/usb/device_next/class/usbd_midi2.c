@@ -775,8 +775,8 @@ void usbd_midi_set_ops(const struct device *dev, const struct usbd_midi_ops *ops
 #define USBD_MIDI_DEFINE_DEVICE(n)                                           \
 	USBD_MIDI_VALIDATE_INSTANCE(n)                                       \
 	USBD_MIDI_DEFINE_DESCRIPTORS(n);                                     \
-	USBD_DEFINE_CLASS(midi_##n, &usbd_midi_class_api,                    \
-			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);      \
+	USBD_DEFINE_CLASS_DT(DT_DRV_INST(n), midi_##n, &usbd_midi_class_api, \
+			     (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);   \
 	static const struct usbd_midi_config usbd_midi_config_##n = {        \
 		.desc = &usbd_midi_desc_##n,                                 \
 		.fs_descs = usbd_midi_desc_array_fs_##n,                     \
