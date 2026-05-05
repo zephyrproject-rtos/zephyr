@@ -90,8 +90,18 @@ int set_lvgl_rendering_cb(lv_display_t *display)
 					display);
 		break;
 	case PIXEL_FORMAT_RGB_565:
-	case PIXEL_FORMAT_RGB_565X:
 		lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565);
+		lv_display_set_flush_cb(display, lvgl_flush_cb_16bit);
+		lv_display_add_event_cb(display, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA,
+					display);
+		break;
+	case PIXEL_FORMAT_RGB_565X:
+		/*
+		 * RGB_565X panels expect big-endian pixel data (MSB first).
+		 * LVGL's RGB565_SWAPPED format swaps the two bytes of each
+		 * pixel so they are emitted in the order the panel reads them.
+		 */
+		lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565_SWAPPED);
 		lv_display_set_flush_cb(display, lvgl_flush_cb_16bit);
 		lv_display_add_event_cb(display, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA,
 					display);
