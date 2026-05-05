@@ -876,25 +876,16 @@ static bool parse_ipv6(const char *str, size_t str_len,
 	}
 
 	if ((ptr + 1) < (str + str_len) && *(ptr + 1) == ':') {
+		size_t port_len;
+
 		/* -1 as end does not contain first [
 		 * -2 as pointer is advanced by 2, skipping ]:
 		 */
-		len = str_len - end - 1 - 2;
 
 		ptr += 2;
+		port_len = str_len - end - 1 - 2;
 
-		for (i = 0; i < len; i++) {
-			if (!ptr[i]) {
-				len = i;
-				break;
-			}
-		}
-
-		/* Re-use the ipaddr buf for port conversion */
-		memcpy(ipaddr, ptr, len);
-		ipaddr[len] = '\0';
-
-		ret = convert_port(ipaddr, &port);
+		ret = convert_port(ptr, port_len, &port);
 		if (!ret) {
 			return false;
 		}
