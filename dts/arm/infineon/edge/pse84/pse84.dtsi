@@ -420,7 +420,9 @@
 		};
 
 		i3c0: i3c@42a50000 {
-			compatible = "infineon,i3c";
+			compatible = "infineon,i3c", "snps,designware-i3c";
+			#address-cells = <3>;
+			#size-cells = <0>;
 			reg = <0x42a50000 0x438>;
 			interrupts = <176 4>;
 			status = "disabled";
