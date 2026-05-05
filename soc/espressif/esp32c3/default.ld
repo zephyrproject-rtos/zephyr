@@ -311,6 +311,7 @@ SECTIONS
     *libarch__riscv__core.a:(.literal .text .literal.* .text.*)
     *libarch__common.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
+    *libzephyr.a:atomic_c.*(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)

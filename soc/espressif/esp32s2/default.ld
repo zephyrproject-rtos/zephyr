@@ -350,6 +350,7 @@ SECTIONS
     *libarch__xtensa__core.a:(.literal .text .literal.* .text.*)
     *libarch__common.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
+    *libzephyr.a:atomic_c.*(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
     *libzephyr.a:windowspill_asm.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cbprintf_packaged.*(.literal .text .literal.* .text.*)
