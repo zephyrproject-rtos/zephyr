@@ -175,6 +175,30 @@ typedef int (*flash_api_write)(const struct device *dev, off_t offset,
 typedef int (*flash_api_erase)(const struct device *dev, off_t offset,
 			       size_t size);
 
+#if defined(CONFIG_FLASH_HAS_DRIVER_FILL)
+/**
+ * @brief Flash fill implementation handler type
+ *
+ * Fills a range of flash memory with the specified value, honoring the
+ * device's write_block_size constraint. This callback is optional; when
+ * not provided, flash_fill() falls back to a generic implementation
+ * emulated via flash_api_write.
+ *
+ * @note Intended primarily for RAM-type non-volatile memories
+ * (RRAM/MRAM) which do not require explicit erase, allowing a
+ * driver-level optimized memset-like operation. May also be provided
+ * by explicit-erase drivers when a more efficient path than a loop of
+ * writes is available.
+ *
+ * Implementations must return 0 when @p size is 0 without performing
+ * any work and without validating @p offset; there is nothing to do
+ * and treating an empty range as an error makes upper layers harder
+ * to write.
+ */
+typedef int (*flash_api_fill)(const struct device *dev, uint8_t val,
+			      off_t offset, size_t size);
+#endif /* CONFIG_FLASH_HAS_DRIVER_FILL */
+
 /**
  * @brief Get device size in bytes.
  *
@@ -236,6 +260,10 @@ __subsystem struct flash_driver_api {
 	flash_api_write write;
 	/** @driver_ops_optional @copybrief flash_erase */
 	flash_api_erase erase;
+#if defined(CONFIG_FLASH_HAS_DRIVER_FILL)
+	/** @driver_ops_optional @copybrief flash_fill */
+	flash_api_fill fill;
+#endif /* CONFIG_FLASH_HAS_DRIVER_FILL */
 	/** @driver_ops_mandatory @copybrief flash_get_parameters */
 	flash_api_get_parameters get_parameters;
 	/** @driver_ops_optional @copybrief flash_get_size */
