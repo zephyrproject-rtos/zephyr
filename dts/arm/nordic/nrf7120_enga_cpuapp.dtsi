@@ -24,6 +24,11 @@ nvic: &cpuapp_nvic {};
 		compatible = "simple-bus";
 		interrupt-parent = <&cpuapp_nvic>;
 		ranges;
+
+		/* Cached memory-mapped aperture for MSPI. */
+		memmap_aperture_cached: memory@2000000 {
+			reg = <0x02000000 0x0e000000>;
+		};
 	};
 
 	rng: rng {

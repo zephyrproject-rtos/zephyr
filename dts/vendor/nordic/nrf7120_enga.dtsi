@@ -190,6 +190,11 @@
 			reg = <0x28180000 DT_SIZE_K(512)>;
 		};
 
+		/* Memory-mapped aperture for MSPI. */
+		memmap_aperture_uncached: memory@60000000 {
+			reg = <0x60000000 0x20000000>;
+		};
+
 #ifdef USE_NON_SECURE_ADDRESS_MAP
 		global_peripherals: peripheral@40000000 {
 			reg = <0x40000000 0x10000000>;
