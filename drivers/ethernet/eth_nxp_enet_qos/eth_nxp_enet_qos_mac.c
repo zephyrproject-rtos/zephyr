@@ -862,7 +862,8 @@ static const struct device *eth_nxp_enet_qos_get_phy(const struct device *dev,
 }
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
-static const struct device *eth_nxp_enet_qos_get_ptp_clock(const struct device *dev)
+static const struct device *eth_nxp_enet_qos_get_ptp_clock(const struct device *dev,
+							   struct net_if *iface __unused)
 {
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 
