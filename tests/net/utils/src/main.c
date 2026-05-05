@@ -1622,4 +1622,165 @@ ZTEST(test_utils_fn, test_parse_ipv4_overflow)
 	}
 }
 
+ZTEST(test_utils_fn, test_parse_ipv6_overflow)
+{
+	struct net_sockaddr_storage saddr;
+	struct net_sockaddr *addr = net_sad(&saddr);
+	bool ret;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV6)) {
+		ztest_test_skip();
+	}
+
+	/* Case 1: Exact proof-of-concept from the vulnerability analysis.
+	 *
+	 * str     = "[::1]:" + 50 * 'A'   (56 bytes total, no embedded NUL)
+	 * str_len = 56
+	 *
+	 * Variable trace (unfixed):
+	 *   end  = 3  (ptr points at ']' at str[4], end = ptr-(str+1) = 3)
+	 *   len  = str_len - end - 1 - 2 = 56 - 3 - 1 - 2 = 50
+	 *   NUL-scan: no NUL in first 50 'A' bytes => len stays 50
+	 *   memcpy(ipaddr, ptr, 50) into 47-byte buffer => overflows by 3 bytes
+	 *   ipaddr[50] = '\0' => overflows by 4 bytes
+	 *
+	 * Fixed code scans the bounded port field and rejects it once it sees
+	 * that the port text is overlong.
+	 */
+	{
+		char payload[57];
+
+		memcpy(payload, "[::1]:", 6);
+		memset(payload + 6, 'A', 50);
+		payload[56] = '\0';
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(payload, 56, addr);
+		zassert_false(ret, "Case 1: [::1]: + 50-byte port must be rejected");
+	}
+
+	/* Case 2: Minimum-length valid IPv6 address with oversized port.
+	 *
+	 * Uses "::" (the all-zeros address, 2 chars) to keep 'end' as small
+	 * as possible, maximising the port overflow size.
+	 *
+	 * str     = "[::]:" + 50 * '9'
+	 * str_len = 55
+	 * end     = 2  (ptr at str[3], ptr-(str+1) = 2)
+	 * unfixed len = 55 - 2 - 1 - 2 = 50  => overflow by 3 bytes
+	 */
+	{
+		char payload[56];
+
+		memcpy(payload, "[::]:", 5);
+		memset(payload + 5, '9', 50);
+		payload[55] = '\0';
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(payload, 55, addr);
+		zassert_false(ret, "Case 2: [::] + 50-digit port must be rejected");
+	}
+
+	/* Case 3: Valid address, str_len larger than the actual string.
+	 *
+	 * Mirrors the IPv4 Case 3: a caller passing a generous upper-bound
+	 * str_len (common in the Zephyr network stack) with a valid [addr]:port.
+	 *
+	 * str     = "[::1]:80"  (8 chars, NUL-terminated)
+	 * str_len = 200
+	 *
+	 * Unfixed: len = 200 - 3 - 1 - 2 = 194; NUL-scan caps at 2 ("80")
+	 *          => actually safe here because NUL-scan fires.
+	 *
+	 * This case verifies the NUL-scan path and that the fix does not
+	 * break it.  The result must be true with port 80.
+	 */
+	{
+		const char *str = "[::1]:80";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(str, 200, addr);
+		zassert_true(ret,
+			"Case 3: [::1]:80 with oversized str_len must succeed");
+		zassert_equal(net_sin6(addr)->sin6_family, NET_AF_INET6,
+			      "Case 3: family must be AF_INET6");
+		zassert_equal(net_sin6(addr)->sin6_port, net_htons(80),
+			      "Case 3: port must be 80");
+	}
+
+	/* Case 4: Boundary, a 5-character port with leading zeros is valid.
+	 *
+	 * This exercises the longest accepted decimal port string without
+	 * exceeding the numeric range.
+	 */
+	{
+		const char *str = "[::1]:00080";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_true(ret, "Case 4: 5-digit port must be accepted");
+		zassert_equal(net_sin6(addr)->sin6_port, net_htons(80),
+			      "Case 4: port must be 80");
+	}
+
+	/* Case 5: Overlong numeric ports with leading zeros must be rejected.
+	 *
+	 * This catches the regression where truncating the port text could
+	 * incorrectly accept "000080" as port 80.
+	 */
+	{
+		const char *str = "[::1]:000080";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_false(ret, "Case 5: 6-digit port must be rejected");
+	}
+
+	/* Case 6: Regression, port 0 (lower boundary).                      */
+	{
+		const char *str = "[2001:db8::1]:0";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_true(ret, "Case 6: port 0 must be accepted");
+		zassert_equal(net_sin6(addr)->sin6_port, net_htons(0),
+			      "Case 6: port must be 0");
+	}
+
+	/* Case 7: Regression, port 65535 (upper boundary).                  */
+	{
+		const char *str = "[2001:db8::1]:65535";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_true(ret, "Case 7: port 65535 must be accepted");
+		zassert_equal(net_sin6(addr)->sin6_port, net_htons(65535),
+			      "Case 7: port must be 65535");
+	}
+
+	/* Case 8: Regression, port 65536 (one above maximum).               */
+	{
+		const char *str = "[2001:db8::1]:65536";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_false(ret, "Case 8: port 65536 must be rejected");
+	}
+
+	/* Case 9: Regression, full 128-bit address with port.
+	 *
+	 * Uses the longest standard-notation IPv6 address to ensure the
+	 * address-copy path (end up to NET_INET6_ADDRSTRLEN-1) is also safe.
+	 */
+	{
+		const char *str = "[ff08:1122:3344:5566:7788:9900:aabb:ccdd]:8080";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in6));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_true(ret, "Case 9: full IPv6 address with port must be accepted");
+		zassert_equal(net_sin6(addr)->sin6_port, net_htons(8080),
+			      "Case 9: port must be 8080");
+	}
+}
+
 ZTEST_SUITE(test_utils_fn, NULL, NULL, NULL, NULL, NULL);
