@@ -164,7 +164,8 @@ config NET_SHELL_PTP_SUPPORTED
 config NET_SHELL_ROUTE_SUPPORTED
 	bool "IP routing config"
 	default y
-	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || (NET_ROUTE && NET_NATIVE)
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || \
+	          ((NET_IPV4_ROUTE || NET_IPV6_ROUTE) && NET_NATIVE)
 
 config NET_SHELL_SOCKETS_SERVICE_SUPPORTED
 	bool "Socket service status"
