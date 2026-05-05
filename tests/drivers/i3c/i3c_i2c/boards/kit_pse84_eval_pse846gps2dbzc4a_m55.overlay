@@ -1,0 +1,175 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Board overlay for I3C I2C legacy device tests on KIT_PSE84_EVAL (M55 core).
+ *
+ * Physical connections required:
+ *   P3.0  — I3C0 SCL (open-drain, internal pull-up enabled)
+ *   P3.1  — I3C0 SDA (open-drain, internal pull-up enabled)
+ *
+ * For transfer tests, jumper SCB5 to the I3C bus:
+ *   P17.0 (SCB5 SCL) <-> P3.0 (I3C0 SCL)
+ *   P17.1 (SCB5 SDA) <-> P3.1 (I3C0 SDA)
+ *
+ * For the multiple-targets test, also jumper SCB0 to the I3C bus:
+ *   P8.0 (SCB0 SCL) <-> P3.0 (I3C0 SCL)
+ *   P8.1 (SCB0 SDA) <-> P3.1 (I3C0 SDA)
+ *
+ * SCB5 acts as an I2C target at address 0x50; the I3C0 controller
+ * (acting as I2C controller) drives it.
+ */
+
+/ {
+	aliases {
+		test-i3c = &i3c0;
+		test-i2c-target = &scb5;
+		test-i2c-target2 = &scb0;
+	};
+};
+
+&p3_0_i3c0_i3c_scl {
+	infineon,cfgout3-mode;
+};
+
+&p3_1_i3c0_i3c_sda {
+	infineon,cfgout3-mode;
+};
+
+/* GPIO port 3 must be enabled for the I3C pins (P3.0, P3.1) */
+&gpio_prt3 {
+	status = "okay";
+};
+
+&peri0_group9_8bit_0 {
+	status = "okay";
+	clock-div = <4>;
+};
+
+&i3c0 {
+	status = "okay";
+	clocks = <&peri0_group9_8bit_0>;
+	pinctrl-0 = <&p3_0_i3c0_i3c_scl &p3_1_i3c0_i3c_sda>;
+	pinctrl-names = "default";
+	i3c-scl-hz = <12500000>;
+	/*
+	 * Controller-side OD/I2C SCL rate is intentionally well below the
+	 * SCB targets' 100 kHz to give a wide sampling margin: the loopback
+	 * wiring uses only the pads' weak internal pull-ups (no external
+	 * pull-up resistors), so SDA/SCL rise times are slow.  Running the
+	 * controller at 10 kHz keeps the bit cells long enough for reliable
+	 * sampling on this bench setup.
+	 */
+	i2c-scl-hz = <10000>;
+	primary-controller-da = <0x08>;
+
+	/* reg = <addr pid_high lvr> */
+	test_i2c_dev: test_i2c@500000000000000010 {
+		reg = <0x50 0x0 0x10>;
+	};
+
+	test_i2c_dev2: test_i2c@510000000000000010 {
+		reg = <0x51 0x0 0x10>;
+	};
+};
+
+/*
+ * GPIO-mode pin nodes for SCB5 sleep state.
+ * HSIOM_SEL_GPIO disconnects the SCB from the pad so a disabled SCB
+ * cannot hold SDA/SCL low through its latched output driver.
+ */
+&pinctrl {
+	/omit-if-no-ref/ p17_0_gpio: p17_0_gpio {
+		pinmux = <DT_CAT1_PINMUX(17, 0, HSIOM_SEL_GPIO)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ p17_1_gpio: p17_1_gpio {
+		pinmux = <DT_CAT1_PINMUX(17, 1, HSIOM_SEL_GPIO)>;
+		input-enable;
+	};
+};
+
+i2c5: &scb5 {
+	compatible = "infineon,i2c";
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&p17_0_scb5_i2c_scl &p17_1_scb5_i2c_sda>;
+	pinctrl-1 = <&p17_0_gpio &p17_1_gpio>;
+	pinctrl-names = "default", "sleep";
+
+	clocks = <&peri0_group1_16bit_1>;
+	clock-frequency = <100000>;
+};
+
+/* SCB5 I2C target pins: bias-pull-up for open-drain mode with built-in pull-up. */
+&p17_0_scb5_i2c_scl {
+	input-enable;
+	bias-pull-up;
+};
+
+&p17_1_scb5_i2c_sda {
+	input-enable;
+	bias-pull-up;
+};
+
+/* GPIO port 17 must be enabled for the SCB5 pins (P17.0, P17.1) */
+&gpio_prt17 {
+	status = "okay";
+};
+
+&peri0_group1_16bit_1 {
+	status = "okay";
+	clock-div = <4>;
+};
+
+/*
+ * SCB0 configured as I2C target at 100 kHz (Standard Mode).
+ *
+ * Physical loopback wiring required for TR-I2C-007:
+ *   P8.0 (SCB0 SCL) <-> P3.0 (I3C0 SCL)
+ *   P8.1 (SCB0 SDA) <-> P3.1 (I3C0 SDA)
+ *
+ * Uses peri0_group1_16bit_2 (independent of SCB5's peri0_group1_16bit_1).
+ */
+i2c0: &scb0 {
+	compatible = "infineon,i2c";
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-0 = <&p8_0_scb0_i2c_scl &p8_1_scb0_i2c_sda>;
+	pinctrl-names = "default";
+
+	clocks = <&peri0_group1_16bit_2>;
+	clock-frequency = <100000>;
+};
+
+/*
+ * SCB0 I2C target pins: bias-pull-up (drives 0 strongly, weak pull-up for 1).
+ */
+&p8_0_scb0_i2c_scl {
+	input-enable;
+	bias-pull-up;
+};
+
+&p8_1_scb0_i2c_sda {
+	input-enable;
+	bias-pull-up;
+};
+
+&gpio_prt8 {
+	status = "okay";
+};
+
+&peri0_group1_16bit_2 {
+	status = "okay";
+	clock-div = <4>;
+};
