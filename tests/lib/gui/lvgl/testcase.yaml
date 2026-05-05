@@ -57,7 +57,6 @@ tests:
   libraries.gui.lvgl.16bit.swap:
     extra_configs:
       - CONFIG_LV_COLOR_DEPTH_16=y
-      - CONFIG_LV_COLOR_16_SWAP=y
     platform_allow:
       - native_sim/native/64
       - native_sim

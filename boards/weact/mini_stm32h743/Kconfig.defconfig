@@ -12,9 +12,6 @@ config INPUT
 
 if LVGL
 
-configdefault LV_COLOR_16_SWAP
-	default y
-
 config LV_Z_BITS_PER_PIXEL
 	default 16
 

@@ -157,7 +157,7 @@
 		gctrl = <0x35>;
 		mdac = <0x60>; /* RGB order, swap XY, mirror X */
 		lcm = <0x2c>;
-		pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+		pixel-format = <PANEL_PIXEL_FORMAT_RGB_565X>;
 		gamma = <0x01>;
 		porch-param = [0c 0c 00 33 33];
 		cmd2en-param = [5a 69 02 01];

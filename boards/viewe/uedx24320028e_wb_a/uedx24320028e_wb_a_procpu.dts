@@ -77,7 +77,7 @@
 			reg = <0>;
 			status = "okay";
 			mipi-max-frequency = <80000000>;
-			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565X>;
 			width = <240>;
 			height = <320>;
 			/*

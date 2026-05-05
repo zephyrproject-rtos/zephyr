@@ -36,10 +36,6 @@
 /* Provide definition to align LVGL buffers */
 #define LV_ATTRIBUTE_MEM_ALIGN __aligned(CONFIG_LV_ATTRIBUTE_MEM_ALIGN_SIZE)
 
-#ifdef CONFIG_LV_COLOR_16_SWAP
-#define LV_COLOR_16_SWAP 1
-#endif /* CONFIG_LV_COLOR_16_SWAP */
-
 #ifdef CONFIG_LV_Z_USE_OSAL
 #define LV_USE_OS            LV_OS_CUSTOM
 #define LV_OS_CUSTOM_INCLUDE "lvgl_zephyr_osal.h"

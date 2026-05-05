@@ -56,7 +56,7 @@
 			y-offset = <80>;
 			mdac = <0xc8>;
 			ram-param = [00 e0];
-			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565X>;
 			porch-param = [0c 0c 00 33 33];
 			gctrl = <0x35>;
 			vcom = <0x28>;
