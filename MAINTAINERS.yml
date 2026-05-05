@@ -502,6 +502,8 @@ Bluetooth Audio:
     - pin-zephyr
     - niym-ot
     - jthm-ot
+    - alexsven
+    - koffes
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
