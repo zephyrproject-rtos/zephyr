@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_arp, CONFIG_NET_ARP_LOG_LEVEL);
 
 #include "arp.h"
 #include "ipv4.h"
+#include "route_ipv4.h"
 #include "net_private.h"
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
@@ -403,14 +404,38 @@ int net_arp_prepare(struct net_pkt *pkt,
 		struct net_if_ipv4 *ipv4 = net_pkt_iface(pkt)->config.ip.ipv4;
 
 		if (ipv4) {
-			addr = &ipv4->gw;
-			if (net_ipv4_is_addr_unspecified(addr)) {
-				NET_ERR("Gateway not set for iface %d, could not "
-					"send ARP request for %s",
-					net_if_get_by_iface(net_pkt_iface(pkt)),
-					net_sprint_ipv4_addr(request_ip));
+			addr = NULL;
 
-				return -EINVAL;
+			/* Check routing table first before falling back to
+			 * configured gateway address.
+			 */
+			if (IS_ENABLED(CONFIG_NET_IPV4_ROUTE)) {
+				struct net_route_entry *route;
+				struct net_in_addr *nexthop;
+
+				if (net_route_ipv4_get_info(net_pkt_iface(pkt),
+							    request_ip,
+							    &route,
+							    &nexthop)) {
+					addr = nexthop;
+
+					NET_DBG("Routing to %s via %s",
+						net_sprint_ipv4_addr(request_ip),
+						net_sprint_ipv4_addr(addr));
+				}
+			}
+
+			if (addr == NULL) {
+				addr = &ipv4->gw;
+
+				if (net_ipv4_is_addr_unspecified(addr)) {
+					NET_ERR("Gateway not set for iface %d, could not "
+						"send ARP request for %s",
+						net_if_get_by_iface(net_pkt_iface(pkt)),
+						net_sprint_ipv4_addr(request_ip));
+
+					return -EINVAL;
+				}
 			}
 		} else {
 			addr = request_ip;
