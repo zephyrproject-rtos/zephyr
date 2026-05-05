@@ -2519,14 +2519,17 @@ ZTEST(net_socket_quic, test_330_quic_initial_dcid_too_short)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
 	struct net_sockaddr_in src_addr = { 0 };
+	/* Initial long header with a deliberately too-short 7-byte DCID. */
 	uint8_t packet[] = {
-		0xc0,
-		0x00, 0x00, 0x00, 0x01,
-		0x07, 0x83, 0x94, 0xc8, 0xf0, 0x3e, 0x51, 0x57,
-		0x08, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-		0x00,
-		0x01,
-		0x00,
+		0xc0,                         /* Long header, Initial packet */
+		0x00, 0x00, 0x00, 0x01,       /* Version 1 */
+		0x07, 0x83, 0x94, 0xc8, 0xf0, /* DCID len=7, DCID bytes */
+		0x3e, 0x51, 0x57,
+		0x08, 0x10, 0x11, 0x12, 0x13, /* SCID len=8, SCID bytes */
+		0x14, 0x15, 0x16, 0x17,
+		0x00,                         /* Token length = 0 */
+		0x01,                         /* Payload length = 1 (PN only) */
+		0x00,                         /* Packet number = 0 */
 	};
 	struct quic_long_header_info info;
 	int ret;
@@ -2550,14 +2553,21 @@ ZTEST(net_socket_quic, test_335_quic_vn_ignores_initial_dcid_check)
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
 	struct quic_long_header_info info;
 	struct net_sockaddr_in src_addr = { 0 };
+	/*
+	 * Initial-shaped long header with Version Negotiation version 0. The
+	 * parser still needs the Initial fields below so version handling runs
+	 * before the too-short DCID check.
+	 */
 	uint8_t packet[] = {
-		0xc0,
-		0x00, 0x00, 0x00, 0x00,
-		0x07, 0x83, 0x94, 0xc8, 0xf0, 0x3e, 0x51, 0x57,
-		0x08, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-		0x00,
-		0x01,
-		0x00,
+		0xc0,                         /* Long header, Initial packet */
+		0x00, 0x00, 0x00, 0x00,       /* Version Negotiation version */
+		0x07, 0x83, 0x94, 0xc8, 0xf0, /* DCID len=7, DCID bytes */
+		0x3e, 0x51, 0x57,
+		0x08, 0x10, 0x11, 0x12, 0x13, /* SCID len=8, SCID bytes */
+		0x14, 0x15, 0x16, 0x17,
+		0x00,                         /* Token length = 0 */
+		0x01,                         /* Payload length = 1 (PN only) */
+		0x00,                         /* Packet number = 0 */
 	};
 	int ret;
 
@@ -2581,14 +2591,20 @@ ZTEST(net_socket_quic, test_336_quic_unsupported_version_before_initial_validati
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
 	struct quic_long_header_info info;
 	struct net_sockaddr_in src_addr = { 0 };
+	/*
+	 * Initial-shaped long header with an unsupported version. The remaining
+	 * bytes mirror the minimal Initial layout the parser expects.
+	 */
 	uint8_t packet[] = {
-		0xc0,
-		0x00, 0x00, 0x00, 0x02,
-		0x07, 0x83, 0x94, 0xc8, 0xf0, 0x3e, 0x51, 0x57,
-		0x08, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-		0x00,
-		0x01,
-		0x00,
+		0xc0,                         /* Long header, Initial packet */
+		0x00, 0x00, 0x00, 0x02,       /* Unsupported QUIC version */
+		0x07, 0x83, 0x94, 0xc8, 0xf0, /* DCID len=7, DCID bytes */
+		0x3e, 0x51, 0x57,
+		0x08, 0x10, 0x11, 0x12, 0x13, /* SCID len=8, SCID bytes */
+		0x14, 0x15, 0x16, 0x17,
+		0x00,                         /* Token length = 0 */
+		0x01,                         /* Payload length = 1 (PN only) */
+		0x00,                         /* Packet number = 0 */
 	};
 	int ret;
 
