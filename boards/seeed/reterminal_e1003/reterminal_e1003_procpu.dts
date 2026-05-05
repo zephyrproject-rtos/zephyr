@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <espressif/partitions_0x0_amp_32M.dtsi>
 #include "reterminal_e1003-pinctrl.dtsi"
 
@@ -25,9 +26,11 @@
 		zephyr,bt-hci = &esp32_bt_hci;
 		zephyr,rtc = &pcf8563_rtc;
 		zephyr,sdhc = &sdcard0;
+		zephyr,display = &it8951_epd;
 	};
 
 	aliases {
+		display0 = &it8951_epd;
 		i2c-0 = &i2c0;
 		led0 = &green_led0;
 		pwm-led0 = &buzzer0;
@@ -176,7 +179,7 @@
 	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
-	cs-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>, <&gpio0 10 GPIO_ACTIVE_LOW>;
 
 	sdcard0: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";
@@ -192,6 +195,24 @@
 			disk-name = "SD";
 			status = "okay";
 		};
+	};
+
+	it8951_epd: it8951@1 {
+		compatible = "ite,it8951";
+		reg = <1>;
+		status = "okay";
+		spi-max-frequency = <DT_FREQ_M(10)>;
+		width = <1872>;
+		height = <1404>;
+		busy-gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		reset-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		enable-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		ite-enable-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+		vcom-mv = <1400>;
+		panel-temp-c = <16>;
+		initial-refresh-waveform = <0>;
+		refresh-waveform = <2>;
+		h-mirror;
 	};
 };
 
