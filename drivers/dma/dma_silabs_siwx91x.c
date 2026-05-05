@@ -709,8 +709,8 @@ static DEVICE_API(dma, siwx91x_dma_api) = {
 #define SIWX91X_DMA_INIT(inst)                                                                     \
 	static ATOMIC_DEFINE(dma_channels_atomic_##inst, DT_INST_PROP(inst, dma_channels));        \
 	static UDMA_Channel_Info dma_channel_info_##inst[DT_INST_PROP(inst, dma_channels)];        \
-	SYS_MEM_BLOCKS_DEFINE_STATIC(desc_pool_##inst, sizeof(RSI_UDMA_DESC_T),                    \
-				     CONFIG_DMA_SILABS_SIWX91X_SG_BUFFER_COUNT, 4);                \
+	SYS_MEM_BLOCKS_DEFINE_STATIC_TYPE(desc_pool_##inst, RSI_UDMA_DESC_T,                       \
+					  CONFIG_DMA_SILABS_SIWX91X_SG_BUFFER_COUNT);              \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, silabs_sram_region),                               \
 		    (),                                                                            \
 		    (static __aligned(1024) RSI_UDMA_DESC_T                                        \

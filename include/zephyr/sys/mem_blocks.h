@@ -171,6 +171,17 @@ struct sys_multi_mem_blocks {
 	_SYS_MEM_BLOCKS_DEFINE(name, blk_sz, num_blks, buf_align,)
 
 /**
+ * @brief Create a memory block object for blocks of a given type with a new backing buffer.
+ *
+ * @param name      Name of the memory block object.
+ * @param type      Type of each memory block. The block size is rounded up
+ *                  to the next power of 2 after word alignment.
+ * @param num_blks  Total number of memory blocks.
+ */
+#define SYS_MEM_BLOCKS_DEFINE_TYPE(name, type, num_blks) \
+	SYS_MEM_BLOCKS_DEFINE(name, NHPOT(WB_UP(sizeof(type))), num_blks, __alignof(type))
+
+/**
  * @brief Create a static memory block object with a new backing buffer.
  *
  * @param name      Name of the memory block object.
@@ -181,6 +192,16 @@ struct sys_multi_mem_blocks {
 #define SYS_MEM_BLOCKS_DEFINE_STATIC(name, blk_sz, num_blks, buf_align) \
 	_SYS_MEM_BLOCKS_DEFINE(name, blk_sz, num_blks, buf_align, static)
 
+/**
+ * @brief Create a static memory block object for blocks of a given type with a new backing buffer.
+ *
+ * @param name      Name of the memory block object.
+ * @param type      Type of each memory block. The block size is rounded up
+ *                  to the next power of 2 after word alignment.
+ * @param num_blks  Total number of memory blocks.
+ */
+#define SYS_MEM_BLOCKS_DEFINE_STATIC_TYPE(name, type, num_blks) \
+	SYS_MEM_BLOCKS_DEFINE_STATIC(name, NHPOT(WB_UP(sizeof(type))), num_blks, __alignof(type))
 
 /**
  * @brief Create a memory block object with a providing backing buffer.
