@@ -44,3 +44,16 @@ static inline int z_vrfy_mbox_set_enabled(const struct device *dev,
 	return z_impl_mbox_set_enabled(dev, channel_id, enabled);
 }
 #include <zephyr/syscalls/mbox_set_enabled_mrsh.c>
+
+static inline int z_vrfy_mbox_send_then_poll_rx(const struct device *dev,
+						mbox_channel_id_t rx_channel,
+						mbox_channel_id_t tx_channel,
+						const struct mbox_msg *msg)
+{
+	K_OOPS(K_SYSCALL_DRIVER_MBOX(dev, send_then_poll_rx));
+	K_OOPS(K_SYSCALL_MEMORY_READ(msg, sizeof(struct mbox_msg)));
+	K_OOPS(K_SYSCALL_MEMORY_READ(msg->data, msg->size));
+
+	return z_impl_mbox_send_then_poll_rx(dev, rx_channel, tx_channel, msg);
+}
+#include <zephyr/syscalls/mbox_send_then_poll_rx_mrsh.c>

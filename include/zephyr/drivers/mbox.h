@@ -225,12 +225,27 @@ typedef int (*mbox_set_enabled_t)(const struct device *dev,
  */
 typedef uint32_t (*mbox_max_channels_get_t)(const struct device *dev);
 
+/**
+ * @brief Callback API to send a message then poll (wait) on a reply
+ *
+ * @param dev MBOX device instance
+ * @param rx_channel Channel ID to receive message on
+ * @param tx_channel Channel ID to send message on
+ * @param msg Message to send
+ *
+ * @return See return values for mbox_send_then_poll_rx()
+ * @see mbox_send_then_poll_rx()
+ */
+typedef int (*mbox_send_then_poll_rx_t)(const struct device *dev, mbox_channel_id_t rx_channel,
+					mbox_channel_id_t tx_channel, const struct mbox_msg *msg);
+
 __subsystem struct mbox_driver_api {
 	mbox_send_t send;
 	mbox_register_callback_t register_callback;
 	mbox_mtu_get_t mtu_get;
 	mbox_max_channels_get_t max_channels_get;
 	mbox_set_enabled_t set_enabled;
+	mbox_send_then_poll_rx_t send_then_poll_rx;
 };
 
 /** @endcond */
@@ -479,6 +494,67 @@ static inline uint32_t z_impl_mbox_max_channels_get(const struct device *dev)
 static inline int mbox_max_channels_get_dt(const struct mbox_dt_spec *spec)
 {
 	return mbox_max_channels_get(spec->dev);
+}
+
+/**
+ * @brief Send a message then poll for the reply
+ *
+ * Combine sending and receiving messages over specified channels by polling. This routine disables
+ * the interrupt associated with the RX channel during its duration and is only meant to be used
+ * during pre kernel stages where kernel services are not available. The RX buffer for the channel
+ * should be set up using mbox_register_callback() before calling this API. Since this is a polling
+ * API, it also blocks the thread.
+ *
+ * @param dev MBOX device instance.
+ * @param rx_channel: Channel ID to receive reply on via polling after sending the message
+ * @param tx_channel: Channel ID to send message on
+ * @param msg: TX Message struct
+ *
+ * @retval 0         On success.
+ * @retval -EBUSY    If the remote hasn't yet read the last data sent.
+ * @retval -EMSGSIZE If the supplied data size is unsupported by the driver.
+ * @retval -EIO      If there is an issue with RX thread like being in an error state
+ * @retval -ENOBUFS  If the RX buffer is too small for receiving a message
+ * @retval -EINVAL   If there was a bad parameter, such as: too-large channel
+ *		     descriptor or the device isn't an outbound MBOX channel.
+ * @see mbox_register_callback()
+ *
+ */
+__syscall int mbox_send_then_poll_rx(const struct device *dev, mbox_channel_id_t rx_channel,
+				     mbox_channel_id_t tx_channel, const struct mbox_msg *msg);
+
+static inline int z_impl_mbox_send_then_poll_rx(const struct device *dev,
+						mbox_channel_id_t rx_channel,
+						mbox_channel_id_t tx_channel,
+						const struct mbox_msg *msg)
+{
+	const struct mbox_driver_api *api = DEVICE_API_GET(mbox, dev);
+
+	if (api->send_then_poll_rx == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->send_then_poll_rx(dev, rx_channel, tx_channel, msg);
+}
+
+/**
+ * @brief Send a message then poll for the reply, using struct mbox_dt_spec
+ *
+ * @param rx_spec: MBOX DT spec to receive reply on via polling after sending the message
+ * @param tx_spec: MBOX DT spec to send message on
+ * @param msg: TX Message struct
+ *
+ * @return See return values for mbox_send_then_poll_rx()
+ */
+static inline int mbox_send_then_poll_rx_dt(const struct mbox_dt_spec *rx_spec,
+					    const struct mbox_dt_spec *tx_spec,
+					    const struct mbox_msg *msg)
+{
+	if (rx_spec->dev != tx_spec->dev) {
+		return -EINVAL;
+	}
+
+	return mbox_send_then_poll_rx(tx_spec->dev, rx_spec->channel_id, tx_spec->channel_id, msg);
 }
 
 /** @} */
