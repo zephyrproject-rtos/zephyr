@@ -625,6 +625,7 @@ static void *read_abort_setup(void)
 
 	uart_async_test_init(idx++);
 
+	test_read_abort_rx_cnt = 0;
 	test_read_abort_rx_buf_req_once = false;
 	failed_in_isr = false;
 	uart_callback_set(uart_dev, test_read_abort_callback, NULL);
@@ -644,12 +645,21 @@ ZTEST_USER(uart_async_read_abort, test_read_abort)
 	 __aligned(sizeof(void *)) uint8_t rx_buf[100];
 	 __aligned(sizeof(void *)) uint8_t tx_buf[100];
 #endif /* NOCACHE_MEM */
+	uint32_t baudrate;
 
 	memset(rx_buf, 0, sizeof(rx_buf));
 	memset(tx_buf, 1, sizeof(tx_buf));
 
 	err = uart_config_get(uart_dev, &cfg);
 	zassert_equal(err, 0);
+
+	/* Lets reduce the baudrate as we want to abort the transfer before it is
+	 * finished and k_timer precision depends on the system timer frequency
+	 * which might be low.
+	 */
+	baudrate = cfg.baudrate;
+	cfg.baudrate = 9600;
+	zassert_ok(uart_configure(uart_dev, &cfg));
 
 	/* Lets aim to abort after transmitting ~20 bytes (200 bauds) */
 	t_us = (20 * 10 * 1000000) / cfg.baudrate;
@@ -689,6 +699,8 @@ ZTEST_USER(uart_async_read_abort, test_read_abort)
 	zassert_not_equal(k_sem_take(&rx_buf_coherency, K_NO_WAIT), 0,
 			"All provided buffers are released");
 
+	cfg.baudrate = baudrate;
+	zassert_ok(uart_configure(uart_dev, &cfg));
 }
 
 static ZTEST_BMEM volatile size_t sent;
