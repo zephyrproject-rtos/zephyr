@@ -149,51 +149,49 @@ cy_rslt_t _i2c_abort_async(const struct device *dev)
 	return CY_RSLT_SUCCESS;
 }
 
-static void ifx_master_event_handler(void *callback_arg, uint32_t event)
+static void ifx_handle_target_read_event(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)callback_arg;
 	struct ifx_cat1_i2c_data *data = dev->data;
 	const struct ifx_cat1_i2c_config *const config = dev->config;
 
-	if (((CY_SCB_I2C_MASTER_ERR_EVENT | CY_SCB_I2C_SLAVE_ERR_EVENT) & event) != 0) {
-		/* In case of error abort transfer */
-		(void)_i2c_abort_async(dev);
-		data->error = true;
-		k_sem_give(&data->transfer_sem);
-	} else if (((data->async_pending == CAT1_I2C_PENDING_TX_RX) &&
-	     ((CY_SCB_I2C_MASTER_RD_CMPLT_EVENT & event) != 0)) ||
-	    (data->async_pending != CAT1_I2C_PENDING_TX_RX)) {
-		/* Release semaphore if operation complete
-		 * When we have pending TX, RX operations, the semaphore will be released
-		 * after TX, RX complete.
-		 * Release semaphore (After I2C async transfer is complete)
-		 */
-		k_sem_give(&data->transfer_sem);
+	/* Repeated-start: flush pending write data before switching to read,
+	 * since WR_CMPLT_EVENT won't fire without a STOP.
+	 */
+	if (data->context.state == CY_SCB_I2C_SLAVE_RX) {
+		if (data->p_target_config->callbacks->write_received) {
+			for (int i = 0; i < (int)data->context.slaveRxBufferIdx; i++) {
+				data->p_target_config->callbacks->write_received(
+					data->p_target_config, data->target_wr_buffer[i]);
+			}
+		}
+		if (data->p_target_config->callbacks->stop) {
+			data->p_target_config->callbacks->stop(data->p_target_config);
+		}
 	}
 
-	if (data->p_target_config == NULL) {
-		return;
+	if (data->p_target_config->callbacks->read_requested) {
+		data->p_target_config->callbacks->read_requested(data->p_target_config,
+								 &data->i2c_target_wr_byte);
+		Cy_SCB_I2C_SlaveConfigReadBuf(config->base, &data->i2c_target_wr_byte, 1,
+					      &data->context);
 	}
+}
+
+static void ifx_handle_target_events(const struct device *dev, uint32_t event)
+{
+	struct ifx_cat1_i2c_data *data = dev->data;
+	const struct ifx_cat1_i2c_config *const config = dev->config;
 
 	if (0 != (CY_SCB_I2C_SLAVE_READ_EVENT & event)) {
-		if (data->p_target_config->callbacks->read_requested) {
-			data->p_target_config->callbacks->read_requested(data->p_target_config,
-									 &data->i2c_target_wr_byte);
-			data->context.slaveTxBufferIdx = 0;
-			data->context.slaveTxBufferCnt = 0;
-			data->context.slaveTxBufferSize = 1;
-			data->context.slaveTxBuffer = &data->i2c_target_wr_byte;
-		}
+		ifx_handle_target_read_event(dev);
 	}
 
 	if (0 != (CY_SCB_I2C_SLAVE_RD_BUF_EMPTY_EVENT & event)) {
 		if (data->p_target_config->callbacks->read_processed) {
 			data->p_target_config->callbacks->read_processed(data->p_target_config,
 									 &data->i2c_target_wr_byte);
-			data->context.slaveTxBufferIdx = 0;
-			data->context.slaveTxBufferCnt = 0;
-			data->context.slaveTxBufferSize = 1;
-			data->context.slaveTxBuffer = &data->i2c_target_wr_byte;
+			Cy_SCB_I2C_SlaveConfigReadBuf(config->base, &data->i2c_target_wr_byte, 1,
+						      &data->context);
 		}
 	}
 
@@ -221,6 +219,26 @@ static void ifx_master_event_handler(void *callback_arg, uint32_t event)
 		if (data->p_target_config->callbacks->stop) {
 			data->p_target_config->callbacks->stop(data->p_target_config);
 		}
+	}
+}
+
+static void ifx_cat1_i2c_event_handler(void *callback_arg, uint32_t event)
+{
+	const struct device *dev = (const struct device *)callback_arg;
+	struct ifx_cat1_i2c_data *data = dev->data;
+
+	if (((CY_SCB_I2C_MASTER_ERR_EVENT | CY_SCB_I2C_SLAVE_ERR_EVENT) & event) != 0) {
+		(void)_i2c_abort_async(dev);
+		data->error = true;
+		k_sem_give(&data->transfer_sem);
+	} else if (((data->async_pending == CAT1_I2C_PENDING_TX_RX) &&
+		    ((CY_SCB_I2C_MASTER_RD_CMPLT_EVENT & event) != 0)) ||
+		   (data->async_pending != CAT1_I2C_PENDING_TX_RX)) {
+		k_sem_give(&data->transfer_sem);
+	}
+
+	if (data->p_target_config != NULL) {
+		ifx_handle_target_events(dev, event);
 	}
 }
 
@@ -460,7 +478,7 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 	_i2c_default_config.slaveAddress = data->slave_address;
 
 	if (is_target_mode) {
-		_i2c_default_config.slaveAddressMask = 0;
+		_i2c_default_config.slaveAddressMask = 0xFE;
 		_i2c_default_config.ackGeneralAddr = false;
 	}
 
@@ -494,8 +512,12 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 #endif
 	irq_enable(config->irq_num);
 
-	/* Register an I2C event callback handler */
-	ifx_cat1_i2c_register_callback(dev, ifx_master_event_handler, (void *)dev);
+	/* Register an I2C event callback handler - explicitly drop the const here
+	 * to maintain backwards compatibility. This warning went unnoticed in past
+	 * iterations, and the proper fix of propagating the const may generate
+	 * build warnings for active users / old applications
+	 */
+	ifx_cat1_i2c_register_callback(dev, ifx_cat1_i2c_event_handler, (void *)(uintptr_t)dev);
 
 #ifdef CONFIG_PM
 	data->i2c_deep_sleep_param.context = &data->context;
@@ -711,6 +733,8 @@ void _i2c_free(const struct device *dev)
 static int ifx_cat1_i2c_target_register(const struct device *dev, struct i2c_target_config *cfg)
 {
 	struct ifx_cat1_i2c_data *data = (struct ifx_cat1_i2c_data *)dev->data;
+	const struct ifx_cat1_i2c_config *const config = dev->config;
+	int ret;
 
 	if (!cfg) {
 		return -EINVAL;
@@ -723,6 +747,14 @@ static int ifx_cat1_i2c_target_register(const struct device *dev, struct i2c_tar
 	data->p_target_config = cfg;
 	data->slave_address = (uint8_t)cfg->address;
 
+	/* Restore pinctrl to SCB mode after unregister released pins */
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_WRN("target_register: pinctrl DEFAULT state apply failed (%d); "
+			"SCB may not be able to drive SDA/SCL",
+			ret);
+	}
+
 	if (ifx_cat1_i2c_configure(dev, I2C_SPEED_SET(I2C_SPEED_FAST)) != 0) {
 		/* Free I2C resource */
 		_i2c_free(dev);
@@ -732,6 +764,10 @@ static int ifx_cat1_i2c_target_register(const struct device *dev, struct i2c_tar
 		return -EIO;
 	}
 
+	/* Arm the RX buffer so the first write after register is ACKed. */
+	Cy_SCB_I2C_SlaveConfigWriteBuf(config->base, (uint8_t *)data->target_wr_buffer,
+				       CONFIG_I2C_INFINEON_CAT1_TARGET_BUF, &data->context);
+
 	data->irq_cause |= I2C_CAT1_SLAVE_EVENTS_MASK;
 
 	return 0;
@@ -740,6 +776,8 @@ static int ifx_cat1_i2c_target_register(const struct device *dev, struct i2c_tar
 static int ifx_cat1_i2c_target_unregister(const struct device *dev, struct i2c_target_config *cfg)
 {
 	struct ifx_cat1_i2c_data *data = (struct ifx_cat1_i2c_data *)dev->data;
+	const struct ifx_cat1_i2c_config *const config = dev->config;
+	int ret;
 
 	/* Acquire semaphore (block I2C operation for another thread) */
 	k_sem_take(&data->operation_sem, K_FOREVER);
@@ -748,6 +786,15 @@ static int ifx_cat1_i2c_target_unregister(const struct device *dev, struct i2c_t
 	data->p_target_config = NULL;
 
 	data->irq_cause &= ~I2C_CAT1_SLAVE_EVENTS_MASK;
+
+	/* Disable NVIC to prevent ISR loops from stale INTR_S bits. */
+	irq_disable(config->irq_num);
+
+	/* Release pins so a disabled SCB cannot hold the bus low. */
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+	if (ret < 0 && ret != -ENOENT) {
+		LOG_WRN("target_unregister: pinctrl SLEEP state apply failed (%d)", ret);
+	}
 
 	/* Release semaphore */
 	k_sem_give(&data->operation_sem);
