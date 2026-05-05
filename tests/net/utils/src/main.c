@@ -1468,4 +1468,158 @@ ZTEST(test_utils_fn, test_linkaddr_handling)
 	net_pkt_unref(pkt2);
 }
 
+ZTEST(test_utils_fn, test_parse_ipv4_overflow)
+{
+	struct net_sockaddr_storage saddr;
+	struct net_sockaddr *addr = net_sad(&saddr);
+	bool ret;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4)) {
+		ztest_test_skip();
+	}
+
+	/* Case 1: Invalid IPv4 address.
+	 *
+	 * A lone ':' at position 0 followed by 199 bytes of 'A'.
+	 * This will be rejected before the port is checked.
+	 */
+	{
+		/* Build the payload at runtime so the compiler cannot fold it */
+		char payload[201];
+
+		payload[0] = ':';
+		memset(payload + 1, 'A', 199);
+		payload[200] = '\0';
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(payload, sizeof(payload) - 1, addr);
+		zassert_false(ret, "Case 1: Invalid IPv4 address must be rejected");
+	}
+
+	/* Case 2: Valid IP, oversized port string (str_len >> buffer size).
+	 *
+	 * "192.0.2.1:" + 190 digits.
+	 * end≈9, port portion ≈190 bytes => unfixed overflow.
+	 * Fixed code scans the bounded port field and rejects it once it sees
+	 * that the port text is overlong.
+	 */
+	{
+		char payload[201];
+		int prefix_len;
+
+		prefix_len = snprintf(payload, sizeof(payload), "192.0.2.1:");
+		memset(payload + prefix_len, '9', 190);
+		payload[prefix_len + 190] = '\0';
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(payload, (size_t)(prefix_len + 190), addr);
+		zassert_false(ret, "Case 2: IP with oversized port digits must be rejected");
+	}
+
+	/* Case 3: str_len larger than the actual string (simulates a caller
+	 * passing a generous upper-bound length as allowed by the API).
+	 *
+	 * The buffer is genuinely 200 bytes so net_ipaddr_parse can legally read
+	 * up to str_len bytes from it.  The content ends at "1.2.3.4:80\0" and
+	 * the remainder is zero-padded, matching what a caller would have if it
+	 * allocated a fixed-size receive buffer and filled it partially.
+	 *
+	 * buf[200] = "1.2.3.4:80"  (10 chars)
+	 * buf_len  = 200
+	 *
+	 * Before fix: str_len - end - 1 = 200 - 7 - 1 = 192 bytes copied into
+	 * the 16-byte ipaddr[] buffer => overflow.
+	 * After fix: the parser stops at the first NUL within the bounded input,
+	 * so "80\0..." is handled as port 80.
+	 */
+	{
+		char buf[200];
+
+		memset(buf, 0, sizeof(buf));
+		memcpy(buf, "1.2.3.4:80", sizeof("1.2.3.4:80"));
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(buf, sizeof(buf), addr);
+		zassert_true(ret, "Case 3: valid ip:port with oversized buf_len must succeed");
+		zassert_equal(net_sin(addr)->sin_family, NET_AF_INET,
+			      "Case 3: family must be AF_INET");
+		zassert_equal(net_sin(addr)->sin_port, net_htons(80),
+			      "Case 3: port must be 80");
+		zassert_equal(net_sin(addr)->sin_addr.s4_addr[0], 1,  "Case 3: octet 0");
+		zassert_equal(net_sin(addr)->sin_addr.s4_addr[1], 2,  "Case 3: octet 1");
+		zassert_equal(net_sin(addr)->sin_addr.s4_addr[2], 3,  "Case 3: octet 2");
+		zassert_equal(net_sin(addr)->sin_addr.s4_addr[3], 4,  "Case 3: octet 3");
+	}
+
+	/* Case 4: Boundary, a 5-character port with leading zeros is valid.
+	 *
+	 * This exercises the longest accepted decimal port string without
+	 * exceeding the numeric range.
+	 */
+	{
+		const char *str = "192.168.1.1:00080";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_true(ret, "Case 4: 5-digit port must be accepted");
+		zassert_equal(net_sin(addr)->sin_port, net_htons(80),
+			      "Case 4: port must be 80");
+	}
+
+	/* Case 5: Overlong numeric ports with leading zeros must be rejected.
+	 */
+	{
+		const char *str = "192.168.1.1:000080";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_false(ret, "Case 5: 6-digit port must be rejected");
+	}
+
+	/* Case 6: Regression, shortest valid port (port 0).
+	 * Ensures the fix did not break the lower boundary of port handling.
+	 */
+	{
+		const char *str = "10.0.0.1:0";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_true(ret, "Case 6: port 0 must be accepted");
+		zassert_equal(net_sin(addr)->sin_port, net_htons(0),
+			      "Case 6: port must be 0");
+	}
+
+	/* Case 7: Regression, maximum valid port (65535).
+	 */
+	{
+		const char *str = "255.255.255.255:65535";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_true(ret, "Case 7: port 65535 must be accepted");
+		zassert_equal(net_sin(addr)->sin_port, net_htons(65535),
+			      "Case 7: port must be 65535");
+	}
+
+	/* Case 8: Port one above the maximum (65536) must be rejected.
+	 */
+	{
+		const char *str = "192.0.2.1:65536";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_false(ret, "Case 8: port 65536 must be rejected");
+	}
+
+	/* Case 9: Too long port value must be rejected.
+	 */
+	{
+		const char *str = "192.0.2.1:123456";
+
+		(void)memset(addr, 0, sizeof(struct net_sockaddr_in));
+		ret = net_ipaddr_parse(str, strlen(str), addr);
+		zassert_false(ret, "Case 9: port 123456 must be rejected");
+	}
+}
+
 ZTEST_SUITE(test_utils_fn, NULL, NULL, NULL, NULL, NULL);
