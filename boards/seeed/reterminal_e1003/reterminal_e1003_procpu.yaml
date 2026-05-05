@@ -10,6 +10,7 @@ supported:
   - i2c
   - spi
   - sdhc
+  - display
   - counter
   - watchdog
   - entropy
