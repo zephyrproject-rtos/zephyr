@@ -172,12 +172,6 @@ static int pwm_renesas_ra_set_cycles(const struct device *dev, uint32_t pin, uin
 	/* Apply gtio output setting */
 	pwm_renesas_ra_apply_gtior_config(&data->fsp_ctrl, &data->fsp_cfg);
 
-	/* Stop timer */
-	err = R_GPT_Stop(&data->fsp_ctrl);
-	if (err != FSP_SUCCESS) {
-		return -EIO;
-	}
-
 	/* Update period cycles, reflected at an overflow */
 	err = R_GPT_PeriodSet(&data->fsp_ctrl, period_cycles);
 	if (err != FSP_SUCCESS) {
