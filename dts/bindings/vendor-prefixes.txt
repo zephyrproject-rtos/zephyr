@@ -131,6 +131,7 @@ caninos	Caninos Loucos Program
 canis	Canis Automotive Labs
 capella	Capella Microsystems, Inc
 cascoda	Cascoda, Ltd.
+cast	CAST, Inc.
 catalyst	Catalyst Semiconductor, Inc.
 cavium	Cavium, Inc.
 cdns	Cadence Design Systems Inc.
