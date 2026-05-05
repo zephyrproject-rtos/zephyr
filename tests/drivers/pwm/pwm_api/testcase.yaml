@@ -88,9 +88,11 @@ tests:
     extra_args:
       - platform:sam_e54_xpro/atsame54p20a:DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc2.overlay"
       - platform:pic32cx_sg61_cult/pic32cx1025sg61128:DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg61_cult_tcc2.overlay"
+      - platform:pic32cm_jh01_cpro/pic32cm5164jh01100:DTC_OVERLAY_FILE="boards/microchip/pic32cm_jh01_cpro.overlay"
     platform_allow:
       - sam_e54_xpro
       - pic32cx_sg61_cult
+      - pic32cm_jh01_cpro
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tcc3:
     extra_args:
