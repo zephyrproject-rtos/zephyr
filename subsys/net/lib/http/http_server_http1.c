@@ -926,6 +926,7 @@ static int on_headers_complete(struct http_parser *parser)
 						   struct http_client_ctx,
 						   parser);
 
+	http_server_remove_dot_segments(ctx->url_buffer);
 	ctx->parser_state = HTTP1_RECEIVED_HEADER_STATE;
 
 	return 0;

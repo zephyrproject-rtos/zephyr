@@ -782,6 +782,79 @@ static bool skip_this(struct http_resource_desc *resource, bool is_websocket)
 	return false;
 }
 
+/* Resolves '.' / '..' in the path portion of the URL (everything before the first '?' or '#')
+ * so the caller-visible buffer holds a canonical form. The query/fragment portion is preserved
+ * unchanged. The output is always shorter or equal in length, so the in-place rewrite is safe.
+ */
+void http_server_remove_dot_segments(char *path)
+{
+	char *in = path;
+	char *out = path;
+	char *query = strpbrk(path, "?#");
+	size_t qtail_len = (query != NULL) ? strlen(query) : 0;
+
+	while ((*in != '\0') && (in != query)) {
+		if (in[0] == '.') {
+			if (in[1] == '/') {
+				in += 2;
+				continue;
+			} else if ((in[1] == '.') && (in[2] == '/')) {
+				in += 3;
+				continue;
+			} else if ((in[1] == '\0') || (in + 1 == query)) {
+				in += 1;
+				continue;
+			} else if ((in[1] == '.') &&
+					((in[2] == '\0') || (in + 2 == query))) {
+				in += 2;
+				continue;
+			}
+		} else if ((in[0] == '/') && (in[1] == '.')) {
+			if (in[2] == '/') {
+				in += 2;
+				continue;
+			} else if ((in[2] == '\0') || ((in + 2) == query)) {
+				in += 2;
+				*out++ = '/';
+				continue;
+			} else if ((in[2] == '.') && (in[3] == '/')) {
+				in += 3;
+				while ((out > path) && (*(out - 1) != '/')) {
+					out--;
+				}
+				if (out > path) {
+					out--;
+				}
+				continue;
+			} else if ((in[2] == '.') && ((in[3] == '\0') || ((in + 3) == query))) {
+				in += 3;
+				while ((out > path) && (*(out - 1) != '/')) {
+					out--;
+				}
+				if (out > path) {
+					out--;
+				}
+				*out++ = '/';
+				continue;
+			}
+		}
+
+		/* Move the first segment to output: leading char (often '/') plus
+		 * all non-'/' bytes up to the next segment boundary.
+		 */
+		*out++ = *in++;
+		while ((*in != '\0') && (in != query) && (*in != '/')) {
+			*out++ = *in++;
+		}
+	}
+
+	if (qtail_len > 0) {
+		memmove(out, query, qtail_len);
+		out += qtail_len;
+	}
+	*out = '\0';
+}
+
 struct http_resource_detail *get_resource_detail(const struct http_service_desc *service,
 						 const char *path, int *path_len, bool is_websocket)
 {
