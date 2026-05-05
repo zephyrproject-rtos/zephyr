@@ -3173,7 +3173,7 @@ static int uarte_instance_deinit(const struct device *dev)
 	.timer_regs = COND_CODE_1(UARTE_HAS_PROP(idx, timer),					\
 		(UARTE_TIMER_REG(idx)),								\
 		(COND_CODE_1(CONFIG_UART_##idx##_NRF_HW_ASYNC,					\
-			     (NRFX_CONCAT(NRF_TIMER, CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER)),	\
+			     ((void *)(NRFX_CONCAT(NRF_TIMER, CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER), _BASE)),	\
 			      (NULL)))),							\
 	.uarte_irqn = DT_IRQN(UARTE(idx)),
 
