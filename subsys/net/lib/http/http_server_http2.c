@@ -1396,6 +1396,7 @@ static int process_header(struct http_client_ctx *client,
 
 		memcpy(client->url_buffer, header->value, header->value_len);
 		client->url_buffer[header->value_len] = '\0';
+		http_server_remove_dot_segments(client->url_buffer);
 	} else if (header->name_len == (sizeof("content-type") - 1) &&
 		   memcmp(header->name, "content-type", header->name_len) == 0) {
 		if (header->value_len > sizeof(client->content_type) - 1) {
