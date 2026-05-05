@@ -875,6 +875,7 @@
 				reg = <0x8ef000 0x1000>;
 				status = "disabled";
 				channels = <8>;
+				offset = <16>;
 			};
 
 			cpuppr_vpr: vpr@908000 {
