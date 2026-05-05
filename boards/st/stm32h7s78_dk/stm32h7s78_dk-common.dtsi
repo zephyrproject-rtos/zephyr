@@ -293,6 +293,10 @@ st_cam_i2c: &i2c1 {
 	};
 };
 
+&xspim {
+	status = "okay";
+};
+
 &xspi1 {
 	pinctrl-0 = <&xspim_p1_ncs1_po0 &xspim_p1_dqs0_po2
 		     &xspim_p1_dqs1_po3 &xspim_p1_clk_po4
