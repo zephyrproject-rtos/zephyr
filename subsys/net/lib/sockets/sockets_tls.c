@@ -1102,7 +1102,7 @@ static int dtls_tx(void *ctx, const unsigned char *buf, size_t len)
 static int dtls_server_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
-	net_socklen_t addrlen = sizeof(struct net_sockaddr);
+	net_socklen_t addrlen = sizeof(addr);
 	struct net_sockaddr_storage addr = { 0 };
 	int err;
 	ssize_t received;
@@ -1158,7 +1158,7 @@ static int dtls_server_rx(void *ctx, unsigned char *buf, size_t len)
 static int dtls_client_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
-	net_socklen_t addrlen = sizeof(struct net_sockaddr);
+	net_socklen_t addrlen = sizeof(addr);
 	struct net_sockaddr_storage addr = { 0 };
 	ssize_t received;
 
@@ -1277,8 +1277,8 @@ static int dtls_server_switch_active_session_by_cid(struct tls_context *tls_ctx)
 	k_mutex_lock(&dtls_helper_buf_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&tls_ctx->sessions, session_ctx, node) {
-		struct net_sockaddr_storage addr;
-		net_socklen_t addrlen;
+		struct net_sockaddr_storage addr = { 0 };
+                net_socklen_t addrlen = sizeof(addr);
 		int cid_enabled;
 		ssize_t len;
 		int ret;
@@ -1342,7 +1342,7 @@ static int dtls_server_switch_active_session_by_cid(struct tls_context *tls_ctx)
  */
 static int dtls_server_switch_session_on_rx(struct tls_context *tls_ctx)
 {
-	net_socklen_t addrlen = sizeof(struct net_sockaddr);
+	net_socklen_t addrlen = sizeof(addr);
 	struct net_sockaddr_storage addr = { 0 };
 	uint8_t tmp_buf;
 	int ret;
