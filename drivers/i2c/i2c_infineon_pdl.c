@@ -74,6 +74,9 @@ struct ifx_cat1_i2c_data {
 	struct i2c_target_config *p_target_config;
 	uint8_t i2c_target_wr_byte;
 	uint8_t target_wr_buffer[CONFIG_I2C_INFINEON_CAT1_TARGET_BUF];
+#ifdef CONFIG_I2C_INFINEON_PDL_TARGET_PREFETCH
+	uint8_t slave_tx_prefetch_buf[CONFIG_I2C_INFINEON_CAT1_TARGET_BUF];
+#endif
 	uint8_t slave_address;
 	uint32_t frequencyhal_hz;
 	cy_stc_syspm_callback_t i2c_deep_sleep;
@@ -149,41 +152,53 @@ cy_rslt_t _i2c_abort_async(const struct device *dev)
 	return CY_RSLT_SUCCESS;
 }
 
-static void ifx_master_event_handler(void *callback_arg, uint32_t event)
+static void ifx_handle_target_read_event(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)callback_arg;
+	struct ifx_cat1_i2c_data *data = dev->data;
+#ifdef CONFIG_I2C_INFINEON_PDL_TARGET_PREFETCH
+	const struct ifx_cat1_i2c_config *const config = dev->config;
+	if (data->p_target_config->callbacks->read_requested) {
+		uint32_t prefetch_len = 1;
+
+		/* First byte via read_requested */
+		data->p_target_config->callbacks->read_requested(data->p_target_config,
+								 &data->slave_tx_prefetch_buf[0]);
+
+		/* Pre-fill TX FIFO for non-clock-stretching masters. */
+		if (data->p_target_config->callbacks->read_processed) {
+			while (prefetch_len < CONFIG_I2C_INFINEON_CAT1_TARGET_BUF) {
+				int pret = data->p_target_config->callbacks->read_processed(
+					data->p_target_config,
+					&data->slave_tx_prefetch_buf[prefetch_len]);
+				prefetch_len++;
+				if (pret != 0) {
+					break;
+				}
+			}
+		}
+		Cy_SCB_WriteArrayNoCheck(config->base, data->slave_tx_prefetch_buf, prefetch_len);
+		Cy_SCB_I2C_SlaveConfigReadBuf(config->base, data->slave_tx_prefetch_buf, 0,
+					      &data->context);
+	}
+#else
+	if (data->p_target_config->callbacks->read_requested) {
+		data->p_target_config->callbacks->read_requested(data->p_target_config,
+								 &data->i2c_target_wr_byte);
+		data->context.slaveTxBufferIdx = 0;
+		data->context.slaveTxBufferCnt = 0;
+		data->context.slaveTxBufferSize = 1;
+		data->context.slaveTxBuffer = &data->i2c_target_wr_byte;
+	}
+#endif
+}
+
+static void ifx_handle_target_events(const struct device *dev, uint32_t event)
+{
 	struct ifx_cat1_i2c_data *data = dev->data;
 	const struct ifx_cat1_i2c_config *const config = dev->config;
 
-	if (((CY_SCB_I2C_MASTER_ERR_EVENT | CY_SCB_I2C_SLAVE_ERR_EVENT) & event) != 0) {
-		/* In case of error abort transfer */
-		(void)_i2c_abort_async(dev);
-		data->error = true;
-		k_sem_give(&data->transfer_sem);
-	} else if (((data->async_pending == CAT1_I2C_PENDING_TX_RX) &&
-	     ((CY_SCB_I2C_MASTER_RD_CMPLT_EVENT & event) != 0)) ||
-	    (data->async_pending != CAT1_I2C_PENDING_TX_RX)) {
-		/* Release semaphore if operation complete
-		 * When we have pending TX, RX operations, the semaphore will be released
-		 * after TX, RX complete.
-		 * Release semaphore (After I2C async transfer is complete)
-		 */
-		k_sem_give(&data->transfer_sem);
-	}
-
-	if (data->p_target_config == NULL) {
-		return;
-	}
-
 	if (0 != (CY_SCB_I2C_SLAVE_READ_EVENT & event)) {
-		if (data->p_target_config->callbacks->read_requested) {
-			data->p_target_config->callbacks->read_requested(data->p_target_config,
-									 &data->i2c_target_wr_byte);
-			data->context.slaveTxBufferIdx = 0;
-			data->context.slaveTxBufferCnt = 0;
-			data->context.slaveTxBufferSize = 1;
-			data->context.slaveTxBuffer = &data->i2c_target_wr_byte;
-		}
+		ifx_handle_target_read_event(dev);
 	}
 
 	if (0 != (CY_SCB_I2C_SLAVE_RD_BUF_EMPTY_EVENT & event)) {
@@ -221,6 +236,26 @@ static void ifx_master_event_handler(void *callback_arg, uint32_t event)
 		if (data->p_target_config->callbacks->stop) {
 			data->p_target_config->callbacks->stop(data->p_target_config);
 		}
+	}
+}
+
+static void ifx_cat1_i2c_event_handler(void *callback_arg, uint32_t event)
+{
+	const struct device *dev = (const struct device *)callback_arg;
+	struct ifx_cat1_i2c_data *data = dev->data;
+
+	if (((CY_SCB_I2C_MASTER_ERR_EVENT | CY_SCB_I2C_SLAVE_ERR_EVENT) & event) != 0) {
+		(void)_i2c_abort_async(dev);
+		data->error = true;
+		k_sem_give(&data->transfer_sem);
+	} else if (((data->async_pending == CAT1_I2C_PENDING_TX_RX) &&
+		    ((CY_SCB_I2C_MASTER_RD_CMPLT_EVENT & event) != 0)) ||
+		   (data->async_pending != CAT1_I2C_PENDING_TX_RX)) {
+		k_sem_give(&data->transfer_sem);
+	}
+
+	if (data->p_target_config != NULL) {
+		ifx_handle_target_events(dev, event);
 	}
 }
 
@@ -462,6 +497,10 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 	if (is_target_mode) {
 		_i2c_default_config.slaveAddressMask = 0;
 		_i2c_default_config.ackGeneralAddr = false;
+#ifdef CONFIG_I2C_INFINEON_PDL_TARGET_PREFETCH
+		/* Hardware auto-ACK for non-clock-stretching masters. */
+		_i2c_default_config.useRxFifo = true;
+#endif
 	}
 
 	/* De-initialize SCB before re-configuring (required when switching modes) */
@@ -492,10 +531,23 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 #else
 	Cy_SCB_I2C_Enable(config->base);
 #endif
+
+#ifdef CONFIG_I2C_INFINEON_PDL_TARGET_PREFETCH
+	if (is_target_mode) {
+		/* Enable hardware auto-ACK for address and data phases. */
+		SCB_I2C_CTRL(config->base) |=
+			SCB_I2C_CTRL_S_READY_ADDR_ACK_Msk | SCB_I2C_CTRL_S_READY_DATA_ACK_Msk;
+	}
+#endif
+
 	irq_enable(config->irq_num);
 
-	/* Register an I2C event callback handler */
-	ifx_cat1_i2c_register_callback(dev, ifx_master_event_handler, (void *)dev);
+	/* Register an I2C event callback handler - explicitly drop the const here
+	 * to maintain backwards compatibility. This warning went unnoticed in past
+	 * iterations, and the proper fix of propagating the const may generate
+	 * build warnings for active users / old applications
+	 */
+	ifx_cat1_i2c_register_callback(dev, ifx_cat1_i2c_event_handler, (void *)(uintptr_t)dev);
 
 #ifdef CONFIG_PM
 	data->i2c_deep_sleep_param.context = &data->context;

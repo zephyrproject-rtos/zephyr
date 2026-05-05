@@ -42,3 +42,16 @@ config I2C_INFINEON_CAT1_TARGET_BUF
 	default 64
 	help
 	  Buffer to receive data as an I2C Target.
+
+config I2C_INFINEON_PDL_TARGET_PREFETCH
+	bool "Eagerly prefetch I2C target read bytes into the TX FIFO"
+	depends on I2C_INFINEON_CAT1_PDL
+	default n
+	help
+	  Pre-load the SCB TX FIFO via read_processed() on the first
+	  SLAVE_READ_EVENT.  Needed for masters that do not clock-stretch,
+	  otherwise the TX-underflow ISR cannot refill in time.
+
+	  WARNING: violates the Zephyr i2c_target read_processed() contract.
+	  Only enable if read_processed() is idempotent with respect to
+	  position or cannot clock stretch
