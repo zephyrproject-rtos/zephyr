@@ -40,4 +40,10 @@
 				 <PB9B_ADC1_AIN5>; /* EXT3 pin 4 and J803 pin 1 */
 		};
 	};
+
+	tcc2_pwm_default: tcc2_pwm_default {
+		group1 {
+			pinmux = <PC5F_TCC2_WO1>;
+		};
+	};
 };
