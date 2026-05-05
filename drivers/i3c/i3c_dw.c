@@ -324,6 +324,7 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define I3C_BUS_SDR2_SCL_RATE       6000000
 #define I3C_BUS_SDR3_SCL_RATE       4000000
 #define I3C_BUS_SDR4_SCL_RATE       2000000
+#define I3C_BUS_I2C_SS_TLOW_MIN_NS  4700
 #define I3C_BUS_I2C_FM_TLOW_MIN_NS  1300
 #define I3C_BUS_I2C_FMP_TLOW_MIN_NS 500
 #define I3C_BUS_THIGH_MAX_NS        41
@@ -1646,6 +1647,7 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 #ifdef CONFIG_I3C_CONTROLLER
 	struct dw_i3c_data *data = dev->data;
 	uint32_t hcnt, lcnt, fmlcnt, fmplcnt, free_cnt;
+	uint32_t fm_rate, tlow_min_ns;
 #endif /* CONFIG_I3C_CONTROLLER */
 
 	if (clock_control_get_rate(config->clock, config->clock_subsys, &core_rate) != 0) {
@@ -1699,9 +1701,12 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 	scl_timing = SCL_I2C_FMP_TIMING_HCNT(hcnt) | SCL_I2C_FMP_TIMING_LCNT(fmplcnt);
 	sys_write32(scl_timing, config->regs + SCL_I2C_FMP_TIMING);
 
-	/* I2C FM */
-	fmlcnt = DIV_ROUND_UP(I3C_BUS_I2C_FM_TLOW_MIN_NS * (uint64_t)core_rate, I3C_PERIOD_NS);
-	hcnt = DIV_ROUND_UP(core_rate, I3C_BUS_I2C_FM_SCL_RATE) - fmlcnt;
+	/* I2C FM & SS */
+	fm_rate = (ctrl_cfg->scl.i2c != 0U) ? ctrl_cfg->scl.i2c : I3C_BUS_I2C_FM_SCL_RATE;
+	tlow_min_ns =
+		(fm_rate <= 100000U) ? I3C_BUS_I2C_SS_TLOW_MIN_NS : I3C_BUS_I2C_FM_TLOW_MIN_NS;
+	fmlcnt = DIV_ROUND_UP(tlow_min_ns * (uint64_t)core_rate, I3C_PERIOD_NS);
+	hcnt = DIV_ROUND_UP(core_rate, fm_rate) - fmlcnt;
 	scl_timing = SCL_I2C_FM_TIMING_HCNT(hcnt) | SCL_I2C_FM_TIMING_LCNT(fmlcnt);
 	sys_write32(scl_timing, config->regs + SCL_I2C_FM_TIMING);
 
@@ -2766,7 +2771,7 @@ static int dw_i3c_init(const struct device *dev)
 }
 
 #if defined(CONFIG_PM_DEVICE)
-static int dw_i3c_pm_ctrl(const struct device *dev, enum pm_device_action action)
+static int dw_i3c_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct dw_i3c_config *config = dev->config;
 
