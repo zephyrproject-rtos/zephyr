@@ -51,6 +51,7 @@
 		full-ohms = <20000>;
 		power-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
 		power-on-sample-delay-us = <10000>;
+		skip-calibration;
 	};
 
 	buttons {
