@@ -17,6 +17,8 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include "../ip/icmpv6.h"
 #include "../ip/icmpv4.h"
+#include "../ip/route_ipv6.h"
+#include "../ip/route_ipv4.h"
 #include "../ip/route.h"
 
 #if defined(CONFIG_NET_IP)
@@ -325,10 +327,22 @@ static struct net_if *ping_select_iface(int id, struct net_sockaddr *target)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && target->sa_family == NET_AF_INET) {
+#if defined(CONFIG_NET_IPV4_ROUTE)
+		struct net_route_entry *route;
+#endif
+
 		iface = net_if_ipv4_select_src_iface(&net_sin(target)->sin_addr);
 		if (iface != NULL) {
 			goto out;
 		}
+
+#if defined(CONFIG_NET_IPV4_ROUTE)
+		route = net_route_ipv4_lookup(NULL, &net_sin(target)->sin_addr);
+		if (route) {
+			iface = route->iface;
+			goto out;
+		}
+#endif
 
 		iface = net_if_get_default();
 		goto out;
