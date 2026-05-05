@@ -12,4 +12,4 @@ set -ue
 #Set a default value to BOARD if it does not have one yet
 BOARD="${BOARD:-nrf52_bsim/native}"
 
-west twister -T ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/ -p ${BOARD}
+west twister -T ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/ -p ${BOARD} --build-only

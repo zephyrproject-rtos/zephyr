@@ -931,6 +931,8 @@ static inline bool print_base_subgroup_cb(const struct bt_bap_base_subgroup *sub
 	uint8_t *data;
 	int ret;
 
+	ARG_UNUSED(user_data);
+
 	bt_shell_print("Subgroup %p:", subgroup);
 
 	ret = bt_bap_base_get_subgroup_codec_id(subgroup, &codec_id);

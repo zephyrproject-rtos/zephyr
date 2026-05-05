@@ -26,6 +26,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "../../../../../subsys/bluetooth/host/hci_core.h"
 #include "common.h"
@@ -78,6 +79,8 @@ static const char *phy2str(uint8_t phy)
 static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 				    uint8_t recv_state_count)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("BASS discover failed (%d)\n", err);
 		return;
@@ -105,6 +108,8 @@ static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *i
 static bool metadata_entry(struct bt_data *data, void *user_data)
 {
 	char metadata[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE] = {0};
+
+	ARG_UNUSED(user_data);
 
 	(void)bin2hex(data->data, data->data_len, metadata, sizeof(metadata));
 
@@ -195,6 +200,8 @@ static void bap_broadcast_assistant_recv_state_cb(
 
 static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, uint8_t src_id)
 {
+	ARG_UNUSED(conn);
+
 	printk("BASS recv state %u removed\n", src_id);
 	SET_FLAG(flag_cb_called);
 
@@ -203,6 +210,8 @@ static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, 
 
 static void bap_broadcast_assistant_scan_start_cb(struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("BASS scan start failed (%d)\n", err);
 		return;
@@ -214,6 +223,8 @@ static void bap_broadcast_assistant_scan_start_cb(struct bt_conn *conn, int err)
 
 static void bap_broadcast_assistant_scan_stop_cb(struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("BASS scan stop failed (%d)\n", err);
 		return;
@@ -225,6 +236,8 @@ static void bap_broadcast_assistant_scan_stop_cb(struct bt_conn *conn, int err)
 
 static void bap_broadcast_assistant_add_src_cb(struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("BASS add source failed (%d)\n", err);
 		return;
@@ -236,6 +249,8 @@ static void bap_broadcast_assistant_add_src_cb(struct bt_conn *conn, int err)
 
 static void bap_broadcast_assistant_mod_src_cb(struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("BASS modify source failed (%d)\n", err);
 		return;
@@ -247,6 +262,8 @@ static void bap_broadcast_assistant_mod_src_cb(struct bt_conn *conn, int err)
 
 static void bap_broadcast_assistant_broadcast_code_cb(struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("BASS broadcast code failed (%d)\n", err);
 		return;
@@ -258,6 +275,8 @@ static void bap_broadcast_assistant_broadcast_code_cb(struct bt_conn *conn, int 
 
 static void bap_broadcast_assistant_rem_src_cb(struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(conn);
+
 	SET_FLAG(flag_remove_source_cb_called);
 
 	if (err != 0) {
@@ -290,6 +309,10 @@ static struct bt_bap_broadcast_assistant_cb broadcast_assistant_cbs = {
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(tx);
+	ARG_UNUSED(rx);
+
 	SET_FLAG(flag_mtu_exchanged);
 }
 

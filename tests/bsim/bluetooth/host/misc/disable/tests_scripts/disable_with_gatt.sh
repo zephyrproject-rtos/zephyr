@@ -8,7 +8,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # to a peripheral acting as a GATT server. The GATT client will then attempt
 # to write and read to and from a few GATT characteristics. Both the central and
 # peripheral then disable bluetooth and the test repeats.
-simulation_id="disable_with_gatt"
+simulation_id="${BOARD_TS}_disable_with_gatt"
 verbosity_level=2
 EXECUTE_TIMEOUT=120
 

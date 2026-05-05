@@ -23,6 +23,7 @@
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
@@ -31,6 +32,8 @@ static struct bt_vcp_included vcp_included;
 
 static void vcp_vol_rend_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t mute)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		bt_shell_error("VCP state get failed (%d)", err);
 	} else {
@@ -40,6 +43,8 @@ static void vcp_vol_rend_state_cb(struct bt_conn *conn, int err, uint8_t volume,
 
 static void vcp_vol_rend_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		bt_shell_error("VCP flags get failed (%d)", err);
 	} else {
@@ -245,6 +250,8 @@ static int cmd_vcp_vol_rend_volume_step(const struct shell *sh, size_t argc,
 	unsigned long step;
 	int result = 0;
 
+	ARG_UNUSED(argc);
+
 	step = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Failed to parse step: %d", result);
@@ -271,6 +278,9 @@ static int cmd_vcp_vol_rend_state_get(const struct shell *sh, size_t argc,
 {
 	int result = bt_vcp_vol_rend_get_state();
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -283,6 +293,9 @@ static int cmd_vcp_vol_rend_flags_get(const struct shell *sh, size_t argc,
 {
 	int result = bt_vcp_vol_rend_get_flags();
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -294,6 +307,9 @@ static int cmd_vcp_vol_rend_volume_down(const struct shell *sh, size_t argc,
 					char **argv)
 {
 	int result = bt_vcp_vol_rend_vol_down();
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -308,6 +324,9 @@ static int cmd_vcp_vol_rend_volume_up(const struct shell *sh, size_t argc,
 {
 	int result = bt_vcp_vol_rend_vol_up();
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -320,6 +339,9 @@ static int cmd_vcp_vol_rend_unmute_volume_down(const struct shell *sh,
 {
 	int result = bt_vcp_vol_rend_unmute_vol_down();
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -331,6 +353,9 @@ static int cmd_vcp_vol_rend_unmute_volume_up(const struct shell *sh,
 					     size_t argc, char **argv)
 {
 	int result = bt_vcp_vol_rend_unmute_vol_up();
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -345,6 +370,8 @@ static int cmd_vcp_vol_rend_volume_set(const struct shell *sh, size_t argc,
 {
 	unsigned long volume;
 	int result = 0;
+
+	ARG_UNUSED(argc);
 
 	volume = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {
@@ -372,6 +399,9 @@ static int cmd_vcp_vol_rend_unmute(const struct shell *sh, size_t argc,
 {
 	int result = bt_vcp_vol_rend_unmute();
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -383,6 +413,9 @@ static int cmd_vcp_vol_rend_mute(const struct shell *sh, size_t argc,
 				 char **argv)
 {
 	int result = bt_vcp_vol_rend_mute();
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -397,6 +430,8 @@ static int cmd_vcp_vol_rend_vocs_state_get(const struct shell *sh, size_t argc,
 {
 	unsigned long index;
 	int result = 0;
+
+	ARG_UNUSED(argc);
 
 	index = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {
@@ -425,6 +460,8 @@ static int cmd_vcp_vol_rend_vocs_location_get(const struct shell *sh,
 	unsigned long index;
 	int result = 0;
 
+	ARG_UNUSED(argc);
+
 	index = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Failed to parse index: %d", result);
@@ -452,6 +489,8 @@ static int cmd_vcp_vol_rend_vocs_location_set(const struct shell *sh,
 	unsigned long location;
 	unsigned long index;
 	int result = 0;
+
+	ARG_UNUSED(argc);
 
 	if (default_conn == NULL) {
 		shell_error(sh, "Not connected");
@@ -500,6 +539,8 @@ static int cmd_vcp_vol_rend_vocs_offset_set(const struct shell *sh, size_t argc,
 	int result = 0;
 	long offset;
 
+	ARG_UNUSED(argc);
+
 	if (default_conn == NULL) {
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
@@ -547,6 +588,8 @@ static int cmd_vcp_vol_rend_vocs_output_description_get(const struct shell *sh,
 	unsigned long index;
 	int result = 0;
 
+	ARG_UNUSED(argc);
+
 	index = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Failed to parse index: %d", result);
@@ -574,6 +617,8 @@ static int cmd_vcp_vol_rend_vocs_output_description_set(const struct shell *sh,
 {
 	unsigned long index;
 	int result = 0;
+
+	ARG_UNUSED(argc);
 
 	index = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {
@@ -604,6 +649,8 @@ static int cmd_vcp_vol_rend_aics_input_state_get(const struct shell *sh,
 	unsigned long index;
 	int result = 0;
 
+	ARG_UNUSED(argc);
+
 	index = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Failed to parse index: %d", result);
@@ -630,6 +677,8 @@ static int cmd_vcp_vol_rend_aics_gain_setting_get(const struct shell *sh,
 {
 	unsigned long index;
 	int result = 0;
+
+	ARG_UNUSED(argc);
 
 	index = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {
@@ -658,6 +707,8 @@ static int cmd_vcp_vol_rend_aics_input_type_get(const struct shell *sh,
 	unsigned long index;
 	int result = 0;
 
+	ARG_UNUSED(argc);
+
 	index = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Failed to parse index: %d", result);
@@ -684,6 +735,8 @@ static int cmd_vcp_vol_rend_aics_input_status_get(const struct shell *sh,
 {
 	unsigned long index;
 	int result = 0;
+
+	ARG_UNUSED(argc);
 
 	index = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {
@@ -712,6 +765,8 @@ static int cmd_vcp_vol_rend_aics_input_unmute(const struct shell *sh,
 	unsigned long index;
 	int result = 0;
 
+	ARG_UNUSED(argc);
+
 	index = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Failed to parse index: %d", result);
@@ -738,6 +793,8 @@ static int cmd_vcp_vol_rend_aics_input_mute(const struct shell *sh, size_t argc,
 {
 	unsigned long index;
 	int result = 0;
+
+	ARG_UNUSED(argc);
 
 	index = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {
@@ -767,6 +824,8 @@ static int cmd_vcp_vol_rend_aics_manual_input_gain_set(const struct shell *sh,
 	unsigned long index;
 	int result = 0;
 
+	ARG_UNUSED(argc);
+
 	index = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Failed to parse index: %d", result);
@@ -795,6 +854,8 @@ static int cmd_vcp_vol_rend_aics_auto_input_gain_set(const struct shell *sh,
 	unsigned long index;
 	int result = 0;
 
+	ARG_UNUSED(argc);
+
 	index = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Failed to parse index: %d", result);
@@ -822,6 +883,8 @@ static int cmd_vcp_vol_rend_aics_gain_set(const struct shell *sh, size_t argc,
 	unsigned long index;
 	int result = 0;
 	long gain;
+
+	ARG_UNUSED(argc);
 
 	index = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {
@@ -865,6 +928,8 @@ static int cmd_vcp_vol_rend_aics_input_description_get(const struct shell *sh,
 	unsigned long index;
 	int result = 0;
 
+	ARG_UNUSED(argc);
+
 	index = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {
 		shell_error(sh, "Failed to parse index: %d", result);
@@ -890,6 +955,8 @@ static int cmd_vcp_vol_rend_aics_input_description_set(const struct shell *sh,
 {
 	unsigned long index;
 	int result = 0;
+
+	ARG_UNUSED(argc);
 
 	index = shell_strtoul(argv[1], 0, &result);
 	if (result != 0) {

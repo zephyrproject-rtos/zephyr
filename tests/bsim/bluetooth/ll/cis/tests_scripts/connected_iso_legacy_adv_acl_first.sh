@@ -6,7 +6,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 # Basic Connected ISO test: a Central connects to 9 Peripherals and Establishes
 # 1 CIS each to 9 Peripherals (9 CIS in a CIG)
-simulation_id="connected_iso_legacy_adv_acl_first"
+simulation_id="${BOARD_TS}_connected_iso_legacy_adv_acl_first"
 verbosity_level=2
 EXECUTE_TIMEOUT=200
 

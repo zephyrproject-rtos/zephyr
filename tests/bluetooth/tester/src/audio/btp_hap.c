@@ -22,9 +22,11 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/services/ias.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "../bluetooth/audio/has_internal.h"
 #include "btp/btp.h"
@@ -35,6 +37,9 @@ static uint8_t read_supported_commands(const void *cmd, uint16_t cmd_len, void *
 				       uint16_t *rsp_len)
 {
 	struct btp_hap_read_supported_commands_rp *rp = rsp;
+
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
 
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_HAP, rp->data);
 	*rsp_len += sizeof(*rp);
@@ -52,6 +57,10 @@ static uint8_t ha_init(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *r
 	const bool presets_writable = (opts & BTP_HAP_HA_OPT_PRESETS_WRITABLE) > 0;
 	const bool presets_dynamic = (opts & BTP_HAP_HA_OPT_PRESETS_DYNAMIC) > 0;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	if (!IS_ENABLED(CONFIG_BT_HAS_PRESET_SUPPORT) &&
 	    (presets_sync || presets_independent || presets_writable || presets_dynamic)) {
@@ -96,6 +105,9 @@ static void has_client_discover_cb(struct bt_conn *conn, int err, struct bt_has 
 {
 	struct btp_hap_hauc_discovery_complete_ev ev = { 0 };
 
+	ARG_UNUSED(type);
+	ARG_UNUSED(caps);
+
 	LOG_DBG("conn %p err %d", (void *)conn, err);
 
 	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
@@ -116,6 +128,9 @@ static void has_client_discover_cb(struct bt_conn *conn, int err, struct bt_has 
 
 static void has_client_preset_switch_cb(struct bt_has *has, int err, uint8_t index)
 {
+	ARG_UNUSED(has);
+	ARG_UNUSED(err);
+	ARG_UNUSED(index);
 
 }
 
@@ -127,6 +142,11 @@ static const struct bt_has_client_cb has_client_cb = {
 static uint8_t hauc_init(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	int err;
+
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	err = bt_has_client_cb_register(&has_client_cb);
 	if (err != 0) {
@@ -141,8 +161,10 @@ static void ias_client_discover_cb(struct bt_conn *conn, int err)
 {
 	struct btp_hap_iac_discovery_complete_ev ev;
 	struct bt_conn_info info;
+	__maybe_unused int conn_info_err;
 
-	bt_conn_get_info(conn, &info);
+	conn_info_err = bt_conn_get_info(conn, &info);
+	__ASSERT_NO_MSG(conn_info_err == 0);
 
 	bt_addr_le_copy(&ev.address, info.le.dst);
 	if (err < 0) {
@@ -162,6 +184,11 @@ static uint8_t iac_init(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *
 {
 	int err;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	err = bt_ias_client_cb_register(&ias_client_cb);
 	if (err != 0) {
 		return BTP_STATUS_VAL(err);
@@ -175,6 +202,10 @@ static uint8_t iac_discover(const void *cmd, uint16_t cmd_len, void *rsp, uint16
 	const struct btp_hap_iac_discover_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
@@ -195,6 +226,10 @@ static uint8_t iac_set_alert(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
@@ -213,6 +248,10 @@ static uint8_t hauc_discover(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	const struct btp_hap_hauc_discover_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {

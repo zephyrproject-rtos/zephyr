@@ -44,6 +44,7 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -881,6 +882,8 @@ static uint8_t csip_set_coordinator_discover_insts_read_rank_cb(struct bt_conn *
 {
 	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(conn)];
 
+	ARG_UNUSED(params);
+
 	__ASSERT(client->cur_inst != NULL, "client->cur_inst must not be NULL");
 
 	if (err != 0) {
@@ -912,6 +915,8 @@ static uint8_t csip_set_coordinator_discover_insts_read_set_size_cb(
 	const void *data, uint16_t length)
 {
 	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(conn)];
+
+	ARG_UNUSED(params);
 
 	__ASSERT(client->cur_inst != NULL, "client->cur_inst must not be NULL");
 
@@ -991,6 +996,9 @@ static uint8_t csip_set_coordinator_discover_insts_read_sirk_cb(struct bt_conn *
 {
 	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(conn)];
 	int cb_err = err;
+
+	ARG_UNUSED(params);
+
 	__ASSERT(client->cur_inst != NULL, "client->cur_inst must not be NULL");
 
 	if (err != 0) {
@@ -1028,6 +1036,8 @@ static void discover_insts_resume(struct bt_conn *conn, uint16_t sirk_handle,
 {
 	int cb_err = 0;
 	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(conn)];
+
+	ARG_UNUSED(sirk_handle);
 
 	if (size_handle != 0) {
 		cb_err = csip_set_coordinator_read_set_size(
@@ -1071,6 +1081,8 @@ static void csip_set_coordinator_write_restore_cb(struct bt_conn *conn,
 {
 	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(conn)];
 
+	ARG_UNUSED(params);
+
 	if (err != 0) {
 		LOG_WRN("Could not restore (%d)", err);
 		release_set_complete(err);
@@ -1112,6 +1124,8 @@ static void csip_set_coordinator_write_lock_cb(struct bt_conn *conn,
 					       struct bt_gatt_write_params *params)
 {
 	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(conn)];
+
+	ARG_UNUSED(params);
 
 	if (err != 0) {
 		LOG_DBG("Could not lock (0x%X)", err);
@@ -1187,6 +1201,8 @@ static void csip_set_coordinator_write_release_cb(struct bt_conn *conn, uint8_t 
 {
 	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(conn)];
 
+	ARG_UNUSED(params);
+
 	if (err != 0) {
 		LOG_DBG("Could not release lock (%d)", err);
 		release_set_complete(err);
@@ -1243,6 +1259,8 @@ static uint8_t csip_set_coordinator_read_lock_cb(struct bt_conn *conn,
 {
 	struct bt_csip_set_coordinator_inst *client = &client_insts[bt_conn_index(conn)];
 	uint8_t value = 0;
+
+	ARG_UNUSED(params);
 
 	if (err != 0) {
 		LOG_DBG("Could not read lock value (0x%X)", err);
@@ -1372,6 +1390,8 @@ static void csip_set_coordinator_reset(struct bt_csip_set_coordinator_inst *inst
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct bt_csip_set_coordinator_inst *inst = &client_insts[bt_conn_index(conn)];
+
+	ARG_UNUSED(reason);
 
 	if (inst->conn == conn) {
 		csip_set_coordinator_reset(inst);

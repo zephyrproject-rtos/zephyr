@@ -2080,6 +2080,10 @@ have_endpoint:
 	stream->type = initiator | direction;
 	stream->priority = priority;
 	stream->id = quic_stream_id_get(stream);
+	stream->local_max_data = quic_stream_local_rx_limit(ep, stream->type);
+	stream->local_max_data_sent = stream->local_max_data;
+	stream->fc_bytes_received = 0;
+	stream->highest_offset_received = 0;
 
 	/* Initialize TX flow control from peer transport parameters */
 	if (ep->peer_params.parsed) {

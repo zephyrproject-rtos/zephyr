@@ -74,7 +74,7 @@ static struct net_if *get_iface(struct e1000_dev *ctx)
 	return ctx->iface;
 }
 
-static enum ethernet_hw_caps e1000_caps(const struct device *dev)
+static enum ethernet_hw_caps e1000_caps(const struct device *dev, struct net_if *iface __unused)
 {
 	return
 #if defined(CONFIG_NET_VLAN)
@@ -92,7 +92,8 @@ static enum ethernet_hw_caps e1000_caps(const struct device *dev)
 }
 
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
-static const struct device *e1000_get_ptp_clock(const struct device *dev)
+static const struct device *e1000_get_ptp_clock(const struct device *dev,
+						struct net_if *iface __unused)
 {
 	struct e1000_dev *ctx = dev->data;
 
@@ -287,7 +288,7 @@ static void e1000_iface_init(struct net_if *iface)
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *get_stats(const struct device *dev)
+static struct net_stats_eth *get_stats(const struct device *dev, struct net_if *iface __unused)
 {
 	struct e1000_dev *ctx = dev->data;
 

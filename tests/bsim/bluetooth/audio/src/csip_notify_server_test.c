@@ -17,6 +17,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
@@ -42,6 +43,8 @@ static void csip_set_member_lock_changed_cb(struct bt_conn *conn,
 					    struct bt_csip_set_member_svc_inst *svc_inst,
 					    bool locked)
 {
+	ARG_UNUSED(svc_inst);
+
 	printk("Client %p %s the lock\n", conn, locked ? "locked" : "released");
 }
 

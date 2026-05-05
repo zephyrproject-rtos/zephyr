@@ -20,7 +20,7 @@
 
 static struct bt_conn *default_conn;
 
-static K_SEM_DEFINE(sem_discovery_done, 0, 1);
+static K_SEM_DEFINE(sem_discovery_done, 0U, 1U);
 
 static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 {

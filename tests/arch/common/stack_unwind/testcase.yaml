@@ -71,6 +71,10 @@ tests:
       # these platforms disabled here since CONFIG_ARM_MMU=n by default
       - fvp_baser_aemv8r/fvp_aemv8r_aarch64
       - fvp_baser_aemv8r/fvp_aemv8r_aarch64/smp
+      # In S-mode z_riscv_fatal_error() is called directly (no ecall), adding
+      # two extra func1 frames at the start; the regex expects the alternating
+      # func1/func2 pattern but gets func1/func1/func2 instead.
+      - qemu_riscv64/qemu_virt_riscv64/smode
     extra_configs:
       - CONFIG_FRAME_POINTER=y
       - CONFIG_SYMTAB=y

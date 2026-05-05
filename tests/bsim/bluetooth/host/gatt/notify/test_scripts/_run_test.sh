@@ -5,6 +5,7 @@ set -eu
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
+simulation_id="${BOARD_TS}_${simulation_id}"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

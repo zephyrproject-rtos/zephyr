@@ -5,7 +5,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="ll-throughput"
+simulation_id="${BOARD_TS}_ll-throughput"
 verbosity_level=2
 EXECUTE_TIMEOUT=300
 

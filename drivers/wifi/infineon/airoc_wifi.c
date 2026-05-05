@@ -445,18 +445,17 @@ static void airoc_wifi_network_process_ethernet_data(whd_interface_t interface, 
 	}
 }
 
-static enum ethernet_hw_caps airoc_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps airoc_get_capabilities(const struct device *dev __unused,
+						    struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_HW_FILTERING;
 }
 
-static int airoc_set_config(const struct device *dev,
+static int airoc_set_config(const struct device *dev __unused,
+			    struct net_if *iface __unused,
 			    enum ethernet_config_type type,
 			    const struct ethernet_config *config)
 {
-	ARG_UNUSED(dev);
 	whd_mac_t whd_mac_addr;
 
 	switch (type) {
@@ -539,7 +538,9 @@ static void airoc_mgmt_init(struct net_if *iface)
 	net_if_dormant_on(iface);
 }
 
-static int airoc_mgmt_scan(const struct device *dev, struct wifi_scan_params *params,
+static int airoc_mgmt_scan(const struct device *dev,
+			   struct net_if *iface __unused,
+			   struct wifi_scan_params *params,
 			   scan_result_cb_t cb)
 {
 	struct airoc_wifi_data *data = dev->data;
@@ -577,7 +578,9 @@ static bool is_invalid_security(int security, uint8_t psk_length)
 	return ((security == WIFI_SECURITY_TYPE_NONE) && (psk_length > 0));
 }
 
-static int airoc_mgmt_connect(const struct device *dev, struct wifi_connect_req_params *params)
+static int airoc_mgmt_connect(const struct device *dev,
+			      struct net_if *iface,
+			      struct wifi_connect_req_params *params)
 {
 	struct airoc_wifi_data *data = (struct airoc_wifi_data *)dev->data;
 	int ret = 0;
@@ -656,21 +659,21 @@ static int airoc_mgmt_connect(const struct device *dev, struct wifi_connect_req_
 
 error:
 	if (ret < 0) {
-		net_if_dormant_on(data->iface);
+		net_if_dormant_on(iface);
 	} else {
-		net_if_dormant_off(data->iface);
+		net_if_dormant_off(iface);
 		data->is_sta_connected = true;
 #if defined(CONFIG_NET_DHCPV4)
-		net_dhcpv4_restart(data->iface);
+		net_dhcpv4_restart(iface);
 #endif /* defined(CONFIG_NET_DHCPV4) */
 	}
 
-	wifi_mgmt_raise_connect_result_event(data->iface, ret);
+	wifi_mgmt_raise_connect_result_event(iface, ret);
 	k_sem_give(&data->sema_common);
 	return ret;
 }
 
-static int airoc_mgmt_disconnect(const struct device *dev)
+static int airoc_mgmt_disconnect(const struct device *dev, struct net_if *iface)
 {
 	int ret = 0;
 	struct airoc_wifi_data *data = (struct airoc_wifi_data *)dev->data;
@@ -684,10 +687,10 @@ static int airoc_mgmt_disconnect(const struct device *dev)
 		ret = -EAGAIN;
 	} else {
 		data->is_sta_connected = false;
-		net_if_dormant_on(data->iface);
+		net_if_dormant_on(iface);
 	}
 
-	wifi_mgmt_raise_disconnect_result_event(data->iface, ret);
+	wifi_mgmt_raise_disconnect_result_event(iface, ret);
 	k_sem_give(&data->sema_common);
 
 	return ret;
@@ -707,7 +710,9 @@ static void *airoc_wifi_ap_link_events_handler(whd_interface_t ifp,
 	return NULL;
 }
 
-static int airoc_mgmt_ap_enable(const struct device *dev, struct wifi_connect_req_params *params)
+static int airoc_mgmt_ap_enable(const struct device *dev,
+				struct net_if *iface,
+				struct wifi_connect_req_params *params)
 {
 	struct airoc_wifi_data *data = dev->data;
 	whd_security_t security;
@@ -813,7 +818,7 @@ static int airoc_mgmt_ap_enable(const struct device *dev, struct wifi_connect_re
 
 	data->is_ap_up = true;
 	airoc_if = airoc_ap_if;
-	net_if_dormant_off(data->iface);
+	net_if_dormant_off(iface);
 error:
 
 	k_sem_give(&data->sema_common);
@@ -821,7 +826,9 @@ error:
 }
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
-static int airoc_mgmt_wifi_stats(const struct device *dev, struct net_stats_wifi *stats)
+static int airoc_mgmt_wifi_stats(const struct device *dev,
+				 struct net_if *iface __unused,
+				 struct net_stats_wifi *stats)
 {
 	struct airoc_wifi_data *data = dev->data;
 
@@ -842,7 +849,7 @@ static int airoc_mgmt_wifi_stats(const struct device *dev, struct net_stats_wifi
 }
 #endif
 
-static int airoc_mgmt_ap_disable(const struct device *dev)
+static int airoc_mgmt_ap_disable(const struct device *dev, struct net_if *iface)
 {
 	cy_rslt_t whd_ret;
 	struct airoc_wifi_data *data = dev->data;
@@ -859,7 +866,7 @@ static int airoc_mgmt_ap_disable(const struct device *dev)
 	if (whd_ret == CY_RSLT_SUCCESS) {
 		data->is_ap_up = false;
 		airoc_if = airoc_sta_if;
-		net_if_dormant_on(data->iface);
+		net_if_dormant_on(iface);
 	} else {
 		LOG_ERR("Can't stop wifi ap: %u", whd_ret);
 	}
@@ -873,7 +880,9 @@ static int airoc_mgmt_ap_disable(const struct device *dev)
 	return 0;
 }
 
-static int airoc_iface_status(const struct device *dev, struct wifi_iface_status *status)
+static int airoc_iface_status(const struct device *dev,
+			      struct net_if *iface __unused,
+			      struct wifi_iface_status *status)
 {
 	struct airoc_wifi_data *data = dev->data;
 	whd_result_t result;

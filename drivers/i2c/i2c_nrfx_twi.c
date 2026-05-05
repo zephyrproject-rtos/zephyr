@@ -19,12 +19,6 @@ LOG_MODULE_REGISTER(i2c_nrfx_twi, CONFIG_I2C_LOG_LEVEL);
 
 #define DT_DRV_COMPAT nordic_nrf_twi
 
-#if CONFIG_I2C_NRFX_TRANSFER_TIMEOUT
-#define I2C_TRANSFER_TIMEOUT_MSEC K_MSEC(CONFIG_I2C_NRFX_TRANSFER_TIMEOUT)
-#else
-#define I2C_TRANSFER_TIMEOUT_MSEC K_FOREVER
-#endif
-
 struct i2c_nrfx_twi_data {
 	nrfx_twi_t twi;
 	uint32_t dev_config;
@@ -67,8 +61,7 @@ static int i2c_nrfx_twi_transfer(const struct device *dev,
 			break;
 		}
 
-		ret = k_sem_take(&data->completion_sync,
-				 I2C_TRANSFER_TIMEOUT_MSEC);
+		ret = k_sem_take(&data->completion_sync, I2C_TRANSFER_TIMEOUT);
 		if (ret != 0) {
 			/* Whatever the frequency, completion_sync should have
 			 * been given by the event handler.

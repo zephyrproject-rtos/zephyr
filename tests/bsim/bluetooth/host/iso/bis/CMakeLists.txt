@@ -13,9 +13,13 @@ target_sources(app PRIVATE
   src/bis_broadcaster.c
   src/bis_receiver.c
   src/main.c
+
+  ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/iso/common/iso_tx.c
 )
 
 zephyr_include_directories(
   ${BSIM_COMPONENTS_PATH}/libUtilv1/src/
   ${BSIM_COMPONENTS_PATH}/libPhyComv1/src/
+
+  ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/iso/common
 )

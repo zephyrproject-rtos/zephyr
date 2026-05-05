@@ -6,7 +6,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-SIMULATION_ID="media_controller"
+SIMULATION_ID="${BOARD_TS}_media_controller"
 VERBOSITY_LEVEL=2
 
 cd ${BSIM_OUT_PATH}/bin

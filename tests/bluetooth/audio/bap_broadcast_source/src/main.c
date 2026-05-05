@@ -24,6 +24,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 
@@ -36,12 +37,18 @@ DEFINE_FFF_GLOBALS;
 
 static void mock_init_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
+	ARG_UNUSED(test);
+	ARG_UNUSED(fixture);
+
 	mock_bap_broadcast_source_init();
 	mock_bap_stream_init();
 }
 
 static void mock_destroy_rule_after(const struct ztest_unit_test *test, void *fixture)
 {
+	ARG_UNUSED(test);
+	ARG_UNUSED(fixture);
+
 	mock_bap_stream_cleanup();
 }
 
@@ -1399,6 +1406,8 @@ static bool bap_broadcast_source_foreach_stream_cb(struct bt_bap_stream *stream,
 {
 	size_t *cnt = user_data;
 
+	ARG_UNUSED(stream);
+
 	(*cnt)++;
 
 	return true;
@@ -1423,6 +1432,8 @@ static bool bap_broadcast_source_foreach_stream_return_early_cb(struct bt_bap_st
 								void *user_data)
 {
 	size_t *cnt = user_data;
+
+	ARG_UNUSED(stream);
 
 	(*cnt)++;
 

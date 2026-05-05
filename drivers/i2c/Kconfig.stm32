@@ -6,6 +6,7 @@ menuconfig I2C_STM32
 	default y
 	depends on DT_HAS_ST_STM32_I2C_V1_ENABLED || DT_HAS_ST_STM32_I2C_V2_ENABLED
 	select PINCTRL
+	select I2C_TRANSFER_TIMEOUT_SUPPORTED
 	help
 	  Enable I2C support on the STM32 SoCs
 
@@ -65,14 +66,6 @@ config I2C_STM32_V2_DMA
 	select EXPERIMENTAL
 	help
 	  Enable DMA support for the STM32 I2C driver.
-
-config I2C_STM32_TRANSFER_TIMEOUT_MSEC
-	int "STM32 I2C transfer timeout (ms)"
-	range 1 $(UINT32_MAX)
-	default 500
-	help
-	  Time in milliseconds to wait for an I2C transfer to complete before
-	  considering it timed out.
 
 config I2C_STM32_WAIT_BUS_IDLE_TIMEOUT_USEC
 	int "STM32 I2C bus wait timeout (us)"

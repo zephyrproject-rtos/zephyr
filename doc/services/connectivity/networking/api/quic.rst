@@ -209,6 +209,14 @@ You apply credentials to the QUIC socket using :c:func:`zsock_setsockopt` on
 the **connection socket** immediately after creation. The credentials
 must be set before the stream is created.
 
+Peer certificate verification follows the same default policy as Zephyr TLS
+sockets: clients require successful peer verification by default, while servers
+default to not verifying client certificates unless
+``ZSOCK_TLS_PEER_VERIFY`` is explicitly enabled. A client that does not load a
+CA certificate therefore fails the handshake by default; applications that
+deliberately skip server authentication must opt out with
+``ZSOCK_TLS_PEER_VERIFY = MBEDTLS_SSL_VERIFY_NONE``.
+
 .. code-block:: c
 
    sec_tag_t sec_tag_list[] = { MY_SEC_TAG };

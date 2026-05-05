@@ -115,9 +115,9 @@ static void lan865x_iface_init(struct net_if *iface)
 	ctx->iface_initialized = true;
 }
 
-static enum ethernet_hw_caps lan865x_port_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps lan865x_port_get_capabilities(const struct device *dev __unused,
+							   struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
 	return ETHERNET_LINK_10BASE | ETHERNET_PROMISC_MODE
 #if defined(CONFIG_NET_VLAN)
 	       | ETHERNET_HW_VLAN
@@ -127,7 +127,9 @@ static enum ethernet_hw_caps lan865x_port_get_capabilities(const struct device *
 
 static int lan865x_gpio_reset(const struct device *dev);
 static void lan865x_write_macaddress(const struct device *dev);
-static int lan865x_set_config(const struct device *dev, enum ethernet_config_type type,
+static int lan865x_set_config(const struct device *dev,
+			      struct net_if *iface __unused,
+			      enum ethernet_config_type type,
 			      const struct ethernet_config *config)
 {
 	struct lan865x_data *ctx = dev->data;
@@ -457,7 +459,7 @@ static int lan865x_port_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-const struct device *lan865x_get_phy(const struct device *dev)
+const struct device *lan865x_get_phy(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct lan865x_config *cfg = dev->config;
 

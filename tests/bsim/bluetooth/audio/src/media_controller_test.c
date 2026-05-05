@@ -15,6 +15,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
@@ -95,6 +96,8 @@ static void discover_player_cb(struct media_player *player, int err)
 
 static void player_name_cb(struct media_player *plr, int err, const char *name)
 {
+	ARG_UNUSED(name);
+
 	if (err != 0) {
 		FAIL("Player Name read failed (%d)\n", err);
 		return;
@@ -126,6 +129,8 @@ static void icon_id_cb(struct media_player *plr, int err, uint64_t id)
 
 static void icon_url_cb(struct media_player *plr, int err, const char *url)
 {
+	ARG_UNUSED(url);
+
 	if (err != 0) {
 		FAIL("Icon URL read failed (%d)", err);
 		return;
@@ -140,6 +145,8 @@ static void icon_url_cb(struct media_player *plr, int err, const char *url)
 
 static void track_title_cb(struct media_player *plr, int err, const char *title)
 {
+	ARG_UNUSED(title);
+
 	if (err != 0) {
 		FAIL("Track title read failed (%d)", err);
 		return;
@@ -155,6 +162,8 @@ static void track_title_cb(struct media_player *plr, int err, const char *title)
 
 static void track_duration_cb(struct media_player *plr, int err, int32_t duration)
 {
+	ARG_UNUSED(duration);
+
 	if (err != 0) {
 		FAIL("Track duration read failed (%d)", err);
 		return;
@@ -234,6 +243,8 @@ static void playback_speed_write_cb(struct media_player *plr, int err, int8_t sp
 
 static void seeking_speed_cb(struct media_player *plr, int err, int8_t speed)
 {
+	ARG_UNUSED(speed);
+
 	if (err != 0) {
 		FAIL("Seeking speed read failed (%d)", err);
 		return;
@@ -361,6 +372,8 @@ static void playing_order_write_cb(struct media_player *plr, int err, uint8_t or
 
 static void playing_orders_supported_cb(struct media_player *plr, int err, uint16_t orders)
 {
+	ARG_UNUSED(orders);
+
 	if (err != 0) {
 		FAIL("Playing orders supported read failed (%d)", err);
 		return;
@@ -392,6 +405,8 @@ static void media_state_cb(struct media_player *plr, int err, uint8_t state)
 
 static void command_send_cb(struct media_player *plr, int err, const struct mpl_cmd *cmd)
 {
+	ARG_UNUSED(cmd);
+
 	if (err != 0) {
 		FAIL("Command send failed (%d)", err);
 		return;
@@ -441,6 +456,8 @@ static void commands_supported_cb(struct media_player *plr, int err, uint32_t op
 
 static void search_send_cb(struct media_player *plr, int err, const struct mpl_search *search)
 {
+	ARG_UNUSED(search);
+
 	if (err != 0) {
 		FAIL("Search failed (%d)", err);
 		return;
@@ -488,6 +505,8 @@ static void search_results_id_cb(struct media_player *plr, int err, uint64_t id)
 
 static void content_ctrl_id_cb(struct media_player *plr, int err, uint8_t ccid)
 {
+	ARG_UNUSED(ccid);
+
 	if (err != 0) {
 		FAIL("Content control ID read failed (%d)", err);
 		return;

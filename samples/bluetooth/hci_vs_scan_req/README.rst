@@ -18,11 +18,22 @@ connection can also be added, depending on configuration choices.
 Requirements
 ************
 
-* A board with Bluetooth LE support
-* A central device & monitor (e.g. nRF Connect) to check the advertiments and
+* A board with Bluetooth LE support running Zephyr's built-in Bluetooth LE controller
+  (requires Zephyr-specific HCI vendor extensions; external HCI controllers are not supported)
+* A central device & monitor (e.g. nRF Connect) to check the advertisements and
   send scan requests.
 
 Building and Running
 ********************
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+Build and flash the sample as follows, replacing ``<board>`` with your target board:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/hci_vs_scan_req
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+After flashing, the sample starts advertising. Use a Bluetooth LE central device (e.g. a
+smartphone with nRF Connect) with **active scanning** enabled to scan for the device and
+trigger scan requests. Observe the scan request events reported in the console output.

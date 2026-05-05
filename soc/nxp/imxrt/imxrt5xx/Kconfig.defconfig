@@ -58,9 +58,6 @@ endif # SOC_MIMXRT595S_CM33
 
 if SOC_MIMXRT595S_F1
 
-config SMP
-	default n
-
 config XTENSA_TIMER
 	default y
 

@@ -195,8 +195,7 @@ void arch_busy_wait(uint32_t usec_to_wait)
 	}
 
 	uint64_t start_cycles = arm_arch_timer_count();
-	uint64_t cycles_to_wait = sys_clock_hw_cycles_per_sec() / USEC_PER_SEC *
-			      (uint64_t)usec_to_wait;
+	uint64_t cycles_to_wait = k_us_to_cyc_ceil64(usec_to_wait);
 
 #ifdef CONFIG_ARM64
 	if (is_wfxt_implemented()) {

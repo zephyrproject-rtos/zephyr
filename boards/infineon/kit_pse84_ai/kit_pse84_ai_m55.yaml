@@ -27,3 +27,4 @@ supported:
   - rtc
   - watchdog
   - comparator
+  - dmic

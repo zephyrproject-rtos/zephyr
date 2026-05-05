@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/audio/ccp.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/toolchain.h>
 
 static struct bt_ccp_call_control_server_bearer
 	*bearers[CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_COUNT];
@@ -24,6 +25,9 @@ static struct bt_ccp_call_control_server_bearer
 static int cmd_ccp_call_control_server_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	static bool registered;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	if (registered) {
 		shell_info(sh, "Already initialized");

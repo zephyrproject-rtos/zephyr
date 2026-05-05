@@ -38,7 +38,9 @@
 #define MAX_CONN_ID_LEN 20
 #define MAX_MY_CONN_ID_LEN 8
 
+#define QUIC_VERSION_NEGOTIATION 0x00000000
 #define QUIC_VERSION_1 0x00000001
+#define QUIC_INITIAL_DCID_MIN_LEN 8
 
 #define QUIC_STREAM_ID_UNASSIGNED UINT64_MAX
 
@@ -131,6 +133,9 @@ struct quic_sent_pkt_info {
 
 	/** True if packet is still in flight (not yet acked/lost) */
 	bool in_flight;
+
+	/** True if loss detection queued this frame for retransmission */
+	bool retransmit_pending;
 
 	/* Stream frame carried by this packet (for retransmission).
 	 * Only valid when has_stream_frame is true.
@@ -347,8 +352,6 @@ struct quic_tls_context {
 	const uint8_t *my_cert;      /* DER-encoded certificate */
 	size_t my_cert_len;
 
-	const uint8_t *my_key;       /* DER-encoded private key */
-	size_t my_key_len;
 	psa_key_id_t signing_key_id;  /* Imported signing key */
 
 	/* Intermediate certificate chain (sec_tags resolved at handshake time) */
@@ -454,6 +457,11 @@ struct quic_crypto_ooo_seg {
 	bool valid;       /* Slot in use */
 };
 
+BUILD_ASSERT(CONFIG_QUIC_CRYPTO_RX_BUFFER_SIZE <= UINT16_MAX,
+	     "CRYPTO RX buffer must fit quic_crypto_ooo_seg.len");
+BUILD_ASSERT(CONFIG_QUIC_CRYPTO_RX_BUFFER_SIZE <= UINT32_MAX,
+	     "CRYPTO RX buffer must fit quic_crypto_ooo_seg.offset");
+
 /**
  * Crypto stream state per encryption level
  */
@@ -463,6 +471,14 @@ struct quic_crypto_stream {
 	uint32_t tls_offset; /* Bytes already passed to TLS processing */
 	size_t rx_buffer_len;
 };
+
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+struct quic_deferred_crypto_payload {
+	size_t len;
+	bool valid;
+	uint8_t data[CONFIG_QUIC_TX_BUFFER_SIZE];
+};
+#endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
 
 /**
  * QUIC endpoint information
@@ -523,6 +539,15 @@ struct quic_endpoint {
 
 		/** Out-of-order segment tracking (shared across levels) */
 		struct quic_crypto_ooo_seg ooo[CONFIG_QUIC_CRYPTO_OOO_SLOTS];
+
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+		/** Deferred CRYPTO frame payloads for Initial and Handshake levels.
+		 * TLS send callbacks currently emit CRYPTO data only at these two
+		 * levels, so two slots preserve ordering without growing every
+		 * endpoint by an unused Application-level buffer.
+		 */
+		struct quic_deferred_crypto_payload pending[2];
+#endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
 	} crypto;
 
 	/** Largest packet number tracking per encryption level for TX */
@@ -620,10 +645,19 @@ struct quic_endpoint {
 	/** Connection-level flow control, RX (receiving from peer) */
 	struct {
 		uint64_t max_data;       /* Max data we allow peer to send */
-		uint64_t bytes_received; /* Total bytes received on all streams */
+		uint64_t bytes_received; /* Connection flow-control credit consumed */
 		uint64_t max_data_sent;  /* Last MAX_DATA value we sent */
 		bool need_window_update; /* Flag to send MAX_DATA */
 	} rx_fc;
+
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+	/** Server anti-amplification state before peer address validation. */
+	struct {
+		uint32_t bytes_received;
+		uint32_t bytes_sent;
+		bool validated;
+	} anti_amplification;
+#endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
 
 	/** Stream-count limits, how many streams we allow the peer to open.
 	 * Mirrored from our own transport parameters and grown in response to
@@ -716,11 +750,23 @@ struct quic_endpoint {
 		/** Probe Timeout (RFC 9002 Section 6.2) */
 		struct k_work_delayable pto_work;
 
+		/** Serializes recovery state updates across TX, RX and PTO contexts */
+		struct k_mutex lock;
+
+		/** Deferred release path used when PTO handling needs to drop a ref */
+		struct k_work release_work;
+
 		/** Max. PTO count */
 		uint32_t max_pto_count;
 
 		/** Incremented on each PTO expiry for backoff */
 		uint32_t pto_count;
+
+		/** Suppress further PTO tracking once teardown/close begins */
+		bool closing;
+
+		/** Prevent duplicate deferred release submissions */
+		bool release_pending;
 	} recovery;
 
 	/** Max TX payload size for this endpoint, based on path MTU discovery.
@@ -832,8 +878,11 @@ __net_socket struct quic_stream {
 	/** RX flow control, max data we allow peer to send on this stream */
 	uint64_t local_max_data;
 
-	/** RX flow control, bytes received on this stream */
-	uint64_t bytes_received;
+	/** RX flow control, stream flow-control credit consumed */
+	uint64_t fc_bytes_received;
+
+	/** RX flow control, highest received stream end offset (offset + len) */
+	uint64_t highest_offset_received;
 
 	/** RX flow control, last MAX_STREAM_DATA value we sent */
 	uint64_t local_max_data_sent;
@@ -1040,6 +1089,8 @@ void quic_stream_foreach(quic_stream_cb_t cb, void *user_data);
 struct quic_context *quic_get_context(int sock);
 int quic_get_len(const uint8_t *buf, size_t buf_len, uint64_t *len);
 int quic_put_len(uint8_t *buf, size_t buf_len, uint64_t len);
+int quic_put_varint(uint8_t *buf, size_t buf_len, uint64_t val);
+int quic_validate_frame_type(uint8_t frame_type, enum quic_secret_level level);
 
 bool quic_setup_initial_secrets(struct quic_endpoint *ep,
 				const uint8_t *cid, size_t cid_len,
@@ -1083,6 +1134,48 @@ int quic_decrypt_payload(struct quic_pp_cipher *pp, uint64_t packet_number,
 			 uint8_t *plaintext, size_t plaintext_size,
 			 size_t *plaintext_len);
 
+int quic_flush_deferred_crypto(struct quic_endpoint *ep);
 void quic_crypto_context_destroy(struct quic_crypto_context *ctx);
+int quic_build_version_negotiation_packet(uint8_t *out,
+					  size_t out_len,
+					  const uint8_t *peer_scid,
+					  uint8_t peer_scid_len,
+					  const uint8_t *peer_dcid,
+					  uint8_t peer_dcid_len);
+void quic_endpoint_note_unvalidated_rx(struct quic_endpoint *ep, size_t bytes);
+bool quic_endpoint_can_send_unvalidated(const struct quic_endpoint *ep, size_t bytes);
+uint64_t quic_stream_local_rx_limit(const struct quic_endpoint *ep, int stream_type);
+void quic_recovery_init(struct quic_endpoint *ep);
+void quic_recovery_begin_shutdown(struct quic_endpoint *ep);
+void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
+				  enum quic_secret_level level,
+				  uint64_t pkt_num,
+				  size_t sent_bytes,
+				  bool ack_eliciting);
+int handle_crypto_frame(struct quic_endpoint *ep,
+			 enum quic_secret_level level,
+			 const uint8_t *data,
+			 size_t len,
+			 size_t *consumed);
+int parse_certificate(struct quic_tls_context *ctx,
+		      const uint8_t *data, size_t len);
+int process_handshake_message(struct quic_tls_context *ctx,
+			      uint8_t msg_type,
+			      const uint8_t *msg, size_t msg_len,
+			      const uint8_t *full_msg, size_t full_msg_len);
+int quic_stream_receive_data(struct quic_stream *stream,
+			     uint64_t offset,
+			     const uint8_t *data,
+			     size_t len,
+			     bool is_fin);
+int process_long_header(struct quic_endpoint *ep,
+			struct net_sockaddr *addr,
+			net_socklen_t addrlen,
+			uint8_t *buf,
+			size_t payload_len,
+			uint64_t token,
+			size_t total_len,
+			size_t pn_offset,
+			size_t datagram_len);
 
 #endif /* CONFIG_NET_TEST */

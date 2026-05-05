@@ -26,6 +26,7 @@
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
@@ -73,6 +74,8 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
 	uint8_t conn_index = bt_conn_index(conn);
+
+	ARG_UNUSED(reason);
 
 	bt_conn_unref(conns[conn_index]);
 	conns[conn_index] = NULL;
@@ -137,6 +140,8 @@ static void csip_set_coordinator_ordered_access_cb(
 	const struct bt_csip_set_coordinator_set_info *set_info, int err,
 	bool locked, struct bt_csip_set_coordinator_set_member *member)
 {
+	ARG_UNUSED(set_info);
+
 	if (err != 0) {
 		printk("Ordered access failed with err %d\n", err);
 	} else if (locked) {
@@ -163,6 +168,8 @@ static void
 csip_set_coordinator_size_changed_cb(struct bt_conn *conn,
 				     const struct bt_csip_set_coordinator_csis_inst *inst)
 {
+	ARG_UNUSED(conn);
+
 	bt_shell_print("Inst %p size changed: %u\n", inst, inst->info.set_size);
 }
 
@@ -180,6 +187,8 @@ static bool csip_set_coordinator_oap_cb(const struct bt_csip_set_coordinator_set
 					struct bt_csip_set_coordinator_set_member *members[],
 					size_t count)
 {
+	ARG_UNUSED(set_info);
+
 	for (size_t i = 0; i < count; i++) {
 		printk("Ordered access for members[%zu]: %p\n", i, members[i]);
 	}
@@ -249,6 +258,8 @@ static void discover_members_timer_handler(struct k_work *work)
 {
 	int err;
 
+	ARG_UNUSED(work);
+
 	bt_shell_error("Could not find all members (%u / %u)",
 		       members_found, cur_inst->info.set_size);
 
@@ -308,6 +319,8 @@ static int cmd_csip_set_coordinator_discover_members(const struct shell *sh,
 						     size_t argc, char *argv[])
 {
 	int err;
+
+	ARG_UNUSED(argc);
 
 	cur_inst = (struct bt_csip_set_coordinator_csis_inst *)strtol(argv[1], NULL, 0);
 
@@ -391,6 +404,9 @@ static int cmd_csip_set_coordinator_lock_set(const struct shell *sh,
 	int err;
 	int conn_count = 0;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (cur_inst == NULL) {
 		shell_error(sh, "No set selected");
 		return -ENOEXEC;
@@ -416,6 +432,9 @@ static int cmd_csip_set_coordinator_release_set(const struct shell *sh,
 {
 	int err;
 	int conn_count = 0;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	if (cur_inst == NULL) {
 		shell_error(sh, "No set selected");

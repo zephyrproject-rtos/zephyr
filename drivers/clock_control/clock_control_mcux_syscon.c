@@ -18,6 +18,21 @@ LOG_MODULE_REGISTER(clock_control);
 static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 					    clock_control_subsys_t sub_system)
 {
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX)
+	switch ((uint32_t)sub_system) {
+	case MCUX_USB0_CLK:
+		CLOCK_EnableClock(kCLOCK_Usb0);
+		break;
+	case MCUX_USB1_CLK:
+		CLOCK_EnableClock(kCLOCK_Usb1);
+		break;
+	case MCUX_USBPHY_REF_CLK:
+		CLOCK_EnableClock(kCLOCK_UsbphyRef);
+		break;
+	default:
+		break;
+	}
+#endif
 #if defined(CONFIG_CAN_NXP_LPC_MCAN)
 	if ((uint32_t)sub_system == MCUX_MCAN_CLK) {
 		CLOCK_EnableClock(kCLOCK_Mcan);
@@ -855,6 +870,14 @@ static int SYSCON_SET_FUNC_ATTR mcux_lpc_syscon_clock_control_set_subsys_rate(
 	uint32_t clock_rate = (uintptr_t)rate;
 
 	switch (clock_name) {
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX)
+	case MCUX_USB0_CLK:
+		return CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M, clock_rate) ? 0 : -EINVAL;
+	case MCUX_USB1_CLK:
+		return 0;
+	case MCUX_USBPHY_REF_CLK:
+		return CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usbphy480M, clock_rate) ? 0 : -EINVAL;
+#endif
 	case MCUX_FLEXSPI_CLK:
 #if defined(CONFIG_MEMC)
 		/* The SOC is using the FlexSPI for XIP. Therefore,

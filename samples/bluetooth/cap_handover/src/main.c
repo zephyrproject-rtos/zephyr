@@ -48,7 +48,7 @@ BUILD_ASSERT(CONFIG_BT_MAX_CONN == 1, "Application only supports a single connec
 BUILD_ASSERT(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT == CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT,
 	     "Must support the same number of unicast sink stream and broadcast source streams");
 
-#define SEM_TIMEOUT K_SECONDS(5)
+#define SEM_TIMEOUT K_SECONDS(5U)
 
 /* For simplicity we use the mandatory configuration 16_2_1 */
 static struct bt_bap_lc3_preset unicast_preset_16_2_1 = BT_BAP_LC3_UNICAST_PRESET_16_2_1(
@@ -93,13 +93,13 @@ struct peer_config {
 	uint8_t src_id;
 } peer;
 
-static K_SEM_DEFINE(sem_proc, 0, 1);
-static K_SEM_DEFINE(sem_state_change, 0, 1);
-static K_SEM_DEFINE(sem_mtu_exchanged, 0, 1);
-static K_SEM_DEFINE(sem_security_changed, 0, 1);
-static K_SEM_DEFINE(sem_broadcast_stopped, 1, 1);
-static K_SEM_DEFINE(sem_receive_state_updated, 0, 1);
-static K_SEM_DEFINE(sem_streams, 0, CAP_STREAM_TX_MAX);
+static K_SEM_DEFINE(sem_proc, 0U, 1U);
+static K_SEM_DEFINE(sem_state_change, 0U, 1U);
+static K_SEM_DEFINE(sem_mtu_exchanged, 0U, 1U);
+static K_SEM_DEFINE(sem_security_changed, 0U, 1U);
+static K_SEM_DEFINE(sem_broadcast_stopped, 1U, 1U);
+static K_SEM_DEFINE(sem_receive_state_updated, 0U, 1U);
+static K_SEM_DEFINE(sem_streams, 0U, CAP_STREAM_TX_MAX);
 
 static void stream_configured_cb(struct bt_bap_stream *stream,
 				 const struct bt_bap_qos_cfg_pref *pref)
@@ -922,7 +922,7 @@ static int handover_unicast_to_broadcast(void)
 		/* Use a high timeout here as syncing to the Periodic Advertising, receiving
 		 * the BASE and the BIGInfo and finally syncing to the BIG may take a while
 		 */
-		err = k_sem_take(&sem_receive_state_updated, K_SECONDS(300));
+		err = k_sem_take(&sem_receive_state_updated, K_SECONDS(300U));
 		if (err != 0) {
 			LOG_ERR("Timeout on receive state update: %d", err);
 			return err;
@@ -931,7 +931,7 @@ static int handover_unicast_to_broadcast(void)
 		/* Break once the receive state indicates a non-empty BIS */
 
 		bis_sync_cnt = sys_count_bits(&peer.bis_sync, sizeof(peer.bis_sync));
-		if (bis_sync_cnt > 0) {
+		if (bis_sync_cnt > 0U) {
 			const uint8_t expected_bis_synced =
 				broadcast_create_param.subgroup_params[0].stream_count;
 			if (bis_sync_cnt != expected_bis_synced) {
@@ -1293,7 +1293,7 @@ int main(void)
 			/* Switch between unicast and broadcast */
 
 			/* Wait between switches */
-			k_sleep(K_SECONDS(10));
+			k_sleep(K_SECONDS(10U));
 
 			err = handover_unicast_to_broadcast();
 			if (err != 0) {
@@ -1301,7 +1301,7 @@ int main(void)
 			}
 
 			/* Wait between switches */
-			k_sleep(K_SECONDS(10));
+			k_sleep(K_SECONDS(10U));
 
 			err = handover_broadcast_to_unicast();
 			if (err != 0) {

@@ -434,10 +434,9 @@ static void eth_iface_init(struct net_if *iface)
 	}
 }
 
-static enum ethernet_hw_caps eth_native_tap_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_native_tap_get_capabilities(const struct device *dev __unused,
+							     struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_TXTIME
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
@@ -458,7 +457,8 @@ static enum ethernet_hw_caps eth_native_tap_get_capabilities(const struct device
 }
 
 #if defined(CONFIG_ETH_NATIVE_TAP_PTP_CLOCK)
-static const struct device *eth_get_ptp_clock(const struct device *dev)
+static const struct device *eth_get_ptp_clock(const struct device *dev,
+					      struct net_if *iface __unused)
 {
 	struct eth_context *context = dev->data;
 
@@ -467,7 +467,7 @@ static const struct device *eth_get_ptp_clock(const struct device *dev)
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *get_stats(const struct device *dev)
+static struct net_stats_eth *get_stats(const struct device *dev, struct net_if *iface __unused)
 {
 	struct eth_context *context = dev->data;
 
@@ -476,6 +476,7 @@ static struct net_stats_eth *get_stats(const struct device *dev)
 #endif
 
 static int set_config(const struct device *dev,
+		      struct net_if *iface __unused,
 		      enum ethernet_config_type type,
 		      const struct ethernet_config *config)
 {

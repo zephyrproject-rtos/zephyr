@@ -28,6 +28,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 #include <sys/types.h>
@@ -48,11 +49,17 @@ DEFINE_FFF_GLOBALS;
 
 static void mock_init_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
+	ARG_UNUSED(test);
+	ARG_UNUSED(fixture);
+
 	test_mocks_init();
 }
 
 static void mock_destroy_rule_after(const struct ztest_unit_test *test, void *fixture)
 {
+	ARG_UNUSED(test);
+	ARG_UNUSED(fixture);
+
 	test_mocks_cleanup();
 }
 
@@ -120,6 +127,8 @@ static void ascs_test_suite_teardown(void *f)
 static void ascs_test_suite_after(void *f)
 {
 	int err;
+
+	ARG_UNUSED(f);
 
 	/* If any of these fails, it's a fatal error for any tests running afterwards */
 	err = bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
@@ -621,6 +630,11 @@ static int unicast_server_cb_config_custom_fake(struct bt_conn *conn, const stru
 						struct bt_bap_qos_cfg_pref *const pref,
 						struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(ep);
+	ARG_UNUSED(dir);
+	ARG_UNUSED(codec_cfg);
+
 	*stream = stream_allocated;
 	*pref = qos_pref;
 	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);

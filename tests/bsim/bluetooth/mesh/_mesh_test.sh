@@ -23,7 +23,7 @@ function RunTest(){
 
   idx=0
 
-  s_id=$1
+  s_id="${BOARD_TS}_$1"
   shift 1
 
   declare -A testids
@@ -96,7 +96,7 @@ function RunTestFlash(){
     ext_arg+="$arg "
 
     if [[ "$arg" != "-"* ]]; then
-      ext_arg+="-flash=../results/${s_id}/${s_id}_${idx}.bin "
+      ext_arg+="-flash=../results/${BOARD_TS}_${s_id}/${s_id}_${idx}.bin "
       let idx=idx+1
     fi
 

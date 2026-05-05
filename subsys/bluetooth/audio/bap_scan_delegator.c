@@ -1202,6 +1202,9 @@ static ssize_t write_control_point(struct bt_conn *conn,
 	uint8_t opcode;
 	int err;
 
+	ARG_UNUSED(attr);
+	ARG_UNUSED(flags);
+
 	if (offset != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	} else if (len == 0) {
@@ -1294,6 +1297,8 @@ static ssize_t write_control_point(struct bt_conn *conn,
 static void recv_state_cfg_changed(const struct bt_gatt_attr *attr,
 				   uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 

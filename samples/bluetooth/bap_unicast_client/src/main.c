@@ -65,17 +65,17 @@ static size_t configured_source_stream_count;
 static struct bt_bap_lc3_preset codec_configuration = BT_BAP_LC3_UNICAST_PRESET_16_2_1(
 	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
-static K_SEM_DEFINE(sem_connected, 0, 1);
-static K_SEM_DEFINE(sem_disconnected, 0, 1);
-static K_SEM_DEFINE(sem_mtu_exchanged, 0, 1);
-static K_SEM_DEFINE(sem_security_updated, 0, 1);
-static K_SEM_DEFINE(sem_sinks_discovered, 0, 1);
-static K_SEM_DEFINE(sem_sources_discovered, 0, 1);
-static K_SEM_DEFINE(sem_stream_configured, 0, 1);
-static K_SEM_DEFINE(sem_stream_qos, 0, ARRAY_SIZE(sinks) + ARRAY_SIZE(sources));
-static K_SEM_DEFINE(sem_stream_enabled, 0, 1);
-static K_SEM_DEFINE(sem_stream_started, 0, 1);
-static K_SEM_DEFINE(sem_stream_connected, 0, 1);
+static K_SEM_DEFINE(sem_connected, 0U, 1U);
+static K_SEM_DEFINE(sem_disconnected, 0U, 1U);
+static K_SEM_DEFINE(sem_mtu_exchanged, 0U, 1U);
+static K_SEM_DEFINE(sem_security_updated, 0U, 1U);
+static K_SEM_DEFINE(sem_sinks_discovered, 0U, 1U);
+static K_SEM_DEFINE(sem_sources_discovered, 0U, 1U);
+static K_SEM_DEFINE(sem_stream_configured, 0U, 1U);
+static K_SEM_DEFINE(sem_stream_qos, 0U, ARRAY_SIZE(sinks) + ARRAY_SIZE(sources));
+static K_SEM_DEFINE(sem_stream_enabled, 0U, 1U);
+static K_SEM_DEFINE(sem_stream_started, 0U, 1U);
+static K_SEM_DEFINE(sem_stream_connected, 0U, 1U);
 
 static void print_hex(const uint8_t *ptr, size_t len)
 {
@@ -528,7 +528,7 @@ static int init(void)
 		return err;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 		streams[i].ops = &stream_ops;
 	}
 
@@ -638,7 +638,7 @@ static int configure_streams(void)
 {
 	int err;
 
-	for (size_t i = 0; i < ARRAY_SIZE(sinks); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(sinks); i++) {
 		struct bt_bap_ep *ep = sinks[i].ep;
 		struct bt_bap_stream *stream = &streams[i];
 
@@ -657,7 +657,7 @@ static int configure_streams(void)
 		configured_sink_stream_count++;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(sources); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(sources); i++) {
 		struct bt_bap_ep *ep = sources[i];
 		struct bt_bap_stream *stream = &streams[i + configured_sink_stream_count];
 
@@ -857,8 +857,8 @@ static void reset_data(void)
 	k_sem_reset(&sem_stream_started);
 	k_sem_reset(&sem_stream_connected);
 
-	configured_sink_stream_count = 0;
-	configured_source_stream_count = 0;
+	configured_sink_stream_count = 0U;
+	configured_source_stream_count = 0U;
 	memset(sinks, 0, sizeof(sinks));
 	memset(sources, 0, sizeof(sources));
 }

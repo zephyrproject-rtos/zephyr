@@ -35,6 +35,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -329,6 +330,8 @@ static ssize_t read_sirk(struct bt_conn *conn, const struct bt_gatt_attr *attr, 
 
 static void sirk_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -345,6 +348,12 @@ static ssize_t read_set_size(struct bt_conn *conn,
 				 &svc_inst->set_size,
 				 sizeof(svc_inst->set_size));
 #else
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+	ARG_UNUSED(offset);
+
 	__ASSERT(false, "Unexpected read callback");
 	return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 #endif /* CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT */
@@ -353,6 +362,8 @@ static ssize_t read_set_size(struct bt_conn *conn,
 static void set_size_cfg_changed(const struct bt_gatt_attr *attr,
 				 uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -369,6 +380,12 @@ static ssize_t read_set_lock(struct bt_conn *conn,
 				 &svc_inst->set_lock,
 				 sizeof(svc_inst->set_lock));
 #else
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+	ARG_UNUSED(offset);
+
 	__ASSERT(false, "Unexpected read callback");
 	return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 #endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
@@ -449,6 +466,8 @@ static ssize_t write_set_lock(struct bt_conn *conn,
 			      const void *buf, uint16_t len,
 			      uint16_t offset, uint8_t flags)
 {
+	ARG_UNUSED(flags);
+
 #if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 	ssize_t res;
 	uint8_t val;
@@ -469,6 +488,12 @@ static ssize_t write_set_lock(struct bt_conn *conn,
 
 	return len;
 #else
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+	ARG_UNUSED(offset);
+
 	__ASSERT(false, "Unexpected write callback");
 	return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 #endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
@@ -477,6 +502,8 @@ static ssize_t write_set_lock(struct bt_conn *conn,
 static void set_lock_cfg_changed(const struct bt_gatt_attr *attr,
 				 uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -493,6 +520,12 @@ static ssize_t read_rank(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 sizeof(svc_inst->rank));
 
 #else
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+	ARG_UNUSED(offset);
+
 	__ASSERT(false, "Unexpected read callback");
 	return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 #endif /* CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT */
@@ -524,6 +557,8 @@ static void csip_security_changed(struct bt_conn *conn, bt_security_t level,
 				  enum bt_security_err err)
 {
 	const bt_addr_le_t *peer_addr;
+
+	ARG_UNUSED(level);
 
 	if (err != 0 || conn->encrypt == 0) {
 		return;
@@ -675,6 +710,8 @@ static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 
 static void csip_bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 {
+	ARG_UNUSED(id);
+
 	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
 		struct bt_csip_set_member_svc_inst *svc_inst = &svc_insts[i];
 
@@ -770,6 +807,8 @@ static void notify_cb(struct bt_conn *conn, void *data)
 	struct bt_conn_info info;
 	int err = 0;
 
+	ARG_UNUSED(data);
+
 	err = bt_conn_get_info(conn, &info);
 	if (err != 0) {
 		return;
@@ -840,11 +879,15 @@ unlock_and_return:
 
 static void deferred_nfy_work_handler(struct k_work *work)
 {
+	ARG_UNUSED(work);
+
 	bt_conn_foreach(BT_CONN_TYPE_LE, notify_cb, NULL);
 }
 
 static void add_bonded_addr_to_client_list(const struct bt_bond_info *info, void *data)
 {
+	ARG_UNUSED(data);
+
 	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
 		struct bt_csip_set_member_svc_inst *svc_inst = &svc_insts[i];
 

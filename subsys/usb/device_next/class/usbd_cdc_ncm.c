@@ -1102,6 +1102,7 @@ static int cdc_ncm_send(const struct device *dev, struct net_pkt *const pkt)
 }
 
 static int cdc_ncm_set_config(const struct device *dev,
+			      struct net_if *iface __unused,
 			      const enum ethernet_config_type type,
 			      const struct ethernet_config *config)
 {
@@ -1120,21 +1121,22 @@ static int cdc_ncm_set_config(const struct device *dev,
 	}
 }
 
-static enum ethernet_hw_caps cdc_ncm_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps cdc_ncm_get_capabilities(const struct device *dev __unused,
+						     struct net_if *iface __unused)
 {
 	ARG_UNUSED(dev);
 
 	return ETHERNET_LINK_10BASE | ETHERNET_PROMISC_MODE;
 }
 
-static int cdc_ncm_iface_start(const struct device *dev)
+static int cdc_ncm_iface_start(const struct device *dev, struct net_if *iface)
 {
 	struct cdc_ncm_eth_data *data = dev->data;
 
-	LOG_DBG("Start interface %d", net_if_get_by_iface(data->iface));
+	LOG_DBG("Start interface %d", net_if_get_by_iface(iface));
 
 	atomic_set_bit(&data->state, CDC_NCM_IFACE_UP);
-	net_if_carrier_on(data->iface);
+	net_if_carrier_on(iface);
 
 	if (atomic_test_bit(&data->state, CDC_NCM_DATA_IFACE_ENABLED)) {
 		(void)k_work_reschedule(&data->notif_work, K_MSEC(1));
@@ -1143,11 +1145,11 @@ static int cdc_ncm_iface_start(const struct device *dev)
 	return 0;
 }
 
-static int cdc_ncm_iface_stop(const struct device *dev)
+static int cdc_ncm_iface_stop(const struct device *dev, struct net_if *iface)
 {
 	struct cdc_ncm_eth_data *data = dev->data;
 
-	LOG_DBG("Stop interface %d", net_if_get_by_iface(data->iface));
+	LOG_DBG("Stop interface %d", net_if_get_by_iface(iface));
 
 	atomic_clear_bit(&data->state, CDC_NCM_IFACE_UP);
 

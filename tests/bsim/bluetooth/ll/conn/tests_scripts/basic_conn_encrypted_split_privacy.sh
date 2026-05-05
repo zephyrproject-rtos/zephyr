@@ -6,7 +6,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 # Basic connection test: a central connects to a peripheral and expects a
 # notification
-simulation_id="basic_conn_encr_split_privacy"
+simulation_id="${BOARD_TS}_basic_conn_encr_split_privacy"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

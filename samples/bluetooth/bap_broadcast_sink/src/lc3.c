@@ -45,9 +45,6 @@
 
 LOG_MODULE_REGISTER(lc3, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define LC3_ENCODER_STACK_SIZE 4096
-#define LC3_ENCODER_PRIORITY   5
-
 struct lc3_data {
 	void *fifo_reserved; /* 1st word reserved for use by FIFO */
 	struct net_buf *buf;
@@ -261,11 +258,11 @@ static void do_lc3_decode(struct lc3_data *data)
 		const uint8_t frame_blocks_per_sdu = stream->lc3_frame_blocks_per_sdu;
 		size_t frame_cnt;
 
-		frame_cnt = 0;
+		frame_cnt = 0U;
 		for (uint8_t i = 0U; i < frame_blocks_per_sdu; i++) {
 			const size_t decoded_frames = decode_frame_block(data, frame_cnt);
 
-			if (decoded_frames == 0) {
+			if (decoded_frames == 0U) {
 				break;
 			}
 

@@ -4,11 +4,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-SIMULATION_ID="unicast_audio_acl_disconnect"
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
+SIMULATION_ID="${BOARD_TS}_unicast_audio_acl_disconnect"
 VERBOSITY_LEVEL=2
 EXECUTE_TIMEOUT=120
-
-source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 

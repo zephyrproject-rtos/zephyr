@@ -34,6 +34,7 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "../host/conn_internal.h"
 #include "../host/iso_internal.h"
@@ -278,7 +279,6 @@ static void broadcast_sink_set_ep_state(struct bt_bap_ep *ep, enum bt_bap_ep_sta
 			stream->codec_cfg = NULL;
 			stream->group = NULL;
 			ep->stream = NULL;
-			ep->broadcast_sink = NULL;
 		}
 	}
 }
@@ -517,6 +517,8 @@ static bool base_subgroup_meta_cb(const struct bt_bap_base_subgroup *subgroup, v
 	uint8_t *meta;
 	int ret;
 
+	ARG_UNUSED(user_data);
+
 	ret = bt_bap_base_get_subgroup_codec_meta(subgroup, &meta);
 	if (ret < 0) {
 		return false;
@@ -736,6 +738,8 @@ static void pa_recv(struct bt_le_per_adv_sync *sync,
 {
 	struct bt_bap_broadcast_sink *sink = broadcast_sink_get_by_pa(sync);
 
+	ARG_UNUSED(info);
+
 	if (sink == NULL) {
 		/* Not a PA sync that we control */
 		return;
@@ -754,6 +758,8 @@ static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
 {
 	struct bt_bap_broadcast_sink *sink = broadcast_sink_get_by_pa(sync);
 
+	ARG_UNUSED(info);
+
 	if (sink != NULL) {
 		bt_bap_scan_delegator_set_pa_state(sink->bass_src_id, BT_BAP_PA_STATE_SYNCED);
 	}
@@ -763,6 +769,8 @@ static void pa_term_cb(struct bt_le_per_adv_sync *sync,
 		       const struct bt_le_per_adv_sync_term_info *info)
 {
 	struct bt_bap_broadcast_sink *sink = broadcast_sink_get_by_pa(sync);
+
+	ARG_UNUSED(info);
 
 	if (sink != NULL) {
 		bt_bap_scan_delegator_set_pa_state(sink->bass_src_id, BT_BAP_PA_STATE_NOT_SYNCED);
@@ -1040,7 +1048,6 @@ static void broadcast_sink_cleanup_streams(struct bt_bap_broadcast_sink *sink)
 			bt_bap_iso_unbind_ep(stream->ep->iso, stream->ep);
 			stream->iso = NULL;
 			stream->ep->stream = NULL;
-			stream->ep->broadcast_sink = NULL;
 			stream->ep = NULL;
 		}
 
@@ -1402,7 +1409,6 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 	for (size_t i = 0; i < stream_count; i++) {
 		struct bt_bap_ep *ep = streams[i]->ep;
 
-		ep->broadcast_sink = sink;
 		broadcast_sink_set_ep_state(ep, BT_BAP_EP_STATE_QOS_CONFIGURED);
 	}
 

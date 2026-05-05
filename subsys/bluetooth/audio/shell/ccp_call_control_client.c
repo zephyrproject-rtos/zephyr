@@ -19,6 +19,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/toolchain.h>
 
 #include "common/bt_shell_private.h"
 #include "host/shell/bt.h"
@@ -36,6 +37,8 @@ static void ccp_call_control_client_discover_cb(struct bt_ccp_call_control_clien
 {
 	struct bt_ccp_call_control_client_bearer *gtbs_bearer = NULL;
 	uint8_t tbs_count = 0U;
+
+	ARG_UNUSED(user_data);
 
 	if (err != 0) {
 		bt_shell_error("Failed to discover TBS: %d", err);
@@ -57,6 +60,8 @@ static void
 ccp_call_control_client_bearer_provider_name_cb(struct bt_ccp_call_control_client_bearer *bearer,
 						int err, const char *name, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	if (err != 0) {
 		bt_shell_error("Failed to read bearer %p name: %d", (void *)bearer, err);
 		return;
@@ -93,6 +98,9 @@ static int cmd_ccp_call_control_client_discover(const struct shell *sh, size_t a
 {
 	static bool cb_registered;
 	int err;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	if (default_conn == NULL) {
 		shell_error(sh, "Not connected");

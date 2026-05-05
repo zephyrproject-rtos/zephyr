@@ -268,6 +268,8 @@ void bt_cap_common_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct bt_cap_common_client *client = bt_cap_common_get_client_by_acl(conn);
 
+	ARG_UNUSED(reason);
+
 	if (client->conn != NULL) {
 		bt_conn_unref(client->conn);
 	}

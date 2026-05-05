@@ -16,10 +16,10 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
-#define PRESET_INDEX_UNIVERSAL  1
-#define PRESET_INDEX_OUTDOOR    5
-#define PRESET_INDEX_NOISY_ENV  8
-#define PRESET_INDEX_OFFICE     22
+#define PRESET_INDEX_UNIVERSAL  1U
+#define PRESET_INDEX_OUTDOOR    5U
+#define PRESET_INDEX_NOISY_ENV  8U
+#define PRESET_INDEX_OFFICE     22U
 
 static int select_cb(uint8_t index, bool sync)
 {
@@ -69,7 +69,7 @@ int has_server_preset_init(void)
 		},
 	};
 
-	for (size_t i = 0; i < ARRAY_SIZE(param); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(param); i++) {
 		err = bt_has_preset_register(&param[i]);
 		if (err != 0) {
 			return err;

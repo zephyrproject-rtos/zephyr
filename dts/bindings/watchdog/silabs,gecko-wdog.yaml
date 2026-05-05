@@ -2,9 +2,9 @@
 # Copyright (c) Oane Kingma
 # SPDX-License-Identifier: Apache-2.0
 
-title: Silicon Labs Series 1-2 WDOG (Watchdog)
+title: Silicon Labs Series 0-2 WDOG (Watchdog)
 
-description: Watchdog timer for Silicon Labs Series 1-2 SoCs.
+description: Watchdog timer for Silicon Labs Series 0-2 SoCs.
 
 compatible: "silabs,gecko-wdog"
 
@@ -12,9 +12,6 @@ include: base.yaml
 
 properties:
   reg:
-    required: true
-
-  interrupts:
     required: true
 
   peripheral-id:

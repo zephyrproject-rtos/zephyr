@@ -18,7 +18,13 @@ Requirements
 Building and Running
 ********************
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+Build and flash the sample as follows, replacing ``<board>`` with your target board:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/bthome_sensor_template
+   :board: <board>
+   :goals: build flash
+   :compact:
 
 When the sample is running, navigate to Devices & Services under settings in Home
 Assistant. There you will be asked to configure the BTHome sensor if everything

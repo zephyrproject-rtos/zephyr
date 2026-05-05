@@ -259,6 +259,7 @@ festo	Festo SE & Co. KG
 fii	Foxconn Industrial Internet
 fintek	Feature Integration Technology Inc.
 firefly	Firefly
+flysky	FlySky
 fobe	FoBE Studio
 focaltech	FocalTech Systems Co.,Ltd
 framework	Framework Computer, Inc.
@@ -363,6 +364,7 @@ jedec	JEDEC Solid State Technology Association
 jesurun	Shenzhen Jesurun Electronics Business Dept.
 jhd	Shenzhen Jinghua Displays Electronics Co., Ltd.
 jianda	Jiandangjing Technology Co., Ltd.
+jlc	Shenzhen JLC Technology Group Co., Ltd.
 kam	Kamstrup A/S
 karo	Ka-Ro electronics GmbH
 keithkoep	Keith & Koep GmbH

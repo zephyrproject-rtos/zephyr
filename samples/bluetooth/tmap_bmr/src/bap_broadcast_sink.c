@@ -28,9 +28,9 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
-#define SEM_TIMEOUT K_SECONDS(10)
-#define PA_SYNC_SKIP         5
-#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
+#define SEM_TIMEOUT                       K_SECONDS(10U)
+#define PA_SYNC_SKIP                      5U
+#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20U /* Set the timeout relative to interval */
 
 static bool tmap_bms_found;
 
@@ -176,7 +176,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 	if (!bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_TMAS)) {
 		struct net_buf_simple tmas_svc_data;
 		uint16_t uuid_val;
-		uint16_t peer_tmap_role = 0;
+		uint16_t peer_tmap_role = 0U;
 
 		net_buf_simple_init_with_data(&tmas_svc_data,
 						(void *)data->data,

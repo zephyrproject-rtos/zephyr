@@ -20,6 +20,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
@@ -82,6 +83,8 @@ static void test_ase_state_transition_invalid_before(void *f)
 static void test_ase_state_transition_invalid_after(void *f)
 {
 	int err;
+
+	ARG_UNUSED(f);
 
 	err = bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 	zassert_equal(err, 0, "unexpected err response %d", err);

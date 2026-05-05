@@ -6,7 +6,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 # Disable test: bt_enable and bt_disable are called in a loop.
 # Each iteration the default ID is updated
-simulation_id="disable_test_set_default_id"
+simulation_id="${BOARD_TS}_disable_test_set_default_id"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin
