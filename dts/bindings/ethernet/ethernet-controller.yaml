@@ -46,6 +46,18 @@ properties:
       - "rmii"
       - "gmii"
       - "rgmii"
+      - "rgmii-id"
+      - "rgmii-txid"
+      - "rgmii-rxid"
+      - "tbi"
+      - "rtbi"
+      - "smii"
+      - "sgmii"
+      - "rev-mii"
+      - "xgmii"
+      - "moca"
+      - "qsgmii"
+      - "trgmii"
       - "internal"
 
   ptp-clock:
