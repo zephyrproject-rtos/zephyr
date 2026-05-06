@@ -42,25 +42,25 @@ static int bt_rand_custom_fake(void *buf, size_t len)
 /*
  *  Test creating a new identity.
  *  A valid random static address is passed to bt_id_create() for the address and 'BT_DEV_ENABLE' is
- *  set, the same address is used and copied to bt_dev.id_addr[].
+ *  set, the same address is used and copied to bt_devs[0].id_addr[].
  *
  *  Constraints:
  *   - Valid private random address is used
  *   - Input IRK is NULL
- *   - 'BT_DEV_ENABLE' flag is set in bt_dev.flags
+ *   - 'BT_DEV_ENABLE' flag is set in bt_devs[0].flags
  *
  *  Expected behaviour:
- *   - The same address is used and loaded to bt_dev.id_addr[]
- *   - IRK is loaded to bt_dev.irk[]
- *   - bt_dev.id_count is incremented
+ *   - The same address is used and loaded to bt_devs[0].id_addr[]
+ *   - IRK is loaded to bt_devs[0].irk[]
+ *   - bt_devs[0].id_count is incremented
  */
 ZTEST(bt_id_create_privacy_enabled, test_create_id_valid_input_address_null_irk)
 {
 	int id_count, new_id;
 	bt_addr_le_t addr = *BT_STATIC_RANDOM_LE_ADDR_1;
 
-	id_count = bt_dev.id_count;
-	atomic_set_bit(bt_dev.flags, BT_DEV_ENABLE);
+	id_count = bt_devs[0].id_count;
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_ENABLE);
 	bt_rand_fake.custom_fake = bt_rand_custom_fake;
 	/* Calling bt_addr_le_create_static() isn't expected */
 	bt_addr_le_create_static_fake.return_val = -1;
@@ -68,32 +68,32 @@ ZTEST(bt_id_create_privacy_enabled, test_create_id_valid_input_address_null_irk)
 	new_id = bt_id_create(&addr, NULL);
 
 	expect_not_called_bt_addr_le_create_static();
-	expect_single_call_bt_rand(&bt_dev.irk[new_id], 16);
+	expect_single_call_bt_rand(&bt_devs[0].irk[new_id], 16);
 
 	zassert_true(new_id >= 0, "Unexpected error code '%d' was returned", new_id);
-	zassert_true(bt_dev.id_count == (id_count + 1), "Incorrect ID count %d was set",
-		     bt_dev.id_count);
-	zassert_mem_equal(&bt_dev.id_addr[new_id], BT_STATIC_RANDOM_LE_ADDR_1, sizeof(bt_addr_le_t),
-			  "Incorrect address was set");
-	zassert_mem_equal(&bt_dev.irk[new_id], testing_irk_value, sizeof(testing_irk_value),
+	zassert_true(bt_devs[0].id_count == (id_count + 1), "Incorrect ID count %d was set",
+		     bt_devs[0].id_count);
+	zassert_mem_equal(&bt_devs[0].id_addr[new_id], BT_STATIC_RANDOM_LE_ADDR_1,
+			  sizeof(bt_addr_le_t), "Incorrect address was set");
+	zassert_mem_equal(&bt_devs[0].irk[new_id], testing_irk_value, sizeof(testing_irk_value),
 			  "Incorrect address was set");
 }
 
 /*
  *  Test creating a new identity.
  *  A valid random static address is passed to bt_id_create() for the address and 'BT_DEV_ENABLE' is
- *  set, the same address is used and copied to bt_dev.id_addr[].
+ *  set, the same address is used and copied to bt_devs[0].id_addr[].
  *
  *  Constraints:
  *   - Valid private random address is used
  *   - Input IRK is cleared (zero filled)
- *   - 'BT_DEV_ENABLE' flag is set in bt_dev.flags
+ *   - 'BT_DEV_ENABLE' flag is set in bt_devs[0].flags
  *
  *  Expected behaviour:
- *   - The same address is used and loaded to bt_dev.id_addr[]
- *   - IRK is loaded to bt_dev.irk[]
+ *   - The same address is used and loaded to bt_devs[0].id_addr[]
+ *   - IRK is loaded to bt_devs[0].irk[]
  *   - IRK is loaded to input IRK buffer
- *   - bt_dev.id_count is incremented
+ *   - bt_devs[0].id_count is incremented
  */
 ZTEST(bt_id_create_privacy_enabled, test_create_id_valid_input_address_cleared_irk)
 {
@@ -101,8 +101,8 @@ ZTEST(bt_id_create_privacy_enabled, test_create_id_valid_input_address_cleared_i
 	bt_addr_le_t addr = *BT_STATIC_RANDOM_LE_ADDR_1;
 	uint8_t zero_irk[16] = {0};
 
-	id_count = bt_dev.id_count;
-	atomic_set_bit(bt_dev.flags, BT_DEV_ENABLE);
+	id_count = bt_devs[0].id_count;
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_ENABLE);
 	bt_rand_fake.custom_fake = bt_rand_custom_fake;
 	/* Calling bt_addr_le_create_static() isn't expected */
 	bt_addr_le_create_static_fake.return_val = -1;
@@ -110,14 +110,14 @@ ZTEST(bt_id_create_privacy_enabled, test_create_id_valid_input_address_cleared_i
 	new_id = bt_id_create(&addr, zero_irk);
 
 	expect_not_called_bt_addr_le_create_static();
-	expect_single_call_bt_rand(&bt_dev.irk[new_id], 16);
+	expect_single_call_bt_rand(&bt_devs[0].irk[new_id], 16);
 
 	zassert_true(new_id >= 0, "Unexpected error code '%d' was returned", new_id);
-	zassert_true(bt_dev.id_count == (id_count + 1), "Incorrect ID count %d was set",
-		     bt_dev.id_count);
-	zassert_mem_equal(&bt_dev.id_addr[new_id], BT_STATIC_RANDOM_LE_ADDR_1, sizeof(bt_addr_le_t),
-			  "Incorrect address was set");
-	zassert_mem_equal(&bt_dev.irk[new_id], testing_irk_value, sizeof(testing_irk_value),
+	zassert_true(bt_devs[0].id_count == (id_count + 1), "Incorrect ID count %d was set",
+		     bt_devs[0].id_count);
+	zassert_mem_equal(&bt_devs[0].id_addr[new_id], BT_STATIC_RANDOM_LE_ADDR_1,
+			  sizeof(bt_addr_le_t), "Incorrect address was set");
+	zassert_mem_equal(&bt_devs[0].irk[new_id], testing_irk_value, sizeof(testing_irk_value),
 			  "Incorrect address was set");
 	zassert_mem_equal(zero_irk, testing_irk_value, sizeof(testing_irk_value),
 			  "Incorrect address was set");
@@ -126,25 +126,25 @@ ZTEST(bt_id_create_privacy_enabled, test_create_id_valid_input_address_cleared_i
 /*
  *  Test creating a new identity.
  *  A valid random static address is passed to bt_id_create() for the address and 'BT_DEV_ENABLE' is
- *  set, the same address is used and copied to bt_dev.id_addr[].
+ *  set, the same address is used and copied to bt_devs[0].id_addr[].
  *
  *  Constraints:
  *   - Valid private random address is used
  *   - Input IRK is filled with non-zero values
- *   - 'BT_DEV_ENABLE' flag is set in bt_dev.flags
+ *   - 'BT_DEV_ENABLE' flag is set in bt_devs[0].flags
  *
  *  Expected behaviour:
- *   - The same address is used and loaded to bt_dev.id_addr[]
- *   - Input IRK is loaded to bt_dev.irk[]
- *   - bt_dev.id_count is incremented
+ *   - The same address is used and loaded to bt_devs[0].id_addr[]
+ *   - Input IRK is loaded to bt_devs[0].irk[]
+ *   - bt_devs[0].id_count is incremented
  */
 ZTEST(bt_id_create_privacy_enabled, test_create_id_valid_input_address_filled_irk)
 {
 	int id_count, new_id;
 	bt_addr_le_t addr = *BT_STATIC_RANDOM_LE_ADDR_1;
 
-	id_count = bt_dev.id_count;
-	atomic_set_bit(bt_dev.flags, BT_DEV_ENABLE);
+	id_count = bt_devs[0].id_count;
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_ENABLE);
 	bt_rand_fake.custom_fake = bt_rand_custom_fake;
 	/* Calling bt_addr_le_create_static() isn't expected */
 	bt_addr_le_create_static_fake.return_val = -1;
@@ -155,11 +155,11 @@ ZTEST(bt_id_create_privacy_enabled, test_create_id_valid_input_address_filled_ir
 	expect_not_called_bt_rand();
 
 	zassert_true(new_id >= 0, "Unexpected error code '%d' was returned", new_id);
-	zassert_true(bt_dev.id_count == (id_count + 1), "Incorrect ID count %d was set",
-		     bt_dev.id_count);
-	zassert_mem_equal(&bt_dev.id_addr[new_id], BT_STATIC_RANDOM_LE_ADDR_1, sizeof(bt_addr_le_t),
-			  "Incorrect address was set");
-	zassert_mem_equal(&bt_dev.irk[new_id], testing_irk_value, sizeof(testing_irk_value),
+	zassert_true(bt_devs[0].id_count == (id_count + 1), "Incorrect ID count %d was set",
+		     bt_devs[0].id_count);
+	zassert_mem_equal(&bt_devs[0].id_addr[new_id], BT_STATIC_RANDOM_LE_ADDR_1,
+			  sizeof(bt_addr_le_t), "Incorrect address was set");
+	zassert_mem_equal(&bt_devs[0].irk[new_id], testing_irk_value, sizeof(testing_irk_value),
 			  "Incorrect address was set");
 }
 #endif

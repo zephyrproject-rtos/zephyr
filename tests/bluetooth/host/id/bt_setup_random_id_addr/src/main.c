@@ -31,7 +31,7 @@ static struct custom_bt_hci_rp_vs_read_static_addrs {
 
 static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 
 	NET_BUF_FFF_FAKES_LIST(RESET_FAKE);
 	HCI_CORE_FFF_FAKES_LIST(RESET_FAKE);
@@ -41,7 +41,7 @@ ZTEST_RULE(fff_reset_rule, fff_reset_rule_before, NULL);
 
 static void tc_setup(void *f)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 	memset(&hci_cmd_rsp, 0x00, sizeof(struct net_buf));
 	memset(&hci_cmd_rsp_data, 0x00, sizeof(struct custom_bt_hci_rp_vs_read_static_addrs));
 
@@ -89,7 +89,7 @@ static int bt_hci_cmd_send_sync_custom_fake(uint16_t opcode, struct net_buf *buf
 ZTEST(bt_setup_random_id_addr, test_bt_hci_cmd_send_sync_returns_single_identity)
 {
 	int err;
-	uint16_t *vs_commands = (uint16_t *)bt_dev.vs_commands;
+	uint16_t *vs_commands = (uint16_t *)bt_devs[0].vs_commands;
 	struct bt_hci_rp_vs_read_static_addrs *rp =
 		(void *)&hci_cmd_rsp_data.hci_rp_vs_read_static_addrs;
 	struct bt_hci_vs_static_addr *static_addr = (void *)&hci_cmd_rsp_data.hci_vs_static_addr;
@@ -111,10 +111,10 @@ ZTEST(bt_setup_random_id_addr, test_bt_hci_cmd_send_sync_returns_single_identity
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
 
-	zassert_true(bt_dev.id_count == 1, "Incorrect value '%d' was set to bt_dev.id_count",
-		     bt_dev.id_count);
+	zassert_true(bt_devs[0].id_count == 1,
+		     "Incorrect value '%d' was set to bt_devs[0].id_count", bt_devs[0].id_count);
 
-	zassert_mem_equal(&bt_dev.id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1, sizeof(bt_addr_le_t),
+	zassert_mem_equal(&bt_devs[0].id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
 }
 
@@ -143,7 +143,7 @@ ZTEST(bt_setup_random_id_addr, test_bt_hci_cmd_send_sync_returns_single_identity
 ZTEST(bt_setup_random_id_addr, test_bt_hci_cmd_send_sync_returns_single_valid_identity)
 {
 	int err;
-	uint16_t *vs_commands = (uint16_t *)bt_dev.vs_commands;
+	uint16_t *vs_commands = (uint16_t *)bt_devs[0].vs_commands;
 	struct bt_hci_rp_vs_read_static_addrs *rp =
 		(void *)&hci_cmd_rsp_data.hci_rp_vs_read_static_addrs;
 	struct bt_hci_vs_static_addr *static_addr = (void *)&hci_cmd_rsp_data.hci_vs_static_addr;
@@ -166,14 +166,14 @@ ZTEST(bt_setup_random_id_addr, test_bt_hci_cmd_send_sync_returns_single_valid_id
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
 
-	zassert_true(bt_dev.id_count == 2, "Incorrect value '%d' was set to bt_dev.id_count",
-		     bt_dev.id_count);
+	zassert_true(bt_devs[0].id_count == 2,
+		     "Incorrect value '%d' was set to bt_devs[0].id_count", bt_devs[0].id_count);
 
-	zassert_mem_equal(&bt_dev.id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1, sizeof(bt_addr_le_t),
+	zassert_mem_equal(&bt_devs[0].id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
-	zassert_mem_equal(&bt_dev.id_addr[1].a, BT_ADDR, sizeof(bt_addr_t),
+	zassert_mem_equal(&bt_devs[0].id_addr[1].a, BT_ADDR, sizeof(bt_addr_t),
 			  "Incorrect address was set");
-	zassert_equal(bt_dev.id_addr[1].type, BT_ADDR_LE_RANDOM, "Incorrect address was set");
+	zassert_equal(bt_devs[0].id_addr[1].type, BT_ADDR_LE_RANDOM, "Incorrect address was set");
 }
 
 /*
@@ -197,7 +197,7 @@ ZTEST(bt_setup_random_id_addr, test_bt_hci_cmd_send_sync_returns_single_valid_id
 ZTEST(bt_setup_random_id_addr, test_bt_hci_cmd_send_sync_returns_multiple_identities)
 {
 	int err;
-	uint16_t *vs_commands = (uint16_t *)bt_dev.vs_commands;
+	uint16_t *vs_commands = (uint16_t *)bt_devs[0].vs_commands;
 	struct bt_hci_rp_vs_read_static_addrs *rp =
 		(void *)&hci_cmd_rsp_data.hci_rp_vs_read_static_addrs;
 	struct bt_hci_vs_static_addr *static_addr = (void *)&hci_cmd_rsp_data.hci_vs_static_addr;
@@ -220,12 +220,12 @@ ZTEST(bt_setup_random_id_addr, test_bt_hci_cmd_send_sync_returns_multiple_identi
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
 
-	zassert_true(bt_dev.id_count == 2, "Incorrect value '%d' was set to bt_dev.id_count",
-		     bt_dev.id_count);
+	zassert_true(bt_devs[0].id_count == 2,
+		     "Incorrect value '%d' was set to bt_devs[0].id_count", bt_devs[0].id_count);
 
-	zassert_mem_equal(&bt_dev.id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1, sizeof(bt_addr_le_t),
+	zassert_mem_equal(&bt_devs[0].id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
-	zassert_mem_equal(&bt_dev.id_addr[1], BT_STATIC_RANDOM_LE_ADDR_2, sizeof(bt_addr_le_t),
+	zassert_mem_equal(&bt_devs[0].id_addr[1], BT_STATIC_RANDOM_LE_ADDR_2, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
 }
 #endif /* CONFIG_BT_ID_MAX > 1 */

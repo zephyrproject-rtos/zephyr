@@ -29,7 +29,7 @@ DEFINE_FFF_GLOBALS;
 
 static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 
 	ADV_FFF_FAKES_LIST(RESET_FAKE);
 	CONN_FFF_FAKES_LIST(RESET_FAKE);
@@ -46,8 +46,8 @@ ZTEST_SUITE(bt_id_del, NULL, NULL, NULL, NULL, NULL);
  *  Test deleting key from the resolving list when size of controller resolving list is zero
  *
  *  Constraints:
- *   - bt_dev.le.rl_size is set to 0
- *   - bt_dev.le.rl_entries is greater than 0
+ *   - bt_devs[0].le.rl_size is set to 0
+ *   - bt_devs[0].le.rl_entries is greater than 0
  *
  *  Expected behaviour:
  *   - Passed key state is updated by clearing 'BT_KEYS_ID_ADDED' bit
@@ -57,16 +57,16 @@ ZTEST(bt_id_del, test_zero_controller_list_size)
 	struct bt_keys keys = {0};
 	uint8_t expected_rl_entries;
 
-	bt_dev.le.rl_size = 0;
-	bt_dev.le.rl_entries = 1;
-	expected_rl_entries = bt_dev.le.rl_entries - 1;
+	bt_devs[0].le.rl_size = 0;
+	bt_devs[0].le.rl_entries = 1;
+	expected_rl_entries = bt_devs[0].le.rl_entries - 1;
 	keys.state |= BT_KEYS_ID_ADDED;
 
 	bt_id_del(&keys);
 
 	expect_not_called_bt_conn_lookup_state_le();
 
-	zassert_equal(expected_rl_entries, bt_dev.le.rl_entries, "Incorrect entries count");
+	zassert_equal(expected_rl_entries, bt_devs[0].le.rl_entries, "Incorrect entries count");
 	zassert_false(keys.state & BT_KEYS_ID_ADDED, "Incorrect key state");
 }
 
@@ -75,8 +75,8 @@ ZTEST(bt_id_del, test_zero_controller_list_size)
  *  and number of entries in the resolving list is greater than controller resolving list size.
  *
  *  Constraints:
- *   - bt_dev.le.rl_size is set to 0
- *   - bt_dev.le.rl_entries is greater than (bt_dev.le.rl_size + 1)
+ *   - bt_devs[0].le.rl_size is set to 0
+ *   - bt_devs[0].le.rl_entries is greater than (bt_devs[0].le.rl_size + 1)
  *
  *  Expected behaviour:
  *   - Passed key state is updated by clearing 'BT_KEYS_ID_ADDED' bit
@@ -86,16 +86,16 @@ ZTEST(bt_id_del, test_resolving_list_entries_greater_than_controller_list_size)
 	struct bt_keys keys = {0};
 	uint8_t expected_rl_entries;
 
-	bt_dev.le.rl_size = 1;
-	bt_dev.le.rl_entries = 3;
-	expected_rl_entries = bt_dev.le.rl_entries - 1;
+	bt_devs[0].le.rl_size = 1;
+	bt_devs[0].le.rl_entries = 3;
+	expected_rl_entries = bt_devs[0].le.rl_entries - 1;
 	keys.state |= BT_KEYS_ID_ADDED;
 
 	bt_id_del(&keys);
 
 	expect_not_called_bt_conn_lookup_state_le();
 
-	zassert_equal(expected_rl_entries, bt_dev.le.rl_entries, "Incorrect entries count");
+	zassert_equal(expected_rl_entries, bt_devs[0].le.rl_entries, "Incorrect entries count");
 	zassert_false(keys.state & BT_KEYS_ID_ADDED, "Incorrect key state");
 }
 
@@ -104,13 +104,13 @@ ZTEST(bt_id_del, test_resolving_list_entries_greater_than_controller_list_size)
  *  bt_conn_lookup_state_le() returns a valid connection reference.
  *
  *  Constraints:
- *   - bt_dev.le.rl_size is set to a value greater than 0
- *   - 'bt_dev.le.rl_entries > bt_dev.le.rl_size + 1' condition is false
+ *   - bt_devs[0].le.rl_size is set to a value greater than 0
+ *   - 'bt_devs[0].le.rl_entries > bt_devs[0].le.rl_size + 1' condition is false
  *   - bt_conn_lookup_state_le() returns a valid connection reference.
  *
  *  Expected behaviour:
  *   - Passed key state is updated by setting 'BT_KEYS_ID_PENDING_DEL' bit
- *   - 'BT_DEV_ID_PENDING' in bt_dev.flags is set
+ *   - 'BT_DEV_ID_PENDING' in bt_devs[0].flags is set
  */
 ZTEST(bt_id_del, test_conn_lookup_returns_valid_conn_ref)
 {
@@ -118,8 +118,8 @@ ZTEST(bt_id_del, test_conn_lookup_returns_valid_conn_ref)
 	struct bt_conn conn_ref = {0};
 
 	/* Break the host-side resolving condition */
-	bt_dev.le.rl_size = 1;
-	bt_dev.le.rl_entries = 1;
+	bt_devs[0].le.rl_size = 1;
+	bt_devs[0].le.rl_entries = 1;
 
 	bt_conn_lookup_state_le_fake.return_val = &conn_ref;
 
@@ -130,7 +130,7 @@ ZTEST(bt_id_del, test_conn_lookup_returns_valid_conn_ref)
 
 	zassert_true((keys.state & BT_KEYS_ID_PENDING_DEL) == BT_KEYS_ID_PENDING_DEL,
 		     "Incorrect key state");
-	zassert_true(atomic_test_bit(bt_dev.flags, BT_DEV_ID_PENDING),
+	zassert_true(atomic_test_bit(bt_devs[0].flags, BT_DEV_ID_PENDING),
 		     "Flags were not correctly set");
 }
 
@@ -154,15 +154,15 @@ void bt_le_ext_adv_foreach_custom_fake(void (*func)(struct bt_le_ext_adv *adv, v
  *  'CONFIG_BT_EXT_ADV' are enabled.
  *
  *  Constraints:
- *   - bt_dev.le.rl_size is set to a value greater than 0
- *   - 'bt_dev.le.rl_entries > bt_dev.le.rl_size + 1' condition is false
+ *   - bt_devs[0].le.rl_size is set to a value greater than 0
+ *   - 'bt_devs[0].le.rl_entries > bt_devs[0].le.rl_size + 1' condition is false
  *   - bt_conn_lookup_state_le() returns NULL.
  *   - 'CONFIG_BT_BROADCASTER' and 'CONFIG_BT_EXT_ADV' are enabled.
  *   - adv_is_limited_enabled() sets advertise enable flag to true
  *
  *  Expected behaviour:
  *   - Passed key state is updated by setting 'BT_KEYS_ID_PENDING_DEL' bit
- *   - 'BT_DEV_ID_PENDING' in bt_dev.flags is set if advertising is enabled
+ *   - 'BT_DEV_ID_PENDING' in bt_devs[0].flags is set if advertising is enabled
  */
 ZTEST(bt_id_del, test_conn_lookup_returns_null_broadcaster_ext_adv_enabled)
 {
@@ -172,8 +172,8 @@ ZTEST(bt_id_del, test_conn_lookup_returns_null_broadcaster_ext_adv_enabled)
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_BROADCASTER);
 
 	/* Break the host-side resolving condition */
-	bt_dev.le.rl_size = 1;
-	bt_dev.le.rl_entries = 1;
+	bt_devs[0].le.rl_size = 1;
+	bt_devs[0].le.rl_entries = 1;
 
 	bt_conn_lookup_state_le_fake.return_val = NULL;
 
@@ -188,7 +188,7 @@ ZTEST(bt_id_del, test_conn_lookup_returns_null_broadcaster_ext_adv_enabled)
 
 	zassert_true((keys.state & BT_KEYS_ID_PENDING_DEL) == BT_KEYS_ID_PENDING_DEL,
 		     "Incorrect key state");
-	zassert_true(atomic_test_bit(bt_dev.flags, BT_DEV_ID_PENDING),
+	zassert_true(atomic_test_bit(bt_devs[0].flags, BT_DEV_ID_PENDING),
 		     "Flags were not correctly set");
 }
 
@@ -198,9 +198,9 @@ ZTEST(bt_id_del, test_conn_lookup_returns_null_broadcaster_ext_adv_enabled)
  *  'CONFIG_BT_BROADCASTER' is enabled while 'CONFIG_BT_EXT_ADV' isn't enabled.
  *
  *  Constraints:
- *   - bt_dev.le.rl_size is set to a value greater than 0
- *   - (bt_dev.le.rl_entries > bt_dev.le.rl_size ) true
- *   - (bt_dev.le.rl_entries > bt_dev.le.rl_size + 1) false
+ *   - bt_devs[0].le.rl_size is set to a value greater than 0
+ *   - (bt_devs[0].le.rl_entries > bt_devs[0].le.rl_size ) true
+ *   - (bt_devs[0].le.rl_entries > bt_devs[0].le.rl_size + 1) false
  *   - bt_conn_lookup_state_le() returns NULL.
  *   - 'CONFIG_BT_BROADCASTER' is enabled.
  *   - 'CONFIG_BT_EXT_ADV' isn't enabled.
@@ -220,13 +220,13 @@ ZTEST(bt_id_del, test_conn_lookup_returns_null_broadcaster_no_ext_adv)
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_PRIVACY);
 
 	/* Break the host-side resolving condition */
-	bt_dev.le.rl_size = 1;
+	bt_devs[0].le.rl_size = 1;
 	/*
-	 * (bt_dev.le.rl_entries > bt_dev.le.rl_size ) true
-	 * (bt_dev.le.rl_entries > bt_dev.le.rl_size + 1) false
+	 * (bt_devs[0].le.rl_entries > bt_devs[0].le.rl_size ) true
+	 * (bt_devs[0].le.rl_entries > bt_devs[0].le.rl_size + 1) false
 	 */
-	bt_dev.le.rl_entries = 2;
-	expected_rl_entries = bt_dev.le.rl_entries - 1;
+	bt_devs[0].le.rl_entries = 2;
+	expected_rl_entries = bt_devs[0].le.rl_entries - 1;
 
 	bt_conn_lookup_state_le_fake.return_val = NULL;
 	keys.state |= BT_KEYS_ID_ADDED;
@@ -239,7 +239,7 @@ ZTEST(bt_id_del, test_conn_lookup_returns_null_broadcaster_no_ext_adv)
 
 	expect_single_call_bt_keys_foreach_type(BT_KEYS_IRK);
 
-	zassert_equal(expected_rl_entries, bt_dev.le.rl_entries, "Incorrect entries count");
+	zassert_equal(expected_rl_entries, bt_devs[0].le.rl_entries, "Incorrect entries count");
 	zassert_false(keys.state & BT_KEYS_ID_ADDED, "Incorrect key state");
 }
 
@@ -250,9 +250,9 @@ ZTEST(bt_id_del, test_conn_lookup_returns_null_broadcaster_no_ext_adv)
  *  enabled.
  *
  *  Constraints:
- *   - bt_dev.le.rl_size is set to a value greater than 0
- *   - (bt_dev.le.rl_entries > bt_dev.le.rl_size ) true
- *   - (bt_dev.le.rl_entries > bt_dev.le.rl_size + 1) false
+ *   - bt_devs[0].le.rl_size is set to a value greater than 0
+ *   - (bt_devs[0].le.rl_entries > bt_devs[0].le.rl_size ) true
+ *   - (bt_devs[0].le.rl_entries > bt_devs[0].le.rl_size + 1) false
  *   - bt_conn_lookup_state_le() returns NULL.
  *   - 'CONFIG_BT_BROADCASTER' is enabled.
  *   - 'CONFIG_BT_EXT_ADV' isn't enabled.
@@ -272,13 +272,13 @@ ZTEST(bt_id_del, test_conn_lookup_returns_null_broadcaster_no_ext_adv_privacy_en
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_PRIVACY);
 
 	/* Break the host-side resolving condition */
-	bt_dev.le.rl_size = 1;
+	bt_devs[0].le.rl_size = 1;
 	/*
-	 * (bt_dev.le.rl_entries > bt_dev.le.rl_size ) true
-	 * (bt_dev.le.rl_entries > bt_dev.le.rl_size + 1) false
+	 * (bt_devs[0].le.rl_entries > bt_devs[0].le.rl_size ) true
+	 * (bt_devs[0].le.rl_entries > bt_devs[0].le.rl_size + 1) false
 	 */
-	bt_dev.le.rl_entries = 2;
-	expected_rl_entries = bt_dev.le.rl_entries - 1;
+	bt_devs[0].le.rl_entries = 2;
+	expected_rl_entries = bt_devs[0].le.rl_entries - 1;
 
 	bt_conn_lookup_state_le_fake.return_val = NULL;
 	keys.state |= BT_KEYS_ID_ADDED;
@@ -291,7 +291,7 @@ ZTEST(bt_id_del, test_conn_lookup_returns_null_broadcaster_no_ext_adv_privacy_en
 
 	expect_single_call_bt_keys_foreach_type(BT_KEYS_ALL);
 
-	zassert_equal(expected_rl_entries, bt_dev.le.rl_entries, "Incorrect entries count");
+	zassert_equal(expected_rl_entries, bt_devs[0].le.rl_entries, "Incorrect entries count");
 	zassert_false(keys.state & BT_KEYS_ID_ADDED, "Incorrect key state");
 }
 
@@ -303,8 +303,8 @@ ZTEST(bt_id_del, test_conn_lookup_returns_null_broadcaster_no_ext_adv_privacy_en
  *  An HCI key address delete request is sent through hci_id_del()
  *
  *  Constraints:
- *   - bt_dev.le.rl_size is set to a value greater than 0
- *   - bt_dev.le.rl_entries equals bt_dev.le.rl_size
+ *   - bt_devs[0].le.rl_size is set to a value greater than 0
+ *   - bt_devs[0].le.rl_entries equals bt_devs[0].le.rl_size
  *   - bt_conn_lookup_state_le() returns NULL.
  *   - 'CONFIG_BT_BROADCASTER' is enabled.
  *   - 'CONFIG_BT_EXT_ADV' isn't enabled.
@@ -322,9 +322,9 @@ ZTEST(bt_id_del, test_send_hci_id_del)
 	uint8_t expected_rl_entries;
 
 	/* Break the host-side resolving condition */
-	bt_dev.le.rl_size = 1;
-	bt_dev.le.rl_entries = 1;
-	expected_rl_entries = bt_dev.le.rl_entries - 1;
+	bt_devs[0].le.rl_size = 1;
+	bt_devs[0].le.rl_entries = 1;
+	expected_rl_entries = bt_devs[0].le.rl_entries - 1;
 
 	bt_conn_lookup_state_le_fake.return_val = NULL;
 	keys.state |= BT_KEYS_ID_ADDED;
@@ -343,7 +343,7 @@ ZTEST(bt_id_del, test_send_hci_id_del)
 
 	zassert_mem_equal(&cp.peer_id_addr, BT_RPA_LE_ADDR, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
-	zassert_equal(expected_rl_entries, bt_dev.le.rl_entries, "Incorrect entries count");
+	zassert_equal(expected_rl_entries, bt_devs[0].le.rl_entries, "Incorrect entries count");
 	zassert_false(keys.state & BT_KEYS_ID_ADDED, "Incorrect key state");
 }
 
@@ -354,8 +354,8 @@ ZTEST(bt_id_del, test_send_hci_id_del)
  *  'CONFIG_BT_BROADCASTER', 'CONFIG_BT_OBSERVER' and 'CONFIG_BT_EXT_ADV' are enabled.
  *
  *  Constraints:
- *   - bt_dev.le.rl_size is set to a value greater than 0
- *   - bt_dev.le.rl_entries is set to 0
+ *   - bt_devs[0].le.rl_size is set to a value greater than 0
+ *   - bt_devs[0].le.rl_entries is set to 0
  *   - bt_conn_lookup_state_le() returns NULL.
  *   - 'CONFIG_BT_BROADCASTER' is enabled.
  *   - 'CONFIG_BT_OBSERVER' is enabled.
@@ -376,13 +376,13 @@ ZTEST(bt_id_del, test_scan_re_enabled_observer_enabled_ext_adv)
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_OBSERVER);
 
 	/* Break the host-side resolving condition */
-	bt_dev.le.rl_size = 1;
-	bt_dev.le.rl_entries = 1;
-	expected_rl_entries = bt_dev.le.rl_entries - 1;
+	bt_devs[0].le.rl_size = 1;
+	bt_devs[0].le.rl_entries = 1;
+	expected_rl_entries = bt_devs[0].le.rl_entries - 1;
 
 	/* Make scan enabled flag true */
-	atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
-	atomic_set_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_SCANNING);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_SCAN_LIMITED);
 
 	bt_conn_lookup_state_le_fake.return_val = NULL;
 
@@ -395,6 +395,6 @@ ZTEST(bt_id_del, test_scan_re_enabled_observer_enabled_ext_adv)
 
 	expect_call_count_bt_le_scan_set_enable(2, expected_args_history);
 
-	zassert_equal(expected_rl_entries, bt_dev.le.rl_entries, "Incorrect entries count");
+	zassert_equal(expected_rl_entries, bt_devs[0].le.rl_entries, "Incorrect entries count");
 	zassert_false(keys.state & BT_KEYS_ID_ADDED, "Incorrect key state");
 }

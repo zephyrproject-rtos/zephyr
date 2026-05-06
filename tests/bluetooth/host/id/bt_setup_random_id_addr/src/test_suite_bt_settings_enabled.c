@@ -32,7 +32,7 @@ static void tc_setup(void *f)
 {
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_SETTINGS);
 
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 	memset(&hci_cmd_rsp, 0x00, sizeof(struct net_buf));
 	memset(&hci_cmd_rsp_data, 0x00, sizeof(struct custom_bt_hci_rp_vs_read_static_addrs));
 
@@ -67,8 +67,8 @@ ZTEST(bt_setup_random_id_addr_bt_settings_enabled, test_bt_read_static_addr_retu
 
 	expect_not_called_bt_settings_store_id();
 
-	zassert_true(bt_dev.id_count == 0, "Incorrect value '%d' was set to bt_dev.id_count",
-		     bt_dev.id_count);
+	zassert_true(bt_devs[0].id_count == 0,
+		     "Incorrect value '%d' was set to bt_devs[0].id_count", bt_devs[0].id_count);
 	zassert_true(err < 0, "Unexpected error code '%d' was returned", err);
 }
 
@@ -96,18 +96,18 @@ static int bt_hci_cmd_send_sync_custom_fake(uint16_t opcode, struct net_buf *buf
  *  Constraints:
  *   - bt_hci_cmd_send_sync() returns zero
  *   - Response data contains a valid address
- *   - BT_DEV_READY bit isn't set in bt_dev.flags
+ *   - BT_DEV_READY bit isn't set in bt_devs[0].flags
  *
  *  Expected behaviour:
  *   - Return value is 0
- *   - Static random address is loaded to bt_dev.id_addr[]
+ *   - Static random address is loaded to bt_devs[0].id_addr[]
  *   - No expected calls to bt_settings_store_id()
  */
 ZTEST(bt_setup_random_id_addr_bt_settings_enabled,
 	  test_bt_read_static_addr_succeeds_bt_dev_ready_cleared)
 {
 	int err;
-	uint16_t *vs_commands = (uint16_t *)bt_dev.vs_commands;
+	uint16_t *vs_commands = (uint16_t *)bt_devs[0].vs_commands;
 	struct bt_hci_rp_vs_read_static_addrs *rp =
 		(void *)&hci_cmd_rsp_data.hci_rp_vs_read_static_addrs;
 	struct bt_hci_vs_static_addr *static_addr = (void *)&hci_cmd_rsp_data.hci_vs_static_addr;
@@ -122,17 +122,17 @@ ZTEST(bt_setup_random_id_addr_bt_settings_enabled,
 
 	bt_hci_cmd_send_sync_fake.custom_fake = bt_hci_cmd_send_sync_custom_fake;
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_READY);
+	atomic_clear_bit(bt_devs[0].flags, BT_DEV_READY);
 
 	err = bt_setup_random_id_addr();
 
 	expect_not_called_bt_settings_store_id();
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
-	zassert_mem_equal(&bt_dev.id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1, sizeof(bt_addr_le_t),
+	zassert_mem_equal(&bt_devs[0].id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
-	zassert_true(bt_dev.id_count == 1, "Incorrect value '%d' was set to bt_dev.id_count",
-		     bt_dev.id_count);
+	zassert_true(bt_devs[0].id_count == 1,
+		     "Incorrect value '%d' was set to bt_devs[0].id_count", bt_devs[0].id_count);
 }
 
 /*
@@ -144,18 +144,18 @@ ZTEST(bt_setup_random_id_addr_bt_settings_enabled,
  *  Constraints:
  *   - bt_hci_cmd_send_sync() returns zero
  *   - Response data contains a valid address
- *   - BT_DEV_READY bit isn't set in bt_dev.flags
+ *   - BT_DEV_READY bit isn't set in bt_devs[0].flags
  *
  *  Expected behaviour:
  *   - Return value is 0
- *   - Static random address is loaded to bt_dev.id_addr[]
+ *   - Static random address is loaded to bt_devs[0].id_addr[]
  *   - No expected calls to bt_settings_store_id()
  */
 ZTEST(bt_setup_random_id_addr_bt_settings_enabled,
 	  test_bt_read_static_addr_succeeds_bt_dev_ready_set)
 {
 	int err;
-	uint16_t *vs_commands = (uint16_t *)bt_dev.vs_commands;
+	uint16_t *vs_commands = (uint16_t *)bt_devs[0].vs_commands;
 	struct bt_hci_rp_vs_read_static_addrs *rp =
 		(void *)&hci_cmd_rsp_data.hci_rp_vs_read_static_addrs;
 	struct bt_hci_vs_static_addr *static_addr = (void *)&hci_cmd_rsp_data.hci_vs_static_addr;
@@ -170,7 +170,7 @@ ZTEST(bt_setup_random_id_addr_bt_settings_enabled,
 
 	bt_hci_cmd_send_sync_fake.custom_fake = bt_hci_cmd_send_sync_custom_fake;
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_READY);
 
 	err = bt_setup_random_id_addr();
 
@@ -178,10 +178,10 @@ ZTEST(bt_setup_random_id_addr_bt_settings_enabled,
 	expect_single_call_bt_settings_store_irk();
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
-	zassert_mem_equal(&bt_dev.id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1, sizeof(bt_addr_le_t),
+	zassert_mem_equal(&bt_devs[0].id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
-	zassert_true(bt_dev.id_count == 1, "Incorrect value '%d' was set to bt_dev.id_count",
-		     bt_dev.id_count);
+	zassert_true(bt_devs[0].id_count == 1,
+		     "Incorrect value '%d' was set to bt_devs[0].id_count", bt_devs[0].id_count);
 }
 
 /*
@@ -195,12 +195,12 @@ ZTEST(bt_setup_random_id_addr_bt_settings_enabled,
  *
  *  Expected behaviour:
  *   - Return value is 0
- *   - 'BT_DEV_STORE_ID' bit is set inside bt_dev.flags
+ *   - 'BT_DEV_STORE_ID' bit is set inside bt_devs[0].flags
  */
 ZTEST(bt_setup_random_id_addr_bt_settings_enabled, test_store_flag_set_correctly)
 {
 	int err;
-	uint16_t *vs_commands = (uint16_t *)bt_dev.vs_commands;
+	uint16_t *vs_commands = (uint16_t *)bt_devs[0].vs_commands;
 	struct bt_hci_rp_vs_read_static_addrs *rp =
 		(void *)&hci_cmd_rsp_data.hci_rp_vs_read_static_addrs;
 	struct bt_hci_vs_static_addr *static_addr = (void *)&hci_cmd_rsp_data.hci_vs_static_addr;
@@ -221,6 +221,6 @@ ZTEST(bt_setup_random_id_addr_bt_settings_enabled, test_store_flag_set_correctly
 	err = bt_setup_random_id_addr();
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
-	zassert_true(atomic_test_bit(bt_dev.flags, BT_DEV_STORE_ID),
+	zassert_true(atomic_test_bit(bt_devs[0].flags, BT_DEV_STORE_ID),
 		     "Flags were not correctly set");
 }

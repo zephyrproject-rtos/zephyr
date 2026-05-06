@@ -38,11 +38,11 @@ ZTEST(bt_id_delete_invalid_inputs, test_deleting_default_id)
 }
 
 /*
- *  Test deleting ID value that is equal to bt_dev.id_count
+ *  Test deleting ID value that is equal to bt_devs[0].id_count
  *
  *  Constraints:
- *   - bt_dev.id_count is greater than 0
- *   - ID value used is equal to bt_dev.id_count
+ *   - bt_devs[0].id_count is greater than 0
+ *   - ID value used is equal to bt_devs[0].id_count
  *
  *  Expected behaviour:
  *   - '-EINVAL' error code is returned representing invalid values were used.
@@ -51,9 +51,9 @@ ZTEST(bt_id_delete_invalid_inputs, test_deleting_id_value_equal_to_dev_id_count)
 {
 	int err;
 
-	bt_dev.id_count = 1;
+	bt_devs[0].id_count = 1;
 
-	err = bt_id_delete(bt_dev.id_count);
+	err = bt_id_delete(bt_devs[0].id_count);
 
 	zassert_true(err == -EINVAL, "Unexpected error code '%d' was returned", err);
 }
@@ -62,7 +62,7 @@ ZTEST(bt_id_delete_invalid_inputs, test_deleting_id_value_equal_to_dev_id_count)
  *  Test deleting ID that corresponds to a zero-filled item
  *
  *  Constraints:
- *   - bt_dev.id_count is greater than 1
+ *   - bt_devs[0].id_count is greater than 1
  *   - ID value used corresponds to a zero-filled item
  *
  *  Expected behaviour:
@@ -72,9 +72,9 @@ ZTEST(bt_id_delete_invalid_inputs, test_deleting_id_with_zero_filled_item)
 {
 	int err;
 
-	bt_dev.id_count = 2;
-	bt_addr_le_copy(&bt_dev.id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1);
-	bt_addr_le_copy(&bt_dev.id_addr[1], BT_ADDR_LE_ANY);
+	bt_devs[0].id_count = 2;
+	bt_addr_le_copy(&bt_devs[0].id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1);
+	bt_addr_le_copy(&bt_devs[0].id_addr[1], BT_ADDR_LE_ANY);
 
 	err = bt_id_delete(1);
 
@@ -93,10 +93,10 @@ static void bt_le_ext_adv_foreach_custom_fake(void (*func)(struct bt_le_ext_adv 
 		/* Only check if the ID is in use, as the advertiser can be
 		 * started and stopped without reconfiguring parameters.
 		 */
-		adv_params.id = bt_dev.id_count - 1;
+		adv_params.id = bt_devs[0].id_count - 1;
 	} else {
 		atomic_set_bit(adv_params.flags, BT_ADV_ENABLED);
-		adv_params.id = bt_dev.id_count - 1;
+		adv_params.id = bt_devs[0].id_count - 1;
 	}
 
 	func(&adv_params, data);
@@ -119,16 +119,16 @@ ZTEST(bt_id_delete_invalid_inputs, test_deleting_id_used_in_advertising)
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_BROADCASTER);
 
-	bt_dev.id_count = 2;
-	bt_addr_le_copy(&bt_dev.id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1);
-	bt_addr_le_copy(&bt_dev.id_addr[1], BT_STATIC_RANDOM_LE_ADDR_2);
+	bt_devs[0].id_count = 2;
+	bt_addr_le_copy(&bt_devs[0].id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1);
+	bt_addr_le_copy(&bt_devs[0].id_addr[1], BT_STATIC_RANDOM_LE_ADDR_2);
 
 	/* When bt_le_ext_adv_foreach() is called, this callback will be triggered and causes
 	 * adv_id_check_func() to set the advertising enable flag to true.
 	 */
 	bt_le_ext_adv_foreach_fake.custom_fake = bt_le_ext_adv_foreach_custom_fake;
 
-	err = bt_id_delete(bt_dev.id_count - 1);
+	err = bt_id_delete(bt_devs[0].id_count - 1);
 
 	expect_single_call_bt_le_ext_adv_foreach();
 
@@ -152,11 +152,11 @@ ZTEST(bt_id_delete_invalid_inputs, test_bt_unpair_fails)
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_CONN);
 
-	bt_dev.id_count = 2;
-	id = bt_dev.id_count - 1;
+	bt_devs[0].id_count = 2;
+	id = bt_devs[0].id_count - 1;
 
-	bt_addr_le_copy(&bt_dev.id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1);
-	bt_addr_le_copy(&bt_dev.id_addr[1], BT_STATIC_RANDOM_LE_ADDR_2);
+	bt_addr_le_copy(&bt_devs[0].id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1);
+	bt_addr_le_copy(&bt_devs[0].id_addr[1], BT_STATIC_RANDOM_LE_ADDR_2);
 
 	bt_unpair_fake.return_val = -1;
 

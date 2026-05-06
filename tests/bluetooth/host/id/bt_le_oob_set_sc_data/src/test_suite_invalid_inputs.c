@@ -40,7 +40,7 @@ ZTEST(bt_le_oob_set_sc_data_invalid_inputs, test_null_conn_reference)
  *
  *  Constraints:
  *   - Valid references are used for input parameters
- *   - 'BT_DEV_READY' bit isn't set in bt_dev.flags
+ *   - 'BT_DEV_READY' bit isn't set in bt_devs[0].flags
  *
  *  Expected behaviour:
  *   - '-EAGAIN' error code is returned representing invalid values were used.
@@ -52,7 +52,7 @@ ZTEST(bt_le_oob_set_sc_data_invalid_inputs, test_dev_ready_flag_not_set)
 	const struct bt_le_oob_sc_data oobd_local = {0};
 	const struct bt_le_oob_sc_data oobd_remote = {0};
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_READY);
+	atomic_clear_bit(bt_devs[0].flags, BT_DEV_READY);
 
 	err = bt_le_oob_set_sc_data(&conn, &oobd_local, &oobd_remote);
 

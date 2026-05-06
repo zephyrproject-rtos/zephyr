@@ -27,7 +27,7 @@ static struct bt_hci_rp_read_bd_addr hci_rp_read_bd_addr;
 
 static void tc_setup(void *f)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 	memset(&hci_cmd_rsp, 0x00, sizeof(struct net_buf));
 	memset(&hci_rp_read_bd_addr, 0x00, sizeof(struct bt_hci_rp_read_bd_addr));
 	NET_BUF_FFF_FAKES_LIST(RESET_FAKE);
@@ -100,7 +100,7 @@ ZTEST(bt_id_read_public_addr, test_bt_hci_cmd_send_sync_response_has_invalid_bt_
 
 	for (size_t i = 0; i < ARRAY_SIZE(invalid_bt_address); i++) {
 
-		memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+		memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 		memset(&hci_cmd_rsp, 0x00, sizeof(struct net_buf));
 		memset(&hci_rp_read_bd_addr, 0x00, sizeof(struct bt_hci_rp_read_bd_addr));
 		NET_BUF_FFF_FAKES_LIST(RESET_FAKE);

@@ -26,7 +26,7 @@ static struct bt_hci_rp_read_bd_addr hci_rp_read_bd_addr;
 
 static void tc_setup(void *f)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 	memset(&hci_cmd_rsp, 0x00, sizeof(struct net_buf));
 	memset(&hci_rp_read_bd_addr, 0x00, sizeof(struct bt_hci_rp_read_bd_addr));
 }
@@ -51,16 +51,16 @@ static int bt_hci_cmd_send_sync_custom_fake(uint16_t opcode, struct net_buf *buf
 
 /*
  *  Test initializing the device identity with public address by calling bt_id_init() while the
- *  device has no identity and bt_dev.id_count is set to 0.
+ *  device has no identity and bt_devs[0].id_count is set to 0.
  *  bt_setup_public_id_addr() should return 0 (success).
  *
  *  Constraints:
- *   - bt_dev.id_count is set to 0
+ *   - bt_devs[0].id_count is set to 0
  *   - bt_setup_public_id_addr() succeeds and returns 0
  *
  *  Expected behaviour:
  *   - bt_id_init() returns 0
- *   - bt_dev.id_count is set to 1
+ *   - bt_devs[0].id_count is set to 1
  */
 ZTEST(bt_id_init_setup_public_identity, test_init_dev_identity_succeeds)
 {
@@ -75,23 +75,23 @@ ZTEST(bt_id_init_setup_public_identity, test_init_dev_identity_succeeds)
 	err = bt_id_init();
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
-	zassert_mem_equal(&bt_dev.id_addr[BT_ID_DEFAULT], BT_LE_ADDR, sizeof(bt_addr_le_t),
+	zassert_mem_equal(&bt_devs[0].id_addr[BT_ID_DEFAULT], BT_LE_ADDR, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
-	zassert_true(bt_dev.id_count == 1, "Incorrect value '%d' was set to bt_dev.id_count",
-		     bt_dev.id_count);
+	zassert_true(bt_devs[0].id_count == 1,
+		     "Incorrect value '%d' was set to bt_devs[0].id_count", bt_devs[0].id_count);
 
 #if defined(CONFIG_BT_PRIVACY)
-	expect_single_call_k_work_init_delayable(&bt_dev.rpa_update);
+	expect_single_call_k_work_init_delayable(&bt_devs[0].rpa_update);
 #endif
 }
 
 /*
  *  Test initializing the device identity with public address by calling bt_id_init() while the
- *  device has no identity and bt_dev.id_count is set to 0.
+ *  device has no identity and bt_devs[0].id_count is set to 0.
  *  bt_setup_public_id_addr() should return a negative value (failure).
  *
  *  Constraints:
- *   - bt_dev.id_count is set to 0
+ *   - bt_devs[0].id_count is set to 0
  *   - bt_setup_public_id_addr() fails in setting up device identity
  *
  *  Expected behaviour:
