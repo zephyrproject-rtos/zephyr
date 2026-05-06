@@ -385,8 +385,8 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 #endif /* CONFIG_ETH_STM32_HAL_API_V1 */
 			.MediaInterface = STM32_ETH_PHY_MODE(0),
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32mp13_ethernet)
-			.ClockSelection = DT_INST_PROP(0, st_ext_phyclk) ? HAL_ETH1_REF_CLK_RCC
-							     : HAL_ETH1_REF_CLK_RX_CLK_PIN,
+			.ClockSelection = DT_INST_PROP(0, st_ext_phyclk) ? HAL_ETH_REF_CLK_RCC
+							     : HAL_ETH_REF_CLK_RX_CLK_PIN,
 #endif
 		},
 	},
