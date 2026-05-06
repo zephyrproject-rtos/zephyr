@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pic32c/pic32ck_sg_gc/pic32ck_sg01/pic32ck2051sg01144-pinctrl.h>
+
+&pinctrl {
+	sercom4_i2c_default: sercom4_i2c_default {
+		group1 {
+			pinmux = <PB9C_SERCOM4_PAD0>,  /* SDA */
+				 <PB10C_SERCOM4_PAD1>; /* SCL */
+		};
+	};
+};
