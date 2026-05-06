@@ -324,7 +324,7 @@
 			status = "disabled";
 		};
 
-		eth0: mac: ethernet@5800a000 {
+		eth0: mac0: ethernet@5800a000 {
 			compatible = "st,stm32mp13-ethernet", "st,stm32h7-ethernet",
 				     "st,stm32-ethernet";
 			reg = <0x5800a000 0x2000>;
@@ -338,7 +338,7 @@
 				     <GIC_SPI 63 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
 
-			mdio: mdio {
+			mdio0: mdio {
 				compatible = "st,stm32-mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
