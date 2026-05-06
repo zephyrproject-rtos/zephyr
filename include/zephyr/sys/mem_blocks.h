@@ -126,6 +126,7 @@ struct sys_multi_mem_blocks {
  * @param mbmod    Modifier to the memory block struct
  */
 #define _SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(name, blk_sz, num_blks, buf, mbmod) \
+	BUILD_ASSERT(IS_POWER_OF_TWO(blk_sz), "blk_sz must be a power of 2"); \
 	_SYS_BITARRAY_DEFINE(_sys_mem_blocks_bitmap_##name,		\
 			     num_blks, mbmod);				\
 	mbmod struct sys_mem_blocks name = {                            \
@@ -148,6 +149,7 @@ struct sys_multi_mem_blocks {
  * @param mbmod    Modifier to the memory block struct
  */
 #define _SYS_MEM_BLOCKS_DEFINE(name, blk_sz, num_blks, balign, mbmod)	\
+	BUILD_ASSERT(IS_POWER_OF_TWO(balign), "balign must be a power of 2"); \
 	mbmod uint8_t __noinit_named(sys_mem_blocks_buf_##name)		\
 		__aligned(WB_UP(balign))				\
 		_sys_mem_blocks_buf_##name[num_blks * WB_UP(blk_sz)];	\
@@ -163,7 +165,7 @@ struct sys_multi_mem_blocks {
  * @brief Create a memory block object with a new backing buffer.
  *
  * @param name      Name of the memory block object.
- * @param blk_sz    Size of each memory block (in bytes).
+ * @param blk_sz    Size of each memory block (in bytes, power of 2).
  * @param num_blks  Total number of memory blocks.
  * @param buf_align Alignment of the memory block buffer (power of 2).
  */
@@ -185,7 +187,7 @@ struct sys_multi_mem_blocks {
  * @brief Create a static memory block object with a new backing buffer.
  *
  * @param name      Name of the memory block object.
- * @param blk_sz    Size of each memory block (in bytes).
+ * @param blk_sz    Size of each memory block (in bytes, power of 2).
  * @param num_blks  Total number of memory blocks.
  * @param buf_align Alignment of the memory block buffer (power of 2).
  */
@@ -207,7 +209,7 @@ struct sys_multi_mem_blocks {
  * @brief Create a memory block object with a providing backing buffer.
  *
  * @param name     Name of the memory block object.
- * @param blk_sz   Size of each memory block (in bytes).
+ * @param blk_sz   Size of each memory block (in bytes, power of 2).
  * @param num_blks Total number of memory blocks.
  * @param buf      Backing buffer of type uint8_t.
  */
@@ -218,7 +220,7 @@ struct sys_multi_mem_blocks {
  * @brief Create a static memory block object with a providing backing buffer.
  *
  * @param name     Name of the memory block object.
- * @param blk_sz   Size of each memory block (in bytes).
+ * @param blk_sz   Size of each memory block (in bytes, power of 2).
  * @param num_blks Total number of memory blocks.
  * @param buf      Backing buffer of type uint8_t.
  */
