@@ -1,0 +1,65 @@
+name: Freedom — Sync upstream main
+
+on:
+  schedule:
+    - cron: "17 4 * * *"   # 04:17 UTC = 01:17 BRT
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: freedom-sync-upstream-main
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'FreedomVeiculosEletricos/zephyr'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Checkout main with full history
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          ssh-key: ${{ secrets.SYNC_SSH_KEY }}
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "freedom-sync-bot"
+          git config user.email "freedom-sync-bot@users.noreply.github.com"
+
+      - name: Fetch upstream main + tags
+        run: |
+          git remote add upstream \
+            https://github.com/zephyrproject-rtos/zephyr.git
+          git fetch --no-tags --prune upstream main
+          git fetch --tags --prune --force upstream
+
+      - name: Rebase main onto upstream/main
+        run: |
+          if ! git rebase upstream/main; then
+            git rebase --abort || true
+            exit 1
+          fi
+
+      - name: Disable non-freedom workflows (pre-push)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: ./.github/workflows/freedom/disable-non-freedom-workflows.sh
+
+      - name: Force-push main
+        run: git push --force-with-lease origin main
+
+      - name: Push upstream tags to fork
+        run: git push origin --tags
+
+      - name: Disable non-freedom workflows (post-push)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: ./.github/workflows/freedom/disable-non-freedom-workflows.sh
