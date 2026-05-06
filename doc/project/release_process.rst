@@ -14,10 +14,19 @@ the features that have actually been implemented, allowing the project to
 maintain the quality of the overall release without delays because of one or two
 features that are not ready yet.
 
-Each release period will consist of a development phase followed by a
-stabilization phase. Release candidates will be created during the stabilization
-phase.
+Phases
+******
 
+Each release cycle consists of a *development phase* followed by a
+*stabilization phase*. Release candidates will be created during the
+stabilization phase.
+
+During the development phase, all sorts of changes can be merged. This is
+called the *merge window* for the main branch for this reason. During the
+stabilization phase, the project and its maintainers focus on fixing bugs and
+documenting the release. During this time, new features are generally not
+accepted. The main branch is in *feature freeze* during the stabilization
+phase.
 
 .. figure:: release_cycle.svg
     :align: center
@@ -33,39 +42,73 @@ phase.
     `Official GitHub Wiki <https://github.com/zephyrproject-rtos/zephyr/wiki/Release-Management>`_.
     Information on previous releases can be found :ref:`here <zephyr_release_notes>`.
 
+.. _merge_window:
 
-Development Phase
-*****************
+Merge Window (Development Phase)
+********************************
 
-A relatively straightforward discipline is followed with regard to the merging
-of patches for each release.  At the beginning of each development cycle, the
-main branch is said to be open for development.  At that time, code which is deemed to be
-sufficiently stable (and which is accepted by the maintainers and the wide community) is
-merged into the mainline tree.  The bulk of changes for a new development cycle
-(and all of the major changes) will be merged during this time.
+After tagging a release, the release managers open the `main branch
+<https://github.com/zephyrproject-rtos/zephyr/tree/main>`_ for development for
+the next release cycle. We call this time the *merge window* or the
+*development phase* for each release. During the merge window, any code which
+meets the :ref:`merge_criteria` can be merged into the main branch. Most
+changes for each release are made during its merge window.
 
-The development phase lasts for approximately five months.  At the end of this time,
-the release owner will declare that the development phase is over and releases the first
-of the release candidates.  For the codebase release which is destined to be
-3.1.0, for example, the release which happens at the end of the development phase
-will be called 3.1.0-rc1.  The -rc1 release is the signal that the time to merge
-new features has passed, and that the time to stabilize the next release of the
-code base has begun.
+Each release's merge window lasts approximately five months.
 
-Stabilization Phase
-*******************
+After the merge window, the release team tags the first *release candidate* for
+the upcoming release. At that point, the main branch is closed for most feature
+development, and the project is in :ref:`feature freeze <feature_freeze>` for
+the next release. Feature freeze is described in the next section.
 
-As fixes make their way into the mainline, the patch rate will slow over time.
-The mainline release owner releases new -rc drops once or twice a week; a normal
-series will get up to somewhere between -rc4 and -rc6 before the code base is
-considered to be sufficiently stable and the release criteria have been achieved
-at which point the final release is made.
+Here is an example timeline for a merge window:
 
-At that point, the whole process starts over again.
+- the merge window opened when `v4.3.0
+  <https://github.com/zephyrproject-rtos/zephyr/tree/v4.3.0>`_ was tagged on 13
+  November 2025. At this point, the main branch was open for merges for the
+  next release, which was v4.4.0.
 
-Below is the criteria for accepting pull requests after the
-feature freeze milestone (e.g. after RC1) and during the stabilization
-phase of a release.
+- the merge window for v4.4.0 closed when `v4.4.0-rc1
+  <https://github.com/zephyrproject-rtos/zephyr/tree/v4.4.0-rc1>`_ was tagged
+  on 24 March 2026. At this time, the project entered feature freeze for the
+  v4.4.0 release.
+
+.. _feature_freeze:
+
+Feature Freeze (Stabilization Phase)
+************************************
+
+When the first release candidate is tagged, the release's merge window is
+closed. This is called the *feature freeze* or *stabilization phase* for that
+release. During feature freeze, no new features will be merged for that release
+without a :ref:`tsc` approved exception.
+
+Please be patient during the stabilization phase while waiting for pull request
+review for new features.
+
+As mentioned, the exception process for merging features during the feature
+freeze requires TSC approval and a justification. As a general rule, if your
+pull request is not yet merged and feature freeze is declared, the best thing
+to do is to wait for the next :ref:`merge window <merge_window>` to open.
+
+If you believe your feature merits an exception and should be merged during
+feature freeze, contact the TSC. See the `TSC wiki
+<https://github.com/zephyrproject-rtos/zephyr/wiki/Technical-Steering-Committee-%28TSC%29>`_
+page for general contact information.
+
+Here is an example timeline for a feature freeze:
+
+- The feature freeze for v4.4.0 began when `v4.4.0-rc1
+  <https://github.com/zephyrproject-rtos/zephyr/tree/v4.4.0-rc1>`_ was tagged
+  on 24 March 2026. At that time, new features required a TSC exception
+  in order to be merged to the main branch.
+
+- The feature freeze for v4.4.0 ended when `v4.4.0
+  <https://github.com/zephyrproject-rtos/zephyr/tree/v4.4.0>`_ was tagged on 14
+  April 2026. At that time, the main branch was open again for the next
+  release's :ref:`merge window <merge_window>`.
+
+The following sections describe the feature freeze in more detail.
 
 Allowed Changes
 ===============
