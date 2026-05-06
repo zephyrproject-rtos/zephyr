@@ -299,7 +299,7 @@ csi_interface: &dcmipp {
 	status = "disabled";
 };
 
-&mac {
+&mac0 {
 	pinctrl-0 = <&eth1_txd0_pg13
 		     &eth1_txd1_pg14
 		     &eth1_tx_ctl_pb11
@@ -315,7 +315,7 @@ csi_interface: &dcmipp {
 	status = "okay";
 };
 
-&mdio {
+&mdio0 {
 	pinctrl-0 = <&eth1_mdio_pa2 &eth1_mdc_pg2>;
 	pinctrl-names = "default";
 	status = "okay";
