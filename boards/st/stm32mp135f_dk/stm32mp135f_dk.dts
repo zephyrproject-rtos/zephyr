@@ -309,7 +309,7 @@ csi_interface: &dcmipp {
 		     &eth1_crs_dv_pc1>;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
-	phy-handle = <&eth_phy>;
+	phy-handle = <&eth_phy0>;
 	memory-regions = <&eth_ram>;
 
 	status = "okay";
@@ -320,7 +320,7 @@ csi_interface: &dcmipp {
 	pinctrl-names = "default";
 	status = "okay";
 
-	eth_phy: ethernet-phy@0 {
+	eth_phy0: ethernet-phy@0 {
 		compatible = "microchip,lan8742";
 		reg = <0>;
 		reset-gpios = <&mcp23017 9 GPIO_ACTIVE_LOW>;
@@ -330,4 +330,33 @@ csi_interface: &dcmipp {
 &rtc {
 	clocks = <&rcc STM32_CLOCK(APB5, 8)>, <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
+};
+
+&mac1 {
+	pinctrl-0 = <&eth2_txd0_pf7
+		     &eth2_txd1_pg11
+		     &eth2_tx_ctl_pf6
+		     &eth2_clk_pg8
+		     &eth2_rxd0_pf4
+		     &eth2_rxd1_pe2
+		     &eth2_crs_dv_pa12>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy1>;
+	memory-regions = <&eth_ram>;
+	st,ext-phyclk;
+
+	status = "okay";
+};
+
+&mdio1 {
+	pinctrl-0 = <&eth2_mdio_pb2 &eth2_mdc_pg5>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eth_phy1: ethernet-phy@0 {
+		compatible = "microchip,lan8742";
+		reg = <0>;
+		reset-gpios = <&mcp23017 10 GPIO_ACTIVE_LOW>;
+	};
 };
