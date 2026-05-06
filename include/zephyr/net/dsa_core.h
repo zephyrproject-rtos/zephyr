@@ -111,9 +111,6 @@ struct dsa_api {
 	void (*port_phylink_change)(const struct device *dev, struct phy_link_state *state,
 				    void *user_data);
 
-	/** Port generates random mac address */
-	void (*port_generate_random_mac)(uint8_t *mac_addr);
-
 #if defined(CONFIG_NET_L2_PTP) || defined(__DOXYGEN__)
 	/**
 	 * Port TX timestamp handling
@@ -146,9 +143,7 @@ struct dsa_api {
  */
 struct dsa_port_config {
 	/** Port mac address */
-	uint8_t mac_addr[6];
-	/** Use random mac address or not */
-	const bool use_random_mac_addr;
+	struct net_eth_mac_config mcfg;
 	/** Port index */
 	const int port_idx;
 	/** PHY device */
