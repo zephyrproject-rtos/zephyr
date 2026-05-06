@@ -34,6 +34,7 @@
 		dmic-dev = &dmic0;
 		eeprom-0 = &eeprom0;
 		i2c-0 = &i2c0;
+		i3c-0 = &i3c0;
 		i2s-node0 = &i2s_rxtx;
 		spi-0 = &spi0;
 		led0 = &led0;
@@ -153,6 +154,16 @@
 		reg = <0x400 4>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+	};
+
+	i3c0: i3c@500 {
+		status = "okay";
+		compatible = "zephyr,i3c-emul";
+		reg = <0x500 4>;
+		#address-cells = <3>;
+		#size-cells = <0>;
+		i3c-scl-hz = <12500000>;
+		i2c-scl-hz = <1000000>;
 	};
 
 	uart0: uart {
