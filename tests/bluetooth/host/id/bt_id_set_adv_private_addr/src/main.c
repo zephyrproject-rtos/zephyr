@@ -22,10 +22,10 @@ DEFINE_FFF_GLOBALS;
 
 static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
-	bt_addr_copy(&bt_dev.random_addr, &bt_addr_none);
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
+	bt_addr_copy(&bt_devs[0].random_addr, &bt_addr_none);
 #if defined(CONFIG_BT_RPA_SHARING)
-	bt_addr_copy(&bt_dev.rpa[BT_ID_DEFAULT], BT_ADDR_NONE);
+	bt_addr_copy(&bt_devs[0].rpa[BT_ID_DEFAULT], BT_ADDR_NONE);
 #endif
 
 	RPA_FFF_FAKES_LIST(RESET_FAKE);
@@ -44,7 +44,7 @@ static int bt_rand_custom_fake(void *buf, size_t len)
 
 	/* This will make set_random_address() succeeds and returns 0 */
 	memcpy(buf, &BT_ADDR->val, len);
-	bt_addr_copy(&bt_dev.random_addr, BT_ADDR);
+	bt_addr_copy(&bt_devs[0].random_addr, BT_ADDR);
 
 	return 0;
 }
@@ -56,7 +56,7 @@ static int bt_rpa_create_custom_fake(const uint8_t irk[16], bt_addr_t *rpa)
 
 	/* This will make set_random_address() succeeds and returns 0 */
 	bt_addr_copy(rpa, BT_RPA_ADDR);
-	bt_addr_copy(&bt_dev.random_addr, BT_RPA_ADDR);
+	bt_addr_copy(&bt_devs[0].random_addr, BT_RPA_ADDR);
 
 	return 0;
 }
@@ -86,10 +86,10 @@ ZTEST(bt_id_set_adv_private_addr, test_set_adv_private_address_with_valid_ref_pr
 	err = bt_id_set_adv_private_addr(&adv_param);
 
 #if defined(CONFIG_BT_PRIVACY)
-	expect_single_call_bt_rpa_create(bt_dev.irk[adv_param.id]);
+	expect_single_call_bt_rpa_create(bt_devs[0].irk[adv_param.id]);
 #endif
 
-	zassert_true(atomic_test_bit(bt_dev.flags, BT_DEV_RPA_VALID),
+	zassert_true(atomic_test_bit(bt_devs[0].flags, BT_DEV_RPA_VALID),
 		     "Flags were not correctly set");
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
@@ -120,7 +120,7 @@ ZTEST(bt_id_set_adv_private_addr, test_set_adv_private_address_with_valid_ref_pr
 	err = bt_id_set_adv_private_addr(&adv_param);
 
 #if defined(CONFIG_BT_PRIVACY)
-	expect_single_call_bt_rpa_create(bt_dev.irk[adv_param.id]);
+	expect_single_call_bt_rpa_create(bt_devs[0].irk[adv_param.id]);
 #endif
 
 #if defined(CONFIG_BT_EXT_ADV)

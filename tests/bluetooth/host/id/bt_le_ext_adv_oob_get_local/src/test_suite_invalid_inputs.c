@@ -64,7 +64,7 @@ ZTEST(bt_le_ext_adv_oob_get_local_invalid_inputs, test_null_oob_reference)
  *
  *  Constraints:
  *   - Valid references are used for the advertise parameters and the OOB references
- *   - 'BT_DEV_READY' bit isn't set in bt_dev.flags
+ *   - 'BT_DEV_READY' bit isn't set in bt_devs[0].flags
  *
  *  Expected behaviour:
  *   - '-EAGAIN' error code is returned representing invalid values were used.
@@ -75,7 +75,7 @@ ZTEST(bt_le_ext_adv_oob_get_local_invalid_inputs, test_dev_ready_flag_not_set)
 	struct bt_le_oob oob = {0};
 	struct bt_le_ext_adv adv = {0};
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_READY);
+	atomic_clear_bit(bt_devs[0].flags, BT_DEV_READY);
 
 	err = bt_le_ext_adv_oob_get_local(&adv, &oob);
 
@@ -87,10 +87,10 @@ ZTEST(bt_le_ext_adv_oob_get_local_invalid_inputs, test_dev_ready_flag_not_set)
  *
  *  Constraints:
  *   - Valid references are used for the advertise parameters and the OOB references
- *   - 'BT_DEV_READY' bit is set in bt_dev.flags
+ *   - 'BT_DEV_READY' bit is set in bt_devs[0].flags
  *   - 'CONFIG_BT_PRIVACY' bit is enabled
  *   - 'CONFIG_BT_CENTRAL' bit is enabled
- *   - 'BT_DEV_INITIATING' bit is set in bt_dev.flags
+ *   - 'BT_DEV_INITIATING' bit is set in bt_devs[0].flags
  *
  *  Expected behaviour:
  *   - '-EINVAL' error code is returned representing invalid values were used.
@@ -105,8 +105,8 @@ ZTEST(bt_le_ext_adv_oob_get_local_invalid_inputs, test_updating_rpa_fails_while_
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_CENTRAL);
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_PRIVACY);
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-	atomic_set_bit(bt_dev.flags, BT_DEV_INITIATING);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_READY);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_INITIATING);
 
 	atomic_clear_bit(adv.flags, BT_ADV_LIMITED);
 	atomic_clear_bit(adv.flags, BT_ADV_USE_IDENTITY);
@@ -143,11 +143,11 @@ ZTEST(bt_le_ext_adv_oob_get_local_invalid_inputs, test_get_local_oob_information
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_SMP);
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_PRIVACY);
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_READY);
 
 	bt_smp_le_oob_generate_sc_data_fake.return_val = -1;
 
-	bt_addr_le_copy(&bt_dev.id_addr[BT_ID_DEFAULT], BT_RPA_LE_ADDR);
+	bt_addr_le_copy(&bt_devs[0].id_addr[BT_ID_DEFAULT], BT_RPA_LE_ADDR);
 
 	err = bt_le_ext_adv_oob_get_local(&adv, &oob);
 
@@ -182,7 +182,7 @@ ZTEST(bt_le_ext_adv_oob_get_local_invalid_inputs, test_get_local_oob_information
 
 	bt_smp_le_oob_generate_sc_data_fake.return_val = -1;
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_READY);
 	atomic_clear_bit(adv.flags, BT_ADV_USE_IDENTITY);
 	bt_addr_le_copy(&adv.random_addr, BT_RPA_LE_ADDR);
 

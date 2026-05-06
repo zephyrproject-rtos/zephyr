@@ -21,7 +21,7 @@ DEFINE_FFF_GLOBALS;
 
 static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 
 	HCI_CORE_FFF_FAKES_LIST(RESET_FAKE);
 }
@@ -48,7 +48,7 @@ ZTEST(bt_id_set_adv_random_addr, test_no_ext_adv)
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_EXT_ADV);
 
 	/* This will make set_random_address() succeeds and returns 0 */
-	bt_addr_copy(&bt_dev.random_addr, BT_RPA_ADDR);
+	bt_addr_copy(&bt_devs[0].random_addr, BT_RPA_ADDR);
 
 	err = bt_id_set_adv_random_addr(&adv_param, BT_RPA_ADDR);
 

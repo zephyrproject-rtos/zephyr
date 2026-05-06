@@ -31,7 +31,7 @@ static uint8_t testing_irk_value[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06
 
 static void tc_setup(void *f)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 	memset(&hci_cmd_rsp, 0x00, sizeof(struct net_buf));
 	memset(&hci_rp_read_bd_addr, 0x00, sizeof(struct bt_hci_rp_read_bd_addr));
 
@@ -85,7 +85,7 @@ ZTEST(bt_setup_public_id_addr_privacy_enabled, test_create_default_id_irk_null)
 
 	err = bt_setup_public_id_addr();
 
-	expect_single_call_bt_rand(&bt_dev.irk[BT_ID_DEFAULT], 16);
+	expect_single_call_bt_rand(&bt_devs[0].irk[BT_ID_DEFAULT], 16);
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
 }
@@ -117,7 +117,7 @@ ZTEST(bt_setup_public_id_addr_privacy_enabled, test_create_default_id_irk_null_b
 
 	err = bt_setup_public_id_addr();
 
-	expect_single_call_bt_rand(&bt_dev.irk[BT_ID_DEFAULT], 16);
+	expect_single_call_bt_rand(&bt_devs[0].irk[BT_ID_DEFAULT], 16);
 
 	zassert_true(err < 0, "Unexpected error code '%d' was returned", err);
 }
@@ -159,7 +159,7 @@ ZTEST(bt_setup_public_id_addr_privacy_enabled, test_create_default_id_irk_not_nu
 
 	err = bt_setup_public_id_addr();
 
-	expect_single_call_bt_rand(&bt_dev.irk[BT_ID_DEFAULT], 16);
+	expect_single_call_bt_rand(&bt_devs[0].irk[BT_ID_DEFAULT], 16);
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
 }
@@ -187,7 +187,7 @@ static int bt_smp_irk_get_non_zero_irk_custom_fake(uint8_t *ir, uint8_t *irk)
  *
  *  Expected behaviour:
  *   - Return value is 0
- *   - IRK is loaded to bt_dev.irk[]
+ *   - IRK is loaded to bt_devs[0].irk[]
  */
 ZTEST(bt_setup_public_id_addr_privacy_enabled, test_create_default_id_irk_not_null_and_filled)
 {
@@ -203,7 +203,7 @@ ZTEST(bt_setup_public_id_addr_privacy_enabled, test_create_default_id_irk_not_nu
 	expect_not_called_bt_rand();
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
-	zassert_mem_equal(&bt_dev.irk[BT_ID_DEFAULT], testing_irk_value, sizeof(testing_irk_value),
-			  "Incorrect IRK value was set");
+	zassert_mem_equal(&bt_devs[0].irk[BT_ID_DEFAULT], testing_irk_value,
+			  sizeof(testing_irk_value), "Incorrect IRK value was set");
 }
 #endif

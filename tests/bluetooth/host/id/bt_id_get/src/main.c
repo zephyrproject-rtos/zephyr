@@ -26,12 +26,12 @@ BUILD_ASSERT(ARRAY_SIZE(testing_addr_lut) == CONFIG_BT_ID_MAX);
 
 static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 	memset(copy_dst_addrs, 0x00, sizeof(copy_dst_addrs));
 
 	for (size_t i = 0; i < CONFIG_BT_ID_MAX; i++) {
 		const bt_addr_le_t *src = testing_addr_lut[i];
-		bt_addr_le_t *dst = &bt_dev.id_addr[bt_dev.id_count++];
+		bt_addr_le_t *dst = &bt_devs[0].id_addr[bt_devs[0].id_count++];
 
 		memcpy(dst, src, sizeof(bt_addr_le_t));
 	}
@@ -52,7 +52,7 @@ ZTEST_SUITE(bt_id_get, NULL, NULL, NULL, NULL, NULL);
  *   - Use NULL value for the address
  *
  *  Expected behaviour:
- *   - Count parameter pointer is dereferenced and loaded with the current bt_dev.id_count
+ *   - Count parameter pointer is dereferenced and loaded with the current bt_devs[0].id_count
  */
 ZTEST(bt_id_get, test_get_current_id_count)
 {
@@ -74,8 +74,8 @@ ZTEST(bt_id_get, test_get_current_id_count)
  */
 ZTEST(bt_id_get, test_copy_minimum_count)
 {
-	size_t stored_count = bt_dev.id_count;
-	size_t testing_counts[] = {0, 1, bt_dev.id_count, bt_dev.id_count + 2};
+	size_t stored_count = bt_devs[0].id_count;
+	size_t testing_counts[] = {0, 1, bt_devs[0].id_count, bt_devs[0].id_count + 2};
 
 	for (size_t it = 0; it < ARRAY_SIZE(testing_counts); it++) {
 		size_t count = testing_counts[it];

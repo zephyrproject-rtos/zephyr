@@ -40,11 +40,11 @@ ZTEST(bt_id_reset_invalid_inputs, test_resetting_default_id)
 }
 
 /*
- *  Test resetting ID value that is equal to bt_dev.id_count
+ *  Test resetting ID value that is equal to bt_devs[0].id_count
  *
  *  Constraints:
- *   - bt_dev.id_count is greater than 0
- *   - ID value used is equal to bt_dev.id_count
+ *   - bt_devs[0].id_count is greater than 0
+ *   - ID value used is equal to bt_devs[0].id_count
  *   - Input address is NULL
  *   - Input IRK is NULL
  *
@@ -55,9 +55,9 @@ ZTEST(bt_id_reset_invalid_inputs, test_resetting_id_value_equal_to_dev_id_count)
 {
 	int err;
 
-	bt_dev.id_count = 1;
+	bt_devs[0].id_count = 1;
 
-	err = bt_id_reset(bt_dev.id_count, NULL, NULL);
+	err = bt_id_reset(bt_devs[0].id_count, NULL, NULL);
 
 	zassert_true(err == -EINVAL, "Unexpected error code '%d' was returned", err);
 }
@@ -143,8 +143,8 @@ ZTEST(bt_id_reset_invalid_inputs, test_pa_address_exists_in_id_list)
 {
 	int err;
 
-	bt_dev.id_count = 1;
-	bt_addr_le_copy(&bt_dev.id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1);
+	bt_devs[0].id_count = 1;
+	bt_addr_le_copy(&bt_devs[0].id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1);
 
 	err = bt_id_reset(BT_ID_DEFAULT, BT_STATIC_RANDOM_LE_ADDR_1, NULL);
 
@@ -163,10 +163,10 @@ static void bt_le_ext_adv_foreach_custom_fake(void (*func)(struct bt_le_ext_adv 
 		/* Only check if the ID is in use, as the advertiser can be
 		 * started and stopped without reconfiguring parameters.
 		 */
-		adv_params.id = bt_dev.id_count - 1;
+		adv_params.id = bt_devs[0].id_count - 1;
 	} else {
 		atomic_set_bit(adv_params.flags, BT_ADV_ENABLED);
-		adv_params.id = bt_dev.id_count - 1;
+		adv_params.id = bt_devs[0].id_count - 1;
 	}
 
 	func(&adv_params, data);
@@ -191,14 +191,14 @@ ZTEST(bt_id_reset_invalid_inputs, test_resetting_id_used_in_advertising)
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_BROADCASTER);
 
-	bt_dev.id_count = 2;
+	bt_devs[0].id_count = 2;
 
 	/* When bt_le_ext_adv_foreach() is called, this callback will be triggered and causes
 	 * adv_id_check_func() to set the advertising enable flag to true.
 	 */
 	bt_le_ext_adv_foreach_fake.custom_fake = bt_le_ext_adv_foreach_custom_fake;
 
-	err = bt_id_reset(bt_dev.id_count - 1, BT_STATIC_RANDOM_LE_ADDR_1, NULL);
+	err = bt_id_reset(bt_devs[0].id_count - 1, BT_STATIC_RANDOM_LE_ADDR_1, NULL);
 
 	expect_single_call_bt_le_ext_adv_foreach();
 
@@ -225,11 +225,11 @@ ZTEST(bt_id_reset_invalid_inputs, test_bt_unpair_fails)
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_CONN);
 
-	bt_dev.id_count = 2;
-	id = bt_dev.id_count - 1;
+	bt_devs[0].id_count = 2;
+	id = bt_devs[0].id_count - 1;
 
-	bt_addr_le_copy(&bt_dev.id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1);
-	bt_addr_le_copy(&bt_dev.id_addr[1], BT_STATIC_RANDOM_LE_ADDR_1);
+	bt_addr_le_copy(&bt_devs[0].id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1);
+	bt_addr_le_copy(&bt_devs[0].id_addr[1], BT_STATIC_RANDOM_LE_ADDR_1);
 
 	bt_unpair_fake.return_val = -1;
 

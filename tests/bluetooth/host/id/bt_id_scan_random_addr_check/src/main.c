@@ -18,7 +18,7 @@ DEFINE_FFF_GLOBALS;
 
 static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 
 	ADV_FFF_FAKES_LIST(RESET_FAKE);
 }
@@ -180,7 +180,7 @@ ZTEST(bt_id_scan_random_addr_check, test_scan_returns_false_advertiser_active_pr
 
 	atomic_set_bit(adv.flags, BT_ADV_ENABLED);
 	atomic_set_bit(adv.flags, BT_ADV_USE_IDENTITY);
-	bt_dev.id_addr[adv.id].type = BT_ADDR_LE_RANDOM;
+	bt_devs[0].id_addr[adv.id].type = BT_ADDR_LE_RANDOM;
 	bt_le_adv_lookup_legacy_fake.return_val = &adv;
 
 	result = bt_id_scan_random_addr_check();

@@ -29,7 +29,7 @@ static struct custom_bt_hci_rp_vs_read_static_addrs {
 
 static void tc_setup(void *f)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 	memset(&hci_cmd_rsp, 0x00, sizeof(struct net_buf));
 	memset(&hci_cmd_rsp_data, 0x00, sizeof(struct custom_bt_hci_rp_vs_read_static_addrs));
 
@@ -45,7 +45,7 @@ ZTEST_SUITE(bt_setup_random_id_addr_invalid_cases, NULL, NULL, tc_setup, NULL, N
  *
  *  Constraints:
  *   - VS command for reading static address isn't enabled
- *   - No identity exists and bt_dev.id_count equals 0
+ *   - No identity exists and bt_devs[0].id_count equals 0
  *
  *  Expected behaviour:
  *   - A negative error code is returned by bt_id_create().
@@ -54,7 +54,7 @@ ZTEST(bt_setup_random_id_addr_invalid_cases, test_vs_reading_static_address_fail
 {
 	int err;
 
-	bt_dev.id_count = 0;
+	bt_devs[0].id_count = 0;
 
 	err = bt_setup_random_id_addr();
 
@@ -74,7 +74,7 @@ ZTEST(bt_setup_random_id_addr_invalid_cases, test_vs_reading_static_address_fail
 ZTEST(bt_setup_random_id_addr_invalid_cases, test_bt_hci_cmd_send_sync_returns_err)
 {
 	int err;
-	uint16_t *vs_commands = (uint16_t *)bt_dev.vs_commands;
+	uint16_t *vs_commands = (uint16_t *)bt_devs[0].vs_commands;
 
 	*vs_commands = (1 << BT_VS_CMD_BIT_READ_STATIC_ADDRS);
 	bt_hci_cmd_send_sync_fake.return_val = 1;
@@ -124,7 +124,7 @@ static int bt_hci_cmd_send_sync_custom_fake(uint16_t opcode, struct net_buf *buf
 ZTEST(bt_setup_random_id_addr_invalid_cases, test_bt_hci_cmd_send_sync_response_incomplete_1)
 {
 	int err;
-	uint16_t *vs_commands = (uint16_t *)bt_dev.vs_commands;
+	uint16_t *vs_commands = (uint16_t *)bt_devs[0].vs_commands;
 	struct bt_hci_rp_vs_read_static_addrs *rp =
 		(void *)&hci_cmd_rsp_data.hci_rp_vs_read_static_addrs;
 
@@ -166,7 +166,7 @@ ZTEST(bt_setup_random_id_addr_invalid_cases, test_bt_hci_cmd_send_sync_response_
 ZTEST(bt_setup_random_id_addr_invalid_cases, test_bt_hci_cmd_send_sync_response_incomplete_2)
 {
 	int err;
-	uint16_t *vs_commands = (uint16_t *)bt_dev.vs_commands;
+	uint16_t *vs_commands = (uint16_t *)bt_devs[0].vs_commands;
 	struct bt_hci_rp_vs_read_static_addrs *rp =
 		(void *)&hci_cmd_rsp_data.hci_rp_vs_read_static_addrs;
 
@@ -208,7 +208,7 @@ ZTEST(bt_setup_random_id_addr_invalid_cases, test_bt_hci_cmd_send_sync_response_
 ZTEST(bt_setup_random_id_addr_invalid_cases, test_bt_hci_cmd_send_sync_response_zero_id_addresses)
 {
 	int err;
-	uint16_t *vs_commands = (uint16_t *)bt_dev.vs_commands;
+	uint16_t *vs_commands = (uint16_t *)bt_devs[0].vs_commands;
 	struct bt_hci_rp_vs_read_static_addrs *rp =
 		(void *)&hci_cmd_rsp_data.hci_rp_vs_read_static_addrs;
 
@@ -232,7 +232,7 @@ ZTEST(bt_setup_random_id_addr_invalid_cases, test_bt_hci_cmd_send_sync_response_
  *  Testing setting up device random address while there is an identity exists.
  *
  *  Constraints:
- *   - An identity exists and bt_dev.id_count > 0
+ *   - An identity exists and bt_devs[0].id_count > 0
  *
  *  Expected behaviour:
  *   - A negative error code is returned by bt_id_create().
@@ -241,7 +241,7 @@ ZTEST(bt_setup_random_id_addr_invalid_cases, test_set_up_random_address_fails_wh
 {
 	int err;
 
-	bt_dev.id_count = 1;
+	bt_devs[0].id_count = 1;
 
 	err = bt_setup_random_id_addr();
 
