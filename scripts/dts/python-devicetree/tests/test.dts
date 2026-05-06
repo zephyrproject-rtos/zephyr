@@ -653,4 +653,27 @@
 			foos = <&{/deprecated} 1 2>;
 		};
 	};
+
+	/*
+	 * CPU properties may be defined in /cpus when they are identical across
+	 * all CPUs. Per-CPU properties should still override parent values.
+	 */
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clock-frequency = <1000>;
+
+		cpu@0 {
+			compatible = "test-cpu-fallback";
+			device_type = "cpu";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			compatible = "test-cpu-fallback";
+			device_type = "cpu";
+			reg = <1>;
+			clock-frequency = <2000>;
+		};
+	};
 };

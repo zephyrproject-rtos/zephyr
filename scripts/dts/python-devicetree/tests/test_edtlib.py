@@ -768,6 +768,19 @@ def test_props():
                               'bar-io-channels',
                               [(ctrl_2, {'io-channel-one': 2})])
 
+def test_cpu_props_fallback_from_cpus_node():
+    """CPU property lookup falls back to parent /cpus when missing on cpu@N."""
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    cpu0 = edt.get_node("/cpus/cpu@0")
+    cpu1 = edt.get_node("/cpus/cpu@1")
+
+    # Inherited from /cpus.
+    assert cpu0.props["clock-frequency"].val == 1000
+    # CPU-local value takes precedence.
+    assert cpu1.props["clock-frequency"].val == 2000
+
 def test_nexus():
     '''Test <prefix>-map via gpio-map (the most common case).'''
     with from_here():
