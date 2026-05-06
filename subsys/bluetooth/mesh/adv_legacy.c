@@ -53,9 +53,8 @@ static int bt_data_send(uint8_t num_events, uint16_t adv_int,
 	uint16_t duration;
 	int err;
 	const int32_t adv_int_min =
-		((bt_dev.hci_version >= BT_HCI_VERSION_5_0) ?
-		 ADV_INT_FAST_MS :
-		 ADV_INT_DEFAULT_MS);
+		((bt_devs[0].hci_version >= BT_HCI_VERSION_5_0) ? ADV_INT_FAST_MS
+								: ADV_INT_DEFAULT_MS);
 
 	adv_int = MAX(adv_int_min, adv_int);
 

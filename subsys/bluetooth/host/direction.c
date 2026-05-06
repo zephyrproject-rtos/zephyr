@@ -100,7 +100,7 @@ static int hci_df_set_cl_cte_tx_params(const struct bt_le_ext_adv *adv,
 	 */
 	if (params->cte_type == BT_DF_CTE_TYPE_AOD_1US ||
 	    params->cte_type == BT_DF_CTE_TYPE_AOD_2US) {
-		if (!BT_FEAT_LE_ANT_SWITCH_TX_AOD(bt_dev.le.features)) {
+		if (!BT_FEAT_LE_ANT_SWITCH_TX_AOD(bt_devs[0].le.features)) {
 			return -EINVAL;
 		}
 
@@ -242,7 +242,7 @@ static bool valid_cte_rx_common_params(uint8_t cte_types, uint8_t slot_durations
 
 	if (cte_types & BT_DF_CTE_TYPE_AOA) {
 		if (df_ant_info.num_ant < DF_SAMPLING_ANTENNA_NUMBER_MIN ||
-		    !BT_FEAT_LE_ANT_SWITCH_RX_AOA(bt_dev.le.features)) {
+		    !BT_FEAT_LE_ANT_SWITCH_RX_AOA(bt_devs[0].le.features)) {
 			return false;
 		}
 
@@ -480,7 +480,7 @@ static bool valid_conn_cte_tx_params(const struct bt_df_conn_cte_tx_param *param
 	if ((params->cte_types & (BT_DF_CTE_TYPE_AOD_1US | BT_DF_CTE_TYPE_AOD_2US)) &&
 	    (params->num_ant_ids < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
 	     params->num_ant_ids > BT_HCI_LE_SWITCH_PATTERN_LEN_MAX || !params->ant_ids ||
-	     !BT_FEAT_LE_ANT_SWITCH_TX_AOD(bt_dev.le.features))) {
+	     !BT_FEAT_LE_ANT_SWITCH_TX_AOD(bt_devs[0].le.features))) {
 		return false;
 	}
 
@@ -956,7 +956,7 @@ int bt_df_set_adv_cte_tx_param(struct bt_le_ext_adv *adv,
 
 	int err;
 
-	if (!BT_FEAT_LE_CONNECTIONLESS_CTE_TX(bt_dev.le.features)) {
+	if (!BT_FEAT_LE_CONNECTIONLESS_CTE_TX(bt_devs[0].le.features)) {
 		return -ENOTSUP;
 	}
 
@@ -1015,7 +1015,7 @@ static int
 bt_df_set_per_adv_sync_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool enable,
 				     const struct bt_df_per_adv_sync_cte_rx_param *params)
 {
-	if (!BT_FEAT_LE_CONNECTIONLESS_CTE_RX(bt_dev.le.features)) {
+	if (!BT_FEAT_LE_CONNECTIONLESS_CTE_RX(bt_devs[0].le.features)) {
 		return -ENOTSUP;
 	}
 
@@ -1058,7 +1058,7 @@ int bt_df_per_adv_sync_cte_rx_disable(struct bt_le_per_adv_sync *sync)
 static int bt_df_set_conn_cte_rx_enable(struct bt_conn *conn, bool enable,
 					const struct bt_df_conn_cte_rx_param *params)
 {
-	if (!BT_FEAT_LE_RX_CTE(bt_dev.le.features)) {
+	if (!BT_FEAT_LE_RX_CTE(bt_devs[0].le.features)) {
 		LOG_WRN("Receiving Constant Tone Extensions is not supported");
 		return -ENOTSUP;
 	}
@@ -1124,7 +1124,7 @@ int bt_df_set_conn_cte_tx_param(struct bt_conn *conn, const struct bt_df_conn_ct
 static int bt_df_set_conn_cte_req_enable(struct bt_conn *conn, bool enable,
 					 const struct bt_df_conn_cte_req_params *params)
 {
-	if (!BT_FEAT_LE_CONNECTION_CTE_REQ(bt_dev.le.features)) {
+	if (!BT_FEAT_LE_CONNECTION_CTE_REQ(bt_devs[0].le.features)) {
 		LOG_WRN("Constant Tone Extensions request procedure is not supported");
 		return -ENOTSUP;
 	}
@@ -1172,7 +1172,7 @@ static int bt_df_set_conn_cte_rsp_enable(struct bt_conn *conn, bool enable)
 		return -EINVAL;
 	}
 
-	if (!BT_FEAT_LE_CONNECTION_CTE_RESP(bt_dev.le.features)) {
+	if (!BT_FEAT_LE_CONNECTION_CTE_RESP(bt_devs[0].le.features)) {
 		LOG_WRN("CTE response procedure is not supported");
 		return -ENOTSUP;
 	}

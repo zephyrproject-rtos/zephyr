@@ -182,7 +182,7 @@ int bt_send(struct net_buf *buf)
 	bt_monitor_send(bt_monitor_opcode(buf->data[0], BT_MONITOR_TX),
 			buf->data + 1, buf->len - 1);
 
-	return bt_hci_send(bt_dev.hci, buf);
+	return bt_hci_send(bt_devs[0].hci, buf);
 }
 
 int bt_enable_raw(struct k_fifo *rx_queue)
@@ -193,14 +193,14 @@ int bt_enable_raw(struct k_fifo *rx_queue)
 
 	raw_rx = rx_queue;
 
-	if (!device_is_ready(bt_dev.hci)) {
+	if (!device_is_ready(bt_devs[0].hci)) {
 		LOG_ERR("HCI driver is not ready");
 		return -ENODEV;
 	}
 
 	bt_monitor_new_index(BT_MONITOR_TYPE_PRIMARY, BT_HCI_BUS, BT_ADDR_ANY, BT_HCI_NAME);
 
-	err = bt_hci_open(bt_dev.hci, bt_hci_recv);
+	err = bt_hci_open(bt_devs[0].hci, bt_hci_recv);
 	if (err) {
 		LOG_ERR("HCI driver open failed (%d)", err);
 		return err;

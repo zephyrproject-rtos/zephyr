@@ -21,8 +21,7 @@
 	SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(bt_##_hname, "bt/" _subtree, NULL, _set, _commit,\
 						  NULL, BT_SETTINGS_CPRIO_1)
 
-
-#define ID_DATA_LEN(array) (bt_dev.id_count * sizeof(array[0]))
+#define ID_DATA_LEN(array) (bt_devs[0].id_count * sizeof(array[0]))
 
 int bt_settings_store(const char *key, uint8_t id, const bt_addr_le_t *addr, const void *value,
 		      size_t val_len);

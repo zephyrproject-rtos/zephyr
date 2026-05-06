@@ -1219,7 +1219,7 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 		}
 
 		id_info = net_buf_add(buf, sizeof(*id_info));
-		memcpy(id_info->irk, bt_dev.irk[conn->id], 16);
+		memcpy(id_info->irk, bt_devs[0].irk[conn->id], 16);
 
 		smp_br_send(smp, buf, NULL);
 
@@ -1231,7 +1231,7 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 		}
 
 		id_addr_info = net_buf_add(buf, sizeof(*id_addr_info));
-		bt_addr_le_copy(&id_addr_info->addr, &bt_dev.id_addr[conn->id]);
+		bt_addr_le_copy(&id_addr_info->addr, &bt_devs[0].id_addr[conn->id]);
 
 		smp_br_send(smp, buf, smp_id_sent);
 	}
@@ -1748,7 +1748,7 @@ static bool br_sc_supported(void)
 		return true;
 	}
 
-	return BT_FEAT_SC(bt_dev.features);
+	return BT_FEAT_SC(bt_devs[0].features);
 }
 
 static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
@@ -2329,7 +2329,7 @@ static uint8_t bt_smp_distribute_keys(struct bt_smp *smp)
 		}
 
 		id_info = net_buf_add(buf, sizeof(*id_info));
-		memcpy(id_info->irk, bt_dev.irk[conn->id], 16);
+		memcpy(id_info->irk, bt_devs[0].irk[conn->id], 16);
 
 		smp_send(smp, buf, NULL, NULL);
 
@@ -2341,7 +2341,7 @@ static uint8_t bt_smp_distribute_keys(struct bt_smp *smp)
 		}
 
 		id_addr_info = net_buf_add(buf, sizeof(*id_addr_info));
-		bt_addr_le_copy(&id_addr_info->addr, &bt_dev.id_addr[conn->id]);
+		bt_addr_le_copy(&id_addr_info->addr, &bt_devs[0].id_addr[conn->id]);
 
 		smp_send(smp, buf, smp_id_sent, NULL);
 	}

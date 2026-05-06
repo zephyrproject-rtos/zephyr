@@ -41,6 +41,16 @@ config BT_HCI_HOST
 	default y
 	depends on !BT_HCI_RAW
 	select UUID
+	select POLL
+
+config BT_HCI_MAX_DEV
+	int "Maximum number of HCI devices"
+	default 1
+	range 1 $(UINT8_MAX)
+	help
+	  Maximum number of HCI controller devices that can be managed by
+	  the host simultaneously. Values greater than 1 enable
+	  multi-controller support via bt_dev_enable() / bt_dev_disable().
 
 config BT_HCI_TX_STACK_SIZE
 	# NOTE: This value is derived from other symbols and should only be
