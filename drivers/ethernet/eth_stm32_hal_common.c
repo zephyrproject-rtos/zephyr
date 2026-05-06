@@ -45,18 +45,8 @@ LOG_MODULE_REGISTER(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 #define ETH_STM32_HAL_MTU NET_ETH_MTU
 #define ETH_STM32_HAL_FRAME_SIZE_MAX (ETH_STM32_HAL_MTU + 18)
 
-uint8_t dma_rx_buffer[ETH_RXBUFNB][ETH_STM32_RX_BUF_SIZE] __eth_stm32_buf;
-uint8_t dma_tx_buffer[ETH_TXBUFNB][ETH_STM32_TX_BUF_SIZE] __eth_stm32_buf;
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
-ETH_DMADescTypeDef dma_rx_desc_tab[ETH_DMA_RX_CH_CNT][ETH_RXBUFNB] __eth_stm32_desc __aligned(32);
-ETH_DMADescTypeDef dma_tx_desc_tab[ETH_DMA_TX_CH_CNT][ETH_TXBUFNB] __eth_stm32_desc __aligned(32);
-#else
-ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __eth_stm32_desc;
-ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __eth_stm32_desc;
-#endif
-
-const struct device *eth_stm32_phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle));
+static struct eth_stm32_dma_buf eth0_dma_buf __eth_stm32_buf;
+static struct eth_stm32_dma_desc eth0_dma_desc __eth_stm32_desc;
 
 static void rx_thread(void *arg1, void *unused1, void *unused2)
 {
@@ -271,8 +261,8 @@ static void eth_iface_init(struct net_if *iface)
 
 	net_lldp_set_lldpdu(iface);
 
-	if (device_is_ready(eth_stm32_phy_dev)) {
-		phy_link_callback_set(eth_stm32_phy_dev, phy_link_state_changed, (void *)dev);
+	if (device_is_ready(cfg->phy_dev)) {
+		phy_link_callback_set(cfg->phy_dev, phy_link_state_changed, (void *)dev);
 	} else {
 		LOG_ERR("PHY device not ready");
 	}
@@ -322,8 +312,9 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 static const struct device *eth_stm32_hal_get_phy(const struct device *dev,
 						  struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-	return eth_stm32_phy_dev;
+	const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
+
+	return cfg->phy_dev;
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
@@ -375,6 +366,9 @@ static const struct eth_stm32_hal_dev_cfg eth0_config = {
 #endif
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0),
+	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
+	.dma_buf = &eth0_dma_buf,
+	.dma_desc = &eth0_dma_desc,
 };
 
 BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii)
