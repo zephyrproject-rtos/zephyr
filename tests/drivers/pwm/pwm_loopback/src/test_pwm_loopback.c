@@ -37,6 +37,7 @@ static void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit uni
 	struct test_pwm out;
 	uint64_t period_capture = 0;
 	uint64_t pulse_capture = 0;
+	k_timeout_t timeout;
 	int err = 0;
 
 	get_test_pwms(&out, &in);
@@ -45,6 +46,7 @@ static void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit uni
 	case TEST_PWM_UNIT_NSEC:
 		TC_PRINT("Testing PWM capture @ %u/%u nsec\n",
 			 pulse, period);
+		timeout = K_NSEC(period);
 		err = pwm_set(out.dev, out.pwm, period, pulse, out.flags ^=
 			      (flags & PWM_POLARITY_MASK));
 		break;
@@ -52,6 +54,7 @@ static void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit uni
 	case TEST_PWM_UNIT_USEC:
 		TC_PRINT("Testing PWM capture @ %u/%u usec\n",
 			 pulse, period);
+		timeout = K_USEC(period);
 		err = pwm_set(out.dev, out.pwm, PWM_USEC(period),
 			      PWM_USEC(pulse), out.flags ^=
 			      (flags & PWM_POLARITY_MASK));
@@ -63,6 +66,11 @@ static void test_capture(uint32_t period, uint32_t pulse, enum test_pwm_unit uni
 	}
 
 	zassert_equal(err, 0, "failed to set pwm output (err %d)", err);
+
+	/* Wait for the next period to ensure the new period has taken effect before capturing it.
+	 * Some PWM IPs only apply the new period after the current one completes.
+	 */
+	k_sleep(timeout);
 
 	switch (unit) {
 	case TEST_PWM_UNIT_NSEC:
