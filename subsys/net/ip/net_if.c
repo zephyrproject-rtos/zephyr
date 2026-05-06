@@ -4252,99 +4252,6 @@ out:
 	return ret;
 }
 
-/* Using this function is problematic as if we have multiple
- * addresses configured, which one to return. Use heuristic
- * in this case and return the first one found. Please use
- * net_if_ipv4_get_netmask_by_addr() instead.
- */
-struct net_in_addr net_if_ipv4_get_netmask(struct net_if *iface)
-{
-	struct net_in_addr netmask = { 0 };
-	struct net_if_ipv4 *ipv4;
-
-	net_if_lock(iface);
-
-	if (net_if_config_ipv4_get(iface, NULL) < 0) {
-		goto out;
-	}
-
-	ipv4 = iface->config.ip.ipv4;
-	if (ipv4 == NULL) {
-		goto out;
-	}
-
-	ARRAY_FOR_EACH(ipv4->unicast, i) {
-		if (!ipv4->unicast[i].ipv4.is_used ||
-		    ipv4->unicast[i].ipv4.address.family != NET_AF_INET) {
-			continue;
-		}
-
-		netmask = iface->config.ip.ipv4->unicast[i].netmask;
-		break;
-	}
-
-out:
-	net_if_unlock(iface);
-
-	return netmask;
-}
-
-/* Using this function is problematic as if we have multiple
- * addresses configured, which one to set. Use heuristic
- * in this case and set the first one found. Please use
- * net_if_ipv4_set_netmask_by_addr() instead.
- */
-static void net_if_ipv4_set_netmask_deprecated(struct net_if *iface,
-					       const struct net_in_addr *netmask)
-{
-	struct net_if_ipv4 *ipv4;
-
-	net_if_lock(iface);
-
-	if (net_if_config_ipv4_get(iface, NULL) < 0) {
-		goto out;
-	}
-
-	ipv4 = iface->config.ip.ipv4;
-	if (ipv4 == NULL) {
-		goto out;
-	}
-
-	ARRAY_FOR_EACH(ipv4->unicast, i) {
-		if (!ipv4->unicast[i].ipv4.is_used ||
-		    ipv4->unicast[i].ipv4.address.family != NET_AF_INET) {
-			continue;
-		}
-
-		net_ipaddr_copy(&ipv4->unicast[i].netmask, netmask);
-		break;
-	}
-
-out:
-	net_if_unlock(iface);
-}
-
-void net_if_ipv4_set_netmask(struct net_if *iface,
-			     const struct net_in_addr *netmask)
-{
-	net_if_ipv4_set_netmask_deprecated(iface, netmask);
-}
-
-bool z_impl_net_if_ipv4_set_netmask_by_index(int index,
-					     const struct net_in_addr *netmask)
-{
-	struct net_if *iface;
-
-	iface = net_if_get_by_index(index);
-	if (!iface) {
-		return false;
-	}
-
-	net_if_ipv4_set_netmask_deprecated(iface, netmask);
-
-	return true;
-}
-
 bool z_impl_net_if_ipv4_set_netmask_by_addr_by_index(int index,
 						     const struct net_in_addr *addr,
 						     const struct net_in_addr *netmask)
@@ -4362,25 +4269,6 @@ bool z_impl_net_if_ipv4_set_netmask_by_addr_by_index(int index,
 }
 
 #ifdef CONFIG_USERSPACE
-bool z_vrfy_net_if_ipv4_set_netmask_by_index(int index,
-					     const struct net_in_addr *netmask)
-{
-	struct net_in_addr netmask_addr;
-	struct net_if *iface;
-
-	iface = z_vrfy_net_if_get_by_index(index);
-	if (!iface) {
-		return false;
-	}
-
-	K_OOPS(k_usermode_from_copy(&netmask_addr, (void *)netmask,
-				sizeof(netmask_addr)));
-
-	return z_impl_net_if_ipv4_set_netmask_by_index(index, &netmask_addr);
-}
-
-#include <zephyr/syscalls/net_if_ipv4_set_netmask_by_index_mrsh.c>
-
 bool z_vrfy_net_if_ipv4_set_netmask_by_addr_by_index(int index,
 						     const struct net_in_addr *addr,
 						     const struct net_in_addr *netmask)

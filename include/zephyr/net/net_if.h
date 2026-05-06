@@ -2088,21 +2088,6 @@ static inline void net_if_ipv6_set_hop_limit(struct net_if *iface,
 }
 #endif /* CONFIG_NET_NATIVE_IPV6 */
 
-/** @cond INTERNAL_HIDDEN */
-
-/* The old hop limit setter function is deprecated because the naming
- * of it was incorrect. The API name was missing "_if_" so this function
- * should not be used.
- */
-__deprecated
-static inline void net_ipv6_set_hop_limit(struct net_if *iface,
-					  uint8_t hop_limit)
-{
-	net_if_ipv6_set_hop_limit(iface, hop_limit);
-}
-
-/** @endcond */
-
 /**
  * @brief Get IPv6 multicast hop limit specified for a given interface. This is the
  * default value but can be overridden by the user.
@@ -2836,41 +2821,6 @@ struct net_in_addr *net_if_ipv4_get_global_addr(struct net_if *iface,
  */
 struct net_in_addr net_if_ipv4_get_netmask_by_addr(struct net_if *iface,
 					       const struct net_in_addr *addr);
-
-/**
- * @brief Get IPv4 netmask of an interface.
- *
- * @deprecated Use net_if_ipv4_get_netmask_by_addr() instead.
- *
- * @param iface Interface to use.
- *
- * @return The netmask set on the interface, unspecified address if not found.
- */
-__deprecated struct net_in_addr net_if_ipv4_get_netmask(struct net_if *iface);
-
-/**
- * @brief Set IPv4 netmask for an interface.
- *
- * @deprecated Use net_if_ipv4_set_netmask_by_addr() instead.
- *
- * @param iface Interface to use.
- * @param netmask IPv4 netmask
- */
-__deprecated void net_if_ipv4_set_netmask(struct net_if *iface,
-					  const struct net_in_addr *netmask);
-
-/**
- * @brief Set IPv4 netmask for an interface index.
- *
- * @deprecated Use net_if_ipv4_set_netmask_by_addr() instead.
- *
- * @param index Network interface index
- * @param netmask IPv4 netmask
- *
- * @return True if netmask was added, false otherwise.
- */
-__deprecated __syscall bool net_if_ipv4_set_netmask_by_index(int index,
-							     const struct net_in_addr *netmask);
 
 /**
  * @brief Set IPv4 netmask for an interface index for a given address.
