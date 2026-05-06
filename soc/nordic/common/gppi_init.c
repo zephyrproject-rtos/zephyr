@@ -143,11 +143,12 @@ static int gppi_init(void)
 
 #if defined(CONFIG_NRFX_GPPI) && !defined(CONFIG_NRFX_GPPI_V1)
 
-/* For nrf54h20 GPPI requires that ironside communication is up so delay the initialization. */
-#define GPPI_INIT_STATE COND_CODE_1(IS_ENABLED(CONFIG_SOC_NRF54H20_CPUAPP), (POST_KERNEL), (EARLY))
+/* For SD2PPI GPPI it is required that ironside communication is up so delay the initialization. */
+#define GPPI_INIT_STATE                                                         \
+	COND_CODE_1(IS_ENABLED(CONFIG_NRFX_GPPI_SD2PPI_GLOBAL), (POST_KERNEL), (EARLY))
 
 #define GPPI_INIT_PRIO                                                          \
-	COND_CODE_1(IS_ENABLED(CONFIG_SOC_NRF54H20_CPUAPP),                     \
+	COND_CODE_1(IS_ENABLED(CONFIG_NRFX_GPPI_SD2PPI_GLOBAL),                 \
 		    (UTIL_INC(CONFIG_IRONSIDE_SE_CALL_INIT_PRIORITY)), (0))
 
 SYS_INIT(gppi_init, GPPI_INIT_STATE, GPPI_INIT_PRIO);
