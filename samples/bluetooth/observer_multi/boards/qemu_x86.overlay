@@ -1,0 +1,30 @@
+/*
+ * Copyright (C) 2026 Xiaomi Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		bt-hci1 = &bt_hci_uart_1;
+	};
+
+	soc {
+		uart2: uart@3e8 {
+			compatible = "ns16550";
+			reg = <0x000003e8 0x100>;
+			io-mapped;
+			clock-frequency = <1843200>;
+			interrupts = <5 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+			interrupt-parent = <&intc>;
+			reg-shift = <0>;
+			status = "okay";
+			current-speed = <115200>;
+
+			bt_hci_uart_1: bt_hci_uart_1 {
+				compatible = "zephyr,bt-hci-uart";
+				status = "okay";
+			};
+		};
+	};
+};

@@ -1,0 +1,14 @@
+sample:
+  name: Bluetooth Multi-Controller Observer
+  description: Demonstrates BLE scanning on two HCI controllers simultaneously
+tests:
+  sample.bluetooth.observer_multi:
+    harness: bluetooth
+    build_only: true
+    platform_allow:
+      - native_sim
+      - qemu_x86
+    integration_platforms:
+      - native_sim
+      - qemu_x86
+    tags: bluetooth
