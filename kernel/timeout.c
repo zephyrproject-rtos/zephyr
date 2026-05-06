@@ -28,6 +28,25 @@ static struct k_spinlock timeout_lock;
 /* Ticks left to process in the currently-executing sys_clock_announce() */
 static int announce_remaining;
 
+/* CPU id currently inside sys_clock_announce_locked()'s firing loop, or -1
+ * when no CPU is. The SMP early-return below ensures at most one CPU is in
+ * the loop at a time, so a single int suffices. Used by code that needs to
+ * know whether *this* CPU is at a tick edge (announcing) versus somewhere
+ * within a tick (any other context, including running on a CPU while a
+ * different CPU is the announcer).
+ */
+static int announcing_cpu = -1;
+
+static inline bool this_cpu_announcing(void)
+{
+	return announcing_cpu == CPU_ID;
+}
+
+static inline bool any_cpu_announcing(void)
+{
+	return announcing_cpu != -1;
+}
+
 static struct _timeout *first(void)
 {
 	sys_dnode_t *t = sys_dlist_peek_head(&timeout_list);
@@ -53,23 +72,29 @@ static void remove_timeout(struct _timeout *t)
 
 static int32_t elapsed(void)
 {
-	/* While sys_clock_announce() is executing, new relative timeouts will be
-	 * scheduled relatively to the currently firing timeout's original tick
-	 * value (=curr_tick) rather than relative to the current
-	 * sys_clock_elapsed().
+	/*
+	 * While *this* CPU is executing sys_clock_announce_locked()'s firing
+	 * loop, new relative timeouts scheduled from a callback (or from a
+	 * higher-priority ISR that preempted one) are anchored to the currently
+	 * firing tick (curr_tick), so we report 0.
 	 *
-	 * This means that timeouts being scheduled from within timeout callbacks
-	 * will be scheduled at well-defined offsets from the currently firing
-	 * timeout.
+	 * On any other CPU the picture is different: we are not at a tick edge,
+	 * and curr_tick is partway through being advanced by the announcing
+	 * CPU's loop. The invariant we want to preserve is
 	 *
-	 * As a side effect, the same will happen if an ISR with higher priority
-	 * preempts a timeout callback and schedules a timeout.
+	 *   T_real - curr_tick = announce_remaining + sys_clock_elapsed()
 	 *
-	 * The distinction is implemented by looking at announce_remaining which
-	 * will be non-zero while sys_clock_announce() is executing and zero
-	 * otherwise.
+	 * because the driver bumped its internal announced-cycle baseline to
+	 * (curr_tick_initial + N) * CYC_PER_TICK at ISR entry, while the kernel
+	 * has only advanced curr_tick by the K ticks processed so far -- so
+	 * announce_remaining (= N - K) is the residual that must be added to
+	 * sys_clock_elapsed() to get the real-time delta from curr_tick. This
+	 * keeps sys_clock_tick_get() monotonic across the announce window.
 	 */
-	return announce_remaining == 0 ? sys_clock_elapsed() : 0U;
+	if (this_cpu_announcing()) {
+		return 0U;
+	}
+	return sys_clock_elapsed() + announce_remaining;
 }
 
 static int32_t next_timeout(int32_t ticks_elapsed)
@@ -117,16 +142,18 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 			 * made partway through a tick would fire on the next
 			 * tick edge, yielding less than N full ticks.
 			 *
-			 * The one moment we know we are at (or very close to)
-			 * a tick edge is while processing timeouts inside
-			 * sys_clock_announce_locked(), flagged by
-			 * announce_remaining != 0. Periodic timers rely on
-			 * this when rescheduling themselves from the timer
-			 * ISR: the round-up would otherwise accumulate and
-			 * make every period one tick late.
+			 * The one moment we know *this* CPU is at a tick edge
+			 * is while it is processing timeouts inside its own
+			 * sys_clock_announce_locked() loop. Periodic timers
+			 * rely on this when rescheduling themselves from the
+			 * timer ISR: the round-up would otherwise accumulate
+			 * and make every period one tick late. The check is
+			 * per-CPU: a thread on another CPU running while we
+			 * announce is *not* at a tick edge and still needs
+			 * the round-up.
 			 */
 			to->dticks = timeout.ticks + ticks_elapsed +
-				     ((announce_remaining == 0) ? 1 : 0);
+				     (this_cpu_announcing() ? 0 : 1);
 			ticks = curr_tick + to->dticks;
 		} else {
 			k_ticks_t dticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
@@ -148,7 +175,7 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 			sys_dlist_append(&timeout_list, &to->node);
 		}
 
-		if (to == first() && announce_remaining == 0) {
+		if (to == first() && !any_cpu_announcing()) {
 			if (!has_elapsed) {
 				/* In case of absolute timeout that is first to expire
 				 * elapsed need to be read from the system clock.
@@ -246,38 +273,42 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
 	 * timeouts and confuse apps), just increment the tick count
 	 * and return.
 	 */
-	if (IS_ENABLED(CONFIG_SMP) && (announce_remaining != 0)) {
+	if (IS_ENABLED(CONFIG_SMP) && any_cpu_announcing()) {
 		announce_remaining += ticks;
 		k_spin_unlock(&timeout_lock, key);
 		return;
 	}
 
 	announce_remaining = ticks;
+	announcing_cpu = CPU_ID;
 
-	struct _timeout *t = first();
+	struct _timeout *t;
 
-	while ((t != NULL) && (t->dticks <= announce_remaining)) {
-		int dt = t->dticks;
+	for (t = first();
+	     (t != NULL) && (t->dticks <= announce_remaining);
+	     t = first()) {
+		_timeout_func_t handler = t->fn;
 
-		curr_tick += dt;
-
-		/* Drain all timeouts queued on this tick before
-		 * decrementing announce_remaining.
+		/* Advance curr_tick and decrement announce_remaining
+		 * together under the lock so non-announcing CPUs observe
+		 * a consistent (curr_tick + announce_remaining +
+		 * sys_clock_elapsed()) == T_real even while we drop the
+		 * lock around the handler. The "we are announcing" state
+		 * is carried by announcing_cpu, so announce_remaining
+		 * reaching 0 mid-loop is harmless: same-tick handlers'
+		 * z_add_timeout() still anchors via this_cpu_announcing(),
+		 * and another CPU's announce still folds into ours via
+		 * any_cpu_announcing() in the SMP early-return.
 		 */
-		do {
-			_timeout_func_t handler = t->fn;
+		curr_tick += t->dticks;
+		announce_remaining -= t->dticks;
 
-			sys_dlist_remove(&t->node);
-			t->dticks = TIMEOUT_DTICKS_ANNOUNCING;
+		sys_dlist_remove(&t->node);
+		t->dticks = TIMEOUT_DTICKS_ANNOUNCING;
 
-			k_spin_unlock(&timeout_lock, key);
-			handler(t);
-			key = k_spin_lock(&timeout_lock);
-
-			t = first();
-		} while ((t != NULL) && (t->dticks == 0));
-
-		announce_remaining -= dt;
+		k_spin_unlock(&timeout_lock, key);
+		handler(t);
+		key = k_spin_lock(&timeout_lock);
 	}
 
 	if (t != NULL) {
@@ -286,6 +317,7 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
 
 	curr_tick += announce_remaining;
 	announce_remaining = 0;
+	announcing_cpu = -1;
 
 	sys_clock_set_timeout(next_timeout(0), false);
 
