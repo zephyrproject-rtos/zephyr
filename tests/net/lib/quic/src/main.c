@@ -547,23 +547,6 @@ static int max_quic_closed_context_id(const struct quic_closed_stats_snapshot *s
 	return max_id;
 }
 
-static uint16_t quic_sockaddr_port(const struct net_sockaddr_storage *addr)
-{
-	if (addr == NULL) {
-		return 0U;
-	}
-
-	if (addr->ss_family == NET_AF_INET6) {
-		return net_ntohs(net_sin6(net_sad(addr))->sin6_port);
-	}
-
-	if (addr->ss_family == NET_AF_INET) {
-		return net_ntohs(net_sin(net_sad(addr))->sin_port);
-	}
-
-	return 0U;
-}
-
 static size_t count_new_quic_closed_contexts(const struct quic_closed_stats_snapshot *snapshot,
 					     int baseline_id)
 {
@@ -584,6 +567,8 @@ static const struct quic_closed_context_stats *find_new_quic_closed_context_stat
 {
 	for (size_t i = 0; i < snapshot->count; i++) {
 		const struct quic_closed_context_stats *stats = &snapshot->entries[i];
+		uint16_t port;
+		int ret;
 
 		if (stats->id <= baseline_id) {
 			continue;
@@ -593,11 +578,13 @@ static const struct quic_closed_context_stats *find_new_quic_closed_context_stat
 			continue;
 		}
 
-		if (quic_sockaddr_port(&stats->local_addr) != local_port) {
+		ret = net_port_get(net_sad(&stats->local_addr), &port);
+		if (ret == 0 && port != local_port) {
 			continue;
 		}
 
-		if (quic_sockaddr_port(&stats->remote_addr) != remote_port) {
+		ret = net_port_get(net_sad(&stats->remote_addr), &port);
+		if (ret == 0 && port != remote_port) {
 			continue;
 		}
 
