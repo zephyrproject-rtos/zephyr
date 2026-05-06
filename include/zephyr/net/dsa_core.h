@@ -48,11 +48,8 @@ extern "C" {
  * @param cfg	Pointer to dsa_port_config.
  */
 #define DSA_PORT_INST_INIT(port, n, cfg)                                                           \
-	NET_DEVICE_INIT_INSTANCE(CONCAT(dsa_, n, port), DEVICE_DT_NAME(port), DT_REG_ADDR(port),   \
-				 dsa_port_initialize, NULL, &dsa_switch_context_##n, cfg,          \
-				 CONFIG_ETH_INIT_PRIORITY, &dsa_eth_api, ETHERNET_L2,              \
-				 NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
-
+	ETH_NET_DEVICE_DT_DEFINE(port, dsa_port_initialize, NULL, &dsa_switch_context_##n, cfg,    \
+				 CONFIG_ETH_INIT_PRIORITY, &dsa_eth_api, NET_ETH_MTU)
 /**
  * @brief Macro for DSA switch instance initialization.
  *
