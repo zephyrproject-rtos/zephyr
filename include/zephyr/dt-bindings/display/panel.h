@@ -41,6 +41,7 @@
 #define PANEL_PIXEL_FORMAT_RGBA_8888 (0x1 << 11) /**< 32-bit RGBA (8 bits per component) */
 #define PANEL_PIXEL_FORMAT_BGRA_8888 (0x1 << 12) /**< 32-bit BGRA (8 bits per component) */
 #define PANEL_PIXEL_FORMAT_I_4       (0x1 << 13) /**< 4-bit indexed color */
+#define PANEL_PIXEL_FORMAT_L_4       (0x1 << 14) /**< 4-bit luminance/grayscale */
 
 /**
  * @brief Pack color components into a 32-bit ARGB8888 value.
