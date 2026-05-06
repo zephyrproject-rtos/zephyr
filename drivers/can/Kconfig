@@ -146,6 +146,7 @@ source "drivers/can/Kconfig.sja1000"
 source "drivers/can/Kconfig.stm32"
 source "drivers/can/Kconfig.tcan4x5x"
 source "drivers/can/Kconfig.xmc4xxx"
+source "drivers/can/Kconfig.cast"
 # zephyr-keep-sorted-stop
 
 endif # CAN
