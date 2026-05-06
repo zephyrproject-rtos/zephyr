@@ -30,7 +30,8 @@ A good way to run this sample is to run this PTP application inside
 :zephyr:board:`native_sim` board as described in
 :ref:`networking_with_native_sim` or with
 embedded device like :zephyr:board:`nucleo_h563zi`, :zephyr:board:`nucleo_h743zi`,
-:zephyr:board:`nucleo_h745zi_q` or :zephyr:board:`nucleo_f767zi`.
+:zephyr:board:`nucleo_h745zi_q`, :zephyr:board:`nucleo_f767zi` or
+:zephyr:board:`frdm_mcxn947`.
 
 Note that PTP is only supported for
 boards that have an Ethernet port and which has support for collecting
@@ -212,7 +213,7 @@ Use Linux Host with an Embedded Device
 --------------------------------------
 
 Create a configuration file for ptp4l, for example
-:file:`p2p.cfg`, with contents like this:
+:file:`e2e.cfg`, with contents like this:
 
 .. code-block:: ini
 
@@ -243,7 +244,7 @@ and start it like this:
 
 .. code-block:: console
 
-    sudo ./ptp4l -i zeth -f /path/to/config/p2p.cfg -m
+    sudo ./ptp4l -i zeth -f /path/to/config/e2e.cfg -m
 
 Use Linux host with native_sim
 ------------------------------
