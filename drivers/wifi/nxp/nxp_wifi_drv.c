@@ -1219,7 +1219,9 @@ static inline enum wifi_security_type nxp_wifi_key_mgmt_to_zephyr(int key_mgmt, 
 }
 
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-static int nxp_wifi_uap_status(const struct device *dev, struct wifi_iface_status *status)
+static int nxp_wifi_uap_status(const struct device *dev,
+			       struct net_if *iface __unused,
+			       struct wifi_iface_status *status)
 {
 	enum wlan_connection_state connection_state = WLAN_UAP_STOPPED;
 	struct interface *if_handle = (struct interface *)&g_uap;
