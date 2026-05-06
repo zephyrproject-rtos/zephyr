@@ -1152,7 +1152,7 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 		},
 		{
 			.address = "[2001:db8::200]:080",
-			.len = sizeof("[2001:db8:433:2]:80000") - 1,
+			.len = sizeof("[2001:db8::200]:080") - 1,
 			.verdict = NULL,
 		},
 		{
