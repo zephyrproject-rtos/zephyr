@@ -23,7 +23,7 @@ DEFINE_FFF_GLOBALS;
 
 static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 
 	RPA_FFF_FAKES_LIST(RESET_FAKE);
 	CRYPTO_FFF_FAKES_LIST(RESET_FAKE);
@@ -41,7 +41,7 @@ static int bt_rand_custom_fake(void *buf, size_t len)
 
 	/* This will make set_random_address() succeeds and returns 0 */
 	memcpy(buf, &BT_ADDR->val, len);
-	bt_addr_copy(&bt_dev.random_addr, BT_ADDR);
+	bt_addr_copy(&bt_devs[0].random_addr, BT_ADDR);
 
 	return 0;
 }
@@ -70,7 +70,7 @@ ZTEST(bt_id_set_scan_own_addr, test_set_nrpa_scan_address_no_privacy)
 
 	bt_rand_fake.custom_fake = bt_rand_custom_fake;
 
-	err = bt_id_set_scan_own_addr(false, &own_addr_type);
+	err = bt_id_set_scan_own_addr(&bt_devs[0], false, &own_addr_type);
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
 	zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
@@ -93,7 +93,7 @@ ZTEST(bt_id_set_scan_own_addr, test_set_nrpa_scan_address_no_privacy)
 ZTEST(bt_id_set_scan_own_addr, test_set_nrpa_scan_address_no_privacy_adv_ongoing_random_identity)
 {
 	int err;
-	struct bt_le_ext_adv *adv = &bt_dev.adv;
+	struct bt_le_ext_adv *adv = &bt_devs[0].adv;
 	uint8_t own_addr_type = BT_ADDR_LE_ANONYMOUS;
 
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_PRIVACY);
@@ -103,11 +103,11 @@ ZTEST(bt_id_set_scan_own_addr, test_set_nrpa_scan_address_no_privacy_adv_ongoing
 	bt_rand_fake.custom_fake = bt_rand_custom_fake;
 	bt_le_adv_lookup_legacy_fake.return_val = adv;
 
-	bt_addr_le_copy(&bt_dev.id_addr[BT_ID_DEFAULT], BT_STATIC_RANDOM_LE_ADDR_1);
+	bt_addr_le_copy(&bt_devs[0].id_addr[BT_ID_DEFAULT], BT_STATIC_RANDOM_LE_ADDR_1);
 
 	atomic_set_bit(adv->flags, BT_ADV_ENABLED);
 
-	err = bt_id_set_scan_own_addr(false, &own_addr_type);
+	err = bt_id_set_scan_own_addr(&bt_devs[0], false, &own_addr_type);
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
 	zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
@@ -130,7 +130,7 @@ ZTEST(bt_id_set_scan_own_addr, test_set_nrpa_scan_address_no_privacy_adv_ongoing
 ZTEST(bt_id_set_scan_own_addr, test_set_nrpa_scan_address_no_privacy_adv_ongoing_public_identity)
 {
 	int err;
-	struct bt_le_ext_adv *adv = &bt_dev.adv;
+	struct bt_le_ext_adv *adv = &bt_devs[0].adv;
 	uint8_t own_addr_type = BT_ADDR_LE_ANONYMOUS;
 
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_PRIVACY);
@@ -140,12 +140,12 @@ ZTEST(bt_id_set_scan_own_addr, test_set_nrpa_scan_address_no_privacy_adv_ongoing
 	bt_rand_fake.custom_fake = bt_rand_custom_fake;
 	bt_le_adv_lookup_legacy_fake.return_val = adv;
 
-	bt_addr_le_copy(&bt_dev.id_addr[BT_ID_DEFAULT], BT_LE_ADDR);
+	bt_addr_le_copy(&bt_devs[0].id_addr[BT_ID_DEFAULT], BT_LE_ADDR);
 
 	atomic_set_bit(adv->flags, BT_ADV_ENABLED);
 	atomic_set_bit(adv->flags, BT_ADV_USE_IDENTITY);
 
-	err = bt_id_set_scan_own_addr(false, &own_addr_type);
+	err = bt_id_set_scan_own_addr(&bt_devs[0], false, &own_addr_type);
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
 	zassert_true(own_addr_type == BT_HCI_OWN_ADDR_PUBLIC,
@@ -176,12 +176,12 @@ ZTEST(bt_id_set_scan_own_addr, test_setting_scan_own_rpa_address_no_privacy)
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_PRIVACY);
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_SCAN_WITH_IDENTITY);
 
-	bt_addr_le_copy_addr(&bt_dev.id_addr[BT_ID_DEFAULT], BT_RPA_ADDR, BT_ADDR_LE_RANDOM);
+	bt_addr_le_copy_addr(&bt_devs[0].id_addr[BT_ID_DEFAULT], BT_RPA_ADDR, BT_ADDR_LE_RANDOM);
 
 	/* This will make set_random_address() succeeds and returns 0 */
-	bt_addr_copy(&bt_dev.random_addr, BT_RPA_ADDR);
+	bt_addr_copy(&bt_devs[0].random_addr, BT_RPA_ADDR);
 
-	err = bt_id_set_scan_own_addr(false, &own_addr_type);
+	err = bt_id_set_scan_own_addr(&bt_devs[0], false, &own_addr_type);
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
 	zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
@@ -211,9 +211,9 @@ ZTEST(bt_id_set_scan_own_addr, test_setting_scan_own_address_privacy_enabled)
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_PRIVACY);
 
 	/* This will cause bt_id_set_private_addr() to return 0 (success) */
-	atomic_set_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_RPA_VALID);
 
-	err = bt_id_set_scan_own_addr(true, &own_addr_type);
+	err = bt_id_set_scan_own_addr(&bt_devs[0], true, &own_addr_type);
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
 	zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
@@ -243,11 +243,11 @@ ZTEST(bt_id_set_scan_own_addr, test_setting_scan_own_address_privacy_features_se
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_PRIVACY);
 
 	/* This will cause bt_id_set_private_addr() to return 0 (success) */
-	atomic_set_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_RPA_VALID);
 
-	bt_dev.le.features[(BT_LE_FEAT_BIT_PRIVACY) >> 3] |= BIT((BT_LE_FEAT_BIT_PRIVACY)&7);
+	bt_devs[0].le.features[(BT_LE_FEAT_BIT_PRIVACY) >> 3] |= BIT((BT_LE_FEAT_BIT_PRIVACY) & 7);
 
-	err = bt_id_set_scan_own_addr(true, &own_addr_type);
+	err = bt_id_set_scan_own_addr(&bt_devs[0], true, &own_addr_type);
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
 	zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RPA_OR_RANDOM,

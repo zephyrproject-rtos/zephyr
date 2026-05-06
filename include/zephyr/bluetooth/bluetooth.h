@@ -31,6 +31,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <zephyr/device.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/crypto.h>
@@ -42,6 +43,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
+
+struct k_poll_signal;
 
 #ifdef __cplusplus
 extern "C" {
@@ -331,6 +334,49 @@ typedef void (*bt_ready_cb_t)(int err);
  * @return Zero on success or (negative) error code otherwise.
  */
 int bt_enable(bt_ready_cb_t cb);
+
+/**
+ * @brief Default HCI device from devicetree chosen node.
+ *
+ * This is the device referenced by the zephyr,bt-hci chosen property.
+ * bt_enable() is a wrapper for bt_dev_enable(BT_HCI_DEFAULT, ...).
+ */
+#define BT_HCI_DEFAULT DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci))
+
+/**
+ * @brief Enable a specific HCI controller
+ *
+ * Enable an HCI controller. The default controller is enabled via
+ * bt_enable(), which internally calls bt_dev_enable(BT_HCI_DEFAULT, ...).
+ * Additional controllers are enabled explicitly by the application:
+ *
+ *     struct k_poll_signal ready;
+ *     k_poll_signal_init(&ready);
+ *     bt_dev_enable(hci1, &ready);
+ *
+ * When @p ready is non-NULL, initialization proceeds asynchronously and
+ * the signal is raised with the result code (0 on success, negative errno
+ * on failure). When @p ready is NULL, initialization is synchronous.
+ *
+ * @param dev    HCI device to enable (must implement the bt_hci device API)
+ * @param ready  Poll signal to raise on completion, or NULL for synchronous
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_dev_enable(const struct device *dev, struct k_poll_signal *ready);
+
+/**
+ * @brief Disable a specific HCI controller
+ *
+ * Disable an HCI controller that was previously enabled with
+ * bt_dev_enable(). The default controller should be disabled
+ * with bt_disable() instead.
+ *
+ * @param dev  HCI device to disable
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_dev_disable(const struct device *dev);
 
 /**
  * @brief Disable Bluetooth
@@ -2349,6 +2395,16 @@ struct bt_le_scan_param {
 	 * Set zero to use same as LE 1M PHY scan window.
 	 */
 	uint16_t window_coded;
+
+	/**
+	 * @brief HCI device for scanning
+	 *
+	 * Pointer to the HCI controller device to use for scanning.
+	 * Set to NULL to use the default controller.
+	 *
+	 * @note Only meaningful when @kconfig{CONFIG_BT_HCI_MAX_DEV} > 1.
+	 */
+	const struct device *hci_dev;
 };
 
 /** LE advertisement and scan response packet information */
@@ -2402,6 +2458,14 @@ struct bt_le_scan_recv_info {
 
 	/** Secondary advertising channel PHY. */
 	uint8_t secondary_phy;
+
+	/**
+	 * @brief HCI device
+	 *
+	 * Pointer to the HCI controller device that received this
+	 * advertisement. Corresponds to @ref bt_le_scan_param.hci_dev.
+	 */
+	const struct device *hci_dev;
 };
 
 /** Listener context for (LE) scanning. */

@@ -34,16 +34,19 @@ LOG_MODULE_REGISTER(bt_driver);
 
 #define DT_DRV_COMPAT zephyr_bt_hci_userchan
 
+#define UC_MAX_DEV DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT)
+
+/* Ensure at least one userchan instance is enabled in devicetree */
+BUILD_ASSERT(UC_MAX_DEV > 0, "No zephyr,bt-hci-userchan instances enabled in devicetree");
+
 struct uc_data {
-	int           fd;
+	int fd;
 	bt_hci_recv_t recv;
+	uint8_t dev_idx;
+	k_thread_stack_t *rx_stack;
+	size_t rx_stack_size;
+	struct k_thread *rx_thread;
 };
-
-static K_KERNEL_STACK_DEFINE(rx_thread_stack,
-			     CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
-static struct k_thread rx_thread_data;
-
-static unsigned short bt_dev_index;
 
 #define TCP_ADDR_BUFF_SIZE 16
 #define UNIX_ADDR_BUFF_SIZE 4096
@@ -52,11 +55,20 @@ enum hci_connection_type {
 	HCI_TCP,
 	HCI_UNIX,
 };
-static enum hci_connection_type conn_type;
-static char ip_addr[TCP_ADDR_BUFF_SIZE];
-static unsigned int port;
-static char socket_path[UNIX_ADDR_BUFF_SIZE];
-static bool arg_found;
+
+/* Per-device connection parameters, indexed by --bt-dev order */
+static struct {
+	enum hci_connection_type type;
+	union {
+		unsigned short hci_idx;
+		struct {
+			char ip_addr[TCP_ADDR_BUFF_SIZE];
+			unsigned int port;
+		} tcp;
+		char socket_path[UNIX_ADDR_BUFF_SIZE];
+	};
+} conn_params[MAX(UC_MAX_DEV, 1)];
+static uint8_t conn_param_count;
 
 static bool is_hci_event_discardable(const struct bt_hci_evt_hdr *evt)
 {
@@ -252,10 +264,10 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 	LOG_DBG("started");
 
+	uint8_t frame[512];
 	long frame_size = 0;
 
 	while (1) {
-		static uint8_t frame[512];
 		struct net_buf *buf;
 		size_t buf_tailroom;
 		size_t buf_add_len;
@@ -362,20 +374,31 @@ static int uc_send(const struct device *dev, struct net_buf *buf)
 static int uc_open(const struct device *dev, bt_hci_recv_t recv)
 {
 	struct uc_data *uc = dev->data;
+	uint8_t idx = uc->dev_idx;
 
-	switch (conn_type) {
+	if (idx >= conn_param_count) {
+		LOG_ERR("No --bt-dev argument for instance %u (have %u)", idx, conn_param_count);
+		return -ENODEV;
+	}
+
+	switch (conn_params[idx].type) {
 	case HCI_USERCHAN:
-		LOG_DBG("hci%d", bt_dev_index);
-		uc->fd = user_chan_socket_open(bt_dev_index);
+		LOG_DBG("hci%d (instance %u)", conn_params[idx].hci_idx, idx);
+		uc->fd = user_chan_socket_open(conn_params[idx].hci_idx);
 		break;
 	case HCI_TCP:
-		LOG_DBG("hci %s:%d", ip_addr, port);
-		uc->fd = user_chan_net_connect(ip_addr, port);
+		LOG_DBG("hci %s:%d (instance %u)", conn_params[idx].tcp.ip_addr,
+			conn_params[idx].tcp.port, idx);
+		uc->fd = user_chan_net_connect(conn_params[idx].tcp.ip_addr,
+					       conn_params[idx].tcp.port);
 		break;
 	case HCI_UNIX:
-		LOG_DBG("hci socket %s", socket_path);
-		uc->fd = user_chan_unix_connect(socket_path);
+		LOG_DBG("hci socket %s (instance %u)", conn_params[idx].socket_path, idx);
+		uc->fd = user_chan_unix_connect(conn_params[idx].socket_path);
 		break;
+	default:
+		LOG_ERR("Unknown connection type %d for instance %u", conn_params[idx].type, idx);
+		return -EINVAL;
 	}
 	if (uc->fd < 0) {
 		return -nsi_errno_from_mid(-uc->fd);
@@ -385,11 +408,8 @@ static int uc_open(const struct device *dev, bt_hci_recv_t recv)
 
 	LOG_DBG("User Channel opened as fd %d", uc->fd);
 
-	k_thread_create(&rx_thread_data, rx_thread_stack,
-			K_KERNEL_STACK_SIZEOF(rx_thread_stack),
-			rx_thread, (void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
-			0, K_NO_WAIT);
+	k_thread_create(uc->rx_thread, uc->rx_stack, uc->rx_stack_size, rx_thread, (void *)dev,
+			NULL, NULL, K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
 
 	LOG_DBG("returning");
 
@@ -423,59 +443,76 @@ static DEVICE_API(bt_hci, uc_drv_api) = {
 
 static int uc_init(const struct device *dev)
 {
-	if (!arg_found) {
-		posix_print_warning("Warning: Bluetooth device missing.\n"
-				    "Specify either a local hci interface --bt-dev=hciN,\n"
-				    "a UNIX socket --bt-dev=/tmp/bt-server-bredrle\n"
-				    "or a valid hci tcp server --bt-dev=ip_address:port\n");
+	struct uc_data *uc = dev->data;
+
+	if (uc->dev_idx >= conn_param_count) {
+		posix_print_warning("Warning: Bluetooth device missing for instance %u.\n"
+				    "Specify --bt-dev for each HCI instance.\n",
+				    uc->dev_idx);
 		return -ENODEV;
 	}
 
 	return 0;
 }
 
-#define UC_DEVICE_INIT(inst) \
-	static struct uc_data uc_data_##inst = { \
-		.fd = -1, \
-	}; \
-	DEVICE_DT_INST_DEFINE(inst, uc_init, NULL, &uc_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uc_drv_api)
+#define UC_DEVICE_INIT(inst)                                                                       \
+	static K_KERNEL_STACK_DEFINE(uc_rx_stack_##inst,                                           \
+				     CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);                    \
+	static struct k_thread uc_rx_thread_##inst;                                                \
+	static struct uc_data uc_data_##inst = {                                                   \
+		.fd = -1,                                                                          \
+		.dev_idx = inst,                                                                   \
+		.rx_stack = uc_rx_stack_##inst,                                                    \
+		.rx_stack_size = K_KERNEL_STACK_SIZEOF(uc_rx_stack_##inst),                        \
+		.rx_thread = &uc_rx_thread_##inst,                                                 \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(inst, uc_init, NULL, &uc_data_##inst, NULL, POST_KERNEL,             \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uc_drv_api)
 
 DT_INST_FOREACH_STATUS_OKAY(UC_DEVICE_INIT)
 
 static void cmd_bt_dev_found(char *argv, int offset)
 {
-	arg_found = true;
+	if (conn_param_count >= UC_MAX_DEV) {
+		posix_print_error_and_exit("Too many --bt-dev arguments (max %d).\n", UC_MAX_DEV);
+	}
+
+	uint8_t idx = conn_param_count;
+
 	if (strncmp(&argv[offset], "hci", 3) == 0 && strlen(&argv[offset]) >= 4) {
 		long arg_hci_idx = strtol(&argv[offset + 3], NULL, 10);
 
 		if (arg_hci_idx >= 0 && arg_hci_idx <= USHRT_MAX) {
-			bt_dev_index = arg_hci_idx;
-			conn_type = HCI_USERCHAN;
+			conn_params[idx].hci_idx = arg_hci_idx;
+			conn_params[idx].type = HCI_USERCHAN;
 		} else {
 			posix_print_error_and_exit("Invalid argument value for --bt-dev. "
-						  "hci idx must be within range 0 to 65536.\n");
+						   "hci idx must be within range 0 to 65535.\n");
 		}
-	} else if (sscanf(&argv[offset], "%15[^:]:%d", ip_addr, &port) == 2) {
-		if (port > USHRT_MAX) {
+	} else if (sscanf(&argv[offset], "%15[^:]:%u", conn_params[idx].tcp.ip_addr,
+			  &conn_params[idx].tcp.port) == 2) {
+		if (conn_params[idx].tcp.port > USHRT_MAX) {
 			posix_print_error_and_exit("Error: IP port for bluetooth "
 						   "hci tcp server is out of range.\n");
 		}
 
-		if (user_chan_is_ipaddr_ok(ip_addr) != 1) {
+		if (user_chan_is_ipaddr_ok(conn_params[idx].tcp.ip_addr) != 1) {
 			posix_print_error_and_exit("Error: IP address for bluetooth "
 						   "hci tcp server is incorrect.\n");
 		}
 
-		conn_type = HCI_TCP;
+		conn_params[idx].type = HCI_TCP;
 	} else if (strlen(&argv[offset]) > 0 && argv[offset] == '/') {
-		strncpy(socket_path, &argv[offset], UNIX_ADDR_BUFF_SIZE - 1);
-		conn_type = HCI_UNIX;
+		strncpy(conn_params[idx].socket_path, &argv[offset], UNIX_ADDR_BUFF_SIZE - 1);
+		conn_params[idx].socket_path[UNIX_ADDR_BUFF_SIZE - 1] = '\0';
+		conn_params[idx].type = HCI_UNIX;
 	} else {
 		posix_print_error_and_exit("Invalid option %s for --bt-dev. "
 					   "An hci interface, absolute UNIX socket path or hci tcp server is expected.\n",
 					   &argv[offset]);
 	}
+
+	conn_param_count++;
 }
 
 static void add_btuserchan_arg(void)
@@ -488,14 +525,12 @@ static void add_btuserchan_arg(void)
 		 * destination, callback,
 		 * description
 		 */
-		{ false, true, false,
-		"bt-dev", "hciX", 's',
-		NULL, cmd_bt_dev_found,
-		"A local HCI device to be used for Bluetooth (e.g. hci0), "
-		"UNIX socket (absolute path, like /tmp/bt-server-bredrle) "
-		"or an HCI TCP Server (e.g. 127.0.0.1:9000)"},
-		ARG_TABLE_ENDMARKER
-	};
+		{false, true, false, "bt-dev", "hciX", 's', NULL, cmd_bt_dev_found,
+		 "A local HCI device to be used for Bluetooth (e.g. hci0), "
+		 "UNIX socket (absolute path, like /tmp/bt-server-bredrle) "
+		 "or an HCI TCP Server (e.g. 127.0.0.1:9000). "
+		 "May be specified multiple times for multi-controller setups."},
+		ARG_TABLE_ENDMARKER};
 
 	native_add_command_line_opts(btuserchan_args);
 }

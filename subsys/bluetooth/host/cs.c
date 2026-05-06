@@ -25,6 +25,7 @@
 #include <zephyr/sys/util_macro.h>
 
 #include "conn_internal.h"
+#include "hci_core.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL
 LOG_MODULE_REGISTER(bt_cs);
@@ -307,7 +308,8 @@ int bt_le_cs_read_remote_supported_capabilities(struct bt_conn *conn)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES, buf, NULL);
 }
 
-void bt_hci_le_cs_read_remote_supported_capabilities_complete(struct net_buf *buf)
+void bt_hci_le_cs_read_remote_supported_capabilities_complete(struct bt_dev *hdev,
+							      struct net_buf *buf)
 {
 	struct bt_conn *conn;
 	struct bt_conn_le_cs_capabilities remote_cs_capabilities;
@@ -437,7 +439,8 @@ void bt_hci_le_cs_read_remote_supported_capabilities_complete(struct net_buf *bu
 	bt_conn_unref(conn);
 }
 
-void bt_hci_le_cs_read_remote_supported_capabilities_complete_v2(struct net_buf *buf)
+void bt_hci_le_cs_read_remote_supported_capabilities_complete_v2(struct bt_dev *hdev,
+								 struct net_buf *buf)
 {
 	struct bt_conn *conn;
 	struct bt_conn_le_cs_capabilities remote_cs_capabilities;
@@ -618,7 +621,7 @@ int bt_le_cs_read_remote_fae_table(struct bt_conn *conn)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CS_READ_REMOTE_FAE_TABLE, buf, NULL);
 }
 
-void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf)
+void bt_hci_le_cs_read_remote_fae_table_complete(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_conn *conn;
 	struct bt_conn_le_cs_fae_table fae_table;
@@ -768,7 +771,7 @@ int bt_le_cs_start_test(const struct bt_le_cs_test_param *params)
 }
 #endif /* CONFIG_BT_CHANNEL_SOUNDING_TEST */
 
-void bt_hci_le_cs_subevent_result(struct net_buf *buf)
+void bt_hci_le_cs_subevent_result(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_conn *conn = NULL;
 	struct bt_hci_evt_le_cs_subevent_result *evt;
@@ -878,7 +881,7 @@ abort:
 	}
 }
 
-void bt_hci_le_cs_subevent_result_continue(struct net_buf *buf)
+void bt_hci_le_cs_subevent_result_continue(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_conn *conn = NULL;
 	struct bt_hci_evt_le_cs_subevent_result_continue *evt;
@@ -968,7 +971,7 @@ abort:
 	}
 }
 
-void bt_hci_le_cs_config_complete_event(struct net_buf *buf)
+void bt_hci_le_cs_config_complete_event(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_le_cs_config_complete *evt;
 	struct bt_conn_le_cs_config config;
@@ -1592,7 +1595,7 @@ int bt_le_cs_write_cached_remote_fae_table(struct bt_conn *conn, int8_t remote_f
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CS_WRITE_CACHED_REMOTE_FAE_TABLE, buf, NULL);
 }
 
-void bt_hci_le_cs_security_enable_complete(struct net_buf *buf)
+void bt_hci_le_cs_security_enable_complete(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_conn *conn;
 
@@ -1619,7 +1622,7 @@ void bt_hci_le_cs_security_enable_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-void bt_hci_le_cs_procedure_enable_complete(struct net_buf *buf)
+void bt_hci_le_cs_procedure_enable_complete(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_conn *conn;
 
@@ -1685,7 +1688,7 @@ int bt_le_cs_stop_test(void)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CS_TEST_END, buf, NULL);
 }
 
-void bt_hci_le_cs_test_end_complete(struct net_buf *buf)
+void bt_hci_le_cs_test_end_complete(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_le_cs_test_end_complete *evt;
 

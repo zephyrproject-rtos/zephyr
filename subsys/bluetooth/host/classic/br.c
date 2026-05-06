@@ -108,7 +108,7 @@ static uint8_t accept_conn(const struct bt_hci_evt_conn_request *evt)
 	return BT_HCI_ERR_SUCCESS;
 }
 
-void bt_hci_conn_req(struct net_buf *buf)
+void bt_hci_conn_req(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_conn_request *evt = (void *)buf->data;
 	struct bt_conn *conn;
@@ -230,7 +230,7 @@ bool bt_br_update_sec_level(struct bt_conn *conn)
 	return true;
 }
 
-void bt_hci_synchronous_conn_complete(struct net_buf *buf)
+void bt_hci_synchronous_conn_complete(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_sync_conn_complete *evt = (void *)buf->data;
 	struct bt_conn *sco_conn;
@@ -262,7 +262,7 @@ void bt_hci_synchronous_conn_complete(struct net_buf *buf)
 	bt_conn_unref(sco_conn);
 }
 
-void bt_hci_conn_complete(struct net_buf *buf)
+void bt_hci_conn_complete(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_conn_complete *evt = (void *)buf->data;
 	struct bt_conn *conn;
@@ -428,7 +428,7 @@ static void report_discovery_results(void)
 		return;
 	}
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
+	atomic_clear_bit(bt_devs[0].flags, BT_DEV_INQUIRY);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
 		if (listener->timeout) {
@@ -439,7 +439,7 @@ static void report_discovery_results(void)
 	bt_br_discovery_reset();
 }
 
-void bt_hci_inquiry_complete(struct net_buf *buf)
+void bt_hci_inquiry_complete(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_inquiry_complete *evt = (void *)buf->data;
 
@@ -497,11 +497,11 @@ static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr, int
 	return result;
 }
 
-void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
+void bt_hci_inquiry_result_with_rssi(struct bt_dev *hdev, struct net_buf *buf)
 {
 	uint8_t num_reports = net_buf_pull_u8(buf);
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_INQUIRY)) {
 		return;
 	}
 
@@ -544,14 +544,14 @@ void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 	}
 }
 
-void bt_hci_extended_inquiry_result(struct net_buf *buf)
+void bt_hci_extended_inquiry_result(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_extended_inquiry_result *evt = (void *)buf->data;
 	struct bt_br_discovery_result *result;
 	struct bt_br_discovery_priv *priv;
 	struct bt_br_discovery_cb *listener, *next;
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_INQUIRY)) {
 		return;
 	}
 
@@ -577,7 +577,7 @@ void bt_hci_extended_inquiry_result(struct net_buf *buf)
 	}
 }
 
-void bt_hci_remote_name_request_complete(struct net_buf *buf)
+void bt_hci_remote_name_request_complete(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_remote_name_req_complete *evt = (void *)buf->data;
 	struct bt_br_discovery_result *result;
@@ -650,7 +650,7 @@ check_names:
 	}
 
 	/* all names resolved, report discovery results */
-	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
+	atomic_clear_bit(bt_devs[0].flags, BT_DEV_INQUIRY);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
 		if (listener->timeout) {
@@ -659,7 +659,7 @@ check_names:
 	}
 }
 
-void bt_hci_read_remote_features_complete(struct net_buf *buf)
+void bt_hci_read_remote_features_complete(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_remote_features *evt = (void *)buf->data;
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
@@ -700,7 +700,7 @@ done:
 	bt_conn_unref(conn);
 }
 
-void bt_hci_read_remote_ext_features_complete(struct net_buf *buf)
+void bt_hci_read_remote_ext_features_complete(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_remote_ext_features *evt = (void *)buf->data;
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
@@ -721,7 +721,7 @@ void bt_hci_read_remote_ext_features_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-void bt_hci_role_change(struct net_buf *buf)
+void bt_hci_role_change(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_role_change *evt = (void *)buf->data;
 	struct bt_conn *conn;
@@ -748,7 +748,7 @@ void bt_hci_role_change(struct net_buf *buf)
 }
 
 #if defined(CONFIG_BT_POWER_MODE_CONTROL)
-void bt_hci_link_mode_change(struct net_buf *buf)
+void bt_hci_link_mode_change(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_mode_change *evt = (void *)buf->data;
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
@@ -807,7 +807,7 @@ static int read_ext_features(void)
 
 		rp = (void *)rsp->data;
 
-		memcpy(&bt_dev.features[i], rp->ext_features, sizeof(bt_dev.features[i]));
+		memcpy(&bt_devs[0].features[i], rp->ext_features, sizeof(bt_devs[0].features[i]));
 
 		if (rp->max_page <= i) {
 			net_buf_unref(rsp);
@@ -823,40 +823,40 @@ static int read_ext_features(void)
 void device_supported_pkt_type(void)
 {
 	/* Device supported features and sco packet types */
-	if (BT_FEAT_LMP_SCO_CAPABLE(bt_dev.features)) {
-		bt_dev.br.esco_pkt_type |= (HCI_PKT_TYPE_SCO_HV1);
+	if (BT_FEAT_LMP_SCO_CAPABLE(bt_devs[0].features)) {
+		bt_devs[0].br.esco_pkt_type |= (HCI_PKT_TYPE_SCO_HV1);
 	}
 
-	if (BT_FEAT_HV2_PKT(bt_dev.features)) {
-		bt_dev.br.esco_pkt_type |= (HCI_PKT_TYPE_SCO_HV2);
+	if (BT_FEAT_HV2_PKT(bt_devs[0].features)) {
+		bt_devs[0].br.esco_pkt_type |= (HCI_PKT_TYPE_SCO_HV2);
 	}
 
-	if (BT_FEAT_HV3_PKT(bt_dev.features)) {
-		bt_dev.br.esco_pkt_type |= (HCI_PKT_TYPE_SCO_HV3);
+	if (BT_FEAT_HV3_PKT(bt_devs[0].features)) {
+		bt_devs[0].br.esco_pkt_type |= (HCI_PKT_TYPE_SCO_HV3);
 	}
 
-	if (BT_FEAT_LMP_ESCO_CAPABLE(bt_dev.features)) {
-		bt_dev.br.esco_pkt_type |= (HCI_PKT_TYPE_ESCO_EV3);
+	if (BT_FEAT_LMP_ESCO_CAPABLE(bt_devs[0].features)) {
+		bt_devs[0].br.esco_pkt_type |= (HCI_PKT_TYPE_ESCO_EV3);
 	}
 
-	if (BT_FEAT_EV4_PKT(bt_dev.features)) {
-		bt_dev.br.esco_pkt_type |= (HCI_PKT_TYPE_ESCO_EV4);
+	if (BT_FEAT_EV4_PKT(bt_devs[0].features)) {
+		bt_devs[0].br.esco_pkt_type |= (HCI_PKT_TYPE_ESCO_EV4);
 	}
 
-	if (BT_FEAT_EV5_PKT(bt_dev.features)) {
-		bt_dev.br.esco_pkt_type |= (HCI_PKT_TYPE_ESCO_EV5);
+	if (BT_FEAT_EV5_PKT(bt_devs[0].features)) {
+		bt_devs[0].br.esco_pkt_type |= (HCI_PKT_TYPE_ESCO_EV5);
 	}
 
-	if (BT_FEAT_2EV3_PKT(bt_dev.features)) {
-		bt_dev.br.esco_pkt_type |= (HCI_PKT_TYPE_ESCO_2EV3);
+	if (BT_FEAT_2EV3_PKT(bt_devs[0].features)) {
+		bt_devs[0].br.esco_pkt_type |= (HCI_PKT_TYPE_ESCO_2EV3);
 	}
 
-	if (BT_FEAT_3EV3_PKT(bt_dev.features)) {
-		bt_dev.br.esco_pkt_type |= (HCI_PKT_TYPE_ESCO_3EV3);
+	if (BT_FEAT_3EV3_PKT(bt_devs[0].features)) {
+		bt_devs[0].br.esco_pkt_type |= (HCI_PKT_TYPE_ESCO_3EV3);
 	}
 
-	if (BT_FEAT_3SLOT_PKT(bt_dev.features)) {
-		bt_dev.br.esco_pkt_type |= (HCI_PKT_TYPE_ESCO_2EV5 | HCI_PKT_TYPE_ESCO_3EV5);
+	if (BT_FEAT_3SLOT_PKT(bt_devs[0].features)) {
+		bt_devs[0].br.esco_pkt_type |= (HCI_PKT_TYPE_ESCO_2EV5 | HCI_PKT_TYPE_ESCO_3EV5);
 	}
 }
 
@@ -867,12 +867,12 @@ static void read_buffer_size_complete(struct net_buf *buf)
 
 	LOG_DBG("status 0x%02x", rp->status);
 
-	bt_dev.br.mtu = sys_le16_to_cpu(rp->acl_max_len);
+	bt_devs[0].br.mtu = sys_le16_to_cpu(rp->acl_max_len);
 	pkts = sys_le16_to_cpu(rp->acl_max_num);
 
-	LOG_DBG("ACL BR/EDR buffers: pkts %u mtu %u", pkts, bt_dev.br.mtu);
+	LOG_DBG("ACL BR/EDR buffers: pkts %u mtu %u", pkts, bt_devs[0].br.mtu);
 
-	k_sem_init(&bt_dev.br.pkts, pkts, pkts);
+	k_sem_init(&bt_devs[0].br.pkts, pkts, pkts);
 }
 
 int bt_br_init(void)
@@ -886,7 +886,7 @@ int bt_br_init(void)
 	uint16_t default_link_policy_settings;
 
 	/* Read extended local features */
-	if (BT_FEAT_EXT_FEATURES(bt_dev.features)) {
+	if (BT_FEAT_EXT_FEATURES(bt_devs[0].features)) {
 		err = read_ext_features();
 		if (err) {
 			return err;
@@ -967,7 +967,7 @@ int bt_br_init(void)
 	}
 
 	/* Enable BR/EDR SC if supported */
-	if (BT_FEAT_SC(bt_dev.features)) {
+	if (BT_FEAT_SC(bt_devs[0].features)) {
 		struct bt_hci_cp_write_sc_host_supp *sc_cp;
 
 		buf = bt_hci_cmd_alloc(K_FOREVER);
@@ -1068,7 +1068,7 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 		return -EINVAL;
 	}
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+	if (atomic_test_bit(bt_devs[0].flags, BT_DEV_INQUIRY)) {
 		return -EALREADY;
 	}
 
@@ -1077,7 +1077,7 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 		return err;
 	}
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_INQUIRY);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_INQUIRY);
 
 	(void)memset(results, 0, sizeof(*results) * cnt);
 
@@ -1095,7 +1095,7 @@ int bt_br_discovery_stop(void)
 
 	LOG_DBG("");
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_INQUIRY)) {
 		return -EALREADY;
 	}
 
@@ -1126,7 +1126,7 @@ int bt_br_discovery_stop(void)
 		bt_hci_cmd_send_sync(BT_HCI_OP_REMOTE_NAME_CANCEL, buf, NULL);
 	}
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
+	atomic_clear_bit(bt_devs[0].flags, BT_DEV_INQUIRY);
 
 	discovery_results = NULL;
 	discovery_results_size = 0;
@@ -1163,8 +1163,8 @@ static int write_scan_enable(uint8_t scan)
 		return err;
 	}
 
-	atomic_set_bit_to(bt_dev.flags, BT_DEV_ISCAN, (scan & BT_BREDR_SCAN_INQUIRY));
-	atomic_set_bit_to(bt_dev.flags, BT_DEV_PSCAN, (scan & BT_BREDR_SCAN_PAGE));
+	atomic_set_bit_to(bt_devs[0].flags, BT_DEV_ISCAN, (scan & BT_BREDR_SCAN_INQUIRY));
+	atomic_set_bit_to(bt_devs[0].flags, BT_DEV_PSCAN, (scan & BT_BREDR_SCAN_PAGE));
 
 	return 0;
 }
@@ -1172,7 +1172,7 @@ static int write_scan_enable(uint8_t scan)
 int bt_br_set_connectable(bool enable, bt_br_conn_req_func_t func)
 {
 	if (enable) {
-		if (atomic_test_bit(bt_dev.flags, BT_DEV_PSCAN)) {
+		if (atomic_test_bit(bt_devs[0].flags, BT_DEV_PSCAN)) {
 			return -EALREADY;
 		}
 
@@ -1180,7 +1180,7 @@ int bt_br_set_connectable(bool enable, bt_br_conn_req_func_t func)
 		return write_scan_enable(BT_BREDR_SCAN_PAGE);
 	}
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_PSCAN)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_PSCAN)) {
 		return -EALREADY;
 	}
 
@@ -1293,7 +1293,7 @@ static void bt_br_limited_discoverable_timeout_handler(struct k_work *work)
 {
 	int err;
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_LIMITED_DISCOVERABLE_MODE)) {
 		LOG_INF("Limited discoverable mode has been disabled");
 		return;
 	}
@@ -1313,11 +1313,11 @@ int bt_br_set_discoverable(bool enable, bool limited)
 	int err;
 
 	if (enable) {
-		if (atomic_test_bit(bt_dev.flags, BT_DEV_ISCAN)) {
+		if (atomic_test_bit(bt_devs[0].flags, BT_DEV_ISCAN)) {
 			return -EALREADY;
 		}
 
-		if (!atomic_test_bit(bt_dev.flags, BT_DEV_PSCAN)) {
+		if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_PSCAN)) {
 			return -EPERM;
 		}
 
@@ -1333,14 +1333,14 @@ int bt_br_set_discoverable(bool enable, bool limited)
 
 		err = write_scan_enable(BT_BREDR_SCAN_INQUIRY | BT_BREDR_SCAN_PAGE);
 		if (!err && (limited == true)) {
-			atomic_set_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE);
+			atomic_set_bit(bt_devs[0].flags, BT_DEV_LIMITED_DISCOVERABLE_MODE);
 			k_work_reschedule(&bt_br_limited_discoverable_timeout,
 					  K_SECONDS(CONFIG_BT_LIMITED_DISCOVERABLE_DURATION));
 		}
 		return err;
 	}
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ISCAN)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_ISCAN)) {
 		return -EALREADY;
 	}
 
@@ -1349,7 +1349,7 @@ int bt_br_set_discoverable(bool enable, bool limited)
 		return err;
 	}
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE)) {
+	if (atomic_test_bit(bt_devs[0].flags, BT_DEV_LIMITED_DISCOVERABLE_MODE)) {
 		err = bt_br_write_current_iac_lap(false);
 		if (err) {
 			return err;
@@ -1360,7 +1360,7 @@ int bt_br_set_discoverable(bool enable, bool limited)
 			return err;
 		}
 
-		atomic_clear_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE);
+		atomic_clear_bit(bt_devs[0].flags, BT_DEV_LIMITED_DISCOVERABLE_MODE);
 		k_work_cancel_delayable(&bt_br_limited_discoverable_timeout);
 	}
 
@@ -1372,7 +1372,7 @@ static int bt_br_write_page_scan_activity(uint16_t interval, uint16_t window)
 	struct bt_hci_cp_write_page_scan_activity *cp;
 	struct net_buf *buf;
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
 
@@ -1405,7 +1405,7 @@ static int bt_br_write_inquiry_scan_activity(uint16_t interval, uint16_t window)
 	struct bt_hci_cp_write_inquiry_scan_activity *cp;
 	struct net_buf *buf;
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
 
@@ -1438,7 +1438,7 @@ static int bt_br_write_page_scan_type(uint8_t type)
 	struct bt_hci_cp_write_page_scan_type *cp;
 	struct net_buf *buf;
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
 
@@ -1462,7 +1462,7 @@ static int bt_br_write_inquiry_scan_type(uint8_t type)
 	struct bt_hci_cp_write_inquiry_scan_type *cp;
 	struct net_buf *buf;
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
 
@@ -1531,7 +1531,7 @@ int bt_br_set_class_of_device(uint32_t cod)
 {
 	int err;
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
 
@@ -1544,7 +1544,7 @@ int bt_br_set_class_of_device(uint32_t cod)
 	/* If limited discoverable mode is set, then it should be set in COD.
 	 * If it is not set, then clear the bit from COD.
 	 */
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_LIMITED_DISCOVERABLE_MODE)) {
+	if (atomic_test_bit(bt_devs[0].flags, BT_DEV_LIMITED_DISCOVERABLE_MODE)) {
 		cod |= BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER;
 	} else {
 		cod &= ~BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER;
@@ -1563,7 +1563,7 @@ int bt_br_get_class_of_device(uint32_t *cod)
 {
 	int err;
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
 

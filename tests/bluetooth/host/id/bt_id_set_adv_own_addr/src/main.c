@@ -25,7 +25,7 @@ DEFINE_FFF_GLOBALS;
 
 static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 
 	CRYPTO_FFF_FAKES_LIST(RESET_FAKE);
 	HCI_CORE_FFF_FAKES_LIST(RESET_FAKE);
@@ -62,7 +62,7 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_private_addr_succeeds_adv_conne
 	options |= BT_LE_ADV_OPT_CONN;
 
 	/* This will cause bt_id_set_adv_private_addr() to return 0 */
-	atomic_set_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_RPA_VALID);
 
 	for (size_t i = 0; i < ARRAY_SIZE(dir_adv_test_lut); i++) {
 		err = bt_id_set_adv_own_addr(&adv, options, dir_adv_test_lut[i], &own_addr_type);
@@ -74,7 +74,7 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_private_addr_succeeds_adv_conne
 
 	options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
 
-	bt_dev.le.features[(BT_LE_FEAT_BIT_PRIVACY) >> 3] |= BIT((BT_LE_FEAT_BIT_PRIVACY)&7);
+	bt_devs[0].le.features[(BT_LE_FEAT_BIT_PRIVACY) >> 3] |= BIT((BT_LE_FEAT_BIT_PRIVACY) & 7);
 
 	err = bt_id_set_adv_own_addr(&adv, options, true, &own_addr_type);
 
@@ -111,10 +111,10 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_random_addr_succeeds_adv_connec
 	options |= BT_LE_ADV_OPT_CONN;
 
 	adv.id = 0;
-	bt_addr_le_copy(&bt_dev.id_addr[adv.id], BT_RPA_LE_ADDR);
+	bt_addr_le_copy(&bt_devs[0].id_addr[adv.id], BT_RPA_LE_ADDR);
 
 	/* This will cause bt_id_set_adv_random_addr() to return 0 */
-	bt_addr_copy(&bt_dev.random_addr, BT_RPA_ADDR);
+	bt_addr_copy(&bt_devs[0].random_addr, BT_RPA_ADDR);
 
 	for (size_t i = 0; i < ARRAY_SIZE(dir_adv_test_lut); i++) {
 		err = bt_id_set_adv_own_addr(&adv, options, dir_adv_test_lut[i], &own_addr_type);
@@ -126,7 +126,7 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_random_addr_succeeds_adv_connec
 
 	options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
 
-	bt_dev.le.features[(BT_LE_FEAT_BIT_PRIVACY) >> 3] |= BIT((BT_LE_FEAT_BIT_PRIVACY)&7);
+	bt_devs[0].le.features[(BT_LE_FEAT_BIT_PRIVACY) >> 3] |= BIT((BT_LE_FEAT_BIT_PRIVACY) & 7);
 
 	err = bt_id_set_adv_own_addr(&adv, options, true, &own_addr_type);
 
@@ -165,10 +165,10 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_random_addr_succeeds_not_connec
 	options &= ~BT_LE_ADV_OPT_CONN;
 
 	adv.id = 0;
-	bt_addr_le_copy(&bt_dev.id_addr[adv.id], BT_RPA_LE_ADDR);
+	bt_addr_le_copy(&bt_devs[0].id_addr[adv.id], BT_RPA_LE_ADDR);
 
 	/* This will cause bt_id_set_adv_random_addr() to return 0 */
-	bt_addr_copy(&bt_dev.random_addr, BT_RPA_ADDR);
+	bt_addr_copy(&bt_devs[0].random_addr, BT_RPA_ADDR);
 
 	for (size_t i = 0; i < ARRAY_SIZE(dir_adv_test_lut); i++) {
 		err = bt_id_set_adv_own_addr(&adv, options, dir_adv_test_lut[i], &own_addr_type);
@@ -206,7 +206,7 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_private_addr_succeeds_not_conne
 	options &= ~BT_LE_ADV_OPT_USE_IDENTITY;
 
 	/* This will cause bt_id_set_adv_private_addr() to return 0 */
-	atomic_set_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_RPA_VALID);
 
 	for (size_t i = 0; i < ARRAY_SIZE(dir_adv_test_lut); i++) {
 		err = bt_id_set_adv_own_addr(&adv, options, dir_adv_test_lut[i], &own_addr_type);
@@ -244,7 +244,7 @@ ZTEST(bt_id_set_adv_own_addr, test_observer_scanning_re_enabled_after_updating_a
 	options &= ~BT_LE_ADV_OPT_USE_IDENTITY;
 
 	/* Set device scanning active flag */
-	atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_SCANNING);
 
 	bt_id_set_adv_own_addr(&adv, options, true, &own_addr_type);
 	zassert_true(own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
@@ -283,9 +283,9 @@ ZTEST(bt_id_set_adv_own_addr, test_set_adv_own_addr_while_scanning_with_identity
 	bt_hci_cmd_send_sync_fake.return_val = 0;
 
 	options &= ~BT_LE_ADV_OPT_CONN;
-	bt_addr_le_copy(&bt_dev.id_addr[BT_ID_DEFAULT], BT_STATIC_RANDOM_LE_ADDR_1);
+	bt_addr_le_copy(&bt_devs[0].id_addr[BT_ID_DEFAULT], BT_STATIC_RANDOM_LE_ADDR_1);
 
-	err = bt_id_set_scan_own_addr(false, &scan_own_addr_type);
+	err = bt_id_set_scan_own_addr(&bt_devs[0], false, &scan_own_addr_type);
 
 	expect_single_call_bt_hci_cmd_alloc();
 	expect_single_call_bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RANDOM_ADDRESS);
@@ -294,7 +294,7 @@ ZTEST(bt_id_set_adv_own_addr, test_set_adv_own_addr_while_scanning_with_identity
 	zassert_true(scan_own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
 		     "Address type reference was incorrectly set");
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_SCANNING);
 
 	bt_id_set_adv_own_addr(&adv, options, true, &adv_own_addr_type);
 	zassert_true(adv_own_addr_type == BT_HCI_OWN_ADDR_RANDOM,
@@ -330,15 +330,15 @@ ZTEST(bt_id_set_adv_own_addr, test_set_adv_own_addr_while_scanning_with_identity
 
 	options &= ~BT_LE_ADV_OPT_CONN;
 
-	bt_addr_le_copy(&bt_dev.id_addr[BT_ID_DEFAULT], BT_LE_ADDR);
+	bt_addr_le_copy(&bt_devs[0].id_addr[BT_ID_DEFAULT], BT_LE_ADDR);
 
-	err = bt_id_set_scan_own_addr(false, &scan_own_addr_type);
+	err = bt_id_set_scan_own_addr(&bt_devs[0], false, &scan_own_addr_type);
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
 	zassert_true(scan_own_addr_type == BT_HCI_OWN_ADDR_PUBLIC,
 		     "Address type reference was incorrectly set");
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_SCANNING);
 
 	bt_id_set_adv_own_addr(&adv, options, true, &adv_own_addr_type);
 	zassert_true(adv_own_addr_type == BT_HCI_OWN_ADDR_PUBLIC,

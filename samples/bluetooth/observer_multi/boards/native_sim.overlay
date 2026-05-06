@@ -1,0 +1,16 @@
+/*
+ * Copyright (C) 2026 Xiaomi Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		bt-hci1 = &bt_hci_userchan_1;
+	};
+
+	bt_hci_userchan_1: bt_hci_userchan_1 {
+		compatible = "zephyr,bt-hci-userchan";
+		status = "okay";
+	};
+};

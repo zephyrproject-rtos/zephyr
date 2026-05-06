@@ -173,7 +173,7 @@ static void generate_pub_key(struct k_work *work)
 	sys_memcpy_swap(&pub_key[BT_PUB_KEY_COORD_LEN],
 			&ecc.public_key_be[BT_PUB_KEY_COORD_LEN], BT_PUB_KEY_COORD_LEN);
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_HAS_PUB_KEY);
 	err = 0;
 
 done:
@@ -264,7 +264,7 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 	struct bt_pub_key_cb *cb;
 
 	if (IS_ENABLED(CONFIG_BT_USE_DEBUG_KEYS)) {
-		atomic_set_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
+		atomic_set_bit(bt_devs[0].flags, BT_DEV_HAS_PUB_KEY);
 		__ASSERT_NO_MSG(new_cb->func != NULL);
 		new_cb->func(debug_public_key);
 		return 0;
@@ -292,7 +292,7 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 		return 0;
 	}
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY);
+	atomic_clear_bit(bt_devs[0].flags, BT_DEV_HAS_PUB_KEY);
 
 	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
 		bt_long_wq_submit(&pub_key_work);
@@ -324,7 +324,7 @@ const uint8_t *bt_pub_key_get(void)
 		return debug_public_key;
 	}
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY)) {
+	if (atomic_test_bit(bt_devs[0].flags, BT_DEV_HAS_PUB_KEY)) {
 		return pub_key;
 	}
 
@@ -337,7 +337,7 @@ int bt_dh_key_gen(const uint8_t remote_pk[BT_PUB_KEY_LEN], bt_dh_key_cb_t cb)
 		return -EALREADY;
 	}
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_HAS_PUB_KEY)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_HAS_PUB_KEY)) {
 		return -EADDRNOTAVAIL;
 	}
 

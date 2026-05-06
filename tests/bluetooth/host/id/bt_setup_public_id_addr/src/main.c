@@ -25,7 +25,7 @@ static struct bt_hci_rp_read_bd_addr hci_rp_read_bd_addr;
 
 static void tc_setup(void *f)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 	memset(&hci_cmd_rsp, 0x00, sizeof(struct net_buf));
 	memset(&hci_rp_read_bd_addr, 0x00, sizeof(struct bt_hci_rp_read_bd_addr));
 
@@ -53,8 +53,8 @@ ZTEST(bt_setup_public_id_addr_default, test_bt_id_read_public_addr_returns_zero)
 
 	err = bt_setup_public_id_addr();
 
-	zassert_true(bt_dev.id_count == 0, "Incorrect value '%d' was set to bt_dev.id_count",
-		     bt_dev.id_count);
+	zassert_true(bt_devs[0].id_count == 0,
+		     "Incorrect value '%d' was set to bt_devs[0].id_count", bt_devs[0].id_count);
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
 }
 
@@ -84,7 +84,7 @@ static int bt_hci_cmd_send_sync_custom_fake(uint16_t opcode, struct net_buf *buf
  *
  *  Expected behaviour:
  *   - Return value is 0
- *   - Public address is loaded to bt_dev.id_addr[]
+ *   - Public address is loaded to bt_devs[0].id_addr[]
  */
 ZTEST(bt_setup_public_id_addr_default, test_bt_id_read_public_addr_returns_valid_id_count)
 {
@@ -97,8 +97,8 @@ ZTEST(bt_setup_public_id_addr_default, test_bt_id_read_public_addr_returns_valid
 	err = bt_setup_public_id_addr();
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
-	zassert_mem_equal(&bt_dev.id_addr[BT_ID_DEFAULT], BT_LE_ADDR, sizeof(bt_addr_le_t),
+	zassert_mem_equal(&bt_devs[0].id_addr[BT_ID_DEFAULT], BT_LE_ADDR, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
-	zassert_true(bt_dev.id_count == 1, "Incorrect value '%d' was set to bt_dev.id_count",
-		     bt_dev.id_count);
+	zassert_true(bt_devs[0].id_count == 1,
+		     "Incorrect value '%d' was set to bt_devs[0].id_count", bt_devs[0].id_count);
 }

@@ -88,7 +88,7 @@ void bt_periodic_sync_disable(void);
  *                   the scanner was not started/stopped/updated.
  * @returns negative error codes for errors in @ref bt_hci_cmd_send_sync
  */
-int bt_le_scan_user_add(enum bt_le_scan_user flag);
+int bt_le_scan_user_add(struct bt_dev *hdev, enum bt_le_scan_user flag);
 
 /**
  * Stop / update the scanner.
@@ -117,7 +117,7 @@ int bt_le_scan_user_add(enum bt_le_scan_user flag);
  *                   the scanner was not started/stopped/updated.
  * @returns negative error codes for errors in @ref bt_hci_cmd_send_sync
  */
-int bt_le_scan_user_remove(enum bt_le_scan_user flag);
+int bt_le_scan_user_remove(struct bt_dev *hdev, enum bt_le_scan_user flag);
 
 /**
  * Check if the explicit scanner was enabled.

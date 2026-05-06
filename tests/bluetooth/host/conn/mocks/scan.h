@@ -15,6 +15,6 @@
 	FAKE(bt_le_scan_user_remove)                                                               \
 	FAKE(bt_le_explicit_scanner_running)
 
-DECLARE_FAKE_VALUE_FUNC(int, bt_le_scan_user_add, enum bt_le_scan_user);
-DECLARE_FAKE_VALUE_FUNC(int, bt_le_scan_user_remove, enum bt_le_scan_user);
+DECLARE_FAKE_VALUE_FUNC(int, bt_le_scan_user_add, struct bt_dev *, enum bt_le_scan_user);
+DECLARE_FAKE_VALUE_FUNC(int, bt_le_scan_user_remove, struct bt_dev *, enum bt_le_scan_user);
 DECLARE_FAKE_VALUE_FUNC(bool, bt_le_explicit_scanner_running);

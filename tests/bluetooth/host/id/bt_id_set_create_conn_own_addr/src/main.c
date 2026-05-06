@@ -20,7 +20,7 @@ DEFINE_FFF_GLOBALS;
 
 static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 
 	RPA_FFF_FAKES_LIST(RESET_FAKE);
 	HCI_CORE_FFF_FAKES_LIST(RESET_FAKE);
@@ -50,7 +50,7 @@ ZTEST(bt_id_set_create_conn_own_addr, test_setting_conn_own_public_address_no_pr
 
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_PRIVACY);
 
-	bt_addr_le_copy(&bt_dev.id_addr[BT_ID_DEFAULT], BT_LE_ADDR);
+	bt_addr_le_copy(&bt_devs[0].id_addr[BT_ID_DEFAULT], BT_LE_ADDR);
 
 	err = bt_id_set_create_conn_own_addr(false, &own_addr_type);
 
@@ -80,10 +80,10 @@ ZTEST(bt_id_set_create_conn_own_addr, test_setting_conn_own_rpa_address_no_priva
 
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_PRIVACY);
 
-	bt_addr_le_copy(&bt_dev.id_addr[BT_ID_DEFAULT], BT_RPA_LE_ADDR);
+	bt_addr_le_copy(&bt_devs[0].id_addr[BT_ID_DEFAULT], BT_RPA_LE_ADDR);
 
 	/* This will make set_random_address() succeeds and returns 0 */
-	bt_addr_copy(&bt_dev.random_addr, BT_RPA_ADDR);
+	bt_addr_copy(&bt_devs[0].random_addr, BT_RPA_ADDR);
 
 	err = bt_id_set_create_conn_own_addr(false, &own_addr_type);
 
@@ -115,7 +115,7 @@ ZTEST(bt_id_set_create_conn_own_addr, test_setting_conn_own_address_privacy_enab
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_PRIVACY);
 
 	/* This will cause bt_id_set_private_addr() to return 0 (success) */
-	atomic_set_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_RPA_VALID);
 
 	err = bt_id_set_create_conn_own_addr(true, &own_addr_type);
 
@@ -147,9 +147,9 @@ ZTEST(bt_id_set_create_conn_own_addr, test_setting_conn_own_address_privacy_feat
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_PRIVACY);
 
 	/* This will cause bt_id_set_private_addr() to return 0 (success) */
-	atomic_set_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_RPA_VALID);
 
-	bt_dev.le.features[(BT_LE_FEAT_BIT_PRIVACY) >> 3] |= BIT((BT_LE_FEAT_BIT_PRIVACY)&7);
+	bt_devs[0].le.features[(BT_LE_FEAT_BIT_PRIVACY) >> 3] |= BIT((BT_LE_FEAT_BIT_PRIVACY) & 7);
 
 	err = bt_id_set_create_conn_own_addr(true, &own_addr_type);
 

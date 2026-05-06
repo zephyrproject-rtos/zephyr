@@ -26,7 +26,7 @@ DEFINE_FFF_GLOBALS;
 
 static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 
 	ADV_FFF_FAKES_LIST(RESET_FAKE);
 	SETTINGS_FFF_FAKES_LIST(RESET_FAKE);
@@ -44,8 +44,8 @@ ZTEST_SUITE(bt_id_delete, NULL, NULL, NULL, NULL, NULL);
  *   - ID value used is neither corresponds to default index nor the last index
  *
  *  Expected behaviour:
- *   - bt_dev.id_addr[] at index equals to the ID value used is cleared
- *   - bt_dev.irk[] at index equals to the ID value used is cleared (if privacy is enabled)
+ *   - bt_devs[0].id_addr[] at index equals to the ID value used is cleared
+ *   - bt_devs[0].irk[] at index equals to the ID value used is cleared (if privacy is enabled)
  *   - bt_id_delete() returns 0
  */
 ZTEST(bt_id_delete, test_delete_non_default_no_last_item)
@@ -57,15 +57,15 @@ ZTEST(bt_id_delete, test_delete_non_default_no_last_item)
 	uint8_t zero_irk[16] = {0};
 #endif
 
-	bt_dev.id_count = 3;
+	bt_devs[0].id_count = 3;
 	id = 1;
-	id_count = bt_dev.id_count;
+	id_count = bt_devs[0].id_count;
 
-	bt_addr_le_copy(&bt_dev.id_addr[0], BT_RPA_LE_ADDR);
-	bt_addr_le_copy(&bt_dev.id_addr[1], BT_STATIC_RANDOM_LE_ADDR_1);
-	bt_addr_le_copy(&bt_dev.id_addr[2], BT_STATIC_RANDOM_LE_ADDR_2);
+	bt_addr_le_copy(&bt_devs[0].id_addr[0], BT_RPA_LE_ADDR);
+	bt_addr_le_copy(&bt_devs[0].id_addr[1], BT_STATIC_RANDOM_LE_ADDR_1);
+	bt_addr_le_copy(&bt_devs[0].id_addr[2], BT_STATIC_RANDOM_LE_ADDR_2);
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_READY);
+	atomic_clear_bit(bt_devs[0].flags, BT_DEV_READY);
 
 	err = bt_id_delete(id);
 
@@ -73,12 +73,13 @@ ZTEST(bt_id_delete, test_delete_non_default_no_last_item)
 	expect_not_called_bt_settings_store_irk();
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
-	zassert_true(bt_dev.id_count == id_count, "Incorrect ID count %d was set", bt_dev.id_count);
+	zassert_true(bt_devs[0].id_count == id_count, "Incorrect ID count %d was set",
+		     bt_devs[0].id_count);
 
-	zassert_mem_equal(&bt_dev.id_addr[id], BT_ADDR_LE_ANY, sizeof(bt_addr_le_t),
+	zassert_mem_equal(&bt_devs[0].id_addr[id], BT_ADDR_LE_ANY, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
 #if defined(CONFIG_BT_PRIVACY)
-	zassert_mem_equal(bt_dev.irk[id], zero_irk, sizeof(zero_irk),
+	zassert_mem_equal(bt_devs[0].irk[id], zero_irk, sizeof(zero_irk),
 			  "Incorrect IRK value was set");
 #endif
 }
@@ -87,12 +88,12 @@ ZTEST(bt_id_delete, test_delete_non_default_no_last_item)
  *  Test deleting last ID
  *
  *  Constraints:
- *   - ID value used corresponds to the last item in the list bt_dev.id_addr[]
+ *   - ID value used corresponds to the last item in the list bt_devs[0].id_addr[]
  *
  *  Expected behaviour:
- *   - bt_dev.id_addr[] at index equals to the ID value used is cleared
- *   - bt_dev.irk[] at index equals to the ID value used is cleared (if privacy is enabled)
- *   - bt_dev.id_count is decremented
+ *   - bt_devs[0].id_addr[] at index equals to the ID value used is cleared
+ *   - bt_devs[0].irk[] at index equals to the ID value used is cleared (if privacy is enabled)
+ *   - bt_devs[0].id_count is decremented
  *   - bt_id_delete() returns 0
  */
 ZTEST(bt_id_delete, test_delete_last_id)
@@ -104,14 +105,14 @@ ZTEST(bt_id_delete, test_delete_last_id)
 	uint8_t zero_irk[16] = {0};
 #endif
 
-	bt_dev.id_count = 2;
-	id = bt_dev.id_count - 1;
-	id_count = bt_dev.id_count;
+	bt_devs[0].id_count = 2;
+	id = bt_devs[0].id_count - 1;
+	id_count = bt_devs[0].id_count;
 
-	bt_addr_le_copy(&bt_dev.id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1);
-	bt_addr_le_copy(&bt_dev.id_addr[1], BT_STATIC_RANDOM_LE_ADDR_2);
+	bt_addr_le_copy(&bt_devs[0].id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1);
+	bt_addr_le_copy(&bt_devs[0].id_addr[1], BT_STATIC_RANDOM_LE_ADDR_2);
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_READY);
+	atomic_clear_bit(bt_devs[0].flags, BT_DEV_READY);
 
 	err = bt_id_delete(id);
 
@@ -120,13 +121,13 @@ ZTEST(bt_id_delete, test_delete_last_id)
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
 
-	zassert_true(bt_dev.id_count == (id_count - 1), "Incorrect ID count %d was set",
-		     bt_dev.id_count);
+	zassert_true(bt_devs[0].id_count == (id_count - 1), "Incorrect ID count %d was set",
+		     bt_devs[0].id_count);
 
-	zassert_mem_equal(&bt_dev.id_addr[id], BT_ADDR_LE_ANY, sizeof(bt_addr_le_t),
+	zassert_mem_equal(&bt_devs[0].id_addr[id], BT_ADDR_LE_ANY, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
 #if defined(CONFIG_BT_PRIVACY)
-	zassert_mem_equal(bt_dev.irk[id], zero_irk, sizeof(zero_irk),
+	zassert_mem_equal(bt_devs[0].irk[id], zero_irk, sizeof(zero_irk),
 			  "Incorrect IRK value was set");
 #endif
 }
@@ -141,7 +142,7 @@ static ZTEST(bt_id_delete, test_id_create_after_delete)
 {
 	int default_id;
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_ENABLE);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_ENABLE);
 
 	if (CONFIG_BT_ID_MAX < 2) {
 		ztest_test_skip();
@@ -162,10 +163,10 @@ static ZTEST(bt_id_delete, test_id_create_after_delete)
 		id = bt_id_create(&addr, NULL);
 
 		zassert_true(id >= 0, "[%d]: Unexpected error code '%d' was returned", i, id);
-		zassert_true(bt_dev.id_count == 2U,
+		zassert_true(bt_devs[0].id_count == 2U,
 			     "[%d]: Incorrect ID count %d was set (expected (%u))", i,
-			     bt_dev.id_count, 2U);
-		zassert_mem_equal(&bt_dev.id_addr[id], &addr, sizeof(bt_addr_le_t),
+			     bt_devs[0].id_count, 2U);
+		zassert_mem_equal(&bt_devs[0].id_addr[id], &addr, sizeof(bt_addr_le_t),
 				  "[%d]: Incorrect address was set", i);
 
 		err = bt_id_delete(id);

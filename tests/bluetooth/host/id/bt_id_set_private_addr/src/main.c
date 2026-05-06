@@ -22,8 +22,8 @@ DEFINE_FFF_GLOBALS;
 
 static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
-	bt_addr_copy(&bt_dev.random_addr, &bt_addr_none);
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
+	bt_addr_copy(&bt_devs[0].random_addr, &bt_addr_none);
 
 	RPA_FFF_FAKES_LIST(RESET_FAKE);
 	CRYPTO_FFF_FAKES_LIST(RESET_FAKE);
@@ -41,7 +41,7 @@ static int bt_rand_custom_fake(void *buf, size_t len)
 
 	/* This will make set_random_address() succeeds and returns 0 */
 	memcpy(buf, &BT_ADDR->val, len);
-	bt_addr_copy(&bt_dev.random_addr, BT_ADDR);
+	bt_addr_copy(&bt_devs[0].random_addr, BT_ADDR);
 
 	return 0;
 }
@@ -53,7 +53,7 @@ static int bt_rpa_create_custom_fake(const uint8_t irk[16], bt_addr_t *rpa)
 
 	/* This will make set_random_address() succeeds and returns 0 */
 	bt_addr_copy(rpa, &BT_RPA_LE_ADDR->a);
-	bt_addr_copy(&bt_dev.random_addr, BT_RPA_ADDR);
+	bt_addr_copy(&bt_devs[0].random_addr, BT_RPA_ADDR);
 
 	return 0;
 }
@@ -84,9 +84,9 @@ ZTEST(bt_id_set_private_addr, test_setting_address_with_valid_id_succeeds)
 		expect_not_called_bt_rpa_create();
 	} else {
 #if defined(CONFIG_BT_PRIVACY)
-		expect_single_call_bt_rpa_create(bt_dev.irk[id]);
+		expect_single_call_bt_rpa_create(bt_devs[0].irk[id]);
 #endif
-		zassert_true(atomic_test_bit(bt_dev.flags, BT_DEV_RPA_VALID),
+		zassert_true(atomic_test_bit(bt_devs[0].flags, BT_DEV_RPA_VALID),
 			     "Flags were not correctly set");
 	}
 
@@ -98,7 +98,7 @@ ZTEST(bt_id_set_private_addr, test_setting_address_with_valid_id_succeeds)
  *
  *  Constraints:
  *   - A valid ID value should be used (<= CONFIG_BT_ID_MAX)
- *   - 'BT_DEV_RPA_VALID' flag in bt_dev.flags is set
+ *   - 'BT_DEV_RPA_VALID' flag in bt_devs[0].flags is set
  *
  *  Expected behaviour:
  *   - bt_id_set_private_addr() returns 0 (success) without completing the procedure
@@ -110,7 +110,7 @@ ZTEST(bt_id_set_private_addr, test_setting_address_do_nothing_when_it_was_previo
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_PRIVACY);
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_RPA_VALID);
 
 	err = bt_id_set_private_addr(id);
 

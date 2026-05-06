@@ -32,7 +32,7 @@ ZTEST_SUITE(bt_id_set_scan_own_addr_invalid_inputs, NULL, NULL, NULL, NULL, NULL
 ZTEST(bt_id_set_scan_own_addr_invalid_inputs, test_null_address_type_reference)
 {
 	expect_assert();
-	bt_id_set_scan_own_addr(false, NULL);
+	bt_id_set_scan_own_addr(&bt_devs[0], false, NULL);
 }
 
 /*
@@ -59,7 +59,7 @@ ZTEST(bt_id_set_scan_own_addr_invalid_inputs, test_bt_id_set_private_addr_fails_
 
 	bt_rand_fake.return_val = -1;
 
-	err = bt_id_set_scan_own_addr(false, &own_addr_type);
+	err = bt_id_set_scan_own_addr(&bt_devs[0], false, &own_addr_type);
 
 	zassert_true(err < 0, "Unexpected error code '%d' was returned", err);
 }
@@ -88,12 +88,12 @@ ZTEST(bt_id_set_scan_own_addr_invalid_inputs, test_set_random_address_fails)
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_PRIVACY);
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_SCAN_WITH_IDENTITY);
 
-	bt_addr_le_copy(&bt_dev.id_addr[BT_ID_DEFAULT], BT_RPA_LE_ADDR);
+	bt_addr_le_copy(&bt_devs[0].id_addr[BT_ID_DEFAULT], BT_RPA_LE_ADDR);
 
 	/* This will cause set_random_address() to return (-ENOBUFS) */
 	bt_hci_cmd_alloc_fake.return_val = NULL;
 
-	err = bt_id_set_scan_own_addr(false, &own_addr_type);
+	err = bt_id_set_scan_own_addr(&bt_devs[0], false, &own_addr_type);
 
 	zassert_true(err == -ENOBUFS, "Unexpected error code '%d' was returned", err);
 }
@@ -118,15 +118,15 @@ ZTEST(bt_id_set_scan_own_addr_invalid_inputs, test_bt_id_set_private_addr_fails_
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_PRIVACY);
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	atomic_clear_bit(bt_devs[0].flags, BT_DEV_RPA_VALID);
 
 	/* This will cause bt_id_set_private_addr() to fail */
 	bt_rpa_create_fake.return_val = -1;
 
-	err = bt_id_set_scan_own_addr(true, &own_addr_type);
+	err = bt_id_set_scan_own_addr(&bt_devs[0], true, &own_addr_type);
 
 #if defined(CONFIG_BT_PRIVACY)
-	expect_single_call_bt_rpa_create(bt_dev.irk[BT_ID_DEFAULT]);
+	expect_single_call_bt_rpa_create(bt_devs[0].irk[BT_ID_DEFAULT]);
 #endif
 
 	zassert_true(err < 0, "Unexpected error code '%d' was returned", err);

@@ -23,7 +23,7 @@ DEFINE_FFF_GLOBALS;
 
 static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 
 	ADV_FFF_FAKES_LIST(RESET_FAKE);
 	SMP_FFF_FAKES_LIST(RESET_FAKE);
@@ -51,7 +51,7 @@ ZTEST(bt_le_oob_get_local, test_get_local_out_of_band_information_no_privacy)
 
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_PRIVACY);
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_READY);
 
 	/* Not supported error should not affect the return value of bt_le_oob_get_local() */
 	bt_smp_le_oob_generate_sc_data_fake.return_val = -ENOTSUP;
@@ -59,8 +59,8 @@ ZTEST(bt_le_oob_get_local, test_get_local_out_of_band_information_no_privacy)
 	for (size_t i = 0; i < CONFIG_BT_ID_MAX; i++) {
 
 		SMP_FFF_FAKES_LIST(RESET_FAKE);
-		memset(bt_dev.id_addr, 0x00, sizeof(bt_dev.id_addr));
-		bt_addr_le_copy(&bt_dev.id_addr[i], BT_RPA_LE_ADDR);
+		memset(bt_devs[0].id_addr, 0x00, sizeof(bt_devs[0].id_addr));
+		bt_addr_le_copy(&bt_devs[0].id_addr[i], BT_RPA_LE_ADDR);
 
 		err = bt_le_oob_get_local(i, &oob);
 
@@ -94,8 +94,8 @@ ZTEST(bt_le_oob_get_local, test_get_local_out_of_band_information_privacy_enable
 	/* Not supported error should not affect the return value of bt_le_oob_get_local() */
 	bt_smp_le_oob_generate_sc_data_fake.return_val = -ENOTSUP;
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-	bt_addr_copy(&bt_dev.random_addr, BT_RPA_ADDR);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_READY);
+	bt_addr_copy(&bt_devs[0].random_addr, BT_RPA_ADDR);
 
 	err = bt_le_oob_get_local(BT_ID_DEFAULT, &oob);
 
