@@ -48,6 +48,9 @@ struct sdl_display_config {
 	uint16_t height;
 	uint16_t width;
 	const char *title;
+#ifdef CONFIG_DISPLAY_COLOR_PALETTE
+	uint32_t color_palette[CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE];
+#endif
 };
 
 struct sdl_display_data {
@@ -210,6 +213,8 @@ static int sdl_display_init(const struct device *dev)
 		PIXEL_FORMAT_RGBA_8888
 #elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGRA_8888)
 		PIXEL_FORMAT_BGRA_8888
+#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_I_4)
+		PIXEL_FORMAT_I_4
 #else  /* SDL_DISPLAY_DEFAULT_PIXEL_FORMAT */
 		PIXEL_FORMAT_ARGB_8888
 #endif /* SDL_DISPLAY_DEFAULT_PIXEL_FORMAT */
@@ -571,6 +576,43 @@ static void sdl_display_write_l8(uint8_t *disp_buf, const struct display_buffer_
 	}
 }
 
+/*
+ * Write indexed 4-bit color data to SDL display buffer using color palette.
+ * Palette indices are mapped to ARGB8888 color values from device configuration.
+ */
+static void sdl_display_write_i4(const struct device *dev,
+				 const struct display_buffer_descriptor *desc, const void *buf)
+{
+	__ASSERT((desc->pitch * desc->height / 2U) <= desc->buf_size,
+			"Input buffer too small");
+
+#ifdef CONFIG_DISPLAY_COLOR_PALETTE
+	const struct sdl_display_config *config = dev->config;
+	struct sdl_display_data *disp_data = dev->data;
+	const uint8_t *byte_ptr;
+	uint8_t *disp_buf = disp_data->buf;
+	uint32_t pixel;
+
+	for (uint32_t h_idx = 0U; h_idx < desc->height; ++h_idx) {
+		for (uint32_t w_idx = 0U; w_idx < desc->width; ++w_idx) {
+			byte_ptr = (const uint8_t *)buf +
+				(h_idx * desc->pitch + w_idx) / 2U;
+			/* Extract 4-bit index (high or low nibble) */
+			uint8_t palette_idx = (w_idx & 1U) ?
+				(*byte_ptr & 0x0FU) : (*byte_ptr >> 4U);
+			__ASSERT(palette_idx < CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE,
+				"Palette index out of bounds");
+			/* Look up color from palette */
+			pixel = config->color_palette[palette_idx];
+			*((uint32_t *)disp_buf) = sys_cpu_to_le32(pixel);
+			disp_buf += 4;
+		}
+	}
+#else
+	LOG_WRN_ONCE("Indexed pixel format used but color palette not enabled");
+#endif /* CONFIG_DISPLAY_COLOR_PALETTE */
+}
+
 static int sdl_display_write(const struct device *dev, const uint16_t x,
 			     const uint16_t y,
 			     const struct display_buffer_descriptor *desc,
@@ -633,6 +675,8 @@ static int sdl_display_write(const struct device *dev, const uint16_t x,
 		sdl_display_write_l8(disp_data->buf, desc, buf);
 	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_AL_88) {
 		sdl_display_write_al88(disp_data->buf, desc, buf);
+	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_I_4) {
+		sdl_display_write_i4(dev, desc, buf);
 	}
 
 	if (k_current_get() == &disp_data->sdl_thread) {
@@ -994,6 +1038,60 @@ static void sdl_display_read_al88(const uint8_t *read_buf,
 		}
 	}
 }
+
+/*
+ * Convert from			Byte 0   Byte 1   Byte 2   Byte 3
+ *				7......0 15.....8 23....16 31....24
+ * SDL_PIXELFORMAT_BGRA32	Bbbbbbbb Gggggggg Rrrrrrrr Aaaaaaaa
+ * into
+ * PIXEL_FORMAT_I_4		IIII IIII IIII IIII IIII IIII IIII IIII
+ *
+ * Each 32-bit pixel is matched against color_palette to find the index
+ */
+static void sdl_display_read_i4(const struct device *dev, const uint8_t *read_buf,
+				const struct display_buffer_descriptor *desc, void *buf)
+{
+#ifdef CONFIG_DISPLAY_COLOR_PALETTE
+	const struct sdl_display_config *config = dev->config;
+	uint8_t *buf8;
+	const uint32_t *pix_ptr;
+	uint32_t pixel;
+
+	__ASSERT((desc->pitch * desc->height) <= (desc->buf_size * 2U), "Read buffer is too small");
+
+	for (uint32_t h_idx = 0U; h_idx < desc->height; ++h_idx) {
+		buf8 = ((uint8_t *)buf) + (h_idx * desc->pitch / 2U);
+
+		for (uint32_t w_idx = 0U; w_idx < desc->width; ++w_idx) {
+			pix_ptr = (const uint32_t *)read_buf + ((h_idx * desc->pitch) + w_idx);
+			pixel = sys_le32_to_cpu(*pix_ptr);
+
+			/* Find matching palette index */
+			uint8_t palette_idx = 0;
+
+			for (uint8_t i = 0; i < CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE; i++) {
+				if (config->color_palette[i] == pixel) {
+					palette_idx = i;
+					break;
+				}
+			}
+
+			/* Pack 4-bit index into output buffer (high nibble first) */
+			if ((w_idx & 1U) == 0U) {
+				buf8[w_idx / 2U] = (palette_idx << 4U);
+			} else {
+				buf8[w_idx / 2U] |= (palette_idx & 0x0FU);
+			}
+		}
+	}
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(read_buf);
+	ARG_UNUSED(desc);
+	ARG_UNUSED(buf);
+#endif /* CONFIG_DISPLAY_COLOR_PALETTE */
+}
+
 	static int sdl_display_read(const struct device *dev, const uint16_t x, const uint16_t y,
 			    const struct display_buffer_descriptor *desc, void *buf)
 {
@@ -1055,6 +1153,8 @@ static void sdl_display_read_al88(const uint8_t *read_buf,
 		sdl_display_read_l8(disp_data->read_buf, desc, buf);
 	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_AL_88) {
 		sdl_display_read_al88(disp_data->read_buf, desc, buf);
+	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_I_4) {
+		sdl_display_read_i4(dev, disp_data->read_buf, desc, buf);
 	}
 	k_mutex_unlock(&disp_data->task_mutex);
 
@@ -1096,6 +1196,9 @@ static int sdl_display_clear(const struct device *dev)
 		break;
 	case PIXEL_FORMAT_AL_88:
 		size = config->width * config->height * 2U;
+		break;
+	case PIXEL_FORMAT_I_4:
+		size = config->height * DIV_ROUND_UP(config->width, 2U);
 		break;
 	default:
 		__ASSERT_MSG_INFO("Pixel format not supported");
@@ -1162,6 +1265,9 @@ static void sdl_display_get_capabilities(
 	struct sdl_display_data *disp_data = dev->data;
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
+#ifdef CONFIG_DISPLAY_COLOR_PALETTE
+	memcpy(capabilities->color_palette, config->color_palette, sizeof(config->color_palette));
+#endif /* CONFIG_DISPLAY_COLOR_PALETTE */
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 |
@@ -1176,7 +1282,8 @@ static void sdl_display_get_capabilities(
 		PIXEL_FORMAT_RGB_565 |
 		PIXEL_FORMAT_RGB_565X |
 		PIXEL_FORMAT_L_8 |
-		PIXEL_FORMAT_AL_88;
+		PIXEL_FORMAT_AL_88 |
+		PIXEL_FORMAT_I_4;
 	capabilities->current_pixel_format = disp_data->current_pixel_format;
 	capabilities->screen_info =
 		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED) ? SCREEN_INFO_MONO_VTILED : 0) |
@@ -1201,6 +1308,7 @@ static void sdl_display_get_capabilities(
 	case PIXEL_FORMAT_RGB_565X:
 	case PIXEL_FORMAT_L_8:
 	case PIXEL_FORMAT_AL_88:
+	case PIXEL_FORMAT_I_4:
 		disp_data->current_pixel_format = pixel_format;
 		return 0;
 	default:
@@ -1263,6 +1371,11 @@ static DEVICE_API(display, sdl_display_api) = {
 		.height = DT_INST_PROP(n, height),                                                 \
 		.width = DT_INST_PROP(n, width),                                                   \
 		.title = DT_INST_PROP_OR(n, title, "Zephyr Display"),                              \
+		IF_ENABLED(CONFIG_DISPLAY_COLOR_PALETTE,                                           \
+			   (COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(n, color_palette)),           \
+					(.color_palette = DT_PROP(DT_INST_CHILD(n, color_palette), \
+								  colors),),                       \
+					())))                                                      \
 	};                                                                                         \
                                                                                                    \
 	static uint8_t sdl_buf_##n[4 * DT_INST_PROP(n, height) * DT_INST_PROP(n, width)];          \
