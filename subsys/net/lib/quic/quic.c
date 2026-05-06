@@ -148,7 +148,7 @@ static K_MUTEX_DEFINE(quic_closed_contexts_lock);
 static bool quic_prepare_closed_context_stats(struct quic_context *ctx,
 					      struct quic_closed_context_stats *stats)
 {
-	if (ctx == NULL || stats == NULL || ctx->is_listening) {
+	if (ctx->is_listening) {
 		return false;
 	}
 
@@ -170,7 +170,7 @@ static bool quic_prepare_closed_context_stats(struct quic_context *ctx,
 static void quic_store_closed_context_stats(struct quic_context *ctx,
 					    struct quic_closed_context_stats *stats)
 {
-	if (ctx == NULL || stats == NULL || !stats->valid) {
+	if (!stats->valid) {
 		return;
 	}
 
@@ -229,10 +229,6 @@ void quic_closed_context_stats_foreach(quic_closed_context_stats_cb_t cb, void *
 static void quic_stats_set_context_metadata(struct quic_context *ctx,
 					    const struct quic_endpoint *ep)
 {
-	if (ctx == NULL || ep == NULL) {
-		return;
-	}
-
 	ctx->stats_is_server = ep->is_server;
 	memcpy(&ctx->stats_local_addr, &ep->local_addr, sizeof(ctx->stats_local_addr));
 	memcpy(&ctx->stats_remote_addr, &ep->remote_addr, sizeof(ctx->stats_remote_addr));
