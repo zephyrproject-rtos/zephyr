@@ -178,6 +178,7 @@ out:
 int eth_stm32_hal_init(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 	HAL_StatusTypeDef hal_ret;
 
@@ -190,12 +191,15 @@ int eth_stm32_hal_init(const struct device *dev)
 	/* Initialize semaphores */
 	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
 
-	if (HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
-				      &dma_tx_buffer[0][0], ETH_TXBUFNB) != HAL_OK) {
+	if (HAL_ETH_DMATxDescListInit(heth, ETH_STM32_TX_DESC_PTR(cfg),
+				      ETH_STM32_TX_BUF_PTR(cfg), ETH_TXBUFNB) != HAL_OK) {
+		LOG_ERR("HAL_ETH_DMATxDescListInit failed");
 		return -EIO;
 	}
-	if (HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab,
-				      &dma_rx_buffer[0][0], ETH_RXBUFNB) != HAL_OK) {
+
+	if (HAL_ETH_DMARxDescListInit(heth, ETH_STM32_RX_DESC_PTR(cfg),
+				      ETH_STM32_RX_BUF_PTR(cfg), ETH_RXBUFNB) != HAL_OK) {
+		LOG_ERR("HAL_ETH_DMARxDescListInit failed");
 		return -EIO;
 	}
 
