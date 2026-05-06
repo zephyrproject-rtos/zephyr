@@ -23,13 +23,6 @@ config NET_SOCKETS_PRIORITY_DEFAULT
 	  allows to for instance prioritize offloaded socket processing during
 	  socket creation over the native one, or vice versa.
 
-config NET_SOCKETS_POLL_MAX
-	int "Max number of supported poll() entries [DEPRECATED]"
-	default 0
-	help
-	  This option is deprecated.
-	  Please use CONFIG_ZVFS_POLL_MAX instead.
-
 config NET_SOCKETS_CONNECT_TIMEOUT
 	int "Timeout value in milliseconds to CONNECT"
 	default 3000
