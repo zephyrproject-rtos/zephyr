@@ -787,6 +787,8 @@ int i3c_device_adv_info_get(struct i3c_device_desc *target)
 		 */
 		if (i3c_ccc_do_getcaps_fmt1(target, &caps) != 0) {
 			LOG_DBG("%s: GETCAPS not received", target->dev->name);
+		} else {
+			memcpy(&target->getcaps, &caps, sizeof(target->getcaps));
 		}
 	}
 
@@ -796,6 +798,8 @@ int i3c_device_adv_info_get(struct i3c_device_desc *target)
 		ret = i3c_ccc_do_getcaps_fmt2(target, &caps, GETCAPS_FORMAT_2_CRCAPS);
 		if (ret != 0) {
 			return ret;
+		} else {
+			memcpy(&target->crcaps, &caps, sizeof(target->crcaps));
 		}
 	}
 
