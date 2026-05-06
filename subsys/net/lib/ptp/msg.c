@@ -466,6 +466,9 @@ int ptp_msg_post_recv(struct ptp_port *port, struct ptp_msg *msg, int cnt)
 		return -EBADMSG;
 	}
 
+	/* Record local uptime for aging calculations */
+	msg->local_uptime_ms = k_uptime_get();
+
 	LOG_DBG("Port %d received %s message", port->port_ds.id.port_number, msg_type_str(msg));
 
 	switch (type) {
