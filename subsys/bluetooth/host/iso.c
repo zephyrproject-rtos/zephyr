@@ -867,7 +867,7 @@ static uint16_t iso_chan_max_data_len(const struct bt_iso_chan *chan)
 	max_data_len = chan->qos->tx->sdu;
 
 	/* Ensure that the SDU fits when using all the buffers */
-	max_controller_data_len = bt_dev.le.iso_mtu * bt_dev.le.iso_limit;
+	max_controller_data_len = bt_devs[0].le.iso_mtu * bt_devs[0].le.iso_limit;
 
 	/* Update the max_data_len to take the max_controller_data_len into account */
 	max_data_len = MIN(max_data_len, max_controller_data_len);
@@ -1395,7 +1395,7 @@ static void store_cis_info_v2(const struct bt_hci_evt_le_cis_established_v2 *evt
 	peripheral->sdu_interval = sys_get_le24(evt->p_sdu_interval);
 }
 
-void hci_le_cis_established(struct net_buf *buf)
+void hci_le_cis_established(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_le_cis_established *evt = (void *)buf->data;
 	uint16_t handle = sys_le16_to_cpu(evt->conn_handle);
@@ -1430,7 +1430,7 @@ void hci_le_cis_established(struct net_buf *buf)
 	bt_conn_unref(iso);
 }
 
-void hci_le_cis_established_v2(struct net_buf *buf)
+void hci_le_cis_established_v2(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_le_cis_established_v2 *evt = (void *)buf->data;
 	uint16_t handle = sys_le16_to_cpu(evt->conn_handle);
@@ -1474,7 +1474,7 @@ int bt_iso_server_register(struct bt_iso_server *server)
 	}
 
 	/* Check if controller is ISO capable */
-	if (!BT_FEAT_LE_CIS_PERIPHERAL(bt_dev.le.features)) {
+	if (!BT_FEAT_LE_CIS_PERIPHERAL(bt_devs[0].le.features)) {
 		return -ENOTSUP;
 	}
 
@@ -1583,7 +1583,7 @@ static int hci_le_accept_cis(uint16_t handle)
 	return 0;
 }
 
-void hci_le_cis_req(struct net_buf *buf)
+void hci_le_cis_req(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_le_cis_req *evt = (void *)buf->data;
 	uint16_t acl_handle = sys_le16_to_cpu(evt->acl_handle);
@@ -2160,7 +2160,7 @@ int bt_iso_cig_create(const struct bt_iso_cig_param *param, struct bt_iso_cig **
 	*out_cig = NULL;
 
 	/* Check if controller is ISO capable as a central */
-	if (!BT_FEAT_LE_CIS_CENTRAL(bt_dev.le.features)) {
+	if (!BT_FEAT_LE_CIS_CENTRAL(bt_devs[0].le.features)) {
 		return -ENOTSUP;
 	}
 
@@ -3004,7 +3004,7 @@ static void store_bis_broadcaster_info(const struct bt_hci_evt_le_big_complete *
 		broadcaster_info->irc, broadcaster_info->pto, broadcaster_info->max_pdu);
 }
 
-void hci_le_big_complete(struct net_buf *buf)
+void hci_le_big_complete(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_le_big_complete *evt = (void *)buf->data;
 	struct bt_iso_chan *bis;
@@ -3061,7 +3061,7 @@ void hci_le_big_complete(struct net_buf *buf)
 	}
 }
 
-void hci_le_big_terminate(struct net_buf *buf)
+void hci_le_big_terminate(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_le_big_terminate *evt = (void *)buf->data;
 	struct bt_iso_big *big;
@@ -3212,7 +3212,7 @@ static void store_bis_sync_receiver_info(const struct bt_hci_evt_le_big_sync_est
 		receiver_info->pto, receiver_info->max_pdu);
 }
 
-void hci_le_big_sync_established(struct net_buf *buf)
+void hci_le_big_sync_established(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_le_big_sync_established *evt = (void *)buf->data;
 	struct bt_iso_chan *bis;
@@ -3268,7 +3268,7 @@ void hci_le_big_sync_established(struct net_buf *buf)
 	}
 }
 
-void hci_le_big_sync_lost(struct net_buf *buf)
+void hci_le_big_sync_lost(struct bt_dev *hdev, struct net_buf *buf)
 {
 	struct bt_hci_evt_le_big_sync_lost *evt = (void *)buf->data;
 	struct bt_iso_big *big;

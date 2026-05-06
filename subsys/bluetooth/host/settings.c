@@ -197,7 +197,7 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 	ssize_t len;
 	const char *next;
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_ENABLE)) {
 		/* The Bluetooth settings loader needs to communicate with the Bluetooth
 		 * controller to setup identities. This will not work before
 		 * bt_enable(). The doc on @ref bt_enable requires the "bt/" settings
@@ -216,29 +216,28 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 
 	if ((len == 2) && (memcmp(name, "id", len) == 0)) {
 		/* Any previously provided identities supersede flash */
-		if (atomic_test_bit(bt_dev.flags, BT_DEV_PRESET_ID)) {
+		if (atomic_test_bit(bt_devs[0].flags, BT_DEV_PRESET_ID)) {
 			LOG_WRN("Ignoring identities stored in flash");
 			return 0;
 		}
 
-		len = read_cb(cb_arg, &bt_dev.id_addr, sizeof(bt_dev.id_addr));
-		if (len < sizeof(bt_dev.id_addr[0])) {
+		len = read_cb(cb_arg, &bt_devs[0].id_addr, sizeof(bt_devs[0].id_addr));
+		if (len < sizeof(bt_devs[0].id_addr[0])) {
 			if (len < 0) {
 				LOG_ERR("Failed to read ID address from storage"
 				       " (err %zd)", len);
 			} else {
 				LOG_ERR("Invalid length ID address in storage");
-				LOG_HEXDUMP_DBG(&bt_dev.id_addr, len, "data read");
+				LOG_HEXDUMP_DBG(&bt_devs[0].id_addr, len, "data read");
 			}
-			(void)memset(bt_dev.id_addr, 0,
-				     sizeof(bt_dev.id_addr));
-			bt_dev.id_count = 0U;
+			(void)memset(bt_devs[0].id_addr, 0, sizeof(bt_devs[0].id_addr));
+			bt_devs[0].id_count = 0U;
 		} else {
 			int i;
 
-			bt_dev.id_count = len / sizeof(bt_dev.id_addr[0]);
-			for (i = 0; i < bt_dev.id_count; i++) {
-				LOG_DBG("ID[%d] %s", i, bt_addr_le_str(&bt_dev.id_addr[i]));
+			bt_devs[0].id_count = len / sizeof(bt_devs[0].id_addr[0]);
+			for (i = 0; i < bt_devs[0].id_count; i++) {
+				LOG_DBG("ID[%d] %s", i, bt_addr_le_str(&bt_devs[0].id_addr[i]));
 			}
 		}
 
@@ -247,14 +246,14 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 	if ((len == 4) && (memcmp(name, "name", len) == 0)) {
-		len = read_cb(cb_arg, &bt_dev.name, sizeof(bt_dev.name) - 1);
+		len = read_cb(cb_arg, &bt_devs[0].name, sizeof(bt_devs[0].name) - 1);
 		if (len < 0) {
 			LOG_ERR("Failed to read device name from storage"
 			       " (err %zd)", len);
 		} else {
-			bt_dev.name[len] = '\0';
+			bt_devs[0].name[len] = '\0';
 
-			LOG_DBG("Name set to %s", bt_dev.name);
+			LOG_DBG("Name set to %s", bt_devs[0].name);
 		}
 		return 0;
 	}
@@ -262,12 +261,12 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
 	if ((len == 10) && (memcmp(name, "appearance", len) == 0)) {
-		if (len_rd != sizeof(bt_dev.appearance)) {
+		if (len_rd != sizeof(bt_devs[0].appearance)) {
 			LOG_ERR("Ignoring settings entry 'bt/appearance'. Wrong length.");
 			return -EINVAL;
 		}
 
-		len = read_cb(cb_arg, &bt_dev.appearance, sizeof(bt_dev.appearance));
+		len = read_cb(cb_arg, &bt_devs[0].appearance, sizeof(bt_devs[0].appearance));
 		if (len < 0) {
 			return len;
 		}
@@ -278,21 +277,21 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 
 #if defined(CONFIG_BT_PRIVACY)
 	if ((len == 3) && (memcmp(name, "irk", len) == 0)) {
-		len = read_cb(cb_arg, bt_dev.irk, sizeof(bt_dev.irk));
-		if (len < sizeof(bt_dev.irk[0])) {
+		len = read_cb(cb_arg, bt_devs[0].irk, sizeof(bt_devs[0].irk));
+		if (len < sizeof(bt_devs[0].irk[0])) {
 			if (len < 0) {
 				LOG_ERR("Failed to read IRK from storage"
 				       " (err %zd)", len);
 			} else {
 				LOG_ERR("Invalid length IRK in storage");
-				(void)memset(bt_dev.irk, 0, sizeof(bt_dev.irk));
+				(void)memset(bt_devs[0].irk, 0, sizeof(bt_devs[0].irk));
 			}
 		} else {
 			int i, count;
 
-			count = len / sizeof(bt_dev.irk[0]);
+			count = len / sizeof(bt_devs[0].irk[0]);
 			for (i = 0; i < count; i++) {
-				LOG_DBG("IRK[%d] %s", i, bt_hex(bt_dev.irk[i], 16));
+				LOG_DBG("IRK[%d] %s", i, bt_hex(bt_devs[0].irk[i], 16));
 			}
 		}
 
@@ -309,7 +308,7 @@ static int commit_settings(void)
 
 	LOG_DBG("");
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_ENABLE)) {
 		/* The Bluetooth settings loader needs to communicate with the Bluetooth
 		 * controller to setup identities. This will not work before
 		 * bt_enable(). The doc on @ref bt_enable requires the "bt/" settings
@@ -320,13 +319,12 @@ static int commit_settings(void)
 	}
 
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
-	if (bt_dev.name[0] == '\0') {
-		/* No name in flash — populate bt_dev.name with the default.
+	if (bt_devs[0].name[0] == '\0') {
+		/* No name in flash — populate bt_devs[0].name with the default.
 		 * Skip bt_set_name() to avoid an unnecessary flash write.
 		 */
-		strncpy(bt_dev.name, CONFIG_BT_DEVICE_NAME,
-			CONFIG_BT_DEVICE_NAME_MAX);
-		bt_dev.name[CONFIG_BT_DEVICE_NAME_MAX] = '\0';
+		strncpy(bt_devs[0].name, CONFIG_BT_DEVICE_NAME, CONFIG_BT_DEVICE_NAME_MAX);
+		bt_devs[0].name[CONFIG_BT_DEVICE_NAME_MAX] = '\0';
 	}
 
 	/* Push the name (restored or default) to all transports.
@@ -335,14 +333,14 @@ static int commit_settings(void)
 	 * issue the HCI Write Local Name command explicitly.
 	 */
 	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
-		err = bt_br_write_local_name(bt_dev.name);
+		err = bt_br_write_local_name(bt_devs[0].name);
 		if (err != 0) {
 			LOG_ERR("Unable to set BR/EDR local name (err %d)", err);
 			return err;
 		}
 	}
 #endif
-	if (!bt_dev.id_count) {
+	if (!bt_devs[0].id_count) {
 		err = bt_setup_public_id_addr();
 		if (err) {
 			LOG_ERR("Unable to setup an identity address");
@@ -350,7 +348,7 @@ static int commit_settings(void)
 		}
 	}
 
-	if (!bt_dev.id_count) {
+	if (!bt_devs[0].id_count) {
 		err = bt_setup_random_id_addr();
 		if (err) {
 			LOG_ERR("Unable to setup an identity address");
@@ -358,14 +356,14 @@ static int commit_settings(void)
 		}
 	}
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_READY)) {
 		bt_finalize_init();
 	}
 
 	/* If any part of the Identity Information of the device has been
 	 * generated this Identity needs to be saved persistently.
 	 */
-	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_STORE_ID)) {
+	if (atomic_test_and_clear_bit(bt_devs[0].flags, BT_DEV_STORE_ID)) {
 		LOG_DBG("Storing Identity Information");
 		bt_settings_store_id();
 		bt_settings_store_irk();
@@ -525,7 +523,8 @@ int bt_settings_delete_appearance(void)
 
 static void do_store_id(struct k_work *work)
 {
-	int err = bt_settings_store("id", 0, NULL, &bt_dev.id_addr, ID_DATA_LEN(bt_dev.id_addr));
+	int err = bt_settings_store("id", 0, NULL, &bt_devs[0].id_addr,
+				    ID_DATA_LEN(bt_devs[0].id_addr));
 
 	if (err) {
 		LOG_ERR("Failed to save ID (err %d)", err);
@@ -549,7 +548,7 @@ int bt_settings_delete_id(void)
 static void do_store_irk(struct k_work *work)
 {
 #if defined(CONFIG_BT_PRIVACY)
-	int err = bt_settings_store("irk", 0, NULL, bt_dev.irk, ID_DATA_LEN(bt_dev.irk));
+	int err = bt_settings_store("irk", 0, NULL, bt_devs[0].irk, ID_DATA_LEN(bt_devs[0].irk));
 
 	if (err) {
 		LOG_ERR("Failed to save IRK (err %d)", err);

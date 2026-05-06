@@ -455,7 +455,7 @@ struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer, struct bt_sco_chan *ch
 		}
 	}
 
-	if (BT_FEAT_LMP_ESCO_CAPABLE(bt_dev.features)) {
+	if (BT_FEAT_LMP_ESCO_CAPABLE(bt_devs[0].features)) {
 		link_type = BT_HCI_ESCO;
 	} else {
 		link_type = BT_HCI_SCO;
