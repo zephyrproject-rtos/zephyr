@@ -49,8 +49,10 @@ void ifx_pse84_cm55_startup(void)
 	/* Clear SYSCPU and APPCPU power domain dependency set by boot code */
 	cy_pd_pdcm_clear_dependency(CY_PD_PDCM_APPCPU, CY_PD_PDCM_SYSCPU);
 
+	uint32_t cm55_start_address = DT_REG_ADDR(DT_NODELABEL(m55_xip));
+
 	/* Enable CM55 */
-	Cy_SysEnableCM55(MXCM55, DT_REG_ADDR(DT_NODELABEL(m55_xip)), CM55_BOOT_WAIT_TIME_USEC);
+	Cy_SysEnableCM55(MXCM55, cm55_start_address, CM55_BOOT_WAIT_TIME_USEC);
 
 	/* System Domain Idle Power Mode Configuration */
 	Cy_SysPm_SetDeepSleepMode(CY_SYSPM_MODE_DEEPSLEEP);

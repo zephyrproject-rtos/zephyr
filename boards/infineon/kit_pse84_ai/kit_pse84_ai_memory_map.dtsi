@@ -69,46 +69,109 @@
 		};
 	};
 
-	/* Default Flash memory(16MB) assignment
-	 * - Lowest 1mb reserved for Storage
-	 * - 2mb for each of the cores(cm33_s, cm33 and cm55)
+	/* Default Flash memory(64MB) assignment
+	 * - Lowest 1MB reserved for Storage
+	 * - 2MB for each of the cores(cm33_s, cm33 and cm55)
 	 */
 	flash_controller: flash_controller@40250000 {
 		compatible = "infineon,qspi-flash";
 		reg = <0x40250000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
+		/* CBUS non-secure view of external flash.
+		 * Used as zephyr,flash for NS builds.
+		 * The base address is 0x08000000.
+		 */
 		flash0: flash0@8000000 {
 			compatible = "soc-nv-flash";
 			reg = <0x08000000 DT_SIZE_M(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x08000000 DT_SIZE_M(64)>;
 			write-block-size = <256>;
 			erase-block-size = <65536>;
 
 			partitions {
 				#address-cells = <1>;
 				#size-cells = <1>;
-				compatible = "fixed-partitions";
+				ranges;
 
 				storage: storage@0 {
+					compatible = "zephyr,mapped-partition";
 					label = "storage";
 					reg = <0 DT_SIZE_M(1)>;
 				};
 
-				m33s_header: m33s_header@60100000 {
-					reg = <0x60100000 0x400>;
+				m33_xip: m33_xip@300000 {
+					compatible = "zephyr,mapped-partition";
+					label = "m33-xip";
+					reg = <0x300000 DT_SIZE_M(2)>;
+				};
+			};
+		};
+
+		/* CBUS secure view of the same external flash.
+		 * Used as zephyr,flash for S builds.
+		 * The base address is 0x18000000.
+		 * This is the same physical device as flash0, accessed
+		 * through the secure CBUS alias for instruction-cached
+		 * execution in secure mode.
+		 */
+		flash0_s: flash0_s@18000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x18000000 DT_SIZE_M(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x18000000 DT_SIZE_M(64)>;
+			write-block-size = <256>;
+			erase-block-size = <65536>;
+
+			partitions {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
+
+				m33s_header: m33s_header@100000 {
+					compatible = "zephyr,mapped-partition";
+					label = "m33s-header";
+					reg = <0x100000 0x400>;
 				};
 
-				m33s_xip: m33s_xip@18100400 {
-					reg = <0x18100400 0x1ffc00>;
+				m33s_xip: m33s_xip@100400 {
+					compatible = "zephyr,mapped-partition";
+					label = "m33s-xip";
+					reg = <0x100400 0x1ffc00>;
 				};
+			};
+		};
 
-				m33_xip: m33_xip@8300000 {
-					reg = <0x8300000 DT_SIZE_M(2)>;
-				};
+		/* SAHB view of the same external flash.
+		 * Used as zephyr,flash for CM55 builds.
+		 * The base address is 0x70000000.
+		 * This is the same physical device as flash0, accessed
+		 * through the SAHB alias as cm55 does not have
+		 * instruction-cached execution for external flash.
+		 */
+		flash0_sahb: flash0_sahb@70000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x70000000 DT_SIZE_M(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x70000000 DT_SIZE_M(64)>;
+			write-block-size = <256>;
+			erase-block-size = <65536>;
 
-				m55_xip: m55_xip@60500000 {
-					reg = <0x60500000 DT_SIZE_M(2)>;
+			partitions {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
+
+				m55_xip: m55_xip@500000 {
+					compatible = "zephyr,mapped-partition";
+					label = "m55-xip";
+					reg = <0x500000 DT_SIZE_M(2)>;
 				};
 			};
 		};
