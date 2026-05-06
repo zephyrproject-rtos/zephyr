@@ -11,7 +11,9 @@ flash: 2032
 ram: 512
 supported:
   - clock_control
+  - eeprom
   - gpio
+  - i2c
   - pinctrl
   - uart
 vendor: microchip
