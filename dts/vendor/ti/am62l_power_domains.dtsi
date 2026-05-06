@@ -104,7 +104,7 @@
 			#power-domain-cells = <0>;
 		};
 
-		main_timer0_pd: power-domain@0f {
+		main_timer0_pd: power-domain@f {
 			compatible = "arm,scmi-power-domain";
 			reg = <15>;
 			#power-domain-cells = <0>;
