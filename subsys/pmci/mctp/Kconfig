@@ -67,6 +67,7 @@ config MCTP_I2C_GPIO_TARGET
 config MCTP_I3C_CONTROLLER
 	bool "MCTP I3C Controller Binding"
 	depends on I3C_CONTROLLER
+	select CRC
 	help
 	  Build the MCTP I3C controller binding to use MCTP over Zephyr's I3C
 	  interface. This binding can receive target notifications through IBI
@@ -109,6 +110,7 @@ endif
 config MCTP_I3C_TARGET
 	bool "MCTP I3C Target Binding"
 	depends on I3C_TARGET
+	select CRC
 	help
 	  Build the MCTP I3C target binding to use MCTP over Zephyr's I3C target
 	  interface and optionally IBI to signal a request to send messages to the bus controller.
