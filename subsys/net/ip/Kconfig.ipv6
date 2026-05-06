@@ -13,6 +13,86 @@ menuconfig NET_IPV6
 
 if NET_IPV6
 
+# Note that the Kconfig symbols without IPV6 are old legacy symbols
+# that are deprecated and replaced by IPv6 specific symbols.
+config NET_ROUTE
+	bool
+	depends on NET_IPV6_NBR_CACHE
+	default y if NET_IPV6_ROUTE
+	help
+	  This symbol is deprecated and is driven by NET_IPV6_ROUTE
+	  symbol which is the master one. Note that this symbol is
+	  removed when the other deprecated route symbols are removed.
+
+config NET_ROUTING
+	bool "IP routing between interfaces [DEPRECATED]"
+	depends on NET_ROUTE
+	select DEPRECATED
+	help
+	  Allow IPv6 routing between different network interfaces and
+	  technologies. Currently this has limited use as some entity
+	  would need to populate the routing table. RPL used to do that
+	  earlier but currently there is no RPL support in Zephyr.
+	  This symbol is deprected, use NET_IPV6_ROUTING instead.
+
+config NET_MAX_ROUTES
+	int "Max number of routing entries stored [DEPRECATED]."
+	default NET_IPV6_MAX_NEIGHBORS
+	depends on NET_ROUTE
+	help
+	  This determines how many entries can be stored in routing table.
+	  This symbol is deprected, use NET_IPV6_MAX_ROUTES instead.
+
+config NET_MAX_NEXTHOPS
+	int "Max number of next hop entries stored [DEPRECATED]."
+	default NET_MAX_ROUTES
+	depends on NET_ROUTE
+	help
+	  This determines how many entries can be stored in nexthop table.
+	  This symbol is deprecated, use NET_IPV6_MAX_NEXTHOPS instead.
+
+config NET_ROUTE_MCAST
+	bool "Multicast Routing / Forwarding [DEPRECATED]"
+	depends on NET_ROUTE
+	select DEPRECATED
+	help
+	  Activates multicast routing/forwarding.
+	  This symbol is deprected, use NET_IPV6_ROUTE_MCAST instead.
+
+config NET_MAX_MCAST_ROUTES
+	int "Max number of multicast routing entries stored [DEPRECATED]."
+	default 1
+	depends on NET_ROUTE_MCAST
+	help
+	  This determines how many entries can be stored in multicast
+	  routing table.
+	  This symbol is deprected, use NET_IPV6_MAX_MCAST_ROUTES instead.
+
+config NET_MCAST_ROUTE_MAX_IFACES
+	int "Max number of network interfaces per multicast routing entry [DEPRECATED]"
+	default 1
+	range 1 8
+	depends on NET_ROUTE_MCAST
+	help
+	  Determines how many network interfaces can be assigned to a
+	  single multicast route entry.
+	  This symbol is deprected, use NET_IPV6_MCAST_ROUTE_MAX_IFACES instead.
+
+config NET_MCAST_ROUTE_MLD_REPORTS
+	bool "Report multicast routes as a part of MLDv2 reports [DEPRECATED]"
+	depends on NET_ROUTE_MCAST
+	depends on NET_IPV6_MLD
+	select DEPRECATED
+	help
+	  Determines whether a multicast route entry should be advertised
+	  in MLDv2 reports.
+	  This symbol is deprected, use NET_IPV6_MCAST_ROUTE_MLD_REPORTS instead.
+
+config NET_ROUTE_SYMBOLS_DEPRECATED
+	bool
+	default y
+	depends on NET_ROUTING || NET_ROUTE_MCAST || NET_MCAST_ROUTE_MLD_REPORTS
+
 config NET_IF_MAX_IPV6_COUNT
 	int "Max number of IPv6 network interfaces in the system"
 	default NET_VLAN_COUNT if NET_VLAN && NET_VLAN_COUNT > 0
@@ -106,6 +186,7 @@ config NET_IPV6_ROUTE
 
 config NET_IPV6_ROUTING
 	bool "IP routing between interfaces"
+	default NET_ROUTING if NET_ROUTE_SYMBOLS_DEPRECATED
 	depends on NET_IPV6_ROUTE
 	help
 	  Allow IPv6 routing between different network interfaces and
@@ -115,6 +196,7 @@ config NET_IPV6_ROUTING
 
 config NET_IPV6_MAX_ROUTES
 	int "Max number of routing entries stored."
+	default NET_MAX_ROUTES if NET_ROUTE_SYMBOLS_DEPRECATED
 	default NET_IPV6_MAX_NEIGHBORS
 	depends on NET_IPV6_ROUTE
 	help
@@ -122,6 +204,7 @@ config NET_IPV6_MAX_ROUTES
 
 config NET_IPV6_MAX_NEXTHOPS
 	int "Max number of next hop entries stored."
+	default NET_MAX_NEXTHOPS if NET_ROUTE_SYMBOLS_DEPRECATED
 	default NET_IPV6_MAX_ROUTES
 	depends on NET_IPV6_ROUTE
 	help
@@ -129,12 +212,14 @@ config NET_IPV6_MAX_NEXTHOPS
 
 config NET_IPV6_ROUTE_MCAST
 	bool "Multicast Routing / Forwarding"
+	default NET_ROUTE_MCAST if NET_ROUTE_SYMBOLS_DEPRECATED
 	depends on NET_IPV6_ROUTE
 	help
 	  Activates multicast routing/forwarding
 
 config NET_IPV6_MAX_MCAST_ROUTES
 	int "Max number of multicast routing entries stored."
+	default NET_MAX_MCAST_ROUTES if NET_ROUTE_SYMBOLS_DEPRECATED
 	default 1
 	depends on NET_IPV6_ROUTE_MCAST
 	help
@@ -143,6 +228,7 @@ config NET_IPV6_MAX_MCAST_ROUTES
 
 config NET_IPV6_MCAST_ROUTE_MAX_IFACES
 	int "Max number of network interfaces per multicast routing entry"
+	default NET_MCAST_ROUTE_MAX_IFACES if NET_ROUTE_SYMBOLS_DEPRECATED
 	default 1
 	range 1 8
 	depends on NET_IPV6_ROUTE_MCAST
@@ -152,6 +238,7 @@ config NET_IPV6_MCAST_ROUTE_MAX_IFACES
 
 config NET_IPV6_MCAST_ROUTE_MLD_REPORTS
 	bool "Report multicast routes as a part of MLDv2 reports"
+	default NET_MCAST_ROUTE_MLD_REPORTS if NET_ROUTE_SYMBOLS_DEPRECATED
 	depends on NET_IPV6_ROUTE_MCAST
 	depends on NET_IPV6_MLD
 	help
