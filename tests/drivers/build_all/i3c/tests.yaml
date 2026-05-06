@@ -49,3 +49,19 @@ tests:
   drivers.i3c.build.stm32:
     platform_allow:
       - nucleo_c5a3zg
+  drivers.i3c.build.emul:
+    # Compile-coverage for the I3C emulator on native_sim. Locks in that
+    # CONFIG_I3C_EMUL=y stays buildable through future I3C-subsystem
+    # changes alongside the cdns / dw / stm32 driver coverage above.
+    platform_allow: native_sim
+    tags: i3c_emul
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL=n
+      - CONFIG_CLOCK_CONTROL_FIXED_RATE_CLOCK=n
+      - CONFIG_I3C_DUAL_ROLE=y
+      - CONFIG_I3C_USE_IBI=y
+      - CONFIG_I3C_CALLBACK=y
+      - CONFIG_I3C_RTIO=y
+      - CONFIG_EMUL=y
+      - CONFIG_I3C_EMUL=y
+      - CONFIG_RTIO=y
