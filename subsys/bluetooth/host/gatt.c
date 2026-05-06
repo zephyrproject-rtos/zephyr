@@ -2798,7 +2798,7 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
 	__ASSERT(params, "invalid parameters\n");
 	__ASSERT(params->attr || params->uuid, "invalid parameters\n");
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
 
@@ -2869,7 +2869,7 @@ static int gatt_notify_multiple_verify_args(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
 
@@ -3023,7 +3023,7 @@ int bt_gatt_indicate(struct bt_conn *conn,
 	__ASSERT(params, "invalid parameters\n");
 	__ASSERT(params->attr || params->uuid, "invalid parameters\n");
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+	if (!atomic_test_bit(bt_devs[0].flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
 

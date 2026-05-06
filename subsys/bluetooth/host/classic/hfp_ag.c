@@ -4176,7 +4176,7 @@ static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
 
 	/* Set the supported features*/
 	ag->ag_features = BT_HFP_AG_SUPPORTED_FEATURES;
-	ag->ag_features |= BT_FEAT_SC(bt_dev.features) ? BT_HFP_AG_FEATURE_ESCO_S4 : 0;
+	ag->ag_features |= BT_FEAT_SC(bt_devs[0].features) ? BT_HFP_AG_FEATURE_ESCO_S4 : 0;
 
 	/* Set the default HF infrmation */
 	ag->hf_sdp_features = 0;
