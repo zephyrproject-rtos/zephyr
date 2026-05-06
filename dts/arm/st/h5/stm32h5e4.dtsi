@@ -13,7 +13,7 @@
 
 / {
 	soc {
-		compatible = "st,stm32h5ef", "st,stm32h5", "simple-bus";
+		compatible = "st,stm32h5e4", "st,stm32h5", "simple-bus";
 
 		pinctrl: pin-controller@42020000 {
 			gpioh: gpio@42021c00 {
