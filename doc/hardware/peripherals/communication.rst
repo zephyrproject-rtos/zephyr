@@ -19,6 +19,7 @@ Serial buses (I2C, SPI, UART, CAN) and other communication interfaces.
    mspi.rst
    smbus.rst
    ipm.rst
+   lin.rst
    mbox.rst
    w1.rst
    pulse_io.rst
