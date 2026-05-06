@@ -1,0 +1,5 @@
+# Copyright (c) Arduino s.r.l. and/or its affiliated companies
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ARDUINO_NANO_CONNECT
+	select RP2_FLASH_AT25SF128A
