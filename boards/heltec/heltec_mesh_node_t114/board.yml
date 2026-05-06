@@ -1,0 +1,8 @@
+board:
+  name: heltec_mesh_node_t114
+  full_name: Mesh Node T114
+  vendor: heltec
+  socs:
+    - name: nrf52840
+      variants:
+        - name: uf2

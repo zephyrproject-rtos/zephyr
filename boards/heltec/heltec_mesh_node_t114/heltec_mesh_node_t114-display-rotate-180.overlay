@@ -1,0 +1,14 @@
+/**
+ * Copyright (c) 2026 Yeray Lois Sanchez
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Rotate the ST7789V display 180 degrees.
+ * Default mdac=0x60 is correct for the standard orientation.
+ */
+
+&st7789v {
+	mdac = <0xa0>;
+};

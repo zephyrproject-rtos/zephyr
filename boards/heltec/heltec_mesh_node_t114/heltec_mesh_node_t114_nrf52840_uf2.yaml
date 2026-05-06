@@ -1,0 +1,22 @@
+identifier: heltec_mesh_node_t114/nrf52840/uf2
+name: Heltec Mesh Node T114 UF2
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - ble
+  - counter
+  - display
+  - gpio
+  - led_strip
+  - lora
+  - netif:openthread
+  - spi
+  - usbd
+  - watchdog
+vendor: heltec

@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Yeray Lois Sanchez
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "heltec_mesh_node_t114_common.dtsi"
+#include <nordic/nrf52840_partition_uf2_sdv6.dtsi>
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
+
+/ {
+	model = "Heltec Mesh Node T114";
+	compatible = "heltec,mesh-node-t114-uf2";
+};
