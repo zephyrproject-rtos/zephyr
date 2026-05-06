@@ -9,15 +9,6 @@ config SILABS_SIWX91X_NWP
 	help
 	  Add support for Network Coprocessor (also named NWP) presents on SiWx91x parts.
 
-config SILABS_SIWX91X_NWP_WISECONNECT
-	bool
-	depends on SILABS_SIWX91X_NWP_BROKEN
-	help
-	  This implementation is no more provided
-
-config SILABS_SIWX91X_NWP_BROKEN
-	bool
-
 if SILABS_SIWX91X_NWP
 
 module = SIWX91X_NWP
