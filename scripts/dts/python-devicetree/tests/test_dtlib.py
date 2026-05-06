@@ -2003,6 +2003,36 @@ def test_prop_type_casting():
     verify_raw_to_num_error(dtlib.to_nums, b"", 0, "'length' must be greater than zero, was 0")
     verify_raw_to_num_error(dtlib.to_nums, b"foooo", 2, "b'foooo' is 5 bytes long, expected a length that's a multiple of 2")
 
+def test_signed_cell_offsets_cleared_on_override():
+    '''
+    Overriding a property must clear _signed_cell_offsets so stale signed
+    offsets from the previous assignment do not corrupt the new value.
+    '''
+
+    dt = parse(r"""
+/dts-v1/;
+
+/ {
+	a = < (-1) >;
+	a = < 0xFFFFFFFF >;
+
+	b = < (-1) (-2) >;
+	b = < 1 2 >;
+};
+""")
+
+    # After override with an unsigned literal, to_num(signed_aware=True)
+    # must treat the cell as unsigned (0xFFFFFFFF), not signed (-1).
+    val_a = dt.root.props['a'].to_num(signed_aware=True)
+    assert val_a == 0xFFFFFFFF, \
+        f"stale _signed_cell_offsets: expected 0xFFFFFFFF, got {val_a}"
+
+    # After override with unsigned literals, to_nums(signed_aware=True)
+    # must return the unsigned values.
+    vals_b = dt.root.props['b'].to_nums(signed_aware=True)
+    assert vals_b == [1, 2], \
+        f"stale _signed_cell_offsets: expected [1, 2], got {vals_b}"
+
 def test_duplicate_labels():
     '''
     It is an error to duplicate labels in most conditions, but there
