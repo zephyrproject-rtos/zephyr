@@ -1737,6 +1737,9 @@ def test_prop_type_casting():
 	zero = < >;
 	two_u = < 1 2 >;
 	two_s = < 0xFFFFFFFF 0xFFFFFFFE >;
+	neg_lit = < (-1) >;
+	hex_max = < 0xFFFFFFFF >;
+	mixed = < (-100) 0xFFFFFFFF 0 >;
 	three_u = < 1 2 3 >;
 	three_u_split = < 1 >, < 2 >, < 3 >;
 	empty_string = "";
@@ -1776,6 +1779,14 @@ def test_prop_type_casting():
     verify_to_num("u", True, 1)
     verify_to_num("s", False, 0xFFFFFFFF)
     verify_to_num("s", True, -1)
+
+    # signed_aware=True: negative literal -> signed, hex/positive -> unsigned
+    assert dt.root.props["neg_lit"].to_num(signed_aware=True) == -1, \
+        "neg_lit: negative literal should decode to -1 with signed_aware"
+    assert dt.root.props["hex_max"].to_num(signed_aware=True) == 0xFFFFFFFF, \
+        "hex_max: 0xFFFFFFFF should stay unsigned with signed_aware"
+    assert dt.root.props["u"].to_num(signed_aware=True) == 1, \
+        "u: positive literal should stay unsigned with signed_aware"
 
     verify_to_num_error_matches(
         "two_u",
@@ -1818,6 +1829,14 @@ def test_prop_type_casting():
     verify_to_nums("two_s", True, [-1, -2])
     verify_to_nums("three_u", False, [1, 2, 3])
     verify_to_nums("three_u_split", False, [1, 2, 3])
+
+    # signed_aware=True: only cells written as negative literals are signed
+    assert dt.root.props["neg_lit"].to_nums(signed_aware=True) == [-1], \
+        "neg_lit: negative literal should decode to [-1] with signed_aware"
+    assert dt.root.props["hex_max"].to_nums(signed_aware=True) == [0xFFFFFFFF], \
+        "hex_max: 0xFFFFFFFF should stay unsigned with signed_aware"
+    assert dt.root.props["mixed"].to_nums(signed_aware=True) == [-100, 0xFFFFFFFF, 0], \
+        "mixed: only negative-literal cells should be signed with signed_aware"
 
     verify_to_nums_error_matches(
         "empty",
