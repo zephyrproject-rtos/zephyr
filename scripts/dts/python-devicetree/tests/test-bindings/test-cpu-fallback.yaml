@@ -1,0 +1,10 @@
+description: Test CPU property fallback to /cpus
+compatible: "test-cpu-fallback"
+
+properties:
+  reg:
+    type: array
+
+  clock-frequency:
+    type: int
+    required: true
