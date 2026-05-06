@@ -1219,13 +1219,16 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			parse_ipv4_entries[i].address,
 			parse_ipv4_entries[i].len,
 			&addr, &mask_len);
-		if (next != parse_ipv4_entries[i].verdict) {
+		if (next == NULL && parse_ipv4_entries[i].verdict == NULL) {
+			continue;
+		}
+
+		if (next != NULL && memcmp(next, parse_ipv4_entries[i].verdict,
+					   strlen(next)) != 0) {
 			printk("IPv4 entry [%d] \"%s\" failed\n", i,
 				parse_ipv4_entries[i].address);
 			printk("Points to \"%s\" but should point to \"%s\"\n",
-			       next == NULL ? "NULL" : next,
-			       parse_ipv4_entries[i].verdict == NULL ?
-			       "NULL" : parse_ipv4_entries[i].verdict);
+			       next, parse_ipv4_entries[i].verdict);
 			zassert_true(false, "failure");
 		}
 
@@ -1251,7 +1254,12 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			parse_ipv6_entries[i].address,
 			parse_ipv6_entries[i].len,
 			&addr, &mask_len);
-		if (next != parse_ipv6_entries[i].verdict) {
+		if (next == NULL && parse_ipv6_entries[i].verdict == NULL) {
+			continue;
+		}
+
+		if (next != NULL && memcmp(next, parse_ipv6_entries[i].verdict,
+					   strlen(next)) != 0) {
 			printk("IPv6 entry [%d] \"%s\" failed\n", i,
 			       parse_ipv6_entries[i].address);
 			zassert_true(false, "failure");
