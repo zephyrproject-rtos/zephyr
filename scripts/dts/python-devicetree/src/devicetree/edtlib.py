@@ -1886,6 +1886,19 @@ class Node:
 
         node = self._node
         prop = node.props.get(name)
+        prop_node = node
+
+        # DT spec: CPU properties can be placed on /cpus if identical for all
+        # CPU nodes. Check the CPU node first, then fall back to its parent.
+        if (
+            not prop
+            and node.parent
+            and node.parent.path == "/cpus"
+            and node.path.startswith("/cpus/cpu")
+        ):
+            prop = node.parent.props.get(name)
+            if prop is not None:
+                prop_node = node.parent
         binding_path = prop_spec.binding.path
         prop_type = prop_spec.type
         deprecated = prop_spec.deprecated
@@ -1896,7 +1909,8 @@ class Node:
         if prop and deprecated:
             msg = (
                 f"'{name}' is marked as deprecated in 'properties:' "
-                f"in '{binding_path}' for node {node.path}."
+                f"in '{binding_path}' for node {node.path} "
+                f"(set in {prop_node.path})."
             )
             if err_on_deprecated:
                 _err(msg)

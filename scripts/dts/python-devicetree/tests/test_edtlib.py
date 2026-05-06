@@ -48,7 +48,7 @@ def test_warnings(caplog):
 
     enums_hpath = hpath('test-bindings/enums.yaml')
     expected_warnings = [
-        f"'oldprop' is marked as deprecated in 'properties:' in '{hpath('test-bindings/deprecated.yaml')}' for node /test-deprecated.",
+        f"'oldprop' is marked as deprecated in 'properties:' in '{hpath('test-bindings/deprecated.yaml')}' for node /test-deprecated (set in /test-deprecated).",
         "unit address and first address in 'reg' (0x1) don't match for /reg-zero-size-cells/node",
         "unit address and first address in 'reg' (0x5) don't match for /reg-ranges/parent/node",
         "unit address and first address in 'reg' (0x30000000200000001) don't match for /reg-nested-ranges/grandparent/parent/node",
