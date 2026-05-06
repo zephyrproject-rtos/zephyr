@@ -19,38 +19,40 @@ LOG_MODULE_REGISTER(net_dsa_port, CONFIG_NET_DSA_LOG_LEVEL);
 
 int dsa_port_initialize(const struct device *dev)
 {
-	const struct dsa_port_config *cfg = dev->config;
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;
-	struct net_if *iface = net_if_lookup_by_dev(dev);
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
-	struct ethernet_context *eth_ctx_conduit = NULL;
+	struct net_if *iface;
+	struct ethernet_context *eth_ctx;
+	struct ethernet_context *eth_ctx_conduit;
 	int err = 0;
 
 	dsa_switch_ctx->init_ports++;
 
-	/* Find the connection of conduit port and cpu port */
-	if (dsa_switch_ctx->iface_conduit == NULL && cfg->ethernet_connection != NULL) {
-		dsa_switch_ctx->iface_conduit = net_if_lookup_by_dev(cfg->ethernet_connection);
-		if (dsa_switch_ctx->iface_conduit == NULL) {
-			LOG_ERR("DSA: Conduit iface NOT found!");
+	ARRAY_FOR_EACH(dsa_switch_ctx->iface_user, idx) {
+		iface = dsa_switch_ctx->iface_user[idx];
+		if (iface == NULL) {
+			break;
 		}
-
-		/* Set up tag protocol on the cpu port */
-		eth_ctx->dsa_port = DSA_CPU_PORT;
-		dsa_tag_setup(dev);
-
-		/* Provide DSA information to the conduit port */
-		eth_ctx_conduit = net_if_l2_data(dsa_switch_ctx->iface_conduit);
-		eth_ctx_conduit->dsa_switch_ctx = dsa_switch_ctx;
-		eth_ctx_conduit->dsa_port = DSA_CONDUIT_PORT;
+		if (dev == net_if_get_device(iface)) {
+			eth_ctx = net_if_l2_data(iface);
+			eth_ctx->dsa_port = DSA_USER_PORT;
+			eth_ctx->dsa_switch_ctx = dsa_switch_ctx;
+			goto port_init;
+		}
 	}
 
-	if (cfg->ethernet_connection == NULL) {
-		eth_ctx->dsa_port = DSA_USER_PORT;
-		eth_ctx->dsa_switch_ctx = dsa_switch_ctx;
-		dsa_switch_ctx->iface_user[cfg->port_idx] = iface;
-	}
+	/* Find the connection of conduit port and cpu port */
+	iface = net_if_lookup_by_dev(dev);
+	eth_ctx = net_if_l2_data(iface);
+	/* Set up tag protocol on the cpu port */
+	eth_ctx->dsa_port = DSA_CPU_PORT;
+	dsa_tag_setup(dev);
 
+	/* Provide DSA information to the conduit port */
+	eth_ctx_conduit = net_if_l2_data(dsa_switch_ctx->iface_conduit);
+	eth_ctx_conduit->dsa_switch_ctx = dsa_switch_ctx;
+	eth_ctx_conduit->dsa_port = DSA_CONDUIT_PORT;
+
+port_init:
 	if (dsa_switch_ctx->dapi->port_init != NULL) {
 		err = dsa_switch_ctx->dapi->port_init(dev);
 		if (err != 0) {
@@ -87,6 +89,7 @@ static void dsa_port_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	const struct dsa_port_config *cfg = dev->config;
+	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 	char name[INTERFACE_NAME_LEN];
 	uint8_t mac_addr[6] = {0};
 	int ret;
@@ -103,7 +106,7 @@ static void dsa_port_iface_init(struct net_if *iface)
 		net_if_set_link_addr(iface, mac_addr, sizeof(mac_addr), NET_LINK_ETHERNET);
 	}
 
-	if (cfg->ethernet_connection != NULL) {
+	if (eth_ctx->dsa_port == DSA_CPU_PORT) {
 		/* DSA CPU port used only for DSA management */
 		net_if_flag_clear(iface, NET_IF_IPV4);
 		net_if_flag_clear(iface, NET_IF_IPV6);
