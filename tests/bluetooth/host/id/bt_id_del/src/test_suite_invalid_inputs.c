@@ -35,8 +35,8 @@ ZTEST(bt_id_del_invalid_inputs, test_null_keys_ref)
  *  Test deleting key from the resolving list when size resolving list is zero
  *
  *  Constraints:
- *   - bt_dev.le.rl_size is set to 0
- *   - bt_dev.le.rl_entries is set to 0
+ *   - bt_devs[0].le.rl_size is set to 0
+ *   - bt_devs[0].le.rl_entries is set to 0
  *
  *  Expected behaviour:
  *   - An assertion is raised and execution stops
@@ -45,8 +45,8 @@ ZTEST(bt_id_del_invalid_inputs, test_zero_controller_list_size)
 {
 	struct bt_keys keys = {0};
 
-	bt_dev.le.rl_size = 0;
-	bt_dev.le.rl_entries = 0;
+	bt_devs[0].le.rl_size = 0;
+	bt_devs[0].le.rl_entries = 0;
 
 	expect_assert();
 	bt_id_del(&keys);

@@ -21,7 +21,7 @@ DEFINE_FFF_GLOBALS;
 
 static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 
 	SMP_FFF_FAKES_LIST(RESET_FAKE);
 	CONN_FFF_FAKES_LIST(RESET_FAKE);
@@ -49,12 +49,12 @@ ZTEST(bt_le_ext_adv_oob_get_local, test_get_local_out_of_band_information_no_pri
 
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_PRIVACY);
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_READY);
 
 	/* ENOTSUP error should not affect the return value of bt_le_ext_adv_oob_get_local() */
 	bt_smp_le_oob_generate_sc_data_fake.return_val = -ENOTSUP;
 
-	bt_addr_le_copy(&bt_dev.id_addr[BT_ID_DEFAULT], BT_RPA_LE_ADDR);
+	bt_addr_le_copy(&bt_devs[0].id_addr[BT_ID_DEFAULT], BT_RPA_LE_ADDR);
 
 	err = bt_le_ext_adv_oob_get_local(&adv, &oob);
 
@@ -88,7 +88,7 @@ ZTEST(bt_le_ext_adv_oob_get_local, test_get_local_out_of_band_information_privac
 	/* ENOTSUP error should not affect the return value of bt_le_ext_adv_oob_get_local() */
 	bt_smp_le_oob_generate_sc_data_fake.return_val = -ENOTSUP;
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_READY);
 	atomic_clear_bit(adv.flags, BT_ADV_USE_IDENTITY);
 	bt_addr_le_copy(&adv.random_addr, BT_RPA_LE_ADDR);
 

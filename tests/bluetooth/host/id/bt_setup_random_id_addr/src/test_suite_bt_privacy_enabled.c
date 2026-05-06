@@ -35,7 +35,7 @@ static uint8_t testing_irk_value[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06
 
 static void tc_setup(void *f)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 	memset(&hci_cmd_rsp, 0x00, sizeof(struct net_buf));
 	memset(&hci_cmd_rsp_data, 0x00, sizeof(struct custom_bt_hci_rp_vs_read_static_addrs));
 
@@ -80,7 +80,7 @@ static int bt_hci_cmd_send_sync_custom_fake(uint16_t opcode, struct net_buf *buf
 ZTEST(bt_setup_random_id_addr_privacy_enabled, test_create_id_irk_null)
 {
 	int err;
-	uint16_t *vs_commands = (uint16_t *)bt_dev.vs_commands;
+	uint16_t *vs_commands = (uint16_t *)bt_devs[0].vs_commands;
 	struct bt_hci_rp_vs_read_static_addrs *rp =
 		(void *)&hci_cmd_rsp_data.hci_rp_vs_read_static_addrs;
 	struct bt_hci_vs_static_addr *static_addr = (void *)&hci_cmd_rsp_data.hci_vs_static_addr;
@@ -99,7 +99,7 @@ ZTEST(bt_setup_random_id_addr_privacy_enabled, test_create_id_irk_null)
 
 	err = bt_setup_random_id_addr();
 
-	expect_single_call_bt_rand(&bt_dev.irk[0], 16);
+	expect_single_call_bt_rand(&bt_devs[0].irk[0], 16);
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
 }
@@ -122,7 +122,7 @@ ZTEST(bt_setup_random_id_addr_privacy_enabled, test_create_id_irk_null)
 ZTEST(bt_setup_random_id_addr_privacy_enabled, test_create_id_irk_null_bt_rand_fails)
 {
 	int err;
-	uint16_t *vs_commands = (uint16_t *)bt_dev.vs_commands;
+	uint16_t *vs_commands = (uint16_t *)bt_devs[0].vs_commands;
 	struct bt_hci_rp_vs_read_static_addrs *rp =
 		(void *)&hci_cmd_rsp_data.hci_rp_vs_read_static_addrs;
 	struct bt_hci_vs_static_addr *static_addr = (void *)&hci_cmd_rsp_data.hci_vs_static_addr;
@@ -141,7 +141,7 @@ ZTEST(bt_setup_random_id_addr_privacy_enabled, test_create_id_irk_null_bt_rand_f
 
 	err = bt_setup_random_id_addr();
 
-	expect_single_call_bt_rand(&bt_dev.irk[0], 16);
+	expect_single_call_bt_rand(&bt_devs[0].irk[0], 16);
 
 	zassert_true(err < 0, "Unexpected error code '%d' was returned", err);
 }
@@ -174,7 +174,7 @@ static int bt_smp_irk_get_fill_zero_irk_custom_fake(uint8_t *ir, uint8_t *irk)
 ZTEST(bt_setup_random_id_addr_privacy_enabled, test_create_id_irk_not_null_but_cleared)
 {
 	int err;
-	uint16_t *vs_commands = (uint16_t *)bt_dev.vs_commands;
+	uint16_t *vs_commands = (uint16_t *)bt_devs[0].vs_commands;
 	struct bt_hci_rp_vs_read_static_addrs *rp =
 		(void *)&hci_cmd_rsp_data.hci_rp_vs_read_static_addrs;
 	struct bt_hci_vs_static_addr *static_addr = (void *)&hci_cmd_rsp_data.hci_vs_static_addr;
@@ -193,7 +193,7 @@ ZTEST(bt_setup_random_id_addr_privacy_enabled, test_create_id_irk_not_null_but_c
 
 	err = bt_setup_random_id_addr();
 
-	expect_single_call_bt_rand(&bt_dev.irk[0], 16);
+	expect_single_call_bt_rand(&bt_devs[0].irk[0], 16);
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
 }
@@ -221,12 +221,12 @@ static int bt_smp_irk_get_non_zero_irk_custom_fake(uint8_t *ir, uint8_t *irk)
  *
  *  Expected behaviour:
  *   - Return value is 0
- *   - IRK is loaded to bt_dev.irk[]
+ *   - IRK is loaded to bt_devs[0].irk[]
  */
 ZTEST(bt_setup_random_id_addr_privacy_enabled, test_create_id_irk_not_null_and_filled)
 {
 	int err;
-	uint16_t *vs_commands = (uint16_t *)bt_dev.vs_commands;
+	uint16_t *vs_commands = (uint16_t *)bt_devs[0].vs_commands;
 	struct bt_hci_rp_vs_read_static_addrs *rp =
 		(void *)&hci_cmd_rsp_data.hci_rp_vs_read_static_addrs;
 	struct bt_hci_vs_static_addr *static_addr = (void *)&hci_cmd_rsp_data.hci_vs_static_addr;
@@ -247,7 +247,7 @@ ZTEST(bt_setup_random_id_addr_privacy_enabled, test_create_id_irk_not_null_and_f
 	expect_not_called_bt_rand();
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
-	zassert_mem_equal(&bt_dev.irk[0], testing_irk_value, sizeof(testing_irk_value),
+	zassert_mem_equal(&bt_devs[0].irk[0], testing_irk_value, sizeof(testing_irk_value),
 			  "Incorrect IRK value was set");
 }
 #endif

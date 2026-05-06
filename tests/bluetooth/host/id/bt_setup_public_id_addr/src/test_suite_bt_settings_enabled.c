@@ -28,7 +28,7 @@ static void tc_setup(void *f)
 {
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_SETTINGS);
 
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 	memset(&hci_cmd_rsp, 0x00, sizeof(struct net_buf));
 	memset(&hci_rp_read_bd_addr, 0x00, sizeof(struct bt_hci_rp_read_bd_addr));
 
@@ -63,8 +63,8 @@ ZTEST(bt_setup_public_id_addr_bt_settings_enabled, test_bt_id_read_public_addr_r
 
 	expect_not_called_bt_settings_store_id();
 
-	zassert_true(bt_dev.id_count == 0, "Incorrect value '%d' was set to bt_dev.id_count",
-		     bt_dev.id_count);
+	zassert_true(bt_devs[0].id_count == 0,
+		     "Incorrect value '%d' was set to bt_devs[0].id_count", bt_devs[0].id_count);
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
 }
 
@@ -92,11 +92,11 @@ static int bt_hci_cmd_send_sync_custom_fake(uint16_t opcode, struct net_buf *buf
  *  Constraints:
  *   - bt_hci_cmd_send_sync() returns zero
  *   - Response data contains a valid address
- *   - BT_DEV_READY bit isn't set in bt_dev.flags
+ *   - BT_DEV_READY bit isn't set in bt_devs[0].flags
  *
  *  Expected behaviour:
  *   - Return value is 0
- *   - Public address is loaded to bt_dev.id_addr[]
+ *   - Public address is loaded to bt_devs[0].id_addr[]
  *   - No expected calls to bt_settings_save_id()
  */
 ZTEST(bt_setup_public_id_addr_bt_settings_enabled,
@@ -108,17 +108,17 @@ ZTEST(bt_setup_public_id_addr_bt_settings_enabled,
 	bt_addr_copy(&rp->bdaddr, BT_ADDR);
 	bt_hci_cmd_send_sync_fake.custom_fake = bt_hci_cmd_send_sync_custom_fake;
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_READY);
+	atomic_clear_bit(bt_devs[0].flags, BT_DEV_READY);
 
 	err = bt_setup_public_id_addr();
 
 	expect_not_called_bt_settings_store_id();
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
-	zassert_mem_equal(&bt_dev.id_addr[BT_ID_DEFAULT], BT_LE_ADDR, sizeof(bt_addr_le_t),
+	zassert_mem_equal(&bt_devs[0].id_addr[BT_ID_DEFAULT], BT_LE_ADDR, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
-	zassert_true(bt_dev.id_count == 1, "Incorrect value '%d' was set to bt_dev.id_count",
-		     bt_dev.id_count);
+	zassert_true(bt_devs[0].id_count == 1,
+		     "Incorrect value '%d' was set to bt_devs[0].id_count", bt_devs[0].id_count);
 }
 
 /*
@@ -129,11 +129,11 @@ ZTEST(bt_setup_public_id_addr_bt_settings_enabled,
  *  Constraints:
  *   - bt_hci_cmd_send_sync() returns zero
  *   - Response data contains a valid address
- *   - BT_DEV_READY bit isn't set in bt_dev.flags
+ *   - BT_DEV_READY bit isn't set in bt_devs[0].flags
  *
  *  Expected behaviour:
  *   - Return value is 0
- *   - Public address is loaded to bt_dev.id_addr[]
+ *   - Public address is loaded to bt_devs[0].id_addr[]
  *   - No expected calls to bt_settings_save_id()
  */
 ZTEST(bt_setup_public_id_addr_bt_settings_enabled,
@@ -145,17 +145,17 @@ ZTEST(bt_setup_public_id_addr_bt_settings_enabled,
 	bt_addr_copy(&rp->bdaddr, BT_ADDR);
 	bt_hci_cmd_send_sync_fake.custom_fake = bt_hci_cmd_send_sync_custom_fake;
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_READY);
 
 	err = bt_setup_public_id_addr();
 
 	expect_single_call_bt_settings_store_id();
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
-	zassert_mem_equal(&bt_dev.id_addr[BT_ID_DEFAULT], BT_LE_ADDR, sizeof(bt_addr_le_t),
+	zassert_mem_equal(&bt_devs[0].id_addr[BT_ID_DEFAULT], BT_LE_ADDR, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
-	zassert_true(bt_dev.id_count == 1, "Incorrect value '%d' was set to bt_dev.id_count",
-		     bt_dev.id_count);
+	zassert_true(bt_devs[0].id_count == 1,
+		     "Incorrect value '%d' was set to bt_devs[0].id_count", bt_devs[0].id_count);
 }
 
 /*
@@ -169,7 +169,7 @@ ZTEST(bt_setup_public_id_addr_bt_settings_enabled,
  *
  *  Expected behaviour:
  *   - Return value is 0
- *   - 'BT_DEV_STORE_ID' bit is set inside bt_dev.flags
+ *   - 'BT_DEV_STORE_ID' bit is set inside bt_devs[0].flags
  */
 ZTEST(bt_setup_public_id_addr_bt_settings_enabled, test_store_flag_set_correctly)
 {
@@ -185,6 +185,6 @@ ZTEST(bt_setup_public_id_addr_bt_settings_enabled, test_store_flag_set_correctly
 	err = bt_setup_public_id_addr();
 
 	zassert_true(err == 0, "Unexpected error code '%d' was returned", err);
-	zassert_true(atomic_test_bit(bt_dev.flags, BT_DEV_STORE_ID),
+	zassert_true(atomic_test_bit(bt_devs[0].flags, BT_DEV_STORE_ID),
 		     "Flags were not correctly set");
 }

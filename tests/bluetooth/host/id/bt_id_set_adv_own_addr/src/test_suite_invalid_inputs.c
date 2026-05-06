@@ -74,7 +74,7 @@ ZTEST(bt_id_set_adv_own_addr_invalid_inputs, test_dir_adv_with_rpa_no_privacy)
 	options |= BT_LE_ADV_OPT_CONN;
 	options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
 
-	bt_dev.le.features[(BT_LE_FEAT_BIT_PRIVACY) >> 3] &= ~BIT((BT_LE_FEAT_BIT_PRIVACY)&7);
+	bt_devs[0].le.features[(BT_LE_FEAT_BIT_PRIVACY) >> 3] &= ~BIT((BT_LE_FEAT_BIT_PRIVACY) & 7);
 
 	err = bt_id_set_adv_own_addr(&adv, options, true, &own_addr_type);
 
@@ -140,7 +140,7 @@ ZTEST(bt_id_set_adv_own_addr_invalid_inputs, test_bt_id_set_adv_random_addr_fail
 	options |= BT_LE_ADV_OPT_CONN;
 
 	adv.id = 0;
-	bt_addr_le_copy(&bt_dev.id_addr[adv.id], BT_RPA_LE_ADDR);
+	bt_addr_le_copy(&bt_devs[0].id_addr[adv.id], BT_RPA_LE_ADDR);
 
 	err = bt_id_set_adv_own_addr(&adv, options, true, &own_addr_type);
 
@@ -179,7 +179,7 @@ ZTEST(bt_id_set_adv_own_addr_invalid_inputs, test_bt_id_set_adv_random_addr_fail
 	options &= ~BT_LE_ADV_OPT_CONN;
 
 	adv.id = 0;
-	bt_addr_le_copy(&bt_dev.id_addr[adv.id], BT_RPA_LE_ADDR);
+	bt_addr_le_copy(&bt_devs[0].id_addr[adv.id], BT_RPA_LE_ADDR);
 
 	err = bt_id_set_adv_own_addr(&adv, options, true, &own_addr_type);
 

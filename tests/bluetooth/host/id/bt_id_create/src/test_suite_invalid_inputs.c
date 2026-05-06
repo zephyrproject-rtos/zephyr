@@ -71,7 +71,7 @@ ZTEST(bt_id_create_invalid_inputs, test_id_list_is_full)
 {
 	int err;
 
-	bt_dev.id_count = ARRAY_SIZE(bt_dev.id_addr);
+	bt_devs[0].id_count = ARRAY_SIZE(bt_devs[0].id_addr);
 
 	err = bt_id_create(NULL, NULL);
 
@@ -138,8 +138,8 @@ ZTEST(bt_id_create_invalid_inputs, test_pa_address_exists_in_id_list)
 {
 	int err;
 
-	bt_dev.id_count = 1;
-	bt_addr_le_copy(&bt_dev.id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1);
+	bt_devs[0].id_count = 1;
+	bt_addr_le_copy(&bt_devs[0].id_addr[0], BT_STATIC_RANDOM_LE_ADDR_1);
 
 	err = bt_id_create(BT_STATIC_RANDOM_LE_ADDR_1, NULL);
 

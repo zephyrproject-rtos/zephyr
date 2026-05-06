@@ -13,6 +13,9 @@
 #include "babblekit/flags.h"
 #include "babblekit/testcase.h"
 
+/* Forward declaration for bt_send wrapper */
+struct bt_dev;
+
 LOG_MODULE_REGISTER(broadcaster, LOG_LEVEL_INF);
 
 static struct bt_iso_chan iso_chans[CONFIG_BT_ISO_MAX_CHAN];
@@ -264,9 +267,9 @@ void validate_no_iso_frag(struct net_buf *buf)
 	TEST_ASSERT(pb_flag == BT_ISO_SINGLE, "Packet was fragmented");
 }
 
-int __real_bt_send(struct net_buf *buf);
+int __real_bt_send(struct bt_dev *hdev, struct net_buf *buf);
 
-int __wrap_bt_send(struct net_buf *buf)
+int __wrap_bt_send(struct bt_dev *hdev, struct net_buf *buf)
 {
 	if (buf->data[0] == BT_HCI_H4_ISO) {
 		struct bt_hci_iso_hdr *hci_hdr = (void *)(buf->data + 1);
@@ -281,5 +284,5 @@ int __wrap_bt_send(struct net_buf *buf)
 		}
 	}
 
-	return __real_bt_send(buf);
+	return __real_bt_send(hdev, buf);
 }

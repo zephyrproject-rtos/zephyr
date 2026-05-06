@@ -22,7 +22,7 @@ static struct bt_keys resolving_key;
 
 static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 	memset(&resolving_key, 0x00, sizeof(struct bt_keys));
 
 	KEYS_FFF_FAKES_LIST(RESET_FAKE);

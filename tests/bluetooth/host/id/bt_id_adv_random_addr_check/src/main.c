@@ -18,7 +18,7 @@ DEFINE_FFF_GLOBALS;
 
 static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
-	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
+	memset(&bt_devs[0], 0x00, sizeof(struct bt_dev));
 
 	ADV_FFF_FAKES_LIST(RESET_FAKE);
 }
@@ -71,12 +71,12 @@ ZTEST(bt_id_adv_random_addr_check, test_check_returns_true_ext_adv_enabled)
 
 /*
  *  Test checking advertising random address when scanner roles aren't active so that
- *  'BT_DEV_INITIATING' and 'BT_DEV_SCANNING' aren't set in bt_dev.flags
+ *  'BT_DEV_INITIATING' and 'BT_DEV_SCANNING' aren't set in bt_devs[0].flags
  *
  *  Constraints:
  *   - 'CONFIG_BT_OBSERVER' is enabled
  *   - 'CONFIG_BT_EXT_ADV' isn't enabled
- *   - 'BT_DEV_INITIATING' and 'BT_DEV_SCANNING' aren't set in bt_dev.flags
+ *   - 'BT_DEV_INITIATING' and 'BT_DEV_SCANNING' aren't set in bt_devs[0].flags
  *
  *  Expected behaviour:
  *   - bt_id_scan_random_addr_check() returns true
@@ -89,8 +89,8 @@ ZTEST(bt_id_adv_random_addr_check, test_scanner_roles_not_active)
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_OBSERVER);
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_EXT_ADV);
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_INITIATING);
-	atomic_clear_bit(bt_dev.flags, BT_DEV_SCANNING);
+	atomic_clear_bit(bt_devs[0].flags, BT_DEV_INITIATING);
+	atomic_clear_bit(bt_devs[0].flags, BT_DEV_SCANNING);
 
 	result = bt_id_adv_random_addr_check(&adv_param);
 
@@ -118,11 +118,11 @@ ZTEST(bt_id_adv_random_addr_check, test_check_returns_false_scanner_uses_random_
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_OBSERVER);
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_EXT_ADV);
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_INITIATING);
-	atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_INITIATING);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_SCANNING);
 
 	adv_param.options |= BT_LE_ADV_OPT_USE_IDENTITY;
-	bt_dev.id_addr[adv_param.id].type = BT_ADDR_LE_RANDOM;
+	bt_devs[0].id_addr[adv_param.id].type = BT_ADDR_LE_RANDOM;
 
 	result = bt_id_adv_random_addr_check(&adv_param);
 
@@ -152,11 +152,11 @@ ZTEST(bt_id_adv_random_addr_check, test_check_returns_false_advertise_with_local
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_OBSERVER);
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_EXT_ADV);
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_SCANNING);
 
 	adv_param.options &= ~BT_LE_ADV_OPT_CONN;
 	adv_param.options |= BT_LE_ADV_OPT_USE_IDENTITY;
-	bt_dev.id_addr[BT_ID_DEFAULT].type = BT_ADDR_LE_RANDOM;
+	bt_devs[0].id_addr[BT_ID_DEFAULT].type = BT_ADDR_LE_RANDOM;
 
 	result = bt_id_adv_random_addr_check(&adv_param);
 
@@ -186,11 +186,11 @@ ZTEST(bt_id_adv_random_addr_check, test_check_returns_false_advertise_with_diffe
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_OBSERVER);
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_EXT_ADV);
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_SCANNING);
 
 	adv_param.id = 1;
-	bt_dev.id_addr[adv_param.id].type = BT_ADDR_LE_RANDOM;
-	bt_dev.id_addr[BT_ID_DEFAULT].type = BT_ADDR_LE_RANDOM;
+	bt_devs[0].id_addr[adv_param.id].type = BT_ADDR_LE_RANDOM;
+	bt_devs[0].id_addr[BT_ID_DEFAULT].type = BT_ADDR_LE_RANDOM;
 
 	result = bt_id_adv_random_addr_check(&adv_param);
 
@@ -203,7 +203,7 @@ ZTEST(bt_id_adv_random_addr_check, test_check_returns_false_advertise_with_diffe
  *  Constraints:
  *   - 'CONFIG_BT_OBSERVER' is enabled
  *   - 'CONFIG_BT_EXT_ADV' isn't enabled
- *   - 'BT_DEV_INITIATING' and 'BT_DEV_SCANNING' are set in bt_dev.flags
+ *   - 'BT_DEV_INITIATING' and 'BT_DEV_SCANNING' are set in bt_devs[0].flags
  *   - 'CONFIG_BT_SCAN_WITH_IDENTITY' isn't enabled
  *   - 'CONFIG_BT_PRIVACY' isn't enabled
  *
@@ -220,8 +220,8 @@ ZTEST(bt_id_adv_random_addr_check, test_default_return_value)
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_SCAN_WITH_IDENTITY);
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_PRIVACY);
 
-	atomic_set_bit(bt_dev.flags, BT_DEV_INITIATING);
-	atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_INITIATING);
+	atomic_set_bit(bt_devs[0].flags, BT_DEV_SCANNING);
 
 	result = bt_id_adv_random_addr_check(&adv_param);
 
