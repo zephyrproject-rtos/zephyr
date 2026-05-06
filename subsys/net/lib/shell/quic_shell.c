@@ -299,18 +299,18 @@ static uint64_t quic_shell_uptime_ms(void)
 	return uptime_ms > 0 ? (uint64_t)uptime_ms : 0U;
 }
 
-static bool quic_addr_is_unspecified(const struct net_sockaddr_storage *addr)
+static bool quic_addr_is_unspecified(const struct net_sockaddr *addr)
 {
 	if (addr == NULL) {
 		return true;
 	}
 
-	if (addr->ss_family == NET_AF_INET) {
-		return net_ipv4_is_addr_unspecified(&net_sin(net_sad(addr))->sin_addr);
+	if (addr->sa_family == NET_AF_INET) {
+		return net_ipv4_is_addr_unspecified(&net_sin(addr)->sin_addr);
 	}
 
-	if (addr->ss_family == NET_AF_INET6) {
-		return net_ipv6_is_addr_unspecified(&net_sin6(net_sad(addr))->sin6_addr);
+	if (addr->sa_family == NET_AF_INET6) {
+		return net_ipv6_is_addr_unspecified(&net_sin6(addr)->sin6_addr);
 	}
 
 	return true;
@@ -332,7 +332,7 @@ static void quic_resolve_local_addr(const struct net_sockaddr_storage *local,
 
 	memcpy(resolved, local, sizeof(*resolved));
 
-	if (!quic_addr_is_unspecified(local) || remote == NULL) {
+	if (!quic_addr_is_unspecified(net_sad(local)) || remote == NULL) {
 		return;
 	}
 
