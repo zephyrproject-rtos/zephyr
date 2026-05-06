@@ -60,6 +60,15 @@ properties:
     type: boolean
     description: Inversion Off
 
+  sitronix,skip-power-gamma-init:
+    type: boolean
+    description: |
+      Skip controller power and gamma setup for panels whose integration
+      provides fixed power sequencing or does not accept the default ST7789V
+      power/gamma commands. When enabled, the driver only programs pixel
+      format, memory access control, address window, normal display mode and
+      inversion after reset and sleep-out.
+
   porch-param:
     type: uint8-array
     required: true

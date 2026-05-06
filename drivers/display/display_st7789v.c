@@ -36,6 +36,7 @@ struct st7789v_config {
 	uint8_t gamma;
 	uint8_t lcm;
 	bool inversion_on;
+	bool skip_power_gamma_init;
 	uint8_t porch_param[5];
 	uint8_t cmd2en_param[4];
 	uint8_t pwctrl1_param[2];
@@ -254,6 +255,55 @@ static int st7789v_set_orientation(const struct device *dev,
 	return -ENOTSUP;
 }
 
+static int st7789v_lcd_init_minimal(const struct device *dev)
+{
+	struct st7789v_data *data = dev->data;
+	const struct st7789v_config *config = dev->config;
+	uint8_t tmp;
+	int ret;
+
+	st7789v_set_lcd_margins(dev, data->x_offset,
+				data->y_offset);
+
+	/* Interface Pixel Format */
+	tmp = st7789v_get_colmod(config->pixel_format);
+	ret = st7789v_transmit(dev, ST7789V_CMD_COLMOD, &tmp, 1);
+	if (ret < 0) {
+		return ret;
+	}
+	k_sleep(K_MSEC(10));
+
+	/* Memory Data Access Control */
+	tmp = config->mdac;
+	ret = st7789v_transmit(dev, ST7789V_CMD_MADCTL, &tmp, 1);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = st7789v_set_mem_area(dev, 0, 0, config->width, config->height);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = st7789v_transmit(dev, ST7789V_CMD_NORON, NULL, 0);
+	if (ret < 0) {
+		return ret;
+	}
+	k_sleep(K_MSEC(10));
+
+	if (config->inversion_on) {
+		ret = st7789v_transmit(dev, ST7789V_CMD_INV_ON, NULL, 0);
+	} else {
+		ret = st7789v_transmit(dev, ST7789V_CMD_INV_OFF, NULL, 0);
+	}
+	if (ret < 0) {
+		return ret;
+	}
+	k_sleep(K_MSEC(10));
+
+	return ret;
+}
+
 static int st7789v_lcd_init(const struct device *dev)
 {
 	struct st7789v_data *data = dev->data;
@@ -411,6 +461,28 @@ static int st7789v_init(const struct device *dev)
 		return ret;
 	}
 
+	if (config->skip_power_gamma_init) {
+		ret = st7789v_exit_sleep(dev);
+		if (ret < 0) {
+			LOG_ERR("Failed to exit the sleep mode (%d)", ret);
+			return ret;
+		}
+
+		ret = st7789v_lcd_init_minimal(dev);
+		if (ret < 0) {
+			LOG_ERR("Failed to init display (%d)", ret);
+			return ret;
+		}
+
+		ret = st7789v_blanking_on(dev);
+		if (ret < 0) {
+			LOG_ERR("Failed to turn blanking on (%d)", ret);
+			return ret;
+		}
+
+		return 0;
+	}
+
 	ret = st7789v_blanking_on(dev);
 	if (ret < 0) {
 		LOG_ERR("Failed to turn blanking on (%d)", ret);
@@ -429,7 +501,7 @@ static int st7789v_init(const struct device *dev)
 		return ret;
 	}
 
-	return ret;
+	return 0;
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -482,6 +554,7 @@ static DEVICE_API(display, st7789v_api) = {
 		.gamma = DT_INST_PROP(inst, gamma),					\
 		.lcm = DT_INST_PROP(inst, lcm),						\
 		.inversion_on = !DT_INST_PROP(inst, inversion_off),			\
+		.skip_power_gamma_init = DT_INST_PROP(inst, sitronix_skip_power_gamma_init),	\
 		.porch_param = DT_INST_PROP(inst, porch_param),				\
 		.cmd2en_param = DT_INST_PROP(inst, cmd2en_param),			\
 		.pwctrl1_param = DT_INST_PROP(inst, pwctrl1_param),			\
