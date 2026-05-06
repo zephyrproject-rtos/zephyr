@@ -360,9 +360,9 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 		}
 
 		/* Read the cumulative length of data in this buffer and previous buffers (if any).
-		 * The complete length is in a descriptor with the last descriptor flag set
-		 * (note that it includes four byte FCS as well). This length will be validated
-		 * against processed_len to ensure it's within expected bounds.
+		 * The complete length is in a descriptor with the last descriptor flag set.
+		 * The MAC strips CRC from Type packets, so the packet passed to upper layers
+		 * does not include the FCS.
 		 */
 		pkt_len = desc->write.control3 & DESC_RX_PKT_LEN;
 		if ((pkt_len < processed_len) ||
@@ -419,13 +419,16 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 				uint32_t ctx_idx = rx_data->next_desc_idx;
 				volatile union nxp_enet_qos_rx_desc *ctx_desc = &desc_arr[ctx_idx];
 
-				if (!(ctx_desc->write.control3 & OWN_FLAG) &&
+				if ((desc->write.control3 & RX_STATUS1_VALID_FLAG) &&
+				    (desc->write.control1 & RX_TIMESTAMP_AVAILABLE_FLAG) &&
+				    !(ctx_desc->write.control3 & OWN_FLAG) &&
 				    (ctx_desc->write.control3 & RECEIVE_CONTEXT_DESCRIPTOR_FLAG)) {
 					pkt->timestamp.nanosecond = ctx_desc->write.vlan_tag;
 					pkt->timestamp.second = ctx_desc->write.control1;
+					net_pkt_set_rx_timestamping(pkt, true);
 
 					/* Recycle the context descriptor slot as a
-					 * regular RX descriptor — the reserved_buf at
+					 * regular RX descriptor - the reserved_buf at
 					 * this index was untouched by the context write.
 					 */
 					ctx_desc->read.buf1_addr =
@@ -591,6 +594,8 @@ static inline void enet_qos_mtl_config_init(enet_qos_t *base)
 #if defined(ENET_MTL_QUEUE_MTL_TXQX_OP_MODE_TQS) && defined(ENET_MTL_QUEUE_MTL_TXQX_OP_MODE_TXQEN)
 	/* Enable only Transmit Queue 0 (optimization/configuration pending) with maximum size */
 	base->MTL_QUEUE[0].MTL_TXQX_OP_MODE =
+		/* Store and forward is required for reliable PTP timestamps. */
+		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_TXQX_OP_MODE, TSF, 0b1) |
 		/* Sets the size */
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_TXQX_OP_MODE, TQS, 0b111) |
 		/* Sets it to on */
@@ -603,6 +608,8 @@ static inline void enet_qos_mtl_config_init(enet_qos_t *base)
 		/* Sets the size */
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_RXQX_OP_MODE, RQS, 0b111) |
 #endif
+		/* Store and forward is required for reliable PTP timestamps. */
+		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_RXQX_OP_MODE, RSF, 0b1) |
 		/* Keep small packets */
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_RXQX_OP_MODE, FUP, 0b1);
 }
@@ -641,6 +648,8 @@ static inline void enet_qos_mac_config_init(enet_qos_t *base, struct nxp_enet_qo
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1) |
 		/* 100 Mbps mode, adjust link speed in phy callback if needed */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1) |
+		/* Strip CRC from Type packets before handing frames to the stack */
+		ENET_QOS_REG_PREP(MAC_CONFIGURATION, CST, 0b1) |
 		/* Don't talk unless no one else is talking */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, ECRSFD, 0b1);
 
@@ -862,7 +871,8 @@ static const struct device *eth_nxp_enet_qos_get_phy(const struct device *dev,
 }
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
-static const struct device *eth_nxp_enet_qos_get_ptp_clock(const struct device *dev)
+static const struct device *eth_nxp_enet_qos_get_ptp_clock(const struct device *dev,
+							   struct net_if *iface __unused)
 {
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 
