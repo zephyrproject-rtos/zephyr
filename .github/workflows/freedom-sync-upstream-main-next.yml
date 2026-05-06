@@ -1,0 +1,52 @@
+name: Freedom — Sync upstream main-next
+
+on:
+  workflow_run:
+    workflows: ["Freedom — Sync upstream main"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: freedom-sync-upstream-main-next
+  cancel-in-progress: false
+
+jobs:
+  rebase-main-next:
+    if: >-
+      github.repository == 'FreedomVeiculosEletricos/zephyr' &&
+      (github.event_name == 'workflow_dispatch' ||
+       github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main-next with full history
+        uses: actions/checkout@v4
+        with:
+          ref: main-next
+          fetch-depth: 0
+          ssh-key: ${{ secrets.SYNC_SSH_KEY }}
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "freedom-sync-bot"
+          git config user.email "freedom-sync-bot@users.noreply.github.com"
+
+      - name: Fetch latest main and main-next
+        run: git fetch origin main main-next
+
+      - name: Rebase main-next onto main
+        run: |
+          git checkout main-next
+          git reset --hard origin/main-next
+          if ! git rebase origin/main; then
+            git rebase --abort || true
+            exit 1
+          fi
+
+      - name: Force-push main-next
+        run: git push --force-with-lease origin main-next
