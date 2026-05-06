@@ -402,9 +402,10 @@
 	};
 
 	wuu_0: system-modules@14000 {
-		compatible = "nxp,wuu";
+		compatible = "nxp,wuc-wuu", "nxp,wuu";
 		reg = <0x14000 0x5c>;
 		interrupts = <24 0>;
+		#wakeup-ctrl-cells = <1>;
 	};
 
 	clk_ctrl: clock-controller {
