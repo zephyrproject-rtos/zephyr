@@ -6,7 +6,12 @@
  */
 
 #define DT_DRV_COMPAT     infineon_qspi_flash
+
+#if defined(CONFIG_DT_HAS_FIXED_PARTITIONS_ENABLED)
 #define SOC_NV_FLASH_NODE DT_PARENT(DT_INST(0, fixed_partitions))
+#else
+#define SOC_NV_FLASH_NODE DT_MEM_FROM_MAPPED_PARTITION(DT_INST(0, zephyr_mapped_partition))
+#endif
 
 #define PAGE_LEN DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
 
