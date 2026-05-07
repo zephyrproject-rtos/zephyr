@@ -42,32 +42,61 @@ extern "C" {
 typedef void (*ps2_callback_t)(const struct device *dev, uint8_t data);
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * PS2 driver API definition and system call entry points
- *
- * (Internal use only.)
+ * @def_driverbackendgroup{PS/2,ps2_interface}
+ * @ingroup ps2_interface
+ * @{
+ */
+
+/**
+ * @brief Callback API for configuring a PS/2 device
+ * @see ps2_config() for argument descriptions.
  */
 typedef int (*ps2_config_t)(const struct device *dev,
 			    ps2_callback_t callback_isr);
+
+/**
+ * @brief Callback API for reading from a PS/2 device
+ * @see ps2_read() for argument descriptions.
+ */
 typedef int (*ps2_read_t)(const struct device *dev, uint8_t *value);
+
+/**
+ * @brief Callback API for writing to a PS/2 device
+ * @see ps2_write() for argument descriptions.
+ */
 typedef int (*ps2_write_t)(const struct device *dev, uint8_t value);
+
+/**
+ * @brief Callback API for disabling a PS/2 device callback
+ */
 typedef int (*ps2_disable_callback_t)(const struct device *dev);
+
+/**
+ * @brief Callback API for enabling a PS/2 device callback
+ * @see ps2_enable_callback() for argument descriptions.
+ */
 typedef int (*ps2_enable_callback_t)(const struct device *dev);
 
+/**
+ * @driver_ops{PS/2}
+ */
 __subsystem struct ps2_driver_api {
+	/** @driver_ops_mandatory @copybrief ps2_config() */
 	ps2_config_t config;
+	/** @driver_ops_mandatory @copybrief ps2_read() */
 	ps2_read_t read;
+	/** @driver_ops_mandatory @copybrief ps2_write() */
 	ps2_write_t write;
+	/** @driver_ops_optional @copybrief ps2_disable_callback() */
 	ps2_disable_callback_t disable_callback;
+	/** @driver_ops_optional @copybrief ps2_enable_callback() */
 	ps2_enable_callback_t enable_callback;
 };
-/**
- * @endcond
- */
+
+/** @} */
 
 /**
- * @brief Configure a ps2 instance.
+ * @brief Configure a PS/2 device instance.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param callback_isr called when PS/2 devices reply to a configuration
@@ -86,7 +115,7 @@ static inline int z_impl_ps2_config(const struct device *dev,
 }
 
 /**
- * @brief Write to PS/2 device.
+ * @brief Write to a PS/2 device.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param value Data for the PS2 device.
