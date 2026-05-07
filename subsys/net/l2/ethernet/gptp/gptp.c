@@ -40,18 +40,11 @@ struct gptp_clock_data gptp_clock;
 
 int gptp_get_port_number(struct net_if *iface)
 {
-	int port = net_eth_get_ptp_port(iface) + 1;
+	int port = net_eth_get_ptp_port(iface);
 
 	if (port >= GPTP_PORT_START && port < GPTP_PORT_END) {
 		return port;
 	}
-
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
-		if (GPTP_PORT_IFACE(port) == iface) {
-			return port;
-		}
-	}
-
 	return -ENODEV;
 }
 
@@ -599,7 +592,7 @@ static void gptp_add_port(struct net_if *iface, void *user_data)
 	clk = net_eth_get_ptp_clock(iface);
 	if (clk) {
 		gptp_domain.iface[*num_ports] = iface;
-		net_eth_set_ptp_port(iface, *num_ports);
+		net_eth_set_ptp_port(iface, GPTP_PORT_START + *num_ports);
 		(*num_ports)++;
 	}
 }
