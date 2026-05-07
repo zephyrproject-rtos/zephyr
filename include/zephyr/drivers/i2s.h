@@ -324,23 +324,47 @@ struct i2s_config {
 };
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * For internal use only, skip these in public documentation.
+ * @def_driverbackendgroup{I2S,i2s_interface}
+ * @ingroup i2s_interface
+ * @{
+ */
+
+/**
+ * @driver_ops{I2S}
  */
 __subsystem struct i2s_driver_api {
+	/**
+	 * @driver_ops_mandatory @copybrief i2s_configure
+	 * See i2s_configure() for arguments description.
+	 */
 	int (*configure)(const struct device *dev, enum i2s_dir dir,
 			 const struct i2s_config *cfg);
+	/**
+	 * @driver_ops_mandatory @copybrief i2s_config_get
+	 * See i2s_config_get() for arguments description.
+	 */
 	const struct i2s_config *(*config_get)(const struct device *dev,
 				  enum i2s_dir dir);
+	/**
+	 * @driver_ops_mandatory @copybrief i2s_read
+	 * See i2s_read() for arguments description.
+	 */
 	int (*read)(const struct device *dev, void **mem_block, size_t *size);
+	/**
+	 * @driver_ops_mandatory @copybrief i2s_write
+	 * See i2s_write() for arguments description.
+	 */
 	int (*write)(const struct device *dev, void *mem_block, size_t size);
+	/**
+	 * @driver_ops_mandatory @copybrief i2s_trigger
+	 * See i2s_trigger() for arguments description.
+	 */
 	int (*trigger)(const struct device *dev, enum i2s_dir dir,
 		       enum i2s_trigger_cmd cmd);
 };
-/**
- * @endcond
- */
+
+/** @} */
+
 
 /**
  * @brief Configure operation of a host I2S controller.
