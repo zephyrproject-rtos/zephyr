@@ -266,7 +266,7 @@
 
 		rng: entropy {
 			compatible = "ti,cc23x0-rng", "simple-bus";
-			status = "okay";
+			status = "disabled";
 		};
 
 		adc0: adc@40050000 {
