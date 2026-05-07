@@ -225,6 +225,10 @@ static int handle_ack(struct ieee802154_esp32_data *data)
 		return 0;
 	}
 
+	if (!IS_ENABLED(CONFIG_NET_L2_PHY_IEEE802154)) {
+		goto free_esp_ack;
+	}
+
 	if (IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 		ack_len = data->ack_frame[0];
 	} else {
