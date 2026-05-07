@@ -185,6 +185,7 @@ function(sysbuild_cache)
                      ${${SB_CACHE_APPLICATION}_CACHE_FILE} ONLY_IF_DIFFERENT
     )
   endif()
+  file(REMOVE ${${SB_CACHE_APPLICATION}_CACHE_FILE}.tmp)
 
 endfunction()
 
