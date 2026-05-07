@@ -40,7 +40,8 @@ struct gptp_clock_data gptp_clock;
 
 int gptp_get_port_number(struct net_if *iface)
 {
-	int port = net_eth_get_ptp_port(iface);
+	struct ethernet_context *ctx = net_if_l2_data(iface);
+	int port = ctx->gptp_port;
 
 	if (port >= GPTP_PORT_START && port <= GPTP_PORT_END) {
 		return port;
@@ -581,7 +582,8 @@ static void gptp_thread(void *p1, void *p2, void *p3)
 
 static void gptp_add_port(struct net_if *iface, void *user_data)
 {
-	uint8_t *num_ports = user_data;
+	struct ethernet_context *ctx = net_if_l2_data(iface);
+	uint16_t *num_ports = user_data;
 	const struct device *clk;
 
 	if (*num_ports >= CONFIG_NET_GPTP_NUM_PORTS) {
@@ -592,7 +594,7 @@ static void gptp_add_port(struct net_if *iface, void *user_data)
 	clk = net_eth_get_ptp_clock(iface);
 	if (clk) {
 		gptp_domain.iface[*num_ports] = iface;
-		net_eth_set_ptp_port(iface, GPTP_PORT_START + *num_ports);
+		ctx->gptp_port = GPTP_PORT_START + *num_ports;
 		(*num_ports)++;
 	}
 }

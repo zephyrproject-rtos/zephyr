@@ -38,7 +38,7 @@ extern "C" {
 
 /* Helpers to access gptp_domain fields. */
 #define GPTP_PORT_START 1
-#define GPTP_PORT_END (GPTP_PORT_START + gptp_domain.default_ds.nb_ports - 1)
+#define GPTP_PORT_END (gptp_domain.default_ds.nb_ports - 1 + GPTP_PORT_START)
 #define GPTP_PORT_INDEX(port) (port - GPTP_PORT_START)
 
 #define GPTP_GLOBAL_DS() (&gptp_domain.global_ds)
@@ -276,7 +276,7 @@ struct gptp_default_ds {
 	bool gm_capable;
 
 	/** Number of ports of the time-aware system. */
-	uint8_t nb_ports;
+	uint16_t nb_ports;
 
 	/** Primary priority of the time-aware system. */
 	uint8_t priority1;
