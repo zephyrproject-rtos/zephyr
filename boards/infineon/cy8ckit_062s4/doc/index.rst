@@ -15,10 +15,6 @@ ambient light sensor, a thermistor, and serial memory.
 The board supports Arduino Uno R3 expansion headers and includes an
 onboard `KitProg3`_ programmer/debugger with USB Micro-B connectivity.
 
-.. image:: img/cy8ckit_062s4.png
-   :align: center
-   :alt: PSOC™ 62S4 Pioneer Kit
-
 Hardware
 ********
 

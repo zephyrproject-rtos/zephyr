@@ -17,10 +17,6 @@ components for independent use.
 The board includes an onboard `KitProg3`_ programmer/debugger with USB
 Micro-B connectivity.
 
-.. image:: img/cy8cproto-063-ble.jpg
-   :align: center
-   :alt: CY8CPROTO-063-BLE PSOC™ 6 BLE Prototyping Kit
-
 Hardware
 ********
 

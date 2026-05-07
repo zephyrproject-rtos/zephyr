@@ -21,10 +21,6 @@ The KIT_XMC72_EVK is a multi-core board with three build targets:
 - ``kit_xmc72_evk/xmc7200d_e272k8384/m7_0`` — Cortex-M7 core 0
 - ``kit_xmc72_evk/xmc7200d_e272k8384/m7_1`` — Cortex-M7 core 1
 
-.. image:: img/kit_xmc72_evk.webp
-   :align: center
-   :alt: XMC 7200 Evaluation Kit
-
 Hardware
 ********
 

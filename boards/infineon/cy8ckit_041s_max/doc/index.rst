@@ -12,10 +12,6 @@ Key features include 384 KB flash, 32 KB SRAM, CAPSENSE™ buttons, touchpad,
 slider, and proximity sensing, a thermistor, and an onboard `KitProg3`_
 programmer/debugger with USB Micro-B connectivity.
 
-.. image:: img/cy8ckit_041s_max.webp
-   :align: center
-   :alt: PSOC™ 4100S Max Pioneer Kit
-
 Hardware
 ********
 

@@ -18,10 +18,6 @@ components for independent use, plus support for Digilent Pmod interfaces.
 The board includes an onboard `KitProg3`_ programmer/debugger with USB
 Micro-B connectivity.
 
-.. image:: img/board.jpg
-   :align: center
-   :alt: CY8CPROTO-062-4343W PSOC™ 6 Wi-Fi BT Prototyping Kit
-
 Hardware
 ********
 

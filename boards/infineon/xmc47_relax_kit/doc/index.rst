@@ -13,10 +13,6 @@ QSPI flash, a microSD card slot, and Arduino-compatible headers (3.3V).
 
 The board includes a detachable SEGGER J-Link debugger with UART VCOM.
 
-.. image:: xmc47_relax_kit.jpg
-   :align: center
-   :alt: XMC 4700 Relax Kit
-
 Hardware
 ********
 
