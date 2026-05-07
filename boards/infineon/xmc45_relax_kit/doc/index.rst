@@ -12,10 +12,6 @@ Key features include 1024 KB flash, 160 KB SRAM, Ethernet, CAN, a
 comprehensive set of serial interfaces (SPI, I2C, I2S, UART), and a
 detachable on-board SEGGER J-Link debugger with UART VCOM.
 
-.. image:: xmc45_relax_kit.jpg
-   :align: center
-   :alt: XMC 4500 Relax Kit
-
 Hardware
 ********
 

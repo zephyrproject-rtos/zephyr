@@ -22,10 +22,6 @@ The KIT_PSC3M5_EVK supports the following board variants:
 - ``kit_psc3m5_evk/psc3m5fds2afq1/norflash`` — NOR Flash variant
   (requires :ref:`board rework <kit_psc3m5_evk_norflash_rework>`)
 
-.. image:: img/kit_psc3m5_evk.webp
-   :align: center
-   :alt: PSOC™ Control C3M5 Evaluation Kit
-
 Hardware
 ********
 

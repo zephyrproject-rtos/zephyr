@@ -22,10 +22,6 @@ The KIT_T2G-B-H_EVK is a multi-core board with three build targets:
 - ``kit_t2g_b_h_evk/cyt4bfbche/m7_0`` — Cortex-M7 core 0
 - ``kit_t2g_b_h_evk/cyt4bfbche/m7_1`` — Cortex-M7 core 1
 
-.. image:: img/kit_t2g_b_h_evk.webp
-   :align: center
-   :alt: TRAVEO T2G Body High Evaluation Kit
-
 Hardware
 ********
 

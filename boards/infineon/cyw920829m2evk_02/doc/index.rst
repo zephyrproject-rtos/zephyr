@@ -28,10 +28,6 @@ The CYW920829M2EVK-02 supports multiple SoC variants:
 | ``cyw920829m2evk_02/cyw20829b1340``      | CYW20829 B1340   |
 +------------------------------------------+------------------+
 
-.. image:: img/cyw920829m2evk_02.webp
-   :align: center
-   :alt: AIROC CYW20829 Bluetooth LE Evaluation Kit
-
 Hardware
 ********
 

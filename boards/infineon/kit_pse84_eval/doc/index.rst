@@ -24,10 +24,6 @@ buttons and slider, and comprehensive debug headers (ETM/JTAG/SWD).
 The board includes an onboard `KitProg3`_ programmer/debugger with USB
 Type-C connectivity.
 
-.. image:: kit_pse84_eval.webp
-   :align: center
-   :alt: PSOC™ Edge E84 Evaluation Kit
-
 Board Targets
 *************
 

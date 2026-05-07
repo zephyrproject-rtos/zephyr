@@ -12,10 +12,6 @@ Key features include 128 KB flash, 32 KB SRAM (16 KB usable), CAPSENSE™
 touch sensing, and an onboard `KitProg3`_ programmer/debugger with USB
 Micro-B connectivity.
 
-.. image:: cy8cproto_041tp.webp
-   :align: center
-   :alt: CY8CPROTO-041TP PSOC™ 4100T Plus CAPSENSE™ Prototyping Kit
-
 Hardware
 ********
 

@@ -19,10 +19,6 @@ The board includes an onboard `KitProg3`_ programmer/debugger with USB
 Type-C connectivity, expansion IO header, and Raspberry Pi compatible
 MIPI-DSI display support.
 
-.. image:: kit_pse84_ai.webp
-   :align: center
-   :alt: PSOC™ Edge E84 AI Evaluation Kit
-
 Board Targets
 *************
 

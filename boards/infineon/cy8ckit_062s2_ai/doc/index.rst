@@ -18,10 +18,6 @@ BMI270 6-axis IMU, BMM350 magnetometer, and a PDM-PCM microphone.
 The board includes an onboard `KitProg3`_ programmer/debugger with USB
 Micro-B connectivity.
 
-.. image:: img/cy8ckit_062s2_ai.webp
-   :align: center
-   :alt: PSOC™ 6 AI Evaluation Kit
-
 Hardware
 ********
 
