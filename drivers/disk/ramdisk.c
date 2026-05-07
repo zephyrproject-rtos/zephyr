@@ -17,6 +17,9 @@ LOG_MODULE_REGISTER(ramdisk, CONFIG_RAMDISK_LOG_LEVEL);
 
 struct ram_disk_data {
 	struct disk_info *info;
+#if defined(CONFIG_MMU)
+	uint8_t *ramdisk_buf;
+#endif
 };
 
 struct ram_disk_config {
@@ -26,11 +29,29 @@ struct ram_disk_config {
 	uint8_t *const buf;
 };
 
+#if defined(CONFIG_MMU)
+static uint8_t *disk_ram_external_map(const struct ram_disk_config *conf)
+{
+	uint8_t *virt_start;
+
+	k_mem_map_phys_bare(&virt_start, POINTER_TO_UINT(conf->buf),
+				conf->size, K_MEM_CACHE_WB | K_MEM_PERM_RW);
+
+	return virt_start;
+}
+#endif
+
 static void *lba_to_address(const struct device *dev, uint32_t lba)
 {
 	const struct ram_disk_config *config = dev->config;
+#if defined(CONFIG_MMU)
+	struct ram_disk_data *data = dev->data;
+	uint8_t *ramdisk_buf = data->ramdisk_buf;
+#else
+	uint8_t *ramdisk_buf = config->buf;
+#endif
 
-	return &config->buf[lba * config->sector_size];
+	return &ramdisk_buf[lba * config->sector_size];
 }
 
 static int disk_ram_access_status(struct disk_info *disk)
@@ -130,6 +151,11 @@ static int disk_ram_init(const struct device *dev)
 
 	info->dev = dev;
 
+#if defined(CONFIG_MMU)
+	const struct ram_disk_config *config = dev->config;
+
+	data->ramdisk_buf = disk_ram_external_map(config);
+#endif
 	return disk_access_register(info);
 }
 
