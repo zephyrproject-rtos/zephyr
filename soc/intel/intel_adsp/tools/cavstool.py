@@ -346,7 +346,8 @@ def map_phys_mem(stream_id):
     free = int(runx("awk '/HugePages_Free/ {print $2}' /proc/meminfo"))
     if free == 0:
         tot = 1 + int(runx("awk '/HugePages_Total/ {print $2}' /proc/meminfo"))
-        os.system(f"echo {tot} > /proc/sys/vm/nr_hugepages")
+        with open("/proc/sys/vm/nr_hugepages", "w") as nr_hugepages_f:
+            nr_hugepages_f.write(str(tot))
 
     hugef_name = HUGEPAGE_FILE + str(stream_id)
     hugef = open(hugef_name, "w+")
