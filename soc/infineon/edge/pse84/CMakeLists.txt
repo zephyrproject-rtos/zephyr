@@ -29,6 +29,7 @@ zephyr_sources(security_config/pse84_boot.c)
 zephyr_sources(mpu_regions.c)
 
 zephyr_sources_ifdef(CONFIG_PM power.c)
+zephyr_sources_ifdef(CONFIG_REBOOT reboot.c)
 
 zephyr_include_directories(.)
 
