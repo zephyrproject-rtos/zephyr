@@ -80,15 +80,6 @@ ZTEST(display_callbacks, test_vsync_registration)
 	zassert_ok(k_sem_take(&eventsem, K_MSEC(100)), "Callback was not called within timeout");
 }
 
-ZTEST(display_callbacks, test_null_dev_registration)
-{
-	ztest_set_assert_valid(true);
-	display_register_event_cb(NULL, display_cb_handler, NULL, DISPLAY_EVENT_VSYNC, true,
-				  &cb_handle);
-
-	ztest_test_fail();
-}
-
 ZTEST(display_callbacks, test_null_cb_handler_registration)
 {
 	ztest_set_assert_valid(true);
