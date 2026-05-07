@@ -38,7 +38,7 @@ extern "C" {
 
 /* Helpers to access gptp_domain fields. */
 #define GPTP_PORT_START 1
-#define GPTP_PORT_END (gptp_domain.default_ds.nb_ports + GPTP_PORT_START)
+#define GPTP_PORT_END (GPTP_PORT_START + gptp_domain.default_ds.nb_ports - 1)
 
 #define GPTP_PORT_INDEX (port - GPTP_PORT_START)
 
