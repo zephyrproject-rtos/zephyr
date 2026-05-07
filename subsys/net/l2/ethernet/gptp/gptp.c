@@ -42,7 +42,7 @@ int gptp_get_port_number(struct net_if *iface)
 {
 	int port = net_eth_get_ptp_port(iface);
 
-	if (port >= GPTP_PORT_START && port < GPTP_PORT_END) {
+	if (port >= GPTP_PORT_START && port <= GPTP_PORT_END) {
 		return port;
 	}
 	return -ENODEV;
@@ -519,7 +519,7 @@ static void gptp_state_machine(void)
 	int port;
 
 	/* Manage port states. */
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		struct gptp_port_ds *port_ds = GPTP_PORT_DS(port);
 
 		/* If interface is down, don't move forward */
@@ -559,7 +559,7 @@ static void gptp_thread(void *p1, void *p2, void *p3)
 
 	gptp_init_clock_ds();
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		gptp_init_port_ds(port);
 		gptp_change_port_state(port, GPTP_PORT_DISABLED);
 	}
@@ -875,7 +875,7 @@ int gptp_get_port_data(struct gptp_domain *domain,
 		return -ENOENT;
 	}
 
-	if (port < GPTP_PORT_START || port >= GPTP_PORT_END) {
+	if (port < GPTP_PORT_START || port > GPTP_PORT_END) {
 		return -EINVAL;
 	}
 
