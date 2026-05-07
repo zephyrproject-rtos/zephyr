@@ -49,6 +49,13 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_shutdown_chat_script,
 			 nordic_nrf91_slm_shutdown_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 2);
 
+static const struct modem_cellular_config_scripts nrf91_slm_scripts = {
+	.init = &nordic_nrf91_slm_init_chat_script,
+	.dial = &nordic_nrf91_slm_dial_chat_script,
+	.periodic = &nordic_nrf91_slm_periodic_chat_script,
+	.shutdown = &nordic_nrf91_slm_shutdown_chat_script,
+};
+
 #define MODEM_CELLULAR_DEVICE_NORDIC_NRF91_SLM(inst)                                               \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 1500); \
                                                                                                    \
@@ -59,9 +66,6 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_shutdown_chat_script,
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (gnss_pipe, 3))                            \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(                                                            \
-		inst, 0, 500, 5000, 0, false, NULL, &nordic_nrf91_slm_init_chat_script,            \
-		&nordic_nrf91_slm_dial_chat_script, &nordic_nrf91_slm_periodic_chat_script,        \
-		&nordic_nrf91_slm_shutdown_chat_script)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 0, 500, 5000, 0, false, &nrf91_slm_scripts)
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_NORDIC_NRF91_SLM)

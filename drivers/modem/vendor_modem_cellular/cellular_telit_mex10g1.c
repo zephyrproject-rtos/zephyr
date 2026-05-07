@@ -58,6 +58,12 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me310g1_shutdown_chat_script,
 
 #endif
 
+__maybe_unused static const struct modem_cellular_config_scripts telit_me910g1_scripts = {
+	.init = &telit_mex10g1_init_chat_script,
+	.dial = &telit_mex10g1_dial_chat_script,
+	.periodic = &telit_mex10g1_periodic_chat_script,
+};
+
 #define MODEM_CELLULAR_DEVICE_TELIT_ME910G1(inst)                                                  \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);   \
                                                                                                    \
@@ -69,9 +75,16 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me310g1_shutdown_chat_script,
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(                                                            \
-		inst, 5050, 250, 15000, 5000, false, NULL, &telit_mex10g1_init_chat_script,        \
-		&telit_mex10g1_dial_chat_script, &telit_mex10g1_periodic_chat_script, NULL)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 5050, 250, 15000, 5000, false, &telit_me910g1_scripts)
+
+#if DT_HAS_COMPAT_STATUS_OKAY(telit_me310g1)
+static const struct modem_cellular_config_scripts telit_me310g1_scripts = {
+	.init = &telit_mex10g1_init_chat_script,
+	.dial = &telit_mex10g1_dial_chat_script,
+	.periodic = &telit_mex10g1_periodic_chat_script,
+	.shutdown = &telit_me310g1_shutdown_chat_script,
+};
+#endif
 
 #define MODEM_CELLULAR_DEVICE_TELIT_ME310G1(inst)                                                  \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);   \
@@ -84,10 +97,8 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_me310g1_shutdown_chat_script,
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(                                                            \
-		inst, 5050, 0 /* unused */, 1000, 15000, false, NULL,                              \
-		&telit_mex10g1_init_chat_script, &telit_mex10g1_dial_chat_script,                  \
-		&telit_mex10g1_periodic_chat_script, &telit_me310g1_shutdown_chat_script)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 5050, 0 /* unused */, 1000, 15000, false,             \
+				       &telit_me310g1_scripts)
 
 #define DT_DRV_COMPAT telit_me910g1
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_TELIT_ME910G1)

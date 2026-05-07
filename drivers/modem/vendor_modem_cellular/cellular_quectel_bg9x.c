@@ -54,6 +54,13 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg9x_shutdown_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_shutdown_chat_script, quectel_bg9x_shutdown_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 1);
 
+static const struct modem_cellular_config_scripts quectel_bg9x_scripts = {
+	.init = &quectel_bg9x_init_chat_script,
+	.dial = &quectel_bg9x_dial_chat_script,
+	.periodic = &quectel_bg9x_periodic_chat_script,
+	.shutdown = &quectel_bg9x_shutdown_chat_script,
+};
+
 #define MODEM_CELLULAR_DEVICE_QUECTEL_BG9X(inst)                                                   \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);   \
                                                                                                    \
@@ -65,10 +72,7 @@ MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_shutdown_chat_script, quectel_bg9x_shutdow
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3), (user_pipe_1, 4))        \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(                                                            \
-		inst, 500, 1000, 5000, 2000, false, NULL, &quectel_bg9x_init_chat_script,          \
-		&quectel_bg9x_dial_chat_script, &quectel_bg9x_periodic_chat_script,                \
-		&quectel_bg9x_shutdown_chat_script)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 500, 1000, 5000, 2000, false, &quectel_bg9x_scripts)
 
 #define DT_DRV_COMPAT quectel_bg95
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_QUECTEL_BG9X)
