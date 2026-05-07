@@ -11,7 +11,6 @@
 #include <adsp_shim.h>
 #include <adsp_memory.h>
 #include <cpu_init.h>
-#include "manifest.h"
 
 __imr void hp_sram_init(uint32_t memory_size)
 {
