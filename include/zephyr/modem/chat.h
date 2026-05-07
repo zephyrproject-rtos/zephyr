@@ -221,6 +221,7 @@ enum modem_chat_script_send_state {
  * @warning Do not modify any members of this struct directly
  */
 struct modem_chat {
+	/** @cond INTERNAL_HIDDEN */
 	/* Pipe used to send and receive data */
 	struct modem_pipe *pipe;
 
@@ -289,6 +290,7 @@ struct modem_chat {
 	struct modem_stats_buffer receive_buf_stats;
 	struct modem_stats_buffer work_buf_stats;
 #endif
+	/** @endcond */
 };
 
 /**
