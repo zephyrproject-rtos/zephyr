@@ -83,6 +83,12 @@
 	status = "okay";
 };
 
+arduino_i2c: &i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 zephyr_udc0: &usbd {
 	/*
 	 * Clock source defaults to HIRC, which runs at required 48MHz.
