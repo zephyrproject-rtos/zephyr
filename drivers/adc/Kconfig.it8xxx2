@@ -23,4 +23,13 @@ config ADC_IT8XXX2_VOL_FULL_SCALE
 	  This option enables ADC internal reference
 	  voltage as full-scale 3300mV.
 
+config ADC_IT8XXX2_READING_TIMEOUT_MS
+	int "IT8XXX2 ADC reading timeout (ms)"
+	default 0
+	help
+	  Timeout in milliseconds for waiting on ADC data valid interrupt.
+	  Set to 0 to wait forever (K_FOREVER).
+	  If the timeout expires, the driver falls back to reading the
+	  ADC value directly when valid data is available.
+
 endif # ADC_ITE_IT8XXX2
