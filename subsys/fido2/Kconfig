@@ -6,6 +6,12 @@ menuconfig FIDO2
 	select ZCBOR
 	select ZCBOR_CANONICAL
 	select PSA_CRYPTO
+	select SECURE_STORAGE if !BUILD_WITH_TFM
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	select PSA_WANT_ALG_ECDSA
+	select PSA_WANT_ALG_SHA_256
+	select PSA_WANT_ECC_SECP_R1_256
 	help
 	  Enable the FIDO2/CTAP2 authenticator subsystem.
 
