@@ -310,35 +310,48 @@ struct dai_ts_data {
 };
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * For internal use only, skip these in public documentation.
+ * @def_driverbackendgroup{DAI,dai_interface}
+ * @ingroup dai_interface
+ * @{
+ */
+
+/**
+ * @driver_ops{DAI}
  */
 __subsystem struct dai_driver_api {
+	/** @driver_ops_mandatory @copybrief dai_probe */
 	int (*probe)(const struct device *dev);
+	/** @driver_ops_mandatory @copybrief dai_remove */
 	int (*remove)(const struct device *dev);
+	/** @driver_ops_mandatory @copybrief dai_config_set */
 	int (*config_set)(const struct device *dev, const struct dai_config *cfg,
 			  const void *bespoke_cfg, size_t size);
+	/** @driver_ops_mandatory @copybrief dai_config_get */
 	int (*config_get)(const struct device *dev, struct dai_config *cfg, enum dai_dir dir);
 
+	/** @driver_ops_optional @copybrief dai_get_properties */
 	const struct dai_properties *(*get_properties)(const struct device *dev, enum dai_dir dir,
 						       int stream_id);
+	/** @driver_ops_optional @copybrief dai_get_properties_copy */
 	int (*get_properties_copy)(const struct device *dev, enum dai_dir dir, int stream_id,
 				   struct dai_properties *dst);
 
+	/** @driver_ops_mandatory @copybrief dai_trigger */
 	int (*trigger)(const struct device *dev, enum dai_dir dir, enum dai_trigger_cmd cmd);
 
-	/* optional methods */
+	/** @driver_ops_optional @copybrief dai_ts_config */
 	int (*ts_config)(const struct device *dev, struct dai_ts_cfg *cfg);
+	/** @driver_ops_optional @copybrief dai_ts_start */
 	int (*ts_start)(const struct device *dev, struct dai_ts_cfg *cfg);
+	/** @driver_ops_optional @copybrief dai_ts_stop */
 	int (*ts_stop)(const struct device *dev, struct dai_ts_cfg *cfg);
+	/** @driver_ops_optional @copybrief dai_ts_get */
 	int (*ts_get)(const struct device *dev, struct dai_ts_cfg *cfg, struct dai_ts_data *tsd);
+	/** @driver_ops_optional @copybrief dai_config_update */
 	int (*config_update)(const struct device *dev, const void *bespoke_cfg, size_t size);
 };
 
-/**
- * @endcond
- */
+/** @} */
 
 /**
  * @brief Probe operation of DAI driver.
