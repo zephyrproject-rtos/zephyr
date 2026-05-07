@@ -1127,6 +1127,25 @@ unlock:
 
 #endif /*CONFIG_UART_ASYNC_API */
 
+#if defined(CONFIG_UART_ASYNC_API) && defined(CONFIG_UART_WIDE_DATA)
+static int ifx_cat1_uart_async_tx_u16(const struct device *dev, const uint16_t *tx_data,
+				      size_t buf_size, int32_t timeout)
+{
+	return ifx_cat1_uart_async_tx(dev, (const uint8_t *)tx_data, buf_size * 2, timeout);
+}
+
+static int ifx_cat1_uart_async_rx_enable_u16(const struct device *dev, uint16_t *buf, size_t len,
+					     int32_t timeout)
+{
+	return ifx_cat1_uart_async_rx_enable(dev, (uint8_t *)buf, len * 2, timeout);
+}
+
+static int ifx_cat1_uart_async_rx_buf_rsp_u16(const struct device *dev, uint16_t *buf, size_t len)
+{
+	return ifx_cat1_uart_async_rx_buf_rsp(dev, (uint8_t *)buf, len * 2);
+}
+#endif /* CONFIG_UART_ASYNC_API && CONFIG_UART_WIDE_DATA */
+
 CySCB_Type *const _IFX_CAT1_SCB_BASE_ADDRESSES[_IFX_CAT1_SCB_ARRAY_SIZE] = {
 #ifdef SCB0
 	SCB0,
@@ -1386,6 +1405,11 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 	.rx_enable = ifx_cat1_uart_async_rx_enable,
 	.rx_buf_rsp = ifx_cat1_uart_async_rx_buf_rsp,
 	.rx_disable = ifx_cat1_uart_async_rx_disable,
+#ifdef CONFIG_UART_WIDE_DATA
+	.tx_u16 = ifx_cat1_uart_async_tx_u16,
+	.rx_enable_u16 = ifx_cat1_uart_async_rx_enable_u16,
+	.rx_buf_rsp_u16 = ifx_cat1_uart_async_rx_buf_rsp_u16,
+#endif /* CONFIG_UART_WIDE_DATA */
 #endif /*CONFIG_UART_ASYNC_API*/
 
 };
