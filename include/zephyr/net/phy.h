@@ -134,50 +134,63 @@ typedef void (*phy_callback_t)(const struct device *dev, struct phy_link_state *
 			       void *user_data);
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * These are for internal use only, so skip these in
- * public documentation.
+ * @def_driverbackendgroup{Ethernet PHY,ethernet_phy}
+ * @ingroup ethernet_phy
+ * @{
+ */
+
+/**
+ * @driver_ops{Ethernet PHY}
  */
 __subsystem struct ethphy_driver_api {
-	/** Get link state */
+	/** @driver_ops_optional @copybrief phy_get_link_state */
 	int (*get_link)(const struct device *dev, struct phy_link_state *state);
 
-	/** Configure link */
+	/** @driver_ops_optional @copybrief phy_configure_link */
 	int (*cfg_link)(const struct device *dev, enum phy_link_speed adv_speeds,
 			enum phy_cfg_link_flag flags);
 
-	/** Set callback to be invoked when link state changes. Driver has to invoke
-	 * callback once after setting it, even if link state has not changed.
+	/**
+	 * @driver_ops_optional @copybrief phy_link_callback_set
+	 * @important Drivers must invoke the callback once after setting it, even if link state has
+	 * not changed.
 	 */
 	int (*link_cb_set)(const struct device *dev, phy_callback_t cb, void *user_data);
 
-	/** Read PHY register */
+	/** @driver_ops_optional @copybrief phy_read */
 	int (*read)(const struct device *dev, uint16_t reg_addr, uint32_t *data);
 
-	/** Write PHY register */
+	/** @driver_ops_optional @copybrief phy_write */
 	int (*write)(const struct device *dev, uint16_t reg_addr, uint32_t data);
 
-	/** Read PHY C45 register */
+	/** @driver_ops_optional @copybrief phy_read_c45 */
 	int (*read_c45)(const struct device *dev, uint8_t devad, uint16_t regad, uint16_t *data);
 
-	/** Write PHY C45 register */
+	/** @driver_ops_optional @copybrief phy_write_c45 */
 	int (*write_c45)(const struct device *dev, uint8_t devad, uint16_t regad, uint16_t data);
 
 #if defined(CONFIG_ETH_PHY_API_PLCA) || defined(__DOXYGEN__)
-	/* Set PLCA settings */
+	/**
+	 * @driver_ops_optional @copybrief phy_set_plca_cfg
+	 * @kconfig_dep{CONFIG_ETH_PHY_API_PLCA}
+	 */
 	int (*set_plca_cfg)(const struct device *dev, struct phy_plca_cfg *plca_cfg);
 
-	/* Get PLCA settings */
+	/**
+	 * @driver_ops_optional @copybrief phy_get_plca_cfg
+	 * @kconfig_dep{CONFIG_ETH_PHY_API_PLCA}
+	 */
 	int (*get_plca_cfg)(const struct device *dev, struct phy_plca_cfg *plca_cfg);
 
-	/* Get PLCA status */
+	/**
+	 * @driver_ops_optional @copybrief phy_get_plca_sts
+	 * @kconfig_dep{CONFIG_ETH_PHY_API_PLCA}
+	 */
 	int (*get_plca_sts)(const struct device *dev, bool *plca_sts);
 #endif /* CONFIG_ETH_PHY_API_PLCA */
 };
-/**
- * @endcond
- */
+
+/** @} */
 
 /**
  * @brief      Configure PHY link
@@ -351,6 +364,8 @@ static inline int phy_write_c45(const struct device *dev, uint8_t devad, uint16_
  *
  * This routine provides a generic interface to configure PHY PLCA settings.
  *
+ * @kconfig_dep{CONFIG_ETH_PHY_API_PLCA}
+ *
  * @param[in]  dev       PHY device structure
  * @param[in]  plca_cfg  Pointer to plca configuration structure
  *
@@ -376,6 +391,8 @@ static inline int phy_set_plca_cfg(__maybe_unused const struct device *dev,
  *
  * This routine provides a generic interface to get PHY PLCA settings.
  *
+ * @kconfig_dep{CONFIG_ETH_PHY_API_PLCA}
+ *
  * @param[in]  dev       PHY device structure
  * @param      plca_cfg  Pointer to plca configuration structure
  *
@@ -400,6 +417,8 @@ static inline int phy_get_plca_cfg(__maybe_unused const struct device *dev,
  * @brief      Read PHY PLCA status
  *
  * This routine provides a generic interface to get PHY PLCA status.
+ *
+ * @kconfig_dep{CONFIG_ETH_PHY_API_PLCA}
  *
  * @param[in]  dev          PHY device structure
  * @param      plca_status  Pointer to plca status
