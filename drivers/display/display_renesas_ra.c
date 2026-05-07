@@ -14,6 +14,8 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(display_renesas_ra, CONFIG_DISPLAY_LOG_LEVEL);
@@ -46,6 +48,18 @@ static void renesas_ra_glcdc_isr(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	glcdc_line_detect_isr();
+}
+
+static inline void ra_display_pm_policy_state_lock_get(const struct device *dev)
+{
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+
+static inline void ra_display_pm_policy_state_lock_put(const struct device *dev)
+{
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 }
 
 static void renesas_ra_callback_adapter(display_callback_args_t *p_args)
@@ -140,11 +154,14 @@ static int ra_display_write(const struct device *dev, const uint16_t x, const ui
 			return -EIO;
 		}
 
+		pm_device_busy_set(dev);
 		vsync_wait = true;
 	}
 
 	if (vsync_wait) {
+		ra_display_pm_policy_state_lock_get(dev);
 		k_sem_take(&data->frame_buf_sem, K_FOREVER);
+		ra_display_pm_policy_state_lock_put(dev);
 	}
 
 	return 0;
@@ -183,6 +200,8 @@ static int ra_display_blanking_on(const struct device *dev)
 		ret = -ENOTSUP;
 	}
 
+	pm_device_busy_clear(dev);
+
 	return ret;
 }
 
@@ -196,6 +215,8 @@ static int ra_display_blanking_off(const struct device *dev)
 	} else {
 		ret = -ENOTSUP;
 	}
+
+	pm_device_busy_set(dev);
 
 	return ret;
 }
@@ -402,6 +423,48 @@ static int display_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int display_suspend(const struct device *dev)
+{
+	const struct display_ra_config *config = dev->config;
+	struct display_ra_data *data = dev->data;
+	int err;
+
+	err = R_GLCDC_Close(&data->display_ctrl);
+	if (err) {
+		LOG_ERR("GLCDC close failed");
+		return -EIO;
+	}
+
+	err = clock_control_off(config->clock_dev,
+				(clock_control_subsys_t)&config->clock_glcdc_subsys);
+	if (err) {
+		LOG_ERR("Disable GLCDC clock failed!");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int ra_display_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int err;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		err = display_init(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		err = display_suspend(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return err;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #define IRQ_CONFIGURE_FUNC(id)                                                                     \
 	static void glcdc_renesas_ra_configure_func_##id(void)                                     \
 	{                                                                                          \
@@ -493,7 +556,10 @@ static int display_init(const struct device *dev)
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),                               \
 		.clock_glcdc_subsys = {.mstp = (uint32_t)DT_INST_CLOCKS_CELL_BY_IDX(id, 0, mstp),  \
 				       .stop_bit = DT_INST_CLOCKS_CELL_BY_IDX(id, 0, stop_bit)}};  \
-	DEVICE_DT_INST_DEFINE(id, &display_init, NULL, &ra_data##id, &ra_config##id, POST_KERNEL,  \
-			      CONFIG_DISPLAY_INIT_PRIORITY, &display_api);
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(id, ra_display_pm_action);					   \
+	DEVICE_DT_INST_DEFINE(id, &display_init, PM_DEVICE_DT_INST_GET(id), &ra_data##id,	   \
+			      &ra_config##id, POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,	   \
+			      &display_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RENESAS_RA_DEVICE_INIT)
