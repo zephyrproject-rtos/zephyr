@@ -7,11 +7,26 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/fido2/fido2_types.h>
 #include <zcbor_encode.h>
+#include <zcbor_decode.h>
 
 #include "fido2_cbor.h"
 
 LOG_MODULE_DECLARE(fido2, CONFIG_FIDO2_LOG_LEVEL);
 
+/* authenticatorMakeCredential 0x01 */
+#define MAKE_CREDENTIAL_KEY_CLIENT_DATA_HASH               0x01
+#define MAKE_CREDENTIAL_KEY_RP                             0x02
+#define MAKE_CREDENTIAL_KEY_USER                           0x03
+#define MAKE_CREDENTIAL_KEY_PUB_KEY_CRED_PARAMS            0x04
+#define MAKE_CREDENTIAL_KEY_EXCLUDE_LIST                   0x05
+#define MAKE_CREDENTIAL_KEY_EXTENSIONS                     0x06
+#define MAKE_CREDENTIAL_KEY_OPTIONS                        0x07
+#define MAKE_CREDENTIAL_KEY_PIN_UV_AUTH_PARAM              0x08
+#define MAKE_CREDENTIAL_KEY_PIN_UV_AUTH_PROTOCOL           0x09
+#define MAKE_CREDENTIAL_KEY_ENTERPRISE_ATTESTATION         0x0A
+#define MAKE_CREDENTIAL_KEY_ATTESTATION_FORMATS_PREFERENCE 0x0B
+
+/* authenticatorGetInfo 0x04 */
 #define GETINFO_KEY_VERSIONS                     0x01
 #define GETINFO_KEY_EXTENSIONS                   0x02
 #define GETINFO_KEY_AAGUID                       0x03
@@ -227,5 +242,481 @@ int fido2_cbor_encode_get_info(const struct fido2_device_info *info, uint8_t *cb
 	}
 
 	*cbor_out_len = zs->payload - cbor_out;
+	return 0;
+}
+
+static int decode_tstr_field(zcbor_state_t *zs, char *out, size_t out_cap)
+{
+	struct zcbor_string str;
+
+	if (!zcbor_tstr_decode(zs, &str)) {
+		return -EBADMSG;
+	}
+	if (str.len >= out_cap) {
+		return -EBADMSG;
+	}
+
+	memcpy(out, str.value, str.len);
+	out[str.len] = '\0';
+
+	return 0;
+}
+
+static int mc_decode_rp(zcbor_state_t *zs, struct fido2_make_credential_params *params)
+{
+	struct zcbor_string str;
+	bool has_rp_id = false;
+
+	if (!zcbor_map_start_decode(zs)) {
+		return -EBADMSG;
+	}
+	while (!zcbor_array_at_end(zs)) {
+		if (!zcbor_tstr_decode(zs, &str)) {
+			return -EBADMSG;
+		}
+		if (str.len == 2 && memcmp(str.value, "id", 2) == 0) {
+			if (decode_tstr_field(zs, params->rp_id, sizeof(params->rp_id))) {
+				return -EBADMSG;
+			}
+			has_rp_id = true;
+		} else if (str.len == 4 && memcmp(str.value, "name", 4) == 0) {
+			if (decode_tstr_field(zs, params->rp_name, sizeof(params->rp_name))) {
+				return -EBADMSG;
+			}
+		} else {
+			if (!zcbor_any_skip(zs, NULL)) {
+				return -EBADMSG;
+			}
+		}
+	}
+	if (!zcbor_map_end_decode(zs)) {
+		return -EBADMSG;
+	}
+	if (!has_rp_id) {
+		return -EBADMSG;
+	}
+
+	return 0;
+}
+
+static int mc_decode_user(zcbor_state_t *zs, struct fido2_make_credential_params *params)
+{
+	struct zcbor_string str;
+	bool has_user_id = false;
+
+	if (!zcbor_map_start_decode(zs)) {
+		return -EBADMSG;
+	}
+	while (!zcbor_array_at_end(zs)) {
+		if (!zcbor_tstr_decode(zs, &str)) {
+			return -EBADMSG;
+		}
+		if (str.len == 2 && memcmp(str.value, "id", 2) == 0) {
+			if (!zcbor_bstr_decode(zs, &str)) {
+				return -EBADMSG;
+			}
+			if (str.len > sizeof(params->user_id)) {
+				return -EBADMSG;
+			}
+			params->user_id_len = str.len;
+			memcpy(params->user_id, str.value, str.len);
+			has_user_id = true;
+		} else if (str.len == 4 && memcmp(str.value, "name", 4) == 0) {
+			if (decode_tstr_field(zs, params->user_name, sizeof(params->user_name))) {
+				return -EBADMSG;
+			}
+
+		} else if (str.len == 11 && memcmp(str.value, "displayName", 11) == 0) {
+			if (decode_tstr_field(zs, params->user_display_name,
+					      sizeof(params->user_display_name))) {
+				return -EBADMSG;
+			}
+		} else {
+			if (!zcbor_any_skip(zs, NULL)) {
+				return -EBADMSG;
+			}
+		}
+	}
+	if (!zcbor_map_end_decode(zs)) {
+		return -EBADMSG;
+	}
+	if (!has_user_id) {
+		return -EBADMSG;
+	}
+
+	return 0;
+}
+
+static int mc_decode_pub_key_cred_params(zcbor_state_t *zs,
+					 struct fido2_make_credential_params *params)
+{
+	struct zcbor_string str;
+
+	if (!zcbor_list_start_decode(zs)) {
+		return -EBADMSG;
+	}
+	while (!zcbor_array_at_end(zs)) {
+		int32_t alg = 0;
+		bool has_alg = false;
+		bool has_type = false;
+		bool valid_type = false;
+
+		if (!zcbor_map_start_decode(zs)) {
+			return -EBADMSG;
+		}
+		while (!zcbor_array_at_end(zs)) {
+			if (!zcbor_tstr_decode(zs, &str)) {
+				return -EBADMSG;
+			}
+
+			if (str.len == 3 && memcmp(str.value, "alg", 3) == 0) {
+				if (!zcbor_int32_decode(zs, &alg)) {
+					return -EBADMSG;
+				}
+				has_alg = true;
+			} else if (str.len == 4 && memcmp(str.value, "type", 4) == 0) {
+				struct zcbor_string type_str;
+
+				if (!zcbor_tstr_decode(zs, &type_str)) {
+					return -EBADMSG;
+				}
+				has_type = true;
+				if (type_str.len == 10 &&
+				    memcmp(type_str.value, "public-key", 10) == 0) {
+					valid_type = true;
+				}
+			} else {
+				if (!zcbor_any_skip(zs, NULL)) {
+					return -EBADMSG;
+				}
+			}
+		}
+		if (!zcbor_map_end_decode(zs)) {
+			return -EBADMSG;
+		}
+
+		if (!has_alg || !has_type) {
+			return -EBADMSG;
+		}
+
+		if (valid_type) {
+			if (params->num_algorithms >= FIDO2_MAX_ALGORITHMS) {
+				return -EBADMSG;
+			}
+			params->algorithms[params->num_algorithms++] = alg;
+		}
+	}
+	if (!zcbor_list_end_decode(zs)) {
+		return -EBADMSG;
+	}
+
+	return 0;
+}
+
+static int mc_decode_exclude_list(zcbor_state_t *zs, struct fido2_make_credential_params *params)
+{
+	struct zcbor_string str;
+
+	if (!zcbor_list_start_decode(zs)) {
+		return -EBADMSG;
+	}
+	while (!zcbor_array_at_end(zs)) {
+		struct zcbor_string cred_id;
+		bool valid_type = false;
+		bool has_id = false;
+
+		if (!zcbor_map_start_decode(zs)) {
+			return -EBADMSG;
+		}
+		while (!zcbor_array_at_end(zs)) {
+			if (!zcbor_tstr_decode(zs, &str)) {
+				return -EBADMSG;
+			}
+			if (str.len == 2 && memcmp(str.value, "id", 2) == 0) {
+				if (!zcbor_bstr_decode(zs, &cred_id)) {
+					return -EBADMSG;
+				}
+				has_id = true;
+			} else if (str.len == 4 && memcmp(str.value, "type", 4) == 0) {
+				struct zcbor_string type_str;
+
+				if (!zcbor_tstr_decode(zs, &type_str)) {
+					return -EBADMSG;
+				}
+				if (type_str.len == 10 &&
+				    memcmp(type_str.value, "public-key", 10) == 0) {
+					valid_type = true;
+				}
+			} else {
+				if (!zcbor_any_skip(zs, NULL)) {
+					return -EBADMSG;
+				}
+			}
+		}
+		if (!zcbor_map_end_decode(zs)) {
+			return -EBADMSG;
+		}
+
+		if (!has_id || (cred_id.len == 0)) {
+			return -EBADMSG;
+		}
+
+		if (valid_type) {
+			if (params->num_exclude >= CONFIG_FIDO2_MAX_CREDENTIALS) {
+				return -ENOBUFS;
+			}
+			if (cred_id.len > FIDO2_CREDENTIAL_ID_MAX_SIZE) {
+				return -EBADMSG;
+			}
+			memcpy(params->exclude_ids[params->num_exclude], cred_id.value,
+			       cred_id.len);
+			params->exclude_id_lens[params->num_exclude] = cred_id.len;
+			params->num_exclude++;
+		}
+	}
+	if (!zcbor_list_end_decode(zs)) {
+		return -EBADMSG;
+	}
+
+	return 0;
+}
+
+static int mc_decode_extensions(zcbor_state_t *zs, struct fido2_make_credential_params *params)
+{
+	struct zcbor_string str;
+
+	if (!zcbor_map_start_decode(zs)) {
+		return -EBADMSG;
+	}
+	while (!zcbor_array_at_end(zs)) {
+		if (!zcbor_tstr_decode(zs, &str)) {
+			return -EBADMSG;
+		}
+		if (str.len == 11 && memcmp(str.value, "hmac-secret", 11) == 0) {
+			bool val;
+
+			if (!zcbor_bool_decode(zs, &val)) {
+				return -EBADMSG;
+			}
+			params->ext_hmac_secret = val;
+		} else if (str.len == 11 && memcmp(str.value, "credProtect", 11) == 0) {
+			uint32_t level;
+
+			if (!zcbor_uint32_decode(zs, &level)) {
+				return -EBADMSG;
+			}
+			if (level < 1 || level > 3) {
+				return -EBADMSG;
+			}
+			params->ext_cred_protect_level = level;
+		} else {
+			if (!zcbor_any_skip(zs, NULL)) {
+				return -EBADMSG;
+			}
+		}
+	}
+	if (!zcbor_map_end_decode(zs)) {
+		return -EBADMSG;
+	}
+
+	return 0;
+}
+
+static int mc_decode_options(zcbor_state_t *zs, struct fido2_make_credential_params *params)
+{
+	struct zcbor_string str;
+
+	if (!zcbor_map_start_decode(zs)) {
+		return -EBADMSG;
+	}
+	while (!zcbor_array_at_end(zs)) {
+		if (!zcbor_tstr_decode(zs, &str)) {
+			return -EBADMSG;
+		}
+		if (str.len == 2 && memcmp(str.value, "rk", 2) == 0) {
+			bool rk;
+
+			if (!zcbor_bool_decode(zs, &rk)) {
+				return -EBADMSG;
+			}
+			params->resident_key = rk;
+		} else if (str.len == 2 && memcmp(str.value, "up", 2) == 0) {
+			bool up;
+
+			if (!zcbor_bool_decode(zs, &up)) {
+				return -EBADMSG;
+			}
+			params->up = up;
+			params->has_up_option = true;
+		} else if (str.len == 2 && memcmp(str.value, "uv", 2) == 0) {
+			bool uv;
+
+			if (!zcbor_bool_decode(zs, &uv)) {
+				return -EBADMSG;
+			}
+			params->uv = uv;
+			params->has_uv_option = true;
+		} else {
+			if (!zcbor_any_skip(zs, NULL)) {
+				return -EBADMSG;
+			}
+		}
+	}
+	if (!zcbor_map_end_decode(zs)) {
+		return -EBADMSG;
+	}
+
+	return 0;
+}
+
+static int mc_decode_attestation_formats(zcbor_state_t *zs,
+					 struct fido2_make_credential_params *params)
+{
+	struct zcbor_string str;
+
+	if (!zcbor_list_start_decode(zs)) {
+		return -EBADMSG;
+	}
+	while (!zcbor_array_at_end(zs)) {
+		if (!zcbor_tstr_decode(zs, &str)) {
+			return -EBADMSG;
+		}
+		if (str.len > FIDO2_CBOR_ATTESTATION_FMT_MAX_LEN) {
+			return -EBADMSG;
+		}
+
+		if (params->num_attestation_formats < FIDO2_CBOR_MAX_ATTESTATION_FORMATS) {
+			memcpy(params->attestation_formats[params->num_attestation_formats],
+			       str.value, str.len);
+			params->attestation_formats[params->num_attestation_formats][str.len] =
+				'\0';
+			params->num_attestation_formats++;
+		}
+	}
+	if (!zcbor_list_end_decode(zs)) {
+		return -EBADMSG;
+	}
+
+	return 0;
+}
+
+int fido2_cbor_decode_make_credential(const uint8_t *cbor_in, size_t cbor_in_len,
+				      struct fido2_make_credential_params *params)
+{
+	ZCBOR_STATE_D(zs, 5, cbor_in, cbor_in_len, 1, 0);
+	struct zcbor_string str;
+	uint32_t key;
+
+	memset(params, 0, sizeof(*params));
+	params->up = true;
+
+	/* To see if these were seen at all*/
+	bool has_cdh = false;
+	bool has_rp = false;
+	bool has_user = false;
+	bool has_pkcp = false;
+
+	if (!zcbor_map_start_decode(zs)) {
+		return -EBADMSG;
+	}
+
+	while (!zcbor_array_at_end(zs)) {
+		if (!zcbor_uint32_decode(zs, &key)) {
+			return -EBADMSG;
+		}
+
+		switch (key) {
+		case MAKE_CREDENTIAL_KEY_CLIENT_DATA_HASH:
+			if (!zcbor_bstr_decode(zs, &str) || str.len != FIDO2_SHA256_SIZE) {
+				return -EBADMSG;
+			}
+			memcpy(params->client_data_hash, str.value, FIDO2_SHA256_SIZE);
+			has_cdh = true;
+			break;
+		case MAKE_CREDENTIAL_KEY_RP:
+			if (mc_decode_rp(zs, params)) {
+				return -EBADMSG;
+			}
+			has_rp = true;
+			break;
+		case MAKE_CREDENTIAL_KEY_USER:
+			if (mc_decode_user(zs, params)) {
+				return -EBADMSG;
+			}
+			has_user = true;
+			break;
+		case MAKE_CREDENTIAL_KEY_PUB_KEY_CRED_PARAMS:
+			if (mc_decode_pub_key_cred_params(zs, params)) {
+				return -EBADMSG;
+			}
+			has_pkcp = true;
+			break;
+		case MAKE_CREDENTIAL_KEY_EXCLUDE_LIST:
+			if (mc_decode_exclude_list(zs, params)) {
+				return -EBADMSG;
+			}
+			break;
+		case MAKE_CREDENTIAL_KEY_EXTENSIONS:
+			if (mc_decode_extensions(zs, params)) {
+				return -EBADMSG;
+			}
+			break;
+		case MAKE_CREDENTIAL_KEY_OPTIONS:
+			if (mc_decode_options(zs, params)) {
+				return -EBADMSG;
+			}
+			break;
+		case MAKE_CREDENTIAL_KEY_PIN_UV_AUTH_PARAM:
+			if (!zcbor_bstr_decode(zs, &str)) {
+				return -EBADMSG;
+			}
+			if (str.len > sizeof(params->pin_uv_auth_param)) {
+				return -EBADMSG;
+			}
+			memcpy(params->pin_uv_auth_param, str.value, str.len);
+			params->pin_uv_auth_param_len = str.len;
+			params->has_pin_uv_auth_param = true;
+			break;
+		case MAKE_CREDENTIAL_KEY_PIN_UV_AUTH_PROTOCOL: {
+			uint32_t proto;
+
+			if (!zcbor_uint32_decode(zs, &proto)) {
+				return -EBADMSG;
+			}
+			params->pin_uv_auth_protocol = proto;
+			params->has_pin_uv_auth_protocol = true;
+			break;
+		}
+		case MAKE_CREDENTIAL_KEY_ENTERPRISE_ATTESTATION: {
+			uint32_t ea;
+
+			if (!zcbor_uint32_decode(zs, &ea)) {
+				return -EBADMSG;
+			}
+			params->enterprise_attestation = ea;
+			params->has_enterprise_attestation = true;
+			break;
+		}
+		case MAKE_CREDENTIAL_KEY_ATTESTATION_FORMATS_PREFERENCE:
+			if (mc_decode_attestation_formats(zs, params)) {
+				return -EBADMSG;
+			}
+			break;
+		default:
+			if (!zcbor_any_skip(zs, NULL)) {
+				return -EBADMSG;
+			}
+			break;
+		}
+	}
+
+	if (!zcbor_map_end_decode(zs)) {
+		return -EBADMSG;
+	}
+
+	if (!has_cdh || !has_rp || !has_user || !has_pkcp) {
+		return -EINVAL;
+	}
+
 	return 0;
 }
