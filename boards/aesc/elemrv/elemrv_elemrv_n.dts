@@ -67,6 +67,10 @@
 	status = "okay";
 };
 
+&plic {
+	riscv,ndev = <7>;
+};
+
 &uart0 {
 	clock-frequency = <DT_FREQ_M(20)>;
 	current-speed = <115200>;
