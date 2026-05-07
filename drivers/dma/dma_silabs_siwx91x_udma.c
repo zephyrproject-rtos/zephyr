@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Silicon Laboratories Inc.
+ * Copyright (c) 2024-2026 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -113,87 +113,102 @@ static int siwx91x_addr_adjustment(uint32_t adjustment)
 	}
 }
 
-/* Sets up the scatter-gather descriptor table for a DMA transfer */
-static int siwx91x_sg_fill_desc(RSI_UDMA_DESC_T *descs, const struct dma_config *config_zephyr)
+static int siwx91x_udma_fill_block_descs(const struct dma_config *cfg,
+					 const struct dma_block_config *block,
+					 RSI_UDMA_DESC_T *descs)
 {
-	const struct dma_block_config *block_addr = config_zephyr->head_block;
-	RSI_UDMA_CHA_CONFIG_DATA_T *cfg_91x;
+	uint8_t *src_addr = (uint8_t *)block->source_address;
+	uint8_t *dst_addr = (uint8_t *)block->dest_address;
+	uint32_t remaining = block->block_size;
+	int cnt = 0;
 
-	for (int i = 0; i < config_zephyr->block_count; i++) {
-		sys_write32((uint32_t)&descs[i].vsUDMAChaConfigData1, (mem_addr_t)&cfg_91x);
+	do {
+		uint32_t chunk = MIN(remaining, DMA_MAX_TRANSFER_COUNT * cfg->source_burst_length);
+		RSI_UDMA_CHA_CONFIG_DATA_T *desc_cfg =
+			(RSI_UDMA_CHA_CONFIG_DATA_T *)&descs->vsUDMAChaConfigData1;
 
-		if (siwx91x_addr_adjustment(block_addr->source_addr_adj) == UDMA_ADDR_INC_NONE) {
-			descs[i].pSrcEndAddr = (void *)block_addr->source_address;
+		desc_cfg->srcSize = siwx91x_burst_length(cfg->source_burst_length);
+		desc_cfg->dstSize = siwx91x_burst_length(cfg->dest_burst_length);
+		desc_cfg->totalNumOfDMATrans = (chunk / cfg->source_burst_length) - 1;
+
+		if (siwx91x_addr_adjustment(block->source_addr_adj) == UDMA_ADDR_INC_NONE) {
+			descs->pSrcEndAddr = src_addr;
 		} else {
-			descs[i].pSrcEndAddr = (void *)(block_addr->source_address +
-							(block_addr->block_size -
-							 config_zephyr->source_burst_length));
+			descs->pSrcEndAddr = src_addr + chunk - cfg->source_burst_length;
 		}
-		if (siwx91x_addr_adjustment(block_addr->dest_addr_adj) == UDMA_ADDR_INC_NONE) {
-			descs[i].pDstEndAddr = (void *)block_addr->dest_address;
+
+		if (siwx91x_addr_adjustment(block->dest_addr_adj) == UDMA_ADDR_INC_NONE) {
+			descs->pDstEndAddr = dst_addr;
 		} else {
-			descs[i].pDstEndAddr = (void *)(block_addr->dest_address +
-							(block_addr->block_size -
-							 config_zephyr->dest_burst_length));
+			descs->pDstEndAddr = dst_addr + chunk - cfg->dest_burst_length;
 		}
-
-		cfg_91x->srcSize = siwx91x_burst_length(config_zephyr->source_burst_length);
-		cfg_91x->dstSize = siwx91x_burst_length(config_zephyr->dest_burst_length);
-
-		/* Calculate the number of DMA transfers required */
-		if (block_addr->block_size / config_zephyr->source_burst_length >
-		    DMA_MAX_TRANSFER_COUNT) {
-			return -EINVAL;
-		}
-
-		cfg_91x->totalNumOfDMATrans =
-			block_addr->block_size / config_zephyr->source_burst_length - 1;
 
 		/* Set the transfer type based on whether it is a peripheral request */
-		if (siwx91x_transfer_direction(config_zephyr->channel_direction) ==
-		    TRANSFER_TO_OR_FROM_PER) {
-			cfg_91x->transferType = UDMA_MODE_PER_ALT_SCATTER_GATHER;
+		if (siwx91x_transfer_direction(cfg->channel_direction) == TRANSFER_TO_OR_FROM_PER) {
+			desc_cfg->transferType = UDMA_MODE_PER_ALT_SCATTER_GATHER;
 		} else {
-			cfg_91x->transferType = UDMA_MODE_MEM_ALT_SCATTER_GATHER;
+			desc_cfg->transferType = UDMA_MODE_MEM_ALT_SCATTER_GATHER;
 		}
 
-		cfg_91x->rPower = ARBSIZE_1;
+		desc_cfg->rPower = ARBSIZE_1;
 
-		if (siwx91x_addr_adjustment(block_addr->source_addr_adj) < 0 ||
-		    siwx91x_addr_adjustment(block_addr->dest_addr_adj) < 0) {
+		if (siwx91x_addr_adjustment(block->source_addr_adj) == UDMA_ADDR_INC_NONE) {
+			desc_cfg->srcInc = UDMA_SRC_INC_NONE;
+		} else {
+			desc_cfg->srcInc = siwx91x_burst_length(cfg->source_burst_length);
+		}
+
+		if (siwx91x_addr_adjustment(block->dest_addr_adj) == UDMA_ADDR_INC_NONE) {
+			desc_cfg->dstInc = UDMA_DST_INC_NONE;
+		} else {
+			desc_cfg->dstInc = siwx91x_burst_length(cfg->dest_burst_length);
+		}
+
+		remaining -= chunk;
+		if (siwx91x_addr_adjustment(block->source_addr_adj) != UDMA_ADDR_INC_NONE) {
+			src_addr += chunk;
+		}
+		if (siwx91x_addr_adjustment(block->dest_addr_adj) != UDMA_ADDR_INC_NONE) {
+			dst_addr += chunk;
+		}
+		descs++;
+		cnt++;
+	} while (remaining > 0);
+
+	return cnt;
+}
+
+static int siwx91x_udma_fill_sg_descs(const struct dma_config *config_zephyr,
+				      RSI_UDMA_DESC_T *desc_base, uint32_t desc_count)
+{
+	const struct dma_block_config *block = config_zephyr->head_block;
+	int cnt = 0;
+
+	for (int i = 0; i < config_zephyr->block_count; i++) {
+		if (siwx91x_addr_adjustment(block->source_addr_adj) < 0 ||
+		    siwx91x_addr_adjustment(block->dest_addr_adj) < 0) {
+			return -EINVAL;
+		}
+		if (block->block_size % config_zephyr->source_burst_length) {
 			return -EINVAL;
 		}
 
-		if (siwx91x_addr_adjustment(block_addr->source_addr_adj) == UDMA_ADDR_INC_NONE) {
-			cfg_91x->srcInc = UDMA_SRC_INC_NONE;
-		} else {
-			cfg_91x->srcInc = siwx91x_burst_length(config_zephyr->source_burst_length);
-		}
-
-		if (siwx91x_addr_adjustment(block_addr->dest_addr_adj) == UDMA_ADDR_INC_NONE) {
-			cfg_91x->dstInc = UDMA_DST_INC_NONE;
-		} else {
-			cfg_91x->dstInc = siwx91x_burst_length(config_zephyr->dest_burst_length);
-		}
-
-		/* Move to the next block */
-		block_addr = block_addr->next_block;
+		cnt += siwx91x_udma_fill_block_descs(config_zephyr, block, desc_base + cnt);
+		block = block->next_block;
 	}
+	__ASSERT(cnt == desc_count, "Corrupted state");
 
-	if (block_addr != NULL) {
-		/* next_block address for last block must be null */
+	if (block != NULL) {
 		return -EINVAL;
 	}
 
 	/* Set the transfer type for the last descriptor */
 	switch (siwx91x_transfer_direction(config_zephyr->channel_direction)) {
 	case TRANSFER_TO_OR_FROM_PER:
-		descs[config_zephyr->block_count - 1].vsUDMAChaConfigData1.transferType =
-			UDMA_MODE_BASIC;
+		desc_base[cnt - 1].vsUDMAChaConfigData1.transferType = UDMA_MODE_BASIC;
 		break;
 	case TRANSFER_MEM_TO_MEM:
-		descs[config_zephyr->block_count - 1].vsUDMAChaConfigData1.transferType =
-			UDMA_MODE_AUTO;
+		desc_base[cnt - 1].vsUDMAChaConfigData1.transferType = UDMA_MODE_AUTO;
 		break;
 	default:
 		return -EINVAL;
@@ -202,15 +217,35 @@ static int siwx91x_sg_fill_desc(RSI_UDMA_DESC_T *descs, const struct dma_config 
 	return 0;
 }
 
+static uint32_t siwx91x_udma_count_hw_desc(const struct dma_config *config)
+{
+	const struct dma_block_config *block = config->head_block;
+	uint32_t max_chunk = DMA_MAX_TRANSFER_COUNT * config->source_burst_length;
+	uint32_t total = 0;
+
+	for (int i = 0; i < config->block_count; i++) {
+		if (block->block_size) {
+			total += DIV_ROUND_UP(block->block_size, max_chunk);
+		} else {
+			total += 1;
+		}
+		block = block->next_block;
+	}
+
+	return total;
+}
+
 /* Configure DMA for scatter-gather transfer */
-static int siwx91x_sg_chan_config(const struct device *dev, RSI_UDMA_HANDLE_T udma_handle,
+static int siwx91x_udma_config_sg(const struct device *dev, RSI_UDMA_HANDLE_T udma_handle,
 				  uint32_t channel, const struct dma_config *config)
 {
 	const struct dma_siwx91x_config *cfg = dev->config;
 	struct dma_siwx91x_data *data = dev->data;
-	RSI_UDMA_DESC_T *sg_desc_base_addr = NULL;
+	uint32_t desc_count = siwx91x_udma_count_hw_desc(config);
+	RSI_UDMA_DESC_T *desc_base = NULL;
 	uint8_t transfer_type;
 	enum dma_xfer_dir xfer_dir;
+	int ret;
 
 	xfer_dir = siwx91x_transfer_direction(config->channel_direction);
 	if (xfer_dir == TRANSFER_DIR_INVALID) {
@@ -232,21 +267,23 @@ static int siwx91x_sg_chan_config(const struct device *dev, RSI_UDMA_HANDLE_T ud
 		return -EINVAL;
 	}
 
-	/* Request start index for scatter-gather descriptor table */
-	if (sys_mem_blocks_alloc_contiguous(data->dma_desc_pool, config->block_count,
-					    (void **)&sg_desc_base_addr)) {
+	ret = sys_mem_blocks_alloc_contiguous(data->dma_desc_pool, desc_count,
+					    (void **)&desc_base);
+	if (ret) {
 		return -EINVAL;
 	}
 
-	if (siwx91x_sg_fill_desc(sg_desc_base_addr, config)) {
+	ret = siwx91x_udma_fill_sg_descs(config, desc_base, desc_count);
+	if (ret) {
+		sys_mem_blocks_free_contiguous(data->dma_desc_pool, (void *)desc_base, desc_count);
 		return -EINVAL;
 	}
 
 	/* This channel information is used to distinguish scatter-gather transfers and
 	 * free the allocated descriptors in sg_transfer_desc_block
 	 */
-	data->chan_info[channel].Cnt = config->block_count;
-	data->zephyr_channel_info[channel].sg_desc_addr_info = sg_desc_base_addr;
+	data->chan_info[channel].Cnt = desc_count;
+	data->zephyr_channel_info[channel].sg_desc_addr_info = desc_base;
 
 	/* Store the transfer direction. This is used to trigger SW request for
 	 * Memory to Memory transfers.
@@ -268,12 +305,12 @@ static int siwx91x_sg_chan_config(const struct device *dev, RSI_UDMA_HANDLE_T ud
 	sys_write32(BIT(channel), (mem_addr_t)&cfg->reg->CHNL_PRI_ALT_SET);
 	sys_write32(BIT(channel), (mem_addr_t)&cfg->reg->CHNL_REQ_MASK_CLR);
 
-	RSI_UDMA_SetChannelScatterGatherTransfer(udma_handle, channel, config->block_count,
-						 sg_desc_base_addr, transfer_type);
+	RSI_UDMA_SetChannelScatterGatherTransfer(udma_handle, channel, desc_count,
+						 desc_base, transfer_type);
 	return 0;
 }
 
-static int siwx91x_direct_chan_config(const struct device *dev, RSI_UDMA_HANDLE_T udma_handle,
+static int siwx91x_udma_config_single(const struct device *dev, RSI_UDMA_HANDLE_T udma_handle,
 				      uint32_t channel, const struct dma_config *config)
 {
 	uint32_t dma_transfer_num = config->head_block->block_size / config->source_burst_length;
@@ -396,12 +433,10 @@ static int siwx91x_dma_configure(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	/* Configure dma channel for transfer */
 	if (config->head_block->next_block != NULL) {
-		/* Configure DMA for a Scatter-Gather transfer */
-		status = siwx91x_sg_chan_config(dev, udma_handle, channel, config);
+		status = siwx91x_udma_config_sg(dev, udma_handle, channel, config);
 	} else {
-		status = siwx91x_direct_chan_config(dev, udma_handle, channel, config);
+		status = siwx91x_udma_config_single(dev, udma_handle, channel, config);
 	}
 	if (status) {
 		return status;
