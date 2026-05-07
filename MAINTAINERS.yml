@@ -1371,6 +1371,7 @@ Documentation Infrastructure:
 "Drivers: Audio":
   status: odd fixes
   collaborators:
+    - rriveramcrus
     - lyakh
     - lgirdwood
     - kv2019i
