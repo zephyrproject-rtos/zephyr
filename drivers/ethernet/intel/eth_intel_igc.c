@@ -637,7 +637,7 @@ static int eth_intel_igc_tx_data(const struct device *dev, struct net_pkt *pkt)
 		queue = cfg->num_queues - 1;
 	}
 
-	for (struct net_buf *frag = pkt->frags; frag; frag = frag->frags) {
+	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
 		/* Hold the Header fragment until transmit clean done */
 		if (frag == pkt->frags) {
 			net_pkt_frag_ref(frag);
