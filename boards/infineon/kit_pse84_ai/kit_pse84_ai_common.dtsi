@@ -62,6 +62,10 @@
 	status = "okay";
 };
 
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
 uart2: &scb2 {
 	compatible = "infineon,uart";
 	status = "okay";
