@@ -88,6 +88,17 @@ uart9: &scb9 {
 	pinctrl-names = "default";
 };
 
+spi0: &scb0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "infineon,spi";
+	clocks = <&peri0_group1_16bit_3>;
+
+	pinctrl-0 = <&p11_3_scb0_spi_mosi &p11_0_scb0_spi_miso &p11_2_scb0_spi_clk>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio_prt11 1 GPIO_ACTIVE_LOW>;
+};
+
 &gpio_prt7 {
 	status = "okay";
 };
@@ -193,5 +204,9 @@ uart9: &scb9 {
 };
 
 &peri0_group1_8bit_1 {
+	status = "okay";
+};
+
+&peri0_group1_16bit_3 {
 	status = "okay";
 };
