@@ -110,6 +110,10 @@ struct ndp16 {
 	struct ndp16_datagram datagram[];
 } __packed;
 
+/* Chapter 6.2.1 table 6-2 */
+#define CDC_NCM_NETWORK_CAPS (COND_CODE_1(CONFIG_USBD_CDC_NCM_ETH_FILTER, \
+					  (CDC_NCM_CAP_ETH_FILTER), (0)))
+
 /* Chapter 6.2.1 table 6-3 */
 struct ntb_parameters {
 	uint16_t wLength;
@@ -1275,7 +1279,7 @@ static struct usbd_cdc_ncm_desc cdc_ncm_desc_##n = {				\
 		.bDescriptorType = USB_DESC_CS_INTERFACE,			\
 		.bDescriptorSubtype = ETHERNET_FUNC_DESC_NCM,			\
 		.bcdNcmVersion = sys_cpu_to_le16(0x100),			\
-		.bmNetworkCapabilities = 0,					\
+		.bmNetworkCapabilities = CDC_NCM_NETWORK_CAPS,			\
 	},									\
 										\
 	.if0_int_ep = {								\

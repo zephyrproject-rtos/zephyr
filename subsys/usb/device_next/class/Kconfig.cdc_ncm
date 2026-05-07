@@ -25,6 +25,17 @@ config USBD_CDC_NCM_SUPPORT_NTB32
 	  Enable support for NTB32 format which allows larger
 	  packet sizes.
 
+config USBD_CDC_NCM_ETH_FILTER
+	bool "Advertise SetEthernetPacketFilter support"
+	help
+	  Advertise that SetEthernetPacketFilter requests are
+	  accepted.
+
+	  Currently no filtering is actually implemented, but
+	  without this bit set, it has been observed that iOS
+	  puts the device in alternate setting 0 and effectively
+	  stops network traffic.
+
 module = USBD_CDC_NCM
 module-str = usbd cdc_ncm
 source "subsys/logging/Kconfig.template.log_config"

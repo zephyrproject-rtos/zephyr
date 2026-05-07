@@ -238,4 +238,24 @@ struct cdc_ncm_descriptor {
 	uint8_t bmNetworkCapabilities;
 } __packed;
 
+/**
+ * @name bmNetworkCapabilities bits (NCM11.pdf, 6.2.1, Table 6-2)
+ * @{
+ */
+/** Supports SetEthernetPacketFilter requests */
+#define CDC_NCM_CAP_ETH_FILTER       BIT(0)
+/** Supports GetNetAddress and SetNetAddress requests */
+#define CDC_NCM_CAP_NET_ADDRESS      BIT(1)
+/** Supports SendEncapsulatedCommand and GetEncapsulatedResponse requests */
+#define CDC_NCM_CAP_ENCAP_COMMAND    BIT(2)
+/** Supports SetMaxDatagramSize and GetMaxDatagramSize requests */
+#define CDC_NCM_CAP_MAX_DATAGRAM     BIT(3)
+/** Supports SetCrcMode and GetCrcMode requests */
+#define CDC_NCM_CAP_CRC_MODE         BIT(4)
+/** Supports 8-byte forms of GetNtbInputSize and SetNtbInputSize requests */
+#define CDC_NCM_CAP_NTB_INPUT_SIZE_8 BIT(5)
+/** Supports extended NCM capabilities (NCM 1.1) */
+#define CDC_NCM_CAP_EXTENDED_NCM     BIT(7)
+/** @} */
+
 #endif /* ZEPHYR_INCLUDE_USB_CLASS_USB_CDC_H_ */
