@@ -399,29 +399,15 @@ static int aux_ptr_get(struct pdu_adv *pdu, struct pdu_adv_aux_ptr **aux_ptr)
 	*/
 
 #if !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
-static void isr_race(void *param)
-{
-	radio_status_reset();
-}
-
 static void isr_early_abort(void *param)
 {
 	struct event_done_extra *extra;
-	int err;
 
 	/* Generate auxiliary radio event done */
 	extra = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_ADV_AUX);
 	LL_ASSERT_ERR(extra);
 
-	radio_isr_set(isr_race, param);
-	if (!radio_is_idle()) {
-		radio_disable();
-	}
-
-	err = lll_hfclock_off();
-	LL_ASSERT_ERR(err >= 0);
-
-	lll_done(NULL);
+	lll_isr_early_abort(param);
 }
 #endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
