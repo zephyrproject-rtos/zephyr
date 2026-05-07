@@ -262,22 +262,42 @@ enum sdhc_interrupt_source {
 typedef void (*sdhc_interrupt_cb_t)(const struct device *dev, int reason,
 				    const void *user_data);
 
+/**
+ * @def_driverbackendgroup{SDHC,sdhc_interface}
+ * @ingroup sdhc_interface
+ * @{
+ */
+
+/**
+ * @driver_ops{SDHC}
+ */
 __subsystem struct sdhc_driver_api {
+	/** @driver_ops_optional @copybrief sdhc_hw_reset */
 	int (*reset)(const struct device *dev);
+	/** @driver_ops_optional @copybrief sdhc_request */
 	int (*request)(const struct device *dev,
 		       struct sdhc_command *cmd,
 		       struct sdhc_data *data);
+	/** @driver_ops_optional @copybrief sdhc_set_io */
 	int (*set_io)(const struct device *dev, struct sdhc_io *ios);
+	/** @driver_ops_optional @copybrief sdhc_card_present */
 	int (*get_card_present)(const struct device *dev);
+	/** @driver_ops_optional @copybrief sdhc_execute_tuning */
 	int (*execute_tuning)(const struct device *dev);
+	/** @driver_ops_optional @copybrief sdhc_card_busy */
 	int (*card_busy)(const struct device *dev);
+	/** @driver_ops_optional @copybrief sdhc_get_host_props */
 	int (*get_host_props)(const struct device *dev,
 			      struct sdhc_host_props *props);
+	/** @driver_ops_optional @copybrief sdhc_enable_interrupt */
 	int (*enable_interrupt)(const struct device *dev,
 				sdhc_interrupt_cb_t callback,
 				int sources, void *user_data);
+	/** @driver_ops_optional @copybrief sdhc_disable_interrupt */
 	int (*disable_interrupt)(const struct device *dev, int sources);
 };
+
+/** @} */
 
 /**
  * @brief reset SDHC controller state
