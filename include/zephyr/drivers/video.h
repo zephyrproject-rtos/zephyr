@@ -2520,6 +2520,57 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 #define VIDEO_MIPI_CSI2_DT_RAW14                0x2d
 
 /**
+ * @brief Map pixel formats to their MIPI data type equivalent
+ *
+ * Only the formats that were an exact match are mapped to equivalent MIPI data types.
+ * A driver might want to handle the non-standard types before calling this function.
+ *
+ * Mind that while most receivers store @ref VIDEO_MIPI_CSI2_DT_YUV422_8 as YUYV, it is effectively
+ * the UYVY format being sent over MIPI lanes.
+ *
+ * @param pixfmt Pixel format to convert
+ * @retval the matching MIPI data type if found
+ * @retval VIDEO_MIPI_CSI2_DT_NULL when the format has no known MIPI data type equivalent
+ */
+static inline uint8_t video_mipi_data_type(uint32_t pixfmt)
+{
+	switch (pixfmt) {
+	case VIDEO_PIX_FMT_GREY:
+	case VIDEO_PIX_FMT_SBGGR8:
+	case VIDEO_PIX_FMT_SGBRG8:
+	case VIDEO_PIX_FMT_SGRBG8:
+	case VIDEO_PIX_FMT_SRGGB8:
+		return VIDEO_MIPI_CSI2_DT_RAW8;
+	case VIDEO_PIX_FMT_Y10P:
+	case VIDEO_PIX_FMT_SBGGR10P:
+	case VIDEO_PIX_FMT_SGBRG10P:
+	case VIDEO_PIX_FMT_SGRBG10P:
+	case VIDEO_PIX_FMT_SRGGB10P:
+		return VIDEO_MIPI_CSI2_DT_RAW10;
+	case VIDEO_PIX_FMT_Y12P:
+	case VIDEO_PIX_FMT_SBGGR12P:
+	case VIDEO_PIX_FMT_SGBRG12P:
+	case VIDEO_PIX_FMT_SGRBG12P:
+	case VIDEO_PIX_FMT_SRGGB12P:
+		return VIDEO_MIPI_CSI2_DT_RAW12;
+	case VIDEO_PIX_FMT_Y14P:
+	case VIDEO_PIX_FMT_SBGGR14P:
+	case VIDEO_PIX_FMT_SGBRG14P:
+	case VIDEO_PIX_FMT_SGRBG14P:
+	case VIDEO_PIX_FMT_SRGGB14P:
+		return VIDEO_MIPI_CSI2_DT_RAW14;
+	case VIDEO_PIX_FMT_UYVY:
+		return VIDEO_MIPI_CSI2_DT_YUV422_8;
+	case VIDEO_PIX_FMT_RGB565:
+		return VIDEO_MIPI_CSI2_DT_RGB565;
+	case VIDEO_PIX_FMT_RGB24:
+		return VIDEO_MIPI_CSI2_DT_RGB888;
+	default:
+		return VIDEO_MIPI_CSI2_DT_NULL;
+	}
+}
+
+/**
  * @brief User-defined data type generator macro
  *
  * Generates user-defined data type identifier for custom or proprietary formats.
