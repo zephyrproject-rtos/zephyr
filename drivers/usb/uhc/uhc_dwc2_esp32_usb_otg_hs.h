@@ -16,13 +16,11 @@
 struct esp32_usb_otg_hs_config {
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
-	int irq_source;
-	int irq_priority;
-	int irq_flags;
+	unsigned int irq;
+	void (*irq_configure)(void);
 };
 
 struct esp32_usb_otg_hs_data {
-	struct intr_handle_data_t *int_handle;
 	usb_utmi_hal_context_t utmi_hal;
 };
 
@@ -55,38 +53,20 @@ static inline int esp32_usb_otg_hs_pre_init(const struct device *dev)
 	 */
 	usb_utmi_hal_enable_data_pulldowns(true);
 
-	/* allocate interrupt but keep it disabled to avoid
-	 * spurious suspend/resume event at enumeration phase
+	/* Connect only: the line stays disabled to avoid a spurious
+	 * suspend/resume event at the enumeration phase.
 	 */
-	ret = esp_intr_alloc(cfg->irq_source,
-			     ESP_INTR_FLAG_INTRDISABLED | ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-				     ESP_INT_FLAGS_CHECK(cfg->irq_flags),
-			     (intr_handler_t)uhc_dwc2_isr_handler, (void *)dev, &data->int_handle);
+	cfg->irq_configure();
 
-	return ret;
+	return 0;
 }
 
 static int esp32_usb_otg_hs_shutdown(const struct device *const dev)
 {
 	const struct esp32_usb_otg_hs_config *const cfg = UHC_DWC2_QUIRK_CONFIG(dev);
-	struct esp32_usb_otg_hs_data *const data = UHC_DWC2_QUIRK_DATA(dev);
 	int ret;
 
-	if (data->int_handle != NULL) {
-		ret = esp_intr_disable(data->int_handle);
-		if (ret != 0) {
-			LOG_ERR("Unable to disable interrupt: %d", ret);
-			return ret;
-		}
-
-		ret = esp_intr_free(data->int_handle);
-		if (ret != 0) {
-			LOG_ERR("Unable to free interrupt: %d", ret);
-			return ret;
-		}
-
-		data->int_handle = NULL;
-	}
+	irq_disable(cfg->irq);
 
 	usb_utmi_hal_enable_data_pulldowns(false);
 	usb_utmi_hal_disable();
@@ -101,27 +81,32 @@ static int esp32_usb_otg_hs_shutdown(const struct device *const dev)
 
 static void esp32_usb_otg_hs_irq_enable_func(const struct device *const dev)
 {
-	struct esp32_usb_otg_hs_data *const data = UHC_DWC2_QUIRK_DATA(dev);
+	const struct esp32_usb_otg_hs_config *const cfg = UHC_DWC2_QUIRK_CONFIG(dev);
 
-	esp_intr_enable(data->int_handle);
+	irq_enable(cfg->irq);
 }
 
 static void esp32_usb_otg_hs_irq_disable_func(const struct device *const dev)
 {
-	struct esp32_usb_otg_hs_data *const data = UHC_DWC2_QUIRK_DATA(dev);
+	const struct esp32_usb_otg_hs_config *const cfg = UHC_DWC2_QUIRK_CONFIG(dev);
 
-	esp_intr_disable(data->int_handle);
+	irq_disable(cfg->irq);
 }
 
 #define QUIRK_ESP32_USB_OTG_HS_INST(n)						\
+										\
+	static void uhc_dwc2_quirk_irq_configure_##n(void)			\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n, 0), IRQ_DEFAULT_PRIORITY,	\
+			    uhc_dwc2_isr_handler, DEVICE_DT_INST_GET(n), 0);	\
+	}									\
 										\
 	static const struct esp32_usb_otg_hs_config uhc_dwc2_quirk_config_##n = {\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 		.clock_subsys = (clock_control_subsys_t)			\
 			DT_INST_CLOCKS_CELL(n, offset),				\
-		.irq_source = DT_INST_IRQ_BY_IDX(n, 0, irq),			\
-		.irq_priority = DT_INST_IRQ_BY_IDX(n, 0, priority),		\
-		.irq_flags = DT_INST_IRQ_BY_IDX(n, 0, flags),			\
+		.irq = DT_INST_IRQN_BY_IDX(n, 0),				\
+		.irq_configure = uhc_dwc2_quirk_irq_configure_##n,		\
 	};									\
 										\
 	static struct esp32_usb_otg_hs_data uhc_dwc2_quirk_data_##n;		\

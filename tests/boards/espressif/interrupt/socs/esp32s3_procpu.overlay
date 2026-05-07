@@ -5,7 +5,6 @@
  */
 
 &timer0 {
-	interrupts = <TG0_T0_LEVEL_INTR_SOURCE 1 0>;
 	status = "okay";
 
 	counter {
@@ -14,7 +13,6 @@
 };
 
 &timer1 {
-	interrupts = <TG0_T1_LEVEL_INTR_SOURCE 2 0>;
 	status = "okay";
 
 	counter {
@@ -23,7 +21,6 @@
 };
 
 &timer2 {
-	interrupts = <TG1_T0_LEVEL_INTR_SOURCE 3 0>;
 	status = "okay";
 
 	counter {

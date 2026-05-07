@@ -20,8 +20,8 @@ description: |
   unmasked.
 
   Write the node with ESP_CPU_INTERRUPT(n, flags) from
-  <zephyr/dt-bindings/interrupt-controller/espressif-intmux-common.h>, so that
-  "cpu-line" and the line in "interrupt-map" are written once.
+  <espressif/espressif-cpu-interrupt.dtsi>, so that "cpu-line" and the line
+  in "interrupt-map" are written once.
 
 compatible: "espressif,esp32-cpu-interrupt"
 
