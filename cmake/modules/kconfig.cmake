@@ -220,26 +220,30 @@ if(NOT DEFINED KCONFIG_TARGETS)
   set(KCONFIG_TARGETS menuconfig guiconfig hardenconfig traceconfig)
 endif()
 
-foreach(kconfig_target
-    ${KCONFIG_TARGETS}
-    ${EXTRA_KCONFIG_TARGETS}
-    )
-  zephyr_custom_target_shared(
-    ${kconfig_target}
-    ${CMAKE_COMMAND} -E env
-    ZEPHYR_BASE=${ZEPHYR_BASE}
-    ${COMMON_KCONFIG_ENV_SETTINGS}
-    SHIELD_AS_LIST='${SHIELD_AS_LIST_ESCAPED}'
-    DTS_POST_CPP=${DTS_POST_CPP}
-    DTS_ROOT_BINDINGS=${DTS_ROOT_BINDINGS}
-    ${PTY_INTERFACE}
-    ${PYTHON_EXECUTABLE}
-    ${EXTRA_KCONFIG_TARGET_COMMAND_FOR_${kconfig_target}}
-    ${KCONFIG_ROOT}
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
-    USES_TERMINAL
-    )
-endforeach()
+# Create the Kconfig targets. Skipped if KCONFIG_VARIANT_SOURCE is set, because
+# a variant image shall not be configured independently of its source image.
+if(NOT KCONFIG_VARIANT_SOURCE)
+  foreach(kconfig_target
+      ${KCONFIG_TARGETS}
+      ${EXTRA_KCONFIG_TARGETS}
+      )
+    zephyr_custom_target_shared(
+      ${kconfig_target}
+      ${CMAKE_COMMAND} -E env
+      ZEPHYR_BASE=${ZEPHYR_BASE}
+      ${COMMON_KCONFIG_ENV_SETTINGS}
+      SHIELD_AS_LIST='${SHIELD_AS_LIST_ESCAPED}'
+      DTS_POST_CPP=${DTS_POST_CPP}
+      DTS_ROOT_BINDINGS=${DTS_ROOT_BINDINGS}
+      ${PTY_INTERFACE}
+      ${PYTHON_EXECUTABLE}
+      ${EXTRA_KCONFIG_TARGET_COMMAND_FOR_${kconfig_target}}
+      ${KCONFIG_ROOT}
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
+      USES_TERMINAL
+      )
+  endforeach()
+endif()
 
 # Support assigning Kconfig symbols on the command-line with CMake
 # cache variables prefixed according to the Kconfig namespace.

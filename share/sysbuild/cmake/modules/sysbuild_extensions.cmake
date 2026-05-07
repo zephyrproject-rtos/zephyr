@@ -595,10 +595,6 @@ function(ExternalZephyrVariantProject_Add)
       CACHE INTERNAL "Application config file" FORCE
   )
 
-  set(${ZBUILD_APPLICATION}_KCONFIG_TARGETS "KCONFIG_TARGETS-NOTFOUND"
-      CACHE INTERNAL "Disable Kconfig targets" FORCE
-  )
-
   set(${ZBUILD_APPLICATION}_SNIPPET ${ZBUILD_SNIPPET}
       CACHE INTERNAL "Application snippet" FORCE
   )
