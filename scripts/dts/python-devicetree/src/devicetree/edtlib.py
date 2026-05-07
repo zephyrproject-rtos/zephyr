@@ -3118,7 +3118,7 @@ def _check_prop_by_type(prop_name: str,
         # If you change this, be sure to update the type annotation for
         # PropertySpec.default.
 
-        if (prop_type == "int" and isinstance(default, int)
+        if (prop_type == "int" and _is_plain_int(default)
             or prop_type == "string" and isinstance(default, str)):
             return True
 
@@ -3128,11 +3128,11 @@ def _check_prop_by_type(prop_name: str,
             return False
 
         if (prop_type == "array"
-            and all(isinstance(val, int) for val in default)):
+            and all(_is_plain_int(val) for val in default)):
             return True
 
         if (prop_type == "uint8-array"
-            and all(isinstance(val, int)
+            and all(_is_plain_int(val)
                     and 0 <= val <= 255 for val in default)):
             return True
 
