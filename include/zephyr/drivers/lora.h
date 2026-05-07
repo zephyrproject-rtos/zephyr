@@ -201,9 +201,9 @@ struct lora_modem_config {
 };
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * For internal driver use only, skip these in public documentation.
+ * @def_driverbackendgroup{LoRa,lora_interface}
+ * @ingroup lora_interface
+ * @{
  */
 
 /**
@@ -308,20 +308,33 @@ typedef int (*lora_api_recv_duty_cycle_async)(const struct device *dev,
 typedef int (*lora_api_test_cw)(const struct device *dev, uint32_t frequency,
 				int8_t tx_power, uint16_t duration);
 
+/**
+ * @driver_ops{LoRa}
+ */
 __subsystem struct lora_driver_api {
+	/** @driver_ops_mandatory @copybrief lora_config */
 	lora_api_config config;
+	/** @driver_ops_mandatory @copybrief lora_airtime */
 	lora_api_airtime airtime;
+	/** @driver_ops_mandatory @copybrief lora_send */
 	lora_api_send send;
+	/** @driver_ops_mandatory @copybrief lora_send_async */
 	lora_api_send_async send_async;
+	/** @driver_ops_mandatory @copybrief lora_recv */
 	lora_api_recv recv;
+	/** @driver_ops_mandatory @copybrief lora_recv_async */
 	lora_api_recv_async recv_async;
+	/** @driver_ops_optional @copybrief lora_cad */
 	lora_api_cad cad;
+	/** @driver_ops_optional @copybrief lora_cad_async */
 	lora_api_cad_async cad_async;
+	/** @driver_ops_optional @copybrief lora_recv_duty_cycle_async */
 	lora_api_recv_duty_cycle_async recv_duty_cycle_async;
+	/** @driver_ops_optional @copybrief lora_test_cw */
 	lora_api_test_cw test_cw;
 };
 
-/** @endcond */
+/** @} */
 
 /**
  * @brief Configure the LoRa modem
