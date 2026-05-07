@@ -143,17 +143,6 @@ static int wr_chunk(const struct bt_mesh_blob_io *io,
 	const struct flash_parameters *fparam = flash_get_parameters(fdev);
 
 	/*
-	 * If device has no erase requirement then write directly.
-	 * This is required since trick with padding using the erase value will
-	 * not work in this case.
-	 */
-	if (!(flash_params_get_erase_cap(fparam) & FLASH_ERASE_C_EXPLICIT)) {
-		return flash_area_write(flash->area,
-					flash->offset + block->offset + chunk->offset,
-					chunk->data, chunk->size);
-	}
-
-	/*
 	 * Allocate one additional write block for the case where a chunk will need
 	 * an extra write block on both sides to fit.
 	 */
@@ -162,6 +151,28 @@ static int wr_chunk(const struct bt_mesh_blob_io *io,
 	uint32_t write_block_size = flash_area_align(flash->area);
 	off_t area_offset = flash->offset + block->offset + chunk->offset;
 	int start_pad = area_offset % write_block_size;
+	off_t aligned_offset = ROUND_DOWN(area_offset, write_block_size);
+	size_t write_size = ROUND_UP(start_pad + chunk->size, write_block_size);
+
+	if (!(flash_params_get_erase_cap(fparam) & FLASH_ERASE_C_EXPLICIT)) {
+		/*
+		 * For devices without explicit erase (e.g. RRAM), read existing
+		 * data at alignment boundaries to preserve bytes outside the
+		 * chunk region, then overlay the chunk data and write back.
+		 * The erase-value padding trick cannot be used here because
+		 * writes are destructive regardless of the value written.
+		 */
+		int err;
+
+		err = flash_area_read(flash->area, aligned_offset, buf, write_size);
+		if (err) {
+			return err;
+		}
+
+		memcpy(&buf[start_pad], chunk->data, chunk->size);
+
+		return flash_area_write(flash->area, aligned_offset, buf, write_size);
+	}
 
 	/*
 	 * Fill buffer with erase value, to make sure only the part of the
@@ -173,10 +184,7 @@ static int wr_chunk(const struct bt_mesh_blob_io *io,
 
 	memcpy(&buf[start_pad], chunk->data, chunk->size);
 
-	return flash_area_write(flash->area,
-				ROUND_DOWN(area_offset, write_block_size),
-				buf,
-				ROUND_UP(start_pad + chunk->size, write_block_size));
+	return flash_area_write(flash->area, aligned_offset, buf, write_size);
 }
 
 int bt_mesh_blob_io_flash_init(struct bt_mesh_blob_io_flash *flash,
