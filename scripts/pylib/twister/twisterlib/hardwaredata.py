@@ -46,9 +46,12 @@ class CompoundHardwareData(HardwareData):
     """DUT configuration with auxiliary connections from
     the same physical device (same hardware ID). Entries can represent
     other CPU cores or separate logging ports of the same device.
+    The build_dir attribute specifies the directory where the build artifacts are located,
+    it is optional and used in multi-dut configurations.
     """
 
     entries: list[HardwareData] = field(default_factory=list)
+    build_dir: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert DUT dataclass to dictionary for YAML serialization."""

@@ -32,11 +32,11 @@
 
 static struct bt_conn *default_conn;
 
-static K_SEM_DEFINE(sem_connected, 0, 1);
-static K_SEM_DEFINE(sem_security_updated, 0, 1);
-static K_SEM_DEFINE(sem_disconnected, 0, 1);
-static K_SEM_DEFINE(sem_mtu_exchanged, 0, 1);
-static K_SEM_DEFINE(sem_discovery_done, 0, 1);
+static K_SEM_DEFINE(sem_connected, 0U, 1U);
+static K_SEM_DEFINE(sem_security_updated, 0U, 1U);
+static K_SEM_DEFINE(sem_disconnected, 0U, 1U);
+static K_SEM_DEFINE(sem_mtu_exchanged, 0U, 1U);
+static K_SEM_DEFINE(sem_discovery_done, 0U, 1U);
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
@@ -143,7 +143,7 @@ static bool check_audio_support_and_connect(struct bt_data *data, void *user_dat
 	struct net_buf_simple tmas_svc_data;
 	const struct bt_uuid *uuid;
 	uint16_t uuid_val;
-	uint16_t peer_tmap_role = 0;
+	uint16_t peer_tmap_role = 0U;
 	int err;
 
 	printk("[AD]: %u data_len %u\n", data->type, data->data_len);

@@ -25,6 +25,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "btp_bap_broadcast.h"
 #include "btp/btp.h"
@@ -32,7 +33,7 @@
 #define LOG_MODULE_NAME bttester_pbp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
-#define PBP_EXT_ADV_METADATA_LEN_MAX 128
+#define PBP_EXT_ADV_METADATA_LEN_MAX 128U
 
 static uint8_t pbp_features_cached;
 static uint8_t pbp_metadata_cached[PBP_EXT_ADV_METADATA_LEN_MAX];
@@ -92,11 +93,11 @@ static bool scan_get_data(struct bt_data *data, void *user_data)
 static void pbp_scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
 {
 	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) ||
-	    !(info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) || info->interval == 0) {
+	    !(info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) || info->interval == 0U) {
 		return;
 	}
 
-	uint8_t broadcast_name_len = 0;
+	uint8_t broadcast_name_len = 0U;
 	struct net_buf_simple ad_copy;
 
 	/* Initial parse to determine broadcast_name_len before allocating memory */
@@ -118,7 +119,7 @@ static void pbp_scan_recv(const struct bt_le_scan_recv_info *info, struct net_bu
 	bt_data_parse(ad, scan_get_data, ev_ptr);
 
 	if (sys_get_le24(ev_ptr->broadcast_id) != BT_BAP_INVALID_BROADCAST_ID &&
-	    ev_ptr->pba_features != 0U && ev_ptr->broadcast_name_len > 0) {
+	    ev_ptr->pba_features != 0U && ev_ptr->broadcast_name_len > 0U) {
 		tester_event(BTP_SERVICE_ID_PBP, BTP_PBP_EV_PUBLIC_BROADCAST_ANNOUNCEMENT_FOUND,
 			     ev_ptr, sizeof(*ev_ptr) + broadcast_name_len);
 	}
@@ -135,6 +136,9 @@ static uint8_t pbp_read_supported_commands(const void *cmd, uint16_t cmd_len, vo
 					   uint16_t *rsp_len)
 {
 	struct btp_pbp_read_supported_commands_rp *rp = rsp;
+
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
 
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_PBP, rp->data);
 	*rsp_len += sizeof(*rp);
@@ -217,6 +221,10 @@ static uint8_t pbp_set_public_broadcast_announcement(const void *cmd, uint16_t c
 	const struct btp_pbp_set_public_broadcast_announcement_cmd *cp = cmd;
 	int err = -EINVAL;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	if (cp->features == 0U || cp->features > (BT_PBP_ANNOUNCEMENT_FEATURE_ENCRYPTION |
 						  BT_PBP_ANNOUNCEMENT_FEATURE_STANDARD_QUALITY |
 						  BT_PBP_ANNOUNCEMENT_FEATURE_HIGH_QUALITY)) {
@@ -243,6 +251,10 @@ static uint8_t pbp_set_broadcast_name(const void *cmd, uint16_t cmd_len, void *r
 	const struct btp_pbp_set_broadcast_name_cmd *cp = cmd;
 	int err = -EINVAL;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	if (cp->name_len <= BT_AUDIO_BROADCAST_NAME_LEN_MAX) {
 		pbp_name_cached_len = cp->name_len;
 		memcpy(pbp_broadcast_name_cached, cp->name, cp->name_len);
@@ -260,6 +272,11 @@ static uint8_t pbp_broadcast_scan_start(const void *cmd, uint16_t cmd_len, void 
 {
 	int err;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 	if (err != 0 && err != -EALREADY) {
 		LOG_DBG("Unable to start scan for broadcast sources: %d", err);
@@ -274,6 +291,11 @@ static uint8_t pbp_broadcast_scan_stop(const void *cmd, uint16_t cmd_len, void *
 				       uint16_t *rsp_len)
 {
 	int err;
+
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	err = bt_le_scan_stop();
 	if (err != 0) {

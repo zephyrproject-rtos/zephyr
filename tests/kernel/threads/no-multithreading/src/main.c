@@ -48,10 +48,29 @@ ZTEST(no_multithreading, test_irq_locking)
 
 	unsigned int key = irq_lock();
 
-	k_busy_wait(15000);
+	/* Wait long enough to cover the 10 ms timeout plus one full
+	 * tick of slack for z_add_timeout()'s "at least N" round-up
+	 * plus a few ms of measurement margin.
+	 */
+	k_busy_wait(10000 + k_ticks_to_us_ceil32(1) + 5000);
 	zassert_false(timeout_run, "Timeout should not expire because irq is locked");
 
 	irq_unlock(key);
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		/*
+		 * On a tickful kernel, the timer ISR announces exactly one
+		 * tick per invocation. While IRQs were masked, multiple tick
+		 * interrupts fired but the IRQ controller's pending bit
+		 * coalesces them, so only a single ISR runs when IRQs are
+		 * unlocked. Our K_MSEC(10) timer needs two announces to
+		 * reach its deadline under the "at least N ticks" contract,
+		 * so the first pending delivery only brings dticks from 2
+		 * down to 1. Wait for the next tick so a second ISR fires
+		 * and the timer actually expires.
+		 */
+		k_busy_wait(k_ticks_to_us_ceil32(1) + 1000);
+	}
 
 	zassert_true(timeout_run, "Timeout should expire because irq got unlocked");
 }
@@ -68,11 +87,35 @@ ZTEST(no_multithreading, test_cpu_idle)
 	 */
 	k_timer_start(&timer, K_MSEC(10), K_NO_WAIT);
 
-	k_cpu_idle();
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		/*
+		 * On a tickless kernel the only scheduled wakeup while
+		 * we are idle is our own timer, so k_cpu_idle() returns
+		 * once with the timer callback already executed.
+		 */
+		k_cpu_idle();
+		zassert_true(timeout_run, "Timeout should expire");
+	} else {
+		/*
+		 * On a tickful kernel periodic tick interrupts wake
+		 * k_cpu_idle() on every tick regardless of our timer.
+		 * Loop back to idle until the timer callback has actually
+		 * run, which under the "at least N ticks" contract may
+		 * take more than one tick for K_MSEC() values that round
+		 * to a single tick.
+		 */
+		while (!timeout_run) {
+			k_cpu_idle();
+		}
+	}
 
 	diff = k_uptime_get() - now;
-	zassert_true(timeout_run, "Timeout should expire");
-	zassert_within(diff, 10, 2, "Unexpected time passed: %d ms", (int)diff);
+	/* Timer fires at least 10 ms from now (minimum delay), at most
+	 * 10 ms plus one tick for the round-up in z_add_timeout() and
+	 * a couple of ms of measurement margin.
+	 */
+	zassert_between_inclusive(diff, 10, 10 + k_ticks_to_ms_ceil32(1) + 2,
+				  "Unexpected time passed: %d ms", (int)diff);
 }
 
 #define IDX_PRE_KERNEL_1 0

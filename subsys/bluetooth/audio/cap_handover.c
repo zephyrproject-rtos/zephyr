@@ -83,7 +83,8 @@ static bool unicast_group_foreach_stream_cb(struct bt_cap_stream *cap_stream, vo
 		}
 	}
 
-	data->streams[data->cnt++] = cap_stream;
+	data->streams[data->cnt] = cap_stream;
+	data->cnt++;
 
 	return true;
 }
@@ -418,6 +419,8 @@ static bool valid_unicast_to_broadcast_stream_metadata_param(
 	const uint8_t *unicast_ccid_list;
 	int broadcast_ret;
 	int unicast_ret;
+
+	ARG_UNUSED(lookup_data);
 
 	/* Compare existing unicast metadata with the subgroup param meteadata. It
 	 * is mandatory that the CCID list and the context type remain the same
@@ -815,7 +818,8 @@ static bool broadcast_source_foreach_stream_cb(struct bt_cap_stream *cap_stream,
 		return false;
 	}
 
-	data->streams[data->cnt++] = cap_stream;
+	data->streams[data->cnt] = cap_stream;
+	data->cnt++;
 
 	return true;
 }

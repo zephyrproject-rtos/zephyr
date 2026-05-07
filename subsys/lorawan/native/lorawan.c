@@ -263,7 +263,7 @@ int lorawan_set_class(enum lorawan_class dev_class)
 
 void lorawan_enable_adr(bool enable)
 {
-	ARG_UNUSED(enable);
+	lwan_ctx.mac.adr_enabled = enable;
 }
 
 int lorawan_set_datarate(enum lorawan_datarate dr)
@@ -275,7 +275,8 @@ int lorawan_set_datarate(enum lorawan_datarate dr)
 		return -EINVAL;
 	}
 
-	if (lwan_ctx.region->get_tx_params((uint8_t)dr, &p, &power) != 0) {
+	if (lwan_ctx.region->get_tx_params((uint8_t)dr, lwan_ctx.mac.tx_power_idx,
+					   &p, &power) != 0) {
 		return -EINVAL;
 	}
 
@@ -298,6 +299,7 @@ void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
 
 	if (lwan_ctx.region != NULL &&
 	    lwan_ctx.region->get_tx_params((uint8_t)lwan_ctx.current_dr,
+					    lwan_ctx.mac.tx_power_idx,
 					    &dr_params, &power) == 0) {
 		payload = dr_params.max_payload;
 	} else {

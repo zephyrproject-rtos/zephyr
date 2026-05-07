@@ -22,7 +22,7 @@
 LOG_MODULE_REGISTER(sys_wireless_plat);
 
 RAMCFG_HandleTypeDef hramcfg_SRAM1;
-const struct device *rng_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
+const struct device *rng_dev;
 
 struct entropy_stm32_rng_dev_data {
 	RNG_TypeDef *rng;
@@ -37,7 +37,7 @@ void BLEPLAT_Init(void)
 {
 	BPKA_Reset();
 
-	rng_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
+	rng_dev = entropy_get_default_device();
 	if (!device_is_ready(rng_dev)) {
 		LOG_ERR("error: random device not ready");
 	}

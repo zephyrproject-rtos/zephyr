@@ -209,6 +209,12 @@
 			interrupt-parent = <&clic>;
 		};
 
+		tsen: tsen {
+			compatible = "bflb,tsen";
+			io-channels = <&adc0 0>;
+			status = "disabled";
+		};
+
 		sec_eng_trng: trng@20004000 {
 			compatible = "bflb,sec-eng-trng";
 			reg = <0x20004000 0x100>;
@@ -442,6 +448,11 @@
 			compatible = "zephyr,memory-region";
 			reg = <0xa8000000 DT_SIZE_M(128)>;
 			zephyr,memory-region = "PSRAM";
+			status = "disabled";
+		};
+
+		bt_hci_bflb: bt-hci {
+			compatible = "bflb,bt-hci";
 			status = "disabled";
 		};
 	};

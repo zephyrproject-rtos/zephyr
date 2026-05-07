@@ -28,6 +28,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/ring_buffer.h>
@@ -45,7 +46,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #include "btp_bap_unicast.h"
 
 static struct bt_bap_qos_cfg_pref qos_pref =
-	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 10000, 40000, 10000, 40000);
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02U, 10U, 10000U, 40000U, 10000U, 40000U);
 
 static struct btp_bap_unicast_connection connections[CONFIG_BT_MAX_CONN];
 static struct btp_bap_unicast_group cigs[CONFIG_BT_ISO_MAX_CIG];
@@ -134,7 +135,7 @@ void btp_bap_unicast_stream_free(struct btp_bap_unicast_stream *stream)
 struct btp_bap_unicast_stream *btp_bap_unicast_stream_find(
 	struct btp_bap_unicast_connection *conn, uint8_t ase_id)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(conn->streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(conn->streams); i++) {
 		struct bt_bap_stream *stream = stream_unicast_to_bap(&conn->streams[i]);
 		struct bt_bap_ep_info info;
 
@@ -154,7 +155,7 @@ struct btp_bap_unicast_stream *btp_bap_unicast_stream_find(
 struct bt_bap_ep *btp_bap_unicast_end_point_find(struct btp_bap_unicast_connection *conn,
 						 uint8_t ase_id)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(conn->end_points); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(conn->end_points); i++) {
 		struct bt_bap_ep_info info;
 		struct bt_bap_ep *ep = conn->end_points[i];
 
@@ -419,6 +420,10 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 			const struct bt_audio_codec_cfg *codec_cfg,
 			struct bt_bap_qos_cfg_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(dir);
+	ARG_UNUSED(pref);
+	ARG_UNUSED(rsp);
+
 	LOG_DBG("ASE Codec Reconfig: stream %p", stream);
 
 	print_codec_cfg(codec_cfg);
@@ -429,6 +434,8 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 static int lc3_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qos,
 		   struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_DBG("QoS: stream %p qos %p", stream, qos);
 
 	print_qos(qos);
@@ -438,6 +445,8 @@ static int lc3_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qo
 
 static bool valid_metadata_type(uint8_t type, uint8_t len, const uint8_t *data)
 {
+	ARG_UNUSED(len);
+
 	/* PTS checks if we are able to reject unsupported metadata type or RFU vale.
 	 * The only RFU value PTS seems to check for now is the streaming context.
 	 */
@@ -479,6 +488,8 @@ static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t
 
 static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_DBG("Start: stream %p", stream);
 
 	return 0;
@@ -494,6 +505,8 @@ static int lc3_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size
 
 static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_DBG("Disable: stream %p", stream);
 
 	return 0;
@@ -501,6 +514,8 @@ static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 
 static int lc3_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_DBG("Stop: stream %p", stream);
 
 	return 0;
@@ -508,6 +523,8 @@ static int lc3_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 
 static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_DBG("Release: stream %p", stream);
 
 	return 0;
@@ -552,6 +569,8 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 	struct btp_bap_unicast_connection *u_conn;
 	struct btp_bap_unicast_stream *u_stream = stream_bap_to_unicast(stream);
 
+	ARG_UNUSED(pref);
+
 	(void)bt_bap_ep_get_info(stream->ep, &info);
 	LOG_DBG("Configured stream %p, ep %u, dir %u", stream, info.id, info.dir);
 
@@ -573,13 +592,13 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 {
 	const bool iso_connected =
 		stream->iso == NULL ? false : stream->iso->state == BT_ISO_STATE_CONNECTED;
-	int err;
 
 	LOG_DBG("Enabled stream %p", stream);
 
 	if (iso_connected) {
 		struct bt_bap_ep_info ep_info;
 		struct bt_conn_info conn_info;
+		int err;
 
 		err = bt_bap_ep_get_info(stream->ep, &ep_info);
 		__ASSERT(err == 0, "Failed to get ISO chan info: %d", err);
@@ -716,7 +735,8 @@ static void stream_connected_cb(struct bt_bap_stream *stream)
 		return;
 	}
 
-	(void)bt_conn_get_info(stream->conn, &conn_info);
+	err = bt_conn_get_info(stream->conn, &conn_info);
+	__ASSERT_NO_MSG(err == 0);
 
 	if (conn_info.role == BT_CONN_ROLE_CENTRAL) {
 		if (ep_info.dir == BT_AUDIO_DIR_SOURCE) {
@@ -846,7 +866,7 @@ static struct bt_bap_stream_ops stream_ops = {
 struct btp_bap_unicast_stream *btp_bap_unicast_stream_alloc(
 	struct btp_bap_unicast_connection *conn)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(conn->streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(conn->streams); i++) {
 		struct btp_bap_unicast_stream *stream = &conn->streams[i];
 
 		if (stream->in_use == false) {
@@ -864,6 +884,8 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 				       enum bt_audio_dir dir,
 				       enum bt_audio_location loc)
 {
+	ARG_UNUSED(conn);
+
 	LOG_DBG("dir %u loc %X", dir, loc);
 }
 
@@ -871,6 +893,8 @@ static void unicast_client_supported_contexts_cb(struct bt_conn *conn,
 						 enum bt_audio_context snk_ctx,
 						 enum bt_audio_context src_ctx)
 {
+	ARG_UNUSED(conn);
+
 	LOG_DBG("Supported snk ctx %u src ctx %u", snk_ctx, src_ctx);
 }
 
@@ -878,6 +902,8 @@ static void unicast_client_available_contexts_cb(struct bt_conn *conn,
 						 enum bt_audio_context snk_ctx,
 						 enum bt_audio_context src_ctx)
 {
+	ARG_UNUSED(conn);
+
 	LOG_DBG("Available snk ctx %u src ctx %u", snk_ctx, src_ctx);
 }
 
@@ -1123,6 +1149,10 @@ uint8_t btp_bap_discover(const void *cmd, uint16_t cmd_len,
 	struct bt_conn_info conn_info;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
@@ -1130,7 +1160,9 @@ uint8_t btp_bap_discover(const void *cmd, uint16_t cmd_len,
 	}
 
 	u_conn = &connections[bt_conn_index(conn)];
-	(void)bt_conn_get_info(conn, &conn_info);
+
+	err = bt_conn_get_info(conn, &conn_info);
+	__ASSERT_NO_MSG(err == 0);
 
 	if (u_conn->end_points_count > 0 || conn_info.role != BT_CONN_ROLE_CENTRAL) {
 		bt_conn_unref(conn);
@@ -1201,7 +1233,7 @@ static int client_unicast_group_param_set(struct btp_bap_unicast_connection *u_c
 {
 	struct bt_bap_unicast_group_stream_param *stream_params = *stream_param_ptr;
 
-	for (size_t i = 0; i < ARRAY_SIZE(u_conn->streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(u_conn->streams); i++) {
 		struct bt_bap_ep_info info;
 		struct bt_bap_ep *ep;
 		struct btp_bap_unicast_stream *u_stream = &u_conn->streams[i];
@@ -1251,7 +1283,7 @@ int btp_bap_unicast_group_create(uint8_t cig_id,
 	struct bt_bap_unicast_group_stream_param stream_params[BTP_BAP_UNICAST_MAX_STREAMS_COUNT];
 	struct bt_bap_unicast_group_stream_param *stream_param_ptr;
 	struct bt_bap_unicast_group_param param;
-	size_t cis_cnt = 0;
+	size_t cis_cnt = 0U;
 
 	(void)memset(pair_params, 0, sizeof(pair_params));
 	(void)memset(stream_params, 0, sizeof(stream_params));
@@ -1264,7 +1296,7 @@ int btp_bap_unicast_group_create(uint8_t cig_id,
 	/* API does not allow to assign a CIG ID freely, so ensure we create groups
 	 * in the right order.
 	 */
-	for (uint8_t i = 0; i < cig_id; i++) {
+	for (uint8_t i = 0U; i < cig_id; i++) {
 		if (cigs[i].in_use == false) {
 			return -EINVAL;
 		}
@@ -1284,10 +1316,10 @@ int btp_bap_unicast_group_create(uint8_t cig_id,
 	}
 
 	stream_param_ptr = stream_params;
-	for (size_t i = 0; i < CONFIG_BT_MAX_CONN; i++) {
+	for (size_t i = 0U; i < CONFIG_BT_MAX_CONN; i++) {
 		struct btp_bap_unicast_connection *unicast_conn = &connections[i];
 
-		if (unicast_conn->end_points_count == 0) {
+		if (unicast_conn->end_points_count == 0U) {
 			continue;
 		}
 
@@ -1300,8 +1332,8 @@ int btp_bap_unicast_group_create(uint8_t cig_id,
 	}
 
 	/* Count CISes to be established */
-	for (size_t count = ARRAY_SIZE(pair_params); count > 0; --count) {
-		size_t i = count - 1;
+	for (size_t count = ARRAY_SIZE(pair_params); count > 0U; --count) {
+		size_t i = count - 1U;
 
 		if (pair_params[i].tx_param != NULL || pair_params[i].rx_param != NULL) {
 			cis_cnt++;
@@ -1309,7 +1341,7 @@ int btp_bap_unicast_group_create(uint8_t cig_id,
 			continue;
 		}
 
-		if (cis_cnt > 0) {
+		if (cis_cnt > 0U) {
 			/* No gaps allowed */
 			return -EINVAL;
 		}
@@ -1359,7 +1391,7 @@ static int client_configure_codec(struct btp_bap_unicast_connection *u_conn, str
 			return -ENOMEM;
 		}
 
-		if (u_conn->end_points_count == 0) {
+		if (u_conn->end_points_count == 0U) {
 			return -EINVAL;
 		}
 
@@ -1400,7 +1432,7 @@ static int server_configure_codec(struct btp_bap_unicast_connection *u_conn, str
 		 * we have to initialize all ASEs with a smaller ID first.
 		 * Fortunately, the PTS has nothing against such behavior.
 		 */
-		for (uint8_t i = 1; i <= ase_id; i++) {
+		for (uint8_t i = 1U; i <= ase_id; i++) {
 			stream = btp_bap_unicast_stream_find(u_conn, i);
 			if (stream != NULL) {
 				continue;
@@ -1441,6 +1473,10 @@ uint8_t btp_ascs_configure_codec(const void *cmd, uint16_t cmd_len, void *rsp, u
 	struct btp_bap_unicast_connection *u_conn;
 	struct bt_audio_codec_cfg codec_cfg;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -1451,7 +1487,8 @@ uint8_t btp_ascs_configure_codec(const void *cmd, uint16_t cmd_len, void *rsp, u
 
 	u_conn = &connections[bt_conn_index(conn)];
 
-	(void)bt_conn_get_info(conn, &conn_info);
+	err = bt_conn_get_info(conn, &conn_info);
+	__ASSERT_NO_MSG(err == 0);
 
 	memset(&codec_cfg, 0, sizeof(codec_cfg));
 
@@ -1491,6 +1528,10 @@ uint8_t btp_ascs_preconfigure_qos(const void *cmd, uint16_t cmd_len,
 	const uint32_t pd = sys_get_le24(cp->presentation_delay);
 	const uint16_t max_sdu = sys_le16_to_cpu(cp->max_sdu);
 	struct bt_bap_qos_cfg *qos;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("");
 
@@ -1541,6 +1582,10 @@ uint8_t btp_ascs_configure_qos(const void *cmd, uint16_t cmd_len, void *rsp, uin
 	struct bt_conn *conn;
 	struct btp_bap_unicast_group *out_unicast_group;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -1550,7 +1595,9 @@ uint8_t btp_ascs_configure_qos(const void *cmd, uint16_t cmd_len, void *rsp, uin
 		return BTP_STATUS_FAILED;
 	}
 
-	(void)bt_conn_get_info(conn, &conn_info);
+	err = bt_conn_get_info(conn, &conn_info);
+	__ASSERT_NO_MSG(err == 0);
+
 	if (conn_info.role == BT_CONN_ROLE_PERIPHERAL) {
 		bt_conn_unref(conn);
 
@@ -1588,6 +1635,10 @@ uint8_t btp_ascs_enable(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *
 	struct btp_bap_unicast_stream *stream;
 	struct bt_conn *conn;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -1621,6 +1672,10 @@ uint8_t btp_ascs_disable(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 	struct btp_bap_unicast_connection *u_conn;
 	struct btp_bap_unicast_stream *stream;
 	struct bt_conn *conn;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("");
 
@@ -1677,6 +1732,10 @@ uint8_t btp_ascs_receiver_start_ready(const void *cmd, uint16_t cmd_len,
 	struct bt_conn_info conn_info;
 	struct bt_bap_ep_info info;
 	struct bt_conn *conn;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("");
 
@@ -1748,6 +1807,10 @@ uint8_t btp_ascs_receiver_stop_ready(const void *cmd, uint16_t cmd_len,
 	struct btp_bap_unicast_stream *stream;
 	struct bt_conn *conn;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -1797,6 +1860,10 @@ uint8_t btp_ascs_release(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 	struct btp_bap_unicast_connection *u_conn;
 	struct btp_bap_unicast_stream *stream;
 	struct bt_conn *conn;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("");
 
@@ -1854,6 +1921,10 @@ uint8_t btp_ascs_update_metadata(const void *cmd, uint16_t cmd_len,
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -1906,6 +1977,10 @@ uint8_t btp_ascs_add_ase_to_cis(const void *cmd, uint16_t cmd_len,
 	struct bt_conn_info conn_info;
 	const struct btp_ascs_add_ase_to_cis *cp = cmd;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("");
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
@@ -1915,7 +1990,9 @@ uint8_t btp_ascs_add_ase_to_cis(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	(void)bt_conn_get_info(conn, &conn_info);
+	err = bt_conn_get_info(conn, &conn_info);
+	__ASSERT_NO_MSG(err == 0);
+
 	if (conn_info.role == BT_CONN_ROLE_PERIPHERAL) {
 		bt_conn_unref(conn);
 

@@ -15,8 +15,15 @@
 
 	soc {
 		fmc: flash-controller@4000c000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x0 DT_SIZE_K(512)>;
+
 			flash0: flash@0 {
 				reg = <0 DT_SIZE_K(512)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
 			};
 		};
 

@@ -160,6 +160,14 @@
 			compatible = "serial-flash";
 		};
 
+		wdt0: wdt0@40080000 {
+			compatible = "ti,mspm0-watchdog";
+			reg = <0x40080000 0x2000>;
+			ti,watchdog-reset-action = <1>;
+			closed-window = <0>;
+			status = "disabled";
+		};
+
 		rtc: rtc@40094000 {
 			compatible = "ti,mspm0-rtc";
 			reg = <0x40094000 0x2000>;
@@ -218,6 +226,15 @@
 		spi0: spi@40468000 {
 			compatible = "ti,mspm0-spi";
 			reg = <0x40468000 0x2000>;
+			status = "disabled";
+		};
+
+		dma: dma@4042a000 {
+			compatible = "ti,mspm0-dma";
+			reg = <0x4042a000 0x2000>;
+			interrupts = <31 0>;
+			#dma-cells = <2>;
+			dma-channels = <7>;
 			status = "disabled";
 		};
 	};

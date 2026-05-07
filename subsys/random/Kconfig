@@ -38,10 +38,11 @@ config TIMER_RANDOM_INITIAL_STATE
 
 choice RNG_GENERATOR_CHOICE
 	prompt "Random generator"
+	default ARM64_RANDOM_GENERATOR if ARM64_RNG
 	default ENTROPY_DEVICE_RANDOM_GENERATOR if ENTROPY_HAS_DRIVER && !ENTROPY_NEEDS_PRNG
 	default XOSHIRO_RANDOM_GENERATOR if ENTROPY_HAS_DRIVER && ENTROPY_NEEDS_PRNG
 	default TIMER_RANDOM_GENERATOR if TEST_RANDOM_GENERATOR
-	depends on ENTROPY_HAS_DRIVER || TEST_RANDOM_GENERATOR
+	depends on ENTROPY_HAS_DRIVER || TEST_RANDOM_GENERATOR || ARM64_RNG
 	help
 	  Platform dependent non-cryptographically secure random number support.
 
@@ -74,8 +75,33 @@ config XOSHIRO_RANDOM_GENERATOR
 	  the entropy driver as a seed source. This is a fast general-purpose
 	  non-cryptographically secure random number generator.
 
+config ARM64_RANDOM_GENERATOR
+	bool "Use ARM64 PRNG"
+	depends on ARM64_RNG
+	help
+	  Enables the pseudo-random number generator based on the RNDR instruction
+	  from the ARM extension FEAT_RNG.
+
 endchoice # RNG_GENERATOR_CHOICE
 
+if ARM64_RANDOM_GENERATOR
+
+config ARM64_RANDOM_GENERATOR_MAX_RETRIES
+	int "Maximum number of retries for ARM64 random generator"
+	default 10
+	help
+	  Maximum number of consecutive RNDR instruction failures after which the
+	  random generator gives up. Since we cannot return error, we panic the
+	  kernel.
+
+config ARM64_RANDOM_GENERATOR_RETRY_WAIT_USEC
+	int "Retry wait time for ARM64 random generator"
+	default 500
+	help
+	  Number of microseconds generator should wait before retrying after RNDR
+	  instruction failure.
+
+endif # ARM64_RANDOM_GENERATOR
 
 DT_CHOSEN_Z_ENTROPY := zephyr,entropy
 config ENTROPY_NODE_ENABLED

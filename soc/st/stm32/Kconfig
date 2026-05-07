@@ -46,6 +46,13 @@ config STM32_FLASH_PREFETCH
 	  be enabled when flash is accessed through a cache memory. Flash
 	  prefetch also improves performances a bit.
 
+# This option is consumed by various drivers which access the OTP area.
+config HAS_STM32_UNCACHED_ACCESS_ONLY_OTP
+	bool
+	help
+	  Hidden option selected by SoCs where the OTP/read-only areas of NVM
+	  must be accessed using uncached operations (else a bus fault occurs).
+
 # This option is consumed by external flash drivers
 config STM32_APP_IN_EXT_FLASH
 	bool

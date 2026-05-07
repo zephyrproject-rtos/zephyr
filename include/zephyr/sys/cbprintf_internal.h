@@ -100,6 +100,22 @@ extern "C" {
 #define Z_CBPRINTF_IS_PCHAR(x, flags) \
 	z_cbprintf_cxx_is_pchar(x, (flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO)
 #else
+
+/*
+ * On platforms where wchar_t is 4 bytes (e.g. typedef int), wchar_t *
+ * aliases int * in _Generic, causing any int * argument to be falsely
+ * detected as a string pointer. Skip wchar_t associations in that case.
+ */
+#if __SIZEOF_WCHAR_T__ == 4
+#define Z_CBPRINTF_IS_PCHAR_WCHAR(flags)
+#else
+#define Z_CBPRINTF_IS_PCHAR_WCHAR(flags) \
+	wchar_t * : 1, \
+	const wchar_t * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
+	volatile wchar_t * : 1, \
+	const volatile wchar_t * : 1,
+#endif
+
 /* NOLINTBEGIN(misc-redundant-expression) */
 #define Z_CBPRINTF_IS_PCHAR(x, flags) \
 	_Generic(Z_ARGIFY(x), \
@@ -113,11 +129,7 @@ extern "C" {
 		const unsigned char * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
 		volatile unsigned char * : 1, \
 		const volatile unsigned char * : 1,\
-		/* wchar_t * */ \
-		wchar_t * : 1, \
-		const wchar_t * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
-		volatile wchar_t * : 1, \
-		const volatile wchar_t * : 1, \
+		Z_CBPRINTF_IS_PCHAR_WCHAR(flags) \
 		default : \
 			0)
 /* NOLINTEND(misc-redundant-expression) */

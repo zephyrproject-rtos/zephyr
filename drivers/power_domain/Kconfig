@@ -71,6 +71,12 @@ config POWER_DOMAIN_GPIO_MONITOR_INIT_PRIORITY
 	help
 	  GPIO monitor power domain initialization priority.
 
+config POWER_DOMAIN_GPIO_MONITOR_INITIAL_READ
+	bool "Initial GPIO state read"
+	help
+	Enable a (delayed) initial read of the GPIO pin state used for
+	monitoring the external power domain.
+
 endif #POWER_DOMAIN_GPIO_MONITOR
 
 config POWER_DOMAIN_NXP_SCU

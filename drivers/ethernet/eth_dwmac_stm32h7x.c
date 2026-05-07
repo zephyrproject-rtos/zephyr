@@ -86,17 +86,16 @@ static const struct pinctrl_dev_config *eth0_pcfg =
 static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
 static struct net_eth_mac_config mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0);
 
-int dwmac_bus_init(struct dwmac_priv *p)
+int dwmac_bus_init(const struct device *dev)
 {
+	const struct dwmac_config *cfg = dev->config;
 	int ret;
-
-	p->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	for (size_t n = 0; n < ARRAY_SIZE(pclken); n++) {
 		if (IN_RANGE(pclken[n].bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
-			ret = clock_control_on(p->clock, (clock_control_subsys_t)&pclken[n]);
+			ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&pclken[n]);
 		} else {
-			ret = clock_control_configure(p->clock,
+			ret = clock_control_configure(cfg->clock,
 						      (clock_control_subsys_t)&pclken[n],
 						      NULL);
 		}
@@ -115,7 +114,6 @@ int dwmac_bus_init(struct dwmac_priv *p)
 
 	STM32_CONFIGURE_ETH_PHY_MODE();
 
-	p->base_addr = DT_INST_REG_ADDR(0);
 	return 0;
 }
 
@@ -129,11 +127,10 @@ int dwmac_bus_init(struct dwmac_priv *p)
 static struct dwmac_dma_desc dwmac_tx_descs[NB_TX_DESCS] __desc_mem;
 static struct dwmac_dma_desc dwmac_rx_descs[NB_RX_DESCS] __desc_mem;
 
-int dwmac_platform_init(struct dwmac_priv *p)
+int dwmac_platform_init(const struct device *dev)
 {
+	struct dwmac_priv *p = dev->data;
 	int ret;
-
-	p->phy_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, phy_handle));
 
 	p->tx_descs = dwmac_tx_descs;
 	p->rx_descs = dwmac_rx_descs;
@@ -183,13 +180,20 @@ int dwmac_platform_init(struct dwmac_priv *p)
 }
 
 /* Our private device instance */
+static const struct dwmac_config dwmac_config = {
+	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
+	.phy_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, phy_handle)),
+	.clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+	.mac_clk = (clock_control_subsys_t)&pclken[0],
+};
+
 static struct dwmac_priv dwmac_instance;
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0,
 			      dwmac_probe,
 			      NULL,
 			      &dwmac_instance,
-			      NULL,
+			      &dwmac_config,
 			      CONFIG_ETH_INIT_PRIORITY,
 			      &dwmac_api,
 			      NET_ETH_MTU);

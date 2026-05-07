@@ -243,6 +243,7 @@ void flash_stm32_page_layout(const struct device *dev,
 	*layout_size = 1;
 }
 
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
 int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
@@ -308,3 +309,4 @@ uint32_t flash_stm32_option_bytes_read(const struct device *dev)
 
 	return regs->OBR;
 }
+#endif /* CONFIG_SOC_SERIES_STM32F1X */

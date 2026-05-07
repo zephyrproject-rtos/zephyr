@@ -1161,6 +1161,7 @@ will be needed when submitting to Zephyr.
 The contents of ``my_custom_board`` should follow the same guidelines for any
 Zephyr board, and provide the following files::
 
+    board.yml
     my_custom_board_defconfig
     my_custom_board.dts
     my_custom_board.yaml

@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 
 #include <zephyr/init.h>
+#include <zephyr/sys/ringq.h>
 #include <zephyr/net/http/parser_url.h>
 #include <zephyr/net/lwm2m.h>
 #include <zephyr/net/lwm2m_path.h>
@@ -1398,7 +1399,7 @@ static int lwm2m_read_cached_data(struct lwm2m_message *msg,
 		read_info = &msg->cache_info->read_info[msg->cache_info->entry_size];
 		/* Store original timeseries ring buffer get states for failure handling */
 		read_info->cache_data = cached_data;
-		read_info->original_rb_get = cached_data->rb.get;
+		read_info->original_rb_get = cached_data->fifo.rb.get;
 		msg->cache_info->entry_size++;
 		if (msg->cache_info->entry_limit) {
 			length = MIN(length, msg->cache_info->entry_limit);
@@ -3083,7 +3084,7 @@ static bool lwm2m_timeseries_data_rebuild(struct lwm2m_message *msg, int error_c
 
 	/* Put Ring buffer back to original */
 	for (int i = 0; i < cache_temp->entry_size; i++) {
-		cache_temp->read_info[i].cache_data->rb.get =
+		cache_temp->read_info[i].cache_data->fifo.rb.get =
 			cache_temp->read_info[i].original_rb_get;
 	}
 
@@ -3513,11 +3514,11 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 					  sys_slist_t *lwm2m_path_list,
 					  sys_slist_t *lwm2m_path_free_list)
 {
-	uint32_t bytes_available = 0;
+	uint32_t entries = 0;
 
 	/* Check do we have still pending data to send */
 	for (int i = 0; i < cache_temp->entry_size; i++) {
-		if (ring_buf_is_empty(&cache_temp->read_info[i].cache_data->rb)) {
+		if (sys_ringq_empty(&cache_temp->read_info[i].cache_data->fifo)) {
 			/* Skip Empty cached buffers */
 			continue;
 		}
@@ -3528,14 +3529,14 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 			return false;
 		}
 
-		bytes_available += ring_buf_size_get(&cache_temp->read_info[i].cache_data->rb);
+		entries += sys_ringq_size(&cache_temp->read_info[i].cache_data->fifo);
 	}
 
-	if (bytes_available == 0) {
+	if (entries == 0) {
 		return false;
 	}
 
-	LOG_INF("Allocate a new message for pending data %u", bytes_available);
+	LOG_INF("Allocate a new message for pending data %u", entries);
 	cache_temp->entry_size = 0;
 	cache_temp->entry_limit = 0;
 	return true;

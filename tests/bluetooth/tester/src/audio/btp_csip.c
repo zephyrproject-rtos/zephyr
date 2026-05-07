@@ -18,6 +18,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include "../bluetooth/audio/csip_internal.h"
 #include "btp/btp.h"
@@ -34,6 +35,9 @@ static uint8_t btp_csip_supported_commands(const void *cmd, uint16_t cmd_len,
 					   void *rsp, uint16_t *rsp_len)
 {
 	struct btp_csip_read_supported_commands_rp *rp = rsp;
+
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
 
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_CSIP, rp->data);
 	*rsp_len += sizeof(*rp);
@@ -139,6 +143,9 @@ static void csip_discover_cb(struct bt_conn *conn,
 static void csip_lock_changed_cb(struct bt_csip_set_coordinator_csis_inst *inst,
 				 bool locked)
 {
+	ARG_UNUSED(inst);
+	ARG_UNUSED(locked);
+
 	LOG_DBG("");
 }
 
@@ -146,6 +153,8 @@ static void csip_set_coordinator_ordered_access_cb(
 	const struct bt_csip_set_coordinator_set_info *set_info, int err,
 	bool locked,  struct bt_csip_set_coordinator_set_member *member)
 {
+	ARG_UNUSED(set_info);
+
 	LOG_DBG("");
 
 	if (err != 0) {
@@ -169,7 +178,9 @@ static bool csip_set_coordinator_oap_cb(const struct bt_csip_set_coordinator_set
 					struct bt_csip_set_coordinator_set_member *members[],
 					size_t count)
 {
-	for (size_t i = 0; i < count; i++) {
+	ARG_UNUSED(set_info);
+
+	for (size_t i = 0U; i < count; i++) {
 		LOG_DBG("Ordered access for members[%zu]: %p", i, members[i]);
 	}
 
@@ -182,6 +193,10 @@ static uint8_t btp_csip_discover(const void *cmd, uint16_t cmd_len,
 	int err;
 	struct bt_conn *conn;
 	const struct btp_csip_discover_cmd *cp = cmd;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
@@ -198,14 +213,14 @@ static uint8_t btp_csip_discover(const void *cmd, uint16_t cmd_len,
 
 static int get_available_members(const struct bt_csip_set_coordinator_set_member **members)
 {
-	members_count = 0;
+	members_count = 0U;
 
 	if (cur_csis_inst == NULL) {
 		LOG_ERR("No CSIP instance available");
 		return BTP_STATUS_FAILED;
 	}
 
-	for (size_t i = 0; i < (size_t)ARRAY_SIZE(btp_csip_set_members); i++) {
+	for (size_t i = 0U; i < (size_t)ARRAY_SIZE(btp_csip_set_members); i++) {
 		if (btp_csip_set_members[i] == NULL) {
 			continue;
 		}
@@ -213,7 +228,7 @@ static int get_available_members(const struct bt_csip_set_coordinator_set_member
 		members[members_count++] = btp_csip_set_members[i];
 	}
 
-	if (members_count == 0) {
+	if (members_count == 0U) {
 		LOG_ERR("No set members available");
 		return BTP_STATUS_FAILED;
 	}
@@ -228,6 +243,10 @@ static uint8_t btp_csip_set_coordinator_lock(const void *cmd, uint16_t cmd_len, 
 	const struct btp_csip_set_coordinator_lock_cmd *cp = cmd;
 	int err;
 	int rc;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("");
 
@@ -260,6 +279,10 @@ static uint8_t btp_csip_set_coordinator_release(const void *cmd, uint16_t cmd_le
 	int err;
 	int rc;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("");
 
 	if (cp->addr_cnt != 0) {
@@ -290,6 +313,11 @@ static uint8_t btp_csip_start_ordered_access(const void *cmd, uint16_t cmd_len,
 	unsigned long member_count = 0;
 	int err;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("");
 
 	if (cur_csis_inst == NULL) {
@@ -298,7 +326,7 @@ static uint8_t btp_csip_start_ordered_access(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	for (size_t i = 0; i < (size_t)ARRAY_SIZE(btp_csip_set_members); i++) {
+	for (size_t i = 0U; i < (size_t)ARRAY_SIZE(btp_csip_set_members); i++) {
 		if (btp_csip_set_members[i] == NULL) {
 			continue;
 		}
@@ -351,7 +379,13 @@ static const struct btp_handler csip_handlers[] = {
 
 uint8_t tester_init_csip(void)
 {
-	bt_csip_set_coordinator_register_cb(&set_coordinator_cbs);
+	int err;
+
+	err = bt_csip_set_coordinator_register_cb(&set_coordinator_cbs);
+	if (err != 0) {
+		LOG_DBG("Failed to register CSIP callbacks: %d", err);
+		return BTP_STATUS_FAILED;
+	}
 
 	tester_register_command_handlers(BTP_SERVICE_ID_CSIP, csip_handlers,
 					 ARRAY_SIZE(csip_handlers));

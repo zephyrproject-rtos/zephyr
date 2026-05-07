@@ -1,0 +1,43 @@
+common:
+  tags:
+    - test_framework
+    - pytest
+    - shell
+    - multidut
+  filter: CONFIG_SERIAL and not CONFIG_SMP and dt_chosen_enabled("zephyr,shell-uart")
+  min_ram: 40
+  platform_type:
+    - mcu
+    - native
+  extra_configs:
+    - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+  integration_platforms:
+    - nrf52840dk/nrf52840
+  harness: pytest
+
+tests:
+  multidut.basic:
+    harness_config:
+      pytest_root:
+        - "pytest/test_multiple_duts.py::test_multidut_check_history"
+      required_devices:
+        # second device required, with the same platform and application
+        - {}
+
+  multidut.fixed_platform:
+    harness_config:
+      pytest_root:
+        - "pytest/test_multiple_duts.py::test_multidut_check_history"
+      required_devices:
+        # second device fixed to a specific platform
+        - platform: nrf52840dk/nrf52840
+
+  multidut.other_application:
+    harness_config:
+      pytest_root:
+        - "pytest/test_multiple_duts.py"
+      required_devices:
+        # second device required, with a different application
+        - application: multidut.basic
+    extra_args:
+      - CONFIG_BOOT_BANNER_STRING="Banner changed Zephyr OS"

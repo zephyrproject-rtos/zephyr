@@ -83,7 +83,6 @@
 		antenna-selection = "ext-gpios";
 		support-1p8v;
 		enable-xtal-correction;
-		qspi-80mhz-clk;
 		clock-frequency = <DT_FREQ_M(80)>;
 		status = "okay";
 

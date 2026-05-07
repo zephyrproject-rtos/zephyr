@@ -13,6 +13,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
@@ -27,6 +28,9 @@ static void csip_discover_cb(struct bt_conn *conn,
 			     const struct bt_csip_set_coordinator_set_member *member,
 			     int err, size_t set_count)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(set_count);
+
 	if (err != 0) {
 		FAIL("CSIP Lock Discover failed (err = %d)\n", err);
 		return;
@@ -39,6 +43,9 @@ static void csip_discover_cb(struct bt_conn *conn,
 
 static void csip_lock_changed(struct bt_csip_set_coordinator_csis_inst *inst, bool locked)
 {
+	ARG_UNUSED(inst);
+	ARG_UNUSED(locked);
+
 	SET_FLAG(flag_all_notifications_received);
 }
 

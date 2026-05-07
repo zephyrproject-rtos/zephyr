@@ -13,6 +13,4 @@ supported:
   - netif:serial-net
   - gpio
   - watchdog
-testing:
-  default: true
 vendor: arm

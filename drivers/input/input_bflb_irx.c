@@ -316,7 +316,7 @@ static int bflb_irx_init(struct device const *dev)
 	data->dev = dev;
 
 	if (!gpio_is_ready_dt(gpio)) {
-		LOG_ERR("GPIO input pin is not ready");
+		LOG_ERR_DEVICE_NOT_READY(gpio->port);
 		return -ENODEV;
 	}
 

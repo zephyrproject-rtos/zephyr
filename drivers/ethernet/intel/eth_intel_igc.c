@@ -474,14 +474,17 @@ static void eth_intel_igc_iface_init(struct net_if *iface)
 	eth_intel_igc_intr_enable(dev);
 }
 
-static enum ethernet_hw_caps eth_intel_igc_get_caps(const struct device *dev)
+static enum ethernet_hw_caps eth_intel_igc_get_caps(const struct device *dev,
+						    struct net_if *iface __unused)
 {
 	ARG_UNUSED(dev);
 
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
 }
 
-static int eth_intel_igc_set_config(const struct device *dev, enum ethernet_config_type type,
+static int eth_intel_igc_set_config(const struct device *dev,
+				    struct net_if *iface __unused,
+				    enum ethernet_config_type type,
 				    const struct ethernet_config *eth_cfg)
 {
 	struct eth_intel_igc_mac_data *data = dev->data;
@@ -495,7 +498,8 @@ static int eth_intel_igc_set_config(const struct device *dev, enum ethernet_conf
 	return -ENOTSUP;
 }
 
-static const struct device *eth_intel_igc_get_phy(const struct device *dev)
+static const struct device *eth_intel_igc_get_phy(const struct device *dev,
+						 struct net_if *iface __unused)
 {
 	const struct eth_intel_igc_mac_cfg *cfg = dev->config;
 
@@ -503,7 +507,8 @@ static const struct device *eth_intel_igc_get_phy(const struct device *dev)
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *eth_intel_igc_get_stats(const struct device *dev)
+static struct net_stats_eth *eth_intel_igc_get_stats(const struct device *dev,
+						     struct net_if *iface __unused)
 {
 	struct eth_intel_igc_mac_data *data = dev->data;
 	const struct eth_intel_igc_mac_cfg *cfg = dev->config;

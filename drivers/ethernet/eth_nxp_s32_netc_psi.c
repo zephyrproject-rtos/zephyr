@@ -76,7 +76,8 @@ static void phy_link_state_changed(const struct device *pdev,
 	}
 }
 
-static const struct device *nxp_s32_eth_get_phy(const struct device *dev)
+static const struct device *nxp_s32_eth_get_phy(const struct device *dev,
+						struct net_if *iface __unused)
 {
 	const struct nxp_s32_eth_config *cfg = dev->config;
 

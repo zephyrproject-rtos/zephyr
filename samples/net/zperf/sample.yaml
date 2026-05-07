@@ -99,7 +99,9 @@ tests:
       - mimxrt1170_evk/mimxrt1176/cm7
   sample.net.zperf.802154.subg:
     extra_args: EXTRA_CONF_FILE="overlay-802154-subg.conf"
-    platform_allow: beagleconnect_freedom
+    platform_allow:
+      - beagleconnect_freedom@C5/cc1352p
+      - beagleconnect_freedom@C7/cc1352p7
   sample.net.zperf.nrf7002dk:
     extra_args: SNIPPET=wifi-ipv4
     extra_configs:

@@ -35,6 +35,7 @@ properties:
   qspi-80mhz-clk:
     type: boolean
     description: |
+      Experimental feature.
       Enables 80 MHz QSPI clock mode for the NWP flash interface to improve
       throughput. Enable this if the external flash device supports 80 MHz
       operation; otherwise, keep it disabled.

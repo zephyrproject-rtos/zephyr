@@ -15,6 +15,7 @@ supported:
   - crc
   - dma
   - gpio
+  - hwinfo
   - i2c
   - pwm
   - rtc

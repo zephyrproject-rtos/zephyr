@@ -1,0 +1,46 @@
+# Copyright (c) 2026 Zephyr Project Developers
+# SPDX-License-Identifier: Apache-2.0
+
+title: Texas Instruments FDC1004 4-Channel Capacitance-to-Digital Converter
+
+description: |
+  The FDC1004 is a 4-channel, 16-bit capacitance-to-digital converter with
+  a ±15 pF input range and a per-channel CAPDAC offset of up to ~100 pF (0..31
+  steps of 3.125 pF each). Communicates over I2C at up to 400 kHz.
+
+compatible: "ti,fdc1004"
+
+include: i2c-device.yaml
+
+properties:
+  measure-rate:
+    type: int
+    default: 100
+    enum: [100, 200, 400]
+    description: |
+      Measurement rate in samples per second.
+      100 = 100 S/s, 200 = 200 S/s, 400 = 400 S/s.
+      Default is 100 S/s, it is the lowest rate which provides
+      best accuracy.
+
+  ti,capdac:
+    type: array
+    default: [0, 0, 0, 0]
+    description: |
+      Per-channel CAPDAC offset for CIN1, CIN2, CIN3, CIN4 respectively.
+      Each value is an integer from 0 to 31; each step equals 3.125 pF of
+      offset, shifting the measurement window from [-15, +15] pF to
+      [CAPDAC*3.125 - 15, CAPDAC*3.125 + 15] pF.
+      Default is [0, 0, 0, 0] which means no offset.
+      It centeres the measurement window around GND.
+      Non-zero values can be used based on individual project
+      parastitic capacitance at each electrode.
+
+examples:
+  - |
+    fdc1004_0: fdc1004@50 {
+      compatible = "ti,fdc1004";
+      reg = <0x50>;
+      measure-rate = <100>;
+      ti,capdac = <0 0 0 0>;
+    };

@@ -407,6 +407,7 @@ config MAX_XLAT_TABLES
 	default 28 if USERSPACE && TEST
 	default 20 if USERSPACE && (ARM64_VA_BITS >= 40)
 	default 16 if USERSPACE
+	default 16 if SMP && (ARM64_VA_BITS >= 36)
 	default 12 if (ARM64_VA_BITS >= 40)
 	default 8
 	help
@@ -459,5 +460,11 @@ config ARM64_SVE_VL_MAX
 	  save some per-thread memory in which case the hardware will be
 	  limited to the specified length. Having a larger value than what
 	  the hardware supports will only waste memory.
+
+config ARM64_RNG
+	bool
+	help
+	  This option signifies that the processor has the FEAT_RNG or FEAT_RNG_TRAP
+	  extension.
 
 endif # CPU_CORTEX_A || CPU_AARCH64_CORTEX_R

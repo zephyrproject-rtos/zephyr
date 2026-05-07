@@ -175,7 +175,7 @@ static int gpio_keys_init(const struct device *dev)
 		const struct gpio_dt_spec *gpio = &cfg->pin_cfg[i].spec;
 
 		if (!gpio_is_ready_dt(gpio)) {
-			LOG_ERR("%s is not ready", gpio->port->name);
+			LOG_ERR_DEVICE_NOT_READY(gpio->port);
 			return -ENODEV;
 		}
 

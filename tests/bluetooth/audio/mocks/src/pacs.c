@@ -13,6 +13,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/fff.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "audio/pacs_internal.h"
@@ -42,6 +43,8 @@ static void pacs_cap_foreach_custom_fake(enum bt_audio_dir dir, bt_pacs_cap_fore
 		},
 	};
 
+	ARG_UNUSED(dir);
+
 	for (size_t i = 0; i < ARRAY_SIZE(cap); i++) {
 		if (func(&cap[i], user_data) == false) {
 			break;
@@ -64,6 +67,9 @@ const struct bt_audio_codec_cap *bt_pacs_get_codec_cap(enum bt_audio_dir dir,
 						       const struct bt_pac_codec *codec_id)
 {
 	static struct bt_audio_codec_cap mock_cap;
+
+	ARG_UNUSED(dir);
+	ARG_UNUSED(codec_id);
 
 	return &mock_cap;
 }

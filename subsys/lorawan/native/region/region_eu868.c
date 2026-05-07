@@ -29,6 +29,12 @@ LOG_MODULE_REGISTER(lorawan_native_eu868, CONFIG_LORAWAN_LOG_LEVEL);
 /* EU868 max EIRP */
 #define EU868_MAX_EIRP_DBM	16
 
+/*
+ * EU868 TXPower table (RP002-1.0.4, Table 7):
+ *   index 0 = MaxEIRP (16 dBm), step -2 dB per index, up to index 7 = 2 dBm.
+ */
+#define EU868_MAX_TX_POWER_IDX	7
+
 /* EU868 mandatory default channels */
 #define EU868_DEFAULT_CH_COUNT	3
 
@@ -127,15 +133,20 @@ static int eu868_get_default_channels(struct lwan_channel *ch, size_t *count)
 	return 0;
 }
 
-static int eu868_get_tx_params(uint8_t dr, struct lwan_dr_params *p,
-			       int8_t *power)
+static int eu868_get_tx_params(uint8_t dr, uint8_t tx_power_idx,
+			       struct lwan_dr_params *p, int8_t *power_dbm)
 {
+	uint8_t idx;
+
 	if (dr >= EU868_DR_COUNT) {
 		return -EINVAL;
 	}
 
+	/* Defensive clamp — validate_tx_power() is the authoritative check. */
+	idx = MIN(tx_power_idx, EU868_MAX_TX_POWER_IDX);
+
 	*p = eu868_dr_table[dr];
-	*power = EU868_MAX_EIRP_DBM;
+	*power_dbm = EU868_MAX_EIRP_DBM - (int8_t)(2 * idx);
 	return 0;
 }
 
@@ -240,6 +251,97 @@ static int eu868_apply_cflist(const uint8_t cflist[16],
 	}
 	if (*count < cflist_end) {
 		*count = cflist_end;
+	}
+
+	return 0;
+}
+
+/*
+ * EU868 ChMaskCntl encoding (RP002-1.0.4, Table 12):
+ *   0  = ChMask applies to channels 0..15.
+ *   6  = "all defined channels on" (RFU-ish; mask value is ignored).
+ *   other values are RFU for EU868 and must be rejected.
+ */
+#define EU868_CH_MASK_CNTL_DIRECT	0
+#define EU868_CH_MASK_CNTL_ALL_ON	6
+
+static int eu868_validate_dr(uint8_t dr)
+{
+	if (dr >= EU868_DR_COUNT) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int eu868_validate_tx_power(uint8_t tx_power_idx)
+{
+	if (tx_power_idx > EU868_MAX_TX_POWER_IDX) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int eu868_apply_adr_channel_mask(struct lwan_channel *ch, size_t count,
+					uint8_t ch_mask_cntl, uint16_t ch_mask)
+{
+	/*
+	 * A single LinkADRReq's ChMask is 16 bits wide, so it can only
+	 * address channels 0..15 regardless of the region's total count.
+	 */
+	const size_t bits = MIN(count, (size_t)16);
+	uint8_t enabled_count;
+
+	if (ch_mask_cntl == EU868_CH_MASK_CNTL_ALL_ON) {
+		for (size_t i = 0; i < count; i++) {
+			if (ch[i].frequency != 0) {
+				ch[i].enabled = true;
+			}
+		}
+		return 0;
+	}
+
+	if (ch_mask_cntl != EU868_CH_MASK_CNTL_DIRECT) {
+		return -EINVAL;
+	}
+
+	/*
+	 * Default channels (0..2) must remain enabled per the spec; the
+	 * mask can only toggle channels above that range.  Reject a mask
+	 * that would disable a default channel.
+	 */
+	for (size_t i = 0; i < EU868_DEFAULT_CH_COUNT && i < count; i++) {
+		if ((ch_mask & BIT(i)) == 0) {
+			return -EINVAL;
+		}
+	}
+
+	/*
+	 * Pre-count the resulting enabled channels without mutating ch[]:
+	 * we must reject a mask that leaves zero channels enabled before
+	 * committing any change.
+	 */
+	enabled_count = 0;
+	for (size_t i = 0; i < bits; i++) {
+		if (ch[i].frequency == 0) {
+			continue;
+		}
+		if (ch_mask & BIT(i)) {
+			enabled_count++;
+		}
+	}
+
+	if (enabled_count == 0) {
+		return -EINVAL;
+	}
+
+	/* Validated — commit. */
+	for (size_t i = 0; i < bits; i++) {
+		if (ch[i].frequency == 0) {
+			continue;
+		}
+		ch[i].enabled = (ch_mask & BIT(i)) != 0;
 	}
 
 	return 0;
@@ -367,6 +469,9 @@ const struct lwan_region_ops eu868_ops = {
 	.get_rx2_params = eu868_get_rx2_params,
 	.validate_dl_settings = eu868_validate_dl_settings,
 	.apply_cflist = eu868_apply_cflist,
+	.validate_dr = eu868_validate_dr,
+	.validate_tx_power = eu868_validate_tx_power,
+	.apply_adr_channel_mask = eu868_apply_adr_channel_mask,
 	.select_join_channel = eu868_select_join_channel,
 	.select_data_channel = eu868_select_data_channel,
 	.record_tx = eu868_record_tx,

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,11 +11,13 @@
 #include <stdio.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
@@ -34,6 +36,8 @@ CREATE_FLAG(call_joined);
 
 static void tbs_hold_call_cb(struct bt_conn *conn, uint8_t call_index)
 {
+	ARG_UNUSED(conn);
+
 	if (call_index == g_call_index) {
 		SET_FLAG(call_held);
 	}
@@ -42,6 +46,8 @@ static void tbs_hold_call_cb(struct bt_conn *conn, uint8_t call_index)
 static bool tbs_originate_call_cb(struct bt_conn *conn, uint8_t call_index,
 				  const char *caller_id)
 {
+	ARG_UNUSED(conn);
+
 	printk("Placing call to remote with id %u to %s\n", call_index, caller_id);
 	g_call_index = call_index;
 	SET_FLAG(call_placed);
@@ -56,6 +62,8 @@ static bool tbs_authorize_cb(struct bt_conn *conn)
 static void tbs_terminate_call_cb(struct bt_conn *conn, uint8_t call_index,
 				  uint8_t reason)
 {
+	ARG_UNUSED(conn);
+
 	printk("Terminating call with id %u reason: %u", call_index, reason);
 	SET_FLAG(call_terminated);
 	UNSET_FLAG(call_placed);
@@ -63,12 +71,16 @@ static void tbs_terminate_call_cb(struct bt_conn *conn, uint8_t call_index,
 
 static void tbs_accept_call_cb(struct bt_conn *conn, uint8_t call_index)
 {
+	ARG_UNUSED(conn);
+
 	printk("Accepting call with index %u\n", call_index);
 	SET_FLAG(call_accepted);
 }
 
 static void tbs_retrieve_call_cb(struct bt_conn *conn, uint8_t call_index)
 {
+	ARG_UNUSED(conn);
+
 	printk("Retrieve call with index %u\n", call_index);
 	SET_FLAG(call_retrieved);
 }
@@ -77,7 +89,9 @@ static void tbs_join_calls_cb(struct bt_conn *conn,
 			      uint8_t call_index_count,
 			      const uint8_t *call_indexes)
 {
-	for (size_t i = 0; i < sizeof(call_indexes); i++) {
+	ARG_UNUSED(conn);
+
+	for (size_t i = 0; i < call_index_count; i++) {
 		printk("Call index: %u joined\n", call_indexes[i]);
 	}
 	SET_FLAG(call_joined);
@@ -148,7 +162,7 @@ static int test_set_bearer_technology(uint8_t bearer_index)
 	int err;
 
 	printk("%s\n", __func__);
-	err = bt_tbs_set_bearer_technology(bearer_index, BT_TBS_TECHNOLOGY_GSM);
+	err = bt_tbs_set_bearer_technology(bearer_index, BT_BEARER_TECH_GSM);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not set bearer technology: %d\n", err);
 		return err;
@@ -332,7 +346,7 @@ static void init(void)
 		.uri_schemes_supported = "skype",
 		.gtbs = true,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
+		.technology = BT_BEARER_TECH_3G,
 		.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
 	};
 	int err;
@@ -380,7 +394,7 @@ static void init(void)
 			.gtbs = false,
 			.authorization_required = false,
 			/* Set different technologies per bearer */
-			.technology = (i % BT_TBS_TECHNOLOGY_WCDMA) + 1,
+			.technology = (i % BT_BEARER_TECH_WCDMA) + 1,
 			.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
 		};
 

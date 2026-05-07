@@ -23,6 +23,7 @@ from itertools import islice
 from pathlib import Path
 
 from twisterlib import ZEPHYR_BASE
+from twisterlib.testsuitedata import RequiredApplication
 
 import snippets
 
@@ -36,6 +37,7 @@ from devicetree import edtlib  # pylint: disable=unused-import
 from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.environment import TwisterEnv
 from twisterlib.error import TwisterRuntimeError
+from twisterlib.hardwaremap import HardwareMap
 from twisterlib.platform import Platform, generate_platforms
 from twisterlib.quarantine import Quarantine
 from twisterlib.statuses import TwisterStatus
@@ -176,7 +178,7 @@ class TestPlan:
 
         self.scenarios = []
 
-        self.hwm = env.hwm
+        self.hwm: HardwareMap = env.hwm
         # used during creating shorter build paths
         self.link_dir_counter = 0
         self.modules = [module.get('name') for module in self.env.modules]
@@ -471,6 +473,11 @@ class TestPlan:
 
         self.platform_names = [a for p in self.platforms for a in p.aliases]
 
+        # Convert short platform names from hardware map to full target names.
+        for d in self.hwm.duts:
+            if d.platform in self.platform_names:
+                d.platform = self.get_platform(d.platform).name
+
     def get_all_tests(self):
         testcases = []
         for _, ts in self.testsuites.items():
@@ -588,6 +595,22 @@ class TestPlan:
                         suite.platform_allow =  self.verify_platforms_existence(
                                 suite.platform_allow,
                                 f"platform_allow in {suite.name}")
+
+                        for req_dev in suite.harness_config.required_devices:
+                            if req_dev.platform:
+                                req_dev.platform = self.verify_platforms_existence(
+                                    [req_dev.platform],
+                                    f"required_devices.platform in {suite.name}"
+                                )[0]
+
+                        for req_app in suite.required_applications:
+                            if platform := req_app.platform:
+                                req_app.platform = self.verify_platforms_existence(
+                                    [platform],
+                                    f"required_applications.platform in {suite.name}"
+                                )[0]
+
+                        suite.update_required_applications()
 
                         if suite.harness in ['ztest', 'test']:
                             if subcases is None:
@@ -1230,26 +1253,20 @@ class TestPlan:
 
         return instance.status not in do_not_process
 
-    def _find_required_instance(self, required_app, instance: TestInstance) -> TestInstance | None:
-        if req_platform := required_app.get("platform", None):
-            platform = self.get_platform(req_platform)
-            if not platform:
-                raise TwisterRuntimeError(
-                    f"Unknown platform {req_platform} in required application"
-                )
-            req_platform = platform.name
-        else:
-            req_platform = instance.platform.name
-
+    def _find_required_instance(
+            self, required_app: RequiredApplication, instance: TestInstance
+    ) -> TestInstance | None:
+        req_platform = required_app.platform or instance.platform.name
         for inst in self.instances.values():
-            if required_app["name"] == inst.testsuite.id and req_platform == inst.platform.name:
+            if required_app.name == inst.testsuite.id and req_platform == inst.platform.name:
                 if self._should_instance_be_processed(inst):
                     return inst
                 break
         return None
 
-    def _find_required_application_in_outdir(self, required_app,
-                                             instance: TestInstance) -> str | None:
+    def _find_required_application_in_outdir(
+            self, required_app: RequiredApplication, instance: TestInstance
+    ) -> str | None:
         """Check if required application exists in build directory."""
         if not (
             self.options.no_clean
@@ -1259,12 +1276,11 @@ class TestPlan:
         ):
             return None
 
-        if platform := required_app.get("platform", None):
+        if platform := required_app.platform:
             platform = self.get_platform(platform)
         else:
             platform = instance.platform
-        name = required_app["name"]
-        glob_pattern = f"{self.options.outdir}/{platform.normalized_name}/**/{name}"
+        glob_pattern = f"{self.options.outdir}/{platform.normalized_name}/**/{required_app.name}"
         build_dirs = glob.glob(glob_pattern, recursive=True)
         if not build_dirs:
             return None
@@ -1281,11 +1297,6 @@ class TestPlan:
                 continue
             if instance.status == TwisterStatus.FILTER:
                 # do not proceed if the test is already filtered
-                continue
-
-            if self.options.subset:
-                instance.add_filter("Required applications are not supported with --subsets",
-                                    Filters.CMD_LINE)
                 continue
 
             if self.options.runtime_artifact_cleanup:
@@ -1307,10 +1318,10 @@ class TestPlan:
                         instance.required_build_dirs.append(req_build_dir)
                         continue
 
-                    instance.add_filter(f"Missing required application {required_app['name']}",
+                    instance.add_filter(f"Missing required application {required_app.name}",
                                         Filters.TESTSUITE)
                     logger.debug(
-                        f"{instance.name}: Required application '{required_app['name']}' was not"
+                        f"{instance.name}: Required application '{required_app.name}' was not"
                         " found. Please verify if required test is provided with --testsuite-root"
                         " or build all required applications and rerun twister with --no-cleanup"
                         " option."
@@ -1334,15 +1345,10 @@ class TestPlan:
                                      " is filtered")
                         break
 
-                if instance.testsuite.id in req_instance.testsuite.required_applications:
-                    instance.add_filter("Circular dependency in required applications",
-                                        Filters.TESTSUITE)
-                    logger.warning(f"{instance.name}: Circular dependency, current app also"
-                                   f" required by {req_instance.name}")
-                    break
                 # keep dependencies to use it in the runner module to synchronize
                 # building of applications
                 instance.required_applications.append(req_instance.name)
+                instance.required_build_dirs.append(req_instance.build_dir)
 
     def add_instances(self, instance_list):
         for instance in instance_list:

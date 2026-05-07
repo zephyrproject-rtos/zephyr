@@ -29,6 +29,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "bap_common.h"
 #include "bap_stream_rx.h"
@@ -81,11 +82,17 @@ static struct bt_le_scan_cb broadcast_scan_cb = {
 static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base,
 			 size_t base_size)
 {
+	ARG_UNUSED(sink);
+	ARG_UNUSED(base);
+	ARG_UNUSED(base_size);
+
 	k_sem_give(&sem_base_received);
 }
 
 static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo)
 {
+	ARG_UNUSED(biginfo);
+
 	printk("Broadcast sink %p is now syncable\n", sink);
 	k_sem_give(&sem_syncable);
 }
@@ -118,6 +125,8 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 	uint32_t base_bis_index_bitfield = 0U;
 	int err;
 
+	ARG_UNUSED(user_data);
+
 	/* Base is NULL if the data does not contain a valid BASE */
 	if (base == NULL) {
 		return true;
@@ -138,12 +147,18 @@ static void broadcast_pa_recv(struct bt_le_per_adv_sync *sync,
 			const struct bt_le_per_adv_sync_recv_info *info,
 			struct net_buf_simple *buf)
 {
+	ARG_UNUSED(sync);
+	ARG_UNUSED(info);
+
 	bt_data_parse(buf, pa_decode_base, NULL);
 }
 
 static void broadcast_pa_synced(struct bt_le_per_adv_sync *sync,
 			struct bt_le_per_adv_sync_synced_info *info)
 {
+	ARG_UNUSED(sync);
+	ARG_UNUSED(info);
+
 	printk("PA synced\n");
 	k_sem_give(&sem_pa_synced);
 }
@@ -270,6 +285,8 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 	struct bt_uuid_16 adv_uuid;
 	uint8_t *tmp_meta;
 	int ret;
+
+	ARG_UNUSED(user_data);
 
 	if (data->type != BT_DATA_SVC_DATA16) {
 		return true;

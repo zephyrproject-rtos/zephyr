@@ -1,0 +1,12 @@
+# Copyright (c) 2026 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ubx_evknorab2/nrf54l05/cpuflpr
+name: u-blox EVK-NORA-B2-nRF54L05-Fast-Lightweight-Peripheral-Processor
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+sysbuild: true
+ram: 32
+flash: 32

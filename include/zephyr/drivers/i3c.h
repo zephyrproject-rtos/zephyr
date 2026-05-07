@@ -942,6 +942,8 @@ __subsystem struct i3c_driver_api {
 #endif /* CONFIG_I3C_RTIO */
 };
 
+DEVICE_API_EXTENDS(i3c, i2c, i2c_api);
+
 /**
  * @endcond
  */

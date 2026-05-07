@@ -264,7 +264,8 @@ skip:
 						      k_thread_name_get(k_current_get()));
 }
 
-static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct device *dev __unused,
+							      struct net_if *iface __unused)
 {
 	enum ethernet_hw_caps caps = ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE;
 
@@ -852,7 +853,8 @@ static int eth_nxp_enet_qos_mac_init(const struct device *dev)
 	return ret;
 }
 
-static const struct device *eth_nxp_enet_qos_get_phy(const struct device *dev)
+static const struct device *eth_nxp_enet_qos_get_phy(const struct device *dev,
+						     struct net_if *iface __unused)
 {
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 
@@ -869,6 +871,7 @@ static const struct device *eth_nxp_enet_qos_get_ptp_clock(const struct device *
 #endif
 
 static int eth_nxp_enet_qos_set_config(const struct device *dev,
+			       struct net_if *iface __unused,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *cfg)
 {

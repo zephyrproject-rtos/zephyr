@@ -226,5 +226,17 @@
 				status = "disabled";
 			};
 		};
+
+		usbhs: usbhs@400b1000 {
+			compatible = "adi,max32-usbhs";
+			reg = <0x400b1000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 3>;
+			interrupts = <2 0>;
+			num-bidir-endpoints = <1>;
+			num-in-endpoints = <6>;
+			num-out-endpoints = <7>;
+			maximum-speed = "high-speed";
+			status = "disabled";
+		};
 	};
 };

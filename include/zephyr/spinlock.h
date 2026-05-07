@@ -336,7 +336,7 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
  * @cond INTERNAL_HIDDEN
  */
 
-#if defined(CONFIG_SMP) && (defined(CONFIG_TEST) || defined(CONFIG_ASSERT))
+#if defined(CONFIG_TEST) || defined(CONFIG_ASSERT)
 /*
  * @brief Checks if spinlock is held by some CPU, including the local CPU.
  *		This should only be used in tests or assertions, not to make
@@ -347,6 +347,7 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
  */
 static ALWAYS_INLINE bool z_spin_is_locked(struct k_spinlock *l)
 {
+#ifdef CONFIG_SMP
 #ifdef CONFIG_TICKET_SPINLOCKS
 	atomic_val_t ticket_val = atomic_get(&l->owner);
 
@@ -354,8 +355,13 @@ static ALWAYS_INLINE bool z_spin_is_locked(struct k_spinlock *l)
 #else
 	return l->locked;
 #endif /* CONFIG_TICKET_SPINLOCKS */
+#else
+	ARG_UNUSED(l);
+	/* In UP builds a spinlock reduces to an IRQ lock. */
+	return !arch_cpu_irqs_are_enabled();
+#endif /* CONFIG_SMP */
 }
-#endif /* defined(CONFIG_SMP) && (defined(CONFIG_TEST) || defined(CONFIG_ASSERT)) */
+#endif /* defined(CONFIG_TEST) || defined(CONFIG_ASSERT) */
 
 /* Internal function: releases the lock, but leaves local interrupts disabled */
 static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)

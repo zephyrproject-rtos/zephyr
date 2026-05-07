@@ -230,7 +230,7 @@ static void bulk_poll_out(struct test_data *data, int wait_base, int wait_range)
 		data->cnt++;
 		uart_poll_out(uart_dev, data->buf[i % BUF_SIZE]);
 		if (wait_base) {
-			int r = sys_rand32_get();
+			uint32_t r = sys_rand32_get();
 
 			k_sleep(K_USEC(wait_base + (r % wait_range)));
 		}
@@ -278,7 +278,7 @@ static void int_async_thread_func(void *p_data, void *base, void *range)
 			uart_irq_tx_enable(uart_dev);
 		}
 
-		int r = sys_rand32_get();
+		uint32_t r = sys_rand32_get();
 
 		k_sleep(K_USEC(wait_base + (r % wait_range)));
 	}

@@ -29,6 +29,7 @@
 #include <zephyr/sys/atomic_types.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include "bap_stream_rx.h"
 #include "bap_stream_tx.h"
@@ -79,6 +80,8 @@ CREATE_FLAG(flag_source_supp_ctx_changed);
 static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg_pref *pref)
 {
 	struct bt_conn *ep_conn;
+
+	ARG_UNUSED(pref);
 
 	printk("Configured stream %p\n", stream);
 
@@ -202,12 +205,16 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 				       enum bt_audio_dir dir,
 				       enum bt_audio_location loc)
 {
+	ARG_UNUSED(conn);
+
 	printk("dir %u loc %X\n", dir, loc);
 }
 
 static void supported_contexts_cb(struct bt_conn *conn, enum bt_audio_context snk_ctx,
 				  enum bt_audio_context src_ctx)
 {
+	ARG_UNUSED(conn);
+
 	printk("Supported snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 	printk("cached %d %d\n", cached_supp_snk_ctx, cached_supp_src_ctx);
 
@@ -226,6 +233,8 @@ static void available_contexts_cb(struct bt_conn *conn,
 				  enum bt_audio_context snk_ctx,
 				  enum bt_audio_context src_ctx)
 {
+	ARG_UNUSED(conn);
+
 	printk("Available snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 	printk("cached %d %d\n", cached_avail_snk_ctx, cached_avail_src_ctx);
 
@@ -356,6 +365,9 @@ static void print_remote_codec_cap(const struct bt_audio_codec_cap *codec_cap,
 
 static void discover_sinks_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(dir);
+
 	if (err != 0) {
 		FAIL("Discovery failed: %d\n", err);
 		return;
@@ -368,6 +380,9 @@ static void discover_sinks_cb(struct bt_conn *conn, int err, enum bt_audio_dir d
 
 static void discover_sources_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(dir);
+
 	if (err != 0) {
 		FAIL("Discovery failed: %d\n", err);
 		return;
@@ -381,12 +396,16 @@ static void discover_sources_cb(struct bt_conn *conn, int err, enum bt_audio_dir
 static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir,
 			  const struct bt_audio_codec_cap *codec_cap)
 {
+	ARG_UNUSED(conn);
+
 	print_remote_codec_cap(codec_cap, dir);
 	SET_FLAG(flag_codec_cap_found);
 }
 
 static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_bap_ep *ep)
 {
+	ARG_UNUSED(conn);
+
 	if (dir == BT_AUDIO_DIR_SINK) {
 		add_remote_sink(ep);
 	} else {
@@ -414,6 +433,10 @@ static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(tx);
+	ARG_UNUSED(rx);
+
 	printk("MTU exchanged\n");
 	SET_FLAG(flag_mtu_exchanged);
 }
@@ -672,6 +695,8 @@ static int codec_configure_stream(struct bt_bap_stream *stream, struct bt_bap_ep
 
 static void codec_configure_streams(size_t stream_cnt)
 {
+	ARG_UNUSED(stream_cnt);
+
 	for (size_t i = 0U; i < ARRAY_SIZE(pair_params); i++) {
 		if (pair_params[i].rx_param != NULL && g_sources[i] != NULL) {
 			struct bt_bap_stream *stream = pair_params[i].rx_param->stream;

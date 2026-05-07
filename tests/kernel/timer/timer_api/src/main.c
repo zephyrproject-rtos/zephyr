@@ -91,6 +91,12 @@ static bool interval_check(int64_t interval, int64_t desired)
 {
 	int64_t slop = INEXACT_MS_CONVERT ? 1 : 0;
 
+	/* z_add_timeout() rounds up by one tick to guarantee "at least
+	 * N ticks" -- that can push the first fire a whole tick past
+	 * the nominal duration.
+	 */
+	slop += k_ticks_to_ms_ceil32(1);
+
 	/* Tickless kernels will advance time inside of an ISR, so it
 	 * is always possible (especially with high tick rates and
 	 * slow CPUs) for us to arrive at the uptime check above too

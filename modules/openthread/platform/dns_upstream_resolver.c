@@ -107,11 +107,26 @@ void otPlatDnsStartUpstreamQuery(otInstance *aInstance, otPlatDnsUpstreamQuery *
 			     error = OT_ERROR_FAILED);
 		break;
 	default:
+#if defined(CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT)
+		/* Handle private RR types (65280-65534) */
+		if (qtype >= DNS_RR_TYPE_PRIVATE_START && qtype <= DNS_RR_TYPE_PRIVATE_END) {
+			VerifyOrExit(dns_resolve_name(dns_resolve_get_default(), name,
+						      (enum dns_query_type)qtype,
+						      &ctx->resolve_query_id,
+						      dns_resolve_cb, (void *)ctx,
+						      DNS_TIMEOUT) == 0,
+				     error = OT_ERROR_FAILED);
+			break;
+		}
+#endif
+		error = OT_ERROR_FAILED;
 		break;
 	}
 
 exit:
-	net_buf_unref(result);
+	if (result != NULL) {
+		net_buf_unref(result);
+	}
 	if (error != OT_ERROR_NONE && ctx != NULL) {
 		remove_query_ctx(ctx);
 	}

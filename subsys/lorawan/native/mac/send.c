@@ -50,6 +50,7 @@
 #include <string.h>
 
 #include "mac_internal.h"
+#include "mac_commands.h"
 #include "engine.h"
 #include "crypto/crypto.h"
 
@@ -65,6 +66,10 @@ LOG_MODULE_DECLARE(lorawan_native_mac, CONFIG_LORAWAN_LOG_LEVEL);
 #define DIR_DOWNLINK		1
 #define MAX_FRAME_SIZE		256
 
+/* FOpts carries up to 15 bytes of MAC commands; capped by FCtrl[3:0]. */
+#define LWAN_MAX_FOPTS_LEN	15
+
+#define FCTRL_ADR		BIT(7)
 #define FCTRL_ACK		BIT(5)
 #define FCTRL_FPENDING		BIT(4)
 #define FCTRL_FOPTS_LEN_MASK	GENMASK(3, 0)
@@ -171,12 +176,18 @@ static int mac_build_data_frame(struct lwan_ctx *ctx,
 {
 	struct pkt_data_hdr *hdr = (struct pkt_data_hdr *)frame;
 	struct lwan_session *sess = &ctx->session;
-	size_t fhdr_end = sizeof(*hdr);
+	uint8_t fopts[LWAN_MAX_FOPTS_LEN];
+	size_t fopts_len;
+	size_t fhdr_end;
 	size_t msg_len;
 	size_t pos;
+	uint8_t fctrl;
 	int ret;
 
-	pos = DF_MIN_SIZE;
+	fopts_len = mac_cmd_build_ul_fopts(ctx, fopts, sizeof(fopts));
+	fhdr_end = sizeof(*hdr) + fopts_len;
+
+	pos = fhdr_end + LWAN_MIC_SIZE;
 	if (req->len > 0) {
 		pos += FPORT_SIZE + req->len;
 	}
@@ -185,11 +196,23 @@ static int mac_build_data_frame(struct lwan_ctx *ctx,
 		return -EMSGSIZE;
 	}
 
+	fctrl = (uint8_t)FIELD_PREP(FCTRL_FOPTS_LEN_MASK, fopts_len);
+	if (ctx->pending & LWAN_PENDING_ACK) {
+		fctrl |= FCTRL_ACK;
+	}
+	if (ctx->mac.adr_enabled) {
+		fctrl |= FCTRL_ADR;
+	}
+
 	hdr->mhdr = req->type == LORAWAN_MSG_CONFIRMED
 		   ? MHDR_CONF_DATA_UP : MHDR_UNCONF_DATA_UP;
-	hdr->fctrl = ctx->pending & LWAN_PENDING_ACK ? FCTRL_ACK : 0x00;
+	hdr->fctrl = fctrl;
 	sys_put_le32(sess->dev_addr, hdr->dev_addr);
 	sys_put_le16((uint16_t)(sess->fcnt_up & FCNT_LOW_MASK), hdr->fcnt);
+
+	if (fopts_len > 0) {
+		memcpy(&frame[sizeof(*hdr)], fopts, fopts_len);
+	}
 
 	if (req->len > 0) {
 		ret = mac_encrypt_ul_payload(sess, req->port, req->data,
@@ -212,8 +235,8 @@ static int mac_build_data_frame(struct lwan_ctx *ctx,
 
 	*frame_len = pos;
 
-	LOG_DBG("Data frame built: port=%u len=%u fcnt=%u total=%zu",
-		req->port, req->len, sess->fcnt_up, *frame_len);
+	LOG_DBG("Data frame built: port=%u len=%u fcnt=%u fopts=%zu total=%zu",
+		req->port, req->len, sess->fcnt_up, fopts_len, *frame_len);
 
 	return 0;
 }
@@ -490,7 +513,8 @@ void mac_do_send(struct lwan_ctx *ctx, const struct lwan_send_req *req)
 
 	tx_dr_idx = (uint8_t)ctx->current_dr;
 
-	ret = region->get_tx_params(tx_dr_idx, &dr_params, &tx_power);
+	ret = region->get_tx_params(tx_dr_idx, ctx->mac.tx_power_idx,
+				    &dr_params, &tx_power);
 	if (ret != 0) {
 		LOG_ERR("Invalid datarate DR%u: %d", tx_dr_idx, ret);
 		goto done;

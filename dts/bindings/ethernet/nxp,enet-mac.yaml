@@ -5,7 +5,7 @@ description: NXP ENET MAC/L2 Device
 
 compatible: "nxp,enet-mac"
 
-include: ["ethernet-controller.yaml", "pinctrl-device.yaml"]
+include: ["ethernet-controller.yaml"]
 
 properties:
   interrupts:
@@ -41,9 +41,6 @@ examples:
   - |
     &enet_mac {
             status = "okay";
-
-            pinctrl-0 = <&pinmux_enet>;
-            pinctrl-names = "default";
 
             phy-handle = <&phy>;
             phy-connection-type = "rmii";

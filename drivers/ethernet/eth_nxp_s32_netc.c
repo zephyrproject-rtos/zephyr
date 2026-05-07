@@ -258,10 +258,9 @@ static void nxp_s32_eth_rx_thread(void *arg1, void *unused1, void *unused2)
 	}
 }
 
-enum ethernet_hw_caps nxp_s32_eth_get_capabilities(const struct device *dev)
+enum ethernet_hw_caps nxp_s32_eth_get_capabilities(const struct device *dev __unused,
+						   struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return (ETHERNET_LINK_10BASE
 		| ETHERNET_LINK_100BASE
 		| ETHERNET_LINK_1000BASE
@@ -276,7 +275,9 @@ enum ethernet_hw_caps nxp_s32_eth_get_capabilities(const struct device *dev)
 	);
 }
 
-int nxp_s32_eth_set_config(const struct device *dev, enum ethernet_config_type type,
+int nxp_s32_eth_set_config(const struct device *dev,
+			   struct net_if *iface __unused,
+			   enum ethernet_config_type type,
 			   const struct ethernet_config *config)
 {
 	struct nxp_s32_eth_data *ctx = dev->data;

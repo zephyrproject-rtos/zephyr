@@ -67,7 +67,6 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_GPIO_BL61X_808_WO),
 /** @endcond */
 
 /**
- * @typedef bl61x_wo_callback_t
  * @brief Callback type used to inform user async write has completed
  *
  * This callback is called from IRQ context. WO write cannot fail, only

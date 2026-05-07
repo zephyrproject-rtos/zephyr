@@ -2308,6 +2308,10 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 	struct net_if_mcast_addr *ifmaddr = NULL;
 	struct net_if_ipv6 *ipv6;
 
+	if (iface == NULL || addr == NULL) {
+		return NULL;
+	}
+
 	net_if_lock(iface);
 
 	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
@@ -2364,6 +2368,10 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct net_in6_addr *addr)
 	bool ret = false;
 	struct net_if_ipv6 *ipv6;
 	int refcount;
+
+	if (iface == NULL || addr == NULL) {
+		return ret;
+	}
 
 	net_if_lock(iface);
 
@@ -4919,6 +4927,10 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
 {
 	struct net_if_mcast_addr *maddr = NULL;
 
+	if (iface == NULL || addr == NULL) {
+		return NULL;
+	}
+
 	net_if_lock(iface);
 
 	if (net_if_config_ipv4_get(iface, NULL) < 0) {
@@ -4971,6 +4983,10 @@ bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct net_in_addr *addr)
 	struct net_if_mcast_addr *maddr;
 	bool ret = false;
 	int refcount;
+
+	if (iface == NULL || addr == NULL) {
+		return ret;
+	}
 
 	net_if_lock(iface);
 
@@ -6604,7 +6620,8 @@ static void set_default_name(struct net_if *iface)
 
 		snprintk(name, sizeof(name), "thread%d", count++);
 	} else if (IS_ENABLED(CONFIG_NET_VLAN) &&
-		   (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL))) {
+		   (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) &&
+		   net_eth_is_vlan_interface(iface)) {
 		static int count;
 
 		snprintk(name, sizeof(name), "vlan%d", count++);

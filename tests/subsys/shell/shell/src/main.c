@@ -652,4 +652,5 @@ static void *shell_setup(void)
 ZTEST_SUITE(shell_1cpu, NULL, shell_setup, ztest_simple_1cpu_before,
 			ztest_simple_1cpu_after, NULL);
 
-ZTEST_SUITE(sh, NULL, shell_setup, NULL, NULL, NULL);
+ZTEST_SUITE(sh, NULL, shell_setup, ztest_simple_1cpu_before,
+		ztest_simple_1cpu_after, NULL);

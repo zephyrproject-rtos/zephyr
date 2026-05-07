@@ -337,28 +337,6 @@ config WAITQ_SIMPLE
 endchoice # WAITQ_ALGORITHM
 
 menu "Misc Kernel related options"
-config LIBC_ERRNO
-	bool
-	help
-	  Use external libc errno, not the internal one. This eliminates any
-	  locally allocated errno storage and usage.
-
-config ERRNO
-	bool "Errno support"
-	default y
-	help
-	  Enable per-thread errno in the kernel. Application and library code must
-	  include errno.h provided by the C library (libc) to use the errno
-	  symbol. The C library must access the per-thread errno via the
-	  z_errno() symbol.
-
-config ERRNO_IN_TLS
-	bool "Store errno in thread local storage (TLS)"
-	depends on ERRNO && THREAD_LOCAL_STORAGE && !LIBC_ERRNO
-	default y
-	help
-	  Use thread local storage to store errno instead of storing it in
-	  the kernel thread struct. This avoids a syscall if userspace is enabled.
 
 config CURRENT_THREAD_USE_NO_TLS
 	bool
@@ -402,41 +380,6 @@ config SKIP_BSS_CLEAR
 	  Please pay attention that when this option is enabled
 	  the responsibility for .bss zeroing in all possible scenarios
 	  (mind e.g. SW reset) is delegated to the external SW or HW.
-
-config BOOT_BANNER
-	bool "Boot banner"
-	default y
-	select PRINTK
-	select EARLY_CONSOLE
-	help
-	  This option outputs a banner to the console device during boot up.
-
-config BOOT_BANNER_STRING
-	string "Boot banner string"
-	depends on BOOT_BANNER
-	default "Booting Zephyr OS build"
-	help
-	  Use this option to set the boot banner.
-
-config BOOT_DELAY
-	int "Boot delay in milliseconds"
-	depends on MULTITHREADING
-	default 0
-	help
-	  This option delays bootup for the specified amount of
-	  milliseconds. This is used to allow serial ports to get ready
-	  before starting to print information on them during boot, as
-	  some systems might boot to fast for a receiving endpoint to
-	  detect the new USB serial bus, enumerate it and get ready to
-	  receive before it actually gets data. A similar effect can be
-	  achieved by waiting for DCD on the serial port--however, not
-	  all serial ports have DCD.
-
-config BOOT_CLEAR_SCREEN
-	bool "Clear screen"
-	help
-	  Use this option to clear the screen before printing anything else.
-	  Using a VT100 enabled terminal on the client side is required for this to work.
 
 config THREAD_MONITOR
 	bool "Thread monitoring"
@@ -601,30 +544,6 @@ config BARRIER_OPERATIONS_ARCH
 	help
 	  Use when there isn't support for compiler built-ins, but you have
 	  written optimized assembly code under arch/ which implements these.
-endmenu
-
-menu "Atomic Operations"
-config ATOMIC_OPERATIONS_BUILTIN
-	bool
-	help
-	  Use the compiler builtin functions for atomic operations. This is
-	  the preferred method. However, support for all arches in GCC is
-	  incomplete.
-
-config ATOMIC_OPERATIONS_ARCH
-	bool
-	help
-	  Use when there isn't support for compiler built-ins, but you have
-	  written optimized assembly code under arch/ which implements these.
-
-config ATOMIC_OPERATIONS_C
-	bool
-	help
-	  Use atomic operations routines that are implemented entirely
-	  in C by locking interrupts. Selected by architectures which either
-	  do not have support for atomic operations in their instruction
-	  set, or haven't been implemented yet during bring-up, and also
-	  the compiler does not have support for the atomic __sync_* builtins.
 endmenu
 
 menu "Timer API Options"
@@ -1060,32 +979,6 @@ config STATIC_INIT_GNU
 	  doesn't need any initializers, you can disable this option. The linker
 	  will emit an error if constructors are needed and this option has been
 	  disabled.
-
-menuconfig BOOTARGS
-	bool "Support bootargs"
-	help
-	  Enables bootargs support and passing them to main().
-
-if BOOTARGS
-config DYNAMIC_BOOTARGS
-	bool "Support dynamic bootargs"
-	help
-	  Enables dynamic bootargs support.
-
-config BOOTARGS_STRING
-	string "static bootargs string"
-	depends on !DYNAMIC_BOOTARGS
-	help
-	  Static bootargs string. It includes argv[0], so if its expected that it
-	  contains executable name it should be put at the beginning of this string.
-
-config BOOTARGS_ARGS_BUFFER_SIZE
-	int "Size of buffer containing main arguments in bytes"
-	default 1024
-	help
-	  Configures size of buffer containing all arguments passed to main.
-
-endif # BOOTARGS
 
 endmenu
 

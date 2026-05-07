@@ -9,6 +9,9 @@ config HAS_MSPM0_SDK
 config USE_MSPM0_DL_GPIO
 	bool
 
+config USE_MSPM0_DL_AES
+	bool
+
 config USE_MSPM0_DL_UART
 	bool
 
@@ -28,4 +31,7 @@ config USE_MSPM0_DL_VREF
 	bool
 
 config USE_MSPM0_DL_ADC
+	bool
+
+config USE_MSPM0_DL_DMA
 	bool

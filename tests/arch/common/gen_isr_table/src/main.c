@@ -72,6 +72,18 @@ extern const uintptr_t _irq_vector_table[];
 #define ISR5_OFFSET SPARE_IRQ_4
 #define ISR6_OFFSET SPARE_IRQ_5
 #define TRIG_CHECK_SIZE (ISR6_OFFSET + 1)
+#elif defined(CONFIG_RISCV_S_MODE)
+/* In S-mode the supervisor timer (IRQ_S_TIMER = 5) is already claimed by the
+ * timer driver; only the supervisor software interrupt (IRQ_S_SOFT = 1) is
+ * available for the test.  Mirror the direct/indirect split of the default
+ * CLINT case: use ISR1_OFFSET for direct IRQs, ISR3_OFFSET otherwise.
+ */
+#ifdef HAS_DIRECT_IRQS
+#define ISR1_OFFSET	1
+#else
+#define ISR3_OFFSET	1
+#endif
+#define TRIG_CHECK_SIZE	2
 #else
 
 #if !defined(IRQ1_USED)
@@ -274,7 +286,9 @@ static int check_vector(void *isr, int offset)
 }
 #endif
 
-#ifdef CONFIG_GEN_SW_ISR_TABLE
+#if defined(CONFIG_GEN_SW_ISR_TABLE) && \
+	(defined(ISR3_OFFSET) || defined(ISR4_OFFSET) || \
+	 defined(ISR5_OFFSET) || defined(ISR6_OFFSET))
 static int check_sw_isr(void *isr, uintptr_t arg, int offset)
 {
 	const struct _isr_table_entry *e = &_sw_isr_table[TABLE_INDEX(offset)];

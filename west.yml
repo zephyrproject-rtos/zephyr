@@ -147,7 +147,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: 1da695cbfbbaefcf166a22165702a7442d5e39c0
+      revision: c8aa8d545635a5821045ab500c70b878bd55f15d
       path: modules/hal/adi
       groups:
         - hal
@@ -168,11 +168,11 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: 8ee5e121da0d3800f0723280b6640038cb1bad95
+      revision: 79fabada52e00341589cadc6c2902f0cd2095ba0
       groups:
         - hal
     - name: hal_espressif
-      revision: 15789ec576bdb3397c6fc39542b0d9b534d98d2d
+      revision: 8344b10d3a01392fc204ce7f80c2167eed494c0e
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -208,12 +208,12 @@ manifest:
       groups:
         - hal
     - name: hal_nuvoton
-      revision: 369198f7f7c034b609a4e530e3ecab74f859af09
+      revision: bed550b27c00f0ee4a8086f3eeb9daf7a1aa6c32
       path: modules/hal/nuvoton
       groups:
         - hal
     - name: hal_nxp
-      revision: 127ec2311bec8a0a7cb5d0e81b50ee9d0fed30e4
+      revision: bf4578ffe19daf1d73100cce9f59830c22b8072d
       path: modules/hal/nxp
       groups:
         - hal
@@ -258,7 +258,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 4d5fc691470a59f8b2cdbe8d0a1c08ef71b10476
+      revision: d1d3c0c9ddf697f6bcda911f158777136aa21c5c
       path: modules/hal/stm32
       groups:
         - hal
@@ -324,7 +324,7 @@ manifest:
       revision: 85aa60d18b3d5e5588d7b247abf90198f07c8a63
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: a3e190fe44c78d1ba67f55979e1257328cc7d0d8
+      revision: 6a08a7eb799853ce2a9053d24ecde31bf3a1322c
       path: modules/crypto/mbedtls
       groups:
         - crypto
@@ -358,7 +358,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 158b9710d6e10c57b2c623f8f4178f0bbc85c23f
+      revision: f8690d57f10d2712b374d0661e1515b0a483855b
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: 48a31a7149b019f7cc592a727c479361951f304b
@@ -389,7 +389,7 @@ manifest:
       groups:
         - debug
     - name: tf-m-tests
-      revision: cde5b6ed540d3ff5a09564fded6b39b0a70ad3bf
+      revision: 42f0fb9250acdd62219a13b8d272072f94446b84
       path: modules/tee/tf-m/tf-m-tests
       groups:
         - testing

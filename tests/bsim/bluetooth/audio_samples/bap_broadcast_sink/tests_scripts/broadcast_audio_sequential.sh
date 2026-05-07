@@ -2,16 +2,16 @@
 # Copyright 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
 # Simple selfchecking test for the broadcast audio sink/source samples,
 # It relies on the bs_tests hooks to register a test timer callback, which after a deadline
 # will check how many audio packets the broadcast audio sink has received, and if over a threshold
 # it considers the test passed
 
-simulation_id="samples_bluetooth_bap_broadcast_source_sequential_test"
+simulation_id="${BOARD_TS}_samples_bt_bap_bc_src_seq"
 verbosity_level=2
 EXECUTE_TIMEOUT=200
-
-source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 

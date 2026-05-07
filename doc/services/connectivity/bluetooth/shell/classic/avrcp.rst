@@ -152,9 +152,9 @@ Demonstrate the flow of basic AVRCP operations:
                         Passthrough PRESSED command sent successfully: opid=0x44
                         Passthrough RELEASED command sent successfully: opid=0x44
                         <input `avrcp tg send_passthrough_rsp op play pressed` in TG side>
-                        AVRCP passthough command accepted, operation id = 0x44, state = 0
+                        AVRCP passthrough command accepted, operation id = 0x44, state = 0
                         <input `avrcp tg send_passthrough_rsp op play released` in TG side>
-                        AVRCP passthough command accepted, operation id = 0x44, state = 1
+                        AVRCP passthrough command accepted, operation id = 0x44, state = 1
                         <input `avrcp tg send_notification_rsp 0x01 changed 1` in TG side>
                         AVRCP notification rsp: tid=0x01, status=0x04, event_id=0x01
                          Notification type: CHANGED
@@ -180,9 +180,9 @@ Demonstrate the flow of basic AVRCP operations:
                         Passthrough PRESSED command sent successfully: opid=0x46
                         Passthrough RELEASED command sent successfully: opid=0x46
                         <input `avrcp tg send_passthrough_rsp op pause pressed` in TG side>
-                        AVRCP passthough command accepted, operation id = 0x46, state = 0
+                        AVRCP passthrough command accepted, operation id = 0x46, state = 0
                         <input `avrcp tg send_passthrough_rsp op pause released` in TG side>
-                        AVRCP passthough command accepted, operation id = 0x46, state = 1
+                        AVRCP passthrough command accepted, operation id = 0x46, state = 1
 
         .. group-tab:: Device B (TG - Target)
 

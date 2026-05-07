@@ -1373,6 +1373,8 @@ static uint8_t ase_attr_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 {
 	struct bt_ascs_ase *ase = user_data;
 
+	ARG_UNUSED(handle);
+
 	if (ASE_ID(ase) == POINTER_TO_UINT(BT_AUDIO_CHRC_USER_DATA(attr))) {
 		ase->attr = attr;
 
@@ -2756,6 +2758,8 @@ static bool is_valid_stop_len(struct bt_conn *conn, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_stop_op *op;
 	struct net_buf_simple_state state;
+
+	ARG_UNUSED(conn);
 
 	net_buf_simple_save(buf, &state);
 

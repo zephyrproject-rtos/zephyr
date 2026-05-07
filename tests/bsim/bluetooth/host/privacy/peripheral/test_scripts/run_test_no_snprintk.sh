@@ -6,7 +6,7 @@ set -eu
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 verbosity_level=2
-simulation_id="host_privacy_peripheral_no_snprintk"
+simulation_id="${BOARD_TS}_host_privacy_peripheral_no_snprintk"
 EXECUTE_TIMEOUT=240
 
 central_exe="${BSIM_OUT_PATH}/bin/bs_${BOARD_TS}_$(guess_test_long_name)_prj_no_snprintk_conf"

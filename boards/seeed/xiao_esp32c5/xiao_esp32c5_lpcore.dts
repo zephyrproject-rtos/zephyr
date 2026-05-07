@@ -1,0 +1,25 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32c5/esp32c5_lpcore_wroom_n8.dtsi>
+#include <espressif/partitions_0x2000_default_8M.dtsi>
+
+/ {
+	model = "Seeed XIAO ESP32C5 LP Core";
+	compatible = "seeed,xiao-esp32c5";
+
+	chosen {
+		zephyr,sram = &sramlp;
+		zephyr,code-partition = &slot0_lpcore_partition;
+		zephyr,console = &lp_uart;
+		zephyr,shell-uart = &lp_uart;
+	};
+};
+
+&lp_uart {
+	status = "okay";
+	current-speed = <115200>;
+};

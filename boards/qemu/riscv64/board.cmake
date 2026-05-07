@@ -25,6 +25,10 @@ else()
   set(QEMU_binary_suffix riscv32)
 endif()
 
+if(CONFIG_RISCV_S_MODE)
+  string(APPEND qemu_riscv_cpu ",s=on,u=on,pmp=on,priv_spec=v1.12.0,sv39=on")
+endif()
+
 set(QEMU_CPU_TYPE_${ARCH} "${qemu_riscv_cpu}")
 
 set(QEMU_FLAGS_${ARCH}

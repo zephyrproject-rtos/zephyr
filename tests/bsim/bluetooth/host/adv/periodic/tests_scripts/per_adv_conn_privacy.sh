@@ -7,7 +7,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="per_adv_conn_privacy"
+simulation_id="${BOARD_TS}_per_adv_conn_privacy"
 verbosity_level=2
 EXECUTE_TIMEOUT=60
 

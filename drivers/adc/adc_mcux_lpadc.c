@@ -15,6 +15,7 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/regulator.h>
+#include <zephyr/dt-bindings/regulator/nxp_vref.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/opamp.h>
@@ -821,6 +822,9 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 			if (err < 0) {
 				return err;
 			}
+
+			/* Re-enable the BUF21 buffer (cleared at suspend). */
+			(void)regulator_set_mode(regulator, NXP_VREF_MODE_HIGH_POWER);
 		}
 
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
@@ -877,6 +881,13 @@ static int mcux_lpadc_init(const struct device *dev)
 		if (err) {
 			return err;
 		}
+
+		/* Request the buffered 2.1V output (BUF21) on the NXP VREF
+		 * regulator. enable() only brings up the bandgap; without
+		 * this step BUF21 is left disabled and the LPADC's VREFI
+		 * reference is unbuffered, which causes inaccurate conversions.
+		 */
+		(void)regulator_set_mode(regulator, NXP_VREF_MODE_HIGH_POWER);
 	}
 
 	if (!device_is_ready(config->clock_dev)) {

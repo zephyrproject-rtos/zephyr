@@ -20,7 +20,6 @@ supported:
   - usb_device
   - usbd
   - netif:openthread
-  - gpio
   - spi
   - adc
   - counter

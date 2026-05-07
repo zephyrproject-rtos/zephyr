@@ -948,18 +948,24 @@ static inline uint32_t z_impl_counter_get_top_value(const struct device *dev)
  *
  * More precisely:
  *
- * - When counting upwards (see @ref COUNTER_CONFIG_INFO_COUNT_UP) the given
- *   absolute tick value must be above (now + guard_period) % top_value to be
- *   accepted by the driver.
- * - When counting downwards, the given absolute tick value must be less than
- *   (now + top_value - guard_period) % top_value to be accepted.
+ * - When counting upwards (see @ref COUNTER_CONFIG_INFO_COUNT_UP), an alarm
+ *   is rejected as "late" if the counter has advanced past the given absolute
+ *   tick value by fewer than guard_period ticks:
+ *   (now - target) % top_value < guard_period.
+ *   Otherwise the alarm is accepted (target is still in the future, or far
+ *   enough in the past to be considered an intentional future wrap).
+ * - When counting downwards, an alarm is "late" if:
+ *   (target - now) % top_value < guard_period.
+ *   Otherwise the alarm is accepted.
  *
  * Examples:
  *
  * - counting upwards, now = 4950, top value = 5000, guard period = 100:
- *      absolute tick value >= (4950 + 100) % 5000 = 50
+ *      late zone: (4950 - target) % 5000 < 100, i.e. target in [4851, 4950]
+ *      accepted: target in [0, 4850] or [4951, 4999]
  * - counting downwards, now = 50, top value = 5000, guard period = 100:
- *      absolute tick value <= (50 + 5000 - * 100) % 5000 = 4950
+ *      late zone: (target - 50) % 5000 < 100, i.e. target in [50, 149]
+ *      accepted: target in [0, 49] or [150, 4999]
  *
  * If you need only short alarm periods, you can set the guard period very high
  * (e.g. half of the counter top value) which will make it highly unlikely that
@@ -1161,18 +1167,24 @@ static inline uint64_t z_impl_counter_get_top_value_64(const struct device *dev)
  *
  * More precisely:
  *
- * - When counting upwards (see @ref COUNTER_CONFIG_INFO_COUNT_UP) the given
- *   absolute tick value must be above (now + guard_period) % top_value to be
- *   accepted by the driver.
- * - When counting downwards, the given absolute tick value must be less than
- *   (now + top_value - guard_period) % top_value to be accepted.
+ * - When counting upwards (see @ref COUNTER_CONFIG_INFO_COUNT_UP), an alarm
+ *   is rejected as "late" if the counter has advanced past the given absolute
+ *   tick value by fewer than guard_period ticks:
+ *   (now - target) % top_value < guard_period.
+ *   Otherwise the alarm is accepted (target is still in the future, or far
+ *   enough in the past to be considered an intentional future wrap).
+ * - When counting downwards, an alarm is "late" if:
+ *   (target - now) % top_value < guard_period.
+ *   Otherwise the alarm is accepted.
  *
  * Examples:
  *
  * - counting upwards, now = 4950, top value = 5000, guard period = 100:
- *      absolute tick value >= (4950 + 100) % 5000 = 50
+ *      late zone: (4950 - target) % 5000 < 100, i.e. target in [4851, 4950]
+ *      accepted: target in [0, 4850] or [4951, 4999]
  * - counting downwards, now = 50, top value = 5000, guard period = 100:
- *      absolute tick value <= (50 + 5000 - * 100) % 5000 = 4950
+ *      late zone: (target - 50) % 5000 < 100, i.e. target in [50, 149]
+ *      accepted: target in [0, 49] or [150, 4999]
  *
  * If you need only short alarm periods, you can set the guard period very high
  * (e.g. half of the counter top value) which will make it highly unlikely that

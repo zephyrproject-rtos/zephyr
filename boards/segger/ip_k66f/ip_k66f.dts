@@ -105,10 +105,14 @@
 	};
 };
 
-&enet_mac {
+&enet {
 	status = "okay";
 	pinctrl-0 = <&enet_default>;
 	pinctrl-names = "default";
+};
+
+&enet_mac {
+	status = "okay";
 	zephyr,random-mac-address;
 	phy-connection-type = "rmii";
 	phy-handle = <&phy>;

@@ -493,7 +493,7 @@ enum bt_bap_ep_state {
 	/** Audio Stream Endpoint Disabling state */
 	BT_BAP_EP_STATE_DISABLING = 0x05,
 
-	/** Audio Stream Endpoint Streaming state */
+	/** Audio Stream Endpoint Releasing state */
 	BT_BAP_EP_STATE_RELEASING = 0x06,
 };
 

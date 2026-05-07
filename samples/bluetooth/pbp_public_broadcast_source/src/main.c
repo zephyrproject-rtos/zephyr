@@ -41,8 +41,8 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
-static K_SEM_DEFINE(sem_broadcast_started, 0, 1);
-static K_SEM_DEFINE(sem_broadcast_stopped, 0, 1);
+static K_SEM_DEFINE(sem_broadcast_started, 0U, 1U);
+static K_SEM_DEFINE(sem_broadcast_stopped, 0U, 1U);
 
 static struct bt_cap_stream broadcast_source_stream;
 static struct bt_cap_stream *broadcast_stream;
@@ -205,7 +205,7 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 
 	/* Setup extended advertising data */
 	ext_ad[0].type = BT_DATA_GAP_APPEARANCE;
-	ext_ad[0].data_len = 2;
+	ext_ad[0].data_len = 2U;
 	ext_ad[0].data = appearance_addata;
 	/* Broadcast name AD Type */
 	ext_ad[1].type = BT_DATA_BROADCAST_NAME;
@@ -409,7 +409,7 @@ void cap_initiator_setup(void)
 		}
 
 		/* Keeping running for a little while */
-		k_sleep(K_SECONDS(15));
+		k_sleep(K_SECONDS(15U));
 
 		err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
 		if (err != 0) {

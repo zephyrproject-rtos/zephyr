@@ -1,0 +1,377 @@
+/*
+ * Copyright (c) 2026 Sahaj Sarup
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f0/stm32f072Xb.dtsi>
+#include <st/f0/stm32f072v(8-b)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <zephyr/dt-bindings/clock/stm32_clock.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	model = "FlySky FS-i6S Controller";
+	compatible = "flysky,fs_i6s";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,touch = &ft6236;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_backlight: led_backlight {
+			gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
+			label = "LED Backlight";
+		};
+
+		blue_left_button: led_left {
+			gpios = <&gpiod 10 GPIO_ACTIVE_HIGH>;
+			label = "Button Left LED";
+		};
+
+		blue_right_button: led_right {
+			gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
+			label = "Button Right LED";
+		};
+	};
+
+	analog_axis {
+		compatible = "analog-axis";
+
+		axis_r_x {
+			io-channels = <&adc1 0>;
+			in-deadzone = <100>;
+			in-min = <300>;
+			in-max = <3700>;
+			zephyr,axis = <INPUT_ABS_RX>;
+		};
+
+		axis_r_y {
+			io-channels = <&adc1 1>;
+			in-deadzone = <100>;
+			in-min = <300>;
+			in-max = <3700>;
+			zephyr,axis = <INPUT_ABS_RY>;
+		};
+
+		axis_l_y {
+			io-channels = <&adc1 2>;
+			in-deadzone = <100>;
+			in-min = <300>;
+			in-max = <3700>;
+			zephyr,axis = <INPUT_ABS_Y>;
+		};
+
+		axis_l_x {
+			io-channels = <&adc1 3>;
+			in-deadzone = <100>;
+			in-min = <300>;
+			in-max = <3700>;
+			zephyr,axis = <INPUT_ABS_X>;
+		};
+
+		vaa_x {
+			io-channels = <&adc1 6>;
+			in-deadzone = <100>;
+			in-min = <400>;
+			in-max = <3400>;
+			zephyr,axis = <INPUT_ABS_WHEEL>;
+		};
+
+		vab_x {
+			io-channels = <&adc1 7>;
+			in-deadzone = <100>;
+			in-min = <400>;
+			in-max = <3400>;
+			zephyr,axis = <INPUT_ABS_RUDDER>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		power_button_pair: power_button {
+			label = "Power Button Pair";
+			gpios = <&gpiob 14 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_POWER>;
+		};
+
+		back_button_right: right_button {
+			label = "Back Right Button";
+			gpios = <&gpioa 10 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_BTN_RIGHT>;
+		};
+
+		back_button_left: left_button {
+			label = "Back Left Button";
+			gpios = <&gpioa 9 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_BTN_LEFT>;
+		};
+	};
+
+	zephyr,user {
+		pwms = <&pwm1 1 PWM_USEC(1500) PWM_POLARITY_NORMAL>;
+	};
+
+	switch_a {
+		compatible = "adc-keys";
+		io-channels = <&adc1 4>;
+		keyup-threshold-mv = <0>;
+
+		key_0 {
+			press-thresholds-mv = <3000>, <3300>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	switch_b {
+		compatible = "adc-keys";
+		io-channels = <&adc1 5>;
+		keyup-threshold-mv = <0>;
+
+		key_0 {
+			press-thresholds-mv = <1500>, <2300>;
+			zephyr,code = <INPUT_KEY_X>;
+		};
+
+		key_1 {
+			press-thresholds-mv = <2500>, <3300>;
+			zephyr,code = <INPUT_KEY_B>;
+		};
+	};
+
+	switch_c {
+		compatible = "adc-keys";
+		io-channels = <&adc1 8>;
+		keyup-threshold-mv = <0>;
+
+		key_0 {
+			press-thresholds-mv = <1500>, <2300>;
+			zephyr,code = <INPUT_KEY_Y>;
+		};
+
+		key_1 {
+			press-thresholds-mv = <2500>, <3300>;
+			zephyr,code = <INPUT_KEY_C>;
+		};
+	};
+
+	switch_d {
+		compatible = "adc-keys";
+		io-channels = <&adc1 9>;
+		keyup-threshold-mv = <0>;
+
+		key_0 {
+			press-thresholds-mv = <3000>, <3300>;
+			zephyr,code = <INPUT_KEY_D>;
+		};
+	};
+
+	vbatt: voltage_divider {
+		compatible = "voltage-divider";
+		io-channels = <&adc1 10>;
+		output-ohms = <5100>;
+		full-ohms = <(10000 + 5100)>;
+		status = "okay";
+	};
+
+	aliases {
+
+		led0 = &blue_right_button;
+		sw0 = &back_button_right;
+		watchdog0 = &iwdg;
+		wkup-src = &power_button_pair;
+	};
+};
+
+&clk_hsi {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	prediv = <1>;
+	mul = <6>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(48)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+&adc1 {
+	pinctrl-0 = <&adc_in0_pa0 &adc_in1_pa1
+		     &adc_in2_pa2 &adc_in3_pa3
+		     &adc_in4_pa4 &adc_in5_pa5
+		     &adc_in6_pa6 &adc_in7_pa7
+		     &adc_in8_pb0 &adc_in9_pb1
+		     &adc_in10_pc0>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+
+	dmas = <&dma1 1
+		(STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_MEM_INC | STM32_DMA_PRIORITY_HIGH |
+		 STM32_DMA_MEM_16BITS | STM32_DMA_PERIPH_16BITS)>;
+	dma-names = "dmamux";
+
+	vref-mv = <3300>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 42)>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 42)>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 42)>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 42)>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@4 {
+		reg = <4>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 42)>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@5 {
+		reg = <5>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 42)>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@6 {
+		reg = <6>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 42)>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@7 {
+		reg = <7>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 42)>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@8 {
+		reg = <8>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 42)>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@9 {
+		reg = <9>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 42)>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@a {
+		reg = <0x0a>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 42)>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	ft6236: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		swapped-x-y;
+		screen-width = <128>;
+		screen-height = <64>;
+		int-gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&timers1 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pa8>;
+		pinctrl-names = "default";
+	};
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};

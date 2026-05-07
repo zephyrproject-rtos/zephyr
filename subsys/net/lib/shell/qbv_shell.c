@@ -17,7 +17,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include "net_shell_private.h"
 
-#if defined(CONFIG_NET_QBV) && defined(CONFIG_NET_L2_ETHERNET_MGMT)
+#if defined(CONFIG_NET_QBV)
 static struct net_if *get_iface_from_shell(const struct shell *sh, size_t argc, char **argv)
 {
 	int idx;
@@ -44,7 +44,7 @@ static int cmd_net_qbv(const struct shell *sh, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-#if defined(CONFIG_NET_QBV) && defined(CONFIG_NET_L2_ETHERNET_MGMT)
+#if defined(CONFIG_NET_QBV)
 	shell_print(sh, "To set Qbv config:");
 	shell_print(sh, "  1. Run enable to on");
 	shell_print(sh, "  2. Run set_config to set base_time/cycle_time/cycle_time_ext/list_len");
@@ -56,8 +56,6 @@ static int cmd_net_qbv(const struct shell *sh, size_t argc, char **argv)
 	shell_print(sh, "  4. net qbv set_gc 1 0 0x2 5000000");
 #else
 	shell_print(sh, "Set %s to enable %s support.\n", "CONFIG_NET_QBV", "qbv");
-	shell_print(sh, "Set %s to enable %s support.\n", "CONFIG_NET_L2_ETHERNET_MGMT",
-		    "Ethernet network management interface");
 #endif
 
 	return 0;
@@ -66,7 +64,7 @@ static int cmd_net_qbv(const struct shell *sh, size_t argc, char **argv)
 /* qbv enable <iface_index> <value(off, on)> */
 static int cmd_qbv_enable(const struct shell *sh, size_t argc, char **argv)
 {
-#if defined(CONFIG_NET_QBV) && defined(CONFIG_NET_L2_ETHERNET_MGMT)
+#if defined(CONFIG_NET_QBV)
 	struct net_if *iface;
 	struct ethernet_req_params params;
 	int ret = 0;
@@ -97,8 +95,6 @@ static int cmd_qbv_enable(const struct shell *sh, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 	shell_print(sh, "Set %s to enable %s support.\n", "CONFIG_NET_QBV", "qbv");
-	shell_print(sh, "Set %s to enable %s support.\n", "CONFIG_NET_L2_ETHERNET_MGMT",
-		    "Ethernet network management interface");
 #endif
 
 	return 0;
@@ -110,7 +106,7 @@ static int cmd_qbv_enable(const struct shell *sh, size_t argc, char **argv)
  */
 static int cmd_qbv_set_config(const struct shell *sh, size_t argc, char **argv)
 {
-#if defined(CONFIG_NET_QBV) && defined(CONFIG_NET_L2_ETHERNET_MGMT)
+#if defined(CONFIG_NET_QBV)
 	struct net_if *iface;
 	struct ethernet_req_params params;
 	uint32_t list_len;
@@ -173,8 +169,6 @@ static int cmd_qbv_set_config(const struct shell *sh, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 	shell_print(sh, "Set %s to enable %s support.\n", "CONFIG_NET_QBV", "qbv");
-	shell_print(sh, "Set %s to enable %s support.\n", "CONFIG_NET_L2_ETHERNET_MGMT",
-		    "Ethernet network management interface");
 #endif
 
 	return 0;
@@ -183,7 +177,7 @@ static int cmd_qbv_set_config(const struct shell *sh, size_t argc, char **argv)
 /* qbv set_config <iface_index> <row> <gate_control> <interval> */
 static int cmd_qbv_set_gc(const struct shell *sh, size_t argc, char **argv)
 {
-#if defined(CONFIG_NET_QBV) && defined(CONFIG_NET_L2_ETHERNET_MGMT)
+#if defined(CONFIG_NET_QBV)
 	struct net_if *iface;
 	struct ethernet_req_params params;
 	uint32_t row;
@@ -229,8 +223,6 @@ static int cmd_qbv_set_gc(const struct shell *sh, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 	shell_print(sh, "Set %s to enable %s support.\n", "CONFIG_NET_QBV", "qbv");
-	shell_print(sh, "Set %s to enable %s support.\n", "CONFIG_NET_L2_ETHERNET_MGMT",
-		    "Ethernet network management interface");
 #endif
 
 	return 0;
@@ -239,7 +231,7 @@ static int cmd_qbv_set_gc(const struct shell *sh, size_t argc, char **argv)
 /* qbv get_info <iface_index> */
 static int cmd_qbv_get_info(const struct shell *sh, size_t argc, char **argv)
 {
-#if defined(CONFIG_NET_QBV) && defined(CONFIG_NET_L2_ETHERNET_MGMT)
+#if defined(CONFIG_NET_QBV)
 	struct net_if *iface;
 	struct ethernet_req_params params;
 	int ret;
@@ -309,8 +301,6 @@ static int cmd_qbv_get_info(const struct shell *sh, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 	shell_print(sh, "Set %s to enable %s support.\n", "CONFIG_NET_QBV", "qbv");
-	shell_print(sh, "Set %s to enable %s support.\n", "CONFIG_NET_L2_ETHERNET_MGMT",
-		    "Ethernet network management interface");
 #endif
 
 	return 0;

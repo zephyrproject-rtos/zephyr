@@ -29,6 +29,16 @@ config HTTP_CLIENT
 	help
 	  HTTP client API
 
+config HTTP_CLIENT_SEND_BUF_SIZE
+	int "HTTP client request send buffer size"
+	depends on HTTP_CLIENT
+	default 192
+	range 64 4096
+	help
+	  Size of the temporary stack buffer used by the HTTP client while
+	  constructing and sending request headers. Larger values can reduce
+	  socket send calls at the cost of additional stack usage.
+
 menuconfig HTTP_SERVER
 	bool "HTTP Server [EXPERIMENTAL]"
 	select HTTP_PARSER

@@ -821,6 +821,11 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 		LOG_DBG("Using TX mailbox 2");
 		mailbox = &can->sTxMailBox[2];
 		mb = &data->mb2;
+	} else {
+		/* We should never end up here */
+		__ASSERT_UNREACHABLE;
+		k_mutex_unlock(&data->inst_mutex);
+		return -EIO;
 	}
 
 	mb->tx_callback = callback;

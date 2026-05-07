@@ -9,6 +9,7 @@ zephyr_library_sources(
   engine.c
   mac/mac.c
   mac/join.c
+  mac/mac_commands.c
   mac/send.c
   radio.c
 )

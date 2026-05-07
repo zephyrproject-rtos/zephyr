@@ -20,6 +20,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/toolchain.h>
 
 #include "audio_internal.h"
 
@@ -83,6 +84,8 @@ static struct bt_gmap_client *client_by_conn(struct bt_conn *conn)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct bt_gmap_client *gmap_cli = client_by_conn(conn);
+
+	ARG_UNUSED(reason);
 
 	if (gmap_cli != NULL) {
 		bt_conn_unref(gmap_cli->conn);

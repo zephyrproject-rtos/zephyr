@@ -357,6 +357,7 @@ config EXTRA_EXCEPTION_INFO
 
 config RISCV_PMP
 	bool "RISC-V PMP Support"
+	depends on !RISCV_S_MODE
 	select THREAD_STACK_INFO
 	select CPU_HAS_MPU
 	select ARCH_HAS_USERSPACE
@@ -606,6 +607,41 @@ config RISCV_NO_MTVAL_ON_FP_TRAP
 	  When this option is enabled, the mtval content cannot be relied upon
 	  to contain the faulting FP instruction, requiring alternative methods
 	  to handle FP exceptions.
+
+RISCV_PRIV_MODES_PROP := riscv,privilege-modes
+
+choice RISCV_PRIVILEGE_MODE
+	prompt "RISC-V privilege level"
+	default RISCV_M_MODE
+	help
+	  Select the privilege level at which the kernel runs.
+
+config RISCV_M_MODE
+	bool "Machine mode (M-mode)"
+	depends on $(dt_compat_all_has_prop,riscv,$(RISCV_PRIV_MODES_PROP),m)
+	help
+	  Run the kernel in Machine mode (M-mode). This is the default
+	  privilege level for RISC-V.
+
+config RISCV_S_MODE
+	bool "Supervisor mode (S-mode)"
+	depends on $(dt_compat_all_has_prop,riscv,$(RISCV_PRIV_MODES_PROP),s)
+	help
+	  Indicates that the kernel runs in Supervisor mode (S-mode). When
+	  enabled, the boot code performs an M-mode to S-mode transition
+	  before entering the C runtime, and a minimal SBI runtime is kept
+	  resident in M-mode to service timer and ecall requests.
+
+endchoice # RISCV_PRIVILEGE_MODE
+
+config RISCV_M_MODE_STACK_SIZE
+	int "M-mode SBI handler stack size (bytes)"
+	default 256
+	depends on RISCV_S_MODE
+	help
+	  Size in bytes of the dedicated stack used by the in-tree M-mode SBI
+	  runtime handler. Increase this if the handler is extended with
+	  functionality that requires more stack space.
 
 rsource "Kconfig.isa"
 

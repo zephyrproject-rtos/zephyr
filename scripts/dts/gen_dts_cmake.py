@@ -185,11 +185,11 @@ def main():
         cmake_comp = f'DT_COMP|{comp}'
         cmake_props.append(f'"{cmake_comp}" "{cmake_path}"')
 
-    cmake_props = map(
-        'set_target_properties(${{DEVICETREE_TARGET}} PROPERTIES {})'.format, cmake_props
-    )
     with open(args.cmake_out, "w", encoding="utf-8") as cmake_file:
-        print("\n".join(cmake_props), file=cmake_file)
+        print("set_target_properties(${DEVICETREE_TARGET}", file=cmake_file)
+        print("  PROPERTIES", file=cmake_file)
+        print("\n".join(f"    {prop}" for prop in cmake_props), file=cmake_file)
+        print(")", file=cmake_file)
 
 
 if __name__ == "__main__":

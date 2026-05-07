@@ -16,4 +16,14 @@ config LORAWAN_NATIVE_DUTY_CYCLE
 	  Disable this option for testing or when duty cycle
 	  enforcement is handled externally.
 
+config LORAWAN_NATIVE_MAX_CHANNELS
+	int
+	default 16
+	help
+	  Sizes the per-session channel table.  Not user-tunable: the value
+	  is dictated by the selected region(s).  Currently only EU868 is
+	  implemented (16-channel plan).  Regions with larger channel plans
+	  will extend this config with 'default N if LORAWAN_REGION_X' lines
+	  when they land.
+
 endif # LORA_MODULE_BACKEND_NATIVE

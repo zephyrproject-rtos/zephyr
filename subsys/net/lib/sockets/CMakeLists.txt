@@ -38,4 +38,4 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETPAIR socketpair.c)
 
-zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedTLS)

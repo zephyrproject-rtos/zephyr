@@ -352,6 +352,7 @@ static int port_delay_req_msg_transmit(struct ptp_port *port)
 	msg->header.src_port_id	      = port->port_ds.id;
 	msg->header.sequence_id	      = port->seq_id.delay++;
 	msg->header.log_msg_interval  = DEFAULT_LOG_MSG_INTERVAL;
+	msg->local_uptime_ms = k_uptime_get();
 
 	net_if_register_timestamp_cb(&port->delay_req_ts_cb, NULL, port->iface,
 				     port_delay_req_timestamp_cb);
@@ -458,7 +459,7 @@ static void port_timer_to_handler(struct k_timer *timer)
 static void foreign_clock_cleanup(struct ptp_foreign_tt_clock *foreign)
 {
 	struct ptp_msg *msg;
-	int64_t timestamp, timeout, current = k_uptime_get() * NSEC_PER_MSEC;
+	int64_t age, timeout, current = k_uptime_get();
 
 	while (foreign->messages_count > FOREIGN_TIME_TRANSMITTER_THRESHOLD) {
 		msg = (struct ptp_msg *)k_fifo_get(&foreign->messages, K_NO_WAIT);
@@ -484,10 +485,9 @@ static void foreign_clock_cleanup(struct ptp_foreign_tt_clock *foreign)
 				  (1 << (-msg->header.log_msg_interval));
 		}
 
-		timestamp = msg->timestamp.host.second * NSEC_PER_SEC +
-			    msg->timestamp.host.nanosecond;
+		age = (current - msg->local_uptime_ms) * NSEC_PER_MSEC;
 
-		if (current - timestamp < timeout) {
+		if (age < timeout) {
 			/* Remaining messages are within time window */
 			break;
 		}
@@ -511,21 +511,21 @@ static void port_clear_foreign_clock_records(struct ptp_foreign_tt_clock *foreig
 
 static void port_delay_req_cleanup(struct ptp_port *port)
 {
-	sys_snode_t *prev = NULL;
 	struct ptp_msg *msg;
-	int64_t timestamp, current = k_uptime_get() * NSEC_PER_MSEC;
+	int64_t age, current = k_uptime_get();
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&port->delay_req_list, msg, node) {
-		timestamp = msg->timestamp.host.second * NSEC_PER_SEC +
-			    msg->timestamp.host.nanosecond;
+	while (!sys_slist_is_empty(&port->delay_req_list)) {
+		msg = CONTAINER_OF(sys_slist_peek_head(&port->delay_req_list), struct ptp_msg,
+				   node);
 
-		if (current - timestamp < PORT_DELAY_REQ_CLEAR_TO) {
+		age = (current - msg->local_uptime_ms) * NSEC_PER_MSEC;
+
+		if (age < PORT_DELAY_REQ_CLEAR_TO) {
 			break;
 		}
 
+		(void)sys_slist_get(&port->delay_req_list);
 		ptp_msg_unref(msg);
-		sys_slist_remove(&port->delay_req_list, prev, &msg->node);
-		prev = &msg->node;
 	}
 }
 

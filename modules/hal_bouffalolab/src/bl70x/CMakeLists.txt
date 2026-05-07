@@ -22,8 +22,6 @@ if(CONFIG_BT_BFLB_BL70X)
     set(BLE_VARIANT_LIB libblecontroller_bl702_m1s1.a)
   elseif(CONFIG_BFLB_BL70X_BLE_M16S1)
     set(BLE_VARIANT_LIB libblecontroller_bl702_m16s1.a)
-  elseif(CONFIG_BFLB_BL70X_BLE_UARTHCI)
-    set(BLE_VARIANT_LIB libblecontroller_bl702_uarthci.a)
   endif()
 
   message(STATUS "BL70x BLE controller variant: ${BLE_VARIANT_LIB}")

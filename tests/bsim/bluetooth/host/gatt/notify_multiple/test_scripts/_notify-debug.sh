@@ -13,7 +13,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="notify_multiple"
+simulation_id="${BOARD_TS}_notify_multiple"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

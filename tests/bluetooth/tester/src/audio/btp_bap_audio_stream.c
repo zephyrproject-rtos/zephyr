@@ -30,6 +30,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "btp_bap_audio_stream.h"
@@ -79,6 +80,10 @@ static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 	NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
 				  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 				  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
 
 	/* This loop will attempt to send on all streams in the streaming state in a round robin
 	 * fashion.

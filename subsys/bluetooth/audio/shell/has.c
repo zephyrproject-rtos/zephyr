@@ -26,6 +26,9 @@
 
 static int preset_select(uint8_t index, bool sync)
 {
+	ARG_UNUSED(index);
+	ARG_UNUSED(sync);
+
 	return 0;
 }
 
@@ -49,6 +52,8 @@ static int cmd_preset_reg(const struct shell *sh, size_t argc, char **argv)
 		.ops = &preset_ops,
 	};
 
+	ARG_UNUSED(argc);
+
 	if (err < 0) {
 		shell_print(sh, "Invalid command parameter (err %d)", err);
 		return err;
@@ -67,6 +72,8 @@ static int cmd_preset_unreg(const struct shell *sh, size_t argc, char **argv)
 {
 	int err = 0;
 	const uint8_t index = shell_strtoul(argv[1], 16, &err);
+
+	ARG_UNUSED(argc);
 
 	if (err < 0) {
 		shell_print(sh, "Invalid command parameter (err %d)", err);
@@ -179,6 +186,9 @@ static int cmd_preset_list(const struct shell *sh, size_t argc, char **argv)
 	};
 	__maybe_unused int err;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	err = bt_has_preset_foreach(0, print_list_entry, &data);
 	__ASSERT(err == 0, "bt_has_preset_foreach returned %d", err);
 
@@ -193,6 +203,8 @@ static int cmd_preset_avail(const struct shell *sh, size_t argc, char **argv)
 {
 	int err = 0;
 	const uint8_t index = shell_strtoul(argv[1], 16, &err);
+
+	ARG_UNUSED(argc);
 
 	if (err < 0) {
 		shell_print(sh, "Invalid command parameter (err %d)", err);
@@ -213,6 +225,8 @@ static int cmd_preset_unavail(const struct shell *sh, size_t argc, char **argv)
 	int err = 0;
 	const uint8_t index = shell_strtoul(argv[1], 16, &err);
 
+	ARG_UNUSED(argc);
+
 	if (err < 0) {
 		shell_print(sh, "Invalid command parameter (err %d)", err);
 		return err;
@@ -232,6 +246,8 @@ static int cmd_preset_active_set(const struct shell *sh, size_t argc, char **arg
 	int err = 0;
 	const uint8_t index = shell_strtoul(argv[1], 16, &err);
 
+	ARG_UNUSED(argc);
+
 	if (err < 0) {
 		shell_print(sh, "Invalid command parameter (err %d)", err);
 		return err;
@@ -250,6 +266,9 @@ static int cmd_preset_active_get(const struct shell *sh, size_t argc, char **arg
 {
 	const uint8_t index = bt_has_preset_active_get();
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	shell_print(sh, "Active index 0x%02x", index);
 
 	return 0;
@@ -258,6 +277,9 @@ static int cmd_preset_active_get(const struct shell *sh, size_t argc, char **arg
 static int cmd_preset_active_clear(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	err = bt_has_preset_active_clear();
 	if (err < 0) {
@@ -272,6 +294,8 @@ static int cmd_preset_name_set(const struct shell *sh, size_t argc, char **argv)
 {
 	int err = 0;
 	const uint8_t index = shell_strtoul(argv[1], 16, &err);
+
+	ARG_UNUSED(argc);
 
 	if (err < 0) {
 		shell_print(sh, "Invalid command parameter (err %d)", err);

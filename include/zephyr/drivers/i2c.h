@@ -29,6 +29,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/rtio/rtio.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,6 +69,22 @@ extern "C" {
 
 /** Peripheral to act as Controller. */
 #define I2C_MODE_CONTROLLER		BIT(4)
+
+#if CONFIG_I2C_TRANSFER_TIMEOUT_SUPPORTED
+
+/** Helper macro for CONFIG_I2C_TRANSFER_TIMEOUT_MS */
+#if CONFIG_I2C_TRANSFER_TIMEOUT_MS
+#define I2C_TRANSFER_TIMEOUT K_MSEC(CONFIG_I2C_TRANSFER_TIMEOUT_MS)
+#else
+#define I2C_TRANSFER_TIMEOUT K_FOREVER
+#endif
+
+/** Helper macro drivers that do not support infinite timeout */
+#define BUILD_ASSERT_INVALID_I2C_TRANSFER_TIMEOUT() \
+	BUILD_ASSERT(CONFIG_I2C_TRANSFER_TIMEOUT_MS != 0, \
+		     "infinite i2c transfer timeout not unsupported")
+
+#endif /* CONFIG_I2C_TRANSFER_TIMEOUT_SUPPORTED */
 
 /**
  * @brief Complete I2C DT information

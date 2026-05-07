@@ -637,13 +637,24 @@ int i2c_stm32_error(const struct device *dev)
 
 	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
 		LL_I2C_ClearFlag_BERR(i2c);
-		data->current.is_err = 1U;
+		/* STM32 I2C V1 errata: Spurious Bus Error detection in
+		 * controller mode. Multiple errata sheets document this:
+		 *   - ES0182 (STM32F405/407) §2.10.1
+		 *   - ES0305 (STM32F412)     §2.11.1
+		 *   - ES0206 (STM32F2)       §2.10.1
+		 *
+		 * Workaround: clear the BERR flag and let the ongoing
+		 * transfer continue. If a real bus error has occurred,
+		 * the transfer will eventually time out.
+		 */
 #if defined(CONFIG_I2C_TARGET)
-		if (error_cb != NULL) {
-			error_cb(data->target_cfg, I2C_ERROR_GENERIC);
+		if (!data->controller_active) {
+			if (error_cb != NULL) {
+				error_cb(data->target_cfg, I2C_ERROR_GENERIC);
+			}
+			goto end;
 		}
 #endif
-		goto end;
 	}
 
 	if (LL_I2C_IsActiveFlag_OVR(i2c)) {
@@ -688,8 +699,7 @@ static int32_t i2c_stm32_msg_write(const struct device *dev, struct i2c_msg *msg
 
 	i2c_stm32_enable_transfer_interrupts(dev);
 
-	if (k_sem_take(&data->device_sync_sem,
-		       K_MSEC(CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC)) != 0) {
+	if (k_sem_take(&data->device_sync_sem, I2C_TRANSFER_TIMEOUT) != 0) {
 		LOG_DBG("%s: WRITE timeout", __func__);
 		i2c_stm32_reset(dev);
 		return -EIO;
@@ -710,8 +720,7 @@ static int32_t i2c_stm32_msg_read(const struct device *dev, struct i2c_msg *msg,
 	i2c_stm32_enable_transfer_interrupts(dev);
 	LL_I2C_EnableIT_RX(i2c);
 
-	if (k_sem_take(&data->device_sync_sem,
-		       K_MSEC(CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC)) != 0) {
+	if (k_sem_take(&data->device_sync_sem, I2C_TRANSFER_TIMEOUT) != 0) {
 		LOG_DBG("%s: READ timeout", __func__);
 		i2c_stm32_reset(dev);
 		return -EIO;

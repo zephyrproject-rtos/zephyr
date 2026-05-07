@@ -97,6 +97,9 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_wwdt)
 #define WDT_NODE DT_INST(0, nuvoton_numaker_wwdt)
 #define TIMEOUTS 1
+#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_wdt)
+#define WDT_NODE DT_INST(0, nuvoton_numaker_wdt)
+#define TIMEOUTS 1
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_watchdog)
 #define WDT_TEST_MAX_WINDOW 8000U

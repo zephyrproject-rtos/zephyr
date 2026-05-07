@@ -199,6 +199,12 @@
 			interrupt-parent = <&clic>;
 		};
 
+		tsen: tsen {
+			compatible = "bflb,tsen";
+			io-channels = <&adc0 0>;
+			status = "disabled";
+		};
+
 		sec_eng_trng: trng@40004000 {
 			compatible = "bflb,sec-eng-trng";
 			reg = <0x40004000 0x100>;
@@ -338,6 +344,7 @@
 			reg = <0x4000b000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 			status = "okay";
 
 			interrupts = <39 0>;

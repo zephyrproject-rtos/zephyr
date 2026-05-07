@@ -206,7 +206,6 @@ struct udc_buf_info {
 } __packed;
 
 /**
- * @typedef udc_event_cb_t
  * @brief Callback to submit UDC event to higher layer.
  *
  * At the higher level, the event is to be inserted into a message queue.

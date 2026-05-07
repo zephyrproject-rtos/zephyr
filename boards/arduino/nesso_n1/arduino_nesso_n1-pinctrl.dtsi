@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/esp32c6-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32c6-gpio-sigmap.h>
+
+&pinctrl {
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO10>,
+				 <I2C0_SCL_GPIO8>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+};

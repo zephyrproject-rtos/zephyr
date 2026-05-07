@@ -1836,6 +1836,8 @@ if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
       ${KERNEL_HEX_NAME}
       )
     set(BYPRODUCT_KERNEL_HEX_NAME "${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME}" CACHE FILEPATH "Kernel hex file" FORCE)
+  else()
+    message(WARNING "Intel HEX output format not supported by toolchain (CONFIG_BUILD_OUTPUT_HEX=y)")
   endif()
 endif()
 
@@ -1858,6 +1860,8 @@ if(CONFIG_BUILD_OUTPUT_BIN)
       ${KERNEL_BIN_NAME}
       )
     set(BYPRODUCT_KERNEL_BIN_NAME "${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME}" CACHE FILEPATH "Kernel binary file" FORCE)
+  else()
+    message(WARNING "Binary output format not supported by toolchain (CONFIG_BUILD_OUTPUT_BIN=y)")
   endif()
 endif()
 
@@ -1925,6 +1929,8 @@ if(CONFIG_BUILD_OUTPUT_MOT)
       ${KERNEL_MOT_NAME}
       )
     set(BYPRODUCT_KERNEL_MOT_NAME "${PROJECT_BINARY_DIR}/${KERNEL_MOT_NAME}" CACHE FILEPATH "Kernel mot file" FORCE)
+  else()
+    message(WARNING "Motorola SREC output format not supported by toolchain (CONFIG_BUILD_OUTPUT_MOT=y)")
   endif()
 endif()
 
@@ -1963,7 +1969,6 @@ endif()
 if(CONFIG_BUILD_OUTPUT_S19)
   get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
   if(srec IN_LIST elfconvert_formats)
-    # Should we print a warning if case the tools does not support converting to s19 ?
     list(APPEND
       post_build_commands
       COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
@@ -1980,13 +1985,14 @@ if(CONFIG_BUILD_OUTPUT_S19)
       ${KERNEL_S19_NAME}
       )
     set(BYPRODUCT_KERNEL_S19_NAME "${PROJECT_BINARY_DIR}/${KERNEL_S19_NAME}" CACHE FILEPATH "Kernel s19 file" FORCE)
+  else()
+    message(WARNING "Motorola S19 output format not supported by toolchain (CONFIG_BUILD_OUTPUT_S19=y)")
   endif()
 endif()
 
 if(CONFIG_BUILD_OUTPUT_VERILOG)
   get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
   if(verilog IN_LIST elfconvert_formats)
-    # Should we print a warning if case the tools does not support converting to verilog ?
     list(APPEND
       post_build_commands
       COMMAND
@@ -2000,6 +2006,8 @@ if(CONFIG_BUILD_OUTPUT_VERILOG)
     )
     list(APPEND post_build_byproducts ${KERNEL_VERILOG_NAME})
     set(BYPRODUCT_KERNEL_VERILOG_NAME "${PROJECT_BINARY_DIR}/${KERNEL_VERILOG_NAME}" CACHE FILEPATH "Kernel Verilog file" FORCE)
+  else()
+    message(WARNING "Verilog output format not supported by toolchain (CONFIG_BUILD_OUTPUT_VERILOG=y)")
   endif()
 endif()
 
@@ -2392,22 +2400,13 @@ if(CONFIG_LLEXT_EDK)
   endif()
   set(llext_edk_file ${PROJECT_BINARY_DIR}/${CONFIG_LLEXT_EDK_NAME}.${llext_edk_extension})
 
-  # TODO maybe generate flags for C CXX ASM
-  zephyr_get_compile_definitions_for_lang(C zephyr_defs)
-  zephyr_get_compile_options_for_lang(C zephyr_flags)
-
-  # Filter out non LLEXT and LLEXT_EDK flags - and add required ones
-  llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags} llext_filt_flags)
-  llext_filter_zephyr_flags(LLEXT_EDK_REMOVE_FLAGS ${llext_filt_flags} llext_filt_flags)
-
-  set(llext_edk_cflags ${zephyr_defs} -DLL_EXTENSION_BUILD)
-  list(APPEND llext_edk_cflags ${llext_filt_flags})
-  list(APPEND llext_edk_cflags ${LLEXT_APPEND_FLAGS})
-  list(APPEND llext_edk_cflags ${LLEXT_EDK_APPEND_FLAGS})
-
+  # Export current settings for use in LLEXT EDK generation
   build_info(llext-edk file PATH ${llext_edk_file})
-  build_info(llext-edk cflags VALUE ${llext_edk_cflags})
-  build_info(llext-edk include-dirs VALUE "$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>")
+  build_info(llext-edk remove-cflags VALUE ${LLEXT_REMOVE_FLAGS} ${LLEXT_EDK_REMOVE_FLAGS})
+  build_info(llext-edk append-cflags VALUE ${LLEXT_APPEND_FLAGS} ${LLEXT_EDK_APPEND_FLAGS} -DLL_EXTENSION_BUILD)
+
+  # Generate the compiler flag files that will be used by the EDK
+  add_subdirectory(misc/llext_edk)
 
   add_custom_command(
     OUTPUT ${llext_edk_file}
@@ -2426,7 +2425,7 @@ if(CONFIG_LLEXT_EDK)
       ${SYSCALL_SPLIT_TIMEOUT_ARG}
     COMMAND ${CMAKE_COMMAND}
         -P ${ZEPHYR_BASE}/cmake/llext-edk.cmake
-    DEPENDS ${logical_target_for_zephyr_elf} ${syscalls_json} build_info_yaml_saved
+    DEPENDS ${logical_target_for_zephyr_elf} ${syscalls_json} build_info_yaml_saved llext_edk_build_props
     COMMAND_EXPAND_LISTS
   )
   add_custom_target(llext-edk DEPENDS ${llext_edk_file})

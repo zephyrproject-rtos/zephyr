@@ -137,14 +137,13 @@ static void simplelink_scan_work_handler(struct k_work *work)
 	}
 }
 
-static int simplelink_mgmt_scan(const struct device *dev,
-				struct wifi_scan_params *params,
+static int simplelink_mgmt_scan(const struct device *dev __unused,
+				struct net_if *iface __unused,
+				struct wifi_scan_params *params __unused,
 				scan_result_cb_t cb)
 {
 	int err;
 	int status;
-
-	ARG_UNUSED(params);
 
 	/* Cancel any previous scan processing in progress: */
 	k_work_cancel_delayable(&simplelink_data.work);
@@ -173,7 +172,8 @@ static int simplelink_mgmt_scan(const struct device *dev,
 	return status;
 }
 
-static int simplelink_mgmt_connect(const struct device *dev,
+static int simplelink_mgmt_connect(const struct device *dev __unused,
+				   struct net_if *iface __unused,
 				   struct wifi_connect_req_params *params)
 {
 	int ret;
@@ -183,7 +183,8 @@ static int simplelink_mgmt_connect(const struct device *dev,
 	return ret ? -EIO : ret;
 }
 
-static int simplelink_mgmt_disconnect(const struct device *dev)
+static int simplelink_mgmt_disconnect(const struct device *dev __unused,
+				      struct net_if *iface __unused)
 {
 	int ret;
 
