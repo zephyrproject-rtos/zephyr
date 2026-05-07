@@ -11,3 +11,7 @@ common:
   depends_on: netif
 tests:
   net.ptp.transport_retry: {}
+  net.ptp.transport_retry.ipv4:
+    extra_configs:
+      - CONFIG_NET_IPV4=y
+      - CONFIG_PTP_UDP_IPV4_PROTOCOL=y
