@@ -63,6 +63,7 @@ Example of ``net ptp`` output as a grandmaster:
     PTP Instance:
     Clock ID      : 02:00:00:FF:FE:00:00:01
     Clock Type    : ORDINARY
+    Protocol      : UDP/IPv4
     Domain        : 0
     Priorities    : 128 / 128
     Time source   : INTERNAL_OSCILLATOR (0xa0)
@@ -98,6 +99,7 @@ Example of ``net ptp 1`` output as a grandmaster:
     Configuration:
     state                : GRAND_MASTER
     enabled              : yes
+    protocol             : UDP/IPv4
     time transmitter only: no
     announce log itv     : 1
     announce timeout     : 5
@@ -122,6 +124,7 @@ Example of ``net ptp`` output as a time receiver:
       PTP Instance:
       Clock ID      : 02:00:00:FF:FE:00:00:01
       Clock Type    : ORDINARY
+      Protocol      : UDP/IPv4
       Domain        : 0
       Priorities    : 128 / 128
       Time source   : INTERNAL_OSCILLATOR (0xa0)
@@ -158,6 +161,7 @@ Example of ``net ptp 1`` output as a time receiver:
     Configuration:
     state                : TIME_RECEIVER
     enabled              : yes
+    protocol             : UDP/IPv4
     time transmitter only: no
     announce log itv     : 1
     announce timeout     : 5
@@ -356,3 +360,11 @@ Step 6 - Check PTP state in Zephyr shell
 On ``native_sim``, seeing both host and Zephyr transmit Announce/Sync traffic
 is normal. Depending on BMCA data, Zephyr can remain ``GRAND_MASTER`` even when
 ``best foreign`` is present.
+
+The sample also enables the ``ptp_clock`` shell, which can be useful when
+checking the hardware PTP clock independently from the protocol state machine.
+Use commands such as ``ptp_clock get <device>`` to read the PHC time,
+``ptp_clock set <device> <seconds>`` or ``ptp_clock adj <device> <seconds>`` to
+change it, ``ptp_clock freq <device> <ppb>`` to apply a frequency adjustment,
+and ``ptp_clock selftest <device> <time> <freq> <delay> <adj>`` for a quick
+driver-level sanity check.
