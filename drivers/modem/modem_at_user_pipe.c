@@ -89,6 +89,7 @@ static void at_util_open_pipe_handler(struct k_work *work)
 int modem_at_user_pipe_claim(struct modem_chat *chat, k_timeout_t timeout)
 {
 	struct modem_pipe *pipe = modem_pipelink_get_pipe(at_util_pipelink);
+	uint8_t drain_buffer[16];
 	int rc;
 
 	if (!atomic_test_bit(&at_util_state, AT_UTIL_STATE_OPENED_BIT)) {
@@ -105,6 +106,11 @@ int modem_at_user_pipe_claim(struct modem_chat *chat, k_timeout_t timeout)
 		/* Pipe is available but underlying channel closed while waiting */
 		k_sem_give(&at_util_pipe_access);
 		return -EPERM;
+	}
+
+	/* Drain any pending bytes that the previous user may not have consumed */
+	while (modem_pipe_receive(pipe, drain_buffer, sizeof(drain_buffer)) > 0) {
+		;
 	}
 
 	__ASSERT_NO_MSG(at_util_chat == NULL);

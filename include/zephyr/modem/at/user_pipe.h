@@ -14,6 +14,8 @@
  *
  * @note This function will not block if the underlying pipe is not opened
  *
+ * @note All pending data in the pipe is drained before the chat instance is attached
+ *
  * @param chat Chat instance that will be used with the user pipe
  * @param timeout Maximum duration to wait for other users to release the pipe
  *
