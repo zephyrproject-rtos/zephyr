@@ -234,7 +234,7 @@ struct modem_chat {
 	uint16_t receive_buf_len;
 
 	/* Work buffer */
-	uint8_t work_buf[32];
+	uint8_t work_buf[CONFIG_MODEM_CHAT_WORK_BUFFER_SIZE];
 	uint16_t work_buf_len;
 
 	/* Chat delimiter */
