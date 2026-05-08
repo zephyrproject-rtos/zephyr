@@ -950,3 +950,6 @@ Architectures
 
 * ``CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE`` is removed since memory types are now defined via
   ``xtensa_mpu_mem_type_ranges[]``.
+
+* ``CONFIG_XTENSA_BACKTRACE_EXCEPTION_DUMP_HOOK`` is removed, since backtrace is now always
+  using :c:macro:`EXCEPTION_DUMP` for output.

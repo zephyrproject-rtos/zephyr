@@ -62,6 +62,12 @@ API Changes
 Removed APIs and options
 ========================
 
+* Architectures
+
+   * Xtensa
+
+      * ``CONFIG_XTENSA_BACKTRACE_EXCEPTION_DUMP_HOOK``
+
 * Counter
 
     * ``CONFIG_COUNTER_MAXIM_DS3231``
