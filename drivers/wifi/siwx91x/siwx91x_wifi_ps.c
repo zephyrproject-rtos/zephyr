@@ -238,12 +238,13 @@ static int siwx91x_set_twt_setup(struct wifi_twt_params *params)
 	int twt_req_type = siwx91x_convert_z_sl_twt_req_type(params->setup_cmd);
 	sl_wifi_twt_request_t twt_req = {
 		.twt_retry_interval = 5,
-		.wake_duration_unit = 0,
 		.wake_int_mantissa = params->setup.twt_mantissa,
+		.wake_int_mantissa_tol = 0xFFFF,
 		.un_announced_twt = !params->setup.announce,
-		.wake_duration = params->setup.twt_wake_interval,
 		.triggered_twt = params->setup.trigger,
 		.wake_int_exp = params->setup.twt_exponent,
+		.wake_int_exp_tol = 31,
+		.wake_duration_tol = 0xFF,
 		.implicit_twt = 1,
 		.twt_flow_id = params->flow_id,
 		.twt_enable = 1,
