@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(modulino_buttons, CONFIG_INPUT_LOG_LEVEL);
 struct modulino_buttons_config {
 	struct i2c_dt_spec bus;
 	uint32_t poll_period_ms;
-	uint32_t zephyr_code[MODULINO_NUM_BUTTONS];
+	uint16_t zephyr_code[MODULINO_NUM_BUTTONS];
 };
 
 struct modulino_buttons_data {
@@ -79,6 +79,10 @@ static int modulino_buttons_init(const struct device *dev)
 #define MODULINO_BUTTONS_INIT(inst)							\
 	BUILD_ASSERT(DT_INST_PROP_LEN(inst, zephyr_codes) == MODULINO_NUM_BUTTONS,	\
 		     "zephyr,codes must specify three key codes");			\
+	BUILD_ASSERT(DT_INST_PROP_BY_IDX(inst, zephyr_codes, 0) <= UINT16_MAX &&	\
+		     DT_INST_PROP_BY_IDX(inst, zephyr_codes, 1) <= UINT16_MAX &&	\
+		     DT_INST_PROP_BY_IDX(inst, zephyr_codes, 2) <= UINT16_MAX,		\
+		     "invalid input code");						\
 											\
 	static const struct modulino_buttons_config modulino_buttons_cfg_##inst = {	\
 		.bus = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),				\
