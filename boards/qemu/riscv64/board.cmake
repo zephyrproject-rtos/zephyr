@@ -26,7 +26,8 @@ else()
 endif()
 
 if(CONFIG_RISCV_S_MODE)
-  string(APPEND qemu_riscv_cpu ",s=on,u=on,pmp=on,priv_spec=v1.12.0,sv39=on")
+  # rv64i with sv39=on is broken in QEMU 10.x; use the full rv64 model instead.
+  set(qemu_riscv_cpu "rv64,s=on,u=on,pmp=on,priv_spec=v1.12.0,sv39=on")
 endif()
 
 set(QEMU_CPU_TYPE_${ARCH} "${qemu_riscv_cpu}")
