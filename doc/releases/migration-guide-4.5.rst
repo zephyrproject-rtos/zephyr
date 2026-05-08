@@ -298,6 +298,16 @@ Ethernet
 * :kconfig:option:`CONFIG_NET_DEFAULT_IF_ETHERNET` now allows to get the first ethernet interface,
   instead of the first between ethernet and wifi.
 
+PTP
+===
+
+* The PTP UDP protocol Kconfig symbols have been renamed for consistent capitalization:
+
+  * :kconfig:option:`CONFIG_PTP_UDP_IPv4_PROTOCOL` to
+    :kconfig:option:`CONFIG_PTP_UDP_IPV4_PROTOCOL`
+  * :kconfig:option:`CONFIG_PTP_UDP_IPv6_PROTOCOL` to
+    :kconfig:option:`CONFIG_PTP_UDP_IPV6_PROTOCOL`
+
 Other subsystems
 ****************
 
