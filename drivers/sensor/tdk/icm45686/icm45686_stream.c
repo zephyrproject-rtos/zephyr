@@ -506,6 +506,26 @@ void icm45686_stream_submit(const struct device *dev, struct rtio_iodev_sqe *iod
 				icm45686_stream_result(dev, err);
 				return;
 			}
+
+			/* Enable per-packet hardware timestamp insertion (20-byte hires packets).
+			 * Use 16μs resolution so that batches up to ~500ms fit in the signed
+			 * 16-bit delta used for correlation in the decoder.
+			 */
+			val = REG_FIFO_CONFIG4_TMST_FSYNC_EN(true);
+			err = icm45686_reg_write_rtio(&data->bus, FIFO_CONFIG4, &val, 1);
+			if (err) {
+				LOG_ERR("Failed to enable FIFO timestamp: %d", err);
+				icm45686_stream_result(dev, err);
+				return;
+			}
+
+			val = REG_TMST_WOM_CONFIG_TMST_RESOL(1); /* 16μs */
+			err = icm45686_reg_write_rtio(&data->bus, TMST_WOM_CONFIG, &val, 1);
+			if (err) {
+				LOG_ERR("Failed to set timestamp resolution: %d", err);
+				icm45686_stream_result(dev, err);
+				return;
+			}
 		}
 	}
 	(void)gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
