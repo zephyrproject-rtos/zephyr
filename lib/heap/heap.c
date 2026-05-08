@@ -260,6 +260,10 @@ static void free_chunk(struct z_heap *h, chunkid_t c)
 		verify_chunk_canary(h, lc, chunk_mem(h, lc));
 	}
 
+	if (SYS_HEAP_HARDENING_FULL) {
+		poison_chunk_canary(h, c);
+	}
+
 	free_list_add(h, c);
 }
 
@@ -282,6 +286,10 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 	}
 	struct z_heap *h = heap->heap;
 	chunkid_t c = mem_to_chunkid(h, mem);
+
+	if (SYS_HEAP_HARDENING_FULL) {
+		verify_chunk_canary(h, c, mem);
+	}
 
 	if (SYS_HEAP_HARDENING_BASIC && !chunk_used(h, c)) {
 		LOG_ERR("heap corruption (double free?) at %p", mem);
@@ -320,11 +328,6 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 	    right_chunk(h, left_chunk(h, c)) != c) {
 		LOG_ERR("heap corruption (left neighbor?) at %p", mem);
 		k_panic();
-	}
-
-	if (SYS_HEAP_HARDENING_FULL) {
-		verify_chunk_canary(h, c, mem);
-		poison_chunk_canary(h, c);
 	}
 
 	if (SYS_HEAP_HARDENING_EXTREME && !z_heap_full_check(h)) {
@@ -555,6 +558,9 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 
 	chunksz_t chunks_need = bytes_to_chunksz(h, bytes, align_gap);
 
+	if (SYS_HEAP_HARDENING_FULL) {
+		verify_chunk_canary(h, c, ptr);
+	}
 	if (SYS_HEAP_HARDENING_BASIC && !chunk_used(h, c)) {
 		LOG_ERR("heap corruption (not in use?) at %p", ptr);
 		k_panic();
@@ -568,9 +574,6 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 	    right_chunk(h, left_chunk(h, c)) != c) {
 		LOG_ERR("heap corruption (left neighbor?) at %p", ptr);
 		k_panic();
-	}
-	if (SYS_HEAP_HARDENING_FULL) {
-		verify_chunk_canary(h, c, ptr);
 	}
 	if (SYS_HEAP_HARDENING_EXTREME && !z_heap_full_check(h)) {
 		LOG_ERR("heap validation failed");
