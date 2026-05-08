@@ -1,65 +1,62 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2026 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Renesas RA OSPI FLASH
+description: Renesas RA OSPI FLASH controller
 
 compatible: "renesas,ra-ospi-b-nor"
 
-include: [flash-controller.yaml]
-
-on-bus: ospi
+include: [base.yaml, "jedec,jesd216.yaml"]
 
 properties:
-  reg:
+  jedec-id:
     required: true
-    description: Flash Memory base address and size in bytes
+    description: |
+      The JEDEC ID of the flash memory connected to OSPI. This is used to match the flash
+      memory to a compatible flash driver, and to ensure the correct SPI NOR flash
 
   protocol-mode:
     type: int
     required: true
+    enum: [1, 4, 8]
     description: |
-     The width and rate of XSPI bus to which flash memory is connected.
-
+     The width of OSPI bus to which flash memory is connected.
      Possible values are :
-      - XSPI_SPI_MODE  <1> = SPI mode on 1 data line
-      - XSPI_DUAL_MODE <2> = Dual mode on 2 data lines
-      - XSPI_QUAD_MODE <4> = Quad mode on 4 data lines
-      - XSPI_OCTO_MODE <8> = Octo mode on 8 data lines
-    enum:
-      - 1
-      - 2
-      - 4
-      - 8
+      - OSPI_SPI_MODE  <1> = SPI mode on 1 data line
+      - OSPI_QUAD_MODE <4> = Quad mode on 4 data lines
+      - OSPI_OPI_MODE  <8> = Octo mode on 8 data lines
 
-  data-rate:
+  nor-max-frequency:
     type: int
     required: true
     description: |
-     The SPI data Rate is STR or DTR
+      Max frequency input of the NOR flash memory connected to OSPI.
 
-     Possible values are :
-      - XSPI_STR_TRANSFER <1> = Single Rate Transfer
-      - XSPI_DTR_TRANSFER <2> = Dual Rate Transfer (only with XSPI_OCTO_MODE)
-
-  ospi-max-frequency:
+  enter-4byte-command:
     type: int
-    required: true
-    description: Max frequency input on OSPI
+    description: |
+      Enter 4-byte address mode command (Only required if SPI NOR
+      Flash has the incorrect BFPT DW16 information in SFDP)
 
-  write-block-size:
+  rdsr-addr-4bytes:
+    type: boolean
+    description: |
+      Whether RDSR command requires 4-byte address (Only required if SPI NOR
+      Flash has the incorrect PROFILE1 DW1 information in SFDP)
+
+  default-8d-dummy-cycles:
     type: int
-    description: Address alignment required by flash write operations
+    description: |
+      Default dummy cycles for read command (Only required if SPI NOR Flash enter 8D mode
+      but don't has dummy cycles information or the information is incorrect in SFDP)
 
-child-binding:
-  description: OSPI Flash page layout description
-  child-binding:
-    description: Individual flash page layout entry
-    properties:
-      pages-count:
-        description: Number of consecutive pages with size pages-size bytes
-        type: int
-        required: true
+  seq-enable-qpi:
+    type: int
+    description: |
+      Override for the SFDP BFP DW15 "4-4-4 Enable Sequences" bitfield, used to select the
+      command sequence for entering 4S-4S-4S (QPI) mode (Only required if SPI NOR Flash
+      doesn't have or has incorrect BFPT DW15 information in SFDP).
 
-      pages-size:
-        type: int
-        required: true
+      Possible values are :
+       - <x_xxx1b> = Issue 0x38 after enabling Quad mode via the QE bit (quad-enable-requirements)
+       - <x_xx1xb> = Issue 0x38, no prior QE bit write required
+       - <x_x1xxb> = Issue 0x35, no prior QE bit write required
