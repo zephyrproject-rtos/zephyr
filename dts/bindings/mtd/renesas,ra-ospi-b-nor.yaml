@@ -1,0 +1,56 @@
+# Copyright (c) 2024-2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA OSPI FLASH
+
+compatible: "renesas,ra-ospi-b-nor"
+
+include: [base.yaml, "jedec,jesd216.yaml"]
+
+properties:
+  jedec-id:
+    required: true
+    description: |
+      The JEDEC ID of the flash memory connected to OSPI. This is used to match the flash
+      memory to a compatible flash driver, and to ensure the correct SPI NOR flash
+
+  protocol-mode:
+    type: int
+    required: true
+    description: |
+     The width of OSPI bus to which flash memory is connected.
+
+     Possible values are :
+      - OSPI_SPI_MODE  <1> = SPI mode on 1 data line
+      - OSPI_DUAL_MODE <2> = Dual mode on 2 data lines
+      - OSPI_QUAD_MODE <4> = Quad mode on 4 data lines
+      - OSPI_OPI_MODE  <8> = Octo mode on 8 data lines
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+
+  ospi-max-frequency:
+    type: int
+    required: true
+    description: |
+      Max frequency input on OSPI
+
+  enter-4byte-command:
+    type: int
+    description: |
+      Enter 4-byte address mode command (Only require if SPI NOR
+      Flash has the incorrect BFPT DW16 information in SFDP)
+
+  rdsr-addr-4bytes:
+    type: boolean
+    description: |
+      Whether RDSR command requires 4-byte address (Only require if SPI NOR
+      Flash has the incorrect PROFILE1 DW1 information in SFDP)
+
+  default-8d-dummy-cycles:
+    type: int
+    description: |
+      Default dummy cycles for read command (Only require if SPI NOR Flash enter 8D mode
+      but don't has dummy cycles information or the information is incorrect in SFDP)
