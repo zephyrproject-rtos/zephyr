@@ -632,6 +632,7 @@ struct bmi08x_accel_encoded_data {
 		uint16_t fifo_len;
 		uint8_t sample_count;
 		uint16_t buf_len;
+		uint8_t accel_odr;
 	} header;
 	union {
 		uint16_t payload[3];
