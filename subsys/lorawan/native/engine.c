@@ -5,8 +5,8 @@
  * Native LoRaWAN engine thread
  *
  * A dedicated thread serialises all MAC processing.  API calls post a
- * request to the engine via a message queue and block on a result queue
- * until the engine finishes.
+ * request to the engine via a message queue and block on a per-request
+ * completion until the engine finishes.
  *
  *  Application thread(s)                Engine thread
  *  ~~~~~~~~~~~~~~~~~~~~~~               ~~~~~~~~~~~~~
@@ -22,7 +22,7 @@
  *        |                               |     mac_dispatch_downlink()
  *        |                               |       \---> k_work_submit()
  *        |                               |              (system workqueue)
- *        |  k_msgq_get(result_msgq)      |
+ *        |  k_sem_take(req.done)         |
  *        +<------------------------------+
  *        |                               |
  *     return ret                   k_msgq_get() (next)
@@ -44,8 +44,6 @@ LOG_MODULE_REGISTER(lorawan_native_engine, CONFIG_LORAWAN_LOG_LEVEL);
 #define ENGINE_MSGQ_DEPTH	8
 
 K_MSGQ_DEFINE(engine_msgq, sizeof(struct lwan_req), ENGINE_MSGQ_DEPTH, 4);
-K_MSGQ_DEFINE(join_result_msgq, sizeof(int), 1, 4);
-K_MSGQ_DEFINE(send_result_msgq, sizeof(int), 1, 4);
 
 static K_THREAD_STACK_DEFINE(engine_stack,
 			     CONFIG_LORAWAN_NATIVE_ENGINE_STACK_SIZE);
@@ -80,35 +78,29 @@ void engine_init(struct lwan_ctx *ctx)
 	k_thread_name_set(&engine_thread, "lorawan_engine");
 }
 
-int engine_post_req(const struct lwan_req *req)
+int engine_post_req_wait(struct lwan_req *req)
 {
-	return k_msgq_put(&engine_msgq, req, K_NO_WAIT);
-}
-
-void engine_signal_join_result(int result)
-{
-	k_msgq_put(&join_result_msgq, &result, K_FOREVER);
-}
-
-void engine_signal_send_result(int result)
-{
-	k_msgq_put(&send_result_msgq, &result, K_FOREVER);
-}
-
-int engine_wait_join_result(void)
-{
+	struct k_sem done;
 	int result;
+	int ret;
 
-	k_msgq_get(&join_result_msgq, &result, K_FOREVER);
+	k_sem_init(&done, 0, 1);
+	req->done = &done;
+	req->result = &result;
+
+	ret = k_msgq_put(&engine_msgq, req, K_NO_WAIT);
+	if (ret != 0) {
+		LOG_ERR("Failed to post engine request %d: %d", req->type, ret);
+		return ret;
+	}
+
+	k_sem_take(&done, K_FOREVER);
 
 	return result;
 }
 
-int engine_wait_send_result(void)
+void engine_signal_result(const struct lwan_req *req, int result)
 {
-	int result;
-
-	k_msgq_get(&send_result_msgq, &result, K_FOREVER);
-
-	return result;
+	*req->result = result;
+	k_sem_give(req->done);
 }

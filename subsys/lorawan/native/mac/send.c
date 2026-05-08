@@ -513,14 +513,15 @@ static void send_post_tx(struct lwan_ctx *ctx, void *user_data)
 	ctx->pending &= ~LWAN_PENDING_ACK;
 }
 
-void mac_do_send(struct lwan_ctx *ctx, const struct lwan_send_req *req)
+void mac_do_send(struct lwan_ctx *ctx, const struct lwan_req *req)
 {
+	const struct lwan_send_req *send_req = req->data;
 	const struct lwan_region_ops *region = ctx->region;
 	struct lwan_session *sess = &ctx->session;
 	struct mac_tx_params tx_params;
 	struct lwan_dr_params dr_params;
 	struct send_tx_ctx tx_ctx = {
-		.req = req,
+		.req = send_req,
 	};
 	uint8_t tx_frame[MAX_FRAME_SIZE];
 	size_t tx_frame_len = sizeof(tx_frame);
@@ -542,25 +543,25 @@ void mac_do_send(struct lwan_ctx *ctx, const struct lwan_send_req *req)
 		goto done;
 	}
 
-	if (req->len > dr_params.max_payload) {
+	if (send_req->len > dr_params.max_payload) {
 		LOG_ERR("Payload too large for DR%u: %u > %u", tx_dr_idx,
-			req->len, dr_params.max_payload);
+			send_req->len, dr_params.max_payload);
 		ret = -EMSGSIZE;
 		goto done;
 	}
 
 	rx1_delay_ms = (sess->rx_delay == 0 ? 1 : sess->rx_delay) * 1000U;
 
-	tries = (req->type == LORAWAN_MSG_CONFIRMED) ? ctx->conf_tries : 1;
+	tries = (send_req->type == LORAWAN_MSG_CONFIRMED) ? ctx->conf_tries : 1;
 
-	ret = mac_build_data_frame(ctx, req, tx_frame, &tx_frame_len);
+	ret = mac_build_data_frame(ctx, send_req, tx_frame, &tx_frame_len);
 	if (ret != 0) {
 		goto done;
 	}
 
 	for (uint8_t attempt = 0; attempt < tries; attempt++) {
 		LOG_INF("Send: port=%u len=%u fcnt=%u attempt=%u/%u",
-			req->port, req->len, frame_fcnt, attempt + 1, tries);
+			send_req->port, send_req->len, frame_fcnt, attempt + 1, tries);
 
 		ret = select_data_channel_wait(ctx, tx_dr_idx, &tx_freq);
 		if (ret != 0) {
@@ -590,7 +591,7 @@ void mac_do_send(struct lwan_ctx *ctx, const struct lwan_send_req *req)
 			goto done;
 		}
 
-		if (req->type != LORAWAN_MSG_CONFIRMED) {
+		if (send_req->type != LORAWAN_MSG_CONFIRMED) {
 			/* Unconfirmed: no downlink is normal */
 			ret = 0;
 			goto done;
@@ -614,5 +615,5 @@ done:
 		sess->fcnt_up++;
 	}
 
-	engine_signal_send_result(ret);
+	engine_signal_result(req, ret);
 }
