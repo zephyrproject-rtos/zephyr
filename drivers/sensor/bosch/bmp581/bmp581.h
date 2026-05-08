@@ -338,6 +338,7 @@ struct bmp581_stream {
 	enum bmp581_event enabled_mask;
 	uint8_t fifo_thres;
 	atomic_t state;
+	uint64_t timestamp;
 };
 
 struct bmp581_data {
