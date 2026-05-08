@@ -67,7 +67,6 @@ static struct k_thread drv_stack_data;
 
 static struct udc_ep_config ep_cfg_out[CFG_EPOUT_CNT + CFG_EP_ISOOUT_CNT + 1];
 static struct udc_ep_config ep_cfg_in[CFG_EPIN_CNT + CFG_EP_ISOIN_CNT + 1];
-static bool udc_nrf_ctrl_data_in_finished;
 static bool udc_nrf_setup_set_addr, udc_nrf_fake_setup;
 static uint8_t udc_nrf_address;
 const static struct device *udc_nrf_dev;
@@ -1253,20 +1252,8 @@ static void udc_event_xfer_in(const struct device *dev, const uint8_t ep)
 	if (ep == USB_CONTROL_EP_IN) {
 		__ASSERT(udc_get_buf_info(buf)->data, "EP0IN buf is not data");
 
-		udc_nrf_ctrl_data_in_finished = true;
-
 		/* STALL any further IN tokens, allow status stage */
 		NRF_USBD->TASKS_EP0STATUS = 1;
-
-		/* Software won't know when status stage finishes, if we have
-		 * status OUT pending, just complete it.
-		 */
-		ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-		buf = udc_buf_get(ep_cfg);
-		if (buf != NULL) {
-			__ASSERT(udc_get_buf_info(buf)->status, "EP0OUT buf is not status");
-			udc_submit_ep_event(dev, buf, 0);
-		}
 	}
 }
 
@@ -1294,14 +1281,6 @@ static void udc_event_xfer_out_next(const struct device *dev, const uint8_t ep)
 
 				/* Allow receiving first OUT Data Stage packet */
 				NRF_USBD->TASKS_EP0RCVOUT = 1;
-			}
-
-			if (bi->status) {
-				if (udc_nrf_ctrl_data_in_finished) {
-					udc_submit_ep_event(dev, buf, 0);
-				}
-
-				return;
 			}
 		}
 
@@ -1331,8 +1310,6 @@ static void udc_event_xfer_out(const struct device *dev, const uint8_t ep)
 static int udc_event_xfer_setup(const struct device *dev)
 {
 	struct usb_setup_packet setup;
-
-	udc_nrf_ctrl_data_in_finished = false;
 
 	setup.bmRequestType = NRF_USBD->BMREQUESTTYPE;
 	setup.bRequest = NRF_USBD->BREQUEST;
@@ -1848,6 +1825,7 @@ static int udc_nrf_driver_init(const struct device *dev)
 	data->caps.rwup = true;
 	data->caps.mps0 = UDC_NRF_MPS0;
 	data->caps.can_detect_vbus = true;
+	data->caps.out_ack = true;
 
 	return 0;
 }
