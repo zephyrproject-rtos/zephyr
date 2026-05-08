@@ -473,5 +473,73 @@ ZTEST(ringbuffer_api, invalid_size_init)
 	verify_init_state(&rb);
 }
 
+#include <zephyr/sys/cbprintf.h>
+struct tracing_ctx {
+	int status;
+	uint32_t length;
+	struct ring_buf *rb;
+};
+
+static int str_put(int c, void *ctx)
+{
+	struct tracing_ctx *str_ctx = (struct tracing_ctx *)ctx;
+
+	if (str_ctx->status == 0) {
+		uint8_t *buf;
+		uint32_t claimed_size;
+
+		claimed_size = ring_buf_put_ptr(str_ctx->rb, &buf);
+		if (claimed_size) {
+			*buf = (uint8_t)c;
+			str_ctx->length++;
+			ring_buf_commit(str_ctx->rb, 1);
+		} else {
+			str_ctx->status = -1;
+		}
+	}
+
+	return 0;
+}
+
+static int do_cbvprintf(cbprintf_cb cb, void *ctx, const char *fmt, ...)
+{
+	va_list ap;
+	int rc;
+
+	va_start(ap, fmt);
+	rc = cbvprintf(cb, ctx, fmt, ap);
+	va_end(ap);
+
+	return rc;
+}
+
+ZTEST(ringbuffer_api, claim_finish_cancel)
+{
+	uint8_t ref[20] = {0};
+	uint8_t buf[sizeof(ref)] = {0};
+	char str[] = "Hello world!%d";
+	const char *expected_str = "Hello world!12";
+	struct ring_buf rb = RING_BUF_INIT(buf, sizeof(buf));
+
+	struct ring_buf snapshot = ring_buf_snapshot(&rb);
+	struct tracing_ctx str_ctx = {
+		.status = 0,
+		.length = 0,
+		.rb = &snapshot,
+	};
+
+	zassert_equal(0, ring_buf_size_get(&rb), "size should be 0 after init");
+
+	(void)do_cbvprintf(str_put, (void *)&str_ctx, str, 12);
+
+	zassert_equal(0, ring_buf_size_get(&rb), "size should not be modified from snapshot");
+	zassert_true(str_ctx.length > 0, "some data should have been written to snapshot");
+	zassert_true(memcmp(ref, buf, sizeof(ref)) != 0, "buffer should have been modified from snapshot");
+
+	ring_buf_commit(&rb, str_ctx.length);
+	zassert_true(str_ctx.length == ring_buf_get(&rb, ref, str_ctx.length), "should be able to read committed data");
+	zassert_equal(0, memcmp(expected_str, ref, str_ctx.length), "committed data should match expected");
+}
+
 /*test case main entry*/
 ZTEST_SUITE(ringbuffer_api, NULL, NULL, NULL, NULL, NULL);
