@@ -321,8 +321,8 @@ elseif(QEMU_NET_STACK)
   endif()
 endif(QEMU_PIPE_STACK)
 
-if(CONFIG_CAN AND NOT (CONFIG_SOC_LEON3))
-  # Add CAN bus 0
+if(CONFIG_CAN_KVASER_PCI)
+  # Add CAN bus 0 only when QEMU-emulated CAN hardware is actually needed
   list(APPEND QEMU_FLAGS -object can-bus,id=canbus0)
 
   if(NOT "${CONFIG_CAN_QEMU_IFACE_NAME}" STREQUAL "")
@@ -332,10 +332,8 @@ if(CONFIG_CAN AND NOT (CONFIG_SOC_LEON3))
     )
   endif()
 
-  if(CONFIG_CAN_KVASER_PCI)
-    # Emulate a single-channel Kvaser PCIcan card connected to CAN bus 0
-    list(APPEND QEMU_FLAGS -device kvaser_pci,canbus=canbus0)
-  endif()
+  # Emulate a single-channel Kvaser PCIcan card connected to CAN bus 0
+  list(APPEND QEMU_FLAGS -device kvaser_pci,canbus=canbus0)
 endif()
 
 if(CONFIG_X86_64 AND NOT CONFIG_QEMU_UEFI_BOOT)
