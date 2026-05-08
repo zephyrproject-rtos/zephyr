@@ -5,13 +5,14 @@
 # Multi-controller observer test using two HCI UART controller instances.
 #
 # Topology:
-#   [observer_multi app] --(uart1/fifob)--> [hci_uart ctrl 0] <--(phy)--> [hci_uart ctrl 1]
-#   [observer_multi app] --(uart0/fifob)--> [hci_uart ctrl 1]
+#   [observer_multi app] --(uart1/fifob)--> [hci_uart ctrl 0 (d=0)] <--(phy)-->+
+#   [observer_multi app] --(uart0/fifob)--> [hci_uart ctrl 1 (d=1)] <--(phy)-->| 2G4 PHY
+#                                          [broadcaster_multiple    (d=2)] -----+
 #
 # The observer_multi sample initialises two HCI controllers (one per UART),
-# starts passive scanning on each, logs advertising reports from both, and
-# exits cleanly.  The two hci_uart processes run the open-source Zephyr LL
-# SW-split Bluetooth controller and are connected to the 2G4 radio PHY.
+# starts passive scanning on each, and logs advertising reports from both.
+# The broadcaster_multiple device provides real legacy advertising PDUs so
+# that both scanner instances receive actual reports, then everything exits.
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
@@ -46,8 +47,13 @@ Execute ./bs_${BOARD_TS}_samples_bluetooth_hci_uart_prj_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=1 -RealEncryption=0 \
   -uart1_fifob_rxfile=${UART_HCI1}.tx -uart1_fifob_txfile=${UART_HCI1}.rx
 
-# PHY simulation – 2 radio devices (the two controllers), 15 s of simulated time
+# Broadcaster: connected to PHY as device 2, provides advertising reports for
+# both observers to receive.  Uses the built-in LL SW-split controller.
+Execute ./bs_${BOARD_TS}_samples_bluetooth_broadcaster_multiple_prj_conf_overlay-bt_ll_sw_split_conf \
+  -v=${verbosity_level} -s=${simulation_id} -d=2 -RealEncryption=0
+
+# PHY simulation – 3 radio devices (2 controllers + broadcaster), 15 s of simulated time
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
-  -D=2 -sim_length=15e6 $@
+  -D=3 -sim_length=15e6 $@
 
 wait_for_background_jobs

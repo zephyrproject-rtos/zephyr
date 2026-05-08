@@ -17,5 +17,7 @@ app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_hci_uart.conf conf_overlay=
 app=samples/bluetooth/hci_uart compile
 app=samples/bluetooth/hci_uart_async compile
 app=samples/bluetooth/observer_multi compile
+app=samples/bluetooth/broadcaster_multiple \
+    conf_overlay=overlay-bt_ll_sw_split.conf compile
 
 wait_for_background_jobs
