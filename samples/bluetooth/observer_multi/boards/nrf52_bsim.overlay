@@ -1,0 +1,30 @@
+/*
+ * Copyright (C) 2026 Xiaomi Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Board overlay for nrf52_bsim:
+ * - Frees uart0 from console use so it can serve as the second HCI UART.
+ * - Adds bt_hci_uart_1 as a child of uart0.
+ * - Exposes it via the bt-hci1 alias so the observer_multi app can
+ *   retrieve it with DEVICE_DT_GET(DT_ALIAS(bt_hci1)).
+ */
+
+/ {
+	chosen {
+		/delete-property/ zephyr,console;
+	};
+
+	aliases {
+		bt-hci1 = &bt_hci_uart_1;
+	};
+};
+
+&uart0 {
+	bt_hci_uart_1: bt_hci_uart_1 {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+	};
+};
