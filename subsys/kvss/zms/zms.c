@@ -2290,7 +2290,7 @@ static int zms_iter_has_newer_id(struct zms_fs *fs, struct zms_iter *iter,
 
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
 	int rc;
-	uint64_t cached = fs->lookup_cache[zms_lookup_cache_pos(id)];
+	uint64_t cached = zms_lookup_cache_addr(fs, id);
 
 	if (cached != ZMS_LOOKUP_CACHE_NO_ADDR && cached != ate_addr) {
 		struct zms_ate cached_ate;
