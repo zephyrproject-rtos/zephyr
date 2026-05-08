@@ -45,6 +45,8 @@ $defs:
       extra_sections: {}
       expect_reboot:
         type: boolean
+      build:
+        type: boolean
       required_applications:
         type: array
         items:

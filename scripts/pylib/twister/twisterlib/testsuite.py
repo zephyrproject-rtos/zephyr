@@ -12,7 +12,7 @@ import re
 from enum import Enum
 from pathlib import Path
 
-from twisterlib.constants import canonical_zephyr_base
+from twisterlib.constants import PYTEST_HARNESSES, canonical_zephyr_base
 from twisterlib.error import StatusAttributeError, TwisterException, TwisterRuntimeError
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testsuitedata import HarnessConfig, RequiredApplication
@@ -537,13 +537,22 @@ Tests should reference the category and subsystem with a dot as a separator.
                     )
         return True
 
-    def update_required_applications(self):
-        """Update the list of required applications based on the harness configuration."""
+    def resolve_required_applications(self):
+        """Validate and update the list of required applications."""
+        if not self.build:
+            if self.harness not in PYTEST_HARNESSES + ['bsim']:
+                msg = f"{self.name}: `build: false` not supported with {self.harness} harness"
+                logger.error(msg)
+                raise TwisterException(msg)
+            if not self.required_applications:
+                msg = f"{self.name}: `build: false` set but no required applications specified"
+                logger.error(msg)
+                raise TwisterException(msg)
+
         for req_dev in self.harness_config.required_devices:
             if not (req_dev.application or req_dev.platform):
                 # if neither application nor platform is specified, use the same application
                 continue
-
             req_app = RequiredApplication(name=req_dev.application or self.id)
             if req_dev.platform:
                 req_app.platform = req_dev.platform
