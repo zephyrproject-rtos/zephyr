@@ -21,6 +21,7 @@ supported:
   - netif:eth
   - counter
   - dma
+  - gpio
 testing:
   binaries:
     - flash.bin

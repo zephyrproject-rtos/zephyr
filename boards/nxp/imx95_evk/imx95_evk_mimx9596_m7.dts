@@ -166,6 +166,22 @@
 	status = "okay";
 };
 
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpio5 {
+	status = "okay";
+};
+
 zephyr_dpu: &dpu {};
 
 zephyr_mipi_dsi: &mipi_dsi {};
