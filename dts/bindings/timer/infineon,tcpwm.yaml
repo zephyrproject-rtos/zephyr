@@ -35,3 +35,7 @@ properties:
   index:
     type: int
     description: Index of the TCPWM channel
+
+  frequency:
+    type: int
+    description: Opearting frequncy for Traveo family devices
