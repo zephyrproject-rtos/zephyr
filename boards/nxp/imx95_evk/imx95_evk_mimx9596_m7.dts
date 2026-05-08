@@ -162,6 +162,10 @@
 	status = "okay";
 };
 
+&edma1 {
+	status = "okay";
+};
+
 &edma2 {
 	status = "okay";
 };
