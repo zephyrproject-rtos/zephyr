@@ -431,7 +431,7 @@ if(CONFIG_QEMU_TARGET)
   if((CONFIG_NET_QEMU_ETHERNET OR CONFIG_NET_QEMU_USER) AND NOT CONFIG_ETH_NIC_MODEL)
     message(FATAL_ERROR "
       No Qemu ethernet driver configured!
-      Enable Qemu supported ethernet driver like e1000 at drivers/ethernet"
+      Enable Qemu supported ethernet driver like e1000 in the device tree."
     )
   elseif(CONFIG_NET_QEMU_ETHERNET)
     if(CONFIG_ETH_QEMU_EXTRA_ARGS)
