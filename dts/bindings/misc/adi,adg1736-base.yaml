@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  in1-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO controlling switch SW1 direction (A/B)
+
+  in2-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO controlling switch SW2 direction (A/B)

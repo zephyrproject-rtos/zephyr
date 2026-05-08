@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices ADG1736 dual SPDT analog switch, GPIO control mode.
+
+  Each of the 2 SPDT switches is controlled by a dedicated GPIO pin
+  (IN1 and IN2). An optional enable pin (EN) can be used to
+  enable or disable the device.
+
+compatible: "adi,adg1736"
+
+include: adi,adg1736-base.yaml
+
+properties:
+  en-gpios:
+    type: phandle-array
+    description: |
+      Optional enable GPIO (active high). When driven low the device
+      is disabled and both switches are open.
+
+examples:
+  - |
+    adg1736 {
+      compatible = "adi,adg1736";
+      in1-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+      in2-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+      en-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+    };
