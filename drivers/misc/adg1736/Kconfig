@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADG1736
+	bool "Analog Devices ADG736/ADG1736 dual SPDT analog switch driver"
+	default y
+	depends on DT_HAS_ADI_ADG736_ENABLED || \
+		   DT_HAS_ADI_ADG1736_ENABLED
+	depends on GPIO
+	help
+	  Enable driver for Analog Devices ADG736/ADG1736 dual SPDT
+	  analog switch. Uses GPIO control for each of the 2 switches and
+	  an optional enable pin.
+
+if ADG1736
+
+config ADG1736_INIT_PRIORITY
+	int "Init priority"
+	default 90
+	help
+	  Analog Devices ADG736/ADG1736 dual SPDT analog switch driver
+	  initialization priority.
+
+module = ADG1736
+module-str = adg1736
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # ADG1736
