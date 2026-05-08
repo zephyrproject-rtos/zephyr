@@ -1076,6 +1076,11 @@ static int uvc_control_to_dev(struct usbd_class_data *const c_data,
 		goto end;
 	}
 
+	if (setup->wLength && (buf == NULL)) {
+		/* Data OUT can be received */
+		return 0;
+	}
+
 	LOG_INF("Host sent a SET_CUR request, wValue 0x%04x, wIndex 0x%04x, wLength %u",
 		setup->wValue, setup->wIndex, setup->wLength);
 
