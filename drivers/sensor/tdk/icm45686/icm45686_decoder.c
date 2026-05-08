@@ -18,6 +18,20 @@ LOG_MODULE_REGISTER(ICM45686_DECODER, CONFIG_SENSOR_LOG_LEVEL);
 
 #define DT_DRV_COMPAT invensense_icm45686
 
+/* Period in ns indexed by ICM45686_DT_ACCEL_ODR_* / ICM45686_DT_GYRO_ODR_* DT enum value */
+static const uint32_t imu_period_ns[] = {
+	[ICM45686_DT_ACCEL_ODR_6400]  = UINT32_C(156250),
+	[ICM45686_DT_ACCEL_ODR_3200]  = UINT32_C(312500),
+	[ICM45686_DT_ACCEL_ODR_1600]  = UINT32_C(625000),
+	[ICM45686_DT_ACCEL_ODR_800]   = UINT32_C(1250000),
+	[ICM45686_DT_ACCEL_ODR_400]   = UINT32_C(2500000),
+	[ICM45686_DT_ACCEL_ODR_200]   = UINT32_C(5000000),
+	[ICM45686_DT_ACCEL_ODR_100]   = UINT32_C(10000000),
+	[ICM45686_DT_ACCEL_ODR_50]    = UINT32_C(20000000),
+	[ICM45686_DT_ACCEL_ODR_25]    = UINT32_C(40000000),
+	[ICM45686_DT_ACCEL_ODR_12_5]  = UINT32_C(80000000),
+};
+
 static int icm45686_get_shift(enum sensor_channel channel, int accel_fs, int gyro_fs, int8_t *shift)
 {
 	switch (channel) {
@@ -459,6 +473,23 @@ static int icm45686_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 		return 0;
 	}
 
+	uint32_t period_ns = 0;
+	bool is_accel_chan = (chan_spec.chan_type == SENSOR_CHAN_ACCEL_XYZ);
+
+	if (is_accel_chan || chan_spec.chan_type == SENSOR_CHAN_DIE_TEMP) {
+		if (edata->header.accel_odr < ARRAY_SIZE(imu_period_ns)) {
+			period_ns = imu_period_ns[edata->header.accel_odr];
+		}
+	} else {
+		if (edata->header.gyro_odr < ARRAY_SIZE(imu_period_ns)) {
+			period_ns = imu_period_ns[edata->header.gyro_odr];
+		}
+	}
+
+	uint16_t total = edata->header.fifo_count;
+	uint64_t base_ts = edata->header.timestamp -
+			   (total > 0 ? (uint64_t)(total - 1) : 0) * period_ns;
+
 	while (count < max_count && (*fit < edata->header.fifo_count)) {
 		struct icm45686_encoded_fifo_payload *fdata = &frame_begin[*fit];
 
@@ -482,7 +513,8 @@ static int icm45686_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			icm45686_get_shift(chan_spec.chan_type, edata->header.accel_fs,
 					   edata->header.gyro_fs, &out->shift);
 
-			out->header.base_timestamp_ns = edata->header.timestamp;
+			out->header.base_timestamp_ns = base_ts;
+			out->readings[count].timestamp_delta = count * period_ns;
 
 			err = icm45686_fifo_read_imu_from_packet((uint8_t *)fdata, is_accel, 0,
 								 &out->readings[count].x);
@@ -501,7 +533,8 @@ static int icm45686_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			icm45686_get_shift(chan_spec.chan_type, edata->header.accel_fs,
 					   edata->header.gyro_fs, &out->shift);
 
-			out->header.base_timestamp_ns = edata->header.timestamp;
+			out->header.base_timestamp_ns = base_ts;
+			out->readings[count].timestamp_delta = count * period_ns;
 			out->readings[count].temperature =
 				icm45686_fifo_read_temp_from_packet((uint8_t *)fdata);
 			break;

@@ -148,6 +148,8 @@ static void icm45686_complete_handler(struct rtio *ctx, const struct rtio_sqe *s
 	buf->header.events = REG_INT1_STATUS0_DRDY(data->stream.data.events.drdy) |
 			     REG_INT1_STATUS0_FIFO_THS(data->stream.data.events.fifo_ths) |
 			     REG_INT1_STATUS0_FIFO_FULL(data->stream.data.events.fifo_full);
+	buf->header.accel_odr = cfg->settings.accel.odr;
+	buf->header.gyro_odr = cfg->settings.gyro.odr;
 
 	if (should_flush_fifo(read_cfg, int_status)) {
 		uint8_t write_reg = REG_FIFO_CONFIG2_FIFO_FLUSH(true) |
