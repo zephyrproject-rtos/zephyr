@@ -1,0 +1,19 @@
+sample:
+  name: ADG1736 Dual SPDT Analog Switch
+  description: Demonstrates the ADG736/ADG1736 dual SPDT analog switch driver API
+common:
+  tags:
+    - drivers
+    - misc
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "ADG1736 sample completed"
+tests:
+  sample.drivers.misc.adg1736:
+    filter: dt_compat_enabled("adi,adg1736") or dt_compat_enabled("adi,adg736")
+  sample.drivers.misc.adg1736.eval_adg1736sdz:
+    extra_args: SHIELD=eval_adg1736sdz
+    platform_allow:
+      - nucleo_f413zh
