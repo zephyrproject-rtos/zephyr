@@ -314,7 +314,16 @@ static int bma4xx_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec ch,
 		return -ENOTSUP;
 	}
 
-	((struct sensor_data_header *)data_out)->base_timestamp_ns = edata->header.timestamp;
+	uint16_t total_accel_frames = 0;
+	struct sensor_chan_spec accel_ch = {.chan_type = SENSOR_CHAN_ACCEL_XYZ, .chan_idx = 0};
+
+	bma4xx_decoder_get_frame_count(buffer, accel_ch, &total_accel_frames);
+
+	uint64_t period_ns = accel_period_ns[edata->accel_odr];
+
+	((struct sensor_data_header *)data_out)->base_timestamp_ns =
+		edata->header.timestamp -
+		(total_accel_frames > 0 ? (total_accel_frames - 1) : 0) * period_ns;
 
 	buffer += sizeof(struct bma4xx_fifo_data);
 
@@ -352,8 +361,6 @@ static int bma4xx_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec ch,
 		if (has_accel) {
 			struct sensor_three_axis_data *data =
 				(struct sensor_three_axis_data *)data_out;
-
-			uint64_t period_ns = accel_period_ns[edata->accel_odr];
 
 			bma4xx_get_shift(
 				(struct sensor_chan_spec){.chan_type = SENSOR_CHAN_ACCEL_XYZ,
