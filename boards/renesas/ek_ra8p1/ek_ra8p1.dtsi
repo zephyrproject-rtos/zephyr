@@ -9,6 +9,7 @@
 #include "ek_ra8p1-pinctrl.dtsi"
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/memory-controller/renesas,ra-sdram.h>
+#include <zephyr/dt-bindings/flash_controller/ospi.h>
 
 / {
 	leds {
@@ -167,6 +168,12 @@
 	status = "okay";
 };
 
+&octaspiclk {
+	clocks = <&pll2r>;
+	div = <2>;
+	status = "okay";
+};
+
 &trng {
 	status = "okay";
 };
@@ -254,5 +261,35 @@
 					   SDRAM_TCL_3CYCLES
 					   937
 					   SDRAM_TREFW_8CYCLES>;
+	};
+};
+
+&ospi0 {
+	pinctrl-0 = <&ospi0_default>;
+	pinctrl-names = "default";
+	ddr-sampling-extension = <7>;
+	status = "okay";
+
+	ext_flash_ctrl: flash-controller@1 {
+		compatible = "renesas,ra-ospi-b-nor";
+		ranges = <0x0 0x90000000 DT_SIZE_M(256)>;
+		reg = <1>;
+		protocol-mode = <OSPI_OPI_MODE>;
+		ospi-max-frequency = <DT_FREQ_M(133)>;
+		jedec-id = [c2 86 3a];
+		default-8d-dummy-cycles = <20>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "disabled";
+
+		ext_flash: mx25lw51245g: nor-flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(64)>;
+			ranges = <0x0 0x0 DT_SIZE_M(64)>;
+			write-block-size = <16>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
 	};
 };

@@ -7,6 +7,7 @@
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/flash_controller/ospi.h>
 #include "ek_ra8t2-pinctrl.dtsi"
 
 / {
@@ -298,6 +299,12 @@
 	status = "okay";
 };
 
+&octaspiclk {
+	clocks = <&pll2r>;
+	div = <2>;
+	status = "okay";
+};
+
 &ioport0 {
 	status = "okay";
 };
@@ -355,3 +362,32 @@ pmod2_serial: &uart6 {};
 pmod_serial: &pmod2_serial {};
 
 pmod_header: &pmod2_header {};
+
+&ospi1 {
+	pinctrl-0 = <&ospi1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	ext_flash_ctrl: flash-controller@1 {
+		compatible = "renesas,ra-ospi-b-nor";
+		ranges = <0x0 0x78000000 DT_SIZE_M(128)>;
+		reg = <1>;
+		protocol-mode = <OSPI_OPI_MODE>;
+		ospi-max-frequency = <DT_FREQ_M(133)>;
+		jedec-id = [9d 5a 1a];
+		default-8d-dummy-cycles = <16>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "disabled";
+
+		ext_flash: is25lx512m: nor-flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(64)>;
+			ranges = <0x0 0x0 DT_SIZE_M(64)>;
+			write-block-size = <16>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+};
