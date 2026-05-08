@@ -40,6 +40,7 @@ tests:
       - riscv
       - arc
       - x86
+      - openrisc
     filter: not CONFIG_MPU and not CONFIG_MMU
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
@@ -52,6 +53,7 @@ tests:
       - riscv
       - arc
       - x86
+      - openrisc
     filter: not CONFIG_MPU and not CONFIG_MMU
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
@@ -135,6 +137,7 @@ tests:
       - riscv
       - arc
       - x86
+      - openrisc
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
       - esp32_devkitc/esp32/procpu # Xtensa ISA
@@ -149,6 +152,7 @@ tests:
       - riscv
       - arc
       - x86
+      - openrisc
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
       - esp32_devkitc/esp32/procpu # Xtensa ISA
@@ -164,6 +168,7 @@ tests:
       - riscv
       - arc
       - x86
+      - openrisc
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
       - esp32_devkitc/esp32/procpu # Xtensa ISA
@@ -182,6 +187,7 @@ tests:
       - riscv
       - arc
       - x86
+      - openrisc
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
       - esp32_devkitc/esp32/procpu # Xtensa ISA
@@ -197,6 +203,7 @@ tests:
       - riscv
       - arc
       - x86
+      - openrisc
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
       - esp32_devkitc/esp32/procpu # Xtensa ISA
