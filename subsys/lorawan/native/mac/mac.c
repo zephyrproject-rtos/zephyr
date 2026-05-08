@@ -159,17 +159,92 @@ int mac_do_tx_rx(struct lwan_ctx *ctx, const struct mac_tx_params *params)
 	return -ETIMEDOUT;
 }
 
+static void mac_do_set_datarate(struct lwan_ctx *ctx,
+				const struct lwan_req *req)
+{
+	const struct lwan_set_datarate_req *dr_req = req->data;
+	struct lwan_dr_params p;
+	int8_t power;
+	int ret;
+
+	if (ctx->region == NULL ||
+	    ctx->region->get_tx_params((uint8_t)dr_req->dr,
+				       ctx->mac.tx_power_idx,
+				       &p, &power) != 0) {
+		ret = -EINVAL;
+	} else {
+		ctx->current_dr = dr_req->dr;
+		ret = 0;
+	}
+
+	engine_signal_result(req, ret);
+}
+
+static void mac_do_enable_adr(struct lwan_ctx *ctx,
+			      const struct lwan_req *req)
+{
+	const struct lwan_enable_adr_req *adr_req = req->data;
+
+	ctx->mac.adr_enabled = adr_req->enable;
+	engine_signal_result(req, 0);
+}
+
+static void mac_do_set_conf_msg_tries(struct lwan_ctx *ctx,
+				      const struct lwan_req *req)
+{
+	const struct lwan_set_conf_msg_tries_req *tries_req = req->data;
+
+	ctx->conf_tries = tries_req->tries;
+	engine_signal_result(req, 0);
+}
+
+static void mac_do_set_channels_mask(struct lwan_ctx *ctx,
+				     const struct lwan_req *req)
+{
+	const struct lwan_set_channels_mask_req *mask_req = req->data;
+	size_t min_words = DIV_ROUND_UP(ctx->channel_count, 16);
+	int ret = 0;
+
+	if (mask_req->channels_mask_size < min_words) {
+		ret = -EINVAL;
+		goto signal_result;
+	}
+
+	for (size_t i = 0; i < ctx->channel_count; i++) {
+		uint16_t word = mask_req->channels_mask[i / 16];
+		bool enabled = (word & BIT(i % 16)) != 0;
+
+		ctx->channels[i].enabled = enabled;
+	}
+
+signal_result:
+	engine_signal_result(req, ret);
+}
+
 void mac_process_req(struct lwan_ctx *ctx, const struct lwan_req *req)
 {
 	switch (req->type) {
 	case LWAN_REQ_JOIN:
-		mac_do_join(ctx, req->data);
+		mac_do_join(ctx, req);
 		break;
 	case LWAN_REQ_SEND:
-		mac_do_send(ctx, req->data);
+		mac_do_send(ctx, req);
+		break;
+	case LWAN_REQ_SET_DATARATE:
+		mac_do_set_datarate(ctx, req);
+		break;
+	case LWAN_REQ_ENABLE_ADR:
+		mac_do_enable_adr(ctx, req);
+		break;
+	case LWAN_REQ_SET_CONF_MSG_TRIES:
+		mac_do_set_conf_msg_tries(ctx, req);
+		break;
+	case LWAN_REQ_SET_CHANNELS_MASK:
+		mac_do_set_channels_mask(ctx, req);
 		break;
 	default:
 		LOG_WRN("Unknown request type: %d", req->type);
+		engine_signal_result(req, -ENOTSUP);
 		break;
 	}
 }
