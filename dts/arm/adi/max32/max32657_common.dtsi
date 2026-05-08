@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -220,6 +220,8 @@
 
 		counter {
 			compatible = "adi,max32-counter";
+			zephyr,pm-device-runtime-auto;
+			zephyr,disabling-power-states = <&standby &backup>;
 			status = "disabled";
 		};
 	};
@@ -241,6 +243,8 @@
 
 		counter {
 			compatible = "adi,max32-counter";
+			zephyr,pm-device-runtime-auto;
+			zephyr,disabling-power-states = <&standby &backup>;
 			status = "disabled";
 		};
 	};
@@ -262,6 +266,8 @@
 
 		counter {
 			compatible = "adi,max32-counter";
+			zephyr,pm-device-runtime-auto;
+			zephyr,disabling-power-states = <&standby &backup>;
 			status = "disabled";
 		};
 	};
@@ -283,6 +289,8 @@
 
 		counter {
 			compatible = "adi,max32-counter";
+			zephyr,pm-device-runtime-auto;
+			zephyr,disabling-power-states = <&standby &backup>;
 			status = "disabled";
 		};
 	};
@@ -304,6 +312,8 @@
 
 		counter {
 			compatible = "adi,max32-counter";
+			zephyr,pm-device-runtime-auto;
+			zephyr,disabling-power-states = <&standby &backup>;
 			status = "disabled";
 		};
 	};
@@ -325,6 +335,8 @@
 
 		counter {
 			compatible = "adi,max32-counter";
+			zephyr,pm-device-runtime-auto;
+			zephyr,disabling-power-states = <&standby &backup>;
 			status = "disabled";
 		};
 	};
