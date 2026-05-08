@@ -14,6 +14,7 @@
 LOG_MODULE_REGISTER(rz_scif_uart);
 
 struct uart_rz_scif_config {
+	DEVICE_MMIO_ROM; /* Must be first */
 	const struct pinctrl_dev_config *pin_config;
 	const uart_api_t *fsp_api;
 };
@@ -30,6 +31,7 @@ struct uart_rz_scif_int {
 };
 
 struct uart_rz_scif_data {
+	DEVICE_MMIO_RAM; /* Must be first */
 	struct uart_config uart_config;
 	uart_cfg_t *fsp_cfg;
 	struct uart_rz_scif_int int_data;
@@ -425,6 +427,7 @@ static int uart_rz_scif_init(const struct device *dev)
 {
 	const struct uart_rz_scif_config *config = dev->config;
 	struct uart_rz_scif_data *data = dev->data;
+	scif_uart_extended_cfg_t *fsp_extend = (scif_uart_extended_cfg_t *)data->fsp_cfg->p_extend;
 	int ret;
 
 	/* Configure dt provided device signals when available */
@@ -432,6 +435,9 @@ static int uart_rz_scif_init(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
+
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+	fsp_extend->p_reg = (void *)DEVICE_MMIO_GET(dev);
 
 	/* uart_rz_scif_apply_config must be called first before open api */
 	ret = uart_rz_scif_apply_config(dev);
@@ -485,7 +491,6 @@ static int uart_rz_scif_init(const struct device *dev)
 				.de_control_pin =                                                  \
 					(bsp_io_port_pin_t)SCIF_UART_INVALID_16BIT_PARAM,          \
 			},                                                                         \
-		.p_reg = (void *)DT_INST_REG_ADDR(n),                                              \
 	};                                                                                         \
 	static uart_cfg_t g_uart##n##_cfg = {                                                      \
 		.channel = DT_INST_PROP(n, channel),                                               \
@@ -505,6 +510,7 @@ static int uart_rz_scif_init(const struct device *dev)
 			 .p_context = (void *)DEVICE_DT_INST_GET(n),)) };                          \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static const struct uart_rz_scif_config uart_rz_scif_config_##n = {                        \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 		.pin_config = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                   \
 		.fsp_api = &g_uart_on_scif,                                                        \
 	};                                                                                         \
