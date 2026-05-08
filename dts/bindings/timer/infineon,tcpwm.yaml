@@ -35,3 +35,12 @@ properties:
   index:
     type: int
     description: Index of the TCPWM channel
+
+  clock-frequency:
+    type: int
+    description: |
+      TCPWM peripheral clock frequency in Hz. Required on devices using
+      CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2, where the driver requests this
+      rate from the peripheral clock controller at init. This is the
+      peripheral clock feeding the counter, not the observed PWM output
+      frequency.
