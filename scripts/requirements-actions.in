@@ -7,7 +7,7 @@ elasticsearch<9
 exceptiongroup>=1.0.0rc8
 gcovr==6.0
 gitlint-core>=0.19.1
-gitpython>=3.1.41
+gitpython>=3.1.49
 ijson
 intelhex
 jsonschema

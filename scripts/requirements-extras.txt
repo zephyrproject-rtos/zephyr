@@ -4,7 +4,7 @@
 anytree
 
 # to use in ./scripts for memory footprint, code coverage, etc.
-gitpython>=3.1.41
+gitpython>=3.1.49
 
 # used by scripts/footprint/plot.py for generating plots of size reports
 plotly
