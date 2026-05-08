@@ -64,6 +64,7 @@ PROVIDE (__stack = RAM_BASE + (RAM_SIZE - 1024));
 SECTIONS
 {
 #include <zephyr/linker/rel-sections.ld>
+#include <zephyr/linker/llext-sections.ld>
 
     SECTION_PROLOGUE(.plt,,)
 	{
