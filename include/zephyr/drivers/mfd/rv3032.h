@@ -152,7 +152,13 @@ void mfd_rv3032_set_irq_handler(const struct device *dev, const struct device *c
 #define mfd_rv3032_clear_status(dev, mask) mfd_rv3032_update_status(dev, mask, 0x00)
 
 int mfd_rv3032_update_status(const struct device *dev, uint8_t mask, uint8_t val);
+int mfd_rv3032_update_cfg(const struct device *dev, uint8_t addr, uint8_t mask, uint8_t val);
 
+int mfd_rv3032_enter_eerd(const struct device *dev);
+int mfd_rv3032_exit_eerd(const struct device *dev);
+int mfd_rv3032_eeprom_update(const struct device *dev);
+int mfd_rv3032_eeprom_refresh(const struct device *dev);
+int mfd_rv3032_eeprom_write_one(const struct device *dev, uint8_t addr, uint8_t val);
 
 #ifdef __cplusplus
 }
