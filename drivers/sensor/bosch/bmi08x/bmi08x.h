@@ -649,6 +649,7 @@ struct bmi08x_gyro_encoded_data {
 		uint8_t int_status;
 		uint8_t fifo_status;
 		uint8_t sample_count;
+		uint8_t gyro_odr;
 	} header;
 	union {
 		struct bmi08x_gyro_frame frame;
