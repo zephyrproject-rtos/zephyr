@@ -74,9 +74,12 @@ LOG_MODULE_REGISTER(ft6146, CONFIG_INPUT_LOG_LEVEL);
 
 struct ft6146_data {
 	const struct device *dev;
-	struct gpio_callback int_cb;
 	struct k_work work;
+#ifdef CONFIG_INPUT_FT6146_INTERRUPT
+	struct gpio_callback int_cb;
+#else
 	struct k_timer poll_timer;
+#endif
 };
 
 struct ft6146_config {
