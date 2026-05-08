@@ -308,6 +308,13 @@ static int imx_usdhc_reset(const struct device *dev)
 	struct usdhc_data *data = dev->data;
 	USDHC_Type *base = get_base(dev);
 
+	/* Reset data/command/tuning circuit first, so subsequent register
+	 * writes are not clobbered by the reset.
+	 */
+	if (USDHC_Reset(base, kUSDHC_ResetAll, 1000U) != true) {
+		return -ETIMEDOUT;
+	}
+
 	/* Switch to default I/O voltage for this board */
 	if (cfg->no_330_vol && cfg->no_300_vol) {
 		imx_usdhc_select_1_8v(base, true);
@@ -329,8 +336,7 @@ static int imx_usdhc_reset(const struct device *dev)
 	USDHC_EnableStrobeDLL(base, false);
 #endif
 
-	/* Reset data/command/tuning circuit */
-	return USDHC_Reset(base, kUSDHC_ResetAll, 1000U) == true ? 0 : -ETIMEDOUT;
+	return 0;
 }
 
 /*
