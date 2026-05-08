@@ -11,7 +11,8 @@
 
 extern void z_arm_reset(void);
 
-const T_IMG_HEADER_FORMAT img_header __attribute__((section(".image_header"))) = {
+const T_IMG_HEADER_FORMAT img_header __attribute__((section(".image_header")))
+	__attribute__((used)) = {
 	.auth = {
 			.image_mac = {[0 ... 15] = 0xFF},
 		},
