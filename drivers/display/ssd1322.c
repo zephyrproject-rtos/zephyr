@@ -119,8 +119,8 @@ static int ssd1322_convert_L_8(const struct device *dev, const uint8_t *buf, int
 
 	if (config->segments_per_pixel == SSD1322_2PPP) {
 		for (; i < config->conversion_buf_size && pixel_count > cur_offset + i; i += 1) {
-			config->conversion_buf[i ^ 1] = (buf[cur_offset + i] >> 4) << 4;
-			config->conversion_buf[i ^ 1] |= buf[cur_offset + i] >> 4;
+			config->conversion_buf[i] = buf[cur_offset + i] >> 4
+							| (buf[cur_offset + i] >> 4) << 4;
 		}
 	} else {
 		for (; i / 2 < config->conversion_buf_size && pixel_count > cur_offset + i;
@@ -241,6 +241,8 @@ static int ssd1322_write(const struct device *dev, const uint16_t x, const uint1
 	size_t buf_len;
 	int ret;
 	uint8_t cmd_data[2];
+	uint16_t align_check = config->segments_per_pixel == SSD1322_2PPP ? 1 : 3;
+	uint16_t align_shift = config->segments_per_pixel == SSD1322_2PPP ? 1 : 2;
 
 	if (desc->pitch != desc->width) {
 		LOG_ERR("Pitch is different from width");
@@ -263,12 +265,12 @@ static int ssd1322_write(const struct device *dev, const uint16_t x, const uint1
 		return -EINVAL;
 	}
 
-	if ((x & 1) != 0U) {
+	if ((x & align_check) != 0U) {
 		LOG_ERR("Unsupported origin");
 		return -EINVAL;
 	}
 
-	if ((desc->width & 1) != 0U) {
+	if ((desc->width & align_check) != 0U) {
 		LOG_ERR("Unsupported width");
 		return -EINVAL;
 	}
@@ -276,9 +278,8 @@ static int ssd1322_write(const struct device *dev, const uint16_t x, const uint1
 	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %u", x, y, desc->pitch,
 		desc->width, desc->height, buf_len);
 
-	cmd_data[0] = config->column_offset + (x >> 2) * config->segments_per_pixel;
-	cmd_data[1] =
-		config->column_offset + ((x + desc->width) >> 2) * config->segments_per_pixel - 1;
+	cmd_data[0] = config->column_offset + (x >> align_shift);
+	cmd_data[1] = config->column_offset + ((x + desc->width) >> align_shift) - 1;
 	ret = ssd1322_write_command(dev, SSD1322_SET_COLUMN_ADDR, cmd_data, 2);
 	if (ret < 0) {
 		return ret;
