@@ -126,8 +126,7 @@ static inline int ade7978_write_reg16(const struct device *dev, uint16_t addr, u
 	return 0;
 }
 
-static inline int __maybe_unused ade7978_write_reg32(const struct device *dev, uint16_t addr,
-						     uint32_t value)
+static inline int ade7978_write_reg32(const struct device *dev, uint16_t addr, uint32_t value)
 {
 	const struct ade7978_config *cfg = dev->config;
 	uint8_t tx_buf[7] = {ADE7978_CMD_WRITE,    (addr >> 8) & 0xFF,   addr & 0xFF,
@@ -160,10 +159,69 @@ static inline int32_t ade7978_sign_extend_24(uint32_t value)
 	return (int32_t)value;
 }
 
+static int ade7978_probe(const struct device *dev)
+{
+	int ret;
+	uint8_t value_8bit;
+	uint16_t value_16bit;
+	uint32_t value_32bit;
+
+	ret = ade7978_read_reg32(dev, ADE7978_REG_STATUS1, &value_32bit);
+
+	if (ret < 0) {
+		return ret;
+	} else if (value_32bit & ADE7978_STATUS1_RSTDONE) {
+		ret = ade7978_write_reg32(dev, ADE7978_REG_STATUS1, ADE7978_STATUS1_RSTDONE);
+
+		if (ret < 0) {
+			return -ENODEV;
+		}
+	} else {
+		LOG_ERR("ADE7978 RSTDONE not set after reset (STATUS1=0x%08X)", value_32bit);
+		return -ENODEV;
+	}
+
+	ret = ade7978_read_reg32(dev, ADE7978_REG_CHECKSUM, &value_32bit);
+
+	if (ret < 0) {
+		return ret;
+	} else if (value_32bit != ADE7978_CHECKSUM_POR_VAL) {
+		LOG_ERR("ADE7978 checksum mismatch: got 0x%08X, expected 0x%08X", value_32bit,
+			ADE7978_CHECKSUM_POR_VAL);
+		return -ENODEV;
+	}
+	ret = ade7978_read_reg16(dev, ADE7978_REG_COMPMODE, &value_16bit);
+
+	if (ret < 0) {
+		return ret;
+	} else if (value_16bit != ADE7978_COMPMODE_POR_VAL) {
+		LOG_ERR("ADE7978 COMPMODE mismatch: got 0x%04X, expected 0x%04X", value_16bit,
+			ADE7978_COMPMODE_POR_VAL);
+		return -ENODEV;
+	}
+
+	ret = ade7978_read_reg8(dev, ADE7978_REG_LAST_OP, &value_8bit);
+
+	if (ret < 0) {
+		return ret;
+	} else if (value_8bit != ADE7978_LAST_OP_READ_VAL) {
+		LOG_ERR("ADE7978 SPI comm check failed: LAST_OP=0x%02X, expected 0x%02X",
+			value_8bit, ADE7978_LAST_OP_READ_VAL);
+		return -EIO;
+	}
+
+	ret = ade7978_write_reg16(dev, ADE7978_REG_RUN, 0x01);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
 static int ade7978_init(const struct device *dev)
 {
 	const struct ade7978_config *cfg = dev->config;
-	uint8_t version;
 	int ret;
 
 	if (!spi_is_ready_dt(&cfg->spi)) {
@@ -171,17 +229,9 @@ static int ade7978_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = ade7978_read_reg8(dev, ADE7978_REG_VERSION, &version);
-	if (ret < 0) {
-		LOG_ERR("Failed to read VERSION register");
-		return ret;
-	}
+	ret = ade7978_probe(dev);
 
-	LOG_INF("ADE7978 version: 0x%02X", version);
-
-	ret = ade7978_write_reg16(dev, ADE7978_REG_RUN, 0x01);
 	if (ret < 0) {
-		LOG_ERR("Failed to start DSP");
 		return ret;
 	}
 
@@ -258,7 +308,8 @@ static DEVICE_API(sensor, ade7978_api) = {
                                                                                                    \
 	static const struct ade7978_config ade7978_config_##inst = {                               \
 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |          \
-							  SPI_WORD_SET(8))};                       \
+							  SPI_WORD_SET(8) | SPI_MODE_CPOL |        \
+							  SPI_MODE_CPHA)};                         \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, ade7978_init, NULL, &ade7978_data_##inst,               \
 				     &ade7978_config_##inst, POST_KERNEL,                          \
