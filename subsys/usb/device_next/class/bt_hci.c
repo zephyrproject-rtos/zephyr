@@ -439,6 +439,11 @@ static int bt_hci_ctd(struct usbd_class_data *const c_data,
 		return 0;
 	}
 
+	if (setup->wLength && (buf == NULL)) {
+		/* Data OUT can be received */
+		return 0;
+	}
+
 	LOG_DBG("bmRequestType 0x%02x bRequest 0x%02x",
 		setup->bmRequestType, setup->bRequest);
 
