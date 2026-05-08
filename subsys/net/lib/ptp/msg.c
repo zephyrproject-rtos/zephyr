@@ -261,7 +261,7 @@ enum ptp_msg_type ptp_msg_type(const struct ptp_msg *msg)
 	return (enum ptp_msg_type)(msg->header.type_major_sdo_id & 0xF);
 }
 
-#if defined(CONFIG_PTP_UDP_IPv4_PROTOCOL) || defined(CONFIG_PTP_UDP_IPv6_PROTOCOL)
+#if defined(CONFIG_PTP_UDP_IPV4_PROTOCOL) || defined(CONFIG_PTP_UDP_IPV6_PROTOCOL)
 static struct ptp_msg *msg_from_udp_pkt(struct net_pkt *pkt)
 {
 	static const size_t eth_hdr_len = IS_ENABLED(CONFIG_NET_VLAN)
@@ -307,7 +307,7 @@ static struct ptp_msg *msg_from_udp_pkt(struct net_pkt *pkt)
 
 	return NULL;
 }
-#endif /* CONFIG_PTP_UDP_IPv4_PROTOCOL || CONFIG_PTP_UDP_IPv6_PROTOCOL */
+#endif /* CONFIG_PTP_UDP_IPV4_PROTOCOL || CONFIG_PTP_UDP_IPV6_PROTOCOL */
 
 #if defined(CONFIG_PTP_IEEE_802_3_PROTOCOL)
 static struct ptp_msg *msg_from_l2_pkt(struct net_pkt *pkt)
@@ -377,7 +377,7 @@ static struct ptp_msg *msg_from_l2_pkt(struct net_pkt *pkt)
 
 struct ptp_msg *ptp_msg_from_pkt(struct net_pkt *pkt)
 {
-#if defined(CONFIG_PTP_UDP_IPv4_PROTOCOL) || defined(CONFIG_PTP_UDP_IPv6_PROTOCOL)
+#if defined(CONFIG_PTP_UDP_IPV4_PROTOCOL) || defined(CONFIG_PTP_UDP_IPV6_PROTOCOL)
 	return msg_from_udp_pkt(pkt);
 #elif defined(CONFIG_PTP_IEEE_802_3_PROTOCOL)
 	return msg_from_l2_pkt(pkt);
