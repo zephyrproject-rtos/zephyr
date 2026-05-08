@@ -96,6 +96,26 @@
 			status = "okay";
 		};
 
+		ospi0: ospi@40268000 {
+			compatible = "renesas,ra-ospi-b";
+			reg = <0x40268000 0x19c>, <0x80000000 DT_SIZE_M(512)>;
+			unit = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&octaspiclk MSTPB 16>;
+			status = "disabled";
+		};
+
+		ospi1: ospi@40268400 {
+			compatible = "renesas,ra-ospi-b";
+			reg = <0x40268400 0x19c>, <0x70000000 DT_SIZE_M(256)>;
+			unit = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&octaspiclk MSTPB 17>;
+			status = "disabled";
+		};
+
 		trng: trng {
 			compatible = "renesas,ra-rsip-e50d-trng";
 			status = "disabled";
