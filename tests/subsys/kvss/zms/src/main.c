@@ -1847,3 +1847,928 @@ ZTEST_F(zms, test_zms_read_evil_ate)
 	len = zms_read(&fixture->fs, 3, buffer, sizeof(buffer));
 	zassert_equal(len, -ENOENT, "zms_read(id=3) should return -ENOENT, got %zd", len);
 }
+
+ZTEST_F(zms, test_zms_iter_empty_partition)
+{
+	int err;
+	struct zms_iter iter;
+	zms_id_t id;
+	size_t len;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Initialize iterator on empty partition */
+	err = zms_iter_init(&fixture->fs, &iter);
+	zassert_equal(err, 0, "zms_iter_init failed: %d", err);
+
+	/* Should immediately return 0 (no entries) */
+	err = zms_iter_next(&fixture->fs, &iter, &id, &len, NULL, 0);
+	zassert_equal(err, 0, "zms_iter_next should return 0 on empty partition: %d", err);
+}
+
+ZTEST_F(zms, test_zms_iter_single_entry)
+{
+	int err;
+	struct zms_iter iter;
+	zms_id_t id;
+	size_t len;
+	uint32_t test_data = 0xDEADBEEFU;
+	ssize_t written;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Write a single entry */
+	written = zms_write(&fixture->fs, 100, &test_data, sizeof(test_data));
+	zassert_equal(written, sizeof(test_data), "zms_write failed: %zd", written);
+
+	/* Initialize iterator */
+	err = zms_iter_init(&fixture->fs, &iter);
+	zassert_equal(err, 0, "zms_iter_init failed: %d", err);
+
+	/* Should find the entry */
+	err = zms_iter_next(&fixture->fs, &iter, &id, &len, NULL, 0);
+	zassert_equal(err, 1, "zms_iter_next should find entry: %d", err);
+	zassert_equal(id, 100, "ID mismatch: got %llu", (unsigned long long)id);
+	zassert_equal(len, sizeof(test_data), "len mismatch: got %zu", len);
+
+	/* Second call should return 0 (no more entries) */
+	err = zms_iter_next(&fixture->fs, &iter, &id, &len, NULL, 0);
+	zassert_equal(err, 0, "zms_iter_next should return 0 after last entry: %d", err);
+}
+
+ZTEST_F(zms, test_zms_iter_multiple_entries)
+{
+	int err;
+	struct zms_iter iter;
+	zms_id_t id;
+	size_t len;
+	uint32_t data1 = 0x11111111;
+	uint32_t data2 = 0x22222222;
+	uint32_t data3 = 0x33333333;
+	int found_count = 0;
+	int found_ids[3] = {0};
+	ssize_t written;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Write three distinct entries */
+	written = zms_write(&fixture->fs, 200, &data1, sizeof(data1));
+	zassert_equal(written, sizeof(data1), "zms_write ID 200 failed: %zd", written);
+
+	written = zms_write(&fixture->fs, 201, &data2, sizeof(data2));
+	zassert_equal(written, sizeof(data2), "zms_write ID 201 failed: %zd", written);
+
+	written = zms_write(&fixture->fs, 202, &data3, sizeof(data3));
+	zassert_equal(written, sizeof(data3), "zms_write ID 202 failed: %zd", written);
+
+	/* Initialize iterator */
+	err = zms_iter_init(&fixture->fs, &iter);
+	zassert_equal(err, 0, "zms_iter_init failed: %d", err);
+
+	/* Collect all entries */
+	while (1) {
+		err = zms_iter_next(&fixture->fs, &iter, &id, &len, NULL, 0);
+		if (err == 0) {
+			break;
+		}
+		zassert_equal(err, 1, "zms_iter_next returned error: %d", err);
+		zassert_equal(len, sizeof(uint32_t), "len mismatch for ID %llu: got %zu",
+			      (unsigned long long)id, len);
+
+		found_ids[found_count] = id;
+		found_count++;
+		zassert_true(found_count <= 3, "Found more than 3 entries");
+	}
+
+	/* Verify all three entries were found */
+	zassert_equal(found_count, 3, "Expected 3 entries, found: %d", found_count);
+
+	/* Verify all IDs were found (order may vary due to reverse walk) */
+	bool found_200 = false, found_201 = false, found_202 = false;
+
+	for (int i = 0; i < found_count; i++) {
+		if (found_ids[i] == 200) {
+			found_200 = true;
+		}
+		if (found_ids[i] == 201) {
+			found_201 = true;
+		}
+		if (found_ids[i] == 202) {
+			found_202 = true;
+		}
+	}
+	zassert_true(found_200, "ID 200 not found");
+	zassert_true(found_201, "ID 201 not found");
+	zassert_true(found_202, "ID 202 not found");
+}
+
+static bool iter_predicate_id_ge_0x20(zms_id_t id)
+{
+	return id >= (zms_id_t)0x20;
+}
+
+ZTEST_F(zms, test_zms_iter_id_mask)
+{
+	int err;
+	struct zms_iter iter;
+	struct zms_iter_config config = {
+		.mask_id = (zms_id_t)0xFF,
+		.use_mask = true,
+	};
+	zms_id_t id;
+	size_t len;
+	uint32_t data1 = 0x11111111;
+	uint32_t data2 = 0x22222222;
+	uint32_t data3 = 0x33333333;
+	int found_count = 0;
+	bool found_id_05 = false;
+	bool found_id_a0 = false;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	zassert_equal(zms_write(&fixture->fs, (zms_id_t)0x05, &data1, sizeof(data1)),
+		      sizeof(data1), "zms_write ID 0x05 failed");
+	zassert_equal(zms_write(&fixture->fs, (zms_id_t)0xA0, &data2, sizeof(data2)),
+		      sizeof(data2), "zms_write ID 0xA0 failed");
+	zassert_equal(zms_write(&fixture->fs, (zms_id_t)0x1A0, &data3, sizeof(data3)),
+		      sizeof(data3), "zms_write ID 0x1A0 failed");
+
+	err = zms_iter_init_with_config(&fixture->fs, &iter, &config);
+	zassert_equal(err, 0, "zms_iter_init_with_config failed: %d", err);
+
+	while ((err = zms_iter_next(&fixture->fs, &iter, &id, &len, NULL, 0)) == 1) {
+		zassert_equal(len, sizeof(uint32_t), "len mismatch: %zu", len);
+		found_count++;
+
+		if (id == (zms_id_t)0x05) {
+			found_id_05 = true;
+		} else if (id == (zms_id_t)0xA0) {
+			found_id_a0 = true;
+		} else {
+			zassert_unreachable("Unexpected ID returned by masked iterator");
+		}
+	}
+
+	zassert_equal(err, 0, "zms_iter_next returned unexpected error: %d", err);
+	zassert_equal(found_count, 2, "Expected 2 entries with mask, found: %d", found_count);
+	zassert_true(found_id_05, "ID 0x05 not found with mask");
+	zassert_true(found_id_a0, "ID 0xA0 not found with mask");
+}
+
+ZTEST_F(zms, test_zms_iter_config_default_filters)
+{
+	int err;
+	struct zms_iter iter;
+	struct zms_iter_config config = {0};
+	zms_id_t id;
+	size_t len;
+	uint32_t data = 0xA5A5A5A5U;
+	int found_count = 0;
+	bool found_id_0 = false;
+	bool found_id_ff = false;
+	bool found_id_100 = false;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	zassert_equal(zms_write(&fixture->fs, (zms_id_t)0x00, &data, sizeof(data)),
+		      sizeof(data), "zms_write ID 0x00 failed");
+	zassert_equal(zms_write(&fixture->fs, (zms_id_t)0xFF, &data, sizeof(data)),
+		      sizeof(data), "zms_write ID 0xFF failed");
+	zassert_equal(zms_write(&fixture->fs, (zms_id_t)0x100, &data, sizeof(data)),
+		      sizeof(data), "zms_write ID 0x100 failed");
+
+	err = zms_iter_init_with_config(&fixture->fs, &iter, &config);
+	zassert_equal(err, 0, "zms_iter_init_with_config failed: %d", err);
+
+	while ((err = zms_iter_next(&fixture->fs, &iter, &id, &len, NULL, 0)) == 1) {
+		zassert_equal(len, sizeof(uint32_t), "len mismatch: %zu", len);
+		found_count++;
+
+		if (id == (zms_id_t)0x00) {
+			found_id_0 = true;
+		} else if (id == (zms_id_t)0xFF) {
+			found_id_ff = true;
+		} else if (id == (zms_id_t)0x100) {
+			found_id_100 = true;
+		} else {
+			zassert_unreachable("Unexpected ID returned by default config iterator");
+		}
+	}
+
+	zassert_equal(err, 0, "zms_iter_next returned unexpected error: %d", err);
+	zassert_equal(found_count, 3, "Expected 3 entries with default config, found: %d",
+		      found_count);
+	zassert_true(found_id_0, "ID 0x00 not found with default config");
+	zassert_true(found_id_ff, "ID 0xFF not found with default config");
+	zassert_true(found_id_100, "ID 0x100 not found with default config");
+}
+
+ZTEST_F(zms, test_zms_iter_id_range)
+{
+	int err;
+	struct zms_iter iter;
+	struct zms_iter_config config = {
+		.min_id = (zms_id_t)0x20,
+		.max_id = (zms_id_t)0xA0,
+		.use_range = true,
+	};
+	zms_id_t id;
+	size_t len;
+	uint32_t data = 0x11111111;
+	int found_count = 0;
+	bool found_id_20 = false;
+	bool found_id_a0 = false;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	zassert_equal(zms_write(&fixture->fs, (zms_id_t)0x05, &data, sizeof(data)),
+		      sizeof(data), "zms_write ID 0x05 failed");
+	zassert_equal(zms_write(&fixture->fs, (zms_id_t)0x20, &data, sizeof(data)),
+		      sizeof(data), "zms_write ID 0x20 failed");
+	zassert_equal(zms_write(&fixture->fs, (zms_id_t)0xA0, &data, sizeof(data)),
+		      sizeof(data), "zms_write ID 0xA0 failed");
+	zassert_equal(zms_write(&fixture->fs, (zms_id_t)0xA1, &data, sizeof(data)),
+		      sizeof(data), "zms_write ID 0xA1 failed");
+
+	err = zms_iter_init_with_config(&fixture->fs, &iter, &config);
+	zassert_equal(err, 0, "zms_iter_init_with_config failed: %d", err);
+
+	while ((err = zms_iter_next(&fixture->fs, &iter, &id, &len, NULL, 0)) == 1) {
+		zassert_equal(len, sizeof(uint32_t), "len mismatch: %zu", len);
+		found_count++;
+
+		if (id == (zms_id_t)0x20) {
+			found_id_20 = true;
+		} else if (id == (zms_id_t)0xA0) {
+			found_id_a0 = true;
+		} else {
+			zassert_unreachable("Unexpected ID returned by range iterator");
+		}
+	}
+
+	zassert_equal(err, 0, "zms_iter_next returned unexpected error: %d", err);
+	zassert_equal(found_count, 2, "Expected 2 entries in range, found: %d", found_count);
+	zassert_true(found_id_20, "ID 0x20 not found in range");
+	zassert_true(found_id_a0, "ID 0xA0 not found in range");
+}
+
+ZTEST_F(zms, test_zms_iter_predicate)
+{
+	int err;
+	struct zms_iter iter;
+	struct zms_iter_config config = {
+		.use_predicate = true,
+		.predicate_func = iter_predicate_id_ge_0x20,
+	};
+	zms_id_t id;
+	size_t len;
+	uint32_t data = 0x11111111;
+	int found_count = 0;
+	bool found_id_20 = false;
+	bool found_id_a0 = false;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	zassert_equal(zms_write(&fixture->fs, (zms_id_t)0x05, &data, sizeof(data)),
+		      sizeof(data), "zms_write ID 0x05 failed");
+	zassert_equal(zms_write(&fixture->fs, (zms_id_t)0x20, &data, sizeof(data)),
+		      sizeof(data), "zms_write ID 0x20 failed");
+	zassert_equal(zms_write(&fixture->fs, (zms_id_t)0xA0, &data, sizeof(data)),
+		      sizeof(data), "zms_write ID 0xA0 failed");
+
+	err = zms_iter_init_with_config(&fixture->fs, &iter, &config);
+	zassert_equal(err, 0, "zms_iter_init_with_config failed: %d", err);
+
+	while ((err = zms_iter_next(&fixture->fs, &iter, &id, &len, NULL, 0)) == 1) {
+		zassert_equal(len, sizeof(uint32_t), "len mismatch: %zu", len);
+		found_count++;
+
+		if (id == (zms_id_t)0x20) {
+			found_id_20 = true;
+		} else if (id == (zms_id_t)0xA0) {
+			found_id_a0 = true;
+		} else {
+			zassert_unreachable("Unexpected ID returned by predicate iterator");
+		}
+	}
+
+	zassert_equal(err, 0, "zms_iter_next returned unexpected error: %d", err);
+	zassert_equal(found_count, 2, "Expected 2 entries from predicate, found: %d", found_count);
+	zassert_true(found_id_20, "ID 0x20 not found with predicate");
+	zassert_true(found_id_a0, "ID 0xA0 not found with predicate");
+}
+
+ZTEST_F(zms, test_zms_iter_update_only_latest)
+{
+	int err;
+	struct zms_iter iter;
+	zms_id_t id;
+	size_t len;
+	uint32_t data_v1 = 0x11111111;
+	uint32_t data_v2 = 0x22222222;
+	ssize_t written;
+	uint32_t read_data;
+	ssize_t read_len;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Write same ID twice with different data */
+	written = zms_write(&fixture->fs, 300, &data_v1, sizeof(data_v1));
+	zassert_equal(written, sizeof(data_v1), "zms_write v1 failed: %zd", written);
+
+	written = zms_write(&fixture->fs, 300, &data_v2, sizeof(data_v2));
+	zassert_equal(written, sizeof(data_v2), "zms_write v2 failed: %zd", written);
+
+	/* Initialize iterator */
+	err = zms_iter_init(&fixture->fs, &iter);
+	zassert_equal(err, 0, "zms_iter_init failed: %d", err);
+
+	/* Should find ID 300 exactly once (the latest version) */
+	err = zms_iter_next(&fixture->fs, &iter, &id, &len, NULL, 0);
+	zassert_equal(err, 1, "zms_iter_next should find entry: %d", err);
+	zassert_equal(id, 300, "ID mismatch: got %llu", (unsigned long long)id);
+	zassert_equal(len, sizeof(data_v2), "len mismatch: got %zu", len);
+
+	/* Verify it's the latest data by reading it back */
+	read_len = zms_read(&fixture->fs, 300, &read_data, sizeof(read_data));
+	zassert_equal(read_len, sizeof(read_data), "zms_read failed: %zd", read_len);
+	zassert_equal(read_data, data_v2, "Should read latest version: got 0x%x", read_data);
+
+	/* Second iter_next should return 0 (only one unique ID) */
+	err = zms_iter_next(&fixture->fs, &iter, &id, &len, NULL, 0);
+	zassert_equal(err, 0, "zms_iter_next should return 0 after last entry: %d", err);
+}
+
+ZTEST_F(zms, test_zms_iter_deleted_entries)
+{
+	int err;
+	struct zms_iter iter;
+	zms_id_t id;
+	size_t len;
+	uint32_t data1 = 0x11111111;
+	uint32_t data2 = 0x22222222;
+	int found_count = 0;
+	ssize_t written;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Write two entries, then delete one */
+	written = zms_write(&fixture->fs, 400, &data1, sizeof(data1));
+	zassert_equal(written, sizeof(data1), "zms_write ID 400 failed: %zd", written);
+
+	written = zms_write(&fixture->fs, 401, &data2, sizeof(data2));
+	zassert_equal(written, sizeof(data2), "zms_write ID 401 failed: %zd", written);
+
+	/* Delete ID 400 */
+	err = zms_delete(&fixture->fs, 400);
+	zassert_equal(err, 0, "zms_delete failed: %d", err);
+
+	/* Initialize iterator */
+	err = zms_iter_init(&fixture->fs, &iter);
+	zassert_equal(err, 0, "zms_iter_init failed: %d", err);
+
+	/* Iterator should only find ID 401 (ID 400 is deleted) */
+	err = zms_iter_next(&fixture->fs, &iter, &id, &len, NULL, 0);
+	zassert_equal(err, 1, "zms_iter_next should find entry: %d", err);
+	zassert_equal(id, 401, "Expected ID 401, got %llu", (unsigned long long)id);
+	found_count++;
+
+	/* Second call should return 0 */
+	err = zms_iter_next(&fixture->fs, &iter, &id, &len, NULL, 0);
+	zassert_equal(err, 0, "zms_iter_next should return 0: %d", err);
+
+	zassert_equal(found_count, 1, "Should only find 1 entry (ID 400 is deleted)");
+}
+
+ZTEST_F(zms, test_zms_iter_invalid_params)
+{
+	int err;
+	struct zms_iter iter;
+	zms_id_t id;
+	size_t len;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Test with NULL fs */
+	err = zms_iter_init(NULL, &iter);
+	zassert_equal(err, -EINVAL, "zms_iter_init should return -EINVAL for NULL fs");
+
+	/* Test with NULL iter */
+	err = zms_iter_init(&fixture->fs, NULL);
+	zassert_equal(err, -EINVAL, "zms_iter_init should return -EINVAL for NULL iter");
+
+	/* Test zms_iter_init_with_config with NULL fs */
+	{
+		struct zms_iter_config config = {
+			.mask_id = (zms_id_t)0xFF,
+			.use_mask = true,
+		};
+
+		err = zms_iter_init_with_config(NULL, &iter, &config);
+	}
+	zassert_equal(err, -EINVAL,
+		      "zms_iter_init_with_config should return -EINVAL for NULL fs");
+
+	/* Test zms_iter_init_with_config with NULL iter */
+	{
+		struct zms_iter_config config = {
+			.mask_id = (zms_id_t)0xFF,
+			.use_mask = true,
+		};
+
+		err = zms_iter_init_with_config(&fixture->fs, NULL, &config);
+	}
+	zassert_equal(err, -EINVAL,
+		      "zms_iter_init_with_config should return -EINVAL for NULL iter");
+
+	/* Test zms_iter_init_with_config with NULL config */
+	err = zms_iter_init_with_config(&fixture->fs, &iter, NULL);
+	zassert_equal(err, -EINVAL,
+		      "zms_iter_init_with_config should return -EINVAL for NULL config");
+
+	/* Test zms_iter_init_with_config with invalid range */
+	{
+		struct zms_iter_config config = {
+			.min_id = (zms_id_t)10,
+			.max_id = (zms_id_t)5,
+			.use_range = true,
+		};
+
+		err = zms_iter_init_with_config(&fixture->fs, &iter, &config);
+	}
+	zassert_equal(err, -EINVAL,
+		      "zms_iter_init_with_config should return -EINVAL for invalid range");
+
+	/* Test zms_iter_init_with_config with missing predicate function */
+	{
+		struct zms_iter_config config = {
+			.use_predicate = true,
+			.predicate_func = NULL,
+		};
+
+		err = zms_iter_init_with_config(&fixture->fs, &iter, &config);
+	}
+	zassert_equal(err, -EINVAL,
+		      "zms_iter_init_with_config should return -EINVAL for missing predicate");
+
+	/* Test iter_next with NULL fs */
+	zms_iter_init(&fixture->fs, &iter);
+	err = zms_iter_next(NULL, &iter, &id, &len, NULL, 0);
+	zassert_equal(err, -EINVAL, "zms_iter_next should return -EINVAL for NULL fs");
+
+	/* Test iter_next with NULL iter */
+	err = zms_iter_next(&fixture->fs, NULL, &id, &len, NULL, 0);
+	zassert_equal(err, -EINVAL, "zms_iter_next should return -EINVAL for NULL iter");
+
+	/* Test iter_next with NULL id */
+	zms_iter_init(&fixture->fs, &iter);
+	err = zms_iter_next(&fixture->fs, &iter, NULL, &len, NULL, 0);
+	zassert_equal(err, -EINVAL, "zms_iter_next should return -EINVAL for NULL id");
+
+	/* Test iter_next with NULL len */
+	zms_iter_init(&fixture->fs, &iter);
+	err = zms_iter_next(&fixture->fs, &iter, &id, NULL, NULL, 0);
+	zassert_equal(err, -EINVAL, "zms_iter_next should return -EINVAL for NULL len");
+}
+
+ZTEST_F(zms, test_zms_iter_next_all_empty_partition)
+{
+	int err;
+	struct zms_iter iter;
+	zms_id_t id;
+	size_t len;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	err = zms_iter_init(&fixture->fs, &iter);
+	zassert_equal(err, 0, "zms_iter_init failed: %d", err);
+
+	/* Should immediately return 0 (no ATEs) */
+	err = zms_iter_next_all(&fixture->fs, &iter, &id, &len, NULL, 0);
+	zassert_equal(err, 0, "zms_iter_next_all should return 0 on empty partition: %d", err);
+}
+
+ZTEST_F(zms, test_zms_iter_next_all_includes_history)
+{
+	int err;
+	struct zms_iter iter;
+	zms_id_t id;
+	size_t len;
+	uint32_t data_v1 = 0x11111111;
+	uint32_t data_v2 = 0x22222222;
+	uint32_t data_v3 = 0x33333333;
+	int count = 0;
+	ssize_t written;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Write same ID three times (creates 3 ATEs for same ID) */
+	written = zms_write(&fixture->fs, 500, &data_v1, sizeof(data_v1));
+	zassert_equal(written, sizeof(data_v1), "zms_write v1 failed: %zd", written);
+
+	written = zms_write(&fixture->fs, 500, &data_v2, sizeof(data_v2));
+	zassert_equal(written, sizeof(data_v2), "zms_write v2 failed: %zd", written);
+
+	written = zms_write(&fixture->fs, 500, &data_v3, sizeof(data_v3));
+	zassert_equal(written, sizeof(data_v3), "zms_write v3 failed: %zd", written);
+
+	/* zms_iter_next should find ID 500 exactly once (latest only) */
+	err = zms_iter_init(&fixture->fs, &iter);
+	zassert_equal(err, 0, "zms_iter_init failed: %d", err);
+
+	while ((err = zms_iter_next(&fixture->fs, &iter, &id, &len, NULL, 0)) == 1) {
+		count++;
+	}
+	zassert_equal(err, 0, "zms_iter_next returned error: %d", err);
+	zassert_equal(count, 1, "zms_iter_next should return 1 unique entry, got %d", count);
+
+	/* zms_iter_next_all should find all 3 historical ATEs */
+	count = 0;
+	err = zms_iter_init(&fixture->fs, &iter);
+	zassert_equal(err, 0, "zms_iter_init failed: %d", err);
+
+	while ((err = zms_iter_next_all(&fixture->fs, &iter, &id, &len, NULL, 0)) == 1) {
+		zassert_equal(id, 500, "expected ID 500, got %llu", (unsigned long long)id);
+		zassert_equal(len, sizeof(uint32_t), "unexpected len: %zu", len);
+		count++;
+	}
+	zassert_equal(err, 0, "zms_iter_next_all returned error: %d", err);
+	zassert_equal(count, 3, "zms_iter_next_all should return all 3 revisions, got %d", count);
+}
+
+ZTEST_F(zms, test_zms_iter_next_all_includes_deleted)
+{
+	int err;
+	struct zms_iter iter;
+	zms_id_t id;
+	size_t len;
+	uint32_t data1 = 0x11111111;
+	uint32_t data2 = 0x22222222;
+	int count_all = 0;
+	int count_unique = 0;
+	int deleted_count = 0;
+	ssize_t written;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Write two entries */
+	written = zms_write(&fixture->fs, 600, &data1, sizeof(data1));
+	zassert_equal(written, sizeof(data1), "zms_write ID 600 failed: %zd", written);
+
+	written = zms_write(&fixture->fs, 601, &data2, sizeof(data2));
+	zassert_equal(written, sizeof(data2), "zms_write ID 601 failed: %zd", written);
+
+	/* Delete ID 600 (writes a delete ATE with len==0) */
+	err = zms_delete(&fixture->fs, 600);
+	zassert_equal(err, 0, "zms_delete failed: %d", err);
+
+	/* zms_iter_next should only return ID 601 */
+	err = zms_iter_init(&fixture->fs, &iter);
+	zassert_equal(err, 0, "zms_iter_init failed: %d", err);
+
+	while ((err = zms_iter_next(&fixture->fs, &iter, &id, &len, NULL, 0)) == 1) {
+		count_unique++;
+		zassert_equal(id, 601, "zms_iter_next returned deleted ID %llu",
+			      (unsigned long long)id);
+	}
+	zassert_equal(err, 0, "zms_iter_next returned error: %d", err);
+	zassert_equal(count_unique, 1, "expected 1 live entry, got %d", count_unique);
+
+	/* zms_iter_next_all should return the delete marker (len==0) for ID 600 as well */
+	err = zms_iter_init(&fixture->fs, &iter);
+	zassert_equal(err, 0, "zms_iter_init failed: %d", err);
+
+	while ((err = zms_iter_next_all(&fixture->fs, &iter, &id, &len, NULL, 0)) == 1) {
+		count_all++;
+		if (len == 0U) {
+			/* This is the delete marker */
+			deleted_count++;
+			zassert_equal(id, 600, "unexpected delete marker for ID %llu",
+				      (unsigned long long)id);
+		}
+	}
+	zassert_equal(err, 0, "zms_iter_next_all returned error: %d", err);
+
+	/* We expect at least: data ATE for 600, delete ATE for 600, data ATE for 601 */
+	zassert_true(count_all >= 3, "expected at least 3 ATEs from _all, got %d", count_all);
+	zassert_equal(deleted_count, 1, "expected 1 delete marker, got %d", deleted_count);
+}
+
+ZTEST_F(zms, test_zms_iter_next_all_mask)
+{
+	int err;
+	struct zms_iter iter;
+	struct zms_iter_config config = {
+		.mask_id = (zms_id_t)0x0F,
+		.use_mask = true,
+	};
+	zms_id_t id;
+	size_t len;
+	uint32_t data_v1 = 0xDEADBEEFU;
+	uint32_t data_v2 = 0xCAFEBABEU;
+	uint32_t data = 0x12345678;
+	int count = 0;
+	ssize_t written;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Write three entries: two match mask 0x0F, one does not */
+	written = zms_write(&fixture->fs, (zms_id_t)0x01, &data_v1, sizeof(data_v1));
+	zassert_equal(written, sizeof(data_v1), "zms_write ID 0x01 failed: %zd", written);
+
+	written = zms_write(&fixture->fs, (zms_id_t)0x03, &data, sizeof(data));
+	zassert_equal(written, sizeof(data), "zms_write ID 0x03 failed: %zd", written);
+
+	written = zms_write(&fixture->fs, (zms_id_t)0x10, &data, sizeof(data));
+	zassert_equal(written, sizeof(data), "zms_write ID 0x10 failed: %zd", written);
+
+	/* Update 0x01 with different data so there are 2 ATEs for it */
+	written = zms_write(&fixture->fs, (zms_id_t)0x01, &data_v2, sizeof(data_v2));
+	zassert_equal(written, sizeof(data_v2), "zms_write ID 0x01 update failed: %zd", written);
+
+	err = zms_iter_init_with_config(&fixture->fs, &iter, &config);
+	zassert_equal(err, 0, "zms_iter_init_with_config failed: %d", err);
+
+	while ((err = zms_iter_next_all(&fixture->fs, &iter, &id, &len, NULL, 0)) == 1) {
+		/* Only IDs whose bits are a subset of 0x0F should appear */
+		zassert_equal((id & (zms_id_t)0x0F), id,
+			      "ID 0x%llx does not match mask 0x0F", (unsigned long long)id);
+		count++;
+	}
+	zassert_equal(err, 0, "zms_iter_next_all returned error: %d", err);
+
+	/* Expect 3: two ATEs for ID 0x01 plus one for ID 0x03; ID 0x10 must be excluded */
+	zassert_equal(count, 3, "expected 3 ATEs with mask 0x0F, got %d", count);
+}
+
+ZTEST_F(zms, test_zms_iter_next_all_mask_and_range)
+{
+	int err;
+	struct zms_iter iter;
+	struct zms_iter_config config = {
+		.mask_id = (zms_id_t)0x0F,
+		.min_id = (zms_id_t)0x01,
+		.max_id = (zms_id_t)0x03,
+		.use_mask = true,
+		.use_range = true,
+	};
+	zms_id_t id;
+	size_t len;
+	uint32_t data = 0x12345678;
+	int count = 0;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	zassert_equal(zms_write(&fixture->fs, (zms_id_t)0x01, &data, sizeof(data)),
+		      sizeof(data), "zms_write ID 0x01 failed");
+	zassert_equal(zms_write(&fixture->fs, (zms_id_t)0x03, &data, sizeof(data)),
+		      sizeof(data), "zms_write ID 0x03 failed");
+	zassert_equal(zms_write(&fixture->fs, (zms_id_t)0x07, &data, sizeof(data)),
+		      sizeof(data), "zms_write ID 0x07 failed");
+	zassert_equal(zms_write(&fixture->fs, (zms_id_t)0x10, &data, sizeof(data)),
+		      sizeof(data), "zms_write ID 0x10 failed");
+
+	err = zms_iter_init_with_config(&fixture->fs, &iter, &config);
+	zassert_equal(err, 0, "zms_iter_init_with_config failed: %d", err);
+
+	while ((err = zms_iter_next_all(&fixture->fs, &iter, &id, &len, NULL, 0)) == 1) {
+		zassert_true(id >= (zms_id_t)0x01 && id <= (zms_id_t)0x03,
+			     "ID 0x%llx not within configured range", (unsigned long long)id);
+		zassert_equal((id & (zms_id_t)0x0F), id,
+		      "ID 0x%llx does not match mask 0x0F", (unsigned long long)id);
+		zassert_equal(len, sizeof(uint32_t), "unexpected len: %zu", len);
+		count++;
+	}
+	zassert_equal(err, 0, "zms_iter_next_all returned error: %d", err);
+	zassert_equal(count, 2, "expected 2 ATEs with mask+range, got %d", count);
+}
+
+ZTEST_F(zms, test_zms_iter_next_all_invalid_params)
+{
+	int err;
+	struct zms_iter iter;
+	zms_id_t id;
+	size_t len;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	zms_iter_init(&fixture->fs, &iter);
+
+	/* NULL fs */
+	err = zms_iter_next_all(NULL, &iter, &id, &len, NULL, 0);
+	zassert_equal(err, -EINVAL, "zms_iter_next_all should return -EINVAL for NULL fs");
+
+	/* NULL iter */
+	err = zms_iter_next_all(&fixture->fs, NULL, &id, &len, NULL, 0);
+	zassert_equal(err, -EINVAL, "zms_iter_next_all should return -EINVAL for NULL iter");
+
+	/* NULL id */
+	zms_iter_init(&fixture->fs, &iter);
+	err = zms_iter_next_all(&fixture->fs, &iter, NULL, &len, NULL, 0);
+	zassert_equal(err, -EINVAL, "zms_iter_next_all should return -EINVAL for NULL id");
+
+	/* NULL len */
+	zms_iter_init(&fixture->fs, &iter);
+	err = zms_iter_next_all(&fixture->fs, &iter, &id, NULL, NULL, 0);
+	zassert_equal(err, -EINVAL, "zms_iter_next_all should return -EINVAL for NULL len");
+}
+
+/* When the data fits inside the ATE and the caller provides a buffer, the
+ * iterator copies that data into it.
+ */
+ZTEST_F(zms, test_zms_iter_next_data_in_ate)
+{
+	int err;
+	struct zms_iter iter;
+	zms_id_t id;
+	size_t len;
+	uint8_t wr_data[ZMS_DATA_IN_ATE_SIZE];
+	uint8_t rd_data[ZMS_DATA_IN_ATE_SIZE];
+	ssize_t written;
+
+	for (size_t i = 0; i < sizeof(wr_data); i++) {
+		wr_data[i] = (uint8_t)(0xA0 + i);
+	}
+	memset(rd_data, 0, sizeof(rd_data));
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Data fits inside the ATE (len <= ZMS_DATA_IN_ATE_SIZE) */
+	written = zms_write(&fixture->fs, 700, wr_data, sizeof(wr_data));
+	zassert_equal(written, sizeof(wr_data), "zms_write failed: %zd", written);
+
+	err = zms_iter_init(&fixture->fs, &iter);
+	zassert_equal(err, 0, "zms_iter_init failed: %d", err);
+
+	/* Iterator returns the entry and copies the in-ATE data into the buffer */
+	err = zms_iter_next(&fixture->fs, &iter, &id, &len, rd_data, sizeof(rd_data));
+	zassert_equal(err, 1, "zms_iter_next should find entry: %d", err);
+	zassert_equal(id, 700, "ID mismatch: got %llu", (unsigned long long)id);
+	zassert_equal(len, sizeof(wr_data), "len mismatch: got %zu", len);
+	zassert_mem_equal(rd_data, wr_data, sizeof(wr_data),
+			  "iterator did not copy in-ATE data correctly");
+}
+
+/* Data that is too large to be stored inside the ATE is not copied by the
+ * iterator; the buffer is left untouched and the payload is fetched via
+ * zms_read().
+ */
+ZTEST_F(zms, test_zms_iter_next_data_larger_than_ate)
+{
+	int err;
+	struct zms_iter iter;
+	zms_id_t id;
+	size_t len;
+	uint8_t wr_data[ZMS_DATA_IN_ATE_SIZE + 16];
+	uint8_t rd_data[sizeof(wr_data)];
+	uint8_t sentinel[sizeof(wr_data)];
+	ssize_t ret;
+
+	for (size_t i = 0; i < sizeof(wr_data); i++) {
+		wr_data[i] = (uint8_t)(0x10 + i);
+	}
+	/* Prefill the iterator buffer with a sentinel to detect any writes */
+	memset(rd_data, 0xEE, sizeof(rd_data));
+	memset(sentinel, 0xEE, sizeof(sentinel));
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Data too large to be stored inside the ATE */
+	ret = zms_write(&fixture->fs, 701, wr_data, sizeof(wr_data));
+	zassert_equal(ret, sizeof(wr_data), "zms_write failed: %zd", ret);
+
+	err = zms_iter_init(&fixture->fs, &iter);
+	zassert_equal(err, 0, "zms_iter_init failed: %d", err);
+
+	err = zms_iter_next(&fixture->fs, &iter, &id, &len, rd_data, sizeof(rd_data));
+	zassert_equal(err, 1, "zms_iter_next should find entry: %d", err);
+	zassert_equal(id, 701, "ID mismatch: got %llu", (unsigned long long)id);
+	zassert_equal(len, sizeof(wr_data), "len mismatch: got %zu", len);
+
+	/* Buffer must be left untouched: data is not stored inside the ATE */
+	zassert_mem_equal(rd_data, sentinel, sizeof(rd_data),
+			  "iterator must not copy data that is not stored inside the ATE");
+
+	/* The payload can still be retrieved with zms_read() */
+	ret = zms_read(&fixture->fs, 701, rd_data, sizeof(rd_data));
+	zassert_equal(ret, sizeof(wr_data), "zms_read failed: %zd", ret);
+	zassert_mem_equal(rd_data, wr_data, sizeof(wr_data), "zms_read data mismatch");
+}
+
+/* A buffer smaller than the entry only receives data_len bytes; the iterator
+ * never writes past the caller-provided length.
+ */
+ZTEST_F(zms, test_zms_iter_next_data_truncated)
+{
+	int err;
+	struct zms_iter iter;
+	zms_id_t id;
+	size_t len;
+	uint8_t wr_data[ZMS_DATA_IN_ATE_SIZE];
+	uint8_t rd_data[ZMS_DATA_IN_ATE_SIZE];
+	const size_t small = 1;
+	ssize_t written;
+
+	for (size_t i = 0; i < sizeof(wr_data); i++) {
+		wr_data[i] = (uint8_t)(0x55 + i);
+	}
+	memset(rd_data, 0xEE, sizeof(rd_data));
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	written = zms_write(&fixture->fs, 702, wr_data, sizeof(wr_data));
+	zassert_equal(written, sizeof(wr_data), "zms_write failed: %zd", written);
+
+	err = zms_iter_init(&fixture->fs, &iter);
+	zassert_equal(err, 0, "zms_iter_init failed: %d", err);
+
+	/* Provide a buffer smaller than the entry: only 'small' bytes are copied */
+	err = zms_iter_next(&fixture->fs, &iter, &id, &len, rd_data, small);
+	zassert_equal(err, 1, "zms_iter_next should find entry: %d", err);
+	zassert_equal(len, sizeof(wr_data), "len should be full data length: got %zu", len);
+
+	/* Only the first 'small' bytes are copied; the rest keeps the sentinel */
+	zassert_mem_equal(rd_data, wr_data, small, "truncated copy mismatch");
+	for (size_t i = small; i < sizeof(rd_data); i++) {
+		zassert_equal(rd_data[i], 0xEE, "iterator wrote past data_len at index %zu", i);
+	}
+}
+
+/* zms_iter_next_all() copies in-ATE data for live entries but leaves the buffer
+ * untouched for delete markers (len == 0).
+ */
+ZTEST_F(zms, test_zms_iter_next_all_data_in_ate)
+{
+	int err;
+	struct zms_iter iter;
+	zms_id_t id;
+	size_t len;
+	uint8_t wr_data[ZMS_DATA_IN_ATE_SIZE];
+	uint8_t rd_data[ZMS_DATA_IN_ATE_SIZE];
+	uint8_t sentinel[ZMS_DATA_IN_ATE_SIZE];
+	ssize_t written;
+	bool saw_data = false;
+	bool saw_delete = false;
+
+	for (size_t i = 0; i < sizeof(wr_data); i++) {
+		wr_data[i] = (uint8_t)(0x33 + i);
+	}
+	memset(sentinel, 0xEE, sizeof(sentinel));
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Write a small entry then delete it: creates a data ATE + a delete marker */
+	written = zms_write(&fixture->fs, 800, wr_data, sizeof(wr_data));
+	zassert_equal(written, sizeof(wr_data), "zms_write failed: %zd", written);
+	err = zms_delete(&fixture->fs, 800);
+	zassert_equal(err, 0, "zms_delete failed: %d", err);
+
+	err = zms_iter_init(&fixture->fs, &iter);
+	zassert_equal(err, 0, "zms_iter_init failed: %d", err);
+
+	while (1) {
+		memset(rd_data, 0xEE, sizeof(rd_data));
+		err = zms_iter_next_all(&fixture->fs, &iter, &id, &len, rd_data, sizeof(rd_data));
+		if (err == 0) {
+			break;
+		}
+		zassert_equal(err, 1, "zms_iter_next_all returned error: %d", err);
+		zassert_equal(id, 800, "unexpected ID %llu", (unsigned long long)id);
+
+		if (len == 0) {
+			/* Delete marker: buffer must stay untouched */
+			saw_delete = true;
+			zassert_mem_equal(rd_data, sentinel, sizeof(rd_data),
+					  "buffer modified for delete marker");
+		} else {
+			/* Live in-ATE entry: data must be copied */
+			saw_data = true;
+			zassert_equal(len, sizeof(wr_data), "len mismatch: %zu", len);
+			zassert_mem_equal(rd_data, wr_data, sizeof(wr_data),
+					  "in-ATE data not copied by zms_iter_next_all");
+		}
+	}
+
+	zassert_true(saw_data, "did not encounter the live in-ATE entry");
+	zassert_true(saw_delete, "did not encounter the delete marker");
+}
