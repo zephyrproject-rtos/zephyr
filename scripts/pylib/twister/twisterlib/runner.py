@@ -2078,7 +2078,14 @@ class TwisterRunner:
                         expr_parser.reserved.keys()
                     )
 
-                if test_only and instance.run:
+                if not instance.testsuite.build:
+                    if instance.run:
+                        processing_queue.append({"op": "run", "test": instance})
+                    else:
+                        instance.status = TwisterStatus.NOTRUN
+                        instance.reason = "Nothing to build"
+                        processing_queue.append({"op": "report", "test": instance})
+                elif test_only and instance.run:
                     processing_queue.append({"op": "run", "test": instance})
                 elif instance.filter_stages and "full" not in instance.filter_stages:
                     processing_queue.append({"op": "filter", "test": instance})

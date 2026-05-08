@@ -612,7 +612,7 @@ class TestPlan:
                                     f"required_applications.platform in {suite.name}"
                                 )[0]
 
-                        suite.update_required_applications()
+                        suite.resolve_required_applications()
 
                         if suite.harness in ['ztest', 'test']:
                             if subcases is None:
@@ -952,7 +952,7 @@ class TestPlan:
                         ):
                             instance.add_filter("Not part of requested test plan", Filters.TESTPLAN)
 
-                if runnable and not instance.run:
+                if (runnable or not ts.build) and not instance.run:
                     instance.add_filter("Not runnable on device", Filters.CMD_LINE)
 
                 if (
@@ -1100,6 +1100,9 @@ class TestPlan:
                                 instance.add_filter("Snippet not supported", Filters.PLATFORM)
                                 break
 
+                if not ts.build:
+                    self._apply_no_self_build_filters(instance)
+
                 # handle quarantined tests
                 self.handle_quarantined_tests(instance, plat)
 
@@ -1241,6 +1244,17 @@ class TestPlan:
         build_list_duration = time.time() - build_list_start
         logger.info(f"Built testsuite list in {build_list_duration:.2f} seconds")
 
+    def _apply_no_self_build_filters(self, instance: TestInstance) -> None:
+        """Apply filters for testsuites with `build: false`."""
+        if instance.platform.type == "qemu":
+            logger.debug(f"{instance.testsuite.name}: `build: false` not supported on QEMU")
+            instance.add_filter("build: false - not supported on QEMU", Filters.TESTSUITE)
+        platform = instance.testsuite.required_applications[0].platform
+        if platform and platform != instance.platform.name:
+            logger.warning(f"{instance.testsuite.name}: with `build: false`, platform "
+                           "of the first required application must match instance platform.")
+            instance.add_filter("build: false - platform mismatch", Filters.TESTSUITE)
+
     def _should_instance_be_processed(self, instance: TestInstance) -> bool:
         """Check if instance will be added to processing queue by runner."""
         # Based on add_tasks_to_queue from runner.py,
@@ -1299,6 +1313,13 @@ class TestPlan:
                 continue
             if instance.status == TwisterStatus.FILTER:
                 # do not proceed if the test is already filtered
+                continue
+
+            if self.options.subset:
+                instance.add_filter(
+                    "Required applications are not supported with --subsets",
+                    Filters.CMD_LINE
+                )
                 continue
 
             if self.options.runtime_artifact_cleanup:
