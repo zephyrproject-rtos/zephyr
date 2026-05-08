@@ -17,8 +17,6 @@
 #define TEST_AREA_DEV_NODE	DT_INST(0, nordic_qspi_nor)
 #elif defined(SOC_SERIES_STM32N6X)
 #define TEST_AREA_DEV_NODE	DT_INST(0, st_stm32_xspi_nor)
-#elif defined(CONFIG_FLASH_RENESAS_RA_OSPI_B)
-#define TEST_AREA_DEV_NODE	DT_INST(0, renesas_ra_ospi_b_nor)
 #elif defined(CONFIG_SPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, jedec_spi_nor)
 #elif defined(CONFIG_FLASH_MSPI_NOR)
