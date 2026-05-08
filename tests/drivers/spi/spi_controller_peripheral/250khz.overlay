@@ -5,5 +5,5 @@
  */
 
 &dut_spi_dt {
-	spi-max-frequency = <100000>;
+	spi-max-frequency = <250000>;
 };

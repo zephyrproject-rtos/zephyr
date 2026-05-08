@@ -208,6 +208,10 @@ static void run_test(bool m_same_size, bool s_same_size, bool async)
 	int periph_rv;
 	int srx_len;
 
+	async_evt.signal->result = -1;
+	async_evt.signal->signaled = 0U;
+	async_evt.state = K_POLL_STATE_NOT_READY;
+
 	tdata.async = async;
 	rv = k_work_schedule(&tdata.test_work, K_MSEC(10));
 	zassert_equal(rv, 1);
@@ -233,10 +237,6 @@ static void run_test(bool m_same_size, bool s_same_size, bool async)
 		zassert_false(rv, "one or more events are not ready");
 
 		periph_rv = async_evt.signal->result;
-
-		/* Reinitializing for next call */
-		async_evt.signal->signaled = 0U;
-		async_evt.state = K_POLL_STATE_NOT_READY;
 	}
 
 	rv = k_sem_take(&tdata.sem, K_MSEC(100));
