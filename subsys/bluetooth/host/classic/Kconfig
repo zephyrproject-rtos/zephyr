@@ -682,8 +682,9 @@ config BT_GOEP_RFCOMM_MTU
 	# For GOEP over RFCOMM, including,
 	# 255 bytes - the minimum MTU of GOEP,
 	# 4 bytes - L2CAP Header,
-	# 5 bytes - 4 bytes for RFCOMM header with extended length, 1 byte for FCS.
-	range 264 BT_RFCOMM_L2CAP_MTU
+	# 6 bytes - 4 bytes for RFCOMM header with extended length, 1 byte for FCS, and 1 byte for
+	# credits.
+	range 265 BT_RFCOMM_L2CAP_MTU
 	help
 	  Maximum size of RFCOMM MTU for GOEP.
 	  RX MTU will be truncated to account for ACL data and type overhead, the L2CAP PDU header,
