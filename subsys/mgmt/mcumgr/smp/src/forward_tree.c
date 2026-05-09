@@ -90,6 +90,7 @@ int smp_ft_forward_downstream(struct smp_forward_tree *req_fwd, void *vreq)
 	if (port >= SMP_FORWARD_TREE_MAX_PORTS
 	||  port > ARRAY_SIZE(downstream_transport)) {
 		LOG_ERR("Invalid transport index [%d]", port);
+		smp_packet_free(vreq);
 		return MGMT_ERR_EINVAL;
 	}
 
@@ -100,6 +101,7 @@ int smp_ft_forward_downstream(struct smp_forward_tree *req_fwd, void *vreq)
 			LOG_DBG("transport[%d]: %s", i, downstream_transport[i].dev->name);
 		}
 
+		smp_packet_free(vreq);
 		return MGMT_ERR_EINVAL;
 	}
 
@@ -156,6 +158,7 @@ int smp_ft_process_request_packet(struct smp_streamer *streamer, void *vreq)
 	struct net_buf *req = vreq;
 	struct smp_transport *smpt;
 	int rc = 0;
+	bool consumed = false;
 
 	LOG_DBG("incomming forward request...");
 
@@ -209,6 +212,7 @@ int smp_ft_process_request_packet(struct smp_streamer *streamer, void *vreq)
 			if (req_fwd.hop > 0) {
 				LOG_ERR("forward downstream");
 				rc = smp_ft_forward_downstream(&req_fwd, vreq);
+				consumed = true;
 				break;
 			}
 
@@ -233,6 +237,12 @@ int smp_ft_process_request_packet(struct smp_streamer *streamer, void *vreq)
 		if (streamer->smpt->dev == upstream_transport.dev) {
 			LOG_DBG("local port: %s", streamer->smpt->dev->name);
 			rc = smp_process_request_packet(streamer, vreq);
+			/* smp_process_request_packet() consumes vreq only on
+			 * success; on error the buf is left to the caller.
+			 */
+			if (rc == 0) {
+				consumed = true;
+			}
 		} else {
 			smpt = smp_get_smpt(upstream_transport.dev);
 			if (smpt == NULL) {
@@ -243,12 +253,18 @@ int smp_ft_process_request_packet(struct smp_streamer *streamer, void *vreq)
 
 			LOG_DBG("forward upstream: %s", smpt->dev->name);
 			rc = smpt->functions.output(smpt->dev, vreq);
+			/* The transport's output() callback always consumes
+			 * the buf (success or failure).
+			 */
+			consumed = true;
 		}
 	} while (0);
 
 	LOG_DBG("finish forward request...");
 
-	smp_free_buf(req, streamer->smpt);
+	if (!consumed) {
+		smp_free_buf(req, streamer->smpt);
+	}
 
 	return rc;
 }
