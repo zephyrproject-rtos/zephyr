@@ -36,11 +36,16 @@ data buffer to empty.
 A ``struct ring_buf`` may be placed anywhere in user-accessible
 memory, and must be initialized with :c:func:`ring_buf_init` before use.
 This must be provided a region of user-controlled memory for use as the buffer itself.
-Note carefully that the units of the size of the buffer passed change (either bytes or words)
-depending on how the ring buffer will be used later. Macros for combining these steps in a
-single static declaration exist for convenience.
-:c:macro:`RING_BUF_DECLARE` will declare and statically initialize a ring
-buffer with a specified byte count, where
+The ``size`` argument to :c:func:`ring_buf_init` describes the backing storage
+size in bytes; the user-visible capacity is ``size - 1`` because one byte is
+reserved internally to disambiguate the empty and full states. The
+:c:macro:`RING_BUF_STORAGE_SIZE` helper computes the backing storage size
+required for a desired user-visible capacity.
+
+Macros for combining these steps in a single static declaration exist for
+convenience. :c:macro:`RING_BUF_DECLARE` will declare and statically
+initialize a ring buffer with a specified user-visible byte capacity (the
+extra byte for the reserved slot is allocated automatically).
 
 "Bytes" data may be copied into the ring buffer using
 :c:func:`ring_buf_put`, passing a data pointer and byte count.  These
@@ -140,9 +145,11 @@ case a second call after the matching :c:func:`ring_buf_commit` /
 the buffer.
 
 The ring buffer is implemented as a header-only library. Index wrap-around
-is handled with explicit comparisons (no ``%`` operator), and an internal
-``full`` flag disambiguates the empty and full states without sacrificing
-buffer capacity. This avoids hardware-divide latency on all targets.
+is handled with explicit comparisons (no ``%`` operator), and one slot of
+backing storage is reserved (the "sacrificed slot") to disambiguate the
+empty and full states without an additional flag. The user-visible
+capacity is therefore one less than the backing storage size. This avoids
+hardware-divide latency on all targets.
 
 
 Implementation
