@@ -325,20 +325,23 @@ int mfd_rv3032_update_status(const struct device *dev, uint8_t mask, uint8_t val
 
 	err = i2c_reg_read_byte_dt(&config->i2c, addr, &old_val);
 	if (err != 0) {
+		mfd_rv3032_unlock_sem(dev);
 		return err;
 	}
 
 	new_val = (old_val & ~mask) | (val & mask);
 	if (new_val == old_val) {
+		mfd_rv3032_unlock_sem(dev);
 		return 0;
 	}
 
 	err = i2c_reg_write_byte_dt(&config->i2c, addr, new_val);
 	if (err != 0) {
+		mfd_rv3032_unlock_sem(dev);
 		return err;
 	}
 
-	mfd_rv3032_lock_sem(dev);
+	mfd_rv3032_unlock_sem(dev);
 
 	if (new_val) {
 		LOG_DBG("Pending event!");
@@ -417,6 +420,10 @@ int mfd_rv3032_enter_eerd(const struct device *dev)
 	/* Disable refresh */
 	ret = mfd_rv3032_update_reg8(dev, RV3032_REG_CONTROL1, RV3032_CONTROL1_EERD,
 				     RV3032_CONTROL1_EERD);
+	if (ret) {
+		mfd_rv3032_unlock_eeprom_sem(dev);
+		return ret;
+	}
 
 	/* Clear EEPROM write fail flag */
 	ret = mfd_rv3032_update_reg8(dev, RV3032_REG_TEMPERATURE_LSB, RV3032_TEMPERATURE_EEF, 0);
