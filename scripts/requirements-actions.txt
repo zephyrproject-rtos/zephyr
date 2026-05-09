@@ -51,7 +51,7 @@ certifi==2026.4.22 \
     # via
     #   elastic-transport
     #   requests
-cffi==2.0.0 ; platform_python_implementation != 'PyPy' \
+cffi==2.0.0 \
     --hash=sha256:00bdf7acc5f795150faa6957054fbbca2439db2f775ce831222b66f192f03beb \
     --hash=sha256:07b271772c100085dd28b74fa0cd81c8fb1a3ba18b21e03d7c27f3436a10606b \
     --hash=sha256:087067fa8953339c723661eda6b54bc98c5625757ea62e95eb4898ad5e776e9f \
@@ -304,11 +304,7 @@ colorama==0.4.6 \
     --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
     # via
     #   awscli
-    #   click
-    #   pylint
-    #   pytest
     #   tox
-    #   tqdm
     #   west
 cryptography==46.0.7 \
     --hash=sha256:04959522f938493042d595a736e7dbdff6eb6cc2339c11465b3ff89343b65f65 \
@@ -407,9 +403,9 @@ gitlint-core==0.19.1 \
     --hash=sha256:7bf977b03ff581624a9e03f65ebb8502cc12dfaa3e92d23e8b2b54bbdaa29992 \
     --hash=sha256:f41effd1dcbc06ffbfc56b6888cce72241796f517b46bd9fd4ab1b145056988c
     # via -r requirements-actions.in
-gitpython==3.1.47 \
-    --hash=sha256:489f590edfd6d20571b2c0e72c6a6ac6915ee8b8cd04572330e3842207a78905 \
-    --hash=sha256:dba27f922bd2b42cb54c87a8ab3cb6beb6bf07f3d564e21ac848913a05a8a3cd
+gitpython==3.1.50 \
+    --hash=sha256:80da2d12504d52e1f998772dc5baf6e553f8d2fcfe1fcc226c9d9a2ee3372dcc \
+    --hash=sha256:d352abe2908d07355014abdd21ddf798c2a961469239afec4962e9da884858f9
     # via -r requirements-actions.in
 idna==3.12 \
     --hash=sha256:60ffaa1858fac94c9c124728c24fcde8160f3fb4a7f79aa8cdd33a9d1af60a67 \
@@ -550,7 +546,7 @@ junitparser==5.0.0 \
     --hash=sha256:9e279f2214dc74b6a86b22db757abda2e8e66e819fe882dad5b392d57024cd26 \
     --hash=sha256:f15e292877258d7c5755d672ce86f82c3622c7ea4c2f44f55de44ed7518484d3
     # via -r requirements-actions.in
-librt==0.9.0 ; platform_python_implementation != 'PyPy' \
+librt==0.9.0 \
     --hash=sha256:07cf11f769831186eeac424376e6189f20ace4f7263e2134bdb9757340d84d4d \
     --hash=sha256:0a09c2f5869649101738653a9b7ab70cf045a1105ac66cbb8f4055e61df78f2d \
     --hash=sha256:0a1be03168b2691ba61927e299b352a6315189199ca18a57b733f86cb3cc8d38 \
@@ -999,7 +995,7 @@ pyasn1==0.6.3 \
     --hash=sha256:697a8ecd6d98891189184ca1fa05d1bb00e2f84b5977c481452050549c8a72cf \
     --hash=sha256:a80184d120f0864a52a073acc6fc642847d0be408e7c7252f31390c0f4eadcde
     # via rsa
-pycparser==3.0 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy' \
+pycparser==3.0 \
     --hash=sha256:600f49d217304a5902ac3c37e1281c9fe94e4d0489de643a9504c5cdfdfc6b29 \
     --hash=sha256:b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992
     # via cffi
@@ -1017,7 +1013,7 @@ pygments==2.20.0 \
     # via
     #   gcovr
     #   pytest
-pyjwt==2.12.1 \
+pyjwt[crypto]==2.12.1 \
     --hash=sha256:28ca37c070cad8ba8cd9790cd940535d40274d22f80ab87f3ac6a713e6e8454c \
     --hash=sha256:c74a7a2adf861c04d002db713dd85f84beb242228e671280bf709d765b03672b
     # via pygithub
@@ -1100,17 +1096,12 @@ python-dotenv==1.2.2 \
     --hash=sha256:1d8214789a24de455a8b8bd8ae6fe3c6b69a5e3d64aa8a8e5d68e694bbcb285a \
     --hash=sha256:2c371a91fbd7ba082c2c1dc1f8bf89ca22564a087c2c287cd9b662adde799cf3
     # via -r requirements-actions.in
-python-magic==0.4.27 \
+python-magic==0.4.27 ; sys_platform != "win32" \
     --hash=sha256:c1ba14b08e4a5f5c31a302b7721239695b2f0f058d125bd5ce1ee36b9d9d3c3b \
     --hash=sha256:c212960ad306f700aa0d01e5d7a325d20548ff97eb9920dcd29513174f0294d3
     # via
     #   -r requirements-actions.in
     #   reuse
-python-magic-bin==0.4.14 ; sys_platform == 'win32' \
-    --hash=sha256:34a788c03adde7608028203e2dbb208f1f62225ad91518787ae26d603ae68892 \
-    --hash=sha256:7b1743b3dbf16601d6eedf4e7c2c9a637901b0faaf24ad4df4d4527e7d8f66a4 \
-    --hash=sha256:90be6206ad31071a36065a2fc169c5afb5e0355cbe6030e87641c6c62edc2b69
-    # via -r requirements-actions.in
 pyyaml==6.0.3 \
     --hash=sha256:00c4bdeba853cc34e7dd471f16b4114f4162dc03e6b7afcc2128711f0eca823c \
     --hash=sha256:0150219816b6a1fa26fb4699fb7daa9caf09eb1999f3b70fb6e786805e80375a \
@@ -1481,11 +1472,7 @@ semantic-version==2.10.0 \
     --hash=sha256:bdabb6d336998cbb378d4b9db3a4b56a1e3235701dc05ea2690d9a997ed5041c \
     --hash=sha256:de78a3b8e0feda74cabc54aab2da702113e33ac9d9eb9d2389bcf1f58b7d9177
     # via spdx-tools
-setuptools==82.0.1 \
-    --hash=sha256:7d872682c5d01cfde07da7bccc7b65469d3dca203318515ada1de5eda35efbf9 \
-    --hash=sha256:a59e362652f08dcd477c78bb6e7bd9d80a7995bc73ce773050228a348ce2e5bb
-    # via -r requirements-actions.in
-sh==2.2.2 ; sys_platform != 'win32' \
+sh==2.2.2 \
     --hash=sha256:653227a7c41a284ec5302173fbc044ee817c7bad5e6e4d8d55741b9aeb9eb65b \
     --hash=sha256:e0b15b4ae8ffcd399bc8ffddcbd770a43c7a70a24b16773fbb34c001ad5d52af
     # via gitlint-core
@@ -1532,11 +1519,9 @@ typing-extensions==4.15.0 \
     --hash=sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548
     # via
     #   elasticsearch
-    #   exceptiongroup
     #   mypy
     #   pygithub
     #   python-can
-    #   referencing
 tzdata==2026.1 \
     --hash=sha256:4b1d2be7ac37ceafd7327b961aa3a54e467efbdb563a23655fbfe0d39cfc42a9 \
     --hash=sha256:67658a1903c75917309e753fdc349ac0efd8c27db7a0cb406a25be4840f87f98
