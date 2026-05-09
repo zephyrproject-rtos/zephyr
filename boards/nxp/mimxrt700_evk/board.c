@@ -514,6 +514,11 @@ void board_early_init_hook(void)
 	POWER_DisablePD(kPDRUNCFG_PPD_XSPI2);
 	POWER_ApplyPD();
 #endif
+#ifdef CONFIG_NXP_NEUTRON
+	POWER_DisablePD(kPDRUNCFG_APD_NPU);
+	POWER_DisablePD(kPDRUNCFG_PPD_NPU);
+	POWER_ApplyPD();
+#endif
 }
 
 static void GlikeyWriteEnable(GLIKEY_Type *base, uint8_t idx)
