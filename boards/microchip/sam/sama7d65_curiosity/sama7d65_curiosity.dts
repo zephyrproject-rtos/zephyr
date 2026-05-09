@@ -17,6 +17,7 @@
 
 	chosen {
 		zephyr,sram = &ddram;
+		zephyr,canbus = &mcan1;
 		zephyr,console = &uart6;
 		zephyr,shell-uart = &uart6;
 	};
@@ -74,7 +75,49 @@
 	};
 };
 
+&mcan1 {
+	status = "okay";
+	pinctrl-0 = <&pinctrl_can1_default>;
+	pinctrl-names = "default";
+};
+
+&mcan2 {
+	status = "okay";
+	pinctrl-0 = <&pinctrl_can2_default>;
+	pinctrl-names = "default";
+};
+
+&mcan3 {
+	status = "okay";
+	pinctrl-0 = <&pinctrl_can3_default>;
+	pinctrl-names = "default";
+};
+
 &pinctrl {
+	pinctrl_can1_default: can1_default {
+		group1 {
+			pinmux = <PIN_PD10__CANTX1>,
+				 <PIN_PD11__CANRX1>;
+			bias-disable;
+		};
+	};
+
+	pinctrl_can2_default: can2_default {
+		group1 {
+			pinmux = <PIN_PD12__CANTX2>,
+				 <PIN_PD13__CANRX2>;
+			bias-disable;
+		};
+	};
+
+	pinctrl_can3_default: can3_default {
+		group1 {
+			pinmux = <PIN_PD14__CANTX3>,
+				 <PIN_PD15__CANRX3>;
+			bias-disable;
+		};
+	};
+
 	pinctrl_i2c10_default: i2c10-default {
 		group1 {
 			pinmux = <PIN_PB19__FLEXCOM10_IO1>,
