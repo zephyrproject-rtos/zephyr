@@ -9,10 +9,10 @@
  * @brief FIDO2 authenticator public API.
  */
 
-#ifndef ZEPHYR_INCLUDE_FIDO2_FIDO2_H_
-#define ZEPHYR_INCLUDE_FIDO2_FIDO2_H_
+#ifndef ZEPHYR_INCLUDE_AUTHENTICATION_FIDO2_FIDO2_H_
+#define ZEPHYR_INCLUDE_AUTHENTICATION_FIDO2_FIDO2_H_
 
-#include <zephyr/fido2/fido2_types.h>
+#include <zephyr/authentication/fido2/fido2_types.h>
 
 /**
  * @brief FIDO2 authenticator subsystem
@@ -125,4 +125,4 @@ int fido2_reset(void);
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_FIDO2_FIDO2_H_ */
+#endif /* ZEPHYR_INCLUDE_AUTHENTICATION_FIDO2_FIDO2_H_ */

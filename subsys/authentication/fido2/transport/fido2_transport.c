@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/fido2/fido2_transport.h>
+#include <zephyr/authentication/fido2/fido2_transport.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/iterable_sections.h>
 

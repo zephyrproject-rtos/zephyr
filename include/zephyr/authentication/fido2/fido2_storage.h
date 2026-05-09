@@ -9,10 +9,10 @@
  * @brief FIDO2 credential storage API.
  */
 
-#ifndef ZEPHYR_INCLUDE_FIDO2_FIDO2_STORAGE_H_
-#define ZEPHYR_INCLUDE_FIDO2_FIDO2_STORAGE_H_
+#ifndef ZEPHYR_INCLUDE_AUTHENTICATION_FIDO2_FIDO2_STORAGE_H_
+#define ZEPHYR_INCLUDE_AUTHENTICATION_FIDO2_FIDO2_STORAGE_H_
 
-#include <zephyr/fido2/fido2_types.h>
+#include <zephyr/authentication/fido2/fido2_types.h>
 #include <stddef.h>
 
 /**
@@ -164,4 +164,4 @@ int fido2_storage_sign_count_increment(const uint8_t *cred_id, size_t cred_id_le
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_FIDO2_FIDO2_STORAGE_H_ */
+#endif /* ZEPHYR_INCLUDE_AUTHENTICATION_FIDO2_FIDO2_STORAGE_H_ */

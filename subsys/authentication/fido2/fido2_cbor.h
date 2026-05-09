@@ -7,7 +7,7 @@
 #ifndef FIDO2_CBOR_H_
 #define FIDO2_CBOR_H_
 
-#include <zephyr/fido2/fido2_types.h>
+#include <zephyr/authentication/fido2/fido2_types.h>
 
 /** Maximum number of algorithms in pubKeyCredParams */
 #define FIDO2_MAX_ALGORITHMS 8

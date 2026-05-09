@@ -12,7 +12,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/class/usbd_hid.h>
-#include <zephyr/fido2/fido2_transport.h>
+#include <zephyr/authentication/fido2/fido2_transport.h>
 
 LOG_MODULE_DECLARE(fido2, CONFIG_FIDO2_LOG_LEVEL);
 

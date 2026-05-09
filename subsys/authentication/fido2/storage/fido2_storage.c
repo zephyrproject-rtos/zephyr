@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/logging/log.h>
-#include <zephyr/fido2/fido2_types.h>
-#include <zephyr/fido2/fido2_storage.h>
+#include <zephyr/authentication/fido2/fido2_types.h>
+#include <zephyr/authentication/fido2/fido2_storage.h>
 #include <psa/crypto.h>
 
 LOG_MODULE_DECLARE(fido2, CONFIG_FIDO2_LOG_LEVEL);

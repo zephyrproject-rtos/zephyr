@@ -8,9 +8,9 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/fido2/fido2_types.h>
-#include <zephyr/fido2/fido2_storage.h>
-#include <zephyr/fido2/fido2_transport.h>
+#include <zephyr/authentication/fido2/fido2_types.h>
+#include <zephyr/authentication/fido2/fido2_storage.h>
+#include <zephyr/authentication/fido2/fido2_transport.h>
 
 #include "fido2_cbor.h"
 

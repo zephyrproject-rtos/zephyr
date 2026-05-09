@@ -7,6 +7,7 @@
 menu "Subsystems and OS Services"
 
 # zephyr-keep-sorted-start
+source "subsys/authentication/Kconfig"
 source "subsys/bindesc/Kconfig"
 source "subsys/bluetooth/Kconfig"
 source "subsys/canbus/Kconfig"
@@ -20,7 +21,6 @@ source "subsys/disk/Kconfig"
 source "subsys/dsp/Kconfig"
 source "subsys/emul/Kconfig"
 source "subsys/fb/Kconfig"
-source "subsys/fido2/Kconfig"
 source "subsys/fs/Kconfig"
 source "subsys/gnss/Kconfig"
 source "subsys/input/Kconfig"
