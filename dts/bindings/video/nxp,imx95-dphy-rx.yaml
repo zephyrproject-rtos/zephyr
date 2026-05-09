@@ -1,0 +1,38 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+title: NXP i.MX95 MIPI D-PHY RX
+
+description: |
+  NXP i.MX95 MIPI D-PHY receiver. Provides the physical layer for the
+  MIPI CSI-2 host controller (nxp,imx-mipi-csi2).
+
+  The DPHY is initialized by the CSI-2 controller driver and does not
+  require a standalone driver. It is referenced via the phys phandle
+  in the CSI-2 node.
+
+compatible: "nxp,imx95-dphy-rx"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    description: Must contain "phy_cfg"
+
+  power-domains:
+    required: true
+
+  "#phy-cells":
+    type: int
+    required: true
+    const: 0
+    description: |
+      Number of cells in a PHY specifier. Must be 0 since no additional
+      arguments are needed when referencing this PHY.
