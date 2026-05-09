@@ -68,15 +68,15 @@
 		clk_aupll: clk-aupll {
 			#clock-cells = <1>;
 			compatible = "bflb,pll";
-			clocks = <&clk_rc32m>;
+			clocks = <&clk_crystal>;
 			top-frequency = <BL61X_AUPLL_TOP_FREQ>;
-			status = "disabled";
+			status = "okay";
 		};
 
 		clk_root: clk-root {
 			#clock-cells = <0>;
 			compatible = "bflb,root-clk";
-			clocks = <&clk_wifipll BL61X_WIFIPLL_ID_DIV1>;
+			clocks = <&clk_aupll BL61X_AUPLL_ID_DIV1>;
 			divider = <1>;
 			status = "okay";
 		};

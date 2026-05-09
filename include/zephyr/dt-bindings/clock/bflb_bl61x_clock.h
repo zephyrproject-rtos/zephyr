@@ -53,8 +53,8 @@
 /** The reference top frequency for the WIFIPLL at the root clock (WIFIPLL root / 3 here) */
 #define BL61X_WIFIPLL_TOP_FREQ	(DT_FREQ_M(320))
 
-/** The reference top frequency for the AUPLL at the root clock (undefined) */
-#define BL61X_AUPLL_TOP_FREQ	(DT_FREQ_M(1))
+/** The reference top frequency for the AUPLL (VCO direct, no post-divider) */
+#define BL61X_AUPLL_TOP_FREQ	(DT_FREQ_M(320))
 
 /** Overclocked PLL example 1, standard voltages can be used */
 #define BL61X_WIFIPLL_TOP_FREQ_OC1	(DT_FREQ_M(480))
