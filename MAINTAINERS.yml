@@ -1156,6 +1156,7 @@ Demand Paging:
     - ceolin
     - peter-mitsis
     - nashif
+    - npitre
   files:
     - subsys/mem_mgmt/demand_paging/
     - tests/kernel/mem_protect/demand_paging/
