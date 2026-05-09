@@ -87,7 +87,7 @@ static int get_normalized_sys_pressure(void)
 	struct pressure_stats sys_pressure = {.max_pressure = 0, .pressure_acum = 0};
 
 #ifdef CONFIG_CPU_FREQ_PER_CPU_SCALING
-	k_thread_foreach_filter_by_cpu(_kernel.cpus[cpu].current, thread_eval_cb, &sys_pressure);
+	k_thread_foreach_filter_by_cpu(CPU_ID, thread_eval_cb, &sys_pressure);
 #else
 	k_thread_foreach(thread_eval_cb, &sys_pressure);
 #endif /* CONFIG_CPU_FREQ_PER_CPU_SCALING */
@@ -115,19 +115,14 @@ static int get_normalized_sys_pressure(void)
  */
 int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 {
-	int sys_pressure = 0;
-	int cpu_id = 0;
+	int sys_pressure;
 
 	if (NULL == pstate_out) {
 		LOG_ERR("On-Demand Policy: pstate_out is NULL");
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_SMP)
 	/* The caller has already ensured that the CPU is fixed */
-	cpu_id = arch_curr_cpu()->id;
-#endif
-
 	sys_pressure = get_normalized_sys_pressure();
 
 	if (sys_pressure < 0) {
@@ -135,7 +130,7 @@ int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 		return sys_pressure;
 	}
 
-	LOG_DBG("CPU%d Pressure: %d%%", cpu_id, sys_pressure);
+	LOG_DBG("CPU%d Pressure: %d%%", CPU_ID, sys_pressure);
 
 	for (int i = 0; i < soc_pstates_count; i++) {
 		const struct pstate *state = soc_pstates[i];
