@@ -618,10 +618,6 @@ static int sreq_get_desc_dev(struct usbd_context *const uds_ctx,
 		return 0;
 	}
 
-	if (head == NULL) {
-		return -EINVAL;
-	}
-
 	net_buf_add_mem(buf, head, MIN(len, head->bLength));
 
 	return 0;
