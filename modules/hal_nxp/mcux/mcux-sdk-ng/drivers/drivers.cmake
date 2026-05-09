@@ -329,6 +329,7 @@ if(CONFIG_SOC_SERIES_LPC84X)
   endif()
   set_variable_ifdef(CONFIG_UART_LPC84X CONFIG_MCUX_COMPONENT_driver.lpc_miniusart)
   zephyr_library_compile_definitions_ifdef(CONFIG_UART_LPC84X FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL=1)
+  set_variable_ifdef(CONFIG_FLASH_SOC_LPC84X_IAP CONFIG_MCUX_COMPONENT_driver.iap)
 endif()
 
 if(CONFIG_SOC_LPC55S36)
