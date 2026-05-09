@@ -128,6 +128,12 @@
 			reg = <0x12>;
 			#power-domain-cells = <0>;
 		};
+
+		camera_mix: power-domain@3 {
+			compatible = "arm,scmi-power-domain";
+			reg = <3>;
+			#power-domain-cells = <0>;
+		};
 	};
 
 	soc {
@@ -871,6 +877,26 @@
 			interrupt-parent = <&disp_irqsteer_master0>;
 			interrupts = <48 0>;
 			clocks = <&scmi_clk 0>;
+			status = "disabled";
+		};
+
+		mipi_csi: csi@4ad30000 {
+			compatible = "nxp,imx-mipi-csi";
+			reg = <0x4ad30000 0x10000>;
+			phys = <&mipi_dphy>;
+			clocks = <&scmi_clk IMX95_CLK_CAMAPB>;
+			clock-names = "pixel";
+			power-domains = <&camera_mix>;
+			status = "disabled";
+		};
+
+		mipi_dphy: dphy@4ad20000 {
+			compatible = "nxp,imx95-dphy-rx";
+			reg = <0x4ad20000 0x10000>;
+			clocks = <&scmi_clk IMX95_CLK_MIPIPHYCFG>;
+			clock-names = "phy_cfg";
+			power-domains = <&camera_mix>;
+			#phy-cells = <0>;
 			status = "disabled";
 		};
 
