@@ -405,29 +405,16 @@ int mfd_rv3032_enter_eerd(const struct device *dev)
 
 	mfd_rv3032_lock_eeprom_sem(dev);
 
-	ret = mfd_rv3032_read_reg8(dev, RV3032_REG_CONTROL1, &ctrl1);
+	/* Clear EEPROM write fail flag */
+	ret = mfd_rv3032_update_reg8(dev, RV3032_REG_TEMPERATURE_LSB, RV3032_TEMPERATURE_EEF, 0);
 	if (ret) {
 		mfd_rv3032_unlock_eeprom_sem(dev);
 		return ret;
-	}
-
-	eerd = ctrl1 & RV3032_CONTROL1_EERD;
-	if (eerd) {
-		mfd_rv3032_unlock_eeprom_sem(dev);
-		return 0;
 	}
 
 	/* Disable refresh */
 	ret = mfd_rv3032_update_reg8(dev, RV3032_REG_CONTROL1, RV3032_CONTROL1_EERD,
 				     RV3032_CONTROL1_EERD);
-	if (ret) {
-		mfd_rv3032_unlock_eeprom_sem(dev);
-		return ret;
-	}
-
-	/* Clear EEPROM write fail flag */
-	ret = mfd_rv3032_update_reg8(dev, RV3032_REG_TEMPERATURE_LSB, RV3032_TEMPERATURE_EEF, 0);
-
 	if (ret) {
 		mfd_rv3032_unlock_eeprom_sem(dev);
 		return ret;
