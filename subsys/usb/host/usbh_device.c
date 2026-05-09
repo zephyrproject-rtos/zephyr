@@ -496,6 +496,10 @@ void usbh_device_connect(struct usbh_context *const ctx,
 
 	udev->state = USB_STATE_DEFAULT;
 
+	if (ctx->root == NULL) {
+		ctx->root = udev;
+	}
+
 	err = usbh_device_init(udev);
 	if (err != 0) {
 		LOG_ERR("Failed to init new USB device");
@@ -513,6 +517,10 @@ void usbh_device_connect(struct usbh_context *const ctx,
 void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev)
 {
 	usbh_class_remove_all(udev);
+
+	if (usbh_device_is_root(ctx, udev)) {
+		ctx->root = NULL;
+	}
 
 	usbh_device_free(udev);
 
