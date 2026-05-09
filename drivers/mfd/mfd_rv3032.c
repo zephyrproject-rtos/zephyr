@@ -399,8 +399,6 @@ int mfd_rv3032_exit_eerd(const struct device *dev)
 
 int mfd_rv3032_enter_eerd(const struct device *dev)
 {
-	uint8_t ctrl1;
-	bool eerd;
 	int ret;
 
 	mfd_rv3032_lock_eeprom_sem(dev);
