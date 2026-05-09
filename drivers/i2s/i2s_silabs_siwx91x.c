@@ -66,10 +66,10 @@ struct i2s_siwx91x_data {
 	struct i2s_siwx91x_stream rx;
 	struct i2s_siwx91x_stream tx;
 	uint8_t current_resolution;
-	uint8_t rx_buffer[sizeof(struct i2s_siwx91x_queue_item) *
-			  CONFIG_I2S_SILABS_SIWX91X_RX_BLOCK_COUNT];
-	uint8_t tx_buffer[sizeof(struct i2s_siwx91x_queue_item) *
-			  CONFIG_I2S_SILABS_SIWX91X_TX_BLOCK_COUNT];
+	uint8_t rx_buffer[SYS_RINGQ_STORAGE_SIZE(sizeof(struct i2s_siwx91x_queue_item),
+						 CONFIG_I2S_SILABS_SIWX91X_RX_BLOCK_COUNT)];
+	uint8_t tx_buffer[SYS_RINGQ_STORAGE_SIZE(sizeof(struct i2s_siwx91x_queue_item),
+						 CONFIG_I2S_SILABS_SIWX91X_TX_BLOCK_COUNT)];
 };
 
 static void i2s_siwx91x_dma_rx_callback(const struct device *dma_dev, void *user_data,

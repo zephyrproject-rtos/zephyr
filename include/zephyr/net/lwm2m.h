@@ -31,6 +31,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/mutex.h>
+#include <zephyr/sys/ringq.h>
 #include <zephyr/net/coap.h>
 #include <zephyr/net/lwm2m_path.h>
 
@@ -1591,21 +1592,23 @@ int lwm2m_send_cb(struct lwm2m_ctx *ctx, const struct lwm2m_obj_path path_list[]
  */
 struct lwm2m_ctx *lwm2m_rd_client_ctx(void);
 
-/** 
- * @brief Enable data cache for a resource.
+/**
+ * @brief Enable data cache for a resource.
  *
  * Application may enable caching of resource data by allocating buffer for LwM2M engine to use.
- * Buffer must be size of struct @ref lwm2m_time_series_elem times cache_len
+ * Buffer must be sized with @ref SYS_RINGQ_STORAGE_SIZE for the desired number of
+ * @ref lwm2m_time_series_elem entries; one byte is reserved internally to disambiguate
+ * the full and empty states.
  *
- * @param path LwM2M path to resource as a struct
- * @param data_cache Pointer to Data cache array
- * @param cache_len number of cached entries
+ * @param path      LwM2M path to resource as a struct
+ * @param data      Pointer to caller-owned backing buffer
+ * @param data_size Size of @p data in bytes (typically
+ *                  @ref SYS_RINGQ_STORAGE_SIZE(sizeof(struct lwm2m_time_series_elem), N))
  *
- * @return 0 for success or negative in case of error.
+ * @return 0 for success or negative in case of error.
  *
  */
-int lwm2m_enable_cache(const struct lwm2m_obj_path *path, struct lwm2m_time_series_elem *data_cache,
-		       size_t cache_len);
+int lwm2m_enable_cache(const struct lwm2m_obj_path *path, uint8_t *data, size_t data_size);
 
 /**
  * @brief Register a filtering callback for cached resource samples.

@@ -31,12 +31,25 @@ struct sys_ringq {
 	/** @endcond */
 };
 
+/**
+ * @brief Backing-buffer size (in bytes) required to store
+ *        @p item_capacity elements of @p item_size bytes each.
+ *
+ * Includes the single byte reserved by the underlying ring buffer
+ * to disambiguate the full and empty states.
+ *
+ * @param item_size     Size of each ringq element (in bytes).
+ * @param item_capacity Capacity (in number of elements).
+ */
+#define SYS_RINGQ_STORAGE_SIZE(item_size, item_capacity) \
+	RING_BUF_STORAGE_SIZE((item_size) * (item_capacity))
+
 /** @cond INTERNAL_HIDDEN */
 
-#define SYS_RINGQ_INIT(buf, item_sz, item_capacity)			\
-{									\
-	.rb = RING_BUF_INIT(buf, item_sz * item_capacity),		\
-	.item_size = item_sz,						\
+#define SYS_RINGQ_INIT(buf, item_sz, item_capacity)				\
+{										\
+	.rb = RING_BUF_INIT(buf, SYS_RINGQ_STORAGE_SIZE(item_sz, item_capacity)),\
+	.item_size = item_sz,							\
 }
 
 /** @endcond */
@@ -51,7 +64,8 @@ struct sys_ringq {
  * @param item_capacity capacity (in number of elements).
  */
 #define SYS_RINGQ_DEFINE(name, item_size, item_capacity)					\
-	static uint8_t __noinit CONCAT(_ringq_data_, name)[item_size * item_capacity];		\
+	static uint8_t __noinit									\
+		CONCAT(_ringq_data_, name)[SYS_RINGQ_STORAGE_SIZE(item_size, item_capacity)];	\
 	struct sys_ringq name = SYS_RINGQ_INIT(CONCAT(_ringq_data_, name), item_size, item_capacity)
 
 /**
@@ -61,23 +75,26 @@ struct sys_ringq {
  *
  * @param ringq Address of sys_ringq struct.
  * @param data ringq sys_ringq data area.
- * @param data_size Size of the ringq data area (in bytes).
+ * @param data_size Size of the ringq data area (in bytes). Must be at least
+ * @p SYS_RINGQ_STORAGE_SIZE(item_size, 1) bytes; one byte is reserved
+ * internally to disambiguate full vs empty.
  * @param item_size Size of each ringq element (in bytes).
  *
- * @note data_size should be a multiple of item_size. If not, it will be adjusted to the nearest
- * lower multiple of item_size.
+ * @note Usable capacity is @p (data_size - 1) / item_size elements. If
+ * @p (data_size - 1) is not a multiple of @p item_size, it is rounded down.
  */
 static inline void sys_ringq_init(struct sys_ringq *ringq, uint8_t *data, size_t data_size,
 				size_t item_size)
 {
 	__ASSERT(data != NULL, "Data buffer should not be NULL");
 	__ASSERT(item_size > 0, "item_size should be greater than 0");
+	__ASSERT(data_size > item_size, "data_size must be > item_size");
 
-	/* Adjust data size to be a multiple of item size */
-	data_size = (data_size / item_size) * item_size;
-	__ASSERT(data_size > 0, "data_size should be a multiple of item_size and greater than 0");
+	size_t items = (data_size - 1U) / item_size;
 
-	ring_buf_init(&ringq->rb, data_size, data);
+	__ASSERT(items > 0, "data_size must hold at least one item plus the sacrificed byte");
+
+	ring_buf_init(&ringq->rb, SYS_RINGQ_STORAGE_SIZE(item_size, items), data);
 	ringq->item_size = item_size;
 }
 

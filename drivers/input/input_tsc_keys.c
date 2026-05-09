@@ -344,7 +344,8 @@ static int stm32_tsc_init(const struct device *dev)
 DT_INST_FOREACH_STATUS_OKAY(STM32_TSC_INIT)
 
 struct input_tsc_keys_data {
-	uint8_t buffer[CONFIG_INPUT_STM32_TSC_KEYS_BUFFER_WORD_SIZE * sizeof(uint32_t)];
+	uint8_t buffer[SYS_RINGQ_STORAGE_SIZE(sizeof(uint32_t),
+					      CONFIG_INPUT_STM32_TSC_KEYS_BUFFER_WORD_SIZE)];
 	struct sys_ringq fifo;
 	bool expect_release;
 	struct k_timer sampling_timer;

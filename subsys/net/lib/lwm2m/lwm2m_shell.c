@@ -575,7 +575,8 @@ static int cmd_cache(const struct shell *sh, size_t argc, char **argv)
 #if (K_HEAP_MEM_POOL_SIZE > 0)
 	int rc;
 	int elems;
-	struct lwm2m_time_series_elem *cache;
+	uint8_t *cache;
+	size_t cache_size;
 	struct lwm2m_obj_path obj_path;
 
 	if (argc != 3) {
@@ -605,13 +606,14 @@ static int cmd_cache(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	cache = k_malloc(sizeof(struct lwm2m_time_series_elem) * elems);
+	cache_size = SYS_RINGQ_STORAGE_SIZE(sizeof(struct lwm2m_time_series_elem), elems);
+	cache = k_malloc(cache_size);
 	if (!cache) {
 		shell_error(sh, "Out of memory");
 		return -ENOEXEC;
 	}
 
-	rc = lwm2m_enable_cache(&obj_path, cache, elems);
+	rc = lwm2m_enable_cache(&obj_path, cache, cache_size);
 	if (rc) {
 		shell_error(sh, "lwm2m_enable_cache(%u/%u/%u/%u, %p, %d) returned %d",
 			    obj_path.obj_id, obj_path.obj_inst_id, obj_path.res_id,

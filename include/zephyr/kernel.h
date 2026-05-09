@@ -5724,11 +5724,12 @@ struct k_pipe {
  * @param pipe_align Alignment of the pipe's ring buffer (power of 2).
  *
  */
-#define K_PIPE_DEFINE(name, pipe_buffer_size, pipe_align)		\
-	static unsigned char __noinit __aligned(pipe_align)		\
-		_k_pipe_buf_##name[pipe_buffer_size];			\
-	STRUCT_SECTION_ITERABLE(k_pipe, name) =				\
-		Z_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
+#define K_PIPE_DEFINE(name, pipe_buffer_size, pipe_align)			\
+	static unsigned char __noinit __aligned(pipe_align)			\
+		_k_pipe_buf_##name[RING_BUF_STORAGE_SIZE(pipe_buffer_size)];	\
+	STRUCT_SECTION_ITERABLE(k_pipe, name) =					\
+		Z_PIPE_INITIALIZER(name, _k_pipe_buf_##name,			\
+				RING_BUF_STORAGE_SIZE(pipe_buffer_size))
 
 
 /**

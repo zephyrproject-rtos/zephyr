@@ -22,7 +22,7 @@ static struct k_work_delayable temp_work;
 #define PERIOD K_MINUTES(2)
 
 /* Cache slots used by the send scheduler for the temperature sensor */
-static struct lwm2m_time_series_elem temp_cache[8];
+static uint8_t temp_cache[SYS_RINGQ_STORAGE_SIZE(sizeof(struct lwm2m_time_series_elem), 8)];
 
 static void temp_work_cb(struct k_work *work)
 {
@@ -62,7 +62,7 @@ void init_temp_sensor(void)
 			int ret;
 
 			ret = lwm2m_enable_cache(&LWM2M_OBJ(3303, 0, 5700), temp_cache,
-						 ARRAY_SIZE(temp_cache));
+						 sizeof(temp_cache));
 			if (ret < 0) {
 				LOG_WRN("Failed to enable cache for temp sensor (%d)", ret);
 			}

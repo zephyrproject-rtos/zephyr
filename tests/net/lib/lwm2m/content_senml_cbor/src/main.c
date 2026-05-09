@@ -981,7 +981,8 @@ ZTEST(net_content_senml_cbor, test_put_composite)
 		.len = 42
 	};
 
-	struct lwm2m_time_series_elem test_time_series_cache[3];
+	uint8_t test_time_series_cache[
+		SYS_RINGQ_STORAGE_SIZE(sizeof(struct lwm2m_time_series_elem), 3)];
 	struct lwm2m_cache_read_info cache_temp_info = {
 		.entry_size = 3,
 		.entry_limit = 3
@@ -991,7 +992,7 @@ ZTEST(net_content_senml_cbor, test_put_composite)
 	test_msg.cache_info = &cache_temp_info;
 
 	ret = lwm2m_enable_cache(&test_msg.path, test_time_series_cache,
-				 ARRAY_SIZE(test_time_series_cache));
+				 sizeof(test_time_series_cache));
 	zassert_equal(ret, 0, "Failed to enable cache");
 
 	struct lwm2m_time_series_elem test_time_series_temp;
@@ -1000,7 +1001,7 @@ ZTEST(net_content_senml_cbor, test_put_composite)
 
 	zassert_not_null(cache_entry, "Failed to get cache entry");
 
-	for (int i = 0; i < ARRAY_SIZE(test_time_series_cache); i++) {
+	for (int i = 0; i < 3; i++) {
 		test_time_series_temp.t = 1761226500 + i * 60;
 		test_time_series_temp.i32 = i + 10;
 		zassert_true(lwm2m_cache_write(cache_entry, &test_time_series_temp));
@@ -1039,7 +1040,8 @@ ZTEST(net_content_senml_cbor, test_put_composite_res_inst)
 		.len = 51
 	};
 
-	struct lwm2m_time_series_elem test_time_series_cache[3];
+	uint8_t test_time_series_cache[
+		SYS_RINGQ_STORAGE_SIZE(sizeof(struct lwm2m_time_series_elem), 3)];
 	struct lwm2m_cache_read_info cache_temp_info = {
 		.entry_size = 3,
 		.entry_limit = 3
@@ -1051,7 +1053,7 @@ ZTEST(net_content_senml_cbor, test_put_composite_res_inst)
 	test_msg.cache_info = &cache_temp_info;
 
 	ret = lwm2m_enable_cache(&test_msg.path, test_time_series_cache,
-				 ARRAY_SIZE(test_time_series_cache));
+				 sizeof(test_time_series_cache));
 	zassert_equal(ret, 0, "Failed to enable cache");
 
 	struct lwm2m_time_series_elem test_time_series_temp;
@@ -1060,7 +1062,7 @@ ZTEST(net_content_senml_cbor, test_put_composite_res_inst)
 
 	zassert_not_null(cache_entry, "Failed to get cache entry");
 
-	for (int i = 0; i < ARRAY_SIZE(test_time_series_cache); i++) {
+	for (int i = 0; i < 3; i++) {
 		test_time_series_temp.t = 1761226500 + i * 60;
 		test_time_series_temp.i32 = i + 10;
 		zassert_true(lwm2m_cache_write(cache_entry, &test_time_series_temp));

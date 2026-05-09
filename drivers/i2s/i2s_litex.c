@@ -580,7 +580,8 @@ static DEVICE_API(i2s, i2s_litex_driver_api) = {
 };
 
 #define I2S_INIT(dir, items)							\
-	static uint8_t dir##_buffer[items * sizeof(struct queue_item)];		\
+	static uint8_t dir##_buffer[SYS_RINGQ_STORAGE_SIZE(			\
+			sizeof(struct queue_item), items)];			\
 	static struct i2s_litex_data i2s_litex_data_##dir = {			\
 		.dir.mem_block_queue = SYS_RINGQ_INIT(dir##_buffer,		\
 				sizeof(struct queue_item), items),		\

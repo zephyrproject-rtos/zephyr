@@ -623,11 +623,11 @@ ZTEST(lwm2m_registry, test_obj_version)
 ZTEST(lwm2m_registry, test_resource_cache)
 {
 	struct lwm2m_obj_path path = LWM2M_OBJ(32768, 0, LWM2M_RES_TYPE_BOOL);
-	struct lwm2m_time_series_elem e;
+	uint8_t e[SYS_RINGQ_STORAGE_SIZE(sizeof(struct lwm2m_time_series_elem), 1)];
 
 	/* Resource cache is turned off */
 	zassert_is_null(lwm2m_cache_entry_get_by_object(&path));
-	zassert_equal(lwm2m_enable_cache(&path, &e, 1), -ENOTSUP);
+	zassert_equal(lwm2m_enable_cache(&path, e, sizeof(e)), -ENOTSUP);
 	zassert_equal(lwm2m_set_cache_filter(&path, NULL), -ENOTSUP);
 	zassert_equal(lwm2m_cache_free_slots_get(&path), -ENOTSUP);
 	zassert_false(lwm2m_cache_write(NULL, NULL));

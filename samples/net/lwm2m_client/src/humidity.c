@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 static struct k_work_delayable humidity_work;
 #define HUMIDITY_PERIOD K_MINUTES(2)
 
-static struct lwm2m_time_series_elem humidity_cache[8];
+static uint8_t humidity_cache[SYS_RINGQ_STORAGE_SIZE(sizeof(struct lwm2m_time_series_elem), 8)];
 
 static void humidity_work_cb(struct k_work *work)
 {
@@ -41,7 +41,7 @@ void init_humidity_sensor(void)
 			int ret;
 
 			ret = lwm2m_enable_cache(&LWM2M_OBJ(3304, 0, 5700), humidity_cache,
-						 ARRAY_SIZE(humidity_cache));
+						 sizeof(humidity_cache));
 			if (ret < 0) {
 				LOG_WRN("Failed to enable cache for humidity sensor (%d)", ret);
 			}
