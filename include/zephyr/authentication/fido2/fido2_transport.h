@@ -9,12 +9,12 @@
  * @brief FIDO2 transport abstraction API.
  */
 
-#ifndef ZEPHYR_INCLUDE_FIDO2_FIDO2_TRANSPORT_H_
-#define ZEPHYR_INCLUDE_FIDO2_FIDO2_TRANSPORT_H_
+#ifndef ZEPHYR_INCLUDE_AUTHENTICATION_FIDO2_FIDO2_TRANSPORT_H_
+#define ZEPHYR_INCLUDE_AUTHENTICATION_FIDO2_FIDO2_TRANSPORT_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/iterable_sections.h>
-#include <zephyr/fido2/fido2_types.h>
+#include <zephyr/authentication/fido2/fido2_types.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -148,4 +148,4 @@ void fido2_transport_shutdown_all(void);
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_FIDO2_FIDO2_TRANSPORT_H_ */
+#endif /* ZEPHYR_INCLUDE_AUTHENTICATION_FIDO2_FIDO2_TRANSPORT_H_ */

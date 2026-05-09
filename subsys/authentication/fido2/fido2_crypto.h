@@ -7,7 +7,7 @@
 #ifndef FIDO2_CRYPTO_H_
 #define FIDO2_CRYPTO_H_
 
-#include <zephyr/fido2/fido2_types.h>
+#include <zephyr/authentication/fido2/fido2_types.h>
 
 /* Max number of retries for key generation */
 #define FIDO2_KEYGEN_ID_RETRIES          16

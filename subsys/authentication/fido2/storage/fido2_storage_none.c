@@ -5,8 +5,8 @@
  */
 
 #include <errno.h>
-#include <zephyr/fido2/fido2_types.h>
-#include <zephyr/fido2/fido2_storage.h>
+#include <zephyr/authentication/fido2/fido2_types.h>
+#include <zephyr/authentication/fido2/fido2_storage.h>
 
 static int none_backend_init(void)
 {

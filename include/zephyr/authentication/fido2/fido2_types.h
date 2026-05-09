@@ -9,8 +9,8 @@
  * @brief FIDO2 shared type definitions.
  */
 
-#ifndef ZEPHYR_INCLUDE_FIDO2_FIDO2_TYPES_H_
-#define ZEPHYR_INCLUDE_FIDO2_FIDO2_TYPES_H_
+#ifndef ZEPHYR_INCLUDE_AUTHENTICATION_FIDO2_FIDO2_TYPES_H_
+#define ZEPHYR_INCLUDE_AUTHENTICATION_FIDO2_FIDO2_TYPES_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -242,4 +242,4 @@ struct fido2_device_info {
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_FIDO2_FIDO2_TYPES_H_ */
+#endif /* ZEPHYR_INCLUDE_AUTHENTICATION_FIDO2_FIDO2_TYPES_H_ */

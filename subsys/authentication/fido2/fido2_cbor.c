@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/logging/log.h>
-#include <zephyr/fido2/fido2_types.h>
+#include <zephyr/authentication/fido2/fido2_types.h>
 #include <zcbor_encode.h>
 #include <zcbor_decode.h>
 
