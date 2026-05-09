@@ -355,6 +355,10 @@ int lorawan_set_conf_msg_tries(uint8_t tries);
  * be enabled for devices with stable RF conditions (i.e., devices in a mostly
  * static location).
  *
+ * Enabling ADR does not reset the current data rate; a value previously set
+ * via lorawan_set_datarate() remains in use until the network adjusts it
+ * through a LinkADRReq.
+ *
  * This function must be called after lorawan_start(). Calls before start are
  * ignored.
  *
@@ -394,7 +398,7 @@ int lorawan_set_channels_mask(uint16_t *channels_mask, size_t channels_mask_size
  *
  * @retval 0 successful
  * @retval -EPERM LoRaWAN stack has not been started
- * @retval -EINVAL data rate is invalid for the active region
+ * @retval -EINVAL data rate is invalid for the active region or ADR is already enabled
  */
 int lorawan_set_datarate(enum lorawan_datarate dr);
 

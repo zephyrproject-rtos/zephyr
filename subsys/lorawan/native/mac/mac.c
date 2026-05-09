@@ -167,6 +167,11 @@ static void mac_do_set_datarate(struct lwan_ctx *ctx,
 	int8_t power;
 	int ret;
 
+	if (ctx->mac.adr_enabled) {
+		engine_signal_result(req, -EINVAL);
+		return;
+	}
+
 	if (ctx->region == NULL ||
 	    ctx->region->get_tx_params((uint8_t)dr_req->dr,
 				       ctx->mac.tx_power_idx,
