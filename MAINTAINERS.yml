@@ -2600,6 +2600,7 @@ Documentation Infrastructure:
     - andyross
   collaborators:
     - teburd
+    - npitre
   files:
     - drivers/timer/
     - include/zephyr/drivers/timer/
