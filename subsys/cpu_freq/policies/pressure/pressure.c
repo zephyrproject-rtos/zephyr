@@ -92,6 +92,10 @@ static int get_normalized_sys_pressure(void)
 	k_thread_foreach(thread_eval_cb, &sys_pressure);
 #endif /* CONFIG_CPU_FREQ_PER_CPU_SCALING */
 
+	if (sys_pressure.max_pressure == 0) {
+		return 0;
+	}
+
 	int normalized_pressure = (sys_pressure.pressure_acum * 100) / sys_pressure.max_pressure;
 
 	LOG_DBG("System pressure is: %d%% (raw: %d / max: %d)", normalized_pressure,
