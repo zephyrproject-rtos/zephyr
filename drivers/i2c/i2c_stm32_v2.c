@@ -798,13 +798,12 @@ end:
 static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *msg)
 {
 	struct i2c_stm32_data *data = dev->data;
-	const struct i2c_stm32_config *cfg = dev->config;
 	bool keep_enabled = (msg->flags & I2C_MSG_STOP) == 0U;
 	bool disable_i2c;
 	int ret;
 
 	/* Wait for IRQ to complete or timeout */
-	ret = k_sem_take(&data->device_sync_sem, K_MSEC(CONFIG_I2C_TRANSFER_TIMEOUT_MS));
+	ret = k_sem_take(&data->device_sync_sem, I2C_TRANSFER_TIMEOUT);
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
 	/* Stop DMA and invalidate cache if needed */

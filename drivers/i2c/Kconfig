@@ -33,7 +33,7 @@ config I2C_SHELL_BUFFER_SIZE
 config I2C_TRANSFER_TIMEOUT_SUPPORTED
 	bool
 	help
-	  Selected by drivers that supports setting an i2c transaction timeout
+	  Selected by drivers that support setting an i2c transaction timeout
 	  using the I2C_TRANSFER_TIMEOUT_MS Kconfig option.
 
 config I2C_TRANSFER_TIMEOUT_MS
@@ -41,7 +41,10 @@ config I2C_TRANSFER_TIMEOUT_MS
 	default 500
 	depends on I2C_TRANSFER_TIMEOUT_SUPPORTED
 	help
-	  Timeout in milliseconds used for each I2C transfer.
+	  Timeout in milliseconds used by I2C drivers that support
+	  configuring a transfer timeout.
+	  Drivers may use this as the whole transfer timeout or as
+	  tolerance added to an estimated transfer duration.
 	  In some drivers 0 means that the driver should use the K_FOREVER
 	  value, i.e. it should wait as long as necessary.
 
@@ -251,6 +254,7 @@ config I2C_MCUX_LPI2C
 	depends on DT_HAS_NXP_LPI2C_ENABLED
 	depends on CLOCK_CONTROL
 	select PINCTRL
+	select I2C_TRANSFER_TIMEOUT_SUPPORTED
 	help
 	  Enable the mcux LPI2C driver.
 

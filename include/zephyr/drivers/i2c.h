@@ -70,6 +70,43 @@ extern "C" {
 /** Peripheral to act as Controller. */
 #define I2C_MODE_CONTROLLER		BIT(4)
 
+/**
+ * @brief Calculate an I2C transfer timeout.
+ *
+ * The calculated timeout is the expected message transfer duration based on
+ * @p bitrate and @p msg_len plus @p timeout_ms. Passing 0 for @p bitrate
+ * returns only @p timeout_ms.
+ *
+ * @note This is a nominal bus transfer time estimate intended for I2C
+ * controller drivers. It does not account for target devices that use I2C
+ * clock stretching, or other topology-specific delays. Drivers for I2C
+ * peripherals should not use it as their only timeout source unless they add
+ * any device- and bus-specific margin they require.
+ *
+ * @param timeout_ms Base transfer timeout in milliseconds, used as tolerance
+ *		     when @p bitrate is provided. 0 returns K_FOREVER.
+ * @param bitrate Bus bitrate in Hz.
+ * @param msg_len Message length in bytes.
+ *
+ * @return Timeout for the transfer.
+ */
+static inline k_timeout_t i2c_transfer_timeout(uint32_t timeout_ms,
+					       uint32_t bitrate,
+					       uint32_t msg_len)
+{
+	uint64_t total_ms = timeout_ms;
+
+	if (timeout_ms == 0U) {
+		return K_FOREVER;
+	}
+
+	if (bitrate != 0U) {
+		total_ms += ((uint64_t)msg_len * 10U * MSEC_PER_SEC) / bitrate;
+	}
+
+	return K_MSEC(total_ms);
+}
+
 #if CONFIG_I2C_TRANSFER_TIMEOUT_SUPPORTED
 
 /** Helper macro for CONFIG_I2C_TRANSFER_TIMEOUT_MS */

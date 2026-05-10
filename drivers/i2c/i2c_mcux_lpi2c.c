@@ -201,8 +201,18 @@ static int mcux_lpi2c_transfer(const struct device *dev, struct i2c_msg *msgs,
 			break;
 		}
 
-		/* Wait for the transfer to complete */
-		k_sem_take(&data->device_sync_sem, K_FOREVER);
+		if (k_sem_take(&data->device_sync_sem,
+			       i2c_transfer_timeout(CONFIG_I2C_TRANSFER_TIMEOUT_MS,
+						    config->bitrate, msgs->len)) != 0) {
+			LPI2C_MasterTransferAbort(base, &data->handle);
+			k_sem_reset(&data->device_sync_sem);
+			LOG_ERR("transfer timeout on addr 0x%02x, "
+				"msg %d/%d (%u bytes), MSR 0x%08x",
+				addr, i, num_msgs, msgs->len,
+				base->MSR);
+			ret = -ETIMEDOUT;
+			break;
+		}
 
 		/* Return an error if the transfer didn't complete
 		 * successfully. e.g., nak, timeout, lost arbitration
