@@ -12,6 +12,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -27,6 +28,7 @@ struct i2c_rcar_cfg {
 	const struct device *clock_dev;
 	struct rcar_cpg_clk mod_clk;
 	uint32_t bitrate;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct i2c_rcar_data {
@@ -315,6 +317,18 @@ static int i2c_rcar_init(const struct device *dev)
 	uint32_t bitrate_cfg;
 	int ret;
 
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret != 0) {
+		/* Gen 3 boards do not provide pin control for some dedicated I2C */
+#ifdef CONFIG_SOC_SERIES_RCAR_GEN3
+		if (ret != -ENOENT) {
+			return ret;
+		}
+#else
+		return ret;
+#endif
+	}
+
 	k_sem_init(&data->int_sem, 0, 1);
 
 	if (!device_is_ready(config->clock_dev)) {
@@ -350,12 +364,14 @@ static DEVICE_API(i2c, i2c_rcar_driver_api) = {
 
 /* Device Instantiation */
 #define I2C_RCAR_INIT(n)						       \
+	PINCTRL_DT_INST_DEFINE(n);					       \
 	static void i2c_rcar_##n##_init(const struct device *dev);	       \
 	static const struct i2c_rcar_cfg i2c_rcar_cfg_##n = {		       \
 		.reg_addr = DT_INST_REG_ADDR(n),			       \
 		.init_func = i2c_rcar_##n##_init,			       \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	       \
 		.bitrate = DT_INST_PROP(n, clock_frequency),		       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		       \
 		.mod_clk.module =					       \
 			DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),	       \
 		.mod_clk.domain =					       \
