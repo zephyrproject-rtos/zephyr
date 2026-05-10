@@ -58,7 +58,13 @@ static int tmc51xx_bus_check_spi(const union tmc_bus *bus, uint8_t comm_type)
 	if (comm_type != TMC_COMM_SPI) {
 		return -ENOTSUP;
 	}
-	return spi_is_ready_dt(&bus->spi) ? 0 : -ENODEV;
+
+	if (!spi_is_ready_dt(&bus->spi)) {
+		LOG_ERR_DEVICE_NOT_READY(bus->spi.bus);
+		return -ENODEV;
+	}
+
+	return 0;
 }
 
 static int tmc51xx_reg_write_spi(const struct device *dev, const uint8_t reg_addr,
@@ -102,7 +108,12 @@ static int tmc51xx_bus_check_uart(const union tmc_bus *bus, uint8_t comm_type)
 	if (comm_type != TMC_COMM_UART) {
 		return -ENOTSUP;
 	}
-	return device_is_ready(bus->uart) ? 0 : -ENODEV;
+
+	if (!device_is_ready(bus->uart)) {
+		LOG_ERR_DEVICE_NOT_READY(bus->uart);
+		return -ENODEV;
+	}
+	return 0;
 }
 
 static int tmc51xx_reg_write_uart(const struct device *dev, const uint8_t reg_addr,
@@ -409,7 +420,7 @@ static int tmc51xx_init(const struct device *dev)
 	/* Initialize SW_SEL GPIO if using UART and GPIO is specified */
 	if (config->comm_type == TMC_COMM_UART && config->sw_sel_gpio.port) {
 		if (!gpio_is_ready_dt(&config->sw_sel_gpio)) {
-			LOG_ERR("SW_SEL GPIO not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->sw_sel_gpio.port);
 			return -ENODEV;
 		}
 
@@ -426,7 +437,7 @@ static int tmc51xx_init(const struct device *dev)
 	if ((config->comm_type == TMC_COMM_SPI) && config->diag0_gpio.port) {
 		LOG_INF("Configuring DIAG0 GPIO interrupt pin");
 		if (!gpio_is_ready_dt(&config->diag0_gpio)) {
-			LOG_ERR("DIAG0 interrupt GPIO not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->diag0_gpio.port);
 			return -ENODEV;
 		}
 
