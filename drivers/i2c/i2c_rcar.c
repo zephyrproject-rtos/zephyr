@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(i2c_rcar);
 typedef void (*init_func_t)(const struct device *dev);
 
 struct i2c_rcar_cfg {
-	uint32_t reg_addr;
+	DEVICE_MMIO_ROM; /* Must be first */
 	init_func_t init_func;
 	const struct device *clock_dev;
 	struct rcar_cpg_clk mod_clk;
@@ -32,6 +32,7 @@ struct i2c_rcar_cfg {
 };
 
 struct i2c_rcar_data {
+	DEVICE_MMIO_RAM; /* Must be first */
 	uint8_t status_mask;
 	struct k_sem int_sem;
 };
@@ -77,33 +78,30 @@ struct i2c_rcar_data {
 
 #define MAX_WAIT_US 100
 
-static uint32_t i2c_rcar_read(const struct i2c_rcar_cfg *config,
-			      uint32_t offs)
+static inline uint32_t i2c_rcar_read(const struct device *dev, uint32_t offs)
 {
-	return sys_read32(config->reg_addr + offs);
+	return sys_read32(DEVICE_MMIO_GET(dev) + offs);
 }
 
-static void i2c_rcar_write(const struct i2c_rcar_cfg *config,
-			   uint32_t offs, uint32_t value)
+static inline void i2c_rcar_write(const struct device *dev,
+				  uint32_t offs, uint32_t value)
 {
-	sys_write32(value, config->reg_addr + offs);
+	sys_write32(value, DEVICE_MMIO_GET(dev) + offs);
 }
 
 static void i2c_rcar_isr(const struct device *dev)
 {
-	const struct i2c_rcar_cfg *config = dev->config;
 	struct i2c_rcar_data *data = dev->data;
 
-	if (((i2c_rcar_read(config, RCAR_I2C_ICMSR)) & data->status_mask) ==
+	if (((i2c_rcar_read(dev, RCAR_I2C_ICMSR)) & data->status_mask) ==
 	    data->status_mask) {
 		k_sem_give(&data->int_sem);
-		i2c_rcar_write(config, RCAR_I2C_ICMIER, 0);
+		i2c_rcar_write(dev, RCAR_I2C_ICMIER, 0);
 	}
 }
 
 static int i2c_rcar_wait_for_state(const struct device *dev, uint8_t mask)
 {
-	const struct i2c_rcar_cfg *config = dev->config;
 	struct i2c_rcar_data *data = dev->data;
 
 	data->status_mask = mask;
@@ -112,7 +110,7 @@ static int i2c_rcar_wait_for_state(const struct device *dev, uint8_t mask)
 	k_sem_reset(&data->int_sem);
 
 	/* Enable interrupts */
-	i2c_rcar_write(config, RCAR_I2C_ICMIER, mask);
+	i2c_rcar_write(dev, RCAR_I2C_ICMIER, mask);
 
 	/* Wait for the interrupts */
 	return k_sem_take(&data->int_sem, K_USEC(MAX_WAIT_US));
@@ -120,19 +118,18 @@ static int i2c_rcar_wait_for_state(const struct device *dev, uint8_t mask)
 
 static int i2c_rcar_finish(const struct device *dev)
 {
-	const struct i2c_rcar_cfg *config = dev->config;
 	int ret;
 
 	/* Enable STOP generation */
-	i2c_rcar_write(config, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER | RCAR_I2C_ICMCR_FSB);
-	i2c_rcar_write(config, RCAR_I2C_ICMSR, 0);
+	i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER | RCAR_I2C_ICMCR_FSB);
+	i2c_rcar_write(dev, RCAR_I2C_ICMSR, 0);
 
 	/* Wait for STOP to be transmitted */
 	ret = i2c_rcar_wait_for_state(dev, RCAR_I2C_MST);
-	i2c_rcar_write(config, RCAR_I2C_ICMSR, 0);
+	i2c_rcar_write(dev, RCAR_I2C_ICMSR, 0);
 
 	/* Disable STOP generation */
-	i2c_rcar_write(config, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER);
+	i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER);
 
 	return ret;
 }
@@ -140,14 +137,12 @@ static int i2c_rcar_finish(const struct device *dev)
 static int i2c_rcar_set_addr(const struct device *dev,
 			     uint8_t chip, uint8_t read)
 {
-	const struct i2c_rcar_cfg *config = dev->config;
-
 	/* Set slave address & transfer mode */
-	i2c_rcar_write(config, RCAR_I2C_ICMAR, (chip << 1) | read);
+	i2c_rcar_write(dev, RCAR_I2C_ICMAR, (chip << 1) | read);
 	/* Reset */
-	i2c_rcar_write(config, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER | RCAR_I2C_ICMCR_ESG);
+	i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER | RCAR_I2C_ICMCR_ESG);
 	/* Clear Status */
-	i2c_rcar_write(config, RCAR_I2C_ICMSR, 0);
+	i2c_rcar_write(dev, RCAR_I2C_ICMSR, 0);
 
 	/* Wait for address & transfer mode to be transmitted */
 	if (read != 0) {
@@ -159,24 +154,23 @@ static int i2c_rcar_set_addr(const struct device *dev,
 
 static int i2c_rcar_transfer_msg(const struct device *dev, struct i2c_msg *msg)
 {
-	const struct i2c_rcar_cfg *config = dev->config;
 	uint32_t i, reg;
 	int ret = 0;
 
 	if ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 		/* Reading as master */
-		i2c_rcar_write(config, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER);
+		i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER);
 
 		for (i = 0; i < msg->len; i++) {
 			if (msg->len - 1 == i) {
-				i2c_rcar_write(config, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER |
+				i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER |
 					       RCAR_I2C_ICMCR_FSB);
 			}
 
 			/* Start data reception */
-			reg = i2c_rcar_read(config, RCAR_I2C_ICMSR);
+			reg = i2c_rcar_read(dev, RCAR_I2C_ICMSR);
 			reg &= ~RCAR_I2C_MDR;
-			i2c_rcar_write(config, RCAR_I2C_ICMSR, reg);
+			i2c_rcar_write(dev, RCAR_I2C_ICMSR, reg);
 
 			/* Wait for data to be received */
 			ret = i2c_rcar_wait_for_state(dev, RCAR_I2C_MDR);
@@ -184,19 +178,19 @@ static int i2c_rcar_transfer_msg(const struct device *dev, struct i2c_msg *msg)
 				return ret;
 			}
 
-			msg->buf[i] = i2c_rcar_read(config, RCAR_I2C_ICRXD_ICTXD) & 0xff;
+			msg->buf[i] = i2c_rcar_read(dev, RCAR_I2C_ICRXD_ICTXD) & 0xff;
 		}
 	} else {
 		/* Writing as master */
 		for (i = 0; i < msg->len; i++) {
-			i2c_rcar_write(config, RCAR_I2C_ICRXD_ICTXD, msg->buf[i]);
+			i2c_rcar_write(dev, RCAR_I2C_ICRXD_ICTXD, msg->buf[i]);
 
-			i2c_rcar_write(config, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER);
+			i2c_rcar_write(dev, RCAR_I2C_ICMCR, RCAR_I2C_ICMCR_MASTER);
 
 			/* Start data transmission */
-			reg = i2c_rcar_read(config, RCAR_I2C_ICMSR);
+			reg = i2c_rcar_read(dev, RCAR_I2C_ICMSR);
 			reg &= ~RCAR_I2C_MDE;
-			i2c_rcar_write(config, RCAR_I2C_ICMSR, reg);
+			i2c_rcar_write(dev, RCAR_I2C_ICMSR, reg);
 
 			/* Wait for all data to be transmitted */
 			ret = i2c_rcar_wait_for_state(dev, RCAR_I2C_MDE);
@@ -213,12 +207,11 @@ static int i2c_rcar_transfer(const struct device *dev,
 			     struct i2c_msg *msgs, uint8_t num_msgs,
 			     uint16_t addr)
 {
-	const struct i2c_rcar_cfg *config = dev->config;
 	uint16_t timeout = 0;
 	int ret;
 
 	/* Wait for the bus to be available */
-	while ((i2c_rcar_read(config, RCAR_I2C_ICMCR) & RCAR_I2C_ICMCR_FSDA) && (timeout < 10)) {
+	while ((i2c_rcar_read(dev, RCAR_I2C_ICMCR) & RCAR_I2C_ICMCR_FSDA) && (timeout < 10)) {
 		k_busy_wait(USEC_PER_MSEC);
 		timeout++;
 	}
@@ -264,7 +257,6 @@ static int i2c_rcar_transfer(const struct device *dev,
 
 static int i2c_rcar_configure(const struct device *dev, uint32_t dev_config)
 {
-	const struct i2c_rcar_cfg *config = dev->config;
 	uint8_t cdf, scgd;
 
 	/* We only support Master mode */
@@ -293,19 +285,19 @@ static int i2c_rcar_configure(const struct device *dev, uint32_t dev_config)
 	}
 
 	/* Setting ICCCR to recommended value */
-	i2c_rcar_write(config, RCAR_I2C_ICCCR, (scgd << 3) | cdf);
+	i2c_rcar_write(dev, RCAR_I2C_ICCCR, (scgd << 3) | cdf);
 
 	/* Reset slave mode */
-	i2c_rcar_write(config, RCAR_I2C_ICSIER, 0);
-	i2c_rcar_write(config, RCAR_I2C_ICSAR, 0);
-	i2c_rcar_write(config, RCAR_I2C_ICSCR, 0);
-	i2c_rcar_write(config, RCAR_I2C_ICSSR, 0);
+	i2c_rcar_write(dev, RCAR_I2C_ICSIER, 0);
+	i2c_rcar_write(dev, RCAR_I2C_ICSAR, 0);
+	i2c_rcar_write(dev, RCAR_I2C_ICSCR, 0);
+	i2c_rcar_write(dev, RCAR_I2C_ICSSR, 0);
 
 	/* Reset master mode */
-	i2c_rcar_write(config, RCAR_I2C_ICMIER, 0);
-	i2c_rcar_write(config, RCAR_I2C_ICMCR, 0);
-	i2c_rcar_write(config, RCAR_I2C_ICMSR, 0);
-	i2c_rcar_write(config, RCAR_I2C_ICMAR, 0);
+	i2c_rcar_write(dev, RCAR_I2C_ICMIER, 0);
+	i2c_rcar_write(dev, RCAR_I2C_ICMCR, 0);
+	i2c_rcar_write(dev, RCAR_I2C_ICMSR, 0);
+	i2c_rcar_write(dev, RCAR_I2C_ICMAR, 0);
 
 	return 0;
 }
@@ -342,6 +334,8 @@ static int i2c_rcar_init(const struct device *dev)
 		return ret;
 	}
 
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 
 	ret = i2c_rcar_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
@@ -367,7 +361,7 @@ static DEVICE_API(i2c, i2c_rcar_driver_api) = {
 	PINCTRL_DT_INST_DEFINE(n);					       \
 	static void i2c_rcar_##n##_init(const struct device *dev);	       \
 	static const struct i2c_rcar_cfg i2c_rcar_cfg_##n = {		       \
-		.reg_addr = DT_INST_REG_ADDR(n),			       \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),			       \
 		.init_func = i2c_rcar_##n##_init,			       \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	       \
 		.bitrate = DT_INST_PROP(n, clock_frequency),		       \
