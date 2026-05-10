@@ -424,15 +424,16 @@ static int mac_parse_downlink(struct lwan_ctx *ctx, const uint8_t *rx_buf,
 		LOG_DBG("Invalid FOptsLen: %u for len %zu", fopts_len, rx_len);
 		return -EINVAL;
 	}
-	if (fopts_len > 0) {
-		LOG_WRN("Downlink MAC commands are not supported yet");
-		return -ENOTSUP;
-	}
 
 	ret = mac_verify_data_mic(sess->fnwk_s_int_cmac, dev_addr,
 				  fcnt_down, rx_buf, rx_len);
 	if (ret != 0) {
 		return ret;
+	}
+
+	if (fopts_len > 0) {
+		LOG_WRN("Downlink MAC commands not supported; ignoring %u byte(s)",
+			fopts_len);
 	}
 
 	if (sess->fcnt_down != LWAN_FCNT_NONE && fcnt_down <= sess->fcnt_down) {
