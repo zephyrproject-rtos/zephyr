@@ -79,6 +79,8 @@ enum k_objects {
 #define K_OBJ_FLAG_ALLOC	BIT(2)
 /** Driver Object */
 #define K_OBJ_FLAG_DRIVER	BIT(3)
+/** Object is mapped */
+#define K_OBJ_FLAG_MAP          BIT(4)
 
 /**
  * Grant a thread access to a kernel object
@@ -304,6 +306,28 @@ __syscall void *k_object_alloc_size(enum k_objects otype, size_t size);
  * @param obj Pointer to the kernel object memory address.
  */
 void k_object_free(void *obj);
+
+/**
+ * Map a kernel object of a designated type and a given size
+ *
+ * This will instantiate at runtime a kernel object of the specified type,
+ * returning a pointer to it. The object will be returned in an uninitialized
+ * state, with the calling thread being granted permission on it. The memory
+ * for the object will be mapped from anonymous memory.
+ *
+ * This function is mainly helpful for thread stack objects since gaurd page
+ * size and alignment requirements can consume heap resources quickly.
+ *
+ * @note This function is available only if @kconfig{CONFIG_DYNAMIC_OBJECTS}
+ * is selected, the platform has an MMU, and firmware is built with
+ * @kconfig{CONFIG_MMU}.
+ *
+ * @param otype Requested kernel object type
+ * @param size Requested kernel object size
+ * @return A pointer to the allocated kernel object, or NULL if memory wasn't
+ * available
+ */
+__syscall void *k_object_map_size(enum k_objects otype, size_t size);
 #else
 
 /* LCOV_EXCL_START */
@@ -332,6 +356,15 @@ static inline void k_object_free(void *obj)
 {
 	ARG_UNUSED(obj);
 }
+
+static inline void *z_impl_k_object_map_size(enum k_objects otype, size_t size)
+{
+	ARG_UNUSED(otype);
+	ARG_UNUSED(size);
+
+	return NULL;
+}
+
 /* LCOV_EXCL_STOP */
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 

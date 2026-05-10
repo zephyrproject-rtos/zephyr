@@ -1633,9 +1633,28 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 static int map_thread_stack(struct k_thread *thread,
 			    struct arm_mmu_ptables *ptables)
 {
-	return private_map(ptables, "thread_stack", thread->stack_info.start,
-			    thread->stack_info.start, thread->stack_info.size,
-			    MT_P_RW_U_RW | MT_NORMAL);
+	uintptr_t virt = thread->stack_info.start;
+	const uintptr_t end = virt + thread->stack_info.size;
+	int ret = 0;
+
+	/*
+	 * Dynamically-mapped stacks (k_mem_map()) are not identity-mapped and
+	 * their backing frames are not physically contiguous: resolve and map
+	 * each page individually.
+	 */
+	for (; virt < end; virt += CONFIG_MMU_PAGE_SIZE) {
+		uintptr_t phys = virt;
+		size_t len = MIN((size_t)CONFIG_MMU_PAGE_SIZE, (size_t)(end - virt));
+
+		(void)arch_page_phys_get((void *)virt, &phys);
+		ret = private_map(ptables, "thread_stack", phys, virt, len,
+				  MT_P_RW_U_RW | MT_NORMAL);
+		if (ret != 0) {
+			break;
+		}
+	}
+
+	return ret;
 }
 
 int arch_mem_domain_thread_add(struct k_thread *thread)

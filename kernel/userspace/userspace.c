@@ -156,10 +156,9 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 #define DYN_OBJ_DATA_ALIGN_K_THREAD	(sizeof(void *))
 #endif /* ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT */
 
-#ifdef CONFIG_DYNAMIC_THREAD_STACK_SIZE
+#ifdef CONFIG_SYS_THREAD_STACK_SIZE
 #if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_PMP_STACK_GUARD)
-#define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK \
-	Z_THREAD_STACK_OBJ_ALIGN(CONFIG_DYNAMIC_THREAD_STACK_SIZE)
+#define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK Z_THREAD_STACK_OBJ_ALIGN(CONFIG_SYS_THREAD_STACK_SIZE)
 #else
 #define DYN_OBJ_DATA_ALIGN_K_THREAD_STACK \
 	Z_THREAD_STACK_OBJ_ALIGN(CONFIG_PRIVILEGED_STACK_SIZE)
@@ -590,6 +589,19 @@ void k_object_free(void *obj)
 			k_free(stack);
 		} else
 #endif /* CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED */
+#ifdef CONFIG_MMU
+		if ((dyn->kobj.flags & K_OBJ_FLAG_MAP) != 0) {
+			/* the data is a k_object_map_size() anonymous mapping, not heap */
+			size_t unmap_size;
+
+#ifdef CONFIG_GEN_PRIV_STACKS
+			unmap_size = dyn->kobj.data.stack_data->size;
+#else
+			unmap_size = dyn->kobj.data.stack_size;
+#endif /* CONFIG_GEN_PRIV_STACKS */
+			k_mem_unmap(dyn->data, unmap_size);
+		} else
+#endif /* CONFIG_MMU */
 		{
 			k_free(dyn->data);
 		}
@@ -632,6 +644,64 @@ void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 	}
 	k_spin_unlock(&lists_lock, key);
 }
+
+#ifdef CONFIG_MMU
+void *z_impl_k_object_map_size(enum k_objects otype, size_t size)
+{
+	switch (otype) {
+	case K_OBJ_THREAD_STACK_ELEMENT:
+		break;
+	default:
+		LOG_WRN_ONCE("%s() does not support object type '%s'",
+			     __func__, otype_to_str(otype));
+		return NULL;
+	}
+
+	struct dyn_obj *dyn;
+
+	dyn = z_thread_aligned_alloc(obj_align_get(otype), sizeof(struct dyn_obj));
+	if (dyn == NULL) {
+		return NULL;
+	}
+
+	size_t adjusted_size;
+
+	adjusted_size = ROUND_UP(STACK_ELEMENT_DATA_SIZE(size), CONFIG_MMU_PAGE_SIZE);
+	/* stacks must be pinned: a demand-paging fault on a thread stack is unrecoverable */
+	dyn->data = k_mem_map(adjusted_size, K_MEM_PERM_RW | K_MEM_MAP_LOCK);
+	if (dyn->data == NULL) {
+		k_free(dyn);
+		return NULL;
+	}
+
+#ifdef CONFIG_GEN_PRIV_STACKS
+	struct z_stack_data *stack_data =
+		(struct z_stack_data *)((uint8_t *)dyn->data + adjusted_size - sizeof(*stack_data));
+	stack_data->priv = (uint8_t *)dyn->data;
+	stack_data->size = adjusted_size;
+	dyn->kobj.data.stack_data = stack_data;
+#if defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU) || defined(CONFIG_RISCV_PMP)
+	dyn->kobj.name = (void *)ROUND_UP(((uint8_t *)dyn->data + CONFIG_PRIVILEGED_STACK_SIZE),
+					  Z_THREAD_STACK_OBJ_ALIGN(size));
+#else
+	dyn->kobj.name = dyn->data;
+#endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU || CONFIG_RISCV_PMP */
+#else
+	dyn->kobj.name = dyn->data;
+	dyn->kobj.data.stack_size = adjusted_size;
+#endif /* CONFIG_GEN_PRIV_STACKS */
+
+	dyn->kobj.type = otype;
+	dyn->kobj.flags = K_OBJ_FLAG_MAP;
+	(void)memset(dyn->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
+
+	K_SPINLOCK(&lists_lock) {
+		sys_dlist_append(&obj_list, &dyn->dobj_list);
+	}
+
+	return dyn->kobj.name;
+}
+#endif /* CONFIG_MMU */
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 
 /* In the earlier linker-passes before we have the real generated
