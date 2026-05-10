@@ -427,27 +427,6 @@ int zvfs_close(int fd)
 	return res;
 }
 
-FILE *zvfs_fdopen(int fd, const char *mode)
-{
-	ARG_UNUSED(mode);
-
-	if (_check_fd(fd) < 0) {
-		return NULL;
-	}
-
-	return (FILE *)&fdtable[fd];
-}
-
-int zvfs_fileno(FILE *file)
-{
-	if (!IS_ARRAY_ELEMENT(fdtable, file)) {
-		errno = EBADF;
-		return -1;
-	}
-
-	return (struct fd_entry *)file - fdtable;
-}
-
 int zvfs_fstat(int fd, struct zvfs_stat *buf)
 {
 	if (_check_fd(fd) < 0) {
