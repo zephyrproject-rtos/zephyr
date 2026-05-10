@@ -11,7 +11,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
+#include <zephyr/drivers/clock_control/renesas_rcar_generic.h>
 #include <zephyr/drivers/pinctrl.h>
 
 #include <zephyr/logging/log.h>
@@ -26,7 +26,7 @@ struct i2c_rcar_cfg {
 	DEVICE_MMIO_ROM; /* Must be first */
 	init_func_t init_func;
 	const struct device *clock_dev;
-	struct rcar_cpg_clk mod_clk;
+	rcar_generic_clk_t mod_clk;
 	uint32_t bitrate;
 	const struct pinctrl_dev_config *pcfg;
 };
@@ -331,9 +331,7 @@ static int i2c_rcar_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(config->clock_dev,
-			       (clock_control_subsys_t)&config->mod_clk);
-
+	ret = clock_control_on(config->clock_dev, RCAR_CLOCK_SUBSYS(config->mod_clk));
 	if (ret != 0) {
 		return ret;
 	}
@@ -370,10 +368,7 @@ static DEVICE_API(i2c, i2c_rcar_driver_api) = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	       \
 		.bitrate = DT_INST_PROP(n, clock_frequency),		       \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		       \
-		.mod_clk.module =					       \
-			DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),	       \
-		.mod_clk.domain =					       \
-			DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),	       \
+		.mod_clk = RCAR_DT_INST_CLOCKS_CELL_BY_IDX(n, 0)	       \
 	};								       \
 									       \
 	static struct i2c_rcar_data i2c_rcar_data_##n;			       \
