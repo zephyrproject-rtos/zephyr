@@ -466,6 +466,7 @@ static void rfcomm_dlc_init(struct bt_rfcomm_dlc *dlc,
 	dlc->dlci = dlci;
 	dlc->session = session;
 	dlc->rx_credit = RFCOMM_DEFAULT_CREDIT;
+	dlc->rx_throttled = false;
 	dlc->state = BT_RFCOMM_STATE_INIT;
 	dlc->role = role;
 	k_work_init_delayable(&dlc->rtx_work, rfcomm_dlc_rtx_timeout);
@@ -1458,6 +1459,11 @@ static void rfcomm_dlc_update_credits(struct bt_rfcomm_dlc *dlc)
 
 	LOG_DBG("dlc %p credits %u", dlc, dlc->rx_credit);
 
+	if (dlc->rx_throttled) {
+		LOG_DBG("dlc %p throttled, not restoring credits", dlc);
+		return;
+	}
+
 	/* Only give more credits if it went below the defined threshold */
 	if (dlc->rx_credit > RFCOMM_CREDITS_THRESHOLD) {
 		return;
@@ -1861,4 +1867,29 @@ void bt_rfcomm_init(void)
 	}
 
 	initialized = true;
+}
+
+void bt_rfcomm_dlc_throttle(struct bt_rfcomm_dlc *dlc)
+{
+	LOG_DBG("dlc %p throttle", dlc);
+
+	if (dlc == NULL || dlc->session == NULL ||
+	    dlc->state != BT_RFCOMM_STATE_CONNECTED) {
+		return;
+	}
+
+	dlc->rx_throttled = true;
+}
+
+void bt_rfcomm_dlc_unthrottle(struct bt_rfcomm_dlc *dlc)
+{
+	LOG_DBG("dlc %p unthrottle", dlc);
+
+	if (dlc == NULL || dlc->session == NULL ||
+	    dlc->state != BT_RFCOMM_STATE_CONNECTED) {
+		return;
+	}
+
+	dlc->rx_throttled = false;
+	rfcomm_dlc_update_credits(dlc);
 }

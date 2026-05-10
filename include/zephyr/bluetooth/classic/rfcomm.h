@@ -123,6 +123,11 @@ struct bt_rfcomm_dlc {
 	uint8_t                    dlci;
 	uint8_t                    state;
 	uint8_t                    rx_credit;
+
+	/** RX throttle flag. When set, credits are not restored to the
+	 *  remote peer, effectively pausing incoming data.
+	 */
+	bool                       rx_throttled;
 };
 
 struct bt_rfcomm_server {
@@ -301,6 +306,29 @@ struct net_buf *bt_rfcomm_create_pdu(struct net_buf_pool *pool);
  * @return 0 on success, negative error code on failure
  */
 int bt_rfcomm_send_rpn_cmd(struct bt_rfcomm_dlc *dlc, struct bt_rfcomm_rpn *rpn);
+
+/** @brief Throttle RFCOMM DLC (pause incoming data)
+ *
+ *  Stop restoring RX credits to the remote peer. The remote side will
+ *  stop sending data once its TX credits are exhausted. Call
+ *  bt_rfcomm_dlc_unthrottle() to resume.
+ *
+ *  This is analogous to Linux's rfcomm_dlc_throttle() and is intended
+ *  for flow control when the local receive buffer is full.
+ *
+ *  @param dlc DLC object.
+ */
+void bt_rfcomm_dlc_throttle(struct bt_rfcomm_dlc *dlc);
+
+/** @brief Unthrottle RFCOMM DLC (resume incoming data)
+ *
+ *  Restore RX credits to the remote peer, allowing it to resume
+ *  sending data. Any credits that were withheld during the throttled
+ *  period are sent immediately.
+ *
+ *  @param dlc DLC object.
+ */
+void bt_rfcomm_dlc_unthrottle(struct bt_rfcomm_dlc *dlc);
 
 #ifdef __cplusplus
 }
