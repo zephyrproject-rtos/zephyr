@@ -1,0 +1,46 @@
+common:
+  tags: cpu_freq
+
+tests:
+  cpu_freq.energy_aware.soc:
+    extra_dtc_overlay_files:
+      - pstate-stub.overlay
+    platform_allow:
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
+    extra_configs:
+      - CONFIG_CPU_FREQ_PSTATE_SET_STUB=y
+
+  cpu_freq.energy_aware.slow:
+    extra_dtc_overlay_files:
+      - pstate-stub.overlay
+    platform_allow:
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
+    extra_configs:
+      - CONFIG_CPU_FREQ_PSTATE_SET_STUB=y
+      - CONFIG_CPU_FREQ_POLICY_ENERGY_AWARE_DEADLINE_US=2000
+
+  cpu_freq.energy_aware.mid:
+    extra_dtc_overlay_files:
+      - pstate-stub.overlay
+    platform_allow:
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
+    extra_configs:
+      - CONFIG_CPU_FREQ_PSTATE_SET_STUB=y
+      - CONFIG_CPU_FREQ_POLICY_ENERGY_AWARE_DEADLINE_US=500
+
+  cpu_freq.energy_aware.miss:
+    extra_dtc_overlay_files:
+      - pstate-stub.overlay
+    platform_allow:
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
+    extra_configs:
+      - CONFIG_CPU_FREQ_PSTATE_SET_STUB=y
+      - CONFIG_CPU_FREQ_POLICY_ENERGY_AWARE_DEADLINE_US=50
