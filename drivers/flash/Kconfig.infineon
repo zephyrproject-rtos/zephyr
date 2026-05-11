@@ -42,8 +42,3 @@ config INFINEON_CAT1_QSPI_FLASH
 	select FLASH_HAS_EXPLICIT_ERASE
 	help
 	  Enable the QSPI Flash driver for Infineon CAT1 family.
-
-config MPU_ALLOW_FLASH_WRITE
-	bool "Add MPU access to write to flash"
-	help
-	  Enable this to allow MPU RWX access to flash memory.
