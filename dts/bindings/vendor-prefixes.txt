@@ -130,6 +130,7 @@ calxeda	Calxeda
 canaan	Canaan, Inc.
 caninos	Caninos Loucos Program
 canis	Canis Automotive Labs
+canmodule	CAN-module, FOP
 capella	Capella Microsystems, Inc
 cascoda	Cascoda, Ltd.
 catalyst	Catalyst Semiconductor, Inc.
