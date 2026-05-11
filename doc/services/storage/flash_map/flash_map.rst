@@ -8,12 +8,13 @@ flash partitions via :c:struct:`flash_area` structures.
 
 Each :c:struct:`flash_area` describes a flash partition. The API provides access
 to a "flash map", which contains predefined flash areas accessible via globally
-unique ID numbers. The map is created from "fixed-partition" compatible entries
+unique ID numbers. The map is created from "fixed-partitions" and
+"zephyr,mapped-partition" compatible entries
 in DTS file. Users may also create :c:struct:`flash_area` objects at runtime
 for application-specific purposes.
 
-This documentation uses "flash area" when referencing single "fixed-partition"
-entities.
+This documentation uses "flash area" when referencing single "fixed-partitions"
+or "zephyr,mapped-partition" entities.
 
 The :c:struct:`flash_area` contains a pointer to a :c:struct:`device`,
 which can be used to access the flash device an area is placed on directly
@@ -41,7 +42,8 @@ methods to obtain such a pointer:
 :c:func:`flash_area_open` uses numeric identifiers to search flash map for
 :c:struct:`flash_area` objects and returns, if found, a pointer to an object
 representing area with given ID.
-The ID number for a flash area can be obtained from a fixed-partition
+The ID number for a flash area can be obtained from a "fixed-partitions"
+or a "zephyr,mapped-partition"
 DTS node label using :c:macro:`PARTITION_ID()`; these labels are obtained
 from the devicetree as described below.
 

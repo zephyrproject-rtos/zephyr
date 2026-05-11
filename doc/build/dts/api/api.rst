@@ -269,12 +269,13 @@ controllers, and properties related to them.
 
 .. _devicetree-flash-api:
 
-Fixed flash partitions
-======================
+Fixed and mapped flash partitions
+=================================
 
 These conveniences may be used for the special-purpose ``fixed-partitions``
-compatible used to encode information about flash memory partitions in the
-device tree. See See :dtcompatible:`fixed-partition` for more details.
+and ``zephyr,mapped-partition`` compatibles used to encode information about
+flash memory partitions in the device tree. See :dtcompatible:`fixed-partitions`
+and :dtcompatible:`zephyr,mapped-partition` for more details.
 
 .. doxygengroup:: devicetree-fixed-partition
 
