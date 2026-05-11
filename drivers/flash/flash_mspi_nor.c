@@ -1377,7 +1377,7 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 
 #define FLASH_MSPI_NOR_INST(inst)						\
 	BUILD_ASSERT(!PACKET_DATA_LIMIT(inst) ||				\
-		     FLASH_PAGE_SIZE_INST(inst) <= PACKET_DATA_LIMIT(inst),		\
+		     FLASH_PAGE_SIZE_INST(inst) <= PACKET_DATA_LIMIT(inst),	\
 		"Page size for " DT_NODE_FULL_NAME(DT_DRV_INST(inst))		\
 		" exceeds controller packet data limit");			\
 	SFDP_BUILD_ASSERTS(inst);						\
@@ -1388,8 +1388,8 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),			\
 		.packet_data_limit = DT_PROP_OR(DT_INST_BUS(inst),		\
 						packet_data_limit, 0),		\
-		.flash_size = FLASH_SIZE_INST(inst),					\
-		.page_size = FLASH_PAGE_SIZE_INST(inst),				\
+		.flash_size = FLASH_SIZE_INST(inst),				\
+		.page_size = FLASH_PAGE_SIZE_INST(inst),			\
 		.mspi_id = MSPI_DEVICE_ID_DT_INST(inst),			\
 		.mspi_nor_cfg = MSPI_DEVICE_CONFIG_DT_INST(inst),		\
 		.mspi_control_cfg = FLASH_CONTROL_CMD_CONFIG(inst),		\
@@ -1400,9 +1400,9 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 	IF_ENABLED(WITH_RESET_GPIO,						\
 		(.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),	\
 		 .reset_pulse_us = DT_INST_PROP_OR(inst, t_reset_pulse, 0)	\
-				 / 1000,))					\
+				 / NSEC_PER_USEC,))				\
 		.reset_recovery_us = DT_INST_PROP_OR(inst, t_reset_recovery, 0)	\
-				   / 1000,					\
+				   / NSEC_PER_USEC,				\
 		.transfer_timeout = DT_INST_PROP(inst, transfer_timeout),	\
 		FLASH_PAGE_LAYOUT_DEFINE(inst)					\
 		.jedec_id = DT_INST_PROP_OR(inst, jedec_id, {0}),		\
