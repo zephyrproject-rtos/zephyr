@@ -10,6 +10,8 @@
 
 MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 
+MODEM_CELLULAR_UNSOL_DEFINE(telit_le910c1tx_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	telit_le910c1tx_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
 	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100), MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
@@ -70,6 +72,6 @@ static const struct modem_cellular_config_scripts telit_le910c1tx_scripts = {
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 5050, 250, 20000, 5000, false,                        \
-				       &telit_le910c1tx_scripts)
+				       &telit_le910c1tx_scripts, &telit_le910c1tx_unsol)
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_TELIT_LE910C1TX)

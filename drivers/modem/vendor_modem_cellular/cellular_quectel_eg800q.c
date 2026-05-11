@@ -10,6 +10,8 @@
 
 MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 
+MODEM_CELLULAR_UNSOL_DEFINE(quectel_eg800q_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	quectel_eg800q_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
@@ -65,4 +67,5 @@ static const struct modem_cellular_config_scripts quectel_eg800q_scripts = {
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3), (user_pipe_1, 4))        \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 500, 15000, 5000, false, &quectel_eg800q_scripts)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 500, 15000, 5000, false,                        \
+				       &quectel_eg800q_scripts, &quectel_eg800q_unsol)

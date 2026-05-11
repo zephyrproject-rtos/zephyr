@@ -211,6 +211,11 @@ struct modem_cellular_config_scripts {
 	const struct modem_chat_script *shutdown;     /**< script for shutting down the modem */
 };
 
+struct modem_cellular_config_unsol {
+	const struct modem_chat_match *matches;
+	uint16_t size;
+};
+
 struct modem_cellular_config {
 	const struct device *uart;
 	struct gpio_dt_spec power_gpio;
@@ -232,6 +237,7 @@ struct modem_cellular_config {
 	bool use_default_apn;
 	k_timeout_t cmux_idle_timeout;
 	const struct modem_cellular_config_scripts *scripts;
+	const struct modem_cellular_config_unsol *unsol;
 	struct modem_cellular_user_pipe *user_pipes;
 	uint8_t user_pipes_size;
 };
@@ -374,10 +380,43 @@ void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, ui
 				  MODEM_CHAT_MATCH("NO CARRIER", "", NULL),			   \
 				  MODEM_CHAT_MATCH("NO DIALTONE", "", NULL))
 
+/* Common URC match entries shared by every cellular modem driver.
+ * Use as the body of a MODEM_CELLULAR_UNSOL_DEFINE() expansion so vendor
+ * drivers can extend the table with their own vendor-specific URCs.
+ */
+#define MODEM_CELLULAR_COMMON_UNSOL_MATCHES							   \
+	MODEM_CHAT_MATCH("+CREG: ", ",", modem_cellular_chat_on_cxreg),				   \
+	MODEM_CHAT_MATCH("+CEREG: ", ",", modem_cellular_chat_on_cxreg),			   \
+	MODEM_CHAT_MATCH("+CGREG: ", ",", modem_cellular_chat_on_cxreg),			   \
+	MODEM_CHAT_MATCH("+CGEV: ", ",", modem_cellular_chat_on_cgev),				   \
+	MODEM_CHAT_MATCH("APP RDY", "", modem_cellular_chat_on_modem_ready),			   \
+	MODEM_CHAT_MATCH("Ready", "", modem_cellular_chat_on_modem_ready)
+
+/**
+ * @brief Define a cellular modem unsol-match table.
+ *
+ * Generates the underlying match array and the
+ * modem_cellular_config_unsol descriptor that modem_cellular_init reads
+ * when wiring the chat instance.
+ *
+ * @param[in] name Descriptor name; referenced from the driver's config.
+ * @param[in] ...  MODEM_CHAT_MATCH() entries; typically begins with
+ *                 @ref MODEM_CELLULAR_COMMON_UNSOL_MATCHES.
+ *
+ * @see struct modem_cellular_config_unsol
+ */
+#define MODEM_CELLULAR_UNSOL_DEFINE(name, ...)							   \
+	MODEM_CHAT_MATCHES_DEFINE(name##_matches, __VA_ARGS__);					   \
+	static const struct modem_cellular_config_unsol name = {				   \
+		.matches = name##_matches,							   \
+		.size = ARRAY_SIZE(name##_matches),						   \
+	}
+
 /* Helper to define modem instance */
 #define MODEM_CELLULAR_DEFINE_INSTANCE(inst, power_ms, reset_ms, startup_ms, shutdown_ms, start,   \
-				       _scripts)                                                   \
+				       _scripts, _unsol)                                           \
 	BUILD_ASSERT(_scripts != NULL, "scripts must be non-NULL");                                \
+	BUILD_ASSERT(_unsol != NULL, "unsol must be non-NULL");                                    \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
@@ -404,6 +443,7 @@ void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, ui
 		.use_default_apn = DT_INST_PROP_OR(inst, zephyr_use_default_apn, 0),               \
 		.cmux_idle_timeout = K_MSEC(DT_INST_PROP_OR(inst, cmux_idle_timeout_ms, 0)),       \
 		.scripts = _scripts,                                                               \
+		.unsol = _unsol,                                                                   \
 		.user_pipes = MODEM_CELLULAR_GET_USER_PIPES(inst),                                 \
 		.user_pipes_size = ARRAY_SIZE(MODEM_CELLULAR_GET_USER_PIPES(inst)),                \
 	};                                                                                         \

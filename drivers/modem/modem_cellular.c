@@ -550,14 +550,6 @@ MODEM_CHAT_MATCH_DEFINE(cimi_match __maybe_unused, "", "", modem_cellular_chat_o
 MODEM_CHAT_MATCH_DEFINE(cgmi_match __maybe_unused, "", "", modem_cellular_chat_on_cgmi);
 MODEM_CHAT_MATCH_DEFINE(cgmr_match __maybe_unused, "", "", modem_cellular_chat_on_cgmr);
 
-MODEM_CHAT_MATCHES_DEFINE(__maybe_unused unsol_matches,
-			  MODEM_CHAT_MATCH("+CREG: ", ",", modem_cellular_chat_on_cxreg),
-			  MODEM_CHAT_MATCH("+CEREG: ", ",", modem_cellular_chat_on_cxreg),
-			  MODEM_CHAT_MATCH("+CGREG: ", ",", modem_cellular_chat_on_cxreg),
-			  MODEM_CHAT_MATCH("+CGEV: ", ",", modem_cellular_chat_on_cgev),
-			  MODEM_CHAT_MATCH("APP RDY", "", modem_cellular_chat_on_modem_ready),
-			  MODEM_CHAT_MATCH("Ready", "", modem_cellular_chat_on_modem_ready));
-
 MODEM_CHAT_MATCHES_DEFINE(abort_matches, MODEM_CHAT_MATCH("ERROR", "", NULL));
 
 MODEM_CHAT_MATCHES_DEFINE(__maybe_unused dial_abort_matches,
@@ -2412,8 +2404,8 @@ int modem_cellular_init(const struct device *dev)
 			.filter_size = data->chat_filter ? strlen(data->chat_filter) : 0,
 			.argv = data->chat_argv,
 			.argv_size = ARRAY_SIZE(data->chat_argv),
-			.unsol_matches = unsol_matches,
-			.unsol_matches_size = ARRAY_SIZE(unsol_matches),
+			.unsol_matches = config->unsol->matches,
+			.unsol_matches_size = config->unsol->size,
 		};
 
 		modem_chat_init(&data->chat, &chat_config);
