@@ -10,6 +10,7 @@
 #include <zcbor_decode.h>
 
 #include "fido2_cbor.h"
+#include "fido2_crypto.h"
 
 LOG_MODULE_DECLARE(fido2, CONFIG_FIDO2_LOG_LEVEL);
 
@@ -25,6 +26,13 @@ LOG_MODULE_DECLARE(fido2, CONFIG_FIDO2_LOG_LEVEL);
 #define MAKE_CREDENTIAL_KEY_PIN_UV_AUTH_PROTOCOL           0x09
 #define MAKE_CREDENTIAL_KEY_ENTERPRISE_ATTESTATION         0x0A
 #define MAKE_CREDENTIAL_KEY_ATTESTATION_FORMATS_PREFERENCE 0x0B
+/* authenticatorMakeCredential response */
+#define MAKE_CREDENTIAL_RESP_FMT                           0x01
+#define MAKE_CREDENTIAL_RESP_AUTH_DATA                     0x02
+#define MAKE_CREDENTIAL_RESP_ATT_STMT                      0x03
+#define MAKE_CREDENTIAL_RESP_EP_ATT                        0x04
+#define MAKE_CREDENTIAL_RESP_LARGE_BLOB_KEY                0x05
+#define MAKE_CREDENTIAL_RESP_UNSIGNED_EXT_OUTPUTS          0x06
 
 /* authenticatorGetInfo 0x04 */
 #define GETINFO_KEY_VERSIONS                     0x01
@@ -717,6 +725,123 @@ int fido2_cbor_decode_make_credential(const uint8_t *cbor_in, size_t cbor_in_len
 	if (!has_cdh || !has_rp || !has_user || !has_pkcp) {
 		return -EINVAL;
 	}
+
+	return 0;
+}
+
+int fido2_cbor_encode_cose_key(const uint8_t *pub_key, size_t pub_key_len, uint8_t *cbor_out,
+			       size_t cbor_out_cap, size_t *cbor_out_len)
+{
+	ZCBOR_STATE_E(zs, 5, cbor_out, cbor_out_cap, 1);
+	const uint8_t *x;
+	const uint8_t *y;
+
+	if (pub_key_len < FIDO2_P256_UNCOMPRESSED_KEY_SIZE ||
+	    pub_key[0] != FIDO2_EC_POINT_UNCOMPRESSED) {
+		return -EINVAL;
+	}
+
+	x = pub_key + 1;
+	y = pub_key + 1 + FIDO2_P256_COORD_SIZE;
+
+	if (!zcbor_map_start_encode(zs, 5)) {
+		return -ENOMEM;
+	}
+
+	/* 1 (kty) = 2 (EC2) */
+	if (!zcbor_int32_put(zs, 1) || !zcbor_int32_put(zs, 2)) {
+		return -ENOMEM;
+	}
+	/* 3 (alg) = -7 (ES256) */
+	if (!zcbor_int32_put(zs, 3) || !zcbor_int32_put(zs, FIDO2_COSE_ES256)) {
+		return -ENOMEM;
+	}
+	/* -1 (crv) = 1 (P-256) */
+	if (!zcbor_int32_put(zs, -1) || !zcbor_int32_put(zs, 1)) {
+		return -ENOMEM;
+	}
+	/* -2 (x) = x coordinate */
+	if (!zcbor_int32_put(zs, -2) || !zcbor_bstr_encode_ptr(zs, x, FIDO2_P256_COORD_SIZE)) {
+		return -ENOMEM;
+	}
+	/* -3 (x) = x coordinate */
+	if (!zcbor_int32_put(zs, -3) || !zcbor_bstr_encode_ptr(zs, y, FIDO2_P256_COORD_SIZE)) {
+		return -ENOMEM;
+	}
+
+	if (!zcbor_map_end_encode(zs, 5)) {
+		return -ENOMEM;
+	}
+
+	*cbor_out_len = zs->payload - cbor_out;
+
+	return 0;
+}
+
+int fido2_cbor_encode_make_credential_resp(const uint8_t *auth_data, size_t auth_data_len,
+					   const struct fido2_attestation_result *att_result,
+					   uint8_t *cbor_out, size_t cbor_out_cap,
+					   size_t *cbor_out_len)
+{
+	ZCBOR_STATE_E(zs, 5, cbor_out, cbor_out_cap, 1);
+
+	uint8_t att_stmt_entries = 0;
+
+	if (att_result->sig != NULL && att_result->sig_len > 0) {
+		att_stmt_entries = 2; /* alg + sig */
+		if (att_result->x5c != NULL && att_result->x5c_len > 0) {
+			att_stmt_entries = 3; /* alg + sig + x5c */
+		}
+	}
+
+	if (!zcbor_map_start_encode(zs, 3)) {
+		return -ENOMEM;
+	}
+
+	/* 0x01: fmt */
+	if (!zcbor_uint32_put(zs, MAKE_CREDENTIAL_RESP_FMT) ||
+	    !zcbor_tstr_put_term(zs, att_result->fmt, FIDO2_ATTESTATION_FMT_MAX_LEN)) {
+		return -ENOMEM;
+	}
+	/* 0x02: authData */
+	if (!zcbor_uint32_put(zs, MAKE_CREDENTIAL_RESP_AUTH_DATA) ||
+	    !zcbor_bstr_encode_ptr(zs, auth_data, auth_data_len)) {
+		return -ENOMEM;
+	}
+	/* 0x03: attStmt */
+	if (!zcbor_uint32_put(zs, MAKE_CREDENTIAL_RESP_ATT_STMT) ||
+	    !zcbor_map_start_encode(zs, att_stmt_entries)) {
+		return -ENOMEM;
+	}
+	if (att_stmt_entries >= 2) {
+		if (!zcbor_tstr_put_lit(zs, "alg") || !zcbor_int32_put(zs, att_result->alg)) {
+			return -ENOMEM;
+		}
+		if (!zcbor_tstr_put_lit(zs, "sig") ||
+		    !zcbor_bstr_encode_ptr(zs, att_result->sig, att_result->sig_len)) {
+			return -ENOMEM;
+		}
+	}
+	if (att_stmt_entries >= 3) {
+		if (!zcbor_tstr_put_lit(zs, "x5c") || !zcbor_list_start_encode(zs, 1)) {
+			return -ENOMEM;
+		}
+		if (!zcbor_bstr_encode_ptr(zs, att_result->x5c, att_result->x5c_len)) {
+			return -ENOMEM;
+		}
+		if (!zcbor_list_end_encode(zs, 1)) {
+			return -ENOMEM;
+		}
+	}
+	if (!zcbor_map_end_encode(zs, att_stmt_entries)) {
+		return -ENOMEM;
+	}
+
+	if (!zcbor_map_end_encode(zs, 3)) {
+		return -ENOMEM;
+	}
+
+	*cbor_out_len = zs->payload - cbor_out;
 
 	return 0;
 }

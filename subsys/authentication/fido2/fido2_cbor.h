@@ -8,6 +8,7 @@
 #define FIDO2_CBOR_H_
 
 #include <zephyr/authentication/fido2/fido2_types.h>
+#include <zephyr/authentication/fido2/fido2_attestation.h>
 
 /** Maximum number of algorithms in pubKeyCredParams */
 #define FIDO2_MAX_ALGORITHMS 8
@@ -32,6 +33,12 @@
 
 /** Maximum attestation statement format identifier length */
 #define FIDO2_CBOR_ATTESTATION_FMT_MAX_LEN 32
+
+/** CTAP2 canonical CBOR-encoded COSE ES256 public key size */
+#define FIDO2_COSE_ES256_KEY_SIZE 77
+
+/** ES256 is the only supported algorithm for now */
+#define FIDO2_COSE_KEY_MAX_SIZE FIDO2_COSE_ES256_KEY_SIZE
 
 /**
  * Decoded authenticatorMakeCredential request parameters.
@@ -118,5 +125,34 @@ int fido2_cbor_encode_get_info(const struct fido2_device_info *info, uint8_t *cb
  */
 int fido2_cbor_decode_make_credential(const uint8_t *cbor_in, size_t cbor_in_len,
 				      struct fido2_make_credential_params *params);
+
+/**
+ * Encode authenticatorMakeCredential response.
+ *
+ * @param auth_data Raw authenticatorData bytes
+ * @param auth_data_len Length of authenticatorData
+ * @param att Attestation result from the attestation callback
+ * @param cbor_out Output buffer
+ * @param cbor_out_cap Capacity of @p cbor_out in bytes
+ * @param cbor_out_len Number of bytes written to @p cbor_out
+ * @return 0 on success, negative errno on failure
+ */
+int fido2_cbor_encode_make_credential_resp(const uint8_t *auth_data, size_t auth_data_len,
+					   const struct fido2_attestation_result *att,
+					   uint8_t *cbor_out, size_t cbor_out_cap,
+					   size_t *cbor_out_len);
+
+/**
+ * Encode a COSE_Key for ES256 (P-256) public key.
+ *
+ * @param pub_key Uncompressed public key
+ * @param pub_key_len Public key length
+ * @param cbor_out     Output buffer
+ * @param cbor_out_cap Capacity of @p cbor_out in bytes
+ * @param cbor_out_len Number of bytes written to @p cbor_out
+ * @return 0 on success, negative errno on failure
+ */
+int fido2_cbor_encode_cose_key(const uint8_t *pub_key, size_t pub_key_len, uint8_t *cbor_out,
+			       size_t cbor_out_cap, size_t *cbor_out_len);
 
 #endif /* FIDO2_CBOR_H_ */

@@ -54,6 +54,22 @@ extern "C" {
 /** @brief PIN hash size */
 #define FIDO2_PIN_HASH_SIZE 16
 
+/** @brief Size of a discoverable credential ID */
+#define FIDO2_DISCOVERABLE_CRED_ID_SIZE 32
+
+/** @brief Size of a non-discoverable credential ID */
+#define FIDO2_NON_DISCOVERABLE_CRED_ID_SIZE 64
+
+/** @brief Authenticator data header size */
+#define FIDO2_AUTH_DATA_HEADER_SIZE 37
+
+/** @brief Attested credential data size */
+#define FIDO2_ATTESTED_CRED_DATA_MAX_SIZE                                                          \
+	(FIDO2_AAGUID_SIZE + 2 + FIDO2_CREDENTIAL_ID_MAX_SIZE + FIDO2_COSE_KEY_MAX_SIZE)
+
+/** @brief Maximum authenticatorData size 8 */
+#define FIDO2_AUTH_DATA_MAX_SIZE (FIDO2_AUTH_DATA_HEADER_SIZE + FIDO2_ATTESTED_CRED_DATA_MAX_SIZE)
+
 /** @brief Maximum number of supported extensions */
 #define FIDO2_MAX_EXTENSIONS 8
 
@@ -75,6 +91,15 @@ extern "C" {
 #define FIDO2_TRANSPORT_BLE BIT(1)
 /** @brief Transport NFC */
 #define FIDO2_TRANSPORT_NFC BIT(2)
+
+/** @brief User Present (UP) result */
+#define AUTH_DATA_FLAG_UP BIT(0)
+/** @brief User Verified (UV) result */
+#define AUTH_DATA_FLAG_UV BIT(2)
+/** @brief Attested credential data included (AT) */
+#define AUTH_DATA_FLAG_AT BIT(6)
+/** @brief Extension data included (ED) */
+#define AUTH_DATA_FLAG_ED BIT(7)
 
 /** @brief CTAP2 status codes */
 enum fido2_status {
