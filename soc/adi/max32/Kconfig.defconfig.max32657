@@ -19,4 +19,7 @@ config PM_S2RAM
 config SYSTEM_TIMER_RESET_BY_LPM
 	default y if PM_S2RAM && !SYSTEM_TIMER_LPM_COMPANION_NONE
 
+configdefault CACHE_MANAGEMENT
+	default y
+
 endif # SOC_MAX32657
