@@ -11,4 +11,10 @@ tests:
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
       - nrf7120dk/nrf7120/cpuapp
+      - rtl87x2g_evb_a/rtl8762gku
+      - rtl87x2g_evb_a/rtl8762gru
+      - rtl8752h_evb/rtl8752hjf
+      - rtl8752h_evb/rtl8752hjl
+      - rtl8752h_evb/rtl8752hkf
+      - rtl8752h_evb/rtl8752hmf
       - sam_e54_xpro
