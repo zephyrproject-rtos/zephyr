@@ -77,6 +77,7 @@
 	aliases {
 		led0 = &green_led_1;
 		led1 = &red_led_2;
+		die-temp0 = &die_temp;
 	};
 };
 
@@ -165,6 +166,10 @@
 	};
 };
 
+&die_temp {
+	status = "okay";
+};
+
 stm32_lp_tick_source: &lptim1 {
 	clocks = <&rcc STM32_CLOCK(APB7, 11)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
@@ -172,6 +177,19 @@ stm32_lp_tick_source: &lptim1 {
 };
 
 &rng {
+	status = "okay";
+};
+
+&bt_hci_wba {
+	/* Use HASH IRQn as Radio SW IRQ (HASH peripheral must not be enabled!) */
+	interrupts = <66 0>, <61 14>;
+	interrupt-names = "radio", "radio-sw-low";
+};
+
+&ieee802154 {
+	/* Use HASH IRQn as Radio SW IRQ (HASH peripheral must not be enabled!) */
+	interrupts = <66 0>, <61 14>;
+	interrupt-names = "radio", "radio-sw-low";
 	status = "okay";
 };
 
