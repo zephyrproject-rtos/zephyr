@@ -178,14 +178,33 @@ void pm_state_set(enum pm_state state, uint8_t substate_id);
  * @brief Do any SoC or architecture specific post ops after sleep state exits.
  *
  * This function is a place holder to do any operations that may
- * be needed to be done after sleep state exits. Currently it enables
- * interrupts after resuming from sleep state. In future, the enabling
- * of interrupts may be moved into the kernel.
+ * be needed to be done after sleep state exits. Legacy SoC
+ * implementations also use it to enable interrupts after resuming
+ * from sleep state. SoCs that need interrupt unmasking to happen
+ * after PM core wake-up housekeeping should use
+ * pm_state_exit_irq_enable() for that part instead.
  *
  * @param state Power state.
  * @param substate_id Power substate id.
  */
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id);
+
+/**
+ * @brief Enable interrupts after the PM core has completed wake-up housekeeping.
+ *
+ * This optional hook is called after pm_state_exit_post_ops(), PM exit
+ * notifications, and system clock idle-exit accounting have completed.
+ * A SoC may implement this hook when its wake-source ISR must not run until
+ * after those PM core steps are complete.
+ *
+ * The default implementation does nothing. SoCs that move interrupt enabling
+ * out of pm_state_exit_post_ops() are responsible for enabling or restoring
+ * interrupts from this hook.
+ *
+ * @param state Power state.
+ * @param substate_id Power substate id.
+ */
+void pm_state_exit_irq_enable(enum pm_state state, uint8_t substate_id);
 
 /**
  * @}

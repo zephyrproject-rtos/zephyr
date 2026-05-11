@@ -114,22 +114,32 @@ void pm_system_resume(void)
 	 * and it may schedule another thread.
 	 */
 	if (atomic_test_and_clear_bit(z_post_ops_required, id)) {
+		enum pm_state state = z_cpus_pm_state[id]->state;
+		uint8_t substate_id = z_cpus_pm_state[id]->substate_id;
+
 #ifdef CONFIG_PM_DEVICE_SYSTEM_MANAGED
 		if (atomic_add(&_cpus_active, 1) == 0) {
-			if ((z_cpus_pm_state[id]->state != PM_STATE_RUNTIME_IDLE) &&
+			if ((state != PM_STATE_RUNTIME_IDLE) &&
 					!z_cpus_pm_state[id]->pm_device_disabled) {
 				pm_resume_devices();
 			}
 		}
 #endif
-		pm_state_exit_post_ops(z_cpus_pm_state[id]->state,
-				       z_cpus_pm_state[id]->substate_id);
+		pm_state_exit_post_ops(state, substate_id);
 		pm_state_notify(false);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 		sys_clock_idle_exit();
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
 		z_cpus_pm_state[id] = NULL;
+		_kernel.idle = 0;
+		pm_state_exit_irq_enable(state, substate_id);
 	}
+}
+
+__weak void pm_state_exit_irq_enable(enum pm_state state, uint8_t substate_id)
+{
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
 }
 
 bool pm_state_force(uint8_t cpu, const struct pm_state_info *info)
@@ -227,10 +237,10 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	}
 
 	/*
-	 * This function runs with interruptions locked but it is
-	 * expected the SoC to unlock them in
-	 * pm_state_exit_post_ops() when returning to active
-	 * state. We don't want to be scheduled out yet, first we need
+	 * This function runs with interruptions locked but it is expected
+	 * the SoC to unlock them in pm_state_exit_post_ops() or in
+	 * pm_state_exit_irq_enable() when returning to active state.
+	 * We don't want to be scheduled out yet, first we need
 	 * to send a notification about leaving the idle state. So,
 	 * we lock the scheduler here and unlock just after we have
 	 * sent the notification in pm_system_resume().

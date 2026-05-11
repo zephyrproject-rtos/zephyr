@@ -27,6 +27,9 @@ static bool idle_entered;
 static bool testing_device_runtime;
 static bool testing_device_order;
 static bool testing_force_state;
+static bool exit_post_ops_called;
+static bool exit_irq_enable_called;
+static bool expect_irq_enable_after_notifier;
 
 enum pm_state forced_state;
 static const struct device *device_dummy;
@@ -237,9 +240,23 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
 
-	/* pm_system_suspend is entered with irq locked
-	 * unlock irq before leave pm_system_suspend
-	 */
+	exit_post_ops_called = true;
+}
+
+void pm_state_exit_irq_enable(enum pm_state state, uint8_t substate_id)
+{
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+
+	zassert_true(exit_post_ops_called,
+		     "IRQ enable hook ran before PM exit post ops");
+	if (expect_irq_enable_after_notifier) {
+		zassert_true(leave_idle,
+			     "IRQ enable hook ran before the exit notifier");
+	}
+
+	exit_post_ops_called = false;
+	exit_irq_enable_called = true;
 	irq_unlock(0);
 }
 
@@ -355,6 +372,9 @@ ZTEST(power_management_1cpu, test_power_state_trans)
 
 	pm_notifier_register(&notifier);
 	enter_low_power = true;
+	leave_idle = false;
+	exit_irq_enable_called = false;
+	expect_irq_enable_after_notifier = true;
 
 	ret = pm_device_runtime_disable(device_dummy);
 	zassert_true(ret == 0, "Failed to disable device runtime PM");
@@ -362,6 +382,8 @@ ZTEST(power_management_1cpu, test_power_state_trans)
 	/* give way to idle thread */
 	k_sleep(SLEEP_TIMEOUT);
 	zassert_true(leave_idle);
+	zassert_true(exit_irq_enable_called);
+	expect_irq_enable_after_notifier = false;
 
 	ret = pm_device_runtime_enable(device_dummy);
 	zassert_true(ret == 0, "Failed to enable device runtime PM");
