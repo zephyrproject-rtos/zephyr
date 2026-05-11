@@ -42,7 +42,7 @@ methods to obtain such a pointer:
 :c:struct:`flash_area` objects and returns, if found, a pointer to an object
 representing area with given ID.
 The ID number for a flash area can be obtained from a fixed-partition
-DTS node label using :c:macro:`FIXED_PARTITION_ID()`; these labels are obtained
+DTS node label using :c:macro:`PARTITION_ID()`; these labels are obtained
 from the devicetree as described below.
 
 Relationship with Devicetree
@@ -75,20 +75,20 @@ nonvolatile storage API.
 .. _MCUboot documentation: https://docs.mcuboot.com
 
 Numeric flash area ID is obtained by passing DTS node label to
-:c:macro:`FIXED_PARTITION_ID()`; for example to obtain ID number
-for ``slot0_partition``, user would invoke ``FIXED_PARTITION_ID(slot0_partition)``.
+:c:macro:`PARTITION_ID()`; for example to obtain ID number
+for ``slot0_partition``, user would invoke ``PARTITION_ID(slot0_partition)``.
 
-All :code:`FIXED_PARTITION_*` macros take DTS node labels as partition
+All :code:`PARTITION_*` macros take DTS node labels as partition
 identifiers.
 
 Users do not have to obtain a :c:struct:`flash_area` object pointer
 using :c:func:`flash_map_open` to get information on flash area size, offset
 or device, if such area is defined in DTS file. Knowing the DTS node label
-of an area, users may use :c:macro:`FIXED_PARTITION_OFFSET()`,
-:c:macro:`FIXED_PARTITION_SIZE()` or :c:macro:`FIXED_PARTITION_DEVICE()`
+of an area, users may use :c:macro:`PARTITION_OFFSET()`,
+:c:macro:`PARTITION_SIZE()` or :c:macro:`PARTITION_DEVICE()`
 respectively to obtain such information directly from DTS node definition.
 For example to obtain offset of ``storage_partition`` it is enough to
-invoke ``FIXED_PARTITION_OFFSET(storage_partition)``.
+invoke ``PARTITION_OFFSET(storage_partition)``.
 
 Below example shows how to obtain a :c:struct:`flash_area` object pointer
 using :c:func:`flash_area_open` and DTS node label:
@@ -96,7 +96,7 @@ using :c:func:`flash_area_open` and DTS node label:
 .. code-block:: c
 
    const struct flash_area *my_area;
-   int err = flash_area_open(FIXED_PARTITION_ID(slot0_partition), &my_area);
+   int err = flash_area_open(PARTITION_ID(slot0_partition), &my_area);
 
    if (err != 0) {
    	handle_the_error(err);
