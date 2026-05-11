@@ -83,6 +83,16 @@ config MODEM_CELLULAR_RESET_POWER_ON_DELAY_MS
 	int "Delay between de-asserting the reset pin and pulsing the power pin"
 	default 500
 
+config MODEM_CELLULAR_SHELL
+	bool "Cellular modem driver shell commands"
+	depends on !MODEM_SHELL
+	select SHELL
+	help
+	  Enable shell commands for the cellular_modem driver, exposing
+	  cellular_modem_pause_periodic_script() /
+	  cellular_modem_resume_periodic_script() at runtime via a
+	  "cellular" shell command.
+
 if DT_HAS_U_BLOX_LARA_R6_ENABLED
 
 choice MODEM_CELLULAR_RAT
