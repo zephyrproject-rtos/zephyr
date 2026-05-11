@@ -794,6 +794,10 @@ class FilterBuilder(CMake):
             logger.debug(f"Loaded sysbuild domain data from {domain_path}")
             self.instance.domains = domains
             domain_build = domains.get_default_domain().build_dir
+            if not os.path.isabs(domain_build):
+                domain_build = os.path.normpath(
+                    os.path.join(self.build_dir, domain_build)
+                )
             cmake_cache_path = os.path.join(domain_build, "CMakeCache.txt")
             defconfig_path = os.path.join(domain_build, "zephyr", ".config")
             edt_pickle = os.path.join(domain_build, "zephyr", "edt.pickle")
@@ -1460,12 +1464,18 @@ class ProjectBuilder(FilterBuilder):
         self._sanitize_runners_file()
         self._sanitize_zephyr_base_from_files()
 
-    def _sanitize_runners_file(self):
+        if self.instance.sysbuild and self.instance.domains:
+            for domain in self.instance.domains.get_domains():
+                self._sanitize_runners_file(domain.name)
+                self._sanitize_zephyr_base_from_files(domain.name)
+
+    def _sanitize_runners_file(self, domain: str = ''):
         """
         Replace absolute paths of binary files for relative ones. The base
-        directory for those files is f"{self.instance.build_dir}/zephyr"
+        directory for those files is f"{self.instance.build_dir}/{domain}/zephyr"
+        for domain builds, or f"{self.instance.build_dir}/zephyr" otherwise.
         """
-        runners_dir_path: str = os.path.join(self.instance.build_dir, 'zephyr')
+        runners_dir_path: str = os.path.join(self.instance.build_dir, domain, 'zephyr')
         runners_file_path: str = os.path.join(runners_dir_path, 'runners.yaml')
         if not os.path.exists(runners_file_path):
             return
@@ -1491,7 +1501,7 @@ class ProjectBuilder(FilterBuilder):
         with open(runners_file_path, 'w') as file:
             file.write(runners_content_text)
 
-    def _sanitize_zephyr_base_from_files(self):
+    def _sanitize_zephyr_base_from_files(self, domain: str = ''):
         """
         Remove Zephyr base paths from selected files.
         """
@@ -1500,7 +1510,7 @@ class ProjectBuilder(FilterBuilder):
             os.path.join('zephyr', 'runners.yaml'),
         ]
         for file_path in files_to_sanitize:
-            file_path = os.path.join(self.instance.build_dir, file_path)
+            file_path = os.path.join(self.instance.build_dir, domain, file_path)
             if not os.path.exists(file_path):
                 continue
 
