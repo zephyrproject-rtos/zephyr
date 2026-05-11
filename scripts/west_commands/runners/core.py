@@ -820,6 +820,8 @@ class ZephyrBinaryRunner(abc.ABC):
             return build_conf['CONFIG_SRAM_BASE_ADDRESS']
         else:
             sram_node = build_conf.edt.chosen_node('zephyr,sram')
+            if sram_node is None:
+                raise ValueError('Required devicetree chosen node `zephyr,sram` is not set')
             return sram_node.regs[0].addr
 
     def run(self, command: str, **kwargs):
