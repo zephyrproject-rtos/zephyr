@@ -53,13 +53,21 @@ if(CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_VERSION_NS=${CONFIG_TFM_IMAGE_VERSION_NS})
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_SIGNATURE_TYPE=${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE})
 
-    # Use MCUBOOT_HW_KEY for RSA keys and MCUBOOT_BUILTIN_KEY for EC ones.
-    if(${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE} MATCHES "^RSA")
+    # Configure which format to include the public key in the image manifest.
+    #
+    # Note: we disable MCUBOOT_BUILTIN_KEY because starting from TF-M v2.3
+    # this would mean that the key is being passed through key ID. Currently
+    # we don't support this in Zephyr because this requires an extra patch
+    # (provided by TF-M) to be applied in MCUboot, but this has not been
+    # accepted on upstream MCUboot (which is the one used in Zephyr).
+    if(${CONFIG_TFM_PUBLIC_KEY_FORMAT_FULL})
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_BUILTIN_KEY=OFF)
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_HW_KEY=ON)
-    elseif(${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE} MATCHES "^EC-P")
-      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_BUILTIN_KEY=ON)
+      set(TFM_PUBLIC_KEY_FORMAT full)
+    else()  # CONFIG_TFM_PUBLIC_KEY_FORMAT_HASH
+      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_BUILTIN_KEY=OFF)
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_HW_KEY=OFF)
+      set(TFM_PUBLIC_KEY_FORMAT hash)
     endif()
 
     foreach(SUFFIX IN ITEMS "S" "NS")
@@ -461,12 +469,6 @@ if(CONFIG_BUILD_WITH_TFM)
     set(PREPROCESSED_FILE_S_NS "${TFM_BINARY_DIR}/bl2/ext/mcuboot/CMakeFiles/signing_layout_s.dir/signing_layout_s_ns.o")
     set(PREPROCESSED_FILE_NS "${TFM_BINARY_DIR}/bl2/ext/mcuboot/CMakeFiles/signing_layout_ns.dir/signing_layout_ns.o")
     set(TFM_MCUBOOT_DIR "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot")
-  endif()
-
-  # Configure which format (full or hash) to include the public key in
-  # the image manifest
-  if(NOT DEFINED TFM_PUBLIC_KEY_FORMAT)
-    set(TFM_PUBLIC_KEY_FORMAT "full")
   endif()
 
   if(DEFINED TFM_HEX_BASE_ADDRESS_S)

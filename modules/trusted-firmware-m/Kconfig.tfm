@@ -323,6 +323,20 @@ config TFM_KEY_FILE_NS
 	  that should be used by the BL2 bootloader when signing non-secure
 	  firmware images.
 
+choice TFM_PUBLIC_KEY_FORMAT
+	prompt "Public key storing format in BL2"
+	default TFM_PUBLIC_KEY_FORMAT_FULL
+
+config TFM_PUBLIC_KEY_FORMAT_FULL
+	prompt "Full"
+	bool
+
+config TFM_PUBLIC_KEY_FORMAT_HASH
+	prompt "Hash"
+	bool
+
+endchoice
+
 config TFM_MCUBOOT_IMAGE_NUMBER
 	int "Granularity of FW updates of TFM and app"
 	range 1 2
