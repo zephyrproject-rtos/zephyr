@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Mahad Faisal
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA General PWM Timer counter
+
+compatible: "renesas,ra-gpt-counter"
+
+include: [base.yaml]
