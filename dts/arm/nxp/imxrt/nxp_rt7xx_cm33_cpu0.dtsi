@@ -943,7 +943,6 @@
 		reg = <0x418000 0x1000>;
 		interrupts = <40 0>;
 		interrupt-names = "usb_otg";
-		clocks = <&usbclk>;
 		status = "disabled";
 	};
 
@@ -963,7 +962,6 @@
 		reg = <0x419000 0x1000>;
 		interrupts = <41 0>;
 		interrupt-names = "usb_otg";
-		clocks = <&usbclk>;
 		status = "disabled";
 	};
 
