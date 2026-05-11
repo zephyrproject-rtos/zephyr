@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +31,9 @@ LOG_MODULE_REGISTER(max3421e, CONFIG_UHC_DRIVER_LOG_LEVEL);
 #define MAX3421E_STATE_BUS_RESET	0
 #define MAX3421E_STATE_BUS_RESUME	1
 
+/* Section 9.2.6.2 of USB 2.0 standard */
+#define MAX3421E_RST_SKIP_FRAME_CNT 10
+
 struct max3421e_data {
 	struct gpio_callback gpio_cb;
 	struct uhc_transfer *last_xfer;
@@ -43,6 +47,7 @@ struct max3421e_data {
 	uint8_t mode;
 	uint8_t hxfr;
 	uint8_t hrsl;
+	uint8_t skip_frames;
 };
 
 struct max3421e_config {
@@ -492,11 +497,22 @@ static int max3421e_hrslt_success(const struct device *dev)
 		if (err) {
 			break;
 		}
+		xfer->recived_data_len += len;
 
-		LOG_INF("bc %u tr %u", bc, net_buf_tailroom(buf));
+		LOG_DBG("bc %u tr %u", bc, net_buf_tailroom(buf));
+		LOG_DBG("expected_data_len: %d; recived_data_len: %d", xfer->expected_data_len,
+			xfer->recived_data_len);
 
-		if (bc < MAX3421E_MAX_EP_SIZE || !net_buf_tailroom(buf)) {
-			LOG_INF("hrslt bulk in %u, %u", bc, len);
+		/*
+		 * Per USB 2.0 Specification
+		 * A USB Transfer has finished if the endpoint transfers (one or more):
+		 * - exactly the amount of data expected
+		 * - a packet with a payload size less than wMaxPacketSize of the endpoint
+		 * - a zero-length packet
+		 */
+		if ((xfer->recived_data_len >= xfer->expected_data_len) || (bc < xfer->mps) ||
+		    !net_buf_tailroom(buf)) {
+			LOG_DBG("hrslt bulk in %u, %u", bc, len);
 			if (xfer->ep == USB_CONTROL_EP_IN) {
 				xfer->stage = UHC_CONTROL_STAGE_STATUS;
 			} else {
@@ -553,33 +569,71 @@ static int max3421e_handle_hxfrdn(const struct device *dev)
 	return ret;
 }
 
-static void max3421e_handle_condet(const struct device *dev)
+static int max3421e_handle_condet(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 	const uint8_t jk = priv->hrsl & MAX3421E_JKSTATUS_MASK;
+	uint8_t new_mode = priv->mode;
 	enum uhc_event_type type = UHC_EVT_ERROR;
 
+	if (atomic_test_bit(&priv->state, MAX3421E_STATE_BUS_RESET) ||
+	    atomic_test_bit(&priv->state, MAX3421E_STATE_BUS_RESUME)) {
+		/* NOTE: Resetting the bus triggers a spurious condet event */
+		return 0;
+	}
+
 	/*
-	 * JSTATUS:KSTATUS 0:0 - SE0
-	 * JSTATUS:KSTATUS 0:1 - K   (Resume)
-	 * JSTATUS:KSTATUS 1:0 - J   (Idle)
+	 * JSTATUS:KSTATUS 0:0 = SE0 = No device present
+	 * JSTATUS:KSTATUS 1:1 = SE1 = illegal state
+	 * JSTATUS:KSTATUS 0:1 =  K  = Device connected at a different speed than the current one
+	 * JSTATUS:KSTATUS 1:0 =  J  = Device connected at the same speed
 	 */
-	if (jk == 0) {
-		/* Device disconnected */
+	switch (jk) {
+	case 0:
+		LOG_INF("Device disconnected");
 		type = UHC_EVT_DEV_REMOVED;
+		/* NOTE: We set SOFKAENAB in max3421e_bus_event */
+		new_mode &= ~MAX3421E_SOFKAENAB;
+		priv->skip_frames = 0;
+		break;
+	case MAX3421E_KSTATUS:
+		/* Need to switch speed */
+		new_mode ^= MAX3421E_LOWSPEED;
+	case MAX3421E_JSTATUS:
+		bool is_low_speed = new_mode & MAX3421E_LOWSPEED;
+
+		type = is_low_speed ? UHC_EVT_DEV_CONNECTED_LS : UHC_EVT_DEV_CONNECTED_FS;
+		LOG_INF("%s Device connected", is_low_speed ? "LS" : "FS");
+		break;
+	case (MAX3421E_JSTATUS | MAX3421E_KSTATUS):
+		LOG_ERR("Illegal USB Bus state");
+		type = UHC_EVT_ERROR;
+		break;
 	}
 
-	if (jk == MAX3421E_JSTATUS) {
-		/* Device connected */
-		type = UHC_EVT_DEV_CONNECTED_FS;
-	}
-
-	if (jk == MAX3421E_KSTATUS) {
-		/* Device connected */
-		type = UHC_EVT_DEV_CONNECTED_LS;
+	if (priv->mode != new_mode) {
+		LOG_DBG("Changing mode. New Mode: %02x; Old Mode:%02x ", new_mode, priv->mode);
+		max3421e_write_byte(dev, MAX3421E_REG_MODE, new_mode);
+		priv->mode = new_mode;
 	}
 
 	uhc_submit_event(dev, type, 0);
+
+	return 0;
+}
+
+/* Enable SOF generator */
+static int max3421e_sof_enable(const struct device *dev)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+
+	if (priv->mode & MAX3421E_SOFKAENAB) {
+		return -EALREADY;
+	}
+
+	priv->mode |= MAX3421E_SOFKAENAB;
+
+	return max3421e_write_byte(dev, MAX3421E_REG_MODE, priv->mode);
 }
 
 static void max3421e_bus_event(const struct device *dev)
@@ -589,12 +643,17 @@ static void max3421e_bus_event(const struct device *dev)
 	if (atomic_test_and_clear_bit(&priv->state,
 				      MAX3421E_STATE_BUS_RESUME)) {
 		/* Resume operation done event */
+		LOG_DBG("Bus Resume Done");
 		uhc_submit_event(dev, UHC_EVT_RESUMED, 0);
+		max3421e_sof_enable(dev);
 	}
 
 	if (atomic_test_and_clear_bit(&priv->state,
 				      MAX3421E_STATE_BUS_RESET)) {
 		/* Reset operation done event */
+		LOG_DBG("Bus Reset Done");
+		max3421e_sof_enable(dev);
+		priv->skip_frames = MAX3421E_RST_SKIP_FRAME_CNT;
 		uhc_submit_event(dev, UHC_EVT_RESETED, 0);
 	}
 }
@@ -684,7 +743,10 @@ static void uhc_max3421e_thread(void *p1, void *p2, void *p3)
 
 		/* Frame Generator Interrupt */
 		if (priv->hirq & MAX3421E_FRAME) {
-			schedule = HRSLT_IS_BUSY(priv->hrsl) ? false : true;
+			schedule = !HRSLT_IS_BUSY(priv->hrsl) && priv->skip_frames <= 0;
+			if (priv->skip_frames > 0) {
+				priv->skip_frames--;
+			}
 		}
 
 		/* Shorten the if path a little */
@@ -722,20 +784,6 @@ static void max3421e_gpio_cb(const struct device *dev,
 		CONTAINER_OF(cb, struct max3421e_data, gpio_cb);
 
 	k_sem_give(&priv->irq_sem);
-}
-
-/* Enable SOF generator */
-static int max3421e_sof_enable(const struct device *dev)
-{
-	struct max3421e_data *priv = uhc_get_private(dev);
-
-	if (priv->mode & MAX3421E_SOFKAENAB) {
-		return -EALREADY;
-	}
-
-	priv->mode |= MAX3421E_SOFKAENAB;
-
-	return max3421e_write_byte(dev, MAX3421E_REG_MODE, priv->mode);
 }
 
 /* Disable SOF generator and suspend bus */
@@ -1108,6 +1156,8 @@ static DEVICE_API(uhc, max3421e_uhc_api) = {
 	.sof_enable  = max3421e_sof_enable,
 	.bus_suspend = max3421e_bus_suspend,
 	.bus_resume = max3421e_bus_resume,
+
+	.probe = max3421e_handle_condet,
 
 	.ep_enqueue = max3421e_enqueue,
 	.ep_dequeue = max3421e_dequeue,

@@ -146,8 +146,9 @@ int uhc_get_ep_properties(struct usb_device *const udev,
 struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t ep,
 				    struct usb_device *const udev,
+				    const size_t rec_len,
 				    void *const cb,
-				    void *const cb_priv,
+				    void *const cb_priv)
 				    const k_timeout_t timeout)
 {
 	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
@@ -183,6 +184,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	xfer->udev = udev;
 	xfer->cb = cb;
 	xfer->priv = cb_priv;
+	xfer->expected_data_len = rec_len;
 
 xfer_alloc_error:
 	api->unlock(dev);

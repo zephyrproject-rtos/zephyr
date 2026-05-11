@@ -76,7 +76,7 @@ static int validate_device_mps0(const struct usb_device *const udev)
 {
 	const uint8_t mps0 = udev->dev_desc.bMaxPacketSize0;
 
-	if (udev->speed == USB_SPEED_SPEED_SS || udev->speed == USB_SPEED_SPEED_LS) {
+	if (udev->speed == USB_SPEED_SPEED_SS) {
 		LOG_ERR("USB device speed not supported");
 		return -ENOTSUP;
 	}
@@ -91,6 +91,13 @@ static int validate_device_mps0(const struct usb_device *const udev)
 	if (udev->speed == USB_SPEED_SPEED_FS) {
 		if (mps0 != 8 && mps0 != 16 && mps0 != 32 && mps0 != 64) {
 			LOG_ERR("FS device has wrong bMaxPacketSize0 %u", mps0);
+			return -EINVAL;
+		}
+	}
+
+	if (udev->speed == USB_SPEED_SPEED_LS) {
+		if (mps0 != 8) {
+			LOG_ERR("LS device has wrong bMaxPacketSize0 %u", mps0);
 			return -EINVAL;
 		}
 	}

@@ -143,6 +143,10 @@ struct uhc_transfer {
 	 * This flag is optional and is mainly used for testing.
 	 */
 	unsigned int no_status : 1;
+	/** Expected length of the data that wil be recived (device to host xfers only)*/
+	size_t expected_data_len;
+	/** Length of the data that was already received (device to host xfers only)*/
+	size_t recived_data_len;
 	/** Pointer to USB device */
 	struct usb_device *udev;
 	/** Pointer to transfer completion callback (opaque for the UHC) */
@@ -307,6 +311,8 @@ __subsystem struct uhc_driver_api {
 	int (*bus_suspend)(const struct device *dev);
 	int (*bus_resume)(const struct device *dev);
 
+	int (*probe)(const struct device *dev);
+
 	int (*ep_enqueue)(const struct device *dev,
 			  struct uhc_transfer *const xfer);
 	int (*ep_dequeue)(const struct device *dev,
@@ -408,6 +414,31 @@ static inline int uhc_bus_resume(const struct device *dev)
 }
 
 /**
+ * @brief Probe USB bus for root device
+ *
+ * Manual detection of root usb device. Usually the device is detected automatically, but this
+ * function is useful if our usb host detects only connects/disconnects and we power it on with
+ * the device already plugged in.
+ *
+ * If a device is connected it will be reported as UHC_EVT_DEV_CONNECTED_LS/FS/HS UHC event.
+ *
+ * @param[in] dev      Pointer to device struct of the driver instance
+ *
+ * @return 0 on success, all other values should be treated as error.
+ */
+static inline int uhc_probe(const struct device *dev)
+{
+	const struct uhc_driver_api *api = dev->api;
+	int ret;
+
+	api->lock(dev);
+	ret = api->probe(dev);
+	api->unlock(dev);
+
+	return ret;
+}
+
+/**
  * @brief Allocate UHC transfer
  *
  * Allocate a new transfer from common transfer pool.
@@ -417,6 +448,8 @@ static inline int uhc_bus_resume(const struct device *dev)
  * @param[in] dev     Pointer to device struct of the driver instance
  * @param[in] ep      Endpoint address
  * @param[in] udev    Pointer to USB device
+ * @param[in] rec_len Desired length of the response from the device in bytes.
+ *                    Set to 0 if receiving one packet or if sending data.
  * @param[in] cb      Transfer completion callback
  * @param[in] cb_priv Completion callback callback private data
  * @param[in] timeout Waiting period to wait for allocation to complete.
@@ -428,6 +461,7 @@ static inline int uhc_bus_resume(const struct device *dev)
 struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t ep,
 				    struct usb_device *const udev,
+				    const size_t rec_len,
 				    void *const cb,
 				    void *const cb_priv,
 				    const k_timeout_t timeout);
