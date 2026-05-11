@@ -659,19 +659,97 @@ static int api_read_jedec_id(const struct device *dev, uint8_t *id)
 }
 #endif /* CONFIG_FLASH_JESD216_API  */
 
+#if defined(WITH_DPD)
+static int enter_dpd(const struct device *const dev)
+{
+	const struct flash_mspi_nor_config *dev_config = dev->config;
+	struct flash_mspi_nor_data *dev_data = dev->data;
+	int rc = 0;
+
+	if (dev_config->has_dpd) {
+		set_up_xfer(dev, MSPI_TX, dev_config->control_xfer_mode);
+		rc = perform_xfer(dev, SPI_NOR_CMD_DPD);
+
+		if (rc >= 0) {
+			dev_data->enter_dpd_cycle = k_cycle_get_32();
+		}
+	}
+
+	return rc;
+}
+
+static int exit_dpd(const struct device *const dev)
+{
+	const struct flash_mspi_nor_config *dev_config = dev->config;
+	struct flash_mspi_nor_data *dev_data = dev->data;
+	int rc = 0;
+
+	if (dev_config->has_dpd) {
+		/* When relasing the flash chip from DPD mode, make sure that
+		 * enough time has passed since the DPD command was issued,
+		 * otherwise the request might get ignored by the chip.
+		 * This minimal interval is the sum of the time the flash
+		 * chip needs to enter DPD mode after receiving the DPD
+		 * command (t-enter-dpd in dts) and the time the chip needs
+		 * to be in DPD mode before it can handle a request to exit
+		 * the mode (item 0 in dpd-wakeup-sequence).
+		 */
+		uint32_t min_interval_us = dev_config->t_enter_dpd_us
+					 + dev_config->t_dpdd_us;
+		uint32_t since_enter_cyc = k_cycle_get_32()
+					 - dev_data->enter_dpd_cycle;
+		uint32_t since_enter_us = k_cyc_to_us_floor32(since_enter_cyc);
+
+		if (since_enter_us < min_interval_us) {
+			k_busy_wait(min_interval_us - since_enter_us);
+		}
+
+		/* It is not possible to request the MSPI controller to just
+		 * do a pulse on the CS line, thus even if dpd-wakeup-sequence
+		 * is defined, we just send the RDPD command - this will cause
+		 * the CS line to be asserted and the pulse should always be
+		 * longer than the required tCDRP from dpd-wakeup-sequence as
+		 * that time is usually less than two SCK cycles.
+		 */
+		set_up_xfer(dev, MSPI_TX, dev_config->control_xfer_mode);
+		rc = perform_xfer(dev, SPI_NOR_CMD_RDPD);
+
+		if (rc >= 0) {
+			k_busy_wait(dev_config->t_exit_dpd_us);
+		}
+	}
+
+	return rc;
+}
+#endif /* WITH_DPD */
+
 static int dev_pm_action_cb(const struct device *dev,
 			    enum pm_device_action action)
 {
+	int rc = 0;
+
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
+#if defined(WITH_DPD)
+		acquire(dev);
+		rc = enter_dpd(dev);
+		release(dev);
+#endif
 		break;
+
 	case PM_DEVICE_ACTION_RESUME:
+#if defined(WITH_DPD)
+		acquire(dev);
+		rc = exit_dpd(dev);
+		release(dev);
+#endif
 		break;
+
 	default:
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return rc;
 }
 
 static int quad_enable_set(const struct device *dev, bool enable)
@@ -1072,6 +1150,18 @@ static int flash_chip_init(const struct device *dev)
 		k_busy_wait(dev_config->reset_recovery_us);
 	}
 
+#if defined(WITH_DPD)
+	/* If the flash chip was not reset, it may remain in DPD mode.
+	 * Make sure to bring it to normal operation.
+	 */
+	dev_data->enter_dpd_cycle = k_cycle_get_32();
+	rc = exit_dpd(dev);
+	if (rc < 0) {
+		LOG_ERR("Failed to exit DPD (%d)", rc);
+		return -EIO;
+	}
+#endif
+
 	if (dev_config->quirks != NULL &&
 	    dev_config->quirks->pre_init != NULL) {
 		rc = dev_config->quirks->pre_init(dev);
@@ -1363,6 +1453,17 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 #define PACKET_DATA_LIMIT(inst) \
 	DT_PROP_OR(DT_INST_BUS(inst), packet_data_limit, 0)
 
+#define INIT_DPD_TIMES(inst) \
+	.t_enter_dpd_us = DT_INST_PROP_OR(inst, t_enter_dpd, 0) \
+			/ NSEC_PER_USEC, \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, dpd_wakeup_sequence), \
+		(.t_dpdd_us = DT_INST_PROP_BY_IDX(inst, dpd_wakeup_sequence, 0) \
+			    / NSEC_PER_USEC, \
+		 .t_exit_dpd_us = DT_INST_PROP_BY_IDX(inst, dpd_wakeup_sequence, 2) \
+				/ NSEC_PER_USEC,), \
+		(.t_exit_dpd_us = DT_INST_PROP_OR(inst, t_exit_dpd, 0) \
+				/ NSEC_PER_USEC,))
+
 #if CONFIG_FLASH_MSPI_NOR_DMA_CONTROL_XFER
 #define FLASH_MSPI_NOR_CONTROL_XFER_MODE MSPI_DMA
 #else
@@ -1404,6 +1505,7 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 		.reset_recovery_us = DT_INST_PROP_OR(inst, t_reset_recovery, 0)	\
 				   / NSEC_PER_USEC,				\
 		.transfer_timeout = DT_INST_PROP(inst, transfer_timeout),	\
+		IF_ENABLED(WITH_DPD, (INIT_DPD_TIMES(inst)))			\
 		FLASH_PAGE_LAYOUT_DEFINE(inst)					\
 		.jedec_id = DT_INST_PROP_OR(inst, jedec_id, {0}),		\
 		.quirks = FLASH_QUIRKS(inst),					\
@@ -1424,6 +1526,7 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 					       software_multiperipheral),	\
 		IO_MODE_FLAGS(DT_INST_ENUM_IDX(inst, mspi_io_mode)),		\
 		.initial_soft_reset = DT_INST_PROP(inst, initial_soft_reset),	\
+		.has_dpd = DT_INST_PROP(inst, has_dpd),				\
 		.control_xfer_mode = FLASH_MSPI_NOR_CONTROL_XFER_MODE,		\
 		.data_xfer_mode = FLASH_MSPI_NOR_DATA_XFER_MODE,		\
 	};									\
