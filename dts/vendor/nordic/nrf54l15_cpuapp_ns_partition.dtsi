@@ -93,3 +93,19 @@
 		};
 	};
 };
+
+/ {
+	nordic-tz-secure {
+		compatible = "nordic,tz-secure";
+		code-partitions = <&slot0_s_partition>;
+		data-partitions = <&tfm_ps_partition>,
+				  <&tfm_its_partition>,
+				  <&tfm_otp_partition>;
+	};
+
+	nordic-tz-nonsecure {
+		compatible = "nordic,tz-nonsecure";
+		code-partitions = <&slot0_ns_partition>;
+		data-partitions = <&storage_partition>;
+	};
+};
