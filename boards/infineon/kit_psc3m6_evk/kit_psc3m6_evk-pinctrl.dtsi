@@ -1,0 +1,57 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Debug UART (SCB3) pin drive modes */
+&p6_3_scb3_uart_tx {
+	drive-push-pull;
+};
+
+&p6_2_scb3_uart_rx {
+	input-enable;
+};
+
+/* User UART (SCB4) pin drive modes */
+&p3_3_scb4_uart_tx {
+	drive-push-pull;
+};
+
+&p3_2_scb4_uart_rx {
+	input-enable;
+};
+
+/* I2C (SCB0) pin drive modes — open-drain for I2C bus */
+&p9_0_scb0_i2c_scl {
+	drive-open-drain;
+	input-enable;
+};
+
+&p9_2_scb0_i2c_sda {
+	drive-open-drain;
+	input-enable;
+};
+
+/* SPI (SCB2) pin drive modes */
+&p7_0_scb2_spi_m_clk {
+	drive-push-pull;
+};
+
+&p7_1_scb2_spi_m_mosi {
+	drive-push-pull;
+};
+
+&p7_2_scb2_spi_m_miso {
+	input-enable;
+};
+
+/* CAN pin drive modes */
+&p5_2_can1_ttcan_rx {
+	input-enable;
+};
+
+&p5_3_can1_ttcan_tx {
+	drive-push-pull;
+};

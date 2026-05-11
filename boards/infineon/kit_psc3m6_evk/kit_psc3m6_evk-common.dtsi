@@ -1,0 +1,180 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Common devicetree content for the kit_psc3m6_evk board variants.
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	model = "PSOC™ Control C3M6 Evaluation Kit";
+	compatible = "infineon,kit_psc3m6_evk", "infineon,PSC3M6";
+
+	aliases {
+		led0 = &user_led0;
+		led1 = &user_led1;
+		sw0 = &user_bt0;
+		sw1 = &user_bt1;
+		watchdog0 = &watchdog0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		user_led0: led_0 {
+			label = "LED_0";
+			/* P8.4 - LED3 Yellow, anode to VTARG_REF, cathode to pin */
+			gpios = <&gpio_prt8 4 GPIO_ACTIVE_LOW>;
+		};
+
+		user_led1: led_1 {
+			label = "LED_1";
+			/* P8.5 - LED4 Blue, anode to VTARG_REF, cathode to pin */
+			gpios = <&gpio_prt8 5 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_bt0: user_btn0 {
+			label = "SW_4";
+			/* P10.2 - SW4 (USER BTN-1), pull-up to VTARG_REF */
+			gpios = <&gpio_prt10 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		user_bt1: user_btn1 {
+			label = "SW_3";
+			/* P2.0 - SW3 (USER BTN-2), pull-up to VTARG_REF */
+			gpios = <&gpio_prt2 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+/* Enable GPIO ports used by board peripherals */
+&gpio_prt2 {
+	status = "okay";
+};
+
+&gpio_prt3 {
+	status = "okay";
+};
+
+&gpio_prt5 {
+	status = "okay";
+};
+
+&gpio_prt6 {
+	status = "okay";
+};
+
+&gpio_prt7 {
+	status = "okay";
+};
+
+&gpio_prt8 {
+	status = "okay";
+};
+
+&gpio_prt9 {
+	status = "okay";
+};
+
+&gpio_prt10 {
+	status = "okay";
+};
+
+/* Debug UART — console (SCB3: P6.3 TX, P6.2 RX) */
+uart3: &scb3 {
+	compatible = "infineon,uart";
+	status = "okay";
+	current-speed = <115200>;
+	clocks = <&peri0_group4_8bit_0>;
+	pinctrl-0 = <&p6_3_scb3_uart_tx &p6_2_scb3_uart_rx>;
+	pinctrl-names = "default";
+};
+
+/* User UART (SCB4: P3.3 TX, P3.2 RX) */
+uart4: &scb4 {
+	compatible = "infineon,uart";
+	status = "okay";
+	current-speed = <115200>;
+	clocks = <&peri0_group4_8bit_1>;
+	pinctrl-0 = <&p3_3_scb4_uart_tx &p3_2_scb4_uart_rx>;
+	pinctrl-names = "default";
+};
+
+/* I2C (SCB0: P9.0 SCL, P9.2 SDA) */
+i2c0: &scb0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "infineon,i2c";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	clocks = <&peri0_group4_8bit_2>;
+	pinctrl-0 = <&p9_0_scb0_i2c_scl &p9_2_scb0_i2c_sda>;
+	pinctrl-names = "default";
+};
+
+/* SPI (SCB2: P7.0 CLK, P7.1 MOSI, P7.2 MISO, P7.3 CS via GPIO) */
+spi2: &scb2 {
+	compatible = "infineon,spi";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&peri0_group4_16bit_0>;
+	pinctrl-0 = <&p7_0_scb2_spi_m_clk &p7_1_scb2_spi_m_mosi
+		     &p7_2_scb2_spi_m_miso>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio_prt7 3 GPIO_ACTIVE_LOW>;
+};
+
+/* CAN (CANFD0 channel 1: P5.2 RX, P5.3 TX) */
+&canfd0 {
+	status = "okay";
+};
+
+&can1 {
+	status = "okay";
+	clocks = <&peri0_group4_16_5bit_0>;
+	pinctrl-0 = <&p5_2_can1_ttcan_rx &p5_3_can1_ttcan_tx>;
+	pinctrl-names = "default";
+};
+
+/* Peripheral clock dividers */
+&peri0_group4_8bit_0 {
+	status = "okay";
+	clock-div = <86>;
+};
+
+&peri0_group4_8bit_1 {
+	status = "okay";
+	clock-div = <86>;
+};
+
+&peri0_group4_8bit_2 {
+	status = "okay";
+	clock-div = <86>;
+};
+
+&peri0_group4_16bit_0 {
+	status = "okay";
+	clock-div = <4>;
+};
+
+&peri0_group4_16_5bit_0 {
+	status = "okay";
+	clock-div = <1>;
+};
+
+&watchdog0 {
+	status = "okay";
+};
