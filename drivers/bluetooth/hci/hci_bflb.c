@@ -69,7 +69,6 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 
 struct bt_bflb_data {
 	struct bt_hci_driver_data common;
-	bt_hci_recv_t recv;
 };
 
 static K_FIFO_DEFINE(rx_fifo);
@@ -201,7 +200,6 @@ static void controller_rx_cb(uint8_t pkt_type, uint16_t src_id, uint8_t *param, 
 static void rx_thread_func(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
-	struct bt_bflb_data *hci = dev->data;
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -209,11 +207,7 @@ static void rx_thread_func(void *p1, void *p2, void *p3)
 	while (true) {
 		struct net_buf *buf = k_fifo_get(&rx_fifo, K_FOREVER);
 
-		if (hci->recv != NULL) {
-			hci->recv(dev, buf);
-		} else {
-			net_buf_unref(buf);
-		}
+		bt_hci_recv(dev, buf);
 	}
 }
 
@@ -290,12 +284,9 @@ done:
 	return ret;
 }
 
-static int bt_bflb_open(const struct device *dev, bt_hci_recv_t recv)
+static int bt_bflb_open(const struct device *dev)
 {
-	struct bt_bflb_data *hci = dev->data;
 	uint8_t hci_ret;
-
-	hci->recv = recv;
 
 	bflb_rf_init();
 
@@ -317,10 +308,7 @@ static int bt_bflb_open(const struct device *dev, bt_hci_recv_t recv)
 
 static int bt_bflb_close(const struct device *dev)
 {
-	struct bt_bflb_data *hci = dev->data;
-
 	bflb_controller_deinit();
-	hci->recv = NULL;
 
 	LOG_INF("BLE controller stopped");
 	return 0;

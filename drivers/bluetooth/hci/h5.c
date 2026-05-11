@@ -87,8 +87,6 @@ struct h5_data {
 	/* Needed for delayed work callbacks */
 	const struct device     *dev;
 
-	bt_hci_recv_t           recv;
-
 	struct net_buf		*rx_buf;
 
 	struct k_fifo		tx_queue;
@@ -417,7 +415,7 @@ static void h5_process_complete_packet(const struct device *dev, uint8_t *hdr)
 	case HCI_ACLDATA_PKT:
 	case HCI_ISODATA_PKT:
 		hexdump("=> ", buf->data, buf->len);
-		h5->recv(dev, buf);
+		bt_hci_recv(dev, buf);
 		break;
 	}
 }
@@ -752,7 +750,7 @@ static void h5_init(const struct device *dev)
 	k_work_init_delayable(&h5->retx_work, retx_timeout);
 }
 
-static int h5_open(const struct device *dev, bt_hci_recv_t recv)
+static int h5_open(const struct device *dev)
 {
 	const struct h5_config *cfg = dev->config;
 	struct h5_data *h5 = dev->data;
@@ -763,8 +761,6 @@ static int h5_open(const struct device *dev, bt_hci_recv_t recv)
 	 * delayed work callbacks.
 	 */
 	h5->dev = dev;
-
-	h5->recv = recv;
 
 	uart_irq_rx_disable(cfg->uart);
 	uart_irq_tx_disable(cfg->uart);

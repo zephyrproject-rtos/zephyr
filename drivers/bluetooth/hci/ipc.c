@@ -39,7 +39,6 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_BT_CONN) || IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CO
 
 struct ipc_data {
 	struct bt_hci_driver_data common;
-	bt_hci_recv_t recv;
 	struct ipc_ept hci_ept;
 	struct ipc_ept_cfg hci_ept_cfg;
 	struct k_sem bound_sem;
@@ -230,7 +229,6 @@ static struct net_buf *bt_ipc_iso_recv(const uint8_t *data, size_t remaining)
 
 static void bt_ipc_rx(const struct device *dev, const uint8_t *data, size_t len)
 {
-	struct ipc_data *ipc = dev->data;
 	uint8_t pkt_indicator;
 	struct net_buf *buf = NULL;
 	size_t remaining = len;
@@ -241,14 +239,17 @@ static void bt_ipc_rx(const struct device *dev, const uint8_t *data, size_t len)
 	remaining -= sizeof(pkt_indicator);
 
 	switch (pkt_indicator) {
-	case BT_HCI_H4_EVT:
+	case BT_HCI_H4_EVT: {
 #if defined(CONFIG_BT_EXT_ADV)
+		struct ipc_data *ipc = dev->data;
+
 		if (hci_ext_adv_report_process(&ipc->ext_adv_discard, data, remaining, &buf)) {
 			break;
 		}
 #endif /* CONFIG_BT_EXT_ADV */
 		buf = bt_ipc_evt_recv(data, remaining);
 		break;
+	}
 
 	case BT_HCI_H4_ACL:
 		buf = bt_ipc_acl_recv(data, remaining);
@@ -264,10 +265,10 @@ static void bt_ipc_rx(const struct device *dev, const uint8_t *data, size_t len)
 	}
 
 	if (buf) {
-		LOG_DBG("Calling bt_recv(%p)", buf);
-		ipc->recv(dev, buf);
-
 		LOG_HEXDUMP_DBG(buf->data, buf->len, "RX buf payload:");
+		LOG_DBG("Calling bt_hci_recv(%p)", buf);
+		bt_hci_recv(dev, buf);
+
 	}
 }
 
@@ -328,7 +329,7 @@ int __weak bt_hci_transport_teardown(const struct device *dev)
 	return 0;
 }
 
-static int bt_ipc_open(const struct device *dev, bt_hci_recv_t recv)
+static int bt_ipc_open(const struct device *dev)
 {
 	struct ipc_data *ipc = dev->data;
 	int err;
@@ -359,8 +360,6 @@ static int bt_ipc_open(const struct device *dev, bt_hci_recv_t recv)
 		return err;
 	}
 
-	ipc->recv = recv;
-
 	return 0;
 }
 
@@ -386,8 +385,6 @@ static int bt_ipc_close(const struct device *dev)
 		LOG_ERR("HCI transport teardown failed with: %d", err);
 		return err;
 	}
-
-	ipc->recv = NULL;
 
 	return 0;
 }

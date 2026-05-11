@@ -44,7 +44,6 @@ struct bt_sf32lb_data {
 	} tx;
 
 	struct k_sem sem;
-	bt_hci_recv_t recv;
 	ipc_queue_handle_t ipc_port;
 
 	struct {
@@ -342,8 +341,8 @@ static void rx_thread(void *p1, void *p2, void *p3)
 				if (buf->len == 0 || buf->data == NULL) {
 					break;
 				}
-				if (hci->recv != NULL && hci->rx.ready) {
-					hci->recv(dev, buf);
+				if (hci->rx.ready) {
+					bt_hci_recv(dev, buf);
 					buf = k_fifo_get(&hci->rx.fifo, K_NO_WAIT);
 					continue;
 				}
@@ -544,15 +543,13 @@ static int bt_hci_sf32lb_send(const struct device *dev, struct net_buf *buf)
 	return 0;
 }
 
-static int bt_hci_sf32lb_open(const struct device *dev, bt_hci_recv_t recv)
+static int bt_hci_sf32lb_open(const struct device *dev)
 {
-	struct bt_sf32lb_data *hci = dev->data;
 	const struct bt_sf32lb_config *cfg = dev->config;
 	k_tid_t tid;
 	int r;
 
-	LOG_DBG("hci open %p", (void *)recv);
-	hci->recv = recv;
+	LOG_DBG("hci open %p", (void *)dev);
 	r = zbt_config_mailbox(dev);
 	if (r == 0) {
 		tid = k_thread_create(cfg->rx_thread, cfg->rx_thread_stack,

@@ -21,7 +21,6 @@ LOG_MODULE_REGISTER(bt_hci_driver_efr32);
 
 struct hci_data {
 	struct bt_hci_driver_data common;
-	bt_hci_recv_t recv;
 };
 
 #if defined(CONFIG_BT_MAX_CONN)
@@ -218,7 +217,6 @@ static void slz_ll_thread_func(void *p1, void *p2, void *p3)
 static void slz_rx_thread_func(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
-	struct hci_data *hci = dev->data;
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -226,7 +224,7 @@ static void slz_rx_thread_func(void *p1, void *p2, void *p3)
 	while (true) {
 		struct net_buf *buf = k_fifo_get(&slz_rx_fifo, K_FOREVER);
 
-		hci->recv(dev, buf);
+		bt_hci_recv(dev, buf);
 	}
 }
 
@@ -242,11 +240,12 @@ static void slz_set_tx_power(int16_t max_power_dbm)
 	}
 }
 
-static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
+static int slz_bt_open(const struct device *dev)
 {
-	struct hci_data *hci = dev->data;
 	int ret;
 	sl_status_t sl_status;
+
+	ARG_UNUSED(dev);
 
 	BUILD_ASSERT(CONFIG_NUM_METAIRQ_PRIORITIES > 0,
 		     "Config NUM_METAIRQ_PRIORITIES must be greater than 0");
@@ -300,8 +299,6 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 
 	/* Set up interrupts after Controller init, because it will overwrite them. */
 	rail_isr_installer();
-
-	hci->recv = recv;
 
 	LOG_DBG("SiLabs BT HCI started");
 

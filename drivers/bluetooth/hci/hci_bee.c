@@ -38,7 +38,6 @@ static struct {
 
 struct bt_bee_data {
 	struct bt_hci_driver_data common;
-	bt_hci_recv_t recv;
 };
 
 static bool bt_hci_bee_check_hci_event_discardable(const uint8_t *event_data)
@@ -110,7 +109,6 @@ static bool bt_hci_bee_recv_cb(T_RTL_BT_HCI_EVT evt, bool status, uint8_t *buf, 
 
 void bt_hci_bee_handle_rx_data(const struct device *dev, struct rtl_bt_rx_buf *rx_buf)
 {
-	struct bt_bee_data *hci = dev->data;
 	struct net_buf *z_buf = NULL;
 	size_t buf_tailroom;
 
@@ -131,7 +129,7 @@ void bt_hci_bee_handle_rx_data(const struct device *dev, struct rtl_bt_rx_buf *r
 			if (buf_tailroom >= (hdr.len + sizeof(hdr))) {
 				net_buf_add_mem(z_buf, &rx_buf->buf[1], hdr.len + sizeof(hdr));
 				LOG_DBG("H4_EVT: event 0x%x", hdr.evt);
-				hci->recv(dev, z_buf);
+				bt_hci_recv(dev, z_buf);
 				break;
 			}
 			net_buf_unref(z_buf);
@@ -151,7 +149,7 @@ void bt_hci_bee_handle_rx_data(const struct device *dev, struct rtl_bt_rx_buf *r
 				net_buf_add_mem(z_buf, &rx_buf->buf[1], hdr.len + sizeof(hdr));
 				LOG_DBG("H4_ACL: handle 0x%x, Calling bt_recv(%p)", hdr.handle,
 					z_buf);
-				hci->recv(dev, z_buf);
+				bt_hci_recv(dev, z_buf);
 				break;
 			}
 			net_buf_unref(z_buf);
@@ -169,9 +167,9 @@ void bt_hci_bee_handle_rx_data(const struct device *dev, struct rtl_bt_rx_buf *r
 			buf_tailroom = net_buf_tailroom(z_buf);
 			if (buf_tailroom >= (hdr.len + sizeof(hdr))) {
 				net_buf_add_mem(z_buf, &rx_buf->buf[1], hdr.len + sizeof(hdr));
-				LOG_DBG("H4_ISO: handle 0x%x, Calling bt_recv(%p)", hdr.handle,
-					z_buf);
-				hci->recv(dev, z_buf);
+				LOG_DBG("H4_ISO: handle 0x%x, Calling bt_hci_recv(%p)",
+					hdr.handle, z_buf);
+				bt_hci_recv(dev, z_buf);
 				break;
 			}
 			net_buf_unref(z_buf);
@@ -256,7 +254,7 @@ done:
 	return ret;
 }
 
-static int bt_hci_bee_open(const struct device *dev, bt_hci_recv_t recv)
+static int bt_hci_bee_open(const struct device *dev)
 {
 	k_tid_t tid;
 
@@ -265,11 +263,8 @@ static int bt_hci_bee_open(const struct device *dev, bt_hci_recv_t recv)
 			      NULL, NULL, 0, 0, K_NO_WAIT);
 	k_thread_name_set(tid, "rtl_rx_thread");
 
-	struct bt_bee_data *hci = dev->data;
-
 	if (rtl_bt_hci_h2c_pool_init(CONFIG_BT_BEE_HCI_H2C_POOL_SIZE)) {
 		if (rtl_bt_hci_open(bt_hci_bee_recv_cb)) {
-			hci->recv = recv;
 			LOG_DBG("Bee BT started");
 			return 0;
 		}
@@ -279,10 +274,6 @@ static int bt_hci_bee_open(const struct device *dev, bt_hci_recv_t recv)
 
 static int bt_hci_bee_close(const struct device *dev)
 {
-	struct bt_bee_data *hci = dev->data;
-
-	hci->recv = NULL;
-
 	LOG_DBG("Bee BT stopped");
 
 	return 0;

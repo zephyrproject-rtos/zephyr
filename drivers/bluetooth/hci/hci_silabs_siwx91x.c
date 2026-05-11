@@ -30,7 +30,6 @@ struct hci_config {
 
 struct hci_data {
 	struct bt_hci_driver_data common;
-	bt_hci_recv_t recv;
 	rsi_data_packet_t rsi_data_packet;
 };
 
@@ -66,15 +65,13 @@ static int rsi_bt_driver_send_tx_pwr_vs_cmd(const struct device *dev, uint8_t pr
 	return 0;
 }
 
-static int siwx91x_bt_open(const struct device *dev, bt_hci_recv_t recv)
+static int siwx91x_bt_open(const struct device *dev)
 {
-	struct hci_data *hci = dev->data;
+	ARG_UNUSED(dev);
+
 	int status = rsi_ble_enhanced_gap_extended_register_callbacks(RSI_BLE_ON_RCP_EVENT,
 								      (void *)siwx91x_bt_resp_rcvd);
 
-	if (!status) {
-		hci->recv = recv;
-	}
 	return status ? -EIO : 0;
 }
 
@@ -125,7 +122,6 @@ static int siwx91x_bt_send(const struct device *dev, struct net_buf *buf)
 static void siwx91x_bt_resp_rcvd(uint16_t status, rsi_ble_event_rcp_rcvd_info_t *resp_buf)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct hci_data *hci = dev->data;
 	uint8_t packet_type = BT_HCI_H4_NONE;
 	size_t len = 0;
 	struct net_buf *buf = NULL;
@@ -156,7 +152,7 @@ static void siwx91x_bt_resp_rcvd(uint16_t status, rsi_ble_event_rcp_rcvd_info_t 
 
 	if (buf && (len <= net_buf_tailroom(buf))) {
 		net_buf_add_mem(buf, resp_buf->data, len);
-		hci->recv(dev, buf);
+		bt_hci_recv(dev, buf);
 	}
 }
 
