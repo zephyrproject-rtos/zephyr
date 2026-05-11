@@ -910,12 +910,29 @@ static int uaol_intel_adsp_get_capabilities(const struct device *dev,
 	return ret;
 }
 
+/*
+ * Perform a one time rate adjustment for UAOL stream.
+ */
+static int uaol_intel_adsp_adjust_rate(const struct device *dev, int stream, bool increase)
+{
+	struct uaol_intel_adsp_data *dp = dev->data;
+	union UAOLxPCMSyRA pcms_ra;
+
+	pcms_ra.full = sys_read32(UAOLxPCMSyRA_ADDR(dp, stream));
+	pcms_ra.part.fbadir = increase ? 0 : 1;
+	pcms_ra.part.fbadj = 1;
+	sys_write32(pcms_ra.full, UAOLxPCMSyRA_ADDR(dp, stream));
+
+	return 0;
+}
+
 static DEVICE_API(uaol, uaol_intel_adsp_api_funcs) = {
 	.config = uaol_intel_adsp_config,
 	.start = uaol_intel_adsp_start,
 	.stop = uaol_intel_adsp_stop,
 	.program_ep_table = uaol_intel_adsp_program_ep_table,
 	.get_capabilities = uaol_intel_adsp_get_capabilities,
+	.adjust_rate = uaol_intel_adsp_adjust_rate,
 };
 
 /* Can be called anytime, e.g., before the device probe. */
