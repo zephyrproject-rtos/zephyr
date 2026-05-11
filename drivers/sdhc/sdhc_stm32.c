@@ -633,7 +633,7 @@ static void sdhc_stm32_read_fifo_block(SDMMC_TypeDef *instance, uint8_t **p_buf)
 	uint32_t data;
 	uint8_t *buf = *p_buf;
 
-	for (uint32_t count = 0U; count < (SDMMC_FIFO_SIZE / sizeof(uint32_t)); count++) {
+	for (uint32_t count = 0U; count < (SDMMC_HALFFIFOBYTES / sizeof(uint32_t)); count++) {
 		data = SDMMC_ReadFIFO(instance);
 		UNALIGNED_PUT(data, (uint32_t *)buf);
 		buf += 4;
@@ -649,7 +649,7 @@ static void sdhc_stm32_write_fifo_block(SDMMC_TypeDef *instance, const uint8_t *
 	uint32_t data;
 	const uint8_t *buf = *p_buf;
 
-	for (uint32_t count = 0U; count < (SDMMC_FIFO_SIZE / sizeof(uint32_t)); count++) {
+	for (uint32_t count = 0U; count < (SDMMC_HALFFIFOBYTES / sizeof(uint32_t)); count++) {
 		data = UNALIGNED_GET((const uint32_t *)buf);
 		SDMMC_WriteFIFO(instance, &data);
 		buf += 4;
@@ -665,10 +665,10 @@ static int sdhc_stm32_poll_read_transfer(SDMMC_TypeDef *instance, uint8_t **temp
 
 	ret = WAIT_FOR(__SDMMC_GET_FLAG(instance, SDMMC_WAIT_RX_FLAGS), timeout * USEC_PER_MSEC, ({
 				if (__SDMMC_GET_FLAG(instance, SDMMC_FLAG_RXFIFOHF) &&
-				    (*dataremaining >= SDMMC_FIFO_SIZE)) {
+				    (*dataremaining >= SDMMC_HALFFIFOBYTES)) {
 					/* Read data from SDMMC Rx FIFO */
 					sdhc_stm32_read_fifo_block(instance, tempbuff);
-					*dataremaining -= SDMMC_FIFO_SIZE;
+					*dataremaining -= SDMMC_HALFFIFOBYTES;
 				}
 				k_yield();
 		       }));
@@ -690,10 +690,10 @@ static int sdhc_stm32_poll_write_transfer(SDMMC_TypeDef *instance, const uint8_t
 
 	ret = WAIT_FOR(__SDMMC_GET_FLAG(instance, SDMMC_WAIT_TX_FLAGS), timeout * USEC_PER_MSEC, ({
 				if (__SDMMC_GET_FLAG(instance, SDMMC_FLAG_TXFIFOHE) &&
-				    (*dataremaining >= SDMMC_FIFO_SIZE)) {
+				    (*dataremaining >= SDMMC_HALFFIFOBYTES)) {
 					/* Write data to SDMMC Tx FIFO */
 					sdhc_stm32_write_fifo_block(instance, tempbuff);
-					*dataremaining -= SDMMC_FIFO_SIZE;
+					*dataremaining -= SDMMC_HALFFIFOBYTES;
 				}
 				k_yield();
 		       }));
@@ -987,7 +987,9 @@ static void sdhc_stm32_write_fifo_words(SDMMC_TypeDef *instance, uint32_t **u32t
 {
 	uint32_t *buf = *u32tempbuff;
 
-	for (uint32_t reg_count = 0U; reg_count < (SDMMC_FIFO_SIZE / sizeof(uint32_t)); reg_count++) {
+	for (uint32_t reg_count = 0U;
+	     reg_count < (SDMMC_HALFFIFOBYTES / sizeof(uint32_t));
+	     reg_count++) {
 		instance->FIFO = *buf++;
 	}
 	*u32tempbuff = buf;
@@ -1187,10 +1189,10 @@ static int sdhc_stm32_sdio_rw_extended_poll(struct sdhc_command *cmd, SDMMC_Type
 		res = WAIT_FOR(__SDMMC_GET_FLAG(instance, SDMMC_WAIT_TX_FLAGS),
 			       timeout_ms * USEC_PER_MSEC, ({
 				if (__SDMMC_GET_FLAG(instance, SDMMC_FLAG_TXFIFOHE) &&
-				    (dataremaining >= SDMMC_FIFO_SIZE)) {
+				    (dataremaining >= SDMMC_HALFFIFOBYTES)) {
 					sdhc_stm32_write_fifo_words(instance, &u32tempbuff);
-					dataremaining -= SDMMC_FIFO_SIZE;
-				} else if ((dataremaining < SDMMC_FIFO_SIZE) &&
+					dataremaining -= SDMMC_HALFFIFOBYTES;
+				} else if ((dataremaining < SDMMC_HALFFIFOBYTES) &&
 					   (__SDMMC_GET_FLAG(instance,
 						     SDMMC_FLAG_TXFIFOHE | SDMMC_FLAG_TXFIFOE))) {
 					uint8_t *u8buff = (uint8_t *)u32tempbuff;
@@ -1205,10 +1207,10 @@ static int sdhc_stm32_sdio_rw_extended_poll(struct sdhc_command *cmd, SDMMC_Type
 		res = WAIT_FOR(__SDMMC_GET_FLAG(instance, SDMMC_WAIT_RX_FLAGS),
 			       timeout_ms * USEC_PER_MSEC, ({
 				if (__SDMMC_GET_FLAG(instance, SDMMC_FLAG_RXFIFOHF) &&
-				    (dataremaining >= SDMMC_FIFO_SIZE)) {
+				    (dataremaining >= SDMMC_HALFFIFOBYTES)) {
 					sdhc_stm32_read_fifo_block(instance, &tempbuff);
-					dataremaining -= SDMMC_FIFO_SIZE;
-				} else if (dataremaining < SDMMC_FIFO_SIZE) {
+					dataremaining -= SDMMC_HALFFIFOBYTES;
+				} else if (dataremaining < SDMMC_HALFFIFOBYTES) {
 					sdhc_stm32_read_remaining_bytes(instance, &tempbuff,
 									&dataremaining);
 				}
@@ -1317,9 +1319,9 @@ static int sdhc_stm32_switch_speed(SDMMC_TypeDef *instance, uint32_t switch_arg,
 	ret = WAIT_FOR(__SDMMC_GET_FLAG(instance, SDMMC_WAIT_RX_DBCKEND_FLAGS),
 		       SDMMC_SWDATATIMEOUT * USEC_PER_MSEC, ({
 			if (__SDMMC_GET_FLAG(instance, SDMMC_FLAG_RXFIFOHF)) {
-				if ((loop + 1) * SDMMC_FIFO_SIZE <= sizeof(sd_hs)) {
+				if ((loop + 1) * SDMMC_HALFFIFOBYTES <= sizeof(sd_hs)) {
 					uint8_t *buf =
-						((uint8_t *)sd_hs) + (loop * SDMMC_FIFO_SIZE);
+						((uint8_t *)sd_hs) + (loop * SDMMC_HALFFIFOBYTES);
 
 					sdhc_stm32_read_fifo_block(instance, &buf);
 					loop++;
