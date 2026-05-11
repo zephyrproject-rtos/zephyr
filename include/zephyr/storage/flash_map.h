@@ -134,7 +134,10 @@ int flash_area_open(uint8_t id, const struct flash_area **fa);
  *
  * @param[in] fa Flash area to be closed.
  */
-void flash_area_close(const struct flash_area *fa);
+static inline void flash_area_close(__unused const struct flash_area *fa)
+{
+	/* nothing to do for now */
+}
 
 /**
  * @brief Verify that a device assigned to flash area is ready for use.
