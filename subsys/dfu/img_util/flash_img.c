@@ -148,29 +148,28 @@ size_t flash_img_bytes_written(struct flash_img_context *ctx)
  * Determines if the specified area of flash is completely unwritten.
  *
  * @param	fa	pointer to flash area to scan
+ * @param	len	length of area (starting from beginning) of flash area to scan (must be
+ *			divisible by 4)
  *
  * @return	0	when not empty, 1 when empty, negative errno code on error.
  */
-static int flash_check_erased(const struct flash_area *fa)
+static int flash_check_erased(const struct flash_area *fa, off_t len)
 {
 	uint32_t data[FLASH_CHECK_ERASED_BUFFER_SIZE];
-	off_t addr;
-	off_t end;
 	int bytes_to_read;
 	int rc;
 	int i;
 	uint8_t erased_val;
 	uint32_t erased_val_32;
 
-	assert(fa->fa_size % sizeof(erased_val_32) == 0);
+	assert(len % sizeof(erased_val_32) == 0);
 
 	erased_val = flash_area_erased_val(fa);
 	erased_val_32 = ERASED_VAL_32(erased_val);
 
-	end = fa->fa_size;
-	for (addr = 0; addr < end; addr += sizeof(data)) {
-		if (end - addr < sizeof(data)) {
-			bytes_to_read = end - addr;
+	for (off_t addr = 0; addr < len; addr += sizeof(data)) {
+		if (len - addr < sizeof(data)) {
+			bytes_to_read = len - addr;
 		} else {
 			bytes_to_read = sizeof(data);
 		}
@@ -233,7 +232,8 @@ int flash_img_init_id(struct flash_img_context *ctx, uint8_t area_id)
 	sector_data.fs_size = CONFIG_IMG_CUSTOM_SECTOR_SIZE;
 #endif
 
-	if (!flash_check_erased((const struct flash_area *)ctx->flash_area)) {
+	if (!flash_check_erased((const struct flash_area *)ctx->flash_area,
+				(off_t)sector_data.fs_size)) {
 		/* Flash is not empty, therefore flatten/erase the area to prevent issues when
 		 * the firmware update process begins
 		 */
