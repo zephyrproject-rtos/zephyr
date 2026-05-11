@@ -471,7 +471,30 @@ int icmsg_open(const struct icmsg_config_t *conf,
 	return ret;
 
 cleanup_and_exit:
-	atomic_set(&dev_data->state, ICMSG_STATE_OFF);
+	/*
+	 * Only roll the state back to OFF if it's still in one of the
+	 * INITIALIZING states. Under SMP / preemptive workqueues, the
+	 * mbox-init path can have already enabled RX, fired the IRQ for
+	 * a remote OPEN that was pending in HW, and the workqueue's
+	 * callback_process can race ahead of icmsg_open's own
+	 * mbox_send_dt — landing the state in CONNECTED *before* we get
+	 * here. In that case the connection is in fact valid (bound was
+	 * called, magic was matched) and we must not destroy it.
+	 *
+	 * We try INITIALIZING_SID_DISABLED first, then the SID-aware
+	 * variants. If none match, leave the state alone.
+	 */
+	(void)atomic_cas(&dev_data->state,
+			 ICMSG_STATE_INITIALIZING_SID_DISABLED,
+			 ICMSG_STATE_OFF);
+#if UNBOUND_ENABLED || UNBOUND_DETECT
+	(void)atomic_cas(&dev_data->state,
+			 ICMSG_STATE_INITIALIZING_SID_ENABLED,
+			 ICMSG_STATE_OFF);
+	(void)atomic_cas(&dev_data->state,
+			 ICMSG_STATE_INITIALIZING_SID_DETECT,
+			 ICMSG_STATE_OFF);
+#endif
 	return ret;
 }
 
