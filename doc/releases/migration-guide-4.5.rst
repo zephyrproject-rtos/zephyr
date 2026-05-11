@@ -1123,6 +1123,9 @@ Architectures
 * ``CONFIG_XTENSA_BACKTRACE_EXCEPTION_DUMP_HOOK`` is removed, since backtrace is now always
   using :c:macro:`EXCEPTION_DUMP` for output.
 
+* SoCs using :kconfig:option:`CONFIG_XTENSA_BACKTRACE` are now expected to implement
+  :c:func:`xtensa_soc_stack_ptr_is_sane` and :c:func:`xtensa_soc_ptr_executable`.
+
 Video
 =====
 
