@@ -92,6 +92,8 @@ enum {
  * structure.
  */
 struct bt_hci_driver_config {
+	/** Quirks for this HCI device instance */
+	uint32_t quirks;
 };
 
 /**
@@ -101,6 +103,7 @@ struct bt_hci_driver_config {
  */
 #define BT_DT_HCI_DRIVER_CONFIG_GET(node_id)                                                    \
 	{                                                                                       \
+		.quirks = (uint32_t)BT_DT_HCI_QUIRKS_GET(node_id),                              \
 	}
 
 /**
