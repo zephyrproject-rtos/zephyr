@@ -462,7 +462,7 @@ static void uaol_intel_adsp_program_feedback(const struct device *dev, int strea
 /*
  * Program M/N rate adjustment for UAOL stream.
  */
-static void uaol_intel_adsp_program_rate_adjustment(const struct device *dev, int stream,
+static void uaol_intel_adsp_program_mn_rate_adjustment(const struct device *dev, int stream,
 						    uint32_t sample_rate,
 						    uint32_t service_interval_usec)
 {
@@ -747,7 +747,7 @@ static int uaol_intel_adsp_config(const struct device *dev, int stream, struct u
 				       cfg->sample_bits, cfg->sio_credit_size,
 				       cfg->service_interval, cfg->direction);
 
-	uaol_intel_adsp_program_rate_adjustment(dev, stream, cfg->sample_rate,
+	uaol_intel_adsp_program_mn_rate_adjustment(dev, stream, cfg->sample_rate,
 						cfg->service_interval);
 
 	if (cfg->feedback_stream) {
