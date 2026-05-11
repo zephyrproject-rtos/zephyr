@@ -33,7 +33,6 @@ LOG_MODULE_REGISTER(psoc6_bless);
 
 struct psoc6_bless_data {
 	struct bt_hci_driver_data common;
-	bt_hci_recv_t recv;
 };
 
 #define BLE_LOCK_TMOUT_MS       (1000)
@@ -99,7 +98,6 @@ static void psoc6_bless_isr_handler(const struct device *dev)
 static void psoc6_bless_events_handler(uint32_t eventCode, void *eventParam)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct psoc6_bless_data *hci = dev->data;
 	cy_stc_ble_hci_tx_packet_info_t *hci_rx = NULL;
 	struct net_buf *buf = NULL;
 	size_t buf_tailroom = 0;
@@ -139,15 +137,12 @@ static void psoc6_bless_events_handler(uint32_t eventCode, void *eventParam)
 		return;
 	}
 	net_buf_add_mem(buf, hci_rx->data, hci_rx->dataLength);
-	hci->recv(dev, buf);
+	bt_hci_recv(dev, buf);
 }
 
-static int psoc6_bless_open(const struct device *dev, bt_hci_recv_t recv)
+static int psoc6_bless_open(const struct device *dev)
 {
-	struct psoc6_bless_data *hci = dev->data;
 	k_tid_t tid;
-
-	hci->recv = recv;
 
 	tid = k_thread_create(&psoc6_bless_rx_thread_data, psoc6_bless_rx_thread_stack,
 			      K_KERNEL_STACK_SIZEOF(psoc6_bless_rx_thread_stack),

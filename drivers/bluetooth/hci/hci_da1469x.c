@@ -30,7 +30,6 @@ LOG_MODULE_REGISTER(hci_da1469x);
 
 struct hci_data {
 	struct bt_hci_driver_data common;
-	bt_hci_recv_t recv;
 };
 
 static K_KERNEL_STACK_DEFINE(rng_thread_stack, CONFIG_BT_RX_STACK_SIZE);
@@ -213,7 +212,6 @@ static void rx_isr_stop(void)
 static void rx_thread(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
-	struct hci_data *hci = dev->data;
 	struct net_buf *buf;
 
 	ARG_UNUSED(p2);
@@ -247,8 +245,8 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		do {
 			rx_isr_start();
 
-			LOG_DBG("Calling bt_recv(%p)", buf);
-			hci->recv(dev, buf);
+			LOG_DBG("Calling bt_hci_recv(%p)", buf);
+			bt_hci_recv(dev, buf);
 
 			/* Give other threads a chance to run if the ISR
 			 * is receiving data so fast that rx.fifo never
@@ -422,9 +420,8 @@ static void rng_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static int bt_da1469x_open(const struct device *dev, bt_hci_recv_t recv)
+static int bt_da1469x_open(const struct device *dev)
 {
-	struct hci_data *hci = dev->data;
 	k_tid_t tid;
 
 	tid = k_thread_create(&rx_thread_data, rx_thread_stack,
@@ -443,8 +440,6 @@ static int bt_da1469x_open(const struct device *dev, bt_hci_recv_t recv)
 			      0, K_NO_WAIT);
 	k_thread_name_set(tid, "bt_rng_thread");
 
-	hci->recv = recv;
-
 	cmac_enable();
 	irq_enable(CMAC2SYS_IRQn);
 
@@ -454,12 +449,8 @@ static int bt_da1469x_open(const struct device *dev, bt_hci_recv_t recv)
 #ifdef CONFIG_BT_HCI_HOST
 static int bt_da1469x_close(const struct device *dev)
 {
-	struct hci_data *hci = dev->data;
-
 	irq_disable(CMAC2SYS_IRQn);
 	cmac_disable();
-
-	hci->recv = NULL;
 
 	return 0;
 }

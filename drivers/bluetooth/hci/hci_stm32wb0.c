@@ -199,7 +199,6 @@ void send_event(uint8_t *buffer_out, uint16_t buffer_out_length, int8_t overflow
 	ARG_UNUSED(overflow_index);
 
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct hci_data *hci = dev->data;
 	struct net_buf *buf;
 
 	/* Construct net_buf from event data */
@@ -207,7 +206,7 @@ void send_event(uint8_t *buffer_out, uint16_t buffer_out_length, int8_t overflow
 	if (buf) {
 		/* Handle the received HCI data */
 		LOG_DBG("New event %p len %u type %u", buf, buf->len, buf->data[0]);
-		hci->recv(dev, buf);
+		bt_hci_recv(dev, buf);
 	} else {
 		LOG_ERR("Buf is null");
 	}
@@ -450,9 +449,8 @@ static int bt_hci_stm32wb0_send(const struct device *dev, struct net_buf *buf)
 	return 0;
 }
 
-static int bt_hci_stm32wb0_open(const struct device *dev, bt_hci_recv_t recv)
+static int bt_hci_stm32wb0_open(const struct device *dev)
 {
-	struct hci_data *data = dev->data;
 	RADIO_HandleTypeDef hradio = {0};
 	BLE_STACK_InitTypeDef BLE_STACK_InitParams = {
 		.BLEStartRamAddress = (uint8_t *)dyn_alloc_a,
@@ -504,7 +502,9 @@ static int bt_hci_stm32wb0_open(const struct device *dev, bt_hci_recv_t recv)
 #endif /* CONFIG_BT_EXT_ADV */
 
 	aci_adv_nwk_init();
-	data->recv = recv;
+#if defined(CONFIG_PM_DEVICE)
+	aci_hal_set_radio_activity_mask(STM32_STATE_ALL_BITMASK);
+#endif /* CONFIG_PM_DEVICE */
 	k_work_init_delayable(&ble_stack_work, blestack_process);
 	k_work_schedule(&ble_stack_work, K_NO_WAIT);
 

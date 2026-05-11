@@ -72,7 +72,6 @@ static K_SEM_DEFINE(sem_spi_available, 1, 1);
 
 struct bt_apollo_data {
 	struct bt_hci_driver_data common;
-	bt_hci_recv_t recv;
 };
 
 void bt_packet_irq_isr(const struct device *unused1, struct gpio_callback *unused2,
@@ -336,7 +335,7 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 
 			/* Post the RX message to host stack to process */
 			if (buf) {
-				hci->recv(dev, buf);
+				bt_hci_recv(dev, buf);
 			}
 		} while (0);
 	}
@@ -362,7 +361,7 @@ static int bt_apollo_send(const struct device *dev, struct net_buf *buf)
 	return 0;
 }
 
-static int bt_apollo_open(const struct device *dev, bt_hci_recv_t recv)
+static int bt_apollo_open(const struct device *dev)
 {
 	struct bt_apollo_data *hci = dev->data;
 	int ret;
@@ -377,18 +376,12 @@ static int bt_apollo_open(const struct device *dev, bt_hci_recv_t recv)
 			(k_thread_entry_t)bt_spi_rx_thread, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
 
-	ret = bt_apollo_controller_init(spi_send_packet);
-	if (ret == 0) {
-		hci->recv = recv;
-	}
-
-	return ret;
+	return bt_apollo_controller_init(spi_send_packet);
 }
 
 static int bt_apollo_close(const struct device *dev)
 {
 	int ret;
-	struct bt_apollo_data *hci = dev->data;
 
 	ret = bt_apollo_controller_deinit();
 	if (ret) {
@@ -397,8 +390,6 @@ static int bt_apollo_close(const struct device *dev)
 
 	/* Stop RX thread */
 	k_thread_abort(&spi_rx_thread_data);
-
-	hci->recv = NULL;
 
 	return ret;
 }

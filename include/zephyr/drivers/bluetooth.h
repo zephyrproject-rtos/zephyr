@@ -87,8 +87,8 @@ enum {
 /**
  * @brief Common Bluetooth HCI driver configuration.
  *
- * This structure is common to all Bluetooth HCI drivers and is expected to be
- * the first element in the object pointed to by the config field in the device
+ * This structure is common to all Bluetooth HCI drivers and must be the first member
+ * in the object pointed to by the config field in the device
  * structure.
  */
 struct bt_hci_driver_config {
@@ -103,7 +103,7 @@ struct bt_hci_driver_config {
  */
 #define BT_DT_HCI_DRIVER_CONFIG_GET(node_id)                                                    \
 	{                                                                                       \
-		.quirks = (uint32_t)BT_DT_HCI_QUIRKS_GET(node_id),                              \
+		.quirks = (uint32_t)BT_DT_HCI_QUIRKS_GET(node_id),                                \
 	}
 
 /**
@@ -118,15 +118,6 @@ struct bt_hci_driver_config {
 	BT_DT_HCI_DRIVER_CONFIG_GET(DT_DRV_INST(inst))
 
 /**
- * @brief Common Bluetooth HCI driver data.
- *
- * This structure is common to all Bluetooth HCI drivers and is expected to be
- * the first element in the driver's struct driver_data declaration.
- */
-struct bt_hci_driver_data {
-};
-
-/**
  * @def_driverbackendgroup{Bluetooth HCI,bt_hci_api}
  * @{
  */
@@ -139,10 +130,21 @@ struct bt_hci_driver_data {
 typedef int (*bt_hci_recv_t)(const struct device *dev, struct net_buf *buf);
 
 /**
+ * @brief Common Bluetooth HCI driver data.
+ *
+ * This structure is common to all Bluetooth HCI drivers and must be the first member
+ * in the driver's data struct.
+ */
+struct bt_hci_driver_data {
+	/** Callback for the driver to deliver data received from the controller to the host. */
+	bt_hci_recv_t recv;
+};
+
+/**
  * @brief Callback API to open the HCI transport.
  * See bt_hci_open() for argument description
  */
-typedef int (*bt_hci_api_open_t)(const struct device *dev, bt_hci_recv_t recv);
+typedef int (*bt_hci_api_open_t)(const struct device *dev);
 
 /**
  * @brief Callback API to close the HCI transport.
@@ -192,6 +194,31 @@ __subsystem struct bt_hci_driver_api {
  */
 
 /**
+ * @brief Deliver an HCI packet from the driver.
+ *
+ * This function is called by the HCI driver to deliver data received from the
+ * controller to the host. The buffer contains the raw HCI packet, including the
+ * packet type prefix encoded in the H:4 format.
+ *
+ * @param dev  HCI device
+ * @param buf  Buffer containing data received from the controller.
+ *
+ * @return 0 on success or negative POSIX error number on failure.
+ * @return -ENOTCONN THe HCI transport is not open.
+ */
+static inline int bt_hci_recv(const struct device *dev, struct net_buf *buf)
+{
+	struct bt_hci_driver_data *data = dev->data;
+
+	if (data->recv == NULL) {
+		net_buf_unref(buf);
+		return -ENOTCONN;
+	}
+
+	return data->recv(dev, buf);
+}
+
+/**
  * @brief Open the HCI transport.
  *
  * Opens the HCI transport for operation. This function must not
@@ -201,13 +228,29 @@ __subsystem struct bt_hci_driver_api {
  * @param dev  HCI device
  * @param recv This is callback through which the HCI driver provides the
  *             host with data from the controller. The callback is expected
- *             to be called from thread context.
+ *             to be called from thread context, and it may be called already
+ *             before bt_hci_open() returns.
  *
  * @return 0 on success or negative POSIX error number on failure.
+ * @return -EALREADY THe HCI transport is already open.
  */
 static inline int bt_hci_open(const struct device *dev, bt_hci_recv_t recv)
 {
-	return DEVICE_API_GET(bt_hci, dev)->open(dev, recv);
+	struct bt_hci_driver_data *data = dev->data;
+	int err;
+
+	if (data->recv != NULL) {
+		return -EALREADY;
+	}
+
+	data->recv = recv;
+
+	err = DEVICE_API_GET(bt_hci, dev)->open(dev);
+	if (err != 0) {
+		data->recv = NULL;
+	}
+
+	return err;
 }
 
 /**
@@ -223,12 +266,19 @@ static inline int bt_hci_open(const struct device *dev, bt_hci_recv_t recv)
 static inline int bt_hci_close(const struct device *dev)
 {
 	const struct bt_hci_driver_api *api = DEVICE_API_GET(bt_hci, dev);
+	struct bt_hci_driver_data *data = dev->data;
+	int err = 0;
 
 	if (api->close == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->close(dev);
+	err = api->close(dev);
+	if (err == 0) {
+		data->recv = NULL;
+	}
+
+	return err;
 }
 
 /**
