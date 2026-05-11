@@ -20,5 +20,6 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
+		zephyr,edac = &erm0;
 	};
 };
