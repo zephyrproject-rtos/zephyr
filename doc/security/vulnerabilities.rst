@@ -2167,7 +2167,22 @@ This has been fixed in main for v4.4.0
 :cve:`2026-1677`
 ----------------
 
-Under embargo until 2026-04-15
+net: TLS 1.2 connections allowed on TLS 1.3 sockets
+
+Zephyr sockets created with ``IPPROTO_TLS_1_3`` can still negotiate a TLS 1.2 connection when both
+TLS versions are enabled in Kconfig, because the socket-level protocol selection is not propagated
+to mbedTLS (e.g. via ``mbedtls_ssl_conf_min_tls_version``). The ClientHello advertises both versions
+and the peer can establish TLS 1.2, so applications that assumed ``IPPROTO_TLS_1_3`` enforces TLS
+1.3 may silently use TLS 1.2 and remain exposed to TLS 1.2-specific weaknesses.
+
+- `Zephyr project bug tracker GHSA-23r2-m5wx-4rvq
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-23r2-m5wx-4rvq>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 102570 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/102570>`_
+
 
 :cve:`2026-1678`
 ----------------
