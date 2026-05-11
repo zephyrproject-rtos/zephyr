@@ -65,6 +65,19 @@ ZTEST(uuid, test_uuid_cmp)
 	zassert_equal(0, uuid_cmp(&a, &b), "copied UUID should compare equal to original");
 }
 
+ZTEST(uuid, test_uuid_is_nil)
+{
+	struct uuid val = {0};
+
+	zassert_true(uuid_is_nil(&val), "all-zero UUID should be the Nil UUID");
+
+	zassert_ok(uuid_from_string("44b35f73-cfbd-43b4-8fef-ca7baea1375f", &val));
+	zassert_false(uuid_is_nil(&val), "non-zero UUID should not be the Nil UUID");
+
+	zassert_ok(uuid_from_string("00000000-0000-0000-0000-000000000000", &val));
+	zassert_true(uuid_is_nil(&val), "Empty UUID string should be the Nil UUID");
+}
+
 ZTEST(uuid, test_uuid_copy)
 {
 	int result;
