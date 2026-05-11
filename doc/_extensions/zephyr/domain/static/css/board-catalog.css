@@ -50,6 +50,8 @@
   overflow: auto;
   border-radius: 8px;
   padding-right: 18px;
+  font-family: var(--monospace-font-family);
+  font-size: 12px;
 }
 
 .filter-form #family option:checked,
