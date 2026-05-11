@@ -21,8 +21,9 @@ function populateFormFromURL() {
     if (hashParams.has(param)) {
       const value = hashParams.get(param);
       if (param === "soc") {
-        value.split(",").forEach(soc =>
-          element.querySelector(`option[value="${soc}"]`).selected = true);
+        value
+          .split(",")
+          .forEach((soc) => (element.querySelector(`option[value="${soc}"]`).selected = true));
       } else {
         element.value = value;
       }
@@ -30,7 +31,7 @@ function populateFormFromURL() {
   });
 
   // Restore visibility toggles from URL
-  ["show-boards", "show-shields"].forEach(toggle => {
+  ["show-boards", "show-shields"].forEach((toggle) => {
     if (hashParams.has(toggle)) {
       document.getElementById(toggle).checked = hashParams.get(toggle) === "true";
     }
@@ -40,12 +41,12 @@ function populateFormFromURL() {
   if (hashParams.has("features")) {
     const features = hashParams.get("features").split(",");
     setTimeout(() => {
-      features.forEach(feature => {
-        const tagContainer = document.getElementById('hwcaps-tags');
-        const tagInput = document.getElementById('hwcaps-input');
+      features.forEach((feature) => {
+        const tagContainer = document.getElementById("hwcaps-tags");
+        const tagInput = document.getElementById("hwcaps-input");
 
-        const tagElement = document.createElement('span');
-        tagElement.classList.add('tag');
+        const tagElement = document.createElement("span");
+        tagElement.classList.add("tag");
         tagElement.textContent = feature;
         tagElement.onclick = () => {
           tagElement.remove();
@@ -61,12 +62,12 @@ function populateFormFromURL() {
   if (hashParams.has("compatibles")) {
     const compatibles = hashParams.get("compatibles").split("|");
     setTimeout(() => {
-      compatibles.forEach(compatible => {
-        const tagContainer = document.getElementById('compatibles-tags');
-        const tagInput = document.getElementById('compatibles-input');
+      compatibles.forEach((compatible) => {
+        const tagContainer = document.getElementById("compatibles-tags");
+        const tagInput = document.getElementById("compatibles-input");
 
-        const tagElement = document.createElement('span');
-        tagElement.classList.add('tag');
+        const tagElement = document.createElement("span");
+        tagElement.classList.add("tag");
         tagElement.textContent = compatible;
         tagElement.onclick = () => {
           tagElement.remove();
@@ -103,25 +104,34 @@ function updateURL() {
     const element = document.getElementById(param);
     if (param === "soc") {
       const selectedSocs = [...element.selectedOptions].map(({ value }) => value);
-      selectedSocs.length ? hashParams.set(param, selectedSocs.join(",")) : hashParams.delete(param);
-    }
-    else {
+      selectedSocs.length
+        ? hashParams.set(param, selectedSocs.join(","))
+        : hashParams.delete(param);
+    } else {
       element.value ? hashParams.set(param, element.value) : hashParams.delete(param);
     }
   });
 
-  ["show-boards", "show-shields"].forEach(toggle => {
+  ["show-boards", "show-shields"].forEach((toggle) => {
     const isChecked = document.getElementById(toggle).checked;
     isChecked ? hashParams.delete(toggle) : hashParams.set(toggle, "false");
   });
 
   // Add supported features to URL
-  const selectedHWTags = [...document.querySelectorAll('#hwcaps-tags .tag')].map(tag => tag.textContent);
-  selectedHWTags.length ? hashParams.set("features", selectedHWTags.join(",")) : hashParams.delete("features");
+  const selectedHWTags = [...document.querySelectorAll("#hwcaps-tags .tag")].map(
+    (tag) => tag.textContent,
+  );
+  selectedHWTags.length
+    ? hashParams.set("features", selectedHWTags.join(","))
+    : hashParams.delete("features");
 
   // Add compatibles to URL
-  const selectedCompatibles = [...document.querySelectorAll('#compatibles-tags .tag')].map(tag => tag.textContent);
-  selectedCompatibles.length ? hashParams.set("compatibles", selectedCompatibles.join("|")) : hashParams.delete("compatibles");
+  const selectedCompatibles = [...document.querySelectorAll("#compatibles-tags .tag")].map(
+    (tag) => tag.textContent,
+  );
+  selectedCompatibles.length
+    ? hashParams.set("compatibles", selectedCompatibles.join("|"))
+    : hashParams.delete("compatibles");
 
   window.history.replaceState({}, "", `#${hashParams.toString()}`);
 }
@@ -129,19 +139,21 @@ function updateURL() {
 function fillSocFamilySelect() {
   const socFamilySelect = document.getElementById("family");
 
-  Object.keys(socs_data).sort().forEach(f => {
-    socFamilySelect.add(new Option(f));
-  });
+  Object.keys(socs_data)
+    .sort()
+    .forEach((f) => {
+      socFamilySelect.add(new Option(f));
+    });
 }
 
 function fillSocSeriesSelect(families, selectOnFill = false) {
   const socSeriesSelect = document.getElementById("series");
 
   families = families?.length ? families : Object.keys(socs_data);
-  let allSeries = [...new Set(families.flatMap(f => Object.keys(socs_data[f])))];
+  let allSeries = [...new Set(families.flatMap((f) => Object.keys(socs_data[f])))];
 
   socSeriesSelect.innerHTML = "";
-  allSeries.sort().map(s => {
+  allSeries.sort().map((s) => {
     const option = new Option(s, s, selectOnFill, selectOnFill);
     socSeriesSelect.add(option);
   });
@@ -151,8 +163,10 @@ function fillSocSocSelect(families, series = undefined, selectOnFill = false) {
   const socSocSelect = document.getElementById("soc");
 
   families = families?.length ? families : Object.keys(socs_data);
-  series = series?.length ? series : families.flatMap(f => Object.keys(socs_data[f]));
-  matchingSocs = [...new Set(families.flatMap(f => series.flatMap(s => socs_data[f][s] || [])))];
+  series = series?.length ? series : families.flatMap((f) => Object.keys(socs_data[f]));
+  matchingSocs = [
+    ...new Set(families.flatMap((f) => series.flatMap((s) => socs_data[f][s] || []))),
+  ];
 
   socSocSelect.innerHTML = "";
   matchingSocs.sort().forEach((soc) => {
@@ -163,12 +177,12 @@ function fillSocSocSelect(families, series = undefined, selectOnFill = false) {
 function setupHWCapabilitiesField() {
   let selectedTags = [];
 
-  const tagContainer = document.getElementById('hwcaps-tags');
-  const tagInput = document.getElementById('hwcaps-input');
-  const datalist = document.getElementById('tag-list');
+  const tagContainer = document.getElementById("hwcaps-tags");
+  const tagInput = document.getElementById("hwcaps-input");
+  const datalist = document.getElementById("tag-list");
 
-  const tagCounts = Array.from(document.querySelectorAll('.board-card')).reduce((acc, board) => {
-    (board.getAttribute('data-supported-features') || '').split(' ').forEach(tag => {
+  const tagCounts = Array.from(document.querySelectorAll(".board-card")).reduce((acc, board) => {
+    (board.getAttribute("data-supported-features") || "").split(" ").forEach((tag) => {
       acc[tag] = (acc[tag] || 0) + 1;
     });
     return acc;
@@ -180,30 +194,30 @@ function setupHWCapabilitiesField() {
     if (selectedTags.includes(tag) || tag === "" || !allTags.includes(tag)) return;
     selectedTags.push(tag);
 
-    const tagElement = document.createElement('span');
-    tagElement.classList.add('tag');
+    const tagElement = document.createElement("span");
+    tagElement.classList.add("tag");
     tagElement.textContent = tag;
     tagElement.onclick = () => removeTag(tag);
     tagContainer.insertBefore(tagElement, tagInput);
 
-    tagInput.value = '';
+    tagInput.value = "";
     updateDatalist();
   }
 
   function removeTag(tag) {
-    selectedTags = selectedTags.filter(t => t !== tag);
-    document.querySelectorAll('.tag').forEach(el => {
+    selectedTags = selectedTags.filter((t) => t !== tag);
+    document.querySelectorAll(".tag").forEach((el) => {
       if (el.textContent.includes(tag)) el.remove();
     });
     updateDatalist();
   }
 
   function updateDatalist() {
-    datalist.innerHTML = '';
-    const filteredTags = allTags.filter(tag => !selectedTags.includes(tag));
+    datalist.innerHTML = "";
+    const filteredTags = allTags.filter((tag) => !selectedTags.includes(tag));
 
-    filteredTags.forEach(tag => {
-      const option = document.createElement('option');
+    filteredTags.forEach((tag) => {
+      const option = document.createElement("option");
       option.value = tag;
       datalist.appendChild(option);
     });
@@ -211,23 +225,23 @@ function setupHWCapabilitiesField() {
     filterBoards();
   }
 
-  tagInput.addEventListener('input', () => {
+  tagInput.addEventListener("input", () => {
     if (allTags.includes(tagInput.value)) {
       addTag(tagInput.value);
     }
   });
 
   // Add tag when pressing the Enter key
-  tagInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && allTags.includes(tagInput.value)) {
+  tagInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && allTags.includes(tagInput.value)) {
       addTag(tagInput.value);
       e.preventDefault();
     }
   });
 
   // Delete tag when pressing the Backspace key
-  tagInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Backspace' && tagInput.value === '' && selectedTags.length > 0) {
+  tagInput.addEventListener("keydown", (e) => {
+    if (e.key === "Backspace" && tagInput.value === "" && selectedTags.length > 0) {
       removeTag(selectedTags[selectedTags.length - 1]);
     }
   });
@@ -238,19 +252,22 @@ function setupHWCapabilitiesField() {
 function setupCompatiblesField() {
   let selectedCompatibles = [];
 
-  const tagContainer = document.getElementById('compatibles-tags');
-  const tagInput = document.getElementById('compatibles-input');
-  const datalist = document.getElementById('compatibles-list');
+  const tagContainer = document.getElementById("compatibles-tags");
+  const tagInput = document.getElementById("compatibles-input");
+  const datalist = document.getElementById("compatibles-list");
 
   // Collect all unique compatibles from boards
-  const allCompatibles = Array.from(document.querySelectorAll('.board-card')).reduce((acc, board) => {
-    (board.getAttribute('data-compatibles') || '').split(' ').forEach(compat => {
-      if (compat && !acc.includes(compat)) {
-        acc.push(compat);
-      }
-    });
-    return acc;
-  }, []);
+  const allCompatibles = Array.from(document.querySelectorAll(".board-card")).reduce(
+    (acc, board) => {
+      (board.getAttribute("data-compatibles") || "").split(" ").forEach((compat) => {
+        if (compat && !acc.includes(compat)) {
+          acc.push(compat);
+        }
+      });
+      return acc;
+    },
+    [],
+  );
 
   allCompatibles.sort();
 
@@ -258,19 +275,19 @@ function setupCompatiblesField() {
     if (selectedCompatibles.includes(compatible) || compatible === "") return;
     selectedCompatibles.push(compatible);
 
-    const tagElement = document.createElement('span');
-    tagElement.classList.add('tag');
+    const tagElement = document.createElement("span");
+    tagElement.classList.add("tag");
     tagElement.textContent = compatible;
     tagElement.onclick = () => removeCompatible(compatible);
     tagContainer.insertBefore(tagElement, tagInput);
 
-    tagInput.value = '';
+    tagInput.value = "";
     updateDatalist();
   }
 
   function removeCompatible(compatible) {
-    selectedCompatibles = selectedCompatibles.filter(c => c !== compatible);
-    document.querySelectorAll('.tag').forEach(el => {
+    selectedCompatibles = selectedCompatibles.filter((c) => c !== compatible);
+    document.querySelectorAll(".tag").forEach((el) => {
       if (el.textContent === compatible && el.parentElement === tagContainer) {
         el.remove();
       }
@@ -279,11 +296,11 @@ function setupCompatiblesField() {
   }
 
   function updateDatalist() {
-    datalist.innerHTML = '';
-    const filteredCompatibles = allCompatibles.filter(c => !selectedCompatibles.includes(c));
+    datalist.innerHTML = "";
+    const filteredCompatibles = allCompatibles.filter((c) => !selectedCompatibles.includes(c));
 
-    filteredCompatibles.forEach(compatible => {
-      const option = document.createElement('option');
+    filteredCompatibles.forEach((compatible) => {
+      const option = document.createElement("option");
       option.value = compatible;
       datalist.appendChild(option);
     });
@@ -291,17 +308,17 @@ function setupCompatiblesField() {
     filterBoards();
   }
 
-  tagInput.addEventListener('input', () => {
+  tagInput.addEventListener("input", () => {
     if (allCompatibles.includes(tagInput.value)) {
       addCompatible(tagInput.value);
     }
   });
 
-  tagInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && tagInput.value) {
+  tagInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && tagInput.value) {
       addCompatible(tagInput.value);
       e.preventDefault();
-    } else if (e.key === 'Backspace' && tagInput.value === '' && selectedCompatibles.length > 0) {
+    } else if (e.key === "Backspace" && tagInput.value === "" && selectedCompatibles.length > 0) {
       removeCompatible(selectedCompatibles[selectedCompatibles.length - 1]);
     }
   });
@@ -389,33 +406,31 @@ function resetForm() {
   document.getElementById("show-shields").checked = true;
 
   // Clear supported features
-  document.querySelectorAll('#hwcaps-tags .tag').forEach(tag => tag.remove());
-  document.getElementById('hwcaps-input').value = '';
+  document.querySelectorAll("#hwcaps-tags .tag").forEach((tag) => tag.remove());
+  document.getElementById("hwcaps-input").value = "";
 
   // Clear compatibles
-  document.querySelectorAll('#compatibles-tags .tag').forEach(tag => tag.remove());
-  document.getElementById('compatibles-input').value = '';
+  document.querySelectorAll("#compatibles-tags .tag").forEach((tag) => tag.remove());
+  document.getElementById("compatibles-input").value = "";
 
   filterBoards();
 }
 
 function updateBoardCount() {
   const boards = Array.from(document.getElementsByClassName("board-card"));
-  const visible = boards.filter(board => !board.classList.contains("hidden"));
-  const shields = boards.filter(board => board.classList.contains("shield"));
-  const visibleShields = visible.filter(board => board.classList.contains("shield"));
+  const visible = boards.filter((board) => !board.classList.contains("hidden"));
+  const shields = boards.filter((board) => board.classList.contains("shield"));
+  const visibleShields = visible.filter((board) => board.classList.contains("shield"));
 
   document.getElementById("nb-matches").textContent =
-    `Showing ${visible.length - visibleShields.length} of ${boards.length - shields.length} boards,`
-    + ` ${visibleShields.length} of ${shields.length} shields`;
+    `Showing ${visible.length - visibleShields.length} of ${boards.length - shields.length} boards,` +
+    ` ${visibleShields.length} of ${shields.length} shields`;
 }
 
 function wildcardMatch(pattern, str) {
   // Convert wildcard pattern to regex
   // Escape special regex characters except *
-  const regexPattern = pattern
-    .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*/g, '.*');
+  const regexPattern = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
   const regex = new RegExp(`^${regexPattern}$`, "i");
   return regex.test(str);
 }
@@ -429,13 +444,26 @@ function filterBoards() {
   const showShields = document.getElementById("show-shields").checked;
 
   // Get selected hardware capability tags
-  const selectedHWTags = [...document.querySelectorAll('#hwcaps-tags .tag')].map(tag => tag.textContent);
+  const selectedHWTags = [...document.querySelectorAll("#hwcaps-tags .tag")].map(
+    (tag) => tag.textContent,
+  );
 
   // Get selected compatible tags
-  const selectedCompatibles = [...document.querySelectorAll('#compatibles-tags .tag')].map(tag => tag.textContent);
+  const selectedCompatibles = [...document.querySelectorAll("#compatibles-tags .tag")].map(
+    (tag) => tag.textContent,
+  );
 
   const resetFiltersBtn = document.getElementById("reset-filters");
-  if (nameInput || archSelect || vendorSelect || socSocSelect.selectedOptions.length || selectedHWTags.length || selectedCompatibles.length || !showBoards || !showShields) {
+  if (
+    nameInput ||
+    archSelect ||
+    vendorSelect ||
+    socSocSelect.selectedOptions.length ||
+    selectedHWTags.length ||
+    selectedCompatibles.length ||
+    !showBoards ||
+    !showShields
+  ) {
     resetFiltersBtn.classList.remove("btn-disabled");
   } else {
     resetFiltersBtn.classList.add("btn-disabled");
@@ -448,8 +476,12 @@ function filterBoards() {
     const boardArchs = (board.getAttribute("data-arch") || "").split(" ").filter(Boolean);
     const boardVendor = board.getAttribute("data-vendor") || "";
     const boardSocs = (board.getAttribute("data-socs") || "").split(" ").filter(Boolean);
-    const boardSupportedFeatures = (board.getAttribute("data-supported-features") || "").split(" ").filter(Boolean);
-    const boardCompatibles = (board.getAttribute("data-compatibles") || "").split(" ").filter(Boolean);
+    const boardSupportedFeatures = (board.getAttribute("data-supported-features") || "")
+      .split(" ")
+      .filter(Boolean);
+    const boardCompatibles = (board.getAttribute("data-compatibles") || "")
+      .split(" ")
+      .filter(Boolean);
     const isShield = board.classList.contains("shield");
 
     let matches = true;
@@ -460,9 +492,10 @@ function filterBoards() {
       matches = false;
     } else {
       // Check if board matches all selected compatibles (with wildcard support)
-      const compatiblesMatch = selectedCompatibles.length === 0 ||
+      const compatiblesMatch =
+        selectedCompatibles.length === 0 ||
         selectedCompatibles.every((pattern) =>
-          boardCompatibles.some((compatible) => wildcardMatch(pattern, compatible))
+          boardCompatibles.some((compatible) => wildcardMatch(pattern, compatible)),
         );
 
       matches =
@@ -470,7 +503,8 @@ function filterBoards() {
         !(archSelect && !boardArchs.includes(archSelect)) &&
         !(vendorSelect && boardVendor !== vendorSelect) &&
         (selectedSocs.length === 0 || selectedSocs.some((soc) => boardSocs.includes(soc))) &&
-        (selectedHWTags.length === 0 || selectedHWTags.every((tag) => boardSupportedFeatures.includes(tag))) &&
+        (selectedHWTags.length === 0 ||
+          selectedHWTags.every((tag) => boardSupportedFeatures.includes(tag))) &&
         compatiblesMatch;
     }
 
