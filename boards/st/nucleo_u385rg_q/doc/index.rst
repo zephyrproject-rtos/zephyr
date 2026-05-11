@@ -198,6 +198,7 @@ Default Zephyr Peripheral Mapping:
 - UART_3_TX : PC10
 - UART_3_RX : PC11
 - USER_PB : PC13
+- I3C1 SCL/SDA : PB2/PC1
 
 System Clock
 ------------
