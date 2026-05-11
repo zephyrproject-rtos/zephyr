@@ -73,6 +73,13 @@ struct video_reg16 {
 #define VIDEO_REG_DATA_SIZE_MASK		(uint32_t)(GENMASK(19, 16))
 #define VIDEO_REG_ADDR_MASK			(uint32_t)(GENMASK(15, 0))
 
+/*
+ * Some devices require multi-byte register values to be read/written using a
+ * single I2C transaction starting at the register address, instead of splitting
+ * the access into multiple 1-byte transactions at addr+i.
+ */
+#define VIDEO_REG_SINGLE_XFER			BIT(25)
+
 #define VIDEO_REG(addr_size, data_size, endianness)                                                \
 	(FIELD_PREP(VIDEO_REG_ADDR_SIZE_MASK, (addr_size)) |                                       \
 	 FIELD_PREP(VIDEO_REG_DATA_SIZE_MASK, (data_size)) |                                       \
