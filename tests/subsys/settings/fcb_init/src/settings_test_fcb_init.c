@@ -12,7 +12,6 @@
 #include <string.h>
 
 #include <zephyr/settings/settings.h>
-#include <zephyr/devicetree/fixed-partitions.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/drivers/flash.h>
 
