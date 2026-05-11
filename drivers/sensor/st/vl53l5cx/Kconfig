@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig VL53L5CX
+	bool "VL53L5CX Time-of-Flight sensor"
+	default y
+	depends on DT_HAS_ST_VL53L5CX_ENABLED
+	depends on ZEPHYR_HAL_ST_MODULE
+	depends on !BUILD_ONLY_NO_BLOBS
+	select I2C
+	select HAS_STLIB
+	select RTIO_WORKQ if SENSOR_ASYNC_API
+	help
+	  Enable support for the VL53L5CX Time-of-Flight sensor.
+
+config VL53L5CX_MAX_I2C_CHUNK_SIZE
+	int "Maximum I2C chunk size allowed"
+	default 1024
+	depends on VL53L5CX
+	help
+	  Allow to limit the size of each i2c chunk.

@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STMicroelectronics VL53L5CX Time of Flight sensor
+
+description: |
+    The VL53L5CX is a Time-of-Flight (TOF), multizone ranging sensor,
+    ranging up to 400 cm and can work at speed up to 60Hz. Multizone
+    distance measurements are possible up to 8x8 zones with a wide 65°
+    diagonal FoV.
+
+compatible: "st,vl53l5cx"
+
+include: [sensor-device.yaml, i2c-device.yaml]
