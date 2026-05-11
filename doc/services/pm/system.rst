@@ -37,7 +37,7 @@ The following diagram describes system power management:
        pm_suspend_devices [label="Suspend\ndevices"]
        pm_resume_devices [label="Resume\ndevices"]
        pm_state_set [label="Change power state\n(SoC API)" style="rounded,bold"]
-       pm_system_resume [label="Finish wake-up\n(SoC API)\n(restore interruptions)" style="rounded,bold"]
+          pm_system_resume [label="Finish wake-up\n(SoC APIs)" style="rounded,bold"]
        k_cpu_idle [label="k_cpu_idle()"]
 
        subgraph cluster_0 {
@@ -67,6 +67,15 @@ The following diagram describes system power management:
         config_pm -> forced_state [label="yes" lhead="cluster_1"]
         pm_system_resume:e -> lock:e [constraint=false lhed="cluster_0"]
    }
+
+The PM subsystem calls :c:func:`pm_state_exit_post_ops` after the CPU wakes
+so the SoC can perform hardware-specific resume operations while interrupts
+are still locked. After PM exit notifications and system clock idle-exit
+accounting have completed, the PM subsystem calls
+:c:func:`pm_state_exit_irq_enable`. SoCs may use this second hook when pending
+wake-source interrupts must not be dispatched until after the PM core has
+finished its own wake-up housekeeping. Legacy SoC implementations that already
+restore interrupts from :c:func:`pm_state_exit_post_ops` can continue to do so.
 
 
 Power States
