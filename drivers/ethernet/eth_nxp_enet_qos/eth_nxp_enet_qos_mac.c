@@ -129,6 +129,9 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	struct net_buf *fragment = pkt->frags;
 	int frags_count = 0, total_bytes = 0, frags_idx = 0;
 	int ret;
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+	bool pkt_is_ptp;
+#endif
 
 	/* Only allow send of the maximum normal packet size */
 	while (fragment != NULL) {
@@ -191,7 +194,8 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	last_desc_ptr->read.control1 |= TX_INTERRUPT_ON_COMPLETE_FLAG;
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
-	if (net_pkt_is_tx_timestamping(pkt)) {
+	pkt_is_ptp = net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP;
+	if (net_pkt_is_tx_timestamping(pkt) || pkt_is_ptp) {
 		LOG_DBG("SET TX TIMESTAMP %p control %x", pkt, base->MAC_TIMESTAMP_CONTROL);
 		last_desc_ptr->read.control1 |= TX_TIMESTAMP_ENABLE_FLAG;
 	}
