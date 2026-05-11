@@ -161,5 +161,14 @@ properties:
     description: |
       If present, it indicates that the ADC instance supports the injected channel feature.
 
+  st,adc-hardware-trigger-timer:
+    type: phandle
+    description: |
+      If present, points to the timer device to use for dma hardware trigger.
+      over the dts you will need to configure a counter with the timer base address like this:
+      `counter15: counter@40014000`
+      and ref it in this field liek this:
+      `st,adc-hardware-trigger-timer = <&counter15>;`
+
 io-channel-cells:
   - input

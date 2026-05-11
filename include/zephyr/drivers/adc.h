@@ -1464,6 +1464,18 @@ static inline int adc_sequence_init_dt(const struct adc_dt_spec *spec,
 	return 0;
 }
 
+static inline int adc_sequence_configure_dt(size_t size, void* buffer, struct adc_sequence *seq)
+{
+	if (seq == NULL){
+		return -EINVAL;
+	}
+
+	seq->buffer = buffer;
+	seq->buffer_size = size;
+
+	return 0;
+}
+
 /**
  * @brief Validate that the ADC device is ready.
  *

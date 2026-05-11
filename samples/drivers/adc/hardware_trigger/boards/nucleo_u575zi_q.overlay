@@ -1,0 +1,38 @@
+/ {
+    zephyr,user {
+        io-channels = <&adc4 1>;
+    };
+
+    chosen {
+        adc-counter = &counter15;
+    };
+};
+
+&adc4 {
+    #address-cells = <1>;
+    #size-cells = <0>;
+
+    dmas = <&gpdma1 1 1 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_16BITS | STM32_DMA_PERIPH_16BITS)>;
+    dma-names = "gpdma";
+    pinctrl-0 = <&adc1_in1_pc0>;
+    st,adc-hardware-trigger-timer = <&counter15>;
+
+    channel@1 {
+        reg = <1>;
+        zephyr,gain = "ADC_GAIN_1";
+        zephyr,reference = "ADC_REF_INTERNAL";
+        zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+        zephyr,resolution = <12>;
+    };
+};
+
+&timers15 {
+    status = "okay";
+    st,prescaler = <0>;
+
+    counter15: counter@40014000 {
+        compatible = "st,stm32-counter";
+        reg = <0x0 0x40014000 0x400>;
+        status = "okay";
+    };
+};

@@ -28,6 +28,13 @@ config ADC_STM32WB0
 	select PINCTRL
 	help
 	  Enable the driver implementation for the STM32WB0 series ADC
+	
+config ADC_STM32_DMA_HARDWARE_TRIGGER
+	bool "STM32 MCU ADC DMA Hardware Trigger support"
+	depends on ADC_STM32_DMA
+	select USE_STM32_LL_ADC
+	help
+	  Enable sampling over hardware trigger with DMA
 
 if ADC_STM32 || ADC_STM32WB0
 

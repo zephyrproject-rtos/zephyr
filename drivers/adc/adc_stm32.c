@@ -37,6 +37,12 @@
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/dma.h>
 #include <stm32_ll_dma.h>
+
+#ifdef CONFIG_ADC_STM32_DMA_HARDWARE_TRIGGER
+#include <zephyr/drivers/counter.h>
+#include <stm32_ll_tim.h>
+#include "adc_stm32_hardware_trigger.h"
+#endif
 #endif
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
@@ -260,6 +266,13 @@ struct adc_stm32_data {
 #ifdef CONFIG_ADC_STM32_DMA
 	volatile int dma_error;
 	struct stream dma;
+
+#ifdef CONFIG_ADC_STM32_DMA_HARDWARE_TRIGGER
+	size_t size;
+	int trigger;
+	const struct device* counter_dev;
+	TIM_TypeDef* counter_addr;
+#endif
 #endif
 #ifdef CONFIG_ADC_STREAM
 	struct rtio_iodev_sqe *sqe;
@@ -340,7 +353,11 @@ static int adc_stm32_dma_start(const struct device *dev,
 	blk_cfg = &dma->dma_blk_cfg;
 
 	/* prepare the block */
+#ifdef CONFIG_ADC_STM32_DMA_HARDWARE_TRIGGER
+	blk_cfg->block_size = channel_count * data->size;
+#else
 	blk_cfg->block_size = channel_count * sizeof(adc_data_size_t);
+#endif
 
 	/* Source and destination */
 	blk_cfg->source_address = (uint32_t)LL_ADC_DMA_GetRegAddr(adc, LL_ADC_DMA_REG_REGULAR_DATA);
@@ -358,7 +375,7 @@ static int adc_stm32_dma_start(const struct device *dev,
 
 	/* direction is given by the DT */
 	dma->dma_cfg.head_block = blk_cfg;
-	dma->dma_cfg.user_data = data;
+	dma->dma_cfg.user_data = (struct device*)dev;
 
 	ret = dma_config(data->dma.dma_dev, data->dma.channel,
 			 &dma->dma_cfg);
@@ -916,7 +933,7 @@ static void dma_callback(const struct device *dev, void *user_data,
 			 uint32_t channel, int status)
 {
 	/* user_data directly holds the adc device */
-	struct adc_stm32_data *data = user_data;
+	struct adc_stm32_data *data = ((struct device*)user_data)->data;
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) /* Avoid unused variables */
 	const struct adc_stm32_cfg *config = data->dev->config;
 	ADC_TypeDef *adc = config->base;
@@ -1187,6 +1204,11 @@ static int start_read(const struct device *dev,
 	data->channel_count = POPCOUNT(data->channels);
 	data->samples_count = 0;
 	data->resolution = sequence->resolution;
+#ifdef CONFIG_ADC_STM32_DMA_HARDWARE_TRIGGER
+	LL_TIM_SetTriggerOutput(data->counter_addr, LL_TIM_TRGO_UPDATE);
+	LL_ADC_REG_SetTriggerSource(config->base, data->trigger);
+	data->size = sequence->buffer_size;
+#endif
 
 	if (data->channel_count == 0) {
 		LOG_ERR("No channels selected");
@@ -1322,6 +1344,13 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_NONE);
 #endif
 	adc_stm32_dma_start(dev, data->buffer, data->channel_count);
+#endif
+#ifdef CONFIG_ADC_STM32_DMA_HARDWARE_TRIGGER
+	int err = counter_start(data->counter_dev);
+	if (err){
+		LOG_ERR("Failed to start timer with error code: %d", err);
+		return;
+	}
 #endif
 	adc_stm32_start_conversion(dev);
 }
@@ -1926,6 +1955,18 @@ static int adc_stm32_init(const struct device *dev)
 
 	LOG_DBG("Initializing %s", dev->name);
 
+#if defined(CONFIG_ADC_STM32_DMA_HARDWARE_TRIGGER) && defined(CONFIG_SOC_SERIES_STM32U5X)
+	if (data->counter_dev){
+		err = assign_hardware_trigger(config->base, data->counter_addr, &data->trigger);
+		if (err){
+			LOG_ERR("Failed to connect between adc 0x%x and timer 0x%x, please check the compatible ones at `stm32xxx_ll_adc.h`", (uint32_t)config->base, (uint32_t)data->counter_addr);
+		}
+		else{
+			LOG_DBG("ADC hardware trigger is: 0x%x", (uint32_t)data->counter_addr);
+		}
+	}
+#endif
+
 	data->dev = dev;
 
 	/*
@@ -2225,6 +2266,14 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
 #endif /* !DT_ANY_INST_HAS_PROP_STATUS_OKAY(st_adc_clock_source) */
 
 
+#ifdef CONFIG_ADC_STM32_DMA_HARDWARE_TRIGGER
+
+#define INIT_DMA_HARDWARE_TRIGGER(index)	\
+	.counter_dev = DEVICE_DT_GET(DT_INST_PHANDLE(index, st_adc_hardware_trigger_timer)),	\
+	.counter_addr = (TIM_TypeDef*)DT_REG_ADDR(DT_INST_PHANDLE(index, st_adc_hardware_trigger_timer))	\
+
+#endif
+
 #if defined(CONFIG_ADC_STM32_DMA)
 
 #define ADC_DMA_CHANNEL_INIT(index, src_dev, dest_dev)					\
@@ -2253,7 +2302,9 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
 			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
 		.dst_addr_increment = STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(		\
 			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
-	}
+	},	\
+	COND_CODE_1(IS_ENABLED(CONFIG_ADC_STM32_DMA_HARDWARE_TRIGGER),	\
+		(INIT_DMA_HARDWARE_TRIGGER(index)), ())	\
 
 #else /* CONFIG_ADC_STM32_DMA */
 
