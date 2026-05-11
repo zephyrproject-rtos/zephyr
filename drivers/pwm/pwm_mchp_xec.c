@@ -391,7 +391,7 @@ static int pwm_xec_pm_action(const struct device *dev, enum pm_device_action act
 
 			data->config &= (~MCHP_PWM_CFG_ENABLE);
 		}
-	break;
+		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		if ((regs->CONFIG & MCHP_PWM_CFG_ENABLE) == MCHP_PWM_CFG_ENABLE) {
 			/* Do copy first, then clear mode. */
@@ -405,7 +405,7 @@ static int pwm_xec_pm_action(const struct device *dev, enum pm_device_action act
 		if (ret == -ENOENT) {
 			ret = 0;
 		}
-	break;
+		break;
 	default:
 		ret = -ENOTSUP;
 	}
