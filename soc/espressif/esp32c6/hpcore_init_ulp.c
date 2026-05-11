@@ -11,14 +11,14 @@
 #include "lp_core_uart.h"
 #include <zephyr/logging/log.h>
 #include <zephyr/devicetree.h>
+#include "memory.h"
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 void IRAM_ATTR lp_core_image_init(void)
 {
 	const uint32_t lpcore_img_off = FIXED_PARTITION_OFFSET(slot0_lpcore_partition);
-	const uint32_t lpcore_img_size =
-		DT_REG_SIZE(DT_NODELABEL(sramlp)) - DT_REG_SIZE(DT_NODELABEL(shmlp));
+	const uint32_t lpcore_img_size = ULP_COPROC_RESERVE_MEM;
 	int ret = 0;
 
 	LOG_INF("Getting LPU image at %p, size %d", (void *)lpcore_img_off, lpcore_img_size);
