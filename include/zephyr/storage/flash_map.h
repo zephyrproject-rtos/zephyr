@@ -330,7 +330,10 @@ int flash_area_has_driver(const struct flash_area *fa);
  *
  * @return device driver.
  */
-const struct device *flash_area_get_device(const struct flash_area *fa);
+static inline const struct device *flash_area_get_device(const struct flash_area *fa)
+{
+	return fa->fa_dev;
+}
 
 #if CONFIG_FLASH_MAP_LABELS
 /**

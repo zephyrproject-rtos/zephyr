@@ -114,11 +114,6 @@ int flash_area_has_driver(const struct flash_area *fa)
 	return 1;
 }
 
-const struct device *flash_area_get_device(const struct flash_area *fa)
-{
-	return fa->fa_dev;
-}
-
 #if CONFIG_FLASH_MAP_LABELS
 const char *flash_area_label(const struct flash_area *fa)
 {
