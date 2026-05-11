@@ -232,3 +232,14 @@ properties:
     description: |
       Do not initialize device automatically on boot. Device should be manually
       initialized using device_init().
+
+  zephyr,depends-on:
+    type: phandles
+    description: |
+      List of nodes that must be initialized before this device is initialized.
+      This property is useful for specifying dependencies between devices, ensuring
+      that certain devices are ready before others are initialized. Only use this
+      property when the dependency cannot be expressed through other properties like
+      "clocks", "dmas", "power-domains", etc. This is mainly intended to influence
+      initialization order of devices (devicetree ordinal), and should not be used
+      for other purposes.
