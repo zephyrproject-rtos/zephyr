@@ -178,7 +178,7 @@ static int ssh_server_thread_run(struct ssh_server *sshd)
 		.fd = sshd->eventfd, .events = ZSOCK_POLLIN,
 	};
 
-	BUILD_ASSERT(CONFIG_NET_SOCKETS_POLL_MAX >= ARRAY_SIZE(fds));
+	BUILD_ASSERT(CONFIG_ZVFS_POLL_MAX >= ARRAY_SIZE(fds));
 
 	for (int i = 2; i < ARRAY_SIZE(fds); i++) {
 		fds[i].fd = -1;
