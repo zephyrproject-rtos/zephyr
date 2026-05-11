@@ -21,6 +21,7 @@ LOG_MODULE_DECLARE(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
 #define PM_DOMAIN(_pm) NULL
 #endif
 
+static struct k_spinlock lock;
 #ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 #ifdef CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
 K_THREAD_STACK_DEFINE(pm_device_runtime_stack, CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_STACK_SIZE);
@@ -57,11 +58,24 @@ static int runtime_suspend(const struct device *dev, bool async,
 {
 	int ret = 0;
 	struct pm_device *pm = dev->pm;
+	bool early_exit = false;
 
 	/*
 	 * Early return if device runtime is not enabled.
 	 */
 	if (!atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
+		return 0;
+	}
+
+	K_SPINLOCK(&lock) {
+		/* If we are not the last user, return. */
+		if (pm->base.usage > 1U) {
+			pm->base.usage--;
+			early_exit = true;
+		}
+	}
+
+	if (early_exit == true) {
 		return 0;
 	}
 
@@ -219,6 +233,21 @@ int pm_device_runtime_get(const struct device *dev)
 	}
 
 	if (!k_is_pre_kernel()) {
+		bool early_exit = false;
+
+		K_SPINLOCK(&lock) {
+			/* If we are not the first user and device is active, return. */
+			if ((pm->base.usage > 0U) && (pm->base.state == PM_DEVICE_STATE_ACTIVE)) {
+				pm->base.usage++;
+				early_exit = true;
+			}
+		}
+
+		if (early_exit == true) {
+			ret = 0;
+			goto end;
+		}
+
 		ret = k_sem_take(&pm->lock, k_is_in_isr() ? K_NO_WAIT : K_FOREVER);
 		if (ret < 0) {
 			return -EWOULDBLOCK;
