@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
- * an affiliate of Cypress Semiconductor Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  * Copyright (c) 2026 Linumiz
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -678,7 +678,7 @@ static void ifx_cat1_uart_irq_handler(const struct device *dev)
 /* Default Counter configuration structure */
 static const cy_stc_scb_uart_config_t _uart_default_config = {
 	.uartMode = CY_SCB_UART_STANDARD,
-#if defined(CONFIG_SOC_SERIES_PSE84)
+#if defined(CONFIG_UART_INFINEON_PDL_MP_FIELD_QUIRK)
 	.enableMultiProcessorMode = false,
 #else
 	.enableMutliProcessorMode = false,
