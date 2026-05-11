@@ -83,6 +83,9 @@ typedef int (*uaol_api_get_capabilities)(const struct device *dev, struct uaol_c
 
 typedef int (*uaol_api_adjust_rate)(const struct device *dev, int stream, bool increase);
 
+typedef int (*uaol_api_interpret_feedback_value)(const struct device *dev, int stream,
+						 uint32_t feedback_value);
+
 __subsystem struct uaol_driver_api {
 	uaol_api_config config;
 	uaol_api_start start;
@@ -90,6 +93,7 @@ __subsystem struct uaol_driver_api {
 	uaol_api_program_ep_table program_ep_table;
 	uaol_api_get_capabilities get_capabilities;
 	uaol_api_adjust_rate adjust_rate;
+	uaol_api_interpret_feedback_value interpret_feedback_value;
 };
 /**
  * @endcond
@@ -179,6 +183,23 @@ static inline int uaol_get_capabilities(const struct device *dev, struct uaol_ca
 static inline int uaol_adjust_rate(const struct device *dev, int stream, bool increase)
 {
 	return DEVICE_API_GET(uaol, dev)->adjust_rate(dev, stream, increase);
+}
+
+/**
+ * @brief Convert a raw feedback endpoint value to a frequency.
+ *
+ * The value format depends on the USB device speed set with uaol_config().
+ *
+ * @param dev UAOL device instance.
+ * @param stream UAOL stream index.
+ * @param feedback_value Raw value read from the USB feedback endpoint.
+ *
+ * @return the frequency in Hz on success, a negative error code otherwise.
+ */
+static inline int uaol_interpret_feedback_value(const struct device *dev, int stream,
+						 uint32_t feedback_value)
+{
+	return DEVICE_API_GET(uaol, dev)->interpret_feedback_value(dev, stream, feedback_value);
 }
 
 /**
