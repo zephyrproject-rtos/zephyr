@@ -322,7 +322,7 @@ static int max3421e_xfer_control(const struct device *dev,
 	if (xfer->stage == UHC_CONTROL_STAGE_SETUP) {
 		LOG_DBG("Handle SETUP stage");
 		ret = max3421e_write(dev, MAX3421E_REG_SUDFIFO,
-				     xfer->setup_pkt, sizeof(xfer->setup_pkt));
+				     xfer->setup_pkt, 8);
 		if (ret) {
 			return ret;
 		}
