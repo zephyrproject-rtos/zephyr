@@ -26,6 +26,9 @@ Refer to the :ref:`shield_porting_guide` for more information on how to port a s
      a single field, selecting multiple options (such as two architectures) will show boards
      matching **either** option.
 
+   * When filtering by available RAM and/or Flash, a board will be included in the results if it has
+     at least one board target that meets the specified criteria.
+
    * Can't find your exact board? Don't worry! If a similar board with the same or a closely related
      MCU exists, you can use it as a :ref:`starting point <create-your-board-directory>` for adding
      support for your own board.

@@ -16,12 +16,21 @@
     return element;
   };
 
-  // Target parsing helper
-  const parseTargetString = (targetString) => {
-    const [boardWithRev, ...qualifiers] = targetString.split("/");
-    const [board, revision] = boardWithRev.split("@");
+  const boardTargetsList = () => {
+    if (!Array.isArray(board_data?.targets)) return [];
+    return board_data.targets.filter((t) => t != null && String(t).trim() !== "");
+  };
+
+  /** Parse a canonical Zephyr board target string; safe for missing or empty input. */
+  const parseTargetString = (targetString, defaultBoard = "") => {
+    if (targetString == null || String(targetString).trim() === "") {
+      return { board: defaultBoard || "", revision: "", qualifier: "" };
+    }
+    const s = String(targetString);
+    const [boardWithRev, ...qualifiers] = s.split("/");
+    const [board, revision] = (boardWithRev ?? "").split("@");
     return {
-      board: board || "",
+      board: board || defaultBoard || "",
       revision: revision || "",
       qualifier: qualifiers.join("/") || "",
     };
@@ -44,19 +53,25 @@
     const container = document.querySelector('.container[id$="-hw-features"]');
     if (!container) return console.error("Container element not found");
 
+    const targets = boardTargetsList();
+    if (targets.length === 0) {
+      initializeDisplay(undefined, undefined);
+      return;
+    }
+
     const components = {
       boards: new Set([board_data.board_name]),
       revisions: new Set(),
       qualifiers: new Set(),
     };
 
-    board_data.targets.forEach((target) => {
-      const { revision, qualifier } = parseTargetString(target);
+    targets.forEach((target) => {
+      const { revision, qualifier } = parseTargetString(target, board_data.board_name || "");
       if (revision) components.revisions.add(revision);
       if (qualifier) components.qualifiers.add(qualifier);
     });
 
-    const initialValues = parseTargetString(board_data.targets[0]);
+    const initialValues = parseTargetString(targets[0], board_data.board_name || "");
     if (board_data.revision_default) {
       initialValues.revision = board_data.revision_default;
     }
@@ -98,13 +113,12 @@
     selector.querySelectorAll("select").forEach((select) => {
       select.addEventListener("change", () => {
         updateSelectOptions(initialValues, revisionSelect, qualifierSelect);
-        updateDisplayedTable(revisionSelect, qualifierSelect);
+        updateDisplayedTarget(revisionSelect, qualifierSelect);
       });
     });
 
     // Initial display setup
-    initializeDisplay();
-    // updateDisplayedTable(revisionSelect, qualifierSelect);
+    initializeDisplay(revisionSelect, qualifierSelect);
   };
 
   // Copy button click handler
@@ -145,44 +159,51 @@
     return parts.join("");
   };
 
-  // Update displayed table based on selections
-  const updateDisplayedTable = (revisionSelect, qualifierSelect) => {
-    const currentTarget = buildTargetString(
-      parseTargetString(board_data.targets[0]),
-      revisionSelect,
-      qualifierSelect,
-    );
+  /** Panel id: ``{board_id}-{target}-hw-features-panel`` (same target string as section key). */
+  const targetKeyFromHwFeaturesPanelId = (panelId) => {
+    const suffix = "-hw-features-panel";
+    if (!panelId.endsWith(suffix)) {
+      return "";
+    }
+    const core = panelId.slice(0, -suffix.length);
+    const prefix = `${board_data.board_name}-`;
+    return core.startsWith(prefix) ? core.slice(prefix.length) : "";
+  };
 
-    console.log(currentTarget);
+  const buildCurrentTargetString = (revisionSelect, qualifierSelect) => {
+    const list = boardTargetsList();
+    const initialValues = parseTargetString(list[0], board_data.board_name || "");
+    if (board_data.revision_default) {
+      initialValues.revision = board_data.revision_default;
+    }
+    return buildTargetString(initialValues, revisionSelect, qualifierSelect);
+  };
 
-    document.querySelectorAll('section[id$="-hw-features-section"]').forEach((section) => {
-      // Find the matching target in board_data.targets
-      const isMatch = section.id
-        .replace(/${board_data.name}/)
-        .replace(/-hw-features-section$/, "")
-        .endsWith(currentTarget);
+  // Update displayed build target (memory + hardware-features panel) based on selections
+  const updateDisplayedTarget = (revisionSelect, qualifierSelect) => {
+    const currentTarget = buildCurrentTargetString(revisionSelect, qualifierSelect);
+    const panels = document.querySelectorAll('[id$="-hw-features-panel"]');
+    const singlePanel = panels.length === 1 ? panels[0] : null;
 
-      const table = document.querySelector(
-        `table[id="${section.id.replace("-section", "-table")}"]`,
-      );
-      const wrapper = table?.closest(".wy-table-responsive");
-
-      if (table) table.style.display = isMatch ? "table" : "none";
-      if (wrapper) wrapper.style.display = isMatch ? "block" : "none";
+    panels.forEach((panel) => {
+      const targetKey = targetKeyFromHwFeaturesPanelId(panel.id);
+      let isMatch = targetKey === currentTarget;
+      if (!isMatch && singlePanel === panel) {
+        isMatch = true;
+      }
+      panel.style.display = isMatch ? "" : "none";
     });
   };
 
   // Initial display setup
-  const initializeDisplay = () => {
-    document
-      .querySelectorAll('section[id$="-hw-features-section"]')
-      .forEach((section) => (section.style.display = "none"));
-    document.querySelectorAll("table.hardware-features").forEach((table, index) => {
-      const wrapper = table.closest(".wy-table-responsive");
-      table.style.display = index === 0 ? "table" : "none";
-      if (wrapper) wrapper.style.display = index === 0 ? "block" : "none";
+  const initializeDisplay = (revisionSelect, qualifierSelect) => {
+    document.querySelectorAll('section[id$="-hw-features-section"]').forEach((section) => {
+      section.style.display = "none";
     });
-    updateDisplayedTable(revisionSelect, qualifierSelect);
+    document.querySelectorAll('[id$="-hw-features-panel"]').forEach((panel) => {
+      panel.style.display = "none";
+    });
+    updateDisplayedTarget(revisionSelect, qualifierSelect);
   };
 
   // Update select options based on valid combinations
@@ -192,8 +213,8 @@
       const validRevisions = new Set();
 
       // Find valid revisions for current board
-      board_data.targets.forEach((target) => {
-        const { board, revision } = parseTargetString(target);
+      boardTargetsList().forEach((target) => {
+        const { board, revision } = parseTargetString(target, board_data.board_name || "");
         if (board === currentBoard && revision) {
           validRevisions.add(revision);
         }
@@ -216,8 +237,11 @@
       const validQualifiers = new Set();
 
       // Find valid qualifiers for current board and revision
-      board_data.targets.forEach((target) => {
-        const { board, revision, qualifier } = parseTargetString(target);
+      boardTargetsList().forEach((target) => {
+        const { board, revision, qualifier } = parseTargetString(
+          target,
+          board_data.board_name || "",
+        );
         if (board === currentBoard && (!revision || revision === currentRevision) && qualifier) {
           validQualifiers.add(qualifier);
         }

@@ -337,8 +337,7 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
 
         supported_features = {}
         compatibles = {}
-        max_ram = None
-        max_flash = None
+        target_memory = []
 
         # Use pre-gathered build info and DTS files
         if board.name in board_devicetrees:
@@ -347,10 +346,14 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
                 target_compatibles = set()
                 ram_size = get_board_memory_size(edt, "zephyr,sram")
                 flash_size = get_board_memory_size(edt, "zephyr,flash")
-                if ram_size is not None:
-                    max_ram = ram_size if max_ram is None else max(max_ram, ram_size)
-                if flash_size is not None:
-                    max_flash = flash_size if max_flash is None else max(max_flash, flash_size)
+                if ram_size is not None or flash_size is not None:
+                    target_memory.append(
+                        {
+                            "target": board_target,
+                            "ram": ram_size,
+                            "flash": flash_size,
+                        }
+                    )
                 for node in edt.nodes:
                     if node.binding_path is None:
                         continue
@@ -455,9 +458,8 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
             "compatibles": compatibles,
             "image": guess_image(board),
             "maintained": is_board_maintained(doc_page_path) if doc_page_path else False,
-            # Largest zephyr,sram / zephyr,flash among all board targets (in bytes).
-            "ram": max_ram,
-            "flash": max_flash,
+            # Per-target zephyr,sram / zephyr,flash sizes in bytes.
+            "target_memory": target_memory,
             # runners
             "supported_runners": board_runner_info.get("runners", []),
             "flash_runner": board_runner_info.get("flash-runner", ""),
