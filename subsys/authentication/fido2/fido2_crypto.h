@@ -9,12 +9,6 @@
 
 #include <zephyr/authentication/fido2/fido2_types.h>
 
-/* Max number of retries for key generation */
-#define FIDO2_KEYGEN_ID_RETRIES          16
-/* Key size for ES256 in bits */
-#define FIDO2_ES256_KEY_BITS             256
-/* r||s, 32 bytes each for P-256 */
-#define FIDO2_ES256_RAW_SIG_SIZE         64
 /* P-256 public key export size */
 #define FIDO2_P256_UNCOMPRESSED_KEY_SIZE 65
 /* P-256 coordinate size */

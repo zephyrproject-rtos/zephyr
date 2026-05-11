@@ -11,6 +11,7 @@ menuconfig FIDO2
 	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
 	select PSA_WANT_ALG_ECDSA
 	select PSA_WANT_ALG_SHA_256
+	select PSA_WANT_ALG_GCM
 	select PSA_WANT_ECC_SECP_R1_256
 	help
 	  Enable the FIDO2/CTAP2 authenticator subsystem.
@@ -43,13 +44,6 @@ config FIDO2_MAX_CREDENTIALS
 	help
 	  Maximum number of discoverable (resident) credentials that
 	  can be stored on the device.
-
-config FIDO2_UP_TIMEOUT_MS
-	int "User presence timeout in milliseconds"
-	default 30000
-	help
-	  Time to wait for user presence confirmation before timing out.
-	  Default 30 seconds, as per FIDO2 specification.
 
 config FIDO2_EXT_CRED_PROTECT
 	bool "credProtect extension"
@@ -102,7 +96,9 @@ config FIDO2_ALWAYS_UV
 
 	  This overrides makeCredUvNotRqd
 
+rsource "attestation/Kconfig"
 rsource "transport/Kconfig"
+rsource "up/Kconfig"
 rsource "storage/Kconfig"
 
 endif # FIDO2

@@ -1,0 +1,39 @@
+# Copyright (c) 2026 Siratul Islam <email@sirat.me>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "User Presence"
+
+choice FIDO2_UP_BACKEND
+	prompt "User presence backend"
+	default FIDO2_UP_INPUT
+
+config FIDO2_UP_INPUT
+	bool "Input device"
+	depends on INPUT
+	help
+	  Check user presence using the INPUT subsystem. Uses the devicetree chosen property
+	  zephyr,fido2-up-input.
+
+config FIDO2_UP_ALWAYS
+	bool "Always approve"
+	select NOT_SECURE
+	help
+	  Bypass user presence and always return success. This reduces security
+	  and should only be used for testing or in very specific use cases.
+
+config FIDO2_UP_CUSTOM
+	bool "Custom (application-provided)"
+	help
+	  No UP source is compiled from the subsystem. The application
+	  must provide its own implementation.
+
+endchoice
+
+config FIDO2_UP_TIMEOUT_MS
+	int "User presence timeout in milliseconds"
+	default 30000
+	help
+	  Time to wait for user presence confirmation before timing out.
+	  Default 30 seconds, as per FIDO2 specification.
+
+endmenu
