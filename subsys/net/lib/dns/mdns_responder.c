@@ -549,7 +549,7 @@ static void send_sd_response(int sock,
 				ntohs(*(record->port)),
                 ifname,
                 record->alias, record->iface);
-                
+
             if (0 != strcmp(ifname, record->iface)) {
                 NET_DBG("skipped on this interface");
                 continue;
@@ -704,9 +704,9 @@ static int dns_read(int sock,
 			}
 		}
 
-		if (!strncasecmp(hostname, result->data + 1, hostname_len) &&
-		    (result->len - 1) >= hostname_len &&
-		    &(result->data + 1)[hostname_len] == lquery) {
+		if (!strncasecmp(hostname, result->data, hostname_len) &&
+		    (result->len) >= hostname_len &&
+		    &result->data[hostname_len] == lquery) {
 			NET_DBG("%s %s %s to our hostname %s%s", "mDNS",
 				family == AF_INET ? "IPv4" : "IPv6", "query",
 				hostname, ".local");
