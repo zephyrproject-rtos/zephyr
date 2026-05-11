@@ -910,6 +910,7 @@ static int i2s_esp32_restart_dma(const struct device *dev, enum i2s_dir dir)
 
 #if I2S_ESP32_IS_DIR_EN(rx)
 	if (dir == I2S_DIR_RX) {
+		i2s_ll_rx_reset_fifo(hal->dev);
 		i2s_ll_rx_set_eof_num(hal->dev, chunk_len);
 	}
 #endif /* I2S_ESP32_IS_DIR_EN(rx) */
