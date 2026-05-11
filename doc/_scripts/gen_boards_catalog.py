@@ -104,6 +104,23 @@ class DeviceTreeUtils:
         )
 
 
+def get_board_memory_size(edt, chosen_name):
+    """Get the total size of a memory region from a chosen Devicetree node.
+
+    Args:
+        edt: The EDT object for a board target.
+        chosen_name: Chosen node name (for example "zephyr,sram" or "zephyr,flash").
+
+    Returns:
+        Total size in bytes, or None if the chosen node is not present.
+    """
+    memory_node = edt.chosen_node(chosen_name)
+    if memory_node is None:
+        return None
+    memory_sizes = [reg.size for reg in memory_node.regs if reg.size is not None]
+    return sum(memory_sizes) if memory_sizes else None
+
+
 def guess_file_from_patterns(directory, patterns, name, extensions):
     for pattern in patterns:
         for ext in extensions:
@@ -320,12 +337,20 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
 
         supported_features = {}
         compatibles = {}
+        max_ram = None
+        max_flash = None
 
         # Use pre-gathered build info and DTS files
         if board.name in board_devicetrees:
             for board_target, edt in board_devicetrees[board.name].items():
                 features = {}
                 target_compatibles = set()
+                ram_size = get_board_memory_size(edt, "zephyr,sram")
+                flash_size = get_board_memory_size(edt, "zephyr,flash")
+                if ram_size is not None:
+                    max_ram = ram_size if max_ram is None else max(max_ram, ram_size)
+                if flash_size is not None:
+                    max_flash = flash_size if max_flash is None else max(max_flash, flash_size)
                 for node in edt.nodes:
                     if node.binding_path is None:
                         continue
@@ -384,8 +409,12 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
 
                     features.setdefault(binding_type, {})[node.matching_compat] = feature_data
 
-                # Store features and compatibles for this specific target
-                supported_features[board_target] = features
+                # Per-target EDT metadata and feature bindings
+                supported_features[board_target] = {
+                    "ram_size": ram_size,
+                    "flash_size": flash_size,
+                    "features": features,
+                }
                 compatibles[board_target] = list(target_compatibles)
 
         board_runner_info = {}
@@ -426,6 +455,9 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
             "compatibles": compatibles,
             "image": guess_image(board),
             "maintained": is_board_maintained(doc_page_path) if doc_page_path else False,
+            # Largest zephyr,sram / zephyr,flash among all board targets (in bytes).
+            "ram": max_ram,
+            "flash": max_flash,
             # runners
             "supported_runners": board_runner_info.get("runners", []),
             "flash_runner": board_runner_info.get("flash-runner", ""),
