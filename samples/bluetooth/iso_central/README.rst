@@ -22,6 +22,18 @@ Requirements
 
 Building and Running
 ********************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/iso_central
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+Use ``-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf`` to enable
+required ISO feature support in Zephyr Bluetooth Controller on supported boards.
+
+After flashing, check the following:
+
 1. Start the application.
    In the terminal window, check that it is scanning for other devices.
 
@@ -35,7 +47,7 @@ Building and Running
 
       Connected: 65:CF:20:0D:CB:9D (random)
 
-3. Observe that the ISO channel is connected
+3. Observe that the ISO channel is connected.
 
       ISO Channel 0x200048f8 connected
 

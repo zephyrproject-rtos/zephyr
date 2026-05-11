@@ -26,16 +26,19 @@ Requirements
 * A remote board running the same sample as the reversed role that supports
   setting CONFIG_BT_CTLR_PERIPHERAL_ISO=y
 
-Building and running
+Building and Running
 ********************
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/iso_connected_benchmark
+   :board: <board>
+   :goals: build flash
+   :compact:
 
 Testing
 =======
 
-After programming the sample to both boards, test it by performing the following
+After flashing the sample to both boards, test it by performing the following
 steps:
 
 1. Connect to both boards with a terminal emulator (for example, PuTTY or
@@ -46,9 +49,9 @@ steps:
 #. In the other terminal emulator, type "p" to start the application in the
    peripheral role.
 #. Optionally modify the central ISO settings using the console.
-#. Observe that the central and the peripheral connects.
+#. Observe that the central and the peripheral connect.
 #. Observe the receive statistics on the devices (the connected ISO channels may
-   by uni- or bidirectional).
+   be uni- or bidirectional).
 
 Sample output
 ==============
