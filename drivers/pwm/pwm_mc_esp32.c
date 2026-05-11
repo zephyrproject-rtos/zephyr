@@ -16,10 +16,23 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/pm/device.h>
 #include <esp_clk_tree.h>
 #ifdef CONFIG_PWM_CAPTURE
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #endif /* CONFIG_PWM_CAPTURE */
+
+#if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MCPWM_SUPPORT_SLEEP_RETENTION
+#define MCPWM_SLEEP_RETENTION_ENABLED 1
+#else
+#define MCPWM_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if MCPWM_SLEEP_RETENTION_ENABLED
+#include <hal/mcpwm_periph.h>
+#include <esp_private/sleep_retention.h>
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mcpwm_esp32, CONFIG_PWM_LOG_LEVEL);
 
@@ -383,6 +396,96 @@ static void channel_init(const struct device *dev)
 	}
 }
 
+#if MCPWM_SLEEP_RETENTION_ENABLED
+static esp_err_t mcpwm_esp32_create_sleep_retention_cb(void *arg)
+{
+	const struct device *dev = arg;
+	const struct mcpwm_esp32_config *cfg = dev->config;
+	const mcpwm_reg_retention_info_t *info;
+
+	info = &mcpwm_reg_retention_info[cfg->index];
+
+	return sleep_retention_entries_create(info->regdma_entry_array, info->array_size,
+					      REGDMA_LINK_PRI_MCPWM, info->retention_module);
+}
+
+static void mcpwm_esp32_sleep_retention_init(const struct device *dev)
+{
+	const struct mcpwm_esp32_config *cfg = dev->config;
+	sleep_retention_module_t module;
+
+	if (cfg->index >= MCPWM_LL_GET(GROUP_NUM)) {
+		return;
+	}
+
+	module = mcpwm_reg_retention_info[cfg->index].retention_module;
+
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = mcpwm_esp32_create_sleep_retention_cb,
+				   .arg = (void *)dev}},
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)};
+
+	esp_err_t err = sleep_retention_module_init(module, &init_param);
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_allocate(module);
+	}
+	if (err != ESP_OK) {
+		LOG_WRN("MCPWM sleep retention init failed (%d)", err);
+	}
+}
+#endif /* MCPWM_SLEEP_RETENTION_ENABLED */
+
+#if CONFIG_PM_DEVICE
+static void mcpwm_esp32_force_output(const struct device *dev, bool suspend)
+{
+	const struct mcpwm_esp32_config *config = dev->config;
+	struct mcpwm_esp32_data *data = dev->data;
+	const int n_ch = MCPWM_LL_GET(OPERATORS_PER_GROUP) * MCPWM_LL_GET(GENERATORS_PER_OPERATOR);
+
+	for (int i = 0; i < n_ch; i++) {
+		const struct mcpwm_esp32_channel_config *channel = &config->channel_config[i];
+
+		if (channel->freq == 0) {
+			continue;
+		}
+
+		if (suspend) {
+			/* Force output to recessive (off) level immediately */
+			mcpwm_ll_gen_set_continue_force_level(data->hal.dev, channel->operator_id,
+							      channel->generator_id,
+							      channel->inverted ? 1 : 0);
+		} else {
+			mcpwm_ll_gen_disable_continue_force_action(
+				data->hal.dev, channel->operator_id, channel->generator_id);
+		}
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
+
+static int mcpwm_esp32_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+#if MCPWM_SLEEP_RETENTION_ENABLED
+		mcpwm_esp32_sleep_retention_init(dev);
+#endif
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_RESUME:
+#if CONFIG_PM_DEVICE
+		mcpwm_esp32_force_output(dev, action == PM_DEVICE_ACTION_SUSPEND);
+#endif
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 int mcpwm_esp32_init(const struct device *dev)
 {
 	int ret;
@@ -422,9 +525,11 @@ int mcpwm_esp32_init(const struct device *dev)
 
 	if (ret != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", ret);
+		return ret;
 	}
 #endif /* CONFIG_PWM_CAPTURE */
-	return ret;
+
+	return pm_device_driver_init(dev, mcpwm_esp32_pm_action);
 }
 
 #ifdef CONFIG_PWM_CAPTURE
@@ -552,8 +657,10 @@ static DEVICE_API(pwm, mcpwm_esp32_api) = {
 		.prescale_timer2 = DT_INST_PROP_OR(idx, prescale_timer2, 0),                       \
 		CAPTURE_INIT(idx)};                                                                \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(idx, &mcpwm_esp32_init, NULL, &mcpwm_esp32_data_##idx,               \
-			      &mcpwm_esp32_config_##idx, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,    \
-			      &mcpwm_esp32_api);
+	PM_DEVICE_DT_INST_DEFINE(idx, mcpwm_esp32_pm_action);                                      \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, &mcpwm_esp32_init, PM_DEVICE_DT_INST_GET(idx),                  \
+			      &mcpwm_esp32_data_##idx, &mcpwm_esp32_config_##idx, POST_KERNEL,     \
+			      CONFIG_PWM_INIT_PRIORITY, &mcpwm_esp32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_MCPWM_INIT)
