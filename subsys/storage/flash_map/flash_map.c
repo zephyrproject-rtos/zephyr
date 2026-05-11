@@ -114,13 +114,6 @@ int flash_area_has_driver(const struct flash_area *fa)
 	return 1;
 }
 
-#if CONFIG_FLASH_MAP_LABELS
-const char *flash_area_label(const struct flash_area *fa)
-{
-	return fa->fa_label;
-}
-#endif
-
 uint8_t flash_area_erased_val(const struct flash_area *fa)
 {
 	const struct flash_parameters *param;

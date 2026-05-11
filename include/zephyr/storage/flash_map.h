@@ -64,7 +64,7 @@ struct flash_area {
 	size_t fa_size;
 	/** Backing flash device */
 	const struct device *fa_dev;
-#if CONFIG_FLASH_MAP_LABELS
+#if defined(CONFIG_FLASH_MAP_LABELS)
 	/** Partition label if defined in DTS. Otherwise nullptr; */
 	const char *fa_label;
 #endif
@@ -335,7 +335,6 @@ static inline const struct device *flash_area_get_device(const struct flash_area
 	return fa->fa_dev;
 }
 
-#if CONFIG_FLASH_MAP_LABELS
 /**
  * Get the label property from the device tree
  *
@@ -343,8 +342,15 @@ static inline const struct device *flash_area_get_device(const struct flash_area
  *
  * @return The label property if it is defined, otherwise NULL
  */
-const char *flash_area_label(const struct flash_area *fa);
-#endif
+static inline const char *flash_area_label(const struct flash_area *fa)
+{
+#if defined(CONFIG_FLASH_MAP_LABELS)
+	return fa->fa_label;
+#else /* CONFIG_FLASH_MAP_LABELS */
+	ARG_UNUSED(fa);
+	return NULL;
+#endif /* CONFIG_FLASH_MAP_LABELS */
+}
 
 /**
  * Get the value expected to be read when accessing any erased
