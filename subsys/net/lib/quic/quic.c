@@ -2455,6 +2455,14 @@ static int quic_decrypt_packet(struct quic_endpoint *ep,
 	crypto = quic_get_crypto_context(ep, ptype);
 	if (crypto == NULL) {
 		NET_DBG("No crypto context for packet type %d", ptype);
+		if (ptype == QUIC_PACKET_TYPE_HANDSHAKE ||
+		    ptype == QUIC_PACKET_TYPE_1RTT) {
+			/* These packets can arrive before the matching keys are installed
+			 * or after that packet number space is no longer usable.
+			 * Drop them without counting an invalid-key error.
+			 */
+			return -EAGAIN;
+		}
 		QUIC_EP_STAT_INC(ep, invalid_key);
 		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -ENOENT;
@@ -6412,10 +6420,12 @@ static bool process_short_header_msg(struct quic_pkt *pkt)
 	/* Get crypto context for APPLICATION level (1-RTT) */
 	crypto_ctx = quic_get_crypto_context_by_level(ep, QUIC_SECRET_LEVEL_APPLICATION);
 	if (crypto_ctx == NULL || !crypto_ctx->initialized) {
+		/* A reordered 1-RTT packet can arrive before this endpoint finishes
+		 * installing application keys from the peer's handshake flight.
+		 * Ignore it without charging invalid-key/drop statistics.
+		 */
 		NET_DBG("[%p] Application crypto context still not ready for endpoint %d",
 			ep, quic_get_by_ep(ep));
-		QUIC_EP_STAT_INC(ep, invalid_key);
-		QUIC_EP_STAT_INC(ep, drop_rx);
 		return false;
 	}
 
