@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Bjarki Arge Andreasen
+ * Copyright (c) 2026 Leica Geosystems AG
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -142,6 +143,8 @@ static const char *modem_cellular_event_str(enum modem_cellular_event event)
 		return "apn set";
 	case MODEM_CELLULAR_EVENT_RING:
 		return "RING";
+	case MODEM_CELLULAR_EVENT_PERIODIC_KICK:
+		return "periodic kick";
 	}
 
 	return "";
@@ -1402,7 +1405,27 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 		break;
 
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
+		if (atomic_get(&data->periodic_paused)) {
+			data->periodic_timeout_skipped = true;
+			break;
+		}
 		modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic);
+		break;
+
+	case MODEM_CELLULAR_EVENT_PERIODIC_KICK:
+		if (atomic_get(&data->periodic_paused)) {
+			break;
+		}
+		if (!data->periodic_timeout_skipped) {
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+			break;
+		}
+		data->periodic_timeout_skipped = false;
+		if (modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic) <
+		    0) {
+			LOG_WRN("periodic kick busy, rearming timer");
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_REGISTERED:
@@ -1468,7 +1491,27 @@ static void modem_cellular_registered_event_handler(struct modem_cellular_data *
 		break;
 
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
+		if (atomic_get(&data->periodic_paused)) {
+			data->periodic_timeout_skipped = true;
+			break;
+		}
 		modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic);
+		break;
+
+	case MODEM_CELLULAR_EVENT_PERIODIC_KICK:
+		if (atomic_get(&data->periodic_paused)) {
+			break;
+		}
+		if (!data->periodic_timeout_skipped) {
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+			break;
+		}
+		data->periodic_timeout_skipped = false;
+		if (modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic) <
+		    0) {
+			LOG_WRN("periodic kick busy, rearming timer");
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_DEREGISTERED:
@@ -2214,6 +2257,39 @@ static int modem_cellular_set_callback(const struct device *dev, cellular_event_
 
 	k_mutex_unlock(&data->api_lock);
 	return ret;
+}
+
+int cellular_modem_pause_periodic_script(const struct device *dev)
+{
+	const struct modem_cellular_config *config = dev->config;
+	struct modem_cellular_data *data = dev->data;
+
+	if (config->vendor->scripts.periodic == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!atomic_cas(&data->periodic_paused, 0, 1)) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int cellular_modem_resume_periodic_script(const struct device *dev)
+{
+	const struct modem_cellular_config *config = dev->config;
+	struct modem_cellular_data *data = dev->data;
+
+	if (config->vendor->scripts.periodic == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!atomic_cas(&data->periodic_paused, 1, 0)) {
+		return -EINVAL;
+	}
+
+	modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_PERIODIC_KICK);
+	return 0;
 }
 
 DEVICE_API(cellular, modem_cellular_api) = {
