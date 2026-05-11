@@ -53,6 +53,7 @@
 			status = "disabled";
 			reg = <0xe000b000 0x1000>,
 			      <0xf8000140 0x4>;
+			reg-names = "mac", "clkc";
 			interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 23 IRQ_TYPE_LEVEL
@@ -79,6 +80,7 @@
 			status = "disabled";
 			reg = <0xe000c000 0x1000>,
 			      <0xf8000144 0x4>;
+			reg-names = "mac", "clkc";
 			interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 46 IRQ_TYPE_LEVEL
