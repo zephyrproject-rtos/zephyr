@@ -57,12 +57,6 @@ enum ssh_server_sig_algs {
 #endif
 };
 
-static inline int ssh_mbedtls_rand(void *rng_state, unsigned char *output, size_t len)
-{
-	ARG_UNUSED(rng_state);
-	return sys_csrand_get(output, len);
-}
-
 #define ssh_zeroize(buf, len) mbedtls_platform_zeroize((buf), (len))
 
 #endif
