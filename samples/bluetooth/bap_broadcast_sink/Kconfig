@@ -91,7 +91,7 @@ config TARGET_BROADCAST_CHANNEL
 
 config INFO_REPORTING_INTERVAL
 	int "Number of SDUs received between each information report"
-	default 1000
+	default 1
 	help
 	  Determines how often information about received data is logged.
 	  Set to 0 to disable reporting.

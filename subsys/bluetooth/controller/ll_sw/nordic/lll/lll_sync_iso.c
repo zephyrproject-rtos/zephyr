@@ -580,7 +580,6 @@ static void isr_rx(void *param)
 	uint8_t stream_curr;
 	uint8_t rssi_ready;
 	uint32_t start_us;
-	uint8_t new_burst;
 	uint8_t trx_done;
 	uint8_t bis_idx;
 	uint8_t skipped;
@@ -763,7 +762,6 @@ static void isr_rx(void *param)
 isr_rx_done:
 	uint8_t bis_idx_old = bis_idx;
 
-	new_burst = 0U;
 	skipped = 0U;
 
 isr_rx_find_subevent:
@@ -803,81 +801,45 @@ isr_rx_find_subevent:
 			payload_index -= lll->payload_count_max;
 		}
 
-		/* Check if (bn_curr)th Rx PDU has been received */
-		if (!lll->payload[stream_curr][payload_index]) {
-			/* Receive the (bn_curr)th Rx PDU of bis_curr */
-			bis = lll->bis_curr;
+		/* Receive the (bn_curr)th Rx PDU of bis_curr.
+		 * Always attempt reception for every IRC repetition, even if a
+		 * prior copy was already successfully received. The PDU store
+		 * guard in isr_rx will discard the duplicate if a valid copy
+		 * already exists in the payload buffer.
+		 */
+		bis = lll->bis_curr;
 
-			goto isr_rx_next_subevent;
-		}
-
-		/* (bn_curr)th Rx PDU already received, skip subevent */
-		skipped++;
+		goto isr_rx_next_subevent;
 	}
 
 	/* Find the next repetition (irc_curr)th subevent to receive PDU */
 	if (lll->irc_curr < lll->irc) {
-		if (!new_burst) {
-			uint32_t payload_offset;
-			uint16_t payload_index;
+		uint32_t payload_offset;
 
-			/* Increment to next repetition count and be at first
-			 * burst count for it.
-			 */
-			lll->bn_curr = 1U;
-			lll->irc_curr++;
+		/* Increment to next repetition count and be at first
+		 * burst count for it.
+		 */
+		lll->bn_curr = 1U;
+		lll->irc_curr++;
 
-			/* Check payload buffer overflow */
-			/* FIXME: Typically we should not have high latency, but do have an
-			 *        assertion check to ensure we do not rollover in the payload_index
-			 *        variable use. Alternatively, add implementation to correctly
-			 *        skip subevents as buffers at these high offset are unavailable.
-			 */
-			payload_offset = (lll->latency_event * lll->bn);
-			LL_ASSERT_ERR(payload_offset <= UINT8_MAX);
+		/* Check payload buffer overflow */
+		/* FIXME: Typically we should not have high latency, but do have an
+		 *        assertion check to ensure we do not rollover in the payload_index
+		 *        variable use. Alternatively, add implementation to correctly
+		 *        skip subevents as buffers at these high offset are unavailable.
+		 */
+		payload_offset = (lll->latency_event * lll->bn);
+		LL_ASSERT_ERR(payload_offset <= UINT8_MAX);
 
-			/* Find the index of the (irc_curr)th bn = 1 Rx PDU
-			 * buffer.
-			 */
-			payload_index = lll->payload_tail + payload_offset;
-			if (payload_index >= lll->payload_count_max) {
-				payload_index -= lll->payload_count_max;
-			}
+		/* Always receive the (irc_curr)th bn = 1 Rx PDU of bis_curr,
+		 * even if a prior IRC repetition already delivered this payload.
+		 * This ensures every IRC copy is attempted so no transmission
+		 * opportunity is missed due to a prior successful reception.
+		 * The PDU store guard in isr_rx discards duplicates.
+		 */
+		bis = lll->bis_curr;
 
-			/* Check if (irc_curr)th bn = 1 Rx PDU has been
-			 * received.
-			 */
-			if (!lll->payload[stream_curr][payload_index]) {
-				/* Receive the (irc_curr)th bn = 1 Rx PDU of
-				 * bis_curr.
-				 */
-				bis = lll->bis_curr;
-
-				goto isr_rx_next_subevent;
-			} else {
-				/* bn = 1 Rx PDU already received, skip
-				 * subevent.
-				 */
-				skipped++;
-
-				/* flag to skip successive repetitions if all
-				 * bn PDUs have been received. i.e. the bn
-				 * loop above did not find a PDU to be received.
-				 */
-				new_burst = 1U;
-
-				/* Find the missing (bn_curr)th Rx PDU of
-				 * bis_curr
-				 */
-				goto isr_rx_find_subevent;
-			}
-		} else {
-			/* Skip all successive repetition reception as all
-			 * bn PDUs have been received.
-			 */
-			skipped += (lll->irc - lll->irc_curr) * lll->bn;
-			lll->irc_curr = lll->irc;
-		}
+		goto isr_rx_next_subevent;
 	}
 
 	/* Next pre-transmission subevent */

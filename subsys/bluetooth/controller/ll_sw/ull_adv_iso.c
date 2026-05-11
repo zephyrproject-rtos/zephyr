@@ -1213,7 +1213,8 @@ static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t event_spacing,
 			 * Usecases where BAP Broadcast Audio Assistant role device has a drifting
 			 * ACL Peripheral role active in the BAP Broadcast Audio Sink device.
 			 */
-			ptc = MIN(ptc, (lll->bn * BT_CTLR_ADV_ISO_PTO_GROUP_COUNT));
+			//ptc = MIN(ptc, (lll->bn * BT_CTLR_ADV_ISO_PTO_GROUP_COUNT));
+			ptc = 0U;
 		}
 
 		/* FIXME: Do not remember why ptc is 4 bits, it should be 5 bits as ptc is a

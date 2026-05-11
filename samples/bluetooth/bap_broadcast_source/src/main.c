@@ -48,7 +48,7 @@ BUILD_ASSERT(IN_RANGE(strlen(CONFIG_BROADCAST_NAME), BT_AUDIO_BROADCAST_NAME_LEN
 /* When BROADCAST_ENQUEUE_COUNT > 1 we can enqueue enough buffers to ensure that
  * the controller is never idle
  */
-#define BROADCAST_ENQUEUE_COUNT 3U
+#define BROADCAST_ENQUEUE_COUNT 25U
 #define TOTAL_BUF_NEEDED        (BROADCAST_ENQUEUE_COUNT * CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT)
 
 BUILD_ASSERT(CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
@@ -58,7 +58,7 @@ BUILD_ASSERT(CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
 #if defined(CONFIG_BAP_BROADCAST_16_2_1)
 
 static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_16_2_1(
-	BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
+	BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT | BT_AUDIO_LOCATION_FRONT_CENTER | BT_AUDIO_LOCATION_LEFT_SURROUND | BT_AUDIO_LOCATION_RIGHT_SURROUND | BT_AUDIO_LOCATION_BACK_LEFT | BT_AUDIO_LOCATION_BACK_RIGHT,
 	BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 #define BROADCAST_SAMPLE_RATE 16000
@@ -66,7 +66,7 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_16_2
 #elif defined(CONFIG_BAP_BROADCAST_24_2_1)
 
 static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_24_2_1(
-	BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
+	BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT | BT_AUDIO_LOCATION_FRONT_CENTER | BT_AUDIO_LOCATION_LEFT_SURROUND | BT_AUDIO_LOCATION_RIGHT_SURROUND | BT_AUDIO_LOCATION_BACK_LEFT | BT_AUDIO_LOCATION_BACK_RIGHT,
 	BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 #define BROADCAST_SAMPLE_RATE 24000
@@ -74,7 +74,7 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_24_2
 #elif defined(CONFIG_BAP_BROADCAST_48_2_1)
 
 static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_48_2_1(
-	BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
+	BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT | BT_AUDIO_LOCATION_FRONT_CENTER | BT_AUDIO_LOCATION_LEFT_SURROUND | BT_AUDIO_LOCATION_RIGHT_SURROUND | BT_AUDIO_LOCATION_BACK_LEFT | BT_AUDIO_LOCATION_BACK_RIGHT,
 	BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 #define BROADCAST_SAMPLE_RATE 48000
@@ -450,6 +450,14 @@ static struct bt_bap_stream_ops stream_ops = {
 
 static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 {
+	//preset_active.qos.rtn = 24;
+	preset_active.qos.phy = BT_BAP_QOS_CFG_2M;
+	preset_active.qos.sdu = 100;
+
+	preset_active.qos.burst_number = 5;
+	preset_active.qos.num_subevents = 25;
+	preset_active.qos.max_pdu = 130;
+
 	struct bt_bap_broadcast_source_stream_param
 		stream_params[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 	struct bt_bap_broadcast_source_subgroup_param
@@ -457,9 +465,20 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 	struct bt_bap_broadcast_source_param create_param = {0};
 	const size_t streams_per_subgroup = ARRAY_SIZE(stream_params) / ARRAY_SIZE(subgroup_param);
 	uint8_t left[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
-					      BT_BYTES_LIST_LE32(BT_AUDIO_LOCATION_FRONT_LEFT))};
+						BT_BYTES_LIST_LE32(BT_AUDIO_LOCATION_FRONT_LEFT))};
 	uint8_t right[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
-					       BT_BYTES_LIST_LE32(BT_AUDIO_LOCATION_FRONT_RIGHT))};
+						BT_BYTES_LIST_LE32(BT_AUDIO_LOCATION_FRONT_RIGHT))};
+	uint8_t center[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
+						BT_BYTES_LIST_LE32(BT_AUDIO_LOCATION_FRONT_CENTER))};
+	uint8_t lefts[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
+						BT_BYTES_LIST_LE32(BT_AUDIO_LOCATION_LEFT_SURROUND))};
+	uint8_t rights[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
+						BT_BYTES_LIST_LE32(BT_AUDIO_LOCATION_RIGHT_SURROUND))};
+	uint8_t blefts[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
+						BT_BYTES_LIST_LE32(BT_AUDIO_LOCATION_BACK_LEFT))};
+	uint8_t brights[] = {BT_AUDIO_CODEC_DATA(BT_AUDIO_CODEC_CFG_CHAN_ALLOC,
+						BT_BYTES_LIST_LE32(BT_AUDIO_LOCATION_BACK_RIGHT))};
+
 	int err;
 
 	for (size_t i = 0U; i < ARRAY_SIZE(subgroup_param); i++) {
@@ -468,17 +487,25 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 		subgroup_param[i].codec_cfg = &preset_active.codec_cfg;
 	}
 
+	uint8_t *data_lut[] = {left, right, center, lefts, rights, blefts, brights};
+	size_t data_len_lut[] = { sizeof(left), sizeof(right), sizeof(center), sizeof(lefts), sizeof(rights), sizeof(blefts), sizeof(brights)};
+
 	for (size_t j = 0U; j < ARRAY_SIZE(stream_params); j++) {
 		stream_params[j].stream = &streams[j].stream;
-		stream_params[j].data = j == 0 ? left : right;
-		stream_params[j].data_len = j == 0 ? sizeof(left) : sizeof(right);
+		stream_params[j].data = data_lut[j];
+		stream_params[j].data_len = data_len_lut[j];
 		bt_bap_stream_cb_register(stream_params[j].stream, &stream_ops);
 	}
+
 
 	create_param.params_count = ARRAY_SIZE(subgroup_param);
 	create_param.params = subgroup_param;
 	create_param.qos = &preset_active.qos;
 	create_param.encryption = strlen(CONFIG_BROADCAST_CODE) > 0;
+	create_param.irc = 5;
+	create_param.pto = 0;
+	create_param.iso_interval = 40; //*1.25 so 50ms
+
 	create_param.packing = (IS_ENABLED(CONFIG_ISO_PACKING_INTERLEAVED) ?
 				BT_ISO_PACKING_INTERLEAVED :
 				BT_ISO_PACKING_SEQUENTIAL);
@@ -595,7 +622,7 @@ int main(void)
 	k_thread_start(encoder);
 #endif /* defined(CONFIG_LIBLC3) */
 
-	while (true) {
+	for (int x =0; x<1; x++) {
 		/* Broadcast Audio Streaming Endpoint advertising data */
 		NET_BUF_SIMPLE_DEFINE(ad_buf, BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
 		NET_BUF_SIMPLE_DEFINE(base_buf, 128);

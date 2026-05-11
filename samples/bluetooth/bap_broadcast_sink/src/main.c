@@ -1332,6 +1332,7 @@ wait_for_pa_sync:
 
 		err = bt_bap_broadcast_sink_sync(broadcast_sink, sync_bitfield, bap_streams_p,
 						 sink_broadcast_code);
+
 		if (err != 0) {
 			printk("Unable to sync to broadcast source: %d\n", err);
 			return 0;
