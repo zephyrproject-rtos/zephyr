@@ -169,6 +169,11 @@ New Samples
 Libraries / Subsystems
 **********************
 
+* DFU
+
+  * Added :kconfig:option:`CONFIG_IMG_CUSTOM_SECTOR_SIZE` to allow MCUboot to use a different
+    sector size for reducing the swap-using-offset status area size.
+
 * LoRa / LoRaWAN
 
   * Added a native LoRaWAN backend
