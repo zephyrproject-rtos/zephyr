@@ -235,3 +235,9 @@ zephyr_udc0: &usb {
 &crc {
 	status = "okay";
 };
+
+&i3c1 {
+	pinctrl-0 = <&i3c1_scl_pb2 &i3c1_sda_pc1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
