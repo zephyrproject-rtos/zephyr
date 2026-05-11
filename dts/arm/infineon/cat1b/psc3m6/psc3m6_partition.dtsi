@@ -1,0 +1,40 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_s: sram0_s@34000000 {
+			/* Secure image SRAM */
+			reg = <0x34000000 DT_SIZE_K(32)>;
+		};
+
+		sram0_ns: sram0_ns@34008000 {
+			/* Non-Secure image SRAM */
+			reg = <0x34008000 DT_SIZE_K(96)>;
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@12000000 {
+			reg = <0x12000000 DT_SIZE_K(256)>;
+		};
+
+		slot0_ns_partition: partition@2040000 {
+			reg = <0x02040000 DT_SIZE_K(256)>;
+		};
+	};
+};
