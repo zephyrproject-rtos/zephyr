@@ -143,6 +143,10 @@ struct uhc_transfer {
 	 * This flag is optional and is mainly used for testing.
 	 */
 	unsigned int no_status : 1;
+	/** Expected length of the data that wil be recived (device to host xfers only)*/
+	size_t expected_data_len;
+	/** Length of the data that was already received (device to host xfers only)*/
+	size_t recived_data_len;
 	/** Pointer to USB device */
 	struct usb_device *udev;
 	/** Pointer to transfer completion callback (opaque for the UHC) */
@@ -414,17 +418,20 @@ static inline int uhc_bus_resume(const struct device *dev)
  * Transfer has no buffer after allocation, but can be allocated
  * and added from different pools.
  *
- * @param[in] dev     Pointer to device struct of the driver instance
- * @param[in] ep      Endpoint address
- * @param[in] udev    Pointer to USB device
- * @param[in] cb      Transfer completion callback
- * @param[in] cb_priv Completion callback callback private data
+ * @param[in] dev       Pointer to device struct of the driver instance
+ * @param[in] ep        Endpoint address
+ * @param[in] udev      Pointer to USB device
+ * @param[in] rec_len   Desired length of the response from the device in bytes.
+ *                      Set to 0 if receiving one packet or if sending data.
+ * @param[in] cb	Transfer completion callback
+ * @param[in] cb_priv   Completion callback callback private data
  *
  * @return pointer to allocated transfer or NULL on error.
  */
 struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t ep,
 				    struct usb_device *const udev,
+				    const size_t rec_len,
 				    void *const cb,
 				    void *const cb_priv);
 
