@@ -30,37 +30,12 @@ LOG_MODULE_DECLARE(uhc_mcux);
 K_MEM_SLAB_DEFINE_STATIC_TYPE(mcux_uhc_transfer_pool, usb_host_transfer_t,
 			      USB_HOST_CONFIG_MAX_TRANSFERS);
 
-#if defined(CONFIG_NOCACHE_MEMORY)
-K_HEAP_DEFINE_NOCACHE(mcux_transfer_alloc_pool,
-		      USB_HOST_CONFIG_MAX_TRANSFERS * 8u + 1024u * USB_HOST_CONFIG_MAX_TRANSFERS);
-#endif
-
 #define PRV_DATA_HANDLE(_handle) CONTAINER_OF(_handle, struct uhc_mcux_data, mcux_host)
 
 struct uhc_mcux_ehci_config {
 	struct uhc_mcux_config uhc_config;
 	usb_phy_config_struct_t *phy_config;
 };
-
-#if defined(CONFIG_NOCACHE_MEMORY)
-/* allocate non-cached buffer for usb */
-static void *uhc_mcux_nocache_alloc(uint32_t size)
-{
-	void *p = (void *)k_heap_alloc(&mcux_transfer_alloc_pool, size, K_NO_WAIT);
-
-	if (p != NULL) {
-		(void)memset(p, 0, size);
-	}
-
-	return p;
-}
-
-/* free the allocated non-cached buffer */
-static void uhc_mcux_nocache_free(void *p)
-{
-	k_heap_free(&mcux_transfer_alloc_pool, p);
-}
-#endif
 
 static void uhc_mcux_thread(void *p1, void *p2, void *p3)
 {
@@ -165,24 +140,10 @@ static void uhc_mcux_transfer_callback(void *param, usb_host_transfer_t *transfe
 		err = -EPIPE;
 	}
 
-#if defined(CONFIG_NOCACHE_MEMORY)
-	if (transfer->setupPacket != NULL) {
-		uhc_mcux_nocache_free(transfer->setupPacket);
-	}
-#endif
 	if ((xfer->buf != NULL) && (transfer->transferBuffer != NULL) &&
 	    USB_EP_DIR_IS_IN(xfer->ep) && (transfer->transferSofar > 0)) {
-#if defined(CONFIG_NOCACHE_MEMORY)
-		memcpy(net_buf_tail(xfer->buf), transfer->transferBuffer, transfer->transferSofar);
-#endif
 		net_buf_add(xfer->buf, transfer->transferSofar);
 	}
-
-#if defined(CONFIG_NOCACHE_MEMORY)
-	if (transfer->transferBuffer != NULL && transfer->transferLength != 0) {
-		uhc_mcux_nocache_free(transfer->transferBuffer);
-	}
-#endif
 
 	transfer->setupPacket = NULL;
 	transfer->transferBuffer = NULL;
@@ -199,36 +160,9 @@ static usb_host_transfer_t *uhc_mcux_hal_init_transfer(const struct device *dev,
 	if (k_mem_slab_alloc(&mcux_uhc_transfer_pool, (void **)&mcux_xfer, K_NO_WAIT)) {
 		return NULL;
 	}
+
 	(void)uhc_mcux_hal_init_transfer_common(dev, mcux_xfer, mcux_ep_handle, xfer,
 						uhc_mcux_transfer_callback);
-#if defined(CONFIG_NOCACHE_MEMORY)
-	if (USB_EP_GET_IDX(xfer->ep) == 0) {
-		mcux_xfer->setupPacket = uhc_mcux_nocache_alloc(8u);
-		if (mcux_xfer->setupPacket == NULL) {
-			k_mem_slab_free(&mcux_uhc_transfer_pool, mcux_xfer);
-			return NULL;
-		}
-
-		memcpy(mcux_xfer->setupPacket, xfer->setup_pkt, 8u);
-	} else {
-		mcux_xfer->setupPacket = NULL;
-	}
-
-	if (mcux_xfer->transferBuffer != NULL && mcux_xfer->transferLength != 0) {
-		uint8_t *nocache_buf = uhc_mcux_nocache_alloc(mcux_xfer->transferLength);
-
-		if (nocache_buf == NULL) {
-			k_mem_slab_free(&mcux_uhc_transfer_pool, mcux_xfer);
-			return NULL;
-		}
-
-		if (USB_EP_DIR_IS_OUT(xfer->ep)) {
-			memcpy(nocache_buf, mcux_xfer->transferBuffer, mcux_xfer->transferLength);
-		}
-
-		mcux_xfer->transferBuffer = nocache_buf;
-	}
-#endif
 
 	return mcux_xfer;
 }
