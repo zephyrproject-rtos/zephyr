@@ -24,7 +24,7 @@
 #define RAM_SIZE (DT_CHOSEN_SRAM_ADDR / 1024)
 
 /* Reduce echo delay when running on low ram devices */
-#if SRAM_SIZE <= 48
+#if RAM_SIZE <= 48
 #define ECHO_DELAY 30
 #else
 #define ECHO_DELAY 10
