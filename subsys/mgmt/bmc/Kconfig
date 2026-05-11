@@ -1,0 +1,427 @@
+# SPDX-FileCopyrightText: © 2025-2026 Tenstorrent USA, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMC
+	bool "Baseboard Management Controller (BMC)"
+	help
+	  Enable the lightweight BMC subsystem.
+
+if BMC
+
+# This UUID should not be changed, it is a namespace from which
+# to generate other UUIDs for BMC.
+config BMC_UUID_NS
+	string
+	default "6ae4c3c7-fff0-472a-a77c-6f3f5a09ee7c"
+
+config BMC_DEFAULT_USE_DHCP4
+	bool "Default use DHCPv4"
+	default y
+
+config BMC_DEFAULT_USE_NTP
+	bool "Default use NTP"
+	default y
+
+config BMC_DEFAULT_NTP_SERVER
+	string "Default NTP server"
+	default "pool.ntp.org"
+
+config BMC_DEFAULT_IPV4_ADDRESS
+	string "Default IPv4 address"
+	default "0.0.0.0"
+
+config BMC_DEFAULT_IPV4_SUBNET_MASK
+	string "Default IPv4 subnet mask"
+	default "0.0.0.0"
+
+config BMC_DEFAULT_IPV4_GATEWAY
+	string "Default IPv4 gateway"
+	default "0.0.0.0"
+
+config BMC_DEFAULT_HOST_AUTO_POWERON
+	bool "Default host auto power-on"
+	default n
+
+config BMC_APP_DNS_RESOLVE
+	bool
+	select REQUIRES_FULL_LIBC
+	select NET_SOCKETS_SERVICE
+	select DNS_RESOLVER
+	select NET_DHCPV4_OPTION_DNS_ADDRESS
+	# If DHCP is not enabled, then need these. For now, DNS/NTP
+	# requires DHCP. Could make DNS configurable.
+	select DNS_SERVER_IP_ADDRESSES
+	select DNS_RECONFIGURE_CLEANUP
+
+configdefault DNS_SERVER1
+	default "1.1.1.1" if BMC_APP_DNS_RESOLVE
+
+config BMC_APP_NTP
+	bool "NTP time synchronisation"
+	select SNTP
+	select BMC_APP_DNS_RESOLVE
+	# Could these options reduce our code?
+	#CONFIG_NET_CONFIG_CLOCK_SNTP_INIT=y
+	#CONFIG_NET_CONFIG_CLOCK_SNTP_SET_RTC=y
+	default y
+
+configdefault MAIN_STACK_SIZE
+	default 4096 if BMC_PERSISTENT_STORAGE
+
+config BMC_APP_CRYPTO
+	bool
+	select NET_SOCKETS_SOCKOPT_TLS
+	select MBEDTLS
+	select MBEDTLS_ENABLE_HEAP
+	select MBEDTLS_SSL_PROTO_TLS1_2
+	select MBEDTLS_SSL_ALPN
+	# XXX: Should HAVE_TIME_DATE be enabled? Test if it prevents HTTPS
+	# connections if the RTC is wrong, in which case it might not be
+	# feasible if we need webui to set time.
+	# select MBEDTLS_HAVE_TIME_DATE if RTC
+
+config BMC_APP_CRYPTO_TLS13
+	bool
+	default y
+	depends on BMC_APP_CRYPTO && !BMC_APP_CRYPTO_PSK
+	select MBEDTLS_SSL_PROTO_TLS1_3
+        select MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED
+	select MBEDTLS_SSL_EARLY_DATA
+        select MBEDTLS_SSL_SESSION_TICKETS
+	select PSA_WANT_ALG_HKDF
+	select PSA_WANT_ALG_HKDF_EXTRACT
+	select PSA_WANT_ALG_HKDF_EXPAND
+
+config BMC_APP_CRYPTO_PUBLIC_KEY
+	bool
+	# Basic ciphers
+	select MBEDTLS_CIPHERSUITE_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+	select PSA_WANT_ALG_SHA_256
+	# Plus SHA384
+	select PSA_WANT_ALG_SHA_384
+	# Plus CHACHA20
+	select PSA_WANT_ALG_CHACHA20_POLY1305
+	select PSA_WANT_KEY_TYPE_CHACHA20
+	# Required for websocket
+	select PSA_WANT_ALG_SHA_1 if HTTP_SERVER_WEBSOCKET
+
+# PSK can only use TLS1.2 (supporting 1.3 seems to require pulling in
+# so much that it is not worthwhile).
+config BMC_APP_CRYPTO_PSK
+	bool
+	select MBEDTLS_KEY_EXCHANGE_PSK_ENABLED # TLS1.2
+	select MBEDTLS_CIPHERSUITE_TLS_PSK_WITH_AES_128_GCM_SHA256
+	select MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
+	select MBEDTLS_RSA_C
+	select MBEDTLS_PKCS1_V15
+	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT
+	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT
+	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE
+
+config BMC_APP_CRYPTO_DEBUG
+	bool "crypto debug"
+	default n
+	select MBEDTLS_DEBUG
+	select MBEDTLS_MEMORY_DEBUG
+	select NET_SOCKETS_TLS_LOG_LEVEL_DBG
+
+config MBEDTLS_DEBUG_LEVEL
+	int
+	depends on BMC_APP_CRYPTO_DEBUG
+	default 1
+
+config MBEDTLS_HEAP_SIZE
+	int
+	depends on BMC_APP_CRYPTO
+	default 49152
+
+configdefault NET_PKT_RX_COUNT
+	default 32 if BMC_APP_CRYPTO
+
+configdefault NET_PKT_TX_COUNT
+	default 32 if BMC_APP_CRYPTO
+
+configdefault NET_BUF_RX_COUNT
+	default 96 if BMC_APP_CRYPTO
+	default 64
+
+configdefault NET_BUF_TX_COUNT
+	default 96 if BMC_APP_CRYPTO
+	default 64
+
+configdefault NET_SOCKETS_TLS_MAX_CONTEXTS
+	default 6 if BMC_APP_CRYPTO
+
+# The Kconfig comments for this option say TLS standards require
+# 16k size, but this requires several 16K allocations each for
+# send and recv on the heap so it's too large. Apparently browsers
+# negotiate smaller sizes, so 1500 should be okay there. Redfish
+# and curl with auth headers seem to require more (4096 works).
+# may require more?
+configdefault MBEDTLS_SSL_MAX_CONTENT_LEN
+	default 4096 if BMC_APP_CRYPTO
+
+config BMC_APP_HTTPS
+	bool "HTTPS support for web and redfish"
+	default y
+	depends on REDFISH || BMC_APP_WEB
+	select HTTP_SERVER_TLS_USE_ALPN
+	select BMC_APP_CRYPTO
+
+config BMC_APP_HTTPS_PUBLIC_KEY
+	bool "HTTPS public key support"
+	default y
+	depends on BMC_APP_HTTPS
+	select BMC_APP_CRYPTO_PUBLIC_KEY
+
+config BMC_APP_HTTPS_PSK
+	bool "HTTPS PSK support"
+	default n
+	depends on BMC_APP_HTTPS
+	select BMC_APP_CRYPTO_PSK
+
+config BMC_APP_BMC_UUID
+	bool "BMC UUID based on HWINFO device ID"
+	select MBEDTLS
+	select PSA_CRYPTO
+	select MBEDTLS_PSA_CRYPTO_C
+	select PSA_WANT_ALG_SHA_1
+	select UUID
+	select UUID_V5
+	select HWINFO
+
+config BMC_APP_SENSORS
+	bool "BMC Sensors (temperature)"
+	select SENSOR
+	select ADC
+
+config REDFISH
+	bool "Redfish server"
+	default y
+	select HTTP_SERVER
+	select HTTP_SERVER_CAPTURE_HEADERS
+	select JSON_LIBRARY
+	select BMC_APP_BMC_UUID
+	select BASE64
+
+if REDFISH
+
+config REDFISH_SYSTEM_PRODUCT_NAME
+	string "Redfish system product / board display name"
+	default "BMC Board"
+	help
+	  Shown as System Name in Redfish and in the dashboard System Overview.
+
+config REDFISH_SYSTEM_MANUFACTURER
+	string "Redfish system manufacturer"
+	default "BMC"
+
+config REDFISH_SYSTEM_MODEL
+	string "Redfish system model"
+	default "Generic"
+
+config REDFISH_SYSTEM_PROCESSOR_MODEL
+	string "Redfish processor summary model"
+	default "N/A"
+
+config REDFISH_SYSTEM_PROCESSOR_COUNT
+	int "Redfish processor summary count"
+	default 1
+
+config REDFISH_SYSTEM_MEMORY_GIB
+	int "Redfish memory summary total (GiB)"
+	default 0
+	help
+	  Total system memory in GiB for Redfish MemorySummary. 0 shows as N/A.
+
+config HTTP_SERVER_MAX_HEADER_LEN
+	int
+	default 48 # Basic auth header + 15 character password is 34 characters
+
+endif # REDFISH
+
+config HTTP_SERVER_NUM_SERVICES
+	int
+	default 2 if BMC_APP_HTTPS # default 1 (listen on just 80)
+
+config HTTP_SERVER_MAX_CLIENTS
+	int
+	default 8 if BMC_APP_WEB
+
+config BMC_APP_WEB
+	bool "Web server"
+	default y
+	select HTTP_SERVER
+	select REDFISH
+
+config BMC_APP_WEB_TERMINAL
+	bool "Websocket consoles and webui terminal emulator"
+	default y
+	select BMC_APP_WEB
+	select HTTP_SERVER_WEBSOCKET
+	# WS auth protocol requires these hashes
+	select BASE64
+	select MBEDTLS_SHA1
+
+config BMC_APP_WEB_TERMINAL_BMC_SHELL
+	bool "Zephyr shell websocket and webui terminal"
+	default y
+	depends on BMC_APP_WEB_TERMINAL
+	select SHELL
+	select SHELL_BACKEND_WEBSOCKET
+	select LOG_BACKEND_WS
+	select LOG_BACKEND_WS_AUTOSTART
+
+config BMC_APP_WEB_TERMINAL_HOST_SERIAL
+	bool "Host serial websocket and webui terminal"
+	default y
+	depends on BMC_APP_WEB_TERMINAL
+	depends on BMC_APP_CONSOLE_LOGGER
+
+if BMC_APP_WEB_TERMINAL_HOST_SERIAL
+config CONSOLE_BRIDGE_WS_STACK_SIZE
+	int
+	default 4096 if BMC_APP_HTTPS
+	default 2048
+
+config CONSOLE_BRIDGE_WS_PRIORITY
+	int
+	default 5
+endif
+
+endif # BMC
+
+config SHELL_WEBSOCKET_ENDPOINT_URL
+	string
+	depends on SHELL_BACKEND_WEBSOCKET
+	default "console/bmc"
+
+config DEFAULT_ADMIN_PASSWORD
+	string "Default admin password"
+	# Kconfig lib does not like (even if quoted) " , ' or , in the string
+	# chr(115)+chr(121)+chr(115) = sys
+	# chr(98)+chr(97)+chr(115)+chr(101)+chr(54)+chr(52) = base64
+	# chr(111)+chr(115) = os
+	default "$(shell,python3 -c '__import__(chr(115)+chr(121)+chr(115)).stdout.write(__import__(chr(98)+chr(97)+chr(115)+chr(101)+chr(54)+chr(52)).b64encode(__import__(chr(111)+chr(115)).urandom(12)).decode()[:15])')"
+
+configdefault SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2560 if BMC_APP_HTTPS
+	default 1536
+
+# WS log backend uses lot of stack
+configdefault LOG_PROCESS_THREAD_STACK_SIZE
+	default 2560 if LOG_BACKEND_WS
+
+configdefault NET_TCP_MAX_RECV_WINDOW_SIZE
+	default 20480
+
+# Increase retry and timeout limits
+configdefault NET_TCP_INIT_RETRANSMISSION_TIMEOUT
+	default 500
+
+configdefault NET_TCP_RETRY_COUNT
+	default 10
+
+configdefault SHELL_STACK_SIZE
+	default 3072 if SHELL_BACKEND_WEBSOCKET
+
+configdefault HTTP_SERVER_STACK_SIZE
+	default 4096 if LOG_BACKEND_WS
+
+configdefault NET_SOCKETS_SERVICE_STACK_SIZE
+	default 3072 if BMC_APP_CRYPTO
+	default 1536
+
+configdefault NET_MAX_CONTEXTS
+	default 12 if HTTP_SERVER
+
+configdefault NET_MAX_CONN
+	default 16 if HTTP_SERVER
+
+configdefault ZVFS_EVENTFD_MAX
+	default 4 if HTTP_SERVER
+
+configdefault ZVFS_POLL_MAX
+	default 8 if HTTP_SERVER
+
+config BMC_PERSISTENT_STORAGE
+	bool "Persistent storage for config"
+	default n
+	# Enable Flash and Flash Map to access memory
+	select FLASH
+	select FLASH_MAP
+	# select FLASH_SHELL if SHELL # ~4kB flash
+	# Writing internal flash that is used for XIP requires
+	# that the flash driver is relocated into RAM.
+	select CODE_DATA_RELOCATION_SRAM
+	# XXX: May need to enable these, or disable IRQs in the flash
+	# erase and program functions while flash is being written.
+	# select SRAM_VECTOR_TABLE
+	# select SRAM_SW_ISR_TABLE
+	# select DEVICE_MUTABLE
+	# Enable NVS key-value system
+	select NVS
+	select NVS_INIT_BAD_MEMORY_REGION # Do not require erased flash
+
+configdefault REBOOT
+	default y
+
+configdefault POWEROFF
+	default y if HAS_POWEROFF
+
+config BCM_JTAG
+	bool "JTAG support"
+	depends on $(dt_path_enabled,/jtag)
+	default y
+
+if BMC_JTAG
+
+config BMC_JTAG_DAEMON_STACK_SIZE
+	int "JTAG daemon stack size"
+	default 1024
+
+config BMC_JTAG_DAEMON_PRIORITY
+	int "JTAG daemon priority"
+	default 5
+
+endif
+
+# use `kernel thread stack` shell command
+config BMC_APP_STACK_DEBUG
+	bool
+	default n
+	select THREAD_NAME
+	select THREAD_ANALYZER
+	select THREAD_ANALYZER_RUN_UNLOCKED
+
+config BMC_APP_CONSOLE_LOGGER
+	bool "Console logger (capture host console uart)"
+	default y
+	depends on $(dt_alias_enabled,host-console-uart)
+	depends on SERIAL
+	depends on SERIAL_SUPPORT_ASYNC
+	select UART_ASYNC_API
+
+if BMC_APP_CONSOLE_LOGGER
+config BMC_APP_CONSOLE_LOG_SIZE
+	int "Console log size"
+	range 64 65536
+	default 2048
+endif
+
+config CONSOLE_BRIDGE
+	bool "Console bridge (host console to TCP port 22)"
+	default y
+	depends on BMC_APP_CONSOLE_LOGGER
+
+if CONSOLE_BRIDGE
+
+config CONSOLE_BRIDGE_STACK_SIZE
+	int "Console bridge daemon stack size"
+	default 1024
+
+config CONSOLE_BRIDGE_PRIORITY
+	int "Console bridge daemon priority"
+	default 5
+
+endif

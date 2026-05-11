@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" Version="4.0">
+    <edmx:Reference Uri="http://redfish.dmtf.org/schemas/v1/RedfishExtensions_v1.xml">
+        <edmx:Include Namespace="RedfishExtensions.v1_0_0" Alias="Redfish"/>
+    </edmx:Reference>
+
+    <edmx:Reference Uri="http://redfish.dmtf.org/schemas/v1/ServiceRoot_v1.xml">
+        <edmx:Include Namespace="ServiceRoot"/>
+        <edmx:Include Namespace="ServiceRoot.v1_5_0"/>
+    </edmx:Reference>
+
+    <edmx:Reference Uri="http://redfish.dmtf.org/schemas/v1/AccountService_v1.xml">
+        <edmx:Include Namespace="AccountService"/>
+    </edmx:Reference>
+
+    <edmx:Reference Uri="http://redfish.dmtf.org/schemas/v1/ManagerAccount_v1.xml">
+        <edmx:Include Namespace="ManagerAccount"/>
+    </edmx:Reference>
+
+    <edmx:Reference Uri="http://redfish.dmtf.org/schemas/v1/Manager_v1.xml">
+        <edmx:Include Namespace="Manager"/>
+    </edmx:Reference>
+
+    <edmx:Reference Uri="http://redfish.dmtf.org/schemas/v1/EthernetInterface_v1.xml">
+        <edmx:Include Namespace="EthernetInterface"/>
+    </edmx:Reference>
+
+    <edmx:Reference Uri="http://redfish.dmtf.org/schemas/v1/ComputerSystem_v1.xml">
+        <edmx:Include Namespace="ComputerSystem"/>
+    </edmx:Reference>
+
+    <edmx:DataServices>
+        <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="Service">
+            <EntityContainer Name="Service" Extends="ServiceRoot.v1_5_0.ServiceContainer"/>
+        </Schema>
+    </edmx:DataServices>
+</edmx:Edmx>
