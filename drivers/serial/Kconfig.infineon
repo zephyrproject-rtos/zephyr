@@ -32,3 +32,12 @@ config UART_INFINEON_CAT1_PDL
 	select USE_INFINEON_DMA if UART_ASYNC_API
 	help
 	  This option enables the PDL based UART driver for Infineon CAT1 family.
+
+config UART_INFINEON_PDL_MP_FIELD_QUIRK
+	bool
+	default y if SOC_DIE_PSC3M6 || SOC_SERIES_PSE84
+	help
+	  Enabled for SoCs whose PDL fixed the SCB UART config field name
+	  "enableMultiProcessorMode". Older PDL revisions misspell it as
+	  "enableMutliProcessorMode"; the driver picks the field name from
+	  this symbol.
