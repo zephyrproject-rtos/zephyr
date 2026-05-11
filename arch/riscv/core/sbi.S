@@ -11,8 +11,39 @@
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/arch/riscv/irq.h>
 #include <zephyr/devicetree.h>
+#include "asm_macros.inc"
 
 #ifdef CONFIG_RISCV_S_MODE
+
+#ifdef CONFIG_64BIT
+#define REGBYTES 8
+#else
+#define REGBYTES 4
+#endif
+
+#define OFF_RA  (0 * REGBYTES)
+#define OFF_T0  (1 * REGBYTES)
+#define OFF_T1  (2 * REGBYTES)
+#define OFF_T2  (3 * REGBYTES)
+#define OFF_A0  (4 * REGBYTES)
+#define OFF_A1  (5 * REGBYTES)
+#define OFF_A6  (6 * REGBYTES)
+#define OFF_A7  (7 * REGBYTES)
+
+#if defined(CONFIG_RISCV_ISA_RV32E)
+#error "Internal SBI requires the full RV32I/RV64I register set (uses a6/a7)."
+#else
+/* Helper macro for stacking/unstacking GPRs */
+#define DO_STACK_GPRS(op) \
+	RV_E(	op   ra, (OFF_RA)(sp)	);\
+	RV_E(	op   t0, (OFF_T0)(sp)	);\
+	RV_E(	op   t1, (OFF_T1)(sp)	);\
+	RV_E(	op   t2, (OFF_T2)(sp)	);\
+	RV_E(	op   a0, (OFF_A0)(sp)	);\
+	RV_E(	op   a1, (OFF_A1)(sp)	);\
+	RV_I(	op   a6, (OFF_A6)(sp)	);\
+	RV_I(	op   a7, (OFF_A7)(sp)	)
+#endif
 
 /* MTIMECMP base address from devicetree (hart 0) */
 #define MTIMECMP0  DT_REG_ADDR_BY_NAME(DT_INST(0, riscv_machine_timer), mtimecmp)
@@ -49,15 +80,8 @@ SECTION_FUNC(TEXT, __m_mode_sbi_handler)
     csrrw sp, mscratch, sp
 
     /* Save all registers we will use */
-    addi sp, sp, -80
-    sd ra,  0(sp)
-    sd t0,  8(sp)
-    sd t1, 16(sp)
-    sd t2, 24(sp)
-    sd a0, 32(sp)
-    sd a1, 40(sp)
-    sd a6, 48(sp)
-    sd a7, 56(sp)
+    addi sp, sp, -8 * REGBYTES
+    DO_STACK_GPRS(sr)
 
     csrr t0, mcause
 
@@ -87,7 +111,7 @@ SECTION_FUNC(TEXT, __m_mode_sbi_handler)
 
     /* Unknown extension — a1 is undefined on error per SBI spec */
     li a0, SBI_ERR_NOT_SUPPORTED
-    sd a0, 32(sp)
+    sr a0, OFF_A0(sp)
     j m_mode_return
 
 m_mode_ext_time:
@@ -97,13 +121,21 @@ m_mode_ext_time:
 
     /* Unknown function within SBI_EXT_TIME — a1 undefined on error */
     li a0, SBI_ERR_NOT_SUPPORTED
-    sd a0, 32(sp)
+    sr a0, OFF_A0(sp)
     j m_mode_return
 
 m_mode_set_timer:
     /* a0 = timer deadline (absolute time value) */
     li t0, MTIMECMP0
-    sd a0, 0(t0)     /* write new deadline to mtimecmp[0] */
+    /* write new deadline to mtimecmp[0] */
+#ifdef CONFIG_64BIT
+    sd a0, 0(t0)
+#else
+    li t1, -1
+    sw t1, REGBYTES(t0)  /* avoid false triggering */
+    sw a0, 0(t0)
+    sw a1, REGBYTES(t0)
+#endif /* CONFIG_64BIT */
 
     /*
     * Clear STIP: S-mode already handled the previous interrupt,
@@ -115,8 +147,8 @@ m_mode_set_timer:
     /* Return success: a0 = SBI_SUCCESS, a1 = 0 (no return value) */
     li a0, SBI_SUCCESS
     li a1, 0
-    sd a0, 32(sp)    /* update saved a0/a1 so m_mode_return restores them */
-    sd a1, 40(sp)
+    sr a0, OFF_A0(sp)    /* update saved a0/a1 so m_mode_return restores them */
+    sr a1, OFF_A1(sp)
     j m_mode_return
 
 m_mode_ext_srst:
@@ -140,7 +172,7 @@ m_mode_srst_loop:
 
 m_mode_srst_unsupported:
     li a0, SBI_ERR_NOT_SUPPORTED
-    sd a0, 32(sp)
+    sr a0, 3 * REGBYTES(sp)
     j m_mode_return
 
 m_mode_handle_interrupt:
@@ -158,7 +190,12 @@ m_mode_handle_interrupt:
      */
     li t0, MTIMECMP0
     li t1, -1
+#ifdef CONFIG_64BIT
     sd t1, 0(t0)
+#else
+    sw t1, 0(t0)
+    sw t1, REGBYTES(t0)
+#endif
 
     /* Forward to S-mode by raising STIP */
     li t0, MIP_STIP
@@ -177,15 +214,8 @@ m_mode_unhandled_loop:
 	j m_mode_unhandled_loop
 
 m_mode_return:
-    ld ra,  0(sp)
-    ld t0,  8(sp)
-    ld t1, 16(sp)
-    ld t2, 24(sp)
-    ld a0, 32(sp)
-    ld a1, 40(sp)
-    ld a6, 48(sp)
-    ld a7, 56(sp)
-    addi sp, sp, 80
+    DO_STACK_GPRS(lr)
+    addi sp, sp, 8 * REGBYTES
 
     /* Restore S-mode sp, put M-mode stack pointer back into mscratch */
     csrrw sp, mscratch, sp
