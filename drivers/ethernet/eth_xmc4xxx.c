@@ -1028,11 +1028,6 @@ static int eth_xmc4xxx_init(const struct device *dev)
 	sys_slist_init(&dev_data->tx_frame_list);
 	k_sem_init(&dev_data->tx_desc_sem, NUM_TX_DMA_DESCRIPTORS, NUM_TX_DMA_DESCRIPTORS);
 
-	if (!device_is_ready(dev_cfg->phy_dev)) {
-		LOG_ERR("Phy device not ready");
-		return -ENODEV;
-	}
-
 	/* get the port control initialized by MDIO driver */
 	port_ctrl.raw = ETH0_CON->CON;
 	port_ctrl.raw |= dev_cfg->port_ctrl.raw;
