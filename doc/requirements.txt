@@ -179,16 +179,16 @@ docutils==0.22.4 \
     #   sphinx-rtd-theme
     #   sphinx-tabs
     #   sphinx-togglebutton
-doxmlparser==1.16.1 \
-    --hash=sha256:3f51651077a8a77360548e4a236b7b9ae71a283f187373677fa4a2ab763b9c2e
+doxmlparser==1.17.0 \
+    --hash=sha256:376b12f43ee037fb98f471512e257ba022245829940532019241f17be5a93b24
     # via -r requirements.in
 h11==0.16.0 \
     --hash=sha256:4e35b956cf45792e4caa5885e69fba00bdbc6ffafbfa020300e549b208ee5ff1 \
     --hash=sha256:63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86
     # via uvicorn
-idna==3.12 \
-    --hash=sha256:60ffaa1858fac94c9c124728c24fcde8160f3fb4a7f79aa8cdd33a9d1af60a67 \
-    --hash=sha256:724e9952cc9e2bd7550ea784adb098d837ab5267ef67a1ab9cf7846bdbdd8254
+idna==3.14 \
+    --hash=sha256:466d810d7a2cc1022bea9b037c39728d51ae7dad40d480fc9b7d7ecf98ba8ee3 \
+    --hash=sha256:e677eaf072e290f7b725f9acf0b3a2bd55f9fd6f7c70abe5f0e34823d0accf69
     # via
     #   anyio
     #   requests
@@ -433,9 +433,9 @@ markupsafe==3.0.3 \
     --hash=sha256:f9e130248f4462aaa8e2552d547f36ddadbeaa573879158d721bbd33dfe4743a \
     --hash=sha256:fed51ac40f757d41b7c48425901843666a6677e3e8eb0abcff09e4ba6e664f50
     # via jinja2
-packaging==26.1 \
-    --hash=sha256:5d9c0669c6285e491e0ced2eee587eaf67b670d94a19e94e3984a481aba6802f \
-    --hash=sha256:f042152b681c4bfac5cae2742a55e103d27ab2ec0f3d88037136b6bfe7c9c5de
+packaging==26.2 \
+    --hash=sha256:5fc45236b9446107ff2415ce77c807cee2862cb6fac22b8a73826d0693b0980e \
+    --hash=sha256:ff452ff5a3e828ce110190feff1178bb1f2ea2281fa2075aadb987c2fb221661
     # via
     #   pytest
     #   sphinx
@@ -549,9 +549,9 @@ pyyaml==6.0.3 \
     # via
     #   -r requirements.in
     #   sphinxcontrib-mermaid
-requests==2.33.1 \
-    --hash=sha256:18817f8c57c6263968bc123d237e3b8b08ac046f5456bd1e307ee8f4250d3517 \
-    --hash=sha256:4e6d1ef462f3626a1f0a0a9c42dd93c63bad33f9f1c1937509b8c5c8718ab56a
+requests==2.34.0 \
+    --hash=sha256:7d62fe92f50eb82c529b0916bb445afa1531a566fc8f35ffdc64446e771b856a \
+    --hash=sha256:917520a21b767485ce7c588f4ebb917c436b24a31231b44228715eaeb5a52c60
     # via sphinx
 roman-numerals==4.1.0 \
     --hash=sha256:1af8b147eb1405d5839e78aeb93131690495fe9da5c91856cb33ad55a7f1e5b2 \
@@ -673,13 +673,13 @@ typing-extensions==4.15.0 ; python_full_version < '3.13' \
     # via
     #   anyio
     #   starlette
-urllib3==2.6.3 \
-    --hash=sha256:1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed \
-    --hash=sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4
+urllib3==2.7.0 \
+    --hash=sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c \
+    --hash=sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897
     # via requests
-uvicorn==0.45.0 \
-    --hash=sha256:2db26f588131aeec7439de00f2dd52d5f210710c1f01e407a52c90b880d1fd4f \
-    --hash=sha256:3fe650df136c5bd2b9b06efc5980636344a2fbb840e9ddd86437d53144fa335d
+uvicorn==0.46.0 \
+    --hash=sha256:bbebbcbed972d162afca128605223022bedd345b7bc7855ce66deb31487a9048 \
+    --hash=sha256:fb9da0926999cc6cb22dc7cd71a94a632f078e6ae47ff683c5c420750fb7413d
     # via sphinx-autobuild
 watchfiles==1.1.1 \
     --hash=sha256:00485f441d183717038ed2e887a7c868154f216877653121068107b227a2f64c \
@@ -855,7 +855,7 @@ websockets==16.0 \
     --hash=sha256:f4a32d1bd841d4bcbffdcb3d2ce50c09c3909fbead375ab28d0181af89fd04da \
     --hash=sha256:fd3cb4adb94a2a6e2b7c0d8d05cb94e6f1c81a0cf9dc2694fb65c7e8d94c42e4
     # via sphinx-autobuild
-wheel==0.46.3 \
-    --hash=sha256:4b399d56c9d9338230118d705d9737a2a468ccca63d5e813e2a4fc7815d8bc4d \
-    --hash=sha256:e3e79874b07d776c40bd6033f8ddf76a7dad46a7b8aa1b2787a83083519a1803
+wheel==0.47.0 \
+    --hash=sha256:212281cab4dff978f6cedd499cd893e1f620791ca6ff7107cf270781e587eced \
+    --hash=sha256:cc72bd1009ba0cf63922e28f94d9d83b920aa2bb28f798a31d0691b02fa3c9b3
     # via sphinx-togglebutton
