@@ -473,7 +473,7 @@ static int bme680_init(const struct device *dev)
 
 	err = bme680_bus_check(dev);
 	if (err < 0) {
-		LOG_ERR("Bus not ready for '%s'", dev->name);
+		LOG_ERR_DEVICE_NOT_READY(dev);
 		return err;
 	}
 

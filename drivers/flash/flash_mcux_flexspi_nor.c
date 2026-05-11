@@ -23,8 +23,12 @@
 #include <zephyr/drivers/gpio.h>
 #endif
 
-#define NOR_WRITE_SIZE	1
 #define NOR_ERASE_VALUE	0xff
+
+#define FLEXSPI_NOR_SOC_NV_FLASH_COMPAT(node_id) \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, soc_nv_flash), (node_id), ())
+#define FLEXSPI_NOR_SOC_NV_FLASH_NODE(node_id) \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY(node_id, FLEXSPI_NOR_SOC_NV_FLASH_COMPAT)
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
 static uint8_t nor_write_buf[SPI_NOR_PAGE_SIZE];
@@ -92,7 +96,32 @@ struct flash_flexspi_nor_data {
 	struct flash_pages_layout layout;
 #endif
 	struct flash_parameters flash_parameters;
+#if defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR_MUTEX)
+	struct k_mutex lock;
+#endif
 };
+
+static inline void flash_flexspi_nor_lock(const struct device *dev)
+{
+#if defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR_MUTEX)
+	struct flash_flexspi_nor_data *data = dev->data;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
+static inline void flash_flexspi_nor_unlock(const struct device *dev)
+{
+#if defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR_MUTEX)
+	struct flash_flexspi_nor_data *data = dev->data;
+
+	k_mutex_unlock(&data->lock);
+#else
+	ARG_UNUSED(dev);
+#endif
+}
 
 /*
  * FLEXSPI LUT buffer used during configuration. Stored in .data to avoid
@@ -198,8 +227,13 @@ static int flash_flexspi_nor_read_id_helper(struct flash_flexspi_nor_data *data,
 static int flash_flexspi_nor_read_jedec_id(const struct device *dev, uint8_t *vendor_id)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
+	int ret;
 
-	return flash_flexspi_nor_read_id_helper(data, vendor_id);
+	flash_flexspi_nor_lock(dev);
+	ret = flash_flexspi_nor_read_id_helper(data, vendor_id);
+	flash_flexspi_nor_unlock(dev);
+
+	return ret;
 }
 #endif
 
@@ -351,7 +385,10 @@ static int flash_flexspi_nor_read(const struct device *dev, off_t offset, void *
 		return -EINVAL;
 	}
 
+	flash_flexspi_nor_lock(dev);
+
 	if (!area_is_subregion(dev, offset, len)) {
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
@@ -388,6 +425,7 @@ static int flash_flexspi_nor_read(const struct device *dev, off_t offset, void *
 			if (xip) {
 				irq_unlock(key);
 			}
+			flash_flexspi_nor_unlock(dev);
 			return ret;
 		}
 
@@ -400,6 +438,8 @@ static int flash_flexspi_nor_read(const struct device *dev, off_t offset, void *
 	if (xip) {
 		irq_unlock(key);
 	}
+
+	flash_flexspi_nor_unlock(dev);
 
 	return 0;
 }
@@ -414,7 +454,10 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
+	flash_flexspi_nor_lock(dev);
+
 	if (!area_is_subregion(dev, offset, len)) {
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
@@ -427,6 +470,7 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 						    offset);
 
 	if (!dst) {
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
@@ -478,6 +522,8 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 	DCACHE_InvalidateByRange((uintptr_t)dst, size);
 #endif
 
+	flash_flexspi_nor_unlock(dev);
+
 	return 0;
 }
 
@@ -486,7 +532,10 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 {
 	struct flash_flexspi_nor_data *data = dev->data;
 
+	flash_flexspi_nor_lock(dev);
+
 	if (!area_is_subregion(dev, offset, size)) {
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
@@ -497,16 +546,19 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 						    offset);
 
 	if (!dst) {
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
 	if (offset % SPI_NOR_SECTOR_SIZE) {
 		LOG_ERR("Invalid offset");
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
 	if (size % SPI_NOR_SECTOR_SIZE) {
 		LOG_ERR("Invalid size");
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
@@ -570,6 +622,8 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 #ifdef CONFIG_HAS_MCUX_CACHE
 	DCACHE_InvalidateByRange((uintptr_t)dst, size);
 #endif
+
+	flash_flexspi_nor_unlock(dev);
 
 	return 0;
 }
@@ -1230,8 +1284,13 @@ static int flash_flexspi_nor_sfdp_read(const struct device *dev,
 		off_t offset, void *data, size_t len)
 {
 	struct flash_flexspi_nor_data *dev_data = dev->data;
+	int ret;
 
-	return flash_flexspi_nor_sfdp_read_helper(dev_data, offset, data, len);
+	flash_flexspi_nor_lock(dev);
+	ret = flash_flexspi_nor_sfdp_read_helper(dev_data, offset, data, len);
+	flash_flexspi_nor_unlock(dev);
+
+	return ret;
 }
 
 #endif
@@ -1338,9 +1397,11 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 	case 0x16609d: /* IS25LP032 */
 	case 0x17609d: /* IS25LP064 */
 	case 0x18609d: /* IS25LP128 */
+	case 0x19609d: /* IS25LP256 */
 	case 0x16709d: /* IS25WP032 */
 	case 0x17709d: /* IS25WP064 */
 	case 0x18709d: /* IS25WP128 */
+	case 0x19709d: /* IS25WP256 */
 		/*
 		 * We can support this flash with the JEDEC probe, but we need to
 		 * ensure Dummy Cycles are at the default value
@@ -1702,6 +1763,10 @@ static int flash_flexspi_nor_init(const struct device *dev)
 	const struct flash_flexspi_nor_config *config = dev->config;
 	struct flash_flexspi_nor_data *data = dev->data;
 
+#if defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR_MUTEX)
+	k_mutex_init(&data->lock);
+#endif
+
 	/* First step- use ROM pointer to controller device to create
 	 * a copy of the device structure in RAM we can use while in
 	 * critical sections of code.
@@ -1836,8 +1901,9 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 			.pages_size = SPI_NOR_SECTOR_SIZE,		\
 		},))							\
 		.flash_parameters = {					\
-			.write_block_size = DT_INST_PROP_OR(n,		\
-				write_block_size, NOR_WRITE_SIZE),	\
+			.write_block_size = DT_PROP(			\
+				FLEXSPI_NOR_SOC_NV_FLASH_NODE(n),\
+				write_block_size),		\
 			.erase_value = NOR_ERASE_VALUE,			\
 		},							\
 	};								\

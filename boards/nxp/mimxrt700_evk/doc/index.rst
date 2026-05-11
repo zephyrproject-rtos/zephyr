@@ -229,6 +229,19 @@ should see the following message in the terminal:
    *** Booting Zephyr OS v3.7.0 ***
    Hello World! mimxrt700_evk/mimxrt798s/cm33_cpu0
 
+SD Card Support
+***************
+
+The USDHC1 interface on the MIMXRT700-EVK is shared between the SD card socket (J47) and
+the M.2 connector (J44) through electronic switches (TMUX136). Jumper JP65 is used to select
+which interface is active:
+
+- **JP65 1-2**: Routes SDIO signals to the SD card socket (J47). Set this position when
+  using the SD card.
+- **JP65 2-3** (default): Routes SDIO signals to the M.2 connector (J44).
+
+To use the SD card, ensure JP65 is set to the 1-2 position.
+
 .. include:: ../../common/board-footer.rst.inc
 
 .. _i.MX RT700 Website:
@@ -241,7 +254,8 @@ Display Support
 ***************
 
 The mimxrt700_evk board supports following in-tree display module(s). Setup for
-each module is described below:
+each module is described below. Note that the display controller on board cannot be worked with
+data cache enabled.
 
 NXP G1120B0MIPI MIPI Display
 ============================
@@ -289,3 +303,27 @@ for a list). The display sample can be built for this module like so:
    :zephyr-app: samples/drivers/display
    :goals: build
    :compact:
+
+NXP LCD_PAR_S035
+================
+
+The :ref:`lcd_par_s035` connects to the board's LCD socket J4 pin 1 to pin 28
+directly, but some modifications are required (see
+:zephyr_file:`boards/shields/lcd_par_s035/boards/mimxrt700_evk_mimxrt798s_cm33_cpu0.overlay`
+for a list). Connect JP7 2&3 to use 3.3v interface, and remove resistance R60 to use the touch
+function. The display sample can be built for this module like so:
+
+.. zephyr-app-commands::
+   :board: mimxrt700_evk/mimxrt798s/cm33_cpu0
+   :shield: lcd_par_s035_8080
+   :zephyr-app: samples/drivers/display
+   :goals: build
+   :compact:
+
+.. include:: ../../common/board-footer.rst.inc
+
+.. _i.MX RT700 Website:
+   https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/i-mx-rt-crossover-mcus/i-mx-rt700-crossover-mcu-with-arm-cortex-m33-npu-dsp-and-gpu-cores:i.MX-RT700
+
+.. _MIMXRT700-EVK Debug Firmware:
+   https://www.nxp.com/docs/en/application-note/AN13206.pdf

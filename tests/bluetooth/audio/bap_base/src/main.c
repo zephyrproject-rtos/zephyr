@@ -15,6 +15,7 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 #include <zephyr/fff.h>
@@ -258,6 +259,8 @@ static bool test_base_foreach_subgroup_cb(const struct bt_bap_base_subgroup *sub
 {
 	size_t *count = user_data;
 
+	ARG_UNUSED(subgroup);
+
 	(*count)++;
 
 	return true;
@@ -302,6 +305,8 @@ static bool test_base_get_subgroup_codec_id_cb(const struct bt_bap_base_subgroup
 	struct bt_bap_base_codec_id codec_id;
 	int ret;
 
+	ARG_UNUSED(user_data);
+
 	ret = bt_bap_base_get_subgroup_codec_id(subgroup, &codec_id);
 	zassert_equal(ret, 0, "Unexpected return value: %d", ret);
 	zassert_equal(codec_id.id, 0x06, "Unexpected codec.id value: %u", codec_id.id);
@@ -328,6 +333,9 @@ static bool test_base_get_subgroup_codec_id_inval_param_null_subgroup_cb(
 	struct bt_bap_base_codec_id codec_id;
 	int ret;
 
+	ARG_UNUSED(subgroup);
+	ARG_UNUSED(user_data);
+
 	ret = bt_bap_base_get_subgroup_codec_id(NULL, &codec_id);
 	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
 
@@ -351,6 +359,8 @@ test_base_get_subgroup_codec_id_inval_param_null_cb(const struct bt_bap_base_sub
 						    void *user_data)
 {
 	int ret;
+
+	ARG_UNUSED(user_data);
 
 	ret = bt_bap_base_get_subgroup_codec_id(subgroup, NULL);
 	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
@@ -380,6 +390,8 @@ static bool test_base_get_subgroup_codec_data_cb(const struct bt_bap_base_subgro
 	uint8_t *data;
 	int ret;
 
+	ARG_UNUSED(user_data);
+
 	ret = bt_bap_base_get_subgroup_codec_data(subgroup, &data);
 	zassert_equal(ret, sizeof(expected_data), "Unexpected return value: %d", ret);
 	zassert_mem_equal(data, expected_data, sizeof(expected_data));
@@ -404,6 +416,9 @@ static bool test_base_get_subgroup_codec_data_inval_param_null_subgroup_cb(
 	uint8_t *data;
 	int ret;
 
+	ARG_UNUSED(subgroup);
+	ARG_UNUSED(user_data);
+
 	ret = bt_bap_base_get_subgroup_codec_data(NULL, &data);
 	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
 
@@ -427,6 +442,8 @@ test_base_get_subgroup_codec_data_inval_param_null_cb(const struct bt_bap_base_s
 						      void *user_data)
 {
 	int ret;
+
+	ARG_UNUSED(user_data);
 
 	ret = bt_bap_base_get_subgroup_codec_data(subgroup, NULL);
 	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
@@ -453,6 +470,8 @@ static bool test_base_get_subgroup_codec_meta_cb(const struct bt_bap_base_subgro
 	uint8_t *data;
 	int ret;
 
+	ARG_UNUSED(user_data);
+
 	ret = bt_bap_base_get_subgroup_codec_meta(subgroup, &data);
 	zassert_equal(ret, sizeof(expected_data), "Unexpected return value: %d", ret);
 	zassert_mem_equal(data, expected_data, sizeof(expected_data));
@@ -477,6 +496,9 @@ static bool test_base_get_subgroup_codec_meta_inval_param_null_subgroup_cb(
 	uint8_t *data;
 	int ret;
 
+	ARG_UNUSED(subgroup);
+	ARG_UNUSED(user_data);
+
 	ret = bt_bap_base_get_subgroup_codec_meta(NULL, &data);
 	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
 
@@ -500,6 +522,8 @@ test_base_get_subgroup_codec_meta_inval_param_null_cb(const struct bt_bap_base_s
 						      void *user_data)
 {
 	int ret;
+
+	ARG_UNUSED(user_data);
 
 	ret = bt_bap_base_get_subgroup_codec_meta(subgroup, NULL);
 	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
@@ -530,6 +554,8 @@ static bool test_base_subgroup_codec_to_codec_cfg_cb(const struct bt_bap_base_su
 	struct bt_audio_codec_cfg codec_cfg;
 	int ret;
 
+	ARG_UNUSED(user_data);
+
 	ret = bt_bap_base_subgroup_codec_to_codec_cfg(subgroup, &codec_cfg);
 	zassert_equal(ret, 0, "Unexpected return value: %d", ret);
 	zassert_equal(codec_cfg.data_len, sizeof(expected_data), "Unexpected data length: %d", ret);
@@ -557,6 +583,9 @@ static bool test_base_subgroup_codec_to_codec_cfg_inval_param_null_subgroup_cb(
 	struct bt_audio_codec_cfg codec_cfg;
 	int ret;
 
+	ARG_UNUSED(subgroup);
+	ARG_UNUSED(user_data);
+
 	ret = bt_bap_base_subgroup_codec_to_codec_cfg(NULL, &codec_cfg);
 	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
 
@@ -579,6 +608,8 @@ static bool test_base_subgroup_codec_to_codec_cfg_inval_param_null_cb(
 	const struct bt_bap_base_subgroup *subgroup, void *user_data)
 {
 	int ret;
+
+	ARG_UNUSED(user_data);
 
 	ret = bt_bap_base_subgroup_codec_to_codec_cfg(subgroup, NULL);
 	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
@@ -603,6 +634,8 @@ static bool test_base_get_subgroup_bis_count_cb(const struct bt_bap_base_subgrou
 {
 	int ret;
 
+	ARG_UNUSED(user_data);
+
 	ret = bt_bap_base_get_subgroup_bis_count(subgroup);
 	zassert_equal(ret, 0x01, "Unexpected return value: %d", ret);
 
@@ -624,6 +657,9 @@ static bool test_base_get_subgroup_bis_count_inval_param_null_subgroup_cb(
 	const struct bt_bap_base_subgroup *subgroup, void *user_data)
 {
 	int ret;
+
+	ARG_UNUSED(subgroup);
+	ARG_UNUSED(user_data);
 
 	ret = bt_bap_base_get_subgroup_bis_count(NULL);
 	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
@@ -649,6 +685,8 @@ test_bt_bap_base_subgroup_get_bis_indexes_cb(const struct bt_bap_base_subgroup *
 {
 	uint32_t bis_indexes;
 	int ret;
+
+	ARG_UNUSED(user_data);
 
 	ret = bt_bap_base_subgroup_get_bis_indexes(subgroup, &bis_indexes);
 	zassert_equal(ret, 0, "Unexpected return value: %d", ret);
@@ -676,6 +714,9 @@ static bool test_bt_bap_base_subgroup_get_bis_indexes_inval_param_null_subgroup_
 	uint32_t bis_indexes;
 	int ret;
 
+	ARG_UNUSED(subgroup);
+	ARG_UNUSED(user_data);
+
 	ret = bt_bap_base_subgroup_get_bis_indexes(NULL, &bis_indexes);
 	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
 
@@ -698,6 +739,8 @@ static bool test_bt_bap_base_subgroup_get_bis_indexes_inval_param_null_index_cb(
 	const struct bt_bap_base_subgroup *subgroup, void *user_data)
 {
 	int ret;
+
+	ARG_UNUSED(user_data);
 
 	ret = bt_bap_base_subgroup_get_bis_indexes(subgroup, NULL);
 	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
@@ -722,6 +765,8 @@ test_base_subgroup_foreach_bis_subgroup_bis_cb(const struct bt_bap_base_subgroup
 					       void *user_data)
 {
 	size_t *count = user_data;
+
+	ARG_UNUSED(bis);
 
 	(*count)++;
 
@@ -765,6 +810,9 @@ static bool test_base_subgroup_foreach_bis_inval_param_null_subgroup_cb(
 	size_t count;
 	int ret;
 
+	ARG_UNUSED(subgroup);
+	ARG_UNUSED(user_data);
+
 	ret = bt_bap_base_subgroup_foreach_bis(NULL, test_base_subgroup_foreach_bis_subgroup_bis_cb,
 					       &count);
 	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
@@ -789,6 +837,8 @@ test_base_subgroup_foreach_bis_inval_param_null_cb_cb(const struct bt_bap_base_s
 						      void *user_data)
 {
 	int ret;
+
+	ARG_UNUSED(user_data);
 
 	ret = bt_bap_base_subgroup_foreach_bis(subgroup, NULL, NULL);
 	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
@@ -816,6 +866,8 @@ test_base_subgroup_bis_codec_to_codec_cfg_bis_cb(const struct bt_bap_base_subgro
 	struct bt_audio_codec_cfg codec_cfg;
 	int ret;
 
+	ARG_UNUSED(user_data);
+
 	ret = bt_bap_base_subgroup_bis_codec_to_codec_cfg(bis, &codec_cfg);
 	zassert_equal(ret, 0, "Unexpected return value: %d", ret);
 	zassert_equal(codec_cfg.data_len, sizeof(expected_data), "Unexpected data length: %d", ret);
@@ -829,6 +881,8 @@ test_base_subgroup_bis_codec_to_codec_cfg_subgroup_cb(const struct bt_bap_base_s
 						      void *user_data)
 {
 	int ret;
+
+	ARG_UNUSED(user_data);
 
 	ret = bt_bap_base_subgroup_foreach_bis(
 		subgroup, test_base_subgroup_bis_codec_to_codec_cfg_bis_cb, NULL);
@@ -855,6 +909,9 @@ static bool test_base_subgroup_bis_codec_to_codec_cfg_inval_param_null_bis_bis_c
 	struct bt_audio_codec_cfg codec_cfg;
 	int ret;
 
+	ARG_UNUSED(bis);
+	ARG_UNUSED(user_data);
+
 	ret = bt_bap_base_subgroup_bis_codec_to_codec_cfg(NULL, &codec_cfg);
 	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
 
@@ -865,6 +922,9 @@ static bool test_base_subgroup_bis_codec_to_codec_cfg_inval_param_null_bis_subgr
 	const struct bt_bap_base_subgroup *subgroup, void *user_data)
 {
 	int ret;
+
+	ARG_UNUSED(subgroup);
+	ARG_UNUSED(user_data);
 
 	ret = bt_bap_base_subgroup_foreach_bis(
 		NULL, test_base_subgroup_bis_codec_to_codec_cfg_inval_param_null_bis_bis_cb, NULL);
@@ -891,6 +951,8 @@ static bool test_base_subgroup_bis_codec_to_codec_cfg_inval_param_null_codec_cfg
 {
 	int ret;
 
+	ARG_UNUSED(user_data);
+
 	ret = bt_bap_base_subgroup_bis_codec_to_codec_cfg(bis, NULL);
 	zassert_equal(ret, -EINVAL, "Unexpected return value: %d", ret);
 
@@ -901,6 +963,9 @@ static bool test_base_subgroup_bis_codec_to_codec_cfg_inval_param_null_codec_cfg
 	const struct bt_bap_base_subgroup *subgroup, void *user_data)
 {
 	int ret;
+
+	ARG_UNUSED(subgroup);
+	ARG_UNUSED(user_data);
 
 	ret = bt_bap_base_subgroup_foreach_bis(
 		NULL, test_base_subgroup_bis_codec_to_codec_cfg_inval_param_null_codec_cfg_bis_cb,

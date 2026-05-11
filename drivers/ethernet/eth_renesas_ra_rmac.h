@@ -59,10 +59,17 @@ static inline void r_rmac_phy_set_operation_mode(uint8_t channel, uint8_t mode)
 	R_ETHA0_Type *p_etha_reg =
 		(R_ETHA0_Type *)(R_ETHA0_BASE + (RENESAS_RA_ETHA_REG_SIZE * channel));
 
+	R_RMAC0_Type *p_reg_rmac =
+		(R_RMAC0_Type *) (R_RMAC0_BASE + (RENESAS_RA_ETHA_REG_SIZE * channel));
+
 	/* Mode transition */
 	p_etha_reg->EAMC_b.OPC = R_ETHA0_EAMC_OPC_Msk & mode;
 
-	WAIT_FOR((p_etha_reg->EAMS_b.OPS == mode), 1000, k_busy_wait(1));
+	if (!WAIT_FOR((p_etha_reg->EAMS_b.OPS == mode), 10000, k_busy_wait(1))) {
+		p_reg_rmac->MIOC_b.MIOC = 0x01;
+		FSP_HARDWARE_REGISTER_WAIT(p_etha_reg->EAMS_b.OPS, mode);
+		p_reg_rmac->MIOC_b.MIOC = 0x00;
+	}
 }
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_ETH_RENESAS_RA_RMAC_H__ */

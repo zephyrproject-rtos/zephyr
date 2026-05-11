@@ -34,4 +34,14 @@
 				 <RZV_PINMUX(PORT_02, 0, 4)>; /* SDA */
 		};
 	};
+
+	/omit-if-no-ref/ spi2_pins: spi2 {
+		spi2-pinmux {
+			pinmux = <RZV_PINMUX(PORT_11, 5, 5)>, /* CK */
+				 <RZV_PINMUX(PORT_11, 4, 5)>, /* MOSI */
+				 <RZV_PINMUX(PORT_11, 3, 5)>, /* MISO */
+				 <RZV_PINMUX(PORT_10, 7, 5)>; /* SSL */
+			drive-strength = <1>;
+		};
+	};
 };

@@ -336,13 +336,14 @@ static void eth_esp32_iomux_init_mii(void)
 	}
 }
 
-static enum ethernet_hw_caps eth_esp32_caps(const struct device *dev)
+static enum ethernet_hw_caps eth_esp32_caps(const struct device *dev __unused,
+					    struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
 }
 
 static int eth_esp32_set_config(const struct device *dev,
+				struct net_if *iface __unused,
 				enum ethernet_config_type type,
 				const struct ethernet_config *config)
 {
@@ -462,19 +463,16 @@ static int generate_mac_addr(uint8_t mac_addr[6])
 	return res;
 }
 
-static void phy_link_state_changed(const struct device *phy_dev,
+static void phy_link_state_changed(const struct device *phy_dev __unused,
 				   struct phy_link_state *state,
 				   void *user_data)
 {
-	const struct device *dev = (const struct device *)user_data;
-	struct eth_esp32_dev_data *const dev_data = dev->data;
-
-	ARG_UNUSED(phy_dev);
+	struct net_if *iface = (struct net_if *)user_data;
 
 	if (state->is_up) {
-		net_eth_carrier_on(dev_data->iface);
+		net_eth_carrier_on(iface);
 	} else {
-		net_eth_carrier_off(dev_data->iface);
+		net_eth_carrier_off(iface);
 	}
 }
 
@@ -589,9 +587,9 @@ err:
 	return res;
 }
 
-static const struct device *eth_esp32_phy_get(const struct device *dev)
+static const struct device *eth_esp32_phy_get(const struct device *dev __unused,
+					      struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
 	return eth_esp32_phy_dev;
 }
 
@@ -613,7 +611,7 @@ static void eth_esp32_iface_init(struct net_if *iface)
 		net_if_carrier_off(iface);
 
 		phy_link_callback_set(eth_esp32_phy_dev, phy_link_state_changed,
-				      (void *)dev);
+				      (void *)iface);
 	} else {
 		LOG_ERR("PHY device not ready");
 	}

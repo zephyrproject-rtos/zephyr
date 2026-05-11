@@ -161,7 +161,7 @@ static void explorir_m_uart_isr(const struct device *uart_dev, void *user_data)
 	int rc, read_len;
 
 	if (!device_is_ready(uart_dev)) {
-		LOG_DBG("UART device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(uart_dev);
 		return;
 	}
 

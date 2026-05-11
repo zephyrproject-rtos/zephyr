@@ -20,7 +20,7 @@ The board includes the following features:
 - 8MB of PSRAM
 - 800×480 e-ink Spectra 6 (E6) full-color (6 colors) display
 - Micro SD slot
-- 2000 mAh built-in battery
+- 2000 mAh built-in battery + Silergy SY6974B switching battery charger
 - Temperature sensor
 - RTC
 - 3x buttons
@@ -135,7 +135,7 @@ References
    https://wiki.seeedstudio.com/getting_started_with_reterminal_e1002/
 
 .. _`reTerminal E1002 board schematics`:
-   https://files.seeedstudio.com/wiki/reterminal_e10xx/res/202004321_reTerminal_E1002_V1.0_SCH_250805.pdf
+   https://files.seeedstudio.com/wiki/reterminal_e10xx/res/202004321_reTerminal_E1002_V1_2_SCH_251120.pdf
 
 .. _`GDEP073E01 Good Display product page`:
    https://www.good-display.com/blank7.html?productId=533

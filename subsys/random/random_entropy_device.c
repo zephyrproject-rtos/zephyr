@@ -9,13 +9,11 @@
 #include <zephyr/drivers/entropy.h>
 #include <string.h>
 
-static const struct device *const entropy_dev =
-	DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
-
 static int rand_get(uint8_t *dst, size_t outlen, bool csrand)
 {
 	uint32_t random_num;
 	int ret;
+	const struct device *const entropy_dev = entropy_get_default_device();
 
 	if (!device_is_ready(entropy_dev)) {
 		return -ENODEV;

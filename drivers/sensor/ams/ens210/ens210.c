@@ -285,7 +285,7 @@ static int ens210_init(const struct device *dev)
 	uint16_t part_id;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C bus device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 

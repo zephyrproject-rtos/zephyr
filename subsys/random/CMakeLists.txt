@@ -17,6 +17,7 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_TIMER_RANDOM_GENERATOR          random_timer.c)
 zephyr_library_sources_ifdef(CONFIG_XOSHIRO_RANDOM_GENERATOR        random_xoshiro128.c)
+zephyr_library_sources_ifdef(CONFIG_ARM64_RANDOM_GENERATOR          random_arm64.c)
 zephyr_library_sources_ifdef(CONFIG_TEST_CSPRNG_GENERATOR           random_test_csprng.c)
 
 if(CONFIG_ENTROPY_DEVICE_RANDOM_GENERATOR OR CONFIG_HARDWARE_DEVICE_CS_GENERATOR)
@@ -25,5 +26,5 @@ endif()
 
 if(CONFIG_CTR_DRBG_CSPRNG_GENERATOR OR CONFIG_PSA_CSPRNG_GENERATOR)
 zephyr_library_sources(random_psa.c)
-zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedTLS)
 endif()

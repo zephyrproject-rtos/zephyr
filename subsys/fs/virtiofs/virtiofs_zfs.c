@@ -32,11 +32,11 @@ struct virtiofs_dir {
 	uint64_t offset;
 };
 
-K_MEM_SLAB_DEFINE_STATIC(
-	file_struct_slab, sizeof(struct virtiofs_file), CONFIG_VIRTIOFS_MAX_FILES, sizeof(void *)
+K_MEM_SLAB_DEFINE_STATIC_TYPE(
+	file_struct_slab, struct virtiofs_file, CONFIG_VIRTIOFS_MAX_FILES
 );
-K_MEM_SLAB_DEFINE_STATIC(
-	dir_struct_slab, sizeof(struct virtiofs_dir), CONFIG_VIRTIOFS_MAX_FILES, sizeof(void *)
+K_MEM_SLAB_DEFINE_STATIC_TYPE(
+	dir_struct_slab, struct virtiofs_dir, CONFIG_VIRTIOFS_MAX_FILES
 );
 
 static int zephyr_mode_to_posix(int m)

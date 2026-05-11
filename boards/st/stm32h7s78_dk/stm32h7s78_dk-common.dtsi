@@ -97,6 +97,7 @@
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
 		spi-flash0 = &mx66uw1g45;
+		rtc = &rtc;
 	};
 
 	ext_flash_mem: memory@70000000 {

@@ -1291,7 +1291,7 @@ New Samples
 * :zephyr:code-sample:`max32664c`
 * :zephyr:code-sample:`mctp-usb-endpoint`
 * :zephyr:code-sample:`mctp_i2c_bus_endpoint`
-* :zephyr:code-sample:`mctp_i2c_bus_owner`
+* PMCI MCTP over I2C+GPIO (``mctp_i2c_bus_owner``)
 * :zephyr:code-sample:`msg_queue`
 * :zephyr:code-sample:`netmidi2`
 * :zephyr:code-sample:`ocpp`

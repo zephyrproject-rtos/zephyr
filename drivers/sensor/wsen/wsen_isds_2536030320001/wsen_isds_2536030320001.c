@@ -729,7 +729,7 @@ static int isds_2536030320001_init(const struct device *dev)
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	case WE_i2c:
 		if (!i2c_is_ready_dt(&config->bus_cfg.i2c)) {
-			LOG_ERR("I2C bus device not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->bus_cfg.i2c.bus);
 			return -ENODEV;
 		}
 		data->sensor_interface.handle = (void *)&config->bus_cfg.i2c;
@@ -738,7 +738,7 @@ static int isds_2536030320001_init(const struct device *dev)
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	case WE_spi:
 		if (!spi_is_ready_dt(&config->bus_cfg.spi)) {
-			LOG_ERR("SPI bus device not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->bus_cfg.spi.bus);
 			return -ENODEV;
 		}
 		data->sensor_interface.handle = (void *)&config->bus_cfg.spi;

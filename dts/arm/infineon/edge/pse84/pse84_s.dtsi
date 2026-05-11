@@ -289,8 +289,6 @@
 			compatible = "infineon,lp-comp";
 			reg = <0x52880000 0x10000>;
 			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <1>;
 
 			lpcomp0_0: lpcomp0-0 {
 				compatible = "infineon,lp-comp-channel";
@@ -457,6 +455,14 @@
 			compatible = "infineon,lp-timer";
 			reg = <0x5240d040 0x40>;
 			interrupts = <0 4>;
+			status = "disabled";
+		};
+
+		rtc0: rtc@52420000 {
+			compatible = "infineon,rtc";
+			reg = <0x52420000 0x1140>;
+			interrupts = <56 4>;
+			alarms-count = <2>;
 			status = "disabled";
 		};
 
@@ -1281,6 +1287,24 @@
 				channel = <5>;
 				status = "disabled";
 			};
+		};
+
+		usbhs: usbhs@54900000 {
+			compatible = "infineon,usbhs", "snps,dwc2";
+			reg = <0x54900000 0x40100>;
+			interrupts = <174 4>, /* usbhs_ctrl_irqn */
+				     <175 4>; /* usbhss_irqn */
+			num-in-eps = <9>;
+			num-out-eps = <9>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x228fe052>;
+			ghwcfg4 = <0xe2103a20>;
+			status = "disabled";
+			mmio-peri-inst = <1>;
+			mmio-peri-group = <3>;
+			mmio-reg-bit-pos = <5>;
+			mmio-peri-hf-src = <1>;
+			mmio-peri-div = <3>;
 		};
 	};
 };

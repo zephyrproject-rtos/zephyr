@@ -154,7 +154,7 @@
 		};
 
 		gpios: gpio@20000000 {
-			compatible = "bflb,bl61x-gpio";
+			compatible = "bflb,bl61x_808-gpio";
 			reg = <0x20000000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -207,6 +207,12 @@
 
 			interrupts = <41 1>;
 			interrupt-parent = <&clic>;
+		};
+
+		tsen: tsen {
+			compatible = "bflb,tsen";
+			io-channels = <&adc0 0>;
+			status = "disabled";
 		};
 
 		sec_eng_trng: trng@20004000 {
@@ -427,6 +433,15 @@
 			size = <512>;
 		};
 
+		sdhc0: sdhc@20060000 {
+			compatible = "bflb,sdhc";
+			reg = <0x20060000 0x200>;
+			status = "disabled";
+
+			interrupts = <33 1>;
+			interrupt-parent = <&clic>;
+		};
+
 		sram0: memory@62fc0000 {
 			compatible = "mmio-sram";
 			reg = <0x62fc0000 DT_SIZE_K(320)>;
@@ -442,6 +457,11 @@
 			compatible = "zephyr,memory-region";
 			reg = <0xa8000000 DT_SIZE_M(128)>;
 			zephyr,memory-region = "PSRAM";
+			status = "disabled";
+		};
+
+		bt_hci_bflb: bt-hci {
+			compatible = "bflb,bt-hci";
 			status = "disabled";
 		};
 	};

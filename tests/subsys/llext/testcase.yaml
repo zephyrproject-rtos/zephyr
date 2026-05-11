@@ -57,8 +57,6 @@ tests:
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
       - CONFIG_LLEXT_RODATA_NO_RELOC=y
       - CONFIG_LLEXT_HEAP_MEMBLK=y
-      - arch:arc:CONFIG_LLEXT_EXT_HEAP_SIZE=64
-      - arch:arc:CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE=2048
   llext.readonly_mpu:
     arch_allow:
       - arm # Xtensa needs writable storage, currently not supported on RISC-V
@@ -76,6 +74,8 @@ tests:
       - CONFIG_USERSPACE=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
       - CONFIG_LLEXT_HEAP_MEMBLK=y
+      - CONFIG_LLEXT_EXT_HEAP_SIZE=64
+      - CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE=8192
   llext.readonly_mpu.memblk.power_of_two_alignment:
     arch_allow:
       - arm # Xtensa needs writable storage, currently not supported on RISC-V
@@ -144,8 +144,6 @@ tests:
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_HEAP_MEMBLK=y
-      - arch:arc:CONFIG_LLEXT_EXT_HEAP_SIZE=64
-      - arch:arc:CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE=2048
   llext.writable_relocatable:
     arch_allow:
       - arm

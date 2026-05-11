@@ -168,7 +168,11 @@ tests:
       - userspace
     extra_args:
       - platform:frdm_mcxw71/mcxw716c:DTC_OVERLAY_FILE="boards/frdm_mcxw71_2.overlay"
+      - platform:frdm_imxrt1186/mimxrt1186/cm33:DTC_OVERLAY_FILE="boards/frdm_imxrt1186_mimxrt1186_cm33_tpm.overlay"
+      - platform:frdm_imxrt1186/mimxrt1186/cm7:DTC_OVERLAY_FILE="boards/frdm_imxrt1186_mimxrt1186_cm7_tpm.overlay"
     platform_allow:
       - frdm_mcxw71
+      - frdm_imxrt1186/mimxrt1186/cm33
+      - frdm_imxrt1186/mimxrt1186/cm7
     filter: dt_nodelabel_enabled("pwm_test_center") and CONFIG_DT_HAS_NXP_KINETIS_TPM_ENABLED
     depends_on: pwm

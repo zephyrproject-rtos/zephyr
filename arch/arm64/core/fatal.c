@@ -26,6 +26,9 @@
 #include <zephyr/arch/exception.h>
 
 #include "paging.h"
+#ifdef CONFIG_ARM_MMU
+#include "mmu.h"
+#endif
 #ifdef CONFIG_ARM_PAC
 #include <zephyr/arch/arm64/pac.h>
 #endif
@@ -546,6 +549,41 @@ static bool is_recoverable(struct arch_esf *esf, uint64_t esr, uint64_t far,
 	return false;
 }
 
+#if defined(CONFIG_EXCEPTION_DEBUG) && defined(CONFIG_ARM_MMU)
+static void dump_ptable_walk(uintptr_t addr)
+{
+	uint64_t ttbr0 = read_ttbr0_el1();
+	uint64_t *table = (uint64_t *)(ttbr0 & PTE_PHYSADDR_MASK);
+	unsigned int level = BASE_XLAT_LEVEL;
+
+	EXCEPTION_DUMP("PTE walk for 0x%lx (TTBR0=0x%016llx):",
+		       (unsigned long)addr, ttbr0);
+
+	for (;;) {
+		unsigned int idx = XLAT_TABLE_VA_IDX(addr, level);
+		uint64_t pte = table[idx];
+
+		EXCEPTION_DUMP("  L%d[%03d] @ %p = 0x%016llx",
+			       level, idx, &table[idx], pte);
+
+		if ((pte & PTE_DESC_TYPE_MASK) == 0) {
+			break;
+		}
+		if (level == XLAT_LAST_LEVEL || (pte & PTE_DESC_TYPE_MASK) != PTE_TABLE_DESC) {
+			EXCEPTION_DUMP("    %s AP=%s%s%s%s",
+				level == XLAT_LAST_LEVEL ? "page" : "block",
+				(pte & PTE_BLOCK_DESC_AP_ELx) ? "ELx" : "EL_higher",
+				(pte & PTE_BLOCK_DESC_AP_RO)  ? " RO" : " RW",
+				(pte & PTE_BLOCK_DESC_NG)     ? " nG" : " G",
+				(pte & PTE_BLOCK_DESC_AF)     ? " AF" : "");
+			break;
+		}
+		table = (uint64_t *)(pte & PTE_PHYSADDR_MASK);
+		level++;
+	}
+}
+#endif
+
 void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 {
 	uint64_t esr = 0;
@@ -598,6 +636,9 @@ void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 
 			if (dump_far) {
 				EXCEPTION_DUMP("FAR_ELn: 0x%016llx", far);
+#ifdef CONFIG_ARM_MMU
+				dump_ptable_walk(far);
+#endif
 			}
 
 			EXCEPTION_DUMP("TPIDRRO: 0x%016llx", read_tpidrro_el0());

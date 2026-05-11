@@ -2,7 +2,7 @@ identifier: w5500_evb_pico
 name: Wiznet W5500 Evaluation Board
 type: mcu
 arch: arm
-flash: 16384
+flash: 2048
 ram: 264
 toolchain:
   - zephyr

@@ -93,7 +93,7 @@ int hmc5883l_init(const struct device *dev)
 	uint8_t chip_cfg[4], id[3], idx;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C bus device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 

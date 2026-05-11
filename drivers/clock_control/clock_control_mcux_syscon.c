@@ -18,6 +18,28 @@ LOG_MODULE_REGISTER(clock_control);
 static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 					    clock_control_subsys_t sub_system)
 {
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX)
+	switch ((uint32_t)sub_system) {
+	case MCUX_USB0_CLK:
+		CLOCK_EnableClock(kCLOCK_Usb0);
+		break;
+	case MCUX_USB1_CLK:
+		CLOCK_EnableClock(kCLOCK_Usb1);
+		break;
+	case MCUX_USBPHY_REF_CLK:
+		CLOCK_EnableClock(kCLOCK_UsbphyRef);
+		break;
+	case MCUX_EDMA0_CLK:
+		CLOCK_EnableClock(kCLOCK_Dma0);
+		break;
+	case MCUX_EDMA1_CLK:
+		CLOCK_EnableClock(kCLOCK_Dma1);
+		break;
+	default:
+		break;
+	}
+#endif
+
 #if defined(CONFIG_CAN_NXP_LPC_MCAN)
 	if ((uint32_t)sub_system == MCUX_MCAN_CLK) {
 		CLOCK_EnableClock(kCLOCK_Mcan);
@@ -676,11 +698,22 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		*rate = CLOCK_GetAdcClkFreq(0);
 #endif
 		break;
-#if (FSL_FEATURE_SOC_LPADC_COUNT == 2)
+#if (FSL_FEATURE_SOC_LPADC_COUNT >= 2)
 	case MCUX_LPADC2_CLK:
 		*rate = CLOCK_GetAdcClkFreq(1);
 		break;
 #endif
+#if (FSL_FEATURE_SOC_LPADC_COUNT >= 3)
+	case MCUX_LPADC3_CLK:
+		*rate = CLOCK_GetAdcClkFreq(2);
+		break;
+#endif
+#if (FSL_FEATURE_SOC_LPADC_COUNT >= 4)
+	case MCUX_LPADC4_CLK:
+		*rate = CLOCK_GetAdcClkFreq(3);
+		break;
+#endif
+
 #endif /* CONFIG_ADC_MCUX_LPADC */
 
 #if defined(CONFIG_CAN_MCUX_FLEXCAN)
@@ -844,6 +877,14 @@ static int SYSCON_SET_FUNC_ATTR mcux_lpc_syscon_clock_control_set_subsys_rate(
 	uint32_t clock_rate = (uintptr_t)rate;
 
 	switch (clock_name) {
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX)
+	case MCUX_USB0_CLK:
+		return CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M, clock_rate) ? 0 : -EINVAL;
+	case MCUX_USB1_CLK:
+		return 0;
+	case MCUX_USBPHY_REF_CLK:
+		return CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usbphy480M, clock_rate) ? 0 : -EINVAL;
+#endif
 	case MCUX_FLEXSPI_CLK:
 #if defined(CONFIG_MEMC)
 		/* The SOC is using the FlexSPI for XIP. Therefore,

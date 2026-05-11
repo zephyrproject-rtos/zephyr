@@ -286,7 +286,7 @@ tests:
       fixture: spi_loopback
       type: one_line
       regex:
-        - "Failed to initialize nrfx driver"
+        - "Failed to configure nrfx driver"
   drivers.spi.nrf54h_fast_8mhz:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
     platform_allow:
@@ -319,7 +319,7 @@ tests:
       fixture: spi_loopback
       type: one_line
       regex:
-        - "Failed to initialize nrfx driver"
+        - "Failed to configure nrfx driver"
   drivers.spi.nrf54l_8mhz:
     extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_8mhz.overlay"
     platform_allow:
@@ -467,3 +467,6 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
       - CONF_FILE="prj.conf" # to exclude "boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}.overlay"
+  drivers.spi.mspm0.loopback:
+    platform_allow:
+      - lp_mspm0g3507

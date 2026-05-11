@@ -83,6 +83,19 @@ NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR,
 DNS_CACHE_DEFINE(dns_cache, CONFIG_DNS_RESOLVER_CACHE_MAX_ENTRIES);
 #endif /* CONFIG_DNS_RESOLVER_CACHE */
 
+/**
+ * Get raw integer value from query type
+ *
+ * Useful for private RR types.
+ *
+ * @param type Query type
+ * @return Raw integer value
+ */
+static inline unsigned int dns_query_type_raw(enum dns_query_type type)
+{
+	return (unsigned int)type;
+}
+
 static K_MUTEX_DEFINE(lock);
 static struct dns_resolve_context dns_default_ctx;
 
@@ -1248,6 +1261,21 @@ static int dns_validate_record(struct dns_resolve_context *ctx, struct dns_msg_t
 
 		break;
 	}
+
+#if defined(CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT)
+	case DNS_RESPONSE_PRIVATE:
+		pos = dns_msg->msg + dns_msg->response_position;
+
+		info->ai_family = NET_AF_UNSPEC;
+		info->ai_extension = DNS_RESOLVE_PRIVATE;
+		info->ai_private.type = *answer_type;
+		info->ai_private.datalen = MIN(dns_msg->response_length,
+					       DNS_MAX_PRIVATE_DATA_SIZE);
+		memcpy(info->ai_private.data, pos, info->ai_private.datalen);
+
+		break;
+#endif /* CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT */
+
 	case DNS_RESPONSE_CNAME_NO_IP:
 		/* Instead of using the QNAME at DNS_QUERY_POS,
 		 * we will use this CNAME
@@ -1398,7 +1426,7 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 		 * type of answer we got. Currently only A or AAAA
 		 * are supported.
 		 */
-		if (ctx->queries[*query_idx].query_type == (enum dns_query_type)DNS_RR_TYPE_ANY &&
+		if (ctx->queries[*query_idx].query_type == DNS_QUERY_TYPE_ANY &&
 		    answer_type != DNS_RR_TYPE_AAAA && answer_type != DNS_RR_TYPE_A) {
 			ret = DNS_EAI_ADDRFAMILY;
 			goto quit;
@@ -1410,6 +1438,14 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 			 * for query redirection.
 			 */
 			continue;
+		}
+
+		if (IS_ENABLED(CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT) &&
+		    dns_query_type_is_private(ctx->queries[*query_idx].query_type) &&
+		    dns_msg->response_type == DNS_RESPONSE_PRIVATE &&
+		    answer_type != dns_query_type_raw(ctx->queries[*query_idx].query_type)) {
+			ret = DNS_EAI_ADDRFAMILY;
+			goto quit;
 		}
 
 		invoke_query_callback(DNS_EAI_INPROGRESS, &info, &ctx->queries[*query_idx]);
@@ -1506,7 +1542,19 @@ static int dns_read(struct dns_resolve_context *ctx,
 
 #if defined(CONFIG_DNS_RESOLVER_PACKET_FORWARDING)
 	if (ctx->pkt_fw_cb != NULL) {
-		ctx->pkt_fw_cb(dns_data, data_len, ctx->queries[query_idx].user_data);
+		/* Some packets are discarded by dns_validate_msg function
+		 *(DNS_HEADER_REFUSED, or ANCOUNT < 1). Applications that install this callback
+		 * might require such packets, so try to update query_idx and forward them.
+		 */
+		if (query_idx < 0 && dns_msg.msg_size > DNS_MSG_HEADER_SIZE &&
+		    dns_header_qdcount(dns_msg.msg) > 0 && *dns_id > 0 &&
+		    dns_unpack_response_query(&dns_msg) == 0) {
+			update_query_idx(ctx, &dns_msg, dns_id, &query_idx, query_hash);
+		}
+		/* Make sure that query index is in a valid range */
+		if (query_idx >= 0 && query_idx < CONFIG_DNS_NUM_CONCUR_QUERIES) {
+			ctx->pkt_fw_cb(dns_data, data_len, ctx->queries[query_idx].user_data);
+		}
 	}
 #endif /* CONFIG_DNS_RESOLVER_PACKET_FORWARDING */
 
@@ -1746,7 +1794,7 @@ int dns_resolve_cancel_with_name(struct dns_resolve_context *ctx,
 		/* Use net_buf as a temporary buffer to store the packed
 		 * DNS name.
 		 */
-		buf = net_buf_alloc(&dns_msg_pool, ctx->buf_timeout);
+		buf = net_buf_alloc(&dns_msg_pool, K_FOREVER);
 		if (!buf) {
 			return -ENOMEM;
 		}
@@ -1833,6 +1881,32 @@ static void query_timeout(struct k_work *work)
 	k_mutex_unlock(&pending_query->ctx->lock);
 }
 
+static inline bool query_type_is_valid(enum dns_query_type type)
+{
+	bool valid_query_type = false;
+
+	switch (type) {
+	case DNS_QUERY_TYPE_A:
+	case DNS_QUERY_TYPE_CNAME:
+	case DNS_QUERY_TYPE_PTR:
+	case DNS_QUERY_TYPE_TXT:
+	case DNS_QUERY_TYPE_AAAA:
+	case DNS_QUERY_TYPE_SRV:
+	case DNS_QUERY_TYPE_ANY:
+		valid_query_type = true;
+		break;
+	default:
+		/* Check if this is a private RR type */
+		if (IS_ENABLED(CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT) &&
+		    dns_query_type_is_private(type)) {
+			valid_query_type = true;
+		}
+		break;
+	}
+
+	return valid_query_type;
+}
+
 int dns_resolve_name_internal(struct dns_resolve_context *ctx,
 			      const char *query,
 			      enum dns_query_type type,
@@ -1855,6 +1929,10 @@ int dns_resolve_name_internal(struct dns_resolve_context *ctx,
 #endif /* CONFIG_DNS_RESOLVER_CACHE */
 
 	if (!ctx || !query || !cb) {
+		return -EINVAL;
+	}
+
+	if (!query_type_is_valid(type)) {
 		return -EINVAL;
 	}
 
@@ -2088,8 +2166,7 @@ try_resolve:
 	if (IS_ENABLED(CONFIG_MDNS_RESOLVER)) {
 		const char *ptr = strrchr(query, '.');
 
-		/* Note that we memcmp() the \0 here too */
-		if (ptr && !memcmp(ptr, (const void *){ ".local" }, 7)) {
+		if (ptr && strcmp(ptr, ".local") == 0) {
 			mdns_query = true;
 
 			ctx->queries[i].id = 0;

@@ -183,14 +183,12 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
-
-				write-block-size = <16>;
-				erase-block-size = <8192>;
-				/* maximum erase time(ms) for a 8K sector */
-				max-erase-time = <5>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 
 			st_nvm_user_otp: flash@USER_OTP_BASE {
@@ -400,7 +398,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x46002000 0x400>;
-			interrupts = <63 5>;
+			interrupts = <63 0>;
 			clocks = <&rcc STM32_CLOCK(APB7, 5)>;
 			st,spi-data-width = "limited-8-16-bit";
 			fifo-size = <8>;
@@ -524,7 +522,7 @@
 			reg = <0x46004400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB7, 11)>;
 			resets = <&rctl STM32_RESET(APB7, 11)>;
-			interrupts = <49 1>;
+			interrupts = <49 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
@@ -536,7 +534,7 @@
 			reg = <0x40009400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1_2, 5)>;
 			resets = <&rctl STM32_RESET(APB1H, 5)>;
-			interrupts = <50 1>;
+			interrupts = <50 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
@@ -574,11 +572,15 @@
 
 	bt_hci_wba: bt_hci_wba {
 		compatible = "st,hci-stm32wba";
+		interrupt-parent = <&nvic>;
+		interrupt-names = "radio";
 		status = "okay";
 	};
 
 	ieee802154: ieee802154 {
 		compatible = "st,stm32wba-ieee802154";
+		interrupt-parent = <&nvic>;
+		interrupt-names = "radio";
 		status = "disabled";
 	};
 

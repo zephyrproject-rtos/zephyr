@@ -13,6 +13,8 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/llext/symbol.h>
 
+#include <timeslicing.h>
+
 static uint64_t curr_tick;
 
 static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
@@ -108,7 +110,23 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 		if (Z_IS_TIMEOUT_RELATIVE(timeout)) {
 			ticks_elapsed = elapsed();
 			has_elapsed = true;
-			to->dticks = timeout.ticks + 1 + ticks_elapsed;
+			/*
+			 * In the general case, "now" may be anywhere within
+			 * the current tick. Rounding up by one tick guarantees
+			 * "at least N ticks" semantics -- otherwise a request
+			 * made partway through a tick would fire on the next
+			 * tick edge, yielding less than N full ticks.
+			 *
+			 * The one moment we know we are at (or very close to)
+			 * a tick edge is while processing timeouts inside
+			 * sys_clock_announce_locked(), flagged by
+			 * announce_remaining != 0. Periodic timers rely on
+			 * this when rescheduling themselves from the timer
+			 * ISR: the round-up would otherwise accumulate and
+			 * make every period one tick late.
+			 */
+			to->dticks = timeout.ticks + ticks_elapsed +
+				     ((announce_remaining == 0) ? 1 : 0);
 			ticks = curr_tick + to->dticks;
 		} else {
 			k_ticks_t dticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
@@ -236,21 +254,29 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
 
 	announce_remaining = ticks;
 
-	struct _timeout *t;
+	struct _timeout *t = first();
 
-	for (t = first();
-	     (t != NULL) && (t->dticks <= announce_remaining);
-	     t = first()) {
+	while ((t != NULL) && (t->dticks <= announce_remaining)) {
 		int dt = t->dticks;
 
 		curr_tick += dt;
-		t->dticks = 0;
-		remove_timeout(t);
-		t->dticks = TIMEOUT_DTICKS_ANNOUNCING;
 
-		k_spin_unlock(&timeout_lock, key);
-		t->fn(t);
-		key = k_spin_lock(&timeout_lock);
+		/* Drain all timeouts queued on this tick before
+		 * decrementing announce_remaining.
+		 */
+		do {
+			_timeout_func_t handler = t->fn;
+
+			sys_dlist_remove(&t->node);
+			t->dticks = TIMEOUT_DTICKS_ANNOUNCING;
+
+			k_spin_unlock(&timeout_lock, key);
+			handler(t);
+			key = k_spin_lock(&timeout_lock);
+
+			t = first();
+		} while ((t != NULL) && (t->dticks == 0));
+
 		announce_remaining -= dt;
 	}
 
@@ -279,6 +305,13 @@ k_spinlock_key_t sys_clock_lock(void)
 void sys_clock_unlock(k_spinlock_key_t key)
 {
 	k_spin_unlock(&timeout_lock, key);
+}
+#endif
+
+#if defined(CONFIG_TEST) || defined(CONFIG_ASSERT)
+bool sys_clock_is_locked(void)
+{
+	return z_spin_is_locked(&timeout_lock);
 }
 #endif
 

@@ -319,10 +319,13 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		}
 		status = DMA_STATUS_COMPLETE;
 	} else {
-		LOG_ERR("Transfer Error.");
-		stream->busy = false;
-		dma_stm32_dump_stream_irq(dev, id);
-		dma_stm32_clear_stream_irq(dev, id);
+		/* Let HAL DMA handle flags on its own */
+		if (!stream->hal_override) {
+			LOG_ERR("Transfer Error.");
+			stream->busy = false;
+			dma_stm32_dump_stream_irq(dev, id);
+			dma_stm32_clear_stream_irq(dev, id);
+		}
 		status = -EIO;
 	}
 

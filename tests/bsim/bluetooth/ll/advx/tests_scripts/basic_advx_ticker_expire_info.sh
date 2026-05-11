@@ -6,7 +6,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 # Basic connection test: a central connects to a peripheral and expects a
 # notification, using the split controller (ULL LLL)
-simulation_id="basic_advx_ticker_expire_info"
+simulation_id="${BOARD_TS}_basic_advx_ticker_expire_info"
 verbosity_level=2
 EXECUTE_TIMEOUT=120
 

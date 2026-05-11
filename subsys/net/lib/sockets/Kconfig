@@ -23,13 +23,6 @@ config NET_SOCKETS_PRIORITY_DEFAULT
 	  allows to for instance prioritize offloaded socket processing during
 	  socket creation over the native one, or vice versa.
 
-config NET_SOCKETS_POLL_MAX
-	int "Max number of supported poll() entries [DEPRECATED]"
-	default 0
-	help
-	  This option is deprecated.
-	  Please use CONFIG_ZVFS_POLL_MAX instead.
-
 config NET_SOCKETS_CONNECT_TIMEOUT
 	int "Timeout value in milliseconds to CONNECT"
 	default 3000
@@ -119,6 +112,7 @@ config NET_SOCKETS_SERVICE_THREAD_PRIO
 
 config NET_SOCKETS_SERVICE_STACK_SIZE
 	int "Stack size for the thread handling socket services"
+	default 2400 if QUIC
 	default 2400 if NET_DHCPV4_SERVER
 	default 1400 if MDNS_RESPONDER
 	default 1200
@@ -161,7 +155,8 @@ config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 
 	  Maximum Fragment Length (MFL) value is automatically chosen based on
 	  MBEDTLS_SSL_OUT_CONTENT_LEN and MBEDTLS_SSL_IN_CONTENT_LEN mbed TLS
-	  macros (which are configured by CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN in
+	  macros (which are configured by CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN and
+	  CONFIG_MBEDTLS_SSL_OUT_CONTENT_LEN in
 	  case of default mbed TLS config). With DTLS, MFL value may be further
 	  limited with NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH.
 
@@ -171,6 +166,7 @@ config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 config NET_SOCKETS_ENABLE_DTLS
 	bool "DTLS socket support"
 	depends on NET_SOCKETS_SOCKOPT_TLS
+	select MBEDTLS_SSL_PROTO_TLS1_2 if NET_NATIVE
 	select MBEDTLS_SSL_PROTO_DTLS if NET_NATIVE
 	help
 	  Enable DTLS socket support. By default only TLS over TCP is supported.

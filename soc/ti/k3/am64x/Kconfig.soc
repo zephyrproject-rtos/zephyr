@@ -1,0 +1,47 @@
+# Copyright (c) 2023 Enphase Energy
+# Copyright (c) 2026 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_AM64X
+	bool
+	select SOC_FAMILY_TI_K3
+
+config SOC_SERIES_AM64X_M4
+	bool
+	select SOC_SERIES_AM64X
+	help
+	  Enable support for AM64X M4 Series.
+
+config SOC_SERIES_AM64X_R5
+	bool
+	select SOC_SERIES_AM64X
+	help
+	  Enable support for AM64X R5 Series.
+
+config SOC_AM6442_M4
+	bool
+	select SOC_SERIES_AM64X_M4
+
+config SOC_AM2434_M4
+	bool
+	select SOC_SERIES_AM64X_M4
+
+config SOC_AM2434_R5F0_0
+	bool
+	select SOC_SERIES_AM64X_R5
+
+config SOC_AM6442_R5F0_0
+	bool
+	select SOC_SERIES_AM64X_R5
+
+config SOC_AM6442_R5F0_1
+	bool
+	select SOC_SERIES_AM64X_R5
+
+config SOC_AM6442_R5F1_0
+	bool
+	select SOC_SERIES_AM64X_R5
+
+config SOC_AM6442_R5F1_1
+	bool
+	select SOC_SERIES_AM64X_R5

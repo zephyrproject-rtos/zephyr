@@ -296,9 +296,8 @@ static K_MUTEX_DEFINE(dtls_helper_buf_lock);
 
 /* A global pool of TLS contexts. */
 static struct tls_context tls_contexts[CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS];
-K_MEM_SLAB_DEFINE_STATIC(tls_session_contexts, sizeof(struct tls_session_context),
-			 CONFIG_NET_SOCKETS_TLS_MAX_SESSION_CONTEXTS,
-			 __alignof__(struct tls_session_context));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(tls_session_contexts, struct tls_session_context,
+			      CONFIG_NET_SOCKETS_TLS_MAX_SESSION_CONTEXTS);
 
 BUILD_ASSERT(CONFIG_NET_SOCKETS_TLS_MAX_SESSION_CONTEXTS >= CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS,
 	     "CONFIG_NET_SOCKETS_TLS_MAX_SESSION_CONTEXTS cannot be smaller than "
@@ -1103,7 +1102,7 @@ static int dtls_server_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
 	net_socklen_t addrlen = sizeof(struct net_sockaddr);
-	struct net_sockaddr_storage addr;
+	struct net_sockaddr_storage addr = { 0 };
 	int err;
 	ssize_t received;
 	uint8_t tmp_buf;
@@ -1159,7 +1158,7 @@ static int dtls_client_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
 	net_socklen_t addrlen = sizeof(struct net_sockaddr);
-	struct net_sockaddr_storage addr;
+	struct net_sockaddr_storage addr = { 0 };
 	ssize_t received;
 
 	received = zsock_recvfrom(tls_ctx->sock, buf, len,
@@ -1343,7 +1342,7 @@ static int dtls_server_switch_active_session_by_cid(struct tls_context *tls_ctx)
 static int dtls_server_switch_session_on_rx(struct tls_context *tls_ctx)
 {
 	net_socklen_t addrlen = sizeof(struct net_sockaddr);
-	struct net_sockaddr_storage addr;
+	struct net_sockaddr_storage addr = { 0 };
 	uint8_t tmp_buf;
 	int ret;
 
@@ -3948,7 +3947,8 @@ static int tls_data_check(struct tls_context *ctx)
 		}
 
 		if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
-		    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+		    ret == MBEDTLS_ERR_SSL_WANT_WRITE ||
+		    ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
 			return 0;
 		}
 

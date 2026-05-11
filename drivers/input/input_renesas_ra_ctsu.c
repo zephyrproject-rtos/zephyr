@@ -87,8 +87,8 @@ struct ctsu_scan_msg {
 	struct st_touch_instance *p_instance;
 };
 
-SYS_MEM_BLOCKS_DEFINE_STATIC(scan_msg_allocator, sizeof(struct ctsu_scan_msg),
-			     CONFIG_INPUT_RENESAS_RA_CTSU_MSG_MEM_BLOCK_SIZE, sizeof(uint32_t));
+SYS_MEM_BLOCKS_DEFINE_STATIC_TYPE(scan_msg_allocator, struct ctsu_scan_msg,
+				  CONFIG_INPUT_RENESAS_RA_CTSU_MSG_MEM_BLOCK_SIZE);
 
 static void renesas_ra_callback_adapter(touch_callback_args_t *p_args)
 {

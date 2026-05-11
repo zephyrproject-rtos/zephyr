@@ -1174,23 +1174,49 @@ int net_netmask_to_mask_len(net_sa_family_t family, struct net_sockaddr *mask, u
 	return 0;
 }
 
-int net_port_set_default(struct net_sockaddr *addr, uint16_t default_port)
+int net_port_get(struct net_sockaddr *addr, uint16_t *port)
 {
-	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET &&
-	    net_sin(addr)->sin_port == 0) {
-		net_sin(addr)->sin_port = net_htons(default_port);
-	} else if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6 &&
-		   net_sin6(addr)->sin6_port == 0) {
-		net_sin6(addr)->sin6_port = net_htons(default_port);
-	} else if ((IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) ||
-		   (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6)) {
-		; /* Port is already set */
-	} else {
-		LOG_ERR("Unknown address family");
+	if (addr == NULL || port == NULL) {
 		return -EINVAL;
 	}
 
-	return 0;
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6) {
+		*port = net_ntohs(net_sin6(addr)->sin6_port);
+		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) {
+		*port = net_ntohs(net_sin(addr)->sin_port);
+		return 0;
+	}
+
+	return -ENOTSUP;
+}
+
+int net_port_set(struct net_sockaddr *addr, uint16_t port)
+{
+	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) {
+		net_sin(addr)->sin_port = net_htons(port);
+		return 0;
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6) {
+		net_sin6(addr)->sin6_port = net_htons(port);
+		return 0;
+	}
+
+	return -ENOTSUP;
+}
+
+int net_port_set_default(struct net_sockaddr *addr, uint16_t default_port)
+{
+	uint16_t current_port = 0U;
+	int ret;
+
+	ret = net_port_get(addr, &current_port);
+	if (ret < 0 || current_port != 0U) {
+		return ret;
+	}
+
+	return net_port_set(addr, default_port);
 }
 
 int net_bytes_from_str(uint8_t *buf, int buf_len, const char *src)

@@ -48,11 +48,20 @@ static int bbram_stm32_read(const struct device *dev, size_t offset, size_t size
 		return -EFAULT;
 	}
 
+	/* On H7RSx: PWR_CR1.DBP must also be set for read access to backup registers */
+	if (IS_ENABLED(CONFIG_SOC_SERIES_STM32H7RSX)) {
+		stm32_backup_domain_enable_access();
+	}
+
 	for (size_t read = 0; read < size; read += to_copy) {
 		reg = STM32_BKP_REG(STM32_BKP_REG_INDEX(offset + read));
 		begin = STM32_BKP_REG_BYTE_INDEX(offset + read);
 		to_copy = MIN(STM32_BKP_REG_BYTES - begin, size - read);
 		bytecpy(data + read, (uint8_t *)&reg + begin, to_copy);
+	}
+
+	if (IS_ENABLED(CONFIG_SOC_SERIES_STM32H7RSX)) {
+		stm32_backup_domain_disable_access();
 	}
 
 	return 0;

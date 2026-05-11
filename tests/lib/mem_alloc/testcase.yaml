@@ -8,20 +8,16 @@ common:
 tests:
   libraries.libc.minimal.mem_alloc:
     extra_args: CONF_FILE=prj.conf
-    platform_exclude: twr_ke18f
     tags:
       - minimal_libc
   libraries.libc.minimal.mem_alloc_negative_testing:
     extra_args: CONF_FILE=prj_negative_testing.conf
-    platform_exclude: twr_ke18f
     tags:
       - minimal_libc
   libraries.libc.newlib.mem_alloc:
     extra_args: CONF_FILE=prj_newlib.conf
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     min_ram: 16
-    platform_exclude:
-      - twr_ke18f
     tags:
       - newlib
   libraries.libc.newlib_nano.mem_alloc:
@@ -32,7 +28,5 @@ tests:
   libraries.libc.picolibc.mem_alloc:
     extra_args: CONF_FILE=prj_picolibc.conf
     filter: CONFIG_PICOLIBC_SUPPORTED
-    platform_exclude:
-      - twr_ke18f
     tags:
       - picolibc

@@ -25,3 +25,16 @@ tests:
     platform_allow:
       - esp32s3_devkitc/esp32s3/procpu
       - esp_threadbr/esp32s3/procpu
+  sample.net.openthread.border_router.esp_rcp_host_eth.esp_devkits:
+    build_only: true
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-ot-rcp-host-eth-esp.conf"
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+  sample.net.openthread.border_router.esp_rcp_host_eth.esp_threadbr:
+    build_only: true
+    extra_args:
+      - SHIELD="esp_threadbr_ethernet"
+      - EXTRA_CONF_FILE="overlay-ot-rcp-host-eth-esp.conf"
+    platform_allow:
+      - esp_threadbr/esp32s3/procpu

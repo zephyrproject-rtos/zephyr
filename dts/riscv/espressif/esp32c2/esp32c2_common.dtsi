@@ -34,7 +34,7 @@
 			device_type = "cpu";
 			compatible = "espressif,riscv", "riscv";
 			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "c", "zicsr";
+			riscv,isa-extensions = "i", "m", "c", "zicsr", "zifencei";
 			reg = <0>;
 			cpu-power-states = <&light_sleep &deep_sleep>;
 			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
@@ -135,12 +135,15 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				erase-block-size = <4096>;
 				write-block-size = <4>;
-				/* Flash size is specified in SOC/SIP dtsi */
+				#address-cells = <1>;
+				#size-cells = <1>;
+				/* reg and ranges are specified in SOC/SIP dtsi */
 			};
 		};
 

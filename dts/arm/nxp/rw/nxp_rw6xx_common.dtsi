@@ -377,6 +377,16 @@
 		power-domains = <&peripheral_domain>;
 	};
 
+	gdma: dma-controller@4014e000 {
+		compatible = "nxp,gdma";
+		reg = <0x4014e000 0x1000>;
+		interrupts = <128 0>;
+		status = "disabled";
+		#dma-cells = <1>;
+		dma-channels = <4>;
+		power-domains = <&peripheral_domain>;
+	};
+
 	lcdic: lcdic@128000 {
 		compatible = "nxp,lcdic";
 		reg = <0x128000 0x52>;

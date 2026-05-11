@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Patryk Koscik <pkoscik@antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_TOMU
+
+config USE_DT_CODE_PARTITION
+	default y
+
+# Tomu doesn't have external oscillators. HFCLK runs off the internal HFRCO,
+# which Toboot sets up before handing over control (see toboot/main.c).
+# We must define `CMU_HFXO_FREQ` and `CMU_LFXO_FREQ` because leaving these
+# default-less Kconfig symbols empty will fail the assembler via an empty
+# .equ operand in GEN_ABSOLUTE_SYM_KCONFIG.
+
+config CMU_HFXO_FREQ
+	default 0
+
+config CMU_LFXO_FREQ
+	default 0
+
+endif # BOARD_TOMU

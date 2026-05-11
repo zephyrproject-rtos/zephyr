@@ -32,7 +32,7 @@ static uint8_t unicast_server_addata[] = {
 	BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED, /* Target Announcement */
 	BT_BYTES_LIST_LE16(HAP_CONTEXT),
 	BT_BYTES_LIST_LE16(HAP_CONTEXT),
-	0x00, /* Metadata length */
+	0x00U, /* Metadata length */
 };
 
 static uint8_t csis_rsi_addata[BT_CSIP_RSI_SIZE];
@@ -80,7 +80,7 @@ static bool adv_rpa_expired_cb(struct bt_le_ext_adv *adv)
 	printk("PRSI: 0x%s\n", rsi_str);
 
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to set advertising data (err %d)\n", err);
 		return false;
 	}
@@ -102,12 +102,12 @@ static void adv_work_handler(struct k_work *work)
 	if (ext_adv == NULL) {
 		/* Create a connectable advertising set */
 		err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_CONN_QUICK, &adv_cb, &ext_adv);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to create advertising set (err %d)\n", err);
 		}
 
 		err = bt_le_ext_adv_set_data(ext_adv, ad, ARRAY_SIZE(ad), NULL, 0);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to set advertising data (err %d)\n", err);
 		}
 
@@ -115,7 +115,7 @@ static void adv_work_handler(struct k_work *work)
 	}
 
 	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to start advertising set (err %d)\n", err);
 	} else {
 		printk("Advertising successfully started\n");

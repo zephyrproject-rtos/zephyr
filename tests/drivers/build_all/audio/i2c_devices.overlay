@@ -49,6 +49,12 @@
 				reg = <0x3>;
 				mclk-frequency = <13000000>;
 			};
+
+			test_i2c_tas2563: tas2563@4 {
+				compatible = "ti,tas2563";
+				reg = <0x4>;
+				status = "okay";
+			};
 		};
 	};
 };

@@ -233,7 +233,10 @@ static void _test_kernel_cpu_idle(int atomic)
 	uint64_t t0, dt;
 	unsigned int i, key;
 	uint32_t dur = k_ms_to_ticks_ceil32(10);
-	uint32_t slop = 1 + k_ms_to_ticks_ceil32(1);
+	/* 1 tick for z_add_timeout()'s "at least N" round-up, plus
+	 * 1 ms measurement slop.
+	 */
+	uint32_t slop = 2 + k_ms_to_ticks_ceil32(1);
 	int idle_loops;
 
 	/* Set up a time to trigger events to exit idle mode */
@@ -512,6 +515,37 @@ ZTEST(context, test_interrupts)
 	}
 
 	_test_kernel_interrupts(irq_lock_wrapper, irq_unlock_wrapper, -1);
+}
+
+/**
+ * @brief Test that arch_cpu_irqs_are_enabled() reports the current CPU
+ *	  interrupt-enable state without modifying it.
+ *
+ * @ingroup kernel_context_tests
+ *
+ * @see arch_cpu_irqs_are_enabled()
+ */
+ZTEST(context, test_arch_cpu_irqs_are_enabled)
+{
+	unsigned int key;
+
+	/* In thread context IRQs are enabled. Call twice to confirm the
+	 * probe does not flip the state it observes.
+	 */
+	zassert_true(arch_cpu_irqs_are_enabled(),
+		     "IRQs reported disabled in thread context");
+	zassert_true(arch_cpu_irqs_are_enabled(),
+		     "probe altered the IRQ state (enabled -> disabled)");
+
+	key = arch_irq_lock();
+	zassert_false(arch_cpu_irqs_are_enabled(),
+		      "IRQs reported enabled after arch_irq_lock()");
+	zassert_false(arch_cpu_irqs_are_enabled(),
+		      "probe altered the IRQ state (disabled -> enabled)");
+	arch_irq_unlock(key);
+
+	zassert_true(arch_cpu_irqs_are_enabled(),
+		     "IRQs reported disabled after arch_irq_unlock()");
 }
 
 /**

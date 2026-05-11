@@ -15,15 +15,21 @@
 #include <zephyr/irq.h>
 #include <zephyr/cache.h>
 
+#include <string.h>
+
 #include <clic.h>
 #include <bflb_soc.h>
 #include <glb_reg.h>
 #include <hbn_reg.h>
 
+#if defined(CONFIG_BT_BFLB_BL70XL)
+extern char _hbn_load_start[];
+extern char _hbn_run_start[];
+extern char _hbn_run_size[];
+#endif
+
 void soc_early_init_hook(void)
 {
-	volatile uint32_t *p;
-	uint32_t i = 0;
 	uint32_t tmp;
 
 	/* Clear PDS fastboot flag (HBN_RSV0) immediately.
@@ -40,23 +46,36 @@ void soc_early_init_hook(void)
 	tmp = tmp & HBN_REG_EN_HW_PU_PD_UMSK;
 	sys_write32(tmp, HBN_BASE + HBN_IRQ_MODE_OFFSET);
 
-	/* 'seam' 0kb, undocumented */
+	/* 'seam' — BLE exchange memory (EM) via GLB_EM_SEL.
+	 * EM_SEL values: 0x0=0KB, 0x3=8KB, 0xF=16KB
+	 */
 	tmp = sys_read32(GLB_BASE + GLB_SEAM_MISC_OFFSET);
-	tmp = (tmp & GLB_EM_SEL_UMSK) | (0U << GLB_EM_SEL_POS);
+#if defined(CONFIG_BFLB_BL70XL_BLE_EM_16K)
+	tmp = (tmp & GLB_EM_SEL_UMSK) | (0xFU << GLB_EM_SEL_POS);
+#elif defined(CONFIG_BT_BFLB_BL70XL)
+	tmp = (tmp & GLB_EM_SEL_UMSK) | (0x3U << GLB_EM_SEL_POS);
+#else
+	tmp = (tmp & GLB_EM_SEL_UMSK) | (0x0U << GLB_EM_SEL_POS);
+#endif
 	sys_write32(tmp, GLB_BASE + GLB_SEAM_MISC_OFFSET);
 
-	/* Clear all interrupts */
-	p = (volatile uint32_t *)(CLIC_HART0_ADDR + CLIC_INTIE);
+	/* Clear all interrupt enable and pending bits */
+	volatile uint32_t *p = (volatile uint32_t *)(CLIC_HART0_ADDR + CLIC_INTIE);
 
-	for (i = 0; i < (IRQn_LAST + 3) / 4; i++) {
+	for (uint32_t i = 0U; i < ((uint32_t)IRQn_LAST + 3U) / 4U; i++) {
 		p[i] = 0;
 	}
 
 	p = (volatile uint32_t *)(CLIC_HART0_ADDR + CLIC_INTIP);
 
-	for (i = 0; i < (IRQn_LAST + 3) / 4; i++) {
+	for (uint32_t i = 0U; i < ((uint32_t)IRQn_LAST + 3U) / 4U; i++) {
 		p[i] = 0;
 	}
 
 	sys_cache_data_flush_and_invd_all();
+
+#if defined(CONFIG_BT_BFLB_BL70XL)
+	/* Copy .hbn_code from flash (LMA) to HBN RAM (VMA) */
+	memcpy(_hbn_run_start, _hbn_load_start, (size_t)_hbn_run_size);
+#endif
 }

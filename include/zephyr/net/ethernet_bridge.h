@@ -58,9 +58,6 @@ struct eth_bridge_iface_context {
 	/* Bridge instance id */
 	int id;
 
-	/* Is the bridge interface initialized */
-	bool is_init : 1;
-
 	/* Has user configured the bridge */
 	bool is_setup : 1;
 

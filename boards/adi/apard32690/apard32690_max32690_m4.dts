@@ -9,7 +9,7 @@
 #include <adi/max32/max32690-m4.dtsi>
 #include <adi/max32/max32690-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
-#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/gpio/arduino-mega-header.h>
 #include <zephyr/dt-bindings/memory-controller/adi-max32-hpb.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -61,32 +61,50 @@
 	};
 
 	arduino_header: connector {
-		compatible = "arduino-header-r3";
+		compatible = "arduino-header-r3", "arduino-mega-header";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xfffffe00>;
 		gpio-map-pass-thru = <0 0x1ff>;
-		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio3 0 0>,
-			   <ARDUINO_HEADER_R3_A1 0 &gpio3 1 0>,
-			   <ARDUINO_HEADER_R3_A2 0 &gpio3 2 0>,
-			   <ARDUINO_HEADER_R3_A3 0 &gpio3 3 0>,
-			   <ARDUINO_HEADER_R3_A4 0 &gpio3 4 0>,
-			   <ARDUINO_HEADER_R3_A5 0 &gpio3 5 0>,
-			   <ARDUINO_HEADER_R3_D0 0 &gpio2 14 0>,
-			   <ARDUINO_HEADER_R3_D1 0 &gpio2 16 0>,
-			   <ARDUINO_HEADER_R3_D2 0 &gpio2 13 0>,
-			   <ARDUINO_HEADER_R3_D3 0 &gpio2 15 0>,
-			   <ARDUINO_HEADER_R3_D4 0 &gpio0 8 0>,
-			   <ARDUINO_HEADER_R3_D5 0 &gpio0 7 0>,
-			   <ARDUINO_HEADER_R3_D6 0 &gpio1 24 0>,
-			   <ARDUINO_HEADER_R3_D7 0 &gpio1 25 0>,
-			   <ARDUINO_HEADER_R3_D8 0 &gpio1 31 0>,
-			   <ARDUINO_HEADER_R3_D9 0 &gpio1 30 0>,
-			   <ARDUINO_HEADER_R3_D10 0 &gpio1 23 0>,
-			   <ARDUINO_HEADER_R3_D11 0 &gpio1 29 0>,
-			   <ARDUINO_HEADER_R3_D12 0 &gpio1 28 0>,
-			   <ARDUINO_HEADER_R3_D13 0 &gpio1 26 0>,
-			   <ARDUINO_HEADER_R3_D14 0 &gpio2 17 0>,
-			   <ARDUINO_HEADER_R3_D15 0 &gpio2 18 0>;
+		gpio-map = <ARDUINO_MEGA_HEADER_A0 0 &gpio3 0 0>,
+			   <ARDUINO_MEGA_HEADER_A1 0 &gpio3 1 0>,
+			   <ARDUINO_MEGA_HEADER_A2 0 &gpio3 2 0>,
+			   <ARDUINO_MEGA_HEADER_A3 0 &gpio3 3 0>,
+			   <ARDUINO_MEGA_HEADER_A4 0 &gpio3 4 0>,
+			   <ARDUINO_MEGA_HEADER_A5 0 &gpio3 5 0>,
+			   <ARDUINO_MEGA_HEADER_A6 0 &gpio3 6 0>,
+			   <ARDUINO_MEGA_HEADER_A7 0 &gpio3 7 0>,
+			   <ARDUINO_MEGA_HEADER_D0 0 &gpio2 14 0>,
+			   <ARDUINO_MEGA_HEADER_D1 0 &gpio2 16 0>,
+			   <ARDUINO_MEGA_HEADER_D2 0 &gpio2 13 0>,
+			   <ARDUINO_MEGA_HEADER_D3 0 &gpio2 15 0>,
+			   <ARDUINO_MEGA_HEADER_D4 0 &gpio0 8 0>,
+			   <ARDUINO_MEGA_HEADER_D5 0 &gpio0 7 0>,
+			   <ARDUINO_MEGA_HEADER_D6 0 &gpio1 24 0>,
+			   <ARDUINO_MEGA_HEADER_D7 0 &gpio1 25 0>,
+			   <ARDUINO_MEGA_HEADER_D8 0 &gpio1 31 0>,
+			   <ARDUINO_MEGA_HEADER_D9 0 &gpio1 30 0>,
+			   <ARDUINO_MEGA_HEADER_D10 0 &gpio1 23 0>,
+			   <ARDUINO_MEGA_HEADER_D11 0 &gpio1 29 0>,
+			   <ARDUINO_MEGA_HEADER_D12 0 &gpio1 28 0>,
+			   <ARDUINO_MEGA_HEADER_D13 0 &gpio1 26 0>,
+			   <ARDUINO_MEGA_HEADER_SDA1 0 &gpio2 17 0>,
+			   <ARDUINO_MEGA_HEADER_SCL1 0 &gpio2 18 0>,
+			   <ARDUINO_MEGA_HEADER_A8 0 &gpio2 26 0>,
+			   <ARDUINO_MEGA_HEADER_A9 0 &gpio2 29 0>,
+			   <ARDUINO_MEGA_HEADER_A10 0 &gpio2 27 0>,
+			   <ARDUINO_MEGA_HEADER_A11 0 &gpio2 28 0>,
+			   <ARDUINO_MEGA_HEADER_A12 0 &gpio0 22 0>,
+			   <ARDUINO_MEGA_HEADER_A13 0 &gpio2 30 0>,
+			   <ARDUINO_MEGA_HEADER_A14 0 &gpio2 31 0>,
+			   <ARDUINO_MEGA_HEADER_A15 0 &gpio2 6 0>,
+			   <ARDUINO_MEGA_HEADER_D14 0 &gpio2 7 0>,
+			   <ARDUINO_MEGA_HEADER_D15 0 &gpio2 8 0>,
+			   <ARDUINO_MEGA_HEADER_D16 0 &gpio2 9 0>,
+			   <ARDUINO_MEGA_HEADER_D17 0 &gpio2 10 0>,
+			   <ARDUINO_MEGA_HEADER_D18 0 &gpio2 22 0>,
+			   <ARDUINO_MEGA_HEADER_D19 0 &gpio2 23 0>,
+			   <ARDUINO_MEGA_HEADER_D20 0 &gpio2 24 0>,
+			   <ARDUINO_MEGA_HEADER_D21 0 &gpio2 25 0>;
 	};
 
 	pmod_header: pmod-header {

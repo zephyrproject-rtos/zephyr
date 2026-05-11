@@ -43,6 +43,6 @@ ZTEST(bt_br_oob_get_local, test_get_local_out_of_band_information)
 	err = bt_br_oob_get_local(&oob);
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
-	zassert_mem_equal(&oob.addr, &BT_RPA_LE_ADDR->a, sizeof(bt_addr_t),
+	zassert_mem_equal(&oob.addr, BT_RPA_ADDR, sizeof(bt_addr_t),
 			  "Incorrect address was set");
 }

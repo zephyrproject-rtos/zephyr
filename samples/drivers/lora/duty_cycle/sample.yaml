@@ -17,6 +17,7 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
   sample.driver.lora.duty_cycle.native.stm32wl:
+    filter: dt_compat_enabled("st,stm32wl-subghz-radio")
     build_only: true
     integration_platforms:
       - nucleo_wl55jc

@@ -15,5 +15,7 @@
 
 #define REGION_LIMIT_ADDR(base, size) (((base & MPU_RBAR_BASE_Msk) + size - 1) & MPU_RLAR_LIMIT_Msk)
 
+#define RAM_LIMIT_SIZE DT_CHOSEN_SRAM_SIZE
+
 PROVIDE(__rom_region_limit = REGION_LIMIT_ADDR(__rom_region_start, __rom_region_size));
-PROVIDE(__image_ram_limit = REGION_LIMIT_ADDR(_image_ram_start, (CONFIG_SRAM_SIZE * 1024)));
+PROVIDE(__image_ram_limit = REGION_LIMIT_ADDR(_image_ram_start, RAM_LIMIT_SIZE));

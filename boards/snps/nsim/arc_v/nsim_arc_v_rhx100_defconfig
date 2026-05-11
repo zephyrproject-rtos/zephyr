@@ -8,3 +8,7 @@ CONFIG_UART_CONSOLE=y
 CONFIG_BUILD_OUTPUT_HEX=y
 CONFIG_INCLUDE_RESET_VECTOR=y
 CONFIG_LOG=y
+
+# nSIM standalone mode has no PLIC/APLIC model, so UART interrupts never
+# reach the CPU. Use polling mode for the shell UART backend instead.
+CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN=n

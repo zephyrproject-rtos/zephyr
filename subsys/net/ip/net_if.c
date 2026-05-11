@@ -120,10 +120,42 @@ K_KERNEL_STACK_DEFINE(tx_ts_stack, CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE);
 K_FIFO_DEFINE(tx_ts_queue);
 
 static struct k_thread tx_thread_ts;
+static struct k_thread *timestamp_cb_dispatch_thread;
+static int timestamp_cb_dispatch_depth;
 
 /* We keep track of the timestamp callbacks in this list.
  */
 static sys_slist_t timestamp_callbacks;
+
+static void timestamp_cb_clear(struct net_if_timestamp_cb *handle)
+{
+	handle->pkt = NULL;
+	handle->iface = NULL;
+	handle->cb = NULL;
+}
+
+static bool timestamp_cb_dispatch_is_current(void)
+{
+	return timestamp_cb_dispatch_depth > 0 &&
+	       timestamp_cb_dispatch_thread == k_current_get();
+}
+
+static void timestamp_cb_prune_locked(void)
+{
+	sys_snode_t *sn, *sns, *prev = NULL;
+
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&timestamp_callbacks, sn, sns) {
+		struct net_if_timestamp_cb *handle =
+			CONTAINER_OF(sn, struct net_if_timestamp_cb, node);
+
+		if (handle->cb != NULL) {
+			prev = sn;
+			continue;
+		}
+
+		sys_slist_remove(&timestamp_callbacks, prev, sn);
+	}
+}
 #endif /* CONFIG_NET_PKT_TIMESTAMP_THREAD */
 
 #if CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG
@@ -621,7 +653,7 @@ struct net_if *net_if_get_default(void)
 	}
 
 #if defined(CONFIG_NET_DEFAULT_IF_ETHERNET)
-	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	iface = net_if_get_first_ethernet();
 #endif
 #if defined(CONFIG_NET_DEFAULT_IF_IEEE802154)
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(IEEE802154));
@@ -2276,6 +2308,10 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 	struct net_if_mcast_addr *ifmaddr = NULL;
 	struct net_if_ipv6 *ipv6;
 
+	if (iface == NULL || addr == NULL) {
+		return NULL;
+	}
+
 	net_if_lock(iface);
 
 	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
@@ -2332,6 +2368,10 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct net_in6_addr *addr)
 	bool ret = false;
 	struct net_if_ipv6 *ipv6;
 	int refcount;
+
+	if (iface == NULL || addr == NULL) {
+		return ret;
+	}
 
 	net_if_lock(iface);
 
@@ -4212,99 +4252,6 @@ out:
 	return ret;
 }
 
-/* Using this function is problematic as if we have multiple
- * addresses configured, which one to return. Use heuristic
- * in this case and return the first one found. Please use
- * net_if_ipv4_get_netmask_by_addr() instead.
- */
-struct net_in_addr net_if_ipv4_get_netmask(struct net_if *iface)
-{
-	struct net_in_addr netmask = { 0 };
-	struct net_if_ipv4 *ipv4;
-
-	net_if_lock(iface);
-
-	if (net_if_config_ipv4_get(iface, NULL) < 0) {
-		goto out;
-	}
-
-	ipv4 = iface->config.ip.ipv4;
-	if (ipv4 == NULL) {
-		goto out;
-	}
-
-	ARRAY_FOR_EACH(ipv4->unicast, i) {
-		if (!ipv4->unicast[i].ipv4.is_used ||
-		    ipv4->unicast[i].ipv4.address.family != NET_AF_INET) {
-			continue;
-		}
-
-		netmask = iface->config.ip.ipv4->unicast[i].netmask;
-		break;
-	}
-
-out:
-	net_if_unlock(iface);
-
-	return netmask;
-}
-
-/* Using this function is problematic as if we have multiple
- * addresses configured, which one to set. Use heuristic
- * in this case and set the first one found. Please use
- * net_if_ipv4_set_netmask_by_addr() instead.
- */
-static void net_if_ipv4_set_netmask_deprecated(struct net_if *iface,
-					       const struct net_in_addr *netmask)
-{
-	struct net_if_ipv4 *ipv4;
-
-	net_if_lock(iface);
-
-	if (net_if_config_ipv4_get(iface, NULL) < 0) {
-		goto out;
-	}
-
-	ipv4 = iface->config.ip.ipv4;
-	if (ipv4 == NULL) {
-		goto out;
-	}
-
-	ARRAY_FOR_EACH(ipv4->unicast, i) {
-		if (!ipv4->unicast[i].ipv4.is_used ||
-		    ipv4->unicast[i].ipv4.address.family != NET_AF_INET) {
-			continue;
-		}
-
-		net_ipaddr_copy(&ipv4->unicast[i].netmask, netmask);
-		break;
-	}
-
-out:
-	net_if_unlock(iface);
-}
-
-void net_if_ipv4_set_netmask(struct net_if *iface,
-			     const struct net_in_addr *netmask)
-{
-	net_if_ipv4_set_netmask_deprecated(iface, netmask);
-}
-
-bool z_impl_net_if_ipv4_set_netmask_by_index(int index,
-					     const struct net_in_addr *netmask)
-{
-	struct net_if *iface;
-
-	iface = net_if_get_by_index(index);
-	if (!iface) {
-		return false;
-	}
-
-	net_if_ipv4_set_netmask_deprecated(iface, netmask);
-
-	return true;
-}
-
 bool z_impl_net_if_ipv4_set_netmask_by_addr_by_index(int index,
 						     const struct net_in_addr *addr,
 						     const struct net_in_addr *netmask)
@@ -4322,25 +4269,6 @@ bool z_impl_net_if_ipv4_set_netmask_by_addr_by_index(int index,
 }
 
 #ifdef CONFIG_USERSPACE
-bool z_vrfy_net_if_ipv4_set_netmask_by_index(int index,
-					     const struct net_in_addr *netmask)
-{
-	struct net_in_addr netmask_addr;
-	struct net_if *iface;
-
-	iface = z_vrfy_net_if_get_by_index(index);
-	if (!iface) {
-		return false;
-	}
-
-	K_OOPS(k_usermode_from_copy(&netmask_addr, (void *)netmask,
-				sizeof(netmask_addr)));
-
-	return z_impl_net_if_ipv4_set_netmask_by_index(index, &netmask_addr);
-}
-
-#include <zephyr/syscalls/net_if_ipv4_set_netmask_by_index_mrsh.c>
-
 bool z_vrfy_net_if_ipv4_set_netmask_by_addr_by_index(int index,
 						     const struct net_in_addr *addr,
 						     const struct net_in_addr *netmask)
@@ -4887,6 +4815,10 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
 {
 	struct net_if_mcast_addr *maddr = NULL;
 
+	if (iface == NULL || addr == NULL) {
+		return NULL;
+	}
+
 	net_if_lock(iface);
 
 	if (net_if_config_ipv4_get(iface, NULL) < 0) {
@@ -4939,6 +4871,10 @@ bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct net_in_addr *addr)
 	struct net_if_mcast_addr *maddr;
 	bool ret = false;
 	int refcount;
+
+	if (iface == NULL || addr == NULL) {
+		return ret;
+	}
 
 	net_if_lock(iface);
 
@@ -6297,6 +6233,16 @@ void net_if_register_timestamp_cb(struct net_if_timestamp_cb *handle,
 				  struct net_if *iface,
 				  net_if_timestamp_callback_t cb)
 {
+	if (timestamp_cb_dispatch_is_current()) {
+		sys_slist_find_and_remove(&timestamp_callbacks, &handle->node);
+		sys_slist_prepend(&timestamp_callbacks, &handle->node);
+
+		handle->iface = iface;
+		handle->cb = cb;
+		handle->pkt = pkt;
+		return;
+	}
+
 	k_mutex_lock(&lock, K_FOREVER);
 
 	sys_slist_find_and_remove(&timestamp_callbacks, &handle->node);
@@ -6311,9 +6257,15 @@ void net_if_register_timestamp_cb(struct net_if_timestamp_cb *handle,
 
 void net_if_unregister_timestamp_cb(struct net_if_timestamp_cb *handle)
 {
+	if (timestamp_cb_dispatch_is_current()) {
+		timestamp_cb_clear(handle);
+		return;
+	}
+
 	k_mutex_lock(&lock, K_FOREVER);
 
 	sys_slist_find_and_remove(&timestamp_callbacks, &handle->node);
+	timestamp_cb_clear(handle);
 
 	k_mutex_unlock(&lock);
 }
@@ -6323,16 +6275,32 @@ void net_if_call_timestamp_cb(struct net_pkt *pkt)
 	sys_snode_t *sn, *sns;
 
 	k_mutex_lock(&lock, K_FOREVER);
+	timestamp_cb_dispatch_thread = k_current_get();
+	timestamp_cb_dispatch_depth++;
 
 	SYS_SLIST_FOR_EACH_NODE_SAFE(&timestamp_callbacks, sn, sns) {
 		struct net_if_timestamp_cb *handle =
 			CONTAINER_OF(sn, struct net_if_timestamp_cb, node);
+
+		if (handle->cb == NULL) {
+			continue;
+		}
 
 		if (((handle->iface == NULL) ||
 		     (handle->iface == net_pkt_iface(pkt))) &&
 		    (handle->pkt == NULL || handle->pkt == pkt)) {
 			handle->cb(pkt);
 		}
+	}
+
+	timestamp_cb_prune_locked();
+	NET_ASSERT(timestamp_cb_dispatch_depth > 0);
+	if (timestamp_cb_dispatch_depth > 0) {
+		timestamp_cb_dispatch_depth--;
+	}
+
+	if (timestamp_cb_dispatch_depth == 0) {
+		timestamp_cb_dispatch_thread = NULL;
 	}
 
 	k_mutex_unlock(&lock);
@@ -6344,6 +6312,26 @@ void net_if_add_tx_timestamp(struct net_pkt *pkt)
 	net_pkt_ref(pkt);
 }
 #endif /* CONFIG_NET_PKT_TIMESTAMP_THREAD */
+
+bool net_if_is_ethernet(struct net_if *iface)
+{
+	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET)) {
+		return net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET) &&
+		       net_eth_type_is_ethernet(iface);
+	}
+
+	return false;
+}
+
+struct net_if *net_if_get_first_ethernet(void)
+{
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		if (net_if_is_ethernet(iface)) {
+			return iface;
+		}
+	}
+	return NULL;
+}
 
 bool net_if_is_wifi(struct net_if *iface)
 {
@@ -6520,7 +6508,8 @@ static void set_default_name(struct net_if *iface)
 
 		snprintk(name, sizeof(name), "thread%d", count++);
 	} else if (IS_ENABLED(CONFIG_NET_VLAN) &&
-		   (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL))) {
+		   (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) &&
+		   net_eth_is_vlan_interface(iface)) {
 		static int count;
 
 		snprintk(name, sizeof(name), "vlan%d", count++);

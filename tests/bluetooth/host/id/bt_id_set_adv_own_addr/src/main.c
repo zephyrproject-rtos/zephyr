@@ -114,7 +114,7 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_random_addr_succeeds_adv_connec
 	bt_addr_le_copy(&bt_dev.id_addr[adv.id], BT_RPA_LE_ADDR);
 
 	/* This will cause bt_id_set_adv_random_addr() to return 0 */
-	bt_addr_copy(&bt_dev.random_addr.a, &BT_RPA_LE_ADDR->a);
+	bt_addr_copy(&bt_dev.random_addr, BT_RPA_ADDR);
 
 	for (size_t i = 0; i < ARRAY_SIZE(dir_adv_test_lut); i++) {
 		err = bt_id_set_adv_own_addr(&adv, options, dir_adv_test_lut[i], &own_addr_type);
@@ -168,7 +168,7 @@ ZTEST(bt_id_set_adv_own_addr, test_bt_id_set_adv_random_addr_succeeds_not_connec
 	bt_addr_le_copy(&bt_dev.id_addr[adv.id], BT_RPA_LE_ADDR);
 
 	/* This will cause bt_id_set_adv_random_addr() to return 0 */
-	bt_addr_copy(&bt_dev.random_addr.a, &BT_RPA_LE_ADDR->a);
+	bt_addr_copy(&bt_dev.random_addr, BT_RPA_ADDR);
 
 	for (size_t i = 0; i < ARRAY_SIZE(dir_adv_test_lut); i++) {
 		err = bt_id_set_adv_own_addr(&adv, options, dir_adv_test_lut[i], &own_addr_type);

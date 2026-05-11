@@ -102,7 +102,7 @@ const __imx_boot_data_section BOOT_DATA_T boot_data = {
 	.start = CONFIG_FLASH_BASE_ADDRESS,
 	.size = (uint32_t)&_flash_used,
 #else
-	.start = CONFIG_SRAM_BASE_ADDRESS,
+	.start = DT_CHOSEN_SRAM_ADDR,
 	.size = (uint32_t)&_image_ram_size,
 #endif
 	.plugin = PLUGIN_FLAG,
@@ -478,11 +478,48 @@ __weak void clock_init(void)
 #endif
 
 #ifdef CONFIG_SPI_NXP_LPSPI
-	/* Configure input clock to be able to reach the datasheet specified band rate. */
-	rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxOscRc400M;
-	rootCfg.div = 1;
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi1), okay)
+	/* Configure input clock to be able to reach the datasheet specified baud rate. */
+	rootCfg.mux = kCLOCK_LPSPI1_ClockRoot_MuxSysPll3Pfd2;
+	rootCfg.div = 2;
 	CLOCK_SetRootClock(kCLOCK_Root_Lpspi1, &rootCfg);
-#endif
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi1), okay) */
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi2), okay)
+	/* Configure input clock to be able to reach the datasheet specified baud rate. */
+	rootCfg.mux = kCLOCK_LPSPI2_ClockRoot_MuxSysPll3Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpspi2, &rootCfg);
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi2), okay) */
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi3), okay)
+	/* Configure input clock to be able to reach the datasheet specified baud rate. */
+	rootCfg.mux = kCLOCK_LPSPI3_ClockRoot_MuxSysPll3Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpspi3, &rootCfg);
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi3), okay) */
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi4), okay)
+	/* Configure input clock to be able to reach the datasheet specified baud rate. */
+	rootCfg.mux = kCLOCK_LPSPI4_ClockRoot_MuxSysPll3Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpspi4, &rootCfg);
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi4), okay) */
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi5), okay)
+	/* Configure input clock to be able to reach the datasheet specified baud rate. */
+	rootCfg.mux = kCLOCK_LPSPI5_ClockRoot_MuxSysPll3Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpspi5, &rootCfg);
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi5), okay) */
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi6), okay)
+	/* Configure input clock to be able to reach the datasheet specified baud rate. */
+	rootCfg.mux = kCLOCK_LPSPI6_ClockRoot_MuxSysPll3Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpspi6, &rootCfg);
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi6), okay) */
+#endif /* CONFIG_SPI_NXP_LPSPI */
 
 #ifdef CONFIG_VIDEO_MCUX_MIPI_CSI2RX
 	/* MIPI CSI-2 Rx connects to CSI via Video Mux */
@@ -791,11 +828,7 @@ static int imxrt_init(void)
 	/* Initialize system clock */
 	clock_init();
 
-#if defined(CONFIG_IMX_USDHC) && defined(CONFIG_CPU_CORTEX_M7) &&                                  \
-	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1)) ||                                          \
-	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc2)))
-	/* USDHC ERR050396 workaround */
-
+#if defined(CONFIG_CPU_CORTEX_M7)
 	/* ERR050396
 	 * Errata description:
 	 *  AXI to AHB conversion for CM7 AHBS port (port to access CM7 to TCM) is by a NIC301
@@ -805,9 +838,20 @@ static int imxrt_init(void)
 	 * Errata workaround:
 	 *  For uSDHC, don't set the bit#1 of IOMUXC_GPR28 (AXI transaction is cacheable), if write
 	 *  data to TCM aligned in 4 bytes; No such write access limitation for OCRAM or external
-	 *  RAM
+	 *  RAM.
+	 *  For ENET, clear CACHE_ENET if TCM is used as the write destination.
 	 */
+#if defined(CONFIG_IMX_USDHC) && \
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1)) || \
+	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc2)))
+	/* USDHC ERR050396 workaround */
 	IOMUXC_GPR->GPR28 &= (~IOMUXC_GPR_GPR28_AWCACHE_USDHC_MASK);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet)) && defined(IOMUXC_GPR_GPR28_CACHE_ENET_MASK)
+	/* ENET ERR050396 workaround */
+	IOMUXC_GPR->GPR28 &= (~IOMUXC_GPR_GPR28_CACHE_ENET_MASK);
+#endif
 #endif
 
 	return 0;

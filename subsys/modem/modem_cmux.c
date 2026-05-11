@@ -1966,12 +1966,17 @@ static int modem_cmux_dlci_pipe_api_receive(void *data, uint8_t *buf, size_t siz
 
 	ret = ring_buf_get(&dlci->receive_rb, buf, size);
 	k_mutex_unlock(&dlci->receive_rb_lock);
-	/* Release FC if set */
-	if (dlci->rx_full &&
-	    ring_buf_space_get(&dlci->receive_rb) >= CONFIG_MODEM_CMUX_MTU) {
-		LOG_DBG("DLCI %u receive buffer is no longer full", dlci->dlci_address);
-		dlci->rx_full = false;
-		modem_cmux_send_msc(dlci->cmux, dlci);
+	/* Flow control handling if we previously paused RX */
+	if (dlci->rx_full) {
+		/* Ring buffer can be smaller than CONFIG_MODEM_CMUX_MTU for user pipes */
+		uint32_t rb_capacity = ring_buf_capacity_get(&dlci->receive_rb);
+		uint32_t not_full_threshold = MIN(rb_capacity, CONFIG_MODEM_CMUX_MTU);
+
+		if (ring_buf_space_get(&dlci->receive_rb) >= not_full_threshold) {
+			LOG_DBG("DLCI %u receive buffer is no longer full", dlci->dlci_address);
+			dlci->rx_full = false;
+			modem_cmux_send_msc(dlci->cmux, dlci);
+		}
 	}
 
 	return ret;

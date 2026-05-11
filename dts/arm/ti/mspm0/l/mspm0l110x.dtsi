@@ -8,6 +8,9 @@
 #include <mem.h>
 #include <ti/mspm0/l/mspm0l.dtsi>
 
+/delete-node/ &gpiob;
+/delete-node/ &gpioc;
+
 / {
 	soc {
 		sram0: memory@20000000 {

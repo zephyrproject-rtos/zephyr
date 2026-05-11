@@ -34,9 +34,13 @@ void soc_early_init_hook(void)
 	tmp = tmp & HBN_REG_EN_HW_PU_PD_UMSK;
 	sys_write32(tmp, HBN_BASE + HBN_IRQ_MODE_OFFSET);
 
-	/* 'seam' 0kb, undocumented */
+	/* BLE exchange memory (SEAM): 8 KB when BLE enabled, 0 otherwise */
+#define BLE_EM_SEL_8K  3U
 	tmp = sys_read32(GLB_BASE + GLB_SEAM_MISC_OFFSET);
-	tmp = (tmp & GLB_EM_SEL_UMSK) | ((uint32_t)(0) << GLB_EM_SEL_POS);
+	tmp &= GLB_EM_SEL_UMSK;
+#if defined(CONFIG_BT_BFLB_BL60X)
+	tmp |= (BLE_EM_SEL_8K << GLB_EM_SEL_POS);
+#endif
 	sys_write32(tmp, GLB_BASE + GLB_SEAM_MISC_OFFSET);
 
 	/* Fix 26M xtal clkpll_sdmin */

@@ -9,6 +9,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/logging/log_frontend_stmesp.h>
 #include <ironside/se/api.h>
 #include <ironside_zephyr/se/uicr_periphconf.h>
 
@@ -136,8 +137,8 @@ static void nrf_stm_init(void)
 		sys_write32((1 << STM_STMHEMCR_EN_Pos), stm + STM_STMHEMCR_OFFSET);
 	}
 
-	sys_write32(((CONFIG_DEBUG_CORESIGHT_NRF_ATB_TRACE_ID_STM_GLOBAL & STM_STMTCSR_TRACEID_Msk)
-		     << STM_STMTCSR_TRACEID_Pos) |
+	sys_write32(((CONFIG_DEBUG_CORESIGHT_NRF_ATB_TRACE_ID_STM_GLOBAL << STM_STMTCSR_TRACEID_Pos)
+			& STM_STMTCSR_TRACEID_Msk) |
 			    (1 << STM_STMTCSR_EN_Pos) | (1 << STM_STMTCSR_TSEN_Pos),
 		    stm + STM_STMTCSR_OFFSET);
 
@@ -204,6 +205,9 @@ static int coresight_nrf_init_stm_etr(uintptr_t buf, size_t buf_word_len)
 	nrf_etr_init(buf, buf_word_len);
 	nrf_stm_init();
 
+ #if defined(CONFIG_LOG_FRONTEND_STMESP_EARLY_BUF_SIZE) && CONFIG_LOG_FRONTEND_STMESP_EARLY_BUF_SIZE
+	log_frontend_stmesp_etr_ready();
+ #endif
 	return 0;
 }
 #endif

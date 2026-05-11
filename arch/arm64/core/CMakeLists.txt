@@ -22,7 +22,13 @@ zephyr_library_sources(
 # simple numeric comparison because these values may be
 # beyond the numeric range of integers for cmake.
 
-string(LENGTH "x${CONFIG_SRAM_BASE_ADDRESS}" SRAM_LENGTH)
+if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+  string(LENGTH "x${CONFIG_SRAM_BASE_ADDRESS}" SRAM_LENGTH)
+else()
+  dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+  dt_reg_addr(ram_addr PATH "${chosen_sram_path}")
+  string(LENGTH "x${ram_addr}" SRAM_LENGTH)
+endif()
 string(LENGTH "x${CONFIG_KERNEL_VM_BASE}" KERNEL_VM_LENGTH)
 
 if(${SRAM_LENGTH} GREATER 11 OR ${KERNEL_VM_LENGTH} GREATER 11)

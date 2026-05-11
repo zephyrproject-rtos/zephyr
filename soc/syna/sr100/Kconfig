@@ -4,6 +4,9 @@
 config SOC_SR100
 	select ARM
 	select ARM_MPU
+	select ARMV8_M_DSP
+	select ARMV8_1_M_MVEI
+	select ARMV8_1_M_MVEF
 	select CLOCK_CONTROL
 	select CPU_CORTEX_M55
 	select DYNAMIC_INTERRUPTS

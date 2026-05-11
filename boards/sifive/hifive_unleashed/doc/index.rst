@@ -44,7 +44,7 @@ Load applications on DDR and run as follows:
 .. code-block:: console
 
    openocd -c 'bindto 0.0.0.0' \
-           -f boards/riscv/hifive_unleashed/support/openocd_hifive_unleashed.cfg
+           -f boards/sifive/hifive_unleashed/support/openocd_hifive_unleashed.cfg
    riscv64-zephyr-elf-gdb build/zephyr/zephyr.elf
    (gdb) target remote :3333
    (gdb) c

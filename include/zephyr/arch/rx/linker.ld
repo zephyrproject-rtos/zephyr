@@ -45,8 +45,8 @@
 #endif
 #endif
 
-#define RAM_START (CONFIG_SRAM_BASE_ADDRESS)
-#define RAM_SIZE  (KB(CONFIG_SRAM_SIZE))
+#define RAM_START DT_CHOSEN_SRAM_ADDR
+#define RAM_SIZE DT_CHOSEN_SRAM_SIZE
 
 _region_min_align = 4;
 
@@ -230,7 +230,7 @@ SECTIONS
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif /* CONFIG_USERSPACE */
 
-	#if CONFIG_SRAM_BASE_ADDRESS == 0
+	#if DT_CHOSEN_SRAM_ADDR == 0
 		/* RX memory starts at address 0 which can be confused with NULL. To prevent this, block
 		 * the first memory page (16 Bytes).
 		 */

@@ -7,7 +7,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 verbosity_level=2
 
-simulation_id="security_bond_per_connection"
+simulation_id="${BOARD_TS}_security_bond_per_connection"
 
 central_exe="${BSIM_OUT_PATH}/bin/bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf"
 peripheral_exe="${central_exe}"

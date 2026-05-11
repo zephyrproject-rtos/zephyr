@@ -30,6 +30,7 @@
 	aliases {
 		led0 = &green_led_1;
 		led1 = &red_led_2;
+		rtc = &rtc;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 	};
@@ -123,6 +124,10 @@
 
 &clk_hsi {
 	hsi-div = <1>;
+	status = "okay";
+};
+
+&clk_lse {
 	status = "okay";
 };
 
@@ -575,5 +580,11 @@ zephyr_jpegenc: &jpeg {
 };
 
 &crc {
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };

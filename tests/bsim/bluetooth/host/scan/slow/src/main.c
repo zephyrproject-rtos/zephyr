@@ -4,8 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+
 #include <zephyr/kernel.h>
 
+#include "bs_cmd_line.h"
 #include "bs_tracing.h"
 #include "bstests.h"
 #include "babblekit/testcase.h"
@@ -16,24 +19,29 @@ extern void entrypoint_peer(void);
 extern enum bst_result_t bst_result;
 
 unsigned long runtime_log_level = LOG_LEVEL_INF;
+bool use_chain_adv;
 
 static void test_args(int argc, char *argv[])
 {
-	size_t argn = 0;
-	const char *arg = argv[argn];
+	bs_args_struct_t args_struct[] = {
+		{
+			.dest = &runtime_log_level,
+			.type = 'u',
+			.name = "{0..4}",
+			.option = "log_level",
+			.descript = "Runtime log level (0=NONE .. 4=DBG)",
+		},
+		{
+			.dest = &use_chain_adv,
+			.type = 'b',
+			.name = "{0, 1}",
+			.option = "chain",
+			.descript = "Use chained (~1000 B) advertising data",
+		},
+		ARG_TABLE_ENDMARKER,
+	};
 
-	if (strcmp(arg, "log_level") == 0) {
-
-		runtime_log_level = strtoul(argv[++argn], NULL, 10);
-
-		if (runtime_log_level >= LOG_LEVEL_NONE && runtime_log_level <= LOG_LEVEL_DBG) {
-			TEST_PRINT("Runtime log level configuration: %d", runtime_log_level);
-		} else {
-			TEST_FAIL("Invalid arguments to set log level: %d", runtime_log_level);
-		}
-	} else {
-		TEST_PRINT("Default runtime log level configuration: INFO");
-	}
+	bs_args_parse_all_cmd_line(argc, argv, args_struct);
 }
 
 static void test_end_cb(void)

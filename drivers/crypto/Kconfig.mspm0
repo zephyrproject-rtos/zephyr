@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Linumiz
+
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_MSPM0_AES
+	bool "TI MSPM0 AES driver support"
+	default y
+	depends on DT_HAS_TI_MSPM0_AES_ENABLED
+	depends on CRYPTO
+	select USE_MSPM0_DL_AES
+	help
+	  Enable TI MSPM0 AES driver support
+
+config CRYPTO_MSPM0_MAX_SESSION
+	int "Maximum of sessions the mspm0 aes driver can handle"
+	default 2
+	depends on CRYPTO_MSPM0_AES
+	help
+	  This can be used to tweak the amount of sessions the driver
+	  can handle in parallel

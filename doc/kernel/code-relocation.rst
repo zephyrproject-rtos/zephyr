@@ -82,7 +82,7 @@ This section shows additional configuration options that can be set in
   .. code-block:: cmake
 
      zephyr_code_relocate(FILES src/file1.c LOCATION SRAM2)
-     zephyr_code_relocate(FILES src/file2.c LOCATION SRAM)
+     zephyr_code_relocate(FILES src/file2.c LOCATION SRAM1)
 
 * If the memory type is appended with ``_DATA``, ``_TEXT``, ``_RODATA``,
   ``_BSS`` or ``_NOINIT``, only the selected memory is placed in the required
@@ -103,8 +103,8 @@ This section shows additional configuration options that can be set in
   .. code-block:: cmake
 
      file(GLOB sources "file*.c")
-     zephyr_code_relocate(FILES ${sources} LOCATION SRAM)
-     zephyr_code_relocate(FILES $<TARGET_PROPERTY:my_tgt,SOURCES> LOCATION SRAM)
+     zephyr_code_relocate(FILES ${sources} LOCATION SRAM2)
+     zephyr_code_relocate(FILES $<TARGET_PROPERTY:my_tgt,SOURCES> LOCATION SRAM2)
 
 Section Filtering
 =================

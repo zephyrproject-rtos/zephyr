@@ -48,9 +48,9 @@ ZTEST(bt_id_set_adv_random_addr, test_no_ext_adv)
 	Z_TEST_SKIP_IFDEF(CONFIG_BT_EXT_ADV);
 
 	/* This will make set_random_address() succeeds and returns 0 */
-	bt_addr_copy(&bt_dev.random_addr.a, &BT_RPA_LE_ADDR->a);
+	bt_addr_copy(&bt_dev.random_addr, BT_RPA_ADDR);
 
-	err = bt_id_set_adv_random_addr(&adv_param, &BT_RPA_LE_ADDR->a);
+	err = bt_id_set_adv_random_addr(&adv_param, BT_RPA_ADDR);
 
 	expect_not_called_bt_hci_cmd_alloc();
 	expect_not_called_bt_hci_cmd_send_sync();
@@ -123,7 +123,7 @@ ZTEST(bt_id_set_adv_random_addr, test_ext_adv_enabled_hci_set_adv_set_random_add
 	bt_hci_cmd_alloc_fake.return_val = &net_buff;
 	bt_hci_cmd_send_sync_fake.return_val = 0;
 
-	err = bt_id_set_adv_random_addr(&adv_param, &BT_RPA_LE_ADDR->a);
+	err = bt_id_set_adv_random_addr(&adv_param, BT_RPA_ADDR);
 
 	expect_single_call_net_buf_simple_add(&net_buff.b, sizeof(cp));
 	expect_single_call_bt_hci_cmd_alloc();
@@ -131,7 +131,7 @@ ZTEST(bt_id_set_adv_random_addr, test_ext_adv_enabled_hci_set_adv_set_random_add
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
 	zassert_equal(cp.handle, adv_param.handle, "Incorrect handle value was set");
-	zassert_mem_equal(&cp.bdaddr, &BT_RPA_LE_ADDR->a, sizeof(bt_addr_t),
+	zassert_mem_equal(&cp.bdaddr, BT_RPA_ADDR, sizeof(bt_addr_t),
 			  "Incorrect address was set");
 	zassert_mem_equal(&adv_param.random_addr, BT_RPA_LE_ADDR, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");

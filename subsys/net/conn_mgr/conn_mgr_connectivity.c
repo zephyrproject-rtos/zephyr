@@ -33,6 +33,14 @@ int conn_mgr_if_connect(struct net_if *iface)
 		return -ENOTSUP;
 	}
 
+	if (!conn_mgr_if_get_flag(iface, CONN_MGR_IF_PERSISTENT) && api->has_connection_config &&
+	    !api->has_connection_config(binding)) {
+		LOG_DBG("iface %p no connection configuration", iface);
+		/* Non-persistent interface does not have connection configuration */
+		net_mgmt_event_notify(NET_EVENT_CONN_IF_NO_CONFIGURATION, iface);
+		return -EAGAIN;
+	}
+
 	conn_mgr_binding_lock(binding);
 
 	if (!net_if_is_admin_up(iface)) {
@@ -446,6 +454,8 @@ static void conn_mgr_conn_self_handler(struct net_mgmt_event_callback *cb, uint6
 		/* Interface is idle, disconnect */
 		LOG_DBG("iface %d (%p) idle", net_if_get_by_iface(iface), iface);
 		conn_mgr_if_disconnect_internal(iface, true);
+		break;
+	case NET_EVENT_CONN_CMD_IF_NO_CONFIGURATION:
 		break;
 	}
 }

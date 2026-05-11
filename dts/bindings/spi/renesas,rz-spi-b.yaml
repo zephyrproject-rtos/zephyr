@@ -1,0 +1,33 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: RENESAS RZ SPI B
+
+compatible: "renesas,rz-spi-b"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  channel:
+    type: int
+    required: true
+
+  clk-src:
+    type: int
+    required: true
+    enum:
+    - 0
+    - 1
+    description: |
+      Select clock source supplied to calculate bitrate
+      - 0: SCISPICLK
+      - 1: PCLK

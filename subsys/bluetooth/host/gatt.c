@@ -270,6 +270,8 @@ static bool update_range(uint16_t *start, uint16_t *end, uint16_t new_start,
 	LOG_DBG("start 0x%04x end 0x%04x new_start 0x%04x new_end 0x%04x", *start, *end, new_start,
 		new_end);
 
+	__ASSERT(new_start <= new_end, "New start is greater than new end");
+
 	/* Check if inside existing range */
 	if (new_start >= *start && new_end <= *end) {
 		return false;
@@ -397,6 +399,15 @@ enum delayed_store_flags {
 static void gatt_delayed_store_enqueue(uint8_t id, const bt_addr_le_t *peer_addr,
 				       enum delayed_store_flags flag);
 #endif
+
+bool bt_gatt_is_db_hash_valid(void)
+{
+#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+	return atomic_test_bit(gatt_sc.flags, DB_HASH_VALID);
+#else
+	return false;
+#endif
+}
 
 #if defined(CONFIG_BT_GATT_CACHING)
 static bool set_change_aware_no_store(struct gatt_cf_cfg *cfg, bool aware)
@@ -575,6 +586,11 @@ static int db_hash_setup(struct gen_hash_state *state, uint8_t *key)
 	ret = psa_mac_sign_setup(&(state->operation), state->key, PSA_ALG_CMAC);
 	if (ret != PSA_SUCCESS) {
 		LOG_ERR("CMAC operation init failed %d", ret);
+
+		ret = psa_destroy_key(state->key);
+		if (ret != PSA_SUCCESS) {
+			LOG_ERR("key destroy failed %d", ret);
+		}
 		return -EIO;
 	}
 	return 0;
@@ -1029,6 +1045,32 @@ static void bt_gatt_identity_resolved(struct bt_conn *conn, const bt_addr_le_t *
 		bt_addr_le_copy(&cfg->peer, id_addr);
 		if (is_bonded) {
 			bt_gatt_store_cf(conn->id, &conn->le.dst);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)) {
+		/* Keep Service Changed bookkeeping aligned with the bonded identity
+		 * address so restore-on-reconnect works when privacy is enabled.
+		 */
+		struct gatt_sc_cfg *sc = find_sc_cfg(conn->id, private_addr);
+
+		if (sc != NULL) {
+			struct gatt_sc_cfg *sc_id = find_sc_cfg(conn->id, id_addr);
+
+			if ((sc_id != NULL) && (sc_id != sc)) {
+				if (sc->data.start != 0U || sc->data.end != 0U) {
+					(void)update_range(&sc_id->data.start, &sc_id->data.end,
+							   sc->data.start, sc->data.end);
+				}
+				clear_sc_cfg(sc);
+				sc = sc_id;
+			} else {
+				bt_addr_le_copy(&sc->peer, id_addr);
+			}
+
+			if (is_bonded) {
+				sc_store(sc);
+			}
 		}
 	}
 }

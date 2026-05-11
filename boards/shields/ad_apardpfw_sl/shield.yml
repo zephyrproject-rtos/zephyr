@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: ad_apardpfw_sl
+  full_name: AD-APARDPFW-SL 2-port 10BASE-T1L Arduino Shield with SPoE Power Forwarding
+  vendor: adi
+  supported_features:
+    - ethernet

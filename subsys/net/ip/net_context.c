@@ -2800,6 +2800,16 @@ skip_alloc:
 			goto fail;
 		}
 
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMPING)
+		if (context->options.timestamping & ZSOCK_SOF_TIMESTAMPING_TX_HARDWARE) {
+			net_pkt_set_tx_timestamping(pkt, true);
+		}
+
+		if (context->options.timestamping & ZSOCK_SOF_TIMESTAMPING_RX_HARDWARE) {
+			net_pkt_set_rx_timestamping(pkt, true);
+		}
+#endif
+
 		net_pkt_cursor_init(pkt);
 
 		struct net_sockaddr_ll_ptr *ll_src_addr;
@@ -2820,6 +2830,7 @@ skip_alloc:
 
 		net_pkt_set_ll_proto_type(pkt, net_ntohs(ll_dst_addr->sll_protocol));
 
+		net_stats_update_raw_sent(net_pkt_iface(pkt), len);
 		net_if_try_queue_tx(net_pkt_iface(pkt), pkt, timeout);
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == NET_AF_CAN &&
 		   net_context_get_proto(context) == NET_CAN_RAW) {

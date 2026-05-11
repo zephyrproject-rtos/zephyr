@@ -3853,8 +3853,8 @@ static int cmd_wifi_p2p_connect(const struct shell *sh, size_t argc, char *argv[
 
 	/* Set default GO intent */
 	params.connect.go_intent = 0;
-	/* Set default frequency to 2462 MHz (channel 11, 2.4 GHz) */
-	params.connect.freq = 2462;
+	/* Let wpa_supplicant choose channel; user can override with -f */
+	params.connect.freq = 0;
 	/* Set default join to false */
 	params.connect.join = false;
 

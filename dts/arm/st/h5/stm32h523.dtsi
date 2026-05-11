@@ -10,12 +10,30 @@
 	soc {
 		compatible = "st,stm32h523", "st,stm32h5", "simple-bus";
 
-		gpiof: gpio@42021400 {
-			compatible = "st,stm32-gpio";
-			gpio-controller;
-			#gpio-cells = <2>;
-			reg = <0x42021400 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 7)>;
+		pinctrl: pin-controller@42020000 {
+			gpioe: gpio@42021000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42021000 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 4)>;
+			};
+
+			gpiof: gpio@42021400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42021400 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
+			};
+
+			gpiog: gpio@42021800 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42021800 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 6)>;
+			};
 		};
 
 		fmc: memory-controller@47000400 {
@@ -46,5 +64,29 @@
 			ref-voltages = <2500000>, <2048000>, <1800000>;
 			status = "disabled";
 		};
+
+		adc2: adc@42028100 {
+			compatible = "st,stm32-adc";
+			reg = <0x42028100 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
+				 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
+			clock-names = "adcx", "adc_ker";
+			interrupts = <69 0>;
+			vref-mv = <3300>;
+			#io-channel-cells = <1>;
+			st,adc-resolutions = <12 10 8 6>;
+			sampling-times = <3 7 13 25 48 93 248 641>;
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "minimal";
+			st,adc-internal-regulator = "startup-sw-delay";
+			st,adc-has-deep-powerdown;
+			st,adc-has-differential-support;
+			st,adc-has-injected-support;
+			status = "disabled";
+		};
 	};
+};
+
+&vbat {
+	io-channels = <&adc2 16>;
 };

@@ -1,13 +1,4 @@
-.. _circuitdojo_feather_nrf9160:
-
-nRF9160 Feather
-###############
-
-.. figure:: img/circuitdojo_feather_nrf9160.jpg
-     :align: center
-     :alt: Circuit Dojo nRF9160 Feather
-
-     nRF9160 Feather (Credit: Circuit Dojo)
+.. zephyr:board:: circuitdojo_feather
 
 Overview
 ********
@@ -42,6 +33,11 @@ Hardware
 .. figure:: img/nrf9160-feather-v31-features.jpg
    :align: center
    :alt: nRF9160 Feather Features
+
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -81,6 +77,8 @@ on the bottom side.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
 
 circuitdojo_feather_nrf9160 has a Tag Connect TC2030-CTX-NL. It can be used
 by most programmers like:

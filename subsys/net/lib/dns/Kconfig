@@ -202,6 +202,20 @@ config DNS_RESOLVER_PACKET_FORWARDING
 	  This allows forwarding of received packets from DNS servers
 	  to applications that register the forwarding callback.
 
+config DNS_RESOLVER_PRIVATE_RR_SUPPORT
+	bool "Support for private DNS resource records"
+	help
+	  Enable support for private DNS resource records (types 65280-65534).
+	  Private RR types can be used for custom DNS record types.
+
+config DNS_RESOLVER_MAX_PRIVATE_DATA_LEN
+	int "Maximum size of private RR data"
+	range 1 DNS_RESOLVER_MAX_ANSWER_SIZE
+	default 512 if DNS_RESOLVER_PRIVATE_RR_SUPPORT
+	default 128
+	help
+	  Maximum size in bytes for private DNS resource record data.
+
 endif # DNS_RESOLVER
 
 config MDNS_RESPONDER

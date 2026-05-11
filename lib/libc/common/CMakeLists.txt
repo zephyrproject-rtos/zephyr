@@ -21,5 +21,11 @@ zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_THRD
     )
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_REMOVE source/stdio/remove.c)
 
+if(NOT CONFIG_ERRNO_IN_TLS AND NOT CONFIG_LIBC_ERRNO)
+  zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/sys/errno_private.h)
+endif()
+
+zephyr_library_sources(source/errno/errno.c)
+
 # Prevent compiler from optimizing calloc into an infinite recursive call
 zephyr_library_compile_options($<TARGET_PROPERTY:compiler,no_builtin_malloc>)

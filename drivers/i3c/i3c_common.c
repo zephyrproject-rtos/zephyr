@@ -31,7 +31,7 @@ void i3c_dump_msgs(const char *name, const struct i3c_msg *msgs, uint8_t num_msg
 		}
 	}
 }
-
+#ifdef CONFIG_I3C_CONTROLLER
 void i3c_addr_slots_set(struct i3c_addr_slots *slots, uint8_t dev_addr,
 			enum i3c_addr_slot_status status)
 {
@@ -787,6 +787,8 @@ int i3c_device_adv_info_get(struct i3c_device_desc *target)
 		 */
 		if (i3c_ccc_do_getcaps_fmt1(target, &caps) != 0) {
 			LOG_DBG("%s: GETCAPS not received", target->dev->name);
+		} else {
+			memcpy(&target->getcaps, &caps, sizeof(target->getcaps));
 		}
 	}
 
@@ -796,6 +798,8 @@ int i3c_device_adv_info_get(struct i3c_device_desc *target)
 		ret = i3c_ccc_do_getcaps_fmt2(target, &caps, GETCAPS_FORMAT_2_CRCAPS);
 		if (ret != 0) {
 			return ret;
+		} else {
+			memcpy(&target->crcaps, &caps, sizeof(target->crcaps));
 		}
 	}
 
@@ -952,6 +956,7 @@ bool i3c_bus_has_sec_controller(const struct device *dev)
 #ifdef CONFIG_I3C_CONTROLLER
 int i3c_bus_rstdaa_all(const struct device *dev)
 {
+	struct i3c_driver_data *data = (struct i3c_driver_data *)dev->data;
 	struct i3c_device_desc *desc;
 	int ret;
 
@@ -961,10 +966,20 @@ int i3c_bus_rstdaa_all(const struct device *dev)
 		return ret;
 	}
 
-	/* reset all devices' DA */
+	/* RSTDAA has cleared every target's dynamic address in hardware.
+	 * Sync software state: clear the cached dynamic_addr and return
+	 * each DA to the address-slot pool so it can be reassigned by
+	 * a subsequent DAA.
+	 */
+
 	I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
-		desc->dynamic_addr = 0;
-		LOG_DBG("%s: Reset dynamic address for device %s", dev->name, desc->dev->name);
+		if (desc->dynamic_addr != 0U) {
+			i3c_addr_slots_mark_free(&data->attached_dev.addr_slots,
+						 desc->dynamic_addr);
+			desc->dynamic_addr = 0;
+			LOG_DBG("%s: Reset dynamic address for device %s",
+					dev->name, desc->dev->name);
+		}
 	}
 
 	return ret;
@@ -1559,3 +1574,4 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 err_out:
 	return ret;
 }
+#endif /*CONFIG_I3C_CONTROLLER*/

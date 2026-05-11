@@ -50,7 +50,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 *
 	 * Given that thread startup happens through the exception exit
 	 * path, initially set:
-	 * 1) MSTATUS to MSTATUS_DEF_RESTORE in the thread stack to enable
+	 * 1) MSTATUS to RV_STATUS_DEF_RESTORE in the thread stack to enable
 	 *    interrupts when the newly created thread will be scheduled;
 	 * 2) MEPC to the address of the z_thread_entry in the thread
 	 *    stack.
@@ -62,7 +62,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 *    counter will be restored following the MEPC value set within the
 	 *    thread stack.
 	 */
-	stack_init->mstatus = MSTATUS_DEF_RESTORE;
+	stack_init->mstatus = RV_STATUS_DEF_RESTORE;
 
 #if defined(CONFIG_FPU_SHARING)
 	/* thread birth happens through the exception return path */
@@ -163,17 +163,27 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 				_current->stack_info.size -
 				_current->stack_info.delta);
 
+#ifdef CONFIG_RISCV_S_MODE
+	status = csr_read(sstatus);
+	/* Clear SPP so that sret returns to U-mode */
+	status = INSERT_FIELD(status, SSTATUS_SPP, 0);
+	/* Enable IRQs when entering user mode (SPIE) */
+	status = INSERT_FIELD(status, SSTATUS_SPIE, 1);
+	/* Disable IRQs in S-mode until the mode switch */
+	status = INSERT_FIELD(status, SSTATUS_SIE, 0);
+	csr_write(sstatus, status);
+	csr_write(sepc, z_thread_entry);
+#else
 	status = csr_read(mstatus);
-
 	/* Set next CPU status to user mode */
 	status = INSERT_FIELD(status, MSTATUS_MPP, PRV_U);
 	/* Enable IRQs for user mode */
 	status = INSERT_FIELD(status, MSTATUS_MPIE, 1);
 	/* Disable IRQs for m-mode until the mode switch */
 	status = INSERT_FIELD(status, MSTATUS_MIE, 0);
-
 	csr_write(mstatus, status);
 	csr_write(mepc, z_thread_entry);
+#endif
 
 #ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 	/* reconfigure as the kernel mode configuration will be different */
@@ -199,11 +209,19 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	register void *a2 __asm__("a2") = p2;
 	register void *a3 __asm__("a3") = p3;
 
+#ifdef CONFIG_RISCV_S_MODE
+	__asm__ volatile (
+	"mv sp, %4; sret"
+	:
+	: "r" (a0), "r" (a1), "r" (a2), "r" (a3), "r" (top_of_user_stack)
+	: "memory");
+#else
 	__asm__ volatile (
 	"mv sp, %4; mret"
 	:
 	: "r" (a0), "r" (a1), "r" (a2), "r" (a3), "r" (top_of_user_stack)
 	: "memory");
+#endif
 
 	CODE_UNREACHABLE;
 }
@@ -255,7 +273,7 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 #ifdef CONFIG_CUSTOM_STACK_GUARD
 	z_riscv_custom_stack_guard_disable();
 
-	irq_unlock(MSTATUS_IEN);
+	irq_unlock(RV_STATUS_IE);
 
 	__asm__ volatile (
 	"mv sp, %0\n"
@@ -265,7 +283,7 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 	: "r" (main_stack), "r" (main_entry)
 	: "memory");
 #else
-	irq_unlock(MSTATUS_IEN);
+	irq_unlock(RV_STATUS_IE);
 
 	__asm__ volatile (
 	"mv sp, %0; jalr ra, %1, 0"

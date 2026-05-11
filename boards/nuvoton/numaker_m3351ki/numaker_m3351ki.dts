@@ -42,26 +42,30 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x0 0xfe00>;
 		};
 
 		slot0_partition: partition@fe00 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0xfe00 0x74100>;
 		};
 
 		slot1_partition: partition@83f00 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x83f00 0x74100>;
 		};
 
 		storage_partition: partition@f8000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0xf8000 0x8000>;
 		};
@@ -76,5 +80,13 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+zephyr_udc0: &usbd {
+	/*
+	 * Clock source defaults to HIRC, which runs at required 48MHz.
+	 * Pinctrl is unneeded because pins are dedicated.
+	 */
 	status = "okay";
 };

@@ -43,8 +43,8 @@
 BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 	     "Either SCAN_SELF or SCAN_OFFLOAD must be enabled");
 
-#define SEM_TIMEOUT                 K_SECONDS(60)
-#define BROADCAST_ASSISTANT_TIMEOUT K_SECONDS(120) /* 2 minutes */
+#define SEM_TIMEOUT                 K_SECONDS(60U)
+#define BROADCAST_ASSISTANT_TIMEOUT K_SECONDS(120U) /* 2 minutes */
 
 #define LOG_INTERVAL 1000U
 
@@ -54,9 +54,9 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 #define ADV_TIMEOUT K_FOREVER
 #endif /* CONFIG_SCAN_SELF */
 
-#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 5 /* Set the timeout relative to interval */
-#define PA_SYNC_SKIP                      5
-#define NAME_LEN                          sizeof(CONFIG_TARGET_BROADCAST_NAME) + 1
+#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 5U /* Set the timeout relative to interval */
+#define PA_SYNC_SKIP                      5U
+#define NAME_LEN                          sizeof(CONFIG_TARGET_BROADCAST_NAME) + 1U
 #define BROADCAST_DATA_ELEMENT_SIZE       sizeof(int16_t)
 
 static K_SEM_DEFINE(sem_broadcast_sink_stopped, 0U, 1U);
@@ -571,8 +571,8 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 {
 	bool sync_req = false;
 	bool bis_sync_req_no_pref = true;
-	uint8_t subgroup_sync_req_cnt = 0;
-	uint32_t bis_sync_req_bitfield = 0;
+	uint8_t subgroup_sync_req_cnt = 0U;
+	uint32_t bis_sync_req_bitfield = 0U;
 
 	(void)memset(requested_bis_sync, 0, sizeof(requested_bis_sync));
 
@@ -869,7 +869,7 @@ static int init(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		printk("Bluetooth enable failed (err %d)\n", err);
 		return err;
 	}
@@ -877,19 +877,19 @@ static int init(void)
 	printk("Bluetooth initialized\n");
 
 	err = bt_pacs_register(&pacs_param);
-	if (err) {
+	if (err != 0) {
 		printk("Could not register PACS (err %d)\n", err);
 		return err;
 	}
 
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
-	if (err) {
+	if (err != 0) {
 		printk("Capability register failed (err %d)\n", err);
 		return err;
 	}
 
 	err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
-	if (err) {
+	if (err != 0) {
 		printk("Scan delegator register failed (err %d)\n", err);
 		return err;
 	}
@@ -933,7 +933,7 @@ static int reset(void)
 
 	if (broadcast_sink != NULL) {
 		err = bt_bap_broadcast_sink_delete(broadcast_sink);
-		if (err) {
+		if (err != 0) {
 			printk("Deleting broadcast sink failed (err %d)\n", err);
 
 			return err;
@@ -944,7 +944,7 @@ static int reset(void)
 
 	if (pa_sync != NULL) {
 		bt_le_per_adv_sync_delete(pa_sync);
-		if (err) {
+		if (err != 0) {
 			printk("Deleting PA sync failed (err %d)\n", err);
 
 			return err;
@@ -1164,7 +1164,7 @@ int main(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		printk("Init failed (err %d)\n", err);
 		return 0;
 	}

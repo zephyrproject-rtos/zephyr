@@ -13,6 +13,8 @@
 #ifndef ZEPHYR_INCLUDE_NET_TLS_CREDENTIALS_H_
 #define ZEPHYR_INCLUDE_NET_TLS_CREDENTIALS_H_
 
+#include <stddef.h>
+
 /**
  * @brief TLS credentials management
  * @defgroup tls_credentials TLS credentials management
@@ -41,10 +43,6 @@ enum tls_credential_type {
 	 *  private key. Used with certificate-based ciphersuites.
 	 */
 	TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
-
-	/** @deprecated Use TLS_CREDENTIAL_PUBLIC_CERTIFICATE instead.
-	 */
-	TLS_CREDENTIAL_SERVER_CERTIFICATE = TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 
 	/** Private key. Should be registered together with a corresponding
 	 *  public certificate. Used with certificate-based ciphersuites.

@@ -36,7 +36,9 @@ static enum nrf_wifi_band nrf_wifi_map_zep_band_to_rpu(enum wifi_frequency_bands
 	}
 }
 
-int nrf_wifi_disp_scan_zep(const struct device *dev, struct wifi_scan_params *params,
+int nrf_wifi_disp_scan_zep(const struct device *dev,
+			   struct net_if *iface __unused,
+			   struct wifi_scan_params *params,
 			   scan_result_cb_t cb)
 {
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
@@ -298,6 +300,10 @@ static inline enum wifi_security_type drv_to_wifi_mgmt(int drv_security_type)
 		return WIFI_SECURITY_TYPE_WAPI;
 	case NRF_WIFI_EAP:
 		return WIFI_SECURITY_TYPE_EAP;
+	case NRF_WIFI_WPA3_AUTO:
+		return WIFI_SECURITY_TYPE_SAE_AUTO;
+	case NRF_WIFI_WPA3_FT_SAE:
+		return WIFI_SECURITY_TYPE_FT_SAE;
 	default:
 		return WIFI_SECURITY_TYPE_UNKNOWN;
 	}

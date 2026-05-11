@@ -14,6 +14,7 @@ K_THREAD_STACK_DEFINE(extra_stack, KOBJECT_STACK_SIZE);
 
 K_SEM_DEFINE(kobject_sem, SEMAPHORE_INIT_COUNT, SEMAPHORE_MAX_COUNT);
 K_SEM_DEFINE(kobject_public_sem, SEMAPHORE_INIT_COUNT, SEMAPHORE_MAX_COUNT);
+K_SEM_DEFINE(kobject_sem_extra, SEMAPHORE_INIT_COUNT, SEMAPHORE_MAX_COUNT);
 K_MUTEX_DEFINE(kobject_mutex);
 
 static struct k_thread kobj_child_thread;
@@ -389,6 +390,14 @@ static void access_all_grant_child_take(void *p1, void *p2, void *p3)
 	k_sem_take(&kobject_public_sem, K_FOREVER);
 }
 
+static void access_check_child(void *p1, void *p2, void *p3)
+{
+	int have_access = k_object_access_check(p1);
+	int expect_access = (int)(uintptr_t)p2;
+
+	zassert_equal(expect_access, have_access, "incorrect permission in child thread");
+}
+
 /**
  * @brief Test supervisor thread grants kernel objects all access public status
  *
@@ -420,6 +429,48 @@ ZTEST(mem_protect_kobj, test_kobject_access_all_grant)
 			0, K_USER, K_NO_WAIT);
 
 	k_thread_join(&kobj_child_thread, K_FOREVER);
+}
+
+/**
+ * @brief Test supervisor thread revokes access from all other threads
+ *
+ * @details System grants access to kernel object kobject_sem_extra to first
+ * child thread and tests that only that has access but not the second one,
+ * then makes it public and tests that both child threads have access, then
+ * revokes access from all others and tests that no child thread has access
+ * anymore.
+ *
+ * @see k_object_access_revoke_others()
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+ZTEST(mem_protect_kobj, test_kobject_revoke_others)
+{
+	set_fault_valid(false);
+
+	k_object_access_grant(&kobject_sem_extra, &kobj_child_thread);
+	k_thread_create(&kobj_child_thread, child_stack, KOBJECT_STACK_SIZE, access_check_child,
+			&kobject_sem_extra, (void *)(uintptr_t)0, NULL, 0, K_USER, K_NO_WAIT);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
+	k_thread_create(&extra_thread, extra_stack, KOBJECT_STACK_SIZE, access_check_child,
+			&kobject_sem_extra, (void *)(uintptr_t)-EPERM, NULL, 0, K_USER, K_NO_WAIT);
+	k_thread_join(&extra_thread, K_FOREVER);
+
+	k_object_access_all_grant(&kobject_sem_extra);
+	k_thread_create(&kobj_child_thread, child_stack, KOBJECT_STACK_SIZE, access_check_child,
+			&kobject_sem_extra, (void *)(uintptr_t)0, NULL, 0, K_USER, K_NO_WAIT);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
+	k_thread_create(&extra_thread, extra_stack, KOBJECT_STACK_SIZE, access_check_child,
+			&kobject_sem_extra, (void *)(uintptr_t)0, NULL, 0, K_USER, K_NO_WAIT);
+	k_thread_join(&extra_thread, K_FOREVER);
+
+	k_object_access_revoke_others(&kobject_sem_extra);
+	k_thread_create(&kobj_child_thread, child_stack, KOBJECT_STACK_SIZE, access_check_child,
+			&kobject_sem_extra, (void *)(uintptr_t)-EPERM, NULL, 0, K_USER, K_NO_WAIT);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
+	k_thread_create(&extra_thread, extra_stack, KOBJECT_STACK_SIZE, access_check_child,
+			&kobject_sem_extra, (void *)(uintptr_t)-EPERM, NULL, 0, K_USER, K_NO_WAIT);
+	k_thread_join(&extra_thread, K_FOREVER);
 }
 
 /****************************************************************************/

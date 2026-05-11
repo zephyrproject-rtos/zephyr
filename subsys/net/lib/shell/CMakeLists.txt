@@ -5,7 +5,7 @@ zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/l2)
 zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/lib)
 zephyr_library_include_directories_ifdef(CONFIG_WIREGUARD . ${ZEPHYR_BASE}/subsys/net/lib/wireguard)
 zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/ip)
-zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedTLS)
 
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_PKT_ALLOC_SUPPORTED allocs.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_ETHERNET_SUPPORTED arp.c)
@@ -18,6 +18,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_SHELL_EVENT_MONITOR_SUPPORTED events.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_FTP_SUPPORTED ftp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_GPTP_SUPPORTED gptp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_HTTP_CLIENT_SUPPORTED http_client.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_PTP_SUPPORTED ptp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_HTTP_SERVER_SUPPORTED http.c)
 zephyr_library_sources(iface.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_CONNECTION_MANAGER_SUPPORTED cm.c)
@@ -41,6 +42,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_SHELL_VIRTUAL_SUPPORTED virtual.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_VLAN_SUPPORTED vlan.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_WEBSOCKET_SUPPORTED websocket.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_QBV_SUPPORTED qbv_shell.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_QUIC_SUPPORTED quic_shell.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_WIREGUARD_SUPPORTED wg_shell.c)
 
 if(CONFIG_NET_SHELL_HTTP_CLIENT_HAS_CERTIFICATE)
@@ -57,6 +59,6 @@ if(CONFIG_NET_SHELL_HTTP_CLIENT_HAS_CERTIFICATE)
   generate_inc_file_for_target(
     app
     ${CERTIFICATE_PATH}
-    ${ZEPHYR_BINARY_DIR}/include/generated/certs.der.inc
+    ${ZEPHYR_BINARY_DIR}/include/generated/net_shell_http_client_ca.der.inc
   )
 endif()

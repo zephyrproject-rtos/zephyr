@@ -35,7 +35,7 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 
 /** Check driver bits for this header are available */
-BUILD_ASSERT(IS_ENABLED(CONFIG_GPIO_BL61X_WO),
+BUILD_ASSERT(IS_ENABLED(CONFIG_GPIO_BL61X_808_WO),
 	     "BFLB Wire Out must be activated to use this header");
 
 /** Time size validator */
@@ -67,7 +67,6 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_GPIO_BL61X_WO),
 /** @endcond */
 
 /**
- * @typedef bl61x_wo_callback_t
  * @brief Callback type used to inform user async write has completed
  *
  * This callback is called from IRQ context. WO write cannot fail, only

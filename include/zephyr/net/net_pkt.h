@@ -35,7 +35,7 @@
 #include <zephyr/net/net_time.h>
 #include <zephyr/net/ethernet_vlan.h>
 #include <zephyr/net/ptp_time.h>
-#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_core.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -1291,7 +1291,7 @@ static ALWAYS_INLINE void net_pkt_set_stats_tick(struct net_pkt *pkt,
 						 uint32_t tick)
 {
 	if (pkt->detail.count >= NET_PKT_DETAIL_STATS_COUNT) {
-		LOG_ERR("Detail stats count overflow (%d >= %d)",
+		printk("ERROR: Detail stats count overflow (%d >= %d)",
 			pkt->detail.count, NET_PKT_DETAIL_STATS_COUNT);
 		return;
 	}
@@ -1585,7 +1585,7 @@ static inline void net_pkt_set_remote_address(struct net_pkt *pkt,
  * @param count Number of net_pkt in this slab.
  */
 #define NET_PKT_SLAB_DEFINE(name, count)				\
-	K_MEM_SLAB_DEFINE(name, sizeof(struct net_pkt), count, 4);      \
+	K_MEM_SLAB_DEFINE_TYPE(name, struct net_pkt, count);		\
 	NET_PKT_ALLOC_STATS_DEFINE(pkt_alloc_stats_##name, name)
 
 /** @cond INTERNAL_HIDDEN */

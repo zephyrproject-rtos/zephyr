@@ -12,9 +12,11 @@ supported:
   - arduino_i2c
   - crc
   - dac
+  - entropy
   - gpio
   - i2c
   - pwm
+  - spi
   - tsc
   - usart
   - usb_device

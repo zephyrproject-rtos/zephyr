@@ -128,6 +128,12 @@ foreach(module IN LISTS zephyr_cmake_modules)
   string(CONFIGURE "${module}" module)
   include(${module})
 
+  if(NOT "${module}" MATCHES ";")
+    if(COMMAND ${module}_init)
+      cmake_language(CALL ${module}_init)
+    endif()
+  endif()
+
   list(REMOVE_ITEM SUB_COMPONENTS ${module})
   if(DEFINED SUB_COMPONENTS AND NOT SUB_COMPONENTS)
     # All requested Zephyr CMake modules have been loaded, so let's return.

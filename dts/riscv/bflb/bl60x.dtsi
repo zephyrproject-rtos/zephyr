@@ -21,6 +21,11 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	bt_hci_bflb: bt-hci {
+		compatible = "bflb,bt-hci";
+		status = "disabled";
+	};
+
 	clocks {
 		clk_rc32m: clk-rc32m {
 			#clock-cells = <0>;
@@ -190,6 +195,12 @@
 
 			interrupts = <41 0>;
 			interrupt-parent = <&clic>;
+		};
+
+		tsen: tsen {
+			compatible = "bflb,tsen";
+			io-channels = <&adc0 0>;
+			status = "disabled";
 		};
 
 		sec_eng_trng: trng@40004000 {

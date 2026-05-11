@@ -220,7 +220,7 @@ int mq_unlink(const char *name)
 
 	if (msg_queue == NULL) {
 		k_sem_give(&mq_sem);
-		errno = EBADF;
+		errno = ENOENT;
 		return -1;
 	}
 

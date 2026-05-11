@@ -129,6 +129,7 @@ config RISCV
 	select ARCH_SUPPORTS_EMPTY_IRQ_SPURIOUS
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select ARCH_HAS_SUSPEND_TO_RAM
 	select USE_SWITCH_SUPPORTED
 	select USE_SWITCH
 	select SCHED_IPI_SUPPORTED if SMP
@@ -223,24 +224,37 @@ config 64BIT
 	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally
 	  avoid modifying it.
 
+config SRAM_DEPRECATED_KCONFIG_SET
+	bool
+	default y if SRAM_SIZE != $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
+	default y if SRAM_BASE_ADDRESS != $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
+	default n
+	select DEPRECATED
+	help
+	  Indicates that either `CONFIG_SRAM_SIZE` or `CONFIG_SRAM_BASE_ADDRESS` have been
+	  manually set, these Kconfigs are now deprecated and should be replaced by referencing
+	  the devicetree `zephyr,sram` chosen node instead.
+
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_SRAM := zephyr,sram
 
 config SRAM_SIZE
-	int "SRAM Size in kB"
+	int "SRAM Size in kB [DEPRECATED]"
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
 	help
 	  The SRAM size in kB. The default value comes from /chosen/zephyr,sram in
 	  devicetree. The user should generally avoid changing it via menuconfig or
-	  in configuration files.
+	  in configuration files. This option is now deprecated and must be replaced by referencing
+	  the devicetree `zephyr,sram` chosen node instead.
 
 config SRAM_BASE_ADDRESS
-	hex "SRAM Base Address"
+	hex "SRAM Base Address [DEPRECATED]"
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
 	help
 	  The SRAM base address. The default value comes from
 	  /chosen/zephyr,sram in devicetree. The user should generally avoid
-	  changing it via menuconfig or in configuration files.
+	  changing it via menuconfig or in configuration files. This option is now deprecated and
+	  must be replaced by referencing the devicetree `zephyr,sram` chosen node instead.
 
 config XIP
 	bool "Execute in place"
@@ -322,7 +336,6 @@ config HW_STACK_PROTECTION
 config USERSPACE
 	bool "User mode threads"
 	depends on ARCH_HAS_USERSPACE
-	depends on RUNTIME_ERROR_CHECKS
 	depends on SRAM_REGION_PERMISSIONS
 	select THREAD_STACK_INFO
 	select LINKER_USE_NO_RELAX
@@ -599,9 +612,36 @@ config GEN_SW_ISR_TABLE
 	depends on GEN_ISR_TABLES
 	help
 	  This option controls whether a platform using gen_isr_tables
-	  needs a software ISR table table created. This is an array of struct
-	  _isr_table_entry containing the interrupt service routine and supplied
-	  parameter.
+	  needs a software ISR table created.
+	  It can be generated as either an array or a switch-case.
+	  See CONFIG_GEN_SW_ISR_TABLE_TYPE.
+
+choice GEN_SW_ISR_TABLE_TYPE
+	prompt "Allows to chose how ISR table is implemented"
+	depends on GEN_SW_ISR_TABLE
+	default GEN_SW_ISR_TABLE_ARRAY
+	help
+	  CONFIG_GEN_SW_ISR_TABLE_ARRAY is a default option.
+	  It should be used when in doubt.
+	  GEN_SW_ISR_TABLE_SWITCH allows for binary size optimization
+	  in certain scenarios, but may also increase latency, to execution of ISR with higher number, if there is significant number of ISR assigned in your system.
+
+config GEN_SW_ISR_TABLE_ARRAY
+	bool "Generate an array of ISR entries"
+	help
+	  This is an array of struct _isr_table_entry containing
+	  the interrupt service routine and supplied parameter.
+	  All interrupts have their own entry.
+
+config GEN_SW_ISR_TABLE_SWITCH
+	bool "Generate a function with a switch-case"
+	help
+	  Use a switch-case instead of an array.
+	  This helps to limit binary size when most of the IRQs are not used.
+	  In such case common, duplicated entries are grouped in a single default block
+	  while few used interrupts have their own case blocks.
+
+endchoice
 
 config ARCH_SW_ISR_TABLE_ALIGN
 	int "Alignment size of a software ISR table"

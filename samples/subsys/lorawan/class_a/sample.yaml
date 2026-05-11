@@ -44,3 +44,7 @@ tests:
     extra_configs:
       - CONFIG_LORAWAN_REGION_EU868=y
       - CONFIG_LORAWAN_REGION_US915=y
+  sample.lorawan.class_a.native:
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_NATIVE=y
+      - CONFIG_LORAWAN_REGION_EU868=y

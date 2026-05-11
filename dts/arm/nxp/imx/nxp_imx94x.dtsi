@@ -423,7 +423,7 @@
 			status = "disabled";
 		};
 
-		i2s2: i2s@4265000 {
+		i2s2: i2s@42650000 {
 			compatible = "nxp,mcux-i2s";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -434,7 +434,7 @@
 			status = "disabled";
 		};
 
-		i2s3: i2s@4266000 {
+		i2s3: i2s@42660000 {
 			compatible = "nxp,mcux-i2s";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -445,7 +445,7 @@
 			status = "disabled";
 		};
 
-		i2s4: i2s@4267000 {
+		i2s4: i2s@42670000 {
 			compatible = "nxp,mcux-i2s";
 			#address-cells = <1>;
 			#size-cells = <0>;

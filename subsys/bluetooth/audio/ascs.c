@@ -1373,6 +1373,8 @@ static uint8_t ase_attr_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 {
 	struct bt_ascs_ase *ase = user_data;
 
+	ARG_UNUSED(handle);
+
 	if (ASE_ID(ase) == POINTER_TO_UINT(BT_AUDIO_CHRC_USER_DATA(attr))) {
 		ase->attr = attr;
 
@@ -1684,6 +1686,7 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 	ascs_cp_rsp_success(ASE_ID(ase));
 
 	bt_bap_stream_attach(ase->conn, stream, &ase->ep);
+	stream->codec_cfg = &ase->ep.codec_cfg;
 
 	ascs_ep_set_state(&ase->ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
 
@@ -1760,6 +1763,7 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 	ep->qos_pref = *qos_pref;
 
 	bt_bap_stream_attach(conn, stream, ep);
+	stream->codec_cfg = &ep->codec_cfg;
 
 	err = ascs_ep_set_state(ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
 	if (err != 0) {
@@ -2754,6 +2758,8 @@ static bool is_valid_stop_len(struct bt_conn *conn, struct net_buf_simple *buf)
 {
 	const struct bt_ascs_stop_op *op;
 	struct net_buf_simple_state state;
+
+	ARG_UNUSED(conn);
 
 	net_buf_simple_save(buf, &state);
 

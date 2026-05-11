@@ -125,7 +125,7 @@ static int stm32_vbat_init(const struct device *dev)
 	}
 
 	if (!device_is_ready(data->adc)) {
-		LOG_ERR("Device %s is not ready", data->adc->name);
+		LOG_ERR_DEVICE_NOT_READY(data->adc);
 		return -ENODEV;
 	}
 

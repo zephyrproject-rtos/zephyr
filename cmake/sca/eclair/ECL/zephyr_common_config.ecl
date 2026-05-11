@@ -1,3 +1,5 @@
+-eval_file=toolchain.ecl
+
 -eval_file=out_of_initial_scope.ecl
 -eval_file=language_extensions.ecl
 -eval_file=call_properties.ecl

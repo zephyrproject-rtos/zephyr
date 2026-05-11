@@ -80,7 +80,7 @@ int iis3dwb_init_interrupt(const struct device *dev)
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */
 	if (!gpio_is_ready_dt(iis3dwb->drdy_gpio)) {
-		LOG_ERR("Cannot get pointer to drdy_gpio device");
+		LOG_ERR_DEVICE_NOT_READY(iis3dwb->drdy_gpio->port);
 		return -ENODEV;
 	}
 

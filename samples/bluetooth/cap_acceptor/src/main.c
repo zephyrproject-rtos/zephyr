@@ -37,10 +37,10 @@ LOG_MODULE_REGISTER(cap_acceptor, LOG_LEVEL_INF);
 
 #define SUPPORTED_DURATION (BT_AUDIO_CODEC_CAP_DURATION_7_5 | BT_AUDIO_CODEC_CAP_DURATION_10)
 #define SUPPORTED_FREQ     BT_AUDIO_CODEC_CAP_FREQ_ANY
-#define SEM_TIMEOUT        K_SECONDS(5)
+#define SEM_TIMEOUT        K_SECONDS(5U)
 #define MAX_SDU            155U
 #define MIN_SDU            30U
-#define FRAMES_PER_SDU     2
+#define FRAMES_PER_SDU     2U
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -68,7 +68,7 @@ static const struct bt_data ad[] = {
 static struct bt_le_ext_adv *adv;
 static struct peer_config peer;
 
-static K_SEM_DEFINE(sem_state_change, 0, 1);
+static K_SEM_DEFINE(sem_state_change, 0U, 1U);
 
 static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
@@ -102,21 +102,21 @@ static int advertise(void)
 	int err;
 
 	err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_CONN_QUICK, NULL, &adv);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Failed to create advertising set: %d", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Failed to set advertising data: %d", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Failed to start advertising set: %d", err);
 
 		return err;
@@ -281,7 +281,7 @@ static int init_cap_acceptor(void)
 	LOG_INF("Bluetooth initialized");
 
 	err = bt_pacs_register(&pacs_param);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Could not register PACS (err %d)", err);
 		return 0;
 	}

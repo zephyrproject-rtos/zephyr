@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2024 Demant A/S
- * Copyright (c) 2024-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,12 +32,12 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
-#define NAME_LEN 30
-#define PA_SYNC_SKIP         5
-#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
+#define NAME_LEN                          30U
+#define PA_SYNC_SKIP                      5U
+#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20U /* Set the timeout relative to interval */
 /* Broadcast IDs are 24bit, so this is out of valid range */
 /* Default semaphore timeout when waiting for an action */
-#define SEM_TIMEOUT                       K_SECONDS(10)
+#define SEM_TIMEOUT                       K_SECONDS(10U)
 
 static void scan_for_broadcast_sink(void);
 
@@ -67,16 +67,16 @@ static struct bt_bap_bass_subgroup
 static bool scanning_for_broadcast_source;
 
 static struct k_mutex base_store_mutex;
-static K_SEM_DEFINE(sem_source_discovered, 0, 1);
-static K_SEM_DEFINE(sem_sink_discovered, 0, 1);
-static K_SEM_DEFINE(sem_sink_connected, 0, 1);
-static K_SEM_DEFINE(sem_sink_disconnected, 0, 1);
-static K_SEM_DEFINE(sem_security_updated, 0, 1);
-static K_SEM_DEFINE(sem_bass_discovered, 0, 1);
-static K_SEM_DEFINE(sem_recv_state_read, 0, 1);
-static K_SEM_DEFINE(sem_pa_synced, 0, 1);
-static K_SEM_DEFINE(sem_pa_sync_terminted, 0, 1);
-static K_SEM_DEFINE(sem_received_base_subgroups, 0, 1);
+static K_SEM_DEFINE(sem_source_discovered, 0U, 1U);
+static K_SEM_DEFINE(sem_sink_discovered, 0U, 1U);
+static K_SEM_DEFINE(sem_sink_connected, 0U, 1U);
+static K_SEM_DEFINE(sem_sink_disconnected, 0U, 1U);
+static K_SEM_DEFINE(sem_security_updated, 0U, 1U);
+static K_SEM_DEFINE(sem_bass_discovered, 0U, 1U);
+static K_SEM_DEFINE(sem_recv_state_read, 0U, 1U);
+static K_SEM_DEFINE(sem_pa_synced, 0U, 1U);
+static K_SEM_DEFINE(sem_pa_sync_terminted, 0U, 1U);
+static K_SEM_DEFINE(sem_received_base_subgroups, 0U, 1U);
 
 static bool device_found(struct bt_data *data, void *user_data)
 {
@@ -127,7 +127,7 @@ static bool device_found(struct bt_data *data, void *user_data)
 			return true;
 		}
 
-		for (size_t i = 0; i < data->data_len; i += sizeof(uint16_t)) {
+		for (size_t i = 0U; i < data->data_len; i += sizeof(uint16_t)) {
 			const struct bt_uuid *uuid;
 			uint16_t u16;
 
@@ -254,7 +254,7 @@ static bool is_substring(const char *substr, const char *str)
 		return false;
 	}
 
-	for (size_t pos = 0; pos < str_len; pos++) {
+	for (size_t pos = 0U; pos < str_len; pos++) {
 		if (pos + sub_str_len > str_len) {
 			return false;
 		}
@@ -426,7 +426,7 @@ static void scan_for_broadcast_source(void)
 	scanning_for_broadcast_source = true;
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
-	if (err) {
+	if (err != 0) {
 		printk("Scanning failed to start (err %d)\n", err);
 		return;
 	}
@@ -444,7 +444,7 @@ static void scan_for_broadcast_sink(void)
 	scanning_for_broadcast_source = false;
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
-	if (err) {
+	if (err != 0) {
 		printk("Scanning failed to start (err %d)\n", err);
 		return;
 	}
@@ -539,7 +539,7 @@ bap_broadcast_assistant_recv_state_read_cb(struct bt_conn *conn, int err,
 		       state->adv_sid, state->pa_sync_state, state->encrypt_state,
 		       state->num_subgroups);
 
-		for (uint8_t i = 0; i < state->num_subgroups; i++) {
+		for (uint8_t i = 0U; i < state->num_subgroups; i++) {
 			const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 
 			printk("\t[%d]: BIS sync %u, metadata_len %u\n", i, subgroup->bis_sync,
@@ -623,8 +623,8 @@ static void reset(void)
 	}
 
 	selected_broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
-	selected_sid = 0;
-	selected_pa_interval = 0;
+	selected_sid = 0U;
+	selected_pa_interval = 0U;
 	(void)memset(&selected_addr, 0, sizeof(selected_addr));
 
 	k_sem_reset(&sem_source_discovered);
@@ -673,7 +673,7 @@ int main(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return 0;
 	}
@@ -699,15 +699,21 @@ int main(void)
 			continue;
 		}
 
-		err = bt_bap_broadcast_assistant_discover(broadcast_sink_conn);
+		err = bt_conn_set_security(broadcast_sink_conn, BT_SECURITY_L2);
 		if (err != 0) {
-			printk("Failed to discover BASS on the sink (err %d)\n", err);
+			printk("Failed to set security: %d\n", err);
 			continue;
 		}
 
 		err = k_sem_take(&sem_security_updated, SEM_TIMEOUT);
 		if (err != 0) {
 			printk("Failed to take sem_security_updated (err %d)\n", err);
+			continue;
+		}
+
+		err = bt_bap_broadcast_assistant_discover(broadcast_sink_conn);
+		if (err != 0) {
+			printk("Failed to discover BASS on the sink (err %d)\n", err);
 			continue;
 		}
 

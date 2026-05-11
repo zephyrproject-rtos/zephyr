@@ -485,7 +485,7 @@ static int vcnl36825t_init(const struct device *dev)
 	uint16_t reg_value;
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 

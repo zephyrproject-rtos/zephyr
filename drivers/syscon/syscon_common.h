@@ -22,7 +22,7 @@ extern "C" {
  * @retval 0 if the register address is valid.
  * @retval -EINVAL if the address is misaligned or out of bounds.
  */
-static inline int syscon_sanitize_reg(uint16_t reg, size_t reg_size, uint8_t reg_width)
+static inline int syscon_sanitize_reg(uint32_t reg, size_t reg_size, uint8_t reg_width)
 {
 	if (reg % reg_width != 0) {
 		return -EINVAL;

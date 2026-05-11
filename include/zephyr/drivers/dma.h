@@ -24,7 +24,7 @@ extern "C" {
  * @brief Interfaces for DMA (Direct Memory Access) controllers.
  * @defgroup dma_interface DMA
  * @since 1.5
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup io_interfaces
  * @{
  */
@@ -171,7 +171,6 @@ struct dma_block_config {
 #define DMA_STATUS_HALF_COMPLETE	2
 
 /**
- * @typedef dma_callback_t
  * @brief Callback function for DMA transfer completion
  *
  *  If enabled, callback function will be invoked at transfer or block completion,
@@ -340,7 +339,6 @@ typedef int (*dma_api_get_status)(const struct device *dev, uint32_t channel,
 typedef int (*dma_api_get_attribute)(const struct device *dev, uint32_t type, uint32_t *value);
 
 /**
- * @typedef dma_chan_filter
  * @brief channel filter function call
  *
  * filter function that is used to find the matched internal dma channel
@@ -356,7 +354,6 @@ typedef bool (*dma_api_chan_filter)(const struct device *dev,
 				int channel, void *filter_param);
 
 /**
- * @typedef dma_chan_release
  * @brief channel release function call
  *
  * used to release channel resources "allocated" during the
@@ -471,12 +468,19 @@ static inline int dma_start(const struct device *dev, uint32_t channel)
  * @param channel Numeric identification of the channel where the transfer was
  *                being processed
  *
- * @retval 0 if successful.
- * @retval <0 Negative errno code if failure.
+ * @retval 0 If successful.
+ * @retval -ENOSYS If not implemented.
+ * @retval -EINVAL If invalid channel id.
+ * @retval -errno Other negative errno code failure.
  */
 static inline int dma_stop(const struct device *dev, uint32_t channel)
 {
-	return DEVICE_API_GET(dma, dev)->stop(dev, channel);
+	const struct dma_driver_api *api = DEVICE_API_GET(dma, dev);
+
+	if (api->stop == NULL) {
+		return -ENOSYS;
+	}
+	return api->stop(dev, channel);
 }
 
 /**

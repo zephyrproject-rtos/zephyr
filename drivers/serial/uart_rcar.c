@@ -11,7 +11,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
+#include <zephyr/drivers/clock_control/renesas_rcar_generic.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
@@ -19,8 +19,8 @@
 struct uart_rcar_cfg {
 	DEVICE_MMIO_ROM; /* Must be first */
 	const struct device *clock_dev;
-	struct rcar_cpg_clk mod_clk;
-	struct rcar_cpg_clk bus_clk;
+	rcar_generic_clk_t mod_clk;
+	rcar_generic_clk_t bus_clk;
 	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
@@ -297,14 +297,13 @@ static int uart_rcar_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(config->clock_dev,
-			       (clock_control_subsys_t)&config->mod_clk);
+	ret = clock_control_on(config->clock_dev, RCAR_CLOCK_SUBSYS(config->mod_clk));
 	if (ret < 0) {
 		return ret;
 	}
 
 	ret = clock_control_get_rate(config->clock_dev,
-				     (clock_control_subsys_t)&config->bus_clk,
+				     RCAR_CLOCK_SUBSYS(config->bus_clk),
 				     &data->clk_rate);
 	if (ret < 0) {
 		return ret;
@@ -545,12 +544,10 @@ static DEVICE_API(uart, uart_rcar_driver_api) = {
 	static const struct uart_rcar_cfg uart_rcar_cfg_##compat##n = {			\
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),					\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
-		.mod_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),		\
-		.mod_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),		\
-		.bus_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),		\
-		.bus_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),		\
+		.mod_clk = RCAR_DT_INST_CLOCKS_CELL_BY_IDX(n, 0),			\
+		.bus_clk = RCAR_DT_INST_CLOCKS_CELL_BY_IDX(n, 1),			\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
-		.is_hscif = DT_INST_NODE_HAS_COMPAT(n, renesas_rcar_hscif),	        \
+		.is_hscif = DT_INST_NODE_HAS_COMPAT(n, renesas_rcar_hscif),		\
 		IRQ_FUNC_INIT								\
 	}
 

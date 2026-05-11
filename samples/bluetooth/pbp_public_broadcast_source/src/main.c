@@ -41,8 +41,8 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
-static K_SEM_DEFINE(sem_broadcast_started, 0, 1);
-static K_SEM_DEFINE(sem_broadcast_stopped, 0, 1);
+static K_SEM_DEFINE(sem_broadcast_started, 0U, 1U);
+static K_SEM_DEFINE(sem_broadcast_stopped, 0U, 1U);
 
 static struct bt_cap_stream broadcast_source_stream;
 static struct bt_cap_stream *broadcast_stream;
@@ -162,7 +162,7 @@ static int setup_extended_adv(struct bt_le_ext_adv **adv)
 
 	/* Set advertising data to have complete local name set */
 	err = bt_le_ext_adv_set_data(*adv, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to set advertising data (err %d)\n", err);
 
 		return 0;
@@ -170,7 +170,7 @@ static int setup_extended_adv(struct bt_le_ext_adv **adv)
 
 	/* Set periodic advertising parameters */
 	err = bt_le_per_adv_set_param(*adv, BT_BAP_PER_ADV_PARAM_BROADCAST_FAST);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to set periodic advertising parameters: %d\n", err);
 
 		return err;
@@ -197,7 +197,7 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	broadcast_id = CONFIG_BROADCAST_ID;
 #else
 	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
-	if (err) {
+	if (err != 0) {
 		printk("Unable to generate broadcast ID: %d\n", err);
 		return err;
 	}
@@ -205,7 +205,7 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 
 	/* Setup extended advertising data */
 	ext_ad[0].type = BT_DATA_GAP_APPEARANCE;
-	ext_ad[0].data_len = 2;
+	ext_ad[0].data_len = 2U;
 	ext_ad[0].data = appearance_addata;
 	/* Broadcast name AD Type */
 	ext_ad[1].type = BT_DATA_BROADCAST_NAME;
@@ -275,7 +275,7 @@ static int start_extended_adv(struct bt_le_ext_adv *adv)
 
 	/* Start extended advertising */
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to start extended advertising: %d\n", err);
 
 		return err;
@@ -283,7 +283,7 @@ static int start_extended_adv(struct bt_le_ext_adv *adv)
 
 	/* Enable Periodic Advertising */
 	err = bt_le_per_adv_start(adv);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to enable periodic advertising: %d\n", err);
 
 		return err;
@@ -298,21 +298,21 @@ static int stop_and_delete_extended_adv(struct bt_le_ext_adv *adv)
 
 	/* Stop extended advertising */
 	err = bt_le_per_adv_stop(adv);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to stop periodic advertising: %d\n", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_stop(adv);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to stop extended advertising: %d\n", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_delete(adv);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to delete extended advertising: %d\n", err);
 
 		return err;
@@ -409,7 +409,7 @@ void cap_initiator_setup(void)
 		}
 
 		/* Keeping running for a little while */
-		k_sleep(K_SECONDS(15));
+		k_sleep(K_SECONDS(15U));
 
 		err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
 		if (err != 0) {

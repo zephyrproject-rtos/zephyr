@@ -106,7 +106,6 @@ config MBEDTLS_MEMORY_DEBUG
 
 config MBEDTLS_CIPHER
 	bool "Generic cipher layer"
-	default y if PSA_WANT_ALG_CMAC
 
 config MBEDTLS_MD_C
 	bool "Generic message digest layer"
@@ -226,7 +225,8 @@ config MBEDTLS_PKCS5_C
 choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
 	prompt "PSA crypto random source"
 	depends on MBEDTLS_PSA_CRYPTO_C
-	default MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG  if CSPRNG_ENABLED && !ENTROPY_NEEDS_PRNG
+	default MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG if (CSPRNG_ENABLED && !ENTROPY_NEEDS_PRNG) \
+						   || !PSA_CRYPTO_PROVIDER_MBEDTLS
 	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 
 config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
@@ -280,7 +280,7 @@ config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG
 config MBEDTLS_PSA_CRYPTO_C
 	bool "Platform Security Architecture cryptography API"
 	depends on !BUILD_WITH_TFM
-	select CSPRNG_NEEDED
+	select CSPRNG_NEEDED if PSA_CRYPTO_PROVIDER_MBEDTLS
 
 config MBEDTLS_PSA_CRYPTO_CLIENT
 	bool
@@ -294,6 +294,19 @@ config MBEDTLS_LMS_C
 	select PSA_WANT_ALG_SHA_256
 
 if MBEDTLS_PSA_CRYPTO_C
+
+config MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS
+	bool "Assume exclusive buffers for PSA Crypto operations"
+	default y
+	help
+	  Assume all buffers passed to PSA functions are owned exclusively by the
+	  PSA function and are not stored in shared memory.
+
+	  Enabling this can improve performance by avoiding internal buffer
+	  copies. However, the application must ensure that buffers do not
+	  overlap. For some algorithms and modes, additional constraints may
+	  apply (for example, input sizes may need to be a multiple of the
+	  block size).
 
 config MBEDTLS_PSA_P256M_DRIVER_ENABLED
 	bool "P256-M driver"

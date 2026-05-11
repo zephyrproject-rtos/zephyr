@@ -207,7 +207,6 @@ struct lora_modem_config {
  */
 
 /**
- * @typedef lora_recv_cb()
  * @brief Callback API for receiving data asynchronously
  *
  * @see lora_recv() for argument descriptions.
@@ -216,7 +215,6 @@ typedef void (*lora_recv_cb)(const struct device *dev, uint8_t *data, uint16_t s
 			     int16_t rssi, int8_t snr, void *user_data);
 
 /**
- * @typedef lora_cad_cb()
  * @brief Callback API for channel activity detection asynchronously
  *
  * @param dev               LoRa device
@@ -227,16 +225,14 @@ typedef void (*lora_cad_cb)(const struct device *dev, bool activity_detected,
 			    void *user_data);
 
 /**
- * @typedef lora_api_config()
  * @brief Callback API for configuring the LoRa module
  *
  * @see lora_config() for argument descriptions.
  */
 typedef int (*lora_api_config)(const struct device *dev,
-			       struct lora_modem_config *config);
+			       const struct lora_modem_config *config);
 
 /**
- * @typedef lora_api_airtime()
  * @brief Callback API for querying packet airtime
  *
  * @see lora_airtime() for argument descriptions.
@@ -244,7 +240,6 @@ typedef int (*lora_api_config)(const struct device *dev,
 typedef uint32_t (*lora_api_airtime)(const struct device *dev, uint32_t data_len);
 
 /**
- * @typedef lora_api_send()
  * @brief Callback API for sending data over LoRa
  *
  * @see lora_send() for argument descriptions.
@@ -253,7 +248,6 @@ typedef int (*lora_api_send)(const struct device *dev,
 			     uint8_t *data, uint32_t data_len);
 
 /**
- * @typedef lora_api_send_async()
  * @brief Callback API for sending data asynchronously over LoRa
  *
  * @see lora_send_async() for argument descriptions.
@@ -263,7 +257,6 @@ typedef int (*lora_api_send_async)(const struct device *dev,
 				   struct k_poll_signal *async);
 
 /**
- * @typedef lora_api_recv()
  * @brief Callback API for receiving data over LoRa
  *
  * @see lora_recv() for argument descriptions.
@@ -273,7 +266,6 @@ typedef int (*lora_api_recv)(const struct device *dev, uint8_t *data,
 			     k_timeout_t timeout, int16_t *rssi, int8_t *snr);
 
 /**
- * @typedef lora_api_recv_async()
  * @brief Callback API for receiving data asynchronously over LoRa
  *
  * @param dev Modem to receive data on.
@@ -283,7 +275,6 @@ typedef int (*lora_api_recv_async)(const struct device *dev, lora_recv_cb cb,
 			     void *user_data);
 
 /**
- * @typedef lora_api_cad()
  * @brief Callback API for channel activity detection
  *
  * @see lora_cad() for argument descriptions.
@@ -291,7 +282,6 @@ typedef int (*lora_api_recv_async)(const struct device *dev, lora_recv_cb cb,
 typedef int (*lora_api_cad)(const struct device *dev, k_timeout_t timeout);
 
 /**
- * @typedef lora_api_cad_async()
  * @brief Callback API for channel activity detection asynchronously
  *
  * @see lora_cad_async() for argument descriptions.
@@ -311,7 +301,6 @@ typedef int (*lora_api_recv_duty_cycle_async)(const struct device *dev,
 					      lora_recv_cb cb, void *user_data);
 
 /**
- * @typedef lora_api_test_cw()
  * @brief Callback API for transmitting a continuous wave
  *
  * @see lora_test_cw() for argument descriptions.
@@ -343,7 +332,7 @@ __subsystem struct lora_driver_api {
  * @return 0 on success, negative on error
  */
 static inline int lora_config(const struct device *dev,
-			      struct lora_modem_config *config)
+			      const struct lora_modem_config *config)
 {
 	return DEVICE_API_GET(lora, dev)->config(dev, config);
 }

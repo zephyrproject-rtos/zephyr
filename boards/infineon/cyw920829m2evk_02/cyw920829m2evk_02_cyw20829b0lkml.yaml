@@ -25,5 +25,4 @@ supported:
   - rtc
   - dma
   - pwm
-  - watchdog
 vendor: infineon

@@ -1,0 +1,16 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bluetooth HCI for Bouffalo Lab on-chip BLE controllers
+
+compatible: "bflb,bt-hci"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "BT BFLB"
+  bt-hci-bus:
+    default: "virtual"
+  bt-hci-quirks:
+    default: ["no-auto-dle"]

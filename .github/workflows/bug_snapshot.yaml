@@ -51,7 +51,7 @@ jobs:
         echo "BUGS_PICKLE_PATH=${BUGS_PICKLE_PATH}" >> ${GITHUB_ENV}
 
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+      uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
       with:
         aws-access-key-id: ${{ vars.AWS_BUILDS_ZEPHYR_BUG_SNAPSHOT_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_BUILDS_ZEPHYR_BUG_SNAPSHOT_SECRET_ACCESS_KEY }}

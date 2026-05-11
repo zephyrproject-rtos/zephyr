@@ -1,0 +1,9 @@
+# Seeed XIAO ESP32C5 board configuration
+
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XIAO_ESP32C5
+	select SOC_ESP32_C5_WROOM_1_N8R8
+	select SOC_ESP32C5_HPCORE if BOARD_XIAO_ESP32C5_ESP32C5_HPCORE
+	select SOC_ESP32C5_LPCORE if BOARD_XIAO_ESP32C5_ESP32C5_LPCORE

@@ -5,12 +5,12 @@
  */
 
 #include <mem.h>
-#include <arm/armv8-m.dtsi>
 
 / {
 	soc {
 		sram: sram@38000000 {
-			ranges = <0x38000000 0x38000000 0x8000>;
+			ranges = <0x28000000 0x38000000 0x8000>,
+				 <0xa1000000 0xb1000000 0x8000>;
 		};
 
 		peripheral: peripheral@50000000 {
@@ -24,11 +24,12 @@
 };
 
 #include "nxp_mcxl.dtsi"
+#include "nxp_mcxl_aon.dtsi"
 
-/ {
-	cpus {
-		/delete-node/ cpu@1;
-	};
+/delete-node/ &sramx;
+
+&sram0 {
+	reg = <0x28000000 DT_SIZE_K(32)>;
 };
 
 &fmu {
@@ -38,4 +39,12 @@
 		erase-block-size = <DT_SIZE_K(8)>;
 		write-block-size = <128>;
 	};
+};
+
+&systick {
+	status = "disabled";
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
 };

@@ -89,6 +89,7 @@ static void after(void *data)
 	}
 
 	fixture->fs.sector_count = TEST_SECTOR_COUNT;
+	fixture->fs.mount_flags = 0;
 }
 
 ZTEST_SUITE(zms, NULL, setup, before, after, NULL);
@@ -122,6 +123,42 @@ static void execute_long_pattern_write(uint32_t id, struct zms_fs *fs)
 	len = zms_read(fs, id, rd_buf, sizeof(rd_buf));
 	zassert_true(len == sizeof(rd_buf), "zms_read unexpected failure: %d", len);
 	zassert_mem_equal(wr_buf, rd_buf, sizeof(rd_buf), "RD buff should be equal to the WR buff");
+}
+
+static void erase_test_partition(void)
+{
+	const struct flash_area *fa;
+	int err;
+
+	err = flash_area_open(TEST_ZMS_AREA_ID, &fa);
+	zassert_true(err == 0, "flash_area_open() fail: %d", err);
+
+	err = flash_area_erase(fa, 0, fa->fa_size);
+	zassert_true(err == 0, "flash_area_erase() fail: %d", err);
+
+	flash_area_close(fa);
+}
+
+ZTEST_F(zms, test_zms_mount_no_format_on_erased_flash)
+{
+	int err;
+
+	erase_test_partition();
+
+	fixture->fs.mount_flags = ZMS_MOUNT_FLAG_NO_FORMAT;
+	err = zms_mount(&fixture->fs);
+	zassert_equal(err, -ENOTSUP, "zms_mount should fail without formatting: %d", err);
+}
+
+ZTEST_F(zms, test_zms_mount_auto_format_on_erased_flash)
+{
+	int err;
+
+	erase_test_partition();
+
+	fixture->fs.mount_flags = 0U;
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
 }
 
 ZTEST_F(zms, test_zms_write)
@@ -172,6 +209,13 @@ ZTEST_F(zms, test_zms_corrupted_write)
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
 
+	/* Get the address of current write calls and the maximum number of writes and reinitialize
+	 * the current number of write calls to 0.
+	 */
+	stats_walk(fixture->sim_thresholds, flash_sim_max_write_calls_find, &flash_max_write_calls);
+	stats_walk(fixture->sim_stats, flash_sim_write_calls_find, &flash_write_stat);
+	*flash_write_stat = 0;
+
 	err = zms_read(&fixture->fs, TEST_DATA_ID, rd_buf, sizeof(rd_buf));
 	zassert_true(err == -ENOENT, "zms_read unexpected failure: %d", err);
 
@@ -196,9 +240,6 @@ ZTEST_F(zms, test_zms_corrupted_write)
 	/* Set the maximum number of writes that the flash simulator can
 	 * execute.
 	 */
-	stats_walk(fixture->sim_thresholds, flash_sim_max_write_calls_find, &flash_max_write_calls);
-	stats_walk(fixture->sim_stats, flash_sim_write_calls_find, &flash_write_stat);
-
 	*flash_max_write_calls = *flash_write_stat - 1;
 	*flash_write_stat = 0;
 
@@ -225,6 +266,13 @@ ZTEST_F(zms, test_zms_corrupted_write)
 			  "write operation has failed");
 }
 
+static uint16_t get_max_writes_to_trigger_gc(struct zms_fs *fs, size_t data_size)
+{
+	const size_t aligned_size_headers = 3 * fs->ate_size;
+
+	return (fs->sector_size - aligned_size_headers) / (data_size + fs->ate_size) + 1;
+}
+
 ZTEST_F(zms, test_zms_gc)
 {
 	int err;
@@ -232,14 +280,16 @@ ZTEST_F(zms, test_zms_gc)
 	uint8_t buf[32];
 	uint8_t rd_buf[32];
 	const uint8_t max_id = 10;
-	/* 21st write will trigger GC. */
-	const uint16_t max_writes = 21;
+	uint16_t max_writes;
 
 	fixture->fs.sector_count = 2;
 
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
 
+	/* Calculate the number of writes to fill a sector and trigger GC.
+	 */
+	max_writes = get_max_writes_to_trigger_gc(&fixture->fs, sizeof(buf));
 	for (int i = 0; i < max_writes; i++) {
 		uint8_t id = (i % max_id);
 		uint8_t id_data = id + max_id * (i / max_id);
@@ -329,6 +379,11 @@ ZTEST_F(zms, test_zms_gc_3sectors)
 	/* 101st write will trigger 4th GC. */
 	const uint16_t max_writes_4 = 41 + 20 + 20 + 20;
 
+	if (fixture->fs.sector_size != 1024) {
+		/* this test is designed for 1KB sectors */
+		ztest_test_skip();
+	}
+
 	fixture->fs.sector_count = 3;
 
 	err = zms_mount(&fixture->fs);
@@ -407,8 +462,7 @@ ZTEST_F(zms, test_zms_corrupted_sector_close_operation)
 	uint32_t *flash_max_write_calls;
 	uint32_t *flash_max_len;
 	const uint16_t max_id = 10;
-	/* 21st write will trigger GC. */
-	const uint16_t max_writes = 21;
+	uint16_t max_writes;
 
 	/* Get the address of simulator parameters. */
 	stats_walk(fixture->sim_thresholds, flash_sim_max_write_calls_find, &flash_max_write_calls);
@@ -418,6 +472,9 @@ ZTEST_F(zms, test_zms_corrupted_sector_close_operation)
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
 
+	/* Calculate the number of writes to fill a sector and trigger GC.
+	 */
+	max_writes = get_max_writes_to_trigger_gc(&fixture->fs, sizeof(buf));
 	for (int i = 0; i < max_writes; i++) {
 		uint8_t id = (i % max_id);
 		uint8_t id_data = id + max_id * (i / max_id);
@@ -606,6 +663,14 @@ ZTEST_F(zms, test_zms_gc_corrupt_close_ate)
 	ate.crc8 = crc8_ccitt(0xff, (uint8_t *)&ate + SIZEOF_FIELD(struct zms_ate, crc8),
 			      sizeof(struct zms_ate) - SIZEOF_FIELD(struct zms_ate, crc8));
 
+	/* Ensure sectors are erased before injecting handcrafted ATEs.
+	 * Flash simulator writes are one-way bit transitions and cannot set bits back to 1.
+	 */
+	fixture->fs.sector_count = 3;
+	err = flash_erase(fixture->fs.flash_device, fixture->fs.offset,
+			  fixture->fs.sector_count * fixture->fs.sector_size);
+	zassert_true(err == 0, "flash_erase sector 1 failed: %d", err);
+
 	/* Add empty ATE */
 	err = flash_write(fixture->fs.flash_device,
 			  fixture->fs.offset + fixture->fs.sector_size - sizeof(struct zms_ate),
@@ -630,8 +695,6 @@ ZTEST_F(zms, test_zms_gc_corrupt_close_ate)
 				  2 * sizeof(struct zms_ate),
 			  &close_ate, sizeof(close_ate));
 	zassert_true(err == 0, "flash_write failed: %d", err);
-
-	fixture->fs.sector_count = 3;
 
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);

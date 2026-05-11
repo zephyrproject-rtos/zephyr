@@ -19,7 +19,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 #
 # The central and peripherals check that all tx_pool and rx_pool
 # buffers have been returned after the disconnect.
-simulation_id="l2cap_stress_early_disconnect"
+simulation_id="${BOARD_TS}_l2cap_stress_early_disconnect"
 verbosity_level=2
 EXECUTE_TIMEOUT=240
 

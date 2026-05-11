@@ -1,7 +1,4 @@
-.. _niosv_m:
-
-INTEL FPGA niosv_m
-####################
+.. zephyr:board:: niosv_m
 
 Overview
 ********
@@ -13,6 +10,19 @@ niosv_m board is based on Intel FPGA Design Store Nios® V/m Hello World Example
 	Nios® V/m Processor Intel® FPGA IP
 	JTAG UART Intel® FPGA IP
 	On-Chip Memory Intel® FPGA IP
+
+Hardware
+********
+
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
+
+Programming and Debugging
+*************************
+
+.. zephyr:board-supported-runners::
 
 Nios® V/m hello world example design system
 ===========================================

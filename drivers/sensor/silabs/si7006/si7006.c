@@ -189,7 +189,7 @@ static int si7006_init(const struct device *dev)
 	const struct si7006_config *config = dev->config;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 
@@ -225,4 +225,8 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(SI7006_DEFINE, DT_DRV_COMPAT, SI7006_READ_OLD_
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT sensirion_sht21
+DT_INST_FOREACH_STATUS_OKAY_VARGS(SI7006_DEFINE, DT_DRV_COMPAT, SI7006_MEAS_TEMP_MASTER_MODE);
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT meas_htu21d
 DT_INST_FOREACH_STATUS_OKAY_VARGS(SI7006_DEFINE, DT_DRV_COMPAT, SI7006_MEAS_TEMP_MASTER_MODE);

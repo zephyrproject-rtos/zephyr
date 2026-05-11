@@ -34,6 +34,7 @@
 		msc: flash-controller@400e0000 {
 			compatible = "silabs,gecko-flash-controller";
 			reg = <0x400e0000 0x104>;
+			ranges;
 			interrupts = <25 0>;
 
 			#address-cells = <1>;
@@ -41,6 +42,8 @@
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <4>;
 				erase-block-size = <2048>;
 			};

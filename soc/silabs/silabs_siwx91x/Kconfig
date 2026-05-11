@@ -10,6 +10,8 @@ config SOC_FAMILY_SILABS_SIWX91X
 	select HAS_SILABS_WISECONNECT
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select HAS_PM
+	select SILABS_SIWX91X_NWP if PM
+	select SILABS_SLEEPTIMER_TIMER if PM
 
 if SOC_FAMILY_SILABS_SIWX91X
 
@@ -41,14 +43,6 @@ config SILABS_SIWX91X_NWP
 	select INIT_STACKS
 	help
 	  Add support for Network Coprocessor (also named NWP) presents on SiWx91x parts.
-
-config SOC_SIWX91X_PM_BACKEND_PMGR
-	bool
-	select SILABS_SIWX91X_NWP
-	select SILABS_SLEEPTIMER_TIMER
-	default y if PM
-	help
-	  Implement PM using sl_power_manager service from Gecko SDK
 
 config SIWX91X_NWP_INIT_PRIORITY
 	int "SiWx91x Network Processor init priority"

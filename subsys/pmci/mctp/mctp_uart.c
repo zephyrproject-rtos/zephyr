@@ -62,6 +62,7 @@ static void mctp_uart_finish_pkt(struct mctp_binding_uart *uart, bool valid)
 		mctp_bus_rx(&uart->binding, pkt);
 	}
 
+	mctp_pktbuf_free(pkt);
 	uart->rx_pkt = NULL;
 }
 

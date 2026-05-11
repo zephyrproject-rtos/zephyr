@@ -2975,14 +2975,6 @@ void bt_avrcp_init(void)
 		return;
 	}
 
-#if defined(CONFIG_BT_AVRCP_TG_COVER_ART)
-	err = bt_avrcp_tg_cover_art_init(&bt_avrcp_tg_cover_art_psm);
-	if (err < 0) {
-		LOG_ERR("AVRCP Cover Art initialization failed (err %d)", err);
-		return;
-	}
-#endif /* CONFIG_BT_AVRCP_TG_COVER_ART */
-
 	LOG_DBG("AVRCP Initialized successfully.");
 
 	initialized = true;
@@ -3868,6 +3860,14 @@ int bt_avrcp_tg_register_cb(const struct bt_avrcp_tg_cb *cb)
 	}
 
 	avrcp_tg_cb = cb;
+
+#if defined(CONFIG_BT_AVRCP_TG_COVER_ART)
+	err = bt_avrcp_tg_cover_art_init(&bt_avrcp_tg_cover_art_psm);
+	if (err < 0) {
+		LOG_ERR("AVRCP Cover Art initialization failed (err %d)", err);
+		goto failed;
+	}
+#endif /* CONFIG_BT_AVRCP_TG_COVER_ART */
 
 #if defined(CONFIG_BT_AVRCP_TARGET)
 	/* Register SDP record when TG callback is registered */

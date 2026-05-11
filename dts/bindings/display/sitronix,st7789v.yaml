@@ -10,7 +10,7 @@ description: |
 
 compatible: "sitronix,st7789v"
 
-include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+include: [mipi-dbi-spi-device.yaml, lcd-controller.yaml]
 
 properties:
   x-offset:
@@ -50,11 +50,6 @@ properties:
     type: int
     required: true
     description: LCM Setting
-
-  colmod:
-    type: int
-    required: true
-    description: Interface Pixel Format
 
   gamma:
     type: int

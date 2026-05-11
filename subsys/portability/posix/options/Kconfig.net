@@ -6,7 +6,6 @@ menuconfig POSIX_NETWORKING
 	bool "POSIX Networking API"
 	depends on NETWORKING
 	select NET_HOSTNAME_ENABLE
-	select NET_HOSTNAME_DYNAMIC
 	select NET_INTERFACE_NAME
 	select NET_SOCKETPAIR
 	select NET_SOCKETS

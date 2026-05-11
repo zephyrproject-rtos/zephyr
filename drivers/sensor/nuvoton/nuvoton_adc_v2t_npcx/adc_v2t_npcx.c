@@ -132,7 +132,7 @@ static int adc_v2t_npcx_init(const struct device *dev)
 	const struct adc_v2t_npcx_config *const config = dev->config;
 
 	if (!device_is_ready(config->adc_dev)) {
-		LOG_ERR("ADC device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->adc_dev);
 		return -EINVAL;
 	}
 

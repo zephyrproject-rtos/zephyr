@@ -125,7 +125,8 @@ config BT_STM32_IPM
 	select HAS_STM32LIB
 	select BT_HCI_SETUP
 	help
-	  TODO
+	  STM32WB HCI driver using the shared memory transport between
+	  CPU1 and the wireless coprocessor on CPU2.
 
 config BT_STM32WBA
 	bool
@@ -327,7 +328,7 @@ config BT_DRV_RX_STACK_SIZE
 	default BT_STM32_IPM_RX_STACK_SIZE if BT_STM32_IPM
 	default HCI_NXP_RX_STACK_SIZE if HCI_NXP_RX_THREAD
 	default 1024 if BT_SF32LB
-	default 1024 if BT_BFLB_BL70X
+	default 1024 if BT_BFLB
 	default 512
 	help
 	  Stack size for the HCI driver's RX thread.

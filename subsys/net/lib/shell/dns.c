@@ -394,7 +394,7 @@ static int cmd_net_dns_list(const struct shell *sh, size_t argc, char *argv[])
 		return 0;
 	}
 #else
-	PR_INFO("Set %s to enable %s support.\n", "CONFIG_DNS_RESOLVER",
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_DNS_SD",
 		"DNS service discovery");
 #endif
 

@@ -12,12 +12,13 @@ from twisterlib.harness import Pytest
 from twisterlib.platform import Platform
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite
+from twisterlib.testsuitedata import HarnessConfig
 
 
 @pytest.fixture
 def testinstance(tmp_path: Path) -> TestInstance:
     testsuite = TestSuite('.', 'samples/hello', 'unit.test')
-    testsuite.harness_config = {}
+    testsuite.harness_config = HarnessConfig()
     testsuite.harness = 'pytest'
     testsuite.ignore_faults = False
     testsuite.sysbuild = False
@@ -70,7 +71,7 @@ def test_pytest_command(testinstance: TestInstance, device_type):
 def test_pytest_command_dut_scope(testinstance: TestInstance):
     pytest_harness = Pytest()
     dut_scope = 'session'
-    testinstance.testsuite.harness_config['pytest_dut_scope'] = dut_scope
+    testinstance.testsuite.harness_config.pytest_dut_scope = dut_scope
     pytest_harness.configure(testinstance)
     command = pytest_harness.generate_command()
     assert f'--dut-scope={dut_scope}' in command
@@ -79,7 +80,7 @@ def test_pytest_command_dut_scope(testinstance: TestInstance):
 def test_pytest_command_extra_args(testinstance: TestInstance):
     pytest_harness = Pytest()
     pytest_args = ['-k test1', '-m mark1']
-    testinstance.testsuite.harness_config['pytest_args'] = pytest_args
+    testinstance.testsuite.harness_config.pytest_args = pytest_args
     pytest_harness.configure(testinstance)
     command = pytest_harness.generate_command()
     for c in pytest_args:
@@ -99,7 +100,7 @@ def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
     pytest_harness = Pytest()
     pytest_args_from_yaml = '--extra-option'
     pytest_args_from_cmd = ['-k', 'test_from_cmd']
-    testinstance.testsuite.harness_config['pytest_args'] = [pytest_args_from_yaml]
+    testinstance.testsuite.harness_config.pytest_args = [pytest_args_from_yaml]
     testinstance.handler.options.pytest_args = pytest_args_from_cmd
     pytest_harness.configure(testinstance)
     command = pytest_harness.generate_command()
@@ -172,7 +173,7 @@ def test_pytest_command_required_build_args(testinstance: TestInstance):
 def test_pytest_handle_source_list(testinstance: TestInstance, monkeypatch, pytest_root, expected):
     monkeypatch.setenv('ZEPHYR_BASE', '/zephyr_base')
     monkeypatch.setenv('HOME', '/home/joe')
-    testinstance.testsuite.harness_config['pytest_root'] = pytest_root
+    testinstance.testsuite.harness_config.pytest_root = pytest_root
     pytest_harness = Pytest()
     pytest_harness.configure(testinstance)
     command = pytest_harness.generate_command()

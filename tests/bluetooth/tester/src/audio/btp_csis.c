@@ -16,6 +16,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include "btp/btp.h"
 
@@ -32,6 +33,9 @@ static uint8_t csis_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_csis_read_supported_commands_rp *rp = rsp;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_CSIS, rp->data);
 	*rsp_len += sizeof(*rp);
 
@@ -43,6 +47,10 @@ static uint8_t csis_set_member_lock(const void *cmd, uint16_t cmd_len,
 {
 	const struct btp_csis_set_member_lock_cmd *cp = cmd;
 	int err = -1;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	if (csis_svc_inst) {
 		err = bt_csip_set_member_lock(csis_svc_inst, cp->lock, cp->force);
@@ -57,6 +65,9 @@ static uint8_t csis_get_member_rsi(const void *cmd, uint16_t cmd_len,
 	struct btp_csis_get_member_rsi_rp *rp = rsp;
 	int err = -1;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+
 	if (csis_svc_inst) {
 		err = bt_csip_set_member_generate_rsi(csis_svc_inst, rp->rsi);
 	}
@@ -69,6 +80,10 @@ static uint8_t csis_get_member_rsi(const void *cmd, uint16_t cmd_len,
 static uint8_t csis_set_sirk_type(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_csis_sirk_set_type_cmd *cp = cmd;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	switch (cp->type) {
 	case BTP_CSIS_SIRK_TYPE_PLAINTEXT:
@@ -96,6 +111,10 @@ static uint8_t csis_set_sirk(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	const struct btp_csis_set_sirk_cmd *cp = cmd;
 	int err = -ENOENT;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("Setting new SIRK");
 
 	if (csis_svc_inst != NULL) {
@@ -111,6 +130,10 @@ static uint8_t csis_set_set_size(const void *cmd, uint16_t cmd_len, void *rsp, u
 {
 	const struct btp_csis_set_set_size_cmd *cp = cmd;
 	int err = -ENOENT;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("Setting new set size %u and rank %u", cp->set_size, cp->rank);
 
@@ -160,11 +183,17 @@ static const struct btp_handler csis_handlers[] = {
 static void lock_changed_cb(struct bt_conn *conn, struct bt_csip_set_member_svc_inst *svc_inst,
 			    bool locked)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(svc_inst);
+
 	LOG_DBG("%s", locked ? "locked" : "unlocked");
 }
 
 static uint8_t sirk_read_cb(struct bt_conn *conn, struct bt_csip_set_member_svc_inst *svc_inst)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(svc_inst);
+
 	return sirk_read_response;
 }
 

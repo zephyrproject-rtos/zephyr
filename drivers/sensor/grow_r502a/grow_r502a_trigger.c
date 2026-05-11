@@ -101,7 +101,7 @@ int grow_r502a_init_interrupt(const struct device *dev)
 	int rc;
 
 	if (!gpio_is_ready_dt(&cfg->int_gpios)) {
-		LOG_ERR("GPIO port %s not ready", cfg->int_gpios.port->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->int_gpios.port);
 		return -ENODEV;
 	}
 

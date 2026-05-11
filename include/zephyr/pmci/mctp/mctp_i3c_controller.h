@@ -28,6 +28,7 @@ struct mctp_binding_i3c_controller {
 	enum mctp_i3c_endpoint_state *endpoint_states;
 	size_t rx_buf_len;
 	uint8_t *rx_buf;
+	uint8_t tx_storage[MCTP_PKTBUF_SIZE(MCTP_I3C_MAX_PKT_SIZE)] PKTBUF_STORAGE_ALIGN;
 	/** @endcond INTERNAL_HIDDEN */
 };
 
@@ -71,6 +72,7 @@ int mctp_i3c_controller_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt
 			.start = mctp_i3c_controller_start,					\
 			.tx = mctp_i3c_controller_tx,						\
 			.pkt_size = MCTP_I3C_MAX_PKT_SIZE,					\
+			.tx_storage = _name.tx_storage,						\
 		},										\
 		.num_endpoints = DT_PROP_LEN(_node_id, endpoints),				\
 		.devices = _name##_endpoints,							\

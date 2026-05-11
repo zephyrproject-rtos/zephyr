@@ -20,6 +20,7 @@ config MFD_INIT_PRIORITY
 
 # zephyr-keep-sorted-start
 source "drivers/mfd/Kconfig.ad559x"
+source "drivers/mfd/Kconfig.adp5360"
 source "drivers/mfd/Kconfig.adp5585"
 source "drivers/mfd/Kconfig.aw9523b"
 source "drivers/mfd/Kconfig.axp192"

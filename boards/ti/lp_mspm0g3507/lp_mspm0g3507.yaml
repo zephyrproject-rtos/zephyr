@@ -13,4 +13,6 @@ supported:
   - gpio
   - can
   - dac
+  - spi
+  - vref
 vendor: ti

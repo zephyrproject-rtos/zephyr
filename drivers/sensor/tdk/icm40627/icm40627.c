@@ -637,7 +637,7 @@ static inline int icm40627_bus_check(const struct device *dev)
 static int icm40627_init(const struct device *dev)
 {
 	if (icm40627_bus_check(dev) < 0) {
-		LOG_ERR("Bus is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->bus.bus);
 		return -ENODEV;
 	}
 

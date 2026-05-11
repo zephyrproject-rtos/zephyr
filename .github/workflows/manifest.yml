@@ -30,7 +30,7 @@ jobs:
           west init -l . || true
 
       - name: Manifest
-        uses: zephyrproject-rtos/action-manifest@9cda77710c1c49c6734490ec7233f6d2d43f9503
+        uses: zephyrproject-rtos/action-manifest@700ecf53942aba4433c070e5e58193f75c8eddde
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           manifest-path: 'west.yml'

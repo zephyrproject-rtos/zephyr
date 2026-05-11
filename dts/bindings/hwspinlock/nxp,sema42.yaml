@@ -9,6 +9,7 @@ compatible: "nxp,sema42"
 include:
   - name: base.yaml
   - name: hwspinlock-controller.yaml
+  - name: reset-device.yaml
 
 properties:
   reg:

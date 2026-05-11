@@ -116,6 +116,25 @@ For example, below is part of an overlay to change the whole SRAM to be used for
    };
 
 
+NAND Flash (Board Rework)
+*************************
+
+The FlexSPI PortB1 on FRDM-RW612 is pin-compatible with SPI NAND flash.
+A Winbond W25N01GV (1 Gbit) can be fitted at U12 by board rework, providing
+128 MB of NAND storage accessible via the FlexSPI controller.
+
+The ``w25n01gv`` device tree node is present in the board DTS but disabled
+by default. Enable it with a devicetree overlay:
+
+.. code-block:: devicetree
+
+   &w25n01gv {
+       status = "okay";
+   };
+
+The :zephyr:code-sample:`littlefs` sample provides ready-made board files
+(``boards/frdm_rw612_nand.*``) that run LittleFS over Dhara FTL on this NAND.
+
 Wireless Connectivity Support
 *****************************
 

@@ -186,6 +186,13 @@ available to user threads, however user threads may use
 :c:func:`k_object_release` to relinquish their own permissions on an
 object.
 
+Supervisor threads may use :c:func:`k_object_access_revoke_others` to revoke
+access from all threads except the caller. This is useful to reset the
+permissions of an object in cases where access was previously given to an
+untrusted user thread, which may have in turn given it to others.
+This API also reverts a public access state which may have been set previously
+via :c:func:`k_object_access_all_grant`.
+
 API calls from supervisor mode to set permissions on kernel objects that are
 not being tracked by the kernel will be no-ops. Doing the same from user mode
 will result in a fatal error for the calling thread.

@@ -134,14 +134,15 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * Reserve the final 16 KiB for file system partition
 		 */
 		storage_partition: partition@3c000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x0003c000 DT_SIZE_K(16)>;
 		};

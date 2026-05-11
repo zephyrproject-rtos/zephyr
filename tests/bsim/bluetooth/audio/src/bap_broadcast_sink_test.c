@@ -206,6 +206,8 @@ static bool base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup, void *
 	uint8_t *meta;
 	int ret;
 
+	ARG_UNUSED(user_data);
+
 	ret = bt_bap_base_get_subgroup_codec_meta(subgroup, &meta);
 	if (ret < 0) {
 		FAIL("Could not get subgroup meta: %d\n", ret);
@@ -234,6 +236,8 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 {
 	uint32_t base_bis_index_bitfield = 0U;
 	int ret;
+
+	ARG_UNUSED(base_size);
 
 	printk("Received BASE with %d subgroups from broadcast sink %p\n",
 	       bt_bap_base_get_subgroup_count(base), sink);
@@ -353,6 +357,8 @@ static struct bt_le_scan_cb bap_scan_cb = {
 static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 				  struct bt_le_per_adv_sync_synced_info *info)
 {
+	ARG_UNUSED(info);
+
 	if (sync == pa_sync) {
 		printk("PA sync %p synced for broadcast sink with broadcast ID 0x%06X\n", sync,
 		       broadcaster_broadcast_id);
@@ -381,6 +387,10 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 			  const struct bt_bap_scan_delegator_recv_state *recv_state,
 			  bool past_avail, uint16_t pa_interval)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(past_avail);
+	ARG_UNUSED(pa_interval);
+
 	if (recv_state->pa_sync_state == BT_BAP_PA_STATE_SYNCED ||
 	    recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
 		/* Already syncing */
@@ -398,6 +408,8 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 static int pa_sync_term_req_cb(struct bt_conn *conn,
 			       const struct bt_bap_scan_delegator_recv_state *recv_state)
 {
+	ARG_UNUSED(conn);
+
 	if (pa_sync == NULL || recv_state->pa_sync_state == BT_BAP_PA_STATE_NOT_SYNCED) {
 		return -EALREADY;
 	}
@@ -413,6 +425,8 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 			   const struct bt_bap_scan_delegator_recv_state *recv_state,
 			   const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
 {
+	ARG_UNUSED(conn);
+
 	req_recv_state = recv_state;
 
 	printk("BIS sync request received for %p: 0x%08x\n", recv_state, bis_sync_req[0]);
@@ -432,6 +446,8 @@ static void broadcast_code_cb(struct bt_conn *conn,
 			      const struct bt_bap_scan_delegator_recv_state *recv_state,
 			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
+	ARG_UNUSED(conn);
+
 	req_recv_state = recv_state;
 
 	memcpy(recv_state_broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
@@ -439,6 +455,8 @@ static void broadcast_code_cb(struct bt_conn *conn,
 
 static void scanning_state_cb(struct bt_conn *conn, bool is_scanning)
 {
+	ARG_UNUSED(conn);
+
 	printk("Assistant scanning %s\n", is_scanning ? "started" : "stopped");
 
 }
@@ -642,7 +660,7 @@ static int init(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		FAIL("Bluetooth enable failed (err %d)\n", err);
 		return err;
 	}
@@ -650,25 +668,25 @@ static int init(void)
 	printk("Bluetooth initialized\n");
 
 	err = bt_pacs_register(&pacs_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("Could not register PACS (err %d)\n", err);
 		return err;
 	}
 
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
-	if (err) {
+	if (err != 0) {
 		FAIL("Capability register failed (err %d)\n", err);
 		return err;
 	}
 
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &vs_cap);
-	if (err) {
+	if (err != 0) {
 		FAIL("VS capability register failed (err %d)\n", err);
 		return err;
 	}
 
 	err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
-	if (err) {
+	if (err != 0) {
 		FAIL("Scan delegator register failed (err %d)\n", err);
 		return err;
 	}
@@ -941,7 +959,7 @@ static void test_common(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		FAIL("Init failed (err %d)\n", err);
 		return;
 	}
@@ -1056,7 +1074,7 @@ static void test_sink_encrypted(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		FAIL("Init failed (err %d)\n", err);
 		return;
 	}
@@ -1108,7 +1126,7 @@ static void test_sink_encrypted_incorrect_code(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		FAIL("Init failed (err %d)\n", err);
 		return;
 	}
@@ -1150,7 +1168,7 @@ static void broadcast_sink_with_assistant(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		FAIL("Init failed (err %d)\n", err);
 		return;
 	}
@@ -1206,7 +1224,7 @@ static void broadcast_sink_with_assistant_incorrect_code(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		FAIL("Init failed (err %d)\n", err);
 		return;
 	}

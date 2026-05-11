@@ -13,7 +13,7 @@ cd ${BSIM_OUT_PATH}/bin
 
 printf "\n\n======== Broadcaster sink disconnect test =========\n\n"
 
-SIMULATION_ID="bap_broadcast_audio_sink_disconnect"
+SIMULATION_ID="${BOARD_TS}_bap_broadcast_audio_sink_disconnect"
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=broadcast_source \

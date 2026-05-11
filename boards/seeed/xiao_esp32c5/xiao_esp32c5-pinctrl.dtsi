@@ -1,0 +1,44 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/esp32c5-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32c5-gpio-sigmap.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO11>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO12>;
+			bias-pull-up;
+		};
+	};
+
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO9>,
+				 <SPIM2_SCLK_GPIO8>;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO10>;
+			output-low;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO23>,
+				 <I2C0_SCL_GPIO24>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+};

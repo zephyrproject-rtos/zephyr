@@ -67,6 +67,14 @@ static const uint32_t dma_m_size[] = {
 };
 #endif
 
+static const uint32_t sai_fifo_threshold[] = {
+	SAI_FIFOTHRESHOLD_EMPTY,
+	SAI_FIFOTHRESHOLD_1QF,
+	SAI_FIFOTHRESHOLD_HF,
+	SAI_FIFOTHRESHOLD_3QF,
+	SAI_FIFOTHRESHOLD_FULL,
+};
+
 struct queue_item {
 	void *buffer;
 	size_t size;
@@ -586,7 +594,7 @@ static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 #endif
 
 	if (cfg->mclk_div == (enum mclk_divider)MCLK_NO_DIV) {
-		hsai->Init.NoDivider = SAI_MASTERDIVIDER_DISABLED;
+		hsai->Init.NoDivider = SAI_MASTERDIVIDER_DISABLE;
 	} else {
 		hsai->Init.NoDivider = SAI_MASTERDIVIDER_ENABLE;
 
@@ -951,6 +959,9 @@ static DEVICE_API(i2s, i2s_stm32_driver_api) = {
 		.queue_drop = queue_drop,                                                          \
 	}
 
+#define SAI_FIFO_THRESHOLD(index) \
+	sai_fifo_threshold[DT_INST_ENUM_IDX_OR(index, fifo_threshold, 0)]
+
 #define I2S_STM32_SAI_INIT(index)                                                                  \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
@@ -961,7 +972,7 @@ static DEVICE_API(i2s, i2s_stm32_driver_api) = {
 		.hsai = {                                                                          \
 			.Instance = (SAI_Block_TypeDef *)DT_INST_REG_ADDR(index),                  \
 			.Init.OutputDrive = SAI_OUTPUTDRIVE_DISABLE,                               \
-			.Init.FIFOThreshold = SAI_FIFOTHRESHOLD_FULL,                              \
+			.Init.FIFOThreshold = SAI_FIFO_THRESHOLD(index),                           \
 			.Init.SynchroExt = SAI_SYNCEXT_DISABLE,                                    \
 			.Init.CompandingMode = SAI_NOCOMPANDING,                                   \
 			.Init.TriState = SAI_OUTPUT_NOTRELEASED,                                   \

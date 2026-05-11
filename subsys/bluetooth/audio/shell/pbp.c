@@ -23,6 +23,7 @@
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include "common/bt_shell_private.h"
 
@@ -40,6 +41,8 @@ static int cmd_pbp_set_features(const struct shell *sh, size_t argc, char **argv
 {
 	int err = 0;
 	enum bt_pbp_announcement_feature features;
+
+	ARG_UNUSED(argc);
 
 	features = shell_strtoul(argv[1], 16, &err);
 	if (err != 0) {

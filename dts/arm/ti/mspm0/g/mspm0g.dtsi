@@ -22,6 +22,30 @@
 	};
 
 	soc {
+		adc0: adc@40000000 {
+			compatible = "ti,mspm0-adc12";
+			reg = <0x40000000 0x2000>;
+			interrupts = <4 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		adc1: adc@40002000 {
+			compatible = "ti,mspm0-adc12";
+			reg = <0x40002000 0x2000>;
+			interrupts = <5 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		wdt1: wdt1@40082000 {
+			compatible = "ti,mspm0-watchdog";
+			reg = <0x40082000 0x2000>;
+			ti,watchdog-reset-action = <0>;
+			closed-window = <0>;
+			status = "disabled";
+		};
+
 		timg0: timg0@40084000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40084000 0x2000>;
@@ -153,6 +177,12 @@
 			reg = <0x40444000 0x2000>;
 			interrupts = <1 0>;
 			ti,clk-div = <1>;
+			status = "disabled";
+		};
+
+		spi1: spi@4046a000 {
+			compatible = "ti,mspm0-spi";
+			reg = <0x4046a000 0x2000>;
 			status = "disabled";
 		};
 	};

@@ -67,6 +67,7 @@ enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_RUN_INIT_SCRIPT,
 	MODEM_CELLULAR_STATE_CONNECT_CMUX,
 	MODEM_CELLULAR_STATE_OPEN_DLCI1,
+	MODEM_CELLULAR_STATE_OPEN_DLCI2,
 	MODEM_CELLULAR_STATE_WAIT_FOR_APN,
 	MODEM_CELLULAR_STATE_RUN_APN_SCRIPT,
 	MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT,
@@ -122,7 +123,7 @@ struct modem_cellular_data {
 	struct modem_cmux_dlci dlci2;
 	struct modem_pipe *dlci1_pipe;
 	struct modem_pipe *dlci2_pipe;
-	/* Points to dlci2_pipe or NULL. Used for shutdown script if not NULL */
+	/* Points to dlci1_pipe or NULL. Used for shutdown script if not NULL */
 	struct modem_pipe *cmd_pipe;
 	uint8_t dlci1_receive_buf[MODEM_CMUX_WORK_BUFFER_SIZE];
 	/* DLCI 2 is only used for chat scripts. */
@@ -228,6 +229,30 @@ extern const struct cellular_driver_api modem_cellular_api;
 void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 						 enum modem_chat_script_result result,
 						 void *user_data);
+
+void modem_cellular_chat_on_imei(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data);
+void modem_cellular_chat_on_cgmm(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data);
+void modem_cellular_chat_on_csq(struct modem_chat *chat, char **argv, uint16_t argc,
+				void *user_data);
+void modem_cellular_chat_on_cesq(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data);
+void modem_cellular_chat_on_iccid(struct modem_chat *chat, char **argv, uint16_t argc,
+				  void *user_data);
+void modem_cellular_chat_on_imsi(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data);
+void modem_cellular_chat_on_cgmi(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data);
+void modem_cellular_chat_on_cgmr(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data);
+void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc,
+				  void *user_data);
+void modem_cellular_chat_on_cgev(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data);
+void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, uint16_t argc,
+					void *user_data);
+
 /** @} */
 
 /**
@@ -292,6 +317,43 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 		FOR_EACH_FIXED_ARG(MODEM_CELLULAR_INIT_USER_PIPE_HELPER,                           \
 				   (,), inst, __VA_ARGS__)                                         \
 	);
+
+/* Define common chat matches for cellular modems to reduce copy-pasting */
+#define MODEM_CELLULAR_COMMON_CHAT_MATCHES()							   \
+	MODEM_CHAT_MATCH_DEFINE(ok_match, "OK", "", NULL);					   \
+	MODEM_CHAT_MATCHES_DEFINE(__maybe_unused allow_match,					   \
+				  MODEM_CHAT_MATCH("OK", "", NULL),				   \
+				  MODEM_CHAT_MATCH("ERROR", "", NULL));				   \
+	MODEM_CHAT_MATCH_DEFINE(imei_match __maybe_unused,					   \
+				"", "", modem_cellular_chat_on_imei);				   \
+	MODEM_CHAT_MATCH_DEFINE(cgmm_match __maybe_unused,					   \
+				"", "", modem_cellular_chat_on_cgmm);				   \
+	MODEM_CHAT_MATCH_DEFINE(csq_match __maybe_unused,					   \
+				"+CSQ: ", ",", modem_cellular_chat_on_csq);			   \
+	MODEM_CHAT_MATCH_DEFINE(cesq_match __maybe_unused,					   \
+				"+CESQ: ", ",", modem_cellular_chat_on_cesq);			   \
+	MODEM_CHAT_MATCH_DEFINE(qccid_match __maybe_unused,					   \
+				"+QCCID: ", "", modem_cellular_chat_on_iccid);			   \
+	MODEM_CHAT_MATCH_DEFINE(iccid_match __maybe_unused,					   \
+				"+ICCID: ", "", modem_cellular_chat_on_iccid);			   \
+	MODEM_CHAT_MATCH_DEFINE(ccid_match __maybe_unused,					   \
+				"+CCID: ", "", modem_cellular_chat_on_iccid);			   \
+	MODEM_CHAT_MATCH_DEFINE(cimi_match __maybe_unused,					   \
+				"", "", modem_cellular_chat_on_imsi);				   \
+	MODEM_CHAT_MATCH_DEFINE(cgmi_match __maybe_unused,					   \
+				"", "", modem_cellular_chat_on_cgmi);				   \
+	MODEM_CHAT_MATCH_DEFINE(cgmr_match __maybe_unused,					   \
+				"", "", modem_cellular_chat_on_cgmr);				   \
+	MODEM_CHAT_MATCH_DEFINE(connect_match __maybe_unused,					   \
+				"CONNECT", "", NULL);						   \
+	MODEM_CHAT_MATCHES_DEFINE(__maybe_unused abort_matches,					   \
+				  MODEM_CHAT_MATCH("ERROR", "", NULL));				   \
+	MODEM_CHAT_MATCHES_DEFINE(__maybe_unused dial_abort_matches,				   \
+				  MODEM_CHAT_MATCH("ERROR", "", NULL),				   \
+				  MODEM_CHAT_MATCH("BUSY", "", NULL),				   \
+				  MODEM_CHAT_MATCH("NO ANSWER", "", NULL),			   \
+				  MODEM_CHAT_MATCH("NO CARRIER", "", NULL),			   \
+				  MODEM_CHAT_MATCH("NO DIALTONE", "", NULL))
 
 /* Helper to define modem instance */
 #define MODEM_CELLULAR_DEFINE_INSTANCE(inst, power_ms, reset_ms, startup_ms, shutdown_ms, start,   \

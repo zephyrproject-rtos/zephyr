@@ -315,7 +315,7 @@ static void i2c_bee_isr(const struct device *dev)
 		I2C_ClearINTPendingBit(i2c, I2C_INT_TX_EMPTY);
 	}
 
-	if (!i2c_bee_next_msg_available(&data->ctx)) {
+	if (!i2c_bee_next_msg_available(&data->ctx) && !I2C_GetFlagState(i2c, I2C_FLAG_ACTIVITY)) {
 		I2C_INTConfig(i2c, I2C_INT_TX_ABRT | I2C_INT_RX_FULL | I2C_INT_TX_EMPTY, DISABLE);
 		I2C_Cmd(i2c, DISABLE);
 

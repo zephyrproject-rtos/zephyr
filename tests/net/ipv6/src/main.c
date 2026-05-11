@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_stats.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/udp.h>
@@ -209,6 +210,7 @@ static const unsigned char ipv6_ext_hdr_err_3[] = {
 	/* Padding to reach 48 bytes */
 	0x00, 0x00, 0x00, 0x00,
 };
+
 /* clang-format on */
 
 static int send_msg(struct net_in6_addr *src, struct net_in6_addr *dst);
@@ -2574,6 +2576,133 @@ ZTEST(net_ipv6, test_z_privacy_extension_03_get_addr)
 		zassert_true(net_ipv6_addr_cmp(src_addr, temp_addr),
 			     "Non temporary address selected");
 	}
+}
+
+static void inject_bad_nd_message(struct net_if *iface, const uint8_t *data, size_t len)
+{
+	struct net_eth_hdr hdr;
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_eth_addr) + len,
+					NET_AF_INET6, NET_IPPROTO_ICMPV6, K_NO_WAIT);
+	zassert_not_null(pkt, "Failed to allocate packet");
+
+	net_pkt_cursor_init(pkt);
+
+	hdr.type = net_htons(NET_ETH_PTYPE_IPV6);
+	memset(&hdr.src, 0, sizeof(struct net_eth_addr));
+	memcpy(&hdr.dst, net_if_get_link_addr(net_pkt_iface(pkt))->addr,
+	       sizeof(struct net_eth_addr));
+
+	net_pkt_set_overwrite(pkt, false);
+
+	zassert_ok(net_pkt_write(pkt, &hdr, sizeof(struct net_eth_hdr)),
+		   "Failed to write L2 header");
+	zassert_ok(net_pkt_write(pkt, data, len),
+		   "Failed to write ND packet data");
+
+	net_pkt_cursor_init(pkt);
+	zassert_ok((net_recv_data(iface, pkt)), "Data receive for ND packet failed.");
+}
+
+static void test_nd_packet_drop(const uint8_t *data, size_t len)
+{
+	struct net_stats_ipv6_nd ipv6_nd_before = { 0 };
+	struct net_stats_ipv6_nd ipv6_nd_after = { 0 };
+	struct net_if *iface = TEST_NET_IF;
+
+	zassert_ok(net_mgmt(NET_REQUEST_STATS_GET_IPV6_ND, NULL, &ipv6_nd_before,
+			    sizeof(ipv6_nd_before)),
+		   "Failed to retrieve stats");
+
+	inject_bad_nd_message(iface, data, len);
+
+	for (int i = 0; i < 20; i++) {
+		/* Give the packet some time to propagate into the stack. */
+		k_msleep(10);
+
+		zassert_ok(net_mgmt(NET_REQUEST_STATS_GET_IPV6_ND, NULL, &ipv6_nd_after,
+				    sizeof(ipv6_nd_after)),
+			   "Failed to retrieve stats");
+
+		if (ipv6_nd_before.drop < ipv6_nd_after.drop) {
+			break;
+		}
+	}
+
+	zassert_equal(ipv6_nd_before.drop + 1, ipv6_nd_after.drop,
+		      "ND packet drop count did not increase");
+}
+
+/* Minimal ICMPv6 RA with bad hop limit */
+static const unsigned char icmpv6_ra_bad_hop_limit[] = {
+/* IPv6 header starts here */
+	0x60, 0x00, 0x00, 0x00, 0x00, 0x10, 0x3a, /* Invalid IPv6 hop limit */ 0x10,
+	0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x02, 0x60, 0x97, 0xff, 0xfe, 0x07, 0x69, 0xea,
+	0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+/* ICMPv6 RA header starts here */
+	0x86, 0x00, 0x21, 0xd5, 0x40, 0x00, 0x07, 0x08,
+	0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01,
+};
+
+ZTEST(net_ipv6, test_ra_with_bad_hop_limit)
+{
+	/* This injects RA packet with bad hop limit in the IP header,
+	 * which should be dropped.
+	 */
+	test_nd_packet_drop(icmpv6_ra_bad_hop_limit, sizeof(icmpv6_ra_bad_hop_limit));
+}
+
+/* Minimal ICMPv6 NS with bad hop limit */
+static const unsigned char icmpv6_ns_bad_hop_limit[] = {
+/* IPv6 header starts here */
+	0x60, 0x00, 0x00, 0x00, 0x00, 0x20, 0x3A, /* Invalid IPv6 hop limit */ 0x10,
+	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+/* ICMPv6 NS header starts here */
+	0x87, 0x00, 0x7c, 0x9d, 0x60, 0x00, 0x00, 0x00,
+/* Target Address */
+	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+/* Source link layer address */
+	0x02, 0x01, 0x10, 0x00, 0x00, 0x00, 0x00, 0xD7,
+};
+
+ZTEST(net_ipv6, test_ns_with_bad_hop_limit)
+{
+	/* This injects NS packet with bad hop limit in the IP header,
+	 * which should be dropped.
+	 */
+	test_nd_packet_drop(icmpv6_ns_bad_hop_limit, sizeof(icmpv6_ns_bad_hop_limit));
+}
+
+/* Minimal ICMPv6 NA with bad hop limit */
+static const unsigned char icmpv6_na_bad_hop_limit[] = {
+/* IPv6 header starts here */
+	0x60, 0x00, 0x00, 0x00, 0x00, 0x20, 0x3A, /* Invalid IPv6 hop limit */ 0x10,
+	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+/* ICMPv6 NA header starts here */
+	0x88, 0x00, 0xbb, 0x9c, 0x20, 0x00, 0x00, 0x00,
+/* Target Address */
+	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+/* Target link layer address */
+	0x02, 0x01, 0x10, 0x00, 0x00, 0x00, 0x00, 0xD7,
+};
+
+ZTEST(net_ipv6, test_na_with_bad_hop_limit)
+{
+	/* This injects NA packet with bad hop limit in the IP header,
+	 * which should be dropped.
+	 */
+	test_nd_packet_drop(icmpv6_na_bad_hop_limit, sizeof(icmpv6_na_bad_hop_limit));
 }
 
 ZTEST_SUITE(net_ipv6, NULL, ipv6_setup, ipv6_before, NULL, ipv6_teardown);

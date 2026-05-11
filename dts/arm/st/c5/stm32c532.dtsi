@@ -9,5 +9,27 @@
 / {
 	soc {
 		compatible = "st,stm32c532", "st,stm32c5", "simple-bus";
+
+		fdcan1: can@4000a400 {
+			compatible = "st,stm32-fdcan";
+			reg = <0x4000a400 0x400>, <0x4000ac00 0x350>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <34 0>, <35 0>;
+			interrupt-names = "int0", "int1";
+			clocks = <&rcc STM32_CLOCK(APB1_2, 9)>;
+			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+
+		fdcan2: can@4000a800 {
+			compatible = "st,stm32-fdcan";
+			reg = <0x4000a800 0x400>, <0x4000ac00 0x6a0>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <86 0>, <87 0>;
+			interrupt-names = "int0", "int1";
+			clocks = <&rcc STM32_CLOCK(APB1_2, 9)>;
+			bosch,mram-cfg = <0x350 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
 	};
 };

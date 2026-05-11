@@ -134,6 +134,11 @@ exit:
 }
 #endif
 
+int uuid_cmp(const struct uuid *a, const struct uuid *b)
+{
+	return memcmp(a->val, b->val, UUID_SIZE);
+}
+
 int uuid_copy(const struct uuid *data, struct uuid *out)
 {
 	if (out == NULL) {

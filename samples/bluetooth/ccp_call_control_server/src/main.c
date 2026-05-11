@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,7 +26,7 @@
 
 LOG_MODULE_REGISTER(ccp_call_control_server, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define SEM_TIMEOUT K_SECONDS(5)
+#define SEM_TIMEOUT K_SECONDS(5U)
 
 static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
@@ -42,7 +42,7 @@ static struct bt_conn *peer_conn;
 static struct bt_ccp_call_control_server_bearer
 	*bearers[CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_COUNT];
 
-static K_SEM_DEFINE(sem_state_change, 0, 1);
+static K_SEM_DEFINE(sem_state_change, 0U, 1U);
 
 static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
@@ -76,21 +76,21 @@ static int advertise(void)
 	int err;
 
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &adv);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Failed to create advertising set: %d", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Failed to set advertising data: %d", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Failed to start advertising set: %d", err);
 
 		return err;
@@ -157,7 +157,7 @@ static int init_ccp_call_control_server(void)
 		.uri_schemes_supported = "tel,skype",
 		.gtbs = true,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
+		.technology = BT_BEARER_TECH_3G,
 		.supported_features = BT_TBS_FEATURE_HOLD,
 	};
 	int err;
@@ -189,7 +189,7 @@ static int init_ccp_call_control_server(void)
 			.gtbs = false,
 			.authorization_required = false,
 			/* Set different technologies per bearer */
-			.technology = (i % BT_TBS_TECHNOLOGY_WCDMA) + 1,
+			.technology = (i % BT_BEARER_TECH_WCDMA) + 1,
 			.supported_features = BT_TBS_FEATURE_HOLD,
 		};
 

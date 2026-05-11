@@ -251,6 +251,17 @@ static inline void net_coap_init(void)
 }
 #endif
 
+#if defined(CONFIG_QUIC)
+/**
+ * @brief QUIC init function declaration. It belongs here because we don't want
+ * to expose it as a public API -- it should only be called once, and only by
+ * net_core.
+ */
+extern void net_quic_init(void);
+#else
+#define net_quic_init()
+#endif
+
 #if defined(CONFIG_NET_SOCKETS_OBJ_CORE)
 struct sock_obj_type_raw_stats {
 	uint64_t sent;

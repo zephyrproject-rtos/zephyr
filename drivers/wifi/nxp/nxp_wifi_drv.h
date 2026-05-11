@@ -18,7 +18,9 @@
 #endif
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/net/wifi_mgmt.h>
+#ifdef CONFIG_NXP_WIFI_SOFTAP_DHCP_SERVER
 #include <zephyr/net/dhcpv4_server.h>
+#endif
 
 #include "wlan_bt_fw.h"
 #include "wlan.h"

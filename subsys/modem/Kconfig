@@ -28,6 +28,10 @@ config MODEM_CHAT
 
 if MODEM_CHAT
 
+config MODEM_CHAT_WORK_BUFFER_SIZE
+	int "Modem chat work buffer size in bytes"
+	default 32
+
 config MODEM_CHAT_LOG_BUFFER_SIZE
 	int "Modem chat log buffer size in bytes"
 	default 128

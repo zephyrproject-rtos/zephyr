@@ -43,20 +43,44 @@
 	};
 
 	soc {
-		sram0: memory@20010020 {
-			compatible = "mmio-sram";
-			reg = <0x20010020 0x00030000>;
-		};
-
 		ram_image2_entry: memory@20004da0 {
 			compatible = "zephyr,memory-region";
 			reg = <0x20004da0 0x20>;
 			zephyr,memory-region = "KM4_IMG2_ENTRY";
 		};
 
+		sram0: memory@20010020 {
+			compatible = "mmio-sram";
+			reg = <0x20010020 0x00030000>;
+		};
+
+		spic: flash-controller@40128000 {
+			compatible = "realtek,ameba-flash-controller";
+			reg = <0x40128000 0x400>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			flash0: flash@e000020 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <DT_SIZE_K(4)>;
+				write-block-size = <4>;
+			};
+		};
+
 		pinctrl: pinctrl@41008800 {
 			compatible = "realtek,ameba-pinctrl";
 			reg = <0x41008800 0x200>;
+			status = "disabled";
+		};
+
+		rtc: rtc@41008a00 {
+			compatible = "realtek,ameba-rtc";
+			reg = <0x41008a00 0x30>;
+			clocks = <&rcc AMEBA_RTC_CLK>;
+			interrupts = <46 0>;
+			alarms-count = <1>;
 			status = "disabled";
 		};
 
@@ -85,21 +109,6 @@
 			#gpio-cells = <2>;
 			interrupts = <29 0>;
 			status = "disabled";
-		};
-
-		spic: flash-controller@40128000 {
-			compatible = "realtek,ameba-flash-controller";
-			reg = <0x40128000 0x400>;
-
-			#address-cells = <1>;
-			#size-cells = <1>;
-			status = "disabled";
-
-			flash0: flash@e000020 {
-				compatible = "soc-nv-flash";
-				erase-block-size = <DT_SIZE_K(4)>;
-				write-block-size = <4>;
-			};
 		};
 	};
 };

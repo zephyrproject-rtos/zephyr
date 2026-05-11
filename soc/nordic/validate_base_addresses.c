@@ -373,7 +373,7 @@ CHECK_DT_REG(cpuflpr_clic, NRF_FLPR_VPRCLIC);
 CHECK_DT_REG(cpuppr_clic, NRF_PPR_VPRCLIC);
 #if defined(CONFIG_SOC_SERIES_NRF54L)
 CHECK_DT_REG(cpuflpr_vpr, NRF_VPR00);
-#elif defined(CONFIG_NRF_PLATFORM_HALTIUM)
+#elif defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)
 CHECK_DT_REG(cpuflpr_vpr, NRF_VPR121);
 CHECK_DT_REG(cpuppr_vpr, NRF_VPR130);
 #endif

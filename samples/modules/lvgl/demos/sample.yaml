@@ -12,6 +12,7 @@ common:
     - platform:mimxrt595_evk/mimxrt595s/cm33:SHIELD=rk055hdmipi4ma0
     - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:SHIELD=g1120b0mipi
     - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:SHIELD=zc143ac72mipi
+    - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:SHIELD=rk055hdmipi4ma0
   tags:
     - samples
     - display

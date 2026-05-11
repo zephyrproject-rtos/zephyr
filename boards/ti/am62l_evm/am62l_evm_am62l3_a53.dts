@@ -19,6 +19,20 @@
 		zephyr,sram = &ddr0;
 	};
 
+	aliases {
+		adc0 = &main_adc0;
+		led0 = &ld9;
+		watchdog0 = &main_rti0;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		ld9: led_0 {
+			gpios = <&main_gpio0_3 27 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
 	cpus {
 		cpu@0 {
 			status = "okay";
@@ -39,5 +53,96 @@
 	pinctrl-0 = <&uart0_rx_default>,
 		    <&uart0_tx_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_adc0 {
+	ti,fifo = <0>;
+	pinctrl-0 = <&adc0_ext_trigger0>,
+		    <&adc0_ext_trigger1>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		ti,open-delay = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+		zephyr,vref-mv = <1800>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		ti,open-delay = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+		zephyr,vref-mv = <1800>;
+	};
+
+	channel@2 {
+		reg = <2>;
+		ti,open-delay = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+		zephyr,vref-mv = <1800>;
+	};
+
+	channel@3 {
+		reg = <3>;
+		ti,open-delay = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <4>;
+		zephyr,vref-mv = <1800>;
+	};
+};
+
+&main_gpio0_3 {
+	pinctrl-0 = <&main_gpio0_3_led>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_i2c0 {
+	pinctrl-0 = <&main_i2c0_scl &main_i2c0_sda>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom0: eeprom@51 {
+		compatible = "atmel,at24";
+		reg = <0x51>;
+		address-width = <16>;
+		pagesize = <128>;
+		size = <65536>;
+		timeout = <5>;
+	};
+};
+
+&main_i2c1 {
+	pinctrl-0 = <&main_i2c1_scl &main_i2c1_sda>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	gpio_expander: tca6424a@22 {
+		compatible = "ti,tca6424a";
+		reg = <0x22>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <24>;
+	};
+};
+
+&main_rti0 {
 	status = "okay";
 };

@@ -24,6 +24,7 @@ add_subdirectory_ifdef(CONFIG_WIFI_CREDENTIALS       wifi_credentials)
 add_subdirectory_ifdef(CONFIG_OCPP ocpp)
 add_subdirectory_ifdef(CONFIG_NETMIDI2_HOST          midi2)
 add_subdirectory_ifdef(CONFIG_WIREGUARD              wireguard)
+add_subdirectory_ifdef(CONFIG_QUIC                   quic)
 
 if(CONFIG_NET_DHCPV4 OR CONFIG_NET_DHCPV4_SERVER)
   add_subdirectory(dhcpv4)

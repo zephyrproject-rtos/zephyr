@@ -1,0 +1,250 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_r8.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <espressif/partitions_0x0_amp_32M.dtsi>
+#include "reterminal_e1003-pinctrl.dtsi"
+
+/ {
+	model = "Seeed Studio reTerminal E1003 PROCPU";
+	compatible = "seeed,reterminal-e1003";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,rtc = &pcf8563_rtc;
+		zephyr,sdhc = &sdcard0;
+	};
+
+	aliases {
+		i2c-0 = &i2c0;
+		led0 = &green_led0;
+		pwm-led0 = &buzzer0;
+		rtc = &pcf8563_rtc;
+		sdhc0 = &sdcard0;
+		sw0 = &refresh_key0;
+		sw1 = &left_key1;
+		sw2 = &right_key2;
+		temp0 = &sht40_temp;
+		uart-0 = &uart0;
+		uart-1 = &uart1;
+		watchdog0 = &wdt0;
+	};
+
+	vbatt: vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc0 0>;
+		output-ohms = <10000>;
+		full-ohms = <20000>;
+		power-gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+		power-on-sample-delay-us = <10000>;
+		skip-calibration;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		refresh_key0: button_0 {
+			gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Refresh";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		left_key1: button_1 {
+			gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Left";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		right_key2: button_2 {
+			gpios = <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Right";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		green_led0: led_0 {
+			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+			label = "Green";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		buzzer0: pwmled_0 {
+			pwms = <&ledc0 0 PWM_HZ(50) PWM_POLARITY_NORMAL>;
+		};
+	};
+};
+
+&dma {
+	status = "okay";
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(32)>;
+	ranges = <0x0 0x0 DT_SIZE_M(32)>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	status = "disabled";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	sht40_temp: sht4x@44 {
+		status = "okay";
+		compatible = "sensirion,sht4x";
+		reg = <0x44>;
+		repeatability = <2>;
+	};
+
+	pcf8563_rtc: pcf8563@51 {
+		status = "okay";
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+	};
+
+	gt911_touch: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio1 16 GPIO_ACTIVE_LOW>;
+	};
+
+	charger: sy6974b@6b {
+		compatible = "silergy,sy6974b";
+		reg = <0x6b>;
+		constant-charge-current-max-microamp = <1500000>;
+		constant-charge-voltage-max-microvolt = <4208000>;
+	};
+};
+
+&ledc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&ledc0_default>;
+	pinctrl-names = "default";
+
+	channel0@0 {
+		reg = <0x0>;
+		timer = <0>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+
+	sdcard0: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		spi-max-frequency = <DT_FREQ_M(20)>;
+		pwr-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+		cd-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+		power-delay-ms = <5>;
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
+};
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&timer0 {
+	status = "disabled";
+};
+
+&timer1 {
+	status = "disabled";
+};
+
+&timer2 {
+	status = "disabled";
+};
+
+&timer3 {
+	status = "disabled";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&usb_serial {
+	status = "disabled";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};

@@ -310,6 +310,13 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 		len = (ftr & ADIN2111_OA_DATA_FTR_EV) ?
 		       ((ftr & ADIN2111_OA_DATA_FTR_EBO_MSK) >> ADIN2111_OA_DATA_FTR_EBO) + 1 :
 		       ctx->oa_cps;
+
+		if (ctx->scur + len > CONFIG_ETH_ADIN2111_BUFFER_SIZE) {
+			ctx->scur = 0;
+			LOG_ERR("OA RX: Frame is larger than maximum size !");
+			goto update_pos;
+		}
+
 		memcpy(&ctx->buf[ctx->scur], &ctx->oa_rx_buf[rx_pos], len);
 		ctx->scur += len;
 
@@ -1216,9 +1223,9 @@ static void adin2111_port_iface_init(struct net_if *iface)
 	}
 }
 
-static enum ethernet_hw_caps adin2111_port_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps adin2111_port_get_capabilities(const struct device *dev __unused,
+							    struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
 	return ETHERNET_LINK_10BASE |
 		ETHERNET_HW_FILTERING
 #if defined(CONFIG_NET_LLDP)
@@ -1228,6 +1235,7 @@ static enum ethernet_hw_caps adin2111_port_get_capabilities(const struct device 
 }
 
 static int adin2111_port_set_config(const struct device *dev,
+				    struct net_if *iface __unused,
 				    enum ethernet_config_type type,
 				    const struct ethernet_config *config)
 {
@@ -1273,7 +1281,8 @@ end_unlock:
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *adin2111_port_get_stats(const struct device *dev)
+static struct net_stats_eth *adin2111_port_get_stats(const struct device *dev,
+						     struct net_if *iface __unused)
 {
 	struct adin2111_port_data *data = dev->data;
 

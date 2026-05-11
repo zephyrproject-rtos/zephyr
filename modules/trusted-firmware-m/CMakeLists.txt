@@ -3,19 +3,30 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# List of all partitions supported by TF-M
-# Name must match name in 'trusted-firmware-m/tools/tfm_manifest_list.yaml'
-set(TFM_VALID_PARTITIONS
-  TFM_PARTITION_NS_AGENT_MAILBOX
-  TFM_PARTITION_PROTECTED_STORAGE
-  TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
-  TFM_PARTITION_CRYPTO
-  TFM_PARTITION_PLATFORM
-  TFM_PARTITION_INITIAL_ATTESTATION
-  TFM_PARTITION_FIRMWARE_UPDATE
-  )
-
 if(CONFIG_BUILD_WITH_TFM)
+
+  macro(kconfig_bool_to_tfm kconfig_option tfm_option)
+    if(${kconfig_option})
+      set(value ON)
+    else()
+      set(value OFF)
+    endif()
+    list(APPEND TFM_CMAKE_ARGS -D${tfm_option}=${value})
+  endmacro()
+
+  kconfig_bool_to_tfm(CONFIG_TFM_PARTITION_PROTECTED_STORAGE
+                             TFM_PARTITION_PROTECTED_STORAGE)
+  kconfig_bool_to_tfm(CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+                             TFM_PARTITION_INTERNAL_TRUSTED_STORAGE)
+  kconfig_bool_to_tfm(CONFIG_TFM_PARTITION_CRYPTO
+                             TFM_PARTITION_CRYPTO)
+  kconfig_bool_to_tfm(CONFIG_TFM_PARTITION_PLATFORM
+                             TFM_PARTITION_PLATFORM)
+  kconfig_bool_to_tfm(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION
+                             TFM_PARTITION_INITIAL_ATTESTATION)
+  kconfig_bool_to_tfm(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE
+                             TFM_PARTITION_FIRMWARE_UPDATE)
+
   # PSA API awareness for the Non-Secure application
   target_compile_definitions(app PRIVATE "TFM_PSA_API")
 
@@ -35,14 +46,6 @@ if(CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="SFN")
   else() # CONFIG_TFM_IPC
     list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="IPC")
-  endif()
-  if(CONFIG_TFM_REGRESSION_S)
-    list(APPEND TFM_CMAKE_ARGS -DTEST_S=ON)
-    list(APPEND TFM_CMAKE_ARGS -DTFM_S_REG_TEST:BOOL=ON)
-  endif()
-  if(CONFIG_TFM_REGRESSION_NS)
-    list(APPEND TFM_CMAKE_ARGS -DTEST_NS=ON)
-    list(APPEND TFM_CMAKE_ARGS -DTFM_NS_REG_TEST:BOOL=ON)
   endif()
   if(CONFIG_TFM_BL2)
     list(APPEND TFM_CMAKE_ARGS -DBL2=TRUE)
@@ -97,17 +100,11 @@ if(CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_NUMBER=${CONFIG_TFM_MCUBOOT_IMAGE_NUMBER})
   endif()
 
-  if(CONFIG_TFM_DUMMY_PROVISIONING)
-    list(APPEND TFM_CMAKE_ARGS -DTFM_DUMMY_PROVISIONING=ON)
-  else()
-    list(APPEND TFM_CMAKE_ARGS -DTFM_DUMMY_PROVISIONING=OFF)
-  endif()
+  kconfig_bool_to_tfm(CONFIG_TFM_DUMMY_PROVISIONING TFM_DUMMY_PROVISIONING)
 
-  if(CONFIG_TFM_EXCEPTION_INFO_DUMP)
-    list(APPEND TFM_CMAKE_ARGS -DTFM_EXCEPTION_INFO_DUMP=ON)
-  else()
-    list(APPEND TFM_CMAKE_ARGS -DTFM_EXCEPTION_INFO_DUMP=OFF)
-  endif()
+  kconfig_bool_to_tfm(CONFIG_TFM_EXCEPTION_INFO_DUMP TFM_EXCEPTION_INFO_DUMP)
+
+  kconfig_bool_to_tfm(CONFIG_TFM_PS_ROLLBACK_PROTECTION PS_ROLLBACK_PROTECTION)
 
   if(CONFIG_TFM_BL2)
     if(CONFIG_TFM_BL2_LOG_LEVEL_DEBUG)
@@ -161,17 +158,6 @@ if(CONFIG_BUILD_WITH_TFM)
   else()
     list(APPEND TFM_CMAKE_ARGS -DSECURE_UART1=0)
   endif()
-
-  # Enable TFM partitions as specified in Kconfig
-  foreach(partition ${TFM_VALID_PARTITIONS})
-    if(CONFIG_${partition})
-      # list(APPEND TFM_ENABLED_PARTITIONS_ARG ${partition})
-      set(val "ON")
-    else()
-      set(val "OFF")
-    endif()
-    list(APPEND TFM_CMAKE_ARGS -D${partition}=${val})
-  endforeach()
 
   set(TFM_BINARY_DIR ${CMAKE_BINARY_DIR}/tfm)
 
@@ -291,6 +277,17 @@ if(CONFIG_BUILD_WITH_TFM)
   if(CONFIG_SOC_SERIES_PSE84)
     include(${ZEPHYR_BASE}/soc/infineon/edge/pse84/pse84_metadata.cmake)
     list(APPEND TFM_CMAKE_ARGS -DIFX_EPC=epc2)
+
+    # Use local hal_infineon assets instead of fetching from GitHub
+    list(APPEND TFM_CMAKE_ARGS
+      -DIFX_CORE_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/core-lib
+      -DIFX_DEV_SUPPORT_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-dsl-pse8xxgp
+      -DIFX_MTB_SRF_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-srf
+      -DIFX_ABSTRACTION_RTOS_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/abstraction-rtos
+      -DIFX_MTB_IPC_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-ipc
+      -DIFX_DEVICE_DB_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/device-db
+      -DIFX_BSP_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-template-pse8xxgp/files
+    )
   endif()
 
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})

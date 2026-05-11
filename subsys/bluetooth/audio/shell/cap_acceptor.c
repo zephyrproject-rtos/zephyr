@@ -23,6 +23,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -54,6 +55,8 @@ static void locked_cb(struct bt_conn *conn,
 		      struct bt_csip_set_member_svc_inst *svc_inst,
 		      bool locked)
 {
+	ARG_UNUSED(svc_inst);
+
 	if (conn == NULL) {
 		bt_shell_error("Server %s the device",
 			       locked ? "locked" : "released");
@@ -69,6 +72,8 @@ static uint8_t sirk_read_req_cb(struct bt_conn *conn,
 	static const char *const rsp_strings[] = {
 		"Accept", "Accept Enc", "Reject", "OOB only"
 	};
+
+	ARG_UNUSED(svc_inst);
 
 	bt_shell_print("Client %s requested to read the sirk. Responding with %s",
 		       bt_conn_dst_str(conn), rsp_strings[sirk_read_rsp]);
@@ -182,10 +187,14 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 static int cmd_cap_acceptor_lock(const struct shell *sh, size_t argc,
 				 char *argv[])
 {
 	int err;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	err = bt_csip_set_member_lock(cap_csip_svc_inst, true, false);
 	if (err != 0) {
@@ -227,12 +236,15 @@ static int cmd_cap_acceptor_release(const struct shell *sh, size_t argc,
 
 	return 0;
 }
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 
 static int cmd_cap_acceptor_sirk(const struct shell *sh, size_t argc, char *argv[])
 {
 	uint8_t sirk[BT_CSIP_SIRK_SIZE];
 	size_t len;
 	int err;
+
+	ARG_UNUSED(argc);
 
 	if (cap_csip_svc_inst == NULL) {
 		shell_error(sh, "CSIS not registered");
@@ -264,6 +276,9 @@ static int cmd_cap_acceptor_get_info(const struct shell *sh, size_t argc, char *
 	uint8_t sirk[BT_CSIP_SIRK_SIZE];
 	int err;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (cap_csip_svc_inst == NULL) {
 		shell_error(sh, "CSIS not registered yet");
 
@@ -292,6 +307,8 @@ static int cmd_cap_acceptor_get_info(const struct shell *sh, size_t argc, char *
 
 static int cmd_cap_acceptor_sirk_rsp(const struct shell *sh, size_t argc, char *argv[])
 {
+	ARG_UNUSED(argc);
+
 	if (strcmp(argv[1], "accept") == 0) {
 		sirk_read_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
 	} else if (strcmp(argv[1], "accept_enc") == 0) {
@@ -310,6 +327,8 @@ static int cmd_cap_acceptor_sirk_rsp(const struct shell *sh, size_t argc, char *
 
 static int cmd_cap_acceptor(const struct shell *sh, size_t argc, char **argv)
 {
+	ARG_UNUSED(argc);
+
 	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;
@@ -321,8 +340,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Initialize the service and register callbacks "
 		      "[size <int>] [rank <int>] [not-lockable] [sirk <data>]",
 		      cmd_cap_acceptor_init, 1, 4),
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 	SHELL_CMD_ARG(lock, NULL, "Lock the set", cmd_cap_acceptor_lock, 1, 0),
 	SHELL_CMD_ARG(release, NULL, "Release the set [force]", cmd_cap_acceptor_release, 1, 1),
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 	SHELL_CMD_ARG(sirk, NULL, "Set the currently used SIRK <sirk>", cmd_cap_acceptor_sirk, 2,
 		      0),
 	SHELL_CMD_ARG(get_info, NULL, "Get CSIS info", cmd_cap_acceptor_get_info, 1, 0),

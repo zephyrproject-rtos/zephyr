@@ -34,6 +34,13 @@ Obscure user-input with asterisks
    ``login`` and ``logout`` implement the feature of enabling and disabling
    this functionality, respectively.
 
+Remote Shell
+============
+
+The sample can be built for remote shell using sysbuild. Remote shell allows to execute commands
+on the remote core using the main core shell interface. Command ``remote_shell`` is used to execute
+commands as a root command for the remote core tree of commands.
+
 Requirements
 ************
 

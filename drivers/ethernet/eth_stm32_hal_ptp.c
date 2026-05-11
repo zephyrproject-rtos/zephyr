@@ -16,6 +16,8 @@
 
 #include "eth_stm32_hal_priv.h"
 
+#define DT_DRV_COMPAT st_stm32_ethernet
+
 LOG_MODULE_REGISTER(eth_stm32_hal_ptp, CONFIG_ETHERNET_LOG_LEVEL);
 
 /* Naming of the  ETH PTP Config Status changes depending on the stm32 series */
@@ -48,7 +50,8 @@ void HAL_ETH_TxPtpCallback(uint32_t *buff, ETH_TimeStampTypeDef *timestamp)
 	net_if_add_tx_timestamp(ctx->pkt);
 }
 
-const struct device *eth_stm32_get_ptp_clock(const struct device *dev)
+const struct device *eth_stm32_get_ptp_clock(const struct device *dev,
+					     struct net_if *iface __unused)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 
@@ -293,7 +296,7 @@ static int ptp_stm32_init(const struct device *port)
 	struct ptp_context *ptp_context = port->data;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
 	int ret;
-	uint32_t ptp_hclk_rate;
+	uint32_t ptp_clk_rate;
 	uint32_t ss_incr_ns;
 	uint32_t addend_val;
 
@@ -302,13 +305,13 @@ static int ptp_stm32_init(const struct device *port)
 
 	eth_stm32_ptp_enable_timestamping(heth);
 
-	/* Query ethernet clock rate */
+	/* Query the MAC timestamp reference clock rate */
 	clock_control_subsys_t rate_clk = (void *)&eth_cfg->pclken[eth_cfg->rate_pclken_idx];
 
 	ret = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE), rate_clk,
-				     &ptp_hclk_rate);
+				     &ptp_clk_rate);
 	if (ret) {
-		LOG_ERR("Failed to query ethernet clock");
+		LOG_ERR("Failed to query PTP reference clock");
 		return -EIO;
 	}
 
@@ -330,12 +333,13 @@ static int ptp_stm32_init(const struct device *port)
 
 	/* Program timestamp addend register */
 	eth_dev_data->clk_ratio =
-		((double)CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ) / ((double)ptp_hclk_rate);
+		((double)CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ) / ((double)ptp_clk_rate);
 	/*
-	 * clk_ratio is a ratio between desired PTP clock frequency and HCLK rate.
-	 * Because HCLK is defined by a physical oscillator, it might drift due
-	 * to manufacturing tolerances and environmental effects (e.g. temperature).
-	 * It gets adjusted by calling ptp_clock_stm32_rate_adjust().
+	 * clk_ratio is the ratio between the desired PTP clock frequency and the
+	 * MAC timestamp reference clock. Because that reference is derived from a
+	 * physical oscillator, it might drift due to manufacturing tolerances and
+	 * environmental effects (e.g. temperature). It gets adjusted by calling
+	 * ptp_clock_stm32_rate_adjust().
 	 */
 	addend_val =
 		UINT32_MAX * eth_dev_data->clk_ratio;

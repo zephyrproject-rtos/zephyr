@@ -31,6 +31,7 @@
 #define PSIREF_24000000	LL_RCC_PSIREF_24MHZ
 #define PSIREF_16000000	LL_RCC_PSIREF_16MHZ
 #define PSIREF_8000000	LL_RCC_PSIREF_8MHZ
+#define PSIREF_0	0	/* Dummy value in case STM32_HSE_FREQ is defined to 0 */
 
 #define psi_ref(v) CONCAT(PSIREF_, v)
 

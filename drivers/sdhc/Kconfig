@@ -10,6 +10,7 @@ if SDHC
 
 # zephyr-keep-sorted-start
 source "drivers/sdhc/Kconfig.ambiq"
+source "drivers/sdhc/Kconfig.bflb"
 source "drivers/sdhc/Kconfig.esp32"
 source "drivers/sdhc/Kconfig.imx"
 source "drivers/sdhc/Kconfig.infineon"

@@ -15,10 +15,8 @@
 	model = "STMicroelectronics STM32C5A3ZG-NUCLEO board";
 	compatible = "st,stm32c5a3zg-nucleo";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
+		zephyr,canbus = &fdcan1;
 		zephyr,console = &lpuart1;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,shell-uart = &lpuart1;
@@ -30,6 +28,7 @@
 		die-temp0 = &die_temp;
 		led0 = &green_led;
 		sw0 = &user_button;
+		rtc = &rtc;
 		volt-sensor0 = &vref;
 		watchdog0 = &iwdg;
 	};
@@ -67,13 +66,13 @@
 
 &adc1 {
 	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
-		 <&rcc STM32_SRC_PSIK ADCDAC_SEL(2)>;
+		 <&rcc STM32_SRC_HSIK ADCDAC_SEL(3)>;
 	status = "okay";
 };
 
 &adc2 {
 	clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
-		 <&rcc STM32_SRC_PSIK ADCDAC_SEL(2)>;
+		 <&rcc STM32_SRC_HSIK ADCDAC_SEL(3)>;
 	clock-names = "adcx", "adc_ker";
 	pinctrl-0 = <&adc2_in12_ph4 &adc2_in13_ph5>; /* Arduino A1 & A2 */
 	pinctrl-names = "default";
@@ -101,6 +100,16 @@
 	status = "okay";
 };
 
+&clk_hsik {
+	clock-frequency = <DT_FREQ_M(32)>;
+	xsik-div = "4.5";
+	status = "okay";
+};
+
+&clk_hsis {
+	status = "okay";
+};
+
 &clk_lse {
 	status = "okay";
 };
@@ -109,39 +118,55 @@
 	status = "okay";
 };
 
-&clk_psis {
-	clock-frequency = <DT_FREQ_M(144)>;
+&clk_psik {
+	clock-frequency = <DT_FREQ_M(80)>;
+	xsik-div = "2";
 	status = "okay";
 };
 
-&clk_psik {
-	clock-frequency = <DT_FREQ_M(32)>;
-	xsik-div = "4.5";
+&clk_psis {
+	clock-frequency = <DT_FREQ_M(160)>;
+	status = "okay";
+};
+
+&fdcan1 {
+	clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
+		 <&rcc STM32_SRC_PSIK FDCAN_SEL(2)>;
+	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
 		};
 
 		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(472)>;
 		};
 
 		slot1_partition: partition@82000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x00082000 DT_SIZE_K(480)>;
 		};
 
 		storage_partition: partition@fa000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x000fa000 DT_SIZE_K(24)>;
 		};
@@ -160,6 +185,17 @@
 	status = "okay";
 };
 
+&i3c1 {
+	pinctrl-0 = <&i3c1_scl_pb6 &i3c1_sda_pb7>;
+	pinctrl-names = "default";
+
+	i2c-scl-hz = <400000>;
+	i3c-scl-hz = <6000000>;
+
+	/* Due to pin conflict with i2c1, keep it disabled  */
+	/* status = "okay"; */
+};
+
 &iwdg {
 	status = "okay";
 };
@@ -176,15 +212,46 @@
 	status = "okay";
 };
 
+&mac {
+	pinctrl-0 = <&eth1_rmii_crs_dv_pd1
+		     &eth1_rmii_ref_clk_pa1
+		     &eth1_rmii_rxd0_pc4
+		     &eth1_rmii_rxd1_pc5
+		     &eth1_rmii_txd0_pg13
+		     &eth1_rmii_txd1_pg12
+		     &eth1_rmii_tx_en_pg11>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&eth1_mdc_pc1 &eth1_mdio_pe12>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+	};
+};
+
 &rcc {
-	clocks = <&clk_psis>;
+	clocks = <&clk_hsis>;
 	clock-frequency = <DT_FREQ_M(144)>;
 	ahb-prescaler = <1>;
 	apb1-prescaler = <2>;
 	apb2-prescaler = <2>;
 	apb3-prescaler = <2>;
-	st,psi-frequency = <144>;
+	st,psi-frequency = <160>;
 	st,psi-source = "HSE";
+};
+
+&rng {
+	clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
+		 <&rcc STM32_SRC_CK48 CK48_SEL(2)>;
+	status = "okay";
 };
 
 &rtc {

@@ -71,7 +71,7 @@ int ina2xx_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(config->bus.bus)) {
-		LOG_ERR("I2C bus %s is not ready", config->bus.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(config->bus.bus);
 		return -ENODEV;
 	}
 

@@ -585,6 +585,16 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, udp.chkerr));
 #endif
 
+#if defined(CONFIG_NET_STATISTICS_RAW)
+	PR("Raw recv       %u\tsent\t%u\tdrop\t%u\n",
+	   GET_STAT(iface, raw.recv),
+	   GET_STAT(iface, raw.sent),
+	   GET_STAT(iface, raw.drop));
+	PR("Raw bytes recv %llu\tsent\t%llu\n",
+	   GET_STAT(iface, raw.bytes.received),
+	   GET_STAT(iface, raw.bytes.sent));
+#endif
+
 #if defined(CONFIG_NET_STATISTICS_TCP) && defined(CONFIG_NET_NATIVE_TCP)
 	PR("TCP bytes recv %llu\tsent\t%llu\tresent\t%u\n",
 	   GET_STAT(iface, tcp.bytes.received),
@@ -638,7 +648,8 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 #if defined(CONFIG_NET_STATISTICS_ETHERNET) && \
 					defined(CONFIG_NET_STATISTICS_USER_API)
 	if (iface && net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-		const struct ethernet_api *eth_api;
+		const struct device *dev = net_if_get_device(iface);
+		const struct ethernet_api *eth_api = dev->api;
 		struct net_stats_eth *eth_data = NULL;
 		uint32_t type = ETHERNET_STATS_TYPE_ALL;
 
@@ -648,15 +659,14 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 			type = opts->type;
 		}
 
-		eth_api = net_if_get_device(iface)->api;
 		if (eth_api != NULL) {
 			/* Use get_stats_type if available for type filtering */
 			if (eth_api->get_stats_type != NULL) {
 				eth_data = eth_api->get_stats_type(
-					net_if_get_device(iface), type);
+					dev, iface, type);
 			} else if (eth_api->get_stats != NULL) {
 				eth_data = eth_api->get_stats(
-					net_if_get_device(iface));
+					dev, iface);
 			}
 		}
 

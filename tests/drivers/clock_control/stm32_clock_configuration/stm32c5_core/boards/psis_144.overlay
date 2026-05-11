@@ -10,13 +10,7 @@
  */
 
 &clk_hse {
-	/* Necessary for HAL macro HSE_VALUE */
-	clock-frequency = <DT_FREQ_M(24)>;
-	status = "okay";
-};
-
-&clk_hse {
-	clock-frequency = <DT_FREQ_M(24)>;
+	clock-frequency = <DT_FREQ_M(48)>;
 	status = "okay";
 };
 

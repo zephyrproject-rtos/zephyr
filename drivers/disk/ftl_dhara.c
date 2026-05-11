@@ -85,7 +85,7 @@ int dhara_nand_erase(const struct dhara_nand *n, dhara_block_t b, dhara_error_t 
 	ret = flash_erase(ctx->info.dev, block_addr, ctx->block_size);
 	if (ret != 0) {
 		LOG_ERR("erasing block at 0x%08lx failed with error %d", (long)block_addr, ret);
-		*err = DHARA_E_BAD_BLOCK;
+		dhara_set_error(err, DHARA_E_BAD_BLOCK);
 		return -1;
 	}
 
@@ -104,7 +104,7 @@ int dhara_nand_prog(const struct dhara_nand *n, dhara_page_t p, const uint8_t *d
 	ret = flash_write(ctx->info.dev, page_addr, data, ctx->page_size);
 	if (ret != 0) {
 		LOG_ERR("writing page at 0x%08lx failed with error %d", (long)page_addr, ret);
-		*err = DHARA_E_BAD_BLOCK;
+		dhara_set_error(err, DHARA_E_BAD_BLOCK);
 		return -1;
 	}
 
@@ -151,7 +151,7 @@ int dhara_nand_read(const struct dhara_nand *n, dhara_page_t p, size_t offset, s
 	if (ret != 0) {
 		LOG_ERR("reading data at 0x%08lx failed with error %d", (long)(page_addr + offset),
 			ret);
-		*err = DHARA_E_ECC;
+		dhara_set_error(err, DHARA_E_ECC);
 		return -1;
 	}
 
@@ -171,14 +171,14 @@ int dhara_nand_copy(const struct dhara_nand *n, dhara_page_t src, dhara_page_t d
 	ret = flash_read(ctx->info.dev, src_page_addr, ctx->page_buffer, ctx->page_size);
 	if (ret != 0) {
 		LOG_ERR("reading page at 0x%08lx failed with error %d", (long)src_page_addr, ret);
-		*err = DHARA_E_ECC;
+		dhara_set_error(err, DHARA_E_ECC);
 		return -1;
 	}
 
 	ret = flash_write(ctx->info.dev, dst_page_addr, ctx->page_buffer, ctx->page_size);
 	if (ret != 0) {
 		LOG_ERR("writing page at 0x%08lx failed with error %d", (long)dst_page_addr, ret);
-		*err = DHARA_E_BAD_BLOCK;
+		dhara_set_error(err, DHARA_E_BAD_BLOCK);
 		return -1;
 	}
 

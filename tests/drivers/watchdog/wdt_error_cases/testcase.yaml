@@ -24,6 +24,7 @@ tests:
       - raytac_an54lq_db_15/nrf54l15/cpuapp
       - sam_e54_xpro
       - pic32cx_sg41_cult
+      - numaker_pfm_m487
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp

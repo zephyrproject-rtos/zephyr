@@ -309,7 +309,6 @@ static int littlefs_mount(struct fs_mount_t *mp)
 #endif /* CONFIG_APP_LITTLEFS_STORAGE_FLASH */
 
 #ifdef CONFIG_APP_LITTLEFS_STORAGE_BLK_SDMMC
-
 #if defined(CONFIG_DISK_DRIVER_SDMMC)
 #define DISK_NAME "SD"
 #elif defined(CONFIG_DISK_DRIVER_MMC)
@@ -317,6 +316,14 @@ static int littlefs_mount(struct fs_mount_t *mp)
 #else
 #error "No disk device defined, is your board supported?"
 #endif
+#endif /* CONFIG_APP_LITTLEFS_STORAGE_BLK_SDMMC */
+
+#ifdef CONFIG_APP_LITTLEFS_STORAGE_BLK_FTL
+#define DISK_NAME "NAND"
+#endif /* CONFIG_APP_LITTLEFS_STORAGE_BLK_FTL */
+
+#if defined(CONFIG_APP_LITTLEFS_STORAGE_BLK_SDMMC) || \
+	defined(CONFIG_APP_LITTLEFS_STORAGE_BLK_FTL)
 
 struct fs_littlefs lfsfs;
 static struct fs_mount_t __mp = {
@@ -336,7 +343,7 @@ static int littlefs_mount(struct fs_mount_t *mp)
 
 	return fs_mount(mp);
 }
-#endif /* CONFIG_APP_LITTLEFS_STORAGE_BLK_SDMMC */
+#endif /* CONFIG_APP_LITTLEFS_STORAGE_BLK_SDMMC || CONFIG_APP_LITTLEFS_STORAGE_BLK_FTL */
 
 int main(void)
 {

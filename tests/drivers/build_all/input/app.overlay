@@ -194,6 +194,16 @@
 				compatible = "wch,ch9350l";
 				status = "okay";
 			};
+
+			crsf {
+				compatible = "tbs,crsf";
+
+				right_stick_x {
+					channel = <1>;
+					type = <INPUT_EV_ABS>;
+					zephyr,code = <INPUT_ABS_RX>;
+				};
+			};
 		};
 
 		i2c@1 {

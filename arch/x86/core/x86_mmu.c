@@ -1325,8 +1325,8 @@ static void identity_map_remove(uint32_t level)
 	pentry_t *entry_ptr;
 
 	k_mem_region_align((uintptr_t *)&pos, &size,
-			   (uintptr_t)CONFIG_SRAM_BASE_ADDRESS,
-			   (size_t)CONFIG_SRAM_SIZE * 1024U, scope);
+			   (uintptr_t)DT_CHOSEN_SRAM_ADDR,
+			   (size_t)DT_CHOSEN_SRAM_SIZE, scope);
 
 	while (size != 0U) {
 		/* Need to get to the correct table */
