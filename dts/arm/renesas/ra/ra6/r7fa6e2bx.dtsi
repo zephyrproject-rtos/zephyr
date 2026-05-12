@@ -16,8 +16,7 @@
 /delete-node/ &agt4;
 /delete-node/ &agt5;
 /delete-node/ &adc1;
-/delete-node/ &usbfs;
-/delete-node/ &usbfs_phy;
+
 /delete-node/ &eth;
 /delete-node/ &mdio;
 
@@ -373,4 +372,8 @@
 
 &dac_global {
 	has-output-amplifier;
+};
+
+&usbfs {
+	num-bidir-endpoints = <5>;
 };
