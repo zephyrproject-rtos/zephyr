@@ -9,3 +9,4 @@ config TEST_PROVIDE_PM_HOOKS
 	bool "Provide PM hooks for test purposes"
 	default y
 	select HAS_PM
+	select PM_STATE_SET_IRQ_LOCKED
