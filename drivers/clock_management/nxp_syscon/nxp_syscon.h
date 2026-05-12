@@ -36,10 +36,6 @@ extern "C" {
 #define Z_CLOCK_MANAGEMENT_DATA_GET_nxp_syscon_clock_div(node_id, prop, idx)         \
 	DT_PHA_BY_IDX(node_id, prop, idx, divider)
 
-#define Z_CLOCK_MANAGEMENT_DATA_DEFINE_nxp_syscon_clock_gate(node_id, prop, idx)
-#define Z_CLOCK_MANAGEMENT_DATA_GET_nxp_syscon_clock_gate(node_id, prop, idx)        \
-	DT_PHA_BY_IDX(node_id, prop, idx, gate)
-
 #define Z_CLOCK_MANAGEMENT_DATA_DEFINE_nxp_syscon_clock_source(node_id, prop, idx)
 #define Z_CLOCK_MANAGEMENT_DATA_GET_nxp_syscon_clock_source(node_id, prop, idx)      \
 	DT_PHA_BY_IDX(node_id, prop, idx, gate)
