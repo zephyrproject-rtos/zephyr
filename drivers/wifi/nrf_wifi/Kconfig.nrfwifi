@@ -926,6 +926,11 @@ config NRF_WIFI_COEX_DISABLE_PRIORITY_WINDOW_FOR_SCAN
 	  Enable this configuration to disable priority window for scan
 	  in the case of coexistence with Short Range radio.
 
+config NRF_WIFI_DISPLAY_SCAN_ABORT_ON_BSS_LIMIT
+	bool "Abort scan when display BSS limit is reached"
+	help
+	  Enable this configuration to abort display scan when the BSS limit is reached.
+
 if NETWORKING
 config NRF_WIFI_ZERO_COPY_TX
 	bool "Zero copy Transmit path [EXPERIMENTAL]"
