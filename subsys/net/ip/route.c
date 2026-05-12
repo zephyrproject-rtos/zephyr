@@ -28,7 +28,11 @@
 #endif
 
 #include <zephyr/logging/log.h>
+#if defined(CONFIG_NET_IPV4_ROUTE) && defined(CONFIG_NET_IPV6_ROUTE)
 LOG_MODULE_REGISTER(net_route, ROUTE_LOG_LEVEL);
+#else
+LOG_MODULE_DECLARE(net_route, ROUTE_LOG_LEVEL);
+#endif
 
 #include <errno.h>
 #include <limits.h>
