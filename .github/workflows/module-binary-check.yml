@@ -1,0 +1,29 @@
+name: Module Binary Check
+
+on:
+  pull_request:
+    paths:
+      - west.yml
+
+permissions:
+  contents: read
+
+jobs:
+  module-binary-check:
+    runs-on: ubuntu-24.04
+    name: Module Binary Check
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check module binary additions
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          base_rev=$(git merge-base HEAD origin/${BASE_REF})
+          python3 scripts/ci/check_manifest_module_binaries.py \
+            --old-rev "$base_rev" \
+            --new-rev HEAD
