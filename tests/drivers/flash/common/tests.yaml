@@ -71,6 +71,10 @@ tests:
     integration_platforms:
       - qemu_x86
       - mimxrt1060_evk/mimxrt1062/qspi
+  drivers.flash.common.intel_pflash_cfi01:
+    platform_allow: qemu_x86
+    integration_platforms:
+      - qemu_x86
   drivers.flash.common.no_explicit_erase:
     platform_allow:
       - nrf54l15dk/nrf54l05/cpuapp
