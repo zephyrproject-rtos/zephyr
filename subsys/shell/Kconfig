@@ -468,7 +468,6 @@ endif
 
 config SHELL_ALIASES
 	bool "Support command aliases"
-	default y
 	help
 	  Aliases can be used the same way as in Linux shells. You can rename
 	  an existing command if you want to have shortcuts.
