@@ -193,6 +193,9 @@ static int lsm6dsv16x_decoder_get_frame_count(const uint8_t *buffer,
 	uint8_t fifo_tag;
 	uint8_t tot_accel_fifo_words = 0, tot_gyro_fifo_words = 0;
 	uint8_t tot_sflp_gbias = 0, tot_sflp_gravity = 0, tot_sflp_game_rotation = 0;
+#if defined(CONFIG_LSM6DSV16X_EXT_LIS2MDL)
+	uint8_t tot_shub0_fifo_words = 0;
+#endif
 
 #if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
 	uint8_t tot_temp_fifo_words = 0;
@@ -226,6 +229,11 @@ static int lsm6dsv16x_decoder_get_frame_count(const uint8_t *buffer,
 		case LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG:
 			tot_sflp_game_rotation++;
 			break;
+#if defined(CONFIG_LSM6DSV16X_EXT_LIS2MDL)
+		case LSM6DSV16X_SENSORHUB_SLAVE0_TAG:
+			tot_shub0_fifo_words++;
+			break;
+#endif
 		default:
 			break;
 		}
@@ -262,6 +270,11 @@ static int lsm6dsv16x_decoder_get_frame_count(const uint8_t *buffer,
 	case SENSOR_CHAN_GBIAS_XYZ:
 		*frame_count = tot_sflp_gbias;
 		break;
+#if defined(CONFIG_LSM6DSV16X_EXT_LIS2MDL)
+	case SENSOR_CHAN_MAGN_XYZ:
+		*frame_count = tot_shub0_fifo_words;
+		break;
+#endif
 	default:
 		*frame_count = 0;
 		break;
@@ -282,6 +295,9 @@ static int lsm6dsv16x_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec
 	uint8_t fifo_tag;
 	uint16_t xl_count = 0, gy_count = 0;
 	uint16_t tot_chan_fifo_words = 0;
+#if defined(CONFIG_LSM6DSV16X_EXT_LIS2MDL)
+	uint16_t shub0_count = 0;
+#endif
 
 #if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
 	uint16_t temp_count = 0;
@@ -323,7 +339,16 @@ static int lsm6dsv16x_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec
 		((struct sensor_data_header *)data_out)->base_timestamp_ns =
 			edata->header.timestamp -
 			(tot_chan_fifo_words - 1) * sflp_period_ns[edata->sflp_batch_odr];
+	} else {
+#if defined(CONFIG_LSM6DSV16X_EXT_LIS2MDL)
+		if (chan_spec.chan_type == SENSOR_CHAN_MAGN_XYZ) {
+			((struct sensor_data_header *)data_out)->base_timestamp_ns =
+				edata->header.timestamp;
+		} else {
+		}
+#endif
 	}
+
 
 	while (count < max_count && buffer < buffer_end) {
 		const uint8_t *frame_end = buffer;
@@ -547,6 +572,51 @@ static int lsm6dsv16x_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec
 			break;
 		}
 
+#if defined(CONFIG_LSM6DSV16X_EXT_LIS2MDL)
+		case LSM6DSV16X_SENSORHUB_SLAVE0_TAG: {
+			/*
+			 * LIS2MDL via sensor hub: fixed ±50 Gauss range,
+			 * 1.5 mGauss/LSB = 1500 µGauss/LSB.
+			 * shift=6 → representable range ±64 Gauss.
+			 *
+			 * For a different mag IC on slave 0: replace the two
+			 * constants below (shub0_scale, shub0_shift) with its
+			 * µGauss/LSB sensitivity and ceil(log2(range_gauss)).
+			 */
+			static const int32_t shub0_scale = 1500; /* µGauss/LSB */
+			static const int8_t shub0_shift = 6;     /* covers ±64 Gauss */
+			struct sensor_three_axis_data *out = data_out;
+			int16_t x, y, z;
+
+			shub0_count++;
+			if ((uintptr_t)buffer < *fit) {
+				buffer = frame_end;
+				continue;
+			}
+
+			if (chan_spec.chan_type != SENSOR_CHAN_MAGN_XYZ) {
+				buffer = frame_end;
+				continue;
+			}
+
+			out->readings[count].timestamp_delta = 0;
+
+			memcpy(&x, &buffer[1], sizeof(x));
+			memcpy(&y, &buffer[3], sizeof(y));
+			memcpy(&z, &buffer[5], sizeof(z));
+
+			out->shift = shub0_shift;
+
+			out->readings[count].x =
+				Q31_SHIFT_MICROVAL((int64_t)shub0_scale * x, shub0_shift);
+			out->readings[count].y =
+				Q31_SHIFT_MICROVAL((int64_t)shub0_scale * y, shub0_shift);
+			out->readings[count].z =
+				Q31_SHIFT_MICROVAL((int64_t)shub0_scale * z, shub0_shift);
+			break;
+		}
+#endif /* CONFIG_LSM6DSV16X_EXT_LIS2MDL */
+
 		default:
 			/* skip unhandled FIFO tag */
 			buffer = frame_end;
@@ -685,6 +755,12 @@ static int lsm6dsv16x_decoder_get_size_info(struct sensor_chan_spec chan_spec, s
 		*base_size = sizeof(struct sensor_q31_data);
 		*frame_size = sizeof(struct sensor_q31_sample_data);
 		return 0;
+#if defined(CONFIG_LSM6DSV16X_EXT_LIS2MDL)
+	case SENSOR_CHAN_MAGN_XYZ:
+		*base_size = sizeof(struct sensor_three_axis_data);
+		*frame_size = sizeof(struct sensor_three_axis_sample_data);
+		return 0;
+#endif
 	default:
 		return -ENOTSUP;
 	}
