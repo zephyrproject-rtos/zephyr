@@ -49,6 +49,14 @@ SHF_ALLOC_EXEC = SHF_ALLOC | SHF_EXEC
 
 DT_LOCATION = re.compile(r"\(DW_OP_addr: ([0-9a-f]+)\)")
 
+# Matches local-exec TLS location expressions of the form:
+#   (DW_OP_constNu: <offset>; DW_OP_GNU_push_tls_address)  -- GCC/Clang pre-DWARF5
+#   (DW_OP_constNu: <offset>; DW_OP_form_tls_address)      -- DWARF5 standard
+# The constant is the TLS section offset, which equals the symbol's st_value.
+DT_TLS_LOCATION = re.compile(
+    r"\(DW_OP_const\d+[us]: (\d+); DW_OP_(?:GNU_push_tls_address|form_tls_address)\)"
+)
+
 SRC_FILE_EXT = ('.h', '.c', '.hpp', '.cpp', '.hxx', '.cxx', '.c++')
 
 
@@ -92,6 +100,11 @@ def get_die_mapped_address(die, parser, dwarfinfo):
                     if matcher:
                         low = int(matcher.group(1), 16)
                         high = low + 1
+                    else:
+                        tls_matcher = DT_TLS_LOCATION.match(addr)
+                        if tls_matcher:
+                            low = int(tls_matcher.group(1))
+                            high = low + 1
 
     if die.tag == 'DW_TAG_subprogram':
         if 'DW_AT_low_pc' in die.attributes:
@@ -388,10 +401,23 @@ def do_simple_name_matching(dwarfinfo, symbol_dict, processed):
                 # having 'DW_AT_low_pc' means it maps to
                 # an actual address
                 elif 'DW_AT_low_pc' in die.attributes:
-                    # DW_AT_low_pc == 0 is a weak function
-                    # which has been overriden
+                    # DW_AT_low_pc == 0 usually means a weak function that has
+                    # been overridden or a garbage-collected function whose
+                    # address was never resolved. However, it can also be a
+                    # legitimate function placed at address 0 (e.g. in ITCM
+                    # starting at 0x0).
+                    # Distinguish by checking whether a symbol with a matching
+                    # name actually exists at that address in the ELF.
                     if die.attributes['DW_AT_low_pc'].value != 0:
                         sym_name = die.get_full_path()
+                    else:
+                        candidate = die.get_full_path()
+                        if candidate in symbol_dict:
+                            sym = match_symbol_address(symbol_dict[candidate],
+                                                       die, location_parser,
+                                                       dwarfinfo)
+                            if sym is not None:
+                                sym_name = candidate
 
                 # For mangled function names, the linkage name
                 # is what appears in the symbol list
@@ -488,6 +514,20 @@ def do_address_range_matching(dwarfinfo, symbol_dict, processed):
 
     unmapped_dies = processed['unmapped_dies']
 
+    # Pre-compute whether any non-TLS symbol at address 0 or 1 (ARM Thumb
+    # variant of address 0) is still unmatched. DIEs with DW_AT_low_pc == 0
+    # that come from garbage-collected functions have an unresolved address
+    # identical to the ITCM start address on some targets. We only allow such
+    # DIEs to be used for range matching when a genuine unmatched function
+    # at address 0 exists; otherwise they are phantom entries that could
+    # incorrectly capture symbols in low-address memory regions.
+    has_unmatched_at_zero = any(
+        s['symbol']['st_value'] in (0, 1) and
+        s['symbol']['st_info']['type'] != 'STT_TLS'
+        for ums in unmapped_symbols
+        for s in symbol_dict[ums]
+    )
+
     # Group DIEs by compile units
     cu_list = dict()
 
@@ -548,6 +588,13 @@ def do_address_range_matching(dwarfinfo, symbol_dict, processed):
                 low, high = get_die_mapped_address(die, location_parser,
                                                    dwarfinfo)
                 if low is None:
+                    continue
+
+                # Phantom DIEs from garbage-collected code have
+                # DW_AT_low_pc == 0 because the linker never resolved their
+                # address. Skip them unless a real unmatched function at
+                # address 0 still exists.
+                if low == 0 and not has_unmatched_at_zero:
                     continue
 
                 # Case 1: Match for a function (using a range)
