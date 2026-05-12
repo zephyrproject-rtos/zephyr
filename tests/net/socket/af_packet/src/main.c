@@ -1067,6 +1067,7 @@ static void test_recvfrom_unbound_round(int tx_sock, int rx_sock, int sock_type,
 	zassert_not_equal(ret, -1, "Failed to send (%d)", errno);
 	zassert_equal(ret, pkt_len, "Invalid data length sent (%d/%d)", ret, pkt_len);
 
+	zassert_true(pkt_len >= offset, "Packet shorter than expected L2 header");
 	pkt_len -= offset;
 
 	for (int attempt = 0; attempt < 4; attempt++) {
