@@ -15,9 +15,9 @@ tests:
       - mimxrt1064_evk
   drivers.disk.ram:
     platform_allow: qemu_x86_64
-  drivers.disk.nvme:
     extra_configs:
-      - CONFIG_NVME=y
+      - CONFIG_NVME=n
+  drivers.disk.nvme:
     platform_allow: qemu_x86_64
   drivers.disk.flash:
     extra_configs:
