@@ -321,17 +321,48 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 #endif
 
+/*
+ * On i.MX 8M family the NXP MIMX8ML8 HAL CLOCK_GetClockRootFreq()
+ * indexes its clockRootControlArray with `(uint8_t)clockRoot`. The
+ * `clock_root_t` enum values are full uintptr_t addresses
+ * ((uintptr_t)CCM_BASE + offset), so on aarch64 (where uintptr_t is
+ * 8 bytes) the cast truncates and produces the wrong index, then
+ * derefs garbage as a register pointer and faults. The HAL was
+ * written for the M7 (32-bit) build path and never tested on the
+ * A53 (64-bit). Until the upstream NXP HAL is fixed, return a known
+ * conservative rate that matches U-Boot's typical USDHC ROOT clock
+ * configuration on this family (200 MHz). The Zephyr USDHC driver
+ * uses this value to compute SD bus dividers; an under-estimate
+ * just runs the bus slower than HS400/HS200 capability allows.
+ */
+#define IMX8M_USDHC_ROOT_RATE_HZ 200000000U
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1)) && CONFIG_IMX_USDHC
 	case IMX_CCM_USDHC1_CLK:
+#ifdef CONFIG_SOC_SERIES_IMX8M
+		*rate = IMX8M_USDHC_ROOT_RATE_HZ;
+#else
 		*rate = CLOCK_GetSysPfdFreq(kCLOCK_Pfd0) /
 				(CLOCK_GetDiv(kCLOCK_Usdhc1Div) + 1U);
+#endif
 		break;
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc2)) && CONFIG_IMX_USDHC
 	case IMX_CCM_USDHC2_CLK:
+#ifdef CONFIG_SOC_SERIES_IMX8M
+		*rate = IMX8M_USDHC_ROOT_RATE_HZ;
+#else
 		*rate = CLOCK_GetSysPfdFreq(kCLOCK_Pfd0) /
 				(CLOCK_GetDiv(kCLOCK_Usdhc2Div) + 1U);
+#endif
+		break;
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc3)) && CONFIG_IMX_USDHC \
+	&& defined(CONFIG_SOC_SERIES_IMX8M)
+	case IMX_CCM_USDHC3_CLK:
+		*rate = IMX8M_USDHC_ROOT_RATE_HZ;
 		break;
 #endif
 
