@@ -205,6 +205,24 @@
 				compatible = "ti,lp5860";
 				reg = <0x16>;
 			};
+
+			pmic@17 {
+				compatible = "nordic,npm10xx";
+				reg = <0x17>;
+
+				leds {
+					compatible = "nordic,npm10xx-led";
+
+					led0 {
+						index = <2>;
+					};
+
+					led1 {
+						index = <0>;
+						led-mode = "charge";
+					};
+				};
+			};
 		};
 
 		test_pwm: pwm@12341234 {
