@@ -19,4 +19,6 @@ config BUZZER_INIT_PRIORITY
 	help
 	  System initialization priority for buzzer drivers.
 
+rsource "Kconfig.gpio"
+
 endif # BUZZER
