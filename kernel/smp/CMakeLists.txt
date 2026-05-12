@@ -6,6 +6,6 @@ target_sources(kernel PRIVATE
   ipi.c
   )
 
-target_sources_ifdef(CONFIG_SCHED_CPU_MASK kernel PRIVATE
-  cpu_mask.c
-  )
+if(CONFIG_SCHED_CPU_MASK OR CONFIG_SCHED_CPU_MASK_PIN_ONLY)
+  target_sources(kernel PRIVATE cpu_mask.c)
+endif()

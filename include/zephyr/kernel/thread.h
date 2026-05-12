@@ -109,10 +109,10 @@ struct _thread_base {
 
 #endif /* CONFIG_SMP */
 
-#ifdef CONFIG_SCHED_CPU_MASK
+#if defined(CONFIG_SCHED_CPU_MASK) || defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
 	/* "May run on" bits for each CPU */
 	uint16_t cpu_mask;
-#endif /* CONFIG_SCHED_CPU_MASK */
+#endif /* SCHED_CPU_MASK || SCHED_CPU_MASK_PIN_ONLY */
 
 	/* data returned by APIs */
 	void *swap_data;

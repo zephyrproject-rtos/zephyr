@@ -1238,7 +1238,9 @@ int k_thread_cpu_mask_enable(k_tid_t thread, int cpu);
  * @return Zero on success, otherwise error code
  */
 int k_thread_cpu_mask_disable(k_tid_t thread, int cpu);
+#endif /* CONFIG_SCHED_CPU_MASK */
 
+#if defined(CONFIG_SCHED_CPU_MASK) || defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
 /**
  * @brief Pin a thread to a CPU
  *
@@ -1250,7 +1252,7 @@ int k_thread_cpu_mask_disable(k_tid_t thread, int cpu);
  * @return Zero on success, otherwise error code
  */
 int k_thread_cpu_pin(k_tid_t thread, int cpu);
-#endif
+#endif /* SCHED_CPU_MASK || SCHED_CPU_MASK_PIN_ONLY */
 
 /**
  * @brief Suspend a thread.

@@ -91,20 +91,19 @@ config SCHED_CPU_MASK
 
 config SCHED_CPU_MASK_PIN_ONLY
 	bool "CPU mask variant with single-CPU pinning only"
-	depends on SCHED_CPU_MASK
+	depends on SMP
 	help
-	  When true, enables a variant of SCHED_CPU_MASK where only
-	  one CPU may be specified for every thread.  Effectively, all
-	  threads have a single "assigned" CPU and they will never be
-	  scheduled symmetrically.  In general this is not helpful,
-	  but some applications have a carefully designed threading
-	  architecture and want to make their own decisions about how
-	  to assign work to CPUs.  In that circumstance, some moderate
-	  optimizations can be made (e.g. having a separate run queue
-	  per CPU, keeping the list length shorter). When selected,
-	  the CPU mask becomes an immutable thread attribute. It can
-	  only be modified before a thread is started.  Most
-	  applications don't want this.
+	  Enable hard CPU pinning via k_thread_cpu_pin() without
+	  requiring SCHED_CPU_MASK (and therefore SCHED_SIMPLE).
+	  Each thread has exactly one assigned CPU and will never be
+	  scheduled on any other.
+
+	  Unlike SCHED_CPU_MASK's soft-affinity walk, this mode uses
+	  per-CPU runqueues, so it works with all three scheduler
+	  implementations (SIMPLE, SCALABLE, MULTIQ).
+
+	  The CPU mask becomes immutable once the thread starts.
+	  The k_thread_cpu_mask_*() APIs require SCHED_CPU_MASK.
 
 config TRACE_SCHED_IPI
 	bool "Test IPI"

@@ -53,7 +53,7 @@ atomic_val_t ipi_mask_create(struct k_thread *thread)
 		 *    (Items 3 & 4 may be overridden by a metaIRQ thread)
 		 */
 
-#if defined(CONFIG_SCHED_CPU_MASK)
+#if defined(CONFIG_SCHED_CPU_MASK) || defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
 		executable_on_cpu = ((thread->base.cpu_mask & BIT(i)) != 0);
 #endif
 

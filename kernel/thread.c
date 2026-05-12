@@ -681,13 +681,13 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 		new_thread->name[0] = '\0';
 	}
 #endif /* CONFIG_THREAD_NAME */
-#ifdef CONFIG_SCHED_CPU_MASK
+#if defined(CONFIG_SCHED_CPU_MASK) || defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
 	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
 		new_thread->base.cpu_mask = 1; /* must specify only one cpu */
 	} else {
 		new_thread->base.cpu_mask = -1; /* allow all cpus */
 	}
-#endif /* CONFIG_SCHED_CPU_MASK */
+#endif /* SCHED_CPU_MASK || SCHED_CPU_MASK_PIN_ONLY */
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	/* _current may be null if the dummy thread is not used */
 	if (!_current) {
