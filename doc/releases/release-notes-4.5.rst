@@ -33,6 +33,12 @@ We are pleased to announce the release of Zephyr version 4.5.0.
 
 Major enhancements with this release include:
 
+**New driver classes**
+
+  Zephyr 4.5 adds several new driver APIs, including:
+
+  - :ref:`Clock Monitor <clock_monitor_api>` for runtime observation of clock frequency
+
 An overview of the changes required or recommended when migrating your application from Zephyr
 v4.4.0 to Zephyr v4.5.0 can be found in the separate :ref:`migration guide<migration_4.5>`.
 
@@ -228,6 +234,13 @@ New Drivers
 
   * VIRTIO input device (:dtcompatible:`virtio,input`).
 
+* Clock Monitor
+
+  * :dtcompatible:`nxp,cmu-fc` — NXP Clock Monitoring Unit (Frequency Check)
+    back-end for the new :ref:`clock_monitor_api` subsystem.
+  * :dtcompatible:`nxp,cmu-fm` — NXP Clock Monitoring Unit (Frequency Meter)
+    back-end for the new :ref:`clock_monitor_api` subsystem.
+
 New Samples
 ***********
 
@@ -237,6 +250,10 @@ New Samples
 
 * :zephyr:code-sample:`mctp_i2c_bus_host` (renamed from ``mctp_i2c_bus_owner``)
 * :zephyr:code-sample:`mctp_i3c_bus_host` (renamed from ``mctp_i3c_bus_owner``)
+* ``samples/drivers/clock_monitor/check_freq`` — demonstrates WINDOW-mode
+  out-of-window frequency checking on the new :ref:`clock_monitor_api`.
+* ``samples/drivers/clock_monitor/measure_freq`` — demonstrates MEASURE-mode
+  one-shot frequency measurement on the new :ref:`clock_monitor_api`.
 
 Libraries / Subsystems
 **********************
