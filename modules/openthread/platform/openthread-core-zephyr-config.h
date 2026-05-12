@@ -236,7 +236,7 @@
  */
 #define OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_NUM CONFIG_OPENTHREAD_MULTIPLE_INSTANCE_NUM
 
-/* Zephyr does not use OpenThread's heap. mbedTLS will use heap memory allocated
+/* Zephyr does not use OpenThread's heap. Mbed TLS will use heap memory allocated
  * by Zephyr. Here, we use some dummy values to prevent OpenThread warnings.
  */
 

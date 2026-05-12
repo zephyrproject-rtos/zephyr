@@ -162,7 +162,7 @@ config MBEDTLS_HAVE_ASM
 	bool "Use of assembly code"
 	default y if !ARM
 	help
-	  Enable use of assembly code in mbedTLS. This improves the performances
+	  Enable use of assembly code in Mbed TLS. This improves the performance
 	  of asymmetric cryptography, however this might have an impact on the
 	  code size.
 
@@ -192,9 +192,9 @@ config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
 	depends on OPENTHREAD
 	default y if !NET_SOCKETS_SOCKOPT_TLS
 	help
-	  Enable some OpenThread specific mbedTLS optimizations that allows to
+	  Enable some OpenThread specific Mbed TLS optimizations that allows to
 	  save some RAM/ROM when OpenThread is used. Note, that when application
-	  aims to use other mbedTLS services on top of OpenThread (e.g. secure
+	  aims to use other Mbed TLS services on top of OpenThread (e.g. secure
 	  sockets), it's advised to disable this option.
 
 config MBEDTLS_PK_PARSE_C

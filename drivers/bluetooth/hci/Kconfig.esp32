@@ -485,7 +485,7 @@ config ESP32_BT_LE_LL_CFG_FEAT_LE_ENCRYPTION
 	  Support link-layer encryption for BLE connections.
 
 config ESP32_BT_LE_CRYPTO_STACK_MBEDTLS
-	bool "mbedTLS crypto stack"
+	bool "Mbed TLS crypto stack"
 	depends on ESP32_BT_LE_SECURITY_ENABLE
 	default y
 	select PSA_CRYPTO
@@ -499,7 +499,7 @@ config ESP32_BT_LE_CRYPTO_STACK_MBEDTLS
 	# Keep access to legacy crypto headers
 	select MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 	help
-	  Use mbedTLS library for BLE cryptographic operations.
+	  Use Mbed TLS library for BLE cryptographic operations.
 
 config ESP32_BT_LE_WHITELIST_SIZE
 	int "BLE whitelist size"

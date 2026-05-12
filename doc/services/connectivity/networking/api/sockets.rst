@@ -104,7 +104,7 @@ Secure Sockets
 Zephyr provides an extension of standard POSIX socket API, allowing to create
 and configure sockets with TLS protocol types, facilitating secure
 communication. Secure functions for the implementation are provided by
-mbedTLS library. Secure sockets implementation allows use of both TLS and DTLS
+Mbed TLS library. Secure sockets implementation allows use of both TLS and DTLS
 protocols with standard socket calls. See :c:enum:`net_ip_protocol_secure` type
 for supported secure protocol versions.
 
@@ -142,7 +142,7 @@ array) looks like this:
                             ca_certificate, sizeof(ca_certificate));
 
 By default certificates in DER format are supported. PEM support can be enabled
-in mbedTLS settings.
+in Mbed TLS settings.
 
 Secure Socket Creation
 ======================

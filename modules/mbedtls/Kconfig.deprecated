@@ -14,7 +14,7 @@ config MBEDTLS_CFG_FILE_DEPRECATED
 	select DEPRECATED
 
 config MBEDTLS_USER_CONFIG_ENABLE
-	bool "User mbedTLS config file [DEPRECATED]"
+	bool "User Mbed TLS config file [DEPRECATED]"
 	select DEPRECATED
 	help
 	  This Kconfig option is deprecated. Define MBEDTLS_USER_CONFIG_FILE directly instead.
@@ -89,8 +89,8 @@ config MBEDTLS_SSL_MAX_CONTENT_LEN
 	  E.g. for DTLS, payload size is limited by UDP datagram size, and
 	  even for HTTPS REST API, the payload can be limited to max size of
 	  (REST request, REST response, server certificate(s)).
-	  mbedTLS uses this value separate for input and output buffers, so
-	  twice this value will be allocated (on mbedTLS own heap, so the
+	  Mbed TLS uses this value separate for input and output buffers, so
+	  twice this value will be allocated (on Mbed TLS own heap, so the
 	  value of MBEDTLS_HEAP_SIZE should accommodate that).
 
 config MBEDTLS_SSL_MAX_CONTENT_LEN_DEPRECATED

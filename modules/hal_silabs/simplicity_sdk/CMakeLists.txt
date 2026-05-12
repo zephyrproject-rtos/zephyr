@@ -98,7 +98,7 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
     zephyr_library_sources(src/sl_btctrl_hci_reset_shim.c)
     zephyr_include_directories(config/ll)
 
-    zephyr_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedTLS)
+    zephyr_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
   endif()
 
   if(CONFIG_SOC_GECKO_USE_RAIL)

@@ -123,9 +123,9 @@ The security functionality in Zephyr hinges mainly on the inclusion of
 cryptographic algorithms, and on its monolithic system design.
 
 The cryptographic features are provided through PSA Crypto, with
-mbedTLS as the underlying implementation. Applications leverage PSA
+Mbed TLS as the underlying implementation. Applications leverage PSA
 Crypto APIs, ensuring a standardized and secure approach to
-cryptographic operations. mbedTLS, as the implementation of PSA
+cryptographic operations. Mbed TLS, as the implementation of PSA
 Crypto, supports a wide range of cryptographic algorithms, making it
 suitable for various application requirements.
 

@@ -7,19 +7,24 @@
 if(CONFIG_MBEDTLS)
 
   if(CONFIG_MBEDTLS_BUILTIN)
-    # Create an interface library named "mbedTLS":
+    # Create an interface library named "mbedtls_iface":
     # - This is the library other modules/subsystems link against.
     # - It contains some Mbed TLS configuration flags (ex: MBEDTLS_CONFIG_FILE
     #   and TF_PSA_CRYPTO_CONFIG_FILE) which are used in Mbed TLS build, but
     #   which must also be defined when Zephyr code includes headers
     #   from Mbed TLS.
     # - It contains public include directories which are provided by Mbed TLS.
-    zephyr_interface_library_named(mbedTLS)
+    zephyr_interface_library_named(mbedtls_iface)
 
-    # Explicitly link zephyr_interface to mbedTLS
-    zephyr_link_libraries(mbedTLS)
+    # Keep mbedTLS library as alias since downstream versions of Zephyr or
+    # modules might still refer to it.
+    add_library(mbedTLS ALIAS mbedtls_iface)
+    set_property(GLOBAL APPEND PROPERTY ZEPHYR_INTERFACE_LIBS mbedTLS)
 
-    target_compile_definitions(mbedTLS INTERFACE
+    # Explicitly link zephyr_interface to mbedtls_iface
+    zephyr_link_libraries(mbedtls_iface)
+
+    target_compile_definitions(mbedtls_iface INTERFACE
       MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CONFIG_FILE}"
       TF_PSA_CRYPTO_CONFIG_FILE="${CONFIG_TF_PSA_CRYPTO_CONFIG_FILE}"
     )
@@ -59,13 +64,13 @@ if(CONFIG_MBEDTLS)
     # to ZEPHYR_LIBS list.
     zephyr_append_cmake_library(mbedtls)
 
-    # Add Mbed TLS public include directories to the "mbedTLS" interface library.
-    target_include_directories(mbedTLS INTERFACE
+    # Add Mbed TLS public include directories to the "mbedtls_iface" interface library.
+    target_include_directories(mbedtls_iface INTERFACE
       $<TARGET_PROPERTY:mbedtls,INTERFACE_INCLUDE_DIRECTORIES>
     )
 
-    # Add local include directories to the "mbedTLS" interface library.
-    target_include_directories(mbedTLS INTERFACE
+    # Add local include directories to the "mbedtls_iface" interface library.
+    target_include_directories(mbedtls_iface INTERFACE
       ${CMAKE_CURRENT_LIST_DIR}/configs
       ${CMAKE_CURRENT_LIST_DIR}/include
     )
@@ -82,7 +87,7 @@ if(CONFIG_MBEDTLS)
       $<$<BOOL:${CONFIG_MBEDTLS_DEBUG}>:${CMAKE_CURRENT_LIST_DIR}/debug.c>
       $<$<BOOL:${CONFIG_MBEDTLS_SHELL}>:${CMAKE_CURRENT_LIST_DIR}/shell.c>
     )
-    zephyr_library_link_libraries(mbedTLS)
+    zephyr_library_link_libraries(mbedtls_iface)
 
   endif()
 

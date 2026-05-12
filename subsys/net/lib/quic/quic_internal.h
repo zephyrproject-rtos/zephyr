@@ -313,7 +313,7 @@ struct quic_tls_context {
 		/** Select which credentials to use with TLS. */
 		struct sec_tag_list sec_tag_list;
 
-		/** 0-terminated list of allowed ciphersuites (mbedTLS format).
+		/** 0-terminated list of allowed ciphersuites (Mbed TLS format).
 		 * TODO: this is not used for anything yet
 		 */
 		int ciphersuites[CONFIG_QUIC_TLS_MAX_CIPHERSUITES + 1];
@@ -404,13 +404,13 @@ struct quic_tls_context {
 
 #if defined(CONFIG_MBEDTLS)
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
-	/** mbedTLS structure for CA chain. */
+	/** Mbed TLS structure for CA chain. */
 	mbedtls_x509_crt ca_chain;
 
-	/** mbedTLS structure for own certificate. */
+	/** Mbed TLS structure for own certificate. */
 	mbedtls_x509_crt own_cert;
 
-	/** mbedTLS structure for own private key. */
+	/** Mbed TLS structure for own private key. */
 	mbedtls_pk_context priv_key;
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 #endif /* CONFIG_MBEDTLS */
