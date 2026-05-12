@@ -3,9 +3,12 @@
 
 menuconfig NVME
 	bool "NVMe disk"
-	depends on PCIE
+	select PCIE
+	select PCIE_MSI
 	select PCIE_MSI_X
 	select PCIE_MSI_MULTI_VECTOR
+	depends on DT_HAS_NVME_CONTROLLER_ENABLED
+	default y
 	help
 	  NVMe disk(s) might be present on the system through PCIe, enable this
 	  driver to support these. It will enable MSI-X and MSI multi-vector

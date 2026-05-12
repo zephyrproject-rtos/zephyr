@@ -15,8 +15,6 @@ tests:
       - platform:ek_ra8m1/r7fa8m1ahecbd:SHIELD=pmod_sd
       - platform:ek_ra8p1/r7ka8p1kflcac/cm85:SHIELD=pmod_sd
   drivers.disk.disk_performance.disk.nvme:
-    extra_configs:
-      - CONFIG_NVME=y
     platform_allow: qemu_x86_64
   drivers.disk.disk_performance.ftl.spi_nand.mikroe_flash_5_click:
     harness_config:
