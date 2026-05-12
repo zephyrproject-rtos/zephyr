@@ -70,10 +70,6 @@ static const struct spi_buf_set spi_rx = {.buffers = &spi_rx_buf, .count = 1};
 static K_SEM_DEFINE(sem_irq, 0, 1);
 static K_SEM_DEFINE(sem_spi_available, 1, 1);
 
-struct bt_apollo_data {
-	struct bt_hci_driver_data common;
-};
-
 void bt_packet_irq_isr(const struct device *unused1, struct gpio_callback *unused2,
 		       uint32_t unused3)
 {
@@ -291,7 +287,6 @@ static struct net_buf *bt_hci_acl_recv(uint8_t *data, size_t len)
 static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
-	struct bt_apollo_data *hci = dev->data;
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -363,7 +358,6 @@ static int bt_apollo_send(const struct device *dev, struct net_buf *buf)
 
 static int bt_apollo_open(const struct device *dev)
 {
-	struct bt_apollo_data *hci = dev->data;
 	int ret;
 
 	ret = bt_hci_transport_setup(spi_bus.bus);
@@ -434,7 +428,7 @@ static int bt_apollo_init(const struct device *dev)
 }
 
 #define HCI_DEVICE_INIT(inst)                                                                      \
-	static struct bt_apollo_data hci_data_##inst = {};                                         \
+	static struct bt_hci_driver_data hci_data_##inst = {};                                     \
 	static const struct bt_hci_driver_config hci_config_##inst =                               \
 		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
 	DEVICE_DT_INST_DEFINE(inst, bt_apollo_init, NULL, &hci_data_##inst, &hci_config_##inst,    \

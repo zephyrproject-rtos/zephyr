@@ -25,10 +25,6 @@
 
 #define DT_DRV_COMPAT zephyr_bt_hci_test
 
-struct driver_data {
-	struct bt_hci_driver_data common;
-};
-
 #define LOG_LEVEL CONFIG_BT_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(host_test_app);
@@ -255,7 +251,7 @@ static DEVICE_API(bt_hci, driver_api) = {
 };
 
 #define TEST_DEVICE_INIT(inst) \
-	static struct driver_data driver_data_##inst = { \
+	static struct bt_hci_driver_data driver_data_##inst = { \
 	}; \
 	static const struct bt_hci_driver_config driver_config_##inst = \
 						BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \

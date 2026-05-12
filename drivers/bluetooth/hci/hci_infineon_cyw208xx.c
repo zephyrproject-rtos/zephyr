@@ -76,10 +76,6 @@ LOG_MODULE_REGISTER(cyw208xx);
 
 #define DT_DRV_COMPAT infineon_cyw208xx_hci
 
-struct cyw208xx_data {
-	struct bt_hci_driver_data common;
-};
-
 enum {
 	BT_HCI_VND_OP_DOWNLOAD_MINIDRIVER = 0xFC2E,
 	BT_HCI_VND_OP_WRITE_RAM = 0xFC4C,
@@ -540,7 +536,7 @@ cy_en_syspm_status_t cyw208xx_syspm_callback(cy_stc_syspm_callback_params_t *cal
 }
 
 #define CYW208XX_DEVICE_INIT(inst)                                                                 \
-	static struct cyw208xx_data cyw208xx_data_##inst = {};                                     \
+	static struct bt_hci_driver_data cyw208xx_data_##inst = {};                                \
 	static const struct bt_hci_driver_config cyw208xx_config_##inst =                          \
 		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
 	DEVICE_DT_INST_DEFINE(inst, cyw208xx_hci_init, NULL, &cyw208xx_data_##inst,                \

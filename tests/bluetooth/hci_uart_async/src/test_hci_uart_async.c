@@ -29,10 +29,6 @@ static const struct device *const zephyr_bt_c2h_uart = DEVICE_DT_GET(DT_CHOSEN(z
  */
 #define DT_DRV_COMPAT zephyr_bt_hci_test
 
-struct drv_data {
-	struct bt_hci_driver_data common;
-};
-
 static void serial_vnd_data_callback(const struct device *dev, void *user_data);
 static int drv_send(const struct device *dev, struct net_buf *buf);
 static int drv_open(const struct device *dev);
@@ -49,7 +45,7 @@ static int drv_init(const struct device *dev)
 }
 
 #define TEST_DEVICE_INIT(inst) \
-	static struct drv_data drv_data_##inst = { \
+	static struct bt_hci_driver_data drv_data_##inst = { \
 	}; \
 	static const struct bt_hci_driver_config drv_config_##inst = \
 						BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \

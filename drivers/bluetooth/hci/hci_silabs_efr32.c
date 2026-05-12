@@ -19,10 +19,6 @@ LOG_MODULE_REGISTER(bt_hci_driver_efr32);
 
 #define DT_DRV_COMPAT silabs_bt_hci_efr32
 
-struct hci_data {
-	struct bt_hci_driver_data common;
-};
-
 #if defined(CONFIG_BT_MAX_CONN)
 #define MAX_CONN CONFIG_BT_MAX_CONN
 #else
@@ -344,7 +340,7 @@ static DEVICE_API(bt_hci, drv) = {
 };
 
 #define HCI_DEVICE_INIT(inst) \
-	static struct hci_data hci_data_##inst = { \
+	static struct bt_hci_driver_data hci_data_##inst = { \
 	}; \
 	static const struct bt_hci_driver_config hci_config_##inst =                               \
 		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \

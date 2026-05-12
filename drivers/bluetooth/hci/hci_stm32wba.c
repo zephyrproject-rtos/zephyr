@@ -34,10 +34,6 @@ LOG_MODULE_REGISTER(hci_wba);
 
 #define DT_DRV_COMPAT st_hci_stm32wba
 
-struct hci_data {
-	struct bt_hci_driver_data common;
-};
-
 static K_SEM_DEFINE(hci_sem, 1, 1);
 
 #if defined(CONFIG_BT_HCI_SETUP)
@@ -624,7 +620,7 @@ static DEVICE_API(bt_hci, drv) = {
 };
 
 #define HCI_DEVICE_INIT(inst) \
-	static struct hci_data hci_data_##inst = {}; \
+	static struct bt_hci_driver_data hci_data_##inst = {}; \
 	static const struct bt_hci_driver_config hci_config_##inst = \
 		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \
 	PM_DEVICE_DT_INST_DEFINE(inst, radio_pm_action); \

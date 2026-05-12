@@ -28,10 +28,6 @@ LOG_MODULE_REGISTER(hci_da1469x);
 
 #define DT_DRV_COMPAT renesas_bt_hci_da1469x
 
-struct hci_data {
-	struct bt_hci_driver_data common;
-};
-
 static K_KERNEL_STACK_DEFINE(rng_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 static struct k_thread rng_thread_data;
 struct k_sem rng_sem;
@@ -488,7 +484,7 @@ static int bt_da1469x_init(const struct device *dev)
 }
 
 #define HCI_DEVICE_INIT(inst) \
-	static struct hci_data hci_data_##inst = { \
+	static struct bt_hci_driver_data hci_data_##inst = { \
 	}; \
 	static const struct bt_hci_driver_config hci_config_##inst =                               \
 		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \

@@ -67,10 +67,6 @@ LOG_MODULE_REGISTER(bt_hci_bflb, CONFIG_BT_HCI_DRIVER_LOG_LEVEL);
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "Exactly one bflb bt-hci instance required");
 
-struct bt_bflb_data {
-	struct bt_hci_driver_data common;
-};
-
 static K_FIFO_DEFINE(rx_fifo);
 
 #if defined(CONFIG_BT_BFLB_BL70X)
@@ -328,7 +324,7 @@ static DEVICE_API(bt_hci, bt_bflb_drv) = {
 	.close = bt_bflb_close,
 };
 
-static struct bt_bflb_data bt_bflb_data_0 = {0};
+static struct bt_hci_driver_data bt_bflb_data_0 = {0};
 static const struct bt_hci_driver_config bt_bflb_config_0 = BT_DT_HCI_DRIVER_CONFIG_INST_GET(0);
 
 DEVICE_DT_INST_DEFINE(0, bt_bflb_init, NULL, &bt_bflb_data_0, &bt_bflb_config_0, POST_KERNEL,
