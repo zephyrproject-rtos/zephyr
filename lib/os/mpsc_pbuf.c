@@ -506,8 +506,12 @@ void mpsc_pbuf_put_data(struct mpsc_pbuf_buffer *buffer, const uint32_t *data,
 		wrap = free_space(buffer, &free_wlen);
 
 		if (free_wlen >= wlen) {
-			memcpy(&buffer->buf[buffer->tmp_wr_idx], data,
-				wlen * sizeof(uint32_t));
+			/* Use manual 32 bit copy instead of memcpy which might be slow,
+			 * byte-by-byte implementation.
+			 */
+			for (size_t i = 0; i < wlen; i++) {
+				buffer->buf[buffer->tmp_wr_idx + i] = data[i];
+			}
 			buffer->wr_idx = idx_inc(buffer, buffer->wr_idx, wlen);
 			tmp_wr_idx_inc(buffer, wlen);
 			cont = false;
