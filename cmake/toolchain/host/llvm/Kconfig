@@ -3,6 +3,7 @@
 
 choice LLVM_LINKER
 	prompt "LLVM Linker"
+	default LLVM_USE_LLD if HEXAGON
 	default LLVM_USE_LD
 
 config LLVM_USE_LD
@@ -14,6 +15,9 @@ config LLVM_USE_LLD
 	bool "LLVM lld"
 	help
 	  Use LLVM built-in lld linker with llvm/clang.
+	  Host binutils ld does not recognise the Hexagon target
+	  ("unrecognised emulation mode: cpu=hexagonvNN"), so lld is the only
+	  linker in this toolchain variant that can link Hexagon.
 
 config LLVM_USE_ELD
 	bool "ELD ld.eld"
@@ -23,7 +27,7 @@ config LLVM_USE_ELD
 endchoice
 
 config TOOLCHAIN_LLVM_SUPPORTS_THREAD_LOCAL_STORAGE
-	depends on RISCV || ARM || ARM64
+	depends on RISCV || ARM || ARM64 || HEXAGON
 	def_bool y
 	select TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
 
