@@ -371,6 +371,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         xip_ranges = {
             'nrf52': (0x12000000, 0x19FFFFFF),
             'nrf53': (0x10000000, 0x1FFFFFFF),
+            'nrf54l': (0x10000000, 0x1FFFFFFF),
         }
         ext_mem_erase_opt = None
         if self.family in xip_ranges:

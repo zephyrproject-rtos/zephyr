@@ -1,0 +1,17 @@
+{
+  "firmware_config": {
+    "peripheral": "SPIM00"
+  },
+  "pins": {
+    "sck": 65,
+    "csn": 69,
+    "io0": 66,
+    "io1": 68,
+    "io2": 67,
+    "io3": 64
+  },
+  "flash_size": 8388608,
+  "page_size": 4096,
+  "sck_frequency": 8000000,
+  "address_mode": "MODE24BIT"
+}

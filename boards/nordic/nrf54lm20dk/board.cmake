@@ -15,5 +15,7 @@ if(CONFIG_TFM_FLASH_MERGED_BINARY)
   set_property(TARGET runners_yaml_props_target PROPERTY hex_file tfm_merged.hex)
 endif()
 
+board_runner_args(nrfutil "--ext-mem-config-file=${BOARD_DIR}/support/nrf54lm20dk_spi_nrfutil_config.json")
+
 include(${ZEPHYR_BASE}/boards/common/nrfutil.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
