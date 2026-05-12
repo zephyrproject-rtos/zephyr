@@ -15,6 +15,7 @@ struct memc_xspi_dev_config {
 	xspi_device_config_t xspi_dev_config;
 	const uint32_t *lut_array;
 	size_t lut_count;
+	bool is_opi;
 };
 
 /**

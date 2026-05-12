@@ -90,7 +90,7 @@ endchoice
 
 endif # DT_HAS_NXP_IMX_FLEXSPI_ENABLED
 
-if DT_HAS_NXP_XSPI_PSRAM_ENABLED
+if DT_HAS_NXP_XSPI_PSRAM_ENABLED || DT_HAS_NXP_XSPI_NOR_ENABLED
 
 config MEMC_MCUX_XSPI_INIT_XIP
 	bool "Initialize XSPI when using device for XIP"

@@ -401,29 +401,33 @@ out:
 
 static int del_oldest_log(void)
 {
-	int rc;
-	static char dellname[MAX_PATH_LEN];
+    int rc;
+    int attempts = MAX_FILE_NUMERAL + 1;
+    static char dellname[MAX_PATH_LEN];
 
-	while (true) {
-		get_log_path(dellname, sizeof(dellname), oldest);
-		rc = fs_unlink(dellname);
+    if (file_ctr == 0) {
+        return -ENOENT;
+    }
 
-		if ((rc == 0) || (rc == -ENOENT)) {
-			oldest++;
-			if (oldest > MAX_FILE_NUMERAL) {
-				oldest = 0;
-			}
+    while (attempts--) {
+        get_log_path(dellname, sizeof(dellname), oldest);
 
-			if (rc == 0) {
-				--file_ctr;
-				break;
-			}
-		} else {
-			break;
-		}
-	}
+        rc = fs_unlink(dellname);
 
-	return rc;
+        if (rc == 0) {
+            oldest = (oldest + 1) % (MAX_FILE_NUMERAL + 1);
+            file_ctr--;
+            return 0;
+        }
+
+        if (rc != -ENOENT) {
+            return rc;
+        }
+
+        oldest = (oldest + 1) % (MAX_FILE_NUMERAL + 1);
+    }
+
+    return -ENOENT;
 }
 
 BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE),
