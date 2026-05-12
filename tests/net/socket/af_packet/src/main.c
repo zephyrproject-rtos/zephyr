@@ -965,6 +965,19 @@ static void validate_recvfrom_addr(struct net_sockaddr_ll *ll_rx, net_socklen_t 
 	zassert_mem_equal(ll_rx->sll_addr, lladdr, NET_ETH_ADDR_LEN, "Invalid address");
 }
 
+static bool recvfrom_addr_matches(struct net_sockaddr_ll *ll_rx, net_socklen_t addrlen,
+				  int iface, uint8_t *lladdr)
+{
+	return addrlen == sizeof(struct net_sockaddr_ll) &&
+	       ll_rx->sll_family == NET_AF_PACKET &&
+	       ll_rx->sll_protocol == net_htons(ETH_P_IP) &&
+	       ll_rx->sll_ifindex == iface &&
+	       ll_rx->sll_hatype == NET_ARPHRD_ETHER &&
+	       ll_rx->sll_pkttype == NET_PACKET_OTHERHOST &&
+	       ll_rx->sll_halen == NET_ETH_ADDR_LEN &&
+	       memcmp(ll_rx->sll_addr, lladdr, NET_ETH_ADDR_LEN) == 0;
+}
+
 static void test_recvfrom_common(int sock_type, int proto)
 {
 	struct net_sockaddr_ll ll_dst;
@@ -1040,14 +1053,15 @@ static void test_recvfrom_unbound_round(int tx_sock, int rx_sock, int sock_type,
 	uint16_t offset = (sock_type == NET_SOCK_DGRAM) ? sizeof(struct net_eth_hdr) : 0;
 	struct net_sockaddr_ll ll_dst;
 	struct net_sockaddr_ll ll_rx = { 0 };
-	net_socklen_t addrlen = sizeof(ll_rx);
+	net_socklen_t last_addrlen = 0U;
 	uint16_t pkt_len;
 	int ret;
+	int expected_iface = net_if_get_by_iface(dst_iface);
 
 	prepare_test_packet(NET_SOCK_RAW, ETH_P_IP, src_addr, dst_addr, &pkt_len);
 	prepare_test_dst_lladdr(&ll_dst, ETH_P_IP, dst_addr, src_iface);
 
-	ret = zsock_sendto(packet_sock_1, tx_buf, pkt_len, 0,
+	ret = zsock_sendto(tx_sock, tx_buf, pkt_len, 0,
 			   (struct net_sockaddr *)&ll_dst,
 			   sizeof(struct net_sockaddr_ll));
 	zassert_not_equal(ret, -1, "Failed to send (%d)", errno);
@@ -1055,20 +1069,34 @@ static void test_recvfrom_unbound_round(int tx_sock, int rx_sock, int sock_type,
 
 	pkt_len -= offset;
 
-	ret = zsock_recvfrom(packet_sock_2, rx_buf, sizeof(rx_buf), 0,
-			     (struct net_sockaddr *)&ll_rx, &addrlen);
-	zassert_not_equal(ret, -1, "Failed to receive packet (%d)", errno);
+	for (int attempt = 0; attempt < 4; attempt++) {
+		net_socklen_t addrlen = sizeof(ll_rx);
+
+		memset(&ll_rx, 0, sizeof(ll_rx));
+		ret = zsock_recvfrom(rx_sock, rx_buf, sizeof(rx_buf), 0,
+				     (struct net_sockaddr *)&ll_rx, &addrlen);
+		last_addrlen = addrlen;
+		zassert_not_equal(ret, -1, "Failed to receive packet (%d)", errno);
+
+		if (ret == pkt_len &&
+		    memcmp(rx_buf, tx_buf + offset, pkt_len) == 0 &&
+		    recvfrom_addr_matches(&ll_rx, addrlen, expected_iface, src_addr)) {
+			validate_recvfrom_addr(&ll_rx, addrlen, expected_iface, src_addr);
+			return;
+		}
+	}
+
 	zassert_equal(ret, pkt_len,
 		      "Invalid data size received (%d, expected %d)",
 		      ret, pkt_len);
 	zassert_mem_equal(rx_buf, tx_buf + offset, pkt_len,
 			  "Invalid payload received");
-	validate_recvfrom_addr(&ll_rx, addrlen, net_if_get_by_iface(dst_iface),
-			       src_addr);
+	validate_recvfrom_addr(&ll_rx, last_addrlen, expected_iface, src_addr);
 }
 
 static void test_recvfrom_common_unbound(int sock_type, bool bind_iface_0)
 {
+	struct net_sockaddr_in ip_src;
 	struct net_sockaddr_ll ll_dst;
 	static uint8_t dummy_lladdr[] = { 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
 	uint16_t pkt_len;
@@ -1078,6 +1106,9 @@ static void test_recvfrom_common_unbound(int sock_type, bool bind_iface_0)
 	setup_packet_socket(&packet_sock_1, NET_SOCK_RAW, 0);
 	/* Receiving sock */
 	setup_packet_socket(&packet_sock_2, sock_type, net_htons(ETH_P_ALL));
+
+	/* Avoid ICMP destination-unreachable replies polluting the packet socket. */
+	prepare_udp_socket(&udp_sock_1, &ip_src, DST_PORT);
 
 	if (bind_iface_0) {
 		bind_packet_socket(packet_sock_2, NULL);
