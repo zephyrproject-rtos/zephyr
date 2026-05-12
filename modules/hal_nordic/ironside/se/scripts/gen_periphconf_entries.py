@@ -511,6 +511,11 @@ def lookup_tables_get(soc: Soc, family: Family) -> SocLookupTables:
                 NrfPsel(fun=NrfFun.SPIM_MISO, port=2, pin=3): Ctrlsel.SERIAL0,
                 NrfPsel(fun=NrfFun.SPIM_MOSI, port=2, pin=4): Ctrlsel.SERIAL0,
                 NrfPsel(fun=NrfFun.SPIM_SCK, port=2, pin=0): Ctrlsel.SERIAL0,
+                # SPIM P5 mappings
+                NrfPsel(fun=NrfFun.SPIM_CSN, port=5, pin=5): Ctrlsel.SERIAL0,
+                NrfPsel(fun=NrfFun.SPIM_MISO, port=5, pin=4): Ctrlsel.SERIAL0,
+                NrfPsel(fun=NrfFun.SPIM_MOSI, port=5, pin=2): Ctrlsel.SERIAL0,
+                NrfPsel(fun=NrfFun.SPIM_SCK, port=5, pin=1): Ctrlsel.SERIAL0,
                 # SPIM P6 mappings
                 NrfPsel(fun=NrfFun.SPIM_CSN, port=6, pin=5): Ctrlsel.SERIAL0,
                 NrfPsel(fun=NrfFun.SPIM_MISO, port=6, pin=7): Ctrlsel.SERIAL0,
@@ -521,6 +526,11 @@ def lookup_tables_get(soc: Soc, family: Family) -> SocLookupTables:
                 NrfPsel(fun=NrfFun.UART_RTS, port=2, pin=5): Ctrlsel.SERIAL0,
                 NrfPsel(fun=NrfFun.UART_RX, port=2, pin=2): Ctrlsel.SERIAL0,
                 NrfPsel(fun=NrfFun.UART_TX, port=2, pin=4): Ctrlsel.SERIAL0,
+                # UARTE P5 mappings
+                NrfPsel(fun=NrfFun.UART_CTS, port=5, pin=4): Ctrlsel.SERIAL0,
+                NrfPsel(fun=NrfFun.UART_RTS, port=5, pin=5): Ctrlsel.SERIAL0,
+                NrfPsel(fun=NrfFun.UART_RX, port=5, pin=3): Ctrlsel.SERIAL0,
+                NrfPsel(fun=NrfFun.UART_TX, port=5, pin=2): Ctrlsel.SERIAL0,
                 # UARTE P6 mappings
                 NrfPsel(fun=NrfFun.UART_CTS, port=6, pin=7): Ctrlsel.SERIAL0,
                 NrfPsel(fun=NrfFun.UART_RTS, port=6, pin=5): Ctrlsel.SERIAL0,
