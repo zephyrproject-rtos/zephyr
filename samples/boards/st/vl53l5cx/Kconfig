@@ -1,0 +1,12 @@
+# Private config options for VL53L5CX sample program
+
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "VL53L5CX sample application"
+
+source "Kconfig.zephyr"
+
+config SAMPLE_VL53L5CX_DIST_MAX_MM
+	int "The maximum distance (in mm) captured by the VL53L5CX"
+	default 4000
