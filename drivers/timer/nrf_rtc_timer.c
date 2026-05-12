@@ -64,6 +64,7 @@ extern void rtc_pretick_rtc1_isr_hook(void);
 static volatile uint32_t overflow_cnt;
 static volatile uint64_t anchor;
 static uint64_t last_count;
+static uint32_t last_elapsed;
 static bool sys_busy;
 
 struct z_nrf_rtc_timer_chan_data {
@@ -501,6 +502,7 @@ static void sys_clock_timeout_handler(int32_t chan,
 	uint32_t dticks = (uint32_t)(expire_time - last_count) / CYC_PER_TICK;
 
 	last_count += dticks * CYC_PER_TICK;
+	last_elapsed = 0;
 
 	anchor_update(cc_value);
 
@@ -667,25 +669,35 @@ bail:
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
-	uint32_t cyc;
+	uint64_t target_time;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
 	if (ticks == K_TICKS_FOREVER) {
-		cyc = MAX_TICKS * CYC_PER_TICK;
+		target_time = last_count + MAX_CYCLES;
 		sys_busy = false;
 	} else {
-		/* Value of ticks can be zero or negative, what means "announce
-		 * the next tick" (the same as ticks equal to 1).
+		/* Absolute tick-aligned target pinned to last_elapsed (the
+		 * tick count the kernel last observed via sys_clock_elapsed)
+		 * so the fire lands at exactly (last_elapsed + ticks) ticks
+		 * past the last announce -- no sub-tick alignment slack from
+		 * the caller's mid-tick arm. Clamp on ticks (not the sum)
+		 * because the 24-bit compare register is constrained relative
+		 * to the current counter, not to last_count, and
+		 *   target - now = ticks * CYC_PER_TICK - sub_tick
+		 * so it is ticks alone that must fit COUNTER_HALF_SPAN.
 		 */
-		cyc = CLAMP(ticks, 1, (int32_t)MAX_TICKS);
-		cyc *= CYC_PER_TICK;
+		if ((uint32_t)ticks > MAX_TICKS) {
+			ticks = MAX_TICKS;
+		}
+		target_time = last_count +
+			      ((uint64_t)last_elapsed + (uint64_t)ticks) * CYC_PER_TICK;
 		sys_busy = true;
 	}
 
-	uint32_t unannounced = z_nrf_rtc_timer_read() - last_count;
+	uint32_t unannounced = (uint32_t)(z_nrf_rtc_timer_read() - last_count);
 
 	/* If we haven't announced for more than half the 24-bit wrap
 	 * duration, then force an announce to avoid loss of a wrap
@@ -693,25 +705,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * before the existing one triggers the interrupt.
 	 */
 	if (unannounced >= COUNTER_HALF_SPAN) {
-		cyc = 0;
+		target_time = last_count;
 	}
-
-	/* Get the cycles from last_count to the tick boundary after
-	 * the requested ticks have passed starting now.
-	 */
-	cyc += unannounced;
-	cyc = DIV_ROUND_UP(cyc, CYC_PER_TICK) * CYC_PER_TICK;
-
-	/* Due to elapsed time the calculation above might produce a
-	 * duration that laps the counter.  Don't let it.
-	 * This limitation also guarantees that the anchor will be properly
-	 * updated before every overflow (see anchor_update()).
-	 */
-	if (cyc > MAX_CYCLES) {
-		cyc = MAX_CYCLES;
-	}
-
-	uint64_t target_time = cyc + last_count;
 
 	compare_set(SYS_CLOCK_CH, target_time, sys_clock_timeout_handler, NULL, false);
 }
@@ -722,7 +717,10 @@ uint32_t sys_clock_elapsed(void)
 		return 0;
 	}
 
-	return (z_nrf_rtc_timer_read() - last_count) / CYC_PER_TICK;
+	uint32_t delta = (uint32_t)(z_nrf_rtc_timer_read() - last_count) / CYC_PER_TICK;
+
+	last_elapsed = delta;
+	return delta;
 }
 
 uint32_t sys_clock_cycle_get_32(void)
