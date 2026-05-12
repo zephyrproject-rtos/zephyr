@@ -14,7 +14,16 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/logging/log.h>
+#ifdef CONFIG_SOC_SERIES_IMX8M
+/*
+ * The i.MX 8M family does not provide a per-board <soc.h> shim like
+ * the i.MX RT family does. The driver only needs <fsl_common.h>
+ * symbols from soc.h, so include it directly on this family.
+ */
+#include <fsl_common.h>
+#else
 #include <soc.h>
+#endif
 #include <zephyr/drivers/pinctrl.h>
 #define PINCTRL_STATE_SLOW   PINCTRL_STATE_PRIV_START
 #define PINCTRL_STATE_MED    (PINCTRL_STATE_PRIV_START + 1U)
