@@ -5551,6 +5551,7 @@ Test Framework (Ztest):
     - jeremybettis
     - yperess
     - asemjonovs
+    - Mattemagikern
   files:
     - subsys/testsuite/
     - tests/ztest/
