@@ -34,10 +34,6 @@
 
 #define DT_DRV_COMPAT nxp_hci_ble
 
-struct bt_nxp_data {
-	struct bt_hci_driver_data common;
-};
-
 struct hci_data {
 	uint8_t packetType;
 	uint8_t *data;
@@ -817,7 +813,7 @@ static int bt_nxp_init(const struct device *dev)
 }
 
 #define HCI_DEVICE_INIT(inst)                                                                      \
-	static struct bt_nxp_data hci_data_##inst = {};                                            \
+	static struct bt_hci_driver_data hci_data_##inst = {};                                     \
 	static const struct bt_hci_driver_config hci_config_##inst =                               \
 		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
 	DEVICE_DT_INST_DEFINE(inst, bt_nxp_init, NULL, &hci_data_##inst, &hci_config_##inst,       \

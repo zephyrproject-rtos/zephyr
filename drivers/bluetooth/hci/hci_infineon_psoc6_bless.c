@@ -31,10 +31,6 @@ LOG_MODULE_REGISTER(psoc6_bless);
 
 #define DT_DRV_COMPAT infineon_bless_hci
 
-struct psoc6_bless_data {
-	struct bt_hci_driver_data common;
-};
-
 #define BLE_LOCK_TMOUT_MS       (1000)
 #define BLE_THREAD_SEM_TMOUT_MS (1000)
 
@@ -253,7 +249,7 @@ static DEVICE_API(bt_hci, drv) = {
 };
 
 #define PSOC6_BLESS_DEVICE_INIT(inst) \
-	static struct psoc6_bless_data psoc6_bless_data_##inst = { \
+	static struct bt_hci_driver_data psoc6_bless_data_##inst = { \
 	}; \
 	static const struct bt_hci_driver_config psoc6_bless_config_##inst = \
 		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \

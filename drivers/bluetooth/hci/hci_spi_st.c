@@ -90,10 +90,6 @@ static struct k_thread spi_rx_thread_data;
 #define BLUENRG_CONFIG_LL_ONLY_OFFSET       0x2C
 #define BLUENRG_CONFIG_LL_ONLY_LEN          0x01
 
-struct bt_spi_data {
-	struct bt_hci_driver_data common;
-};
-
 static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
 	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LOCK_ON);
 
@@ -758,7 +754,7 @@ static int bt_spi_init(const struct device *dev)
 }
 
 #define HCI_DEVICE_INIT(inst) \
-	static struct bt_spi_data hci_data_##inst = { \
+	static struct bt_hci_driver_data hci_data_##inst = { \
 	}; \
 	static const struct bt_hci_driver_config hci_config_##inst =                               \
 		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \

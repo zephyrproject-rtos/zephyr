@@ -21,10 +21,6 @@
 #include "shci.h"
 #include "shci_tl.h"
 
-struct hci_data {
-	struct bt_hci_driver_data common;
-};
-
 static const struct stm32_pclken clk_cfg[] = STM32_DT_CLOCKS(DT_DRV_INST(0));
 
 #define POOL_SIZE (CFG_TLBLE_EVT_QUEUE_LENGTH * 4 * \
@@ -710,7 +706,7 @@ static int _bt_ipm_init(const struct device *dev)
 }
 
 #define HCI_DEVICE_INIT(inst) \
-	static struct hci_data hci_data_##inst = { \
+	static struct bt_hci_driver_data hci_data_##inst = { \
 	}; \
 	static const struct bt_hci_driver_config hci_config_##inst = \
 		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \

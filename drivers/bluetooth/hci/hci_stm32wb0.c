@@ -67,11 +67,6 @@ static PKA_HandleTypeDef hpka;
 static uint32_t __noinit aci_adv_nwk_buffer[CFG_BLE_ADV_NWK_BUFFER_SIZE >> 2];
 #endif /* CONFIG_BT_EXT_ADV */
 
-struct hci_data {
-	struct bt_hci_driver_data common;
-	bt_hci_recv_t recv;
-};
-
 /* Dummy implementation */
 int BLEPLAT_NvmGet(void)
 {
@@ -518,7 +513,7 @@ static DEVICE_API(bt_hci, drv) = {
 
 #define HCI_DEVICE_INIT(inst) \
 	PM_DEVICE_DT_INST_DEFINE(inst, ble_pm_action); \
-	static struct hci_data hci_data_##inst = { \
+	static struct bt_hci_driver_data hci_data_##inst = { \
 	}; \
 	static const struct bt_hci_driver_config hci_config_##inst =                               \
 		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \

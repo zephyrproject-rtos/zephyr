@@ -68,10 +68,6 @@ LOG_MODULE_REGISTER(bt_ctlr_hci_driver);
 
 #define DT_DRV_COMPAT zephyr_bt_hci_ll_sw_split
 
-struct hci_driver_data {
-	struct bt_hci_driver_data common;
-};
-
 static struct k_sem sem_recv;
 static struct k_fifo recv_fifo;
 
@@ -1054,7 +1050,7 @@ static DEVICE_API(bt_hci, hci_driver_api) = {
 };
 
 #define BT_HCI_CONTROLLER_INIT(inst) \
-	static struct hci_driver_data data_##inst; \
+	static struct bt_hci_driver_data data_##inst; \
 	static const struct bt_hci_driver_config config_##inst = \
 						BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \
 	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &data_##inst, &config_##inst, POST_KERNEL, \

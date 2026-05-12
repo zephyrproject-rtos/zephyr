@@ -66,10 +66,6 @@ LOG_MODULE_REGISTER(bt_driver);
 	be transmitted across this HCI link
 #endif /* CONFIG_BT_L2CAP_TX_MTU > MAX_MTU */
 
-struct bt_spi_data {
-	struct bt_hci_driver_data common;
-};
-
 static uint8_t __noinit rxmsg[SPI_MAX_MSG_LEN];
 static uint8_t __noinit txmsg[SPI_MAX_MSG_LEN];
 
@@ -434,7 +430,7 @@ static int bt_spi_init(const struct device *dev)
 }
 
 #define HCI_DEVICE_INIT(inst) \
-	static struct bt_spi_data hci_data_##inst = { \
+	static struct bt_hci_driver_data hci_data_##inst = { \
 	}; \
 	static const struct bt_hci_driver_config hci_config_##inst = \
 		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \
