@@ -285,7 +285,6 @@ config MBEDTLS_PSA_CRYPTO_C
 config MBEDTLS_PSA_CRYPTO_CLIENT
 	def_bool y
 	depends on PSA_CRYPTO
-	select PSA_CRYPTO_CLIENT
 
 config MBEDTLS_LMS_C
 	bool "Support LMS signature schemes"

@@ -5,13 +5,7 @@
 # from ../../../modules/crypto/tf-psa-crypto/include/psa/crypto_config.h.
 # Some manual additions are made, but no deletion.
 
-config PSA_CRYPTO_CLIENT
-	bool
-	help
-	  Promptless symbol to state that there is a PSA crypto API provider
-	  enabled in the system. This allows to select desired PSA_WANT features.
-
-if PSA_CRYPTO_CLIENT
+if PSA_CRYPTO
 
 config PSA_CRYPTO_ENABLE_ALL
 	bool "All PSA crypto features"
@@ -340,4 +334,4 @@ config PSA_WANT_KEY_TYPE_DH_KEY_PAIR_GENERATE
 	bool "PSA_WANT_KEY_TYPE_DH_KEY_PAIR_GENERATE" if !MBEDTLS_PROMPTLESS
 	default y if PSA_CRYPTO_ENABLE_ALL
 
-endif # PSA_CRYPTO_CLIENT
+endif # PSA_CRYPTO

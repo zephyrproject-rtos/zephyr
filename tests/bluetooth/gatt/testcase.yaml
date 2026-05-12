@@ -13,7 +13,7 @@ tests:
       - bluetooth
       - gatt
   bluetooth.gatt.psa:
-    filter: CONFIG_PSA_CRYPTO_CLIENT
+    filter: CONFIG_PSA_CRYPTO
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="test.overlay"
     platform_allow:
