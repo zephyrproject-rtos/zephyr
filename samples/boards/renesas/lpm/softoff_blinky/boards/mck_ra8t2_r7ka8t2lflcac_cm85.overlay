@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/wuc/wuc_renesas_ra_lpm.h>
+
+/ {
+	zephyr,user {
+		wakeup-source;
+		wakeup-ctrls = <&wuc RA_WUC_DPSS_ULPT1>;
+	};
+};
+
+&lpm {
+	deep-standby-options = "io-port-keep";
+};
+
+&wuc {
+	status = "okay";
+};
+
+&ulpt1 {
+	interrupts = <95 1>;
+	interrupt-names = "ulptcmai";
+	status = "okay";
+
+	wakeup_counter: counter {
+		status = "okay";
+	};
+};
