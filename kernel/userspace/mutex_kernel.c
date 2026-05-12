@@ -40,8 +40,7 @@ int z_impl_z_sys_mutex_kernel_lock(struct sys_mutex *mutex, k_timeout_t timeout)
 	return k_mutex_lock(kernel_mutex, timeout);
 }
 
-static inline int z_vrfy_z_sys_mutex_kernel_lock(struct sys_mutex *mutex,
-						 k_timeout_t timeout)
+static inline int z_vrfy_z_sys_mutex_kernel_lock(struct sys_mutex *mutex, k_timeout_t timeout)
 {
 	if (check_sys_mutex_addr(mutex)) {
 		return -EACCES;
@@ -71,3 +70,24 @@ static inline int z_vrfy_z_sys_mutex_kernel_unlock(struct sys_mutex *mutex)
 	return z_impl_z_sys_mutex_kernel_unlock(mutex);
 }
 #include <zephyr/syscalls/z_sys_mutex_kernel_unlock_mrsh.c>
+
+void sys_mutex_init(struct sys_mutex *mutex)
+{
+	ARG_UNUSED(mutex);
+
+	/* Nothing to do, kernel-side data structures are initialized at
+	 * boot
+	 */
+}
+
+int sys_mutex_lock(struct sys_mutex *mutex, k_timeout_t timeout)
+{
+	/* For now, make the syscall unconditionally */
+	return z_sys_mutex_kernel_lock(mutex, timeout);
+}
+
+int sys_mutex_unlock(struct sys_mutex *mutex)
+{
+	/* For now, make the syscall unconditionally */
+	return z_sys_mutex_kernel_unlock(mutex);
+}
