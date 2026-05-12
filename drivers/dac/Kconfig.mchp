@@ -35,3 +35,11 @@ config DAC_MCHP_G1_OVERSAMPLING_RATIO
 	  Enable Oversampling Ratio support for G1 DAC
 
 endif # DAC_MCHP_G1
+
+config DAC_MCHP_G2
+	bool "Microchip G2 DAC Driver"
+	depends on DT_HAS_MICROCHIP_DAC_G2_ENABLED
+	default y
+	select PINCTRL
+	help
+	  Enable support for the Microchip DAC driver on G2 DAC peripherals.
