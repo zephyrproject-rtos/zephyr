@@ -14,8 +14,8 @@ mutex_complex suite runs two cases:
    - A supervisor thread accesses the mutex directly to confirm the
      supervisor path behaves the same as the user-mode path.
 
-The kernel.mutex.system test builds with userspace enabled, while
-kernel.mutex.system.nouser builds with CONFIG_TEST_USERSPACE=n.
+The kernel.mutex.system.k_mutex test builds with userspace enabled, while
+kernel.mutex.system.k_mutex.nouser builds with CONFIG_TEST_USERSPACE=n.
 
 ---------------------------------------------------------------------------
 
