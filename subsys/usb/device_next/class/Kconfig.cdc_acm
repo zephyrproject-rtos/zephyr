@@ -47,6 +47,24 @@ config USBD_CDC_ACM_BUF_POOL_SIZE
 	  be large enough to accommodate the maximum packet size for
 	  the endpoints.
 
+config USBD_CDC_ACM_RX_BUF_QUEUE_SIZE
+    int "Maximum number of RX buffers that can be queued"
+    range 2 5
+    default 3
+    help
+      IN buffers are queued on an slist from which they are later released to
+      application. This specifies the maximum amount of buffers that can be
+      queued.
+
+config USBD_CDC_ACM_TX_FLUSH_TIMEOUT
+    int "Timeout in ms after which the leftover tx data will be flushed."
+    range 1 20
+    default 10
+    help
+      It is more efficient to pass on data in sizes of multiple of
+      wMaxPacketSize, but if the writes are not aligned the remaining data will
+      get flushed after this timeout.
+
 module = USBD_CDC_ACM
 module-str = usbd cdc_acm
 default-count = 1
