@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+config HEXAGON_TIMER
+	bool "Hexagon VM timer driver"
+	depends on HEXAGON
+	default y
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	help
+	  This option enables the Hexagon VM timer driver for system clock and
+	  timing services. The driver is tickless: it arms an absolute deadline
+	  through the H2 vmtimerop interface and drives the tick accounting with
+	  the generic system-timer core. Its counter rate is queried from the
+	  hypervisor at boot.
+
+if HEXAGON_TIMER
+
+config HEXAGON_TIMER_IRQ
+	int "Timer interrupt number"
+	default 12
+	help
+	  The interrupt number for the Hexagon system timer.
+	  Under H2, the timer posts virtual interrupt 12
+	  (H2K_TIME_GUESTINT) to the guest.
+
+config HEXAGON_TIMER_PRIORITY
+	int "Timer interrupt priority"
+	default 0
+	help
+	  The interrupt priority for the Hexagon system timer.
+	  Lower values indicate higher priority.
+
+endif # HEXAGON_TIMER
