@@ -16,6 +16,7 @@ Peripherals
    bbram.rst
    bc12.rst
    biometrics.rst
+   buzzer.rst
    clock_control.rst
    can/index.rst
    charger.rst

@@ -1411,6 +1411,21 @@ Documentation Infrastructure:
   tests:
     - sample.drivers.auxdisplay
 
+"Drivers: Buzzer":
+  status: maintained
+  maintainers:
+    - carlocaione
+  files:
+    - doc/hardware/peripherals/buzzer.rst
+    - drivers/buzzer/
+    - dts/bindings/buzzer/
+    - include/zephyr/drivers/buzzer.h
+    - samples/drivers/buzzer/
+  labels:
+    - "area: Buzzer"
+  tests:
+    - sample.drivers.buzzer
+
 "Drivers: CAN":
   status: maintained
   maintainers:
