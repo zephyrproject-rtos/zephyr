@@ -2216,7 +2216,21 @@ This has been fixed in main for v4.4.0
 :cve:`2026-1681`
 ----------------
 
-Under embargo until 2026-04-15
+net: Stack Overflow with Ping (to own IP Address) via Shell
+
+Issuing an ICMP ping via the ``net ping`` shell command to a device's own IPv4 address causes the
+network stack to recursively re-enter the input path on the same system work-queue stack. Because
+the destination is recognized as a local address, both the echo request and the resulting echo reply
+are processed inline before the current frame returns. The nested input-path frames exceed the
+work-queue stack and trigger a stack overflow.
+
+- `Zephyr project bug tracker GHSA-6fcc-8rwr-w7xx
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-6fcc-8rwr-w7xx>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 102268 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/102268>`_
 
 :cve:`2026-4179`
 ----------------
