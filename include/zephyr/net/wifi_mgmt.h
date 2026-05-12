@@ -805,6 +805,9 @@ enum wifi_disconn_reason {
 	WIFI_REASON_DISCONN_INACTIVITY,
 };
 
+/** Helper function to get user-friendly disconnect reason name. */
+const char *wifi_disconn_reason_txt(enum wifi_disconn_reason reason);
+
 /** @brief Wi-Fi AP mode result codes. To be overlaid on top of \ref wifi_status
  * in the AP mode enable or disable result event for detailed status.
  */
