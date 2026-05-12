@@ -91,10 +91,13 @@ int _isatty(int file)
 	return 0;
 }
 
+/* MWDT picolibc provides ___errno(); mwlibc does not. */
+#ifndef __PICOLIBC__
 int *___errno(void)
 {
 	return z_errno();
 }
+#endif
 
 __weak void _exit(int status)
 {

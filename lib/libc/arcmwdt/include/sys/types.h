@@ -27,4 +27,10 @@ typedef int ssize_t;
 #endif /* CONFIG_64BIT */
 #endif /* _SSIZE_T_DEFINED */
 
+#ifdef __PICOLIBC__
+#define _ITIMERSPEC_DECLARED
+#define _TIMESPEC_DECLARED
+#define _LOCALE_T_DECLARED
+#endif /* __PICOLIBC__ */
+
 #endif /* LIB_LIBC_ARCMWDT_INCLUDE_SYS_TYPES_H_ */
