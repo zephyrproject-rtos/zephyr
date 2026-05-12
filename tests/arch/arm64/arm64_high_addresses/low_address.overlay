@@ -1,3 +1,9 @@
-&sram0 {
-	reg = <0x0 0x400000 0x0 0x80000>;
+/ {
+	chosen {
+		zephyr,sram = &low_ram0;
+	};
+
+	low_ram0: memory@0x400000 {
+		reg = <0x0 0x400000 0x0 0x80000>;
+	};
 };
