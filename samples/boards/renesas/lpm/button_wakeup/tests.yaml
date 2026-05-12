@@ -1,0 +1,17 @@
+sample:
+  name: renesas_button_wakeup
+  description: Wake the board from PM_STATE_SOFT_OFF using a physical button (WUC)
+
+common:
+  build_only: true
+
+tests:
+  sample.boards.renesas.lpm.button_wakeup:
+    tags: pm
+    filter: dt_compat_enabled("renesas,ra-lpm-wuc")
+
+  sample.boards.renesas.lpm.button_wakeup.poweroff:
+    tags: pm
+    filter: dt_compat_enabled("renesas,ra-lpm-wuc")
+    extra_configs:
+      - CONFIG_POWEROFF=y
