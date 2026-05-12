@@ -247,6 +247,83 @@ static int i2c_stm32_bitbang_get_sda(void *io_context)
 	return gpio_pin_get_dt(&config->sda) == 0 ? 0 : 1;
 }
 
+#ifdef CONFIG_I2C_STM32_V2
+static void i2c_stm32_clear_recovery_flags(const struct device *dev)
+{
+	const struct i2c_stm32_config *config = dev->config;
+	I2C_TypeDef *i2c = config->i2c;
+
+	LL_I2C_ClearFlag_NACK(i2c);
+	LL_I2C_ClearFlag_STOP(i2c);
+	LL_I2C_ClearFlag_ADDR(i2c);
+	LL_I2C_ClearFlag_BERR(i2c);
+	LL_I2C_ClearFlag_ARLO(i2c);
+	LL_I2C_ClearFlag_OVR(i2c);
+	LL_I2C_ClearFlag_TXE(i2c);
+}
+
+static void i2c_stm32_prepare_recovery(const struct device *dev)
+{
+	const struct i2c_stm32_config *config = dev->config;
+	struct i2c_stm32_data *data = dev->data;
+	I2C_TypeDef *i2c = config->i2c;
+
+	ARG_UNUSED(data);
+
+#ifdef CONFIG_I2C_STM32_INTERRUPT
+	LL_I2C_DisableIT_TX(i2c);
+	LL_I2C_DisableIT_RX(i2c);
+	LL_I2C_DisableIT_STOP(i2c);
+	LL_I2C_DisableIT_NACK(i2c);
+	LL_I2C_DisableIT_TC(i2c);
+#ifdef CONFIG_I2C_STM32_V2_DMA
+	LL_I2C_DisableDMAReq_RX(i2c);
+	LL_I2C_DisableDMAReq_TX(i2c);
+#endif /* CONFIG_I2C_STM32_V2_DMA */
+	k_sem_reset(&data->device_sync_sem);
+	data->current.msg = NULL;
+	data->current.is_arlo = 0U;
+	data->current.is_nack = 0U;
+	data->current.is_err = 0U;
+	data->current.continue_in_next = false;
+
+	if (!data->smbalert_active) {
+		LL_I2C_DisableIT_ERR(i2c);
+	}
+#endif /* CONFIG_I2C_STM32_INTERRUPT */
+
+#ifdef CONFIG_I2C_TARGET
+	data->controller_active = false;
+	LL_I2C_DisableIT_ADDR(i2c);
+#endif /* CONFIG_I2C_TARGET */
+
+	LL_I2C_Disable(i2c);
+	i2c_stm32_clear_recovery_flags(dev);
+}
+
+static void i2c_stm32_finish_recovery(const struct device *dev)
+{
+	const struct i2c_stm32_config *config = dev->config;
+	struct i2c_stm32_data *data = dev->data;
+	I2C_TypeDef *i2c = config->i2c;
+
+	i2c_stm32_clear_recovery_flags(dev);
+
+#ifdef CONFIG_I2C_TARGET
+	if (data->target_attached) {
+		LL_I2C_AcknowledgeNextData(i2c, LL_I2C_ACK);
+		LL_I2C_EnableIT_ADDR(i2c);
+		LL_I2C_Enable(i2c);
+		return;
+	}
+#endif /* CONFIG_I2C_TARGET */
+
+	if (data->smbalert_active) {
+		LL_I2C_Enable(i2c);
+	}
+}
+#endif /* CONFIG_I2C_STM32_V2 */
+
 static int i2c_stm32_recover_bus(const struct device *dev)
 {
 	const struct i2c_stm32_config *config = dev->config;
@@ -259,8 +336,9 @@ static int i2c_stm32_recover_bus(const struct device *dev)
 	};
 	uint32_t bitrate_cfg;
 	int error = 0;
+	int pm_ret = 0;
 
-	LOG_ERR("attempting to recover bus");
+	LOG_DBG("attempting to recover bus");
 
 	if (!gpio_is_ready_dt(&config->scl)) {
 		LOG_ERR("SCL GPIO device not ready");
@@ -272,7 +350,17 @@ static int i2c_stm32_recover_bus(const struct device *dev)
 		return -EIO;
 	}
 
+	pm_ret = pm_device_runtime_get(dev);
+	if (pm_ret < 0) {
+		LOG_ERR("failed to resume device for recovery (err %d)", pm_ret);
+		return pm_ret;
+	}
+
 	k_sem_take(&data->bus_mutex, K_FOREVER);
+
+#ifdef CONFIG_I2C_STM32_V2
+	i2c_stm32_prepare_recovery(dev);
+#endif /* CONFIG_I2C_STM32_V2 */
 
 	error = gpio_pin_configure_dt(&config->scl, GPIO_OUTPUT_HIGH);
 	if (error != 0) {
@@ -303,7 +391,13 @@ static int i2c_stm32_recover_bus(const struct device *dev)
 restore:
 	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
+#ifdef CONFIG_I2C_STM32_V2
+	i2c_stm32_finish_recovery(dev);
+#endif /* CONFIG_I2C_STM32_V2 */
+
 	k_sem_give(&data->bus_mutex);
+
+	(void)pm_device_runtime_put(dev);
 
 	return error;
 }
