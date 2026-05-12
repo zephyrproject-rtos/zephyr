@@ -61,6 +61,11 @@ static uint32_t announced_cycles;
 /* Lock on shared variables */
 static struct k_spinlock lock;
 
+static inline uint32_t counter_delta(uint32_t now, uint32_t then)
+{
+	return (now - then) & COUNTER_MAX;
+}
+
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -86,7 +91,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	now = LPTMR_GetCurrentTimerCount(LPTMR_BASE);
 
 	/* Adjustment value, used to ensure next capture is on tick boundary */
-	adj = (now - announced_cycles) + (CYCLES_PER_TICK - 1);
+	adj = counter_delta(now, announced_cycles) + (CYCLES_PER_TICK - 1);
 
 	next = ticks * CYCLES_PER_TICK;
 	/*
@@ -100,11 +105,14 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	}
 	next = (next / CYCLES_PER_TICK) * CYCLES_PER_TICK;
 
-	if ((int32_t)(next + announced_cycles - now) < MIN_DELAY) {
+	/* Keep the comparison in LPTMR counter space so targets after a
+	 * hardware counter wrap are treated as future compare values.
+	 */
+	if (counter_delta(next + announced_cycles, now) < MIN_DELAY) {
 		next += CYCLES_PER_TICK;
 	}
 
-	next += announced_cycles;
+	next = (next + announced_cycles) & COUNTER_MAX;
 
 	/* Update CMR safely while the timer is running.
 	 *
@@ -151,7 +159,7 @@ uint32_t sys_clock_elapsed(void)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint32_t now = LPTMR_GetCurrentTimerCount(LPTMR_BASE);
 
-	now -= announced_cycles;
+	now = counter_delta(now, announced_cycles);
 	k_spin_unlock(&lock, key);
 
 	return now / CYCLES_PER_TICK;
@@ -173,12 +181,12 @@ static void mcux_lptmr_timer_isr(const void *arg)
 		uint32_t now = LPTMR_GetCurrentTimerCount(LPTMR_BASE);
 
 		LPTMR_ClearStatusFlags(LPTMR_BASE, kLPTMR_TimerCompareFlag);
-		tick += (now - announced_cycles) / CYCLES_PER_TICK;
+		tick += counter_delta(now, announced_cycles) / CYCLES_PER_TICK;
 		/*
 		 * Advance in whole ticks to avoid accumulating sub-tick
 		 * ISR latency, which would otherwise cause long-term drift.
 		 */
-		announced_cycles += tick * CYCLES_PER_TICK;
+		announced_cycles = (announced_cycles + tick * CYCLES_PER_TICK) & COUNTER_MAX;
 	} else {
 		LPTMR_ClearStatusFlags(LPTMR_BASE, kLPTMR_TimerCompareFlag);
 		cycles += CYCLES_PER_TICK;
