@@ -104,6 +104,8 @@
     #define   ALIGN(x)    .align    x
   #elif defined(CONFIG_SPARC)
     #define   ALIGN(x)    .align    x
+  #elif defined(CONFIG_HEXAGON)
+    #define   ALIGN(x)    .balign   x
   #else
     #error Architecture unsupported
   #endif
@@ -146,6 +148,10 @@
   #elif defined(CONFIG_SPARC)
 
     #define PERFOPT_ALIGN .align  4
+
+  #elif defined(CONFIG_HEXAGON)
+
+    #define PERFOPT_ALIGN .balign 4
 
   #else
 

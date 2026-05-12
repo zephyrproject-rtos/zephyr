@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+menu "Hexagon Options"
+	depends on HEXAGON
+
+config ARCH
+	string
+	default "hexagon"
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+source "arch/hexagon/core/Kconfig"
+
+endmenu
