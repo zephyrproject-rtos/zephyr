@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		mspi0 = &octospi2;
+	};
+};
+
+&mx25lm51245 {
+	/* permission = 1 for Rd only */
+	xip-config = <1 0 DT_SIZE_M(64) 1>;
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+	ranges = <0x0 0x70000000 DT_SIZE_M(64)>;
+};
