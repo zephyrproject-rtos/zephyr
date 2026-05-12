@@ -57,6 +57,14 @@ config CLOCK_MANAGEMENT_SOURCE
 	help
 	  Clock source driver, for fixed clock sources that may be gated/ungated
 
+config CLOCK_MANAGEMENT_FIXED_FACTOR
+	bool "Fixed factor clock"
+	default y
+	depends on DT_HAS_FIXED_FACTOR_CLOCK_ENABLED
+	help
+	  A fixed factor clock that increases or decreases a parent clock by a
+	  fixed rate.
+
 source "drivers/clock_management/nxp_syscon/Kconfig"
 
 module = CLOCK_MANAGEMENT

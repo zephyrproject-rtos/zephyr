@@ -663,6 +663,8 @@ implementations. For a list, see the table below:
     +-------------------------------------+--------------------------------------------+
     | :dtcompatible:`clock-source`        | Gateable clock sources with a fixed rate   |
     +-------------------------------------+--------------------------------------------+
+    | :dtcompatible:`fixed-factor-clock`  | Fixed clock divider or multiplier          |
+    +-------------------------------------+--------------------------------------------+
 
 Implementation Guidelines
 -------------------------
