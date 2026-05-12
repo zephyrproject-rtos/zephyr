@@ -51,6 +51,9 @@ BUILD_ASSERT(MAX_TX_DMA_BLOCKS > NUM_DMA_BLOCKS_RX_PREP,
 #define SAI_WORD_PER_FRAME_MIN 0
 #define SAI_WORD_PER_FRAME_MAX 32
 
+#define I2S_MCUX_MCLK_48KHZ_FAMILY 12288000U
+#define I2S_MCUX_MCLK_44K1HZ_FAMILY 11289600U
+
 /*
  * SAI driver uses source_gather_en/dest_scatter_en feature of DMA, and relies
  * on DMA driver managing circular list of DMA blocks.  Like eDMA driver links
@@ -466,7 +469,7 @@ static void get_mclk_rate(const struct device *dev, uint32_t *mclk)
 	*mclk = rate;
 }
 
-#ifndef CONFIG_I2S_HAS_PLL_SETTING
+#if !defined(CONFIG_I2S_HAS_PLL_SETTING) || defined(CONFIG_SOC_FAMILY_MCXN)
 static void set_mclk_rate(const struct device *dev, uint32_t rate)
 {
 	const struct i2s_mcux_config *dev_cfg = dev->config;
@@ -483,6 +486,19 @@ static void set_mclk_rate(const struct device *dev, uint32_t rate)
 	}
 }
 #endif
+
+#if defined(CONFIG_SOC_FAMILY_MCXN)
+static uint32_t get_mclk_rate_for_frame_clk(uint32_t frame_clk_freq)
+{
+	if ((frame_clk_freq != 0U) && ((frame_clk_freq % 11025U) == 0U)) {
+		return I2S_MCUX_MCLK_44K1HZ_FAMILY;
+	}
+
+	return I2S_MCUX_MCLK_48KHZ_FAMILY;
+}
+#endif
+
+static void audio_clock_settings(const struct device *dev, uint32_t frame_clk_freq);
 
 static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 			   const struct i2s_config *i2s_cfg)
@@ -537,6 +553,8 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	if (dev_cfg->mclk_control_base) {
 		enable_mclk_direction(dev, dev_cfg->mclk_output);
 	}
+
+	audio_clock_settings(dev, i2s_cfg->frame_clk_freq);
 
 	get_mclk_rate(dev, &mclk);
 	LOG_DBG("mclk is %d", mclk);
@@ -1116,12 +1134,14 @@ static void i2s_mcux_isr(void *arg)
 #endif
 }
 
-static void audio_clock_settings(const struct device *dev)
+static void audio_clock_settings(const struct device *dev, uint32_t frame_clk_freq)
 {
-#ifdef CONFIG_I2S_HAS_PLL_SETTING
+#if defined(CONFIG_I2S_HAS_PLL_SETTING) && !defined(CONFIG_SOC_FAMILY_MCXN)
 	clock_audio_pll_config_t audioPllConfig;
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 	uint32_t clock_name = (uint32_t)dev_cfg->clk_sub_sys;
+
+	ARG_UNUSED(frame_clk_freq);
 
 	/*Clock setting for SAI*/
 	imxrt_audio_codec_pll_init(clock_name, dev_cfg->clk_src, dev_cfg->clk_pre_div,
@@ -1145,7 +1165,15 @@ static void audio_clock_settings(const struct device *dev)
 
 	CLOCK_InitAudioPll(&audioPllConfig);
 #else
-	set_mclk_rate(dev, 12288000);
+	uint32_t mclk_rate = I2S_MCUX_MCLK_48KHZ_FAMILY;
+
+#if defined(CONFIG_SOC_FAMILY_MCXN)
+	mclk_rate = get_mclk_rate_for_frame_clk(frame_clk_freq);
+#else
+	ARG_UNUSED(frame_clk_freq);
+#endif
+
+	set_mclk_rate(dev, mclk_rate);
 #endif
 }
 
@@ -1199,7 +1227,7 @@ static int i2s_mcux_initialize(const struct device *dev)
 	}
 
 	/*clock configuration*/
-	audio_clock_settings(dev);
+	audio_clock_settings(dev, 0U);
 
 	if (dev_cfg->mclk_control_base) {
 		enable_mclk_direction(dev, dev_cfg->mclk_output);
