@@ -29,7 +29,7 @@ import sys
 
 # Constants / fixed overheads (bytes)
 SENT_PKT_ENTRY_BYTES = 24  # per entry in sent-packet history ring buffer
-TLS_CONTEXT_OVERHEAD = 8192  # rough mbedTLS per-connection overhead
+TLS_CONTEXT_OVERHEAD = 8192  # rough Mbed TLS per-connection overhead
 STREAM_STATE_OVERHEAD = 128  # misc per-stream state (not buffers)
 CONN_STATE_OVERHEAD = 512  # misc per-connection state
 

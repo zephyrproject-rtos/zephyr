@@ -125,7 +125,7 @@ extern "C" {
 /** Socket option to select ciphersuites to use. It accepts and returns an array
  *  of integers with IANA assigned ciphersuite identifiers.
  *  If not set, socket will allow all ciphersuites available in the system
- *  (mbedTLS default behavior).
+ *  (Mbed TLS default behavior).
  */
 #define ZSOCK_TLS_CIPHERSUITE_LIST 3
 /** Read-only socket option to read a ciphersuite chosen during TLS handshake.
@@ -135,12 +135,12 @@ extern "C" {
 #define ZSOCK_TLS_CIPHERSUITE_USED 4
 /** Write-only socket option to set peer verification level for TLS connection.
  *  This option accepts an integer with a peer verification level, compatible
- *  with mbedTLS values:
+ *  with Mbed TLS values:
  *    - 0 - none
  *    - 1 - optional
  *    - 2 - required
  *
- *  If not set, socket will use mbedTLS defaults (none for servers, required
+ *  If not set, socket will use Mbed TLS defaults (none for servers, required
  *  for clients).
  */
 #define ZSOCK_TLS_PEER_VERIFY 5
@@ -148,7 +148,7 @@ extern "C" {
  *  is irrelevant for TLS connections, as for them role is selected based on
  *  connect()/listen() usage. By default, DTLS will assume client role.
  *  This option accepts an integer with a TLS role, compatible with
- *  mbedTLS values:
+ *  Mbed TLS values:
  *    - 0 - client
  *    - 1 - server
  */
@@ -171,7 +171,7 @@ extern "C" {
  */
 #define ZSOCK_TLS_DTLS_HANDSHAKE_TIMEOUT_MAX 9
 
-/** Socket option for preventing certificates from being copied to the mbedTLS
+/** Socket option for preventing certificates from being copied to the Mbed TLS
  *  heap if possible. The option is only effective for DER certificates and is
  *  ignored for PEM certificates.
  */

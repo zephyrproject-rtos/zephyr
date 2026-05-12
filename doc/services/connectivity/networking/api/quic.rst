@@ -169,7 +169,7 @@ descriptor for a new stream initiated by a peer.
 TLS & Security Configuration
 ****************************
 
-The QUIC transport uses ``mbedTLS`` and PSA APIs for cryptographic operations.
+The QUIC transport uses Mbed TLS and PSA APIs for cryptographic operations.
 Security credentials (certificates, keys) are managed via the
 Zephyr **TLS Credentials** subsystem.
 
@@ -471,7 +471,7 @@ Service Thread Options
    * - :kconfig:option:`CONFIG_QUIC_SERVICE_STACK_SIZE`
      - 4096
      - Stack size in bytes for the QUIC service thread.  4096 bytes is the
-       default and is sufficient for mbedTLS handshake operations.  Reduce
+       default and is sufficient for Mbed TLS handshake operations.  Reduce
        only if RAM is extremely constrained and profiling confirms the stack
        headroom is not needed.
    * - :kconfig:option:`CONFIG_QUIC_PKT_COUNT`
@@ -512,7 +512,7 @@ parameters.  All sizes are in bytes unless noted.
      - ``QUIC_MAX_CONTEXTS × QUIC_SENT_PKT_HISTORY_SIZE × 24``
    * - TLS transcript buffers
      - ``QUIC_MAX_CONTEXTS × QUIC_TLS_TRANSCRIPT_BUF_LEN``
-   * - TLS context (mbedTLS)
+   * - TLS context (Mbed TLS)
      - ~8192 × ``QUIC_MAX_CONTEXTS`` (estimated; depends on ciphersuites)
    * - Connection state
      - ~512 × ``QUIC_MAX_CONTEXTS``
@@ -538,7 +538,7 @@ parameters.  All sizes are in bytes unless noted.
    ─────────────────────────────────────────────
    Approximate total                   ≈ 35 992 B (~35 KiB)
 
-The dominant cost at low stream counts is the mbedTLS context per connection.
+The dominant cost at low stream counts is the Mbed TLS context per connection.
 At higher stream counts, the stream TX/RX buffers become dominant.
 
 
