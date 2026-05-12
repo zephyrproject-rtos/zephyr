@@ -178,6 +178,21 @@ pass the ``--erase`` option when executing ``west flash``.
    be connected to the standard 2*5 pin debug connector (P9) using an
    appropriate adapter board and cable.
 
+
+Flashing RV32 Core
+******************
+
+Flashing the RV32 core requires loading a firmware image onto the M4 core that will boot the
+RV32 core from the ``FLC1`` flash bank.
+
+For example:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sysbuild/hello_world
+   :board: apard32690//m4
+   :goals: build flash
+   :west-args: --sysbuild
+
 Debugging
 =========
 
