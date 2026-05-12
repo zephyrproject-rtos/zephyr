@@ -225,6 +225,7 @@ tests:
       - lp_em_cc2340r53_wcsp
       - lp_em_cc2745r10_q1/cc2745r10_q1
       - lp_em_cc2745r10_q1/cc2755r10
+      - lp_em_cc2755p10
   sample.mcumgr.smp_svr.ti_lpf3_bt_dfu_onchip_v2:
     sysbuild: true
     extra_args: OVERLAY_CONFIG="overlay-bt.conf;boards/ti_lpf3_bt_dfu.conf"
@@ -238,6 +239,7 @@ tests:
       - lp_em_cc2340r53_wcsp
       - lp_em_cc2745r10_q1/cc2745r10_q1
       - lp_em_cc2745r10_q1/cc2755r10
+      - lp_em_cc2755p10
   sample.mcumgr.smp_svr.ti_lpf3_bt_dfu_offchip_v1:
     sysbuild: true
     extra_args:
@@ -254,6 +256,7 @@ tests:
       - lp_em_cc2340r53_wcsp
       - lp_em_cc2745r10_q1/cc2745r10_q1
       - lp_em_cc2745r10_q1/cc2755r10
+      - lp_em_cc2755p10
   sample.mcumgr.smp_svr.ti_lpf3_bt_dfu_offchip_v2:
     sysbuild: true
     extra_args:
@@ -270,3 +273,4 @@ tests:
       - lp_em_cc2340r53_wcsp
       - lp_em_cc2745r10_q1/cc2745r10_q1
       - lp_em_cc2745r10_q1/cc2755r10
+      - lp_em_cc2755p10
