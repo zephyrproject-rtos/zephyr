@@ -5563,6 +5563,22 @@ Test Framework (Ztest):
   tests:
     - testing
 
+Testing:
+  status: maintained
+  maintainers:
+    - PerMac
+    - hakehuang
+  collaborators:
+    - nashif
+  files: []
+  description: >-
+    This area is for testing activities on hardware and in emulators. It is not
+    meant to be a catch-all for tests, but rather a place to identify
+    collaboratorts and files related to testing activities that don't fit in
+    other areas.
+    Anyone involved with testing and filing/triaging issues who are not active
+    in other areas are encouraged to be listed here as collaborators.
+
 Testing with Renode:
   # This area is to be converted to a subarea
   status: odd fixes
@@ -6838,6 +6854,14 @@ West:
   files: []
   labels:
     - "area: Rust"
+
+Wiki:
+  status: maintained
+  maintainers:
+    - kartben
+  collaborators:
+    - SusanRemm
+  files: []
 
 Wurth Elektronik Platforms:
   status: maintained
