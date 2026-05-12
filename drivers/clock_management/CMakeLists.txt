@@ -8,6 +8,7 @@ zephyr_library_sources(clock_management_common.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_MANAGEMENT_FIXED_SOURCE fixed_clock_source.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_MANAGEMENT_SOURCE clock_source.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_MANAGEMENT_FIXED_FACTOR fixed_factor_clock.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_MANAGEMENT_GATE clock_gate.c)
 # Header for common clock drivers
 add_clock_management_header(clock_management_drivers.h)
 

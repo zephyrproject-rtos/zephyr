@@ -65,6 +65,13 @@ config CLOCK_MANAGEMENT_FIXED_FACTOR
 	  A fixed factor clock that increases or decreases a parent clock by a
 	  fixed rate.
 
+config CLOCK_MANAGEMENT_GATE
+	bool "Clock gate"
+	default y
+	depends on DT_HAS_CLOCK_GATE_ENABLED
+	help
+	  A generic clock gate that can pass or inhibit a clock signal.
+
 source "drivers/clock_management/nxp_syscon/Kconfig"
 
 module = CLOCK_MANAGEMENT

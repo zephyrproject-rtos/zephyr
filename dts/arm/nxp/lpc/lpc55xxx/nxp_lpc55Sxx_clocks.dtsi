@@ -110,7 +110,7 @@
 	};
 
 	pluglitch12mhzclk: pluglitch12mhzclk@40000a18 {
-		compatible = "nxp,syscon-clock-gate";
+		compatible = "clock-gate";
 		#clock-cells = <1>;
 		/* SYSCON::CLOCK_CTRL[PLU_DEGLITCH_CLK_ENA] */
 		reg = <0x40000a18 0x1>;
@@ -124,7 +124,7 @@
 	};
 
 	clk_in_en: clk-in-en@40013020 {
-		compatible = "nxp,syscon-clock-gate";
+		compatible = "clock-gate";
 		#clock-cells = <1>;
 		/* ANACTRL::XO32M_CTRL[ENABLE_SYSTEM_CLK_OUT] */
 		reg = <0x40013020 0x1>;
@@ -133,7 +133,7 @@
 	};
 
 	clk_usb_en: clk-usb-en@40013020 {
-		compatible = "nxp,syscon-clock-gate";
+		compatible = "clock-gate";
 		#clock-cells = <1>;
 		/* ANACTRL::XO32M_CTRL[ENABLE_PLL_USB_OUT] */
 		reg = <0x40013020 0x1>;
@@ -147,7 +147,7 @@
 	};
 
 	utickclk: utickclk@40000a18 {
-		compatible = "nxp,syscon-clock-gate";
+		compatible = "clock-gate";
 		#clock-cells = <1>;
 		/* SYSCON::CLOCK_CTRL[FRO1MHZ_UTICK_ENA] */
 		reg = <0x40000a18 0x1>;
@@ -161,7 +161,7 @@
 	};
 
 	pluglitch1mhzclk: pluglitch1mhzclk@40000a18 {
-		compatible = "nxp,syscon-clock-gate";
+		compatible = "clock-gate";
 		#clock-cells = <1>;
 		/* SYSCON::CLOCK_CTRL[PLU_DEGLITCH_CLK_ENA] */
 		reg = <0x40000a18 0x1>;
@@ -224,7 +224,7 @@
 	};
 
 	ostimer32khzclk: ostimer32khzclk@4002009c {
-		compatible = "nxp,syscon-clock-gate";
+		compatible = "clock-gate";
 		#clock-cells = <1>;
 		/* PMC::OSTIMER[CLOCKENABLE] */
 		reg = <0x4002009c 0x1>;
@@ -238,7 +238,7 @@
 	};
 
 	rtc_1hz_clk: rtc-1hz-clk@4002c000 {
-		compatible = "nxp,syscon-clock-gate";
+		compatible = "clock-gate";
 		#clock-cells = <1>;
 		/* RTC::CTRL[RTC_EN] */
 		reg = <0x4002c000 0x1>;
@@ -252,7 +252,7 @@
 	};
 
 	rtc_1khz_clk: rtc-1khz-clk@4002c000 {
-		compatible = "nxp,syscon-clock-gate";
+		compatible = "clock-gate";
 		#clock-cells = <1>;
 		/* RTC::CTRL[RTC1KHZ_EN] */
 		reg = <0x4002c000 0x1>;

@@ -665,6 +665,8 @@ implementations. For a list, see the table below:
     +-------------------------------------+--------------------------------------------+
     | :dtcompatible:`fixed-factor-clock`  | Fixed clock divider or multiplier          |
     +-------------------------------------+--------------------------------------------+
+    | :dtcompatible:`clock-gate`          | Clock gate to inhibit or pass a clock      |
+    +-------------------------------------+--------------------------------------------+
 
 Implementation Guidelines
 -------------------------
