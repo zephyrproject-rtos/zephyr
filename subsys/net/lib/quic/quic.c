@@ -5256,8 +5256,12 @@ static int quic_endpoint_send_transport_close(struct quic_endpoint *ep,
 		level = QUIC_SECRET_LEVEL_APPLICATION;
 	} else if (ep->crypto.handshake.initialized) {
 		level = QUIC_SECRET_LEVEL_HANDSHAKE;
-	} else {
+	} else if (ep->crypto.initial.initialized) {
 		level = QUIC_SECRET_LEVEL_INITIAL;
+	} else {
+		NET_DBG("[EP:%p/%d] Skipping CONNECTION_CLOSE without crypto context",
+			ep, quic_get_by_ep(ep));
+		return 0;
 	}
 
 	/* Cancel any PTO work to avoid unnecessary retransmissions after

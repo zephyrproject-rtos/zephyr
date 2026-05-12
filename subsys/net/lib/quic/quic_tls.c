@@ -4203,6 +4203,12 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 	crypto_ctx = quic_get_crypto_context_by_level(ep, level);
 	if (crypto_ctx == NULL || !crypto_ctx->initialized) {
 		NET_DBG("Crypto context not initialized for level %d", level);
+
+		if (level == QUIC_SECRET_LEVEL_HANDSHAKE ||
+		    level == QUIC_SECRET_LEVEL_APPLICATION) {
+			return -EAGAIN;
+		}
+
 		QUIC_EP_STAT_INC(ep, invalid_key);
 		QUIC_EP_STAT_INC(ep, drop_tx);
 		return -EINVAL;
