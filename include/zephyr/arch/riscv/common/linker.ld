@@ -350,6 +350,16 @@ SECTIONS
 	__kernel_ram_end = .;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
+#ifdef CONFIG_ARCMWDT_LIBC
+	/*
+	 * MWDT picolibc sbrk requires _fheap/_eheap symbols.
+	 * Set both equal for zero heap size so sbrk returns ENOMEM.
+	 * Zephyr's COMMON_LIBC_MALLOC provides malloc via sys_heap, not sbrk.
+	 */
+	_fheap = __kernel_ram_end;
+	_eheap = __kernel_ram_end;
+#endif /* CONFIG_ARCMWDT_LIBC */
+
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
 GROUP_START(ITCM)
 

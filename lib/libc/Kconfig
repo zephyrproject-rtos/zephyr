@@ -137,6 +137,7 @@ config ARCMWDT_LIBC
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
 	select STATIC_INIT_GNU
 	select LIBC_ALLOW_LESS_THAN_64BIT_TIME
+	imply COMMON_LIBC_MALLOC
 	help
 	  C library provided by ARC MWDT toolchain.
 
