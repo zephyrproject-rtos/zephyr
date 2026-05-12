@@ -439,7 +439,7 @@ const char *log_frontend_stmesp_demux_str_get(uint32_t m_id, uint16_t s_id)
 	uintptr_t *log_str_start = NULL;
 
 	if (demux.m_ids[m_id] == APP_M_ID) {
-		log_str_start = (uintptr_t *)TYPE_SECTION_START(log_stmesp_ptr);
+		log_str_start = (uintptr_t *)TYPE_SECTION_START(log_str_ptr);
 	} else if (m_id == demux.coproc_sources[0].m_id) {
 		log_str_start = demux.coproc_sources[0].data.log_str_section;
 	} else if (m_id == demux.coproc_sources[1].m_id) {
