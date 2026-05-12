@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* connect the PD9(EXT1 pin 11) to PB25(EXT1 pin 18) and PD8(EXT1 pin 12) to PB24(EXT1 pin 16) */
+
+dut: &sercom2 {
+	compatible = "microchip,sercom-g1-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&sercom2_i2c_default>;
+	pinctrl-names = "default";
+	dmas = <&dmac 12 0x08>, <&dmac 13 0x09>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+dut_aux: &sercom6 {
+	status = "okay";
+};
+
+&pinctrl {
+	sercom2_i2c_default: sercom2_i2c_default {
+		group1 {
+			pinmux = <PB25D_SERCOM2_PAD0>,
+				 <PB24D_SERCOM2_PAD1>;
+		};
+	};
+};
