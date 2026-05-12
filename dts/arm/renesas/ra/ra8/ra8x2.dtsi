@@ -122,6 +122,12 @@
 					  "pll2-ldo-retain",
 					  "hoco-ldo-retain";
 
+			wuc: wakeup-controller {
+				compatible = "renesas,ra-lpm-wuc";
+				#wakeup-ctrl-cells = <1>;
+				status = "disabled";
+			};
+
 			status = "okay";
 		};
 
