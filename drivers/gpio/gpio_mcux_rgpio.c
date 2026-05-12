@@ -90,6 +90,9 @@ static int mcux_rgpio_configure(const struct device *dev,
 #endif
 
 #if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	/* Enable Software Input On (SION) so PDIR reflects the driven pad value. */
+	reg |= BIT(MCUX_IMX_INPUT_ENABLE_SHIFT);
+
 	/* PUE/PDRV types have the same ODE bit */
 	if ((flags & GPIO_SINGLE_ENDED)) {
 		/* Set ODE bit */
@@ -179,6 +182,7 @@ static int mcux_rgpio_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	RGPIO_Type *base = (RGPIO_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
+	/* Read actual pad state from the input data register. */
 	*value = base->PDIR;
 
 	return 0;
