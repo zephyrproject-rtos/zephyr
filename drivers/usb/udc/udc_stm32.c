@@ -79,9 +79,11 @@ typedef PCD_HandleTypeDef		stm32_pcd_handle_t;
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 #define DT_DRV_COMPAT st_stm32_otghs
 #define UDC_STM32_IRQ_NAME     otghs
+#define UDC_STM32_DWC2_BASED   1
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
 #define DT_DRV_COMPAT st_stm32_otgfs
 #define UDC_STM32_IRQ_NAME     otgfs
+#define UDC_STM32_DWC2_BASED   1
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
 #define DT_DRV_COMPAT st_stm32_usb
 #define UDC_STM32_IRQ_NAME     usb
@@ -1059,6 +1061,11 @@ int udc_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
+#if defined(UDC_STM32_DWC2_BASED)
+	/* c.f. udc_stm32_disable() */
+	k_msleep(3);
+#endif /* UDC_STM32_DWC2_BASED */
+
 	return 0;
 }
 
@@ -1123,6 +1130,15 @@ static int udc_stm32_disable(const struct device *dev)
 		LOG_ERR("PCD_Stop failed, %d", (int)status);
 		return -EIO;
 	}
+
+#if defined(UDC_STM32_DWC2_BASED)
+	/*
+	 * Ensure device is seen as disconnected by host.
+	 * The duration to wait depends on operating speed and device state;
+	 * the worst-case scenario requires ~3 ms so this should always work.
+	 */
+	k_msleep(3);
+#endif /* UDC_STM32_DWC2_BASED */
 
 	return 0;
 }
