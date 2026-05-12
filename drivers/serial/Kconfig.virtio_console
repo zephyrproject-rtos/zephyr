@@ -4,7 +4,7 @@
 menuconfig UART_VIRTIO_CONSOLE
 	bool "VIRTIO console paravirtualization device driver"
 	default y
-	depends on VIRTIO
+	select VIRTIO
 	depends on DT_HAS_VIRTIO_CONSOLE_ENABLED
 	select SERIAL_HAS_POST_KERNEL_INIT
 

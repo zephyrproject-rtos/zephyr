@@ -5,6 +5,7 @@ config FILE_SYSTEM_VIRTIOFS
 	bool "Virtiofs file system support"
 	depends on FILE_SYSTEM
 	select FUSE_CLIENT
+	select VIRTIO
 	help
 	  Enable virtiofs file system support.
 
