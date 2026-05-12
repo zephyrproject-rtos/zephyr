@@ -138,7 +138,8 @@ devicetree nodes, which is defined as the `transitive closure
 depends on" relation:
 
 - every non-root node directly depends on its parent node
-- a node directly depends on any nodes its properties refer to by phandle
+- a node directly depends on any nodes its properties refer to by phandle, this
+  can be changed with :ref:`dt-bindings-dependency-mode` in the node's binding
 - a node directly depends on its ``interrupt-parent`` if it has an
   ``interrupts`` property
 - a parent node inherits all dependencies from its child nodes
