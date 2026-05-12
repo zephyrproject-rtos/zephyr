@@ -439,6 +439,32 @@
 			clock-names = "mclk", "gclk";
 			status = "disabled";
 		};
+
+		sdhc0: sdhc@45000000 {
+			compatible = "microchip,sdhc-g1";
+			reg = <0x45000000 0x234>;
+			interrupts = <136 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_AHB_SDHC0>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SDHC0>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SDHC0_SLOW>;
+			clock-names = "mclk", "gclk", "gclk-slow";
+			min-bus-freq = <400000>;
+			max-bus-freq = <25000000>;
+			status = "disabled";
+		};
+
+		sdhc1: sdhc@46000000 {
+			compatible = "microchip,sdhc-g1";
+			reg = <0x46000000 0x234>;
+			interrupts = <136 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_AHB_SDHC1>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SDHC1>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SDHC1_SLOW>;
+			clock-names = "mclk", "gclk", "gclk-slow";
+			min-bus-freq = <400000>;
+			max-bus-freq = <25000000>;
+			status = "disabled";
+		};
 	};
 };
 
