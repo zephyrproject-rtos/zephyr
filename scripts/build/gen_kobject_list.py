@@ -105,7 +105,7 @@ kobjects = OrderedDict(
         ("device", (None, False, False)),
         ("NET_SOCKET", (None, False, False)),
         ("net_if", (None, False, False)),
-        ("sys_mutex", (None, True, False)),
+        ("sys_mutex", ("CONFIG_SYS_MUTEX_IMPL_K_MUTEX", True, False)),
         ("k_futex", (None, True, False)),
         ("k_condvar", (None, False, True)),
         ("k_event", ("CONFIG_EVENTS", False, True)),
@@ -550,6 +550,11 @@ def find_kobjects(elf, syms):
     if not elf.has_dwarf_info():
         sys.exit("ELF file has no DWARF information")
 
+    # sys_mutex should only be considered a kobject if it is implemented
+    # via k_mutex
+    if "CONFIG_SYS_MUTEX_IMPL_K_MUTEX" not in syms:
+        del kobjects["sys_mutex"]
+
     app_smem_start = syms["_app_smem_start"]
     app_smem_end = syms["_app_smem_end"]
 
@@ -799,9 +804,11 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
 
     metadata_names = {
         "K_OBJ_THREAD": "thread_id",
-        "K_OBJ_SYS_MUTEX": "mutex",
         "K_OBJ_FUTEX": "futex_data",
     }
+
+    if "CONFIG_SYS_MUTEX_IMPL_K_MUTEX" in syms:
+        metadata_names["K_OBJ_SYS_MUTEX"] = "mutex"
 
     if "CONFIG_GEN_PRIV_STACKS" in syms:
         metadata_names["K_OBJ_THREAD_STACK_ELEMENT"] = "stack_data"

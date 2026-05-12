@@ -1,6 +1,6 @@
 tests:
-  kernel.mutex.system:
-    filter: CONFIG_ARCH_HAS_USERSPACE
+  kernel.mutex.system.k_mutex:
+    filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_SYS_MUTEX_IMPL_K_MUTEX
     arch_exclude:
       - posix
     tags:
