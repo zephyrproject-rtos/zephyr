@@ -283,9 +283,8 @@ config MBEDTLS_PSA_CRYPTO_C
 	select CSPRNG_NEEDED if PSA_CRYPTO_PROVIDER_MBEDTLS
 
 config MBEDTLS_PSA_CRYPTO_CLIENT
-	bool
-	default y
-	depends on BUILD_WITH_TFM || MBEDTLS_PSA_CRYPTO_C
+	def_bool y
+	depends on PSA_CRYPTO
 	select PSA_CRYPTO_CLIENT
 
 config MBEDTLS_LMS_C
