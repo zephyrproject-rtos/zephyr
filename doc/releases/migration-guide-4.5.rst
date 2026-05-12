@@ -133,6 +133,11 @@ Kernel
   be used as futex address. The error -EINVAL can no longer happen on futex
   operations.
 
+* The type of the expected value parameter for :c:func:`k_futex_wait` is now
+  ``atomic_t`` instead of ``int``, the same as the type of the value stored
+  internally by :c:struct:`k_futex`. Callers might have to add an explicit
+  cast if the compiler does not implicitly cast the value.
+
 Boards
 ******
 

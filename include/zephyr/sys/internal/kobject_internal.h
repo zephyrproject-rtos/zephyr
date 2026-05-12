@@ -30,8 +30,10 @@ struct z_stack_data {
 
 /* Object extra data. Only some objects use this, determined by object type */
 union k_object_data {
+#ifdef CONFIG_SYS_MUTEX_IMPL_K_MUTEX
 	/* Backing mutex for K_OBJ_SYS_MUTEX */
 	struct k_mutex *mutex;
+#endif /* CONFIG_SYS_MUTEX_IMPL_K_MUTEX*/
 
 	/* Numerical thread ID for K_OBJ_THREAD */
 	unsigned int thread_id;
