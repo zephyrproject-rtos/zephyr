@@ -373,6 +373,8 @@ static const struct dai_properties *dai_uaol_get_properties(const struct device 
 	prop->fifo_depth = 0;
 	prop->dma_hs_id = 0;
 	prop->reg_init_delay = 0;
+	prop->uaol_link_id = dp->link;
+	prop->uaol_stream_id = dp->stream;
 
 	return prop;
 }
