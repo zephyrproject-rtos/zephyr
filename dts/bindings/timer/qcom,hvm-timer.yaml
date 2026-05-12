@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+description: |
+  Qualcomm Hexagon HVM virtual timer.
+
+  This timer is provided by the H2 hypervisor via the vmtimerop interface.
+  The guest programs timeouts through trap1 hypercalls and receives
+  timer expiry as a virtual interrupt.
+
+compatible: "qcom,hvm-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: Base address and size of the timer register block.
+
+  interrupts:
+    required: true
+    description: Virtual interrupt number delivered on timer expiry.
