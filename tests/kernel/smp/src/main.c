@@ -1249,7 +1249,7 @@ ZTEST(smp_stress, test_smp_switch_stress)
  * @details Pin thread to a specific cpu. Once thread gets cpu, check
  *          the cpu id is correct and then thread will give up cpu.
  */
-#ifdef CONFIG_SCHED_CPU_MASK
+#if defined(CONFIG_SCHED_CPU_MASK) || defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
 static void check_affinity(void *arg0, void *arg1, void *arg2)
 {
 	ARG_UNUSED(arg1);
@@ -1283,7 +1283,7 @@ ZTEST(smp, test_smp_affinity)
 		k_thread_join(&tthread[i], K_FOREVER);
 	}
 }
-#endif
+#endif /* SCHED_CPU_MASK || SCHED_CPU_MASK_PIN_ONLY */
 
 static void *smp_tests_setup(void)
 {

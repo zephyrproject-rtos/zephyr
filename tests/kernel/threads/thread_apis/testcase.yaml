@@ -12,4 +12,19 @@ tests:
     depends_on:
       - smp
     extra_configs:
+      - CONFIG_SCHED_CPU_MASK=n
       - CONFIG_SCHED_CPU_MASK_PIN_ONLY=y
+  kernel.threads.apis.pinonly.scalable:
+    min_flash: 34
+    depends_on:
+      - smp
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK_PIN_ONLY=y
+      - CONFIG_SCHED_SCALABLE=y
+  kernel.threads.apis.pinonly.multiq:
+    min_flash: 34
+    depends_on:
+      - smp
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK_PIN_ONLY=y
+      - CONFIG_SCHED_MULTIQ=y
