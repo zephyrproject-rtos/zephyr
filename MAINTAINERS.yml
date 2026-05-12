@@ -3100,6 +3100,7 @@ Infineon Platforms:
     - Peterson-Brett
     - lauracarlesso
     - merin-infineon
+    - ifx-rmcs
   files:
     - boards/cypress/
     - boards/infineon/
@@ -6236,6 +6237,7 @@ West:
     - Peterson-Brett
     - lauracarlesso
     - merin-infineon
+    - ifx-rmcs
   files:
     - modules/Kconfig.infineon
     - modules/hal_infineon/
