@@ -1,6 +1,7 @@
 /**
  * @file
  * @brief ARM64 specific memory attribute definitions for devicetree.
+ * @ingroup dt_binding_mem_attr_arm64
  *
  * Copyright (c) 2025 Advanced Micro Devices, Inc.
  *
@@ -12,18 +13,15 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr.h>
 
 /**
- * @defgroup dt_binding_arm64_mem_attr ARM64 DT memory attributes
+ * @defgroup dt_binding_mem_attr_arm64 ARM64 memory attributes
+ * @ingroup dt_memory_attr_architecture
  * @{
  */
 
+/** @cond INTERNAL_HIDDEN */
+
 /** @brief Mask for ARM64 architecture-specific memory attribute bits. */
 #define DT_MEM_ARM64_MASK		DT_MEM_ARCH_ATTR_MASK
-
-/**
- * @brief Extract ARM64-specific bits from a DT memory attribute value.
- * @param x Full DT memory attribute bitmask.
- */
-#define DT_MEM_ARM64_GET(x)		((x) & DT_MEM_ARM64_MASK)
 
 /**
  * @brief Shift a raw ARM64 attribute into the architecture field.
@@ -40,6 +38,17 @@
 
 /** @brief Write-Back cache policy (only meaningful with DT_MEM_CACHEABLE). */
 #define ATTR_ARM64_CACHE_WB		BIT(1)
+
+/** @endcond */
+
+/**
+ * @brief Extract ARM64-specific bits from a full <tt>zephyr,memory-attr</tt> value.
+ *
+ * @param x Value to extract ARM64-specific memory attribute bits from.
+ *
+ * @return ARM64-specific memory attribute bits.
+ */
+ #define DT_MEM_ARM64_GET(x)		((x) & DT_MEM_ARM64_MASK)
 
 /*
  * Convenience macros: combinations of generic + arch-specific attributes.
