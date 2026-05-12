@@ -21,6 +21,7 @@
 		zephyr,flash-controller = &ospi_nor_flash;
 		zephyr,flash = &ext_flash;
 		zephyr,code-partition = &slot0_partition;
+		mcuboot,image-ram = &axisram1;
 	};
 
 	leds: leds {
@@ -295,11 +296,6 @@ zephyr_udc0: &usbotg_hs1 {
 		compatible = "ethernet-phy";
 		reg = <0x0>;
 	};
-};
-
-&xspim {
-	/* To be moved to sb/fsbl target once sysbuild added to the board */
-	status = "okay";
 };
 
 &xspi2 {

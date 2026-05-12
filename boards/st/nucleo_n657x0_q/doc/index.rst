@@ -215,14 +215,25 @@ First, connect the NUCLEO-N657X0-Q to your host computer using the ST-Link USB p
 
    .. tabs::
 
-      .. group-tab:: ST-Link
+      .. group-tab:: Application Image
 
-         Build and flash an application using ``nucleo_n657x0_q`` target.
+         Build and flash an application loaded by MCUBoot
 
          .. zephyr-app-commands::
             :zephyr-app: samples/hello_world
             :board: nucleo_n657x0_q
+            :west-args: --sysbuild
             :goals: build flash
+
+         .. note::
+             By default, application runs in XIP mode. To use RAMLOAD mode, build
+	     using the following command instead:
+
+                      .. zephyr-app-commands::
+                         :zephyr-app: samples/hello_world
+                         :board: nucleo_n657x0_q
+                         :west-args: --sysbuild -- -DCONFIG_XIP=n -DSB_CONFIG_MCUBOOT_MODE_RAM_LOAD=y
+                         :goals: build flash
 
          .. note::
             For flashing, before powering the board, set the boot pins in the following configuration:
@@ -279,19 +290,65 @@ Debugging
 =========
 
 You can debug an application in the usual way using the :ref:`ST-LINK GDB Server <runner_stlink_gdbserver>`.
-Here is an example for the :zephyr:code-sample:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: nucleo_n657x0_q
-   :maybe-skip-config:
-   :goals: debug
 
 .. note::
    To enable debugging, before powering on the board, set the boot pins in the following configuration:
 
    * BOOT0: 0
    * BOOT1: 1
+
+.. tabs::
+
+      .. group-tab:: Application image
+
+         To debug a multi-stage application (application loaded by a bootloader such as MCUboot), follow these steps:
+
+         First, flash your application, it is required so that MCUboot can find it in external memory (see indications above).
+
+         Then, launch debug session using the bootloader domain:
+
+         .. code-block:: console
+
+            west debug --domain mcuboot
+
+         At this step, you're able to debug the bootloader. To debug the chainloaded application, now run the following gdb commands:
+
+         .. code-block:: console
+
+            (gdb) b do_boot
+            (gdb) c
+            # Once stopped in do_boot, add chainloaded application symbols
+            (gdb) add-symbol-file ./build/hello_world/zephyr/zephyr.elf
+            # Place breakpoint on 'main' in chainloaded application
+            (gdb) b main
+            (gdb) c
+
+         Don't forget to systematically power reset the board before each debug session.
+         This can be done using :zephyr_file:`the following script:<boards/st/common/scripts/board_power_reset.sh>`
+
+         .. code-block:: console
+
+            ./boards/st/common/scripts/board_power_reset.sh
+
+      .. group-tab:: FSBL - ST-Link
+
+         Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+         .. zephyr-app-commands::
+            :zephyr-app: samples/hello_world
+            :board: nucleo_n657x0_q/fsbl
+            :maybe-skip-config:
+            :goals: debug
+
+      .. group-tab:: FSBL - Serial Boot Loader (USB)
+
+         Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+         .. zephyr-app-commands::
+            :zephyr-app: samples/hello_world
+            :board: nucleo_n657x0_q/stm32n657xx/sb
+            :maybe-skip-config:
+            :goals: debug
 
 Another solution for debugging is to use STM32CubeIDE:
 
