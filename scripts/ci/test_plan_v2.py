@@ -11,7 +11,7 @@ change while maximising coverage of what was touched.
 Architecture
 ============
 Each *strategy* is an independent analyser.  A strategy receives the list of
-changed files and returns a list of :class:`TwisterCall` descriptors – each
+changed files and returns a list of :class:`TwisterCall` descriptors - each
 descriptor maps to exactly one ``twister --save-tests`` invocation.  The
 orchestrator executes all calls, merges the resulting test-suite lists, removes
 duplicates and writes the consolidated ``testplan.json``.
@@ -22,67 +22,67 @@ To add a new strategy:
 
 Current strategies (execution order)
 =====================================
-0. :class:`ComplexityStrategy` – analyses patchset complexity using
+0. :class:`ComplexityStrategy` - analyses patchset complexity using
    **pydriller** (commit-level metrics: churn, DMM unit-complexity,
    changed-method CCN) and **lizard** (full-file average CCN delta).
    Emits a composite score into a shared :class:`PipelineContext`.  The
    :class:`RiskClassifierStrategy` reads this score to optionally escalate
    NORMAL-risk files to WIDE coverage.  Non-consuming; emits no twister calls.
-1. :class:`IgnoreStrategy` – reads ``scripts/ci/twister_ignore.txt`` and
+1. :class:`IgnoreStrategy` - reads ``scripts/ci/twister_ignore.txt`` and
    silently drops any changed file that matches a glob pattern in that file
    (documentation, tooling, CI workflows, etc.).  Consumes matched files so
    downstream strategies never see them.
-2. :class:`DirectTestStrategy` – for changed files that live directly
+2. :class:`DirectTestStrategy` - for changed files that live directly
    inside a ``tests/`` or ``samples/`` tree, walks up to find the
    ``testcase.yaml`` / ``tests.yaml`` / ``sample.yaml`` root and runs
    so the exact test suite is exercised end-to-end.
    Consumes matched files so downstream strategies do not inflate the plan.
-3. :class:`SnippetStrategy` – for changed files under ``snippets/``, reads
+3. :class:`SnippetStrategy` - for changed files under ``snippets/``, reads
    the snippet name from ``snippet.yml`` then finds and runs only the tests
    that declare that snippet as a ``required_snippets`` dependency.
    Consumes matched files.
-4. :class:`BoardStrategy` – for changed files under ``boards/``, uses
+4. :class:`BoardStrategy` - for changed files under ``boards/``, uses
    ``scripts/list_boards.py`` to enumerate all board variants (SoC /
    CPU-cluster combinations) and runs ``tests/integration/kernel`` on each.
    Consumes matched files so downstream strategies do not see board changes.
-5. :class:`SoCStrategy` – for changed files under ``soc/``, resolves the
+5. :class:`SoCStrategy` - for changed files under ``soc/``, resolves the
    SoC names declared in the nearest ``soc.yml``, finds every board whose
    ``board.yml`` references those SoCs, and runs ``tests/integration/kernel``
    on each.  Consumes matched files.
-6. :class:`ManifestStrategy` – for changed ``west.yml`` or
+6. :class:`ManifestStrategy` - for changed ``west.yml`` or
    ``submanifests/*.yaml`` files, diffs the manifest against its previous
    revision (requires ``--commits``), identifies added/removed/updated west
    projects, and runs ``--tag <module> --integration`` so only tests that
    declare that module as a tag are selected.  Consumes matched files.
-7. :class:`DriverCompatStrategy` – for changed files under ``drivers/``,
+7. :class:`DriverCompatStrategy` - for changed files under ``drivers/``,
    extracts ``DT_DRV_COMPAT`` from the source, converts to a DTS compatible
    string, then searches ``tests/`` and ``samples/`` for overlay/DTS files
    that instantiate that compatible.  The containing test directories are
    added as ``-T`` roots so twister exercises the actual driver code.
-8. :class:`DtsBindingStrategy` – for changed ``dts/bindings/**/*.yaml``
+8. :class:`DtsBindingStrategy` - for changed ``dts/bindings/**/*.yaml``
    files, reads the ``compatible:`` field and feeds it through the same
    compat-resolution chain used by :class:`DriverCompatStrategy` (overlay
    scan + board-targeted area calls).  Additive, not consuming.
-9. :class:`KconfigImpactStrategy` – for changed Kconfig definition files,
+9. :class:`KconfigImpactStrategy` - for changed Kconfig definition files,
    config fragments, and board defconfigs, extracts the affected symbol
    names and greps ``tests/`` and ``samples/`` for ``.conf`` / ``.yaml``
    files that enable those symbols.  Per-symbol and per-test-root thresholds
    prevent core-symbol changes from triggering a near-full run.
-10. :class:`HeaderImpactStrategy` – for changed headers under
+10. :class:`HeaderImpactStrategy` - for changed headers under
     ``include/zephyr/``, greps the source tree for files that ``#include``
     the header, then maps those files to MAINTAINERS areas with tests.
     Headers included in more than ``_MAX_INCLUDE_REFS`` files are treated as
     "widespread" and skipped to prevent a near-full run from a single common
     header change (e.g. ``kernel.h``).
-11. :class:`MaintainerAreaStrategy` – catch-all: matches any remaining
+11. :class:`MaintainerAreaStrategy` - catch-all: matches any remaining
     changed files against ``MAINTAINERS.yml`` areas and uses the ``tests:``
     list from each matching area to build ``--test-pattern`` arguments.
 
 Output
 ======
-* ``<output_file>`` (default ``testplan.json``) – passed to twister via
+* ``<output_file>`` (default ``testplan.json``) - passed to twister via
   ``twister --load-tests``.
-* ``.testplan`` – plain env-var file (``TWISTER_TESTS=``, ``TWISTER_NODES=``,
+* ``.testplan`` - plain env-var file (``TWISTER_TESTS=``, ``TWISTER_NODES=``,
   ``TWISTER_FULL=``) consumed by CI orchestration scripts.
 """
 
@@ -125,7 +125,7 @@ log = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# Pipeline context – shared state across strategies
+# Pipeline context - shared state across strategies
 # ---------------------------------------------------------------------------
 
 
@@ -375,7 +375,7 @@ def _test_pattern(test_name):
 
 
 # ---------------------------------------------------------------------------
-# Strategy 1 – Maintainer area
+# Strategy 1 - Maintainer area
 # ---------------------------------------------------------------------------
 
 
@@ -554,7 +554,7 @@ class Orchestrator:
         Returns the number of error-status test suites encountered.
         """
         if not changed_files:
-            log.info("No changed files – nothing to do.")
+            log.info("No changed files - nothing to do.")
             self._write_dotplan(0, full=False)
             return 0
 
@@ -566,7 +566,7 @@ class Orchestrator:
         for strategy in self._strategies:
             if not remaining:
                 log.info(
-                    "=== Strategy: %s === (skipped – no remaining files)",
+                    "=== Strategy: %s === (skipped - no remaining files)",
                     strategy.name,
                 )
                 continue
@@ -590,7 +590,7 @@ class Orchestrator:
             for call in calls:
                 if call.full_run:
                     log.warning(
-                        "  Full-run signaled by '%s' – skipping targeted plan.",
+                        "  Full-run signaled by '%s' - skipping targeted plan.",
                         call.description,
                     )
                     full_run = True
@@ -625,7 +625,7 @@ class Orchestrator:
         if total > 0:
             accumulator.write(output_file)
         else:
-            log.info("No test suites selected – %s not written.", output_file)
+            log.info("No test suites selected - %s not written.", output_file)
 
         self._write_dotplan(total, full=full_run)
         return errors
@@ -638,11 +638,11 @@ class Orchestrator:
         ``platforms`` list, and ``extra_args``, **and** both use the same
         selection mode:
 
-        * *roots-only* – ``testsuite_roots`` non-empty, ``test_patterns`` empty:
+        * *roots-only* - ``testsuite_roots`` non-empty, ``test_patterns`` empty:
           all ``-T`` roots are combined into one call.
-        * *patterns-only* – ``test_patterns`` non-empty, ``testsuite_roots`` empty:
+        * *patterns-only* - ``test_patterns`` non-empty, ``testsuite_roots`` empty:
           all ``--test-pattern`` args are combined into one call.
-        * *mixed* – both set: not merged (unusual; kept as-is).
+        * *mixed* - both set: not merged (unusual; kept as-is).
 
         The resulting call carries a consolidated description that lists all
         merged descriptions.
@@ -721,7 +721,7 @@ class Orchestrator:
         for ts in testsuites:
             if TwisterStatus(ts.get("status")) == TwisterStatus.ERROR:
                 log.warning(
-                    "Error: %s on %s – %s",
+                    "Error: %s on %s - %s",
                     ts.get("name"),
                     ts.get("platform"),
                     ts.get("reason"),
@@ -746,7 +746,7 @@ class Orchestrator:
 
 
 # ---------------------------------------------------------------------------
-# Strategy 2 – Snippet changes → tests that require the snippet
+# Strategy 2 - Snippet changes → tests that require the snippet
 # ---------------------------------------------------------------------------
 
 
@@ -802,7 +802,7 @@ class SnippetStrategy(SelectionStrategy):
             snippet_name = self._find_snippet_name(self._zephyr_base / f)
             if snippet_name is None:
                 log.debug(
-                    "[%s] '%s' has no ancestor snippet.yml – skipping.",
+                    "[%s] '%s' has no ancestor snippet.yml - skipping.",
                     self.name,
                     f,
                 )
@@ -922,7 +922,7 @@ class SnippetStrategy(SelectionStrategy):
 
 
 # ---------------------------------------------------------------------------
-# Strategy 3 – Board directory changes → integration kernel test
+# Strategy 3 - Board directory changes → integration kernel test
 # ---------------------------------------------------------------------------
 
 
@@ -992,7 +992,7 @@ class BoardStrategy(SelectionStrategy):
             targets = self._get_board_targets(board_dir)
             if not targets:
                 log.info(
-                    "[%s] No targets found for '%s' – skipping.",
+                    "[%s] No targets found for '%s' - skipping.",
                     self.name,
                     board_dir,
                 )
@@ -1033,7 +1033,7 @@ class BoardStrategy(SelectionStrategy):
                 continue
             board_dir = self._find_board_yml_dir(self._zephyr_base / f)
             if board_dir is None:
-                log.debug("[%s] '%s' has no ancestor board.yml – skipping.", self.name, f)
+                log.debug("[%s] '%s' has no ancestor board.yml - skipping.", self.name, f)
                 continue
             board_dirs.setdefault(board_dir, set()).add(f)
         return board_dirs
@@ -1080,7 +1080,7 @@ class BoardStrategy(SelectionStrategy):
            containing an ``identifier:`` key (the legacy approach used by
            most boards and mirrored from ``scripts/ci/test_plan.py``).
 
-        2. ``twister.yaml`` – a single file that consolidates all variants for
+        2. ``twister.yaml`` - a single file that consolidates all variants for
            a board (used by e.g. ``intel_adsp``, ``mediatek``).  The file may
            live in *board_dir* itself or in a parent directory.  Identifiers
            are the keys of the ``variants:`` mapping, filtered to those that
@@ -1190,7 +1190,7 @@ class BoardStrategy(SelectionStrategy):
 
 
 # ---------------------------------------------------------------------------
-# Strategy 4 – SoC directory changes → integration kernel test on boards
+# Strategy 4 - SoC directory changes → integration kernel test on boards
 # ---------------------------------------------------------------------------
 
 
@@ -1254,7 +1254,7 @@ class SoCStrategy(SelectionStrategy):
             abs_path = self._zephyr_base / f
             soc_yml = self._find_soc_yml(abs_path)
             if soc_yml is None:
-                log.debug("[%s] '%s' has no ancestor soc.yml – skipping.", self.name, f)
+                log.debug("[%s] '%s' has no ancestor soc.yml - skipping.", self.name, f)
                 continue
             soc_yml_dir = soc_yml.parent
             try:
@@ -1276,7 +1276,7 @@ class SoCStrategy(SelectionStrategy):
             soc_names = self._collect_soc_names(soc_yml, group_prefix=prefix)
             if not soc_names:
                 log.debug(
-                    "[%s] No SoC names found for prefix '%s' in '%s' – skipping.",
+                    "[%s] No SoC names found for prefix '%s' in '%s' - skipping.",
                     self.name,
                     prefix,
                     soc_yml,
@@ -1286,7 +1286,7 @@ class SoCStrategy(SelectionStrategy):
             targets = self._find_board_targets_for_socs(soc_names)
             if not targets:
                 log.info(
-                    "[%s] SoC group '%s': no board targets found – skipping.",
+                    "[%s] SoC group '%s': no board targets found - skipping.",
                     self.name,
                     prefix or soc_yml.parent.name,
                 )
@@ -1418,7 +1418,7 @@ class SoCStrategy(SelectionStrategy):
 
 
 # ---------------------------------------------------------------------------
-# Strategy 5 – Driver DT_DRV_COMPAT → overlay → test directory
+# Strategy 5 - Driver DT_DRV_COMPAT → overlay → test directory
 # ---------------------------------------------------------------------------
 
 
@@ -1481,7 +1481,7 @@ class DriverCompatStrategy(SelectionStrategy):
     # Path fragments that indicate a generated build artifact
     _ARTIFACT_FRAGMENTS: tuple = ("twister-out",)
 
-    # Vendor prefixes that indicate test/mock devices – skip them
+    # Vendor prefixes that indicate test/mock devices - skip them
     _MOCK_VENDORS: frozenset = frozenset({"vnd", "test"})
 
     # Maximum number of board identifiers to collect per compat string.
@@ -1670,7 +1670,7 @@ class DriverCompatStrategy(SelectionStrategy):
         on-SoC peripheral (e.g. external components like ``adi,max14906-gpio``
         that are instantiated only in board overlays, not in vendor dtsi files).
         """
-        # Step 1 – find vendor dtsi files that define the peripheral
+        # Step 1 - find vendor dtsi files that define the peripheral
         dts_root = self._zephyr_base / "dts"
         compat_literal = f'compatible = "{compat_str}"'
         try:
@@ -1693,7 +1693,7 @@ class DriverCompatStrategy(SelectionStrategy):
         if not dtsi_files:
             return []
 
-        # Step 2 – find board files that #include any of those dtsi files
+        # Step 2 - find board files that #include any of those dtsi files
         boards_root = self._zephyr_base / "boards"
         board_yaml_dirs: set = set()
 
@@ -1726,7 +1726,7 @@ class DriverCompatStrategy(SelectionStrategy):
         if not board_yaml_dirs:
             return []
 
-        # Step 3 – extract board identifiers from .yaml files
+        # Step 3 - extract board identifiers from .yaml files
         board_ids: set = set()
         for board_dir in sorted(board_yaml_dirs):
             for yaml_file in sorted(board_dir.glob("*.yaml")):
@@ -1883,7 +1883,7 @@ class DriverCompatStrategy(SelectionStrategy):
 
 
 # ---------------------------------------------------------------------------
-# Strategy 6 – DTS binding changes → compat-matched tests + board targets
+# Strategy 6 - DTS binding changes → compat-matched tests + board targets
 # ---------------------------------------------------------------------------
 
 
@@ -1939,7 +1939,7 @@ class DtsBindingStrategy(DriverCompatStrategy):
         for f in binding_files:
             compat_str = self._read_binding_compat(self._zephyr_base / f)
             if compat_str is None:
-                log.debug("[%s] '%s' has no top-level compatible – skipping.", self.name, f)
+                log.debug("[%s] '%s' has no top-level compatible - skipping.", self.name, f)
                 continue
             vendor = compat_str.split(",")[0]
             if vendor in self._MOCK_VENDORS:
@@ -2037,7 +2037,7 @@ class DtsBindingStrategy(DriverCompatStrategy):
 
 
 # ---------------------------------------------------------------------------
-# Strategy 3 – Header include impact
+# Strategy 3 - Header include impact
 # ---------------------------------------------------------------------------
 
 
@@ -2073,7 +2073,7 @@ class HeaderImpactStrategy(SelectionStrategy):
 
     # Directories under ZEPHYR_BASE to grep for #include references.
     # Deliberately excludes build/, twister-out*, modules/ (third-party),
-    # tests/, and samples/ – we want *source* files that consume the header.
+    # tests/, and samples/ - we want *source* files that consume the header.
     _SCAN_DIRS: tuple = (
         "arch",
         "drivers",
@@ -2087,7 +2087,7 @@ class HeaderImpactStrategy(SelectionStrategy):
     # and skip it to avoid an explosion of test coverage.
     _MAX_INCLUDE_REFS: int = 50
 
-    # Path fragments that indicate a generated build artifact – exclude them
+    # Path fragments that indicate a generated build artifact - exclude them
     # from the grep results.
     _ARTIFACT_FRAGMENTS: tuple = ("twister-out", "build/")
 
@@ -2126,7 +2126,7 @@ class HeaderImpactStrategy(SelectionStrategy):
 
             if len(refs) > self._MAX_INCLUDE_REFS:
                 log.info(
-                    "[%s] '%s' has %d refs (> %d) – widespread header, skipping.",
+                    "[%s] '%s' has %d refs (> %d) - widespread header, skipping.",
                     self.name,
                     header,
                     len(refs),
@@ -2202,7 +2202,7 @@ class HeaderImpactStrategy(SelectionStrategy):
             log.warning("[%s] grep failed: %s", self.name, exc)
             return None
 
-        # grep returns 1 when no matches found – that is not an error
+        # grep returns 1 when no matches found - that is not an error
         if result.returncode not in (0, 1):
             log.warning("[%s] grep error: %s", self.name, result.stderr.strip())
             return None
@@ -2228,7 +2228,7 @@ class HeaderImpactStrategy(SelectionStrategy):
 
 
 # ---------------------------------------------------------------------------
-# Strategy 3 – Kconfig symbol impact
+# Strategy 3 - Kconfig symbol impact
 # ---------------------------------------------------------------------------
 
 
@@ -2263,7 +2263,7 @@ class KconfigImpactStrategy(SelectionStrategy):
        symbols without paying the grep cost.
 
     6. Emit one :class:`TwisterCall` per surviving test root.  Only consume
-       the input files if at least one targeted test root was found – this
+       the input files if at least one targeted test root was found - this
        way, if all symbols are widespread the files fall through to
        :class:`MaintainerAreaStrategy` for broad coverage.
     """
@@ -2286,7 +2286,7 @@ class KconfigImpactStrategy(SelectionStrategy):
     # and the file is released back to MaintainerAreaStrategy.
     _MAX_TOTAL_ROOTS: int = 30
 
-    # Symbols present in virtually every test – skip without even counting.
+    # Symbols present in virtually every test - skip without even counting.
     _SKIP_SYMBOLS: frozenset = frozenset(
         {
             "ZTEST",
@@ -2387,7 +2387,7 @@ class KconfigImpactStrategy(SelectionStrategy):
 
         if not surviving_roots:
             log.info(
-                "[%s] All symbols widespread – file(s) not consumed, "
+                "[%s] All symbols widespread - file(s) not consumed, "
                 "falling through to MaintainerArea.",
                 self.name,
             )
@@ -2398,7 +2398,7 @@ class KconfigImpactStrategy(SelectionStrategy):
         # Release it to MaintainerAreaStrategy instead.
         if len(surviving_roots) > self._MAX_TOTAL_ROOTS:
             log.info(
-                "[%s] %d surviving roots (> %d) – file too broad, "
+                "[%s] %d surviving roots (> %d) - file too broad, "
                 "falling through to MaintainerArea.",
                 self.name,
                 len(surviving_roots),
@@ -2519,7 +2519,7 @@ class KconfigImpactStrategy(SelectionStrategy):
 
 
 # ---------------------------------------------------------------------------
-# Strategy 0 – Risk-based file classifier
+# Strategy 0 - Risk-based file classifier
 # ---------------------------------------------------------------------------
 
 
@@ -2664,7 +2664,7 @@ class RiskClassifierStrategy(SelectionStrategy):
             escalated = by_risk[Risk.NORMAL]
             if escalated:
                 log.info(
-                    "[%s] Complexity score %.2f ≥ %.1f – escalating %d "
+                    "[%s] Complexity score %.2f ≥ %.1f - escalating %d "
                     "NORMAL-risk file(s) to WIDE: %s",
                     self.name,
                     complexity_score,
@@ -2684,7 +2684,7 @@ class RiskClassifierStrategy(SelectionStrategy):
 
         if skip_files:
             log.info(
-                "[%s] SKIP – %d test-free file(s): %s",
+                "[%s] SKIP - %d test-free file(s): %s",
                 self.name,
                 len(skip_files),
                 ", ".join(sorted(skip_files)),
@@ -2693,7 +2693,7 @@ class RiskClassifierStrategy(SelectionStrategy):
         # A single FULL-risk file overrides everything: signal a full run.
         if full_files:
             log.warning(
-                "[%s] FULL-risk change – %d file(s) affect the build system / linker: %s",
+                "[%s] FULL-risk change - %d file(s) affect the build system / linker: %s",
                 self.name,
                 len(full_files),
                 ", ".join(sorted(full_files)),
@@ -2720,7 +2720,7 @@ class RiskClassifierStrategy(SelectionStrategy):
             if root_to_files:
                 for root, files in sorted(root_to_files.items()):
                     log.info(
-                        "[%s] WIDE – '%s' ← %s",
+                        "[%s] WIDE - '%s' ← %s",
                         self.name,
                         root,
                         ", ".join(sorted(set(files))),
@@ -2783,9 +2783,9 @@ class RiskClassifierStrategy(SelectionStrategy):
 
 
 # ---------------------------------------------------------------------------
-# Strategy N – west manifest changes → module-tagged integration tests
+# Strategy N - west manifest changes → module-tagged integration tests
 # ---------------------------------------------------------------------------
-# Strategy – patchset complexity scoring (pydriller + lizard)
+# Strategy - patchset complexity scoring (pydriller + lizard)
 # ---------------------------------------------------------------------------
 
 
@@ -2805,24 +2805,24 @@ class ComplexityStrategy(SelectionStrategy):
     For every modified C / C++ / assembly source file the following raw
     metrics are collected and weighted into a per-file sub-score:
 
-    * **churn** – ``added_lines + deleted_lines`` from pydriller's commit
+    * **churn** - ``added_lines + deleted_lines`` from pydriller's commit
       model.  High churn correlates with merge-conflict risk and review
       fatigue.  Weight: ``0.01`` (1 point per 100 lines changed).
 
-    * **max_method_ccn** – highest cyclomatic complexity (McCabe CCN) among
+    * **max_method_ccn** - highest cyclomatic complexity (McCabe CCN) among
       the methods *actually touched by the diff*, taken from pydriller's
       ``changed_methods`` list.  A CCN above 10 indicates highly branching
       logic.  Weight: ``0.5`` (0.5 points per CCN unit of the worst method).
 
-    * **avg_ccn_delta** – change in the file's average CCN between the old
+    * **avg_ccn_delta** - change in the file's average CCN between the old
       and new versions, computed by running lizard on the full source text
       of both versions.  A positive delta means the patch made the file
       harder to understand.  Weight: ``2.0`` (2 points per unit of average
       CCN increase).
 
-    * **dmm_unit_complexity** – pydriller's Delta Maintainability Model
+    * **dmm_unit_complexity** - pydriller's Delta Maintainability Model
       fraction: the proportion of methods in the commit with CCN > 5.
-      Ranges 0–1; higher is riskier.  Weight: ``3.0``.
+      Ranges 0-1; higher is riskier.  Weight: ``3.0``.
 
     The aggregate score is the sum of per-file sub-scores:
 
@@ -2874,7 +2874,7 @@ class ComplexityStrategy(SelectionStrategy):
     _W_CHURN = 0.01  # per added+deleted line
     _W_MAX_CCN = 0.5  # per CCN unit of the worst changed method
     _W_CCN_DELTA = 2.0  # per unit of avg-CCN increase
-    _W_DMM = 3.0  # DMM unit-complexity fraction (0–1)
+    _W_DMM = 3.0  # DMM unit-complexity fraction (0-1)
 
     # Score above this value is treated as "high complexity" by the context
     _ESCALATION_THRESHOLD: float = 10.0
@@ -2906,14 +2906,14 @@ class ComplexityStrategy(SelectionStrategy):
 
     def analyze(self, changed_files):
         if not self._commits:
-            log.debug("[%s] No --commits range – skipping complexity analysis.", self.name)
+            log.debug("[%s] No --commits range - skipping complexity analysis.", self.name)
             return [], set()
 
         try:
             import lizard as _lizard  # noqa: PLC0415
             from pydriller import Repository as PydrillerRepository  # noqa: PLC0415
         except ImportError as exc:
-            log.warning("[%s] Optional dependency missing (%s) – skipping.", self.name, exc)
+            log.warning("[%s] Optional dependency missing (%s) - skipping.", self.name, exc)
             return [], set()
 
         parts = self._commits.split("..")
@@ -2942,7 +2942,7 @@ class ComplexityStrategy(SelectionStrategy):
             return [], set()
 
         for commit in repo_iter:
-            # Skip the base (start) commit – git's A..B excludes A but
+            # Skip the base (start) commit - git's A..B excludes A but
             # pydriller's from_commit is inclusive.
             if base_hash and commit.hash == base_hash:
                 continue
@@ -3059,7 +3059,7 @@ class ComplexityStrategy(SelectionStrategy):
 
 
 # ---------------------------------------------------------------------------
-# Strategy N – west manifest changes → module-tagged integration tests
+# Strategy N - west manifest changes → module-tagged integration tests
 # ---------------------------------------------------------------------------
 
 
@@ -3086,9 +3086,9 @@ class ManifestStrategy(SelectionStrategy):
 
     4. Compute three project sets:
 
-       * **removed** – in old, not in new (by name).
-       * **updated** – in both, but revision changed.
-       * **added**   – in new, not in old (by name).
+       * **removed** - in old, not in new (by name).
+       * **updated** - in both, but revision changed.
+       * **added**   - in new, not in old (by name).
 
     5. For each changed project name, emit one :class:`TwisterCall` using
        ``--tag <name> --integration``.  This lets twister select only tests
@@ -3144,7 +3144,7 @@ class ManifestStrategy(SelectionStrategy):
         if self._repo is None or not self._commits:
             log.warning(
                 "[%s] west.yml changed but no --commits range supplied; "
-                "cannot diff manifest – falling through to MaintainerArea.",
+                "cannot diff manifest - falling through to MaintainerArea.",
                 self.name,
             )
             return [], set()
@@ -3155,13 +3155,13 @@ class ManifestStrategy(SelectionStrategy):
         changed_projects = self._diff_manifests(base_commit, head_commit)
 
         if changed_projects is None:
-            # Diff failed – do not consume so MaintainerArea can catch it
+            # Diff failed - do not consume so MaintainerArea can catch it
             return [], set()
 
         if not changed_projects:
             log.info(
                 "[%s] Manifest changed but no project revisions differ "
-                "(e.g. comment / formatting edit) – no module tests needed.",
+                "(e.g. comment / formatting edit) - no module tests needed.",
                 self.name,
             )
             return set(manifest_files), set(manifest_files)
@@ -3215,7 +3215,7 @@ class ManifestStrategy(SelectionStrategy):
         import importlib.util
 
         if importlib.util.find_spec("west.manifest") is None:
-            log.warning("[%s] west.manifest not importable – skipping.", self.name)
+            log.warning("[%s] west.manifest not importable - skipping.", self.name)
             return None
 
         try:
@@ -3263,7 +3263,7 @@ class ManifestStrategy(SelectionStrategy):
 
 
 # ---------------------------------------------------------------------------
-# Strategy 4 – Ignore list: files that never trigger tests
+# Strategy 4 - Ignore list: files that never trigger tests
 # ---------------------------------------------------------------------------
 
 
@@ -3323,7 +3323,7 @@ class IgnoreStrategy(SelectionStrategy):
 
 
 # ---------------------------------------------------------------------------
-# Strategy 4b – Boilerplate-only filter
+# Strategy 4b - Boilerplate-only filter
 # ---------------------------------------------------------------------------
 
 
@@ -3392,7 +3392,7 @@ class BoilerplateFilter(SelectionStrategy):
         for f in changed_files:
             if self._is_boilerplate_only(f):
                 log.info(
-                    "[%s] '%s' has only boilerplate changes – skipping.",
+                    "[%s] '%s' has only boilerplate changes - skipping.",
                     self.name,
                     f,
                 )
@@ -3470,7 +3470,7 @@ class BoilerplateFilter(SelectionStrategy):
 
 
 # ---------------------------------------------------------------------------
-# Strategy 5 – Direct test/sample changes
+# Strategy 5 - Direct test/sample changes
 # ---------------------------------------------------------------------------
 
 
@@ -3634,7 +3634,7 @@ def build_strategies(
             repo_path=base,
             commits=commits,
         ),
-        # 0b. Risk classifier: disabled pending rework – needs better
+        # 0b. Risk classifier: disabled pending rework - needs better
         #    classification rules and blast-radius definition before it
         #    can be re-enabled in production.
         # RiskClassifierStrategy(
@@ -3813,7 +3813,7 @@ def parse_args():
         default=900,
         type=int,
         metavar="N",
-        help="Tests per CI builder node – used to compute TWISTER_NODES (default: 900).",
+        help="Tests per CI builder node - used to compute TWISTER_NODES (default: 900).",
     )
     parser.add_argument(
         "-r",
