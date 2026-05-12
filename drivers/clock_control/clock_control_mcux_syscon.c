@@ -641,7 +641,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 #endif
 #endif /* CONFIG_MEMC_MCUX_FLEXSPI */
 
-#if defined(CONFIG_I2S_MCUX_SAI)
+#if defined(CONFIG_I2S_MCUX_SAI) || defined(CONFIG_SOC_FAMILY_MCXN)
 #if defined(CONFIG_SOC_SERIES_IMXRT7XX)
 	case MCUX_SAI0_CLK:
 	case MCUX_SAI1_CLK:
@@ -662,7 +662,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		break;
 #endif
 #endif /* CONFIG_SOC_SERIES_IMXRT7XX */
-#endif /* CONFIG_I2S_MCUX_SAI */
+#endif /* CONFIG_I2S_MCUX_SAI || CONFIG_SOC_FAMILY_MCXN */
 
 #ifdef CONFIG_ETH_NXP_ENET_QOS
 	case MCUX_ENET_QOS_CLK:
@@ -874,6 +874,70 @@ __weak int flexspi_clock_set_freq(uint32_t clock_name, uint32_t freq)
 #define SYSCON_SET_FUNC_ATTR
 #endif
 
+#if defined(CONFIG_SOC_FAMILY_MCXN)
+#define MCXN_SAI_AUDIO_PLL_48KHZ_FAMILY_RATE 24576000U
+#define MCXN_SAI_AUDIO_PLL_44K1HZ_FAMILY_RATE 22579200U
+
+static int mcux_lpc_syscon_set_mcxn_sai_rate(uint32_t clock_name, uint32_t clock_rate)
+{
+	clock_attach_id_t attach_id;
+	clock_div_name_t clk_div;
+	uint32_t pll_rate;
+	pll_config_t pll_config = {
+		.inputSource = (uint32_t)kPll_ClkSrcSysOsc,
+		.flags = 0U,
+		.ss_mf = kSS_MF_512,
+		.ss_mr = kSS_MR_K0,
+		.ss_mc = kSS_MC_NOC,
+		.mfDither = false,
+	};
+	pll_setup_t pll_setup = {0};
+	pll_error_t pll_err;
+
+	switch (clock_name) {
+	case MCUX_SAI0_CLK:
+		attach_id = kPLL1_CLK0_to_SAI0;
+		clk_div = kCLOCK_DivSai0Clk;
+		break;
+	case MCUX_SAI1_CLK:
+		attach_id = kPLL1_CLK0_to_SAI1;
+		clk_div = kCLOCK_DivSai1Clk;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	switch (clock_rate) {
+	case 12288000U:
+		pll_rate = MCXN_SAI_AUDIO_PLL_48KHZ_FAMILY_RATE;
+		break;
+	case 11289600U:
+		pll_rate = MCXN_SAI_AUDIO_PLL_44K1HZ_FAMILY_RATE;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	pll_config.desiredRate = pll_rate;
+	pll_err = CLOCK_SetupPLLData(&pll_config, &pll_setup);
+	if (pll_err != kStatus_PLL_Success) {
+		return -EINVAL;
+	}
+
+	pll_err = CLOCK_SetPLL1Freq(&pll_setup);
+	if (pll_err != kStatus_PLL_Success) {
+		return -EIO;
+	}
+
+	CLOCK_SetClkDiv(kCLOCK_DivPLL1Clk0, 1U);
+	CLOCK_AttachClk(attach_id);
+	CLOCK_SetClkDiv(clk_div, pll_rate / clock_rate);
+	CLOCK_SetupSaiMclk(clock_name == MCUX_SAI0_CLK ? 0U : 1U, clock_rate);
+
+	return 0;
+}
+#endif
+
 static int SYSCON_SET_FUNC_ATTR mcux_lpc_syscon_clock_control_set_subsys_rate(
 	const struct device *dev, clock_control_subsys_t subsys, clock_control_subsys_rate_t rate)
 {
@@ -881,6 +945,12 @@ static int SYSCON_SET_FUNC_ATTR mcux_lpc_syscon_clock_control_set_subsys_rate(
 	uint32_t clock_rate = (uintptr_t)rate;
 
 	switch (clock_name) {
+
+#if defined(CONFIG_SOC_FAMILY_MCXN)
+	case MCUX_SAI0_CLK:
+	case MCUX_SAI1_CLK:
+		return mcux_lpc_syscon_set_mcxn_sai_rate(clock_name, clock_rate);
+#endif
 #if defined(CONFIG_SOC_SERIES_IMXRT7XX)
 	case MCUX_USB0_CLK:
 		return CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M, clock_rate) ? 0 : -EINVAL;
