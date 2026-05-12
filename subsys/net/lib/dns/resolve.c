@@ -2466,6 +2466,10 @@ unlock:
 	k_mutex_unlock(&ctx->lock);
 	k_mutex_unlock(&lock);
 
+	if (err == 0) {
+		net_mgmt_event_notify(NET_EVENT_DNS_SERVERS_RECONFIGURED, NULL);
+	}
+
 	return err;
 }
 
