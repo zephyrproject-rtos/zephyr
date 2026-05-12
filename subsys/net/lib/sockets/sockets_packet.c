@@ -181,7 +181,11 @@ static void zpacket_set_source_addr(struct net_context *ctx,
 				    net_socklen_t *addrlen)
 {
 	struct net_sockaddr_ll addr = {0};
-	struct net_if *iface = net_context_get_iface(ctx);
+	struct net_if *iface = net_pkt_iface(pkt);
+
+	if (iface == NULL) {
+		iface = net_context_get_iface(ctx);
+	}
 
 	if (iface == NULL) {
 		return;
