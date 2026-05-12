@@ -11,6 +11,29 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/device_mmio.h>
+
+/*
+ * The mcux-sdk-ng MU header (modules/hal/nxp/mcux/mcux-sdk-ng/drivers/
+ * mu/fsl_mu.h) unconditionally defines a couple of static inline
+ * helpers that reference register fields not present on every i.MX
+ * MU variant: MU_MaskHardwareReset() expects MU_CR_HRM_MASK and
+ * MU_GetOtherCorePowerMode() expects MU_SR_PM_MASK / MU_SR_PM_SHIFT.
+ * The i.MX 8M Plus (MIMX8ML8) MU PERI_MU.h does not define these
+ * symbols (they are only present on MUs with an HRM control bit and
+ * an explicit power-mode field). The Zephyr mbox driver does not
+ * call either function, so stub the macros to harmless 0 just so
+ * the static-inline bodies compile through.
+ */
+#ifndef MU_CR_HRM_MASK
+#define MU_CR_HRM_MASK 0U
+#endif
+#ifndef MU_SR_PM_MASK
+#define MU_SR_PM_MASK  0U
+#endif
+#ifndef MU_SR_PM_SHIFT
+#define MU_SR_PM_SHIFT 0U
+#endif
+
 #include <fsl_mu.h>
 
 #define LOG_LEVEL CONFIG_MBOX_LOG_LEVEL
