@@ -1,0 +1,18 @@
+sample:
+  name: renesas_softoff_blinky
+  description: Blink/restore LED after wake from PM_STATE_SOFT_OFF using WUC + counter
+
+tests:
+  sample.boards.renesas.lpm.softoff_blinky:
+    tags: renesas_lpm
+    filter: dt_compat_enabled("renesas,ra-lpm-wuc")
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "LED: ON"
+        - "Woke up from deep standby"
+        - "LED: OFF"
+        - "Woke up from deep standby"
+        - "LED: ON"
