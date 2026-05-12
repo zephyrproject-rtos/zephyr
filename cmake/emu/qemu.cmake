@@ -465,6 +465,29 @@ if(CONFIG_QEMU_TARGET)
   endif()
 endif()
 
+if(CONFIG_FLASH_INTEL_PFLASH_CFI01)
+  if(CONFIG_X86)
+    # X86 Needs an initial bios file in pflash0 slot
+    list(APPEND QEMU_EXTRA_FLAGS
+      -drive file=${HOST_TOOLS_HOME}/usr/share/qemu/bios-256k.bin,if=pflash,format=raw,unit=0
+    )
+  endif()
+
+  list(APPEND QEMU_EXTRA_FLAGS
+    -drive file=${ZEPHYR_BINARY_DIR}/pflash.img,if=pflash,format=raw,unit=1
+  )
+
+  if(CONFIG_RISCV)
+    set(PFLASH_SIZE 32768)
+  else()
+    set(PFLASH_SIZE 4096)
+  endif()
+  execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
+    "open('${ZEPHYR_BINARY_DIR}/pflash.img', 'wb').write(bytes([0])*${PFLASH_SIZE}*1024)"
+    COMMAND_ERROR_IS_FATAL ANY
+  )
+endif()
+
 if(NOT QEMU_PIPE)
   set(QEMU_PIPE_COMMENT "\nTo exit from QEMU enter: 'CTRL+a, x'\n")
 endif()
