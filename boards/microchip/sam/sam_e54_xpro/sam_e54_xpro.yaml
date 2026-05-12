@@ -27,6 +27,7 @@ supported:
   - pwm
   - reset
   - rtc
+  - sdhc
   - spi
   - uart
   - watchdog
