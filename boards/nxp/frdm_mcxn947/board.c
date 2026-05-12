@@ -121,9 +121,9 @@ void board_early_init_hook(void)
 	 */
 	const pll_setup_t pll0Setup = {.pllctrl = SCG_APLLCTRL_SOURCE(0U) | SCG_APLLCTRL_SELI(27U) |
 						  SCG_APLLCTRL_SELP(13U),
-				       .pllndiv = SCG_APLLNDIV_NDIV(8U),
+				       .pllndiv = SCG_APLLNDIV_NDIV(4U),
 				       .pllpdiv = SCG_APLLPDIV_PDIV(1U),
-				       .pllmdiv = SCG_APLLMDIV_MDIV(100U),
+				       .pllmdiv = SCG_APLLMDIV_MDIV(50U),
 				       .pllRate = 150000000U};
 	/* Configure PLL0 to the desired values */
 	CLOCK_SetPLL0Freq(&pll0Setup);
