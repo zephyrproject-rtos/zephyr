@@ -1831,7 +1831,15 @@ static void modem_cmux_disconnect_handler(struct k_work *item)
 			disconnect(cmux);
 			return;
 		}
-	} else if (cmux->state != MODEM_CMUX_STATE_DISCONNECTED) {
+	} else if (is_connected(cmux)) {
+		/* Check if we need to initiate wake-up before changing the state */
+		if (powersave_wait_wakeup(cmux)) {
+			/* Retry after the wake-up, if still alive */
+			if (is_connected(cmux)) {
+				modem_work_schedule(&cmux->disconnect_work, MODEM_CMUX_T1_TIMEOUT);
+			}
+			return;
+		}
 		set_state(cmux, MODEM_CMUX_STATE_DISCONNECTING);
 		cmux->retry_count = 0;
 	} else {
@@ -2208,7 +2216,7 @@ int modem_cmux_connect_async(struct modem_cmux *cmux)
 {
 	int ret = 0;
 
-	if (cmux->state != MODEM_CMUX_STATE_DISCONNECTED) {
+	if (is_connecting(cmux)) {
 		return -EALREADY;
 	}
 
@@ -2246,7 +2254,7 @@ int modem_cmux_disconnect_async(struct modem_cmux *cmux)
 {
 	int ret = 0;
 
-	if (cmux->state == MODEM_CMUX_STATE_DISCONNECTED) {
+	if (!is_connected(cmux)) {
 		return -EALREADY;
 	}
 
