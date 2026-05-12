@@ -170,6 +170,7 @@ config PRINTK_BUFFER_SIZE
 
 config EARLY_CONSOLE
 	bool "Send stdout at the earliest stage possible"
+	default y
 	help
 	  This option will enable stdout as early as possible, for debugging
 	  purpose. For instance, in case of STDOUT_CONSOLE being set it will
