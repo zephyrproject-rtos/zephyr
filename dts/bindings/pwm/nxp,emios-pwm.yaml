@@ -1,0 +1,151 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP eMIOS PWM node. Each channel (UC) in eMIOS can be configured to use for
+  PWM and capture operation. There are several modes supported by this module,
+  some modes only support on channels that have internal counter, some modes
+  require to use a reference timebase from a counter bus.
+
+  For example to configuring eMIOS instance 0 with:
+    - Channel 16 for mode OPWFMB
+    - Channel 9 for mode OPWMB
+    - Channel 2 for mode OPWMCB with deadtime inserted at leading edge
+
+    emios0_pwm: pwm {
+      pwm_0 {
+        channel = <16>;
+        mode = "OPWFMB";
+        counter-bus-type = "BUS_INTERNAL";
+        prescaler = <8>;
+      };
+
+      pwm_1 {
+        channel = <9>;
+        mode = "OPWMB";
+        counter-bus-type = "BUS_C";
+        phase-shift = <100>;
+      };
+
+      pwm_2 {
+        channel = <2>;
+        mode = "OPWMCB_LEAD_EDGE";
+        counter-bus-type = "BUS_B";
+        dead-time = <100>;
+      };
+    };
+
+  OPWMB and OPWMCB modes use reference timebase. Please notice that the devicetree
+  node for counter bus should be enabled and configured for using, please see
+  'nxp,emios' bindings.
+
+compatible: "nxp,emios-pwm"
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags
+
+child-binding:
+  description: |
+    eMIOS PWM channel configuration.
+
+  properties:
+    channel:
+      type: int
+      required: true
+      description: eMIOS PWM channel
+
+    mode:
+      type: string
+      required: true
+      description: |
+        Select PWM mode:
+        - OPWFMB: Provides waveforms with variable duty cycle and frequency.
+                  This mode uses internal counter.
+
+        - OPWMB:  Generate pulses with programmable leading and trailing
+                  edge placement. The period is determined by period of
+                  an external counter driven in MCB Up Mode. Changing PWM period
+                  at runtime will impact to all channels share the same timebase.
+                  The new period and cycle take effect in next period boundary.
+
+        - OPWMCB: Generates a center aligned PWM with dead time insertion to the
+                  leading or trailing edge. The period is determined by period of
+                  an external counter driven in MCB Up Down Mode. Changing PWM period
+                  at runtime will impact to all channels share the same timebase,
+                  The new period and cycle take effect in next period boundary.
+
+        - SAIC: Single action input capture mode, the eMIOS captures events as soon as
+                they occur. The value of latest captured event is stored and can be read
+                by software. This mode uses internal counter with range [0, 0xFFFF].
+      enum:
+        - "OPWFMB"
+        - "OPWMB"
+        - "OPWMCB_TRAIL_EDGE"
+        - "OPWMCB_LEAD_EDGE"
+        - "SAIC"
+
+    counter-bus-type:
+      type: string
+      required: true
+      description: |
+        Counter bus provides the time base for each channel (UC).
+        Global counter bus provides the time base for any other channels.
+        Local counter bus provides the time base for specific channels.
+        Channel drives counter bus only use the internal counter as its time base.
+          - BUS_A: global bus, driven by channel 23, used by other all channels
+          - BUS_B: local bus,  driven by channel 0,  used by channels 1-7
+          - BUS_C: local bus,  driven by channel 8,  used by channels 9-15
+          - BUS_D: local bus,  driven by channel 16, used by channels 17-23
+          - BUS_F: global bus, driven by channel 22, used by other all channels
+          - BUS_INTERNAL: the channel's own internal counter, OPWFMB and SAIC mode use this type
+      enum:
+        - "BUS_A"
+        - "BUS_B"
+        - "BUS_C"
+        - "BUS_D"
+        - "BUS_F"
+        - "BUS_INTERNAL"
+
+    prescaler:
+      type: int
+      min: 1
+      max: 16
+      default: 1
+      description: |
+        The clock divider for internal counter prescaler.
+
+    dead-time:
+      type: int
+      default: 0
+      description: |
+        Dead time (in ticks) for PWM channel in OPWMCB mode.
+
+    phase-shift:
+      type: int
+      default: 0
+      description: |
+        Phase Shift (in ticks) for PWM channel in OPWMB mode.
+
+    input-filter:
+      type: int
+      default: 0
+      enum: [0, 2, 4, 8, 16]
+      description: |
+        Select the minimum input pulse width, in filter clock cycles that can pass
+        through the input filter. The filter latency - the difference in time between
+        the input and the response is three clock edges. Default 0 means the filter
+        is bypassed. The clock source for programmable input filter is eMIOS clock.
