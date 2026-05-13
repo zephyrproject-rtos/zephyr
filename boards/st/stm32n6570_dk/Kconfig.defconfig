@@ -51,7 +51,7 @@ if LVGL
 config LV_ATTRIBUTE_MEM_ALIGN_SIZE
 	default 32 if NEOCHROM_GPU2D
 
-config LV_NEMA_GFX_MULTI_THREAD
+config LV_Z_NEMA_GFX_MULTI_THREAD
 	default y if LV_USE_NEMA_GFX
 
 config GRAPHICS_ACCELERATOR
@@ -62,8 +62,22 @@ if NEOCHROM_GPU2D
 config LV_USE_NEMA_GFX
 	default y
 
-config LV_USE_NEMA_LIB
-	default 3
+choice LV_USE_NEMA_HAL
+	default LV_NEMA_HAL_CUSTOM
+endchoice
+
+choice LV_USE_NEMA_LIB
+	default LV_NEMA_LIB_M33_REVC
+endchoice
+
+config LV_NEMA_CUSTOM_HAL_INCLUDE
+	default y
+
+config LV_NEMA_CUSTOM_HAL_INCLUDE_FILENAME
+	default "stm32n657xx.h"
+
+config LV_NEMA_CACHE_SUPPORT
+	default y
 
 endif # NEOCHROM_GPU2D
 

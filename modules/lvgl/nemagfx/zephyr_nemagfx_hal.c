@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "lv_conf_internal.h"
-
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -33,7 +31,7 @@
 
 /********** Defines **********/
 
-#define RING_SIZE	CONFIG_LV_NEMA_HAL_RING_SIZE
+#define RING_SIZE	CONFIG_LV_Z_NEMA_HAL_RING_SIZE
 
 /* NemaGFX byte pool size in bytes.
  * One byte per pixel for masking/stenciling plus 10240 for
