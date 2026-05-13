@@ -27,6 +27,9 @@ BUILD_ASSERT(sizeof(struct log_msg_desc) == sizeof(uint32_t),
 BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG_SIMPLE_MSG_OPTIMIZE) ||
 	     (IS_ENABLED(CONFIG_LOG_SIMPLE_MSG_OPTIMIZE) && (CBPRINTF_DESC_SIZE32 == 1)));
 
+/* Get the start of the log string section. */
+TYPE_SECTION_START_EXTERN(const char *, log_strings);
+TYPE_SECTION_END_EXTERN(const char *, log_strings);
 
 void z_log_msg_finalize(struct log_msg *msg, const void *source,
 			 const struct log_msg_desc desc, const void *data)
@@ -77,6 +80,52 @@ static bool frontend_runtime_filtering(const void *source, uint32_t level)
 	return level <= f_level;
 }
 
+void z_log_msg_compressed_to_generic(struct log_msg_compressed *msg, struct log_msg *std_msg)
+{
+	uintptr_t fmt = (uintptr_t)TYPE_SECTION_START(log_strings) + msg->desc.string_off;
+	union cbprintf_package_hdr hdr = {
+		.desc = {
+			.len = msg->desc.args + 2 * sizeof(void *) / sizeof(uint32_t),
+			.ro_str_cnt = IS_ENABLED(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC) ? 1 : 0
+		}
+	};
+	uint32_t *pkg = (uint32_t *)std_msg->data;
+
+	std_msg->hdr.desc.type = Z_LOG_MSG_LOG;
+	std_msg->hdr.desc.level = msg->desc.level;
+	std_msg->hdr.desc.domain = 0;
+	std_msg->hdr.desc.package_len = 2 * sizeof(void *) + (msg->desc.args * sizeof(uint32_t));
+	std_msg->hdr.desc.data_len = 0;
+	std_msg->hdr.source = msg->desc.level == LOG_LEVEL_INTERNAL_RAW_STRING ?
+		(void *)(uintptr_t)msg->desc.source_id : log_source_ptr(msg->desc.source_id);
+#if defined(CONFIG_LOG_THREAD_ID_PREFIX)
+	std_msg->hdr.tid = msg->tid;
+#endif
+#if defined(CONFIG_LOG_CORE_ID_PREFIX)
+	std_msg->hdr.core_id = msg->core_id;
+#endif
+#if !IS_ENABLED(ARCH_DOUBLE_WORD_32BIT_ALIGNMENT) && defined(CONFIG_LOG_TIMESTAMP_64BIT)
+	/* Timestamp is only 32 bit aligned so we need to copy it as double word
+	 * instruction would fail.
+	 */
+	memcpy(&std_msg->hdr.timestamp, &msg->timestamp, sizeof(std_msg->hdr.timestamp));
+#else
+	std_msg->hdr.timestamp = msg->timestamp;
+#endif
+	*pkg++ = (uint32_t)(uintptr_t)hdr.raw;
+	*pkg++ = (uint32_t)fmt;
+	if (msg->desc.args > 0) {
+		*pkg++ = msg->arg0;
+	}
+	if (msg->desc.args > 1) {
+		*pkg++ = msg->arg1;
+	}
+	if (IS_ENABLED(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC)) {
+		/* fmt string located at index 1 */
+		*(uint8_t *)pkg = 1;
+	}
+}
+
 /** @brief Create a log message using simplified method.
  *
  * Simple log message has 0-2 32 bit word arguments so creating cbprintf package
@@ -95,6 +144,44 @@ static bool frontend_runtime_filtering(const void *source, uint32_t level)
  */
 static void z_log_msg_simple_create(const void *source, uint32_t level, uint32_t *data, size_t len)
 {
+	if (IS_ENABLED(CONFIG_LOG_SIMPLE_MSG_COMPRESS)) {
+		uint32_t log_str_start = (uint32_t)(uintptr_t)TYPE_SECTION_START(log_strings);
+		uint32_t string_off = (data[0] - log_str_start);
+		uint32_t source_id = level == LOG_LEVEL_INTERNAL_RAW_STRING ?
+				(uint32_t)(uintptr_t)source : log_source_id(source);
+
+		/* If there are lot of logging strings offset may exceed bit field size, in that
+		 * case use standard message.
+		 * If source ID exceeds bit field size then also use standard message.
+		 */
+		if ((string_off <= BIT_MASK(Z_LOG_MSG_COMPRESSED_STRING_OFF_BITS)) &&
+		    (source_id <= BIT_MASK(Z_LOG_MSG_COMPRESSED_SOURCE_ID_BITS))) {
+			struct log_msg_compressed msg;
+
+			msg.desc.valid = 1;
+			msg.desc.busy = 0;
+			msg.desc.type = Z_LOG_MSG_COMPRESSED;
+			msg.desc.level = level;
+			msg.desc.args = len - 1;
+			msg.desc.source_id = source_id;
+			msg.desc.string_off = string_off;
+#if CONFIG_LOG_THREAD_ID_PREFIX
+			msg.tid = (k_is_in_isr() || k_is_pre_kernel()) ? NULL : k_current_get();
+#endif
+#if CONFIG_LOG_CORE_ID_PREFIX
+			msg.core_id = arch_proc_id();
+#endif
+			if (len > 1) {
+				msg.arg0 = data[1];
+				if (len > 2) {
+					msg.arg1 = data[2];
+				}
+			}
+			z_log_msg_compressed_commit(&msg, log_msg_compressed_get_wlen(&msg));
+			return;
+		}
+	}
+
 	/* Package length (in words) is increased by the header. */
 	size_t plen32 = len + CBPRINTF_DESC_SIZE32;
 	/* Package length in bytes. */
