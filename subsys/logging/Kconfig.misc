@@ -35,6 +35,18 @@ config LOG_SIMPLE_MSG_OPTIMIZE
 	  Depending on the architecture code size reduction is from 0-40% (highest seen on
 	  RISCV32) and execution time also up to 40%.
 
+config LOG_SIMPLE_MSG_COMPRESS
+	bool "Compress simple messages"
+	depends on LOG_SIMPLE_MSG_OPTIMIZE
+	depends on LOG_MODE_DEFERRED && !LOG_SPEED
+	depends on !LOG_USE_TAGGED_ARGUMENTS
+	depends on !XTENSA # xtensa requires 16 byte alignment of the logging message
+	default y
+	help
+	  If enabled, the compressed message format is used for the most common log
+	  messages (0-2 32 bit word arguments). Compressed messages are faster to create
+	  and take less memory in the logger buffer.
+
 config LOG_ALWAYS_RUNTIME
 	bool "Always use runtime message creation (v2)"
 	default y if NO_OPTIMIZATIONS

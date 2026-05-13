@@ -54,6 +54,12 @@ typedef uint64_t log_timestamp_t;
 typedef uint32_t log_timestamp_t;
 #endif
 
+/** @brief Determine if architecture supports double word instructions with 32 bit alignment. */
+#if (defined(CONFIG_RISCV) || defined(CONFIG_X86) || defined(CONFIG_CPU_CORTEX_A) || \
+	(defined(CONFIG_CPU_CORTEX_M) && !defined(ARMV6_M_ARMV8_M_BASELINE)))
+#define ARCH_DOUBLE_WORD_32BIT_ALIGNMENT 1
+#endif
+
 /**
  * @brief Log message
  * @defgroup log_msg Log messages
@@ -62,22 +68,48 @@ typedef uint32_t log_timestamp_t;
  */
 
 /** @cond INTERNAL_HIDDEN */
+/** @brief Standard log message type. */
 #define Z_LOG_MSG_LOG 0
+
+/** @brief Compressed log message type (0-2 32 bit word arguments). */
+#define Z_LOG_MSG_COMPRESSED 1
 
 #define Z_LOG_MSG_PACKAGE_BITS 11
 
 #define Z_LOG_MSG_MAX_PACKAGE BIT_MASK(Z_LOG_MSG_PACKAGE_BITS)
 
-#define LOG_MSG_GENERIC_HDR \
-	MPSC_PBUF_HDR;\
+/** @brief Generic part of the logging message header. */
+#define LOG_MSG_GENERIC_HDR               \
+	/** MPSC packet buffer header. */ \
+	MPSC_PBUF_HDR;                    \
+	/** Log message type. */          \
 	uint32_t type:1
 
 struct log_msg_desc {
+	/** Header with type and MPSC packet buffer part. */
 	LOG_MSG_GENERIC_HDR;
+	/** Domain ID. */
 	uint32_t domain:3;
+	/** Log level. */
 	uint32_t level:3;
+	/** Package length. */
 	uint32_t package_len:Z_LOG_MSG_PACKAGE_BITS;
+	/** Data length. */
 	uint32_t data_len:12;
+};
+
+/** @brief Compressed log message descriptor. */
+struct log_msg_desc_compressed {
+	/** Header with type and MPSC packet buffer part. */
+	LOG_MSG_GENERIC_HDR;
+	/** Log level. */
+	uint32_t level:3;
+	/** Number of arguments (0-2). */
+	uint32_t args:2;
+	/** Index of the source structure in the log_source memory section. */
+	uint32_t source_id: 12;
+	/** Index of the string in the log_str_ptr memory section. */
+	uint32_t string_id: 12;
 };
 
 union log_msg_source {
@@ -105,6 +137,32 @@ struct log_msg_hdr {
 	uint8_t core_id;
 #endif
 };
+
+/** @brief Compressed log message. */
+struct log_msg_compressed {
+	/** Descriptor with information like level, source, string and number of arguments. */
+	struct log_msg_desc_compressed desc;
+	/** Timestamp. */
+	log_timestamp_t timestamp;
+#if defined(CONFIG_LOG_THREAD_ID_PREFIX)
+	/** Thread ID. */
+	void *tid;
+#endif
+#if defined(CONFIG_LOG_CORE_ID_PREFIX)
+	/** Core ID */
+	uint8_t core_id;
+#endif
+	/** Optional arguments. */
+	uint32_t args[2];
+};
+
+/** @brief Maximum size of the compressed log message after conversion to generic log message. */
+#define LOG_COMPRESSED_MSG_TO_STD_MAX_SIZE \
+	(sizeof(struct log_msg) + \
+	 sizeof(struct cbprintf_package_hdr_ext) + \
+	 sizeof(uint32_t) * 2 + \
+	 (IS_ENABLED(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC) ? 1 : 0))
+
 /* Messages are aligned to alignment required by cbprintf package. */
 #define Z_LOG_MSG_ALIGNMENT CBPRINTF_PACKAGE_ALIGNMENT
 
@@ -130,10 +188,16 @@ struct log_msg_generic_hdr {
 	LOG_MSG_GENERIC_HDR;
 };
 
+/** @brief Generic log message union. */
 union log_msg_generic {
+	/** MPSC packet buffer header. */
 	union mpsc_pbuf_generic buf;
+	/** Generic log message header. */
 	struct log_msg_generic_hdr generic;
+	/** Standard log message. */
 	struct log_msg log;
+	/** Compressed log message. */
+	struct log_msg_compressed compressed;
 };
 
 /** @brief Method used for creating a log message.
@@ -295,7 +359,9 @@ enum z_log_msg_mode {
 			(uint32_t)(uintptr_t)GET_ARG_N(2, __VA_ARGS__), \
 			(uint32_t)(uintptr_t)GET_ARG_N(3, __VA_ARGS__))
 
-/* Call specific function based on the number of arguments.
+/** @brief Call specific function to create a log message.
+ *
+ * Call specific function based on the number of arguments.
  * Since up 2 to arguments are supported COND_CODE_0 and COND_CODE_1 can be used to
  * handle all cases (0, 1 and 2 arguments). When tracing is enable then for each
  * function a macro is create. The difference between function and macro is that
@@ -303,18 +369,6 @@ enum z_log_msg_mode {
  * always called with proper number of arguments. For that it is wrapped around
  * into another macro and dummy arguments to cover for cases when there is less
  * arguments in a log call.
- */
-#define Z_LOG_MSG_SIMPLE_FUNC2(arg_cnt, _source, _level, ...) \
-	COND_CODE_0(arg_cnt, \
-			(z_log_msg_simple_create_0(_source, _level, GET_ARG_N(1, __VA_ARGS__))), \
-			(COND_CODE_1(arg_cnt, ( \
-			    Z_LOG_MSG_SIMPLE_CREATE_1(_source, _level, __VA_ARGS__, dummy) \
-			    ), ( \
-			    Z_LOG_MSG_SIMPLE_CREATE_2(_source, _level, __VA_ARGS__, dummy, dummy) \
-			    ) \
-			)))
-
-/** @brief Call specific function to create a log message.
  *
  * Macro picks matching function (based on number of arguments) and calls it.
  * String arguments are casted to uint32_t.
@@ -323,8 +377,24 @@ enum z_log_msg_mode {
  * @param _level	Severity level.
  * @param ...		String with arguments.
  */
-#define LOG_MSG_SIMPLE_FUNC(_source, _level, ...) \
-	Z_LOG_MSG_SIMPLE_FUNC2(NUM_VA_ARGS_LESS_1(__VA_ARGS__), _source, _level, __VA_ARGS__)
+#define LOG_MSG_SIMPLE_FUNC(_source, _level, ...) do {                         \
+	COND_CODE_1(CONFIG_LOG_SIMPLE_MSG_COMPRESS, (                          \
+		static const char *_sptr __in_section(_log_str_ptr, static, _) \
+			__used __noasan = GET_ARG_N(1, __VA_ARGS__);           \
+		const char *_fmt_field = (const char *)&_sptr                  \
+		), (                                                           \
+		const char *_fmt_field = GET_ARG_N(1, __VA_ARGS__)             \
+		));                                                            \
+	COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__),                           \
+		(z_log_msg_simple_create_0(_source, _level, _fmt_field)),      \
+		(COND_CODE_1(NUM_VA_ARGS_LESS_1(__VA_ARGS__), (                \
+			Z_LOG_MSG_SIMPLE_CREATE_1(_source, _level, _fmt_field, \
+				GET_ARGS_LESS_N(1, __VA_ARGS__), dummy)        \
+		), (                                                           \
+			Z_LOG_MSG_SIMPLE_CREATE_2(_source, _level, _fmt_field, \
+				GET_ARGS_LESS_N(1, __VA_ARGS__), dummy, dummy) \
+		))));                                                          \
+} while (false)
 
 /** @brief Create log message using simplified method.
  *
@@ -755,6 +825,17 @@ static inline uint32_t log_msg_get_total_wlen(const struct log_msg_desc desc)
 	return Z_LOG_MSG_ALIGNED_WLEN(desc.package_len, desc.data_len);
 }
 
+/** @brief Get length of the compressed log message.
+ *
+ * @param msg Message.
+ *
+ * @return Length in 32 bit words.
+ */
+static inline size_t log_msg_compressed_get_wlen(const struct log_msg_compressed *msg)
+{
+	return offsetof(struct log_msg_compressed, args) / sizeof(uint32_t) + msg->desc.args;
+}
+
 /** @brief Get length of the log item.
  *
  * @param item Item.
@@ -771,7 +852,7 @@ static inline uint32_t log_msg_generic_get_wlen(const union mpsc_pbuf_generic *i
 		return log_msg_get_total_wlen(msg->hdr.desc);
 	}
 
-	return 0;
+	return log_msg_compressed_get_wlen((const struct log_msg_compressed *)generic_msg);
 }
 
 /** @brief Get log message domain ID.
@@ -887,6 +968,13 @@ static inline uint8_t *log_msg_get_package(struct log_msg *msg, size_t *len)
 
 	return msg->data;
 }
+
+/** @brief Convert compressed log message to generic log message.
+ *
+ * @param[in] msg Compressed message.
+ * @param[out] std_msg Generic message to be filled.
+ */
+void z_log_msg_compressed_to_generic(struct log_msg_compressed *msg, struct log_msg *std_msg);
 
 /**
  * @}
