@@ -78,6 +78,14 @@ static struct fs_mount_t littlefs_mnt = {
 };
 #endif
 #endif
+
+/* RPMSGFS */
+#ifdef CONFIG_FILE_SYSTEM_RPMSGFS
+static struct fs_mount_t rpmsgfs_mnt = {
+	.type = FS_RPMSGFS,
+	.fs_data = NULL,
+};
+#endif
 #endif
 
 #define BUF_CNT 64
@@ -905,6 +913,40 @@ static int cmd_mount_littlefs(const struct shell *sh, size_t argc, char **argv)
 }
 #endif
 
+#if defined(CONFIG_FILE_SYSTEM_RPMSGFS)
+static int cmd_mount_rpmsgfs(const struct shell *sh, size_t argc, char **argv)
+{
+	if (rpmsgfs_mnt.mnt_point != NULL) {
+		shell_error(sh, "%s already mounted at %s", "RPMsgFS", rpmsgfs_mnt.mnt_point);
+		return -EBUSY;
+	}
+
+	char *remote_dir = (argc > 2) ? argv[2] : "/";
+	char *mntpt = mntpt_prepare(argv[1]);
+
+	if (mntpt == NULL) {
+		shell_error(sh, "Failed to allocate buffer for mount point");
+		return -EIO;
+	}
+
+	rpmsgfs_mnt.mnt_point = mntpt;
+	rpmsgfs_mnt.fs_data = remote_dir; /* pass remote dir through fs_data field */
+
+	int res = fs_mount(&rpmsgfs_mnt);
+
+	if (res != 0) {
+		shell_error(sh, "Error mounting as rpmsgfs: %d", res);
+		k_free((void *)mntpt);
+		rpmsgfs_mnt.mnt_point = NULL;
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Successfully mounted %s at %s", "RPMsgFS", rpmsgfs_mnt.mnt_point);
+
+	return res;
+}
+#endif
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs_mount,
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
 	SHELL_CMD_ARG(fat, NULL,
@@ -916,6 +958,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs_mount,
 	SHELL_CMD_ARG(littlefs, NULL,
 		      SHELL_HELP("Mount littlefs", "<mount-point>"),
 		      cmd_mount_littlefs, 2, 0),
+#endif
+
+#if defined(CONFIG_FILE_SYSTEM_RPMSGFS)
+	SHELL_CMD_ARG(rpmsgfs, NULL,
+		      SHELL_HELP("Mount rpmsgfs", "<mount-point> [<remote-path>]"),
+		      cmd_mount_rpmsgfs, 2, 1),
 #endif
 
 	SHELL_SUBCMD_SET_END
