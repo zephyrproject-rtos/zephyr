@@ -78,7 +78,11 @@ int main(void)
 		return 0;
 	}
 
-	num_cycles = zms_get_num_cycles(&fs);
+	rc = zms_get_num_cycles(&fs, &num_cycles);
+	if (rc) {
+		printk("FAIL: zms_get_num_cycles failed: %d\n", rc);
+		return 0;
+	}
 	base_cycles = num_cycles;
 	printk("After mount: num_cycles=%u (base=%u)\n", num_cycles, base_cycles);
 
@@ -91,7 +95,11 @@ int main(void)
 			return 0;
 		}
 		total_advances++;
-		num_cycles = zms_get_num_cycles(&fs);
+		rc = zms_get_num_cycles(&fs, &num_cycles);
+		if (rc) {
+			printk("FAIL: zms_get_num_cycles failed: %d\n", rc);
+			return 0;
+		}
 		printk("After sector_use_next[%d]: num_cycles=%u\n", i, num_cycles);
 	}
 
@@ -115,13 +123,21 @@ int main(void)
 		total_advances++;
 		/* Print progress every SECTOR_COUNT advances (each full cycle) */
 		if ((i % SECTOR_COUNT) == 0) {
-			num_cycles = zms_get_num_cycles(&fs);
+			rc = zms_get_num_cycles(&fs, &num_cycles);
+			if (rc) {
+				printk("FAIL: zms_get_num_cycles failed: %d\n", rc);
+				return 0;
+			}
 			printk("Phase 2 progress [%d/%d]: num_cycles=%u\n",
 			       i, PHASE2_ITERATIONS, num_cycles);
 		}
 	}
 
-	num_cycles = zms_get_num_cycles(&fs);
+	rc = zms_get_num_cycles(&fs, &num_cycles);
+	if (rc) {
+		printk("FAIL: zms_get_num_cycles failed: %d\n", rc);
+		return 0;
+	}
 	expected = base_cycles + (total_advances / SECTOR_COUNT);
 	printk("Final expected=%u, got=%u (total_advances=%d)\n",
 	       expected, num_cycles, total_advances);

@@ -2096,14 +2096,18 @@ end:
 	return ret;
 }
 
-uint32_t zms_get_num_cycles(struct zms_fs *fs)
+int zms_get_num_cycles(struct zms_fs *fs, uint32_t *cycles)
 {
 	uint32_t max_cycle_cnt = 0;
 	uint32_t cycle_cnt;
 	int rc;
 
-	if (!fs || !fs->ready) {
-		return 0;
+	if (!fs || !cycles) {
+		return -EINVAL;
+	}
+
+	if (!fs->ready) {
+		return -EACCES;
 	}
 
 	k_mutex_lock(&fs->zms_lock, K_FOREVER);
@@ -2120,7 +2124,8 @@ uint32_t zms_get_num_cycles(struct zms_fs *fs)
 
 	k_mutex_unlock(&fs->zms_lock);
 
-	return max_cycle_cnt;
+	*cycles = max_cycle_cnt;
+	return 0;
 }
 
 int zms_get_sector_num_cycles(struct zms_fs *fs, uint32_t sector, uint32_t *cycles)

@@ -333,11 +333,17 @@ ZTEST_F(zms, test_zms_cycle_count_input_validation)
 	int err;
 	uint32_t cycles;
 
-	/* zms_get_num_cycles must safely return 0 for NULL or unmounted fs. */
-	zassert_equal(zms_get_num_cycles(NULL), 0, "expected 0 for NULL fs");
-	zassert_equal(zms_get_num_cycles(&fixture->fs), 0, "expected 0 on unmounted fs");
+	/* NULL fs / NULL out pointer must be rejected. */
+	err = zms_get_num_cycles(NULL, &cycles);
+	zassert_equal(err, -EINVAL, "expected -EINVAL for NULL fs, got %d", err);
+
+	err = zms_get_num_cycles(&fixture->fs, NULL);
+	zassert_equal(err, -EINVAL, "expected -EINVAL for NULL cycles, got %d", err);
 
 	/* Unmounted filesystem must be rejected. */
+	err = zms_get_num_cycles(&fixture->fs, &cycles);
+	zassert_equal(err, -EACCES, "expected -EACCES on unmounted fs, got %d", err);
+
 	err = zms_get_sector_num_cycles(&fixture->fs, 0, &cycles);
 	zassert_equal(err, -EACCES, "expected -EACCES on unmounted fs, got %d", err);
 
@@ -369,7 +375,8 @@ ZTEST_F(zms, test_zms_cycle_count_increments)
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
 
-	base_cycles = zms_get_num_cycles(&fixture->fs);
+	err = zms_get_num_cycles(&fixture->fs, &base_cycles);
+	zassert_true(err == 0, "zms_get_num_cycles failed: %d", err);
 
 	/* Each call to zms_sector_use_next advances the active sector by one;
 	 * after sector_count advances every sector has been recycled once and
@@ -380,7 +387,8 @@ ZTEST_F(zms, test_zms_cycle_count_increments)
 		zassert_true(err == 0, "zms_sector_use_next failed at %u: %d", i, err);
 	}
 
-	num_cycles = zms_get_num_cycles(&fixture->fs);
+	err = zms_get_num_cycles(&fixture->fs, &num_cycles);
+	zassert_true(err == 0, "zms_get_num_cycles failed: %d", err);
 	zassert_equal(num_cycles, base_cycles + (advances / fixture->fs.sector_count),
 		      "num_cycles=%u expected=%u (base=%u)", num_cycles,
 		      base_cycles + (advances / fixture->fs.sector_count), base_cycles);
@@ -408,14 +416,16 @@ ZTEST_F(zms, test_zms_cycle_count_persistence)
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
 
-	base_cycles = zms_get_num_cycles(&fixture->fs);
+	err = zms_get_num_cycles(&fixture->fs, &base_cycles);
+	zassert_true(err == 0, "zms_get_num_cycles failed: %d", err);
 
 	for (uint32_t i = 0; i < advances; i++) {
 		err = zms_sector_use_next(&fixture->fs);
 		zassert_true(err == 0, "zms_sector_use_next failed at %u: %d", i, err);
 	}
 
-	num_cycles_before = zms_get_num_cycles(&fixture->fs);
+	err = zms_get_num_cycles(&fixture->fs, &num_cycles_before);
+	zassert_true(err == 0, "zms_get_num_cycles failed: %d", err);
 	zassert_true(num_cycles_before > base_cycles,
 		     "cycle count did not advance: before=%u base=%u", num_cycles_before,
 		     base_cycles);
@@ -426,7 +436,8 @@ ZTEST_F(zms, test_zms_cycle_count_persistence)
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount (remount) call failure: %d", err);
 
-	num_cycles_after = zms_get_num_cycles(&fixture->fs);
+	err = zms_get_num_cycles(&fixture->fs, &num_cycles_after);
+	zassert_true(err == 0, "zms_get_num_cycles failed: %d", err);
 	zassert_equal(num_cycles_after, num_cycles_before,
 		      "cycle count not persisted across remount: before=%u after=%u",
 		      num_cycles_before, num_cycles_after);

@@ -293,17 +293,18 @@ int zms_sector_use_next(struct zms_fs *fs);
 /**
  * @brief Return the maximum sector recycle count across all sectors.
  *
- * Iterates all sectors and returns the highest 32-bit cycle counter stored in
- * each sector's empty ATE. This can be used to estimate write-cycle
- * consumption during testing.
+ * Iterates all sectors and stores the highest 32-bit cycle counter found in
+ * each sector's empty ATE in @p cycles. This can be used to estimate
+ * write-cycle consumption during testing.
  *
  * @param fs Pointer to the file system.
+ * @param cycles Pointer to store the maximum 32-bit cycle count across sectors.
  *
- * @return Maximum number of times any single sector has been recycled.
- * @retval 0 if @p fs is NULL, the file system is not mounted, or no sector has
- *           been recycled yet.
+ * @retval 0 on success.
+ * @retval -EINVAL if @p fs or @p cycles is NULL.
+ * @retval -EACCES if the file system is not mounted.
  */
-uint32_t zms_get_num_cycles(struct zms_fs *fs);
+int zms_get_num_cycles(struct zms_fs *fs, uint32_t *cycles);
 
 /**
  * @brief Return the recycle count for a specific sector.
