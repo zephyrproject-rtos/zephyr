@@ -95,6 +95,9 @@
 				compatible = "arm,scmi-clock";
 				reg = <0x14>;
 				#clock-cells = <1>;
+
+				ignore-denied;
+				ignore-denied-clock-ids = <IMX95_CLK_ADC IMX95_CLK_BUSAON>;
 			};
 
 			scmi_iomuxc: protocol@19 {

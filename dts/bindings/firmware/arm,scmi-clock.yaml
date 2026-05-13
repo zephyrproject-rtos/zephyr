@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: SCMI (System Control and Management Interface) clock protocol
@@ -22,6 +22,18 @@ properties:
       Vendor-specific clock identifier. Needs to match identifier
       expected by the SCMI platform as this is directly used in SCMI
       clock management messages.
+
+  ignore-denied:
+    type: boolean
+    description: |
+      Enable ignoring SCMI DENIED responses for clock enable/disable requests
+      for selected clock IDs listed in ignore-denied-clock-ids.
+
+  ignore-denied-clock-ids:
+    type: array
+    description: |
+      List of SCMI clock identifiers for which SCMI_DENIED (mapped to -EACCES)
+      should be treated as success when enabling/disabling clocks.
 
 clock-cells:
   - name
