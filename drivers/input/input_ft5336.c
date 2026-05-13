@@ -20,6 +20,7 @@
 LOG_MODULE_REGISTER(ft5336, CONFIG_INPUT_LOG_LEVEL);
 
 /* FT5336 used registers */
+#define REG_DEVICE_MODE		0x00U
 #define REG_TD_STATUS		0x02U
 #define REG_P1_XH		0x03U
 #define REG_G_PMODE		0xA5U
@@ -77,6 +78,9 @@ struct ft5336_data {
 #endif
 	/** Last pressed state. */
 	bool pressed_old;
+
+	/** Initial valid read state */
+	bool got_valid_read;
 };
 
 INPUT_TOUCH_STRUCT_CHECK(struct ft5336_config);
@@ -91,6 +95,15 @@ static int ft5336_process(const struct device *dev)
 	uint8_t coords[4U];
 	uint16_t row, col;
 	bool pressed;
+
+	if (!data->got_valid_read) {
+		r = i2c_reg_read_byte_dt(&config->bus, REG_DEVICE_MODE, &points);
+		if (r != 0) {
+			return r;
+		}
+
+		data->got_valid_read = true;
+	}
 
 	/* obtain number of touch points */
 	r = i2c_reg_read_byte_dt(&config->bus, REG_TD_STATUS, &points);
@@ -228,7 +241,7 @@ static int ft5336_init(const struct device *dev)
 	}
 #else
 	k_timer_init(&data->timer, ft5336_timer_handler, NULL);
-	k_timer_start(&data->timer, K_MSEC(CONFIG_INPUT_FT5336_PERIOD_MS),
+	k_timer_start(&data->timer, K_MSEC(CONFIG_INPUT_FT5336_INIT_DELAY_MS),
 		      K_MSEC(CONFIG_INPUT_FT5336_PERIOD_MS));
 #endif
 

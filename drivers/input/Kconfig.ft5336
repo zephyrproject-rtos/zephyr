@@ -16,6 +16,16 @@ menuconfig INPUT_FT5336
 
 if INPUT_FT5336
 
+config INPUT_FT5336_INIT_DELAY_MS
+	int "Initialization delay"
+	depends on !INPUT_FT5336_INTERRUPT
+	default 10
+	help
+	  Wait duration in milliseconds before starting to
+	  poll for touch samples. This can be useful if the
+	  touch controller has an extended power on or
+	  initialization time.
+
 config INPUT_FT5336_PERIOD_MS
 	int "Sample period"
 	depends on !INPUT_FT5336_INTERRUPT
