@@ -191,7 +191,7 @@
 /* Open Alliance definitions */
 #define ADIN2111_OA_ALLOC_TIMEOUT		K_MSEC(10)
 /* Max setting to a max RCA of 255 68-bytes chunks */
-#define ADIN2111_OA_BUF_SZ			(255U * 68U)
+#define ADIN2111_OA_BUF_SZ                      (CONFIG_ETH_ADIN2111_OA_MAX_RCA_COUNT * 68U)
 
 #define ADIN2111_OA_CTL_LEN_PROT		16U
 #define ADIN2111_OA_CTL_LEN			12U
@@ -207,7 +207,6 @@
 #define ADIN2111_OA_DATA_HDR_EBO		8U
 
 #define ADIN2111_OA_DATA_FTR_SYNC		BIT(29)
-#define ADIN2111_OA_DATA_FTR_EBO		8U
 #define ADIN2111_OA_DATA_FTR_DV			BIT(21)
 #define ADIN2111_OA_DATA_FTR_SV			BIT(20)
 #define ADIN2111_OA_DATA_FTR_EV			BIT(14)
