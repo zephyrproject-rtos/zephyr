@@ -137,6 +137,24 @@
 				interrupts-extended = <&nvic 229 0>;
 			};
 		};
+
+		sema42_1: hwspinlock@44260000 {
+			compatible = "nxp,sema42";
+			reg = <0x44260000 0x1000>;
+			#hwlock-cells = <1>;
+			num-locks = <64>;
+			domain-id = <5>;
+			status = "disabled";
+		};
+
+		sema42_2: hwspinlock@42450000 {
+			compatible = "nxp,sema42";
+			reg = <0x42450000 0x1000>;
+			#hwlock-cells = <1>;
+			num-locks = <64>;
+			domain-id = <5>;
+			status = "disabled";
+		};
 	};
 
 	mailbox_m33s_m70_for_m33s_as_master: ipm-mbox0 {

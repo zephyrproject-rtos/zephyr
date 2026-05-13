@@ -142,6 +142,24 @@
 			reg = <0x20000000 DT_SIZE_K(256)>;
 		};
 
+		sema42_1: hwspinlock@44260000 {
+			compatible = "nxp,sema42";
+			reg = <0x44260000 0x1000>;
+			#hwlock-cells = <1>;
+			num-locks = <64>;
+			domain-id = <9>;
+			status = "disabled";
+		};
+
+		sema42_2: hwspinlock@42450000 {
+			compatible = "nxp,sema42";
+			reg = <0x42450000 0x1000>;
+			#hwlock-cells = <1>;
+			num-locks = <64>;
+			domain-id = <9>;
+			status = "disabled";
+		};
+
 		flexio1: flexio@425c0000 {
 			compatible = "nxp,flexio";
 			reg = <0x425c0000 0x4000>;
