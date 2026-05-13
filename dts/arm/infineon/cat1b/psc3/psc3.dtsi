@@ -147,10 +147,32 @@
 		};
 
 		hppass_analog0: analog@42b00000 {
+			compatible = "infineon,hppass-analog";
 			reg = <0x42b00000 0x100000>;
+			interrupts = <108 4>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
+			status = "disabled";
+
+			/*
+			 * Vendor-recommended startup timing.
+			 * Only usage of the startup parameters recommended
+			 * by the vendor guarantees reliable operation.
+			 * Use the Device Configurator tool or refer to the
+			 * Technical Reference Manual for correct values.
+			 * Override in board overlay only if directed by TRM.
+			 */
+			startup-clk-div = <24>;
+			startup-0-count = <200>;
+			startup-0-sar = <1>;
+			startup-0-csg-chan = <1>;
+			startup-1-count = <50>;
+			startup-1-csg-slice = <1>;
+			startup-2-csg-ready = <1>;
+
+			/* Default trigger 0 = FW pulse (used by SAR driver) */
+			trig-in-0-type = <3>;
 
 			adc0: adc@70000 {
 				compatible = "infineon,hppass-sar-adc";
