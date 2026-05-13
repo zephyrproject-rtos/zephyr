@@ -36,11 +36,20 @@ phase.
 
     Release Cycle
 
+The milestones for the current major version can be found on the
+`Official GitHub Wiki <https://github.com/zephyrproject-rtos/zephyr/wiki/Release-Management>`_.
+Information on previous releases can be found :ref:`here <zephyr_release_notes>`.
+
 .. note::
 
-    The milestones for the current major version can be found on the
-    `Official GitHub Wiki <https://github.com/zephyrproject-rtos/zephyr/wiki/Release-Management>`_.
-    Information on previous releases can be found :ref:`here <zephyr_release_notes>`.
+   After each stable release is made, a new "release branch" for that release
+   is created.
+
+   For example, after Zephyr stable release v4.4.0 was announced, a new branch
+   ``v4.4-branch`` was created. Commits intended for v4.4.x point releases
+   (v4.4.1, v4.4.2, etc.) should be proposed with that branch as a target.
+
+   This page currently does not document the point release process in detail.
 
 .. _merge_window:
 
