@@ -27,7 +27,6 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
-		zephyr,sdhc = &sdcard0;
 		zephyr,display = &epd_ed2208_gca;
 	};
 
