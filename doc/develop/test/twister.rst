@@ -774,6 +774,12 @@ required_applications: <list of required applications> (default empty)
     - For pytest harness, build directories are passed via ``--required-build`` arguments
       and accessible through the ``required_build_dirs`` fixture
 
+    When combined with ``build: false``, the current test scenario
+    skips its own build step entirely and uses the first required
+    application's build artifacts as its image. This is useful for
+    scenarios that serve purely as test harnesses for an image built
+    elsewhere.
+
     Example configuration:
 
     .. code-block:: yaml
@@ -788,9 +794,25 @@ required_applications: <list of required applications> (default empty)
           sample.shared_app:
             build_only: true
 
-    Limitations: Not supported with the ``--runtime-artifact-cleanup`` option,
-    as build artifacts of required applications must be retained for use
-    by the main test application.
+    Limitations:
+
+    - Not supported with ``--runtime-artifact-cleanup``, as build artifacts of
+      required applications must be retained for use by the main test application.
+    - Not supported with ``--subset``: a required application and the test
+      depending on it may be assigned to different subsets, making build
+      artifacts unavailable at test execution time.
+
+build: <True|False> (default True)
+    If false, the test scenario skips its own build step and uses the build
+    artifacts from the first entry in ``required_applications`` as its image.
+    This is useful for scenarios that serve purely as a test harness for an
+    image built by another scenario.
+
+    Constraints:
+
+    - ``required_applications`` must be non-empty.
+    - Supported harnesses: pytest-based (e.g. ``pytest``, ``shell``) and ``bsim``.
+    - QEMU platforms are not supported.
 
 expect_reboot: <True|False> (default False)
     Notify twister that the test scenario is expected to reboot while executing.
