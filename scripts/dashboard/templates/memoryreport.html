@@ -109,7 +109,7 @@ SPDX-License-Identifier: Apache-2.0
         {% for symbol in top_ten %}
         <tr>
           <td>{{symbol.identifier}}
-            <span class="fancytree-title memory-type">
+            <span class="memory-type">
               {% for loc in symbol.loc %}
               {{loc|upper}}{% if not loop.last %},{%endif%}
               {% endfor %}

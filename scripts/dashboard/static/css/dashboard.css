@@ -221,7 +221,7 @@ tr.text-secondary > td {
  * ==========================================================================
  */
 
-.tt-cell-content > span.memory-type {
+td span.memory-type {
     float: right;
     font-size: smaller;
 }
