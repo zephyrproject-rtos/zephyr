@@ -117,6 +117,7 @@ endif()
 zephyr_library_sources(${pdl_drv_dir}/source/cy_syslib.c)
 zephyr_library_sources(${pdl_drv_dir}/source/cy_systick.c)
 zephyr_library_sources(${pdl_drv_dir}/source/cy_trigmux.c)
+zephyr_library_sources(${pdl_drv_dir}/source/cy_tdm.c)
 
 zephyr_library_sources(${pdl_drv_dir}/source/cy_syspm.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1C ${pdl_drv_dir}/source/cy_syspm_v3.c)
