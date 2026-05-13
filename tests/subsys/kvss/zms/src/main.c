@@ -408,7 +408,8 @@ ZTEST_F(zms, test_zms_cycle_count_persistence)
 	int err;
 	uint32_t base_cycles;
 	uint32_t num_cycles_before;
-	uint32_t num_cycles_after;
+	uint32_t num_cycles_after_clear;
+	uint32_t num_cycles_after_remount;
 	const uint32_t advances = 6;
 
 	fixture->fs.sector_count = 3;
@@ -430,17 +431,32 @@ ZTEST_F(zms, test_zms_cycle_count_persistence)
 		     "cycle count did not advance: before=%u base=%u", num_cycles_before,
 		     base_cycles);
 
+	/* zms_clear must not roll the cycle counter back: the per-sector
+	 * full_cycle_cnt is preserved (and bumped) by zms_wipe_partition.
+	 */
+	err = zms_clear(&fixture->fs);
+	zassert_true(err == 0, "zms_clear failed: %d", err);
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount (after clear) call failure: %d", err);
+
+	err = zms_get_num_cycles(&fixture->fs, &num_cycles_after_clear);
+	zassert_true(err == 0, "zms_get_num_cycles failed: %d", err);
+	zassert_true(num_cycles_after_clear >= num_cycles_before,
+		     "cycle count regressed across zms_clear: before=%u after=%u",
+		     num_cycles_before, num_cycles_after_clear);
+
 	/* Re-mount and ensure the cycle count survives, exercising the
-	 * full_cycle_cnt persistence path fixed in 6aa5edc5/6db9fd35.
+	 * full_cycle_cnt persistence path.
 	 */
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount (remount) call failure: %d", err);
 
-	err = zms_get_num_cycles(&fixture->fs, &num_cycles_after);
+	err = zms_get_num_cycles(&fixture->fs, &num_cycles_after_remount);
 	zassert_true(err == 0, "zms_get_num_cycles failed: %d", err);
-	zassert_equal(num_cycles_after, num_cycles_before,
-		      "cycle count not persisted across remount: before=%u after=%u",
-		      num_cycles_before, num_cycles_after);
+	zassert_equal(num_cycles_after_remount, num_cycles_after_clear,
+		      "cycle count not persisted across remount: after_clear=%u after_remount=%u",
+		      num_cycles_after_clear, num_cycles_after_remount);
 }
 
 static void write_content(uint32_t max_id, uint32_t begin, uint32_t end, struct zms_fs *fs)
