@@ -10,6 +10,11 @@ dut: &sercom0 {
 	#size-cells = <0>;
 	current-speed = <115200>;
 
+	/* sercom0 is configured for SPI, drop SPI-related properties to allow UART use */
+	/delete-property/ dipo;
+	/delete-property/ dopo;
+	/delete-property/ cs-gpios;
+
 	/* Internally loop-back TX and RX on PAD0 */
 	rxpo = <0>;
 	txpo = <0>;
