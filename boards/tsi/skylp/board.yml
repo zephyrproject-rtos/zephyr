@@ -1,0 +1,10 @@
+board:
+  name: tsi_skylp
+  vendor: tsi
+  socs:
+  - name: skylp
+    variants:
+    - name: tensilica
+      cpucluster: txe
+    - name: cortex-m85
+      cpucluster: m85

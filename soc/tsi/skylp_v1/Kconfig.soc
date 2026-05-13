@@ -1,0 +1,27 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+
+config SOC_SERIES_SKYLP_V1
+	bool
+	select SOC_FAMILY_ARM
+	help
+	  Enable support for ARM MPS3 MCU Series
+
+config SOC_SKYLP
+	bool
+	select SOC_SERIES_SKYP_V1
+	help
+	  skylp
+
+config SOC_SKYLP_M85
+	bool
+	select SOC_SKYLP
+	help
+	  skylp_m85
+
+config SOC_SERIES
+	default "skylp_v1" if SOC_SERIES_SKYLP_V1
+
+config SOC
+	default "skylp" if SOC_SKYLP

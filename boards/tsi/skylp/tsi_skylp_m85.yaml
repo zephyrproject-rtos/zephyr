@@ -1,0 +1,12 @@
+identifier: tsi_skylp/m85
+name: TSI skylp
+type: mcu
+arch: arm
+ram: 1792
+flash: 256
+simulation: qemu
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+vendor: arm

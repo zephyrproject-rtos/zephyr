@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2024 TSI
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/drivers/gpio/gpio_mmio32.h>
+#include <soc.h>
+#include <zephyr/linker/linker-defs.h>
+
+
+/* Setup GPIO drivers for accessing FPGAIO registers */
+#define FPGAIO_NODE(n) DT_INST(n, arm_mps3_fpgaio_gpio)
+#define FPGAIO_INIT(n)						\
+	GPIO_MMIO32_INIT(FPGAIO_NODE(n),			\
+			DT_REG_ADDR(FPGAIO_NODE(n)),		\
+			BIT_MASK(DT_PROP(FPGAIO_NODE(n), ngpios)))
+
+/* We expect there to be 3 arm,mps3-fpgaio-gpio devices:
+ * led0, button, and misc
+ */
+
+FPGAIO_INIT(2);
+
+#define SCU_IP0CLK_GLOBAL_RESET_ADDR 0x80800010
+
+void release_chip_reset() {
+    // Pointer to the register
+    volatile uint32_t *reg = (volatile uint32_t *)SCU_IP0CLK_GLOBAL_RESET_ADDR;
+
+    // Read the current value of the register
+    uint32_t reg_val = *reg;
+
+    // Clear the hard_reset and soft_reset bits
+    reg_val &= ~(1 << 0); // Clear bit 0 (hard_reset)
+    reg_val &= ~(1 << 1); // Clear bit 1 (soft_reset)
+
+    // Write the modified value back to the register
+    *reg = reg_val;
+}
+
+int main() {
+    // Call the function to release the chip-wide reset
+    release_chip_reset();
+
+    // Continue with the rest of the boot process
+    // ...
+
+    return 0;
+}
