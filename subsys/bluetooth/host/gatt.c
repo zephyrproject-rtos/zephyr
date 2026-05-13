@@ -4179,6 +4179,7 @@ static uint16_t parse_read_std_char_desc(struct bt_conn *conn, const void *pdu,
 					 uint16_t length)
 {
 	const struct bt_att_read_type_rsp *rsp;
+	const struct bt_att_data *data;
 	uint16_t handle = 0U;
 	uint16_t uuid_val;
 
@@ -4195,6 +4196,11 @@ static uint16_t parse_read_std_char_desc(struct bt_conn *conn, const void *pdu,
 
 	rsp = pdu;
 
+	if (rsp->len < sizeof(*data)) {
+		LOG_WRN("Invalid data len %u", rsp->len);
+		goto done;
+	}
+
 	/* Parse characteristics found */
 	for (length--, pdu = rsp->data; length >= rsp->len;
 	     length -= rsp->len, pdu = (const uint8_t *)pdu + rsp->len) {
@@ -4204,7 +4210,6 @@ static uint16_t parse_read_std_char_desc(struct bt_conn *conn, const void *pdu,
 			struct bt_gatt_cep cep;
 			struct bt_gatt_scc scc;
 		} value;
-		const struct bt_att_data *data;
 		struct bt_gatt_attr attr;
 
 		if (length < sizeof(*data)) {
