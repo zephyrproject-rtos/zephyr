@@ -10,8 +10,13 @@ config KERNEL_ENTRY
 config NUM_IRQS
 	default 512 if SOC_SERIES_J721E_R5
 
-# The frequency for Cortex-R cores depends on the external crystal on the
-# board. Therefor it is defined for each board individually
+# The frequency for Cortex-R cores depends on the external oscillator on the
+# board. Therefor it is necessary that boards have a node with the nodelabel
+# "onboard_osc" that hold its frequency
+DT_ONBOARD_OSC_PATH := $(dt_nodelabel_path,onboard_osc)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(DT_ONBOARD_OSC_PATH),clock-frequency) if SOC_SERIES_J721E_R5
 
 if SERIAL
 
