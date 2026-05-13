@@ -216,6 +216,18 @@ config DNS_RESOLVER_MAX_PRIVATE_DATA_LEN
 	help
 	  Maximum size in bytes for private DNS resource record data.
 
+config DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS
+	bool "Send DNS queries to all configured servers"
+	help
+	  When enabled, DNS queries will be sent to all available DNS servers
+	  simultaneously. The first valid response received will be used.
+	  This can improve reliability and response time when multiple DNS
+	  servers are configured, but will increase network traffic.
+	  When disabled, DNS queries are sent to only the first available
+	  server.
+	  Default behavior is to query only one server to minimize network
+	  traffic.
+
 endif # DNS_RESOLVER
 
 config MDNS_RESPONDER
