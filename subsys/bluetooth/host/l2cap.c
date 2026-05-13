@@ -1759,7 +1759,13 @@ static void le_ecred_reconf_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 	while (buf->len >= sizeof(scid)) {
 		struct bt_l2cap_chan *chan;
+
 		scid = net_buf_pull_le16(buf);
+		if (!L2CAP_LE_CID_IS_DYN(scid)) {
+			result = BT_L2CAP_RECONF_INVALID_CID;
+			goto response;
+		}
+
 		chan = bt_l2cap_le_lookup_tx_cid(conn, scid);
 		if (!chan) {
 			result = BT_L2CAP_RECONF_INVALID_CID;
