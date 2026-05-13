@@ -318,6 +318,16 @@ and properties related to them.
 
 .. doxygengroup:: devicetree-mbox
 
+.. _devicetree-mux-api:
+
+MUX
+===
+
+These conveniences may be used for nodes which describe MUX controllers/consumers,
+and properties related to them.
+
+.. doxygengroup:: devicetree-mux
+
 .. _devicetree-nvmem-api:
 
 NVMEM
