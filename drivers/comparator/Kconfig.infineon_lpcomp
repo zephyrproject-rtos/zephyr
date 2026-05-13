@@ -2,7 +2,7 @@
 # or an affiliate of Infineon Technologies AG. All rights reserved.</text>
 #
 # SPDX-License-Identifier: Apache-2.0
-#
+
 
 config COMPARATOR_INFINEON_LPCOMP
 	bool "Infineon LPCOMP driver"
