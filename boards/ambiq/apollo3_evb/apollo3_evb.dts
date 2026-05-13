@@ -17,7 +17,7 @@
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,uart-pipe = &uart0;
 		zephyr,flash-controller = &flash;
-		zephyr,bt_hci = &bt_hci_apollo;
+		zephyr,bt-hci = &bt_hci_apollo;
 		zephyr,code-partition = &slot0_partition;
 	};
 
