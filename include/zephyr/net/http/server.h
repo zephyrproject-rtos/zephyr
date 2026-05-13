@@ -307,9 +307,6 @@ struct http_resource_detail_websocket {
 
 /** @cond INTERNAL_HIDDEN */
 BUILD_ASSERT(offsetof(struct http_resource_detail_websocket, common) == 0);
-/** @endcond */
-
-/** @cond INTERNAL_HIDDEN */
 
 enum http2_stream_state {
 	HTTP2_STREAM_IDLE,
@@ -350,8 +347,6 @@ enum http1_parser_state {
 
 #define HTTP_SERVER_INITIAL_WINDOW_SIZE 65536
 #define HTTP_SERVER_WS_MAX_SEC_KEY_LEN 32
-
-/** @endcond */
 
 /** @brief HTTP/2 stream representation. */
 struct http2_stream_ctx {
@@ -396,7 +391,6 @@ struct http3_stream_ctx {
 	enum http_method method;
 };
 
-/** @cond INTERNAL_HIDDEN */
 /** @brief Context for capturing HTTP headers */
 struct http_header_capture_ctx {
 	/** Buffer for HTTP headers captured for application use */
@@ -420,17 +414,18 @@ struct http_header_capture_ctx {
 	/** The next HTTP header value should be stored */
 	bool store_next_value;
 };
-/** @endcond */
 
 /** @brief HTTP header name representation */
 struct http_header_name {
 	const char *name; /**< Pointer to header name NULL-terminated string. */
 };
+/** @endcond */
 
 /**
  * @brief Representation of an HTTP client connected to the server.
  */
 struct http_client_ctx {
+/** @cond INTERNAL_HIDDEN */
 	/** Socket descriptor associated with the server. */
 	int fd;
 
@@ -484,6 +479,7 @@ struct http_client_ctx {
 
 	/** Temp buffer for currently processed header (HTTP/1 only). */
 	unsigned char header_buffer[HTTP_SERVER_MAX_HEADER_LEN];
+/** @endcond */
 
 	/** Request content length. */
 	size_t content_len;
@@ -491,6 +487,7 @@ struct http_client_ctx {
 	/** Request method. */
 	enum http_method method;
 
+/** @cond INTERNAL_HIDDEN */
 	/** HTTP/1 parser state. */
 	enum http1_parser_state parser_state;
 
@@ -504,27 +501,21 @@ struct http_client_ctx {
 	 */
 	struct k_work_delayable inactivity_timer;
 
-/** @cond INTERNAL_HIDDEN */
 	/** Websocket security key. */
 	IF_ENABLED(CONFIG_WEBSOCKET, (uint8_t ws_sec_key[HTTP_SERVER_WS_MAX_SEC_KEY_LEN]));
-/** @endcond */
 
-/** @cond INTERNAL_HIDDEN */
 	/** Client supported compression. */
 	IF_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION, (uint8_t supported_compression));
-/** @endcond */
 
 	/** HTTP/3 connection and stream information. */
 	struct {
-#if defined(CONFIG_HTTP_SERVER_VERSION_3) || defined(__DOXYGEN__)
+#if defined(CONFIG_HTTP_SERVER_VERSION_3)
 		/** QUIC connection socket for HTTP/3. It is used to open streams
 		 *  on the same connection.
 		 */
 		int conn_sock;
 
-/** @cond INTERNAL_HIDDEN */
 #define HTTP3_SERVER_MAX_STREAMS (CONFIG_QUIC_MAX_STREAMS_UNI + CONFIG_QUIC_MAX_STREAMS_BIDI)
-/** @endcond */
 
 		/** HTTP/3 client stream sockets.
 		 */
@@ -549,6 +540,7 @@ struct http_client_ctx {
 #define HTTP3_SERVER_MAX_STREAMS 0
 #endif /* CONFIG_HTTP_SERVER_VERSION_3 */
 	} h3;
+/** @endcond */
 
 	/** Flag indicating this is an HTTP/3 (QUIC stream) client. */
 	bool is_h3 : 1;
@@ -568,6 +560,7 @@ struct http_client_ctx {
 	/** Flag indicating Websocket upgrade takes place. */
 	bool websocket_upgrade : 1;
 
+/** @cond INTERNAL_HIDDEN */
 	/** Flag indicating Websocket key is being processed. */
 	bool websocket_sec_key_next : 1;
 
@@ -576,6 +569,7 @@ struct http_client_ctx {
 
 	/** The next frame on the stream is expectd to be a continuation frame. */
 	bool expect_continuation : 1;
+/** @endcond */
 };
 
 /**
