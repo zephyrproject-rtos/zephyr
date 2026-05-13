@@ -31,7 +31,12 @@ dut: &scb4 {
 	input-enable;
 };
 
+&clk_hf2 {
+	clock-div = <IFX_CLK_HF_DIVIDE_BY_16>;
+	status = "okay";
+};
+
 &peri0_group4_8bit_1 {
 	status = "okay";
-	clock-div = <109>;
+	clock-div = <16>;
 };
