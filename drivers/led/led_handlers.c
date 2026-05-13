@@ -10,7 +10,7 @@
 static inline int z_vrfy_led_blink(const struct device *dev, uint32_t led,
 				   uint32_t delay_on, uint32_t delay_off)
 {
-	K_OOPS(K_SYSCALL_DRIVER_LED(dev, blink));
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_LED));
 	return z_impl_led_blink((const struct device *)dev, led, delay_on,
 					delay_off);
 }
@@ -29,7 +29,7 @@ static inline int z_vrfy_led_set_brightness(const struct device *dev,
 					    uint32_t led,
 					    uint8_t value)
 {
-	K_OOPS(K_SYSCALL_DRIVER_LED(dev, set_brightness));
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_LED));
 	return z_impl_led_set_brightness((const struct device *)dev, led,
 					 value);
 }
@@ -64,14 +64,14 @@ static inline int z_vrfy_led_set_color(const struct device *dev, uint32_t led,
 
 static inline int z_vrfy_led_on(const struct device *dev, uint32_t led)
 {
-	K_OOPS(K_SYSCALL_DRIVER_LED(dev, on));
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_LED));
 	return z_impl_led_on((const struct device *)dev, led);
 }
 #include <zephyr/syscalls/led_on_mrsh.c>
 
 static inline int z_vrfy_led_off(const struct device *dev, uint32_t led)
 {
-	K_OOPS(K_SYSCALL_DRIVER_LED(dev, off));
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_LED));
 	return z_impl_led_off((const struct device *)dev, led);
 }
 #include <zephyr/syscalls/led_off_mrsh.c>
