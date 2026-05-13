@@ -244,6 +244,10 @@ tr.mem-rpt-symbol span.tt-cell-content {
     color: rgba(var(--bs-success-rgb));
 }
 
+.table-search-input {
+    width: 300px;
+}
+
 /* ==========================================================================
  * Device Tree Page
  * ==========================================================================
