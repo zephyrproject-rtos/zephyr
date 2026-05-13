@@ -299,7 +299,7 @@ void z_impl_k_pipe_close(struct k_pipe *pipe)
 #ifdef CONFIG_USERSPACE
 void z_vrfy_k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size)
 {
-	K_OOPS(K_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
+	K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(pipe, K_OBJ_PIPE));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(buffer, buffer_size));
 
 	z_impl_k_pipe_init(pipe, buffer, buffer_size);
