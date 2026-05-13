@@ -507,6 +507,7 @@ static bool msg_filter_check(struct log_backend const *backend,
 	/* Accept all non-logging messages. */
 	if (level == LOG_LEVEL_NONE) {
 		return true;
+
 	}
 	if (source_id >= 0) {
 		backend_level = log_filter_get(backend, domain_id, source_id, true);
@@ -519,6 +520,19 @@ static bool msg_filter_check(struct log_backend const *backend,
 
 static void msg_process(union log_msg_generic *msg)
 {
+	uint8_t msg_buf[LOG_COMPRESSED_MSG_TO_STD_MAX_SIZE] __aligned(Z_LOG_MSG_ALIGNMENT);
+
+	if (msg->log.hdr.desc.type == Z_LOG_MSG_COMPRESSED) {
+		/* Convert compressed log message to standard log message. Use buffer
+		 * allocated on stack since size is known and small.
+		 */
+		union log_msg_generic *generic_msg = (union log_msg_generic *)msg_buf;
+
+		z_log_msg_compressed_to_generic(&msg->compressed, &generic_msg->log);
+		/* Overwrite pointer to the stack buffer with converted message. */
+		msg = generic_msg;
+	}
+
 	STRUCT_SECTION_FOREACH(log_backend, backend) {
 		if (log_backend_is_active(backend) &&
 		    msg_filter_check(backend, msg)) {
@@ -675,6 +689,29 @@ static struct log_msg *msg_alloc(struct mpsc_pbuf_buffer *buffer, uint32_t wlen)
 		(CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS == -1)
 			? K_FOREVER
 			: K_MSEC(CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS));
+}
+
+void z_log_msg_compressed_commit(struct log_msg_compressed *msg, size_t len)
+{
+	k_timeout_t timeout = (CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS == -1)
+		? K_FOREVER
+		: K_MSEC(CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS);
+
+#if !IS_ENABLED(ARCH_DOUBLE_WORD_32BIT_ALIGNMENT) && defined(CONFIG_LOG_TIMESTAMP_64BIT)
+	/* Timestamp is only 32 bit aligned so we need to copy it as double word
+	 * instruction would fail.
+	 */
+	log_timestamp_t timestamp = z_log_timestamp();
+
+	memcpy(&msg->timestamp, &timestamp, sizeof(msg->timestamp));
+#else
+	msg->timestamp = z_log_timestamp();
+#endif
+	if (mpsc_pbuf_write_data(&log_buffer, (const uint32_t *)msg, len, timeout) == 0) {
+		z_log_msg_post_finalize();
+	} else {
+		z_log_dropped(false);
+	}
 }
 
 static inline bool process_lock_required_for_clean_output(int owner_cpu, int curr_cpu)
