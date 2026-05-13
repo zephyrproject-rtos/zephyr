@@ -125,8 +125,8 @@ static int bip_rfcomm_accept(struct bt_conn *conn, struct bt_goep_transport_rfco
 
 	bip->role = BT_BIP_ROLE_RESPONDER;
 	bip->goep.transport_ops = &bip_rfcomm_ops;
-	bip->goep_transport_v1.goep = &bip->goep;
-	bip->goep.v1 = &bip->goep_transport_v1;
+	bip->goep_transport.v1.goep = &bip->goep;
+	bip->goep.v1 = &bip->goep_transport.v1;
 	bip->goep.v2 = NULL;
 	atomic_set(&bip->_transport_state, BT_BIP_TRANSPORT_STATE_CONNECTING);
 
@@ -159,8 +159,8 @@ int bt_bip_rfcomm_connect(struct bt_conn *conn, struct bt_bip *bip, uint8_t chan
 
 	bip->role = BT_BIP_ROLE_INITIATOR;
 	bip->goep.transport_ops = &bip_rfcomm_ops;
-	bip->goep_transport_v1.goep = &bip->goep;
-	bip->goep.v1 = &bip->goep_transport_v1;
+	bip->goep_transport.v1.goep = &bip->goep;
+	bip->goep.v1 = &bip->goep_transport.v1;
 	bip->goep.v2 = NULL;
 	atomic_set(&bip->_transport_state, BT_BIP_TRANSPORT_STATE_CONNECTING);
 
@@ -271,8 +271,8 @@ static int bip_l2cap_accept(struct bt_conn *conn, struct bt_goep_transport_l2cap
 
 	bip->role = BT_BIP_ROLE_RESPONDER;
 	bip->goep.transport_ops = &bip_l2cap_ops;
-	bip->goep_transport_v2.goep = &bip->goep;
-	bip->goep.v2 = &bip->goep_transport_v2;
+	bip->goep_transport.v2.goep = &bip->goep;
+	bip->goep.v2 = &bip->goep_transport.v2;
 	bip->goep.v1 = NULL;
 	atomic_set(&bip->_transport_state, BT_BIP_TRANSPORT_STATE_CONNECTING);
 
@@ -305,8 +305,8 @@ int bt_bip_l2cap_connect(struct bt_conn *conn, struct bt_bip *bip, uint16_t psm)
 
 	bip->role = BT_BIP_ROLE_INITIATOR;
 	bip->goep.transport_ops = &bip_l2cap_ops;
-	bip->goep_transport_v2.goep = &bip->goep;
-	bip->goep.v2 = &bip->goep_transport_v2;
+	bip->goep_transport.v2.goep = &bip->goep;
+	bip->goep.v2 = &bip->goep_transport.v2;
 	bip->goep.v1 = NULL;
 	atomic_set(&bip->_transport_state, BT_BIP_TRANSPORT_STATE_CONNECTING);
 

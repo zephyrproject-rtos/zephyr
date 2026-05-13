@@ -860,11 +860,8 @@ struct bt_map_mce_mas_cb {
  * Used for browsing folders and manipulating messages on the server.
  */
 struct bt_map_mce_mas {
-	/** @brief Underlying GOEP transport V1 instance */
-	struct bt_goep_transport_v1 goep_transport_v1;
-
-	/** @brief Underlying GOEP transport V2 instance */
-	struct bt_goep_transport_v2 goep_transport_v2;
+	/** @brief Underlying GOEP transport instance */
+	struct bt_goep_transport goep_transport;
 
 	/** @brief Underlying GOEP instance */
 	struct bt_goep goep;
@@ -1380,11 +1377,8 @@ struct bt_map_mce_mns_cb {
  * The MCE acts as a server for the MNS connection.
  */
 struct bt_map_mce_mns {
-	/** @brief Underlying GOEP transport V1 instance */
-	struct bt_goep_transport_v1 goep_transport_v1;
-
-	/** @brief Underlying GOEP transport V2 instance */
-	struct bt_goep_transport_v2 goep_transport_v2;
+	/** @brief Underlying GOEP transport instance */
+	struct bt_goep_transport goep_transport;
 
 	/** @brief Underlying GOEP instance */
 	struct bt_goep goep;
@@ -1843,11 +1837,8 @@ struct bt_map_mse_mas_cb {
  * The MSE acts as a server for the MAS connection.
  */
 struct bt_map_mse_mas {
-	/** @brief Underlying GOEP transport V1 instance */
-	struct bt_goep_transport_v1 goep_transport_v1;
-
-	/** @brief Underlying GOEP transport V2 instance */
-	struct bt_goep_transport_v2 goep_transport_v2;
+	/** @brief Underlying GOEP transport instance */
+	struct bt_goep_transport goep_transport;
 
 	/** @brief Underlying GOEP instance */
 	struct bt_goep goep;
@@ -2318,11 +2309,8 @@ struct bt_map_mse_mns_cb {
  * Used for sending event notifications to the MCE.
  */
 struct bt_map_mse_mns {
-	/** @brief Underlying GOEP transport V1 instance */
-	struct bt_goep_transport_v1 goep_transport_v1;
-
-	/** @brief Underlying GOEP transport V2 instance */
-	struct bt_goep_transport_v2 goep_transport_v2;
+	/** @brief Underlying GOEP transport instance */
+	struct bt_goep_transport goep_transport;
 
 	/** @brief Underlying GOEP instance */
 	struct bt_goep goep;

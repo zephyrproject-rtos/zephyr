@@ -400,11 +400,8 @@ struct bt_pbap_pce {
 	/** @brief Callback operations structure. */
 	struct bt_pbap_pce_cb *cb;
 
-	/** @internal Underlying GOEP transport V1 instance */
-	struct bt_goep_transport_v1 _goep_transport_v1;
-
-	/** @internal Underlying GOEP transport V2 instance */
-	struct bt_goep_transport_v2 _goep_transport_v2;
+	/** @internal Underlying GOEP transport instance */
+	struct bt_goep_transport _goep_transport;
 
 	/** @internal GOEP (Generic Object Exchange Profile) instance. */
 	struct bt_goep _goep;
@@ -775,11 +772,8 @@ struct bt_pbap_pse {
 	/** @brief Callback operations structure. */
 	struct bt_pbap_pse_cb *cb;
 
-	/** @internal Underlying GOEP transport V1 instance */
-	struct bt_goep_transport_v1 _goep_transport_v1;
-
-	/** @internal Underlying GOEP transport V2 instance */
-	struct bt_goep_transport_v2 _goep_transport_v2;
+	/** @internal Underlying GOEP transport instance */
+	struct bt_goep_transport _goep_transport;
 
 	/** @internal GOEP (Generic Object Exchange Profile) instance. */
 	struct bt_goep _goep;

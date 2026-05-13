@@ -334,7 +334,7 @@ NET_BUF_POOL_DEFINE(goep_rx_pool, BT_BUF_ACL_RX_COUNT, BT_BUF_ACL_SIZE(CONFIG_BT
 
 static int goep_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-	struct bt_goep_transport_v2 *goep_transport_v2 = GOEP_GET_TRANSPORT_V2(_chan);
+	struct bt_goep_transport_v2 *goep_transport_v2 = GOEP_GET_TRANSPORT_V2(chan);
 	struct bt_goep *goep = goep_transport_v2->goep;
 	int err;
 
@@ -347,7 +347,7 @@ static int goep_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 static void goep_l2cap_connected(struct bt_l2cap_chan *chan)
 {
-	struct bt_goep_transport_v2 *goep_transport_v2 = GOEP_GET_TRANSPORT_V2(_chan);
+	struct bt_goep_transport_v2 *goep_transport_v2 = GOEP_GET_TRANSPORT_V2(chan);
 	struct bt_goep *goep = goep_transport_v2->goep;
 	int err;
 
@@ -380,7 +380,7 @@ static void goep_l2cap_connected(struct bt_l2cap_chan *chan)
 
 static void goep_l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
-	struct bt_goep_transport_v2 *goep_transport_v2 = GOEP_GET_TRANSPORT_V2(_chan);
+	struct bt_goep_transport_v2 *goep_transport_v2 = GOEP_GET_TRANSPORT_V2(chan);
 	struct bt_goep *goep = goep_transport_v2->goep;
 	int err;
 
