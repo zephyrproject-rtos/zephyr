@@ -564,8 +564,8 @@ static int qpack_decode_int(const uint8_t *buf, size_t buflen,
  *
  * @return Number of bytes written, or <0 on error.
  */
-static int qpack_encode_int(uint8_t *buf, size_t buflen,
-			    int prefix_n, uint8_t prefix, uint64_t value)
+ZTESTABLE_STATIC int qpack_encode_int(uint8_t *buf, size_t buflen,
+				      int prefix_n, uint8_t prefix, uint64_t value)
 {
 	uint8_t max_first;
 	int pos = 0;
