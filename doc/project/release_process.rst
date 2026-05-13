@@ -14,8 +14,8 @@ the features that have actually been implemented, allowing the project to
 maintain the quality of the overall release without delays because of one or two
 features that are not ready yet.
 
-Phases
-******
+Release Phases Overview
+***********************
 
 Each release cycle consists of a *development phase* followed by a
 *stabilization phase*. Release candidates will be created during the
@@ -45,7 +45,7 @@ phase.
 .. _merge_window:
 
 Merge Window (Development Phase)
-********************************
+================================
 
 After tagging a release, the release managers open the `main branch
 <https://github.com/zephyrproject-rtos/zephyr/tree/main>`_ for development for
@@ -76,7 +76,7 @@ Here is an example timeline for a merge window:
 .. _feature_freeze:
 
 Feature Freeze (Stabilization Phase)
-************************************
+====================================
 
 When the first release candidate is tagged, the release's merge window is
 closed. This is called the *feature freeze* or *stabilization phase* for that
@@ -111,7 +111,7 @@ Here is an example timeline for a feature freeze:
 The following sections describe the feature freeze in more detail.
 
 Allowed Changes
-===============
+---------------
 
 After feature freeze, **only** stabilization-related changes **shall** be accepted:
 
@@ -127,7 +127,7 @@ justification and TSC approval. As a general rule, if a feature misses the
 development phase window, it should wait for the next development cycle.
 
 Disallowed Changes
-==================
+------------------
 
 The following changes **shall not** be accepted after feature freeze:
 
@@ -136,12 +136,11 @@ The following changes **shall not** be accepted after feature freeze:
 * Refactoring not directly tied to a bug fix or stabilization effort
 * New subsystems, drivers, boards, or architectural changes
 
-
-Issue Tracking
-==============
+Issue Tracking during Feature Freeze
+************************************
 
 Referencing a GitHub issue in a pull request is **recommended** but **not required**
-during the stabilization phase.
+during feature freeze.
 
 Pull requests **must** include a clear description of:
 
@@ -151,7 +150,6 @@ Pull requests **must** include a clear description of:
 
 Maintainers and release engineers **may** request additional clarification when
 the intent or scope of a pull request is not clear.
-
 
 Mandatory Issue Usage
 =====================
@@ -178,7 +176,6 @@ Release engineers **may**:
 * Reject or defer changes based on risk assessment
 * Request changes or additional justification
 
-
 Risk Expectations
 =================
 
@@ -193,8 +190,10 @@ even if they qualify as bug fixes.
 
 .. _merge_criteria:
 
-Merge Criteria
-**************
+Pull Request Merge Criteria
+***************************
+
+The following criteria apply during all release phases.
 
 .. figure:: img/img_release_activity.png
       :width: 663px
@@ -250,8 +249,8 @@ Merge Criteria
 
 .. _release_quality_criteria:
 
-Release Criteria
-****************
+Release Quality Criteria
+************************
 
 The main motivation is to clearly have the criteria in place that must be met
 for a release. This will help define when a release is "done" in terms that most
@@ -304,8 +303,9 @@ guidelines for release blocker bugs:
 .. _release_milestones:
 
 Release Milestones
-*******************
+******************
 
+This table documents milestones associated with each release.
 
 .. list-table:: Release Milestones
    :widths: 15 25 100 25
@@ -353,14 +353,10 @@ Release Milestones
      -
      - Release Manager
 
-
-Releases
-*********
-
 .. _release_process_lts:
 
-Long Term Support (LTS)
-=======================
+Long Term Support (LTS) Releases
+********************************
 
 Long-term support releases are designed to be supported and maintained
 for an extended period and are the recommended release for
@@ -374,9 +370,8 @@ An LTS release is defined as:
 - **Quality Driven Process**
 - **Long Term**: Maintained for an extended period of time (at least 5 years).
 
-
 Product Focused
-+++++++++++++++
+===============
 
 Zephyr LTS is the recommended release for product makers with an extended
 support and maintenance which includes general stability and bug fixes,
@@ -388,7 +383,7 @@ as we move from one LTS to the next giving users access to bleeding edge feature
 and new hardware while keeping a stable foundation that evolves over time.
 
 Extended Stabilisation Period
-+++++++++++++++++++++++++++++
+=============================
 
 Zephyr LTS development cycle differs from regular releases and has an extended
 stabilization period. Feature freeze of regular releases happens 3-4 weeks
@@ -397,7 +392,7 @@ by 3 weeks with the feature freeze occurring 6-7 weeks before the anticipated
 release date. The time between code freeze and release date is extended in this case.
 
 Stable APIs
-+++++++++++
+===========
 
 Zephyr LTS provides a stable and long-lived foundation for developing
 products. To guarantee stability of the APIs and the implementation of such
@@ -431,7 +426,7 @@ supported during the lifetime of the release LTS.
     can be added at any time and should be marked as experimental if applicable
 
 Quality Driven Process
-++++++++++++++++++++++
+======================
 
 The Zephyr project follows industry standards and processes with the goal of
 providing a quality oriented releases. This is achieved by providing the
@@ -457,7 +452,7 @@ Each release is created with the above products to document the quality and the
 state of the software when it was released.
 
 Long Term Support and Maintenance
-++++++++++++++++++++++++++++++++++
+=================================
 
 LTS releases are published every 2.5 to 3 years and are branched and maintained independently from
 the main tree for approximately 5 years after they were released.
@@ -519,8 +514,11 @@ Safety Working Groups and coordinated with the TSC.
 Host Tools Support Policy
 *************************
 
+This section documents policies related to host tools required to develop
+zephyr applications.
+
 Python Version Policy
-*********************
+=====================
 
 Zephyr tracks the `Python upstream release schedule`_ when determining its minimum supported Python
 version.
@@ -538,7 +536,11 @@ A Python version is considered for removal when:
 .. _Python upstream release schedule: https://devguide.python.org/versions/
 
 Hardware Support Tiers
-***********************
+**********************
+
+This section documents a rough set of tiers associated with hardware platforms.
+These criteria are not currently formally enforced or evaluated at a board,
+architecture, or SoC level.
 
 Tier 0: Emulation Platforms
 ===========================
@@ -580,9 +582,8 @@ Tier 3: Deprecated and unsupported Platforms
 - Bugs reported against platforms of this tier are NOT considered as
   a general bug in Zephyr.
 
-
 Release Procedure
-******************
+*****************
 
 This section documents the Release manager responsibilities so that it serves as
 a knowledge repository for Release managers.
