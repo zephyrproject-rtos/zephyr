@@ -15,6 +15,7 @@
 /**
  * @defgroup imx937_clock_sources Clock Sources (0-40)
  * @brief Root clock sources for i.MX937 SoC
+ * @ingroup devicetree-clocks
  * @{
  */
 
@@ -108,6 +109,7 @@
 
 /**
  * @defgroup imx937_peripheral_clocks Peripheral Clocks (41-163)
+ * @ingroup imx937_clock_sources
  * Peripheral clock definitions based on MIMX9379 fsl_clock.h
  * @{
  */
