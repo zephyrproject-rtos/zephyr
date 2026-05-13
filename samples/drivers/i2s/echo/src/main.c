@@ -340,7 +340,7 @@ int main(void)
 
 		while (k_sem_take(&toggle_transfer, K_NO_WAIT) != 0) {
 			void *mem_block;
-			uint32_t block_size;
+			size_t block_size;
 			int ret;
 
 			ret = i2s_read(i2s_dev_rx, &mem_block, &block_size);

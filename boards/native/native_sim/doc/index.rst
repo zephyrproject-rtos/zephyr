@@ -333,6 +333,7 @@ Here are more details on the peripherals that are currently provided with this b
   If the configured host input file does not exist, the driver prints a warning
   from the native simulator runner side and provides silence instead of failing
   configuration.
+
 **Inter-IC sound (I2S)**
   A file-backed I2S driver is available for native_sim. It can be configured
   for RX, TX, or both directions, and it reads or writes PCM sample data from
