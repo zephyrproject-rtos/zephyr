@@ -347,6 +347,7 @@ static void sdhc_stm32_abort_dma_transfer(SDMMC_TypeDef *instance, struct sdhc_s
 static uint32_t sdhc_stm32_convert_block_size(struct sdhc_stm32_data *dev_data)
 {
 	uint32_t block_size = dev_data->block_size;
+#ifdef CONFIG_ASSERT
 	struct sdhc_host_props *props = &dev_data->props;
 
 	uint32_t max_block_len = SDMMC_DATABLOCK_SIZE_512B << props->host_caps.max_blk_len;
@@ -354,6 +355,7 @@ static uint32_t sdhc_stm32_convert_block_size(struct sdhc_stm32_data *dev_data)
 
 	__ASSERT(IS_POWER_OF_TWO(block_size) && block_size >= 1U && block_size <= max_blk_size,
 		"Invalid block size: %u", block_size);
+#endif
 	/* SDMMC_DATABLOCK_SIZE_<n>B is log2(n) shifted to DBLOCKSIZE bit position */
 	return LOG2(block_size) << SDMMC_DCTRL_DBLOCKSIZE_Pos;
 }
