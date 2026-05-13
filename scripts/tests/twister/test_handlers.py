@@ -710,7 +710,7 @@ def test_devicehandler_monitor_serial(
     print(harness.call_args_list)
 
     harness.handle.assert_has_calls(
-        [mock.call(f'line no {idx}') for idx in range(expected_line_count)]
+        [mock.call(f'line no {idx}', mock.ANY) for idx in range(expected_line_count)]
     )
 
 
