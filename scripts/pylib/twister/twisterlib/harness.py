@@ -406,13 +406,18 @@ class Keyboard(Harness):
             for item in config.get('interactions', [])
         ]
 
-    def handle(self, line, callback):
+    def handle(self, line, callback = None):
         for pattern, response in self.interactions:
             if pattern.search(line):
                 logger.debug(
                     f"HARNESS:{self.__class__.__name__}:matched "
                     f"'{pattern.pattern}', sending response"
                 )
+                if not callback:
+                    logger.warning(
+                        f"HARNESS:{self.__class__.__name__}: callback not set, "
+                        f"can't send response"
+                    )
                 callback(response)
 
         self.process_test(line)
