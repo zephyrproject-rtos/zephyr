@@ -6,9 +6,18 @@
  */
 
 /**
- * @brief ADC HPPASS SAR driver
+ * @brief HPPASS SAR ADC driver for PSoC C3.
  *
- * Driver for the HPPASS SAR ADC used in the Infineon PSOC C3 series.
+ * 12-bit fixed resolution ADC, software-triggered via FW pulse.  Uses Group 0
+ * for all reads.  Async mode completes via SAR result interrupt.
+ *
+ * HPPASS is shared across multiple Infineon device families. The TRM
+ * citations throughout this file refer to the PSOC Control C3 Mainline
+ * documentation:
+ *   - <em>PSOC Control C3 Mainline Architecture TRM</em>, 002-39348
+ *     (§27.2.2 SAR ADC)
+ *   - <em>PSOC Control C3 Mainline Registers TRM</em>, 002-39445
+ *     (HPPASS_SAR_*)
  */
 
 #define DT_DRV_COMPAT infineon_hppass_sar_adc
@@ -19,23 +28,25 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/sys_io.h>
 #include <zephyr/irq.h>
 
-#include "ifx_hppass_analog.h"
-#include "cy_pdl.h"
+#include <infineon_hppass.h>
+#include "cy_hppass_sar.h"
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
-#define IFX_HPPASS_SAR_ADC_RESOLUTION (12u) /* ADC Resolution for this device is fixed at 12-bit*/
+#define IFX_HPPASS_SAR_ADC_RESOLUTION (12u)
 
 LOG_MODULE_REGISTER(ifx_hppass_sar_adc, CONFIG_ADC_LOG_LEVEL);
 
 /**
  * @brief HPPASS Configuration Structure
  *
- * Basic configuration for the HPPASS analog subsystem.  By default this structure configures the
- * HPPASS AC to enable the ADC.  Other functions of the HPPASS system are not enabled by default.
+ * Default arg for the Cy_HPPASS_SAR_Init() call.  Per-channel programming goes through
+ * SAR_CHAN_CFG, SAMP_GAIN, and RESULT_MASK directly.  Unsupported fields (sampTime, fir, fifo,
+ * limit, chan/grp, lowSupply, chanId, holdCount) are set to PDL-recommended values.
  */
 const cy_stc_hppass_sar_t ifx_hppass_sar_pdl_cfg_struct_default = {
 	.vref = CY_HPPASS_SAR_VREF_EXT,
@@ -112,19 +123,78 @@ const cy_stc_hppass_sar_t ifx_hppass_sar_pdl_cfg_struct_default = {
 };
 
 /*
- * Device supports up to 28 channels.  Note that channels 12-15, 16-19, 20-23, and 24-27 are
- * multiplexed in hardware and share samplers.
+ * Device supports 28 channels.
+ * Channels 12..27 are multiplexed: samplers 12-15 each select one of four
+ * channels (12-15, 16-19, 20-23, 24-27).
  */
 #define HPPASS_SAR_ADC_MAX_CHANNELS       CY_HPPASS_SAR_CHAN_NUM
 #define DIRECT_CHANNEL_CNT                CY_HPPASS_SAR_DIR_SAMP_NUM
-#define MUXED_CHANNELS_PER_SAMPLER        4
+#define MUXED_CHANNELS_PER_SAMPLER \
+	((CY_HPPASS_SAR_CHAN_NUM - CY_HPPASS_SAR_DIR_SAMP_NUM) / CY_HPPASS_SAR_MUX_SAMP_NUM)
 #define IFX_HPPASS_SAR_SAMPLER_GAIN_MSK   0x03
 #define IFX_HPPASS_SAR_SAMPLER_GAIN_WIDTH 2
+
+/* 28-channel mask, OR'd into CFG_RESULT_MASK (Regs TRM §20.1.18). */
+#define IFX_HPPASS_SAR_CHAN_MSK            ((1UL << HPPASS_SAR_ADC_MAX_CHANNELS) - 1UL)
+/* Group 0 done bit, bit 0 of the ENTRY_DONE field in CFG_SAR_RESULT_INTR/_SET/_MASK/_MASKED
+ * (Regs TRM §20.1.26-29).  Derived from the IP register header so the bit position tracks
+ * silicon revisions rather than a hand-coded literal.
+ */
+#define IFX_HPPASS_SAR_INTR_RESULT_GROUP_0 BIT(HPPASS_SAR_CFG_SAR_RESULT_INTR_ENTRY_DONE_Pos)
+
+/*
+ * SAR controller register offsets relative to the SAR controller reg
+ * region (HPPASS_SAR_Type), wired in via cfg->ctrl_base.  The FwGen
+ * HPPASS_SAR_*() accessor macros key off the parent HPPASS base and
+ * re-add the SAR controller offset, so they cannot address this region
+ * directly; access it with sys_read32()/sys_write32() instead.
+ */
+#define IFX_HPPASS_SAR_SEQ_ENTRY(grp)     (0x100U + (grp) * 4U) /* SAR.SEQ_ENTRY[grp] */
+#define IFX_HPPASS_SAR_SAMP_GAIN          0x408U                /* SAR.CFG.SAMP_GAIN */
+#define IFX_HPPASS_SAR_CHAN_CFG(ch)       (0x430U + (ch) * 4U)  /* SAR.CFG.CHAN_CFG[ch] */
+#define IFX_HPPASS_SAR_CHAN_RESULT(ch)    (0x510U + (ch) * 4U)  /* SAR.CFG.CHAN_RESULT[ch] */
+#define IFX_HPPASS_SAR_RESULT_MASK        0x590U                /* SAR.CFG.RESULT_MASK */
+#define IFX_HPPASS_SAR_RESULT_UPDATED     0x594U                /* SAR.CFG.RESULT_UPDATED */
+#define IFX_HPPASS_SAR_RESULT_INTR        0x600U                /* SAR.CFG.SAR_RESULT_INTR */
+#define IFX_HPPASS_SAR_RESULT_INTR_MASK   0x608U                /* SAR.CFG.SAR_RESULT_INTR_MASK */
+#define IFX_HPPASS_SAR_RESULT_INTR_MASKED 0x60CU                /* SAR.CFG.SAR_RESULT_INTR_MASKED */
+
+/*
+ * Field masks for SAR registers written as multi-field aggregates.
+ * Values are composed with FIELD_PREP(); PSC3 runs little-endian (CFGEND=0).
+ */
+
+/* SEQ_ENTRY0: per-group sampler enables, mux select, trigger source (Regs TRM 002-39445 §20.1.5).
+ */
+#define IFX_HPPASS_SAR_SEQ_DIRECT_SAMPLER_EN GENMASK(11, 0)  /* per direct sampler */
+#define IFX_HPPASS_SAR_SEQ_MUXED_SAMPLER_EN  GENMASK(15, 12) /* per mux sampler */
+#define IFX_HPPASS_SAR_SEQ_MUX0_SEL          GENMASK(17, 16) /* mux 0 channel select */
+#define IFX_HPPASS_SAR_SEQ_MUX1_SEL          GENMASK(19, 18) /* mux 1 channel select */
+#define IFX_HPPASS_SAR_SEQ_MUX2_SEL          GENMASK(21, 20) /* mux 2 channel select */
+#define IFX_HPPASS_SAR_SEQ_MUX3_SEL          GENMASK(23, 22) /* mux 3 channel select */
+#define IFX_HPPASS_SAR_SEQ_TR_SEL            GENMASK(27, 24) /* trigger source */
+#define IFX_HPPASS_SAR_SEQ_SAMP_TIME_SEL     GENMASK(29, 28) /* sample-time gen */
+#define IFX_HPPASS_SAR_SEQ_PRIORITY          BIT(30)         /* group priority */
+#define IFX_HPPASS_SAR_SEQ_CONT              BIT(31)         /* continuous conversion */
+
+/* CFG_CHAN_CFG0: per-channel differential/signed/range/avg/FIFO (Regs TRM 002-39445 §20.1.12). */
+#define IFX_HPPASS_SAR_CHAN_CFG_DIFFERENTIAL BIT(0)          /* differential input mode */
+#define IFX_HPPASS_SAR_CHAN_CFG_IS_SIGNED    BIT(1)          /* signed result format */
+#define IFX_HPPASS_SAR_CHAN_CFG_RANGE_SEL    GENMASK(23, 20) /* input range select */
+#define IFX_HPPASS_SAR_CHAN_CFG_AVG_SEL      GENMASK(26, 24) /* averaging select */
+#define IFX_HPPASS_SAR_CHAN_CFG_FIFO_SEL     GENMASK(30, 28) /* result FIFO select */
 
 /*
  * Configuration and data structures
  */
 struct ifx_hppass_sar_adc_config {
+	const struct device *mfd;
+	/*
+	 * SAR controller register base (HPPASS_SAR).  All direct register
+	 * access in this driver goes through here.  Calibration registers
+	 * (HPPASS_SARADC) are owned by the HPPASS MFD parent.
+	 */
+	mem_addr_t ctrl_base;
 	uint8_t irq_priority;
 	IRQn_Type irq_num;
 	void (*irq_func)(void);
@@ -137,43 +207,18 @@ struct ifx_hppass_sar_adc_config {
 };
 
 /**
- * @brief HPPASS SAR ADC channel configuration
- */
-struct ifx_hppass_sar_adc_channel_config {
-	/** Channel number */
-	uint8_t id;
-	uint8_t input_positive;
-	/*
-	 * PDL channel configuration structure.  The PDL will reapply channel configurations for all
-	 * channels any time a change is made to any channel configuration.  Store the PDL
-	 * configuration for this channel so we have a copy to be used for this action.
-	 */
-	cy_stc_hppass_sar_chan_t pdl_channel_cfg;
-};
-
-/**
  * @brief HPPASS SAR ADC device data
  */
 struct ifx_hppass_sar_adc_data {
-	/* ADC context for async operations */
 	struct adc_context ctx;
 	const struct device *dev;
-	/*	PDL ADC configuration structure */
-	cy_stc_hppass_sar_t hppass_sar_obj;
-	/* channel configurations for all channels (used or not)*/
-	struct ifx_hppass_sar_adc_channel_config hppass_sar_chan_obj[HPPASS_SAR_ADC_MAX_CHANNELS];
-	/* Bitmask of enabled channels */
 	uint32_t enabled_channels;
-	/* Conversion buffer */
 	uint16_t *buffer;
-	/* Repeat buffer for continuous sampling */
 	uint16_t *repeat_buffer;
-	/** Conversion result */
-	int result;
 };
 
 /*
- * ADC Channels 12-28 are grouped together in hardware using a mux.  The grouping is as follows:
+ * ADC Channels 12-28 are grouped together in hardware using a mux.  The groupings are:
  * Sampler 12: Channels 12-15,
  * Sampler 13: Channels 16-19,
  * Sampler 14: Channels 20-23,
@@ -191,13 +236,14 @@ struct ifx_hppass_sar_adc_data {
  * @param channels Bitmask of channels to be enabled in the group
  * @param group Group number to configure (0-7)
  *
- * HPPASS SAR ADC has 8 groups.  ADC samplers can be added to a group, and will be sampled
- * simultaneously and converted sequentially when the group is triggered.  Note that only one MUXed
- * channel can be included in a mux group.
+ * Configure SAR_SEQ_GROUP[group] to fire the requested channels on the next trigger.
+ * Each mux sampler can select only one of its four inputs; returns -EINVAL if more than
+ * one channel per mux group is requested.
  */
-static int ifx_hppass_sar_configure_group(uint32_t channels, uint32_t group)
+static int ifx_hppass_sar_configure_group(mem_addr_t ctrl_base, uint32_t channels, uint32_t group)
 {
-	cy_stc_hppass_sar_grp_t group_cfg = {0};
+	uint32_t mux_samp_msk = 0;
+	uint32_t mux_sel[4] = {0};
 
 	/* Check that no more than one channel is selected from each muxed group */
 	if (POPCOUNT(channels & ADC_SAMPLER_12_CHANNEL_GROUP) > 1 ||
@@ -208,16 +254,7 @@ static int ifx_hppass_sar_configure_group(uint32_t channels, uint32_t group)
 		return -EINVAL;
 	}
 
-	group_cfg.trig = CY_HPPASS_SAR_TRIG_0; /* TRIG_0 used for SW Trigger */
-	group_cfg.sampTime = CY_HPPASS_SAR_SAMP_TIME_DISABLED;
-
-	/* Enable directly sampled channels. */
-	group_cfg.dirSampMsk = channels & ADC_SAMPLER_DIRECT_MASK;
-
-	/* Enable Muxed channels.  We need to determine if each sampler is enabled and what the mux
-	 * should be set to for the sampler.
-	 */
-	group_cfg.muxSampMsk = 0;
+	/* Determine which muxed samplers are needed and their mux select values. */
 	for (int channel_num = DIRECT_CHANNEL_CNT; channel_num < HPPASS_SAR_ADC_MAX_CHANNELS;
 	     channel_num++) {
 		if (channels & (1 << channel_num)) {
@@ -225,17 +262,31 @@ static int ifx_hppass_sar_configure_group(uint32_t channels, uint32_t group)
 				(channel_num - DIRECT_CHANNEL_CNT) / MUXED_CHANNELS_PER_SAMPLER;
 			int mux_setting =
 				(channel_num - DIRECT_CHANNEL_CNT) % MUXED_CHANNELS_PER_SAMPLER;
-			group_cfg.muxSampMsk |= (1 << sampler_num);
-			group_cfg.muxChanIdx[sampler_num] = mux_setting;
+			mux_samp_msk |= (1 << sampler_num);
+			mux_sel[sampler_num] = mux_setting;
 		}
 	}
 
-	if (Cy_HPPASS_SAR_GroupConfig(group, &group_cfg) != 0) {
-		LOG_ERR("ADC Group configuration failed");
-		return -EINVAL;
-	}
+	/* Single-shot conversion via SEQ_ENTRY0 (Regs TRM §20.1.5). */
+	uint32_t seq_entry_reg =
+		FIELD_PREP(IFX_HPPASS_SAR_SEQ_DIRECT_SAMPLER_EN,
+			   channels & ADC_SAMPLER_DIRECT_MASK) |
+		FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUXED_SAMPLER_EN, mux_samp_msk) |
+		FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX0_SEL, mux_sel[0]) |
+		FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX1_SEL, mux_sel[1]) |
+		FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX2_SEL, mux_sel[2]) |
+		FIELD_PREP(IFX_HPPASS_SAR_SEQ_MUX3_SEL, mux_sel[3]) |
+		/* MFD wires TR0 to FW_PULSE via trig-in-0-type */
+		FIELD_PREP(IFX_HPPASS_SAR_SEQ_TR_SEL, CY_HPPASS_SAR_TRIG_0);
 
-	/* CrossTalkAdjust must be called any time groups are reconfigured. */
+	sys_write32(seq_entry_reg, ctrl_base + IFX_HPPASS_SAR_SEQ_ENTRY(group));
+
+	/*
+	 * Cross-talk compensation: adjusts per-sampler offset trim based on
+	 * the number of simultaneously active samplers.  Must be called each
+	 * time the active sampler set changes (per cy_hppass_sar.h:1172-1177).
+	 * Reads calOffsetMirror[] populated by Cy_HPPASS_SAR_Init().
+	 */
 	Cy_HPPASS_SAR_CrossTalkAdjust((uint8_t)1U << group);
 	return 0;
 }
@@ -246,9 +297,10 @@ static int ifx_hppass_sar_configure_group(uint32_t channels, uint32_t group)
  * @param channels Bitmask of channels to read results for
  * @param data Pointer to ADC data structure
  *
- * Helper function to read all the results for the specified channels into the data buffer.
+ * Reads all results for the specified channels into the data buffer.
  */
-static void ifx_hppass_get_group_results(uint32_t channels, struct ifx_hppass_sar_adc_data *data)
+static void ifx_hppass_get_group_results(mem_addr_t ctrl_base, uint32_t channels,
+					 struct ifx_hppass_sar_adc_data *data)
 {
 	if (data->buffer == NULL) {
 		LOG_ERR("ADC data buffer is NULL");
@@ -257,7 +309,8 @@ static void ifx_hppass_get_group_results(uint32_t channels, struct ifx_hppass_sa
 
 	for (size_t i = 0; i < HPPASS_SAR_ADC_MAX_CHANNELS; i++) {
 		if (channels & (1 << i)) {
-			int16_t result = Cy_HPPASS_SAR_Result_ChannelRead(i);
+			int16_t result =
+				(int16_t)sys_read32(ctrl_base + IFX_HPPASS_SAR_CHAN_RESULT(i));
 			*data->buffer++ = result;
 		}
 	}
@@ -276,41 +329,66 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct ifx_hppass_sar_adc_data *data =
 		CONTAINER_OF(ctx, struct ifx_hppass_sar_adc_data, ctx);
+	const struct ifx_hppass_sar_adc_config *cfg = data->dev->config;
+	mem_addr_t ctrl_base = cfg->ctrl_base;
 	const struct adc_sequence *sequence = &ctx->sequence;
 	uint32_t result_status;
 
 	data->repeat_buffer = data->buffer;
 	if (data->buffer == NULL || sequence->buffer_size == 0) {
-		data->result = -ENOMEM;
+		adc_context_complete(&data->ctx, -ENOMEM);
 		return;
 	}
 
 	if (sequence->channels == 0) {
 		LOG_ERR("No channels specified");
-		data->result = -EINVAL;
-	} else if (ifx_hppass_sar_configure_group(sequence->channels, 0) != 0) {
+		adc_context_complete(&data->ctx, -EINVAL);
+	} else if (ifx_hppass_sar_configure_group(ctrl_base, sequence->channels, 0) != 0) {
 		LOG_ERR("Invalid channel group selection");
-		data->result = -EINVAL;
+		adc_context_complete(&data->ctx, -EINVAL);
 	} else {
-		/* Trigger SAR ADC group 0 conversion */
-		Cy_HPPASS_SAR_Result_ClearStatus(sequence->channels);
-		Cy_HPPASS_SetFwTrigger(CY_HPPASS_TRIG_0_MSK);
+		/* Clear previous results before triggering the next conversion. */
+		sys_write32(sequence->channels & IFX_HPPASS_SAR_CHAN_MSK,
+			    ctrl_base + IFX_HPPASS_SAR_RESULT_UPDATED);
+		ifx_hppass_ac_set_fw_trigger_pulse(cfg->mfd, IFX_HPPASS_TRIG_0_MSK);
 
 #if defined(CONFIG_ADC_ASYNC)
 		if (!data->ctx.asynchronous) {
 #endif /* CONFIG_ADC_ASYNC */
-			/* Wait for channel conversion done */
-			do {
-				result_status = Cy_HPPASS_SAR_Result_GetStatus();
-			} while ((result_status & sequence->channels) != sequence->channels);
+			/*
+			 * A synchronous conversion completes only once the MFD
+			 * parent's autonomous controller is running and the
+			 * firmware trigger reaches this group, both outside this
+			 * driver's control.  Bound the poll so a stalled or
+			 * mis-routed trigger fails the read with -ETIMEDOUT
+			 * instead of spinning the calling thread forever.
+			 */
+			bool completed = false;
 
-			ifx_hppass_get_group_results(sequence->channels, data);
+			for (uint32_t i = 0U;
+			     i < CONFIG_ADC_INFINEON_HPPASS_SAR_POLL_TIMEOUT_US; i++) {
+				result_status =
+					sys_read32(ctrl_base + IFX_HPPASS_SAR_RESULT_UPDATED);
+				if ((result_status & sequence->channels) ==
+				    sequence->channels) {
+					completed = true;
+					break;
+				}
+				k_busy_wait(1);
+			}
+
+			if (!completed) {
+				LOG_ERR("SAR conversion timed out (AC not running or "
+					"trigger not routed?)");
+				adc_context_complete(&data->ctx, -ETIMEDOUT);
+				return;
+			}
+
+			ifx_hppass_get_group_results(ctrl_base, sequence->channels, data);
 			adc_context_on_sampling_done(&data->ctx, data->dev);
 #if defined(CONFIG_ADC_ASYNC)
 		}
 #endif /* CONFIG_ADC_ASYNC */
-
-		data->result = 0;
 	}
 }
 
@@ -330,8 +408,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
  * @param dev Pointer to the device structure for the driver instance.
  * @param sequence Pointer to the adc_sequence structure.
  *
- * This function validates the read parameters, sets up the buffer, and initiates the read
- * operation using the ADC context.
+ * Validates the read parameters, sets buffer pointer, and calls adc_context_start_read().
  */
 static int start_read(const struct device *dev, const struct adc_sequence *sequence)
 {
@@ -379,34 +456,36 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
  */
 static void ifx_hppass_sar_adc_isr(const struct device *dev)
 {
+	const struct ifx_hppass_sar_adc_config *cfg = dev->config;
+	mem_addr_t ctrl_base = cfg->ctrl_base;
 #if defined(CONFIG_ADC_ASYNC)
 	struct ifx_hppass_sar_adc_data *data = dev->data;
-#else
-	ARG_UNUSED(dev);
 #endif /* CONFIG_ADC_ASYNC */
 	LOG_DBG("SAR ADC combined results interrupt");
 
-	/* Check which SAR result groups have completed */
-	uint32_t result_intr_status = Cy_HPPASS_SAR_Result_GetInterruptStatusMasked();
+	uint32_t result_intr_status = sys_read32(ctrl_base + IFX_HPPASS_SAR_RESULT_INTR_MASKED);
 
-	/* Clear the specific SAR result interrupts that fired */
-	Cy_HPPASS_SAR_Result_ClearInterrupt(result_intr_status);
+	/* RESULT_INTR is write-1-to-clear (TRM 002-39445 §20.1.26). Read it
+	 * back after clearing to force the write to complete before the ISR
+	 * returns, so the same interrupt isn't re-triggered.
+	 */
+	sys_write32(result_intr_status, ctrl_base + IFX_HPPASS_SAR_RESULT_INTR);
+	(void)sys_read32(ctrl_base + IFX_HPPASS_SAR_RESULT_INTR);
 
-	/* Check if Group 0 completed (which is what we're using) */
-	if (result_intr_status & CY_HPPASS_INTR_SAR_RESULT_GROUP_0) {
+	if (result_intr_status & IFX_HPPASS_SAR_INTR_RESULT_GROUP_0) {
 		LOG_DBG("SAR Group 0 conversion complete");
 
 #if defined(CONFIG_ADC_ASYNC)
 		if (data->ctx.asynchronous) {
 			const struct adc_sequence *sequence = &data->ctx.sequence;
-			uint32_t result_status = Cy_HPPASS_SAR_Result_GetStatus();
+			uint32_t result_status =
+				sys_read32(ctrl_base + IFX_HPPASS_SAR_RESULT_UPDATED);
 
-			/* Make sure all requested channels have completed */
 			if ((result_status & sequence->channels) == sequence->channels) {
-				ifx_hppass_get_group_results(sequence->channels, data);
-				/* Clear the result status for the channels we read */
-				Cy_HPPASS_SAR_Result_ClearStatus(result_status &
-								 sequence->channels);
+				ifx_hppass_get_group_results(ctrl_base, sequence->channels, data);
+				sys_write32(result_status & sequence->channels &
+						    IFX_HPPASS_SAR_CHAN_MSK,
+					    ctrl_base + IFX_HPPASS_SAR_RESULT_UPDATED);
 
 				adc_context_on_sampling_done(&data->ctx, dev);
 			} else {
@@ -425,59 +504,33 @@ static void ifx_hppass_sar_adc_isr(const struct device *dev)
 	 * This implementation only uses Group 0. Any other interrupts indicates a configuration
 	 * error.
 	 */
-	if (result_intr_status & ~CY_HPPASS_INTR_SAR_RESULT_GROUP_0) {
+	if (result_intr_status & ~IFX_HPPASS_SAR_INTR_RESULT_GROUP_0) {
 		LOG_ERR("SAR Results Interrupt for unhandled groups: 0x%08X",
-			(uint32_t)(result_intr_status & ~CY_HPPASS_INTR_SAR_RESULT_GROUP_0));
+			(uint32_t)(result_intr_status & ~IFX_HPPASS_SAR_INTR_RESULT_GROUP_0));
 	}
 }
 
 /**
- * @brief Initialize pdl adc configuration structure
+ * @brief Initialize PDL ADC configuration structure
  *
- * This function initializes the pdl adc configuration with values derived from the device tree and
- * other default values.  Channel and Group configurations are set to NULL initially.  Channels will
- * be configured later in the channel setup function.  Groups are configured when a conversion is
- * started.
+ * Builds the one-shot Cy_HPPASS_SAR_Init() argument from the device-tree
+ * configuration on top of the fully initialized file-scope default.  The
+ * default supplies a complete baseline so the structure is deterministic
+ * regardless of which fields are overridden here.  Channel and group
+ * pointers stay NULL; per-channel programming uses direct SAR_CHAN_CFG /
+ * SAMP_GAIN / RESULT_MASK access at runtime.
  */
-static void ifx_init_pdl_struct(struct ifx_hppass_sar_adc_data *data,
+static void ifx_init_pdl_struct(cy_stc_hppass_sar_t *sar_cfg,
 				const struct ifx_hppass_sar_adc_config *cfg)
 {
-	data->hppass_sar_obj = ifx_hppass_sar_pdl_cfg_struct_default;
-	data->hppass_sar_obj.vref =
+	*sar_cfg = ifx_hppass_sar_pdl_cfg_struct_default;
+	sar_cfg->vref =
 		cfg->vref_internal_source ? CY_HPPASS_SAR_VREF_VDDA : CY_HPPASS_SAR_VREF_EXT;
-	data->hppass_sar_obj.offsetCal = cfg->offset_cal;
-	data->hppass_sar_obj.linearCal = cfg->linear_cal;
-	data->hppass_sar_obj.gainCal = cfg->gain_cal;
-	data->hppass_sar_obj.dirSampEnMsk = cfg->dir_samp_en_mask;
-	data->hppass_sar_obj.muxSampEnMsk = cfg->mux_samp_en_mask;
-}
-
-/**
- * @brief Initialize channel configuration structures
- *
- * This function initializes the channel configuration structures with default values.  All
- * channels are initially disabled.  Channels will be enabled and configured in the channel setup
- * function.
- */
-static void ifx_init_channel_cfg(struct ifx_hppass_sar_adc_data *data)
-{
-	for (int i = 0; i < HPPASS_SAR_ADC_MAX_CHANNELS; i++) {
-		data->hppass_sar_chan_obj[i] = (struct ifx_hppass_sar_adc_channel_config){
-			.id = (uint8_t)i,
-			.input_positive = 0,
-			.pdl_channel_cfg =
-				(cy_stc_hppass_sar_chan_t){
-					.diff = false,
-					.sign = false,
-					.avg = CY_HPPASS_SAR_AVG_DISABLED,
-					.limit = CY_HPPASS_SAR_LIMIT_DISABLED,
-					.result = false,
-					.fifo = CY_HPPASS_FIFO_DISABLED,
-				},
-		};
-
-		data->hppass_sar_obj.chan[i] = NULL;
-	}
+	sar_cfg->offsetCal = cfg->offset_cal;
+	sar_cfg->linearCal = cfg->linear_cal;
+	sar_cfg->gainCal = cfg->gain_cal;
+	sar_cfg->dirSampEnMsk = cfg->dir_samp_en_mask;
+	sar_cfg->muxSampEnMsk = cfg->mux_samp_en_mask;
 }
 
 /*
@@ -520,12 +573,14 @@ static int ifx_hppass_sar_adc_read_async(const struct device *dev,
 /**
  * @brief Configure ADC channel
  *
- * Implements the Zephyr ADC channel configuration API.
+ * Validates params, writes SAR_CHAN_CFG, RESULT_MASK, and SAMP_GAIN for one channel.
  */
 static int ifx_hppass_sar_adc_channel_setup(const struct device *dev,
 					    const struct adc_channel_cfg *channel_cfg)
 {
+	const struct ifx_hppass_sar_adc_config *cfg = dev->config;
 	struct ifx_hppass_sar_adc_data *data = dev->data;
+	mem_addr_t ctrl_base = cfg->ctrl_base;
 
 	if (channel_cfg->channel_id >= HPPASS_SAR_ADC_MAX_CHANNELS) {
 		LOG_ERR("Invalid channel ID: %d", channel_cfg->channel_id);
@@ -564,37 +619,41 @@ static int ifx_hppass_sar_adc_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	data->hppass_sar_chan_obj[channel_cfg->channel_id].id = channel_cfg->channel_id;
-	data->hppass_sar_chan_obj[channel_cfg->channel_id].pdl_channel_cfg =
-		(cy_stc_hppass_sar_chan_t){
-			.diff = (channel_cfg->differential == 0) ? false : true,
-			.sign = false,
-			.avg = CY_HPPASS_SAR_AVG_DISABLED,
-			.limit = CY_HPPASS_SAR_LIMIT_DISABLED,
-			.result = true,
-			.fifo = CY_HPPASS_FIFO_DISABLED,
-		};
-
-	data->hppass_sar_obj.chan[channel_cfg->channel_id] =
-		&data->hppass_sar_chan_obj[channel_cfg->channel_id].pdl_channel_cfg;
-
-	if (Cy_HPPASS_SAR_ChannelConfig(
-		    channel_cfg->channel_id,
-		    &data->hppass_sar_chan_obj[channel_cfg->channel_id].pdl_channel_cfg) !=
-	    CY_HPPASS_SUCCESS) {
-		LOG_ERR("Channel %d configuration failed", channel_cfg->channel_id);
-		return -EIO;
-	}
+	/*
+	 * Per-channel CFG_CHAN_CFG0 defaults to all-zero: single-ended,
+	 * unsigned, full-range, no averaging, no FIFO.  RESULT_MASK then
+	 * gates this channel's result register.
+	 */
+	uint32_t chan_cfg_reg = 0U;
 
 	/*
-	 * PDL doesn't support configuring gain except during device initialization.  Initialize the
-	 * gain registers directly here.
+	 * RESULT_MASK and SAMP_GAIN are shared across all channels and are
+	 * updated read-modify-write below.  Serialize against concurrent
+	 * channel setup and against an in-flight conversion via the existing
+	 * adc_context lock to avoid lost updates.
+	 */
+	adc_context_lock(&data->ctx, false, NULL);
+
+	sys_write32(chan_cfg_reg, ctrl_base + IFX_HPPASS_SAR_CHAN_CFG(channel_cfg->channel_id));
+
+	sys_write32(sys_read32(ctrl_base + IFX_HPPASS_SAR_RESULT_MASK) |
+			    (1UL << channel_cfg->channel_id),
+		    ctrl_base + IFX_HPPASS_SAR_RESULT_MASK);
+
+	/*
+	 * SAMP_GAIN has one 2-bit field per sampler (12 direct in bits [23:0],
+	 * 4 muxed in [31:24]).  Muxed samplers are shared by several channels,
+	 * so map the channel to its sampler to pick the field.
 	 */
 	uint32_t sampler_gain;
+	uint32_t sampler_idx =
+		(channel_cfg->channel_id < DIRECT_CHANNEL_CNT)
+			? channel_cfg->channel_id
+			: (DIRECT_CHANNEL_CNT +
+			   (channel_cfg->channel_id - DIRECT_CHANNEL_CNT) /
+				   MUXED_CHANNELS_PER_SAMPLER);
+	uint32_t gain_shift = sampler_idx * IFX_HPPASS_SAR_SAMPLER_GAIN_WIDTH;
 
-	HPPASS_SAR_SAMP_GAIN(HPPASS_BASE) &=
-		~(IFX_HPPASS_SAR_SAMPLER_GAIN_MSK
-		  << (channel_cfg->channel_id * IFX_HPPASS_SAR_SAMPLER_GAIN_WIDTH));
 	switch (channel_cfg->gain) {
 	case ADC_GAIN_1:
 		sampler_gain = 0;
@@ -613,10 +672,15 @@ static int ifx_hppass_sar_adc_channel_setup(const struct device *dev,
 		break;
 	}
 
-	HPPASS_SAR_SAMP_GAIN(HPPASS_BASE) |=
-		(sampler_gain << (channel_cfg->channel_id * IFX_HPPASS_SAR_SAMPLER_GAIN_WIDTH));
+	uint32_t samp_gain = sys_read32(ctrl_base + IFX_HPPASS_SAR_SAMP_GAIN);
+
+	samp_gain &= ~(IFX_HPPASS_SAR_SAMPLER_GAIN_MSK << gain_shift);
+	samp_gain |= (sampler_gain << gain_shift);
+	sys_write32(samp_gain, ctrl_base + IFX_HPPASS_SAR_SAMP_GAIN);
 
 	data->enabled_channels |= BIT(channel_cfg->channel_id);
+
+	adc_context_release(&data->ctx, 0);
 
 	return 0;
 }
@@ -628,30 +692,40 @@ static int ifx_hppass_sar_adc_init(const struct device *dev)
 {
 	const struct ifx_hppass_sar_adc_config *cfg = dev->config;
 	struct ifx_hppass_sar_adc_data *data = dev->data;
+	cy_stc_hppass_sar_t sar_cfg;
 
 	data->dev = dev;
 
 	LOG_DBG("Initializing HPPASS SAR ADC");
 
 	/*
-	 * Initialize the data structure.  The data structure contains a pdl device initialization
-	 * object which we store to be able to reinitialize the ADC if needed.
+	 * The MFD parent (infineon,hppass-analog) enables the HPPASS block and
+	 * brings up the clock, power, and AREF/Vref that the SAR depends on.
+	 * It must be ready before any SAR register access below.
 	 */
-	ifx_init_pdl_struct(data, cfg);
-	ifx_init_channel_cfg(data);
+	if (!device_is_ready(cfg->mfd)) {
+		LOG_ERR("HPPASS MFD parent not ready");
+		return -ENODEV;
+	}
 
-	if (Cy_HPPASS_SAR_Init(&data->hppass_sar_obj) != CY_RSLT_SUCCESS) {
+	ifx_init_pdl_struct(&sar_cfg, cfg);
+
+	/*
+	 * Cy_HPPASS_SAR_Init() copies SFLASH calibration into
+	 * SAR_CALOFFST[0..3]/CALGAINC/CALGAINF and populates the PDL
+	 * calOffsetMirror[] table.  The cross-talk compensation in
+	 * ifx_hppass_sar_configure_group() reads that table via
+	 * Cy_HPPASS_SAR_CrossTalkAdjust(), so this call must stay.
+	 */
+	if (Cy_HPPASS_SAR_Init(&sar_cfg) != CY_RSLT_SUCCESS) {
 		LOG_ERR("Failed to initialize HPPASS SAR ADC");
 		return -EIO;
 	}
 
-	if (ifx_hppass_ac_init_adc() != CY_RSLT_SUCCESS) {
-		LOG_ERR("HPPASS AC failed to initialize ADC");
-		return -EIO;
-	}
-
 #if defined(CONFIG_ADC_ASYNC)
-	Cy_HPPASS_SAR_Result_SetInterruptMask(CY_HPPASS_INTR_SAR_RESULT_GROUP_0);
+	/* Group 0 result interrupt drives async completions. */
+	sys_write32(IFX_HPPASS_SAR_INTR_RESULT_GROUP_0,
+		    cfg->ctrl_base + IFX_HPPASS_SAR_RESULT_INTR_MASK);
 	cfg->irq_func();
 #endif /* CONFIG_ADC_ASYNC */
 
@@ -738,6 +812,8 @@ static int ifx_hppass_sar_adc_init(const struct device *dev)
 	ADC_IFX_HPPASS_SAR_DRIVER_API(n);                                                          \
 	static void ifx_hppass_sar_adc_config_func_##n(void);                                      \
 	static const struct ifx_hppass_sar_adc_config ifx_hppass_sar_adc_config_##n = {            \
+		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                           \
+		.ctrl_base = (mem_addr_t)DT_INST_REG_ADDR(n),                                      \
 		.irq_priority = DT_INST_IRQ(n, priority),                                          \
 		.irq_num = DT_INST_IRQN(n),                                                        \
 		.irq_func = ifx_hppass_sar_adc_config_func_##n,                                    \
