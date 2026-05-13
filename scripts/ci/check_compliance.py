@@ -1489,9 +1489,23 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             logging.info(f"Loading extra UNDEF_KCONFIG_ALLOWLIST values from {path}")
             undef_kconfig_allowlist_extra = get_set_from_file(path)
 
+        # Load the per-file allowlist: files listed here are skipped entirely
+        self_folder = Path(__file__).resolve().parent
+        default_files_allowlist_file = self_folder / 'undef_kconfig_files_allowlist.txt'
+        undef_kconfig_files_allowlist = get_set_from_file(str(default_files_allowlist_file))
+
+        # Load extensions to the per-file allowlist via environment variable
+        if path := os.environ.get("UNDEF_KCONFIG_FILES_ALLOWLIST_FILE", None):
+            logging.info(f"Loading extra file allowlist entries from {path}")
+            undef_kconfig_files_allowlist |= get_set_from_file(path)
+
         # splitlines() supports various line terminators
         for grep_line in grep_stdout.splitlines():
             path, lineno, line = grep_line.split("\0")
+
+            # Skip files whose CONFIG_ references are explicitly allowlisted
+            if path in undef_kconfig_files_allowlist:
+                continue
 
             # Extract symbol references (might be more than one) within the
             # line
