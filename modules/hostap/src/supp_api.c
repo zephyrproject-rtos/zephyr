@@ -1056,7 +1056,6 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 						   resp.network_id)) {
 					goto out;
 				}
-			}
 
 			if (wpas_config_process_blob(wpa_s->conf, "client_cert",
 					   enterprise_creds.client_cert,
@@ -1121,6 +1120,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			if (!wpa_cli_cmd_v("set_network %d private_key2_passwd \"%s\"",
 					   resp.network_id, params->key2_passwd)) {
 				goto out;
+			}
 			}
 #endif
 #ifdef CONFIG_WEP
