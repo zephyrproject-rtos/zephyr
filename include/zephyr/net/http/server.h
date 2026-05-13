@@ -373,24 +373,6 @@ struct http2_frame {
 	uint8_t padding_len; /**< Frame padding length. */
 };
 
-/** @brief HTTP/3 bidirectional request stream state. */
-struct http3_stream_ctx {
-	/** Buffered request data for this stream. */
-	unsigned char buffer[HTTP_SERVER_CLIENT_BUFFER_SIZE];
-
-	/** Data left to process in the stream buffer. */
-	size_t data_len;
-
-	/** Currently processed resource detail for this stream. */
-	struct http_resource_detail *current_detail;
-
-	/** Request URL for this stream. */
-	unsigned char url_buffer[HTTP_SERVER_MAX_URL_LENGTH];
-
-	/** Request method for this stream. */
-	enum http_method method;
-};
-
 /** @brief Context for capturing HTTP headers */
 struct http_header_capture_ctx {
 	/** Buffer for HTTP headers captured for application use */
@@ -413,6 +395,30 @@ struct http_header_capture_ctx {
 
 	/** The next HTTP header value should be stored */
 	bool store_next_value;
+};
+
+/** @brief HTTP/3 bidirectional request stream state. */
+struct http3_stream_ctx {
+	/** Buffered request data for this stream. */
+	unsigned char buffer[HTTP_SERVER_CLIENT_BUFFER_SIZE];
+
+	/** Data left to process in the stream buffer. */
+	size_t data_len;
+
+	/** Currently processed resource detail for this stream. */
+	struct http_resource_detail *current_detail;
+
+	/** Request URL for this stream. */
+	unsigned char url_buffer[HTTP_SERVER_MAX_URL_LENGTH];
+
+	/** Request method for this stream. */
+	enum http_method method;
+
+	/** Request header capture state for this stream. */
+	struct http_header_capture_ctx header_capture_ctx;
+
+	/** Request headers have not yet been delivered to the application. */
+	bool request_headers_pending;
 };
 
 /** @brief HTTP header name representation */
