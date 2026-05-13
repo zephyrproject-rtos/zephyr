@@ -1,0 +1,20 @@
+sample:
+  name: HWSPINLOCK shell
+common:
+  tags:
+    - drivers
+    - hwspinlock
+    - shell
+  platform_allow:
+    - imx95_evk/mimx9596/m7
+    - imx943_evk/mimx94398/m33
+  integration_platforms:
+    - imx95_evk/mimx9596/m7
+    - imx943_evk/mimx94398/m33
+tests:
+  sample.drivers.hwspinlock.shell:
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "hwspinlock shell sample ready"
