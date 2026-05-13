@@ -255,7 +255,7 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 	struct net_if *iface = ((struct adin2111_port_data *)ctx->port[port_idx]->data)->iface;
 	struct net_pkt *pkt;
 	uint32_t hdr, ftr;
-	int i, len, rx_pos, ret, rca, swo;
+	int i, len, rx_pos, ret, rca, swo, chunk_count;
 
 	ret = eth_adin2111_reg_read(dev, ADIN2111_BUFSTS, &rca);
 	if (ret < 0) {
@@ -264,9 +264,14 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 	}
 
 	rca &= ADIN2111_BUFSTS_RCA_MASK;
+	if (rca == 0) {
+		return 0;
+	}
+
+	chunk_count = MIN(rca, (int)CONFIG_ETH_ADIN2111_OA_MAX_RCA_COUNT);
 
 	/* Preare all tx headers */
-	for (i = 0, len = 0; i < rca; ++i) {
+	for (i = 0, len = 0; i < chunk_count; ++i) {
 		hdr = ADIN2111_OA_DATA_HDR_DNC;
 		hdr |= eth_adin2111_oa_get_parity(hdr);
 
@@ -281,7 +286,7 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 		return ret;
 	}
 
-	for (i = 0, rx_pos = 0; i < rca; ++i) {
+	for (i = 0, rx_pos = 0; i < chunk_count; ++i) {
 
 		ftr = sys_be32_to_cpu(*(uint32_t *)&ctx->oa_rx_buf[rx_pos + ctx->oa_cps]);
 
@@ -300,7 +305,7 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 		if (ftr & ADIN2111_OA_DATA_FTR_SV) {
 			swo = (ftr & ADIN2111_OA_DATA_FTR_SWO_MSK) >> ADIN2111_OA_DATA_FTR_SWO;
 			if (swo != 0) {
-				LOG_ERR("OA RX: Misalignbed start of frame !");
+				LOG_ERR("OA RX: Misaligned start of frame !");
 				return -EIO;
 			}
 			/* Reset store cursor */
@@ -316,7 +321,6 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 			LOG_ERR("OA RX: Frame is larger than maximum size !");
 			goto update_pos;
 		}
-
 		memcpy(&ctx->buf[ctx->scur], &ctx->oa_rx_buf[rx_pos], len);
 		ctx->scur += len;
 
@@ -342,6 +346,7 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 					port_idx, ret);
 				return ret;
 			}
+			ctx->scur = 0;
 		}
 update_pos:
 		rx_pos += ctx->oa_cps + sizeof(uint32_t);
@@ -356,21 +361,41 @@ update_pos:
 static int eth_adin2111_send_oa_frame(const struct device *dev, struct net_pkt *pkt,
 				      const uint16_t port_idx)
 {
+	const struct adin2111_config *cfg = dev->config;
 	struct adin2111_data *ctx = dev->data;
-	uint16_t clen, len = net_pkt_get_len(pkt);
+	struct net_buf *frag;
+	struct net_buf *cur_frag;
+	struct spi_buf_set tx;
+	struct spi_buf *tx_bufs = (struct spi_buf *)ctx->oa_rx_buf;
+	uint8_t *hdr_buf = ctx->oa_tx_buf;
+	uint8_t *pad_buf = ctx->buf;
+	size_t tx_buf_count = 0;
+	size_t tx_buf_max = ADIN2111_OA_BUF_SZ / sizeof(struct spi_buf);
+	size_t total_len = net_pkt_get_len(pkt);
+	size_t remaining;
+	size_t frag_off = 0;
+	size_t frag_count = 0;
 	uint32_t hdr;
-	uint8_t chunks, i;
-	int ret, txc, cur, ebo;
+	uint32_t txc;
+	uint8_t chunks;
+	uint8_t i;
+	int ret;
+	int ebo;
 
-	chunks = len / ctx->oa_cps;
-
-	if (len % ctx->oa_cps) {
-		chunks++;
+	if (total_len == 0U) {
+		return -EINVAL;
 	}
 
-	if (chunks > 1) {
-		/* we have to calculate EBO so we do not exceed maximum Ethernet frame length */
-		ebo = (len % ctx->oa_cps) - 1;
+	chunks = DIV_ROUND_UP(total_len, (size_t)ctx->oa_cps);
+
+	if (chunks > CONFIG_ETH_ADIN2111_OA_MAX_RCA_COUNT) {
+		LOG_ERR("OA TX frame needs %u chunks, max supported per xfer is %u", chunks,
+			CONFIG_ETH_ADIN2111_OA_MAX_RCA_COUNT);
+		return -ENOMEM;
+	}
+
+	if (chunks > 1U) {
+		ebo = (total_len % ctx->oa_cps) - 1;
 		if (ebo < 0) {
 			ebo += ctx->oa_cps;
 		}
@@ -390,37 +415,101 @@ static int eth_adin2111_send_oa_frame(const struct device *dev, struct net_pkt *
 		return -EIO;
 	}
 
-	/* Prepare for single dma transfer */
-	for (i = 1, cur = 0; i <= chunks; i++) {
+	for (frag = pkt->frags; frag != NULL; frag = frag->frags) {
+		if (frag->len > 0U) {
+			frag_count++;
+		}
+	}
+
+	/*
+	 * Worst case:
+	 * - 1 spi_buf for each OA header
+	 * - frag_count + (chunks - 1) spi_buf entries for payload
+	 *   (chunk boundary may split inside a fragment)
+	 * - 1 spi_buf for final zero padding
+	 */
+	if ((frag_count + (2U * chunks) + 1U) > tx_buf_max) {
+		LOG_ERR("OA TX spi_buf table too small: need %u entries, have %u",
+			(unsigned int)(frag_count + (2U * chunks) + 1U), (unsigned int)tx_buf_max);
+		return -ENOMEM;
+	}
+
+	memset(pad_buf, 0, ctx->oa_cps);
+
+	cur_frag = pkt->frags;
+	while ((cur_frag != NULL) && (cur_frag->len == 0U)) {
+		cur_frag = cur_frag->frags;
+	}
+
+	remaining = total_len;
+
+	for (i = 0U; i < chunks; i++) {
+		size_t chunk_payload_len = MIN(remaining, (size_t)ctx->oa_cps);
+		size_t chunk_remaining = chunk_payload_len;
+		size_t chunk_pad = ctx->oa_cps - chunk_payload_len;
+		size_t hdr_off = i * sizeof(uint32_t);
+
 		hdr = ADIN2111_OA_DATA_HDR_DNC | ADIN2111_OA_DATA_HDR_DV |
-			ADIN2111_OA_DATA_HDR_NORX;
+		      ADIN2111_OA_DATA_HDR_NORX;
 		hdr |= (!!port_idx << ADIN2111_OA_DATA_HDR_VS);
-		if (i == 1) {
+
+		if (i == 0U) {
 			hdr |= ADIN2111_OA_DATA_HDR_SV;
 		}
-		if (i == chunks) {
+
+		if (i == (chunks - 1U)) {
 			hdr |= ADIN2111_OA_DATA_HDR_EV;
-			hdr |= ebo << ADIN2111_OA_DATA_HDR_EBO;
+			hdr |= ((uint32_t)ebo << ADIN2111_OA_DATA_HDR_EBO);
 		}
 
 		hdr |= eth_adin2111_oa_get_parity(hdr);
+		*(uint32_t *)&hdr_buf[hdr_off] = sys_cpu_to_be32(hdr);
 
-		*(uint32_t *)&ctx->oa_tx_buf[cur] = sys_cpu_to_be32(hdr);
-		cur += sizeof(uint32_t);
+		tx_bufs[tx_buf_count].buf = &hdr_buf[hdr_off];
+		tx_bufs[tx_buf_count].len = sizeof(uint32_t);
+		tx_buf_count++;
 
-		clen = len > ctx->oa_cps ? ctx->oa_cps : len;
-		ret = net_pkt_read(pkt, &ctx->oa_tx_buf[cur], clen);
-		if (ret < 0) {
-			LOG_ERR("Cannot read from tx packet");
-			return ret;
+		while (chunk_remaining > 0U) {
+			size_t seg_len;
+
+			if (cur_frag == NULL) {
+				LOG_ERR("OA TX: packet fragment list ended too early");
+				return -EINVAL;
+			}
+
+			if (frag_off >= cur_frag->len) {
+				do {
+					cur_frag = cur_frag->frags;
+				} while ((cur_frag != NULL) && (cur_frag->len == 0U));
+
+				frag_off = 0U;
+				continue;
+			}
+
+			seg_len = MIN(chunk_remaining, (size_t)(cur_frag->len - frag_off));
+
+			tx_bufs[tx_buf_count].buf = cur_frag->data + frag_off;
+			tx_bufs[tx_buf_count].len = seg_len;
+			tx_buf_count++;
+
+			chunk_remaining -= seg_len;
+			remaining -= seg_len;
+			frag_off += seg_len;
 		}
-		cur += ctx->oa_cps;
-		len -= clen;
+
+		if (chunk_pad > 0U) {
+			tx_bufs[tx_buf_count].buf = pad_buf;
+			tx_bufs[tx_buf_count].len = chunk_pad;
+			tx_buf_count++;
+		}
 	}
 
-	ret = eth_adin2111_oa_spi_xfer(dev, ctx->oa_rx_buf, ctx->oa_tx_buf, cur);
+	tx.buffers = tx_bufs;
+	tx.count = tx_buf_count;
+
+	ret = spi_write_dt(&cfg->spi, &tx);
 	if (ret < 0) {
-		LOG_ERR("Error on SPI xfer");
+		LOG_ERR("Error on SPI write");
 		return ret;
 	}
 
@@ -832,7 +921,7 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 		 */
 		ret = eth_adin2111_reg_read(adin, ADIN2111_BUFSTS, &val);
 		if (ret < 0) {
-			return ret;
+			goto end_unlock;
 		}
 		rca = val & ADIN2111_BUFSTS_RCA_MASK;
 
