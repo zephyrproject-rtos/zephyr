@@ -36,5 +36,6 @@ comment "MUX Drivers"
 
 rsource "Kconfig.gpio"
 rsource "Kconfig.nxp_inputmux"
+rsource "Kconfig.nxp_trgmux"
 
 endif # MUX

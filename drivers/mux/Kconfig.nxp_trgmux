@@ -1,0 +1,11 @@
+# NXP TRGMUX driver
+
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MUX_NXP_TRGMUX
+	bool "NXP TRGMUX MUX driver"
+	default y
+	depends on DT_HAS_NXP_TRGMUX_ENABLED
+	help
+	  Enable the NXP TRGMUX-based multiplexer driver.

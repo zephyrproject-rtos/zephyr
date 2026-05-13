@@ -1,0 +1,48 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP TRGMUX peripheral wrapper.
+
+  TRGMUX provides per-device output trigger inputs. Each device exposes
+  up to 4 trigger input slots, and each slot can be routed to one of the
+  TRGMUX trigger sources.
+
+  The first cell selects the destination device, the second selects the
+  trigger input slot. The state value is the source to route to that slot.
+
+  Example:
+
+    trgmux0: trgmux@... {
+        compatible = "nxp,trgmux";
+        reg = <...>;
+        #mux-control-cells = <2>;
+        #mux-state-cells = <3>;
+    };
+
+    adc-trigger {
+        mux-states = <&trgmux0 5 1 7>; /* device=5, input=1, source=7 */
+    };
+
+compatible: "nxp,trgmux"
+
+include: [base.yaml, mux-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#mux-control-cells":
+    const: 2
+
+  "#mux-state-cells":
+    const: 3
+
+mux-control-cells:
+  - device
+  - input
+
+mux-state-cells:
+  - device
+  - input
+  - source
