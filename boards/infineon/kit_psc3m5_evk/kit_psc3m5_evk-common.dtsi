@@ -208,3 +208,90 @@ uart3: &scb3 {
 	source-path = <IFX_CLK_HF_IN_CLKPATH2>;
 	status = "okay";
 };
+
+/*
+ * HPPASS CSG block.
+ *
+ * The EVK exposes all 16 CSG-capable analog input pins (AN_A0..AN_A7,
+ * AN_B0..AN_B7) on headers J5/J24 with no fixed application.  Every CSG
+ * slice is enabled here with its paired in-slice DAC selected as the
+ * comparator negative input (TRM 002-39348 Table 253):
+ *
+ *   Slice 0: pos = AN_A0,  neg = DAC0
+ *   Slice 1: pos = AN_A1,  neg = DAC1
+ *   Slice 2: pos = AN_A2,  neg = DAC2
+ *   Slice 3: pos = AN_A3,  neg = DAC3
+ *   Slice 4: pos = AN_A4,  neg = DAC4
+ *
+ * Applications that need AIN_PB on the positive input or a standalone
+ * (DAC-less) comparator may override "positive-input" / "negative-input"
+ * in their own overlay.  Disable individual slices that are unused to
+ * save the AC startup cycles, or disable &csg0 entirely for SAR-only use.
+ *
+ * STARTUP_CFG[0..2] on &hppass_analog0 are vendor-recommended values set
+ * in the SoC dtsi and required for the CSG hardware bring-up cascade
+ * (TRM 002-39348 §27.2.4.4).  Do not modify.
+ */
+&hppass_analog0 {
+	status = "okay";
+};
+
+&peri0_group5_16bit_0 {
+	status = "okay";
+	clock-div = <2>;
+};
+
+&csg0 {
+	status = "okay";
+	clocks = <&peri0_group5_16bit_0>;
+};
+
+&dac0 {
+	status = "okay";
+};
+
+&dac1 {
+	status = "okay";
+};
+
+&dac2 {
+	status = "okay";
+};
+
+&dac3 {
+	status = "okay";
+};
+
+&dac4 {
+	status = "okay";
+};
+
+&comp0 {
+	status = "okay";
+	positive-input = "ain-pa";
+	negative-input = "dac";
+};
+
+&comp1 {
+	status = "okay";
+	positive-input = "ain-pa";
+	negative-input = "dac";
+};
+
+&comp2 {
+	status = "okay";
+	positive-input = "ain-pa";
+	negative-input = "dac";
+};
+
+&comp3 {
+	status = "okay";
+	positive-input = "ain-pa";
+	negative-input = "dac";
+};
+
+&comp4 {
+	status = "okay";
+	positive-input = "ain-pa";
+	negative-input = "dac";
+};
