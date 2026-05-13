@@ -1969,6 +1969,9 @@ This has been fixed in main for v4.2.0
 - `PR 93576 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/93576>`_
 
+- `PR 100474 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/100474>`_
+
 :cve:`2025-10457`
 -----------------
 
