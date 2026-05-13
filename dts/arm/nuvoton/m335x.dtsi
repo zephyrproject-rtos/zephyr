@@ -402,6 +402,28 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
+		uspi0: spi@400d0000 {
+			compatible = "nuvoton,numaker-usci-spi";
+			reg = <0x400d0000 0x1000>;
+			interrupts = <76 0>;
+			resets = <&rst NUMAKER_USCI0_RST>;
+			clocks = <&pcc NUMAKER_USCI0_MODULE 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		uspi1: spi@400d1000 {
+			compatible = "nuvoton,numaker-usci-spi";
+			reg = <0x400d1000 0x1000>;
+			interrupts = <77 0>;
+			resets = <&rst NUMAKER_USCI1_RST>;
+			clocks = <&pcc NUMAKER_USCI1_MODULE 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
 
