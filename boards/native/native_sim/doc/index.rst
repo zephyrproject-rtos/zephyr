@@ -319,6 +319,38 @@ Here are more details on the peripherals that are currently provided with this b
       (eg. USB to UART dongles). For more information refer to the section
       `TTY UART`_.
 
+**Digital microphone (DMIC)**
+  A file-backed DMIC driver is available for native_sim. It reads PCM sample
+  data from a binary file on the host file system and presents it through the
+  Zephyr DMIC API, which is useful for testing audio capture pipelines.
+
+  By default the input file path is taken from
+  :kconfig:option:`CONFIG_AUDIO_DMIC_NATIVE_SIM_FILE_PATH`. Each DMIC instance
+  exposes its own command line override in the form
+  ``--<device>_file=<path>``. For the default native_sim instance this is
+  ``--dmic0_file=<path>``.
+
+  If the configured host input file does not exist, the driver prints a warning
+  from the native simulator runner side and provides silence instead of failing
+  configuration.
+**Inter-IC sound (I2S)**
+  A file-backed I2S driver is available for native_sim. It can be configured
+  for RX, TX, or both directions, and it reads or writes PCM sample data from
+  or to files on the host file system through the Zephyr I2S API. This is
+  useful for testing stream handling and loopback scenarios.
+
+  By default the RX and TX file paths are taken from
+  :kconfig:option:`CONFIG_I2S_NATIVE_SIM_RX_FILE_PATH` and
+  :kconfig:option:`CONFIG_I2S_NATIVE_SIM_TX_FILE_PATH`. Each I2S instance
+  exposes its own command line overrides in the form
+  ``--<device>_rx=<path>`` and ``--<device>_tx=<path>``. For example, the
+  default bidirectional native_sim instance uses ``--i2s_rxtx_rx=<path>`` and
+  ``--i2s_rxtx_tx=<path>``.
+
+  If an RX input file does not exist, the driver prints a warning from the
+  native simulator runner side and feeds silence until a valid input file is
+  configured.
+
 **Real time clock**
   The real time clock model provides a model of a constantly powered clock.
   By default this is initialized to the host time at boot.
