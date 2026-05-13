@@ -26,6 +26,39 @@ config LED_SHELL
 	help
 	  Enable LED shell for testing.
 
+config LED_TRIGGER
+	bool "LED trigger support"
+	depends on LED
+	help
+	  Enable the LED trigger framework. LED triggers are
+	  kernel-based sources of LED events that can drive LEDs
+	  according to a pattern or system event.
+
+	  The framework provides a channel pool and shared
+	  infrastructure. Individual triggers (timer, network activity
+	  etc.) are enabled separately below.
+
+config LED_TRIGGER_MAX_CHANNELS
+	int "Maximum number of LED trigger channels"
+	default 8
+	depends on LED_TRIGGER
+	help
+	  Maximum number of LED channels that can simultaneously use
+	  the trigger framework. Each channel consumes a slot from
+	  a fixed-size static pool. Once claimed, a slot is never
+	  freed.
+
+config LED_TRIGGER_TIMER
+	bool "Timer LED trigger"
+	default y
+	depends on LED_TRIGGER
+	help
+	  Enable the timer LED trigger, which provides periodic
+	  on/off blinking via the system workqueue. This is the
+	  software fallback used by led_blink() when the hardware
+	  driver does not implement blink. The timer's accuracy
+	  depends heavily on current system load.
+
 # zephyr-keep-sorted-start
 source "drivers/led/Kconfig.axp192"
 source "drivers/led/Kconfig.dac"
