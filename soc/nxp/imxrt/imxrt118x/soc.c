@@ -910,5 +910,5 @@ static int second_core_boot(void)
 	return 0;
 }
 
-SYS_INIT(second_core_boot, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(second_core_boot, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
 #endif
