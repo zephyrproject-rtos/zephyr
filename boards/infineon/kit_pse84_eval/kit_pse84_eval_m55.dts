@@ -35,6 +35,7 @@
 		zephyr,shell-uart = &uart2;
 		zephyr,dtcm = &dtcm;
 		zephyr,itcm = &itcm;
+		zephyr,touch = &ft5406;
 	};
 
 	power-states {
@@ -56,6 +57,19 @@
 		cpu@1 {
 			cpu-power-states = <&sleep &deepsleep>;
 		};
+	};
+};
+
+&i2c0 {
+	ft5406: ft5406@38 {
+		status = "okay";
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		swapped-x-y;
+		inverted-x;
+		inverted-y;
+		screen-width = <480>;
+		screen-height = <800>;
 	};
 };
 

@@ -90,7 +90,7 @@ i2c0: &scb0 {
 
 &peri0_group1_16bit_3 {
 	status = "okay";
-	clock-div = <1000>;
+	clock-div = <62>;
 };
 
 &gpio_prt0 {
