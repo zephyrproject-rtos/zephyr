@@ -191,3 +191,7 @@ zephyr_dpu: &dpu {};
 zephyr_mipi_dsi: &mipi_dsi {};
 
 display_i2c: &lpi2c2 {};
+
+&sema42_1 {
+	status = "okay";
+};

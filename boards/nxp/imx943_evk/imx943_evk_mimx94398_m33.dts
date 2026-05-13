@@ -111,3 +111,7 @@
 &edma1 {
 	status = "okay";
 };
+
+&sema42_1 {
+	status = "okay";
+};
