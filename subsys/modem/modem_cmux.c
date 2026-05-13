@@ -313,7 +313,7 @@ static struct modem_cmux_command modem_cmux_command_decode(const uint8_t *data, 
  *
  * @param command command to encode
  * @param len encoded length of the command is written here
- * @return pointer to encoded command buffer on success, NULL on failure
+ * @return pointer to encoded command buffer
  */
 static uint8_t *modem_cmux_command_encode(struct modem_cmux_command *command, uint16_t *len)
 {
@@ -703,10 +703,6 @@ static void modem_cmux_send_psc(struct modem_cmux *cmux)
 		.length.value = 0,
 	}, &len);
 
-	if (data == NULL) {
-		return;
-	}
-
 	struct modem_cmux_frame frame = {
 		.dlci_address = 0,
 		.cr = cmux->initiator,
@@ -754,10 +750,6 @@ static void modem_cmux_send_msc(struct modem_cmux *cmux, struct modem_cmux_dlci 
 
 	uint16_t len;
 	uint8_t *data = modem_cmux_command_encode(&cmd, &len);
-
-	if (data == NULL) {
-		return;
-	}
 
 	struct modem_cmux_frame frame = {
 		.dlci_address = 0,
@@ -912,10 +904,6 @@ static void modem_cmux_respond_unsupported_cmd(struct modem_cmux *cmux)
 
 	uint16_t len;
 	uint8_t *data = modem_cmux_command_encode(&nsc_cmd, &len);
-
-	if (data == NULL) {
-		return;
-	}
 
 	frame.data = data;
 	frame.data_len = len;
@@ -1849,11 +1837,6 @@ static void modem_cmux_disconnect_handler(struct k_work *item)
 
 	uint16_t len;
 	uint8_t *data = modem_cmux_command_encode(&command, &len);
-
-	if (data == NULL) {
-		return;
-	}
-
 
 	struct modem_cmux_frame frame = {
 		.dlci_address = 0,
