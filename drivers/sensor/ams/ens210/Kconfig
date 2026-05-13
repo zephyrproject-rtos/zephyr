@@ -8,6 +8,9 @@ menuconfig ENS210
 	default y
 	depends on DT_HAS_AMS_ENS210_ENABLED
 	select I2C
+	select I2C_RTIO if SENSOR_ASYNC_API
+	select RTIO_OP_DELAY if SENSOR_ASYNC_API && \
+		(ENS210_TEMPERATURE_SINGLE || ENS210_HUMIDITY_SINGLE)
 	help
 	  Enable driver for ENS210 Digital Temperature and Humidity sensor.
 if ENS210
