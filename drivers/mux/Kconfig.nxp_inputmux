@@ -1,0 +1,12 @@
+# NXP INPUTMUX driver
+
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MUX_NXP_INPUTMUX
+	bool "NXP INPUTMUX MUX driver"
+	default y
+	depends on DT_HAS_NXP_INPUTMUX_ENABLED
+	select NXP_INPUTMUX
+	help
+	  Enable the NXP INPUTMUX-based multiplexer driver.

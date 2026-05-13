@@ -1,0 +1,32 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP INPUTMUX peripheral binding.
+
+compatible: "nxp,inputmux"
+
+include: [base.yaml, mux-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#mux-control-cells":
+    const: 1
+
+  "#mux-state-cells":
+    const: 2
+
+mux-control-cells:
+  # Serial number of the destination register inside its group. For
+  # example, "index = 2" selects PINT_SEL2 within the PINTSEL group.
+  - index
+
+mux-state-cells:
+  # Same "index" as above (addressing).
+  - index
+  # inputmux connection value. Encodes BOTH the
+  # destination register-group offset (high bits, PMUX_SHIFT and above)
+  # AND the source / function ID (low bits).
+  - connection
