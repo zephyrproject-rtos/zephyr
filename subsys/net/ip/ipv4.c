@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/ipv4_forward.h>
 #include "net_private.h"
 #include "connection.h"
 #include "net_stats.h"
@@ -268,6 +269,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	uint8_t opts_len;
 	int pkt_len;
 	int ret;
+	bool for_me = true;
 
 #if defined(CONFIG_NET_L2_IPIP)
 	struct net_pkt_cursor hdr_start;
@@ -377,8 +379,12 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		net_dhcpv4_accept_unicast(pkt)))) ||
 	    (hdr->proto == NET_IPPROTO_TCP &&
 	     net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), hdr->dst))) {
-		NET_DBG("DROP: not for me");
-		goto drop;
+		if (IS_ENABLED(CONFIG_NET_IPV4_FORWARD)) {
+			for_me = false;
+		} else {
+			NET_DBG("DROP: not for me");
+			goto drop;
+		}
 	}
 
 	if (net_ipv4_is_addr_mcast_raw(hdr->dst)) {
@@ -424,6 +430,19 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_INET_RAW)) {
 		if (net_conn_raw_ip_input(pkt, &ip, hdr->proto) == NET_DROP) {
+			goto drop;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_FORWARD)) {
+		if (!net_ipv4_is_addr_mcast_raw(hdr->dst) &&
+		    !net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), hdr->dst) &&
+		    ipforward_route(pkt, hdr) == NET_OK) {
+			return NET_OK;
+		}
+
+		if (!for_me) {
+			NET_DBG("DROP: ucast not for me");
 			goto drop;
 		}
 	}
@@ -533,5 +552,9 @@ void net_ipv4_init(void)
 
 	if (IS_ENABLED(CONFIG_NET_IPV4_ACD)) {
 		net_ipv4_acd_init();
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_FORWARD)) {
+		ipforward_init();
 	}
 }

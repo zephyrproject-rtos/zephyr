@@ -188,6 +188,28 @@ config NET_IPV4_PMTU_DESTINATION_CACHE_ENTRIES
 	help
 	  How many PMTU entries we can track for each destination address.
 
+config NET_IPV4_FORWARD
+	bool "IPv4 forward and NAT"
+	help
+	  Forward packets in IP layer between interfaces and subnets by NAT.
+	  Add iptable rule to allow specific packets to be forwarded.
+
+if NET_IPV4_FORWARD
+config NET_IPV4_CONN_TRACK_MAX_NUM
+	int "Maximum connection track maintained for IP forward"
+	default 10
+	help
+	  Maximum number of active connection tracks maintained
+	  in the same time.
+	  The connection track will age out after inactive timeout.
+
+config NET_IPV4_IPTABLE_RULE_MAX_NUM
+	int "Maximum IP table rule number for IP forward"
+	default 3
+	help
+	  Maximum number of active IP table rules.
+endif
+
 module = NET_IPV4
 module-dep = NET_LOG
 module-str = Log level for core IPv4
