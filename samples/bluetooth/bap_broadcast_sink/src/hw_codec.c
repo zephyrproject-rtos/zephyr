@@ -140,9 +140,9 @@ int hw_codec_cfg(uint32_t samplerate)
 	audio_cfg.dai_cfg.i2s.channels = 2;
 	audio_cfg.dai_cfg.i2s.format = I2S_FMT_DATA_FORMAT_I2S;
 #if defined(CONFIG_USE_I2S_CODEC_CLK_MASTER)
-	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_MASTER | I2S_OPT_BIT_CLK_MASTER;
+	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER;
 #else /* !CONFIG_USE_I2S_CODEC_CLK_MASTER */
-	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_SLAVE | I2S_OPT_BIT_CLK_SLAVE;
+	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_TARGET | I2S_OPT_BIT_CLK_TARGET;
 #endif /* !CONFIG_USE_I2S_CODEC_CLK_MASTER */
 	audio_cfg.dai_cfg.i2s.frame_clk_freq = samplerate;
 	audio_cfg.dai_cfg.i2s.mem_slab = &mem_slab;

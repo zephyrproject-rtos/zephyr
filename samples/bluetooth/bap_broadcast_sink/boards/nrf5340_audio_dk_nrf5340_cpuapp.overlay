@@ -5,3 +5,19 @@
  */
 
 #include "../app.overlay"
+
+/ {
+	aliases {
+		codec0 = &cs47l63;
+		i2s-codec-tx = &i2s0;
+	};
+};
+
+/* Use HFCLKAUDIO for stable I2S master clocking on nRF5340 Audio DK */
+&clock {
+	hfclkaudio-frequency = <12288000>;
+};
+
+&i2s0 {
+	clock-source = "ACLK";
+};

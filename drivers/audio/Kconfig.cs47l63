@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_CS47L63
+	bool "Cirrus Logic CS47L63 codec driver"
+	default y
+	depends on SPI
+	depends on GPIO
+	depends on DT_HAS_CIRRUS_CS47L63_ENABLED
+	help
+	  Enable support for the Cirrus Logic CS47L63 Low-Power Audio DSP
+	  codec. The driver communicates over SPI and implements the Zephyr
+	  audio codec API for I2S playback through the headphone output.
