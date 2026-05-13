@@ -384,11 +384,8 @@ enum __packed bt_bip_supported_functions {
  * Main structure representing a BIP session
  */
 struct bt_bip {
-	/** @brief Underlying GOEP transport V1 instance */
-	struct bt_goep_transport_v1 goep_transport_v1;
-
-	/** @brief Underlying GOEP transport V2 instance */
-	struct bt_goep_transport_v2 goep_transport_v2;
+	/** @brief Underlying GOEP transport instance */
+	struct bt_goep_transport goep_transport;
 
 	/** @brief Underlying GOEP instance */
 	struct bt_goep goep;

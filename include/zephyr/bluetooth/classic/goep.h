@@ -88,6 +88,14 @@ struct bt_goep_transport_v2 {
 	struct bt_goep *goep;
 };
 
+/** @brief GOEP transport unified structure. */
+struct bt_goep_transport {
+	/** @brief GOEP v1.1 transport */
+	struct bt_goep_transport_v1 v1;
+	/** @brief GOEP v2 transport */
+	struct bt_goep_transport_v2 v2;
+};
+
 /** @brief Life-span states of GOEP transport.
  *
  *  Used only by internal APIs dealing with setting GOEP to proper transport state depending on
