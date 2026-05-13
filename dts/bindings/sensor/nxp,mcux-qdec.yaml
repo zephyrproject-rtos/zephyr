@@ -1,11 +1,12 @@
 # Copyright (c) 2022, Prevas A/S
+# Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP MCUX QDEC
 
 compatible: "nxp,mcux-qdec"
 
-include: [pinctrl-device.yaml, sensor-device.yaml]
+include: [pinctrl-device.yaml, sensor-device.yaml, mux-consumer.yaml]
 
 properties:
   reg:
@@ -47,8 +48,13 @@ properties:
       frequency. Turning on the input filter introduces a latency of:
       ((FILT_CNT + 3) * FILT_PER) FILT clock cycles + 2 IPBus clock periods.
 
-  xbar:
-    type: phandle
+  mux-states:
     required: true
     description: |
-      The xbar phandle.
+      Routing entries to apply at QDEC init time, one per QDEC input
+      signal. Each entry references a mux controller node (e.g.
+      nxp,mcux-xbar on i.MX RT, nxp,inputmux on MCXN family, ...) and
+      carries the cells that controller's binding requires. The driver
+      applies each entry via mux_state_apply() and is agnostic to the
+      underlying mux hardware; refer to the corresponding mux-controller
+      binding for the meaning of the cells.
