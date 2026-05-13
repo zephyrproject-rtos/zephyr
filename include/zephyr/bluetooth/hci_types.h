@@ -1058,23 +1058,23 @@ struct bt_hci_rp_configure_data_path {
 } __packed;
 
 /* HCI version from Assigned Numbers */
-#define BT_HCI_VERSION_1_0B                     0
-#define BT_HCI_VERSION_1_1                      1
-#define BT_HCI_VERSION_1_2                      2
-#define BT_HCI_VERSION_2_0                      3
-#define BT_HCI_VERSION_2_1                      4
-#define BT_HCI_VERSION_3_0                      5
-#define BT_HCI_VERSION_4_0                      6
-#define BT_HCI_VERSION_4_1                      7
-#define BT_HCI_VERSION_4_2                      8
-#define BT_HCI_VERSION_5_0                      9
-#define BT_HCI_VERSION_5_1                      10
-#define BT_HCI_VERSION_5_2                      11
-#define BT_HCI_VERSION_5_3                      12
-#define BT_HCI_VERSION_5_4                      13
-#define BT_HCI_VERSION_6_0                      14
-#define BT_HCI_VERSION_6_1                      15
-#define BT_HCI_VERSION_6_2                      16
+#define BT_HCI_VERSION_1_0B                     0  /**< 1.0b */
+#define BT_HCI_VERSION_1_1                      1  /**< 1.1  */
+#define BT_HCI_VERSION_1_2                      2  /**< 1.2  */
+#define BT_HCI_VERSION_2_0                      3  /**< 2.0  */
+#define BT_HCI_VERSION_2_1                      4  /**< 2.1  */
+#define BT_HCI_VERSION_3_0                      5  /**< 3.0  */
+#define BT_HCI_VERSION_4_0                      6  /**< 4.0  */
+#define BT_HCI_VERSION_4_1                      7  /**< 4.1  */
+#define BT_HCI_VERSION_4_2                      8  /**< 4.2  */
+#define BT_HCI_VERSION_5_0                      9  /**< 5.0  */
+#define BT_HCI_VERSION_5_1                      10 /**< 5.1  */
+#define BT_HCI_VERSION_5_2                      11 /**< 5.2  */
+#define BT_HCI_VERSION_5_3                      12 /**< 5.3  */
+#define BT_HCI_VERSION_5_4                      13 /**< 5.4  */
+#define BT_HCI_VERSION_6_0                      14 /**< 6.0  */
+#define BT_HCI_VERSION_6_1                      15 /**< 6.1  */
+#define BT_HCI_VERSION_6_2                      16 /**< 6.2  */
 
 #define BT_HCI_OP_READ_LOCAL_VERSION_INFO       BT_OP(BT_OGF_INFO, 0x0001) /* 0x1001 */
 struct bt_hci_rp_read_local_version_info {
