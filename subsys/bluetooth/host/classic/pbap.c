@@ -284,15 +284,11 @@ static int bt_pbap_transport_connect(struct bt_conn *conn, struct bt_pbap_pce *p
 
 	if (channel != 0 && psm == 0) {
 		pbap_pce->_goep.transport_ops = &pbap_rfcomm_transport_ops;
-		pbap_pce->_goep_transport.v1.goep = &pbap_pce->_goep;
-		pbap_pce->_goep.v1 = &pbap_pce->_goep_transport.v1;
-		pbap_pce->_goep.v2 = NULL;
+		BT_GOEP_INIT_V1(&pbap_pce->_goep, &pbap_pce->_goep_transport.v1);
 		err = bt_goep_transport_rfcomm_connect(conn, &pbap_pce->_goep, channel);
 	} else {
 		pbap_pce->_goep.transport_ops = &pbap_l2cap_transport_ops;
-		pbap_pce->_goep_transport.v2.goep = &pbap_pce->_goep;
-		pbap_pce->_goep.v2 = &pbap_pce->_goep_transport.v2;
-		pbap_pce->_goep.v1 = NULL;
+		BT_GOEP_INIT_V2(&pbap_pce->_goep, &pbap_pce->_goep_transport.v2);
 		err = bt_goep_transport_l2cap_connect(conn, &pbap_pce->_goep, psm);
 	}
 
@@ -1247,9 +1243,7 @@ static int pbap_pse_rfcomm_accept(struct bt_conn *conn,
 	}
 
 	pbap_pse->_goep.transport_ops = &pse_rfcomm_transport_ops;
-	pbap_pse->_goep_transport.v1.goep = &pbap_pse->_goep;
-	pbap_pse->_goep.v1 = &pbap_pse->_goep_transport.v1;
-	pbap_pse->_goep.v2 = NULL;
+	BT_GOEP_INIT_V1(&pbap_pse->_goep, &pbap_pse->_goep_transport.v1);
 	*goep = &pbap_pse->_goep;
 
 	atomic_set(&pbap_pse->_transport_state, BT_PBAP_TRANSPORT_STATE_CONNECTING);
@@ -1281,9 +1275,7 @@ static int pbap_pse_l2cap_accept(struct bt_conn *conn,
 	}
 
 	pbap_pse->_goep.transport_ops = &pse_l2cap_transport_ops;
-	pbap_pse->_goep_transport.v2.goep = &pbap_pse->_goep;
-	pbap_pse->_goep.v2 = &pbap_pse->_goep_transport.v2;
-	pbap_pse->_goep.v1 = NULL;
+	BT_GOEP_INIT_V2(&pbap_pse->_goep, &pbap_pse->_goep_transport.v2);
 	*goep = &pbap_pse->_goep;
 
 	atomic_set(&pbap_pse->_transport_state, BT_PBAP_TRANSPORT_STATE_CONNECTING);

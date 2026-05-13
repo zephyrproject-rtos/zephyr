@@ -267,9 +267,7 @@ static int rfcomm_accept(struct bt_conn *conn, struct bt_goep_transport_rfcomm_s
 	}
 
 	g_app->goep.transport_ops = &goep_transport_ops;
-	g_app->goep_transport.v1.goep = &g_app->goep;
-	g_app->goep.v1 = &g_app->goep_transport.v1;
-	g_app->goep.v2 = NULL;
+	BT_GOEP_INIT_V1(&g_app->goep, &g_app->goep_transport.v1);
 	*goep = &g_app->goep;
 	return 0;
 }
@@ -322,9 +320,7 @@ static int cmd_connect_rfcomm(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	g_app->goep.transport_ops = &goep_transport_ops;
-	g_app->goep_transport.v1.goep = &g_app->goep;
-	g_app->goep.v1 = &g_app->goep_transport.v1;
-	g_app->goep.v2 = NULL;
+	BT_GOEP_INIT_V1(&g_app->goep, &g_app->goep_transport.v1);
 
 	err = bt_goep_transport_rfcomm_connect(default_conn, &g_app->goep, channel);
 	if (err != 0) {
@@ -372,9 +368,7 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_goep_transport_l2cap_ser
 	}
 
 	g_app->goep.transport_ops = &goep_transport_ops;
-	g_app->goep_transport.v2.goep = &g_app->goep;
-	g_app->goep.v2 = &g_app->goep_transport.v2;
-	g_app->goep.v1 = NULL;
+	BT_GOEP_INIT_V2(&g_app->goep, &g_app->goep_transport.v2);
 	*goep = &g_app->goep;
 	return 0;
 }
@@ -427,9 +421,7 @@ static int cmd_connect_l2cap(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	g_app->goep.transport_ops = &goep_transport_ops;
-	g_app->goep_transport.v2.goep = &g_app->goep;
-	g_app->goep.v2 = &g_app->goep_transport.v2;
-	g_app->goep.v1 = NULL;
+	BT_GOEP_INIT_V2(&g_app->goep, &g_app->goep_transport.v2);
 
 	err = bt_goep_transport_l2cap_connect(default_conn, &g_app->goep, psm);
 	if (err != 0) {
