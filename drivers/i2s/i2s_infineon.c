@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
  * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
- *
+ * Copyright (c) 2026 Linumiz
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,6 +10,8 @@
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
+#include <zephyr/drivers/clock_control/clock_control_ifx.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/dma.h>
@@ -35,11 +37,16 @@ static void i2s_rx_stream_disable(const struct device *dev, bool drop);
 struct ifx_i2s_config {
 	TDM_STRUCT_Type *reg_addr;
 	const struct pinctrl_dev_config *pcfg;
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
 	uint32_t clk_dst;
+#endif
 	cy_stc_tdm_config_t tdm_config;
 	uint32_t tx_irq_num;
 	uint32_t rx_irq_num;
 	void (*irq_config_func)(const struct device *dev);
+#if CONFIG_SOC_FAMILY_INFINEON_TRAVEO
+	const struct device *clk_dev;
+#endif
 };
 
 struct queue_item {
@@ -74,8 +81,12 @@ struct ifx_i2s_data {
 	struct dma_channel dma_tx;
 	struct queue_item rx_queue_buffer[RX_QUEUE_SIZE];
 	struct queue_item tx_queue_buffer[TX_QUEUE_SIZE];
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+	struct ifx_clk clock;
+#else
 	struct ifx_cat1_clock clock;
 	uint8_t clock_peri_group;
+#endif
 	bool tx_waiting_to_start;
 };
 
@@ -435,10 +446,17 @@ static int configure_i2s_clock(const struct device *dev, enum i2s_dir dir)
 	const struct ifx_i2s_config *config = dev->config;
 	struct ifx_i2s_data *const data = dev->data;
 	struct i2s_stream *stream;
+	uint32_t peri_freq;
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+	cy_rslt_t status = clock_control_get_rate(config->clk_dev, (void *)&data->clock,
+					&peri_freq);
+	if (status != 0) {
+		return -EINVAL;
+	}
+#else
 	uint32_t clk_dest = PCLK_TDM0_CLK_IF_SRSS0 + data->clock.channel;
-	uint32_t peri_freq =
-		ifx_cat1_utils_peri_pclk_get_frequency((en_clk_dst_t)clk_dest, &data->clock);
-
+	peri_freq = ifx_cat1_utils_peri_pclk_get_frequency((en_clk_dst_t)clk_dest, &data->clock);
+#endif
 	if (dir == I2S_DIR_RX) {
 		stream = &data->rx;
 	} else {
@@ -874,7 +892,9 @@ static int ifx_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 static int i2s_init(const struct device *dev)
 {
 	int ret = 0;
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
 	cy_rslt_t status;
+#endif
 	struct ifx_i2s_data *const data = dev->data;
 	const struct ifx_i2s_config *const config = dev->config;
 	TDM_TX_STRUCT_Type *tdm_tx = &((TDM_STRUCT_Type *)config->reg_addr)->TDM_TX_STRUCT;
@@ -914,13 +934,13 @@ static int i2s_init(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-
+#if !defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
 	/* Connect I2S to the configured peripheral clock */
 	status = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
 	if (status != CY_RSLT_SUCCESS) {
 		return -EIO;
 	}
-
+#endif
 	config->irq_config_func(dev);
 	Cy_AudioTDM_SetTxInterruptMask(tdm_tx, CY_TDM_INTR_TX_MASK);
 	Cy_AudioTDM_SetRxInterruptMask(tdm_rx, CY_TDM_INTR_RX_MASK);
@@ -1015,6 +1035,13 @@ static DEVICE_API(i2s, ifx_i2s_api) = {
 	.trigger = ifx_i2s_trigger,
 };
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+#define I2S_PERI_CLOCK_INFO(n)                                                                     \
+	.clock = {                                                                                 \
+		.clk = IFX_CLK_HF,                                         			   \
+		.clk_id = DT_REG_ADDR(DT_INST_CLOCKS_CTLR(n)),                             	   \
+	},
+#else
 #define I2S_PERI_CLOCK_INFO(n)                                                                     \
 	.clock = {                                                                                 \
 		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                         \
@@ -1024,6 +1051,27 @@ static DEVICE_API(i2s, ifx_i2s_api) = {
 		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
 	},                                                                                         \
 	.clock_peri_group = DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),
+#endif
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+#define CLOCK_GET(n) .clk_dev =  DEVICE_DT_GET(DT_GPARENT(DT_INST_CLOCKS_CTLR(n))),
+#else
+#define CLOCK_GET(n)
+#endif
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+#define I2S_CLOCK_SEL(n) .clkSel = DT_INST_PROP(n, clksel),
+#else
+#define I2S_CLOCK_SEL(n) .clkSel =  (0 == DT_INST_PROP_BY_PHANDLE(index, clocks, channel)          \
+				   ? CY_TDM_SEL_SRSS_CLK0                                          \
+				   : CY_TDM_SEL_SRSS_CLK1),
+#endif
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+#define I2S_CLOCK_DEST_GET(n)
+#else
+#define I2S_CLOCK_DEST_GET(n) .clk_dst = DT_INST_PROP(index, clk_dst),
+#endif
 
 #define I2S_DMA_CHANNEL_INIT(index, dir, ch_dir)                                                   \
 	.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, dir)),                           \
@@ -1047,10 +1095,10 @@ static DEVICE_API(i2s, ifx_i2s_api) = {
                                                                                                    \
 	static void ifx_i2s_irq_config_func_##index(const struct device *dev)                      \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(index, 0, irq),                                     \
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(index, 0),                                     	   \
 			    DT_INST_IRQ_BY_IDX(index, 0, priority), i2s_rx_isr,                    \
 			    DEVICE_DT_INST_GET(index), 0);                                         \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(index, 1, irq),                                     \
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(index, 1),                                     	   \
 			    DT_INST_IRQ_BY_IDX(index, 1, priority), i2s_tx_isr,                    \
 			    DEVICE_DT_INST_GET(index), 0);                                         \
 	}                                                                                          \
@@ -1063,9 +1111,6 @@ static DEVICE_API(i2s, ifx_i2s_api) = {
 		.wordSize = CY_TDM_SIZE_16,                                                        \
 		.format = CY_TDM_LEFT_DELAYED, /* fixed for i2s mode */                            \
 		.clkDiv = 2,                                                                       \
-		.clkSel = (0 == DT_INST_PROP_BY_PHANDLE(index, clocks, channel)                    \
-				   ? CY_TDM_SEL_SRSS_CLK0                                          \
-				   : CY_TDM_SEL_SRSS_CLK1),                                        \
 		.sckPolarity = CY_TDM_CLK,                                                         \
 		.fsyncPolarity = CY_TDM_SIGN_INVERTED, /* fixed for i2s mode */                    \
 		.fsyncFormat = CY_TDM_CH_PERIOD,       /* fixed for i2s mode */                    \
@@ -1074,7 +1119,8 @@ static DEVICE_API(i2s, ifx_i2s_api) = {
 		.fifoTriggerLevel = MAX_TX_TRIGGER_LEVEL,                                          \
 		.chEn = 0x3,                                                                       \
 		.signalInput = 0,                                                                  \
-		.i2sMode = true}; /* fixed for i2s mode */                                         \
+		.i2sMode = true, /* fixed for i2s mode */                                          \
+		I2S_CLOCK_SEL(index)};								   \
                                                                                                    \
 	static cy_stc_tdm_config_rx_t rx_config_##index = {                                        \
 		.enable = false,                                                                   \
@@ -1083,9 +1129,6 @@ static DEVICE_API(i2s, ifx_i2s_api) = {
 		.signExtend = CY_ZERO_EXTEND,                                                      \
 		.format = CY_TDM_LEFT_DELAYED, /* fixed for i2s mode */                            \
 		.clkDiv = 2,                                                                       \
-		.clkSel = (0 == DT_INST_PROP_BY_PHANDLE(index, clocks, channel)                    \
-				   ? CY_TDM_SEL_SRSS_CLK0                                          \
-				   : CY_TDM_SEL_SRSS_CLK1),                                        \
 		.sckPolarity = CY_TDM_CLK,                                                         \
 		.fsyncPolarity = CY_TDM_SIGN_INVERTED, /* fixed for i2s mode */                    \
 		.lateSample = false,                                                               \
@@ -1095,7 +1138,8 @@ static DEVICE_API(i2s, ifx_i2s_api) = {
 		.fifoTriggerLevel = MAX_TRANSFER_SIZE_ELEMENTS,                                    \
 		.chEn = 0x3,                                                                       \
 		.signalInput = 0,                                                                  \
-		.i2sMode = true}; /* fixed for i2s mode */                                         \
+		.i2sMode = true, /* fixed for i2s mode */					   \
+		I2S_CLOCK_SEL(index)};                                  			   \
                                                                                                    \
 	static struct ifx_i2s_data i2s_data_##index = {                                            \
 		I2S_DMA_CHANNEL(index, tx, MEMORY_TO_PERIPHERAL)                                   \
@@ -1107,12 +1151,12 @@ static DEVICE_API(i2s, ifx_i2s_api) = {
 	static struct ifx_i2s_config i2s_config_##index = {                                        \
 		.reg_addr = (TDM_STRUCT_Type *)DT_INST_REG_ADDR(index),                            \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
-		.clk_dst = DT_INST_PROP(index, clk_dst),                                           \
 		.tdm_config = {.tx_config = &tx_config_##index, .rx_config = &rx_config_##index},  \
-                                                                                                   \
 		.rx_irq_num = DT_INST_IRQN_BY_IDX(index, 0),                                       \
 		.tx_irq_num = DT_INST_IRQN_BY_IDX(index, 1),                                       \
-		.irq_config_func = ifx_i2s_irq_config_func_##index};                               \
+		.irq_config_func = ifx_i2s_irq_config_func_##index,                                \
+		I2S_CLOCK_DEST_GET(index)							   \
+		CLOCK_GET(index)};                               				   \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(index, &i2s_init, NULL, &i2s_data_##index, &i2s_config_##index,      \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ifx_i2s_api);
