@@ -3065,10 +3065,17 @@ def _check_prop_by_type(prop_name: str,
     # If you change const_types, be sure to update the type annotation
     # for PropertySpec.const.
     const_types = {"int", "array", "uint8-array", "string", "string-array"}
-    if const and prop_type not in const_types:
-        _err(f"const in '{binding_path}' for property '{prop_name}' "
-             f"has type '{prop_type}', expected one of " +
-             ", ".join(const_types))
+    if const is not None:
+        if prop_type not in const_types:
+            _err(f"const in '{binding_path}' for property '{prop_name}' "
+                 f"has type '{prop_type}', expected one of " +
+                 ", ".join(const_types))
+
+        if prop_type in {"int", "array"}:
+            for subval in const if isinstance(const, list) else [const]:
+                if not _is_plain_int(subval):
+                    _err(f"'const: {const}' for '{prop_name}' in "
+                         f"'{binding_path}' is not an integer/array")
 
     if min_val is not None or max_val is not None:
         if prop_type not in {"int", "array"}:
