@@ -8,6 +8,8 @@ config SOC_SERIES_RA8M1
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_SAU
 	select ARMV8_M_DSP
+	select ARMV8_1_M_MVEI
+	select ARMV8_1_M_MVEF
 	select FPU
 	select HAS_SWO
 	select XIP
