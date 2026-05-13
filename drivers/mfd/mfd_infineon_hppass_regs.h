@@ -93,6 +93,30 @@ extern "C" {
 #define IFX_HPPASS_MMIO_TR_LEVEL_OUT(n)    (0x000F0060U + (n) * 4U)
 #define IFX_HPPASS_MMIO_TR_PULSE_OUT(n)    (0x000F0080U + (n) * 4U)
 
+/*
+ * CSG (Comparator Slope Generator): offsets relative to CSG @c reg base.
+ * CSG section base within HPPASS is 0x000B0000 (Regs TRM Table 20-1),
+ * but the CSG DT node has its own reg property pointing at 0x000B0000
+ * so offsets below are relative to that.
+ *
+ * Regs TRM 002-39445 §20.1.53–20.1.63.
+ */
+#define IFX_HPPASS_CSG_CTRL                0x00000A00U
+
+/* Per-slice register offsets relative to the slice base (Regs TRM §20.1.42–20.1.51). */
+#define IFX_HPPASS_CSG_SLICE_CMP_CFG       0x00U
+#define IFX_HPPASS_CSG_SLICE_CMP_STATUS    0x24U
+
+/* DAC register offsets relative to the DAC node base (slice + 0x04). */
+#define IFX_HPPASS_CSG_SLICE_DAC_CFG       0x00U
+#define IFX_HPPASS_CSG_SLICE_DAC_VAL       0x18U
+
+#define IFX_HPPASS_CSG_CMP_INTR            0x00000B10U
+#define IFX_HPPASS_CSG_CMP_INTR_SET        0x00000B14U
+#define IFX_HPPASS_CSG_CMP_INTR_MASK       0x00000B18U
+#define IFX_HPPASS_CSG_CMP_INTR_MASKED     0x00000B1CU
+#define IFX_HPPASS_CSG_VDAC_OUT_BLANK      0x00000B20U
+
 /**
  * @brief Composed value for AREFv2_AREF_CTRL "normal operation, internal
  *        Vref" mode.
