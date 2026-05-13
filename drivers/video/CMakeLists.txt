@@ -36,4 +36,32 @@ zephyr_library_sources_ifdef(CONFIG_VIDEO_ST_MIPID02 video_st_mipid02.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_SW_GENERATOR video_sw_generator.c)
 # zephyr-keep-sorted-stop
 
+if(CONFIG_VIDEO_SW_GENERATOR)
+    set(VIDEO_DIR ${CMAKE_CURRENT_LIST_DIR})
+
+    generate_inc_file_for_target(
+        ${ZEPHYR_CURRENT_LIBRARY}
+        ${VIDEO_DIR}/video_sw_generator_input/${CONFIG_VIDEO_SW_GENERATOR_JPEG_NAME}.jpg
+        ${ZEPHYR_BINARY_DIR}/include/generated/jpeg_frame_buffer.inc
+    )
+
+    generate_inc_file_for_target(
+        ${ZEPHYR_CURRENT_LIBRARY}
+        ${VIDEO_DIR}/video_sw_generator_input/${CONFIG_VIDEO_SW_GENERATOR_JPEG_HFLIP_NAME}.jpg
+        ${ZEPHYR_BINARY_DIR}/include/generated/jpeg_frame_buffer_hflip.inc
+    )
+
+    generate_inc_file_for_target(
+        ${ZEPHYR_CURRENT_LIBRARY}
+        ${VIDEO_DIR}/video_sw_generator_input/${CONFIG_VIDEO_SW_GENERATOR_PNG_NAME}.png
+        ${ZEPHYR_BINARY_DIR}/include/generated/png_frame_buffer.inc
+    )
+
+    generate_inc_file_for_target(
+        ${ZEPHYR_CURRENT_LIBRARY}
+        ${VIDEO_DIR}/video_sw_generator_input/${CONFIG_VIDEO_SW_GENERATOR_PNG_HFLIP_NAME}.png
+        ${ZEPHYR_BINARY_DIR}/include/generated/png_frame_buffer_hflip.inc
+    )
+endif()
+
 zephyr_linker_sources(DATA_SECTIONS video.ld)

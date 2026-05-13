@@ -67,10 +67,13 @@ config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	  and most people should say n here to minimize context switching
 	  overhead.
 
+DT_CHOSEN_Z_SRAM = zephyr,sram
+
 choice RISCV_CMODEL
 	prompt "RISC-V Code Model"
-	default RISCV_CMODEL_LARGE if (SRAM_BASE_ADDRESS > 0xffffffff) || \
-				      (KERNEL_VM_BASE > 0xffffffff)
+	default RISCV_CMODEL_LARGE if (SRAM_DEPRECATED_KCONFIG_SET && SRAM_BASE_ADDRESS > 0xffffffff) || \
+		(!SRAM_DEPRECATED_KCONFIG_SET && $(dt_chosen_reg_addr_int,$(DT_CHOSEN_Z_SRAM),0) > 0xffffffff) || \
+		(KERNEL_VM_BASE > 0xffffffff)
 	default RISCV_CMODEL_MEDANY if 64BIT
 	default RISCV_CMODEL_MEDLOW
 
@@ -266,6 +269,14 @@ config RISCV_HAS_CLIC
 	select CLIC_SUPPORT_INTERRUPT_LEVEL if !NRFX_CLIC
 	help
 	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
+
+config RISCV_HAS_AIA
+	bool
+	depends on RISCV_PRIVILEGED
+	help
+	  Does the SOC provide support for the Advanced Interrupt Architecture (AIA),
+	  which includes APLIC (Advanced Platform-Level Interrupt Controller) and
+	  IMSIC (Incoming Message-Signaled Interrupt Controller).
 
 config CLIC_SUPPORT_INTERRUPT_LEVEL
 	bool

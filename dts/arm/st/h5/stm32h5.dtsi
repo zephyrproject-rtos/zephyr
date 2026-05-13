@@ -751,6 +751,12 @@
 		status = "disabled";
 	};
 
+	vddcore: vddcore {
+		compatible = "st,stm32-vddcore";
+		io-channels = <&adc1 6>;
+		status = "disabled";
+	};
+
 	usb_fs_phy: usbphy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;

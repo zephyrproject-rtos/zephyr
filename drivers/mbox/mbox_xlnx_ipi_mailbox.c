@@ -14,61 +14,61 @@
 LOG_MODULE_REGISTER(mbox_xlnx_ipi_mailbox, CONFIG_MBOX_LOG_LEVEL);
 
 /* Register offsets of IPI */
-#define IPI_REG_TRIG_OFFSET	0x00U /* Offset for Trigger Register */
-#define IPI_REG_OBS_OFFSET	0x04U /* Offset for Observation Register */
-#define IPI_REG_ISR_OFFSET	0x10U /* Offset for ISR Register */
-#define IPI_REG_IMR_OFFSET	0x14U /* Offset for Interrupt Mask Register */
-#define IPI_REG_IER_OFFSET	0x18U /* Offset for Interrupt Enable Register */
-#define IPI_REG_IDR_OFFSET	0x1CU /* Offset for Interrupt Disable Register */
+#define IPI_REG_TRIG_OFFSET 0x00U /* Offset for Trigger Register */
+#define IPI_REG_OBS_OFFSET  0x04U /* Offset for Observation Register */
+#define IPI_REG_ISR_OFFSET  0x10U /* Offset for ISR Register */
+#define IPI_REG_IMR_OFFSET  0x14U /* Offset for Interrupt Mask Register */
+#define IPI_REG_IER_OFFSET  0x18U /* Offset for Interrupt Enable Register */
+#define IPI_REG_IDR_OFFSET  0x1CU /* Offset for Interrupt Disable Register */
 
 /* Mask of all valid IPI bits in above registers */
-#define IPI_ALL_MASK	GENMASK(31, 0)
+#define IPI_ALL_MASK GENMASK(31, 0)
 
 /* IPI mailbox channels */
-#define IPI_MB_MAX_CHNLS	2U /* One Tx, One Rx */
-#define IPI_MB_CHNL_TX		0U /* IPI mailbox TX channel */
-#define IPI_MB_CHNL_RX		1U /* IPI mailbox RX channel */
+#define IPI_MB_MAX_CHNLS 2U /* One Tx, One Rx */
+#define IPI_MB_CHNL_TX   0U /* IPI mailbox TX channel */
+#define IPI_MB_CHNL_RX   1U /* IPI mailbox RX channel */
 
 /* IPI Message Buffer Information */
-#define IPI_MAX_MSG_BYTES	(32U)
-#define IPI_MAX_MSG_WORDS	(8U)
-#define IPI_MEM_STRIDE		(0x200U)
-#define IPI_REQ_OFF		(0x00U)
-#define IPI_RESP_OFF		(0x20U)
-#define IPI_BUF_STRIDE		(0x40U)
+#define IPI_MAX_MSG_BYTES (32U)
+#define IPI_MAX_MSG_WORDS (8U)
+#define IPI_MEM_STRIDE    (0x200U)
+#define IPI_REQ_OFF       (0x00U)
+#define IPI_RESP_OFF      (0x20U)
+#define IPI_BUF_STRIDE    (0x40U)
 
 /**
  * @brief Configuration for the Xilinx IPI host mailbox
  */
 struct mbox_xlnx_ipi_parent_config {
-	mem_addr_t reg_base;			/**< Host Control register base address */
-	uint8_t *msg_base;			/**< Pointer to Host message buffer */
-	uint32_t ipi_id;			/**< Host IPI ID */
-	uint32_t ipi_bitmask;			/**< Host IPI Bitmask */
-	void (*irq_config_func)(void);		/**< IRQ configuration API pointer */
-	const struct device **cdev_list;	/**< Array of pointers to child devices */
-	int num_cdev;				/**< Number of child devices */
+	mem_addr_t reg_base;             /**< Host Control register base address */
+	uint8_t *msg_base;               /**< Pointer to Host message buffer */
+	uint32_t ipi_id;                 /**< Host IPI ID */
+	uint32_t ipi_bitmask;            /**< Host IPI Bitmask */
+	void (*irq_config_func)(void);   /**< IRQ configuration API pointer */
+	const struct device **cdev_list; /**< Array of pointers to child devices */
+	int num_cdev;                    /**< Number of child devices */
 };
 
 /**
  * @brief Configuration for the Xilinx IPI destination mailbox
  */
 struct mbox_xlnx_ipi_child_config {
-	mem_addr_t reg_base;		/**< Remote Control register base address */
-	uint8_t *msg_base;		/**< Pointer to the Remote message buffer */
-	uint32_t remote_ipi_id;		/**< Remote IPI ID */
-	uint32_t remote_ipi_bitmask;	/**< Remote IPI Bitmask */
-	mem_addr_t parent_ipi_reg;	/**< Host Control register base address */
-	uint8_t *parent_ipi_msg;	/**< Pointer to Host message buffer */
+	mem_addr_t reg_base;         /**< Remote Control register base address */
+	uint8_t *msg_base;           /**< Pointer to the Remote message buffer */
+	uint32_t remote_ipi_id;      /**< Remote IPI ID */
+	uint32_t remote_ipi_bitmask; /**< Remote IPI Bitmask */
+	mem_addr_t parent_ipi_reg;   /**< Host Control register base address */
+	uint8_t *parent_ipi_msg;     /**< Pointer to Host message buffer */
 };
 
 /**
  * @brief Runtime data for the Xilinx IPI destination mailbox
  */
 struct mbox_xlnx_ipi_child_data {
-	bool enabled;			/**< Channel enable status */
-	mbox_callback_t mb_callback;	/**< Callback function */
-	void *user_data;		/**< Application specific data pointer */
+	bool enabled;                /**< Channel enable status */
+	mbox_callback_t mb_callback; /**< Callback function */
+	void *user_data;             /**< Application specific data pointer */
 };
 
 /**
@@ -118,8 +118,8 @@ static void mbox_xlnx_ipi_isr(const struct device *pdev)
 
 		/* Read the message if buffered IPI */
 		if ((pcfg->msg_base != NULL) && (cdev_conf->msg_base != NULL)) {
-			off = (mem_addr_t)pcfg->msg_base + IPI_REQ_OFF;
-			off += (cdev_conf->remote_ipi_id) * IPI_BUF_STRIDE;
+			off = (mem_addr_t)cdev_conf->msg_base + IPI_REQ_OFF;
+			off += (pcfg->ipi_id) * IPI_BUF_STRIDE;
 			buf_ptr = (uint8_t *)ipi_msg_buf;
 			for (buf_idx = 0; buf_idx < IPI_MAX_MSG_BYTES; buf_idx += 4) {
 				*(uint32_t *)(buf_ptr + buf_idx) = sys_read32(off + buf_idx);
@@ -318,49 +318,48 @@ static DEVICE_API(mbox, mbox_xlnx_ipi_driver_api) = {
  */
 
 /* Child node is used for MBOX driver */
-#define MBOX_XLNX_VERSAL_IPI_CHILD(ch_node)\
-	struct mbox_xlnx_ipi_child_data mbox_xlnx_ipi_child_data##ch_node = {\
-		.enabled = false,\
-		.mb_callback = NULL,\
-		.user_data = NULL,\
-	};\
-	struct mbox_xlnx_ipi_child_config mbox_xlnx_ipi_child_config##ch_node = {\
-		.reg_base = DT_REG_ADDR_BY_NAME(ch_node, ctrl),\
-		.msg_base = (uint8_t *)DT_REG_ADDR_BY_NAME_OR(ch_node, msg, NULL),\
-		.remote_ipi_id = DT_PROP(ch_node, xlnx_ipi_id),\
-		.remote_ipi_bitmask = BIT(DT_PROP(ch_node, xlnx_ipi_id)),\
-		.parent_ipi_reg = DT_REG_ADDR_BY_NAME(DT_PARENT(ch_node), ctrl),\
-		.parent_ipi_msg = (uint8_t *)DT_REG_ADDR_BY_NAME_OR(DT_PARENT(ch_node), msg, NULL),\
-	};\
-	DEVICE_DT_DEFINE(ch_node, NULL, NULL, &mbox_xlnx_ipi_child_data##ch_node,\
-			&mbox_xlnx_ipi_child_config##ch_node, POST_KERNEL,\
-			CONFIG_MBOX_INIT_PRIORITY, &mbox_xlnx_ipi_driver_api);
+#define MBOX_XLNX_VERSAL_IPI_CHILD(ch_node)                                                        \
+	static struct mbox_xlnx_ipi_child_data mbox_xlnx_ipi_child_data##ch_node = {               \
+		.enabled = false,                                                                  \
+		.mb_callback = NULL,                                                               \
+		.user_data = NULL,                                                                 \
+	};                                                                                         \
+	static const struct mbox_xlnx_ipi_child_config mbox_xlnx_ipi_child_config##ch_node = {     \
+		.reg_base = DT_REG_ADDR_BY_NAME(ch_node, ctrl),                                    \
+		.msg_base = (uint8_t *)DT_REG_ADDR_BY_NAME_OR(ch_node, msg, NULL),                 \
+		.remote_ipi_id = DT_PROP(ch_node, xlnx_ipi_id),                                    \
+		.remote_ipi_bitmask = BIT(DT_PROP(ch_node, xlnx_ipi_id)),                          \
+		.parent_ipi_reg = DT_REG_ADDR_BY_NAME(DT_PARENT(ch_node), ctrl),                   \
+		.parent_ipi_msg =                                                                  \
+			(uint8_t *)DT_REG_ADDR_BY_NAME_OR(DT_PARENT(ch_node), msg, NULL),          \
+	};                                                                                         \
+	DEVICE_DT_DEFINE(ch_node, NULL, NULL, &mbox_xlnx_ipi_child_data##ch_node,                  \
+			 &mbox_xlnx_ipi_child_config##ch_node, POST_KERNEL,                        \
+			 CONFIG_MBOX_INIT_PRIORITY, &mbox_xlnx_ipi_driver_api);
 
 /* Parent node for ISR and initialization */
-#define MBOX_XLNX_VERSAL_IPI_INSTANCE_DEFINE(idx)\
-	DT_INST_FOREACH_CHILD_STATUS_OKAY(idx, MBOX_XLNX_VERSAL_IPI_CHILD);\
-	static const struct device *cdev##idx[] = {\
-		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(idx, DEVICE_DT_GET, (,))\
-	};\
-	static void mbox_xlnx_ipi_##idx##_irq_config_func(void);\
-	const static struct mbox_xlnx_ipi_parent_config mbox_xlnx_ipi_##idx##_pconfig = {\
-		.reg_base = DT_REG_ADDR_BY_NAME(DT_DRV_INST(idx), ctrl),\
-		.msg_base = (uint8_t *)DT_REG_ADDR_BY_NAME_OR(DT_DRV_INST(idx), msg, NULL),\
-		.ipi_id = DT_INST_PROP(idx, xlnx_ipi_id),\
-		.ipi_bitmask = BIT(DT_INST_PROP(idx, xlnx_ipi_id)),\
-		.irq_config_func = mbox_xlnx_ipi_##idx##_irq_config_func,\
-		.cdev_list = cdev##idx,\
-		.num_cdev = ARRAY_SIZE(cdev##idx),\
-		};\
-	static void mbox_xlnx_ipi_##idx##_irq_config_func(void)\
-	{\
-		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority),\
-			mbox_xlnx_ipi_isr, DEVICE_DT_INST_GET(idx), 0);\
-		irq_enable(DT_INST_IRQN(idx));\
-	} \
-	DEVICE_DT_INST_DEFINE(idx, mbox_xlnx_ipi_init, NULL, NULL,\
-				&mbox_xlnx_ipi_##idx##_pconfig, POST_KERNEL,\
-				CONFIG_MBOX_INIT_PRIORITY, NULL);
+#define MBOX_XLNX_VERSAL_IPI_INSTANCE_DEFINE(idx)                                                  \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY(idx, MBOX_XLNX_VERSAL_IPI_CHILD);                        \
+	static const struct device *cdev##idx[] = {                                                \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(idx, DEVICE_DT_GET, (,))};                   \
+	static void mbox_xlnx_ipi_##idx##_irq_config_func(void);                                   \
+	static const struct mbox_xlnx_ipi_parent_config mbox_xlnx_ipi_##idx##_pconfig = {          \
+		.reg_base = DT_REG_ADDR_BY_NAME(DT_DRV_INST(idx), ctrl),                           \
+		.msg_base = (uint8_t *)DT_REG_ADDR_BY_NAME_OR(DT_DRV_INST(idx), msg, NULL),        \
+		.ipi_id = DT_INST_PROP(idx, xlnx_ipi_id),                                          \
+		.ipi_bitmask = BIT(DT_INST_PROP(idx, xlnx_ipi_id)),                                \
+		.irq_config_func = mbox_xlnx_ipi_##idx##_irq_config_func,                          \
+		.cdev_list = cdev##idx,                                                            \
+		.num_cdev = ARRAY_SIZE(cdev##idx),                                                 \
+	};                                                                                         \
+	static void mbox_xlnx_ipi_##idx##_irq_config_func(void)                                    \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), mbox_xlnx_ipi_isr,      \
+			    DEVICE_DT_INST_GET(idx), 0);                                           \
+		irq_enable(DT_INST_IRQN(idx));                                                     \
+	}                                                                                          \
+	DEVICE_DT_INST_DEFINE(idx, mbox_xlnx_ipi_init, NULL, NULL, &mbox_xlnx_ipi_##idx##_pconfig, \
+			      POST_KERNEL, CONFIG_MBOX_INIT_PRIORITY, NULL);
 
 #define DT_DRV_COMPAT xlnx_mbox_versal_ipi_mailbox
 DT_INST_FOREACH_STATUS_OKAY(MBOX_XLNX_VERSAL_IPI_INSTANCE_DEFINE)

@@ -8,8 +8,9 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
-#include <zephyr/dt-bindings/clock/numaker_m48x_clock.h>
+#include <zephyr/dt-bindings/clock/numicro_m48x_clock.h>
 #include <zephyr/dt-bindings/reset/numicro_m48x_reset.h>
+#include <freq.h>
 
 / {
 	cpus {
@@ -39,24 +40,55 @@
 		#clock-cells = <0>;
 	};
 
-	soc {
-		scc: system-clock-controller@40000200 {
-			compatible = "nuvoton,numaker-scc";
-			reg = <0x40000200 0x100>;
-			#clock-cells = <0>;
-			/* hxt = "enable"; */
-			lxt = "enable";
-			clk-pclkdiv = <(NUMAKER_CLK_PCLKDIV_APB0DIV_DIV2 |
-					NUMAKER_CLK_PCLKDIV_APB1DIV_DIV2)>;
-			core-clock = <DT_FREQ_M(192)>;
-			powerdown-mode = <NUMAKER_CLK_PMUCTL_PDMSEL_DPD>;
+	clocks {
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-			pcc: peripheral-clock-controller {
-				compatible = "nuvoton,numaker-pcc";
-				#clock-cells = <3>;
-			};
+		clk_hirc: clk-hirc {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(12)>;
+			status = "disabled";
 		};
 
+		clk_hxt: clk-hxt {
+			#clock-cells = <0>;
+			compatible = "nuvoton,m4-hxt-clock";
+			status = "disabled";
+		};
+
+		clk_lxt: clk-lxt {
+			#clock-cells = <0>;
+			compatible = "nuvoton,m4-lxt-clock";
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		clk_lirc: clk-licr {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_K(10)>;
+			status = "disabled";
+		};
+
+		pll: pll {
+			#clock-cells = <0>;
+			compatible = "nuvoton,m4-pll-clock";
+			clocks = <&clk_hirc>;
+			status = "disabled";
+		};
+
+		hclk: hclk {
+			#clock-cells = <0>;
+			compatible = "nuvoton,m4-hclk-clock";
+			clock-frequency = <DT_FREQ_M(160)>;
+			clocks = <&pll>;
+			pclk0-div = <2>;
+			pclk1-div = <2>;
+		};
+	};
+
+	soc {
 		pinctrl: pinctrl@40000030 {
 			compatible = "nuvoton,numicro-pinctrl";
 			reg = <0x40000030 0x40
@@ -70,6 +102,18 @@
 			reg = <0x40000000 0x20>;
 			#reset-cells = <1>;
 			status = "okay";
+		};
+
+		scc: scc@40000200 {
+			compatible = "nuvoton,numicro-m4-scc";
+			#clock-cells = <0>;
+			reg = <0x40000200 0xb4>;
+			status = "okay";
+
+			pcc: peripheral-clock-controller {
+				compatible = "nuvoton,numicro-m4-pcc";
+				#clock-cells = <3>;
+			};
 		};
 
 		gpioa: gpio@40004000 {
@@ -212,7 +256,7 @@
 			compatible = "nuvoton,numaker-wdt";
 			reg = <0x40040000 0x0c>;
 			interrupts = <8 0>;
-			clocks = <&pcc NUMAKER_WDT_MODULE NUMAKER_CLK_CLKSEL1_WDTSEL_LIRC 0>;
+			clocks = <&pcc NUMICRO_WDT_MODULE NUMICRO_CLK_CLKSEL1_WDTSEL_LIRC 0>;
 			status = "disabled";
 		};
 	};

@@ -231,7 +231,7 @@ static int tmc50xx_init(const struct device *dev)
 	k_sem_init(&data->sem, 1, 1);
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->spi.bus);
 		return -ENODEV;
 	}
 

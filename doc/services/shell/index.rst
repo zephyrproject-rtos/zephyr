@@ -19,8 +19,9 @@ interaction is required. This module is a Unix-like shell with these features:
 * Support for static and dynamic commands.
 * Support for dictionary commands.
 * Smart command completion with the :kbd:`Tab` key.
-* Built-in commands: :command:`clear`, :command:`shell`, :command:`colors`,
-  :command:`echo`, :command:`history` and :command:`resize`.
+* Built-in commands: :command:`aliases`, :command:`clear`, :command:`shell`,
+  :command:`colors`, :command:`echo`, :command:`history` and
+  :command:`resize`.
 * Viewing recently executed commands using keys: :kbd:`↑` :kbd:`↓` or meta keys.
 * Text edition using keys: :kbd:`←`, :kbd:`→`, :kbd:`Backspace`,
   :kbd:`Delete`, :kbd:`End`, :kbd:`Home`, :kbd:`Insert`.
@@ -564,6 +565,8 @@ Built-in commands
 
 These commands are activated by :kconfig:option:`CONFIG_SHELL_CMDS` set to ``y``.
 
+* :command:`aliases` - Shows currently configured aliases. This command needs
+  extra activation: :kconfig:option:`CONFIG_SHELL_CMDS_ALIASES` set to ``y``.
 * :command:`clear` - Clears the screen.
 * :command:`history` - Shows the recently entered commands.
 * :command:`resize` - Must be executed when terminal width is different than 80
@@ -586,6 +589,47 @@ These commands are activated by :kconfig:option:`CONFIG_SHELL_CMDS` set to ``y``
         * :command:`colors` - Toggles colored syntax. This might be helpful in
           case of Bluetooth shell to limit the amount of transferred bytes.
 	* :command:`stats` - Shows shell statistics.
+
+Alias support
+*************
+
+The shell can expand aliases before executing a command when
+:kconfig:option:`CONFIG_SHELL_ALIASES` is enabled. Zephyr always provides the
+built-in alias :command:`?`, which expands to :command:`help`.
+
+To load additional aliases from a host file, set
+:kconfig:option:`CONFIG_SHELL_ALIASES_FILE` and generate the corresponding
+include file from the application ``CMakeLists.txt`` file. When
+:kconfig:option:`CONFIG_SHELL_ALIASES_FILE` is non-empty,
+:kconfig:option:`CONFIG_SHELL_ALIASES_HAS_FILE` is enabled automatically.
+
+.. code-block:: cmake
+
+   if(CONFIG_SHELL_ALIASES_HAS_FILE)
+     set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
+     set(aliases_src ${CONFIG_SHELL_ALIASES_FILE})
+
+     generate_shell_aliases_inc_file_for_target(
+       app
+       ${aliases_src}
+       ${gen_dir}/generated-shell-aliases.inc
+     )
+   endif()
+
+The aliases file uses one ``alias=command`` entry per line. Lines beginning
+with ``#`` are comments, and command strings containing spaces must be quoted.
+The sample at :zephyr_file:`samples/net/sockets/echo_service/shell_aliases.txt`
+uses the following format:
+
+.. code-block:: none
+
+   # Example shell aliases file
+   stacks="kernel thread stacks"
+   scan="wifi scan"
+   connect="wifi connect"
+
+Use the :command:`aliases` command to inspect the aliases available in the
+running shell.
 
 .. _tab-feature:
 

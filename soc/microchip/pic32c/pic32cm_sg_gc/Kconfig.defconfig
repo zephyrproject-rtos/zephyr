@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_MICROCHIP_PIC32CM_SG_GC
+
+config NUM_IRQS
+	default 141
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config ROMSTART_RELOCATION_ROM
+	default y
+
+config ROMSTART_REGION_ADDRESS
+	default $(dt_nodelabel_reg_addr_hex,boot_flash)
+
+config ROMSTART_REGION_SIZE
+	default $(dt_nodelabel_reg_size_hex,boot_flash,0,k)
+
+config ARM_TRUSTZONE_M
+	default y
+	depends on SOC_SERIES_PIC32CM_SG00
+
+config CPU_HAS_ARM_SAU
+	default y
+	depends on SOC_SERIES_PIC32CM_SG00
+
+endif # SOC_FAMILY_MICROCHIP_PIC32CM_SG_GC

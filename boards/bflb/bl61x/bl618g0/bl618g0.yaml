@@ -27,4 +27,5 @@ supported:
   - entropy
   - crypto
   - counter
+  - sdhc
 vendor: bflb

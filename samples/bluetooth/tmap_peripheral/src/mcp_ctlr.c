@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
 
 static struct bt_conn *default_conn;
 
@@ -24,6 +25,8 @@ static K_SEM_DEFINE(sem_discovery_done, 0U, 1U);
 
 static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		printk("MCP: Discovery of MCS failed (%d)\n", err);
 	} else {
@@ -34,6 +37,8 @@ static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 
 static void mcc_send_command_cb(struct bt_conn *conn, int err, const struct mpl_cmd *cmd)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		printk("MCP: Command send failed (%d) - opcode: %u, param: %d\n",
 			err, cmd->opcode, cmd->param);

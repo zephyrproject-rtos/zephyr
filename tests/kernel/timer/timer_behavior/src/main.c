@@ -12,4 +12,5 @@ void test_main(void)
 #ifndef CONFIG_TIMER_EXTERNAL_TEST
 	ztest_run_test_suite(timer_tick_train, false, 1, 1, NULL);
 #endif
+	ztest_run_test_suite(timer_ramp, false, 1, 1, NULL);
 }

@@ -119,7 +119,7 @@ int mac_do_tx_rx(struct lwan_ctx *ctx, const struct mac_tx_params *params)
 	}
 
 	if (params->post_tx != NULL) {
-		params->post_tx(ctx);
+		params->post_tx(ctx, params->user_data);
 	}
 
 	/* --- RX1 window --- */

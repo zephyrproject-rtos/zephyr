@@ -123,6 +123,13 @@ endchoice
 
 endif # FLASH_MCUX_FLEXSPI_MX25UM51345G
 
+config FLASH_MCUX_FLEXSPI_NOR_MUTEX
+	bool "MCUX FlexSPI NOR mutex protection"
+	depends on FLASH_MCUX_FLEXSPI_NOR
+	depends on MULTITHREADING
+	help
+	  Protect the MCUX FlexSPI NOR API with a mutex.
+
 config FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
 	bool "MCUX FlexSPI NOR write RAM buffer"
 	default y

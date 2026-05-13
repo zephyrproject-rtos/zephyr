@@ -165,8 +165,7 @@ static int goep_rfcomm_init(struct bt_conn *conn, struct bt_goep *goep)
 	uint32_t hdr_size;
 	int err;
 
-	hdr_size = sizeof(struct bt_l2cap_hdr);
-	hdr_size += BT_RFCOMM_HDR_SIZE + BT_RFCOMM_FCS_SIZE;
+	hdr_size = BT_L2CAP_HDR_SIZE + BT_RFCOMM_OVERHEAD_SIZE;
 
 	mtu = CONFIG_BT_GOEP_RFCOMM_MTU - hdr_size;
 

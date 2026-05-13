@@ -62,8 +62,15 @@ struct nsos_socket {
 
 static sys_dlist_t nsos_polls = SYS_DLIST_STATIC_INIT(&nsos_polls);
 
-/* Forward declaration of the interface */
-NET_IF_DECLARE(nsos_socket, 0);
+static int nsos_socket_offload_init(const struct device *arg);
+
+static struct offloaded_if_api nsos_iface_offload_api;
+
+NET_DEVICE_OFFLOAD_INIT(nsos_socket, "nsos_socket",
+			nsos_socket_offload_init,
+			NULL,
+			NULL, NULL,
+			0, &nsos_iface_offload_api, NET_ETH_MTU);
 
 static int socket_family_to_nsos_mid(int family, int *family_mid)
 {
@@ -1717,23 +1724,9 @@ static void nsos_iface_api_init(struct net_if *iface)
 	socket_offload_dns_register(&nsos_dns_ops);
 }
 
-static int nsos_iface_enable(const struct net_if *iface, bool enabled)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(enabled);
-	return 0;
-}
-
 static struct offloaded_if_api nsos_iface_offload_api = {
 	.iface_api.init = nsos_iface_api_init,
-	.enable = nsos_iface_enable,
 };
-
-NET_DEVICE_OFFLOAD_INIT(nsos_socket, "nsos_socket",
-			nsos_socket_offload_init,
-			NULL,
-			NULL, NULL,
-			0, &nsos_iface_offload_api, NET_ETH_MTU);
 
 #ifdef CONFIG_NET_NATIVE_OFFLOADED_SOCKETS_CONNECTIVITY_SIM
 

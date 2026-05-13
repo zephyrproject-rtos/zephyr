@@ -221,7 +221,7 @@ struct stm32wba_802154_data_t {
 	uint8_t tx_psdu[STM32WBA_PHR_LENGTH + IEEE802154_MAX_PHY_PACKET_SIZE];
 
 	/* TX result, updated in radio transmit callbacks. */
-	uint8_t tx_result;
+	int tx_result;
 
 	/* A buffer for the received ACK frame. psdu pointer be NULL if no
 	 * ACK was requested/received.

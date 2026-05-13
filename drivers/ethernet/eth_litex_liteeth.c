@@ -32,12 +32,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define ETH_LITEX_SLOT_SIZE 0x0800
 
 struct eth_litex_dev_data {
-	struct net_if *iface;
 	uint8_t txslot;
 	struct k_sem sem_tx_ready;
 };
 
 struct eth_litex_config {
+	struct net_if *iface;
 	const struct device *phy_dev;
 	void (*config_func)(const struct device *dev);
 	struct net_eth_mac_config mcfg;
@@ -103,14 +103,13 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 static void eth_rx(const struct device *port)
 {
 	struct net_pkt *pkt;
-	struct eth_litex_dev_data *context = port->data;
 	const struct eth_litex_config *config = port->config;
 
 	int r;
 	uint16_t len = 0;
 	uint8_t rxslot = 0;
 
-	if (!net_if_flag_is_set(context->iface, NET_IF_UP)) {
+	if (!net_if_flag_is_set(config->iface, NET_IF_UP)) {
 		return;
 	}
 
@@ -121,7 +120,7 @@ static void eth_rx(const struct device *port)
 	rxslot = litex_read8(config->rx_slot_addr);
 
 	/* obtain rx buffer */
-	pkt = net_pkt_rx_alloc_with_buffer(context->iface, len, NET_AF_UNSPEC, 0,
+	pkt = net_pkt_rx_alloc_with_buffer(config->iface, len, NET_AF_UNSPEC, 0,
 					   K_NO_WAIT);
 	if (pkt == NULL) {
 		LOG_ERR("Failed to obtain RX buffer of length %u", len);
@@ -138,7 +137,7 @@ static void eth_rx(const struct device *port)
 	}
 
 	/* receive data */
-	r = net_recv_data(context->iface, pkt);
+	r = net_recv_data(config->iface, pkt);
 	if (r < 0) {
 		LOG_ERR("Failed to enqueue frame into RX queue: %d", r);
 		net_pkt_unref(pkt);
@@ -194,11 +193,11 @@ static int eth_start(const struct device *dev, struct net_if *iface __unused)
 		k_sem_give(&context->sem_tx_ready);
 	}
 
-	litex_write8(1, config->tx_ev_enable_addr);
-	litex_write8(1, config->rx_ev_enable_addr);
-
 	litex_write8(BIT(0), config->tx_ev_pending_addr);
 	litex_write8(BIT(0), config->rx_ev_pending_addr);
+
+	litex_write8(1, config->tx_ev_enable_addr);
+	litex_write8(1, config->rx_ev_enable_addr);
 
 	return 0;
 }
@@ -237,11 +236,7 @@ static void eth_iface_init(struct net_if *iface)
 {
 	const struct device *port = net_if_get_device(iface);
 	const struct eth_litex_config *config = port->config;
-	struct eth_litex_dev_data *context = port->data;
 	uint8_t mac_addr[NET_ETH_ADDR_LEN] = {0};
-
-	/* set interface */
-	context->iface = iface;
 
 	/* initialize ethernet L2 */
 	ethernet_init(iface);
@@ -318,7 +313,13 @@ static const struct ethernet_api eth_api = {
                                                                                                    \
 	static struct eth_litex_dev_data eth_data##n;                                              \
                                                                                                    \
+	static const struct eth_litex_config eth_config##n;                                        \
+                                                                                                   \
+	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_initialize, NULL, &eth_data##n, &eth_config##n,       \
+				      CONFIG_ETH_INIT_PRIORITY, &eth_api, NET_ETH_MTU);            \
+                                                                                                   \
 	static const struct eth_litex_config eth_config##n = {                                     \
+		.iface = NET_IF_DT_INST_GET(n, 0),                                                 \
 		.phy_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, phy_handle)),                  \
 		.config_func = eth_irq_config##n,                                                  \
 		.mcfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(n),                                        \
@@ -336,10 +337,6 @@ static const struct ethernet_api eth_api = {
 		.tx_buf_addr = ETH_LITEX_SLOT_TX_ADDR(n),                                          \
 		.rx_buf_n = ETH_LITEX_SLOT_RX_N(n),                                                \
 		.tx_buf_n = ETH_LITEX_SLOT_TX_N(n),                                                \
-                                                                                                   \
-	};                                                                                         \
-                                                                                                   \
-	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_initialize, NULL, &eth_data##n, &eth_config##n,       \
-				      CONFIG_ETH_INIT_PRIORITY, &eth_api, NET_ETH_MTU);
+	};
 
 DT_INST_FOREACH_STATUS_OKAY(ETH_LITEX_INIT);

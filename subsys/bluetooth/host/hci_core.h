@@ -557,6 +557,7 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf);
 void bt_hci_read_remote_features_complete(struct net_buf *buf);
 void bt_hci_read_remote_ext_features_complete(struct net_buf *buf);
 void bt_hci_role_change(struct net_buf *buf);
+void bt_hci_conn_pkt_type_changed(struct net_buf *buf);
 #if defined(CONFIG_BT_POWER_MODE_CONTROL)
 void bt_hci_link_mode_change(struct net_buf *buf);
 #endif /* CONFIG_BT_POWER_MODE_CONTROL */

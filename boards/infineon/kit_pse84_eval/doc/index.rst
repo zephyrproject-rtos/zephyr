@@ -121,6 +121,59 @@ to set the CMake variable ``OPENOCD``.
 Once the gdb console starts after executing the west debug command, you may now set breakpoints and
 perform other standard GDB debugging on the PSOC E84 CM33 core.
 
+Secure Boot
+***********
+
+The PSOC™ Edge E84 MCU includes an extended boot stage in ROM that, on reset, jumps to the first
+application image. The destination is selected by the on-board ``BOOT SW``:
+
+- ``BOOT SW`` **OFF**: the ROM extended boot jumps to the first application located in internal
+  RRAM.
+- ``BOOT SW`` **ON**: the ROM extended boot jumps to the first application located in external
+  flash.
+
+In both cases the first application image must be in MCUboot image format, i.e. it must be
+preceded by an MCUboot image header (magic number, header size, vector table address, image size)
+and followed by the trailer with the hash/signature TLVs. Out of the box, the device is **not**
+provisioned for secure boot, so the ROM extended boot only checks the image format and hash; no
+cryptographic signature verification is performed against a provisioned key.
+
+The MCUboot image format is produced automatically by the
+:file:`soc/infineon/edge/pse84/pse84_metadata.cmake` helper
+``pse84_add_metadata_secure_hex()``, which invokes ``imgtool sign`` with the header address,
+header size and slot size derived from the devicetree memory map. By default this helper does not
+pass a signing key, which is sufficient for a non-provisioned device.
+
+Enabling Secure Boot
+====================
+
+To enable real signature verification by the ROM extended boot, the device must be reprovisioned.
+Follow sections **2.2.1**, **2.2.2** and **2.2.3** of the
+`PSOC™ Edge Security Getting Started Application Note`_ to:
+
+#. Generate (or import) the OEM signing key pair.
+#. Provision the device with the corresponding public key and lifecycle transition.
+#. Program the desired security counter / anti-rollback value.
+
+After the device has been reprovisioned, the
+``pse84_add_metadata_secure_hex()`` function in
+:file:`soc/infineon/edge/pse84/pse84_metadata.cmake` must be updated so that ``imgtool sign``
+also receives the signing key and a security counter. The relevant additions are:
+
+.. code-block:: none
+
+   ${PYTHON_EXECUTABLE} ${IMGTOOL} sign --version "0.0.0+0"
+     --header-size ${header_size} --erased-val 0xff --pad-header
+     --slot-size ${slot_size} --hex-addr ${header_addr}
+     --key <oem-private-key-file>
+     --security-counter <value>
+     ${INPUT_FILE} ${OUTPUT_FILE}
+
+Where ``<oem-private-key-file>`` is the path to the OEM private key file (e.g. a ``.pem``
+file) matching the public key provisioned into the device, and ``<value>`` is the security
+counter assigned during provisioning. Without these additional parameters, images built for a
+provisioned device will be rejected by the ROM extended boot.
+
 References
 **********
 
@@ -134,6 +187,9 @@ References
 
 .. _kit_pse84_eval User Manual Website:
     https://www.infineon.com/assets/row/public/documents/30/44/infineon-kit-pse84-eval-qsg-usermanual-en.pdf
+
+.. _PSOC™ Edge Security Getting Started Application Note:
+    https://www.infineon.com/assets/row/public/documents/30/42/infineon-an237849-getting-started-psoc-edge-security-applicationnotes-en.pdf
 
 .. _ModusToolbox™:
     https://softwaretools.infineon.com/tools/com.ifx.tb.tool.modustoolboxsetup

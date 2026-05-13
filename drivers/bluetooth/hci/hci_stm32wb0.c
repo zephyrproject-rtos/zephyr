@@ -363,7 +363,7 @@ static int ble_pm_action(const struct device *dev,
 
 static void rng_get_random(void *num, size_t size)
 {
-	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
+	const struct device *dev = entropy_get_default_device();
 	int res;
 
 	/* try to allocate from pool */

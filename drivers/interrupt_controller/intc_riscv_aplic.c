@@ -35,8 +35,6 @@ int riscv_aplic_domain_enable(const struct device *dev, bool enable)
 
 	k_spin_unlock(&data->lock, key);
 
-	LOG_DBG("APLIC DOMAINCFG: wrote 0x%08x", v);
-
 	return 0;
 }
 
@@ -99,23 +97,8 @@ static int aplic_init(const struct device *dev)
 
 DT_INST_FOREACH_STATUS_OKAY(APLIC_INIT)
 
-/* Global device pointer for easy access */
-static const struct device *aplic_device;
-
-/* Zephyr integration functions */
-const struct device *riscv_aplic_get_dev(void)
-{
-	if (!aplic_device) {
-		aplic_device = DEVICE_DT_GET_ANY(riscv_aplic);
-	}
-	return aplic_device;
-}
-
 uint32_t riscv_aplic_get_num_sources(const struct device *dev)
 {
-	if (!dev) {
-		return 0;
-	}
 	const struct aplic_cfg *cfg = dev->config;
 
 	return cfg->num_sources;

@@ -400,6 +400,15 @@ static void gatt_delayed_store_enqueue(uint8_t id, const bt_addr_le_t *peer_addr
 				       enum delayed_store_flags flag);
 #endif
 
+bool bt_gatt_is_db_hash_valid(void)
+{
+#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+	return atomic_test_bit(gatt_sc.flags, DB_HASH_VALID);
+#else
+	return false;
+#endif
+}
+
 #if defined(CONFIG_BT_GATT_CACHING)
 static bool set_change_aware_no_store(struct gatt_cf_cfg *cfg, bool aware)
 {
@@ -577,6 +586,11 @@ static int db_hash_setup(struct gen_hash_state *state, uint8_t *key)
 	ret = psa_mac_sign_setup(&(state->operation), state->key, PSA_ALG_CMAC);
 	if (ret != PSA_SUCCESS) {
 		LOG_ERR("CMAC operation init failed %d", ret);
+
+		ret = psa_destroy_key(state->key);
+		if (ret != PSA_SUCCESS) {
+			LOG_ERR("key destroy failed %d", ret);
+		}
 		return -EIO;
 	}
 	return 0;

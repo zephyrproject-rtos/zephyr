@@ -132,7 +132,11 @@ static void cdc_acm_irq_rx_enable(const struct device *dev);
 #if CONFIG_USBD_CDC_ACM_BUF_POOL
 UDC_BUF_POOL_DEFINE(cdc_acm_ep_pool,
 		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
-		    USBD_MAX_BULK_MPS, sizeof(struct udc_buf_info), NULL);
+		    CONFIG_USBD_CDC_ACM_BUF_POOL_SIZE,
+		    sizeof(struct udc_buf_info), NULL);
+
+BUILD_ASSERT((CONFIG_USBD_CDC_ACM_BUF_POOL_SIZE % USBD_MAX_BULK_MPS) == 0,
+	     "USBD_CDC_ACM_BUF_POOL_SIZE is not multiple of bulk endpoint MPS");
 
 static struct net_buf *cdc_acm_buf_alloc(struct usbd_class_data *const c_data,
 					 const uint8_t ep)
@@ -564,6 +568,7 @@ static int usbd_cdc_acm_init(struct usbd_class_data *const c_data)
 
 	desc->if0_union.bControlInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bSubordinateInterface0 = desc->if1.bInterfaceNumber;
+	desc->if0_cm.bDataInterface = desc->if1.bInterfaceNumber;
 
 	if (cfg->if_desc_data != NULL && desc->if0.iInterface == 0) {
 		if (usbd_add_descriptor(uds_ctx, cfg->if_desc_data)) {

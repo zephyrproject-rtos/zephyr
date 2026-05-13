@@ -81,7 +81,9 @@
 	};
 
 	bt_hci_wba: bt_hci_wba {
+		interrupt-parent = <&nvic>;
 		interrupts = <60 0>;
+		interrupt-names = "radio";
 	};
 
 	ieee802154: ieee802154 {

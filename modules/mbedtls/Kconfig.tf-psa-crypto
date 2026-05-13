@@ -295,6 +295,19 @@ config MBEDTLS_LMS_C
 
 if MBEDTLS_PSA_CRYPTO_C
 
+config MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS
+	bool "Assume exclusive buffers for PSA Crypto operations"
+	default y
+	help
+	  Assume all buffers passed to PSA functions are owned exclusively by the
+	  PSA function and are not stored in shared memory.
+
+	  Enabling this can improve performance by avoiding internal buffer
+	  copies. However, the application must ensure that buffers do not
+	  overlap. For some algorithms and modes, additional constraints may
+	  apply (for example, input sizes may need to be a multiple of the
+	  block size).
+
 config MBEDTLS_PSA_P256M_DRIVER_ENABLED
 	bool "P256-M driver"
 	imply PSA_WANT_ALG_SHA_256

@@ -420,8 +420,8 @@ static int actual_channel_mask(nrfx_gppi_node_id_t node_id, uint32_t *ch_mask, b
 		NRF_SPU133,
 		NRF_SPU134,
 		NRF_SPU135,
-		IF_ENABLED(NRFX_INSTANCE_PRESENT(SPU136), (NRF_SPU136,))
-		IF_ENABLED(NRFX_INSTANCE_PRESENT(SPU137), (NRF_SPU137,))
+		IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(dppic135)), (NRF_SPU136,))
+		IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(dppic136)), (NRF_SPU137,))
 		NRF_SPU122,
 	};
 	uint32_t out_mask = 0;

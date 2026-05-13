@@ -46,8 +46,6 @@ typedef void (*radio_isr_cb_t) (void);
 radio_isr_cb_t radio_callback;
 radio_isr_cb_t low_isr_callback;
 
-extern const struct device *rng_dev;
-
 /* Radio critical sections */
 volatile int32_t prio_high_isr_counter;
 volatile int32_t prio_low_isr_counter;
@@ -59,6 +57,9 @@ static uint32_t primask_bit;
 /* Radio SW low ISR global variable */
 volatile uint8_t radio_sw_low_isr_is_running_high_prio;
 
+/* get_rng_device() is implemented in sys_wireless_plat.c */
+extern const struct device *get_rng_device(void);
+
 void LINKLAYER_PLAT_DelayUs(uint32_t delay)
 {
 	k_busy_wait(delay);
@@ -67,6 +68,7 @@ void LINKLAYER_PLAT_DelayUs(uint32_t delay)
 void LINKLAYER_PLAT_GetRNG(uint8_t *ptr_rnd, uint32_t len)
 {
 	int ret;
+	const struct device *rng_dev = get_rng_device();
 
 	/* Read 32-bit random values from HW driver */
 	ret = entropy_get_entropy_isr(rng_dev, (char *)ptr_rnd, len, 0);

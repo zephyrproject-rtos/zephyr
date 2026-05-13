@@ -118,9 +118,8 @@ struct loopback_buf {
 	uint8_t data[LOOPBACK_MAX_PDU_LEN];
 };
 
-K_MEM_SLAB_DEFINE(loopback_buf_pool,
-		  sizeof(struct loopback_buf),
-		  CONFIG_BT_MESH_LOOPBACK_BUFS, __alignof__(struct loopback_buf));
+K_MEM_SLAB_DEFINE_TYPE(loopback_buf_pool, struct loopback_buf,
+		       CONFIG_BT_MESH_LOOPBACK_BUFS);
 
 static uint32_t dup_cache[CONFIG_BT_MESH_MSG_CACHE_SIZE];
 static int   dup_cache_next;

@@ -168,7 +168,9 @@
 		nxp,version = <4>;
 		dma-channels = <16>;
 		dma-requests = <105>;
+		clocks = <&clkctl0 MCUX_EDMA0_CLK>;
 		reg = <0x140000 0x1000>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(2, 5)>;
 		interrupts = <59 0>, <60 0>, <61 0>, <62 0>,
 			     <63 0>, <64 0>, <65 0>, <66 0>,
 			     <67 0>, <68 0>, <69 0>, <70 0>,
@@ -183,7 +185,9 @@
 		nxp,version = <4>;
 		dma-channels = <16>;
 		dma-requests = <105>;
+		clocks = <&clkctl0 MCUX_EDMA1_CLK>;
 		reg = <0x160000 0x1000>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(2, 6)>;
 		interrupts = <75 0>, <76 0>, <77 0>, <78 0>,
 			     <79 0>, <80 0>, <81 0>, <82 0>,
 			     <83 0>, <84 0>, <85 0>, <86 0>,
@@ -934,6 +938,14 @@
 		status = "disabled";
 	};
 
+	usbh0: usbh@418000 {
+		compatible = "nxp,uhc-ehci";
+		reg = <0x418000 0x1000>;
+		interrupts = <40 0>;
+		interrupt-names = "usb_otg";
+		status = "disabled";
+	};
+
 	usb1: usb@419000 {
 		compatible = "nxp,ehci";
 		reg = <0x419000 0x1000>;
@@ -942,6 +954,14 @@
 		clocks = <&clkctl4 MCUX_USB1_CLK>;
 		clock-rates = <DT_FREQ_M(24)>;
 		num-bidir-endpoints = <8>;
+		status = "disabled";
+	};
+
+	usbh1: usbh@419000 {
+		compatible = "nxp,uhc-ehci";
+		reg = <0x419000 0x1000>;
+		interrupts = <41 0>;
+		interrupt-names = "usb_otg";
 		status = "disabled";
 	};
 
@@ -1137,11 +1157,33 @@
 		compatible = "nxp,kinetis-acmp";
 		reg = <0x20b000 0x1000>;
 		interrupts = <17 0>;
+		resets = <&rstctl3 NXP_SYSCON_RESET(9, 8)>;
+		clocks = <&clkctl3 MCUX_ACMP0_CLK>;
 		status = "disabled";
+	};
+
+	ocotp: ocotp@18000 {
+		compatible = "nxp,rt7xx-ocotp";
+		reg = <0x18000 0x7a0>;
+		status = "disabled";
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			tsens_cal: tsens-cal@134 {
+				reg = <0x134 0x4>;
+				#nvmem-cell-cells = <0>;
+				read-only;
+			};
+		};
 	};
 
 	pmc_tmpsns: pmc-tmpsns {
 		compatible = "nxp,pmc-tmpsns";
+		nvmem-cells = <&tsens_cal>;
+		nvmem-cell-names = "tsens-cal";
 		status = "disabled";
 	};
 

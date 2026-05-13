@@ -56,6 +56,10 @@ else()
   list(APPEND QEMU_FLAGS qemu${QEMU_INSTANCE}.pid)
 endif()
 
+if(CONFIG_VIRTIO_MMIO)
+  list(APPEND QEMU_FLAGS -global virtio-mmio.force-legacy=false)
+endif()
+
 # If running with sysbuild, we need to ensure this variable is populated
 zephyr_get(QEMU_PIPE)
 # Set up chardev for console.

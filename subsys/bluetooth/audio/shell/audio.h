@@ -125,7 +125,6 @@ struct shell_stream {
 			size_t left_read_idx;
 			/* Indicates where to read right USB data in the ring buffer */
 			size_t right_read_idx;
-			size_t right_ring_buf_fail_cnt;
 #endif /* CONFIG_USBD_AUDIO2_CLASS */
 #endif /* CONFIG_LIBLC3 */
 		} tx;

@@ -209,6 +209,13 @@ ZTEST_F(zms, test_zms_corrupted_write)
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
 
+	/* Get the address of current write calls and the maximum number of writes and reinitialize
+	 * the current number of write calls to 0.
+	 */
+	stats_walk(fixture->sim_thresholds, flash_sim_max_write_calls_find, &flash_max_write_calls);
+	stats_walk(fixture->sim_stats, flash_sim_write_calls_find, &flash_write_stat);
+	*flash_write_stat = 0;
+
 	err = zms_read(&fixture->fs, TEST_DATA_ID, rd_buf, sizeof(rd_buf));
 	zassert_true(err == -ENOENT, "zms_read unexpected failure: %d", err);
 
@@ -233,9 +240,6 @@ ZTEST_F(zms, test_zms_corrupted_write)
 	/* Set the maximum number of writes that the flash simulator can
 	 * execute.
 	 */
-	stats_walk(fixture->sim_thresholds, flash_sim_max_write_calls_find, &flash_max_write_calls);
-	stats_walk(fixture->sim_stats, flash_sim_write_calls_find, &flash_write_stat);
-
 	*flash_max_write_calls = *flash_write_stat - 1;
 	*flash_write_stat = 0;
 
@@ -262,6 +266,13 @@ ZTEST_F(zms, test_zms_corrupted_write)
 			  "write operation has failed");
 }
 
+static uint16_t get_max_writes_to_trigger_gc(struct zms_fs *fs, size_t data_size)
+{
+	const size_t aligned_size_headers = 3 * fs->ate_size;
+
+	return (fs->sector_size - aligned_size_headers) / (data_size + fs->ate_size) + 1;
+}
+
 ZTEST_F(zms, test_zms_gc)
 {
 	int err;
@@ -269,14 +280,16 @@ ZTEST_F(zms, test_zms_gc)
 	uint8_t buf[32];
 	uint8_t rd_buf[32];
 	const uint8_t max_id = 10;
-	/* 21st write will trigger GC. */
-	const uint16_t max_writes = 21;
+	uint16_t max_writes;
 
 	fixture->fs.sector_count = 2;
 
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
 
+	/* Calculate the number of writes to fill a sector and trigger GC.
+	 */
+	max_writes = get_max_writes_to_trigger_gc(&fixture->fs, sizeof(buf));
 	for (int i = 0; i < max_writes; i++) {
 		uint8_t id = (i % max_id);
 		uint8_t id_data = id + max_id * (i / max_id);
@@ -313,6 +326,137 @@ ZTEST_F(zms, test_zms_gc)
 		zassert_mem_equal(buf, rd_buf, sizeof(rd_buf),
 				  "RD buff should be equal to the WR buff");
 	}
+}
+
+ZTEST_F(zms, test_zms_cycle_count_input_validation)
+{
+	int err;
+	uint32_t cycles;
+
+	/* NULL fs / NULL out pointer must be rejected. */
+	err = zms_get_num_cycles(NULL, &cycles);
+	zassert_equal(err, -EINVAL, "expected -EINVAL for NULL fs, got %d", err);
+
+	err = zms_get_num_cycles(&fixture->fs, NULL);
+	zassert_equal(err, -EINVAL, "expected -EINVAL for NULL cycles, got %d", err);
+
+	/* Unmounted filesystem must be rejected. */
+	err = zms_get_num_cycles(&fixture->fs, &cycles);
+	zassert_equal(err, -EACCES, "expected -EACCES on unmounted fs, got %d", err);
+
+	err = zms_get_sector_num_cycles(&fixture->fs, 0, &cycles);
+	zassert_equal(err, -EACCES, "expected -EACCES on unmounted fs, got %d", err);
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* NULL fs / NULL out pointer. */
+	err = zms_get_sector_num_cycles(NULL, 0, &cycles);
+	zassert_equal(err, -EINVAL, "expected -EINVAL for NULL fs, got %d", err);
+
+	err = zms_get_sector_num_cycles(&fixture->fs, 0, NULL);
+	zassert_equal(err, -EINVAL, "expected -EINVAL for NULL cycles, got %d", err);
+
+	/* Sector index out of range. */
+	err = zms_get_sector_num_cycles(&fixture->fs, fixture->fs.sector_count, &cycles);
+	zassert_equal(err, -EINVAL, "expected -EINVAL for out-of-range sector, got %d", err);
+}
+
+ZTEST_F(zms, test_zms_cycle_count_increments)
+{
+	int err;
+	uint32_t base_cycles;
+	uint32_t num_cycles;
+	uint32_t sector_cycles;
+	const uint32_t advances = 9;
+
+	fixture->fs.sector_count = 3;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	err = zms_get_num_cycles(&fixture->fs, &base_cycles);
+	zassert_true(err == 0, "zms_get_num_cycles failed: %d", err);
+
+	/* Each call to zms_sector_use_next advances the active sector by one;
+	 * after sector_count advances every sector has been recycled once and
+	 * the maximum cycle count must have grown by exactly 1.
+	 */
+	for (uint32_t i = 0; i < advances; i++) {
+		err = zms_sector_use_next(&fixture->fs);
+		zassert_true(err == 0, "zms_sector_use_next failed at %u: %d", i, err);
+	}
+
+	err = zms_get_num_cycles(&fixture->fs, &num_cycles);
+	zassert_true(err == 0, "zms_get_num_cycles failed: %d", err);
+	zassert_equal(num_cycles, base_cycles + (advances / fixture->fs.sector_count),
+		      "num_cycles=%u expected=%u (base=%u)", num_cycles,
+		      base_cycles + (advances / fixture->fs.sector_count), base_cycles);
+
+	/* Each individual sector must report a non-zero, in-range cycle count. */
+	for (uint32_t s = 0; s < fixture->fs.sector_count; s++) {
+		err = zms_get_sector_num_cycles(&fixture->fs, s, &sector_cycles);
+		zassert_true(err == 0, "zms_get_sector_num_cycles(%u) failed: %d", s, err);
+		zassert_true(sector_cycles <= num_cycles,
+			     "sector %u cycles=%u exceeds max=%u", s, sector_cycles,
+			     num_cycles);
+	}
+}
+
+ZTEST_F(zms, test_zms_cycle_count_persistence)
+{
+	int err;
+	uint32_t base_cycles;
+	uint32_t num_cycles_before;
+	uint32_t num_cycles_after_clear;
+	uint32_t num_cycles_after_remount;
+	const uint32_t advances = 6;
+
+	fixture->fs.sector_count = 3;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	err = zms_get_num_cycles(&fixture->fs, &base_cycles);
+	zassert_true(err == 0, "zms_get_num_cycles failed: %d", err);
+
+	for (uint32_t i = 0; i < advances; i++) {
+		err = zms_sector_use_next(&fixture->fs);
+		zassert_true(err == 0, "zms_sector_use_next failed at %u: %d", i, err);
+	}
+
+	err = zms_get_num_cycles(&fixture->fs, &num_cycles_before);
+	zassert_true(err == 0, "zms_get_num_cycles failed: %d", err);
+	zassert_true(num_cycles_before > base_cycles,
+		     "cycle count did not advance: before=%u base=%u", num_cycles_before,
+		     base_cycles);
+
+	/* zms_clear must not roll the cycle counter back: the per-sector
+	 * full_cycle_cnt is preserved (and bumped) by zms_wipe_partition.
+	 */
+	err = zms_clear(&fixture->fs);
+	zassert_true(err == 0, "zms_clear failed: %d", err);
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount (after clear) call failure: %d", err);
+
+	err = zms_get_num_cycles(&fixture->fs, &num_cycles_after_clear);
+	zassert_true(err == 0, "zms_get_num_cycles failed: %d", err);
+	zassert_true(num_cycles_after_clear >= num_cycles_before,
+		     "cycle count regressed across zms_clear: before=%u after=%u",
+		     num_cycles_before, num_cycles_after_clear);
+
+	/* Re-mount and ensure the cycle count survives, exercising the
+	 * full_cycle_cnt persistence path.
+	 */
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount (remount) call failure: %d", err);
+
+	err = zms_get_num_cycles(&fixture->fs, &num_cycles_after_remount);
+	zassert_true(err == 0, "zms_get_num_cycles failed: %d", err);
+	zassert_equal(num_cycles_after_remount, num_cycles_after_clear,
+		      "cycle count not persisted across remount: after_clear=%u after_remount=%u",
+		      num_cycles_after_clear, num_cycles_after_remount);
 }
 
 static void write_content(uint32_t max_id, uint32_t begin, uint32_t end, struct zms_fs *fs)
@@ -365,6 +509,11 @@ ZTEST_F(zms, test_zms_gc_3sectors)
 	const uint16_t max_writes_3 = 41 + 20 + 20;
 	/* 101st write will trigger 4th GC. */
 	const uint16_t max_writes_4 = 41 + 20 + 20 + 20;
+
+	if (fixture->fs.sector_size != 1024) {
+		/* this test is designed for 1KB sectors */
+		ztest_test_skip();
+	}
 
 	fixture->fs.sector_count = 3;
 
@@ -444,8 +593,7 @@ ZTEST_F(zms, test_zms_corrupted_sector_close_operation)
 	uint32_t *flash_max_write_calls;
 	uint32_t *flash_max_len;
 	const uint16_t max_id = 10;
-	/* 21st write will trigger GC. */
-	const uint16_t max_writes = 21;
+	uint16_t max_writes;
 
 	/* Get the address of simulator parameters. */
 	stats_walk(fixture->sim_thresholds, flash_sim_max_write_calls_find, &flash_max_write_calls);
@@ -455,6 +603,9 @@ ZTEST_F(zms, test_zms_corrupted_sector_close_operation)
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
 
+	/* Calculate the number of writes to fill a sector and trigger GC.
+	 */
+	max_writes = get_max_writes_to_trigger_gc(&fixture->fs, sizeof(buf));
 	for (int i = 0; i < max_writes; i++) {
 		uint8_t id = (i % max_id);
 		uint8_t id_data = id + max_id * (i / max_id);
@@ -643,6 +794,14 @@ ZTEST_F(zms, test_zms_gc_corrupt_close_ate)
 	ate.crc8 = crc8_ccitt(0xff, (uint8_t *)&ate + SIZEOF_FIELD(struct zms_ate, crc8),
 			      sizeof(struct zms_ate) - SIZEOF_FIELD(struct zms_ate, crc8));
 
+	/* Ensure sectors are erased before injecting handcrafted ATEs.
+	 * Flash simulator writes are one-way bit transitions and cannot set bits back to 1.
+	 */
+	fixture->fs.sector_count = 3;
+	err = flash_erase(fixture->fs.flash_device, fixture->fs.offset,
+			  fixture->fs.sector_count * fixture->fs.sector_size);
+	zassert_true(err == 0, "flash_erase sector 1 failed: %d", err);
+
 	/* Add empty ATE */
 	err = flash_write(fixture->fs.flash_device,
 			  fixture->fs.offset + fixture->fs.sector_size - sizeof(struct zms_ate),
@@ -667,8 +826,6 @@ ZTEST_F(zms, test_zms_gc_corrupt_close_ate)
 				  2 * sizeof(struct zms_ate),
 			  &close_ate, sizeof(close_ate));
 	zassert_true(err == 0, "flash_write failed: %d", err);
-
-	fixture->fs.sector_count = 3;
 
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
@@ -879,7 +1036,7 @@ ZTEST_F(zms, test_zms_cache_gc)
 	 */
 
 	num = num_matching_cache_entries(0ULL << ADDR_SECT_SHIFT, true, &fixture->fs);
-	zassert_equal(num, 0, "not invalidated cache entries aftetr gc");
+	zassert_equal(num, 0, "not invalidated cache entries after gc");
 
 	num = num_matching_cache_entries(2ULL << ADDR_SECT_SHIFT, true, &fixture->fs);
 	zassert_equal(num, 2, "invalid cache content after gc");

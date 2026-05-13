@@ -37,8 +37,8 @@ static bool uart_mcumgr_ignoring;
 #endif
 
 /** Contains buffers to hold incoming request fragments. */
-K_MEM_SLAB_DEFINE(uart_mcumgr_slab, sizeof(struct uart_mcumgr_rx_buf),
-		  CONFIG_UART_MCUMGR_RX_BUF_COUNT, 1);
+K_MEM_SLAB_DEFINE_TYPE(uart_mcumgr_slab, struct uart_mcumgr_rx_buf,
+		       CONFIG_UART_MCUMGR_RX_BUF_COUNT);
 
 #if defined(CONFIG_MCUMGR_TRANSPORT_UART_ASYNC)
 uint8_t async_buffer[CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_BUFS]
@@ -249,7 +249,8 @@ static void uart_mcumgr_setup(const struct device *uart)
 {
 	uart_callback_set(uart, uart_mcumgr_async, NULL);
 
-	uart_rx_enable(uart, async_buffer[0], sizeof(async_buffer[0]), 0);
+	uart_rx_enable(uart, async_buffer[0], sizeof(async_buffer[0]),
+		       CONFIG_UART_CONSOLE_MCUMGR_ASYNC_RX_TIMEOUT_US);
 }
 #else
 static void uart_mcumgr_setup(const struct device *uart)

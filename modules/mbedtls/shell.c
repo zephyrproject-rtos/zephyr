@@ -32,10 +32,13 @@ static int cmd_mbedtls_heap(const struct shell *sh, size_t argc, char **argv)
 	mbedtls_memory_buffer_alloc_max_get(&max_used, &max_blocks);
 	mbedtls_memory_buffer_alloc_cur_get(&cur_used, &cur_blocks);
 
-	shell_print(sh, "Maximum (peak): %zu bytes, %zu blocks",
-		    max_used, max_blocks);
 	shell_print(sh, "Current: %zu bytes, %zu blocks",
 		    cur_used, cur_blocks);
+	shell_print(sh, "Maximum (peak): %zu bytes, %zu blocks",
+		    max_used, max_blocks);
+	shell_print(sh, "Total:   %d bytes", CONFIG_MBEDTLS_HEAP_SIZE);
+	shell_print(sh, "Free:    %zu bytes",
+		    (size_t)CONFIG_MBEDTLS_HEAP_SIZE - cur_used);
 
 	return 0;
 }
@@ -47,13 +50,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mbedtls_heap_cmds,
 		      cmd_mbedtls_heap_max_reset, 1, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
-#endif
 
-#if defined(MBEDTLS_MEMORY_DEBUG)
 SHELL_STATIC_SUBCMD_SET_CREATE(mbedtls_cmds,
-			       SHELL_CMD_ARG(heap, &mbedtls_heap_cmds, "Show heap status",
-					     cmd_mbedtls_heap, 1, 0),
-			       SHELL_SUBCMD_SET_END /* Array terminated. */
+	SHELL_CMD_ARG(heap, &mbedtls_heap_cmds, "Show heap status",
+		      cmd_mbedtls_heap, 1, 0),
+	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
 SHELL_CMD_REGISTER(mbedtls, &mbedtls_cmds, "mbed TLS commands", NULL);

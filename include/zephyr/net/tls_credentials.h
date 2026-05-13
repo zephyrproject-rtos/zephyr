@@ -44,10 +44,6 @@ enum tls_credential_type {
 	 */
 	TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 
-	/** @deprecated Use TLS_CREDENTIAL_PUBLIC_CERTIFICATE instead.
-	 */
-	TLS_CREDENTIAL_SERVER_CERTIFICATE = TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
-
 	/** Private key. Should be registered together with a corresponding
 	 *  public certificate. Used with certificate-based ciphersuites.
 	 */

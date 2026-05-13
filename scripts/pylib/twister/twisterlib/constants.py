@@ -43,4 +43,6 @@ SUPPORTED_HARNESSES = [
     'robot',
     'ctest',
     'shell',
+    'bsim',
+    'script',
 ]

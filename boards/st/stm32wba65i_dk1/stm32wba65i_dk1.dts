@@ -175,6 +175,10 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 };
 
+&aes {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		#address-cells = <1>;

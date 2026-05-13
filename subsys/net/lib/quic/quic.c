@@ -38,6 +38,7 @@ LOG_MODULE_REGISTER(net_quic, CONFIG_QUIC_LOG_LEVEL);
 #include <mbedtls/error.h>
 #include <mbedtls/platform.h>
 #include <mbedtls/ssl_cache.h>
+#include <mbedtls/constant_time.h>
 
 #include <psa/crypto.h>
 #endif /* CONFIG_MBEDTLS */
@@ -78,8 +79,8 @@ static const struct socket_op_vtable quic_stream_fd_op_vtable;
 static enum quic_stream_states quic_stream_get_state(struct quic_stream *stream);
 static const struct smf_state quic_stream_bidirectional_states[];
 
-K_MEM_SLAB_DEFINE_STATIC(endpoints_slab, sizeof(struct quic_endpoint),
-			 CONFIG_QUIC_MAX_ENDPOINTS, sizeof(intptr_t));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(endpoints_slab, struct quic_endpoint,
+			      CONFIG_QUIC_MAX_ENDPOINTS);
 static struct quic_endpoint *endpoints[CONFIG_QUIC_MAX_ENDPOINTS];
 static struct k_mutex endpoints_lock;
 
@@ -131,6 +132,109 @@ static struct zsock_pollfd quic_ipv6_pollfds[QUIC_IPV6_SVC_POLL_COUNT];
 #if defined(CONFIG_NET_STATISTICS_QUIC)
 static struct net_stats_quic_global quic_stats_vars;
 struct net_stats_quic_global *quic_stats = &quic_stats_vars;
+
+static uint64_t quic_stats_uptime_ms(void)
+{
+	int64_t uptime_ms = k_uptime_get();
+
+	return uptime_ms > 0 ? (uint64_t)uptime_ms : 0U;
+}
+
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+static struct quic_closed_context_stats quic_closed_contexts[CONFIG_QUIC_STATS_HISTORY_SIZE];
+static size_t quic_closed_contexts_next;
+static size_t quic_closed_contexts_count;
+static K_MUTEX_DEFINE(quic_closed_contexts_lock);
+
+static bool quic_prepare_closed_context_stats(struct quic_context *ctx,
+					      struct quic_closed_context_stats *stats)
+{
+	if (ctx->is_listening) {
+		return false;
+	}
+
+	memset(stats, 0, sizeof(*stats));
+
+	stats->id = ctx->id;
+	stats->error_code = ctx->error_code;
+	stats->is_server = ctx->stats_is_server;
+	stats->valid = true;
+
+	if (ctx->stats_metadata_valid) {
+		memcpy(&stats->local_addr, &ctx->stats_local_addr, sizeof(stats->local_addr));
+		memcpy(&stats->remote_addr, &ctx->stats_remote_addr, sizeof(stats->remote_addr));
+	}
+
+	return true;
+}
+
+static void quic_store_closed_context_stats(struct quic_context *ctx,
+					    struct quic_closed_context_stats *stats)
+{
+	if (!stats->valid) {
+		return;
+	}
+
+	stats->stats = ctx->stats;
+	stats->duration_ms = quic_stats_uptime_ms();
+
+	if (stats->duration_ms > ctx->stats_started_at_ms) {
+		stats->duration_ms -= ctx->stats_started_at_ms;
+	} else {
+		stats->duration_ms = 0U;
+	}
+
+	k_mutex_lock(&quic_closed_contexts_lock, K_FOREVER);
+
+	quic_closed_contexts[quic_closed_contexts_next] = *stats;
+	quic_closed_contexts_next =
+		(quic_closed_contexts_next + 1U) % ARRAY_SIZE(quic_closed_contexts);
+	quic_closed_contexts_count = MIN(quic_closed_contexts_count + 1U,
+					 ARRAY_SIZE(quic_closed_contexts));
+
+	k_mutex_unlock(&quic_closed_contexts_lock);
+}
+
+void quic_closed_context_stats_foreach(quic_closed_context_stats_cb_t cb, void *user_data)
+{
+	struct quic_closed_context_stats snapshot[CONFIG_QUIC_STATS_HISTORY_SIZE];
+	size_t count;
+
+	if (cb == NULL) {
+		return;
+	}
+
+	k_mutex_lock(&quic_closed_contexts_lock, K_FOREVER);
+
+	count = quic_closed_contexts_count;
+
+	for (size_t i = 0; i < count; i++) {
+		size_t idx;
+
+		idx = (quic_closed_contexts_next + ARRAY_SIZE(quic_closed_contexts) - 1U - i) %
+			ARRAY_SIZE(quic_closed_contexts);
+
+		snapshot[i] = quic_closed_contexts[idx];
+	}
+
+	k_mutex_unlock(&quic_closed_contexts_lock);
+
+	for (size_t i = 0; i < count; i++) {
+		if (snapshot[i].valid) {
+			cb(&snapshot[i], user_data);
+		}
+	}
+}
+#endif /* CONFIG_QUIC_STATS_HISTORY */
+
+static void quic_stats_set_context_metadata(struct quic_context *ctx,
+					    const struct quic_endpoint *ep)
+{
+	ctx->stats_is_server = ep->is_server;
+	memcpy(&ctx->stats_local_addr, &ep->local_addr, sizeof(ctx->stats_local_addr));
+	memcpy(&ctx->stats_remote_addr, &ep->remote_addr, sizeof(ctx->stats_remote_addr));
+	ctx->stats_metadata_valid = true;
+}
 #endif /* CONFIG_NET_STATISTICS_QUIC */
 
 static K_FIFO_DEFINE(quic_queue);
@@ -175,9 +279,6 @@ struct quic_pkt {
 	/** Packet number */
 	uint64_t pkt_num;
 
-	/** Token */
-	uint64_t token;
-
 	/** Packet number offset */
 	size_t pn_offset;
 
@@ -200,7 +301,7 @@ struct quic_pkt {
 };
 
 #define QUIC_SLAB_DEFINE(name, count) \
-	K_MEM_SLAB_DEFINE_STATIC(name, sizeof(struct quic_pkt), count, sizeof(intptr_t));
+	K_MEM_SLAB_DEFINE_STATIC_TYPE(name, struct quic_pkt, count);
 
 QUIC_SLAB_DEFINE(quic_pkts, CONFIG_QUIC_PKT_COUNT);
 
@@ -266,6 +367,99 @@ static int quic_send_stop_sending(struct quic_endpoint *ep,
 				  uint64_t stream_id,
 				  uint64_t error_code);
 int quic_flush_deferred_crypto(struct quic_endpoint *ep);
+
+#if defined(CONFIG_NET_STATISTICS_QUIC)
+static struct net_stats_quic *quic_stats_get_for_ep(struct quic_endpoint *ep)
+{
+	struct quic_context *ctx;
+
+	if (ep == NULL) {
+		return NULL;
+	}
+
+	ctx = quic_find_context(ep);
+	if (ctx != NULL) {
+		if (ep->parent != NULL && ctx->is_listening) {
+			return &ep->stats;
+		}
+
+		return &ctx->stats;
+	}
+
+	return &ep->stats;
+}
+
+static void quic_stats_merge_endpoint(struct quic_context *ctx,
+				      struct quic_endpoint *ep)
+{
+	struct net_stats_quic *dst;
+	struct net_stats_quic *src;
+
+	if (ctx == NULL || ep == NULL) {
+		return;
+	}
+
+	dst = &ctx->stats;
+	src = &ep->stats;
+
+#define QUIC_STATS_MERGE(field) dst->field += src->field
+	QUIC_STATS_MERGE(handshake_init_rx);
+	QUIC_STATS_MERGE(handshake_init_tx);
+	QUIC_STATS_MERGE(handshake_resp_rx);
+	QUIC_STATS_MERGE(handshake_resp_tx);
+	QUIC_STATS_MERGE(invalid_handshake);
+	QUIC_STATS_MERGE(peer_not_found);
+	QUIC_STATS_MERGE(invalid_packet);
+	QUIC_STATS_MERGE(invalid_key);
+	QUIC_STATS_MERGE(invalid_packet_len);
+	QUIC_STATS_MERGE(decrypt_failed);
+	QUIC_STATS_MERGE(drop_rx);
+	QUIC_STATS_MERGE(drop_tx);
+	QUIC_STATS_MERGE(alloc_failed);
+	QUIC_STATS_MERGE(valid_rx);
+	QUIC_STATS_MERGE(valid_tx);
+#undef QUIC_STATS_MERGE
+
+	memset(src, 0, sizeof(*src));
+}
+
+#define QUIC_EP_STAT_INC(ep, field)					\
+	do {								\
+		struct net_stats_quic *__stats = quic_stats_get_for_ep(ep); \
+									\
+		if (__stats != NULL) {					\
+			__stats->field++;				\
+		}							\
+	} while (false)
+#else
+static void quic_stats_merge_endpoint(struct quic_context *ctx,
+				      struct quic_endpoint *ep)
+{
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(ep);
+}
+
+#define QUIC_EP_STAT_INC(ep, field) do { } while (false)
+#endif /* CONFIG_NET_STATISTICS_QUIC */
+
+#define QUIC_TOKEN_FORMAT_VERSION 1
+#define QUIC_TOKEN_NONCE_LEN 8
+#define QUIC_TOKEN_TAG_LEN 16
+#define QUIC_TOKEN_SECRET_LEN QUIC_HASH_SHA2_256_LEN
+#define QUIC_TOKEN_FIXED_PART_LEN (1 + 1 + 1 + 1 + sizeof(uint64_t) + QUIC_TOKEN_NONCE_LEN)
+
+struct quic_token_cache_entry {
+	struct net_sockaddr_storage remote_addr;
+	uint8_t token[CONFIG_QUIC_TOKEN_MAX_LEN];
+	uint16_t token_len;
+	bool valid;
+};
+
+static uint8_t quic_token_secret[QUIC_TOKEN_SECRET_LEN];
+static struct quic_token_cache_entry quic_token_cache[CONFIG_QUIC_TOKEN_CACHE_SIZE];
+/* Protected by quic_token_lock together with quic_token_cache[] updates. */
+static size_t quic_token_cache_replace_idx;
+static K_MUTEX_DEFINE(quic_token_lock);
 
 static int quic_get_by_ep(struct quic_endpoint *ep)
 {
@@ -801,6 +995,328 @@ static int quic_hkdf_extract_ex(psa_algorithm_t hash_alg,
 	}
 
 	return 0;
+}
+
+static bool quic_token_copy_addr(uint8_t *dst, size_t dst_len,
+				 const struct net_sockaddr *addr,
+				 size_t *addr_len)
+{
+	switch (addr->sa_family) {
+	case NET_AF_INET:
+		*addr_len = sizeof(struct net_in_addr);
+		if (dst_len < *addr_len) {
+			return false;
+		}
+
+		memcpy(dst, &net_sin(addr)->sin_addr, *addr_len);
+		return true;
+	case NET_AF_INET6:
+		*addr_len = sizeof(struct net_in6_addr);
+		if (dst_len < *addr_len) {
+			return false;
+		}
+
+		memcpy(dst, &net_sin6(addr)->sin6_addr, *addr_len);
+		return true;
+	default:
+		return false;
+	}
+}
+
+static bool quic_token_addr_matches(const struct net_sockaddr *addr,
+				    const uint8_t *token_addr,
+				    size_t token_addr_len)
+{
+	switch (addr->sa_family) {
+	case NET_AF_INET:
+		return token_addr_len == sizeof(struct net_in_addr) &&
+			net_ipv4_addr_cmp((const struct net_in_addr *)token_addr,
+					  &net_sin(addr)->sin_addr);
+	case NET_AF_INET6:
+		return token_addr_len == sizeof(struct net_in6_addr) &&
+			net_ipv6_addr_cmp((const struct net_in6_addr *)token_addr,
+					   &net_sin6(addr)->sin6_addr);
+	default:
+		return false;
+	}
+}
+
+static bool quic_token_cache_addr_matches(const struct net_sockaddr *cached,
+					  const struct net_sockaddr *addr)
+{
+	if (cached->sa_family != addr->sa_family) {
+		return false;
+	}
+
+	switch (addr->sa_family) {
+	case NET_AF_INET:
+		return net_sin(cached)->sin_port == net_sin(addr)->sin_port &&
+		       net_ipv4_addr_cmp(&net_sin(cached)->sin_addr,
+					 &net_sin(addr)->sin_addr);
+
+	case NET_AF_INET6:
+		return net_sin6(cached)->sin6_port == net_sin6(addr)->sin6_port &&
+		       net_ipv6_addr_cmp(&net_sin6(cached)->sin6_addr,
+					 &net_sin6(addr)->sin6_addr);
+	default:
+		return false;
+	}
+}
+
+static void quic_endpoint_clear_initial_token(struct quic_endpoint *ep)
+{
+	memset(ep->token.initial, 0, sizeof(ep->token.initial));
+	ep->token.initial_len = 0U;
+	ep->token.initial_type = QUIC_TOKEN_NONE;
+}
+
+static void quic_endpoint_set_initial_token(struct quic_endpoint *ep,
+					    enum quic_address_token_type type,
+					    const uint8_t *token, size_t token_len)
+{
+	quic_endpoint_clear_initial_token(ep);
+
+	if (token_len > 0U) {
+		memcpy(ep->token.initial, token, token_len);
+	}
+
+	ep->token.initial_len = token_len;
+	ep->token.initial_type = type;
+}
+
+static uint64_t quic_token_now_sec(void)
+{
+	return (uint64_t)k_uptime_get() / MSEC_PER_SEC;
+}
+
+static void quic_token_ensure_secret(void)
+{
+	sys_rand_get(quic_token_secret, sizeof(quic_token_secret));
+}
+
+static int quic_token_compute_tag(const uint8_t *body, size_t body_len,
+				  uint8_t *tag, size_t tag_len)
+{
+	uint8_t full_tag[QUIC_TOKEN_SECRET_LEN];
+	int ret;
+
+	if (tag_len > sizeof(full_tag)) {
+		return -EINVAL;
+	}
+
+	ret = quic_hkdf_extract_ex(PSA_ALG_SHA_256,
+				   quic_token_secret, sizeof(quic_token_secret),
+				   body, body_len,
+				   full_tag, sizeof(full_tag));
+	if (ret != 0) {
+		return ret;
+	}
+
+	memcpy(tag, full_tag, tag_len);
+	crypto_zero(full_tag, sizeof(full_tag));
+
+	return 0;
+}
+
+ZTESTABLE_STATIC int quic_build_address_token(enum quic_address_token_type type,
+					      const struct net_sockaddr *addr,
+					      const uint8_t *orig_dcid,
+					      uint8_t orig_dcid_len,
+					      uint8_t *out, size_t out_len,
+					      size_t *token_len)
+{
+	size_t addr_len = 0U;
+	size_t body_len;
+	size_t pos = 0U;
+	int ret;
+
+	if (!quic_token_copy_addr(&out[QUIC_TOKEN_FIXED_PART_LEN],
+				  out_len - QUIC_TOKEN_FIXED_PART_LEN,
+				  addr, &addr_len)) {
+		return -EINVAL;
+	}
+
+	body_len = QUIC_TOKEN_FIXED_PART_LEN + addr_len + orig_dcid_len;
+	if (body_len + QUIC_TOKEN_TAG_LEN > out_len) {
+		return -ENOBUFS;
+	}
+
+	out[pos++] = QUIC_TOKEN_FORMAT_VERSION;
+	out[pos++] = type;
+	out[pos++] = addr_len;
+	out[pos++] = orig_dcid_len;
+	sys_put_be64(quic_token_now_sec(), &out[pos]);
+	pos += sizeof(uint64_t);
+	sys_rand_get(&out[pos], QUIC_TOKEN_NONCE_LEN);
+	pos += QUIC_TOKEN_NONCE_LEN;
+	pos += addr_len;
+
+	if (orig_dcid_len > 0U) {
+		memcpy(&out[pos], orig_dcid, orig_dcid_len);
+		pos += orig_dcid_len;
+	}
+
+	ret = quic_token_compute_tag(out, body_len, &out[pos], QUIC_TOKEN_TAG_LEN);
+	if (ret != 0) {
+		return ret;
+	}
+
+	*token_len = body_len + QUIC_TOKEN_TAG_LEN;
+
+	return 0;
+}
+
+ZTESTABLE_STATIC int quic_validate_address_token(const struct net_sockaddr *addr,
+						 const uint8_t *token, size_t token_len,
+						 struct quic_token_validation *validation)
+{
+	size_t addr_len;
+	size_t orig_dcid_len;
+	size_t body_len;
+	uint64_t issued_at;
+	uint64_t now_sec;
+	uint64_t lifetime;
+	uint8_t expected_tag[QUIC_TOKEN_TAG_LEN];
+	int ret;
+
+	memset(validation, 0, sizeof(*validation));
+
+	if (token_len < QUIC_TOKEN_FIXED_PART_LEN + QUIC_TOKEN_TAG_LEN) {
+		return -EINVAL;
+	}
+
+	if (token[0] != QUIC_TOKEN_FORMAT_VERSION) {
+		return -EINVAL;
+	}
+
+	validation->type = token[1];
+	addr_len = token[2];
+	orig_dcid_len = token[3];
+
+	if ((validation->type != QUIC_TOKEN_RETRY && validation->type != QUIC_TOKEN_NEW) ||
+	    (addr_len != sizeof(struct net_in_addr) &&
+	     addr_len != sizeof(struct net_in6_addr)) ||
+	    orig_dcid_len > MAX_CONN_ID_LEN) {
+		return -EINVAL;
+	}
+
+	body_len = QUIC_TOKEN_FIXED_PART_LEN + addr_len + orig_dcid_len;
+	if (token_len != body_len + QUIC_TOKEN_TAG_LEN) {
+		return -EINVAL;
+	}
+
+	ret = quic_token_compute_tag(token, body_len, expected_tag, sizeof(expected_tag));
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (mbedtls_ct_memcmp(expected_tag, token + body_len, sizeof(expected_tag)) != 0) {
+		return -EACCES;
+	}
+
+	issued_at = sys_get_be64(&token[4]);
+	now_sec = quic_token_now_sec();
+	lifetime = validation->type == QUIC_TOKEN_RETRY ?
+		CONFIG_QUIC_RETRY_TOKEN_LIFETIME_SEC :
+		CONFIG_QUIC_NEW_TOKEN_LIFETIME_SEC;
+
+	if (now_sec < issued_at || now_sec - issued_at > lifetime) {
+		return -ETIMEDOUT;
+	}
+
+	if (!quic_token_addr_matches(addr,
+				     token + QUIC_TOKEN_FIXED_PART_LEN,
+				     addr_len)) {
+		return -EADDRNOTAVAIL;
+	}
+
+	validation->orig_dcid_len = orig_dcid_len;
+	if (orig_dcid_len > 0U) {
+		memcpy(validation->orig_dcid,
+		       token + QUIC_TOKEN_FIXED_PART_LEN + addr_len,
+		       orig_dcid_len);
+	}
+
+	return 0;
+}
+
+ZTESTABLE_STATIC void quic_token_cache_store(const struct net_sockaddr *remote_addr,
+					     const uint8_t *token, size_t token_len)
+{
+	struct quic_token_cache_entry *slot = NULL;
+
+	if (token_len == 0U || token_len > CONFIG_QUIC_TOKEN_MAX_LEN) {
+		return;
+	}
+
+	k_mutex_lock(&quic_token_lock, K_FOREVER);
+
+	for (size_t i = 0; i < ARRAY_SIZE(quic_token_cache); i++) {
+		if (quic_token_cache[i].valid &&
+		    quic_token_cache_addr_matches(net_sad(&quic_token_cache[i].remote_addr),
+						  remote_addr)) {
+			slot = &quic_token_cache[i];
+			break;
+		}
+
+		if (!quic_token_cache[i].valid && slot == NULL) {
+			slot = &quic_token_cache[i];
+		}
+	}
+
+	if (slot == NULL) {
+		slot = &quic_token_cache[quic_token_cache_replace_idx];
+		quic_token_cache_replace_idx =
+			(quic_token_cache_replace_idx + 1U) % ARRAY_SIZE(quic_token_cache);
+	}
+
+	if (slot != NULL) {
+		memset(slot, 0, sizeof(*slot));
+		memcpy(&slot->remote_addr, remote_addr, net_family2size(remote_addr->sa_family));
+		memcpy(slot->token, token, token_len);
+		slot->token_len = token_len;
+		slot->valid = true;
+	}
+
+	k_mutex_unlock(&quic_token_lock);
+}
+
+ZTESTABLE_STATIC __maybe_unused void quic_token_cache_clear(void)
+{
+	k_mutex_lock(&quic_token_lock, K_FOREVER);
+	memset(quic_token_cache, 0, sizeof(quic_token_cache));
+	quic_token_cache_replace_idx = 0U;
+	k_mutex_unlock(&quic_token_lock);
+}
+
+ZTESTABLE_STATIC size_t quic_token_cache_take(const struct net_sockaddr *remote_addr,
+					      uint8_t *token, size_t token_size)
+{
+	size_t token_len = 0U;
+
+	k_mutex_lock(&quic_token_lock, K_FOREVER);
+
+	for (size_t i = 0; i < ARRAY_SIZE(quic_token_cache); i++) {
+		if (!quic_token_cache[i].valid ||
+		    !quic_token_cache_addr_matches(net_sad(&quic_token_cache[i].remote_addr),
+						   remote_addr)) {
+			continue;
+		}
+
+		token_len = (size_t)quic_token_cache[i].token_len;
+		if (token_size < token_len) {
+			token_len = 0U;
+		} else {
+			memcpy(token, quic_token_cache[i].token, token_len);
+			memset(&quic_token_cache[i], 0, sizeof(quic_token_cache[i]));
+		}
+
+		break;
+	}
+
+	k_mutex_unlock(&quic_token_lock);
+
+	return token_len;
 }
 
 /*
@@ -1939,6 +2455,16 @@ static int quic_decrypt_packet(struct quic_endpoint *ep,
 	crypto = quic_get_crypto_context(ep, ptype);
 	if (crypto == NULL) {
 		NET_DBG("No crypto context for packet type %d", ptype);
+		if (ptype == QUIC_PACKET_TYPE_HANDSHAKE ||
+		    ptype == QUIC_PACKET_TYPE_1RTT) {
+			/* These packets can arrive before the matching keys are installed
+			 * or after that packet number space is no longer usable.
+			 * Drop them without counting an invalid-key error.
+			 */
+			return -EAGAIN;
+		}
+		QUIC_EP_STAT_INC(ep, invalid_key);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -ENOENT;
 	}
 
@@ -1951,6 +2477,12 @@ static int quic_decrypt_packet(struct quic_endpoint *ep,
 				  &pn_length);
 	if (ret != 0) {
 		NET_DBG("Header protection removal failed (%d)", ret);
+		if (ret == -EINVAL || ret == -ENOBUFS) {
+			QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		} else {
+			QUIC_EP_STAT_INC(ep, decrypt_failed);
+		}
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return ret;
 	}
 
@@ -1968,11 +2500,15 @@ static int quic_decrypt_packet(struct quic_endpoint *ep,
 
 	if (header_len > sizeof(header_aad)) {
 		NET_DBG("Header too large for AAD buffer");
+		QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -ENOBUFS;
 	}
 
 	if (header_len > packet_len) {
 		NET_DBG("Header length exceeds packet length");
+		QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 
@@ -1998,6 +2534,8 @@ static int quic_decrypt_packet(struct quic_endpoint *ep,
 	if (ciphertext_len < QUIC_AEAD_TAG_LEN) {
 		NET_DBG("Packet too short for AEAD tag (%zu < %d)",
 			ciphertext_len, QUIC_AEAD_TAG_LEN);
+		QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 
@@ -2014,6 +2552,14 @@ static int quic_decrypt_packet(struct quic_endpoint *ep,
 				   &result->payload_len);
 	if (ret != 0) {
 		NET_DBG("Payload decryption failed (%d)", ret);
+		if (ret == -EBADMSG) {
+			QUIC_EP_STAT_INC(ep, decrypt_failed);
+		} else if (ret == -EINVAL || ret == -ENOBUFS) {
+			QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		} else {
+			QUIC_EP_STAT_INC(ep, invalid_key);
+		}
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return ret;
 	}
 
@@ -2090,6 +2636,10 @@ static int quic_context_unref(struct quic_context *ctx)
 #endif
 {
 	struct quic_endpoint *ep, *tmp;
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+	struct quic_closed_context_stats closed_stats;
+	bool keep_closed_stats;
+#endif
 	atomic_val_t ref;
 
 	do {
@@ -2115,7 +2665,12 @@ static int quic_context_unref(struct quic_context *ctx)
 
 	k_mutex_lock(&endpoints_lock, K_FOREVER);
 
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+	keep_closed_stats = quic_prepare_closed_context_stats(ctx, &closed_stats);
+#endif
+
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->endpoints, ep, tmp, node) {
+		quic_stats_merge_endpoint(ctx, ep);
 		sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
 		quic_endpoint_send_connection_close(ep, 0, NULL);
 		quic_endpoint_unref(ep);
@@ -2131,6 +2686,12 @@ static int quic_context_unref(struct quic_context *ctx)
 	}
 
 	k_mutex_unlock(&endpoints_lock);
+
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+	if (keep_closed_stats) {
+		quic_store_closed_context_stats(ctx, &closed_stats);
+	}
+#endif
 
 	if (ctx->sock >= 0) {
 		zsock_close(ctx->sock);
@@ -2449,6 +3010,7 @@ static int quic_endpoint_unref(struct quic_endpoint *ep)
 		}
 
 		if (sys_slist_find_and_remove(&contexts[i].endpoints, &ep->node)) {
+			quic_stats_merge_endpoint(&contexts[i], ep);
 			break;
 		}
 	}
@@ -3615,9 +4177,11 @@ static void quic_endpoint_init(struct quic_endpoint *ep)
 	ep->parent = NULL;
 	ep->peer_cid_len = 0;
 	ep->my_cid_len = 0;
+	ep->peer_orig_dcid_len = 0;
 	memset(ep->peer_cid, 0, sizeof(ep->peer_cid));
 	memset(ep->my_cid, 0, sizeof(ep->my_cid));
 	memset(ep->peer_orig_dcid, 0, sizeof(ep->peer_orig_dcid));
+	memset(&ep->token, 0, sizeof(ep->token));
 
 	/* Default max UDP payload size per RFC 9000 when PMTUD is not performed */
 	ep->max_tx_payload_size = 1200;
@@ -4042,6 +4606,15 @@ static struct quic_context *quic_context_init(struct quic_context *ctx)
 
 	ctx->error_code = 0;
 
+#if defined(CONFIG_NET_STATISTICS_QUIC)
+	memset(&ctx->stats, 0, sizeof(ctx->stats));
+	ctx->stats_started_at_ms = quic_stats_uptime_ms();
+	memset(&ctx->stats_local_addr, 0, sizeof(ctx->stats_local_addr));
+	memset(&ctx->stats_remote_addr, 0, sizeof(ctx->stats_remote_addr));
+	ctx->stats_is_server = false;
+	ctx->stats_metadata_valid = false;
+#endif /* CONFIG_NET_STATISTICS_QUIC */
+
 	return ctx;
 }
 
@@ -4454,8 +5027,18 @@ static int handle_initial_packet(struct quic_endpoint *ep,
 				 size_t payload_len,
 				 size_t packet_len)
 {
-	return handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_INITIAL,
-					  payload, payload_len, packet_len, NULL);
+	int ret;
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_INITIAL,
+					 payload, payload_len, packet_len, NULL);
+	if (ret >= 0) {
+		QUIC_EP_STAT_INC(ep, handshake_init_rx);
+	} else {
+		QUIC_EP_STAT_INC(ep, invalid_handshake);
+		QUIC_EP_STAT_INC(ep, drop_rx);
+	}
+
+	return ret;
 }
 
 /*
@@ -4466,8 +5049,18 @@ static int handle_handshake_packet(struct quic_endpoint *ep,
 				   size_t payload_len,
 				   size_t packet_len)
 {
-	return handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_HANDSHAKE,
-					  payload, payload_len, packet_len, NULL);
+	int ret;
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_HANDSHAKE,
+					 payload, payload_len, packet_len, NULL);
+	if (ret >= 0) {
+		QUIC_EP_STAT_INC(ep, handshake_resp_rx);
+	} else {
+		QUIC_EP_STAT_INC(ep, invalid_handshake);
+		QUIC_EP_STAT_INC(ep, drop_rx);
+	}
+
+	return ret;
 }
 
 /*
@@ -4573,6 +5166,35 @@ static int quic_send_handshake_done(struct quic_endpoint *ep)
 	return quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, 1);
 }
 
+static int quic_send_new_token(struct quic_endpoint *ep)
+{
+	uint8_t token[CONFIG_QUIC_TOKEN_MAX_LEN];
+	uint8_t frame[1 + 8 + CONFIG_QUIC_TOKEN_MAX_LEN];
+	size_t token_len;
+	size_t pos = 0U;
+	int ret;
+
+	ret = quic_build_address_token(QUIC_TOKEN_NEW,
+				       net_sad(&ep->remote_addr),
+				       NULL, 0,
+				       token, sizeof(token), &token_len);
+	if (ret != 0) {
+		return ret;
+	}
+
+	frame[pos++] = QUIC_FRAME_TYPE_NEW_TOKEN;
+	ret = quic_put_len(&frame[pos], sizeof(frame) - pos, token_len);
+	if (ret != 0) {
+		return ret;
+	}
+
+	pos += quic_get_varint_size(token_len);
+	memcpy(&frame[pos], token, token_len);
+	pos += token_len;
+
+	return quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, pos);
+}
+
 /**
  * Send CONNECTION_CLOSE frame to peer
  *
@@ -4634,8 +5256,12 @@ static int quic_endpoint_send_transport_close(struct quic_endpoint *ep,
 		level = QUIC_SECRET_LEVEL_APPLICATION;
 	} else if (ep->crypto.handshake.initialized) {
 		level = QUIC_SECRET_LEVEL_HANDSHAKE;
-	} else {
+	} else if (ep->crypto.initial.initialized) {
 		level = QUIC_SECRET_LEVEL_INITIAL;
+	} else {
+		NET_DBG("[EP:%p/%d] Skipping CONNECTION_CLOSE without crypto context",
+			ep, quic_get_by_ep(ep));
+		return 0;
 	}
 
 	/* Cancel any PTO work to avoid unnecessary retransmissions after
@@ -4654,12 +5280,15 @@ static int quic_endpoint_send_connection_close(struct quic_endpoint *ep,
 }
 
 /* Parse peer's transport parameters and initialize flow control */
-static int parse_peer_transport_params(struct quic_endpoint *ep)
+ZTESTABLE_STATIC int parse_peer_transport_params(struct quic_endpoint *ep)
 {
 	struct quic_tls_context *tls = &ep->crypto.tls;
 	uint8_t params[256];
 	size_t params_len = sizeof(params);
 	size_t pos = 0;
+	bool saw_original_dcid = false;
+	bool saw_initial_scid = false;
+	bool saw_retry_scid = false;
 	int ret;
 
 	if (!tls->is_initialized) {
@@ -4710,6 +5339,37 @@ static int parse_peer_transport_params(struct quic_endpoint *ep)
 		}
 
 		switch (param_id) {
+		case QUIC_ORIGINAL_DESTINATION_CONNECTION_ID:
+			saw_original_dcid = true;
+			if (!ep->is_server &&
+			    (param_len != ep->token.client_initial_dcid_len ||
+			     memcmp(&params[pos], ep->token.client_initial_dcid, param_len) != 0)) {
+				NET_ERR("[EP:%p/%d] Invalid original_destination_connection_id",
+					ep, quic_get_by_ep(ep));
+				return -EINVAL;
+			}
+			break;
+		case QUIC_INITIAL_SOURCE_CONNECTION_ID:
+			saw_initial_scid = true;
+			if (!ep->is_server &&
+			    (param_len != ep->peer_cid_len ||
+			     memcmp(&params[pos], ep->peer_cid, param_len) != 0)) {
+				NET_ERR("[EP:%p/%d] Invalid initial_source_connection_id",
+					ep, quic_get_by_ep(ep));
+				return -EINVAL;
+			}
+			break;
+		case QUIC_RETRY_SOURCE_CONNECTION_ID:
+			saw_retry_scid = true;
+			if (!ep->is_server &&
+			    (!ep->token.retry_seen ||
+			     param_len != ep->token.retry_source_cid_len ||
+			     memcmp(&params[pos], ep->token.retry_source_cid, param_len) != 0)) {
+				NET_ERR("[EP:%p/%d] Invalid retry_source_connection_id",
+					ep, quic_get_by_ep(ep));
+				return -EINVAL;
+			}
+			break;
 		case QUIC_INITIAL_MAX_DATA:
 			ep->peer_params.initial_max_data = value;
 			ep->tx_fc.max_data = value;
@@ -4756,6 +5416,17 @@ static int parse_peer_transport_params(struct quic_endpoint *ep)
 		}
 
 		pos += param_len;
+	}
+
+	if (!ep->is_server) {
+		if (!saw_original_dcid || !saw_initial_scid ||
+		    (ep->token.retry_seen && !saw_retry_scid) ||
+		    (!ep->token.retry_seen && saw_retry_scid)) {
+			NET_ERR("[EP:%p/%d] Missing or unexpected QUIC connection ID "
+				"transport parameter",
+				ep, quic_get_by_ep(ep));
+			return -EINVAL;
+		}
 	}
 
 	ep->peer_params.parsed = true;
@@ -4876,6 +5547,10 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 	child_ctx->stream_id_counter = 0ULL;
 	child_ctx->id = connection_ids++;
 	child_ctx->is_listening = false;
+	quic_stats_merge_endpoint(child_ctx, child_ep);
+#if defined(CONFIG_NET_STATISTICS_QUIC)
+	quic_stats_set_context_metadata(child_ctx, child_ep);
+#endif /* CONFIG_NET_STATISTICS_QUIC */
 
 	NET_DBG("[EP:%p/%d] Enqueueing accept CO:%p/%d to CO:%p/%d; parent EP:%p/%d",
 		child_ep, quic_get_by_ep(child_ep),
@@ -4903,7 +5578,10 @@ static int quic_handshake_complete(struct quic_endpoint *ep)
 	ret = parse_peer_transport_params(ep);
 	if (ret != 0) {
 		NET_WARN("Failed to parse peer transport params: %d", ret);
-		/* Continue anyway, use defaults */
+		(void)quic_endpoint_send_connection_close(ep,
+							  QUIC_ERROR_TRANSPORT_PARAMETER_ERROR,
+							  "Invalid transport parameters");
+		return ret;
 	}
 
 	quic_endpoint_negotiate_idle_timeout(ep);
@@ -4921,6 +5599,12 @@ static int quic_handshake_complete(struct quic_endpoint *ep)
 		if (ret != 0) {
 			NET_ERR("Failed to send HANDSHAKE_DONE");
 			return ret;
+		}
+
+		ret = quic_send_new_token(ep);
+		if (ret != 0) {
+			NET_WARN("[EP:%p/%d] Failed to send NEW_TOKEN (%d)",
+				 ep, quic_get_by_ep(ep), ret);
 		}
 	}
 
@@ -5432,6 +6116,7 @@ static struct quic_stream *quic_create_stream_from_peer(struct quic_context *ctx
 	stream = quic_get_stream(ctx);
 	if (stream == NULL) {
 		NET_DBG("[CO:%p/%d] No available stream slots", ctx, quic_get_by_conn(ctx));
+		QUIC_EP_STAT_INC(ep, alloc_failed);
 		quic_stats_update_stream_open_failed();
 		return NULL;
 	}
@@ -5599,20 +6284,16 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 	}
 
 	if (ptype == QUIC_PACKET_TYPE_INITIAL) {
-		if (pkt->token > 0) {
-			NET_WARN("[EP:%p/%d] Initial packet carried token length %" PRIu64
-				 ", but Retry/NEW_TOKEN token handling is not implemented",
-				 ep, quic_get_by_ep(ep), pkt->token);
-		}
-	}
-
-	if (ptype == QUIC_PACKET_TYPE_INITIAL) {
 		if (ep->crypto.initial.rx.hp.key_id == 0) {
 			if (!quic_conn_init_setup(ep,
-						  ep->peer_orig_dcid,
-						  ep->peer_orig_dcid_len)) {
+						  ep->token.retry_used ?
+						  ep->my_cid : ep->peer_orig_dcid,
+						  ep->token.retry_used ?
+						  ep->my_cid_len : ep->peer_orig_dcid_len)) {
 				NET_DBG("[EP:%p/%d] Cannot setup initial connection ID",
 					ep, quic_get_by_ep(ep));
+				QUIC_EP_STAT_INC(ep, invalid_key);
+				QUIC_EP_STAT_INC(ep, drop_rx);
 				goto fail;
 			}
 
@@ -5635,6 +6316,8 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 	if (pkt->total_len > pkt->len + pkt->pn_offset) {
 		NET_DBG("[EP:%p/%d] Actual packet length %zu exceeds calculated length %zu",
 			ep, quic_get_by_ep(ep), pkt->total_len, pkt->len + pkt->pn_offset);
+		QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		goto fail;
 	}
 
@@ -5676,6 +6359,8 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 					  ep->peer_orig_dcid_len)) {
 			NET_ERR("[EP:%p/%d] Failed to setup Initial crypto for new endpoint",
 				ep, quic_get_by_ep(ep));
+			QUIC_EP_STAT_INC(ep, invalid_key);
+			QUIC_EP_STAT_INC(ep, drop_rx);
 			goto free_ep;
 		}
 
@@ -5692,6 +6377,8 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 		if (clone_ret != 0) {
 			NET_ERR("[EP:%p/%d] Failed to clone TLS context for Initial", ep,
 				quic_get_by_ep(ep));
+			QUIC_EP_STAT_INC(ep, invalid_handshake);
+			QUIC_EP_STAT_INC(ep, drop_rx);
 			goto free_ep;
 		}
 
@@ -5737,6 +6424,10 @@ static bool process_short_header_msg(struct quic_pkt *pkt)
 	/* Get crypto context for APPLICATION level (1-RTT) */
 	crypto_ctx = quic_get_crypto_context_by_level(ep, QUIC_SECRET_LEVEL_APPLICATION);
 	if (crypto_ctx == NULL || !crypto_ctx->initialized) {
+		/* A reordered 1-RTT packet can arrive before this endpoint finishes
+		 * installing application keys from the peer's handshake flight.
+		 * Ignore it without charging invalid-key/drop statistics.
+		 */
 		NET_DBG("[%p] Application crypto context still not ready for endpoint %d",
 			ep, quic_get_by_ep(ep));
 		return false;
@@ -5805,6 +6496,250 @@ static void quic_service_thread(void *p1, void *p2, void *p3)
 	}
 }
 
+/*
+ * RFC 9001 Section 5.8 defines the QUIC v1 Retry Integrity Tag as
+ * AEAD_AES_128_GCM with an empty plaintext and fixed key/nonce values.
+ * The RFC notes these constants come from HKDF-Expand-Label using the
+ * version-specific Retry secret; we embed the final key/IV directly here.
+ */
+static int quic_compute_retry_integrity_tag(const uint8_t *pseudo_packet,
+					    size_t pseudo_packet_len,
+					    uint8_t tag[QUIC_TOKEN_TAG_LEN])
+{
+	static const uint8_t retry_key[16] = {
+		0xbe, 0x0c, 0x69, 0x0b, 0x9f, 0x66, 0x57, 0x5a,
+		0x1d, 0x76, 0x6b, 0x54, 0xe3, 0x68, 0xc8, 0x4e,
+	};
+	static const uint8_t retry_nonce[12] = {
+		0x46, 0x15, 0x99, 0xd3, 0x5d, 0x63,
+		0x2b, 0xf2, 0x23, 0x98, 0x25, 0xbb,
+	};
+	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t key_id = 0;
+	psa_status_t status;
+	size_t out_len;
+
+	psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
+	psa_set_key_algorithm(&attributes, PSA_ALG_GCM);
+	psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+	psa_set_key_bits(&attributes, sizeof(retry_key) * 8);
+
+	status = psa_import_key(&attributes, retry_key, sizeof(retry_key), &key_id);
+	if (status != PSA_SUCCESS) {
+		return -EIO;
+	}
+
+	status = psa_aead_encrypt(key_id, PSA_ALG_GCM,
+				  retry_nonce, sizeof(retry_nonce),
+				  pseudo_packet, pseudo_packet_len,
+				  NULL, 0,
+				  tag, QUIC_TOKEN_TAG_LEN, &out_len);
+	psa_destroy_key(key_id);
+
+	if (status != PSA_SUCCESS || out_len != QUIC_TOKEN_TAG_LEN) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+/*
+ * RFC 9001 Section 5.8 Figure 8 defines the Retry Pseudo-Packet used as
+ * AEAD associated data: prepend ODCID length and ODCID to the Retry
+ * packet with the final 16-byte integrity tag removed.
+ */
+static int quic_build_retry_pseudo_packet(const struct quic_long_header_info *info,
+					  const uint8_t *orig_dcid,
+					  uint8_t orig_dcid_len,
+					  uint8_t *pseudo_packet,
+					  size_t pseudo_packet_len,
+					  size_t *out_len)
+{
+	size_t needed_len;
+
+	needed_len = 1U + orig_dcid_len + info->total_len - QUIC_TOKEN_TAG_LEN;
+	if (needed_len > pseudo_packet_len) {
+		return -ENOBUFS;
+	}
+
+	pseudo_packet[0] = orig_dcid_len;
+	memcpy(&pseudo_packet[1], orig_dcid, orig_dcid_len);
+	memcpy(&pseudo_packet[1 + orig_dcid_len], info->packet,
+	       info->total_len - QUIC_TOKEN_TAG_LEN);
+	*out_len = needed_len;
+
+	return 0;
+}
+
+static int quic_validate_retry_packet(const struct quic_long_header_info *info,
+				      const uint8_t *orig_dcid,
+				      uint8_t orig_dcid_len)
+{
+	uint8_t pseudo_packet[1 + MAX_CONN_ID_LEN + MAX_QUIC_HEADER_SIZE +
+			      CONFIG_QUIC_TOKEN_MAX_LEN];
+	uint8_t expected_tag[QUIC_TOKEN_TAG_LEN];
+	size_t pseudo_len;
+	int ret;
+
+	ret = quic_build_retry_pseudo_packet(info, orig_dcid, orig_dcid_len,
+					     pseudo_packet, sizeof(pseudo_packet),
+					     &pseudo_len);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = quic_compute_retry_integrity_tag(pseudo_packet, pseudo_len, expected_tag);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return mbedtls_ct_memcmp(expected_tag,
+				 info->packet + info->total_len - QUIC_TOKEN_TAG_LEN,
+				 QUIC_TOKEN_TAG_LEN) == 0 ? 0 : -EACCES;
+}
+
+static int quic_send_retry(struct quic_endpoint *ep,
+			   const struct net_sockaddr *addr,
+			   net_socklen_t addrlen,
+			   const struct quic_long_header_info *info)
+{
+	uint8_t packet[MAX_QUIC_HEADER_SIZE + CONFIG_QUIC_TOKEN_MAX_LEN + QUIC_TOKEN_TAG_LEN];
+	uint8_t pseudo_packet[1 + MAX_CONN_ID_LEN + sizeof(packet)];
+	uint8_t retry_scid[MAX_MY_CONN_ID_LEN];
+	size_t token_len;
+	size_t pseudo_len;
+	size_t pos = 0U;
+	uint8_t first_byte;
+	int ret;
+	ssize_t sent;
+
+	ret = quic_build_address_token(QUIC_TOKEN_RETRY, addr,
+				       info->dst_conn_id, info->dst_conn_id_len,
+				       &packet[MAX_QUIC_HEADER_SIZE],
+				       sizeof(packet) - MAX_QUIC_HEADER_SIZE,
+				       &token_len);
+	if (ret != 0) {
+		QUIC_EP_STAT_INC(ep, drop_tx);
+		return ret;
+	}
+
+	sys_rand_get(retry_scid, sizeof(retry_scid));
+	sys_rand_get(&first_byte, sizeof(first_byte));
+
+	packet[pos++] = QUIC_LONG_HEADER_RETRY | (first_byte & 0x0f);
+	packet[pos++] = (QUIC_VERSION_1 >> 24) & 0xff;
+	packet[pos++] = (QUIC_VERSION_1 >> 16) & 0xff;
+	packet[pos++] = (QUIC_VERSION_1 >> 8) & 0xff;
+	packet[pos++] = QUIC_VERSION_1 & 0xff;
+	packet[pos++] = info->src_conn_id_len;
+	memcpy(&packet[pos], info->src_conn_id, info->src_conn_id_len);
+	pos += info->src_conn_id_len;
+	packet[pos++] = sizeof(retry_scid);
+	memcpy(&packet[pos], retry_scid, sizeof(retry_scid));
+	pos += sizeof(retry_scid);
+	memcpy(&packet[pos], &packet[MAX_QUIC_HEADER_SIZE], token_len);
+	pos += token_len;
+
+	/* RFC 9001 Section 5.8: ODCID length + ODCID + Retry packet without
+	 * the final integrity tag.
+	 */
+	pseudo_packet[0] = info->dst_conn_id_len;
+	memcpy(&pseudo_packet[1], info->dst_conn_id, info->dst_conn_id_len);
+	memcpy(&pseudo_packet[1 + info->dst_conn_id_len], packet, pos);
+	pseudo_len = 1 + info->dst_conn_id_len + pos;
+
+	ret = quic_compute_retry_integrity_tag(pseudo_packet, pseudo_len,
+					       &packet[pos]);
+	if (ret != 0) {
+		QUIC_EP_STAT_INC(ep, drop_tx);
+		return ret;
+	}
+
+	pos += QUIC_TOKEN_TAG_LEN;
+
+	sent = zsock_sendto(ep->sock, packet, pos, 0, addr, addrlen);
+	if (sent < 0) {
+		QUIC_EP_STAT_INC(ep, drop_tx);
+		return -errno;
+	}
+
+	if (sent != (ssize_t)pos) {
+		QUIC_EP_STAT_INC(ep, drop_tx);
+		return -EIO;
+	}
+
+	QUIC_EP_STAT_INC(ep, handshake_resp_tx);
+
+	return 0;
+}
+
+ZTESTABLE_STATIC int quic_client_handle_retry(struct quic_endpoint *ep,
+					      const struct quic_long_header_info *info)
+{
+	int ret;
+
+	/* RFC 9000 only permits Retry before the client processes the first
+	 * server flight, and at most once per connection attempt.
+	 */
+	if (ep->token.retry_seen ||
+	    ep->crypto.tls.state != QUIC_TLS_STATE_WAIT_SERVER_HELLO ||
+	    !ep->crypto.tls.client_hello_prepared) {
+		return -EPROTO;
+	}
+
+	ret = quic_validate_retry_packet(info,
+					 ep->token.client_initial_dcid,
+					 ep->token.client_initial_dcid_len);
+	if (ret != 0) {
+		return ret;
+	}
+
+	quic_endpoint_set_initial_token(ep, QUIC_TOKEN_RETRY,
+					info->token, info->token_len);
+
+	ep->token.retry_seen = true;
+	ep->token.retry_source_cid_len = info->src_conn_id_len;
+	memcpy(ep->token.retry_source_cid, info->src_conn_id, info->src_conn_id_len);
+	ep->peer_cid_len = info->src_conn_id_len;
+	memcpy(ep->peer_cid, info->src_conn_id, info->src_conn_id_len);
+
+	quic_crypto_context_destroy(&ep->crypto.initial);
+
+	if (!quic_conn_init_setup(ep, ep->peer_cid, ep->peer_cid_len)) {
+		return -EIO;
+	}
+
+	return quic_tls_client_retry(&ep->crypto.tls);
+}
+
+static int validate_address_token(struct quic_endpoint *ep,
+				  const struct net_sockaddr *addr,
+				  net_socklen_t addrlen,
+				  struct quic_long_header_info *info,
+				  struct quic_token_validation *validation)
+{
+	int ret;
+
+	ret = quic_validate_address_token(addr, info->token, info->token_len,
+					  validation);
+	if (ret != 0) {
+		if (IS_ENABLED(CONFIG_QUIC_SERVER_RETRY) &&
+		    validation->type != QUIC_TOKEN_RETRY) {
+			ret = quic_send_retry(ep, addr, addrlen, info);
+			if (ret < 0) {
+				NET_WARN("[EP:%p/%d] Failed to send Retry (%d)",
+					 ep, quic_get_by_ep(ep), ret);
+			}
+
+			return 1;
+		}
+
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 /* Both the long and short header processing functions make rudimentary
  * checks and then store the remaining packet data in the endpoint's
  * pending buffer for further processing done by QUIC handler thread.
@@ -5812,11 +6747,7 @@ static void quic_service_thread(void *p1, void *p2, void *p3)
 ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 					 struct net_sockaddr *addr,
 					 net_socklen_t addrlen,
-					 uint8_t *buf,
-					 size_t payload_len,
-					 uint64_t token,
-					 size_t total_len,
-					 size_t pn_offset,
+					 struct quic_long_header_info *info,
 					 size_t datagram_len)
 {
 	uint8_t dst_conn_id[MAX_CONN_ID_LEN];
@@ -5825,13 +6756,21 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 	struct quic_endpoint *existing_ep;
 	struct quic_pkt *pkt;
 	enum quic_packet_type ptype;
-	uint32_t version;
 	int dst_conn_id_len;
 	int src_conn_id_len;
 	int my_cid_len = 0;
-	int pos = 0;
+	bool retry_used = false;
+	int ret;
 
-	ptype = (buf[pos++] >> 4) & 0x03;
+	if (info == NULL || info->packet == NULL) {
+		return -EINVAL;
+	}
+
+	ptype = info->ptype;
+	dst_conn_id_len = info->dst_conn_id_len;
+	src_conn_id_len = info->src_conn_id_len;
+	memcpy(dst_conn_id, info->dst_conn_id, dst_conn_id_len);
+	memcpy(src_conn_id, info->src_conn_id, src_conn_id_len);
 
 	NET_DBG("[EP:%p/%d] Packet type: %s, first byte: 0x%02x",
 		ep, quic_get_by_ep(ep),
@@ -5839,66 +6778,26 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 		ptype == QUIC_PACKET_TYPE_0RTT ? "0-RTT" :
 		ptype == QUIC_PACKET_TYPE_HANDSHAKE ? "handshake" :
 		ptype == QUIC_PACKET_TYPE_RETRY ? "retry" : "unknown",
-		buf[0]);
-
-	version = sys_get_be32(&buf[pos]);
-	pos += sizeof(uint32_t);
-	if ((size_t)pos >= total_len) {
-		NET_DBG("[EP:%p/%d] Packet too short for connection IDs",
-			ep, quic_get_by_ep(ep));
-		return -EINVAL;
-	}
-
-	/* Destination id len */
-	dst_conn_id_len = buf[pos++];
-	if (dst_conn_id_len > MAX_CONN_ID_LEN) {
-		NET_DBG("[EP:%p/%d] Invalid QUIC connection ID len %d",
-			ep, quic_get_by_ep(ep), dst_conn_id_len);
-		return -EINVAL;
-	}
-
-	memcpy(dst_conn_id, &buf[pos], dst_conn_id_len);
-	pos += dst_conn_id_len;
-	if ((size_t)pos >= total_len) {
-		NET_DBG("[EP:%p/%d] Packet too short for %s connection ID",
-			ep, quic_get_by_ep(ep), "destination");
-		return -EINVAL;
-	}
-
-	/* Src id len */
-	src_conn_id_len = buf[pos++];
-	if (src_conn_id_len > MAX_CONN_ID_LEN) {
-		NET_DBG("[EP:%p/%d] Invalid QUIC connection ID len %d",
-			ep, quic_get_by_ep(ep), src_conn_id_len);
-		return -EINVAL;
-	}
-
-	memcpy(src_conn_id, &buf[pos], src_conn_id_len);
-	pos += src_conn_id_len;
-	if ((size_t)pos >= total_len) {
-		NET_DBG("[EP:%p/%d] Packet too short for %s connection ID",
-			ep, quic_get_by_ep(ep), "source");
-		return -EINVAL;
-	}
+		info->packet[0]);
 
 	NET_HEXDUMP_DBG(dst_conn_id, dst_conn_id_len, "Destination Conn ID:");
 	NET_HEXDUMP_DBG(src_conn_id, src_conn_id_len, "Source Conn ID:");
 
-	if (version != QUIC_VERSION_1) {
-		if (version == QUIC_VERSION_NEGOTIATION) {
+	if (info->version != QUIC_VERSION_1) {
+		if (info->version == QUIC_VERSION_NEGOTIATION) {
 			NET_DBG("[EP:%p/%d] Ignoring Version Negotiation packet",
 				ep, quic_get_by_ep(ep));
 			return 1;
 		}
 
 		NET_DBG("[EP:%p/%d] Unsupported QUIC version: 0x%08x",
-			ep, quic_get_by_ep(ep), version);
+			ep, quic_get_by_ep(ep), info->version);
 
 		if (quic_send_version_negotiation(ep, addr, addrlen,
 						  src_conn_id, src_conn_id_len,
 						  dst_conn_id, dst_conn_id_len) < 0) {
 			NET_WARN("[EP:%p/%d] Failed to send Version Negotiation for version 0x%08x",
-				 ep, quic_get_by_ep(ep), version);
+				 ep, quic_get_by_ep(ep), info->version);
 		}
 
 		return 1;
@@ -5908,6 +6807,8 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 	    dst_conn_id_len < QUIC_INITIAL_DCID_MIN_LEN) {
 		NET_WARN("[EP:%p/%d] Dropping Initial packet with too-short DCID len %d",
 			 ep, quic_get_by_ep(ep), dst_conn_id_len);
+		QUIC_EP_STAT_INC(ep, invalid_packet);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 
@@ -5917,8 +6818,27 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 	existing_ep = quic_endpoint_lookup(addr, net_sad(&ep->local_addr),
 					   src_conn_id, src_conn_id_len,
 					   dst_conn_id, dst_conn_id_len);
+	if (ptype == QUIC_PACKET_TYPE_RETRY) {
+		if (existing_ep == NULL || existing_ep->is_server) {
+			return 1;
+		}
+
+		ret = quic_client_handle_retry(existing_ep, info);
+		if (ret != 0) {
+			QUIC_EP_STAT_INC(existing_ep, invalid_packet);
+			QUIC_EP_STAT_INC(existing_ep, drop_rx);
+			return ret;
+		}
+
+		QUIC_EP_STAT_INC(existing_ep, handshake_resp_rx);
+
+		return 1;
+	}
+
 	if (existing_ep == NULL) {
+		struct quic_token_validation validation;
 		struct quic_endpoint *new_ep;
+		bool token_validated = false;
 
 		/* Make sure that the initial packet's UDP datagram is at least
 		 * 1200 bytes long (RFC 9000 Section 14.1) to prevent
@@ -5927,15 +6847,50 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 		if (ptype == QUIC_PACKET_TYPE_INITIAL && datagram_len < 1200) {
 			NET_DBG("[EP:%p/%d] Initial datagram too short: %zu bytes",
 				ep, quic_get_by_ep(ep), datagram_len);
+			QUIC_EP_STAT_INC(ep, invalid_packet_len);
+			QUIC_EP_STAT_INC(ep, drop_rx);
 			return -EINVAL;
+		}
+
+		if (ptype == QUIC_PACKET_TYPE_INITIAL && ep->is_server) {
+			if (info->token_len == 0U) {
+				if (IS_ENABLED(CONFIG_QUIC_SERVER_RETRY)) {
+					ret = quic_send_retry(ep, addr, addrlen, info);
+					if (ret < 0) {
+						NET_WARN("[EP:%p/%d] Failed to send Retry (%d)",
+							 ep, quic_get_by_ep(ep), ret);
+					}
+
+					return 1;
+				}
+			} else {
+				ret = validate_address_token(ep, addr, addrlen,
+							     info, &validation);
+				if (ret != 0) {
+					if (ret < 0) {
+						QUIC_EP_STAT_INC(ep, invalid_packet);
+						QUIC_EP_STAT_INC(ep, drop_rx);
+					}
+
+					return ret;
+				}
+
+				token_validated = true;
+				retry_used = validation.type == QUIC_TOKEN_RETRY;
+			}
 		}
 
 		/*
 		 * Server generates its own CID for the client to use.
 		 * This is different from the DCID the client used in Initial.
 		 */
-		my_cid_len = MAX_MY_CONN_ID_LEN;
-		sys_rand_get(my_cid, my_cid_len);
+		if (retry_used) {
+			my_cid_len = dst_conn_id_len;
+			memcpy(my_cid, dst_conn_id, my_cid_len);
+		} else {
+			my_cid_len = MAX_MY_CONN_ID_LEN;
+			sys_rand_get(my_cid, my_cid_len);
+		}
 
 		NET_HEXDUMP_DBG(my_cid, my_cid_len, "Recipient generated CID:");
 
@@ -5945,13 +6900,22 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 		if (new_ep == NULL) {
 			NET_DBG("[EP:%p/%d] Cannot create new endpoint",
 				ep, quic_get_by_ep(ep));
+			QUIC_EP_STAT_INC(ep, alloc_failed);
+			QUIC_EP_STAT_INC(ep, drop_rx);
 			return -ENOMEM;
 		}
 
 		/* Save the original DCID as it is used during handshake process */
 		if (new_ep->peer_orig_dcid_len == 0) {
-			new_ep->peer_orig_dcid_len = dst_conn_id_len;
-			memcpy(new_ep->peer_orig_dcid, dst_conn_id, dst_conn_id_len);
+			if (retry_used) {
+				new_ep->peer_orig_dcid_len = validation.orig_dcid_len;
+				memcpy(new_ep->peer_orig_dcid, validation.orig_dcid,
+				       validation.orig_dcid_len);
+				new_ep->token.retry_used = true;
+			} else {
+				new_ep->peer_orig_dcid_len = dst_conn_id_len;
+				memcpy(new_ep->peer_orig_dcid, dst_conn_id, dst_conn_id_len);
+			}
 		}
 
 		NET_DBG("[EP:%p/%d] New endpoint", new_ep, quic_get_by_ep(new_ep));
@@ -5964,6 +6928,9 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 
 		new_ep->parent = ep;
 		new_ep->is_server = true;
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+		new_ep->anti_amplification.validated = token_validated;
+#endif
 
 		/* Take a ref to parent endpoint to ensure it stays alive as long as this
 		 * child endpoint exists.
@@ -5993,11 +6960,13 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 		}
 	}
 
-	quic_endpoint_note_unvalidated_rx(existing_ep, total_len);
+	quic_endpoint_note_unvalidated_rx(existing_ep, info->total_len);
 
-	if (total_len > sizeof(((struct quic_pkt *)0)->data)) {
-		NET_DBG("Packet too large: %zu > %zu", total_len,
+	if (info->total_len > sizeof(((struct quic_pkt *)0)->data)) {
+		NET_DBG("Packet too large: %zu > %zu", info->total_len,
 			sizeof(((struct quic_pkt *)0)->data));
+		QUIC_EP_STAT_INC(existing_ep, invalid_packet_len);
+		QUIC_EP_STAT_INC(existing_ep, drop_rx);
 		return -ENOBUFS;
 	}
 
@@ -6012,6 +6981,8 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 	pkt = quic_pkt_alloc(&quic_pkts, K_MSEC(CONFIG_QUIC_PKT_ALLOC_TIMEOUT));
 	if (pkt == NULL) {
 		NET_DBG("Cannot allocate QUIC packet");
+		QUIC_EP_STAT_INC(existing_ep, alloc_failed);
+		QUIC_EP_STAT_INC(existing_ep, drop_rx);
 		return -ENOMEM;
 	}
 
@@ -6019,12 +6990,11 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 	pkt->old_ep = ep;
 	pkt->ptype = ptype;
 	pkt->htype = QUIC_HEADER_TYPE_LONG;
-	pkt->token = token;
-	pkt->pn_offset = pn_offset;
+	pkt->pn_offset = info->pn_offset;
 	pkt->pos = 0;
-	pkt->len = payload_len;
-	pkt->total_len = total_len;
-	memcpy(pkt->data, buf, total_len);
+	pkt->len = info->payload_len;
+	pkt->total_len = info->total_len;
+	memcpy(pkt->data, info->packet, info->total_len);
 
 	quic_endpoint_ref(pkt->ep);
 
@@ -6068,6 +7038,8 @@ static int process_short_header(struct quic_endpoint *ep,
 	ARG_UNUSED(addrlen);
 
 	if (len < 1) {
+		QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 
@@ -6076,10 +7048,14 @@ static int process_short_header(struct quic_endpoint *ep,
 	/* Verify it's a short header (bit 7 = 0) with fixed bit set (bit 6 = 1) */
 	if ((first_byte & 0x80) != 0) {
 		NET_ERR("Not a short header packet");
+		QUIC_EP_STAT_INC(ep, invalid_packet);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 	if ((first_byte & 0x40) == 0) {
 		NET_ERR("Fixed bit not set in short header");
+		QUIC_EP_STAT_INC(ep, invalid_packet);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 
@@ -6096,6 +7072,8 @@ static int process_short_header(struct quic_endpoint *ep,
 
 	if (len < 1 + dcid_len + 1) {
 		NET_ERR("Short header packet too small for CID");
+		QUIC_EP_STAT_INC(ep, invalid_packet_len);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return -EINVAL;
 	}
 
@@ -6105,6 +7083,8 @@ static int process_short_header(struct quic_endpoint *ep,
 	target_ep = quic_endpoint_lookup(addr, NULL, NULL, 0, dcid, dcid_len);
 	if (target_ep == NULL || target_ep->sock == -1) {
 		NET_DBG("No endpoint found for short header DCID");
+		QUIC_EP_STAT_INC(ep, peer_not_found);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		return 0; /* Silently ignore, might be for unknown connection */
 	}
 
@@ -6136,6 +7116,8 @@ static int process_short_header(struct quic_endpoint *ep,
 		pkt = quic_pkt_alloc(&quic_pkts, K_MSEC(CONFIG_QUIC_PKT_ALLOC_TIMEOUT));
 		if (pkt == NULL) {
 			NET_DBG("Cannot allocate QUIC packet for short header");
+			QUIC_EP_STAT_INC(target_ep, alloc_failed);
+			QUIC_EP_STAT_INC(target_ep, drop_rx);
 			quic_endpoint_unref(target_ep);
 			return -ENOMEM;
 		}
@@ -6144,7 +7126,6 @@ static int process_short_header(struct quic_endpoint *ep,
 		pkt->old_ep = ep;
 		pkt->ptype = QUIC_PACKET_TYPE_1RTT;
 		pkt->htype = QUIC_HEADER_TYPE_SHORT;
-		pkt->token = 0;
 		pkt->pn_offset = pn_offset;
 		pkt->pos = 0;
 		pkt->len = len;
@@ -6186,10 +7167,12 @@ static int process_short_header(struct quic_endpoint *ep,
 	/* EAGAIN indicates out-of-order data. Packet was valid, fall through to ACK */
 	if (ret < 0 && ret != -EAGAIN) {
 		NET_DBG("Short header packet handling failure (%d)", ret);
+		QUIC_EP_STAT_INC(target_ep, drop_rx);
 		quic_endpoint_notify_streams_closed(target_ep);
 		quic_endpoint_unref(target_ep);
 		goto out;
 	} else if (ret > 0) {
+		QUIC_EP_STAT_INC(target_ep, valid_rx);
 		/* Close the connection */
 		NET_DBG("[EP:%p/%d] Connection closing after short header packet",
 			target_ep, quic_get_by_ep(target_ep));
@@ -6201,6 +7184,8 @@ static int process_short_header(struct quic_endpoint *ep,
 		ret = 0;
 		goto out;
 	}
+
+	QUIC_EP_STAT_INC(target_ep, valid_rx);
 
 	/* Send ACK for 1-RTT packets, but NOT for ACK-only packets.
 	 * Per RFC 9000 Section 13.2.1: "A sender MUST NOT send an ACK frame
@@ -6234,48 +7219,52 @@ out:
  * Parse a long header to determine the total packet length.
  * Returns total packet size including header.
  */
-static int get_long_header_packet_length(const uint8_t *data, size_t data_len,
-					 size_t *packet_len, uint64_t *token,
-					 size_t *pn_offset)
+ZTESTABLE_STATIC int quic_parse_long_header(struct quic_long_header_info *info,
+					    uint8_t *data, size_t data_len)
 {
 	enum quic_packet_type ptype;
-	uint8_t dcid_len, scid_len;
 	uint64_t payload_len;
 	int varint_size;
 	size_t pos;
 
-	if (data_len < 7) {
+	if (info == NULL || data == NULL || data_len < 7) {
 		return -EINVAL;
 	}
+
+	memset(info, 0, sizeof(*info));
+	info->packet = data;
 
 	/* First byte + Version (4 bytes) */
 	pos = 5;
 
 	ptype = quic_get_long_packet_type(data[0]);
+	info->ptype = ptype;
+	info->version = sys_get_be32(&data[1]);
 
 	/* DCID length and DCID */
-	dcid_len = data[pos++];
-	if (dcid_len > MAX_CONN_ID_LEN) {
+	info->dst_conn_id_len = data[pos++];
+	if (info->dst_conn_id_len > MAX_CONN_ID_LEN) {
 		return -EINVAL;
 	}
 
-	pos += dcid_len;
+	info->dst_conn_id = &data[pos];
+	pos += info->dst_conn_id_len;
 	if (pos > data_len) {
 		return -EINVAL;
 	}
 
 	/* SCID length and SCID */
-	scid_len = data[pos++];
-	if (scid_len > MAX_CONN_ID_LEN) {
+	info->src_conn_id_len = data[pos++];
+	if (info->src_conn_id_len > MAX_CONN_ID_LEN) {
 		return -EINVAL;
 	}
 
-	pos += scid_len;
+	info->src_conn_id = &data[pos];
+	pos += info->src_conn_id_len;
 	if (pos > data_len) {
 		return -EINVAL;
 	}
 
-	/* Token (only for Initial packets) */
 	if (ptype == QUIC_PACKET_TYPE_INITIAL) {
 		uint64_t token_len = 0;
 
@@ -6290,14 +7279,50 @@ static int get_long_header_packet_length(const uint8_t *data, size_t data_len,
 			return -EINVAL;
 		}
 
-		if (token != NULL) {
-			*token = token_len;
+		if (token_len > CONFIG_QUIC_TOKEN_MAX_LEN) {
+			return -ENOBUFS;
 		}
 
+		info->token = &data[pos];
+		info->token_len = token_len;
 		pos += token_len;
+
+		if (pos >= data_len) {
+			return -EINVAL;
+		}
+
+		/* Length field (varint), this is PN length + encrypted payload + tag */
+		varint_size = quic_get_len(&data[pos], data_len - pos, &payload_len);
+		if (varint_size < 0) {
+			return -EINVAL;
+		}
+
+		pos += varint_size;
+
+		info->pn_offset = pos;
+		info->payload_len = payload_len;
+		info->total_len = pos + payload_len;
+
+		return info->total_len <= data_len ? 0 : -EINVAL;
 	}
 
-	/* Length field (varint), this is PN length + encrypted payload + tag */
+	if (ptype == QUIC_PACKET_TYPE_RETRY) {
+		if (data_len < pos + QUIC_TOKEN_TAG_LEN) {
+			return -EINVAL;
+		}
+
+		info->token = &data[pos];
+		info->token_len = data_len - pos - QUIC_TOKEN_TAG_LEN;
+		if (info->token_len > CONFIG_QUIC_TOKEN_MAX_LEN) {
+			return -ENOBUFS;
+		}
+
+		info->total_len = data_len;
+		info->payload_len = 0U;
+		info->pn_offset = 0U;
+		return 0;
+	}
+
 	if (pos >= data_len) {
 		return -EINVAL;
 	}
@@ -6308,15 +7333,11 @@ static int get_long_header_packet_length(const uint8_t *data, size_t data_len,
 	}
 
 	pos += varint_size;
+	info->pn_offset = pos;
+	info->payload_len = payload_len;
+	info->total_len = pos + payload_len;
 
-	/* pos now points to the packet number, this is pn_offset */
-	*pn_offset = pos;
-
-	/* packet_len is the Length field value */
-	*packet_len = payload_len;
-
-	/* Return total packet length = header up to length field + payload_len */
-	return pos + payload_len;
+	return info->total_len <= data_len ? 0 : -EINVAL;
 }
 
 /*
@@ -6328,17 +7349,18 @@ static int get_long_header_packet_length(const uint8_t *data, size_t data_len,
 static int handle_datagram(struct quic_endpoint *ep,
 			   uint8_t *data, size_t data_len,
 			   struct net_sockaddr *src_addr,
-			   net_socklen_t addr_len)
+			   net_socklen_t addr_len,
+			   int *packets_seen)
 {
 	size_t offset = 0;
 	int packets_processed = 0;
+	int seen = 0;
 	bool long_header_queued = false;
 	int ret;
 
 	while (offset < data_len) {
 		uint8_t first_byte = data[offset];
-		size_t packet_len, total_len, pn_offset;
-		uint64_t token = 0;
+		size_t total_len;
 
 		/* Skip padding bytes (0x00) between coalesced packets */
 		if (first_byte == 0x00) {
@@ -6346,36 +7368,47 @@ static int handle_datagram(struct quic_endpoint *ep,
 			continue;
 		}
 
+		seen++;
+
 		if (quic_is_long_header(first_byte)) {
+			struct quic_long_header_info info;
+
 			/* Long header packet, need to parse to find length */
-			ret = get_long_header_packet_length(data + offset,
-							    data_len - offset,
-							    &packet_len, &token,
-							    &pn_offset);
+			ret = quic_parse_long_header(&info, data + offset, data_len - offset);
 			if (ret < 0) {
 				NET_DBG("Failed to get long header packet length:  %d", ret);
+				QUIC_EP_STAT_INC(ep, invalid_packet_len);
+				QUIC_EP_STAT_INC(ep, drop_rx);
 				break;
 			}
 
-			total_len = ret;
+			total_len = info.total_len;
 		} else {
 			/* Short header packet, consumes rest of datagram */
-			packet_len = data_len - offset;
-			total_len = packet_len;
-			pn_offset = 0;
+			total_len = data_len - offset;
 		}
 
 		if (offset + total_len > data_len) {
 			NET_ERR("Total packet length %zu exceeds datagram at offset %zu",
 				total_len, offset);
+			QUIC_EP_STAT_INC(ep, invalid_packet_len);
+			QUIC_EP_STAT_INC(ep, drop_rx);
 			break;
 		}
 
 		/* Process this single packet based on header type */
 		if (quic_is_long_header(first_byte)) {
+			struct quic_long_header_info info;
+
+			ret = quic_parse_long_header(&info, data + offset, data_len - offset);
+			if (ret < 0) {
+				NET_DBG("Failed to parse long header at offset %zu: %d",
+					offset, ret);
+				break;
+			}
+
 			ret = process_long_header(ep, src_addr, addr_len,
-						  data + offset, packet_len,
-						  token, total_len, pn_offset,
+						  &info,
 						  data_len);
 			if (ret == 0) {
 				long_header_queued = true;
@@ -6388,7 +7421,7 @@ static int handle_datagram(struct quic_endpoint *ep,
 			 * Processing order is preserved via the FIFO queue.
 			 */
 			ret = process_short_header(ep, src_addr, addr_len,
-						   data + offset, packet_len,
+						   data + offset, total_len,
 						   long_header_queued);
 		}
 		if (ret < 0) {
@@ -6398,6 +7431,10 @@ static int handle_datagram(struct quic_endpoint *ep,
 
 		offset += total_len;
 		packets_processed++;
+	}
+
+	if (packets_seen != NULL) {
+		*packets_seen = seen;
 	}
 
 	return packets_processed > 0 ? packets_processed :  -EINVAL;
@@ -6413,6 +7450,7 @@ static void receive_data(int sock, struct quic_endpoint *ep_hint)
 	struct quic_endpoint *ep;
 	ssize_t len;
 	int packets;
+	int packets_seen = 0;
 
 	/* The ep_hint from socket service user_data may not be correct if multiple
 	 * endpoints share the same socket service. Look up the endpoint by socket.
@@ -6460,6 +7498,8 @@ static void receive_data(int sock, struct quic_endpoint *ep_hint)
 	if (ep->remote_addr.ss_family != addr.sin6_family) {
 		NET_ERR("[EP:%p/%d] Address family mismatch: endpoint %d vs packet %d",
 			ep, quic_get_by_ep(ep), ep->remote_addr.ss_family, addr.sin6_family);
+		QUIC_EP_STAT_INC(ep, invalid_packet);
+		QUIC_EP_STAT_INC(ep, drop_rx);
 		quic_endpoint_unref(ep);
 		return;
 	}
@@ -6481,7 +7521,10 @@ static void receive_data(int sock, struct quic_endpoint *ep_hint)
 	sock_obj_core_update_recv_stats(sock, ep->pending.len);
 
 	packets = handle_datagram(ep, ep->pending.data, ep->pending.len,
-				  (struct net_sockaddr *)&addr, addrlen);
+				  (struct net_sockaddr *)&addr, addrlen,
+				  &packets_seen);
+	quic_stats_update_packets_rx(packets_seen);
+
 	if (packets < 0) {
 		NET_DBG("[EP:%p/%d] Failed to handle QUIC datagram (%d)", ep,
 			quic_get_by_ep(ep), packets);
@@ -6489,8 +7532,6 @@ static void receive_data(int sock, struct quic_endpoint *ep_hint)
 		NET_DBG("[EP:%p/%d] Read %d QUIC packet%sfrom datagram", ep,
 			quic_get_by_ep(ep), packets,
 			packets > 1 ? "s " : " ");
-
-		quic_stats_update_packets_rx(packets);
 	}
 }
 
@@ -6573,6 +7614,7 @@ void net_quic_init(void)
 	tls_subsystem_init();
 	init_quic_recovery_service();
 	init_quic_service();
+	quic_token_ensure_secret();
 }
 
 #if defined(CONFIG_QUIC_TLS_DEBUG_KEYLOG)

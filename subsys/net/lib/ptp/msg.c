@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(ptp_msg, CONFIG_PTP_LOG_LEVEL);
 
 static struct k_mem_slab msg_slab;
 
-K_MEM_SLAB_DEFINE_STATIC(msg_slab, sizeof(struct ptp_msg), CONFIG_PTP_MSG_POLL_SIZE, 4);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(msg_slab, struct ptp_msg, CONFIG_PTP_MSG_POLL_SIZE);
 
 static const char *msg_type_str(struct ptp_msg *msg)
 {
@@ -261,7 +261,7 @@ enum ptp_msg_type ptp_msg_type(const struct ptp_msg *msg)
 	return (enum ptp_msg_type)(msg->header.type_major_sdo_id & 0xF);
 }
 
-#if defined(CONFIG_PTP_UDP_IPv4_PROTOCOL) || defined(CONFIG_PTP_UDP_IPv6_PROTOCOL)
+#if defined(CONFIG_PTP_UDP_IPV4_PROTOCOL) || defined(CONFIG_PTP_UDP_IPV6_PROTOCOL)
 static struct ptp_msg *msg_from_udp_pkt(struct net_pkt *pkt)
 {
 	static const size_t eth_hdr_len = IS_ENABLED(CONFIG_NET_VLAN)
@@ -307,7 +307,7 @@ static struct ptp_msg *msg_from_udp_pkt(struct net_pkt *pkt)
 
 	return NULL;
 }
-#endif /* CONFIG_PTP_UDP_IPv4_PROTOCOL || CONFIG_PTP_UDP_IPv6_PROTOCOL */
+#endif /* CONFIG_PTP_UDP_IPV4_PROTOCOL || CONFIG_PTP_UDP_IPV6_PROTOCOL */
 
 #if defined(CONFIG_PTP_IEEE_802_3_PROTOCOL)
 static struct ptp_msg *msg_from_l2_pkt(struct net_pkt *pkt)
@@ -377,7 +377,7 @@ static struct ptp_msg *msg_from_l2_pkt(struct net_pkt *pkt)
 
 struct ptp_msg *ptp_msg_from_pkt(struct net_pkt *pkt)
 {
-#if defined(CONFIG_PTP_UDP_IPv4_PROTOCOL) || defined(CONFIG_PTP_UDP_IPv6_PROTOCOL)
+#if defined(CONFIG_PTP_UDP_IPV4_PROTOCOL) || defined(CONFIG_PTP_UDP_IPV6_PROTOCOL)
 	return msg_from_udp_pkt(pkt);
 #elif defined(CONFIG_PTP_IEEE_802_3_PROTOCOL)
 	return msg_from_l2_pkt(pkt);
@@ -465,6 +465,9 @@ int ptp_msg_post_recv(struct ptp_port *port, struct ptp_msg *msg, int cnt)
 		LOG_ERR("Received message incomplient with supported PTP version");
 		return -EBADMSG;
 	}
+
+	/* Record local uptime for aging calculations */
+	msg->local_uptime_ms = k_uptime_get();
 
 	LOG_DBG("Port %d received %s message", port->port_ds.id.port_number, msg_type_str(msg));
 

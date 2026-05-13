@@ -35,6 +35,12 @@ Kernel
 Boards
 ******
 
+* The Kconfig options :kconfig:option:`CONFIG_SRAM_SIZE` and
+  :kconfig:option:`CONFIG_SRAM_BASE_ADDRESS` have been deprecated, boards should instead use the
+  devicetree ``zephyr.sram`` chosen node to specify the RAM node which will be used (whose values
+  populated the Kconfig values). If either option is manually adjusted, it will cause
+  :kconfig:option:`CONFIG_SRAM_DEPRECATED_KCONFIG_SET` to be set which indicates this deprecation.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -54,6 +60,13 @@ Haptics
 .. ...
 
 .. zephyr-keep-sorted-start re(^\w) ignorecase
+
+ADC
+===
+
+* The ``girqs`` and ``pcrs`` properties (array type) of :dtcompatible:`microchip,xec-adc` have been
+  replaced by encoded ``girqs`` (using ``MCHP_XEC_ECIA_GIRQ_ENC`` macros) and ``pcr-scr`` (int type)
+  for encoded PCR register index and bit position (:github:`105658`).
 
 Clock Control
 =============
@@ -85,6 +98,10 @@ Ethernet
   a pointer to :c:struct:`net_if`. This api is not directly exposed to the application, so only
   out-of-tree drivers need to be updated. (:github:`106086`)
 
+* The ``pinctrl-0`` and ``pinctrl-names`` devicetree properties for the
+  :dtcompatible:`nxp,enet-mac` need to be moved from the MAC node to the parent Ethernet controller
+  node. (:github:`107352`)
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
@@ -103,12 +120,99 @@ GPIO
 
 * On STM32F1 series, GPIO output pins now use 50 MHz max. speed instead of 10 MHz. (:github:`104690`)
 
+Input
+=====
+
+* The ``no-disconnect`` property of :dtcompatible:`gpio-keys` has been replaced by enumeration
+  property ``zephyr,suspend-action``. The new property currently has three values, two of which
+  are direct replacements for the old situations:
+
+    * ``zephyr,suspend-action = "none";`` is the remplacement for the behavior when
+      when ``no-disconnect`` was present. Users of the ``no-disconnect`` property
+      should replace it with ``zephyr,suspend-action = "none";``.
+
+    * ``zephyr,suspend-action = "disconnect-with-pupd";`` is the replacement for the
+      behavior when ``no-disconnect`` was not present. This is selected by default
+      for backwards compatibility with the previous behavior.
+
+    * ``zephyr,suspend-action = "full-disconnect";`` is a new value.
+      (Refer to :dtcompatible:`the binding <gpio-keys>` for more details)
+
+  Users of the default configuration are advised to reconsider whether it really is appropriate;
+  migration to ``zephyr,suspend-action = "full-disconnect";`` is recommended. (:github:`108294`)
+
+NXP
+===
+
+* :kconfig:option:`CONFIG_MCUX_LPTMR_TIMER` no longer defaults to ``y`` based on the
+  ``/chosen/zephyr,system-timer`` chosen node being compatible with
+  :dtcompatible:`nxp,lptmr`. Out-of-tree SoCs and boards that rely on the LPTMR
+  as the system timer must now explicitly default the symbol in their
+  ``Kconfig.defconfig`` (for example ``default y if PM``).
+
+* Kinetis KE1xF no longer requires a board overlay to designate the system
+  timer when :kconfig:option:`CONFIG_PM` is enabled. The SoC DTSI now sets the
+  ``zephyr,system-timer`` chosen property, so boards that added the overlay
+  described in the Zephyr 4.4 migration guide can remove it.
+
+PWM
+===
+
+* The ``pcrs`` property (array type) of :dtcompatible:`microchip,xec-pwm` has been replaced
+  by ``pcr-scr`` (int type) to use encoded PCR register index and bit position macros
+  (:github:`104570`).
+
+SD Host Controller
+==================
+
+* Renamed the Kconfig option ``CONFIG_SDHC_STM32_POLLING_SUPPORT`` to
+  :kconfig:option:`CONFIG_SDHC_STM32_DMA_MODE`. The new symbol enables DMA
+  (default ``y``); set it to ``n`` to use polling mode. (:github:`101617`)
+
+* Renamed the Kconfig option ``CONFIG_SDHC_STM32_SDIO`` to
+  :kconfig:option:`CONFIG_SDHC_STM32_SDMMC`. (:github:`101617`)
+
+* The devicetree compatible ``st,stm32-sdio`` was renamed. Use
+  :dtcompatible:`st,stm32-sdmmc` instead. With this compatible, the legacy
+  disk driver and the SDHC driver can target the same node. To migrate to the
+  SDHC STM32 SDMMC driver, disable the legacy disk driver:
+
+  .. code-block:: kconfig
+
+     CONFIG_SDMMC_STM32=n
+
+  (:github:`101617`)
+
+* For :dtcompatible:`st,stm32-sdmmc`, the ``sdhi-on-gpios`` property has been
+  consolidated into the existing ``pwr-gpios`` property. Replace
+  ``sdhi-on-gpios`` with ``pwr-gpios`` in out-of-tree devicetree nodes.
+
+Sensor
+======
+
+* The ``girqs`` and ``pcrs`` properties (array type) of :dtcompatible:`microchip,xec-tach` have been
+  replaced by ``pcr-scr`` (int type) to use encoded PCR register index and bit position macros.
+  GIRQ configuration is now handled via the ``microchip,dmec-ecia-girq`` binding include
+  (:github:`104808`).
+
 STM32
 =====
+
+* :dtcompatible:`gpio-keys` devices will fail to suspend unless property ``zephyr,suspend-action``
+  is present in Devicetree with value ``"none"`` or ``"full-disconnect"``. Refer to the migration
+  guide entry related to this binding for more details. (:github:`104690` / :github:`108294`)
 
 * SoC DTSI files now consistently use interrupt priority zero for all peripherals.
   Applications must now explicitly configure interrupt priorities using Devicetree
   if they previously relied on the values found in SoC DTSI files. (:github:`106188`)
+
+Syscon
+======
+
+* The syscon API functions :c:func:`syscon_read_reg` and :c:func:`syscon_write_reg` now use
+  ``uint32_t`` for the register offset parameter instead of ``uint16_t``. This allows for
+  larger register offsets. Code that explicitly declares ``uint16_t`` variables for the
+  register parameter or implements the syscon driver API functions may need to be updated.
 
 WiFi
 ====
@@ -226,13 +330,22 @@ Ethernet
 * :kconfig:option:`CONFIG_NET_DEFAULT_IF_ETHERNET` now allows to get the first ethernet interface,
   instead of the first between ethernet and wifi.
 
+PTP
+===
+
+* The PTP UDP protocol Kconfig symbols have been renamed for consistent capitalization:
+
+  * :kconfig:option:`CONFIG_PTP_UDP_IPv4_PROTOCOL` to
+    :kconfig:option:`CONFIG_PTP_UDP_IPV4_PROTOCOL`
+  * :kconfig:option:`CONFIG_PTP_UDP_IPv6_PROTOCOL` to
+    :kconfig:option:`CONFIG_PTP_UDP_IPV6_PROTOCOL`
+
 Other subsystems
 ****************
 
 * Demand paging (``subsys/demand_paging``) is moved under Memory Management
   into ``subsys/mem_mgmt/demand_paging``. Custom backing store and eviction algorithm code need
   to be moved there.
-
 
 * The ring buffer "item" API in ``<zephyr/sys/ring_buffer.h>`` has been deprecated in favor of the new
   fixed-size queue API in ``<zephyr/sys/ringq.h>``.
@@ -241,6 +354,27 @@ Other subsystems
   :ref:`fixed_size_ringq_api`). Code that only used the item API at the byte level should switch to
   the byte-mode functions :c:func:`ring_buf_put` / :c:func:`ring_buf_get` calls on the same
   :c:struct:`ring_buf`. (:github:`98255`)
+
+* The :c:func:`ZTEST_BENCHMARK_SETUP_TEARDOWN` and :c:func:`ZTEST_BENCHMARK_TIMED_SETUP_TEARDOWN` macros have
+  been removed. Their setup/teardown signature has been folded into :c:func:`ZTEST_BENCHMARK` and
+  :c:func:`ZTEST_BENCHMARK_TIMED`, which now require explicit ``setup_fn`` and ``teardown_fn``
+  arguments at every call site. Pass ``NULL`` when a benchmark genuinely needs neither.
+
+  Update existing call sites as follows:
+
+  .. code-block:: c
+
+     /* Before */
+     ZTEST_BENCHMARK(suite, my_bench, 100) { /* ... */ }
+     ZTEST_BENCHMARK_TIMED(suite, my_bench, 1000) { /* ... */ }
+     ZTEST_BENCHMARK_SETUP_TEARDOWN(suite, my_bench, 100, setup, teardown) { /* ... */ }
+     ZTEST_BENCHMARK_TIMED_SETUP_TEARDOWN(suite, my_bench, 1000, setup, teardown) { /* ... */ }
+
+     /* After */
+     ZTEST_BENCHMARK(suite, my_bench, 100, NULL, NULL) { /* ... */ }
+     ZTEST_BENCHMARK_TIMED(suite, my_bench, 1000, NULL, NULL) { /* ... */ }
+     ZTEST_BENCHMARK(suite, my_bench, 100, setup, teardown) { /* ... */ }
+     ZTEST_BENCHMARK_TIMED(suite, my_bench, 1000, setup, teardown) { /* ... */ }
 
 Modules
 *******

@@ -402,7 +402,7 @@ static int esp32_ed_scan(const struct device *dev, uint16_t duration, energy_sca
 		esp32_data.energy_scan_done = done_cb;
 
 		/* The duration of energy detection, in symbol unit (16 us) */
-		if (esp_ieee802154_energy_detect(duration * USEC_PER_MSEC / US_PER_SYMBLE) != 0) {
+		if (esp_ieee802154_energy_detect(duration * USEC_PER_MSEC / US_PER_SYMBOL) != 0) {
 			esp32_data.energy_scan_done = NULL;
 			err = -EBUSY;
 		}

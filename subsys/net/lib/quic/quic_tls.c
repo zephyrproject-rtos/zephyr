@@ -711,7 +711,9 @@ static int build_client_hello(struct quic_tls_context *ctx,
 	buf[pos++] = 0x03;
 
 	/* Client random (32 bytes) */
-	sys_rand_get(ctx->client_random, 32);
+	if (!ctx->client_hello_prepared) {
+		sys_rand_get(ctx->client_random, 32);
+	}
 	memcpy(&buf[pos], ctx->client_random, 32);
 	pos += 32;
 
@@ -766,9 +768,11 @@ static int build_client_hello(struct quic_tls_context *ctx,
 	buf[pos++] = 0x17;  /* secp256r1 */
 
 	/* Generate ECDH key pair for key_share */
-	ret = generate_ecdh_keypair(ctx);
-	if (ret != 0) {
-		return ret;
+	if (!ctx->client_hello_prepared) {
+		ret = generate_ecdh_keypair(ctx);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 
 	/* key_share extension */
@@ -834,6 +838,7 @@ static int build_client_hello(struct quic_tls_context *ctx,
 	buf[ext_start] = (ext_len >> 8) & 0xFF;
 	buf[ext_start + 1] = ext_len & 0xFF;
 
+	ctx->client_hello_prepared = true;
 	*out_len = pos;
 
 	NET_DBG("Built ClientHello, %zu bytes", pos);
@@ -1078,26 +1083,38 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 	 *       to use quic_put_len() instead of hand crafted values.
 	 */
 
-	/* original_destination_connection_id (0x00), server must echo client's DCID */
+	/* original_destination_connection_id, server must echo client's DCID */
 	if (ctx->ep != NULL && ctx->ep->peer_orig_dcid_len > 0) {
 		if (pos + 2 + ctx->ep->peer_orig_dcid_len > max_len) {
 			return -ENOBUFS;
 		}
 
-		buf[pos++] = 0x00;  /* parameter ID */
+		buf[pos++] = QUIC_ORIGINAL_DESTINATION_CONNECTION_ID;
 		buf[pos++] = ctx->ep->peer_orig_dcid_len;  /* length */
 		memcpy(&buf[pos], ctx->ep->peer_orig_dcid, ctx->ep->peer_orig_dcid_len);
 		pos += ctx->ep->peer_orig_dcid_len;
 	}
 
-	/* initial_source_connection_id (0x0f), this is our CID */
+	/* initial_source_connection_id, this is our CID */
 	if (ctx->ep != NULL && ctx->ep->my_cid_len > 0) {
 		if (pos + 2 + ctx->ep->my_cid_len > max_len) {
 			return -ENOBUFS;
 		}
 
-		buf[pos++] = 0x0f;  /* parameter ID */
+		buf[pos++] = QUIC_INITIAL_SOURCE_CONNECTION_ID;
 		buf[pos++] = ctx->ep->my_cid_len;  /* length */
+		memcpy(&buf[pos], ctx->ep->my_cid, ctx->ep->my_cid_len);
+		pos += ctx->ep->my_cid_len;
+	}
+
+	/* retry_source_connection_id, only when Retry was used */
+	if (ctx->ep != NULL && ctx->ep->token.retry_used && ctx->ep->my_cid_len > 0) {
+		if (pos + 2 + ctx->ep->my_cid_len > max_len) {
+			return -ENOBUFS;
+		}
+
+		buf[pos++] = QUIC_RETRY_SOURCE_CONNECTION_ID;
+		buf[pos++] = ctx->ep->my_cid_len;
 		memcpy(&buf[pos], ctx->ep->my_cid, ctx->ep->my_cid_len);
 		pos += ctx->ep->my_cid_len;
 	}
@@ -3428,6 +3445,7 @@ static void quic_tls_free(struct quic_tls_context *ctx)
 	/* Clear sensitive data */
 	memset(ctx->shared_secret, 0, sizeof(ctx->shared_secret));
 	memset(&ctx->ks, 0, sizeof(ctx->ks));
+	ctx->client_hello_prepared = false;
 }
 
 /*
@@ -3489,6 +3507,7 @@ static size_t calculate_padding_for_level(struct quic_endpoint *ep,
 	size_t header_estimate;
 	size_t current_total;
 	size_t min_plaintext_for_hp;
+	size_t token_len = 0;
 	size_t padding = 0;
 
 	/*
@@ -3513,11 +3532,20 @@ static size_t calculate_padding_for_level(struct quic_endpoint *ep,
 
 	min_packet_size = 1200;
 
+	if (ep->token.initial_type != QUIC_TOKEN_NONE) {
+		token_len = ep->token.initial_len;
+	}
+
 	/* Estimate header size:
 	 * 1 (first byte) + 4 (version) + 1 (DCID len) + DCID +
-	 * 1 (SCID len) + SCID + 1 (token len) + 2 (length) + 4 (PN max)
+	 * 1 (SCID len) + SCID + varint(token len) + token +
+	 * varint(length) + PN
 	 */
-	header_estimate = 1 + 4 + 1 + ep->peer_cid_len + 1 + ep->my_cid_len + 1 + 2 + pn_len;
+	header_estimate = 1 + 4 + 1 + ep->peer_cid_len + 1 + ep->my_cid_len +
+			  quic_get_varint_size(token_len) + token_len +
+			  quic_get_varint_size(current_payload_len + padding + pn_len +
+					       QUIC_AEAD_TAG_LEN) +
+			  pn_len;
 
 	current_total = header_estimate + current_payload_len + padding + QUIC_AEAD_TAG_LEN;
 
@@ -3862,7 +3890,11 @@ static int build_packet_header(struct quic_endpoint *ep,
 	switch (level) {
 	case QUIC_SECRET_LEVEL_INITIAL:
 		return build_initial_header(ep, packet_number, pn_len,
-					    payload_len, NULL, 0,
+					    payload_len,
+					    ep->token.initial_type != QUIC_TOKEN_NONE ?
+					    ep->token.initial : NULL,
+					    ep->token.initial_type != QUIC_TOKEN_NONE ?
+					    ep->token.initial_len : 0,
 					    out, out_size,
 					    header_len, pn_offset);
 	case QUIC_SECRET_LEVEL_HANDSHAKE:
@@ -4171,6 +4203,14 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 	crypto_ctx = quic_get_crypto_context_by_level(ep, level);
 	if (crypto_ctx == NULL || !crypto_ctx->initialized) {
 		NET_DBG("Crypto context not initialized for level %d", level);
+
+		if (level == QUIC_SECRET_LEVEL_HANDSHAKE ||
+		    level == QUIC_SECRET_LEVEL_APPLICATION) {
+			return -EAGAIN;
+		}
+
+		QUIC_EP_STAT_INC(ep, invalid_key);
+		QUIC_EP_STAT_INC(ep, drop_tx);
 		return -EINVAL;
 	}
 
@@ -4185,6 +4225,7 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 
 	/* Verify we have space for ciphertext */
 	if (plaintext_len + QUIC_AEAD_TAG_LEN > ciphertext_size) {
+		QUIC_EP_STAT_INC(ep, drop_tx);
 		return -ENOBUFS;
 	}
 
@@ -4195,6 +4236,7 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 				  &header_len, &pn_offset);
 	if (ret != 0) {
 		NET_DBG("Failed to build packet header (%d)", ret);
+		QUIC_EP_STAT_INC(ep, drop_tx);
 		return ret;
 	}
 
@@ -4216,6 +4258,7 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 				   &ciphertext_len);
 	if (ret != 0) {
 		NET_DBG("Failed to encrypt payload (%d)", ret);
+		QUIC_EP_STAT_INC(ep, drop_tx);
 		return ret;
 	}
 
@@ -4233,6 +4276,7 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 						 crypto_ctx->tx.hp.cipher_algo);
 	if (ret != 0) {
 		NET_DBG("Failed to apply header protection (%d)", ret);
+		QUIC_EP_STAT_INC(ep, drop_tx);
 		return ret;
 	}
 
@@ -4247,6 +4291,7 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 			 ep->anti_amplification.bytes_sent,
 			 total_len);
 #endif
+		QUIC_EP_STAT_INC(ep, drop_tx);
 		return -EAGAIN;
 	}
 
@@ -4286,17 +4331,33 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 		ret = -errno;
 
 		NET_DBG("Failed to send packet (%d)", ret);
+		QUIC_EP_STAT_INC(ep, drop_tx);
 		return ret;
 	}
 
 	/* XXX: TODO: Handle partial sends properly */
 	if ((size_t)sent != total_len) {
 		NET_WARN("Partial send: %zd of %zu bytes", sent, total_len);
+		QUIC_EP_STAT_INC(ep, drop_tx);
 	}
 
 	quic_endpoint_note_unvalidated_tx(ep, MIN((size_t)sent, total_len));
 
 	quic_recovery_on_packet_sent(ep, level, packet_number, total_len, ack_eliciting);
+
+	switch (level) {
+	case QUIC_SECRET_LEVEL_INITIAL:
+		QUIC_EP_STAT_INC(ep, handshake_init_tx);
+		break;
+	case QUIC_SECRET_LEVEL_HANDSHAKE:
+		QUIC_EP_STAT_INC(ep, handshake_resp_tx);
+		break;
+	case QUIC_SECRET_LEVEL_APPLICATION:
+		QUIC_EP_STAT_INC(ep, valid_tx);
+		break;
+	default:
+		break;
+	}
 
 	NET_DBG("[EP:%p/%d] Sent %zd bytes at level %d, pn=%" PRIu64 ", ack-eliciting=%d",
 		ep, quic_get_by_ep(ep), sent, level, packet_number, ack_eliciting);
@@ -4454,16 +4515,8 @@ static int quic_tls_process(struct quic_tls_context *ctx,
 	return QUIC_HANDSHAKE_IN_PROGRESS;
 }
 
-/*
- * Start client TLS handshake by building and sending ClientHello
- *
- * This should be called when the client wants to initiate a QUIC connection.
- * It builds the ClientHello, wraps it in a handshake message, and sends it
- * via the send callback (which will wrap it in a CRYPTO frame).
- *
- * Uses endpoint's rx_buffer as scratch space to avoid large stack allocations.
- */
-static int quic_tls_client_start(struct quic_tls_context *ctx)
+static int quic_tls_send_client_hello(struct quic_tls_context *ctx,
+				      bool update_transcript)
 {
 	struct quic_endpoint *ep;
 	size_t buf_size;
@@ -4490,22 +4543,6 @@ static int quic_tls_client_start(struct quic_tls_context *ctx)
 		return -EINVAL;
 	}
 
-	if (ctx->state != QUIC_TLS_STATE_INITIAL) {
-		NET_DBG("Invalid TLS state for client start: %d", ctx->state);
-		return -EINVAL;
-	}
-
-	NET_DBG("[EP:%p/%d] Starting client TLS handshake", ctx->ep,
-		quic_get_by_ep(ctx->ep));
-
-	/* Initialize key schedule (will be updated when we receive ServerHello) */
-	ctx->ks.cipher_suite = TLS_AES_128_GCM_SHA256;  /* Default, may change */
-	ret = key_schedule_init(ctx);
-	if (ret != 0) {
-		NET_DBG("Failed to initialize key schedule: %d", ret);
-		return ret;
-	}
-
 	/* Build ClientHello */
 	ret = build_client_hello(ctx, client_hello, client_hello_size, &ch_len);
 	if (ret != 0) {
@@ -4522,11 +4559,12 @@ static int quic_tls_client_start(struct quic_tls_context *ctx)
 		return ret;
 	}
 
-	/* Update transcript with ClientHello */
-	ret = transcript_update(ctx, wrapped, wrapped_len);
-	if (ret != 0) {
-		NET_DBG("Failed to update transcript: %d", ret);
-		return ret;
+	if (update_transcript) {
+		ret = transcript_update(ctx, wrapped, wrapped_len);
+		if (ret != 0) {
+			NET_DBG("Failed to update transcript: %d", ret);
+			return ret;
+		}
 	}
 
 	/* Send ClientHello via CRYPTO frame at Initial level */
@@ -4540,12 +4578,65 @@ static int quic_tls_client_start(struct quic_tls_context *ctx)
 		}
 	}
 
+	return 0;
+}
+
+/*
+ * Start client TLS handshake by building and sending ClientHello
+ *
+ * This should be called when the client wants to initiate a QUIC connection.
+ * It builds the ClientHello, wraps it in a handshake message, and sends it
+ * via the send callback (which will wrap it in a CRYPTO frame).
+ *
+ * Uses endpoint's rx_buffer as scratch space to avoid large stack allocations.
+ */
+static int quic_tls_client_start(struct quic_tls_context *ctx)
+{
+	int ret;
+
+	if (ctx == NULL || ctx->ep == NULL) {
+		return -EINVAL;
+	}
+
+	if (ctx->state != QUIC_TLS_STATE_INITIAL) {
+		NET_DBG("Invalid TLS state for client start: %d", ctx->state);
+		return -EINVAL;
+	}
+
+	NET_DBG("[EP:%p/%d] Starting client TLS handshake", ctx->ep,
+		quic_get_by_ep(ctx->ep));
+
+	/* Initialize key schedule (will be updated when we receive ServerHello) */
+	ctx->ks.cipher_suite = TLS_AES_128_GCM_SHA256;
+	ret = key_schedule_init(ctx);
+	if (ret != 0) {
+		NET_DBG("Failed to initialize key schedule: %d", ret);
+		return ret;
+	}
+
+	ret = quic_tls_send_client_hello(ctx, true);
+	if (ret != 0) {
+		return ret;
+	}
+
 	ctx->state = QUIC_TLS_STATE_WAIT_SERVER_HELLO;
 
 	NET_DBG("[EP:%p/%d] ClientHello sent, waiting for ServerHello",
 		ctx->ep, quic_get_by_ep(ctx->ep));
 
 	return 0;
+}
+
+static int quic_tls_client_retry(struct quic_tls_context *ctx)
+{
+	struct quic_endpoint *ep;
+
+	ep = ctx->ep;
+
+	ep->crypto.stream[QUIC_SECRET_LEVEL_INITIAL].tx_offset = 0U;
+	quic_recovery_discard_pn_space(ep, level_to_pn_space(QUIC_SECRET_LEVEL_INITIAL));
+
+	return quic_tls_send_client_hello(ctx, false);
 }
 
 static int quic_tls_get_peer_transport_params(struct quic_tls_context *ctx,
@@ -5212,6 +5303,7 @@ static int tls_opt_cert_verify_callback_set(struct quic_tls_context *context,
 static void quic_tls_context_init(struct quic_tls_context *tls)
 {
 	tls->options.verify_level = -1;
+	tls->ks.key_exchange_group = MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1;
 
 	k_sem_init(&tls->tls_established, 0, 1);
 

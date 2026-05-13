@@ -195,7 +195,7 @@ using :c:func:`tls_credential_add`.
    static const char priv_key[] = ...;    /* PEM or DER data */
 
    void setup_credentials(void) {
-       tls_credential_add(MY_SEC_TAG, TLS_CREDENTIAL_SERVER_CERTIFICATE,
+       tls_credential_add(MY_SEC_TAG, TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
                           server_cert, sizeof(server_cert));
        tls_credential_add(MY_SEC_TAG, TLS_CREDENTIAL_PRIVATE_KEY,
                           priv_key, sizeof(priv_key));

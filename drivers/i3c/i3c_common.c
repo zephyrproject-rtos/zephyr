@@ -31,7 +31,7 @@ void i3c_dump_msgs(const char *name, const struct i3c_msg *msgs, uint8_t num_msg
 		}
 	}
 }
-
+#ifdef CONFIG_I3C_CONTROLLER
 void i3c_addr_slots_set(struct i3c_addr_slots *slots, uint8_t dev_addr,
 			enum i3c_addr_slot_status status)
 {
@@ -787,6 +787,8 @@ int i3c_device_adv_info_get(struct i3c_device_desc *target)
 		 */
 		if (i3c_ccc_do_getcaps_fmt1(target, &caps) != 0) {
 			LOG_DBG("%s: GETCAPS not received", target->dev->name);
+		} else {
+			memcpy(&target->getcaps, &caps, sizeof(target->getcaps));
 		}
 	}
 
@@ -796,6 +798,8 @@ int i3c_device_adv_info_get(struct i3c_device_desc *target)
 		ret = i3c_ccc_do_getcaps_fmt2(target, &caps, GETCAPS_FORMAT_2_CRCAPS);
 		if (ret != 0) {
 			return ret;
+		} else {
+			memcpy(&target->crcaps, &caps, sizeof(target->crcaps));
 		}
 	}
 
@@ -1570,3 +1574,4 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 err_out:
 	return ret;
 }
+#endif /*CONFIG_I3C_CONTROLLER*/

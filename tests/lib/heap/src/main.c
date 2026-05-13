@@ -21,7 +21,7 @@
  */
 # define MEMSZ (192 * 1024)
 #elif defined(CONFIG_ARCH_POSIX)
-/* POSIX arch based targets don't support CONFIG_SRAM_SIZE at all (because
+/* POSIX arch based targets don't support DT_CHOSEN_SRAM_SIZE at all (because
  * they can link anything big enough to fit on the host), so just use a
  * reasonable value.
  */
@@ -33,9 +33,7 @@
  */
 # define MEMSZ (16 * 1024)
 #else
-/* Otherwise just trust CONFIG_SRAM_SIZE
- */
-# define MEMSZ (1024 * (size_t) CONFIG_SRAM_SIZE)
+# define MEMSZ DT_CHOSEN_SRAM_SIZE
 #endif
 
 #define BIG_HEAP_SZ MIN(256 * 1024, MEMSZ / 3)

@@ -26,7 +26,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/fs/fs.h>
 
-K_MEM_SLAB_DEFINE(file_desc_slab, sizeof(struct fs_file_t), ZVFS_OPEN_SIZE, 4);
+K_MEM_SLAB_DEFINE_TYPE(file_desc_slab, struct fs_file_t, ZVFS_OPEN_SIZE);
 
 struct fd_entry {
 	void *obj;

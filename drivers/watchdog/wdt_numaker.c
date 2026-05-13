@@ -9,7 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/clock_control_numaker.h>
+#include <zephyr/drivers/clock_control/clock_control_numicro.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
@@ -36,33 +36,25 @@ struct wdt_numaker_data {
 	uint8_t flags;
 };
 
-static int wdt_numaker_clk_get_rate(const struct wdt_numaker_config *cfg, uint32_t *rate)
-{
-	if (cfg->clk_src == CLK_CLKSEL1_WDTSEL_LIRC) {
-		*rate = __LIRC / (cfg->clk_div + 1);
-	} else if (cfg->clk_src == CLK_CLKSEL1_WDTSEL_LXT) {
-		*rate = __LXT / (cfg->clk_div + 1);
-	} else if (cfg->clk_src == CLK_CLKSEL1_WDTSEL_HCLK_DIV2048) {
-		SystemCoreClockUpdate();
-		*rate = CLK_GetHCLKFreq() / 2048 / (cfg->clk_div + 1);
-	} else {
-		LOG_ERR("Unsupported WDT clock source 0x%x", cfg->clk_src);
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-
 
 /* Convert watchdog clock to nearest ms (rounded up) */
 static uint32_t wdt_numaker_calc_ms(const struct device *dev, const uint32_t tout)
 {
 	const struct wdt_numaker_config *cfg = dev->config;
+	struct numicro_scc_subsys scc_subsys;
 	uint32_t clk_freq = 0;
 	uint32_t tout_clks;
 	uint32_t period_ms;
 
-	if (wdt_numaker_clk_get_rate(cfg, &clk_freq) != 0 || clk_freq == 0) {
+	memset(&scc_subsys, 0x00, sizeof(scc_subsys));
+	scc_subsys.subsys_id = NUMICRO_SCC_SUBSYS_ID_PCC;
+	scc_subsys.pcc.clk_mod = cfg->clk_modidx;
+	scc_subsys.pcc.clk_src = cfg->clk_src;
+	scc_subsys.pcc.clk_div = cfg->clk_div;
+
+	if (clock_control_get_rate(cfg->clk_dev, (clock_control_subsys_t)&scc_subsys, &clk_freq) !=
+		    0 ||
+	    clk_freq != 0) {
 		return 0;
 	}
 
@@ -244,7 +236,7 @@ static DEVICE_API(wdt, wdt_numaker_api) = {
 static int wdt_numaker_init(const struct device *dev)
 {
 	const struct wdt_numaker_config *cfg = dev->config;
-	struct numaker_scc_subsys scc_subsys;
+	struct numicro_scc_subsys scc_subsys;
 	int err;
 
 	SYS_UnlockReg();
@@ -257,8 +249,8 @@ static int wdt_numaker_init(const struct device *dev)
 	irq_disable(DT_INST_IRQN(0));
 	/* CLK controller */
 	memset(&scc_subsys, 0x00, sizeof(scc_subsys));
-	scc_subsys.subsys_id = NUMAKER_SCC_SUBSYS_ID_PCC;
-	scc_subsys.pcc.clk_modidx = cfg->clk_modidx;
+	scc_subsys.subsys_id = NUMICRO_SCC_SUBSYS_ID_PCC;
+	scc_subsys.pcc.clk_mod = cfg->clk_modidx;
 	scc_subsys.pcc.clk_src = cfg->clk_src;
 	scc_subsys.pcc.clk_div = cfg->clk_div;
 

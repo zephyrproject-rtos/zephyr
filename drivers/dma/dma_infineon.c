@@ -76,8 +76,8 @@ struct ifx_cat1_dma_config {
 };
 
 /* Descriptors pool */
-K_MEM_SLAB_DEFINE_STATIC(ifx_cat1_dma_descriptors_pool_slab, sizeof(cy_stc_dma_descriptor_t),
-			 DESCRIPTOR_POOL_SIZE, 4);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(ifx_cat1_dma_descriptors_pool_slab, cy_stc_dma_descriptor_t,
+			      DESCRIPTOR_POOL_SIZE);
 
 static int32_t _get_hw_block_num(DW_Type *reg_addr)
 {

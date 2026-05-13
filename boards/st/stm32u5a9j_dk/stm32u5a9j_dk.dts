@@ -322,3 +322,16 @@ zephyr_udc0: &usbotg_hs {
 &vbat4 {
 	status = "okay";
 };
+
+qsh_030_i2c: &i2c5 {
+	pinctrl-0 = <&i2c5_scl_ph5 &i2c5_sda_ph4>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+};
+
+/* alias used by display shields */
+zephyr_mipi_dsi: &mipi_dsi {};
+
+/* alias used by LCD display shields */
+zephyr_lcd_controller: &ltdc {};

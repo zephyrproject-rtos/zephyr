@@ -416,6 +416,8 @@
 		compatible = "props";
 		existent-boolean;
 		int = <1>;
+		negative = <(-1)>;
+		negative-array = <(-100) (-10) 0 10 100>;
 		array = <1 2 3>;
 		uint8-array = [12 34];
 		string = "foo";

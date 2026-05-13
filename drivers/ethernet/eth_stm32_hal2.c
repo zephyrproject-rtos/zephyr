@@ -263,7 +263,7 @@ static int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	__ASSERT_NO_MSG(pkt->frags != NULL);
 
 	/* Build TX buffer chain directly from net_buf fragments */
-	for (struct net_buf *frag = pkt->frags; frag != NULL; frag = frag->frags) {
+	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
 		if (frag->len == 0U) {
 			/* Skip empty fragments */
 			continue;

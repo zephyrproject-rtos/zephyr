@@ -1490,17 +1490,6 @@ static int _api_transceive(const struct device *dev,
 	int rc;
 
 	if (dev_data->standard_spi) {
-		/* The SPI_CTRLR0 register is intended for enhanced SPI modes,
-		 * however some implementations continue to process the INST_L
-		 * and ADDR_L fields in standard mode. On those platforms the
-		 * controller sends its own instruction/address phase in
-		 * addition to what the driver sends. This results in a
-		 * malformed SPI transaction with extra bytes on the wire.
-		 * Mask these fields to ensure this does not happen.
-		 */
-		dev_data->spi_ctrlr0 &= ~SPI_CTRLR0_INST_L_MASK
-					& ~SPI_CTRLR0_ADDR_L_MASK;
-
 		if (req->tx_dummy) {
 			LOG_ERR("TX dummy cycles unsupported in single line mode");
 			return -EINVAL;
@@ -1514,6 +1503,19 @@ static int _api_transceive(const struct device *dev,
 		LOG_ERR("Unsupported RX (%u) or TX (%u) dummy cycles",
 			req->rx_dummy, req->tx_dummy);
 		return -EINVAL;
+	}
+
+	/* In PIO mode, the SPI_CTRLR0 register is intended for enhanced SPI modes only,
+	 * however some implementations continue to process the INST_L and ADDR_L
+	 * fields in standard mode. On those platforms the controller sends its own
+	 * instruction/address phase in addition to what the driver sends. This results
+	 * in a malformed SPI transaction with extra bytes on the wire. Mask these
+	 * fields to ensure this does not happen.
+	 */
+	if (!(IS_ENABLED(CONFIG_MSPI_DMA) && req->xfer_mode == MSPI_DMA) &&
+	    dev_data->standard_spi) {
+		dev_data->spi_ctrlr0 &= ~SPI_CTRLR0_INST_L_MASK
+				     &  ~SPI_CTRLR0_ADDR_L_MASK;
 	} else {
 		if (!apply_cmd_length(dev_data, req->cmd_length) ||
 		    !apply_addr_length(dev_data, req->addr_length)) {

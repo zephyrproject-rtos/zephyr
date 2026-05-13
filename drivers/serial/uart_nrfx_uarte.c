@@ -3163,7 +3163,10 @@ static int uarte_instance_deinit(const struct device *dev)
 }
 #endif
 
-#define UARTE_TIMER_REG(idx) (NRF_TIMER_Type *)DT_REG_ADDR(DT_PHANDLE(UARTE(idx), timer))
+#define UARTE_TIMER_REG(node) (NRF_TIMER_Type *)DT_REG_ADDR(node)
+
+#define UARTE_TIMER_NODE(idx) \
+	DT_NODELABEL(NRFX_CONCAT(timer, CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER))
 
 #define UARTE_TIMER_IRQN(idx) DT_IRQN(DT_PHANDLE(UARTE(idx), timer))
 
@@ -3171,10 +3174,10 @@ static int uarte_instance_deinit(const struct device *dev)
 
 #define UARTE_COUNT_BYTES_WITH_TIMER_COMMON_CONFIG(idx)						\
 	.timer_regs = COND_CODE_1(UARTE_HAS_PROP(idx, timer),					\
-		(UARTE_TIMER_REG(idx)),								\
+		(UARTE_TIMER_REG(DT_PHANDLE(UARTE(idx), timer))),				\
 		(COND_CODE_1(CONFIG_UART_##idx##_NRF_HW_ASYNC,					\
-			     (NRFX_CONCAT(NRF_TIMER, CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER)),	\
-			      (NULL)))),							\
+			     (UARTE_TIMER_REG(UARTE_TIMER_NODE(idx))),				\
+			     (NULL)))),								\
 	.uarte_irqn = DT_IRQN(UARTE(idx)),
 
 

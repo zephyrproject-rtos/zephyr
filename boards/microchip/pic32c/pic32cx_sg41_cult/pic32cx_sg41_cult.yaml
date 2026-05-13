@@ -26,6 +26,7 @@ supported:
   - pwm
   - reset
   - rtc
+  - spi
   - uart
   - watchdog
 vendor: microchip

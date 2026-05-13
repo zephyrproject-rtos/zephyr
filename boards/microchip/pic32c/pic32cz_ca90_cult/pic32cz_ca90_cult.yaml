@@ -13,4 +13,5 @@ supported:
   - clock_control
   - gpio
   - pinctrl
+  - uart
 vendor: microchip

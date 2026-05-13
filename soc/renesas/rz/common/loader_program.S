@@ -9,8 +9,9 @@
 
 /* Require CONFIG_XIP=n */
 #define ROM_START	(CONFIG_FLASH_BASE_ADDRESS + DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition)))
-#define RAM_START	CONFIG_SRAM_BASE_ADDRESS
 #define APP_SIZE	_flash_used
+
+#define RAM_START DT_CHOSEN_SRAM_ADDR
 
 _ASM_FILE_PROLOGUE
 

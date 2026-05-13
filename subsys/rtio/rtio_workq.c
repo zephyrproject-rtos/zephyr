@@ -8,10 +8,9 @@
 #include <zephyr/rtio/work.h>
 #include <zephyr/kernel.h>
 
-K_MEM_SLAB_DEFINE_STATIC(rtio_work_items_slab,
-			 sizeof(struct rtio_work_req),
-			 CONFIG_RTIO_WORKQ_POOL_ITEMS,
-			 4);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(rtio_work_items_slab,
+			      struct rtio_work_req,
+			      CONFIG_RTIO_WORKQ_POOL_ITEMS);
 static K_THREAD_STACK_ARRAY_DEFINE(rtio_workq_threads_stack,
 				   CONFIG_RTIO_WORKQ_THREADS_POOL,
 				   CONFIG_RTIO_WORKQ_THREADS_POOL_STACK_SIZE);

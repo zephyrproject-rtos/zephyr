@@ -17,6 +17,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 enum {
 	CCP_FLAG_PROFILE_CONNECTED,
@@ -82,6 +83,8 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 static void discover_cb(struct bt_conn *conn, int err, uint8_t tbs_count, bool gtbs_found)
 {
+	ARG_UNUSED(tbs_count);
+
 	if (!gtbs_found) {
 		printk("Failed to discover GTBS\n");
 		return;
@@ -99,6 +102,8 @@ static void discover_cb(struct bt_conn *conn, int err, uint8_t tbs_count, bool g
 
 static void ccid_cb(struct bt_conn *conn, int err, uint8_t inst_index, uint32_t value)
 {
+	ARG_UNUSED(value);
+
 	if (inst_index != BT_TBS_GTBS_INDEX) {
 		printk("Unexpected %s for instance %u\n", __func__, inst_index);
 		return;
@@ -116,6 +121,8 @@ static void ccid_cb(struct bt_conn *conn, int err, uint8_t inst_index, uint32_t 
 
 static void status_flags_cb(struct bt_conn *conn, int err, uint8_t inst_index, uint32_t value)
 {
+	ARG_UNUSED(value);
+
 	if (inst_index != BT_TBS_GTBS_INDEX) {
 		printk("Unexpected %s for instance %u\n", __func__, inst_index);
 		return;
@@ -134,6 +141,9 @@ static void status_flags_cb(struct bt_conn *conn, int err, uint8_t inst_index, u
 static void call_state_cb(struct bt_conn *conn, int err, uint8_t inst_index, uint8_t call_count,
 			  const struct bt_tbs_client_call_state *call_states)
 {
+	ARG_UNUSED(call_count);
+	ARG_UNUSED(call_states);
+
 	if (inst_index != BT_TBS_GTBS_INDEX) {
 		printk("Unexpected %s for instance %u\n", __func__, inst_index);
 		return;

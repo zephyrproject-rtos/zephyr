@@ -17,6 +17,13 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
   message(STATUS "SPSDK version is ${SPSDK_VERSION}")
 
   if(CONFIG_SOC_MIMX9352_A55)
+    if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+      set(RAM_ADDR ${CONFIG_SRAM_BASE_ADDRESS})
+    else()
+      dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+      dt_reg_addr(RAM_ADDR PATH "${chosen_sram_path}")
+    endif()
+
     file(WRITE ${CMAKE_BINARY_DIR}/zephyr/imx93_evk_mimx9352_a55_ahab_primary.yaml
       "
       family: mimx9352
@@ -47,8 +54,8 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
             images:
               - atf:            ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/bl31-imx93-zephyr.bin
               - image_path:     ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
-                load_address:   '${CONFIG_SRAM_BASE_ADDRESS}'
-                entry_point:    '${CONFIG_SRAM_BASE_ADDRESS}'
+                load_address:   '${RAM_ADDR}'
+                entry_point:    '${RAM_ADDR}'
                 image_type:     executable
                 core_id:        cortex-a55
                 is_encrypted:   false

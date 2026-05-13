@@ -26,7 +26,6 @@
 	leds: leds {
 		compatible = "gpio-leds";
 
-		/* Pin muxing conflict with ADC4 */
 		blue_led_1: led_0 {
 			gpios = <&gpioa 7 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
@@ -148,17 +147,16 @@
 };
 
 &adc4 {
-	/* Pin muxing conflict with LED1, disabled by default */
-	pinctrl-0 = <&adc4_in2_pa7>;
+	pinctrl-0 = <&adc4_in8_pa1>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
-	status = "disabled";
+	status = "okay";
 };
 
 &die_temp {
-	/* keep disabled if adc4 is disabled */
-	status = "disabled";
+	/* Disable the node if adc4 is disabled */
+	status = "okay";
 };
 
 &timers2 {

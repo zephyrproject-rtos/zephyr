@@ -493,7 +493,7 @@ void __weak z_early_rand_get(uint8_t *buf, size_t length)
 	int rc;
 
 #ifdef CONFIG_ENTROPY_HAS_DRIVER
-	const struct device *const entropy = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_entropy));
+	const struct device *const entropy = entropy_get_default_device();
 
 	if ((entropy != NULL) && device_is_ready(entropy)) {
 		/* Try to see if driver provides an ISR-specific API */

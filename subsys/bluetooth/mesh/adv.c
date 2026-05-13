@@ -46,17 +46,17 @@ static K_FIFO_DEFINE(bt_mesh_adv_queue);
 static K_FIFO_DEFINE(bt_mesh_relay_queue);
 static K_FIFO_DEFINE(bt_mesh_friend_queue);
 
-K_MEM_SLAB_DEFINE_STATIC(local_adv_pool, sizeof(struct bt_mesh_adv),
-			 CONFIG_BT_MESH_ADV_BUF_COUNT, __alignof__(struct bt_mesh_adv));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(local_adv_pool, struct bt_mesh_adv,
+			      CONFIG_BT_MESH_ADV_BUF_COUNT);
 
 #if defined(CONFIG_BT_MESH_RELAY_BUF_COUNT)
-K_MEM_SLAB_DEFINE_STATIC(relay_adv_pool, sizeof(struct bt_mesh_adv),
-			 CONFIG_BT_MESH_RELAY_BUF_COUNT, __alignof__(struct bt_mesh_adv));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(relay_adv_pool, struct bt_mesh_adv,
+			      CONFIG_BT_MESH_RELAY_BUF_COUNT);
 #endif
 
 #if defined(CONFIG_BT_MESH_ADV_EXT_FRIEND_SEPARATE)
-K_MEM_SLAB_DEFINE_STATIC(friend_adv_pool, sizeof(struct bt_mesh_adv),
-			 CONFIG_BT_MESH_FRIEND_LPN_COUNT, __alignof__(struct bt_mesh_adv));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(friend_adv_pool, struct bt_mesh_adv,
+			      CONFIG_BT_MESH_FRIEND_LPN_COUNT);
 #endif
 
 void bt_mesh_adv_send_start(uint16_t duration, int err, struct bt_mesh_adv_ctx *ctx)

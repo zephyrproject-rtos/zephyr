@@ -90,6 +90,19 @@ static const char *ptp_delay_mechanism2str(enum ptp_delay_mechanism mechanism)
 	}
 }
 
+static const char *ptp_net_protocol2str(void)
+{
+	if (IS_ENABLED(CONFIG_PTP_UDP_IPV4_PROTOCOL)) {
+		return "UDP/IPv4";
+	} else if (IS_ENABLED(CONFIG_PTP_UDP_IPV6_PROTOCOL)) {
+		return "UDP/IPv6";
+	} else if (IS_ENABLED(CONFIG_PTP_IEEE_802_3_PROTOCOL)) {
+		return "IEEE 802.3";
+	}
+
+	return "<unknown>";
+}
+
 static const char *ptp_time_src2str(uint8_t time_src)
 {
 	switch (time_src) {
@@ -215,6 +228,7 @@ static void ptp_print_instance_info(const struct shell *sh)
 	PR("PTP Instance:\n");
 	PR("Clock ID      : %s\n", clock_id);
 	PR("Clock Type    : %s\n", ptp_clock_type2str(ptp_clock_type()));
+	PR("Protocol      : %s\n", ptp_net_protocol2str());
 	PR("Domain        : %u\n", dds->domain);
 	PR("Priorities    : %u / %u\n", dds->priority1, dds->priority2);
 	PR("Time source   : %s (0x%02x)\n", ptp_time_src2str(tpds->time_src), tpds->time_src);
@@ -270,6 +284,7 @@ static void ptp_print_port_info(const struct shell *sh, uint16_t port_id)
 	PR("\nConfiguration:\n");
 	PR("state                : %s\n", ptp_port_state2str(ptp_port_state(port)));
 	PR("enabled              : %s\n", port->port_ds.enable ? "yes" : "no");
+	PR("protocol             : %s\n", ptp_net_protocol2str());
 	PR("time transmitter only: %s\n", port->port_ds.time_transmitter_only ? "yes" : "no");
 	PR("announce log itv     : %d\n", port->port_ds.log_announce_interval);
 	PR("announce timeout     : %u\n", port->port_ds.announce_receipt_timeout);

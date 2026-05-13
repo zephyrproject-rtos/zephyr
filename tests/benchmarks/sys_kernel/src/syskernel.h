@@ -15,7 +15,9 @@
 #include <zephyr/toolchain.h>
 
 #define STACK_SIZE 2048
-#if CONFIG_SRAM_SIZE <= 32
+#define RAM_SIZE (DT_CHOSEN_SRAM_SIZE / 1024)
+
+#if RAM_SIZE <= 32
 #define NUMBER_OF_LOOPS 100
 #else
 #define NUMBER_OF_LOOPS 1000

@@ -301,7 +301,7 @@ int netc_eth_init_common(const struct device *dev)
 	config->bdr_init(&bdr_config, &rx_bdr_config, &tx_bdr_config);
 
 #ifdef NETC_PTP_TIMESTAMPING_SUPPORT
-	if (netc_eth_get_ptp_clock(dev) != NULL) {
+	if (netc_eth_get_ptp_clock(dev, data->iface) != NULL) {
 		bdr_config.rxBdrConfig[0].extendDescEn = true;
 	}
 

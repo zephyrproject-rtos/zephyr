@@ -514,7 +514,9 @@ int tcpci_tcpm_transmit_data(const struct i2c_dt_spec *bus, struct pd_msg *msg,
 			TCPC_REG_TRANSMIT_SET_WITHOUT_RETRY(msg->header.message_type));
 	}
 
-	if (cnt > 0) {
+	/* Avoid missing messages without data objects (e.g., PD control msg). */
+	/* Uses NUM_SOP_STAR_TYPES to transmit general msg, such as SOP, SOP', and SOP''. */
+	if (msg->type < NUM_SOP_STAR_TYPES) {
 		reg = TCPC_REG_TX_BUFFER;
 		/* TX_BYTE_CNT includes extra bytes for message header */
 		cnt += sizeof(msg->header.raw_value);

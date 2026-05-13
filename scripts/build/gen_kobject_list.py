@@ -286,10 +286,11 @@ class AggregateTypeMember:
             # DWARF v2, location encoded as set of operations
             # only "DW_OP_plus_uconst" with ULEB128 argument supported
             if member_offset[0] == 0x23:
-                self.member_offset = member_offset[1] & 0x7F
-                for i in range(1, len(member_offset) - 1):
-                    if member_offset[i] & 0x80:
-                        self.member_offset += (member_offset[i + 1] & 0x7F) << i * 7
+                if len(member_offset) < 2:
+                    raise NotImplementedError(
+                        f"DW_OP_plus_uconst with no operand ({self.member_name}:{self.member_type})"
+                    )
+                self.member_offset, _ = decode_uleb128(member_offset, 1)
             else:
                 err = "not yet supported location operation "
                 err += f"({self.member_name}:{self.member_type}:{member_offset[0]})"
@@ -494,6 +495,21 @@ def analyze_typedef(die):
     type_env[die.offset] = type_env[type_offset]
 
 
+def decode_uleb128(data, idx):
+    if idx >= len(data):
+        raise ValueError(f"ULEB128 decode: no data at index {idx} (length {len(data)})")
+    value = 0
+    shift = 0
+    while idx < len(data):
+        byte = data[idx]
+        idx += 1
+        value |= (byte & 0x7F) << shift
+        if (byte & 0x80) == 0:
+            return value, idx
+        shift += 7
+    raise ValueError("ULEB128 decode: sequence ended without terminating byte")
+
+
 def unpack_pointer(elf, data, offset):
     endian_code = "<" if elf.little_endian else ">"
     if elf.elfclass == 32:
@@ -621,41 +637,22 @@ def find_kobjects(elf, syms):
                 debug_die(die, f"kernel object '{name}' unexpected exprloc opcode {hex(opcode)}")
             continue
 
+        endian_code = "<" if elf.little_endian else ">"
         if "CONFIG_64BIT" in syms:
-            addr = (
-                (loc.value[1] << 0)
-                | (loc.value[2] << 8)
-                | (loc.value[3] << 16)
-                | (loc.value[4] << 24)
-                | (loc.value[5] << 32)
-                | (loc.value[6] << 40)
-                | (loc.value[7] << 48)
-                | (loc.value[8] << 56)
-            )
+            addr = struct.unpack(endian_code + "Q", bytes(loc.value[1:9]))[0]
             uconst_idx = 9
         else:
-            addr = (
-                (loc.value[1] << 0)
-                | (loc.value[2] << 8)
-                | (loc.value[3] << 16)
-                | (loc.value[4] << 24)
-            )
+            addr = struct.unpack(endian_code + "I", bytes(loc.value[1:5]))[0]
             uconst_idx = 5
 
         # Handle a DW_FORM_exprloc that contains a DW_OP_addr, followed immediately by
         # a DW_OP_plus_uconst. The offset is ULEB128-encoded and may span multiple bytes.
         if len(loc.value) > uconst_idx and loc.value[uconst_idx] == DW_OP_plus_uconst:
-            offset = 0
-            shift = 0
-            idx = uconst_idx + 1
-            while idx < len(loc.value):
-                byte = loc.value[idx]
-                offset |= (byte & 0x7F) << shift
-                idx += 1
-                if (byte & 0x80) == 0:
-                    break
-                shift += 7
-            addr += offset
+            if len(loc.value) <= uconst_idx + 1:
+                debug_die(die, f"kernel object '{name}' DW_OP_plus_uconst missing operand")
+                continue
+            uconst_val, _ = decode_uleb128(loc.value, uconst_idx + 1)
+            addr += uconst_val
 
         if addr == 0:
             # Never linked; gc-sections deleted it

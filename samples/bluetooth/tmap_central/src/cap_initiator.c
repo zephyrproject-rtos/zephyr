@@ -25,6 +25,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #if defined(CONFIG_BT_CAP_INITIATOR)
@@ -48,6 +49,8 @@ static K_SEM_DEFINE(sem_audio_start, 0U, 1U);
 static void unicast_stream_configured(struct bt_bap_stream *stream,
 				      const struct bt_bap_qos_cfg_pref *pref)
 {
+	ARG_UNUSED(pref);
+
 	printk("Configured stream %p\n", stream);
 
 	/* TODO: The preference should be used/taken into account when
@@ -114,6 +117,9 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 				      const struct bt_csip_set_coordinator_set_member *member,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(member);
+
 	if (err != 0) {
 		printk("Failed to discover CAS: %d", err);
 		return;
@@ -205,6 +211,8 @@ static bool print_cb(struct bt_data *data, void *user_data)
 
 static void print_remote_codec(const struct bt_audio_codec_cap *codec_cap, enum bt_audio_dir dir)
 {
+	ARG_UNUSED(dir);
+
 	printk("codec id 0x%02x cid 0x%04x vid 0x%04x count %u\n", codec_cap->id, codec_cap->cid,
 	       codec_cap->vid, codec_cap->data_len);
 
@@ -243,6 +251,8 @@ static void add_remote_source(struct bt_bap_ep *ep)
 
 static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		printk("Discovery failed: %d\n", err);
 		return;
@@ -260,11 +270,15 @@ static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir,
 			  const struct bt_audio_codec_cap *codec_cap)
 {
+	ARG_UNUSED(conn);
+
 	print_remote_codec(codec_cap, dir);
 }
 
 static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_bap_ep *ep)
 {
+	ARG_UNUSED(conn);
+
 	if (dir == BT_AUDIO_DIR_SOURCE) {
 		add_remote_source(ep);
 	} else if (dir == BT_AUDIO_DIR_SINK) {
@@ -384,6 +398,8 @@ static void audio_timer_timeout(struct k_work *work)
 	int ret;
 	static size_t len_to_send;
 	struct bt_bap_stream *stream = &unicast_streams[0].bap_stream;
+
+	ARG_UNUSED(work);
 
 	len_to_send = unicast_preset_48_2_1.qos.sdu;
 

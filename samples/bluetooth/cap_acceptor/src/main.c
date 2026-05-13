@@ -30,6 +30,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "cap_acceptor.h"
 
@@ -72,6 +73,8 @@ static K_SEM_DEFINE(sem_state_change, 0U, 1U);
 
 static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
+	ARG_UNUSED(err);
+
 	LOG_INF("Connected: %s", bt_conn_dst_str(conn));
 
 	peer.conn = bt_conn_ref(conn);

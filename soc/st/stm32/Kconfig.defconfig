@@ -30,6 +30,8 @@ configdefault NUM_IRQS
 	default $(inc,$(DT_NVIC_MAX_IRQN)) if $(dt_path_enabled,$(DT_NVIC_PATH))
 
 # Reduce kernel stack sizes to fit MCUs with 8 KiB RAM or less
+if SRAM_DEPRECATED_KCONFIG_SET
+
 config MAIN_STACK_SIZE
 	default 320 if SRAM_SIZE <= 2
 	default 512 if SRAM_SIZE <= 4
@@ -43,6 +45,29 @@ config IDLE_STACK_SIZE
 config ISR_STACK_SIZE
 	default 256 if SRAM_SIZE <= 2
 	default 512 if SRAM_SIZE <= 8
+
+endif # SRAM_DEPRECATED_KCONFIG_SET
+
+if !SRAM_DEPRECATED_KCONFIG_SET
+
+DT_CHOSEN_Z_SRAM = zephyr,sram
+DT_SRAM_SIZE = $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
+
+config MAIN_STACK_SIZE
+	default 320 if $(DT_SRAM_SIZE) <= 2
+	default 512 if $(DT_SRAM_SIZE) <= 4
+	default 640 if $(DT_SRAM_SIZE) <= 8
+
+config IDLE_STACK_SIZE
+	default 100 if $(DT_SRAM_SIZE) <= 2
+	default 150 if $(DT_SRAM_SIZE) <= 4
+	default 200 if $(DT_SRAM_SIZE) <= 8
+
+config ISR_STACK_SIZE
+	default 256 if $(DT_SRAM_SIZE) <= 2
+	default 512 if $(DT_SRAM_SIZE) <= 8
+
+endif # !SRAM_DEPRECATED_KCONFIG_SET
 
 DT_STM32_RCC_PATH := $(dt_nodelabel_path,rcc)
 DT_STM32_RCC_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_RCC_PATH),clock-frequency)

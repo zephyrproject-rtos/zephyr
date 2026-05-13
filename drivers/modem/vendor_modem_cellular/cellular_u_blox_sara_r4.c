@@ -46,6 +46,12 @@ MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_periodic_chat_script,
 			 u_blox_sara_r4_periodic_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 4);
 
+static const struct modem_cellular_config_scripts u_blox_sara_r4_scripts = {
+	.init = &u_blox_sara_r4_init_chat_script,
+	.dial = &u_blox_sara_r4_dial_chat_script,
+	.periodic = &u_blox_sara_r4_periodic_chat_script,
+};
+
 #define MODEM_CELLULAR_DEVICE_U_BLOX_SARA_R4(inst)                                                 \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);   \
                                                                                                    \
@@ -57,8 +63,6 @@ MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_periodic_chat_script,
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (gnss_pipe, 3), (user_pipe_0, 4))          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(                                                            \
-		inst, 1500, 100, 10000, 5000, false, NULL, &u_blox_sara_r4_init_chat_script,       \
-		&u_blox_sara_r4_dial_chat_script, &u_blox_sara_r4_periodic_chat_script, NULL)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 10000, 5000, false, &u_blox_sara_r4_scripts)
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_U_BLOX_SARA_R4)

@@ -739,6 +739,53 @@ function(generate_inc_file_for_target
   generate_inc_file_for_gen_target(${target} ${source_file} ${generated_file} ${generated_target_name} ${ARGN})
 endfunction()
 
+function(generate_shell_aliases_inc_file
+    source_file    # The source file to be converted to array element
+    generated_file # The generated file
+    )
+  add_custom_command(
+    OUTPUT ${generated_file}
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/build/gen_shell_aliases.py
+    --max-command-len ${CONFIG_SHELL_CMD_BUFF_SIZE}
+    ${source_file}
+    > ${generated_file}
+    DEPENDS ${source_file}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endfunction()
+
+function(generate_shell_aliases_inc_file_for_gen_target
+    target          # The cmake target that depends on the generated file
+    source_file     # The source file to be converted to array element
+    generated_file  # The generated file
+    gen_target      # The generated file target we depend on
+    )
+  generate_shell_aliases_inc_file(${source_file} ${generated_file})
+
+  # Ensure 'generated_file' is generated before 'target' by creating a
+  # dependency between the two targets
+
+  add_dependencies(${target} ${gen_target})
+endfunction()
+
+function(generate_shell_aliases_inc_file_for_target
+    target          # The cmake target that depends on the generated file
+    source_file     # The source file to be converted to array element
+    generated_file  # The generated file
+    )
+  # Ensure 'generated_file' is generated before 'target' by creating a
+  # 'custom_target' for it and setting up a dependency between the two
+  # targets
+
+  # But first create a unique name for the custom target
+  generate_unique_target_name_from_filename(${generated_file} generated_target_name)
+
+  add_custom_target(${generated_target_name} DEPENDS ${generated_file})
+  generate_shell_aliases_inc_file_for_gen_target(${target} ${source_file} ${generated_file} ${generated_target_name})
+endfunction()
+
 # 1.4. board_*
 #
 # This section is for extensions related to Zephyr board handling.
@@ -4823,6 +4870,7 @@ function(zephyr_dt_import)
     )
 
     zephyr_file_copy(${gen_dts_cmake_temp} ${gen_dts_cmake_output} ONLY_IF_DIFFERENT)
+    file(REMOVE ${gen_dts_cmake_temp})
   endif()
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${gen_dts_cmake_script})
 
@@ -5307,10 +5355,20 @@ function(zephyr_linker_section)
     # If KVMA is set and the Kernel virtual memory settings reqs are met, we
     # substitute the VMA setting with the specified KVMA value.
     if(CONFIG_MMU)
-      math(EXPR KERNEL_MEM_VM_OFFSET
-           "(${CONFIG_KERNEL_VM_BASE} + ${CONFIG_KERNEL_VM_OFFSET})\
-            - (${CONFIG_SRAM_BASE_ADDRESS} + ${CONFIG_SRAM_OFFSET})"
-      )
+      if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+        math(EXPR KERNEL_MEM_VM_OFFSET
+          "(${CONFIG_KERNEL_VM_BASE} + ${CONFIG_KERNEL_VM_OFFSET}) \
+           - (${CONFIG_SRAM_BASE_ADDRESS} + ${CONFIG_SRAM_OFFSET})"
+        )
+      else()
+        dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+        dt_reg_addr(ram_addr PATH "${chosen_sram_path}")
+
+        math(EXPR KERNEL_MEM_VM_OFFSET
+          "(${CONFIG_KERNEL_VM_BASE} + ${CONFIG_KERNEL_VM_OFFSET}) \
+           - (${ram_addr} + ${CONFIG_SRAM_OFFSET})"
+        )
+      endif()
 
       if(NOT (${KERNEL_MEM_VM_OFFSET} EQUAL 0))
         set(SECTION_VMA ${SECTION_KVMA})

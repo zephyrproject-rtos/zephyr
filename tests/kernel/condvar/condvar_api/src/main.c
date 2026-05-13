@@ -29,7 +29,6 @@ K_MUTEX_DEFINE(test_mutex);
 
 ZTEST_BMEM int woken;
 ZTEST_BMEM int timeout;
-ZTEST_BMEM int index[TOTAL_THREADS_WAITING];
 ZTEST_BMEM int count;
 
 struct k_condvar multiple_condvar[TOTAL_THREADS_WAITING];
@@ -358,7 +357,7 @@ void condvar_multiple_wait_wake_task(void *p1, void *p2, void *p3)
 {
 	int32_t ret_value;
 	int time_val = *(int *)p1;
-	int idx = *(int *)p2;
+	int idx = POINTER_TO_INT(p2);
 
 	k_condvar_init(&multiple_condvar[idx]);
 
@@ -376,7 +375,7 @@ void condvar_multiple_wake_task(void *p1, void *p2, void *p3)
 {
 	int32_t ret_value;
 	int woken_num = *(int *)p1;
-	int idx = *(int *)p2;
+	int idx = POINTER_TO_INT(p2);
 
 	zassert_true(woken_num > 0, "invalid woken number");
 
@@ -405,22 +404,18 @@ ZTEST_USER(condvar_tests, test_multiple_condvar_wait_wake)
 	timeout = K_TICKS_FOREVER;
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
-		index[i] = i;
-
-		k_thread_create(&multiple_tid[i], multiple_stack[i],
-				STACK_SIZE, condvar_multiple_wait_wake_task,
-				&timeout, &index[i], NULL, PRIO_WAIT,
-				K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+		k_thread_create(&multiple_tid[i], multiple_stack[i], STACK_SIZE,
+				condvar_multiple_wait_wake_task, &timeout, INT_TO_POINTER(i), NULL,
+				PRIO_WAIT, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 	}
 
 	/* giving time for the other threads to execute */
 	k_msleep(10);
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
-		k_thread_create(&multiple_wake_tid[i], multiple_wake_stack[i],
-				STACK_SIZE, condvar_multiple_wake_task,
-				&woken, &index[i], NULL, PRIO_WAKE,
-				K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+		k_thread_create(&multiple_wake_tid[i], multiple_wake_stack[i], STACK_SIZE,
+				condvar_multiple_wake_task, &woken, INT_TO_POINTER(i), NULL,
+				PRIO_WAKE, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 	}
 
 	/* giving time for the other threads to execute */

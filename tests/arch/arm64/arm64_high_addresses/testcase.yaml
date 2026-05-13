@@ -10,48 +10,56 @@ common:
 tests:
   arch.arm64.high_addr.high_sram_low_vm:
     extra_configs:
-      - CONFIG_SRAM_BASE_ADDRESS=0x200880000
       - CONFIG_KERNEL_VM_BASE=0x00400000
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="high_address.overlay"
 
   arch.arm64.high_addr.low_sram_high_vm:
     extra_configs:
-      - CONFIG_SRAM_BASE_ADDRESS=0x00400000
       - CONFIG_KERNEL_VM_BASE=0x200880000
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="low_address.overlay"
 
   arch.arm64.high_addr.high_sram_equal_vm:
     extra_configs:
-      - CONFIG_SRAM_BASE_ADDRESS=0x200880000
       - CONFIG_KERNEL_VM_BASE=0x200880000
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="high_address.overlay"
 
   arch.arm64.high_addr.high_sram_high_vm:
     extra_configs:
-      - CONFIG_SRAM_BASE_ADDRESS=0x200880000
       - CONFIG_KERNEL_VM_BASE=0x200800000
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="high_address.overlay"
 
   arch.arm64.high_addr.high_sram_low_vm.picolibc:
     tags: picolibc
     extra_configs:
-      - CONFIG_SRAM_BASE_ADDRESS=0x200880000
       - CONFIG_KERNEL_VM_BASE=0x00400000
       - CONFIG_PICOLIBC=y
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="high_address.overlay"
 
   arch.arm64.high_addr.low_sram_high_vm.picolibc:
     tags: picolibc
     extra_configs:
-      - CONFIG_SRAM_BASE_ADDRESS=0x00400000
       - CONFIG_KERNEL_VM_BASE=0x200880000
       - CONFIG_PICOLIBC=y
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="low_address.overlay"
 
   arch.arm64.high_addr.high_sram_equal_vm.picolibc:
     tags: picolibc
     extra_configs:
-      - CONFIG_SRAM_BASE_ADDRESS=0x200880000
       - CONFIG_KERNEL_VM_BASE=0x200880000
       - CONFIG_PICOLIBC=y
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="high_address.overlay"
 
   arch.arm64.high_addr.high_sram_high_vm.picolibc:
     tags: picolibc
     extra_configs:
-      - CONFIG_SRAM_BASE_ADDRESS=0x200880000
       - CONFIG_KERNEL_VM_BASE=0x200800000
       - CONFIG_PICOLIBC=y
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="high_address.overlay"

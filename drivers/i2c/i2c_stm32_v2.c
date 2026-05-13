@@ -133,6 +133,7 @@ static uint32_t i2c_valid_timing_nbr;
 
 #define I2C_STM32_WAIT_POLL_SLEEP_USEC 10U
 
+#if defined(CONFIG_I2C_TARGET)
 static inline int wait_bus_idle(const struct device *dev, uint32_t timeout_us)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
@@ -152,6 +153,7 @@ static inline int wait_bus_idle(const struct device *dev, uint32_t timeout_us)
 
 	return 0;
 }
+#endif /* CONFIG_I2C_TARGET */
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
 static int configure_dma(struct stream const *dma, struct dma_config *dma_cfg,

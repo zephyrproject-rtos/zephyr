@@ -15,6 +15,7 @@ supported:
   - bluetooth
   - i2c
   - pwm
+  - entropy
 testing:
   ignore_tags:
     - pm

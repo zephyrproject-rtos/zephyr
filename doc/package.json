@@ -2,6 +2,6 @@
   "private": true,
   "dependencies": {
     "d3": "^7.9.0",
-    "mermaid": "^11.14.0"
+    "mermaid": "^11.15.0"
   }
 }

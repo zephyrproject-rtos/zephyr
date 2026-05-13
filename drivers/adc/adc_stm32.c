@@ -1629,13 +1629,15 @@ static int set_channel_differential_mode(ADC_TypeDef *adc, uint8_t channel_id, b
 {
 	const uint32_t mode = differential ? LL_ADC_DIFFERENTIAL_ENDED : STM32_IN_ADC_SINGLE_ENDED;
 	const uint32_t channel = STM32_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
+	uint32_t current_mode = LL_ADC_GetChannelSingleDiff(adc, channel);
 	int err;
 
 	/* The ADC must be disabled to change the single ended / differential mode setting. The
 	 * disable / re-enable cycle can take some time, so avoid doing this if the channel is
 	 * already set to the correct mode.
 	 */
-	if (LL_ADC_GetChannelSingleDiff(adc, channel) == mode) {
+	if ((current_mode != 0U && mode == LL_ADC_DIFFERENTIAL_ENDED) ||
+	    (current_mode == 0U && mode == STM32_IN_ADC_SINGLE_ENDED)) {
 		return 0;
 	}
 

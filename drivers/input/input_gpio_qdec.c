@@ -272,7 +272,7 @@ static int gpio_qdec_init(const struct device *dev)
 		const struct gpio_dt_spec *gpio = &cfg->ab_gpio[i];
 
 		if (!gpio_is_ready_dt(gpio)) {
-			LOG_ERR("%s is not ready", gpio->port->name);
+			LOG_ERR_DEVICE_NOT_READY(gpio->port);
 			return -ENODEV;
 		}
 
@@ -298,7 +298,7 @@ static int gpio_qdec_init(const struct device *dev)
 		gpio_flags_t mode;
 
 		if (!gpio_is_ready_dt(gpio)) {
-			LOG_ERR("%s is not ready", gpio->port->name);
+			LOG_ERR_DEVICE_NOT_READY(gpio->port);
 			return -ENODEV;
 		}
 

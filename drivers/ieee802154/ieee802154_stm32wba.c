@@ -78,9 +78,9 @@ static void stm32wba_802154_receive_done(uint8_t *p_buffer,
 void stm32wba_802154_tx_ack_started(bool ack_fpb, bool ack_seb);
 static void stm32wba_802154_transmit_done(
 				uint8_t *p_frame,
-				stm32wba_802154_ral_tx_error_t error,
+				stm32wba_802154_ral_error_t error,
 				const stm32wba_802154_ral_transmit_done_metadata_t *p_metadata);
-static void stm32wba_802154_cca_done(uint8_t error);
+static void stm32wba_802154_cca_done(stm32wba_802154_ral_error_t error);
 static void stm32wba_802154_energy_scan_done(int8_t ed_result);
 
 static const struct device *stm32wba_802154_get_device(void)
@@ -165,19 +165,19 @@ static void stm32wba_802154_rx_thread(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-static void stm32wba_802154_receive_failed(stm32wba_802154_ral_rx_error_t error)
+static void stm32wba_802154_receive_failed(stm32wba_802154_ral_error_t error)
 {
 	const struct device *dev = stm32wba_802154_get_device();
 	enum ieee802154_rx_fail_reason reason;
 
 	switch (error) {
-	case STM32WBA_802154_RAL_RX_ERROR_FCS:
+	case STM32WBA_802154_RAL_ERROR_FCS:
 		reason = IEEE802154_RX_FAIL_INVALID_FCS;
 		break;
-	case STM32WBA_802154_RAL_RX_ERROR_NO_FRAME_RECEIVED:
+	case STM32WBA_802154_RAL_ERROR_NO_FRAME_RECEIVED:
 		reason = IEEE802154_RX_FAIL_NOT_RECEIVED;
 		break;
-	case STM32WBA_802154_RAL_RX_ERROR_DEST_ADDRESS_FILTERED:
+	case STM32WBA_802154_RAL_ERROR_DESTINATION_ADDRESS_FILTERED:
 		reason = IEEE802154_RX_FAIL_ADDR_FILTERED;
 		break;
 	default:
@@ -607,20 +607,20 @@ static int stm32wba_802154_tx(const struct device *dev,
 	net_pkt_set_ieee802154_mac_hdr_rdy(pkt, stm32wba_802154_data.tx_frame_mac_hdr_rdy);
 
 	switch (stm32wba_802154_data.tx_result) {
-	case STM32WBA_802154_RAL_TX_ERROR_NONE:
+	case STM32WBA_802154_RAL_ERROR_NONE:
 		if (stm32wba_802154_data.ack_frame.psdu == NULL) {
 			/* No ACK was requested. */
 			return 0;
 		}
 		/* Handle ACK packet. */
 		return handle_ack(&stm32wba_802154_data);
-	case STM32WBA_802154_RAL_TX_ERROR_NO_MEM:
+	case STM32WBA_802154_RAL_ERROR_NO_BUFS:
 		return -ENOBUFS;
-	case STM32WBA_802154_RAL_TX_ERROR_BUSY_CHANNEL:
+	case STM32WBA_802154_RAL_ERROR_CHANNEL_ACCESS_FAILURE:
 		return -EBUSY;
-	case STM32WBA_802154_RAL_TX_ERROR_NO_ACK:
+	case STM32WBA_802154_RAL_ERROR_NO_ACK:
 		return -ENOMSG;
-	case STM32WBA_802154_RAL_TX_ERROR_ABORTED:
+	case STM32WBA_802154_RAL_ERROR_ABORT:
 	default:
 		return -EIO;
 	}
@@ -995,7 +995,7 @@ static int stm32wba_802154_attr_get(const struct device *dev,
 static void stm32wba_802154_receive_done(uint8_t *p_buffer,
 					 stm32wba_802154_ral_receive_done_metadata_t *p_metadata)
 {
-	if ((p_buffer == NULL) || (p_metadata->error != STM32WBA_802154_RAL_RX_ERROR_NONE)) {
+	if ((p_buffer == NULL) || (p_metadata->error != STM32WBA_802154_RAL_ERROR_NONE)) {
 		stm32wba_802154_receive_failed(p_metadata->error);
 		return;
 	}
@@ -1033,7 +1033,7 @@ void stm32wba_802154_tx_ack_started(bool ack_fpb, bool ack_seb)
 
 static void stm32wba_802154_transmit_done(
 				uint8_t *p_frame,
-				stm32wba_802154_ral_tx_error_t error,
+				stm32wba_802154_ral_error_t error,
 				const stm32wba_802154_ral_transmit_done_metadata_t *p_metadata)
 {
 	ARG_UNUSED(p_frame);
@@ -1056,9 +1056,9 @@ static void stm32wba_802154_transmit_done(
 	k_sem_give(&stm32wba_802154_data.tx_wait);
 }
 
-static void stm32wba_802154_cca_done(uint8_t error)
+static void stm32wba_802154_cca_done(stm32wba_802154_ral_error_t error)
 {
-	if (error == STM32WBA_802154_RAL_RX_ERROR_NONE) {
+	if (error == STM32WBA_802154_RAL_ERROR_NONE) {
 		stm32wba_802154_data.channel_free = true;
 	}
 

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -570,6 +570,10 @@ static int _i2c_master_transfer_async(const struct device *dev, uint16_t address
 	} else if (rx_size) {
 		data->pending = CAT1_I2C_PENDING_RX;
 		Cy_SCB_I2C_MasterRead(config->base, &data->rx_config, &data->context);
+	} else if (tx != NULL) {
+		/* 0-byte write for address probing (i2c scan) */
+		data->pending = CAT1_I2C_PENDING_TX;
+		Cy_SCB_I2C_MasterWrite(config->base, &data->tx_config, &data->context);
 	} else {
 		return -EIO;
 	}

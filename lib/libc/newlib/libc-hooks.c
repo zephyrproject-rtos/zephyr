@@ -111,8 +111,8 @@ int _getpid(void);
 		#define MAX_HEAP_SIZE	(POINTER_TO_UINT(&_heap_sentry) - \
 					 HEAP_BASE)
 	#else
-		#define MAX_HEAP_SIZE	(KB(CONFIG_SRAM_SIZE) - (HEAP_BASE - \
-					 CONFIG_SRAM_BASE_ADDRESS))
+		#define MAX_HEAP_SIZE	(DT_CHOSEN_SRAM_SIZE - (HEAP_BASE - \
+					 DT_CHOSEN_SRAM_ADDR))
 	#endif /* CONFIG_XTENSA */
 #endif
 

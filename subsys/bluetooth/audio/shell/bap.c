@@ -2546,8 +2546,7 @@ struct lc3_data {
 	bool do_plc;
 };
 
-K_MEM_SLAB_DEFINE(lc3_data_slab, sizeof(struct lc3_data), CONFIG_BT_ISO_RX_BUF_COUNT,
-		  __alignof__(struct lc3_data));
+K_MEM_SLAB_DEFINE_TYPE(lc3_data_slab, struct lc3_data, CONFIG_BT_ISO_RX_BUF_COUNT);
 
 static int16_t lc3_rx_buf[LC3_MAX_NUM_SAMPLES_MONO];
 static K_FIFO_DEFINE(lc3_in_fifo);

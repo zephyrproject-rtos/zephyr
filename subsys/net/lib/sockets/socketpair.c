@@ -56,8 +56,7 @@ __net_socket struct spair {
 };
 
 #ifdef CONFIG_NET_SOCKETPAIR_STATIC
-K_MEM_SLAB_DEFINE_STATIC(spair_slab, sizeof(struct spair), CONFIG_NET_SOCKETPAIR_MAX * 2,
-			 __alignof__(struct spair));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(spair_slab, struct spair, CONFIG_NET_SOCKETPAIR_MAX * 2);
 #endif /* CONFIG_NET_SOCKETPAIR_STATIC */
 
 /* forward declaration */

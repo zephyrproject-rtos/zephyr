@@ -14,6 +14,8 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gatt.h>
 
+#include "gatt_internal.h"
+
 /* Custom Service Variables */
 static const struct bt_uuid_128 test_uuid = BT_UUID_INIT_128(
 	0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
@@ -534,4 +536,76 @@ ZTEST(test_gatt, test_gatt_ccc_write_cb)
 		     "Test service registration failed");
 	zassert_false(bt_gatt_service_unregister(&test_write_cb_svc),
 		     "Test service1 unregister failed");
+}
+
+/*
+ * Test for PSA key memory leak
+ *
+ * Using dynamic registration/deregistration to test for PSA key memory leak.
+ * Each dynamic registration/deregistration clears DB_HASH_VALID and causes the db_hash work to be
+ * rescheduled; if db_hash_gen fails, the flag stays clear; otherwise the flag is set. If PSA
+ * memory is not released, either dynamic registration/deregistration fails or the flag check
+ * asserts.
+ * k_sleep(K_MSEC(settle_ms)) is used to wait for the db_hash work to complete
+ * The presence of memory leak does not depend on the PSA memory type (heap or static slot).
+ * CONFIG_MBEDTLS_PSA_STATIC_KEY_SLOTS=y is used to fail quickly with fewer iterations in case of a
+ * memory leak. The iteration count is set to CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT + 1: slightly
+ * larger than slot_count, assuming each iteration leaks at least one key.
+ */
+ZTEST(test_gatt, test_gatt_db_hash_psa_dynamic_register_no_leak)
+{
+
+	if (!IS_ENABLED(CONFIG_BT_GATT_CACHING)) {
+		ztest_test_skip();
+	}
+
+	/*
+	 * Using only SLOT_COUNT+1 iterations to test for a memory leak, assuming each iteration
+	 * leaks at least one key, which guarantees that we will hit PSA_ERROR_INSUFFICIENT_MEMORY
+	 * with +1 after all slots are occupied by leakages.
+	 */
+	int iterations = CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT + 1;
+
+	/*
+	 * Wait for the db_hash work to complete; DB_HASH_TIMEOUT is 10ms so 30ms should be enough
+	 * as a very conservative wait time.
+	 */
+	int settle_ms = 30;
+
+	/* Same layout as test_attrs / test_svc (reuse UUIDs and callbacks). */
+	struct bt_gatt_attr dyn_attrs[] = {
+		BT_GATT_PRIMARY_SERVICE(&test_uuid),
+		BT_GATT_CHARACTERISTIC(&test_chrc_uuid.uuid, BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+				       BT_GATT_PERM_READ_AUTHEN | BT_GATT_PERM_WRITE_AUTHEN,
+				       read_test, write_test, test_value),
+	};
+	struct bt_gatt_service dyn_svc = BT_GATT_SERVICE(dyn_attrs);
+
+	/* We need to call bt_gatt_init() to set GATT_INITIALIZED which locks DB hash behaviour */
+	bt_gatt_init();
+
+	/* Ensure our test services are not already registered */
+	int err = bt_gatt_service_unregister(&dyn_svc);
+
+	zassert_true(err == 0 || err == -ENOENT, "unexpected pre-test unregister failed: %d", err);
+
+	for (int i = 0; i < iterations; i++) {
+		err = bt_gatt_service_register(&dyn_svc);
+		zassert_true(err == 0,
+			"registration failed at iteration %d, db_hash_gen failed: %d:", i, err);
+		k_sleep(K_MSEC(settle_ms));
+		zassert_true(bt_gatt_is_db_hash_valid(),
+			     "DB hash is still invalid %dms after registration (iteration %d);"
+			     "db_hash_gen failed",
+			     settle_ms, i);
+
+		err = bt_gatt_service_unregister(&dyn_svc);
+		zassert_true(err == 0,
+			"deregistration failed at iteration %d, db_hash_gen failed: %d", i, err);
+		k_sleep(K_MSEC(settle_ms));
+		zassert_true(bt_gatt_is_db_hash_valid(),
+			     "DB hash is still invalid %dms after deregistration (iteration %d);"
+			     "db_hash_gen failed",
+			     settle_ms, i);
+	}
 }

@@ -14,6 +14,7 @@ tests:
     harness: ztest
     build_only: true
     filter: CONFIG_FLASH_HAS_DRIVER_ENABLED and
-      dt_label_with_parent_compat_enabled("slot1_partition", "fixed-partitions")
+            (dt_label_with_parent_compat_enabled("slot1_partition", "fixed-partitions") or
+             dt_label_compat_enabled("slot1_partition", "zephyr,mapped-partition"))
     integration_platforms:
       - imx95_evk/mimx9596/m7

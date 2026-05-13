@@ -30,10 +30,22 @@
 			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
+
+		blue_led_1: led_4 {
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+			label = "User LD4";
+		};
+
+		red_led_1: led_5 {
+			gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+			label = "User LD5";
+		};
 	};
 
 	aliases {
 		led0 = &green_led_1;
+		led1 = &red_led_1;
+		led2 = &blue_led_1;
 	};
 };
 

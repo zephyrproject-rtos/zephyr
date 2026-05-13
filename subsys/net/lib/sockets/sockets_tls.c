@@ -296,9 +296,8 @@ static K_MUTEX_DEFINE(dtls_helper_buf_lock);
 
 /* A global pool of TLS contexts. */
 static struct tls_context tls_contexts[CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS];
-K_MEM_SLAB_DEFINE_STATIC(tls_session_contexts, sizeof(struct tls_session_context),
-			 CONFIG_NET_SOCKETS_TLS_MAX_SESSION_CONTEXTS,
-			 __alignof__(struct tls_session_context));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(tls_session_contexts, struct tls_session_context,
+			      CONFIG_NET_SOCKETS_TLS_MAX_SESSION_CONTEXTS);
 
 BUILD_ASSERT(CONFIG_NET_SOCKETS_TLS_MAX_SESSION_CONTEXTS >= CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS,
 	     "CONFIG_NET_SOCKETS_TLS_MAX_SESSION_CONTEXTS cannot be smaller than "

@@ -334,6 +334,7 @@ SECTIONS
     *libzephyr.a:rtc_*.*(.literal .text .literal.* .text.*)
     *libzephyr.a:periph_ctrl.*(.literal .text .literal.* .text.*)
     *libzephyr.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:sar_periph_ctrl_common.*(.literal .text .literal.* .text.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
     *libphy.a:( .phyiram .phyiram.*)
     *librtc.a:(.literal .text .literal.* .text.*)
@@ -420,7 +421,7 @@ SECTIONS
     *libzephyr.a:esp_rom_efuse.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_rom_systimer.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_rom_wdt.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:esp_rom_regi2c_esp32h2.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:regi2c_impl.*(.literal .literal.* .text .text.*)
 
     /* [mapping:esp_mm] */
     *libzephyr.a:esp_cache_utils.*(.literal .literal.* .text .text.*)
@@ -635,7 +636,7 @@ SECTIONS
     *libzephyr.a:esp_rom_spiflash.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:esp_rom_efuse.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:esp_rom_systimer.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:esp_rom_regi2c_esp32h2.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:regi2c_impl.*(.rodata .rodata.* .srodata .srodata.*)
 
     *libphy.a:(.rodata .rodata.* .srodata .srodata.*)
 

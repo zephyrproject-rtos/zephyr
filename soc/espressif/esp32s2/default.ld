@@ -350,6 +350,7 @@ SECTIONS
     *libarch__xtensa__core.a:(.literal .text .literal.* .text.*)
     *libarch__common.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
+    *libzephyr.a:atomic_c.*(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
     *libzephyr.a:windowspill_asm.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cbprintf_packaged.*(.literal .text .literal.* .text.*)
@@ -448,6 +449,8 @@ SECTIONS
     *libzephyr.a:systimer.*(.literal .literal.* .text .text.*)
     *libzephyr.a:periph_ctrl.*(.literal .text .literal.* .text.*)
     *libzephyr.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:sar_periph_ctrl_common.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:regi2c_impl.*(.literal .literal.* .text .text.*)
     *(.literal.sar_periph_ctrl_power_enable .text.sar_periph_ctrl_power_enable)
 
     /* [mapping:soc_pm] */
@@ -687,6 +690,7 @@ SECTIONS
     *libzephyr.a:systimer.*(.rodata .rodata.*)
     *(.rodata.sar_periph_ctrl_power_enable)
     *libzephyr.a:periph_ctrl.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:regi2c_impl.*(.rodata .rodata.* .srodata .srodata.*)
 
     /* [mapping:soc_pm] */
     *(.rodata.GPIO_HOLD_MASK)

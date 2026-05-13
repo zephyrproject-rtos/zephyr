@@ -1,0 +1,103 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <microchip/pic32c/pic32ck_sg_gc/pic32ck_gc01/pic32ck2051gc01144.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "PIC32CK GC01 Curiosity Ultra";
+	compatible = "microchip,pic32ck_gc01_cult";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash1;
+		zephyr,code-partition = &code_partition;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&portd 20 GPIO_ACTIVE_LOW>;
+			label = "LED0";
+		};
+
+		led1: led_1 {
+			gpios = <&portb 25 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&portb 26 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&portd 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		boot_partition: partition@0 {
+			label = "boot_flash";
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_K(128)>;
+		};
+	};
+};
+
+&flash1 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		code_partition: partition@0 {
+			label = "program_flash";
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_K(2032)>;
+		};
+
+		storage_partition: partition@1fc000 {
+			label = "storage";
+			compatible = "zephyr,mapped-partition";
+			reg = <0x1fc000 DT_SIZE_K(16)>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&portb {
+	status = "okay";
+};
+
+&portd {
+	status = "okay";
+};

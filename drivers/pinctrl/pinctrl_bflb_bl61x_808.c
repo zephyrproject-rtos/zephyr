@@ -20,6 +20,8 @@
 #error "Unsupported Platform"
 #endif
 
+#define BFLB_CLK_OUT_SEL_MSK	0x3
+
 void pinctrl_bflb_configure_uart(uint8_t pin, uint8_t func)
 {
 	uint32_t regval, regval2;
@@ -88,6 +90,19 @@ void pinctrl_bflb_configure_uart(uint8_t pin, uint8_t func)
 		sys_write32(regval, GLB_BASE + GLB_UART_CFG2_OFFSET);
 		sys_write32(regval2, GLB_BASE + GLB_UART_CFG1_OFFSET);
 	}
+}
+
+void pinctrl_bflb_configure_clk_out(pinctrl_soc_pin_t pin)
+{
+	uint8_t sig = BFLB_PINMUX_GET_SIGNAL(pin);
+	uint32_t inst = BFLB_PINMUX_GET_INST(pin);
+	uint32_t tmp;
+
+	tmp = sys_read32(GLB_BASE + GLB_DIG_CLK_CFG2_OFFSET);
+	tmp |= 1U << (GLB_CHIP_CLK_OUT_0_EN_POS + inst);
+	tmp &= ~(BFLB_CLK_OUT_SEL_MSK << (GLB_CHIP_CLK_OUT_0_SEL_POS + inst * 2U));
+	tmp |= sig << (GLB_CHIP_CLK_OUT_0_SEL_POS + inst * 2U);
+	sys_write32(tmp, GLB_BASE + GLB_DIG_CLK_CFG2_OFFSET);
 }
 
 void pinctrl_bflb_init_pin(pinctrl_soc_pin_t pin)

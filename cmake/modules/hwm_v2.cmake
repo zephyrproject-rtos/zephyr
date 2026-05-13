@@ -31,6 +31,7 @@ function(kconfig_gen bin_dir file dirs comment)
 
   file(WRITE ${kconfig_file}.tmp "${kconfig_output}")
   zephyr_file_copy(${kconfig_file}.tmp ${kconfig_file} ONLY_IF_DIFFERENT)
+  file(REMOVE ${kconfig_file}.tmp)
 endfunction()
 
 # 'SOC_ROOT' and 'ARCH_ROOT' are prioritized lists of directories where their

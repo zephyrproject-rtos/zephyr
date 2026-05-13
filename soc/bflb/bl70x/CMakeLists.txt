@@ -35,6 +35,7 @@ zephyr_ld_options(-T${CMAKE_CURRENT_SOURCE_DIR}/bflb_rom_symbols.ld)
 if(CONFIG_BT_BFLB_BL70X)
   zephyr_sources(
     bflb_platform_shim.c
+    bflb_rf.c
     rf_callbacks.c
   )
 endif()

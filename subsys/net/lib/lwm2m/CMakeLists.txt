@@ -141,4 +141,4 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_SHELL
 
 zephyr_linker_sources(SECTIONS iterables.ld)
 
-zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedTLS)

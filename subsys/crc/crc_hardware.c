@@ -120,19 +120,18 @@ uint8_t crc7_be(uint8_t seed, const uint8_t *src, size_t len)
 uint8_t crc8(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
 	     bool reversed)
 {
-	uint8_t flag_reversed;
 	int ret;
-
-	if (reversed) {
-		flag_reversed = CRC_FLAG_REVERSE_OUTPUT | CRC_FLAG_REVERSE_INPUT;
-	}
 
 	struct crc_ctx ctx = {
 		.type = CRC8,
 		.polynomial = polynomial,
 		.seed = initial_value,
-		.reversed = flag_reversed,
+		.reversed = 0,
 	};
+
+	if (reversed) {
+		ctx.reversed = CRC_FLAG_REVERSE_OUTPUT | CRC_FLAG_REVERSE_INPUT;
+	}
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
 	if (ret != 0) {

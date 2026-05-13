@@ -73,6 +73,8 @@ static void uac2_sof_cb(const struct device *dev, void *user_data)
 	uint32_t size;
 	int err;
 
+	ARG_UNUSED(user_data);
+
 	if (!terminal_enabled) {
 		/* Simply discard the data then */
 		(void)ring_buf_get(&usb_in_ring_buf, NULL, USB_STEREO_FRAME_SIZE);
@@ -124,12 +126,21 @@ static void uac2_sof_cb(const struct device *dev, void *user_data)
 static void uac2_buf_release_cb(const struct device *dev, uint8_t terminal, void *buf,
 				void *user_data)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(terminal);
+	ARG_UNUSED(user_data);
+
 	k_mem_slab_free(&usb_in_buf_pool, buf);
 }
 
 static void terminal_update_cb(const struct device *dev, uint8_t terminal, bool enabled,
 			       bool microframes, void *user_data)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(terminal);
+	ARG_UNUSED(microframes);
+	ARG_UNUSED(user_data);
+
 	terminal_enabled = enabled;
 }
 

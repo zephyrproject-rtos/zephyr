@@ -16,6 +16,12 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	tsen: tsen {
+		compatible = "bflb,tsen";
+		io-channels = <&adc0 0>;
+		status = "disabled";
+	};
+
 	clocks {
 		clk_rc32m: clk-rc32m {
 			#clock-cells = <0>;
@@ -216,12 +222,6 @@
 			status = "disabled";
 		};
 
-		tsen: tsen {
-			compatible = "bflb,tsen";
-			io-channels = <&adc0 0>;
-			status = "disabled";
-		};
-
 		sec_eng_trng: trng@20004000 {
 			compatible = "bflb,sec-eng-trng";
 			reg = <0x20004000 0x100>;
@@ -415,6 +415,15 @@
 			reg = <0x20056000 0x1000>;
 			status = "okay";
 			size = <512>;
+		};
+
+		sdhc0: sdhc@20060000 {
+			compatible = "bflb,sdhc";
+			reg = <0x20060000 0x200>;
+			status = "disabled";
+
+			interrupts = <33 1>;
+			interrupt-parent = <&clic>;
 		};
 
 		itcm: memory@62020000 {

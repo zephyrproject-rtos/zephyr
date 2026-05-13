@@ -50,7 +50,6 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  */
 #ifdef CONFIG_DYNAMIC_OBJECTS
 static struct k_spinlock lists_lock;       /* kobj dlist */
-static struct k_spinlock objfree_lock;     /* k_object_free */
 
 #ifdef CONFIG_GEN_PRIV_STACKS
 /* On ARM & ARC MPU & RISC-V PMP we may have two different alignment requirement
@@ -223,28 +222,31 @@ static size_t obj_align_get(enum k_objects otype)
 	return ret;
 }
 
-static struct dyn_obj *dyn_object_find(const void *obj)
+static struct dyn_obj *dyn_object_find_locked(const void *obj)
 {
 	struct dyn_obj *node;
-	k_spinlock_key_t key;
 
 	/* For any dynamically allocated kernel object, the object
 	 * pointer is just a member of the containing struct dyn_obj,
 	 * so just a little arithmetic is necessary to locate the
 	 * corresponding struct rbnode
 	 */
-	key = k_spin_lock(&lists_lock);
-
 	SYS_DLIST_FOR_EACH_CONTAINER(&obj_list, node, dobj_list) {
 		if (node->kobj.name == obj) {
-			goto end;
+			return node;
 		}
 	}
 
-	/* No object found */
-	node = NULL;
+	return NULL;
+}
 
- end:
+static struct dyn_obj *dyn_object_find(const void *obj)
+{
+	struct dyn_obj *node;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&lists_lock);
+	node = dyn_object_find_locked(obj);
 	k_spin_unlock(&lists_lock, key);
 
 	return node;
@@ -309,14 +311,26 @@ static bool thread_idx_alloc(uintptr_t *tidx)
  **/
 static void thread_idx_free(uintptr_t tidx)
 {
-	/* To prevent leaked permission when index is recycled */
-	k_object_wordlist_foreach(clear_perms_cb, (void *)tidx);
+	struct dyn_obj *obj, *next;
+
+	z_object_gperf_wordlist_foreach(clear_perms_cb, (void *)tidx);
+
+	/* Hold lists_lock so two concurrent k_object_free() calls on thread indices
+	 * within the same byte cannot lose a bit in the non-atomic |=.
+	 */
+	k_spinlock_key_t key = k_spin_lock(&lists_lock);
+
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&obj_list, obj, next, dobj_list) {
+		clear_perms_cb(&obj->kobj, (void *)tidx);
+	}
 
 	/* Figure out which bits to set in _thread_idx_map[] and set it. */
 	int base = tidx / NUM_BITS(_thread_idx_map[0]);
 	int offset = tidx % NUM_BITS(_thread_idx_map[0]);
 
 	_thread_idx_map[base] |= BIT(offset);
+
+	k_spin_unlock(&lists_lock, key);
 }
 
 static struct k_object *dynamic_object_create(enum k_objects otype, size_t align,
@@ -472,24 +486,40 @@ void *z_impl_k_object_alloc_size(enum k_objects otype, size_t size)
 
 void k_object_free(void *obj)
 {
-	struct dyn_obj *dyn;
+	struct dyn_obj *dyn = NULL;
+	bool free_thread_idx = false;
+	uintptr_t thread_idx = 0;
 
 	/* This function is intentionally not exposed to user mode.
 	 * There's currently no robust way to track that an object isn't
 	 * being used by some other thread
 	 */
 
-	k_spinlock_key_t key = k_spin_lock(&objfree_lock);
+	/* Hold lists_lock so a concurrent k_object_wordlist_foreach() on
+	 * another CPU cannot save a pointer to a node that we are
+	 * about to unlink and free.
+	 */
+	k_spinlock_key_t key = k_spin_lock(&lists_lock);
 
-	dyn = dyn_object_find(obj);
+	dyn = dyn_object_find_locked(obj);
+
 	if (dyn != NULL) {
 		sys_dlist_remove(&dyn->dobj_list);
 
 		if (dyn->kobj.type == K_OBJ_THREAD) {
-			thread_idx_free(dyn->kobj.data.thread_id);
+			free_thread_idx = true;
+			thread_idx = dyn->kobj.data.thread_id;
 		}
 	}
-	k_spin_unlock(&objfree_lock, key);
+	k_spin_unlock(&lists_lock, key);
+
+	/* thread_idx_free() acquires lists_lock itself to serialize the
+	 * non-atomic bitmap update against concurrent frees, so it must
+	 * run with the lock dropped here.
+	 */
+	if (free_thread_idx) {
+		thread_idx_free(thread_idx);
+	}
 
 	if (dyn != NULL) {
 #ifdef CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED
@@ -594,6 +624,10 @@ static unsigned int thread_index_get(struct k_thread *thread)
 	return ko->data.thread_id;
 }
 
+/* Caller must hold lists_lock for the duration of this call so that the
+ * sys_dlist_remove() below is mutually exclusive with concurrent
+ * obj_list traversal in k_object_wordlist_foreach() on another CPU.
+ */
 static void unref_check(struct k_object *ko, uintptr_t index)
 {
 	k_spinlock_key_t key = k_spin_lock(&obj_lock);
@@ -681,7 +715,17 @@ void k_thread_perms_clear(struct k_object *ko, struct k_thread *thread)
 
 	if (index != -1) {
 		sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
+		/* unref_check() requires lists_lock so its dlist remove is
+		 * SMP-safe.
+		 */
+#ifdef CONFIG_DYNAMIC_OBJECTS
+		k_spinlock_key_t key = k_spin_lock(&lists_lock);
+
 		unref_check(ko, index);
+		k_spin_unlock(&lists_lock, key);
+#else
+		unref_check(ko, index);
+#endif /* CONFIG_DYNAMIC_OBJECTS */
 	}
 }
 

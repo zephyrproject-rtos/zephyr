@@ -242,7 +242,7 @@ static int pat912x_init(const struct device *dev)
 	int ret;
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("%s is not ready", cfg->i2c.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 
@@ -251,7 +251,7 @@ static int pat912x_init(const struct device *dev)
 	k_work_init(&data->motion_work, pat912x_motion_work_handler);
 
 	if (!gpio_is_ready_dt(&cfg->motion_gpio)) {
-		LOG_ERR("%s is not ready", cfg->motion_gpio.port->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->motion_gpio.port);
 		return -ENODEV;
 	}
 

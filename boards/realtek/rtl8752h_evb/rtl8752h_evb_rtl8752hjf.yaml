@@ -12,8 +12,10 @@ supported:
   - uart
   - gpio
   - counter
+  - bluetooth
   - i2c
   - pwm
+  - entropy
 testing:
   ignore_tags:
     - pm

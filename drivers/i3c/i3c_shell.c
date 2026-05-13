@@ -336,6 +336,40 @@ static int cmd_i3c_speed(const struct shell *sh, size_t argc, char **argv)
 	return ret;
 }
 
+/* i3c config_get controller <device> */
+static int cmd_i3c_config_get_controller(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_config_controller config;
+	int ret;
+
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	ret = i3c_config_get_controller(dev, &config);
+	if (ret != 0) {
+		shell_error(sh, "I3C: Failed to retrieve controller configuration");
+		return ret;
+	}
+
+	shell_print(sh,
+		    "is_secondary: %s\n"
+		    "scl.i3c: %u Hz\n"
+		    "scl.i2c: %u Hz\n"
+		    "scl_od_min.high_ns: %u ns\n"
+		    "scl_od_min.low_ns: %u ns\n"
+		    "supported_hdr: 0x%02x",
+		    config.is_secondary ? "true" : "false",
+		    config.scl.i3c, config.scl.i2c,
+		    config.scl_od_min.high_ns, config.scl_od_min.low_ns,
+		    config.supported_hdr);
+
+	return 0;
+}
+
 /* i3c recover <device> */
 static int cmd_i3c_recover(const struct shell *sh, size_t argc, char **argv)
 {
@@ -1946,6 +1980,48 @@ static int cmd_i3c_i2c_scan(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 #endif /* CONFIG_I3C_CONTROLLER */
+#ifdef CONFIG_I3C_TARGET
+/* i3c config_get target <device> */
+static int cmd_i3c_config_get_target(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_config_target config;
+	int ret;
+
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	ret = i3c_config_get_target(dev, &config);
+	if (ret != 0) {
+		shell_error(sh, "I3C: Failed to retrieve target configuration");
+		return ret;
+	}
+
+	shell_print(sh,
+		    "enabled: %s\n"
+		    "dynamic_addr: 0x%02x\n"
+		    "static_addr: 0x%02x\n"
+		    "pid: 0x%012llx\n"
+		    "pid_random: %s\n"
+		    "bcr: 0x%02x\n"
+		    "dcr: 0x%02x\n"
+		    "max_read_len: %u\n"
+		    "max_write_len: %u\n"
+		    "supported_hdr: 0x%02x",
+		    config.enabled ? "true" : "false",
+		    config.dynamic_addr, config.static_addr,
+		    (uint64_t)config.pid,
+		    config.pid_random ? "true" : "false",
+		    config.bcr, config.dcr,
+		    config.max_read_len, config.max_write_len,
+		    config.supported_hdr);
+
+	return 0;
+}
+#endif /* CONFIG_I3C_TARGET */
 #ifdef CONFIG_I3C_USE_IBI
 #ifdef CONFIG_I3C_CONTROLLER
 /* i3c ibi hj_response <device> <"ack"/"nack"> */
@@ -2390,6 +2466,24 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 );
 #endif /* CONFIG_I3C_CONTROLLER */
 
+/* L2 I3C Config Get Shell Commands */
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_i3c_config_get_cmds,
+#ifdef CONFIG_I3C_CONTROLLER
+	SHELL_CMD_ARG(controller, &dsub_i3c_device_name,
+		      SHELL_HELP("Get I3C controller configuration",
+				 "<device>"),
+		      cmd_i3c_config_get_controller, 2, 0),
+#endif /* CONFIG_I3C_CONTROLLER */
+#ifdef CONFIG_I3C_TARGET
+	SHELL_CMD_ARG(target, &dsub_i3c_device_name,
+		      SHELL_HELP("Get I3C target configuration",
+				 "<device>"),
+		      cmd_i3c_config_get_target, 2, 0),
+#endif /* CONFIG_I3C_TARGET */
+	SHELL_SUBCMD_SET_END /* Array terminated. */
+);
+
 /* L1 I3C Shell Commands*/
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_i3c_cmds,
@@ -2455,6 +2549,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "<sub cmd>"),
 		      NULL, 3, 0),
 #endif /* CONFIG_I3C_CONTROLLER */
+	SHELL_CMD_ARG(config_get, &sub_i3c_config_get_cmds,
+		      SHELL_HELP("Get I3C bus configuration",
+				 "<sub cmd>"),
+		      NULL, 2, 0),
 #ifdef CONFIG_I3C_USE_IBI
 	SHELL_CMD_ARG(ibi, &sub_i3c_ibi_cmds,
 		      SHELL_HELP("Send I3C IBI",

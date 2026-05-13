@@ -261,6 +261,12 @@ def ast_expr(ast, env, edt):
             return False
         return parent is not None and parent.status == 'okay' and \
             (parent.matching_compat == compat or compat in parent.compats)
+    elif ast[0] == "dt_label_compat_enabled":
+        compat = ast[1][1]
+        label = ast[1][0]
+        node = edt.label2node.get(label)
+        return node is not None and node.status == 'okay' and \
+            (node.matching_compat == compat or compat in node.compats)
     elif ast[0] == "dt_chosen_enabled":
         chosen = ast[1][0]
         node = edt.chosen_node(chosen)

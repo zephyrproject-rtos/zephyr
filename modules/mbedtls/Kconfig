@@ -46,25 +46,6 @@ config MBEDTLS_CUSTOM
 	help
 	  The mbedTLS library must be configured and added out of tree.
 
-config MBEDTLS_LIBRARY
-	bool "External mbedTLS library [DEPRECATED]"
-	select DEPRECATED
-	help
-	  Use external, out-of-tree prebuilt mbedTLS library. For advanced
-	  users only.
-	  This option is deprecated. Use MBEDTLS_CUSTOM instead.
-
-if MBEDTLS_LIBRARY
-
-config MBEDTLS_INSTALL_PATH
-	string "mbedTLS install path"
-	help
-	  This option holds the path where the mbedTLS libraries and headers are
-	  installed. Make sure this option is properly set when MBEDTLS_LIBRARY
-	  is enabled otherwise the build will fail.
-
-endif # MBEDTLS_LIBRARY
-
 endchoice # MBEDTLS_IMPLEMENTATION
 
 rsource "Kconfig.mbedtls"
@@ -203,6 +184,7 @@ config MBEDTLS_SHELL
 
 config APP_LINK_WITH_MBEDTLS
 	bool "Link 'app' with MBEDTLS"
+	depends on MBEDTLS_BUILTIN
 	default y
 	help
 	  Add MBEDTLS header files to the 'app' include path. It may be

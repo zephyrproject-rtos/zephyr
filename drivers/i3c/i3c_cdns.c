@@ -2449,8 +2449,8 @@ static int cdns_i3c_detach_device(const struct device *dev, struct i3c_device_de
 	struct cdns_i3c_i2c_dev_data *cdns_i3c_device_data = desc->controller_priv;
 
 	if (cdns_i3c_device_data == NULL) {
-		LOG_ERR("%s: %s: device not attached", dev->name, desc->dev->name);
-		return -EINVAL;
+		/* device was probably attached, but never went through ENTDAA */
+		return 0;
 	}
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);

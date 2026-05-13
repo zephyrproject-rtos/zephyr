@@ -35,6 +35,66 @@ static void test_shell_execute_cmd(const char *cmd, int result)
 							cmd, ret, result);
 }
 
+static void test_shell_reset_state(const struct shell *sh)
+{
+	shell_backend_dummy_clear_input(sh);
+	shell_backend_dummy_clear_output(sh);
+	sh->ctx->cmd_buff[0] = '\0';
+	sh->ctx->cmd_buff_len = 0U;
+	sh->ctx->cmd_buff_pos = 0U;
+}
+
+static void test_shell_push_input(const struct shell *sh, const char *input)
+{
+	struct shell_dummy *sh_dummy = (struct shell_dummy *)sh->iface->ctx;
+	int ret = shell_backend_dummy_push_input(sh, input, strlen(input));
+
+	zassert_equal(ret, 0, "Failed to push input '%s': %d", input, ret);
+
+	while (sh_dummy->input_pos < sh_dummy->input_len) {
+		shell_process(sh);
+		k_msleep(1);
+	}
+}
+
+static void test_shell_wait_for_cmd(const struct shell *sh, const char *expected)
+{
+	size_t expected_len = strlen(expected);
+
+	WAIT_FOR((sh->ctx->cmd_buff_len == expected_len) &&
+		 (sh->ctx->cmd_buff_pos == expected_len) &&
+		 (strcmp(sh->ctx->cmd_buff, expected) == 0),
+		 20000, k_msleep(1));
+	zassert_equal(sh->ctx->cmd_buff_len, expected_len,
+		      "Unexpected command length: %u, buffer '%s'",
+		      sh->ctx->cmd_buff_len, sh->ctx->cmd_buff);
+	zassert_equal(sh->ctx->cmd_buff_pos, expected_len,
+		      "Unexpected cursor position: %u, buffer '%s'",
+		      sh->ctx->cmd_buff_pos, sh->ctx->cmd_buff);
+	zassert_str_equal(sh->ctx->cmd_buff, expected,
+			  "Unexpected command buffer");
+}
+
+static bool test_shell_output_contains(const struct shell *sh, const char *expected)
+{
+	struct shell_dummy *sh_dummy = (struct shell_dummy *)sh->iface->ctx;
+
+	sh_dummy->buf[sh_dummy->len] = '\0';
+
+	return strstr(sh_dummy->buf, expected) != NULL;
+}
+
+static void test_shell_wait_for_output(const struct shell *sh, const char *expected)
+{
+	struct shell_dummy *sh_dummy = (struct shell_dummy *)sh->iface->ctx;
+
+	WAIT_FOR(test_shell_output_contains(sh, expected), 20000, k_msleep(1));
+	sh_dummy->buf[sh_dummy->len] = '\0';
+	zassert_not_null(strstr(sh_dummy->buf, expected),
+			 "Expected output to contain '%s', got '%s'",
+			 expected, sh_dummy->buf);
+}
+
 ZTEST(shell_1cpu, test_cmd_help)
 {
 	test_shell_execute_cmd("help", 0);
@@ -143,6 +203,106 @@ ZTEST(sh, test_cmd_history)
 	test_shell_execute_cmd("history --help", 1);
 	test_shell_execute_cmd("history dummy", -EINVAL);
 	test_shell_execute_cmd("history dummy dummy", -EINVAL);
+}
+
+#if defined(CONFIG_SHELL_ALIASES)
+#if CONFIG_SHELL_ALIASES_HAS_FILE
+#define SHELL_ALIASES_FILE 1
+#else
+#define SHELL_ALIASES_FILE 0
+#endif
+#else
+#define SHELL_ALIASES_FILE 0
+#endif
+
+ZTEST(sh, test_alias_root_tab_completion)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+
+	if (!IS_ENABLED(CONFIG_SHELL_ALIASES) || !SHELL_ALIASES_FILE) {
+		ztest_test_skip();
+	}
+
+	test_shell_reset_state(sh);
+	test_shell_push_input(sh, "zz\t");
+	test_shell_wait_for_cmd(sh, "zzcmd ");
+}
+
+ZTEST(sh, test_builtin_alias_tab_completion)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+
+	if (!IS_ENABLED(CONFIG_SHELL_ALIASES) || !SHELL_ALIASES_FILE) {
+		ztest_test_skip();
+	}
+
+	test_shell_reset_state(sh);
+	test_shell_push_input(sh, "?\t");
+	test_shell_wait_for_cmd(sh, "? ");
+}
+
+ZTEST(sh, test_alias_subcommand_tab_completion)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+
+	if (!IS_ENABLED(CONFIG_SHELL_ALIASES) || !SHELL_ALIASES_FILE) {
+		ztest_test_skip();
+	}
+
+	test_shell_reset_state(sh);
+	test_shell_push_input(sh, "colorset \t");
+	test_shell_wait_for_cmd(sh, "colorset o");
+	test_shell_wait_for_output(sh, "off");
+	test_shell_wait_for_output(sh, "on");
+}
+
+ZTEST(sh, test_alias_partial_subcommand_tab_completion)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+
+	if (!IS_ENABLED(CONFIG_SHELL_ALIASES) || !SHELL_ALIASES_FILE) {
+		ztest_test_skip();
+	}
+
+	test_shell_reset_state(sh);
+	test_shell_push_input(sh, "statscmd sh\t");
+	test_shell_wait_for_cmd(sh, "statscmd show ");
+}
+
+ZTEST(sh, test_alias_collision_prefers_command)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+
+	if (!IS_ENABLED(CONFIG_SHELL_ALIASES) || !SHELL_ALIASES_FILE) {
+		ztest_test_skip();
+	}
+
+	shell_backend_dummy_clear_output(sh);
+	test_shell_execute_cmd("shell", 1);
+	test_shell_wait_for_output(sh,
+				   "Alias 'shell' ignored because command exists "
+				   "in current context");
+}
+
+ZTEST(sh, test_alias_collision_prefers_selected_command)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_SHELL_ALIASES) || !SHELL_ALIASES_FILE) {
+		ztest_test_skip();
+	}
+
+	test_shell_execute_cmd("select section_cmd", 0);
+
+	shell_backend_dummy_clear_output(sh);
+	test_shell_execute_cmd("cmd1", 10);
+	test_shell_wait_for_output(sh,
+				   "Alias 'cmd1' ignored because command "
+				   "exists in current context");
+
+	ret = shell_set_root_cmd(NULL);
+	zassert_equal(ret, 0, "Unexpected error %d", ret);
 }
 
 ZTEST(sh, test_cmd_resize)

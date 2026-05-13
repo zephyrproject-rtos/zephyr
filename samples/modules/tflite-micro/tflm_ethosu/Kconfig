@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: <text>Copyright 2022, 2025 Arm Limited and/or its
+# SPDX-FileCopyrightText: <text>Copyright 2022, 2025-2026 Arm Limited and/or its
 # affiliates <open-source-office@arm.com></text>
 # SPDX-License-Identifier: Apache-2.0
 
@@ -19,5 +19,62 @@ config SAMPLE_TFLM_ETHOSU_PMU
 	help
 	  Enable PMU counters for this sample. When enabled,
 	  the sample collects cycle and selected event counters per inference.
+
+choice SAMPLE_TFLM_ETHOSU_MEM_MODE
+	prompt "Vela memory mode (sample override)"
+	default SAMPLE_TFLM_ETHOSU_MEM_MODE_HAL_DEFAULT
+	depends on ETHOS_U
+	help
+	  Configure memory mode used by Vela.
+
+	  - On Arm Ethos-U55 NPU and Arm Ethos-U65 NPU:
+	    REGIONCFG values 0/1 route to AXI0 (governed by AXI_LIMIT0/1, typically on-chip SRAM),
+	    REGIONCFG values 2/3 route to AXI1 (governed by AXI_LIMIT2/3, typically external memory).
+	    (U55: AXI1 is read-only; U65: both ports are read/write.)
+	    This mapping is architectural (fixed).
+
+	  - On Arm Ethos-U85 NPU:
+	    REGIONCFG values 0/1 select MEM_ATTR[0/1] (typically the SRAM AXI port),
+	    REGIONCFG values 2/3 select MEM_ATTR[2/3] (typically the external AXI port).
+	    These defaults come from the HAL but can be changed by redefining
+	    NPU_MEM_ATTR_[0-3] if your system requires different attributes.
+
+	  The chosen mode must match the mode used when compiling the model with Vela.
+
+config SAMPLE_TFLM_ETHOSU_MEM_MODE_HAL_DEFAULT
+	bool "HAL default"
+	help
+	  Do not override the HAL defaults for region mapping.
+	  The HAL determines NPU_REGIONCFG_n and NPU_QCONFIG.
+
+config SAMPLE_TFLM_ETHOSU_MEM_MODE_SHARED_SRAM
+	bool "Shared_Sram (weights=3, scratch=0, fast_scratch=0, cmd_stream=3)"
+	help
+	  Match Vela's Shared_Sram mode:
+	  - U55/U65: weights & command stream -> AXI1 / AXI_LIMIT3 (typically external),
+	             scratch & fast_scratch -> AXI0 / AXI_LIMIT0 (typically on-chip)
+	  - U85:     weights & command stream -> MEM_ATTR[3] (typically external),
+	             scratch & fast_scratch -> MEM_ATTR[0] (typically on-chip)
+
+config SAMPLE_TFLM_ETHOSU_MEM_MODE_DEDICATED_SRAM
+	bool "Dedicated_Sram (weights=3, scratch=3, fast_scratch=0, cmd_stream=3)"
+	depends on !(ETHOS_U55_64 || ETHOS_U55_128 || ETHOS_U55_256)
+	help
+	  Match Vela's Dedicated_Sram mode:
+	  - U55/U65: weights, scratch & command stream -> AXI1 / AXI_LIMIT3 (typically external),
+	             fast_scratch -> AXI0 / AXI_LIMIT0 (typically on-chip)
+	  - U85:     weights, scratch & command stream -> MEM_ATTR[3] (typically external),
+	             fast_scratch -> MEM_ATTR[0] (typically on-chip)
+	  Not supported on Arm Ethos-U55 NPU.
+
+config SAMPLE_TFLM_ETHOSU_MEM_MODE_SRAM_ONLY
+	bool "Sram_Only (weights=1, scratch=0, fast_scratch=0, cmd_stream=1)"
+	help
+	  Match Vela's SRAM_Only mode (everything on the SRAM side):
+	  - U55/U65: weights & command stream -> AXI0 / AXI_LIMIT1,
+	             scratch & fast_scratch -> AXI0 / AXI_LIMIT0
+	  - U85:     weights & command stream -> MEM_ATTR[1] (SRAM port),
+	             scratch & fast_scratch -> MEM_ATTR[0] (SRAM port)
+endchoice
 
 source "Kconfig.zephyr"

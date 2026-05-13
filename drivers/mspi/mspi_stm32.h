@@ -48,12 +48,13 @@ struct mspi_stm32_context {
 };
 
 struct mspi_stm32_conf {
-	bool dma_specified;
+	void *base;
 	size_t pclk_len;
 	irq_config_func_t irq_config;
 	struct mspi_cfg mspicfg;
 	const struct stm32_pclken *pclken;
 	const struct pinctrl_dev_config *pcfg;
+	bool dma_specified;
 };
 
 struct stm32_stream {
@@ -82,7 +83,6 @@ union mspi_stm32_handle {
 /* mspi data includes the controller specific config variable */
 struct mspi_stm32_data {
 	union mspi_stm32_handle hmspi;
-	uintptr_t phys_addr;
 	uint32_t memmap_base_addr;
 	struct mspi_stm32_context ctx;
 	const struct mspi_dev_id *dev_id;

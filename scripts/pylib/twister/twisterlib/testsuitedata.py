@@ -47,6 +47,7 @@ class HarnessConfig:
     robot_option: Any | None = None  # schema has no type defined
     record: Record | None = None
     bsim_exe_name: str | None = None
+    tests_scripts: list[str] = field(default_factory=list)
     ztest_suite_repeat: int | None = None
     ztest_test_repeat: int | None = None
     ztest_test_shuffle: bool = False

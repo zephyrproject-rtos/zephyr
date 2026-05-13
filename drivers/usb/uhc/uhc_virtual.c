@@ -67,8 +67,7 @@ struct uhc_vrt_event {
 	struct uvb_packet *pkt;
 };
 
-K_MEM_SLAB_DEFINE(uhc_vrt_slab, sizeof(struct uhc_vrt_event),
-		  16, sizeof(void *));
+K_MEM_SLAB_DEFINE_TYPE(uhc_vrt_slab, struct uhc_vrt_event, 16);
 
 static void vrt_event_submit(const struct device *dev,
 			     const enum uhc_vrt_event_type type,

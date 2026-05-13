@@ -70,6 +70,7 @@ enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_OPEN_DLCI2,
 	MODEM_CELLULAR_STATE_WAIT_FOR_APN,
 	MODEM_CELLULAR_STATE_RUN_APN_SCRIPT,
+	MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT,
 	MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT,
 	MODEM_CELLULAR_STATE_AWAIT_REGISTERED,
 	MODEM_CELLULAR_STATE_REGISTERED,
@@ -188,6 +189,28 @@ struct modem_cellular_user_pipe {
 	struct modem_pipelink *pipelink;
 };
 
+/**
+ * @brief Chat scripts for cellular modem.
+ *
+ * Only the init and dial scripts are mandatory, other scripts are optional.
+ *
+ * If the network script is provided, it will be used to wait for network registration
+ * before issuing the dial script.
+ *
+ * If the network script is not provided, the dial script is expected to
+ * configure the network registration and the modem will wait for
+ * registration after the dial script completes.
+ *
+ */
+struct modem_cellular_config_scripts {
+	const struct modem_chat_script *set_baudrate; /**< script for setting the baudrate */
+	const struct modem_chat_script *init;         /**< script for initializing the CMUX */
+	const struct modem_chat_script *network;      /**< script for network registration */
+	const struct modem_chat_script *dial;         /**< script for starting the PPP data mode */
+	const struct modem_chat_script *periodic;     /**< script for periodic state polling */
+	const struct modem_chat_script *shutdown;     /**< script for shutting down the modem */
+};
+
 struct modem_cellular_config {
 	const struct device *uart;
 	struct gpio_dt_spec power_gpio;
@@ -208,11 +231,7 @@ struct modem_cellular_config {
 	bool use_default_pdp_context;
 	bool use_default_apn;
 	k_timeout_t cmux_idle_timeout;
-	const struct modem_chat_script *init_chat_script;
-	const struct modem_chat_script *dial_chat_script;
-	const struct modem_chat_script *periodic_chat_script;
-	const struct modem_chat_script *shutdown_chat_script;
-	const struct modem_chat_script *set_baudrate_chat_script;
+	const struct modem_cellular_config_scripts *scripts;
 	struct modem_cellular_user_pipe *user_pipes;
 	uint8_t user_pipes_size;
 };
@@ -357,8 +376,8 @@ void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, ui
 
 /* Helper to define modem instance */
 #define MODEM_CELLULAR_DEFINE_INSTANCE(inst, power_ms, reset_ms, startup_ms, shutdown_ms, start,   \
-				       set_baudrate_script, init_script, dial_script,              \
-				       periodic_script, shutdown_script)                           \
+				       _scripts)                                                   \
+	BUILD_ASSERT(_scripts != NULL, "scripts must be non-NULL");                                \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
@@ -384,11 +403,7 @@ void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, ui
 		.use_default_pdp_context = DT_INST_PROP_OR(inst, zephyr_use_default_pdp_ctx, 0),   \
 		.use_default_apn = DT_INST_PROP_OR(inst, zephyr_use_default_apn, 0),               \
 		.cmux_idle_timeout = K_MSEC(DT_INST_PROP_OR(inst, cmux_idle_timeout_ms, 0)),       \
-		.set_baudrate_chat_script = (set_baudrate_script),                                 \
-		.init_chat_script = (init_script),                                                 \
-		.dial_chat_script = (dial_script),                                                 \
-		.periodic_chat_script = (periodic_script),                                         \
-		.shutdown_chat_script = (shutdown_script),                                         \
+		.scripts = _scripts,                                                               \
 		.user_pipes = MODEM_CELLULAR_GET_USER_PIPES(inst),                                 \
 		.user_pipes_size = ARRAY_SIZE(MODEM_CELLULAR_GET_USER_PIPES(inst)),                \
 	};                                                                                         \

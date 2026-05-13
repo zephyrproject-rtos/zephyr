@@ -56,6 +56,13 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(simcom_a76xx_shutdown_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(simcom_a76xx_shutdown_chat_script, simcom_a76xx_shutdown_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 15);
 
+static const struct modem_cellular_config_scripts simcom_a76xx_scripts = {
+	.init = &simcom_a76xx_init_chat_script,
+	.dial = &simcom_a76xx_dial_chat_script,
+	.periodic = &simcom_a76xx_periodic_chat_script,
+	.shutdown = &simcom_a76xx_shutdown_chat_script,
+};
+
 #define MODEM_CELLULAR_DEVICE_SIMCOM_A76XX(inst)                                                   \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);   \
                                                                                                    \
@@ -67,9 +74,6 @@ MODEM_CHAT_SCRIPT_DEFINE(simcom_a76xx_shutdown_chat_script, simcom_a76xx_shutdow
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3), (user_pipe_1, 4))        \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(                                                            \
-		inst, 500, 100, 20000, 5000, false, NULL, &simcom_a76xx_init_chat_script,          \
-		&simcom_a76xx_dial_chat_script, &simcom_a76xx_periodic_chat_script,                \
-		&simcom_a76xx_shutdown_chat_script)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 500, 100, 20000, 5000, false, &simcom_a76xx_scripts)
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_SIMCOM_A76XX)

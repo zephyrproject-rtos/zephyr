@@ -1219,7 +1219,9 @@ static inline enum wifi_security_type nxp_wifi_key_mgmt_to_zephyr(int key_mgmt, 
 }
 
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-static int nxp_wifi_uap_status(const struct device *dev, struct wifi_iface_status *status)
+static int nxp_wifi_uap_status(const struct device *dev,
+			       struct net_if *iface __unused,
+			       struct wifi_iface_status *status)
 {
 	enum wlan_connection_state connection_state = WLAN_UAP_STOPPED;
 	struct interface *if_handle = (struct interface *)&g_uap;
@@ -2251,6 +2253,9 @@ static int nxp_wifi_set_config(const struct device *dev,
 			return -ENOEXEC;
 		}
 		break;
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		/* nothing to do */
+		break;
 	default:
 		return -ENOTSUP;
 	}
@@ -2272,6 +2277,12 @@ static int nxp_wifi_get_config(const struct device *dev,
 	}
 
 	return 0;
+}
+
+static enum ethernet_hw_caps nxp_wifi_get_capa(const struct device *dev,
+					       struct net_if *iface __unused)
+{
+	return ETHERNET_PROMISC_MODE;
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -2474,6 +2485,7 @@ static const struct net_wifi_mgmt_offload nxp_wifi_sta_apis = {
 	.wifi_iface.set_config = nxp_wifi_set_config,
 	.wifi_iface.get_config = nxp_wifi_get_config,
 	.wifi_iface.send = nxp_wifi_send,
+	.wifi_iface.get_capabilities = nxp_wifi_get_capa,
 	.wifi_mgmt_api = &nxp_wifi_sta_mgmt,
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
 	.wifi_drv_ops = &nxp_wifi_drv_ops,
@@ -2518,6 +2530,7 @@ static const struct net_wifi_mgmt_offload nxp_wifi_uap_apis = {
 	.wifi_iface.set_config = nxp_wifi_set_config,
 	.wifi_iface.get_config = nxp_wifi_get_config,
 	.wifi_iface.send = nxp_wifi_send,
+	.wifi_iface.get_capabilities = nxp_wifi_get_capa,
 	.wifi_mgmt_api = &nxp_wifi_uap_mgmt,
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
 	.wifi_drv_ops = &nxp_wifi_drv_ops,

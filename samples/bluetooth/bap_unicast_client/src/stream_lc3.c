@@ -17,6 +17,7 @@
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
 #include <lc3.h>
 #include <sys/errno.h>
@@ -135,6 +136,8 @@ static bool encode_frame(struct tx_stream *stream, uint8_t index, struct net_buf
 {
 	const uint16_t octets_per_frame = stream->lc3_tx.octets_per_frame;
 	int lc3_ret;
+
+	ARG_UNUSED(index);
 
 	/* Generate sine wave */
 	fill_audio_buf_sin(stream);

@@ -172,13 +172,15 @@
 	status = "okay";
 };
 
-&sercom1 {
+&sercom3 {
 	compatible = "microchip,sercom-g1-i2c";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clock-frequency = <I2C_BITRATE_FAST>;
-	pinctrl-0 = <&sercom1_i2c_default>;
+	pinctrl-0 = <&sercom3_i2c_default>;
 	pinctrl-names = "default";
+	dmas = <&dmac 0x2 0x8>, <&dmac 0x3 0x9>;
+	dma-names = "rx", "tx";
 	status = "okay";
 };
 

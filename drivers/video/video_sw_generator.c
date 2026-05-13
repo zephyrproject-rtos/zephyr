@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, Linaro Limited
+ * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,9 +31,31 @@ LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
 #define MAX_FRAME_RATE          60
 #define MIN_FRAME_RATE          1
 
+/* Default frame configuration */
+#define DEFAULT_FRAME_WIDTH  320
+#define DEFAULT_FRAME_HEIGHT 160
+
 struct sw_ctrls {
 	struct video_ctrl hflip;
 	struct video_ctrl test_pattern;
+};
+
+/* Static JPEG frame buffers. 2 320x160 color-bar pattern frames, h-flipped. */
+static uint8_t jpeg_frame_buffer[] = {
+#include "jpeg_frame_buffer.inc"
+};
+
+static uint8_t jpeg_frame_buffer_hflip[] = {
+#include "jpeg_frame_buffer_hflip.inc"
+};
+
+/* Static PNG frame buffers. 2 320x160 color-bar pattern frames, h-flipped. */
+static uint8_t png_frame_buffer[] = {
+#include "png_frame_buffer.inc"
+};
+
+static uint8_t png_frame_buffer_hflip[] = {
+#include "png_frame_buffer_hflip.inc"
 };
 
 struct video_sw_generator_data {
@@ -69,6 +92,24 @@ static const struct video_format_cap fmts[] = {
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_SGRBG8),
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_SBGGR8),
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_SGBRG8),
+	{
+		.pixelformat = VIDEO_PIX_FMT_JPEG,
+		.width_min = CONFIG_VIDEO_SW_GENERATOR_JPEG_WIDTH,
+		.width_max = CONFIG_VIDEO_SW_GENERATOR_JPEG_WIDTH,
+		.height_min = CONFIG_VIDEO_SW_GENERATOR_JPEG_HEIGHT,
+		.height_max = CONFIG_VIDEO_SW_GENERATOR_JPEG_HEIGHT,
+		.width_step = 1,
+		.height_step = 1,
+	},
+	{
+		.pixelformat = VIDEO_PIX_FMT_PNG,
+		.width_min = CONFIG_VIDEO_SW_GENERATOR_PNG_WIDTH,
+		.width_max = CONFIG_VIDEO_SW_GENERATOR_PNG_WIDTH,
+		.height_min = CONFIG_VIDEO_SW_GENERATOR_PNG_HEIGHT,
+		.height_max = CONFIG_VIDEO_SW_GENERATOR_PNG_HEIGHT,
+		.width_step = 1,
+		.height_step = 1,
+	},
 	{0},
 };
 
@@ -92,6 +133,14 @@ static int video_sw_generator_set_fmt(const struct device *dev, struct video_for
 	ret = video_estimate_fmt_size(fmt);
 	if (ret < 0) {
 		return ret;
+	}
+
+	/* Special handling for JPEG and PNG file size */
+	if (fmt->pixelformat == VIDEO_PIX_FMT_JPEG) {
+		fmt->size = MAX(sizeof(jpeg_frame_buffer), sizeof(jpeg_frame_buffer_hflip));
+	}
+	if (fmt->pixelformat == VIDEO_PIX_FMT_PNG) {
+		fmt->size = MAX(sizeof(png_frame_buffer), sizeof(png_frame_buffer_hflip));
 	}
 
 	data->fmt = *fmt;
@@ -253,6 +302,51 @@ static uint16_t video_sw_generator_fill_bayer8(uint8_t *buffer, uint16_t width, 
 	return 2;
 }
 
+static int video_sw_generator_fill_compressed(struct video_buffer *vbuf, bool hflip,
+					      uint32_t pix_format)
+{
+	uint8_t *frame;
+	uint32_t frame_size;
+
+	switch (pix_format) {
+	case VIDEO_PIX_FMT_JPEG:
+		if (hflip) {
+			frame = jpeg_frame_buffer_hflip;
+			frame_size = sizeof(jpeg_frame_buffer_hflip);
+		} else {
+			frame = jpeg_frame_buffer;
+			frame_size = sizeof(jpeg_frame_buffer);
+		}
+		break;
+	case VIDEO_PIX_FMT_PNG:
+		if (hflip) {
+			frame = png_frame_buffer_hflip;
+			frame_size = sizeof(png_frame_buffer_hflip);
+		} else {
+			frame = png_frame_buffer;
+			frame_size = sizeof(png_frame_buffer);
+		}
+		break;
+	default:
+		LOG_ERR("Unsupported compressed format: %u", pix_format);
+		return -EINVAL;
+	}
+
+	/* Check if buffer is large enough */
+	if (vbuf->size < frame_size) {
+		LOG_ERR("Buffer too small (need %u, have %zu)", frame_size, vbuf->size);
+		return -ENOMEM;
+	}
+
+	/* Copy the compressed frame data to the video buffer */
+	memcpy(vbuf->buffer, frame, frame_size);
+	vbuf->bytesused = frame_size;
+	vbuf->timestamp = k_uptime_get_32();
+	vbuf->line_offset = 0;
+
+	return 0;
+}
+
 static int video_sw_generator_fill(const struct device *const dev, struct video_buffer *vbuf)
 {
 	struct video_sw_generator_data *data = dev->data;
@@ -260,6 +354,12 @@ static int video_sw_generator_fill(const struct device *const dev, struct video_
 	size_t pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 	bool hflip = data->ctrls.hflip.val;
 	uint16_t lines = 0;
+
+	/* Handle JPEG and PNG formats specially */
+	if ((data->fmt.pixelformat == VIDEO_PIX_FMT_JPEG) ||
+	    (data->fmt.pixelformat == VIDEO_PIX_FMT_PNG)) {
+		return video_sw_generator_fill_compressed(vbuf, hflip, data->fmt.pixelformat);
+	}
 
 	if (vbuf->size < pitch * 2) {
 		LOG_ERR("At least 2 lines needed for bayer formats support");
@@ -521,11 +621,11 @@ static int video_sw_generator_init(const struct device *dev)
 
 #define VIDEO_SW_GENERATOR_DEFINE(n)                                                               \
 	static struct video_sw_generator_data video_sw_generator_data_##n = {                      \
-		.fmt.width = 320,                                                                  \
-		.fmt.height = 160,                                                                 \
-		.fmt.pitch = 320 * 2,                                                              \
+		.fmt.width = DEFAULT_FRAME_WIDTH,                                                  \
+		.fmt.height = DEFAULT_FRAME_HEIGHT,                                                \
+		.fmt.pitch = DEFAULT_FRAME_WIDTH * 2,                                              \
 		.fmt.pixelformat = VIDEO_PIX_FMT_RGB565,                                           \
-		.fmt.size = 320 * 2 * 160,                                                         \
+		.fmt.size = DEFAULT_FRAME_WIDTH * 2 * DEFAULT_FRAME_HEIGHT,                        \
 		.frame_rate = DEFAULT_FRAME_RATE,                                                  \
 	};                                                                                         \
                                                                                                    \

@@ -414,10 +414,32 @@ static void rfcomm_connected(struct bt_l2cap_chan *chan)
 
 	LOG_DBG("Session %p", session);
 
-	/* Need to include UIH header and FCS*/
-	session->mtu = MIN(session->br_chan.rx.mtu,
-			   session->br_chan.tx.mtu) -
-			   BT_RFCOMM_HDR_SIZE - BT_RFCOMM_FCS_SIZE;
+	/* Take the minimum value supported by both ends. */
+	session->mtu = MIN(session->br_chan.rx.mtu, session->br_chan.tx.mtu);
+
+	if (session->mtu < (BT_RFCOMM_OVERHEAD_SIZE + RFCOMM_MIN_MTU)) {
+		int err;
+
+		LOG_ERR("Invalid RFCOMM session MTU %u < %u", session->mtu,
+			BT_RFCOMM_OVERHEAD_SIZE + RFCOMM_MIN_MTU);
+
+		err = bt_l2cap_chan_disconnect(chan);
+		if (err < 0) {
+			LOG_ERR("Failed to disconnect RFCOMM session (err %d)", err);
+		}
+
+		return;
+	}
+
+	/* Discount the overhead size from the L2CAP MTU.
+	 *
+	 * The overhead size of RFCOMM includes the maximum header size, FCS size, and credits size.
+	 *
+	 * For the field credits size, in the CFC supported case, the space of credits should be
+	 * discounted from the maximum frame size. It is used to avoid the SDU length exceeding the
+	 * maximum frame size if the credits field is included.
+	 */
+	session->mtu -= BT_RFCOMM_OVERHEAD_SIZE;
 
 	if (session->state == BT_RFCOMM_STATE_CONNECTING) {
 		rfcomm_send_sabm(session, 0);
@@ -834,9 +856,6 @@ static int rfcomm_send_fcoff(struct bt_rfcomm_session *session, uint8_t cr)
 	return rfcomm_send(session, buf);
 }
 
-/* The size of credits field. */
-#define BT_RFCOMM_CREDITS_SIZE 0x01
-
 static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 {
 	dlc->state = BT_RFCOMM_STATE_CONNECTED;
@@ -862,14 +881,6 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 
 	k_fifo_init(&dlc->tx_queue);
 	k_work_init(&dlc->tx_work, rfcomm_dlc_tx_worker);
-
-	/* For CFC supported cases, the space of credits should be discounted from the maximum
-	 * frame size. It is used to avoid the SDU length exceeding the maximum frame size if the
-	 * credits field is included.
-	 */
-	if (dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
-		dlc->mtu -= BT_RFCOMM_CREDITS_SIZE;
-	}
 
 	if (dlc->ops && dlc->ops->connected) {
 		dlc->ops->connected(dlc);

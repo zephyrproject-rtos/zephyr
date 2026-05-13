@@ -62,6 +62,7 @@ tests:
   drivers.flash.common.default:
     filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE)
       and (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+      or dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition")
       or dt_label_with_parent_compat_enabled("storage_partition", "nordic,owned-partitions")))
     platform_exclude:
       - nrf54lm20dk/nrf54lm20a/cpuapp
@@ -103,7 +104,8 @@ tests:
   drivers.flash.common.tfm_ns:
     build_only: true
     filter: (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE
-      and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
+      and (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+           or dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition")))
     integration_platforms:
       - nrf9161dk/nrf9161/ns
   drivers.flash.common.mx25r_high_perf:
@@ -174,7 +176,8 @@ tests:
   drivers.flash.common.stm32:
     filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE)
       and CONFIG_SOC_FAMILY_STM32
-      and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
+      and (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+           or dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition")))
     integration_platforms:
       - nucleo_g474re
     platform_exclude:
@@ -190,7 +193,8 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
   drivers.flash.common.test_storage_partition:
     filter: CONFIG_FLASH_HAS_DRIVER_ENABLED
-      and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+      and (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+           or dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition"))
     platform_exclude:
       - beagleconnect_freedom@C5/cc1352p
       - beagleconnect_freedom@C7/cc1352p7

@@ -264,6 +264,10 @@ static void init_lc3_thread(void *arg1, void *arg2, void *arg3)
 	const struct bt_audio_codec_cfg *codec_cfg = &preset_active.codec_cfg;
 	int ret;
 
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
 	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
 	if (ret > 0) {
 		freq_hz = bt_audio_codec_cfg_freq_to_freq_hz(ret);
@@ -339,11 +343,19 @@ static bool terminal_enabled;
 static void terminal_update_cb(const struct device *dev, uint8_t terminal, bool enabled,
 			       bool microframes, void *user_data)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(terminal);
+	ARG_UNUSED(microframes);
+	ARG_UNUSED(user_data);
+
 	terminal_enabled = enabled;
 }
 
 static void uac2_sof_cb(const struct device *dev, void *user_data)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(user_data);
+
 	/* no-op, but has to be registered */
 }
 
@@ -352,6 +364,10 @@ static void *get_recv_buf_cb(const struct device *dev, uint8_t terminal, uint16_
 {
 	void *buf = NULL;
 	int ret;
+
+	ARG_UNUSED(dev);
+	ARG_UNUSED(terminal);
+	ARG_UNUSED(user_data);
 
 	if (!terminal_enabled) {
 		return NULL;
@@ -375,6 +391,10 @@ static void data_recv_cb(const struct device *dev, uint8_t terminal, void *buf, 
 	int nsamples, ratio;
 	static int count;
 	int16_t *pcm;
+
+	ARG_UNUSED(dev);
+	ARG_UNUSED(terminal);
+	ARG_UNUSED(user_data);
 
 	if (!terminal_enabled || buf == NULL || size == 0U) {
 		k_mem_slab_free(&usb_out_buf_pool, buf);

@@ -60,7 +60,7 @@ influenced by external factors such as I/O operations or context switches.
 
    ZTEST_BENCHMARK_SUITE(<suite name>, NULL, NULL);
 
-   ZTEST_BENCHMARK(<suite name>, <benchmark name>, <number of samples>)
+   ZTEST_BENCHMARK(<suite name>, <benchmark name>, <number of samples>, <setup_fn>, <teardown_fn>)
    {
        /* Code to benchmark */
    }
@@ -81,7 +81,7 @@ performance.
 
 .. code-block:: c
 
-   ZTEST_BENCHMARK_TIMED(<suite name>, <benchmark name>, <time in milliseconds>)
+   ZTEST_BENCHMARK_TIMED(<suite name>, <benchmark name>, <time in ms>, <setup_fn>, <teardown_fn>)
    {
          /* Code to benchmark */
    }

@@ -52,6 +52,30 @@ extern "C" {
 
 struct net_context;
 
+/**
+ * @brief Iterate over all fragments in a network packet.
+ *
+ * @details Traverses the fragment chain of a @ref net_pkt buffer.
+ *
+ * @param _pkt Pointer to the head @ref net_pkt buffer whose fragment
+ *             chain is to be traversed.
+ * @param _var Name of the iterator variable. The macro declares
+ *             this variable internally as <tt>struct net_buf *</tt>
+ *             and updates it on each iteration.
+ *
+ * @note Iteration starts from the first fragment buffer <tt>(_pkt)->frags</tt>;
+ *
+ * Example usage:
+ * @code{.c}
+ * NET_PKT_FRAG_FOR_EACH(pkt, frag) {
+ *     do_something(frag->data, frag->len);
+ * }
+ * @endcode
+ */
+#define NET_PKT_FRAG_FOR_EACH(_pkt, _var) \
+	for (struct net_buf *_var = (_pkt)->frags; _var != NULL; \
+	     _var = _var->frags)
+
 /** @cond INTERNAL_HIDDEN */
 
 #if defined(CONFIG_NET_PKT_ALLOC_STATS)
@@ -1585,7 +1609,7 @@ static inline void net_pkt_set_remote_address(struct net_pkt *pkt,
  * @param count Number of net_pkt in this slab.
  */
 #define NET_PKT_SLAB_DEFINE(name, count)				\
-	K_MEM_SLAB_DEFINE(name, sizeof(struct net_pkt), count, 4);      \
+	K_MEM_SLAB_DEFINE_TYPE(name, struct net_pkt, count);		\
 	NET_PKT_ALLOC_STATS_DEFINE(pkt_alloc_stats_##name, name)
 
 /** @cond INTERNAL_HIDDEN */

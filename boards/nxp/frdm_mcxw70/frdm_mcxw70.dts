@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_mcxw70.dtsi>
+#include <nxp/mcx/nxp_mcxw70.dtsi>
 #include "frdm_mcxw70-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -168,4 +168,12 @@ tpm2: &tpm_2 {
 
 lptmr0: &lptmr_0 {
 	status = "okay";
+};
+
+lptmr1: &lptmr_1 {
+	status = "okay";
+};
+
+&ieee802154 {
+	counter = <&lptmr1>;
 };

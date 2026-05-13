@@ -26,7 +26,7 @@ K_SEM_DEFINE(timers_sem, 0, K_SEM_MAX_LIMIT);
 
 struct timer_wrapper timers[TIMERS_CNT];
 
-void tm_fn(struct k_timer *tm)
+static void tm_fn(struct k_timer *tm)
 {
 	struct timer_wrapper *tm_wrap =
 		CONTAINER_OF(tm, struct timer_wrapper, tm);

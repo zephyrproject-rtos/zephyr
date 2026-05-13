@@ -33,6 +33,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "stream_tx.h"
@@ -215,6 +216,8 @@ static void start_scan(void)
 
 static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg_pref *pref)
 {
+	ARG_UNUSED(pref);
+
 	printk("Audio Stream %p configured\n", stream);
 
 	k_sem_give(&sem_stream_configured);
@@ -383,6 +386,9 @@ static void print_remote_codec_cap(const struct bt_audio_codec_cap *codec_cap,
 
 static void discover_sinks_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(dir);
+
 	if (err != 0 && err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
 		printk("Discovery failed: %d\n", err);
 		return;
@@ -399,6 +405,9 @@ static void discover_sinks_cb(struct bt_conn *conn, int err, enum bt_audio_dir d
 
 static void discover_sources_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(dir);
+
 	if (err != 0 && err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
 		printk("Discovery failed: %d\n", err);
 		return;
@@ -452,6 +461,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
 				enum bt_security_err err)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(level);
+
 	if (err == 0) {
 		k_sem_give(&sem_security_updated);
 	} else {
@@ -467,6 +479,8 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
+	ARG_UNUSED(conn);
+
 	printk("MTU exchanged: %u/%u\n", tx, rx);
 	k_sem_give(&sem_mtu_exchanged);
 }
@@ -479,12 +493,16 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 				      enum bt_audio_dir dir,
 				      enum bt_audio_location loc)
 {
+	ARG_UNUSED(conn);
+
 	printk("dir %u loc %X\n", dir, loc);
 }
 
 static void supported_contexts_cb(struct bt_conn *conn, enum bt_audio_context snk_ctx,
 				  enum bt_audio_context src_ctx)
 {
+	ARG_UNUSED(conn);
+
 	printk("Supported snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 }
 
@@ -492,17 +510,23 @@ static void available_contexts_cb(struct bt_conn *conn,
 				  enum bt_audio_context snk_ctx,
 				  enum bt_audio_context src_ctx)
 {
+	ARG_UNUSED(conn);
+
 	printk("Available snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 }
 
 static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir,
 			  const struct bt_audio_codec_cap *codec_cap)
 {
+	ARG_UNUSED(conn);
+
 	print_remote_codec_cap(codec_cap, dir);
 }
 
 static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_bap_ep *ep)
 {
+	ARG_UNUSED(conn);
+
 	if (dir == BT_AUDIO_DIR_SOURCE) {
 		add_remote_source(ep);
 	} else if (dir == BT_AUDIO_DIR_SINK) {

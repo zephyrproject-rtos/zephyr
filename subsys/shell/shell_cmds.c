@@ -12,6 +12,7 @@
 #include "shell_vt100.h"
 
 #define SHELL_MSG_CMD_NOT_SUPPORTED	"Command not supported.\n"
+#define SHELL_HELP_ALIASES		"Print defined aliases"
 #define SHELL_HELP_COMMENT		"Ignore lines beginning with 'rem '"
 #define SHELL_HELP_RETVAL		"Print return value of most recent command"
 #define SHELL_HELP_CLEAR		"Clear screen."
@@ -68,6 +69,10 @@
 
 /* 10 == {esc, [, 2, 5, 0, ;, 2, 5, 0, '\0'} */
 #define SHELL_CURSOR_POSITION_BUFFER	(10u)
+
+#if defined(CONFIG_SHELL_ALIASES)
+extern const struct shell_alias shell_aliases[];
+#endif
 
 /* Function reads cursor position from terminal. */
 static int cursor_position_get(const struct shell *sh, uint16_t *x, uint16_t *y)
@@ -478,6 +483,27 @@ static int cmd_select(const struct shell *sh, size_t argc, char **argv)
 	return -EINVAL;
 }
 
+#if defined(CONFIG_SHELL_ALIASES)
+static int cmd_get_aliases(const struct shell *sh, size_t argc, char **argv)
+{
+	int i = 0;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	shell_print(sh, "Shell aliases:\n");
+
+	while (shell_aliases[i].alias != NULL) {
+		shell_print(sh, "%-8s  %s", shell_aliases[i].alias,
+			    shell_aliases[i].command);
+
+		i++;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_SHELL_ALIASES */
+
 SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_colors,
 	SHELL_COND_CMD_ARG(CONFIG_SHELL_VT100_COMMANDS, off, NULL,
 			   SHELL_HELP_COLORS_OFF, cmd_colors_off, 1, 0),
@@ -557,3 +583,8 @@ SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_CMDS_SELECT, select, NULL,
 			    SHELL_OPT_ARG_CHECK_SKIP);
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_CMDS_RETURN_VALUE, retval, NULL,
 			    SHELL_HELP_RETVAL, cmd_get_retval, 1, 0);
+
+#if defined(CONFIG_SHELL_ALIASES)
+SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_CMDS_ALIASES, aliases, NULL,
+			    SHELL_HELP_ALIASES, cmd_get_aliases, 1, 0);
+#endif /* CONFIG_SHELL_ALIASES */

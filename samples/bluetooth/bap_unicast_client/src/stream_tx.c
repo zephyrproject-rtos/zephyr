@@ -24,6 +24,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "stream_lc3.h"
@@ -61,6 +62,10 @@ static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 				  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 				  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 	static uint8_t mock_data[CONFIG_BT_ISO_TX_MTU];
+
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
 
 	for (size_t i = 0U; i < ARRAY_SIZE(mock_data); i++) {
 		mock_data[i] = (uint8_t)i;

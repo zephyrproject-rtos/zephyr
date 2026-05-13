@@ -22,6 +22,8 @@ common:
 
 tests:
   tf-m.regression.ipc.lvl1:
+    platform_exclude:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
     extra_args:
       - CONFIG_TFM_IPC=y
       - CONFIG_TFM_ISOLATION_LEVEL=1
@@ -34,6 +36,8 @@ tests:
     timeout: 200
 
   tf-m.regression.sfn:
+    platform_exclude:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
     extra_args:
       - CONFIG_TFM_SFN=y
       - CONFIG_TFM_ISOLATION_LEVEL=1

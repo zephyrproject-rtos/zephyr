@@ -26,6 +26,10 @@
 void pinctrl_bflb_configure_uart(uint8_t pin, uint8_t func);
 void pinctrl_bflb_init_pin(pinctrl_soc_pin_t pin);
 
+#if !defined(CONFIG_SOC_SERIES_BL60X)
+void pinctrl_bflb_configure_clk_out(pinctrl_soc_pin_t pin);
+#endif
+
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
 	uint8_t i;
@@ -35,10 +39,16 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 	for (i = 0U; i < pin_cnt; i++) {
 
 		if ((BFLB_PINMUX_GET_FUN(pins[i]) & BFLB_PINMUX_FUN_MASK)
-			== BFLB_PINMUX_FUN_INST_uart0) {
+		    == BFLB_PINMUX_FUN_INST_uart0) {
 			pinctrl_bflb_configure_uart(BFLB_PINMUX_GET_PIN(pins[i]),
 			BFLB_PINMUX_GET_SIGNAL(pins[i]) + 4 * BFLB_PINMUX_GET_INST(pins[i]));
 		}
+#if !defined(CONFIG_SOC_SERIES_BL60X)
+		if ((BFLB_PINMUX_GET_FUN(pins[i]) & BFLB_PINMUX_FUN_MASK)
+		    == BFLB_PINMUX_FUN_INST_clock_out0) {
+			pinctrl_bflb_configure_clk_out(pins[i]);
+		}
+#endif
 
 		/* gpio init*/
 		pinctrl_bflb_init_pin(pins[i]);

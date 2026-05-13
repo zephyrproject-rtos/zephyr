@@ -14,11 +14,10 @@
 #include <zephyr/logging/log.h>
 
 #ifndef CONFIG_USERSPACE
-#define ARCMWDT_DYN_LOCK_SZ	(sizeof(struct k_mutex))
 /* The library wants 2 locks per available FILE entry, and then some more */
 #define ARCMWDT_MAX_DYN_LOCKS	(FOPEN_MAX * 2 + 5)
 
-K_MEM_SLAB_DEFINE(z_arcmwdt_lock_slab, ARCMWDT_DYN_LOCK_SZ, ARCMWDT_MAX_DYN_LOCKS, sizeof(void *));
+K_MEM_SLAB_DEFINE_TYPE(z_arcmwdt_lock_slab, struct k_mutex, ARCMWDT_MAX_DYN_LOCKS);
 #endif /* !CONFIG_USERSPACE */
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);

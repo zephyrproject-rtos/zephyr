@@ -2543,8 +2543,6 @@ PREDEFINED             = __DOXYGEN__ \
                          CONFIG_BT_SMP_APP_PAIRING_ACCEPT \
                          CONFIG_CBPRINTF_LIBC_SUBSTS \
                          CONFIG_ERRNO \
-                         CONFIG_FLASH_JESD216_API \
-                         CONFIG_FLASH_PAGE_LAYOUT \
                          CONFIG_FP16 \
                          CONFIG_FPU \
                          CONFIG_FPU_SHARING \

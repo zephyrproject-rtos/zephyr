@@ -36,6 +36,16 @@ config EDAC_SYNOPSYS
 	help
 	  Enable the Synopsys DDR controller EDAC driver.
 
+config EDAC_NXP_MECC
+	bool "NXP MECC EDAC driver"
+	default y
+	depends on DT_HAS_NXP_MECC_ENABLED
+	help
+	  Enable EDAC driver for NXP Memory ECC Controller (MECC).
+	  This driver provides Single Error Correction and Double Error Detection
+	  (SEC-DED) ECC functions for On-Chip RAM (OCRAM) access through the
+	  standard EDAC interface.
+
 source "drivers/edac/Kconfig.mcux_erm"
 module = EDAC
 module-str = edac

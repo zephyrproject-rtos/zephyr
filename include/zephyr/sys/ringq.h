@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header-file for fixed size circular queue
+ * @ingroup sys_ringq_apis
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_RINGQ_H_
 #define ZEPHYR_INCLUDE_SYS_RINGQ_H_
 
@@ -14,15 +20,14 @@ extern "C" {
 #endif
 
 /**
- * @file
- * @brief Fixed size circular queue
+ * @defgroup sys_ringq_apis Ring queue
  * @ingroup datastructure_apis
- * @defgroup sys_ringq_apis sys_ringq API
+ * @brief Fixed size circular queue
  * @{
  */
 
 /**
- * @brief A structure to represent a ringq queue
+ * @brief An opaque structure representing a ringq queue
  */
 struct sys_ringq {
 	/** @cond INTERNAL_HIDDEN */

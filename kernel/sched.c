@@ -461,12 +461,22 @@ void z_sched_wake_thread_locked(struct k_thread *thread)
 /* Timeout handler for *_thread_timeout() APIs */
 void z_thread_timeout(struct _timeout *timeout)
 {
+	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+
+	if (z_is_timeout_handler_canceled(timeout)) {
+		/*
+		 * The timeout handler was canceled by a thread on another
+		 * CPU or another ISR. Bail.
+		 */
+		k_spin_unlock(&_sched_spinlock, key);
+		return;
+	}
+
 	struct k_thread *thread = CONTAINER_OF(timeout,
 					       struct k_thread, base.timeout);
 
-	K_SPINLOCK(&_sched_spinlock) {
-		z_sched_wake_thread_locked(thread);
-	}
+	z_sched_wake_thread_locked(thread);
+	k_spin_unlock(&_sched_spinlock, key);
 }
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
 
@@ -509,8 +519,12 @@ struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
 
 void z_unpend_thread(struct k_thread *thread)
 {
-	z_unpend_thread_no_timeout(thread);
-	z_abort_thread_timeout(thread);
+	K_SPINLOCK(&_sched_spinlock) {
+		if (thread->base.pended_on != NULL) {
+			unpend_thread_no_timeout(thread);
+		}
+		z_abort_thread_timeout(thread);
+	}
 }
 
 /* Priority set utility that does no rescheduling, it just changes the

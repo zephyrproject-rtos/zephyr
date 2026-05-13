@@ -314,6 +314,15 @@ static void esp32_cpu_clock_init(const struct esp32_cpu_clock_config *cpu_cfg)
 
 #if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                    \
 	defined(CONFIG_SOC_SERIES_ESP32H2)
+	/*
+	 * When PVT is enabled, esp_rtc_init() -> pmu_init() already
+	 * hands DBIAS control to PVT (DBIAS_SEL=0) and enables dynamic
+	 * tracking. Taking it back to PMU here stops PVT from updating
+	 * the RO HP/LP DBIAS_VOL fields, causing pvt_func_enable(false)
+	 * at sleep entry to read stale values (0) and write an invalid
+	 * regulator bias which brown-outs the core.
+	 */
+#if !defined(CONFIG_ESP_ENABLE_PVT)
 	uint32_t hp_cali_dbias = get_act_hp_dbias();
 	uint32_t lp_cali_dbias = get_act_lp_dbias();
 
@@ -327,6 +336,7 @@ static void esp32_cpu_clock_init(const struct esp32_cpu_clock_config *cpu_cfg)
 			  hp_cali_dbias, PMU_HP_MODEM_HP_REGULATOR_DBIAS_S);
 	SET_PERI_REG_BITS(PMU_HP_SLEEP_LP_REGULATOR0_REG, PMU_HP_SLEEP_LP_REGULATOR_DBIAS,
 			  lp_cali_dbias, PMU_HP_SLEEP_LP_REGULATOR_DBIAS_S);
+#endif /* !CONFIG_ESP_ENABLE_PVT */
 #endif
 
 #if defined(CONFIG_SOC_SERIES_ESP32)

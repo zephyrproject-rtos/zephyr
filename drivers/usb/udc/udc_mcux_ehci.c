@@ -75,8 +75,8 @@ struct udc_mcux_event {
 	usb_device_callback_message_struct_t mcux_msg;
 };
 
-K_MEM_SLAB_DEFINE(udc_event_slab, sizeof(struct udc_mcux_event),
-		  CONFIG_UDC_NXP_EVENT_COUNT, sizeof(void *));
+K_MEM_SLAB_DEFINE_TYPE(udc_event_slab, struct udc_mcux_event,
+		       CONFIG_UDC_NXP_EVENT_COUNT);
 
 static void udc_mcux_lock(const struct device *dev)
 {
