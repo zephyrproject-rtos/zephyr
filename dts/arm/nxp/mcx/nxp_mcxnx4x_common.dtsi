@@ -114,6 +114,14 @@
 		};
 	};
 
+	inputmux0: inputmux@6000 {
+		compatible = "nxp,inputmux";
+		reg = <0x6000 0x1000>;
+		status = "disabled";
+		#mux-control-cells = <1>;
+		#mux-state-cells = <2>;
+	};
+
 	porta: pinmux@116000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0x116000 0x1000>;

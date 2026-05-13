@@ -10,8 +10,8 @@
 #include <stdint.h>
 
 #include <fsl_qdc.h>
-#include <fsl_inputmux.h>
 
+#include <zephyr/drivers/mux.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/qdec_mcux.h>
@@ -19,12 +19,16 @@
 
 LOG_MODULE_REGISTER(qdc_mcux, CONFIG_SENSOR_LOG_LEVEL);
 
+struct qdc_mux_entry {
+	const struct device *dev;
+	const struct mux_state *state;
+};
+
 struct qdc_mcux_config {
 	QDC_Type *base;
 	const struct pinctrl_dev_config *pincfg;
-	const uint32_t *input_channels;
-	const uint32_t *inputmux_connections;
-	uint8_t input_channel_count;
+	const struct qdc_mux_entry *mux_entries;
+	uint8_t mux_entries_len;
 	uint8_t filter_count;
 	uint8_t filter_sample_period;
 	bool single_phase_mode;
@@ -145,12 +149,20 @@ static int qdc_mcux_init(const struct device *dev)
 		return err;
 	}
 
-	INPUTMUX_Init(INPUTMUX);
-	for (uint8_t i = 0; i < config->input_channel_count; i++) {
-		INPUTMUX_AttachSignal(INPUTMUX, config->input_channels[i],
-				      config->inputmux_connections[i]);
+	for (uint8_t i = 0; i < config->mux_entries_len; i++) {
+		const struct qdc_mux_entry *e = &config->mux_entries[i];
+
+		if (!device_is_ready(e->dev)) {
+			LOG_ERR("mux controller %s not ready", e->dev->name);
+			return -ENODEV;
+		}
+
+		err = mux_state_apply(e->dev, e->state);
+		if (err) {
+			LOG_ERR("Failed to apply mux state %d: %d", i, err);
+			return err;
+		}
 	}
-	INPUTMUX_Deinit(INPUTMUX);
 
 	QDC_GetDefaultConfig(&data->qdc_config);
 	data->qdc_config.decoderWorkMode = int_to_work_mode(config->single_phase_mode);
@@ -169,43 +181,43 @@ static int qdc_mcux_init(const struct device *dev)
 		    BUILD_ASSERT(IN_RANGE(DT_INST_PROP(n, p), min, max),	\
 				 STRINGIFY(p) " value is out of range")), ())
 
-#define QDC_INPUTMUX_INIT(n)							\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, input_channels),			\
-		(.input_channels = (const uint32_t[]) DT_INST_PROP(n, input_channels), \
-		 .inputmux_connections = (const uint32_t[]) DT_INST_PROP(n, inputmux_connections), \
-		 .input_channel_count = DT_INST_PROP_LEN(n, input_channels),), ())
+#define QDC_MUX_ENTRY_INIT(node_id, prop, idx)					\
+	{									\
+		.dev   = MUX_STATE_DT_DEV_GET_BY_IDX(node_id, idx),		\
+		.state = MUX_STATE_DT_GET_BY_IDX(node_id, idx),			\
+	},
 
-#define QDC_MCUX_INIT(n)							 \
-	QDC_CHECK_COND(n, filter_count, 0, 7);		 \
-	BUILD_ASSERT((DT_INST_NODE_HAS_PROP(n, input_channels) &&		 \
-		      DT_INST_NODE_HAS_PROP(n, inputmux_connections)) ||	 \
-			     (!DT_INST_NODE_HAS_PROP(n, input_channels) &&	 \
-			      !DT_INST_NODE_HAS_PROP(n, inputmux_connections)), \
-		     "input-channels and inputmux-connections must be defined together"); \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, input_channels),		 \
-		    (BUILD_ASSERT(DT_INST_PROP_LEN(n, input_channels) ==	 \
-					  DT_INST_PROP_LEN(n, inputmux_connections), \
-				  "input-channels and inputmux-connections must"	\
-				  "have same length");), ()) \
-									 \
-	static struct qdc_mcux_data qdc_mcux_##n##_data = {			 \
+#define QDC_MCUX_INIT(n)							\
+	QDC_CHECK_COND(n, filter_count, 0, 7);					\
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(n, mux_states),			\
+		     "nxp,mcux-qdc node " #n				        \
+		     " requires a mux-states property to route external "	\
+		     "signals into the QDC inputs");				\
+										\
+	static struct qdc_mcux_data qdc_mcux_##n##_data = {			\
 		.counts_per_revolution = DT_INST_PROP(n, counts_per_revolution), \
-	};									 \
-									 \
-	PINCTRL_DT_INST_DEFINE(n);						 \
-									 \
-	static const struct qdc_mcux_config qdc_mcux_##n##_config = {		 \
-		.base = (QDC_Type *)DT_INST_REG_ADDR(n),			 \
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			 \
-		.filter_count = DT_INST_PROP_OR(n, filter_count, 0),		 \
+	};									\
+										\
+	PINCTRL_DT_INST_DEFINE(n);						\
+										\
+	MUX_STATE_DT_INST_SPEC_DEFINE_ALL(n);					\
+	static const struct qdc_mux_entry qdc_mcux_##n##_mux_entries[] = {	\
+		DT_INST_FOREACH_PROP_ELEM(n, mux_states, QDC_MUX_ENTRY_INIT)	\
+	};									\
+										\
+	static const struct qdc_mcux_config qdc_mcux_##n##_config = {		\
+		.base = (QDC_Type *)DT_INST_REG_ADDR(n),			\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+		.filter_count = DT_INST_PROP_OR(n, filter_count, 0),		\
 		.filter_sample_period = DT_INST_PROP_OR(n, filter_sample_period, 0), \
-		.single_phase_mode = DT_INST_PROP(n, single_phase_mode),		 \
-		QDC_INPUTMUX_INIT(n)						 \
-	};									 \
-									 \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, qdc_mcux_init, NULL,			 \
-				     &qdc_mcux_##n##_data,			 \
-				     &qdc_mcux_##n##_config, POST_KERNEL,	 \
+		.single_phase_mode = DT_INST_PROP(n, single_phase_mode),	\
+		.mux_entries = qdc_mcux_##n##_mux_entries,			\
+		.mux_entries_len = ARRAY_SIZE(qdc_mcux_##n##_mux_entries),	\
+	};									\
+										\
+	SENSOR_DEVICE_DT_INST_DEFINE(n, qdc_mcux_init, NULL,			\
+				     &qdc_mcux_##n##_data,			\
+				     &qdc_mcux_##n##_config, POST_KERNEL,	\
 				     CONFIG_SENSOR_INIT_PRIORITY, &qdc_mcux_api);
 
 DT_INST_FOREACH_STATUS_OKAY(QDC_MCUX_INIT)

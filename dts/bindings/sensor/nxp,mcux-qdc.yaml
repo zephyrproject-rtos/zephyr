@@ -5,7 +5,7 @@ description: NXP MCUX QDC
 
 compatible: "nxp,mcux-qdc"
 
-include: [pinctrl-device.yaml, sensor-device.yaml]
+include: [pinctrl-device.yaml, sensor-device.yaml, mux-consumer.yaml]
 
 properties:
   reg:
@@ -37,17 +37,13 @@ properties:
       Sampling period, in IPBus clock cycles, of the decoder input signals.
       Valid range: 0-255. If value is 0, then the input filter is bypassed.
 
-  input-channels:
-    type: array
+  mux-states:
+    required: true
     description: |
-      INPUTMUX destination channel numbers used when attaching QDC signals.
-      Each entry pairs with the corresponding element in inputmux-connections.
-
-  inputmux-connections:
-    type: array
-    description: |
-      INPUTMUX connection values for QDC inputs. Values map to
-      inputmux_connection_t enums in fsl_inputmux_connections.h.
-      For MCXN947 QDC0, examples include:
-      - kINPUTMUX_TrigIn3ToQdc0Phasea
-      - kINPUTMUX_TrigIn5ToQdc0Phaseb
+      Routing entries to apply at QDC init time, one per QDC input
+      signal. Each entry references a mux controller node (e.g.
+      nxp,inputmux on MCXN family, nxp,mcux-xbar on i.MX RT, ...) and
+      carries the cells that controller's binding requires. The driver
+      applies each entry via mux_state_apply() and is agnostic to the
+      underlying mux hardware; refer to the corresponding mux-controller
+      binding for the meaning of the cells.
