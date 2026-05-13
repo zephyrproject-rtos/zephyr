@@ -1,0 +1,32 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/imx/nxp_imx937_m7.dtsi>
+#include "frdm_imx937-pinctrl.dtsi"
+#include <dt-bindings/mipi_dsi/mipi_dsi.h>
+
+/ {
+	compatible = "nxp,frdm_imx937";
+	model = "NXP FRDM-IMX937 board";
+
+	chosen {
+		/* TCM */
+		zephyr,flash = &itcm;
+		zephyr,sram = &dtcm;
+
+		zephyr,console = &lpuart3;
+		zephyr,shell-uart = &lpuart3;
+	};
+};
+
+&lpuart3 {
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

@@ -1,0 +1,11 @@
+board:
+  name: frdm_imx937
+  full_name: FRDM-IMX937
+  vendor: nxp
+  socs:
+  - name: mimx9375
+    variants:
+    - name: ddr
+      cpucluster: m7
+    - name: flash
+      cpucluster: m7
