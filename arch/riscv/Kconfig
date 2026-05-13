@@ -619,6 +619,17 @@ config RISCV_NO_MTVAL_ON_FP_TRAP
 	  to contain the faulting FP instruction, requiring alternative methods
 	  to handle FP exceptions.
 
+if RISCV_NO_MTVAL_ON_FP_TRAP
+
+config RISCV_NO_MTVAL_ON_FP_TRAP_UNALIGNED
+	bool
+	help
+	  Fetch the faulting FP instruction halfword-by-halfword when mepc is not
+	  4-byte aligned. Avoids an unaligned-load exception in the
+	  no-MTVAL FP trap handler.
+
+endif
+
 RISCV_PRIV_MODES_PROP := riscv,privilege-modes
 
 choice RISCV_PRIVILEGE_MODE
