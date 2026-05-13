@@ -36,4 +36,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 comment "MUX Drivers"
 
+rsource "Kconfig.nxp_inputmux"
+
 endif # MUX
