@@ -115,6 +115,122 @@ int http_hpack_huffman_decode(const uint8_t *encoded_buf, size_t encoded_len,
 /* Maximum size of a Huffman decoded string */
 #define H3_HUFFMAN_DECODE_BUF_SIZE 256
 
+struct qpack_static_entry {
+	const char *name;
+	const char *value;
+};
+
+static const struct qpack_static_entry qpack_static_table[] = {
+	[0] = { .name = ":authority", .value = NULL },
+	[1] = { .name = ":path", .value = "/" },
+	[2] = { .name = "age", .value = "0" },
+	[3] = { .name = "content-disposition", .value = NULL },
+	[4] = { .name = "content-length", .value = "0" },
+	[5] = { .name = "cookie", .value = NULL },
+	[6] = { .name = "date", .value = NULL },
+	[7] = { .name = "etag", .value = NULL },
+	[8] = { .name = "if-modified-since", .value = NULL },
+	[9] = { .name = "if-none-match", .value = NULL },
+	[10] = { .name = "last-modified", .value = NULL },
+	[11] = { .name = "link", .value = NULL },
+	[12] = { .name = "location", .value = NULL },
+	[13] = { .name = "referer", .value = NULL },
+	[14] = { .name = "set-cookie", .value = NULL },
+	[15] = { .name = ":method", .value = "CONNECT" },
+	[16] = { .name = ":method", .value = "DELETE" },
+	[17] = { .name = ":method", .value = "GET" },
+	[18] = { .name = ":method", .value = "HEAD" },
+	[19] = { .name = ":method", .value = "OPTIONS" },
+	[20] = { .name = ":method", .value = "POST" },
+	[21] = { .name = ":method", .value = "PUT" },
+	[22] = { .name = ":scheme", .value = "http" },
+	[23] = { .name = ":scheme", .value = "https" },
+	[24] = { .name = ":status", .value = "103" },
+	[25] = { .name = ":status", .value = "200" },
+	[26] = { .name = ":status", .value = "304" },
+	[27] = { .name = ":status", .value = "404" },
+	[28] = { .name = ":status", .value = "503" },
+	[29] = { .name = "accept", .value = "*/*" },
+	[30] = { .name = "accept", .value = "application/dns-message" },
+	[31] = { .name = "accept-encoding", .value = "gzip, deflate, br" },
+	[32] = { .name = "accept-ranges", .value = "bytes" },
+	[33] = { .name = "access-control-allow-headers", .value = "cache-control" },
+	[34] = { .name = "access-control-allow-headers", .value = "content-type" },
+	[35] = { .name = "access-control-allow-origin", .value = "*" },
+	[36] = { .name = "cache-control", .value = "max-age=0" },
+	[37] = { .name = "cache-control", .value = "max-age=2592000" },
+	[38] = { .name = "cache-control", .value = "max-age=604800" },
+	[39] = { .name = "cache-control", .value = "no-cache" },
+	[40] = { .name = "cache-control", .value = "no-store" },
+	[41] = { .name = "cache-control", .value = "public, max-age=31536000" },
+	[42] = { .name = "content-encoding", .value = "br" },
+	[43] = { .name = "content-encoding", .value = "gzip" },
+	[44] = { .name = "content-type", .value = "application/dns-message" },
+	[45] = { .name = "content-type", .value = "application/javascript" },
+	[46] = { .name = "content-type", .value = "application/json" },
+	[47] = { .name = "content-type", .value = "application/x-www-form-urlencoded" },
+	[48] = { .name = "content-type", .value = "image/gif" },
+	[49] = { .name = "content-type", .value = "image/jpeg" },
+	[50] = { .name = "content-type", .value = "image/png" },
+	[51] = { .name = "content-type", .value = "text/css" },
+	[52] = { .name = "content-type", .value = "text/html; charset=utf-8" },
+	[53] = { .name = "content-type", .value = "text/plain" },
+	[54] = { .name = "content-type", .value = "text/plain;charset=utf-8" },
+	[55] = { .name = "range", .value = "bytes=0-" },
+	[56] = { .name = "strict-transport-security", .value = "max-age=31536000" },
+	[57] = {
+		.name = "strict-transport-security",
+		.value = "max-age=31536000; includesubdomains",
+	},
+	[58] = {
+		.name = "strict-transport-security",
+		.value = "max-age=31536000; includesubdomains; preload",
+	},
+	[59] = { .name = "vary", .value = "accept-encoding" },
+	[60] = { .name = "vary", .value = "origin" },
+	[61] = { .name = "x-content-type-options", .value = "nosniff" },
+	[62] = { .name = "x-xss-protection", .value = "1; mode=block" },
+	[63] = { .name = ":status", .value = "100" },
+	[64] = { .name = ":status", .value = "204" },
+	[65] = { .name = ":status", .value = "206" },
+	[66] = { .name = ":status", .value = "302" },
+	[67] = { .name = ":status", .value = "400" },
+	[68] = { .name = ":status", .value = "403" },
+	[69] = { .name = ":status", .value = "421" },
+	[70] = { .name = ":status", .value = "425" },
+	[71] = { .name = ":status", .value = "500" },
+	[72] = { .name = "accept-language", .value = NULL },
+	[73] = { .name = "access-control-allow-credentials", .value = "FALSE" },
+	[74] = { .name = "access-control-allow-credentials", .value = "TRUE" },
+	[75] = { .name = "access-control-allow-headers", .value = "*" },
+	[76] = { .name = "access-control-allow-methods", .value = "get" },
+	[77] = { .name = "access-control-allow-methods", .value = "get, post, options" },
+	[78] = { .name = "access-control-allow-methods", .value = "options" },
+	[79] = { .name = "access-control-expose-headers", .value = "content-length" },
+	[80] = { .name = "access-control-request-headers", .value = "content-type" },
+	[81] = { .name = "access-control-request-method", .value = "get" },
+	[82] = { .name = "access-control-request-method", .value = "post" },
+	[83] = { .name = "alt-svc", .value = "clear" },
+	[84] = { .name = "authorization", .value = NULL },
+	[85] = {
+		.name = "content-security-policy",
+		.value = "script-src 'none'; object-src 'none'; base-uri 'none'",
+	},
+	[86] = { .name = "early-data", .value = "1" },
+	[87] = { .name = "expect-ct", .value = NULL },
+	[88] = { .name = "forwarded", .value = NULL },
+	[89] = { .name = "if-range", .value = NULL },
+	[90] = { .name = "origin", .value = NULL },
+	[91] = { .name = "purpose", .value = "prefetch" },
+	[92] = { .name = "server", .value = NULL },
+	[93] = { .name = "timing-allow-origin", .value = "*" },
+	[94] = { .name = "upgrade-insecure-requests", .value = "1" },
+	[95] = { .name = "user-agent", .value = NULL },
+	[96] = { .name = "x-forwarded-for", .value = NULL },
+	[97] = { .name = "x-frame-options", .value = "deny" },
+	[98] = { .name = "x-frame-options", .value = "sameorigin" },
+};
+
 /* Per-connection H3 context (simplified: indexed by slot) */
 static struct h3_conn_ctx h3_conn_contexts[CONFIG_HTTP_SERVER_MAX_CLIENTS];
 
@@ -486,59 +602,112 @@ static int qpack_encode_int(uint8_t *buf, size_t buflen,
 	return pos;
 }
 
-/**
- * Look up a method string from a QPACK static table index.
- *
- * @param index  Static table index.
- * @param method Output: HTTP method enum value.
- *
- * @return 0 on success, -ENOENT if the index doesn't map to a method.
- */
-static int qpack_static_method(uint64_t index, enum http_method *method)
+static int qpack_static_entry_get(uint64_t index,
+				  const struct qpack_static_entry **entry)
 {
-	switch (index) {
-	case QPACK_STATIC_METHOD_GET:
-		*method = HTTP_GET;
-		return 0;
-	case QPACK_STATIC_METHOD_POST:
-		*method = HTTP_POST;
-		return 0;
-	case QPACK_STATIC_METHOD_PUT:
-		*method = HTTP_PUT;
-		return 0;
-	case QPACK_STATIC_METHOD_DELETE:
-		*method = HTTP_DELETE;
-		return 0;
-	case QPACK_STATIC_METHOD_HEAD:
-		*method = HTTP_HEAD;
-		return 0;
-	case QPACK_STATIC_METHOD_OPTIONS:
-		*method = HTTP_OPTIONS;
-		return 0;
-	case QPACK_STATIC_METHOD_CONNECT:
-		*method = HTTP_CONNECT;
-		return 0;
-	default:
+	if (index >= ARRAY_SIZE(qpack_static_table)) {
 		return -ENOENT;
+	}
+
+	*entry = &qpack_static_table[index];
+
+	if ((*entry)->name == NULL) {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
+static void h3_capture_request_header(struct http_header_capture_ctx *ctx,
+				      const char *name, size_t name_len,
+				      const char *value, size_t value_len)
+{
+	size_t required_len;
+	char *dest;
+	size_t remaining;
+	struct http_header *current_header;
+
+	if (!IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) || ctx == NULL) {
+		return;
+	}
+
+	dest = &ctx->buffer[ctx->cursor];
+	remaining = sizeof(ctx->buffer) - ctx->cursor;
+	current_header = &ctx->headers[ctx->count];
+	required_len = name_len + value_len + 2;
+
+	STRUCT_SECTION_FOREACH(http_header_name, header) {
+		if (name_len == strlen(header->name) &&
+		    strncasecmp(name, header->name, name_len) == 0) {
+			if (ctx->count == ARRAY_SIZE(ctx->headers)) {
+				LOG_DBG("Header '%s' dropped: not enough slots", header->name);
+				ctx->status = HTTP_HEADER_STATUS_DROPPED;
+				break;
+			}
+
+			if (remaining < required_len) {
+				LOG_DBG("Header '%s' dropped: buffer too small", header->name);
+				ctx->status = HTTP_HEADER_STATUS_DROPPED;
+				break;
+			}
+
+			memcpy(dest, header->name, name_len);
+			dest[name_len] = '\0';
+			current_header->name = dest;
+			ctx->cursor += (name_len + 1);
+			dest += (name_len + 1);
+
+			memcpy(dest, value, value_len);
+			dest[value_len] = '\0';
+			current_header->value = dest;
+			ctx->cursor += (value_len + 1);
+
+			ctx->count++;
+			break;
+		}
 	}
 }
 
-/**
- * Look up a path string from a QPACK static table index.
- *
- * @param index Static table index.
- *
- * @return Path string, or NULL if the index doesn't map to a known path.
- */
-static const char *qpack_static_path(uint64_t index)
+static void h3_process_request_header(struct http_client_ctx *client,
+				      const char *name, size_t name_len,
+				      const char *value, size_t value_len)
 {
-	switch (index) {
-	case QPACK_STATIC_PATH_SLASH:
-		return "/";
-	case QPACK_STATIC_PATH_INDEX_HTML:
-		return "/index.html";
-	default:
-		return NULL;
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
+		h3_capture_request_header(&client->header_capture_ctx,
+					  name, name_len, value, value_len);
+	}
+
+	if (name_len == (sizeof(":method") - 1) &&
+	    memcmp(name, ":method", name_len) == 0) {
+		const enum http_method supported_methods[] = {
+			HTTP_GET, HTTP_DELETE, HTTP_POST, HTTP_PUT, HTTP_PATCH,
+			HTTP_HEAD, HTTP_OPTIONS, HTTP_CONNECT,
+		};
+
+		for (int i = 0; i < ARRAY_SIZE(supported_methods); i++) {
+			if (value_len == strlen(http_method_str(supported_methods[i])) &&
+			    memcmp(value, http_method_str(supported_methods[i]),
+				   value_len) == 0) {
+				client->method = supported_methods[i];
+				break;
+			}
+		}
+
+		return;
+	}
+
+	if (name_len == (sizeof(":path") - 1) &&
+	    memcmp(name, ":path", name_len) == 0 &&
+	    value_len < sizeof(client->url_buffer)) {
+		memcpy(client->url_buffer, value, value_len);
+		client->url_buffer[value_len] = '\0';
+		LOG_DBG("[%p] H3: path=%s", client, client->url_buffer);
+		return;
+	}
+
+	if (name_len == (sizeof(":authority") - 1) &&
+	    memcmp(name, ":authority", name_len) == 0) {
+		LOG_DBG("[%p] H3: authority=%.*s", client, (int)value_len, value);
 	}
 }
 
@@ -1109,6 +1278,17 @@ static bool *h3_stream_headers_sent(struct http_client_ctx *client)
 	return NULL;
 }
 
+static struct http3_stream_ctx *h3_stream_ctx(struct http_client_ctx *client)
+{
+	for (int i = 0; i < ARRAY_SIZE(client->h3.stream_sock); i++) {
+		if (client->h3.stream_sock[i] == client->fd) {
+			return &client->h3.streams[i];
+		}
+	}
+
+	return NULL;
+}
+
 static int h3_dynamic_response(struct http_client_ctx *client,
 				struct http_response_ctx *rsp,
 				enum http_transaction_status status,
@@ -1173,8 +1353,10 @@ static int h3_dynamic_get_del_opts(
 	int len;
 	char *ptr;
 	enum http_transaction_status status;
+	struct http3_stream_ctx *stream;
 	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
+	struct http_header_capture_ctx *request_headers_ctx = NULL;
 	bool *headers_sent;
 
 	if (dynamic_detail->common.path_len >= sizeof(client->url_buffer) ||
@@ -1187,6 +1369,16 @@ static int h3_dynamic_get_del_opts(
 	ptr = (char *)&client->url_buffer[dynamic_detail->common.path_len];
 	len = strlen(ptr);
 	status = HTTP_SERVER_REQUEST_DATA_FINAL;
+	stream = h3_stream_ctx(client);
+	if (stream == NULL) {
+		return -ENOENT;
+	}
+
+	if (stream->request_headers_pending) {
+		request_headers_ctx = &client->header_capture_ctx;
+		stream->request_headers_pending = false;
+	}
+
 	headers_sent = h3_stream_headers_sent(client);
 	if (headers_sent == NULL) {
 		return -ENOENT;
@@ -1194,7 +1386,8 @@ static int h3_dynamic_get_del_opts(
 
 	do {
 		memset(&response_ctx, 0, sizeof(response_ctx));
-		populate_request_ctx(&request_ctx, (uint8_t *)ptr, len, NULL);
+		populate_request_ctx(&request_ctx, (uint8_t *)ptr, len,
+				     request_headers_ctx);
 
 		ret = dynamic_detail->cb(client, status, &request_ctx,
 					 &response_ctx,
@@ -1211,6 +1404,7 @@ static int h3_dynamic_get_del_opts(
 
 		/* URL params are passed in the first cb only */
 		len = 0;
+		request_headers_ctx = NULL;
 	} while (!http_response_is_final(&response_ctx, status));
 
 	ret = dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_COMPLETE,
@@ -1240,8 +1434,14 @@ static int h3_dynamic_post_put_start(
 	struct http_resource_detail_dynamic *dynamic_detail,
 	struct http_client_ctx *client)
 {
+	struct http3_stream_ctx *stream;
+
 	/* Store the detail for later DATA frame processing */
 	client->current_detail = (struct http_resource_detail *)dynamic_detail;
+	stream = h3_stream_ctx(client);
+	if (stream == NULL) {
+		return -ENOENT;
+	}
 
 	LOG_DBG("[%p] H3: POST/PUT waiting for DATA frames", client);
 
@@ -1365,8 +1565,10 @@ static int h3_process_data_frame(struct http_client_ctx *client,
 				 bool fin)
 {
 	struct http_resource_detail_dynamic *dynamic_detail;
+	struct http3_stream_ctx *stream;
 	struct http_request_ctx request_ctx;
 	struct http_response_ctx response_ctx;
+	struct http_header_capture_ctx *request_headers_ctx = NULL;
 	enum http_transaction_status status;
 	bool *headers_sent;
 	int ret;
@@ -1388,6 +1590,11 @@ static int h3_process_data_frame(struct http_client_ctx *client,
 		return -ESRCH;
 	}
 
+	stream = h3_stream_ctx(client);
+	if (stream == NULL) {
+		return -ENOENT;
+	}
+
 	headers_sent = h3_stream_headers_sent(client);
 	if (headers_sent == NULL) {
 		return -ENOENT;
@@ -1396,8 +1603,14 @@ static int h3_process_data_frame(struct http_client_ctx *client,
 	status = fin ? HTTP_SERVER_REQUEST_DATA_FINAL
 		     : HTTP_SERVER_REQUEST_DATA_MORE;
 
+	if (stream->request_headers_pending) {
+		request_headers_ctx = &client->header_capture_ctx;
+		stream->request_headers_pending = false;
+	}
+
 	memset(&response_ctx, 0, sizeof(response_ctx));
-	populate_request_ctx(&request_ctx, (uint8_t *)payload, length, NULL);
+	populate_request_ctx(&request_ctx, (uint8_t *)payload, length,
+			     request_headers_ctx);
 
 	ret = dynamic_detail->cb(client, status, &request_ctx, &response_ctx,
 				 dynamic_detail->user_data);
@@ -1444,6 +1657,7 @@ static int h3_process_data_frame(struct http_client_ctx *client,
 		}
 
 		dynamic_detail->holder = NULL;
+		stream->request_headers_pending = false;
 
 		return h3_end_response(client);
 	}
@@ -1472,24 +1686,39 @@ static int h3_process_data_frame(struct http_client_ctx *client,
 static int h3_parse_qpack_headers(struct http_client_ctx *client,
 				  const uint8_t *buf, size_t buflen)
 {
-	/* Buffer for Huffman decoding (stack-allocated for reentrancy) */
-	uint8_t huffman_buf[H3_HUFFMAN_DECODE_BUF_SIZE];
+	uint8_t name_buf[H3_HUFFMAN_DECODE_BUF_SIZE];
+	uint8_t value_buf[H3_HUFFMAN_DECODE_BUF_SIZE];
+	struct http3_stream_ctx *stream;
+	const struct qpack_static_entry *static_entry;
+	const char *name_ptr;
+	size_t decoded_name_len;
+	const char *value_ptr;
 	size_t pos = 0;
 	uint64_t ric;
 	uint64_t delta_base;
 	int ret;
 	uint8_t byte;
 	uint64_t index;
-	enum http_method method;
-	const char *path;
-	size_t path_len;
 	uint64_t name_index;
 	bool huffman;
 	uint64_t val_len;
 	bool name_huffman;
 	uint64_t name_len;
-	const uint8_t *val_ptr;
 	size_t decoded_len;
+
+	stream = h3_stream_ctx(client);
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) &&
+	    client->current_detail == NULL) {
+		client->header_capture_ctx.count = 0;
+		client->header_capture_ctx.cursor = 0;
+		client->header_capture_ctx.status = HTTP_HEADER_STATUS_OK;
+		client->header_capture_ctx.current_stream = NULL;
+		client->header_capture_ctx.store_next_value = false;
+
+		if (stream != NULL) {
+			stream->request_headers_pending = true;
+		}
+	}
 
 	/* Required Insert Count (RFC 9204 Section 4.5.1) */
 	ret = qpack_decode_int(buf, buflen, 8, &ric);
@@ -1530,29 +1759,18 @@ static int h3_parse_qpack_headers(struct http_client_ctx *client,
 
 			pos += ret;
 
-			/* Check if this is a method */
-			if (qpack_static_method(index, &method) == 0) {
-				client->method = method;
-				LOG_DBG("[%p] H3: method=%d (static idx %llu)",
-					client, method, index);
-				continue;
+			ret = qpack_static_entry_get(index, &static_entry);
+			if (ret < 0) {
+				return ret;
 			}
 
-			/* Check if this is a path */
-			path = qpack_static_path(index);
+			name_ptr = static_entry->name;
+			decoded_name_len = strlen(name_ptr);
+			value_ptr = static_entry->value != NULL ? static_entry->value : "";
+			decoded_len = static_entry->value != NULL ? strlen(static_entry->value) : 0;
 
-			if (path != NULL) {
-				path_len = strlen(path);
-
-				if (path_len < sizeof(client->url_buffer)) {
-					memcpy(client->url_buffer, path,
-					       path_len);
-					client->url_buffer[path_len] = '\0';
-
-					LOG_DBG("[%p] H3: path=%s (static idx %llu)",
-						client, client->url_buffer, index);
-				}
-			}
+			h3_process_request_header(client, name_ptr, decoded_name_len,
+					      value_ptr, decoded_len);
 		} else if ((byte & QPACK_LIT_NAME_REF_MASK) ==
 			   QPACK_LIT_NAME_REF_STATIC) {
 			/* Literal with name reference, static table */
@@ -1564,6 +1782,11 @@ static int h3_parse_qpack_headers(struct http_client_ctx *client,
 			}
 
 			pos += ret;
+
+			ret = qpack_static_entry_get(name_index, &static_entry);
+			if (ret < 0) {
+				return ret;
+			}
 
 			/* Read the value */
 			huffman = (buf[pos] & 0x80) != 0;
@@ -1582,40 +1805,26 @@ static int h3_parse_qpack_headers(struct http_client_ctx *client,
 			/* Decode value (Huffman or literal) */
 			if (huffman) {
 				ret = http_hpack_huffman_decode(buf + pos, val_len,
-							       huffman_buf,
-							       sizeof(huffman_buf) - 1);
+							       value_buf,
+							       sizeof(value_buf) - 1);
 				if (ret < 0) {
 					LOG_DBG("[%p] H3: Huffman decode failed (%d)",
 						client, ret);
 					return ret;
 				}
 
-				huffman_buf[ret] = '\0';
-				val_ptr = huffman_buf;
+				value_buf[ret] = '\0';
+				value_ptr = value_buf;
 				decoded_len = ret;
 			} else {
-				val_ptr = buf + pos;
+				value_ptr = buf + pos;
 				decoded_len = val_len;
 			}
 
-			/* Extract known pseudo-headers by name index */
-			if (name_index == QPACK_STATIC_PATH_SLASH ||
-			    name_index == QPACK_STATIC_PATH_INDEX_HTML) {
-				if (decoded_len < sizeof(client->url_buffer)) {
-					memcpy(client->url_buffer, val_ptr,
-					       decoded_len);
-					client->url_buffer[decoded_len] = '\0';
-					LOG_DBG("[%p] H3: path=%s", client, client->url_buffer);
-				}
-			} else if (name_index == QPACK_STATIC_AUTHORITY) {
-				LOG_DBG("[%p] H3: authority=%.*s", client,
-					(int)decoded_len, val_ptr);
-			}
-
-			/* Check method by name index */
-			if (qpack_static_method(name_index, &method) == 0) {
-				client->method = method;
-			}
+			name_ptr = static_entry->name;
+			decoded_name_len = strlen(name_ptr);
+			h3_process_request_header(client, name_ptr, decoded_name_len,
+					      value_ptr, decoded_len);
 
 			pos += val_len;
 		} else if ((byte & QPACK_LIT_WITHOUT_NAME_MASK) ==
@@ -1638,13 +1847,21 @@ static int h3_parse_qpack_headers(struct http_client_ctx *client,
 			/* Decode and log name */
 			if (name_huffman) {
 				ret = http_hpack_huffman_decode(buf + pos, name_len,
-							       huffman_buf,
-							       sizeof(huffman_buf) - 1);
-				if (ret >= 0) {
-					huffman_buf[ret] = '\0';
-					LOG_DBG("[%p] H3: header name=%s", client, huffman_buf);
+							       name_buf,
+							       sizeof(name_buf) - 1);
+				if (ret < 0) {
+					LOG_DBG("[%p] H3: Huffman decode failed (%d)",
+						client, ret);
+					return ret;
 				}
+
+				name_buf[ret] = '\0';
+				name_ptr = name_buf;
+				decoded_name_len = ret;
+				LOG_DBG("[%p] H3: header name=%s", client, name_buf);
 			} else {
+				name_ptr = buf + pos;
+				decoded_name_len = name_len;
 				LOG_DBG("[%p] H3: header name=%.*s", client,
 					(int)name_len, buf + pos);
 			}
@@ -1673,16 +1890,27 @@ static int h3_parse_qpack_headers(struct http_client_ctx *client,
 			/* Decode and log value */
 			if (huffman) {
 				ret = http_hpack_huffman_decode(buf + pos, val_len,
-							       huffman_buf,
-							       sizeof(huffman_buf) - 1);
-				if (ret >= 0) {
-					huffman_buf[ret] = '\0';
-					LOG_DBG("[%p] H3: header value=%s", client, huffman_buf);
+							       value_buf,
+							       sizeof(value_buf) - 1);
+				if (ret < 0) {
+					LOG_DBG("[%p] H3: Huffman decode failed (%d)",
+						client, ret);
+					return ret;
 				}
+
+				value_buf[ret] = '\0';
+				value_ptr = value_buf;
+				decoded_len = ret;
+				LOG_DBG("[%p] H3: header value=%s", client, value_buf);
 			} else {
+				value_ptr = buf + pos;
+				decoded_len = val_len;
 				LOG_DBG("[%p] H3: header value=%.*s", client,
 					(int)val_len, buf + pos);
 			}
+
+			h3_process_request_header(client, name_ptr, decoded_name_len,
+					      value_ptr, decoded_len);
 
 			pos += val_len;
 		} else {

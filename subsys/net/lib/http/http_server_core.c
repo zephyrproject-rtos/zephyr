@@ -919,6 +919,7 @@ static void restore_h3_stream_state(struct http_client_ctx *client, int slot)
 	client->current_detail = stream->current_detail;
 	memcpy(client->url_buffer, stream->url_buffer, sizeof(client->url_buffer));
 	client->method = stream->method;
+	client->header_capture_ctx = stream->header_capture_ctx;
 }
 
 static void store_h3_stream_state(struct http_client_ctx *client, int slot)
@@ -930,6 +931,7 @@ static void store_h3_stream_state(struct http_client_ctx *client, int slot)
 	stream->current_detail = client->current_detail;
 	memcpy(stream->url_buffer, client->url_buffer, sizeof(stream->url_buffer));
 	stream->method = client->method;
+	stream->header_capture_ctx = client->header_capture_ctx;
 }
 
 static int add_h3_stream_poll(struct http_client_ctx *client,
