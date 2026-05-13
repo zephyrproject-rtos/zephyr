@@ -147,6 +147,14 @@ Input
   Users of the default configuration are advised to reconsider whether it really is appropriate;
   migration to ``zephyr,suspend-action = "full-disconnect";`` is recommended. (:github:`108294`)
 
+* Kconfig options for the ft6146, ft5336, and cst8xx input drivers have been renamed to be
+  consistent with the other input drivers. Applications using the following Kconfig options
+  must update their configurations accordingly:
+
+  * ``CONFIG_INPUT_FT5336_PERIOD`` → :kconfig:option:`CONFIG_INPUT_FT5336_PERIOD_MS`
+  * ``CONFIG_INPUT_CST8XX_PERIOD`` → :kconfig:option:`CONFIG_INPUT_CST8XX_PERIOD_MS`
+  * ``CONFIG_INPUT_FT6146_PERIOD`` → :kconfig:option:`CONFIG_INPUT_FT6146_PERIOD_MS`
+
 NXP
 ===
 

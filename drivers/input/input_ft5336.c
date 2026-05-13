@@ -228,8 +228,8 @@ static int ft5336_init(const struct device *dev)
 	}
 #else
 	k_timer_init(&data->timer, ft5336_timer_handler, NULL);
-	k_timer_start(&data->timer, K_MSEC(CONFIG_INPUT_FT5336_PERIOD),
-		      K_MSEC(CONFIG_INPUT_FT5336_PERIOD));
+	k_timer_start(&data->timer, K_MSEC(CONFIG_INPUT_FT5336_PERIOD_MS),
+		      K_MSEC(CONFIG_INPUT_FT5336_PERIOD_MS));
 #endif
 
 	r = pm_device_runtime_enable(dev);
@@ -300,8 +300,8 @@ static int ft5336_pm_action(const struct device *dev,
 		}
 #else
 		k_timer_start(&data->timer,
-			      K_MSEC(CONFIG_INPUT_FT5336_PERIOD),
-			      K_MSEC(CONFIG_INPUT_FT5336_PERIOD));
+			      K_MSEC(CONFIG_INPUT_FT5336_PERIOD_MS),
+			      K_MSEC(CONFIG_INPUT_FT5336_PERIOD_MS));
 #endif
 		break;
 	default:
