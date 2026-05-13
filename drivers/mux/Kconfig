@@ -34,8 +34,11 @@ source "subsys/logging/Kconfig.template.log_config"
 
 comment "MUX Drivers"
 
+# zephyr-keep-sorted-start
 rsource "Kconfig.gpio"
 rsource "Kconfig.nxp_inputmux"
 rsource "Kconfig.nxp_trgmux"
+rsource "Kconfig.nxp_xbar"
+# zephyr-keep-sorted-stop
 
 endif # MUX

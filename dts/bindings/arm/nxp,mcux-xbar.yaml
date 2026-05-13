@@ -1,20 +1,47 @@
 # Copyright (c) 2023, Prevas A/S
+# Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: MCUX XBAR (Crossbar)
+description: |
+  NXP MCUX XBAR (Crossbar Switch).
+
+  Acts as a generic mux controller: each SEL register selects one input
+  signal to route to one output line. The driver writes the SEL registers
+  directly via DEVICE_MMIO and supports both 16-bit and 32-bit register
+  layouts (selected at compile time by FSL_FEATURE_XBAR_DSC_REG_WIDTH).
+
+  Cell layout (mux-controls / mux-states):
+    cell[0] = "output" -- xbar output signal id (the SEL register that
+                          will be programmed; addressing).
+    state              -- xbar input signal id (the value to write into
+                          the SEL register). For mux-states the trailing
+                          cell is named "input" and carries this value.
+
+  Legacy "xbar-maps" property is still accepted by drivers (e.g.
+  qdec_mcux) that have not yet migrated to the mux-states API.
 
 compatible: "nxp,mcux-xbar"
 
-include: base.yaml
+include: [base.yaml, mux-controller.yaml]
 
 properties:
   reg:
     required: true
 
-  xbar-maps:
-    type: array
-    description: |
-      Crossbar input and output mappings. Input is followed by the output.
-      Input should match pinctrl mapping in dtsi. The desired values can be
-      found by searching for 'enum _xbar_' in
-      modules/hal/nxp/mcux/mcux-sdk/devices/<device>/<device>.h.
+  clocks:
+    required: true
+
+  "#mux-control-cells":
+    const: 1
+
+  "#mux-state-cells":
+    const: 2
+
+mux-control-cells:
+  # xbar output signal id (which SEL register to program).
+  - output
+
+mux-state-cells:
+  - output
+  # xbar input signal id (value written into the SEL register).
+  - input
