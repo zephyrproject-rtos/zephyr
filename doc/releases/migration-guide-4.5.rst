@@ -398,6 +398,10 @@ Mbed TLS
   Out-of-tree applications or board configurations that rely on TLS 1.3 PSK early data (0-RTT)
   must now explicitly enable :kconfig:option:`CONFIG_MBEDTLS_SSL_EARLY_DATA`.
 
+* ``CONFIG_PSA_CRYPTO_CLIENT`` has been removed as it was a duplicate of
+  :kconfig:option:`CONFIG_PSA_CRYPTO`. If you were using it, use
+  :kconfig:option:`CONFIG_PSA_CRYPTO` instead. (:github:`108960`)
+
 Architectures
 *************
 
