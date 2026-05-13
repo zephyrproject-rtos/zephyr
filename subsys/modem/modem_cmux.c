@@ -211,33 +211,37 @@ static bool modem_cmux_command_length_is_valid(const struct modem_cmux_command_l
 
 static bool modem_cmux_command_is_valid(const struct modem_cmux_command *command)
 {
+	uint8_t length;
+
 	if (!modem_cmux_command_type_is_valid(command->type)) {
 		return false;
 	}
 	if (!modem_cmux_command_length_is_valid(command->length)) {
 		return false;
 	}
+
 	/* Verify known value sizes as specified in 3GPP TS 27.010
 	 * section 5.4.6.3 Message Type and Actions
 	 */
+	length = command->length.value;
+
 	switch (command->type.value) {
 	case MODEM_CMUX_COMMAND_PN:
-		return command->length.value == 8;
+		return length == 8;
 	case MODEM_CMUX_COMMAND_TEST:
-		return (command->length.value > 0 &&
-			command->length.value <= MODEM_CMUX_CMD_DATA_SIZE_MAX - 2);
+		return (length > 0 && length <= MODEM_CMUX_CMD_DATA_SIZE_MAX - 2);
 	case MODEM_CMUX_COMMAND_MSC:
-		return command->length.value == 2 || command->length.value == 3;
+		return length == 2 || length == 3;
 	case MODEM_CMUX_COMMAND_NSC:
-		return command->length.value == 1;
+		return length == 1;
 	case MODEM_CMUX_COMMAND_RPN:
-		return command->length.value == 1 || command->length.value == 8;
+		return length == 1 || length == 8;
 	case MODEM_CMUX_COMMAND_RLS:
-		return command->length.value == 2;
+		return length == 2;
 	case MODEM_CMUX_COMMAND_SNC:
-		return command->length.value == 1 || command->length.value == 3;
+		return length == 1 || length == 3;
 	default:
-		return command->length.value == 0;
+		return length == 0;
 	}
 }
 
