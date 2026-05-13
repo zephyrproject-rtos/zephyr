@@ -165,6 +165,56 @@ struct bt_goep {
 	struct bt_obex obex;
 };
 
+/** @brief Initialize the GOEP and GOEP v1 (RFCOMM) transport structures.
+ *
+ *  Sets up the mutual back-pointer between a @ref bt_goep instance and its transport instance
+ *  @ref bt_goep_transport_v1, and clears the unused v2 pointer to avoid the goep version mismatch.
+ *
+ *  Equivalent to:
+ *  @code
+ *  (_v1)->goep = (_goep);
+ *  (_goep)->v1 = (_v1);
+ *  (_goep)->v2 = NULL;
+ *  @endcode
+ *
+ *  @param _goep Pointer to the @ref bt_goep structure to initialize.
+ *  @param _v1   Pointer to the @ref bt_goep_transport_v1 structure to associate.
+ */
+#define BT_GOEP_INIT_V1(_goep, _v1) \
+	do { \
+		BUILD_ASSERT(SAME_TYPE(*(_goep), struct bt_goep) && \
+			     SAME_TYPE(*(_v1), struct bt_goep_transport_v1), \
+			     "pointer type mismatch in BT_GOEP_INIT_V1"); \
+		(_v1)->goep = (_goep); \
+		(_goep)->v1 = (_v1); \
+		(_goep)->v2 = NULL; \
+	} while (0)
+
+/** @brief Initialize the GOEP and GOEP v2 (L2CAP) transport structures.
+ *
+ *  Sets up the mutual back-pointer between a @ref bt_goep instance and its transport instance
+ *  @ref bt_goep_transport_v2, and clears the unused v1 pointer to avoid the goep version mismatch.
+ *
+ *  Equivalent to:
+ *  @code
+ *  (_v2)->goep = (_goep);
+ *  (_goep)->v2 = (_v2);
+ *  (_goep)->v1 = NULL;
+ *  @endcode
+ *
+ *  @param _goep Pointer to the @ref bt_goep structure to initialize.
+ *  @param _v2   Pointer to the @ref bt_goep_transport_v2 structure to associate.
+ */
+#define BT_GOEP_INIT_V2(_goep, _v2) \
+	do { \
+		BUILD_ASSERT(SAME_TYPE(*(_goep), struct bt_goep) && \
+			     SAME_TYPE(*(_v2), struct bt_goep_transport_v2), \
+			     "pointer type mismatch in BT_GOEP_INIT_V2"); \
+		(_v2)->goep = (_goep); \
+		(_goep)->v2 = (_v2); \
+		(_goep)->v1 = NULL; \
+	} while (0)
+
 /**
  * @defgroup bt_goep_transport_rfcomm GOEP transport RFCOMM
  * @ingroup bt_goep
