@@ -1,0 +1,38 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Properties to be included by devicetree nodes that consume one or more
+# MUX controllers.
+
+description: |
+  Consumer-side properties for referencing MUX controllers.
+
+  Use "mux-controls" when the consumer needs to drive the MUX state at
+  runtime (state value is supplied by code).
+
+  Use "mux-states" when the desired state is fixed in devicetree, and a
+  single mux_state_apply() call is enough.
+
+properties:
+  mux-controls:
+    type: phandle-array
+    description: |
+      List of MUX controller specifiers. Each entry is a phandle to a MUX
+      controller followed by #mux-control-cells addressing cells.
+
+  mux-control-names:
+    type: string-array
+    description: |
+      Optional names for the entries in "mux-controls"
+
+  mux-states:
+    type: phandle-array
+    description: |
+      List of MUX state specifiers. Each entry is a phandle to a MUX
+      controller followed by #mux-state-cells cells: the addressing cells
+      followed by a trailing "state" cell carrying the default state value.
+
+  mux-state-names:
+    type: string-array
+    description: |
+      Optional names for the entries in "mux-states"

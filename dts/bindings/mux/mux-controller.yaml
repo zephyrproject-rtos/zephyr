@@ -1,0 +1,24 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for MUX (multiplexer) controllers.
+
+properties:
+  "#mux-control-cells":
+    type: int
+    required: true
+    description: |
+      Number of cells in a "mux-controls" specifier. These cells form the
+      addressing portion only (which output line) and do NOT include the
+      target state value. Drivers receive the addressing cells in
+      mux_control::cells.
+
+  "#mux-state-cells":
+    type: int
+    required: true
+    description: |
+      Number of cells in a "mux-states" specifier. Equals
+      #mux-control-cells + 1: the trailing cell carries the default state
+      value. Backends may name the trailing cell whatever best describes
+      the hardware (e.g. "state" for a generic GPIO mux, "input" for an
+      XBAR, "source" for a TRGMUX).
