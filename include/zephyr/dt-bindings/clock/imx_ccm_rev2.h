@@ -171,6 +171,14 @@
 /** PDM/MICFIL clock identifier */
 #define IMX_CCM_PDM_CLK                0x2800UL
 
+/* XBAR */
+/** XBAR1 peripheral clock identifier */
+#define IMX_CCM_XBAR1_CLK             0x2900UL
+/** XBAR2 peripheral clock identifier */
+#define IMX_CCM_XBAR2_CLK             0x2901UL
+/** XBAR3 peripheral clock identifier */
+#define IMX_CCM_XBAR3_CLK             0x2902UL
+
 /* QTMR */
 #define IMX_CCM_QTMR_CLK               0x6000UL
 #define IMX_CCM_QTMR1_CLK              0x6000UL
