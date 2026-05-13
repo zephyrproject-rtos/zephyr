@@ -41,6 +41,9 @@
 /** get the clock's enabled status based on given attributes */
 #define SCMI_CLK_ENABLED(attributes) ((attributes) & BIT(0))
 
+/** check if clock allows gating/ungating based on its permissions */
+#define SCMI_CLK_STATE_CONTROL_ALLOWED(permissions) ((permissions) & BIT(31))
+
 /**
  * @struct scmi_clock_config
  *
@@ -178,6 +181,19 @@ int scmi_clock_parent_set(struct scmi_protocol *proto, uint32_t clk_id, uint32_t
  */
 int scmi_clock_attributes(struct scmi_protocol *proto, uint32_t clk_id,
 			  struct scmi_clock_attributes *attributes);
+
+/**
+ * @brief Send the CLOCK_GET_PERMISSIONS command and get its reply
+ *
+ * @param proto pointer to SCMI clock protocol data
+ * @param clk_id ID of the clock for which the query is done
+ * @param permissions clock permissions returned by the command
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_clock_get_permissions(struct scmi_protocol *proto, uint32_t clk_id,
+			       uint32_t *permissions);
 /**
  * @}
  */
