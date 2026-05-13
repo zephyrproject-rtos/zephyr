@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "server_internal.h"
+
 #include <errno.h>
 #include <string.h>
 
@@ -36,6 +38,7 @@
 #define QPACK_STATIC_PATH_SLASH 1
 #define QPACK_STATIC_METHOD_GET 17
 #define QPACK_STATIC_METHOD_POST 20
+#define QPACK_STATIC_USER_AGENT 95
 
 #define TEST_STATIC_PAYLOAD "Hello, H3!"
 #define TEST_DYNAMIC_POST_PAYLOAD "Test dynamic POST"
@@ -184,6 +187,77 @@ static struct http_resource_detail_dynamic streaming_resource_detail = {
 HTTP_RESOURCE_DEFINE(streaming_resource, test_http_service, "/streaming",
 		     &streaming_resource_detail);
 
+struct test_headers_clone {
+	uint8_t buffer[CONFIG_HTTP_SERVER_CAPTURE_HEADER_BUFFER_SIZE];
+	struct http_header headers[CONFIG_HTTP_SERVER_CAPTURE_HEADER_COUNT];
+	size_t count;
+	enum http_header_status status;
+};
+
+static struct test_headers_clone request_headers_clone;
+
+static int header_capture_cb(struct http_client_ctx *client,
+			     enum http_transaction_status status,
+			     const struct http_request_ctx *request_ctx,
+			     struct http_response_ctx *response_ctx,
+			     void *user_data)
+{
+	struct http_header *hdrs_src;
+	struct http_header *hdrs_dst;
+	struct test_headers_clone *clone = user_data;
+	const char *src_buffer = (const char *)client->header_capture_ctx.buffer;
+
+	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
+	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
+		return 0;
+	}
+
+	if (request_ctx->header_count != 0) {
+		memcpy(clone->buffer, client->header_capture_ctx.buffer,
+		       sizeof(clone->buffer));
+		clone->count = request_ctx->header_count;
+		clone->status = request_ctx->headers_status;
+
+		hdrs_src = request_ctx->headers;
+		hdrs_dst = clone->headers;
+
+		for (int i = 0; i < request_ctx->header_count; i++) {
+			if (hdrs_src[i].name != NULL) {
+				hdrs_dst[i].name =
+					(char *)clone->buffer + (hdrs_src[i].name - src_buffer);
+			}
+
+			if (hdrs_src[i].value != NULL) {
+				hdrs_dst[i].value =
+					(char *)clone->buffer + (hdrs_src[i].value - src_buffer);
+			}
+		}
+	}
+
+	if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
+		response_ctx->status = 200;
+		response_ctx->final_chunk = true;
+	}
+
+	return 0;
+}
+
+static struct http_resource_detail_dynamic header_capture_resource_detail = {
+	.common = {
+		.type = HTTP_RESOURCE_TYPE_DYNAMIC,
+		.bitmask_of_supported_http_methods = BIT(HTTP_GET) | BIT(HTTP_POST),
+		.content_type = "text/plain",
+	},
+	.cb = header_capture_cb,
+	.user_data = &request_headers_clone,
+};
+
+HTTP_RESOURCE_DEFINE(header_capture_resource, test_http_service, "/header_capture",
+		     &header_capture_resource_detail);
+
+HTTP_SERVER_REGISTER_HEADER_CAPTURE(h3_capture_user_agent, "User-Agent");
+HTTP_SERVER_REGISTER_HEADER_CAPTURE(h3_capture_test_header, "Test-Header");
+
 static int client_conn_fd = -1;
 static int tracked_stream_fds[MAX_TRACKED_STREAMS];
 static size_t tracked_stream_count;
@@ -313,6 +387,77 @@ static size_t build_headers_frame(uint8_t *buf,
 	buf[1] = (uint8_t)pos;
 
 	return pos + 2;
+}
+
+static size_t build_header_capture_headers_frame(uint8_t *buf, size_t buflen,
+						 enum http_method method,
+						 const char *path,
+						 const char *user_agent,
+						 const char *test_header)
+{
+	uint8_t frame_header[4];
+	size_t path_len = strlen(path);
+	size_t user_agent_len = strlen(user_agent);
+	size_t test_header_len = strlen(test_header);
+	size_t pos = 0;
+	size_t frame_header_len = 0;
+	uint8_t method_index;
+	int ret;
+
+	switch (method) {
+	case HTTP_GET:
+		method_index = 0xc0U | QPACK_STATIC_METHOD_GET;
+		break;
+	case HTTP_POST:
+		method_index = 0xc0U | QPACK_STATIC_METHOD_POST;
+		break;
+	default:
+		zassert_unreachable("Unsupported method %d", method);
+		return 0;
+	}
+
+	buf[pos++] = 0x00U;
+	buf[pos++] = 0x00U;
+	buf[pos++] = method_index;
+
+	if (strcmp(path, "/") == 0) {
+		buf[pos++] = 0xc0U | QPACK_STATIC_PATH_SLASH;
+	} else {
+		zassert_true(path_len <= 0x7fU, "Path too long");
+		buf[pos++] = 0x50U | QPACK_STATIC_PATH_SLASH;
+		buf[pos++] = (uint8_t)path_len;
+		memcpy(buf + pos, path, path_len);
+		pos += path_len;
+	}
+
+	ret = qpack_encode_int(buf + pos, buflen - pos, 4, 0x50U,
+			       QPACK_STATIC_USER_AGENT);
+	zassert_true(ret > 0, "Failed to encode user-agent name index");
+	pos += ret;
+	ret = qpack_encode_int(buf + pos, buflen - pos, 7, 0x00U, user_agent_len);
+	zassert_true(ret > 0, "Failed to encode user-agent length");
+	pos += ret;
+	memcpy(buf + pos, user_agent, user_agent_len);
+	pos += user_agent_len;
+
+	ret = qpack_encode_int(buf + pos, buflen - pos, 3, 0x20U,
+			       sizeof("test-header") - 1);
+	zassert_true(ret > 0, "Failed to encode header name length");
+	pos += ret;
+	memcpy(buf + pos, "test-header", sizeof("test-header") - 1);
+	pos += sizeof("test-header") - 1;
+	ret = qpack_encode_int(buf + pos, buflen - pos, 7, 0x00U, test_header_len);
+	zassert_true(ret > 0, "Failed to encode test-header length");
+	pos += ret;
+	memcpy(buf + pos, test_header, test_header_len);
+	pos += test_header_len;
+
+	frame_header_len += h3_encode_varint(frame_header + frame_header_len, H3_FRAME_HEADERS);
+	frame_header_len += h3_encode_varint(frame_header + frame_header_len, pos);
+	memmove(buf + frame_header_len, buf, pos);
+	memcpy(buf, frame_header, frame_header_len);
+
+	return frame_header_len + pos;
 }
 
 static size_t build_data_frame(uint8_t *buf, const uint8_t *payload, size_t payload_len)
@@ -764,6 +909,7 @@ static void http_server_h3_before(void *fixture)
 	dynamic_more_seen = false;
 	dynamic_final_seen = false;
 	dynamic_complete = false;
+	memset(&request_headers_clone, 0, sizeof(request_headers_clone));
 	tracked_stream_count = 0;
 	for (size_t i = 0; i < ARRAY_SIZE(tracked_stream_fds); i++) {
 		tracked_stream_fds[i] = -1;
@@ -1037,6 +1183,119 @@ ZTEST(server_h3_tests, test_h3_multiple_data_callbacks_send_headers_once)
 	untrack_stream_fd(stream_fd);
 }
 
+ZTEST(server_h3_tests, test_h3_get_captures_request_headers)
+{
+	uint8_t headers[128];
+	size_t headers_len;
+	struct http_header *hdrs = request_headers_clone.headers;
+	int stream_fd;
+	int ret;
+
+	start_h3_session(false);
+
+	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	headers_len = build_header_capture_headers_frame(headers, sizeof(headers),
+							 HTTP_GET,
+							 "/header_capture",
+							 "h3-test-agent/1.0",
+							 "capture-me");
+	send_all(stream_fd, headers, headers_len);
+	expect_headers_only_response(stream_fd);
+
+	zassert_equal(request_headers_clone.count, 2,
+		      "Unexpected captured header count");
+	zassert_equal(request_headers_clone.status, HTTP_HEADER_STATUS_OK,
+		      "Unexpected captured header status");
+	zassert_mem_equal(hdrs[0].name, "User-Agent", strlen("User-Agent"),
+			  "Unexpected first captured header name");
+	zassert_mem_equal(hdrs[0].value, "h3-test-agent/1.0",
+			  strlen("h3-test-agent/1.0"),
+			  "Unexpected first captured header value");
+	zassert_mem_equal(hdrs[1].name, "Test-Header", strlen("Test-Header"),
+			  "Unexpected second captured header name");
+	zassert_mem_equal(hdrs[1].value, "capture-me", strlen("capture-me"),
+			  "Unexpected second captured header value");
+
+	ret = zsock_close(stream_fd);
+	zassert_ok(ret, "Failed to close header capture stream (%d)", errno);
+	untrack_stream_fd(stream_fd);
+}
+
+ZTEST(server_h3_tests, test_h3_post_captures_request_headers_on_first_data_callback)
+{
+	static const uint8_t payload[] = "body";
+	uint8_t headers[128];
+	uint8_t data_frame[32];
+	size_t headers_len;
+	size_t data_len;
+	struct http_header *hdrs = request_headers_clone.headers;
+	int stream_fd;
+	int ret;
+
+	start_h3_session(false);
+
+	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	headers_len = build_header_capture_headers_frame(headers, sizeof(headers),
+							 HTTP_POST,
+							 "/header_capture",
+							 "h3-post-agent/1.0",
+							 "post-capture");
+	send_all(stream_fd, headers, headers_len);
+
+	data_len = build_data_frame(data_frame, payload, sizeof(payload) - 1);
+	send_all(stream_fd, data_frame, data_len);
+	shutdown_stream_send(stream_fd);
+	expect_headers_only_response(stream_fd);
+
+	zassert_equal(request_headers_clone.count, 2,
+		      "Unexpected captured header count");
+	zassert_equal(request_headers_clone.status, HTTP_HEADER_STATUS_OK,
+		      "Unexpected captured header status");
+	zassert_mem_equal(hdrs[0].name, "User-Agent", strlen("User-Agent"),
+			  "Unexpected first captured header name");
+	zassert_mem_equal(hdrs[0].value, "h3-post-agent/1.0",
+			  strlen("h3-post-agent/1.0"),
+			  "Unexpected first captured header value");
+	zassert_mem_equal(hdrs[1].name, "Test-Header", strlen("Test-Header"),
+			  "Unexpected second captured header name");
+	zassert_mem_equal(hdrs[1].value, "post-capture", strlen("post-capture"),
+			  "Unexpected second captured header value");
+
+	ret = zsock_close(stream_fd);
+	zassert_ok(ret, "Failed to close POST header capture stream (%d)", errno);
+	untrack_stream_fd(stream_fd);
+}
+
+ZTEST(server_h3_function_tests, test_qpack_encode_int)
+{
+	uint8_t buf[4];
+	static const uint8_t expected_boundary[] = { 0x3f, 0x00 };
+	static const uint8_t expected_multibyte[] = { 0x3f, 0x9a, 0x0a };
+	int ret;
+
+	ret = qpack_encode_int(buf, sizeof(buf), 7, 0x00U, 10);
+	zassert_equal(ret, 1, "Unexpected single-byte encoding length");
+	zassert_equal(buf[0], 10, "Unexpected single-byte encoding");
+
+	ret = qpack_encode_int(buf, sizeof(buf), 5, 0x20U, 31);
+	zassert_equal(ret, sizeof(expected_boundary),
+		      "Unexpected boundary encoding length");
+	zassert_mem_equal(buf, expected_boundary, sizeof(expected_boundary),
+			  "Unexpected boundary encoding");
+
+	ret = qpack_encode_int(buf, sizeof(buf), 5, 0x20U, 1337);
+	zassert_equal(ret, sizeof(expected_multibyte),
+		      "Unexpected multibyte encoding length");
+	zassert_mem_equal(buf, expected_multibyte, sizeof(expected_multibyte),
+			  "Unexpected multibyte encoding");
+
+	ret = qpack_encode_int(buf, 2, 5, 0x20U, 1337);
+	zassert_equal(ret, -ENOSPC, "Expected ENOSPC for short buffer");
+
+	ret = qpack_encode_int(buf, 0, 5, 0x20U, 1);
+	zassert_equal(ret, -ENOSPC, "Expected ENOSPC for empty buffer");
+}
+
 ZTEST(server_h3_tests, test_http1_alt_svc_is_service_scoped)
 {
 	expect_http1_alt_svc_response(SERVER_PORT, true, SERVER_PORT,
@@ -1044,5 +1303,6 @@ ZTEST(server_h3_tests, test_http1_alt_svc_is_service_scoped)
 	expect_http1_alt_svc_response(ALT_SVC_DISABLED_PORT, false, 0U, 0U);
 }
 
+ZTEST_SUITE(server_h3_function_tests, NULL, NULL, NULL, NULL, NULL);
 ZTEST_SUITE(server_h3_tests, NULL, http_server_h3_setup,
 	    http_server_h3_before, http_server_h3_after, http_server_h3_teardown);

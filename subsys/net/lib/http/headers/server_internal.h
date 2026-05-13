@@ -126,6 +126,9 @@ bool http_response_is_provided(struct http_response_ctx *rsp);
 /* TODO Could be static, but currently used in tests. */
 int parse_http_frame_header(struct http_client_ctx *client, const uint8_t *buffer, size_t buflen);
 const char *get_frame_type_name(enum http2_frame_type type);
+#if defined(CONFIG_ZTEST)
+int qpack_encode_int(uint8_t *buf, size_t buflen, int prefix_n, uint8_t prefix, uint64_t value);
+#endif
 
 void populate_request_ctx(struct http_request_ctx *req_ctx, uint8_t *data, size_t len,
 			  struct http_header_capture_ctx *header_ctx);
