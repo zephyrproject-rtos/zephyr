@@ -1,6 +1,5 @@
 name: Feature Request
-description: Suggest a new feature or enhancement
-labels: ["Feature Request"]
+description: Suggest a new idea, or new functionality
 type: Feature
 assignees: []
 body:
