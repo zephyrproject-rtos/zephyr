@@ -41,6 +41,9 @@
 /** get the clock's enabled status based on given attributes */
 #define SCMI_CLK_ENABLED(attributes) ((attributes) & BIT(0))
 
+/** check if a clock has restrictions based on given attributes */
+#define SCMI_CLK_HAS_RESTRICTIONS(attributes) ((attributes) & BIT(1))
+
 /** check if clock allows gating/ungating based on its permissions */
 #define SCMI_CLK_STATE_CONTROL_ALLOWED(permissions) ((permissions) & BIT(31))
 
