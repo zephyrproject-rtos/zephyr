@@ -1,0 +1,48 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO-based multiplexer.
+
+  A set of GPIO lines drive a MUX select bus. The state value is encoded
+  on the GPIOs as a binary pattern: bit N of state goes to mux-gpios[N].
+
+  Single-channel by design: the controller has no addressing, so
+  #mux-control-cells is 0 and #mux-state-cells is 1 (state value only).
+
+  Example:
+
+    mux0: mux-controller {
+        compatible = "gpio-mux";
+        #mux-control-cells = <0>;
+        #mux-state-cells = <1>;
+        mux-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>,
+                    <&gpio0 6 GPIO_ACTIVE_HIGH>;
+    };
+
+    consumer {
+        mux-controls = <&mux0>;          /* runtime state */
+        mux-states   = <&mux0 2>;        /* static default state = 2 */
+    };
+
+compatible: "gpio-mux"
+
+include: [base.yaml, mux-controller.yaml]
+
+properties:
+  mux-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO lines driving the MUX select bus, in LSB-first order. Bit 0 of
+      the state value is written to mux-gpios[0], bit 1 to mux-gpios[1],
+      and so on.
+
+  "#mux-control-cells":
+    const: 0
+
+  "#mux-state-cells":
+    const: 1
+
+mux-state-cells:
+  - state

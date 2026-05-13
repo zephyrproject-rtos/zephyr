@@ -34,4 +34,6 @@ source "subsys/logging/Kconfig.template.log_config"
 
 comment "MUX Drivers"
 
+rsource "Kconfig.gpio"
+
 endif # MUX
