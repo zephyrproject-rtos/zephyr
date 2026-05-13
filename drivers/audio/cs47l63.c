@@ -462,8 +462,7 @@ static int cs47l63_init(const struct device *dev)
 		.spi = SPI_DT_SPEC_INST_GET(                                       \
 			inst,                                                      \
 			SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |                    \
-			SPI_WORD_SET(8) | SPI_LINES_SINGLE,                       \
-			0),                                                        \
+			SPI_WORD_SET(8) | SPI_LINES_SINGLE),                      \
 		.irq_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, irq_gpios, {0}),       \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),   \
 	};                                                                         \
