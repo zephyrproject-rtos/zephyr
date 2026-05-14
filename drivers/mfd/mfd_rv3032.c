@@ -480,14 +480,9 @@ int mfd_rv3032_eeprom_write_one(const struct device *dev, uint8_t addr, uint8_t 
 	int err;
 	uint8_t eef;
 
-	uint8_t buf[2] = {addr, val};
+	uint8_t buf[3] = {addr, val, RV3032_EEPROM_CMD_WRITE};
 
 	err = mfd_rv3032_write_regs(dev, RV3032_REG_EEPROM_ADDRESS, buf, sizeof(buf));
-	if (err) {
-		goto exit_eerd;
-	}
-
-	err = mfd_rv3032_eeprom_command(dev, RV3032_EEPROM_CMD_WRITE);
 	if (err) {
 		goto exit_eerd;
 	}
