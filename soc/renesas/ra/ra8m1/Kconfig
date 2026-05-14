@@ -17,6 +17,7 @@ config SOC_SERIES_RA8M1
 	select HAS_PM
 	select PM_STATE_SET_IRQ_UNLOCKED
 	select SOC_RA_DYNAMIC_INTERRUPT_NUMBER
+	select HAS_POWEROFF
 	help
 	  Enable support for Renesas RA8M1 MCU series
 
