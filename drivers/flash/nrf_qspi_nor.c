@@ -828,19 +828,22 @@ static inline int read_non_aligned(const struct device *dev,
 
 	/* read prefix */
 	if (flash_prefix != 0) {
-		res = nrfx_qspi_read(buf, WORD_SIZE, addr -
-				     (WORD_SIZE - flash_prefix));
+		off_t offset = addr % WORD_SIZE;
+
+		res = nrfx_qspi_read(buf, WORD_SIZE, addr - offset);
 		qspi_wait_for_completion(dev, res);
 		if (res != 0) {
 			return res;
 		}
-		memcpy(dptr, buf + WORD_SIZE - flash_prefix, flash_prefix);
+		memcpy(dptr, buf + offset, flash_prefix);
 	}
 
 	/* read suffix */
 	if (flash_suffix != 0) {
-		res = nrfx_qspi_read(buf, WORD_SIZE * 2,
-				     addr + flash_prefix + flash_middle);
+		size_t suffix_size = (flash_suffix <= WORD_SIZE) ? WORD_SIZE : (WORD_SIZE * 2);
+
+		res = nrfx_qspi_read(buf, suffix_size, addr + flash_prefix + flash_middle);
+
 		qspi_wait_for_completion(dev, res);
 		if (res != 0) {
 			return res;
