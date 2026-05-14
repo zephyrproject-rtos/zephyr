@@ -74,6 +74,27 @@ static struct k_spinlock xtensa_mpu_lock;
  */
 
 /**
+ * Find the memory type of a region according to xtensa_mpu_mem_type_ranges[].
+ *
+ * @param[in] start Start address of the region.
+ * @param[in] end End address of the region.
+ */
+static uint32_t find_memory_type(const uintptr_t start, const uintptr_t end)
+{
+	for (int i = 0; i < xtensa_mpu_mem_type_ranges_num; i++) {
+		const struct xtensa_mpu_mem_type_region *region = &xtensa_mpu_mem_type_ranges[i];
+
+		if (IN_RANGE(start, region->start, region->end) &&
+		    IN_RANGE(end, region->start, region->end)) {
+			return (uint32_t)region->memory_type;
+		}
+	}
+
+	__ASSERT(false, "Cannot find memory type for region 0x%lx - 0x%lx", start, end);
+	return CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE;
+}
+
+/**
  * Return the pointer to the entry encompassing @a addr out of an array of MPU entries.
  *
  * Returning the entry where @a addr is greater or equal to the entry's start address,
@@ -338,7 +359,6 @@ static uint8_t consolidate_entries(struct xtensa_mpu_entry *entries,
  * @param[in] start_addr Start address of the region.
  * @param[in] end_addr End address of the region.
  * @param[in] access_rights Access rights of this region.
- * @param[in] memory_type Memory type of this region.
  * @param[out] first_idx Return index of first enabled entry if not NULL.
  *
  * @retval 0 Successful in adding the region.
@@ -346,12 +366,12 @@ static uint8_t consolidate_entries(struct xtensa_mpu_entry *entries,
  */
 static int mpu_map_region_add(struct xtensa_mpu_map *map,
 			      uintptr_t start_addr, uintptr_t end_addr,
-			      uint32_t access_rights, uint32_t memory_type,
-			      uint8_t *first_idx)
+			      uint32_t access_rights, uint8_t *first_idx)
 {
 	int ret;
 	bool exact_s, exact_e;
 	uint8_t idx_s, idx_e, first_enabled_idx;
+	uint32_t memory_type;
 	struct xtensa_mpu_entry *entry_slot_s, *entry_slot_e, prev_entry;
 
 	struct xtensa_mpu_entry *entries = map->entries;
@@ -360,6 +380,8 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 		ret = -EINVAL;
 		goto out;
 	}
+
+	memory_type = find_memory_type(start_addr, end_addr);
 
 	first_enabled_idx = find_first_enabled_entry(entries);
 	if (first_enabled_idx >= XTENSA_MPU_NUM_ENTRIES) {
@@ -640,8 +662,7 @@ void xtensa_mpu_init(void)
 
 		int ret = mpu_map_region_add(&xtensa_mpu_map_fg_kernel,
 					     range->start, range->end,
-					     range->access_rights, range->memory_type,
-					     &first_enabled_idx);
+					     range->access_rights, &first_enabled_idx);
 
 		ARG_UNUSED(ret);
 		__ASSERT(ret == 0, "Unable to add region [0x%08x, 0x%08x): %d",
@@ -755,10 +776,7 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 	 * be updated with the default attributes. Or new entries
 	 * will be added to carve a hole in existing regions.
 	 */
-	ret = mpu_map_region_add(map, partition->start, end_addr,
-				 perm,
-				 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
-				 NULL);
+	ret = mpu_map_region_add(map, partition->start, end_addr, perm, NULL);
 
 	/*
 	 * Need to update hardware MPU regions if we are removing
@@ -788,9 +806,7 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 	}
 
 	ret = mpu_map_region_add(map, partition->start, end_addr,
-				 (uint8_t)partition->attr,
-				 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
-				 NULL);
+				 (uint8_t)partition->attr, NULL);
 
 	/*
 	 * Need to update hardware MPU regions if we are removing
@@ -843,7 +859,6 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 		ret = mpu_map_region_add(&domain->arch.mpu_map,
 					 thread->stack_info.start, stack_end_addr,
 					 XTENSA_MPU_ACCESS_P_RW_U_RW,
-					 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
 					 NULL);
 
 		/* Probably this fails due to no more available slots in MPU map. */
@@ -866,7 +881,6 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 		ret = mpu_map_region_add(old_map,
 					 thread->stack_info.start, stack_end_addr,
 					 XTENSA_MPU_ACCESS_P_RW_U_NA,
-					 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
 					 NULL);
 	}
 
@@ -916,7 +930,6 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 	ret = mpu_map_region_add(&domain->arch.mpu_map,
 				 thread->stack_info.start, stack_end_addr,
 				 XTENSA_MPU_ACCESS_P_RW_U_NA,
-				 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
 				 NULL);
 
 	xtensa_mpu_map_write(thread);
@@ -1111,7 +1124,6 @@ void xtensa_user_stack_perms(struct k_thread *thread)
 	ret = mpu_map_region_add(thread->arch.mpu_map,
 				 thread->stack_info.start, stack_end_addr,
 				 XTENSA_MPU_ACCESS_P_RW_U_RW,
-				 CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
 				 NULL);
 
 	xtensa_mpu_map_write(thread);

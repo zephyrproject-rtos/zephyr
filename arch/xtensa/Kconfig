@@ -283,10 +283,10 @@ if XTENSA_MPU
 
 config XTENSA_MPU_DEFAULT_MEM_TYPE
 	hex "Default Memory Type"
-	default 0x18
+	default 0x6
 	help
-	  Default memory type for memory regions: non-cacheable memory,
-	  non-shareable, non-bufferable and interruptible.
+	  Default memory type for memory regions: device, shareable, not interruptible,
+	  and not cached.
 
 	  If userspace is enabled, it will be used to restore the memory type of
 	  the region being removed from a memory domain.

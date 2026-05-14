@@ -45,7 +45,6 @@ __weak const struct xtensa_mpu_range xtensa_mpu_ranges[] = {
 		 */
 		.end   = (uintptr_t)__text_region_start,
 		.access_rights = XTENSA_MPU_ACCESS_P_RX_U_RX,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
 	},
 	/*
 	 * Mark the zephyr execution regions (data, bss, noinit, etc.)
@@ -56,7 +55,6 @@ __weak const struct xtensa_mpu_range xtensa_mpu_ranges[] = {
 		.start = (uintptr_t)_image_ram_start,
 		.end   = (uintptr_t)_image_ram_end,
 		.access_rights = XTENSA_MPU_ACCESS_P_RW_U_NA,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
 	},
 #if K_HEAP_MEM_POOL_SIZE > 0
 	/* System heap memory */
@@ -64,7 +62,6 @@ __weak const struct xtensa_mpu_range xtensa_mpu_ranges[] = {
 		.start = (uintptr_t)_heap_start,
 		.end   = (uintptr_t)_heap_end,
 		.access_rights = XTENSA_MPU_ACCESS_P_RW_U_NA,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
 	},
 #endif
 	/* Mark text segment cacheable, read only and executable */
@@ -72,15 +69,27 @@ __weak const struct xtensa_mpu_range xtensa_mpu_ranges[] = {
 		.start = (uintptr_t)__text_region_start,
 		.end   = (uintptr_t)__text_region_end,
 		.access_rights = XTENSA_MPU_ACCESS_P_RX_U_RX,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
 	},
 	/* Mark rodata segment cacheable, read only and non-executable */
 	{
 		.start = (uintptr_t)__rodata_region_start,
 		.end   = (uintptr_t)__rodata_region_end,
 		.access_rights = XTENSA_MPU_ACCESS_P_RO_U_RO,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
 	},
 };
 
 __weak const unsigned int xtensa_mpu_ranges_num = ARRAY_SIZE(xtensa_mpu_ranges);
+
+/*
+ * By default whole memory has the same type.
+ * Override this in SoC or board layer if needed.
+ */
+__weak const struct xtensa_mpu_mem_type_region xtensa_mpu_mem_type_ranges[] = {
+	{
+		.start = 0x00000000,
+		.end = 0xFFFFFFFF,
+		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
+	},
+};
+
+__weak const unsigned int xtensa_mpu_mem_type_ranges_num = ARRAY_SIZE(xtensa_mpu_mem_type_ranges);
