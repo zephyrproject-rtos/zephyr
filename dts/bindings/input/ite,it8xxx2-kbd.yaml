@@ -25,13 +25,11 @@ properties:
 
   kso16-gpios:
     type: phandle-array
-    required: true
     description: |
       The KSO16 pin for the selected port.
 
   kso17-gpios:
     type: phandle-array
-    required: true
     description: |
       The KSO17 pin for the selected port.
 
