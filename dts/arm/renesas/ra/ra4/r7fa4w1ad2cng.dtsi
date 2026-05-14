@@ -17,24 +17,38 @@
 		};
 
 		flash-controller@407e0000 {
-			flash-hardware-version = <3>;
-			#erase-block-cells = <2>;
-
-			flash0: flash@0 {
-				compatible = "renesas,ra-nv-code-flash";
-				reg = <0x0 DT_SIZE_K(512)>;
-				write-block-size = <8>;
-				erase-block-size = <2048>;
-				erase-blocks = <&flash 256 2048>;
+			code_flash_ctrl: code-flash-ctrl {
+				compatible = "renesas,ra-flash-region-ctrl";
 				programming-enable;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				code_flash: code-flash@0 {
+					compatible = "soc-nv-flash";
+					reg = <0x0 DT_SIZE_K(512)>;
+					ranges = <0x0 0x0 DT_SIZE_K(512)>;
+					write-block-size = <8>;
+					erase-block-size = <2048>;
+					#address-cells = <1>;
+					#size-cells = <1>;
+				};
 			};
 
-			flash1: flash@40100000 {
-				compatible = "renesas,ra-nv-data-flash";
-				reg = <0x40100000 DT_SIZE_K(8)>;
-				write-block-size = <1>;
-				erase-block-size = <1024>;
+			data_flash_ctrl: data-flash-ctrl {
+				compatible = "renesas,ra-flash-region-ctrl";
 				programming-enable;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				data_flash: data-flash@40100000 {
+					compatible = "soc-nv-flash";
+					reg = <0x40100000 DT_SIZE_K(8)>;
+					ranges = <0x0 0x40100000 DT_SIZE_K(8)>;
+					write-block-size = <1>;
+					erase-block-size = <1024>;
+					#address-cells = <1>;
+					#size-cells = <1>;
+				};
 			};
 		};
 
