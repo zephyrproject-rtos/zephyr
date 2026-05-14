@@ -5,7 +5,7 @@ menuconfig UART_VIRTIO_CONSOLE
 	bool "VIRTIO console paravirtualization device driver"
 	default y
 	depends on VIRTIO && DT_HAS_VIRTIO_CONSOLE_ENABLED && \
-		!(X86_VERY_EARLY_CONSOLE || EARLY_CONSOLE)
+		!(X86_VERY_EARLY_CONSOLE || EARLY_CONSOLE || BOOT_BANNER)
 
 if UART_VIRTIO_CONSOLE
 

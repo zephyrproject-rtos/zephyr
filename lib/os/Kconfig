@@ -147,8 +147,9 @@ config BOOT_BANNER
 	bool "Boot banner"
 	default y
 	select PRINTK
+	select EARLY_CONSOLE
 	help
-	  This option outputs a banner to the console device at the end of boot.
+	  This option outputs a banner to the console device during boot up.
 
 config BOOT_BANNER_STRING
 	string "Boot banner string"
