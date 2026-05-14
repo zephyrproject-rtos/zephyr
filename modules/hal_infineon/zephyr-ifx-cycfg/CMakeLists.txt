@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-if(CONFIG_BUILD_WITH_TFM)
+if(CONFIG_BUILD_WITH_TFM OR CONFIG_PSOC_EDGE_M55_SRF_SUPPORT)
   set(zephyr_ifx_cycfg_dir ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/infineon/pse84/epc2/board/shared/design/default/GeneratedSource)
 
   zephyr_include_directories(${zephyr_ifx_cycfg_dir})

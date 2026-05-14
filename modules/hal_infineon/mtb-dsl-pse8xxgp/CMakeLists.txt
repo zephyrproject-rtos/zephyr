@@ -112,19 +112,82 @@ zephyr_library_sources(${pdl_drv_dir}/source/cy_trigmux.c)
 zephyr_include_directories(${hal_dir}/include)
 zephyr_library_sources(${hal_dir}/source/mtb_hal_clock.c)
 
-if(CONFIG_BUILD_WITH_TFM)
-  zephyr_library_sources(${hal_dir}/source/mtb_hal_system.c)
-
-  zephyr_library_sources(${pdl_drv_dir}/source/cy_pdl_srf.c)
-  zephyr_library_sources(${pdl_drv_dir}/source/cy_pdl_srf_common.c)
+if(CONFIG_BUILD_WITH_TFM OR CONFIG_PSOC_EDGE_M55_SRF_SUPPORT)
 
   set(tfm_ifx_dir ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/infineon/common)
 
-  zephyr_include_directories(${tfm_ifx_dir}/device/include)
-  zephyr_include_directories(${tfm_ifx_dir}/interface/include)
-  zephyr_library_sources(${tfm_ifx_dir}/interface/src/ifx_mtb_srf.c)
+  # Common SRF / TF-M interface sources for both CM33 (S/NS) and CM55 NS
+  zephyr_include_directories(
+    ${tfm_ifx_dir}/shared
+    ${tfm_ifx_dir}/device/include
+    ${tfm_ifx_dir}/interface/include
+    ${tfm_ifx_dir}/spe/services/ifx_ext_sp
+    ${tfm_ifx_dir}/spe/svc
+  )
+  zephyr_library_sources(
+    ${pdl_drv_dir}/source/cy_pdl_srf.c
+    ${pdl_drv_dir}/source/cy_pdl_srf_common.c
+    ${hal_dir}/source/mtb_hal_system.c
+    ${tfm_ifx_dir}/interface/src/ifx_mtb_srf.c
+    ${tfm_ifx_dir}/spe/services/ifx_ext_sp/ifx_ext_sp_api.c
+  )
 
-  zephyr_include_directories(${tfm_ifx_dir}/spe/services/ifx_ext_sp)
-  zephyr_include_directories(${tfm_ifx_dir}/spe/svc)
-  zephyr_library_sources(${tfm_ifx_dir}/spe/services/ifx_ext_sp/ifx_ext_sp_api.c)
+  # CM33 with multicore (mailbox) enabled
+  if(CONFIG_BUILD_WITH_TFM AND CONFIG_PSOC_EDGE_M55_SRF_SUPPORT)
+    zephyr_library_sources(
+      ${hal_dir}/source/mtb_hal_syspm.c
+      ${tfm_ifx_dir}/utils/ifx_regions.c
+      ${tfm_ifx_dir}/interface/src/ifx_mtb_srf_relay.c
+      ${tfm_ifx_dir}/spe/services/mailbox/platform_hal_multi_core_cm55.c
+    )
+    zephyr_include_directories(
+      ${tfm_ifx_dir}/shared/mailbox
+      ${tfm_ifx_dir}/utils
+      ${tfm_ifx_dir}/interface/include/ifx_mtb_mailbox
+      ${tfm_ifx_dir}/../pse84/shared
+      ${tfm_ifx_dir}/../pse84/board/shared
+      ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/include
+    )
+    # Additional defines for mailbox support
+    zephyr_compile_definitions(
+      IFX_MTB_MAILBOX=1                    # Compile the mailbox code in TF-M
+      IFX_NS_INTERFACE_TZ=1                # Compile the non-secure TZ interface code in TF-M
+    )
+  endif()
+
+  # CM55 non-secure side
+  if(CONFIG_CPU_CORTEX_M55 AND CONFIG_PSOC_EDGE_M55_SRF_SUPPORT)
+    zephyr_library_sources(
+      ${hal_dir}/source/mtb_hal_syspm.c
+      ${tfm_ifx_dir}/interface/src/ifx_mtb_mailbox/ifx_mtb_mailbox_psa_ns_api.c
+      ${tfm_ifx_dir}/interface/src/ifx_mtb_mailbox/ifx_mtb_mailbox.c
+    )
+    zephyr_include_directories(
+      ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/interface/include
+      ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/secure_fw/include
+      ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/secure_fw/spm/include
+      ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/config
+      ${tfm_ifx_dir}/interface/include/ifx_mtb_mailbox
+    )
+    # Paired-build setup: consume generated PSA manifest headers from the
+    # CM33-NS TF-M build. Override at configure time, e.g.:
+    #   west build ... -- -DPSE84_CM33_BUILD_DIR=/abs/path/to/cm33_ns/build/tfm
+    set(PSE84_CM33_BUILD_DIR "${ZEPHYR_BASE}/build"
+        CACHE PATH
+        "Path to the CM33-NS build output directory consumed by the CM55 paired build")
+
+    if(NOT EXISTS "${PSE84_CM33_BUILD_DIR}/tfm/generated/interface/include")
+      message(FATAL_ERROR
+        "PSE84_CM33_BUILD_DIR='${PSE84_CM33_BUILD_DIR}' does not contain "
+        "/tfm/generated/interface/include. The CM55 build needs the PSA manifest headers "
+        "produced by a prior CM33-NS TF-M build. Override with "
+        "-DPSE84_CM33_BUILD_DIR=<path>.")
+    endif()
+
+    zephyr_include_directories(
+      ${PSE84_CM33_BUILD_DIR}/tfm/generated/interface/include
+      ${PSE84_CM33_BUILD_DIR}/tfm/api_ns/interface/include
+    )
+  endif()
+
 endif()
