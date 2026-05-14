@@ -1,0 +1,9 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_NXP_EMIOS
+	bool "NXP PWM-eMIOS driver"
+	default y
+	depends on DT_HAS_NXP_EMIOS_PWM_ENABLED
+	help
+	  Enable support for the NXP PWM-eMIOS.
