@@ -47,7 +47,9 @@ struct max3421e_data {
 	uint8_t mode;
 	uint8_t hxfr;
 	uint8_t hrsl;
+	uint8_t retries;
 	uint8_t skip_frames;
+	bool retry;
 };
 
 struct max3421e_config {
@@ -56,6 +58,16 @@ struct max3421e_config {
 	struct gpio_dt_spec dt_rst;
 	void (*make_thread)(const struct device *dev);
 };
+
+static bool max3421e_should_retry(const struct device *dev)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+	bool retry = priv->retry;
+
+	priv->retry = false;
+
+	return retry;
+}
 
 static int max3421e_read_hirq(const struct device *dev,
 			      const uint8_t reg,
@@ -313,11 +325,12 @@ static int max3421e_xfer_control(const struct device *dev,
 	struct net_buf *buf = xfer->buf;
 	int ret;
 
-	/* Just restart if device NAKed packet */
-	if (HRSLT_IS_NAK(hrsl)) {
+	if (max3421e_should_retry(dev)) {
+		if (HRSLT_IS_TIMEOUT(hrsl)) {
+			LOG_WRN("Control transfer retry because of timeout");
+		}
 		return max3421e_hxfr_start(dev, priv->hxfr);
 	}
-
 
 	if (xfer->stage == UHC_CONTROL_STAGE_SETUP) {
 		LOG_DBG("Handle SETUP stage");
@@ -361,8 +374,10 @@ static int max3421e_xfer_bulk(const struct device *dev,
 	struct max3421e_data *priv = uhc_get_private(dev);
 	struct net_buf *buf = xfer->buf;
 
-	/* Just restart if device NAKed packet */
-	if (HRSLT_IS_NAK(hrsl)) {
+	if (max3421e_should_retry(dev)) {
+		if (HRSLT_IS_TIMEOUT(hrsl)) {
+			LOG_WRN("Bulk transfer retry because of timeout");
+		}
 		return max3421e_hxfr_start(dev, priv->hxfr);
 	}
 
@@ -412,6 +427,9 @@ static int max3421e_schedule_xfer(const struct device *dev)
 static void max3421e_xfer_drop_active(const struct device *dev, int err)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
+
+	priv->retries = 0;
+	priv->retry = false;
 
 	if (priv->last_xfer) {
 		uhc_xfer_return(dev, priv->last_xfer, err);
@@ -547,8 +565,21 @@ static int max3421e_handle_hxfrdn(const struct device *dev)
 		return -ENODATA;
 	}
 
+	if (!HRSLT_IS_TIMEOUT(hrsl)) {
+		priv->retries = 0;
+		priv->retry = false;
+	}
+
 	switch (MAX3421E_HRSLT(hrsl)) {
 	case MAX3421E_HR_NAK:
+		priv->retry = true;
+		break;
+	case MAX3421E_HR_TIMEOUT:
+		priv->retry = priv->retries++ < CONFIG_MAX3421E_MAX_TIMEOUT_RETRIES;
+		if (!priv->retry) {
+			max3421e_xfer_drop_active(dev, -ETIMEDOUT);
+		}
+		LOG_WRN("MAX3421E_HR_TIMEOUT");
 		break;
 	case MAX3421E_HR_STALL:
 		max3421e_xfer_drop_active(dev, -EPIPE);
