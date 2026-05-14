@@ -72,6 +72,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NRF_MRAMC soc_flash_nrf_mramc.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NRF_RRAM soc_flash_nrf_rram.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NUMAKER soc_flash_numaker.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NUMAKER_RMC soc_flash_numaker_rmc.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_RENESAS_RA_HP soc_flash_renesas_ra_hp.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_RENESAS_RA_LP soc_flash_renesas_ra_lp.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_RENESAS_RA_MRAM soc_flash_renesas_ra_mram.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_RENESAS_RX soc_flash_renesas_rx.c)
@@ -214,11 +215,6 @@ if(CONFIG_SOC_FLASH_MCUX_C40 AND CONFIG_CODE_DATA_RELOCATION)
     # Relocate the HAL driver to RAM
     zephyr_code_relocate(FILES ${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/flash_c40/fsl_c40_flash.c LOCATION RAM)
   endif()
-endif()
-
-if(CONFIG_SOC_FLASH_RENESAS_RA_HP)
-  zephyr_library_sources(soc_flash_renesas_ra_hp.c)
-  zephyr_library_sources_ifdef(CONFIG_FLASH_EX_OP_ENABLED soc_flash_renesas_ra_hp_ex_op.c)
 endif()
 
 # Do not use prologue and epilogue code that uses library function calls

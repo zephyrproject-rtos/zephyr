@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA flash region controller
+
+include: base.yaml
+
+compatible: "renesas,ra-flash-region-ctrl"
+
+properties:
+  programming-enable:
+    type: boolean
+    description: |
+      Enable code flash programming configuration
+
+  erase-value-undefined:
+    type: boolean
+    description: |
+      Areas of flash that are in an erased state will read back undefined values.
