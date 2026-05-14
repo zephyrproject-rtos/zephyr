@@ -1296,9 +1296,9 @@ Documentation:
   status: maintained
   maintainers:
     - kartben
-    - carlescufi
   collaborators:
     - nashif
+    - carlescufi
   files:
     - CODE_OF_CONDUCT.md
     - CONTRIBUTING.rst
