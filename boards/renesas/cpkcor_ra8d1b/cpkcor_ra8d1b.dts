@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2025 Jisheng Zhang <jszhang@kernel.org>
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -19,13 +21,13 @@
 
 	chosen {
 		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
+		zephyr,flash = &code_flash;
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
 		zephyr,console = &uart3;
 		zephyr,shell-uart = &uart3;
 		zephyr,entropy = &trng;
-		zephyr,flash-controller = &flash;
+		zephyr,flash-controller = &code_flash_ctrl;
 		zephyr,crc = &crc;
 	};
 
@@ -143,13 +145,14 @@
 	status = "okay";
 };
 
-&flash1 {
+&data_flash {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		storage_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x0 DT_SIZE_K(12)>;
 		};
