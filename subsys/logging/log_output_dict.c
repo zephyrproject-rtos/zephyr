@@ -40,7 +40,7 @@ void log_dict_output_msg_process(const struct log_output *output,
 
 		key = k_spin_lock(&output->control_block->lock);
 		available = log_output_get_available(output);
-		if ((size_t)available < total_msg_len) {
+		if (available < 0 || (size_t)available < total_msg_len) {
 			k_spin_unlock(&output->control_block->lock, key);
 			return;
 		}
