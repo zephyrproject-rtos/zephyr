@@ -21,9 +21,9 @@
 unset(CMAKE_C_COMPILER_LAUNCHER)
 unset(CMAKE_DEPFILE_FLAGS_C)
 set(CMAKE_C_COMPILE_OBJECT
-    "${CMAKE_COMMAND} -E echo '<DEFINES>' > ${CMAKE_CURRENT_BINARY_DIR}/c_defs.txt"
-    "${CMAKE_COMMAND} -E echo '<INCLUDES>' > ${CMAKE_CURRENT_BINARY_DIR}/c_incs.txt"
-    "${CMAKE_COMMAND} -E echo '<FLAGS>' > ${CMAKE_CURRENT_BINARY_DIR}/c_flags.txt"
+    "'${CMAKE_COMMAND}' -E echo '<DEFINES>' > ${CMAKE_CURRENT_BINARY_DIR}/c_defs.txt"
+    "'${CMAKE_COMMAND}' -E echo '<INCLUDES>' > ${CMAKE_CURRENT_BINARY_DIR}/c_incs.txt"
+    "'${CMAKE_COMMAND}' -E echo '<FLAGS>' > ${CMAKE_CURRENT_BINARY_DIR}/c_flags.txt"
     "${CMAKE_C_COMPILE_OBJECT}")
 
 add_library(llext_edk_build_props ${ZEPHYR_BASE}/misc/empty_file.c)
