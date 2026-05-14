@@ -23,6 +23,12 @@ properties:
     description: |
       Offset of bitfield within register to set to ungate clock
 
+  input:
+    type: phandle
+    required: true
+    description: |
+      Clock node that is the input to this clock gate.
+
   "#clock-cells":
     const: 1
 

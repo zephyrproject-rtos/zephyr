@@ -134,7 +134,7 @@ const struct clock_management_standard_api nxp_syscon_rtcclk_api = {
 
 #define NXP_RTCCLK_DEFINE(inst)                                                \
 	const struct syscon_rtcclk_config nxp_syscon_rtcclk_##inst = {         \
-		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PARENT(inst))) \
+		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PHANDLE(inst, input))) \
 		.reg = (volatile uint32_t *)DT_INST_REG_ADDR(inst),            \
 		.mask_width = DT_INST_REG_SIZE(inst),                          \
 		.mask_offset = DT_INST_PROP(inst, offset),                     \
