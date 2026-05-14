@@ -28,9 +28,6 @@ BUILD_ASSERT((CONFIG_PRIVILEGED_STACK_SIZE > 0) &&
 	     (CONFIG_PRIVILEGED_STACK_SIZE % XCHAL_MPU_ALIGN) == 0);
 #endif
 
-extern char _heap_end[];
-extern char _heap_start[];
-
 /** MPU foreground map for kernel mode. */
 static struct xtensa_mpu_map xtensa_mpu_map_fg_kernel;
 
@@ -75,66 +72,6 @@ static struct k_spinlock xtensa_mpu_lock;
  *   corresponds to the minimum segment size (MINSEGMENTSIZE)
  *   definied in the processor configuration.
  */
-
-#ifndef CONFIG_XTENSA_MPU_ONLY_SOC_RANGES
-/**
- * Static definition of all code and data memory regions of the
- * current Zephyr image. This information must be available and
- * need to be processed upon MPU initialization.
- */
-static const struct xtensa_mpu_range mpu_zephyr_ranges[] = {
-	/* Region for vector handlers. */
-	{
-		.start = (uintptr_t)XCHAL_VECBASE_RESET_VADDR,
-		/*
-		 * There is nothing from the Xtensa overlay about how big
-		 * the vector handler region is. So we make an assumption
-		 * that vecbase and .text are contiguous.
-		 *
-		 * SoC can override as needed if this is not the case,
-		 * especially if the SoC reset/startup code relocates
-		 * vecbase.
-		 */
-		.end   = (uintptr_t)__text_region_start,
-		.access_rights = XTENSA_MPU_ACCESS_P_RX_U_RX,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
-	},
-	/*
-	 * Mark the zephyr execution regions (data, bss, noinit, etc.)
-	 * cacheable, read / write and non-executable
-	 */
-	{
-		/* This includes .data, .bss and various kobject sections. */
-		.start = (uintptr_t)_image_ram_start,
-		.end   = (uintptr_t)_image_ram_end,
-		.access_rights = XTENSA_MPU_ACCESS_P_RW_U_NA,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
-	},
-#if K_HEAP_MEM_POOL_SIZE > 0
-	/* System heap memory */
-	{
-		.start = (uintptr_t)_heap_start,
-		.end   = (uintptr_t)_heap_end,
-		.access_rights = XTENSA_MPU_ACCESS_P_RW_U_NA,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
-	},
-#endif
-	/* Mark text segment cacheable, read only and executable */
-	{
-		.start = (uintptr_t)__text_region_start,
-		.end   = (uintptr_t)__text_region_end,
-		.access_rights = XTENSA_MPU_ACCESS_P_RX_U_RX,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
-	},
-	/* Mark rodata segment cacheable, read only and non-executable */
-	{
-		.start = (uintptr_t)__rodata_region_start,
-		.end   = (uintptr_t)__rodata_region_end,
-		.access_rights = XTENSA_MPU_ACCESS_P_RO_U_RO,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
-	},
-};
-#endif /* !CONFIG_XTENSA_MPU_ONLY_SOC_RANGES */
 
 /**
  * Return the pointer to the entry encompassing @a addr out of an array of MPU entries.
@@ -695,12 +632,11 @@ void xtensa_mpu_init(void)
 		xtensa_mpu_map_fg_kernel.entries[entry] = ent;
 	}
 
-#ifndef CONFIG_XTENSA_MPU_ONLY_SOC_RANGES
 	/*
-	 * Add necessary MPU entries for the memory regions of base Zephyr image.
+	 * Add necessary MPU entries for the memory regions of Zephyr image.
 	 */
-	for (entry = 0; entry < ARRAY_SIZE(mpu_zephyr_ranges); entry++) {
-		const struct xtensa_mpu_range *range = &mpu_zephyr_ranges[entry];
+	for (entry = 0; entry < (unsigned int)xtensa_mpu_ranges_num; entry++) {
+		const struct xtensa_mpu_range *range = &xtensa_mpu_ranges[entry];
 
 		int ret = mpu_map_region_add(&xtensa_mpu_map_fg_kernel,
 					     range->start, range->end,
@@ -713,7 +649,6 @@ void xtensa_mpu_init(void)
 				   (unsigned int)range->end,
 				   ret);
 	}
-#endif /* !CONFIG_XTENSA_MPU_ONLY_SOC_RANGES */
 
 	/*
 	 * Now for the entries for memory regions needed by SoC.

@@ -444,3 +444,6 @@ Architectures
   It returns the current interrupt-enable state of the calling CPU without
   modifying it, complementing ``arch_irq_unlocked()`` which inspects a saved
   key.  Out-of-tree architecture ports must provide an implementation.
+
+* ``CONFIG_XTENSA_MPU_ONLY_SOC_RANGES`` is removed. For SoC or board to override the default
+  MPU region table, override :c:var:`xtensa_mpu_ranges` in the SoC or board layer instead.
