@@ -30,6 +30,12 @@ properties:
       Integer factor to subtract when calculating register value for
       a given divisor request
 
+  input:
+    type: phandle
+    required: true
+    description: |
+      Clock node that is the input to this clock gate.
+
   "#clock-cells":
     const: 1
 

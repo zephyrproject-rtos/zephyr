@@ -389,7 +389,7 @@ const struct clock_management_standard_api nxp_syscon_pll0_api = {
 
 #define NXP_LPC55SXX_PLL0_DEFINE(inst)                                         \
 	const struct lpc55sxx_pll0_data nxp_lpc55sxx_pll0_data_##inst = {      \
-		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PARENT(inst))) \
+		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PHANDLE(inst, input))) \
 		.regs = ((struct lpc55sxx_pll0_regs *)                         \
 			DT_INST_REG_ADDR(inst)),                               \
 	};                                                                     \
@@ -636,7 +636,7 @@ const struct clock_management_standard_api nxp_syscon_pll1_api = {
 
 #define NXP_LPC55SXX_PLL1_DEFINE(inst)                                         \
 	const struct lpc55sxx_pll1_data nxp_lpc55sxx_pll1_data_##inst = {      \
-		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PARENT(inst))) \
+		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PHANDLE(inst, input))) \
 		.regs = ((struct lpc55sxx_pll1_regs *)                         \
 			DT_INST_REG_ADDR(inst)),                               \
 	};                                                                     \
@@ -839,7 +839,7 @@ const struct clock_management_standard_api nxp_syscon_pdec_api = {
 
 #define NXP_LPC55SXX_PDEC_DEFINE(inst)                                         \
 	const struct lpc55sxx_pll_pdec_config lpc55sxx_pdec_cfg_##inst = {     \
-		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PARENT(inst))) \
+		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PHANDLE(inst, input))) \
 		.reg = (volatile uint32_t *)DT_INST_REG_ADDR(inst),            \
 	};                                                                     \
 	                                                                       \

@@ -86,7 +86,7 @@ const struct clock_management_standard_api nxp_syscon_div_api = {
 
 #define NXP_SYSCON_CLOCK_DEFINE(inst)                                          \
 	const struct syscon_clock_div_config nxp_syscon_div_##inst = {         \
-		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PARENT(inst))) \
+		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PHANDLE(inst, input))) \
 		.reg = (volatile uint32_t *)DT_INST_REG_ADDR(inst),            \
 		.mask_width = (uint8_t)DT_INST_REG_SIZE(inst),                 \
 	};                                                                     \

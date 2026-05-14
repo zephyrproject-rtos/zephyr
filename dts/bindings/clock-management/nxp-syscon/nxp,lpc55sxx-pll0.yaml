@@ -26,6 +26,12 @@ properties:
     required: true
     description: PLL0CTRL register address for this block
 
+  input:
+    type: phandle
+    required: true
+    description: |
+      Clock node that is the input to this clock gate.
+
   "#clock-cells":
     const: 8
 

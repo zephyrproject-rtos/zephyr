@@ -27,19 +27,6 @@
 		frequency = <12000000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		pluglitch12mhzclk: pluglitch12mhzclk@40000a18 {
-			compatible = "nxp,syscon-clock-gate";
-			#clock-cells = <1>;
-			/* SYSCON::CLOCK_CTRL[PLU_DEGLITCH_CLK_ENA] */
-			reg = <0x40000a18 0x1>;
-			offset = <0x9>;
-
-			plu_glitch_12mhz_clock: plu-glitch-12mhz-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	xtal32m: xtal32m@40000a18 {
@@ -54,27 +41,6 @@
 		frequency = <16000000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		clk_in_en: clk-in-en@40013020 {
-			compatible = "nxp,syscon-clock-gate";
-			#clock-cells = <1>;
-			/* ANACTRL::XO32M_CTRL[ENABLE_SYSTEM_CLK_OUT] */
-			reg = <0x40013020 0x1>;
-			offset = <0x18>;
-		};
-
-		clk_usb_en: clk-usb-en@40013020 {
-			compatible = "nxp,syscon-clock-gate";
-			#clock-cells = <1>;
-			/* ANACTRL::XO32M_CTRL[ENABLE_PLL_USB_OUT] */
-			reg = <0x40013020 0x1>;
-			offset = <0x17>;
-
-			usb1_phy_clock: usb1-phy-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	fro_1m: fro-1m@40000a18 {
@@ -87,44 +53,6 @@
 		frequency = <1000000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		wdtclkdiv: wdtclkdiv@4000038c {
-			compatible = "nxp,syscon-clock-div";
-			#clock-cells = <1>;
-			/* SYSCON::WDTCLKDIV[DIV] */
-			reg = <0x4000038c 0x6>;
-
-			wdt_clock: wdt-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
-
-		utickclk: utickclk@40000a18 {
-			compatible = "nxp,syscon-clock-gate";
-			#clock-cells = <1>;
-			/* SYSCON::CLOCK_CTRL[FRO1MHZ_UTICK_ENA] */
-			reg = <0x40000a18 0x1>;
-			offset = <0x2>;
-
-			utick_clock: utick-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
-
-		pluglitch1mhzclk: pluglitch1mhzclk@40000a18 {
-			compatible = "nxp,syscon-clock-gate";
-			#clock-cells = <1>;
-			/* SYSCON::CLOCK_CTRL[PLU_DEGLITCH_CLK_ENA] */
-			reg = <0x40000a18 0x1>;
-			offset = <0x9>;
-
-			plu_glitch_1mhz_clock: plu-glitch-1mhz-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	fro_hf: fro-hf@40013010 {
@@ -137,13 +65,6 @@
 		frequency = <96000000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		frohfdiv: frohfdiv@40000388 {
-			compatible = "nxp,syscon-clock-div";
-			#clock-cells = <1>;
-			/* SYSCON::FROHFDIV[DIV] */
-			reg = <0x40000388 0x8>;
-		};
 	};
 
 	fro_32k: fro-32k@400200b8 {
@@ -188,6 +109,71 @@
 		};
 	};
 
+	pluglitch12mhzclk: pluglitch12mhzclk@40000a18 {
+		compatible = "nxp,syscon-clock-gate";
+		#clock-cells = <1>;
+		/* SYSCON::CLOCK_CTRL[PLU_DEGLITCH_CLK_ENA] */
+		reg = <0x40000a18 0x1>;
+		offset = <0x9>;
+		input = <&fro_12m>;
+
+		plu_glitch_12mhz_clock: plu-glitch-12mhz-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	clk_in_en: clk-in-en@40013020 {
+		compatible = "nxp,syscon-clock-gate";
+		#clock-cells = <1>;
+		/* ANACTRL::XO32M_CTRL[ENABLE_SYSTEM_CLK_OUT] */
+		reg = <0x40013020 0x1>;
+		offset = <0x18>;
+		input = <&xtal32m>;
+	};
+
+	clk_usb_en: clk-usb-en@40013020 {
+		compatible = "nxp,syscon-clock-gate";
+		#clock-cells = <1>;
+		/* ANACTRL::XO32M_CTRL[ENABLE_PLL_USB_OUT] */
+		reg = <0x40013020 0x1>;
+		offset = <0x17>;
+		input = <&xtal32m>;
+
+		usb1_phy_clock: usb1-phy-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	utickclk: utickclk@40000a18 {
+		compatible = "nxp,syscon-clock-gate";
+		#clock-cells = <1>;
+		/* SYSCON::CLOCK_CTRL[FRO1MHZ_UTICK_ENA] */
+		reg = <0x40000a18 0x1>;
+		offset = <0x2>;
+		input = <&fro_1m>;
+
+		utick_clock: utick-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	pluglitch1mhzclk: pluglitch1mhzclk@40000a18 {
+		compatible = "nxp,syscon-clock-gate";
+		#clock-cells = <1>;
+		/* SYSCON::CLOCK_CTRL[PLU_DEGLITCH_CLK_ENA] */
+		reg = <0x40000a18 0x1>;
+		offset = <0x9>;
+		input = <&fro_1m>;
+
+		plu_glitch_1mhz_clock: plu-glitch-1mhz-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
 	/* Clock muxes */
 	mainclksela: mainclksela@40000280 {
 		compatible = "nxp,syscon-clock-mux";
@@ -206,73 +192,76 @@
 		reg = <0x40020098 0x1>;
 		offset = <0x0>;
 		input-sources = <&fro_32k &xtal32k>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		ostimer32khzclk: ostimer32khzclk@4002009c {
-			compatible = "nxp,syscon-clock-gate";
-			#clock-cells = <1>;
-			/* PMC::OSTIMER[CLOCKENABLE] */
-			reg = <0x4002009c 0x1>;
-			offset = <0x1>;
-
-			ostimer32khz_clock: ostimer32khz-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 
 		osc32khz_clock: osc32khz-clock {
 			compatible = "clock-output";
 			#clock-cells = <0>;
 		};
+	};
 
-		rtcclk1hzdiv: rtcclk1hzdiv@40020098 {
-			compatible = "nxp,syscon-rtcclk";
-			#clock-cells = <1>;
-			/* PMC::RTCOSC32K[CLK1HZDIV] */
-			reg = <0x40020098 0xb>;
-			offset = <0x10>;
-			add-factor = <31744>;
-			#address-cells = <1>;
-			#size-cells = <1>;
+	rtcclk1hzdiv: rtcclk1hzdiv@40020098 {
+		compatible = "nxp,syscon-rtcclk";
+		#clock-cells = <1>;
+		/* PMC::RTCOSC32K[CLK1HZDIV] */
+		reg = <0x40020098 0xb>;
+		offset = <0x10>;
+		add-factor = <31744>;
+		input = <&rtcosc32ksel>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
 
-			rtc_1hz_clk: rtc-1hz-clk@4002c000 {
-				compatible = "nxp,syscon-clock-gate";
-				#clock-cells = <1>;
-				/* RTC::CTRL[RTC_EN] */
-				reg = <0x4002c000 0x1>;
-				offset = <0x7>;
+	rtcclk1khzdiv: rtcclk1khzdiv@40020098 {
+		compatible = "nxp,syscon-rtcclk";
+		#clock-cells = <1>;
+		/* PMC::RTCOSC32K[CLK1KHZDIV] */
+		reg = <0x40020098 0x3>;
+		offset = <0x1>;
+		add-factor = <28>;
+		input = <&rtcosc32ksel>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
 
-				rtc1hz_clock: rtc1hz-clock {
-					compatible = "clock-output";
-					#clock-cells = <0>;
-				};
-			};
+	ostimer32khzclk: ostimer32khzclk@4002009c {
+		compatible = "nxp,syscon-clock-gate";
+		#clock-cells = <1>;
+		/* PMC::OSTIMER[CLOCKENABLE] */
+		reg = <0x4002009c 0x1>;
+		offset = <0x1>;
+		input = <&rtcosc32ksel>;
+
+		ostimer32khz_clock: ostimer32khz-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
 		};
+	};
 
-		rtcclk1khzdiv: rtcclk1khzdiv@40020098 {
-			compatible = "nxp,syscon-rtcclk";
-			#clock-cells = <1>;
-			/* PMC::RTCOSC32K[CLK1KHZDIV] */
-			reg = <0x40020098 0x3>;
-			offset = <0x1>;
-			add-factor = <28>;
-			#address-cells = <1>;
-			#size-cells = <1>;
+	rtc_1hz_clk: rtc-1hz-clk@4002c000 {
+		compatible = "nxp,syscon-clock-gate";
+		#clock-cells = <1>;
+		/* RTC::CTRL[RTC_EN] */
+		reg = <0x4002c000 0x1>;
+		offset = <0x7>;
+		input = <&rtcclk1hzdiv>;
 
-			rtc_1khz_clk: rtc-1khz-clk@4002c000 {
-				compatible = "nxp,syscon-clock-gate";
-				#clock-cells = <1>;
-				/* RTC::CTRL[RTC1KHZ_EN] */
-				reg = <0x4002c000 0x1>;
-				offset = <0x6>;
+		rtc1hz_clock: rtc1hz-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
 
-				rtc1khz_clock: rtc1khz-clock {
-					compatible = "clock-output";
-					#clock-cells = <0>;
-				};
-			};
+	rtc_1khz_clk: rtc-1khz-clk@4002c000 {
+		compatible = "nxp,syscon-clock-gate";
+		#clock-cells = <1>;
+		/* RTC::CTRL[RTC1KHZ_EN] */
+		reg = <0x4002c000 0x1>;
+		offset = <0x6>;
+		input = <&rtcclk1khzdiv>;
+
+		rtc1khz_clock: rtc1khz-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
 		};
 	};
 
@@ -286,21 +275,23 @@
 				 &no_clock>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+	};
 
-		pll0: pll0@40000580 {
-			compatible = "nxp,lpc55sxx-pll0";
-			reg = <0x40000580 0x20>;
-			#clock-cells = <8>;
-			#address-cells = <1>;
-			#size-cells = <1>;
+	pll0: pll0@40000580 {
+		compatible = "nxp,lpc55sxx-pll0";
+		reg = <0x40000580 0x20>;
+		#clock-cells = <8>;
+		input = <&pll0clksel>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
 
-			pll0_pdec: pll0-pdec@4000058c {
-				compatible = "nxp,lpc55sxx-pll-pdec";
-				#clock-cells = <1>;
-				/* SYSCON::PLL0PDEC[PDIV] */
-				reg = <0x4000058c 0x5>;
-			};
-		};
+	pll0_pdec: pll0-pdec@4000058c {
+		compatible = "nxp,lpc55sxx-pll-pdec";
+		#clock-cells = <1>;
+		/* SYSCON::PLL0PDEC[PDIV] */
+		reg = <0x4000058c 0x5>;
+		input = <&pll0>;
 	};
 
 	pll0_directo: pll0-directo@40000580 {
@@ -321,13 +312,6 @@
 		input-sources = <&pll0_directo &pll0clksel>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		pll0div: pll0div@400003c4 {
-			compatible = "nxp,syscon-clock-div";
-			#clock-cells = <1>;
-			/* SYSCON::PLL0CLKDIV[DIV] */
-			reg = <0x400003c4 0x8>;
-		};
 	};
 
 	pll1clksel: pll1clksel@40000294 {
@@ -340,21 +324,23 @@
 				 &no_clock>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+	};
 
-		pll1: pll1@40000560 {
-			compatible = "nxp,lpc55sxx-pll1";
-			reg = <0x40000560 0x20>;
-			#clock-cells = <5>;
-			#address-cells = <1>;
-			#size-cells = <1>;
+	pll1: pll1@40000560 {
+		compatible = "nxp,lpc55sxx-pll1";
+		reg = <0x40000560 0x20>;
+		#clock-cells = <5>;
+		input = <&pll1clksel>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
 
-			pll1_pdec: pll1-pdec@40000570 {
-				compatible = "nxp,lpc55sxx-pll-pdec";
-				#clock-cells = <1>;
-				/* SYSCON::PLL1PDEC[PDIV] */
-				reg = <0x40000570 0x5>;
-			};
-		};
+	pll1_pdec: pll1-pdec@40000570 {
+		compatible = "nxp,lpc55sxx-pll-pdec";
+		#clock-cells = <1>;
+		/* SYSCON::PLL1PDEC[PDIV] */
+		reg = <0x40000570 0x5>;
+		input = <&pll1>;
 	};
 
 	pll1_directo: pll1-directo@40000560 {
@@ -385,39 +371,6 @@
 		input-sources = <&mainclksela &pll0_bypass &pll1_bypass &rtcosc32ksel>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		traceclkdiv: traceclkdiv@40000308 {
-			compatible = "nxp,syscon-clock-div";
-			#clock-cells = <1>;
-			/* SYSCON::TRACECLKDIV[DIV] */
-			reg = <0x40000308 0x8>;
-		};
-
-		systickclkdiv0: systickclkdiv0@40000300 {
-			compatible = "nxp,syscon-clock-div";
-			#clock-cells = <1>;
-			/* SYSCON::SYSTICKCLKDIV0[DIV] */
-			reg = <0x40000300 0x8>;
-		};
-
-		systickclkdiv1: systickclkdiv1@40000304 {
-			compatible = "nxp,syscon-clock-div";
-			#clock-cells = <1>;
-			/* SYSCON::SYSTICKCLKDIV1[DIV] */
-			reg = <0x40000304 0x8>;
-		};
-
-		ahbclkdiv: ahbclkdiv@40000380 {
-			compatible = "nxp,syscon-clock-div";
-			#clock-cells = <1>;
-			/* SYSCON::AHBCLKDIV[DIV] */
-			reg = <0x40000380 0x8>;
-
-			system_clock: system-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	traceclksel: traceclksel@40000268 {
@@ -471,18 +424,6 @@
 		input-sources = <&mainclkselb &pll0_bypass &fro_hf &no_clock>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		adcclkdiv: adcclkdiv@40000394 {
-			compatible = "nxp,syscon-clock-div";
-			#clock-cells = <1>;
-			/* SYSCON::ADCCLKDIV[DIV] */
-			reg = <0x40000394 0x3>;
-
-			asyncadc_clock: asyncadc-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	usb0clksel: usb0clksel@400002a8 {
@@ -495,18 +436,6 @@
 				 &no_clock &pll1_bypass &no_clock>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		usb0clkdiv: usb0clkdiv@40000398 {
-			compatible = "nxp,syscon-clock-div";
-			#clock-cells = <1>;
-			/* SYSCON::USB0CLKDIV[DIV] */
-			reg = <0x40000398 0x8>;
-
-			usb0_clock: usb0-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	mclkclksel: mclkclksel@400002e0 {
@@ -518,18 +447,6 @@
 		input-sources = <&fro_hf &pll0_bypass &no_clock>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		mclkdiv: mclkdiv@400003ac {
-			compatible = "nxp,syscon-clock-div";
-			#clock-cells = <1>;
-			/* SYSCON::MCLKDIV[DIV] */
-			reg = <0x400003ac 0x8>;
-
-			mclk_clock: mclk-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	sctclksel: sctclksel@400002f0 {
@@ -542,18 +459,6 @@
 				 &no_clock &mclk_in &no_clock>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		sctclkdiv: sctclkdiv@400003b4 {
-			compatible = "nxp,syscon-clock-div";
-			#clock-cells = <1>;
-			/* SYSCON::SCTCLKDIV[DIV] */
-			reg = <0x400003b4 0x8>;
-
-			sct_clock: sct-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	clkoutsel: clkoutsel@40000288 {
@@ -566,18 +471,6 @@
 				 &fro_1m &pll1_bypass &rtcosc32ksel &no_clock>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		clkoutdiv: clkoutdiv@40000384 {
-			compatible = "nxp,syscon-clock-div";
-			#clock-cells = <1>;
-			/* SYSCON::CLKOUTDIV[DIV] */
-			reg = <0x40000384 0x8>;
-
-			clkout_clock: clkout-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	sdioclksel: sdioclksel@400002f8 {
@@ -590,18 +483,6 @@
 				 &no_clock &pll1_bypass &no_clock>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		sdioclkdiv: sdioclkdiv@400003bc {
-			compatible = "nxp,syscon-clock-div";
-			#clock-cells = <1>;
-			/* SYSCON::SDIOCLKDIV[DIV] */
-			reg = <0x400003bc 0x8>;
-
-			sdio_clock: sdio-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	ctimerclksel0: ctimerclksel0@4000026c {
@@ -689,18 +570,6 @@
 				 &mclk_in &rtcosc32ksel &no_clock>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		frgctrl0_mul: frgctrl0-mul@40000320 {
-			compatible = "nxp,syscon-flexfrg";
-			#clock-cells = <1>;
-			/* SYSCON::FLEXFRG0CTRL[MULT] */
-			reg = <0x40000320 0x8>;
-
-			fxcom0_clock: fxcom0-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	fcclksel1: fcclksel1@400002b4 {
@@ -713,18 +582,6 @@
 				 &mclk_in &rtcosc32ksel &no_clock>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		frgctrl1_mul: frgctrl1-mul@40000324 {
-			compatible = "nxp,syscon-flexfrg";
-			#clock-cells = <1>;
-			/* SYSCON::FLEXFRG1CTRL[MULT] */
-			reg = <0x40000324 0x8>;
-
-			fxcom1_clock: fxcom1-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	fcclksel2: fcclksel2@400002b8 {
@@ -737,18 +594,6 @@
 				 &mclk_in &rtcosc32ksel &no_clock>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		frgctrl2_mul: frgctrl2-mul@40000328 {
-			compatible = "nxp,syscon-flexfrg";
-			#clock-cells = <1>;
-			/* SYSCON::FLEXFRG2CTRL[MULT] */
-			reg = <0x40000328 0x8>;
-
-			fxcom2_clock: fxcom2-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	fcclksel3: fcclksel3@400002bc {
@@ -761,18 +606,6 @@
 				 &mclk_in &rtcosc32ksel &no_clock>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		frgctrl3_mul: frgctrl3-mul@4000032c {
-			compatible = "nxp,syscon-flexfrg";
-			#clock-cells = <1>;
-			/* SYSCON::FLEXFRG3CTRL[MULT] */
-			reg = <0x4000032c 0x8>;
-
-			fxcom3_clock: fxcom3-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	fcclksel4: fcclksel4@400002c0 {
@@ -785,18 +618,6 @@
 				 &mclk_in &rtcosc32ksel &no_clock>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		frgctrl4_mul: frgctrl4-mul@40000330 {
-			compatible = "nxp,syscon-flexfrg";
-			#clock-cells = <1>;
-			/* SYSCON::FLEXFRG4CTRL[MULT] */
-			reg = <0x40000330 0x8>;
-
-			fxcom4_clock: fxcom4-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	fcclksel5: fcclksel5@400002c4 {
@@ -809,18 +630,6 @@
 				 &mclk_in &rtcosc32ksel &no_clock>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		frgctrl5_mul: frgctrl5-mul@40000334 {
-			compatible = "nxp,syscon-flexfrg";
-			#clock-cells = <1>;
-			/* SYSCON::FLEXFRG5CTRL[MULT] */
-			reg = <0x40000334 0x8>;
-
-			fxcom5_clock: fxcom5-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	fcclksel6: fcclksel6@400002c8 {
@@ -833,18 +642,6 @@
 				 &mclk_in &rtcosc32ksel &no_clock>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		frgctrl6_mul: frgctrl6-mul@40000338 {
-			compatible = "nxp,syscon-flexfrg";
-			#clock-cells = <1>;
-			/* SYSCON::FLEXFRG6CTRL[MULT] */
-			reg = <0x40000338 0x8>;
-
-			fxcom6_clock: fxcom6-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	fcclksel7: fcclksel7@400002cc {
@@ -857,18 +654,6 @@
 				 &mclk_in &rtcosc32ksel &no_clock>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		frgctrl7_mul: frgctrl7-mul@4000033c {
-			compatible = "nxp,syscon-flexfrg";
-			#clock-cells = <1>;
-			/* SYSCON::FLEXFRG7CTRL[MULT] */
-			reg = <0x4000033c 0x8>;
-
-			fxcom7_clock: fxcom7-clock {
-				compatible = "clock-output";
-				#clock-cells = <0>;
-			};
-		};
 	};
 
 	hslspiclksel: hslspiclksel@400002d0 {
@@ -881,6 +666,249 @@
 				 &no_clock &rtcosc32ksel &no_clock>;
 
 		hslspi_clock: hslspi-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	wdtclkdiv: wdtclkdiv@4000038c {
+		compatible = "nxp,syscon-clock-div";
+		#clock-cells = <1>;
+		/* SYSCON::WDTCLKDIV[DIV] */
+		reg = <0x4000038c 0x6>;
+		input = <&fro_1m>;
+	};
+
+	frohfdiv: frohfdiv@40000388 {
+		compatible = "nxp,syscon-clock-div";
+		#clock-cells = <1>;
+		/* SYSCON::FROHFDIV[DIV] */
+		reg = <0x40000388 0x8>;
+		input = <&fro_hf>;
+	};
+
+	traceclkdiv: traceclkdiv@40000308 {
+		compatible = "nxp,syscon-clock-div";
+		#clock-cells = <1>;
+		/* SYSCON::TRACECLKDIV[DIV] */
+		reg = <0x40000308 0x8>;
+		input = <&mainclkselb>;
+	};
+
+	systickclkdiv0: systickclkdiv0@40000300 {
+		compatible = "nxp,syscon-clock-div";
+		#clock-cells = <1>;
+		/* SYSCON::SYSTICKCLKDIV0[DIV] */
+		reg = <0x40000300 0x8>;
+		input = <&mainclkselb>;
+	};
+
+	systickclkdiv1: systickclkdiv1@40000304 {
+		compatible = "nxp,syscon-clock-div";
+		#clock-cells = <1>;
+		/* SYSCON::SYSTICKCLKDIV1[DIV] */
+		reg = <0x40000304 0x8>;
+		input = <&mainclkselb>;
+	};
+
+	ahbclkdiv: ahbclkdiv@40000380 {
+		compatible = "nxp,syscon-clock-div";
+		#clock-cells = <1>;
+		/* SYSCON::AHBCLKDIV[DIV] */
+		reg = <0x40000380 0x8>;
+		input = <&mainclkselb>;
+
+		system_clock: system-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	pll0div: pll0div@400003c4 {
+		compatible = "nxp,syscon-clock-div";
+		#clock-cells = <1>;
+		/* SYSCON::PLL0CLKDIV[DIV] */
+		reg = <0x400003c4 0x8>;
+		input = <&pll0_bypass>;
+	};
+
+	adcclkdiv: adcclkdiv@40000394 {
+		compatible = "nxp,syscon-clock-div";
+		#clock-cells = <1>;
+		/* SYSCON::ADCCLKDIV[DIV] */
+		reg = <0x40000394 0x3>;
+		input = <&adcclksel>;
+
+		asyncadc_clock: asyncadc-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	usb0clkdiv: usb0clkdiv@40000398 {
+		compatible = "nxp,syscon-clock-div";
+		#clock-cells = <1>;
+		/* SYSCON::USB0CLKDIV[DIV] */
+		reg = <0x40000398 0x8>;
+		input = <&usb0clksel>;
+
+		usb0_clock: usb0-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	mclkdiv: mclkdiv@400003ac {
+		compatible = "nxp,syscon-clock-div";
+		#clock-cells = <1>;
+		/* SYSCON::MCLKDIV[DIV] */
+		reg = <0x400003ac 0x8>;
+		input = <&mclkclksel>;
+
+		mclk_clock: mclk-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	sctclkdiv: sctclkdiv@400003b4 {
+		compatible = "nxp,syscon-clock-div";
+		#clock-cells = <1>;
+		/* SYSCON::SCTCLKDIV[DIV] */
+		reg = <0x400003b4 0x8>;
+		input = <&sctclksel>;
+
+		sct_clock: sct-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	clkoutdiv: clkoutdiv@40000384 {
+		compatible = "nxp,syscon-clock-div";
+		#clock-cells = <1>;
+		/* SYSCON::CLKOUTDIV[DIV] */
+		reg = <0x40000384 0x8>;
+		input = <&clkoutsel>;
+
+		clkout_clock: clkout-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	sdioclkdiv: sdioclkdiv@400003bc {
+		compatible = "nxp,syscon-clock-div";
+		#clock-cells = <1>;
+		/* SYSCON::SDIOCLKDIV[DIV] */
+		reg = <0x400003bc 0x8>;
+		input = <&sdioclksel>;
+
+		sdio_clock: sdio-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	frgctrl0_mul: frgctrl0-mul@40000320 {
+		compatible = "nxp,syscon-flexfrg";
+		#clock-cells = <1>;
+		/* SYSCON::FLEXFRG0CTRL[MULT] */
+		reg = <0x40000320 0x8>;
+		input = <&fcclksel0>;
+
+		fxcom0_clock: fxcom0-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	frgctrl1_mul: frgctrl1-mul@40000324 {
+		compatible = "nxp,syscon-flexfrg";
+		#clock-cells = <1>;
+		/* SYSCON::FLEXFRG1CTRL[MULT] */
+		reg = <0x40000324 0x8>;
+		input = <&fcclksel1>;
+
+		fxcom1_clock: fxcom1-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	frgctrl2_mul: frgctrl2-mul@40000328 {
+		compatible = "nxp,syscon-flexfrg";
+		#clock-cells = <1>;
+		/* SYSCON::FLEXFRG2CTRL[MULT] */
+		reg = <0x40000328 0x8>;
+		input = <&fcclksel2>;
+
+		fxcom2_clock: fxcom2-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	frgctrl3_mul: frgctrl3-mul@4000032c {
+		compatible = "nxp,syscon-flexfrg";
+		#clock-cells = <1>;
+		/* SYSCON::FLEXFRG3CTRL[MULT] */
+		reg = <0x4000032c 0x8>;
+		input = <&fcclksel3>;
+
+		fxcom3_clock: fxcom3-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	frgctrl4_mul: frgctrl4-mul@40000330 {
+		compatible = "nxp,syscon-flexfrg";
+		#clock-cells = <1>;
+		/* SYSCON::FLEXFRG4CTRL[MULT] */
+		reg = <0x40000330 0x8>;
+		input = <&fcclksel4>;
+
+		fxcom4_clock: fxcom4-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	frgctrl5_mul: frgctrl5-mul@40000334 {
+		compatible = "nxp,syscon-flexfrg";
+		#clock-cells = <1>;
+		/* SYSCON::FLEXFRG5CTRL[MULT] */
+		reg = <0x40000334 0x8>;
+		input = <&fcclksel5>;
+
+		fxcom5_clock: fxcom5-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	frgctrl6_mul: frgctrl6-mul@40000338 {
+		compatible = "nxp,syscon-flexfrg";
+		#clock-cells = <1>;
+		/* SYSCON::FLEXFRG6CTRL[MULT] */
+		reg = <0x40000338 0x8>;
+		input = <&fcclksel6>;
+
+		fxcom6_clock: fxcom6-clock {
+			compatible = "clock-output";
+			#clock-cells = <0>;
+		};
+	};
+
+	frgctrl7_mul: frgctrl7-mul@4000033c {
+		compatible = "nxp,syscon-flexfrg";
+		#clock-cells = <1>;
+		/* SYSCON::FLEXFRG7CTRL[MULT] */
+		reg = <0x4000033c 0x8>;
+		input = <&fcclksel7>;
+
+		fxcom7_clock: fxcom7-clock {
 			compatible = "clock-output";
 			#clock-cells = <0>;
 		};
