@@ -98,8 +98,8 @@
 static uint32_t irq_line_0;
 static uint32_t irq_line_1;
 
-static uint32_t isr0_result;
-static uint32_t isr1_result;
+static volatile uint32_t isr0_result;
+static volatile uint32_t isr1_result;
 
 void isr1(const void *param)
 {
