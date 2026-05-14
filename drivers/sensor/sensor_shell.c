@@ -11,7 +11,6 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
-#include <zephyr/rtio/rtio.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
@@ -259,6 +258,12 @@ enum dynamic_command_context {
 
 static enum dynamic_command_context current_cmd_ctx = NONE;
 
+#if defined(CONFIG_SENSOR_SHELL_ASYNC) || defined(CONFIG_SENSOR_SHELL_STREAM)
+/* Create the RTIO context to service the reading */
+RTIO_DEFINE_WITH_MEMPOOL(sensor_read_rtio, 8, 8, 32, 64, 4);
+#endif /* CONFIG_SENSOR_SHELL_ASYNC || CONFIG_SENSOR_SHELL_STREAM */
+
+#ifdef CONFIG_SENSOR_SHELL_ASYNC
 /* Mutex for accessing shared RTIO/IODEV data structures */
 K_MUTEX_DEFINE(cmd_get_mutex);
 
@@ -272,9 +277,7 @@ static struct sensor_read_config iodev_sensor_shell_read_config = {
 	.max = ARRAY_SIZE(iodev_sensor_shell_channels),
 };
 RTIO_IODEV_DEFINE(iodev_sensor_shell_read, &__sensor_iodev_api, &iodev_sensor_shell_read_config);
-
-/* Create the RTIO context to service the reading */
-RTIO_DEFINE_WITH_MEMPOOL(sensor_read_rtio, 8, 8, 32, 64, 4);
+#endif /* CONFIG_SENSOR_SHELL_ASYNC */
 
 static int parse_named_int(const char *name, const char *const heystack[], size_t count)
 {
@@ -338,6 +341,7 @@ static int parse_sensor_value(const char *val_str, struct sensor_value *out)
 	return 0;
 }
 
+#if defined(CONFIG_SENSOR_SHELL_ASYNC) || defined(CONFIG_SENSOR_SHELL_STREAM)
 void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len,
 				      void *userdata)
 {
@@ -543,7 +547,9 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 		ch.chan_idx = 0;
 	}
 }
+#endif /* CONFIG_SENSOR_SHELL_ASYNC || CONFIG_SENSOR_SHELL_STREAM */
 
+#ifdef CONFIG_SENSOR_SHELL_ASYNC
 static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 {
 	static struct sensor_shell_processing_context ctx;
@@ -621,6 +627,83 @@ unlock:
 	k_mutex_unlock(&cmd_get_mutex);
 	return err;
 }
+
+#else /* !CONFIG_SENSOR_SHELL_ASYNC */
+
+static int handle_channel_by_name(const struct shell *shell_ptr, const struct device *dev,
+				  const char *channel_name)
+{
+	const int i =
+		parse_named_int(channel_name, sensor_channel_name, ARRAY_SIZE(sensor_channel_name));
+	struct sensor_value value[3];
+	int err;
+
+	if (i < 0) {
+		shell_error(shell_ptr, "Channel not supported (%s)", channel_name);
+		return i;
+	}
+
+	err = sensor_channel_get(dev, i, value);
+	if (err < 0) {
+		return err;
+	}
+
+	if (!SENSOR_CHANNEL_3_AXIS(i)) {
+		shell_print(shell_ptr, "channel idx=%d %s = %10.6f", i, sensor_channel_name[i],
+			    sensor_value_to_double(&value[0]));
+	} else {
+		shell_print(shell_ptr,
+			    "channel idx=%d %s x = %10.6f y = %10.6f z = %10.6f",
+			    i, sensor_channel_name[i],
+			    sensor_value_to_double(&value[0]),
+			    sensor_value_to_double(&value[1]),
+			    sensor_value_to_double(&value[2]));
+	}
+
+	return 0;
+}
+
+static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct device *dev;
+	int err;
+
+	dev = shell_device_get_binding(argv[1]);
+	if (dev == NULL || !sensor_device_check(dev)) {
+		shell_error(sh, "Sensor device unknown (%s)", argv[1]);
+		return -ENODEV;
+	}
+
+	err = sensor_sample_fetch(dev);
+	if (err < 0) {
+		shell_error(sh, "Failed to read sensor: %d", err);
+		return err;
+	}
+
+	if (argc == 2) {
+		/* attempt all known channels; unsupported ones are silently skipped */
+		for (int i = 0; i < ARRAY_SIZE(sensor_channel_name); i++) {
+			if (sensor_channel_name[i]) {
+				handle_channel_by_name(sh, dev, sensor_channel_name[i]);
+			}
+		}
+	} else {
+		/*
+		 * Iterates over the channel name arguments the user typed on the shell
+		 * (e.g. sensor get bme280 ambient_temp humidity)
+		 */
+		for (int i = 2; i < argc; i++) {
+			err = handle_channel_by_name(sh, dev, argv[i]);
+			if (err < 0) {
+				shell_error(sh, "Failed to read channel (%s)", argv[i]);
+			}
+		}
+	}
+
+	return 0;
+}
+
+#endif /* CONFIG_SENSOR_SHELL_ASYNC */
 
 static int cmd_sensor_attr_set(const struct shell *sh, size_t argc, char *argv[])
 {

@@ -34,13 +34,24 @@ config SENSOR_SHELL
 	bool "Sensor shell"
 	depends on SHELL
 	select CBPRINTF_FP_SUPPORT
-	select SENSOR_ASYNC_API
 	help
 	  This shell provides access to basic sensor data.
 
+config SENSOR_SHELL_ASYNC
+	bool "Sensor shell async 'get' with timestamps"
+	depends on SENSOR_SHELL && SENSOR_ASYNC_API
+	default y
+	help
+	  Use the RTIO/decoder-based read path for 'sensor get', providing
+	  nanosecond timestamps. Disable to fall back to
+	  sensor_sample_fetch/sensor_channel_get, which suits legacy-only
+	  drivers or builds where a smaller footprint is preferred. Note: the
+	  synchronous fallback path is transitional; drivers are expected to
+	  migrate to the RTIO API over time.
+
 config SENSOR_SHELL_STREAM
 	bool "Sensor shell 'stream' command"
-	depends on SENSOR_SHELL
+	depends on SENSOR_SHELL && SENSOR_ASYNC_API
 	help
 	  Add the 'stream' subcommand to the sensor shell. When run on drivers that
 	  support streaming (usually hardware FIFO backed), the shell will continue

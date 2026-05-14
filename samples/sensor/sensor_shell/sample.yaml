@@ -15,6 +15,13 @@ tests:
     harness: keyboard
     min_ram: 20
     min_flash: 33
+  sample.sensor.shell.sync:
+    build_only: true
+    integration_platforms:
+      - frdm_k64f
+    extra_configs:
+      - CONFIG_RTIO_CONSUME_SEM=n
+      - CONFIG_SENSOR_ASYNC_API=n
   sample.sensor.shell.pytest:
     platform_exclude: qemu_rx
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
