@@ -606,7 +606,7 @@ void xtensa_mpu_map_write(struct xtensa_mpu_map *map)
 void xtensa_mpu_init(void)
 {
 	unsigned int entry;
-	uint8_t first_enabled_idx;
+	uint8_t first_enabled_idx = XTENSA_MPU_NUM_ENTRIES;
 
 	/* Disable all foreground segments before we start configuration. */
 	xtensa_mpu_mpuenb_write(0);
@@ -637,24 +637,6 @@ void xtensa_mpu_init(void)
 	 */
 	for (entry = 0; entry < (unsigned int)xtensa_mpu_ranges_num; entry++) {
 		const struct xtensa_mpu_range *range = &xtensa_mpu_ranges[entry];
-
-		int ret = mpu_map_region_add(&xtensa_mpu_map_fg_kernel,
-					     range->start, range->end,
-					     range->access_rights, range->memory_type,
-					     &first_enabled_idx);
-
-		ARG_UNUSED(ret);
-		__ASSERT(ret == 0, "Unable to add region [0x%08x, 0x%08x): %d",
-				   (unsigned int)range->start,
-				   (unsigned int)range->end,
-				   ret);
-	}
-
-	/*
-	 * Now for the entries for memory regions needed by SoC.
-	 */
-	for (entry = 0; entry < xtensa_soc_mpu_ranges_num; entry++) {
-		const struct xtensa_mpu_range *range = &xtensa_soc_mpu_ranges[entry];
 
 		int ret = mpu_map_region_add(&xtensa_mpu_map_fg_kernel,
 					     range->start, range->end,
