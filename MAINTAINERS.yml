@@ -765,6 +765,10 @@ Board/SoC configuration:
 
 Boards/SoCs:
   status: odd fixes
+  collaborators:
+    - kartben
+    - nordicjm
+    - sylvioalves
   files:
     - boards/
     - soc/
