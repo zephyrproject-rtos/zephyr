@@ -17,16 +17,3 @@ GROUP_START(SHARED_MEMORY_M33)
 	} GROUP_LINK_IN(SHARED_MEMORY_M33)
 
 GROUP_END(SHARED_MEMORY_M33)
-
-GROUP_START(SHARED_MEMORY_SEC)
-
-	SECTION_PROLOGUE(.cy_sharedmem_sec,(NOLOAD),)
-	{
-        . = ALIGN(4);
-        __sec_ram_start__ = .;
-        KEEP(*(.cy_sharedmem_sec))
-        . = ALIGN(4);
-        __sec_ram_end__ = .;
-	} GROUP_LINK_IN(SHARED_MEMORY_SEC)
-
-GROUP_END(SHARED_MEMORY_SEC)

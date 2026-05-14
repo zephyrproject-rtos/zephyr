@@ -57,10 +57,14 @@ if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "armclang")
 endif()
 
 # Add sections
-if(CONFIG_CPU_CORTEX_M33)
-  zephyr_linker_sources(SECTIONS shared_mem_sec.ld)
+if(CONFIG_CPU_CORTEX_M55)
+zephyr_linker_sources(SECTIONS shared_mem_m55.ld)
 else()
-  zephyr_linker_sources(SECTIONS shared_mem.ld)
+  if(CONFIG_TRUSTED_EXECUTION_SECURE)
+    zephyr_linker_sources(SECTIONS shared_mem_sec.ld)
+  else()
+    zephyr_linker_sources(SECTIONS shared_mem_m33.ld)
+  endif()
 endif()
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/soc/infineon/edge/pse84/linker_exclude_syslib.ld CACHE INTERNAL "")
