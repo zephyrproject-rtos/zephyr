@@ -41,6 +41,7 @@ struct max3421e_data {
 	atomic_t state;
 	uint16_t tog_in;
 	uint16_t tog_out;
+	uint16_t frame_number;
 	uint8_t addr;
 	uint8_t hirq;
 	uint8_t hien;
@@ -389,6 +390,37 @@ static int max3421e_xfer_bulk(const struct device *dev,
 	return max3421e_xfer_data(dev, buf, xfer->ep);
 }
 
+static int max3421e_xfer_interrupt(const struct device *dev,
+				   struct uhc_transfer *const xfer,
+				   const uint8_t hrsl)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+	struct net_buf *buf = xfer->buf;
+
+	/*
+	 * USB 2.0 spec section 5.7.4
+	 * If the endpoint has no interrupt data to transmit when accessed by the host,
+	 * it responds with NAK. An endpoint should only provide interrupt data
+	 * when it has an interrupt pending to avoid having a software client
+	 * erroneously notified of IRP complete.
+	 */
+	if (max3421e_should_retry(dev)) {
+		if (HRSLT_IS_TIMEOUT(hrsl)) {
+			LOG_WRN("Rescheduling interrupt after a timeout");
+		}
+		uhc_xfer_reschedule_periodic(dev, xfer, priv->frame_number);
+		priv->last_xfer = NULL;
+		return 0;
+	}
+
+	if (buf == NULL) {
+		LOG_ERR("No buffer to handle");
+		return -ENODATA;
+	}
+
+	return max3421e_xfer_data(dev, buf, xfer->ep);
+}
+
 static int max3421e_schedule_xfer(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
@@ -400,7 +432,7 @@ static int max3421e_schedule_xfer(const struct device *dev)
 		/* Do not restart last transfer */
 		hrsl = 0;
 
-		priv->last_xfer = uhc_xfer_get_next(dev);
+		priv->last_xfer = uhc_xfer_get_next(dev, priv->frame_number);
 		if (priv->last_xfer == NULL) {
 			LOG_DBG("Nothing to transfer");
 			return 0;
@@ -413,15 +445,19 @@ static int max3421e_schedule_xfer(const struct device *dev)
 		}
 	}
 
-	/*
-	 * TODO: currently we only support control transfers and
-	 * treat all others as bulk.
-	 */
-	if (USB_EP_GET_IDX(priv->last_xfer->ep) == 0) {
+	switch (priv->last_xfer->type) {
+	case USB_EP_TYPE_CONTROL:
 		return max3421e_xfer_control(dev, priv->last_xfer, hrsl);
+	case USB_EP_TYPE_BULK:
+		return max3421e_xfer_bulk(dev, priv->last_xfer, hrsl);
+	case USB_EP_TYPE_ISO:
+		LOG_WRN("Iso xfers not implemeted yet, treating as interrupt xfer");
+	case USB_EP_TYPE_INTERRUPT:
+		return max3421e_xfer_interrupt(dev, priv->last_xfer, hrsl);
+	default:
+		LOG_ERR("Invalid xfer type: %d", priv->last_xfer->type);
+		return -EINVAL;
 	}
-
-	return max3421e_xfer_bulk(dev, priv->last_xfer, hrsl);
 }
 
 static void max3421e_xfer_drop_active(const struct device *dev, int err)
@@ -437,21 +473,29 @@ static void max3421e_xfer_drop_active(const struct device *dev, int err)
 	}
 }
 
+static void max3421e_dlist_xfer_cleanup_cancelled(const struct device *dev, sys_dlist_t *dlist)
+{
+	struct uhc_transfer *tmp;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(dlist, tmp, node) {
+		if (tmp->err == -ECONNRESET) {
+			uhc_xfer_return(dev, tmp, -ECONNRESET);
+		}
+	}
+}
+
 static void max3421e_xfer_cleanup_cancelled(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 	struct uhc_data *data = dev->data;
-	struct uhc_transfer *tmp;
 
 	if (priv->last_xfer != NULL && priv->last_xfer->err == -ECONNRESET) {
 		max3421e_xfer_drop_active(dev, -ECONNRESET);
 	}
 
-	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
-		if (tmp->err == -ECONNRESET) {
-			uhc_xfer_return(dev, tmp, -ECONNRESET);
-		}
-	}
+	max3421e_dlist_xfer_cleanup_cancelled(dev, &data->ctrl_xfers);
+	max3421e_dlist_xfer_cleanup_cancelled(dev, &data->bulk_xfers);
+	max3421e_dlist_xfer_cleanup_cancelled(dev, &data->int_xfers);
 }
 
 static int max3421e_hrslt_success(const struct device *dev)
@@ -774,6 +818,7 @@ static void uhc_max3421e_thread(void *p1, void *p2, void *p3)
 
 		/* Frame Generator Interrupt */
 		if (priv->hirq & MAX3421E_FRAME) {
+			priv->frame_number++;
 			schedule = !HRSLT_IS_BUSY(priv->hrsl) && priv->skip_frames <= 0;
 			if (priv->skip_frames > 0) {
 				priv->skip_frames--;
@@ -869,6 +914,13 @@ static int max3421e_bus_resume(const struct device *dev)
 static int max3421e_enqueue(const struct device *dev,
 			    struct uhc_transfer *const xfer)
 {
+	struct max3421e_data *priv = uhc_get_private(dev);
+
+	if (xfer->interval) {
+		xfer->start_frame = priv->frame_number + xfer->interval;
+		LOG_DBG("New periodic transfer s.f. %u f.n. %u interval %u", xfer->start_frame,
+			priv->frame_number, xfer->interval);
+	}
 	return uhc_xfer_append(dev, xfer);
 }
 
@@ -877,12 +929,32 @@ static int max3421e_dequeue(const struct device *dev,
 {
 	struct uhc_data *data = dev->data;
 	struct uhc_transfer *tmp;
+	sys_dlist_t *dlist;
 	unsigned int key;
 
+	switch (xfer->type) {
+	case USB_EP_TYPE_CONTROL:
+		dlist = &data->ctrl_xfers;
+		break;
+	case USB_EP_TYPE_BULK:
+		dlist = &data->bulk_xfers;
+		break;
+	case USB_EP_TYPE_ISO:
+		LOG_WRN("Iso xfers not implemeted yet, treating as interrupt xfer");
+	case USB_EP_TYPE_INTERRUPT:
+		dlist = &data->int_xfers;
+		break;
+	default:
+		LOG_ERR("Invalid xfer type: %d", xfer->type);
+		return -EINVAL;
+	}
+
 	key = irq_lock();
-	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
+
+	SYS_DLIST_FOR_EACH_CONTAINER(dlist, tmp, node) {
 		if (xfer == tmp) {
 			tmp->err = -ECONNRESET;
+			break;
 		}
 	}
 
