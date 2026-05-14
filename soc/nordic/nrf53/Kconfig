@@ -126,6 +126,7 @@ if SOC_NRF5340_CPUAPP
 config SOC_NRF53_ANOMALY_166_WORKAROUND
 	bool "Workaround for nRF5340 anomaly 166"
 	depends on "$(dt_node_int_prop_int,$(VREGMAIN_PATH),regulator-initial-mode)" = 0
+	default y
 	help
 	  Indicates that the workaround for the anomaly 166 that affects
 	  the nRF5340 SoC should be applied.
