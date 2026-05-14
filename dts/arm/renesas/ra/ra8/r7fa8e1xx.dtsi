@@ -362,3 +362,11 @@
 &adc1 {
 	channel-available-mask = <0x37>;
 };
+
+&lpm {
+	capabilities = "has-deep-sleep",
+		       "has-deep-software-standby",
+		       "has-ram-retain",
+		       "has-ldo-retain",
+		       "has-dpsbycr-dcssmode";
+};
