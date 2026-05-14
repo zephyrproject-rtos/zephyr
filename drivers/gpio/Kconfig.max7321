@@ -1,0 +1,19 @@
+# MAX7321 GPIO configuration options
+
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_MAX7321
+	bool "MAX7321 I2C GPIO chip"
+	default y
+	depends on DT_HAS_ADI_MAX7321_ENABLED
+	select I2C
+	help
+	  Enable driver for MAX7321 I2C GPIO chip.
+
+config GPIO_MAX7321_INIT_PRIORITY
+	int "Init priority"
+	default I2C_INIT_PRIORITY
+	depends on GPIO_MAX7321
+	help
+	  Device driver initialization priority.

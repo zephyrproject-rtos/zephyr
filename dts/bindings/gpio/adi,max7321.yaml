@@ -1,0 +1,31 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MAX7321 I2C port expander with 8 open-drain I/Os.
+  The MAX7321 has 8 open-drain I/O ports with selectable internal pull-ups.
+  Writing a 1 to a port makes it high-impedance (input with pull-up).
+  Writing a 0 to a port pulls it low (output driven low).
+
+compatible: "adi,max7321"
+
+include: [i2c-device.yaml, gpio-controller.yaml]
+
+properties:
+  ngpios:
+    required: true
+    const: 8
+    description: Number of GPIOs. MAX7321 always has 8 I/O pins.
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the controller INT pin. This pin is active-low,
+      open-drain. Asserted when any input pin changes state.
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
