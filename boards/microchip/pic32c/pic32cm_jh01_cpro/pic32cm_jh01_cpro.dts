@@ -215,3 +215,12 @@
 	prescaler = <256>;
 	status = "okay";
 };
+
+&tc5 {
+	compatible = "microchip,tc-g1-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&tc5_pwm_default>;
+	pinctrl-names = "default";
+	prescaler = <64>;
+	status = "okay";
+};
