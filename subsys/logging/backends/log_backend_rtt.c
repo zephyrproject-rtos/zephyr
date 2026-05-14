@@ -286,11 +286,20 @@ static int get_available(void *ctx)
 {
 	ARG_UNUSED(ctx);
 
+	int space;
+
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_OVERWRITE)) {
-		return _SEGGER_RTT.aUp[CONFIG_LOG_BACKEND_RTT_BUFFER].SizeOfBuffer;
+		space = _SEGGER_RTT.aUp[CONFIG_LOG_BACKEND_RTT_BUFFER].SizeOfBuffer;
+	} else {
+		space = SEGGER_RTT_GetAvailWriteSpace(CONFIG_LOG_BACKEND_RTT_BUFFER);
 	}
 
-	return SEGGER_RTT_GetAvailWriteSpace(CONFIG_LOG_BACKEND_RTT_BUFFER);
+	/* In hex mode each byte is encoded as 2 characters */
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX)) {
+		space /= 2;
+	}
+
+	return space;
 }
 
 LOG_OUTPUT_EXT_DEFINE(log_output_rtt, data_out,
