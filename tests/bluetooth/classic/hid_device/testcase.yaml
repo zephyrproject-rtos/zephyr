@@ -1,0 +1,13 @@
+tests:
+  bluetooth.classic.hid_device:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags:
+      - bluetooth
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      fixture: usb_hci
+    timeout: 180
