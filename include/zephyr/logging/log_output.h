@@ -6,6 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_OUTPUT_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_OUTPUT_H_
 
+#include <errno.h>
 #include <zephyr/logging/log_msg.h>
 #include <zephyr/sys/util.h>
 #include <stdarg.h>
@@ -88,16 +89,26 @@ extern "C" {
  */
 typedef int (*log_output_func_t)(uint8_t *buf, size_t size, void *ctx);
 
+/** @brief Function pointer type for getting available output space.
+ *
+ * @param ctx User context.
+ *
+ * @return Number of bytes available or negative error code.
+ */
+typedef int (*log_output_get_available_t)(void *ctx);
+
 /* @brief Control block structure for log_output instance.  */
 struct log_output_control_block {
 	atomic_t offset;
 	void *ctx;
 	const char *hostname;
+	struct k_spinlock lock; /**< Spinlock for atomic output operations. */
 };
 
 /** @brief Log_output instance structure. */
 struct log_output {
 	log_output_func_t func;
+	log_output_get_available_t get_available; /**< Get available output space. */
 	struct log_output_control_block *control_block;
 	uint8_t *buf;
 	size_t size;
@@ -127,13 +138,25 @@ log_format_func_t log_format_func_t_get(uint32_t log_type);
  * @param _buf  Pointer to the output buffer.
  * @param _size Size of the output buffer.
  */
-#define LOG_OUTPUT_DEFINE(_name, _func, _buf, _size)			\
-	static struct log_output_control_block _name##_control_block;	\
-	static const struct log_output _name = {			\
-		.func = _func,						\
-		.control_block = &_name##_control_block,		\
-		.buf = _buf,						\
-		.size = _size,						\
+#define LOG_OUTPUT_DEFINE(_name, _func, _buf, _size)                                               \
+	LOG_OUTPUT_EXT_DEFINE(_name, _func, NULL, _buf, _size)
+
+/** @brief Create log_output instance with extended API.
+ *
+ * @param _name Instance name.
+ * @param _func Function for processing output data.
+ * @param _get_available Function for getting available output space (or NULL).
+ * @param _buf  Pointer to the output buffer.
+ * @param _size Size of the output buffer.
+ */
+#define LOG_OUTPUT_EXT_DEFINE(_name, _func, _get_available, _buf, _size)                           \
+	static struct log_output_control_block _name##_control_block;                              \
+	static const struct log_output _name = {                                                   \
+		.func = _func,                                                                     \
+		.get_available = _get_available,                                                   \
+		.control_block = &_name##_control_block,                                           \
+		.buf = _buf,                                                                       \
+		.size = _size,                                                                     \
 	}
 
 /** @brief Process log messages v2 to readable strings.
@@ -244,6 +267,21 @@ static inline void log_output_hostname_set(const struct log_output *output,
 					   const char *hostname)
 {
 	output->control_block->hostname = hostname;
+}
+
+/** @brief Get available space in the output backend.
+ *
+ * @param	output Pointer to the log output instance.
+ *
+ * @return Number of bytes available or negative error if not supported.
+ */
+static inline int log_output_get_available(const struct log_output *output)
+{
+	if (output->get_available == NULL) {
+		return -ENOTSUP;
+	}
+
+	return output->get_available(output->control_block->ctx);
 }
 
 /** @brief Set timestamp frequency.
