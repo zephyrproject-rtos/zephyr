@@ -266,7 +266,6 @@ static void lsm6dsv16x_complete_op_cb(struct rtio *r, const struct rtio_sqe *sqe
 	 * Mark operation completed
 	 */
 	rtio_iodev_sqe_ok(sqe->userdata, 0);
-	lsm6dsv16x->streaming_sqe = NULL;
 	if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
 		gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	}
@@ -329,7 +328,6 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 		/* complete operation with no error */
 		rtio_iodev_sqe_ok(sqe->userdata, 0);
 
-		lsm6dsv16x->streaming_sqe = NULL;
 		if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
 			gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		}
@@ -386,7 +384,6 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 
 		/* complete request with ok */
 		rtio_iodev_sqe_ok(lsm6dsv16x->streaming_sqe, 0);
-		lsm6dsv16x->streaming_sqe = NULL;
 		if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
 			gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		}
@@ -561,7 +558,6 @@ static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 
 		/* complete request with ok */
 		rtio_iodev_sqe_ok(lsm6dsv16x->streaming_sqe, 0);
-		lsm6dsv16x->streaming_sqe = NULL;
 		if (!ON_I3C_BUS(config) || (I3C_INT_PIN(config))) {
 			gpio_pin_interrupt_configure_dt(irq_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		}
@@ -661,6 +657,7 @@ void lsm6dsv16x_stream_irq_handler(const struct device *dev)
 	if (rc != 0) {
 		LOG_ERR("Failed to get sensor clock cycles");
 		rtio_iodev_sqe_err(lsm6dsv16x->streaming_sqe, rc);
+		lsm6dsv16x->streaming_sqe = NULL;
 		return;
 	}
 
