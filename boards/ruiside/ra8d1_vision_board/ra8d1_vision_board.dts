@@ -18,11 +18,11 @@
 
 	chosen {
 		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
+		zephyr,flash = &code_flash;
 		zephyr,console = &uart9;
 		zephyr,shell-uart = &uart9;
 		zephyr,entropy = &trng;
-		zephyr,flash-controller = &flash;
+		zephyr,flash-controller = &code_flash_ctrl;
 	};
 
 	leds {
@@ -157,13 +157,14 @@
 	status = "okay";
 };
 
-&flash1 {
+&data_flash {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		storage_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x0 DT_SIZE_K(12)>;
 		};
