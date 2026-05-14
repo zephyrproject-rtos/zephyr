@@ -64,6 +64,44 @@ int bmi270_reg_write_with_delay(const struct device *dev,
 	return ret;
 }
 
+#if defined(CONFIG_BMI270_STREAM)
+int bmi270_prep_reg_read_async(const struct device *dev, uint8_t reg, uint8_t *buf, size_t len,
+			       uint8_t flags)
+{
+#if CONFIG_BMI270_BUS_SPI
+	const struct bmi270_config *cfg = dev->config;
+
+	if (cfg->bus_io == &bmi270_bus_io_spi) {
+		return bmi270_spi_prep_reg_read_async(dev, reg, buf, len, flags);
+	}
+#endif
+
+#if CONFIG_BMI270_BUS_I2C
+	return bmi270_i2c_prep_reg_read_async(dev, reg, buf, len, flags);
+#else
+	return -ENOTSUP;
+#endif
+}
+
+int bmi270_prep_reg_write_async(const struct device *dev, uint8_t reg, const uint8_t *buf,
+				size_t len, uint8_t flags)
+{
+#if CONFIG_BMI270_BUS_SPI
+	const struct bmi270_config *cfg = dev->config;
+
+	if (cfg->bus_io == &bmi270_bus_io_spi) {
+		return bmi270_spi_prep_reg_write_async(dev, reg, buf, len, flags);
+	}
+#endif
+
+#if CONFIG_BMI270_BUS_I2C
+	return bmi270_i2c_prep_reg_write_async(dev, reg, buf, len, flags);
+#else
+	return -ENOTSUP;
+#endif
+}
+#endif
+
 int bmi270_adv_power_save_enable(const struct device *dev)
 {
 	uint8_t pwr = BMI270_PWR_CONF_ADV_PWR_SAVE_EN;
@@ -669,6 +707,11 @@ static int bmi270_init(const struct device *dev)
 	data->gyr_odr = BMI270_GYR_ODR_200_HZ;
 	data->gyr_range = 2000;
 
+#if defined(CONFIG_BMI270_STREAM)
+	mpsc_init(&data->fifo_jobs);
+	bmi270_stream_init(dev);
+#endif
+
 	k_usleep(BMI270_POWER_ON_TIME);
 
 	ret = bmi270_bus_init(dev);
@@ -858,9 +901,35 @@ static const struct bmi270_feature_config bmi270_feature_base = {
 	.bus.i2c = I2C_DT_SPEC_INST_GET(inst),		\
 	.bus_io = &bmi270_bus_io_i2c,
 
+#if defined(CONFIG_BMI270_STREAM)
+#define BMI270_RTIO_SPI_DEFINE(inst)					\
+	SPI_DT_IODEV_DEFINE(bmi270_iodev_##inst, DT_DRV_INST(inst),	\
+			    BMI270_SPI_OPERATION);			\
+	RTIO_DEFINE(bmi270_rtio_ctx_##inst, 8, 8);
+
+#define BMI270_RTIO_I2C_DEFINE(inst)					\
+	I2C_DT_IODEV_DEFINE(bmi270_iodev_##inst, DT_DRV_INST(inst));	\
+	RTIO_DEFINE(bmi270_rtio_ctx_##inst, 8, 8);
+
+#define BMI270_RTIO_DEFINE(inst)					\
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
+		    (BMI270_RTIO_SPI_DEFINE(inst)),			\
+		    (BMI270_RTIO_I2C_DEFINE(inst)))
+#define BMI270_RTIO_DATA_INIT(inst)					\
+	.rtio_ctx = &bmi270_rtio_ctx_##inst,				\
+	.iodev = &bmi270_iodev_##inst,
+#else
+#define BMI270_RTIO_DEFINE(inst)
+#define BMI270_RTIO_DATA_INIT(inst)
+#endif
+
 #define BMI270_CREATE_INST(inst)					\
 									\
-	static struct bmi270_data bmi270_drv_##inst;			\
+	BMI270_RTIO_DEFINE(inst)					\
+									\
+	static struct bmi270_data bmi270_drv_##inst = {			\
+		BMI270_RTIO_DATA_INIT(inst)				\
+	};								\
 									\
 	static const struct bmi270_config bmi270_config_##inst = {	\
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\

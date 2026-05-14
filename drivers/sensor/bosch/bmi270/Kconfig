@@ -9,7 +9,9 @@ menuconfig BMI270
 	default y
 	depends on DT_HAS_BOSCH_BMI270_ENABLED
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI270),i2c)
+	select I2C_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI270),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI270),spi)
+	select SPI_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI270),spi)
 	help
 	  Enable driver for BMI270 I2C-based imu sensor
 
@@ -110,15 +112,6 @@ config BMI270_FIFO_POLL_PERIOD_MS
 	help
 	  How often (in milliseconds) the poll fallback checks the FIFO fill
 	  level. Lower values reduce latency but increase SPI/I2C bus traffic.
-
-config BMI270_FIFO_WORKQ_STACK_SIZE
-	int "Stack size for FIFO handler work queue thread"
-	depends on BMI270_STREAM
-	default 4096
-	help
-	  The FIFO watermark handler runs in a dedicated work queue thread to avoid
-	  stack overflow in the trigger thread. Increase if you see crashes when
-	  the interrupt fires.
 
 config BMI270_FIFO_HEADERLESS
 	bool "Use FIFO headerless mode (no per-frame headers)"

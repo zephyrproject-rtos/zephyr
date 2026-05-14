@@ -12,11 +12,6 @@ LOG_MODULE_DECLARE(bmi270);
 #include "bmi270.h"
 
 #if defined(CONFIG_BMI270_STREAM)
-/* Dedicated work queue so FIFO handler runs on a thread with large stack (SPI + RTIO). */
-static K_KERNEL_STACK_DEFINE(bmi270_fifo_work_stack, CONFIG_BMI270_FIFO_WORKQ_STACK_SIZE);
-static struct k_work_q bmi270_fifo_work_q;
-static bool bmi270_fifo_work_q_initialized;
-
 static inline const struct gpio_dt_spec *bmi270_fifo_irq_pin(const struct bmi270_config *cfg)
 {
 #if defined(CONFIG_BMI270_FIFO_ON_INT2)
@@ -24,25 +19,6 @@ static inline const struct gpio_dt_spec *bmi270_fifo_irq_pin(const struct bmi270
 #else
 	return &cfg->int1;
 #endif
-}
-
-static void bmi270_fifo_work_handler(struct k_work *work)
-{
-	struct bmi270_data *data = CONTAINER_OF(work, struct bmi270_data, fifo_work);
-
-	bmi270_stream_handle_fifo(data->dev);
-}
-
-void bmi270_submit_fifo_work(const struct device *dev)
-{
-	struct bmi270_data *data = dev->data;
-
-	k_work_submit_to_queue(&bmi270_fifo_work_q, &data->fifo_work);
-}
-
-struct k_work_q *bmi270_get_fifo_work_q(void)
-{
-	return &bmi270_fifo_work_q;
 }
 
 static bool bmi270_try_submit_fifo_irq(const struct device *dev, const struct gpio_dt_spec *irq_pin,
@@ -58,8 +34,8 @@ static bool bmi270_try_submit_fifo_irq(const struct device *dev, const struct gp
 		gpio_pin_interrupt_configure_dt(irq_pin, GPIO_INT_DISABLE);
 	}
 
-	LOG_DBG("%s: submit FIFO work", label);
-	k_work_submit_to_queue(&bmi270_fifo_work_q, &data->fifo_work);
+	LOG_DBG("%s: handle FIFO stream", label);
+	bmi270_stream_submit_fifo_job(dev);
 	return true;
 }
 #endif
@@ -283,17 +259,6 @@ int bmi270_init_interrupts(const struct device *dev)
 		LOG_ERR("Failed to initialize INT2 (required for FIFO and data ready)");
 		return -EINVAL;
 	}
-
-#if defined(CONFIG_BMI270_STREAM)
-	if (!bmi270_fifo_work_q_initialized) {
-		k_work_queue_init(&bmi270_fifo_work_q);
-		k_work_queue_start(&bmi270_fifo_work_q, bmi270_fifo_work_stack,
-				   K_THREAD_STACK_SIZEOF(bmi270_fifo_work_stack),
-				   CONFIG_BMI270_THREAD_PRIORITY - 1, NULL);
-		bmi270_fifo_work_q_initialized = true;
-	}
-	k_work_init(&data->fifo_work, bmi270_fifo_work_handler);
-#endif
 
 	ret = bmi270_configure_int_io_ctrl(dev, &cfg->int1, BMI270_REG_INT1_IO_CTRL, "INT1");
 	if (ret < 0) {

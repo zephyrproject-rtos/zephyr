@@ -11,6 +11,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include "bmi270.h"
 #include "bmi270_decoder.h"
@@ -236,7 +237,7 @@ static void poll_work_fn(struct k_work *work)
 	bmi270_reg_read(dev, BMI270_REG_FIFO_LENGTH_0, (uint8_t *)&fifo_len, 2);
 	fifo_len = sys_get_le16((uint8_t *)&fifo_len) & 0x3FFF;
 	if (fifo_len >= data->fifo_watermark_bytes) {
-		bmi270_submit_fifo_work(dev);
+		bmi270_stream_submit_fifo_job(dev);
 	}
 	k_work_schedule(&poll_work, K_MSEC(FIFO_POLL_MS));
 }
@@ -268,31 +269,449 @@ static void fifo_fill_encoded_header(struct bmi270_fifo_encoded_data *edata,
 	edata->fifo_byte_count = fifo_len;
 }
 
-static void fifo_drain_bytes(const struct device *dev, uint16_t remain)
+static int bmi270_rtio_drain_cq(struct rtio *r, int result)
 {
-	uint8_t discard[64];
+	struct rtio_cqe *cqe;
 
-	while (remain > 0) {
-		size_t chunk = remain > sizeof(discard) ? sizeof(discard) : (size_t)remain;
+	do {
+		cqe = rtio_cqe_consume(r);
+		if (cqe != NULL) {
+			if (result >= 0) {
+				result = cqe->result;
+			}
+			rtio_cqe_release(r, cqe);
+		}
+	} while (cqe != NULL);
 
-		bmi270_reg_read(dev, BMI270_REG_FIFO_DATA, discard, chunk);
-		remain -= (uint16_t)chunk;
+	return result;
+}
+
+enum bmi270_fifo_job_phase {
+	BMI270_FIFO_JOB_STATUS,
+	BMI270_FIFO_JOB_DATA,
+	BMI270_FIFO_JOB_DRAIN,
+	BMI270_FIFO_JOB_CLEAR_STATUS,
+};
+
+/* SPI register reads use 3 SQEs, so keep each drain submission within the 8-SQE pool. */
+#define BMI270_FIFO_DATA_JOB_DRAIN_READS 1
+#define BMI270_FIFO_DRAIN_JOB_DRAIN_READS 2
+
+static void bmi270_fifo_job_work_handler(struct k_work *work)
+{
+	struct bmi270_data *data = CONTAINER_OF(work, struct bmi270_data, fifo_job_work);
+
+	bmi270_stream_handle_fifo(data->dev);
+}
+
+void bmi270_stream_init(const struct device *dev)
+{
+	struct bmi270_data *data = dev->data;
+
+	k_work_init(&data->fifo_job_work, bmi270_fifo_job_work_handler);
+}
+
+void bmi270_stream_submit_fifo_job(const struct device *dev)
+{
+	struct bmi270_data *data = dev->data;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&data->fifo_job_lock);
+	data->fifo_job_pending++;
+	if (!data->fifo_job_queued && !data->fifo_job_processing) {
+		data->fifo_job_pending--;
+		data->fifo_job_queued = true;
+		data->fifo_job_phase = BMI270_FIFO_JOB_STATUS;
+		mpsc_push(&data->fifo_jobs, &data->fifo_job);
 	}
+	k_spin_unlock(&data->fifo_job_lock, key);
+
+	k_work_submit(&data->fifo_job_work);
+}
+
+static void bmi270_requeue_fifo_job_work(const struct device *dev,
+					 enum bmi270_fifo_job_phase phase)
+{
+	struct bmi270_data *data = dev->data;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&data->fifo_job_lock);
+	data->fifo_job_phase = phase;
+	data->fifo_job_queued = true;
+	data->fifo_job_processing = false;
+	mpsc_push(&data->fifo_jobs, &data->fifo_job);
+	k_spin_unlock(&data->fifo_job_lock, key);
+	k_work_submit(&data->fifo_job_work);
+}
+
+static void bmi270_fifo_job_complete(const struct device *dev)
+{
+	struct bmi270_data *data = dev->data;
+	k_spinlock_key_t key;
+	bool submit = false;
+
+	key = k_spin_lock(&data->fifo_job_lock);
+	data->fifo_job_processing = false;
+	if (data->fifo_job_pending > 0U) {
+		data->fifo_job_pending--;
+		data->fifo_job_queued = true;
+		data->fifo_job_phase = BMI270_FIFO_JOB_STATUS;
+		mpsc_push(&data->fifo_jobs, &data->fifo_job);
+		submit = true;
+	} else {
+		data->fifo_job_queued = false;
+	}
+	k_spin_unlock(&data->fifo_job_lock, key);
+
+	if (submit) {
+		k_work_submit(&data->fifo_job_work);
+	}
+}
+
+static void bmi270_fifo_job_abort(const struct device *dev)
+{
+	struct bmi270_data *data = dev->data;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&data->fifo_job_lock);
+	data->fifo_job_pending = 0U;
+	data->fifo_job_queued = false;
+	data->fifo_job_processing = false;
+	k_spin_unlock(&data->fifo_job_lock, key);
+}
+
+static int bmi270_prep_fifo_drain_async(const struct device *dev, size_t max_reads,
+					uint16_t *drained)
+{
+	struct bmi270_data *data = dev->data;
+	int ret;
+
+	*drained = 0U;
+
+	while (data->fifo_drain_len > *drained && max_reads > 0) {
+		uint16_t remaining = data->fifo_drain_len - *drained;
+		size_t chunk = MIN((size_t)remaining, sizeof(data->fifo_discard_buf));
+
+		ret = bmi270_prep_reg_read_async(dev, BMI270_REG_FIFO_DATA, data->fifo_discard_buf,
+						 chunk, RTIO_SQE_CHAINED);
+		if (ret < 0) {
+			return ret;
+		}
+
+		*drained += (uint16_t)chunk;
+		max_reads--;
+	}
+
+	return 0;
+}
+
+static void bmi270_fifo_drain_done_cb(struct rtio *r, const struct rtio_sqe *sqe, int result,
+				      void *arg)
+{
+	ARG_UNUSED(sqe);
+
+	const struct device *dev = arg;
+	struct bmi270_data *data = dev->data;
+	struct rtio_iodev_sqe *iodev_sqe = data->streaming_sqe;
+
+	result = bmi270_rtio_drain_cq(r, result);
+
+	if (result < 0 || iodev_sqe == NULL) {
+		if (iodev_sqe != NULL) {
+			stream_error(dev, data, iodev_sqe, result);
+		}
+		data->fifo_drain_len = 0U;
+		bmi270_fifo_job_abort(dev);
+		return;
+	}
+
+	if (data->fifo_drain_len > 0U) {
+		bmi270_requeue_fifo_job_work(dev, BMI270_FIFO_JOB_DRAIN);
+	} else {
+		bmi270_requeue_fifo_job_work(dev, BMI270_FIFO_JOB_CLEAR_STATUS);
+	}
+}
+
+static void bmi270_fifo_read_done_cb(struct rtio *r, const struct rtio_sqe *sqe, int result,
+				     void *arg)
+{
+	ARG_UNUSED(sqe);
+
+	const struct device *dev = arg;
+	struct bmi270_data *data = dev->data;
+	struct rtio_iodev_sqe *iodev_sqe = data->streaming_sqe;
+
+	result = bmi270_rtio_drain_cq(r, result);
+
+	if (result < 0 || iodev_sqe == NULL) {
+		if (iodev_sqe != NULL) {
+			stream_error(dev, data, iodev_sqe, result);
+		}
+		bmi270_fifo_job_abort(dev);
+		return;
+	}
+
+	adv_power_save_enable_log_failure(dev);
+
+	data->streaming_sqe = NULL;
+	rtio_iodev_sqe_ok(iodev_sqe,
+			  sizeof(struct bmi270_fifo_encoded_data) + data->fifo_len);
+	bmi270_fifo_job_complete(dev);
+}
+
+static void bmi270_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, int result,
+				void *arg)
+{
+	ARG_UNUSED(sqe);
+
+	const struct device *dev = arg;
+	struct bmi270_data *data = dev->data;
+	struct rtio_iodev_sqe *iodev_sqe = data->streaming_sqe;
+	uint16_t fifo_len;
+	uint16_t fifo_len_orig;
+	uint8_t *buf;
+	uint32_t buf_len;
+	struct bmi270_fifo_encoded_data *edata;
+	size_t max_fifo;
+	size_t min_len;
+	int ret;
+
+	if (result < 0 || iodev_sqe == NULL) {
+		result = bmi270_rtio_drain_cq(r, result);
+		if (iodev_sqe != NULL) {
+			stream_error(dev, data, iodev_sqe, result);
+		}
+		bmi270_fifo_job_abort(dev);
+		return;
+	}
+
+	result = bmi270_rtio_drain_cq(r, result);
+	if (result < 0) {
+		stream_error(dev, data, iodev_sqe, result);
+		bmi270_fifo_job_abort(dev);
+		return;
+	}
+
+	if (!(data->int_status_1 & (BMI270_INT_STATUS_1_FWM_INT | BMI270_INT_STATUS_1_FFULL_INT))) {
+		adv_power_save_enable_log_failure(dev);
+		data->streaming_sqe = NULL;
+		rtio_iodev_sqe_ok(iodev_sqe, 0);
+		bmi270_fifo_job_complete(dev);
+		return;
+	}
+
+	fifo_len = sys_get_le16(data->fifo_status) & 0x3FFF;
+	if (fifo_len == 0) {
+		adv_power_save_enable_log_failure(dev);
+		data->streaming_sqe = NULL;
+		rtio_iodev_sqe_ok(iodev_sqe, 0);
+		bmi270_fifo_job_complete(dev);
+		return;
+	}
+
+	max_fifo = CONFIG_BMI270_FIFO_STREAM_BLOCK_SIZE - sizeof(struct bmi270_fifo_encoded_data);
+	fifo_len_orig = fifo_len;
+	data->fifo_drain_len = 0U;
+
+	if (fifo_len > max_fifo) {
+		LOG_WRN("FIFO len %u > max %zu, capping and draining remainder", fifo_len,
+			max_fifo);
+		fifo_len = (uint16_t)max_fifo;
+		data->fifo_drain_len = fifo_len_orig - fifo_len;
+	}
+
+	data->fifo_len = fifo_len;
+	min_len = sizeof(struct bmi270_fifo_encoded_data) + fifo_len;
+
+	ret = rtio_sqe_rx_buf(iodev_sqe, min_len, min_len, &buf, &buf_len);
+	if (ret != 0 || buf_len < min_len) {
+		stream_error(dev, data, iodev_sqe, -ENOMEM);
+		bmi270_fifo_job_abort(dev);
+		return;
+	}
+
+	edata = (struct bmi270_fifo_encoded_data *)buf;
+	fifo_fill_encoded_header(edata, data, fifo_len);
+	data->fifo_data_buf = edata->fifo_data;
+
+	bmi270_requeue_fifo_job_work(dev, BMI270_FIFO_JOB_DATA);
+}
+
+static void bmi270_submit_fifo_data_job(const struct device *dev)
+{
+	struct bmi270_data *data = dev->data;
+	struct rtio_iodev_sqe *iodev_sqe = data->streaming_sqe;
+	struct rtio_sqe *cb_sqe;
+	uint16_t drained;
+	int ret;
+
+	if (iodev_sqe == NULL) {
+		bmi270_fifo_job_abort(dev);
+		return;
+	}
+
+	ret = bmi270_prep_reg_read_async(dev, BMI270_REG_FIFO_DATA, data->fifo_data_buf,
+					 data->fifo_len, RTIO_SQE_CHAINED);
+	if (ret < 0) {
+		rtio_sqe_drop_all(data->rtio_ctx);
+		bmi270_requeue_fifo_job_work(dev, BMI270_FIFO_JOB_DATA);
+		return;
+	}
+
+	if (data->fifo_drain_len > 0U) {
+		ret = bmi270_prep_fifo_drain_async(dev, BMI270_FIFO_DATA_JOB_DRAIN_READS,
+						   &drained);
+		if (ret < 0) {
+			rtio_sqe_drop_all(data->rtio_ctx);
+			bmi270_requeue_fifo_job_work(dev, BMI270_FIFO_JOB_DATA);
+			return;
+		}
+
+		cb_sqe = rtio_sqe_acquire(data->rtio_ctx);
+		if (cb_sqe == NULL) {
+			rtio_sqe_drop_all(data->rtio_ctx);
+			bmi270_requeue_fifo_job_work(dev, BMI270_FIFO_JOB_DATA);
+			return;
+		}
+		rtio_sqe_prep_callback_no_cqe(cb_sqe, bmi270_fifo_drain_done_cb, (void *)dev,
+					      NULL);
+		data->fifo_drain_len -= drained;
+
+		rtio_submit(data->rtio_ctx, 0);
+		return;
+	}
+
+	ret = bmi270_prep_reg_read_async(dev, BMI270_REG_INT_STATUS_1, &data->int_status_1, 1,
+					 RTIO_SQE_CHAINED);
+	if (ret < 0) {
+		rtio_sqe_drop_all(data->rtio_ctx);
+		bmi270_requeue_fifo_job_work(dev, BMI270_FIFO_JOB_DATA);
+		return;
+	}
+
+	cb_sqe = rtio_sqe_acquire(data->rtio_ctx);
+	if (cb_sqe == NULL) {
+		rtio_sqe_drop_all(data->rtio_ctx);
+		bmi270_requeue_fifo_job_work(dev, BMI270_FIFO_JOB_DATA);
+		return;
+	}
+	rtio_sqe_prep_callback_no_cqe(cb_sqe, bmi270_fifo_read_done_cb, (void *)dev, NULL);
+
+	rtio_submit(data->rtio_ctx, 0);
+}
+
+static void bmi270_submit_fifo_drain_job(const struct device *dev)
+{
+	struct bmi270_data *data = dev->data;
+	struct rtio_iodev_sqe *iodev_sqe = data->streaming_sqe;
+	struct rtio_sqe *cb_sqe;
+	uint16_t drained;
+	int ret;
+
+	if (iodev_sqe == NULL) {
+		bmi270_fifo_job_abort(dev);
+		return;
+	}
+
+	if (data->fifo_drain_len == 0U) {
+		bmi270_requeue_fifo_job_work(dev, BMI270_FIFO_JOB_CLEAR_STATUS);
+		return;
+	}
+
+	ret = bmi270_prep_fifo_drain_async(dev, BMI270_FIFO_DRAIN_JOB_DRAIN_READS, &drained);
+	if (ret < 0) {
+		rtio_sqe_drop_all(data->rtio_ctx);
+		bmi270_requeue_fifo_job_work(dev, BMI270_FIFO_JOB_DRAIN);
+		return;
+	}
+
+	cb_sqe = rtio_sqe_acquire(data->rtio_ctx);
+	if (cb_sqe == NULL) {
+		rtio_sqe_drop_all(data->rtio_ctx);
+		bmi270_requeue_fifo_job_work(dev, BMI270_FIFO_JOB_DRAIN);
+		return;
+	}
+	rtio_sqe_prep_callback_no_cqe(cb_sqe, bmi270_fifo_drain_done_cb, (void *)dev, NULL);
+	data->fifo_drain_len -= drained;
+
+	rtio_submit(data->rtio_ctx, 0);
+}
+
+static void bmi270_submit_fifo_clear_status_job(const struct device *dev)
+{
+	struct bmi270_data *data = dev->data;
+	struct rtio_iodev_sqe *iodev_sqe = data->streaming_sqe;
+	struct rtio_sqe *cb_sqe;
+	int ret;
+
+	if (iodev_sqe == NULL) {
+		bmi270_fifo_job_abort(dev);
+		return;
+	}
+
+	ret = bmi270_prep_reg_read_async(dev, BMI270_REG_INT_STATUS_1, &data->int_status_1, 1,
+					 RTIO_SQE_CHAINED);
+	if (ret < 0) {
+		rtio_sqe_drop_all(data->rtio_ctx);
+		bmi270_requeue_fifo_job_work(dev, BMI270_FIFO_JOB_CLEAR_STATUS);
+		return;
+	}
+
+	cb_sqe = rtio_sqe_acquire(data->rtio_ctx);
+	if (cb_sqe == NULL) {
+		rtio_sqe_drop_all(data->rtio_ctx);
+		bmi270_requeue_fifo_job_work(dev, BMI270_FIFO_JOB_CLEAR_STATUS);
+		return;
+	}
+	rtio_sqe_prep_callback_no_cqe(cb_sqe, bmi270_fifo_read_done_cb, (void *)dev, NULL);
+
+	rtio_submit(data->rtio_ctx, 0);
 }
 
 void bmi270_stream_handle_fifo(const struct device *dev)
 {
 	struct bmi270_data *data = dev->data;
-	struct rtio_iodev_sqe *iodev_sqe = data->streaming_sqe;
-	uint8_t int_status_1;
-	uint16_t fifo_len;
+	struct rtio_iodev_sqe *iodev_sqe;
+	struct rtio_sqe *cb_sqe;
+	struct mpsc_node *job;
+	k_spinlock_key_t key;
 	uint64_t cycles;
-	uint8_t *buf;
-	uint32_t buf_len;
-	struct bmi270_fifo_encoded_data *edata;
 	int ret;
 
+	key = k_spin_lock(&data->fifo_job_lock);
+	if (data->fifo_job_processing) {
+		k_spin_unlock(&data->fifo_job_lock, key);
+		return;
+	}
+
+	job = mpsc_pop(&data->fifo_jobs);
+	if (job == NULL) {
+		data->fifo_job_queued = false;
+		k_spin_unlock(&data->fifo_job_lock, key);
+		return;
+	}
+	data->fifo_job_queued = false;
+	data->fifo_job_processing = true;
+	k_spin_unlock(&data->fifo_job_lock, key);
+
+	iodev_sqe = data->streaming_sqe;
 	if (iodev_sqe == NULL) {
+		bmi270_fifo_job_abort(dev);
+		return;
+	}
+
+	if (data->fifo_job_phase == BMI270_FIFO_JOB_DATA) {
+		bmi270_submit_fifo_data_job(dev);
+		return;
+	}
+
+	if (data->fifo_job_phase == BMI270_FIFO_JOB_DRAIN) {
+		bmi270_submit_fifo_drain_job(dev);
+		return;
+	}
+
+	if (data->fifo_job_phase == BMI270_FIFO_JOB_CLEAR_STATUS) {
+		bmi270_submit_fifo_clear_status_job(dev);
 		return;
 	}
 
@@ -302,78 +721,31 @@ void bmi270_stream_handle_fifo(const struct device *dev)
 		data->timestamp = sensor_clock_cycles_to_ns(cycles);
 	}
 
-	ret = bmi270_reg_read(dev, BMI270_REG_INT_STATUS_1, &int_status_1, 1);
+	ret = bmi270_prep_reg_read_async(dev, BMI270_REG_INT_STATUS_1, &data->int_status_1, 1,
+					 RTIO_SQE_CHAINED);
 	if (ret < 0) {
-		stream_error(dev, data, iodev_sqe, ret);
+		rtio_sqe_drop_all(data->rtio_ctx);
+		bmi270_requeue_fifo_job_work(dev, BMI270_FIFO_JOB_STATUS);
 		return;
 	}
 
-	data->int_status_1 = int_status_1;
-
-	if (!(int_status_1 & (BMI270_INT_STATUS_1_FWM_INT | BMI270_INT_STATUS_1_FFULL_INT))) {
-		adv_power_save_enable_log_failure(dev);
-		return;
-	}
-
-	/* Read FIFO length (14-bit, LSB then MSB) */
-	ret = bmi270_reg_read(dev, BMI270_REG_FIFO_LENGTH_0, (uint8_t *)&fifo_len, 2);
+	ret = bmi270_prep_reg_read_async(dev, BMI270_REG_FIFO_LENGTH_0, data->fifo_status, 2,
+					 RTIO_SQE_CHAINED);
 	if (ret < 0) {
-		stream_error(dev, data, iodev_sqe, ret);
+		rtio_sqe_drop_all(data->rtio_ctx);
+		bmi270_requeue_fifo_job_work(dev, BMI270_FIFO_JOB_STATUS);
 		return;
 	}
 
-	fifo_len = sys_get_le16((uint8_t *)&fifo_len) & 0x3FFF;
-	if (fifo_len == 0) {
-		adv_power_save_enable_log_failure(dev);
-		data->streaming_sqe = NULL;
-		rtio_iodev_sqe_ok(iodev_sqe, 0);
+	cb_sqe = rtio_sqe_acquire(data->rtio_ctx);
+	if (cb_sqe == NULL) {
+		rtio_sqe_drop_all(data->rtio_ctx);
+		bmi270_requeue_fifo_job_work(dev, BMI270_FIFO_JOB_STATUS);
 		return;
 	}
+	rtio_sqe_prep_callback_no_cqe(cb_sqe, bmi270_read_fifo_cb, (void *)dev, NULL);
 
-	size_t max_fifo =
-		CONFIG_BMI270_FIFO_STREAM_BLOCK_SIZE - sizeof(struct bmi270_fifo_encoded_data);
-	uint16_t fifo_len_orig = fifo_len;
-
-	if (fifo_len > max_fifo) {
-		LOG_WRN("FIFO len %u > max %zu, capping and draining remainder", fifo_len,
-			max_fifo);
-		fifo_len = (uint16_t)max_fifo;
-	}
-
-	size_t min_len = sizeof(struct bmi270_fifo_encoded_data) + fifo_len;
-
-	ret = rtio_sqe_rx_buf(iodev_sqe, min_len, min_len, &buf, &buf_len);
-	if (ret != 0 || buf_len < min_len) {
-		stream_error(dev, data, iodev_sqe, -ENOMEM);
-		return;
-	}
-
-	edata = (struct bmi270_fifo_encoded_data *)buf;
-	fifo_fill_encoded_header(edata, data, fifo_len);
-
-	/* Burst read from FIFO_DATA (address does not auto-increment; burst read does) */
-	ret = bmi270_reg_read(dev, BMI270_REG_FIFO_DATA, edata->fifo_data, fifo_len);
-	if (ret < 0) {
-		stream_error(dev, data, iodev_sqe, ret);
-		return;
-	}
-
-	/* If we capped, drain remainder so FIFO is empty for next watermark */
-	if (fifo_len_orig > fifo_len) {
-		fifo_drain_bytes(dev, fifo_len_orig - fifo_len);
-	}
-
-	/*
-	 * Clear the FWM/FFULL latch now that the FIFO is drained below
-	 * watermark.  Latched interrupts only clear when INT_STATUS is read
-	 * AND fill level is below the threshold, so this must come AFTER drain.
-	 */
-	bmi270_reg_read(dev, BMI270_REG_INT_STATUS_1, &int_status_1, 1);
-
-	adv_power_save_enable_log_failure(dev);
-
-	data->streaming_sqe = NULL;
-	rtio_iodev_sqe_ok(iodev_sqe, (int)min_len);
+	rtio_submit(data->rtio_ctx, 0);
 }
 
 void bmi270_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)

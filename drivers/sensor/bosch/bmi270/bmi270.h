@@ -18,6 +18,8 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/sys/mpsc_lockfree.h>
 
 #define BMI270_WR_LEN                           32
 #define BMI270_CONFIG_FILE_RETRIES              15
@@ -32,10 +34,10 @@ int bmi270_adv_power_save_enable(const struct device *dev);
 int bmi270_adv_power_save_disable(const struct device *dev);
 
 #if defined(CONFIG_BMI270_STREAM)
+void bmi270_stream_init(const struct device *dev);
 void bmi270_stream_handle_fifo(const struct device *dev);
+void bmi270_stream_submit_fifo_job(const struct device *dev);
 void bmi270_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
-void bmi270_submit_fifo_work(const struct device *dev);
-struct k_work_q *bmi270_get_fifo_work_q(void);
 #endif
 
 #define BMI270_REG_CHIP_ID         0x00
@@ -54,6 +56,8 @@ struct k_work_q *bmi270_get_fifo_work_q(void);
 #define BMI270_REG_TEMPERATURE_0   0x22
 #define BMI270_REG_FIFO_LENGTH_0   0x24
 #define BMI270_REG_FIFO_DATA       0x26
+
+#define BMI270_FIFO_DRAIN_CHUNK_SIZE 64
 #define BMI270_REG_FEAT_PAGE       0x2F
 #define BMI270_REG_FEATURES_0      0x30
 #define BMI270_REG_ACC_CONF        0x40
@@ -345,11 +349,26 @@ struct bmi270_data {
 #endif /* CONFIG_BMI270_TRIGGER */
 
 #if defined(CONFIG_BMI270_STREAM)
+	struct rtio *rtio_ctx;
+	struct rtio_iodev *iodev;
 	struct rtio_iodev_sqe *streaming_sqe;
 	uint16_t fifo_watermark_bytes;
+	uint16_t fifo_len;
+	uint16_t fifo_drain_len;
 	uint8_t int_status_1;
+	uint8_t fifo_status[2];
+	uint8_t *fifo_data_buf;
+	uint8_t fifo_discard_buf[BMI270_FIFO_DRAIN_CHUNK_SIZE];
+	uint8_t spi_dummy_byte;
 	uint64_t timestamp;
-	struct k_work fifo_work;
+	struct mpsc fifo_jobs;
+	struct mpsc_node fifo_job;
+	struct k_work fifo_job_work;
+	struct k_spinlock fifo_job_lock;
+	uint16_t fifo_job_pending;
+	uint8_t fifo_job_phase;
+	bool fifo_job_queued;
+	bool fifo_job_processing;
 #endif /* CONFIG_BMI270_STREAM */
 };
 
@@ -412,6 +431,25 @@ extern const struct bmi270_bus_io bmi270_bus_io_spi;
 
 #if CONFIG_BMI270_BUS_I2C
 extern const struct bmi270_bus_io bmi270_bus_io_i2c;
+#endif
+
+#if defined(CONFIG_BMI270_STREAM)
+int bmi270_prep_reg_read_async(const struct device *dev, uint8_t reg, uint8_t *buf, size_t len,
+			       uint8_t flags);
+int bmi270_prep_reg_write_async(const struct device *dev, uint8_t reg, const uint8_t *buf,
+				size_t len, uint8_t flags);
+#if CONFIG_BMI270_BUS_SPI
+int bmi270_spi_prep_reg_read_async(const struct device *dev, uint8_t reg, uint8_t *buf,
+				   size_t len, uint8_t flags);
+int bmi270_spi_prep_reg_write_async(const struct device *dev, uint8_t reg, const uint8_t *buf,
+				    size_t len, uint8_t flags);
+#endif
+#if CONFIG_BMI270_BUS_I2C
+int bmi270_i2c_prep_reg_read_async(const struct device *dev, uint8_t reg, uint8_t *buf,
+				   size_t len, uint8_t flags);
+int bmi270_i2c_prep_reg_write_async(const struct device *dev, uint8_t reg, const uint8_t *buf,
+				    size_t len, uint8_t flags);
+#endif
 #endif
 
 int bmi270_reg_read(const struct device *dev, uint8_t reg, uint8_t *data, uint16_t length);
