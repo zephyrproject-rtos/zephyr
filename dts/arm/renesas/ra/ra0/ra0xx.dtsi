@@ -103,11 +103,10 @@
 			status = "okay";
 		};
 
-		flash: flash-controller@407ec000 {
-			compatible = "renesas,ra-flash-lp-controller";
+		fcb: fcb@407ec000 {
+			compatible = "renesas,ra-fcb";
 			reg = <0x407ec000 0x3fd8>;
-			#address-cells = <1>;
-			#size-cells = <1>;
+			ranges;
 			interrupts = <11 1>;
 			interrupt-names = "frdyi";
 		};
