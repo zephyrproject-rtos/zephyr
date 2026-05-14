@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_include_directories(.)
+zephyr_include_directories(${ZEPHYR_BASE}/drivers)
 
 # Let SystemInit() be called in place of soc_reset_hook() by default.
 zephyr_linker_symbol(SYMBOL soc_reset_hook EXPR "@SystemInit@")
@@ -20,6 +21,7 @@ elseif(CONFIG_LD_LINKER_TEMPLATE)
 endif()
 
 zephyr_sources(soc.c)
+zephyr_sources_ifdef(CONFIG_SOC_RA_PM power.c)
 
 if(NOT CONFIG_ETH_RENESAS_RA_USE_NS_BUF)
   set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
