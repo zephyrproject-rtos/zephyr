@@ -2235,13 +2235,15 @@ class SphinxLint(ComplianceTest):
     name = "SphinxLint"
     doc = "Check Sphinx/reStructuredText files with sphinx-lint."
 
+    RST_DOC_MAX_LINE_LENGTH = 100
+
     # Checkers added/removed to sphinx-lint's default set
     DISABLE_CHECKERS = [
         "horizontal-tab",
         "missing-space-before-default-role",
         "trailing-whitespace",
     ]
-    ENABLE_CHECKERS = ["default-role"]
+    ENABLE_CHECKERS = ["default-role", "line-too-long"]
 
     def run(self):
         for file in get_files():
@@ -2253,7 +2255,8 @@ class SphinxLint(ComplianceTest):
                 disable_checkers = ','.join(self.DISABLE_CHECKERS)
                 enable_checkers = ','.join(self.ENABLE_CHECKERS)
                 subprocess.run(
-                    f"sphinx-lint -d {disable_checkers} -e {enable_checkers} {file}",
+                    f"sphinx-lint -d {disable_checkers} -e {enable_checkers} "
+                    f"--max-line-length {self.RST_DOC_MAX_LINE_LENGTH} {file}",
                     check=True,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
