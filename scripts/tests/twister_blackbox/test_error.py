@@ -12,7 +12,6 @@ import re
 import sys
 from unittest import mock
 
-# pylint: disable=no-name-in-module
 from conftest import TEST_DATA, test_filename_mock
 from twisterlib.testplan import TestPlan
 from twisterlib.twister_main import main as twister_main

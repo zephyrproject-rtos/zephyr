@@ -15,7 +15,6 @@ import pytest
 import sys
 import tarfile
 
-# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, test_filename_mock
 from twisterlib.testplan import TestPlan
 

@@ -10,7 +10,6 @@ from unittest import mock
 import os
 import json
 
-# pylint: disable=no-name-in-module
 from conftest import TEST_DATA, test_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 from twisterlib.twister_main import main as twister_main

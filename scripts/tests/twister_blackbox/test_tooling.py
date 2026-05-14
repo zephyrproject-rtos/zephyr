@@ -13,7 +13,6 @@ import pytest
 import sys
 import json
 
-# pylint: disable=no-name-in-module
 from conftest import TEST_DATA, test_filename_mock
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan

@@ -14,7 +14,6 @@ import sys
 import json
 import re
 
-# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, test_filename_mock
 from twisterlib.testplan import TestPlan
 

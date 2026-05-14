@@ -15,7 +15,6 @@ import re
 import sys
 import time
 
-# pylint: disable=no-name-in-module
 from conftest import TEST_DATA, ZEPHYR_BASE, test_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
