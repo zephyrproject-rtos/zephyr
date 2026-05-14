@@ -2121,8 +2121,8 @@ static void error_isr(const struct device *dev)
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	uint32_t err = nrf_uarte_errorsrc_get(uarte);
 	struct uart_event evt = {
-		.type = UART_RX_STOPPED,
-		.data.rx_stop.reason = UARTE_ERROR_FROM_MASK(err),
+		.type = UART_RX_ERROR,
+		.data.rx_error.reason = UARTE_ERROR_FROM_MASK(err),
 	};
 
 	/* For VPR cores read and write may be reordered - barrier needed. */
@@ -2130,7 +2130,6 @@ static void error_isr(const struct device *dev)
 	nrf_uarte_errorsrc_clear(uarte, err);
 
 	user_callback(dev, &evt);
-	(void)rx_disable(dev, false);
 }
 
 static void rxstarted_isr(const struct device *dev)
