@@ -1,0 +1,89 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# Author: Siddharth Vadapalli <s-vadapalli@ti.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI AM62L Common Platform Switch (CPSW)
+
+compatible: "ti,am62l-cpsw"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      CPSW NU Subsystem Register region.
+
+  reg-names:
+    required: true
+    description: |
+      "cpsw_nuss" for the CPSW NU Subsystem register region,
+      "gmii_sel" for the GMII configuration CTRL MMR registers, and
+      "mac_efuse" for the eFuse register holding the MAC Port 1 address.
+
+  dmas:
+    required: true
+    description: |
+      DMA Channels for transmitting data to and receiving data from
+      CPSW. The Address Select (ASEL) parameter is specified along
+      with the DMA Channel. The Accelerator Coherency Port (ACP) in
+      the ARM Cluster on the SoC enables IO Coherency in the following
+      manner:
+      A) Device initiated reads to System Memory go through the L2
+      cache controller ensuring that the device gets the correct data
+      if the data hasn't been flushed to System Memory yet.
+      B) Device initiated writes to System Memory also go through the
+      L2 cache controller ensuring that the cache is updated to reflect
+      the correct contents of System Memory.
+      The ASEL parameter is utilized to enable this feature and the
+      valid values are:
+      ASEL 14
+      => Write transactions cause L2 cache allocation for cache warming
+      ASEL 15
+      => Write transactions do not cause L2 cache allocation
+      Read transactions do not result in L2 cache allocation independent
+      of the ASEL value.
+
+  dma-names:
+    required: true
+    description: |
+      The DMA Channels should be named in the format of "tx0", "tx1" and
+      so on for transmit and "rx" for receive (there is a single RX DMA
+      Channel). Transmit and receive are defined from the perspective of
+      Host Software. Hence, "transmit" refers to DMA Channels moving data
+      from System Memory to CPSW whereas "receive" refers to DMA Channels
+      moving data from CPSW to System Memory.
+
+child-binding:
+  description: Ethernet Ports
+
+  properties:
+    "#address-cells":
+      type: int
+      const: 1
+
+    "#size-cells":
+      type: int
+      const: 0
+
+  child-binding:
+    description: MAC Port
+
+    include:
+      - name: ethernet-controller.yaml
+        property-blocklist:
+          - compatible
+
+    properties:
+      reg:
+        required: true
+        type: array
+        max-len: 1
+        description: |
+          The MAC Port number (starting from 1 for MAC Port 1).
+          The CPSW Host Port (CPU facing port) is numbered 0 and
+          doesn't have to be described.
+
+      ti,mac-only:
+        type: boolean
+        description: Port is MAC only (no L2 switching to/from other MAC Ports).
