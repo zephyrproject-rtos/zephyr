@@ -118,6 +118,10 @@ New Boards
 
   * :zephyr:board:`Arduino Nesso N1 <arduino_nesso_n1>` (``arduino_nesso_n1``)
 
+* Seeed
+
+  * :zephyr:board:`Seeed Wio Tracker L1 <wio_tracker_l1>` (``wio_tracker_l1``)
+
 New Shields
 ***********
 
