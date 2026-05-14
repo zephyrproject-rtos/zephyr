@@ -19,6 +19,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2s.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/audio/codec.h>
 #include <zephyr/kernel.h>
@@ -43,6 +44,16 @@ struct cs47l63_config {
 
 struct cs47l63_data {
 	bool configured;
+	audio_codec_tx_done_callback_t tx_done_cb;
+	void *tx_cb_user_data;
+	audio_codec_rx_done_callback_t rx_done_cb;
+	void *rx_cb_user_data;
+	const struct device *i2s_dev;
+	struct k_mem_slab *i2s_mem_slab;
+	size_t i2s_block_size;
+	struct k_work tx_work;
+	const struct device *dev;
+	bool i2s_started;
 };
 
 /* ------------------------------------------------------------------ */
@@ -288,6 +299,33 @@ static int cs47l63_codec_configure(const struct device *dev,
 		return ret;
 	}
 
+	/* Configure I2S TX if I2S config is provided */
+	if (cfg->dai_type == AUDIO_DAI_TYPE_I2S && data->i2s_dev != NULL) {
+		struct i2s_config i2s_cfg = {0};
+
+		i2s_cfg.word_size = cfg->dai_cfg.i2s.word_size;
+		i2s_cfg.channels = cfg->dai_cfg.i2s.channels;
+		i2s_cfg.format = cfg->dai_cfg.i2s.format;
+		i2s_cfg.options = cfg->dai_cfg.i2s.options;
+		i2s_cfg.frame_clk_freq = cfg->dai_cfg.i2s.frame_clk_freq;
+		i2s_cfg.mem_slab = cfg->dai_cfg.i2s.mem_slab;
+		i2s_cfg.block_size = cfg->dai_cfg.i2s.block_size;
+		i2s_cfg.timeout = SYS_FOREVER_US;
+
+		ret = i2s_configure(data->i2s_dev, I2S_DIR_TX, &i2s_cfg);
+		if (ret != 0) {
+			LOG_ERR("I2S TX configure failed: %d", ret);
+			return ret;
+		}
+
+		data->i2s_mem_slab = cfg->dai_cfg.i2s.mem_slab;
+		data->i2s_block_size = cfg->dai_cfg.i2s.block_size;
+		LOG_INF("I2S TX configured: %u Hz, %u-bit, %u ch",
+			cfg->dai_cfg.i2s.frame_clk_freq,
+			cfg->dai_cfg.i2s.word_size,
+			cfg->dai_cfg.i2s.channels);
+	}
+
 	data->configured = true;
 	LOG_INF("CS47L63 configured");
 	return 0;
@@ -310,9 +348,20 @@ static int cs47l63_codec_start(const struct device *dev, audio_dai_dir_t dir)
 static int cs47l63_codec_stop(const struct device *dev, audio_dai_dir_t dir)
 {
 	const struct cs47l63_config *drv_cfg = dev->config;
+	struct cs47l63_data *data = dev->data;
+	int ret;
 
 	if (dir != AUDIO_DAI_DIR_TX) {
 		return -ENOTSUP;
+	}
+
+	/* Stop I2S TX if running */
+	if (data->i2s_dev != NULL && data->i2s_started) {
+		ret = i2s_trigger(data->i2s_dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
+		if (ret != 0) {
+			LOG_ERR("I2S TX stop failed: %d", ret);
+		}
+		data->i2s_started = false;
 	}
 
 	/* Disable FLL */
@@ -322,11 +371,20 @@ static int cs47l63_codec_stop(const struct device *dev, audio_dai_dir_t dir)
 static void cs47l63_start_output(const struct device *dev)
 {
 	const struct cs47l63_config *drv_cfg = dev->config;
+	struct cs47l63_data *data = dev->data;
 	int ret;
 
 	ret = cs47l63_write_reg(&drv_cfg->spi, CS47L63_OUTPUT_ENABLE_1, 0x0002);
 	if (ret) {
 		LOG_ERR("Failed to enable output: %d", ret);
+		return;
+	}
+
+	/* Kick off the tx_done callback chain so the application starts
+	 * feeding audio data via audio_codec_write().
+	 */
+	if (data->tx_done_cb != NULL) {
+		k_work_submit(&data->tx_work);
 	}
 }
 
@@ -381,6 +439,79 @@ static int cs47l63_apply_properties(const struct device *dev)
 	return 0;
 }
 
+static void cs47l63_tx_work_handler(struct k_work *work)
+{
+	struct cs47l63_data *data = CONTAINER_OF(work, struct cs47l63_data, tx_work);
+
+	if (data->tx_done_cb != NULL) {
+		data->tx_done_cb(data->dev, data->tx_cb_user_data);
+	}
+}
+
+static int cs47l63_register_done_callback(const struct device *dev,
+					  audio_codec_tx_done_callback_t tx_cb,
+					  void *tx_cb_user_data,
+					  audio_codec_rx_done_callback_t rx_cb,
+					  void *rx_cb_user_data)
+{
+	struct cs47l63_data *data = dev->data;
+
+	data->tx_done_cb = tx_cb;
+	data->tx_cb_user_data = tx_cb_user_data;
+	data->rx_done_cb = rx_cb;
+	data->rx_cb_user_data = rx_cb_user_data;
+
+	return 0;
+}
+
+static int cs47l63_write(const struct device *dev, uint8_t *buf, size_t size)
+{
+	struct cs47l63_data *data = dev->data;
+	void *mem_block;
+	int ret;
+
+	if (data->i2s_dev == NULL) {
+		return -ENODEV;
+	}
+
+	ret = k_mem_slab_alloc(data->i2s_mem_slab, &mem_block, K_NO_WAIT);
+	if (ret != 0) {
+		LOG_ERR("Failed to allocate I2S TX block: %d", ret);
+		return ret;
+	}
+
+	size_t copy_len = MIN(size, data->i2s_block_size);
+
+	memcpy(mem_block, buf, copy_len);
+	if (copy_len < data->i2s_block_size) {
+		memset((uint8_t *)mem_block + copy_len, 0,
+		       data->i2s_block_size - copy_len);
+	}
+
+	ret = i2s_write(data->i2s_dev, mem_block, data->i2s_block_size);
+	if (ret != 0) {
+		LOG_ERR("I2S write failed: %d", ret);
+		k_mem_slab_free(data->i2s_mem_slab, mem_block);
+		return ret;
+	}
+
+	if (!data->i2s_started) {
+		ret = i2s_trigger(data->i2s_dev, I2S_DIR_TX, I2S_TRIGGER_START);
+		if (ret != 0) {
+			LOG_ERR("I2S TX start trigger failed: %d", ret);
+			return ret;
+		}
+		data->i2s_started = true;
+	}
+
+	/* Signal the tx_done callback via work queue so the caller can
+	 * feed the next block from a non-ISR context.
+	 */
+	k_work_submit(&data->tx_work);
+
+	return 0;
+}
+
 /* ------------------------------------------------------------------ */
 /* Driver API structure                                                */
 /* ------------------------------------------------------------------ */
@@ -393,6 +524,8 @@ static const struct audio_codec_api cs47l63_api = {
 	.apply_properties = cs47l63_apply_properties,
 	.start = cs47l63_codec_start,
 	.stop = cs47l63_codec_stop,
+	.write = cs47l63_write,
+	.register_done_callback = cs47l63_register_done_callback,
 };
 
 /* ------------------------------------------------------------------ */
@@ -402,13 +535,28 @@ static const struct audio_codec_api cs47l63_api = {
 static int cs47l63_init(const struct device *dev)
 {
 	const struct cs47l63_config *cfg = dev->config;
+	struct cs47l63_data *data = dev->data;
 	uint32_t devid;
 	int ret;
+
+	data->dev = dev;
+	k_work_init(&data->tx_work, cs47l63_tx_work_handler);
 
 	if (!spi_is_ready_dt(&cfg->spi)) {
 		LOG_ERR("SPI bus not ready");
 		return -ENODEV;
 	}
+
+	/* Obtain I2S TX device from the i2s-codec-tx alias if defined */
+#if DT_NODE_EXISTS(DT_ALIAS(i2s_codec_tx))
+	data->i2s_dev = DEVICE_DT_GET(DT_ALIAS(i2s_codec_tx));
+	if (!device_is_ready(data->i2s_dev)) {
+		LOG_WRN("I2S device not ready, I2S output disabled");
+		data->i2s_dev = NULL;
+	}
+#else
+	data->i2s_dev = NULL;
+#endif
 
 	/* Configure and assert hardware reset */
 	if (cfg->reset_gpio.port != NULL) {
