@@ -82,7 +82,16 @@ int uhc_xfer_append(const struct device *dev,
 {
 	struct uhc_data *data = dev->data;
 
-	sys_dlist_append(&data->ctrl_xfers, &xfer->node);
+	switch (xfer->type) {
+	case USB_EP_TYPE_CONTROL:
+		sys_dlist_append(&data->ctrl_xfers, &xfer->node);
+		break;
+	case USB_EP_TYPE_BULK:
+		sys_dlist_append(&data->bulk_xfers, &xfer->node);
+		break;
+	default:
+		LOG_ERR("Invalid xfer type: %d", xfer->type);
+	}
 
 	return 0;
 }
@@ -108,6 +117,7 @@ void uhc_xfer_cleanup_cancelled(const struct device *dev, uhc_xfer_cancel_cb_t c
 	struct uhc_data *data = dev->data;
 
 	uhc_xfer_dlist_cleanup_cancelled(dev, &data->ctrl_xfers, cb, priv);
+	uhc_xfer_dlist_cleanup_cancelled(dev, &data->bulk_xfers, cb, priv);
 }
 
 int uhc_xfer_dequeue(struct uhc_transfer *const xfer)
