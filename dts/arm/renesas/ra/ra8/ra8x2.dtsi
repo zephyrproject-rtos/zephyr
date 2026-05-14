@@ -22,7 +22,8 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			cpu-power-states = <&stop0 &stop1>;
+			cpu-power-states = <&sleep &deep_sleep &sw_standby &deep_sw_standby0
+					    &deep_sw_standby1 &deep_sw_standby2>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8.1m-mpu";
@@ -44,23 +45,85 @@
 		};
 
 		power-states {
-			stop0: state0 {
+			sleep: sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "runtime-idle";
-				min-residency-us = <100>;
+				min-residency-us = <1000>;
+				exit-latency-us = <60>;
+				zephyr,pm-device-disabled;
 			};
 
-			stop1: state1 {
+			deep_sleep: deep-sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <3000>;
+				exit-latency-us = <80>;
+			};
+
+			sw_standby: sw-standby {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
-				min-residency-us = <5000>;
-				exit-latency-us = <3000>;
+				min-residency-us = <10000>;
+				exit-latency-us = <33000>;
+			};
+
+			/*
+			 * Deep software standby - entered via pm_state_force() or
+			 * sys_poweroff() only. Wakeup is a full system reset.
+			 *
+			 * substate-id 0: DEEP_STANDBY_MODE1
+			 *   Standby RAM, LOCO, AGTn, USBFS/HS resume unit supplied.
+			 *
+			 * substate-id 1: DEEP_STANDBY_MODE2
+			 *   Standby RAM / USBFS/HS / LOCO / IWDT disabled; PVD0 supplied.
+			 *
+			 * substate-id 2: DEEP_STANDBY_MODE3
+			 *   Standby RAM, PVD0, USBFS/HS, LOCO, IWDT all disabled.
+			 */
+			deep_sw_standby0: deep-sw-standby-0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				substate-id = <0>;
+				status = "disabled";
+			};
+
+			deep_sw_standby1: deep-sw-standby-1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				substate-id = <1>;
+				status = "disabled";
+			};
+
+			deep_sw_standby2: deep-sw-standby-2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				substate-id = <2>;
+				status = "disabled";
 			};
 		};
 	};
 
 	soc {
 		interrupt-parent = <&nvic>;
+
+		lpm: power-controller {
+			compatible = "renesas,ra-lpm";
+			capabilities = "has-deep-sleep",
+				       "has-deep-sleep-irq-wakeup",
+				       "has-deep-software-standby",
+				       "has-output-port-retain",
+				       "has-ram-retain",
+				       "has-ldo-retain",
+				       "has-dpsbycr-dcssmode";
+			standby-options = "output-port-retain",
+					  "sram-retain",
+					  "tcm-retain",
+					  "pll1-ldo-retain",
+					  "pll2-ldo-retain",
+					  "hoco-ldo-retain";
+
+			status = "okay";
+		};
 
 		battery_backup: battery-backup@4001e3b0 {
 			compatible = "renesas,ra-battery-backup";
