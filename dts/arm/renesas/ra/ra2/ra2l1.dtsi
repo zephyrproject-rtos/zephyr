@@ -51,11 +51,10 @@
 			status = "disabled";
 		};
 
-		flash: flash-controller@407e0000 {
-			compatible = "renesas,ra-flash-lp-controller";
+		fcb: fcb@407e0000 {
+			compatible = "renesas,ra-fcb";
 			reg = <0x407e0000 0x20000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
+			ranges;
 			interrupts = <30 1>;
 			interrupt-names = "frdyi";
 		};
