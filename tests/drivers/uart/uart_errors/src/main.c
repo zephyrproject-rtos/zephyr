@@ -41,7 +41,7 @@ static uint8_t rx_chunks[RX_CHUNK_CNT][16];
 static uint32_t rx_chunks_mask = BIT_MASK(RX_CHUNK_CNT);
 static uint8_t rx_buffer[256];
 static uint32_t rx_buffer_cnt;
-static volatile uint32_t rx_stopped_cnt;
+static volatile uint32_t rx_error_cnt;
 static volatile bool rx_active;
 
 struct aux_dut_data {
@@ -119,9 +119,10 @@ static void dut_async_callback(const struct device *dev, struct uart_event *evt,
 			LOG_WRN("RX disabled");
 		}
 		break;
-	case UART_RX_STOPPED:
+	case UART_RX_ERROR:
 		LOG_WRN("RX error");
-		rx_stopped_cnt++;
+		rx_error_cnt++;
+		(void)uart_rx_disable(dev);
 		break;
 	default:
 		zassert_true(false);
@@ -141,7 +142,7 @@ static void dut_int_callback(const struct device *dev, void *user_data)
 
 		zassert_false(uart_irq_tx_ready(dev));
 		if (uart_err_check(dev) != 0) {
-			rx_stopped_cnt++;
+			rx_error_cnt++;
 		}
 		if (uart_irq_rx_ready(dev)) {
 			size_t rem = sizeof(rx_buffer) - rx_buffer_cnt;
@@ -372,13 +373,13 @@ static void test_detect_error(bool hwfc, int err_byte)
 	 * should be only one error.
 	 */
 	k_msleep(100);
-	zassert_true(rx_stopped_cnt > 0);
+	zassert_true(rx_error_cnt > 0);
 
 	/* Send TX without error. Receiver is settled so it should be correctly received. */
 	aux_tx(uart_dev_aux, buf, sizeof(buf), -1);
 
 	k_msleep(100);
-	TC_PRINT("RX bytes:%d/%d err_cnt:%d\n", rx_buffer_cnt, 3 * sizeof(buf), rx_stopped_cnt);
+	TC_PRINT("RX bytes:%d/%d err_cnt:%d\n", rx_buffer_cnt, 3 * sizeof(buf), rx_error_cnt);
 
 	LOG_HEXDUMP_INF(rx_buffer, rx_buffer_cnt, "Received data:");
 
@@ -441,7 +442,7 @@ static void before(void *unused)
 {
 	ARG_UNUSED(unused);
 	rx_buffer_cnt = 0;
-	rx_stopped_cnt = 0;
+	rx_error_cnt = 0;
 	rx_active = true;
 }
 
