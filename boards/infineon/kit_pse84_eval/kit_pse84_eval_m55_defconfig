@@ -15,9 +15,6 @@ CONFIG_HW_STACK_PROTECTION=y
 # Enable GPIO driver
 CONFIG_GPIO=y
 
-# Enable Clock Control driver
-CONFIG_CLOCK_CONTROL=y
-
 # Enable console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
