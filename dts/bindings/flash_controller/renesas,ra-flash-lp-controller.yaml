@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Renesas Electronics Corporation
+# Copyright (c) 2025-2026 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 description: Renesas RA family flash low-power controller
@@ -19,20 +19,3 @@ properties:
       - "frdyi"
     description: |
       Interrupts must be given corresponding names so that the driver can recognize them.
-
-  flash-hardware-version:
-    type: int
-    required: true
-    enum:
-      - 3
-    description: |
-      Version of the Flash peripheral/hardware.
-
-  "#erase-block-cells":
-    type: int
-    const: 2
-    description: Number of items to expect in a flash layout.
-
-erase-block-cells:
-  - pages_count
-  - pages_size
