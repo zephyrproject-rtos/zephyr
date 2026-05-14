@@ -309,22 +309,6 @@ extern const struct xtensa_mpu_range xtensa_mpu_ranges[];
 extern const unsigned int xtensa_mpu_ranges_num;
 
 /**
- * @brief Additional memory regions required by SoC.
- *
- * These memory regions will be setup by MPU initialization code at boot.
- *
- * Must be defined in the SoC layer.
- */
-extern const struct xtensa_mpu_range xtensa_soc_mpu_ranges[];
-
-/**
- * @brief Number of SoC additional memory regions.
- *
- * Must be defined in the SoC layer.
- */
-extern const int xtensa_soc_mpu_ranges_num;
-
-/**
  * @brief Initialize hardware MPU.
  *
  * This initializes the MPU hardware and setup the memory regions at boot.
