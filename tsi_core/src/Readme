@@ -25,7 +25,5 @@ int main() {
     release_chip_reset();
 
     // Continue with the rest of the boot process
-    // ...
-
     return 0;
 }
