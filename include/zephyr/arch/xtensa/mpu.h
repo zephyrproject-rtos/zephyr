@@ -297,6 +297,18 @@ struct xtensa_mpu_range {
 } __packed;
 
 /**
+ * @brief MPU memory regions at boot.
+ *
+ * These memory regions will be setup by MPU initialization code at boot.
+ */
+extern const struct xtensa_mpu_range xtensa_mpu_ranges[];
+
+/**
+ * @brief Number of MPU memory regions at boot.
+ */
+extern const unsigned int xtensa_mpu_ranges_num;
+
+/**
  * @brief Additional memory regions required by SoC.
  *
  * These memory regions will be setup by MPU initialization code at boot.
