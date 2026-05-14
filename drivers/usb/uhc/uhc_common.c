@@ -203,6 +203,41 @@ int uhc_xfer_defer_active(const struct device *dev, struct uhc_transfer *const x
 	return 0;
 }
 
+static void xfer_schedule_periodic(const struct device *dev,
+				  struct uhc_transfer *const xfer,
+				  const uint16_t cur_frame,
+				  const uint16_t max_frame)
+{
+	struct uhc_data *data = dev->data;
+	struct uhc_transfer *curr;
+
+	xfer->start_frame = cur_frame;
+
+	/* Search for transfers with same address and endpoint */
+	SYS_DLIST_FOR_EACH_CONTAINER(&data->periodic_xfers, curr, node) {
+		if (xfer->udev->addr == curr->udev->addr &&
+		    xfer->ep == curr->ep &&
+		    xfer_seq_cmp(xfer->start_frame, curr->start_frame) < 0) {
+			/* Schedule it on the next interval */
+			xfer->start_frame = curr->start_frame;
+		}
+	}
+
+	xfer->start_frame++;
+	xfer->start_frame = ROUND_UP(xfer->start_frame, 1U << (xfer->interval - 1));
+	xfer->start_frame %= (uint32_t)max_frame + 1;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&data->periodic_xfers, curr, node) {
+		if (xfer_seq_cmp(curr->start_frame, xfer->start_frame) < 0) {
+			continue;
+		}
+		sys_dlist_insert(&curr->node, &xfer->node);
+		return;
+	}
+
+	sys_dlist_append(&data->periodic_xfers, &xfer->node);
+}
+
 int uhc_xfer_defer_all_active(const struct device *dev)
 {
 	struct uhc_data *data = dev->data;
