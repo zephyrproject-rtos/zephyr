@@ -40,6 +40,10 @@ void usbh_device_free(struct usb_device *const udev)
 {
 	struct usbh_context *const uhs_ctx = udev->ctx;
 
+	if (usbh_device_is_root(uhs_ctx, udev)) {
+		uhs_ctx->root = NULL;
+	}
+
 	sys_bitarray_clear_bit(uhs_ctx->addr_ba, udev->addr);
 	sys_dlist_remove(&udev->node);
 	if (udev->cfg_desc != NULL) {
