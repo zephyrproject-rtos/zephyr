@@ -514,19 +514,21 @@ int mfd_rv3032_update_cfg(const struct device *dev, uint8_t addr, uint8_t mask, 
 	uint8_t val_new;
 	int err;
 
+	err = mfd_rv3032_enter_eerd(dev);
+	if (err) {
+		return err;
+	}
+
 	err = mfd_rv3032_read_reg8(dev, addr, &val_old);
 	if (err) {
+		mfd_rv3032_exit_eerd(dev);
 		return err;
 	}
 
 	val_new = (val_old & ~mask) | (val & mask);
 	if (val_new == val_old) {
+		mfd_rv3032_exit_eerd(dev);
 		return 0;
-	}
-
-	err = mfd_rv3032_enter_eerd(dev);
-	if (err) {
-		return err;
 	}
 
 	/* Write to ram so the setting takes effect without a EEPROM refresh */
