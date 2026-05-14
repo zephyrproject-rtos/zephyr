@@ -217,12 +217,14 @@ static void release_cs(bool data_transaction)
 	spi_release_dt(&bus);
 }
 
-static int bt_spi_get_header(uint8_t op, uint16_t *size)
+static int bt_spi_get_header(uint8_t op, uint16_t *size, uint16_t write_size)
 {
 	uint8_t header_master[5] = {op, 0, 0, 0, 0};
 	uint8_t header_slave[5];
 	uint8_t size_offset, attempts;
 	int ret;
+
+	ARG_UNUSED(write_size);
 
 	if (op == SPI_READ) {
 		if (!IS_IRQ_HIGH) {
@@ -278,7 +280,7 @@ static void release_cs(bool data_transaction)
 	spi_release_dt(&bus);
 }
 
-static int bt_spi_get_header(uint8_t op, uint16_t *size)
+static int bt_spi_get_header(uint8_t op, uint16_t *size, uint16_t write_size)
 {
 	uint8_t header_master[5] = {op, 0, 0, 0, 0};
 	uint8_t header_slave[5];
@@ -297,6 +299,8 @@ static int bt_spi_get_header(uint8_t op, uint16_t *size)
 		/* To make sure we have a minimum delay from previous release cs */
 		cs_delay = 100;
 		size_offset = STATUS_HEADER_TOWRITE;
+		header_master[size_offset] = write_size & 0x00FF;
+		header_master[size_offset + 1] = write_size >> 8;
 	} else {
 		return -EINVAL;
 	}
@@ -318,6 +322,14 @@ static int bt_spi_get_header(uint8_t op, uint16_t *size)
 
 	ret = bt_spi_transceive(header_master, 5, header_slave, 5);
 	*size = header_slave[size_offset] | (header_slave[size_offset + 1] << 8);
+
+	if (DT_INST_PROP_OR(0, wait_irq_low, false)) {
+		/* Wait up to a maximum time of 10 ms */
+		if (!WAIT_FOR(!IS_IRQ_HIGH, 10000, k_usleep(50))) {
+			LOG_ERR("IRQ pin did not go low");
+			return -EIO;
+		}
+	}
 	return ret;
 }
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1) */
@@ -361,10 +373,12 @@ static int bt_spi_bluenrg_setup(const struct device *dev,
 	int ret;
 	const bt_addr_t *addr = &params->public_addr;
 
-	/* force BlueNRG to be on controller mode */
-	uint8_t data = 1;
+	if (DT_INST_PROP_OR(0, req_ll_only, false)) {
+		/* force BlueNRG to be on controller mode */
+		uint8_t data = 1;
 
-	bt_spi_send_aci_config(BLUENRG_CONFIG_LL_ONLY_OFFSET, &data, 1);
+		bt_spi_send_aci_config(BLUENRG_CONFIG_LL_ONLY_OFFSET, &data, 1);
+	}
 
 	if (!bt_addr_eq(addr, BT_ADDR_NONE) && !bt_addr_eq(addr, BT_ADDR_ANY)) {
 		ret = bt_spi_send_aci_config(
@@ -526,7 +540,7 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 		do {
 			/* Wait for SPI bus to be available */
 			k_sem_take(&sem_busy, K_FOREVER);
-			ret = bt_spi_get_header(SPI_READ, &size);
+			ret = bt_spi_get_header(SPI_READ, &size, 0);
 
 			/* Read data */
 			if (ret == 0 && size != 0) {
@@ -577,7 +591,7 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 	data_ptr = buf->data;
 	remaining_bytes = buf->len;
 	do {
-		ret = bt_spi_get_header(SPI_WRITE, &size);
+		ret = bt_spi_get_header(SPI_WRITE, &size, remaining_bytes);
 		size = MIN(remaining_bytes, size);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v2)
@@ -666,6 +680,7 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 	/* Take BLE out of reset */
 	k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_assert_duration_ms, 0)));
 	gpio_pin_set_dt(&rst_gpio, 0);
+	k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_delay_ms, 0)));
 
 	/* Start RX thread */
 	k_thread_create(&spi_rx_thread_data, spi_rx_stack,
@@ -674,9 +689,11 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
 
-	/* Device will let us know when it's ready */
-	if (k_sem_take(&sem_initialised, K_SECONDS(CONFIG_BT_SPI_BOOT_TIMEOUT_SEC)) < 0) {
-		return -EIO;
+	if (DT_INST_PROP_OR(0, reset_event, false)) {
+		/* Device will let us know when it's ready */
+		if (k_sem_take(&sem_initialised, K_SECONDS(CONFIG_BT_SPI_BOOT_TIMEOUT_SEC)) < 0) {
+			return -EIO;
+		}
 	}
 
 #if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_BLUENRG_ACI)
