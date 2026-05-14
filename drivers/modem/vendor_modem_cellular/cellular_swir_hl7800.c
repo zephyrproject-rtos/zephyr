@@ -10,7 +10,7 @@
 
 MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 
-MODEM_CELLULAR_UNSOL_DEFINE(swir_hl7800_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
+MODEM_CHAT_MATCHES_DEFINE(swir_hl7800_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	swir_hl7800_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 1000),
@@ -56,10 +56,22 @@ MODEM_CHAT_SCRIPT_DEFINE(swir_hl7800_periodic_chat_script, swir_hl7800_periodic_
 MODEM_CHAT_SCRIPT_DEFINE(swir_hl7800_dial_chat_script, swir_hl7800_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
 
-static const struct modem_cellular_config_scripts hl7800_scripts = {
-	.init = &swir_hl7800_init_chat_script,
-	.dial = &swir_hl7800_dial_chat_script,
-	.periodic = &swir_hl7800_periodic_chat_script,
+static const struct modem_cellular_vendor_config hl7800_vendor = {
+	/* clang-format off */
+	.scripts = {
+		.init = &swir_hl7800_init_chat_script,
+		.dial = &swir_hl7800_dial_chat_script,
+		.periodic = &swir_hl7800_periodic_chat_script,
+	},
+	.unsol_matches = {
+		.matches = swir_hl7800_unsol,
+		.size = ARRAY_SIZE(swir_hl7800_unsol),
+	},
+	/* clang-format on */
+	.power_pulse_duration_ms = 1500,
+	.reset_pulse_duration_ms = 100,
+	.startup_time_ms = 10000,
+	.shutdown_time_ms = 5000,
 };
 
 #define MODEM_CELLULAR_DEVICE_SWIR_HL7800(inst)                                                    \
@@ -73,7 +85,6 @@ static const struct modem_cellular_config_scripts hl7800_scripts = {
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3), (user_pipe_1, 4))        \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 10000, 5000, false, &hl7800_scripts,       \
-				       &swir_hl7800_unsol)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &hl7800_vendor)
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_SWIR_HL7800)

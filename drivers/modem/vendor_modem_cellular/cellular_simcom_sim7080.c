@@ -10,7 +10,7 @@
 
 MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 
-MODEM_CELLULAR_UNSOL_DEFINE(simcom_sim7080_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
+MODEM_CHAT_MATCHES_DEFINE(simcom_sim7080_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	simcom_sim7080_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
@@ -48,10 +48,22 @@ MODEM_CHAT_SCRIPT_DEFINE(simcom_sim7080_periodic_chat_script,
 			 simcom_sim7080_periodic_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 4);
 
-static const struct modem_cellular_config_scripts simcom_sim7080_scripts = {
-	.init = &simcom_sim7080_init_chat_script,
-	.dial = &simcom_sim7080_dial_chat_script,
-	.periodic = &simcom_sim7080_periodic_chat_script,
+static const struct modem_cellular_vendor_config simcom_sim7080_vendor = {
+	/* clang-format off */
+	.scripts = {
+		.init = &simcom_sim7080_init_chat_script,
+		.dial = &simcom_sim7080_dial_chat_script,
+		.periodic = &simcom_sim7080_periodic_chat_script,
+	},
+	.unsol_matches = {
+		.matches = simcom_sim7080_unsol,
+		.size = ARRAY_SIZE(simcom_sim7080_unsol),
+	},
+	/* clang-format on */
+	.power_pulse_duration_ms = 1500,
+	.reset_pulse_duration_ms = 100,
+	.startup_time_ms = 10000,
+	.shutdown_time_ms = 5000,
 };
 
 #define MODEM_CELLULAR_DEVICE_SIMCOM_SIM7080(inst)                                                 \
@@ -65,7 +77,6 @@ static const struct modem_cellular_config_scripts simcom_sim7080_scripts = {
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3), (user_pipe_1, 4))        \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 10000, 5000, false,                        \
-				       &simcom_sim7080_scripts, &simcom_sim7080_unsol)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &simcom_sim7080_vendor)
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_SIMCOM_SIM7080)

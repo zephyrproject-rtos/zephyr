@@ -169,7 +169,7 @@ static bool modem_cellular_apn_change_allowed(enum modem_cellular_state st)
 
 static bool modem_cellular_has_network_script(const struct modem_cellular_config *config)
 {
-	return config->scripts->network != NULL;
+	return config->vendor->scripts.network != NULL;
 }
 
 static void modem_cellular_emit_event(struct modem_cellular_data *data,
@@ -697,7 +697,7 @@ static void modem_cellular_idle_event_handler(struct modem_cellular_data *data,
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_RESUME:
-		if (config->autostarts) {
+		if (config->autostarts || config->vendor->force_autostart) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_POWER_ON);
 			break;
 		}
@@ -713,7 +713,7 @@ static void modem_cellular_idle_event_handler(struct modem_cellular_data *data,
 			break;
 		}
 
-		if (config->scripts->set_baudrate != NULL) {
+		if (config->vendor->scripts.set_baudrate != NULL) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_SET_BAUDRATE);
 		} else {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_INIT_SCRIPT);
@@ -783,7 +783,7 @@ static int modem_cellular_on_reset_pulse_state_enter(struct modem_cellular_data 
 	}
 
 	gpio_pin_set_dt(&config->reset_gpio, 1);
-	modem_cellular_start_timer(data, K_MSEC(config->reset_pulse_duration_ms));
+	modem_cellular_start_timer(data, K_MSEC(config->vendor->reset_pulse_duration_ms));
 	return 0;
 }
 
@@ -863,7 +863,7 @@ static int modem_cellular_on_power_on_pulse_state_enter(struct modem_cellular_da
 	const struct modem_cellular_config *config = data->dev->config;
 
 	gpio_pin_set_dt(&config->power_gpio, 1);
-	modem_cellular_start_timer(data, K_MSEC(config->power_pulse_duration_ms));
+	modem_cellular_start_timer(data, K_MSEC(config->vendor->power_pulse_duration_ms));
 	return 0;
 }
 
@@ -897,7 +897,7 @@ static int modem_cellular_on_await_power_on_state_enter(struct modem_cellular_da
 {
 	const struct modem_cellular_config *config = data->dev->config;
 
-	modem_cellular_start_timer(data, K_MSEC(config->startup_time_ms));
+	modem_cellular_start_timer(data, K_MSEC(config->vendor->startup_time_ms));
 	modem_pipe_attach(data->uart_pipe, modem_cellular_bus_pipe_handler, data);
 	return modem_pipe_open_async(data->uart_pipe);
 }
@@ -915,7 +915,7 @@ static void modem_cellular_await_power_on_event_handler(struct modem_cellular_da
 		/* disable the timer and fall through, as we are ready to proceed */
 		modem_cellular_stop_timer(data);
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		if (config->scripts->set_baudrate != NULL) {
+		if (config->vendor->scripts.set_baudrate != NULL) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_SET_BAUDRATE);
 		} else {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_INIT_SCRIPT);
@@ -945,7 +945,7 @@ static void modem_cellular_set_baudrate_event_handler(struct modem_cellular_data
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_BUS_OPENED:
 		modem_chat_attach(&data->chat, data->uart_pipe);
-		modem_chat_run_script_async(&data->chat, config->scripts->set_baudrate);
+		modem_chat_run_script_async(&data->chat, config->vendor->scripts.set_baudrate);
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
@@ -1000,7 +1000,7 @@ static void modem_cellular_run_init_script_event_handler(struct modem_cellular_d
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_BUS_OPENED:
 		modem_chat_attach(&data->chat, data->uart_pipe);
-		modem_chat_run_script_async(&data->chat, config->scripts->init);
+		modem_chat_run_script_async(&data->chat, config->vendor->scripts.init);
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
@@ -1245,7 +1245,7 @@ static void modem_cellular_run_network_script_event_handler(struct modem_cellula
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		modem_chat_run_script_async(&data->chat, config->scripts->network);
+		modem_chat_run_script_async(&data->chat, config->vendor->scripts.network);
 		break;
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
 		modem_cellular_script_failed(data);
@@ -1284,7 +1284,7 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		modem_chat_run_script_async(&data->chat, config->scripts->dial);
+		modem_chat_run_script_async(&data->chat, config->vendor->scripts.dial);
 		break;
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
 		modem_cellular_script_failed(data);
@@ -1326,7 +1326,7 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 		/* Restart immediately, if we are waiting to retry the dial-script */
 		if (!modem_chat_is_running(&data->chat)) {
 			modem_cellular_stop_timer(data);
-			modem_chat_run_script_async(&data->chat, config->scripts->dial);
+			modem_chat_run_script_async(&data->chat, config->vendor->scripts.dial);
 		}
 		break;
 	default:
@@ -1371,7 +1371,7 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 		break;
 
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		modem_chat_run_script_async(&data->chat, config->scripts->periodic);
+		modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic);
 		break;
 
 	case MODEM_CELLULAR_EVENT_REGISTERED:
@@ -1437,7 +1437,7 @@ static void modem_cellular_registered_event_handler(struct modem_cellular_data *
 		break;
 
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		modem_chat_run_script_async(&data->chat, config->scripts->periodic);
+		modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic);
 		break;
 
 	case MODEM_CELLULAR_EVENT_DEREGISTERED:
@@ -1489,7 +1489,7 @@ static void modem_cellular_await_ppp_dead_event_handler(struct modem_cellular_da
 		modem_pipe_open_async(data->uart_pipe);
 	case MODEM_CELLULAR_EVENT_PPP_DEAD:
 		/* Wait for the channel to return to AT mode after PPP termination */
-		modem_cellular_start_timer(data, K_MSEC(config->reset_pulse_duration_ms));
+		modem_cellular_start_timer(data, K_MSEC(config->vendor->reset_pulse_duration_ms));
 		break;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		if (modem_cellular_has_network_script(config) &&
@@ -1530,13 +1530,13 @@ static void modem_cellular_init_power_off_event_handler(struct modem_cellular_da
 		modem_cellular_stop_timer(data);
 		data->cmd_pipe = data->uart_pipe;
 		/* Assume the same time as reset pulse is enough to return from CMUX to AT mode */
-		modem_cellular_start_timer(data, K_MSEC(config->reset_pulse_duration_ms));
+		modem_cellular_start_timer(data, K_MSEC(config->vendor->reset_pulse_duration_ms));
 		break;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		/* Shutdown script can only be used if cmd_pipe is available, i.e. we are not in
 		 * some intermediary state without a pipe for commands available
 		 */
-		if (config->scripts->shutdown != NULL && data->cmd_pipe != NULL) {
+		if (config->vendor->scripts.shutdown != NULL && data->cmd_pipe != NULL) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_SHUTDOWN_SCRIPT);
 			break;
 		}
@@ -1562,7 +1562,7 @@ static int modem_cellular_on_run_shutdown_script_state_enter(struct modem_cellul
 	const struct modem_cellular_config *config = data->dev->config;
 
 	modem_chat_attach(&data->chat, data->cmd_pipe);
-	return modem_chat_run_script_async(&data->chat, config->scripts->shutdown);
+	return modem_chat_run_script_async(&data->chat, config->vendor->scripts.shutdown);
 }
 
 static void modem_cellular_run_shutdown_script_event_handler(struct modem_cellular_data *data,
@@ -1600,7 +1600,7 @@ static int modem_cellular_on_power_off_pulse_state_enter(struct modem_cellular_d
 
 	data->cmd_pipe = NULL;
 	gpio_pin_set_dt(&config->power_gpio, 1);
-	modem_cellular_start_timer(data, K_MSEC(config->power_pulse_duration_ms));
+	modem_cellular_start_timer(data, K_MSEC(config->vendor->power_pulse_duration_ms));
 	return 0;
 }
 
@@ -1630,7 +1630,7 @@ static int modem_cellular_on_await_power_off_state_enter(struct modem_cellular_d
 {
 	const struct modem_cellular_config *config = data->dev->config;
 
-	modem_cellular_start_timer(data, K_MSEC(config->shutdown_time_ms));
+	modem_cellular_start_timer(data, K_MSEC(config->vendor->shutdown_time_ms));
 	return 0;
 }
 
@@ -2269,8 +2269,8 @@ int modem_cellular_init(const struct device *dev)
 
 	data->dev = dev;
 
-	__ASSERT_NO_MSG(config->scripts->init != NULL);
-	__ASSERT_NO_MSG(config->scripts->dial != NULL);
+	__ASSERT_NO_MSG(config->vendor->scripts.init != NULL);
+	__ASSERT_NO_MSG(config->vendor->scripts.dial != NULL);
 
 	k_mutex_init(&data->api_lock);
 	k_work_init_delayable(&data->timeout_work, modem_cellular_timeout_handler);
@@ -2404,8 +2404,8 @@ int modem_cellular_init(const struct device *dev)
 			.filter_size = data->chat_filter ? strlen(data->chat_filter) : 0,
 			.argv = data->chat_argv,
 			.argv_size = ARRAY_SIZE(data->chat_argv),
-			.unsol_matches = config->unsol->matches,
-			.unsol_matches_size = config->unsol->size,
+			.unsol_matches = config->vendor->unsol_matches.matches,
+			.unsol_matches_size = config->vendor->unsol_matches.size,
 		};
 
 		modem_chat_init(&data->chat, &chat_config);
