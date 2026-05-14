@@ -19,7 +19,7 @@
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
 		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
+		zephyr,flash = &code_flash;
 		zephyr,entropy = &trng;
 		zephyr,code-partition = &code_partition;
 	};
@@ -89,19 +89,21 @@
 	status = "okay";
 };
 
-&flash0 {
+&code_flash {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "bootloader";
 			reg = <0x00000000 0x4000>;
 			read-only;
 		};
 
 		code_partition: partition@4000 {
+			compatible = "zephyr,mapped-partition";
 			label = "code";
 			reg = <0x4000 0x3c000>;
 			read-only;
