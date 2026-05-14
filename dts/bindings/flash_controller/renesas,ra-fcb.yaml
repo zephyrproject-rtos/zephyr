@@ -1,0 +1,21 @@
+# Copyright (c) 2025-2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA Flash Control Block
+
+compatible: "renesas,ra-fcb"
+
+include: flash-controller.yaml
+
+properties:
+  interrupts:
+    description: |
+      IRQ number and priority to use for Flash controller.
+      Note: If the config FLASH_RENESAS_RA_LP_BGO is not set,
+            no need to define interrupt for flash controller.
+
+  interrupt-names:
+    enum:
+      - "frdyi"
+    description: |
+      Interrupts must be given corresponding names so that the driver can recognize them.
