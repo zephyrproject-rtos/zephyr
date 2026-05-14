@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Renesas Electronics Corporation
+ * Copyright (c) 2024-2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -776,11 +776,9 @@
 			status = "disabled";
 		};
 
-		flash: flash-controller@407e0000 {
+		flash_controller: flash-controller@407e0000 {
 			compatible = "renesas,ra-flash-hp-controller";
 			reg = <0x407e0000 0x10000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
 			interrupts = <49 1>, <50 1>;
 			interrupt-names = "frdyi", "fiferr";
 		};

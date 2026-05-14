@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Renesas Electronics Corporation
+ * Copyright (c) 2024-2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,25 +10,39 @@
 / {
 	soc {
 		flash-controller@407e0000 {
-			flash-hardware-version = <40>;
-			#erase-block-cells = <2>;
-
-			flash0: flash@0 {
-				compatible = "renesas,ra-nv-code-flash";
-				reg = <0x0 DT_SIZE_K(512)>;
-				write-block-size = <128>;
-				erase-block-size = <32768>;
-				erase-blocks = <&flash 8 8192>, <&flash 14 32768>;
+			code_flash_ctrl: code-flash-ctrl {
+				compatible = "renesas,ra-flash-region-ctrl";
 				programming-enable;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				code_flash: code-flash@0 {
+					compatible = "soc-nv-flash";
+					reg = <0x0 DT_SIZE_K(512)>;
+					ranges = <0x0 0x0 DT_SIZE_K(512)>;
+					write-block-size = <128>;
+					erase-block-size = <32768>;
+					#address-cells = <1>;
+					#size-cells = <1>;
+				};
 			};
 
-			flash1: flash@8000000 {
-				compatible = "renesas,ra-nv-data-flash";
-				reg = <0x8000000 DT_SIZE_K(8)>;
-				write-block-size = <4>;
-				erase-block-size = <64>;
+			data_flash_ctrl: data-flash-ctrl {
+				compatible = "renesas,ra-flash-region-ctrl";
 				programming-enable;
 				erase-value-undefined;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				data_flash: data-flash@8000000 {
+					compatible = "soc-nv-flash";
+					reg = <0x8000000 DT_SIZE_K(8)>;
+					ranges = <0x0 0x8000000 DT_SIZE_K(8)>;
+					write-block-size = <4>;
+					erase-block-size = <64>;
+					#address-cells = <1>;
+					#size-cells = <1>;
+				};
 			};
 		};
 	};
