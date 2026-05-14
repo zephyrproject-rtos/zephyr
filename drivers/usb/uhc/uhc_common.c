@@ -55,19 +55,43 @@ void uhc_xfer_return(const struct device *dev,
 	(void)uhc_xfer_unref(xfer);
 }
 
-struct uhc_transfer *uhc_xfer_get_next(const struct device *dev)
+void uhc_xfer_add_to_int(const struct device *dev, struct uhc_transfer *const xfer)
+{
+	struct uhc_data *data = dev->data;
+	sys_dlist_t *int_list = &data->int_xfers;
+	struct uhc_transfer *curr;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(int_list, curr, node) {
+		if (xfer_seq_cmp(xfer->start_microframe, curr->start_microframe) < 0) {
+			continue;
+		}
+		sys_dlist_insert(&curr->node, &xfer->node);
+		return;
+	}
+
+	sys_dlist_append(int_list, &xfer->node);
+}
+
+struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t microframe_number)
 {
 	struct uhc_data *data = dev->data;
 	struct uhc_transfer *xfer;
 	sys_dnode_t *node;
+	struct uhc_transfer *xfer;
 
 	/* Draft, WIP */
-	node = sys_dlist_peek_head(&data->ctrl_xfers);
-	if (node == NULL) {
-		node = sys_dlist_peek_head(&data->bulk_xfers);
+
+	xfer = SYS_DLIST_CONTAINER(sys_dlist_peek_tail(&data->int_xfers), xfer, node);
+	if (xfer && xfer_seq_cmp(xfer->start_microframe, microframe_number) <= 0) {
+		return xfer;
 	}
 
-	return (node == NULL) ? NULL : SYS_DLIST_CONTAINER(node, xfer, node);
+	xfer = SYS_DLIST_PEEK_HEAD_CONTAINER(&data->ctrl_xfers, xfer, node);
+	if (xfer == NULL) {
+		xfer = SYS_DLIST_PEEK_HEAD_CONTAINER(&data->bulk_xfers, xfer, node);
+	}
+
+	return xfer;
 }
 
 int uhc_xfer_append(const struct device *dev,
@@ -75,7 +99,21 @@ int uhc_xfer_append(const struct device *dev,
 {
 	struct uhc_data *data = dev->data;
 
-	sys_dlist_append(&data->ctrl_xfers, &xfer->node);
+	switch (xfer->type) {
+	case USB_EP_TYPE_CONTROL:
+		sys_dlist_append(&data->ctrl_xfers, &xfer->node);
+		break;
+	case USB_EP_TYPE_BULK:
+		sys_dlist_append(&data->bulk_xfers, &xfer->node);
+		break;
+	case USB_EP_TYPE_ISO:
+		LOG_WRN("Iso xfers not implemeted yet, treating as interrupt xfer");
+	case USB_EP_TYPE_INTERRUPT:
+		uhc_xfer_add_to_int(dev, xfer);
+		break;
+	default:
+		LOG_ERR("Invalid xfer type: %d", xfer->type);
+	}
 
 	return 0;
 }
@@ -418,6 +456,7 @@ int uhc_init(const struct device *dev,
 	data->event_ctx = event_ctx;
 	sys_dlist_init(&data->ctrl_xfers);
 	sys_dlist_init(&data->bulk_xfers);
+	sys_dlist_init(&data->int_xfers);
 
 	ret = api->init(dev);
 	if (ret == 0) {

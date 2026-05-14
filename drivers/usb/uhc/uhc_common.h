@@ -110,13 +110,14 @@ void uhc_xfer_return(const struct device *dev,
 /**
  * @brief Helper to get next transfer to process.
  *
- * This is currently a draft, and simple picks a transfer
- * from the lists.
+ * This is currently a draft, and simple picks a transfer from the lists.
  *
- * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] dev        Pointer to device struct of the driver instance.
+ * @param[in] microframe The current USB microframe number
+ *
  * @return pointer to the next transfer or NULL on error.
  */
-struct uhc_transfer *uhc_xfer_get_next(const struct device *dev);
+struct uhc_transfer *uhc_xfer_get_next(const struct device *dev, uint32_t microframe);
 
 /**
  * @brief Helper to append a transfer to internal list.
