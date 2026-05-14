@@ -588,10 +588,10 @@ static inline void async_evt_rx_release_buffer(struct uart_xmc4xxx_data *data, i
 }
 
 static inline void async_evt_rx_stopped(struct uart_xmc4xxx_data *data,
-					enum uart_rx_stop_reason reason)
+					enum uart_rx_error_reason reason)
 {
-	struct uart_event event = {.type = UART_RX_STOPPED, .data.rx_stop.reason = reason};
-	struct uart_event_rx *rx = &event.data.rx_stop.data;
+	struct uart_event event = {.type = UART_RX_ERROR, .data.rx_error.reason = reason};
+	struct uart_event_rx *rx = &event.data.rx_error.data;
 	struct dma_status stat;
 
 	if (data->dma_rx.buffer_len == 0 || data->async_cb == NULL) {
@@ -894,12 +894,6 @@ static void uart_xmc4xxx_dma_rx_cb(const struct device *dma_dev, void *user_data
 
 	if (status < 0) {
 		async_evt_rx_stopped(data, UART_ERROR_OVERRUN);
-		uart_xmc4xxx_irq_rx_disable(dev_uart);
-		dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
-		async_evt_rx_release_buffer(data, CURRENT_BUFFER);
-		async_evt_rx_release_buffer(data, NEXT_BUFFER);
-		async_evt_rx_disabled(data);
-		goto done;
 	}
 
 	if (data->dma_rx.buffer_len == 0) {
