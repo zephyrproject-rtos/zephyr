@@ -29,7 +29,7 @@ static inline void name(const void *data)		\
 	test_vector[idx] = result_vector[idx];		\
 }							\
 
-static uint32_t test_vector[TEST_VECTOR_SIZE] = {
+static volatile uint32_t test_vector[TEST_VECTOR_SIZE] = {
 };
 
 static uint32_t result_vector[TEST_VECTOR_SIZE] = {
