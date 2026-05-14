@@ -46,4 +46,11 @@
 			pinmux = <PC5F_TCC2_WO1>;
 		};
 	};
+
+	tc5_pwm_default: tc5_pwm_default {
+		group1 {
+			pinmux = <PA4F_TC5_WO0>,
+				 <PA5F_TC5_WO1>;
+		};
+	};
 };
