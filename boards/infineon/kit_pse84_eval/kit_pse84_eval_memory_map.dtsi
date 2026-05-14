@@ -163,17 +163,17 @@
 
 		/* SAHB view of the same external flash.
 		 * Used as zephyr,flash for CM55 builds.
-		 * The base address is 0x70000000.
+		 * The base address is 0x60000000.
 		 * This is the same physical device as flash0, accessed
 		 * through the SAHB alias as cm55 does not have
 		 * instruction-cached execution for external flash.
 		 */
-		flash0_sahb: flash0_sahb@70000000 {
+		flash0_sahb: flash0_sahb@60000000 {
 			compatible = "soc-nv-flash";
-			reg = <0x70000000 DT_SIZE_M(16)>;
+			reg = <0x60000000 DT_SIZE_M(16)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x70000000 DT_SIZE_M(16)>;
+			ranges = <0x0 0x60000000 DT_SIZE_M(16)>;
 			write-block-size = <256>;
 			erase-block-size = <65536>;
 
@@ -182,10 +182,10 @@
 				#size-cells = <1>;
 				ranges;
 
-				m55_xip: m55_xip@500000 {
+				m55_xip: m55_xip@580000 {
 					compatible = "zephyr,mapped-partition";
 					label = "m55-xip";
-					reg = <0x500000 DT_SIZE_M(2)>;
+					reg = <0x580000 DT_SIZE_M(2)>;
 				};
 			};
 		};
