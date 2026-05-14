@@ -448,6 +448,12 @@
 	CONFIG_NRF52_ANOMALY_109_WORKAROUND_EGU_INSTANCE
 #endif
 
+#ifdef CONFIG_SOC_NRF53_ANOMALY_166_WORKAROUND
+#define NRF53_ERRATA_166_ENABLE_WORKAROUND 1
+#else
+#define NRF53_ERRATA_166_ENABLE_WORKAROUND 0
+#endif
+
 /* If local or global DPPIC peripherals are used, provide the following macro
  * definitions required by the interconnect/ipct layer:
  * - NRFX_IPCTx_PUB_CONFIG_ALLOWED_CHANNELS_MASK_BY_INST_NUM(inst_num)
