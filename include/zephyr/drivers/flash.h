@@ -117,6 +117,8 @@ int flash_params_get_erase_cap(const struct flash_parameters *p)
 	ARG_UNUSED(p);
 	return FLASH_ERASE_C_EXPLICIT;
 #endif
+#else
+	ARG_UNUSED(p);
 #endif
 	return 0;
 }
