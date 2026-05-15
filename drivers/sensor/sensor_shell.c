@@ -1104,6 +1104,7 @@ static int cmd_trig_sensor(const struct shell *sh, size_t argc, char **argv)
 
 			if (sensor_idx < 0) {
 				shell_error(sh, "Unable to find sensor device in trigger array");
+				return -ENOENT;
 			} else {
 				sensor_trigger_devices[sensor_idx] = NULL;
 			}
