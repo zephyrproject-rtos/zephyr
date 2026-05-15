@@ -4,6 +4,7 @@
 /dts-v1/;
 
 #include <qemu/virt-riscv64.dtsi>
+#include <qemu/virt-riscv-plic.dtsi>
 
 #include <qemu/virt-riscv-virtio-net.dtsi>
 
