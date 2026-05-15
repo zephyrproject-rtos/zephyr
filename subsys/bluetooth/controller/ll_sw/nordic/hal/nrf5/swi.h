@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "hal/cpu.h"
+
 /* nRF51 and nRF52 Series IRQ mapping*/
 #if defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
 
@@ -41,9 +43,28 @@
 #error Unknown NRF5340 CPU.
 #endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET */
 
-/* nRF54 Series IRQ mapping */
+/* nRF54L Series IRQ mapping */
 #elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 
+#if defined(CONFIG_RISCV)
+/* FLPR (VPR RISC-V) core uses VPRCLIC software interrupts */
+#define HAL_SWI_RADIO_IRQ  EGU10_IRQn
+
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+#define HAL_SWI_WORKER_IRQ GRTC_1_IRQn
+#define HAL_RTC_IRQn       GRTC_1_IRQn
+#else /* !CONFIG_BT_CTLR_NRF_GRTC */
+#error "nRF54L FLPR requires CONFIG_BT_CTLR_NRF_GRTC"
+#endif /* !CONFIG_BT_CTLR_NRF_GRTC */
+
+#if !defined(CONFIG_BT_CTLR_LOW_LAT) && \
+	(CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+#define HAL_SWI_JOB_IRQ    HAL_SWI_WORKER_IRQ
+#else
+#define HAL_SWI_JOB_IRQ    EGU20_IRQn
+#endif
+
+#else /* !CONFIG_RISCV - nRF54L Application core (ARM) */
 #define HAL_SWI_RADIO_IRQ  SWI02_IRQn
 
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
@@ -60,6 +81,7 @@
 #else
 #define HAL_SWI_JOB_IRQ    SWI03_IRQn
 #endif
+#endif /* !CONFIG_RISCV */
 
 #endif
 
@@ -70,15 +92,15 @@ static inline void hal_swi_init(void)
 
 static inline void hal_swi_lll_pend(void)
 {
-	NVIC_SetPendingIRQ(HAL_SWI_RADIO_IRQ);
+	cpu_irq_pending_set(HAL_SWI_RADIO_IRQ);
 }
 
 static inline void hal_swi_worker_pend(void)
 {
-	NVIC_SetPendingIRQ(HAL_SWI_WORKER_IRQ);
+	cpu_irq_pending_set(HAL_SWI_WORKER_IRQ);
 }
 
 static inline void hal_swi_job_pend(void)
 {
-	NVIC_SetPendingIRQ(HAL_SWI_JOB_IRQ);
+	cpu_irq_pending_set(HAL_SWI_JOB_IRQ);
 }
