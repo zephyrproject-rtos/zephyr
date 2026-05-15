@@ -138,3 +138,15 @@ properties:
       Specify the FIFO watermark level in frame count.
       Only supports frames with both Pressure and Temperature
       Valid range: 1 - 15
+
+  int-active-low:
+    type: boolean
+    description: |
+      Configure the INT pin as active low. Defaults to active high.
+      The GPIO flags on the int-gpios property must agree with this setting
+      (e.g. GPIO_ACTIVE_LOW when this property is present).
+
+  int-open-drain:
+    type: boolean
+    description: |
+      Configure the INT pin as open-drain. Defaults to push-pull.

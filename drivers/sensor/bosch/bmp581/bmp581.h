@@ -350,6 +350,8 @@ struct bmp581_data {
 struct bmp581_config {
 	struct bmp581_bus bus;
 	struct gpio_dt_spec int_gpio;
+	bool int_polarity;
+	bool int_open_drain;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMP581_BMP581_H_ */
