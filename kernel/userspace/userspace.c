@@ -1075,29 +1075,7 @@ static int app_shmem_bss_zero(void)
 	region = (struct z_app_region *)&__app_shmem_regions_start[0];
 
 	for ( ; region < end; region++) {
-#if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
-		/* When BSS sections are not present at boot, we need to wait for
-		 * paging mechanism to be initialized before we can zero out BSS.
-		 */
-		extern bool z_sys_post_kernel;
-		bool do_clear = z_sys_post_kernel;
-
-		/* During pre-kernel init, z_sys_post_kernel == false, but
-		 * with pinned rodata region, so clear. Otherwise skip.
-		 * In post-kernel init, z_sys_post_kernel == true,
-		 * skip those in pinned rodata region as they have already
-		 * been cleared and possibly already in use. Otherwise clear.
-		 */
-		if (((uint8_t *)region->bss_start >= (uint8_t *)_app_smem_pinned_start) &&
-		    ((uint8_t *)region->bss_start < (uint8_t *)_app_smem_pinned_end)) {
-			do_clear = !do_clear;
-		}
-
-		if (do_clear)
-#endif /* CONFIG_DEMAND_PAGING && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
-		{
-			(void)memset(region->bss_start, 0, region->bss_size);
-		}
+		(void)memset(region->bss_start, 0, region->bss_size);
 	}
 
 	return 0;
@@ -1105,14 +1083,6 @@ static int app_shmem_bss_zero(void)
 
 SYS_INIT_NAMED(app_shmem_bss_zero_pre, app_shmem_bss_zero,
 	       PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
-#if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
-/* When BSS sections are not present at boot, we need to wait for
- * paging mechanism to be initialized before we can zero out BSS.
- */
-SYS_INIT_NAMED(app_shmem_bss_zero_post, app_shmem_bss_zero,
-	       POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif /* CONFIG_DEMAND_PAGING && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 
 /*
  * Default handlers if otherwise unimplemented

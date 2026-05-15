@@ -30,10 +30,6 @@ endif()
 if(CONFIG_XIP)
   # Extra 4MB to emulate flash area
   math(EXPR QEMU_MEMORY_SIZE_MB "${RAM_SIZE} + 4")
-elseif(CONFIG_BOARD_QEMU_X86_TINY AND CONFIG_DEMAND_PAGING
-       AND NOT CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
-  # Flash is at 4MB-8MB, so need this to be large enough
-  math(EXPR QEMU_MEMORY_SIZE_MB "8")
 else()
   math(EXPR QEMU_MEMORY_SIZE_MB "${RAM_SIZE}")
 endif()
@@ -85,11 +81,4 @@ if(NOT CONFIG_ACPI)
   list(APPEND QEMU_FLAGS_${ARCH} -machine acpi=off)
 endif()
 
-if(CONFIG_BOARD_QEMU_X86_TINY AND CONFIG_DEMAND_PAGING
-   AND NOT CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
-  # This is to map the flash so it is accessible.
-  math(EXPR QEMU_FLASH_SIZE_KB "${CONFIG_FLASH_SIZE} * 1024")
-  set(X86_EXTRA_GEN_MMU_ARGUMENTS
-      --map ${CONFIG_FLASH_BASE_ADDRESS},${QEMU_FLASH_SIZE_KB},W)
-endif()
 include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

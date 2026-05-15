@@ -1230,14 +1230,6 @@ if(CONFIG_USERSPACE)
     set(APP_SMEM_PINNED_UNALIGNED_LD
         "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_unaligned.${APP_SMEM_LD_EXT}")
 
-    if(NOT CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
-      # The libc partition may hold symbols that are required during boot process,
-      # for example, stack guard (if enabled). So the libc partition must be pinned
-      # if not sections are in physical memory at boot, as the paging mechanism is
-      # only initialized post-kernel.
-      set_property(TARGET app_smem APPEND PROPERTY pinned_partitions "z_libc_partition")
-    endif()
-
     get_property(APP_SMEM_PINNED_PARTITION_LIST TARGET app_smem PROPERTY pinned_partitions)
     if(APP_SMEM_PINNED_PARTITION_LIST)
       list(JOIN APP_SMEM_PINNED_PARTITION_LIST "," APP_SMEM_PINNED_PARTITION_LIST_ARG_CSL)

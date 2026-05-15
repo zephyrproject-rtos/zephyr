@@ -1100,28 +1100,17 @@ void z_mem_manage_init(void)
 	arch_reserved_pages_update();
 #endif /* CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES */
 
-#ifdef CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
-	/* All pages composing the Zephyr image are mapped at boot in a
-	 * predictable way. This can change at runtime.
+	/* The entire Zephyr image is mapped and pinned at boot. Demand
+	 * paging applies only to anonymous mappings created via k_mem_map()
+	 * and to memory placed in explicit __ondemand_* linker sections;
+	 * the kernel image itself is never a candidate for eviction.
 	 */
 	VIRT_FOREACH(K_MEM_KERNEL_VIRT_START, K_MEM_KERNEL_VIRT_SIZE, addr)
 	{
 		pf = k_mem_phys_to_page_frame(K_MEM_BOOT_VIRT_TO_PHYS(addr));
 		frame_mapped_set(pf, addr);
-
-		/* TODO: for now we pin the whole Zephyr image. Demand paging
-		 * currently tested with anonymously-mapped pages which are not
-		 * pinned.
-		 *
-		 * We will need to setup linker regions for a subset of kernel
-		 * code/data pages which are pinned in memory and
-		 * may not be evicted. This will contain critical CPU data
-		 * structures, and any code used to perform page fault
-		 * handling, page-ins, etc.
-		 */
 		k_mem_page_frame_set(pf, K_MEM_PAGE_FRAME_PINNED);
 	}
-#endif /* CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
 	/* Pin the boot section to prevent it from being swapped out during
@@ -1170,16 +1159,6 @@ void z_mem_manage_init(void)
 	page_frames_initialized = true;
 #endif
 	k_spin_unlock(&z_mm_lock, key);
-
-#ifndef CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
-	/* If BSS section is not present in memory at boot,
-	 * it would not have been cleared. This needs to be
-	 * done now since paging mechanism has been initialized
-	 * and the BSS pages can be brought into physical
-	 * memory to be cleared.
-	 */
-	arch_bss_zero();
-#endif /* CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 }
 
 void z_mem_manage_boot_finish(void)
