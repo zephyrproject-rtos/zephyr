@@ -19,6 +19,7 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_service.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/minmax.h>
 
 LOG_MODULE_REGISTER(net_dhcpv4_server, CONFIG_NET_DHCPV4_SERVER_LOG_LEVEL);
 

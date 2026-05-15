@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/led_strip.h>

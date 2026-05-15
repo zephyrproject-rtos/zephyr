@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/sys/minmax.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/internal/syscall_handler.h>
