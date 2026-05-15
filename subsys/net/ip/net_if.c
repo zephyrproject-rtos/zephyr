@@ -1715,8 +1715,7 @@ static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 
 	net_if_lock(iface);
 
-	if (!net_if_flag_is_set(iface, NET_IF_IPV6) ||
-	    net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6)) {
 		goto out;
 	}
 
@@ -1724,13 +1723,20 @@ static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 		goto out;
 	}
 
-	/* Rejoin solicited node multicasts. */
-	ARRAY_FOR_EACH(ipv6->unicast, i) {
-		if (!ipv6->unicast[i].is_used) {
-			continue;
-		}
+	/* Rejoin solicited node multicasts if the interface has ND enabled. */
+	if (!net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
+		ARRAY_FOR_EACH(ipv6->unicast, i) {
+			if (!ipv6->unicast[i].is_used) {
+				continue;
+			}
 
-		join_mcast_nodes(iface, &ipv6->unicast[i].address.in6_addr);
+			join_mcast_nodes(iface, &ipv6->unicast[i].address.in6_addr);
+		}
+	}
+
+	/* If MLD is disabled on the interface, skip rejoining. */
+	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD)) {
+		goto out;
 	}
 
 	sys_slist_init(&rejoin_needed);
@@ -1782,6 +1788,11 @@ static void clear_joined_ipv6_mcast_groups(struct net_if *iface)
 	net_if_lock(iface);
 
 	if (!net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		goto out;
+	}
+
+	/* If MLD is disabled on the interface, skip clearing. */
+	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD)) {
 		goto out;
 	}
 
