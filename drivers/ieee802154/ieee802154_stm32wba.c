@@ -965,6 +965,12 @@ static int stm32wba_802154_configure(const struct device *dev,
 		stm32wba_802154_data.rx_on_when_idle = config->rx_on_when_idle;
 		stm32wba_802154_ral_set_continuous_reception(config->rx_on_when_idle);
 		break;
+#ifdef CONFIG_IEEE802154_STM32WBA_CSMA_CA_ENABLED
+	case IEEE802154_CONFIG_CSMA_CA_BACKOFFS:
+		LOG_DBG("Setting MAX_CSMA_BACKOFF: %u", config->csma_ca_backoffs);
+		stm32wba_802154_ral_set_max_csma_backoff(config->csma_ca_backoffs);
+		break;
+#endif
 #if (SUPPORT_RADIO_SECURITY_OT_1_2 == 1)
 	case IEEE802154_CONFIG_FRAME_COUNTER_IF_LARGER:
 		stm32wba_802154_ral_set_mac_frame_counter_if_larger(config->frame_counter);
