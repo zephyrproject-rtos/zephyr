@@ -1,0 +1,121 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Board overlay for the i3c_loopback CONTROLLER (Board A) on
+ * KIT_PSE84_EVAL (M33 core).
+ *
+ * Topology — I3C bus between two boards:
+ *
+ *   A.I3C0_SCL  ── B.I3C0_SCL    (P3.0 / B.P3.0)
+ *   A.I3C0_SDA  ── B.I3C0_SDA    (P3.1 / B.P3.1)
+ *
+ * UART sync channel (separate from the I3C bus):
+ *
+ *   A.SCB5_TX (P17.1)  ──── B.SCB5_RX (P17.0)
+ *   A.SCB5_RX (P17.0)  ──── B.SCB5_TX (P17.1)
+ *
+ * SCB5 was selected after SCB1 (separate non-LPSS IP block at
+ * 0x42d00000) refused to drain its TX FIFO regardless of clock /
+ * pinctrl configuration.  SCB5 (LPSS, 0x429d0000) is the same UART
+ * instance used by tests/drivers/uart/uart_async_api on this board
+ * and was validated end-to-end by tests/drivers/serial/uart_sync_loopback.
+ */
+
+/ {
+	aliases {
+		test-i3c = &i3c0;
+	};
+
+	chosen {
+		zephyr,sync-uart = &scb5;
+	};
+};
+
+/*
+ * Mandatory CFGOUT3 mode on the I3C SCL/SDA pads.  Without this the DW
+ * I3C ACK detector cannot sample SDA and every transfer reports
+ * ADDRESS_NACK (see tests/drivers/i3c/i3c_i2c/boards/<...>.overlay for
+ * the full rationale).
+ */
+&p3_0_i3c0_i3c_scl {
+	infineon,cfgout3-mode;
+	infineon,cfgout3-pullup-ohms = <1100>;
+	bias-pull-up;
+};
+
+&p3_1_i3c0_i3c_sda {
+	infineon,cfgout3-mode;
+	infineon,cfgout3-pullup-ohms = <1100>;
+	bias-pull-up;
+};
+
+&gpio_prt3 {
+	status = "okay";
+};
+
+/*
+ * I3C protocol clock (CORE_CLK).
+ *
+ * CLK_HF[13] = CLKPATH0 / 4 = 400 MHz / 4 = 100 MHz.
+ * peri0_group9_8bit_0 divides that further: 100 MHz / 16 = 6.25 MHz.
+ *
+ * With 6.25 MHz core_rate, the SCL hcnt/lcnt computation for
+ * i3c-scl-hz=3125000 yields 1 (clamped to min 5 each), giving an
+ * actual SCL of ~625 kHz.  Keeping the divider high intentionally
+ * slows the bus, giving the target more time between transfers to
+ * drain its FIFOs and clear SLAVE_BUSY.
+ */
+&peri0_group9_8bit_0 {
+	status = "okay";
+	clock-div = <16>;
+};
+
+&i3c0 {
+	status = "okay";
+	clocks = <&peri0_group9_8bit_0>;
+	pinctrl-0 = <&p3_0_i3c0_i3c_scl &p3_1_i3c0_i3c_sda>;
+	pinctrl-names = "default";
+	i3c-scl-hz = <3125000>;
+	primary-controller-da = <0x08>;
+
+	/*
+	 * Note: Board B is intentionally NOT declared as an i3c child
+	 * node in DT.  Doing so would require a real driver matching the
+	 * compatible (DEVICE_DT_GET would otherwise link-fail).  The
+	 * controller-side test code instead populates a static
+	 * `struct i3c_device_desc` programmatically and calls
+	 * i3c_attach_i3c_device() at suite setup, which exercises the
+	 * dynamic-attach path of the driver.
+	 */
+};
+
+/*
+ * SCB5 — UART sync channel between Board A and Board B.
+ *   P17.1 SCB5_UART_TX, P17.0 SCB5_UART_RX
+ * Pinctrl reused from the SoC pin database (omit-if-no-ref).
+ * (See file header for SCB1 history.)
+ */
+scb5_sync_uart: &scb5 {
+	compatible = "infineon,uart";
+	status = "okay";
+	current-speed = <115200>;
+	clocks = <&peri0_group1_16bit_1>;
+	pinctrl-0 = <&p17_1_scb5_uart_tx &p17_0_scb5_uart_rx>;
+	pinctrl-names = "default";
+};
+
+&p17_1_scb5_uart_tx {
+	drive-push-pull;
+};
+
+&p17_0_scb5_uart_rx {
+	input-enable;
+};
+
+&peri0_group1_16bit_1 {
+	status = "okay";
+	clock-div = <109>;
+};

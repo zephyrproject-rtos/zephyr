@@ -1,0 +1,103 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Board overlay for the i3c_loopback TARGET (Board B) on
+ * KIT_PSE84_EVAL (M33 core).
+ *
+ * Wiring:
+ *   B.I3C0_SCL ── shared with A.I3C0_SCL    (P3.0)
+ *   B.I3C0_SDA ── shared with A.I3C0_SDA    (P3.1)
+ *   B.SCB5 RX/TX ── crossed with A.SCB5 TX/RX           (P17.0/P17.1)
+ *   B.GREEN LED   ── LA channel 2 (target-IP-saw-address marker, P16.6)
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		test-i3c = &i3c0;
+	};
+
+	chosen {
+		zephyr,sync-uart = &scb5;
+	};
+
+	/*
+	 * LA debug marker: the on-board GREEN user LED (P16.6).
+	 * Provably digital GPIO (it lights up).  LA Ch2 clips to the
+	 * LED anode test point / pad.  Toggled from inside the I3C
+	 * target callbacks so the LA can correlate "did the slave IP
+	 * see this address phase" against SDA/SCL.
+	 */
+	zephyr,user {
+		la-marker-gpios = <&gpio_prt16 6 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpio_prt16 {
+	status = "okay";
+};
+
+&p3_0_i3c0_i3c_scl {
+	infineon,cfgout3-mode;
+	infineon,cfgout3-pullup-ohms = <1100>;
+	bias-pull-up;
+};
+
+&p3_1_i3c0_i3c_sda {
+	infineon,cfgout3-mode;
+	infineon,cfgout3-pullup-ohms = <1100>;
+	bias-pull-up;
+};
+
+&gpio_prt3 {
+	status = "okay";
+};
+
+&peri0_group9_8bit_0 {
+	status = "okay";
+	clock-div = <16>;
+};
+
+&i3c0 {
+	status = "okay";
+	clocks = <&peri0_group9_8bit_0>;
+	pinctrl-0 = <&p3_0_i3c0_i3c_scl &p3_1_i3c0_i3c_sda>;
+	pinctrl-names = "default";
+	i3c-scl-hz = <3125000>;
+
+	/*
+	 * Note: PSE84 silicon's PID/BCR/DCR are fixed by the IP and not
+	 * settable via DT.  Board A's controller-side test code is
+	 * hard-coded with the matching PID
+	 *   ((uint64_t)0x0000020a << 32) | 0x00000011
+	 * for ENTDAA matching.  When future silicon supports DT-driven
+	 * target identity, add target-pid / bcr / dcr properties (or
+	 * extend the snps,designware-i3c binding) here.
+	 */
+};
+
+scb5_sync_uart: &scb5 {
+	compatible = "infineon,uart";
+	status = "okay";
+	current-speed = <115200>;
+	clocks = <&peri0_group1_16bit_1>;
+	pinctrl-0 = <&p17_1_scb5_uart_tx &p17_0_scb5_uart_rx>;
+	pinctrl-names = "default";
+};
+
+&p17_1_scb5_uart_tx {
+	drive-push-pull;
+};
+
+&p17_0_scb5_uart_rx {
+	input-enable;
+};
+
+&peri0_group1_16bit_1 {
+	status = "okay";
+	clock-div = <109>;
+};
