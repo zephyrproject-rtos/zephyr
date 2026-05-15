@@ -36,6 +36,7 @@ add_subdirectory(dwc_xgmac)
 add_subdirectory(intel)
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_ETH_ADIN1140 eth_adin1140.c oa_tc6.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_ADIN2111 eth_adin2111.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_CYCLONEV eth_cyclonev.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_DM9051 eth_dm9051.c)

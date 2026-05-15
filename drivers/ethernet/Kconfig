@@ -51,6 +51,7 @@ config ETH_QEMU_EXTRA_ARGS
 	  for the available options.
 
 # zephyr-keep-sorted-start
+source "drivers/ethernet/Kconfig.adin1140"
 source "drivers/ethernet/Kconfig.adin2111"
 source "drivers/ethernet/Kconfig.cyclonev"
 source "drivers/ethernet/Kconfig.dm9051"

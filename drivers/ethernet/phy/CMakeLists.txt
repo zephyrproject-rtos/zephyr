@@ -4,6 +4,7 @@ zephyr_library_sources_ifdef(CONFIG_PHY_GENERIC_MII phy_mii.c)
 zephyr_library_sources_ifdef(CONFIG_PHY_GENERIC_FIXED_LINK phy_fixed_link.c)
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_PHY_ADIN1140 phy_adin1140.c)
 zephyr_library_sources_ifdef(CONFIG_PHY_ADIN2111 phy_adin2111.c)
 zephyr_library_sources_ifdef(CONFIG_PHY_DM8806 phy_dm8806.c)
 zephyr_library_sources_ifdef(CONFIG_PHY_MAXLINEAR_GPY111 phy_maxlinear_gpy111.c)

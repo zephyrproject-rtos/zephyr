@@ -25,6 +25,7 @@ config MDIO_SHELL
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
 # zephyr-keep-sorted-start
+rsource "Kconfig.adin1140"
 rsource "Kconfig.adin2111"
 rsource "Kconfig.dwcxgmac"
 rsource "Kconfig.dwmac"
