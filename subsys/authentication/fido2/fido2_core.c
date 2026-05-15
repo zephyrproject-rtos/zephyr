@@ -10,6 +10,7 @@
 #include <zephyr/random/random.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/authentication/fido2/fido2.h>
 #include <zephyr/authentication/fido2/fido2_attestation.h>
 #include <zephyr/authentication/fido2/fido2_storage.h>
 #include <zephyr/authentication/fido2/fido2_transport.h>
@@ -53,6 +54,30 @@ static uint8_t ctap_tx_frame[CONFIG_FIDO2_CBOR_MAX_SIZE];
 static atomic_t fido2_running;
 
 static k_timepoint_t reset_timeout;
+
+static struct k_spinlock state_lock;
+static enum fido2_runtime_state runtime_state = FIDO2_RUNTIME_STATE_STOPPED;
+static fido2_state_callback_t runtime_state_cb;
+static void *runtime_state_cb_user_data;
+
+static void set_runtime_state(enum fido2_runtime_state state)
+{
+	fido2_state_callback_t cb;
+	void *cb_user_data;
+	bool changed;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&state_lock);
+	changed = state != runtime_state;
+	runtime_state = state;
+	cb = runtime_state_cb;
+	cb_user_data = runtime_state_cb_user_data;
+	k_spin_unlock(&state_lock, key);
+
+	if (changed && cb != NULL) {
+		cb(state, cb_user_data);
+	}
+}
 
 static bool mc_check_exclude_list(void)
 {
@@ -278,6 +303,7 @@ handle_make_credential(uint8_t *cbor_in, size_t cbor_in_len, uint8_t *cbor_out, 
 	}
 
 	if (mc_check_exclude_list()) {
+		set_runtime_state(FIDO2_RUNTIME_STATE_WAITING_USER_PRESENCE);
 		fido2_up_wait();
 		return FIDO2_ERR_CREDENTIAL_EXCLUDED;
 	}
@@ -310,11 +336,14 @@ handle_make_credential(uint8_t *cbor_in, size_t cbor_in_len, uint8_t *cbor_out, 
 		goto cleanup;
 	}
 
+	set_runtime_state(FIDO2_RUNTIME_STATE_WAITING_USER_PRESENCE);
 	ret = fido2_up_wait();
 	if (ret) {
 		fido2_crypto_destroy_key(mc_credential.key_id);
 		return FIDO2_ERR_OPERATION_DENIED;
 	}
+
+	set_runtime_state(FIDO2_RUNTIME_STATE_PROCESSING);
 
 	flags = AUTH_DATA_FLAG_AT | AUTH_DATA_FLAG_UP;
 
@@ -507,8 +536,10 @@ static void fido2_thread_fn(void *p1, void *p2, void *p3)
 			process_command(cmd, rx_dequeue_msg.data + 1, rx_dequeue_msg.len - 1,
 					ctap_tx_frame + 1, sizeof(ctap_tx_frame) - 1, &cbor_out_len,
 					rx_dequeue_msg.transport, rx_dequeue_msg.cid);
-		ctap_tx_frame[0] = (uint8_t)status;
 
+		set_runtime_state(FIDO2_RUNTIME_STATE_IDLE);
+
+		ctap_tx_frame[0] = (uint8_t)status;
 		if (rx_dequeue_msg.transport && rx_dequeue_msg.transport->api) {
 			ret = rx_dequeue_msg.transport->api->send(rx_dequeue_msg.cid, ctap_tx_frame,
 								  cbor_out_len + 1);
@@ -569,6 +600,8 @@ int fido2_start(void)
 			K_NO_WAIT);
 	k_thread_name_set(&fido2_thread, "fido2");
 
+	set_runtime_state(FIDO2_RUNTIME_STATE_IDLE);
+
 	LOG_INF("FIDO2 authenticator started");
 	return 0;
 }
@@ -592,8 +625,40 @@ int fido2_stop(void)
 
 	fido2_transport_shutdown_all();
 
+	set_runtime_state(FIDO2_RUNTIME_STATE_STOPPED);
+
 	LOG_INF("FIDO2 authenticator stopped");
 	return 0;
+}
+
+int fido2_set_state_callback(fido2_state_callback_t cb, void *user_data)
+{
+	enum fido2_runtime_state state;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&state_lock);
+	runtime_state_cb = cb;
+	runtime_state_cb_user_data = user_data;
+	state = runtime_state;
+	k_spin_unlock(&state_lock, key);
+
+	if (cb != NULL) {
+		cb(state, user_data);
+	}
+
+	return 0;
+}
+
+enum fido2_runtime_state fido2_get_state(void)
+{
+	enum fido2_runtime_state state;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&state_lock);
+	state = runtime_state;
+	k_spin_unlock(&state_lock, key);
+
+	return state;
 }
 
 int fido2_reset(void)
