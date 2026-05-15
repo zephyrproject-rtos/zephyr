@@ -23,6 +23,12 @@
  * @version 0.1.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup devicetree-regulator Devicetree Regulator API
+ * @ingroup devicetree
+ * @ingroup regulator_interface
+ * @{
+ * @}
  */
 
 #include <errno.h>

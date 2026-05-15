@@ -3,12 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup regulator_nrf5x
+ * @brief Header file for nRF5X Devicetree helpers.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_NRF5X_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_NRF5X_H_
 
 /**
- * @defgroup regulator_nrf5x nRF5X regulator devicetree helpers.
- * @ingroup regulator_interface
+ * @defgroup regulator_nrf5x nRF5X Devicetree helpers
+ * @brief nRF5X regulator Devicetree helpers
+ * @ingroup devicetree-regulator
  * @{
  */
 
