@@ -20,6 +20,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 
@@ -42,6 +43,25 @@ static int soft_reset(const struct device *dev);
 static int set_iir_config(const struct sensor_value *iir, const struct device *dev);
 static int get_power_mode(enum bmp5_powermode *powermode, const struct device *dev);
 static int set_power_mode(enum bmp5_powermode powermode, const struct device *dev);
+
+#ifdef CONFIG_PM_DEVICE
+static int bmp581_pm_busy_check(const struct device *dev)
+{
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+	if (state != PM_DEVICE_STATE_ACTIVE) {
+		return -EBUSY;
+	}
+	return 0;
+}
+#else
+static inline int bmp581_pm_busy_check(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 0;
+}
+#endif
 
 static int set_power_mode(enum bmp5_powermode powermode, const struct device *dev)
 {
@@ -633,6 +653,39 @@ static int bmp581_init(const struct device *dev)
 	return ret;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int bmp581_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct bmp581_data *drv = (struct bmp581_data *)dev->data;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/*
+		 * Restore the configured power mode (NORMAL/FORCED/CONTINUOUS).
+		 * set_power_mode() drops the device to STANDBY first as required
+		 * by the datasheet (section 4.3.7) before transitioning to an
+		 * active mode.
+		 */
+		ret = set_power_mode(drv->osr_odr_press_config.power_mode, dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/*
+		 * Per datasheet section 4.3.1, STANDBY halts measurements but
+		 * keeps registers accessible and preserves the last sample in
+		 * the data registers. Transition takes up to t_standby (2.5 ms).
+		 */
+		ret = set_power_mode(BMP5_POWERMODE_STANDBY, dev);
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #ifdef CONFIG_SENSOR_ASYNC_API
 
 static void bmp581_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe,
@@ -721,6 +774,18 @@ static void bmp581_submit(const struct device *dev, struct rtio_iodev_sqe *iodev
 	if (!cfg->is_streaming) {
 		bmp581_submit_one_shot(dev, iodev_sqe);
 	} else if (IS_ENABLED(CONFIG_BMP581_STREAM)) {
+		/*
+		 * Streaming relies on DRDY/FIFO interrupts, which only fire while
+		 * the device is in NORMAL or CONTINUOUS mode. If the device has
+		 * been suspended, refuse the request so the caller doesn't wait
+		 * forever for an interrupt that won't arrive.
+		 */
+		int ret = bmp581_pm_busy_check(dev);
+
+		if (ret != 0) {
+			rtio_iodev_sqe_err(iodev_sqe, ret);
+			return;
+		}
 		bmp581_stream_submit(dev, iodev_sqe);
 	} else {
 		LOG_ERR("Streaming not supported");
@@ -802,7 +867,10 @@ static DEVICE_API(sensor, bmp581_driver_api) = {
 		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(i, int_gpios, {0}),                           \
 	};                                                                                         \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(i, bmp581_init, NULL, &bmp581_data_##i, &bmp581_config_##i,   \
+	PM_DEVICE_DT_INST_DEFINE(i, bmp581_pm_action);                                             \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(i, bmp581_init, PM_DEVICE_DT_INST_GET(i),                     \
+				     &bmp581_data_##i, &bmp581_config_##i,                         \
 				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                     \
 				     &bmp581_driver_api);
 
