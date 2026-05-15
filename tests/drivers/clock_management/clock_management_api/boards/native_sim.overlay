@@ -18,26 +18,12 @@
 			compatible = "fixed-clock";
 			clock-frequency = <10000000>;
 			#clock-cells = <0>;
-
-			emul_div1: emul-div1 {
-				compatible = "vnd,emul-clock-div";
-				max-div = <64>;
-				#clock-cells = <1>;
-				clock-ranking = <1>;
-			};
 		};
 
 		emul_source2: emul-source2 {
 			compatible = "fixed-clock";
 			clock-frequency = <50000000>;
 			#clock-cells = <0>;
-
-			emul_div2: emul-div2 {
-				compatible = "vnd,emul-clock-div";
-				max-div = <256>;
-				#clock-cells = <1>;
-				clock-ranking = <2>;
-			};
 		};
 
 		emul_source3: emul-source3 {
@@ -58,15 +44,32 @@
 			compatible = "fixed-clock";
 			clock-frequency = <50000000>;
 			#clock-cells = <0>;
+		};
 
-			test_emul_onoff_gate: test-emul-onoff-gate {
-				compatible = "vnd,emul-clock-gateable";
+		emul_div1: emul-div1 {
+			compatible = "vnd,emul-clock-div";
+			max-div = <64>;
+			#clock-cells = <1>;
+			clock-ranking = <1>;
+			input = <&emul_source1>;
+		};
+
+		emul_div2: emul-div2 {
+			compatible = "vnd,emul-clock-div";
+			max-div = <256>;
+			#clock-cells = <1>;
+			clock-ranking = <2>;
+			input = <&emul_source2>;
+		};
+
+		test_emul_onoff_gate: test-emul-onoff-gate {
+			compatible = "vnd,emul-clock-gateable";
+			#clock-cells = <0>;
+			input = <&test_emul_onoff_source>;
+
+			emul_dev3_out: emul-dev3-out {
+				compatible = "clock-output";
 				#clock-cells = <0>;
-
-				emul_dev3_out: emul-dev3-out {
-					compatible = "clock-output";
-					#clock-cells = <0>;
-				};
 			};
 		};
 

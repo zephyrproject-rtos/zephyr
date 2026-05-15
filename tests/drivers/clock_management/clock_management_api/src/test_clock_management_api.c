@@ -334,7 +334,7 @@ const struct clock_management_standard_api gateable_clock_api = {
 
 #define GATEABLE_CLOCK_DEFINE(inst)                                            \
 	static struct gateable_clock_data gate_clk_##inst = {                  \
-		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PARENT(inst))) \
+		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PHANDLE(inst, input))) \
 	};                                                                     \
 	CLOCK_DT_INST_DEFINE(inst,                                             \
 			     &gate_clk_##inst,                                 \

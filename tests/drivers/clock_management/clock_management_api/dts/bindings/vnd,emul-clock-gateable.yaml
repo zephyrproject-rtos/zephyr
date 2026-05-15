@@ -12,5 +12,11 @@ compatible: "vnd,emul-clock-gateable"
 include: [clock-node.yaml]
 
 properties:
+  input:
+    type: phandle
+    required: true
+    description: |
+      Clock node that is the input to this clock gate.
+
   "#clock-cells":
     const: 0

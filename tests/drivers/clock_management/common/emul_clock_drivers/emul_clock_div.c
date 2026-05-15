@@ -109,7 +109,7 @@ const struct clock_management_standard_api emul_div_api = {
 
 #define EMUL_CLOCK_DEFINE(inst)                                                \
 	struct emul_clock_div emul_clock_div_##inst = {                        \
-		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PARENT(inst))) \
+		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PHANDLE(inst, input))) \
 		.div_max = DT_INST_PROP(inst, max_div) - 1,                    \
 		.div_val = 0,                                                  \
 	};                                                                     \
