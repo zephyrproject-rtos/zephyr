@@ -13,7 +13,6 @@ import csv
 import logging
 import math
 import os
-import re
 import select
 import shlex
 import signal
@@ -28,6 +27,7 @@ from queue import Empty, Queue
 import psutil
 from domains import Domains
 from twisterlib import ZEPHYR_BASE
+from twisterlib.dut_channel import DUTChannel, ProcessDUTChannel, SerialDUTChannel
 from twisterlib.environment import strip_ansi_sequences
 from twisterlib.hardwaredata import CompoundHardwareData
 from twisterlib.platform import Platform
@@ -35,18 +35,8 @@ from twisterlib.statuses import TwisterStatus
 
 try:
     import serial
-    from serial.tools import list_ports
 except ImportError:
     print("Install pyserial python module with pip to use --device-testing option.")
-
-try:
-    import pty
-
-except ImportError as capture_error:
-    if os.name == "nt":  # "nt" means that program is running on Windows OS
-        pass  # "--device-serial-pty" option is not supported on Windows OS
-    else:
-        raise capture_error
 
 logger = logging.getLogger('twister')
 
@@ -435,56 +425,51 @@ class DeviceHandler(Handler):
             timeout += 120
         return timeout
 
-    def monitor_serial(self, ser, halt_event, harness):
+    def monitor_serial(self, channel: DUTChannel, halt_event, harness):
         if self.options.enable_coverage:
             # Set capture_coverage to True to indicate that right after
             # test results we should get coverage data, otherwise we exit
             # from the test.
             harness.capture_coverage = True
 
-        # Wait for serial connection
-        while not ser.isOpen():
+        # Wait for the channel to become available.
+        while not channel.is_open:
             time.sleep(0.1)
 
-        # Clear serial leftover.
-        ser.reset_input_buffer()
+        # Clear any leftover input.
+        channel.reset_input_buffer()
 
         with open(self.log, "w", encoding="utf-8") as log_out_fp:
-            while ser.isOpen():
+            while channel.is_open:
                 if halt_event.is_set():
                     logger.debug('halted')
-                    ser.close()
+                    channel.close()
                     break
 
                 try:
-                    if not ser.in_waiting:
-                        # no incoming bytes are waiting to be read from
-                        # the serial input buffer, let other threads run
+                    if not channel.in_waiting:
+                        # No incoming bytes are waiting; let other threads run.
                         time.sleep(0.001)
                         continue
-                # maybe the serial port is still in reset
-                # check status may cause error
-                # wait for more time
+                # The serial port may still be in reset; checking status may
+                # raise. Wait for more time.
                 except OSError:
                     time.sleep(0.001)
                     continue
                 except TypeError:
-                    # This exception happens if the serial port was closed and
-                    # its file descriptor cleared in between of ser.isOpen()
-                    # and ser.in_waiting checks.
-                    logger.debug("Serial port is already closed, stop reading.")
+                    # The channel was closed and its fd cleared between the
+                    # is_open and in_waiting checks.
+                    logger.debug("DUT channel is already closed, stop reading.")
                     break
 
-                serial_line = None
-                # SerialException may happen during the serial device power off/on process.
+                line = None
+                # SerialException may happen during a device power off/on cycle.
                 with contextlib.suppress(TypeError, serial.SerialException):
-                    serial_line = ser.readline()
+                    line = channel.readline()
 
-                # Just because ser_fileno has data doesn't mean an entire line
-                # is available yet.
-                if serial_line:
-                    # can be more lines in serial_line so split them before handling
-                    for sl in serial_line.decode('utf-8', 'replace').splitlines(keepends=True):
+                # The channel may have data without yielding a complete line yet.
+                if line:
+                    for sl in line.decode('utf-8', 'replace').splitlines(keepends=True):
                         log_out_fp.write(strip_ansi_sequences(sl))
                         log_out_fp.flush()
                         if sl := sl.strip():
@@ -492,7 +477,7 @@ class DeviceHandler(Handler):
                             harness.handle(sl)
 
                 if harness.status != TwisterStatus.NONE and not harness.capture_coverage:
-                    ser.close()
+                    channel.close()
                     break
 
     @staticmethod
@@ -597,71 +582,40 @@ class DeviceHandler(Handler):
 
         return command
 
-    def _terminate_pty(self, ser_pty, ser_pty_process):
-        logger.debug(f"Terminating serial-pty:'{ser_pty}'")
-        terminate_process(ser_pty_process)
-        try:
-            (stdout, stderr) = ser_pty_process.communicate(timeout=self.get_test_timeout())
-            logger.debug(f"Terminated serial-pty:'{ser_pty}', stdout:'{stdout}', stderr:'{stderr}'")
-        except subprocess.TimeoutExpired:
-            logger.debug(f"Terminated serial-pty:'{ser_pty}'")
-    #
-
-    def _create_serial_connection(self, serial_device, hardware_baud,
-                                  flash_timeout, serial_pty, ser_pty_process):
-        try:
-            ser = serial.Serial(
-                serial_device,
-                baudrate=hardware_baud,
-                parity=serial.PARITY_NONE,
-                stopbits=serial.STOPBITS_ONE,
-                bytesize=serial.EIGHTBITS,
-                # the worst case of no serial input
-                timeout=max(flash_timeout, self.get_test_timeout())
-            )
-        except serial.SerialException as e:
-            self._handle_serial_exception(e, serial_pty, ser_pty_process)
-            raise
-
-        return ser
-
-    def _handle_serial_exception(self, exception, serial_pty, ser_pty_process):
+    def _handle_channel_exception(self, exception, channel: DUTChannel):
         self.instance.status = TwisterStatus.FAIL
         self.instance.reason = "Serial Device Error"
         logger.error(f"Serial device error: {exception!s}")
-
         self.instance.add_missing_case_status(TwisterStatus.BLOCK, "Serial Device Error")
-        if serial_pty and ser_pty_process:
-            self._terminate_pty(serial_pty, ser_pty_process)
+        channel.close()
 
-    def _start_serial_pty(self, serial_pty, serial_pty_master):
-        ser_pty_process = None
-        try:
-            # Pass environment variables including platform name to serial PTY script
+    def _create_channel(self, hardware: CompoundHardwareData, runner: str | None,
+                        flash_timeout: float) -> DUTChannel:
+        """Pick the DUT communication backend based on hardware config."""
+        read_timeout = max(flash_timeout, self.get_test_timeout())
+        if hardware.serial_pty:
             env = os.environ.copy()
-            if hasattr(self, 'instance') and hasattr(self.instance, 'platform'):
+            if hasattr(self.instance, 'platform'):
                 env['TWISTER_PLATFORM'] = self.instance.platform.name
-            ser_pty_process = subprocess.Popen(
-                re.split('[, ]', serial_pty),
-                stdout=serial_pty_master,
-                stdin=serial_pty_master,
-                stderr=serial_pty_master,
-                env=env
+            return ProcessDUTChannel(
+                hardware.serial_pty,
+                env=env,
+                read_timeout=read_timeout,
+                kill_timeout=self.get_test_timeout(),
             )
-        except subprocess.CalledProcessError as error:
-            logger.error(
-                f"Failed to run subprocess {serial_pty}, error {error.output}"
-            )
-
-        return ser_pty_process
+        return SerialDUTChannel(
+            hardware.serial,
+            hardware.serial_baud,
+            read_timeout=read_timeout,
+            runner=runner,
+        )
 
     def handle(self, harness):
         hardware: CompoundHardwareData = self.instance.reserved_duts[0]
 
-        # Run pre-script BEFORE starting serial PTY to avoid conflicts
+        # Run pre-script BEFORE opening the DUT channel to avoid conflicts.
         pre_script = hardware.pre_script
         script_param = hardware.script_param
-
         if pre_script:
             timeout = 30
             if script_param:
@@ -669,47 +623,30 @@ class DeviceHandler(Handler):
             self.run_custom_script(pre_script, timeout)
 
         runner = hardware.runner or self.options.west_runner
-        serial_pty = hardware.serial_pty
 
-        if not serial_pty:
-            serial_device = hardware.serial
-        else:
-            ser_pty_master, slave = pty.openpty()
-            serial_device = os.ttyname(slave)
+        flash_timeout = hardware.flash_timeout
+        if hardware.flash_with_test:
+            flash_timeout += self.get_test_timeout()
 
-        logger.debug(f"Using serial device {serial_device} @ {hardware.serial_baud} baud")
+        channel = self._create_channel(hardware, runner, flash_timeout)
+        logger.debug(f"Using DUT channel {channel}")
 
         command = self._create_command(runner, hardware)
 
         post_flash_script = hardware.post_flash_script
         post_script = hardware.post_script
 
-        flash_timeout = hardware.flash_timeout
-        if hardware.flash_with_test:
-            flash_timeout += self.get_test_timeout()
-
-        serial_port = None
-        ser_pty_process = None
         if hardware.flash_before is False:
-            if serial_pty:
-                ser_pty_process = self._start_serial_pty(serial_pty, ser_pty_master)
-            serial_port = serial_device
-
-        try:
-            ser = self._create_serial_connection(
-                serial_port,
-                hardware.serial_baud,
-                flash_timeout,
-                serial_pty,
-                ser_pty_process
-            )
-        except serial.SerialException:
-            return
+            try:
+                channel.open_before_flash()
+            except (serial.SerialException, OSError) as e:
+                self._handle_channel_exception(e, channel)
+                return
 
         halt_monitor_evt = threading.Event()
 
         t = threading.Thread(target=self.monitor_serial, daemon=True,
-                             args=(ser, halt_monitor_evt, harness))
+                             args=(channel, halt_monitor_evt, harness))
         start_time = time.time()
         t.start()
 
@@ -754,58 +691,19 @@ class DeviceHandler(Handler):
                 timeout = script_param.get("post_flash_timeout", timeout)
             self.run_custom_script(post_flash_script, timeout)
 
-        # Connect to device after flashing it
+        # Attach to the device after flashing it.
         if hardware.flash_before:
             try:
-                logger.debug(f"Attach serial device {serial_device} @ {hardware.serial_baud} baud")
-                ser.port = serial_device
-
-                if serial_pty:
-                    ser_pty_process = self._start_serial_pty(serial_pty, ser_pty_master)
-                    ser.open()
-                elif runner == "esp32":
-                    # Apply ESP32-specific RTS/DTR reset logic
-                    logger.debug("Applying ESP32 RTS/DTR reset sequence")
-
-                    # Prepare: IO0=HIGH (DTR=True), EN=HIGH (RTS=False)
-                    ser.dtr = True
-                    ser.rts = False
-
-                    ser.open()
-
-                    # Reset pulse: IO0=LOW (DTR=False), EN=LOW (RTS=True)
-                    ser.dtr = False
-                    ser.rts = True
-                    time.sleep(0.1)
-
-                    # Return to normal boot
-                    ser.rts = False
-                else:
-                    # Wait for serial port to appear after flashing
-                    # To keep dependency between flash_timeout proposed 20% of this value
-                    # but not less than 10s. TO keep clarity of measurement,
-                    # declare new start time instead of using existing one start_time.
-                    serial_wait_timeout = max(10, int(flash_timeout * 0.2))
-                    flash_start_time = time.time()
-                    while ser.port not in (p.name for p in list_ports.comports()):
-                        time.sleep(0.1)
-                        if time.time() - flash_start_time > serial_wait_timeout:
-                            break
-                    ser.open()
-
-            except serial.SerialException as e:
-                self._handle_serial_exception(e, serial_pty, ser_pty_process)
+                channel.open_after_flash(flash_timeout)
+            except (serial.SerialException, OSError) as e:
+                self._handle_channel_exception(e, channel)
                 return
 
         if failure_type != Handler.FailureType.FLASH:
-            # Always wait at most the test timeout here after flashing.
+            # Always wait at most the test timeout after flashing.
             t.join(self.get_test_timeout())
         else:
-            # When the flash error is due exceptions,
-            # twister tell the monitor serial thread
-            # to close the serial. But it is necessary
-            # for this thread being run first and close
-            # have the change to close the serial.
+            # Give the monitor thread a brief window to observe the close.
             t.join(0.1)
 
         if t.is_alive():
@@ -813,11 +711,7 @@ class DeviceHandler(Handler):
                 f"Timed out while monitoring serial output on {self.instance.platform.name}"
             )
 
-        if ser.isOpen():
-            ser.close()
-
-        if serial_pty:
-            self._terminate_pty(serial_pty, ser_pty_process)
+        channel.close()
 
         self.execution_time = time.time() - start_time
 

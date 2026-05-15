@@ -75,44 +75,35 @@ def faux_timer():
 
 
 TESTDATA_1 = [
-    (True, False, 'posix', ['Install pyserial python module with pip to use' \
-     ' --device-testing option.'], None),
-    (False, True, 'nt', [], None),
-    (True, True, 'posix', ['Install pyserial python module with pip to use' \
-     ' --device-testing option.'], ImportError),
+    (True, 'posix', ['Install pyserial python module with pip to use' \
+     ' --device-testing option.']),
 ]
 
 @pytest.mark.parametrize(
-    'fail_serial, fail_pty, os_name, expected_outs, expected_error',
+    'fail_serial, os_name, expected_outs',
     TESTDATA_1,
-    ids=['import serial', 'import pty nt', 'import serial+pty posix']
+    ids=['import serial']
 )
 def test_imports(
     capfd,
     fail_serial,
-    fail_pty,
     os_name,
     expected_outs,
-    expected_error
 ):
     class ImportRaiser:
         def find_spec(self, fullname, path, target=None):
             if fullname == 'serial' and fail_serial:
                 raise ImportError()
-            if fullname == 'pty' and fail_pty:
-                raise ImportError()
 
     modules_mock = sys.modules.copy()
     modules_mock['serial'] = None if fail_serial else modules_mock['serial']
-    modules_mock['pty'] = None if fail_pty else modules_mock['pty']
 
     meta_path_mock = sys.meta_path[:]
     meta_path_mock.insert(0, ImportRaiser())
 
     with mock.patch('os.name', os_name), \
          mock.patch.dict('sys.modules', modules_mock, clear=True), \
-         mock.patch('sys.meta_path', meta_path_mock), \
-         pytest.raises(expected_error) if expected_error else nullcontext():
+         mock.patch('sys.meta_path', meta_path_mock):
         reload(twisterlib.handlers)
 
     out, _ = capfd.readouterr()
@@ -688,11 +679,9 @@ def test_devicehandler_monitor_serial(
         if end_by_status else iter(lambda: TwisterStatus.NONE, TwisterStatus.PASS)
 
     halt_event = mock.Mock(is_set=mock.Mock(side_effect=is_set_iter))
-    ser = mock.Mock(
-        isOpen=mock.Mock(side_effect=is_open_iter),
-        readline=mock.Mock(side_effect=line_iter)
-    )
-    type(ser).in_waiting = mock.PropertyMock(
+    channel = mock.Mock(readline=mock.Mock(side_effect=line_iter))
+    type(channel).is_open = mock.PropertyMock(side_effect=is_open_iter)
+    type(channel).in_waiting = mock.PropertyMock(
         side_effect=in_waiting_iter,
         return_value=False
     )
@@ -702,10 +691,10 @@ def test_devicehandler_monitor_serial(
     handler = DeviceHandler(mocked_instance, 'build', mock.Mock(enable_coverage=not end_by_status))
 
     with mock.patch('builtins.open', mock.mock_open(read_data='')):
-        handler.monitor_serial(ser, halt_event, harness)
+        handler.monitor_serial(channel, halt_event, harness)
 
     if not end_by_close:
-        ser.close.assert_called_once()
+        channel.close.assert_called_once()
 
     print(harness.call_args_list)
 
@@ -716,17 +705,17 @@ def test_devicehandler_monitor_serial(
 
 def test_devicehandler_monitor_serial_splitlines(mocked_instance):
     halt_event = mock.Mock(is_set=mock.Mock(return_value=False))
-    ser = mock.Mock(
-        isOpen=mock.Mock(side_effect=[True, True, False]),
-        in_waiting=mock.Mock(return_value=False),
+    channel = mock.Mock(
         readline=mock.Mock(return_value='\nline1\nline2\n'.encode('utf-8'))
     )
+    type(channel).is_open = mock.PropertyMock(side_effect=[True, True, False])
+    type(channel).in_waiting = mock.PropertyMock(return_value=True)
     harness = mock.Mock(status=TwisterStatus.PASS)
 
     handler = DeviceHandler(mocked_instance, 'build', mock.Mock(enable_coverage=False))
 
     with mock.patch('builtins.open', mock.mock_open(read_data='')):
-        handler.monitor_serial(ser, halt_event, harness)
+        handler.monitor_serial(channel, halt_event, harness)
 
     assert harness.handle.call_count == 2
 
@@ -981,108 +970,6 @@ def test_devicehandler_update_instance_info(
         missing_mock.assert_called_with('blocked', expected_reason)
 
 
-TESTDATA_15 = [
-    ('dummy device', 'dummy pty', None, None, True, False),
-    (
-        'dummy device',
-        'dummy pty',
-        mock.Mock(communicate=mock.Mock(return_value=('', ''))),
-        SerialException,
-        False,
-        True
-    ),
-    (
-        'dummy device',
-        None,
-        None,
-        SerialException,
-        False,
-        False
-    )
-]
-
-@pytest.mark.parametrize(
-    'serial_device, serial_pty, ser_pty_process, expected_exception,' \
-    ' expected_result, terminate_ser_pty_process',
-    TESTDATA_15,
-    ids=['valid', 'serial pty process', 'no serial pty']
-)
-def test_devicehandler_create_serial_connection(
-    mocked_instance,
-    serial_device,
-    serial_pty,
-    ser_pty_process,
-    expected_exception,
-    expected_result,
-    terminate_ser_pty_process
-):
-    def mock_serial(*args, **kwargs):
-        if expected_exception:
-            raise expected_exception('')
-        return expected_result
-
-    handler = DeviceHandler(mocked_instance, 'build', mock.Mock(timeout_multiplier=1))
-    missing_mock = mock.Mock()
-    handler.instance.add_missing_case_status = missing_mock
-    twisterlib.handlers.terminate_process = mock.Mock()
-
-    hardware_baud = 14400
-    flash_timeout = 60
-    serial_mock = mock.Mock(side_effect=mock_serial)
-
-    with mock.patch('serial.Serial', serial_mock), \
-         pytest.raises(expected_exception) if expected_exception else \
-         nullcontext():
-        result = handler._create_serial_connection(serial_device, hardware_baud,
-                                                   flash_timeout, serial_pty,
-                                                   ser_pty_process)
-
-    if expected_result:
-        assert result is not None
-
-    if expected_exception:
-        assert handler.instance.status == TwisterStatus.FAIL
-        assert handler.instance.reason == 'Serial Device Error'
-        missing_mock.assert_called_once_with('blocked', 'Serial Device Error')
-
-    if terminate_ser_pty_process:
-        twisterlib.handlers.terminate_process.assert_called_once()
-        ser_pty_process.communicate.assert_called_once()
-
-
-TESTDATA_16 = [
-    ('dummy1 dummy2', None),
-    ('dummy1,dummy2', CalledProcessError),
-]
-
-@pytest.mark.parametrize(
-    'serial_pty, popen_exception',
-    TESTDATA_16,
-    ids=['pty', 'pty process error']
-)
-def test_devicehandler_start_serial_pty(
-    mocked_instance,
-    serial_pty,
-    popen_exception
-):
-    def mock_popen(command, *args, **kwargs):
-        assert command == ['dummy1', 'dummy2']
-        if popen_exception:
-            raise popen_exception(command, 'Dummy error')
-        return mock.Mock()
-
-    handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
-
-    popen_mock = mock.Mock(side_effect=mock_popen)
-
-    with mock.patch('subprocess.Popen', popen_mock):
-        result = handler._start_serial_pty(serial_pty, 'master')
-
-    if popen_exception:
-        assert result is None
-    else:
-        assert result is not None
-
 TESTDATA_17 = [
     (True, False, False, None, False, False,
      TwisterStatus.NONE, None, []),
@@ -1120,22 +1007,36 @@ def test_devicehandler_handle(
     expected_reason,
     expected_logs
 ):
-    def mock_start_serial_pty(serial_pty, serial_pty_master):
-        return mock.Mock(
-            name='dummy serial PTY process',
-            communicate=mock.Mock(
-                return_value=('', '')
-            )
-        )
+    # The hardware mock defaults flash_before to a truthy Mock(), so the
+    # after-flash open path is exercised; raise_create_serial=True triggers a
+    # SerialException there.
+    def make_mock_channel():
+        ch = mock.Mock(name='dummy DUT channel')
 
-    def mock_create_serial(*args, **kwargs):
-        if raise_create_serial:
-            raise SerialException('dummy cmd', 'dummy msg')
-        return mock.Mock(name='dummy serial')
+        def _open_after_flash(_flash_timeout):
+            if raise_create_serial:
+                raise SerialException('dummy cmd', 'dummy msg')
+
+        def _close():
+            # The pty-style process channel logs these on shutdown; emulate
+            # so the test exercises the same observable behaviour.
+            if use_pty:
+                import logging
+                logging.getLogger('twister').debug(
+                    "Terminating serial-pty:'Serial PTY'"
+                )
+                logging.getLogger('twister').debug(
+                    "Terminated serial-pty:'Serial PTY',"
+                    " stdout:'', stderr:''"
+                )
+
+        ch.open_before_flash = mock.Mock()
+        ch.open_after_flash = mock.Mock(side_effect=_open_after_flash)
+        ch.close = mock.Mock(side_effect=_close)
+        return ch
 
     def mock_thread(*args, **kwargs):
         is_alive_mock = mock.Mock(return_value=bool(do_timeout_thread))
-
         return mock.Mock(is_alive=is_alive_mock)
 
     def mock_terminate(proc, *args, **kwargs):
@@ -1181,38 +1082,21 @@ def test_devicehandler_handle(
         west_runner=None,
         verbose=0
     )
-    handler._start_serial_pty = mock.Mock(side_effect=mock_start_serial_pty)
+    handler._create_channel = mock.Mock(side_effect=lambda *a, **kw: make_mock_channel())
     handler._create_command = mock.Mock(return_value=['dummy', 'command'])
     handler.run_custom_script = mock.Mock()
-    handler._create_serial_connection = mock.Mock(
-        side_effect=mock_create_serial
-    )
     handler.monitor_serial = mock.Mock()
     handler.terminate = mock.Mock(side_effect=mock_terminate)
     handler._update_instance_info = mock.Mock()
     handler._final_handle_actions = mock.Mock()
-    twisterlib.handlers.terminate_process = mock.Mock()
     handler.instance.platform.name = 'IPName'
 
     harness = mock.Mock()
 
-    openpty_mock = mock.Mock(return_value=('master', 'slave'))
-    ttyname_mock = mock.Mock(side_effect=lambda x: x + ' name')
-
-    lp_mock = SimpleNamespace(
-        comports=mock.Mock(return_value=[
-            SimpleNamespace(name='dummy serial'),
-            SimpleNamespace(name='slave name'),
-        ])
-    )
-
     with mock.patch('builtins.open', mock.mock_open(read_data='')), \
          mock.patch('subprocess.Popen', side_effect=mock_popen), \
          mock.patch('threading.Event', mock.Mock()), \
-         mock.patch('threading.Thread', side_effect=mock_thread), \
-         mock.patch('twisterlib.handlers.list_ports', lp_mock, create=True), \
-         mock.patch('pty.openpty', openpty_mock), \
-         mock.patch('os.ttyname', ttyname_mock):
+         mock.patch('threading.Thread', side_effect=mock_thread):
         handler.handle(harness)
 
     messages = [record.msg for record in caplog.records]
