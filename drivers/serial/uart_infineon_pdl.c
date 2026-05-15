@@ -311,9 +311,8 @@ static int ifx_cat1_uart_poll_in(const struct device *dev, unsigned char *c)
 
 	uint32_t read_value = Cy_SCB_UART_Get(config->reg_addr);
 
-	while (read_value == CY_SCB_UART_RX_NO_DATA) {
-		k_sleep(K_MSEC(1));
-		read_value = Cy_SCB_UART_Get(config->reg_addr);
+	if (read_value == CY_SCB_UART_RX_NO_DATA) {
+		return -1;
 	}
 	*c = (uint8_t)read_value;
 
