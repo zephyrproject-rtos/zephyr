@@ -286,7 +286,7 @@ static int cmd_net_route_del(const struct shell *sh, size_t argc, char *argv[])
 #if defined(NATIVE_ROUTE)
 	struct net_if *iface = NULL;
 	int idx;
-	struct net_route_entry *route;
+	struct net_route_entry *route = NULL;
 	struct net_sockaddr_storage addr;
 	const char *str;
 	uint8_t mask_len;
