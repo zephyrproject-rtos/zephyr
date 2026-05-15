@@ -499,7 +499,7 @@ static int i2c_validate_msgs(struct i2c_msg *msgs, uint8_t num_msgs)
 
 	for (uint8_t i = 0; i < num_msgs; i++) {
 
-		if ((msgs[i].buf == NULL) || (msgs[i].len == 0)) {
+		if ((msgs[i].len > 0) && (msgs[i].buf == NULL)) {
 			return -EINVAL;
 		}
 
