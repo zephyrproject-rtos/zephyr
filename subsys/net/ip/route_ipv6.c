@@ -450,15 +450,22 @@ bool net_route_ipv6_get_info(struct net_if *iface,
 int net_route_ipv6_packet(struct net_pkt *pkt, struct net_in6_addr *nexthop)
 {
 	struct net_linkaddr *lladdr = NULL;
+	struct net_if *out_iface = net_pkt_iface(pkt);
 	struct net_nbr *nbr;
 
 	nbr = net_ipv6_nbr_lookup(NULL, nexthop);
 	if (nbr == NULL) {
-		NET_DBG("Cannot find %s neighbor", net_sprint_ipv6_addr(nexthop));
-		return -ENOENT;
+		if (net_route_ll_addr_supported(out_iface)) {
+			NET_DBG("Cannot find %s neighbor",
+				net_sprint_ipv6_addr(nexthop));
+			return -ENOENT;
+		}
+	} else {
+		out_iface = nbr->iface;
 	}
 
-	if (net_route_ll_addr_supported(nbr->iface) &&
+	if (nbr != NULL &&
+	    net_route_ll_addr_supported(out_iface) &&
 	    net_route_ll_addr_supported(net_pkt_iface(pkt)) &&
 	    net_route_ll_addr_supported(net_pkt_orig_iface(pkt))) {
 		lladdr = net_nbr_get_lladdr(nbr->idx);
@@ -481,6 +488,7 @@ int net_route_ipv6_packet(struct net_pkt *pkt, struct net_in6_addr *nexthop)
 	}
 
 	net_pkt_set_forwarding(pkt, true);
+	net_pkt_set_iface(pkt, out_iface);
 
 	if (net_route_ll_addr_supported(net_pkt_iface(pkt))) {
 		(void)net_linkaddr_copy(net_pkt_lladdr_src(pkt),
@@ -490,8 +498,6 @@ int net_route_ipv6_packet(struct net_pkt *pkt, struct net_in6_addr *nexthop)
 	if (lladdr != NULL) {
 		(void)net_linkaddr_copy(net_pkt_lladdr_dst(pkt), lladdr);
 	}
-
-	net_pkt_set_iface(pkt, nbr->iface);
 
 	return net_send_data(pkt);
 }

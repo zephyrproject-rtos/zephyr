@@ -41,6 +41,8 @@ LOG_MODULE_DECLARE(net_route, ROUTE_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_pkt.h>
 
+#include <zephyr/net/virtual.h>
+
 #include "route.h"
 
 static size_t route_addr_len(net_sa_family_t family)
@@ -552,6 +554,12 @@ bool net_route_has_nexthop(const struct net_route_entry *route)
 
 bool net_route_ll_addr_supported(struct net_if *iface)
 {
+#if defined(CONFIG_NET_L2_VIRTUAL)
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL) &&
+	    (net_virtual_get_iface_capabilities(iface) & VIRTUAL_INTERFACE_VPN)) {
+		return false;
+	}
+#endif
 #if defined(CONFIG_NET_L2_DUMMY)
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
 		return false;
