@@ -634,7 +634,6 @@ static int cmd_sensor_attr_set(const struct shell *sh, size_t argc, char *argv[]
 
 	if (!device_is_sensor(dev)) {
 		shell_error(sh, "Device is not a sensor (%s)", argv[1]);
-		k_mutex_unlock(&cmd_get_mutex);
 		return -ENODEV;
 	}
 
@@ -720,7 +719,6 @@ static int cmd_sensor_attr_get(const struct shell *sh, size_t argc, char *argv[]
 
 	if (!device_is_sensor(dev)) {
 		shell_error(sh, "Device is not a sensor (%s)", argv[1]);
-		k_mutex_unlock(&cmd_get_mutex);
 		return -ENODEV;
 	}
 
