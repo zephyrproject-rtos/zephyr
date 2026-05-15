@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/* Use all 128KB SRAM for network stack */
+		zephyr,sram = &sram0;
+	};
+
+	soc {
+		/* Combine all SRAM banks into one contiguous region */
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(128)>;
+		};
+	};
+};
+
+&spi0_mosi_p0_5 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0_miso_p0_6 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0_sck_p0_7 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0_ss0_p0_4 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+/* I2C uses P0.10/P0.11, which conflict with QSPI_SS1 */
+&i2c0 {
+	status = "disabled";
+};
+
+/* Fix UART clock source to use IBRO for accurate baudrate */
+&uart0 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+};
+
+&spi0 {
+	status = "okay";
+	cs-gpios = <&gpio0 11 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+
+	adin1140@0 {
+		compatible = "adi,adin1140";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(25)>;
+		int-gpios = <&gpio1 6 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH | GPIO_PULL_UP)>;
+		wake-gpios = <&gpio0 24 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		status = "okay";
+		local-mac-address = [00 e0 22 fe da d0];
+		phy-handle = <&adin1140_phy>;
+
+		mdio {
+			compatible = "adi,adin1140-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			adin1140_phy: ethernet-phy@0 {
+				reg = <0x0>;
+				compatible = "adi,adin1140-phy";
+				plca-enable;
+				plca-node-id = <0>;
+				plca-node-count = <5>;
+				plca-burst-count = <0>;
+				plca-burst-timer = <0x60>;
+				plca-to-timer = <0x20>;
+			};
+		};
+	};
+};
