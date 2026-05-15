@@ -38,6 +38,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include "ipv4.h"
 #include "ipv6.h"
 #include "route_ipv4.h"
+#include "route_ipv6.h"
 #include "tcp_internal.h"
 
 #include "net_stats.h"
@@ -3402,6 +3403,44 @@ out:
 	return src;
 }
 
+static struct net_if *net_if_ipv6_select_route_iface(const struct net_in6_addr *dst)
+{
+#if defined(CONFIG_NET_IPV6_ROUTE)
+	struct net_route_entry *route;
+	struct net_in6_addr *nexthop;
+	struct net_if_router *router;
+	struct net_nbr *nbr;
+
+	if (dst == NULL || net_ipv6_is_ll_addr(dst) ||
+	    net_ipv6_is_addr_mcast_link(dst)) {
+		return NULL;
+	}
+
+	nbr = net_ipv6_nbr_lookup(NULL, (struct net_in6_addr *)dst);
+	if (nbr != NULL) {
+		return nbr->iface;
+	}
+
+	if (!net_route_ipv6_get_info(NULL, (struct net_in6_addr *)dst,
+				     &route, &nexthop)) {
+		return NULL;
+	}
+
+	if (route != NULL) {
+		return route->iface;
+	}
+
+	router = net_if_ipv6_router_find_default(NULL, dst);
+	if (router != NULL) {
+		return router->iface;
+	}
+#else
+	ARG_UNUSED(dst);
+#endif
+
+	return NULL;
+}
+
 const struct net_in6_addr *net_if_ipv6_select_src_addr_hint(struct net_if *dst_iface,
 							const struct net_in6_addr *dst,
 							int flags)
@@ -3411,6 +3450,11 @@ const struct net_in6_addr *net_if_ipv6_select_src_addr_hint(struct net_if *dst_i
 
 	if (dst == NULL) {
 		return NULL;
+	}
+
+	if (dst_iface == NULL && !net_ipv6_is_ll_addr(dst) &&
+	    !net_ipv6_is_addr_mcast_link(dst)) {
+		dst_iface = net_if_ipv6_select_route_iface(dst);
 	}
 
 	if (!net_ipv6_is_ll_addr(dst) && !net_ipv6_is_addr_mcast_link(dst)) {
@@ -3484,10 +3528,14 @@ const struct net_in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 struct net_if *net_if_ipv6_select_src_iface_addr(const struct net_in6_addr *dst,
 						 const struct net_in6_addr **src_addr)
 {
-	struct net_if *iface = NULL;
+	struct net_if *iface = net_if_ipv6_select_route_iface(dst);
 	const struct net_in6_addr *src;
 
-	src = net_if_ipv6_select_src_addr(NULL, dst);
+	src = net_if_ipv6_select_src_addr(iface, dst);
+	if (iface != NULL && src == net_ipv6_unspecified_address()) {
+		src = net_if_ipv6_select_src_addr(NULL, dst);
+	}
+
 	if (src != net_ipv6_unspecified_address()) {
 		net_if_ipv6_addr_lookup(src, &iface);
 	}
