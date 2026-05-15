@@ -36,7 +36,6 @@ BUILD_ASSERT((CONFIG_PRIVILEGED_STACK_SIZE > 0) &&
  * code has to manually transition off of it to the appropriate stack after
  * switching page tables.
  */
-__pinned_func
 void z_x86_swap_update_page_tables(struct k_thread *incoming)
 {
 #ifndef CONFIG_X86_64

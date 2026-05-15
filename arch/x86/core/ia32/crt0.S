@@ -267,9 +267,6 @@ __csSet:
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
 	call	arch_bss_zero_boot
 #endif
-#ifdef CONFIG_LINKER_USE_PINNED_SECTION
-	call	arch_bss_zero_pinned
-#endif
 	call	arch_bss_zero
 
 #ifdef CONFIG_X86_CET
@@ -335,7 +332,7 @@ z_x86_idt:
 	 * and fails to set it.
 	 */
 
-SECTION_VAR(PINNED_RODATA, _gdt_rom)
+SECTION_VAR(RODATA, _gdt_rom)
 #ifndef CONFIG_GDT_DYNAMIC
 _gdt:
 #endif

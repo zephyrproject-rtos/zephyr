@@ -162,7 +162,6 @@ ZTEST_USER(device, test_null_dynamic_name)
 #endif
 }
 
-__pinned_bss
 static struct init_record {
 	bool pre_kernel;
 	bool is_in_isr;
@@ -170,10 +169,8 @@ static struct init_record {
 	bool could_yield;
 } init_records[4];
 
-__pinned_data
 static struct init_record *rp = init_records;
 
-__pinned_func
 static int add_init_record(bool pre_kernel)
 {
 	rp->pre_kernel = pre_kernel;
@@ -184,13 +181,11 @@ static int add_init_record(bool pre_kernel)
 	return 0;
 }
 
-__pinned_func
 static int pre1_fn(void)
 {
 	return add_init_record(true);
 }
 
-__pinned_func
 static int pre2_fn(void)
 {
 	return add_init_record(true);

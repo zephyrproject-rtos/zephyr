@@ -21,7 +21,6 @@
  * not assembly language safe.
  * FIXME: wastes 4 bytes
  */
-__pinned_rodata
 const int _errno_neg_eagain = -EAGAIN;
 
 #ifdef CONFIG_ERRNO

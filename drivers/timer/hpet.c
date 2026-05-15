@@ -231,12 +231,12 @@ __WARN("HPET_INT_LEVEL_TRIGGER has no effect, DTS setting is used instead")
 #endif
 #endif /* (DT_INST_IRQ_HAS_CELL(0, flags)) */
 
-static __pinned_bss uint64_t last_count;
-static __pinned_bss uint64_t last_tick;
-static __pinned_bss uint32_t last_elapsed;
+static uint64_t last_count;
+static uint64_t last_tick;
+static uint32_t last_elapsed;
 
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
-static __pinned_bss unsigned int cyc_per_tick;
+static unsigned int cyc_per_tick;
 #else
 #define cyc_per_tick			\
 	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
@@ -323,7 +323,6 @@ static void hpet_isr(const void *arg)
 	sys_clock_announce_locked(dticks, key);
 }
 
-__pinned_func
 static void config_timer0(unsigned int irq)
 {
 	uint32_t val = hpet_timer_conf_get();
@@ -352,7 +351,6 @@ void smp_timer_init(void)
 	 */
 }
 
-__pinned_func
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -378,7 +376,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 #endif
 }
 
-__pinned_func
 uint32_t sys_clock_elapsed(void)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
@@ -394,19 +391,16 @@ uint32_t sys_clock_elapsed(void)
 	return ret;
 }
 
-__pinned_func
 uint32_t sys_clock_cycle_get_32(void)
 {
 	return (uint32_t)hpet_counter_get();
 }
 
-__pinned_func
 uint64_t sys_clock_cycle_get_64(void)
 {
 	return hpet_counter_get();
 }
 
-__pinned_func
 void sys_clock_idle_exit(void)
 {
 	uint32_t reg;

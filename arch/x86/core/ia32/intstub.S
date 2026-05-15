@@ -66,7 +66,7 @@
  *
  * void _interrupt_enter(void *isr, void *isr_param);
  */
-SECTION_FUNC(PINNED_TEXT, _interrupt_enter)
+SECTION_FUNC(TEXT, _interrupt_enter)
 	/*
 	 * Note that the processor has pushed both the EFLAGS register
 	 * and the logical return address (cs:eip) onto the stack prior
@@ -459,7 +459,7 @@ handle_idle:
  * thus z_SpuriousIntNoErrCodeHandler()/z_SpuriousIntHandler() shall be
  * invoked with interrupts disabled.
  */
-SECTION_FUNC(PINNED_TEXT, z_SpuriousIntNoErrCodeHandler)
+SECTION_FUNC(TEXT, z_SpuriousIntNoErrCodeHandler)
 
 	endbr32
 	pushl	$0			/* push dummy err code onto stk */
@@ -467,7 +467,7 @@ SECTION_FUNC(PINNED_TEXT, z_SpuriousIntNoErrCodeHandler)
 	/* fall through to z_SpuriousIntHandler */
 
 
-SECTION_FUNC(PINNED_TEXT, z_SpuriousIntHandler)
+SECTION_FUNC(TEXT, z_SpuriousIntHandler)
 
 	endbr32
 	cld				/* Clear direction flag */
@@ -496,7 +496,7 @@ SECTION_FUNC(PINNED_TEXT, z_SpuriousIntHandler)
 	/* handler doesn't  return */
 
 #if CONFIG_IRQ_OFFLOAD
-SECTION_FUNC(PINNED_TEXT, _irq_sw_handler)
+SECTION_FUNC(TEXT, _irq_sw_handler)
 	endbr32
 	push $0
 	push $z_irq_do_offload

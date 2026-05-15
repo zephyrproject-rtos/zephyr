@@ -139,12 +139,6 @@ ZTEST(x86_pagetables, test_ram_perms)
 		} else if (IN_REGION(lnkr_boot_rodata, pos)) {
 			expected = MMU_P | MMU_US | MMU_XD;
 #endif
-#ifdef CONFIG_LINKER_USE_PINNED_SECTION
-		} else if (IN_REGION(lnkr_pinned_text, pos)) {
-			expected = MMU_P | MMU_US;
-		} else if (IN_REGION(lnkr_pinned_rodata, pos)) {
-			expected = MMU_P | MMU_US | MMU_XD;
-#endif
 #ifdef Z_LIBC_PARTITION_EXISTS
 		} else if (IN_REGION(z_data_smem_z_libc_partition_part, pos)) {
 			expected = MMU_P | MMU_RW | MMU_XD;

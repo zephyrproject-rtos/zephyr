@@ -8,7 +8,6 @@
 #include <zephyr/arch/cpu.h>
 
 #ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
-__pinned_func
 void arch_cpu_idle(void)
 {
 #if defined(CONFIG_TRACING)
@@ -21,7 +20,6 @@ void arch_cpu_idle(void)
 #endif
 
 #ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
-__pinned_func
 void arch_cpu_atomic_idle(unsigned int key)
 {
 #if defined(CONFIG_TRACING)

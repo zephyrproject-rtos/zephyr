@@ -91,20 +91,6 @@
 #define __boot_noinit	__noinit
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION */
 
-#if defined(CONFIG_LINKER_USE_PINNED_SECTION)
-#define __pinned_func	Z_GENERIC_DOT_SECTION(PINNED_TEXT_SECTION_NAME)
-#define __pinned_data	Z_GENERIC_DOT_SECTION(PINNED_DATA_SECTION_NAME)
-#define __pinned_rodata	Z_GENERIC_DOT_SECTION(PINNED_RODATA_SECTION_NAME)
-#define __pinned_bss	Z_GENERIC_DOT_SECTION(PINNED_BSS_SECTION_NAME)
-#define __pinned_noinit	Z_GENERIC_DOT_SECTION(PINNED_NOINIT_SECTION_NAME)
-#else
-#define __pinned_func
-#define __pinned_data
-#define __pinned_rodata
-#define __pinned_bss
-#define __pinned_noinit	__noinit
-#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
-
 #if defined(CONFIG_LINKER_USE_ONDEMAND_SECTION)
 #define __ondemand_func	Z_GENERIC_DOT_SECTION(ONDEMAND_TEXT_SECTION_NAME)
 #define __ondemand_rodata	Z_GENERIC_DOT_SECTION(ONDEMAND_RODATA_SECTION_NAME)
@@ -113,11 +99,7 @@
 #define __ondemand_rodata
 #endif /* CONFIG_LINKER_USE_ONDEMAND_SECTION */
 
-#if defined(CONFIG_LINKER_USE_PINNED_SECTION)
-#define __isr		__pinned_func
-#else
 #define __isr
-#endif
 
 /* Symbol table section */
 #if defined(CONFIG_SYMTAB)
