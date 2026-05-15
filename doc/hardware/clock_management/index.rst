@@ -667,6 +667,8 @@ implementations. For a list, see the table below:
     +-------------------------------------+--------------------------------------------+
     | :dtcompatible:`clock-gate`          | Clock gate to inhibit or pass a clock      |
     +-------------------------------------+--------------------------------------------+
+    | :dtcompatible:`clock-mux`           | Multiplexer to select between sources      |
+    +-------------------------------------+--------------------------------------------+
 
 Implementation Guidelines
 -------------------------
