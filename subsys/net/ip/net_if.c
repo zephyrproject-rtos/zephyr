@@ -3276,14 +3276,15 @@ static struct net_in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 			continue;
 		}
 
-		/* This is a dirty hack until we have proper IPv6 routing.
-		 * Without this the IPv6 packets might go to VPN interface for
-		 * subnets that are not on the same subnet as the VPN interface
-		 * which typically is not desired.
-		 * TODO: Implement IPv6 routing support and remove this hack.
-		 */
-		if (IS_ENABLED(CONFIG_NET_VPN)) {
-			/* For the VPN interface, we need to check if
+		if (!IS_ENABLED(CONFIG_NET_IPV6_ROUTE) && IS_ENABLED(CONFIG_NET_VPN)) {
+			/* If the IPv6 routing is disabled, then do some extra checks which
+			 * try to route the packet to correct network interface. Preferably
+			 * the IP routing should direct the packet to correct interface so this
+			 * extra check is not needed. Without this the IPv6 packets might go
+			 * to VPN interface for subnets that are not on the same subnet as the
+			 * VPN interface which typically is not desired.
+			 *
+			 * For the VPN interface, we need to check if
 			 * address matches exactly the address of the interface.
 			 */
 			if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL) &&
@@ -3952,14 +3953,15 @@ static struct net_in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 			continue;
 		}
 
-		/* This is a dirty hack until we have proper IPv4 routing.
-		 * Without this the IPv4 packets might go to VPN interface for
-		 * subnets that are not on the same subnet as the VPN interface
-		 * which typically is not desired.
-		 * TODO: Implement IPv4 routing support and remove this hack.
-		 */
-		if (IS_ENABLED(CONFIG_NET_VPN)) {
-			/* For the VPN interface, we need to check if
+		if (!IS_ENABLED(CONFIG_NET_IPV4_ROUTE) && IS_ENABLED(CONFIG_NET_VPN)) {
+			/* If the IPv4 routing is disabled, then do some extra checks which
+			 * try to route the packet to correct network interface. Preferably
+			 * the IP routing should direct the packet to correct interface so this
+			 * extra check is not needed. Without this the IPv4 packets might go
+			 * to VPN interface for subnets that are not on the same subnet as the
+			 * VPN interface which typically is not desired.
+			 *
+			 * For the VPN interface, we need to check if the IPv4
 			 * address matches exactly the address of the interface.
 			 */
 			if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL) &&
