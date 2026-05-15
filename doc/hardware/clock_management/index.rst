@@ -47,7 +47,7 @@ Clock Management Usage
 **********************
 
 In order to interact with the clock tree, clock consumers must define and
-initialize a clock output device. For devices defined in devicetree, which
+initialize a clock output device. For devices described in devicetree, which
 define clocks within their ``clock-outputs`` property,
 :c:macro:`CLOCK_MANAGEMENT_DT_DEFINE_OUTPUT` or similar may be used. For
 software applications consuming a clock,
@@ -146,16 +146,17 @@ but may look similar to the following:
         compatible = "fixed-clock";
         clock-frequency = <DT_FREQ_M(10)>;
         #clock-cells = <0>;
+    };
 
-        clock_div: clock-div@50000000 {
-            compatible = "vnd,clock-div";
+    clock_div: clock-div@50000000 {
+        compatible = "vnd,clock-div";
+        input = <&clock_source>;
+        #clock-cells = <1>;
+        reg = <0x5000000>;
+
+        clock_output: clock-output {
+            compatible = "clock-output";
             #clock-cells = <1>;
-            reg = <0x5000000>;
-
-            clock_output: clock-output {
-                compatible = "clock-output";
-                #clock-cells = <1>;
-            };
         };
     };
 
@@ -287,7 +288,7 @@ For example, if a peripheral devicetree was defined like so:
     periph0: periph@0 {
         compatible = "vnd,mydev";
         /* Clock outputs */
-        clock-outputs= <&periph_hs_clock &periph_lp_clock>;
+        clock-outputs = <&periph_hs_clock &periph_lp_clock>;
         clock-output-names = "high-speed", "low-power";
         /* Default clock state */
         clock-state-0 = <&hs_clock_default &lp_clock_default>;
@@ -558,12 +559,12 @@ See below for a simple example of defining a standard clock structure:
         ...
     };
 
-    #define VND_CLOCK_DEFINE(inst)                                           \
-      const struct vnd_clock_driver_data clock_data_##inst = {               \
-        STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PARENT(inst)))    \
-      };                                                                     \
-      CLOCK_DT_INST_DEFINE(inst,                                             \
-                           &clock_data_##inst,                               \
+    #define VND_CLOCK_DEFINE(inst)                                                \
+      const struct vnd_clock_driver_data clock_data_##inst = {                    \
+		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PHANDLE(inst, input))) \
+      };                                                                          \
+      CLOCK_DT_INST_DEFINE(inst,                                                  \
+                           &clock_data_##inst,                                    \
                            &vnd_clock_api);
 
     DT_INST_FOREACH_STATUS_OKAY(VND_CLOCK_DEFINE)
@@ -595,16 +596,17 @@ As an example, for the following devicetree:
         compatible = "fixed-clock";
         clock-frequency = <10000000>;
         #clock-cells = <0>;
+    };
 
-        clock_div: clock-div@50000000 {
-            compatible = "vnd,clock-div";
-            #clock-cells = <1>;
-            reg = <0x5000000>;
+    clock_div: clock-div@50000000 {
+        compatible = "vnd,clock-div";
+        #clock-cells = <1>;
+        input = <&clock_source>;
+        reg = <0x5000000>;
 
-            clock_output: clock-output {
-                compatible = "clock-output";
-                #clock-cells = <0>;
-            };
+        clock_output: clock-output {
+            compatible = "clock-output";
+            #clock-cells = <0>;
         };
     };
 
@@ -837,16 +839,17 @@ be described in devicetree like so:
         reg = <0x40001000>
         #clock-cells = <1>;
         input-sources = <&fixed_source &external_osc>;
+    };
 
-        uart_div: uart-div@40001200 {
-            compatible = "vnd,clock-div";
-            #clock-cells = <1>;
-            reg = <0x40001200>;
+    uart_div: uart-div@40001200 {
+        compatible = "vnd,clock-div";
+        #clock-cells = <1>;
+        input = <&uart_mux>;
+        reg = <0x40001200>;
 
-            uart_output: clock-output {
-                compatible = "clock-output";
-                #clock-cells = <0>;
-            };
+        uart_output: clock-output {
+            compatible = "clock-output";
+            #clock-cells = <0>;
         };
     };
 
