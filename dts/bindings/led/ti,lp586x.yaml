@@ -1,0 +1,40 @@
+# Copyright (c) 2026 Draeger
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments LP586X I2C LED controller
+
+include: ["i2c-device.yaml", "led-controller.yaml"]
+
+properties:
+  enable-gpios:
+    type: phandle-array
+    description: |
+      GPIO to use to enable/disable the controller.
+  vsync-en:
+    type: boolean
+    description: |
+      If enabled the controller will wait for a vertical synchronization signal
+      before updating the LED states. This is useful to avoid visual artifacts
+      when the LEDs are used as backlight for a display.
+      The vertical synchronization signal must be provided externally.
+      If not enabled the controller will update the LED states immediately when
+      a change is requested.
+  phase-shift-en:
+    type: boolean
+    description: |
+      If enabled a phase shift is activated for each current sink to avoid the
+      current overshot when turning on LEDs simultaneously.
+  exp-scale-en:
+    type: boolean
+    description: |
+      If enabled an exponential dimming scale curve is used for LED brightness
+      control. A linear dimming scale curve is used else.
+
+child-binding:
+  properties:
+    label:
+      required: true
+    index:
+      required: true
+    color-mapping:
+      required: true
