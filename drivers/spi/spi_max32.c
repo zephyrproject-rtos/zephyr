@@ -56,7 +56,8 @@ struct max32_spi_data {
 	struct spi_context ctx;
 	const struct device *dev;
 	mxc_spi_req_t req;
-	uint8_t dummy[2];
+	uint8_t tx_dummy[2];
+	uint8_t rx_dummy[2];
 
 #ifdef CONFIG_SPI_MAX32_DMA
 	volatile uint8_t dma_stat;
@@ -266,8 +267,9 @@ static int spi_max32_transceive_sync(mxc_spi_regs_t *spi, struct max32_spi_data 
 		remain = tx_len - req->txCnt;
 		if (remain > 0) {
 			if (!data->req.txData) {
-				req->txCnt += MXC_SPI_WriteTXFIFO(spi, data->dummy,
-								  MIN(remain, sizeof(data->dummy)));
+				req->txCnt += MXC_SPI_WriteTXFIFO(spi, data->tx_dummy,
+								  MIN(remain,
+								      sizeof(data->tx_dummy)));
 			} else {
 				req->txCnt +=
 					MXC_SPI_WriteTXFIFO(spi, &req->txData[req->txCnt], remain);
@@ -321,11 +323,7 @@ static int spi_max32_transceive(const struct device *dev)
 	uint8_t dfs_shift;
 
 	dfs_shift = spi_max32_get_dfs_shift(ctx);
-
 	len = spi_context_max_continuous_chunk(ctx);
-
-	/* Make sure dummy is zero'd in case it's re-used as a TX buffer in a later request. */
-	memset(data->dummy, 0, sizeof(data->dummy));
 
 #ifdef CONFIG_SPI_RTIO
 	switch (sqe->op) {
@@ -336,7 +334,7 @@ static int spi_max32_transceive(const struct device *dev)
 		if (data->req.rxData == NULL &&
 		    (COND_CODE_1(IS_ENABLED(CONFIG_SPI_MAX32_DMA),
 				 (cfg->rx_dma.channel == 0xFF), (true)))) {
-			data->req.rxData = data->dummy;
+			data->req.rxData = data->rx_dummy;
 			data->req.rxLen = 0;
 		}
 		data->req.txData = NULL;
@@ -345,14 +343,14 @@ static int spi_max32_transceive(const struct device *dev)
 	case RTIO_OP_TX:
 		len = sqe->tx.buf_len;
 		data->req.rxLen = 0;
-		data->req.rxData = data->dummy;
+		data->req.rxData = data->rx_dummy;
 		data->req.txData = (uint8_t *)sqe->tx.buf;
 		data->req.txLen = len;
 		break;
 	case RTIO_OP_TINY_TX:
 		len = sqe->tiny_tx.buf_len;
 		data->req.txData = (uint8_t *)sqe->tiny_tx.buf;
-		data->req.rxData = data->dummy;
+		data->req.rxData = data->rx_dummy;
 		data->req.txLen = len;
 		data->req.rxLen = 0;
 		break;
@@ -365,7 +363,7 @@ static int spi_max32_transceive(const struct device *dev)
 		if (data->req.rxData == NULL &&
 		    (COND_CODE_1(IS_ENABLED(CONFIG_SPI_MAX32_DMA),
 				 (cfg->rx_dma.channel == 0xFF), (true)))) {
-			data->req.rxData = data->dummy;
+			data->req.rxData = data->rx_dummy;
 			data->req.rxLen = 0;
 		}
 		break;
@@ -395,7 +393,7 @@ static int spi_max32_transceive(const struct device *dev)
 		/* Pass a dummy buffer to HAL if receive buffer is NULL, otherwise
 		 * corrupt data is read during subsequent transactions.
 		 */
-		data->req.rxData = data->dummy;
+		data->req.rxData = data->rx_dummy;
 		data->req.rxLen = 0;
 
 		if (!data->req.txData && !data->req.txLen) {
@@ -491,8 +489,8 @@ dma_rtio_exit:
 		MXC_SPI_SetTXThreshold(cfg->regs, 1 << dfs_shift);
 		MXC_SPI_EnableInt(cfg->regs, ADI_MAX32_SPI_INT_EN_TX_THD);
 		if (!data->req.txData) {
-			data->req.txCnt = MXC_SPI_WriteTXFIFO(cfg->regs, data->dummy,
-							      MIN(len, sizeof(data->dummy)));
+			data->req.txCnt = MXC_SPI_WriteTXFIFO(cfg->regs, data->tx_dummy,
+							      MIN(len, sizeof(data->tx_dummy)));
 		} else {
 			data->req.txCnt = MXC_SPI_WriteTXFIFO(cfg->regs,
 							      data->req.txData, data->req.txLen);
@@ -713,7 +711,7 @@ static int spi_max32_tx_dma_load(const struct device *dev, const uint8_t *buf, u
 		dma_blk.source_address = (uint32_t)buf;
 	} else {
 		dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		dma_blk.source_address = (uint32_t)data->dummy;
+		dma_blk.source_address = (uint32_t)data->tx_dummy;
 	}
 
 	ret = dma_config(config->tx_dma.dev, config->tx_dma.channel, &dma_cfg);
@@ -773,7 +771,7 @@ static int spi_max32_rx_dma_load(const struct device *dev, const uint8_t *buf, u
 		dma_blk.dest_address = (uint32_t)buf;
 	} else {
 		dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		dma_blk.dest_address = (uint32_t)data->dummy;
+		dma_blk.dest_address = (uint32_t)data->rx_dummy;
 	}
 	ret = dma_config(config->rx_dma.dev, config->rx_dma.channel, &dma_cfg);
 	if (ret < 0) {
@@ -1150,8 +1148,9 @@ static void spi_max32_isr(const struct device *dev)
 	if (flags & ADI_MAX32_SPI_INT_FL_TX_THD) {
 		if (remain) {
 			if (!data->req.txData) {
-				req->txCnt += MXC_SPI_WriteTXFIFO(cfg->regs, data->dummy,
-								  MIN(remain, sizeof(data->dummy)));
+				req->txCnt += MXC_SPI_WriteTXFIFO(cfg->regs, data->tx_dummy,
+								  MIN(remain,
+								      sizeof(data->tx_dummy)));
 			} else {
 				req->txCnt +=
 					MXC_SPI_WriteTXFIFO(spi, &req->txData[req->txCnt], remain);
