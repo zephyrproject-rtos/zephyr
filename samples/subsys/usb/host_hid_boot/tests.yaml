@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Antmicro <www.antmicro.com>
+
+sample:
+  name: USB support shell sample
+tests:
+  sample.usbh.hid.log:
+    tags:
+      - usb
+      - shield
+    extra_args:
+      - SHIELD="sparkfun_max3421e"
+    platform_allow:
+      - stm32h747i_disco/stm32h747xx/m7
+    build_only: true
