@@ -594,44 +594,28 @@ For more information about these environment variables in Zephyr, see :ref:`env_
 Asking for Help
 ***************
 
-You can ask for help on a mailing list or on Discord. Please send bug reports and
-feature requests to GitHub.
+Before asking for help, search this documentation, the Zephyr project's GitHub
+discussions and issues, and Discord chat history. Your question may already
+have an answer there. You can also ask the :ref:`chatbot <kapa_ai>` available
+from every page of this documentation.
 
 * **Mailing Lists**: users@lists.zephyrproject.org is usually the right list to
   ask for help. `Search archives and sign up here`_.
+* **GitHub**: Use `GitHub discussions`_ for questions and `GitHub issues`_ for
+  bugs and feature requests.
 * **Discord**: You can join with this `Discord invite`_.
-* **GitHub**: Use `GitHub issues`_ for bugs and feature requests.
 
-How to Ask
-==========
-
-.. important::
-
-   Please search this documentation and the mailing list archives first. Your
-   question may have an answer there.
-
-Don't just say "this isn't working" or ask "is this working?". Include as much
-detail as you can about:
+When asking for help, include:
 
 #. What you want to do
-#. What you tried (commands you typed, etc.)
-#. What happened (output of each command, etc.)
+#. What you tried, including the commands you ran
+#. What happened, including the full text output
 
-Use Copy/Paste
-==============
-
-Please **copy/paste text** instead of taking a picture or a screenshot of it.
-Text includes source code, terminal commands, and their output.
-
-Doing this makes it easier for people to help you, and also helps other users
-search the archives. Unnecessary screenshots exclude vision impaired
-developers; some are major Zephyr contributors. `Accessibility`_ has been
-recognized as a basic human right by the United Nations.
-
-When copy/pasting more than 5 lines of computer text into Discord or Github,
-create a snippet using three backticks to delimit the snippet.
+Copy and paste text instead of sharing screenshots. For more than 5 lines of
+terminal output, source code, or logs on Discord or GitHub, create a snippet
+using three backticks.
 
 .. _Search archives and sign up here: https://lists.zephyrproject.org/g/users
+.. _GitHub discussions: https://github.com/zephyrproject-rtos/zephyr/discussions
 .. _Discord invite: https://chat.zephyrproject.org
 .. _GitHub issues: https://github.com/zephyrproject-rtos/zephyr/issues
-.. _Accessibility: https://www.w3.org/standards/webdesign/accessibility
