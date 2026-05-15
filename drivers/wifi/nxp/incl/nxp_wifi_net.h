@@ -240,7 +240,7 @@ int wrapper_wlan_handle_rx_packet(t_u16 datalen, RxPD * rxpd, void *p, void *pay
 void user_recv_monitor_data(void *p, RxPD * rxpd, t_u16 intf_pkt_len);
 #endif
 
-#if defined(CONFIG_NET_DHCPV4)
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 /* Deactivate the dhcp timer
  */
 void net_stop_dhcp_timer(void);

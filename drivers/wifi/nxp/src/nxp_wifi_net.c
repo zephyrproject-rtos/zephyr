@@ -102,7 +102,7 @@ void nxp_wifi_internal_register_rx_cb(int (*rx_cb_fn)(struct net_if *iface, stru
 	net_internal_rx_callback = rx_cb_fn;
 }
 
-#ifdef CONFIG_NET_DHCPV4
+#ifdef CONFIG_WIFI_STA_AUTO_DHCPV4
 OSA_TIMER_HANDLE_DEFINE(dhcp_timer);
 static void dhcp_timer_cb(osa_timer_arg_t arg);
 #endif
@@ -907,7 +907,7 @@ int net_get_if_name_netif(char *pif_name, struct netif *iface)
 	return WM_SUCCESS;
 }
 
-#if defined(CONFIG_NET_DHCPV4)
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 void net_stop_dhcp_timer(void)
 {
 	(void)OSA_TimerDeactivate((osa_timer_handle_t)dhcp_timer);
@@ -1068,7 +1068,7 @@ int net_configure_address(struct net_ip_config *addr, void *intrfc_handle)
 		}
 		break;
 	case NET_ADDR_TYPE_DHCP:
-#if defined(CONFIG_NET_DHCPV4)
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 		(void)OSA_TimerActivate((osa_timer_handle_t)dhcp_timer);
 		net_dhcpv4_restart(if_handle->netif);
 #endif
@@ -1380,7 +1380,7 @@ static void cleanup_mgmt_events(void)
 int net_wlan_init(void)
 {
 	int ret;
-#if defined(CONFIG_NET_DHCPV4)
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 	osa_status_t status;
 #endif
 	wifi_register_data_input_callback(&handle_data_packet);
@@ -1418,7 +1418,7 @@ int net_wlan_init(void)
 		ethernet_init(g_uap.netif);
 #endif
 		net_wlan_init_done = 1;
-#if defined(CONFIG_NET_DHCPV4)
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 		status = OSA_TimerCreate((osa_timer_handle_t)dhcp_timer, MSEC_TO_TICK(DHCP_TIMEOUT),
 					 &dhcp_timer_cb, NULL, KOSA_TimerOnce,
 					 OSA_TIMER_NO_ACTIVATE);
@@ -1475,7 +1475,7 @@ static int net_netif_deinit(struct net_if *netif)
 int net_wlan_deinit(void)
 {
 	int ret;
-#if defined(CONFIG_NET_DHCPV4)
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 	osa_status_t status;
 #endif
 	if (net_wlan_init_done != 1) {
@@ -1495,7 +1495,7 @@ int net_wlan_deinit(void)
 		return -WM_FAIL;
 	}
 #endif
-#if defined(CONFIG_NET_DHCPV4)
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 	status = OSA_TimerDestroy((osa_timer_handle_t)dhcp_timer);
 	if (status != KOSA_StatusSuccess) {
 		net_e("DHCP timer deletion failed");
