@@ -618,7 +618,7 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 
 	k_mutex_unlock(&cmd_get_mutex);
 
-	return 0;
+	return err;
 }
 
 static int cmd_sensor_attr_set(const struct shell *sh, size_t argc, char *argv[])
