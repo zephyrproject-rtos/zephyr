@@ -9,6 +9,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/drivers/bluetooth.h>
 #include <zephyr/bluetooth/addr.h>
@@ -299,16 +300,14 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 
 static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 {
-	uint16_t event_length;
+	uint8_t hci_cmd_buf[MAX(BT_BUF_CMD_TX_SIZE, BT_BUF_EVT_SIZE(255U))];
 	struct hci_data *hci = dev->data;
 	struct net_buf *evt_buf = NULL;
+	uint16_t event_length;
 	uint8_t *data;
-
-	ARG_UNUSED(dev);
+	int err = 0;
 
 	k_sem_take(&hci_sem, K_FOREVER);
-
-	LOG_DBG("buf %p type %u len %u", buf, buf->data[0], buf->len);
 
 	if (buf->data[0] == BT_HCI_H4_CMD) {
 		/*
@@ -320,16 +319,18 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 		if (!evt_buf) {
 			LOG_ERR("No available event buffers!");
 			__ASSERT_NO_MSG(evt_buf);
-			k_sem_give(&hci_sem);
-			return -ENOMEM;
+			err = -ENOMEM;
+			goto done;
 		}
-		/*
-		 * Reset the event buffer length and copy the data packet to transmit
-		 * in the event buffer resource.
-		 */
-		evt_buf->len = 0;
-		net_buf_add_mem(evt_buf, buf->data, buf->len);
-		data = evt_buf->data;
+		if (buf->len > sizeof(hci_cmd_buf)) {
+			LOG_ERR("HCI command length %zu exceeds buffer size %zu",
+				buf->len, sizeof(hci_cmd_buf));
+			net_buf_unref(evt_buf);
+			err = -EMSGSIZE;
+			goto done;
+		}
+		memcpy(hci_cmd_buf, buf->data, buf->len);
+		data = hci_cmd_buf;
 	} else {
 		data = buf->data;
 	}
@@ -339,22 +340,27 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 
 	if (evt_buf) {
 		if (event_length) {
-			/*
-			 * Update the length of the event packet returned by
-			 * the BleStack_Request() function.
-			 */
-			evt_buf->len = event_length;
-			hci->recv(dev, evt_buf);
+			if (event_length > net_buf_tailroom(evt_buf)) {
+				LOG_ERR("HCI event too large for sync event buffer (%u > %zu)",
+					event_length, net_buf_tailroom(evt_buf));
+				net_buf_unref(evt_buf);
+				err = -EMSGSIZE;
+			} else {
+				net_buf_reset(evt_buf);
+				net_buf_add_mem(evt_buf, hci_cmd_buf, event_length);
+				hci->recv(dev, evt_buf);
+			}
 		} else {
 			net_buf_unref(evt_buf);
 		}
 	}
 
+done:
 	k_sem_give(&hci_sem);
 
 	net_buf_unref(buf);
 
-	return 0;
+	return err;
 }
 
 static void stm32wba_set_stack_options(BleStack_init_t *init_params_p)
