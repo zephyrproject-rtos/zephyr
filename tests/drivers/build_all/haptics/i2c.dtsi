@@ -51,3 +51,9 @@ test_cs40l27@6 {
 	reg = <0x6>;
 	status = "okay";
 };
+
+test_i2c_tm6605@7 {
+	compatible = "titanmec,tm6605";
+	reg = <0x7>;
+	status = "okay";
+};
