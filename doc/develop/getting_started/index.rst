@@ -474,8 +474,9 @@ Build the Blinky Sample
    does not meet Blinky's :ref:`blinky-sample-requirements`, then
    :zephyr:code-sample:`hello_world` is a good alternative.
 
-   If you are unsure what name west uses for your board, ``west boards``
-   can be used to obtain a list of all boards Zephyr supports.
+   If you are unsure what name west uses for your board, use ``west boards`` to
+   list all boards Zephyr supports. Your board's :zephyr:board-catalog:`documentation page`
+   also shows the exact board target name to pass to ``west build``.
 
 Build the :zephyr:code-sample:`blinky` with :ref:`west build <west-building>`.
 Replace ``<your-board-name>`` with the name of your board:
@@ -517,10 +518,9 @@ when a pristine build may be needed. See ``west build -h`` for details.
 
 .. note::
 
-   A board may contain one or multiple SoCs, Also, each SoC may contain one or
-   more CPU clusters.
-   When building for such boards it is necessary to specify the SoC or CPU
-   cluster for which the sample must be built.
+   A board may contain one or multiple SoCs and each SoC may contain one or more
+   CPU clusters. When building for such boards, specify the SoC or CPU cluster
+   for which the sample must be built.
    For example to build :zephyr:code-sample:`blinky` for the ``cpuapp`` core on
    the :zephyr:board:`nrf5340dk` the board must be provided as:
    ``nrf5340dk/nrf5340/cpuapp``. See also :ref:`board_terminology` for more
