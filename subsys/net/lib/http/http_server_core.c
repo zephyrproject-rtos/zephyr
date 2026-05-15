@@ -196,6 +196,10 @@ static int setup_h3_socket(const struct http_service_desc *svc, int af,
 	int quic_sock;
 	int ret;
 
+	if (!IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3)) {
+		return -ENOTSUP;
+	}
+
 	if (net_sin(addr)->sin_port == 0) {
 		NET_ERR("No local port specified for QUIC service");
 		return -EINVAL;
@@ -1050,7 +1054,7 @@ static void handle_listen_pollin(struct http_server_ctx *ctx, int i)
 		return;
 	}
 
-	if (is_h3_conn) {
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3) && is_h3_conn) {
 		if (ctx->fds[i].fd != *service->fd_h3) {
 			return;
 		}
@@ -1091,7 +1095,7 @@ static void handle_listen_pollin(struct http_server_ctx *ctx, int i)
 		LOG_DBG("Init client #%d", idx);
 		init_client_ctx(&ctx->clients[idx], service, new_socket);
 
-		if (is_h3_conn) {
+		if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3) && is_h3_conn) {
 			int ret;
 
 			ctx->clients[idx].is_h3 = true;
