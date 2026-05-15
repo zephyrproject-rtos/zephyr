@@ -487,6 +487,34 @@ static void test_route_ipv4_host_route_overrides_normal_iface(void)
 	zassert_ok(net_route_ipv4_del(route_override), "Override route del failed");
 }
 
+static void test_route_ipv4_select_src_iface_uses_explicit_route(void)
+{
+	const struct net_in_addr *src_addr;
+	struct net_if *iface;
+	struct net_route_entry *route;
+
+	net_if_ipv4_set_gw(my_iface, &gateway_addr);
+
+	route = net_route_ipv4_add(my_iface_alt, &dest_addr_iface1, 32,
+				   &gateway_addr_alt, NET_ROUTE_INFINITE_LIFETIME,
+				   NET_ROUTE_PREFERENCE_HIGH);
+	zassert_not_null(route, "Selection route add failed");
+
+	src_addr = net_if_ipv4_select_src_addr(NULL, &dest_addr_iface1);
+	zassert_false(src_addr == net_ipv4_unspecified_address(),
+		      "Source address selection failed");
+	zassert_true(net_ipv4_addr_cmp(src_addr, &my_addr_alt),
+		     "Source address should come from the routed interface");
+
+	iface = net_if_ipv4_select_src_iface(&dest_addr_iface1);
+	zassert_equal_ptr(iface, my_iface_alt,
+			  "Explicit host route should select alt interface");
+
+	net_if_ipv4_set_gw(my_iface, net_ipv4_unspecified_address());
+
+	zassert_ok(net_route_ipv4_del(route), "Selection route del failed");
+}
+
 ZTEST(route_test_suite, test_route)
 {
 	test_init();
@@ -508,6 +536,7 @@ ZTEST(route_test_suite, test_route)
 	test_route_ipv4_packet_arp_handoff();
 	test_route_ipv4_packet_multi_iface();
 	test_route_ipv4_host_route_overrides_normal_iface();
+	test_route_ipv4_select_src_iface_uses_explicit_route();
 }
 
 ZTEST_SUITE(route_test_suite, NULL, NULL, NULL, NULL, NULL);
