@@ -667,6 +667,8 @@ enum hid_kbd_code {
 	HID_KEY_KP_8		= 96,
 	HID_KEY_KP_9		= 97,
 	HID_KEY_KP_0		= 98,
+	HID_KEY_KPDOT		= 99,
+	HID_KEY_MENU		= 101,
 };
 
 /**
