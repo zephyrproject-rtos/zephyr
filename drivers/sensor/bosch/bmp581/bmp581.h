@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * Driver is developed to be used with Zephyr. And it only supports i2c interface.
+ * Driver is developed to be used with Zephyr. Supports I2C, SPI and I3C interfaces.
  *
  * Author: Talha Can Havadar <havadartalha@gmail.com>
  *
@@ -15,6 +15,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>

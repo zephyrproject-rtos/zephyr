@@ -15,6 +15,8 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/i3c.h>
+#include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
@@ -557,10 +559,33 @@ static int bmp581_init(const struct device *dev)
 	drv->chip_id = 0;
 	memset(&drv->last_sample, 0, sizeof(drv->last_sample));
 
+	/*
+	 * After power-up the BMP581 primary interface is I2C/I3C. To switch to SPI
+	 * mode the host must perform a dummy SPI read with CSB asserted for at least
+	 * 16 SCK cycles; the returned data is invalid and must be discarded.
+	 * See datasheet sections 5.1 "Protocol Selection" and 5.5 "SPI Protocol".
+	 */
+	if (conf->bus.rtio.type == BMP581_BUS_TYPE_SPI) {
+		uint8_t dummy = 0;
+
+		(void)bmp581_reg_read_rtio(&conf->bus, BMP5_REG_CHIP_ID, &dummy, 1);
+	}
+
 	ret = soft_reset(dev);
 	if (ret != BMP5_OK) {
 		LOG_ERR("Failed to perform soft-reset: %d", ret);
 		return ret;
+	}
+
+	/*
+	 * Soft-reset returns the device to its power-up I2C/I3C mode. Re-issue the
+	 * SPI dummy read to switch the interface back to SPI before subsequent
+	 * register accesses.
+	 */
+	if (conf->bus.rtio.type == BMP581_BUS_TYPE_SPI) {
+		uint8_t dummy = 0;
+
+		(void)bmp581_reg_read_rtio(&conf->bus, BMP5_REG_CHIP_ID, &dummy, 1);
 	}
 
 	ret = bmp581_reg_read_rtio(&conf->bus, BMP5_REG_CHIP_ID, &drv->chip_id, 1);
@@ -715,6 +740,31 @@ static DEVICE_API(sensor, bmp581_driver_api) = {
 #endif
 };
 
+/* SPI mode 0 (CPOL=0, CPHA=0). Datasheet supports modes 0 and 3 up to 12 MHz. */
+#define BMP581_SPI_OPERATION (SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB)
+
+#define BMP581_BUS_IODEV_DEFINE(i)                                                                 \
+	COND_CODE_1(DT_INST_ON_BUS(i, i3c),                                                        \
+		    (I3C_DT_IODEV_DEFINE(bmp581_bus_##i, DT_DRV_INST(i))),                         \
+		    (COND_CODE_1(DT_INST_ON_BUS(i, i2c),                                           \
+				 (I2C_DT_IODEV_DEFINE(bmp581_bus_##i, DT_DRV_INST(i))),            \
+				 (SPI_DT_IODEV_DEFINE(bmp581_bus_##i, DT_DRV_INST(i),              \
+						      BMP581_SPI_OPERATION)))))
+
+#define BMP581_BUS_TYPE(i)                                                                         \
+	COND_CODE_1(DT_INST_ON_BUS(i, i3c),                                                        \
+		    (BMP581_BUS_TYPE_I3C),                                                         \
+		    (COND_CODE_1(DT_INST_ON_BUS(i, i2c),                                           \
+				 (BMP581_BUS_TYPE_I2C),                                            \
+				 (BMP581_BUS_TYPE_SPI))))
+
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(bosch_bmp581, i3c)
+#define BMP581_BUS_I3C_ID(i)                                                                       \
+	COND_CODE_1(DT_INST_ON_BUS(i, i3c), (.i3c.id = I3C_DEVICE_ID_DT_INST(i),), ())
+#else
+#define BMP581_BUS_I3C_ID(i)
+#endif
+
 #define BMP581_INIT(i)                                                                             \
                                                                                                    \
 	BUILD_ASSERT(COND_CODE_1(DT_INST_NODE_HAS_PROP(i, fifo_watermark),                         \
@@ -725,7 +775,7 @@ static DEVICE_API(sensor, bmp581_driver_api) = {
 		     "the device-tree node properties");                                           \
                                                                                                    \
 	RTIO_DEFINE(bmp581_rtio_ctx_##i, 16, 16);                                                  \
-	I2C_DT_IODEV_DEFINE(bmp581_bus_##i, DT_DRV_INST(i));                                       \
+	BMP581_BUS_IODEV_DEFINE(i);                                                                \
                                                                                                    \
 	static struct bmp581_data bmp581_data_##i = {                                              \
 		.osr_odr_press_config = {                                                          \
@@ -746,7 +796,8 @@ static DEVICE_API(sensor, bmp581_driver_api) = {
 		.bus.rtio = {                                                                      \
 			.ctx = &bmp581_rtio_ctx_##i,                                               \
 			.iodev = &bmp581_bus_##i,                                                  \
-			.type = BMP581_BUS_TYPE_I2C,                                               \
+			.type = BMP581_BUS_TYPE(i),                                                \
+			BMP581_BUS_I3C_ID(i)                                                       \
 		},                                                                                 \
 		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(i, int_gpios, {0}),                           \
 	};                                                                                         \
