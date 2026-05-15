@@ -548,9 +548,8 @@ application you just built onto the connected board:
 
 .. note::
 
-    When using Linux, you may need to configure udev rules the first time
-    of using a debug probe.
-    Please also see :ref:`setting-udev-rules`.
+    On Linux, you may need to configure udev rules before flashing with a debug
+    probe for the first time. See :ref:`setting-udev-rules`.
 
 If you're using blinky, the LED will start to blink as shown in this figure:
 
