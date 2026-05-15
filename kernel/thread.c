@@ -32,6 +32,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/llext/symbol.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/minmax.h>
 
 #include <usage.h>
 
