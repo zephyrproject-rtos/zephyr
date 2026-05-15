@@ -2348,6 +2348,83 @@ ZTEST(net_ipv6, test_no_nd_flag)
 	net_if_flag_clear(iface, NET_IF_IPV6_NO_ND);
 }
 
+ZTEST(net_ipv6, test_no_mld_flag_preserves_joined_state)
+{
+	struct net_if *iface = TEST_NET_IF;
+	struct net_in6_addr mcast_addr;
+	struct net_if_mcast_addr *maddr;
+
+	net_ipv6_addr_create(&mcast_addr, 0xff10, 0, 0, 0, 0, 0, 0, 0x1234);
+
+	net_if_flag_set(iface, NET_IF_IPV6_NO_MLD);
+
+	maddr = net_if_ipv6_maddr_add(iface, &mcast_addr);
+	zassert_not_null(maddr, "Cannot add multicast address");
+	zassert_equal(atomic_get(&maddr->atomic_ref), 1, "Ref count should be 1");
+
+	net_if_ipv6_maddr_join(iface, maddr);
+	zassert_true(net_if_ipv6_maddr_is_joined(maddr),
+		     "Multicast address should be marked joined");
+
+	/* Toggle iface down by turning off the carrier */
+	net_if_carrier_off(iface);
+	k_msleep(10);
+
+	zassert_false(net_if_is_up(iface), "Iface should be down");
+	zassert_true(net_if_ipv6_maddr_is_joined(maddr),
+		     "Joined multicast address was cleared when MLD is disabled");
+	zassert_equal(atomic_get(&maddr->atomic_ref), 1, "Ref count should remain 1");
+
+	/* Turning the carrier back up to bring the iface up again */
+	net_if_carrier_on(iface);
+	k_msleep(10);
+
+	zassert_true(net_if_is_up(iface), "Iface should be up");
+	zassert_true(net_if_ipv6_maddr_is_joined(maddr),
+		     "Joined multicast address was not preserved across iface up");
+	zassert_equal(atomic_get(&maddr->atomic_ref), 1, "Ref count should remain 1");
+
+	net_if_flag_clear(iface, NET_IF_IPV6_NO_MLD);
+
+	zassert_true(net_if_ipv6_maddr_rm(iface, &mcast_addr),
+		     "Failed to remove multicast address");
+}
+
+ZTEST(net_ipv6, test_mld_clears_joined_state_on_iface_down)
+{
+	struct net_if *iface = TEST_NET_IF;
+	struct net_in6_addr mcast_addr;
+	struct net_if_mcast_addr *maddr;
+
+	net_ipv6_addr_create(&mcast_addr, 0xff10, 0, 0, 0, 0, 0, 0, 0x1235);
+
+	maddr = net_if_ipv6_maddr_add(iface, &mcast_addr);
+	zassert_not_null(maddr, "Cannot add multicast address");
+	zassert_equal(atomic_get(&maddr->atomic_ref), 1, "Ref count should be 1");
+
+	net_if_ipv6_maddr_join(iface, maddr);
+	zassert_true(net_if_ipv6_maddr_is_joined(maddr),
+		     "Multicast address should be marked joined");
+
+	net_if_carrier_off(iface);
+	k_msleep(10);
+
+	zassert_false(net_if_is_up(iface), "Iface should be down");
+	zassert_false(net_if_ipv6_maddr_is_joined(maddr),
+		      "Joined multicast address should be cleared when MLD is enabled");
+	zassert_equal(atomic_get(&maddr->atomic_ref), 1, "Ref count should remain 1");
+
+	net_if_carrier_on(iface);
+	k_msleep(10);
+
+	zassert_true(net_if_is_up(iface), "Iface should be up");
+	zassert_true(net_if_ipv6_maddr_is_joined(maddr),
+		     "Multicast address should be rejoined when iface comes back up");
+
+	zassert_true(net_if_ipv6_maddr_rm(iface, &mcast_addr),
+		     "Failed to remove multicast address");
+}
+
 ZTEST(net_ipv6, test_nd_reachability_hint)
 {
 	struct net_nbr *nbr;
