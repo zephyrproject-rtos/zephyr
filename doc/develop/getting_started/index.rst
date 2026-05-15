@@ -191,11 +191,13 @@ The current minimum required version for the main dependencies are:
 Get Zephyr and install Python dependencies
 ******************************************
 
-Next, clone Zephyr and its :ref:`modules <modules>` into a new :ref:`west
-<west>` workspace. In the following instructions the name :file:`zephyrproject`
-is used for the workspace, however in practice its name and location can be freely
-chosen. You'll also install Zephyr's additional Python dependencies in a
-`Python virtual environment`_.
+Next, use :ref:`west <west>` to create a workspace and fetch Zephyr together
+with its :ref:`modules <modules>`.
+
+These commands use :file:`zephyrproject` as the workspace name; you can choose
+another name and location. You will also install Zephyr's Python dependencies in
+a `Python virtual environment`_ so they stay separate from your system Python
+installation.
 
 .. _Python virtual environment: https://docs.python.org/3/library/venv.html
 
