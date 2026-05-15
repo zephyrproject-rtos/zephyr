@@ -148,14 +148,14 @@ The current minimum required versions for the main dependencies are:
 
          Therefore, we don't recommend using WSL when getting started.
 
-      In modern version of Windows (10 and later) it is recommended to install the Windows Terminal
-      application from the Microsoft Store. Instructions are provided for a ``cmd.exe`` or
-      PowerShell command prompts.
+      On modern versions of Windows (10 and later), install Windows Terminal from the
+      Microsoft Store. The instructions below work in either ``cmd.exe`` or
+      PowerShell.
 
-      These instructions rely on Windows' official package manager, `winget`_.
-      If using winget isn't an option, you can install dependencies from their
-      respective websites and ensure the command line tools are on your
-      :envvar:`PATH` :ref:`environment variable <env_vars>`.
+      These instructions use Windows' official package manager, `winget`_. If winget
+      isn't an option, install the dependencies from their respective websites and
+      make sure their command line tools are on your :envvar:`PATH` :ref:`environment
+      variable <env_vars>`.
 
       |p|
 
