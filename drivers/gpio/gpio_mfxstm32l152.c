@@ -66,6 +66,7 @@ struct mfxstm32l152_pins_state {
 	uint32_t type;
 	/** 0b0 = Pull-Down, 0b1 = Pull-Up */
 	uint32_t pupd;
+	uint32_t toggle_edge;
 	uint32_t irq_enabled;
 };
 
@@ -214,6 +215,7 @@ static void mfxstm32l152_handle_interrupt(const struct device *dev)
 {
 	struct mfxstm32l152_drv_data *drv_data = dev->data;
 	uint32_t irq_status;
+	uint32_t toggle_irqs;
 	int ret;
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
@@ -241,6 +243,26 @@ static void mfxstm32l152_handle_interrupt(const struct device *dev)
 	if (ret != 0) {
 		k_sem_give(&drv_data->lock);
 		return;
+	}
+
+	/* Check if EDGE toggle is necessary */
+	toggle_irqs = irq_status & drv_data->pins_state.toggle_edge;
+	if (toggle_irqs != 0) {
+		uint32_t type;
+
+		ret = read_port_regs(dev, REG_GPIO_IRQ_TYPE, &type);
+		if (ret != 0) {
+			k_sem_give(&drv_data->lock);
+			return;
+		}
+
+		type ^= toggle_irqs;
+
+		ret = write_port_regs(dev, REG_GPIO_IRQ_TYPE, type);
+		if (ret != 0) {
+			k_sem_give(&drv_data->lock);
+			return;
+		}
 	}
 
 	k_sem_give(&drv_data->lock);
@@ -502,11 +524,33 @@ static int mfxstm32l152_pin_interrupt_configure(const struct device *dev, gpio_p
 		return ret;
 	}
 
-	/* We cannot handle BOTH edge so if BOTH is asked, we set it as HIGH */
-	if (trig == GPIO_INT_TRIG_HIGH || trig == GPIO_INT_TRIG_BOTH) {
-		irq_type |= BIT(pin);
+	/* BOTH edge is not natively supported, hence the driver will toggle
+	 * the edge every time an IRQ is generated
+	 */
+	if (trig == GPIO_INT_TRIG_BOTH) {
+		uint32_t state;
+
+		drv_data->pins_state.toggle_edge |= BIT(pin);
+
+		/* Read first the current state to set proper edge */
+		ret = read_port_regs(dev, REG_GPIO_STATE, &state);
+		if (ret != 0) {
+			k_sem_give(&drv_data->lock);
+			return ret;
+		}
+
+		if (state & BIT(pin)) {
+			irq_type &= ~BIT(pin);
+		} else {
+			irq_type |= BIT(pin);
+		}
 	} else {
-		irq_type &= ~BIT(pin);
+		drv_data->pins_state.toggle_edge &= ~BIT(pin);
+		if (trig == GPIO_INT_TRIG_HIGH) {
+			irq_type |= BIT(pin);
+		} else {
+			irq_type &= ~BIT(pin);
+		}
 	}
 
 	ret = write_port_regs(dev, REG_GPIO_IRQ_TYPE, irq_type);
