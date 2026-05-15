@@ -165,6 +165,18 @@ endif # WIFI_SHELL_RUNTIME_CERTIFICATES
 
 endif # WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 
+config WIFI_STA_AUTO_DHCPV4
+	bool "Automatically start DHCPv4 after STA connects"
+	depends on NET_DHCPV4
+	default y
+	help
+	  When enabled, the DHCPv4 client is automatically started
+	  by the Wi-Fi driver or supplicant after the STA connection
+	  is established.
+	  If this option is disabled, the application layer is
+	  responsible for either manually starting the DHCPv4 client
+	  or configuring a static IPv4 address.
+
 config WIFI_MGMT_BSS_MAX_IDLE_TIME
 	int "BSS max idle timeout in seconds"
 	range 0 64000
