@@ -31,11 +31,11 @@ A PWM signal is described by three values:
 
 .. code-block:: none
 
-   |<-------- period -------->|
-   |          |<-- pulse -->|  |
-   +----------+             +--
-   |          |             |
-   +          +-------------+
+   |<-- pulse -->|
+   +--------------+            +-
+   |              |            |
+   +              +------------+
+   |<----------- period -------->|
 
 Zephyr PWM Driver Model
 ***********************
@@ -49,7 +49,7 @@ All PWM drivers implement the same API defined in
 Helper macros convert common time units to nanoseconds:
 
 * :c:macro:`PWM_HZ` — frequency in Hz (e.g. ``PWM_HZ(1000)`` → 1 ms period)
-* :c:macro:`PWM_KHZ`, :c:macro:`PWM_MHZ` — frequency in kHz / MHz
+* :c:macro:`PWM_KHZ` — frequency in kHz
 * :c:macro:`PWM_USEC` — period or pulse width in microseconds
 * :c:macro:`PWM_MSEC` — period or pulse width in milliseconds
 
