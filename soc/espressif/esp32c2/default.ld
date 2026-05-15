@@ -700,6 +700,9 @@ SECTIONS
      */
     . += 16;
 
+    /* Enforce flash segment size alignment */
+    . = ALIGN(0x10);
+
     _instruction_reserved_end = ABSOLUTE(.);
     _text_end = ABSOLUTE(.);
     _instruction_reserved_end = ABSOLUTE(.);
