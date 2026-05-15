@@ -696,6 +696,7 @@
 				reg = <0>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 224 0>;
 			};
 
@@ -704,6 +705,7 @@
 				reg = <1>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 225 0>;
 			};
 
@@ -712,6 +714,7 @@
 				reg = <2>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 226 0>;
 			};
 
@@ -720,6 +723,7 @@
 				reg = <3>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 227 0>;
 			};
 
@@ -728,6 +732,7 @@
 				reg = <4>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 228 0>;
 			};
 
@@ -736,6 +741,7 @@
 				reg = <5>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 229 0>;
 			};
 
@@ -744,6 +750,7 @@
 				reg = <6>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 230 0>;
 			};
 
@@ -752,6 +759,7 @@
 				reg = <7>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 231 0>;
 			};
 
@@ -760,6 +768,7 @@
 				reg = <8>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 232 0>;
 			};
 
@@ -768,6 +777,7 @@
 				reg = <9>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 233 0>;
 			};
 		};
@@ -787,6 +797,7 @@
 				reg = <0>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 214 0>;
 				status = "disabled";
 			};
@@ -796,6 +807,7 @@
 				reg = <1>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 215 0>;
 				status = "disabled";
 			};
@@ -805,6 +817,7 @@
 				reg = <2>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 216 0>;
 				status = "disabled";
 			};
@@ -814,6 +827,7 @@
 				reg = <3>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 217 0>;
 				status = "disabled";
 			};
@@ -823,6 +837,7 @@
 				reg = <4>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 218 0>;
 				status = "disabled";
 			};
@@ -832,6 +847,7 @@
 				reg = <7>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 219 0>;
 				status = "disabled";
 			};
