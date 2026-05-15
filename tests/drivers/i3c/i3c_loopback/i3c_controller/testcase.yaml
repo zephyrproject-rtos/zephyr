@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - i3c
+  depends_on: i3c
+  harness: console
+  harness_config:
+    fixture: i3c_loopback_pair
+tests:
+  drivers.i3c.i3c_loopback.i3c_controller:
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+    filter: dt_compat_enabled("snps,designware-i3c")

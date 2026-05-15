@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "I3C loopback test (controller)"
+
+source "Kconfig.zephyr"
+
+menu "I3C loopback bench options"
+
+config I3C_LOOPBACK_BENCH_HAS_PERMANENT_TARGET
+	bool "Bench has a permanent on-bus I3C target besides Board B"
+	help
+	  Enable on benches where the controller's I3C bus has an
+	  unkillable target chip wired in besides the test target on
+	  Board B (for example, a sensor permanently mounted on the
+	  controller's SOM with no power-enable or isolation).  When
+	  enabled, the controller suite attaches a placeholder descriptor
+	  for that chip so its participation in ENTDAA does not steal the
+	  Board B descriptor's address slot.  The PID/BCR/DCR/init-DA of
+	  the permanent target are configured below.
+
+if I3C_LOOPBACK_BENCH_HAS_PERMANENT_TARGET
+
+config I3C_LOOPBACK_BENCH_PERMANENT_TARGET_PID_HI
+	hex "Permanent target PID (upper 16 bits)"
+	default 0x0770
+
+config I3C_LOOPBACK_BENCH_PERMANENT_TARGET_PID_LO
+	hex "Permanent target PID (lower 32 bits)"
+	default 0x10331000
+
+config I3C_LOOPBACK_BENCH_PERMANENT_TARGET_INIT_DA
+	hex "Permanent target initial dynamic address"
+	default 0x09
+
+endif
+
+endmenu

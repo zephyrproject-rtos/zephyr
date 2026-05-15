@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "I3C loopback test (target)"
+
+source "Kconfig.zephyr"
+
+menu "I3C loopback target bench options"
+
+config I3C_LOOPBACK_TARGET_VENDOR_WRAPPER_GATE
+	bool "Re-open vendor clock-gate register during SOFT_RST"
+	help
+	  Some DW I3C IP integrations gate the protocol clock through a
+	  vendor wrapper register that must be re-opened before SOFT_RST
+	  can self-clear.  Enable this option for those integrations and
+	  set the wrapper register offset and write value below.
+
+if I3C_LOOPBACK_TARGET_VENDOR_WRAPPER_GATE
+
+config I3C_LOOPBACK_TARGET_WRAPPER_GATE_OFFSET
+	hex "Vendor wrapper-gate register offset from controller base"
+	default 0x400
+
+config I3C_LOOPBACK_TARGET_WRAPPER_GATE_VALUE
+	hex "Value to write to the wrapper-gate register"
+	default 0x80000000
+
+endif
+
+config I3C_LOOPBACK_TARGET_VENDOR_EXT_CMD_KICK
+	bool "Issue vendor EXT_CMD kick to re-arm target after RSTDAA"
+	help
+	  Some DW I3C IP variants require a vendor-specific EXT_CMD
+	  sequence to re-arm the target's bus-available detector after
+	  the controller broadcasts RSTDAA.  Enable this option for those
+	  variants.
+
+config I3C_LOOPBACK_TARGET_SOFT_RST_CLEARS_DEVICE_ADDR
+	bool "DW SOFT_RST already clears DEVICE_ADDR (default true)"
+	default y
+	help
+	  On most DW I3C variants, SOFT_RST also clears the DEVICE_ADDR
+	  register.  Disable this option for variants where the stale
+	  dynamic address from a previous ENTDAA round survives SOFT_RST
+	  — the target side will then explicitly zero DEVICE_ADDR after
+	  the reset to avoid the target believing it already has a DA
+	  during the next enumeration round.
+
+endmenu
