@@ -317,6 +317,18 @@ static char *get_l3_desc(struct event_msg *msg,
 		info = net_addr_ntop(NET_AF_INET, msg->data, extra_info,
 				     extra_info_len);
 		break;
+	case NET_EVENT_IPV4_ROUTE_ADD:
+		*desc = "IPv4 route";
+		*desc2 = "add";
+		info = net_addr_ntop(NET_AF_INET, msg->data, extra_info,
+				     extra_info_len);
+		break;
+	case NET_EVENT_IPV4_ROUTE_DEL:
+		*desc = "IPv4 route";
+		*desc2 = "del";
+		info = net_addr_ntop(NET_AF_INET, msg->data, extra_info,
+				     extra_info_len);
+		break;
 	case NET_EVENT_IPV4_DHCP_START:
 		*desc = "DHCPv4";
 		*desc2 = "start";
