@@ -21,9 +21,14 @@ tests:
       - qemu_x86
     tags: tensorflow
     filter: CONFIG_FULL_LIBC_SUPPORTED
+
   sample.tensorflow.helloworld.cmsis_nn:
     tags: tensorflow
     platform_allow:
       - mps3/corstone300/fvp
+      - ek_ra8m1
+    integration_platforms:
+      - mps3/corstone300/fvp
+      - ek_ra8m1
     extra_configs:
       - CONFIG_TENSORFLOW_LITE_MICRO_CMSIS_NN_KERNELS=y

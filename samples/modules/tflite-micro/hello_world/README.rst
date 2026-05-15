@@ -68,6 +68,18 @@ commands.
 $ west build -p auto -b mps3/corstone300/fvp samples/modules/tflite-micro/hello_world/ -T sample.tensorflow.helloworld.cmsis_nn
 $ FVP_Corstone_SSE-300_Ethos-U55 build/zephyr/zephyr.elf
 ```
+The CMSIS-NN kernel application can also be built for EK-RA8M1:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/modules/tflite-micro/hello_world
+   :host-os: unix
+   :board: ek_ra8m1
+   :gen-args: -T sample.tensorflow.helloworld.cmsis_nn
+   :goals: build
+   :compact:
+
+On EK-RA8M1, the sample prints generated x values and predicted y values
+over the console.
 
 Sample Output
 =============
