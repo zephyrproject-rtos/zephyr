@@ -153,6 +153,14 @@
 	#size-cells = <0>;
 	status = "okay";
 
+	gpio_exp1: gpio-exp@21 {
+		compatible = "nxp,pcal6408";
+		reg = <0x21>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <8>;
+	};
+
 	audio_codec: wm8962@1a {
 		compatible = "wolfson,wm8962";
 		reg = <0x1a>;
