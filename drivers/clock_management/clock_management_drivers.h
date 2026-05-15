@@ -25,6 +25,10 @@ extern "C" {
 #define Z_CLOCK_MANAGEMENT_DATA_GET_clock_gate(node_id, prop, idx)      \
 	DT_PHA_BY_IDX(node_id, prop, idx, gate)
 
+#define Z_CLOCK_MANAGEMENT_DATA_DEFINE_clock_mux(node_id, prop, idx)
+#define Z_CLOCK_MANAGEMENT_DATA_GET_clock_mux(node_id, prop, idx)      \
+	DT_PHA_BY_IDX(node_id, prop, idx, mux)
+
 /** @endcond */
 
 #ifdef __cplusplus

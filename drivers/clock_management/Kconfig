@@ -72,6 +72,14 @@ config CLOCK_MANAGEMENT_GATE
 	help
 	  A generic clock gate that can pass or inhibit a clock signal.
 
+config CLOCK_MANAGEMENT_MUX
+	bool "Clock mux driver"
+	default y
+	depends on DT_HAS_CLOCK_MUX_ENABLED
+	help
+	  A generic mux driver where a simple bitfield will unconditionally
+	  select a clock parent.
+
 source "drivers/clock_management/nxp_syscon/Kconfig"
 
 module = CLOCK_MANAGEMENT
