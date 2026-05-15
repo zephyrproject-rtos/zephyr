@@ -201,165 +201,25 @@ installation.
 
 .. _Python virtual environment: https://docs.python.org/3/library/venv.html
 
-.. tabs::
+#. Create a new virtual environment:
 
-   .. group-tab:: Ubuntu
+   .. tabs::
 
-      #. Create a new virtual environment:
-
-         .. code-block:: bash
-
-            python3 -m venv ~/zephyrproject/.venv
-
-      #. Activate the virtual environment:
-
-         .. code-block:: bash
-
-            source ~/zephyrproject/.venv/bin/activate
-
-         Once activated your shell will be prefixed with ``(.venv)``. The
-         virtual environment can be deactivated at any time by running
-         ``deactivate``.
-
-         .. note::
-
-            Remember to activate the virtual environment every time you
-            start working.
-
-      #. Install west:
-
-         .. code-block:: bash
-
-            pip install west
-
-      #. Get the Zephyr source code:
-
-         .. only:: not release
-
-            .. code-block:: bash
-
-               west init ~/zephyrproject
-               cd ~/zephyrproject
-
-            .. tip::
-
-               To reduce disk space usage and avoid downloading unnecessary
-               modules or vendor HALs during setup, configure
-               :ref:`west-manifest-groups` before running ``west update``.
-
-            .. code-block:: bash
-
-               west update
-
-         .. only:: release
-
-            .. We need to use a parsed-literal here because substitutions do not work in code
-               blocks. This means users can't copy-paste these lines as easily as other blocks but
-               should be good enough still :)
-
-            .. parsed-literal::
-
-               west init ~/zephyrproject --mr v |zephyr-version-ltrim|
-               cd ~/zephyrproject
-
-            .. tip::
-
-               To reduce disk space usage and avoid downloading unnecessary
-               modules or vendor HALs during setup, configure
-               :ref:`west-manifest-groups` before running ``west update``.
-
-            .. code-block:: bash
-
-               west update
-
-      #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
-         automatically load boilerplate code required for building Zephyr
-         applications.
-
-         .. code-block:: bash
-
-            west zephyr-export
-
-      #. Install Python dependencies using ``west packages``.
-
-         .. code-block:: bash
-
-            west packages pip --install
-
-         .. note::
-
-            This could downgrade or upgrade west itself.
-
-   .. group-tab:: macOS
-
-      #. Create a new virtual environment:
+      .. group-tab:: Ubuntu
 
          .. code-block:: bash
 
             python3 -m venv ~/zephyrproject/.venv
 
-      #. Activate the virtual environment:
+      .. group-tab:: macOS
 
          .. code-block:: bash
 
-            source ~/zephyrproject/.venv/bin/activate
+            python3 -m venv ~/zephyrproject/.venv
 
-         Once activated your shell will be prefixed with ``(.venv)``. The
-         virtual environment can be deactivated at any time by running
-         ``deactivate``.
+      .. group-tab:: Windows
 
-         .. note::
-
-            Remember to activate the virtual environment every time you
-            start working.
-
-      #. Install west:
-
-         .. code-block:: bash
-
-            pip install west
-
-      #. Get the Zephyr source code:
-
-         .. only:: not release
-
-            .. code-block:: bash
-
-               west init ~/zephyrproject
-               cd ~/zephyrproject
-               west update
-
-         .. only:: release
-
-            .. parsed-literal::
-
-               west init ~/zephyrproject --mr v |zephyr-version-ltrim|
-               cd ~/zephyrproject
-               west update
-
-      #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
-         automatically load boilerplate code required for building Zephyr
-         applications.
-
-         .. code-block:: bash
-
-            west zephyr-export
-
-      #. Install Python dependencies using ``west packages``.
-
-         .. code-block:: bash
-
-            west packages pip --install
-
-         .. note::
-
-            This could downgrade or upgrade west itself.
-
-   .. group-tab:: Windows
-
-      #. Open a ``cmd.exe`` or PowerShell terminal window **as a regular user**
-
-      #. Create a new virtual environment:
+         Open a ``cmd.exe`` or PowerShell terminal window **as a regular user**.
 
          .. tabs::
 
@@ -373,7 +233,23 @@ installation.
                cd $Env:HOMEPATH
                py -3.12 -m venv zephyrproject\.venv
 
-      #. Activate the virtual environment:
+#. Activate the virtual environment:
+
+   .. tabs::
+
+      .. group-tab:: Ubuntu
+
+         .. code-block:: bash
+
+            source ~/zephyrproject/.venv/bin/activate
+
+      .. group-tab:: macOS
+
+         .. code-block:: bash
+
+            source ~/zephyrproject/.venv/bin/activate
+
+      .. group-tab:: Windows
 
          .. note::
 
@@ -394,28 +270,75 @@ installation.
 
                zephyrproject\.venv\Scripts\Activate.ps1
 
-         Once activated your shell will be prefixed with ``(.venv)``. The
-         virtual environment can be deactivated at any time by running
-         ``deactivate``.
+   Once activated your shell will be prefixed with ``(.venv)``. The
+   virtual environment can be deactivated at any time by running
+   ``deactivate``.
 
-         .. note::
+   .. note::
 
-            Remember to activate the virtual environment every time you
-            start working.
+      Remember to activate the virtual environment every time you
+      start working.
 
-      #. Install west:
+#. Install west:
 
-         .. code-block:: bat
+   West is Zephyr's workspace manager; the next commands use it to create and
+   update the workspace.
 
-            pip install west
+   .. code-block:: shell
 
-      #. Get the Zephyr source code:
+      pip install west
+
+#. Get the Zephyr source code:
+
+   .. tabs::
+
+      .. group-tab:: Ubuntu
+
+         .. only:: not release
+
+            .. code-block:: bash
+
+               west init -m https://github.com/zephyrproject-rtos/zephyr ~/zephyrproject
+               cd ~/zephyrproject
+               west update
+
+         .. only:: release
+
+            .. We need to use a parsed-literal here because substitutions do not work in code
+               blocks. This means users can't copy-paste these lines as easily as other blocks but
+               should be good enough still :)
+
+            .. parsed-literal::
+
+               west init ~ -m https://github.com/zephyrproject-rtos/zephyr/zephyrproject --mr v |zephyr-version-ltrim|
+               cd ~/zephyrproject
+               west update
+
+      .. group-tab:: macOS
+
+         .. only:: not release
+
+            .. code-block:: bash
+
+               west init ~ -m https://github.com/zephyrproject-rtos/zephyr/zephyrproject
+               cd ~/zephyrproject
+               west update
+
+         .. only:: release
+
+            .. parsed-literal::
+
+               west init ~ -m https://github.com/zephyrproject-rtos/zephyr/zephyrproject --mr v |zephyr-version-ltrim|
+               cd ~/zephyrproject
+               west update
+
+      .. group-tab:: Windows
 
          .. only:: not release
 
             .. code-block:: bat
 
-               west init zephyrproject
+               west init -m https://github.com/zephyrproject-rtos/zephyr zephyrproject
                cd zephyrproject
                west update
 
@@ -423,19 +346,40 @@ installation.
 
             .. parsed-literal::
 
-               west init zephyrproject --mr v |zephyr-version-ltrim|
+               west init -m https://github.com/zephyrproject-rtos/zephyr zephyrproject --mr v |zephyr-version-ltrim|
                cd zephyrproject
                west update
 
-      #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
-         automatically load boilerplate code required for building Zephyr
-         applications.
+   .. tip::
 
-         .. code-block:: bat
+      To reduce disk space usage and avoid downloading unnecessary modules or vendor HALs during
+      setup, you may configure :ref:`west-manifest-groups` before running ``west update``.
 
-            west zephyr-export
+#. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This registers your current
+   Zephyr checkout in CMake's user package registry so ``find_package(Zephyr)``
+   can locate it automatically when building applications.
 
-      #. Install Python dependencies using ``west packages``.
+   .. code-block:: shell
+
+      west zephyr-export
+
+#. Install Python dependencies using ``west packages``.
+
+   .. tabs::
+
+      .. group-tab:: Ubuntu
+
+         .. code-block:: bash
+
+            west packages pip --install
+
+      .. group-tab:: macOS
+
+         .. code-block:: bash
+
+            west packages pip --install
+
+      .. group-tab:: Windows
 
          .. tabs::
 
@@ -447,9 +391,9 @@ installation.
 
                python -m pip install @((west packages pip) -split ' ')
 
-         .. note::
+   .. note::
 
-            This could downgrade or upgrade west itself.
+      This could downgrade or upgrade west itself.
 
 Install the Zephyr SDK
 **********************
