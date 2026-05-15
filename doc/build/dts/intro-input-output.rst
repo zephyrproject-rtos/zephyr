@@ -97,9 +97,15 @@ documentation.
     properties and give a higher-level view of the devicetree. Uses dtlib to do
     the DTS parsing.
 
-:zephyr_file:`gen_defines.py <scripts/dts/python-devicetree/src/devicetree/edtlib.py>`
-    A script that uses edtlib to generate C preprocessor macros from the
-    devicetree and bindings.
+:zephyr_file:`gen_edt.py <scripts/dts/gen_edt.py>`
+    A script that uses edtlib to parse the preprocessed devicetree and create
+    the devicetree-derived build outputs: the final merged DTS source, the
+    pickled EDT object, generated Kconfig symbols, CMake target properties, and
+    the C preprocessor macros used by :file:`devicetree.h`.
+
+:zephyr_file:`gen_defines.py <scripts/dts/gen_defines.py>`
+    Helper code used by :file:`gen_edt.py` to generate C preprocessor macros
+    from the devicetree and bindings.
 
 In addition to these, the standard ``dtc`` (devicetree compiler) tool is run on
 the final devicetree if it is installed on your system. This is just to catch
@@ -129,15 +135,27 @@ These are created in your application's build directory.
 
 :file:`<build>/zephyr/zephyr.dts.pre`
    The preprocessed DTS source. This is an intermediate output file, which is
-   input to :file:`gen_defines.py` and used to create :file:`zephyr.dts` and
-   :file:`devicetree_generated.h`.
+   input to :file:`gen_edt.py` and used to create the devicetree-derived build
+   outputs.
 
 :file:`<build>/zephyr/include/generated/zephyr/devicetree_generated.h`
    The generated macros and additional comments describing the devicetree.
    Included by ``devicetree.h``.
 
 :file:`<build>/zephyr/zephyr.dts`
-   The final merged devicetree. This file is output by :file:`gen_defines.py`.
+   The final merged devicetree. This file is output by :file:`gen_edt.py`.
    It is useful for debugging any issues. If the devicetree compiler ``dtc`` is
    installed, it is also run on this file, to catch any additional warnings or
    errors.
+
+:file:`<build>/zephyr/edt.pickle`
+   The parsed EDT object, serialized with Python's pickle format. This is used
+   by Kconfig preprocessor functions and other Python tooling that needs access
+   to devicetree data.
+
+:file:`<build>/zephyr/edt.pickle.cmake`
+   Devicetree data converted into CMake target properties for the CMake
+   devicetree API.
+
+:file:`<build>/Kconfig/Kconfig.dts`
+   Generated Kconfig symbols for compatible strings present in the current EDT.
