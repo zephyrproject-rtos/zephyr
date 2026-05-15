@@ -25,6 +25,7 @@ tests:
       - sam_e54_xpro
       - pic32cx_sg41_cult
       - numaker_pfm_m487
+      - pic32cm_jh01_cpro
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
