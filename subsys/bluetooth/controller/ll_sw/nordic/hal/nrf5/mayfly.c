@@ -7,6 +7,7 @@
 
 #include <soc.h>
 
+#include "hal/cpu.h"
 #include "hal/nrf5/swi.h"
 
 #include "util/memq.h"

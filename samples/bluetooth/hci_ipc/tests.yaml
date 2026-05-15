@@ -9,9 +9,11 @@ tests:
       - nrf5340dk/nrf5340/cpunet
       - nrf5340_audio_dk/nrf5340/cpunet
       - nrf5340bsim/nrf5340/cpunet
+      - nrf54l15dk/nrf54l15/cpuflpr
     integration_platforms:
       - nrf5340dk/nrf5340/cpunet
       - nrf5340_audio_dk/nrf5340/cpunet
+      - nrf54l15dk/nrf54l15/cpuflpr
   sample.bluetooth.hci_ipc.iso_broadcast.bt_ll_sw_split:
     harness: bluetooth
     tags: bluetooth
