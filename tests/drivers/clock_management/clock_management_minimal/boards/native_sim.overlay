@@ -19,24 +19,26 @@
 			compatible = "fixed-clock";
 			clock-frequency = <DT_FREQ_M(10)>;
 			#clock-cells = <0>;
-
-			emul_div1: emul-div1 {
-				compatible = "vnd,emul-clock-div";
-				max-div = <64>;
-				#clock-cells = <1>;
-			};
 		};
 
 		emul_source2: emul-source2 {
 			compatible = "fixed-clock";
 			clock-frequency = <DT_FREQ_M(50)>;
 			#clock-cells = <0>;
+		};
 
-			emul_div2: emul-div2 {
-				compatible = "vnd,emul-clock-div";
-				max-div = <256>;
-				#clock-cells = <1>;
-			};
+		emul_div1: emul-div1 {
+			compatible = "vnd,emul-clock-div";
+			max-div = <64>;
+			#clock-cells = <1>;
+			input = <&emul_source1>;
+		};
+
+		emul_div2: emul-div2 {
+			compatible = "vnd,emul-clock-div";
+			max-div = <256>;
+			#clock-cells = <1>;
+			input = <&emul_source2>;
 		};
 
 		emul_source3: emul-source3 {
