@@ -1,0 +1,147 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Must match samples/bluetooth/hci_ipc/boards/nrf54l15dk_nrf54l15_cpuflpr.overlay
+ *
+ * RRAM: 1204 (APP) + 320 (FLPR) = 1524KB
+ * RAM:  156 (APP) + 4 (IPC) + 95 (FLPR) + 1 (unused) = 256KB
+ */
+
+/ {
+	chosen {
+		zephyr,bt-hci = &bt_hci_ipc0;
+		zephyr,console = &uart30;
+	};
+
+	reserved-memory {
+		sram_rx: memory@20027000 {
+			reg = <0x20027000 DT_SIZE_K(2)>;
+		};
+
+		sram_tx: memory@20027800 {
+			reg = <0x20027800 DT_SIZE_K(2)>;
+		};
+	};
+
+	soc {
+		cpuflpr_sram_code_data: memory@20028000 {
+			compatible = "mmio-sram";
+			reg = <0x20028000 DT_SIZE_K(95)>;
+			ranges = <0x0 0x20028000 DT_SIZE_K(95)>;
+			status = "reserved";
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-icbmsg";
+			tx-blocks = <16>;
+			rx-blocks = <16>;
+			dcache-alignment = <32>;
+			tx-region = <&sram_tx>;
+			rx-region = <&sram_rx>;
+			mboxes = <&cpuapp_vevif_rx 20>, <&cpuapp_vevif_tx 21>;
+			mbox-names = "rx", "tx";
+			status = "okay";
+
+			bt_hci_ipc0: bt_hci_ipc0 {
+				compatible = "zephyr,bt-hci-ipc";
+				status = "okay";
+			};
+		};
+	};
+};
+
+&cpuapp_sram {
+	reg = <0x20000000 DT_SIZE_K(156)>;
+	ranges = <0x0 0x20000000 DT_SIZE_K(156)>;
+};
+
+&cpuapp_sram_app {
+	reg = <0x60 (DT_SIZE_K(156) - 0x60)>;
+};
+
+&cpuapp_rram {
+	reg = <0x0 DT_SIZE_K(1204)>;
+	ranges = <0x0 0x0 DT_SIZE_K(1204)>;
+
+	/delete-node/ partitions;
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(62)>;
+		};
+
+		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x10000 DT_SIZE_K(552)>;
+		};
+
+		slot1_partition: partition@9a000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x9a000 DT_SIZE_K(552)>;
+		};
+
+		storage_partition: partition@124000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x124000 DT_SIZE_K(36)>;
+		};
+	};
+};
+
+&rram_controller {
+	cpuflpr_rram: rram@12d000 {
+		compatible = "soc-nv-flash";
+		reg = <0x12d000 DT_SIZE_K(320)>;
+		ranges = <0x0 0x12d000 DT_SIZE_K(320)>;
+		erase-block-size = <0x1000>;
+		write-block-size = <0x10>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+};
+
+&cpuflpr_vpr {
+	status = "okay";
+	execution-memory = <&cpuflpr_rram>;
+	/*
+	 * execution-memory = <&cpuflpr_sram_code_data>;
+	 * source-memory = <&cpuflpr_rram>;
+	 */
+};
+
+&cpuapp_vevif_rx {
+	status = "okay";
+};
+
+&cpuapp_vevif_tx {
+	status = "okay";
+};
+
+&bt_hci_controller {
+	status = "disabled";
+};
+
+&uart30 {
+	current-speed = <1000000>;
+	status = "okay";
+};
+
+&uart20 {
+	status = "disabled";
+};
