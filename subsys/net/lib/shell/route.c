@@ -281,6 +281,134 @@ static int cmd_net_route_add(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_net_route_check(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(NATIVE_ROUTE)
+	struct net_sockaddr_storage addr = { 0 };
+	struct net_if *iface = NULL;
+	struct net_route_entry *route;
+
+	if (argc != 2) {
+		PR_ERROR("Correct usage: net route check <destination>\n");
+		return -EINVAL;
+	}
+
+	if (!net_ipaddr_parse(argv[1], strlen(argv[1]), net_sad(&addr))) {
+		PR_ERROR("Invalid destination: %s\n", argv[1]);
+		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_ROUTE) && addr.ss_family == NET_AF_INET) {
+		struct net_in_addr *dst = &net_sin(net_sad(&addr))->sin_addr;
+
+		iface = net_if_ipv4_select_src_iface(dst);
+		if (iface == NULL) {
+			PR_ERROR("No source interface for destination %s\n", argv[1]);
+			return -ENOEXEC;
+		}
+
+		route = net_route_ipv4_lookup(iface, dst);
+
+	} else if (IS_ENABLED(CONFIG_NET_IPV6_ROUTE) && addr.ss_family == NET_AF_INET6) {
+		struct net_in6_addr *dst = &net_sin6(net_sad(&addr))->sin6_addr;
+
+		iface = net_if_ipv6_select_src_iface(dst);
+		if (iface == NULL) {
+			PR_ERROR("No source interface for destination %s\n", argv[1]);
+			return -ENOEXEC;
+		}
+
+		route = net_route_ipv6_lookup(iface, dst);
+
+	} else {
+		PR("Unknown route family %d\n", addr.ss_family);
+		return -EINVAL;
+	}
+
+	if (route == NULL) {
+		/* There was no specific route to the destination, use the default
+		 * route then.
+		 */
+		if (IS_ENABLED(CONFIG_NET_IPV4) && addr.ss_family == NET_AF_INET) {
+			struct net_if_addr *ifaddr;
+
+			ifaddr = net_if_ipv4_addr_lookup(&net_sin(net_sad(&addr))->sin_addr,
+							 NULL);
+			if (ifaddr == NULL) {
+				struct net_in_addr gw;
+
+				gw = net_if_ipv4_get_gw(iface);
+
+				if (!net_ipv4_addr_cmp(&gw, net_ipv4_unspecified_address())) {
+					PR("%s route to %s is via %s (interface %d)\n",
+					   "IPv4", argv[1], net_sprint_ipv4_addr(&gw),
+					   net_if_get_by_iface(iface));
+				} else {
+					PR("%s route to %s is via interface %d\n",
+					   "IPv4", argv[1], net_if_get_by_iface(iface));
+				}
+			} else {
+				PR("%s address %s is local address in interface %d\n",
+				   "IPv4", argv[1], net_if_get_by_iface(iface));
+			}
+
+			return 0;
+		}
+
+		if (IS_ENABLED(CONFIG_NET_IPV6) && addr.ss_family == NET_AF_INET6) {
+			struct net_if_addr *ifaddr;
+			struct net_in6_addr *addr6 = &net_sin6(net_sad(&addr))->sin6_addr;
+
+			ifaddr = net_if_ipv6_addr_lookup(addr6, NULL);
+			if (ifaddr == NULL) {
+				struct net_if_router *router;
+
+				router = net_if_ipv6_router_find_default(NULL, addr6);
+				if (router != NULL) {
+					PR("%s route to %s is via %s (interface %d)\n",
+					   "IPv6", argv[1],
+					   net_sprint_ipv6_addr(&router->address.in6_addr),
+					   net_if_get_by_iface(iface));
+				} else {
+					PR("%s route to %s is via interface %d\n",
+					   "IPv6", argv[1], net_if_get_by_iface(iface));
+				}
+			} else {
+				PR("%s address %s is local address in interface %d\n",
+				   "IPv6", argv[1], net_if_get_by_iface(iface));
+			}
+
+			return 0;
+		}
+
+		PR_ERROR("Failed to get route\n");
+		return -ENOEXEC;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_ROUTE) && route->addr.family == NET_AF_INET) {
+		PR("%s route to %s is via %s (interface %d)\n",
+		   "IPv4", argv[1], net_sprint_ipv4_addr(net_route_ipv4_get_nexthop(route)),
+		   net_if_get_by_iface(route->iface));
+	} else if (IS_ENABLED(CONFIG_NET_IPV6_ROUTE) && route->addr.family == NET_AF_INET6) {
+		PR("%s route to %s is via %s (interface %d)\n",
+		   "IPv6", argv[1], net_sprint_ipv6_addr(net_route_ipv6_get_nexthop(route)),
+		   net_if_get_by_iface(route->iface));
+	} else {
+		PR("Unknown route family %d\n", route->addr.family);
+		return -EINVAL;
+	}
+
+#else /* NATIVE_ROUTE */
+
+	PR_INFO("Set %s and %s to enable native %s support."
+		" And enable CONFIG_NET_IPV6_ROUTE or CONFIG_NET_IPV4_ROUTE.\n",
+		"CONFIG_NET_NATIVE", "CONFIG_NET_IPV6 or CONFIG_NET_IPV4", "IPv6 or IPv4");
+
+#endif /* NATIVE_ROUTE */
+
+	return 0;
+}
+
 static int cmd_net_route_del(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(NATIVE_ROUTE)
@@ -377,6 +505,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_route,
 		  SHELL_HELP("Adds the route to the destination",
 			     "<index> <destination> <gateway>"),
 		  cmd_net_route_add),
+	SHELL_CMD(check, NULL,
+		  SHELL_HELP("Show how the packet will be routed to the destination",
+			     "<destination>"),
+		  cmd_net_route_check),
 	SHELL_CMD(del, NULL,
 		  SHELL_HELP("Deletes the route to the destination",
 			     "<index> <destination>"),
