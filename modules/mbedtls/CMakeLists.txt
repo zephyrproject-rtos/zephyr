@@ -70,10 +70,9 @@ if(CONFIG_MBEDTLS)
         PROPERTIES COMPILE_OPTIONS "${COMPILER_OPTIMIZE_FOR_SPEED_FLAG}")
     endif()
 
-    if(CONFIG_TF_PSA_CRYPTO_BUILTIN)
-      # Custom macro to tell that a TF-PSA-Crypto source file is being compiled.
-      # This is used by Secure Storage.
-      target_compile_definitions(tfpsacrypto PRIVATE BUILDING_MBEDTLS_CRYPTO)
+    if(CONFIG_TF_PSA_CRYPTO_BUILTIN AND CONFIG_SECURE_STORAGE)
+      # For Secure Storage to be able to differentiate callers.
+      target_compile_definitions(tfpsacrypto PRIVATE BUILDING_PSA_CRYPTO)
     endif()
 
     # Add Mbed TLS libraries ("tfpsacrypto" and "mbedx509" are linked to "mbedtls")
