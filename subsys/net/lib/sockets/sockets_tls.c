@@ -2412,6 +2412,10 @@ static int tls_opt_dtls_peer_connection_id_value_get(struct tls_context *context
 		return -ENOTCONN;
 	}
 
+	if (*optlen < MBEDTLS_SSL_CID_OUT_LEN_MAX) {
+		return -EINVAL;
+	}
+
 	ret = mbedtls_ssl_get_peer_cid(&session_ctx->ssl, &enabled, optval, &optlen_local);
 	if (enabled) {
 		*optlen = optlen_local;
