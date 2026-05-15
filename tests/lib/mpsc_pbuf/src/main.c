@@ -1313,8 +1313,8 @@ static void check_usage(struct mpsc_pbuf_buffer *buffer,
 	int err;
 
 	mpsc_pbuf_get_utilization(buffer, &size, &usage);
-	zassert_equal(size / sizeof(int), buffer->size - 1, "%d: got:%d, exp:%d",
-			line, (uint32_t)(size / sizeof(int)), buffer->size - 1);
+	zassert_equal(size / sizeof(int), buffer->size, "%d: got:%d, exp:%d",
+			line, (uint32_t)(size / sizeof(int)), buffer->size);
 	zassert_equal(usage, now, "%d: got:%d, exp:%d", line, usage, now);
 
 	err = mpsc_pbuf_get_max_utilization(buffer, &usage);

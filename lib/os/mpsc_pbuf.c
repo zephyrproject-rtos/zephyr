@@ -71,7 +71,6 @@ static inline bool free_space(struct mpsc_pbuf_buffer *buffer, uint32_t *res)
 		return false;
 	}
 	*res = buffer->size - buffer->tmp_wr_idx;
-
 	return true;
 }
 
@@ -101,10 +100,10 @@ static inline uint32_t get_usage(struct mpsc_pbuf_buffer *buffer)
 	uint32_t f;
 
 	if (free_space(buffer, &f)) {
-		f += (buffer->rd_idx - 1);
+		f += buffer->rd_idx;
 	}
 
-	return buffer->size - 1 - f;
+	return buffer->size - f;
 }
 
 static inline void max_utilization_update(struct mpsc_pbuf_buffer *buffer)
@@ -640,8 +639,7 @@ void mpsc_pbuf_get_utilization(struct mpsc_pbuf_buffer *buffer,
 {
 	k_spinlock_key_t key = k_spin_lock(&buffer->lock);
 
-	/* One byte is left for full/empty distinction. */
-	*size = (buffer->size - 1) * sizeof(int);
+	*size = buffer->size * sizeof(int);
 	*now = get_usage(buffer) * sizeof(int);
 
 	k_spin_unlock(&buffer->lock, key);
