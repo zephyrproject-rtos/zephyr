@@ -22,6 +22,8 @@
 #include "constants.h"
 #include "model.hpp"
 #include "output_handler.hpp"
+
+#include <zephyr/kernel.h>
 #include <tensorflow/lite/micro/micro_log.h>
 #include <tensorflow/lite/micro/micro_interpreter.h>
 #include <tensorflow/lite/micro/system_setup.h>
@@ -97,12 +99,20 @@ void loop(void)
 	/* Place the quantized input in the model's input tensor */
 	input->data.int8[0] = x_quantized;
 
-	/* Run inference, and report any error */
+	/* Run inference, measure latency, and report any error. */
+	uint32_t start_cycles = k_cycle_get_32();
 	TfLiteStatus invoke_status = interpreter->Invoke();
+	uint32_t end_cycles = k_cycle_get_32();
+	uint32_t invoke_cycles = end_cycles - start_cycles;
+	uint32_t invoke_us = (uint32_t)(k_cyc_to_ns_floor64(invoke_cycles) / 1000U);
+
 	if (invoke_status != kTfLiteOk) {
 		MicroPrintf("Invoke failed on x: %f\n", static_cast < double > (x));
 		return;
 	}
+
+	MicroPrintf("invoke_cycles: %u, invoke_time_us: %u\n",
+		    (unsigned int)invoke_cycles, (unsigned int)invoke_us);
 
 	/* Obtain the quantized output from model's output tensor */
 	int8_t y_quantized = output->data.int8[0];
@@ -118,5 +128,7 @@ void loop(void)
 	 * the total number per cycle
 	 */
 	inference_count += 1;
-	if (inference_count >= kInferencesPerCycle) inference_count = 0;
+	if (inference_count >= kInferencesPerCycle) {
+		inference_count = 0;
+	}
 }

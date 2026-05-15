@@ -87,6 +87,9 @@ Sample Output
 .. code-block:: console
 
     ...
+    invoke_cycles: 21312, invoke_time_us: 44
+
+    x_value: 0.314159, y_value: 0.372770
 
     x_value: 1.0995567*2^1, y_value: 1.6951603*2^-1
 
