@@ -56,9 +56,10 @@ static clock_freq_t syscon_clock_rtcclk_recalc_configure(const struct clk *clk_h
 #endif
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-static clock_freq_t syscon_clock_rtcclk_round_rate(const struct clk *clk_hw,
-					  clock_freq_t rate_req,
-					  clock_freq_t parent_rate)
+static clock_freq_t syscon_clock_rtcclk_best_rate(const struct clk *clk_hw,
+						  clock_freq_t rate_req,
+						  clock_freq_t parent_rate,
+						  bool commit)
 {
 	const struct syscon_rtcclk_config *config = clk_hw->hw_data;
 	uint32_t div_raw, div_factor;
@@ -67,12 +68,11 @@ static clock_freq_t syscon_clock_rtcclk_round_rate(const struct clk *clk_hw,
 				   config->mask_offset);
 	clock_freq_t parent_req = rate_req * config->add_factor;
 
-
 	/*
 	 * Request a parent rate at the lower end of the frequency range
 	 * this RTC divider can handle
 	 */
-	parent_rate = clock_management_round_rate(GET_CLK_PARENT(clk_hw), parent_req);
+	parent_rate = clock_management_best_rate(GET_CLK_PARENT(clk_hw), parent_req, false);
 	if (parent_rate < 0) {
 		return parent_rate;
 	}
@@ -84,38 +84,9 @@ static clock_freq_t syscon_clock_rtcclk_round_rate(const struct clk *clk_hw,
 	div_raw = (parent_rate / rate_req) - config->add_factor;
 	div_factor = (div_raw & div_mask) + config->add_factor;
 
-	return parent_rate / div_factor;
-}
-
-static clock_freq_t syscon_clock_rtcclk_set_rate(const struct clk *clk_hw,
-					clock_freq_t rate_req,
-					clock_freq_t parent_rate)
-{
-	const struct syscon_rtcclk_config *config = clk_hw->hw_data;
-	uint32_t div_raw, div_factor;
-	uint8_t div_mask = GENMASK((config->mask_width +
-				   config->mask_offset - 1),
-				   config->mask_offset);
-	clock_freq_t parent_req = rate_req * config->add_factor;
-
-
-	/*
-	 * Request a parent rate at the lower end of the frequency range
-	 * this RTC divider can handle
-	 */
-	parent_rate = clock_management_round_rate(GET_CLK_PARENT(clk_hw), parent_req);
-	if (parent_rate < 0) {
-		return parent_rate;
+	if (commit) {
+		(*config->reg) = ((*config->reg) & ~div_mask) | div_raw;
 	}
-	/*
-	 * Formula for the target RTC clock div setting is given
-	 * by the following:
-	 * reg_val = fin / fout - add_factor
-	 */
-	div_raw = (parent_rate / rate_req) - config->add_factor;
-	div_factor = (div_raw & div_mask) + config->add_factor;
-
-	(*config->reg) = ((*config->reg) & ~div_mask) | div_raw;
 	return parent_rate / div_factor;
 }
 #endif
@@ -127,8 +98,7 @@ const struct clock_management_standard_api nxp_syscon_rtcclk_api = {
 	.configure_recalc = syscon_clock_rtcclk_recalc_configure,
 #endif
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-	.round_rate = syscon_clock_rtcclk_round_rate,
-	.set_rate = syscon_clock_rtcclk_set_rate,
+	.best_rate = syscon_clock_rtcclk_best_rate,
 #endif
 };
 

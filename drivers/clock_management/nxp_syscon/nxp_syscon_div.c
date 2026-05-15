@@ -48,26 +48,18 @@ static clock_freq_t syscon_clock_div_configure_recalc(const struct clk *clk_hw,
 #endif
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-static clock_freq_t syscon_clock_div_round_rate(const struct clk *clk_hw,
-						clock_freq_t rate_req,
-						clock_freq_t parent_rate)
+static clock_freq_t syscon_clock_div_best_rate(const struct clk *clk_hw,
+					       clock_freq_t rate_req,
+					       clock_freq_t parent_rate,
+					       bool commit)
 {
 	const struct syscon_clock_div_config *config = clk_hw->hw_data;
 	uint32_t div_val = MAX((parent_rate / rate_req), 1) - 1;
 	uint8_t div_mask = GENMASK((config->mask_width - 1), 0);
 
-	return parent_rate / ((div_val & div_mask) + 1);
-}
-
-static clock_freq_t syscon_clock_div_set_rate(const struct clk *clk_hw,
-				     clock_freq_t rate_req,
-				     clock_freq_t parent_rate)
-{
-	const struct syscon_clock_div_config *config = clk_hw->hw_data;
-	uint32_t div_val = MAX((parent_rate / rate_req), 1) - 1;
-	uint8_t div_mask = GENMASK((config->mask_width - 1), 0);
-
-	(*config->reg) = ((*config->reg) & ~div_mask) | (div_val & div_mask);
+	if (commit) {
+		(*config->reg) = ((*config->reg) & ~div_mask) | (div_val & div_mask);
+	}
 	return parent_rate / ((div_val & div_mask) + 1);
 }
 #endif
@@ -79,8 +71,7 @@ const struct clock_management_standard_api nxp_syscon_div_api = {
 	.configure_recalc = syscon_clock_div_configure_recalc,
 #endif
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-	.round_rate = syscon_clock_div_round_rate,
-	.set_rate = syscon_clock_div_set_rate,
+	.best_rate = syscon_clock_div_best_rate,
 #endif
 };
 

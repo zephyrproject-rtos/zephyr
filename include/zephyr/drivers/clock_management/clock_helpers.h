@@ -56,32 +56,21 @@ int clock_children_check_rate(const struct clk *clk_hw, clock_freq_t new_rate);
 clock_freq_t clock_management_clk_rate(const struct clk *clk_hw);
 
 /**
- * @brief Determine the best rate a clock can produce
+ * @brief Determine the best rate a clock can produce, and optionally apply it
  *
  * This function is used to determine the best rate a clock can produce using
- * its parents. The subsystem will call this automatically with the rate a user
- * requests, but clock drivers can also call it if they need to request a
- * different rate from their parent then what has been offered.
+ * its parents. When @p commit is true, the rate is also applied to hardware.
+ * The subsystem will call this automatically with the rate a user requests,
+ * but clock drivers can also call it if they need to request a different rate
+ * from their parent than what has been offered.
  *
- * @param clk_hw Clock to round rate for
- * @param rate_req Requested rate to round
+ * @param clk_hw Clock to query/set rate for
+ * @param rate_req Requested rate
+ * @param commit if true, apply the rate to hardware; if false, only query
  * @return best possible rate on success, or negative value on error
  */
-clock_freq_t clock_management_round_rate(const struct clk *clk_hw, clock_freq_t rate_req);
-
-/**
- * @brief Set the rate of a clock
- *
- * This function is used to set the rate of a clock. The subsystem will call this
- * automatically with the rate a user requests, but clock drivers can also call it
- * if they need to request a different rate from their parent then what has been
- * offered.
- *
- * @param clk_hw Clock to set rate for
- * @param rate_req Requested rate to set
- * @return rate clock is set to on success, or negative value on error
- */
-clock_freq_t clock_management_set_rate(const struct clk *clk_hw, clock_freq_t rate_req);
+clock_freq_t clock_management_best_rate(const struct clk *clk_hw, clock_freq_t rate_req,
+					bool commit);
 
 #ifdef __cplusplus
 }

@@ -50,9 +50,10 @@ static clock_freq_t emul_clock_div_configure_recalc(const struct clk *clk_hw,
 #endif
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-static clock_freq_t emul_clock_div_round_rate(const struct clk *clk_hw,
-				     clock_freq_t req_rate,
-				     clock_freq_t parent_rate)
+static clock_freq_t emul_clock_div_best_rate(const struct clk *clk_hw,
+					     clock_freq_t req_rate,
+					     clock_freq_t parent_rate,
+					     bool commit)
 {
 	struct emul_clock_div *data = clk_hw->hw_data;
 	int div_val = CLAMP((parent_rate / req_rate), 1, (data->div_max + 1));
@@ -68,28 +69,9 @@ static clock_freq_t emul_clock_div_round_rate(const struct clk *clk_hw,
 		return -ENOENT;
 	}
 
-	return output_rate;
-}
-
-static clock_freq_t emul_clock_div_set_rate(const struct clk *clk_hw,
-				   clock_freq_t req_rate,
-				   clock_freq_t parent_rate)
-{
-	struct emul_clock_div *data = clk_hw->hw_data;
-	int div_val = CLAMP((parent_rate / req_rate), 1, (data->div_max + 1));
-	clock_freq_t output_rate = parent_rate / div_val;
-
-	/* Raise div value until we are in range */
-	while (output_rate > req_rate) {
-		div_val++;
-		output_rate = parent_rate / div_val;
+	if (commit) {
+		data->div_val = div_val - 1;
 	}
-
-	if (output_rate > req_rate) {
-		return -ENOENT;
-	}
-
-	data->div_val = div_val - 1;
 
 	return output_rate;
 }
@@ -102,8 +84,7 @@ const struct clock_management_standard_api emul_div_api = {
 	.configure_recalc = emul_clock_div_configure_recalc,
 #endif
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-	.round_rate = emul_clock_div_round_rate,
-	.set_rate = emul_clock_div_set_rate,
+	.best_rate = emul_clock_div_best_rate,
 #endif
 };
 

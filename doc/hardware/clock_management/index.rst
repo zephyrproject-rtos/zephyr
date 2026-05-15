@@ -466,10 +466,8 @@ given below:
     |                                                     | :c:func:`clock_mux_validate_parent`   |
     |                                                     | :c:func:`clock_root_configure_recalc` |
     +-----------------------------------------------------+---------------------------------------+
-    | :kconfig:option:`CONFIG_CLOCK_MANAGEMENT_SET_RATE`  | :c:func:`clock_set_rate`              |
-    |                                                     | :c:func:`clock_round_rate`            |
-    |                                                     | :c:func:`clock_root_round_rate`       |
-    |                                                     | :c:func:`clock_root_set_rate`         |
+    | :kconfig:option:`CONFIG_CLOCK_MANAGEMENT_SET_RATE`  | :c:func:`clock_best_rate`             |
+    |                                                     | :c:func:`clock_root_best_rate`        |
     |                                                     | :c:func:`clock_set_parent`            |
     +-----------------------------------------------------+---------------------------------------+
 
@@ -735,24 +733,17 @@ general guidance on implementing each API is provided below:
     acceptable for the multiplexer, otherwise return an error.
 
 
-* :c:func:`clock_root_round_rate` (root clocks only)
+* :c:func:`clock_root_best_rate` (root clocks only)
 
-  * Return the closest frequency the root clock can produce for the given request.
+  * Return (and optionally apply) the closest frequency the root clock can
+    produce for the given request. When ``commit`` is true, the rate is applied
+    to hardware.
 
-* :c:func:`clock_root_set_rate` (root clocks only)
+* :c:func:`clock_best_rate` (standard clocks only)
 
-  * Set and return the closest frequency the root clock can produce for the given request.
-
-
-* :c:func:`clock_round_rate` (standard clocks only)
-
-  * Return the closest frequency the root clock can produce for the given
-    requested frequency if the clock is provided with the given parent rate
-
-* :c:func:`clock_set_rate` (standard clocks only)
-
-  * Set and return the closest frequency the root clock can produce for the
-    given requested frequency using the provided parent rate
+  * Return (and optionally apply) the closest frequency the clock can produce
+    for the given requested frequency if the clock is provided with the given
+    parent rate. When ``commit`` is true, the rate is applied to hardware.
 
 * :c:func:`clock_set_parent` (multiplexer clocks only)
 
@@ -1102,16 +1093,18 @@ and applying it.
 
 During the query phase, the clock subsystem will walk up the clock tree until it
 reaches a root clock. Once a root clock is reached, the rate it offers via
-:c:func:`clock_root_round_rate` will be offered as the parent rate to its child
-clock when calling :c:func:`clock_round_rate`. Multiplexers have this support
-implemented generically, via a function that selects the best rate offered by
-all of the multiplexer parents. Proposed parent rates are validated with clock
-children via :c:func:`clock_recalc_rate`, or multipexers via
+:c:func:`clock_root_best_rate` (with ``commit=false``) will be offered as the
+parent rate to its child clock when calling :c:func:`clock_best_rate` (with
+``commit=false``). Multiplexers have this support implemented generically, via a
+function that selects the best rate offered by all of the multiplexer parents.
+Proposed parent rates are validated with clock children via
+:c:func:`clock_recalc_rate`, or multipexers via
 :c:func:`clock_mux_validate_parent`.
 
 In the application phase, the clock subsystem will once again walk up the clock
 tree, but now clock settings will be applied using
-:c:func:`clock_root_set_rate`, :c:func:`clock_set_rate` and
+:c:func:`clock_root_best_rate` (with ``commit=true``),
+:c:func:`clock_best_rate` (with ``commit=true``), and
 :c:func:`clock_set_parent`.
 
 Clock ranking is performed within the muliplexer query phase. Clocks may either
@@ -1161,17 +1154,17 @@ this example, ``external_osc`` produces a better rate match than
          clock_management_apply_state;
          "Read parent from clock struct";
          read_parent_2 [label="Read parent from clock struct"];
-         clock_round_rate;
+         clock_best_rate;
          clock_management_best_parent;
          clock_management_round_internal1 [label="clock_management_round_internal"];
          clock_management_round_internal2 [label="clock_management_round_internal"];
          clock_management_round_internal3 [label="clock_management_round_internal"];
-         clock_root_round_rate;
-         clock_root_round_rate2 [label="clock_root_round_rate"];
+         clock_root_best_rate;
+         clock_root_best_rate2 [label="clock_root_best_rate"];
          clock_management_set_internal1 [label="clock_management_set_internal"];
-         clock_set_rate;
+         clock_best_rate_set [label="clock_best_rate"];
          clock_set_parent;
-         clock_root_set_rate;
+         clock_root_best_rate_set [label="clock_root_best_rate"];
      }
      {
          # Ranked the same so that the splitter node doesn't mess up the alignment of these nodes
@@ -1195,17 +1188,17 @@ this example, ``external_osc`` produces a better rate match than
      splitter->clock_management_set_internal0;
      clock_management_round_internal0->"Read parent from clock struct"->uart_div;
      clock_management_round_internal0->clock_management_round_internal1 [dir=both, minlen=2];
-     clock_management_round_internal0->clock_round_rate->uart_div;
+     clock_management_round_internal0->clock_best_rate->uart_div;
      clock_management_round_internal1->clock_management_best_parent->uart_mux;
      clock_management_best_parent->clock_management_round_internal2 [dir=both, minlen=2];
      clock_management_best_parent->clock_management_round_internal3 [dir=both, minlen=2];
-     clock_management_round_internal2->clock_root_round_rate->fixed_source;
-     clock_management_round_internal3->clock_root_round_rate2->external_osc;
+     clock_management_round_internal2->clock_root_best_rate->fixed_source;
+     clock_management_round_internal3->clock_root_best_rate2->external_osc;
      clock_management_set_internal0->read_parent_2->uart_div;
      clock_management_set_internal0->clock_management_set_internal1 [dir=both, minlen=2];
-     clock_management_set_internal0->clock_set_rate->uart_div;
+     clock_management_set_internal0->clock_best_rate_set->uart_div;
      clock_management_set_internal1->clock_management_best_parent [minlen=3];
-     clock_management_set_internal1->clock_root_set_rate->external_osc;
+     clock_management_set_internal1->clock_root_best_rate_set->external_osc;
      clock_management_set_internal1->clock_set_parent->uart_mux;
 
      # Lengend for the graph
