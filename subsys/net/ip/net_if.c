@@ -2806,6 +2806,32 @@ static struct net_if_ipv6_prefix *ipv6_prefix_find(struct net_if *iface,
 	return NULL;
 }
 
+static struct net_if_ipv6_prefix *ipv6_prefix_get(struct net_if_ipv6 *ipv6,
+						  const struct net_in6_addr *addr)
+{
+	struct net_if_ipv6_prefix *prefix = NULL;
+
+	if (ipv6 == NULL) {
+		return NULL;
+	}
+
+	ARRAY_FOR_EACH(ipv6->prefix, i) {
+		if (!ipv6->prefix[i].is_used) {
+			continue;
+		}
+
+		if (net_ipv6_is_prefix(ipv6->prefix[i].prefix.s6_addr,
+				       addr->s6_addr,
+				       ipv6->prefix[i].len)) {
+			if (prefix == NULL || prefix->len < ipv6->prefix[i].len) {
+				prefix = &ipv6->prefix[i];
+			}
+		}
+	}
+
+	return prefix;
+}
+
 static void net_if_ipv6_prefix_init(struct net_if *iface,
 				    struct net_if_ipv6_prefix *ifprefix,
 				    const struct net_in6_addr *addr, uint8_t len,
@@ -2958,19 +2984,7 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_get(struct net_if *iface,
 		goto out;
 	}
 
-	ARRAY_FOR_EACH(ipv6->prefix, i) {
-		if (!ipv6->prefix[i].is_used) {
-			continue;
-		}
-
-		if (net_ipv6_is_prefix(ipv6->prefix[i].prefix.s6_addr,
-				       addr->s6_addr,
-				       ipv6->prefix[i].len)) {
-			if (!prefix || prefix->len > ipv6->prefix[i].len) {
-				prefix = &ipv6->prefix[i];
-			}
-		}
-	}
+	prefix = ipv6_prefix_get(ipv6, addr);
 
 out:
 	if (prefix != NULL) {
@@ -3289,17 +3303,27 @@ static struct net_in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 			 * For the VPN interface, we need to check if
 			 * address matches exactly the address of the interface.
 			 */
+#if defined(CONFIG_NET_NATIVE_IPV6)
 			if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL) &&
 			    net_virtual_get_iface_capabilities(iface) == VIRTUAL_INTERFACE_VPN) {
-				/* FIXME: Do not hard code the prefix length */
+				struct net_if_ipv6_prefix *prefix;
+				uint8_t match_prefix_len = 64U;
+
+				prefix = ipv6_prefix_get(ipv6,
+							 &ipv6->unicast[i].address.in6_addr);
+				if (prefix != NULL) {
+					match_prefix_len = prefix->len;
+				}
+
 				if (!net_ipv6_is_prefix(
 					    (const uint8_t *)&ipv6->unicast[i].address.in6_addr,
 					    (const uint8_t *)dst,
-					    64)) {
+					    match_prefix_len)) {
 					/* Skip this address as it is no match */
 					continue;
 				}
 			}
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 		}
 
 		len = get_diff_ipv6(dst, &ipv6->unicast[i].address.in6_addr);
