@@ -13,6 +13,12 @@ LOG_MODULE_DECLARE(net_shell);
 #include "../ip/route_ipv6.h"
 #include "../ip/route_ipv4.h"
 
+#if defined(CONFIG_WIREGUARD)
+#include <zephyr/net/virtual.h>
+#include <zephyr/net/wireguard.h>
+#include "wg_internal.h"
+#endif
+
 #if (defined(CONFIG_NET_NATIVE_IPV6) && defined(CONFIG_NET_IPV6_ROUTE)) || \
 	(defined(CONFIG_NET_NATIVE_IPV4) && defined(CONFIG_NET_IPV4_ROUTE))
 #define NATIVE_ROUTE
@@ -30,6 +36,147 @@ struct user_data_lladdr {
 	size_t lladdr_len;
 	bool found;
 };
+
+#if defined(CONFIG_WIREGUARD)
+struct wg_route_peer_snapshot {
+	int id;
+	uint32_t last_tx;
+	uint64_t keypair_sending_counter;
+	k_timepoint_t keypair_expires;
+	uint32_t keypair_last_rx;
+	bool send_handshake;
+	bool keypair_is_valid;
+	bool keypair_is_initiator;
+};
+
+struct user_data_wg_route {
+	struct net_if *iface;
+	net_sa_family_t family;
+	const uint8_t *dst;
+	struct wg_route_peer_snapshot peer;
+	bool has_peer;
+	bool allowed;
+};
+
+static bool is_wireguard_iface(struct net_if *iface)
+{
+	if (iface == NULL || net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
+		return false;
+	}
+
+	return (net_virtual_get_iface_capabilities(iface) & VIRTUAL_INTERFACE_VPN) != 0U;
+}
+
+static const struct wg_keypair *wg_route_select_keypair(const struct wg_peer *peer)
+{
+	const struct wg_keypair *keypair = &peer->session.keypair.current;
+
+	if (keypair->is_valid && !keypair->is_initiator && keypair->last_rx == 0U) {
+		keypair = &peer->session.keypair.prev;
+	}
+
+	return keypair;
+}
+
+static void wg_route_copy_peer_snapshot(struct wg_route_peer_snapshot *snapshot,
+					const struct wg_peer *peer)
+{
+	const struct wg_keypair *keypair = wg_route_select_keypair(peer);
+
+	snapshot->id = peer->id;
+	snapshot->last_tx = peer->last_tx;
+	snapshot->send_handshake = peer->send_handshake;
+	snapshot->keypair_is_valid = keypair->is_valid;
+	snapshot->keypair_is_initiator = keypair->is_initiator;
+	snapshot->keypair_last_rx = keypair->last_rx;
+	snapshot->keypair_expires = keypair->expires;
+	snapshot->keypair_sending_counter = keypair->sending_counter;
+}
+
+static void wg_route_cb(struct wg_peer *peer, void *user_data)
+{
+	struct user_data_wg_route *data = user_data;
+	bool allowed;
+
+	if (peer->iface != data->iface) {
+		return;
+	}
+
+	allowed = wg_peer_is_allowed_ip(peer, data->family, data->dst);
+
+	if (!data->has_peer || (!data->allowed && allowed)) {
+		wg_route_copy_peer_snapshot(&data->peer, peer);
+		data->has_peer = true;
+		data->allowed = allowed;
+	}
+}
+
+static int print_wireguard_route_status(const struct shell *sh,
+					struct net_if *iface,
+					net_sa_family_t family,
+					const uint8_t *dst)
+{
+	struct user_data_wg_route data = {
+		.iface = iface,
+		.family = family,
+		.dst = dst,
+	};
+	const char *reason;
+	bool can_send;
+	int status;
+
+	if (!is_wireguard_iface(iface)) {
+		return 0;
+	}
+
+	wireguard_peer_foreach(wg_route_cb, &data);
+
+	if (!data.has_peer) {
+		PR_SHELL(sh, "\tWireGuard: no peer configured for interface %d\n",
+			 net_if_get_by_iface(iface));
+		return -ENOENT;
+	}
+
+	if (!data.allowed) {
+		can_send = false;
+		status = -ENETUNREACH;
+		reason = "destination not in AllowedIP";
+	} else if (!net_if_is_up(iface)) {
+		can_send = false;
+		status = -ENETDOWN;
+		reason = "interface down";
+	} else if (data.peer.last_tx == 0U) {
+		can_send = false;
+		status = -EAGAIN;
+		reason = "handshake required";
+	} else {
+		if (!(data.peer.keypair_is_valid &&
+		      (data.peer.keypair_is_initiator ||
+		       data.peer.keypair_last_rx != 0U))) {
+			can_send = false;
+			status = -ENOTCONN;
+			reason = "no valid session key";
+		} else if (sys_timepoint_expired(data.peer.keypair_expires) ||
+			   data.peer.keypair_sending_counter >= REJECT_AFTER_MESSAGES) {
+			can_send = false;
+			status = -EKEYEXPIRED;
+			reason = "session key expired";
+		} else {
+			can_send = true;
+			status = 0;
+			reason = data.peer.send_handshake ?
+				"current session usable, rekey pending" :
+				"current session usable";
+		}
+	}
+
+	PR_SHELL(sh, "\tWireGuard peer %d: AllowedIP %s, can send %s (%s)\n",
+		 data.peer.id, data.allowed ? "yes" : "no",
+		 can_send ? "yes" : "no", reason);
+
+	return status;
+}
+#endif /* CONFIG_WIREGUARD */
 
 #if defined(CONFIG_NET_ARP)
 #include "ethernet/arp.h"
@@ -287,6 +434,9 @@ static int cmd_net_route_check(const struct shell *sh, size_t argc, char *argv[]
 	struct net_sockaddr_storage addr = { 0 };
 	struct net_if *iface = NULL;
 	struct net_route_entry *route;
+	net_sa_family_t family;
+	const uint8_t *dst = NULL;
+	int ret = 0;
 
 	if (argc != 2) {
 		PR_ERROR("Correct usage: net route check <destination>\n");
@@ -299,26 +449,30 @@ static int cmd_net_route_check(const struct shell *sh, size_t argc, char *argv[]
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4_ROUTE) && addr.ss_family == NET_AF_INET) {
-		struct net_in_addr *dst = &net_sin(net_sad(&addr))->sin_addr;
+		struct net_in_addr *addr4 = &net_sin(net_sad(&addr))->sin_addr;
 
-		iface = net_if_ipv4_select_src_iface(dst);
+		family = NET_AF_INET;
+		dst = addr4->s4_addr;
+		iface = net_if_ipv4_select_src_iface(addr4);
 		if (iface == NULL) {
 			PR_ERROR("No source interface for destination %s\n", argv[1]);
 			return -ENOEXEC;
 		}
 
-		route = net_route_ipv4_lookup(iface, dst);
+		route = net_route_ipv4_lookup(iface, addr4);
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV6_ROUTE) && addr.ss_family == NET_AF_INET6) {
-		struct net_in6_addr *dst = &net_sin6(net_sad(&addr))->sin6_addr;
+		struct net_in6_addr *addr6 = &net_sin6(net_sad(&addr))->sin6_addr;
 
-		iface = net_if_ipv6_select_src_iface(dst);
+		family = NET_AF_INET6;
+		dst = addr6->s6_addr;
+		iface = net_if_ipv6_select_src_iface(addr6);
 		if (iface == NULL) {
 			PR_ERROR("No source interface for destination %s\n", argv[1]);
 			return -ENOEXEC;
 		}
 
-		route = net_route_ipv6_lookup(iface, dst);
+		route = net_route_ipv6_lookup(iface, addr6);
 
 	} else {
 		PR("Unknown route family %d\n", addr.ss_family);
@@ -352,7 +506,13 @@ static int cmd_net_route_check(const struct shell *sh, size_t argc, char *argv[]
 				   "IPv4", argv[1], net_if_get_by_iface(iface));
 			}
 
-			return 0;
+#if defined(CONFIG_WIREGUARD)
+			if (ifaddr == NULL) {
+				ret = print_wireguard_route_status(sh, iface, family, dst);
+			}
+#endif
+
+			return ret;
 		}
 
 		if (IS_ENABLED(CONFIG_NET_IPV6) && addr.ss_family == NET_AF_INET6) {
@@ -378,7 +538,13 @@ static int cmd_net_route_check(const struct shell *sh, size_t argc, char *argv[]
 				   "IPv6", argv[1], net_if_get_by_iface(iface));
 			}
 
-			return 0;
+#if defined(CONFIG_WIREGUARD)
+			if (ifaddr == NULL) {
+				ret = print_wireguard_route_status(sh, iface, family, dst);
+			}
+#endif
+
+			return ret;
 		}
 
 		PR_ERROR("Failed to get route\n");
@@ -386,17 +552,27 @@ static int cmd_net_route_check(const struct shell *sh, size_t argc, char *argv[]
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4_ROUTE) && route->addr.family == NET_AF_INET) {
+		struct net_in_addr *nexthop = net_route_ipv4_get_nexthop(route);
+
 		PR("%s route to %s is via %s (interface %d)\n",
-		   "IPv4", argv[1], net_sprint_ipv4_addr(net_route_ipv4_get_nexthop(route)),
+		   "IPv4", argv[1], nexthop ? net_sprint_ipv4_addr(nexthop) : "<on-link>",
 		   net_if_get_by_iface(route->iface));
 	} else if (IS_ENABLED(CONFIG_NET_IPV6_ROUTE) && route->addr.family == NET_AF_INET6) {
+		struct net_in6_addr *nexthop = net_route_ipv6_get_nexthop(route);
+
 		PR("%s route to %s is via %s (interface %d)\n",
-		   "IPv6", argv[1], net_sprint_ipv6_addr(net_route_ipv6_get_nexthop(route)),
+		   "IPv6", argv[1], nexthop ? net_sprint_ipv6_addr(nexthop) : "<on-link>",
 		   net_if_get_by_iface(route->iface));
 	} else {
 		PR("Unknown route family %d\n", route->addr.family);
 		return -EINVAL;
 	}
+
+#if defined(CONFIG_WIREGUARD)
+	ret = print_wireguard_route_status(sh, route->iface, family, dst);
+#endif
+
+	return ret;
 
 #else /* NATIVE_ROUTE */
 
@@ -404,9 +580,8 @@ static int cmd_net_route_check(const struct shell *sh, size_t argc, char *argv[]
 		" And enable CONFIG_NET_IPV6_ROUTE or CONFIG_NET_IPV4_ROUTE.\n",
 		"CONFIG_NET_NATIVE", "CONFIG_NET_IPV6 or CONFIG_NET_IPV4", "IPv6 or IPv4");
 
-#endif /* NATIVE_ROUTE */
-
 	return 0;
+#endif /* NATIVE_ROUTE */
 }
 
 static int cmd_net_route_del(const struct shell *sh, size_t argc, char *argv[])
