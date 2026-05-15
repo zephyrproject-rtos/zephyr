@@ -30,6 +30,8 @@ static struct net_in_addr dest_addr = { .s4_addr = { 203, 0, 113, 7 } };
 static struct net_in_addr dest_addr_iface0 = { .s4_addr = { 203, 0, 113, 10 } };
 static struct net_in_addr dest_addr_iface1 = { .s4_addr = { 203, 0, 113, 11 } };
 static struct net_in_addr dest_addr_override = { .s4_addr = { 192, 0, 3, 77 } };
+static struct net_in_addr default_route_addr = { .s4_addr = { 0, 0, 0, 0 } };
+static struct net_in_addr default_route_dest = { .s4_addr = { 198, 18, 0, 1 } };
 static struct net_in_addr gateway_addr = { .s4_addr = { 192, 0, 2, 2 } };
 static struct net_in_addr gateway_addr_alt = { .s4_addr = { 192, 0, 3, 2 } };
 static struct net_in_addr subnet_addr = { .s4_addr = { 198, 51, 100, 99 } };
@@ -407,6 +409,40 @@ static void test_route_ipv4_onlink_subnet(void)
 	zassert_ok(net_route_ipv4_del(entry), "On-link route del failed");
 }
 
+static void test_route_ipv4_default_route(void)
+{
+	struct net_route_entry *entry;
+	struct net_route_entry *lookup;
+	struct net_route_entry *info_route;
+	struct net_in_addr *nexthop;
+	struct net_in_addr *info_nexthop;
+
+	entry = net_route_ipv4_add(my_iface, &default_route_addr, 0,
+				   &gateway_addr, NET_ROUTE_INFINITE_LIFETIME,
+				   NET_ROUTE_PREFERENCE_MEDIUM);
+	zassert_not_null(entry, "Default route add failed");
+	zassert_true(net_ipv4_addr_cmp(&entry->addr.in_addr, &default_route_addr),
+		     "Stored default route prefix was not normalized");
+
+	nexthop = net_route_ipv4_get_nexthop(entry);
+	zassert_not_null(nexthop, "Default route should have a nexthop");
+	zassert_true(net_ipv4_addr_cmp(nexthop, &gateway_addr),
+		     "Default route nexthop mismatch");
+
+	lookup = net_route_ipv4_lookup(my_iface, &default_route_dest);
+	zassert_equal_ptr(lookup, entry, "Default route lookup failed");
+
+	zassert_true(net_route_ipv4_get_info(my_iface, &default_route_dest,
+					     &info_route, &info_nexthop),
+		     "Default route info lookup failed");
+	zassert_equal_ptr(info_route, entry, "Route info returned wrong default route");
+	zassert_not_null(info_nexthop, "Default route should return a nexthop");
+	zassert_true(net_ipv4_addr_cmp(info_nexthop, &gateway_addr),
+		     "Route info returned wrong default-route nexthop");
+
+	zassert_ok(net_route_ipv4_del(entry), "Default route del failed");
+}
+
 static void test_route_ipv4_packet_arp_handoff(void)
 {
 	struct net_ipv4_hdr *hdr;
@@ -533,6 +569,7 @@ ZTEST(route_test_suite, test_route)
 	test_route_ipv4_lifetime();
 	test_route_ipv4_preference();
 	test_route_ipv4_onlink_subnet();
+	test_route_ipv4_default_route();
 	test_route_ipv4_packet_arp_handoff();
 	test_route_ipv4_packet_multi_iface();
 	test_route_ipv4_host_route_overrides_normal_iface();
