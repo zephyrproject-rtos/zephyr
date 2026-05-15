@@ -838,9 +838,6 @@ def main():
 
     is_perm_regions = isdef("CONFIG_SRAM_REGION_PERMISSIONS")
 
-    # Are pages in non-boot, non-pinned sections present at boot.
-    is_generic_section_present = isdef("CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT")
-
     if image_size >= vm_size:
         error(f"VM size is too small (have 0x{vm_size:x} need more than 0x{image_size:x})")
 
@@ -855,17 +852,8 @@ def main():
     # Instantiate all the paging structures for the address space
     pt.reserve(vm_base, vm_size)
     # Map the zephyr image
-    if is_generic_section_present:
-        map_flags = map_flags | FLAG_P
-        pt.map(image_base_phys, image_base, image_size, map_flags | ENTRY_RW)
-    else:
-        # When generic linker sections are not present in physical memory,
-        # the corresponding virtual pages should not be mapped to non-existent
-        # physical pages. So simply identity map them to create the page table
-        # entries but without the present bit set.
-        # Boot and pinned sections (if configured) will be mapped to
-        # physical memory below.
-        pt.map(image_base, image_base, image_size, map_flags | ENTRY_RW)
+    map_flags = map_flags | FLAG_P
+    pt.map(image_base_phys, image_base, image_size, map_flags | ENTRY_RW)
 
     if virt_to_phys_offset != 0:
         # Need to identity map the physical address space
@@ -919,28 +907,25 @@ def main():
         else:
             flags = ENTRY_US
 
-        if is_generic_section_present:
-            flags = flags | FLAG_P
+        flags = flags | FLAG_P
 
         pt.set_region_perms("__text_region", flags)
 
         if isdef("CONFIG_LINKER_USE_BOOT_SECTION"):
-            pt.set_region_perms("lnkr_boot_text", flags | FLAG_P)
+            pt.set_region_perms("lnkr_boot_text", flags)
 
         if isdef("CONFIG_LINKER_USE_PINNED_SECTION"):
-            pt.set_region_perms("lnkr_pinned_text", flags | FLAG_P)
+            pt.set_region_perms("lnkr_pinned_text", flags)
 
-        flags = ENTRY_US | ENTRY_XD
-        if is_generic_section_present:
-            flags = flags | FLAG_P
+        flags = ENTRY_US | ENTRY_XD | FLAG_P
 
         pt.set_region_perms("__rodata_region", flags)
 
         if isdef("CONFIG_LINKER_USE_BOOT_SECTION"):
-            pt.set_region_perms("lnkr_boot_rodata", flags | FLAG_P)
+            pt.set_region_perms("lnkr_boot_rodata", flags)
 
         if isdef("CONFIG_LINKER_USE_PINNED_SECTION"):
-            pt.set_region_perms("lnkr_pinned_rodata", flags | FLAG_P)
+            pt.set_region_perms("lnkr_pinned_rodata", flags)
 
         if isdef("CONFIG_COVERAGE_GCOV") and isdef("CONFIG_USERSPACE"):
             # If GCOV is enabled, user mode must be able to write to its

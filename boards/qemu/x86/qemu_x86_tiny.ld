@@ -60,10 +60,6 @@ MEMORY
 #endif
     RAM (wx)        : ORIGIN = KERNEL_BASE_ADDR, LENGTH = KERNEL_RAM_SIZE
 
-#if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
-    FLASH (rw)      : ORIGIN = FLASH_ROM_ADDR, LENGTH = FLASH_ROM_SIZE
-#endif
-
     /*
      * On 32-bit x86, fake memory area for build-time IDT generation data.
      *
@@ -87,27 +83,6 @@ MEMORY
 	#define MMU_PAGE_ALIGN		. = ALIGN(CONFIG_MMU_PAGE_SIZE);
 #else
 	#define MMU_PAGE_ALIGN
-#endif
-
-#if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
-
-#undef SECTION_PROLOGUE
-#define SECTION_PROLOGUE(name, options, align) \
-        name options : ALIGN_WITH_INPUT align
-
-#undef SECTION_DATA_PROLOGUE
-#define SECTION_DATA_PROLOGUE(name, options, align) \
-        name options : ALIGN_WITH_INPUT align
-
-#undef GROUP_ROM_LINK_IN
-#define GROUP_ROM_LINK_IN(vregion, lregion) > vregion AT > lregion
-
-#undef GROUP_DATA_LINK_IN
-#define GROUP_DATA_LINK_IN(vregion, lregion) > vregion AT > lregion
-
-#undef GROUP_NOLOAD_LINK_IN
-#define GROUP_NOLOAD_LINK_IN(vregion, lregion) > vregion AT > lregion
-
 #endif
 
 /* Used to align areas with separate memory permission characteristics
@@ -586,25 +561,6 @@ SECTIONS
 	lnkr_pinned_noinit_size = lnkr_pinned_noinit_end - lnkr_pinned_noinit_start;
 
 #endif /* CONFIG_LINKER_USE_PINNED_SECTION */
-
-#if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
-/* From now on, put symbols into FLASH */
-#undef ROMABLE_REGION
-#define ROMABLE_REGION	FLASH
-
-	/* This is to align the following sections in flash
-	 * to their corresponding virtual addresses.
-	 * In other words, the offset from start of flash
-	 * for these sections would be the same from start of
-	 * their virtual addresses. This provides a simple and
-	 * direct mapping from backing store.
-	 */
-	flash_load_offset :
-	{
-		. = FLASH_ROM_ADDR + (lnkr_pinned_end - KERNEL_BASE_ADDR);
-	} > FLASH AT > FLASH
-
-#endif
 
 	GROUP_START(ROMABLE_REGION)
 
