@@ -64,13 +64,11 @@
 #define LOAPIC_SSPND_BITS_PER_IRQ  1  /* Just the one for enable disable*/
 #define LOAPIC_SUSPEND_BITS_REQD (ROUND_UP((LOAPIC_IRQ_COUNT * LOAPIC_SSPND_BITS_PER_IRQ), 32))
 #ifdef CONFIG_PM_DEVICE
-__pinned_bss
 uint32_t loapic_suspend_buf[LOAPIC_SUSPEND_BITS_REQD / 32] = {0};
 #endif
 
 DEVICE_MMIO_TOPLEVEL(LOAPIC_REGS_STR, DT_DRV_INST(0));
 
-__pinned_func
 void send_eoi(void)
 {
 	x86_write_xapic(LOAPIC_EOI, 0);
@@ -81,7 +79,6 @@ void send_eoi(void)
  *
  * Called from early assembly layer (e.g., crt0.S).
  */
-__pinned_func
 void z_loapic_enable(unsigned char cpu_number)
 {
 	int32_t loApicMaxLvt; /* local APIC Max LVT */
@@ -188,7 +185,6 @@ static int loapic_init(const struct device *unused)
 }
 
 
-__pinned_func
 uint32_t z_loapic_irq_base(void)
 {
 	return z_ioapic_num_rtes();
@@ -199,7 +195,6 @@ uint32_t z_loapic_irq_base(void)
  *
  * This associates an IRQ with the desired vector in the IDT.
  */
-__pinned_func
 void z_loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
 				  unsigned int vector /* vector to copy into the LVT */
 				  )
@@ -235,7 +230,6 @@ void z_loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
  *
  * This routine clears the interrupt mask bit in the LVT for the specified IRQ
  */
-__pinned_func
 void z_loapic_irq_enable(unsigned int irq)
 {
 	unsigned int oldLevel;   /* previous interrupt lock level */
@@ -261,7 +255,6 @@ void z_loapic_irq_enable(unsigned int irq)
  *
  * This routine clears the interrupt mask bit in the LVT for the specified IRQ
  */
-__pinned_func
 void z_loapic_irq_disable(unsigned int irq)
 {
 	unsigned int oldLevel;   /* previous interrupt lock level */
@@ -308,7 +301,6 @@ void z_loapic_irq_disable(unsigned int irq)
  * @return The vector of the interrupt that is currently being processed, or -1
  * if no IRQ is being serviced.
  */
-__pinned_func
 int z_irq_controller_isr_vector_get(void)
 {
 	int pReg, block;
@@ -327,7 +319,6 @@ int z_irq_controller_isr_vector_get(void)
 }
 
 #ifdef CONFIG_PM_DEVICE
-__pinned_func
 static int loapic_suspend(const struct device *port)
 {
 	volatile uint32_t lvt; /* local vector table entry value */
@@ -356,7 +347,6 @@ static int loapic_suspend(const struct device *port)
 	return 0;
 }
 
-__pinned_func
 int loapic_resume(const struct device *port)
 {
 	int loapic_irq;
@@ -390,7 +380,6 @@ int loapic_resume(const struct device *port)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-__pinned_func
 static int loapic_pm_action(const struct device *dev,
 			    enum pm_device_action action)
 {

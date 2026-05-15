@@ -1021,7 +1021,7 @@ size_t k_mem_region_align(uintptr_t *aligned_addr, size_t *aligned_size,
 	return addr_offset;
 }
 
-#if defined(CONFIG_LINKER_USE_BOOT_SECTION) || defined(CONFIG_LINKER_USE_PINNED_SECTION)
+#ifdef CONFIG_LINKER_USE_BOOT_SECTION
 static void mark_linker_section_pinned(void *start_addr, void *end_addr,
 				       bool pin)
 {
@@ -1052,7 +1052,7 @@ static void mark_linker_section_pinned(void *start_addr, void *end_addr,
 		}
 	}
 }
-#endif /* CONFIG_LINKER_USE_BOOT_SECTION) || CONFIG_LINKER_USE_PINNED_SECTION */
+#endif /* CONFIG_LINKER_USE_BOOT_SECTION */
 
 #ifdef CONFIG_LINKER_USE_ONDEMAND_SECTION
 static void z_paging_ondemand_section_map(void)
@@ -1118,11 +1118,6 @@ void z_mem_manage_init(void)
 	 */
 	mark_linker_section_pinned(lnkr_boot_start, lnkr_boot_end, true);
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION */
-
-#ifdef CONFIG_LINKER_USE_PINNED_SECTION
-	/* Pin the page frames correspondng to the pinned symbols */
-	mark_linker_section_pinned(lnkr_pinned_start, lnkr_pinned_end, true);
-#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 	/* Any remaining pages that aren't mapped, reserved, or pinned get
 	 * added to the free pages list

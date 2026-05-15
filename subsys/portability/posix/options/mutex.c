@@ -28,7 +28,6 @@ static const struct pthread_mutexattr def_attr = {
 	.type = PTHREAD_MUTEX_DEFAULT,
 };
 
-__pinned_bss
 static struct k_mutex posix_mutex_pool[CONFIG_MAX_PTHREAD_MUTEX_COUNT];
 
 static uint8_t posix_mutex_type[CONFIG_MAX_PTHREAD_MUTEX_COUNT];

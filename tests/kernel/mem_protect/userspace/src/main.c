@@ -361,13 +361,6 @@ ZTEST_USER(userspace, test_write_kernro)
 	in_rodata = ptr < __rodata_region_end &&
 		    ptr >= __rodata_region_start;
 
-#ifdef CONFIG_LINKER_USE_PINNED_SECTION
-	if (!in_rodata) {
-		in_rodata = ptr < lnkr_pinned_rodata_end &&
-			    ptr >= lnkr_pinned_rodata_start;
-	}
-#endif
-
 	zassert_true(in_rodata,
 		     "_errno_neg_eagain is not in rodata");
 

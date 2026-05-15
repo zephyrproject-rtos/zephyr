@@ -887,9 +887,6 @@ def main():
     if isdef("CONFIG_LINKER_USE_BOOT_SECTION"):
         pt.map_region("lnkr_boot", map_flags | FLAG_P | ENTRY_RW, virt_to_phys_offset)
 
-    if isdef("CONFIG_LINKER_USE_PINNED_SECTION"):
-        pt.map_region("lnkr_pinned", map_flags | FLAG_P | ENTRY_RW, virt_to_phys_offset)
-
     # Process extra mapping requests
     if args.map:
         map_extra_regions(pt)
@@ -914,18 +911,12 @@ def main():
         if isdef("CONFIG_LINKER_USE_BOOT_SECTION"):
             pt.set_region_perms("lnkr_boot_text", flags)
 
-        if isdef("CONFIG_LINKER_USE_PINNED_SECTION"):
-            pt.set_region_perms("lnkr_pinned_text", flags)
-
         flags = ENTRY_US | ENTRY_XD | FLAG_P
 
         pt.set_region_perms("__rodata_region", flags)
 
         if isdef("CONFIG_LINKER_USE_BOOT_SECTION"):
             pt.set_region_perms("lnkr_boot_rodata", flags)
-
-        if isdef("CONFIG_LINKER_USE_PINNED_SECTION"):
-            pt.set_region_perms("lnkr_pinned_rodata", flags)
 
         if isdef("CONFIG_COVERAGE_GCOV") and isdef("CONFIG_USERSPACE"):
             # If GCOV is enabled, user mode must be able to write to its
