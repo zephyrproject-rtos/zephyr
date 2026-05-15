@@ -7,8 +7,10 @@
 #include <soc.h>
 #include <zephyr/device.h>
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#endif /* CONFIG_CLOCK_CONTROL_NRF */
 
 #include "hal/debug.h"
 
@@ -28,13 +30,15 @@
 
 static uint16_t const sca_ppm_lut[] = {500, 250, 150, 100, 75, 50, 30, 20};
 
+static atomic_val_t hf_refcnt;
+
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 struct lll_clock_state {
 	struct onoff_client cli;
 	struct k_sem sem;
 };
 
 static struct onoff_client lf_cli;
-static atomic_val_t hf_refcnt;
 
 static void clock_ready(struct onoff_manager *mgr, struct onoff_client *cli,
 			uint32_t state, int res)
@@ -107,13 +111,40 @@ int lll_clock_wait(void)
 	return 0;
 }
 
+#else /* !CONFIG_CLOCK_CONTROL_NRF */
+int lll_clock_init(void)
+{
+	/* FIXME: Add implementation alternative for clock control */
+	return 0;
+}
+
+int lll_clock_deinit(void)
+{
+	/* FIXME: Add implementation alternative for clock control */
+	return 0;
+}
+
+int lll_clock_wait(void)
+{
+	/* FIXME: Add implementation alternative for clock control */
+	return 0;
+}
+#endif /* !CONFIG_CLOCK_CONTROL_NRF */
+
 int lll_hfclock_on(void)
 {
 	if (atomic_inc(&hf_refcnt) > 0) {
 		return 0;
 	}
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	z_nrf_clock_bt_ctlr_hf_request();
+
+#else /* !CONFIG_CLOCK_CONTROL_NRF */
+	/* FIXME: Add implementation alternative for clock control */
+	NRF_CLOCK->TASKS_XOSTART = 1U;
+#endif /* !CONFIG_CLOCK_CONTROL_NRF */
+
 	DEBUG_RADIO_XTAL(1);
 
 	return 0;
@@ -121,16 +152,23 @@ int lll_hfclock_on(void)
 
 int lll_hfclock_on_wait(void)
 {
-	struct onoff_manager *mgr =
-		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 	int err;
 
 	atomic_inc(&hf_refcnt);
+
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
+	struct onoff_manager *mgr =
+		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 
 	err = blocking_on(mgr, HFCLOCK_TIMEOUT_MS);
 	if (err >= 0) {
 		DEBUG_RADIO_XTAL(1);
 	}
+
+#else /* !CONFIG_CLOCK_CONTROL_NRF */
+	/* FIXME: Add implementation alternative for clock control */
+	err = 0U;
+#endif /* !CONFIG_CLOCK_CONTROL_NRF */
 
 	return err;
 }
@@ -145,7 +183,14 @@ int lll_hfclock_off(void)
 		return 0;
 	}
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	z_nrf_clock_bt_ctlr_hf_release();
+
+#else /* !CONFIG_CLOCK_CONTROL_NRF */
+	/* FIXME: Add implementation alternative for clock control */
+	NRF_CLOCK->TASKS_XOSTOP = 1U;
+#endif /* !CONFIG_CLOCK_CONTROL_NRF */
+
 	DEBUG_RADIO_XTAL(0);
 
 	return 0;
@@ -153,12 +198,28 @@ int lll_hfclock_off(void)
 
 uint8_t lll_clock_sca_local_get(void)
 {
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	return CLOCK_CONTROL_NRF_K32SRC_ACCURACY;
+
+#else /* !CONFIG_CLOCK_CONTROL_NRF */
+	/* FIXME: Add implementation alternative for clock control */
+	/* For time being, default to 50 ppm accuracy when clock control is not available */
+	#define LLL_CLOCK_SCA_DEFAULT 5
+
+	return LLL_CLOCK_SCA_DEFAULT;
+#endif /* !CONFIG_CLOCK_CONTROL_NRF */
+
 }
 
 uint32_t lll_clock_ppm_local_get(void)
 {
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	return sca_ppm_lut[CLOCK_CONTROL_NRF_K32SRC_ACCURACY];
+
+#else /* !CONFIG_CLOCK_CONTROL_NRF */
+	/* For time being, default to 50 ppm accuracy when clock control is not available */
+	return sca_ppm_lut[LLL_CLOCK_SCA_DEFAULT];
+#endif /* !CONFIG_CLOCK_CONTROL_NRF */
 }
 
 uint32_t lll_clock_ppm_get(uint8_t sca)

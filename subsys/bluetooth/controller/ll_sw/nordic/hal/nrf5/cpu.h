@@ -7,6 +7,10 @@
 
 #include <zephyr/kernel.h>
 
+#if defined(CONFIG_RISCV)
+#include <hal/nrf_vpr_clic.h>
+#endif
+
 static inline void cpu_sleep(void)
 {
 	k_cpu_atomic_idle(irq_lock());
@@ -25,6 +29,8 @@ static inline void cpu_dmb(void)
 	 * each access. Only a compiler memory clobber is sufficient.
 	 */
 	__asm__ volatile ("" : : : "memory");
+#elif defined(CONFIG_RISCV)
+	__asm__ volatile ("" : : : "memory");
 #elif defined(CONFIG_ARCH_POSIX)
 	/* FIXME: Add necessary host machine required Data Memory Barrier
 	 *        instruction alongwith the below defined compiler memory
@@ -33,5 +39,23 @@ static inline void cpu_dmb(void)
 	__asm__ volatile ("" : : : "memory");
 #else
 #error "Unsupported CPU."
+#endif
+}
+
+static inline void cpu_irq_pending_set(uint32_t irq)
+{
+#if defined(CONFIG_RISCV)
+	nrf_vpr_clic_int_pending_set(NRF_VPRCLIC, irq);
+#else
+	NVIC_SetPendingIRQ(irq);
+#endif
+}
+
+static inline void cpu_irq_pending_clear(uint32_t irq)
+{
+#if defined(CONFIG_RISCV)
+	nrf_vpr_clic_int_pending_clear(NRF_VPRCLIC, irq);
+#else
+	NVIC_ClearPendingIRQ(irq);
 #endif
 }
