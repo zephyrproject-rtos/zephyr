@@ -101,8 +101,9 @@ struct net_route_entry *net_route_ipv4_add(struct net_if *iface,
 	NET_ASSERT(addr);
 	NET_ASSERT(iface);
 
-	if (net_ipv4_addr_cmp(addr, net_ipv4_unspecified_address())) {
-		NET_DBG("Route cannot be towards unspecified address");
+	if (net_ipv4_addr_cmp(addr, net_ipv4_unspecified_address()) &&
+	    mask_len != 0U) {
+		NET_DBG("Route cannot be towards unspecified address unless prefix length is 0");
 		return NULL;
 	}
 
