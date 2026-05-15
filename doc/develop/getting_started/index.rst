@@ -411,67 +411,50 @@ Install the Zephyr SDK
 **********************
 
 The :ref:`Zephyr Software Development Kit (SDK) <toolchain_zephyr_sdk>`
-contains toolchains for each of Zephyr's supported architectures, which
-include a compiler, assembler, linker and other programs required to build
-Zephyr applications.
+contains toolchains for each of Zephyr's supported architectures. Those
+toolchains include the compiler, assembler, linker, and other programs
+required to build Zephyr applications for your target hardware.
 
 It also contains additional host tools, such as custom QEMU and OpenOCD builds
 that are used to emulate, flash and debug Zephyr applications.
 
+Install the Zephyr SDK with ``west sdk install`` from the Zephyr repository:
 
 .. tabs::
 
    .. group-tab:: Ubuntu
 
-      Install the Zephyr SDK using the ``west sdk install``.
+      .. code-block:: bash
 
-         .. code-block:: bash
-
-            cd ~/zephyrproject/zephyr
-            west sdk install
-
-      .. tip::
-
-          Using the command options, you can specify the SDK installation destination
-          and which architecture of toolchains to install.
-          See ``west sdk install --help`` for details.
+         cd ~/zephyrproject/zephyr
+         west sdk install
 
    .. group-tab:: macOS
 
-      Install the Zephyr SDK using the ``west sdk install``.
+      .. code-block:: bash
 
-         .. code-block:: bash
-
-            cd ~/zephyrproject/zephyr
-            west sdk install
-
-      .. tip::
-
-          Using the command options, you can specify the SDK installation destination
-          and which architecture of toolchains to install.
-          See ``west sdk install --help`` for details.
+         cd ~/zephyrproject/zephyr
+         west sdk install
 
    .. group-tab:: Windows
 
-      Install the Zephyr SDK using the ``west sdk install``.
+      .. tabs::
 
-         .. tabs::
+         .. code-tab:: bat
 
-            .. code-tab:: bat
+            cd %HOMEPATH%\zephyrproject\zephyr
+            west sdk install
 
-               cd %HOMEPATH%\zephyrproject\zephyr
-               west sdk install
+         .. code-tab:: powershell
 
-            .. code-tab:: powershell
+            cd $Env:HOMEPATH\zephyrproject\zephyr
+            west sdk install
 
-               cd $Env:HOMEPATH\zephyrproject\zephyr
-               west sdk install
+.. tip::
 
-      .. tip::
-
-          Using the command options, you can specify the SDK installation destination
-          and which architecture of toolchains to install.
-          See ``west sdk install --help`` for details.
+   Use command options to choose the SDK installation destination or install
+   only selected architecture toolchains. See ``west sdk install --help`` for
+   details.
 
 .. note::
 
