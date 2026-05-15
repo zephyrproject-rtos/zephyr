@@ -271,7 +271,7 @@ static int fuse_fs_access_create(const char *path, mode_t mode,
 
 	fi->fh = handle;
 
-	err = fs_open(&files[handle], path, FS_O_CREATE | FS_O_WRITE);
+	err = fs_open(&files[handle], path, FS_O_CREATE | FS_O_RDWR);
 	if (err != 0) {
 		release_file_handle(handle);
 		fi->fh = INVALID_FILE_HANDLE;
