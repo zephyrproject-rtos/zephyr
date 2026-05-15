@@ -115,6 +115,10 @@ static const struct mc_cgm_gate_entry mc_cgm_gate_map[] = {
 	LISTIFY(MC_CGM_COUNT(FSL_FEATURE_SOC_ADC_COUNT),
 		MC_CGM_GATE_ENTRY, (,), ADC, Adc),
 #endif
+#if defined(CONFIG_PWM_NXP_EMIOS) && defined(FSL_FEATURE_SOC_EMIOS_COUNT)
+	LISTIFY(MC_CGM_COUNT(FSL_FEATURE_SOC_EMIOS_COUNT),
+		MC_CGM_GATE_ENTRY, (,), EMIOS, Emios),
+#endif
 };
 
 /*
@@ -122,6 +126,11 @@ static const struct mc_cgm_gate_entry mc_cgm_gate_map[] = {
  * clock_ip_name_t uses "Lpcmp" (kCLOCK_Lpcmp0), but clock_name_t
  * drops the "Lp" (kCLOCK_Cmp0Clk). Pass "Cmp" as the SDK prefix
  * here so CLOCK_GetFreq receives the right identifier.
+ *
+ * EMIOS: SDK provides per-instance clock gates (kCLOCK_Emios0/1/2)
+ * but only a single shared clock query enum (kCLOCK_EmiosClk), so
+ * EMIOS cannot use LISTIFY here. Frequency queries are handled via
+ * switch-case in mc_cgm_get_subsys_rate() instead.
  */
 static const struct mc_cgm_rate_entry mc_cgm_rate_map[] = {
 #if defined(CONFIG_CAN_MCUX_FLEXCAN) && defined(FSL_FEATURE_SOC_FLEXCAN_COUNT)
@@ -261,6 +270,11 @@ static int mc_cgm_get_subsys_rate(const struct device *dev, clock_control_subsys
 	case MCUX_CORESYS_CLK:
 #if defined(CONFIG_MCUX_FLEXIO)
 	case MCUX_FLEXIO_CLK:
+#endif
+#if defined(CONFIG_PWM_NXP_EMIOS)
+	case MCUX_EMIOS0_CLK:
+	case MCUX_EMIOS1_CLK:
+	case MCUX_EMIOS2_CLK:
 #endif
 		*rate = CLOCK_GetCoreClkFreq();
 		return 0;

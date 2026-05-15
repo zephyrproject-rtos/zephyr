@@ -305,7 +305,7 @@
 			     <65 0>, <66 0>;
 		interrupt-names = "emios0-2", "emios0-3", "emios0-4",
 				  "emios0-5", "emios0-6", "emios0-7";
-		clocks = <&mc_cgm MCUX_EMIOS_CLK>;
+		clocks = <&mc_cgm MCUX_EMIOS0_CLK>;
 		status = "disabled";
 
 		counter_bus {
@@ -349,7 +349,7 @@
 			     <73 0>, <74 0>;
 		interrupt-names = "emios1-2", "emios1-3", "emios1-4",
 				  "emios1-5", "emios1-6", "emios1-7";
-		clocks = <&mc_cgm MCUX_EMIOS_CLK>;
+		clocks = <&mc_cgm MCUX_EMIOS1_CLK>;
 		status = "disabled";
 
 		counter_bus {
@@ -393,7 +393,7 @@
 			     <81 0>, <82 0>;
 		interrupt-names = "emios2-2", "emios2-3", "emios2-4",
 				  "emios2-5", "emios2-6", "emios2-7";
-		clocks = <&mc_cgm MCUX_EMIOS_CLK>;
+		clocks = <&mc_cgm MCUX_EMIOS2_CLK>;
 		status = "disabled";
 
 		counter_bus {
