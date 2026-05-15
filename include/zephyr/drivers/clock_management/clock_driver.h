@@ -46,16 +46,14 @@ struct clock_management_shared_api {
 /**
  * @brief Get a clock's only parent.
  *
- * This macro gets a pointer to the clock's only parent, handling the difference
- * in access between when CONFIG_CLOCK_MANAGEMENT_RUNTIME is enabled or not.
+ * This macro gets a pointer to the clock's only parent
  * It should only be used by "standard type" clocks.
  */
 #define GET_CLK_PARENT(clk) (((struct clk_standard_subsys_data *)clk->hw_data)->parent)
 /**
  * @brief Get a clock's parent array.
  *
- * This macro gets a pointer to the clock's parent array, handling the difference
- * in access between when CONFIG_CLOCK_MANAGEMENT_RUNTIME is enabled or not.
+ * This macro gets a pointer to the clock's parent array
  * It should only be used by "multiplexer type" clocks.
  */
 #define GET_CLK_PARENTS(clk) (((struct clk_mux_subsys_data *)clk->hw_data)->parents)
