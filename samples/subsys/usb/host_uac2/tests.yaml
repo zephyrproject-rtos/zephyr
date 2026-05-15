@@ -1,0 +1,15 @@
+sample:
+  name: USB host UAC2 audio sample
+tests:
+  sample.subsys.usb.host.uac2.audio:
+    tags:
+      - usbh
+      - samples
+    extra_configs:
+      - CONFIG_FPU=y
+    platform_allow:
+      - rd_rw612_bga/rw612
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+    integration_platforms:
+      - rd_rw612_bga/rw612
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
