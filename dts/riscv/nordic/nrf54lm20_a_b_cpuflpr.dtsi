@@ -14,11 +14,19 @@ clic: &cpuflpr_clic {};
 /delete-node/ &cpuapp_sram;
 
 / {
+	chosen {
+		zephyr,bt-hci = &bt_hci_controller;
+	};
+
 	soc {
 		compatible = "simple-bus";
 		interrupt-parent = <&cpuflpr_clic>;
 		ranges;
 	};
+};
+
+&bt_hci_controller {
+	status = "okay";
 };
 
 &cpuflpr {
