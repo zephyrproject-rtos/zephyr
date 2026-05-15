@@ -52,9 +52,11 @@ Click the operating system you are using.
 Install dependencies
 ********************
 
-Next, you'll install some host dependencies using your package manager.
+Next, install the host tools Zephyr needs to configure and build applications.
+The instructions below use the recommended package manager for each operating
+system so the tools are available from your terminal.
 
-The current minimum required version for the main dependencies are:
+The current minimum required versions for the main dependencies are:
 
 .. list-table::
    :header-rows: 1
