@@ -19,10 +19,11 @@ static clock_freq_t clock_source_get_rate(const struct clk *clk_hw)
 }
 
 #ifdef CONFIG_CLOCK_MANAGEMENT_SET_RATE
-static clock_freq_t clock_source_request_rate(const struct clk *clk_hw, clock_freq_t rate_req)
+static clock_freq_t fixed_clock_source_best_rate(const struct clk *clk_hw,
+						 clock_freq_t rate_req, bool commit)
 {
-	/* Clock isn't reconfigurable, just return current rate */
 	ARG_UNUSED(rate_req);
+	ARG_UNUSED(commit);
 	return ((struct fixed_clock_data *)clk_hw->hw_data)->clock_rate;
 }
 #endif
@@ -30,8 +31,7 @@ static clock_freq_t clock_source_request_rate(const struct clk *clk_hw, clock_fr
 const struct clock_management_root_api fixed_clock_source_api = {
 	.get_rate = clock_source_get_rate,
 #ifdef CONFIG_CLOCK_MANAGEMENT_SET_RATE
-	.root_round_rate = clock_source_request_rate,
-	.root_set_rate = clock_source_request_rate,
+	.root_best_rate = fixed_clock_source_best_rate,
 #endif
 };
 

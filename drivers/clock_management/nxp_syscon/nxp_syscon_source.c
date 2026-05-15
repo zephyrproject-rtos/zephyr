@@ -57,24 +57,18 @@ static clock_freq_t syscon_clock_source_configure_recalc(const struct clk *clk_h
 
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-static clock_freq_t syscon_clock_source_round_rate(const struct clk *clk_hw,
-					  clock_freq_t rate_req)
+static clock_freq_t syscon_clock_source_best_rate(const struct clk *clk_hw,
+						  clock_freq_t rate_req,
+						  bool commit)
 {
 	const struct syscon_clock_source_config *config = clk_hw->hw_data;
 
-	return (rate_req != 0) ? config->rate : 0;
-}
-
-static clock_freq_t syscon_clock_source_set_rate(const struct clk *clk_hw,
-					clock_freq_t rate_req)
-{
-	const struct syscon_clock_source_config *config = clk_hw->hw_data;
-
-	/* If the clock rate is 0, gate the source */
-	if (rate_req == 0) {
-		syscon_clock_source_configure(clk_hw, (void *)0);
-	} else {
-		syscon_clock_source_configure(clk_hw, (void *)1);
+	if (commit) {
+		if (rate_req == 0) {
+			syscon_clock_source_configure(clk_hw, (void *)0);
+		} else {
+			syscon_clock_source_configure(clk_hw, (void *)1);
+		}
 	}
 	return (rate_req != 0) ? config->rate : 0;
 }
@@ -87,8 +81,7 @@ const struct clock_management_root_api nxp_syscon_source_api = {
 	.root_configure_recalc = syscon_clock_source_configure_recalc,
 #endif
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-	.root_round_rate = syscon_clock_source_round_rate,
-	.root_set_rate = syscon_clock_source_set_rate,
+	.root_best_rate = syscon_clock_source_best_rate,
 #endif
 };
 

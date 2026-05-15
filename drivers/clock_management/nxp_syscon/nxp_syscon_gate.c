@@ -50,28 +50,21 @@ static clock_freq_t syscon_clock_gate_configure_recalc(const struct clk *clk_hw,
 #endif
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-static clock_freq_t syscon_clock_gate_round_rate(const struct clk *clk_hw,
-					clock_freq_t rate_req,
-					clock_freq_t parent_rate)
+static clock_freq_t syscon_clock_gate_best_rate(const struct clk *clk_hw,
+						clock_freq_t rate_req,
+						clock_freq_t parent_rate,
+						bool commit)
 {
-	if (rate_req != 0) {
-		return parent_rate;
-	}
-	return 0;
-}
+	if (commit) {
+		const struct syscon_clock_gate_config *config = clk_hw->hw_data;
 
-static clock_freq_t syscon_clock_gate_set_rate(const struct clk *clk_hw,
-				      clock_freq_t rate_req,
-				      clock_freq_t parent_rate)
-{
-	const struct syscon_clock_gate_config *config = clk_hw->hw_data;
-
-	if (rate_req != 0) {
-		(*config->reg) |= BIT(config->enable_offset);
-		return parent_rate;
+		if (rate_req != 0) {
+			(*config->reg) |= BIT(config->enable_offset);
+		} else {
+			(*config->reg) &= ~BIT(config->enable_offset);
+		}
 	}
-	(*config->reg) &= ~BIT(config->enable_offset);
-	return 0;
+	return (rate_req != 0) ? parent_rate : 0;
 }
 #endif
 
@@ -82,8 +75,7 @@ const struct clock_management_standard_api nxp_syscon_gate_api = {
 	.configure_recalc = syscon_clock_gate_configure_recalc,
 #endif
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-	.round_rate = syscon_clock_gate_round_rate,
-	.set_rate = syscon_clock_gate_set_rate,
+	.best_rate = syscon_clock_gate_best_rate,
 #endif
 };
 

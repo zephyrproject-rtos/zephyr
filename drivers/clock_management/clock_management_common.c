@@ -682,7 +682,7 @@ static clock_freq_t clock_management_round_internal(const struct clk *clk_hw,
 		if (current_rate < 0) {
 			return current_rate;
 		}
-		best_rate = clock_root_round_rate(clk_hw, req->max_freq);
+		best_rate = clock_root_best_rate(clk_hw, req->max_freq, false);
 		if (best_rate < 0) {
 			/* Clock can't reconfigure, use the current rate */
 			best_rate = current_rate;
@@ -705,7 +705,7 @@ static clock_freq_t clock_management_round_internal(const struct clk *clk_hw,
 			return current_rate;
 		}
 		/* Check what rate this clock can offer with its parent offering */
-		best_rate = clock_round_rate(clk_hw, req->max_freq, parent_rate);
+		best_rate = clock_best_rate(clk_hw, req->max_freq, parent_rate, false);
 		if (best_rate < 0) {
 			/* Clock can't reconfigure, use the current rate */
 			best_rate = current_rate;
@@ -797,7 +797,7 @@ static clock_freq_t clock_management_set_internal(const struct clk *clk_hw,
 			return ret;
 		}
 		/* Root clock parent can be set directly (base case) */
-		new_rate = clock_root_set_rate(clk_hw, new_rate);
+		new_rate = clock_root_best_rate(clk_hw, new_rate, true);
 		if (new_rate < 0) {
 			return new_rate;
 		}
@@ -823,7 +823,7 @@ static clock_freq_t clock_management_set_internal(const struct clk *clk_hw,
 		if (ret < 0) {
 			return ret;
 		}
-		new_rate = clock_set_rate(clk_hw, new_rate, parent_rate);
+		new_rate = clock_best_rate(clk_hw, new_rate, parent_rate, true);
 		if (new_rate < 0) {
 			return new_rate;
 		}
@@ -837,44 +837,33 @@ static clock_freq_t clock_management_set_internal(const struct clk *clk_hw,
 }
 
 /**
- * @brief Determine the best rate a clock can produce
+ * @brief Determine the best rate a clock can produce, and optionally apply it
  *
- * This function is used to determine the best rate a clock can produce using
- * its parents.
+ * When @p commit is false, determines the best rate a clock can produce using
+ * its parents without modifying hardware. When @p commit is true, also applies
+ * the rate to hardware.
  *
- * @param clk_hw Clock to round rate for
- * @param rate_req Requested rate to round
+ * @param clk_hw Clock to query/set rate for
+ * @param rate_req Requested rate
+ * @param commit if true, apply the rate to hardware
  * @return best possible rate on success, or negative value on error
  */
-clock_freq_t clock_management_round_rate(const struct clk *clk_hw, clock_freq_t rate_req)
+clock_freq_t clock_management_best_rate(const struct clk *clk_hw, clock_freq_t rate_req,
+					bool commit)
 {
+	struct clock_management_rate_req req = {
+		.min_freq = rate_req,
+		.max_freq = rate_req,
+		.max_rank = CLOCK_MANAGEMENT_ANY_RANK,
+	};
+
+	if (commit) {
+		return clock_management_set_internal(clk_hw, &req, false);
+	}
+
 	uint32_t best_rank; /* Unused */
-	struct clock_management_rate_req req = {
-		.min_freq = rate_req,
-		.max_freq = rate_req,
-		.max_rank = CLOCK_MANAGEMENT_ANY_RANK,
-	};
+
 	return clock_management_round_internal(clk_hw, &req, &best_rank, false);
-}
-
-/**
- * @brief Set the rate of a clock
- *
- * This function is used to set the rate of a clock.
- *
- * @param clk_hw Clock to set rate for
- * @param rate_req Requested rate to set
- * @return rate clock is set to on success, or negative value on error
- */
-clock_freq_t clock_management_set_rate(const struct clk *clk_hw, clock_freq_t rate_req)
-{
-
-	struct clock_management_rate_req req = {
-		.min_freq = rate_req,
-		.max_freq = rate_req,
-		.max_rank = CLOCK_MANAGEMENT_ANY_RANK,
-	};
-	return clock_management_set_internal(clk_hw, &req, false);
 }
 
 #else
@@ -888,12 +877,8 @@ static clock_freq_t clock_management_round_internal(const struct clk *clk_hw,
 	return -ENOTSUP;
 }
 
-clock_freq_t clock_management_round_rate(const struct clk *clk_hw, clock_freq_t rate_req)
-{
-	return -ENOTSUP;
-}
-
-clock_freq_t clock_management_set_rate(const struct clk *clk_hw, clock_freq_t rate_req)
+clock_freq_t clock_management_best_rate(const struct clk *clk_hw, clock_freq_t rate_req,
+					bool commit)
 {
 	return -ENOTSUP;
 }
@@ -917,7 +902,7 @@ static int clock_apply_state(const struct clk *clk_hw,
 
 	if (clk_state->num_clocks == 0) {
 		/* Use runtime clock setting */
-		new_rate = clock_management_set_rate(data->parent, clk_state->frequency);
+		new_rate = clock_management_best_rate(data->parent, clk_state->frequency, true);
 
 		if (new_rate < 0) {
 			return new_rate;

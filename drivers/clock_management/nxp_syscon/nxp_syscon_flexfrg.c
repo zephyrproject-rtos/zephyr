@@ -61,38 +61,17 @@ static clock_freq_t syscon_clock_frg_configure_recalc(const struct clk *clk_hw,
 #endif
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-static clock_freq_t syscon_clock_frg_round_rate(const struct clk *clk_hw,
-				       clock_freq_t rate_req,
-				       clock_freq_t parent_rate)
-{
-	uint32_t mult;
-
-	/* FRG rate is calculated as out_clk = in_clk / (1 + (MULT/DIV)) */
-	if (rate_req < parent_rate / 2) {
-		/* We can't support this request */
-		return -ENOTSUP;
-	}
-	/*
-	 * To calculate a target multiplier value, we use the formula:
-	 * MULT = DIV(in_clk - out_clk)/out_clk
-	 */
-	mult = SYSCON_FLEXFRGXCTRL_DIV_MASK * ((parent_rate - rate_req) /
-		rate_req);
-
-	return syscon_clock_frg_calc_rate(parent_rate, mult);
-}
-
-static clock_freq_t syscon_clock_frg_set_rate(const struct clk *clk_hw,
-					      clock_freq_t rate_req,
-					      clock_freq_t parent_rate)
+static clock_freq_t syscon_clock_frg_best_rate(const struct clk *clk_hw,
+					       clock_freq_t rate_req,
+					       clock_freq_t parent_rate,
+					       bool commit)
 {
 	const struct syscon_clock_frg_config *config = clk_hw->hw_data;
-	uint32_t mult, mult_val;
+	uint32_t mult;
 	clock_freq_t output_rate;
 
 	/* FRG rate is calculated as out_clk = in_clk / (1 + (MULT/DIV)) */
 	if (rate_req < parent_rate / 2) {
-		/* We can't support this request */
 		return -ENOTSUP;
 	}
 	/*
@@ -102,19 +81,17 @@ static clock_freq_t syscon_clock_frg_set_rate(const struct clk *clk_hw,
 	mult = SYSCON_FLEXFRGXCTRL_DIV_MASK * ((parent_rate - rate_req) /
 		rate_req);
 
-	mult_val = FIELD_PREP(SYSCON_FLEXFRGXCTRL_MULT_MASK, mult);
-
-	/* Check if multiplier value exceeds mask range- if so, the FRG will
-	 * generate a rate equal to input clock divided by 2
-	 */
 	if (mult > 255) {
 		output_rate = parent_rate / 2;
 	} else {
 		output_rate = syscon_clock_frg_calc_rate(parent_rate, mult);
 	}
 
-	/* Apply new configuration */
-	(*config->reg) = mult_val | SYSCON_FLEXFRGXCTRL_DIV_MASK;
+	if (commit) {
+		uint32_t mult_val = FIELD_PREP(SYSCON_FLEXFRGXCTRL_MULT_MASK, mult);
+
+		(*config->reg) = mult_val | SYSCON_FLEXFRGXCTRL_DIV_MASK;
+	}
 
 	return output_rate;
 }
@@ -127,8 +104,7 @@ const struct clock_management_standard_api nxp_syscon_frg_api = {
 	.configure_recalc = syscon_clock_frg_configure_recalc,
 #endif
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-	.round_rate = syscon_clock_frg_round_rate,
-	.set_rate = syscon_clock_frg_set_rate,
+	.best_rate = syscon_clock_frg_best_rate,
 #endif
 };
 

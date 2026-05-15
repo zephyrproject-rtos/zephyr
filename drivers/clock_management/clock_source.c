@@ -49,22 +49,17 @@ static clock_freq_t clock_source_configure_recalc(const struct clk *clk_hw,
 
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-static clock_freq_t clock_source_round_rate(const struct clk *clk_hw, clock_freq_t rate_req)
+static clock_freq_t clock_source_best_rate(const struct clk *clk_hw,
+					   clock_freq_t rate_req, bool commit)
 {
 	const struct clock_source_config *config = clk_hw->hw_data;
 
-	return (rate_req != 0) ? config->rate : 0;
-}
-
-static clock_freq_t clock_source_set_rate(const struct clk *clk_hw, clock_freq_t rate_req)
-{
-	const struct clock_source_config *config = clk_hw->hw_data;
-
-	/* If the clock rate is 0, gate the source */
-	if (rate_req == 0) {
-		clock_source_configure(clk_hw, (void *)0);
-	} else {
-		clock_source_configure(clk_hw, (void *)1);
+	if (commit) {
+		if (rate_req == 0) {
+			clock_source_configure(clk_hw, (void *)0);
+		} else {
+			clock_source_configure(clk_hw, (void *)1);
+		}
 	}
 
 	return (rate_req != 0) ? config->rate : 0;
@@ -78,8 +73,7 @@ const struct clock_management_root_api clock_source_api = {
 	.root_configure_recalc = clock_source_configure_recalc,
 #endif
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-	.root_round_rate = clock_source_round_rate,
-	.root_set_rate = clock_source_set_rate,
+	.root_best_rate = clock_source_best_rate,
 #endif
 };
 

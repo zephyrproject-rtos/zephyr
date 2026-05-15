@@ -86,12 +86,9 @@ struct clock_management_standard_api {
 				clock_freq_t parent_rate);
 #endif
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE) || defined(__DOXYGEN__)
-	/** Gets nearest rate clock can support given rate request */
-	clock_freq_t (*round_rate)(const struct clk *clk_hw, clock_freq_t rate_req,
-			  clock_freq_t parent_rate);
-	/** Sets clock rate using rate request */
-	clock_freq_t (*set_rate)(const struct clk *clk_hw, clock_freq_t rate_req,
-			clock_freq_t parent_rate);
+	/** Gets nearest rate clock can support, and optionally applies it */
+	clock_freq_t (*best_rate)(const struct clk *clk_hw, clock_freq_t rate_req,
+			  clock_freq_t parent_rate, bool commit);
 #endif
 };
 
@@ -140,10 +137,9 @@ struct clock_management_root_api {
 	clock_freq_t (*root_configure_recalc)(const struct clk *clk_hw, const void *data);
 #endif
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE) || defined(__DOXYGEN__)
-	/** Gets nearest rate clock can support given rate request */
-	clock_freq_t (*root_round_rate)(const struct clk *clk_hw, clock_freq_t rate_req);
-	/** Sets clock rate using rate request */
-	clock_freq_t (*root_set_rate)(const struct clk *clk_hw, clock_freq_t rate_req);
+	/** Gets nearest rate root clock can support, and optionally applies it */
+	clock_freq_t (*root_best_rate)(const struct clk *clk_hw, clock_freq_t rate_req,
+			  bool commit);
 #endif
 };
 
@@ -495,75 +491,45 @@ static inline int clock_mux_validate_parent(const struct clk *clk_hw,
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE) || defined(__DOXYGEN__)
 
 /**
- * @brief Get nearest rate a clock can support
+ * @brief Get nearest rate a clock can support, and optionally apply it
  *
- * Returns the actual rate that this clock would produce if `clock_set_rate`
- * was called with the requested frequency.
- * @param clk_hw clock device to query
+ * When @p commit is false, returns the actual rate that this clock would
+ * produce without modifying hardware. When @p commit is true, also programs
+ * the hardware to produce that rate.
+ * @param clk_hw clock device to query/set
  * @param rate_req requested rate
  * @param parent_rate best parent clock rate offered based on request
+ * @param commit if true, apply the rate to hardware
  * @return -ENOTSUP if API is not supported
  * @return -ENOENT if clock cannot satisfy request
- * @return -ENOSYS if clock does not implement round_rate API
+ * @return -ENOSYS if clock does not implement best_rate API
  * @return -EINVAL if arguments are invalid
  * @return -EBUSY if clock can't be reconfigured
- * @return -EIO if clock could not be queried
- * @return negative errno for other error calculating rate
- * @return best rate clock could produce on success
+ * @return -EIO if clock could not be queried/set
+ * @return negative errno for other errors
+ * @return best rate clock produces (or would produce) on success
  */
-static inline clock_freq_t clock_round_rate(const struct clk *clk_hw, clock_freq_t rate_req,
-				   clock_freq_t parent_rate)
+static inline clock_freq_t clock_best_rate(const struct clk *clk_hw, clock_freq_t rate_req,
+				   clock_freq_t parent_rate, bool commit)
 {
 	clock_freq_t ret;
 	const struct clock_management_standard_api *api = clk_hw->api;
 
-	if (!(api) || !(api->round_rate)) {
+	if (!(api) || !(api->best_rate)) {
 		return -ENOSYS;
 	}
 
-	ret = api->round_rate(clk_hw, rate_req, parent_rate);
+	ret = api->best_rate(clk_hw, rate_req, parent_rate, commit);
 #ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
 	LOG_MODULE_DECLARE(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
 
-	LOG_DBG("Clock %s reports rate %d for rate %u",
-		clk_hw->clk_name, ret, rate_req);
-#endif
-	return ret;
-}
-
-/**
- * @brief Set a clock rate
- *
- * Sets a clock to the closest frequency possible given the requested rate.
- * @param clk_hw clock device to set rate for
- * @param rate_req requested rate
- * @param parent_rate best parent clock rate offered based on request
- * @return -ENOTSUP if API is not supported
- * @return -ENOENT if clock cannot satisfy request
- * @return -ENOSYS if clock does not implement set_rate API
- * @return -EPERM if clock cannot be reconfigured
- * @return -EINVAL if arguments are invalid
- * @return -EIO if clock rate could not be set
- * @return -EBUSY if clock can't be reconfigured
- * @return negative errno for other error setting rate
- * @return rate clock now produces on success
- */
-static inline clock_freq_t clock_set_rate(const struct clk *clk_hw, clock_freq_t rate_req,
-				clock_freq_t parent_rate)
-{
-	clock_freq_t ret;
-	const struct clock_management_standard_api *api = clk_hw->api;
-
-	if (!(api) || !(api->set_rate)) {
-		return -ENOSYS;
-	}
-
-	ret = api->set_rate(clk_hw, rate_req, parent_rate);
-#ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
-	LOG_MODULE_DECLARE(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
-
-	if (ret > 0) {
-		LOG_DBG("Clock %s set to rate %d for request %u",
+	if (commit) {
+		if (ret > 0) {
+			LOG_DBG("Clock %s set to rate %d for request %u",
+				clk_hw->clk_name, ret, rate_req);
+		}
+	} else {
+		LOG_DBG("Clock %s reports rate %d for rate %u",
 			clk_hw->clk_name, ret, rate_req);
 	}
 #endif
@@ -571,71 +537,44 @@ static inline clock_freq_t clock_set_rate(const struct clk *clk_hw, clock_freq_t
 }
 
 /**
- * @brief Get nearest rate a root clock can support
+ * @brief Get nearest rate a root clock can support, and optionally apply it
  *
- * Returns the actual rate that this clock would produce if `clock_root_set_rate`
- * was called with the requested frequency.
- * @param clk_hw clock device to query
+ * When @p commit is false, returns the actual rate that this clock would
+ * produce without modifying hardware. When @p commit is true, also programs
+ * the hardware to produce that rate.
+ * @param clk_hw clock device to query/set
  * @param rate_req requested rate
+ * @param commit if true, apply the rate to hardware
  * @return -ENOTSUP if API is not supported
  * @return -ENOENT if clock cannot satisfy request
- * @return -ENOSYS if clock does not implement round_rate API
+ * @return -ENOSYS if clock does not implement root_best_rate API
  * @return -EINVAL if arguments are invalid
- * @return -EIO if clock could not be queried
  * @return -EBUSY if clock can't be reconfigured
- * @return negative errno for other error calculating rate
- * @return best rate clock could produce on success
+ * @return -EIO if clock could not be queried/set
+ * @return negative errno for other errors
+ * @return best rate clock produces (or would produce) on success
  */
-static inline clock_freq_t clock_root_round_rate(const struct clk *clk_hw, clock_freq_t rate_req)
+static inline clock_freq_t clock_root_best_rate(const struct clk *clk_hw,
+					clock_freq_t rate_req, bool commit)
 {
 	clock_freq_t ret;
 	const struct clock_management_root_api *api = clk_hw->api;
 
-	if (!(api) || !(api->root_round_rate)) {
+	if (!(api) || !(api->root_best_rate)) {
 		return -ENOSYS;
 	}
 
-	ret = api->root_round_rate(clk_hw, rate_req);
+	ret = api->root_best_rate(clk_hw, rate_req, commit);
 #ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
 	LOG_MODULE_DECLARE(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
 
-	LOG_DBG("Clock %s reports rate %d for rate %u",
-		clk_hw->clk_name, ret, rate_req);
-#endif
-	return ret;
-}
-
-/**
- * @brief Set a root clock rate
- *
- * Sets a clock to the closest frequency possible given the requested rate.
- * @param clk_hw clock device to set rate for
- * @param rate_req requested rate
- * @return -ENOTSUP if API is not supported
- * @return -ENOENT if clock cannot satisfy request
- * @return -ENOSYS if clock does not implement set_rate API
- * @return -EPERM if clock cannot be reconfigured
- * @return -EINVAL if arguments are invalid
- * @return -EIO if clock rate could not be set
- * @return -EBUSY if clock can't be reconfigured
- * @return negative errno for other error setting rate
- * @return rate clock now produces on success
- */
-static inline clock_freq_t clock_root_set_rate(const struct clk *clk_hw, clock_freq_t rate_req)
-{
-	clock_freq_t ret;
-	const struct clock_management_root_api *api = clk_hw->api;
-
-	if (!(api) || !(api->root_set_rate)) {
-		return -ENOSYS;
-	}
-
-	ret = api->root_set_rate(clk_hw, rate_req);
-#ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
-	LOG_MODULE_DECLARE(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
-
-	if (ret > 0) {
-		LOG_DBG("Clock %s set to rate %d for request %u",
+	if (commit) {
+		if (ret > 0) {
+			LOG_DBG("Clock %s set to rate %d for request %u",
+				clk_hw->clk_name, ret, rate_req);
+		}
+	} else {
+		LOG_DBG("Clock %s reports rate %d for rate %u",
 			clk_hw->clk_name, ret, rate_req);
 	}
 #endif
@@ -678,24 +617,14 @@ static inline int clock_set_parent(const struct clk *clk_hw, uint8_t new_idx)
 
 /* Stub functions to indicate SET_RATE APIs aren't supported */
 
-static inline clock_freq_t clock_round_rate(const struct clk *clk_hw, clock_freq_t req_rate,
-				   clock_freq_t parent_rate)
+static inline clock_freq_t clock_best_rate(const struct clk *clk_hw, clock_freq_t req_rate,
+				   clock_freq_t parent_rate, bool commit)
 {
 	return -ENOTSUP;
 }
 
-static inline clock_freq_t clock_set_rate(const struct clk *clk_hw, clock_freq_t req_rate,
-				  clock_freq_t parent_rate)
-{
-	return -ENOTSUP;
-}
-
-static inline clock_freq_t clock_root_round_rate(const struct clk *clk_hw, clock_freq_t req_rate)
-{
-	return -ENOTSUP;
-}
-
-static inline clock_freq_t clock_root_set_rate(const struct clk *clk_hw, clock_freq_t req_rate)
+static inline clock_freq_t clock_root_best_rate(const struct clk *clk_hw,
+					clock_freq_t req_rate, bool commit)
 {
 	return -ENOTSUP;
 }
