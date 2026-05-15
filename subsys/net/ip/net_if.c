@@ -37,6 +37,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include "net_private.h"
 #include "ipv4.h"
 #include "ipv6.h"
+#include "route_ipv4.h"
 #include "tcp_internal.h"
 
 #include "net_stats.h"
@@ -3884,13 +3885,48 @@ bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
 	return net_if_ipv4_is_addr_bcast_raw(iface, addr->s4_addr);
 }
 
+static struct net_if *net_if_ipv4_select_route_iface(const struct net_in_addr *dst)
+{
+#if defined(CONFIG_NET_IPV4_ROUTE)
+	struct net_route_entry *route;
+	struct net_in_addr *nexthop;
+	struct net_if_router *router;
+
+	if (dst == NULL || net_ipv4_is_ll_addr(dst)) {
+		return NULL;
+	}
+
+	if (!net_route_ipv4_get_info(NULL, (struct net_in_addr *)dst,
+				     &route, &nexthop)) {
+		return NULL;
+	}
+
+	if (route != NULL) {
+		return route->iface;
+	}
+
+	router = net_if_ipv4_router_find_default(NULL, dst);
+	if (router != NULL) {
+		return router->iface;
+	}
+#else
+	ARG_UNUSED(dst);
+#endif
+
+	return NULL;
+}
+
 struct net_if *net_if_ipv4_select_src_iface_addr(const struct net_in_addr *dst,
 						 const struct net_in_addr **src_addr)
 {
-	struct net_if *selected = NULL;
+	struct net_if *selected = net_if_ipv4_select_route_iface(dst);
 	const struct net_in_addr *src;
 
-	src = net_if_ipv4_select_src_addr(NULL, dst);
+	src = net_if_ipv4_select_src_addr(selected, dst);
+	if (selected != NULL && src == net_ipv4_unspecified_address()) {
+		src = net_if_ipv4_select_src_addr(NULL, dst);
+	}
+
 	if (src != net_ipv4_unspecified_address()) {
 		net_if_ipv4_addr_lookup(src, &selected);
 	}
@@ -4057,6 +4093,10 @@ const struct net_in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 
 	if (dst == NULL) {
 		return NULL;
+	}
+
+	if (dst_iface == NULL && !net_ipv4_is_ll_addr(dst)) {
+		dst_iface = net_if_ipv4_select_route_iface(dst);
 	}
 
 	if (!net_ipv4_is_ll_addr(dst)) {
