@@ -169,6 +169,17 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 	return ret;
 }
 
+#ifdef CONFIG_SPI_MAX32_DMA
+
+static inline bool spi_max32_has_dma_channels(const struct device *dev)
+{
+	const struct max32_spi_config *cfg = dev->config;
+
+	return cfg->tx_dma.channel != 0xFF && cfg->rx_dma.channel != 0xFF;
+}
+
+#endif
+
 static inline int spi_max32_get_dfs_shift(const struct spi_context *ctx)
 {
 	if (SPI_WORD_SIZE_GET(ctx->config->operation) < 9) {
@@ -417,7 +428,7 @@ static int spi_max32_transceive(const struct device *dev)
 #if defined(CONFIG_SPI_MAX32_DMA) && defined(CONFIG_SPI_MAX32_RTIO)
 	struct dma_status status;
 
-	if (cfg->tx_dma.channel != 0xFF && cfg->rx_dma.channel != 0xFF) {
+	if (spi_max32_has_dma_channels(dev)) {
 		MXC_SPI_ClearTXFIFO(cfg->regs);
 		MXC_SPI_ClearRXFIFO(cfg->regs);
 
@@ -1016,9 +1027,7 @@ static int api_transceive(const struct device *dev, const struct spi_config *con
 			  const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 #if defined(CONFIG_SPI_MAX32_DMA) && !defined(CONFIG_SPI_MAX32_RTIO)
-	const struct max32_spi_config *cfg = dev->config;
-
-	if (cfg->tx_dma.channel != 0xFF && cfg->rx_dma.channel != 0xFF) {
+	if (spi_max32_has_dma_channels(dev)) {
 		return transceive_dma(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
 	}
 #endif /* CONFIG_SPI_MAX32_DMA */
@@ -1032,9 +1041,7 @@ static int api_transceive_async(const struct device *dev, const struct spi_confi
 				void *userdata)
 {
 #ifdef CONFIG_SPI_MAX32_DMA
-	const struct max32_spi_config *cfg = dev->config;
-
-	if (cfg->tx_dma.channel != 0xFF && cfg->rx_dma.channel != 0xFF) {
+	if (spi_max32_has_dma_channels(dev)) {
 		return transceive_dma(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
 	}
 #endif /* CONFIG_SPI_MAX32_DMA */
