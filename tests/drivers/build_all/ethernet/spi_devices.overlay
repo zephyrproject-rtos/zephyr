@@ -39,6 +39,7 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_enc28j60: enc28j60@0 {
@@ -169,6 +170,34 @@
 				spi-max-frequency = <0>;
 				int-gpios = <&test_gpio 0 0>;
 				local-mac-address = [00 00 00 00 00 00];
+			};
+
+			test_spi_adin1140: adin1140@8 {
+				compatible = "adi,adin1140";
+				reg = <0x8>;
+				spi-max-frequency = <0>;
+				int-gpios = <&test_gpio 0 0>;
+				wake-gpios = <&test_gpio 0 0>;
+				local-mac-address = [00 00 00 00 00 00];
+				phy-handle = <&adin1140_phy>;
+
+				mdio {
+					compatible = "adi,adin1140-mdio";
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					adin1140_phy: ethernet-phy@0 {
+						reg = <0x0>;
+						compatible = "adi,adin1140-phy";
+						plca-enable;
+						plca-node-id = <0>;
+						plca-node-count = <5>;
+						plca-burst-count = <0>;
+						plca-burst-timer = <0x60>;
+						plca-to-timer = <0x20>;
+						status = "okay";
+					};
+				};
 			};
 		};
 	};
