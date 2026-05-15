@@ -573,24 +573,6 @@ Here are some next steps for exploring Zephyr:
 * Discover :ref:`project-resources` for getting help from the Zephyr
   community
 
-.. _troubleshooting_installation:
-
-Troubleshooting Installation
-****************************
-
-Here are some tips for fixing some issues related to the installation process.
-
-.. _toolchain_zephyr_sdk_update:
-
-Double Check the Zephyr SDK Variables When Updating
-===================================================
-
-When updating Zephyr SDK, check whether the :envvar:`ZEPHYR_TOOLCHAIN_VARIANT`
-or :envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variables are already set.
-See :ref:`gs_toolchain_update` for more information.
-
-For more information about these environment variables in Zephyr, see :ref:`env_vars_important`.
-
 .. _help:
 
 Asking for Help
