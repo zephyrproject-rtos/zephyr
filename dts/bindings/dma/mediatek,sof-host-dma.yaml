@@ -1,0 +1,12 @@
+# Copyright 2026 MediaTek
+# SPDX-License-Identifier: Apache-2.0
+
+description: MediaTek SOF host DMA
+
+compatible: "mediatek,sof-host-dma"
+
+include: [base.yaml, dma-controller.yaml]
+
+properties:
+  dma-channels:
+    required: true

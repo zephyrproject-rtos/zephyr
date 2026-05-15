@@ -102,6 +102,21 @@
 			interrupts = <7 0 0>;
 		};
 
+		afe_memif_dma: dma@1a110000 {
+			compatible = "mediatek,afe-memif-dma";
+			reg = <0x1a110000 0x10000>;
+			dma-channels = <5>;
+			#dma-cells = <1>;
+			status = "okay";
+		};
+
+		host_dma: dma-host {
+			compatible = "mediatek,sof-host-dma";
+			dma-channels = <16>;
+			#dma-cells = <1>;
+			status = "okay";
+		};
+
 		/* Generated code for AFE devices */
 		#include "afe-mt8196.dtsi"
 	}; /* soc */
