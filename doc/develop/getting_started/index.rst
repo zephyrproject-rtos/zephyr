@@ -371,7 +371,11 @@ installation.
 
       west zephyr-export
 
-#. Install Python dependencies using ``west packages``.
+#. Install Zephyr's Python dependencies:
+
+   ``west packages`` reads the Python requirements from the checked-out Zephyr
+   workspace (including its modules), so the installed packages match the Zephyr
+   version you fetched.
 
    .. tabs::
 
@@ -401,7 +405,7 @@ installation.
 
    .. note::
 
-      This could downgrade or upgrade west itself.
+      Installing these dependencies can downgrade or upgrade west itself.
 
 Install the Zephyr SDK
 **********************
