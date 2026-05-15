@@ -1432,7 +1432,7 @@ uint32_t radio_tmr_isr_set(uint32_t start_us, radio_tmr_isr_cb_t cb, void *param
 {
 	irq_disable(EVENT_TIMER_IRQn);
 	nrf_timer_int_disable(EVENT_TIMER, HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
-	NVIC_ClearPendingIRQ(EVENT_TIMER_IRQn);
+	cpu_irq_pending_clear(EVENT_TIMER_IRQn);
 
 	isr_radio_tmr_cb_param = param;
 	isr_radio_tmr_cb = cb;
@@ -3057,7 +3057,7 @@ uint32_t radio_ccm_is_done(void)
 		cpu_sleep();
 	}
 	nrf_ccm_int_disable(NRF_CCM, CCM_INTENCLR_ENDCRYPT_Msk);
-	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_CCM));
+	cpu_irq_pending_clear(nrfx_get_irq_number(NRF_CCM));
 
 	return (NRF_CCM->EVENTS_ERROR == 0);
 }
@@ -3270,7 +3270,7 @@ uint32_t radio_ar_has_match(void)
 
 	nrf_aar_int_disable(NRF_AAR, AAR_INTENCLR_END_Msk);
 
-	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
+	cpu_irq_pending_clear(nrfx_get_irq_number(NRF_AAR));
 
 	if (NRF_AAR->EVENTS_RESOLVED && !NRF_AAR->EVENTS_NOTRESOLVED) {
 		return 1U;
@@ -3310,7 +3310,7 @@ uint8_t radio_ar_resolve(const uint8_t *addr)
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_RESOLVED);
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_NOTRESOLVED);
 
-	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
+	cpu_irq_pending_clear(nrfx_get_irq_number(NRF_AAR));
 
 	nrf_aar_int_enable(NRF_AAR, AAR_INTENSET_END_Msk);
 
@@ -3320,7 +3320,7 @@ uint8_t radio_ar_resolve(const uint8_t *addr)
 
 	nrf_aar_int_disable(NRF_AAR, AAR_INTENCLR_END_Msk);
 
-	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
+	cpu_irq_pending_clear(nrfx_get_irq_number(NRF_AAR));
 
 	retval = (NRF_AAR->EVENTS_RESOLVED && !NRF_AAR->EVENTS_NOTRESOLVED) ?
 		 1U : 0U;

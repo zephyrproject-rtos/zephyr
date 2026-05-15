@@ -137,6 +137,9 @@ int lll_hfclock_off(void)
 }
 
 #else /* !CONFIG_SOC_SERIES_NRF54H */
+static atomic_val_t hf_refcnt;
+
+#if !defined(CONFIG_SOC_NRF54L15_CPUFLPR)
 struct lll_clock_state {
 	struct onoff_client cli;
 	struct k_sem sem;
@@ -243,13 +246,40 @@ int lll_clock_wait(void)
 	return 0;
 }
 
+#else /* CONFIG_SOC_NRF54L15_CPUFLPR */
+int lll_clock_init(void)
+{
+	/* FIXME: Add implementation alternative for clock control */
+	return 0;
+}
+
+int lll_clock_deinit(void)
+{
+	/* FIXME: Add implementation alternative for clock control */
+	return 0;
+}
+
+int lll_clock_wait(void)
+{
+	/* FIXME: Add implementation alternative for clock control */
+	return 0;
+}
+#endif /* CONFIG_SOC_NRF54L15_CPUFLPR */
+
 int lll_hfclock_on(void)
 {
 	if (atomic_inc(&hf_refcnt) > 0) {
 		return 0;
 	}
 
+#if !defined(CONFIG_SOC_NRF54L15_CPUFLPR)
 	z_nrf_clock_bt_ctlr_hf_request();
+
+#else /* CONFIG_SOC_NRF54L15_CPUFLPR */
+	/* FIXME: Add implementation alternative for clock control */
+	NRF_CLOCK->TASKS_XOSTART = 1U;
+#endif /* CONFIG_SOC_NRF54L15_CPUFLPR */
+
 	DEBUG_RADIO_XTAL(1);
 
 	return 0;
@@ -257,23 +287,28 @@ int lll_hfclock_on(void)
 
 int lll_hfclock_on_wait(void)
 {
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
-	struct onoff_manager *mgr =
-		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
-#endif
 	int err;
 
 	atomic_inc(&hf_refcnt);
 
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
+	struct onoff_manager *mgr =
+		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
+
 	err = blocking_on(mgr, HFCLOCK_TIMEOUT_MS);
-#else
+
+#elif !defined(CONFIG_SOC_NRF54L15_CPUFLPR)
 	const struct device *clk_dev = DEVICE_DT_GET_ONE(COND_CODE_1(NRF_CLOCK_HAS_HFCLK,
 							       (nordic_nrf_clock_hfclk),
 							       (nordic_nrf_clock_xo)));
 
 	err = blocking_on(clk_dev, HFCLOCK_TIMEOUT_MS);
+
+#else
+	/* FIXME: Add implementation alternative for clock control */
+	err = 0U;
 #endif
+
 	if (err >= 0) {
 		DEBUG_RADIO_XTAL(1);
 	}
@@ -291,7 +326,14 @@ int lll_hfclock_off(void)
 		return 0;
 	}
 
+#if !defined(CONFIG_SOC_NRF54L15_CPUFLPR)
 	z_nrf_clock_bt_ctlr_hf_release();
+
+#else /* CONFIG_SOC_NRF54L15_CPUFLPR */
+	/* FIXME: Add implementation alternative for clock control */
+	NRF_CLOCK->TASKS_XOSTOP = 1U;
+#endif /* CONFIG_SOC_NRF54L15_CPUFLPR */
+
 	DEBUG_RADIO_XTAL(0);
 
 	return 0;
@@ -302,9 +344,17 @@ uint8_t lll_clock_sca_local_get(void)
 {
 #if defined(CONFIG_CLOCK_CONTROL_NRF) || defined(CONFIG_SOC_SERIES_NRF54H)
 	return CLOCK_CONTROL_NRF_K32SRC_ACCURACY;
-#else
+
+#elif !defined(CONFIG_SOC_NRF54L15_CPUFLPR)
 	return DT_ENUM_IDX(DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_clock_lfclk),
 			   k32src_accuracy_ppm);
+
+#else
+	/* FIXME: Add implementation alternative for clock control */
+	/* For time being, default to 50 ppm accuracy when clock control is not available */
+	#define LLL_CLOCK_SCA_DEFAULT 5
+
+	return LLL_CLOCK_SCA_DEFAULT;
 #endif
 }
 
@@ -312,9 +362,14 @@ uint32_t lll_clock_ppm_local_get(void)
 {
 #if defined(CONFIG_CLOCK_CONTROL_NRF) || defined(CONFIG_SOC_SERIES_NRF54H)
 	return sca_ppm_lut[CLOCK_CONTROL_NRF_K32SRC_ACCURACY];
-#else
+
+#elif !defined(CONFIG_SOC_NRF54L15_CPUFLPR)
 	return sca_ppm_lut[DT_ENUM_IDX(DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_clock_lfclk),
 				       k32src_accuracy_ppm)];
+
+#else
+	/* For time being, default to 50 ppm accuracy when clock control is not available */
+	return sca_ppm_lut[LLL_CLOCK_SCA_DEFAULT];
 #endif
 }
 
