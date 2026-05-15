@@ -45,25 +45,25 @@
 
 		joy_up: joystick_up {
 			label = "joystick up";
-			gpios = <&mfx 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+			gpios = <&mfx 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_UP>;
 		};
 
 		joy_down: joystick_down {
 			label = "joystick down";
-			gpios = <&mfx 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+			gpios = <&mfx 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_DOWN>;
 		};
 
 		joy_right: joystick_right {
 			label = "joystick right";
-			gpios = <&mfx 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+			gpios = <&mfx 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
 
 		joy_left: joystick_left {
 			label = "joystick left";
-			gpios = <&mfx 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+			gpios = <&mfx 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_LEFT>;
 		};
 	};
@@ -240,6 +240,9 @@ st_cam_i2c: &i2c1 {
 		#gpio-cells = <2>;
 	};
 };
+
+/* Label used by display shields with touchscreen */
+qsh_030_i2c: &i2c1 {};
 
 &i2c3 {
 	status = "okay";
