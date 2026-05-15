@@ -144,6 +144,22 @@
 	status = "okay";
 };
 
+&lpi2c4 {
+	pinctrl-0 = <&lpi2c4_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	audio_codec: wm8962@1a {
+		compatible = "wolfson,wm8962";
+		reg = <0x1a>;
+		clock-source = "MCLK";
+		clocks = <&scmi_clk IMX95_CLK_SAI3>;
+		clock-names = "mclk";
+	};
+};
+
 &lpi2c5 {
 	pinctrl-0 = <&lpi2c5_default>;
 	pinctrl-names = "default";
