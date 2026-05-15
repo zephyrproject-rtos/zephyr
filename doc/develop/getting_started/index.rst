@@ -528,9 +528,11 @@ Flash the Sample
 ****************
 
 Connect your board, usually via USB, and turn it on if there's a power switch.
-If in doubt about what to do, check your board's page in :ref:`boards`.
+If in doubt about what to do, check your board's page in :ref:`boards`, as some
+boards require a specific setup or procedure to flash them.
 
-Then flash the sample using :ref:`west flash <west-flashing>`:
+Flash the sample with :ref:`west flash <west-flashing>`. This programs the
+application you just built onto the connected board:
 
 .. code-block:: shell
 
