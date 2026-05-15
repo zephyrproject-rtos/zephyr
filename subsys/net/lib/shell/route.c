@@ -155,7 +155,7 @@ static void iface_per_route_cb(struct net_if *iface, void *user_data)
 	const struct shell *sh = data->sh;
 	const char *extra;
 
-	if (IS_ENABLED(CONFIG_NET_IPV6_ROUTE)) {
+	if (IS_ENABLED(CONFIG_NET_IPV6_ROUTE) && net_if_flag_is_set(iface, NET_IF_IPV6)) {
 		PR("\nIPv6 routes for interface %d (%p) (%s)\n",
 		   net_if_get_by_iface(iface), iface,
 		   iface2str(iface, &extra));
@@ -166,7 +166,7 @@ static void iface_per_route_cb(struct net_if *iface, void *user_data)
 		net_route_ipv6_foreach(route_cb, data);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4_ROUTE)) {
+	if (IS_ENABLED(CONFIG_NET_IPV4_ROUTE) && net_if_flag_is_set(iface, NET_IF_IPV4)) {
 		PR("\nIPv4 routes for interface %d (%p) (%s)\n",
 		   net_if_get_by_iface(iface), iface,
 		   iface2str(iface, &extra));
