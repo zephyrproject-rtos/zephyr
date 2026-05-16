@@ -2897,6 +2897,13 @@ static int dw_i3c_configure(const struct device *dev, enum i3c_config_type type,
 			return -EINVAL;
 		}
 
+		/* Identity regs require ENABLE=0.  Clear DEVICE_CTRL, then
+		 * set DEV_OPERATION_MODE to SLAVE (IP defaults to MASTER).
+		 */
+		sys_write32(0x00000000, dev_config->regs + DEVICE_CTRL);
+		sys_write32(DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE_SLAVE,
+			    dev_config->regs + DEVICE_CTRL_EXTENDED);
+
 		val = SLV_MAX_LEN_MWL(target_cfg->max_write_len) |
 		      (SLV_MAX_LEN_MRL(target_cfg->max_read_len) << 16);
 		sys_write32(val, dev_config->regs + SLV_MAX_LEN);
@@ -2919,7 +2926,7 @@ static int dw_i3c_configure(const struct device *dev, enum i3c_config_type type,
 		 * written to in bcr
 		 */
 		val |= SLV_CHAR_CTRL_BCR(target_cfg->bcr);
-		val |= SLV_CHAR_CTRL_DCR(target_cfg->dcr) << 8;
+		val |= ((uint32_t)target_cfg->dcr << 8) & SLV_CHAR_CTRL_DCR_MASK;
 		/* HDR CAPs is not settable */
 		sys_write32(val, dev_config->regs + SLV_CHAR_CTRL);
 
@@ -2931,6 +2938,32 @@ static int dw_i3c_configure(const struct device *dev, enum i3c_config_type type,
 
 		val = (uint32_t)(target_cfg->pid & 0xFFFFFFFF);
 		sys_write32(val, dev_config->regs + SLV_PID_VALUE);
+
+		/* TX_START_THLD = 0 (1 byte) so the target ACKs private
+		 * reads regardless of staged length
+		 */
+		val = sys_read32(dev_config->regs + DATA_BUFFER_THLD_CTRL);
+		val &= ~(DATA_BUFFER_THLD_CTRL_TX_START_THLD_MASK |
+			 DATA_BUFFER_THLD_CTRL_TX_BUF_MASK);
+		val |= DATA_BUFFER_THLD_CTRL_TX_START_THLD(0) | DATA_BUFFER_THLD_CTRL_TX_BUF(0);
+		sys_write32(val, dev_config->regs + DATA_BUFFER_THLD_CTRL);
+
+		/* Re-enable with ENABLE only (no HOT_JOIN_NACK) and fire
+		 * the platform post_enable hook (EXT_CMD workaround).
+		 */
+		sys_write32(DEV_CTRL_ENABLE, dev_config->regs + DEVICE_CTRL);
+
+		if (dev_config->ops && dev_config->ops->post_enable) {
+			dev_config->ops->post_enable(dev, true);
+		}
+
+		/* Clear HJ_EN so the target does not Hot-Join before DAA.
+		 * SIR_EN/MR_EN (bits 0-1) are read-only — only the
+		 * controller can clear them via directed DISEC.
+		 */
+		sys_write32(sys_read32(dev_config->regs + SLV_EVENT_STATUS) &
+				    ~SLV_EVENT_STATUS_HJ_EN,
+			    dev_config->regs + SLV_EVENT_STATUS);
 #else
 		return -ENOTSUP;
 #endif /* CONFIG_I3C_TARGET */
