@@ -313,17 +313,8 @@ class TestPlan:
             self.generate_subset(subset, int(sets))
 
     def generate_subset(self, subset, sets):
-        # Test instances are sorted depending on the context. For CI runs
-        # the execution order is: "plat1-testA, plat1-testB, ...,
-        # plat1-testZ, plat2-testA, ...". For hardware tests
-        # (device_testing), were multiple physical platforms can run the tests
-        # in parallel, it is more efficient to run in the order:
-        # "plat1-testA, plat2-testA, ..., plat1-testB, plat2-testB, ..."
-        if self.options.device_testing:
-            self.instances = OrderedDict(sorted(self.instances.items(),
-                                key=lambda x: x[0][x[0].find("/") + 1:]))
-        else:
-            self.instances = OrderedDict(sorted(self.instances.items()))
+        self.instances = OrderedDict(sorted(self.instances.items(),
+                                key=lambda x: (x[1].testsuite.name, x[0])))
 
         if self.options.shuffle_tests:
             seed_value = int.from_bytes(os.urandom(8), byteorder="big")
