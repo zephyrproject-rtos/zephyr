@@ -1,0 +1,36 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "LVGL Animation Sample"
+
+config LVGL_ANIMATION_VIDEO_PATH
+	string "Absolute path to the source video file"
+	default ""
+	help
+	  Full path to the video file passed to video_to_lvgl_frames.py.
+	  Example: CONFIG_LVGL_ANIMATION_VIDEO_PATH="/home/user/clips/intro.mp4"
+
+config LVGL_ANIMATION_FRAME_COUNT
+	int "Number of frames to extract from the video"
+	default 10
+	help
+	  Evenly-spaced frames extracted from the source video.
+	  More frames = smoother animation, more flash usage.
+
+config LVGL_ANIMATION_FIT
+	string "Fit mode for video scaling"
+	default "crop"
+	help
+	  How to handle aspect-ratio mismatch between video and display:
+	    crop       - scale to fill, center-crop the overflow (default)
+	    letterbox  - scale to fit, pad remainder with black bars
+	    stretch    - scale to fill exactly, ignoring aspect ratio
+
+config LVGL_ANIMATION_PREFIX
+	string "C variable name prefix for generated frame symbols"
+	default "frame"
+	help
+	  Each frame is named <prefix>_001, <prefix>_002, etc.
+	  Change this if you have multiple animations in one project.
+
+source "Kconfig.zephyr"
