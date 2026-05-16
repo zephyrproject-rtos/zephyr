@@ -1424,7 +1424,7 @@ static void ibis_handle(const struct device *dev)
 	int32_t i;
 
 	nibis = sys_read32(config->regs + QUEUE_STATUS_LEVEL);
-	nibis = QUEUE_STATUS_IBI_BUF_BLR(nibis);
+	nibis = QUEUE_STATUS_IBI_STATUS_CNT(nibis);
 	for (i = 0; i < nibis; i++) {
 		ibi_stat = sys_read32(config->regs + IBI_QUEUE_STATUS);
 		if (IBI_TYPE_SIRQ(ibi_stat)) {
@@ -1513,6 +1513,11 @@ static int dw_i3c_target_ibi_raise_tir(const struct device *dev, struct i3c_ibi 
 		if ((request->payload_len > 5) || (request->payload_len == 0)) {
 			return -EINVAL;
 		}
+
+		/* Clear stale MDB/SIR_DATA_LENGTH — IP does not auto-clear
+		 * between IBIs.
+		 */
+		slv_intr_req &= ~(GENMASK(23, 16) | GENMASK(15, 8));
 
 		/* MDB should be the first byte of the payload */
 		slv_intr_req |= SLV_INTR_REQ_MDB(request->payload[0]) |
@@ -2076,8 +2081,9 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 			cmd->cmd_hi =
 				COMMAND_PORT_ARG_DATA_LEN(payload->targets.payloads[i].data_len) |
 				COMMAND_PORT_TRANSFER_ARG;
-			cmd->cmd_lo = COMMAND_PORT_CP | COMMAND_PORT_DEV_INDEX(pos) |
-				      COMMAND_PORT_ROC | COMMAND_PORT_CMD(payload->ccc.id);
+			cmd->cmd_lo = COMMAND_PORT_CP | COMMAND_PORT_TID(i) |
+				      COMMAND_PORT_DEV_INDEX(pos) | COMMAND_PORT_ROC |
+				      COMMAND_PORT_CMD(payload->ccc.id);
 			/* last command queue with multiple targets must have TOC set */
 			if (i == (payload->targets.num_targets - 1)) {
 				cmd->cmd_lo |= COMMAND_PORT_TOC;
@@ -2124,6 +2130,40 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 	}
 
 	ret = xfer->ret;
+
+	/*
+	 * Post-RSTDAA cleanup: all targets dropped their DAs, so clear
+	 * controller-side bookkeeping (DAT, addr_slots, free_pos,
+	 * controller_priv).  Without this the next ENTDAA allocates new
+	 * slots while stale DAT entries persist, causing directed CCCs
+	 * to NACK.  Targets with a static_addr keep their DAT slot
+	 * reserved for potential SETDASA re-assignment.
+	 */
+	if (ret == 0 && i3c_ccc_is_payload_broadcast(payload) &&
+	    payload->ccc.id == I3C_CCC_RSTDAA) {
+		struct i3c_device_desc *desc;
+
+		I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
+			struct dw_i3c_i2c_dev_data *priv = desc->controller_priv;
+
+			if (priv == NULL) {
+				continue;
+			}
+
+			if (desc->dynamic_addr != 0U) {
+				i3c_addr_slots_mark_free(&data->common.attached_dev.addr_slots,
+							 desc->dynamic_addr);
+				desc->dynamic_addr = 0U;
+			}
+
+			if (desc->static_addr == 0U) {
+				sys_write32(0, config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr,
+										 priv->id));
+				data->free_pos |= BIT(priv->id);
+				desc->controller_priv = NULL;
+			}
+		}
+	}
 error:
 	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->mt);
@@ -2275,6 +2315,25 @@ static int dw_i3c_do_daa(const struct device *dev)
 		return -EACCES;
 	}
 
+	/* Release stale DAT slots kept for SETDASA after RSTDAA so
+	 * ENTDAA starts from a clean slate.
+	 */
+	{
+		struct i3c_device_desc *desc;
+
+		I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
+			struct dw_i3c_i2c_dev_data *priv = desc->controller_priv;
+
+			if (priv == NULL || desc->dynamic_addr != 0U) {
+				continue;
+			}
+			sys_write32(0, config->regs +
+					       DEV_ADDR_TABLE_LOC(data->datstartaddr, priv->id));
+			data->free_pos |= BIT(priv->id);
+			desc->controller_priv = NULL;
+		}
+	}
+
 	olddevs = ~(data->free_pos);
 
 	/* Prepare DAT before launching DAA. */
@@ -2306,6 +2365,8 @@ static int dw_i3c_do_daa(const struct device *dev)
 		return -ENOSPC;
 	}
 
+	uint32_t total_newdevs = 0;
+
 	ret = k_mutex_lock(&data->mt, K_MSEC(1000));
 	if (ret) {
 		LOG_ERR("%s: Mutex err (%d)", dev->name, ret);
@@ -2332,8 +2393,12 @@ static int dw_i3c_do_daa(const struct device *dev)
 	k_mutex_unlock(&data->mt);
 
 	if (ret) {
-		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
-		return ret;
+		LOG_DBG("%s: ENTDAA timeout (%d)", dev->name, ret);
+		/* No targets responded; recover the halted IP and
+		 * return -ENODEV (normal empty-bus completion).
+		 */
+		dw_i3c_recover_from_halt(dev);
+		return -ENODEV;
 	}
 
 	if (data->maxdevs == cmd->rx_len) {
@@ -2347,6 +2412,26 @@ static int dw_i3c_do_daa(const struct device *dev)
 		idx = pos - 1;
 		if (newdevs & BIT(idx)) {
 			add_slave_from_daa(dev, idx);
+		}
+	}
+
+	total_newdevs |= newdevs;
+
+	/* Broadcast DISEC to silence IBI/MR assertions from newly
+	 * assigned targets (HW reset defaults have TIR_EN/CR_EN set).
+	 */
+	if (total_newdevs != 0) {
+		struct i3c_ccc_events disec_events = {
+			.events = I3C_CCC_EVT_ALL,
+		};
+		int disec_ret = i3c_ccc_do_events_all_set(dev, false, &disec_events);
+
+		if (disec_ret != 0) {
+			LOG_WRN("%s: Broadcast DISEC after DAA failed (%d)"
+				" — targets may keep asserting IBIs",
+				dev->name, disec_ret);
+		} else {
+			LOG_INF("%s: Broadcast DISEC after DAA sent OK", dev->name);
 		}
 	}
 
