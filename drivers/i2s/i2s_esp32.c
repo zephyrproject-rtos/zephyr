@@ -952,11 +952,8 @@ static int i2s_esp32_initialize(const struct device *dev)
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
 	const struct device *clk_dev = dev_cfg->clock_dev;
 	const struct i2s_esp32_stream *stream;
-	int err;
-
-#if !SOC_GDMA_SUPPORTED
 	const i2s_hal_context_t *hal = &(dev_cfg->hal);
-#endif /* !SOC_GDMA_SUPPORTED */
+	int err;
 
 	if (!device_is_ready(clk_dev)) {
 		LOG_DBG("Clock control device not ready");
@@ -968,6 +965,8 @@ static int i2s_esp32_initialize(const struct device *dev)
 		LOG_DBG("Clock control enabling failed: %d", err);
 		return -EIO;
 	}
+
+	i2s_ll_enable_core_clock(hal->dev, true);
 
 	err = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (err < 0) {
