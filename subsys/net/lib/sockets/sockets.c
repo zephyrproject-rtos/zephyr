@@ -7,6 +7,21 @@
  */
 
 /* Zephyr headers */
+#include <fcntl.h>
+#include <zephyr/sys/fdtable.h>
+
+#ifndef F_GETFL
+#define F_GETFL ZVFS_F_GETFL
+#endif
+
+#ifndef F_SETFL
+#define F_SETFL ZVFS_F_SETFL
+#endif
+
+#ifndef O_NONBLOCK
+#define O_NONBLOCK ZVFS_O_NONBLOCK
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
@@ -767,9 +782,30 @@ int z_impl_zsock_fcntl_impl(int sock, int cmd, int flags)
 	const struct socket_op_vtable *vtable;
 	struct k_mutex *lock;
 	void *obj;
+	int zvfs_cmd = cmd;
+	int zvfs_flags = flags;
 	int ret;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(socket, fcntl, sock, cmd, flags);
+
+	if (cmd == F_GETFL) {
+#if F_GETFL != ZVFS_F_GETFL
+		LOG_WRN_ONCE("zsock_fcntl() called with F_GETFL; use ZVFS_F_GETFL instead");
+#endif
+		zvfs_cmd = ZVFS_F_GETFL;
+	} else if (cmd == F_SETFL) {
+#if F_SETFL != ZVFS_F_SETFL
+		LOG_WRN_ONCE("zsock_fcntl() called with F_SETFL; use ZVFS_F_SETFL instead");
+#endif
+		zvfs_cmd = ZVFS_F_SETFL;
+		if (flags & O_NONBLOCK) {
+#if O_NONBLOCK != ZVFS_O_NONBLOCK
+			LOG_WRN_ONCE("zsock_fcntl() called with O_NONBLOCK; "
+				     "use ZVFS_O_NONBLOCK instead");
+#endif
+			zvfs_flags |= ZVFS_O_NONBLOCK;
+		}
+	}
 
 	obj = get_sock_vtable(sock, &vtable, &lock);
 	if (obj == NULL) {
@@ -781,7 +817,7 @@ int z_impl_zsock_fcntl_impl(int sock, int cmd, int flags)
 	(void)k_mutex_lock(lock, K_FOREVER);
 
 	ret = zvfs_fdtable_call_ioctl((const struct fd_op_vtable *)vtable,
-				   obj, cmd, flags);
+				   obj, zvfs_cmd, zvfs_flags);
 
 	k_mutex_unlock(lock);
 
