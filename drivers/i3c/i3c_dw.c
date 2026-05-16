@@ -928,13 +928,20 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 
 		cmd->buf = msgs[i].buf;
 
-		if (msgs[i].flags & I3C_MSG_NBCH) {
-			sys_write32(sys_read32(config->regs + DEVICE_CTRL) & ~DEV_CTRL_IBA_INCLUDE,
-				    config->regs + DEVICE_CTRL);
-		} else {
-			sys_write32(sys_read32(config->regs + DEVICE_CTRL) | DEV_CTRL_IBA_INCLUDE,
-				    config->regs + DEVICE_CTRL);
-		}
+		/*
+		 * IBA_INCLUDE control: previously written read-modify-write
+		 * inside the per-message loop on every i3c_transfer.  That
+		 * bit lives in DEVICE_CTRL alongside RESUME/ABORT/ENABLE and
+		 * the DW MIPI I3C TRM warns DEVICE_CTRL programmable bits
+		 * should only change when the controller is idle.  Stress
+		 * tests of {256-byte WRITE → 1-byte WRITE} caught a low-rate
+		 * ADDR_NACK on the second xfer that survives every queue/FIFO
+		 * cleanliness check (controller IDLE=1, INTR=0, queues empty,
+		 * DAT correct, target DEV_ADDR valid).  Skip the write when
+		 * the bit is already at the desired value to eliminate this
+		 * race.  Also do it once outside this loop (only the first
+		 * msg's NBCH flag is meaningful for IBA gating per spec).
+		 */
 
 		if (msgs[i].flags & I3C_MSG_READ) {
 			uint8_t rd_speed;
@@ -1026,11 +1033,42 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 		}
 	}
 
+	/* Clear any stale sem_give from a previous late IRQ. */
+	k_sem_reset(&data->sem_xfer);
+
+	/*
+	 * Pre-transfer: recover if IP is still halted from a previous
+	 * error.  Must run before DEVICE_CTRL writes (DW TRM: programmable
+	 * bits should only change when controller is idle).  Poll briefly
+	 * first — CONTROLLER_IDLE lags sem_give by a few SCL cycles.
+	 */
+	uint32_t settle_us = 1000U;
+	uint32_t pstate;
+
+	do {
+		pstate = sys_read32(config->regs + PRESENT_STATE);
+		if (PRESENT_STATE_CM_TFR_STS(pstate) != CM_TFR_STS_HALT) {
+			break;
+		}
+		k_busy_wait(1);
+	} while (--settle_us > 0U);
+
+	if (PRESENT_STATE_CM_TFR_STS(pstate) == CM_TFR_STS_HALT) {
+		LOG_WRN("%s: IP halted before xfer, recovering", dev->name);
+		dw_i3c_recover_from_halt(dev);
+	}
+
+	/* Private I3C transfers do not use the broadcast address header. */
+	sys_write32(sys_read32(config->regs + DEVICE_CTRL) & ~DEV_CTRL_IBA_INCLUDE,
+		    config->regs + DEVICE_CTRL);
+
 	start_xfer(dev);
 
 	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
 	if (ret) {
 		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
+		/* Silent HALT (no IRQ) */
+		dw_i3c_recover_from_halt(dev);
 		goto error;
 	}
 
@@ -2020,6 +2058,7 @@ static uint8_t odd_parity(uint8_t p)
  */
 static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *payload)
 {
+	const struct dw_i3c_config *config = dev->config;
 	struct dw_i3c_data *data = dev->data;
 	struct dw_i3c_xfer *xfer = &data->xfer;
 	struct dw_i3c_cmd *cmd;
@@ -2107,11 +2146,36 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 		}
 	}
 
+	k_sem_reset(&data->sem_xfer);
+
+	/* Pre-CCC sanity: recover if the IP is still halted from a prior
+	 * error whose ISR-context recovery was incomplete.
+	 */
+	uint32_t pstate;
+	uint32_t settle_us = 1000U;
+	/* Only CM_TFR_STS == HALT requires recovery; transient non-zero values (1-14)
+	 * and lagging CONTROLLER_IDLE are normal.
+	 */
+	do {
+		pstate = sys_read32(config->regs + PRESENT_STATE);
+		if (PRESENT_STATE_CM_TFR_STS(pstate) != CM_TFR_STS_HALT) {
+			break;
+		}
+		k_busy_wait(1);
+	} while (--settle_us > 0U);
+
+	if (PRESENT_STATE_CM_TFR_STS(pstate) == CM_TFR_STS_HALT) {
+		LOG_WRN("%s: IP halted before CCC, recovering", dev->name);
+		dw_i3c_recover_from_halt(dev);
+	}
+
 	start_xfer(dev);
 
 	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
 	if (ret) {
 		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
+		/* IRQ never fired — the IP is silently HALTed */
+		dw_i3c_recover_from_halt(dev);
 		goto error;
 	}
 
@@ -2450,6 +2514,7 @@ static int dw_i3c_do_daa(const struct device *dev)
 		      COMMAND_PORT_DEV_COUNT(data->maxdevs - pos) | COMMAND_PORT_DEV_INDEX(pos) |
 		      COMMAND_PORT_CMD(I3C_CCC_ENTDAA) | COMMAND_PORT_ADDR_ASSGN_CMD;
 
+	k_sem_reset(&data->sem_xfer);
 	start_xfer(dev);
 	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
 
