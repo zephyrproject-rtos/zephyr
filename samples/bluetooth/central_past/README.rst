@@ -18,12 +18,19 @@ Requirements
 Building and Running
 ********************
 
-Use the sample found under :zephyr_file:`samples/bluetooth/periodic_adv` on
-another board that will start periodic advertising, to which this sample will
-establish periodic advertising synchronization.
+Build and flash the sample as follows, replacing ``<board>`` with your target board:
 
-Use the sample found under :zephyr_file:`samples/bluetooth/peripheral_past` in
-the Zephyr tree on another board that will advertise and await a periodic
-advertising sync transfer.
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/central_past
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+You can use the :zephyr:code-sample:`ble_periodic_adv` sample on another board that
+will start periodic advertising, to which this sample will establish periodic
+advertising synchronization.
+
+Alternatively, you can use the :zephyr:code-sample:`ble_peripheral_past` sample on
+another board that will advertise and await a periodic advertising sync transfer.
 
 See :zephyr:code-sample-category:`bluetooth` samples for details.
