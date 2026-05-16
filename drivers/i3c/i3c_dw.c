@@ -2193,9 +2193,41 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos)
 	uint64_t pid;
 	uint8_t dyn_addr;
 
-	/* retrieve dynamic address assigned */
-	tmp = sys_read32(config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
-	dyn_addr = (((tmp) & GENMASK(22, 16)) >> 16);
+	/* Read the DA the IP actually assigned (DCT.LOC4[7:0]), not the
+	 * SW hint pre-loaded into DAT[22:16].  On silicon where the IP
+	 * picks a different DA than the hint, reading DAT caused
+	 * split-brain (descriptor DA != target DA → all directed CCCs NACK).
+	 */
+	tmp = sys_read32(config->regs + DEV_CHAR_TABLE_LOC1(data->dctstartaddr, pos) + 12U);
+	dyn_addr = tmp & 0xFFu;
+
+	/* Reject corrupt DCT entries (bus noise / unterminated round).
+	 * LOC2/LOC3[31:16] are reserved (must be 0, TRM §20.1.55-.58),
+	 * DA must be in 0x08..0x6E (MIPI I3C v1.1 §5.1.2.2.5).
+	 * Violation → clear DAT, free slot, skip attach.
+	 */
+	uint32_t l2_full = sys_read32(config->regs + DEV_CHAR_TABLE_LOC2(data->dctstartaddr, pos));
+	uint32_t l3_full = sys_read32(config->regs + DEV_CHAR_TABLE_LOC3(data->dctstartaddr, pos));
+	bool l2_rsvd_nz = (l2_full & GENMASK(31, 16)) != 0U;
+	bool l3_rsvd_nz = (l3_full & GENMASK(31, 16)) != 0U;
+	bool da_oor = (dyn_addr < 0x08U) || (dyn_addr > 0x6EU);
+
+	if (l2_rsvd_nz || l3_rsvd_nz || da_oor) {
+		LOG_WRN("%s: DCT[%d] corrupt (DA=0x%02x), revoking", dev->name, pos, dyn_addr);
+		sys_write32(0, config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
+		data->free_pos |= BIT(pos);
+		return 0;
+	}
+
+	/* Patch DAT[pos][22:16] to match the HW-chosen DA from DCT.LOC4,
+	 * preserving the remaining bits (SIR_REJECT, MR_REJECT, parity).
+	 */
+	uint32_t dat = sys_read32(config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
+	uint8_t parity = odd_parity(dyn_addr) << 7;
+
+	dat &= ~GENMASK(23, 16);
+	dat |= ((uint32_t)(dyn_addr | parity) << 16) & GENMASK(23, 16);
+	sys_write32(dat, config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
 
 	/* retrieve pid */
 	tmp = sys_read32(config->regs + DEV_CHAR_TABLE_LOC1(data->dctstartaddr, pos));
@@ -2212,6 +2244,23 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos)
 	struct i3c_device_desc *target = i3c_device_find(dev, &i3c_id);
 
 	if (target != NULL) {
+		/* Stale-DCT duplicate detection.  The DW IP does not
+		 * reliably clear DCT slots across consecutive ENTDAA
+		 * rounds, so a single target can appear in two slots
+		 * (real DA + stale residue).  RSTDAA cleanup zeroes
+		 * dynamic_addr; the first slot processed sets it, so
+		 * any later slot with the same PID but different DA is
+		 * stale — revoke it and keep the first binding.
+		 */
+		if (target->dynamic_addr != 0U && target->dynamic_addr != dyn_addr) {
+			LOG_WRN("%s: DCT[%d] stale PID 0x%012llx DA=0x%02x, "
+				"keeping 0x%02x",
+				dev->name, pos, pid, dyn_addr, target->dynamic_addr);
+			sys_write32(0, config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
+			data->free_pos |= BIT(pos);
+			return 0;
+		}
+
 		/* Known device (DT or previously discovered): refresh state. */
 		target->dynamic_addr = dyn_addr;
 		target->bcr = bcr;
@@ -2227,8 +2276,15 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos)
 			target->controller_priv = &data->dw_i3c_i2c_priv_data[pos];
 			data->free_pos &= ~BIT(pos);
 
-			sys_slist_append(&data->common.attached_dev.devices.i3c,
-					 &target->node);
+			sys_slist_append(&data->common.attached_dev.devices.i3c, &target->node);
+		} else if (target->controller_priv == NULL) {
+			/* Device is attached but its slot was released by a
+			 * prior RSTDAA cleanup (static_addr == 0 path).
+			 * Re-bind to the slot ENTDAA just assigned.
+			 */
+			data->dw_i3c_i2c_priv_data[pos].id = pos;
+			target->controller_priv = &data->dw_i3c_i2c_priv_data[pos];
+			data->free_pos &= ~BIT(pos);
 		} else {
 			struct dw_i3c_i2c_dev_data *priv = target->controller_priv;
 
@@ -2267,9 +2323,17 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos)
 		 */
 		target = i3c_device_desc_alloc();
 		if (target == NULL) {
-			LOG_WRN("%s: PID 0x%012llx DA 0x%02x — descriptor pool "
-				"exhausted, device untracked",
+			/*
+			 * Undo the address assignment by clearing the DAT
+			 * entry and freeing the slot
+			 */
+			sys_write32(0, config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
+			data->free_pos |= BIT(pos);
+
+			LOG_WRN("%s: PID 0x%012llx at DA 0x%02x has no "
+				"descriptor — revoked DA to keep bus clear",
 				dev->name, pid, dyn_addr);
+			return 0;
 		} else {
 			*(const struct device **)&target->bus = dev;
 			*(uint64_t *)&target->pid = pid;
