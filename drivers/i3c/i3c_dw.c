@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define DEVICE_CTRL                0x0
 #define DEV_CTRL_ENABLE            BIT(31)
 #define DEV_CTRL_RESUME            BIT(30)
+#define DEV_CTRL_ABORT             BIT(29)
 #define DEV_CTRL_HOT_JOIN_NACK     BIT(8)
 #define DEV_CTRL_I2C_SLAVE_PRESENT BIT(7)
 #define DEV_CTRL_IBA_INCLUDE       BIT(0)
@@ -160,13 +161,15 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 	 INTR_CMD_QUEUE_READY_STAT | INTR_IBI_THLD_STAT | INTR_TX_THLD_STAT | INTR_RX_THLD_STAT)
 
 #ifdef CONFIG_I3C_USE_IBI
-#define INTR_MASTER_MASK (INTR_TRANSFER_ERR_STAT | INTR_RESP_READY_STAT | INTR_IBI_THLD_STAT)
+#define INTR_MASTER_MASK                                                                           \
+	(INTR_TRANSFER_ERR_STAT | INTR_TRANSFER_ABORT_STAT | INTR_RESP_READY_STAT |                \
+	 INTR_IBI_THLD_STAT)
 #else
-#define INTR_MASTER_MASK (INTR_TRANSFER_ERR_STAT | INTR_RESP_READY_STAT)
+#define INTR_MASTER_MASK (INTR_TRANSFER_ERR_STAT | INTR_TRANSFER_ABORT_STAT | INTR_RESP_READY_STAT)
 #endif
 #define INTR_SLAVE_MASK                                                                            \
 	(INTR_TRANSFER_ERR_STAT | INTR_IBI_UPDATED_STAT | INTR_READ_REQ_RECV_STAT |                \
-	 INTR_DYN_ADDR_ASSGN_STAT | INTR_RESP_READY_STAT)
+	 INTR_DYN_ADDR_ASSGN_STAT | INTR_RESP_READY_STAT | INTR_CCC_UPDATED_STAT)
 
 #define QUEUE_STATUS_LEVEL             0x4c
 #define QUEUE_STATUS_IBI_STATUS_CNT(x) (((x) & GENMASK(28, 24)) >> 24)
@@ -178,8 +181,24 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define DATA_BUFFER_STATUS_LEVEL_RX(x) (((x) & GENMASK(23, 16)) >> 16)
 #define DATA_BUFFER_STATUS_LEVEL_TX(x) ((x) & GENMASK(7, 0))
 
-#define PRESENT_STATE                0x54
-#define PRESENT_STATE_CURRENT_MASTER BIT(2)
+#define PRESENT_STATE                 0x54
+#define PRESENT_STATE_CURRENT_MASTER  BIT(2)
+#define PRESENT_STATE_CM_TFR_STS_MASK GENMASK(13, 8)
+#define PRESENT_STATE_CM_TFR_STS(x)   (((x) & PRESENT_STATE_CM_TFR_STS_MASK) >> 8)
+/*
+ * CM_TFR_STATUS (bits 13:8, Databook §6.1.23 p.237):
+ *   Master: 0x0 = IDLE, 0x1..0xE = transfer in progress, 0xF = HALT.
+ *   Slave:  0x0 = IDLE, 0x1..0x5 = transfer states, 0x6 = HALT.
+ * Writing RESUME while 0x1..0xE is active empirically wedges the IP.
+ */
+#define CM_TFR_STS_HALT               0xF
+/*
+ * CONTROLLER_IDLE (bit 28) reads as 1 when the IP is fully idle
+ * between transfers, but it lags transfer completion -- can be 0
+ * during the last cycle of a clean transfer.  Do NOT use this bit
+ * alone to detect halt.
+ */
+#define PRESENT_STATE_CONTROLLER_IDLE BIT(28)
 
 #define CCC_DEVICE_STATUS          0x58
 #define DEVICE_ADDR_TABLE_POINTER  0x5c
@@ -211,6 +230,10 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define SLV_MAX_LEN        0x7c
 #define SLV_MAX_LEN_MRL(x) (((x) & GENMASK(31, 16)) >> 16)
 #define SLV_MAX_LEN_MWL(x) ((x) & GENMASK(15, 0))
+
+#define TGT_EVENT_STATUS             0x38
+#define TGT_EVENT_STATUS_MWL_UPDATED BIT(7)
+#define TGT_EVENT_STATUS_MRL_UPDATED BIT(6)
 
 #define MAX_READ_TURNAROUND                     0x80
 #define MAX_READ_TURNAROUND_MXDX_MAX_RD_TURN(x) ((x) & GENMASK(23, 0))
@@ -412,6 +435,7 @@ struct dw_i3c_data {
 
 #ifdef CONFIG_I3C_TARGET
 	struct i3c_target_config *target_config;
+	bool target_da_valid_last;
 #endif /* CONFIG_I3C_TARGET */
 	struct k_sem sem_xfer;
 	struct k_mutex mt;
@@ -521,6 +545,127 @@ static inline int dw_i3c_clock_on(const struct device *dev)
 }
 
 #ifdef CONFIG_I3C_CONTROLLER
+
+/*
+ * Write DEV_CTRL_RESUME to exit HALT and poll until consumed.
+ * Caller must have already called dw_i3c_pre_resume_ctrl() and
+ * cleared latched INTR_STATUS bits.
+ */
+static void dw_i3c_resume_controller(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	sys_write32(sys_read32(config->regs + DEVICE_CTRL) | DEV_CTRL_RESUME,
+		    config->regs + DEVICE_CTRL);
+
+	uint32_t timeout = 1000U;
+
+	while ((sys_read32(config->regs + DEVICE_CTRL) & DEV_CTRL_RESUME) && --timeout) {
+	}
+}
+
+/*
+ * Flush command, response, RX and TX queues.  Uses k_busy_wait(50)
+ * instead of polling RESET_CTRL for self-clear because some variants
+ * gate the register-bus interface during the flush.
+ */
+static void dw_i3c_flush_queues(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	sys_write32(RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO | RESET_CTRL_RESP_QUEUE |
+			    RESET_CTRL_CMD_QUEUE,
+		    config->regs + RESET_CTRL);
+	k_busy_wait(50);
+}
+
+/*
+ * Issue DEV_CTRL_ABORT for a stuck mid-transfer and poll for
+ * TRANSFER_ABORT_STS.  Returns 0 on success, -ETIMEDOUT if the
+ * IP did not acknowledge the abort.  Caller must mask and later
+ * restore INTR_SIGNAL_EN around this call.
+ */
+static int dw_i3c_abort_xfer(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	sys_write32(sys_read32(config->regs + DEVICE_CTRL) | DEV_CTRL_ABORT,
+		    config->regs + DEVICE_CTRL);
+
+	uint32_t timeout = 100000U;
+
+	while (!(sys_read32(config->regs + INTR_STATUS) & INTR_TRANSFER_ABORT_STAT) && --timeout) {
+	}
+
+	return (timeout == 0U) ? -ETIMEDOUT : 0;
+}
+
+/*
+ * Recover the IP from a silent HALT after a sem-timeout.
+ *
+ * When the IP halts without firing an IRQ (e.g. ENTDAA with no targets,
+ * or a CCC that never produces a response entry), the waiter's k_sem
+ * times out and the IP is stuck in CM_TFR_STS_HALT.  This mirrors the
+ * end_xfer recovery: pre_resume hook, clear TRANSFER_ERR/ABORT, write
+ * RESUME if halted, poll until consumed, then flush all queues.
+ */
+static void dw_i3c_recover_from_halt(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+	struct dw_i3c_data *data = dev->data;
+	uint32_t pstate;
+
+	pstate = sys_read32(config->regs + PRESENT_STATE);
+
+	/* IP is idle or settling — nothing to recover. */
+	if ((pstate & PRESENT_STATE_CONTROLLER_IDLE) || PRESENT_STATE_CM_TFR_STS(pstate) == 0U) {
+		k_sem_reset(&data->sem_xfer);
+		return;
+	}
+
+	/* Already halted — resume then flush. */
+	if (PRESENT_STATE_CM_TFR_STS(pstate) == CM_TFR_STS_HALT) {
+		dw_i3c_pre_resume_ctrl(dev);
+		sys_write32(INTR_TRANSFER_ERR_STAT | INTR_TRANSFER_ABORT_STAT,
+			    config->regs + INTR_STATUS);
+		dw_i3c_resume_controller(dev);
+		dw_i3c_flush_queues(dev);
+		k_sem_reset(&data->sem_xfer);
+		return;
+	}
+
+	/*
+	 * Stuck mid-transfer (CM_TFR_STS 1-14, !IDLE).
+	 * Abort -> flush -> resume -> clear status -> restore mask.
+	 */
+	LOG_WRN("%s: IP stuck mid-transfer, attempting ABORT", dev->name);
+
+	dw_i3c_pre_resume_ctrl(dev);
+
+	uint32_t saved_signal_en = sys_read32(config->regs + INTR_SIGNAL_EN);
+
+	sys_write32(saved_signal_en & ~(INTR_TRANSFER_ABORT_STAT | INTR_TRANSFER_ERR_STAT |
+					INTR_RESP_READY_STAT),
+		    config->regs + INTR_SIGNAL_EN);
+
+	if (dw_i3c_abort_xfer(dev) != 0) {
+		LOG_WRN("%s: ABORT timeout, needs full_reset via "
+			"i3c_recover_bus",
+			dev->name);
+		sys_write32(saved_signal_en, config->regs + INTR_SIGNAL_EN);
+		k_sem_reset(&data->sem_xfer);
+		return;
+	}
+
+	dw_i3c_flush_queues(dev);
+	dw_i3c_resume_controller(dev);
+
+	sys_write32(INTR_TRANSFER_ABORT_STAT | INTR_TRANSFER_ERR_STAT, config->regs + INTR_STATUS);
+	sys_write32(saved_signal_en, config->regs + INTR_SIGNAL_EN);
+
+	k_sem_reset(&data->sem_xfer);
+}
+
 static uint8_t get_free_pos(uint32_t free_pos)
 {
 	return find_lsb_set(free_pos) - 1;
@@ -1700,20 +1845,34 @@ static int i3c_dw_irq(const struct device *dev)
 #endif /* CONFIG_I3C_TARGET */
 
 	status = sys_read32(config->regs + INTR_STATUS);
-	if (status & (INTR_TRANSFER_ERR_STAT | INTR_RESP_READY_STAT)) {
+	if (status & (INTR_TRANSFER_ERR_STAT | INTR_TRANSFER_ABORT_STAT | INTR_RESP_READY_STAT)) {
 		dw_i3c_end_xfer(dev);
 
+		/*
+		 * Both TRANSFER_ERR_STAT and TRANSFER_ABORT_STAT are
+		 * level-sensitive; if not cleared, the ISR re-fires forever.
+		 */
 		if (status & INTR_TRANSFER_ERR_STAT) {
 			sys_write32(INTR_TRANSFER_ERR_STAT, config->regs + INTR_STATUS);
 		}
+		if (status & INTR_TRANSFER_ABORT_STAT) {
+			sys_write32(INTR_TRANSFER_ABORT_STAT, config->regs + INTR_STATUS);
+		}
+		/* Clear all residual status before the next transfer. */
+		sys_write32(INTR_ALL, config->regs + INTR_STATUS);
 	}
-#ifdef CONFIG_I3C_CONTROLLER
+#if defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_USE_IBI)
 	if (status & INTR_IBI_THLD_STAT) {
-#ifdef CONFIG_I3C_USE_IBI
 		ibis_handle(dev);
-#endif /* CONFIG_I3C_USE_IBI */
+		/* IBI_THLD is level-sensitive; mask it if still asserted
+		 * after draining to prevent ISR storm.
+		 */
+		if (sys_read32(config->regs + INTR_STATUS) & INTR_IBI_THLD_STAT) {
+			sys_write32(sys_read32(config->regs + INTR_SIGNAL_EN) & ~INTR_IBI_THLD_STAT,
+				    config->regs + INTR_SIGNAL_EN);
+		}
 	}
-#endif /* CONFIG_I3C_CONTROLLER */
+#endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_USE_IBI */
 #ifdef CONFIG_I3C_TARGET
 	/* target mode related interrupts */
 	if (!dw_i3c_is_current_controller(dev)) {
@@ -1728,6 +1887,45 @@ static int i3c_dw_irq(const struct device *dev)
 			}
 			sys_write32(INTR_READ_REQ_RECV_STAT, config->regs + INTR_STATUS);
 		}
+		/* CCC updated a target register — ack event flags and
+		 * RESUME to clear SLAVE_BUSY (§6.1.24).  Only RESUME
+		 * for MRL/MWL updates; unconditional RESUME here was
+		 * empirically observed to NACK subsequent GETSTATUS.
+		 */
+		if (status & INTR_CCC_UPDATED_STAT) {
+			uint32_t ev = sys_read32(config->regs + TGT_EVENT_STATUS);
+			bool need_resume_ack = false;
+
+			if (ev & (TGT_EVENT_STATUS_MRL_UPDATED | TGT_EVENT_STATUS_MWL_UPDATED)) {
+				sys_write32(ev & (TGT_EVENT_STATUS_MRL_UPDATED |
+						  TGT_EVENT_STATUS_MWL_UPDATED),
+					    config->regs + TGT_EVENT_STATUS);
+				need_resume_ack = true;
+			}
+
+			/* RESUME only for MRL/MWL ack (see above). */
+			if (need_resume_ack) {
+				sys_write32(sys_read32(config->regs + DEVICE_CTRL) |
+						    DEV_CTRL_RESUME,
+					    config->regs + DEVICE_CTRL);
+			}
+			sys_write32(INTR_CCC_UPDATED_STAT, config->regs + INTR_STATUS);
+
+			uint32_t da_after = sys_read32(config->regs + DEVICE_ADDR);
+			bool da_valid_now = (da_after & DEVICE_ADDR_DYNAMIC_ADDR_VALID) != 0U;
+
+			/*
+			 * Detect RSTDAA: DA-valid transitions true->false.
+			 * Some variants then ignore the next ENTDAA until
+			 * the platform re-arm hook kicks the bus detector.
+			 */
+			if (data->target_da_valid_last && !da_valid_now) {
+				if (config->ops && config->ops->re_arm_target) {
+					config->ops->re_arm_target(dev);
+				}
+			}
+			data->target_da_valid_last = da_valid_now;
+		}
 #ifdef CONFIG_I3C_USE_IBI
 		/* IBI TIR request register is addressed and status is updated*/
 		if (status & INTR_IBI_UPDATED_STAT) {
@@ -1736,6 +1934,7 @@ static int i3c_dw_irq(const struct device *dev)
 		}
 		/* DA has been assigned, could happen after a IBI HJ request */
 		if (status & INTR_DYN_ADDR_ASSGN_STAT) {
+			data->target_da_valid_last = true;
 			k_sem_give(&data->sem_hj);
 			sys_write32(INTR_DYN_ADDR_ASSGN_STAT, config->regs + INTR_STATUS);
 		}
