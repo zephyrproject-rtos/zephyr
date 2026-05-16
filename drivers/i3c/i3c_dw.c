@@ -1862,9 +1862,13 @@ static int dw_i3c_attach_device(const struct device *dev, struct i3c_device_desc
 	desc->controller_priv = &(data->dw_i3c_i2c_priv_data[pos]);
 	data->free_pos &= ~BIT(pos);
 
-	LOG_DBG("%s: Attaching %s", dev->name, desc->dev->name);
+	LOG_DBG("%s: Attaching %s", dev->name, desc->dev ? desc->dev->name : "<no-dev>");
 
-	sys_write32(DEV_ADDR_TABLE_DYNAMIC_ADDR(addr),
+	/* Default to SIR/MR reject — unsolicited IBIs without a matching
+	 * descriptor halt the controller.  Cleared by i3c_ibi_enable().
+	 */
+	sys_write32(DEV_ADDR_TABLE_DYNAMIC_ADDR(addr) | DEV_ADDR_TABLE_SIR_REJECT |
+			    DEV_ADDR_TABLE_MR_REJECT,
 		    config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
 
 	return 0;
@@ -2288,7 +2292,11 @@ static int dw_i3c_do_daa(const struct device *dev)
 		p = odd_parity(addr);
 		last_addr = addr;
 		addr |= (p << 7);
-		sys_write32(DEV_ADDR_TABLE_DYNAMIC_ADDR(addr),
+		/* Pre-populate DAT with SIR/MR reject so unsolicited IBIs
+		 * are auto-NACKed until explicitly enabled via i3c_dw_endis_ibi.
+		 */
+		sys_write32(DEV_ADDR_TABLE_DYNAMIC_ADDR(addr) | DEV_ADDR_TABLE_SIR_REJECT |
+				    DEV_ADDR_TABLE_MR_REJECT,
 			    config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
 	}
 
