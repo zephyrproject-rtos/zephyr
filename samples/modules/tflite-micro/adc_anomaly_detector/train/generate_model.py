@@ -31,7 +31,7 @@ def normal_stream(amp: float = 1000.0, phase: float = 0.0, noise: float = 0.0):
 
 def drift_stream(amp: float = 650.0, drift: float = 1200.0, noise: float = 0.0):
     x = np.arange(SAMPLES_PER_CLASS, dtype=np.float32)
-    base = amp * np.sin(2.0 * np.pi * 1.0 * x / WINDOW_SIZE)
+    base = amp * np.sin(2.0 * np.pi * x / WINDOW_SIZE)
     ramp = np.linspace(0.0, drift, SAMPLES_PER_CLASS, dtype=np.float32)
     y = base + ramp
 
@@ -121,15 +121,7 @@ def eval_streams():
     ]
 
 
-def label_symbol(label: int):
-    return {
-        0: "NORMAL",
-        1: "DRIFT",
-        2: "TRANSIENT",
-    }[label]
-
-
-def write_input_stream():
+def write_synthetic_source():
     arrays = []
     entries = []
 
@@ -142,7 +134,7 @@ def write_input_stream():
             lines.append("\t" + ", ".join(parts[index : index + 8]))
 
         arrays.append(
-            f"static const int16_t {name}_stream[STREAM_SAMPLES_PER_CLASS] = {{\n"
+            f"static const int16_t {name}_stream[ADC_ANOMALY_SAMPLES_PER_CLASS] = {{\n"
             + ",\n".join(lines)
             + "\n};\n"
         )
@@ -156,48 +148,96 @@ def write_input_stream():
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "stream_features.h"
-#include "input_stream.h"
+#include "sample_source.h"
 
+#include "ring_buffer.h"
+
+#include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
 
+#define ADC_ANOMALY_SAMPLES_PER_CLASS (ADC_ANOMALY_WINDOW_SIZE + ADC_ANOMALY_HOP_SIZE)
+
 {stream_arrays}
-static const int16_t *const streams[STREAM_NUM_CLASSES] = {{
+static const int16_t *const streams[ADC_ANOMALY_NUM_CLASSES] = {{
 {stream_entries}
 }};
 
-const int16_t *input_stream_get_samples(enum stream_label label)
+static struct adc_anomaly_ring_buffer sample_ring;
+
+int sample_source_init(void)
 {{
-return streams[(size_t)label];
+adc_anomaly_ring_buffer_reset(&sample_ring);
+
+return 0;
 }}
 
-enum stream_label input_stream_expected_label(size_t stream_window)
+int sample_source_load_window(size_t sample_window, int16_t *window, size_t len)
 {{
-return (enum stream_label)(stream_window / STREAM_WINDOWS_PER_CLASS);
+enum adc_anomaly_label label;
+const int16_t *samples;
+size_t position;
+
+if (len != ADC_ANOMALY_WINDOW_SIZE) {{
+return -EINVAL;
 }}
 
-const char *input_stream_label_name(enum stream_label label)
+label = sample_source_expected_label(sample_window);
+samples = streams[(size_t)label];
+position = sample_window % ADC_ANOMALY_WINDOWS_PER_CLASS;
+
+if (position == 0U) {{
+adc_anomaly_ring_buffer_reset(&sample_ring);
+adc_anomaly_ring_buffer_push_many(&sample_ring, samples,
+  ADC_ANOMALY_WINDOW_SIZE);
+}} else {{
+adc_anomaly_ring_buffer_push_many(&sample_ring,
+  &samples[ADC_ANOMALY_WINDOW_SIZE],
+  ADC_ANOMALY_HOP_SIZE);
+}}
+
+adc_anomaly_ring_buffer_copy_window(&sample_ring, window,
+    ADC_ANOMALY_WINDOW_SIZE);
+
+return 0;
+}}
+
+enum adc_anomaly_label sample_source_expected_label(size_t sample_window)
+{{
+return (enum adc_anomaly_label)(sample_window / ADC_ANOMALY_WINDOWS_PER_CLASS);
+}}
+
+size_t sample_source_window_start(size_t sample_window)
+{{
+return (sample_window % ADC_ANOMALY_WINDOWS_PER_CLASS) * ADC_ANOMALY_HOP_SIZE;
+}}
+
+const char *sample_source_label_name(enum adc_anomaly_label label)
 {{
 switch (label) {{
-case STREAM_LABEL_NORMAL:
+case ADC_ANOMALY_NORMAL:
 return "normal";
-case STREAM_LABEL_DRIFT:
+case ADC_ANOMALY_DRIFT:
 return "drift";
-case STREAM_LABEL_TRANSIENT:
+case ADC_ANOMALY_TRANSIENT:
 return "transient";
 default:
 return "unknown";
 }}
 }}
 
-size_t input_stream_window_start(size_t stream_window)
+const char *sample_source_name(void)
 {{
-return (stream_window % STREAM_WINDOWS_PER_CLASS) * STREAM_HOP_SIZE;
+return "synthetic";
+}}
+
+bool sample_source_has_expected_labels(void)
+{{
+return true;
 }}
 """
 
-    (SRC / "input_stream.c").write_text(text, newline="\n")
+    (SRC / "synthetic_source.c").write_text(text, newline="\n")
 
 
 def write_model_cpp(model_bytes: bytes):
@@ -241,8 +281,8 @@ extern const int g_model_len;
 
 
 def main():
-    np.random.seed(19)
-    tf.random.set_seed(19)
+    np.random.seed(23)
+    tf.random.set_seed(23)
 
     x_train, y_train = make_dataset()
 
@@ -287,7 +327,7 @@ def main():
     tflite_model = converter.convert()
     print(f"model_size={len(tflite_model)} bytes")
 
-    write_input_stream()
+    write_synthetic_source()
     write_model_cpp(tflite_model)
 
 

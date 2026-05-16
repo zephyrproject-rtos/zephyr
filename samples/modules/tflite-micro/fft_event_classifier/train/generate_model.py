@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 # Copyright (c) 2026 Mahad Faisal
 # SPDX-License-Identifier: Apache-2.0
 

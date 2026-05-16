@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Mahad Faisal
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+menu "TFLM ADC anomaly detector"
+
+config TFLM_ADC_ANOMALY_DETECTOR_ADC_SOURCE
+	bool "Use ADC sample source"
+	depends on ADC
+	default n
+	help
+		Use Zephyr's ADC API as the sample source. The default synthetic
+		source is used for deterministic CI and QEMU validation.
+
+config TFLM_ADC_ANOMALY_DETECTOR_ADC_INTERVAL_US
+	int "ADC sample interval in microseconds"
+	depends on TFLM_ADC_ANOMALY_DETECTOR_ADC_SOURCE
+	default 1000
+	help
+		Delay between ADC samples when the ADC source is enabled.
+
+endmenu
