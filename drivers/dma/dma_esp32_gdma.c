@@ -31,6 +31,13 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 
 #define DMA_MAX_CHANNEL GDMA_LL_PAIRS_PER_INST
 
+/*
+ * On some SoCs (ESP32-C2, ESP32-C3) RX and TX of a channel pair share a
+ * single interrupt source. Detect this from DT by comparing the number of
+ * interrupts against the number of channel pairs.
+ */
+#define DMA_ESP32_SHARED_IRQ (DT_NUM_IRQS(DT_DRV_INST(0)) == DT_INST_PROP(0, dma_channels) / 2)
+
 static int get_m2m_periph_id(void)
 {
 	return __builtin_ctz(GDMA_LL_M2M_FREE_PERIPH_ID_MASK);
@@ -155,7 +162,7 @@ static void IRAM_ATTR dma_esp32_isr_handle_tx(const struct device *dev,
 	}
 }
 
-#if defined(GDMA_LL_AHB_TX_RX_SHARE_INTERRUPT)
+#if DMA_ESP32_SHARED_IRQ
 static void IRAM_ATTR dma_esp32_isr_handle(const struct device *dev, uint8_t rx_id, uint8_t tx_id)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
@@ -613,7 +620,7 @@ static int dma_esp32_configure_irq(const struct device *dev)
 	uint32_t status_mask;
 
 	for (uint8_t i = 0; i < config->irq_size; i++) {
-#if defined(GDMA_LL_AHB_TX_RX_SHARE_INTERRUPT)
+#if DMA_ESP32_SHARED_IRQ
 		status_reg = gdma_ll_rx_get_interrupt_status_reg(data->hal.dev, i);
 		status_mask = (GDMA_LL_RX_EVENT_MASK | GDMA_LL_TX_EVENT_MASK);
 #else
@@ -694,7 +701,7 @@ static DEVICE_API(dma, dma_esp32_api) = {
 	.reload = dma_esp32_reload,
 };
 
-#if defined(GDMA_LL_AHB_TX_RX_SHARE_INTERRUPT)
+#if DMA_ESP32_SHARED_IRQ
 
 #define DMA_ESP32_DEFINE_IRQ_HANDLER(channel)                                                      \
 	__attribute__((unused)) static void IRAM_ATTR dma_esp32_isr_##channel(                     \
@@ -734,7 +741,7 @@ static DEVICE_API(dma, dma_esp32_api) = {
 
 #endif
 
-#if defined(GDMA_LL_AHB_TX_RX_SHARE_INTERRUPT)
+#if DMA_ESP32_SHARED_IRQ
 #define ESP32_DMA_HANDLER(channel) dma_esp32_isr_##channel
 #else
 #define ESP32_DMA_HANDLER(channel) dma_esp32_isr_##channel##_rx, dma_esp32_isr_##channel##_tx
