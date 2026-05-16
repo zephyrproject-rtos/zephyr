@@ -7,6 +7,7 @@
 #include <zephyr/dt-bindings/display/panel.h>
 
 &sdl_dc {
+	pixel-format = <PANEL_PIXEL_FORMAT_I_4>;
 	width = <320>;
 	height = <240>;
 

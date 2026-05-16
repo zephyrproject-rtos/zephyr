@@ -33,6 +33,7 @@
 	sdl_dc2: sdl-dc2 {
 		compatible = "zephyr,sdl-dc";
 		title = "Zephyr Display 2";
+		pixel-format = <PANEL_PIXEL_FORMAT_ARGB_8888>;
 		width = <800>;
 		height = <600>;
 		status = "okay";
