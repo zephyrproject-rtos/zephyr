@@ -97,20 +97,22 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define IBI_QUEUE_STATUS_DATA_LEN(x) ((x) & GENMASK(7, 0))
 #define IBI_QUEUE_IBI_ADDR(x)        (IBI_QUEUE_STATUS_IBI_ID(x) >> 1)
 #define IBI_QUEUE_IBI_RNW(x)         (IBI_QUEUE_STATUS_IBI_ID(x) & BIT(0))
-#define IBI_TYPE_MR(x) \
-	((IBI_QUEUE_IBI_ADDR(x) != I3C_HOT_JOIN_ADDR) && !IBI_QUEUE_IBI_RNW(x))
-#define IBI_TYPE_HJ(x) \
-	((IBI_QUEUE_IBI_ADDR(x) == I3C_HOT_JOIN_ADDR) && !IBI_QUEUE_IBI_RNW(x))
-#define IBI_TYPE_SIRQ(x) \
-	((IBI_QUEUE_IBI_ADDR(x) != I3C_HOT_JOIN_ADDR) && IBI_QUEUE_IBI_RNW(x))
+#define IBI_TYPE_MR(x)   ((IBI_QUEUE_IBI_ADDR(x) != I3C_HOT_JOIN_ADDR) && !IBI_QUEUE_IBI_RNW(x))
+#define IBI_TYPE_HJ(x)   ((IBI_QUEUE_IBI_ADDR(x) == I3C_HOT_JOIN_ADDR) && !IBI_QUEUE_IBI_RNW(x))
+#define IBI_TYPE_SIRQ(x) ((IBI_QUEUE_IBI_ADDR(x) != I3C_HOT_JOIN_ADDR) && IBI_QUEUE_IBI_RNW(x))
 
 #define QUEUE_THLD_CTRL               0x1c
 #define QUEUE_THLD_CTRL_IBI_STS_MASK  GENMASK(31, 24)
 #define QUEUE_THLD_CTRL_RESP_BUF_MASK GENMASK(15, 8)
 #define QUEUE_THLD_CTRL_RESP_BUF(x)   (((x) - 1) << 8)
 
-#define DATA_BUFFER_THLD_CTRL        0x20
-#define DATA_BUFFER_THLD_CTRL_RX_BUF GENMASK(11, 8)
+#define DATA_BUFFER_THLD_CTRL                    0x20
+#define DATA_BUFFER_THLD_CTRL_RX_BUF             GENMASK(11, 8)
+#define DATA_BUFFER_THLD_CTRL_TX_START_THLD_MASK GENMASK(18, 16)
+#define DATA_BUFFER_THLD_CTRL_TX_START_THLD(x)                                                     \
+	(((x) << 16) & DATA_BUFFER_THLD_CTRL_TX_START_THLD_MASK)
+#define DATA_BUFFER_THLD_CTRL_TX_BUF_MASK GENMASK(2, 0)
+#define DATA_BUFFER_THLD_CTRL_TX_BUF(x)   ((x) & DATA_BUFFER_THLD_CTRL_TX_BUF_MASK)
 
 #define IBI_QUEUE_CTRL     0x24
 #define IBI_MR_REQ_REJECT  0x2C
@@ -274,9 +276,9 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define SCL_EXT_TERMN_LCNT_TIMING 0xcc
 
 #define SDA_HOLD_SWITCH_DLY_TIMING                         0xd0
-#define SDA_HOLD_SWITCH_DLY_TIMING_SDA_TX_HOLD(x)          (((x)&GENMASK(18, 16)) >> 16)
-#define SDA_HOLD_SWITCH_DLY_TIMING_SDA_PP_OD_SWITCH_DLY(x) (((x)&GENMASK(10, 8)) >> 8)
-#define SDA_HOLD_SWITCH_DLY_TIMING_SDA_OD_PP_SWITCH_DLY(x) ((x)&GENMASK(2, 0))
+#define SDA_HOLD_SWITCH_DLY_TIMING_SDA_TX_HOLD(x)          (((x) & GENMASK(18, 16)) >> 16)
+#define SDA_HOLD_SWITCH_DLY_TIMING_SDA_PP_OD_SWITCH_DLY(x) (((x) & GENMASK(10, 8)) >> 8)
+#define SDA_HOLD_SWITCH_DLY_TIMING_SDA_OD_PP_SWITCH_DLY(x) ((x) & GENMASK(2, 0))
 
 #define BUS_FREE_TIMING           0xd4
 /* Bus available time of 1us in ns */
@@ -729,7 +731,8 @@ static void dw_i3c_end_xfer(const struct device *dev)
 					/* Call write received cb for each remaining byte  */
 					for (k = 0; k < MIN(4, cmd->rx_len - j); k++) {
 						target_cb->write_received_cb(data->target_config,
-								(rx_data >> (8 * k)) & 0xff);
+									     (rx_data >> (8 * k)) &
+										     0xff);
 					}
 				}
 			}
@@ -772,7 +775,7 @@ static void dw_i3c_end_xfer(const struct device *dev)
 
 	if (ret < 0) {
 		sys_write32(RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO | RESET_CTRL_RESP_QUEUE |
-			    RESET_CTRL_CMD_QUEUE,
+				    RESET_CTRL_CMD_QUEUE,
 			    config->regs + RESET_CTRL);
 		dw_i3c_pre_resume_ctrl(dev);
 		sys_write32(sys_read32(config->regs + DEVICE_CTRL) | DEV_CTRL_RESUME,
@@ -1701,8 +1704,7 @@ static int i3c_dw_irq(const struct device *dev)
 
 		if (dw_i3c_is_current_controller(dev)) {
 			i3c_ibi_work_enqueue_cb(dev, i3c_sec_handoffed);
-			if (data->target_config != NULL &&
-			    data->target_config->callbacks != NULL &&
+			if (data->target_config != NULL && data->target_config->callbacks != NULL &&
 			    data->target_config->callbacks->controller_handoff_cb != NULL) {
 				data->target_config->callbacks->controller_handoff_cb(
 					data->target_config);
@@ -1828,13 +1830,11 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 #endif /* CONFIG_I3C_CONTROLLER */
 #ifdef CONFIG_I3C_TARGET
 	/* I3C Bus Available Time */
-	scl_timing = DIV_ROUND_UP(I3C_BUS_AVAILABLE_TIME_NS * (uint64_t)core_rate,
-					I3C_PERIOD_NS);
+	scl_timing = DIV_ROUND_UP(I3C_BUS_AVAILABLE_TIME_NS * (uint64_t)core_rate, I3C_PERIOD_NS);
 	sys_write32(BUS_I3C_AVAIL_TIME(scl_timing), config->regs + BUS_FREE_TIMING);
 
 	/* I3C Bus Idle Time */
-	scl_timing =
-		DIV_ROUND_UP(I3C_BUS_IDLE_TIME_NS * (uint64_t)core_rate, I3C_PERIOD_NS);
+	scl_timing = DIV_ROUND_UP(I3C_BUS_IDLE_TIME_NS * (uint64_t)core_rate, I3C_PERIOD_NS);
 	sys_write32(BUS_I3C_IDLE_TIME(scl_timing), config->regs + BUS_IDLE_TIMING);
 #endif /* CONFIG_I3C_TARGET */
 
@@ -2196,8 +2196,8 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos)
 				 * a consistent view of hardware.
 				 */
 				LOG_DBG("%s: rebinding PID 0x%012llx from DAT slot %u to %d "
-						"(ENTDAA placed target in different slot)",
-						dev->name, pid, priv->id, pos);
+					"(ENTDAA placed target in different slot)",
+					dev->name, pid, priv->id, pos);
 
 				data->free_pos |= BIT(priv->id);
 				data->dw_i3c_i2c_priv_data[pos].id = pos;
@@ -2206,8 +2206,8 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos)
 			}
 		}
 
-		LOG_DBG("%s: PID 0x%012llx assigned dynamic address 0x%02x",
-			dev->name, pid, dyn_addr);
+		LOG_DBG("%s: PID 0x%012llx assigned dynamic address 0x%02x", dev->name, pid,
+			dyn_addr);
 	} else {
 		/* Unknown device (not in DT). Allocate a descriptor so the
 		 * driver can track it for address-slot accounting and future
@@ -2231,11 +2231,10 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos)
 			target->controller_priv = &data->dw_i3c_i2c_priv_data[pos];
 			data->free_pos &= ~BIT(pos);
 
-			sys_slist_append(&data->common.attached_dev.devices.i3c,
-					 &target->node);
+			sys_slist_append(&data->common.attached_dev.devices.i3c, &target->node);
 
-			LOG_INF("%s: PID 0x%012llx not in DT, given DA 0x%02x",
-				dev->name, pid, dyn_addr);
+			LOG_INF("%s: PID 0x%012llx not in DT, given DA 0x%02x", dev->name, pid,
+				dyn_addr);
 		}
 	}
 	i3c_addr_slots_mark_i3c(&data->common.attached_dev.addr_slots, dyn_addr);
@@ -2457,8 +2456,7 @@ static int dw_i3c_configure(const struct device *dev, enum i3c_config_type type,
 		if (ret != 0) {
 			return ret;
 		}
-		(void)memcpy(&data->common.ctrl_config,
-			     config, sizeof(data->common.ctrl_config));
+		(void)memcpy(&data->common.ctrl_config, config, sizeof(data->common.ctrl_config));
 #else
 		return -ENOTSUP;
 #endif /* CONFIG_I3C_CONTROLLER */
@@ -2870,7 +2868,7 @@ static int dw_i3c_init(const struct device *dev)
 		/* Bus Initialization Complete, allow HJ ACKs if not disabled */
 		if (!(config->common.flags & I3C_CONTROLLER_FLAG_DISABLE_HJ_AT_INIT)) {
 			sys_write32(sys_read32(config->regs + DEVICE_CTRL) &
-				    ~(DEV_CTRL_HOT_JOIN_NACK),
+					    ~(DEV_CTRL_HOT_JOIN_NACK),
 				    config->regs + DEVICE_CTRL);
 		}
 	}
