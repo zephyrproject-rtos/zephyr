@@ -854,6 +854,9 @@ static int get_i3c_addr_pos(const struct device *dev, uint8_t addr, bool sa)
 	}
 
 	dw_i3c_device_data = desc->controller_priv;
+	if (dw_i3c_device_data == NULL) {
+		return -ENODEV;
+	}
 
 	return dw_i3c_device_data->id;
 }
@@ -1850,7 +1853,8 @@ static int dw_i3c_attach_device(const struct device *dev, struct i3c_device_desc
 	uint8_t addr = desc->dynamic_addr ? desc->dynamic_addr : desc->static_addr;
 
 	if (pos < 0) {
-		LOG_ERR("%s: no space for i3c device: %s", dev->name, desc->dev->name);
+		LOG_ERR("%s: no space for i3c device: %s", dev->name,
+			desc->dev ? desc->dev->name : "<no-dev>");
 		return -ENOSPC;
 	}
 
@@ -1877,12 +1881,13 @@ static int dw_i3c_reattach_device(const struct device *dev, struct i3c_device_de
 	uint32_t dat;
 
 	if (dw_i3c_device_data == NULL) {
-		LOG_ERR("%s: %s: device not attached", dev->name, desc->dev->name);
+		LOG_ERR("%s: %s: device not attached", dev->name,
+			desc->dev ? desc->dev->name : "<no-dev>");
 		return -EINVAL;
 	}
 	/* TODO: investigate clearing table beforehand */
 
-	LOG_DBG("Reattaching %s", desc->dev->name);
+	LOG_DBG("Reattaching %s", desc->dev ? desc->dev->name : "<no-dev>");
 
 	dat = sys_read32(config->regs +
 			 DEV_ADDR_TABLE_LOC(data->datstartaddr, dw_i3c_device_data->id));
@@ -1900,11 +1905,12 @@ static int dw_i3c_detach_device(const struct device *dev, struct i3c_device_desc
 	struct dw_i3c_i2c_dev_data *dw_i3c_device_data = desc->controller_priv;
 
 	if (dw_i3c_device_data == NULL) {
-		LOG_ERR("%s: %s: device not attached", dev->name, desc->dev->name);
+		LOG_ERR("%s: %s: device not attached", dev->name,
+			desc->dev ? desc->dev->name : "<no-dev>");
 		return -EINVAL;
 	}
 
-	LOG_DBG("%s: Detaching %s", dev->name, desc->dev->name);
+	LOG_DBG("%s: Detaching %s", dev->name, desc->dev ? desc->dev->name : "<no-dev>");
 
 	sys_write32(0,
 		    config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, dw_i3c_device_data->id));
