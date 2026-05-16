@@ -18,8 +18,15 @@ Requirements
 Building and Running
 ********************
 
-Use the sample found under :zephyr_file:`samples/bluetooth/central_past` on
-another board that will connect to this and transfer a periodic advertisement
-sync.
+Build and flash the sample as follows, replacing ``<board>`` with your target board:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/peripheral_past
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+You can use the :zephyr:code-sample:`ble_central_past` sample on another board that
+will connect to this device and transfer a periodic advertising sync.
 
 See :zephyr:code-sample-category:`bluetooth` samples for details.
