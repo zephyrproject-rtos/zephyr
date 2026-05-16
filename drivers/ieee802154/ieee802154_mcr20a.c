@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/ieee802154_radio.h>
 
 #include "ieee802154_mcr20a.h"
-#include "MCR20Overwrites.h"
+#include "ieee802154_mcr20a_overwrites.h"
 
 /*
  * max. TX duration = (PR + SFD + FLI + PDU + FCS)
