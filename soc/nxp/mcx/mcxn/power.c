@@ -23,7 +23,7 @@ static void pm_enter_hook(void)
 	CMC_EnableDebugOperation(MCXN_CMC_ADDR, false);
 	CMC_ConfigFlashMode(MCXN_CMC_ADDR, true, false);
 	WUU_SetInternalWakeUpModulesConfig(MCXN_WUU_ADDR, WUU_WAKEUP_LPTMR0_IDX,
-					kWUU_InternalModuleInterrupt);
+					   kWUU_InternalModuleInterrupt);
 }
 
 static void enter_low_power(void)
@@ -79,6 +79,8 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	if ((SCB->SCR & SCB_SCR_SLEEPDEEP_Msk) == SCB_SCR_SLEEPDEEP_Msk) {
 		SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
 	}
+
+	CMC_SetClockMode(MCXN_CMC_ADDR, kCMC_GateNoneClock);
 
 	SPC_ClearPowerDomainLowPowerRequestFlag(MCXN_SPC_ADDR, kSPC_PowerDomain0);
 	SPC_ClearPowerDomainLowPowerRequestFlag(MCXN_SPC_ADDR, kSPC_PowerDomain1);
