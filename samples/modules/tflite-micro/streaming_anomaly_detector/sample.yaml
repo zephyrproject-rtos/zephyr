@@ -1,0 +1,33 @@
+sample:
+  description: TensorFlow Lite Micro streaming anomaly detector sample
+  name: Streaming anomaly detector TensorFlow Lite Micro
+
+common:
+  tags:
+    - tensorflow
+  modules:
+    - tflite-micro
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: false
+    regex:
+      - "stream_window: .*"
+      - "raw_prediction: .*"
+      - "stable_prediction: .*"
+      - "result: PASS"
+
+tests:
+  sample.tensorflow.streaming_anomaly_detector:
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_64
+    integration_platforms:
+      - qemu_x86
+    filter: CONFIG_FULL_LIBC_SUPPORTED
+
+  sample.tensorflow.streaming_anomaly_detector.cmsis_nn:
+    platform_allow:
+      - ek_ra8m1
+    extra_configs:
+      - CONFIG_TENSORFLOW_LITE_MICRO_CMSIS_NN_KERNELS=y

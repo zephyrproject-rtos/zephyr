@@ -1,0 +1,294 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Mahad Faisal
+# SPDX-License-Identifier: Apache-2.0
+
+from pathlib import Path
+
+import numpy as np
+import tensorflow as tf
+
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+
+WINDOW_SIZE = 64
+HOP_SIZE = 32
+SAMPLES_PER_CLASS = WINDOW_SIZE + HOP_SIZE
+NUM_CLASSES = 3
+NUM_FEATURES = 6
+
+LABELS = ["normal", "drift", "transient"]
+
+
+def normal_stream(amp: float = 1000.0, phase: float = 0.0, noise: float = 0.0):
+    x = np.arange(SAMPLES_PER_CLASS, dtype=np.float32)
+    y = amp * np.sin((2.0 * np.pi * 2.0 * x / WINDOW_SIZE) + phase)
+
+    if noise > 0.0:
+        y += np.random.normal(0.0, noise, size=SAMPLES_PER_CLASS)
+
+    return y.astype(np.float32)
+
+
+def drift_stream(amp: float = 650.0, drift: float = 1200.0, noise: float = 0.0):
+    x = np.arange(SAMPLES_PER_CLASS, dtype=np.float32)
+    base = amp * np.sin(2.0 * np.pi * 1.0 * x / WINDOW_SIZE)
+    ramp = np.linspace(0.0, drift, SAMPLES_PER_CLASS, dtype=np.float32)
+    y = base + ramp
+
+    if noise > 0.0:
+        y += np.random.normal(0.0, noise, size=SAMPLES_PER_CLASS)
+
+    return y.astype(np.float32)
+
+
+def transient_stream(amp: float = 800.0, noise: float = 0.0):
+    x = np.arange(SAMPLES_PER_CLASS, dtype=np.float32)
+    y = amp * np.sin(2.0 * np.pi * 2.0 * x / WINDOW_SIZE)
+    y[20] += 2500.0
+    y[72] -= 2300.0
+
+    if noise > 0.0:
+        y += np.random.normal(0.0, noise, size=SAMPLES_PER_CLASS)
+
+    return y.astype(np.float32)
+
+
+def extract_features(samples: np.ndarray):
+    samples = samples.astype(np.float32)
+
+    mean = np.mean(samples)
+    rms = np.sqrt(np.mean(samples * samples))
+    peak = np.max(np.abs(samples))
+    zcr = np.mean(np.signbit(samples[:-1]) != np.signbit(samples[1:]))
+    slope = (samples[-1] - samples[0]) / len(samples)
+    energy = np.sum(samples * samples)
+
+    return np.array(
+        [
+            mean / 3000.0,
+            rms / 2000.0,
+            peak / 4000.0,
+            zcr / 0.20,
+            slope / 100.0,
+            energy / 200000000.0,
+        ],
+        dtype=np.float32,
+    )
+
+
+def stream_windows(stream):
+    return [
+        stream[:WINDOW_SIZE],
+        stream[HOP_SIZE : HOP_SIZE + WINDOW_SIZE],
+    ]
+
+
+def make_dataset(samples_per_class: int = 700):
+    xs = []
+    ys = []
+
+    for _ in range(samples_per_class):
+        streams = [
+            normal_stream(
+                amp=np.random.uniform(800.0, 1100.0),
+                phase=np.random.uniform(0.0, 2.0 * np.pi),
+                noise=20.0,
+            ),
+            drift_stream(
+                amp=np.random.uniform(500.0, 750.0),
+                drift=np.random.uniform(900.0, 1500.0),
+                noise=20.0,
+            ),
+            transient_stream(
+                amp=np.random.uniform(650.0, 900.0),
+                noise=20.0,
+            ),
+        ]
+
+        for label, stream in enumerate(streams):
+            for window in stream_windows(stream):
+                xs.append(extract_features(window))
+                ys.append(label)
+
+    return np.stack(xs), np.array(ys, dtype=np.int64)
+
+
+def eval_streams():
+    return [
+        ("normal", 0, normal_stream(amp=1000.0)),
+        ("drift", 1, drift_stream(amp=650.0, drift=1200.0)),
+        ("transient", 2, transient_stream(amp=800.0)),
+    ]
+
+
+def label_symbol(label: int):
+    return {
+        0: "NORMAL",
+        1: "DRIFT",
+        2: "TRANSIENT",
+    }[label]
+
+
+def write_input_stream():
+    arrays = []
+    entries = []
+
+    for name, label, samples in eval_streams():
+        values = np.round(samples).astype(np.int16)
+        parts = [str(int(value)) for value in values]
+        lines = []
+
+        for index in range(0, len(parts), 8):
+            lines.append("\t" + ", ".join(parts[index : index + 8]))
+
+        arrays.append(
+            f"static const int16_t {name}_stream[STREAM_SAMPLES_PER_CLASS] = {{\n"
+            + ",\n".join(lines)
+            + "\n};\n"
+        )
+        entries.append(f"\t[{label}] = {name}_stream")
+
+    stream_arrays = "\n".join(arrays)
+    stream_entries = ",\n".join(entries)
+
+    text = f"""/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Mahad Faisal
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "stream_features.h"
+#include "input_stream.h"
+
+#include <stddef.h>
+#include <stdint.h>
+
+{stream_arrays}
+static const int16_t *const streams[STREAM_NUM_CLASSES] = {{
+{stream_entries}
+}};
+
+const int16_t *input_stream_get_samples(enum stream_label label)
+{{
+return streams[(size_t)label];
+}}
+
+enum stream_label input_stream_expected_label(size_t stream_window)
+{{
+return (enum stream_label)(stream_window / STREAM_WINDOWS_PER_CLASS);
+}}
+
+const char *input_stream_label_name(enum stream_label label)
+{{
+switch (label) {{
+case STREAM_LABEL_NORMAL:
+return "normal";
+case STREAM_LABEL_DRIFT:
+return "drift";
+case STREAM_LABEL_TRANSIENT:
+return "transient";
+default:
+return "unknown";
+}}
+}}
+
+size_t input_stream_window_start(size_t stream_window)
+{{
+return (stream_window % STREAM_WINDOWS_PER_CLASS) * STREAM_HOP_SIZE;
+}}
+"""
+
+    (SRC / "input_stream.c").write_text(text, newline="\n")
+
+
+def write_model_cpp(model_bytes: bytes):
+    items = [f"0x{byte:02x}" for byte in model_bytes]
+    wrapped = []
+
+    for index in range(0, len(items), 12):
+        wrapped.append("\t" + ", ".join(items[index : index + 12]))
+
+    model_body = ",\n".join(wrapped)
+
+    model_cpp = f"""/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Mahad Faisal
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "model.hpp"
+
+#include <cstdint>
+
+alignas(16) const unsigned char g_model[] = {{
+{model_body}
+}};
+
+const int g_model_len = sizeof(g_model);
+"""
+
+    model_hpp = """/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Mahad Faisal
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#pragma once
+
+extern const unsigned char g_model[];
+extern const int g_model_len;
+"""
+
+    (SRC / "model.cpp").write_text(model_cpp, newline="\n")
+    (SRC / "model.hpp").write_text(model_hpp, newline="\n")
+
+
+def main():
+    np.random.seed(19)
+    tf.random.set_seed(19)
+
+    x_train, y_train = make_dataset()
+
+    model = tf.keras.Sequential(
+        [
+            tf.keras.layers.Input(shape=(NUM_FEATURES,)),
+            tf.keras.layers.Dense(12, activation="relu"),
+            tf.keras.layers.Dense(NUM_CLASSES),
+        ]
+    )
+
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),
+        loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        metrics=["accuracy"],
+    )
+
+    model.fit(x_train, y_train, epochs=35, batch_size=32, verbose=0)
+    _, acc = model.evaluate(x_train, y_train, verbose=0)
+    print(f"train_acc={acc:.4f}")
+
+    for name, label, stream in eval_streams():
+        for window_index, window in enumerate(stream_windows(stream)):
+            output = model.predict(extract_features(window)[None, :], verbose=0)[0]
+            prediction = int(np.argmax(output))
+            print(
+                f"eval_stream={name}, window={window_index}, "
+                f"expected={LABELS[label]}, predicted={LABELS[prediction]}"
+            )
+
+    def representative_dataset():
+        for index in range(min(300, len(x_train))):
+            yield [x_train[index : index + 1].astype(np.float32)]
+
+    converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    converter.representative_dataset = representative_dataset
+    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+    converter.inference_input_type = tf.int8
+    converter.inference_output_type = tf.int8
+
+    tflite_model = converter.convert()
+    print(f"model_size={len(tflite_model)} bytes")
+
+    write_input_stream()
+    write_model_cpp(tflite_model)
+
+
+if __name__ == "__main__":
+    main()
