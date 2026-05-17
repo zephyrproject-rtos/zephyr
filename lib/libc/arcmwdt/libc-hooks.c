@@ -69,9 +69,25 @@ int _write(int fd, const char *buf, unsigned int nbytes)
 
 	return zephyr_write_stdout(buf, nbytes);
 }
-#endif
 
+#ifdef __PICOLIBC__
 #ifndef CONFIG_POSIX_DEVICE_IO
+/*
+ * MWDT picolibc runtime calls write() (POSIX convention), not _write()
+ * (mwlibc convention). Override the MWDT host library write(),
+ * so output is routed through Zephyr's console instead.
+ * Not needed when CONFIG_POSIX_DEVICE_IO is enabled, as device_io.c
+ * already provides write() via the VFS layer.
+ */
+ssize_t write(int fd, const void *buf, size_t nbytes)
+{
+	return _write(fd, (const char *)buf, (unsigned int)nbytes);
+}
+#endif /* !CONFIG_POSIX_DEVICE_IO */
+#endif /* __PICOLIBC__ */
+#endif /* !CONFIG_POSIX_DEVICE_IO_ALIAS_WRITE */
+
+#if !defined(CONFIG_POSIX_DEVICE_IO) && !defined(__PICOLIBC__)
 __weak int fileno(FILE *file)
 {
 	return _fileno(file);
