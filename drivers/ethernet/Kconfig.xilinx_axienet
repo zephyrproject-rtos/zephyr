@@ -15,6 +15,14 @@ config ETH_XILINX_AXIENET
 		Enable Xilinx 1G / 2.5G AXI Ethernet driver,
 		commonly found on FPGAs.
 
+config ETH_XILINX_AXIENET_SHELL
+	bool "Xilinx AXI Ethernet shell commands"
+	depends on ETH_XILINX_AXIENET
+	depends on SHELL
+	help
+		Enable the axienet_bd_config shell command for runtime
+		configuration of TX/RX BD ring counts without rebuilding.
+
 config ETH_XILINX_AXIENET_BUFFER_NUM_TX
 	int "Number of buffers for concurrent transmission (TX)."
 	depends on ETH_XILINX_AXIENET
