@@ -347,12 +347,13 @@ def wrapper_defs(func_name, func_type, args, fn, userspace_only):
 
 
 # Returns an expression for the specified (zero-indexed!) marshalled
-# parameter to a syscall, with handling for a final "more" parameter.
+# parameter to a syscall, with handling for a final "more" parameter
+# (which is just arg5 reinterpreted as a pointer to an overflow array).
 def mrsh_rval(mrsh_num, total):
     if mrsh_num < 5 or total <= 6:
         return f"arg{mrsh_num}"
     else:
-        return f"(((uintptr_t *)more)[{mrsh_num - 5}])"
+        return f"(((uintptr_t *)arg5)[{mrsh_num - 5}])"
 
 
 def marshall_defs(func_name, func_type, args):
@@ -373,10 +374,7 @@ def marshall_defs(func_name, func_type, args):
     mrsh = f"extern {func_type} z_vrfy_{func_name}({decl_arglist});\n"
 
     mrsh += f"uintptr_t {mrsh_name}(uintptr_t arg0, uintptr_t arg1, uintptr_t arg2,\n"
-    if nmrsh <= 6:
-        mrsh += "\t\t" + "uintptr_t arg3, uintptr_t arg4, uintptr_t arg5, void *ssf)\n"
-    else:
-        mrsh += "\t\t" + "uintptr_t arg3, uintptr_t arg4, void *more, void *ssf)\n"
+    mrsh += "\t\t" + "uintptr_t arg3, uintptr_t arg4, uintptr_t arg5, void *ssf)\n"
     mrsh += "{\n"
     mrsh += "\t" + "_current->syscall_frame = ssf;\n"
 
@@ -385,7 +383,9 @@ def marshall_defs(func_name, func_type, args):
 
     if nmrsh > 6:
         mrsh += (
-            "\tK_OOPS(K_SYSCALL_MEMORY_READ(more, " + str(nmrsh - 5) + " * sizeof(uintptr_t)));\n"
+            "\tK_OOPS(K_SYSCALL_MEMORY_READ((void *)arg5, "
+            + str(nmrsh - 5)
+            + " * sizeof(uintptr_t)));\n"
         )
 
     argnum = 0
