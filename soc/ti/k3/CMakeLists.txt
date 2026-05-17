@@ -248,3 +248,7 @@ if(CONFIG_SOC_FAMILY_TI_K3_BUILD_TISPL)
 endif()
 
 add_subdirectory(./common)
+
+if(CONFIG_SOC_SERIES_AM62LX)
+  add_subdirectory(am62lx)
+endif()
