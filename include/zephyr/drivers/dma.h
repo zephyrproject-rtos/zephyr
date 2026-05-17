@@ -263,6 +263,11 @@ struct dma_config {
 	uint32_t  dest_burst_length :   16;
 	/** Number of blocks in transfer list */
 	uint32_t block_count;
+	/**
+	 * Number of scatter-gather descriptors in the DMA ring.
+	 * Ignored by DMA drivers that do not use a software-managed SG ring.
+	 */
+	uint32_t num_sg_descriptors;
 	/** Pointer to the first block in the transfer list */
 	struct dma_block_config *head_block;
 	/** Optional attached user data for callbacks */
