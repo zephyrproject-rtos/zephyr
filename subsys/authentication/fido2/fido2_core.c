@@ -482,6 +482,26 @@ static enum fido2_status handle_get_info(uint8_t *cbor_out, size_t cbor_out_cap,
 	return FIDO2_OK;
 }
 
+static enum fido2_status handle_selection(const struct fido2_transport *transport, uint32_t cid)
+{
+	int ret;
+
+	set_runtime_state(FIDO2_RUNTIME_STATE_WAITING_USER_PRESENCE);
+	notify_wire(transport, cid, FIDO2_WIRE_STATUS_UP_NEEDED);
+
+	ret = fido2_up_wait();
+
+	if (ret) {
+		if (ret == -ECANCELED) {
+			return FIDO2_ERR_KEEPALIVE_CANCEL;
+		}
+
+		return FIDO2_ERR_USER_ACTION_TIMEOUT;
+	}
+
+	return FIDO2_OK;
+}
+
 static enum fido2_status process_command(uint8_t cmd, uint8_t *cbor_in, size_t cbor_in_len,
 					 uint8_t *cbor_out, size_t cbor_out_cap,
 					 size_t *cbor_out_len,
@@ -498,7 +518,7 @@ static enum fido2_status process_command(uint8_t cmd, uint8_t *cbor_in, size_t c
 		return FIDO2_ERR_NO_CREDENTIALS;
 	case FIDO2_CMD_SELECTION:
 		*cbor_out_len = 0;
-		return FIDO2_OK;
+		return handle_selection(transport, cid);
 	default:
 		*cbor_out_len = 0;
 		return FIDO2_ERR_INVALID_COMMAND;
