@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		host-console-uart = &uart1;
+	};
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "okay";
+};
