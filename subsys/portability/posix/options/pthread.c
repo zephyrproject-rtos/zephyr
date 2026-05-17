@@ -82,6 +82,9 @@ BUILD_ASSERT((PTHREAD_CANCEL_ENABLE == 0 || PTHREAD_CANCEL_DISABLE == 0) &&
 BUILD_ASSERT(CONFIG_POSIX_PTHREAD_ATTR_STACKSIZE_BITS + CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS <=
 	     32);
 
+/* ensure public `pthread_attr_t` covers whole memory requirements of private `struct posix_thread_attr` */
+BUILD_ASSERT(sizeof(struct posix_thread_attr) <= sizeof(pthread_attr_t));
+
 static void posix_thread_recycle(void);
 
 static sys_dlist_t posix_thread_q[] = {
