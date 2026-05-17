@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox>, <&mbox>;
+		mbox-names = "tx", "rx";
+	};
+};
+
+&mbox {
+	status = "okay";
+};
+
+&ipm_mbox {
+	status = "okay";
+};
