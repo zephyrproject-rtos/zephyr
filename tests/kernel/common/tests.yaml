@@ -48,6 +48,8 @@ tests:
     tags:
       - nano
     filter: not CONFIG_KERNEL_COHERENCE
+    toolchain_exclude:
+      - zephyr/llvm
     extra_configs:
       - CONFIG_CBPRINTF_NANO=y
       - CONFIG_CBPRINTF_REDUCED_INTEGRAL=y
@@ -60,6 +62,8 @@ tests:
     tags:
       - nano
     filter: not CONFIG_KERNEL_COHERENCE
+    toolchain_exclude:
+      - zephyr/llvm
     extra_configs:
       - CONFIG_CBPRINTF_NANO=y
       - CONFIG_CBPRINTF_FULL_INTEGRAL=y

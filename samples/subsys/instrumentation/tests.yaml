@@ -2,6 +2,8 @@ sample:
   name: Instrumentation subsystem sample
 tests:
   sample.instrumentation:
+    toolchain_exclude:
+      - zephyr/llvm
     platform_allow:
       - b_u585i_iot02a
       - mps2/an385
