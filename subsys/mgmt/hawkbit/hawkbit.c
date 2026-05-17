@@ -883,7 +883,8 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 			body_data = rsp->body_frag_start;
 			body_len = rsp->body_frag_len;
 
-			if ((hb_context.dl.downloaded_size + body_len) > response_buffer_size) {
+			if ((hb_context.dl.downloaded_size + body_len + 1) >
+			    response_buffer_size) {
 				response_buffer_size <<= 1;
 				rsp_tmp = realloc(hb_context.response_data, response_buffer_size);
 				if (rsp_tmp == NULL) {
@@ -894,8 +895,8 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 
 				hb_context.response_data = rsp_tmp;
 			}
-			strncpy(hb_context.response_data + hb_context.dl.downloaded_size, body_data,
-				body_len);
+			memcpy(&hb_context.response_data[hb_context.dl.downloaded_size], body_data,
+			       body_len);
 			hb_context.dl.downloaded_size += body_len;
 		}
 
@@ -934,7 +935,8 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 			body_data = rsp->body_frag_start;
 			body_len = rsp->body_frag_len;
 
-			if ((hb_context.dl.downloaded_size + body_len) > response_buffer_size) {
+			if ((hb_context.dl.downloaded_size + body_len + 1) >
+			    response_buffer_size) {
 				response_buffer_size <<= 1;
 				rsp_tmp = realloc(hb_context.response_data, response_buffer_size);
 				if (rsp_tmp == NULL) {
@@ -945,8 +947,8 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 
 				hb_context.response_data = rsp_tmp;
 			}
-			strncpy(hb_context.response_data + hb_context.dl.downloaded_size, body_data,
-				body_len);
+			memcpy(&hb_context.response_data[hb_context.dl.downloaded_size], body_data,
+			       body_len);
 			hb_context.dl.downloaded_size += body_len;
 		}
 
