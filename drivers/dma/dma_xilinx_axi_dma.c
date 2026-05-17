@@ -747,6 +747,39 @@ static inline int dma_xilinx_axi_dma_config_reload(const struct device *dev, uin
 		true);
 }
 
+/* Wire each descriptor's nxtdesc pointer to the next one, forming a circular ring. */
+static void dma_xilinx_axi_dma_link_sg_ring(struct dma_xilinx_axi_dma_channel *ch)
+{
+	for (int i = 0; i < ch->num_descriptors; i++) {
+		uintptr_t nextdesc;
+		uint32_t low_bytes;
+#ifdef CONFIG_DMA_64BIT
+		uint32_t high_bytes;
+#endif
+		if (i + 1 < ch->num_descriptors) {
+			nextdesc = (uintptr_t)&ch->descriptors[i + 1];
+		} else {
+			nextdesc = (uintptr_t)&ch->descriptors[0];
+		}
+		/* SG descriptors have 64-byte alignment requirements */
+		/* we check this here, for each descriptor */
+		__ASSERT(
+			(nextdesc & XILINX_AXI_DMA_SG_DESCRIPTOR_ADDRESS_MASK) == 0,
+			"SG descriptor address %p (offset %u) was not aligned to 64-byte boundary!",
+			(void *)nextdesc, i);
+
+		low_bytes = (uint32_t)(((uint64_t)nextdesc) & UINT32_MAX);
+		ch->descriptors[i].nxtdesc = low_bytes;
+
+#ifdef CONFIG_DMA_64BIT
+		high_bytes = (uint32_t)(((uint64_t)nextdesc >> 32) & UINT32_MAX);
+		ch->descriptors[i].nxtdesc_msb = high_bytes;
+#endif
+		dma_xilinx_axi_dma_flush_dcache((void *)(uintptr_t)&ch->descriptors[i],
+						sizeof(ch->descriptors[i]));
+	}
+}
+
 /* Soft-reset the DMA core if dma_stop() flagged it as needed. */
 static int dma_xilinx_axi_dma_soft_reset_if_needed(struct dma_xilinx_axi_dma_data *data)
 {
@@ -779,6 +812,7 @@ static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t chann
 	struct dma_block_config *current_block = dma_cfg->head_block;
 	int ret = 0;
 	int block_count = 0;
+	size_t ring_size;
 
 	if (channel >= cfg->channels) {
 		LOG_ERR("Invalid channel %" PRIu32 " - must be < %" PRIu32 "!", channel,
@@ -826,41 +860,34 @@ static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t chann
 		return err;
 	}
 
+	/* Determine active ring size within the static allocation bound. */
+	{
+		size_t max_desc = (channel == XILINX_AXI_DMA_TX_CHANNEL_NUM)
+				  ? CONFIG_DMA_XILINX_AXI_DMA_SG_DESCRIPTOR_NUM_TX
+				  : CONFIG_DMA_XILINX_AXI_DMA_SG_DESCRIPTOR_NUM_RX;
+
+		ring_size = (dma_cfg->num_sg_descriptors > 0)
+			    ? dma_cfg->num_sg_descriptors : max_desc;
+
+		if (ring_size > max_desc) {
+			LOG_ERR("Channel %" PRIu32 ": %zu descriptors exceeds static max %zu",
+				channel, ring_size, max_desc);
+			return -EINVAL;
+		}
+	}
+
+	/* Re-initialise only the active slice of the static descriptor ring. */
+	memset((void *)(uintptr_t)data->channels[channel].descriptors, 0,
+	       ring_size * sizeof(struct dma_xilinx_axi_dma_sg_descriptor));
+
+	data->channels[channel].num_descriptors = ring_size;
+	data->channels[channel].populated_desc_index = ring_size - 1;
+	data->channels[channel].completion_desc_index = 0;
+
 	LOG_DBG("Configuring %zu DMA descriptors for %s", data->channels[channel].num_descriptors,
 		channel == XILINX_AXI_DMA_TX_CHANNEL_NUM ? "TX" : "RX");
 
-	/* only configures fields whos default is not 0, as descriptors are in zero-initialized */
-	/* segment */
-	data->channels[channel].populated_desc_index = data->channels[channel].num_descriptors - 1;
-	data->channels[channel].completion_desc_index = 0;
-	for (int i = 0; i < data->channels[channel].num_descriptors; i++) {
-		uintptr_t nextdesc;
-		uint32_t low_bytes;
-#ifdef CONFIG_DMA_64BIT
-		uint32_t high_bytes;
-#endif
-		if (i + 1 < data->channels[channel].num_descriptors) {
-			nextdesc = (uintptr_t)&data->channels[channel].descriptors[i + 1];
-		} else {
-			nextdesc = (uintptr_t)&data->channels[channel].descriptors[0];
-		}
-		/* SG descriptors have 64-byte alignment requirements */
-		/* we check this here, for each descriptor */
-		__ASSERT(
-			nextdesc & XILINX_AXI_DMA_SG_DESCRIPTOR_ADDRESS_MASK == 0,
-			"SG descriptor address %p (offset %u) was not aligned to 64-byte boundary!",
-			(void *)nextdesc, i);
-
-		low_bytes = (uint32_t)(((uint64_t)nextdesc) & UINT32_MAX);
-		data->channels[channel].descriptors[i].nxtdesc = low_bytes;
-
-#ifdef CONFIG_DMA_64BIT
-		high_bytes = (uint32_t)(((uint64_t)nextdesc >> 32) & UINT32_MAX);
-		data->channels[channel].descriptors[i].nxtdesc_msb = high_bytes;
-#endif
-		dma_xilinx_axi_dma_flush_dcache((void *)&data->channels[channel].descriptors[i],
-						sizeof(data->channels[channel].descriptors[i]));
-	}
+	dma_xilinx_axi_dma_link_sg_ring(&data->channels[channel]);
 
 #ifdef CONFIG_DMA_64BIT
 	dma_xilinx_axi_dma_write_reg(
