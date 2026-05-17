@@ -1,0 +1,76 @@
+# TI AM62L CPSW Ethernet driver configuration
+
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_TI_AM62L_CPSW
+	bool "TI AM62L CPSW Ethernet Driver"
+	default y
+	depends on DT_HAS_TI_AM62L_CPSW_ENABLED
+	select DYNAMIC_INTERRUPTS
+	select DMA
+	imply NVMEM if $(dt_compat_any_has_prop,$(DT_COMPAT_TI_AM62L_CPSW),nvmem-cells)
+	help
+	  Enable TI AM62L CPSW (Common Platform Ethernet Switch) driver.
+	  Uses the TI AM62L PKTDMA driver for DMA-based packet transmission
+	  and reception. Requires the MDIO subsystem for PHY management via
+	  the CPSW MDIO controller if Ethernet PHY(s) is(are) used with CPSW
+	  MAC Ports.
+
+if ETH_TI_AM62L_CPSW
+
+config ETH_TI_AM62L_CPSW_TX_DESC_NUM
+	int "TX descriptor count"
+	default 128
+	help
+	  Number of TX descriptors
+
+config ETH_TI_AM62L_CPSW_RX_DESC_NUM
+	int "RX descriptor count"
+	default 128
+	help
+	  Number of RX descriptors
+
+config ETH_TI_AM62L_CPSW_TX_THREAD_STACK_SIZE
+	int "TX completion thread stack size"
+	default 2048
+	help
+	  TX completion thread stack size
+
+config ETH_TI_AM62L_CPSW_RX_THREAD_STACK_SIZE
+	int "RX thread stack size"
+	default 2048
+	help
+	  RX thread stack size
+
+config ETH_TI_AM62L_TX_THREAD_PRIO
+	int "TX completion thread priority"
+	default 2
+	help
+	  TX completion thread priority
+
+config ETH_TI_AM62L_RX_THREAD_PRIO
+	int "RX thread priority"
+	default 2
+	help
+	  RX thread priority
+
+config ETH_TI_AM62L_CPSW_TX_BUDGET
+	int "TX completion budget"
+	default 64
+	help
+	  Number of TX completions processed before yielding
+
+config ETH_TI_AM62L_CPSW_RX_BUDGET
+	int "RX budget"
+	default 64
+	help
+	  Number of packets received before yielding
+
+config ETH_TI_AM62L_CPSW_TX_DESC_ACQUIRE_TIMEOUT
+	int "TX descriptior acquire timeout"
+	default 100
+	help
+	  Timeout in milliseconds for acquiring a TX descriptor
+
+endif #ETH_TI_AM62L_CPSW
