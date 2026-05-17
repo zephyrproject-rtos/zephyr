@@ -746,7 +746,7 @@ void net_arp_update(struct net_if *iface,
 
 		/* Set the dst in the pending packet */
 		(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt),
-				       (const uint8_t *)&NET_ETH_HDR(pkt)->dst.addr,
+				       (const uint8_t *)&entry->eth,
 				       sizeof(struct net_eth_addr));
 
 		NET_DBG("iface %d (%p) dst %s pending %p frag %p ptype 0x%04x",
