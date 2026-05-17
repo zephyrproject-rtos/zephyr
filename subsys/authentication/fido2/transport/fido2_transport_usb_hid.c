@@ -27,6 +27,10 @@ LOG_MODULE_DECLARE(fido2, CONFIG_FIDO2_LOG_LEVEL);
 #define CTAPHID_ERROR     0x3F
 #define CTAPHID_KEEPALIVE 0x3B
 
+/* CTAPHID keepalive status bytes */
+#define CTAPHID_KEEPALIVE_STATUS_PROCESSING 0x01
+#define CTAPHID_KEEPALIVE_STATUS_UPNEEDED   0x02
+
 /* CTAPHID error codes */
 #define CTAPHID_ERR_INVALID_CMD     0x01
 #define CTAPHID_ERR_INVALID_PAR     0x02
@@ -77,7 +81,6 @@ struct __packed ctaphid_cont_pkt {
 
 #define FIDO2_HID_NODE DT_CHOSEN(zephyr_fido2_hid)
 
-static const struct fido2_transport_api usb_hid_api;
 extern struct fido2_transport usb_hid_transport;
 
 static K_MUTEX_DEFINE(tx_mutex);
@@ -105,9 +108,13 @@ struct ctaphid_ctx {
 	bool msg_in_progress;
 	k_timepoint_t msg_timeout;
 
+	/* Keepalive */
+	atomic_t keepalive_cid;
+	atomic_t keepalive_status_byte;
+
 	/* Registered receive callback */
 	fido2_transport_recv_cb_t recv_cb;
-	void *recv_cb_user_data;
+	fido2_transport_cancel_cb_t cancel_cb;
 };
 
 static struct ctaphid_ctx ctx = {
@@ -270,9 +277,17 @@ static void dispatch_message(uint32_t cid, uint8_t cmd, uint8_t *data, size_t le
 		usb_hid_send_frame(cmd, cid, data, len);
 		break;
 	case CTAPHID_CBOR:
+		/*
+		 * Implicitly cancel any pending UP wait before dispatching the
+		 * new command. Some WebAuthn clients don't send CTAPHID_CANCEL
+		 * command, Safari/AuthenticationServices framework has this issue.
+		 */
+		if (ctx.cancel_cb) {
+			ctx.cancel_cb();
+		}
 		/* Forward to core layer */
 		if (ctx.recv_cb) {
-			ctx.recv_cb(&usb_hid_transport, cid, data, len, ctx.recv_cb_user_data);
+			ctx.recv_cb(&usb_hid_transport, cid, data, len);
 		}
 		break;
 	case CTAPHID_CANCEL:
@@ -281,7 +296,9 @@ static void dispatch_message(uint32_t cid, uint8_t cmd, uint8_t *data, size_t le
 		 * response, it just aborts a pending keepalive/UP cycle.
 		 */
 		LOG_DBG("CTAPHID CANCEL on CID 0x%08x", cid);
-		/* TODO */
+		if (ctx.cancel_cb) {
+			ctx.cancel_cb();
+		}
 		break;
 	case CTAPHID_MSG:
 		/* CTAP1/U2F not supported */
@@ -485,13 +502,44 @@ static const struct hid_device_ops fido2_hid_ops = {
 	.set_report = fido2_hid_set_report,
 };
 
-/* Public API */
-static int usb_hid_init(fido2_transport_recv_cb_t cb, void *user_data)
+static void keepalive_work_handler(struct k_work *work)
+{
+	uint32_t cid;
+	uint8_t status;
+
+	ARG_UNUSED(work);
+
+	cid = (uint32_t)atomic_get(&ctx.keepalive_cid);
+	status = (uint8_t)atomic_get(&ctx.keepalive_status_byte);
+
+	usb_hid_send_frame(CTAPHID_KEEPALIVE, cid, &status, 1);
+}
+
+K_WORK_DEFINE(keepalive_work, keepalive_work_handler);
+
+static void keepalive_timer_expiry(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+
+	k_work_submit(&keepalive_work);
+}
+
+K_TIMER_DEFINE(keepalive_timer, keepalive_timer_expiry, NULL);
+
+static void keepalive_stop(void)
+{
+	struct k_work_sync sync;
+
+	k_timer_stop(&keepalive_timer);
+	k_work_flush(&keepalive_work, &sync);
+}
+
+static int usb_hid_init(fido2_transport_recv_cb_t cb, fido2_transport_cancel_cb_t ccb)
 {
 	int ret;
 
 	ctx.recv_cb = cb;
-	ctx.recv_cb_user_data = user_data;
+	ctx.cancel_cb = ccb;
 
 	atomic_set(&ctx.hid_iface_ready, 0);
 
@@ -524,26 +572,47 @@ static int usb_hid_send(uint32_t cid, const uint8_t *data, size_t len)
 	return usb_hid_send_frame(CTAPHID_CBOR, cid, data, len);
 }
 
-static int usb_hid_send_keepalive(uint32_t cid, uint8_t status)
+static void usb_hid_notify(uint32_t cid, enum fido2_wire_status status)
 {
-	if (cid == CTAPHID_BROADCAST_CID) {
-		return -EINVAL;
+	uint8_t status_byte;
+
+	if (status == FIDO2_WIRE_STATUS_DONE) {
+		keepalive_stop();
+		return;
 	}
 
-	return usb_hid_send_frame(CTAPHID_KEEPALIVE, cid, &status, 1);
+	if (status == FIDO2_WIRE_STATUS_UP_NEEDED) {
+		status_byte = CTAPHID_KEEPALIVE_STATUS_UPNEEDED;
+	} else {
+		status_byte = CTAPHID_KEEPALIVE_STATUS_PROCESSING;
+	}
+
+	atomic_set(&ctx.keepalive_cid, cid);
+	atomic_set(&ctx.keepalive_status_byte, status_byte);
+
+	usb_hid_send_frame(CTAPHID_KEEPALIVE, cid, &status_byte, 1);
+
+	k_timer_start(&keepalive_timer, K_MSEC(CONFIG_FIDO2_CTAPHID_KEEPALIVE_INTERVAL_MS),
+		      K_MSEC(CONFIG_FIDO2_CTAPHID_KEEPALIVE_INTERVAL_MS));
 }
 
 static void usb_hid_shutdown(void)
 {
+	keepalive_stop();
+
 	atomic_set(&ctx.hid_iface_ready, 0);
+
 	ctx.recv_cb = NULL;
-	ctx.recv_cb_user_data = NULL;
+	ctx.cancel_cb = NULL;
+
 	abort_assembly();
 }
 
-static const struct fido2_transport_api usb_hid_api = {.init = usb_hid_init,
-						       .send = usb_hid_send,
-						       .send_keepalive = usb_hid_send_keepalive,
-						       .shutdown = usb_hid_shutdown};
+static const struct fido2_transport_api usb_hid_api = {
+	.init = usb_hid_init,
+	.send = usb_hid_send,
+	.notify = usb_hid_notify,
+	.shutdown = usb_hid_shutdown,
+};
 
 FIDO2_TRANSPORT_DEFINE(usb_hid_transport, "USB_HID", &usb_hid_api);

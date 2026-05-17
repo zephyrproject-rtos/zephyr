@@ -10,7 +10,7 @@
 
 LOG_MODULE_DECLARE(fido2, CONFIG_FIDO2_LOG_LEVEL);
 
-int fido2_transport_init_all(fido2_transport_recv_cb_t cb, void *user_data)
+int fido2_transport_init_all(fido2_transport_recv_cb_t cb, fido2_transport_cancel_cb_t cancel_cb)
 {
 	int ret;
 
@@ -19,7 +19,7 @@ int fido2_transport_init_all(fido2_transport_recv_cb_t cb, void *user_data)
 			continue;
 		}
 
-		ret = t->api->init(cb, user_data);
+		ret = t->api->init(cb, cancel_cb);
 		if (ret) {
 			LOG_ERR("Transport %s init failed: %d", t->name, ret);
 			return ret;

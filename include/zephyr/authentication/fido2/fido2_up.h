@@ -31,9 +31,17 @@ extern "C" {
  *
  * @retval 0 User presence confirmed.
  * @retval -ETIMEDOUT Timeout expired without user interaction.
+ * @retval -ECANCELED Canceled user interaction.
  * @retval -errno On other failure.
  */
 int fido2_up_wait(void);
+
+/**
+ * @brief Cancel a pending user presence wait.
+ *
+ * Called when the cancel command is received from a transport.
+ */
+void fido2_up_cancel(void);
 
 #ifdef __cplusplus
 }

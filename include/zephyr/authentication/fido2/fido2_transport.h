@@ -30,6 +30,16 @@ extern "C" {
 
 struct fido2_transport;
 
+/** @brief Transport progress status codes. */
+enum fido2_wire_status {
+	/** The authenticator is waiting for a user presence gesture. */
+	FIDO2_WIRE_STATUS_UP_NEEDED,
+	/** A long-running operation has started (e.g. crypto, storage). */
+	FIDO2_WIRE_STATUS_PROCESSING,
+	/** The operation is complete. */
+	FIDO2_WIRE_STATUS_DONE
+};
+
 /**
  * @brief Callback invoked when a transport receives data from the host.
  *
@@ -38,36 +48,39 @@ struct fido2_transport;
  * return immediately. Not callable from userspace.
  *
  * @param transport Transport instance that received the data.
- * @param cid       CTAPHID channel ID associated with the received message.
+ * @param cid       Transport channel ID associated with the received message.
  * @param buf       Received data payload.
  * @param len       Length of the received data in bytes.
- * @param user_data Opaque context provided during callback registration.
  */
 typedef void (*fido2_transport_recv_cb_t)(const struct fido2_transport *transport, uint32_t cid,
-					  const uint8_t *buf, size_t len, void *user_data);
+					  const uint8_t *buf, size_t len);
+
+/**
+ * @brief Callback invoked when a transport receives a cancel command.
+ */
+typedef void (*fido2_transport_cancel_cb_t)(void);
 
 /** @brief Transport driver API callbacks. */
 struct fido2_transport_api {
 	/**
 	 * @brief Initialize the transport.
 	 *
-	 * Called once during subsystem startup. The transport must store @p cb
-	 * and @p user_data and invoke them on every received CTAPHID CBOR
-	 * message. The callback is guaranteed to be set before any host traffic
-	 * can arrive.
+	 * Called once during subsystem startup. The transport must store
+	 * the callbacks and invoke them on every received CBOR message
+	 * or cancel command.
 	 *
-	 * @param cb        Callback to invoke when a CTAPHID CBOR message is received.
-	 * @param user_data Opaque context forwarded to @p cb.
+	 * @param cb        Callback to invoke when a CBOR message is received.
+	 * @param cancel_cb Callback to invoke when the cancel command is received
 	 *
 	 * @retval 0 If successful.
 	 * @retval -ENODEV If hardware is not available.
 	 */
-	int (*init)(fido2_transport_recv_cb_t cb, void *user_data);
+	int (*init)(fido2_transport_recv_cb_t cb, fido2_transport_cancel_cb_t cancel_cb);
 
 	/**
 	 * @brief Send response data to the host.
 	 *
-	 * @param cid  CTAPHID channel ID to send the response on.
+	 * @param cid  Transport channel ID to send the response on.
 	 * @param data Response payload bytes.
 	 * @param len  Length of data in bytes.
 	 *
@@ -77,19 +90,16 @@ struct fido2_transport_api {
 	int (*send)(uint32_t cid, const uint8_t *data, size_t len);
 
 	/**
-	 * @brief Send a CTAPHID keepalive notification to the host.
+	 * @brief Notify the transport of an operation progress change.
 	 *
-	 * For transports that encapsulate CTAPHID framing (e.g. USB HID), this
-	 * allows long-running operations to periodically notify the host that the
-	 * authenticator is still processing or waiting for user interaction.
+	 * Called by the FIDO2 core to signal state transitions during
+	 * long-running operations. Each transport translates this into the
+	 * appropriate wire-protocol signaling.
 	 *
-	 * @param cid    CTAPHID channel ID.
-	 * @param status Keepalive status byte (CTAPHID keepalive payload).
-	 *
-	 * @retval 0 If successful.
-	 * @retval -EIO On transport error.
+	 * @param cid    Channel/connection identifier.
+	 * @param status Progress status indicating what the core is doing.
 	 */
-	int (*send_keepalive)(uint32_t cid, uint8_t status);
+	void (*notify)(uint32_t cid, enum fido2_wire_status status);
 
 	/**
 	 * @brief Shut down the transport.
@@ -109,7 +119,7 @@ struct fido2_transport {
  * @brief Register a FIDO2 transport.
  *
  * @param _name  C identifier for this transport instance.
- * @param _label Human-readable name string (e.g. "usb_ctaphid").
+ * @param _label Human-readable name string (e.g. "USB_HID").
  * @param _api   Pointer to the transport's @ref fido2_transport_api.
  */
 #define FIDO2_TRANSPORT_DEFINE(_name, _label, _api)                                                \
@@ -126,12 +136,12 @@ struct fido2_transport {
  * @brief Initialize all registered transports.
  *
  * @param cb        Callback to invoke when any transport receives data.
- * @param user_data Opaque context forwarded to the callback.
+ * @param cancel_cb Callback to invoke when the cancel command is received.
  *
  * @retval 0 If successful.
  * @retval -errno If any transport fails to initialize.
  */
-int fido2_transport_init_all(fido2_transport_recv_cb_t cb, void *user_data);
+int fido2_transport_init_all(fido2_transport_recv_cb_t cb, fido2_transport_cancel_cb_t cancel_cb);
 
 /**
  * @brief Shut down all registered transports.

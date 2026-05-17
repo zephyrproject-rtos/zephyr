@@ -79,6 +79,14 @@ static void set_runtime_state(enum fido2_runtime_state state)
 	}
 }
 
+static void notify_wire(const struct fido2_transport *transport, uint32_t cid,
+			enum fido2_wire_status status)
+{
+	if (transport && transport->api && transport->api->notify) {
+		transport->api->notify(cid, status);
+	}
+}
+
 static bool mc_check_exclude_list(void)
 {
 	for (int i = 0; i < mc_params.num_exclude; ++i) {
@@ -304,7 +312,16 @@ handle_make_credential(uint8_t *cbor_in, size_t cbor_in_len, uint8_t *cbor_out, 
 
 	if (mc_check_exclude_list()) {
 		set_runtime_state(FIDO2_RUNTIME_STATE_WAITING_USER_PRESENCE);
-		fido2_up_wait();
+		notify_wire(transport, cid, FIDO2_WIRE_STATUS_UP_NEEDED);
+
+		ret = fido2_up_wait();
+		if (ret) {
+			if (ret == -ECANCELED) {
+				return FIDO2_ERR_KEEPALIVE_CANCEL;
+			}
+			return FIDO2_ERR_USER_ACTION_TIMEOUT;
+		}
+
 		return FIDO2_ERR_CREDENTIAL_EXCLUDED;
 	}
 
@@ -337,13 +354,17 @@ handle_make_credential(uint8_t *cbor_in, size_t cbor_in_len, uint8_t *cbor_out, 
 	}
 
 	set_runtime_state(FIDO2_RUNTIME_STATE_WAITING_USER_PRESENCE);
+	notify_wire(transport, cid, FIDO2_WIRE_STATUS_UP_NEEDED);
+
 	ret = fido2_up_wait();
 	if (ret) {
-		fido2_crypto_destroy_key(mc_credential.key_id);
-		return FIDO2_ERR_OPERATION_DENIED;
+		status = (ret == -ECANCELED) ? FIDO2_ERR_KEEPALIVE_CANCEL
+					     : FIDO2_ERR_USER_ACTION_TIMEOUT;
+		goto cleanup;
 	}
 
 	set_runtime_state(FIDO2_RUNTIME_STATE_PROCESSING);
+	notify_wire(transport, cid, FIDO2_WIRE_STATUS_PROCESSING);
 
 	flags = AUTH_DATA_FLAG_AT | AUTH_DATA_FLAG_UP;
 
@@ -485,11 +506,9 @@ static enum fido2_status process_command(uint8_t cmd, uint8_t *cbor_in, size_t c
 }
 
 static void transport_recv_cb(const struct fido2_transport *transport, uint32_t cid,
-			      const uint8_t *buf, size_t len, void *user_data)
+			      const uint8_t *buf, size_t len)
 {
 	int ret;
-
-	ARG_UNUSED(user_data);
 
 	if (len > sizeof(rx_enqueue_msg.data)) {
 		LOG_WRN("Message too large, dropping");
@@ -510,6 +529,11 @@ static void transport_recv_cb(const struct fido2_transport *transport, uint32_t 
 	if (ret) {
 		LOG_WRN("Message queue full, dropping cid=0x%08x", cid);
 	}
+}
+
+static inline void transport_cancel_cb(void)
+{
+	fido2_up_cancel();
 }
 
 static void fido2_thread_fn(void *p1, void *p2, void *p3)
@@ -538,6 +562,7 @@ static void fido2_thread_fn(void *p1, void *p2, void *p3)
 					rx_dequeue_msg.transport, rx_dequeue_msg.cid);
 
 		set_runtime_state(FIDO2_RUNTIME_STATE_IDLE);
+		notify_wire(rx_dequeue_msg.transport, rx_dequeue_msg.cid, FIDO2_WIRE_STATUS_DONE);
 
 		ctap_tx_frame[0] = (uint8_t)status;
 		if (rx_dequeue_msg.transport && rx_dequeue_msg.transport->api) {
@@ -575,7 +600,7 @@ int fido2_init(void)
 		return ret;
 	}
 
-	ret = fido2_transport_init_all(transport_recv_cb, NULL);
+	ret = fido2_transport_init_all(transport_recv_cb, transport_cancel_cb);
 	if (ret) {
 		LOG_ERR("Transport init failed: %d", ret);
 		return ret;
