@@ -44,15 +44,20 @@ struct posix_thread_attr
 	bool cancelstate: 1;
 	bool canceltype: 1;
 	bool detachstate: 1;
+	bool is_external: 1;
 };
 
 struct posix_thread {
+	/* `struct k_thread` storage for threads created via `pthread_create` */
 	struct k_thread thread;
+
+	/* pointer to related Zephyr thread either `thread` (`pthread_create`) or external. */
+	k_tid_t z_thread;
 
 	/* List nodes for pthread_cleanup_push() / pthread_cleanup_pop() */
 	sys_slist_t cleanup_list;
 
-	/* List node for ready_q, run_q, or done_q */
+	/* List node for ready_q, run_q, done_q or external_q */
 	sys_dnode_t q_node;
 
 	/* List of keys that thread has called pthread_setspecific() on */
@@ -124,6 +129,7 @@ static inline pthread_t mark_pthread_obj_uninitialized(pthread_t obj)
 }
 
 struct posix_thread *to_posix_thread(pthread_t pth);
+k_tid_t pthread_to_zephyr_thread(pthread_t pth);
 
 /* get and possibly initialize a posix_mutex */
 struct k_mutex *to_posix_mutex(pthread_mutex_t *mu);
