@@ -31,6 +31,7 @@ tests:
       - nucleo_h743zi
       - nucleo_h753zi
       - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
       - kit_psc3m5_evk
     integration_platforms:
       - nucleo_h753zi
