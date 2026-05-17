@@ -108,17 +108,17 @@ struct pthread_key_data {
 	pthread_thread_data thread_data;
 };
 
-static inline bool is_pthread_obj_initialized(uint32_t obj)
+static inline bool is_pthread_obj_initialized(pthread_t obj)
 {
 	return (obj & PTHREAD_OBJ_MASK_INIT) != 0;
 }
 
-static inline uint32_t mark_pthread_obj_initialized(uint32_t obj)
+static inline pthread_t mark_pthread_obj_initialized(size_t obj)
 {
 	return obj | PTHREAD_OBJ_MASK_INIT;
 }
 
-static inline uint32_t mark_pthread_obj_uninitialized(uint32_t obj)
+static inline pthread_t mark_pthread_obj_uninitialized(pthread_t obj)
 {
 	return obj & ~PTHREAD_OBJ_MASK_INIT;
 }

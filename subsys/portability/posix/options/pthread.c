@@ -85,6 +85,10 @@ BUILD_ASSERT(CONFIG_POSIX_PTHREAD_ATTR_STACKSIZE_BITS + CONFIG_POSIX_PTHREAD_ATT
 /* ensure public `pthread_attr_t` covers whole memory requirements of private `struct posix_thread_attr` */
 BUILD_ASSERT(sizeof(struct posix_thread_attr) <= sizeof(pthread_attr_t));
 
+/* ensure public unsigned `pthread_t` type is sufficient as the private `posix_thread_pool` index (size_t). */
+BUILD_ASSERT(CONFIG_POSIX_THREAD_THREADS_MAX <= (pthread_t)~0);
+BUILD_ASSERT(PTHREAD_OBJ_MASK_INIT <= (pthread_t)~0);
+
 static void posix_thread_recycle(void);
 
 static sys_dlist_t posix_thread_q[] = {
