@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config RASPBERRYPI_BCM2711_FRAMEBUFFER
+	bool "Raspberry Pi BCM2711 framebuffer"
+	default y
+	depends on DT_HAS_RASPBERRYPI_BCM2711_FRAMEBUFFER_ENABLED
+	select RASPBERRYPI_FIRMWARE
+	help
+	  Enable Raspberry Pi BCM2711 framebuffer display driver.
