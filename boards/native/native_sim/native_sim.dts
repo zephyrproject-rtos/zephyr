@@ -262,4 +262,9 @@
 			pstate-id = <2>;
 		};
 	};
+
+	ptp_clock: ptp_clock {
+		compatible = "zephyr,native-ptp-clock";
+		status = "okay";
+	};
 };
