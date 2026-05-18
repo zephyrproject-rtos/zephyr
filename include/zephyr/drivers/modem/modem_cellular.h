@@ -251,6 +251,9 @@ int modem_cellular_pm_action(const struct device *dev, enum pm_device_action act
 
 extern const struct cellular_driver_api modem_cellular_api;
 
+void modem_cellular_emit_event(struct modem_cellular_data *data, enum cellular_event evt,
+			       const void *payload);
+
 void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 						 enum modem_chat_script_result result,
 						 void *user_data);
