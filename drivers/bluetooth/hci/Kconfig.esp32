@@ -769,6 +769,58 @@ config ESP32_BT_LE_CTLR_SLV_FAST_RX_CONN_DATA_EN
 	  while peripheral latency is active, at the cost of slightly higher
 	  current draw.
 
+config ESP32_BT_CTRL_MAIN_XTAL_PU_DURING_LIGHT_SLEEP
+	bool "Keep main XTAL powered up during light sleep"
+	depends on PM
+	help
+	  Keep the main crystal oscillator powered during light sleep so BLE wakes
+	  with a stable clock. Costs sleep current; only enable when BLE activity
+	  spans light-sleep transitions.
+
+config ESP32_BT_LE_CTLR_ADV_CH38_39_TX_AVOID_CONFLICT_EN
+	bool "Avoid TX conflicts on adv channels 38/39"
+	help
+	  Skip advertising on channels 38 and 39 when they overlap a connection
+	  event, reducing on-air collisions at the cost of slightly lower adv
+	  throughput.
+
+config ESP32_BT_LE_CTLR_ADV_EVENT_INC_ON_FULL_TX_EN
+	bool "Increment adv event counter on full TX"
+	help
+	  Increment the advertising event counter only after a full PDU is
+	  transmitted instead of after each PDU attempt.
+
+config ESP32_BT_LE_CTLR_ADV_FAST_TX_EN
+	bool "Fast advertising TX"
+	help
+	  Reduce inter-PDU spacing on advertising channels to increase
+	  advertisement rate. Higher power; may increase coex pressure.
+
+config ESP32_BT_LE_CTLR_ADV_RAND_CH_IDX_EN
+	bool "Randomize advertising channel index"
+	help
+	  Randomize the order in which adv channels 37/38/39 are used to spread
+	  airtime across the band.
+
+config ESP32_BT_LE_CTLR_ADV_TX_CONTINUE_WHEN_EXCEED_ITVL_EN
+	bool "Continue advertising TX past interval"
+	help
+	  Continue an in-flight advertising event when the configured interval
+	  expires, rather than aborting. Improves reliability under high load.
+
+config ESP32_BT_LE_CTLR_DL_ITVL_PHY_SYNC_EN
+	bool "Downlink interval PHY sync"
+	help
+	  Synchronize the downlink interval to the connection PHY for tighter
+	  timing on links that frequently switch PHY.
+
+config ESP32_BT_LE_CTLR_SLV_FAST_RX_CONN_DATA_EN
+	bool "Fast peripheral PDU reception during latency"
+	help
+	  Allow the peripheral role to receive connection data PDUs faster
+	  while peripheral latency is active, at the cost of slightly higher
+	  current draw.
+
 endif # SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
 
 endif # BT_ESP32
