@@ -1303,7 +1303,7 @@ def write_global_macros(edt: edtlib.EDT):
 def str2ident(s: str) -> str:
     # Converts 's' to a form suitable for (part of) an identifier
 
-    return re.sub('[-,.@/+]', '_', s.lower())
+    return re.sub('[-,.@/+%]', '_', s.lower())
 
 
 def list2init(values: Iterable[str]) -> str:
