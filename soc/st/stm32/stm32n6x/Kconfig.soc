@@ -19,5 +19,5 @@ config SOC_STM32N657XX
 	select SOC_SERIES_STM32N6X
 
 config SOC
-    default "stm32n647xx" if SOC_STM32N647XX
+	default "stm32n647xx" if SOC_STM32N647XX
 	default "stm32n657xx" if SOC_STM32N657XX
