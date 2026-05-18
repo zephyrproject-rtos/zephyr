@@ -20,6 +20,7 @@
 		zephyr,flash-controller = &fmu;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
+		zephyr,crc = &crc;
 	};
 
 	reserved-memory {

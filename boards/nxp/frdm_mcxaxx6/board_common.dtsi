@@ -30,6 +30,7 @@
 		zephyr,system-timer-companion = &lptmr0;
 		zephyr,canbus = &flexcan0;
 		zephyr,edac = &erm0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -250,5 +251,9 @@
 };
 
 &erm0 {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

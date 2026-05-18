@@ -352,6 +352,12 @@
 		status = "okay";
 		interrupts = <97 1>;
 	};
+
+	crc: crc@23000 {
+		compatible = "nxp,crc";
+		reg = <0x23000 0x1000>;
+		status = "disabled";
+	};
 };
 
 &pbridge1 {

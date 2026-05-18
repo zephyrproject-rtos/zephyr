@@ -234,3 +234,7 @@
 &erm0 {
 	status = "okay";
 };
+
+&crc {
+	status = "okay";
+};

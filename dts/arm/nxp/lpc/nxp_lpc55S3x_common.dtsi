@@ -567,6 +567,12 @@
 		nxp,internal-voltage-regulator-en;
 		nxp,chop-oscillator-en;
 	};
+
+	crc: crc@95000 {
+		compatible = "nxp,crc";
+		reg = <0x95000 0x1000>;
+		status = "disabled";
+	};
 };
 
 &nvic {

@@ -21,5 +21,6 @@
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,edac = &erm0;
+		zephyr,crc = &crc;
 	};
 };

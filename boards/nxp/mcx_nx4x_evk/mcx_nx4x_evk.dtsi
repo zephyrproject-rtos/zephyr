@@ -300,3 +300,7 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 	pinctrl-0 = <&flexpwm0_pwm2_default>;
 	pinctrl-names = "default";
 };
+
+&crc {
+	status = "okay";
+};

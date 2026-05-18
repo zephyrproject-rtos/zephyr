@@ -40,6 +40,7 @@
 		zephyr,canbus = &flexcan0;
 		zephyr,system-timer-companion = &lptmr0;
 		zephyr,edac = &erm0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -313,5 +314,9 @@ zephyr_udc0: &usb {
 };
 
 &erm0 {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };
