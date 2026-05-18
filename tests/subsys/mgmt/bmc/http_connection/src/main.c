@@ -96,4 +96,10 @@ ZTEST(bmc_http_connection, test_redfish_service_root_is_reachable)
 	expect_get_response_contains("/redfish/v1", "application/json", "RootService");
 }
 
+ZTEST(bmc_http_connection, test_webui_features_match_test_configuration)
+{
+	expect_get_response_contains("/webui/features", "\"hostConsole\":false",
+				     "\"bmcShell\":false");
+}
+
 ZTEST_SUITE(bmc_http_connection, NULL, bmc_suite_setup, NULL, NULL, NULL);

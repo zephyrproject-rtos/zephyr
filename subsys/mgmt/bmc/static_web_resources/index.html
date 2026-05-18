@@ -531,9 +531,9 @@
 				<nav class="sidebar">
 					<a class="sidebar-item active" data-section="system-overview" href="#" onclick="showSection('system-overview'); return false;">System Overview</a>
 					<a class="sidebar-item" data-section="power-control" href="#" onclick="showSection('power-control'); return false;">Host Power Control</a>
-					<a class="sidebar-item" data-section="host-console" href="#" onclick="showSection('host-console'); return false;">Host Console</a>
+					<a class="sidebar-item hidden" data-section="host-console" href="#" onclick="showSection('host-console'); return false;">Host Console</a>
 					<a class="sidebar-item" data-section="bmc" href="#" onclick="showSection('bmc'); return false;">BMC Settings</a>
-					<a class="sidebar-item" data-section="bmc-shell" href="#" onclick="showSection('bmc-shell'); return false;">BMC Shell</a>
+					<a class="sidebar-item hidden" data-section="bmc-shell" href="#" onclick="showSection('bmc-shell'); return false;">BMC Shell</a>
 					<a id="sidebar-sensors" class="sidebar-item hidden" data-section="sensors" href="#" onclick="showSection('sensors'); return false;">Sensors</a>
 				</nav>
 				<div class="dashboard-content">
@@ -750,6 +750,10 @@
 		let bmcData = null;
 		let networkProtocolData = null;
 		let ethData = null;
+		let webuiFeatures = {
+			hostConsole: false,
+			bmcShell: false,
+		};
 
 		let tempChart = null;
 		const SENSORS_POLL_INTERVAL_MS = 10000;
@@ -935,6 +939,17 @@
 				} else {
 					console.log("No BMC temperature sensor found.");
 				}
+
+				try {
+					webuiFeatures = await redfishCall('/webui/features');
+				} catch (err) {
+					console.warn('Could not load web UI feature flags:', err);
+					webuiFeatures = {
+						hostConsole: false,
+						bmcShell: false,
+					};
+				}
+				applyWebuiFeatures();
 
 				hide('login-section');
 				show('dashboard-section');
@@ -1295,6 +1310,10 @@
 		}
 
 		function showSection(name) {
+			if ((name === 'host-console' && !webuiFeatures.hostConsole) ||
+			    (name === 'bmc-shell' && !webuiFeatures.bmcShell))
+				return;
+
 			SECTIONS.forEach(s => document.getElementById('section-' + s).classList.add('hidden'));
 			document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
 			document.getElementById('section-' + name).classList.remove('hidden');
@@ -1314,6 +1333,21 @@
 			}
 			if (name === 'host-console' && hostWsConsole) hostWsConsole.term.focus();
 			if (name === 'bmc-shell' && bmcWsConsole) bmcWsConsole.term.focus();
+		}
+
+		function applyWebuiFeatures() {
+			const hostConsoleItem = document.querySelector('.sidebar-item[data-section="host-console"]');
+			if (hostConsoleItem)
+				hostConsoleItem.classList.toggle('hidden', !webuiFeatures.hostConsole);
+
+			const bmcShellItem = document.querySelector('.sidebar-item[data-section="bmc-shell"]');
+			if (bmcShellItem)
+				bmcShellItem.classList.toggle('hidden', !webuiFeatures.bmcShell);
+
+			if (!webuiFeatures.hostConsole)
+				closeTerminal(true);
+			if (!webuiFeatures.bmcShell)
+				closeTerminal(false);
 		}
 
 		// --- Terminal font settings ---
