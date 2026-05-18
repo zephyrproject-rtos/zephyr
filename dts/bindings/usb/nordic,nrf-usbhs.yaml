@@ -1,0 +1,16 @@
+description: |
+  Nordic USB High-Speed controller (DWC2 compatible) used on targets with NRFS.
+
+compatible: "nordic,nrf-usbhs"
+
+include: ["snps,dwc2.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  phy:
+    required: true
+    type: phandle
+    description: |
+      USB PHY configuration
