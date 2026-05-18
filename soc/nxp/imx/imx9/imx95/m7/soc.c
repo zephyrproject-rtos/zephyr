@@ -42,6 +42,89 @@ int set_flexcan_clock(uint32_t clk_id)
 #define FLEXCAN_CLOCK_SETUP(node_id) \
 	set_flexcan_clock(DT_CLOCKS_CELL_BY_IDX(node_id, 0, name));
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_i2s)
+static int set_audiopll1_clock(struct scmi_protocol *proto)
+{
+	int ret = 0;
+	struct scmi_clock_rate_config clk_cfg = {0};
+	struct scmi_clock_config cfg = {0};
+	uint64_t audiopll1_vco_clk = 3932160000ULL; /* 3932.16 MHz */
+	uint64_t audiopll1_clk = 393216000ULL;      /* 393.216 MHz */
+
+	/* AUDIOPLL1_VCO clock init */
+	clk_cfg.flags = SCMI_CLK_RATE_SET_FLAGS_ROUNDS_AUTO;
+	clk_cfg.clk_id = IMX95_CLK_AUDIOPLL1_VCO;
+	clk_cfg.rate[0] = audiopll1_vco_clk & 0xffffffff;
+	clk_cfg.rate[1] = (audiopll1_vco_clk >> 32) & 0xffffffff;
+
+	ret = scmi_clock_rate_set(proto, &clk_cfg);
+	if (ret) {
+		return ret;
+	}
+
+	cfg.attributes = 1;
+	cfg.clk_id = IMX95_CLK_AUDIOPLL1_VCO;
+
+	ret = scmi_clock_config_set(proto, &cfg);
+	if (ret) {
+		return ret;
+	}
+
+	/* AUDIOPLL1 clock init */
+	clk_cfg.flags = SCMI_CLK_RATE_SET_FLAGS_ROUNDS_AUTO;
+	clk_cfg.clk_id = IMX95_CLK_AUDIOPLL1;
+	clk_cfg.rate[0] = audiopll1_clk & 0xffffffff;
+	clk_cfg.rate[1] = (audiopll1_clk >> 32) & 0xffffffff;
+
+	ret = scmi_clock_rate_set(proto, &clk_cfg);
+	if (ret) {
+		return ret;
+	}
+
+	cfg.attributes = 1;
+	cfg.clk_id = IMX95_CLK_AUDIOPLL1;
+
+	ret = scmi_clock_config_set(proto, &cfg);
+
+	return ret;
+}
+
+static int set_sai_clock(uint32_t clk_id)
+{
+	int ret = 0;
+	static bool audiopll1_initialized;
+	const struct device *clk_dev = DEVICE_DT_GET(DT_NODELABEL(scmi_clk));
+	struct scmi_protocol *proto = clk_dev->data;
+	struct scmi_clock_rate_config clk_cfg = {0};
+	uint64_t sai_clk = 12288000ULL; /* 12.288 MHz */
+
+	if (!audiopll1_initialized) {
+		ret = set_audiopll1_clock(proto);
+		if (ret) {
+			return ret;
+		}
+		audiopll1_initialized = true;
+	}
+
+	/* SAI clock init: parent = AUDIOPLL1, rate = 12.288 MHz */
+	ret = scmi_clock_parent_set(proto, clk_id, IMX95_CLK_AUDIOPLL1);
+	if (ret) {
+		return ret;
+	}
+
+	clk_cfg.flags = SCMI_CLK_RATE_SET_FLAGS_ROUNDS_AUTO;
+	clk_cfg.clk_id = clk_id;
+	clk_cfg.rate[0] = sai_clk & 0xffffffff;
+	clk_cfg.rate[1] = (sai_clk >> 32) & 0xffffffff;
+
+	ret = scmi_clock_rate_set(proto, &clk_cfg);
+
+	return ret;
+}
+
+#define SAI_CLOCK_SETUP(node_id) set_sai_clock(DT_CLOCKS_CELL_BY_IDX(node_id, 0, name));
+
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_i2s) */
 void soc_early_init_hook(void)
 {
 #ifdef CONFIG_CACHE_MANAGEMENT
@@ -239,6 +322,8 @@ static int soc_init(void)
 #endif
 
 DT_FOREACH_STATUS_OKAY(nxp_flexcan, FLEXCAN_CLOCK_SETUP)
+
+DT_FOREACH_STATUS_OKAY(nxp_mcux_i2s, SAI_CLOCK_SETUP)
 
 #if defined(CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS)
 	cpu_cfg.cpu_id = CPU_IDX_M7P;
