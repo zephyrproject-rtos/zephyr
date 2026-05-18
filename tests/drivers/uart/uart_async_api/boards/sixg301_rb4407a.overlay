@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/delete-property/ zephyr,display;
+	};
+};
+
+/delete-node/ &ls013b7dh03;
+
+/*
+ * Connect EXP4 with EXP7 on the Expension Pin header
+ */
+&pinctrl {
+	eusart1_default: eusart1_default {
+		group0 {
+			pins = <EUSART1_TX_PA4>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <EUSART1_RX_PC0>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+};
+
+dut: &eusart1 {
+	compatible = "silabs,eusart-uart";
+	current-speed = <115200>;
+	dmas = <&dma0 DMA_REQSEL_EUSART1TXFL>,
+	       <&dma0 DMA_REQSEL_EUSART1RXFL>;
+	dma-names = "tx", "rx";
+	status = "okay";
+
+	/delete-property/ cs-gpios;
+};
+
+&dma0 {
+	status = "okay";
+};
