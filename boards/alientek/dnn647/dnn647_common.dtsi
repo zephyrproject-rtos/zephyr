@@ -7,12 +7,14 @@
 #include <st/n6/stm32n647X0.dtsi>
 #include <st/n6/stm32n647x0hxq-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	chosen {
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &axisram2;
+		zephyr,display = &ltdc;
 	};
 
 	leds {
@@ -95,6 +97,13 @@
 	status = "okay";
 };
 
+/* LTDC pixel clock: PLL1 (2400 MHz) / 72 = 33.33 MHz (~60 Hz for 800x480) */
+&ic16 {
+	pll-src = <1>;
+	ic-div = <72>;
+	status = "okay";
+};
+
 &cpusw {
 	clocks = <&rcc STM32_SRC_IC1 CPU_SEL(3)>;
 	clock-frequency = <DT_FREQ_M(800)>;
@@ -115,4 +124,44 @@
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
+};
+
+&ltdc {
+	clocks = <&rcc STM32_CLOCK(APB5, 1)>,
+		 <&rcc STM32_SRC_IC16 LTDC_SEL(2)>;
+	pinctrl-0 = <&ltdc_g3_pa0  &ltdc_g2_pa1  &ltdc_b7_pa2
+		     &ltdc_clk_pa5  &ltdc_b6_pa8  &ltdc_b5_pa9
+		     &ltdc_b4_pa10  &ltdc_b3_pa11 &ltdc_r5_pa15
+		     &ltdc_r3_pb4   &ltdc_g7_pb10 &ltdc_g6_pb11
+		     &ltdc_g5_pb12  &ltdc_g4_pb15
+		     &ltdc_r6_pf8   &ltdc_hsync_pf9
+		     &ltdc_vsync_pg0 &ltdc_r7_pg9  &ltdc_de_pg13
+		     &ltdc_r4_ph4>;
+	pinctrl-names = "default";
+	bl-ctrl-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+	ext-sdram = <&axisram1>;
+
+	status = "okay";
+
+	width = <800>;
+	height = <480>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		hsync-len = <1>;
+		vsync-len = <1>;
+		hback-porch = <46>;
+		vback-porch = <23>;
+		hfront-porch = <210>;
+		vfront-porch = <22>;
+	};
+
+	def-back-color-red = <0x00>;
+	def-back-color-green = <0x00>;
+	def-back-color-blue = <0x00>;
 };
