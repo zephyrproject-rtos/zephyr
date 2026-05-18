@@ -27,6 +27,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -77,5 +78,9 @@
 };
 
 &gpiod {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

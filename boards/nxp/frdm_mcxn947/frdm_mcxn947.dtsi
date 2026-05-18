@@ -23,6 +23,7 @@
 
 	chosen {
 		zephyr,edac = &erm0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -431,3 +432,7 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 dvp_20pin_i2c: &flexcomm7_lpi2c7 {};
 
 dvp_20pin_interface: &video_sdma {};
+
+&crc {
+	status = "okay";
+};

@@ -1162,6 +1162,12 @@
 		reg = <0x59000 0x1000>;
 		interrupts = <99 0>;
 	};
+
+	crc: crc@cb000 {
+		compatible = "nxp,crc";
+		reg = <0xcb000 0x1000>;
+		status = "disabled";
+	};
 };
 
 &systick {

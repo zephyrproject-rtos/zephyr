@@ -25,6 +25,7 @@
 		zephyr,code-cpu1-partition = &slot1_partition;
 		zephyr,system-timer-companion = &lptmr0;
 		zephyr,edac = &erm0;
+		zephyr,crc = &crc;
 	};
 
 	aliases {

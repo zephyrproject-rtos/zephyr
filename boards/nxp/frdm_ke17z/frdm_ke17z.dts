@@ -37,6 +37,7 @@
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
 		zephyr,system-timer-companion = &lptmr0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -218,5 +219,9 @@
 };
 
 &lpit0 {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

@@ -28,6 +28,7 @@
 		zephyr,canbus = &flexcan1;
 		zephyr,edac = &erm0;
 		zephyr,system-timer-companion = &lptmr0;
+		zephyr,crc = &crc;
 	};
 
 	aliases {
@@ -465,4 +466,8 @@ dvp_20pin_interface: &video_sdma {};
 	status = "okay";
 	pinctrl-0 = <&pinmux_micfil>;
 	pinctrl-names = "default";
+};
+
+&crc {
+	status = "okay";
 };

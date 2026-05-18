@@ -642,6 +642,12 @@
 			interrupts = <10 0>, <11 0>;
 			channels = <0 1>;
 		};
+
+		crc: crc@4008a000 {
+			compatible = "nxp,crc";
+			reg = <0x4008a000 0x1000>;
+			status = "disabled";
+		};
 	};
 };
 

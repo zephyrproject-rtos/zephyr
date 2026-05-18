@@ -33,6 +33,7 @@
 		zephyr,canbus = &flexcan0;
 		zephyr,uart-mcumgr = &lpuart0;
 		zephyr,bt-c2h-uart = &lpuart0;
+		zephyr,crc = &crc;
 	};
 
 	user_led {
@@ -248,5 +249,9 @@ arduino_i2c: &lpi2c1 {};
 };
 
 &counter_rtc {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

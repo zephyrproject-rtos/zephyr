@@ -564,6 +564,12 @@
 			status = "disabled";
 		};
 	};
+
+	crc: crc@23000 {
+		compatible = "nxp,crc";
+		reg = <0x23000 0x1000>;
+		status = "disabled";
+	};
 };
 
 &fast_peripheral0 {
