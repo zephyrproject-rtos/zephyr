@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/silabs/six301-pinctrl.h>
+
+&pinctrl {
+	adc0_default: adc0_default {
+		group0 {
+			silabs,analog-bus = <ABUS_CDEVEN0_ADC0>;
+		};
+	};
+
+	eusart0_default: eusart0_default {
+		group0 {
+			pins = <EUSART0_TX_PB2>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <EUSART0_RX_PB0>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+
+	eusart1_default: eusart1_default {
+		group0 {
+			pins = <EUSART1_TX_PC0>, <EUSART1_SCLK_PC2>;
+			drive-push-pull;
+			output-high;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group0 {
+			pins = <I2C0_SDA_PD1>, <I2C0_SCL_PD0>;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
+
+	itm_default: itm_default {
+		group0 {
+			pins = <GPIO_SWV_PA3>;
+			drive-push-pull;
+			output-high;
+		};
+	};
+
+	pti_default: pti_default {
+		group0 {
+			pins = <PTI_DOUT_PD5>, <PTI_DFRAME_PD6>;
+			drive-push-pull;
+			output-high;
+		};
+	};
+
+	timer0_default: timer0_default {
+		group0 {
+			pins = <TIMER0_CC0_PD3>, <TIMER0_CC1_PD4>;
+			drive-push-pull;
+			output-low;
+		};
+	};
+};
