@@ -22,8 +22,8 @@ config SPI_SILABS_SIWX91X_GSPI_DMA
 config SPI_SILABS_SIWX91X_GSPI_DMA_MAX_BLOCKS
 	int "Maximum DMA transfer block per channel for a transaction."
 	depends on SPI_SILABS_SIWX91X_GSPI_DMA
-	default 16
+	default 3
 	help
-	  One block is needed for every chunk found in the SPI transaction and every 1024 bytes
+	  One block is needed for every SPI buffer in the transaction plus one for padding.
 
 endif # SPI_SILABS_SIWX91X_GSPI
