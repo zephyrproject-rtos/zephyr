@@ -14,6 +14,10 @@
 	model = "NXP i.MX95 EVK board";
 	compatible = "nxp,imx95_evk";
 
+	aliases {
+		watchdog0 = &wdog5;
+	};
+
 	chosen {
 		/* TCM */
 		zephyr,flash = &itcm;
@@ -199,3 +203,7 @@ zephyr_dpu: &dpu {};
 zephyr_mipi_dsi: &mipi_dsi {};
 
 display_i2c: &lpi2c2 {};
+
+&wdog5 {
+	status = "okay";
+};
