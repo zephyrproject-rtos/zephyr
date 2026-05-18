@@ -6,11 +6,58 @@ Process a build folder and generate a comprehensive HTML dashboard
 including memory use, Kconfig values, devicetree browser, sys-init
 ordering, and other general details.
 
-This incorporates results from various other scripts:
-- traceconfig
-- footprint
-- ram_plot/rom_plot
-- initlevels
+Data sources
+============
+
+The following build artifacts (read from <build_dir>/zephyr/ unless noted)
+are used by this script:
+
+  <build_dir>/build_info.yml
+      Build metadata produced by CMake: application source path, board
+      name, west build command, and workspace top directory.
+
+  <zephyr_base>/VERSION
+      Zephyr source version (major, minor, patchlevel, extraversion).
+
+  <build_dir>/CMakeFiles/*/CMakeCCompiler.cmake
+      CMake compiler description file, parsed to extract the toolchain
+      name and version string.
+
+  zephyr/<kernel>.elf
+      ELF image of the built kernel. Used by pyelftools to compute the
+      memory summary (text/rodata/rwdata/bss section sizes), to check
+      sys-init ordering via check_init_priorities, and by the
+      scripts/footprint/size_report script to generate memory reports.
+
+  zephyr/<kernel>.bin
+      Binary image.  Only its file size is read, reported as "Bin Size"
+      on the build summary page.
+
+  zephyr/.config-trace.pickle
+      Pickled output of the traceconfig script.  Contains the list of
+      Kconfig symbols that were evaluated during the build, together
+      with their values and source locations, used to populate the
+      Kconfig browser tab.
+
+  zephyr/edt.pickle
+      Pickled edtlib.EDT object representing the fully resolved
+      devicetree for the build.  Used in two ways:
+
+      1. General devicetree browser — the full DT node tree is rendered
+         as a searchable, expandable view in the Devicetree tab.
+
+      2. Per-region memory reports — all nodes whose "compatible"
+         includes "zephyr,memory-region" and whose status is "okay" are
+         enumerated.  For each such node the "zephyr,memory-region"
+         property provides the region name and the first "reg" entry
+         provides its base address and size.  If the ELF contains at
+         least one allocated section that overlaps the region's address
+         range, a report is created and shown as an additional tab in the
+         Memory Report view.
+
+  zephyr/zephyr.dts
+      Raw DTS source file, syntax-highlighted with Pygments and
+      displayed verbatim in the Devicetree tab.
 '''
 
 import argparse
@@ -462,7 +509,7 @@ class ZephyrDashboard:
             for section in elf.iter_sections():
                 if section["sh_size"] == 0:
                     continue
-                if not (section["sh_flags"] & SH_FLAGS.SHF_ALLOC):
+                if section["sh_flags"] & SH_FLAGS.SHF_ALLOC == 0:
                     continue
                 sec_start = section["sh_addr"]
                 sec_end = sec_start + section["sh_size"]
