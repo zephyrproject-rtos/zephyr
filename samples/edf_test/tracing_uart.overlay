@@ -1,0 +1,13 @@
+/* tracing_uart.overlay */
+
+/ {
+    chosen {
+        /* Set the UART used for tracing */
+        zephyr_tracing_uart = &uart0;
+    };
+};
+
+ &uart0 {
+    status = "okay";
+};
+

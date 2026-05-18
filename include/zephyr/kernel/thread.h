@@ -87,7 +87,7 @@ struct _thread_base {
 	};
 
 #ifdef CONFIG_SCHED_DEADLINE
-	int prio_deadline;
+	int64_t prio_deadline;
 #endif /* CONFIG_SCHED_DEADLINE */
 
 #if defined(CONFIG_SCHED_SCALABLE) || defined(CONFIG_WAITQ_SCALABLE)

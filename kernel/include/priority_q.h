@@ -70,6 +70,9 @@ static ALWAYS_INLINE void z_priq_simple_init(sys_dlist_t *pq)
  * Do not rely on the actual value returned aside from the above.
  * (Again, like memcmp.)
  */
+
+ #pragma GCC push_options
+#pragma GCC optimize ("O0") 
 static ALWAYS_INLINE int32_t z_sched_prio_cmp(struct k_thread *thread_1, struct k_thread *thread_2)
 {
 	/* `prio` is <32b, so the below cannot overflow. */
@@ -96,12 +99,22 @@ static ALWAYS_INLINE int32_t z_sched_prio_cmp(struct k_thread *thread_1, struct 
 		 * Doing the calculation with unsigned types and casting
 		 * to signed isn't perfect, but at least reduces this
 		 * from UB on overflow to impdef.
+
+		 
 		 */
-		return (int32_t)(d2 - d1);
+          /*
+		   * Note that this is not a simple d1 - d2, because that can
+		   * overflow and give the wrong sign.  Instead we check if
+		   * d2 is greater than d1, which is equivalent to checking
+		   * if (d1 - d2) is negative without risking overflow.
+		  */
+
+			 return (int32_t)((d2 > d1) ? 1 : -1);
 	}
 #endif /* CONFIG_SCHED_DEADLINE */
 	return 0;
 }
+#pragma GCC pop_options
 
 static ALWAYS_INLINE void z_priq_simple_add(sys_dlist_t *pq, struct k_thread *thread)
 {

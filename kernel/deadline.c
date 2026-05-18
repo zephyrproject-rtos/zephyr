@@ -33,7 +33,7 @@
  * @param thread   Thread whose deadline is being updated.
  * @param deadline New absolute deadline value (raw cycle counter).
  */
-void z_sched_prio_deadline_set(struct k_thread *thread, int deadline)
+void z_sched_prio_deadline_set(struct k_thread *thread, int64_t deadline)
 {
 	K_SPINLOCK(&_sched_spinlock) {
 		if (z_is_thread_queued(thread)) {
@@ -46,7 +46,7 @@ void z_sched_prio_deadline_set(struct k_thread *thread, int deadline)
 	}
 }
 
-void z_impl_k_thread_absolute_deadline_set(k_tid_t tid, int deadline)
+void z_impl_k_thread_absolute_deadline_set(k_tid_t tid, int64_t deadline)
 {
 	struct k_thread *thread = tid;
 
@@ -60,17 +60,17 @@ void z_impl_k_thread_absolute_deadline_set(k_tid_t tid, int deadline)
 	z_sched_prio_deadline_set(thread, deadline);
 }
 
-void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
+void z_impl_k_thread_deadline_set(k_tid_t tid, int64_t deadline)
 {
-	deadline = clamp(deadline, 0, INT_MAX);
+	deadline = clamp(deadline, 0, INT64_MAX);
 
-	int32_t newdl = k_cycle_get_32() + deadline;
+	int64_t newdl = k_cycle_get_64() + deadline;
 
 	z_impl_k_thread_absolute_deadline_set(tid, newdl);
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_thread_absolute_deadline_set(k_tid_t tid, int deadline)
+static inline void z_vrfy_k_thread_absolute_deadline_set(k_tid_t tid, int64_t deadline)
 {
 	struct k_thread *thread = tid;
 
@@ -80,14 +80,14 @@ static inline void z_vrfy_k_thread_absolute_deadline_set(k_tid_t tid, int deadli
 }
 #include <zephyr/syscalls/k_thread_absolute_deadline_set_mrsh.c>
 
-static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int deadline)
+static inline void z_vrfy_k_thread_deadline_set(k_tid_t tid, int64_t deadline)
 {
 	struct k_thread *thread = tid;
 
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	K_OOPS(K_SYSCALL_VERIFY_MSG(deadline > 0,
-				    "invalid thread deadline %d",
-				    (int)deadline));
+				    "invalid thread deadline %lld",
+				    (int64_t)deadline));
 
 	z_impl_k_thread_deadline_set((k_tid_t)thread, deadline);
 }

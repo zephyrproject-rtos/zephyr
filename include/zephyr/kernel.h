@@ -1117,7 +1117,7 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * @param deadline A time delta, in cycle units
  *
  */
-__syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
+__syscall void k_thread_deadline_set(k_tid_t thread, int64_t deadline);
 
 /**
  * @brief Set absolute deadline expiration time for scheduler
@@ -1159,7 +1159,7 @@ __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
  * @param thread A thread on which to set the deadline
  * @param deadline A timestamp, in cycle units
  */
-__syscall void k_thread_absolute_deadline_set(k_tid_t thread, int deadline);
+__syscall void k_thread_absolute_deadline_set(k_tid_t thread, int64_t deadline);
 #endif
 
 /**
