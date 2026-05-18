@@ -4,6 +4,12 @@
 
 # Infineon CAT1A devices
 
+if SOC_FAMILY_INFINEON_CAT1A
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_INFINEON_CAT1A
+
 # Family definitions
 config SOC_FAMILY_PSOC6
 	select ARM

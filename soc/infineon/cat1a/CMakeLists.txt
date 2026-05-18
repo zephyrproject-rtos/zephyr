@@ -1,6 +1,11 @@
 # Copyright (c) 2024 Cypress Semiconductor Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
+if(CONFIG_SOC_SERIES_CYT2BX)
+  add_subdirectory(${SOC_SERIES})
+  zephyr_include_directories(common)
+endif()
+
 if(CONFIG_SOC_FAMILY_PSOC6)
   zephyr_include_directories(common)
   zephyr_sources(common/soc.c)

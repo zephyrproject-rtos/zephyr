@@ -1,0 +1,335 @@
+# Copyright (c) 2026 Linumiz
+# Copyright (c) 2026 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+# SOC Series
+config SOC_SERIES_CYT2BX
+	bool
+	select SOC_FAMILY_INFINEON_CAT1
+	select SOC_FAMILY_INFINEON_CAT1A
+	select SOC_FAMILY_INFINEON_TRAVEO
+
+config SOC_SERIES
+	default "cyt2bx" if SOC_SERIES_CYT2BX
+
+# SOC die
+config SOC_DIE_CYT2BL
+	bool
+
+config SOC_DIE_CYT2B7
+	bool
+
+# SOC packages
+config SOC_PACKAGE_CYT2BL_176_LQFP
+	bool
+
+config SOC_PACKAGE_CYT2BL_144_LQFP
+	bool
+
+config SOC_PACKAGE_CYT2BL_100_LQFP
+	bool
+
+config SOC_PACKAGE_CYT2BL_80_LQFP
+	bool
+
+config SOC_PACKAGE_CYT2BL_64_LQFP
+	bool
+
+config SOC_PACKAGE_CYT2B7_64_LQFP
+	bool
+
+config SOC_PACKAGE_CYT2B7_80_LQFP
+	bool
+
+config SOC_PACKAGE_CYT2B7_100_LQFP
+	bool
+
+config SOC_PACKAGE_CYT2B7_144_LQFP
+	bool
+
+config SOC_PACKAGE_CYT2B7_176_LQFP
+	bool
+
+# Infineon CYT2BL series MCUs
+config SOC_CYT2BL3BAS
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_64_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL3BAE
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_64_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL3CAS
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_64_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL3CAE
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_64_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL4BAS
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_80_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL4BAE
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_80_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL4CAS
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_80_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL4CAE
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_80_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL5BAS
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_100_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL5BAE
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_100_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL5CAS
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_100_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL5CAE
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_100_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL7BAS
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_144_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL7BAE
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_144_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL7CAS
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_144_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL7CAE
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_144_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL8BAS
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_176_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL8BAE
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_176_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL8CAS
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_176_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2BL8CAE
+	bool
+	select SOC_DIE_CYT2BL
+	select SOC_PACKAGE_CYT2BL_176_LQFP
+	select SOC_SERIES_CYT2BX
+
+# Infineon CYT2B7 series MCUs
+config SOC_CYT2B73BAS
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_64_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B73BAE
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_64_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B73CAS
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_64_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B73CAE
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_64_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B74BAS
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_80_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B74BAE
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_80_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B74CAS
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_80_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B74CAE
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_80_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B75BAS
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_100_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B75BAE
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_100_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B75CAS
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_100_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B75CAE
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_100_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B77BAS
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_144_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B77BAE
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_144_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B77CAS
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_144_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B77CAE
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_144_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B78BAS
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_176_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B78BAE
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_176_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B78CAS
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_176_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC_CYT2B78CAE
+	bool
+	select SOC_DIE_CYT2B7
+	select SOC_PACKAGE_CYT2B7_176_LQFP
+	select SOC_SERIES_CYT2BX
+
+config SOC
+	default "cyt2bl3bas" if SOC_CYT2BL3BAS
+	default "cyt2bl3bae" if SOC_CYT2BL3BAE
+	default "cyt2bl3cas" if SOC_CYT2BL3CAS
+	default "cyt2bl3cae" if SOC_CYT2BL3CAE
+	default "cyt2bl4bas" if SOC_CYT2BL4BAS
+	default "cyt2bl4bae" if SOC_CYT2BL4BAE
+	default "cyt2bl4cas" if SOC_CYT2BL4CAS
+	default "cyt2bl4cae" if SOC_CYT2BL4CAE
+	default "cyt2bl5bas" if SOC_CYT2BL5BAS
+	default "cyt2bl5bae" if SOC_CYT2BL5BAE
+	default "cyt2bl5cas" if SOC_CYT2BL5CAS
+	default "cyt2bl5cae" if SOC_CYT2BL5CAE
+	default "cyt2bl7bas" if SOC_CYT2BL7BAS
+	default "cyt2bl7bae" if SOC_CYT2BL7BAE
+	default "cyt2bl7cas" if SOC_CYT2BL7CAS
+	default "cyt2bl7cae" if SOC_CYT2BL7CAE
+	default "cyt2bl8bas" if SOC_CYT2BL8BAS
+	default "cyt2bl8bae" if SOC_CYT2BL8BAE
+	default "cyt2bl8cas" if SOC_CYT2BL8CAS
+	default "cyt2bl8cae" if SOC_CYT2BL8CAE
+	default "cyt2b73bas" if SOC_CYT2B73BAS
+	default "cyt2b73bae" if SOC_CYT2B73BAE
+	default "cyt2b73cas" if SOC_CYT2B73CAS
+	default "cyt2b73cae" if SOC_CYT2B73CAE
+	default "cyt2b74bas" if SOC_CYT2B74BAS
+	default "cyt2b74bae" if SOC_CYT2B74BAE
+	default "cyt2b74cas" if SOC_CYT2B74CAS
+	default "cyt2b74cae" if SOC_CYT2B74CAE
+	default "cyt2b75bas" if SOC_CYT2B75BAS
+	default "cyt2b75bae" if SOC_CYT2B75BAE
+	default "cyt2b75cas" if SOC_CYT2B75CAS
+	default "cyt2b75cae" if SOC_CYT2B75CAE
+	default "cyt2b77bas" if SOC_CYT2B77BAS
+	default "cyt2b77bae" if SOC_CYT2B77BAE
+	default "cyt2b77cas" if SOC_CYT2B77CAS
+	default "cyt2b77cae" if SOC_CYT2B77CAE
+	default "cyt2b78bas" if SOC_CYT2B78BAS
+	default "cyt2b78bae" if SOC_CYT2B78BAE
+	default "cyt2b78cas" if SOC_CYT2B78CAS
+	default "cyt2b78cae" if SOC_CYT2B78CAE

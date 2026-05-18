@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Linumiz
+# Copyright (c) 2026 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_CYT2BX
+
+config SOC_CYT2BX_CORE_M0PLUS
+	bool
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_HAS_ARM_MPU
+	select SOC_PREP_HOOK
+
+config SOC_CYT2BX_START_M4
+	bool "Infineon M4 during M0+ startup"
+	default n
+	help
+	  Enable starting M4 core 0 from M0+ core.
+
+endif # SOC_SERIES_CYT2BX
