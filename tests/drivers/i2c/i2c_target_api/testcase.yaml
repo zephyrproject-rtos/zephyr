@@ -12,6 +12,8 @@ tests:
     platform_allow:
       - b_u585i_iot02a
       - disco_l475_iot1
+      - esp32h2_devkitm
+      - esp32s3_devkitc/esp32s3/procpu
       - nucleo_f746zg
       - nucleo_g474re
       - nucleo_f091rc
