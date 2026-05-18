@@ -20,6 +20,7 @@ config SILABS_SISDK_EMU
 
 config SILABS_SISDK_EUSART
 	bool "Peripheral HAL for EUSART"
+	select SILABS_SISDK_PRS
 
 config SILABS_SISDK_GPCRC
 	bool "Peripheral HAL for GPCRC"
