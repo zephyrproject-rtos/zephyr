@@ -460,6 +460,13 @@ config SCHED_THREAD_USAGE_AUTO_ENABLE
 	  When set, this option automatically enables the gathering of both
 	  the thread and CPU usage statistics.
 
+config SCHED_THREAD_USAGE_ARRIVAL_STATS
+	bool "Track thread arrival statistics"
+	depends on SCHED_THREAD_USAGE
+	help
+	  Track raw scheduler wakeup arrival source bits and arrival counts in
+	  each thread's runtime usage statistics.
+
 endif # THREAD_RUNTIME_STATS
 
 menuconfig THREAD_RUNTIME_STACK_SAFETY
@@ -494,6 +501,13 @@ config WORKQUEUE_WORK_TIMEOUT
 	  If the work item handler takes longer than the specified time to
 	  execute, the work queue thread will be aborted, and an error will be
 	  logged.
+
+config WORKQUEUE_HANDLER_RUNTIME_STATS
+	bool "Track k_work handler runtime statistics"
+	help
+	  Track raw per-work-item handler runtime statistics from workqueue
+	  dispatch. The statistics record handler execution cycles and invocation
+	  counts.
 
 menu "System Work Queue Options"
 config SYSTEM_WORKQUEUE_STACK_SIZE

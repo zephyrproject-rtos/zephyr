@@ -1,0 +1,138 @@
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CPU_WORKLOAD
+	bool "CPU Workload"
+	select EXPERIMENTAL
+	help
+	  CPU workload signals and aggregation helpers. This subsystem collects
+	  runtime and scheduling information and exposes workload estimates that
+	  describe recent, queued, or expected CPU work.
+
+if CPU_WORKLOAD
+
+module = CPU_WORKLOAD
+module-str = CPU Workload
+source "subsys/logging/Kconfig.template.log_config"
+
+config CPU_WORKLOAD_THREAD_PROFILE
+	bool "CPU per-thread workload profile"
+	select THREAD_RUNTIME_STATS
+	select SCHED_THREAD_USAGE
+	select SCHED_THREAD_USAGE_ANALYSIS
+	select SCHED_THREAD_USAGE_AUTO_ENABLE
+	help
+	  Build a workload-oriented per-thread profile from scheduler runtime
+	  usage windows. The profile maintains the EWMA (Exponential Weighted
+	  Moving Average) and confidence heuristics used to turn completed runtime
+	  windows into predicted cycles.
+
+config CPU_WORKLOAD_THREAD_PROFILE_EWMA_SHIFT
+	int "Per-thread workload EWMA shift"
+	default 3
+	range 1 8
+	depends on CPU_WORKLOAD_THREAD_PROFILE
+	help
+	  Shift used by the per-thread workload EWMA. A value of 3 gives alpha =
+	  1/8, using avg = ((7 * avg) + burst) / 8. Smaller values react faster;
+	  larger values smooth more aggressively.
+
+config CPU_WORKLOAD_THREAD_PROFILE_CACHE_SIZE
+	int "Per-thread workload profile cache size"
+	default 16
+	range 1 256
+	depends on CPU_WORKLOAD_THREAD_PROFILE
+	help
+	  Maximum number of thread burst profiles cached by the subsystem. Threads
+	  that cannot be cached are treated as unprofiled by ready-backlog and
+	  arrival signals.
+
+config CPU_WORKLOAD_READY_BACKLOG
+	bool "CPU ready backlog workload signal"
+	select THREAD_MONITOR
+	select THREAD_RUNTIME_STATS
+	select SCHED_THREAD_USAGE
+	select SCHED_THREAD_USAGE_AUTO_ENABLE
+	select CPU_WORKLOAD_THREAD_PROFILE
+	help
+	  Estimate runnable backlog work by scanning runnable threads and summing
+	  their per-thread CPU burst profiles. This exposes forward-looking runnable
+	  work that has not yet completed.
+
+config CPU_WORKLOAD_READY_BACKLOG_MIN_CONFIDENCE
+	int "Minimum thread profile confidence for ready backlog"
+	default 20
+	range 0 100
+	depends on CPU_WORKLOAD_READY_BACKLOG
+	help
+	  Minimum per-thread burst profile confidence required before that profile
+	  contributes its average burst cycles to the ready backlog.
+
+config CPU_WORKLOAD_ARRIVAL
+	bool "CPU wakeup-arrival workload signal"
+	select THREAD_MONITOR
+	select THREAD_RUNTIME_STATS
+	select SCHED_THREAD_USAGE
+	select SCHED_THREAD_USAGE_ARRIVAL_STATS
+	select SCHED_THREAD_USAGE_AUTO_ENABLE
+	select CPU_WORKLOAD_THREAD_PROFILE
+	help
+	  Attribute thread wakeups to arrival sources and estimate the expected
+	  cycles from those arrivals using per-thread burst profiles. This provides
+	  a forward-looking signal for work that arrived since the previous query.
+
+config CPU_WORKLOAD_WORK_PROFILE
+	bool "CPU k_work handler workload profile"
+	select WORKQUEUE_HANDLER_RUNTIME_STATS
+	help
+	  Track a lightweight per-work-item handler profile from workqueue dispatch.
+	  The profile maintains an exponentially weighted moving average (EWMA) of
+	  handler execution time in CPU cycles, plus a warm-up sample count and
+	  confidence value. This distinguishes work items processed by the same
+	  workqueue thread so policies can use the real cost of the next queued
+	  handler.
+
+config CPU_WORKLOAD_WORK_PROFILE_CACHE_SIZE
+	int "k_work handler workload profile cache size"
+	default 16
+	range 1 256
+	depends on CPU_WORKLOAD_WORK_PROFILE
+	help
+	  Maximum number of work item handler profiles cached by the subsystem.
+	  Work items that cannot be cached are treated as unprofiled.
+
+config CPU_WORKLOAD_WORK_PROFILE_EWMA_SHIFT
+	int "k_work handler workload EWMA shift"
+	default 3
+	range 1 8
+	depends on CPU_WORKLOAD_WORK_PROFILE
+	help
+	  Shift used by the k_work handler exponentially weighted moving average
+	  (EWMA). A value of 3 gives alpha = 1/8, using avg = ((7 * avg) +
+	  handler_cycles) / 8. Smaller values react faster; larger values smooth
+	  more aggressively.
+
+config CPU_WORKLOAD_HISTORY
+	bool "CPU runtime-history workload signal"
+	select THREAD_RUNTIME_STATS
+	select SCHED_THREAD_USAGE
+	select SCHED_THREAD_USAGE_ALL
+	select SCHED_THREAD_USAGE_AUTO_ENABLE
+	help
+	  Track recent CPU runtime history from scheduler runtime statistics.
+	  The history signal reports non-idle cycles, elapsed runtime-stat cycles,
+	  load percentage, and confidence since the previous cpu_workload query.
+
+config CPU_WORKLOAD_ESTIMATE
+	bool "Unified CPU workload estimate"
+	select CPU_WORKLOAD_HISTORY
+	select CPU_WORKLOAD_READY_BACKLOG
+	select CPU_WORKLOAD_ARRIVAL
+	help
+	  Combine runtime history, ready backlog, and arrival attribution into a
+	  single estimated cycle count. The estimate uses recent runtime history as
+	  a conservative floor and adds the forward-looking ready backlog and arrival
+	  signals.
+
+endif # CPU_WORKLOAD

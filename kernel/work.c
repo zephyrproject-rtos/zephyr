@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <ksched.h>
 #include <scheduler.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 
@@ -65,6 +66,23 @@ static inline uint32_t flags_get(const uint32_t *flagp)
  * and pending_cancels.
  */
 static struct k_spinlock lock;
+
+#ifdef CONFIG_WORKQUEUE_HANDLER_RUNTIME_STATS
+static void work_handler_runtime_stats_update_locked(struct k_work *work, uint32_t cycles)
+{
+	work->handler_last_cycles = cycles;
+
+	if ((UINT64_MAX - work->handler_total_cycles) < cycles) {
+		work->handler_total_cycles = UINT64_MAX;
+	} else {
+		work->handler_total_cycles += cycles;
+	}
+
+	if (work->handler_count < UINT16_MAX) {
+		work->handler_count++;
+	}
+}
+#endif /* CONFIG_WORKQUEUE_HANDLER_RUNTIME_STATS */
 
 /* Invoked by work thread */
 static void handle_flush(struct k_work *work) { }
@@ -175,6 +193,30 @@ int k_work_busy_get(const struct k_work *work)
 	k_spin_unlock(&lock, key);
 
 	return ret;
+}
+
+int k_work_handler_runtime_stats_get(struct k_work *work, k_work_handler_runtime_stats_t *stats)
+{
+	CHECKIF((work == NULL) || (stats == NULL)) {
+		return -EINVAL;
+	}
+
+#ifdef CONFIG_WORKQUEUE_HANDLER_RUNTIME_STATS
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	stats->total_cycles = work->handler_total_cycles;
+	stats->last_cycles = work->handler_last_cycles;
+	stats->count = work->handler_count;
+
+	k_spin_unlock(&lock, key);
+
+	return 0;
+#else
+	ARG_UNUSED(work);
+	ARG_UNUSED(stats);
+
+	return -ENOTSUP;
+#endif /* CONFIG_WORKQUEUE_HANDLER_RUNTIME_STATS */
 }
 
 /* Add a flusher work item to the queue.
@@ -685,6 +727,10 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		k_work_handler_t handler = NULL;
 		k_spinlock_key_t key = k_spin_lock(&lock);
 		bool yield;
+#ifdef CONFIG_WORKQUEUE_HANDLER_RUNTIME_STATS
+		uint32_t stats_start_cycles;
+		uint32_t handler_cycles;
+#endif /* CONFIG_WORKQUEUE_HANDLER_RUNTIME_STATS */
 
 		/* Check for and prepare any new work. */
 		node = sys_slist_get(&queue->pending);
@@ -754,7 +800,13 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		k_spin_unlock(&lock, key);
 
 		__ASSERT_NO_MSG(handler != NULL);
+#ifdef CONFIG_WORKQUEUE_HANDLER_RUNTIME_STATS
+		stats_start_cycles = k_cycle_get_32();
 		handler(work);
+		handler_cycles = k_cycle_get_32() - stats_start_cycles;
+#else
+		handler(work);
+#endif /* CONFIG_WORKQUEUE_HANDLER_RUNTIME_STATS */
 
 		/* Mark the work item as no longer running and deal
 		 * with any cancellation and flushing issued while it
@@ -762,6 +814,10 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		 * yield to prevent starving other threads.
 		 */
 		key = k_spin_lock(&lock);
+
+#ifdef CONFIG_WORKQUEUE_HANDLER_RUNTIME_STATS
+		work_handler_runtime_stats_update_locked(work, handler_cycles);
+#endif /* CONFIG_WORKQUEUE_HANDLER_RUNTIME_STATS */
 
 #if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
 		if (queue->finished) {

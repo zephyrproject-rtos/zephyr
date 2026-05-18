@@ -1484,6 +1484,13 @@ void z_impl_k_wakeup(k_tid_t thread)
 	if (z_is_thread_sleeping(thread)) {
 		z_abort_thread_timeout(thread);
 		z_mark_thread_as_not_sleeping(thread);
+#ifdef CONFIG_SCHED_THREAD_USAGE_ARRIVAL_STATS
+		/* k_wakeup() is an API for users or drivers to actively wake up threads,
+		 * belonging to the "explicit wakeup" scenario. This type of wakeup should
+		 * be attributed as EXPLICIT.
+		 */
+		z_sched_thread_arrival_stats_update(thread, K_THREAD_ARRIVAL_SOURCE_EXPLICIT);
+#endif /* CONFIG_SCHED_THREAD_USAGE_ARRIVAL_STATS */
 		z_sched_ready_locked(thread);
 		z_reschedule(&_sched_spinlock, key);
 	} else {
