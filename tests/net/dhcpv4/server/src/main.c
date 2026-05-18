@@ -44,6 +44,11 @@ static struct test_dhcpv4_server_ctx {
 	int lease_time;
 	bool broadcast;
 	bool send_echo_reply;
+	/* When true, append DHCP option 114 (RFC 8910 captive portal URI) to
+	 * the Parameter Request List in the next Discover/Request, and expect
+	 * the server reply to carry option 114.
+	 */
+	bool request_captive_portal;
 } test_ctx;
 
 struct test_lease_count {
@@ -205,8 +210,14 @@ static void client_prepare_test_msg(
 	}
 
 	net_pkt_write_u8(pkt, DHCPV4_OPTIONS_REQ_LIST);
-	net_pkt_write_u8(pkt, 1);
-	net_pkt_write_u8(pkt, DHCPV4_OPTIONS_SUBNET_MASK);
+	if (test_ctx.request_captive_portal) {
+		net_pkt_write_u8(pkt, 2);
+		net_pkt_write_u8(pkt, DHCPV4_OPTIONS_SUBNET_MASK);
+		net_pkt_write_u8(pkt, DHCPV4_OPTIONS_CAPTIVE_PORTAL);
+	} else {
+		net_pkt_write_u8(pkt, 1);
+		net_pkt_write_u8(pkt, DHCPV4_OPTIONS_SUBNET_MASK);
+	}
 
 	if (test_ctx.client_id) {
 		net_pkt_write_u8(pkt, DHCPV4_OPTIONS_CLIENT_ID);
@@ -482,6 +493,59 @@ static void verify_option_uint8(struct net_pkt *pkt, uint8_t opt_type,
 	verify_option(pkt, opt_type, &optval, sizeof(optval));
 }
 
+#if defined(CONFIG_NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL)
+/* Build the URI the server is expected to return in DHCP option 114, mirroring
+ * the encoding logic in subsys/net/lib/dhcpv4/dhcpv4_server.c
+ * dhcpv4_encode_captive_portal_uri_option(): use the Kconfig override when
+ * non-empty, otherwise "http://<server_addr>/generate_204".
+ */
+static void verify_captive_portal_in_reply(struct net_pkt *pkt)
+{
+	char auto_uri[NET_IPV4_ADDR_LEN + sizeof("http://") + sizeof("/generate_204")];
+	const char *override = CONFIG_NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL_URI;
+	const char *expected;
+	size_t expected_len;
+
+	if (override[0] != '\0') {
+		expected = override;
+		expected_len = strlen(override);
+	} else {
+		char addr_str[NET_IPV4_ADDR_LEN];
+		int n;
+
+		zassert_not_null(net_addr_ntop(NET_AF_INET, &server_addr, addr_str,
+					       sizeof(addr_str)),
+				 "Could not format server address");
+		n = snprintk(auto_uri, sizeof(auto_uri), "http://%s/generate_204",
+			     addr_str);
+		zassert_true(n > 0 && (size_t)n < sizeof(auto_uri),
+			     "Auto captive portal URI did not fit");
+		expected = auto_uri;
+		expected_len = (size_t)n;
+	}
+
+	zassert_true(expected_len <= UINT8_MAX,
+		     "Expected captive portal URI exceeds DHCP option length");
+
+	verify_option(pkt, DHCPV4_OPTIONS_CAPTIVE_PORTAL, expected,
+		      (uint8_t)expected_len);
+}
+#endif /* CONFIG_NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL */
+
+static void verify_captive_portal_in_reply_or_absent(struct net_pkt *pkt)
+{
+	if (test_ctx.request_captive_portal) {
+#if defined(CONFIG_NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL)
+		verify_captive_portal_in_reply(pkt);
+#else
+		zassert_unreachable("request_captive_portal set without "
+				    "CONFIG_NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL");
+#endif
+	} else {
+		verify_no_option(pkt, DHCPV4_OPTIONS_CAPTIVE_PORTAL);
+	}
+}
+
 static void verify_offer(bool broadcast)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(ipv4_access, struct net_ipv4_hdr);
@@ -571,6 +635,7 @@ static void verify_offer(bool broadcast)
 		      strlen(test_ctx.client_id));
 	verify_option(pkt, DHCPV4_OPTIONS_SUBNET_MASK, netmask.s4_addr,
 		      sizeof(struct net_in_addr));
+	verify_captive_portal_in_reply_or_absent(pkt);
 	verify_no_option(pkt, DHCPV4_OPTIONS_REQ_IPADDR);
 	verify_no_option(pkt, DHCPV4_OPTIONS_REQ_LIST);
 }
@@ -763,6 +828,7 @@ static void verify_ack(bool inform, bool renew)
 	}
 	verify_option(pkt, DHCPV4_OPTIONS_SUBNET_MASK, netmask.s4_addr,
 		      sizeof(struct net_in_addr));
+	verify_captive_portal_in_reply_or_absent(pkt);
 	verify_no_option(pkt, DHCPV4_OPTIONS_REQ_IPADDR);
 	verify_no_option(pkt, DHCPV4_OPTIONS_REQ_LIST);
 }
@@ -999,6 +1065,43 @@ ZTEST(dhcpv4_server_tests_no_init, test_initialization)
 	net_dhcpv4_server_stop(test_ctx.iface);
 }
 
+#if defined(CONFIG_NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL)
+/* Verify that the DHCP server includes option 114 (RFC 8910 captive portal URI)
+ * in the Offer when the client lists 114 in the Parameter Request List.
+ */
+ZTEST(dhcpv4_server_tests, test_discover_captive_portal)
+{
+	test_ctx.request_captive_portal = true;
+
+	client_send_discover();
+	verify_offer(false);
+	test_pkt_free();
+
+	verify_lease_count(1, 0, 0);
+	verify_reserved_address(&test_ctx.assigned_ip);
+}
+
+/* Verify that the DHCP server also includes option 114 in the Ack of a full
+ * Discover+Request cycle, not just in the Offer.
+ */
+ZTEST(dhcpv4_server_tests, test_request_captive_portal)
+{
+	test_ctx.request_captive_portal = true;
+
+	client_send_discover();
+	verify_offer(false);
+	verify_lease_count(1, 0, 0);
+	test_pkt_free();
+
+	client_send_request_solicit();
+	verify_ack(false, false);
+	test_pkt_free();
+
+	verify_lease_count(0, 1, 0);
+	verify_allocated_address(&test_ctx.assigned_ip);
+}
+#endif /* CONFIG_NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL */
+
 static void dhcpv4_server_tests_before(void *fixture)
 {
 	ARG_UNUSED(fixture);
@@ -1009,6 +1112,7 @@ static void dhcpv4_server_tests_before(void *fixture)
 	test_ctx.pkt = NULL;
 	test_ctx.lease_time = NO_LEASE_TIME;
 	test_ctx.send_echo_reply = false;
+	test_ctx.request_captive_portal = false;
 	memset(&test_ctx.assigned_ip, 0, sizeof(test_ctx.assigned_ip));
 
 	net_dhcpv4_server_start(test_ctx.iface, &test_base_addr);
