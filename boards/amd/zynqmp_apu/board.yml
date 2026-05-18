@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: zynqmp_apu
+  full_name: AMD Zynq UltraScale+ MPSoC APU
+  vendor: amd
+  socs:
+  - name: zynqmp_apu
