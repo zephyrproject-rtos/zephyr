@@ -172,8 +172,8 @@ static bool modem_cellular_has_network_script(const struct modem_cellular_config
 	return config->scripts->network != NULL;
 }
 
-static void modem_cellular_emit_event(struct modem_cellular_data *data,
-				      enum cellular_event evt, const void *payload)
+void modem_cellular_emit_event(struct modem_cellular_data *data,
+			       enum cellular_event evt, const void *payload)
 {
 	if ((data->cb.fn != NULL) && (data->cb.mask & evt)) {
 		data->cb.fn(data->dev, evt, payload, data->cb.user_data);
