@@ -956,6 +956,23 @@
 			clocks = <&scmi_clk IMX95_CLK_ADC>;
 			status = "disabled";
 		};
+
+		/* WDOG clocks:
+		 * 0 - ipg_clk  : IMX95_CLK_BUSWAKEUP
+		 * 1 - lpo_clk  : IMX95_CLK_32K
+		 * 2 - int_clk  : IMX95_CLK_BUSWAKEUP
+		 * 3 - ext_clk  : IMX95_CLK_24M
+		 */
+		wdog5: watchdog@424b0000 {
+			compatible = "nxp,wdog32";
+			reg = <0x424b0000 0x1000>;
+			interrupts = <79 0>;
+			clocks = <&scmi_clk IMX95_CLK_32K>;
+			clock-names = "clksrc1";
+			clk-source = <1>;
+			clk-divider = <1>;
+			status = "disabled";
+		};
 	};
 };
 
