@@ -97,7 +97,7 @@ static struct mpl_track track_1_1 = {
 static struct mpl_track track_1_2 = {
 	.title	     = "Interlude #2 (For Bobbye)",
 	.duration    = 7500,
-	.segment     = NULL,
+	.segment     = &seg_1,
 	.prev	     = &track_1_1,
 	.next	     = &track_1_3,
 };
@@ -105,7 +105,7 @@ static struct mpl_track track_1_2 = {
 static struct mpl_track track_1_3 = {
 	.title	     = "Interlude #3 (Levanto Seventy)",
 	.duration    = 7800,
-	.segment     = NULL,
+	.segment     = &seg_1,
 	.prev	     = &track_1_2,
 	.next	     = &track_1_4,
 };
@@ -113,7 +113,7 @@ static struct mpl_track track_1_3 = {
 static struct mpl_track track_1_4 = {
 	.title	     = "Interlude #4 (Vesper Dreams)",
 	.duration    = 13500,
-	.segment     = NULL,
+	.segment     = &seg_1,
 	.prev	     = &track_1_3,
 	.next	     = &track_1_5,
 };
@@ -121,7 +121,7 @@ static struct mpl_track track_1_4 = {
 static struct mpl_track track_1_5 = {
 	.title	     = "Interlude #5 (Shasti)",
 	.duration    = 7500,
-	.segment     = NULL,
+	.segment     = &seg_1,
 	.prev	     = &track_1_4,
 	.next	     = NULL,
 };
@@ -132,7 +132,7 @@ static struct mpl_track track_2_3;
 static struct mpl_track track_2_1 = {
 	.title	     = "Track 2.1",
 	.duration    = 30000,
-	.segment     = NULL,
+	.segment     = &seg_1,
 	.prev	     = NULL,
 	.next	     = &track_2_2,
 };
@@ -140,7 +140,7 @@ static struct mpl_track track_2_1 = {
 static struct mpl_track track_2_2 = {
 	.title	     = "Track 2.2",
 	.duration    = 30000,
-	.segment     = NULL,
+	.segment     = &seg_1,
 	.prev	     = &track_2_1,
 	.next	     = &track_2_3,
 };
@@ -148,7 +148,7 @@ static struct mpl_track track_2_2 = {
 static struct mpl_track track_2_3 = {
 	.title	     = "Track 2.3",
 	.duration    = 30000,
-	.segment     = NULL,
+	.segment     = &seg_1,
 	.prev	     = &track_2_2,
 	.next	     = NULL,
 };
@@ -159,7 +159,7 @@ static struct mpl_track track_3_3;
 static struct mpl_track track_3_1 = {
 	.title	     = "Track 3.1",
 	.duration    = 30000,
-	.segment     = NULL,
+	.segment     = &seg_1,
 	.prev	     = NULL,
 	.next	     = &track_3_2,
 };
@@ -167,7 +167,7 @@ static struct mpl_track track_3_1 = {
 static struct mpl_track track_3_2 = {
 	.title	     = "Track 3.2",
 	.duration    = 30000,
-	.segment     = NULL,
+	.segment     = &seg_1,
 	.prev	     = &track_3_1,
 	.next	     = &track_3_3,
 };
@@ -175,7 +175,7 @@ static struct mpl_track track_3_2 = {
 static struct mpl_track track_3_3 = {
 	.title	     = "Track 3.3",
 	.duration    = 30000,
-	.segment     = NULL,
+	.segment     = &seg_1,
 	.prev	     = &track_3_2,
 	.next	     = NULL,
 };
@@ -379,6 +379,31 @@ static uint32_t setup_segments_object(struct mpl_track *track)
 	}
 
 	return obj.content->len;
+}
+
+static void set_all_track_segments_id(struct mpl_group *group, uint64_t id)
+{
+	struct mpl_group *iter_group;
+
+	if (group == NULL) {
+		return;
+	}
+
+	while (group->prev != NULL) {
+		group = group->prev;
+	}
+
+	for (iter_group = group; iter_group != NULL; iter_group = iter_group->next) {
+		struct mpl_track *track = iter_group->track;
+
+		while (track != NULL) {
+			if (track->segment != NULL) {
+				track->segments_id = id;
+			}
+
+			track = track->next;
+		}
+	}
 }
 
 /* Set up content buffer for a track object */
@@ -776,7 +801,7 @@ static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
 		LOG_DBG("Track Segments Obj Type");
 		if (obj.add_type == MPL_OBJ_TRACK_SEGMENTS) {
 			obj.add_type = MPL_OBJ_NONE;
-			media_player.group->track->segments_id = id;
+			set_all_track_segments_id(media_player.group, id);
 		} else {
 			LOG_DBG("Unexpected object creation");
 		}
@@ -1774,6 +1799,9 @@ static uint8_t seeking_state_command_handler(const struct mpl_cmd *command)
 	case MEDIA_PROXY_OP_MOVE_RELATIVE:
 		if (command->use_param) {
 			set_relative_track_position(command->param);
+			media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
+			mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
+			media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
 		} else {
 			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
 		}
@@ -1787,18 +1815,26 @@ static uint8_t seeking_state_command_handler(const struct mpl_cmd *command)
 			do_prev_segment(&media_player);
 		}
 		set_track_position(media_player.group->track->segment->pos);
+		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
+		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		break;
 	case MEDIA_PROXY_OP_NEXT_SEGMENT:
 		do_next_segment(&media_player);
 		set_track_position(media_player.group->track->segment->pos);
+		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
+		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		break;
 	case MEDIA_PROXY_OP_FIRST_SEGMENT:
 		do_first_segment(&media_player);
 		set_track_position(media_player.group->track->segment->pos);
+		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
+		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		break;
 	case MEDIA_PROXY_OP_LAST_SEGMENT:
 		do_last_segment(&media_player);
 		set_track_position(media_player.group->track->segment->pos);
+		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
+		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		break;
 	case MEDIA_PROXY_OP_GOTO_SEGMENT:
 		if (command->use_param) {
