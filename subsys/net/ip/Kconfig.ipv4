@@ -193,8 +193,9 @@ config NET_IPV4_NBR_CACHE
 	default y if NET_ARP
 	help
 	  The value depends on your network needs. You might need to enable
-	  neighbor cache and IPv4 packet routing if you have multiple network
-	  interfaces and you want to control where IPv4 packets are sent.
+	  neighbor cache and IPv4 route table support if you have multiple
+	  network interfaces and you want to control where IPv4 packets are
+	  sent.
 
 config NET_IPV4_MAX_NEIGHBORS
 	int "How many IPv4 neighbors are supported"
@@ -205,17 +206,35 @@ config NET_IPV4_MAX_NEIGHBORS
 	  The value depends on your network needs.
 
 config NET_IPV4_ROUTE
-	bool
+	bool "IPv4 unicast route table support"
 	depends on NET_IPV4_NBR_CACHE
 	default y if NET_IPV4_NBR_CACHE
+	help
+	  Enable the IPv4 unicast route table and route-aware destination
+	  selection for locally originated traffic.
 
-config NET_IPV4_ROUTING
-	bool "IP routing between interfaces"
+	  This option is needed for static IPv4 routes, route lookups from
+	  networking shell commands, and host-side route selection such as
+	  VPN traffic steering. Enable NET_IPV4_FORWARDING as well if the
+	  device must forward packets between interfaces.
+
+config NET_IPV4_FORWARDING
+	bool "IPv4 forwarding between interfaces"
+	default y if NET_IPV4_ROUTING
 	depends on NET_IPV4_ROUTE
 	help
-	  Allow IPv4 routing between different network interfaces and
-	  technologies. Currently this has limited use as some entity
-	  would need to populate the routing table.
+	  Allow the device to forward IPv4 packets between different network
+	  interfaces and technologies.
+
+	  This is separate from NET_IPV4_ROUTE, which only enables the IPv4
+	  route table for host-side route selection and shell route commands.
+
+config NET_IPV4_ROUTING
+	bool "IPv4 routing between interfaces [DEPRECATED]"
+	depends on NET_IPV4_ROUTE
+	select DEPRECATED
+	help
+	  This symbol is deprecated, use NET_IPV4_FORWARDING instead.
 
 config NET_IPV4_MAX_ROUTES
 	int "Max number of routing entries stored."

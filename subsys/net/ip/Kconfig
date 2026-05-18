@@ -205,6 +205,11 @@ source "subsys/net/ip/Kconfig.ipv6"
 
 source "subsys/net/ip/Kconfig.ipv4"
 
+config NET_PKT_ORIG_IFACE
+	bool
+	default y
+	depends on NET_IPV4_ROUTE || NET_IPV6_ROUTE || NET_ETHERNET_BRIDGE
+
 config NET_IPV4_MAPPING_TO_IPV6
 	bool "Support IPv4 mapped on IPv6 addresses"
 	depends on NET_NATIVE_IPV6
