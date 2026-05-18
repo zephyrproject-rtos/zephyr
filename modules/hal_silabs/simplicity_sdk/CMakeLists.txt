@@ -17,6 +17,7 @@ set(SECURITY_DIR   ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/secur
 set(SERVICE_DIR    ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/service)
 set(PERIPHERAL_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/platform/peripheral)
 set(BLUETOOTH_DIR  ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/protocol/bluetooth)
+set(CRYPTO_DIR     ${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/util/third_party/crypto_ip)
 set(BLOBS_DIR      ${ZEPHYR_HAL_SILABS_MODULE_DIR}/zephyr/blobs/simplicity_sdk)
 
 # Translate the SoC name and part number into the gecko device and cpu name
@@ -80,11 +81,27 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
   )
 
   # sl_protocol_crypto
-  zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_PROTOCOL_CRYPTO
-    ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src/sli_radioaes_management.c
-    ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src/sli_protocol_crypto_radioaes.c
-    ${SECURITY_DIR}/sl_component/sli_crypto/src/sl_crypto_s2.c
-  )
+  if(CONFIG_SILABS_SISDK_PROTOCOL_CRYPTO)
+    zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2
+      ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src/sli_radioaes_management.c
+      ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src/sli_protocol_crypto_radioaes.c
+      ${SECURITY_DIR}/sl_component/sli_crypto/src/sl_crypto_s2.c
+    )
+    zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S3
+      ${SECURITY_DIR}/sl_component/sli_crypto/src/sl_crypto_s3.c
+      src/sl_sxsymcrypt_platform.c
+    )
+    zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_SILABS_S3
+      ${CRYPTO_DIR}/sxsymcrypt/include
+      ${CRYPTO_DIR}/sxsymcrypt/src/platform/silicon_labs
+    )
+    if(CONFIG_SOC_FAMILY_SILABS_S3)
+      add_prebuilt_library(sxsymcrypt util/third_party/crypto_ip/libsxsymcrypt.a)
+    endif()
+    zephyr_compile_definitions(
+      SL_CODE_COMPONENT_SLI_CRYPTO=sli_crypto
+    )
+  endif()
 
   if(CONFIG_BT_SILABS_EFR32)
     # prebuilt libs
