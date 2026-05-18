@@ -69,4 +69,14 @@
 /* CLKIN0 */
 #define SL_CLOCK_MANAGER_CLKIN0_FREQ DT_PROP(DT_NODELABEL(clkin0), clock_frequency)
 
+/* SOCPLL */
+#define SL_CLOCK_MANAGER_SOCPLL_EN   DT_NODE_HAS_STATUS(DT_NODELABEL(socpll), okay)
+#define SL_CLOCK_MANAGER_SOCPLL_FREQ DT_PROP(DT_NODELABEL(socpll), clock_frequency)
+#define SL_CLOCK_MANAGER_SOCPLL_REFCLK                                                             \
+	(DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(socpll)), DT_NODELABEL(hfxo))                    \
+		 ? SOCPLL_CTRL_REFCLKSEL_REF_HFXO                                                  \
+	 : DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(socpll)), DT_NODELABEL(hfrcodpll))             \
+		 ? SOCPLL_CTRL_REFCLKSEL_REF_HFRCO                                                 \
+		 : SOCPLL_CTRL_REFCLKSEL_DEFAULT)
+
 #endif /* SL_CLOCK_MANAGER_OSCILLATOR_CONFIG_H */
