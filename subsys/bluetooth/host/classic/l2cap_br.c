@@ -3675,7 +3675,7 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 	struct bt_l2cap_br_chan *br_chan;
 	int err;
 
-	if (buf->len < sizeof(*rsp)) {
+	if (len < sizeof(*rsp)) {
 		LOG_ERR("Too small L2CAP conf rsp packet size");
 		return;
 	}
@@ -4459,7 +4459,7 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 	uint16_t flags, dcid, opt_len, hint, result = BT_L2CAP_CONF_SUCCESS;
 	struct net_buf *rsp_buf;
 
-	if (buf->len < sizeof(*req)) {
+	if (len < sizeof(*req)) {
 		LOG_ERR("Too small L2CAP conf req packet size");
 		return;
 	}
