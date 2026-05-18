@@ -318,13 +318,14 @@ endif()
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_ACMP      ${EMLIB_DIR}/src/em_acmp.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_EMU       ${EMLIB_DIR}/src/em_emu.c)
 if(CONFIG_SILABS_SISDK_GPIO)
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2  ${EMLIB_DIR}/src/em_gpio.c)
   zephyr_library_sources(
-    ${EMLIB_DIR}/src/em_gpio.c
     ${DRIVER_DIR}/gpio/src/sl_gpio.c
     ${PERIPHERAL_DIR}/src/sl_hal_gpio.c
   )
   zephyr_library_compile_definitions(
     SL_CATALOG_GPIO_PRESENT
+    SL_CODE_COMPONENT_GPIO=gpio
     SL_CODE_COMPONENT_HAL_GPIO=hal_gpio
   )
 endif()
