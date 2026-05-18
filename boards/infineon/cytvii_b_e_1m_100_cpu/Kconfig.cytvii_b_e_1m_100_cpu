@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Linumiz
+# Copyright (c) 2026 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CYTVII_B_E_1M_100_CPU
+	select SOC_CYT2B75CAE
+	select SOC_CYT2BX_CORE_M0PLUS if BOARD_CYTVII_B_E_1M_100_CPU_CYT2B75CAE_M0P
+	select SOC_CYT2BX_CORE_M4 if BOARD_CYTVII_B_E_1M_100_CPU_CYT2B75CAE_M4

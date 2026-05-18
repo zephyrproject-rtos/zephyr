@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Linumiz
+# Copyright (c) 2026 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: cytvii_b_e_1m_100_cpu
+name: T2G CYTVII-B-E-1M-100-CPU Evaluation Board
+type: mcu
+arch: arm
+ram: 128
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+vendor: infineon
