@@ -1401,16 +1401,24 @@ static int start_next_packet(const struct device *dev)
 	}
 #endif
 
+#if defined(CONFIG_MULTITHREADING)
+	k_timeout_t timeout = K_MSEC(dev_data->xfer.timeout);
+
+	/* For async transfer, start timeout timer BEFORE starting transfer to
+	 * avoid race. On fast buses the ISR can fire and call k_timer_stop()
+	 * before k_timer_start() if SER is written first.
+	 */
+	if (dev_data->xfer.async) {
+		k_timer_start(&dev_data->async_timer, timeout, K_NO_WAIT);
+	}
+#endif
+
 	/* Write SER to start transfer */
 	write_ser(dev, BIT(dev_data->dev_id->dev_idx));
 
 #if defined(CONFIG_MULTITHREADING)
-	k_timeout_t timeout = K_MSEC(dev_data->xfer.timeout);
-
-	/* For async transfer, start the timeout timer and exit. */
+	/* For async transfer, exit after starting the timeout timer. */
 	if (dev_data->xfer.async) {
-		k_timer_start(&dev_data->async_timer, timeout, K_NO_WAIT);
-
 		return 0;
 	}
 
