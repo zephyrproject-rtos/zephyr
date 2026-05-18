@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2026 SMILE (smile.eu)
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_CH570
+	bool
+	select SOC_SERIES_QINGKE_V3C
+
+config SOC
+	default "ch570" if SOC_CH570
