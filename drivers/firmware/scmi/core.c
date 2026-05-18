@@ -240,3 +240,19 @@ int scmi_core_transport_init(const struct device *transport)
 
 	return scmi_core_protocol_setup(transport);
 }
+
+int scmi_xfer_init(struct scmi_protocol *proto,
+		   struct scmi_message *tx, struct scmi_message *rx,
+		   uint8_t msg_id, void *tx_buf, uint32_t tx_len,
+		   void *rx_buf, uint32_t rx_len)
+{
+	tx->hdr = SCMI_MESSAGE_HDR_MAKE(msg_id, SCMI_COMMAND, proto->id, 0x0);
+	tx->len = tx_len;
+	tx->content = tx_buf;
+
+	rx->hdr = tx->hdr;
+	rx->len = rx_len;
+	rx->content = rx_buf;
+
+	return 0;
+}

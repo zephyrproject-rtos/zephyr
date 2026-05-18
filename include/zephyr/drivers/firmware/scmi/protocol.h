@@ -164,6 +164,29 @@ int scmi_send_message(struct scmi_protocol *proto,
 		      bool use_polling);
 
 /**
+ * @brief Prepare the message structures for an SCMI transfer
+ *
+ * Prepare the TX and RX message structures for a transfer (i.e. an SCMI
+ * command followed by its synchronous reply).
+ *
+ * @param proto protocol handle
+ * @param tx message to send
+ * @param rx message to receive
+ * @param msg_id message ID
+ * @param tx_buf TX buffer
+ * @param tx_len TX buffer length
+ * @param rx_buf RX buffer
+ * @param rx_len RX buffer length
+ *
+ * @retval 0 if successful
+ * @retval <0 negative errno code if failure
+ */
+int scmi_xfer_init(struct scmi_protocol *proto,
+		   struct scmi_message *tx, struct scmi_message *rx,
+		   uint8_t msg_id, void *tx_buf, uint32_t tx_len,
+		   void *rx_buf, uint32_t rx_len);
+
+/**
  * @brief Get protocol version
  *
  * @param proto Protocol instance
