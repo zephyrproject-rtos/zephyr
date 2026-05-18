@@ -1,0 +1,475 @@
+/*
+* Copyright (c) 2026 Linumiz
+* Copyright (c) 2026 Infineon Technologies AG
+* SPDX-License-Identifier: Apache-2.0
+*/
+
+#include <mem.h>
+#include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		m0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+			clock-frequency = <100000000>;
+		};
+
+		m4: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <1>;
+			clock-frequency = <160000000>;
+			status = "disabled";
+		};
+	};
+
+	soc {
+		cpuss_intc: interrupt-controller@40200000 {
+			compatible = "infineon,sysintc";
+			reg = <0x40200000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			intmux_ch0: interrupt-controller@0 {
+				compatible = "infineon,sysintc-mux";
+				reg = <0>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <0 1>;
+			};
+
+			intmux_ch1: interrupt-controller@1 {
+				compatible = "infineon,sysintc-mux";
+				reg = <1>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <1 1>;
+			};
+
+			intmux_ch2: interrupt-controller@2 {
+				compatible = "infineon,sysintc-mux";
+				reg = <2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <2 1>;
+			};
+
+			intmux_ch3: interrupt-controller@3 {
+				compatible = "infineon,sysintc-mux";
+				reg = <3>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <3 1>;
+			};
+
+			intmux_ch4: interrupt-controller@4 {
+				compatible = "infineon,sysintc-mux";
+				reg = <4>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <4 1>;
+			};
+
+			intmux_ch5: interrupt-controller@5 {
+				compatible = "infineon,sysintc-mux";
+				reg = <5>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <5 1>;
+			};
+
+			intmux_ch6: interrupt-controller@6 {
+				compatible = "infineon,sysintc-mux";
+				reg = <6>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <6 1>;
+			};
+
+			intmux_ch7: interrupt-controller@7 {
+				compatible = "infineon,sysintc-mux";
+				reg = <7>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts = <7 1>;
+			};
+		};
+
+		flash_controller: flash-controller@40240000 {
+			reg = <0x40240000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			code_flash0: flash@10000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x10000000 DT_SIZE_K(1088)>;
+				ranges = <0x0 0x10000000 DT_SIZE_K(1088)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+
+		pinctrl: pinctrl@40300000 {
+			compatible = "infineon,pinctrl";
+			reg = <0x40300000 0x20000>;
+		};
+
+		gpio_prt0: gpio@40310000 {
+			compatible = "infineon,gpio";
+			reg = <0x40310000 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <21 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt1: gpio@40310080 {
+			compatible = "infineon,gpio";
+			reg = <0x40310080 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <22 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt2: gpio@40310100 {
+			compatible = "infineon,gpio";
+			reg = <0x40310100 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <23 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt3: gpio@40310180 {
+			compatible = "infineon,gpio";
+			reg = <0x40310180 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <24 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt4: gpio@40310200 {
+			compatible = "infineon,gpio";
+			reg = <0x40310200 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <25 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt5: gpio@40310280 {
+			compatible = "infineon,gpio";
+			reg = <0x40310280 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <26 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt6: gpio@40310300 {
+			compatible = "infineon,gpio";
+			reg = <0x40310300 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <27 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt7: gpio@40310380 {
+			compatible = "infineon,gpio";
+			reg = <0x40310380 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <28 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt8: gpio@40310400 {
+			compatible = "infineon,gpio";
+			reg = <0x40310400 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <29 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt9: gpio@40310480 {
+			compatible = "infineon,gpio";
+			reg = <0x40310480 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <30 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt10: gpio@40310500 {
+			compatible = "infineon,gpio";
+			reg = <0x40310500 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <31 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt11: gpio@40310580 {
+			compatible = "infineon,gpio";
+			reg = <0x40310580 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <32 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt12: gpio@40310600 {
+			compatible = "infineon,gpio";
+			reg = <0x40310600 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <33 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt13: gpio@40310680 {
+			compatible = "infineon,gpio";
+			reg = <0x40310680 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <34 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt14: gpio@40310700 {
+			compatible = "infineon,gpio";
+			reg = <0x40310700 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <35 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt15: gpio@40310780 {
+			compatible = "infineon,gpio";
+			reg = <0x40310780 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <36 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt16: gpio@40310800 {
+			compatible = "infineon,gpio";
+			reg = <0x40310800 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <37 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt17: gpio@40310880 {
+			compatible = "infineon,gpio";
+			reg = <0x40310880 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <38 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt18: gpio@40310900 {
+			compatible = "infineon,gpio";
+			reg = <0x40310900 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <39 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt19: gpio@40310980 {
+			compatible = "infineon,gpio";
+			reg = <0x40310980 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <40 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt20: gpio@40310a00 {
+			compatible = "infineon,gpio";
+			reg = <0x40310a00 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <41 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt21: gpio@40310a80 {
+			compatible = "infineon,gpio";
+			reg = <0x40310a80 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <42 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt22: gpio@40310b00 {
+			compatible = "infineon,gpio";
+			reg = <0x40310b00 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <43 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt23: gpio@40310b80 {
+			compatible = "infineon,gpio";
+			reg = <0x40310b80 0x80>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <44 0>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		scb0: scb@40600000 {
+			compatible = "infineon,scb";
+			reg = <0x40600000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <17 0>;
+			clk-dst = <0x001e>;
+			status = "disabled";
+		};
+
+		scb1: scb@40610000 {
+			compatible = "infineon,scb";
+			reg = <0x40610000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <77 0>;
+			clk-dst = <0x001f>;
+			status = "disabled";
+		};
+
+		scb2: scb@40620000 {
+			compatible = "infineon,scb";
+			reg = <0x40620000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <78 0>;
+			clk-dst = <0x0020>;
+			status = "disabled";
+		};
+
+		scb3: scb@40630000 {
+			compatible = "infineon,scb";
+			reg = <0x40630000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <79 0>;
+			clk-dst = <0x0021>;
+			status = "disabled";
+		};
+
+		scb4: scb@40640000 {
+			compatible = "infineon,scb";
+			reg = <0x40640000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <80 0>;
+			clk-dst = <0x0022>;
+			status = "disabled";
+		};
+
+		scb5: scb@40650000 {
+			compatible = "infineon,scb";
+			reg = <0x40650000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <81 0>;
+			clk-dst = <0x0023>;
+			status = "disabled";
+		};
+
+		scb6: scb@40660000 {
+			compatible = "infineon,scb";
+			reg = <0x40660000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <82 0>;
+			clk-dst = <0x0024>;
+			status = "disabled";
+		};
+
+		scb7: scb@40670000 {
+			compatible = "infineon,scb";
+			reg = <0x40670000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&intmux_ch6>;
+			interrupts = <83 0>;
+			clk-dst = <0x0025>;
+			status = "disabled";
+		};
+	};
+};
