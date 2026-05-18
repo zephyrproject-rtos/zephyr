@@ -416,13 +416,19 @@ static DEVICE_API(gpio, mcux_igpio_driver_api) = {
 									\
 	static int mcux_igpio_##n##_init(const struct device *dev)	\
 	{								\
+		GPIO_Type *base;					\
+									\
+		DEVICE_MMIO_NAMED_MAP(dev, igpio_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP); \
+									\
+		base = get_base(dev);					\
+		base->IMR = 0U;						\
+		base->ISR = 0xFFFFFFFFU;				\
+									\
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),			\
-		   (MCUX_IGPIO_IRQ_INIT(n, 0);))		\
+		   (MCUX_IGPIO_IRQ_INIT(n, 0);))			\
 									\
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 1),			\
 			   (MCUX_IGPIO_IRQ_INIT(n, 1);))		\
-									\
-		DEVICE_MMIO_NAMED_MAP(dev, igpio_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP); \
 									\
 		return 0;						\
 	}
