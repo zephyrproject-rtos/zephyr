@@ -259,6 +259,9 @@ static void siwx91x_configure_ap_mode(sl_wifi_system_boot_configuration_t *boot_
 
 	boot_config->custom_feature_bit_map |= SL_WIFI_CUSTOM_FEAT_MAX_NUM_OF_CLIENTS(max_num_sta);
 
+	/* FIXME: Remove this line when NWP has enough memory for AP mode */
+	boot_config->feature_bit_map &= ~(SL_SI91X_FEAT_WPS_DISABLE);
+
 	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
 		LOG_WRN("Bluetooth is not supported in AP mode");
 	}
