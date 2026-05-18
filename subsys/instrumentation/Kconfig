@@ -33,7 +33,9 @@ if INSTRUMENTATION_RECURSIVE_EXCLUDE
 config INSTRUMENTATION_RECURSIVE_EXCLUDE_LIST
 	string "Comma separated list of functions"
 	default "sys_clock_isr,z_impl_k_sem_give,z_impl_k_sem_take,z_impl_k_mutex_lock,\
-z_impl_k_mutex_unlock,printk,instr_timestamp_ns"
+z_impl_k_mutex_unlock,z_impl_k_sleep_ticks,instr_timestamp_ns" if !PRINTK
+	default "sys_clock_isr,z_impl_k_sem_give,z_impl_k_sem_take,z_impl_k_mutex_lock,\
+z_impl_k_mutex_unlock,z_impl_k_sleep_ticks,instr_timestamp_ns,printk" if PRINTK
 
 endif
 
