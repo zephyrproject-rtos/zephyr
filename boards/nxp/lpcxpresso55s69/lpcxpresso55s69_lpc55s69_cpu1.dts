@@ -22,6 +22,7 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_ns_partition;
 		zephyr,entropy = &rng;
+		zephyr,crc = &crc;
 	};
 };
 
@@ -66,5 +67,9 @@
 };
 
 &gint1 {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

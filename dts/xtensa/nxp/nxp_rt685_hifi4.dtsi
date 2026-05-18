@@ -214,6 +214,12 @@
 
 				status = "disabled";
 			};
+
+			crc: crc@120000 {
+				compatible = "nxp,lpc-crc";
+				reg = <0x120000 0x1000>;
+				status = "disabled";
+			};
 		};
 	};
 };
