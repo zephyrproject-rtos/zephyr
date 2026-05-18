@@ -15,9 +15,7 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #include <hal/gdma_ll.h>
 #include <hal/dma_types.h>
 #include <hal/gdma_types.h>
-#if defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32S2)
-#include <esp_cache.h>
-#endif
+#include <zephyr/cache.h>
 
 #include <soc.h>
 #include <esp_memory_utils.h>
@@ -257,13 +255,10 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32S2)
-	/* Write back cache to ensure DMA descriptor is visible to GDMA hardware.
-	 * ESP32-S3/S2 have data cache that may hold stale descriptor values.
+	/* Write back cache so the GDMA hardware sees fresh descriptor values.
+	 * No-op when CACHE_MANAGEMENT is disabled (SoCs without a data cache).
 	 */
-	esp_cache_msync(dma_channel->desc_list, sizeof(dma_channel->desc_list),
-			ESP_CACHE_MSYNC_FLAG_DIR_C2M);
-#endif
+	sys_cache_data_flush_range(dma_channel->desc_list, sizeof(dma_channel->desc_list));
 
 	return 0;
 }
