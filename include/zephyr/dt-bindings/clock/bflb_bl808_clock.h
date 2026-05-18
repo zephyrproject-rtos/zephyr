@@ -48,8 +48,10 @@
 
 /** WiFi PLL top frequency (960MHz VCO / 3 = 320MHz) */
 #define BL808_WIFIPLL_TOP_FREQ DT_FREQ_M(320)
-/** Audio PLL top frequency */
-#define BL808_AUPLL_TOP_FREQ   DT_FREQ_M(1)
+/** Audio PLL top frequency for 48 kHz family (442.368 MHz, postdiv /18 = 24.576 MHz) */
+#define BL808_AUPLL_TOP_FREQ       442368000
+/** Audio PLL top frequency for 44.1 kHz family (451.584 MHz, postdiv /20 = 22.5792 MHz) */
+#define BL808_AUPLL_TOP_FREQ_44K1  451584000
 
 /** Overclocked WiFi PLL top frequency (960MHz VCO / 2 = 480MHz) */
 #define BL808_WIFIPLL_TOP_FREQ_OC1 DT_FREQ_M(480)
