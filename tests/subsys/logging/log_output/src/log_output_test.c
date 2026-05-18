@@ -114,8 +114,8 @@ ZTEST(test_log_output, test_ts_flag)
 {
 	char package[256];
 	static const char *exp_str = IS_ENABLED(CONFIG_LOG_TIMESTAMP_64BIT) ?
-		"[0000000000000000] " DNAME "/" SNAME ": " TEST_STR "\r\n" :
-		"[00000000] " DNAME "/" SNAME ": " TEST_STR "\r\n";
+		"[00000000000000000000] " DNAME "/" SNAME ": " TEST_STR "\r\n" :
+		"[0000000000] " DNAME "/" SNAME ": " TEST_STR "\r\n";
 	uint32_t flags = LOG_OUTPUT_FLAG_TIMESTAMP;
 	int err;
 
