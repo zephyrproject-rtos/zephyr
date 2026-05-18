@@ -1,0 +1,269 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/six301/simg301m104lil.dtsi>
+#include <silabs/six301/clock-hfxo.dtsi>
+#include <silabs/six301/clock-socpll.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+#include "sixg301_rb4407a-pinctrl.dtsi"
+
+/ {
+	compatible = "silabs,sixg301_rb4407a";
+	model = "Silicon Labs SixG301-RB4407A";
+
+	aliases {
+		dht0 = &si7021;
+		led0 = &led0;
+		led1 = &led1;
+		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdog0;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+			label = "Push Button 0";
+			zephyr,code = <INPUT_BTN_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpiod 2 GPIO_ACTIVE_LOW>;
+			label = "Push Button 1";
+			zephyr,code = <INPUT_BTN_1>;
+		};
+	};
+
+	chosen {
+		zephyr,bt-hci = &bt_hci_silabs;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &eusart0;
+		zephyr,display = &ls013b7dh03;
+		zephyr,flash = &flash0;
+		zephyr,shell-uart = &eusart0;
+		zephyr,sram = &sram0;
+		zephyr,uart-pipe = &eusart0;
+	};
+
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map = <3 0 &gpiob 3 0>,
+			   <4 0 &gpioc 0 0>,
+			   <5 0 &gpioa 0 0>,
+			   <6 0 &gpioc 1 0>,
+			   <7 0 &gpioa 4 0>,
+			   <8 0 &gpioc 2 0>,
+			   <9 0 &gpioa 5 0>,
+			   <10 0 &gpioc 3 0>,
+			   <11 0 &gpioa 6 0>,
+			   <12 0 &gpiob 2 0>,
+			   <13 0 &gpioa 7 0>,
+			   <14 0 &gpiob 0 0>,
+			   <15 0 &gpiod 0 0>,
+			   <16 0 &gpiod 1 0>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		led1: led_1 {
+			gpios = <&gpiod 4 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+
+		pwm_led1: pwm_led_1 {
+			pwms = <&timer0_pwm 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	rht_enable: rht-enable {
+		compatible = "regulator-fixed";
+		enable-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
+		regulator-name = "rht-enable";
+	};
+};
+
+&bt_hci_silabs {
+	status = "okay";
+};
+
+&eusart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&eusart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&eusart1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(8)>;
+	cs-gpios = <&gpioc 4 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&eusart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	ls013b7dh03: ls013b7dh03@0 {
+		compatible = "sharp,ls0xx";
+		reg = <0>;
+		disp-en-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
+		extcomin-frequency = <60>;
+		extcomin-gpios = <&gpioc 5 GPIO_ACTIVE_HIGH>;
+		height = <128>;
+		spi-max-frequency = <DT_FREQ_K(1100)>;
+		width = <128>;
+	};
+};
+
+&flash0 {
+	/* Adjust logical flash size to account for code regions consuming 36 kB physical flash
+	 * memory per 32 kB logical memory, since the device enables AXiP for code regions by
+	 * default:
+	 *
+	 *          | Logical | Physical
+	 *     -----|---------|---------
+	 *     SE   |         |  192 kB
+	 *     Code | 2016 kB | 2268 kB
+	 *     Data | 1636 kB | 1636 kB
+	 *     -------------------------
+	 *     Sum  | 3652 kB | 4096 kB
+	 *
+	 * If the region configuration of the device is modified, this partition table must be
+	 * updated.
+	 */
+	reg = <0x11000000 DT_SIZE_K(3652)>;
+	ranges = <0x0 0x11000000 DT_SIZE_K(3652)>;
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_K(32)>;
+			label = "mcuboot";
+		};
+
+		slot0_partition: partition@8000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x8000 DT_SIZE_K(1984)>;
+			label = "image-0";
+		};
+
+		data_region: partition@1f8000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x001f8000 DT_SIZE_K(1636)>;
+			ranges = <0x0 0x001f8000 DT_SIZE_K(1636)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@191000 {
+				compatible = "zephyr,mapped-partition";
+				reg = <0x00191000 DT_SIZE_K(32)>;
+				label = "storage";
+			};
+		};
+	};
+};
+
+&gpioa {
+	status = "okay";
+
+	board-controller-enable {
+		gpio-hog;
+		gpios = <8 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&hfxo {
+	ctune = <225>;
+	precision = <50>;
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	si7021: si7021@40 {
+		compatible = "silabs,si7006";
+		reg = <0x40>;
+		vin-supply = <&rht_enable>;
+	};
+};
+
+&itm {
+	pinctrl-0 = <&itm_default>;
+	pinctrl-names = "default";
+};
+
+&lpwaes {
+	status = "okay";
+};
+
+&pti {
+	pinctrl-0 = <&pti_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&se {
+	status = "okay";
+};
+
+&sysrtc0 {
+	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+
+	timer0_pwm: pwm {
+		pinctrl-0 = <&timer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&wdog0 {
+	status = "okay";
+};
