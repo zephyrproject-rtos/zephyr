@@ -12,10 +12,7 @@
 
 LOG_MODULE_DECLARE(fido2, CONFIG_FIDO2_LOG_LEVEL);
 
-/** @brief ASN.1-encoded ECDSA signature length */
-#define FIDO2_SELF_ATTEST_SIG_MAX_SIZE 72
-
-static uint8_t self_attest_sig[FIDO2_SELF_ATTEST_SIG_MAX_SIZE];
+static uint8_t self_attest_sig[FIDO2_ECDSA_SIG_MAX_SIZE];
 
 int fido2_attestation_sign(const uint8_t *auth_data, size_t auth_data_len,
 			   const uint8_t *client_data_hash, uint32_t credential_key_id,

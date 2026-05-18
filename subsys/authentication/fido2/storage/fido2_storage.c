@@ -60,3 +60,9 @@ int fido2_storage_find_by_rp(const uint8_t rp_id_hash[FIDO2_SHA256_SIZE],
 {
 	return fido2_storage_backend.find_by_rp(rp_id_hash, creds, max_creds, count);
 }
+
+int fido2_storage_sign_count_increment(const uint8_t *cred_id, size_t cred_id_len,
+				       uint32_t *new_count)
+{
+	return fido2_storage_backend.sign_count_increment(cred_id, cred_id_len, new_count);
+}

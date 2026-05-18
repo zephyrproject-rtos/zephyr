@@ -131,10 +131,29 @@ static int settings_backend_find_by_rp(const uint8_t rp_id_hash[FIDO2_SHA256_SIZ
 	return 0;
 }
 
+static int settings_backend_sign_count_increment(const uint8_t *cred_id, size_t cred_id_len,
+						 uint32_t *new_count)
+{
+	int idx;
+	char key[FIDO2_SETTINGS_KEY_MAX];
+	struct fido2_credential cred;
+
+	idx = cred_slot_get(cred_id, cred_id_len, &cred);
+	if (idx < 0) {
+		return -ENOENT;
+	}
+
+	*new_count = ++cred.sign_count;
+
+	build_key(key, sizeof(key), idx);
+	return settings_save_one(key, &cred, sizeof(cred));
+}
+
 const struct fido2_storage_api fido2_storage_backend = {
 	.init = settings_backend_init,
 	.store = settings_backend_store,
 	.load = settings_backend_load,
 	.remove = settings_backend_remove,
 	.find_by_rp = settings_backend_find_by_rp,
+	.sign_count_increment = settings_backend_sign_count_increment,
 };
