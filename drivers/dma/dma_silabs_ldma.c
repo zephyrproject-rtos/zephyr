@@ -16,10 +16,9 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/mem_blocks.h>
 
-#include "sl_device_peripheral.h"
-#include "sl_dma_manager.h"
-
-#include "em_ldma.h"
+#include <sl_device_peripheral.h>
+#include <sl_dma_manager.h>
+#include <sl_hal_ldma.h>
 
 #define DT_DRV_COMPAT silabs_ldma
 
@@ -33,12 +32,13 @@ struct dma_silabs_channel {
 	atomic_t busy;
 	void *user_data;
 	dma_callback_t cb;
-	LDMA_TransferCfg_t xfer_config;
-	LDMA_Descriptor_t *desc;
+	sl_hal_ldma_transfer_init_t xfer_config;
+	sl_hal_ldma_descriptor_t *desc;
 };
 
 struct dma_silabs_config {
 	struct sl_dma_handle *handle;
+	LDMA_TypeDef *ldma;
 	void (*config)(const struct device *dev);
 	const struct device *clock_dev;
 	const struct silabs_clock_control_cmu_config clock_cfg;
@@ -57,19 +57,19 @@ static int dma_silabs_get_blocksize(uint32_t src_blen, uint32_t dst_blen, uint32
 		int native;
 		int efr;
 	} ldma_blocksize_map[] = {
-		{ 0x0001, ldmaCtrlBlockSizeUnit1 },
-		{ 0x0002, ldmaCtrlBlockSizeUnit2 },
-		{ 0x0003, ldmaCtrlBlockSizeUnit3 },
-		{ 0x0004, ldmaCtrlBlockSizeUnit4 },
-		{ 0x0006, ldmaCtrlBlockSizeUnit6 },
-		{ 0x0008, ldmaCtrlBlockSizeUnit8 },
-		{ 0x0010, ldmaCtrlBlockSizeUnit16 },
-		{ 0x0020, ldmaCtrlBlockSizeUnit32 },
-		{ 0x0040, ldmaCtrlBlockSizeUnit64 },
-		{ 0x0080, ldmaCtrlBlockSizeUnit128 },
-		{ 0x0100, ldmaCtrlBlockSizeUnit256 },
-		{ 0x0200, ldmaCtrlBlockSizeUnit512 },
-		{ 0x0400, ldmaCtrlBlockSizeUnit1024 }
+		{ 0x0001, SL_HAL_LDMA_CTRL_BLOCK_SIZE_UNIT_1 },
+		{ 0x0002, SL_HAL_LDMA_CTRL_BLOCK_SIZE_UNIT_2 },
+		{ 0x0003, SL_HAL_LDMA_CTRL_BLOCK_SIZE_UNIT_3 },
+		{ 0x0004, SL_HAL_LDMA_CTRL_BLOCK_SIZE_UNIT_4 },
+		{ 0x0006, SL_HAL_LDMA_CTRL_BLOCK_SIZE_UNIT_6 },
+		{ 0x0008, SL_HAL_LDMA_CTRL_BLOCK_SIZE_UNIT_8 },
+		{ 0x0010, SL_HAL_LDMA_CTRL_BLOCK_SIZE_UNIT_16 },
+		{ 0x0020, SL_HAL_LDMA_CTRL_BLOCK_SIZE_UNIT_32 },
+		{ 0x0040, SL_HAL_LDMA_CTRL_BLOCK_SIZE_UNIT_64 },
+		{ 0x0080, SL_HAL_LDMA_CTRL_BLOCK_SIZE_UNIT_128 },
+		{ 0x0100, SL_HAL_LDMA_CTRL_BLOCK_SIZE_UNIT_256 },
+		{ 0x0200, SL_HAL_LDMA_CTRL_BLOCK_SIZE_UNIT_512 },
+		{ 0x0400, SL_HAL_LDMA_CTRL_BLOCK_SIZE_UNIT_1024 }
 	};
 	uint32_t arb_unit;
 
@@ -96,8 +96,8 @@ static int dma_silabs_get_blocksize(uint32_t src_blen, uint32_t dst_blen, uint32
 
 static int dma_silabs_block_to_descriptor(struct dma_config *config,
 					  struct dma_silabs_channel *chan_conf,
-					  struct dma_block_config *block, LDMA_Descriptor_t *desc,
-					  int *offset)
+					  struct dma_block_config *block,
+					  sl_hal_ldma_descriptor_t *desc, int *offset)
 {
 	int ret, src_size, xfer_count, loc_offset, mod, rem_bsize;
 
@@ -117,7 +117,7 @@ static int dma_silabs_block_to_descriptor(struct dma_config *config,
 	memset(desc, 0, sizeof(*desc));
 
 	if (config->channel_direction == MEMORY_TO_MEMORY) {
-		desc->xfer.structReq = 1;
+		desc->xfer.struct_req = 1;
 	}
 
 	if (config->source_data_size != config->dest_data_size) {
@@ -142,20 +142,20 @@ static int dma_silabs_block_to_descriptor(struct dma_config *config,
 	xfer_count = rem_bsize / config->source_data_size;
 	mod = rem_bsize % config->source_data_size;
 
-	if (xfer_count > LDMA_DESCRIPTOR_MAX_XFER_SIZE) {
-		desc->xfer.xferCnt = LDMA_DESCRIPTOR_MAX_XFER_SIZE - 1;
-		*offset = loc_offset + LDMA_DESCRIPTOR_MAX_XFER_SIZE;
+	if (xfer_count > SL_HAL_LDMA_DESCRIPTOR_MAX_XFER_SIZE) {
+		desc->xfer.xfer_count = SL_HAL_LDMA_DESCRIPTOR_MAX_XFER_SIZE - 1;
+		*offset = loc_offset + SL_HAL_LDMA_DESCRIPTOR_MAX_XFER_SIZE;
 
 	} else {
-		if (!mod || xfer_count == LDMA_DESCRIPTOR_MAX_XFER_SIZE) {
+		if (!mod || xfer_count == SL_HAL_LDMA_DESCRIPTOR_MAX_XFER_SIZE) {
 			xfer_count--;
 		}
 
-		desc->xfer.xferCnt = xfer_count;
+		desc->xfer.xfer_count = xfer_count;
 		*offset = 0;
 	}
 
-	/* Warning : High LDMA blockSize (high burst) mean a large transfer
+	/* Warning : High LDMA block size (high burst) means a large transfer
 	 *           without LDMA controller re-arbitration.
 	 */
 	ret = dma_silabs_get_blocksize(config->source_burst_length, config->dest_burst_length,
@@ -164,22 +164,22 @@ static int dma_silabs_block_to_descriptor(struct dma_config *config,
 		return ret;
 	}
 
-	desc->xfer.blockSize = ret;
+	desc->xfer.block_size = ret;
 
 	/* if complete_callbacks_enabled, callback is called at then end of each descriptor
 	 * in the list (block for zephyr)
 	 */
-	desc->xfer.doneIfs = config->complete_callback_en;
+	desc->xfer.done_ifs = config->complete_callback_en;
 
 	if (config->channel_direction == PERIPHERAL_TO_MEMORY ||
 	    config->channel_direction == MEMORY_TO_PERIPHERAL) {
 		if (block->flow_control_mode) {
-			desc->xfer.reqMode = ldmaCtrlReqModeAll;
+			desc->xfer.req_mode = SL_HAL_LDMA_CTRL_REQ_MODE_ALL;
 		} else {
-			desc->xfer.reqMode = ldmaCtrlReqModeBlock;
+			desc->xfer.req_mode = SL_HAL_LDMA_CTRL_REQ_MODE_BLOCK;
 		}
 	} else {
-		desc->xfer.reqMode = ldmaCtrlReqModeAll;
+		desc->xfer.req_mode = SL_HAL_LDMA_CTRL_REQ_MODE_ALL;
 	}
 
 	/* In silabs LDMA, increment sign is managed with the transfer configuration
@@ -189,24 +189,24 @@ static int dma_silabs_block_to_descriptor(struct dma_config *config,
 	 * error is returned.
 	 */
 	if (block->source_addr_adj != DMA_ADDR_ADJ_NO_CHANGE &&
-	    block->source_addr_adj != chan_conf->xfer_config.ldmaCfgSrcIncSign) {
+	    block->source_addr_adj != chan_conf->xfer_config.src_inc_sign) {
 		return -ENOTSUP;
 	}
 
 	if (block->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
-		desc->xfer.srcInc = ldmaCtrlSrcIncNone;
+		desc->xfer.src_inc = SL_HAL_LDMA_CTRL_SRC_INC_NONE;
 	} else {
-		desc->xfer.srcInc = ldmaCtrlSrcIncOne;
+		desc->xfer.src_inc = SL_HAL_LDMA_CTRL_SRC_INC_ONE;
 	}
 
 	if (block->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
-		desc->xfer.dstInc = ldmaCtrlDstIncNone;
+		desc->xfer.dst_inc = SL_HAL_LDMA_CTRL_DST_INC_NONE;
 	} else {
-		desc->xfer.dstInc = ldmaCtrlDstIncOne;
+		desc->xfer.dst_inc = SL_HAL_LDMA_CTRL_DST_INC_ONE;
 	}
 
-	desc->xfer.srcAddrMode = ldmaCtrlSrcAddrModeAbs;
-	desc->xfer.dstAddrMode = ldmaCtrlDstAddrModeAbs;
+	desc->xfer.src_addr_mode = SL_HAL_LDMA_CTRL_SRC_ADDR_MODE_ABS;
+	desc->xfer.dst_addr_mode = SL_HAL_LDMA_CTRL_DST_ADDR_MODE_ABS;
 
 	if (block->source_address == 0) {
 		LOG_WRN("source_buffer address is null.");
@@ -215,20 +215,21 @@ static int dma_silabs_block_to_descriptor(struct dma_config *config,
 		LOG_WRN("dest_buffer address is null.");
 	}
 
-	desc->xfer.srcAddr = block->source_address + loc_offset * config->source_data_size;
-	desc->xfer.dstAddr = block->dest_address + loc_offset * config->dest_data_size;
+	desc->xfer.src_addr = block->source_address + loc_offset * config->source_data_size;
+	desc->xfer.dst_addr = block->dest_address + loc_offset * config->dest_data_size;
 
 	return 0;
 }
 
-static int dma_silabs_release_descriptor(struct dma_silabs_data *data, LDMA_Descriptor_t *desc)
+static int dma_silabs_release_descriptor(struct dma_silabs_data *data,
+					 sl_hal_ldma_descriptor_t *desc)
 {
-	LDMA_Descriptor_t *head_desc, *next_desc;
+	sl_hal_ldma_descriptor_t *head_desc, *next_desc;
 	int ret;
 
 	head_desc = desc;
 	while (desc) {
-		next_desc = LDMA_DESCRIPTOR_LINKABS_LINKADDR_TO_ADDR(desc->xfer.linkAddr);
+		next_desc = SL_HAL_LDMA_DESCRIPTOR_LINKABS_LINKADDR_TO_ADDR(desc->xfer.link_addr);
 		ret = sys_mem_blocks_free(data->dma_desc_pool, 1, (void **)&desc);
 		if (ret) {
 			return ret;
@@ -248,12 +249,12 @@ static int dma_silabs_configure_descriptor(struct dma_config *config, struct dma
 {
 	struct dma_block_config *head_block = config->head_block;
 	struct dma_block_config *block = config->head_block;
-	LDMA_Descriptor_t *desc, *prev_desc;
+	sl_hal_ldma_descriptor_t *desc, *prev_desc;
 	int ret, offset;
 
 	/* Descriptors configuration
 	 * block refers to user configured block (dma_block_config structure from dma.h)
-	 * desc refers to driver configured block (LDMA_Descriptor_t structure from silabs
+	 * desc refers to driver configured block (sl_hal_ldma_descriptor_t structure from silabs
 	 * hal)
 	 */
 	prev_desc = NULL;
@@ -272,8 +273,9 @@ static int dma_silabs_configure_descriptor(struct dma_config *config, struct dma
 		if (!prev_desc) {
 			chan_conf->desc = desc;
 		} else {
-			prev_desc->xfer.linkAddr = LDMA_DESCRIPTOR_LINKABS_ADDR_TO_LINKADDR(desc);
-			prev_desc->xfer.linkMode = ldmaLinkModeAbs;
+			prev_desc->xfer.link_addr =
+				SL_HAL_LDMA_DESCRIPTOR_LINKABS_ADDR_TO_LINKADDR(desc);
+			prev_desc->xfer.link_mode = SL_HAL_LDMA_LINK_MODE_ABS;
 			prev_desc->xfer.link = 1;
 		}
 
@@ -282,9 +284,10 @@ static int dma_silabs_configure_descriptor(struct dma_config *config, struct dma
 			block = block->next_block;
 			if (block == head_block) {
 				block = NULL;
-				prev_desc->xfer.linkAddr =
-					LDMA_DESCRIPTOR_LINKABS_ADDR_TO_LINKADDR(chan_conf->desc);
-				prev_desc->xfer.linkMode = ldmaLinkModeAbs;
+				prev_desc->xfer.link_addr =
+					SL_HAL_LDMA_DESCRIPTOR_LINKABS_ADDR_TO_LINKADDR(
+						chan_conf->desc);
+				prev_desc->xfer.link_mode = SL_HAL_LDMA_LINK_MODE_ABS;
 				prev_desc->xfer.link = 1;
 			}
 		}
@@ -300,23 +303,25 @@ err:
 
 static void dma_silabs_irq_handler(const struct device *dev, uint32_t id)
 {
+	const struct dma_silabs_config *config = dev->config;
 	const struct dma_silabs_data *data = dev->data;
 	struct dma_silabs_channel *chan;
 	int status;
-	uint32_t pending, chnum;
+	uint32_t pending, chnum, error_mask;
 
-	pending = LDMA_IntGetEnabled();
+	pending = sl_hal_ldma_get_enabled_pending_interrupts(config->ldma);
+	error_mask = LDMA_IF_ERROR;
 
 	for (chnum = 0; chnum < data->dma_ctx.dma_channels; chnum++) {
 		chan = &data->dma_chan_table[chnum];
 		status = DMA_STATUS_COMPLETE;
 
-		if (pending & LDMA_IF_ERROR) {
+		if (pending & error_mask) {
 			if (chan->cb) {
 				chan->cb(dev, chan->user_data, chnum, -EIO);
 			}
 		} else if (pending & BIT(chnum)) {
-			LDMA_IntClear(BIT(chnum));
+			sl_hal_ldma_clear_interrupts(config->ldma, BIT(chnum));
 
 			/* Is it only an interrupt for the end of a descriptor and not a complete
 			 * transfer.
@@ -331,10 +336,10 @@ static void dma_silabs_irq_handler(const struct device *dev, uint32_t id)
 			 * In the case that the transfer is done but we have append a new
 			 * descriptor, we need to manually load the next descriptor
 			 */
-			if (LDMA_TransferDone(chnum) &&
-			    LDMA->CH[chnum].LINK & _LDMA_CH_LINK_LINK_MASK) {
-				sys_clear_bit((mem_addr_t)&LDMA->CHDONE, chnum);
-				LDMA->LINKLOAD = BIT(chnum);
+			if (sl_hal_ldma_transfer_is_done(config->ldma, chnum) &&
+			    config->ldma->CH[chnum].LINK & _LDMA_CH_LINK_LINK_MASK) {
+				sys_clear_bit((mem_addr_t)&config->ldma->CHDONE, chnum);
+				config->ldma->LINKLOAD = BIT(chnum);
 			}
 
 			if (chan->cb) {
@@ -347,9 +352,10 @@ static void dma_silabs_irq_handler(const struct device *dev, uint32_t id)
 static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 				struct dma_config *config)
 {
+	const struct dma_silabs_config *cfg = dev->config;
 	struct dma_silabs_data *data = dev->data;
 	struct dma_silabs_channel *chan_conf = &data->dma_chan_table[channel];
-	LDMA_TransferCfg_t *xfer_config = &chan_conf->xfer_config;
+	sl_hal_ldma_transfer_init_t *xfer_config = &chan_conf->xfer_config;
 	int ret;
 
 	if (channel >= data->dma_ctx.dma_channels) {
@@ -381,7 +387,7 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 		return -ENOTSUP;
 	}
 
-	LDMA_StopTransfer(channel);
+	sl_hal_ldma_stop_transfer(cfg->ldma, channel);
 
 	chan_conf->user_data = config->user_data;
 	chan_conf->cb = config->dma_callback;
@@ -395,7 +401,7 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 		break;
 	case PERIPHERAL_TO_MEMORY:
 	case MEMORY_TO_PERIPHERAL:
-		xfer_config->ldmaReqSel = SILABS_LDMA_SLOT_TO_REQSEL(config->dma_slot);
+		xfer_config->request_sel = SILABS_LDMA_SLOT_TO_REQSEL(config->dma_slot);
 		break;
 	case PERIPHERAL_TO_PERIPHERAL:
 	case HOST_TO_MEMORY:
@@ -405,21 +411,21 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 	}
 
 	/* Directly transform channel_priority into efr priority */
-	if (config->channel_priority < ldmaCfgArbSlotsAs1 ||
-	    config->channel_priority > ldmaCfgArbSlotsAs8) {
+	if (config->channel_priority < SL_HAL_LDMA_CFG_ARBSLOTS_ONE ||
+	    config->channel_priority > SL_HAL_LDMA_CFG_ARBSLOTS_EIGHT) {
 		return -EINVAL;
 	}
-	xfer_config->ldmaCfgArbSlots = config->channel_priority;
+	xfer_config->arb_slots = config->channel_priority;
 
 	switch (config->head_block->source_addr_adj) {
 	case DMA_ADDR_ADJ_INCREMENT:
-		xfer_config->ldmaCfgSrcIncSign = ldmaCfgSrcIncSignPos;
+		xfer_config->src_inc_sign = SL_HAL_LDMA_CFG_SRC_INC_SIGN_POS;
 		break;
 	case DMA_ADDR_ADJ_DECREMENT:
-		xfer_config->ldmaCfgSrcIncSign = ldmaCfgSrcIncSignNeg;
+		xfer_config->src_inc_sign = SL_HAL_LDMA_CFG_SRC_INC_SIGN_NEG;
 		break;
 	case DMA_ADDR_ADJ_NO_CHANGE:
-		xfer_config->ldmaCfgSrcIncSign = ldmaCfgSrcIncSignPos;
+		xfer_config->src_inc_sign = SL_HAL_LDMA_CFG_SRC_INC_SIGN_POS;
 		break;
 	default:
 		LOG_ERR("Addr Adjustment error %d", config->head_block->source_addr_adj);
@@ -428,13 +434,13 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 
 	switch (config->head_block->dest_addr_adj) {
 	case DMA_ADDR_ADJ_INCREMENT:
-		xfer_config->ldmaCfgDstIncSign = ldmaCfgDstIncSignPos;
+		xfer_config->dst_inc_sign = SL_HAL_LDMA_CFG_DST_INC_SIGN_POS;
 		break;
 	case DMA_ADDR_ADJ_DECREMENT:
-		xfer_config->ldmaCfgDstIncSign = ldmaCfgDstIncSignNeg;
+		xfer_config->dst_inc_sign = SL_HAL_LDMA_CFG_DST_INC_SIGN_NEG;
 		break;
 	case DMA_ADDR_ADJ_NO_CHANGE:
-		xfer_config->ldmaCfgDstIncSign = ldmaCfgDstIncSignPos;
+		xfer_config->dst_inc_sign = SL_HAL_LDMA_CFG_DST_INC_SIGN_POS;
 		break;
 	default:
 		break;
@@ -452,6 +458,7 @@ static int dma_silabs_configure(const struct device *dev, uint32_t channel,
 
 static int dma_silabs_start(const struct device *dev, uint32_t channel)
 {
+	const struct dma_silabs_config *config = dev->config;
 	const struct dma_silabs_data *data = dev->data;
 	struct dma_silabs_channel *chan = &data->dma_chan_table[channel];
 
@@ -461,13 +468,17 @@ static int dma_silabs_start(const struct device *dev, uint32_t channel)
 
 	atomic_inc(&chan->busy);
 
-	LDMA_StartTransfer(channel, &chan->xfer_config, chan->desc);
+	sl_hal_ldma_init_transfer(config->ldma, channel, &chan->xfer_config, chan->desc);
+	sl_hal_ldma_clear_interrupts(config->ldma, BIT(channel));
+	sl_hal_ldma_enable_interrupts(config->ldma, BIT(channel));
+	sl_hal_ldma_start_transfer(config->ldma, channel);
 
 	return 0;
 }
 
 static int dma_silabs_stop(const struct device *dev, uint32_t channel)
 {
+	const struct dma_silabs_config *config = dev->config;
 	const struct dma_silabs_data *data = dev->data;
 	struct dma_silabs_channel *chan = &data->dma_chan_table[channel];
 
@@ -475,11 +486,11 @@ static int dma_silabs_stop(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
-	LDMA_StopTransfer(channel);
+	sl_hal_ldma_stop_transfer(config->ldma, channel);
 
 	atomic_clear(&chan->busy);
 
-	LDMA_IntClear(BIT(channel));
+	sl_hal_ldma_clear_interrupts(config->ldma, BIT(channel));
 
 	return 0;
 }
@@ -487,6 +498,7 @@ static int dma_silabs_stop(const struct device *dev, uint32_t channel)
 static int dma_silabs_get_status(const struct device *dev, uint32_t channel,
 				 struct dma_status *status)
 {
+	const struct dma_silabs_config *config = dev->config;
 	const struct dma_silabs_data *data = dev->data;
 
 	if (channel > data->dma_ctx.dma_channels) {
@@ -497,7 +509,7 @@ static int dma_silabs_get_status(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	status->pending_length = LDMA_TransferRemainingCount(channel);
+	status->pending_length = sl_hal_ldma_transfer_remaining_count(config->ldma, channel);
 	status->busy = data->dma_chan_table[channel].busy;
 	status->dir = data->dma_chan_table[channel].dir;
 
@@ -557,10 +569,11 @@ static DEVICE_API(dma, dma_funcs) = {
 
 int silabs_ldma_append_block(const struct device *dev, uint32_t channel, struct dma_config *config)
 {
+	const struct dma_silabs_config *cfg = dev->config;
 	const struct dma_silabs_data *data = dev->data;
 	struct dma_silabs_channel *chan_conf = &data->dma_chan_table[channel];
 	struct dma_block_config *block_config = config->head_block;
-	LDMA_Descriptor_t *desc = data->dma_chan_table[channel].desc;
+	sl_hal_ldma_descriptor_t *desc = data->dma_chan_table[channel].desc;
 	unsigned int key;
 	int ret, offset;
 
@@ -582,12 +595,12 @@ int silabs_ldma_append_block(const struct device *dev, uint32_t channel, struct 
 	 * You can't also append a descriptor list.
 	 * This check is here to not use the function in a wrong way
 	 */
-	if (desc->xfer.linkAddr || config->head_block->next_block) {
+	if (desc->xfer.link_addr || config->head_block->next_block) {
 		return -EINVAL;
 	}
 
 	/* A link is already set by a previous call to the function */
-	if (sys_test_bit((mem_addr_t)&LDMA->CH[channel].LINK, _LDMA_CH_LINK_LINK_SHIFT)) {
+	if (sys_test_bit((mem_addr_t)&cfg->ldma->CH[channel].LINK, _LDMA_CH_LINK_LINK_SHIFT)) {
 		return -EINVAL;
 	}
 
@@ -603,19 +616,22 @@ int silabs_ldma_append_block(const struct device *dev, uint32_t channel, struct 
 	}
 
 	key = irq_lock();
-	if (!LDMA_TransferDone(channel)) {
+	if (sl_hal_ldma_channel_is_enabled(cfg->ldma, channel)) {
 		/*
 		 * It is voluntary to split this 2 lines in order to separate the write of the link
 		 * addr and the write of the link bit. In this way, there is always a linkAddr when
 		 * the link bit is set.
 		 */
-		sys_write32((uintptr_t)desc, (mem_addr_t)&LDMA->CH[channel].LINK);
-		sys_set_bit((mem_addr_t)&LDMA->CH[channel].LINK, _LDMA_CH_LINK_LINK_SHIFT);
+		sys_write32((uintptr_t)desc, (mem_addr_t)&cfg->ldma->CH[channel].LINK);
+		sys_set_bit((mem_addr_t)&cfg->ldma->CH[channel].LINK, _LDMA_CH_LINK_LINK_SHIFT);
 		irq_unlock(key);
 
 	} else {
 		irq_unlock(key);
-		LDMA_StartTransfer(channel, &chan_conf->xfer_config, desc);
+		sl_hal_ldma_init_transfer(cfg->ldma, channel, &chan_conf->xfer_config, desc);
+		sl_hal_ldma_clear_interrupts(cfg->ldma, BIT(channel));
+		sl_hal_ldma_enable_interrupts(cfg->ldma, BIT(channel));
+		sl_hal_ldma_start_transfer(cfg->ldma, channel);
 	}
 
 	return 0;
@@ -659,6 +675,7 @@ int silabs_ldma_append_block(const struct device *dev, uint32_t channel, struct 
                                                                                                    \
 	const struct dma_silabs_config dma_silabs_config_##inst = {                                \
 		.handle = &ldma_handle_##inst,                                                     \
+		.ldma = (LDMA_TypeDef *)DT_INST_REG_ADDR(inst),                                    \
 		.config = silabs_dma_configure_##inst,                                             \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
 		.clock_cfg = SILABS_DT_INST_CLOCK_CFG(inst),                                       \
@@ -670,7 +687,7 @@ int silabs_ldma_append_block(const struct device *dev, uint32_t channel, struct 
 	static struct dma_silabs_channel                                                           \
 		dma_silabs_channel_##inst[DT_INST_PROP(inst, dma_channels)];                       \
                                                                                                    \
-	SYS_MEM_BLOCKS_DEFINE_STATIC_TYPE(desc_pool_##inst, LDMA_Descriptor_t,                     \
+	SYS_MEM_BLOCKS_DEFINE_STATIC_TYPE(desc_pool_##inst, sl_hal_ldma_descriptor_t,              \
 					  CONFIG_DMA_MAX_DESCRIPTOR);                              \
                                                                                                    \
 	static struct dma_silabs_data dma_silabs_data_##inst = {                                   \
