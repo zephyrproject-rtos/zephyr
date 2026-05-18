@@ -16,6 +16,7 @@ TEST_CASES = [
         "pdi": None,
         "bl31": None,
         "dtb": None,
+        "pmufw": None,
         "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF],
     },
     {
@@ -25,6 +26,7 @@ TEST_CASES = [
         "pdi": None,
         "bl31": None,
         "dtb": None,
+        "pmufw": None,
         "expected_cmd": ["xsdb", "custom_cfg_path", RC_KERNEL_ELF],
     },
     {
@@ -34,6 +36,7 @@ TEST_CASES = [
         "pdi": None,
         "bl31": None,
         "dtb": None,
+        "pmufw": None,
         "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF, "bitstream_path"],
     },
     {
@@ -43,6 +46,7 @@ TEST_CASES = [
         "pdi": None,
         "bl31": None,
         "dtb": None,
+        "pmufw": None,
         "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF, "fsbl_path"],
     },
     {
@@ -52,6 +56,7 @@ TEST_CASES = [
         "pdi": None,
         "bl31": None,
         "dtb": None,
+        "pmufw": None,
         "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF, "bitstream_path", "fsbl_path"],
     },
     {
@@ -61,6 +66,7 @@ TEST_CASES = [
         "pdi": "pdi_path",
         "bl31": None,
         "dtb": None,
+        "pmufw": None,
         "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF, "pdi_path"],
     },
     {
@@ -70,6 +76,7 @@ TEST_CASES = [
         "pdi": "pdi_path",
         "bl31": "bl31_path",
         "dtb": None,
+        "pmufw": None,
         "expected_cmd": ["xsdb", "default_cfg_path", RC_KERNEL_ELF, "pdi_path", "bl31_path"],
     },
     {
@@ -79,6 +86,7 @@ TEST_CASES = [
         "pdi": "pdi_path",
         "bl31": "bl31_path",
         "dtb": "dtb_path",
+        "pmufw": None,
         "expected_cmd": [
             "xsdb",
             "default_cfg_path",
@@ -86,6 +94,24 @@ TEST_CASES = [
             "pdi_path",
             "bl31_path",
             "dtb_path",
+        ],
+    },
+    {
+        "config": None,
+        "bitstream": "bitstream_path",
+        "fsbl": "fsbl_path",
+        "pdi": None,
+        "bl31": "bl31_path",
+        "dtb": None,
+        "pmufw": "pmufw_path",
+        "expected_cmd": [
+            "xsdb",
+            "default_cfg_path",
+            RC_KERNEL_ELF,
+            "bitstream_path",
+            "fsbl_path",
+            "bl31_path",
+            "pmufw_path",
         ],
     },
 ]
@@ -106,6 +132,7 @@ def test_xsdbbinaryrunner_init(check_call, path_exists, tc, runner_config):
             pdi=tc["pdi"],
             bl31=tc["bl31"],
             dtb=tc["dtb"],
+            pmufw=tc["pmufw"],
         )
 
     runner.do_run("flash")
@@ -131,6 +158,8 @@ def test_xsdbbinaryrunner_create(check_call, path_exists, tc, runner_config):
         args.extend(["--bl31", tc["bl31"]])
     if tc["dtb"]:
         args.extend(["--system-dtb", tc["dtb"]])
+    if tc["pmufw"]:
+        args.extend(["--pmufw", tc["pmufw"]])
 
     parser = argparse.ArgumentParser(allow_abbrev=False)
     XSDBBinaryRunner.add_parser(parser)
