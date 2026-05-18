@@ -1,11 +1,11 @@
-# Copyright (c) 2024 Texas Instruments Incorporated
+# Copyright (c) 2026 Texas Instruments Incorporated
 # Copyright (c) 2024 BayLibre, SAS
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: TI SimpleLink CC23X0 UART node
+description: TI SimpleLink LPF3 UART node (CC23x0, CC27xx)
 
-compatible: "ti,cc23x0-uart"
+compatible: "ti,lpf3-uart"
 
 include: [uart-controller.yaml, pinctrl-device.yaml, base.yaml]
 
@@ -31,6 +31,13 @@ properties:
     description: |
       Sets the number of data bits. Defaults to standard of 8 if not specified.
     default: 8
+
+  ti,clkctl-id:
+    type: int
+    required: true
+    description: |
+      CLKCTL peripheral clock gate ID for this UART instance.
+      Use CLKCTL_UART0 (0x4) for uart0, CLKCTL_UART1 (0x8) for uart1.
 
   dmas:
     description: |

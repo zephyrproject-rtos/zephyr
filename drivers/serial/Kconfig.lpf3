@@ -1,0 +1,24 @@
+# Copyright (c) 2024 - 2026 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_LPF3
+	bool "TI SimpleLink LPF3 UART driver"
+	default y
+	depends on DT_HAS_TI_LPF3_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_SUPPORT_ASYNC
+	select PINCTRL
+	help
+	  Enable the TI SimpleLink LPF3 UART driver (CC23x0 and CC27xx).
+
+config UART_LPF3_DMA_DRIVEN
+	bool "DMA support for TI LPF3 UART devices"
+	default y if UART_ASYNC_API
+	depends on UART_LPF3
+	depends on UART_ASYNC_API
+	select DMA
+	help
+	  DMA driven mode offloads data transfer tasks from the CPU.

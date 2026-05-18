@@ -1,11 +1,16 @@
 /*
- * Copyright (c) 2024 Texas Instruments Incorporated
+ * Copyright (c) 2026 Texas Instruments Incorporated
  * Copyright (c) 2024 BayLibre, SAS
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ti_cc23x0_uart
+/*
+ * Unified UART driver for TI LPF3 family (CC23x0, CC27xx).
+ * Both SOC lines share the same IP block and driverlib API.
+ */
+
+#define DT_DRV_COMPAT ti_lpf3_uart
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/dma.h>
@@ -25,8 +30,8 @@
 
 #include <inc/hw_memmap.h>
 
-#ifdef CONFIG_UART_CC23X0_DMA_DRIVEN
-#define UART_CC23_REG_GET(base, offset) ((base) + (offset))
+#ifdef CONFIG_UART_LPF3_DMA_DRIVEN
+#define UART_LPF3_REG_GET(base, offset) ((base) + (offset))
 /*
  * For each DMA channel, burst transfer and single transfer request signals
  * are not mutually exclusive, and both can be asserted at the same time.
@@ -41,17 +46,18 @@
  * can generate a burst request based on the FIFO trigger level (1/2 full),
  * the burst length is set to half the FIFO size.
  */
-#define UART_CC23_BURST_LEN 4
+#define UART_LPF3_BURST_LEN             4
 #endif
 
-struct uart_cc23x0_config {
+struct uart_lpf3_config {
 	uint32_t reg;
 	uint32_t sys_clk_freq;
 	const struct pinctrl_dev_config *pcfg;
-#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_CC23X0_DMA_DRIVEN
+	uint32_t clkctl_id;
+#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_LPF3_DMA_DRIVEN
 	unsigned int irq;
 #endif
-#ifdef CONFIG_UART_CC23X0_DMA_DRIVEN
+#ifdef CONFIG_UART_LPF3_DMA_DRIVEN
 	const struct device *dma_dev;
 	uint8_t dma_channel_tx;
 	uint8_t dma_trigsrc_tx;
@@ -60,19 +66,22 @@ struct uart_cc23x0_config {
 #endif
 };
 
-enum uart_cc23x0_pm_locks {
-	UART_CC23X0_PM_LOCK_TX,
-	UART_CC23X0_PM_LOCK_RX,
-	UART_CC23X0_PM_LOCK_COUNT,
+enum uart_lpf3_pm_locks {
+	UART_LPF3_PM_LOCK_TX,
+	UART_LPF3_PM_LOCK_RX,
+	UART_LPF3_PM_LOCK_COUNT,
 };
 
-struct uart_cc23x0_data {
+struct uart_lpf3_data {
 	struct uart_config uart_config;
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_LPF3_DMA_DRIVEN
 	uart_irq_callback_user_data_t callback;
 	void *user_data;
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-#ifdef CONFIG_UART_CC23X0_DMA_DRIVEN
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_LPF3_DMA_DRIVEN */
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	bool tx_irq_enabled;
+#endif
+#ifdef CONFIG_UART_LPF3_DMA_DRIVEN
 	const struct device *dev;
 
 	uart_callback_t async_callback;
@@ -87,14 +96,14 @@ struct uart_cc23x0_data {
 	size_t rx_processed_len;
 	uint8_t *rx_next_buf;
 	size_t rx_next_len;
-#endif /* CONFIG_UART_CC23X0_DMA_DRIVEN */
+#endif /* CONFIG_UART_LPF3_DMA_DRIVEN */
 #ifdef CONFIG_PM_DEVICE
-	ATOMIC_DEFINE(pm_lock, UART_CC23X0_PM_LOCK_COUNT);
+	ATOMIC_DEFINE(pm_lock, UART_LPF3_PM_LOCK_COUNT);
 #endif
 };
 
-static inline void uart_cc23x0_pm_policy_state_lock_get(struct uart_cc23x0_data *data,
-							enum uart_cc23x0_pm_locks pm_lock_type)
+static inline void uart_lpf3_pm_policy_state_lock_get(struct uart_lpf3_data *data,
+						      enum uart_lpf3_pm_locks pm_lock_type)
 {
 #ifdef CONFIG_PM_DEVICE
 	if (!atomic_test_and_set_bit(data->pm_lock, pm_lock_type)) {
@@ -104,8 +113,8 @@ static inline void uart_cc23x0_pm_policy_state_lock_get(struct uart_cc23x0_data 
 #endif
 }
 
-static inline void uart_cc23x0_pm_policy_state_lock_put(struct uart_cc23x0_data *data,
-							enum uart_cc23x0_pm_locks pm_lock_type)
+static inline void uart_lpf3_pm_policy_state_lock_put(struct uart_lpf3_data *data,
+						      enum uart_lpf3_pm_locks pm_lock_type)
 {
 #ifdef CONFIG_PM_DEVICE
 	if (atomic_test_and_clear_bit(data->pm_lock, pm_lock_type)) {
@@ -115,9 +124,9 @@ static inline void uart_cc23x0_pm_policy_state_lock_put(struct uart_cc23x0_data 
 #endif
 }
 
-static int uart_cc23x0_poll_in(const struct device *dev, unsigned char *c)
+static int uart_lpf3_poll_in(const struct device *dev, unsigned char *c)
 {
-	const struct uart_cc23x0_config *config = dev->config;
+	const struct uart_lpf3_config *config = dev->config;
 
 	if (!UARTCharAvailable(config->reg)) {
 		return -1;
@@ -128,9 +137,9 @@ static int uart_cc23x0_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void uart_cc23x0_poll_out(const struct device *dev, unsigned char c)
+static void uart_lpf3_poll_out(const struct device *dev, unsigned char c)
 {
-	const struct uart_cc23x0_config *config = dev->config;
+	const struct uart_lpf3_config *config = dev->config;
 
 	UARTPutChar(config->reg, c);
 
@@ -143,9 +152,9 @@ static void uart_cc23x0_poll_out(const struct device *dev, unsigned char c)
 #endif
 }
 
-static int uart_cc23x0_err_check(const struct device *dev)
+static int uart_lpf3_err_check(const struct device *dev)
 {
-	const struct uart_cc23x0_config *config = dev->config;
+	const struct uart_lpf3_config *config = dev->config;
 	uint32_t flags = UARTGetRxError(config->reg);
 	int error = 0;
 
@@ -159,10 +168,10 @@ static int uart_cc23x0_err_check(const struct device *dev)
 	return error;
 }
 
-static int uart_cc23x0_configure(const struct device *dev, const struct uart_config *cfg)
+static int uart_lpf3_configure(const struct device *dev, const struct uart_config *cfg)
 {
-	const struct uart_cc23x0_config *config = dev->config;
-	struct uart_cc23x0_data *data = dev->data;
+	const struct uart_lpf3_config *config = dev->config;
+	struct uart_lpf3_data *data = dev->data;
 	uint32_t line_ctrl = 0;
 	bool flow_ctrl;
 
@@ -253,9 +262,9 @@ static int uart_cc23x0_configure(const struct device *dev, const struct uart_con
 }
 
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-static int uart_cc23x0_config_get(const struct device *dev, struct uart_config *cfg)
+static int uart_lpf3_config_get(const struct device *dev, struct uart_config *cfg)
 {
-	const struct uart_cc23x0_data *data = dev->data;
+	struct uart_lpf3_data *data = dev->data;
 
 	*cfg = data->uart_config;
 	return 0;
@@ -264,9 +273,9 @@ static int uart_cc23x0_config_get(const struct device *dev, struct uart_config *
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static int uart_cc23x0_fifo_fill(const struct device *dev, const uint8_t *buf, int len)
+static int uart_lpf3_fifo_fill(const struct device *dev, const uint8_t *buf, int len)
 {
-	const struct uart_cc23x0_config *config = dev->config;
+	const struct uart_lpf3_config *config = dev->config;
 	int n = 0;
 
 	while (n < len) {
@@ -280,9 +289,9 @@ static int uart_cc23x0_fifo_fill(const struct device *dev, const uint8_t *buf, i
 	return n;
 }
 
-static int uart_cc23x0_fifo_read(const struct device *dev, uint8_t *buf, const int len)
+static int uart_lpf3_fifo_read(const struct device *dev, uint8_t *buf, const int len)
 {
-	const struct uart_cc23x0_config *config = dev->config;
+	const struct uart_lpf3_config *config = dev->config;
 	int c, n;
 
 	n = 0;
@@ -297,14 +306,17 @@ static int uart_cc23x0_fifo_read(const struct device *dev, uint8_t *buf, const i
 	return n;
 }
 
-static void uart_cc23x0_irq_tx_enable(const struct device *dev)
+static void uart_lpf3_irq_tx_enable(const struct device *dev)
 {
-	const struct uart_cc23x0_config *config = dev->config;
+	const struct uart_lpf3_config *config = dev->config;
+	struct uart_lpf3_data *data = dev->data;
 
 	/* When TX IRQ is enabled, it is implicit that we are expecting to transmit
 	 * using the UART, hence we should no longer go into standby
 	 */
-	uart_cc23x0_pm_policy_state_lock_get(dev->data, UART_CC23X0_PM_LOCK_TX);
+	uart_lpf3_pm_policy_state_lock_get(data, UART_LPF3_PM_LOCK_TX);
+
+	data->tx_irq_enabled = true;
 
 	UARTEnableInt(config->reg, UART_INT_TX);
 
@@ -318,30 +330,34 @@ static void uart_cc23x0_irq_tx_enable(const struct device *dev)
 	}
 }
 
-static void uart_cc23x0_irq_tx_disable(const struct device *dev)
+static void uart_lpf3_irq_tx_disable(const struct device *dev)
 {
-	const struct uart_cc23x0_config *config = dev->config;
+	const struct uart_lpf3_config *config = dev->config;
+	struct uart_lpf3_data *data = dev->data;
+
+	data->tx_irq_enabled = false;
 
 	UARTDisableInt(config->reg, UART_INT_TX);
 
-	uart_cc23x0_pm_policy_state_lock_put(dev->data, UART_CC23X0_PM_LOCK_TX);
+	uart_lpf3_pm_policy_state_lock_put(data, UART_LPF3_PM_LOCK_TX);
 }
 
-static int uart_cc23x0_irq_tx_ready(const struct device *dev)
+static int uart_lpf3_irq_tx_ready(const struct device *dev)
 {
-	const struct uart_cc23x0_config *config = dev->config;
+	const struct uart_lpf3_config *config = dev->config;
+	const struct uart_lpf3_data *data = dev->data;
 
-	return UARTSpaceAvailable(config->reg) ? 1 : 0;
+	return (data->tx_irq_enabled && UARTSpaceAvailable(config->reg)) ? 1 : 0;
 }
 
-static void uart_cc23x0_irq_rx_enable(const struct device *dev)
+static void uart_lpf3_irq_rx_enable(const struct device *dev)
 {
-	const struct uart_cc23x0_config *config = dev->config;
+	const struct uart_lpf3_config *config = dev->config;
 
 	/* When RX IRQ is enabled, it is implicit that we are expecting to receive
 	 * from the UART, hence we can no longer go into standby
 	 */
-	uart_cc23x0_pm_policy_state_lock_get(dev->data, UART_CC23X0_PM_LOCK_RX);
+	uart_lpf3_pm_policy_state_lock_get(dev->data, UART_LPF3_PM_LOCK_RX);
 
 	/* Trigger the ISR on both RX and Receive Timeout. This is to allow
 	 * the use of the hardware FIFOs for more efficient operation
@@ -349,57 +365,80 @@ static void uart_cc23x0_irq_rx_enable(const struct device *dev)
 	UARTEnableInt(config->reg, UART_INT_RX | UART_INT_RT);
 }
 
-static void uart_cc23x0_irq_rx_disable(const struct device *dev)
+static void uart_lpf3_irq_rx_disable(const struct device *dev)
 {
-	const struct uart_cc23x0_config *config = dev->config;
+	const struct uart_lpf3_config *config = dev->config;
 
 	UARTDisableInt(config->reg, UART_INT_RX | UART_INT_RT);
 
-	uart_cc23x0_pm_policy_state_lock_put(dev->data, UART_CC23X0_PM_LOCK_RX);
+	uart_lpf3_pm_policy_state_lock_put(dev->data, UART_LPF3_PM_LOCK_RX);
 }
 
-static int uart_cc23x0_irq_tx_complete(const struct device *dev)
+static int uart_lpf3_irq_tx_complete(const struct device *dev)
 {
-	const struct uart_cc23x0_config *config = dev->config;
+	const struct uart_lpf3_config *config = dev->config;
 
 	return UARTBusy(config->reg) ? 0 : 1;
 }
 
-static int uart_cc23x0_irq_rx_ready(const struct device *dev)
+static int uart_lpf3_irq_rx_ready(const struct device *dev)
 {
-	const struct uart_cc23x0_config *config = dev->config;
+	const struct uart_lpf3_config *config = dev->config;
 
 	return UARTCharAvailable(config->reg) ? 1 : 0;
 }
 
-static void uart_cc23x0_irq_err_enable(const struct device *dev)
+static void uart_lpf3_irq_err_enable(const struct device *dev)
 {
-	const struct uart_cc23x0_config *config = dev->config;
+	const struct uart_lpf3_config *config = dev->config;
 
 	return UARTEnableInt(config->reg, UART_INT_OE | UART_INT_BE | UART_INT_PE | UART_INT_FE);
 }
 
-static void uart_cc23x0_irq_err_disable(const struct device *dev)
+static void uart_lpf3_irq_err_disable(const struct device *dev)
 {
-	const struct uart_cc23x0_config *config = dev->config;
+	const struct uart_lpf3_config *config = dev->config;
 
 	return UARTDisableInt(config->reg, UART_INT_OE | UART_INT_BE | UART_INT_PE | UART_INT_FE);
 }
 
-static int uart_cc23x0_irq_is_pending(const struct device *dev)
+static int uart_lpf3_irq_is_pending(const struct device *dev)
 {
-	const struct uart_cc23x0_config *config = dev->config;
+	const struct uart_lpf3_config *config = dev->config;
+	const struct uart_lpf3_data *data = dev->data;
 
 	/* Read masked interrupt status */
 	uint32_t status = UARTIntStatus(config->reg, true);
 
-	return status ? 1 : 0;
+	if (status) {
+		return 1;
+	}
+
+	/* The TX interrupt is edge-triggered (fires on FIFO level transition,
+	 * not while level is already below watermark). When TX IRQ is enabled
+	 * with an already-empty FIFO, no hardware transition occurs so the UART
+	 * interrupt status register stays 0. Check the software flag so the
+	 * callback can still fill the FIFO on the NVIC-pended initial ISR.
+	 */
+	if (data->tx_irq_enabled && UARTSpaceAvailable(config->reg)) {
+		return 1;
+	}
+
+	return 0;
 }
 
-static void uart_cc23x0_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
-					 void *user_data)
+static void uart_lpf3_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
+				       void *user_data)
 {
-	struct uart_cc23x0_data *data = dev->data;
+	struct uart_lpf3_data *data = dev->data;
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS) &&                                                \
+	(defined(UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_LPF3_DMA_DRIVEN))
+	/* Exclusive callbacks: registering the interrupt-driven callback clears
+	 * any previously registered async callback.
+	 */
+	data->async_callback = NULL;
+	data->async_user_data = NULL;
+#endif
 
 	data->callback = cb;
 	data->user_data = user_data;
@@ -407,35 +446,39 @@ static void uart_cc23x0_irq_callback_set(const struct device *dev, uart_irq_call
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#if CONFIG_UART_CC23X0_DMA_DRIVEN
+#if CONFIG_UART_LPF3_DMA_DRIVEN
 
-static int uart_cc23x0_async_callback_set(const struct device *dev, uart_callback_t callback,
-					  void *user_data)
+static int uart_lpf3_async_callback_set(const struct device *dev, uart_callback_t callback,
+					void *user_data)
 {
-	struct uart_cc23x0_data *data = dev->data;
+	struct uart_lpf3_data *data = dev->data;
+#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS) &&                                                \
+	(defined(UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_LPF3_DMA_DRIVEN))
+	/* Exclusive callbacks: registering the async callback clears any
+	 * previously registered interrupt-driven callback so the ISR does not
+	 * invoke a stale handler while the DMA path is active.
+	 */
+	data->callback = NULL;
+	data->user_data = NULL;
+#endif
 
-#if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
-	data->async_callback = NULL;
-	data->async_user_data = NULL;
-#else
 	data->async_callback = callback;
 	data->async_user_data = user_data;
-#endif
 
 	return 0;
 }
 
-static int uart_cc23x0_async_tx(const struct device *dev, const uint8_t *buf, size_t len,
-				int32_t timeout)
+static int uart_lpf3_async_tx(const struct device *dev, const uint8_t *buf, size_t len,
+			      int32_t timeout)
 {
-	const struct uart_cc23x0_config *config = dev->config;
-	struct uart_cc23x0_data *data = dev->data;
+	const struct uart_lpf3_config *config = dev->config;
+	struct uart_lpf3_data *data = dev->data;
 	unsigned int key;
 	int ret;
 
 	struct dma_block_config block_cfg_tx = {
 		.source_address = (uint32_t)buf,
-		.dest_address = UART_CC23_REG_GET(config->reg, UART_O_DR),
+		.dest_address = UART_LPF3_REG_GET(config->reg, UART_O_DR),
 		.source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
 		.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
 		.block_size = len,
@@ -448,7 +491,8 @@ static int uart_cc23x0_async_tx(const struct device *dev, const uint8_t *buf, si
 		.head_block = &block_cfg_tx,
 		.source_data_size = 1,
 		.dest_data_size = 1,
-		.source_burst_length = UART_CC23_BURST_LEN,
+		.source_burst_length = UART_LPF3_BURST_LEN,
+		.dest_burst_length = UART_LPF3_BURST_LEN,
 		.dma_callback = NULL,
 		.user_data = NULL,
 	};
@@ -491,7 +535,7 @@ static int uart_cc23x0_async_tx(const struct device *dev, const uint8_t *buf, si
 	}
 
 	/* Lock PM */
-	uart_cc23x0_pm_policy_state_lock_get(data, UART_CC23X0_PM_LOCK_TX);
+	uart_lpf3_pm_policy_state_lock_get(data, UART_LPF3_PM_LOCK_TX);
 
 	/* Enable DMA trigger to start the transfer */
 	UARTEnableDMA(config->reg, UART_DMA_TX);
@@ -499,9 +543,9 @@ static int uart_cc23x0_async_tx(const struct device *dev, const uint8_t *buf, si
 	return 0;
 }
 
-static int uart_cc23x0_tx_halt(struct uart_cc23x0_data *data)
+static int uart_lpf3_tx_halt(struct uart_lpf3_data *data)
 {
-	const struct uart_cc23x0_config *config = data->dev->config;
+	const struct uart_lpf3_config *config = data->dev->config;
 	struct dma_status status;
 	struct uart_event evt;
 	size_t total_len;
@@ -533,7 +577,7 @@ static int uart_cc23x0_tx_halt(struct uart_cc23x0_data *data)
 		}
 
 		/* Unlock PM */
-		uart_cc23x0_pm_policy_state_lock_put(data, UART_CC23X0_PM_LOCK_TX);
+		uart_lpf3_pm_policy_state_lock_put(data, UART_LPF3_PM_LOCK_TX);
 
 		/* Suspend DMA (TX) */
 		ret = pm_device_runtime_put(config->dma_dev);
@@ -547,35 +591,34 @@ static int uart_cc23x0_tx_halt(struct uart_cc23x0_data *data)
 	return 0;
 }
 
-static void uart_cc23x0_async_tx_timeout(struct k_work *work)
+static void uart_lpf3_async_tx_timeout(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct uart_cc23x0_data *data = CONTAINER_OF(dwork, struct uart_cc23x0_data,
-						     tx_timeout_work);
+	struct uart_lpf3_data *data = CONTAINER_OF(dwork, struct uart_lpf3_data, tx_timeout_work);
 
-	uart_cc23x0_tx_halt(data);
+	uart_lpf3_tx_halt(data);
 }
 
-static int uart_cc23x0_async_tx_abort(const struct device *dev)
+static int uart_lpf3_async_tx_abort(const struct device *dev)
 {
-	struct uart_cc23x0_data *data = dev->data;
+	struct uart_lpf3_data *data = dev->data;
 
 	k_work_cancel_delayable(&data->tx_timeout_work);
 
-	return uart_cc23x0_tx_halt(data);
+	return uart_lpf3_tx_halt(data);
 }
 
-static int uart_cc23x0_async_rx_enable(const struct device *dev, uint8_t *buf, size_t len,
-				       int32_t timeout)
+static int uart_lpf3_async_rx_enable(const struct device *dev, uint8_t *buf, size_t len,
+				     int32_t timeout)
 {
-	const struct uart_cc23x0_config *config = dev->config;
-	struct uart_cc23x0_data *data = dev->data;
+	const struct uart_lpf3_config *config = dev->config;
+	struct uart_lpf3_data *data = dev->data;
 	struct uart_event evt;
 	unsigned int key;
 	int ret;
 
 	struct dma_block_config block_cfg_rx = {
-		.source_address = UART_CC23_REG_GET(config->reg, UART_O_DR),
+		.source_address = UART_LPF3_REG_GET(config->reg, UART_O_DR),
 		.dest_address = (uint32_t)buf,
 		.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
 		.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT,
@@ -589,7 +632,8 @@ static int uart_cc23x0_async_rx_enable(const struct device *dev, uint8_t *buf, s
 		.head_block = &block_cfg_rx,
 		.source_data_size = 1,
 		.dest_data_size = 1,
-		.source_burst_length = UART_CC23_BURST_LEN,
+		.source_burst_length = UART_LPF3_BURST_LEN,
+		.dest_burst_length = UART_LPF3_BURST_LEN,
 		.dma_callback = NULL,
 		.user_data = NULL,
 	};
@@ -626,7 +670,7 @@ static int uart_cc23x0_async_rx_enable(const struct device *dev, uint8_t *buf, s
 	}
 
 	/* Lock PM */
-	uart_cc23x0_pm_policy_state_lock_get(data, UART_CC23X0_PM_LOCK_RX);
+	uart_lpf3_pm_policy_state_lock_get(data, UART_LPF3_PM_LOCK_RX);
 
 	/* Enable DMA trigger to start the transfer */
 	UARTEnableDMA(config->reg, UART_DMA_RX);
@@ -648,9 +692,9 @@ unlock:
 	return ret;
 }
 
-static int uart_cc23x0_async_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t len)
+static int uart_lpf3_async_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t len)
 {
-	struct uart_cc23x0_data *data = dev->data;
+	struct uart_lpf3_data *data = dev->data;
 	unsigned int key;
 	int ret = 0;
 
@@ -675,8 +719,7 @@ unlock:
 	return ret;
 }
 
-static void uart_cc23x0_notify_rx_processed(struct uart_cc23x0_data *data,
-					    size_t processed)
+static void uart_lpf3_notify_rx_processed(struct uart_lpf3_data *data, size_t processed)
 {
 	struct uart_event evt;
 
@@ -694,10 +737,10 @@ static void uart_cc23x0_notify_rx_processed(struct uart_cc23x0_data *data,
 	data->async_callback(data->dev, &evt, data->async_user_data);
 }
 
-static int uart_cc23x0_async_rx_disable(const struct device *dev)
+static int uart_lpf3_async_rx_disable(const struct device *dev)
 {
-	const struct uart_cc23x0_config *config = dev->config;
-	struct uart_cc23x0_data *data = dev->data;
+	const struct uart_lpf3_config *config = dev->config;
+	struct uart_lpf3_data *data = dev->data;
 	struct dma_status status;
 	struct uart_event evt;
 	size_t rx_processed;
@@ -714,13 +757,13 @@ static int uart_cc23x0_async_rx_disable(const struct device *dev)
 	dma_stop(config->dma_dev, config->dma_channel_rx);
 
 	/* Unlock PM */
-	uart_cc23x0_pm_policy_state_lock_put(data, UART_CC23X0_PM_LOCK_RX);
+	uart_lpf3_pm_policy_state_lock_put(data, UART_LPF3_PM_LOCK_RX);
 
 	if (dma_get_status(config->dma_dev, config->dma_channel_rx, &status) == 0 &&
 	    status.pending_length) {
 		rx_processed = data->rx_len - status.pending_length;
 
-		uart_cc23x0_notify_rx_processed(data, rx_processed);
+		uart_lpf3_notify_rx_processed(data, rx_processed);
 	}
 
 	/* Suspend DMA (RX) */
@@ -763,15 +806,15 @@ unlock:
 	return ret;
 }
 
-#endif /* CONFIG_UART_CC23X0_DMA_DRIVEN */
+#endif /* CONFIG_UART_LPF3_DMA_DRIVEN */
 
-#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_CC23X0_DMA_DRIVEN
+#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_LPF3_DMA_DRIVEN
 
-static void uart_cc23x0_isr(const struct device *dev)
+static void uart_lpf3_isr(const struct device *dev)
 {
-	struct uart_cc23x0_data *data = dev->data;
-#if CONFIG_UART_CC23X0_DMA_DRIVEN
-	const struct uart_cc23x0_config *config = dev->config;
+	struct uart_lpf3_data *data = dev->data;
+#if CONFIG_UART_LPF3_DMA_DRIVEN
+	const struct uart_lpf3_config *config = dev->config;
 	struct uart_event evt;
 	unsigned int key;
 	uint32_t int_status = UARTIntStatus(config->reg, true);
@@ -783,7 +826,7 @@ static void uart_cc23x0_isr(const struct device *dev)
 	}
 #endif
 
-#if CONFIG_UART_CC23X0_DMA_DRIVEN
+#if CONFIG_UART_LPF3_DMA_DRIVEN
 	/*
 	 * When a peripheral channel is used (which is the case here for UART),
 	 * the DMA transfer completion is signaled on the peripheral's interrupt only.
@@ -806,7 +849,7 @@ static void uart_cc23x0_isr(const struct device *dev)
 		data->tx_len = 0;
 
 		/* Unlock PM */
-		uart_cc23x0_pm_policy_state_lock_put(data, UART_CC23X0_PM_LOCK_TX);
+		uart_lpf3_pm_policy_state_lock_put(data, UART_LPF3_PM_LOCK_TX);
 
 		/* Suspend DMA (TX) */
 		pm_device_runtime_put(config->dma_dev);
@@ -819,7 +862,7 @@ static void uart_cc23x0_isr(const struct device *dev)
 	if (int_status & UART_INT_RXDMADONE) {
 		key = irq_lock();
 
-		uart_cc23x0_notify_rx_processed(data, data->rx_len);
+		uart_lpf3_notify_rx_processed(data, data->rx_len);
 
 		if (data->async_callback) {
 			evt.type = UART_RX_BUF_RELEASED;
@@ -840,7 +883,7 @@ static void uart_cc23x0_isr(const struct device *dev)
 			}
 
 			/* Unlock PM */
-			uart_cc23x0_pm_policy_state_lock_put(data, UART_CC23X0_PM_LOCK_RX);
+			uart_lpf3_pm_policy_state_lock_put(data, UART_LPF3_PM_LOCK_RX);
 
 			/* Suspend DMA (RX) */
 			pm_device_runtime_put(config->dma_dev);
@@ -853,7 +896,7 @@ static void uart_cc23x0_isr(const struct device *dev)
 			data->rx_processed_len = 0;
 
 			dma_reload(config->dma_dev, config->dma_channel_rx,
-				   (uint32_t)UART_CC23_REG_GET(config->reg, UART_O_DR),
+				   (uint32_t)UART_LPF3_REG_GET(config->reg, UART_O_DR),
 				   (uint32_t)data->rx_buf, data->rx_len);
 
 			dma_start(config->dma_dev, config->dma_channel_rx);
@@ -873,133 +916,96 @@ static void uart_cc23x0_isr(const struct device *dev)
 #endif
 }
 
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_CC23X0_DMA_DRIVEN */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_LPF3_DMA_DRIVEN */
 
-static DEVICE_API(uart, uart_cc23x0_driver_api) = {
-	.poll_in = uart_cc23x0_poll_in,
-	.poll_out = uart_cc23x0_poll_out,
-	.err_check = uart_cc23x0_err_check,
+static DEVICE_API(uart, uart_lpf3_driver_api) = {
+	.poll_in = uart_lpf3_poll_in,
+	.poll_out = uart_lpf3_poll_out,
+	.err_check = uart_lpf3_err_check,
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-	.configure = uart_cc23x0_configure,
-	.config_get = uart_cc23x0_config_get,
+	.configure = uart_lpf3_configure,
+	.config_get = uart_lpf3_config_get,
 #endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.fifo_fill = uart_cc23x0_fifo_fill,
-	.fifo_read = uart_cc23x0_fifo_read,
-	.irq_tx_enable = uart_cc23x0_irq_tx_enable,
-	.irq_tx_disable = uart_cc23x0_irq_tx_disable,
-	.irq_tx_ready = uart_cc23x0_irq_tx_ready,
-	.irq_rx_enable = uart_cc23x0_irq_rx_enable,
-	.irq_rx_disable = uart_cc23x0_irq_rx_disable,
-	.irq_tx_complete = uart_cc23x0_irq_tx_complete,
-	.irq_rx_ready = uart_cc23x0_irq_rx_ready,
-	.irq_err_enable = uart_cc23x0_irq_err_enable,
-	.irq_err_disable = uart_cc23x0_irq_err_disable,
-	.irq_is_pending = uart_cc23x0_irq_is_pending,
-	.irq_callback_set = uart_cc23x0_irq_callback_set,
+	.fifo_fill = uart_lpf3_fifo_fill,
+	.fifo_read = uart_lpf3_fifo_read,
+	.irq_tx_enable = uart_lpf3_irq_tx_enable,
+	.irq_tx_disable = uart_lpf3_irq_tx_disable,
+	.irq_tx_ready = uart_lpf3_irq_tx_ready,
+	.irq_rx_enable = uart_lpf3_irq_rx_enable,
+	.irq_rx_disable = uart_lpf3_irq_rx_disable,
+	.irq_tx_complete = uart_lpf3_irq_tx_complete,
+	.irq_rx_ready = uart_lpf3_irq_rx_ready,
+	.irq_err_enable = uart_lpf3_irq_err_enable,
+	.irq_err_disable = uart_lpf3_irq_err_disable,
+	.irq_is_pending = uart_lpf3_irq_is_pending,
+	.irq_callback_set = uart_lpf3_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-#if CONFIG_UART_CC23X0_DMA_DRIVEN
-	.callback_set = uart_cc23x0_async_callback_set,
-	.tx = uart_cc23x0_async_tx,
-	.tx_abort = uart_cc23x0_async_tx_abort,
-	.rx_enable = uart_cc23x0_async_rx_enable,
-	.rx_buf_rsp = uart_cc23x0_async_rx_buf_rsp,
-	.rx_disable = uart_cc23x0_async_rx_disable,
-#endif /* CONFIG_UART_CC23X0_DMA_DRIVEN */
+#if CONFIG_UART_LPF3_DMA_DRIVEN
+	.callback_set = uart_lpf3_async_callback_set,
+	.tx = uart_lpf3_async_tx,
+	.tx_abort = uart_lpf3_async_tx_abort,
+	.rx_enable = uart_lpf3_async_rx_enable,
+	.rx_buf_rsp = uart_lpf3_async_rx_buf_rsp,
+	.rx_disable = uart_lpf3_async_rx_disable,
+#endif /* CONFIG_UART_LPF3_DMA_DRIVEN */
 };
 
-#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_CC23X0_DMA_DRIVEN
-#define UART_CC23X0_IRQ_CFG(n)                                                                     \
+#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_LPF3_DMA_DRIVEN
+#define UART_LPF3_IRQ_CFG(n)                                                                       \
 	do {                                                                                       \
 		UARTClearInt(config->reg, UART_INT_RX);                                            \
 		UARTClearInt(config->reg, UART_INT_RT);                                            \
                                                                                                    \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_cc23x0_isr,            \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), uart_lpf3_isr,              \
 			    DEVICE_DT_INST_GET(n), 0);                                             \
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	} while (false)
 
-#define UART_CC23X0_IRQ_INIT(n) .irq = DT_INST_IRQN(n),
-#define UART_CC23X0_INT_FIELDS .callback = NULL, .user_data = NULL,
+#define UART_LPF3_IRQ_INIT(n) .irq = DT_INST_IRQN(n),
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#define UART_LPF3_INT_FIELDS .callback = NULL, .user_data = NULL, .tx_irq_enabled = false,
 #else
-#define UART_CC23X0_IRQ_CFG(n)
-#define UART_CC23X0_IRQ_INIT(n)
-#define UART_CC23X0_INT_FIELDS
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_CC23X0_DMA_DRIVEN */
-
-#if CONFIG_UART_INTERRUPT_DRIVEN
-#define UART_CC23X0_INT_FIELDS .callback = NULL, .user_data = NULL,
-#else
-#define UART_CC23X0_INT_FIELDS
+#define UART_LPF3_INT_FIELDS .callback = NULL, .user_data = NULL,
 #endif
-
-#ifdef CONFIG_UART_CC23X0_DMA_DRIVEN
-#define UART_CC23X0_DMA_INIT(n)						\
-	.dma_dev = DEVICE_DT_GET(TI_CC23X0_DT_INST_DMA_CTLR(n, tx)),	\
-	.dma_channel_tx = TI_CC23X0_DT_INST_DMA_CHANNEL(n, tx),		\
-	.dma_trigsrc_tx = TI_CC23X0_DT_INST_DMA_TRIGSRC(n, tx),		\
-	.dma_channel_rx = TI_CC23X0_DT_INST_DMA_CHANNEL(n, rx),		\
-	.dma_trigsrc_rx = TI_CC23X0_DT_INST_DMA_TRIGSRC(n, rx),
 #else
-#define UART_CC23X0_DMA_INIT(n)
-#endif
+#define UART_LPF3_IRQ_CFG(n)
+#define UART_LPF3_IRQ_INIT(n)
+#define UART_LPF3_INT_FIELDS
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_LPF3_DMA_DRIVEN */
 
-static int uart_cc23x0_init_common(const struct device *dev)
+static int uart_lpf3_init_common(const struct device *dev)
 {
-#ifdef CONFIG_UART_CC23X0_DMA_DRIVEN
-	const struct uart_cc23x0_config *config = dev->config;
-#endif
-	struct uart_cc23x0_data *data = dev->data;
+	const struct uart_lpf3_config *config = dev->config;
+	struct uart_lpf3_data *data = dev->data;
 
-	CLKCTLEnable(CLKCTL_BASE, CLKCTL_UART0);
+	CLKCTLEnable(CLKCTL_BASE, config->clkctl_id);
 
-#ifdef CONFIG_UART_CC23X0_DMA_DRIVEN
+#ifdef CONFIG_UART_LPF3_DMA_DRIVEN
 	if (!device_is_ready(config->dma_dev)) {
 		return -ENODEV;
 	}
 
 	UARTEnableInt(config->reg, UART_INT_TXDMADONE | UART_INT_RXDMADONE);
 
-	k_work_init_delayable(&data->tx_timeout_work, uart_cc23x0_async_tx_timeout);
+	k_work_init_delayable(&data->tx_timeout_work, uart_lpf3_async_tx_timeout);
 
 	data->dev = dev;
 #endif
 
 #ifdef CONFIG_PM_DEVICE
-	atomic_clear_bit(data->pm_lock, UART_CC23X0_PM_LOCK_RX);
-	atomic_clear_bit(data->pm_lock, UART_CC23X0_PM_LOCK_TX);
+	atomic_clear_bit(data->pm_lock, UART_LPF3_PM_LOCK_RX);
+	atomic_clear_bit(data->pm_lock, UART_LPF3_PM_LOCK_TX);
 #endif
 
 	/* Configure and enable UART */
-	return uart_cc23x0_configure(dev, &data->uart_config);
+	return uart_lpf3_configure(dev, &data->uart_config);
 }
 
-static int uart_cc23x0_pm_action(const struct device *dev, enum pm_device_action action)
-{
-	const struct uart_cc23x0_config *config = dev->config;
-
-	switch (action) {
-	case PM_DEVICE_ACTION_SUSPEND:
-		UARTDisable(config->reg);
-		CLKCTLDisable(CLKCTL_BASE, CLKCTL_UART0);
-		return 0;
-	case PM_DEVICE_ACTION_RESUME:
-		return uart_cc23x0_init_common(dev);
-	default:
-		return -ENOTSUP;
-	}
-}
-
-#define UART_CC23X0_DEVICE_DEFINE(n)                                                               \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(n, uart_cc23x0_init_##n, PM_DEVICE_DT_INST_GET(n),                   \
-			      &uart_cc23x0_data_##n,  &uart_cc23x0_config_##n,                     \
-			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_cc23x0_driver_api)
-
-#define UART_CC23X0_INIT_FUNC(n)                                                                   \
-	static int uart_cc23x0_init_##n(const struct device *dev)                                  \
+#define UART_LPF3_INIT_FUNC(n)                                                                     \
+	static int uart_lpf3_init_##n(const struct device *dev)                                    \
 	{                                                                                          \
-		const struct uart_cc23x0_config *config = dev->config;                             \
+		const struct uart_lpf3_config *config = dev->config;                               \
 		int ret;                                                                           \
                                                                                                    \
 		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);                    \
@@ -1007,52 +1013,79 @@ static int uart_cc23x0_pm_action(const struct device *dev, enum pm_device_action
 			return ret;                                                                \
 		}                                                                                  \
                                                                                                    \
-		/* Enable interrupts */                                                            \
-		UART_CC23X0_IRQ_CFG(n);                                                            \
+		ret = uart_lpf3_init_common(dev);                                                  \
+		if (ret) {                                                                         \
+			return ret;                                                                \
+		}                                                                                  \
                                                                                                    \
-		return pm_device_driver_init(dev, uart_cc23x0_pm_action);                          \
+		/* Enable interrupts */                                                            \
+		UART_LPF3_IRQ_CFG(n);                                                              \
+                                                                                                   \
+		return 0;                                                                          \
 	}
-#ifdef CONFIG_UART_CC23X0_DMA_DRIVEN
-#define UART_CC23X0_DMA_INIT(n)						\
-	.dma_dev = DEVICE_DT_GET(TI_CC23X0_CC27XX_DT_INST_DMA_CTLR(n, tx)),	\
-	.dma_channel_tx = TI_CC23X0_CC27XX_DT_INST_DMA_CHANNEL(n, tx),		\
-	.dma_trigsrc_tx = TI_CC23X0_CC27XX_DT_INST_DMA_TRIGSRC(n, tx),		\
-	.dma_channel_rx = TI_CC23X0_CC27XX_DT_INST_DMA_CHANNEL(n, rx),		\
+
+#ifdef CONFIG_PM_DEVICE
+
+static int uart_lpf3_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct uart_lpf3_config *config = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		UARTDisable(config->reg);
+		CLKCTLDisable(CLKCTL_BASE, config->clkctl_id);
+		return 0;
+	case PM_DEVICE_ACTION_RESUME:
+		return uart_lpf3_init_common(dev);
+	default:
+		return -ENOTSUP;
+	}
+}
+
+#endif /* CONFIG_PM_DEVICE */
+
+#ifdef CONFIG_UART_LPF3_DMA_DRIVEN
+#define UART_LPF3_DMA_INIT(n)                                                                      \
+	.dma_dev = DEVICE_DT_GET(TI_CC23X0_CC27XX_DT_INST_DMA_CTLR(n, tx)),                        \
+	.dma_channel_tx = TI_CC23X0_CC27XX_DT_INST_DMA_CHANNEL(n, tx),                             \
+	.dma_trigsrc_tx = TI_CC23X0_CC27XX_DT_INST_DMA_TRIGSRC(n, tx),                             \
+	.dma_channel_rx = TI_CC23X0_CC27XX_DT_INST_DMA_CHANNEL(n, rx),                             \
 	.dma_trigsrc_rx = TI_CC23X0_CC27XX_DT_INST_DMA_TRIGSRC(n, rx),
 #else
-#define UART_CC23X0_DMA_INIT(n)
-#endif /* CONFIG_UART_CC23X0_DMA_DRIVEN */
+#define UART_LPF3_DMA_INIT(n)
+#endif /* CONFIG_UART_LPF3_DMA_DRIVEN */
 
-#define UART_CC23X0_DEVICE_DEFINE(n)								\
-												\
-	DEVICE_DT_INST_DEFINE(n, uart_cc23x0_init_##n,						\
-			      PM_DEVICE_DT_INST_GET(n),						\
-			      &uart_cc23x0_data_##n, &uart_cc23x0_config_##n, PRE_KERNEL_1,	\
-			      CONFIG_SERIAL_INIT_PRIORITY, &uart_cc23x0_driver_api)
+#define UART_LPF3_DEVICE_DEFINE(n)                                                                 \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, uart_lpf3_init_##n, PM_DEVICE_DT_INST_GET(n),                     \
+			      &uart_lpf3_data_##n, &uart_lpf3_config_##n, PRE_KERNEL_1,            \
+			      CONFIG_SERIAL_INIT_PRIORITY, &uart_lpf3_driver_api)
 
-#define UART_CC23X0_INIT(n)									\
-	PINCTRL_DT_INST_DEFINE(n);								\
-	PM_DEVICE_DT_INST_DEFINE(n, uart_cc23x0_pm_action);					\
-	UART_CC23X0_INIT_FUNC(n);								\
-												\
-	static const struct uart_cc23x0_config uart_cc23x0_config_##n = {			\
-		.reg = DT_INST_REG_ADDR(n),							\
-		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),		\
+#define UART_LPF3_INIT(n)                                                                          \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	PM_DEVICE_DT_INST_DEFINE(n, uart_lpf3_pm_action);                                          \
+	UART_LPF3_INIT_FUNC(n);                                                                    \
+                                                                                                   \
+	static const struct uart_lpf3_config uart_lpf3_config_##n = {                              \
+		.reg = DT_INST_REG_ADDR(n),                                                        \
+		.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),               \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		UART_CC23X0_IRQ_INIT(n)								\
-		UART_CC23X0_DMA_INIT(n)};							\
-												\
-	static struct uart_cc23x0_data uart_cc23x0_data_##n = {					\
-		.uart_config =									\
-			{									\
-				.baudrate = DT_INST_PROP(n, current_speed),			\
-				.parity = DT_INST_ENUM_IDX(n, parity),					\
-				.stop_bits =  DT_INST_ENUM_IDX(n, stop_bits),				\
-				.data_bits = DT_INST_ENUM_IDX(n, data_bits),				\
-				.flow_ctrl = DT_INST_PROP(n, hw_flow_control),				\
-			},									\
-		UART_CC23X0_INT_FIELDS};							\
-												\
-	UART_CC23X0_DEVICE_DEFINE(n);
+		.clkctl_id = DT_INST_PROP(n, ti_clkctl_id),                                        \
+		UART_LPF3_IRQ_INIT(n) UART_LPF3_DMA_INIT(n)};                                      \
+                                                                                                   \
+	static struct uart_lpf3_data uart_lpf3_data_##n = {                                        \
+		.uart_config =                                                                     \
+			{                                                                          \
+				.baudrate = DT_INST_PROP(n, current_speed),                        \
+				.parity = DT_INST_ENUM_IDX(n, parity),                             \
+				.stop_bits = DT_INST_ENUM_IDX(n, stop_bits),                       \
+				.data_bits = DT_INST_ENUM_IDX(n, data_bits),                       \
+				.flow_ctrl = DT_INST_PROP(n, hw_flow_control)                      \
+						     ? UART_CFG_FLOW_CTRL_RTS_CTS                  \
+						     : UART_CFG_FLOW_CTRL_NONE,                    \
+			},                                                                         \
+		UART_LPF3_INT_FIELDS};                                                             \
+                                                                                                   \
+	UART_LPF3_DEVICE_DEFINE(n);
 
-DT_INST_FOREACH_STATUS_OKAY(UART_CC23X0_INIT)
+DT_INST_FOREACH_STATUS_OKAY(UART_LPF3_INIT)
