@@ -565,7 +565,7 @@ class Pytest(Script):
         config: HarnessConfig = self.instance.testsuite.harness_config
         handler: Handler = self.instance.handler
         command = [
-            'pytest', '-s', '-v',
+            sys.executable, '-m', 'pytest', '-s', '-v',
             '--log-cli-level=DEBUG',
             '--log-cli-format=%(levelname)s: %(message)s',
             f'--junit-xml={self.report_file}',
