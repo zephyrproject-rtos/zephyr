@@ -390,12 +390,14 @@ zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_TIMER
   ${EMLIB_DIR}/src/em_timer.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LDMA
-  ${SERVICE_DIR}/dma_manager/src/sl_dma_manager.c
-  ${SERVICE_DIR}/dma_manager/src/sl_dma_manager_hal_ldma.c
-  ${PERIPHERAL_DIR}/src/sl_hal_ldma.c
-  ${EMLIB_DIR}/src/em_ldma.c
-)
+if(CONFIG_SILABS_SISDK_LDMA)
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2  ${EMLIB_DIR}/src/em_ldma.c)
+  zephyr_library_sources(
+    ${SERVICE_DIR}/dma_manager/src/sl_dma_manager.c
+    ${SERVICE_DIR}/dma_manager/src/sl_dma_manager_hal_ldma.c
+    ${PERIPHERAL_DIR}/src/sl_hal_ldma.c
+  )
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_MSC       ${EMLIB_DIR}/src/em_msc.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_RMU       ${EMLIB_DIR}/src/em_rmu.c)
