@@ -112,8 +112,7 @@ static inline int z_vrfy_k_futex_wake(struct k_futex *futex, bool wake_all)
 #include <zephyr/syscalls/k_futex_wake_mrsh.c>
 #endif
 
-int z_impl_k_futex_wait(struct k_futex *futex, int expected,
-			k_timeout_t timeout)
+int z_impl_k_futex_wait(struct k_futex *futex, atomic_val_t expected, k_timeout_t timeout)
 {
 	int ret;
 	k_spinlock_key_t key;
@@ -126,7 +125,7 @@ int z_impl_k_futex_wait(struct k_futex *futex, int expected,
 	/* counted before the compare, so a waker that sees zero knows the value check follows */
 	(void)atomic_inc(&futex->waiters);
 
-	if (atomic_get(&futex->val) != (atomic_val_t)expected) {
+	if (atomic_get(&futex->val) != expected) {
 		(void)atomic_dec(&futex->waiters);
 		k_spin_unlock(&futex_data->lock, key);
 		return -EAGAIN;
@@ -147,7 +146,7 @@ int z_impl_k_futex_wait(struct k_futex *futex, int expected,
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_futex_wait(struct k_futex *futex, int expected,
+static inline int z_vrfy_k_futex_wait(struct k_futex *futex, atomic_val_t expected,
 				      k_timeout_t timeout)
 {
 	if (K_SYSCALL_MEMORY_WRITE(futex, sizeof(struct k_futex)) != 0) {
