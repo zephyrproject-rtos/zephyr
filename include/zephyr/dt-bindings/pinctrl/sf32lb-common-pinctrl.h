@@ -21,8 +21,7 @@
  * @brief Pin configuration bit field.
  *
  * Bitmap:
- * - 0-10:  Configuration bits (function select, pull, drive strength, etc.)
- * - 11:    Reserved
+ * - 0-11:  Configuration bits (function select, pull, drive strength, etc.)
  * - 12-13: Port (SA, PA, ...)
  * - 14-21: Pad (0-128)
  * - 22-23: PINR register field (0-3)

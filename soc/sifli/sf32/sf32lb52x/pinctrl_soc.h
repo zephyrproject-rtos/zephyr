@@ -21,7 +21,7 @@ extern "C" {
  * Type for SF32LB pin.
  *
  * Bitmap:
- * - 0-10: Maps 1:1 to HPSYS_PINMUX:
+ * - 0-8: Maps 1:1 to HPSYS_PINMUX:
  *   - 0-3: Function select
  *   - 4: Enable/disable pull
  *   - 5: Pull select (0=pulldown, 1=pullup)
@@ -41,9 +41,9 @@ typedef uint32_t pinctrl_soc_pin_t;
 #define SF32LB_SR_MSK BIT(8U)
 #define SF32LB_DS_MSK GENMASK(10U, 9U)
 
-/* Drive strength enum index position and mask (stored in bits 11-13) */
-#define SF32LB_DS_IDX_POS 11U
-#define SF32LB_DS_IDX_MSK GENMASK(13U, 11U)
+/* Drive strength enum index position and mask (stored in bits 9-11) */
+#define SF32LB_DS_IDX_POS 9U
+#define SF32LB_DS_IDX_MSK GENMASK(11U, 9U)
 
 /*
  * Pin configuration mask for bits that should be modified.
