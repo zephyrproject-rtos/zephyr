@@ -30,7 +30,7 @@
 
 		uart0: uart@ff000000 {
 			compatible = "xlnx,xuartps";
-			reg = <0xff000000 0x4c>;
+			reg = <0xff000000 0x1000>;
 			status = "disabled";
 			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
@@ -39,7 +39,7 @@
 
 		uart1: uart@ff010000 {
 			compatible = "xlnx,xuartps";
-			reg = <0xff010000 0x4c>;
+			reg = <0xff010000 0x1000>;
 			status = "disabled";
 			interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
