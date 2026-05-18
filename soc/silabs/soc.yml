@@ -265,6 +265,31 @@ family:
           - name: bgm220sc22hna
           - name: bgm220pc22hna
           - name: bgm220pc22wga
+  - name: silabs_s3
+    series:
+      - name: sibg301
+        socs:
+          - name: sibg301m104lgh
+          - name: sibg301m104lgl
+          - name: sibg301m104lih
+          - name: sibg301m104lil
+          - name: sibg301m104xil
+          - name: sibg301m114kgh
+          - name: sibg301m114kih
+      - name: simg301
+        socs:
+          - name: simg301m103lih
+          - name: simg301m103wih
+          - name: simg301m104lgh
+          - name: simg301m104lgl
+          - name: simg301m104lih
+          - name: simg301m104lil
+          - name: simg301m104xil
+          - name: simg301m113wih
+          - name: simg301m114kgh
+          - name: simg301m114kih
+          - name: simg301m114lgh
+          - name: simg301m114lih
   - name: silabs_siwx91x
     series:
       - name: siwg917

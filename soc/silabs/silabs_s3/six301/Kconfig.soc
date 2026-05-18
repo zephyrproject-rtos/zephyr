@@ -1,0 +1,121 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SILABS_SIX301
+	bool
+	select SOC_FAMILY_SILABS_S3
+	help
+	  Silicon Labs Six301 SoC and modules
+
+config SOC_SERIES_SIBG301
+	bool
+	select SOC_SILABS_SIX301
+	help
+	  Silicon Labs SiBG301 Soc
+
+config SOC_SERIES_SIMG301
+	bool
+	select SOC_SILABS_SIX301
+	help
+	  Silicon Labs SiMG301 SoC
+
+config SOC_SIBG301M104LGH
+	bool
+	select SOC_SERIES_SIBG301
+
+config SOC_SIBG301M104LGL
+	bool
+	select SOC_SERIES_SIBG301
+
+config SOC_SIBG301M104LIH
+	bool
+	select SOC_SERIES_SIBG301
+
+config SOC_SIBG301M104LIL
+	bool
+	select SOC_SERIES_SIBG301
+
+config SOC_SIBG301M104XIL
+	bool
+	select SOC_SERIES_SIBG301
+
+config SOC_SIBG301M114KGH
+	bool
+	select SOC_SERIES_SIBG301
+
+config SOC_SIBG301M114KIH
+	bool
+	select SOC_SERIES_SIBG301
+
+config SOC_SIMG301M103LIH
+	bool
+	select SOC_SERIES_SIMG301
+
+config SOC_SIMG301M103WIH
+	bool
+	select SOC_SERIES_SIMG301
+
+config SOC_SIMG301M104LGH
+	bool
+	select SOC_SERIES_SIMG301
+
+config SOC_SIMG301M104LGL
+	bool
+	select SOC_SERIES_SIMG301
+
+config SOC_SIMG301M104LIH
+	bool
+	select SOC_SERIES_SIMG301
+
+config SOC_SIMG301M104LIL
+	bool
+	select SOC_SERIES_SIMG301
+
+config SOC_SIMG301M104XIL
+	bool
+	select SOC_SERIES_SIMG301
+
+config SOC_SIMG301M113WIH
+	bool
+	select SOC_SERIES_SIMG301
+
+config SOC_SIMG301M114KGH
+	bool
+	select SOC_SERIES_SIMG301
+
+config SOC_SIMG301M114KIH
+	bool
+	select SOC_SERIES_SIMG301
+
+config SOC_SIMG301M114LGH
+	bool
+	select SOC_SERIES_SIMG301
+
+config SOC_SIMG301M114LIH
+	bool
+	select SOC_SERIES_SIMG301
+
+config SOC_SERIES
+	default "sibg301" if SOC_SERIES_SIBG301
+	default "simg301" if SOC_SERIES_SIMG301
+
+config SOC
+	default "sibg301m104lgh" if SOC_SIBG301M104LGH
+	default "sibg301m104lgl" if SOC_SIBG301M104LGL
+	default "sibg301m104lih" if SOC_SIBG301M104LIH
+	default "sibg301m104lil" if SOC_SIBG301M104LIL
+	default "sibg301m104xil" if SOC_SIBG301M104XIL
+	default "sibg301m114kgh" if SOC_SIBG301M114KGH
+	default "sibg301m114kih" if SOC_SIBG301M114KIH
+	default "simg301m103lih" if SOC_SIMG301M103LIH
+	default "simg301m103wih" if SOC_SIMG301M103WIH
+	default "simg301m104lgh" if SOC_SIMG301M104LGH
+	default "simg301m104lgl" if SOC_SIMG301M104LGL
+	default "simg301m104lih" if SOC_SIMG301M104LIH
+	default "simg301m104lil" if SOC_SIMG301M104LIL
+	default "simg301m104xil" if SOC_SIMG301M104XIL
+	default "simg301m113wih" if SOC_SIMG301M113WIH
+	default "simg301m114kgh" if SOC_SIMG301M114KGH
+	default "simg301m114kih" if SOC_SIMG301M114KIH
+	default "simg301m114lgh" if SOC_SIMG301M114LGH
+	default "simg301m114lih" if SOC_SIMG301M114LIH

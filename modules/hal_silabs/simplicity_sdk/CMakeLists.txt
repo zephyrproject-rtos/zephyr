@@ -27,10 +27,13 @@ string(TOUPPER ${CONFIG_SOC} SILABS_DEVICE_PART_NUMBER)
 # Get SoC series number, i.e. translate efr32bg22 -> 22, mgm240p -> 24, simg301 -> 301
 if(CONFIG_SOC_SERIES MATCHES "^ef[rm]32")
   string(SUBSTRING ${CONFIG_SOC_SERIES} 7 2 SILABS_DEVICE_FAMILY_NUMBER)
+  set(SILABS_DEVICE_PREFIX efr32)
 elseif(CONFIG_SOC_SERIES MATCHES "^si")
   string(SUBSTRING ${CONFIG_SOC_SERIES} 4 3 SILABS_DEVICE_FAMILY_NUMBER)
+  set(SILABS_DEVICE_PREFIX si)
 elseif(CONFIG_SOC_SERIES MATCHES "^.gm")
   string(SUBSTRING ${CONFIG_SOC_SERIES} 3 2 SILABS_DEVICE_FAMILY_NUMBER)
+  set(SILABS_DEVICE_PREFIX efr32)
 else()
   message(FATAL_ERROR "unknown part")
 endif()
@@ -49,6 +52,9 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
   zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_SILABS_S2
     ${RADIO_DIR}/rail_lib/chip/efr32/efr32xg2x
   )
+  zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_SILABS_S3
+    ${RADIO_DIR}/rail_lib/chip/efr32/sixg3xx
+  )
 
   zephyr_compile_definitions(
     SL_RAIL_UTIL_PA_CONFIG_HEADER="sl_rail_util_pa_config.h"
@@ -58,8 +64,9 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
   zephyr_include_directories(
     ${RADIO_DIR}/rail_lib/common
     ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_compatible_pa
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_load_devinfo
     ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_rf_path_switch
-    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_built_in_phys/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_built_in_phys/${SILABS_DEVICE_PREFIX}xg${SILABS_DEVICE_FAMILY_NUMBER}
     ${BLUETOOTH_DIR}/bgstack/ll/inc
   )
 
@@ -69,7 +76,7 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
   zephyr_include_directories_ifndef(CONFIG_SILABS_DEVICE_IS_MODULE
     ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_conversions
     ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_tables
-    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_tables/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_tables/${SILABS_DEVICE_PREFIX}xg${SILABS_DEVICE_FAMILY_NUMBER}
   )
 
   # sl_protocol_crypto
@@ -81,7 +88,11 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
 
   if(CONFIG_BT_SILABS_EFR32)
     # prebuilt libs
-    add_prebuilt_library(liblinklayer protocol/bluetooth/bgstack/ll/build/gcc/xg${SILABS_DEVICE_FAMILY_NUMBER}/release/liblinklayer.a)
+    if(CONFIG_SOC_FAMILY_SILABS_S2)
+      add_prebuilt_library(liblinklayer protocol/bluetooth/bgstack/ll/build/gcc/xg${SILABS_DEVICE_FAMILY_NUMBER}/release/liblinklayer.a)
+    elseif(CONFIG_SOC_FAMILY_SILABS_S3)
+      add_prebuilt_library(liblinklayer protocol/bluetooth/bgstack/ll/build/gcc/x${SILABS_DEVICE_FAMILY_NUMBER}/release/liblinklayer.a)
+    endif()
     add_prebuilt_library(libbgcommon  protocol/bluetooth/bgcommon/lib/build/gcc/cortex-m33/bgcommon/release/libbgcommon.a)
     if(NOT CONFIG_BUILD_ONLY_NO_BLOBS)
       # There is a circular dependency between the libs: libbgcommon depends on the symbol
@@ -104,9 +115,12 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
 
   if(CONFIG_SOC_GECKO_USE_RAIL)
     # rail
-    zephyr_library_sources(
+    zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2
       ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_rf_path_switch/sl_rail_util_rf_path_switch.c
       ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_sequencer/sl_rail_util_sequencer.c
+    )
+    zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S3
+      ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_load_devinfo/sl_rail_util_load_devinfo.c
     )
 
     if(NOT CONFIG_SILABS_DEVICE_IS_MODULE)
@@ -114,7 +128,7 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
         ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_built_in_phys/sl_rail_util_built_in_phys.c
       )
 
-      if(CONFIG_SOC_SILABS_XG24 OR CONFIG_SOC_SILABS_XG26)
+      if(CONFIG_SOC_SILABS_XG24 OR CONFIG_SOC_SILABS_XG26 OR CONFIG_SOC_SILABS_SIX301)
         dt_nodelabel(hfxo_node NODELABEL "hfxo" REQUIRED)
         dt_prop(hfxo_freq PATH "${hfxo_node}" PROPERTY "clock-frequency")
         if(hfxo_freq EQUAL "38400000")
@@ -127,7 +141,7 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
           message(FATAL_ERROR "Unknown HFXO frequency, not compatible with radio PHYs")
         endif()
       endif()
-      set(PHY_DIR ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_built_in_phys/efr32xg${SILABS_DEVICE_FAMILY_NUMBER})
+      set(PHY_DIR ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_built_in_phys/${SILABS_DEVICE_PREFIX}xg${SILABS_DEVICE_FAMILY_NUMBER})
 
       # sl_rail_util_built_in_phys.c provides strong definitions of the PHY pointers for
       # every protocol the device supports, overriding the weak fallbacks in the RAIL
@@ -160,18 +174,18 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
     if(CONFIG_SILABS_DEVICE_IS_MODULE)
       # RAIL lib and config for modules
       if(CONFIG_SILABS_SISDK_RAIL_MULTIPROTOCOL)
-        add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_module_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+        add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_module_${SILABS_DEVICE_PREFIX}xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
       else()
-        add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_module_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+        add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_module_${SILABS_DEVICE_PREFIX}xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
       endif()
 
       add_prebuilt_library(librail_config platform/radio/rail_lib/autogen/librail_release/librail_config_${CONFIG_SOC}_gcc.a)
     else()
       # generic RAIL lib for SoCs
       if(CONFIG_SILABS_SISDK_RAIL_MULTIPROTOCOL)
-        add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+        add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_${SILABS_DEVICE_PREFIX}xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
       else()
-        add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
+        add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_${SILABS_DEVICE_PREFIX}xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
       endif()
     endif()
 
@@ -181,7 +195,7 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
       ${RADIO_DIR}/rail_lib/protocol/zwave
       ${RADIO_DIR}/rail_lib/protocol/sidewalk
       ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_protocol
-      ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_protocol/config/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}
+      ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_protocol/config/${SILABS_DEVICE_PREFIX}xg${SILABS_DEVICE_FAMILY_NUMBER}
     )
     zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CUSTOM_RADIO_PHY
       ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_protocol/sl_rail_util_protocol.c
@@ -212,7 +226,6 @@ zephyr_include_directories(
   ${DRIVER_DIR}/i2c/inc
   ${DRIVER_DIR}/i2c/src
   ${EMDRV_DIR}/common/inc
-  ${EMLIB_DIR}/inc
   ${PERIPHERAL_DIR}/inc
   ${SERVICE_DIR}/clock_manager/inc
   ${SERVICE_DIR}/device_init/inc
@@ -225,7 +238,6 @@ zephyr_include_directories(
   ${SERVICE_DIR}/interrupt_manager/inc
   ${SERVICE_DIR}/memory_manager/inc
   ${SERVICE_DIR}/memory_manager/profiler/inc
-  ${SERVICE_DIR}/power_manager/config
   ${SERVICE_DIR}/power_manager/inc
   ${SERVICE_DIR}/power_manager/src/common
   ${SERVICE_DIR}/power_manager/src/sleep_loop
@@ -240,6 +252,10 @@ zephyr_include_directories(
   ${BOARD_DIR}
 )
 
+zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_SILABS_S2
+  ${EMLIB_DIR}/inc
+)
+
 zephyr_compile_definitions(
   ${SILABS_DEVICE_PART_NUMBER}
   SL_CODE_COMPONENT_DEVICE_PERIPHERAL=peripheral
@@ -247,11 +263,30 @@ zephyr_compile_definitions(
   SL_CODE_COMPONENT_SYSTEM=system
 )
 
+zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2
+  ${SERVICE_DIR}/device_manager/devices/sl_device_peripheral_hal_${SILABS_DEVICE_PREFIX}xg${SILABS_DEVICE_FAMILY_NUMBER}.c
+  ${SERVICE_DIR}/device_manager/dma/sl_device_dma_s2.c
+  ${EMLIB_DIR}/src/em_system.c
+)
+zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S3
+  ${SERVICE_DIR}/device_manager/devices/sl_device_peripheral_hal_${SILABS_DEVICE_PREFIX}xx${SILABS_DEVICE_FAMILY_NUMBER}.c
+  ${SERVICE_DIR}/device_manager/dma/sl_device_dma_s3.c
+)
+
+if(CONFIG_SILABS_SISDK_SYSCFG)
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S3
+    ${PERIPHERAL_DIR}/src/sl_hal_syscfg.c
+  )
+endif()
+
+if(CONFIG_SILABS_SISDK_SYSTEM)
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S3
+    ${PERIPHERAL_DIR}/src/sl_hal_system.c
+  )
+endif()
+
 zephyr_library_sources(
   ${DEVICE_DIR}/SiliconLabs/${SILABS_DEVICE_FAMILY}/Source/system_${CONFIG_SOC_SERIES}.c
-  ${EMLIB_DIR}/src/em_system.c
-  ${SERVICE_DIR}/device_manager/devices/sl_device_peripheral_hal_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}.c
-  ${SERVICE_DIR}/device_manager/dma/sl_device_dma_s2.c
   ${SERVICE_DIR}/device_manager/src/sl_device_clock.c
   ${SERVICE_DIR}/device_manager/src/sl_device_dma.c
   ${SERVICE_DIR}/device_manager/src/sl_device_gpio.c
@@ -259,18 +294,24 @@ zephyr_library_sources(
   ${SERVICE_DIR}/memory_manager/profiler/src/sli_memory_profiler_stubs.c
 )
 
-if(NOT SILABS_DEVICE_FAMILY_NUMBER EQUAL "21")
+if(CONFIG_SOC_FAMILY_SILABS_S2 AND NOT SILABS_DEVICE_FAMILY_NUMBER EQUAL "21")
   zephyr_library_sources(
-    ${SERVICE_DIR}/device_manager/clocks/sl_device_clock_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}.c
+    ${SERVICE_DIR}/device_manager/clocks/sl_device_clock_${SILABS_DEVICE_PREFIX}xg${SILABS_DEVICE_FAMILY_NUMBER}.c
+  )
+elseif(CONFIG_SOC_FAMILY_SILABS_S3)
+  zephyr_library_sources(
+    ${SERVICE_DIR}/device_manager/clocks/sl_device_clock_${SILABS_DEVICE_PREFIX}xx${SILABS_DEVICE_FAMILY_NUMBER}.c
   )
 endif()
 
 # Sleeptimer
 if(CONFIG_SILABS_SISDK_SLEEPTIMER)
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2
+    ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer_hal_rtcc.c
+  )
   zephyr_library_sources(
     ${PERIPHERAL_DIR}/src/sl_hal_sysrtc.c
     ${PERIPHERAL_DIR}/src/sl_hal_sysrtc_subsystem.c
-    ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer_hal_rtcc.c
     ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer_hal_sysrtc.c
     ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer.c
   )
@@ -283,27 +324,46 @@ endif()
 
 # Clock Manager
 if(CONFIG_SILABS_SISDK_CLOCK_MANAGER)
-  zephyr_library_sources(
-    ${EMLIB_DIR}/src/em_cmu.c
-    ${SERVICE_DIR}/clock_manager/src/sl_clock_manager.c
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2
     ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_hal_s2.c
-    ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_init.c
     ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_init_hal_s2.c
+    ${EMLIB_DIR}/src/em_cmu.c
+  )
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S3
+    ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_hal_s3.c
+    ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_init_hal_s3.c
+  )
+  zephyr_library_sources(
+    ${SERVICE_DIR}/clock_manager/src/sl_clock_manager.c
+    ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_init.c
   )
   zephyr_compile_definitions(
     SL_CATALOG_CLOCK_MANAGER_PRESENT
     SL_CODE_COMPONENT_CLOCK_MANAGER=clock_manager
   )
+  dt_nodelabel(ext_flash_path NODELABEL "extmem")
+  if(DEFINED ext_flash_path)
+    dt_prop(ext_flash_freq PATH ${ext_flash_path} PROPERTY "clock-frequency")
+    if(DEFINED ext_flash_freq)
+      zephyr_compile_definitions(
+        SL_CATALOG_CLOCK_MANAGER_EXT_FLASH_PRESENT
+      )
+    endif()
+  endif()
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_SYSTEM         ${PERIPHERAL_DIR}/src/sl_hal_system.c)
 
 # Keep em_iadc.c for compatibility for now. Not used anymore.
-zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_IADC         ${EMLIB_DIR}/src/em_iadc.c)
+if(CONFIG_SOC_FAMILY_SILABS_S2)
+  zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_IADC         ${EMLIB_DIR}/src/em_iadc.c)
+endif()
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_IADC         ${PERIPHERAL_DIR}/src/sl_hal_iadc.c)
 
 # Keep em_burtc.c becaused used in gecko_burtc_timer.c
-zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_BURTC     ${EMLIB_DIR}/src/em_burtc.c)
+if(CONFIG_SOC_FAMILY_SILABS_S2)
+  zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_BURTC     ${EMLIB_DIR}/src/em_burtc.c)
+endif()
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_BURTC     ${PERIPHERAL_DIR}/src/sl_hal_burtc.c)
 
 # Device Init
@@ -315,11 +375,16 @@ endif()
 
 # Power Manager
 if(CONFIG_SILABS_SISDK_POWER_MANAGER)
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2
+    ${SERVICE_DIR}/power_manager/src/sleep_loop/sl_power_manager_hal_s2.c
+  )
+  zephyr_library_sources_ifdef(CONFIG_SOC_SILABS_SIX301
+    ${SERVICE_DIR}/power_manager/src/sleep_loop/sl_power_manager_hal_sixg301.c
+  )
   zephyr_library_sources(
     ${SERVICE_DIR}/power_manager/src/common/sl_power_manager_common.c
     ${SERVICE_DIR}/power_manager/src/common/sl_power_manager_em4.c
     ${SERVICE_DIR}/power_manager/src/sleep_loop/sl_power_manager.c
-    ${SERVICE_DIR}/power_manager/src/sleep_loop/sl_power_manager_hal_s2.c
   )
   zephyr_compile_definitions(
     SL_CATALOG_POWER_MANAGER_PRESENT
@@ -328,7 +393,16 @@ if(CONFIG_SILABS_SISDK_POWER_MANAGER)
   zephyr_compile_definitions_ifdef(CONFIG_SILABS_SISDK_RTCC
     SL_CATALOG_POWER_MANAGER_DEEPSLEEP_BLOCKING_HFXO_RESTORE_PRESENT
   )
+  zephyr_compile_definitions_ifdef(CONFIG_SOC_SILABS_SIX301
+    SL_CATALOG_POWER_MANAGER_NO_DEEPSLEEP_PRESENT
+  )
 endif()
+zephyr_include_directories_ifdef(CONFIG_SOC_SILABS_SIX301
+  ${SERVICE_DIR}/power_manager/config/SIXG301
+)
+zephyr_include_directories_ifndef(CONFIG_SOC_SILABS_SIX301
+  ${SERVICE_DIR}/power_manager/config
+)
 
 # HFXO Manager
 if(CONFIG_SILABS_SISDK_HFXO_MANAGER)
@@ -357,7 +431,11 @@ if(CONFIG_SILABS_SISDK_ACMP)
   zephyr_library_sources(${PERIPHERAL_DIR}/src/sl_hal_acmp.c)
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_EMU       ${EMLIB_DIR}/src/em_emu.c)
+if(CONFIG_SILABS_SISDK_EMU)
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2  ${EMLIB_DIR}/src/em_emu.c)
+  zephyr_library_sources(${PERIPHERAL_DIR}/src/sl_hal_emu.c)
+endif()
+
 if(CONFIG_SILABS_SISDK_GPIO)
   zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2  ${EMLIB_DIR}/src/em_gpio.c)
   zephyr_library_sources(
@@ -371,21 +449,14 @@ if(CONFIG_SILABS_SISDK_GPIO)
   )
 endif()
 
-if(CONFIG_SILABS_SISDK_GPIO)
-  zephyr_library_sources(
-    ${PERIPHERAL_DIR}/src/sl_hal_gpio.c
-  )
-  zephyr_library_compile_definitions(
-    SL_CATALOG_GPIO_PRESENT
-    SL_CODE_COMPONENT_HAL_GPIO=hal_gpio
-  )
-endif()
-
 if(CONFIG_SILABS_SISDK_I2C)
   zephyr_library_sources(
     ${DRIVER_DIR}/i2c/src/sl_i2c.c
     ${SERVICE_DIR}/udelay/src/sl_udelay.c
     ${PERIPHERAL_DIR}/src/sl_hal_i2c.c
+  )
+  zephyr_library_compile_definitions_ifdef(CONFIG_SOC_FAMILY_SILABS_S3
+    SL_CATALOG_I2C_FIFO_PRESENT
   )
 endif()
 
@@ -394,11 +465,10 @@ zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_GPCRC     ${PERIPHERAL_DIR}/src
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LETIMER   ${PERIPHERAL_DIR}/src/sl_hal_letimer.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_VDAC      ${PERIPHERAL_DIR}/src/sl_hal_vdac.c)
 
-zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_TIMER
-  ${PERIPHERAL_DIR}/src/sl_hal_timer.c
-  # em_timer.c is still needed e.g. by RAIL for Bluetooth CS
-  ${EMLIB_DIR}/src/em_timer.c
-)
+if(CONFIG_SILABS_SISDK_TIMER)
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2  ${EMLIB_DIR}/src/em_timer.c)
+  zephyr_library_sources(${PERIPHERAL_DIR}/src/sl_hal_timer.c)
+endif()
 
 if(CONFIG_SILABS_SISDK_LDMA)
   zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2  ${EMLIB_DIR}/src/em_ldma.c)
@@ -413,7 +483,6 @@ zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_MSC       ${EMLIB_DIR}/src/em_m
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_RMU       ${EMLIB_DIR}/src/em_rmu.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_RTCC      ${EMLIB_DIR}/src/em_rtcc.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_USART     ${EMLIB_DIR}/src/em_usart.c)
-zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_WDOG      ${EMLIB_DIR}/src/em_wdog.c)
 
 if(CONFIG_SILABS_SISDK_EUSART)
   zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2  ${EMLIB_DIR}/src/em_eusart.c)
@@ -425,21 +494,32 @@ if(CONFIG_SILABS_SISDK_PRS)
   zephyr_library_sources(${PERIPHERAL_DIR}/src/sl_hal_prs.c)
 endif()
 
-zephyr_include_directories_ifdef(CONFIG_SILABS_SISDK_SE
-  ${SECURITY_DIR}/sl_component/se_manager/src
-  ${SECURITY_DIR}/sl_component/se_manager/inc
-)
+if(CONFIG_SILABS_SISDK_WDOG)
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2  ${EMLIB_DIR}/src/em_wdog.c)
+  zephyr_library_sources(${PERIPHERAL_DIR}/src/sl_hal_wdog.c)
+endif()
 
-zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_SE
-  ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager.c
-  ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager_util.c
-  ${SECURITY_DIR}/sl_component/se_manager/src/sli_se_manager_mailbox.c
-)
+if(CONFIG_SILABS_SISDK_SE)
+  zephyr_include_directories(
+    ${SECURITY_DIR}/sl_component/se_manager/src
+    ${SECURITY_DIR}/sl_component/se_manager/inc
+  )
 
-zephyr_compile_definitions_ifdef(CONFIG_SILABS_SISDK_SE
-  SL_CODE_COMPONENT_SE_MANAGER=se_manager
-  SL_CODE_COMPONENT_PSEC_OSAL=psec_osal
-)
+  zephyr_library_sources(
+    ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager.c
+    ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager_util.c
+    ${SECURITY_DIR}/sl_component/se_manager/src/sli_se_manager_mailbox.c
+  )
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S3
+    ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager_extmem.c
+    ${SECURITY_DIR}/sl_component/se_manager/src/sli_se_manager_device_data.c
+  )
+
+  zephyr_compile_definitions(
+    SL_CODE_COMPONENT_SE_MANAGER=se_manager
+    SL_CODE_COMPONENT_PSEC_OSAL=psec_osal
+  )
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_GECKO_SE
   ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager_entropy.c
@@ -462,5 +542,10 @@ if(CONFIG_SILABS_DEVICE_IS_MODULE)
   )
 endif()
 
-zephyr_linker_sources(ROM_SECTIONS linker/code_classification_text.ld)
-zephyr_linker_sources(RAMFUNC_SECTION linker/code_classification_ramfunc.ld)
+if(CONFIG_SOC_FAMILY_SILABS_S2)
+  zephyr_linker_sources(ROM_SECTIONS linker/code_classification_text.ld)
+  zephyr_linker_sources(RAMFUNC_SECTION linker/code_classification_ramfunc.ld)
+endif()
+if(CONFIG_SOC_FAMILY_SILABS_S3)
+  zephyr_linker_sources(RAMFUNC_SECTION linker/code_classification_s3.ld)
+endif()

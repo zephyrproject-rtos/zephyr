@@ -11,7 +11,7 @@ config SILABS_SHELL
 	  Hidden option that enables the "silabs" shell command namespace.
 	  Selected by any Silicon Labs SoC feature that registers a subcommand.
 
-if SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
+if SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2 || SOC_FAMILY_SILABS_S3
 
 config SOC_GECKO_HAS_RADIO
 	bool
@@ -36,6 +36,10 @@ config SOC_GECKO_CUSTOM_RADIO_PHY
 	  If enabled, RAIL can be used for user generated custom radio phy
 	  management, sending and receiving packets on radio phy. User has
 	  to provide the radio_config.c and radio_config.h files for the phy.
+
+config SILABS_DEVICE_IS_MODULE
+	bool
+	default n
 
 config SILABS_IMAGE_PROPERTIES
 	bool "Include application properties data structure in image"
@@ -84,7 +88,7 @@ config SILABS_HAS_RADIO_CS
 config SILABS_HAS_RADIO_TX_HIGH_POWER
 	def_bool $(dt_nodelabel_bool_prop,radio,radio-tx-high-power-supported)
 
-endif # SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
+endif # SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2 || SOC_FAMILY_SILABS_S3
 
 if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1
 

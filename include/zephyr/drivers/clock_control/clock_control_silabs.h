@@ -37,6 +37,8 @@
 #include <zephyr/dt-bindings/clock/silabs/xg28-clock.h>
 #elif defined(CONFIG_SOC_SILABS_XG29)
 #include <zephyr/dt-bindings/clock/silabs/xg29-clock.h>
+#elif defined(CONFIG_SOC_SILABS_SIX301)
+#include <zephyr/dt-bindings/clock/silabs/six301-clock.h>
 #endif
 
 /** @brief Clock Management Unit (CMU) clock configuration for a peripheral. */
