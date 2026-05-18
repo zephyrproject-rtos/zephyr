@@ -60,14 +60,11 @@ int scmi_system_power_state_set(struct scmi_system_power_state_config *cfg)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SYSTEM_POWER_STATE_SET, SCMI_COMMAND,
-					proto->id, 0x0);
-	msg.len = sizeof(*cfg);
-	msg.content = cfg;
-
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(status);
-	reply.content = &status;
+	ret = scmi_xfer_init(proto, &msg, &reply, SYSTEM_POWER_STATE_SET,
+			     cfg, sizeof(*cfg), &status, sizeof(status));
+	if (ret) {
+		return ret;
+	}
 
 	ret = scmi_send_message(proto, &msg, &reply, false);
 	if (ret < 0) {

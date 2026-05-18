@@ -41,14 +41,12 @@ int scmi_power_state_get(uint32_t domain_id, uint32_t *power_state)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(POWER_STATE_GET, SCMI_COMMAND,
-					proto->id, 0x0);
-	msg.len = sizeof(domain_id);
-	msg.content = &domain_id;
-
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(reply_buffer);
-	reply.content = &reply_buffer;
+	ret = scmi_xfer_init(proto, &msg, &reply, POWER_STATE_GET,
+			     &domain_id, sizeof(domain_id),
+			     &reply_buffer, sizeof(reply_buffer));
+	if (ret) {
+		return ret;
+	}
 
 	ret = scmi_send_message(proto, &msg, &reply, false);
 	if (ret < 0) {
@@ -84,14 +82,12 @@ int scmi_power_state_set(struct scmi_power_state_config *cfg)
 		return -ENOTSUP;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(POWER_STATE_SET, SCMI_COMMAND,
-					proto->id, 0x0);
-	msg.len = sizeof(*cfg);
-	msg.content = cfg;
-
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(status);
-	reply.content = &status;
+	ret = scmi_xfer_init(proto, &msg, &reply, POWER_STATE_SET,
+			     cfg, sizeof(*cfg),
+			     &status, sizeof(status));
+	if (ret) {
+		return ret;
+	}
 
 	ret = scmi_send_message(proto, &msg, &reply, false);
 	if (ret < 0) {

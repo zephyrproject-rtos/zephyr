@@ -53,15 +53,14 @@ int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(PINCTRL_SETTINGS_CONFIGURE,
-					SCMI_COMMAND, proto->id, 0x0);
-	msg.len = sizeof(*settings) -
-		(ARM_SCMI_PINCTRL_MAX_CONFIG_SIZE - config_num * 2) * 4;
-	msg.content = settings;
-
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(status);
-	reply.content = &status;
+	ret = scmi_xfer_init(proto, &msg, &reply, PINCTRL_SETTINGS_CONFIGURE,
+			     settings,
+			     sizeof(*settings) -
+			     (ARM_SCMI_PINCTRL_MAX_CONFIG_SIZE - config_num * 2) * 4,
+			     &status, sizeof(status));
+	if (ret) {
+		return ret;
+	}
 
 	ret = scmi_send_message(proto, &msg, &reply, false);
 	if (ret < 0) {
