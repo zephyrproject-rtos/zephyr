@@ -402,20 +402,30 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 		case K_POLL_TYPE_IGNORE:
 			break;
 		case K_POLL_TYPE_SIGNAL:
-			K_OOPS(K_SYSCALL_OBJ(e->signal, K_OBJ_POLL_SIGNAL));
+			if (K_SYSCALL_OBJ(e->signal, K_OBJ_POLL_SIGNAL)) {
+				goto oops_free;
+			}
 			break;
 		case K_POLL_TYPE_SEM_AVAILABLE:
-			K_OOPS(K_SYSCALL_OBJ(e->sem, K_OBJ_SEM));
+			if (K_SYSCALL_OBJ(e->sem, K_OBJ_SEM)) {
+				goto oops_free;
+			}
 			break;
 		case K_POLL_TYPE_DATA_AVAILABLE:
-			K_OOPS(K_SYSCALL_OBJ(e->queue, K_OBJ_QUEUE));
+			if (K_SYSCALL_OBJ(e->queue, K_OBJ_QUEUE)) {
+				goto oops_free;
+			}
 			break;
 		case K_POLL_TYPE_MSGQ_DATA_AVAILABLE:
-			K_OOPS(K_SYSCALL_OBJ(e->msgq, K_OBJ_MSGQ));
+			if (K_SYSCALL_OBJ(e->msgq, K_OBJ_MSGQ)) {
+				goto oops_free;
+			}
 			break;
 #ifdef CONFIG_PIPES
 		case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
-			K_OOPS(K_SYSCALL_OBJ(e->pipe, K_OBJ_PIPE));
+			if (K_SYSCALL_OBJ(e->pipe, K_OBJ_PIPE)) {
+				goto oops_free;
+			}
 			break;
 #endif /* CONFIG_PIPES */
 		default:
