@@ -15,7 +15,7 @@ if(CONFIG_MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS)
     gives access to Mbed TLS crypto functions which are internal and may be removed
     or modified at any time. Please transition to the PSA Crypto API."
   )
-  set(MBEDTLS_PRIVATE_INCLUDE_PATH "${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/include/mbedtls/private")
+  set(MBEDTLS_PRIVATE_INCLUDE_PATH "${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/include/mbedtls/private")
   set(legacy_headers
     ${MBEDTLS_PRIVATE_INCLUDE_PATH}/aes.h
     ${MBEDTLS_PRIVATE_INCLUDE_PATH}/bignum.h
@@ -30,7 +30,7 @@ if(CONFIG_MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS)
   )
   file(COPY ${legacy_headers} DESTINATION ${CMAKE_BINARY_DIR}/legacy-mbedtls-headers/mbedtls/)
   if(CONFIG_MCUBOOT)
-    set(MBEDTLS_BUILTIN_SRC_PATH "${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/src")
+    set(MBEDTLS_BUILTIN_SRC_PATH "${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/src")
     set(legacy_headers
       ${MBEDTLS_BUILTIN_SRC_PATH}/rsa_alt_helpers.h
     )

@@ -20,6 +20,10 @@ config MBEDTLS_VERSION_4_x
 	help
 	  Hidden Kconfig symbol used internally to mark support for Mbed TLS 4.x.
 
+config TF_PSA_CRYPTO_MODULE_DIR
+	string
+	default "${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}"
+
 rsource "Kconfig.psa.auto"
 rsource "Kconfig.psa.logic"
 
