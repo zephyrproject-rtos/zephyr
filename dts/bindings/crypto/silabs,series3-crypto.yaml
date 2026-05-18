@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs Series 3 Crypto
+
+description: |
+  Crypto engine on Silicon Labs Series 3 devices.
+
+compatible: "silabs,series3-crypto"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true

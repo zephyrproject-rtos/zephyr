@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "silabs,socpll"
+
+title: Silicon Labs SOCPLL (System-on-Chip Phase-Locked Loop)
+
+description: |
+  SoC PLL peripheral on Silicon Labs Series 3 SoCs. Used to generate the high-frequency clock for
+  the core SYSCLK branch. It accepts an input frequency of 34 to 44 MHz and produces an output of
+  150 MHz. It may be used in open-loop mode to generate a 145 MHz clock (+/- 3%) for the system
+  without using a reference oscillator.
+
+  To enable the PLL, set the `clocks` property to the source oscillator (hfxo or hfrcodpll) and set
+  `clock-frequency` to `DT_FREQ_M(150)`. To use in open-loop mode, set `clock-frequency` to
+  `DT_FREQ_M(145)` and delete the `clocks` property.
+
+include: fixed-clock.yaml
+
+properties: {}

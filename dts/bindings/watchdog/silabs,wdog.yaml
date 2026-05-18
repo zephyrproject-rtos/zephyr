@@ -1,0 +1,17 @@
+# Copyright (c) 2016 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs Series 3 WDOG (Watchdog)
+
+description: Watchdog timer for Silicon Labs Series 3 SoCs.
+
+compatible: "silabs,wdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
