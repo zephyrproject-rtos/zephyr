@@ -37,7 +37,7 @@ def test_if_test_config_file_is_used(tmp_path: Path):
         runner: ''
         duts:
         - connected: true
-          flash_timeout: 60
+          flash_timeout: 120
           id: 0123456789
           platform: sample/board/name
           runner: jlink
@@ -63,7 +63,7 @@ def test_if_test_config_file_is_used(tmp_path: Path):
     assert device.id == '0123456789'
     assert device.west_flash_extra_args == ['--erase']
     assert device.fixtures == ['ble_hci_adapter', 'usb']
-    assert device.flash_timeout == 60
+    assert device.flash_timeout == 120
     assert device.runner == 'jlink'
     assert len(device.serial_configs) == 2
     assert device.serial_configs[0].port == '/dev/ttyACM1'
