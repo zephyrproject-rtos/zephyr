@@ -451,6 +451,7 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 	enum cellular_registration_status registration_status = CELLULAR_REGISTRATION_UNKNOWN;
+	enum cellular_registration_status registration_prev;
 	uint8_t num_args;
 	uint8_t base;
 
@@ -479,10 +480,13 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 	LOG_DBG("REG %d AcT %d", registration_status, data->access_tech);
 
 	if (strcmp(argv[0], "+CREG: ") == 0) {
+		registration_prev = data->registration_status_gsm;
 		data->registration_status_gsm = registration_status;
 	} else if (strcmp(argv[0], "+CGREG: ") == 0) {
+		registration_prev = data->registration_status_gprs;
 		data->registration_status_gprs = registration_status;
 	} else { /* CEREG */
+		registration_prev = data->registration_status_lte;
 		data->registration_status_lte = registration_status;
 	}
 
@@ -490,6 +494,18 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
 	} else {
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DEREGISTERED);
+		/* If we transitioned into a deregistered state, issue a NETWORK_STATUS event,
+		 * as we cannot guarantee periodic network status AT commands will respond normally.
+		 */
+		if (registration_prev != registration_status) {
+			struct cellular_evt_network_status evt = {
+				.status = registration_status,
+				.access_tech = data->access_tech,
+			};
+
+			modem_cellular_emit_event(data, CELLULAR_EVENT_NETWORK_STATUS_CHANGED,
+						  &evt);
+		}
 	}
 	modem_cellular_emit_reg_state(data, registration_status);
 }
