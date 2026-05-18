@@ -302,6 +302,11 @@ WiFi
   a pointer to :c:struct:`net_if`. This api is not directly exposed to the application, so only
   out-of-tree drivers need to be updated. (:github:`106086`)
 
+* The Espressif Wi-Fi driver Kconfig option ``CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4`` has been
+  removed in favor of the generic :kconfig:option:`CONFIG_WIFI_STA_AUTO_DHCPV4`. Applications
+  that previously disabled the Espressif-specific option must now disable the generic option
+  to retain manual DHCPv4 or static IP behavior after STA connection.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
