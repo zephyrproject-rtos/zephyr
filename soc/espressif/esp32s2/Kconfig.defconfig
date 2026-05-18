@@ -3,6 +3,13 @@
 
 if SOC_SERIES_ESP32S2
 
+configdefault CACHE_MANAGEMENT
+	default y if ESP_SPIRAM
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE if CACHE_MANAGEMENT
+endchoice
+
 config FLASH_SIZE
 	default $(dt_node_reg_size_int,/soc/flash-controller@3f402000/flash@0,0)
 
