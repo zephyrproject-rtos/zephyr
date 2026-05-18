@@ -64,13 +64,7 @@ config WIFI_MGMT_SCAN_CHAN_MAX_MANUAL
 	  There are approximately 100 channels allocated across the three supported bands.
 	  The default of 3 allows the 3 most common channels (2.4GHz: 1, 6, 11) to be specified.
 
-config WIFI_SHELL_MAX_AP_STA
-	int "Maximum number of APs and STAs that can be managed in Wi-Fi shell"
-	range 1 8
-	default 1
-	help
-	  This option defines the maximum number of APs and STAs that can be managed
-	  in Wi-Fi shell.
+rsource "Kconfig.shell"
 
 config WIFI_P2P_MAX_PEERS
 	int "Maximum number of P2P peers that can be returned in a single query"
@@ -140,30 +134,6 @@ config WIFI_CERTIFICATE_LIB
 	bool
 	help
 	  Enable this option to process certificates in enterprise mode.
-
-if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-
-config WIFI_SHELL_RUNTIME_CERTIFICATES
-	bool "Provide Wi-Fi enterprise security certificates at run-time"
-	select TLS_CREDENTIALS
-	select TLS_CREDENTIALS_SHELL
-	select BASE64
-	help
-	  This option enables providing Wi-Fi enterprise security certificates at run-time.
-	  Uses the TLS credentials subsystem to store and manage the certificates.
-
-if WIFI_SHELL_RUNTIME_CERTIFICATES
-
-config HEAP_MEM_POOL_ADD_SIZE_WIFI_CERT
-	int "Wi-Fi enterprise security certificates memory pool size"
-	# STA - 6 certs and each assume 1500 bytes
-	default 12000
-	help
-	  The size of the memory pool used by the Wi-Fi enterprise security certificates.
-
-endif # WIFI_SHELL_RUNTIME_CERTIFICATES
-
-endif # WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 
 config WIFI_STA_AUTO_DHCPV4
 	bool "Automatically start DHCPv4 after STA connects"
