@@ -15,6 +15,8 @@
 #define FIDO2_P256_COORD_SIZE            32
 /* EC point prefix */
 #define FIDO2_EC_POINT_UNCOMPRESSED      0x04
+/* ASN.1-encoded ECDSA signature length */
+#define FIDO2_ECDSA_SIG_MAX_SIZE         72
 
 /**
  * Initialize the crypto module.
