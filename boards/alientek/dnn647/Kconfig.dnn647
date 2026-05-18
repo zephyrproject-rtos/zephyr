@@ -1,0 +1,5 @@
+# Copyright (c) 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_DNN647
+	select SOC_STM32N647XX

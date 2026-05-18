@@ -1,0 +1,8 @@
+board:
+  name: dnn647
+  full_name: STM32N647 DNN647
+  vendor: alientek
+  socs:
+    - name: stm32n647xx
+      variants:
+        - name: sb

@@ -1,0 +1,118 @@
+/*
+ * Copyright (c) 2026 The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/n6/stm32n647X0.dtsi>
+#include <st/n6/stm32n647x0hxq-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &axisram2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiog 10 GPIO_ACTIVE_HIGH>;
+			label = "User LED0";
+		};
+
+		led1: led_1 {
+			gpios = <&gpioe 10 GPIO_ACTIVE_HIGH>;
+			label = "User LED1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		wk_up: wk_up {
+			label = "WK_UP";
+			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &wk_up;
+	};
+};
+
+&clk_hse {
+	hse-div2;
+	clock-frequency = <DT_FREQ_M(48)>;
+	status = "okay";
+};
+
+&clk_hsi {
+	hsi-div = <1>;
+	status = "okay";
+};
+
+&perck {
+	clocks = <&rcc STM32_SRC_HSI PER_SEL(0)>;
+	status = "okay";
+};
+
+&pll1 {
+	clocks = <&clk_hse>;
+	div-m = <3>;
+	mul-n = <150>;
+	div-p1 = <1>;
+	div-p2 = <1>;
+	status = "okay";
+};
+
+&ic1 {
+	pll-src = <1>;
+	ic-div = <3>;
+	status = "okay";
+};
+
+&ic2 {
+	pll-src = <1>;
+	ic-div = <6>;
+	status = "okay";
+};
+
+&ic6 {
+	pll-src = <1>;
+	ic-div = <2>;
+	status = "okay";
+};
+
+&ic11 {
+	pll-src = <1>;
+	ic-div = <3>;
+	status = "okay";
+};
+
+&cpusw {
+	clocks = <&rcc STM32_SRC_IC1 CPU_SEL(3)>;
+	clock-frequency = <DT_FREQ_M(800)>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&ic2>;
+	clock-frequency = <DT_FREQ_M(400)>;
+	ahb-prescaler = <2>;
+	timg-prescaler = <2>;
+};
+
+&usart1 {
+	clocks = <&rcc STM32_CLOCK(APB2, 4)>,
+		 <&rcc STM32_SRC_CKPER USART1_SEL(1)>;
+	pinctrl-0 = <&usart1_tx_pe5 &usart1_rx_pe6>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};

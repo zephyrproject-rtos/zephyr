@@ -1,0 +1,9 @@
+# Copyright (c) 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_DNN647
+
+configdefault XIP
+	default n
+
+endif # BOARD_DNN647
