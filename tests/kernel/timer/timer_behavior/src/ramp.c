@@ -22,6 +22,8 @@ static void tm_fn(struct k_timer *tm)
 	k_sem_give(&ramp_sem);
 }
 
+static struct k_timer tm;
+
 /**
  * @brief Test timers can be scheduled in a ramp
  *
@@ -36,7 +38,6 @@ static void tm_fn(struct k_timer *tm)
 ZTEST(timer_ramp, test_timer_ramp)
 {
 	bool failed = false;
-	struct k_timer tm;
 	uint32_t delay = 1;
 
 	k_timer_init(&tm, tm_fn, NULL);
