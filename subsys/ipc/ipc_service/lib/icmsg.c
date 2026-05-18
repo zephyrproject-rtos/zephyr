@@ -181,13 +181,17 @@ static bool callback_process(struct icmsg_data_t *dev_data)
 							    dev_data->ctx);
 				}
 				__ASSERT(false, "Incorrect Tx configuration");
-				atomic_set(&dev_data->state, ICMSG_STATE_OFF);
+				(void)atomic_cas(&dev_data->state, state,
+						ICMSG_STATE_OFF);
+				return false;
+			}
+			if (!atomic_cas(&dev_data->state, state,
+					ICMSG_STATE_INITIALIZING_SID_DISABLED)) {
 				return false;
 			}
 			/* We got magic data, so we can handle it later. */
 			notify_remote = true;
 			rerun = true;
-			atomic_set(&dev_data->state, ICMSG_STATE_INITIALIZING_SID_DISABLED);
 			break;
 		}
 		/* If remote did not initialize the RX in session-unaware mode, we can try
@@ -217,7 +221,8 @@ static bool callback_process(struct icmsg_data_t *dev_data)
 						dev_data->ctx);
 				}
 				__ASSERT(false, "Incorrect Tx configuration");
-				atomic_set(&dev_data->state, ICMSG_STATE_DISCONNECTED);
+				(void)atomic_cas(&dev_data->state, state,
+						ICMSG_STATE_DISCONNECTED);
 				return false;
 			}
 			/* Acknowledge the remote session. */
@@ -229,10 +234,10 @@ static bool callback_process(struct icmsg_data_t *dev_data)
 
 		if (local_sid_ack == dev_data->local_sid &&
 		    dev_data->remote_sid != SID_DISCONNECTED) {
-			/* We send acknowledge to remote, receive acknowledge from remote,
-			 * so we are ready.
-			 */
-			atomic_set(&dev_data->state, ICMSG_STATE_CONNECTED_SID_ENABLED);
+			if (!atomic_cas(&dev_data->state, state,
+					ICMSG_STATE_CONNECTED_SID_ENABLED)) {
+				return false;
+			}
 
 			if (dev_data->cb->bound) {
 				dev_data->cb->bound(dev_data->ctx);
@@ -306,7 +311,10 @@ static bool callback_process(struct icmsg_data_t *dev_data)
 				return false;
 			}
 
-			atomic_set(&dev_data->state, ICMSG_STATE_CONNECTED_SID_DISABLED);
+			if (!atomic_cas(&dev_data->state, state,
+					ICMSG_STATE_CONNECTED_SID_DISABLED)) {
+				return false;
+			}
 
 			if (dev_data->cb->bound) {
 				dev_data->cb->bound(dev_data->ctx);
@@ -472,17 +480,10 @@ int icmsg_open(const struct icmsg_config_t *conf,
 
 cleanup_and_exit:
 	/*
-	 * Only roll the state back to OFF if it's still in one of the
-	 * INITIALIZING states. Under SMP / preemptive workqueues, the
-	 * mbox-init path can have already enabled RX, fired the IRQ for
-	 * a remote OPEN that was pending in HW, and the workqueue's
-	 * callback_process can race ahead of icmsg_open's own
-	 * mbox_send_dt — landing the state in CONNECTED *before* we get
-	 * here. In that case the connection is in fact valid (bound was
-	 * called, magic was matched) and we must not destroy it.
-	 *
-	 * We try INITIALIZING_SID_DISABLED first, then the SID-aware
-	 * variants. If none match, leave the state alone.
+	 * Under SMP, callback_process may have raced ahead and already
+	 * transitioned to CONNECTED. Both this CAS and callback_process's
+	 * CAS form a pair: whichever runs second sees the other's state
+	 * change and backs off instead of blindly overwriting.
 	 */
 	(void)atomic_cas(&dev_data->state,
 			 ICMSG_STATE_INITIALIZING_SID_DISABLED,
