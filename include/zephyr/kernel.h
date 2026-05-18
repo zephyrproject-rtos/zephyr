@@ -2653,8 +2653,7 @@ struct k_futex {
  *	     should check the futex's value on wakeup to determine if it needs
  *	     to block again.
  */
-__syscall int k_futex_wait(struct k_futex *futex, int expected,
-			   k_timeout_t timeout);
+__syscall int k_futex_wait(struct k_futex *futex, atomic_t expected, k_timeout_t timeout);
 
 /**
  * @brief Wake one/all threads pending on a futex
