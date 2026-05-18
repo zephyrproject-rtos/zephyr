@@ -31,7 +31,11 @@
 		 ? CMU_SYSCLKCTRL_CLKSEL_HFXO                                                      \
 	 : DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(sysclk)), DT_NODELABEL(clkin0))                \
 		 ? CMU_SYSCLKCTRL_CLKSEL_CLKIN0                                                    \
-		 : SL_CLOCK_MANAGER_INVALID)
+		 : COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(socpll)), (                             \
+			DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(sysclk)),                         \
+				DT_NODELABEL(socpll))                                              \
+			? CMU_SYSCLKCTRL_CLKSEL_SOCPLL                                             \
+			: SL_CLOCK_MANAGER_INVALID), (SL_CLOCK_MANAGER_INVALID)))
 
 #if SL_CLOCK_MANAGER_SYSCLK_SOURCE == SL_CLOCK_MANAGER_INVALID
 #error "Invalid clock source selection for SYSCLK"
@@ -143,20 +147,83 @@
 		 ? CMU_EM01GRPCCLKCTRL_CLKSEL_FSRCO                                                \
 		 : COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(hfrcoem23)), (                          \
 			DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(em01grpcclk)),                    \
-				DT_NODELABEL(hfrcodpllrt))                                         \
-			? CMU_EM01GRPACLKCTRL_CLKSEL_HFRCODPLLRT                                   \
-			: DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(em01grpcclk)),                  \
-				DT_NODELABEL(hfxort))                                              \
-			? CMU_EM01GRPACLKCTRL_CLKSEL_HFXORT                                        \
-			: DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(em01grpcclk)),                  \
 				DT_NODELABEL(hfrcoem23))                                           \
 			? CMU_EM01GRPCCLKCTRL_CLKSEL_HFRCOEM23                                     \
-			: SL_CLOCK_MANAGER_INVALID), (SL_CLOCK_MANAGER_INVALID)))
+			: COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(hfrcodpllrt)), (                 \
+				DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(em01grpcclk)),            \
+					DT_NODELABEL(hfrcodpllrt))                                 \
+				? CMU_EM01GRPCCLKCTRL_CLKSEL_HFRCODPLLRT                           \
+				: DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(em01grpcclk)),          \
+					DT_NODELABEL(hfxort))                                      \
+				? CMU_EM01GRPCCLKCTRL_CLKSEL_HFXORT                                \
+				: SL_CLOCK_MANAGER_INVALID), (SL_CLOCK_MANAGER_INVALID))),         \
+			(SL_CLOCK_MANAGER_INVALID)))
 
 #if SL_CLOCK_MANAGER_EM01GRPCCLK_SOURCE == SL_CLOCK_MANAGER_INVALID
 #error "Invalid clock source selection for EM01GRPCCLK"
 #endif
 #endif /* DT_NODE_EXISTS(em01grpcclk)*/
+
+/* EM01GRPDCLK */
+#if DT_NODE_EXISTS(DT_NODELABEL(em01grpdclk))
+#define SL_CLOCK_MANAGER_EM01GRPDCLK_SOURCE                                                        \
+	(DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(em01grpdclk)), DT_NODELABEL(hfrcodpll))          \
+		 ? CMU_EM01GRPDCLKCTRL_CLKSEL_HFRCODPLL                                            \
+	 : DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(em01grpdclk)), DT_NODELABEL(hfxo))             \
+		 ? CMU_EM01GRPDCLKCTRL_CLKSEL_HFXO                                                 \
+	 : DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(em01grpdclk)), DT_NODELABEL(fsrco))            \
+		 ? CMU_EM01GRPDCLKCTRL_CLKSEL_FSRCO                                                \
+		 : COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(hfrcoem23)), (                          \
+			DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(em01grpdclk)),                    \
+				DT_NODELABEL(hfrcoem23))                                           \
+			? CMU_EM01GRPDCLKCTRL_CLKSEL_HFRCOEM23                                     \
+			: SL_CLOCK_MANAGER_INVALID), (SL_CLOCK_MANAGER_INVALID)))
+
+#if SL_CLOCK_MANAGER_EM01GRPDCLK_SOURCE == SL_CLOCK_MANAGER_INVALID
+#error "Invalid clock source selection for EM01GRPDCLK"
+#endif
+#endif /* DT_NODE_EXISTS(em01grpdclk)*/
+
+/* PIXELRZCLK */
+#if DT_NODE_EXISTS(DT_NODELABEL(pixelrzclk))
+#define SL_CLOCK_MANAGER_PIXELRZCLK_SOURCE                                                         \
+	(DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(pixelrzclk)), DT_NODELABEL(hfrcodpll))           \
+		 ? CMU_PIXELRZCLKCTRL_CLKSEL_HFRCODPLL                                             \
+	 : DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(pixelrzclk)), DT_NODELABEL(hfxo))              \
+		 ? CMU_PIXELRZCLKCTRL_CLKSEL_HFXO                                                  \
+	 : DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(pixelrzclk)), DT_NODELABEL(fsrco))             \
+		 ? CMU_PIXELRZCLKCTRL_CLKSEL_FSRCO                                                 \
+		 : COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(hfrcoem23)), (                          \
+			DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(pixelrzclk)),                     \
+				DT_NODELABEL(hfrcoem23))                                           \
+			? CMU_PIXELRZCLKCTRL_CLKSEL_HFRCOEM23                                      \
+			: SL_CLOCK_MANAGER_INVALID), (SL_CLOCK_MANAGER_INVALID)))
+
+#if SL_CLOCK_MANAGER_PIXELRZCLK_SOURCE == SL_CLOCK_MANAGER_INVALID
+#error "Invalid clock source selection for PIXELRZCLK"
+#endif
+
+#define SL_CLOCK_MANAGER_PIXELRZCLK_DIVIDER                                                        \
+	CONCAT(CMU_PIXELRZCLKCTRL_PRESC_DIV, DT_PROP(DT_NODELABEL(pixelrzclk), clock_div))
+#endif /* DT_NODE_EXISTS(pixelrzclk)*/
+
+/* ADCCLK */
+#if DT_NODE_EXISTS(DT_NODELABEL(adcclk))
+#define SL_CLOCK_MANAGER_ADCCLK_SOURCE                                                             \
+	(DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(adcclk)), DT_NODELABEL(em01grpaclk))             \
+		 ? CMU_ADCCLKCTRL_CLKSEL_EM01GRPACLK                                               \
+	 : DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(adcclk)), DT_NODELABEL(fsrco))                 \
+		 ? CMU_ADCCLKCTRL_CLKSEL_FSRCO                                                     \
+		 : COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(hfrcoem23)), (                          \
+			DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(adcclk)),                         \
+				DT_NODELABEL(hfrcoem23))                                           \
+			? CMU_ADCCLKCTRL_CLKSEL_HFRCOEM23                                          \
+			: SL_CLOCK_MANAGER_INVALID), (SL_CLOCK_MANAGER_INVALID)))
+
+#if SL_CLOCK_MANAGER_ADCCLK_SOURCE == SL_CLOCK_MANAGER_INVALID
+#error "Invalid clock source selection for ADCCLK"
+#endif
+#endif /* DT_NODE_EXISTS(adcclk) */
 
 /* IADCCLK */
 #if DT_NODE_EXISTS(DT_NODELABEL(iadcclk))
@@ -369,6 +436,24 @@
 #endif /* DT_NUM_CLOCKS(eusart0clk) */
 #endif /* DT_NODE_EXISTS(eusart0clk) */
 
+/* I2C0CLK */
+#if DT_NODE_EXISTS(DT_NODELABEL(i2c0clk))
+#define SL_CLOCK_MANAGER_I2C0CLK_SOURCE                                                            \
+	(DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(i2c0clk)), DT_NODELABEL(em01grpdclk))            \
+		 ? CMU_I2C0CLKCTRL_CLKSEL_EM01GRPDCLK                                              \
+	 : DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(i2c0clk)), DT_NODELABEL(hfrcoem23))            \
+		 ? CMU_I2C0CLKCTRL_CLKSEL_HFRCOEM23                                                \
+	 : DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(i2c0clk)), DT_NODELABEL(lfrco))                \
+		 ? CMU_I2C0CLKCTRL_CLKSEL_LFRCO                                                    \
+	 : DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(i2c0clk)), DT_NODELABEL(lfxo))                 \
+		 ? CMU_I2C0CLKCTRL_CLKSEL_LFXO                                                     \
+		 : SL_CLOCK_MANAGER_INVALID)
+
+#if SL_CLOCK_MANAGER_I2C0CLK_SOURCE == SL_CLOCK_MANAGER_INVALID
+#error "Invalid clock source selection for I2C0CLK"
+#endif
+#endif /* DT_NODE_EXISTS(i2c0clk) */
+
 /* SYSTICKCLK */
 #if DT_NODE_EXISTS(DT_NODELABEL(systickclk))
 #define SL_CLOCK_MANAGER_SYSTICKCLK_SOURCE                                                         \
@@ -381,6 +466,8 @@
 #error "Invalid clock source selection for SYSTICKCLK"
 #endif
 #endif /* DT_NODE_EXISTS(systickclk) */
+
+#define SL_CLOCK_MANAGER_QSPICLK_ADVANCED_CONFIG_EN 0
 
 /* VDAC0CLK */
 #if DT_NODE_EXISTS(DT_NODELABEL(vdac0clk))
