@@ -43,6 +43,8 @@ tests:
       - kit_pse84_ai/pse846gps2dbzc4a/m55
       - kit_pse84_eval/pse846gps2dbzc4a/m33
       - kit_pse84_eval/pse846gps2dbzc4a/m55
+      - frdm_mcxc242
+      - frdm_mcxc444
     tags: pm
     integration_platforms:
       - mec15xxevb_assy6853
