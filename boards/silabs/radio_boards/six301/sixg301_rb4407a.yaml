@@ -9,6 +9,7 @@ toolchain:
   - gnuarmemb
 supported:
   - bluetooth
+  - dma
   - entropy
   - gpio
 vendor: silabs
