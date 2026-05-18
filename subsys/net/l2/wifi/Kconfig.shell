@@ -11,6 +11,15 @@ config WIFI_SHELL_MAX_AP_STA
 	  This option defines the maximum number of APs and STAs that can be managed
 	  in Wi-Fi shell.
 
+config WIFI_SHELL_ROAMING_AUTO_TRIGGER
+	bool "Automatic roaming trigger in Wi-Fi shell"
+	depends on NET_L2_WIFI_SHELL
+	depends on WIFI_NM_WPA_SUPPLICANT_ROAMING
+	default y
+	help
+	  Enable automatic roaming trigger from roaming-related Wi-Fi events.
+	  Disable this if roaming should be started manually from the shell.
+
 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 
 config WIFI_SHELL_RUNTIME_CERTIFICATES

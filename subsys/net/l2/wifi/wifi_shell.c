@@ -82,6 +82,10 @@ static struct net_mgmt_event_callback wifi_shell_mgmt_cb;
 static struct net_mgmt_event_callback wifi_shell_scan_cb;
 static struct wifi_reg_chan_info chan_info[MAX_REG_CHAN_NUM];
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+static bool wifi_auto_roam_en = IS_ENABLED(CONFIG_WIFI_SHELL_ROAMING_AUTO_TRIGGER);
+#endif
+
 static K_MUTEX_DEFINE(wifi_ap_sta_list_lock);
 struct wifi_ap_sta_node {
 	bool valid;
@@ -520,6 +524,10 @@ static void handle_wifi_signal_change(struct net_mgmt_event_callback *cb, struct
 	const struct shell *sh = context.sh;
 	int ret;
 
+	if (!wifi_auto_roam_en) {
+		return;
+	}
+
 	ret = net_mgmt(NET_REQUEST_WIFI_START_ROAMING, iface, NULL, 0);
 	if (ret) {
 		PR_WARNING("Start roaming failed\n");
@@ -534,6 +542,10 @@ static void handle_wifi_neighbor_rep_complete(struct net_mgmt_event_callback *cb
 {
 	const struct shell *sh = context.sh;
 	int ret;
+
+	if (!wifi_auto_roam_en) {
+		return;
+	}
 
 	ret = net_mgmt(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE, iface, NULL, 0);
 	if (ret) {
@@ -2480,6 +2492,77 @@ static int cmd_wifi_btm_query(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+static int cmd_wifi_roaming(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	static const struct sys_getopt_option long_options[] = {
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
+	struct sys_getopt_state *state;
+	const char *action;
+	int opt_index = 0;
+	int opt;
+	int ret;
+
+	context.sh = sh;
+
+	if (iface == NULL) {
+		return -ENOEXEC;
+	}
+
+	while ((opt = sys_getopt_long(argc, argv, "i:h", long_options, &opt_index)) != -1) {
+		switch (opt) {
+		case 'i':
+			/* Already handled by get_iface(). */
+			break;
+		case 'h':
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		default:
+			PR_ERROR("Invalid option %c\n", opt);
+			shell_help(sh);
+			return -EINVAL;
+		}
+	}
+
+	state = sys_getopt_state_get();
+	action = (state->optind < (int)argc) ? argv[state->optind] : "status";
+
+	if (!strncasecmp(action, "status", 6)) {
+		PR("Roaming auto trigger: %s\n", wifi_auto_roam_en ? "enabled" : "disabled");
+		return 0;
+	}
+
+	if (!strncasecmp(action, "enable", 6)) {
+		wifi_auto_roam_en = true;
+		PR("Roaming auto trigger enabled\n");
+		return 0;
+	}
+
+	if (!strncasecmp(action, "disable", 7)) {
+		wifi_auto_roam_en = false;
+		PR("Roaming auto trigger disabled\n");
+		return 0;
+	}
+
+	if (!strncasecmp(action, "start", 5)) {
+		ret = net_mgmt(NET_REQUEST_WIFI_START_ROAMING, iface, NULL, 0);
+		if (ret) {
+			PR_WARNING("Start roaming failed: %s\n", strerror(-ret));
+			return -ENOEXEC;
+		}
+
+		PR("Start roaming requested\n");
+		return 0;
+	}
+
+	shell_help(sh);
+	return -ENOEXEC;
+}
+#endif
+
 static int cmd_wifi_wps_pbc(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
@@ -4421,6 +4504,14 @@ SHELL_SUBCMD_ADD((wifi), 11v_btm_query, NULL,
 			    "<reason code for BSS transition management query>"),
 		 cmd_wifi_btm_query,
 		 2, 2);
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+SHELL_SUBCMD_ADD((wifi), roaming, NULL,
+		 SHELL_HELP("Control Wi-Fi roaming",
+			    "[status|enable|disable|start] (default: status)\n"
+			    "[-i, --iface=<interface index>]"),
+		 cmd_wifi_roaming, 1, 3);
+#endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	wifi_cmd_ap,
