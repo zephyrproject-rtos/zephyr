@@ -149,6 +149,12 @@ Ethernet
   Out-of-tree DSA drivers must update their port configuration code to use the new API and
   structures. (:github:`108952`)
 
+* The Kconfig option ``CONFIG_ETH_NATIVE_TAP_PTP_CLOCK`` has been replaced by
+  :kconfig:option:`CONFIG_PTP_CLOCK_NATIVE`. A new compatible
+  :dtcompatible:`zephyr,native-ptp-clock` has been added for the native_sim PTP clock driver.
+  :kconfig:option:`CONFIG_PTP_CLOCK_NATIVE` is enabled by default when the
+  :dtcompatible:`zephyr,native-ptp-clock` compatible is present.
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
