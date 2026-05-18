@@ -123,6 +123,13 @@
 	pinctrl-0 = <&usart1_tx_pe5 &usart1_rx_pe6>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	dmas = <&gpdma1 0 108 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+	       <&gpdma1 1 107 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+	status = "okay";
+};
+
+&gpdma1 {
 	status = "okay";
 };
 
