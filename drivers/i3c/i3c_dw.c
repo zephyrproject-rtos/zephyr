@@ -107,6 +107,10 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define QUEUE_THLD_CTRL_RESP_BUF_MASK GENMASK(15, 8)
 #define QUEUE_THLD_CTRL_RESP_BUF(x)   (((x) - 1) << 8)
 
+#define QUEUE_THLD_CTRL_IBI_DATA_MASK    GENMASK(23, 16)
+#define QUEUE_THLD_CTRL_IBI_DATA(x)      (((x) << 16) & QUEUE_THLD_CTRL_IBI_DATA_MASK)
+#define QUEUE_THLD_CTRL_IBI_DATA_DEFAULT 0x01U
+
 #define DATA_BUFFER_THLD_CTRL        0x20
 #define DATA_BUFFER_THLD_CTRL_RX_BUF GENMASK(11, 8)
 
@@ -1851,7 +1855,9 @@ static void enable_interrupts(const struct device *dev)
 	config->irq_config_func();
 
 	thld_ctrl = sys_read32(config->regs + QUEUE_THLD_CTRL);
-	thld_ctrl &= (~QUEUE_THLD_CTRL_RESP_BUF_MASK & ~QUEUE_THLD_CTRL_IBI_STS_MASK);
+	thld_ctrl &= (~QUEUE_THLD_CTRL_RESP_BUF_MASK & ~QUEUE_THLD_CTRL_IBI_STS_MASK &
+		      ~QUEUE_THLD_CTRL_IBI_DATA_MASK);
+	thld_ctrl |= QUEUE_THLD_CTRL_IBI_DATA(QUEUE_THLD_CTRL_IBI_DATA_DEFAULT);
 	sys_write32(thld_ctrl, config->regs + QUEUE_THLD_CTRL);
 
 	thld_ctrl = sys_read32(config->regs + DATA_BUFFER_THLD_CTRL);
