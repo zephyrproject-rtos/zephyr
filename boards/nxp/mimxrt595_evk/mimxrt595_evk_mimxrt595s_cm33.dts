@@ -41,6 +41,7 @@
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,display = &lcdif;
+		zephyr,crc = &crc;
 	};
 
 	gpio_keys {
@@ -156,6 +157,10 @@
 };
 
 &rtc {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };
 

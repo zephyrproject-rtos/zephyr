@@ -18,6 +18,7 @@
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,uart-pipe = &flexcomm0;
 		zephyr,flash-controller = &iap;
+		zephyr,crc = &crc;
 	};
 
 	aliases {
@@ -189,6 +190,10 @@
 };
 
 &rtc {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };
 

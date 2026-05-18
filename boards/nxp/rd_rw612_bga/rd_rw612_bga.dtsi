@@ -31,6 +31,7 @@
 		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,console = &flexcomm3;
 		zephyr,shell-uart = &flexcomm3;
+		zephyr,crc = &crc;
 	};
 
 	gpio_keys {
@@ -131,6 +132,10 @@ arduino_i2c: &flexcomm2 {
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm3_usart>;
 	pinctrl-names = "default";
+};
+
+&crc {
+	status = "okay";
 };
 
 &hsgpio0 {
