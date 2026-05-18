@@ -510,7 +510,7 @@ static int tdm_nrf_configure(const struct device *dev, enum i2s_dir dir,
 		nrfx_cfg.alignment = NRF_TDM_ALIGN_LEFT;
 		nrfx_cfg.fsync_polarity = NRF_TDM_POLARITY_NEGEDGE;
 		nrfx_cfg.sck_polarity = NRF_TDM_POLARITY_POSEDGE;
-		nrfx_cfg.fsync_duration = NRF_TDM_FSYNC_DURATION_CHANNEL;
+		nrfx_cfg.fsync_duration = NRF_TDM_DEFAULT_FSYNC_DURATION;
 		nrfx_cfg.channel_delay = NRF_TDM_CHANNEL_DELAY_1CK;
 		max_num_of_channels = 2;
 		break;
@@ -518,7 +518,7 @@ static int tdm_nrf_configure(const struct device *dev, enum i2s_dir dir,
 		nrfx_cfg.alignment = NRF_TDM_ALIGN_LEFT;
 		nrfx_cfg.fsync_polarity = NRF_TDM_POLARITY_POSEDGE;
 		nrfx_cfg.sck_polarity = NRF_TDM_POLARITY_POSEDGE;
-		nrfx_cfg.fsync_duration = NRF_TDM_FSYNC_DURATION_CHANNEL;
+		nrfx_cfg.fsync_duration = NRF_TDM_DEFAULT_FSYNC_DURATION;
 		nrfx_cfg.channel_delay = NRF_TDM_CHANNEL_DELAY_NONE;
 		max_num_of_channels = 2;
 		break;
@@ -526,7 +526,7 @@ static int tdm_nrf_configure(const struct device *dev, enum i2s_dir dir,
 		nrfx_cfg.alignment = NRF_TDM_ALIGN_RIGHT;
 		nrfx_cfg.fsync_polarity = NRF_TDM_POLARITY_POSEDGE;
 		nrfx_cfg.sck_polarity = NRF_TDM_POLARITY_POSEDGE;
-		nrfx_cfg.fsync_duration = NRF_TDM_FSYNC_DURATION_CHANNEL;
+		nrfx_cfg.fsync_duration = NRF_TDM_DEFAULT_FSYNC_DURATION;
 		nrfx_cfg.channel_delay = NRF_TDM_CHANNEL_DELAY_NONE;
 		max_num_of_channels = 2;
 		break;
@@ -534,14 +534,14 @@ static int tdm_nrf_configure(const struct device *dev, enum i2s_dir dir,
 		nrfx_cfg.alignment = NRF_TDM_ALIGN_LEFT;
 		nrfx_cfg.fsync_polarity = NRF_TDM_POLARITY_NEGEDGE;
 		nrfx_cfg.sck_polarity = NRF_TDM_POLARITY_NEGEDGE;
-		nrfx_cfg.fsync_duration = NRF_TDM_FSYNC_DURATION_SCK;
+		nrfx_cfg.fsync_duration = NRF_TDM_DEFAULT_FSYNC_DURATION;
 		nrfx_cfg.channel_delay = NRF_TDM_CHANNEL_DELAY_NONE;
 		break;
 	case I2S_FMT_DATA_FORMAT_PCM_LONG:
 		nrfx_cfg.alignment = NRF_TDM_ALIGN_LEFT;
 		nrfx_cfg.fsync_polarity = NRF_TDM_POLARITY_POSEDGE;
 		nrfx_cfg.sck_polarity = NRF_TDM_POLARITY_NEGEDGE;
-		nrfx_cfg.fsync_duration = NRF_TDM_FSYNC_DURATION_SCK;
+		nrfx_cfg.fsync_duration = NRF_TDM_DEFAULT_FSYNC_DURATION;
 		nrfx_cfg.channel_delay = NRF_TDM_CHANNEL_DELAY_NONE;
 		break;
 	default:
@@ -555,7 +555,7 @@ static int tdm_nrf_configure(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
-	if (tdm_cfg->channels == 1 && nrfx_cfg.fsync_duration == NRF_TDM_FSYNC_DURATION_CHANNEL) {
+	if (tdm_cfg->channels == 1 && nrfx_cfg.fsync_duration == NRF_TDM_DEFAULT_FSYNC_DURATION) {
 		/* For I2S mono standard, two channels are to be sent.
 		 * The unused half period of LRCK will contain zeros.
 		 */
