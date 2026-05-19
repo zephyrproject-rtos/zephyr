@@ -1,0 +1,17 @@
+sample:
+  name: Bluetooth Classic SPP UART Client
+  description: |
+    Demonstrates SPP UART client mode. Initiates BR/EDR connection,
+    discovers SPP via SDP, and exchanges data over virtual UART.
+common:
+  tags:
+    - bluetooth
+    - classic
+    - spp
+    - uart
+  depends_on: bt_classic
+tests:
+  sample.bluetooth.classic.spp_uart_client:
+    platform_allow:
+      - native_sim/native/64
+    extra_args: EXTRA_DTC_OVERLAY_FILE=app.overlay
