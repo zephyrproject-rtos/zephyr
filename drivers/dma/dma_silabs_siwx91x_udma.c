@@ -39,7 +39,7 @@ struct dma_siwx91x_channel_info {
 	dma_callback_t dma_callback;        /* User callback */
 	void *cb_data;                      /* User callback data */
 	RSI_UDMA_DESC_T *sg_desc_addr_info; /* Scatter-Gather table start address */
-	enum dma_xfer_dir xfer_direction;   /* mem<->mem ot per<->mem */
+	uint32_t channel_dir;
 	bool channel_active;                /* Channel active flag */
 };
 
@@ -288,7 +288,7 @@ static int siwx91x_udma_config_sg(const struct device *dev, RSI_UDMA_HANDLE_T ud
 	/* Store the transfer direction. This is used to trigger SW request for
 	 * Memory to Memory transfers.
 	 */
-	data->zephyr_channel_info[channel].xfer_direction = xfer_dir;
+	data->zephyr_channel_info[channel].channel_dir = config->channel_direction;
 
 	RSI_UDMA_InterruptClear(udma_handle, channel);
 	RSI_UDMA_ErrorStatusClear(udma_handle);
@@ -398,7 +398,7 @@ static int siwx91x_udma_config_single(const struct device *dev, RSI_UDMA_HANDLE_
 	/* Store the transfer direction. This is used to trigger SW request for
 	 * Memory to Memory transfers.
 	 */
-	data->zephyr_channel_info[channel].xfer_direction = xfer_dir;
+	data->zephyr_channel_info[channel].channel_dir = config->channel_direction;
 
 	return 0;
 }
@@ -533,7 +533,7 @@ static int siwx91x_dma_start(const struct device *dev, uint32_t channel)
 	}
 
 	/* Check if the transfer type is memory-memory */
-	if (data->zephyr_channel_info[channel].xfer_direction == TRANSFER_MEM_TO_MEM) {
+	if (data->zephyr_channel_info[channel].channel_dir == MEMORY_TO_MEMORY) {
 		/* Apply software trigger to start transfer */
 		sys_set_bit((mem_addr_t)&cfg->reg->CHNL_SW_REQUEST, channel);
 	}
