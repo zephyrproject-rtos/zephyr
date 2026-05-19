@@ -7,6 +7,12 @@ config STEPPER_ADI_TMC_SPI
 	help
 	  A Trinamic Stepper Controller with SPI is enabled
 
+config STEPPER_ADI_TMC_I2C
+	bool "Use Trinamic Stepper Controller with I2C"
+	select I2C
+	help
+	  A Trinamic Stepper Controller with I2C is enabled
+
 config STEPPER_ADI_TMC_UART
 	bool "Use Trinamic Stepper Controller with single wire UART"
 	select SERIAL
