@@ -119,6 +119,13 @@ New APIs and options
 
   * :c:member:`pcm_stream_cfg.gain_db`
 
+* Bluetooth
+
+  * Audio
+
+    * :c:func:`bt_ascs_register`
+    * :c:func:`bt_ascs_unregister`
+
 * Devicetree
 
   * :c:macro:`DT_IRQN_BY_NAME`
