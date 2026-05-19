@@ -327,7 +327,7 @@ SECTIONS
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
-    *libdrivers__timer.a:esp32c6_sys_timer.*(.literal .text .literal.* .text.*)
+    *libdrivers__timer.a:esp32_sys_timer.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_core.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cbprintf_complete.*(.literal .text .literal.* .text.*)
     *libzephyr.a:printk.*(.literal.printk .literal.vprintk .literal.char_out .text.printk .text.vprintk .text.char_out)
