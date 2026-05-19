@@ -1,0 +1,38 @@
+# Copyright (c) 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: UART over Bluetooth Classic SPP (RFCOMM)
+
+compatible: "zephyr,bt-spp-uart"
+
+properties:
+  role:
+    type: string
+    enum:
+      - "server"
+      - "client"
+    default: "server"
+    description: |
+      SPP role. Server registers an RFCOMM channel and waits for incoming
+      connections. Client initiates an RFCOMM connection to a remote server.
+
+  channel:
+    type: int
+    default: 10
+    description: |
+      RFCOMM channel number (1-30).
+      For server role: 0 means auto-allocate a dynamic channel.
+      For client role: 0 means discover the remote server channel via SDP; otherwise
+      this is the remote server channel to connect to.
+
+  tx-fifo-size:
+    type: int
+    default: 1024
+    description: |
+      Size of the virtual UART TX FIFO (ring buffer) in bytes.
+
+  rx-fifo-size:
+    type: int
+    default: 1024
+    description: |
+      Size of the virtual UART RX FIFO (ring buffer) in bytes.

@@ -28,3 +28,32 @@ config UART_BT_WORKQUEUE_STACK_SIZE
 	  Set UART NUS Work-queue Stack-size based on the application context.
 
 endif
+
+config UART_BT_SPP
+	bool "UART over Bluetooth Classic SPP (RFCOMM)"
+	depends on BT_RFCOMM
+	depends on DT_HAS_ZEPHYR_BT_SPP_UART_ENABLED
+	select UART_INTERRUPT_DRIVEN
+	select RING_BUFFER
+	select EXPERIMENTAL
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable the UART over Bluetooth Classic SPP driver, which can be used
+	  to pipe serial data over RFCOMM. This follows the same pattern as the
+	  NUS UART driver (CONFIG_UART_BT) but for BR/EDR connections.
+
+if UART_BT_SPP
+
+config UART_BT_SPP_WORKQUEUE_PRIORITY
+	int "SPP UART work-queue priority"
+	default MAIN_THREAD_PRIORITY
+	help
+	  Priority of the SPP UART work-queue thread.
+
+config UART_BT_SPP_WORKQUEUE_STACK_SIZE
+	int "SPP UART work-queue stack size"
+	default 1024
+	help
+	  Stack size of the SPP UART work-queue thread.
+
+endif # UART_BT_SPP
