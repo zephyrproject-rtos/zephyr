@@ -443,3 +443,7 @@ st_cam_dvp: &dcmipp {
 &crc {
 	status = "okay";
 };
+
+&gpu2d {
+	status = "okay";
+};
