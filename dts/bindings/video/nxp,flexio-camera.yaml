@@ -1,0 +1,105 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+title: NXP FlexIO parallel camera interface (DVP)
+
+description: |
+  FlexIO is getting pins assigned through pinctrl, by setting the
+  FlexIO pin function to route the pins to the FlexIO controller.
+  Once the pin is assigned to FlexIO, there is a second layer of
+  signal routing happening inside FlexIO, to assign a FlexIO pin
+  number to a FlexIO signal.
+
+  The devicetree properties `*-pin` are configuring this second
+  level of routing inside FlexIO.
+
+  The devicetree properties `*-gpios` are configuring regular
+  pins not going through FlexIO, but still used by the driver.
+
+compatible: "nxp,flexio-camera"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  data-pin-start:
+    required: true
+    type: int
+    description: |
+      FlexIO pin index of the first 8-bit data line (D0). Pins
+      data-pin-start through data-pin-start+7 are used as D0-D7.
+
+  pclk-pin:
+    required: true
+    type: int
+    description: |
+      FlexIO pin index connected to the camera PCLK (pixel clock) output.
+
+  href-pin:
+    required: true
+    type: int
+    description: |
+      FlexIO pin index connected to the camera HREF (horizontal sync) output.
+
+  xclk-pin:
+    type: int
+    description: |
+      FlexIO pin index to use for XCLK output to the camera. Optional; if
+      absent, XCLK generation by FlexIO is disabled (external oscillator used).
+
+  xclk-frequency:
+    required: true
+    type: int
+    description: |
+      Target XCLK output frequency in Hz (e.g. 12000000). Required when
+      xclk-pin is present. The actual frequency is rounded to the nearest
+      value achievable with the current FlexIO clock.
+
+  shifter-count:
+    type: int
+    default: 8
+    enum: [1, 2, 4, 8]
+    description: |
+      Number of consecutive FlexIO shifters used as the camera data FIFO.
+      Each shifter holds 4 bytes, so 8 shifters yield a 32-byte DMA burst
+      per trigger. Must not exceed the number of shifters available in the
+      parent FlexIO peripheral.
+
+  shifter-end-index:
+    type: int
+    default: 7
+    enum: [3, 7]
+    description: |
+      Index of the last FlexIO shifter used for parallel input. Only specific
+      shifters (3 and 7) support parallel input on this peripheral.
+
+  xclk-timer:
+    type: int
+    default: 1
+    description: |
+      FlexIO timer index used to generate the camera XCLK output when
+      xclk-pin is present.
+
+  pclk-timer:
+    type: int
+    default: 0
+    description: |
+      FlexIO timer index used as the PCLK-capture (shifter clock) timer.
+
+  vsync-gpios:
+    required: true
+    type: phandle-array
+    description: |
+      GPIO pin connected to the camera VSYNC output. A rising edge (active
+      assertion) marks start-of-frame and triggers DMA buffer rotation.
+
+  dmas:
+    required: true
+    type: phandle-array
+    description: |
+      eDMA channel used to transfer pixel data from the FlexIO shifter
+      buffer to the user framebuffer. Must contain exactly one entry;
+      the driver always uses index 0.
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
