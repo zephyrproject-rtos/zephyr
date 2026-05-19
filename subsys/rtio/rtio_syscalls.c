@@ -44,6 +44,9 @@ static inline bool rtio_vrfy_sqe(struct rtio_sqe *sqe)
 		valid_sqe &= K_SYSCALL_MEMORY(sqe->txrx.tx_buf, sqe->txrx.buf_len, true);
 		valid_sqe &= K_SYSCALL_MEMORY(sqe->txrx.rx_buf, sqe->txrx.buf_len, true);
 		break;
+	case RTIO_OP_CMD:
+		valid_sqe &= K_SYSCALL_MEMORY(sqe->cmd.buf, sqe->cmd.buf_len, false);
+		break;
 	default:
 		/* RTIO OP must be known and allowable from user mode
 		 * otherwise it is invalid

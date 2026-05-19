@@ -77,6 +77,45 @@ ZTEST(rtio_api, test_rtio_simple)
 	}
 }
 
+RTIO_DEFINE(r_cmd, SQE_POOL_SIZE, CQE_POOL_SIZE);
+
+RTIO_IODEV_TEST_DEFINE(iodev_test_cmd);
+
+ZTEST(rtio_api, test_rtio_cmd)
+{
+	const uint8_t command[] = { 0x12, 0x34, 0x56, 0x78 };
+	uintptr_t userdata = 0x1234;
+	struct rtio_iodev_test_data *data = iodev_test_cmd.data;
+	struct rtio_sqe *sqe;
+	struct rtio_cqe *cqe;
+	int res;
+
+	rtio_iodev_test_init(&iodev_test_cmd);
+
+	sqe = rtio_sqe_acquire(&r_cmd);
+	zassert_not_null(sqe, "Expected a valid sqe");
+
+	rtio_sqe_prep_cmd(sqe, &iodev_test_cmd, RTIO_PRIO_NORM,
+			  command, sizeof(command), &userdata);
+
+	zassert_equal(RTIO_OP_CMD, sqe->op, "Expected command op");
+	zassert_equal_ptr(&iodev_test_cmd, sqe->iodev, "Expected target iodev");
+	zassert_equal_ptr(command, sqe->cmd.buf, "Expected command buffer");
+	zassert_equal(sizeof(command), sqe->cmd.buf_len, "Expected command size");
+
+	res = rtio_submit(&r_cmd, 1);
+	zassert_ok(res, "Should return ok from rtio_submit");
+
+	cqe = rtio_cqe_consume(&r_cmd);
+	zassert_not_null(cqe, "Expected a valid cqe");
+	zassert_ok(cqe->result, "Result should be ok");
+	zassert_equal_ptr(cqe->userdata, &userdata, "Expected userdata back");
+	zassert_equal_ptr(data->cmd_buf, command, "Expected command buffer at iodev");
+	zassert_equal(data->cmd_len, sizeof(command), "Expected command size at iodev");
+
+	rtio_cqe_release(&r_cmd, cqe);
+}
+
 ZTEST(rtio_api, test_rtio_no_response)
 {
 	int res;

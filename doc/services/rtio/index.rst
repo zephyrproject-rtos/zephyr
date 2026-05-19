@@ -122,6 +122,17 @@ does this work is up to the author of the iodev, perhaps the entire queue of
 operations can be converted to a set of DMA transfer descriptors, meaning the
 hardware does almost all of the real work.
 
+Opaque Commands
+***************
+
+Some devices need RTIO scheduling semantics for work that does not naturally fit
+the built-in read, write, or transceive operations. For these cases,
+``RTIO_OP_CMD`` carries an opaque command buffer to an iodev. RTIO does not
+interpret the command contents; it only handles submission ordering, chaining,
+cancellation, and completion delivery. The iodev defines the command format and
+validates any device-specific payload. The caller must keep the command buffer
+valid until the SQE completes.
+
 Cancellation
 ************
 

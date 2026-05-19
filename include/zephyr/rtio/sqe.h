@@ -176,6 +176,9 @@ extern "C" {
 /** An operation to await a signal while blocking the iodev (if one is provided) */
 #define RTIO_OP_AWAIT (RTIO_OP_I3C_CCC+1)
 
+/** An operation carrying an opaque command buffer */
+#define RTIO_OP_CMD (RTIO_OP_AWAIT+1)
+
 /**
  * @}
  */
@@ -353,6 +356,12 @@ struct rtio_sqe {
 			const uint8_t *tx_buf; /**< Buffer to write from */
 			uint8_t *rx_buf; /**< Buffer to read into */
 		} txrx;
+
+		/** OP_CMD */
+		struct {
+			uint32_t buf_len; /**< Length of command buffer */
+			const void *buf; /**< Command buffer */
+		} cmd;
 
 #ifdef CONFIG_RTIO_OP_DELAY
 		/** OP_DELAY */
@@ -571,6 +580,32 @@ static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
 	sqe->txrx.buf_len = buf_len;
 	sqe->txrx.tx_buf = tx_buf;
 	sqe->txrx.rx_buf = rx_buf;
+	sqe->userdata = userdata;
+}
+
+/**
+ * @brief Prepare an opaque iodev command op submission
+ *
+ * The command buffer is interpreted by the selected iodev. RTIO only provides
+ * queueing, ordering, and completion handling for this operation.
+ *
+ * The caller must keep @p buf valid until the SQE completes.
+ */
+static inline void rtio_sqe_prep_cmd(struct rtio_sqe *sqe,
+				     const struct rtio_iodev *iodev,
+				     int8_t prio,
+				     const void *buf,
+				     uint32_t buf_len,
+				     void *userdata)
+{
+	__ASSERT_NO_MSG(iodev != NULL);
+
+	memset(sqe, 0, sizeof(struct rtio_sqe));
+	sqe->op = RTIO_OP_CMD;
+	sqe->prio = prio;
+	sqe->iodev = iodev;
+	sqe->cmd.buf = buf;
+	sqe->cmd.buf_len = buf_len;
 	sqe->userdata = userdata;
 }
 

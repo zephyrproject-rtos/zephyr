@@ -31,6 +31,10 @@ struct rtio_iodev_test_data {
 
 	/* Mocked result to receive by the IODEV */
 	int result;
+
+	/* Last opaque command observed by the IODEV */
+	const void *cmd_buf;
+	uint32_t cmd_len;
 };
 
 static void rtio_iodev_test_next(struct rtio_iodev_test_data *data, bool completion)
@@ -112,6 +116,11 @@ static void rtio_iodev_timer_fn(struct k_timer *tm)
 	case RTIO_OP_AWAIT:
 		rtio_iodev_sqe_await_signal(iodev_sqe, rtio_iodev_await_signaled, data);
 		break;
+	case RTIO_OP_CMD:
+		data->cmd_buf = iodev_sqe->sqe.cmd.buf;
+		data->cmd_len = iodev_sqe->sqe.cmd.buf_len;
+		rtio_iodev_test_complete(data, data->result);
+		break;
 	default:
 		rtio_iodev_test_complete(data, -ENOTSUP);
 	}
@@ -143,6 +152,8 @@ void rtio_iodev_test_init(struct rtio_iodev *test)
 	data->txn_curr = NULL;
 	k_timer_init(&data->timer, rtio_iodev_timer_fn, NULL);
 	data->result = 0;
+	data->cmd_buf = NULL;
+	data->cmd_len = 0U;
 }
 
 void rtio_iodev_test_set_result(struct rtio_iodev *test, int result)
